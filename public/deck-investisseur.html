@@ -1211,6 +1211,98 @@ body.sur-demo .zone{pointer-events:none}
   .dm-tel{height:min(56vh,430px);margin:0 auto}
   .dm-temps li:not(.on){display:none}
 }
+
+/* ── LA RUE ──────────────────────────────────────────────────────── */
+.ville{height:clamp(250px,50vh,470px)}
+/* LA TIGE RATTACHE CHAQUE EPINGLE A SA DEVANTURE. Sans elle, six pastilles
+   flottent au-dessus d'un dessin et on ne sait pas laquelle parle de quoi —
+   c'est precisement la confusion que la slide existe pour dissiper. */
+/* LA TIGE RATTACHE CHAQUE EPINGLE A SA DEVANTURE, et son point d'accroche se
+   pose sur le store. Sans elle, six pastilles flottent au-dessus d'un dessin
+   et rien ne dit laquelle parle de quel commerce — c'est exactement la
+   confusion que cette slide existe pour dissiper. */
+.tige{position:absolute;width:2px;margin-left:-1px;border-radius:2px;opacity:0;
+  background:linear-gradient(180deg,var(--menthe),rgba(61,226,166,.12));
+  box-shadow:0 0 9px rgba(61,226,166,.35);
+  animation:pousse .5s var(--exp) both}
+.tige::after{content:"";position:absolute;left:-4px;bottom:-5px;width:10px;height:10px;
+  border-radius:50%;background:var(--menthe);box-shadow:0 0 0 4px rgba(61,226,166,.18)}
+.dia.on .tige{animation-delay:calc(.35s + var(--i,0) * 210ms)}
+@keyframes pousse{from{opacity:0;transform:scaleY(.15)}to{opacity:1;transform:none}}
+.tige{transform-origin:top}
+/* « VOUS ETES ICI » RESPIRE, et c'est la seule animation continue de la
+   slide : c'est le seul element qui parle de la personne assise dans la
+   salle. */
+.ep.moi{animation:pop .55s cubic-bezier(.34,1.42,.64,1) both,
+  battement 2.6s ease-in-out 1.6s infinite}
+@keyframes battement{0%,100%{box-shadow:0 8px 22px rgba(0,0,0,.45),0 0 0 0 rgba(240,180,41,.34)}
+  55%{box-shadow:0 8px 22px rgba(0,0,0,.45),0 0 0 16px rgba(240,180,41,0)}}
+.ep{box-shadow:0 8px 22px rgba(0,0,0,.45)}
+
+/* ── LA JOURNEE D'UN COMMERCE ────────────────────────────────────── */
+.journee{background:rgba(243,239,228,.035);border:1px solid var(--trait);
+  border-radius:20px;padding:clamp(14px,2vh,20px) clamp(14px,1.8vw,20px);min-width:0}
+.jr-tete{display:flex;align-items:center;gap:10px;padding-bottom:12px;
+  border-bottom:1px solid var(--trait)}
+.jr-tete>i{font-style:normal;font-size:22px;line-height:1;flex:none}
+.jr-tete b{display:block;font-family:"Fraunces",Georgia,serif;font-weight:900;
+  font-size:clamp(16px,1.7vw,20px);letter-spacing:-.03em}
+.jr-tete em{display:block;font-style:normal;font-size:11.5px;color:var(--craie-3)}
+
+.journee ol{list-style:none;margin:12px 0 0;padding:0 0 0 20px;position:relative}
+/* LE RAIL PASSE DE L'AMBRE DU MATIN A L'INDIGO DU SOIR : la journee se voit
+   avant d'etre lue. */
+.journee ol::before{content:"";position:absolute;left:4px;top:8px;bottom:8px;width:2px;
+  border-radius:2px;
+  background:linear-gradient(180deg,#F0B429,#3DE2A6 42%,#7FB2FF 78%,#5B62C9)}
+.journee li{position:relative;display:grid;
+  grid-template-columns:auto 26px minmax(0,1fr) auto;gap:10px;align-items:center;
+  padding:clamp(6px,1.1vh,10px) 0}
+.journee li::before{content:"";position:absolute;left:-20px;top:50%;
+  transform:translateY(-50%);width:10px;height:10px;border-radius:50%;
+  background:var(--nuit);border:2px solid var(--craie-3)}
+.journee li.matin::before{border-color:#F0B429}
+.journee li.midi::before{border-color:var(--menthe)}
+.journee li.aprem::before{border-color:#7FB2FF}
+.journee li.soir::before{border-color:#5B62C9}
+.journee li.ici::before{background:var(--menthe);border-color:var(--menthe);
+  box-shadow:0 0 0 5px rgba(61,226,166,.18)}
+.journee .h{font-size:11px;font-weight:700;color:var(--craie-3);white-space:nowrap}
+.journee li.ici .h{color:var(--menthe)}
+.journee li>i{font-style:normal;font-size:18px;line-height:1;text-align:center}
+.journee .q{min-width:0}
+.journee .q b{display:block;font-size:clamp(13.5px,1.35vw,16px);font-weight:700;
+  letter-spacing:-.015em;line-height:1.2}
+.journee .q em{display:block;font-style:normal;font-size:11.5px;color:var(--craie-2);
+  margin-top:1px}
+.journee .etat{text-decoration:none;font-family:"JetBrains Mono",monospace;font-weight:700;
+  font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:#04150F;
+  background:var(--menthe);border-radius:5px;padding:3px 6px;white-space:nowrap}
+.jr-pied{margin:12px 0 0;padding-top:10px;border-top:1px solid var(--trait);
+  font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--craie-3)}
+
+/* LA COLONNE DE GAUCHE N'EST PAS UNE CARTE. `.duo>div` encadre ses enfants —
+   c'est utile pour la slide de comparaison, ça ne l'est pas ici : le titre se
+   retrouvait dans un cadre, au meme niveau que la journee d'a cote, et les
+   deux se disputaient le regard. */
+.duo .mot{background:none;border:0;padding:0}
+
+/* La comparaison, a gauche. */
+.face2{display:flex;flex-direction:column;gap:8px}
+.face2>div{border:1px solid var(--trait);border-radius:14px;padding:9px 12px}
+.face2 .lab{display:block;font-family:"JetBrains Mono",monospace;font-weight:700;
+  font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--craie-3)}
+.face2 b{display:block;font-size:clamp(13px,1.3vw,15px);font-weight:700;margin-top:3px;
+  line-height:1.25}
+.face2 .mort{color:var(--craie-3)}
+.face2 .oui{background:rgba(61,226,166,.08);border-color:rgba(61,226,166,.28)}
+.face2 .oui b{color:var(--menthe)}
+
+@media(max-width:900px){
+  .journee li{grid-template-columns:auto 22px minmax(0,1fr)}
+  .journee .etat{grid-column:3;justify-self:start}
+}
 </style>
 
 <div id="halo" aria-hidden="true"></div>
@@ -1240,18 +1332,31 @@ body.sur-demo .zone{pointer-events:none}
     <h1 class="tit g serif" data-e style="--i:0">
       VOTRE VILLE BOUGE.<span class="doux">Vous ne le savez pas.</span>
     </h1>
-    <!-- LES EPINGLES ARRIVENT UNE PAR UNE, a trois cent quarante
-         millisecondes d'intervalle : c'est la journee qui se remplit sous
-         les yeux de la salle, et personne n'a besoin qu'on la commente. -->
+    <!-- LA RUE EST DESSINEE, ET C'EST LE POINT DE TOUTE LA SLIDE.
+         Cinq traits gris disaient « une rue » a quelqu'un qui savait deja de
+         quoi on parlait. Des devantures, des stores de couleur, des vitrines
+         allumees et des reverberes disent une VILLE a quelqu'un qui decouvre
+         — et c'est sur cette slide-la que se joue le declic.
+         Tout est trace a la main : aucune image a charger, donc rien qui
+         puisse manquer dans une salle sans reseau.
+         LES EPINGLES S'ALLUMENT UNE PAR UNE, a deux cent dix millisecondes
+         d'intervalle, chacune au-dessus de SA devanture : c'est la journee
+         qui se remplit sous les yeux, et personne n'a besoin de commenter. -->
     <div class="ville" data-e style="--i:1">
-      <svg viewBox="0 0 800 380" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><g stroke="rgba(243,239,228,.09)" stroke-width="14" stroke-linecap="round"><path d="M-20 250 L820 205"/><path d="M-20 105 L820 140"/><path d="M210 -20 L250 400"/><path d="M560 -20 L520 400"/><path d="M380 120 L410 400"/></g><g stroke="rgba(61,226,166,.14)" stroke-width="3" fill="none"><path d="M-20 330 C160 300 320 355 520 320 C640 300 720 330 820 312"/></g></svg>
-      <span class="ep" style="left:14%;top:20%;--i:0"><em class="hh mono">11 h 02</em><b>Plat du jour</b></span>
-      <span class="ep" style="left:64%;top:15%;--i:1"><em class="hh mono">11 h 37</em><b>Créneau libre</b></span>
-      <span class="ep" style="left:26%;top:70%;--i:2"><em class="hh mono">12 h 14</em><b>Dernières portions</b></span>
-      <span class="ep" style="left:76%;top:66%;--i:3"><em class="hh mono">14 h 06</em><b>Nouvelle collection</b></span>
-      <span class="ep" style="left:46%;top:86%;--i:4"><em class="hh mono">16 h 30</em><b>Sortie du four</b></span>
-      <span class="ep moi" style="left:50%;top:47%;--i:6"><b>Vous êtes ici</b></span>
-      <span class="ep" style="left:74%;top:30%;--i:5"><em class="hh mono">19 h 00</em><b>Concert au kiosque</b></span>
+      <svg viewBox="0 0 1240 470" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="ciel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#04100C"/><stop offset="1" stop-color="#0B1C16"/></linearGradient><linearGradient id="vitre" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD98A" stop-opacity=".95"/><stop offset="1" stop-color="#F0B429" stop-opacity=".55"/></linearGradient><radialGradient id="flaque"><stop offset="0" stop-color="#F0B429" stop-opacity=".40"/><stop offset="1" stop-color="#F0B429" stop-opacity="0"/></radialGradient><radialGradient id="halo"><stop offset="0" stop-color="#FFE3A6" stop-opacity=".42"/><stop offset="1" stop-color="#FFE3A6" stop-opacity="0"/></radialGradient><filter id="doux" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="8"/></filter></defs><rect x="0" y="0" width="1240" height="470" fill="url(#ciel)"/><path d="M0 318 L64 318 L64 282 L134 282 L134 306 L204 306 L204 262 L272 262 L272 298 L352 298 L352 272 L424 272 L424 310 L502 310 L502 276 L578 276 L578 304 L660 304 L660 268 L736 268 L736 300 L814 300 L814 274 L894 274 L894 310 L974 310 L974 280 L1054 280 L1054 306 L1132 306 L1132 288 L1240 288 L1240 420 L0 420 Z" fill="#081410" opacity=".85"/><g><rect x="16" y="174" width="190" height="212" rx="3" fill="#0E1A16"/><rect x="16" y="174" width="190" height="7" fill="rgba(243,239,228,.10)"/><rect x="50" y="200" width="26" height="34" rx="3" fill="#F0B429" opacity=".30"/><rect x="54" y="204" width="18" height="26" rx="2" fill="#FFD98A" opacity=".55"/><rect x="98" y="200" width="26" height="34" rx="3" fill="#F0B429" opacity=".30"/><rect x="102" y="204" width="18" height="26" rx="2" fill="#FFD98A" opacity=".55"/><rect x="146" y="200" width="26" height="34" rx="3" fill="#06110D" opacity=".9"/><path d="M20 290 L202 290 L190 324 L32 324 Z" fill="#3DE2A6" opacity=".82"/><path d="M50 290 L39 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M81 290 L70 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M111 290 L100 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M141 290 L130 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M172 290 L161 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><rect x="20" y="286" width="182" height="6" rx="3" fill="rgba(4,16,12,.5)"/><rect x="28" y="324" width="134" height="52" rx="4" fill="url(#vitre)"/><rect x="168" y="320" width="28" height="56" rx="3" fill="#0A1512" stroke="rgba(243,239,228,.16)"/><text x="95" y="358" font-size="26" text-anchor="middle">🍽️</text><ellipse cx="111" cy="402" rx="105" ry="26" fill="url(#flaque)"/></g><g><rect x="216" y="136" width="174" height="250" rx="3" fill="#101E19"/><rect x="216" y="136" width="174" height="7" fill="rgba(243,239,228,.10)"/><rect x="246" y="162" width="26" height="34" rx="3" fill="#F0B429" opacity=".30"/><rect x="250" y="166" width="18" height="26" rx="2" fill="#FFD98A" opacity=".55"/><rect x="290" y="162" width="26" height="34" rx="3" fill="#06110D" opacity=".9"/><rect x="334" y="162" width="26" height="34" rx="3" fill="#F0B429" opacity=".30"/><rect x="338" y="166" width="18" height="26" rx="2" fill="#FFD98A" opacity=".55"/><path d="M220 290 L386 290 L374 324 L232 324 Z" fill="#F0B429" opacity=".82"/><path d="M248 290 L237 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M275 290 L264 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M303 290 L292 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M331 290 L320 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M358 290 L347 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><rect x="220" y="286" width="166" height="6" rx="3" fill="rgba(4,16,12,.5)"/><rect x="228" y="324" width="118" height="52" rx="4" fill="url(#vitre)"/><rect x="352" y="320" width="28" height="56" rx="3" fill="#0A1512" stroke="rgba(243,239,228,.16)"/><text x="287" y="358" font-size="26" text-anchor="middle">🥖</text><ellipse cx="303" cy="402" rx="96" ry="26" fill="url(#flaque)"/></g><g><rect x="398" y="200" width="198" height="186" rx="3" fill="#0D1815"/><rect x="398" y="200" width="198" height="7" fill="rgba(243,239,228,.10)"/><rect x="434" y="226" width="26" height="34" rx="3" fill="#06110D" opacity=".9"/><rect x="484" y="226" width="26" height="34" rx="3" fill="#F0B429" opacity=".30"/><rect x="488" y="230" width="18" height="26" rx="2" fill="#FFD98A" opacity=".55"/><rect x="534" y="226" width="26" height="34" rx="3" fill="#F0B429" opacity=".30"/><rect x="538" y="230" width="18" height="26" rx="2" fill="#FFD98A" opacity=".55"/><path d="M402 290 L592 290 L580 324 L414 324 Z" fill="#7FB2FF" opacity=".82"/><path d="M434 290 L423 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M465 290 L454 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M497 290 L486 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M529 290 L518 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M560 290 L549 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><rect x="402" y="286" width="190" height="6" rx="3" fill="rgba(4,16,12,.5)"/><rect x="410" y="324" width="142" height="52" rx="4" fill="url(#vitre)"/><rect x="558" y="320" width="28" height="56" rx="3" fill="#0A1512" stroke="rgba(243,239,228,.16)"/><text x="481" y="358" font-size="26" text-anchor="middle">✂️</text><ellipse cx="497" cy="402" rx="109" ry="26" fill="url(#flaque)"/></g><g><rect x="604" y="152" width="180" height="234" rx="3" fill="#101E19"/><rect x="604" y="152" width="180" height="7" fill="rgba(243,239,228,.10)"/><rect x="636" y="178" width="26" height="34" rx="3" fill="#F0B429" opacity=".30"/><rect x="640" y="182" width="18" height="26" rx="2" fill="#FFD98A" opacity=".55"/><rect x="681" y="178" width="26" height="34" rx="3" fill="#F0B429" opacity=".30"/><rect x="685" y="182" width="18" height="26" rx="2" fill="#FFD98A" opacity=".55"/><rect x="726" y="178" width="26" height="34" rx="3" fill="#06110D" opacity=".9"/><path d="M608 290 L780 290 L768 324 L620 324 Z" fill="#E58FC0" opacity=".82"/><path d="M637 290 L626 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M665 290 L654 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M694 290 L683 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M723 290 L712 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M751 290 L740 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><rect x="608" y="286" width="172" height="6" rx="3" fill="rgba(4,16,12,.5)"/><rect x="616" y="324" width="124" height="52" rx="4" fill="url(#vitre)"/><rect x="746" y="320" width="28" height="56" rx="3" fill="#0A1512" stroke="rgba(243,239,228,.16)"/><text x="678" y="358" font-size="26" text-anchor="middle">👗</text><ellipse cx="694" cy="402" rx="99" ry="26" fill="url(#flaque)"/></g><g><rect x="792" y="188" width="192" height="198" rx="3" fill="#0E1A16"/><rect x="792" y="188" width="192" height="7" fill="rgba(243,239,228,.10)"/><rect x="827" y="214" width="26" height="34" rx="3" fill="#F0B429" opacity=".30"/><rect x="831" y="218" width="18" height="26" rx="2" fill="#FFD98A" opacity=".55"/><rect x="875" y="214" width="26" height="34" rx="3" fill="#06110D" opacity=".9"/><rect x="923" y="214" width="26" height="34" rx="3" fill="#F0B429" opacity=".30"/><rect x="927" y="218" width="18" height="26" rx="2" fill="#FFD98A" opacity=".55"/><path d="M796 290 L980 290 L968 324 L808 324 Z" fill="#D2604A" opacity=".82"/><path d="M827 290 L816 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M857 290 L846 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M888 290 L877 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M919 290 L908 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M949 290 L938 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><rect x="796" y="286" width="184" height="6" rx="3" fill="rgba(4,16,12,.5)"/><rect x="804" y="324" width="136" height="52" rx="4" fill="url(#vitre)"/><rect x="946" y="320" width="28" height="56" rx="3" fill="#0A1512" stroke="rgba(243,239,228,.16)"/><text x="872" y="358" font-size="26" text-anchor="middle">💐</text><ellipse cx="888" cy="402" rx="106" ry="26" fill="url(#flaque)"/></g><g><rect x="992" y="164" width="232" height="222" rx="3" fill="#101E19"/><rect x="992" y="164" width="232" height="7" fill="rgba(243,239,228,.10)"/><rect x="1025" y="190" width="26" height="34" rx="3" fill="#06110D" opacity=".9"/><rect x="1072" y="190" width="26" height="34" rx="3" fill="#F0B429" opacity=".30"/><rect x="1076" y="194" width="18" height="26" rx="2" fill="#FFD98A" opacity=".55"/><rect x="1118" y="190" width="26" height="34" rx="3" fill="#F0B429" opacity=".30"/><rect x="1122" y="194" width="18" height="26" rx="2" fill="#FFD98A" opacity=".55"/><rect x="1165" y="190" width="26" height="34" rx="3" fill="#06110D" opacity=".9"/><path d="M996 290 L1220 290 L1208 324 L1008 324 Z" fill="#0BA97B" opacity=".82"/><path d="M1033 290 L1022 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M1071 290 L1060 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M1108 290 L1097 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M1145 290 L1134 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><path d="M1183 290 L1172 324" stroke="rgba(4,16,12,.30)" stroke-width="7"/><rect x="996" y="286" width="224" height="6" rx="3" fill="rgba(4,16,12,.5)"/><rect x="1004" y="324" width="176" height="52" rx="4" fill="url(#vitre)"/><rect x="1186" y="320" width="28" height="56" rx="3" fill="#0A1512" stroke="rgba(243,239,228,.16)"/><text x="1092" y="358" font-size="26" text-anchor="middle">🍷</text><ellipse cx="1108" cy="402" rx="128" ry="26" fill="url(#flaque)"/></g><rect x="0" y="386" width="1240" height="84" fill="#0D1D17"/><rect x="0" y="386" width="1240" height="2" fill="rgba(243,239,228,.10)"/><path d="M0 432 L1240 426" stroke="rgba(243,239,228,.06)" stroke-width="2"/><rect x="78" y="292" width="9" height="12" rx="2" fill="#F0B429" opacity=".22"/><rect x="146" y="268" width="9" height="12" rx="2" fill="#F0B429" opacity=".22"/><rect x="288" y="276" width="9" height="12" rx="2" fill="#F0B429" opacity=".22"/><rect x="466" y="284" width="9" height="12" rx="2" fill="#F0B429" opacity=".22"/><rect x="546" y="258" width="9" height="12" rx="2" fill="#F0B429" opacity=".22"/><rect x="692" y="280" width="9" height="12" rx="2" fill="#F0B429" opacity=".22"/><rect x="846" y="286" width="9" height="12" rx="2" fill="#F0B429" opacity=".22"/><rect x="930" y="262" width="9" height="12" rx="2" fill="#F0B429" opacity=".22"/><rect x="1088" y="292" width="9" height="12" rx="2" fill="#F0B429" opacity=".22"/><rect x="1176" y="274" width="9" height="12" rx="2" fill="#F0B429" opacity=".22"/><g opacity=".70" fill="#050F0C"><circle cx="236" cy="406" r="5.0"/><path d="M230.0 414 q6.0 -6 12.0 0 l2.0 34 h-16.0 Z"/></g><g opacity=".70" fill="#050F0C"><circle cx="288" cy="411" r="4.3"/><path d="M282.8 419 q5.2 -6 10.3 0 l1.7 29 h-13.8 Z"/></g><g opacity=".70" fill="#050F0C"><circle cx="612" cy="408" r="4.7"/><path d="M606.4 416 q5.6 -6 11.3 0 l1.9 32 h-15.0 Z"/></g><g opacity=".70" fill="#050F0C"><circle cx="836" cy="404" r="5.3"/><path d="M829.6 412 q6.4 -6 12.7 0 l2.1 36 h-17.0 Z"/></g><g opacity=".70" fill="#050F0C"><circle cx="1032" cy="409" r="4.5"/><path d="M1026.6 417 q5.4 -6 10.8 0 l1.8 31 h-14.4 Z"/></g></svg>
+      <i class="tige" style="left:9.0%;top:13%;height:49%;--i:0"></i>
+      <span class="ep" style="left:9.0%;top:9%;--i:0"><em class="hh mono">11 h 02</em><b>Plat du jour</b></span>
+      <i class="tige" style="left:24.5%;top:29%;height:33%;--i:1"></i>
+      <span class="ep" style="left:24.5%;top:25%;--i:1"><em class="hh mono">12 h 14</em><b>Dernières portions</b></span>
+      <i class="tige" style="left:40.0%;top:13%;height:49%;--i:2"></i>
+      <span class="ep" style="left:40.0%;top:9%;--i:2"><em class="hh mono">11 h 37</em><b>Créneau libre à 14 h</b></span>
+      <i class="tige" style="left:56.0%;top:29%;height:33%;--i:3"></i>
+      <span class="ep" style="left:56.0%;top:25%;--i:3"><em class="hh mono">14 h 06</em><b>Nouvelle collection</b></span>
+      <i class="tige" style="left:71.5%;top:13%;height:49%;--i:4"></i>
+      <span class="ep" style="left:71.5%;top:9%;--i:4"><em class="hh mono">16 h 30</em><b>Sortie du four</b></span>
+      <i class="tige" style="left:87.0%;top:29%;height:33%;--i:5"></i>
+      <span class="ep" style="left:87.0%;top:25%;--i:5"><em class="hh mono">19 h 00</em><b>Concert ce soir</b></span>
+      <span class="ep moi" style="left:50%;top:91%;--i:6"><b>Vous êtes ici</b></span>
     </div>
     <p class="sous centre" data-e style="--i:2">
       Des centaines de choses se passent chaque jour dans une ville.
@@ -1300,21 +1405,40 @@ body.sur-demo .zone{pointer-events:none}
   </div>
 </section>
 
-<section class="dia" aria-label="Slide 4">
-  <div class="boite">
-    <p class="oeil vert" data-e style="--i:0">La réponse</p>
-    <h1 class="tit serif" data-e style="--i:1">CLIKME CHANGE ÇA.</h1>
-    <ul class="jour" data-e style="--i:2">
-      <li><span class="h">10 h 00</span><i aria-hidden="true">🍲</i><b>Voici ce qui va se passer aujourd’hui</b></li>
-      <li><span class="h">11 h 30</span><i aria-hidden="true">🕓</i><b>Voilà ce qui est disponible maintenant</b></li>
-      <li><span class="h">13 h 15</span><i aria-hidden="true">🔥</i><b>Il me reste six portions</b></li>
-      <li><span class="h">15 h 40</span><i aria-hidden="true">✂️</i><b>Deux créneaux viennent de se libérer</b></li>
-      <li><span class="h">18 h 00</span><i aria-hidden="true">🎤</i><b>Ce soir&nbsp;: événement</b></li>
-    </ul>
-    <p class="chute" data-e style="--i:3">
-      Chaque commerce raconte sa journée.
-      <span class="v">Chaque habitant découvre sa ville en direct.</span>
-    </p>
+<section class="dia large" aria-label="Slide 4">
+  <div class="boite duo inv">
+    <div class="mot col">
+      <p class="oeil vert" data-e style="--i:0">La réponse</p>
+      <h1 class="tit m serif" data-e style="--i:1">CLIKME CHANGE ÇA.</h1>
+      <!-- LA COMPARAISON EST LA POUR UNE RAISON PRECISE : sans elle, une
+           journee racontee ressemble a « plus de contenu ». Avec elle, on voit
+           que ce n'est pas la meme information — un horaire ne dit pas ce
+           qu'il y a a manger a midi. -->
+      <div class="face2" data-e style="--i:2">
+        <div><span class="lab">Ce que Google en dit</span><b class="mort">Ouvert 12 h – 14 h, 19 h – 22 h</b></div>
+        <div class="oui"><span class="lab">Ce que ClikMe en dit</span><b>Six moments, du café du matin à la tablée du soir</b></div>
+      </div>
+      <p class="chute" data-e style="--i:3">
+        Chaque commerce raconte sa journée.
+        <span class="v">Chaque habitant découvre sa ville en direct.</span>
+      </p>
+    </div>
+
+    <div class="journee" data-e="cote" style="--i:2">
+      <div class="jr-tete">
+        <i aria-hidden="true">🍽️</i>
+        <span><b>Chez Bergine</b><em>Restaurant · 240 m · aujourd’hui</em></span>
+      </div>
+      <ol>
+        <li class="matin"><span class="h mono">08 h 30</span><i aria-hidden="true">☕</i><span class="q"><b>Le café est ouvert</b><em>Petits déjeuners · 8 places en terrasse</em></span></li>
+        <li class="matin"><span class="h mono">10 h 00</span><i aria-hidden="true">📋</i><span class="q"><b>L’ardoise du jour est écrite</b><em>Garbure, axoa de veau · 14 €</em></span></li>
+        <li class="midi ici"><span class="h mono">12 h 00</span><i aria-hidden="true">🍽️</i><span class="q"><b>Il reste 4 tables</b><em>Service jusqu’à 14 h</em></span><s class="etat">en cours</s></li>
+        <li class="aprem"><span class="h mono">14 h 30</span><i aria-hidden="true">🥡</i><span class="q"><b>Dernières parts à emporter</b><em>−30 % jusqu’à épuisement</em></span></li>
+        <li class="soir"><span class="h mono">17 h 00</span><i aria-hidden="true">🍷</i><span class="q"><b>Apéro : planche et verre</b><em>12 € · sans réservation</em></span></li>
+        <li class="soir"><span class="h mono">19 h 30</span><i aria-hidden="true">👥</i><span class="q"><b>La grande tablée</b><em>6 places, on s’assoit ensemble</em></span></li>
+      </ol>
+      <p class="jr-pied">Tout s’efface le soir. Demain, une autre journée.</p>
+    </div>
   </div>
 </section>
 
