@@ -43,9 +43,8 @@ body{margin:0;background:#20262A;
   box-shadow:inset 0 0 0 1.2mm rgba(255,232,196,.10)}
 .pierre{flex:1;position:relative;border-radius:1.5mm;overflow:hidden;
   background:
-    radial-gradient(120% 80% at 50% 32%, #2B3532 0%, #1A211E 58%, #131917 100%);
-  box-shadow:inset 0 0 0 .7mm rgba(0,0,0,.55), inset 0 4mm 12mm rgba(0,0,0,.5),
-    0 0 0 .5mm rgba(255,232,196,.14);
+    radial-gradient(118% 78% at 50% 30%, #2E3936 0%, #1A211E 56%, #101614 100%);
+  box-shadow:inset 0 0 0 .7mm rgba(0,0,0,.55), 0 0 0 .5mm rgba(255,232,196,.14);
   display:flex;flex-direction:column;justify-content:center;
   padding:13mm 11mm 11mm;text-align:center}
 /* Les traces de l'éponge, en travers : c'est ce qui fait qu'une ardoise a
@@ -65,8 +64,7 @@ body{margin:0;background:#20262A;
   font-family:'JetBrains Mono',monospace;letter-spacing:.24em;text-transform:uppercase}
 .jour i{font-style:normal;opacity:.5;padding:0 3mm}
 
-.grand{margin:6mm 0 0;font-size:38pt;line-height:1.03;letter-spacing:-.02em;
-  text-shadow:0 0 .5mm rgba(242,239,228,.35)}
+.grand{margin:6mm 0 0;font-size:38pt;line-height:1.03;letter-spacing:-.02em}
 .grand .deux{display:block;color:var(--menthe-vif);margin-top:1mm}
 /* Le trait de craie sous la phrase, tracé à main levée. */
 .souligne{display:block;width:78mm;height:4mm;margin:2mm auto 0;opacity:.75}
@@ -121,9 +119,11 @@ body{margin:0;background:#20262A;
 .temps .fort{color:var(--menthe);font-weight:700}
 
 /* La capture, en petit et à la bonne résolution : 760 points pour 62 mm. */
+/* Un decalage NET, sans flou : ca s imprime comme une forme pleine, alors
+   qu une ombre douce sort en bavure grise. */
 .ecran{flex:none;width:36mm;margin:0;
   border:1.6mm solid #1B2622;border-radius:5mm;overflow:hidden;
-  box-shadow:0 6mm 14mm rgba(20,31,26,.28)}
+  box-shadow:1.1mm 1.4mm 0 rgba(20,31,26,.13)}
 .ecran img{display:block;width:100%}
 
 .appel{margin-top:auto;display:flex;gap:5mm;align-items:center;
