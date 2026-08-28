@@ -122,6 +122,8 @@ import {
   selonEnvies,
   type AvisPlat,
   type CarteAutour,
+  type ArticleCatalogue,
+  motCatalogue,
   type CleMetier,
   type EvenementVille,
   type ItemPaquet,
@@ -830,6 +832,25 @@ export function ApercuHabitant() {
    * seule chose qu'une messagerie ne saura jamais faire.
    */
   const [proposeOuvert, setProposeOuvert] = useState(false);
+  /**
+   * LE CATALOGUE OUVERT — CE QU'IL PROPOSE D'HABITUDE.
+   *
+   * LA HIÉRARCHIE EST LA FONCTION, PAS UNE PRÉFÉRENCE DE MISE EN PAGE. Le
+   * Direct dit ce qui se passe MAINTENANT ; le catalogue dit ce qu'il y a
+   * D'HABITUDE. Le jour où les deux ont le même poids à l'écran, ClikMe est
+   * un annuaire de plus. Le catalogue n'a donc ni onglet, ni section, ni
+   * place à côté de « En parler » et « Réserver » : un bouton discret, et une
+   * feuille qui se referme.
+   *
+   * `pourProposer` EST LA SEULE RAISON POUR LAQUELLE IL EXISTE VRAIMENT.
+   * Ouvert depuis un salon, chaque ligne devient « proposer au groupe » :
+   * « moi je préférerais autre chose » cesse d'être une phrase à taper et
+   * devient un choix qu'on désigne, avec son nom, son prix, sa photo — donc
+   * quelque chose sur quoi les autres peuvent voter.
+   */
+  const [catalogue, setCatalogue] = useState<
+    null | { c: CarteAutour; pourProposer: boolean }
+  >(null);
   /**
    * SUIVRE UN COMMERÇANT — et la différence avec garder est tout le sujet.
    * Garder range une annonce pour la retrouver : geste tourné vers soi. Suivre
@@ -1552,6 +1573,38 @@ export function ApercuHabitant() {
       })
       .filter((x) => !dejaLa.has(x.cle));
   })();
+
+  /**
+   * LE COMMERCE DONT LE SALON PARLE, quand c'en est un. Un salon ouvert sur un
+   * événement de la ville n'a pas de catalogue, et il ne doit pas en inventer.
+   */
+  const commerceDuSalon = salon
+    ? toutes.find((c) => c.id === salon.cle.split("|")[0])
+    : undefined;
+
+  /**
+   * DU CATALOGUE À LA TABLE — c'est la raison d'être de toute la fonction.
+   *
+   * « Moi je préférerais autre chose » était une phrase à taper, que personne
+   * ne pouvait ni chiffrer ni voter. Ici c'est un article désigné : il arrive
+   * avec son nom, son prix et sa photo, exactement comme une annonce, donc le
+   * groupe peut trancher dessus au lieu d'en discuter.
+   *
+   * LA CLÉ PORTE `cat` : sans ça, deux articles du même commerce partageraient
+   * la clé du commerce et se remplaceraient l'un l'autre sur la table.
+   */
+  function proposerDuCatalogue(c: CarteAutour, a: ArticleCatalogue) {
+    proposerDansLeSalon({
+      cle: `${c.id}|cat|${a.id}`,
+      quoi: a.nom,
+      ou: c.nom,
+      prix: a.prix,
+      distance: c.distance,
+      photo: a.photo ?? c.photo,
+      metres: c.metres,
+    });
+    setCatalogue(null);
+  }
 
   /**
    * POSER UNE ALTERNATIVE, ET ANNONCER CE QUI CHANGE.
@@ -2346,19 +2399,48 @@ export function ApercuHabitant() {
                         })}
                       </div>
                     )}
-                    <button
-                      type="button"
-                      className="ap-propo-plus"
-                      onClick={() => {
-                        noter("champ-touche", 0, "proposition");
-                        setProposeOuvert(true);
-                      }}
-                    >
-                      ＋ Proposer autre chose
-                      {alternatives.length > 0 && (
-                        <em>{alternatives.length} autour de vous</em>
+                    {/* LE CATALOGUE PARTAGE LA LIGNE DE « PROPOSER », et ce
+                        n'est pas une économie de place gratuite. Sur sa propre
+                        ligne, il repoussait le début de la conversation de
+                        37 points SOUS le pli — mesuré : 491 pour 454
+                        disponibles. Or tout le travail sur ce salon a consisté
+                        à faire qu'on voie parler les gens sans défiler. Les
+                        deux boutons disent la même chose — « et sinon ? » —
+                        donc ils tiennent ensemble.
+                        Le compte « n autour de vous » cède la place quand le
+                        catalogue est là : trois informations sur une ligne,
+                        c'est la densité qu'on vient de retirer d'ici. */}
+                    <div className="ap-obj-fin">
+                      <button
+                        type="button"
+                        className="ap-propo-plus"
+                        onClick={() => {
+                          noter("champ-touche", 0, "proposition");
+                          setProposeOuvert(true);
+                        }}
+                      >
+                        ＋ Proposer autre chose
+                        {alternatives.length > 0 &&
+                          !(commerceDuSalon?.catalogue?.length ?? 0) && (
+                            <em>{alternatives.length} autour de vous</em>
+                          )}
+                      </button>
+                      {(commerceDuSalon?.catalogue?.length ?? 0) > 0 && (
+                        <button
+                          type="button"
+                          className="ap-cata-b mini"
+                          onClick={() =>
+                            setCatalogue({ c: commerceDuSalon!, pourProposer: true })
+                          }
+                        >
+                          <i aria-hidden="true">
+                            {motCatalogue(commerceDuSalon!.metier).emoji}
+                          </i>
+                          {motCatalogue(commerceDuSalon!.metier).titre}
+                          <s aria-hidden="true">→</s>
+                        </button>
                       )}
-                    </button>
+                    </div>
                     </div>
                   );
                 })()}
@@ -3360,6 +3442,36 @@ export function ApercuHabitant() {
 
                       {dessus && (
                         <>
+                      {/* ─── ② ET SINON, QU'EST-CE QU'IL PROPOSE ? ───────────
+                          IL EST ICI, ET IL EST PETIT — les deux comptent.
+
+                          ICI, parce que c'est la question qui vient juste
+                          après l'annonce : « ça, je l'ai vu ; et le reste ? »
+                          La poser plus bas, après la journée et la fiche,
+                          c'est la poser à quelqu'un qui est déjà parti.
+
+                          PETIT, parce que c'est la seule protection contre la
+                          dérive qui tuerait ce produit. Le Direct dit ce qui
+                          se passe MAINTENANT ; un catalogue dit ce qu'il y a
+                          d'habitude, comme partout ailleurs. S'ils ont le même
+                          poids à l'écran, c'est le catalogue qui gagne — il est
+                          plus complet, plus rassurant, et parfaitement inutile.
+
+                          ET IL N'APPARAÎT PAS S'IL EST VIDE : on ne montre
+                          jamais une porte qui ouvre sur une pièce vide. */}
+                      {!embauches && (dessus.catalogue?.length ?? 0) > 0 && (
+                        <button
+                          type="button"
+                          className="ap-cata-b"
+                          onPointerDown={(ev) => ev.stopPropagation()}
+                          onClick={() => setCatalogue({ c: dessus, pourProposer: false })}
+                        >
+                          <i aria-hidden="true">{motCatalogue(dessus.metier).emoji}</i>
+                          {motCatalogue(dessus.metier).verbe}
+                          <s aria-hidden="true">→</s>
+                        </button>
+                      )}
+
                       {/* EN MODE EMBAUCHE, LE PLI PORTE LE POSTE. On ne descend
                           pas pour lire le menu de midi quand on regarde un
                           travail : les horaires, la paye, le mot du patron, et
@@ -4916,6 +5028,29 @@ export function ApercuHabitant() {
                   </span>
                 </div>
                 <div className="ap-f-liste">
+                  {/* AUTRE CHOSE, CE N'EST PAS TOUJOURS AILLEURS. On ne
+                      proposait que d'autres COMMERCES : « je préférerais la
+                      garbure » obligeait à emmener tout le monde autre part.
+                      Le catalogue de l'endroit où l'on va déjà est la
+                      proposition la plus probable, donc elle est en tête. */}
+                  {(commerceDuSalon?.catalogue?.length ?? 0) > 0 && (
+                    <button
+                      type="button"
+                      className="ap-cata-ligne"
+                      onClick={() =>
+                        setCatalogue({ c: commerceDuSalon!, pourProposer: true })
+                      }
+                    >
+                      <i aria-hidden="true">{motCatalogue(commerceDuSalon!.metier).emoji}</i>
+                      <span>
+                        <b>{motCatalogue(commerceDuSalon!.metier).titre} de {commerceDuSalon!.nom}</b>
+                        <em>
+                          {commerceDuSalon!.catalogue!.length} choix, au même endroit
+                        </em>
+                      </span>
+                      <s aria-hidden="true">→</s>
+                    </button>
+                  )}
                   {alternatives.length === 0 ? (
                     <div className="ap-moi-vide">
                       <span aria-hidden="true">🤷</span>
@@ -4950,6 +5085,115 @@ export function ApercuHabitant() {
                       ))}
                     </div>
                   )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ═══ LE CATALOGUE ═══════════════════════════════════════════
+              CE QU'IL PROPOSE D'HABITUDE. Une feuille qui se referme, jamais
+              un écran : l'application ne doit pas pouvoir s'y installer.
+
+              LE RAPPEL EST EN TÊTE, ET IL EST LÀ POUR TENIR LA PROMESSE. « Ce
+              qui est à la carte aujourd'hui est dans l'annonce » remet le
+              Direct au-dessus au moment exact où l'on regarde ailleurs —
+              sinon un catalogue complet finit toujours par avoir l'air plus
+              fiable que l'ardoise du jour, et c'est l'inverse qui est vrai.
+
+              LES PRIX SONT INDICATIFS, ET C'EST ÉCRIT. Un catalogue repris
+              d'une fiche existante vieillit sans prévenir ; laisser croire
+              qu'il fait foi ferait porter au commerçant une promesse qu'il
+              n'a pas faite. */}
+          {catalogue && (
+            <>
+              <button
+                type="button"
+                className="ap-fond"
+                aria-label="Fermer"
+                onClick={() => setCatalogue(null)}
+              />
+              <div className="ap-feuille" role="dialog" aria-modal="true">
+                <span className="ap-poignee" aria-hidden="true" />
+                <button
+                  type="button"
+                  className="ap-f-x"
+                  aria-label="Fermer"
+                  onClick={() => setCatalogue(null)}
+                >
+                  ✕
+                </button>
+                <div className="ap-f-tete">
+                  <b>
+                    {motCatalogue(catalogue.c.metier).titre} · {catalogue.c.nom}
+                  </b>
+                  <span className="simple">
+                    {catalogue.pourProposer
+                      ? "Choisissez, et ça part sur la table du salon."
+                      : "Ce qu'il propose d'habitude. Prix indicatifs."}
+                  </span>
+                </div>
+                <div className="ap-f-liste">
+                  {/* LA PHRASE TIENT DANS UN SEUL ENFANT, ET C'EST NECESSAIRE :
+                      le paragraphe est en flex, donc chaque nœud de texte y
+                      devient une colonne. Sans ce span, elle se lisait « Ce qui
+                      est / aujourd'hui / est dans l'annonce » sur trois blocs
+                      decales. */}
+                  <p className="ap-cata-rappel">
+                    <i aria-hidden="true">⚡</i>
+                    <span>
+                      Ce qui est <b>aujourd&apos;hui</b> est dans
+                      l&apos;annonce. Ici, c&apos;est ce qu&apos;il y a
+                      d&apos;habitude.
+                    </span>
+                  </p>
+                  {(() => {
+                    const arts = catalogue.c.catalogue ?? [];
+                    // LES RAYONS DANS L'ORDRE OÙ ILS ARRIVENT, pas triés :
+                    // une carte se lit entrées, plats, desserts — un ordre
+                    // alphabétique la rendrait absurde.
+                    const rayons: string[] = [];
+                    for (const a of arts) {
+                      const r = a.rayon ?? "";
+                      if (!rayons.includes(r)) rayons.push(r);
+                    }
+                    return rayons.map((r) => (
+                      <div key={r || "sans"} className="ap-cata-r">
+                        {r && <h4>{r}</h4>}
+                        {arts
+                          .filter((a) => (a.rayon ?? "") === r)
+                          .map((a) => (
+                            <div key={a.id} className="ap-cata-a">
+                              {a.photo ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={a.photo} alt="" loading="lazy" />
+                              ) : (
+                                <i aria-hidden="true">
+                                  {motCatalogue(catalogue.c.metier).emoji}
+                                </i>
+                              )}
+                              <span>
+                                <b>{a.nom}</b>
+                                {a.detail && <em>{a.detail}</em>}
+                              </span>
+                              {a.prix && <u>{a.prix}</u>}
+                              {catalogue.pourProposer && (
+                                <button
+                                  type="button"
+                                  className="ap-cata-prop"
+                                  onClick={() =>
+                                    avecMonPrenom(() =>
+                                      proposerDuCatalogue(catalogue.c, a),
+                                    )
+                                  }
+                                >
+                                  Proposer
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    ));
+                  })()}
                 </div>
               </div>
             </>
@@ -6762,6 +7006,86 @@ export function ApercuHabitant() {
         .ap-propo-plus em{margin-left:auto;font-style:normal;font-size:10.5px;
           font-weight:700;color:#6C8078;}
         .ap-propo-plus:active{background:rgba(255,255,255,.05);}
+
+        /* ─── LE CATALOGUE ────────────────────────────────────────────────
+           IL EST DESSINE POUR NE PAS GAGNER. Pas de fond plein, pas de vert
+           d'action, pas de pleine largeur : un trait, un mot, une fleche. Il
+           doit se trouver quand on le cherche et disparaitre quand on ne le
+           cherche pas — c'est la seule facon de garder l'annonce du jour au
+           premier plan. Un bouton plein ici ferait exactement ce que ce
+           produit refuse : mettre le permanent au niveau de l'ephemere. */
+        /* align-self EST CE QUI LE GARDE PETIT, et ce n'est pas cosmetique.
+           .ap-plus est une colonne flex : sans lui, inline-flex ne change rien
+           et le bouton s'etire sur toute la largeur — mesure : 378 px sur 402.
+           Il avait alors exactement le poids de l'annonce, ce que toute cette
+           fonction existe pour eviter.
+           (Et pas d'accent grave ici : dans une feuille en ligne, il ferme la
+           chaine de gabarit et casse le fichier. Sixieme fois.) */
+        .ap-cata-b{display:inline-flex;align-self:flex-start;width:max-content;
+          max-width:100%;align-items:center;gap:8px;
+          font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;
+          color:#B9C6CE;background:rgba(255,255,255,.045);
+          border:1px solid rgba(255,255,255,.11);border-radius:999px;
+          padding:9px 14px;margin:0;}
+        .ap-cata-b i{font-style:normal;font-size:14px;line-height:1;}
+        .ap-cata-b s{text-decoration:none;color:#6C8078;font-weight:700;}
+        .ap-cata-b:active{transform:scale(.98);background:rgba(255,255,255,.08);}
+        /* Dans le salon, encore un cran en dessous : le sujet et le vote
+           passent avant. Il partage la ligne de « proposer autre chose » —
+           voir le commentaire au-dessus de .ap-obj-fin. */
+        .ap-obj-fin{display:flex;align-items:center;
+          border-top:1px solid rgba(255,255,255,.07);}
+        .ap-obj-fin .ap-propo-plus{border-top:0;flex:1;min-width:0;}
+        .ap-cata-b.mini{margin:0;flex:none;border:0;border-radius:0;
+          background:none;font-size:12px;color:#8C9C94;padding:12px 15px 12px 4px;
+          white-space:nowrap;}
+
+        /* L'entree depuis « proposer autre chose » : la, elle est une VOIE,
+           pas une note de bas de page — c'est la proposition la plus probable
+           puisqu'on est deja d'accord sur l'endroit. */
+        .ap-cata-ligne{display:flex;align-items:center;gap:11px;width:100%;
+          font:inherit;text-align:left;cursor:pointer;color:#EAF2EC;
+          background:rgba(61,226,166,.09);border:1px solid rgba(61,226,166,.3);
+          border-radius:16px;padding:11px 13px;margin-bottom:10px;}
+        .ap-cata-ligne>i{font-style:normal;font-size:20px;line-height:1;flex:none;}
+        .ap-cata-ligne span{flex:1;min-width:0;}
+        .ap-cata-ligne b{display:block;font-size:13.5px;font-weight:850;
+          letter-spacing:-.01em;}
+        .ap-cata-ligne em{display:block;font-style:normal;font-size:11px;
+          color:#8C9C94;margin-top:2px;}
+        .ap-cata-ligne s{text-decoration:none;color:#8FE9C4;font-weight:800;}
+        .ap-cata-ligne:active{transform:scale(.99);}
+
+        /* LE RAPPEL QUI TIENT LA PROMESSE. Sans lui, une carte complete finit
+           par avoir l'air plus fiable que l'ardoise du jour — et c'est
+           l'inverse qui est vrai. */
+        .ap-cata-rappel{display:flex;gap:8px;align-items:flex-start;margin:0 0 14px;
+          font-size:11.5px;line-height:1.4;color:#8C9C94;
+          background:rgba(255,255,255,.04);border-radius:12px;padding:9px 11px;}
+        .ap-cata-rappel i{font-style:normal;font-size:13px;line-height:1.3;}
+        .ap-cata-rappel b{color:#CFF7E6;font-weight:850;}
+
+        .ap-cata-r{margin-bottom:16px;}
+        .ap-cata-r h4{margin:0 0 8px;font-size:10.5px;font-weight:850;
+          letter-spacing:.14em;text-transform:uppercase;color:#6C8078;}
+        .ap-cata-a{display:flex;align-items:center;gap:11px;
+          padding:9px 0;border-top:1px solid rgba(255,255,255,.06);}
+        .ap-cata-r h4 + .ap-cata-a{border-top:0;}
+        .ap-cata-a>img{flex:none;width:46px;height:46px;border-radius:11px;
+          object-fit:cover;}
+        .ap-cata-a>i{flex:none;width:46px;height:46px;border-radius:11px;
+          display:flex;align-items:center;justify-content:center;font-style:normal;
+          font-size:19px;background:rgba(255,255,255,.05);}
+        .ap-cata-a>span{flex:1;min-width:0;}
+        .ap-cata-a b{display:block;font-size:13.5px;font-weight:800;color:#EAF2EC;}
+        .ap-cata-a em{display:block;font-style:normal;font-size:11.5px;
+          color:#8C9C94;margin-top:1px;}
+        .ap-cata-a u{flex:none;text-decoration:none;font-size:13px;font-weight:850;
+          color:#F0B429;}
+        .ap-cata-prop{flex:none;font:inherit;font-size:11.5px;font-weight:850;
+          cursor:pointer;color:#04150E;background:#3DE2A6;border:0;
+          border-radius:999px;padding:7px 12px;}
+        .ap-cata-prop:active{transform:scale(.95);}
 
         /* ── QUI VIENT, EN UNE LIGNE ───────────────────────────────────
            C'etait un cadre avec un titre en capitales, une rangee de vignettes

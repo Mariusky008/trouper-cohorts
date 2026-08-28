@@ -352,6 +352,76 @@ export type MenuDuJour = {
   cadrage?: string;
 };
 
+// ═══════════════════════════════════════════════════════════════════════
+// LE CATALOGUE — CE QU'IL PROPOSE D'HABITUDE.
+//
+// LA DISTINCTION QUE CE PRODUIT DOIT TENIR, ET QU'IL PERDRAIT ICI EN PREMIER :
+//
+//   LE DIRECT    = vivant, maintenant, éphémère. C'est l'annonce.
+//   LE CATALOGUE = permanent, référence. C'est « et sinon, il fait quoi ? »
+//
+// LE RISQUE EST DE DEVENIR UN CATALOGUE, et il est réel : un catalogue est
+// plus facile à remplir, plus facile à mesurer, et c'est ce que fait déjà
+// tout le monde. Le jour où l'écran principal montre « tout ce que propose ce
+// commerce », ClikMe n'a plus de raison d'exister. Le catalogue est donc
+// SECONDAIRE PARTOUT : un bouton discret sous l'annonce, jamais une section,
+// jamais un onglet, et jamais à côté de « En parler » ou de « Réserver ».
+//
+// IL EXISTE POUR UNE SEULE RAISON UTILE, ET ELLE EST DANS LE SALON : quand
+// quelqu'un dit « moi je préférerais autre chose », il faut qu'il puisse le
+// DIRE EN UN GESTE au lieu de le taper. Le catalogue est la liste de choix
+// qui manquait à la proposition.
+//
+// IL FONCTIONNE POUR TOUS LES MÉTIERS, et c'est pour ça qu'il ne s'appelle
+// pas « les menus ». Un coiffeur a des prestations, une fleuriste des
+// créations, une boutique des produits. Le mot change à l'écran ; le
+// mécanisme, jamais.
+
+/** Une entrée du catalogue : un plat, une prestation, un produit, une création. */
+export type ArticleCatalogue = {
+  id: string;
+  nom: string;
+  /** Ce qu'il y a autour. Une ligne, jamais un paragraphe. */
+  detail?: string;
+  prix?: string;
+  photo?: string;
+  /** Le rayon : « Entrées », « Coupes », « Bouquets »… Facultatif. */
+  rayon?: string;
+};
+
+/**
+ * COMMENT CE MÉTIER APPELLE SON CATALOGUE.
+ *
+ * Le libellé se déduit du métier déclaré, sans que le commerçant ait à
+ * choisir quoi que ce soit — il n'a pas à apprendre notre vocabulaire pour
+ * que sa page soit juste. Ce qui n'est pas reconnu retombe sur « le
+ * catalogue », qui est vrai pour tout le monde et faux pour personne.
+ */
+export function motCatalogue(metier: string): {
+  emoji: string;
+  /** Sur le bouton : « Voir la carte ». */
+  verbe: string;
+  /** En titre de la feuille : « La carte ». */
+  titre: string;
+} {
+  const m = metier.toLowerCase();
+  if (/restaurant|bistrot|traiteur|brasserie|pizz/.test(m))
+    return { emoji: "🍽️", verbe: "Voir la carte", titre: "La carte" };
+  if (/bar|caviste|vins/.test(m))
+    return { emoji: "🍷", verbe: "Voir la carte", titre: "La carte" };
+  if (/boulanger|pâtiss|patiss|choco|primeur|fromag|boucher/.test(m))
+    return { emoji: "🥖", verbe: "Voir les produits", titre: "Les produits" };
+  if (/coiffeur|barbier|institut|esthét|esthet|ongulaire|ongle|massage|spa/.test(m))
+    return { emoji: "✂️", verbe: "Voir les prestations", titre: "Les prestations" };
+  if (/fleurist/.test(m))
+    return { emoji: "💐", verbe: "Voir les créations", titre: "Les créations" };
+  if (/porter|friperie|mode|boutique|chauss|bijou|opticien|librairie/.test(m))
+    return { emoji: "🛍️", verbe: "Voir les produits", titre: "Les produits" };
+  if (/garage|garagiste|réparat|reparat|plomb|électric|electric|artisan/.test(m))
+    return { emoji: "🔧", verbe: "Voir les prestations", titre: "Les prestations" };
+  return { emoji: "📖", verbe: "Voir le catalogue", titre: "Le catalogue" };
+}
+
 export type CarteAutour = {
   id: string;
   branche: CleMetier;
@@ -418,6 +488,17 @@ export type CarteAutour = {
   /** Ce qu'on mange aujourd'hui. Les métiers de bouche en ont un ; les autres
    *  n'en ont pas, et leur carte continue de montrer le moment en cours. */
   menu?: MenuDuJour;
+  /**
+   * CE QU'IL PROPOSE D'HABITUDE. Voir le grand commentaire au-dessus de
+   * `ArticleCatalogue` : c'est la référence permanente, pas l'actualité.
+   *
+   * FACULTATIF, ET SON ABSENCE NE FAIT RIEN APPARAÎTRE. Un commerce sans
+   * catalogue n'a pas de bouton : on ne montre jamais une porte qui ouvre sur
+   * une pièce vide. C'est aussi ce qui rend l'alimentation automatique
+   * possible plus tard — la fiche du commerçant remplira ce champ, et le
+   * bouton apparaîtra tout seul le jour où il y a quelque chose derrière.
+   */
+  catalogue?: ArticleCatalogue[];
   /**
    * SES HABITUÉS — CEUX QUI LE FONT CONNAÎTRE.
    *
@@ -666,6 +747,17 @@ const CARTES: CarteAutour[] = [
   // ── RESTAURANTS ──────────────────────────────────────────────────────────
   {
     id: "centre",
+    // SA CARTE. Ce qu'il sert TOUS LES JOURS — à ne pas confondre avec le
+    // plat du jour, qui est l'annonce. Voir `ArticleCatalogue`.
+    catalogue: [
+      { id: "c-ent-1", rayon: "Entrées", nom: "Garbure landaise", detail: "Le bouillon du jour, chou et confit.", prix: "8 €", photo: "/direct/plat-garbure.jpg" },
+      { id: "c-ent-2", rayon: "Entrées", nom: "Œuf mimosa", detail: "Comme à la maison.", prix: "6 €" },
+      { id: "c-pl-1", rayon: "Plats", nom: "Axoa de veau", detail: "Piment doux, pommes de terre.", prix: "16 €", photo: "/direct/plat-axoa.jpg" },
+      { id: "c-pl-2", rayon: "Plats", nom: "Poulet basquaise", detail: "Riz, poivrons du pays.", prix: "15 €", photo: "/direct/plat-basquaise.jpg" },
+      { id: "c-pl-3", rayon: "Plats", nom: "Lasagnes maison", detail: "Faites le matin.", prix: "14 €", photo: "/direct/plat-lasagnes.jpg" },
+      { id: "c-de-1", rayon: "Desserts", nom: "Gâteau basque", detail: "Cerise noire.", prix: "6 €" },
+      { id: "c-de-2", rayon: "Desserts", nom: "Café gourmand", prix: "7 €" },
+    ],
     // SES PHOTOS, telles qu'on les reprendrait de sa fiche Google en lui
     // faisant son site. Images d'illustration en attendant les siennes —
     // et uniquement celles qui sont libres d'enseigne, de filigrane et de
@@ -783,6 +875,14 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "emporter",
+    catalogue: [
+      { id: "e-1", rayon: "Sur place", nom: "Lasagnes maison", detail: "Faites le matin.", prix: "11 €", photo: "/direct/plat-lasagnes.jpg" },
+      { id: "e-2", rayon: "Sur place", nom: "Curry de légumes", detail: "Végétarien.", prix: "11 €" },
+      { id: "e-3", rayon: "Sur place", nom: "Formule du midi", detail: "Plat, dessert, café.", prix: "15 €", photo: "/direct/plat-formule.jpg" },
+      { id: "e-4", rayon: "À emporter", nom: "La part de lasagnes", detail: "Dans sa barquette.", prix: "9 €", photo: "/direct/portion-a-emporter.jpg" },
+      { id: "e-5", rayon: "Desserts", nom: "Riz au lait", prix: "4 €" },
+      { id: "e-6", rayon: "Desserts", nom: "Gâteau du jour", detail: "Ça dépend du matin.", prix: "4,50 €" },
+    ],
     // SES PHOTOS, telles qu'on les reprendrait de sa fiche Google en lui
     // faisant son site. Images d'illustration en attendant les siennes —
     // et uniquement celles qui sont libres d'enseigne, de filigrane et de
@@ -848,6 +948,13 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "deux-rues",
+    catalogue: [
+      { id: "d-1", rayon: "Entrées", nom: "Salade landaise", detail: "Gésiers, magret séché.", prix: "12 €" },
+      { id: "d-2", rayon: "Plats", nom: "Parmentier de canard", prix: "16 €" },
+      { id: "d-3", rayon: "Plats", nom: "Pièce du boucher", detail: "Frites maison.", prix: "19 €" },
+      { id: "d-4", rayon: "Plats", nom: "Poisson du jour", detail: "Selon l'arrivage.", prix: "18 €" },
+      { id: "d-5", rayon: "Desserts", nom: "Tarte du jour", prix: "6 €" },
+    ],
     // SES PHOTOS, telles qu'on les reprendrait de sa fiche Google en lui
     // faisant son site. Images d'illustration en attendant les siennes —
     // et uniquement celles qui sont libres d'enseigne, de filigrane et de
@@ -921,6 +1028,14 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "boulange",
+    catalogue: [
+      { id: "b-1", rayon: "Pains", nom: "Tourte de seigle", detail: "Cuisson longue, se garde une semaine.", prix: "4,20 €", photo: "/direct/sortie-du-four.jpg" },
+      { id: "b-2", rayon: "Pains", nom: "Tradition", prix: "1,30 €" },
+      { id: "b-3", rayon: "Pains", nom: "Pain aux céréales", prix: "3,10 €" },
+      { id: "b-4", rayon: "Viennoiseries", nom: "Croissant au beurre", prix: "1,25 €" },
+      { id: "b-5", rayon: "Pâtisseries", nom: "Gâteau basque", detail: "Crème ou cerise.", prix: "3,50 €" },
+      { id: "b-6", rayon: "Pâtisseries", nom: "Tarte aux pommes", detail: "La part.", prix: "3,20 €" },
+    ],
     branche: "restaurant",
     photo: "/direct/sortie-du-four.jpg",
     cadrage: "100%",
@@ -982,6 +1097,13 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "tablee",
+    catalogue: [
+      { id: "g-1", rayon: "La table d'hôtes", nom: "Le menu du soir", detail: "Entrée, plat, dessert, verre compris.", prix: "17 €", photo: "/direct/plat-du-jour.jpg" },
+      { id: "g-2", rayon: "La table d'hôtes", nom: "Menu enfant", prix: "9 €" },
+      { id: "g-3", rayon: "À la carte", nom: "Garbure", prix: "9 €", photo: "/direct/plat-garbure.jpg" },
+      { id: "g-4", rayon: "À la carte", nom: "Axoa de veau", prix: "16 €", photo: "/direct/plat-axoa.jpg" },
+      { id: "g-5", rayon: "Boissons", nom: "Pichet de rouge", detail: "50 cl.", prix: "7 €" },
+    ],
     // SES PHOTOS, telles qu'on les reprendrait de sa fiche Google en lui
     // faisant son site. Images d'illustration en attendant les siennes —
     // et uniquement celles qui sont libres d'enseigne, de filigrane et de
@@ -1028,6 +1150,13 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "traiteur",
+    catalogue: [
+      { id: "t-1", rayon: "À emporter", nom: "Parmentier de canard", detail: "Part individuelle.", prix: "12 €" },
+      { id: "t-2", rayon: "À emporter", nom: "Poulet basquaise", detail: "Pour deux.", prix: "19 €", photo: "/direct/plat-basquaise.jpg" },
+      { id: "t-3", rayon: "À emporter", nom: "Garbure", detail: "Le litre.", prix: "11 €", photo: "/direct/plat-garbure.jpg" },
+      { id: "t-4", rayon: "Sur commande", nom: "Plateau apéritif", detail: "Pour six, 24 h à l'avance.", prix: "38 €" },
+      { id: "t-5", rayon: "Sur commande", nom: "Repas de famille", detail: "Entrée, plat, dessert, à partir de huit.", prix: "22 € / pers." },
+    ],
     branche: "restaurant",
     photo: "/direct/vitrine-du-soir.jpg",
     cadrage: "72%",
@@ -1091,6 +1220,15 @@ const CARTES: CarteAutour[] = [
   // carte du jour. Avec la journée horodatée, il a un programme comme les autres.
   {
     id: "mode-centre",
+    // MÊME MÉCANIQUE, AUTRE MÉTIER : c'est tout l'intérêt de ne pas avoir
+    // appelé ça « les menus ».
+    catalogue: [
+      { id: "m-1", rayon: "Nouveautés", nom: "Manteau laine col montant", detail: "Du 36 au 44.", prix: "129 €", photo: "/direct/portant-boutique.jpg" },
+      { id: "m-2", rayon: "Nouveautés", nom: "Robe imprimée", detail: "Trois coloris.", prix: "69 €" },
+      { id: "m-3", rayon: "Toujours en rayon", nom: "Chemise en lin", prix: "49 €" },
+      { id: "m-4", rayon: "Toujours en rayon", nom: "Jean droit", detail: "Coupe haute.", prix: "79 €" },
+      { id: "m-5", rayon: "Accessoires", nom: "Écharpe alpaga", prix: "39 €" },
+    ],
     branche: "mode",
     photo: "/direct/portant-boutique.jpg",
     cadrage: "50%",
@@ -1158,6 +1296,13 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "mode-friperie",
+    catalogue: [
+      { id: "fr-1", rayon: "Arrivages", nom: "Vestes des années 70", detail: "Pièces uniques.", prix: "à partir de 35 €", photo: "/direct/friperie-rayon.jpg" },
+      { id: "fr-2", rayon: "Arrivages", nom: "Chemises rayées", prix: "18 €" },
+      { id: "fr-3", rayon: "Toujours en rayon", nom: "Jeans vintage", detail: "Du 36 au 46.", prix: "29 €" },
+      { id: "fr-4", rayon: "Toujours en rayon", nom: "Pulls en laine", prix: "22 €" },
+      { id: "fr-5", rayon: "Le service", nom: "Dépôt-vente", detail: "On reprend vos pièces, 50/50." },
+    ],
     branche: "mode",
     photo: "/direct/friperie-rayon.jpg",
     cadrage: "50%",
@@ -1185,6 +1330,13 @@ const CARTES: CarteAutour[] = [
   // ── BARS ─────────────────────────────────────────────────────────────────
   {
     id: "bar-vins",
+    catalogue: [
+      { id: "v-1", rayon: "Au verre", nom: "Blanc sec des Landes", prix: "5 €", photo: "/direct/verre-au-comptoir.jpg" },
+      { id: "v-2", rayon: "Au verre", nom: "Rouge de Tursan", prix: "5,50 €" },
+      { id: "v-3", rayon: "À grignoter", nom: "Planche mixte", detail: "Charcuterie et fromages, pour deux.", prix: "16 €" },
+      { id: "v-4", rayon: "À grignoter", nom: "Olives et amandes", prix: "4 €" },
+      { id: "v-5", rayon: "Sans alcool", nom: "Jus de pomme fermier", prix: "3,50 €" },
+    ],
     // DEUX VUES DU MEME LIEU. Le carrousel ne s'allumait que sur les
     // restaurants, dont les moments portent deja une photo de plat ; partout
     // ailleurs il n'y avait qu'une image et le carrousel restait invisible.
@@ -1236,6 +1388,13 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "bar-terrasse",
+    catalogue: [
+      { id: "bt-1", rayon: "Au comptoir", nom: "Demi pression", prix: "3 €" },
+      { id: "bt-2", rayon: "Au comptoir", nom: "Café", prix: "1,60 €" },
+      { id: "bt-3", rayon: "Apéritif", nom: "Spritz", prix: "7 €", photo: "/direct/verre-au-comptoir.jpg" },
+      { id: "bt-4", rayon: "Apéritif", nom: "Planche à partager", detail: "Pour deux ou trois.", prix: "14 €" },
+      { id: "bt-5", rayon: "Sans alcool", nom: "Limonade artisanale", prix: "4 €" },
+    ],
     // DEUX VUES DU MEME LIEU. Le carrousel ne s'allumait que sur les
     // restaurants, dont les moments portent deja une photo de plat ; partout
     // ailleurs il n'y avait qu'une image et le carrousel restait invisible.
@@ -1286,6 +1445,14 @@ const CARTES: CarteAutour[] = [
   // ── COIFFEURS ────────────────────────────────────────────────────────────
   {
     id: "coif-centre",
+    catalogue: [
+      { id: "k-1", rayon: "Coupes", nom: "Coupe femme", detail: "Shampoing, coupe, brushing.", prix: "38 €", photo: "/direct/avis-coupe.jpg" },
+      { id: "k-2", rayon: "Coupes", nom: "Coupe homme", prix: "22 €" },
+      { id: "k-3", rayon: "Coupes", nom: "Coupe enfant", detail: "Jusqu'à 12 ans.", prix: "16 €" },
+      { id: "k-4", rayon: "Couleurs", nom: "Coloration végétale", detail: "Sans ammoniaque.", prix: "58 €" },
+      { id: "k-5", rayon: "Couleurs", nom: "Balayage", detail: "Selon la longueur.", prix: "à partir de 75 €" },
+      { id: "k-6", rayon: "Soins", nom: "Soin profond", detail: "Vingt minutes, avec massage.", prix: "18 €" },
+    ],
     // DEUX VUES DU MEME LIEU. Le carrousel ne s'allumait que sur les
     // restaurants, dont les moments portent deja une photo de plat ; partout
     // ailleurs il n'y avait qu'une image et le carrousel restait invisible.
@@ -1342,6 +1509,13 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "coif-nouveau",
+    catalogue: [
+      { id: "cn-1", rayon: "Coupes", nom: "Coupe et brushing", prix: "35 €", photo: "/direct/salon-neuf.jpg" },
+      { id: "cn-2", rayon: "Coupes", nom: "Coupe homme et barbe", prix: "28 €" },
+      { id: "cn-3", rayon: "Couleurs", nom: "Coloration végétale", detail: "Cheveux blancs compris.", prix: "55 €" },
+      { id: "cn-4", rayon: "Soins", nom: "Soin hydratant", detail: "Vingt minutes.", prix: "16 €" },
+      { id: "cn-5", rayon: "Offre d'ouverture", nom: "Première visite", detail: "−20 % le premier mois." },
+    ],
     // DEUX VUES DU MEME LIEU. Le carrousel ne s'allumait que sur les
     // restaurants, dont les moments portent deja une photo de plat ; partout
     // ailleurs il n'y avait qu'une image et le carrousel restait invisible.
@@ -1400,6 +1574,13 @@ const CARTES: CarteAutour[] = [
   // ── FLEURISTES ───────────────────────────────────────────────────────────
   {
     id: "fleur-marche",
+    catalogue: [
+      { id: "f-1", rayon: "Bouquets", nom: "Bouquet du marché", detail: "Ce qui est arrivé le matin.", prix: "18 €", photo: "/direct/bouquet-du-jour.jpg" },
+      { id: "f-2", rayon: "Bouquets", nom: "Bouquet rond blanc", detail: "Renoncules et eucalyptus.", prix: "32 €" },
+      { id: "f-3", rayon: "Plantes", nom: "Plante verte d'intérieur", detail: "Pot compris.", prix: "24 €" },
+      { id: "f-4", rayon: "Occasions", nom: "Composition deuil", detail: "Sur commande, même jour.", prix: "à partir de 55 €" },
+      { id: "f-5", rayon: "Occasions", nom: "Décor de mariage", detail: "Devis après rendez-vous." },
+    ],
     branche: "fleuriste",
     photo: "/direct/bouquet-du-jour.jpg",
     cadrage: "50%",
@@ -1440,6 +1621,13 @@ const CARTES: CarteAutour[] = [
   // ── ONGLERIES ────────────────────────────────────────────────────────────
   {
     id: "ongle-institut",
+    catalogue: [
+      { id: "o-1", rayon: "Pose", nom: "Pose complète gel", detail: "Environ 1 h 30.", prix: "55 €", photo: "/direct/pose-ongles.jpg" },
+      { id: "o-2", rayon: "Pose", nom: "Remplissage", detail: "Toutes les trois semaines.", prix: "40 €" },
+      { id: "o-3", rayon: "Vernis", nom: "Semi-permanent", prix: "28 €", photo: "/direct/avis-ongles.jpg" },
+      { id: "o-4", rayon: "Soins", nom: "Manucure russe", detail: "Sans coupe de cuticules.", prix: "35 €" },
+      { id: "o-5", rayon: "Soins", nom: "Beauté des pieds", prix: "38 €" },
+    ],
     branche: "ongles",
     photo: "/direct/pose-ongles.jpg",
     cadrage: "50%",
