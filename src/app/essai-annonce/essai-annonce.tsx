@@ -23,8 +23,25 @@ type Offre = {
   commerce: string;
   distance: string;
   action: string;
-  /** Ce qui presse, quand quelque chose presse. Souvent rien. */
-  reste?: string;
+  /**
+   * CE QUI PRESSE — ET ON NE MET LÀ QUE CE QU'ON SAIT VRAIMENT.
+   *
+   * DÉFAUT CORRIGÉ, ET C'ÉTAIT LE PLUS GRAVE DE CET ESSAI : la pastille disait
+   * « il reste 6 parts ». Nous ne le savons pas. Un restaurateur photographie
+   * son ardoise le matin ; il ne va pas décompter ses portions pendant le
+   * service. Ce chiffre serait donc inventé — et une rareté inventée est pire
+   * que pas de rareté du tout : la première fois que quelqu'un arrive et qu'il
+   * en reste vingt, ou zéro, l'application a menti, et elle ne s'en remet pas.
+   *
+   * CE QU'ON SAIT SANS RIEN DEMANDER À PERSONNE : l'heure. Un plat du jour
+   * existe entre midi et quatorze heures, un pain sort du four à seize. C'est
+   * vrai, c'est vérifiable, et ça presse tout autant.
+   *
+   * LA RARETÉ RESTE POSSIBLE, mais elle vient du commerçant et elle est
+   * annoncée comme telle : c'est LUI qui publie « dernières portions », et
+   * c'est alors la nature de l'annonce qui le dit — sans chiffre.
+   */
+  quand?: string;
 };
 
 const OFFRES: Offre[] = [
@@ -38,7 +55,7 @@ const OFFRES: Offre[] = [
     commerce: "Le Bocal de Margot",
     distance: "180 m",
     action: "Réserver mon plat",
-    reste: "6 parts",
+    quand: "Servi jusqu’à 14 h",
   },
   {
     id: "lasagnes",
@@ -50,7 +67,7 @@ const OFFRES: Offre[] = [
     commerce: "Chez Bergine",
     distance: "240 m",
     action: "Réserver mon plat",
-    reste: "4 tables",
+    quand: "Servi jusqu’à 14 h",
   },
   {
     id: "tourte",
@@ -62,10 +79,14 @@ const OFFRES: Offre[] = [
     commerce: "Le Pétrin d’Amanieu",
     distance: "320 m",
     action: "Je la garde",
+    quand: "Sortie du four à 16 h",
   },
   {
+    // LA RARETÉ QUAND ELLE EXISTE VRAIMENT : c'est le commerçant qui l'a
+    // publiée, elle est dans la nature de l'annonce, et elle ne porte aucun
+    // chiffre que nous aurions inventé.
     id: "garbure",
-    nature: "Ce midi",
+    nature: "Dernières portions",
     plat: "La garbure",
     prix: "9 €",
     photo: "/direct/plat-garbure.jpg",
@@ -73,6 +94,7 @@ const OFFRES: Offre[] = [
     commerce: "L’Ardoise Landaise",
     distance: "410 m",
     action: "Réserver mon plat",
+    quand: "Servi jusqu’à 14 h",
   },
 ];
 
@@ -214,7 +236,11 @@ export default function EssaiAnnonce() {
           letter-spacing:-.02em;text-transform:uppercase;}
         .es-prix{margin:10px 0 0;font-size:clamp(30px,9vw,40px);font-weight:800;
           letter-spacing:-.02em;line-height:1;}
-        /* Le seul chiffre qui presse, quand il y en a un. */
+        /* CE QUI PRESSE, ET QU'ON SAIT VRAIMENT : l'heure. Un « il reste 6
+           parts » que personne ne tient a jour est un mensonge qui se decouvre
+           sur place. Voir le champ quand, plus haut, pour le raisonnement.
+           (Aucun accent grave dans cette feuille : il referme la chaine de
+           gabarit et casse le fichier. Septieme fois.) */
         .es-reste{display:inline-block;margin-top:12px;font-size:11.5px;
           font-weight:800;letter-spacing:.06em;text-transform:uppercase;
           color:#04150E;background:#F0B429;border-radius:999px;padding:5px 11px;}
@@ -302,7 +328,7 @@ export default function EssaiAnnonce() {
               <p className="es-nature">{o.nature}</p>
               <h1 className="es-plat">{o.plat}</h1>
               <p className="es-prix">{o.prix}</p>
-              {o.reste && <span className="es-reste">Il reste {o.reste}</span>}
+              {o.quand && <span className="es-reste">{o.quand}</span>}
             </div>
 
             {dit && <div className="es-echo">{dit}</div>}
