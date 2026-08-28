@@ -42,6 +42,17 @@ type Offre = {
   offre: string;
   prix: string;
   photo: string;
+  /**
+   * LA MÊME PHOTO, PRISE PAR LE COMMERÇANT.
+   *
+   * POURQUOI ELLE EXISTE : toute cette maquette repose sur des photos de
+   * studio, et un vrai patron photographiera son plat au néon, en vitesse,
+   * de travers. Une mise en page qui n'a plus de fond ni de bloc de texte ne
+   * tient QUE par la photo — il fallait donc voir, sur le même plat et le même
+   * cadrage, ce qu'elle devient quand la photo est ordinaire. Rien d'autre ne
+   * change : c'est la seule façon d'isoler la variable.
+   */
+  photoBrute?: string;
   cadrage?: string;
   commerce: string;
   distance: string;
@@ -76,7 +87,8 @@ const OFFRES: Offre[] = [
   {
     id: "magret", branche: "restaurant",
     nature: "Menu du jour", offre: "Le magret", prix: "19 €",
-    photo: "/direct/plat-du-jour.jpg", cadrage: "52%",
+    photo: "/direct/plat-du-jour.jpg", photoBrute: "/direct/plat-du-jour-brute.jpg",
+    cadrage: "52%",
     commerce: "Le Bocal de Margot", distance: "180 m",
     action: "Réserver ma table", quand: "Servi jusqu’à 14 h",
     moments: [{ h: "10 h 00", quoi: "L’ardoise du jour est écrite" }, { h: "12 h 00", quoi: "Il reste des tables en terrasse" }, { h: "19 h 30", quoi: "La grande tablée du vendredi" }],
@@ -170,6 +182,8 @@ export default function EssaiAnnonce() {
    * exactement le défaut qu'on corrige. On regarde les deux sur le même plat.
    */
   const [voile, setVoile] = useState(true);
+  /** Voir la même annonce avec la photo qu'un commerçant prendrait vraiment. */
+  const [brute, setBrute] = useState(false);
   const [echo, setEcho] = useState("");
   /**
    * GARDER, ET RETROUVER CE QU'ON A GARDÉ. Deux gestes différents, et c'est
@@ -190,6 +204,7 @@ export default function EssaiAnnonce() {
     return () => window.clearTimeout(t);
   }, [echo]);
 
+  const image = (x: Offre) => (brute && x.photoBrute ? x.photoBrute : x.photo);
   const garde = favoris.includes(o?.id ?? "");
   function basculerFavori() {
     setFavoris((l) => (l.includes(o.id) ? l.filter((x) => x !== o.id) : [...l, o.id]));
@@ -467,6 +482,17 @@ export default function EssaiAnnonce() {
         <button type="button" className={voile ? "on" : ""} onClick={() => setVoile(true)}>
           Voile sous le texte
         </button>
+        <button
+          type="button"
+          className={brute ? "on" : ""}
+          onClick={() => {
+            setBrute((v) => !v);
+            setBranche("restaurant");
+            setK(0);
+          }}
+        >
+          {brute ? "Photo de studio" : "Photo de commerçant"}
+        </button>
       </div>
 
       <div className="es-tel">
@@ -476,7 +502,7 @@ export default function EssaiAnnonce() {
               <div className="es-photo">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={suivant.photo}
+                  src={image(suivant)}
                   alt=""
                   style={{ objectPosition: `50% ${suivant.cadrage ?? "50%"}` }}
                 />
@@ -493,7 +519,7 @@ export default function EssaiAnnonce() {
               <div className="es-photo">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={o.photo}
+                  src={image(o)}
                   alt={`${o.offre}, chez ${o.commerce}`}
                   style={{ objectPosition: `50% ${o.cadrage ?? "50%"}` }}
                 />
