@@ -837,7 +837,7 @@ const CARTES: CarteAutour[] = [
         prix: "8 €", etiquette: "IL EN RESTE 8", places: 8,
         action: "Gardez-m'en une part", envies: ["italien", "moins15", "maintenant", "emporter"],
         avis: [
-          { note: 5, texte: "Les meilleures lasagnes de la ville.", qui: "Camille", quand: "mardi dernier",
+          { note: 5, texte: "Les meilleures lasagnes de la ville.", qui: "Camille", quand: "ce midi",
             photo: "/direct/portion-a-emporter.jpg" },
           { note: 5, texte: "Généreux, et encore chaud à la maison.", qui: "Bastien", quand: "il y a 2 semaines" },
           { note: 4, texte: "Très bon. J'aurais pris deux parts.", qui: "Nadia", quand: "il y a 1 mois" },

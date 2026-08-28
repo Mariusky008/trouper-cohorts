@@ -63,6 +63,7 @@ import {
   type Salon,
 } from "@/lib/direct/salons";
 import { suivreHauteurEcran } from "@/lib/direct/hauteur-ecran";
+import { abonnerVus, chargerVus, marquerVu, RIEN_VU } from "@/lib/direct/premiere-fois";
 import {
   abonnerSuivis,
   AUCUN_SUIVI,
@@ -497,6 +498,20 @@ export function ApercuHabitant() {
   const [dx, setDx] = useState(0);
   const [sortant, setSortant] = useState<"" | "gauche" | "droite">("");
   const [aJoue, setAJoue] = useState(false);
+  /**
+   * L'EXPLICATION DU BALAYAGE, UNE SEULE FOIS.
+   *
+   * DÉFAUT RELEVÉ AU TEST : « quand on balaie à droite, les gens ne
+   * comprennent pas vraiment où ils arrivent ». C'est le geste central du
+   * produit — celui qui fait passer d'une annonce à une conversation — et il
+   * était deviné, pas compris. Le doigt animé disait « ça se balaie » ; il ne
+   * disait pas ce que chaque côté fait.
+   * `useSyncExternalStore` plutôt qu'un effet : lire le stockage dans un effet
+   * puis appeler setState relance un rendu pour rien, et c'est exactement ce
+   * que la règle des effets interdit ici.
+   */
+  const vus = useSyncExternalStore(abonnerVus, chargerVus, () => RIEN_VU);
+
   const [descendu, setDescendu] = useState(false);
   /**
    * A-T-ON COMMENCÉ À DESCENDRE SOUS LA BARRE DU HAUT ?
@@ -874,6 +889,32 @@ export function ApercuHabitant() {
   /** Le même test, sur une liste de prénoms. */
   const jySuis = (l: string[] | undefined) => (l ?? []).some(cestMoi);
 
+  /**
+   * L'EXPLICATION DU BALAYAGE NE S'AFFICHE QUE SUR LE PAQUET, ET NULLE PART
+   * AILLEURS : par-dessus un salon, une feuille ou les embauches, elle
+   * expliquerait un geste qui n'est pas celui qu'on est en train de faire.
+   * CALCULÉE ICI, et pas plus haut : `onglet`, `salonPage` et `feuille` sont
+   * déclarés au-dessus de cette ligne et pas avant — écrite trop tôt, cette
+   * expression tombait dans la zone morte temporelle et la page devenait
+   * blanche. Défaut déjà payé sur ce fichier.
+   */
+  const montrerLeTuto =
+    onglet === "direct" &&
+    !embauches &&
+    !salonPage &&
+    !feuille &&
+    // ON LIT L'INSTANTANÉ DU MAGASIN, JAMAIS LE STOCKAGE DIRECTEMENT.
+    // DÉFAUT MESURÉ : `jamaisVu()` interroge localStorage pendant le rendu. Sur
+    // le serveur il n'y a pas de localStorage, donc il répondait « jamais vu »
+    // et la page pré-rendue contenait le tutoriel ; sur le téléphone de
+    // quelqu'un qui l'avait déjà fermé, le premier rendu répondait l'inverse.
+    // Deux HTML différents pour la même page — React error #418, et un écran
+    // qui pouvait rester à moitié hydraté.
+    // `useSyncExternalStore` existe précisément pour ça : il sert l'instantané
+    // du serveur pendant l'hydratation, puis celui du client. Le fondu d'entrée
+    // de 0,24 s couvre l'unique image où les deux diffèrent.
+    !vus.includes("balayage");
+
   const salon: Salon | undefined = salons[salonOuvert];
 
   /**
@@ -1117,8 +1158,36 @@ export function ApercuHabitant() {
    * voir tout ce qui a été photographié chez lui, et voir revenir les bonnes
    * photos avec le bon plat.
    */
+  /**
+   * EST-CE D'AUJOURD'HUI ?
+   *
+   * DÉFAUT VU EN CAPTURE : la section s'appelait « Vu chez eux aujourd'hui » et
+   * la première photo était légendée « mardi dernier ». Le titre contredisait la
+   * légende, à trois centimètres d'écart — et c'est précisément le genre de
+   * détail qui décide si l'on croit le reste de l'écran.
+   * La date d'un avis est du texte libre, écrit comme on parle : on ne calcule
+   * donc pas, on reconnaît les quelques tournures qui veulent dire aujourd'hui.
+   * Tout le reste est traité comme ancien, ce qui est le bon sens du doute.
+   */
+  const duJour = (quand: string) =>
+    /^(à l'instant|aujourd'hui|ce (midi|matin|soir)|il y a \d+ (min|h)|maintenant)/i.test(
+      quand.trim(),
+    );
+
   const murDe = (c: CarteAutour) =>
-    c.moments.flatMap((m) => photosDe(avisDe(c, m)));
+    c.moments.flatMap((m) =>
+      avisDe(c, m)
+        .filter((a) => a.photo)
+        // ELLES PORTENT UN PRÉNOM ET UNE HEURE, et ce n'est pas de la
+        // décoration. « Photos des clients » est une catégorie ; « 📸 Camille,
+        // à 12 h 40 » est un fait daté, c'est-à-dire exactement ce que ce
+        // produit vend. La même photo, sans ces deux mots, ne prouve plus rien.
+        .map((a) => ({ src: a.photo as string, qui: a.qui, quand: a.quand })),
+    )
+      // CELLES DU JOUR EN PREMIER : la section promet le direct, elle doit le
+      // montrer d'abord. Tri stable, donc l'ordre des moments est conservé
+      // entre photos de même fraîcheur.
+      .sort((a, b) => Number(duJour(b.quand)) - Number(duJour(a.quand)));
   /**
    * SES HABITUÉS, MOI COMPRIS, DU PLUS ASSIDU AU MOINS.
    *
@@ -1225,6 +1294,8 @@ export function ApercuHabitant() {
   }
 
   function partir(sens: "gauche" | "droite") {
+    // Celui qui a balayé a compris : on ne lui réexplique pas au rechargement.
+    marquerVu("balayage");
     if (!sommet || sortant) return;
     // LE RANG DE LA CARTE EST LA MESURE QUI COMPTE. « Combien de gens ferment
     // après deux cartes » et « combien vont au bout » ne demandent pas les
@@ -3458,10 +3529,27 @@ export function ApercuHabitant() {
                                   </div>
                                 )}
 
-                                {/* LE GESTE DE RETOUR TIENT EN UN APPUI. Une
-                                    vidéo ou un texte demandés à chaque fois ne
-                                    seraient jamais donnés ; cinq étoiles, si. */}
-                                {!passe && (
+                                {/* ─── ON NE DEMANDE PAS UN AVIS AVANT LA VISITE ───
+                                    DÉFAUT RELEVÉ AU TEST, et il était à l'envers :
+                                    cinq étoiles vides, « J'y suis allé » et
+                                    « Ma photo » s'affichaient sur les moments
+                                    À VENIR — donc à midi trente, à quelqu'un en
+                                    train de décider où aller, sur un plat qu'il
+                                    n'a pas mangé. Et le moment PASSÉ, le seul
+                                    où il aurait pu y être, n'avait rien.
+                                    CHAQUE MOMENT PREND UN SEUL RÔLE, selon sa
+                                    place dans la journée : celui qui vient dit
+                                    ce que c'est, ce que ça coûte, et comment le
+                                    prendre ; celui qui est passé demande ce
+                                    qu'on en a pensé et s'il doit revenir. C'est
+                                    ce qui supprime la multiplication — les
+                                    mécaniques étaient répétées à CHAQUE ligne de
+                                    la frise, quatre moments faisant quatre jeux
+                                    d'étoiles et quatre boutons.
+                                    LE GESTE TIENT EN UN APPUI : une vidéo ou un
+                                    texte demandés à chaque fois ne seraient
+                                    jamais donnés ; cinq étoiles, si. */}
+                                {passe && (
                                 <div className="ap-noter">
                                   {[1, 2, 3, 4, 5].map((n) => (
                                     <button
@@ -3485,7 +3573,7 @@ export function ApercuHabitant() {
                                       ★
                                     </button>
                                   ))}
-                                  <span>{maNote ? "Noté" : "J'y suis allé"}</span>
+                                  <span>{maNote ? "Noté" : "J'y étais"}</span>
 
                                   {/* AJOUTER SA PHOTO EST À CÔTÉ DES ÉTOILES,
                                       pas dans un écran à part : c'est le même
@@ -3536,6 +3624,14 @@ export function ApercuHabitant() {
                                     l'écran, le bouton n'est qu'une boîte à
                                     idées, et personne n'appuie deux fois sur
                                     une boîte à idées. */}
+                                {/* CE QUI EST DÉJÀ EXAUCÉ SE MONTRE PARTOUT :
+                                    « il revient jeudi, vous étiez sept » est la
+                                    preuve que le geste sert, et sans elle le
+                                    bouton n'est qu'une boîte à idées.
+                                    LE BOUTON, LUI, N'A DE SENS QUE SUR CE QUI
+                                    EST PASSÉ : demander le retour d'un plat qui
+                                    est servi en ce moment même n'a aucun sens —
+                                    il est là, on le prend. */}
                                 {m.revient ? (
                                   <div className="ap-revient exauce">
                                     <i aria-hidden="true">🔁</i>
@@ -3545,7 +3641,7 @@ export function ApercuHabitant() {
                                       le demander — il l&apos;a remis pour vous.
                                     </span>
                                   </div>
-                                ) : (
+                                ) : passe ? (
                                   <button
                                     type="button"
                                     className={`ap-revient${jeDemande(dessus, m) ? " on" : ""}`}
@@ -3581,7 +3677,7 @@ export function ApercuHabitant() {
                                       <b>
                                         {jeDemande(dessus, m)
                                           ? "Vous l'avez demandé"
-                                          : "Je veux que ça revienne"}
+                                          : "Remettez-le à la carte"}
                                       </b>
                                       {jeDemande(dessus, m)
                                         ? "On vous préviendra le jour où il revient."
@@ -3593,7 +3689,7 @@ export function ApercuHabitant() {
                                       <b className="ap-revient-n">{combienDemandent(dessus, m)}</b>
                                     )}
                                   </button>
-                                )}
+                                ) : null}
 
                                 {!passe && m.action && (m.places ?? 1) > 0 && (
                                   <button
@@ -3615,53 +3711,69 @@ export function ApercuHabitant() {
                       </div>
                       )}
 
+                      {/* ─── VU CHEZ EUX AUJOURD'HUI ─────────────────────
+                          C'ÉTAIT « PHOTOS DES CLIENTS », AU FOND DE LA FICHE
+                          DU COMMERCE. Le titre en faisait une catégorie ; ce
+                          sont des FAITS DATÉS, et c'est exactement ce que ce
+                          produit vend. Chaque photo porte maintenant le prénom
+                          de qui l'a prise et l'heure — la même image, sans ces
+                          deux mots, ne prouve plus rien.
+                          ELLE PASSE AVANT LA FICHE, et c'est l'ordre de la
+                          décision : ce qui a été servi aujourd'hui pèse plus,
+                          pour quelqu'un qui hésite, que l'adresse et les
+                          horaires du commerce.
+                          C'EST CE QUE GOOGLE NE SAIT PAS FAIRE : ses photos
+                          sont collées à l'établissement et datent de trois ans.
+                          Ici chacune reste attachée au moment qu'elle montre, et
+                          revient avec lui quand le plat revient à la carte. */}
+                      {!embauches && (
+                      <div className="ap-bloc">
+                        {/* LE TITRE SUIT CE QU'IL Y A DESSOUS. « Aujourd'hui »
+                            est la promesse du produit : écrite au-dessus de
+                            photos vieilles de deux semaines, elle se retourne
+                            contre lui. */}
+                        <h3>
+                          {murDe(dessus).some((ph) => duJour(ph.quand))
+                            ? "Vu chez eux aujourd'hui"
+                            : "Vu chez eux"}
+                        </h3>
+                        {murDe(dessus).length > 0 ? (
+                          <div className="ap-vu">
+                            {murDe(dessus).map((ph, n) => (
+                              <figure key={`${ph.src}-${n}`}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={ph.src}
+                                  alt={`Chez ${dessus.nom}, photo de ${ph.qui}`}
+                                  loading="lazy"
+                                />
+                                <figcaption>
+                                  <b>📸 {ph.qui}</b>
+                                  <em className={duJour(ph.quand) ? "jour" : ""}>
+                                    {ph.quand}
+                                  </em>
+                                </figcaption>
+                              </figure>
+                            ))}
+                          </div>
+                        ) : (
+                          /* LE VIDE EST DIT, PAS CACHÉ. C'est le démarrage à
+                             froid : tant que personne n'a photographié, il n'y a
+                             rien — et l'écrire est ce qui donne envie d'être le
+                             premier. */
+                          <div className="ap-vu-vide">
+                            <i aria-hidden="true">📷</i>
+                            Personne n&apos;a encore photographié ce qui a été
+                            servi ici aujourd&apos;hui.
+                          </div>
+                        )}
+                      </div>
+                      )}
+
                       <div className="ap-bloc">
                         <h3>Le commerce</h3>
                         <p className="ap-mot">{dessus.fiche.mot}</p>
 
-                        {/* ─── SUIVRE, AVEC UNE PROMESSE ET PAS UN VERBE ───
-                            « Suivre » tout seul promet un fil qu'on lira
-                            peut-être, et personne n'appuie pour ça. Ce qui
-                            décide, c'est l'AVANCE : savoir avant les autres
-                            qu'il reste quatre parts. C'est la leçon de « faites-
-                            le revenir », qui n'a commencé à servir que le jour
-                            où la ligne a dit ce qui se passait ensuite.
-                            La permission de notification se demande ICI, parce
-                            que c'est le seul endroit où « on vous préviendra »
-                            est une phrase vraie. */}
-                        <button
-                          type="button"
-                          className={`ap-suivre${suivis.includes(dessus.id) ? " on" : ""}`}
-                          aria-pressed={suivis.includes(dessus.id)}
-                          onPointerDown={(ev) => ev.stopPropagation()}
-                          onClick={() => {
-                            const suit = basculerSuivi(dessus.id);
-                            noter(suit ? "rappel-demande" : "je-passe", 0, "suivre");
-                            if (!suit) return;
-                            setEchoIcone("🔔");
-                            setEcho(
-                              `Vous suivez ${dessus.nom}. Vous serez prévenu avant les autres.`,
-                            );
-                            noter("notif-proposee", 0, "suivre");
-                            void demanderAvertissement().then((r) =>
-                              noter(r === "granted" ? "notif-acceptee" : "notif-refusee", 0, "suivre"),
-                            );
-                          }}
-                        >
-                          <i aria-hidden="true">
-                            {suivis.includes(dessus.id) ? "✓" : "🔔"}
-                          </i>
-                          <span>
-                            <b>
-                              {suivis.includes(dessus.id)
-                                ? `Vous suivez ${dessus.nom}`
-                                : `Suivre ${dessus.nom}`}
-                            </b>
-                            {suivis.includes(dessus.id)
-                              ? "Vous saurez ce qu'il propose avant les autres."
-                              : "Soyez prévenu avant les autres de ce qu'il propose."}
-                          </span>
-                        </button>
                         <div className="ap-l">
                           <i aria-hidden="true">📍</i>
                           {dessus.fiche.ou} · {dessus.distance}
@@ -3698,40 +3810,6 @@ export function ApercuHabitant() {
                                 </figure>
                               ))}
                             </div>
-                          </div>
-                        )}
-
-                        {/* LE MUR DU COMMERCE. Toutes les photos prises chez
-                            lui, tous moments confondus. Le commerçant n'en a
-                            pris aucune — et pour les métiers qui n'ont pas de
-                            photo du tout (coiffeur, fleuriste, onglerie), c'est
-                            la seule façon réaliste qu'il en existe un jour. */}
-                        {murDe(dessus).length > 0 ? (
-                          <div className="ap-mur">
-                            <h4>
-                              Photos des clients
-                              <b>{murDe(dessus).length}</b>
-                            </h4>
-                            <div className="ap-photos">
-                              {murDe(dessus).map((src, n) => (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  key={n}
-                                  src={src}
-                                  alt={`Chez ${dessus.nom}, photo d'un client`}
-                                  loading="lazy"
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          // LE VIDE EST DIT, PAS CACHÉ. C'est le démarrage à
-                          // froid : tant que personne n'a photographié, il n'y
-                          // a rien — et l'écrire est ce qui donne envie d'être
-                          // le premier.
-                          <div className="ap-mur vide">
-                            <i aria-hidden="true">📷</i>
-                            Personne n&apos;a encore photographié ce commerce.
                           </div>
                         )}
 
@@ -3786,6 +3864,67 @@ export function ApercuHabitant() {
                         >
                           🧭 Y aller
                         </a>
+                      </div>
+
+                      {/* ─── SUIVRE, EN DERNIER ET C'EST SA PLACE ───
+                          Il était au milieu du bloc du commerce, juste après le
+                          mot d'accueil : on demandait de s'abonner à quelqu'un
+                          avant d'avoir montré ce qu'il fait. On suit quand on
+                          est convaincu, donc après la journée, après ce que les
+                          clients en ont dit, et après la fiche.
+                          « SUIVRE » TOUT SEUL PROMET UN FIL qu'on lira peut-être,
+                          et personne n'appuie pour ça. Ce qui décide, c'est
+                          l'AVANCE : savoir avant les autres qu'il reste quatre
+                          parts. C'est la leçon de « faites-le revenir », qui n'a
+                          commencé à servir que le jour où la ligne a dit ce qui
+                          se passait ensuite.
+                          La permission de notification se demande ICI, parce que
+                          c'est le seul endroit où « on vous préviendra » est une
+                          phrase vraie. */}
+                      <div className="ap-bloc">
+                        {/* ─── SUIVRE, AVEC UNE PROMESSE ET PAS UN VERBE ───
+                            « Suivre » tout seul promet un fil qu'on lira
+                            peut-être, et personne n'appuie pour ça. Ce qui
+                            décide, c'est l'AVANCE : savoir avant les autres
+                            qu'il reste quatre parts. C'est la leçon de « faites-
+                            le revenir », qui n'a commencé à servir que le jour
+                            où la ligne a dit ce qui se passait ensuite.
+                            La permission de notification se demande ICI, parce
+                            que c'est le seul endroit où « on vous préviendra »
+                            est une phrase vraie. */}
+                        <button
+                          type="button"
+                          className={`ap-suivre${suivis.includes(dessus.id) ? " on" : ""}`}
+                          aria-pressed={suivis.includes(dessus.id)}
+                          onPointerDown={(ev) => ev.stopPropagation()}
+                          onClick={() => {
+                            const suit = basculerSuivi(dessus.id);
+                            noter(suit ? "rappel-demande" : "je-passe", 0, "suivre");
+                            if (!suit) return;
+                            setEchoIcone("🔔");
+                            setEcho(
+                              `Vous suivez ${dessus.nom}. Vous serez prévenu avant les autres.`,
+                            );
+                            noter("notif-proposee", 0, "suivre");
+                            void demanderAvertissement().then((r) =>
+                              noter(r === "granted" ? "notif-acceptee" : "notif-refusee", 0, "suivre"),
+                            );
+                          }}
+                        >
+                          <i aria-hidden="true">
+                            {suivis.includes(dessus.id) ? "✓" : "🔔"}
+                          </i>
+                          <span>
+                            <b>
+                              {suivis.includes(dessus.id)
+                                ? `Vous suivez ${dessus.nom}`
+                                : `Suivre ${dessus.nom}`}
+                            </b>
+                            {suivis.includes(dessus.id)
+                              ? "Vous saurez ce qu'il propose avant les autres."
+                              : "Soyez prévenu avant les autres de ce qu'il propose."}
+                          </span>
+                        </button>
                       </div>
 
                       {/* ── LE FAIRE CONNAÎTRE ──
@@ -3850,12 +3989,17 @@ export function ApercuHabitant() {
                     </div>
                   </div>
 
+                  {/* LE TAMPON DE GAUCHE DIT CE QU'IL FAIT, pas un symbole.
+                      Une croix seule laisse deviner : on efface ? on refuse ? on
+                      dit du mal ? Le mot lève la question pendant le geste, au
+                      seul moment où on peut encore revenir en arrière. */}
                   <span
                     className="ap-tampon non"
                     style={{ opacity: Math.min(1, Math.max(0, -dx / SEUIL)) }}
                     aria-hidden="true"
                   >
                     ✕
+                    <b>Passer</b>
                   </span>
                   {/* LE TAMPON DE DROITE ANNONCE CE QUI VA S'OUVRIR. C'était
                       un cœur, du temps où le balayage droit gardait la carte ;
@@ -3869,9 +4013,61 @@ export function ApercuHabitant() {
                     aria-hidden="true"
                   >
                     💬
-                    <b>J&rsquo;emmène mes amis</b>
+                    <b>En parler à mes amis</b>
                   </span>
-                  {!aJoue && !descendu && <span className="ap-doigt" aria-hidden="true">👆</span>}
+                  {!aJoue && !descendu && !montrerLeTuto && (
+                    <span className="ap-doigt" aria-hidden="true">👆</span>
+                  )}
+
+                  {/* ─── LE BALAYAGE, EXPLIQUÉ UNE SEULE FOIS ───
+                      DÉFAUT RELEVÉ AU TEST : « quand on balaie à droite, les
+                      gens ne comprennent pas vraiment où ils arrivent ». C'est
+                      le geste central du produit — celui qui fait passer d'une
+                      annonce à une conversation — et il était deviné, pas
+                      compris. Le doigt animé disait « ça se balaie » ; il ne
+                      disait pas ce que chaque côté fait.
+                      ELLE EST POSÉE SUR LA CARTE, pas sur un écran à part : une
+                      explication qui cache ce qu'elle explique s'oublie entre
+                      le moment où on la lit et celui où on agit.
+                      ELLE NE REVIENT PLUS. Une aide qu'on revoit à chaque
+                      ouverture devient un obstacle entre la personne et ce
+                      qu'elle est venue chercher. */}
+                  {montrerLeTuto && (
+                    <div
+                      className="ap-tuto"
+                      role="dialog"
+                      aria-label="Comment ça marche"
+                      onPointerDown={(ev) => ev.stopPropagation()}
+                    >
+                      <div className="ap-tuto-c">
+                        <p className="ap-tuto-t">Deux gestes, et c&apos;est tout.</p>
+                        <div className="ap-tuto-l non">
+                          <i aria-hidden="true">←</i>
+                          <span>
+                            <b>Passer</b>
+                            à l&apos;annonce suivante
+                          </span>
+                        </div>
+                        <div className="ap-tuto-l oui">
+                          <i aria-hidden="true">→</i>
+                          <span>
+                            <b>En parler à mes amis</b>
+                            ouvre le salon de cette annonce
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          className="ap-tuto-b"
+                          onClick={() => {
+                            noter("pli", 0, "tuto-balayage");
+                            marquerVu("balayage");
+                          }}
+                        >
+                          J&apos;ai compris
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -5749,6 +5945,30 @@ export function ApercuHabitant() {
         .ap-sien figcaption{margin-top:6px;font-size:11.5px;line-height:1.35;
           color:#8C9C94;}
 
+        /* ── VU CHEZ EUX AUJOURD'HUI ────────────────────────────────────
+           Une bande de vignettes signees. Le prenom et l'heure ne sont pas de
+           la decoration : ils transforment une image en fait date, et c'est le
+           seul endroit de la fiche ou l'on montre une PREUVE plutot qu'une
+           promesse. */
+        .ap-vu{display:flex;gap:9px;overflow-x:auto;scrollbar-width:none;
+          margin:0 -14px;padding:0 14px 2px;
+          scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;}
+        .ap-vu::-webkit-scrollbar{display:none;}
+        .ap-vu figure{flex:none;margin:0;width:132px;scroll-snap-align:start;}
+        .ap-vu img{display:block;width:132px;height:132px;object-fit:cover;
+          border-radius:14px;background:#0E1815;
+          border:1px solid rgba(255,255,255,.09);}
+        .ap-vu figcaption{margin-top:7px;font-size:11px;color:#6C8078;
+          line-height:1.3;}
+        .ap-vu figcaption b{display:block;font-size:12px;font-weight:800;
+          color:#C7D3CC;}
+        .ap-vu figcaption em{font-style:normal;}
+        /* Le vert de l'application ne peint que ce qui est du jour. */
+        .ap-vu figcaption em.jour{color:#8FE9C4;font-weight:700;}
+        .ap-vu-vide{display:flex;align-items:flex-start;gap:9px;font-size:13px;
+          line-height:1.45;color:#6C8078;}
+        .ap-vu-vide i{font-style:normal;font-size:15px;line-height:1.3;flex:none;}
+
         .ap-mur{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);}
         .ap-mur h4{margin:0;display:flex;align-items:center;gap:8px;font-size:12px;
           font-weight:850;letter-spacing:.1em;text-transform:uppercase;color:#7F988B;}
@@ -6801,6 +7021,49 @@ export function ApercuHabitant() {
           max-width:60%;}
         .ap-tampon.oui b{font-size:11.5px;font-weight:850;line-height:1.15;
           letter-spacing:0;text-align:center;}
+
+        /* ── LE BALAYAGE, EXPLIQUE UNE SEULE FOIS ──────────────────────
+           POSEE SUR LA CARTE, PAS SUR UN ECRAN A PART : une explication qui
+           cache ce qu'elle explique s'oublie entre le moment ou on la lit et
+           celui ou on agit. Le voile laisse voir la photo dessous — on
+           comprend qu'on parle de CETTE annonce-la. */
+        .ap-tuto{position:absolute;inset:0;z-index:6;display:flex;
+          align-items:center;justify-content:center;padding:22px;
+          background:rgba(4,9,7,.72);
+          -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+          animation:apTuto .24s ease both;}
+        @keyframes apTuto{from{opacity:0;}to{opacity:1;}}
+        .ap-tuto-c{width:100%;max-width:300px;display:flex;flex-direction:column;
+          gap:13px;padding:20px 18px;border-radius:20px;
+          background:rgba(12,20,17,.96);border:1px solid rgba(255,255,255,.13);
+          box-shadow:0 30px 60px -24px rgba(0,0,0,.9);}
+        .ap-tuto-t{margin:0;font-size:16px;font-weight:850;color:#fff;
+          letter-spacing:-.02em;text-align:center;}
+        .ap-tuto-l{display:flex;align-items:center;gap:13px;padding:11px 13px;
+          border-radius:14px;background:rgba(255,255,255,.05);
+          border:1px solid rgba(255,255,255,.1);}
+        /* LA MEME COULEUR QUE LE TAMPON QUI APPARAITRA PENDANT LE GESTE : ce
+           qu'on lit ici et ce qu'on verra en balayant doivent se reconnaitre. */
+        .ap-tuto-l i{font-style:normal;font-size:22px;font-weight:900;
+          line-height:1;flex:none;}
+        .ap-tuto-l.non i{color:#FF6B6B;}
+        .ap-tuto-l.oui i{color:#3DE2A6;}
+        .ap-tuto-l span{flex:1;min-width:0;font-size:11.5px;line-height:1.35;
+          color:#8C9C94;}
+        .ap-tuto-l b{display:block;font-size:13.5px;font-weight:850;
+          letter-spacing:-.01em;}
+        .ap-tuto-l.non b{color:#FFB3B3;}
+        .ap-tuto-l.oui b{color:#CFF7E6;}
+        .ap-tuto-b{width:100%;font:inherit;font-size:14.5px;font-weight:850;
+          cursor:pointer;color:#04150E;border:0;border-radius:13px;padding:12px;
+          background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
+        .ap-tuto-b:active{transform:scale(.98);}
+
+        /* Le tampon de gauche porte son mot, comme celui de droite. */
+        .ap-tampon.non{display:flex;flex-direction:column;align-items:center;
+          gap:2px;}
+        .ap-tampon.non b{font-size:11.5px;font-weight:850;line-height:1.15;
+          letter-spacing:0;}
 
         .ap-doigt{position:absolute;left:50%;margin-left:-16px;top:26%;z-index:3;font-size:32px;
           pointer-events:none;filter:drop-shadow(0 4px 10px rgba(0,0,0,.7));
