@@ -82,14 +82,24 @@ const config: NextConfig = {
         // origines-là » (`ALLOW-FROM` est mort et ignoré partout). Le laisser à
         // SAMEORIGIN annulerait `frame-ancestors` sur les navigateurs qui
         // lisent les deux. C'est la CSP qui décide, seule.
+        //
+        // POURQUOI `https:` ET PLUS UNE LISTE D'ORIGINES. La liste
+        // `claude.ai` ne suffisait pas : le navigateur vérifie TOUS les
+        // ancêtres du cadre, et un deck publié est lui-même servi depuis une
+        // origine intermédiaire que nous ne connaissons pas. Il manquait donc
+        // toujours un maillon, et le cadre affichait « Ce contenu est bloqué »
+        // — un refus qui vient de nous, pas de l'hébergeur du deck.
+        //
+        // Deviner cette origine serait un pari à refaire à chaque
+        // présentation. On l'assume : n'importe quelle page servie en HTTPS
+        // peut afficher CETTE page-ci, et elle seule. Le `https:` garde la
+        // seule garantie qui compte encore ici — pas d'encadrement depuis une
+        // page en clair.
         source: "/autour-de-moi",
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          {
-            key: "Content-Security-Policy",
-            value: "frame-ancestors 'self' https://claude.ai https://*.claude.ai",
-          },
+          { key: "Content-Security-Policy", value: "frame-ancestors https:" },
         ],
       },
     ];
