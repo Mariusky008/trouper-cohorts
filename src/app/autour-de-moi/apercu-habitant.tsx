@@ -939,16 +939,45 @@ export function ApercuHabitant() {
   }
 
   /** Inviter : le lien part dans WhatsApp, la conversation reste ici. */
+  /**
+   * INVITER, ET C'EST WHATSAPP.
+   *
+   * DÉFAUT RELEVÉ AU TEST : « le bouton inviter amène sur le SMS au lieu de
+   * WhatsApp ». Le bouton passait par le partage natif du téléphone, qui ouvre
+   * une feuille où l'application la plus récemment utilisée est en tête — donc
+   * Messages, une fois sur deux. Le geste devenait un tirage au sort.
+   *
+   * CE N'EST PAS UN DÉTAIL DE CONFORT. Tout le produit repose sur une seule
+   * boucle : on invite ses amis LÀ OÙ ILS SONT DÉJÀ, ils ouvrent un lien, et
+   * ils répondent sans rien installer. Cet endroit-là, en France et pour ce
+   * genre de message, c'est WhatsApp — et c'est déjà par là que partent la
+   * réservation et la réponse à une offre d'emploi. Un bouton qui envoie
+   * ailleurs fait mentir la promesse de la page d'accueil.
+   *
+   * LE REPLI RESTE HONNÊTE : si la fenêtre ne peut pas s'ouvrir — un navigateur
+   * qui bloque, un ordinateur sans WhatsApp — le lien va dans le presse-papiers
+   * et on le dit, plutôt que de ne rien faire.
+   */
   async function inviterAuSalon(s: Salon) {
     const lien = typeof window === "undefined" ? "" : `${window.location.origin}/autour-de-moi`;
-    const texte = `${s.sujet} — ${s.ou} · ${s.quand}. J'ai trouvé ça sur Clikme, qui vient ?`;
+    const texte = `${s.sujet} — ${s.ou} · ${s.quand}. J'ai trouvé ça sur Clikme, qui vient ? ${lien}`;
+    noter("partage", 0, "invitation-salon");
+    const f = window.open(
+      `https://wa.me/?text=${encodeURIComponent(texte)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+    if (f) {
+      setEchoIcone("👥");
+      setEcho("Votre lien part sur WhatsApp. Ils n'ont rien à installer pour répondre.");
+      return;
+    }
     try {
-      if (navigator.share) await navigator.share({ title: "Clikme", text: texte, url: lien });
-      else await navigator.clipboard.writeText(`${texte} ${lien}`);
-      noter("partage", 0, "invitation-salon");
-      setEcho("Votre lien est parti. Ils n'ont rien à installer pour répondre.");
+      await navigator.clipboard.writeText(texte);
+      setEchoIcone("📋");
+      setEcho("Lien copié : collez-le où vous voulez, ils n'ont rien à installer.");
     } catch {
-      /* Annulé : rien ne s'est passé. */
+      /* Presse-papiers refusé : on ne prétend pas que ça a marché. */
     }
   }
 
@@ -2123,22 +2152,7 @@ export function ApercuHabitant() {
                         samedi dernier renvoie à un menu qui n'est plus servi, et
                         un bouton qui ne mène nulle part est pire qu'une
                         absence. */}
-                    <div
-                      className={`ap-page-objet${photo ? "" : " nu"}${ouvrable ? " ouvrable" : ""}`}
-                      role={ouvrable ? "button" : undefined}
-                      tabIndex={ouvrable ? 0 : undefined}
-                      onClick={ouvrable ? () => voirLAnnonce(salon) : undefined}
-                      onKeyDown={
-                        ouvrable
-                          ? (ev) => {
-                              if (ev.key === "Enter" || ev.key === " ") {
-                                ev.preventDefault();
-                                voirLAnnonce(salon);
-                              }
-                            }
-                          : undefined
-                      }
-                    >
+                    <div className={`ap-page-objet${photo ? "" : " nu"}`}>
                       {photo ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={photo} alt="" />
@@ -2147,11 +2161,27 @@ export function ApercuHabitant() {
                           💬
                         </i>
                       )}
+                      {/* SEULE LA PASTILLE OUVRE L'ANNONCE, PAS TOUTE LA PHOTO.
+                          DÉFAUT RELEVÉ AU TEST : « la photo en haut parfois
+                          n'apparaît pas ». Elle apparaissait — elle partait. La
+                          photo fait 172 points de haut EN TÊTE D'UNE ZONE QUI
+                          DÉFILE : un pouce qui la pousse pour lire la suite, ou
+                          qui la touche sans intention, relâchait sur un bouton
+                          et l'annonce s'ouvrait. On quittait le salon sans
+                          l'avoir demandé, et de l'autre côté de l'écran ça se
+                          lit exactement comme une photo qui a disparu.
+                          Une cible large n'est un service que si l'on veut
+                          l'atteindre ; posée sous le doigt qui défile, c'est un
+                          piège. La pastille, elle, se vise. */}
                       {ouvrable && (
-                        <span className="ap-obj-voir">
+                        <button
+                          type="button"
+                          className="ap-obj-voir"
+                          onClick={() => voirLAnnonce(salon)}
+                        >
                           <i aria-hidden="true">🔎</i>
                           L&apos;annonce
-                        </span>
+                        </button>
                       )}
                       <div className="ap-page-objet-t">
                         {(salon.propositions?.length ?? 0) > 1 && (
@@ -5769,19 +5799,21 @@ export function ApercuHabitant() {
           background:rgba(255,255,255,.045);
           border:1px solid rgba(255,255,255,.09);}
         .ap-page-objet{position:relative;flex:none;}
-        .ap-page-objet.ouvrable{cursor:pointer;}
         .ap-page-objet img{display:block;width:100%;height:min(172px,22vh);
           min-height:118px;object-fit:cover;}
         /* La photo EST le bouton qui ouvre l'annonce : une pastille discrete le
            dit, plutot qu'une ligne encadree de plus sous les propositions. */
-        .ap-obj-voir{position:absolute;right:10px;top:10px;z-index:2;
-          display:inline-flex;align-items:center;gap:5px;font-size:10.5px;
-          font-weight:800;color:#EAF2EC;background:rgba(8,12,10,.6);
+        /* ELLE EST DEVENUE LE SEUL CHEMIN VERS L'ANNONCE, donc elle doit se
+           toucher sans viser : 28 points de haut, c'etait la moitie d'un
+           pouce. Elle reste discrete par sa couleur, pas par sa taille. */
+        .ap-obj-voir{position:absolute;right:9px;top:9px;z-index:2;font:inherit;
+          display:inline-flex;align-items:center;gap:6px;font-size:11px;
+          font-weight:800;cursor:pointer;color:#EAF2EC;background:rgba(8,12,10,.62);
           -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-          border:1px solid rgba(255,255,255,.18);border-radius:999px;
-          padding:5px 10px;}
+          border:1px solid rgba(255,255,255,.2);border-radius:999px;
+          padding:9px 13px;}
         .ap-obj-voir i{font-style:normal;font-size:11px;line-height:1;}
-        .ap-page-objet.ouvrable:active{filter:brightness(.9);}
+        .ap-obj-voir:active{transform:scale(.95);}
         .ap-page-objet-t{position:absolute;left:0;right:0;bottom:0;padding:26px 13px 11px;
           background:linear-gradient(180deg,rgba(4,10,8,0),rgba(4,10,8,.86) 62%);}
         .ap-page-objet:not(:has(img)) .ap-page-objet-t{position:static;padding:13px;
