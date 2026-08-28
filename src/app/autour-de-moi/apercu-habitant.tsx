@@ -1434,6 +1434,26 @@ export function ApercuHabitant() {
     if (el) el.scrollTo({ top: el.clientHeight - 90, behavior: "smooth" });
   }
 
+  /**
+   * GARDER L'ANNONCE QU'ON REGARDE — depuis le bandeau du haut, désormais.
+   *
+   * Le geste était une pastille posée SUR la photo. Il n'a rien perdu en
+   * remontant : c'est le même appui, il ne quitte pas l'écran, et il est
+   * maintenant collé au chiffre qui dit combien on en a gardé — c'est-à-dire
+   * à l'endroit où l'on va les rechercher. Ce qu'il rend, c'est deux
+   * centimètres carrés d'image.
+   */
+  const gardeSommet = !!sommet && gardees.includes(sommet.id);
+  function garderLeSommet() {
+    if (!sommet) return;
+    noter("garde", passees.length + 1, "bandeau");
+    setGardees((g) =>
+      g.includes(sommet.id) ? g.filter((x) => x !== sommet.id) : [...g, sommet.id],
+    );
+    setCoeurVole(true);
+    minuteries.current.push(window.setTimeout(() => setCoeurVole(false), COEUR_MS));
+  }
+
   const listeEnvies = ENVIES[branche];
   const aReserver = restants.filter((m) => m.action && (m.places ?? 1) > 0);
 
@@ -2909,7 +2929,14 @@ export function ApercuHabitant() {
                   écran — le téléphone porte déjà l'heure en haut, deux
                   centimètres plus haut. Ce qui reste vrai, c'est « maintenant »
                   sur les cartes, et ça, c'est la carte qui le dit. */}
-              <span className="cd-marque">{MARQUE}</span>
+              {/* ─── LA MARQUE A QUITTÉ L'ANNONCE ───
+                  Elle disait à quel écran on est, et c'était vrai le jour où
+                  la carte pouvait passer pour une publicité. Ce n'est plus le
+                  cas : l'application porte son nom sur l'écran d'accueil du
+                  téléphone, dans l'onglet, et sur la page d'installation.
+                  Écrit une quatrième fois PAR-DESSUS le plat, ce n'était plus
+                  de l'identité, c'était du bruit — et c'est le premier mot que
+                  l'œil rencontre là où il devrait rencontrer la photo. */}
               <button
                 type="button"
                 className={`cd-puce ap-metier${embauches ? " embauche" : ""}${
@@ -2934,6 +2961,11 @@ export function ApercuHabitant() {
                     : vue === "tout"
                       ? "Tout"
                       : metier.label}
+                {/* LES ENVIES SONT PARTIES DANS CETTE FEUILLE, DONC LEUR
+                    NOMBRE DOIT SE VOIR D'ICI. Un filtre actif qu'on ne voit
+                    plus est un piège : on croit que la ville est vide alors
+                    qu'on a coché « moins de 15 € » il y a dix minutes. */}
+                {envies.length > 0 && <s className="ap-filtres-n">{envies.length}</s>}
                 <em aria-hidden="true">▾</em>
               </button>
               {reserves.length > 0 && (
@@ -2948,83 +2980,66 @@ export function ApercuHabitant() {
                   <b>{reserves.length}</b>
                 </button>
               )}
-              {/* LA PASTILLE DES FAVORIS EST LA PORTE DE L'ESPACE PERSO.
-                  Il en manquait un, et lui ajouter une icône de plus dans un
-                  bandeau qui en porte déjà trois aurait chargé l'écran pour
-                  rien : le cœur COMPTE déjà ce qu'on a gardé, donc c'est là
-                  qu'on va naturellement chercher où ça a été rangé. */}
-              <button
-                type="button"
-                className={`cd-puce vert ap-fav ap-perso${coeurVole ? " pop" : ""}`}
-                onClick={() => {
-                  noter("onglet", gardees.length, "favoris");
-                  setFavorisPage(true);
-                }}
-                aria-label="Mes favoris"
-              >
-                <i aria-hidden="true">💚</i>
-                <b>{gardees.length}</b>
-              </button>
+              {/* ─── LA PASTILLE A DEUX MOITIÉS, ET C'EST DÉLIBÉRÉ ───
+                  Il y a DEUX gestes différents et ils ne doivent pas se
+                  disputer un même bouton : le cœur GARDE l'annonce qu'on
+                  regarde, le chiffre OUVRE ce qu'on a déjà gardé. Confondus,
+                  on perd l'un en cherchant l'autre.
+
+                  C'EST AUSSI CE QUI A LIBÉRÉ LA PHOTO. « Garder » était une
+                  pastille posée sur l'image, à gauche, en face de « Y aller » :
+                  deux objets de plus entre l'œil et le plat. Le geste n'a pas
+                  disparu, il a remonté à l'endroit où l'on va déjà chercher ce
+                  qu'on a mis de côté. */}
+              <div className={`ap-fav2${coeurVole ? " pop" : ""}`}>
+                <button
+                  type="button"
+                  className={gardeSommet ? "on" : ""}
+                  disabled={!sommet}
+                  aria-label={gardeSommet ? "Retirer des favoris" : "Garder cette annonce"}
+                  onClick={garderLeSommet}
+                >
+                  {gardeSommet ? "💚" : "♡"}
+                </button>
+                <button
+                  type="button"
+                  className="nb"
+                  onClick={() => {
+                    noter("onglet", gardees.length, "favoris");
+                    setFavorisPage(true);
+                  }}
+                  aria-label="Mes favoris"
+                >
+                  {gardees.length}
+                </button>
+              </div>
             </div>
 
-            {/* LA PORTE D'ENTRÉE RESSEMBLE À UNE RECHERCHE, ET C'EST VOULU.
-                La version d'avant proposait une pastille « Je sors » au milieu
-                des filtres : personne n'a appuyé dessus. Un champ pleine
-                largeur avec une loupe, tout le monde sait ce que c'est et tout
-                le monde le touche — et c'est justement parce qu'on attend une
-                liste de résultats que recevoir des réponses fait quelque
-                chose. */}
-            {/* On ne l'affiche qu'une fois monté : côté serveur la date est
-                vide, et un jour faux qui se corrige sous les yeux est pire
-                qu'un jour absent une demi-seconde. */}
+            {/* ─── LE BANDEAU N'A PLUS QU'UNE LIGNE, ET C'EST TOUT LE SUJET ───
+                On y trouvait, empilés au-dessus de la photo : la marque, le
+                métier, les réservations, les favoris, puis une SECONDE ligne
+                avec « Je cherche… » et quatre à six envies, puis parfois une
+                TROISIÈME qui répétait le mode en cours. Sept à dix objets
+                avant d'arriver au plat, sur l'écran dont toute la promesse est
+                qu'on le comprenne en une seconde.
 
+                CE QUI PART, ET OÙ ÇA VA. « Je cherche… » et les envies
+                descendent dans la feuille qu'ouvre le métier : c'est déjà
+                l'endroit où l'on va dire ce qu'on veut voir, et rien n'y perd
+                un appui — on en gagne même un, puisque les envies s'y cochent
+                à la suite sans refermer.
 
-            {vue === "evenements" || vue === "tout" ? (
-              <div className={`ap-sortie ${vue === "tout" ? "tout" : "evenement"}`}>
-                <span className="ap-s-quoi">
-                  <i aria-hidden="true">{vue === "tout" ? "✨" : "🎪"}</i>
-                  {vue === "tout" ? "Tout ce qui se passe autour de vous" : "Ce qui se passe en ville"}
-                </span>
-                <span className="ap-s-etat">{dispoBrut.length}</span>
-                <button
-                  type="button"
-                  className="ap-s-x"
-                  aria-label="Revenir aux commerces"
-                  onClick={() => {
-                    setVue("metiers");
-                    remettre();
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
-            ) : embauches ? (
-              /* EN MODE EMBAUCHE, NI CHAMP NI ENVIES. « Qu'est-ce que vous
-                 cherchez ? » y promettrait qu'on peut demander un poste à la
-                 ville, ce que la maquette ne sait pas jouer ; et « moins de
-                 15 € » n'a aucun sens sur une offre. Une seule ligne qui dit ce
-                 qu'on regarde, et de quoi en sortir. */
-              <div className="ap-sortie embauche">
-                {/* COURT : la bande est une seule ligne et « Les commerces qui
-                    cherchent quelqu'un » s'y coupait à 402 px. */}
-                <span className="ap-s-quoi">
-                  <i aria-hidden="true">🙋</i>
-                  Ils cherchent quelqu&apos;un
-                </span>
-                <span className="ap-s-etat">{embauchent.length} à pied</span>
-                <button
-                  type="button"
-                  className="ap-s-x"
-                  aria-label="Revenir aux commerces"
-                  onClick={() => {
-                    setEmbauches(false);
-                    remettre();
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
-            ) : sortie ? (
+                LES BANDES DE MODE PARTENT AUSSI, et elles étaient le doublon
+                le plus visible : « Ce qui se passe en ville » s'écrivait en
+                toutes lettres douze pixels sous la pastille qui disait déjà
+                « En ville ». On en sort par la même feuille qu'on a prise pour
+                y entrer.
+
+                CE QUI RESTE : la bande d'une demande en cours. Elle n'est pas
+                un mode qu'on choisit mais un état qui court — on a écrit
+                quelque chose, des commerces sont en train de répondre — et
+                c'est le seul endroit d'où on peut l'annuler. */}
+            {sortie ? (
               <div className="ap-sortie">
                 {/* LA BANDE NE RÉPÈTE PAS LA DEMANDE — elle est déjà en toutes
                     lettres dans la bulle verte trente pixels plus bas. Elle dit
@@ -3051,55 +3066,7 @@ export function ApercuHabitant() {
                   ✕
                 </button>
               </div>
-            ) : (
-              <>
-                <div className="ap-envies">
-                  {/* ─── LA RECHERCHE PERD SA LIGNE, PAS SA FONCTION ───
-                      Elle occupait un champ pleine largeur — 70 pixels sur les
-                      659 d'un iPhone — pour une fonction dont on ne sait pas
-                      encore si elle sert : la mesure qui trancherait
-                      (`champ-touche`) n'écrit nulle part tant que la migration
-                      n'est pas appliquée. La supprimer emporterait avec elle
-                      toute la demande à la ville et les invitations qui en
-                      reviennent. Elle devient donc la première pastille de la
-                      rangée qui existe déjà : zéro pixel de plus, la fonction
-                      intacte, et une ligne à retirer le jour où les chiffres
-                      diront qu'elle ne sert pas. */}
-                  <button
-                    type="button"
-                    className="ap-e ap-e-cherche"
-                    onClick={() => {
-                      noter("champ-touche");
-                      setBrouillon("");
-                      setFeuille("sortie");
-                    }}
-                  >
-                    <i aria-hidden="true">🔍</i>
-                    Je cherche…
-                  </button>
-                  {listeEnvies.map((e) => {
-                    const on = envies.includes(e.cle);
-                    return (
-                      <button
-                        key={e.cle}
-                        type="button"
-                        aria-pressed={on}
-                        className={`ap-e${on ? " on" : ""}`}
-                        onClick={() => {
-                          setEnvies((v) =>
-                            v.includes(e.cle) ? v.filter((x) => x !== e.cle) : [...v, e.cle],
-                          );
-                          remettre();
-                        }}
-                      >
-                        <i aria-hidden="true">{e.emoji}</i>
-                        {e.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
+            ) : null}
           </div>
 
           <div className="ap-vue">
@@ -3246,52 +3213,16 @@ export function ApercuHabitant() {
                         variante="seconde"
                         className="ap-carte"
                       >
-                        {/* LA FLAMME EST SUR LA PHOTO, PAS SEULEMENT SOUS LE
-                            PLI. Soutenir un commerce est un geste d'humeur : il
-                            se fait dans la seconde où la carte plaît, pas après
-                            avoir déroulé une fiche. Enterrée sous le pli, elle
-                            n'était atteinte que par ceux qui descendaient. */}
-                        {/* « J'EN PARLE » REMPLACE LA FLAMME, ET C'EST UN SEUL
-                            GESTE AU LIEU DE DEUX. « Le soutenir » et « en
-                            parler » ouvraient tous les deux WhatsApp avec un
-                            texte : deux boutons qui font la même chose sont un
-                            défaut, pas une fonction. Celui-ci ouvre le salon de
-                            l'annonce — et c'est ce qui le distingue d'un
-                            partage : il en revient quelque chose. */}
-                        {/* GARDER EST DEVENU LE GESTE TRANQUILLE, donc il a pris
-                            la place de la flamme sur la photo : un appui, sans
-                            rien ouvrir. Le balayage, lui, sert désormais à la
-                            seule chose que le produit fait et que personne
-                            d'autre ne fait. */}
-                        <button
-                          type="button"
-                          className={`ap-garder-photo${gardees.includes(sommet.id) ? " on" : ""}`}
-                          aria-label="Garder"
-                          onPointerDown={(ev) => ev.stopPropagation()}
-                          onClick={() => {
-                            noter("garde", passees.length + 1, "photo");
-                            setGardees((g) =>
-                              g.includes(sommet.id)
-                                ? g.filter((x) => x !== sommet.id)
-                                : [...g, sommet.id],
-                            );
-                            setCoeurVole(true);
-                            minuteries.current.push(
-                              window.setTimeout(() => setCoeurVole(false), COEUR_MS),
-                            );
-                          }}
-                        >
-                          {/* LE MOT, PAS SEULEMENT LE SIGNE. Défaut relevé au
-                              test : « le cœur est peut-être trop discret pour
-                              comprendre que c'est pour mettre en favori ». Un
-                              cœur seul, sur une photo, peut vouloir dire aimer,
-                              recommander, noter — trois choses qu'on fait
-                              ailleurs dans cette application. Le verbe tranche,
-                              et il change au deuxième état pour confirmer que
-                              c'est fait. */}
-                          <i aria-hidden="true">{gardees.includes(sommet.id) ? "💚" : "♡"}</i>
-                          <b>{gardees.includes(sommet.id) ? "Gardé" : "Garder"}</b>
-                        </button>
+                        {/* ─── « GARDER » A QUITTÉ LA PHOTO ───
+                            Il y était depuis qu'il avait remplacé la flamme du
+                            partage, et il y était bien : un geste d'humeur se
+                            fait dans la seconde où la carte plaît. Mais deux
+                            pastilles posées sur l'image, une à chaque coin,
+                            c'étaient deux objets de plus entre l'œil et le
+                            plat — et l'image est la seule chose qui donne
+                            envie. Le geste est intact, il est monté dans la
+                            pastille du bandeau, collé au chiffre qui dit
+                            combien on en a gardé. */}
 
                         {/* ─── LA CONTREPARTIE DU SUIVI, SUR LA PHOTO ───
                             Suivre ne servirait à rien si rien n'arrivait. Sans
@@ -3309,39 +3240,21 @@ export function ApercuHabitant() {
                           </div>
                         )}
 
-                        {/* CE QUI EST EN TRAIN DE SE PASSER SUR CETTE ANNONCE.
-                            Le COMPTE est public, le CONTENU ne l'est jamais :
-                            on voit qu'un groupe se forme, on ne lit pas ce
-                            qu'il s'y dit. C'est ce qui fait passer la carte de
-                            « voici une offre » à « voici quelque chose qui est
-                            en train d'arriver ». */}
-                        {salonDuSommet && salonDuSommet.messages.length > 0 && (
-                          <button
-                            type="button"
-                            className="ap-vie"
-                            onPointerDown={(ev) => ev.stopPropagation()}
-                            onClick={ouvrirLeSalonDuSommet}
-                          >
-                            <i aria-hidden="true">💬</i>
-                            <span>
-                              <b>
-                                {cestMoi(salonDuSommet.parQui)
-                                  ? "Vous en parlez"
-                                  : `${salonDuSommet.parQui} en parle`}
-                                {salonDuSommet.presents.length > 1
-                                  ? ` avec ${salonDuSommet.presents.length - 1} ${
-                                      salonDuSommet.presents.length - 1 > 1 ? "amis" : "ami"
-                                    }`
-                                  : ""}
-                              </b>
-                              {salonDuSommet.viennent.length > 0
-                                ? `${salonDuSommet.viennent.length} ${
-                                    salonDuSommet.viennent.length > 1 ? "viennent" : "vient"
-                                  } · ${salonDuSommet.quand}`
-                                : "Voir la conversation"}
-                            </span>
-                          </button>
-                        )}
+                        {/* ─── LE RECTANGLE « X EN PARLE AVEC 3 AMIS » EST PARTI ───
+                            Il disait qu'un groupe se formait sur cette
+                            annonce, et c'était une jolie preuve sociale. Mais
+                            il occupait toute la largeur au bas de la photo,
+                            juste au-dessus d'un bouton « En parler » qui mène
+                            au même endroit, alors que « Mes salons » porte
+                            déjà le compte dans la barre du bas. Trois portes
+                            pour une pièce, et c'est la plus encombrante qui
+                            est tombée.
+                            CE QU'ON PERD, ET IL FAUT LE SAVOIR : on ne voit
+                            plus, EN BALAYANT, qu'une conversation est déjà
+                            ouverte sur cette annonce-là. Elle reste atteignable
+                            — « Voir la conversation », sous le pli, et l'onglet
+                            « Mes salons » avec son compte — mais il faut aller
+                            la chercher au lieu de la croiser. */}
 
                         {/* SUR UN POSTE, LA LIGNE DU BAS DIT COMMENT ON POSTULE,
                             et c'est toute la différence avec un site d'emploi :
@@ -3389,10 +3302,17 @@ export function ApercuHabitant() {
                             onPointerDown={(ev) => ev.stopPropagation()}
                             onClick={versLeBas}
                           >
+                            {/* LE LIBELLÉ DIT CE QU'IL Y A DERRIÈRE, ET IL LE
+                                DIT DÈS LE PREMIER MOMENT. Il ne comptait qu'à
+                                partir de deux et retombait sinon sur « Voir le
+                                détail », qui ne dit rien : « 1 moment
+                                aujourd'hui » est déjà une information. */}
                             {dessusEv
                               ? "Ce qu’il faut savoir"
-                              : restants.length > 1
-                                ? `${restants.length} moments aujourd’hui`
+                              : restants.length > 0
+                                ? `${restants.length} moment${
+                                    restants.length > 1 ? "s" : ""
+                                  } aujourd’hui`
                                 : "Voir le détail"}
                             <i aria-hidden="true">⌄</i>
                           </button>
@@ -5333,6 +5253,73 @@ export function ApercuHabitant() {
                     <div className="ap-f-tete">
                       <b>Autour de vous</b>
                     </div>
+
+                    {/* ─── CE QUI EST DESCENDU DU BANDEAU ───
+                        « Je cherche… » et les envies vivaient au-dessus de la
+                        photo, sur une ligne à eux. Ils sont ici parce que
+                        c'est déjà la feuille où l'on dit ce qu'on veut voir :
+                        y ajouter « ce que je cherche » et « ce dont j'ai
+                        envie » ne fait que compléter la même phrase.
+
+                        ILS NE REFERMENT PAS LA FEUILLE, à la différence des
+                        métiers. On coche rarement une seule envie, et
+                        rouvrir entre chaque coûterait plus que ce qu'on a
+                        gagné. Le paquet se retrie derrière, on voit les
+                        comptes bouger, et on ferme quand on a fini. */}
+                    <button
+                      type="button"
+                      className="ap-f-cherche"
+                      onClick={() => {
+                        noter("champ-touche");
+                        setBrouillon("");
+                        setFeuille("sortie");
+                      }}
+                    >
+                      <i aria-hidden="true">🔍</i>
+                      <span>
+                        Je cherche…
+                        <em>
+                          Ça part aux commerces ouverts autour de vous. Ils vous
+                          répondent.
+                        </em>
+                      </span>
+                      <s aria-hidden="true">→</s>
+                    </button>
+
+                    {/* Les envies n'ont de sens que sur un métier : « moins de
+                        15 € » ne veut rien dire sur un poste, et un événement
+                        n'est pas « à emporter ». */}
+                    {vue === "metiers" && !embauches && listeEnvies.length > 0 && (
+                      <>
+                        <p className="ap-f-titre">Ce dont j&apos;ai envie</p>
+                        <div className="ap-envies ap-f-envies">
+                          {listeEnvies.map((e) => {
+                            const on = envies.includes(e.cle);
+                            return (
+                              <button
+                                key={e.cle}
+                                type="button"
+                                aria-pressed={on}
+                                className={`ap-e${on ? " on" : ""}`}
+                                onClick={() => {
+                                  setEnvies((v) =>
+                                    v.includes(e.cle)
+                                      ? v.filter((x) => x !== e.cle)
+                                      : [...v, e.cle],
+                                  );
+                                  remettre();
+                                }}
+                              >
+                                <i aria-hidden="true">{e.emoji}</i>
+                                {e.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+
+                    <p className="ap-f-titre">Ce que je regarde</p>
                     <ul className="ap-f-liste">
                       {/* « VOIR TOUT » EST EN PREMIER, ET CE N'EST PAS UN DÉTAIL
                           DE RANGEMENT. Tant qu'il faut choisir un métier avant
@@ -5765,19 +5752,73 @@ export function ApercuHabitant() {
         /* Le nom et l'heure sur deux rangs DANS la meme pastille : le bandeau
            ne grandit pas, la date ne prend plus de ligne a elle. */
 
-        /* LA PASTILLE QUI OUVRE LA DEMANDE A LA VILLE. Vert plein : c'est la
-           seule de la rangee qui ne filtre pas ce qu'on voit mais qui DEMANDE
-           quelque chose, et la confondre avec un filtre serait la perdre. */
-        .ap-e-cherche{color:#CFF7E6!important;background:rgba(61,226,166,.16)!important;
-          border-color:rgba(61,226,166,.5)!important;font-weight:850;}
         .ap-haut .cd-barre{max-width:none;}
 
+        /* ─── LE BANDEAU N'A PLUS QUE DEUX OBJETS ───
+           Le metier a gauche, ce qu'on a garde a droite, et RIEN entre les
+           deux. La marque tenait ce role de calage ; en partant, elle a
+           emporte le flex:1 qui poussait les pastilles vers la droite. C'est
+           donc le metier qui pousse, par sa marge : sans cette ligne, les deux
+           objets se collent a gauche et le bandeau redevient une rangee.
+           ATTENTION : jamais d'accent grave dans ces commentaires CSS. */
         .ap-metier{font:inherit;font-size:11.5px;font-weight:700;cursor:pointer;
-          transition:transform .12s ease;}
+          margin-right:auto;transition:transform .12s ease;}
         .ap-metier em{font-style:normal;font-size:10px;opacity:.65;margin-left:1px;}
         .ap-metier:active{transform:scale(.95);}
-        .ap-fav{transition:transform .28s cubic-bezier(.34,1.5,.64,1);}
-        .ap-fav.pop{transform:scale(1.18);}
+        /* Le compte des envies actives, sur la pastille qui ouvre la feuille
+           ou elles vivent desormais. Un filtre invisible fait croire que la
+           ville est vide. */
+        .ap-filtres-n{text-decoration:none;display:inline-flex;align-items:center;
+          justify-content:center;min-width:16px;height:16px;margin-left:3px;
+          padding:0 4px;border-radius:999px;font-size:10px;font-weight:850;
+          color:#04150E;background:#3DE2A6;}
+
+        /* ─── LA PASTILLE DES FAVORIS A DEUX MOITIES ───
+           Le coeur GARDE l'annonce qu'on regarde ; le chiffre OUVRE ce qu'on a
+           garde. Deux gestes differents : confondus dans un seul bouton, on
+           perd l'un en cherchant l'autre. C'est aussi ce qui a permis de
+           retirer « Garder » de la photo. */
+        .ap-fav2{flex:none;display:flex;align-items:center;overflow:hidden;
+          border-radius:999px;border:1px solid rgba(126,230,192,.28);
+          background:rgba(18,185,129,.14);
+          transition:transform .28s cubic-bezier(.34,1.5,.64,1);}
+        .ap-fav2.pop{transform:scale(1.18);}
+        .ap-fav2 button{font:inherit;font-size:15px;line-height:1;cursor:pointer;
+          border:0;background:none;color:#8FE9C4;padding:7px 10px;
+          transition:transform .12s ease;}
+        .ap-fav2 button:active{transform:scale(.9);}
+        .ap-fav2 button:disabled{opacity:.4;cursor:default;}
+        .ap-fav2 button:disabled:active{transform:none;}
+        .ap-fav2 .nb{font-size:12px;font-weight:850;color:#fff;min-width:30px;
+          border-left:1px solid rgba(126,230,192,.28);
+          font-variant-numeric:tabular-nums;}
+        .ap-fav2 button:focus-visible{outline:2px solid #3DE2A6;outline-offset:-2px;}
+
+        /* ─── CE QUI EST DESCENDU DANS LA FEUILLE ─── */
+        /* flex:none SUR LES TROIS — CE N'EST PAS UNE PRECAUTION.
+           La feuille est une colonne flex dont la liste des metiers porte
+           flex:1 : tout ce qui n'a pas flex:none y est retrecissable en
+           hauteur. Mesure sur la capture : la rangee d'envies s'est fait
+           ecraser, sa deuxieme ligne s'imprimait par-dessus « CE QUE JE
+           REGARDE » et la cinquieme envie, « Table a partager », etait
+           purement invisible. */
+        .ap-f-cherche{flex:none;width:100%;display:flex;align-items:center;gap:11px;
+          font:inherit;font-size:15px;font-weight:700;cursor:pointer;
+          text-align:left;color:#CFF7E6;background:rgba(61,226,166,.13);
+          border:1px solid rgba(61,226,166,.4);border-radius:15px;
+          padding:12px 14px;margin-bottom:16px;transition:transform .12s ease;}
+        .ap-f-cherche:active{transform:scale(.99);}
+        .ap-f-cherche i{font-style:normal;font-size:18px;line-height:1;flex:none;}
+        .ap-f-cherche span{flex:1;min-width:0;}
+        .ap-f-cherche em{display:block;margin-top:2px;font-style:normal;
+          font-size:12px;font-weight:400;color:#8FA79A;line-height:1.3;}
+        .ap-f-cherche s{flex:none;text-decoration:none;font-size:16px;color:#3DE2A6;}
+        .ap-f-titre{flex:none;margin:0 0 8px;font-size:11px;font-weight:850;
+          letter-spacing:.14em;text-transform:uppercase;color:#7F988B;}
+        /* Dans la feuille, la rangee d'envies ne deborde plus par les cotes :
+           elle n'a plus de bandeau a longer, elle a une colonne. */
+        .ap-f-envies{flex:none;margin:0 0 18px;padding:0;flex-wrap:wrap;
+          overflow:visible;}
 
         /* ── LA CONVERSATION AVEC LA VILLE ── */
 
@@ -5949,12 +5990,6 @@ export function ApercuHabitant() {
           display:flex;flex-direction:column;justify-content:flex-end;
           padding:calc(var(--ap-haut-h, 100px) + 8px) 18px
             calc(var(--ap-gestes-h, 80px) + 10px);}
-
-        /* LES DEUX PASTILLES DU HAUT SE PARTAGENT LA LIGNE. « Garder » a pris
-           le coin gauche, laisse libre par la pastille du haut qui est
-           descendue dans le bloc central ; « Y aller » garde le droit. */
-        .ap-dessus .sec .ap-garder-photo{left:14px;right:auto;
-          top:calc(var(--ap-haut-h, 100px) + 8px);}
 
         /* « Y ALLER » REDEVIENT UNE PASTILLE DE VERRE, comme « Garder ».
            MESURE FAITE SUR LA CAPTURE : avec la nouvelle barre, l'ecran
@@ -6412,40 +6447,6 @@ export function ApercuHabitant() {
 
         .ap-yaller.plein{width:100%;justify-content:center;}
 
-        /* ─── GARDER, SUR LA PHOTO ───
-           C'etait la flamme du partage. Defaut releve au test : « le soutenir »
-           et « en parler » ouvraient tous les deux WhatsApp avec un texte, donc
-           deux boutons faisaient la meme chose. Le balayage droit ouvre
-           maintenant le salon, et cette pastille garde l'annonce — un appui,
-           sans rien ouvrir. Le vert de l'application, pas une septieme teinte. */
-        /* La pastille est positionnee par rapport a .cd-bas, pas a la carte :
-           lui appliquer la hauteur du bandeau du haut l'aurait envoyee au
-           milieu de la photo. Mesure, pas deduction. */
-        /* Le cercle est devenu une pastille : le verbe y tient, et c'est lui
-           qui dit ce que le geste fait. */
-        .ap-garder-photo{position:absolute;right:14px;top:56px;z-index:3;
-          display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:15px;
-          line-height:1;cursor:pointer;color:#8FE9C4;
-          background:rgba(8,12,10,.62);-webkit-backdrop-filter:blur(10px);
-          backdrop-filter:blur(10px);border:1px solid rgba(61,226,166,.4);
-          border-radius:999px;padding:8px 11px;transition:transform .12s ease;}
-        .ap-garder-photo:active{transform:scale(.92);}
-        .ap-garder-photo i{font-style:normal;font-size:15px;line-height:1;}
-        .ap-garder-photo b{font-size:12px;font-weight:850;color:#CFF7E6;
-          letter-spacing:-.01em;}
-        .ap-garder-photo.on{background:rgba(61,226,166,.26);
-          border-color:rgba(61,226,166,.75);}
-
-        /* CE QUI EST EN TRAIN DE SE PASSER, sur la face de la carte. Le compte
-           est public, le contenu ne l'est jamais. */
-        .ap-vie{display:flex;align-items:center;gap:9px;width:100%;margin-top:11px;
-          font:inherit;text-align:left;cursor:pointer;color:#A9BBB1;
-          background:rgba(61,226,166,.13);border:1px solid rgba(61,226,166,.35);
-          border-radius:13px;padding:9px 12px;}
-        .ap-vie i{font-style:normal;font-size:15px;line-height:1;flex:none;}
-        .ap-vie span{flex:1;min-width:0;font-size:11.5px;}
-        .ap-vie b{display:block;font-size:13.5px;font-weight:850;color:#CFF7E6;
-          letter-spacing:-.01em;margin-bottom:1px;}
 
         /* CE DONT ON PARLE, EN GRAND ET EN PREMIER. La vignette de 74 pixels
            decorait une conversation ; la photo pleine largeur dit que la page
@@ -6845,11 +6846,8 @@ export function ApercuHabitant() {
           background:rgba(255,255,255,.32);
           box-shadow:0 1px 3px rgba(0,0,0,.5);transition:background .2s ease;}
         .ap-points i.on{background:#fff;}
-        /* Les pastilles laissent la place aux points. « Garder » en fait
-           partie depuis qu'elle a pris le coin gauche : sans cette ligne, elle
-           s'ecrivait par-dessus le premier point du carrousel. */
-        .ap-dessus.carrousel .cd-reste,.ap-dessus.carrousel .cd-aller,
-        .ap-dessus.carrousel .sec .ap-garder-photo{
+        /* Les pastilles laissent la place aux points. */
+        .ap-dessus.carrousel .cd-reste,.ap-dessus.carrousel .cd-aller{
           top:calc(var(--ap-haut-h, 100px) + 19px);}
 
         /* ═══════════════ LA VILLE ═══════════════
@@ -7526,9 +7524,6 @@ export function ApercuHabitant() {
            c'est la hauteur qui manque, et un telephone large mais court a
            exactement le meme probleme. */
         @media (max-height:620px){
-          .ap-dessus .ap-vie{margin-top:7px;padding:7px 10px;border-radius:11px;}
-          .ap-dessus .ap-vie b{font-size:12.5px;}
-          .ap-dessus .ap-vie span{font-size:10.5px;}
           .ap-vers-bas{margin-top:7px;padding:6px 12px;font-size:11.5px;}
 
           /* LA MEME REDUCTION SUR LA SECONDE FACE. Rien ne disparait, tout

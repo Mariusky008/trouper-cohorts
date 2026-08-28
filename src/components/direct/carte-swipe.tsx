@@ -240,7 +240,13 @@ export function CarteSwipe({
       {/* « Y ALLER » EN HAUT À DROITE, à l'opposé du compte à rebours : c'est
           la seule action de la carte qui ne concerne pas le swipe, et la mettre
           en bas la ferait confondre avec les trois gestes. */}
-      {c.itineraire && (
+      {/* IL N'EXISTE PAS NON PLUS SUR LA SECONDE FACE. Un itinéraire est un
+          outil, pas une décision : il se prend une fois qu'on a choisi, et il
+          est déjà en bas de la fiche, pleine largeur. Posé sur la photo, il
+          faisait le troisième objet coloré d'un écran qui n'en veut qu'un —
+          et sur un événement, où la troisième action de la barre DEVIENT
+          « Y aller », on le lisait deux fois. */}
+      {c.itineraire && !sec && (
         <a className="cd-aller" href={c.itineraire} target="_blank" rel="noreferrer noopener">
           <i aria-hidden="true">↗</i>Y aller
         </a>
