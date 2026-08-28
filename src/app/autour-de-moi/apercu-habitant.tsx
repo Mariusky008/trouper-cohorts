@@ -56,6 +56,7 @@ import {
   reagir,
   voter,
   ecrireDansSalon,
+  annoncerLaTete,
   entrerDansSalon,
   heureCourte,
   ouvrirSalon,
@@ -1506,12 +1507,7 @@ export function ApercuHabitant() {
       const s2 = chargerSalons()[salon.cle];
       const t2 = s2 ? enTete(s2) : undefined;
       if (t2 && t2.cle !== avant) {
-        ecrireDansSalon(salon.cle, {
-          qui: "Clikme",
-          voix: "systeme",
-          texte: `🏆 ${t2.ou} passe en tête.`,
-          quand: heureCourte(),
-        });
+        annoncerLaTete(salon.cle, `🏆 ${t2.ou} passe en tête.`, heureCourte());
       }
     }, 60);
   }
@@ -1526,12 +1522,7 @@ export function ApercuHabitant() {
       const s2 = chargerSalons()[salon.cle];
       const t2 = s2 ? enTete(s2) : undefined;
       if (t2 && t2.cle !== avant) {
-        ecrireDansSalon(salon.cle, {
-          qui: "Clikme",
-          voix: "systeme",
-          texte: `🏆 ${t2.ou} passe en tête.`,
-          quand: heureCourte(),
-        });
+        annoncerLaTete(salon.cle, `🏆 ${t2.ou} passe en tête.`, heureCourte());
       }
     }, 60);
   }
@@ -1840,20 +1831,58 @@ export function ApercuHabitant() {
    * ailleurs n'a pas eu lieu pour le groupe : la carte posée dans le fil est ce
    * qui transforme un vote en fait.
    */
+  /**
+   * CE QUE LA DEMANDE VA DIRE — calculé une fois, montré avant d'être envoyé.
+   *
+   * Le même calcul servait à deux endroits qui devaient rester d'accord : le
+   * message qui part, et la confirmation qui l'annonce. Écrits séparément, ils
+   * auraient divergé au premier changement — et une confirmation qui ne montre
+   * pas exactement ce qui va partir est pire que pas de confirmation du tout.
+   */
+  function demandeDuSalon(s: Salon, pourUnSeul = false) {
+    const p = tete;
+    const ou = p?.ou ?? s.ou;
+    const quoi = p?.quoi ?? s.annonce ?? s.sujet;
+    const combien = pourUnSeul ? 1 : Math.max(1, s.viennent.length);
+    return {
+      ou,
+      quoi,
+      combien,
+      prix: p?.prix,
+      // « ce soir · 19 h » est un libellé d'écran, pas une phrase : le point
+      // médian se lit comme une coquille dans un message qu'on envoie.
+      quand: s.quand.toLowerCase().replace(" · ", " à "),
+      texte:
+        `Bonjour, nous sommes ${combien} et nous avons vu « ${quoi} » chez ${ou} sur Clikme. ` +
+        `Est-ce que vous avez de la place ${s.quand.toLowerCase().replace(" · ", " à ")} ? Merci !`,
+    };
+  }
+
+  /**
+   * ─── ON DEMANDE AVANT D'ENVOYER ───
+   *
+   * DÉFAUT RELEVÉ AU TEST : « il faudrait une confirmation pour éviter qu'une
+   * erreur de clic fasse apparaître cette info ». Le bouton faisait DEUX choses
+   * irréversibles d'un seul appui — il ouvrait WhatsApp sur un message adressé
+   * à un commerçant, et il posait dans la conversation une carte « demande
+   * envoyée » que tout le groupe voit. Un doigt qui glisse suffisait, et on ne
+   * peut retirer ni l'un ni l'autre.
+   *
+   * LA CONFIRMATION MONTRE LE MESSAGE, PAS UNE QUESTION. « Êtes-vous sûr ? »
+   * ne renseigne personne et se répond au réflexe. Ce qui fait vraiment
+   * réfléchir, c'est de lire la phrase qu'on s'apprête à envoyer, chez qui elle
+   * va, et pour combien de personnes.
+   */
+  const [aConfirmer, setAConfirmer] = useState<null | { pourUnSeul: boolean }>(null);
+
   function reserverPourLeSalon(pourUnSeul = false) {
     if (!salon) return;
+    const { ou, quoi, combien, texte } = demandeDuSalon(salon, pourUnSeul);
     const p = tete;
-    const ou = p?.ou ?? salon.ou;
-    const quoi = p?.quoi ?? salon.annonce ?? salon.sujet;
-    const combien = pourUnSeul ? 1 : Math.max(1, salon.viennent.length);
     const moi = monPrenom() || "Vous";
     noter("reserve", combien, "salon");
-    surWhatsApp(
-      `Bonjour, nous sommes ${combien} et nous avons vu « ${quoi} » chez ${ou} sur Clikme. ` +
-        // « ce soir · 19 h » est un libellé d'écran, pas une phrase : le point
-        // médian se lit comme une coquille dans un message qu'on envoie.
-        `Est-ce que vous avez de la place ${salon.quand.toLowerCase().replace(" · ", " à ")} ? Merci !`,
-    );
+    setAConfirmer(null);
+    surWhatsApp(texte);
     ecrireDansSalon(salon.cle, {
       qui: moi,
       voix: "systeme",
@@ -2449,7 +2478,7 @@ export function ApercuHabitant() {
                             PAQUET, pas chez celui où l'amie se trouve. */}
                         <button
                           type="button"
-                          onClick={() => avecMonPrenom(() => reserverPourLeSalon(true))}
+                          onClick={() => avecMonPrenom(() => setAConfirmer({ pourUnSeul: true }))}
                         >
                           📅 Prendre le même
                         </button>
@@ -2502,6 +2531,20 @@ export function ApercuHabitant() {
                             {m.carte.tampon && <s>✓ {m.carte.tampon}</s>}
                           </span>
                           <u>{m.quand}</u>
+                        </div>
+                      ) : m.voix === "systeme" ? (
+                        /* ─── UNE ANNONCE N'EST PAS QUELQU'UN QUI PARLE ───
+                           DÉFAUT VU DANS LE FIL : « 🏆 Chez Bergine passe en
+                           tête » s'affichait comme un message, avec une pastille
+                           « C », le nom « Clikme », une bulle et un cœur. On
+                           pouvait donc AIMER une annonce du système, et une
+                           machine avait un avatar au milieu de quatre amis.
+                           C'est un fait qui arrive, pas une prise de parole :
+                           une ligne fine, centrée, sans visage et sans réaction.
+                           Ce qui a une vraie carte — une réservation — garde la
+                           sienne, juste au-dessus. */
+                        <div key={m.id} className="ap-sal-dit">
+                          <span>{m.texte}</span>
                         </div>
                       ) : (
                         <div key={m.id} className={`ap-sal-m ${m.voix}`}>
@@ -2570,7 +2613,7 @@ export function ApercuHabitant() {
                 <button
                   type="button"
                   className="ap-act fort"
-                  onClick={() => avecMonPrenom(reserverPourLeSalon)}
+                  onClick={() => avecMonPrenom(() => setAConfirmer({ pourUnSeul: false }))}
                 >
                   <i aria-hidden="true">📅</i>
                   Réserver
@@ -4588,6 +4631,78 @@ export function ApercuHabitant() {
             </div>
           )}
 
+          {/* ─── LA DEMANDE, RELUE AVANT DE PARTIR ───
+              Le bouton faisait DEUX choses irréversibles d'un seul appui : il
+              ouvrait WhatsApp sur un message adressé à un commerçant, et il
+              posait dans la conversation une carte « demande envoyée » que tout
+              le groupe voit. Un doigt qui glisse suffisait, et on ne peut
+              retirer ni l'un ni l'autre.
+              ON MONTRE LE MESSAGE, PAS UNE QUESTION. « Êtes-vous sûr ? » ne
+              renseigne personne et se répond au réflexe ; ce qui fait réfléchir,
+              c'est de lire la phrase qu'on s'apprête à envoyer. */}
+          {aConfirmer && salon && (
+            <>
+              <button
+                type="button"
+                className="ap-fond"
+                aria-label="Fermer"
+                onClick={() => setAConfirmer(null)}
+              />
+              <div className="ap-feuille" role="dialog" aria-modal="true">
+                {(() => {
+                  const d = demandeDuSalon(salon, aConfirmer.pourUnSeul);
+                  return (
+                    <>
+                      <div className="ap-f-tete">
+                        <b>Envoyer la demande&nbsp;?</b>
+                        <span className="simple">
+                          Elle part sur WhatsApp, et le groupe la verra dans la
+                          conversation.
+                        </span>
+                      </div>
+                      <div className="ap-conf">
+                        <div className="ap-conf-l">
+                          <i aria-hidden="true">📍</i>
+                          <span>
+                            <b>{d.ou}</b>
+                            {d.quoi}
+                            {d.prix ? ` · ${d.prix}` : ""}
+                          </span>
+                        </div>
+                        <div className="ap-conf-l">
+                          <i aria-hidden="true">👥</i>
+                          <span>
+                            <b>
+                              {d.combien}{" "}
+                              {d.combien > 1 ? "personnes" : "personne"}
+                            </b>
+                            {d.quand}
+                          </span>
+                        </div>
+                        {/* LE MESSAGE EXACT, mot pour mot. C'est lui qu'on
+                            relit, pas un résumé : un résumé se croit, une
+                            phrase se vérifie. */}
+                        <p className="ap-conf-mot">{d.texte}</p>
+                      </div>
+                      <div className="ap-conf-b">
+                        <button type="button" onClick={() => setAConfirmer(null)}>
+                          Annuler
+                        </button>
+                        <button
+                          type="button"
+                          className="fort"
+                          onClick={() => reserverPourLeSalon(aConfirmer.pourUnSeul)}
+                        >
+                          Envoyer la demande
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </>
+          )}
+
           {proposeOuvert && salon && (
             <>
               <button
@@ -5934,6 +6049,36 @@ export function ApercuHabitant() {
            sur un ecran de 360. Chaque bloc garde son flex:none, et c'est le
            corps qui defile. */
         .ap-sal-fil{display:flex;flex-direction:column;gap:9px;padding:12px 2px 2px;}
+        /* ── LA DEMANDE, RELUE AVANT DE PARTIR ─────────────────────────
+           Ce qu'on montre n'est pas une question mais LE MESSAGE : « etes-vous
+           sur ? » ne renseigne personne et se repond au reflexe. */
+        .ap-conf{display:flex;flex-direction:column;gap:11px;padding:2px 0 4px;}
+        .ap-conf-l{display:flex;align-items:flex-start;gap:11px;}
+        .ap-conf-l i{font-style:normal;font-size:16px;line-height:1.3;flex:none;}
+        .ap-conf-l span{flex:1;min-width:0;font-size:12.5px;color:#8C9C94;
+          line-height:1.4;}
+        .ap-conf-l b{display:block;font-size:14.5px;font-weight:800;color:#EAF2EC;
+          letter-spacing:-.01em;}
+        .ap-conf-mot{margin:2px 0 0;font-size:13px;line-height:1.5;color:#B9C6CE;
+          background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+          border-radius:14px;padding:12px 14px;}
+        .ap-conf-b{display:flex;gap:9px;margin-top:16px;}
+        .ap-conf-b button{flex:1;font:inherit;font-size:14.5px;font-weight:800;
+          cursor:pointer;color:#C7D3CC;background:rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.13);border-radius:14px;padding:13px;}
+        .ap-conf-b button.fort{color:#04150E;font-weight:850;border-color:transparent;
+          background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
+        .ap-conf-b button:active{transform:scale(.98);}
+
+        /* CE QUI ARRIVE, PAS CE QUI SE DIT. Une ligne fine et centree, sans
+           visage et sans coeur : le systeme n'est pas un convive. */
+        .ap-sal-dit{align-self:center;max-width:88%;margin:2px 0 9px;
+          text-align:center;}
+        .ap-sal-dit span{display:inline-block;font-size:12px;line-height:1.4;
+          font-weight:700;color:#8FA3AC;background:rgba(255,255,255,.05);
+          border:1px solid rgba(255,255,255,.09);border-radius:999px;
+          padding:6px 13px;}
+
         .ap-sal-m{position:relative;max-width:84%;display:flex;flex-direction:column;
           gap:3px;border-radius:16px;padding:9px 12px;margin-bottom:9px;}
         .ap-sal-m b{display:flex;align-items:center;gap:6px;}

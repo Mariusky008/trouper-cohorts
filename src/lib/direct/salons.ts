@@ -730,6 +730,56 @@ export function ecrireDansSalon(cle: string, m: Omit<MessageSalon, "id">) {
   garder({ ...avant, [cle]: { ...s, messages: [...s.messages, { ...m, id }] } });
 }
 
+/** Le préfixe qui marque une annonce de tête, et rien d'autre. */
+const TETE = "🏆 ";
+
+/**
+ * ANNONCER CE QUI MÈNE — UNE SEULE LIGNE, QUI SE MET À JOUR.
+ *
+ * DÉFAUT RELEVÉ AU TEST, et il rend le salon illisible : chaque déplacement de
+ * voix écrivait une ligne de plus. Un groupe qui hésite entre deux endroits en
+ * produisait cinq d'affilée —
+ *
+ *     🏆 Chez Bergine passe en tête.
+ *     🏆 La Grande Tablée passe en tête.
+ *     🏆 Chez Bergine passe en tête.
+ *     🏆 La Grande Tablée passe en tête.
+ *     🏆 Chez Bergine passe en tête.
+ *
+ * — et la conversation devenait le journal d'un serveur. L'intention était
+ * bonne : un bandeau qui change pendant qu'on regarde ailleurs passe inaperçu,
+ * et une ligne dans le fil est ce qu'un groupe relit. Mais CINQ lignes ne se
+ * relisent pas, elles noient ce qui a été dit.
+ *
+ * ON REMPLACE PLUTÔT QUE D'EMPILER : si la dernière chose du fil est déjà une
+ * annonce de tête, elle prend la nouvelle valeur. Dès que quelqu'un a parlé
+ * entre-temps, la suivante s'écrit normalement — parce qu'alors elle répond à
+ * quelque chose, et qu'on la relira.
+ *
+ * ET RIEN SI RIEN N'A CHANGÉ : revenir à ce qui menait déjà n'est pas un
+ * événement, c'est un aller-retour.
+ */
+export function annoncerLaTete(cle: string, texte: string, quand: string) {
+  const avant = chargerSalons();
+  const s = avant[cle];
+  if (!s) return;
+  const dernier = s.messages[s.messages.length - 1];
+  const remplace =
+    dernier && dernier.voix === "systeme" && dernier.texte.startsWith(TETE);
+  if (remplace && dernier.texte === texte) return;
+  const ligne: MessageSalon = {
+    id: remplace ? dernier.id : `m${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
+    qui: "Clikme",
+    voix: "systeme",
+    texte,
+    quand,
+  };
+  const messages = remplace
+    ? [...s.messages.slice(0, -1), ligne]
+    : [...s.messages, ligne];
+  garder({ ...avant, [cle]: { ...s, messages } });
+}
+
 // ─── CE QUI EST EN TÊTE, ET COMMENT ON Y ARRIVE ────────────────────────────
 //
 // PAS DE SEUIL DE MAJORITÉ, ET C'EST DÉLIBÉRÉ. « Quand la majorité est
