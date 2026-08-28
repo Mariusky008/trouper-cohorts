@@ -144,15 +144,48 @@ export function GestesDirect({
   );
 }
 
+/**
+ * LES DEUX FAÇONS DE DESSINER LA MÊME CARTE.
+ *
+ * `fiche` est la face historique : le nom du commerce en gros, puis le métier,
+ * puis ce qui est proposé, puis le prix. Elle se lit comme une fiche — de haut
+ * en bas, à gauche — et c'est ce qu'il faut là où la carte est un exemple posé
+ * dans une page (la démonstration commerçant, la page d'accueil).
+ *
+ * `seconde` est la face de l'application : ce qu'on doit comprendre en une
+ * seconde, et rien d'autre. LE DÉFAUT QU'ELLE CORRIGE A ÉTÉ RELEVÉ SUR L'ÉCRAN
+ * RÉEL : « on a du mal à lire correctement le message… normalement on devrait
+ * comprendre en une seconde le menu grâce à la photo et grâce aux textes ».
+ * La raison tenait à la hiérarchie : le NOM DU COMMERCE était la plus grosse
+ * ligne de la carte, alors que ce qu'on choisit à midi, c'est un plat. Ici
+ * l'ordre est celui de la décision — ce que c'est, ce que c'est vraiment, ce
+ * que ça coûte, chez qui, jusqu'à quand — et c'est centré, parce qu'un bloc
+ * centré sur une photo se lit d'un coup et non ligne à ligne.
+ *
+ * POURQUOI LES DEUX COHABITENT ICI PLUTÔT QUE DANS DEUX FICHIERS. C'est la
+ * raison d'être de ce fichier : une seule carte, un seul jeu de classes, un
+ * seul type. Deux fichiers, ce serait de nouveau deux cartes qui divergent.
+ *
+ * CE QUI RESTE À FAIRE LE JOUR OÙ LA DÉMONSTRATION L'ADOPTERA : `carteDirectHtml`
+ * ne sait dessiner que `fiche`. Elle sert des scènes remplies par `innerHTML`,
+ * qui ne montrent aujourd'hui que la face historique. Le jour où la promesse
+ * faite au commerçant montre la nouvelle face, cette fonction doit suivre —
+ * sans quoi on aurait exactement ce que ce fichier existe pour empêcher.
+ */
+export type FaceCarte = "fiche" | "seconde";
+
 export function CarteSwipe({
   carte,
   style,
   className = "",
+  variante = "fiche",
   children,
 }: {
   carte: CarteDirect;
   style?: CSSProperties;
   className?: string;
+  /** Voir `FaceCarte`. Par défaut la face historique : personne ne change sans le demander. */
+  variante?: FaceCarte;
   /**
    * CE QUE L'ÉCRAN QUI L'UTILISE AJOUTE AU BAS DE LA CARTE.
    *
@@ -170,8 +203,9 @@ export function CarteSwipe({
   children?: ReactNode;
 }) {
   const c = carte;
+  const sec = variante === "seconde";
   return (
-    <div className={`cd-carte ${className}`} style={style}>
+    <div className={`cd-carte${sec ? " sec" : ""} ${className}`} style={style}>
       {/* DEUX COUCHES, PAS UNE, et c'est un filet de sécurité.
           L'image est empilée SUR un dégradé. Si le fichier manque ou tarde, la
           couche du dessous reste : la carte est sombre et propre au lieu d'être
@@ -195,7 +229,14 @@ export function CarteSwipe({
           photo claire devient illisible une fois sur deux. */}
       <div className="cd-voile" aria-hidden="true" />
 
-      {c.reste && <span className="cd-reste"><i aria-hidden="true">⏳</i>{c.reste}</span>}
+      {/* LA PASTILLE DU HAUT N'EXISTE QUE SUR LA FICHE. Sur la seconde face,
+          « jusqu'à quand » est descendu dans le bloc central, avec le reste de
+          la décision : une échéance lue à l'autre bout de l'écran du prix ne
+          se rattache à rien, et elle occupait le seul coin qui pouvait rester
+          vide. */}
+      {c.reste && !sec && (
+        <span className="cd-reste"><i aria-hidden="true">⏳</i>{c.reste}</span>
+      )}
       {/* « Y ALLER » EN HAUT À DROITE, à l'opposé du compte à rebours : c'est
           la seule action de la carte qui ne concerne pas le swipe, et la mettre
           en bas la ferait confondre avec les trois gestes. */}
@@ -206,25 +247,81 @@ export function CarteSwipe({
       )}
 
       <div className="cd-bas">
-        <div className="cd-nom">{c.nom}</div>
-        <div className="cd-ou">
-          <i aria-hidden="true">📍</i>{c.metier} · {c.ville}
-          {c.distance && <b>{c.distance}</b>}
-        </div>
-        {c.social && <div className="cd-social"><i aria-hidden="true">💚</i>{c.social}</div>}
+        {sec ? (
+          /* ─── L'ORDRE DE LA DÉCISION ───
+             Ce que c'est (la nature), ce que c'est vraiment (l'offre), ce que
+             ça coûte, chez qui, jusqu'à quand. Cinq lignes, dans cet ordre-là,
+             et rien entre elles.
 
-        <div className="cd-quoi"><i aria-hidden="true">{c.icone}</i>{c.quoi}</div>
-        {!!c.lignes?.length && (
-          <div className="cd-lignes">
-            {c.lignes.map((l) => (<span key={l}>{l}</span>))}
+             LA NATURE RETOMBE SUR LE MÉTIER quand l'annonce n'en porte pas :
+             « BOULANGERIE » au-dessus de « La tourte de seigle » se lit aussi
+             bien que « SORTIE DU FOUR », et le métier ne se répète pas plus
+             bas — la ligne du commerce ne porte que son nom, sa ville et sa
+             distance. */
+          <div className="cd-dit">
+            {(c.etiquette || c.metier) && (
+              <p className="cd-nature">{c.etiquette || c.metier}</p>
+            )}
+            <h2 className="cd-offre">{c.quoi}</h2>
+            {/* LE DÉTAIL RESTE, MAIS IL A CESSÉ D'ÊTRE UN BLOC. Sur une
+                invitation, c'est le mot du commerçant : le supprimer ferait
+                d'un message adressé une annonce de plus. Sur un menu, c'est la
+                composition du plat. Deux lignes au maximum, et petites : entre
+                le titre en serif et le prix, il n'a aucune chance de prendre
+                le dessus. */}
+            {!!c.lignes?.length && (
+              <p className="cd-detail">{c.lignes.slice(0, 2).join(" · ")}</p>
+            )}
+            {(c.prix || c.prixBarre) && (
+              <p className="cd-prixg">
+                {c.prix}
+                {c.prixBarre && <s>{c.prixBarre}</s>}
+              </p>
+            )}
+            {/* LE NOM DU COMMERCE EST LISIBLE, ET IL N'EST PLUS LE TITRE.
+                Demande explicite, et elle est juste : « si c'est un restaurant
+                que je n'aime pas, alors quoi qu'il serve je n'irai pas, donc
+                j'ai besoin de le savoir ». C'est une information de décision —
+                elle a la taille d'une information. */}
+            <p className="cd-chez">
+              {c.nom}
+              <s>
+                {" · "}
+                {c.ville}
+                {/* L'ESPACE DE « 210 m » EST INSÉCABLE, et ce n'est pas du
+                    zèle : sur une enseigne un peu longue, la ligne se coupait
+                    entre le nombre et son unité et laissait un « m » tout seul
+                    sur la ligne suivante. Vu sur « Une boutique de la rue
+                    piétonne · Dax · 210 m », à 390 points. */}
+                {c.distance ? ` · ${c.distance.replace(/ /g, " ")}` : ""}
+              </s>
+            </p>
+            {c.social && <span className="cd-social">💚 {c.social}</span>}
+            {c.reste && <span className="cd-quand">{c.reste}</span>}
           </div>
-        )}
-        {(c.prix || c.etiquette) && (
-          <div className="cd-prix">
-            {c.prix && <b>{c.prix}</b>}
-            {c.prixBarre && <s>{c.prixBarre}</s>}
-            {c.etiquette && <em>{c.etiquette}</em>}
-          </div>
+        ) : (
+          <>
+            <div className="cd-nom">{c.nom}</div>
+            <div className="cd-ou">
+              <i aria-hidden="true">📍</i>{c.metier} · {c.ville}
+              {c.distance && <b>{c.distance}</b>}
+            </div>
+            {c.social && <div className="cd-social"><i aria-hidden="true">💚</i>{c.social}</div>}
+
+            <div className="cd-quoi"><i aria-hidden="true">{c.icone}</i>{c.quoi}</div>
+            {!!c.lignes?.length && (
+              <div className="cd-lignes">
+                {c.lignes.map((l) => (<span key={l}>{l}</span>))}
+              </div>
+            )}
+            {(c.prix || c.etiquette) && (
+              <div className="cd-prix">
+                {c.prix && <b>{c.prix}</b>}
+                {c.prixBarre && <s>{c.prixBarre}</s>}
+                {c.etiquette && <em>{c.etiquette}</em>}
+              </div>
+            )}
+          </>
         )}
         {children}
       </div>
@@ -384,6 +481,59 @@ export function StylesDirect() {
         .cd-prix s{font-size:13px;color:#93A79C;}
         .cd-prix em{font-style:normal;font-size:10.5px;font-weight:850;letter-spacing:.08em;color:#3A2A00;
           background:#FFC400;border-radius:6px;padding:4px 8px;}
+
+        /* ═══ LA SECONDE FACE — CE QU'ON DOIT COMPRENDRE EN UNE SECONDE ═══
+           Voir le type FaceCarte, plus haut, pour ce qu'elle corrige.
+           ATTENTION : jamais d'accent grave dans ces commentaires CSS.
+
+           LE VOILE NE COUVRE PLUS LA PHOTO, IL MONTE SOUS LE TEXTE. Un voile
+           uniforme eteignait la seule chose qui donne faim ; celui-ci laisse
+           le milieu de l'image en pleine lumiere et ne s'epaissit que la ou
+           il y a des mots. Il garde un souffle en haut, parce que le bandeau
+           des filtres et les deux pastilles y vivent.
+
+           IL N'EST PAS UNE PREFERENCE, C'EST UNE CONDITION. Mesure faite sur
+           la meme annonce avec une photo de commercant ordinaire — claire,
+           plate, au neon : sans voile, le titre et le prix se perdent dans
+           l'assiette. La face ne tient que parce que ce degrade est la. */
+        .cd-carte.sec .cd-voile{background:linear-gradient(180deg,
+          rgba(4,8,6,.52) 0%,rgba(4,8,6,.10) 13%,rgba(4,8,6,0) 27%,
+          rgba(4,8,6,.12) 44%,rgba(4,8,6,.44) 63%,rgba(4,8,6,.80) 82%,
+          rgba(4,8,6,.94) 100%);}
+
+        /* CENTRE, ET C'EST STRUCTUREL : un bloc centre sur une photo se lit
+           d'un coup ; aligne a gauche, il se lit ligne apres ligne, ce qui est
+           exactement le temps qu'on n'a pas. */
+        .cd-carte.sec .cd-bas{align-items:center;text-align:center;gap:0;}
+        .cd-dit{display:flex;flex-direction:column;align-items:center;
+          width:100%;min-width:0;}
+        .cd-nature{margin:0;font-size:11px;font-weight:800;letter-spacing:.24em;
+          text-transform:uppercase;color:#EFEAD9;opacity:.92;}
+        /* LE PLAT EST LA PLUS GROSSE LIGNE DE LA CARTE. C'est tout le
+           correctif : avant, c'etait le nom du commerce. */
+        .cd-offre{margin:8px 0 0;font-family:Georgia,'Times New Roman',serif;
+          font-weight:700;font-size:clamp(27px,8.6vw,40px);line-height:1.03;
+          letter-spacing:-.02em;text-transform:uppercase;color:#fff;
+          text-shadow:0 2px 18px rgba(0,0,0,.55);}
+        .cd-detail{margin:7px 0 0;max-width:31ch;font-size:12.5px;
+          line-height:1.35;color:#C8D6CD;text-wrap:balance;
+          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+          overflow:hidden;}
+        .cd-prixg{margin:9px 0 0;font-size:clamp(24px,7.4vw,34px);font-weight:850;
+          letter-spacing:-.03em;line-height:1;color:#fff;
+          font-variant-numeric:tabular-nums;}
+        .cd-prixg s{margin-left:9px;font-size:14px;font-weight:600;color:#9DB0A6;}
+        .cd-chez{margin:11px 0 0;font-size:14.5px;font-weight:650;
+          line-height:1.25;color:#EAF2EC;text-wrap:balance;}
+        .cd-chez s{text-decoration:none;font-weight:400;color:#B4C6BB;}
+        .cd-carte.sec .cd-social{align-self:center;margin-top:9px;}
+        /* « JUSQU'A QUAND » EST LA SEULE RARETE QU'ON PUISSE ECRIRE SANS
+           L'INVENTER. On ne sait pas combien il reste de parts — un commercant
+           photographie son ardoise le matin et ne decompte rien pendant le
+           service. L'heure, elle, on la connait sans rien demander a personne. */
+        .cd-quand{display:inline-block;margin-top:11px;font-size:11.5px;
+          font-weight:850;letter-spacing:.05em;text-transform:uppercase;
+          color:#04150E;background:#F0B429;border-radius:999px;padding:5px 12px;}
 
         .cd-gestes{display:flex;align-items:flex-start;justify-content:center;gap:26px;margin-top:16px;}
         .cd-g{display:flex;flex-direction:column;align-items:center;gap:6px;}

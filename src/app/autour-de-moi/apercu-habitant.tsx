@@ -3119,6 +3119,7 @@ export function ApercuHabitant() {
                   <CarteSwipe
                     key={`d-${dessous.id}`}
                     carte={carteDe(dessous)}
+                    variante="seconde"
                     className="ap-carte dessous"
                   />
                 )}
@@ -3238,6 +3239,11 @@ export function ApercuHabitant() {
                             ? { ...carteDe(sommet), photo: galerie[rangPhoto] }
                             : carteDe(sommet)
                         }
+                        /* LA FACE « UNE SECONDE » — et elle ne vaut QUE pour
+                           l'annonce principale. La démonstration commerçant et
+                           la page d'accueil gardent la face historique : rien
+                           ne devait changer ailleurs. */
+                        variante="seconde"
                         className="ap-carte"
                       >
                         {/* LA FLAMME EST SUR LA PHOTO, PAS SEULEMENT SOUS LE
@@ -3363,14 +3369,31 @@ export function ApercuHabitant() {
                             <span>· {avisNotes(avisDuMoment(dessus, heure)).length} avis</span>
                           </span>
                         )}
-                        {dessus && !estInvitation(dessus) && restants.length > 1 && (
+                        {/* ─── CE QUI REMPLACE LE BOUTON « DÉTAILS » ───
+                            Il était le quatrième rond de la barre du bas, et
+                            un rond ne dit pas ce qu'il y a derrière. Ici le
+                            libellé porte à la fois le geste ET son contenu :
+                            « 3 moments aujourd'hui » est une information en
+                            soi — ce commerce a d'autres choses prévues.
+
+                            IL EST DEVENU INCONDITIONNEL, et il le fallait : en
+                            quittant la barre, il n'avait plus de secours. Une
+                            invitation, un événement, un commerce qui n'a plus
+                            qu'un seul moment ont tous quelque chose sous le
+                            pli ; c'est le libellé qui s'adapte, pas la
+                            présence du bouton. */}
+                        {sommet && (
                           <button
                             type="button"
                             className="ap-vers-bas"
                             onPointerDown={(ev) => ev.stopPropagation()}
                             onClick={versLeBas}
                           >
-                            {restants.length} moments aujourd&apos;hui
+                            {dessusEv
+                              ? "Ce qu’il faut savoir"
+                              : restants.length > 1
+                                ? `${restants.length} moments aujourd’hui`
+                                : "Voir le détail"}
                             <i aria-hidden="true">⌄</i>
                           </button>
                         )}
@@ -4260,21 +4283,50 @@ export function ApercuHabitant() {
               Ils ne disparaissent que le temps de l'attente. */}
           {!(sortie && arrivees.length === 0) && (
           <div
-            className={`cd-gestes ap-gestes${descendu ? " pose" : ""}`}
+            className={`ap-gestes${descendu ? " pose" : ""}`}
             ref={barreGestes}
           >
-            <button type="button" className="cd-g" onClick={() => partir("gauche")} disabled={!sommet}>
-              <i aria-hidden="true">✕</i>
-              <em>Passer</em>
-            </button>
+            {/* ─── PASSER RESTE UN ROND, ET IL EST LE SEUL ───
+                C'est le geste qu'on fait sans y penser, et il a déjà son
+                balayage. Lui donner la même largeur que les deux actions
+                reviendrait à proposer de partir aussi fort que de venir. */}
             <button
               type="button"
-              className="cd-g grand"
+              className="ap-rond"
+              aria-label="Passer à la suivante"
+              onClick={() => partir("gauche")}
+              disabled={!sommet}
+            >
+              ✕
+            </button>
+            {/* ─── LES DEUX ACTIONS ONT EXACTEMENT LE MÊME POIDS ───
+                Ce n'est pas de l'indécision, c'est la seule position honnête
+                aujourd'hui, et elle a été discutée.
+
+                « EN PARLER » EST CE QUE PERSONNE D'AUTRE NE FAIT. C'est le
+                mécanisme sur lequel tout le produit repose — salon,
+                invitation, vote, décision — et le seul geste qui fasse entrer
+                trois autres personnes dans l'application. Réserver, en
+                revanche, fait sortir de l'application quelqu'un qui serait de
+                toute façon allé chez Google ou au téléphone.
+
+                MAIS « RÉSERVER » EST LA SEULE ACTION QUE LE COMMERÇANT PEUT
+                MESURER, et c'est elle qui justifie sa présence : « vous avez
+                eu onze réservations » se comprend, « trente-quatre personnes
+                en ont parlé » ne remplit pas encore une salle.
+
+                Alors on ne tranche pas à la place des gens : même taille, même
+                corps, deux teintes seulement pour qu'on ne les confonde pas.
+                Lequel est pressé devient une mesure — et cette mesure est
+                exactement ce qu'on aura à montrer au bout de six mois. */}
+            <button
+              type="button"
+              className="ap-agir parler"
               onClick={() => partir("droite")}
               disabled={!sommet}
             >
               <i aria-hidden="true">💬</i>
-              <em>En parler</em>
+              En parler
             </button>
             {/* LE TROISIÈME GESTE PORTE L'ENGAGEMENT DU MOMENT, et il change de
                 nature avec ce qu'on regarde. Sur une invitation on ne réserve
@@ -4283,7 +4335,7 @@ export function ApercuHabitant() {
                 n'apprend qu'un seul geste pour toute l'application. */}
             <button
               type="button"
-              className="cd-g ambre"
+              className="ap-agir engage"
               onClick={() => {
                 // SUR UN ÉVÉNEMENT, IL N'Y A RIEN À RÉSERVER — on y va, ou on
                 // n'y va pas. Le troisième geste ouvre donc l'itinéraire, qui
@@ -4328,20 +4380,17 @@ export function ApercuHabitant() {
                       ? "🚶"
                       : "📅"}
               </i>
-              <em>
-                {dessusEv
-                  ? "Y aller"
-                  : embauches
-                    ? "Je passe"
-                    : dessus && estInvitation(dessus)
-                      ? "J'y vais"
-                      : "Réserver"}
-              </em>
+              {dessusEv
+                ? "Y aller"
+                : embauches
+                  ? "Je passe"
+                  : dessus && estInvitation(dessus)
+                    ? "J’y vais"
+                    : "Réserver"}
             </button>
-            <button type="button" className="cd-g" onClick={versLeBas} disabled={!sommet}>
-              <i aria-hidden="true">↓</i>
-              <em>Détails</em>
-            </button>
+            {/* LE QUATRIÈME ROND A DISPARU, ET IL N'EST PAS PERDU. « Détails »
+                est remonté sur la photo, où il dit ce qu'il y a derrière —
+                « 3 moments aujourd'hui » — au lieu d'une flèche muette. */}
           </div>
           )}
 
@@ -5824,17 +5873,12 @@ export function ApercuHabitant() {
         .ap-metier.embauche{color:#06121F;background:#7DA8FF;border-color:transparent;}
         .ap-dessus.emb .cd-carte{box-shadow:inset 0 0 0 2px #7DA8FF,
           0 0 40px -14px rgba(125,168,255,.55);}
-        .ap-dessus.emb .cd-quoi{font-size:17.5px;font-weight:850;letter-spacing:-.02em;
-          color:#D9E6FF;}
-        .ap-dessus.emb .cd-quoi i{font-size:17px;}
-        .ap-dessus.emb .cd-prix b{color:#B8CEFF;}
-        .ap-dessus.emb .cd-prix em{background:#7DA8FF;color:#06121F;}
-        .ap-dessus.emb .cd-reste{color:#06121F;font-weight:850;
-          background:linear-gradient(140deg,#9FBEFF,#5C8FF0);border-color:transparent;}
-        /* Le composant prefixe cette pastille d'un sablier : juste pour une
-           echeance, faux pour un poste — « On recrute » ne s'epuise pas a midi.
-           Le sablier saute, le texte parle seul. */
-        .ap-dessus.emb .cd-reste i{display:none;}
+        /* Les couleurs du poste sur les lignes de la seconde face — .cd-offre,
+           .cd-nature, .cd-quand — sont posees plus bas, avec celles de
+           l'invitation et de l'evenement. Les regles qui visaient .cd-quoi,
+           .cd-prix et .cd-reste ont ete retirees : ces lignes ne sont plus
+           rendues ici, et une regle morte finit toujours par etre lue comme
+           une regle vivante. */
         /* La ligne du bas d'une carte de poste : comment on se presente. C'est
            la seule chose a retenir, donc c'est la seule pastille. */
         .ap-emb-passez{display:inline-flex;align-items:center;gap:7px;margin-top:11px;
@@ -5884,12 +5928,62 @@ export function ApercuHabitant() {
            disparaitrait sous les gestes. */
         .ap-dessus .cd-bas{max-height:calc(100% - var(--ap-haut-h, 100px) - 8px);
           overflow:hidden;padding-bottom:calc(var(--ap-gestes-h, 80px) + 6px);}
-        .ap-dessus .cd-reste,.ap-dessus .cd-aller,.ap-dessus .ap-yaller-haut{
+        .ap-dessus .cd-aller{top:calc(var(--ap-haut-h, 100px) + 8px);}
+
+        /* ─── LA FACE « UNE SECONDE » : ELLE OCCUPE TOUTE LA CARTE ───
+           Sur la face historique, .cd-bas est une boite ancree en bas dont la
+           hauteur suit son contenu, et on la bornait pour qu'elle ne morde pas
+           le bandeau du haut. Ici elle prend la carte entiere et pousse son
+           contenu vers le bas par flex-end. DEUX RAISONS, et la seconde est
+           celle qui compte :
+            · le bloc central se pose alors a une distance FIXE des gestes,
+              quel que soit le nombre de lignes ; il ne remonte plus quand le
+              plat porte une description ;
+            · la pastille « Garder », qui est un enfant absolu de .cd-bas, se
+              repere enfin par rapport a la CARTE. Elle etait posee a 56 points
+              du haut d'une boite dont la hauteur variait avec le texte : elle
+              flottait au milieu de la photo sur une annonce courte.
+           Le padding du haut remplace la borne : la face ne peut toujours pas
+           passer sous le bandeau des filtres. */
+        .ap-carte.sec .cd-bas{inset:0;max-height:none;
+          display:flex;flex-direction:column;justify-content:flex-end;
+          padding:calc(var(--ap-haut-h, 100px) + 8px) 18px
+            calc(var(--ap-gestes-h, 80px) + 10px);}
+
+        /* LES DEUX PASTILLES DU HAUT SE PARTAGENT LA LIGNE. « Garder » a pris
+           le coin gauche, laisse libre par la pastille du haut qui est
+           descendue dans le bloc central ; « Y aller » garde le droit. */
+        .ap-dessus .sec .ap-garder-photo{left:14px;right:auto;
           top:calc(var(--ap-haut-h, 100px) + 8px);}
 
-        .ap-dessus .cd-reste{max-width:calc(100% - 132px);overflow:hidden;
-          white-space:nowrap;text-overflow:ellipsis;display:block;line-height:1.35;}
-        .ap-dessus .cd-reste i{margin-right:6px;}
+        /* « Y ALLER » REDEVIENT UNE PASTILLE DE VERRE, comme « Garder ».
+           MESURE FAITE SUR LA CAPTURE : avec la nouvelle barre, l'ecran
+           portait TROIS pleins colores en meme temps — « Y aller » en vert en
+           haut, « En parler » en vert et « Reserver » en ambre en bas. Deux
+           verts a deux endroits ne disent pas la meme chose, et le bruit
+           qu'on venait d'enlever du centre etait revenu par les coins. Un
+           itineraire est un outil ; il n'a pas a peser autant qu'une
+           decision. La forme, la taille et la cible ne bougent pas. */
+        .ap-carte.sec .cd-aller{color:#CFF7E6;background:rgba(8,12,10,.62);
+          border:1px solid rgba(61,226,166,.4);box-shadow:none;
+          -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
+        /* SUR UN EVENEMENT, IL DISPARAIT — parce qu'il est deja en bas.
+           La troisieme action change avec la nature de ce qu'on regarde : sur
+           un evenement il n'y a rien a reserver, elle devient « Y aller ». On
+           lisait donc « Y aller » deux fois sur le meme ecran, a dix
+           centimetres d'ecart. Vu sur le concert au kiosque du parc. */
+        .ap-dessus.ev .cd-aller{display:none;}
+
+        /* LES TROIS NATURES GARDENT LEUR COULEUR, sur les lignes qui ont
+           change de nom. Sans ces reprises, une invitation redevenait une
+           annonce ordinaire — et c'est precisement ce que l'or empeche. */
+        .ap-dessus.invit .cd-offre,.ap-dessus.invit .cd-nature{color:#FFE39A;}
+        .ap-dessus.invit .cd-quand{color:#04150E;
+          background:linear-gradient(140deg,#F7C948,#E09B12);}
+        .ap-dessus.emb .cd-offre,.ap-dessus.emb .cd-nature{color:#B8CEFF;}
+        .ap-dessus.emb .cd-quand{color:#06121F;background:#7DA8FF;}
+        .ap-dessus.ev .cd-offre,.ap-dessus.ev .cd-nature{color:#F9C0DC;}
+        .ap-dessus.ev .cd-quand{color:#2A0716;background:#F472B6;}
 
         /* L'INVITATION.
            LE DEFAUT MESURE : « les 3 reponses ne donnent pas du tout envie,
@@ -5906,15 +6000,10 @@ export function ApercuHabitant() {
           45%{box-shadow:inset 0 0 0 3px #F7C948,0 0 66px 0 rgba(240,180,41,.75);}
           100%{box-shadow:inset 0 0 0 2px #F7C948,0 0 44px -10px rgba(240,180,41,.6);}}
         /* Le cadeau est la plus grosse ligne de la carte : c'est lui qu'on
-           raconte le soir, pas le nom du plat. */
-        .ap-dessus.invit .cd-quoi{font-size:17.5px;font-weight:850;letter-spacing:-.02em;
-          color:#FFE39A;}
-        .ap-dessus.invit .cd-quoi i{font-size:17px;}
-        .ap-dessus.invit .cd-reste{color:#04150E;font-weight:850;
-          background:linear-gradient(140deg,#F7C948,#E09B12);border-color:transparent;}
-        /* En bloc plutot qu'en flex : text-overflow ne s'applique pas a un
-           noeud de texte nu dans un conteneur flex. L'ecart se refait a la main. */
-        .ap-dessus.invit .cd-reste i{margin-right:6px;}
+           raconte le soir, pas le nom du plat. Il l'est desormais par
+           construction — .cd-offre est la plus grosse ligne de la seconde
+           face, quelle que soit la nature de l'annonce ; il ne restait qu'a
+           lui donner l'or, plus haut. */
 
         /* LES ETOILES SUR L'INVITATION. « pas d'avis » : sans elles on demande
            de se deplacer sur une jolie phrase. Avec, on se deplace sur une jolie
@@ -6252,12 +6341,8 @@ export function ApercuHabitant() {
         .ap-sortie.tout .ap-s-x{color:#8FE9C4;}
         .ap-dessus.ev .cd-carte{box-shadow:inset 0 0 0 2px #F472B6,
           0 0 40px -14px rgba(244,114,182,.5);}
-        .ap-dessus.ev .cd-quoi{color:#F9C0DC;}
-        .ap-dessus.ev .cd-prix b{color:#F9C0DC;}
-        .ap-dessus.ev .cd-prix em{background:#F472B6;color:#2A0716;}
-        .ap-dessus.ev .cd-reste{color:#2A0716;font-weight:850;
-          background:linear-gradient(140deg,#F9A8D4,#EC4899);border-color:transparent;}
-        .ap-dessus.ev .cd-reste i{display:none;}
+        /* Le rose de l'evenement est pose plus haut, sur les lignes de la
+           seconde face (.cd-offre, .cd-nature, .cd-quand). */
         .ap-metier.evenement{color:#2A0716;background:#F472B6;border-color:transparent;}
         .ap-metier.tout{color:#04150E;background:#3DE2A6;border-color:transparent;}
         .ap-m.evenement em{display:block;margin-top:3px;font-style:normal;font-size:12px;
@@ -6760,8 +6845,11 @@ export function ApercuHabitant() {
           background:rgba(255,255,255,.32);
           box-shadow:0 1px 3px rgba(0,0,0,.5);transition:background .2s ease;}
         .ap-points i.on{background:#fff;}
-        /* Les pastilles laissent la place aux points. */
-        .ap-dessus.carrousel .cd-reste,.ap-dessus.carrousel .cd-aller{
+        /* Les pastilles laissent la place aux points. « Garder » en fait
+           partie depuis qu'elle a pris le coin gauche : sans cette ligne, elle
+           s'ecrivait par-dessus le premier point du carrousel. */
+        .ap-dessus.carrousel .cd-reste,.ap-dessus.carrousel .cd-aller,
+        .ap-dessus.carrousel .sec .ap-garder-photo{
           top:calc(var(--ap-haut-h, 100px) + 19px);}
 
         /* ═══════════════ LA VILLE ═══════════════
@@ -7438,16 +7526,22 @@ export function ApercuHabitant() {
            c'est la hauteur qui manque, et un telephone large mais court a
            exactement le meme probleme. */
         @media (max-height:620px){
-          .ap-dessus .cd-bas{padding:12px 14px 13px;gap:3px;}
-          .ap-dessus .cd-nom{font-size:20px;}
-          .ap-dessus .cd-quoi{margin-top:5px;font-size:13px;}
-          .ap-dessus .cd-lignes span{font-size:11.5px;}
-          .ap-dessus .cd-prix{margin-top:4px;}
-          .ap-dessus .cd-prix b{font-size:21px;}
           .ap-dessus .ap-vie{margin-top:7px;padding:7px 10px;border-radius:11px;}
           .ap-dessus .ap-vie b{font-size:12.5px;}
           .ap-dessus .ap-vie span{font-size:10.5px;}
           .ap-vers-bas{margin-top:7px;padding:6px 12px;font-size:11.5px;}
+
+          /* LA MEME REDUCTION SUR LA SECONDE FACE. Rien ne disparait, tout
+             retrecit : c'est le meme ecran, en plus serre. Les marges du haut
+             et du bas restent, elles, calculees sur les bandeaux — les couper
+             ferait passer le bloc dessous. */
+          .ap-dessus .sec .cd-bas{padding-left:14px;padding-right:14px;}
+          .ap-dessus .cd-offre{font-size:clamp(23px,7.4vw,30px);margin-top:6px;}
+          .ap-dessus .cd-detail{margin-top:5px;font-size:11.5px;
+            -webkit-line-clamp:1;}
+          .ap-dessus .cd-prixg{margin-top:6px;font-size:clamp(21px,6.4vw,26px);}
+          .ap-dessus .cd-chez{margin-top:7px;font-size:13px;}
+          .ap-dessus .cd-quand{margin-top:7px;font-size:10.5px;padding:4px 10px;}
         }
 
         /* LES GESTES S'ARRETENT AU-DESSUS DE LA BARRE DES ONGLETS. Poses a
@@ -7465,33 +7559,77 @@ export function ApercuHabitant() {
            pas compris, et des icones muettes rendraient le probleme. On garde
            aussi la cible du pouce au-dessus des 44 points recommandes.
            Resultat : 132 points, soit 20 %. */
+        /* ─── LA BARRE : UN ROND, PUIS DEUX ACTIONS DE MEME POIDS ───
+           QUATRE RONDS ETIQUETES POSAIENT UNE QUESTION AU LIEU D'Y REPONDRE.
+           Passer, En parler, Reserver, Details avaient la meme forme, donc le
+           meme poids : il fallait lire les quatre etiquettes pour choisir, a
+           l'endroit exact ou l'on veut agir sans lire.
+           Details est remonte sur la photo, ou son libelle dit ce qu'il y a
+           derriere. Passer reste un rond — il a deja son balayage, et proposer
+           de partir aussi fort que de venir n'aurait aucun sens. Restent deux
+           actions, et elles sont a EGALITE : meme largeur, meme corps, deux
+           teintes. Le raisonnement est dans le composant, au-dessus des
+           boutons ; en un mot : « en parler » est ce que personne d'autre ne
+           fait, « reserver » est la seule chose que le commercant sache
+           compter, et on n'a pas encore de quoi trancher entre les deux.
+           ATTENTION : jamais d'accent grave dans ces commentaires CSS. */
         .ap-gestes{position:absolute;left:0;right:0;
           bottom:var(--ap-onglets-h, 51px);z-index:4;
-          gap:12px;padding:11px 0 6px;pointer-events:none;
-          background:linear-gradient(0deg,rgba(4,8,6,.9) 0%,rgba(4,8,6,.72) 45%,rgba(4,8,6,0) 100%);}
-        .ap-gestes .cd-g{pointer-events:auto;}
+          display:flex;align-items:center;gap:9px;
+          padding:10px 12px 8px;pointer-events:none;
+          background:linear-gradient(0deg,rgba(4,8,6,.94) 0%,rgba(4,8,6,.82) 52%,rgba(4,8,6,0) 100%);}
+        .ap-gestes>*{pointer-events:auto;}
         /* SUR LA PHOTO, un voile degrade suffit et laisse voir l'image. SOUS
            LE PLI, non : les avis et le programme defilaient EN TRANSPARENCE
-           derriere les quatre boutons, illisibles. On pose donc un fond plein
-           — celui du panneau — des qu'on descend lire. Les gestes restent
-           disponibles : les cacher obligerait a remonter pour agir. */
+           derriere les boutons, illisibles. On pose donc un fond plein — celui
+           du panneau — des qu'on descend lire. Les gestes restent disponibles :
+           les cacher obligerait a remonter pour agir. */
         .ap-gestes.pose{background:#0A1210;
           box-shadow:0 -1px 0 rgba(255,255,255,.07);}
-        .ap-gestes .cd-g{gap:3px;}
-        .ap-gestes .cd-g i{width:44px;height:44px;font-size:18px;}
-        .ap-gestes .cd-g.grand i{width:50px;height:50px;font-size:20px;}
-        .ap-gestes .cd-g em{font-size:9.5px;}
-        .ap-gestes .cd-g{font:inherit;background:none;border:0;padding:0;cursor:pointer;}
-        .ap-gestes .cd-g:active i{transform:scale(.92);}
-        .ap-gestes .cd-g:disabled{cursor:default;opacity:.32;}
-        .ap-gestes .cd-g:disabled:active i{transform:none;}
-        .ap-gestes .cd-g:focus-visible{outline:2px solid #3DE2A6;outline-offset:4px;border-radius:12px;}
-        /* Reserver est la seule action qui engage : ambre, parce que le vert est
-           deja celui du balayage et que deux boutons verts se confondent. */
-        .ap-gestes .cd-g.ambre i{color:#0A1410;border:0;
+
+        .ap-rond{flex:none;width:46px;height:46px;border-radius:50%;font:inherit;
+          font-size:18px;line-height:1;cursor:pointer;color:#D6DEE4;
+          display:flex;align-items:center;justify-content:center;
+          border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);
+          transition:transform .12s ease;}
+        .ap-rond:active{transform:scale(.92);}
+
+        /* Les deux actions se partagent ce qui reste, a parts strictement
+           egales. flex:1 avec min-width:0, sinon un libelle plus long — « Je
+           passe » contre « En parler » — donnerait a l'un quelques points de
+           plus que l'autre, et l'egalite ne serait plus vraie a l'oeil. */
+        .ap-agir{flex:1;min-width:0;display:flex;align-items:center;
+          justify-content:center;gap:7px;font:inherit;font-size:14.5px;
+          font-weight:850;letter-spacing:-.01em;cursor:pointer;border:0;
+          border-radius:15px;padding:14px 8px;white-space:nowrap;
+          overflow:hidden;text-overflow:ellipsis;
+          transition:transform .12s ease;}
+        .ap-agir i{font-style:normal;font-size:15px;line-height:1;flex:none;}
+        .ap-agir:active{transform:scale(.98);}
+        /* Deux teintes, pas deux tailles : le vert est celui du balayage a
+           droite, qui ouvre le meme salon ; l'ambre est celui de l'engagement.
+           Deux boutons verts se confondraient. */
+        .ap-agir.parler{color:#04150E;
+          background:linear-gradient(140deg,#3DE2A6,#0BA97B);
+          box-shadow:0 12px 26px -16px rgba(18,185,129,.9);}
+        .ap-agir.engage{color:#0A1410;
           background:linear-gradient(140deg,#F7C948,#E09B18);
-          box-shadow:0 12px 26px -14px rgba(240,180,41,.9);}
-        .ap-gestes .cd-g.ambre em{color:#F0C05A;}
+          box-shadow:0 12px 26px -16px rgba(240,180,41,.9);}
+        .ap-rond:disabled,.ap-agir:disabled{cursor:default;opacity:.32;}
+        .ap-rond:disabled:active,.ap-agir:disabled:active{transform:none;}
+        .ap-rond:focus-visible,.ap-agir:focus-visible{outline:2px solid #3DE2A6;
+          outline-offset:3px;}
+
+        /* LES ECRANS ETROITS. A 320 points, deux libelles de quatorze points
+           et demi plus un rond de quarante-six ne tiennent plus sur une ligne :
+           on rend trois points au corps et deux a l'ecart plutot que de couper
+           un mot au milieu. */
+        @media (max-width:349px){
+          .ap-gestes{gap:7px;padding:9px 9px 7px;}
+          .ap-rond{width:42px;height:42px;font-size:16px;}
+          .ap-agir{font-size:13px;padding:12px 6px;gap:5px;}
+          .ap-agir i{font-size:13px;}
+        }
 
         /* ── LES DEUX FEUILLES QUI RESTENT ── */
         .ap-fond{position:absolute;inset:0;z-index:8;border:0;padding:0;cursor:pointer;

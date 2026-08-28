@@ -20,6 +20,10 @@ const FICHIERS = [
   "src/app/le-direct/page.tsx",
   "src/app/autour-de-moi/apercu-habitant.tsx",
   "src/app/essai-annonce/essai-annonce.tsx",
+  // LA CARTE DU PRODUIT PORTE SA PROPRE FEUILLE, et elle est servie à cinq
+  // écrans. Une coupure ici ne casse pas une page, elle les casse toutes —
+  // c'est le fichier de la liste qui a le plus à perdre, et il y manquait.
+  "src/components/direct/carte-swipe.tsx",
 ];
 
 /**
