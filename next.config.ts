@@ -49,12 +49,47 @@ const config: NextConfig = {
     // l'iframe interne. Élargir la CSP (script-src…) plus tard, après tests.
     return [
       {
-        source: "/:path*",
+        // TOUT LE SITE RESTE INCADRABLE, sauf la démonstration ci-dessous.
+        // L'exception est écrite comme une exclusion de ce motif, et pas comme
+        // une deuxième règle : Next AJOUTE les en-têtes de chaque règle qui
+        // correspond, donc deux règles sur le même chemin poseraient DEUX
+        // `X-Frame-Options`, et un navigateur qui en voit deux refuse le cadre.
+        // L'exception ne servirait alors à rien, en silence.
+        source: "/((?!autour-de-moi).*)",
         headers: [
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+        ],
+      },
+      {
+        // ─── LA DÉMONSTRATION PEUT ÊTRE ENCADRÉE, ET ELLE SEULE ───
+        //
+        // POURQUOI ON DESSERRE ICI. Le deck investisseur doit montrer
+        // l'application EN VRAI, manipulable pendant la présentation, et pas
+        // une capture. Sans cette exception, le cadre reste blanc : c'est notre
+        // propre en-tête qui le refuse, pas celui de l'hébergeur.
+        //
+        // POURQUOI ÇA NE COÛTE RIEN. `frame-ancestors 'self'` protège du
+        // clickjacking — faire cliquer quelqu'un sur un bouton qu'il ne voit
+        // pas. Cette page-ci n'a ni compte, ni paiement, ni action destructrice :
+        // tout ce qu'un attaquant obtiendrait, c'est de faire balayer une carte.
+        // Le tableau de bord, l'authentification et l'espace commerçant restent
+        // couverts par la règle du dessus.
+        //
+        // X-FRAME-OPTIONS EST ABSENT ET C'EST VOULU : il ne sait pas dire « ces
+        // origines-là » (`ALLOW-FROM` est mort et ignoré partout). Le laisser à
+        // SAMEORIGIN annulerait `frame-ancestors` sur les navigateurs qui
+        // lisent les deux. C'est la CSP qui décide, seule.
+        source: "/autour-de-moi",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'self' https://claude.ai https://*.claude.ai",
+          },
         ],
       },
     ];
