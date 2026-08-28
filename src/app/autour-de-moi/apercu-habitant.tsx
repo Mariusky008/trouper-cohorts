@@ -2664,41 +2664,85 @@ export function ApercuHabitant() {
                     </span>
                   </div>
 
-                  {/* ─── QUELQU'UN Y EST, MAINTENANT ───
-                      WhatsApp dit « Pauline m'envoie une photo ». Ici on dit
-                      où elle est, depuis quand, à quelle distance, et combien
-                      de minutes il faut pour la rejoindre. C'est une autre
-                      proposition, et c'est la seule que le lieu rende
-                      possible. */}
+                  {/* ─── QUELQU'UN Y EST, ET ON LE VOIT ───
+                      WhatsApp dit « Pauline m'envoie une photo ». Ici on dit où
+                      elle est, depuis quand, à quelle distance, et combien de
+                      minutes pour la rejoindre. C'est une autre proposition, et
+                      c'est la seule que le lieu rende possible.
+
+                      C'ÉTAIENT TROIS LIGNES DE TEXTE dans un encadré rouge, et
+                      c'est devenu une image plein cadre. La raison tient en une
+                      phrase : ce dont ce bloc parle est, par nature, une image —
+                      quelqu'un est quelque part et le montre. Un encadré de
+                      texte demande de croire ; une image montre.
+
+                      LA VIDÉO EST MUETTE ET EN BOUCLE. Un son qui démarre tout
+                      seul dans un salon de coiffure est la façon la plus rapide
+                      de faire fermer l'application. playsInline pour qu'iOS ne
+                      la passe pas en plein écran de lui-même, et l'image sert
+                      d'affiche pendant le chargement.
+
+                      LES DEUX ACTIONS SONT POSÉES SUR L'IMAGE : « la rejoindre »
+                      et « prendre le même » ne se comprennent que là où l'on
+                      voit qu'elle y est. Sous l'image, elles redeviendraient
+                      deux boutons de plus. */}
                   {salon.enDirect && (
-                    <div className="ap-direct">
+                    <div className={`ap-direct${salon.enDirect.image || salon.enDirect.video ? " vu" : ""}`}>
+                      {salon.enDirect.video ? (
+                        <video
+                          className="ap-direct-f"
+                          poster={salon.enDirect.image}
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                          preload="metadata"
+                        >
+                          <source src={salon.enDirect.video.webm} type="video/webm" />
+                          <source src={salon.enDirect.video.mp4} type="video/mp4" />
+                        </video>
+                      ) : salon.enDirect.image ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img className="ap-direct-f" src={salon.enDirect.image} alt="" />
+                      ) : null}
+                      <span className="ap-direct-v" aria-hidden="true" />
+
                       <span className="ap-direct-h">
                         <i aria-hidden="true">●</i>
                         En direct
                       </span>
-                      <b>
-                        {salon.enDirect.qui} y est depuis {salon.enDirect.depuis}
-                      </b>
-                      <span className="ap-direct-l">
-                        {salon.enDirect.distance} de vous · {salon.enDirect.aPied} à pied
-                      </span>
-                      <div className="ap-direct-b">
-                        <a
-                          href="https://www.google.com/maps/dir/?api=1&destination=Dax"
-                          target="_blank"
-                          rel="noreferrer noopener"
-                        >
-                          🚶 La rejoindre
-                        </a>
-                        {/* « Prendre le même » appelait lui aussi la feuille du
-                            paquet : on réservait chez le commerce en tête du
-                            PAQUET, pas chez celui où l'amie se trouve. */}
-                        <button
-                          type="button"
-                          onClick={() => avecMonPrenom(() => setAConfirmer({ pourUnSeul: true }))}
-                        >
-                          📅 Prendre le même
-                        </button>
+
+                      <div className="ap-direct-d">
+                        {/* ON NE RÉPÈTE PAS LE LIEU. Le bandeau de la page le
+                            nomme déjà, deux centimètres au-dessus, et « Camille
+                            est chez Un salon du centre » se lisait mal —
+                            l'article indéfini d'un commerce anonymisé ne passe
+                            pas dans cette tournure. Ce que ce bloc apporte,
+                            c'est QUI et DEPUIS QUAND, pas où. */}
+                        <b>{salon.enDirect.qui} y est en ce moment</b>
+                        <span className="ap-direct-l">
+                          depuis {salon.enDirect.depuis} · {salon.enDirect.distance} de vous
+                          {" · "}
+                          {salon.enDirect.aPied} à pied
+                        </span>
+                        <div className="ap-direct-b">
+                          <a
+                            href="https://www.google.com/maps/dir/?api=1&destination=Dax"
+                            target="_blank"
+                            rel="noreferrer noopener"
+                          >
+                            🚶 La rejoindre
+                          </a>
+                          {/* « Prendre le même » appelait lui aussi la feuille du
+                              paquet : on réservait chez le commerce en tête du
+                              PAQUET, pas chez celui où l'amie se trouve. */}
+                          <button
+                            type="button"
+                            onClick={() => avecMonPrenom(() => setAConfirmer({ pourUnSeul: true }))}
+                          >
+                            📅 Prendre le même
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -6546,17 +6590,45 @@ export function ApercuHabitant() {
            sans l'apprendre. Le vocabulaire complet est donc : vert
            l'application, or l'invitation, bleu l'embauche, violet le rappel,
            orange le coup de pouce, rose les evenements, rouge le direct. */
-        .ap-direct{flex:none;background:rgba(239,68,68,.1);
+        .ap-direct{position:relative;flex:none;overflow:hidden;
+          background:rgba(239,68,68,.1);
           border:1px solid rgba(239,68,68,.38);border-radius:16px;padding:12px;
           margin-bottom:10px;}
+        /* ─── QUAND IL Y A UNE IMAGE, C'EST ELLE LE BLOC ───
+           Trois lignes de texte dans un encadre demandaient de croire que
+           quelqu'un etait la-bas. Une image le montre, et c'est la seule chose
+           qu'aucune messagerie ne fait. Le cadre grandit, le texte descend au
+           pied, et les deux actions se posent dessus : « la rejoindre » ne se
+           comprend que la ou l'on voit qu'elle y est.
+           ATTENTION : jamais d'accent grave dans ces commentaires CSS. */
+        .ap-direct.vu{display:flex;flex-direction:column;justify-content:flex-end;
+          min-height:272px;padding:0;background:#160A0B;}
+        .ap-direct-f{position:absolute;inset:0;width:100%;height:100%;
+          object-fit:cover;display:block;}
+        /* Le voile ne monte que sous le texte : au-dessus, on doit voir la
+           piece ou elle se trouve, c'est tout l'objet du bloc. */
+        .ap-direct-v{position:absolute;left:0;right:0;bottom:0;height:74%;
+          pointer-events:none;background:linear-gradient(180deg,
+            rgba(12,6,7,0),rgba(12,6,7,.42) 44%,rgba(12,6,7,.88) 100%);}
         .ap-direct-h{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;
           font-weight:850;letter-spacing:.1em;text-transform:uppercase;color:#fff;
           background:#E23D4E;border-radius:999px;padding:3px 9px;margin-bottom:8px;}
         .ap-direct-h i{font-style:normal;font-size:8px;
           animation:apVoyant 2.4s ease-in-out infinite;}
+        /* Le voyant part en haut a gauche des que le bloc porte une image :
+           c'est la place ou toutes les applications de direct le posent, et
+           c'est la seule convention que personne n'a besoin d'apprendre. */
+        .ap-direct.vu .ap-direct-h{position:absolute;left:12px;top:12px;z-index:2;
+          margin:0;box-shadow:0 6px 18px -6px rgba(0,0,0,.8);}
+        .ap-direct-d{position:relative;z-index:1;}
+        .ap-direct.vu .ap-direct-d{padding:12px;}
         .ap-direct b{display:block;font-size:15.5px;font-weight:850;color:#FFC9C9;
           letter-spacing:-.01em;}
+        .ap-direct.vu b{font-size:19px;color:#fff;line-height:1.15;
+          text-shadow:0 2px 12px rgba(0,0,0,.65);}
         .ap-direct-l{display:block;font-size:12.5px;color:#D3A0A0;margin-top:2px;}
+        .ap-direct.vu .ap-direct-l{color:#EFCACA;margin-top:4px;
+          text-shadow:0 1px 8px rgba(0,0,0,.6);}
         .ap-direct-b{display:flex;gap:8px;margin-top:11px;}
         .ap-direct-b a,.ap-direct-b button{flex:1;display:inline-flex;align-items:center;
           justify-content:center;gap:6px;font:inherit;font-size:13px;font-weight:850;
@@ -6564,6 +6636,16 @@ export function ApercuHabitant() {
           border:0;border-radius:12px;padding:10px;}
         .ap-direct-b button{color:#FFC9C9;background:rgba(239,68,68,.17);
           border:1px solid rgba(239,68,68,.4);}
+        /* Sur l'image, le second bouton doit rester lisible quelle que soit la
+           photo : le verre depoli remplace la transparence simple. */
+        .ap-direct.vu .ap-direct-b button{color:#fff;background:rgba(12,6,7,.5);
+          border-color:rgba(255,255,255,.3);
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+        /* SUR UNE SEULE LIGNE : « Prendre le meme » se coupait en deux et le
+           bouton devenait deux fois plus haut que son voisin. Deux points de
+           corps rendus, et la cible reste au-dessus des quarante-quatre. */
+        .ap-direct.vu .ap-direct-b a,.ap-direct.vu .ap-direct-b button{
+          font-size:12.5px;white-space:nowrap;padding:11px 8px;}
 
         /* LE VOTE. */
         .ap-vote{flex:none;background:rgba(167,139,250,.1);

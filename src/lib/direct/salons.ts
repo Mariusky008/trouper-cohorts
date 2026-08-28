@@ -92,11 +92,34 @@ export type Statut = "hote" | "vient" | "interesse";
  * même dans un salon fermé, ça se choisit et ça s'arrête en un appui — et dans
  * une petite ville où tout le monde se reconnaît, ça compte plus, pas moins.
  */
+/**
+ * QUELQU'UN Y EST, EN CE MOMENT — et c'est la seule chose qu'aucune messagerie
+ * ne sait faire.
+ *
+ * CE QUE LE BLOC EST DEVENU, ET POURQUOI. C'était trois lignes de texte dans un
+ * encadré rouge. Or ce dont il parle est, par nature, une IMAGE : quelqu'un est
+ * quelque part et le montre. Le jugement de l'usage l'a dit dans ces termes —
+ * « il faudrait qu'on voie le live direct, c'est-à-dire une personne en vidéo
+ * qui est en train de se faire coiffer, et les autres interagissent en voyant
+ * la vidéo ». Un encadré de texte demande de croire ; une image montre.
+ *
+ * LA VIDÉO EST FACULTATIVE, ET LE BLOC MARCHE SANS. Une image fixe fait déjà
+ * l'essentiel — on voit où elle est — et c'est ce qui permet à un habitant de
+ * lancer un direct avec une photo prise d'une main, ce qui est le seul geste
+ * réaliste quand on a des papillotes sur la tête. La vidéo, quand elle existe,
+ * remplace l'image et tourne en boucle, sans son : un son qui démarre tout
+ * seul dans un salon de coiffure est la façon la plus rapide de faire fermer
+ * l'application.
+ */
 export type EnDirect = {
   qui: string;
   depuis: string;
   distance: string;
   aPied: string;
+  /** Ce qu'elle montre. Absente, le bloc se replie sur son texte. */
+  image?: string;
+  /** Muette et en boucle. L'image lui sert d'affiche pendant le chargement. */
+  video?: { mp4: string; webm: string };
 };
 
 /**
@@ -330,7 +353,19 @@ export const SALONS_SEMES: Salon[] = [
     distance: "220 m",
     // ELLE Y EST, ET ELLE L'A CHOISI. C'est la seule chose que WhatsApp ne sait
     // pas faire : « Camille est là-bas, à 220 m, depuis 42 minutes ».
-    enDirect: { qui: "Camille", depuis: "42 min", distance: "220 m", aPied: "3 min" },
+    // L'IMAGE EST CELLE DU SALON, PAS CELLE DE SA COIFFURE, et c'est un choix
+    // qu'il faut savoir : personne n'a filmé de séance de coiffure pour cette
+    // maquette, et une photo de « résultat » présentée comme un direct dirait
+    // le contraire de ce qu'elle montre. Une vue de la pièce, prise d'une main
+    // en attendant, est ce qu'on obtient vraiment. Le jour où il y a dix
+    // secondes de vidéo, elles se posent ici et rien d'autre ne change.
+    enDirect: {
+      qui: "Camille",
+      depuis: "42 min",
+      distance: "220 m",
+      aPied: "3 min",
+      image: "/direct/salon-neuf.jpg",
+    },
     vote: {
       question: "Laquelle je fais ?",
       options: [

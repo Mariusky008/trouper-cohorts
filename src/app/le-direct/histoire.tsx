@@ -116,13 +116,13 @@ const CAS: Cas[] = [
       },
       {
         src: "/le-direct/coiffeur-salon.jpg",
-        alt: "Le salon : Camille est en direct chez la coiffeuse et demande à ses amies naturel ou plus clair.",
-        dit: "Camille y est déjà. Elle demande : naturel, ou plus clair ? Onze voix pendant qu’elle est dans le fauteuil.",
+        alt: "Le direct de Camille depuis le salon, et le vote de ses amies : naturel 27 %, plus clair 73 %.",
+        dit: "Camille y est, et elle le montre en direct. Ses amies regardent et tranchent : naturel, ou plus clair ? Onze voix.",
         fin: "Décidé en dix minutes",
       },
     ],
     chute:
-      "Un salon, ce n’est pas un fil de commentaires : c’est une décision prise pendant qu’elle compte encore.",
+      "Elle est en direct, ils regardent, ils votent — et elle a sa réponse avant que la couleur ne prenne.",
   },
   {
     cle: "soir",
