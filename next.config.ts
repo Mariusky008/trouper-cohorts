@@ -83,23 +83,28 @@ const config: NextConfig = {
         // SAMEORIGIN annulerait `frame-ancestors` sur les navigateurs qui
         // lisent les deux. C'est la CSP qui décide, seule.
         //
-        // POURQUOI `https:` ET PLUS UNE LISTE D'ORIGINES. La liste
-        // `claude.ai` ne suffisait pas : le navigateur vérifie TOUS les
-        // ancêtres du cadre, et un deck publié est lui-même servi depuis une
-        // origine intermédiaire que nous ne connaissons pas. Il manquait donc
-        // toujours un maillon, et le cadre affichait « Ce contenu est bloqué »
-        // — un refus qui vient de nous, pas de l'hébergeur du deck.
+        // CE QUI A ÉTÉ MESURÉ, ET QUI CORRIGE UNE ERREUR DE DIAGNOSTIC.
+        // Les deux refus possibles n'affichent pas le même écran, et on les a
+        // reproduits l'un et l'autre dans un navigateur :
+        //   · la CIBLE refuse (X-Frame-Options, frame-ancestors) →
+        //     « <hôte> refused to connect. »
+        //   · la PAGE QUI AFFICHE refuse (sa propre CSP `frame-src`) →
+        //     « Ce contenu est bloqué. Contactez le propriétaire du site. »
+        // C'est la seconde phrase que montrait la présentation : le refus ne
+        // venait pas d'ici. Aucun en-tête posé sur ce site n'aurait pu la
+        // faire disparaître.
         //
-        // Deviner cette origine serait un pari à refaire à chaque
-        // présentation. On l'assume : n'importe quelle page servie en HTTPS
-        // peut afficher CETTE page-ci, et elle seule. Le `https:` garde la
-        // seule garantie qui compte encore ici — pas d'encadrement depuis une
+        // CE QUI RESTE VRAI MALGRÉ TOUT. Le deck doit pouvoir encadrer cette
+        // page depuis le site lui-même (`'self'`, le cas qui marche), et
+        // depuis n'importe quelle page servie en HTTPS le jour où il est
+        // hébergé ailleurs. `https:` évite d'avoir à deviner cette origine à
+        // chaque présentation ; il interdit toujours l'encadrement depuis une
         // page en clair.
         source: "/autour-de-moi",
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Content-Security-Policy", value: "frame-ancestors https:" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self' https:" },
         ],
       },
     ];
