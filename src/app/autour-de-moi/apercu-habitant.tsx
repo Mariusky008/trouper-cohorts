@@ -2154,7 +2154,11 @@ export function ApercuHabitant() {
     <div className="ap">
       <StylesDirect />
       <div className="ap-tel">
-        <div className="ap-app">
+        {/* SUR LE DIRECT, LA PHOTO PASSE DERRIÈRE LES ONGLETS — voir la règle
+            .ap-app.direct .ap-onglets. Ailleurs, la barre reste dans le flux :
+            une page de salon ou de profil se lit du haut vers le bas, et son
+            dernier paragraphe ne doit pas finir sous les onglets. */}
+        <div className={`ap-app${onglet === "direct" ? " direct" : ""}`}>
           {/* ─── LE SALON, EN PAGE PLEINE ───
               Il vivait dans une feuille qui remonte par-dessus le paquet. Une
               feuille dit « ceci est un aparté, tu vas revenir » ; or le salon
@@ -6793,6 +6797,36 @@ export function ApercuHabitant() {
           border-top:1px solid rgba(255,255,255,.09);
           background:rgba(8,12,10,.75);-webkit-backdrop-filter:blur(12px);
           backdrop-filter:blur(12px);}
+
+        /* ─── SUR LE DIRECT, LA PHOTO PASSE DERRIERE LES ONGLETS ───
+           QUESTION POSEE : est-ce que la barre ne devrait apparaitre qu'au
+           defilement, pour plus d'immersion ? NON, et pour trois raisons.
+           Elle porte les PASTILLES — « Mes salons 14 » — et c'est le seul
+           signal de retour du produit : sans notification, un chiffre qu'on ne
+           voit pas ne rappelle personne. Elle est aussi la seule preuve que
+           l'application a d'autres pieces : cachee, celui qui ouvre pour la
+           premiere fois croit qu'une carte est tout le produit. Enfin le
+           declencheur tomberait a l'envers : sur cet ecran le geste principal
+           est HORIZONTAL, le defilement vertical sert a lire la fiche — les
+           onglets apparaitraient pendant qu'on lit les details et
+           disparaitraient sur la photo, c'est-a-dire exactement quand on
+           voudrait sauter dans un salon.
+           CE QU'ON FAIT A LA PLACE : la barre sort du flux, la photo passe
+           dessous, et son fond disparait. Au repos elle flotte sur l'image ;
+           des qu'on descend lire, le sol plein revient — c'est le meme
+           degrade, porte par .ap-gestes, qui fait les deux. On gagne l'image
+           sans rien perdre.
+           SEULEMENT SUR LE DIRECT : ailleurs la barre reste dans le flux, ou
+           le dernier paragraphe d'une page finirait dessous. */
+        .ap-app.direct .ap-onglets{position:absolute;left:0;right:0;bottom:0;
+          z-index:5;background:none;border-top-color:transparent;
+          -webkit-backdrop-filter:none;backdrop-filter:none;}
+        /* Des qu'on descend lire, le trait revient : il separe alors deux
+           surfaces pleines, et sans lui la barre flotterait au milieu du
+           panneau de details. */
+        .ap-app.direct .ap-gestes.pose{background:#0A1210;}
+        .ap-app.direct:has(.ap-gestes.pose) .ap-onglets{
+          border-top-color:rgba(255,255,255,.09);}
         .ap-onglets button{position:relative;display:flex;flex-direction:column;
           align-items:center;justify-content:center;gap:3px;font:inherit;
           font-size:10.5px;font-weight:800;cursor:pointer;color:#6C8078;
@@ -7619,11 +7653,19 @@ export function ApercuHabitant() {
            fait, « reserver » est la seule chose que le commercant sache
            compter, et on n'a pas encore de quoi trancher entre les deux.
            ATTENTION : jamais d'accent grave dans ces commentaires CSS. */
+        /* ─── LE SOL DU BAS EST FAIT PAR UN SEUL ELEMENT ───
+           Il descend jusqu'au bord et se reserve, en bas, la hauteur des
+           onglets : c'est lui qui porte le degrade SOUS les boutons ET sous
+           les onglets. Deux fonds superposes se voyaient l'un l'autre. */
         .ap-gestes{position:absolute;left:0;right:0;
           bottom:var(--ap-onglets-h, 51px);z-index:4;
           display:flex;align-items:center;gap:9px;
           padding:10px 12px 8px;pointer-events:none;
           background:linear-gradient(0deg,rgba(4,8,6,.94) 0%,rgba(4,8,6,.82) 52%,rgba(4,8,6,0) 100%);}
+        .ap-app.direct .ap-gestes{bottom:0;
+          padding-bottom:calc(var(--ap-onglets-h, 51px) + 8px);
+          background:linear-gradient(0deg,rgba(4,8,6,.97) 0%,rgba(4,8,6,.95) 34%,
+            rgba(4,8,6,.86) 58%,rgba(4,8,6,.55) 80%,rgba(4,8,6,0) 100%);}
         .ap-gestes>*{pointer-events:auto;}
         /* SUR LA PHOTO, un voile degrade suffit et laisse voir l'image. SOUS
            LE PLI, non : les avis et le programme defilaient EN TRANSPARENCE
