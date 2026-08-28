@@ -19,6 +19,7 @@ import { readFileSync } from "node:fs";
 const FICHIERS = [
   "src/app/le-direct/page.tsx",
   "src/app/autour-de-moi/apercu-habitant.tsx",
+  "src/app/essai-annonce/essai-annonce.tsx",
 ];
 
 /**
