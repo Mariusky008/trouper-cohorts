@@ -63,6 +63,13 @@ type Offre = {
    * est alors dans la NATURE de l'annonce, et sans chiffre.
    */
   quand?: string;
+  /**
+   * SA JOURNÉE. Elle remplace le mot « détails », qui ne disait rien de ce
+   * qu'il y avait derrière : « 2 moments aujourd'hui » annonce à la fois le
+   * geste et son contenu. Et elle appartient au commerce — un coiffeur n'a
+   * pas « la grande tablée du soir ».
+   */
+  moments: { h: string; quoi: string }[];
 };
 
 const OFFRES: Offre[] = [
@@ -72,6 +79,7 @@ const OFFRES: Offre[] = [
     photo: "/direct/plat-du-jour.jpg", cadrage: "52%",
     commerce: "Le Bocal de Margot", distance: "180 m",
     action: "Réserver ma table", quand: "Servi jusqu’à 14 h",
+    moments: [{ h: "10 h 00", quoi: "L’ardoise du jour est écrite" }, { h: "12 h 00", quoi: "Il reste des tables en terrasse" }, { h: "19 h 30", quoi: "La grande tablée du vendredi" }],
   },
   {
     id: "lasagnes", branche: "restaurant",
@@ -79,6 +87,7 @@ const OFFRES: Offre[] = [
     photo: "/direct/plat-lasagnes.jpg", cadrage: "50%",
     commerce: "Chez Bergine", distance: "240 m",
     action: "Réserver ma table", quand: "Servi jusqu’à 14 h",
+    moments: [{ h: "11 h 40", quoi: "Les lasagnes sortent du four" }, { h: "14 h 30", quoi: "Les dernières parts à emporter" }],
   },
   {
     // La rareté quand elle existe vraiment : c'est le commerçant qui l'a
@@ -88,6 +97,7 @@ const OFFRES: Offre[] = [
     photo: "/direct/plat-garbure.jpg", cadrage: "50%",
     commerce: "L’Ardoise Landaise", distance: "410 m",
     action: "Réserver ma table", quand: "Servi jusqu’à 14 h",
+    moments: [{ h: "12 h 00", quoi: "Service en cours" }, { h: "13 h 40", quoi: "Dernières portions annoncées" }],
   },
   {
     id: "tourte", branche: "restaurant",
@@ -95,6 +105,7 @@ const OFFRES: Offre[] = [
     photo: "/direct/sortie-du-four.jpg", cadrage: "55%",
     commerce: "Le Pétrin d’Amanieu", distance: "320 m",
     action: "Je la garde", quand: "Sortie du four à 16 h",
+    moments: [{ h: "06 h 30", quoi: "La première fournée" }, { h: "16 h 00", quoi: "La tourte de seigle sort du four" }],
   },
   {
     id: "coupe", branche: "coiffeur",
@@ -102,6 +113,7 @@ const OFFRES: Offre[] = [
     photo: "/direct/fauteuil-coiffeur.jpg", cadrage: "50%",
     commerce: "Un salon du centre", distance: "260 m",
     action: "Prendre le créneau", quand: "Aujourd’hui à 14 h 30",
+    moments: [{ h: "14 h 30", quoi: "Une place vient de se libérer" }, { h: "16 h 00", quoi: "Créneau couleur disponible" }],
   },
   {
     id: "soin", branche: "coiffeur",
@@ -109,6 +121,7 @@ const OFFRES: Offre[] = [
     photo: "/direct/salon-neuf.jpg", cadrage: "50%",
     commerce: "Un salon qui vient d’ouvrir", distance: "480 m",
     action: "Prendre le créneau", quand: "Aujourd’hui à 16 h",
+    moments: [{ h: "16 h 00", quoi: "Coloration végétale" }, { h: "18 h 00", quoi: "Dernier rendez-vous du jour" }],
   },
   {
     id: "bouquet", branche: "fleuriste",
@@ -116,6 +129,7 @@ const OFFRES: Offre[] = [
     photo: "/direct/bouquet-du-jour.jpg", cadrage: "50%",
     commerce: "Une fleuriste du marché", distance: "300 m",
     action: "Je le réserve", quand: "Jusqu’à 19 h",
+    moments: [{ h: "08 h 00", quoi: "Arrivage du marché" }, { h: "17 h 00", quoi: "Les bouquets du soir" }],
   },
   {
     id: "collection", branche: "mode",
@@ -123,6 +137,7 @@ const OFFRES: Offre[] = [
     photo: "/direct/portant-boutique.jpg", cadrage: "50%",
     commerce: "Une boutique de la rue piétonne", distance: "450 m",
     action: "Je passe la voir", quand: "Ouvert jusqu’à 19 h",
+    moments: [{ h: "10 h 00", quoi: "La collection est en vitrine" }, { h: "15 h 00", quoi: "Nouvelles tailles reçues" }],
   },
 ];
 
@@ -147,7 +162,7 @@ export default function EssaiAnnonce() {
   const [branche, setBranche] = useState<Branche>("restaurant");
   const [onglet, setOnglet] = useState<Onglet>("direct");
   const [k, setK] = useState(0);
-  const [feuille, setFeuille] = useState<"" | "metier" | "detail" | "salon">("");
+  const [feuille, setFeuille] = useState<"" | "metier" | "detail" | "salon" | "favoris">("");
   /**
    * LE VOILE EST UN INTERRUPTEUR, PAS UNE DÉCISION PRISE À VOTRE PLACE.
    * Écrire en blanc sur une photo sans voile, c'est prendre le risque d'un
@@ -156,6 +171,13 @@ export default function EssaiAnnonce() {
    */
   const [voile, setVoile] = useState(true);
   const [echo, setEcho] = useState("");
+  /**
+   * GARDER, ET RETROUVER CE QU'ON A GARDÉ. Deux gestes différents, et c'est
+   * pour ça que la pastille en a deux : le cœur garde CETTE annonce, le
+   * chiffre ouvre celles qu'on a déjà gardées. Séparés, on ne perd jamais
+   * l'un en cherchant l'autre.
+   */
+  const [favoris, setFavoris] = useState<string[]>([]);
 
   const liste = useMemo(() => OFFRES.filter((x) => x.branche === branche), [branche]);
   const o = liste[k % liste.length];
@@ -167,6 +189,12 @@ export default function EssaiAnnonce() {
     const t = window.setTimeout(() => setEcho(""), 2800);
     return () => window.clearTimeout(t);
   }, [echo]);
+
+  const garde = favoris.includes(o?.id ?? "");
+  function basculerFavori() {
+    setFavoris((l) => (l.includes(o.id) ? l.filter((x) => x !== o.id) : [...l, o.id]));
+    setEcho(garde ? "Retiré de vos favoris." : "♥ Gardé. Vous le retrouvez en haut à droite.");
+  }
 
   /** Changer de métier repart de la première annonce de ce métier. */
   function choisirMetier(b: Branche) {
@@ -302,8 +330,34 @@ export default function EssaiAnnonce() {
         .es-metier i{font-style:normal;font-size:14px;line-height:1;}
         .es-metier s{text-decoration:none;opacity:.55;font-size:10px;}
 
+        /* LES FAVORIS, EN HAUT A DROITE — symetriques du metier. La pastille
+           a deux moities parce qu'il y a deux gestes : le coeur garde CETTE
+           annonce, le chiffre ouvre celles qu'on a gardees. */
+        .es-fav{position:absolute;right:12px;top:12px;z-index:2;display:flex;
+          align-items:center;border-radius:999px;overflow:hidden;
+          border:1px solid rgba(255,255,255,.18);background:rgba(6,16,13,.55);
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+        .es-fav button{font:inherit;font-size:17px;line-height:1;cursor:pointer;
+          background:none;border:0;color:#F2EFE4;padding:8px 11px;}
+        .es-fav button.on{color:#3DE2A6;}
+        .es-fav .nb{font-size:13px;font-weight:800;min-width:34px;
+          border-left:1px solid rgba(255,255,255,.16);color:#CFE0D6;}
+        .es-fav button:active{transform:scale(.92);}
+
+        /* CE QUI REMPLACE LE MOT « DETAILS ». Un chevron seul ne dit pas ce
+           qu'il y a derriere ; « 2 moments aujourd'hui » dit le geste ET son
+           contenu, et c'est une information en soi. */
+        .es-suite{position:absolute;left:50%;bottom:calc(20% + 8px);z-index:2;
+          transform:translateX(-50%);display:flex;align-items:center;gap:7px;
+          font:inherit;font-size:12px;font-weight:700;cursor:pointer;
+          color:#EAF2EC;border-radius:999px;padding:7px 14px;white-space:nowrap;
+          border:1px solid rgba(255,255,255,.16);background:rgba(6,16,13,.5);
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+        .es-suite s{text-decoration:none;font-size:13px;line-height:1;opacity:.7;}
+        .es-suite:active{transform:translateX(-50%) scale(.97);}
+
         /* ── CE QU'ON LIT : LA DECISION, ET RIEN D'AUTRE ──────────────── */
-        .es-dit{position:absolute;left:0;right:0;bottom:calc(20% + 16px);
+        .es-dit{position:absolute;left:0;right:0;bottom:calc(20% + 54px);
           padding:0 20px;text-align:center;pointer-events:none;}
         .es-nature{margin:0;font-size:11px;font-weight:800;letter-spacing:.26em;
           text-transform:uppercase;color:#EFEAD9;opacity:.92;}
@@ -447,12 +501,36 @@ export default function EssaiAnnonce() {
                 {voile && <span className="es-voile" aria-hidden="true" />}
               </div>
 
-              {/* LE MÉTIER : le seul élément posé en haut de la photo. */}
+              {/* EN HAUT : LE MÉTIER À GAUCHE, LES FAVORIS À DROITE.
+                  Deux objets, aux deux coins, et rien entre les deux. */}
               <button type="button" className="es-metier" onClick={() => setFeuille("metier")}>
                 <i aria-hidden="true">{metier.emoji}</i>
                 {metier.label}
                 <s aria-hidden="true">▾</s>
               </button>
+
+              {/* LA PASTILLE A DEUX MOITIÉS, ET C'EST VOULU : le cœur GARDE
+                  cette annonce, le chiffre OUVRE ce qu'on a gardé. Ce sont
+                  deux gestes différents ; les confondre, c'est perdre l'un en
+                  cherchant l'autre. */}
+              <div className="es-fav">
+                <button
+                  type="button"
+                  className={garde ? "on" : ""}
+                  aria-label={garde ? "Retirer des favoris" : "Garder cette annonce"}
+                  onClick={basculerFavori}
+                >
+                  {garde ? "♥" : "♡"}
+                </button>
+                <button
+                  type="button"
+                  className="nb"
+                  aria-label="Mes favoris"
+                  onClick={() => setFeuille("favoris")}
+                >
+                  {favoris.length}
+                </button>
+              </div>
 
               <span className="es-tampon non">Passer</span>
               <span className="es-tampon oui">En parler</span>
@@ -466,6 +544,20 @@ export default function EssaiAnnonce() {
                 </p>
                 {o.quand && <span className="es-quand">{o.quand}</span>}
               </div>
+
+              {/* CE QUI REMPLACE LE MOT « DÉTAILS ». Un chevron seul ne dit
+                  pas ce qu'il y a derrière ; « 2 moments aujourd'hui » dit à
+                  la fois le geste ET son contenu, et c'est une information en
+                  soi — ce commerce a d'autres choses prévues. Il est au bas de
+                  la photo, à la place où l'on cherche naturellement la suite. */}
+              <button
+                type="button"
+                className="es-suite"
+                onClick={() => setFeuille("detail")}
+              >
+                <s aria-hidden="true">⌄</s>
+                {o.moments.length} moment{o.moments.length > 1 ? "s" : ""} aujourd’hui
+              </button>
             </div>
           </div>
         ) : (
@@ -482,13 +574,18 @@ export default function EssaiAnnonce() {
         <div className="es-bas">
           {onglet === "direct" && (
             <div className="es-actes">
+              {/* PASSER A SON BOUTON, et pas seulement son geste. Le balayage
+                  reste, mais il ne se devine pas : quelqu'un qui ouvre
+                  l'application pour la première fois doit pouvoir avancer
+                  sans qu'on lui ait rien expliqué. Le détail, lui, a quitté
+                  cette rangée — il est sur la photo, avec son contenu. */}
               <button
                 type="button"
                 className="es-rond"
-                aria-label="Le détail"
-                onClick={() => setFeuille("detail")}
+                aria-label="Passer à la suivante"
+                onClick={() => setK((n) => n + 1)}
               >
-                ⌄
+                ✕
               </button>
               <button
                 type="button"
@@ -569,23 +666,40 @@ export default function EssaiAnnonce() {
                     {o.nature} · {o.offre} · {o.prix} · Dax, à {o.distance}
                   </p>
                   <ul className="es-jrn">
-                    <li>
-                      <b>10 h 00</b>
-                      <span>L’ardoise du jour est écrite</span>
-                    </li>
-                    <li>
-                      <b>12 h 00</b>
-                      <span>Il reste des tables en terrasse</span>
-                    </li>
-                    <li>
-                      <b>14 h 30</b>
-                      <span>Les dernières parts à emporter</span>
-                    </li>
-                    <li>
-                      <b>19 h 30</b>
-                      <span>La grande tablée du soir</span>
-                    </li>
+                    {o.moments.map((m) => (
+                      <li key={m.h}>
+                        <b>{m.h}</b>
+                        <span>{m.quoi}</span>
+                      </li>
+                    ))}
                   </ul>
+                </>
+              )}
+
+              {feuille === "favoris" && (
+                <>
+                  <h3>Ce que vous avez gardé</h3>
+                  {favoris.length === 0 ? (
+                    <p>
+                      Rien pour l’instant. Le cœur, en haut à droite, garde une
+                      annonce&nbsp;; vous la retrouvez ici.
+                    </p>
+                  ) : (
+                    <>
+                      <p>Vous les retrouvez aussi dans « Moi ».</p>
+                      <div className="es-liste">
+                        {favoris.map((id) => {
+                          const f = OFFRES.find((x) => x.id === id)!;
+                          return (
+                            <button key={id} type="button" onClick={() => setFeuille("")}>
+                              <i aria-hidden="true">♥</i>
+                              {f.offre} — {f.commerce}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
                 </>
               )}
 
