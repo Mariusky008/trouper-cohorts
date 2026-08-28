@@ -133,6 +133,13 @@ import { MARQUE } from "@/lib/marque";
 
 /** Au-delà de cette distance en pixels, le doigt a décidé : la carte part. */
 const SEUIL = 84;
+/**
+ * COMBIEN DE TEMPS LA CARTE SE MONTRE ELLE-MÊME, à la première ouverture.
+ * Deux allers-retours complets — à droite, puis à gauche — avec le temps de
+ * lire le tampon à chaque bout. Plus court, on ne voit qu'un tremblement ;
+ * plus long, on attend devant sa propre application.
+ */
+const MONTRE_MS = 3400;
 /** À partir de cette descente dans la carte, on considère qu'on LIT — et le
  *  balayage horizontal se désarme pour ne pas emporter la carte qu'on lit. */
 const SEUIL_PLI = 90;
@@ -936,6 +943,22 @@ export function ApercuHabitant() {
     // de 0,24 s couvre l'unique image où les deux diffèrent.
     !vus.includes("balayage");
 
+  /**
+   * LA DÉMONSTRATION SE TERMINE TOUTE SEULE, ET C'EST UN MINUTEUR QUI LA FINIT
+   * — pas la fin de l'animation.
+   *
+   * POURQUOI PAS `animationend` : sous « animations réduites », il n'y a AUCUNE
+   * animation, donc l'événement ne vient jamais et la démonstration resterait
+   * accrochée à l'écran pour toujours. Le minuteur, lui, tourne dans les deux
+   * cas. C'est le genre de panne qu'on ne voit pas en la testant sur sa propre
+   * machine.
+   */
+  useEffect(() => {
+    if (!montrerLeTuto) return;
+    const t = window.setTimeout(() => marquerVu("balayage"), MONTRE_MS + 200);
+    return () => window.clearTimeout(t);
+  }, [montrerLeTuto]);
+
   const salon: Salon | undefined = salons[salonOuvert];
 
   /**
@@ -1456,6 +1479,23 @@ export function ApercuHabitant() {
 
   const listeEnvies = ENVIES[branche];
   const aReserver = restants.filter((m) => m.action && (m.places ?? 1) > 0);
+
+  /**
+   * OÙ EN EST LE GESTE — de 0 à 1, de chaque côté.
+   *
+   * IL SE DÉCLENCHE PLUS TÔT QUE LE SEUIL, et c'est délibéré : à 56 points le
+   * tampon est déjà plein alors que la carte ne partira qu'à 84. On lit donc
+   * ce qui va se passer AVANT d'avoir atteint le point de non-retour, ce qui
+   * est le seul moment où l'information sert encore à quelque chose.
+   *
+   * PENDANT L'ENVOL, il reste à fond : la carte s'en va, mais on doit pouvoir
+   * lire ce qu'on vient de faire pendant qu'elle s'en va.
+   */
+  const ANNONCE = 56;
+  const partNon =
+    sortant === "gauche" ? 1 : Math.min(1, Math.max(0, -dx / ANNONCE));
+  const partOui =
+    sortant === "droite" ? 1 : Math.min(1, Math.max(0, dx / ANNONCE));
 
   // ── CE QUE MON ESPACE AFFICHE ────────────────────────────────────────────
   // Les trois listes se reconstruisent depuis les identifiants gardés : rien
@@ -3095,10 +3135,13 @@ export function ApercuHabitant() {
                     estInvitation(sommet) ? " invit" : ""
                   }${embauches ? " emb" : ""}${dessusEv ? " ev" : ""}${
                     carrousel ? " carrousel" : ""
-                  }`}
+                  }${montrerLeTuto ? " montre" : ""}`}
                   style={{ transform: `translate3d(${dx}px,0,0) rotate(${dx * 0.04}deg)` }}
                   onPointerDown={(e) => {
                     if (sortant) return;
+                    // QUI A DÉJÀ COMPRIS N'ATTEND PAS LA FIN. Le premier
+                    // contact arrête la démonstration et rend la carte.
+                    if (montrerLeTuto) marquerVu("balayage");
                     // PAS DE CAPTURE ICI. La capture au premier contact volerait
                     // le défilement au navigateur : on ne la prend qu'une fois
                     // sûr que le geste est horizontal.
@@ -4044,85 +4087,73 @@ export function ApercuHabitant() {
                     </div>
                   </div>
 
-                  {/* LE TAMPON DE GAUCHE DIT CE QU'IL FAIT, pas un symbole.
-                      Une croix seule laisse deviner : on efface ? on refuse ? on
-                      dit du mal ? Le mot lève la question pendant le geste, au
-                      seul moment où on peut encore revenir en arrière. */}
+                  {/* ─── LES DEUX TAMPONS, COMME SUR UNE CARTE QU'ON JETTE ───
+                      DÉFAUT MESURÉ, PAS SUPPOSÉ : ils existaient déjà, et on
+                      ne les voyait pas. Posés à 26 points du haut de la carte,
+                      ils passaient DERRIÈRE le bandeau, qui en descend 49 —
+                      et le bandeau porte z-index:4 quand la carte, elle, est
+                      enfermée dans son propre contexte d'empilement par
+                      will-change:transform. Aucun z-index n'aurait pu les en
+                      sortir : il fallait les descendre.
+                      MESURE : le tampon « En parler » commençait à 4,4 points
+                      et le bandeau finissait à 49,3. Quarante-cinq points de
+                      tampon, c'est-à-dire sa moitié, étaient recouverts.
+
+                      ILS SONT AUSSI DEVENUS PETITS. Une pancarte de 108 points
+                      de haut sur la moitié de la largeur cache ce qu'on est en
+                      train de choisir ; le geste doit se confirmer, pas
+                      s'imposer. Un mot en capitales, incliné, comme sur les
+                      applications où ce geste a été appris.
+
+                      ILS GROSSISSENT AVEC LE DOIGT — l'échelle suit la
+                      progression, si bien qu'on voit la décision se former
+                      avant de lâcher, et qu'on peut encore revenir. */}
                   <span
                     className="ap-tampon non"
-                    style={{ opacity: Math.min(1, Math.max(0, -dx / SEUIL)) }}
+                    style={{
+                      opacity: partNon,
+                      transform: `rotate(12deg) scale(${(0.84 + 0.16 * partNon).toFixed(3)})`,
+                    }}
                     aria-hidden="true"
                   >
-                    ✕
-                    <b>Passer</b>
+                    Passer
                   </span>
-                  {/* LE TAMPON DE DROITE ANNONCE CE QUI VA S'OUVRIR. C'était
-                      un cœur, du temps où le balayage droit gardait la carte ;
-                      il aurait promis un favori et livré un salon. Il porte
-                      donc la phrase entière — « j'emmène mes amis » — parce que
-                      c'est le seul endroit de l'écran où elle tient en grand et
-                      où on la lit AVANT de lâcher le doigt. */}
                   <span
                     className="ap-tampon oui"
-                    style={{ opacity: Math.min(1, Math.max(0, dx / SEUIL)) }}
+                    style={{
+                      opacity: partOui,
+                      transform: `rotate(-12deg) scale(${(0.84 + 0.16 * partOui).toFixed(3)})`,
+                    }}
                     aria-hidden="true"
                   >
-                    💬
-                    <b>En parler à mes amis</b>
+                    En parler
                   </span>
-                  {!aJoue && !descendu && !montrerLeTuto && (
+                  {!descendu && (montrerLeTuto || !aJoue) && (
                     <span className="ap-doigt" aria-hidden="true">👆</span>
                   )}
 
-                  {/* ─── LE BALAYAGE, EXPLIQUÉ UNE SEULE FOIS ───
-                      DÉFAUT RELEVÉ AU TEST : « quand on balaie à droite, les
-                      gens ne comprennent pas vraiment où ils arrivent ». C'est
-                      le geste central du produit — celui qui fait passer d'une
-                      annonce à une conversation — et il était deviné, pas
-                      compris. Le doigt animé disait « ça se balaie » ; il ne
-                      disait pas ce que chaque côté fait.
-                      ELLE EST POSÉE SUR LA CARTE, pas sur un écran à part : une
-                      explication qui cache ce qu'elle explique s'oublie entre
-                      le moment où on la lit et celui où on agit.
-                      ELLE NE REVIENT PLUS. Une aide qu'on revoit à chaque
-                      ouverture devient un obstacle entre la personne et ce
-                      qu'elle est venue chercher. */}
-                  {montrerLeTuto && (
-                    <div
-                      className="ap-tuto"
-                      role="dialog"
-                      aria-label="Comment ça marche"
-                      onPointerDown={(ev) => ev.stopPropagation()}
-                    >
-                      <div className="ap-tuto-c">
-                        <p className="ap-tuto-t">Deux gestes, et c&apos;est tout.</p>
-                        <div className="ap-tuto-l non">
-                          <i aria-hidden="true">←</i>
-                          <span>
-                            <b>Passer</b>
-                            à l&apos;annonce suivante
-                          </span>
-                        </div>
-                        <div className="ap-tuto-l oui">
-                          <i aria-hidden="true">→</i>
-                          <span>
-                            <b>En parler à mes amis</b>
-                            ouvre le salon de cette annonce
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          className="ap-tuto-b"
-                          onClick={() => {
-                            noter("pli", 0, "tuto-balayage");
-                            marquerVu("balayage");
-                          }}
-                        >
-                          J&apos;ai compris
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                  {/* ─── LE BALAYAGE NE S'EXPLIQUE PLUS, IL SE MONTRE ───
+                      CE QU'IL Y AVAIT : une boîte de dialogue posée sur la
+                      carte, « Deux gestes, et c'est tout », deux lignes de
+                      légende et un bouton « J'ai compris ». Jugement de
+                      l'usage, et il est juste : « c'est vraiment pas beau du
+                      tout et on comprend pas du tout que c'est des swipe ».
+                      Il avait raison sur le fond, pas seulement sur la forme —
+                      DÉCRIRE un geste avec des flèches et des mots demande de
+                      traduire une phrase en mouvement, ce que personne ne fait
+                      devant un écran qu'il découvre. Et la boîte cachait
+                      justement la carte dont elle parlait.
+
+                      CE QU'IL Y A MAINTENANT : la carte part elle-même à
+                      droite, le tampon « En parler » apparaît, elle revient ;
+                      elle part à gauche, « Passer » apparaît, elle revient. Le
+                      doigt suit. Trois secondes et demie, une seule fois, sans
+                      bouton à fermer — et un appui l'interrompt aussitôt,
+                      parce que quelqu'un qui a déjà compris ne doit pas
+                      attendre la fin d'une démonstration.
+
+                      C'est le même dessin que ce qui se passera vraiment : ce
+                      qu'on montre EST le produit, aux pixels près. */}
                 </div>
               </div>
             ) : (
@@ -7423,57 +7454,77 @@ export function ApercuHabitant() {
         .ap-flamme.on{color:#FFD9BE;background:rgba(249,115,22,.22);
           border-color:rgba(249,115,22,.6);}
 
-        .ap-tampon{position:absolute;top:26px;font-size:34px;font-weight:900;line-height:1;
-          border:4px solid currentColor;border-radius:14px;padding:8px 16px;pointer-events:none;}
-        .ap-tampon.non{right:20px;color:#FF6B6B;transform:rotate(15deg);}
-        .ap-tampon.oui{left:20px;color:#3DE2A6;transform:rotate(-15deg);
-          display:flex;flex-direction:column;align-items:center;gap:2px;
-          max-width:60%;}
-        .ap-tampon.oui b{font-size:11.5px;font-weight:850;line-height:1.15;
-          letter-spacing:0;text-align:center;}
+        /* ─── LES DEUX TAMPONS DU GESTE ───
+           DEFAUT MESURE, ET IL DURAIT DEPUIS LONGTEMPS : poses a 26 points du
+           haut de la carte, ils passaient DERRIERE le bandeau, qui en descend
+           49. Mesure au navigateur, doigt sur la carte : « En parler »
+           commencait a 4,4 points et le bandeau finissait a 49,3 — sa moitie
+           etait recouverte. Et aucun z-index ne pouvait l'en sortir :
+           .ap-dessus porte will-change:transform, donc il enferme ses enfants
+           dans son propre contexte d'empilement, sous celui du bandeau. La
+           seule reponse est de les descendre SOUS le bandeau, et c'est ce que
+           fait cette ligne — la meme variable que tout ce qui vit en haut.
+           ATTENTION : jamais d'accent grave dans ces commentaires CSS. */
+        /* TRENTE-QUATRE POINTS, ET PAS VINGT : les points du carrousel vivent
+           a six points sous le bandeau et traversent toute la largeur. A vingt,
+           leur trait blanc barrait le mot en son milieu — vu sur la capture du
+           geste. On descend une fois pour toutes plutot que d'ajouter une
+           exception au cas ou il y a plusieurs photos. */
+        .ap-tampon{position:absolute;top:calc(var(--ap-haut-h, 100px) + 34px);
+          font-size:19px;font-weight:900;line-height:1;letter-spacing:.05em;
+          text-transform:uppercase;white-space:nowrap;pointer-events:none;
+          border:3px solid currentColor;border-radius:11px;padding:7px 13px;
+          background:rgba(4,9,7,.42);
+          -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+          transform-origin:50% 50%;}
+        /* L'un a droite, l'autre a gauche, et c'est le sens du geste qui le
+           veut : la carte glisse a droite, le tampon « En parler » se decouvre
+           a gauche, du cote d'ou elle vient. */
+        .ap-tampon.non{right:18px;color:#FF6B6B;}
+        .ap-tampon.oui{left:18px;color:#3DE2A6;}
 
-        /* ── LE BALAYAGE, EXPLIQUE UNE SEULE FOIS ──────────────────────
-           POSEE SUR LA CARTE, PAS SUR UN ECRAN A PART : une explication qui
-           cache ce qu'elle explique s'oublie entre le moment ou on la lit et
-           celui ou on agit. Le voile laisse voir la photo dessous — on
-           comprend qu'on parle de CETTE annonce-la. */
-        .ap-tuto{position:absolute;inset:0;z-index:6;display:flex;
-          align-items:center;justify-content:center;padding:22px;
-          background:rgba(4,9,7,.72);
-          -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
-          animation:apTuto .24s ease both;}
-        @keyframes apTuto{from{opacity:0;}to{opacity:1;}}
-        .ap-tuto-c{width:100%;max-width:300px;display:flex;flex-direction:column;
-          gap:13px;padding:20px 18px;border-radius:20px;
-          background:rgba(12,20,17,.96);border:1px solid rgba(255,255,255,.13);
-          box-shadow:0 30px 60px -24px rgba(0,0,0,.9);}
-        .ap-tuto-t{margin:0;font-size:16px;font-weight:850;color:#fff;
-          letter-spacing:-.02em;text-align:center;}
-        .ap-tuto-l{display:flex;align-items:center;gap:13px;padding:11px 13px;
-          border-radius:14px;background:rgba(255,255,255,.05);
-          border:1px solid rgba(255,255,255,.1);}
-        /* LA MEME COULEUR QUE LE TAMPON QUI APPARAITRA PENDANT LE GESTE : ce
-           qu'on lit ici et ce qu'on verra en balayant doivent se reconnaitre. */
-        .ap-tuto-l i{font-style:normal;font-size:22px;font-weight:900;
-          line-height:1;flex:none;}
-        .ap-tuto-l.non i{color:#FF6B6B;}
-        .ap-tuto-l.oui i{color:#3DE2A6;}
-        .ap-tuto-l span{flex:1;min-width:0;font-size:11.5px;line-height:1.35;
-          color:#8C9C94;}
-        .ap-tuto-l b{display:block;font-size:13.5px;font-weight:850;
-          letter-spacing:-.01em;}
-        .ap-tuto-l.non b{color:#FFB3B3;}
-        .ap-tuto-l.oui b{color:#CFF7E6;}
-        .ap-tuto-b{width:100%;font:inherit;font-size:14.5px;font-weight:850;
-          cursor:pointer;color:#04150E;border:0;border-radius:13px;padding:12px;
-          background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
-        .ap-tuto-b:active{transform:scale(.98);}
-
-        /* Le tampon de gauche porte son mot, comme celui de droite. */
-        .ap-tampon.non{display:flex;flex-direction:column;align-items:center;
-          gap:2px;}
-        .ap-tampon.non b{font-size:11.5px;font-weight:850;line-height:1.15;
-          letter-spacing:0;}
+        /* ─── LA CARTE SE MONTRE ELLE-MEME, UNE SEULE FOIS ───
+           Elle part a droite, le tampon « En parler » apparait, elle revient ;
+           elle part a gauche, « Passer » apparait, elle revient. Il n'y a rien
+           a lire et rien a fermer.
+           L'ANIMATION L'EMPORTE SUR LE style EN LIGNE — c'est la regle de la
+           cascade, les animations passent devant les declarations en ligne —
+           donc le transform du doigt et l'opacite des tampons, tous deux poses
+           en ligne, sont repris ici sans avoir a les couper cote React.
+           PAS DE fill-mode : a la fin, chacun retrouve sa valeur en ligne,
+           c'est-a-dire l'etat du vrai geste. */
+        .ap-dessus.montre{animation:apMontre ${MONTRE_MS}ms cubic-bezier(.4,0,.25,1) 1;}
+        @keyframes apMontre{
+          0%,5%{transform:translate3d(0,0,0) rotate(0);}
+          22%{transform:translate3d(78px,0,0) rotate(3.1deg);}
+          38%{transform:translate3d(0,0,0) rotate(0);}
+          57%{transform:translate3d(-78px,0,0) rotate(-3.1deg);}
+          73%,100%{transform:translate3d(0,0,0) rotate(0);}
+        }
+        .ap-dessus.montre .ap-tampon.oui{animation:apMontreOui ${MONTRE_MS}ms ease-in-out 1;}
+        @keyframes apMontreOui{
+          0%,8%{opacity:0;transform:rotate(-12deg) scale(.84);}
+          22%,32%{opacity:1;transform:rotate(-12deg) scale(1);}
+          40%,100%{opacity:0;transform:rotate(-12deg) scale(.84);}
+        }
+        .ap-dessus.montre .ap-tampon.non{animation:apMontreNon ${MONTRE_MS}ms ease-in-out 1;}
+        @keyframes apMontreNon{
+          0%,43%{opacity:0;transform:rotate(12deg) scale(.84);}
+          57%,67%{opacity:1;transform:rotate(12deg) scale(1);}
+          75%,100%{opacity:0;transform:rotate(12deg) scale(.84);}
+        }
+        /* LE DOIGT SUIT LA CARTE, au point pres : c'est lui qui dit que le
+           mouvement vient d'une main et pas d'une decoration. */
+        .ap-dessus.montre .ap-doigt{animation:apMontreDoigt ${MONTRE_MS}ms cubic-bezier(.4,0,.25,1) 1;}
+        @keyframes apMontreDoigt{
+          0%{transform:translate3d(0,0,0);opacity:0;}
+          5%{transform:translate3d(0,0,0);opacity:1;}
+          22%{transform:translate3d(78px,0,0);opacity:1;}
+          38%{transform:translate3d(0,0,0);opacity:1;}
+          57%{transform:translate3d(-78px,0,0);opacity:1;}
+          73%{transform:translate3d(0,0,0);opacity:1;}
+          85%,100%{transform:translate3d(0,0,0);opacity:0;}
+        }
 
         .ap-doigt{position:absolute;left:50%;margin-left:-16px;top:26%;z-index:3;font-size:32px;
           pointer-events:none;filter:drop-shadow(0 4px 10px rgba(0,0,0,.7));
@@ -7702,6 +7753,10 @@ export function ApercuHabitant() {
           .ap-dessus.invit .cd-carte{animation:none;}
           .ap-dessus.vole{transition-duration:.01ms;}
           .ap-feuille,.ap-fond,.ap-coeur,.ap-r-ok,.ap-echo{animation:none;}
+          /* PAS DE DEMONSTRATION ANIMEE : on montre les deux tampons, poses,
+             le temps que le minuteur les retire. Rien ne bouge, tout se lit. */
+          .ap-dessus.montre,.ap-dessus.montre .ap-doigt{animation:none;}
+          .ap-dessus.montre .ap-tampon{animation:none;opacity:.92;}
           .ap-coeur{display:none;}
         }
       `,
