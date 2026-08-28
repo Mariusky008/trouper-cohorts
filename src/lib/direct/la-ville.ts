@@ -310,47 +310,103 @@ export function messagesSemes(maintenant = Date.now()): MessageVille[] {
 // raison : on écrit, on ferme, on revient, et c'est encore là. Rien ne quitte
 // le téléphone : la maquette n'a pas de serveur de conversation.
 
-const CLE = "clikme-ville-v1";
+// CE QU'ON ÉCRIT, ET CE QU'ON N'ÉCRIT SURTOUT PAS.
+//
+// DÉFAUT CORRIGÉ ICI, ET IL VIDAIT LA VILLE. On enregistrait la liste ENTIÈRE,
+// exemples compris. Or un exemple porte un instant absolu (`a`), calculé au
+// premier chargement : une fois écrit, il cesse d'être « il y a douze minutes »
+// et devient « mardi à 14 h 02 ». Le lendemain, la purge — qui fait bien son
+// travail — les effaçait tous, et La Ville s'ouvrait sur une place vide. Le
+// premier message envoyé suffisait à déclencher l'écriture, donc à condamner
+// les exemples.
+//
+// LA RÈGLE EST DONC : LES EXEMPLES NE SONT JAMAIS ÉCRITS. Ils sont resemés à
+// chaque ouverture, toujours relatifs à l'instant présent — c'est ce que
+// promet l'en-tête de ce fichier. On n'écrit que ce que le visiteur a fait :
+// ses propres messages, et ses retouches sur les exemples (son cœur, ses
+// réponses, son intérêt, le salon qu'il a ouvert).
+const CLE = "clikme-ville-v2";
+/** L'ancien format écrivait les exemples ; on ne le relit pas, on le jette. */
+const CLE_MORTE = "clikme-ville-v1";
+
+/** Ce que le visiteur a ajouté SUR un exemple. Le reste vient de la graine. */
+type Retouche = {
+  monCoeur?: boolean;
+  reponses?: ReponseVille[];
+  interesses?: string[];
+  salon?: string;
+};
+type Etat = { miennes: MessageVille[]; retouches: Record<string, Retouche> };
+
+const VIDE: Etat = { miennes: [], retouches: {} };
 const abonnes = new Set<() => void>();
 export const VILLE_VIDE: MessageVille[] = [];
+let etat: Etat | null = null;
 let cache: MessageVille[] | null = null;
 
-function garder(v: MessageVille[]) {
-  cache = v;
+/** Recolle les exemples frais et ce que le visiteur en a fait. */
+function composer(e: Etat): MessageVille[] {
+  const semes = messagesSemes().map((m) => {
+    const r = e.retouches[m.id];
+    if (!r) return m;
+    return {
+      ...m,
+      coeurs: m.coeurs + (r.monCoeur ? 1 : 0),
+      monCoeur: r.monCoeur,
+      reponses: [...m.reponses, ...(r.reponses ?? [])],
+      interesses: r.interesses ?? m.interesses,
+      salon: r.salon ?? m.salon,
+    };
+  });
+  // LA PURGE NE PORTE QUE SUR CE QUI EST ÉCRIT, et c'est tout son sens : ce que
+  // le visiteur a dit s'efface vraiment au bout de quelques heures — la
+  // promesse tient — pendant que la maquette reste peuplée.
+  return [...e.miennes.filter((m) => resteMinutes(m) > 0), ...semes];
+}
+
+function lire(): Etat {
+  if (etat) return etat;
+  if (typeof window === "undefined") return VIDE;
   try {
-    window.localStorage.setItem(CLE, JSON.stringify(v));
+    window.localStorage.removeItem(CLE_MORTE);
+    const brut = window.localStorage.getItem(CLE);
+    const e = brut ? (JSON.parse(brut) as Etat) : VIDE;
+    etat = { miennes: e.miennes ?? [], retouches: e.retouches ?? {} };
+  } catch {
+    etat = VIDE;
+  }
+  return etat;
+}
+
+function garder(e: Etat) {
+  etat = e;
+  cache = composer(e);
+  try {
+    window.localStorage.setItem(CLE, JSON.stringify(e));
   } catch {
     /* Stockage plein ou refusé : la session continue en mémoire. */
   }
   abonnes.forEach((f) => f());
 }
 
+/** Retouche un exemple, ou modifie un message du visiteur : même appel. */
+function retoucher(id: string, f: (r: Retouche) => Retouche, g: (m: MessageVille) => MessageVille) {
+  const e = lire();
+  if (e.miennes.some((m) => m.id === id)) {
+    garder({ ...e, miennes: e.miennes.map((m) => (m.id === id ? g(m) : m)) });
+    return;
+  }
+  garder({ ...e, retouches: { ...e.retouches, [id]: f(e.retouches[id] ?? {}) } });
+}
+
 /**
- * LA PURGE EST FAITE ICI, À LA LECTURE, ET ELLE SUPPRIME VRAIMENT.
- *
- * Pas de champ « masqué », pas d'archive : un message dont le temps est écoulé
- * sort du stockage. C'est la seule façon d'être sûr que la promesse tient —
- * une donnée qu'on garde « au cas où » finit toujours par ressortir.
+ * CE QUE LA VILLE MONTRE MAINTENANT : les exemples, toujours frais, et ce que
+ * le visiteur a dit tant que ça vit encore.
  */
 export function chargerVille(): MessageVille[] {
   if (cache) return cache;
   if (typeof window === "undefined") return VILLE_VIDE;
-  let v: MessageVille[];
-  try {
-    const brut = window.localStorage.getItem(CLE);
-    v = brut ? (JSON.parse(brut) as MessageVille[]) : messagesSemes();
-  } catch {
-    v = messagesSemes();
-  }
-  const vivants = v.filter((m) => resteMinutes(m) > 0);
-  cache = vivants;
-  if (vivants.length !== v.length) {
-    try {
-      window.localStorage.setItem(CLE, JSON.stringify(vivants));
-    } catch {
-      /* idem */
-    }
-  }
+  cache = composer(lire());
   return cache;
 }
 
@@ -363,7 +419,7 @@ export function abonnerVille(f: () => void) {
 
 /** Dire quelque chose. Le rangement est déjà fait, et déjà montré. */
 export function direQuelqueChose(texte: string, nature: NatureVille, photo?: string) {
-  const v = chargerVille();
+  const e = lire();
   const neuf: MessageVille = {
     id: `v${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
     qui: "Vous",
@@ -381,60 +437,47 @@ export function direQuelqueChose(texte: string, nature: NatureVille, photo?: str
     photo,
     interesses: nature === "cherche" ? [] : undefined,
   };
-  garder([neuf, ...v]);
+  garder({ ...e, miennes: [neuf, ...e.miennes] });
   return neuf;
 }
 
 export function reagirVille(id: string) {
-  const v = chargerVille();
-  garder(
-    v.map((m) =>
-      m.id === id
-        ? { ...m, coeurs: m.coeurs + (m.monCoeur ? -1 : 1), monCoeur: !m.monCoeur }
-        : m,
-    ),
+  retoucher(
+    id,
+    (r) => ({ ...r, monCoeur: !r.monCoeur }),
+    (m) => ({ ...m, coeurs: m.coeurs + (m.monCoeur ? -1 : 1), monCoeur: !m.monCoeur }),
   );
 }
 
 export function repondreVille(id: string, texte: string) {
-  const v = chargerVille();
-  garder(
-    v.map((m) =>
-      m.id === id
-        ? {
-            ...m,
-            reponses: [
-              ...m.reponses,
-              {
-                id: `r${Date.now()}${Math.random().toString(36).slice(2, 5)}`,
-                qui: "Vous",
-                texte: texte.trim(),
-                quand: "à l'instant",
-              },
-            ],
-          }
-        : m,
-    ),
+  const r: ReponseVille = {
+    id: `r${Date.now()}${Math.random().toString(36).slice(2, 5)}`,
+    qui: "Vous",
+    texte: texte.trim(),
+    quand: "à l'instant",
+  };
+  retoucher(
+    id,
+    (x) => ({ ...x, reponses: [...(x.reponses ?? []), r] }),
+    (m) => ({ ...m, reponses: [...m.reponses, r] }),
   );
 }
 
 /** Sur un « cherche » : dire que ça vous intéresse. */
 export function caMInteresse(id: string) {
-  const v = chargerVille();
-  garder(
-    v.map((m) => {
-      if (m.id !== id) return m;
-      const l = m.interesses ?? [];
-      return {
-        ...m,
-        interesses: l.includes("Vous") ? l.filter((x) => x !== "Vous") : [...l, "Vous"],
-      };
-    }),
+  // LA LISTE DE DÉPART VIENT DE LA GRAINE, pas de la retouche : sans ça, dire
+  // « ça m'intéresse » ferait disparaître Léa, Karim et Fatou de l'écran.
+  const depart = (i: string) => messagesSemes().find((m) => m.id === i)?.interesses ?? [];
+  const bascule = (l: string[]) =>
+    l.includes("Vous") ? l.filter((x) => x !== "Vous") : [...l, "Vous"];
+  retoucher(
+    id,
+    (r) => ({ ...r, interesses: bascule(r.interesses ?? depart(id)) }),
+    (m) => ({ ...m, interesses: bascule(m.interesses ?? []) }),
   );
 }
 
 /** Marque le salon ouvert depuis un message, pour ne pas en ouvrir deux. */
 export function salonDepuisVille(id: string, cle: string) {
-  const v = chargerVille();
-  garder(v.map((m) => (m.id === id ? { ...m, salon: cle } : m)));
+  retoucher(id, (r) => ({ ...r, salon: cle }), (m) => ({ ...m, salon: cle }));
 }
