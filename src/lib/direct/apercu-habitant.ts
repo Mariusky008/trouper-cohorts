@@ -1050,6 +1050,19 @@ const CARTES: CarteAutour[] = [
         titre: "Les deux plats du jour",
         lignes: ["Lasagnes maison", "Curry de légumes"],
         prix: "11 €", places: 14, action: "Gardez-m'en une part", envies: ["italien", "moins15", "maintenant", "emporter"],
+        // LA COMMANDE GROUPEE DU MIDI — le cas le plus banal qui soit dans un
+        // bureau : quelqu'un descend chercher pour tout le monde. Cinq parts
+        // preparees ensemble et retirees en un passage lui coutent moins de
+        // travail que cinq clients etales sur deux heures, et c'est la seule
+        // raison pour laquelle il peut lacher deux euros.
+        // ELLE EST SUR LA PREMIERE CARTE DU PAQUET, ET C'EST DELIBERE :
+        // mesure faite, le premier collectif n'apparaissait qu'a la cinquieme
+        // annonce. Quelqu'un qui en regarde trois et repose son telephone ne
+        // rencontrait jamais la fonction — autant dire qu'elle n'existait pas.
+        collectif: {
+          objectif: 5, participants: 3, prixGroupe: "9 €",
+          qui: ["Camille", "Bastien", "Sofia"],
+        },
       },
       {
         de: 13, a: 17, quand: "à partir de 13 h", icone: "🔥",
@@ -1140,6 +1153,17 @@ const CARTES: CarteAutour[] = [
           "Plat + verre compris · On mélange, on verra bien",
         ],
         prix: "22 €", places: 2, action: "Je prends une place", envies: ["partager"],
+        // CELUI-CI ETAIT DEJA UN COLLECTIF SANS EN PORTER LE NOM : six couverts,
+        // deux places restantes, et la table n'a lieu que si elle est pleine.
+        // Le seuil ne fait donc tomber AUCUN prix — il decide si la chose
+        // existe. C'est la meme jauge que chez le boulanger qui allume son
+        // four, et c'est ce qui montre que la mecanique n'est pas un systeme
+        // de remises deguise.
+        collectif: {
+          objectif: 6, participants: 4,
+          debloque: "la table a lieu",
+          qui: ["Bruno", "Ana", "Nadia", "Hugo"],
+        },
         // LA PREUVE QUE LE BOUTON SERT A QUELQUE CHOSE. Sans un cas deja
         // exauce a l'ecran, « faites-le revenir » est une boite a idees, et
         // personne n'appuie deux fois sur une boite a idees.
