@@ -1280,11 +1280,11 @@ const CARTES: CarteAutour[] = [
   {
     id: "boucher",
     catalogue: [
-      { id: "bo-1", rayon: "Boeuf", nom: "Cote de boeuf maturee", detail: "40 jours, race bazadaise.", prix: "34 €/kg" },
-      { id: "bo-2", rayon: "Boeuf", nom: "Bavette d'aloyau", prix: "24 €/kg" },
-      { id: "bo-3", rayon: "Agneau", nom: "Gigot", detail: "Agneau de lait des Pyrenees.", prix: "26 €/kg" },
+      { id: "bo-1", rayon: "Boeuf", nom: "Côte de bœuf maturée", detail: "40 jours, race bazadaise.", prix: "34 €/kg" },
+      { id: "bo-2", rayon: "Boeuf", nom: "Bavette d’aloyau", prix: "24 €/kg" },
+      { id: "bo-3", rayon: "Agneau", nom: "Gigot", detail: "Agneau de lait des Pyrénées.", prix: "26 €/kg" },
       { id: "bo-4", rayon: "Volaille", nom: "Poulet fermier des Landes", prix: "14 €/kg" },
-      { id: "bo-5", rayon: "Charcuterie", nom: "Ventreche seche", detail: "Maison, sechee trois mois.", prix: "28 €/kg" },
+      { id: "bo-5", rayon: "Charcuterie", nom: "Ventrèche sèche", detail: "Maison, séchée trois mois.", prix: "28 €/kg" },
     ],
     branche: "restaurant",
     photo: "/direct/etal-boucher.jpg",
@@ -1297,24 +1297,24 @@ const CARTES: CarteAutour[] = [
     distance: "340 m",
     pouces: [{ qui: "Jean-Marc T.", combien: 7 }],
     fiche: {
-      ou: "Rue du marche, en face de la halle",
-      horaires: "Aujourd'hui, 7 h – 13 h et 15 h 30 – 19 h 30",
-      mot: "Betes achetees entieres a des eleveurs des Landes. On decoupe sur place.",
+      ou: "Rue du marché, en face de la halle",
+      horaires: "Aujourd’hui, 7 h – 13 h et 15 h 30 – 19 h 30",
+      mot: "Bêtes achetées entières à des éleveurs des Landes. On découpe sur place.",
     },
     recrute: {
       poste: "Un apprenti boucher",
-      quand: "A la rentree",
+      quand: "À la rentrée",
       contrat: "Apprentissage · 35 h · dimanche et lundi de repos",
-      paye: "Selon l'age, grille apprentissage",
-      qui: "Le metier s'apprend au billot, pas dans un livre. Il faut se lever tot et ne pas avoir peur du froid.",
-      passez: "n'importe quel matin avant 11 h",
+      paye: "Selon l’âge, grille apprentissage",
+      qui: "Le métier s’apprend au billot, pas dans un livre. Il faut se lever tôt et ne pas avoir peur du froid.",
+      passez: "n’importe quel matin avant 11 h",
       depuis: "il y a 3 jours",
     },
     moments: [
       {
         de: 7, a: 13, quand: "ce matin", icone: "🔪",
-        titre: "La cote de boeuf maturee",
-        lignes: ["Bazadaise, 40 jours de maturation", "Coupee a l'epaisseur que vous voulez"],
+        titre: "La côte de bœuf maturée",
+        lignes: ["Bazadaise, 40 jours de maturation", "Coupée à l’épaisseur que vous voulez"],
         prix: "34 €/kg", places: 6, action: "Gardez-la-moi",
         envies: ["maintenant"],
       },
@@ -1323,23 +1323,23 @@ const CARTES: CarteAutour[] = [
       // seuil n'est pas un objectif marketing, c'est le nombre de parts que
       // fait l'animal.
       {
-        de: 8, a: 20, quand: "decoupe demain matin", icone: "🐑",
+        de: 8, a: 20, quand: "découpe demain matin", icone: "🐑",
         titre: "Un agneau entier, en quatorze parts",
         lignes: [
-          "Agneau de lait des Pyrenees, achete a l'eleveur",
-          "Gigot, cotelettes, epaule, collier — chacun prend la sienne",
+          "Agneau de lait des Pyrénées, acheté à l’éleveur",
+          "Gigot, côtelettes, épaule, collier — chacun prend la sienne",
         ],
         prix: "22 € la part", places: 3, envies: [],
         collectif: {
           objectif: 14, participants: 11,
-          debloque: "il achete la bete et la decoupe demain",
+          debloque: "il achète la bête et la découpe demain",
           qui: ["Jean-Marc", "Hélène", "Karim", "Sofia", "Paul", "Anne"],
         },
       },
       {
         de: 15.5, a: 19.5, quand: "18 h", icone: "🏷️",
-        titre: "Les plats cuisines du jour",
-        lignes: ["Ce qui a ete prepare le matin", "Jusqu'a la fermeture"],
+        titre: "Les plats cuisinés du jour",
+        lignes: ["Ce qui a été préparé le matin", "Jusqu’à la fermeture"],
         prix: "6 €", prixBarre: "9 €", etiquette: "−30 %", places: 8,
         action: "Gardez-m'en une part", envies: ["moins15", "maintenant", "emporter"],
         rappels: 3,
@@ -1474,14 +1474,21 @@ const CARTES: CarteAutour[] = [
     // MÊME MÉCANIQUE, AUTRE MÉTIER : c'est tout l'intérêt de ne pas avoir
     // appelé ça « les menus ».
     catalogue: [
-      { id: "m-1", rayon: "Nouveautés", nom: "Manteau laine col montant", detail: "Du 36 au 44.", prix: "129 €", photo: "/direct/portant-boutique.jpg" },
+      { id: "m-1", rayon: "Nouveautés", nom: "Manteau laine col montant", detail: "Du 36 au 44.", prix: "129 €" },
       { id: "m-2", rayon: "Nouveautés", nom: "Robe imprimée", detail: "Trois coloris.", prix: "69 €" },
       { id: "m-3", rayon: "Toujours en rayon", nom: "Chemise en lin", prix: "49 €" },
       { id: "m-4", rayon: "Toujours en rayon", nom: "Jean droit", detail: "Coupe haute.", prix: "79 €" },
       { id: "m-5", rayon: "Accessoires", nom: "Écharpe alpaga", prix: "39 €" },
     ],
     branche: "mode",
-    photo: "/direct/portant-boutique.jpg",
+    // PAS `portant-boutique.jpg` ICI : elle porte une enseigne lisible, un
+    // logo de marque sur la boutique voisine et neuf visages de face, dans
+    // une rue qui n'est pas Dax. LISEZ-MOI.md la donne comme validee pour
+    // la maquette en noindex, ET nomme l'argumentaire commercant comme le
+    // moment de la remplacer — un flyer imprime en est un. L'interieur de
+    // friperie, lui, ne montre ni enseigne ni visage. A remplacer par une
+    // vraie vitrine dacquoise : /direct/vitrine-mode.jpg.
+    photo: "/direct/friperie-rayon.jpg",
     cadrage: "50%",
     nom: "Une boutique de la rue piétonne",
     metier: "Prêt-à-porter",
@@ -2165,7 +2172,16 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
     itineraire: c.itineraire,
     // Le badge du haut ne dit plus une échéance mais QUAND ça se passe : c'est
     // devenu l'information principale de la carte.
-    reste: m ? (seJoueMaintenant(m, heure) ? `Maintenant · ${m.quand}` : m.quand) : "",
+    // ON NE PRÉFIXE PAS UN MOMENT QUI SE NOMME DÉJÀ « MAINTENANT ». La
+    // pastille de la prothésiste ongulaire sortait « MAINTENANT · MAINTENANT »
+    // — vu sur la capture d'un flyer, pas dans un test. Le préfixe existe pour
+    // dire que le moment se joue en ce moment ; quand son propre libellé le dit
+    // déjà, il n'ajoute rien et il se lit comme un bégaiement.
+    reste: m
+      ? seJoueMaintenant(m, heure) && !/^maintenant/i.test(m.quand.trim())
+        ? `Maintenant · ${m.quand}`
+        : m.quand
+      : "",
     icone: m?.icone ?? "📍",
     quoi: m?.titre ?? "",
     lignes: m?.lignes,

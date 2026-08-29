@@ -146,7 +146,7 @@ const OFFRES: Offre[] = [
   {
     id: "collection", branche: "mode",
     nature: "Nouvelle collection", offre: "Les manteaux d’hiver", prix: "dès 129 €",
-    photo: "/direct/portant-boutique.jpg", cadrage: "50%",
+    photo: "/direct/friperie-rayon.jpg", cadrage: "50%",
     commerce: "Une boutique de la rue piétonne", distance: "450 m",
     action: "Je passe la voir", quand: "Ouvert jusqu’à 19 h",
     moments: [{ h: "10 h 00", quoi: "La collection est en vitrine" }, { h: "15 h 00", quoi: "Nouvelles tailles reçues" }],
