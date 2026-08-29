@@ -26,9 +26,10 @@ l'image et le dégradé sont deux couches empilées, précisément pour ça).
 | `vitrine-du-soir.jpg`  | Une vitrine de commerce éclairée, le soir         |
 | `portion-a-emporter.jpg` | Une part soulevée d'un plat entamé              |
 | `tablee-du-soir.jpg`   | Une tablée conviviale, le soir                    |
-| `portant-boutique.jpg` | Une chemise sortie en cabine d'essayage           |
+| `portant-boutique.jpg` | **RETIRÉE DU PRODUIT** — enseigne lisible, logo de marque voisin, neuf visages de face. Remplacée par `vitrine-mode.jpg`. |
 | `friperie-rayon.jpg`   | Des rayons de friperie, cintres serrés            |
-| `etal-boucher.jpg`     | **MANQUANT** — un étal de boucherie, ou une pièce au billot. La carte « Une boucherie du centre » tombe sur son dégradé en attendant. Aucune image de viande crue dans le dépôt : la seule qui existe est une assiette dressée, qui dirait « restaurant » sur une carte de boucher. |
+| `etal-boucher.jpg`     | **PRÉSENT MAIS INUTILISABLE — FILIGRANÉ.** Un crédit de site web est incrusté en travers de l'image, lisible en bas à gauche sur un agrandissement. Il s'imprimerait sur le flyer, et l'image n'est pas à nous. La carte « Une boucherie du centre » reste sur son dégradé tant qu'une photo libre n'a pas pris sa place. |
+| `vitrine-mode.jpg`     | Une vitrine de prêt-à-porter, mannequins habillés. Ni visage, ni enseigne lisible. 387 points de large : légèrement molle sur un téléphone récent. |
 | `verre-au-comptoir.jpg`| Un comptoir de bar à vins, fûts au plafond        |
 | `terrasse-au-soleil.jpg` | Une terrasse en plein soleil                    |
 | `fauteuil-coiffeur.jpg`| Un fauteuil de coiffeur libre                     |
@@ -108,16 +109,26 @@ boutique de la rue piétonne ». Une devanture identifiable ferait passer un vra
 commerçant pour un client de ClikMe sans qu'il ait rien signé, et ça vaut aussi
 pour l'image des gens.
 
-TROIS EXCEPTIONS ASSUMÉES, ET ELLES SONT DATÉES. `portant-boutique.jpg` porte
-une enseigne lisible et des passants reconnaissables, `avis-cabine.jpg` un
+DEUX EXCEPTIONS RESTENT, ET ELLES SONT DATÉES. `avis-cabine.jpg` porte un
 visage de face, `avis-verre.jpg` une marque sur trois verres. Le propriétaire du
 produit les a validées explicitement : la page est en `noindex`, elle se partage
 par lien à une trentaine de testeurs, et elle n'a aucun but commercial.
 
-**Ce sont donc les trois premières à remplacer le jour où la page sort de ce
+**Ce sont donc les deux premières à remplacer le jour où la page sort de ce
 cercle** — mise en ligne publique, capture dans un dossier investisseur,
-argumentaire commerçant. Rien d'autre dans `public/direct/` ne pose ce
-problème.
+argumentaire commerçant.
+
+LA TROISIÈME A DÉJÀ ÉTÉ RETIRÉE, et c'est ce seuil-là qui l'a décidé.
+`portant-boutique.jpg` — enseigne lisible, logo de marque sur la boutique
+voisine, neuf visages de face — est sortie du produit le jour où l'on a
+fabriqué un flyer imprimé par métier. Un imprimé distribué en main propre EST
+un argumentaire commerçant : la ligne ci-dessus n'était pas une précaution
+d'écriture, c'était une échéance, et elle est arrivée.
+
+ET UNE QUATRIÈME NE DOIT PAS ENTRER. `etal-boucher.jpg` porte un filigrane —
+le crédit d'un site web incrusté en travers de l'image. Il s'imprimerait, et
+l'image n'est pas à nous. Elle n'est référencée nulle part dans le code : la
+carte de la boucherie reste sur son dégradé.
 
 Les deux photos de portion et de tablée avaient été ajoutées parce que deux moments n'avaient AUCUNE
 image juste : « il m'en reste » tombait sur l'assiette du menu du jour (une

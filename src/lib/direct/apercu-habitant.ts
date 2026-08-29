@@ -1481,14 +1481,17 @@ const CARTES: CarteAutour[] = [
       { id: "m-5", rayon: "Accessoires", nom: "Écharpe alpaga", prix: "39 €" },
     ],
     branche: "mode",
-    // PAS `portant-boutique.jpg` ICI : elle porte une enseigne lisible, un
-    // logo de marque sur la boutique voisine et neuf visages de face, dans
-    // une rue qui n'est pas Dax. LISEZ-MOI.md la donne comme validee pour
-    // la maquette en noindex, ET nomme l'argumentaire commercant comme le
-    // moment de la remplacer — un flyer imprime en est un. L'interieur de
-    // friperie, lui, ne montre ni enseigne ni visage. A remplacer par une
-    // vraie vitrine dacquoise : /direct/vitrine-mode.jpg.
-    photo: "/direct/friperie-rayon.jpg",
+    // LA VITRINE, ENFIN LA SIENNE. Elle remplace `portant-boutique.jpg`, qui
+    // portait une enseigne lisible, un logo de marque sur la boutique voisine
+    // et neuf visages de face, dans une rue qui n'est pas Dax — LISEZ-MOI.md
+    // nommait deja l'argumentaire commercant comme le moment de la retirer, et
+    // un flyer imprime en est un. Celle-ci ne montre ni visage ni enseigne
+    // lisible.
+    // ELLE EST PETITE : 387 points de large pour une carte affichee sur 390
+    // points a deux fois la densite. Elle sera donc legerement molle sur un
+    // telephone recent — visible, pas genant, et a remplacer par un tirage
+    // plus grand quand il y en aura un.
+    photo: "/direct/vitrine-mode.jpg",
     cadrage: "50%",
     nom: "Une boutique de la rue piétonne",
     metier: "Prêt-à-porter",
