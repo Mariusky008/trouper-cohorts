@@ -35,7 +35,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MARQUE } from "@/lib/marque";
 
 /** Un écran de l'application, avec son rang dans l'histoire et sa légende. */
@@ -67,6 +67,17 @@ type Cas = {
   /** La question qu'on se pose vraiment, dans ces termes-là. */
   sous: string;
   ecrans: Ecran[];
+  /**
+   * CE QUE ÇA APPORTE, EN DEUX OU TROIS POINTS — et c'est ce qui manquait.
+   *
+   * Les écrans montrent CE QUI SE PASSE ; ils ne disent pas ce qu'on y gagne.
+   * Quelqu'un qui regarde trois captures comprend le mécanisme et referme la
+   * page sans avoir su pourquoi il installerait ça. Chaque avantage est donc
+   * écrit du point de vue de celui qui lit — « tous les menus de la ville en
+   * trente secondes », pas « moteur de découverte géolocalisé » — et il doit
+   * être VRAI de ce que l'application fait aujourd'hui.
+   */
+  atouts: [string, string, string][];
   /** Ce qu'on retient — et ce que personne d'autre ne fait. */
   chute: string;
   teinte: "menthe" | "or" | "rose" | "bleu";
@@ -98,6 +109,14 @@ const CAS: Cas[] = [
         fin: "Table réservée pour quatre",
       },
     ],
+    atouts: [
+      ["⚡", "Tous les menus de la ville en trente secondes",
+       "Un balayage par restaurant, la photo en grand et le prix. Vous avez fait le tour du centre avant d’avoir fini de descendre l’escalier."],
+      ["👥", "On décide à quatre sans y passer vingt minutes",
+       "Chacun propose autre chose, chacun voit ce que les autres proposent, et la conversation reste collée à l’annonce."],
+      ["📅", "Et on réserve depuis la conversation",
+       "Personne n’appelle, personne ne rouvre un site. La table est prise pour tout le monde, d’un seul appui."],
+    ],
     chute:
       "Vingt minutes de « je sais pas, et toi ? » remplacées par quatre messages et une table.",
   },
@@ -120,6 +139,14 @@ const CAS: Cas[] = [
         dit: "Camille y est, et elle le montre en direct. Ses amies regardent et tranchent : naturel, ou plus clair ? Onze voix.",
         fin: "Décidé en dix minutes",
       },
+    ],
+    atouts: [
+      ["🔔", "Les créneaux qui se libèrent, personne ne les annonce",
+       "Un désistement à quatorze heures se sait à quatorze heures deux. Ailleurs, il reste vide."],
+      ["📺", "Vous montrez, ils tranchent",
+       "Le direct depuis le fauteuil, et le vote de ceux qui ne sont pas là. C’est ce qu’on fait déjà par SMS, en dix fois plus lent."],
+      ["✂️", "Prendre le même, sans savoir le nommer",
+       "Vous avez vu la coupe de quelqu’un : un bouton réserve exactement cette prestation-là, chez la même personne."],
     ],
     chute:
       "Elle est en direct, ils regardent, ils votent — et elle a sa réponse avant que la couleur ne prenne.",
@@ -144,6 +171,14 @@ const CAS: Cas[] = [
         fin: "Quatre personnes au kiosque",
       },
     ],
+    atouts: [
+      ["🎪", "Tout ce que la ville organise, au même endroit",
+       "La mairie, le musée, les associations, les salles. Plus d’affiche vue trop tard ni de page Facebook à surveiller."],
+      ["🕗", "Prévenu le jour même, pas le lendemain",
+       "Un concert s’annonce le matin pour le soir. C’est justement ce qu’aucun agenda papier ne sait faire."],
+      ["👥", "On y va à plusieurs, pas tout seul",
+       "Vous voyez qui vient avant de sortir — et c’est presque toujours ça qui décide."],
+    ],
     chute:
       "La mairie, le musée, les associations publient ici. Vous ne l’apprenez plus après coup.",
   },
@@ -166,6 +201,14 @@ const CAS: Cas[] = [
         dit: "Pas de CV, pas de lettre. Vous passez un mardi après-midi, et vous parlez à la patronne.",
         fin: "Rendez-vous mardi, sans CV",
       },
+    ],
+    atouts: [
+      ["📍", "Le travail à dix minutes à pied",
+       "Pas une offre à trente kilomètres : la boutique de la rue piétonne, avec sa distance affichée."],
+      ["📄", "Rien à envoyer",
+       "Pas de CV, pas de lettre, pas de compte à créer. On vous dit quel jour passer, et vous passez."],
+      ["🗣️", "Dit par celui qui embauche",
+       "« Le samedi je suis seule et je ne peux pas m’occuper de trois personnes en cabine. » Ses mots, pas ceux d’une annonce."],
     ],
     chute:
       "Le travail d’à côté, dit par celui qui embauche, et sans rien à envoyer.",
@@ -241,6 +284,74 @@ function Telephone({ e, rang }: { e: Ecran; rang: number }) {
 export function Histoire() {
   const racine = useRevelation();
 
+  /**
+   * L'APPLICATION S'OUVRE DANS LA PAGE, ET NON À LA PLACE.
+   *
+   * LE DÉFAUT, ET IL EST DE CEUX QUI COÛTENT TOUT : « quand je clique dessus
+   * je pars sur une autre page et je ne peux pas revenir facilement, et sur
+   * téléphone on sait que si la personne part elle ne reviendra plus ». C'est
+   * exact. Une page d'accueil dont le seul bouton est une porte de sortie sans
+   * poignée de retour dépense en une seconde tout ce qu'elle a mis deux
+   * minutes à construire.
+   *
+   * L'ESSAI SE POSE DONC PAR-DESSUS, plein écran, avec une seule chose en
+   * plus : « ✕ Fermer ». On essaie, on ferme, on est exactement là où on
+   * s'était arrêté — même position dans la page, même section.
+   *
+   * LE LIEN RESTE UN VRAI LIEN. On intercepte l'appui, mais l'adresse est
+   * écrite : un appui long, un clic du milieu ou « ouvrir dans un nouvel
+   * onglet » continuent de marcher, et la page reste utilisable sans
+   * JavaScript.
+   */
+  const [essai, setEssai] = useState(false);
+  useEffect(() => {
+    if (!essai) return;
+    /* LA PAGE NE DOIT PAS DÉFILER DERRIÈRE — sur téléphone, le doigt qui
+       balaie une carte de l'application ferait autrement glisser la page
+       d'accueil sous elle.
+
+       ON LA FIGE À SA POSITION, ON NE COUPE PAS SON DÉFILEMENT. DÉFAUT MESURÉ
+       PAR LE TEST : `overflow:hidden` sur le corps de page suffit à bloquer,
+       mais il fait retomber le document à zéro — mesuré, 968 avant, 0 après.
+       Quelqu'un qui essayait l'application depuis la section du coiffeur la
+       refermait tout en haut de la page, c'est-à-dire nulle part. C'est
+       exactement le défaut qu'on venait de corriger, déplacé d'un cran.
+       On décale donc le corps de sa propre hauteur de défilement, et on la
+       rend en fermant. */
+    const y = window.scrollY;
+    const avant = {
+      position: document.body.style.position,
+      top: document.body.style.top,
+      largeur: document.body.style.width,
+    };
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${y}px`;
+    document.body.style.width = "100%";
+    const auClavier = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setEssai(false);
+    };
+    window.addEventListener("keydown", auClavier);
+    return () => {
+      document.body.style.position = avant.position;
+      document.body.style.top = avant.top;
+      document.body.style.width = avant.largeur;
+      // INSTANTANÉ, ET C'EST NÉCESSAIRE : la feuille globale du site pose
+      // scroll-behavior:smooth sur la racine. Sans ce mot, refermer l'essai
+      // déclenchait un défilement animé d'une seconde depuis le haut de la
+      // page — mesuré : 75 points à 200 ms, 420 à 1 200 ms. On revient d'où
+      // l'on vient, on n'y retourne pas en voiture.
+      window.scrollTo({ top: y, behavior: "instant" });
+      window.removeEventListener("keydown", auClavier);
+    };
+  }, [essai]);
+
+  const ouvrir = (e: React.MouseEvent) => {
+    // On laisse passer tout ce qui veut un autre onglet.
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+    setEssai(true);
+  };
+
   return (
     <div ref={racine}>
       {/* ─── LA BARRE ───
@@ -252,7 +363,7 @@ export function Histoire() {
           <i aria-hidden="true">⚡</i>
           {MARQUE}
         </span>
-        <Link href="/autour-de-moi" className="ld-cta petit">
+        <Link href="/autour-de-moi" className="ld-cta petit" onClick={ouvrir}>
           Ouvrir
         </Link>
       </header>
@@ -279,7 +390,7 @@ export function Histoire() {
             trois gestes.
           </p>
           <div className="ld-hero-b" data-r style={{ "--d": "240ms" } as React.CSSProperties}>
-            <Link href="/autour-de-moi" className="ld-cta grand">
+            <Link href="/autour-de-moi" className="ld-cta grand" onClick={ouvrir}>
               Voir ce qui se passe autour de moi
             </Link>
             <p className="ld-n">Sans compte, sans numéro, rien à installer.</p>
@@ -333,6 +444,22 @@ export function Histoire() {
               <Telephone key={e.src} e={e} rang={i} />
             ))}
           </div>
+
+          {/* CE QU'ON Y GAGNE, APRÈS AVOIR VU CE QUI SE PASSE. Les captures
+              montrent le mécanisme ; sans ces trois points, on comprend
+              comment ça marche et on referme sans savoir pourquoi on
+              l'installerait. */}
+          <ul className="ld-atouts cas" aria-label="Ce que ça apporte">
+            {c.atouts.map(([i, t, d], k) => (
+              <li key={t} data-r style={{ "--d": `${k * 70}ms` } as React.CSSProperties}>
+                <i aria-hidden="true">{i}</i>
+                <span>
+                  <b>{t}</b>
+                  {d}
+                </span>
+              </li>
+            ))}
+          </ul>
 
           <p className="ld-chute" data-r>
             {c.chute}
@@ -415,13 +542,29 @@ export function Histoire() {
             </li>
           ))}
         </ul>
-        <Link href="/autour-de-moi" className="ld-cta grand" data-r>
+        <Link href="/autour-de-moi" className="ld-cta grand" data-r onClick={ouvrir}>
           Ouvrir Le Direct
         </Link>
         <p className="ld-n" data-r>
           Dax, aujourd’hui. Votre ville, ensuite.
         </p>
       </section>
+
+      {/* ─── L'ESSAI, PAR-DESSUS ───
+          Même origine que cette page, donc le cadre est autorisé : la règle
+          d'en-têtes du site pose frame-ancestors 'self' sur /autour-de-moi.
+          Il n'est monté qu'à l'ouverture — une application entière chargée
+          d'avance dans une page d'accueil coûterait à tout le monde le prix
+          de ceux qui l'essaient. */}
+      {essai && (
+        <div className="ld-essai" role="dialog" aria-modal="true" aria-label="Clikme">
+          <iframe src="/autour-de-moi" title="Clikme — le direct de votre ville" />
+          <button type="button" className="ld-essai-x" onClick={() => setEssai(false)}>
+            <i aria-hidden="true">✕</i>
+            Fermer
+          </button>
+        </div>
+      )}
 
       {/* ─── LE PIED DE PAGE ─── */}
       <footer className="ld-pied">
@@ -436,7 +579,7 @@ export function Histoire() {
             page « commerçants » qui n'est pas écrite fait un 404 au moment
             précis où quelqu'un s'intéresse assez pour cliquer. */}
         <nav className="ld-pied-l" aria-label="Pied de page">
-          <Link href="/autour-de-moi">Ouvrir l’application</Link>
+          <Link href="/autour-de-moi" onClick={ouvrir}>Ouvrir l’application</Link>
           <Link href="/essai-annonce">L’annonce, de près</Link>
           <Link href="/">Le site</Link>
         </nav>

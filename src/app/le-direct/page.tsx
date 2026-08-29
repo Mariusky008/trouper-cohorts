@@ -247,6 +247,42 @@ function StylesLeDirect() {
 .ld-atouts b{display:block;font-size:15px;font-weight:800;margin-bottom:2px}
 .ld-atouts span{font-size:13.5px;line-height:1.45;color:var(--craie2)}
 
+/* ── CE QUE CHAQUE CAS APPORTE ──────────────────────────────────────────
+   Les captures montrent le mecanisme ; ces trois points disent ce qu'on y
+   gagne. Sans eux, on comprend comment ca marche et on referme sans savoir
+   pourquoi on l'installerait. */
+.ld-atouts.cas{flex:none;max-width:940px;margin:clamp(26px,4vh,44px) auto 0;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:12px}
+.ld-atouts.cas li{border-color:color-mix(in srgb,var(--ton,var(--menthe)) 24%,transparent);
+  background:color-mix(in srgb,var(--ton,var(--menthe)) 6%,var(--nuit2))}
+.ld-atouts.cas b{color:#fff}
+.ld-atouts.cas i{color:var(--ton,var(--menthe))}
+
+/* ── L'ESSAI, PAR-DESSUS LA PAGE ────────────────────────────────────────
+   DEFAUT MESURE A L'USAGE : « quand je clique dessus je pars sur une autre
+   page et je ne peux pas revenir facilement, et sur telephone on sait que si
+   la personne part elle ne reviendra plus ». Une page d'accueil dont le seul
+   bouton est une porte sans poignee de retour depense en une seconde tout ce
+   qu'elle a mis deux minutes a construire.
+   L'application s'ouvre donc PAR-DESSUS, plein ecran, avec une seule chose en
+   plus : un bouton pour fermer. On ferme, on est exactement la ou l'on
+   s'etait arrete. */
+.ld-essai{position:fixed;inset:0;z-index:80;background:#05090C;
+  animation:ldEssai .22s ease both}
+@keyframes ldEssai{from{opacity:0}to{opacity:1}}
+.ld-essai iframe{display:block;width:100%;height:100%;border:0}
+/* IL FLOTTE EN BAS, PAS EN HAUT. Le haut de l'application porte deja ses
+   propres commandes, et un pouce ne monte pas jusqu'au coin oppose. La marge
+   du bas evite la barre d'accueil des telephones sans bouton. */
+.ld-essai-x{position:absolute;left:50%;transform:translateX(-50%);
+  bottom:calc(14px + env(safe-area-inset-bottom));z-index:1;
+  display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:13.5px;
+  font-weight:850;cursor:pointer;color:#04150E;border:0;border-radius:999px;
+  padding:11px 20px;background:#EAF2EC;
+  box-shadow:0 12px 30px -10px rgba(0,0,0,.9)}
+.ld-essai-x i{font-style:normal;font-size:12px;line-height:1}
+.ld-essai-x:active{transform:translateX(-50%) scale(.97)}
+
 /* ── LA DIFFERENCE, APRES QUATRE DEMONSTRATIONS ─────────────────────── */
 .ld-final{display:flex;flex-direction:column;align-items:center;gap:18px;
   text-align:center;border-top:1px solid var(--trait);
