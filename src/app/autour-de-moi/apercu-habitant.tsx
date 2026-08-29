@@ -128,6 +128,12 @@ import {
   type EvenementVille,
   type ItemPaquet,
   type MomentJour,
+  type Collectif,
+  avancementCollectif,
+  collectifComplet,
+  manqueCollectif,
+  phraseCollectif,
+  collectifDeLaCarte,
 } from "@/lib/direct/apercu-habitant";
 import { MARQUE } from "@/lib/marque";
 
@@ -1073,6 +1079,58 @@ export function ApercuHabitant() {
     // produit — un salon ne contient que les gens qu'on y a mis.
   }
 
+  /**
+   * REJOINDRE LE COLLECTIF — l'autre salon, et le seul qu'on ne crée pas.
+   *
+   * TOUT L'INVERSE DE `enParler`, POINT PAR POINT, et c'est ce qui justifie
+   * qu'ils aient deux portes à deux endroits différents de l'annonce :
+   *
+   *   • `enParler` OUVRE une pièce qui n'existait pas ; ici on ENTRE dans une
+   *     pièce qui tournait déjà — d'où « Rejoindre ».
+   *   • là-bas le salon est vide et n'a qu'un geste, inviter ; ici sept
+   *     inconnus y sont déjà, et c'est la seule raison d'y aller.
+   *   • là-bas la clé porte le commerce et le moment parce que plusieurs
+   *     groupes peuvent parler du même menu chacun de leur côté ; ici la clé
+   *     est la même pour tout le monde, sans quoi il y aurait dix collectifs
+   *     de trois personnes au lieu d'un de trente, et aucun n'atteindrait son
+   *     seuil.
+   */
+  function rejoindreLeCollectif(c: CarteAutour, m: MomentJour) {
+    const col = m.collectif;
+    if (!col) return;
+    // UNE SEULE CLÉ POUR TOUTE LA VILLE sur ce moment-là. C'est la condition
+    // arithmétique du mécanisme, pas une commodité de rangement.
+    const cle = `col|${c.id}|${m.titre}`;
+    noter("partage", 0, "collectif");
+    setSalonOuvert(cle);
+    setSalonPage(true);
+    setFeuille("");
+    setMotSalon("");
+    if (salons[cle]) return;
+    ouvrirSalon({
+      cle,
+      sujet: m.titre,
+      ou: c.nom,
+      // PERSONNE NE L'A « OUVERT », et surtout pas moi : l'écrire à mon nom
+      // ferait apparaître le réglage privé/public dans l'en-tête, c'est-à-dire
+      // proposer de rendre privé un groupement d'achat public.
+      parQui: "Le commerce",
+      quand: m.quand,
+      photo: c.photo,
+      annonce: m.titre,
+      prix: m.prix,
+      distance: c.distance,
+      prive: false,
+      presents: col.qui ?? [],
+      collectif: {
+        objectif: col.objectif,
+        participants: col.participants,
+        prixGroupe: col.prixGroupe,
+        debloque: col.debloque,
+      },
+    });
+  }
+
   /** Inviter : le lien part dans WhatsApp, la conversation reste ici. */
   /**
    * INVITER, ET C'EST WHATSAPP.
@@ -1170,6 +1228,14 @@ export function ApercuHabitant() {
   // le menu de midi quand on regarde un poste. Les moments restent accessibles
   // depuis la fiche, mais ils ne pilotent plus ni le pli ni les gestes.
   const restants = dessus && !embauches ? momentsRestants(dessus, heure) : [];
+  /**
+   * LE COLLECTIF ANNONCÉ SUR LA FACE — le premier qui n'est pas encore passé.
+   *
+   * EN MODE EMBAUCHE, RIEN : quelqu'un qui regarde un poste ne se regroupe pas
+   * pour faire baisser le prix d'un pantalon, et la mention y serait la
+   * troisième chose colorée d'un écran qui parle d'autre chose.
+   */
+  const colDessus = dessus && !embauches ? collectifDeLaCarte(dessus, heure) : null;
 
   /**
    * LE SALON DE CE QU'ON REGARDE — celui du MOMENT en cours, ou de l'événement.
@@ -2336,9 +2402,20 @@ export function ApercuHabitant() {
                       <i aria-hidden="true">●</i>
                       {salon.quand}
                     </u>
-                    {" · "}
-                    {salon.presents.length}{" "}
-                    {salon.presents.length > 1 ? "personnes" : "personne"}
+                    {/* PAS LE COMPTE DES PRÉSENTS DANS UN COLLECTIF : il en
+                        faisait un TROISIÈME, après « 4 sur 6 » et « 4 personnes
+                        que vous ne connaissez pas », et il ne disait pas la même
+                        chose que les deux autres — cinq dans la salle, quatre
+                        engagés, six attendus. Trois nombres pour une salle, on
+                        ne sait plus lequel compte. Seule la jauge compte : c'est
+                        elle qui fait tomber le prix. */}
+                    {!salon.collectif && (
+                      <>
+                        {" · "}
+                        {salon.presents.length}{" "}
+                        {salon.presents.length > 1 ? "personnes" : "personne"}
+                      </>
+                    )}
                   </em>
                 </span>
                 {/* ─── PUBLIC OU PRIVÉ, DANS L'EN-TÊTE ───
@@ -2527,6 +2604,12 @@ export function ApercuHabitant() {
                         Le compte « n autour de vous » cède la place quand le
                         catalogue est là : trois informations sur une ligne,
                         c'est la densité qu'on vient de retirer d'ici. */}
+                    {/* « PROPOSER AUTRE CHOSE » N'A PAS DE SENS DANS UN
+                        COLLECTIF. On ne se regroupe pas à dix sur un pantalon
+                        pour qu'un onzième propose un autre magasin : le groupe
+                        n'existe que par cet article-là, à ce seuil-là. Le
+                        bouton part avec sa ligne. */}
+                    {!salon.collectif && (
                     <div className="ap-obj-fin">
                       <button
                         type="button"
@@ -2558,9 +2641,94 @@ export function ApercuHabitant() {
                         </button>
                       )}
                     </div>
+                    )}
                     </div>
                   );
                 })()}
+
+                {/* ─── LE BANDEAU DU COLLECTIF ───
+                    EN TÊTE, PARCE QUE C'EST LA RAISON D'ÊTRE DE LA SALLE. On
+                    n'est pas venu bavarder avec des inconnus, on est venu pour
+                    que le prix tombe. La jauge, le prix et le geste passent donc
+                    avant tout le reste.
+
+                    DEUX BOUTONS, ET LE SECOND EST LE MOTEUR. « Je prends ma
+                    place » est ce qu'on vient faire ; « J'en parle autour de
+                    moi » est ce qui fait monter le compteur, et donc la seule
+                    chose qui puisse faire aboutir le premier. Mon intérêt ici
+                    n'est pas de discuter, c'est d'amener trois personnes.
+
+                    ET « CEUX QUE VOUS NE CONNAISSEZ PAS » RESTE SOUS LES YEUX.
+                    Le vrai danger de deux salons n'est pas d'appuyer sur le
+                    mauvais bouton, c'est d'écrire quelque chose de personnel
+                    devant des inconnus en croyant parler à ses amis. Ça se dit
+                    en permanence, pas une fois à l'entrée. */}
+                {salon.collectif && (
+                  <div
+                    className={`ap-colsal${
+                      salon.collectif.participants >= salon.collectif.objectif ? " plein" : ""
+                    }`}
+                  >
+                    <div className="ap-colsal-h">
+                      <b>
+                        {salon.collectif.participants} sur {salon.collectif.objectif}
+                      </b>
+                      {salon.collectif.prixGroupe && (
+                        <span>
+                          {salon.prix && <s>{salon.prix}</s>}
+                          <u>{salon.collectif.prixGroupe}</u>
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      className="ap-colsal-j"
+                      aria-hidden="true"
+                      style={
+                        {
+                          "--part": `${Math.round(
+                            avancementCollectif(salon.collectif) * 100,
+                          )}%`,
+                        } as React.CSSProperties
+                      }
+                    >
+                      <i />
+                    </div>
+                    <p className="ap-colsal-x">{phraseCollectif(salon.collectif)}</p>
+                    <div className="ap-colsal-b">
+                      <button
+                        type="button"
+                        className="ap-colsal-p"
+                        onClick={() => {
+                          setEchoIcone("👥");
+                          setEcho(
+                            manqueCollectif(salon.collectif!) > 1
+                              ? `Votre place est prise. Il en manque ${
+                                  manqueCollectif(salon.collectif!) - 1
+                                } — parlez-en autour de vous.`
+                              : "Votre place est prise.",
+                          );
+                        }}
+                      >
+                        Je prends ma place
+                      </button>
+                      <button
+                        type="button"
+                        className="ap-colsal-s"
+                        onClick={() => void inviterAuSalon(salon)}
+                      >
+                        J&apos;en parle autour de moi
+                      </button>
+                    </div>
+                    <p className="ap-colsal-q">
+                      <i aria-hidden="true">👁️</i>
+                      {salon.presents.length - 1 > 0
+                        ? `${salon.presents.length - 1} personne${
+                            salon.presents.length - 1 > 1 ? "s" : ""
+                          } que vous ne connaissez pas`
+                        : "Un groupe ouvert : tout le monde peut vous lire"}
+                    </p>
+                  </div>
+                )}
 
                   {/* ─── UN SALON NEUF EST VIDE, ET LE DIT ───
                     Défaut relevé au test : « les gens pensaient que c'était
@@ -2570,7 +2738,34 @@ export function ApercuHabitant() {
                     discuter chez lui — la démonstration prouvait le contraire
                     de ce qu'elle voulait montrer. Il n'y a donc plus rien, et
                     une seule chose à faire. */}
-                {salon.messages.length === 0 && (
+                {/* PAS DANS UN COLLECTIF : « il n'y a personne d'autre » y
+                    serait un mensonge — sept personnes y sont, c'est écrit
+                    trois lignes plus haut — et « invitez ceux avec qui vous
+                    voulez y aller » décrit l'autre salon, celui des amis. */}
+                {/* LE VIDE DU COLLECTIF A SA PROPRE PHRASE. Sous le bandeau, il
+                    restait quatre cents points de noir avant le champ
+                    d'écriture, et un blanc de cette taille se lit comme un
+                    écran qui n'a pas fini de charger. Une ligne suffit — et
+                    elle redit ce qu'on est venu faire ici, qui n'est pas
+                    bavarder. */}
+                {salon.messages.length === 0 && salon.collectif && (
+                  <p className="ap-colsal-vide">
+                    {manqueCollectif(salon.collectif) > 0 ? (
+                      <>
+                        Personne n’a encore écrit. Le compteur, lui, n’attend pas
+                        la conversation&nbsp;: il attend{" "}
+                        {manqueCollectif(salon.collectif)}
+                        {manqueCollectif(salon.collectif) > 1
+                          ? " personnes de plus."
+                          : " personne de plus."}
+                      </>
+                    ) : (
+                      <>Le seuil est atteint. Il n’y a plus qu’à y aller.</>
+                    )}
+                  </p>
+                )}
+
+                {salon.messages.length === 0 && !salon.collectif && (
                   <div className="ap-sal-neuf">
                     <span aria-hidden="true">👋</span>
                     <b>Il n&apos;y a personne d&apos;autre, pour l&apos;instant.</b>
@@ -2648,6 +2843,14 @@ export function ApercuHabitant() {
                       compte est écrit une fois, et le geste tient dans une
                       pastille. L'itinéraire, qui est la seule chose qu'une
                       messagerie ne saura jamais dire, se replie au bout. */}
+                  {/* PAS DANS UN COLLECTIF, ET C'EST UN DÉFAUT VU À L'ÉCRAN :
+                      cette rangée affichait « 1 vient · 4 intéressés » trois
+                      lignes sous « 4 sur 6 ». Deux compteurs qui ne disent pas
+                      la même chose sur la même salle, et on ne sait plus lequel
+                      est le vrai. Dans un collectif, l'engagement EST la jauge —
+                      « je viens » et « ça m'intéresse » sont les nuances du
+                      salon des amis, où rien ne se compte. */}
+                  {!salon.collectif && (
                   <div className="ap-gens">
                     <div className="ap-gens-t">
                       {salon.presents.slice(0, 5).map((q) => {
@@ -2716,6 +2919,7 @@ export function ApercuHabitant() {
                     )}
                     </span>
                   </div>
+                  )}
 
                   {/* ─── QUELQU'UN Y EST, ET ON LE VOIT ───
                       WhatsApp dit « Pauline m'envoie une photo ». Ici on dit où
@@ -2912,6 +3116,14 @@ export function ApercuHabitant() {
                   de DIRE quelque chose : leur place est au bord du champ
                   d'écriture, dépliées d'un « ＋ », et pas au même rang que la
                   réservation. */}
+              {/* DANS UN COLLECTIF, CETTE BARRE EST UN DOUBLON — VU À L'ÉCRAN.
+                  « Inviter » refait « J'en parle autour de moi » et « Réserver »
+                  refait « Je prends ma place », tous deux posés en tête, dans le
+                  bandeau ambre. Quatre boutons pour deux gestes, dont deux
+                  paires qui ne se ressemblent pas : on se demande laquelle des
+                  deux compte. Le bandeau garde les siens, qui sont attachés au
+                  compteur ; la barre s'efface. */}
+              {!salon.collectif && (
               <div className="ap-page-actions">
                 <button
                   type="button"
@@ -2934,6 +3146,7 @@ export function ApercuHabitant() {
                   {salon.viennent.length > 1 && <b>{salon.viennent.length}</b>}
                 </button>
               </div>
+              )}
 
               {/* LES FAÇONS DE DIRE, DÉPLIÉES SEULEMENT SI ON LES DEMANDE. */}
               {outils && (
@@ -3458,6 +3671,41 @@ export function ApercuHabitant() {
                                     restants.length > 1 ? "s" : ""
                                   } aujourd’hui`
                                 : "Voir le détail"}
+                            {/* ─── LA MENTION DU COLLECTIF ───
+                                POURQUOI ELLE EXISTE : le collectif vit dans
+                                les options, sous le pli. Or tout ce produit
+                                est fait pour qu'on balaie SANS descendre —
+                                donc la moitié des gens ne le verraient jamais,
+                                et un mécanisme invisible ne vaut rien.
+
+                                POURQUOI ELLE ENTRE DANS CE BOUTON-CI AU LIEU
+                                D'EN AVOIR UN À ELLE. Deux raisons, toutes deux
+                                mesurées à l'écran :
+
+                                  • LE POIDS. Une pastille de plus en faisait
+                                    trois empilées sous le prix, sur une photo
+                                    qui n'en veut pas tant. Ici, zéro pixel de
+                                    plus : les deux disent la même chose — ce
+                                    qu'il y a plus bas.
+                                  • LE MENSONGE. Elle portait « 18 € à 6 »
+                                    juste sous « 19 € », et le collectif est
+                                    sur le service du SOIR, à 26 €. On lisait
+                                    une remise sur le menu affiché. Le prix
+                                    reste donc en bas, collé au moment auquel
+                                    il appartient, et la face ne porte que le
+                                    compte — un signal, pas une offre.
+
+                                ET CE N'EST TOUJOURS PAS UNE SECONDE PORTE :
+                                l'appui descend, il n'ouvre rien. Deux endroits
+                                pour entrer dans un salon rouvriraient
+                                exactement la confusion qu'on vient de fermer. */}
+                            {colDessus && (
+                              <em className="ap-vb-col">
+                                <i aria-hidden="true">👥</i>
+                                {colDessus.col.participants} sur{" "}
+                                {colDessus.col.objectif}
+                              </em>
+                            )}
                             <i aria-hidden="true">⌄</i>
                           </button>
                         )}
@@ -3642,6 +3890,63 @@ export function ApercuHabitant() {
                                   {m.etiquette && <em>{m.etiquette}</em>}
                                   {m.places != null && <span>{m.places} restantes</span>}
                                 </div>
+                                )}
+
+                                {/* ─── À PLUSIEURS ───
+                                    ELLE EST ICI, SOUS LE PRIX, ET NULLE PART
+                                    AILLEURS. Le collectif n'est pas une
+                                    conversation posée à côté de l'annonce :
+                                    c'est une FAÇON D'EN PROFITER, au même rang
+                                    que le prix du jour. Il se lit donc là où on
+                                    lit les prix — et c'est la comparaison qui
+                                    lui donne son sens : « 26 € » juste au-dessus
+                                    de « 18 € à six » dit en une seconde ce qu'un
+                                    paragraphe n'expliquerait pas.
+
+                                    C'EST AUSSI LA SEULE PORTE DU SALON PUBLIC,
+                                    et c'est voulu. « En parler », en bas, ouvre
+                                    un salon qui n'existe pas avant qu'on
+                                    l'ouvre ; celui-ci existe déjà et il n'y en a
+                                    qu'un par moment — on le REJOINT. Deux
+                                    verbes, deux natures : derrière un seul
+                                    bouton, il faudrait un écran de choix, et
+                                    l'ambiguïté « qui va me lire ? » reviendrait
+                                    sur l'action la plus utilisée du produit. */}
+                                {!passe && m.collectif && (
+                                  <div
+                                    className={`ap-col${collectifComplet(m.collectif) ? " plein" : ""}`}
+                                  >
+                                    <div className="ap-col-h">
+                                      <i aria-hidden="true">👥</i>
+                                      <b>À plusieurs</b>
+                                      <u>
+                                        {m.collectif.participants} sur {m.collectif.objectif}
+                                      </u>
+                                      {m.collectif.prixGroupe && (
+                                        <s>{m.collectif.prixGroupe}</s>
+                                      )}
+                                    </div>
+                                    <div
+                                      className="ap-col-j"
+                                      aria-hidden="true"
+                                      style={
+                                        {
+                                          "--part": `${Math.round(avancementCollectif(m.collectif) * 100)}%`,
+                                        } as React.CSSProperties
+                                      }
+                                    >
+                                      <i />
+                                    </div>
+                                    <p className="ap-col-x">{phraseCollectif(m.collectif)}</p>
+                                    <button
+                                      type="button"
+                                      className="ap-col-b"
+                                      onPointerDown={(ev) => ev.stopPropagation()}
+                                      onClick={() => rejoindreLeCollectif(dessus, m)}
+                                    >
+                                      Rejoindre
+                                    </button>
+                                  </div>
                                 )}
 
                                 {/* LES AVIS SONT SOUS LE MOMENT QU'ILS CONCERNENT,
@@ -6384,6 +6689,103 @@ export function ApercuHabitant() {
         .ap-prog-p em{font-style:normal;font-size:10.5px;font-weight:850;letter-spacing:.08em;
           color:#0A1410;background:#F0B429;border-radius:5px;padding:3px 7px;}
         .ap-prog-p span{font-size:12px;color:#7F988B;}
+
+        /* ── A PLUSIEURS : LA JAUGE, DANS LES OPTIONS ──────────────────────
+           ELLE PORTE L'AMBRE, PAS LE VERT, et ce n'est pas un gout de couleur.
+           Le vert dit « la conversation » dans tout le produit — c'est la
+           couleur de « En parler ». L'ambre dit « on s'engage » : c'est celle
+           de « Reserver » et des places qui se liberent. Un collectif est un
+           engagement, pas une discussion ; il prend donc l'ambre, et l'oeil
+           sait avant d'avoir lu qu'il n'est pas dans la meme famille que le
+           salon des amis.
+           ELLE EST EN RETRAIT DANS LE MOMENT, pas a cote : c'est une facon de
+           profiter de CE moment-la, et la faire flotter au meme niveau que le
+           titre en ferait un cinquieme bloc de la page — exactement ce qu'on a
+           retire du salon pour cause de « beaucoup de choses les unes sous les
+           autres ». */
+        .ap-col{margin-top:9px;padding:10px 12px 11px;border-radius:13px;
+          background:rgba(240,180,41,.09);
+          border:1px solid rgba(240,180,41,.32);}
+        .ap-col-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+        .ap-col-h i{font-style:normal;font-size:13px;line-height:1;}
+        .ap-col-h b{font-size:12.5px;font-weight:850;color:#F0B429;
+          letter-spacing:.01em;}
+        .ap-col-h u{text-decoration:none;font-size:12.5px;color:#B9A277;
+          font-variant-numeric:tabular-nums;}
+        /* LE PRIX DE GROUPE EST A DROITE, EN VERT : c'est le gain, et le vert
+           est la seule couleur du produit qui veuille dire « c'est acquis ». */
+        .ap-col-h s{margin-left:auto;text-decoration:none;font-size:16px;
+          font-weight:850;color:#3DE2A6;letter-spacing:-.02em;}
+        .ap-col-j{margin-top:8px;height:7px;border-radius:99px;
+          background:rgba(255,255,255,.1);overflow:hidden;}
+        .ap-col-j i{display:block;height:100%;width:var(--part,0%);
+          border-radius:99px;background:#F0B429;
+          transition:width .5s cubic-bezier(.16,1,.3,1);}
+        .ap-col-x{margin:8px 0 0;font-size:12px;line-height:1.4;color:#C3CFC8;}
+        .ap-col.plein .ap-col-x{color:#3DE2A6;font-weight:750;}
+        .ap-col.plein .ap-col-j i{background:#3DE2A6;}
+        /* IL NE PREND PAS TOUTE LA LARGEUR, ET C'EST UNE CORRECTION MESUREE.
+           En pleine largeur il faisait 284 px contre 111 pour le « Reserver »
+           du moment lui-meme : rejoindre un groupe criait plus fort que
+           reserver une table, dans le bloc de la table. Or l'ordre est
+           l'inverse — le collectif est une facon de profiter du moment, pas
+           le moment. Meme famille de couleur, poids inferieur. */
+        .ap-col-b{align-self:flex-start;margin-top:9px;font:inherit;
+          font-size:13px;font-weight:850;color:#2A1D00;cursor:pointer;border:0;
+          border-radius:999px;padding:9px 18px;background:#F0B429;}
+        .ap-col-b:active{transform:scale(.98);}
+        .ap-col{display:flex;flex-direction:column;}
+
+        /* ── LA MENTION SUR LA FACE ────────────────────────────────────────
+           ELLE VIT DANS LE RACCOURCI VERS LE BAS, separee par un filet. Zero
+           pixel de hauteur en plus : les deux moities disent la meme chose —
+           ce qu'il y a plus bas. Elle porte l'ambre pour se distinguer du
+           compte de moments, sans devenir un objet de plus. */
+        .ap-vb-col{font-style:normal;display:inline-flex;align-items:center;
+          gap:5px;margin-left:8px;padding-left:9px;font-weight:850;color:#F0B429;
+          border-left:1px solid rgba(255,255,255,.22);}
+        .ap-vb-col i{font-style:normal;font-size:11px;line-height:1;}
+
+        /* ── LE BANDEAU DU COLLECTIF, EN TETE DU SALON ─────────────────────
+           IL PASSE AVANT LA CONVERSATION, et c'est l'inverse de tous les
+           autres salons. Ailleurs, ce qu'on vient faire est parler ; ici, ce
+           qu'on vient faire est prendre sa place et aller chercher les trois
+           qui manquent. La salle sert le compteur, pas le contraire. */
+        .ap-colsal{margin:10px 12px 4px;padding:13px 14px 12px;border-radius:16px;
+          background:rgba(240,180,41,.1);
+          border:1px solid rgba(240,180,41,.34);}
+        .ap-colsal-h{display:flex;align-items:baseline;gap:10px;}
+        .ap-colsal-h b{font-size:23px;font-weight:850;color:#F0B429;
+          letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+        .ap-colsal-h span{margin-left:auto;display:inline-flex;align-items:baseline;
+          gap:8px;}
+        .ap-colsal-h s{text-decoration:line-through;font-size:13px;color:#8B9A92;}
+        .ap-colsal-h u{text-decoration:none;font-size:19px;font-weight:850;
+          color:#3DE2A6;letter-spacing:-.02em;}
+        .ap-colsal-j{margin-top:9px;height:8px;border-radius:99px;
+          background:rgba(255,255,255,.1);overflow:hidden;}
+        .ap-colsal-j i{display:block;height:100%;width:var(--part,0%);
+          border-radius:99px;background:#F0B429;
+          transition:width .5s cubic-bezier(.16,1,.3,1);}
+        .ap-colsal.plein .ap-colsal-j i{background:#3DE2A6;}
+        .ap-colsal-x{margin:9px 0 0;font-size:12.5px;line-height:1.4;color:#C3CFC8;}
+        .ap-colsal.plein .ap-colsal-x{color:#3DE2A6;font-weight:750;}
+        .ap-colsal-b{margin-top:11px;display:flex;gap:8px;}
+        .ap-colsal-b button{flex:1;font:inherit;font-size:13px;font-weight:850;
+          cursor:pointer;border-radius:999px;padding:11px 12px;}
+        .ap-colsal-p{color:#2A1D00;border:0;background:#F0B429;}
+        /* LE SECOND EST UN CONTOUR, PAS UN SECOND PLEIN : deux pleins cote a
+           cote se disputent le regard et on n'en choisit aucun. Il reste
+           parfaitement visible — c'est lui qui fait monter le compteur. */
+        .ap-colsal-s{color:#F5D68A;background:transparent;
+          border:1px solid rgba(240,180,41,.55);}
+        .ap-colsal-b button:active{transform:scale(.98);}
+        .ap-colsal-q{margin:11px 0 0;display:flex;align-items:center;gap:7px;
+          font-size:11.5px;color:#8B9A92;
+          border-top:1px solid rgba(255,255,255,.09);padding-top:9px;}
+        .ap-colsal-q i{font-style:normal;font-size:12px;line-height:1;}
+        .ap-colsal-vide{margin:18px 26px 0;text-align:center;font-size:13px;
+          line-height:1.5;color:#6C8078;}
 
         .ap-prog-av{margin-top:10px;padding:9px 11px;border-radius:12px;
           background:rgba(255,255,255,.05);}

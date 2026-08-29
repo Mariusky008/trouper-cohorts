@@ -158,6 +158,117 @@ export type AvisPlat = {
  *     Mais il a une journée : arrivage ce matin, essayage privé à 15 h, dernier
  *     jour des soldes à 18 h.
  */
+/**
+ * LE COLLECTIF — CE QUE LE COMMERÇANT NE PEUT PAS OFFRIR À UNE PERSONNE.
+ *
+ * ─── POURQUOI CE N'EST PAS UNE REMISE ──────────────────────────────────────
+ *
+ * Un boulanger n'allume pas un four pour trois pains ; pour douze, oui. Un
+ * boucher ne vend pas un quart d'agneau ; à quatorze parts, si. Un restaurant
+ * préfère une table de six à trois tables de deux. L'affaire n'existe QUE si
+ * le groupe existe — c'est pour ça qu'elle ne coûte rien au commerçant, et
+ * c'est ce qui la sépare d'un site de bons de réduction.
+ *
+ * ─── POURQUOI ELLE VIT SUR UN MOMENT ET PAS SUR LA CARTE ───────────────────
+ *
+ * Parce que c'est une FAÇON D'EN PROFITER, au même rang que le prix du jour ou
+ * l'express — pas une conversation posée à côté. Elle se lit donc là où on lit
+ * les prix, et c'est la comparaison qui lui donne son sens : « 50 € seul,
+ * 45 € à dix » ne veut rien dire si les deux ne sont pas l'un sous l'autre.
+ *
+ * ─── CE QUE LE COMMERÇANT FAIT, ET QUAND ───────────────────────────────────
+ *
+ * Il pose le seuil le matin, en publiant sa journée, et il n'y revient jamais.
+ * Aucune de ces valeurs ne lui demande d'être devant son téléphone : le compte
+ * monte tout seul, et le prix tombe tout seul. C'est la seule forme qui tienne
+ * pour un boulanger ou une vendeuse qui sont en boutique, pas sur un écran.
+ */
+export type Collectif = {
+  /** Combien il en faut pour que ça se déclenche. */
+  objectif: number;
+  /** Combien s'y sont déjà mis. */
+  participants: number;
+  /**
+   * LE PRIX UNE FOIS LE SEUIL ATTEINT — et il vaut POUR TOUT LE MONDE, y
+   * compris les premiers inscrits. Sans cette règle, les premiers attendent au
+   * lieu d'aller chercher du monde, et le compteur ne monte jamais.
+   */
+  prixGroupe?: string;
+  /**
+   * CE QUE LE NOMBRE DÉBLOQUE QUAND CE N'EST PAS UN PRIX. « il lance une
+   * fournée à 17 h », « il découpe une bête entière ». Le mécanisme est le
+   * même ; ce qui est en jeu change de métier en métier, et c'est justement ce
+   * qui permet de n'en apprendre qu'un seul.
+   */
+  debloque?: string;
+  /** Les prénoms de ceux qui y sont. Des inconnus — c'est tout le sujet. */
+  qui?: string[];
+};
+
+/** Combien il en manque. Jamais négatif. */
+export function manqueCollectif(c: Collectif): number {
+  return Math.max(0, c.objectif - c.participants);
+}
+
+/** Le seuil est-il tombé ? */
+export function collectifComplet(c: Collectif): boolean {
+  return manqueCollectif(c) === 0;
+}
+
+/**
+ * L'avancement, entre 0 et 1.
+ *
+ * JAMAIS ZÉRO EXACT DÈS QU'UNE PERSONNE S'EST ENGAGÉE : une jauge vide alors
+ * qu'on vient d'appuyer donne l'impression que le geste n'a rien fait. On
+ * plancher à 6 % — assez pour se voir, trop peu pour mentir. La même règle
+ * qu'`avancement()` dans `cliks.ts`, et pour la même raison.
+ */
+export function avancementCollectif(c: Collectif): number {
+  if (c.objectif <= 0) return 0;
+  const p = Math.max(0, Math.min(1, c.participants / c.objectif));
+  return p > 0 && p < 0.06 ? 0.06 : p;
+}
+
+/**
+ * LA PHRASE, EN UNE LIGNE.
+ *
+ * ELLE DIT « POUR TOUT LE MONDE », ET CE N'EST PAS UN ORNEMENT : c'est la
+ * seule information qui donne à celui qui lit une raison d'aller chercher les
+ * trois qui manquent plutôt que d'attendre que d'autres le fassent.
+ */
+export function phraseCollectif(c: Collectif): string {
+  const m = manqueCollectif(c);
+  if (m === 0) {
+    return c.prixGroupe
+      ? `C’est fait — ${c.prixGroupe} pour tout le monde.`
+      : `C’est fait — ${c.debloque ?? "c’est débloqué"}.`;
+  }
+  const gens = m === 1 ? "1 personne" : `${m} personnes`;
+  return c.prixGroupe
+    ? `Encore ${gens} et il tombe à ${c.prixGroupe} pour tout le monde.`
+    : `Encore ${gens} et ${c.debloque ?? "c’est débloqué"}.`;
+}
+
+/**
+ * LE COLLECTIF D'UNE CARTE, S'IL Y EN A UN — celui qu'on annonce sur la face.
+ *
+ * ON N'EN MONTRE QU'UN, ET C'EST LE PREMIER QUI N'EST PAS ENCORE PASSÉ. Deux
+ * jauges sur la face d'une carte qu'on balaie en trois secondes ne se lisent
+ * pas : on n'aurait plus une information, on aurait un tableau.
+ */
+export function collectifDeLaCarte(
+  carte: { moments: MomentJour[] },
+  heure?: number,
+): { moment: MomentJour; col: Collectif } | null {
+  for (const m of carte.moments) {
+    // PASSÉ, ON NE L'ANNONCE PLUS : proposer de rejoindre un groupe dont
+    // l'heure est derrière soi est la meilleure façon de perdre quelqu'un.
+    if (heure != null && heure >= m.a) continue;
+    if (m.collectif) return { moment: m, col: m.collectif };
+  }
+  return null;
+}
+
 export type MomentJour = {
   /** Début et fin en heures décimales — 11.5 vaut 11 h 30. */
   de: number;
@@ -173,6 +284,9 @@ export type MomentJour = {
   etiquette?: string;
   /** Combien il en reste. Zéro : c'est complet. */
   places?: number;
+  /** Ce que ce moment devient à plusieurs. Absent : il n'y a rien à rejoindre,
+   *  et aucune jauge n'apparaît nulle part — ni ici, ni sur la face. */
+  collectif?: Collectif;
   /** L'emoji du moment. */
   icone: string;
   /** Le libellé du bouton. Vide : rien à réserver, on passe, c'est tout. */
@@ -865,6 +979,13 @@ const CARTES: CarteAutour[] = [
         titre: "Service du soir",
         lignes: ["Entrée + plat + dessert", "Dernière commande à 21 h 30"],
         prix: "26 €", places: 6, action: "Réserver", envies: [],
+        // UNE TABLE DE SIX VAUT MIEUX QUE TROIS TABLES DE DEUX, et c'est vrai
+        // pour lui : un service, une nappe, un passage en cuisine. Il concede
+        // huit euros sur un couvert qu'il n'aurait pas rempli.
+        collectif: {
+          objectif: 6, participants: 4, prixGroupe: "18 €",
+          qui: ["Inès", "Marc", "Chloé", "Karim"],
+        },
         avis: [
           { note: 5, texte: "On a fini à onze heures sans voir le temps passer.", qui: "Paul", quand: "samedi dernier",
             photo: "/direct/tablee-du-soir.jpg" },
@@ -1085,6 +1206,22 @@ const CARTES: CarteAutour[] = [
           { note: 3, texte: "Correct, un peu petit pour moi.", qui: "Léa", quand: "il y a 2 semaines" },
         ],
       },
+      // LE SEUL CAS OU LE NOMBRE NE FAIT PAS TOMBER UN PRIX : IL ALLUME UN
+      // FOUR. Sans les douze, la fournee n'existe pas — le boulanger ne
+      // rallume pas pour trois pains. C'est la meme jauge, le meme geste, et
+      // ce qui est en jeu a change de nature : c'est ce qui prouve que la
+      // mecanique n'est pas un systeme de remises deguise.
+      {
+        de: 14, a: 17, quand: "17 h", icone: "🔥",
+        titre: "La fournée de 17 h",
+        lignes: ["Pain de campagne au levain", "Seulement si vous êtes douze"],
+        prix: "4,20 €", places: 12, envies: ["maintenant", "emporter"],
+        collectif: {
+          objectif: 12, participants: 9,
+          debloque: "il lance la fournée à 17 h",
+          qui: ["Martine", "Sofia", "Paul", "Léa", "Hugo"],
+        },
+      },
       {
         de: 18, a: 19.5, quand: "18 h", icone: "🏷️",
         titre: "Ce qui reste, à moitié prix",
@@ -1284,6 +1421,20 @@ const CARTES: CarteAutour[] = [
             photo: "/direct/avis-cabine.jpg" },
         ],
         rappels: 6,
+      },
+      // LE CAS LE PLUS SIMPLE, ET LE PLUS PARLANT : dix pantalons valent mieux
+      // qu'un. Elle en commande une serie au lieu d'en vendre trois, et les
+      // cinq euros qu'elle lache sont pris sur un volume qu'elle n'aurait pas
+      // fait. Personne ne l'obtient seul, d'ou le salon.
+      {
+        de: 10, a: 19, quand: "toute la journée", icone: "👖",
+        titre: "Le pantalon en lin",
+        lignes: ["Coupe droite, du 36 au 44", "Trois coloris en rayon"],
+        prix: "50 €", places: 14, envies: ["arrivage"],
+        collectif: {
+          objectif: 10, participants: 7, prixGroupe: "45 €",
+          qui: ["Élodie", "Manon", "Thomas", "Inès"],
+        },
       },
       {
         de: 17, a: 19, quand: "18 h", icone: "🏷️",

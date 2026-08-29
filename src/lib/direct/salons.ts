@@ -212,6 +212,26 @@ export type Salon = {
    * celui qui l'a ouvert peut basculer.
    */
   prive?: boolean;
+  /**
+   * LA JAUGE, QUAND CE SALON EST CELUI D'UN COLLECTIF.
+   *
+   * CE QUI LE REND DIFFÉRENT DE TOUS LES AUTRES, ET C'EST STRUCTUREL : un
+   * salon ordinaire N'EXISTE PAS avant qu'on l'ouvre, et il ne contient que
+   * les gens qu'on y a mis. Celui-ci existait avant nous, il n'y en a qu'un
+   * par moment d'annonce, et on ne l'ouvre pas — on le rejoint. C'est
+   * exactement pourquoi sa porte n'est pas « En parler » mais un bouton
+   * « Rejoindre », posé dans les options de l'annonce.
+   *
+   * La forme est recopiée plutôt qu'importée d'`apercu-habitant` : ce module
+   * est la couche basse, et lui faire dépendre du catalogue des annonces
+   * créerait un cycle pour trois nombres.
+   */
+  collectif?: {
+    objectif: number;
+    participants: number;
+    prixGroupe?: string;
+    debloque?: string;
+  };
   /** Ce que chacun est. Absent : présent, sans s'être prononcé. */
   statuts?: Record<string, Statut>;
   /** Quelqu'un y est en ce moment, et l'a choisi. */
@@ -722,8 +742,21 @@ function garder(suivant: Record<string, Salon>) {
   abonnes.forEach((f) => f());
 }
 
-/** Ouvre un salon sur une annonce, ou rend celui qui existe déjà. */
-export function ouvrirSalon(salon: Omit<Salon, "messages" | "viennent" | "presents" | "ouvert">) {
+/**
+ * Ouvre un salon sur une annonce, ou rend celui qui existe déjà.
+ *
+ * `presents` EST FACULTATIF, ET N'EXISTE QUE POUR LE COLLECTIF. Partout
+ * ailleurs, un salon neuf ne contient que celui qui l'ouvre — c'est la vérité
+ * du produit et on ne peuple jamais une salle à sa place. Mais un collectif
+ * existait AVANT lui : sept personnes s'y sont déjà mises, et c'est même la
+ * seule raison pour laquelle il le rejoint. L'afficher vide dirait le
+ * contraire de ce que la jauge annonce sur l'annonce.
+ */
+export function ouvrirSalon(
+  salon: Omit<Salon, "messages" | "viennent" | "presents" | "ouvert"> & {
+    presents?: string[];
+  },
+) {
   const avant = chargerSalons();
   if (avant[salon.cle]) return avant[salon.cle];
   /**
@@ -742,7 +775,9 @@ export function ouvrirSalon(salon: Omit<Salon, "messages" | "viennent" | "presen
     // etes ; ici on le sait, et c'est le dernier endroit avant l'ecriture.
     parQui: salon.parQui === "Vous" ? moi : salon.parQui,
     viennent: [moi],
-    presents: [moi],
+    // MOI D'ABORD, PUIS CEUX QUI Y ÉTAIENT DÉJÀ — et jamais deux fois le même
+    // si l'appelant m'a inclus par mégarde.
+    presents: [moi, ...(salon.presents ?? []).filter((q) => q !== moi)],
     messages: [],
     ouvert: true,
     // CE QUI EST SUR LA TABLE DÈS L'OUVERTURE : l'annonce qui a déclenché le
