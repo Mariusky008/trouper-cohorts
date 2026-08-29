@@ -517,6 +517,156 @@ export function Histoire() {
         </div>
       </section>
 
+      {/* ─── LES DEUX SALONS ───
+          POURQUOI ICI ET PAS PLUS HAUT. Les cinq situations d'avant montrent
+          toutes le même salon : celui qu'on ouvre avec ses amis. On peut donc
+          maintenant nommer les deux portes sans rien expliquer — la première
+          vient d'être vue cinq fois, la seconde se comprend par contraste.
+
+          LA SECONDE PORTE EST CE QUE PERSONNE D'AUTRE NE FAIT. Ailleurs, un
+          prix est un prix. Ici, ce qu'un commerçant ne peut pas offrir à une
+          personne, il peut l'offrir à dix : le seuil ne lui coûte rien parce
+          que l'affaire n'existe QUE si le groupe existe. Et comme le prix
+          tombe aussi pour ceux qui s'étaient inscrits les premiers, chacun a
+          intérêt à en parler autour de lui — sinon les premiers attendent au
+          lieu de recruter, et la jauge ne monte jamais.
+
+          LE MOT « BIENTÔT » N'EST PAS UNE PRÉCAUTION DE STYLE. Le salon
+          public n'est pas encore dans l'application, et cette page ouvre
+          l'application juste à côté. Annoncer sans ce mot enverrait quelqu'un
+          chercher un bouton qui n'existe pas ; il tombe le jour où il existe.
+
+          CE QUI EMPÊCHE DE SE TROMPER DE SALON : les deux portes ne sont
+          jamais au même endroit sur l'annonce, l'une en bas, l'autre en haut.
+          Et chaque salon dit en permanence QUI PEUT VOUS LIRE — le vrai
+          danger n'est pas d'appuyer sur le mauvais bouton, c'est de confier a
+          des inconnus ce qu'on croyait dire a ses amis. */}
+      <section className="ld-salons" aria-labelledby="t-salons">
+        <div className="ld-cas-h">
+          <p className="ld-quand" data-r>
+            Le salon
+          </p>
+          <h2 id="t-salons" className="ld-t2" data-r style={{ "--d": "60ms" } as React.CSSProperties}>
+            On n’y va plus seul.
+          </h2>
+          <p className="ld-s" data-r style={{ "--d": "120ms" } as React.CSSProperties}>
+            Sur chaque annonce, deux portes — et jamais au même endroit. On{" "}
+            <b>ouvre</b> une conversation avec ses amis, ou on <b>rejoint</b> des gens
+            qu’on ne connaît pas pour obtenir ce qu’aucun d’eux n’obtiendrait seul.
+          </p>
+        </div>
+
+        <div className="ld-portes">
+          <article className="ld-porte prive" data-r>
+            <p className="ld-porte-e">
+              <b>💬 En parler</b>
+              <em>en bas de l’annonce</em>
+            </p>
+            <h3>Avec mes amis.</h3>
+            <p className="ld-porte-p">
+              On se décide à quatre, chacun propose autre chose, et la table est prise
+              depuis la conversation. Elle vit le temps de l’annonce, puis elle s’éteint.
+            </p>
+
+            {/* LE PENDANT DE LA JAUGE, DU COTE PRIVE. Sans lui, la carte de
+                gauche etait un grand trou a cote d'une carte pleine, et le
+                desequilibre se lisait comme un desequilibre d'importance —
+                alors que ces deux salons comptent autant l'un que l'autre. */}
+            <div className="ld-fil" aria-hidden="true">
+              <p className="ld-f-q">Le menu du jour · Chez Bergine</p>
+              <ul className="ld-f-l">
+                <li>
+                  <b>Julie</b>Je peux vous rejoindre à 12 h 30.
+                </li>
+                <li>
+                  <b>Marc</b>Pas ce midi — gardez-moi ça pour jeudi.
+                </li>
+                <li className="moi">
+                  <b>Pauline</b>Parfait, je réserve pour quatre.
+                </li>
+              </ul>
+              <p className="ld-f-c">
+                <i>📅</i> Table réservée pour 4 <s>confirmé par Chez Bergine</s>
+              </p>
+            </div>
+
+            <p className="ld-porte-q">
+              <i aria-hidden="true">🔒</i> Vous et 3 amis
+            </p>
+          </article>
+
+          <article
+            className="ld-porte public"
+            data-r
+            style={{ "--d": "120ms" } as React.CSSProperties}
+          >
+            <p className="ld-porte-e">
+              <b>👋 Rejoindre</b>
+              <em>en haut de l’annonce</em>
+              <s>Bientôt</s>
+            </p>
+            <h3>Avec des inconnus, pour payer moins.</h3>
+            <p className="ld-porte-p">
+              Le commerçant pose une règle le matin et n’y revient jamais. À dix, le prix
+              tombe — <b>pour tout le monde</b>, ceux qui s’étaient inscrits les premiers
+              compris. Alors on en parle autour de soi&nbsp;: chaque personne de plus fait
+              baisser la vôtre.
+            </p>
+
+            {/* LA JAUGE — le seul objet nouveau, et le même partout. Elle se
+                remplit en arrivant a l'ecran plutot qu'au chargement : figee,
+                elle demanderait d'imaginer la suite ; animee, elle la montre. */}
+            <div className="ld-jauge" aria-hidden="true">
+              <p className="ld-j-q">Pantalon en lin · Chez Marot</p>
+              <div className="ld-pts">
+                {Array.from({ length: 10 }, (_, k) => (
+                  <i key={k} className={k < 7 ? "pris" : `libre l${k - 6}`} />
+                ))}
+              </div>
+              <p className="ld-j-n">
+                <span className="ld-j-g">
+                  <b className="av">7</b>
+                  <b className="ap">10</b>
+                </span>
+                <em>sur 10</em>
+                <s>50 €</s>
+                <u>45 €</u>
+              </p>
+              <p className="ld-j-x">
+                <span className="av">Encore 3 et le prix tombe.</span>
+                <span className="ap">C’est fait. Il est tombé pour les dix.</span>
+              </p>
+            </div>
+
+            <p className="ld-porte-q">
+              <i aria-hidden="true">👁️</i> 7 personnes que vous ne connaissez pas
+            </p>
+          </article>
+        </div>
+
+        {/* LA MÊME JAUGE NE SERT PAS QU'A FAIRE BAISSER UN PRIX. Quatre
+            exemples suffisent a le dire : ce qui est en jeu change de metier
+            en metier, la forme ne change jamais. C'est ce qui permet d'en
+            apprendre UN et de le retrouver dans toute la ville. */}
+        <ul className="ld-seuils" aria-label="Ce que le nombre débloque, selon le commerce">
+          {[
+            ["9 / 12", "et le boulanger lance une fournée à 17 h"],
+            ["11 / 14", "et le boucher découpe une bête entière"],
+            ["4 / 6", "et le menu du soir passe de 21 à 18 €"],
+            ["12 / 15", "et le caviste fait venir le vigneron jeudi"],
+          ].map(([n, d], k) => (
+            <li key={n} data-r style={{ "--d": `${k * 70}ms` } as React.CSSProperties}>
+              <b>{n}</b>
+              <em>{d}</em>
+            </li>
+          ))}
+        </ul>
+
+        <p className="ld-chute" data-r>
+          Ce qu’un commerçant ne peut pas offrir à une personne, il peut l’offrir à dix.
+        </p>
+      </section>
+
       {/* ─── CE QUI N'EXISTE NULLE PART AILLEURS ───
           Placé ici, après quatre démonstrations, ce n'est plus une promesse :
           c'est le nom de ce qu'on vient de voir quatre fois. */}

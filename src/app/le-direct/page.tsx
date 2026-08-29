@@ -283,6 +283,162 @@ function StylesLeDirect() {
 .ld-essai-x i{font-style:normal;font-size:12px;line-height:1}
 .ld-essai-x:active{transform:translateX(-50%) scale(.97)}
 
+/* ── LES DEUX SALONS ────────────────────────────────────────────────────
+   DEUX CARTES QUI NE SE RESSEMBLENT PAS, ET C'EST LE FOND DU SUJET. Si les
+   deux salons se presentaient pareil, on ecrirait dans le mauvais. Celui de
+   gauche porte la menthe de la conversation, celui de droite l'ambre de
+   l'engagement — on les distingue avant d'avoir lu un mot. */
+.ld-salons{position:relative;--ton:var(--or);
+  padding:clamp(56px,9vh,110px) clamp(16px,4vw,48px);
+  border-top:1px solid var(--trait);
+  background:radial-gradient(80% 55% at 50% 0%,rgba(240,180,41,.07),transparent 62%)}
+.ld-salons .ld-quand{--ton:var(--or)}
+
+.ld-portes{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+  gap:clamp(12px,2vw,22px);max-width:980px;
+  margin:clamp(26px,4.5vh,46px) auto 0}
+.ld-porte{display:flex;flex-direction:column;gap:11px;
+  padding:clamp(18px,3vw,26px);border-radius:24px;
+  border:1px solid var(--trait);background:var(--nuit2)}
+.ld-porte.prive{--ton:var(--menthe);
+  background:linear-gradient(170deg,rgba(61,226,166,.07),var(--nuit2) 62%);
+  border-color:color-mix(in srgb,var(--menthe) 26%,transparent)}
+.ld-porte.public{--ton:var(--or);
+  background:linear-gradient(170deg,rgba(240,180,41,.08),var(--nuit2) 62%);
+  border-color:color-mix(in srgb,var(--or) 30%,transparent)}
+
+/* L'ETIQUETTE PORTE LE MOT DU BOUTON *ET* L'ENDROIT OU ON LE TROUVE. Les
+   deux portes ne sont jamais au meme endroit sur l'annonce, et c'est la
+   seule chose qui empeche de se tromper de salon : ca s'ecrit, ca ne se
+   devine pas. */
+.ld-porte-e{margin:0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ld-porte-e b{display:inline-flex;align-items:center;gap:7px;
+  font-size:13px;font-weight:850;letter-spacing:.04em;color:var(--ton);
+  background:color-mix(in srgb,var(--ton) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--ton) 36%,transparent);
+  border-radius:999px;padding:6px 13px}
+.ld-porte-e em{font-style:normal;font-size:12px;color:var(--craie3)}
+/* « BIENTOT » N'EST PAS UNE PRECAUTION DE STYLE : cette page ouvre
+   l'application juste a cote, et le salon public n'y est pas encore. Sans ce
+   mot, on envoie quelqu'un chercher un bouton qui n'existe pas. */
+.ld-porte-e s{margin-left:auto;text-decoration:none;font-size:11px;
+  font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--craie3);border:1px dashed var(--trait);
+  border-radius:999px;padding:4px 10px}
+.ld-porte h3{margin:0;font-family:Georgia,'Times New Roman',serif;
+  font-size:clamp(21px,2.6vw,29px);font-weight:800;line-height:1.12;
+  letter-spacing:-.02em;color:var(--craie)}
+.ld-porte-p{margin:0;font-size:14.5px;line-height:1.55;color:var(--craie2)}
+.ld-porte-p b{color:var(--craie);font-weight:750}
+/* QUI PEUT ME LIRE — EN PERMANENCE, PAS UNE FOIS. Le vrai danger de deux
+   salons n'est pas de se tromper de bouton, c'est de confier a des inconnus
+   ce qu'on croyait dire a ses amis. */
+.ld-porte-q{margin:auto 0 0;display:flex;align-items:center;gap:8px;
+  font-size:12.5px;color:var(--craie3);
+  border-top:1px solid var(--trait);padding-top:12px}
+.ld-porte-q i{font-style:normal;font-size:13px;line-height:1}
+
+/* ── LE FIL, DU COTE PRIVE ──────────────────────────────────────────────
+   Meme boite que la jauge — meme fond, meme rayon, meme retrait — et la
+   menthe a la place de l'or. Les deux cartes portent ainsi un objet de meme
+   poids : ce qui les separe est la couleur et l'enjeu, pas la quantite. */
+.ld-fil{display:flex;flex-direction:column;gap:9px;
+  padding:15px 16px;border-radius:18px;background:rgba(5,9,12,.55);
+  border:1px solid color-mix(in srgb,var(--menthe) 24%,transparent)}
+.ld-f-q{margin:0;font-size:12.5px;color:var(--craie3)}
+.ld-f-l{list-style:none;margin:0;padding:0;display:flex;
+  flex-direction:column;gap:6px}
+.ld-f-l li{align-self:flex-start;max-width:88%;
+  font-size:12.5px;line-height:1.4;color:var(--craie2);
+  padding:8px 11px;border-radius:13px 13px 13px 4px;
+  background:rgba(234,242,236,.06)}
+.ld-f-l li.moi{align-self:flex-end;color:var(--craie);
+  border-radius:13px 13px 4px 13px;
+  background:color-mix(in srgb,var(--menthe) 15%,transparent)}
+.ld-f-l b{display:block;font-size:11px;font-weight:800;letter-spacing:.02em;
+  color:var(--menthe);margin-bottom:2px}
+/* LA CONCLUSION N'EST PAS UNE BULLE. C'est ce que le salon a PRODUIT, et une
+   bulle de plus la ferait lire comme une phrase de quelqu'un. */
+.ld-f-c{margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  font-size:12.5px;font-weight:750;color:var(--craie);
+  padding:9px 12px;border-radius:13px;
+  background:color-mix(in srgb,var(--menthe) 11%,transparent);
+  border:1px solid color-mix(in srgb,var(--menthe) 30%,transparent)}
+.ld-f-c i{font-style:normal;font-size:13px;line-height:1}
+.ld-f-c s{text-decoration:none;font-weight:400;font-size:11.5px;
+  color:var(--craie3)}
+
+/* ── LA JAUGE ───────────────────────────────────────────────────────────
+   LE SEUL OBJET NOUVEAU DU PRODUIT, ET LE MEME PARTOUT : « 7 sur 10 » chez
+   le vendeur de pantalons, « 9 sur 12 » chez le boulanger qui allumera son
+   four. Meme forme, meme place — on en apprend UN, on le retrouve dans
+   toute la ville. */
+.ld-jauge{display:flex;flex-direction:column;gap:9px;
+  padding:15px 16px;border-radius:18px;background:rgba(5,9,12,.55);
+  border:1px solid color-mix(in srgb,var(--or) 28%,transparent)}
+.ld-j-q{margin:0;font-size:12.5px;color:var(--craie3)}
+.ld-pts{display:flex;gap:5px}
+.ld-pts i{flex:1;height:9px;border-radius:99px;background:rgba(234,242,236,.12)}
+.ld-pts i.pris{background:var(--or)}
+.ld-j-n{margin:0;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+/* Les deux chiffres occupent la MEME place : l'un s'efface, l'autre arrive,
+   et le bloc ne bouge pas d'un pixel. Le gabarit est reserve a la largeur du
+   PLUS LARGE des deux — sans lui, « sur 10 » se colle au chiffre et se fait
+   recouvrir a la bascule. */
+.ld-j-g{position:relative;display:inline-block;min-width:2.4ch;height:29px}
+.ld-j-n b{position:absolute;left:0;top:0;
+  font-family:Georgia,'Times New Roman',serif;font-size:29px;font-weight:800;
+  line-height:1;color:var(--or)}
+.ld-j-n .ap{opacity:0}
+.ld-j-n em{font-style:normal;font-size:12.5px;color:var(--craie3)}
+.ld-j-n s{margin-left:auto;text-decoration:none;font-size:14px;
+  color:var(--craie3)}
+.ld-j-n u{text-decoration:none;font-family:Georgia,'Times New Roman',serif;
+  font-size:23px;font-weight:800;color:var(--menthe);opacity:0}
+.ld-j-x{position:relative;margin:0;min-height:2.6em;
+  font-size:12.5px;line-height:1.45;color:var(--craie2)}
+.ld-j-x span{display:block}
+.ld-j-x .ap{position:absolute;left:0;top:0;opacity:0;
+  color:var(--menthe);font-weight:700}
+
+/* ELLE SE REMPLIT EN ARRIVANT A L'ECRAN, pas au chargement : une jauge deja
+   pleine quand on la decouvre montre un resultat, pas un mecanisme. La
+   classe « vu » est posee par l'observateur de la page, une seule fois. */
+.ld-porte.public.vu .ld-pts i.libre{animation:ldPrend .45s ease-out both}
+.ld-porte.public.vu .ld-pts i.l1{animation-delay:.55s}
+.ld-porte.public.vu .ld-pts i.l2{animation-delay:.9s}
+.ld-porte.public.vu .ld-pts i.l3{animation-delay:1.25s}
+.ld-porte.public.vu .ld-j-n .av{animation:ldPart .3s ease-out 1.6s both}
+.ld-porte.public.vu .ld-j-n .ap{animation:ldVient .3s ease-out 1.7s both}
+.ld-porte.public.vu .ld-j-n u{animation:ldVient .4s ease-out 1.9s both}
+.ld-porte.public.vu .ld-j-n s{animation:ldBarre .4s ease-out 1.9s both}
+.ld-porte.public.vu .ld-j-x .av{animation:ldPart .3s ease-out 2s both}
+.ld-porte.public.vu .ld-j-x .ap{animation:ldVient .35s ease-out 2.15s both}
+@keyframes ldPrend{from{background:rgba(234,242,236,.12);transform:scaleY(.55)}
+  to{background:var(--or);transform:scaleY(1)}}
+@keyframes ldPart{to{opacity:0;transform:translateY(-6px)}}
+@keyframes ldVient{from{opacity:0;transform:translateY(7px)}
+  to{opacity:1;transform:none}}
+@keyframes ldBarre{to{text-decoration:line-through;opacity:.55}}
+
+/* LA MEME JAUGE NE SERT PAS QU'A FAIRE BAISSER UN PRIX. Ce qui est en jeu
+   change de metier en metier ; la forme, jamais. */
+.ld-seuils{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:10px;list-style:none;padding:0;max-width:980px;
+  margin:clamp(14px,2.4vh,24px) auto 0}
+.ld-seuils li{display:flex;flex-direction:column;gap:4px;
+  padding:15px 16px;border-radius:16px;
+  background:var(--nuit2);border:1px solid var(--trait)}
+.ld-seuils b{font-family:Georgia,'Times New Roman',serif;font-size:21px;
+  font-weight:800;line-height:1;color:var(--or)}
+.ld-seuils em{font-style:normal;font-size:12.5px;line-height:1.45;
+  color:var(--craie2)}
+
+@media(max-width:560px){
+  .ld-portes{grid-template-columns:1fr}
+  .ld-porte h3{font-size:21px}
+}
+
 /* ── LA DIFFERENCE, APRES QUATRE DEMONSTRATIONS ─────────────────────── */
 .ld-final{display:flex;flex-direction:column;align-items:center;gap:18px;
   text-align:center;border-top:1px solid var(--trait);
@@ -330,6 +486,15 @@ function StylesLeDirect() {
   .ld [data-r]{transition:none}
   .ld-cta,.ld-tel{transition:none}
   .ld-halo i,.ld-quand i{animation:none}
+  /* LE MOUVEMENT DE LA JAUGE EST UN CONFORT, PAS L'INFORMATION : sans lui
+     elle est simplement montree pleine, prix tombe. Rien ne manque. */
+  .ld-porte.public.vu .ld-pts i,.ld-porte.public.vu .ld-j-n b,
+  .ld-porte.public.vu .ld-j-n u,.ld-porte.public.vu .ld-j-n s,
+  .ld-porte.public.vu .ld-j-x span{animation:none}
+  .ld-pts i.libre{background:var(--or)}
+  .ld-j-n .av,.ld-j-x .av{opacity:0}
+  .ld-j-n .ap,.ld-j-x .ap,.ld-j-n u{opacity:1}
+  .ld-j-n s{text-decoration:line-through;opacity:.55}
 }
         `,
       }}
