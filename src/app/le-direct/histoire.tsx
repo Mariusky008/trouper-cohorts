@@ -537,7 +537,9 @@ export function Histoire() {
           chercher un bouton qui n'existe pas ; il tombe le jour où il existe.
 
           CE QUI EMPÊCHE DE SE TROMPER DE SALON : les deux portes ne sont
-          jamais au même endroit sur l'annonce, l'une en bas, l'autre en haut.
+          jamais au même endroit sur l'annonce : « En parler » est dans la barre
+          du bas, « Rejoindre » est une des options du commerçant, sous le pli,
+          collée au prix qu'elle fait baisser.
           Et chaque salon dit en permanence QUI PEUT VOUS LIRE — le vrai
           danger n'est pas d'appuyer sur le mauvais bouton, c'est de confier a
           des inconnus ce qu'on croyait dire a ses amis. */}
@@ -602,7 +604,7 @@ export function Histoire() {
           >
             <p className="ld-porte-e">
               <b>👋 Rejoindre</b>
-              <em>en haut de l’annonce</em>
+              <em>dans les options de l’annonce</em>
               <s>Bientôt</s>
             </p>
             <h3>Avec des inconnus, pour payer moins.</h3>

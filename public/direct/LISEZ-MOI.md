@@ -28,6 +28,7 @@ l'image et le dégradé sont deux couches empilées, précisément pour ça).
 | `tablee-du-soir.jpg`   | Une tablée conviviale, le soir                    |
 | `portant-boutique.jpg` | Une chemise sortie en cabine d'essayage           |
 | `friperie-rayon.jpg`   | Des rayons de friperie, cintres serrés            |
+| `etal-boucher.jpg`     | **MANQUANT** — un étal de boucherie, ou une pièce au billot. La carte « Une boucherie du centre » tombe sur son dégradé en attendant. Aucune image de viande crue dans le dépôt : la seule qui existe est une assiette dressée, qui dirait « restaurant » sur une carte de boucher. |
 | `verre-au-comptoir.jpg`| Un comptoir de bar à vins, fûts au plafond        |
 | `terrasse-au-soleil.jpg` | Une terrasse en plein soleil                    |
 | `fauteuil-coiffeur.jpg`| Un fauteuil de coiffeur libre                     |

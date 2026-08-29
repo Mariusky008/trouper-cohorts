@@ -1256,6 +1256,96 @@ const CARTES: CarteAutour[] = [
       },
     ],
   },
+  // ── LA BOUCHERIE ─────────────────────────────────────────────────────────
+  //
+  // ELLE EST RANGEE DANS « RESTAURANTS », comme la boulangerie : le paquet a
+  // six familles et les metiers de bouche y tiennent ensemble. Une septieme
+  // pastille pour un seul commerce couterait plus a la barre du haut qu'elle
+  // ne rapporterait.
+  //
+  // C'EST LE CAS LE PLUS FORT DU COLLECTIF, ET DE LOIN. Un boucher ne peut pas
+  // vous vendre un quart d'agneau — la bete ne se decoupe pas en quarts de
+  // client. A quatorze parts, si. Le salon n'est plus une conversation, c'est
+  // une table de partage : quatorze parts nommees, chacun prend la sienne, et
+  // si ce n'est pas complet a 20 h ca s'annule et personne ne paie. Il vend
+  // une bete entiere en un apres-midi, a un prix qu'il n'obtiendrait jamais
+  // autrement, avec zero perte.
+  //
+  // SA PHOTO N'EXISTE PAS ENCORE, ET ON N'EN MET PAS UNE FAUSSE. Le depot n'a
+  // aucune image d'etal : la seule viande disponible est une assiette dressee
+  // de restaurant, qui dirait « restaurant » sur une carte de boucher. Un
+  // fichier absent n'est pas une panne — la carte retombe sur son degrade,
+  // voir `carte-swipe.tsx` — et le jour ou la photo arrive a cette adresse,
+  // elle s'affiche sans toucher au code. C'est note dans LISEZ-MOI.md.
+  {
+    id: "boucher",
+    catalogue: [
+      { id: "bo-1", rayon: "Boeuf", nom: "Cote de boeuf maturee", detail: "40 jours, race bazadaise.", prix: "34 €/kg" },
+      { id: "bo-2", rayon: "Boeuf", nom: "Bavette d'aloyau", prix: "24 €/kg" },
+      { id: "bo-3", rayon: "Agneau", nom: "Gigot", detail: "Agneau de lait des Pyrenees.", prix: "26 €/kg" },
+      { id: "bo-4", rayon: "Volaille", nom: "Poulet fermier des Landes", prix: "14 €/kg" },
+      { id: "bo-5", rayon: "Charcuterie", nom: "Ventreche seche", detail: "Maison, sechee trois mois.", prix: "28 €/kg" },
+    ],
+    branche: "restaurant",
+    photo: "/direct/etal-boucher.jpg",
+    cadrage: "50%",
+    nom: "Une boucherie du centre",
+    metier: "Boucherie",
+    ville: VILLE,
+    itineraire: YALLER,
+    metres: 340,
+    distance: "340 m",
+    pouces: [{ qui: "Jean-Marc T.", combien: 7 }],
+    fiche: {
+      ou: "Rue du marche, en face de la halle",
+      horaires: "Aujourd'hui, 7 h – 13 h et 15 h 30 – 19 h 30",
+      mot: "Betes achetees entieres a des eleveurs des Landes. On decoupe sur place.",
+    },
+    recrute: {
+      poste: "Un apprenti boucher",
+      quand: "A la rentree",
+      contrat: "Apprentissage · 35 h · dimanche et lundi de repos",
+      paye: "Selon l'age, grille apprentissage",
+      qui: "Le metier s'apprend au billot, pas dans un livre. Il faut se lever tot et ne pas avoir peur du froid.",
+      passez: "n'importe quel matin avant 11 h",
+      depuis: "il y a 3 jours",
+    },
+    moments: [
+      {
+        de: 7, a: 13, quand: "ce matin", icone: "🔪",
+        titre: "La cote de boeuf maturee",
+        lignes: ["Bazadaise, 40 jours de maturation", "Coupee a l'epaisseur que vous voulez"],
+        prix: "34 €/kg", places: 6, action: "Gardez-la-moi",
+        envies: ["maintenant"],
+      },
+      // LA BETE — le collectif qui ne ressemble a rien d'autre dans le produit.
+      // Ce n'est ni une remise ni un declenchement : c'est un PARTAGE. Le
+      // seuil n'est pas un objectif marketing, c'est le nombre de parts que
+      // fait l'animal.
+      {
+        de: 8, a: 20, quand: "decoupe demain matin", icone: "🐑",
+        titre: "Un agneau entier, en quatorze parts",
+        lignes: [
+          "Agneau de lait des Pyrenees, achete a l'eleveur",
+          "Gigot, cotelettes, epaule, collier — chacun prend la sienne",
+        ],
+        prix: "22 € la part", places: 3, envies: [],
+        collectif: {
+          objectif: 14, participants: 11,
+          debloque: "il achete la bete et la decoupe demain",
+          qui: ["Jean-Marc", "Hélène", "Karim", "Sofia", "Paul", "Anne"],
+        },
+      },
+      {
+        de: 15.5, a: 19.5, quand: "18 h", icone: "🏷️",
+        titre: "Les plats cuisines du jour",
+        lignes: ["Ce qui a ete prepare le matin", "Jusqu'a la fermeture"],
+        prix: "6 €", prixBarre: "9 €", etiquette: "−30 %", places: 8,
+        action: "Gardez-m'en une part", envies: ["moins15", "maintenant", "emporter"],
+        rappels: 3,
+      },
+    ],
+  },
   {
     id: "tablee",
     catalogue: [
@@ -1547,6 +1637,15 @@ const CARTES: CarteAutour[] = [
         titre: "Deux verres pour un",
         lignes: ["Verre de vin + planche"],
         prix: "9 €", places: 20, action: "Réserver", envies: ["maintenant", "happy"],
+        // ON NE DEPLACE PAS UN VIGNERON POUR TROIS CURIEUX. Le seuil ne touche
+        // ni au prix ni au stock : il fait VENIR QUELQU'UN. C'est la variante
+        // la plus eloignee de la remise, et celle qui montre le mieux que la
+        // jauge est un outil de coordination avant d'etre un outil de prix.
+        collectif: {
+          objectif: 15, participants: 12,
+          debloque: "il fait venir le vigneron jeudi",
+          qui: ["Anaïs", "Vincent", "Léo", "Marion"],
+        },
         avis: [
           { note: 5, texte: "La planche est généreuse.", qui: "Anaïs", quand: "vendredi" },
           { note: 4, texte: "Bon choix de vins nature.", qui: "Vincent", quand: "il y a 2 semaines" },
@@ -1679,6 +1778,15 @@ const CARTES: CarteAutour[] = [
         titre: "Coupe homme",
         lignes: ["Tondeuse + ciseaux", "20 minutes"],
         prix: "18 €", places: 3, action: "Réserver", envies: ["moins30", "homme"],
+        // LE TROU DE FIN D'APRES-MIDI, COMBLE A DEUX. Une seule coupe a 15 €
+        // dans un creux, c'est une perte ; deux qui s'enchaînent, c'est une
+        // heure pleine. Le seuil est donc de DEUX, et c'est le plus petit
+        // collectif du produit — assez petit pour qu'on aille chercher un
+        // inconnu, ce qui est exactement le geste qu'on veut voir naître.
+        collectif: {
+          objectif: 2, participants: 1, prixGroupe: "15 €",
+          qui: ["Yann"],
+        },
       },
     ],
   },
@@ -1778,6 +1886,18 @@ const CARTES: CarteAutour[] = [
         lignes: ["Fleurs de saison", "Prêt en cinq minutes"],
         prix: "15 €", places: 12, action: "Mettez-m'en un de côté",
         envies: ["maintenant", "moins20", "saison"],
+        // CHEZ UNE FLEURISTE, LE NOMBRE NE SERT PAS A NEGOCIER : il sert a
+        // FAIRE VENIR CE QU'ELLE NE COMMANDE PAS POUR UNE PERSONNE. Elle ne
+        // fait pas monter un seau de pivoines de Dordogne pour trois tiges —
+        // le trajet et l'invendu mangent la marge. Pour huit bouquets, oui.
+        // Le seuil est donc une COMMANDE FERME au producteur, pas une remise,
+        // et c'est le cas ou le mecanisme cree quelque chose qui n'existait
+        // simplement pas dans la ville ce jour-la.
+        collectif: {
+          objectif: 8, participants: 5,
+          debloque: "elle fait monter les pivoines de Dordogne",
+          qui: ["Maryse", "Chloé", "Anne", "Lucie", "Pierre"],
+        },
         avis: [
           { note: 5, texte: "Il a tenu dix jours sur ma table.", qui: "Maryse", quand: "il y a une semaine",
             photo: "/direct/avis-bouquet.jpg" },
@@ -1829,6 +1949,14 @@ const CARTES: CarteAutour[] = [
         titre: "Pose complète",
         lignes: ["Gel ou semi-permanent", "1 h 15"],
         prix: "45 €", places: 2, action: "Réserver", envies: ["pose"],
+        // ELLE N'OUVRE PAS SON SAMEDI POUR UNE PERSONNE. Quatre poses a la
+        // suite paient la journee ; une seule, non. Le seuil decide donc si le
+        // samedi existe — et les quatre y gagnent dix euros parce qu'elle n'a
+        // pas de trou entre elles.
+        collectif: {
+          objectif: 4, participants: 2, prixGroupe: "35 €",
+          qui: ["Sarah", "Inès"],
+        },
         avis: [
           { note: 5, texte: "Elle a tenu trois semaines sans un éclat.", qui: "Sarah", quand: "le mois dernier",
             photo: "/direct/avis-ongles.jpg" },
