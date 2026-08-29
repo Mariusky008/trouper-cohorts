@@ -671,6 +671,17 @@ export type CarteAutour = {
   distance: string;
   /** LA JOURNÉE, dans l'ordre. C'est l'annonce unique posée le matin. */
   moments: MomentJour[];
+  /**
+   * CETTE CARTE A ÉTÉ PRÉPARÉE POUR UNE VISITE, ET ELLE N'EST PAS EN LIGNE.
+   *
+   * Voir `preparation.ts`. Elle vit dans le téléphone de celui qui démarche et
+   * nulle part ailleurs — publier la carte d'un vrai commerce avant son accord
+   * le ferait passer pour un client sans qu'il ait rien signé, ce que
+   * LISEZ-MOI.md interdit explicitement. Le drapeau sert à le DIRE à l'écran :
+   * une démonstration qui laisse croire que c'est déjà en ligne est un
+   * mensonge, et celui-là se paie le jour où il le découvre.
+   */
+  prepare?: boolean;
   /** Ce que la fiche ajoute quand on descend. */
   fiche: { ou: string; horaires: string; mot: string };
   /** Ce qu'il propose à quelqu'un qui vient d'annoncer qu'il sort. Absent : il
@@ -2266,8 +2277,13 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
     // — vu sur la capture d'un flyer, pas dans un test. Le préfixe existe pour
     // dire que le moment se joue en ce moment ; quand son propre libellé le dit
     // déjà, il n'ajoute rien et il se lit comme un bégaiement.
+    // ON NE PRÉFIXE PAS UN LIBELLÉ QUI COUVRE DÉJÀ TOUTE LA JOURNÉE. « Maintenant
+    // · maintenant » chez la prothésiste, « Maintenant · aujourd'hui » sur une
+    // carte préparée : le préfixe existe pour dire qu'un moment se joue en ce
+    // moment, et quand le libellé le dit déjà il se lit comme un bégaiement.
     reste: m
-      ? seJoueMaintenant(m, heure) && !/^maintenant/i.test(m.quand.trim())
+      ? seJoueMaintenant(m, heure) &&
+        !/^(maintenant|aujourd|toute la journ)/i.test(m.quand.trim())
         ? `Maintenant · ${m.quand}`
         : m.quand
       : "",

@@ -66,7 +66,25 @@ export type MessageSalon = {
   /** Ce que J'ai mis, pour pouvoir le retirer. */
   maReaction?: string;
   /** Une carte de service : réservation, arrivée. Pas une bulle. */
-  carte?: { titre: string; detail: string; tampon?: string };
+  carte?: {
+    titre: string;
+    detail: string;
+    tampon?: string;
+    /**
+     * CETTE CARTE MONTRE L'AUTRE CÔTÉ — ce que le COMMERÇANT reçoit.
+     *
+     * POURQUOI ELLE EXISTE, ET CE N'EST PAS UN ORNEMENT. Le groupe voit sa
+     * demande partir et n'a plus rien à regarder ; le commerçant, lui, reçoit
+     * la seule chose qu'aucune plateforme de réservation ne lui donne : non
+     * pas « table de 4 à 12 h 30 », mais CE QU'ILS ONT CHOISI. Il sait quoi
+     * sortir du frigo. C'est le moment exact où un restaurateur comprend ce
+     * que l'application lui apporte, et il faut donc qu'il le VOIE.
+     *
+     * Elle est marquée pour être lue comme telle : ce n'est pas un message du
+     * salon, c'est un écran d'ailleurs, montré ici.
+     */
+    pro?: boolean;
+  };
 };
 
 /**

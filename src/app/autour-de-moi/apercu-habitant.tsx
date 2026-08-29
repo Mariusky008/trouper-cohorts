@@ -63,6 +63,12 @@ import {
   type Salon,
 } from "@/lib/direct/salons";
 import { suivreHauteurEcran } from "@/lib/direct/hauteur-ecran";
+import {
+  abonnerPreparation,
+  carteDuPrepare,
+  chargerPreparation,
+  preparationVide,
+} from "@/lib/direct/preparation";
 import { abonnerVus, chargerVus, marquerVu, RIEN_VU } from "@/lib/direct/premiere-fois";
 import {
   abonnerSuivis,
@@ -1178,6 +1184,25 @@ export function ApercuHabitant() {
   }
 
 
+  /**
+   * LES COMMERCES PRÉPARÉS POUR LA VISITE, EN TÊTE DU PAQUET.
+   *
+   * ILS PASSENT DEVANT LA DISTANCE, ET C'EST TOUT LE POINT : le paquet est
+   * trié du plus près au plus loin, mais celui devant qui l'on est debout doit
+   * être le premier, quelle que soit la rue. On ne les mélange donc pas, on
+   * les pose devant.
+   *
+   * `useSyncExternalStore` plutôt qu'un `useState` : la préparation se fait sur
+   * une autre page, et l'application doit la voir en revenant sans qu'on la
+   * recharge — devant un commerçant, un rechargement est déjà un aveu.
+   */
+  const prepares = useSyncExternalStore(
+    abonnerPreparation,
+    chargerPreparation,
+    preparationVide,
+  );
+  const cartesPreparees = prepares.map(carteDuPrepare);
+
   const toutes = toutesLesCartes();
   const embauchent = ceuxQuiRecrutent();
   // LES ENVIES NE S'APPLIQUENT PAS AUX EMBAUCHES — « moins de 15 € » n'a aucun
@@ -1209,7 +1234,13 @@ export function ApercuHabitant() {
     ? [...dispoBrut].sort((a, b) => rang(a) - rang(b) || a.metres - b.metres)
     : dispoBrut;
   const pile = (() => {
-    const p = dispo.filter((c) => !passees.includes(c.id));
+    // LES PRÉPARÉS D'ABORD, ET ILS SE PASSENT COMME LES AUTRES : une carte
+    // qu'on ne peut pas balayer se remarque, et c'est la seule chose qu'on ne
+    // veut pas devant un commerçant.
+    const p = [
+      ...cartesPreparees.filter((c) => !passees.includes(c.id)),
+      ...dispo.filter((c) => !passees.includes(c.id)),
+    ];
     if (!epingle) return p;
     const i = p.findIndex((c) => c.id === epingle);
     return i > 0 ? [p[i], ...p.slice(0, i), ...p.slice(i + 1)] : p;
@@ -2196,6 +2227,41 @@ export function ApercuHabitant() {
         tampon: "Demande envoyée",
       },
     });
+
+    // ─── ET VOICI CE QUE LE COMMERÇANT REÇOIT ───
+    //
+    // C'EST LA MOITIÉ QU'ON NE MONTRAIT JAMAIS, et c'est celle qui décide
+    // quand on tend le téléphone à un restaurateur. Une plateforme de
+    // réservation lui envoie « table de 4 à 12 h 30 ». Elle ne lui dit pas CE
+    // QU'ILS ONT CHOISI — donc il ne sait pas quoi sortir du frigo, il ne sait
+    // pas si sa garbure marche, et il apprend le lundi ce qu'il aurait dû
+    // savoir le vendredi. Ici, il reçoit le plat et les prénoms.
+    //
+    // ELLE EST ÉCRITE DANS LE SALON, ET C'EST ASSUMÉ : ce n'est pas un message
+    // du groupe, c'est un écran d'ailleurs, montré ici. Le libellé le dit, et
+    // la carte ne ressemble à aucune autre.
+    const prenoms = (salon.viennent.length ? salon.viennent : salon.presents)
+      .slice(0, 4)
+      .map((q) => (cestMoi(q) ? "vous" : q));
+    const liste =
+      prenoms.length > 1
+        ? `${prenoms.slice(0, -1).join(", ")} et ${prenoms[prenoms.length - 1]}`
+        : prenoms[0] ?? moi;
+    ecrireDansSalon(salon.cle, {
+      qui: ou,
+      voix: "systeme",
+      texte: "",
+      quand: heureCourte(),
+      carte: {
+        titre: `${combien} ${combien > 1 ? "personnes" : "personne"} · ${salon.quand}`,
+        // LE PLAT AVANT LE PRIX : c'est lui qui change ce que fait le cuisinier
+        // en lisant. Le prix, il le connaît, c'est le sien.
+        detail: `Ils ont choisi : ${quoi}${p?.prix ? ` · ${p.prix}` : ""}`,
+        tampon: liste,
+        pro: true,
+      },
+    });
+
     setEcho(`Votre demande est partie pour ${combien}.`);
     setEchoIcone("📅");
   }
@@ -3093,12 +3159,26 @@ export function ApercuHabitant() {
                   <div className="ap-sal-fil">
                     {salon.messages.map((m) =>
                       m.carte ? (
-                        <div className="ap-sal-carte" key={m.id}>
-                          <i aria-hidden="true">📅</i>
+                        <div
+                          className={`ap-sal-carte${m.carte.pro ? " pro" : ""}`}
+                          key={m.id}
+                        >
+                          {/* L'AUTRE CÔTÉ SE PRÉSENTE COMME TEL. Sans ce
+                              libellé, la carte se lirait comme un message de
+                              plus du groupe — or c'est un écran d'ailleurs,
+                              et c'est justement ce qui la rend intéressante. */}
+                          {m.carte.pro && (
+                            <span className="ap-sal-pro-t">
+                              Ce que {m.qui} reçoit
+                            </span>
+                          )}
+                          <i aria-hidden="true">{m.carte.pro ? "🔔" : "📅"}</i>
                           <span>
                             <b>{m.carte.titre}</b>
                             <em>{m.carte.detail}</em>
-                            {m.carte.tampon && <s>✓ {m.carte.tampon}</s>}
+                            {m.carte.tampon && (
+                              <s>{m.carte.pro ? "👥 " : "✓ "}{m.carte.tampon}</s>
+                            )}
                           </span>
                           <u>{m.quand}</u>
                         </div>
@@ -3763,6 +3843,12 @@ export function ApercuHabitant() {
                                 l'appui descend, il n'ouvre rien. Deux endroits
                                 pour entrer dans un salon rouvriraient
                                 exactement la confusion qu'on vient de fermer. */}
+                            {dessus?.prepare && (
+                              <em className="ap-vb-prep">
+                                <i aria-hidden="true">✎</i>
+                                Prête à publier
+                              </em>
+                            )}
                             {colDessus && (
                               <em className="ap-vb-col">
                                 <i aria-hidden="true">👥</i>
@@ -6811,6 +6897,18 @@ export function ApercuHabitant() {
            pixel de hauteur en plus : les deux moities disent la meme chose —
            ce qu'il y a plus bas. Elle porte l'ambre pour se distinguer du
            compte de moments, sans devenir un objet de plus. */
+        /* ── PRÉPARÉE, PAS EN LIGNE ───────────────────────────────────────
+           ELLE SE DIT A L'ECRAN, ET CE N'EST PAS UNE PRECAUTION D'AVOCAT :
+           laisser croire a un commercant que sa carte est deja publique est un
+           mensonge qui se paie le jour ou il le decouvre — c'est-a-dire juste
+           apres avoir dit oui. Dite, la mention devient une invitation :
+           « elle est prete, vous n'avez qu'un mot a dire ».
+           Elle est dans le raccourci vers le bas, comme le compteur du
+           collectif : zero pixel de hauteur en plus sur la photo. */
+        .ap-vb-prep{font-style:normal;display:inline-flex;align-items:center;
+          gap:5px;margin-left:8px;padding-left:9px;font-weight:850;color:#F5D68A;
+          border-left:1px solid rgba(255,255,255,.22);}
+        .ap-vb-prep i{font-style:normal;font-size:11px;line-height:1;}
         .ap-vb-col{font-style:normal;display:inline-flex;align-items:center;
           gap:5px;margin-left:8px;padding-left:9px;font-weight:850;color:#F0B429;
           border-left:1px solid rgba(255,255,255,.22);}
@@ -6854,6 +6952,22 @@ export function ApercuHabitant() {
           font-size:11.5px;color:#8B9A92;
           border-top:1px solid rgba(255,255,255,.09);padding-top:9px;}
         .ap-colsal-q i{font-style:normal;font-size:12px;line-height:1;}
+        /* ── L'AUTRE COTE : CE QUE LE COMMERCANT RECOIT ───────────────────
+           ELLE NE RESSEMBLE A AUCUNE AUTRE CARTE DU FIL, et il le faut : ce
+           n'est pas un message du groupe, c'est un ecran d'ailleurs pose ici.
+           Fond clair sur un fil sombre — c'est l'ecran de quelqu'un d'autre,
+           et l'inversion le dit sans un mot. */
+        .ap-sal-carte.pro{position:relative;padding-top:26px;
+          background:#F4F1E6;border-color:rgba(240,180,41,.5);}
+        .ap-sal-carte.pro b,.ap-sal-carte.pro em{color:#141F1A;}
+        .ap-sal-carte.pro em{opacity:.78;}
+        .ap-sal-carte.pro s{color:#4C5C54;}
+        .ap-sal-carte.pro u{color:#8A968F;}
+        .ap-sal-carte.pro i{filter:none;}
+        .ap-sal-pro-t{position:absolute;left:12px;top:8px;
+          font-size:9.5px;font-weight:850;letter-spacing:.14em;
+          text-transform:uppercase;color:#B87400;}
+
         .ap-colsal-vide{margin:18px 26px 0;text-align:center;font-size:13px;
           line-height:1.5;color:#6C8078;}
         /* ── LE DEUXIEME TEMPS ────────────────────────────────────────────
