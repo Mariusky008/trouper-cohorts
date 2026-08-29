@@ -231,6 +231,10 @@ export type Salon = {
     participants: number;
     prixGroupe?: string;
     debloque?: string;
+    /** La fenêtre de confirmation, quand le seuil est tombé. Voir
+     *  `Collectif` dans `apercu-habitant.ts` : c'est elle qui donne du poids
+     *  à un clic qui ne coûte rien. */
+    fenetre?: { jusqua: string; confirmes: number; moi?: boolean };
   };
   /** Ce que chacun est. Absent : présent, sans s'être prononcé. */
   statuts?: Record<string, Statut>;

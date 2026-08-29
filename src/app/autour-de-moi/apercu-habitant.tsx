@@ -134,6 +134,8 @@ import {
   manqueCollectif,
   phraseCollectif,
   collectifDeLaCarte,
+  compteCollectif,
+  partCollectif,
 } from "@/lib/direct/apercu-habitant";
 import { MARQUE } from "@/lib/marque";
 
@@ -1127,6 +1129,7 @@ export function ApercuHabitant() {
         participants: col.participants,
         prixGroupe: col.prixGroupe,
         debloque: col.debloque,
+        fenetre: col.fenetre,
       },
     });
   }
@@ -2669,10 +2672,36 @@ export function ApercuHabitant() {
                       salon.collectif.participants >= salon.collectif.objectif ? " plein" : ""
                     }`}
                   >
+                    {/* LE DEUXIÈME TEMPS SE DIT AVANT LE CHIFFRE. Une barre
+                        pleine à « 12 sur 12 » se lit comme « c'est acquis » —
+                        or c'est exactement là que tout peut encore tomber. La
+                        ligne d'alerte le dit en clair, au-dessus. */}
+                    {salon.collectif.fenetre && (
+                      <p className="ap-colsal-f">
+                        <i aria-hidden="true">⏳</i>
+                        {/* LA PHRASE EST UN SEUL BLOC. En enfants directs d'un
+                            conteneur flex, le sablier ET le gras devenaient
+                            deux objets a part : « 15 h » se retrouvait coupe en
+                            deux au milieu de la phrase, sur sa propre colonne.
+                            Une grille a deux colonnes, et le texte reste du
+                            texte. */}
+                        <span>
+                          Le compte y est. Confirmez avant{" "}
+                          <b>{salon.collectif.fenetre.jusqua}</b> — seuls les
+                          confirmés comptent.
+                        </span>
+                      </p>
+                    )}
                     <div className="ap-colsal-h">
                       <b>
-                        {salon.collectif.participants} sur {salon.collectif.objectif}
+                        {compteCollectif(salon.collectif).fait} sur{" "}
+                        {salon.collectif.objectif}
                       </b>
+                      {compteCollectif(salon.collectif).mot && (
+                        <em className="ap-colsal-m">
+                          {compteCollectif(salon.collectif).mot}
+                        </em>
+                      )}
                       {salon.collectif.prixGroupe && (
                         <span>
                           {salon.prix && <s>{salon.prix}</s>}
@@ -2686,7 +2715,7 @@ export function ApercuHabitant() {
                       style={
                         {
                           "--part": `${Math.round(
-                            avancementCollectif(salon.collectif) * 100,
+                            partCollectif(salon.collectif) * 100,
                           )}%`,
                         } as React.CSSProperties
                       }
@@ -2699,17 +2728,26 @@ export function ApercuHabitant() {
                         type="button"
                         className="ap-colsal-p"
                         onClick={() => {
-                          setEchoIcone("👥");
-                          setEcho(
-                            manqueCollectif(salon.collectif!) > 1
-                              ? `Votre place est prise. Il en manque ${
-                                  manqueCollectif(salon.collectif!) - 1
-                                } — parlez-en autour de vous.`
-                              : "Votre place est prise.",
-                          );
+                          const c = salon.collectif!;
+                          setEchoIcone(c.fenetre ? "✅" : "👥");
+                          if (c.fenetre) {
+                            const r = Math.max(0, c.objectif - c.fenetre.confirmes - 1);
+                            setEcho(
+                              r > 0
+                                ? `C’est confirmé. Encore ${r} avant ${c.fenetre.jusqua} et c’est lancé.`
+                                : "C’est confirmé, et le compte y est. C’est lancé.",
+                            );
+                          } else {
+                            const r = manqueCollectif(c) - 1;
+                            setEcho(
+                              r > 0
+                                ? `Votre place est prise. Il en manque ${r} — parlez-en autour de vous.`
+                                : "Votre place est prise. Le compte y est : vous serez prévenu pour confirmer.",
+                            );
+                          }
                         }}
                       >
-                        Je prends ma place
+                        {salon.collectif.fenetre ? "Je confirme" : "Je prends ma place"}
                       </button>
                       <button
                         type="button"
@@ -2725,7 +2763,16 @@ export function ApercuHabitant() {
                         ? `${salon.presents.length - 1} personne${
                             salon.presents.length - 1 > 1 ? "s" : ""
                           } que vous ne connaissez pas`
-                        : "Un groupe ouvert : tout le monde peut vous lire"}
+                        : "Un groupe ouvert"}
+                      {/* CE QUI REMPLACE L'EMPREINTE BANCAIRE. Un clic gratuit
+                          ne vaut rien tant que rien ne suit celui qui ne vient
+                          pas. Ici, honorer ses engagements se voit — et deux
+                          lapins de suite ferment l'accès aux collectifs pour un
+                          temps. Dans une ville de vingt mille habitants, ça
+                          pèse plus qu'une caution, et ça ne coûte rien.
+                          C'est aussi, exactement, le mécanisme de suspension
+                          qui manque au salon public : un seul système. */}
+                      <b className="ap-colsal-fi">Vous : 4 sur 4 honorés</b>
                     </p>
                   </div>
                 )}
@@ -2748,19 +2795,24 @@ export function ApercuHabitant() {
                     écran qui n'a pas fini de charger. Une ligne suffit — et
                     elle redit ce qu'on est venu faire ici, qui n'est pas
                     bavarder. */}
-                {salon.messages.length === 0 && salon.collectif && (
+                {salon.collectif && (
                   <p className="ap-colsal-vide">
-                    {manqueCollectif(salon.collectif) > 0 ? (
+                    {salon.collectif.fenetre ? (
                       <>
-                        Personne n’a encore écrit. Le compteur, lui, n’attend pas
-                        la conversation&nbsp;: il attend{" "}
+                        On ne discute pas ici, on compte. Chacun confirme de son
+                        côté&nbsp;; à {salon.collectif.fenetre.jusqua}, on saura.
+                      </>
+                    ) : manqueCollectif(salon.collectif) > 0 ? (
+                      <>
+                        Rien à écrire ici&nbsp;: ce qui fait avancer le compteur,
+                        c’est d’en parler autour de vous. Il manque{" "}
                         {manqueCollectif(salon.collectif)}
                         {manqueCollectif(salon.collectif) > 1
-                          ? " personnes de plus."
-                          : " personne de plus."}
+                          ? " personnes."
+                          : " personne."}
                       </>
                     ) : (
-                      <>Le seuil est atteint. Il n’y a plus qu’à y aller.</>
+                      <>Le compte y est. Vous serez prévenu pour confirmer.</>
                     )}
                   </p>
                 )}
@@ -3222,6 +3274,17 @@ export function ApercuHabitant() {
                 </div>
               )}
 
+              {/* ─── PAS DE TEXTE LIBRE DANS UN COLLECTIF, ET C'EST UN
+                  CHOIX DE LANCEMENT ───
+                  Une salle d'inconnus avec un champ d'écriture demande un
+                  bouton de signalement et un moyen de suspendre quelqu'un.
+                  Ni l'un ni l'autre n'existent — c'est exactement ce qui
+                  retient La Ville. Or ce qui fait tourner un collectif n'est
+                  pas la conversation : c'est le compteur et le fait d'amener
+                  du monde. On ouvre l'écriture le jour où le signalement
+                  existe, c'est-à-dire en même temps que la fiabilité qui suit
+                  ceux qui ne viennent pas. Un seul système, une seule date. */}
+              {!salon.collectif && (
               <form
                 className="ap-page-champ"
                 onSubmit={(ev) => {
@@ -3261,6 +3324,7 @@ export function ApercuHabitant() {
                   ↑
                 </button>
               </form>
+              )}
             </div>
           ) : (
           <>
@@ -3914,13 +3978,19 @@ export function ApercuHabitant() {
                                     sur l'action la plus utilisée du produit. */}
                                 {!passe && m.collectif && (
                                   <div
-                                    className={`ap-col${collectifComplet(m.collectif) ? " plein" : ""}`}
+                                    className={`ap-col${collectifComplet(m.collectif) ? " plein" : ""}${
+                                      m.collectif.fenetre ? " fenetre" : ""
+                                    }`}
                                   >
                                     <div className="ap-col-h">
                                       <i aria-hidden="true">👥</i>
-                                      <b>À plusieurs</b>
+                                      <b>
+                                        {m.collectif.fenetre ? "Ça se joue" : "À plusieurs"}
+                                      </b>
                                       <u>
-                                        {m.collectif.participants} sur {m.collectif.objectif}
+                                        {compteCollectif(m.collectif).fait} sur{" "}
+                                        {m.collectif.objectif}{" "}
+                                        {compteCollectif(m.collectif).mot}
                                       </u>
                                       {m.collectif.prixGroupe && (
                                         <s>{m.collectif.prixGroupe}</s>
@@ -3931,7 +4001,7 @@ export function ApercuHabitant() {
                                       aria-hidden="true"
                                       style={
                                         {
-                                          "--part": `${Math.round(avancementCollectif(m.collectif) * 100)}%`,
+                                          "--part": `${Math.round(partCollectif(m.collectif) * 100)}%`,
                                         } as React.CSSProperties
                                       }
                                     >
@@ -3944,7 +4014,7 @@ export function ApercuHabitant() {
                                       onPointerDown={(ev) => ev.stopPropagation()}
                                       onClick={() => rejoindreLeCollectif(dessus, m)}
                                     >
-                                      Rejoindre
+                                      {m.collectif.fenetre ? "Confirmer" : "Rejoindre"}
                                     </button>
                                   </div>
                                 )}
@@ -6786,6 +6856,26 @@ export function ApercuHabitant() {
         .ap-colsal-q i{font-style:normal;font-size:12px;line-height:1;}
         .ap-colsal-vide{margin:18px 26px 0;text-align:center;font-size:13px;
           line-height:1.5;color:#6C8078;}
+        /* ── LE DEUXIEME TEMPS ────────────────────────────────────────────
+           IL SE DIT AVANT LE CHIFFRE. Une barre pleine se lit comme un
+           acquis, or c'est precisement la que tout peut encore tomber : les
+           inscrits ne valent rien tant qu'ils n'ont pas refait le geste. */
+        .ap-colsal-f{margin:0 0 10px;display:grid;
+          grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:start;
+          font-size:12.5px;line-height:1.4;color:#F5D68A;}
+        .ap-colsal-f i{font-style:normal;font-size:13px;line-height:1.2;}
+        .ap-colsal-f b{color:#F0B429;font-weight:850;}
+        .ap-colsal-m{font-style:normal;font-size:12px;color:#8B9A92;
+          align-self:baseline;}
+        /* LA FIABILITE EST DISCRETE, ET C'EST VOULU : elle rassure celui qui
+           la lit sans transformer l'ecran en tableau de bord. */
+        .ap-colsal-fi{margin-left:auto;font-size:11px;font-weight:800;
+          color:#3DE2A6;white-space:nowrap;}
+        .ap-col.fenetre{background:rgba(61,226,166,.08);
+          border-color:rgba(61,226,166,.34);}
+        .ap-col.fenetre .ap-col-h b{color:#3DE2A6;}
+        .ap-col.fenetre .ap-col-j i{background:#3DE2A6;}
+        .ap-col.fenetre .ap-col-b{background:#3DE2A6;color:#04150E;}
 
         .ap-prog-av{margin-top:10px;padding:9px 11px;border-radius:12px;
           background:rgba(255,255,255,.05);}

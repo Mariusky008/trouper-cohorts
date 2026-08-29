@@ -28,7 +28,7 @@ l'image et le dégradé sont deux couches empilées, précisément pour ça).
 | `tablee-du-soir.jpg`   | Une tablée conviviale, le soir                    |
 | `portant-boutique.jpg` | **RETIRÉE DU PRODUIT** — enseigne lisible, logo de marque voisin, neuf visages de face. Remplacée par `vitrine-mode.jpg`. |
 | `friperie-rayon.jpg`   | Des rayons de friperie, cintres serrés            |
-| `etal-boucher.jpg`     | **PRÉSENT MAIS INUTILISABLE — FILIGRANÉ.** Un crédit de site web est incrusté en travers de l'image, lisible en bas à gauche sur un agrandissement. Il s'imprimerait sur le flyer, et l'image n'est pas à nous. La carte « Une boucherie du centre » reste sur son dégradé tant qu'une photo libre n'a pas pris sa place. |
+| `etal-boucher.jpg`     | Un étal de boucherie : côtes, saucisses, paupiettes. 626 × 877. Les deux premiers envois portaient un filigrane de photographe — celui-ci est vérifié sur les quatre bords. |
 | `vitrine-mode.jpg`     | Une vitrine de prêt-à-porter, mannequins habillés. Ni visage, ni enseigne lisible. 387 points de large : légèrement molle sur un téléphone récent. |
 | `verre-au-comptoir.jpg`| Un comptoir de bar à vins, fûts au plafond        |
 | `terrasse-au-soleil.jpg` | Une terrasse en plein soleil                    |
@@ -125,10 +125,16 @@ fabriqué un flyer imprimé par métier. Un imprimé distribué en main propre E
 un argumentaire commerçant : la ligne ci-dessus n'était pas une précaution
 d'écriture, c'était une échéance, et elle est arrivée.
 
-ET UNE QUATRIÈME NE DOIT PAS ENTRER. `etal-boucher.jpg` porte un filigrane —
-le crédit d'un site web incrusté en travers de l'image. Il s'imprimerait, et
-l'image n'est pas à nous. Elle n'est référencée nulle part dans le code : la
-carte de la boucherie reste sur son dégradé.
+UNE QUATRIÈME A FAILLI ENTRER, DEUX FOIS. Les deux premiers envois
+d'`etal-boucher.jpg` portaient un filigrane de photographe incrusté en travers
+de l'image ; il se serait imprimé sur le flyer, et l'image n'était pas à nous.
+Le troisième est propre.
+
+**COMMENT ON LE VÉRIFIE, PARCE QUE ÇA NE SE VOIT PAS SUR LA VIGNETTE :** un
+filigrane se cache sur un bord, en gris translucide, et disparaît dès qu'on
+regarde l'image en petit. On découpe donc les quatre bords, on les redresse et
+on les agrandit — voir `boucher-bords.png` dans le brouillon. Trente secondes,
+et ça évite un tirage à jeter.
 
 Les deux photos de portion et de tablée avaient été ajoutées parce que deux moments n'avaient AUCUNE
 image juste : « il m'en reste » tombait sur l'assiette du menu du jour (une

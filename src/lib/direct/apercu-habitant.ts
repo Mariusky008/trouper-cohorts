@@ -203,6 +203,50 @@ export type Collectif = {
   debloque?: string;
   /** Les prénoms de ceux qui y sont. Des inconnus — c'est tout le sujet. */
   qui?: string[];
+  /**
+   * LA FENÊTRE DE CONFIRMATION — ce qui donne du poids à un clic gratuit.
+   *
+   * ─── LE PROBLÈME QU'ELLE RÈGLE, ET IL TUE LE MÉCANISME SANS ELLE ────────
+   *
+   * S'inscrire ne coûte rien, donc ça ne vaut rien : douze inscrits peuvent
+   * donner quatre présents, et le boulanger qui a chauffé son four pour rien
+   * ne recommencera jamais. La réponse habituelle est l'empreinte bancaire.
+   * Elle est hors de portée ici — et elle n'est pas nécessaire.
+   *
+   * ─── CE QUI LA REMPLACE : UN SECOND GESTE, PLUS TARD, AVEC UN DÉLAI ─────
+   *
+   * Le seuil n'est pas la fin, c'est le début d'une fenêtre courte. Quand il
+   * tombe, tout le monde reçoit « c'est bon, confirmez avant 15 h », et SEULS
+   * LES CONFIRMÉS COMPTENT. Le même clic redemandé quelques heures avant
+   * sépare les curieux des vrais, parce qu'il arrive au moment où la personne
+   * sait vraiment si elle vient. Si l'on retombe sous le seuil, ça n'a pas
+   * lieu et personne n'a rien perdu.
+   *
+   * ─── ET LE COMMERÇANT N'EST JAMAIS ENGAGÉ PAR UN COMPTEUR ──────────────
+   *
+   * C'est lui qui appuie sur « je lance », avec le nombre de confirmés sous
+   * les yeux. Deux conséquences qu'on ne code pas ici parce qu'elles vivent
+   * dans son espace, mais qui font partie du même dessin :
+   *   · IL POSE SON SEUIL AU-DESSUS DE SON BESOIN RÉEL — il lui faut huit, il
+   *     demande douze. Les compagnies aériennes font ça depuis cinquante ans,
+   *     ça ne coûte rien à construire, et ça absorbe la casse.
+   *   · IL VOIT LA FIABILITÉ, PAS LES NOMS — « 9 confirmés, dont 7 qui
+   *     viennent toujours ». Deux lapins de suite et l'on ne peut plus
+   *     rejoindre de collectif pendant un temps. Dans une ville de vingt
+   *     mille habitants, ça pèse plus qu'une empreinte bancaire, et c'est
+   *     gratuit. Même mécanisme que la suspension du salon public : un seul
+   *     système règle les deux.
+   *
+   * Absente : le seuil n'est pas tombé, on en est encore à réunir du monde.
+   */
+  fenetre?: {
+    /** L'heure limite, telle qu'on l'écrit. */
+    jusqua: string;
+    /** Combien ont refait le geste. C'est CE nombre qui décide. */
+    confirmes: number;
+    /** VRAI quand c'est moi qui ai confirmé — pour ne pas le redemander. */
+    moi?: boolean;
+  };
 };
 
 /** Combien il en manque. Jamais négatif. */
@@ -237,6 +281,21 @@ export function avancementCollectif(c: Collectif): number {
  * trois qui manquent plutôt que d'attendre que d'autres le fassent.
  */
 export function phraseCollectif(c: Collectif): string {
+  // ─── DEUXIÈME TEMPS : LA FENÊTRE EST OUVERTE ───
+  // Le compteur ne dit plus la même chose. Avant, il comptait des intentions ;
+  // maintenant il compte des engagements, et c'est le seul qui décide. La
+  // phrase doit donc changer de nature, pas seulement de chiffre — sinon on
+  // croit que c'est acquis parce que la barre est pleine.
+  if (c.fenetre) {
+    const reste = Math.max(0, c.objectif - c.fenetre.confirmes);
+    if (reste === 0) {
+      return c.prixGroupe
+        ? `C’est confirmé — ${c.prixGroupe} pour tout le monde.`
+        : `C’est confirmé — ${c.debloque ?? "c’est débloqué"}.`;
+    }
+    const gens = reste === 1 ? "1 confirmation" : `${reste} confirmations`;
+    return `Le compte y est. Encore ${gens} avant ${c.fenetre.jusqua}, et c’est lancé.`;
+  }
   const m = manqueCollectif(c);
   if (m === 0) {
     return c.prixGroupe
@@ -247,6 +306,27 @@ export function phraseCollectif(c: Collectif): string {
   return c.prixGroupe
     ? `Encore ${gens} et il tombe à ${c.prixGroupe} pour tout le monde.`
     : `Encore ${gens} et ${c.debloque ?? "c’est débloqué"}.`;
+}
+
+/**
+ * CE QUE COMPTE LA JAUGE — et il change de sens en cours de route.
+ *
+ * Avant la fenêtre : des intéressés, un clic gratuit. Pendant : des confirmés,
+ * un second geste. La même barre, deux natures — c'est ce qui permet de n'en
+ * avoir qu'une seule à l'écran, et c'est le libellé qui dit laquelle.
+ */
+export function compteCollectif(c: Collectif): { fait: number; mot: string } {
+  return c.fenetre
+    ? { fait: c.fenetre.confirmes, mot: "confirmés" }
+    : { fait: c.participants, mot: "" };
+}
+
+/** L'avancement affiché : celui de la phase en cours. */
+export function partCollectif(c: Collectif): number {
+  if (!c.fenetre) return avancementCollectif(c);
+  if (c.objectif <= 0) return 0;
+  const p = Math.max(0, Math.min(1, c.fenetre.confirmes / c.objectif));
+  return p > 0 && p < 0.06 ? 0.06 : p;
 }
 
 /**
@@ -1240,10 +1320,16 @@ const CARTES: CarteAutour[] = [
         titre: "La fournée de 17 h",
         lignes: ["Pain de campagne au levain", "Seulement si vous êtes douze"],
         prix: "4,20 €", places: 12, envies: ["maintenant", "emporter"],
+        // CELUI-CI EST AU DEUXIÈME TEMPS, ET C'EST DÉLIBÉRÉ : les autres
+        // montrent un compteur qui monte, celui-ci montre ce qui se passe
+        // APRÈS. Sans un cas déjà en fenêtre à l'écran, personne ne comprend
+        // que le seuil n'est pas la fin — et c'est justement le mécanisme qui
+        // fait qu'un clic gratuit finit par valoir quelque chose.
         collectif: {
-          objectif: 12, participants: 9,
+          objectif: 12, participants: 12,
           debloque: "il lance la fournée à 17 h",
           qui: ["Martine", "Sofia", "Paul", "Léa", "Hugo"],
+          fenetre: { jusqua: "15 h", confirmes: 10 },
         },
       },
       {
@@ -1271,12 +1357,12 @@ const CARTES: CarteAutour[] = [
   // une bete entiere en un apres-midi, a un prix qu'il n'obtiendrait jamais
   // autrement, avec zero perte.
   //
-  // SA PHOTO N'EXISTE PAS ENCORE, ET ON N'EN MET PAS UNE FAUSSE. Le depot n'a
-  // aucune image d'etal : la seule viande disponible est une assiette dressee
-  // de restaurant, qui dirait « restaurant » sur une carte de boucher. Un
-  // fichier absent n'est pas une panne — la carte retombe sur son degrade,
-  // voir `carte-swipe.tsx` — et le jour ou la photo arrive a cette adresse,
-  // elle s'affiche sans toucher au code. C'est note dans LISEZ-MOI.md.
+  // SA PHOTO A MIS TROIS ENVOIS A ARRIVER, ET LES DEUX PREMIERS PORTAIENT UN
+  // FILIGRANE — le credit d'un photographe incruste en travers de l'image. Il
+  // se serait imprime sur le flyer, et l'image n'etait pas a nous. La carte est
+  // restee sur son degrade entre-temps : un fichier absent n'est pas une panne,
+  // les deux couches de `carte-swipe.tsx` existent pour ca. Le troisieme envoi
+  // est propre — verifie sur les quatre bords, la ou un filigrane se cache.
   {
     id: "boucher",
     catalogue: [
