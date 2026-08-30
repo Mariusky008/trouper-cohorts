@@ -2273,24 +2273,30 @@ export function autourDeMoi(heure: number, branche: CleMetier): CarteAutour[] {
  * suivre un commerce et photographier son QR sont le même geste, à deux
  * endroits différents. Les deux doivent donc promettre la même chose, sans quoi
  * l'un des deux ment.
+ *
+ * C'EST UN COMPLÉMENT, PAS UNE PHRASE, et la correction vient de l'essai :
+ * « Ce qu'il a aujourd'hui, avant les autres » — « c'est très étrange comme
+ * texte ». Juste : une liste de choses posée sous un verbe à l'infinitif ne
+ * s'adresse à personne. La fonction rend donc de quoi compléter « Recevez en
+ * priorité … », qui a un sujet, un verbe et un destinataire.
  */
 export function promesseDeSuivi(c: CarteAutour): string {
   const m = c.metier.toLowerCase();
-  if (/boulang/.test(m)) return "L'heure des fournées, et ce qu'il reste le soir.";
-  if (/pâtiss|patiss|chocolat/.test(m)) return "Les pièces du jour, en quantité limitée.";
-  if (/bouch|charcut/.test(m)) return "La pièce du jour, et ce qu'il en reste.";
-  if (/poissonn/.test(m)) return "L'arrivage du matin, et d'où il vient.";
-  if (/fromag/.test(m)) return "Ce qui est à point cette semaine.";
-  if (/primeur|épicer|epicer/.test(m)) return "Les prix du jour et ce qui est arrivé le matin.";
-  if (/fleur/.test(m)) return "Ce qui est arrivé du marché le matin.";
-  if (/coiff/.test(m)) return "Les rendez-vous qui se libèrent dans la journée.";
-  if (/ongle|institut|esthé|esthe/.test(m)) return "Les créneaux annulés, avant tout le monde.";
-  if (/cavist/.test(m)) return "Ce qui est ouvert à la dégustation aujourd'hui.";
-  if (/bar|café|cafe|brasser/.test(m)) return "Ce qui se passe ici ce soir.";
+  if (/boulang/.test(m)) return "l'heure des fournées et ce qu'il reste le soir";
+  if (/pâtiss|patiss|chocolat/.test(m)) return "les pièces du jour, en quantité limitée";
+  if (/bouch|charcut/.test(m)) return "la pièce du jour et ce qu'il en reste";
+  if (/poissonn/.test(m)) return "l'arrivage du matin, et d'où il vient";
+  if (/fromag/.test(m)) return "ce qui est à point cette semaine";
+  if (/primeur|épicer|epicer/.test(m)) return "les prix du jour et ce qui arrive le matin";
+  if (/fleur/.test(m)) return "ce qui est arrivé du marché le matin";
+  if (/coiff/.test(m)) return "les rendez-vous qui se libèrent dans la journée";
+  if (/ongle|institut|esthé|esthe/.test(m)) return "les créneaux annulés du jour";
+  if (/cavist/.test(m)) return "ce qui est ouvert à la dégustation";
+  if (/bar|café|cafe|brasser/.test(m)) return "ce qui se passe ici ce soir";
   if (/mode|vêtement|vetement|friperie|prêt-à|pret-a/.test(m))
-    return "Les nouveautés, et les tailles qu'il reste.";
-  if (/restaur|traiteur|table/.test(m)) return "Le menu du jour, et les dernières places.";
-  return "Ce qu'il a aujourd'hui, avant les autres.";
+    return "les nouveautés et les tailles qu'il reste";
+  if (/restaur|traiteur|table/.test(m)) return "le menu du jour et les dernières places";
+  return "ses offres du jour";
 }
 
 export function nouvelleDuJour(

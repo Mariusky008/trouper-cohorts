@@ -73,7 +73,7 @@ export function chargerSuivis(): string[] {
   return cache;
 }
 
-// ── LA PASTILLE DU CŒUR : LUE OU PAS LUE ────────────────────────────────────
+// ── LA PASTILLE DU CŒUR : CE QU'ON A DÉJÀ LU ────────────────────────────────
 //
 // CE QU'ELLE COMPTE, ET CE QU'ELLE NE COMPTE PAS. Elle compte LES NOUVELLES DU
 // JOUR des commerces suivis — un flux, quelque chose qui arrive le matin et qui
@@ -88,9 +88,25 @@ export function chargerSuivis(): string[] {
 // C'EST AUSSI LA PROMESSE FAITE AU COMMERÇANT, et il faut qu'elle soit
 // vérifiable : « vos abonnés ont une pastille qui s'allume le matin quand vous
 // publiez ; si vous ne publiez pas, elle ne s'allume pas ».
-const CLE_LU = "clikme-nouvelles-lues-v1";
+// ON GARDE CE QU'ON A LU, PAS LE FAIT D'AVOIR OUVERT — ET C'EST UNE CORRECTION
+// DE FOND, PAS UN RÉGLAGE. La première version retenait une DATE : « la
+// pastille a-t-elle été ouverte aujourd'hui ». Signalé deux fois à l'essai :
+// « y a toujours pas de numéro pour m'avertir du nombre d'actualités ». C'était
+// exact, et c'était structurel — une fois ouverte le matin, la pastille restait
+// éteinte jusqu'au lendemain MÊME SI trois commerces publiaient dans l'heure
+// qui suivait. Le boulanger qui sort une fournée à 17 h n'allumait plus rien.
+//
+// CE QU'ON RETIENT MAINTENANT : la liste de ce qu'on a effectivement lu, une
+// clé par nouvelle (le commerce et ce qu'il a annoncé). Une publication qu'on
+// n'a jamais vue rallume la pastille, à n'importe quelle heure. C'est aussi la
+// seule version qui rende la promesse au commerçant littéralement vraie :
+// « vos abonnés ont une pastille qui s'allume QUAND vous publiez ».
+const CLE_LU = "clikme-nouvelles-lues-v2";
 const lecteurs = new Set<() => void>();
-let cacheLu: string | null = null;
+export const RIEN_LU: string[] = [];
+let cacheLu: string[] | null = null;
+/** On ne garde pas l'historique de six mois : ce qui est vieux ne revient pas. */
+const MAX_LU = 200;
 
 /** Le jour courant, à la façon d'un journal : il change à minuit. */
 function ceJour(): string {
@@ -98,27 +114,31 @@ function ceJour(): string {
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
 
-export function nouvellesLues(): boolean {
-  if (typeof window === "undefined") return false;
-  if (cacheLu === null) {
-    try {
-      cacheLu = window.localStorage.getItem(CLE_LU) ?? "";
-    } catch {
-      cacheLu = "";
-    }
+export function chargerLues(): string[] {
+  if (cacheLu) return cacheLu;
+  if (typeof window === "undefined") return RIEN_LU;
+  try {
+    const brut = window.localStorage.getItem(CLE_LU);
+    const l = brut ? JSON.parse(brut) : null;
+    cacheLu = Array.isArray(l) && l.length ? (l as string[]) : RIEN_LU;
+  } catch {
+    cacheLu = RIEN_LU;
   }
-  return cacheLu === ceJour();
+  return cacheLu;
 }
 
 /** Sur le serveur, rien n'est lu : la pastille se peint au premier rendu. */
-export function nouvellesLuesServeur(): boolean {
-  return false;
+export function luesServeur(): string[] {
+  return RIEN_LU;
 }
 
-export function marquerNouvellesLues() {
-  cacheLu = ceJour();
+export function marquerLues(cles: string[]) {
+  const deja = chargerLues();
+  const neuves = cles.filter((c) => !deja.includes(c));
+  if (!neuves.length) return;
+  cacheLu = [...deja, ...neuves].slice(-MAX_LU);
   try {
-    window.localStorage.setItem(CLE_LU, cacheLu);
+    window.localStorage.setItem(CLE_LU, JSON.stringify(cacheLu));
   } catch {
     /* Stockage refusé : la session continue en mémoire. */
   }

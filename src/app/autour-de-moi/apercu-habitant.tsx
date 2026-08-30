@@ -76,11 +76,11 @@ import {
   AUCUN_SUIVI,
   avisDuMatinDejaEnvoye,
   basculerSuivi,
+  chargerLues,
   chargerSuivis,
+  luesServeur,
   marquerAvisDuMatin,
-  marquerNouvellesLues,
-  nouvellesLues,
-  nouvellesLuesServeur,
+  marquerLues,
 } from "@/lib/direct/suivis";
 import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
 import {
@@ -995,16 +995,14 @@ export function ApercuHabitant() {
    */
   const suivis = useSyncExternalStore(abonnerSuivis, chargerSuivis, () => AUCUN_SUIVI);
   /**
-   * A-T-ON DÉJÀ OUVERT LES NOUVELLES DU JOUR ? Voir `suivis.ts` : la pastille
-   * du cœur s'allume le matin quand les commerces suivis publient, s'éteint
-   * quand on l'ouvre, et se rallume le lendemain. C'est une date qui est
-   * gardée, pas un état — sinon elle ne se rallumerait jamais.
+   * CE QU'ON A DÉJÀ LU — une clé par nouvelle, pas une date.
+   *
+   * Voir `suivis.ts` : la première version retenait « la pastille a-t-elle été
+   * ouverte aujourd'hui », et elle restait donc éteinte jusqu'au lendemain même
+   * si trois commerces publiaient dans l'heure. Le boulanger qui sort une
+   * fournée à 17 h n'allumait plus rien.
    */
-  const dejaLues = useSyncExternalStore(
-    abonnerLecture,
-    nouvellesLues,
-    nouvellesLuesServeur,
-  );
+  const lues = useSyncExternalStore(abonnerLecture, chargerLues, luesServeur);
 
   function allerA_onglet(o: "direct" | "ville" | "salons" | "profil") {
     // ON FERME CE QUI EST PAR-DESSUS, ET C'EST INDISPENSABLE DEPUIS QUE LA
@@ -1780,6 +1778,21 @@ export function ApercuHabitant() {
   const nouvelles = mesSuivis.map((c) => ({ c, n: nouvelleDuJour(c, heure) }));
   const combienDeNouvelles = nouvelles.filter((x) => x.n).length;
   /**
+   * CE QU'ON N'A PAS ENCORE LU — une clé par commerce et par annonce.
+   *
+   * La clé porte CE QU'IL A DIT, et pas seulement son identifiant : sans ça,
+   * lire sa formule du midi éteindrait aussi la fournée de 17 h qu'il n'a pas
+   * encore publiée. C'est exactement le défaut qu'on vient de corriger.
+   */
+  const clesNouvelles = nouvelles.flatMap(({ c, n }) =>
+    n ? [`${c.id}|${n.moment.titre}`] : [],
+  );
+  const nonLues = clesNouvelles.filter((k) => !lues.includes(k));
+  /** Les commerces dont on n'a pas encore lu la nouvelle — pour la nommer. */
+  const quiAduNeuf = nouvelles.filter(
+    ({ c, n }) => n && !lues.includes(`${c.id}|${n.moment.titre}`),
+  );
+  /**
    * L'OFFRE QUI EST À MOI EN CE MOMENT — chez un commerce que je suis.
    *
    * ELLE NE PEUT VENIR QUE D'UN SUIVI, et ce n'est pas une restriction
@@ -1938,11 +1951,37 @@ export function ApercuHabitant() {
     noter(suit ? "rappel-demande" : "je-passe", 0, "suivre");
     if (!suit) return;
     setEchoIcone("🔔");
-    setEcho(`Vous suivez ${c.nom}. ${promesseDeSuivi(c)}`);
+    setEcho(`Vous suivez ${c.nom}. Vous recevrez en priorité ${promesseDeSuivi(c)}.`);
     noter("notif-proposee", 0, "suivre");
     void demanderAvertissement().then((r) =>
       noter(r === "granted" ? "notif-acceptee" : "notif-refusee", 0, "suivre"),
     );
+  }
+
+  /**
+   * « DE » DEVANT UN NOM DE COMMERCE — et ce n'est pas de la coquetterie.
+   *
+   * « Une nouvelle de Le Pétrin d'Amanieu » : la faute saute aux yeux de
+   * n'importe quel habitant de Dax, et une application qui écrit mal a l'air
+   * d'avoir été faite ailleurs, par des gens qui ne sont pas d'ici. C'est
+   * exactement ce qu'on ne veut pas.
+   */
+  function deChez(nom: string): string {
+    if (/^Les /.test(nom)) return `des ${nom.slice(4)}`;
+    if (/^Le /.test(nom)) return `du ${nom.slice(3)}`;
+    if (/^Une /.test(nom)) return `d’une ${nom.slice(4)}`;
+    if (/^Un /.test(nom)) return `d’un ${nom.slice(3)}`;
+    if (/^[AEIOUYÉÈÀH]/.test(nom)) return `d’${nom}`;
+    return `de ${nom}`;
+  }
+
+  /** La porte des nouvelles : la pastille, et la bulle qui la désigne. */
+  function ouvrirMesCommerces() {
+    noter("onglet", nonLues.length, "mes-commerces");
+    // ON MARQUE CE QU'ON OUVRE, PAS LA JOURNÉE. Ce qui sera publié après —
+    // la fournée de 17 h — rallumera la pastille, comme il se doit.
+    marquerLues(clesNouvelles);
+    setFavorisPage(true);
   }
 
   function jeNePreviensPas() {
@@ -2210,10 +2249,7 @@ export function ApercuHabitant() {
               <button
                 type="button"
                 className="ap-moi-l"
-                onClick={() => {
-                  marquerNouvellesLues();
-                  setFavorisPage(true);
-                }}
+                onClick={ouvrirMesCommerces}
               >
                 <i aria-hidden="true">🔔</i>
                 <span>
@@ -3984,17 +4020,13 @@ export function ApercuHabitant() {
                     porte ne disparaît jamais. */}
                 <button
                   type="button"
-                  className={`nb${!dejaLues && combienDeNouvelles > 0 ? " neuf" : ""}`}
-                  onClick={() => {
-                    noter("onglet", combienDeNouvelles, "mes-commerces");
-                    marquerNouvellesLues();
-                    setFavorisPage(true);
-                  }}
+                  className={`nb${nonLues.length > 0 ? " neuf" : ""}`}
+                  onClick={ouvrirMesCommerces}
                   aria-label={
-                    !dejaLues && combienDeNouvelles > 0
-                      ? `Mes commerces · ${combienDeNouvelles} ${
-                          combienDeNouvelles > 1 ? "nouvelles" : "nouvelle"
-                        } aujourd'hui`
+                    nonLues.length > 0
+                      ? `Mes commerces · ${nonLues.length} ${
+                          nonLues.length > 1 ? "nouvelles" : "nouvelle"
+                        }`
                       : `Mes commerces · ${gardees.length} gardé${
                           gardees.length > 1 ? "s" : ""
                         }`
@@ -4007,14 +4039,40 @@ export function ApercuHabitant() {
                       qui donne l'impression que la fonction est morte. Le
                       chevron dit la même chose honnêtement : il y a quelque
                       chose derrière, mais rien de neuf. */}
-                  {!dejaLues && combienDeNouvelles > 0
-                    ? combienDeNouvelles
+                  {nonLues.length > 0
+                    ? nonLues.length
                     : gardees.length > 0
                       ? gardees.length
                       : "›"}
                 </button>
               </div>
             </div>
+
+            {/* ─── CE QUI VOUS ATTEND, SOUS LA PASTILLE ───
+                Elle remplace la bande qui vivait au milieu de l'annonce
+                (« X vient de publier · vous êtes parmi les premiers
+                informés »). Trois différences, et chacune répond à un défaut
+                relevé à l'essai :
+
+                  • ELLE EST SOUS LE CHIFFRE, donc elle apprend OÙ ON VA
+                    CHERCHER. Une bande au milieu d'une photo n'apprend rien :
+                    elle informe et disparaît avec la carte.
+                  • ELLE NE SE DIT QU'UNE FOIS, pas une fois par carte suivie.
+                  • ET ELLE DIT CE QU'IL Y A, pas un statut. « Vous êtes parmi
+                    les premiers informés » décrit une position dans une file
+                    d'attente&nbsp;; personne ne cherche une position.
+
+                ELLE S'EFFACE À LA LECTURE, et pas au bout de quelques
+                secondes : ce qu'on n'a pas ouvert doit rester visible. */}
+            {nonLues.length > 0 && !sortie && (
+              <button type="button" className="ap-jai" onClick={ouvrirMesCommerces}>
+                <i aria-hidden="true">🔔</i>
+                {quiAduNeuf.length === 1
+                  ? `Une nouvelle ${deChez(quiAduNeuf[0].c.nom)}`
+                  : `${nonLues.length} nouvelles de vos commerces`}
+                <s aria-hidden="true">›</s>
+              </button>
+            )}
 
             {/* ─── LE BANDEAU N'A PLUS QU'UNE LIGNE, ET C'EST TOUT LE SUJET ───
                 On y trouvait, empilés au-dessus de la photo : la marque, le
@@ -4323,21 +4381,29 @@ export function ApercuHabitant() {
                             pastille du bandeau, collé au chiffre qui dit
                             combien on en a gardé. */}
 
-                        {/* ─── LA CONTREPARTIE DU SUIVI, SUR LA PHOTO ───
-                            Suivre ne servirait à rien si rien n'arrivait. Sans
-                            serveur, la maquette ne peut pas envoyer d'avis ;
-                            elle peut au moins tenir la promesse à l'écran :
-                            l'annonce d'un commerce qu'on suit se signale
-                            d'elle-même quand on la croise. */}
-                        {suivis.includes(sommet.id) && (
-                          <div className="ap-suivi-vu">
-                            <i aria-hidden="true">🔔</i>
-                            <span>
-                              <b>{dessus?.nom ?? "Ce commerce"} vient de publier</b>
-                              Vous êtes parmi les premiers informés.
-                            </span>
-                          </div>
-                        )}
+                        {/* ─── LA CONTREPARTIE DU SUIVI A QUITTÉ L'ANNONCE ───
+                            Il y avait ici « X vient de publier · vous êtes
+                            parmi les premiers informés », sur chaque carte
+                            d'un commerce suivi. Trois défauts, relevés à
+                            l'essai et tous les trois vrais :
+
+                              • ELLE N'EST PAS À SA PLACE. Au milieu d'une
+                                annonce déjà chargée, entre le prix et les
+                                actions, elle occupe le rang de quelque chose
+                                qu'on doit lire pour décider — or elle ne
+                                décide de rien.
+                              • ELLE SE RÉPÈTE. Une fois par carte suivie,
+                                c'est-à-dire les premières du paquet depuis
+                                qu'elles passent devant.
+                              • ET LE TEXTE NE VEUT RIEN DIRE. « Vous êtes
+                                parmi les premiers informés » décrit un statut ;
+                                personne ne cherche un statut.
+
+                            OÙ ELLE EST ALLÉE : sous la pastille du cœur, une
+                            seule fois, et en disant simplement combien il y a
+                            de nouvelles et de qui. Elle y apprend en même
+                            temps OÙ ON VA LES CHERCHER, ce que la bande au
+                            milieu de la photo n'apprenait pas. */}
 
                         {/* ─── LE RECTANGLE « X EN PARLE AVEC 3 AMIS » EST PARTI ───
                             Il disait qu'un groupe se formait sur cette
@@ -4506,8 +4572,16 @@ export function ApercuHabitant() {
                             >
                               <i aria-hidden="true">🔔</i>
                               <span>
-                                <b>Suivre</b>
-                                {promesseDeSuivi(dessus)}
+                                {/* LE NOM DU COMMERCE EST DANS LE BOUTON, ET
+                                    LA PROMESSE EST UNE PHRASE. « Suivre » puis
+                                    « Ce qu'il a aujourd'hui, avant les
+                                    autres » — « c'est très étrange comme
+                                    texte », et c'est vrai : une liste de
+                                    choses posée sous un infinitif ne s'adresse
+                                    à personne. Avec un destinataire et un
+                                    verbe, elle dit ce qu'on reçoit. */}
+                                <b>Suivre {dessus.nom}</b>
+                                Recevez en priorité {promesseDeSuivi(dessus)}.
                               </span>
                             </button>
                           )}
@@ -5220,7 +5294,9 @@ export function ApercuHabitant() {
                                 ? `Vous suivez ${dessus.nom}`
                                 : `Suivre ${dessus.nom}`}
                             </b>
-                            {promesseDeSuivi(dessus)}
+                            {suivis.includes(dessus.id)
+                              ? `Vous recevez en priorité ${promesseDeSuivi(dessus)}.`
+                              : `Recevez en priorité ${promesseDeSuivi(dessus)}.`}
                           </span>
                         </button>
                       </div>
@@ -8758,17 +8834,21 @@ export function ApercuHabitant() {
         .ap-suivre.on span{color:#8C9C94;}
         .ap-suivre.on b{color:#CFF7E6;}
 
-        /* LA CONTREPARTIE, SUR LA PHOTO. Suivre ne servirait a rien si rien
-           n'arrivait : l'annonce d'un commerce suivi se signale d'elle-meme. */
-        .ap-suivi-vu{display:flex;align-items:center;gap:9px;width:100%;
-          margin-top:11px;padding:8px 11px;
-          background:rgba(167,139,250,.16);border:1px solid rgba(167,139,250,.4);
-          border-radius:13px;}
-        .ap-suivi-vu i{font-style:normal;font-size:14px;line-height:1;flex:none;}
-        .ap-suivi-vu span{flex:1;min-width:0;font-size:10.5px;color:#B7A9D6;
-          line-height:1.3;}
-        .ap-suivi-vu b{display:block;font-size:12.5px;font-weight:850;
-          color:#EDE7FF;letter-spacing:-.01em;}
+        /* ─── CE QUI VOUS ATTEND, SOUS LA PASTILLE ───
+           Elle remplace la bande qui vivait au milieu de l'annonce. Elle est
+           SOUS LE CHIFFRE et alignee a droite sur lui : c'est ce qui apprend
+           ou l'on va chercher ses nouvelles, ce qu'une bande posee sur une
+           photo n'apprenait pas. Ambre comme la pastille qu'elle designe —
+           deux objets d'une meme phrase ne peuvent pas etre de deux
+           couleurs. */
+        .ap-jai{display:flex;align-items:center;gap:8px;margin:8px 0 0 auto;
+          font:inherit;font-size:12px;font-weight:800;cursor:pointer;
+          color:#F7C948;background:rgba(240,180,41,.13);
+          border:1px solid rgba(240,180,41,.4);border-radius:999px;
+          padding:7px 12px;}
+        .ap-jai i{font-style:normal;font-size:13px;line-height:1;flex:none;}
+        .ap-jai s{text-decoration:none;font-size:12px;opacity:.7;flex:none;}
+        .ap-jai:active{transform:scale(.98);}
 
         /* ─── CE QUI EST SUR LA TABLE ───
            Le salon cesse d'etre une conversation pour devenir une petite salle
