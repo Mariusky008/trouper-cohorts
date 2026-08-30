@@ -616,6 +616,71 @@ export function motCatalogue(metier: string): {
   return { emoji: "📖", verbe: "Voir le catalogue", titre: "Le catalogue" };
 }
 
+/**
+ * L'OFFRE PROPOSÉE À UNE SEULE PERSONNE À LA FOIS — le tour de rôle.
+ *
+ * LE PROBLÈME QUE PERSONNE NE SAIT TRAITER. « Il me reste deux croissants. »
+ * Aucune plateforme ne sait publier ça : envoyé à quatre cents abonnés, ça fait
+ * trois cent quatre-vingt-dix-huit déçus et une course à qui clique le plus
+ * vite. Alors le commerçant ne le dit pas, et les deux croissants sont jetés.
+ * C'est vrai tous les soirs, dans tous les commerces de bouche de la ville.
+ *
+ * CE QU'ON FAIT À LA PLACE : ça part à UNE personne, qui a cinq minutes. Elle
+ * prend, ou elle passe, ou elle ne répond pas — et ça continue tout seul chez
+ * la suivante. Le commerçant a appuyé une fois et n'a plus rien à faire.
+ *
+ * POURQUOI C'EST UN TOUR ET PAS UNE LOTERIE, et c'est tout le sujet moral.
+ * L'ordre n'est pas le hasard et surtout pas la vitesse de clic : c'est celui
+ * qui n'a rien reçu depuis le plus longtemps qui passe devant. Une course de
+ * rapidité désigne toujours les mêmes gagnants — ceux qui ont le téléphone en
+ * main — et apprend à tous les autres que ce n'est pas pour eux. Un tour de
+ * rôle, lui, donne une raison de rester abonné même quand on n'a pas eu celui
+ * d'aujourd'hui : on remonte dans la file.
+ *
+ * ET C'EST POUR ÇA QUE L'ATTENTE EST ÉCRITE. « 4 personnes après vous » dit
+ * deux choses en cinq mots : que ce n'est pas une publicité de masse, et que
+ * si on ne répond pas quelqu'un d'autre l'aura. C'est le seul compte à rebours
+ * du produit qui soit honnête — il n'est pas là pour presser, il est là parce
+ * qu'il y a vraiment quelqu'un derrière.
+ */
+export type TourDeRole = {
+  /** Ce qu'il reste, dit comme il le dirait : « 2 croissants aux amandes ». */
+  quoi: string;
+  detail?: string;
+  prix?: string;
+  prixBarre?: string;
+  /** Combien de minutes j'ai pour répondre. */
+  minutes: number;
+  /** Combien attendent derrière moi si je passe. */
+  apres: number;
+};
+
+/**
+ * LE BULLETIN DU JOUR — ce que seuls les abonnés voient.
+ *
+ * D'OÙ VIENT L'IDÉE : « comme un bulletin météo du jour du commerçant ». Elle
+ * est juste, et voici pourquoi. Un abonnement qui ne donne que des offres est
+ * un abonnement à de la publicité : on s'en désabonne au bout de trois
+ * semaines. Ce qui fait revenir, c'est la CURIOSITÉ — savoir comment va
+ * quelqu'un qu'on croise deux fois par semaine sans jamais lui parler.
+ *
+ * CE QU'ON A REFUSÉ D'Y METTRE, ET C'EST AUSSI IMPORTANT. Pas de vlog, pas de
+ * dédicaces, pas de direct réservé aux membres : tout cela suppose un
+ * commerçant qui produit du contenu et qui a du temps. Or tout ce qu'on sait de
+ * lui dit l'inverse — il n'est pas sur son téléphone, il a les mains prises, et
+ * il arrêtera en neuf jours. Ce qui reste ici tient en UN GESTE : une humeur
+ * qu'on désigne du doigt, et une phrase. C'est le maximum de ce qu'on peut lui
+ * demander tous les jours, et c'est déjà quelque chose qu'aucune chaîne ne
+ * pourra jamais imiter — parce qu'une chaîne n'a pas d'humeur.
+ */
+export type Bulletin = {
+  /** Un doigt sur un visage, le matin. Rien à écrire. */
+  humeur: { emoji: string; mot: string };
+  /** Ce qui vient d'arriver, en une phrase. Facultatif, et souvent absent. */
+  mot?: string;
+  tour?: TourDeRole;
+};
+
 export type CarteAutour = {
   id: string;
   branche: CleMetier;
@@ -699,6 +764,12 @@ export type CarteAutour = {
    * recherche de bras dure trois semaines et ne dépend pas du jour.
    */
   silencieux?: boolean;
+  /**
+   * CE QUE SEULS SES ABONNÉS VOIENT. Voir `Bulletin` au-dessus. Absent chez la
+   * plupart — un commerçant qui n'a rien à dire aujourd'hui ne dit rien, et le
+   * silence est une information exacte.
+   */
+  bulletin?: Bulletin;
   /** Ce que la fiche ajoute quand on descend. */
   fiche: { ou: string; horaires: string; mot: string };
   /** Ce qu'il propose à quelqu'un qui vient d'annoncer qu'il sort. Absent : il
@@ -1281,6 +1352,30 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "boulange",
+    // LE BULLETIN LE PLUS IMPORTANT DE LA MAQUETTE, et c'est celui qui porte
+    // le tour de rôle. « Il me reste deux croissants » est l'exemple exact
+    // qu'aucune plateforme ne sait traiter — voir `TourDeRole`.
+    //
+    // L'HUMEUR EST BOUGONNE, ET C'EST DÉLIBÉRÉ. La tentation serait de ne
+    // montrer que des commerçants heureux ; ce serait de la publicité, et
+    // personne n'y reviendrait. Un boulanger dont le four a lâché à 5 h est
+    // exactement ce qu'on ne peut lire nulle part ailleurs, et c'est ça qu'on
+    // ouvre le lendemain matin pour voir comment ça s'est fini.
+    bulletin: {
+      humeur: { emoji: "😤", mot: "bougon" },
+      mot: "Le four a lâché à 5 h, réparé à 7. Tout est parti avec deux heures de retard, alors ne me demandez pas comment va la journée.",
+      tour: {
+        quoi: "2 croissants aux amandes",
+        // UNE SEULE LIGNE, MESURÉE. À deux lignes la bande dépassait 215 points
+        // et poussait la photo de l'annonce hors de l'écran — or elle
+        // interrompt déjà, elle n'a pas à occuper la place.
+        detail: "Les derniers de la fournée.",
+        prix: "1,20 €",
+        prixBarre: "2,40 €",
+        minutes: 5,
+        apres: 4,
+      },
+    },
     catalogue: [
       { id: "b-1", rayon: "Pains", nom: "Tourte de seigle", detail: "Cuisson longue, se garde une semaine.", prix: "4,20 €", photo: "/direct/sortie-du-four.jpg" },
       { id: "b-2", rayon: "Pains", nom: "Tradition", prix: "1,30 €" },
@@ -1393,6 +1488,10 @@ const CARTES: CarteAutour[] = [
   // est propre — verifie sur les quatre bords, la ou un filigrane se cache.
   {
     id: "boucher",
+    bulletin: {
+      humeur: { emoji: "😄", mot: "content" },
+      mot: "J'ai eu la bazadaise que j'attendais depuis trois semaines. Elle est au frigo, elle en a pour quarante jours.",
+    },
     catalogue: [
       { id: "bo-1", rayon: "Boeuf", nom: "Côte de bœuf maturée", detail: "40 jours, race bazadaise.", prix: "34 €/kg" },
       { id: "bo-2", rayon: "Boeuf", nom: "Bavette d’aloyau", prix: "24 €/kg" },
@@ -1986,6 +2085,10 @@ const CARTES: CarteAutour[] = [
   // ── FLEURISTES ───────────────────────────────────────────────────────────
   {
     id: "fleur-marche",
+    // UNE HUMEUR SANS PHRASE — et c'est le cas le plus fréquent. Le bulletin
+    // n'oblige à rien : un doigt sur un visage le matin suffit, et ça reste
+    // quelque chose que ses abonnés n'auraient nulle part ailleurs.
+    bulletin: { humeur: { emoji: "🥰", mot: "amoureuse" } },
     catalogue: [
       { id: "f-1", rayon: "Bouquets", nom: "Bouquet du marché", detail: "Ce qui est arrivé le matin.", prix: "18 €", photo: "/direct/bouquet-du-jour.jpg" },
       { id: "f-2", rayon: "Bouquets", nom: "Bouquet rond blanc", detail: "Renoncules et eucalyptus.", prix: "32 €" },

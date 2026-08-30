@@ -182,6 +182,30 @@ const MONTRE_MS = 3400;
 const DEMANDE_A_LA_VILLE = false;
 
 /**
+ * LES ENVIES SONT EN SOMMEIL, POUR LA MÊME RAISON ET AVEC LE MÊME
+ * INTERRUPTEUR.
+ *
+ * POURQUOI : « ça prend trop de place et ça ne servira pas vraiment au début ».
+ * C'est exact, et pour un motif qu'il faut écrire : un filtre ne sert que
+ * quand il y a trop de réponses. À l'ouverture d'une ville, il y a huit
+ * restaurants ouverts à midi — on les regarde tous en huit balayages, et
+ * « moins de 15 € » ne retire rien qu'on n'aurait pas vu. La rangée coûtait
+ * donc un tiers de la feuille du métier pour ne rien trancher.
+ *
+ * LE JOUR OÙ ELLE SERVIRA se reconnaît à un seul signe : quand les gens
+ * arriveront au bout du paquet sans avoir trouvé. Tant que personne ne va au
+ * bout, il n'y a rien à filtrer.
+ *
+ * CE QUI DORT AVEC, ET RIEN D'AUTRE : la rangée de la feuille et son compteur
+ * sur la pastille. Le moteur (`selonEnvies`), les listes par métier (`ENVIES`)
+ * et les envies portées par chaque moment sont intacts — la sélection tourne
+ * simplement sur une liste vide, ce qui ne retire personne.
+ *
+ * POUR LA RALLUMER : passer cette constante à `true`. Rien d'autre.
+ */
+const LES_ENVIES = false;
+
+/**
  * LE NOM DE L'ONGLET, POUR LE BOUTON DE RETOUR.
  *
  * IL DIT OÙ L'ON RETOURNE, PAS « RETOUR ». Une flèche seule ne se voyait pas —
@@ -729,6 +753,32 @@ export function ApercuHabitant() {
    * l'application.
    */
   const [favorisPage, setFavorisPage] = useState(false);
+
+  /**
+   * LE TOUR DE RÔLE — voir `TourDeRole` dans les fiches.
+   *
+   * QUATRE ÉTATS ET PAS TROIS. « À moi » pendant que le compte tourne, puis
+   * « pris » ou « passé » selon ce qu'on a fait — et « fini », qui n'est pas un
+   * état de l'offre mais du bandeau : il s'efface tout seul quelques secondes
+   * après. Une bande qui reste à l'écran après qu'on a répondu devient un
+   * meuble, et un meuble ne se lit plus le jour où il redevient urgent.
+   *
+   * LE COMPTE EST EN SECONDES, ET IL DESCEND VRAIMENT. Le faire semblant —
+   * un chiffre figé, une barre décorative — serait le seul vrai mensonge
+   * possible ici : il y a quelqu'un derrière, qui aura les croissants si on ne
+   * répond pas.
+   */
+  const [tourEtat, setTourEtat] = useState<"a-moi" | "pris" | "passe" | "fini">(
+    "a-moi",
+  );
+  /**
+   * MOINS UN VEUT DIRE « PAS ENCORE ARMÉ », ET CE N'EST PAS UNE COQUETTERIE.
+   * À zéro, la règle d'expiration ci-dessous se déclenchait au tout premier
+   * rendu — avant même que la durée soit posée — et l'offre passait à la
+   * personne suivante sans que personne ne l'ait vue. Mesuré : la bande
+   * apparaissait déjà en « passé au suivant ».
+   */
+  const [tourReste, setTourReste] = useState(-1);
 
   /**
    * ─── LE DIRECT VIDÉO DANS LE SALON ───
@@ -1686,6 +1736,69 @@ export function ApercuHabitant() {
    */
   const nouvelles = mesSuivis.map((c) => ({ c, n: nouvelleDuJour(c, heure) }));
   const combienDeNouvelles = nouvelles.filter((x) => x.n).length;
+  /**
+   * L'OFFRE QUI EST À MOI EN CE MOMENT — chez un commerce que je suis.
+   *
+   * ELLE NE PEUT VENIR QUE D'UN SUIVI, et ce n'est pas une restriction
+   * technique : c'est la contrepartie de l'abonnement. Recevoir les deux
+   * derniers croissants avant tout le monde est exactement ce qu'on ne peut
+   * avoir nulle part ailleurs, et c'est ce qui rend le geste « prévenez-moi »
+   * intéressant pour autre chose que de la politesse.
+   */
+  const tourCarte = toutes.find((c) => suivis.includes(c.id) && c.bulletin?.tour);
+  const tour = tourCarte?.bulletin?.tour;
+  const tourMinutes = tour?.minutes ?? 0;
+
+  // ON ARME LE COMPTE UNE FOIS, quand l'offre apparaît.
+  useEffect(() => {
+    if (tourMinutes > 0) setTourReste(tourMinutes * 60);
+  }, [tourMinutes]);
+
+  // ET IL DESCEND D'UNE SECONDE PAR SECONDE. Un `setTimeout` qui se replante
+  // à chaque tour plutôt qu'un `setInterval` : si l'onglet est mis en veille
+  // par le téléphone, on ne rattrape pas quinze secondes d'un coup.
+  useEffect(() => {
+    if (tourEtat !== "a-moi" || tourReste <= 0) return;
+    const t = setTimeout(() => setTourReste((r) => r - 1), 1000);
+    return () => clearTimeout(t);
+  }, [tourEtat, tourReste]);
+
+  // ZÉRO SANS RÉPONSE : ça passe à la personne suivante, tout seul. C'est le
+  // cas le plus fréquent en vrai, et celui qu'il ne faut surtout pas cacher —
+  // le commerçant n'a rien eu à faire, et les croissants ne sont pas perdus.
+  useEffect(() => {
+    if (tourEtat === "a-moi" && tourMinutes > 0 && tourReste === 0) {
+      noter("tour", 0, "expire");
+      setTourEtat("passe");
+    }
+  }, [tourEtat, tourReste, tourMinutes]);
+
+  // LA BANDE S'EFFACE APRÈS COUP. Voir l'état « fini » : une fois qu'on a
+  // répondu, elle n'a plus rien à demander, et ce qu'on a pris est rangé dans
+  // « Prévu ».
+  useEffect(() => {
+    if (tourEtat !== "pris" && tourEtat !== "passe") return;
+    const t = setTimeout(() => setTourEtat("fini"), tourEtat === "pris" ? 8000 : 5200);
+    return () => clearTimeout(t);
+  }, [tourEtat]);
+
+  /** « 4:52 » — jamais « 292 s », qu'on ne sait pas lire d'un coup d'œil.
+   *  Avant l'armement, on affiche la durée pleine plutôt qu'un chiffre faux. */
+  const tourSec = tourReste < 0 ? tourMinutes * 60 : tourReste;
+  const tourMinSec = `${Math.floor(tourSec / 60)}:${String(tourSec % 60).padStart(2, "0")}`;
+
+  function jePrendsLeTour() {
+    if (!tourCarte || !tour) return;
+    noter("tour", 0, "pris");
+    setTourEtat("pris");
+    // ÇA VA DANS « PRÉVU », comme une réservation — parce que c'en est une :
+    // il met les deux croissants de côté et il faut aller les chercher.
+    setReserves((r) =>
+      r.includes(`${tourCarte.id}|${tour.quoi}`)
+        ? r
+        : [...r, `${tourCarte.id}|${tour.quoi}`],
+    );
+  }
   const mesReserves = reserves.flatMap((cle) => {
     const [a, b] = cle.split("|");
     if (a === "vais" || a === "emb") {
@@ -2438,41 +2551,76 @@ export function ApercuHabitant() {
                         {combienDeNouvelles} sur {nouvelles.length}
                       </b>
                     </h4>
+                    {/* CE QUI EST RÉSERVÉ AUX ABONNÉS EST DIT UNE FOIS, ICI.
+                        Sans cette ligne, l'humeur du boulanger et son mot du
+                        jour passent pour du remplissage ; avec elle, ce sont
+                        des choses qu'on est le seul à voir — et c'est
+                        exactement pour ça qu'on s'abonne. */}
+                    <p className="ap-nouv-priv">
+                      Ce que seuls ses abonnés voient.
+                    </p>
                     {nouvelles.map(({ c, n }) =>
                       n ? (
-                        <button
-                          key={c.id}
-                          type="button"
-                          className="ap-nouv-l"
-                          onClick={() => {
-                            setFavorisPage(false);
-                            setEmbauches(false);
-                            setBranche(c.branche);
-                            setVue("metiers");
-                            setEnvies([]);
-                            setPassees([]);
-                            setEpingle(c.id);
-                          }}
-                        >
-                          {c.photo ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={c.photo} alt="" loading="lazy" />
-                          ) : (
-                            <i aria-hidden="true">{n.moment.icone ?? "•"}</i>
+                        <div key={c.id} className="ap-nouv-e">
+                          <button
+                            type="button"
+                            className="ap-nouv-l"
+                            onClick={() => {
+                              setFavorisPage(false);
+                              setEmbauches(false);
+                              setBranche(c.branche);
+                              setVue("metiers");
+                              setEnvies([]);
+                              setPassees([]);
+                              setEpingle(c.id);
+                            }}
+                          >
+                            {c.photo ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={c.photo} alt="" loading="lazy" />
+                            ) : (
+                              <i aria-hidden="true">{n.moment.icone ?? "•"}</i>
+                            )}
+                            <span>
+                              <u>
+                                {/* LE NOM SUR UNE SEULE LIGNE. « Une fleuriste
+                                    du marché » se coupait en deux et poussait
+                                    l'humeur en face de la seconde moitié. */}
+                                <i>{c.nom}</i>
+                                {/* ─── SON HUMEUR DU JOUR ───
+                                    Un doigt sur un visage, le matin, et rien
+                                    de plus à écrire. C'est la seule chose de
+                                    cette page qu'une chaîne ne pourra jamais
+                                    imiter : une enseigne n'a pas d'humeur. */}
+                                {c.bulletin && (
+                                  <mark>
+                                    {c.bulletin.humeur.emoji}{" "}
+                                    {c.bulletin.humeur.mot}
+                                  </mark>
+                                )}
+                              </u>
+                              <b>{n.moment.titre}</b>
+                              <em>
+                                {/* « CE MIDI » ET « DANS UNE HEURE »
+                                    N'APPELLENT PAS LE MÊME GESTE : on ne se
+                                    déplace pas pour ce qui est fini. */}
+                                {n.passe ? "C'était aujourd'hui" : n.moment.quand}
+                                {n.moment.prix ? ` · ${n.moment.prix}` : ""}
+                              </em>
+                            </span>
+                            <s aria-hidden="true">›</s>
+                          </button>
+                          {/* ─── LE MOT DU JOUR ───
+                              Ce n'est ni une offre ni une information de
+                              service : c'est ce qui donne envie d'ouvrir
+                              demain matin pour savoir comment ça s'est fini.
+                              Un abonnement qui ne donne que des promotions est
+                              un abonnement à de la publicité, et on s'en
+                              débarrasse en trois semaines. */}
+                          {c.bulletin?.mot && (
+                            <p className="ap-nouv-mot">{c.bulletin.mot}</p>
                           )}
-                          <span>
-                            <u>{c.nom}</u>
-                            <b>{n.moment.titre}</b>
-                            <em>
-                              {/* « CE MIDI » ET « DANS UNE HEURE » N'APPELLENT
-                                  PAS LE MÊME GESTE : on ne se déplace pas pour
-                                  ce qui est fini. Le passé le dit. */}
-                              {n.passe ? "C'était aujourd'hui" : n.moment.quand}
-                              {n.moment.prix ? ` · ${n.moment.prix}` : ""}
-                            </em>
-                          </span>
-                          <s aria-hidden="true">›</s>
-                        </button>
+                        </div>
                       ) : (
                         /* ─── LA LIGNE QUI FAIT TOUT LE TRAVAIL ───
                            Elle n'est pas une case vide : c'est exactement ce
@@ -2480,13 +2628,15 @@ export function ApercuHabitant() {
                            planning du matin, à côté de trois voisins qui ont
                            quelque chose. Aucune phrase d'argumentaire ne
                            remplace ça. */
-                        <div key={c.id} className="ap-nouv-l muet">
-                          <i aria-hidden="true">·</i>
-                          <span>
-                            <u>{c.nom}</u>
-                            <b>Rien aujourd&apos;hui</b>
-                            <em>{c.metier} · il n&apos;a pas publié</em>
-                          </span>
+                        <div key={c.id} className="ap-nouv-e muet">
+                          <div className="ap-nouv-l">
+                            <i aria-hidden="true">·</i>
+                            <span>
+                              <u>{c.nom}</u>
+                              <b>Rien aujourd&apos;hui</b>
+                              <em>{c.metier} · il n&apos;a pas publié</em>
+                            </span>
+                          </div>
                         </div>
                       ),
                     )}
@@ -3590,7 +3740,9 @@ export function ApercuHabitant() {
                     NOMBRE DOIT SE VOIR D'ICI. Un filtre actif qu'on ne voit
                     plus est un piège : on croit que la ville est vide alors
                     qu'on a coché « moins de 15 € » il y a dix minutes. */}
-                {envies.length > 0 && <s className="ap-filtres-n">{envies.length}</s>}
+                {LES_ENVIES && envies.length > 0 && (
+                  <s className="ap-filtres-n">{envies.length}</s>
+                )}
                 <em aria-hidden="true">▾</em>
               </button>
               {reserves.length > 0 && (
@@ -3720,6 +3872,101 @@ export function ApercuHabitant() {
                 </button>
               </div>
             ) : null}
+
+            {/* ─── LE TOUR DE RÔLE ───
+                « Il me reste deux croissants » est la phrase qu'aucune
+                plateforme ne sait traiter : envoyée à quatre cents abonnés
+                elle fait trois cent quatre-vingt-dix-huit déçus, alors le
+                commerçant ne la dit pas et les croissants sont jetés. Ici elle
+                part à UNE personne, qui a cinq minutes.
+
+                POURQUOI ELLE INTERROMPT, alors que tout le reste du produit
+                attend qu'on vienne le chercher : c'est la seule chose de
+                l'application qui a une fin. Dans cinq minutes elle n'existe
+                plus, et une information qui se périme derrière une pastille
+                qu'on ouvrira ce soir ne sert personne — ni celui qui aurait
+                voulu les croissants, ni celui qui aurait voulu les vendre.
+
+                ET ELLE NE PEUT VENIR QUE D'UN COMMERCE SUIVI. C'est la
+                contrepartie de l'abonnement, celle qu'on ne trouve nulle part
+                ailleurs, et c'est ce qui donne au geste « prévenez-moi » une
+                raison d'être autre chose qu'une politesse. */}
+            {tourCarte && tour && tourEtat !== "fini" && (
+              <div className={`ap-tour ${tourEtat}`}>
+                {tourEtat === "a-moi" ? (
+                  <>
+                    <div className="ap-tour-h">
+                      <span className="ap-tour-q">
+                        <i aria-hidden="true">⏳</i>C&apos;est à vous
+                      </span>
+                      {/* LE COMPTE EST LE SEUL CHIFFRE EN GROS DE LA BANDE :
+                          c'est lui qui dit que ce n'est pas une publicité. */}
+                      <b aria-label={`Il vous reste ${tourMinSec}`}>{tourMinSec}</b>
+                    </div>
+                    <p className="ap-tour-t">{tour.quoi}</p>
+                    <p className="ap-tour-d">
+                      {tourCarte.nom} · {tourCarte.distance}
+                      {tour.prix ? (
+                        <>
+                          {" · "}
+                          <u>{tour.prix}</u>
+                          {tour.prixBarre && <s>{tour.prixBarre}</s>}
+                        </>
+                      ) : null}
+                    </p>
+                    {tour.detail && <p className="ap-tour-x">{tour.detail}</p>}
+                    <div className="ap-tour-b">
+                      <button type="button" className="fort" onClick={jePrendsLeTour}>
+                        Je prends
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          noter("tour", 0, "passe");
+                          setTourEtat("passe");
+                        }}
+                      >
+                        Je passe
+                      </button>
+                    </div>
+                    {/* CE QUE CETTE LIGNE FAIT VRAIMENT : elle dit que ce
+                        n'est ni une loterie ni une course de rapidité, mais
+                        une file — et que si l'on passe, ça ne se perd pas. */}
+                    <p className="ap-tour-f">
+                      {tour.apres} personne{tour.apres > 1 ? "s" : ""} après vous
+                      si vous ne répondez pas.
+                    </p>
+                  </>
+                ) : tourEtat === "pris" ? (
+                  <>
+                    <div className="ap-tour-h">
+                      <span className="ap-tour-q">
+                        <i aria-hidden="true">✓</i>C&apos;est à vous
+                      </span>
+                    </div>
+                    <p className="ap-tour-t">{tour.quoi}</p>
+                    <p className="ap-tour-d">
+                      Il vous les met de côté. Passez chez {tourCarte.nom}.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="ap-tour-h">
+                      <span className="ap-tour-q">
+                        <i aria-hidden="true">→</i>Passé au suivant
+                      </span>
+                    </div>
+                    {/* ON DIT CE QUI SE PASSE ENSUITE, ET C'EST TOUT LE
+                        CONTRAIRE D'UNE PERTE : personne n'a rien à faire, et
+                        les croissants ne finiront pas à la poubelle. */}
+                    <p className="ap-tour-d">
+                      Proposé à la personne suivante. Vous repassez devant la
+                      prochaine fois.
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="ap-vue">
@@ -6052,7 +6299,7 @@ export function ApercuHabitant() {
                     {/* Les envies n'ont de sens que sur un métier : « moins de
                         15 € » ne veut rien dire sur un poste, et un événement
                         n'est pas « à emporter ». */}
-                    {vue === "metiers" && !embauches && listeEnvies.length > 0 && (
+                    {LES_ENVIES && vue === "metiers" && !embauches && listeEnvies.length > 0 && (
                       <>
                         <p className="ap-f-titre">Ce dont j&apos;ai envie</p>
                         <div className="ap-envies ap-f-envies">
@@ -6674,6 +6921,65 @@ export function ApercuHabitant() {
           background:#F7C948;border-radius:999px;padding:3px 9px;}
         .ap-s-x{flex:none;font:inherit;font-size:13px;line-height:1;cursor:pointer;
           color:#F0C05A;background:none;border:0;padding:2px 4px;}
+
+        /* ═══ LE TOUR DE ROLE ═══
+           La seule chose de l'application qui a une fin, donc la seule qui ait
+           le droit d'interrompre. Elle prend un rectangle et pas une pilule :
+           une pilule dit « au passage », or ici il faut repondre.
+
+           L'AMBRE PLEIN ET NON UN VOILE. La bande de la demande en cours est
+           un fond a 10 % — un etat qui court, qu'on peut ignorer. Celle-ci est
+           une adresse personnelle avec cinq minutes au compteur ; si elle se
+           lisait comme les autres, on la lirait ce soir. */
+        /* LE FOND EST OPAQUE, ET C'EST UNE CORRECTION MESUREE.
+           Sur Le Direct, la barre du haut flotte au-dessus de la photo : avec
+           un ambre a 20 % la lasagne traversait la bande, « 4 personnes apres
+           vous » devenait illisible, et l'objet le plus urgent de l'ecran
+           passait pour un calque decoratif. La couleur en dernier dans le
+           raccourci est peinte DESSOUS le degrade. */
+        .ap-tour{margin-top:9px;padding:10px 13px 11px;border-radius:17px;
+          background:linear-gradient(180deg,rgba(240,180,41,.22),rgba(240,180,41,.1)),
+            #0B1411;
+          border:1px solid rgba(240,180,41,.5);
+          box-shadow:0 10px 26px rgba(0,0,0,.4);
+          animation:apTourEntre .42s cubic-bezier(.22,1.1,.4,1);}
+        @keyframes apTourEntre{from{opacity:0;transform:translateY(-10px);}}
+        .ap-tour-h{display:flex;align-items:center;gap:10px;}
+        .ap-tour-q{flex:1;min-width:0;display:flex;align-items:center;gap:7px;
+          font-size:10.5px;font-weight:850;letter-spacing:.13em;
+          text-transform:uppercase;color:#F7C948;}
+        .ap-tour-q i{font-style:normal;font-size:13px;letter-spacing:0;}
+        /* LE COMPTE EST LE PLUS GROS CHIFFRE DE LA BANDE, en chasse fixe pour
+           qu'il ne saute pas d'un pixel a chaque seconde. */
+        .ap-tour-h b{flex:none;font-size:19px;font-weight:850;color:#F7C948;
+          font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
+        .ap-tour-t{margin:5px 0 0;font-size:16.5px;font-weight:850;color:#FFF6E2;
+          letter-spacing:-.02em;line-height:1.2;}
+        .ap-tour-d{margin:3px 0 0;font-size:12.5px;color:#E7D3A6;}
+        .ap-tour-d u{text-decoration:none;font-weight:850;color:#FFF6E2;}
+        .ap-tour-d s{margin-left:5px;font-size:11.5px;color:#BFA672;}
+        .ap-tour-x{margin:4px 0 0;font-size:12px;line-height:1.4;color:#C9B587;}
+        .ap-tour-b{display:flex;gap:8px;margin-top:10px;}
+        .ap-tour-b button{flex:1;font:inherit;font-size:14px;font-weight:850;
+          line-height:1;cursor:pointer;border-radius:999px;padding:10px;
+          color:#F0DFB6;background:rgba(255,255,255,.07);
+          border:1px solid rgba(240,180,41,.36);}
+        .ap-tour-b button.fort{color:#2A1B00;background:#F7C948;border-color:transparent;}
+        .ap-tour-b button:active{transform:scale(.97);}
+        .ap-tour-f{margin:8px 0 0;font-size:11px;line-height:1.4;color:#CBB27C;}
+        /* UNE FOIS REPONDU, LA BANDE SE CALME : elle ne demande plus rien, elle
+           confirme — et elle s'efface toute seule quelques secondes apres. */
+        .ap-tour.pris{background:rgba(61,226,166,.13);border-color:rgba(61,226,166,.42);}
+        .ap-tour.pris .ap-tour-q{color:#7EE6C0;}
+        .ap-tour.pris .ap-tour-t{color:#EAF7F0;}
+        .ap-tour.pris .ap-tour-d{color:#A9C8BB;}
+        .ap-tour.passe{background:rgba(255,255,255,.05);
+          border-color:rgba(255,255,255,.14);}
+        .ap-tour.passe .ap-tour-q{color:#A9BBB1;}
+        .ap-tour.passe .ap-tour-d{color:#8FA79B;}
+        @media (prefers-reduced-motion:reduce){
+          .ap-tour{animation:none;}
+        }
 
         /* L'EMBAUCHE EST BLEUE, PARTOUT ET SEULEMENT LA.
            Le vert est la couleur de l'application, l'or celle de l'invitation
@@ -8349,10 +8655,16 @@ export function ApercuHabitant() {
         .ap-nouv h4 b{font-size:10px;font-weight:800;color:#04150E;
           background:#F0B429;border-radius:999px;padding:2px 7px;
           letter-spacing:.02em;}
+        .ap-nouv-priv{margin:-4px 0 10px;font-size:11.5px;color:#7F988B;}
+        /* L'ENVELOPPE PORTE LE CADRE, la ligne ne porte plus que le geste :
+           c'est ce qui permet au mot du jour de vivre SOUS la ligne, dans la
+           meme carte, sans etre un second bouton. */
+        .ap-nouv-e{background:rgba(255,255,255,.05);
+          border:1px solid rgba(255,255,255,.1);border-radius:15px;
+          margin-bottom:8px;overflow:hidden;}
         .ap-nouv-l{display:flex;align-items:center;gap:11px;width:100%;font:inherit;
           text-align:left;cursor:pointer;color:#A9BBB1;
-          background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
-          border-radius:15px;padding:9px 11px 9px 9px;margin-bottom:8px;}
+          background:none;border:0;padding:9px 11px 9px 9px;}
         .ap-nouv-l:active{transform:scale(.99);}
         .ap-nouv-l img{width:52px;height:52px;flex:none;object-fit:cover;
           border-radius:11px;}
@@ -8360,8 +8672,17 @@ export function ApercuHabitant() {
           align-items:center;justify-content:center;font-style:normal;
           font-size:21px;background:rgba(255,255,255,.06);border-radius:11px;}
         .ap-nouv-l span{flex:1;min-width:0;display:block;}
-        .ap-nouv-l u{display:block;text-decoration:none;font-size:11.5px;
-          font-weight:750;color:#8FE9C4;}
+        .ap-nouv-l u{display:flex;align-items:center;gap:7px;text-decoration:none;
+          font-size:11.5px;font-weight:750;color:#8FE9C4;}
+        /* SON HUMEUR, POUSSEE A DROITE. Elle ne doit ni precer le nom du
+           commerce ni s'aligner avec l'offre : c'est une note en marge, pas
+           une information de service. */
+        .ap-nouv-l u i{min-width:0;font-style:normal;white-space:nowrap;
+          overflow:hidden;text-overflow:ellipsis;}
+        .ap-nouv-l mark{margin-left:auto;flex:none;background:none;
+          color:#C6D6CD;font-size:11px;font-weight:700;
+          border:1px solid rgba(255,255,255,.14);border-radius:999px;
+          padding:2px 8px;white-space:nowrap;}
         .ap-nouv-l b{display:block;font-size:14px;font-weight:850;color:#EAF2EC;
           letter-spacing:-.01em;margin-top:1px;white-space:nowrap;
           overflow:hidden;text-overflow:ellipsis;}
@@ -8374,13 +8695,25 @@ export function ApercuHabitant() {
            pas de photo, pas de chevron, pas de vert : ce n'est pas un endroit
            ou aller aujourd'hui. Mais il reste a sa place dans la liste, entre
            deux voisins qui ont quelque chose — c'est tout l'interet. */
-        .ap-nouv-l.muet{background:transparent;border-style:dashed;
-          border-color:rgba(255,255,255,.13);cursor:default;}
-        .ap-nouv-l.muet>i{font-size:15px;color:#5E7168;background:none;
+        .ap-nouv-e.muet{background:transparent;border-style:dashed;
+          border-color:rgba(255,255,255,.13);}
+        .ap-nouv-e.muet .ap-nouv-l{cursor:default;}
+        .ap-nouv-e.muet .ap-nouv-l>i{font-size:15px;color:#5E7168;background:none;
           border:1px dashed rgba(255,255,255,.13);}
-        .ap-nouv-l.muet u{color:#8C9C94;}
-        .ap-nouv-l.muet b{color:#8C9C94;font-weight:800;}
-        .ap-nouv-l.muet em{color:#5E7168;}
+        .ap-nouv-e.muet u{color:#8C9C94;}
+        .ap-nouv-e.muet b{color:#8C9C94;font-weight:800;}
+        .ap-nouv-e.muet em{color:#5E7168;}
+        /* ─── LE MOT DU JOUR ───
+           Il est en serif et entre guillemets : c'est quelqu'un qui parle, pas
+           une notification. Le trait du haut le separe de l'offre, parce que
+           ce n'est pas la meme nature de chose — l'une se vend, l'autre pas. */
+        .ap-nouv-mot{margin:0;padding:10px 13px 12px;
+          border-top:1px solid rgba(255,255,255,.09);
+          background:rgba(255,255,255,.03);
+          font-family:Georgia,"Times New Roman",serif;font-size:13.5px;
+          line-height:1.5;color:#C6D6CD;}
+        .ap-nouv-mot::before{content:"« ";color:#7F988B;}
+        .ap-nouv-mot::after{content:" »";color:#7F988B;}
         .ap-nouv-rien{margin:0;font-size:12px;color:#7F988B;}
 
         /* LE CHAMP. Colle en bas, avec la marge de securite du bas d'ecran :
