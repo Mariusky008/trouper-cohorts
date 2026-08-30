@@ -132,6 +132,48 @@ export function abonnerLecture(f: () => void) {
   };
 }
 
+// ── L'AVIS DU MATIN — UN SEUL, ET GROUPÉ ────────────────────────────────────
+//
+// POURQUOI IL FAUT UNE NOTIFICATION, ET PAS SEULEMENT UNE PASTILLE. Relevé à
+// l'essai : « je n'ai aucune notification qui me permet de savoir ces news ».
+// C'est le fond du problème : une pastille dans un coin n'est vue que par ceux
+// qui ouvrent déjà l'application tous les jours — c'est-à-dire exactement les
+// gens dont on n'a pas besoin de s'occuper.
+//
+// POURQUOI UNE SEULE, ET GROUPÉE. Une notification par commerce suivi, à cinq
+// commerces, fait cinq sonneries entre 7 h et 9 h : on coupe les notifications
+// au bout de trois jours, et on ne les rallume jamais. Une seule, qui dit
+// combien et cite le plus intéressant, se lit en entier.
+//
+// ET UNE SEULE PAR JOUR : c'est la même date qui est gardée que pour la
+// pastille, mais dans sa propre clé — ouvrir l'application à 7 h ne doit pas
+// empêcher l'avis, et recevoir l'avis ne doit pas éteindre la pastille avant
+// qu'on ait lu.
+//
+// CE QUI EST SIMULÉ ICI, ET IL FAUT LE SAVOIR : la maquette n'a pas de serveur.
+// L'avis se déclenche à l'ouverture de l'application, pas à 7 h du matin sur un
+// téléphone éteint. Le vrai produit a besoin d'un envoi côté serveur ; tout le
+// reste — la permission, le groupement, le texte, la règle d'une fois par jour
+// — est celui qu'on gardera.
+const CLE_REVEIL = "clikme-avis-matin-v1";
+
+export function avisDuMatinDejaEnvoye(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    return window.localStorage.getItem(CLE_REVEIL) === ceJour();
+  } catch {
+    return true;
+  }
+}
+
+export function marquerAvisDuMatin() {
+  try {
+    window.localStorage.setItem(CLE_REVEIL, ceJour());
+  } catch {
+    /* Stockage refusé : l'avis se rejouera, ce qui est le moindre mal. */
+  }
+}
+
 export function abonnerSuivis(f: () => void) {
   abonnes.add(f);
   return () => {

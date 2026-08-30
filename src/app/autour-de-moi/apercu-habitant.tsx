@@ -74,12 +74,15 @@ import {
   abonnerLecture,
   abonnerSuivis,
   AUCUN_SUIVI,
+  avisDuMatinDejaEnvoye,
   basculerSuivi,
   chargerSuivis,
+  marquerAvisDuMatin,
   marquerNouvellesLues,
   nouvellesLues,
   nouvellesLuesServeur,
 } from "@/lib/direct/suivis";
+import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
 import {
   abonnerVille,
   caMInteresse,
@@ -126,6 +129,7 @@ import {
   momentEnCours,
   momentsRestants,
   nouvelleDuJour,
+  promesseDeSuivi,
   avisNotes,
   moyenneAvis,
   repondeurs,
@@ -768,9 +772,9 @@ export function ApercuHabitant() {
    * possible ici : il y a quelqu'un derrière, qui aura les croissants si on ne
    * répond pas.
    */
-  const [tourEtat, setTourEtat] = useState<"a-moi" | "pris" | "passe" | "fini">(
-    "a-moi",
-  );
+  const [tourEtat, setTourEtat] = useState<
+    "a-moi" | "prevenir" | "pris" | "passe" | "fini"
+  >("a-moi");
   /**
    * MOINS UN VEUT DIRE « PAS ENCORE ARMÉ », ET CE N'EST PAS UNE COQUETTERIE.
    * À zéro, la règle d'expiration ci-dessous se déclenchait au tout premier
@@ -779,6 +783,24 @@ export function ApercuHabitant() {
    * apparaissait déjà en « passé au suivant ».
    */
   const [tourReste, setTourReste] = useState(-1);
+
+  /**
+   * PRÉVENIR LE COMMERÇANT — la feuille, et la règle qui va avec.
+   *
+   * Voir `lib/direct/prevenir.ts`. Tant que cette feuille est ouverte, RIEN
+   * N'EST ENREGISTRÉ : `alors` n'est joué qu'au moment où l'on dit « je l'ai
+   * prévenu ». C'est le seul endroit du produit où l'on pourrait mentir — un
+   * écran qui annonce « c'est réservé » alors que WhatsApp n'a pas été envoyé
+   * laisse les croissants sur le comptoir en faisant croire le contraire.
+   */
+  const [prevenir, setPrevenir] = useState<null | {
+    nom: string;
+    telephone: string;
+    quoi: string;
+    quand?: string;
+    /** Joué seulement si l'on confirme avoir prévenu. */
+    alors?: () => void;
+  }>(null);
 
   /**
    * ─── LE DIRECT VIDÉO DANS LE SALON ───
@@ -1310,9 +1332,30 @@ export function ApercuHabitant() {
     // LES PRÉPARÉS D'ABORD, ET ILS SE PASSENT COMME LES AUTRES : une carte
     // qu'on ne peut pas balayer se remarque, et c'est la seule chose qu'on ne
     // veut pas devant un commerçant.
+    // ─── MES COMMERCES PASSENT DEVANT ───
+    //
+    // LE DÉFAUT QUE ÇA CORRIGE, ET IL EST DE FOND. Les nouvelles des commerces
+    // suivis vivaient derrière une pastille, dans un coin : « ça m'a l'air très
+    // discret comme message aux abonnés, placé dans cet espace ». C'est juste.
+    // Une pastille est une chose qu'on va CHERCHER ; or ce qu'a publié son
+    // boulanger ce matin doit VENIR. Et sans notification, un badge dans un
+    // coin n'est vu que par ceux qui ouvrent déjà l'application tous les
+    // jours — exactement les gens dont on n'a pas besoin de s'occuper.
+    //
+    // POURQUOI EN TÊTE DU PAQUET ET PAS DANS UN ÉCRAN À EUX. C'est la règle
+    // qu'on s'est donnée et qui tient tout le produit : LE GESTE EST IDENTIQUE
+    // PARTOUT. Même carte, même balayage, aucune interface nouvelle — on les
+    // passe comme les autres. Et l'abonnement cesse d'avoir besoin d'être
+    // expliqué : il se voit en s'en servant, dès la première seconde.
+    //
+    // LE TRI PAR DISTANCE SURVIT DERRIÈRE. On ne mélange pas : les suivis
+    // d'abord dans leur ordre de distance, puis tous les autres dans le leur.
+    const aMoi = (c: ItemPaquet) => suivis.includes(c.id);
+    const restant = dispo.filter((c) => !passees.includes(c.id));
     const p = [
       ...cartesPreparees.filter((c) => !passees.includes(c.id)),
-      ...dispo.filter((c) => !passees.includes(c.id)),
+      ...restant.filter(aMoi),
+      ...restant.filter((c) => !aMoi(c)),
     ];
     if (!epingle) return p;
     const i = p.findIndex((c) => c.id === epingle);
@@ -1749,6 +1792,50 @@ export function ApercuHabitant() {
   const tour = tourCarte?.bulletin?.tour;
   const tourMinutes = tour?.minutes ?? 0;
 
+  /**
+   * L'AVIS DU MATIN — UN SEUL, ET GROUPÉ.
+   *
+   * Voir `suivis.ts`. « Je n'ai aucune notification qui me permet de savoir ces
+   * news » : c'était le fond du problème. Une par commerce ferait cinq
+   * sonneries entre 7 h et 9 h, et on couperait tout au bout de trois jours ;
+   * une seule, qui dit combien et cite le plus intéressant, se lit en entier.
+   *
+   * CE QUI EST SIMULÉ, ET IL FAUT LE SAVOIR : sans serveur, l'avis part à
+   * l'ouverture de l'application, pas à 7 h sur un téléphone éteint. Le vrai
+   * produit a besoin d'un envoi côté serveur ; le groupement, le texte, la
+   * permission et la règle d'une fois par jour sont ceux qu'on gardera.
+   *
+   * ET IL S'AFFICHE AUSSI DANS L'ÉCRAN. La permission peut être refusée, et
+   * sur iPhone elle n'existe que si l'application est posée sur l'écran
+   * d'accueil : sans le doublon, la moitié des gens ne verrait jamais l'avis.
+   */
+  useEffect(() => {
+    if (combienDeNouvelles === 0 || avisDuMatinDejaEnvoye()) return;
+    const t = setTimeout(() => {
+      const premier = nouvelles.find((x) => x.n);
+      const texte =
+        combienDeNouvelles > 1
+          ? `${combienDeNouvelles} de vos commerces ont publié — dont ${premier?.c.nom}.`
+          : `${premier?.c.nom} a publié aujourd'hui.`;
+      marquerAvisDuMatin();
+      noter("avis-matin", combienDeNouvelles, "groupe");
+      setEchoIcone("🔔");
+      setEcho(texte);
+      try {
+        if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+          new Notification("Le direct de Dax", { body: texte, tag: "clikme-matin" });
+        }
+      } catch {
+        /* Certains navigateurs refusent la construction directe. Sans
+           importance : l'écho dans l'écran a déjà fait le travail. */
+      }
+    }, 2600);
+    return () => clearTimeout(t);
+    // Volontairement sur le seul compte : le contenu du tableau change à chaque
+    // rendu, et l'avis ne doit partir qu'une fois.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [combienDeNouvelles]);
+
   // ON ARME LE COMPTE UNE FOIS, quand l'offre apparaît.
   useEffect(() => {
     if (tourMinutes > 0) setTourReste(tourMinutes * 60);
@@ -1757,21 +1844,28 @@ export function ApercuHabitant() {
   // ET IL DESCEND D'UNE SECONDE PAR SECONDE. Un `setTimeout` qui se replante
   // à chaque tour plutôt qu'un `setInterval` : si l'onglet est mis en veille
   // par le téléphone, on ne rattrape pas quinze secondes d'un coup.
+  // IL CONTINUE DE DESCENDRE PENDANT QU'ON ÉCRIT LE MESSAGE, et c'est la
+  // vérité : la personne suivante n'attend pas qu'on ait fini de taper.
+  const tourEnCours = tourEtat === "a-moi" || tourEtat === "prevenir";
   useEffect(() => {
-    if (tourEtat !== "a-moi" || tourReste <= 0) return;
+    if (!tourEnCours || tourReste <= 0) return;
     const t = setTimeout(() => setTourReste((r) => r - 1), 1000);
     return () => clearTimeout(t);
-  }, [tourEtat, tourReste]);
+  }, [tourEnCours, tourReste]);
 
   // ZÉRO SANS RÉPONSE : ça passe à la personne suivante, tout seul. C'est le
   // cas le plus fréquent en vrai, et celui qu'il ne faut surtout pas cacher —
   // le commerçant n'a rien eu à faire, et les croissants ne sont pas perdus.
   useEffect(() => {
-    if (tourEtat === "a-moi" && tourMinutes > 0 && tourReste === 0) {
+    if (tourEnCours && tourMinutes > 0 && tourReste === 0) {
       noter("tour", 0, "expire");
       setTourEtat("passe");
+      // ET LA FEUILLE SE REFERME AVEC. Laisser « prévenez-le » ouvert sur une
+      // offre qui n'est plus à nous ferait envoyer un message pour rien —
+      // au boulanger, qui a déjà donné les croissants à quelqu'un d'autre.
+      setPrevenir(null);
     }
-  }, [tourEtat, tourReste, tourMinutes]);
+  }, [tourEnCours, tourReste, tourMinutes]);
 
   // LA BANDE S'EFFACE APRÈS COUP. Voir l'état « fini » : une fois qu'on a
   // répondu, elle n'a plus rien à demander, et ce qu'on a pris est rangé dans
@@ -1787,17 +1881,76 @@ export function ApercuHabitant() {
   const tourSec = tourReste < 0 ? tourMinutes * 60 : tourReste;
   const tourMinSec = `${Math.floor(tourSec / 60)}:${String(tourSec % 60).padStart(2, "0")}`;
 
+  /**
+   * « JE PRENDS » N'ENREGISTRE RIEN — il ouvre le seul geste qui compte.
+   *
+   * Le bouton rangeait directement les croissants dans « Prévu », et c'était
+   * un mensonge poli : le boulanger, lui, ne savait toujours rien. Il ne
+   * regarde pas son espace, il est devant son four. Tant qu'on ne le prévient
+   * pas, les croissants sont encore là à la fermeture — et notre écran a dit
+   * le contraire, ce qui est pire que de n'avoir rien dit.
+   */
   function jePrendsLeTour() {
     if (!tourCarte || !tour) return;
     noter("tour", 0, "pris");
-    setTourEtat("pris");
-    // ÇA VA DANS « PRÉVU », comme une réservation — parce que c'en est une :
-    // il met les deux croissants de côté et il faut aller les chercher.
-    setReserves((r) =>
-      r.includes(`${tourCarte.id}|${tour.quoi}`)
-        ? r
-        : [...r, `${tourCarte.id}|${tour.quoi}`],
+    setTourEtat("prevenir");
+    setPrevenir({
+      nom: tourCarte.nom,
+      telephone: tourCarte.telephone ?? numeroDeFiction(tourCarte.id),
+      quoi: tour.quoi,
+      quand: "Je passe avant la fermeture",
+      alors: () => {
+        noter("tour", 0, "prevenu");
+        setTourEtat("pris");
+        // MAINTENANT ÇA VA DANS « PRÉVU », et pas avant — parce que c'en est
+        // une : il met les deux croissants de côté et il faut aller les
+        // chercher.
+        setReserves((r) =>
+          r.includes(`${tourCarte.id}|${tour.quoi}`)
+            ? r
+            : [...r, `${tourCarte.id}|${tour.quoi}`],
+        );
+      },
+    });
+  }
+
+  /**
+   * ON RENONCE À PRÉVENIR — et l'offre repart au suivant.
+   *
+   * C'est la seule issue honnête : on ne peut pas garder deux croissants pour
+   * quelqu'un dont le boulanger ignore l'existence. Dit comme ça, ce n'est pas
+   * une punition, c'est ce qui fait que le tour de rôle tient.
+   */
+  /**
+   * SUIVRE UN COMMERCE — le même geste, à deux endroits.
+   *
+   * Il vit maintenant sur la face de la carte ET sous le pli. Le dupliquer en
+   * copiant vingt lignes aurait garanti qu'ils divergent : l'un demanderait la
+   * permission de notification, l'autre non, et personne ne saurait lequel des
+   * deux est le bon.
+   *
+   * LA PROMESSE EST CELLE DU MÉTIER — voir `promesseDeSuivi`. C'est aussi ce
+   * que dit l'écho : « prévenu avant les autres » ne décrit rien qu'on puisse
+   * imaginer recevoir ; « l'heure des fournées » si.
+   */
+  function suivreCeCommerce(c: CarteAutour) {
+    const suit = basculerSuivi(c.id);
+    noter(suit ? "rappel-demande" : "je-passe", 0, "suivre");
+    if (!suit) return;
+    setEchoIcone("🔔");
+    setEcho(`Vous suivez ${c.nom}. ${promesseDeSuivi(c)}`);
+    noter("notif-proposee", 0, "suivre");
+    void demanderAvertissement().then((r) =>
+      noter(r === "granted" ? "notif-acceptee" : "notif-refusee", 0, "suivre"),
     );
+  }
+
+  function jeNePreviensPas() {
+    setPrevenir(null);
+    if (tourEtat === "prevenir") {
+      noter("tour", 0, "abandon");
+      setTourEtat("passe");
+    }
   }
   const mesReserves = reserves.flatMap((cle) => {
     const [a, b] = cle.split("|");
@@ -2304,9 +2457,23 @@ export function ApercuHabitant() {
    * joue en entier, sans qu'un téléphone réel puisse sonner. Le vrai produit
    * portera le numéro du commerçant.
    */
-  function surWhatsApp(texte: string) {
+  /**
+   * WHATSAPP, MAINTENANT ADRESSÉ — et c'était le défaut le plus grave.
+   *
+   * Le lien partait SANS destinataire : `wa.me/?text=…` ouvre le carnet
+   * d'adresses et demande de choisir à qui envoyer. Or on n'a pas le boulanger
+   * dans ses contacts — c'est même toute la raison d'être de l'application. Le
+   * message était donc écrit, montré, relu… et n'arrivait chez personne.
+   *
+   * AVEC LE NUMÉRO, la conversation s'ouvre directement sur lui. Ce qui rend
+   * ce numéro obligatoire dans la fiche du commerce, et c'est le premier
+   * renseignement à lui demander en le démarchant — avant sa photo, avant son
+   * catalogue, avant tout le reste.
+   */
+  function surWhatsApp(texte: string, telephone?: string) {
     noter("reserve", 0, "whatsapp");
-    const url = `https://wa.me/?text=${encodeURIComponent(texte)}`;
+    const num = telephone ? telephone.replace(/\D/g, "").replace(/^0/, "33") : "";
+    const url = `https://wa.me/${num}?text=${encodeURIComponent(texte)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
@@ -2369,16 +2536,36 @@ export function ApercuHabitant() {
    * réfléchir, c'est de lire la phrase qu'on s'apprête à envoyer, chez qui elle
    * va, et pour combien de personnes.
    */
-  const [aConfirmer, setAConfirmer] = useState<null | { pourUnSeul: boolean }>(null);
+  const [aConfirmer, setAConfirmer] = useState<null | {
+    pourUnSeul: boolean;
+    /** WhatsApp a été OUVERT — ce qui ne veut pas dire que le message est parti. */
+    ouvert?: boolean;
+  }>(null);
+
+  /**
+   * ON OUVRE WHATSAPP, ET ON N'ENREGISTRE RIEN ENCORE.
+   *
+   * LA RAISON, ET ELLE VAUT POUR TOUT LE PRODUIT : `wa.me` ouvre WhatsApp, il
+   * n'envoie pas. C'est encore à la personne d'appuyer sur « envoyer ». Écrire
+   * « demande envoyée » dans le salon à cet instant-là est un mensonge que le
+   * groupe entier va croire — et personne ne saura, à midi, que la table n'a
+   * jamais été demandée.
+   */
+  function ouvrirWhatsAppPourLeSalon(pourUnSeul = false) {
+    if (!salon) return;
+    const { texte } = demandeDuSalon(salon, pourUnSeul);
+    const chez = toutes.find((c) => c.nom === (tete?.ou ?? salon.ou));
+    surWhatsApp(texte, chez?.telephone ?? (chez ? numeroDeFiction(chez.id) : undefined));
+    setAConfirmer({ pourUnSeul, ouvert: true });
+  }
 
   function reserverPourLeSalon(pourUnSeul = false) {
     if (!salon) return;
-    const { ou, quoi, combien, texte } = demandeDuSalon(salon, pourUnSeul);
+    const { ou, quoi, combien } = demandeDuSalon(salon, pourUnSeul);
     const p = tete;
     const moi = monPrenom() || "Vous";
     noter("reserve", combien, "salon");
     setAConfirmer(null);
-    surWhatsApp(texte);
     ecrireDansSalon(salon.cle, {
       qui: moi,
       voix: "systeme",
@@ -3813,9 +4000,18 @@ export function ApercuHabitant() {
                         }`
                   }
                 >
+                  {/* JAMAIS « 0 » — RELEVÉ À L'ESSAI, ET C'EST NOTRE PROPRE
+                      RÈGLE (T2 : pas de zéro affiché). Une fois la pastille
+                      lue, elle revenait au compte des gardés ; sans rien de
+                      gardé, elle affichait « 0 » — une porte étiquetée zéro,
+                      qui donne l'impression que la fonction est morte. Le
+                      chevron dit la même chose honnêtement : il y a quelque
+                      chose derrière, mais rien de neuf. */}
                   {!dejaLues && combienDeNouvelles > 0
                     ? combienDeNouvelles
-                    : gardees.length}
+                    : gardees.length > 0
+                      ? gardees.length
+                      : "›"}
                 </button>
               </div>
             </div>
@@ -3893,7 +4089,7 @@ export function ApercuHabitant() {
                 raison d'être autre chose qu'une politesse. */}
             {tourCarte && tour && tourEtat !== "fini" && (
               <div className={`ap-tour ${tourEtat}`}>
-                {tourEtat === "a-moi" ? (
+                {tourEnCours ? (
                   <>
                     <div className="ap-tour-h">
                       <span className="ap-tour-q">
@@ -4258,9 +4454,63 @@ export function ApercuHabitant() {
                                 {colDessus.col.objectif}
                               </em>
                             )}
+                            {/* ─── POURQUOI CETTE CARTE EST LA PREMIÈRE ───
+                                Les commerces suivis passent devant tout le
+                                reste. Sans le dire, le tri par distance a
+                                l'air cassé — « pourquoi la boulangerie avant
+                                le restaurant d'à côté ? ». Trois mots
+                                suffisent, et ils ne coûtent aucune hauteur :
+                                ils vivent dans le raccourci vers le bas,
+                                comme la mention du collectif. */}
+                            {/* « VOUS LE SUIVEZ » N'EST PAS ICI, ET C'EST UNE
+                                MESURE. Avec la mention du collectif, la bande
+                                passait à 56 px au lieu de 28 — deux lignes —
+                                et poussait la photo. Même réduite à la seule
+                                cloche, elle ne rentrait pas. Elle vit donc à
+                                l'emplacement du bouton « Suivre », juste
+                                dessous : un seul endroit, deux états, et la
+                                carte ne saute pas quand on s'abonne. */}
                             <i aria-hidden="true">⌄</i>
                           </button>
                         )}
+                        {/* ─── SUIVRE, SUR LA FACE ───
+                            « Pour s'abonner ça m'a l'air très loin » : le
+                            geste vivait sous le pli, à deux écrans de haut,
+                            et il fallait avoir déjà décidé pour le trouver.
+                            Il remonte ici, à côté des actions — pas SUR la
+                            photo, qui a été dégagée exprès, mais dans la
+                            bande qui la borde.
+                            ET IL PORTE LA PROMESSE DU MÉTIER, pas le verbe :
+                            « l'heure des fournées » chez le boulanger, « la
+                            pièce du jour » chez le boucher. La même phrase
+                            pour tous ne dit rien à personne. */}
+                        {dessus &&
+                          !embauches &&
+                          !suivis.includes(dessus.id) && (
+                            /* RIEN POUR CEUX QU'ON SUIT DÉJÀ, ET C'EST UNE
+                               CORRECTION MESURÉE. On y avait mis « Vous le
+                               suivez » pour expliquer pourquoi la carte passe
+                               devant — mais `.ap-suivi-vu`, trente lignes plus
+                               haut, le dit déjà et le dit mieux : « Le Pétrin
+                               d'Amanieu vient de publier · vous êtes parmi les
+                               premiers informés ». Sur la capture, les deux
+                               empilés faisaient QUATRE bandeaux entre la photo
+                               et les actions. Un doublon dans un écran plein
+                               n'est pas une redondance inoffensive : c'est ce
+                               qui fait qu'on ne lit plus aucun des deux. */
+                            <button
+                              type="button"
+                              className="ap-suivre-face"
+                              onPointerDown={(ev) => ev.stopPropagation()}
+                              onClick={() => suivreCeCommerce(dessus)}
+                            >
+                              <i aria-hidden="true">🔔</i>
+                              <span>
+                                <b>Suivre</b>
+                                {promesseDeSuivi(dessus)}
+                              </span>
+                            </button>
+                          )}
                       </CarteSwipe>
                     </div>
 
@@ -4959,19 +5209,7 @@ export function ApercuHabitant() {
                           className={`ap-suivre${suivis.includes(dessus.id) ? " on" : ""}`}
                           aria-pressed={suivis.includes(dessus.id)}
                           onPointerDown={(ev) => ev.stopPropagation()}
-                          onClick={() => {
-                            const suit = basculerSuivi(dessus.id);
-                            noter(suit ? "rappel-demande" : "je-passe", 0, "suivre");
-                            if (!suit) return;
-                            setEchoIcone("🔔");
-                            setEcho(
-                              `Vous suivez ${dessus.nom}. Vous serez prévenu avant les autres.`,
-                            );
-                            noter("notif-proposee", 0, "suivre");
-                            void demanderAvertissement().then((r) =>
-                              noter(r === "granted" ? "notif-acceptee" : "notif-refusee", 0, "suivre"),
-                            );
-                          }}
+                          onClick={() => suivreCeCommerce(dessus)}
                         >
                           <i aria-hidden="true">
                             {suivis.includes(dessus.id) ? "✓" : "🔔"}
@@ -4982,9 +5220,7 @@ export function ApercuHabitant() {
                                 ? `Vous suivez ${dessus.nom}`
                                 : `Suivre ${dessus.nom}`}
                             </b>
-                            {suivis.includes(dessus.id)
-                              ? "Vous saurez ce qu'il propose avant les autres."
-                              : "Soyez prévenu avant les autres de ce qu'il propose."}
+                            {promesseDeSuivi(dessus)}
                           </span>
                         </button>
                       </div>
@@ -5969,16 +6205,145 @@ export function ApercuHabitant() {
                             phrase se vérifie. */}
                         <p className="ap-conf-mot">{d.texte}</p>
                       </div>
+                      {/* ─── L'ALLER, PUIS LE RETOUR ───
+                          WhatsApp s'OUVRE, il n'envoie pas : c'est encore à
+                          la personne d'appuyer sur « envoyer ». Écrire
+                          « demande envoyée » dans le salon à l'aller est un
+                          mensonge que tout le groupe croira, et personne ne
+                          saura à midi que la table n'a jamais été demandée.
+                          On revient donc lui poser la seule question qui
+                          renseigne, et rien n'est enregistré avant. */}
+                      {aConfirmer.ouvert ? (
+                        <>
+                          <p className="ap-conf-retour">
+                            WhatsApp s&apos;est ouvert avec ce message. Il
+                            n&apos;est parti que si vous avez appuyé sur
+                            <b> envoyer</b>.
+                          </p>
+                          <div className="ap-conf-b">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setAConfirmer({
+                                  pourUnSeul: aConfirmer.pourUnSeul,
+                                })
+                              }
+                            >
+                              Pas encore
+                            </button>
+                            <button
+                              type="button"
+                              className="fort"
+                              onClick={() =>
+                                reserverPourLeSalon(aConfirmer.pourUnSeul)
+                              }
+                            >
+                              Oui, c&apos;est envoyé
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="ap-conf-b">
+                          <button type="button" onClick={() => setAConfirmer(null)}>
+                            Annuler
+                          </button>
+                          <button
+                            type="button"
+                            className="fort"
+                            onClick={() =>
+                              ouvrirWhatsAppPourLeSalon(aConfirmer.pourUnSeul)
+                            }
+                          >
+                            Envoyer la demande
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            </>
+          )}
+
+          {/* ─── PRÉVENEZ-LE — le dernier centimètre ───
+              « Autrement le boulanger ne le saura jamais parce qu'il ne
+              regardera pas son espace admin. » C'est exact, et c'est le seul
+              endroit du produit où l'on peut mentir : `wa.me` OUVRE WhatsApp,
+              il n'envoie pas. Tant qu'on n'a pas dit « je l'ai prévenu », rien
+              n'est enregistré et l'offre reste à prendre — voir `prevenir`. */}
+          {prevenir && (
+            <>
+              <button
+                type="button"
+                className="ap-fond"
+                aria-label="Fermer"
+                onClick={jeNePreviensPas}
+              />
+              <div className="ap-feuille ap-prev" role="dialog" aria-modal="true">
+                {(() => {
+                  const c = commentPrevenir({
+                    telephone: prevenir.telephone,
+                    quoi: prevenir.quoi,
+                    prenom: monPrenom() || undefined,
+                    quand: prevenir.quand,
+                  });
+                  return (
+                    <>
+                      <div className="ap-f-tete">
+                        <b>Prévenez {prevenir.nom}</b>
+                        <span className="simple">
+                          Sinon il ne le saura pas : il est devant son four, pas
+                          devant un écran.
+                        </span>
+                      </div>
+                      {/* LE MESSAGE EXACT, AVANT D'OUVRIR WHATSAPP. On envoie
+                          un message en son nom : il doit l'avoir lu avant, sans
+                          avoir à changer d'application pour le découvrir. */}
+                      <p className="ap-conf-mot">{c.texte}</p>
+                      <div className="ap-prev-b">
+                        <a
+                          className="wa"
+                          href={c.whatsapp}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => noter("reserve", 0, "prevenir-whatsapp")}
+                        >
+                          {/* « ENVOYER SUR WHATSAPP » PASSAIT SUR DEUX LIGNES
+                              à côté d'« Appeler » qui n'en prenait qu'une :
+                              deux boutons de la même paire qui n'ont pas la
+                              même hauteur de texte se lisent comme deux rangs
+                              différents. Le vert et la bulle disent déjà de
+                              quoi il s'agit. */}
+                          <i aria-hidden="true">💬</i>
+                          WhatsApp
+                        </a>
+                        {/* L'APPEL N'EST PAS EN PETIT. Une partie des gens
+                            n'écrira jamais à un commerçant et appellera sans
+                            hésiter ; leur imposer WhatsApp les ferait
+                            renoncer. Et un boulanger décroche. */}
+                        <a
+                          className="tel"
+                          href={c.appel}
+                          onClick={() => noter("reserve", 0, "prevenir-appel")}
+                        >
+                          <i aria-hidden="true">📞</i>
+                          Appeler
+                        </a>
+                      </div>
                       <div className="ap-conf-b">
-                        <button type="button" onClick={() => setAConfirmer(null)}>
-                          Annuler
+                        <button type="button" onClick={jeNePreviensPas}>
+                          Finalement non
                         </button>
                         <button
                           type="button"
                           className="fort"
-                          onClick={() => reserverPourLeSalon(aConfirmer.pourUnSeul)}
+                          onClick={() => {
+                            const suite = prevenir.alors;
+                            setPrevenir(null);
+                            suite?.();
+                          }}
                         >
-                          Envoyer la demande
+                          Je l&apos;ai prévenu
                         </button>
                       </div>
                     </>
@@ -7386,6 +7751,29 @@ export function ApercuHabitant() {
           gap:5px;margin-left:8px;padding-left:9px;font-weight:850;color:#F0B429;
           border-left:1px solid rgba(255,255,255,.22);}
         .ap-vb-col i{font-style:normal;font-size:11px;line-height:1;}
+        /* POURQUOI CETTE CARTE EST LA PREMIERE. Sans ces trois mots, le tri
+           par distance a l'air casse. Zero pixel de hauteur : la mention vit
+           dans le raccourci vers le bas, comme celle du collectif. */
+
+        /* ─── SUIVRE, SUR LA FACE DE L'ANNONCE ───
+           Le geste vivait sous le pli, a deux ecrans de haut. Il remonte ici,
+           dans la bande qui borde la photo — jamais SUR la photo, qui a ete
+           degagee expres. Discret par construction : bordure seule, pas de
+           fond plein, parce qu'il ne doit pas rivaliser avec « Reserver ». */
+        .ap-suivre-face{display:flex;align-items:center;gap:9px;width:100%;
+          margin-top:8px;font:inherit;text-align:left;cursor:pointer;
+          color:#C6D6CD;background:rgba(10,20,16,.5);
+          border:1px solid rgba(126,230,192,.3);border-radius:14px;
+          padding:8px 12px;backdrop-filter:blur(6px);}
+        .ap-suivre-face:active{transform:scale(.99);}
+        .ap-suivre-face>i{font-style:normal;font-size:15px;line-height:1;flex:none;}
+        .ap-suivre-face span{flex:1;min-width:0;display:block;font-size:11.5px;
+          line-height:1.3;color:#9FB5AA;}
+        .ap-suivre-face b{display:block;font-size:13px;font-weight:850;
+          color:#EAF2EC;letter-spacing:-.01em;}
+        /* Pas d'etat « deja suivi » ici : la bande .ap-suivi-vu le dit deja
+           sur la photo, et deux bandeaux qui disent la meme chose font qu'on
+           ne lit plus ni l'un ni l'autre. */
 
         /* ── LE BANDEAU DU COLLECTIF, EN TETE DU SALON ─────────────────────
            IL PASSE AVANT LA CONVERSATION, et c'est l'inverse de tous les
@@ -7876,6 +8264,30 @@ export function ApercuHabitant() {
         .ap-conf-mot{margin:2px 0 0;font-size:13px;line-height:1.5;color:#B9C6CE;
           background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
           border-radius:14px;padding:12px 14px;}
+        /* LA QUESTION DU RETOUR. WhatsApp s'OUVRE, il n'envoie pas : c'est la
+           seule phrase qui empeche l'ecran de mentir au groupe entier. */
+        .ap-conf-retour{margin:14px 0 0;font-size:13px;line-height:1.5;
+          color:#E7D3A6;background:rgba(240,180,41,.1);
+          border:1px solid rgba(240,180,41,.3);border-radius:14px;
+          padding:11px 13px;}
+        .ap-conf-retour b{color:#FFF6E2;font-weight:850;}
+
+        /* ─── PREVENEZ-LE ───
+           Deux liens, pas deux boutons : ils sortent de l'application, et un
+           <a> le dit au systeme (ouverture dans WhatsApp, composition du
+           numero) la ou un <button> demanderait du JavaScript pour faire
+           moins bien. L'appel est aussi gros que le message : une partie des
+           gens n'ecrira jamais a un commercant, et un boulanger decroche. */
+        .ap-prev-b{display:flex;gap:9px;margin-top:14px;}
+        .ap-prev-b a{flex:1;display:flex;align-items:center;justify-content:center;
+          gap:8px;font:inherit;font-size:14px;font-weight:850;text-decoration:none;
+          border-radius:14px;padding:13px 10px;}
+        .ap-prev-b a i{font-style:normal;font-size:15px;line-height:1;}
+        .ap-prev-b a.wa{flex:1.5;color:#04150E;background:#25D366;}
+        .ap-prev-b a.tel{color:#C7D3CC;background:rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.14);}
+        .ap-prev-b a:active{transform:scale(.98);}
+
         .ap-conf-b{display:flex;gap:9px;margin-top:16px;}
         .ap-conf-b button{flex:1;font:inherit;font-size:14.5px;font-weight:800;
           cursor:pointer;color:#C7D3CC;background:rgba(255,255,255,.06);

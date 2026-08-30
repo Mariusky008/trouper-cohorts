@@ -770,6 +770,16 @@ export type CarteAutour = {
    * silence est une information exacte.
    */
   bulletin?: Bulletin;
+  /**
+   * SON NUMÉRO — celui par lequel on le PRÉVIENT.
+   *
+   * Voir `prevenir.ts` : c'est le dernier centimètre du produit, celui où tout
+   * se perdait. Absent dans la maquette, où un numéro de fiction est calculé à
+   * la place — un numéro inventé au hasard existe vraiment chez quelqu'un, et
+   * la première démonstration enverrait « je prends les 2 croissants » à un
+   * inconnu. Le vrai produit portera le numéro déclaré par le commerçant.
+   */
+  telephone?: string;
   /** Ce que la fiche ajoute quand on descend. */
   fiche: { ou: string; horaires: string; mot: string };
   /** Ce qu'il propose à quelqu'un qui vient d'annoncer qu'il sort. Absent : il
@@ -2248,6 +2258,41 @@ export function autourDeMoi(heure: number, branche: CleMetier): CarteAutour[] {
  * dernier plat serait le pire service à lui rendre : ses abonnés croiraient
  * qu'il a publié, et il n'aurait plus aucune raison de le faire.
  */
+/**
+ * CE QU'ON GAGNE À SUIVRE CE COMMERCE-LÀ — une phrase par métier.
+ *
+ * LE DÉFAUT QU'ELLE CORRIGE, RELEVÉ À L'ESSAI : « pour s'abonner ça m'a l'air
+ * très loin et pas très clair des avantages qu'on en retire ». La promesse
+ * disait « soyez prévenu avant les autres de ce qu'il propose » — la même
+ * partout, donc vraie nulle part. C'est une phrase, pas un bénéfice : elle ne
+ * décrit rien qu'on puisse imaginer recevoir.
+ *
+ * CE QUI CHANGE : chaque métier promet L'INFORMATION QU'IL EST SEUL À AVOIR ET
+ * QUI CHANGE TOUS LES JOURS. C'est exactement le raisonnement de l'autocollant
+ * de vitrine — voir `public/qr-devanture.html` — et ce n'est pas un hasard :
+ * suivre un commerce et photographier son QR sont le même geste, à deux
+ * endroits différents. Les deux doivent donc promettre la même chose, sans quoi
+ * l'un des deux ment.
+ */
+export function promesseDeSuivi(c: CarteAutour): string {
+  const m = c.metier.toLowerCase();
+  if (/boulang/.test(m)) return "L'heure des fournées, et ce qu'il reste le soir.";
+  if (/pâtiss|patiss|chocolat/.test(m)) return "Les pièces du jour, en quantité limitée.";
+  if (/bouch|charcut/.test(m)) return "La pièce du jour, et ce qu'il en reste.";
+  if (/poissonn/.test(m)) return "L'arrivage du matin, et d'où il vient.";
+  if (/fromag/.test(m)) return "Ce qui est à point cette semaine.";
+  if (/primeur|épicer|epicer/.test(m)) return "Les prix du jour et ce qui est arrivé le matin.";
+  if (/fleur/.test(m)) return "Ce qui est arrivé du marché le matin.";
+  if (/coiff/.test(m)) return "Les rendez-vous qui se libèrent dans la journée.";
+  if (/ongle|institut|esthé|esthe/.test(m)) return "Les créneaux annulés, avant tout le monde.";
+  if (/cavist/.test(m)) return "Ce qui est ouvert à la dégustation aujourd'hui.";
+  if (/bar|café|cafe|brasser/.test(m)) return "Ce qui se passe ici ce soir.";
+  if (/mode|vêtement|vetement|friperie|prêt-à|pret-a/.test(m))
+    return "Les nouveautés, et les tailles qu'il reste.";
+  if (/restaur|traiteur|table/.test(m)) return "Le menu du jour, et les dernières places.";
+  return "Ce qu'il a aujourd'hui, avant les autres.";
+}
+
 export function nouvelleDuJour(
   c: CarteAutour,
   heure: number,
