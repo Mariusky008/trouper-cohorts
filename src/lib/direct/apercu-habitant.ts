@@ -2290,12 +2290,18 @@ export function promesseDeSuivi(c: CarteAutour): string {
   if (/primeur|épicer|epicer/.test(m)) return "les prix du jour et ce qui arrive le matin";
   if (/fleur/.test(m)) return "ce qui est arrivé du marché le matin";
   if (/coiff/.test(m)) return "les rendez-vous qui se libèrent dans la journée";
-  if (/ongle|institut|esthé|esthe/.test(m)) return "les créneaux annulés du jour";
+  // « PROTHÉSISTE ONGULAIRE » NE CONTIENT PAS « ONGLERIE », et c'est le genre
+  // de trou qui ne se voit pas : la promesse retombait sur le défaut, « ses
+  // offres du jour », qui ne dit rien à personne. Les libellés de métier sont
+  // ceux que les commerçants emploient, pas ceux de nos six familles.
+  if (/ongle|ongul|institut|esthé|esthe|beauté|beaute/.test(m))
+    return "les créneaux annulés du jour";
   if (/cavist/.test(m)) return "ce qui est ouvert à la dégustation";
   if (/bar|café|cafe|brasser/.test(m)) return "ce qui se passe ici ce soir";
-  if (/mode|vêtement|vetement|friperie|prêt-à|pret-a/.test(m))
+  if (/mode|vêtement|vetement|friperie|prêt-à|pret-a|chaussur/.test(m))
     return "les nouveautés et les tailles qu'il reste";
-  if (/restaur|traiteur|table/.test(m)) return "le menu du jour et les dernières places";
+  if (/traiteur/.test(m)) return "les plats cuisinés du jour";
+  if (/restaur|table|brasser/.test(m)) return "le menu du jour et les dernières places";
   return "ses offres du jour";
 }
 

@@ -655,6 +655,37 @@ export function ApercuHabitant() {
    * L'épingle ne déplace qu'elle, et se retire dès qu'on l'a passée.
    */
   const [epingle, setEpingle] = useState("");
+
+  /**
+   * ─── ON ARRIVE PAR LE QR D'UN COMMERÇANT, PAS PAR LA PORTE PRINCIPALE ───
+   *
+   * LE DÉFAUT QUE ÇA RÈGLE, ET IL AURAIT TOUT FAIT ÉCHOUER. « Quand ils vont
+   * photographier le QR code ils vont tomber sur l'app mais pas sur le profil
+   * du commerçant, donc il risque d'être un peu perdu et tomber sur Le Direct
+   * avec des annonces d'autres commerçants qu'ils ne connaissent pas. » C'est
+   * exact, et c'est fatal : on a promis sur un autocollant « l'heure des
+   * fournées », la personne obtient un restaurant qu'elle ne connaît pas à
+   * 300 mètres, et elle referme. On aura brûlé le seul geste qu'elle nous
+   * accordait, et le commerçant aura appris que « ça ne marche pas ».
+   *
+   * CE QU'ELLE VOIT À LA PLACE : LUI. Son nom, ce qu'il a aujourd'hui, et le
+   * bouton qui tient exactement la promesse de l'autocollant. La ville vient
+   * après, et seulement si elle veut bien.
+   *
+   * LE PARAMÈTRE EST « chez », et il porte l'identifiant du commerce. Dans le
+   * vrai produit ce sera son adresse à lui — clikme.fr/le-petrin — mais le
+   * mécanisme est celui-ci : une porte par commerçant, et chacun distribue la
+   * sienne.
+   */
+  const [arrivee, setArrivee] = useState("");
+  useEffect(() => {
+    try {
+      const chez = new URLSearchParams(window.location.search).get("chez");
+      if (chez) setArrivee(chez);
+    } catch {
+      /* Pas d'URL lisible : on ouvre l'application normalement. */
+    }
+  }, []);
   /**
    * LA PHOTO REGARDÉE DANS LE CARROUSEL DE L'ANNONCE.
    *
@@ -1801,6 +1832,9 @@ export function ApercuHabitant() {
    * avoir nulle part ailleurs, et c'est ce qui rend le geste « prévenez-moi »
    * intéressant pour autre chose que de la politesse.
    */
+  /** Le commerce dont on vient de photographier le QR. Voir `arrivee`. */
+  const carteArrivee = arrivee ? toutes.find((c) => c.id === arrivee) : undefined;
+
   const tourCarte = toutes.find((c) => suivis.includes(c.id) && c.bulletin?.tour);
   const tour = tourCarte?.bulletin?.tour;
   const tourMinutes = tour?.minutes ?? 0;
@@ -1822,8 +1856,14 @@ export function ApercuHabitant() {
    * sur iPhone elle n'existe que si l'application est posée sur l'écran
    * d'accueil : sans le doublon, la moitié des gens ne verrait jamais l'avis.
    */
+  // PAS D'AVIS QUAND ON ARRIVE PAR LE QR D'UN COMMERÇANT. Mesuré : l'avis
+  // partait 2,6 s après l'ouverture et écrasait l'écho « vous suivez Le Pétrin
+  // d'Amanieu » qu'on venait de déclencher. Mais le vrai motif est plus simple
+  // que le conflit d'affichage : quelqu'un qui vient de photographier
+  // l'autocollant d'un boulanger n'a rien à faire d'un résumé sur trois autres
+  // commerces. Il est venu pour un seul.
   useEffect(() => {
-    if (combienDeNouvelles === 0 || avisDuMatinDejaEnvoye()) return;
+    if (combienDeNouvelles === 0 || arrivee || avisDuMatinDejaEnvoye()) return;
     const t = setTimeout(() => {
       const premier = nouvelles.find((x) => x.n);
       const texte =
@@ -1847,7 +1887,7 @@ export function ApercuHabitant() {
     // Volontairement sur le seul compte : le contenu du tableau change à chaque
     // rendu, et l'avis ne doit partir qu'une fois.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [combienDeNouvelles]);
+  }, [combienDeNouvelles, arrivee]);
 
   // ON ARME LE COMPTE UNE FOIS, quand l'offre apparaît.
   useEffect(() => {
@@ -1973,6 +2013,28 @@ export function ApercuHabitant() {
     if (/^Un /.test(nom)) return `d’un ${nom.slice(3)}`;
     if (/^[AEIOUYÉÈÀH]/.test(nom)) return `d’${nom}`;
     return `de ${nom}`;
+  }
+
+  /**
+   * ON ENTRE DEPUIS SA PORTE À LUI — et sa carte est la première du paquet.
+   *
+   * Que l'on se soit abonné ou non, on ne bascule pas dans une ville
+   * d'inconnus : on retombe sur SON annonce, celle qu'on venait voir. C'est le
+   * même mécanisme que l'épinglage depuis les gardés — le tri par distance
+   * n'est pas cassé, une carte sort de son rang le temps qu'on la regarde.
+   */
+  function entrerDepuisLArrivee(suivre: boolean) {
+    const c = carteArrivee;
+    if (!c) return;
+    noter("arrivee", 0, suivre ? "suit" : "entre");
+    if (suivre && !suivis.includes(c.id)) suivreCeCommerce(c);
+    setEmbauches(false);
+    setBranche(c.branche);
+    setVue("metiers");
+    setEnvies([]);
+    setPassees([]);
+    setEpingle(c.id);
+    setArrivee("");
   }
 
   /** La porte des nouvelles : la pastille, et la bulle qui la désigne. */
@@ -6341,6 +6403,93 @@ export function ApercuHabitant() {
             </>
           )}
 
+          {/* ─── LA PORTE DU COMMERÇANT ───
+              On arrive ici par SON autocollant, pas par la porte principale.
+              Voir `arrivee` : la personne a photographié un QR qui promettait
+              « l'heure des fournées » ; si elle atterrit sur le paquet, elle
+              trouve un restaurant qu'elle ne connaît pas à trois cents mètres
+              et elle referme. On aura brûlé le seul geste qu'elle nous
+              accordait, et le commerçant aura appris que ça ne marche pas.
+
+              CE QU'ELLE VOIT DONC : LUI. Son nom en grand, ce qu'il a
+              aujourd'hui, et un seul bouton qui tient exactement la promesse
+              de l'autocollant. La ville est en bas, en petit, et seulement si
+              elle veut bien. */}
+          {carteArrivee && (
+            <div className="ap-arrivee">
+              {carteArrivee.photo && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="ap-arr-photo" src={carteArrivee.photo} alt="" />
+              )}
+              <div className="ap-arr-corps">
+                <p className="ap-arr-ou">Vous êtes chez</p>
+                <h2 className="ap-arr-nom">{carteArrivee.nom}</h2>
+                <p className="ap-arr-m">
+                  {carteArrivee.metier} · {carteArrivee.fiche.ou}
+                </p>
+
+                {/* CE QU'IL A AUJOURD'HUI, TOUT DE SUITE. C'est la promesse de
+                    l'autocollant, et elle doit être tenue avant qu'on demande
+                    quoi que ce soit — pas après. Un écran qui réclame un
+                    abonnement pour montrer ce qu'on venait voir est refermé. */}
+                <p className="ap-arr-t">Aujourd&apos;hui</p>
+                <ul className="ap-arr-jour">
+                  {momentsRestants(carteArrivee, heure)
+                    .slice(0, 3)
+                    .map((m) => (
+                      <li key={m.titre}>
+                        <i aria-hidden="true">{m.icone ?? "•"}</i>
+                        <span>
+                          <b>{m.titre}</b>
+                          {m.quand}
+                          {m.prix ? ` · ${m.prix}` : ""}
+                        </span>
+                      </li>
+                    ))}
+                  {momentsRestants(carteArrivee, heure).length === 0 && (
+                    <li className="rien">
+                      <i aria-hidden="true">·</i>
+                      <span>
+                        <b>Plus rien pour aujourd&apos;hui</b>
+                        Vous verrez ce qu&apos;il a demain matin.
+                      </span>
+                    </li>
+                  )}
+                </ul>
+
+                <button
+                  type="button"
+                  className="ap-arr-b"
+                  onClick={() => entrerDepuisLArrivee(true)}
+                >
+                  {/* LA PHRASE EST DANS LE BOUTON, PAS SOUS LUI. « Être
+                      prévenu » seul ne dit pas de quoi ; posée en gris
+                      dessous, l'explication se lit comme une note de bas de
+                      page. Ensemble, le bouton se suffit. */}
+                  <b>Être prévenu</b>
+                  <span>Recevez en priorité {promesseDeSuivi(carteArrivee)}.</span>
+                </button>
+                <p className="ap-arr-rien">
+                  Rien à installer. Pas de compte, pas de numéro.
+                </p>
+                {/* LA VILLE EST EN BAS ET EN PETIT. C'est le contraire de ce
+                    qu'on ferait spontanément — on voudrait montrer tout ce
+                    qu'il y a. Mais la personne n'est pas venue pour la ville,
+                    elle est venue pour lui, et lui montrer trente inconnus
+                    avant de lui avoir donné ce qu'elle cherchait est
+                    exactement ce qui la fait refermer. */}
+                <button
+                  type="button"
+                  className="ap-arr-ville"
+                  onClick={() => entrerDepuisLArrivee(false)}
+                >
+                  Voir aussi ce qui se passe ailleurs à Dax
+                  <s aria-hidden="true">›</s>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* ─── PRÉVENEZ-LE — le dernier centimètre ───
               « Autrement le boulanger ne le saura jamais parce qu'il ne
               regardera pas son espace admin. » C'est exact, et c'est le seul
@@ -8833,6 +8982,58 @@ export function ApercuHabitant() {
           border-color:rgba(61,226,166,.4);}
         .ap-suivre.on span{color:#8C9C94;}
         .ap-suivre.on b{color:#CFF7E6;}
+
+        /* ═══ LA PORTE DU COMMERCANT ═══
+           On arrive ici par SON autocollant. Elle couvre tout : ce n'est pas
+           une feuille par-dessus l'application, c'est la premiere chose que
+           quelqu'un voit de ClikMe, et il ne doit pas apercevoir derriere
+           trente commerces qu'il ne connait pas. */
+        .ap-arrivee{position:absolute;inset:0;z-index:20;overflow-y:auto;
+          background:#050B09;display:flex;flex-direction:column;
+          animation:apArr .34s ease-out;}
+        @keyframes apArr{from{opacity:0;}}
+        .ap-arr-photo{width:100%;height:190px;flex:none;object-fit:cover;
+          -webkit-mask-image:linear-gradient(#000 52%,transparent);
+          mask-image:linear-gradient(#000 52%,transparent);}
+        .ap-arr-corps{flex:1;display:flex;flex-direction:column;
+          padding:0 18px 22px;margin-top:-58px;position:relative;}
+        .ap-arr-ou{margin:0;font-size:11px;font-weight:800;letter-spacing:.16em;
+          text-transform:uppercase;color:#8FE9C4;}
+        .ap-arr-nom{margin:4px 0 0;font-size:27px;font-weight:900;color:#FFF;
+          letter-spacing:-.03em;line-height:1.08;}
+        .ap-arr-m{margin:5px 0 0;font-size:13px;color:#8FA79B;}
+        .ap-arr-t{margin:22px 0 9px;font-size:10.5px;font-weight:850;
+          letter-spacing:.14em;text-transform:uppercase;color:#7F988B;}
+        .ap-arr-jour{list-style:none;margin:0;padding:0;display:flex;
+          flex-direction:column;gap:8px;}
+        .ap-arr-jour li{display:flex;align-items:center;gap:11px;
+          background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+          border-radius:15px;padding:11px 13px;}
+        .ap-arr-jour i{font-style:normal;font-size:19px;line-height:1;flex:none;}
+        .ap-arr-jour span{flex:1;min-width:0;font-size:11.5px;color:#8FA79B;
+          line-height:1.35;}
+        .ap-arr-jour b{display:block;font-size:14.5px;font-weight:850;
+          color:#EAF2EC;letter-spacing:-.01em;}
+        .ap-arr-jour li.rien{border-style:dashed;background:transparent;}
+        .ap-arr-jour li.rien b{color:#8C9C94;}
+        /* LE BOUTON EST LE SEUL PLEIN DE L'ECRAN : il n'y a qu'une chose a
+           faire ici, et c'est celle qu'on a promise sur l'autocollant. */
+        /* LE BOUTON SUIT LA LISTE, il ne colle pas au bas de l'ecran : avec
+           deux moments seulement, un margin-top automatique laissait un trou
+           de trois cents pixels au milieu de la page — mesure sur capture. */
+        .ap-arr-b{margin-top:26px;width:100%;font:inherit;text-align:left;
+          cursor:pointer;border:0;border-radius:16px;padding:14px 18px 15px;
+          color:#04351F;background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
+        .ap-arr-b b{display:block;font-size:17px;font-weight:900;color:#04150E;
+          letter-spacing:-.02em;}
+        .ap-arr-b span{display:block;margin-top:3px;font-size:12.5px;
+          line-height:1.35;font-weight:600;}
+        .ap-arr-b:active{transform:scale(.99);}
+        .ap-arr-rien{margin:8px 0 0;font-size:11.5px;color:#7F988B;}
+        .ap-arr-ville{margin-top:16px;display:flex;align-items:center;gap:8px;
+          font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;
+          color:#8FA79B;background:none;border:0;padding:6px 0;}
+        .ap-arr-ville s{text-decoration:none;}
 
         /* ─── CE QUI VOUS ATTEND, SOUS LA PASTILLE ───
            Elle remplace la bande qui vivait au milieu de l'annonce. Elle est
