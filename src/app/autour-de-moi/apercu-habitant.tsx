@@ -71,10 +71,14 @@ import {
 } from "@/lib/direct/preparation";
 import { abonnerVus, chargerVus, marquerVu, RIEN_VU } from "@/lib/direct/premiere-fois";
 import {
+  abonnerLecture,
   abonnerSuivis,
   AUCUN_SUIVI,
   basculerSuivi,
   chargerSuivis,
+  marquerNouvellesLues,
+  nouvellesLues,
+  nouvellesLuesServeur,
 } from "@/lib/direct/suivis";
 import {
   abonnerVille,
@@ -121,6 +125,7 @@ import {
   comptesParMetier,
   momentEnCours,
   momentsRestants,
+  nouvelleDuJour,
   avisNotes,
   moyenneAvis,
   repondeurs,
@@ -917,6 +922,17 @@ export function ApercuHabitant() {
    * Voir `lib/direct/suivis.ts`.
    */
   const suivis = useSyncExternalStore(abonnerSuivis, chargerSuivis, () => AUCUN_SUIVI);
+  /**
+   * A-T-ON DÉJÀ OUVERT LES NOUVELLES DU JOUR ? Voir `suivis.ts` : la pastille
+   * du cœur s'allume le matin quand les commerces suivis publient, s'éteint
+   * quand on l'ouvre, et se rallume le lendemain. C'est une date qui est
+   * gardée, pas un état — sinon elle ne se rallumerait jamais.
+   */
+  const dejaLues = useSyncExternalStore(
+    abonnerLecture,
+    nouvellesLues,
+    nouvellesLuesServeur,
+  );
 
   function allerA_onglet(o: "direct" | "ville" | "salons" | "profil") {
     // ON FERME CE QUI EST PAR-DESSUS, ET C'EST INDISPENSABLE DEPUIS QUE LA
@@ -1219,7 +1235,14 @@ export function ApercuHabitant() {
         // vient d'enlever. La distance est le seul tri qui ait du sens quand on
         // demande « qu'est-ce qui se passe autour de moi ».
         : vue === "tout"
-          ? [...toutes, ...embauchent.filter((c) => !toutes.includes(c)), ...evenements].sort(
+          ? [
+              // MÊME RÈGLE QUE `autourDeMoi` : celui qui n'a pas fait son
+              // planning n'a pas de carte aujourd'hui, y compris dans « tout ».
+              // Son annonce d'emploi, elle, arrive par `embauchent`.
+              ...toutes.filter((c) => !c.silencieux),
+              ...embauchent.filter((c) => c.silencieux || !toutes.includes(c)),
+              ...evenements,
+            ].sort(
               (a, b) => a.metres - b.metres,
             )
           : selonEnvies(autourDeMoi(heure, branche), envies, heure);
@@ -1651,6 +1674,18 @@ export function ApercuHabitant() {
   // n'est dupliqué, donc rien ne peut se désynchroniser de ce qui est à l'écran.
   const mesGardes = toutes.filter((c) => gardees.includes(c.id));
   const mesSuivis = toutes.filter((c) => suivis.includes(c.id));
+  /**
+   * CE QUE MES COMMERCES ONT DIT AUJOURD'HUI — la matière de la pastille.
+   *
+   * CHAQUE SUIVI A UNE LIGNE, MÊME CELUI QUI N'A RIEN DIT. C'est le contraire
+   * d'un fil d'actualité, qui ne montre que ce qui existe : ici l'absence est
+   * une information, et c'est même la seule que le commerçant ne peut pas
+   * ignorer. Un boulanger qui voit « Rien aujourd'hui » à sa ligne, entre deux
+   * voisins qui ont quelque chose, comprend en une seconde ce que son matin
+   * vaut — et personne n'a besoin de le lui expliquer.
+   */
+  const nouvelles = mesSuivis.map((c) => ({ c, n: nouvelleDuJour(c, heure) }));
+  const combienDeNouvelles = nouvelles.filter((x) => x.n).length;
   const mesReserves = reserves.flatMap((cle) => {
     const [a, b] = cle.split("|");
     if (a === "vais" || a === "emb") {
@@ -1894,23 +1929,38 @@ export function ApercuHabitant() {
    */
   const monEspace = (
     <div className="ap-f-liste">
+      {/* ─── LES SUIVIS NE SONT PLUS LISTÉS ICI, ILS SONT DERRIÈRE LE CŒUR ───
+          Ils s'affichaient en toutes lettres à deux endroits. La même liste à
+          deux endroits est un défaut : on ne sait jamais lequel des deux dit
+          vrai, et surtout celle-ci ne disait que des noms — pas ce qu'ils ont
+          publié aujourd'hui, qui est la seule chose qu'on vient y chercher. */}
       {mesSuivis.length > 0 && (
         <div className="ap-moi-bloc">
           <h4>
             Suivis<b>{mesSuivis.length}</b>
           </h4>
           <ul>
-            {mesSuivis.map((c) => (
-              <li key={c.id}>
-                <div className="ap-moi-l fixe">
-                  <i aria-hidden="true">🔔</i>
-                  <span>
-                    <b>{c.nom}</b>
-                    Prévenu avant les autres · {c.metier}
-                  </span>
-                </div>
-              </li>
-            ))}
+            <li>
+              <button
+                type="button"
+                className="ap-moi-l"
+                onClick={() => {
+                  marquerNouvellesLues();
+                  setFavorisPage(true);
+                }}
+              >
+                <i aria-hidden="true">🔔</i>
+                <span>
+                  <b>Mes commerces</b>
+                  {combienDeNouvelles > 0
+                    ? `${combienDeNouvelles} ${
+                        combienDeNouvelles > 1 ? "ont publié" : "a publié"
+                      } aujourd'hui · ${mesSuivis.length} suivis`
+                    : `Aucun n'a publié aujourd'hui · ${mesSuivis.length} suivis`}
+                </span>
+                <em aria-hidden="true">›</em>
+              </button>
+            </li>
           </ul>
         </div>
       )}
@@ -2355,10 +2405,12 @@ export function ApercuHabitant() {
               l'écran entier, avec sa propre barre en haut et ses actions en bas,
               et le paquet attend derrière. */}
           {favorisPage ? (
-            /* ─── MES FAVORIS ───
-               Une page à elle seule : quelqu'un qui vient de garder quelque
-               chose veut voir CE qu'il a gardé, pas ses réservations et ses
-               rappels au milieu. */
+            /* ─── MES COMMERCES ───
+               C'était « mes favoris », une liste de noms qu'on a gardés. Il y
+               manquait la moitié qui vit : ce que ces commerces DISENT. La
+               page porte donc deux choses, et jamais dans le désordre — ce
+               qu'ils ont publié aujourd'hui d'abord, parce que c'est ce qui se
+               périme ; ce qu'on a mis de côté ensuite, parce que ça attendra. */
             <div className="ap-page">
               <div className="ap-page-h">
                 <button
@@ -2370,23 +2422,98 @@ export function ApercuHabitant() {
                   {NOM_ONGLET[onglet]}
                 </button>
                 <span className="ap-page-t">
-                  <b>Mes favoris</b>
+                  <b>Mes commerces</b>
                   <em>
-                    {mesGardes.length}{" "}
-                    {mesGardes.length > 1 ? "commerces gardés" : "commerce gardé"}
+                    {mesSuivis.length} suivi{mesSuivis.length > 1 ? "s" : ""} ·{" "}
+                    {mesGardes.length} gardé{mesGardes.length > 1 ? "s" : ""}
                   </em>
                 </span>
               </div>
               <div className="ap-sal-corps">
-                {mesGardes.length === 0 ? (
-                  <div className="ap-moi-vide">
-                    <span aria-hidden="true">💚</span>
-                    <b>Rien de gardé pour l&apos;instant.</b>
-                    <i>
-                      Le cœur sur la photo d&apos;une annonce la range ici, pour
-                      la retrouver plus tard.
-                    </i>
+                {nouvelles.length > 0 && (
+                  <div className="ap-nouv">
+                    <h4>
+                      Aujourd&apos;hui
+                      <b>
+                        {combienDeNouvelles} sur {nouvelles.length}
+                      </b>
+                    </h4>
+                    {nouvelles.map(({ c, n }) =>
+                      n ? (
+                        <button
+                          key={c.id}
+                          type="button"
+                          className="ap-nouv-l"
+                          onClick={() => {
+                            setFavorisPage(false);
+                            setEmbauches(false);
+                            setBranche(c.branche);
+                            setVue("metiers");
+                            setEnvies([]);
+                            setPassees([]);
+                            setEpingle(c.id);
+                          }}
+                        >
+                          {c.photo ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={c.photo} alt="" loading="lazy" />
+                          ) : (
+                            <i aria-hidden="true">{n.moment.icone ?? "•"}</i>
+                          )}
+                          <span>
+                            <u>{c.nom}</u>
+                            <b>{n.moment.titre}</b>
+                            <em>
+                              {/* « CE MIDI » ET « DANS UNE HEURE » N'APPELLENT
+                                  PAS LE MÊME GESTE : on ne se déplace pas pour
+                                  ce qui est fini. Le passé le dit. */}
+                              {n.passe ? "C'était aujourd'hui" : n.moment.quand}
+                              {n.moment.prix ? ` · ${n.moment.prix}` : ""}
+                            </em>
+                          </span>
+                          <s aria-hidden="true">›</s>
+                        </button>
+                      ) : (
+                        /* ─── LA LIGNE QUI FAIT TOUT LE TRAVAIL ───
+                           Elle n'est pas une case vide : c'est exactement ce
+                           que ses clients lisent le jour où il ne fait pas son
+                           planning du matin, à côté de trois voisins qui ont
+                           quelque chose. Aucune phrase d'argumentaire ne
+                           remplace ça. */
+                        <div key={c.id} className="ap-nouv-l muet">
+                          <i aria-hidden="true">·</i>
+                          <span>
+                            <u>{c.nom}</u>
+                            <b>Rien aujourd&apos;hui</b>
+                            <em>{c.metier} · il n&apos;a pas publié</em>
+                          </span>
+                        </div>
+                      ),
+                    )}
                   </div>
+                )}
+                {mesGardes.length > 0 && nouvelles.length > 0 && (
+                  <h4 className="ap-nouv-t">Gardés</h4>
+                )}
+                {mesGardes.length === 0 ? (
+                  /* LE GRAND VIDE NE S'AFFICHE QUE SI LA PAGE EST VRAIMENT
+                     VIDE. Une pleine page « rien de gardé » sous trois
+                     nouvelles du jour ferait croire qu'on est arrivé au mauvais
+                     endroit ; une ligne suffit. */
+                  nouvelles.length > 0 ? (
+                    <p className="ap-nouv-rien">
+                      Rien de gardé — le cœur, en haut, range une annonce ici.
+                    </p>
+                  ) : (
+                    <div className="ap-moi-vide">
+                      <span aria-hidden="true">💚</span>
+                      <b>Rien de gardé pour l&apos;instant.</b>
+                      <i>
+                        Le cœur sur la photo d&apos;une annonce la range ici,
+                        pour la retrouver plus tard.
+                      </i>
+                    </div>
+                  )
                 ) : (
                   <div className="ap-liste">
                     {mesGardes.map((c) => (
@@ -3499,16 +3626,44 @@ export function ApercuHabitant() {
                 >
                   {gardeSommet ? "💚" : "♡"}
                 </button>
+                {/* ─── LE CHIFFRE EST DEVENU LA PORTE DES NOUVELLES ───
+                    Il comptait les annonces gardées. Un stock ne bouge pas :
+                    la pastille affichait le même nombre pendant des semaines,
+                    et on apprend en trois jours à ne plus la regarder.
+
+                    Elle compte maintenant CE QUE LES COMMERCES SUIVIS ONT
+                    PUBLIÉ AUJOURD'HUI — un flux, qui arrive le matin et se
+                    périme le soir. C'est ce qui donne au commerçant une
+                    promesse qu'il peut vérifier : « vos abonnés ont une
+                    pastille qui s'allume quand vous publiez ; si vous ne
+                    publiez pas, elle ne s'allume pas. »
+
+                    LES DEUX NOMBRES NE SE MÉLANGENT JAMAIS. Quand il y a du
+                    neuf non lu, la pastille est ambre et compte les
+                    nouvelles ; sinon elle redevient verte et compte les
+                    gardés. La couleur dit laquelle des deux on lit, et la
+                    porte ne disparaît jamais. */}
                 <button
                   type="button"
-                  className="nb"
+                  className={`nb${!dejaLues && combienDeNouvelles > 0 ? " neuf" : ""}`}
                   onClick={() => {
-                    noter("onglet", gardees.length, "favoris");
+                    noter("onglet", combienDeNouvelles, "mes-commerces");
+                    marquerNouvellesLues();
                     setFavorisPage(true);
                   }}
-                  aria-label="Mes favoris"
+                  aria-label={
+                    !dejaLues && combienDeNouvelles > 0
+                      ? `Mes commerces · ${combienDeNouvelles} ${
+                          combienDeNouvelles > 1 ? "nouvelles" : "nouvelle"
+                        } aujourd'hui`
+                      : `Mes commerces · ${gardees.length} gardé${
+                          gardees.length > 1 ? "s" : ""
+                        }`
+                  }
                 >
-                  {gardees.length}
+                  {!dejaLues && combienDeNouvelles > 0
+                    ? combienDeNouvelles
+                    : gardees.length}
                 </button>
               </div>
             </div>
@@ -6400,6 +6555,18 @@ export function ApercuHabitant() {
         .ap-fav2 .nb{font-size:12px;font-weight:850;color:#fff;min-width:30px;
           border-left:1px solid rgba(126,230,192,.28);
           font-variant-numeric:tabular-nums;}
+        /* LA MOITIE DROITE S'ALLUME QUAND LES COMMERCES SUIVIS ONT PUBLIE.
+           L'ambre n'est pas decoratif : c'est la seule chose qui distingue « 3
+           nouvelles ce matin » de « 3 annonces gardees depuis trois semaines ».
+           Elle s'eteint des qu'on ouvre, et revient le lendemain. */
+        .ap-fav2 .nb.neuf{color:#04150E;background:#F0B429;
+          border-left-color:rgba(240,180,41,.6);
+          animation:apNeuf 2.6s ease-in-out infinite;}
+        @keyframes apNeuf{0%,72%,100%{box-shadow:0 0 0 0 rgba(240,180,41,0);}
+          84%{box-shadow:0 0 0 4px rgba(240,180,41,.26);}}
+        @media (prefers-reduced-motion:reduce){
+          .ap-fav2 .nb.neuf{animation:none;}
+        }
         .ap-fav2 button:focus-visible{outline:2px solid #3DE2A6;outline-offset:-2px;}
 
         /* ─── CE QUI EST DESCENDU DANS LA FEUILLE ─── */
@@ -8168,6 +8335,53 @@ export function ApercuHabitant() {
         .ap-ligne s.direct{color:#FFC9C9;background:rgba(239,68,68,.2);
           border:1px solid rgba(239,68,68,.42);border-radius:999px;
           font-size:8.5px;letter-spacing:.08em;padding:4px 7px;}
+
+        /* ─── CE QUE MES COMMERCES ONT DIT AUJOURD'HUI ───
+           Meme dessin que les lignes gardees, a une difference pres : le NOM
+           passe au-dessus et CE QU'IL A DIT en gros. Dans une liste de gardes
+           on cherche un commerce ; ici on lit une journee, et le nom n'est que
+           la signature. */
+        .ap-nouv{margin-bottom:14px;}
+        .ap-nouv h4,.ap-nouv-t{display:flex;align-items:center;gap:7px;
+          margin:2px 0 9px;font-size:10.5px;font-weight:850;letter-spacing:.1em;
+          text-transform:uppercase;color:#7F988B;}
+        .ap-nouv-t{margin-top:16px;}
+        .ap-nouv h4 b{font-size:10px;font-weight:800;color:#04150E;
+          background:#F0B429;border-radius:999px;padding:2px 7px;
+          letter-spacing:.02em;}
+        .ap-nouv-l{display:flex;align-items:center;gap:11px;width:100%;font:inherit;
+          text-align:left;cursor:pointer;color:#A9BBB1;
+          background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+          border-radius:15px;padding:9px 11px 9px 9px;margin-bottom:8px;}
+        .ap-nouv-l:active{transform:scale(.99);}
+        .ap-nouv-l img{width:52px;height:52px;flex:none;object-fit:cover;
+          border-radius:11px;}
+        .ap-nouv-l>i{width:52px;height:52px;flex:none;display:flex;
+          align-items:center;justify-content:center;font-style:normal;
+          font-size:21px;background:rgba(255,255,255,.06);border-radius:11px;}
+        .ap-nouv-l span{flex:1;min-width:0;display:block;}
+        .ap-nouv-l u{display:block;text-decoration:none;font-size:11.5px;
+          font-weight:750;color:#8FE9C4;}
+        .ap-nouv-l b{display:block;font-size:14px;font-weight:850;color:#EAF2EC;
+          letter-spacing:-.01em;margin-top:1px;white-space:nowrap;
+          overflow:hidden;text-overflow:ellipsis;}
+        .ap-nouv-l em{display:block;font-style:normal;font-size:11px;
+          color:#7F988B;margin-top:2px;white-space:nowrap;overflow:hidden;
+          text-overflow:ellipsis;}
+        .ap-nouv-l s{flex:none;text-decoration:none;font-size:11px;
+          font-weight:850;color:#7F988B;}
+        /* CELUI QUI N'A RIEN DIT NE SE CLIQUE PAS ET NE SE CACHE PAS. Il n'a
+           pas de photo, pas de chevron, pas de vert : ce n'est pas un endroit
+           ou aller aujourd'hui. Mais il reste a sa place dans la liste, entre
+           deux voisins qui ont quelque chose — c'est tout l'interet. */
+        .ap-nouv-l.muet{background:transparent;border-style:dashed;
+          border-color:rgba(255,255,255,.13);cursor:default;}
+        .ap-nouv-l.muet>i{font-size:15px;color:#5E7168;background:none;
+          border:1px dashed rgba(255,255,255,.13);}
+        .ap-nouv-l.muet u{color:#8C9C94;}
+        .ap-nouv-l.muet b{color:#8C9C94;font-weight:800;}
+        .ap-nouv-l.muet em{color:#5E7168;}
+        .ap-nouv-rien{margin:0;font-size:12px;color:#7F988B;}
 
         /* LE CHAMP. Colle en bas, avec la marge de securite du bas d'ecran :
            sans elle, la barre gestuelle d'Android mange le bouton d'envoi. */

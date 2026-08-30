@@ -26,6 +26,28 @@ const abonnes = new Set<() => void>();
 export const AUCUN_SUIVI: string[] = [];
 let cache: string[] | null = null;
 
+/**
+ * QUATRE COMMERCES DÉJÀ SUIVIS, AU PREMIER OUVRAGE — et c'est une décision.
+ *
+ * UNE FONCTION QUI NE SE VOIT QU'APRÈS COUP N'EXISTE PAS. La pastille du cœur
+ * ne dit quelque chose que si l'on suit déjà quelqu'un : à zéro suivi, elle
+ * affiche zéro, et celui qui essaie l'application n'a aucune raison de deviner
+ * qu'il faut d'abord appuyer sur « Prévenez-moi » trois fois pour comprendre à
+ * quoi elle sert. On démarre donc avec un voisinage, comme quelqu'un qui
+ * utilise l'application depuis un mois.
+ *
+ * LE QUATRIÈME EST MUET, ET C'EST LE PLUS IMPORTANT DES QUATRE. Voir
+ * `silencieux` dans les fiches : il n'a rien publié aujourd'hui, et sa ligne
+ * dit « Rien aujourd'hui ». Sans lui, la liste ne montrerait que des jours
+ * réussis, et on ne verrait jamais ce que ses clients lisent quand il ne fait
+ * pas son planning du matin.
+ *
+ * CE N'EST PAS UN ABONNEMENT FORCÉ : on peut les retirer un par un, et le
+ * retrait se garde. Le tableau ne sert qu'au tout premier passage, quand le
+ * téléphone n'a encore rien mémorisé.
+ */
+const DEBUT = ["boulange", "boucher", "fleur-marche", "coif-nouveau"];
+
 function garder(v: string[]) {
   cache = v;
   try {
@@ -41,11 +63,73 @@ export function chargerSuivis(): string[] {
   if (typeof window === "undefined") return AUCUN_SUIVI;
   try {
     const brut = window.localStorage.getItem(CLE);
-    cache = brut ? (JSON.parse(brut) as string[]) : [];
+    // AUCUNE CLÉ = PREMIER PASSAGE, donc le voisinage de départ. Une clé
+    // présente mais vide veut dire qu'on a tout retiré à la main : on la
+    // respecte, et on ne réabonne personne dans son dos.
+    cache = brut ? (JSON.parse(brut) as string[]) : [...DEBUT];
   } catch {
-    cache = [];
+    cache = [...DEBUT];
   }
   return cache;
+}
+
+// ── LA PASTILLE DU CŒUR : LUE OU PAS LUE ────────────────────────────────────
+//
+// CE QU'ELLE COMPTE, ET CE QU'ELLE NE COMPTE PAS. Elle compte LES NOUVELLES DU
+// JOUR des commerces suivis — un flux, quelque chose qui arrive le matin et qui
+// se périme le soir. Elle ne compte pas les annonces gardées : celles-là sont
+// un stock, elles ne bougent pas, et un stock qui s'allume en permanence
+// apprend en trois jours à ne plus regarder la pastille.
+//
+// ELLE S'ÉTEINT QUAND ON A OUVERT, ET ELLE REVIENT LE LENDEMAIN. On garde donc
+// la DATE de lecture, pas un booléen : un booléen resterait vrai demain matin,
+// exactement au moment où le commerçant a besoin qu'elle se rallume.
+//
+// C'EST AUSSI LA PROMESSE FAITE AU COMMERÇANT, et il faut qu'elle soit
+// vérifiable : « vos abonnés ont une pastille qui s'allume le matin quand vous
+// publiez ; si vous ne publiez pas, elle ne s'allume pas ».
+const CLE_LU = "clikme-nouvelles-lues-v1";
+const lecteurs = new Set<() => void>();
+let cacheLu: string | null = null;
+
+/** Le jour courant, à la façon d'un journal : il change à minuit. */
+function ceJour(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+export function nouvellesLues(): boolean {
+  if (typeof window === "undefined") return false;
+  if (cacheLu === null) {
+    try {
+      cacheLu = window.localStorage.getItem(CLE_LU) ?? "";
+    } catch {
+      cacheLu = "";
+    }
+  }
+  return cacheLu === ceJour();
+}
+
+/** Sur le serveur, rien n'est lu : la pastille se peint au premier rendu. */
+export function nouvellesLuesServeur(): boolean {
+  return false;
+}
+
+export function marquerNouvellesLues() {
+  cacheLu = ceJour();
+  try {
+    window.localStorage.setItem(CLE_LU, cacheLu);
+  } catch {
+    /* Stockage refusé : la session continue en mémoire. */
+  }
+  lecteurs.forEach((f) => f());
+}
+
+export function abonnerLecture(f: () => void) {
+  lecteurs.add(f);
+  return () => {
+    lecteurs.delete(f);
+  };
 }
 
 export function abonnerSuivis(f: () => void) {

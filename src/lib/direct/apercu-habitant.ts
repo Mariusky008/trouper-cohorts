@@ -682,6 +682,23 @@ export type CarteAutour = {
    * mensonge, et celui-là se paie le jour où il le découvre.
    */
   prepare?: boolean;
+  /**
+   * IL N'A RIEN PUBLIÉ AUJOURD'HUI — il n'a pas fait son planning ce matin.
+   *
+   * POURQUOI CE DRAPEAU EXISTE, ALORS QUE TOUTES LES AUTRES FICHES ONT UNE
+   * JOURNÉE PLEINE. Les commerces de la maquette sont écrits une fois pour
+   * toutes et publient donc éternellement : sans ce drapeau, on ne verrait
+   * jamais le cas qui décide de tout le produit — celui du commerçant qui
+   * n'a rien dit. Or c'est LUI qu'il faut pouvoir montrer : derrière le cœur,
+   * ses abonnés lisent « Rien aujourd'hui » à côté de trois voisins qui ont
+   * quelque chose. C'est ce que ses clients voient quand il ne publie pas, et
+   * c'est ce qui rend le geste du matin non négociable.
+   *
+   * IL SORT DU PAQUET, COMME EN VRAI. Pas de planning, pas de carte dans Le
+   * Direct : `autourDeMoi` l'écarte. Son annonce d'emploi, elle, reste — une
+   * recherche de bras dure trois semaines et ne dépend pas du jour.
+   */
+  silencieux?: boolean;
   /** Ce que la fiche ajoute quand on descend. */
   fiche: { ou: string; horaires: string; mot: string };
   /** Ce qu'il propose à quelqu'un qui vient d'annoncer qu'il sort. Absent : il
@@ -1899,6 +1916,11 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "coif-nouveau",
+    // CELUI-LÀ N'A RIEN PUBLIÉ AUJOURD'HUI. Voir `silencieux` : il est suivi
+    // par défaut dans la démonstration, donc c'est lui qui porte la ligne
+    // « Rien aujourd'hui » derrière le cœur, à côté de trois voisins qui ont
+    // quelque chose à dire. Son annonce d'emploi, elle, tient toujours.
+    silencieux: true,
     catalogue: [
       { id: "cn-1", rayon: "Coupes", nom: "Coupe et brushing", prix: "35 €", photo: "/direct/salon-neuf.jpg" },
       { id: "cn-2", rayon: "Coupes", nom: "Coupe homme et barbe", prix: "28 €" },
@@ -2101,9 +2123,36 @@ export function seJoueMaintenant(m: MomentJour, heure: number): boolean {
  * choisit un commerce où on a le temps d'aller.
  */
 export function autourDeMoi(heure: number, branche: CleMetier): CarteAutour[] {
-  return CARTES.filter((c) => c.branche === branche && momentsRestants(c, heure).length > 0).sort(
-    (a, b) => a.metres - b.metres,
-  );
+  // CELUI QUI N'A RIEN PUBLIÉ N'EST PAS DANS LE PAQUET. Voir `silencieux` :
+  // pas de planning le matin, pas de carte dans la journée. C'est la règle du
+  // produit, pas une exception de maquette.
+  return CARTES.filter(
+    (c) => c.branche === branche && !c.silencieux && momentsRestants(c, heure).length > 0,
+  ).sort((a, b) => a.metres - b.metres);
+}
+
+/**
+ * CE QU'UN COMMERCE SUIVI A DIT AUJOURD'HUI — ou rien du tout.
+ *
+ * C'EST LE CONTENU DE LA PASTILLE DU CŒUR, et sa règle tient en deux lignes :
+ * on rend le moment qu'il affiche maintenant, et à défaut le dernier de sa
+ * journée. Le second cas est marqué `passe`, parce que « ce midi » et « dans
+ * une heure » n'appellent pas le même geste : on ne se déplace pas pour ce qui
+ * est fini, on le lit.
+ *
+ * RIEN N'EST INVENTÉ QUAND IL N'A RIEN DIT. La fonction rend `null`, et
+ * l'écran écrit « Rien aujourd'hui ». Remplir ce trou avec sa fiche ou son
+ * dernier plat serait le pire service à lui rendre : ses abonnés croiraient
+ * qu'il a publié, et il n'aurait plus aucune raison de le faire.
+ */
+export function nouvelleDuJour(
+  c: CarteAutour,
+  heure: number,
+): { moment: MomentJour; passe: boolean } | null {
+  if (c.silencieux || c.moments.length === 0) return null;
+  const m = momentEnCours(c, heure);
+  if (m) return { moment: m, passe: false };
+  return { moment: c.moments[c.moments.length - 1], passe: true };
 }
 
 /**
