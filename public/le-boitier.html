@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>ClikMe — le boîtier du comptoir</title>
+
+<style>
+/* Aucune police distante : ce document doit s'ouvrir sur un réseau qui ne
+   suit pas, y compris devant quelqu'un. Voir la même note dans
+   qr-devanture.html. */
+:root{
+  --nuit:#F7F5EE; --nuit2:#FFFFFF; --encre:#0E1614; --encre2:#4A5A53;
+  --encre3:#7C8C84; --trait:rgba(14,22,20,.13);
+  --menthe:#0B8F63; --ambre:#9A6200; --rouge:#B3261E; --bleu:#2B5FB8;
+  --pose:#FBF8F0;
+  --serif:Georgia,"Times New Roman",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --nuit:#05090C; --nuit2:#0C1412; --encre:#EAF2EC; --encre2:#93A79C;
+    --encre3:#6C8078; --trait:rgba(234,242,236,.13);
+    --menthe:#3DE2A6; --ambre:#F0B429; --rouge:#FF8A80; --bleu:#7DA8FF;
+    --pose:#0A1210;
+  }
+}
+:root[data-theme="dark"]{
+  --nuit:#05090C; --nuit2:#0C1412; --encre:#EAF2EC; --encre2:#93A79C;
+  --encre3:#6C8078; --trait:rgba(234,242,236,.13);
+  --menthe:#3DE2A6; --ambre:#F0B429; --rouge:#FF8A80; --bleu:#7DA8FF;
+  --pose:#0A1210;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--nuit);color:var(--encre);font-family:var(--sans);
+  font-size:16px;line-height:1.58;-webkit-font-smoothing:antialiased}
+.enveloppe{max-width:940px;margin:0 auto;
+  padding:clamp(22px,5vw,60px) clamp(15px,4vw,44px) 90px}
+
+.oeil{margin:0 0 10px;font-family:var(--mono);font-size:11px;font-weight:700;
+  letter-spacing:.24em;text-transform:uppercase;color:var(--menthe)}
+h1{margin:0;font-family:var(--serif);font-weight:700;
+  font-size:clamp(28px,5.2vw,50px);line-height:1.04;letter-spacing:-.025em}
+.chapo{margin:16px 0 0;max-width:64ch;font-size:clamp(15px,1.6vw,17.5px);
+  line-height:1.62;color:var(--encre2)}
+.chapo b{color:var(--encre);font-weight:700}
+
+section{margin-top:clamp(38px,6vh,64px)}
+.tete{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+  padding-bottom:12px;border-bottom:2px solid var(--encre)}
+.num{font-family:var(--mono);font-size:12px;font-weight:700;
+  letter-spacing:.12em;color:var(--ambre)}
+h2{margin:0;font-family:var(--serif);font-weight:700;
+  font-size:clamp(21px,3vw,30px);line-height:1.06;letter-spacing:-.025em}
+.tete p{margin:0;flex-basis:100%;font-size:14px;color:var(--encre3);max-width:72ch}
+section>p{max-width:70ch;font-size:15.5px}
+section>p b{font-weight:700}
+h3{margin:26px 0 0;font-size:17px;font-weight:800;letter-spacing:-.015em}
+h3+p{margin-top:6px}
+
+/* ── LA NOMENCLATURE ──────────────────────────────────────────────────
+   Un tableau, parce que c'est la seule partie du document qu'on relit
+   pour un chiffre précis et pas pour un raisonnement. Il défile
+   horizontalement sur un téléphone plutôt que d'écraser la page. */
+.tabl{margin-top:18px;overflow-x:auto;border:1px solid var(--trait);
+  border-radius:14px;background:var(--nuit2)}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--trait)}
+th{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--encre3)}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;
+  font-weight:650}
+tr:last-child td{border-bottom:0}
+tr.somme td{font-weight:800;color:var(--encre);
+  background:color-mix(in srgb,var(--menthe) 9%,transparent)}
+td small{display:block;color:var(--encre3);font-size:12.5px;line-height:1.4;
+  margin-top:2px}
+
+/* ── LES OBSTACLES ────────────────────────────────────────────────── */
+.obst{list-style:none;margin:18px 0 0;padding:0;display:flex;
+  flex-direction:column;gap:16px}
+.obst li{border:1px solid var(--trait);border-radius:16px;padding:16px 18px;
+  background:var(--nuit2)}
+.obst b{display:block;font-size:16px;font-weight:800;letter-spacing:-.015em}
+.obst p{margin:7px 0 0;font-size:14.5px;line-height:1.55;color:var(--encre2);
+  max-width:70ch}
+.obst .rep{margin-top:11px;padding-left:13px;
+  border-left:2px solid color-mix(in srgb,var(--menthe) 58%,transparent)}
+.obst .rep i{font-style:normal;font-family:var(--mono);font-size:9.5px;
+  font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--menthe);display:block;margin-bottom:3px}
+
+/* ── LES BOUTONS ──────────────────────────────────────────────────── */
+.btns{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  margin-top:20px}
+.b{border:1px solid var(--trait);border-radius:16px;padding:16px 17px;
+  background:var(--nuit2)}
+.b h4{margin:0;font-size:16px;font-weight:800;letter-spacing:-.015em;
+  display:flex;align-items:center;gap:8px}
+.b h4 em{font-style:normal;font-family:var(--mono);font-size:11px;
+  font-weight:700;color:var(--ambre)}
+.b p{margin:8px 0 0;font-size:14px;line-height:1.5;color:var(--encre2)}
+.b q{display:block;margin-top:9px;font-family:var(--serif);font-size:15.5px;
+  line-height:1.32;font-weight:700;color:var(--encre);quotes:"«\00a0" "\00a0»"}
+
+/* ── L'ENCADRÉ QUI TRANCHE ───────────────────────────────────────── */
+.tranche{margin-top:clamp(38px,6vh,64px);padding:clamp(20px,3vw,30px);
+  border-radius:18px;background:var(--pose);
+  border:1px solid color-mix(in srgb,var(--ambre) 38%,transparent)}
+.tranche h2{font-size:clamp(19px,2.6vw,27px)}
+.tranche p{max-width:70ch;font-size:15.5px}
+.tranche p:first-of-type{margin-top:14px}
+.etapes{list-style:none;margin:20px 0 0;padding:0;display:flex;
+  flex-direction:column;gap:16px}
+.etapes li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 16px}
+.etapes .r{font-family:var(--mono);font-size:11px;font-weight:700;
+  letter-spacing:.12em;color:var(--ambre);padding-top:4px}
+.etapes b{font-size:16px;font-weight:800;letter-spacing:-.015em}
+.etapes p{margin:5px 0 0;font-size:14.5px;line-height:1.55;color:var(--encre2)}
+.etapes .prix{display:inline-block;margin-top:7px;font-family:var(--mono);
+  font-size:11.5px;font-weight:700;letter-spacing:.06em;
+  color:var(--menthe);border:1px solid color-mix(in srgb,var(--menthe) 42%,transparent);
+  background:color-mix(in srgb,var(--menthe) 11%,transparent);
+  border-radius:999px;padding:3px 10px}
+@media(max-width:560px){
+  .etapes li{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ── CE QUE JE DÉCONSEILLE ────────────────────────────────────────── */
+.contre{margin-top:clamp(38px,6vh,64px);padding:clamp(20px,3vw,30px);
+  border-radius:18px;background:var(--pose);
+  border:1px solid color-mix(in srgb,var(--rouge) 34%,transparent)}
+.contre h2{font-size:clamp(19px,2.6vw,27px)}
+.contre p{max-width:70ch;font-size:15.5px}
+.contre p:first-of-type{margin-top:14px}
+.sauf{margin-top:18px;padding-top:16px;border-top:1px solid var(--trait)}
+.sauf b{color:var(--encre)}
+</style>
+</head>
+<body>
+<div class="enveloppe">
+
+  <p class="oeil">ClikMe · note technique et stratégique</p>
+  <h1>Le boîtier du comptoir.</h1>
+  <p class="chapo">
+    Réponse à la question posée : est-ce que c’est possible, et est-ce que c’est
+    ça qui change le destin de ClikMe. <b>Oui aux deux</b> — mais pas pour la
+    raison qu’on croit, et pas dans la version à deux boîtiers. Ce qui suit
+    donne les coûts réels, les cinq choses qui sont difficiles (aucune n’est
+    l’électronique), ce que je retirerais, et surtout ce que je ferais la
+    semaine prochaine pour le savoir <b>sans construire de matériel</b>.
+  </p>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">1</span>
+      <h2>Ce que l’idée voit juste</h2>
+    </div>
+    <p>
+      Depuis le début du produit, tout ce qu’on simplifie est <em>dans
+      l’écran</em> : un seul geste le matin au lieu de cinq, une seule annonce
+      par jour, des actions armées à l’avance parce qu’il n’est pas sur son
+      téléphone. À chaque fois on rend le geste plus court. Mais il reste un
+      obstacle qu’aucune simplification d’écran ne franchira jamais :
+      <b>sortir le téléphone de sa poche</b>. Le déverrouiller avec les mains
+      dans la farine. Trouver l’application. Ça, ce n’est pas un problème
+      d’interface — c’est un problème de mains.
+    </p>
+    <p>
+      Le boîtier ne rend pas le geste plus court : <b>il le rend possible sans
+      arrêter de travailler</b>. C’est une différence de nature, pas de degré.
+      Et c’est pour ça que l’intuition est bonne là où la pastille du cœur,
+      elle, ne change rien de fondamental.
+    </p>
+    <h3>Mais la vraie raison est ailleurs, et elle est plus forte</h3>
+    <p>
+      Une application locale est copiable en trois semaines par n’importe qui.
+      <b>Deux cents objets posés sur deux cents comptoirs d’une ville ne le sont
+      pas.</b> Le comptoir est le seul espace publicitaire de la ville que
+      personne n’a acheté ; celui qui l’occupe a une exclusivité de fait, que
+      chaque client voit au moment où il paie, et qui ne se désinstalle pas
+      d’un geste comme une application. C’est un actif. C’est aussi ce qui rend
+      l’abonnement évident : on ne résilie pas un objet qu’on utilise tous les
+      matins.
+    </p>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">2</span>
+      <h2>Est-ce que c’est faisable — et ce que ça coûte</h2>
+      <p>Oui, et ce n’est même pas la partie difficile. C’est une catégorie de
+        matériel très balisée : un microcontrôleur à quelques euros, un micro,
+        trois boutons, un haut-parleur.</p>
+    </div>
+
+    <h3>Ce qu’il y a dedans, et le prix de la matière</h3>
+    <p>
+      Ordres de grandeur pour une série de 500 pièces, sur des composants du
+      commerce. À 5 000 pièces, il faut compter environ 30 % de moins.
+    </p>
+    <div class="tabl">
+      <table>
+        <thead><tr><th>Pièce</th><th>Rôle</th><th class="n">≈ à 500</th></tr></thead>
+        <tbody>
+          <tr><td>Module ESP32-S3</td><td>Le cerveau, le Wi-Fi, le Bluetooth<small>Module déjà certifié radio — c’est ce qui divise le coût de certification par trois.</small></td><td class="n">3,50 €</td></tr>
+          <tr><td>Deux micros MEMS</td><td>Capter la voix, annuler le bruit de la boutique</td><td class="n">2,00 €</td></tr>
+          <tr><td>Haut-parleur + ampli</td><td>Lui lire les questions de ses clients</td><td class="n">2,50 €</td></tr>
+          <tr><td>Trois boutons</td><td>Gros, silicone, utilisables avec des gants<small>Un bouton qu’un boulanger ne peut pas presser avec les mains grasses est un bouton mort.</small></td><td class="n">1,50 €</td></tr>
+          <tr><td>Anneau lumineux</td><td>Vert : c’est parti. Rouge : le micro écoute. Ambre : on vous a écrit.</td><td class="n">0,40 €</td></tr>
+          <tr><td>Écran e-paper 2,9″</td><td><b>La face client</b> — voir la section 5</td><td class="n">6,00 €</td></tr>
+          <tr><td>Carte, boîtier, alimentation</td><td>Circuit imprimé, coque, bloc secteur USB-C<small>Pas de batterie : pas de batterie à changer, pas de service après-vente de batterie, et l’objet ne s’éteint jamais.</small></td><td class="n">9,00 €</td></tr>
+          <tr><td>Assemblage et test</td><td>Montage et contrôle unitaire</td><td class="n">4,00 €</td></tr>
+          <tr class="somme"><td>Matière</td><td>par boîtier</td><td class="n">≈ 29 €</td></tr>
+          <tr><td>Modem cellulaire <em>(option, recommandée)</em></td><td>Une carte SIM intégrée, pour ne jamais dépendre du Wi-Fi du commerçant<small>+ environ 1,20 €/mois d’abonnement data. Voir l’obstacle nº 1 : c’est de l’argent très bien dépensé.</small></td><td class="n">+ 12 €</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Ce qu’il faut payer une seule fois</h3>
+    <div class="tabl">
+      <table>
+        <thead><tr><th>Poste</th><th>Remarque</th><th class="n">Fourchette</th></tr></thead>
+        <tbody>
+          <tr><td>Électronique et logiciel embarqué</td><td>Trois à quatre mois d’un ingénieur, ou une agence</td><td class="n">25–60 k€</td></tr>
+          <tr><td>Moule d’injection du boîtier</td><td><b>Évitable au début</b> : un boîtier standard du commerce, ou de l’impression 3D pour les cinquante premiers</td><td class="n">0–20 k€</td></tr>
+          <tr><td>Marquage CE / RED</td><td>Divisé par trois si le module radio est déjà certifié</td><td class="n">3–8 k€</td></tr>
+          <tr><td>Déclarations d’usage</td><td>Éco-organisme (DEEE), emballage, notice</td><td class="n">1–3 k€</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Et ce que ça coûte tous les mois, par boîtier</h3>
+    <p>
+      Trente secondes de parole par jour font quinze minutes d’audio par mois.
+      La transcription revient à <b>moins de dix centimes</b>, la mise en forme
+      de la carte à quelques centimes, la carte SIM à 1,20 €. <b>Le coût
+      variable réel est inférieur à 2 € par mois et par commerçant.</b> Un
+      abonnement à une vingtaine d’euros avec le boîtier inclus rembourse la
+      matière en deux mois — et rend le prix évident, ce qu’un abonnement
+      purement logiciel n’arrive jamais à faire.
+    </p>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">3</span>
+      <h2>Les cinq choses difficiles</h2>
+      <p>Aucune n’est l’électronique. Ce sont elles qui décident si le projet
+        marche, et chacune a une réponse connue.</p>
+    </div>
+    <ul class="obst">
+
+      <li>
+        <b>1 · Le Wi-Fi du commerçant</b>
+        <p>C’est là que meurent les objets connectés. Faire saisir un mot de
+          passe Wi-Fi sur un objet sans clavier échoue une fois sur trois, et
+          quand la box du boulanger redémarre, le boîtier est muet sans que
+          personne ne s’en aperçoive — pendant trois semaines.</p>
+        <div class="rep"><i>La réponse</i>
+          Une carte SIM intégrée. Le boîtier marche à la seconde où on le
+          branche, sans rien demander à personne, et il continue de marcher
+          quand l’internet de la boutique tombe. Douze euros de matériel et
+          1,20 €/mois pour supprimer le premier motif d’échec du projet :
+          c’est le meilleur arbitrage de tout ce document.</div>
+      </li>
+
+      <li>
+        <b>2 · Comprendre une phrase dans le bruit d’un commerce</b>
+        <p>Pétrin, hotte, ventilation, clients qui parlent, radio. La
+          reconnaissance vocale s’effondre dans ces conditions — et un boîtier
+          qui comprend de travers publie n’importe quoi sous le nom du
+          commerçant, ce qui est bien pire que de ne rien publier.</p>
+        <div class="rep"><i>La réponse</i>
+          <b>Pas de mot-réveil</b>, jamais : dans une boulangerie c’est
+          ingérable. On appuie, on parle, on relâche. Le bouton borne
+          l’enregistrement, deux micros séparent la voix de proximité du bruit
+          de fond, et l’anneau devient vert quand la phrase a été comprise.
+          S’il n’a pas été compris, il le sait dans la seconde et recommence.</div>
+      </li>
+
+      <li>
+        <b>3 · Un micro posé sur un comptoir</b>
+        <p>C’est le vrai risque, et il n’est pas technique. Un objet qui écoute
+          en permanence près d’une caisse est mort à la première rumeur — et
+          la rumeur partira, parce qu’elle est raisonnable.</p>
+        <div class="rep"><i>La réponse</i>
+          L’alimentation du micro est <b>coupée physiquement</b> quand le
+          bouton n’est pas enfoncé — pas par le logiciel, par le circuit. Une
+          diode rouge s’allume mécaniquement sur la même ligne : quand elle est
+          éteinte, le micro n’est pas alimenté, et ça se vérifie. C’est écrit
+          en toutes lettres sur le boîtier. L’audio est transcrit puis
+          <b>effacé dans la minute</b> ; seul le texte est conservé.</div>
+      </li>
+
+      <li>
+        <b>4 · Ce qu’il dit n’est pas ce qu’il faut publier</b>
+        <p>Il dira « j’ai des côtes de bœuf ». Publier ça tel quel donne une
+          carte pauvre. Il faut composer une vraie annonce — mais il n’a pas
+          son téléphone pour la relire, et c’est tout le point du boîtier.</p>
+        <div class="rep"><i>La réponse</i>
+          <b>Ça part tout de suite, et ça s’annule.</b> L’annonce est publiée,
+          l’écran de la face client l’affiche immédiatement, et un deuxième
+          appui dans la minute la retire. On ne lui demande pas de valider —
+          on lui donne le droit de se rétracter. Une confirmation ajoute un
+          geste ; une annulation n’en ajoute un que quand il y a un
+          problème.</div>
+      </li>
+
+      <li>
+        <b>5 · Deux cents objets chez deux cents commerçants</b>
+        <p>Le jour où l’un tombe en panne, c’est vous qui traversez la ville.
+          À vingt boîtiers c’est gérable, à deux cents ça devient le
+          métier — et un boîtier mort qui reste muet une semaine détruit
+          l’habitude qu’on a mis six mois à installer.</p>
+        <div class="rep"><i>La réponse</i>
+          Le boîtier dit lui-même qu’il ne va pas bien : s’il n’a pas parlé au
+          serveur depuis douze heures, vous le savez avant le commerçant. Et
+          il doit être <b>remplaçable en trente secondes</b> : on en pose un
+          neuf, il reprend l’identité du commerce sans configuration. C’est un
+          argument de plus pour la carte SIM.</div>
+      </li>
+
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">4</span>
+      <h2>Trois boutons, pas quatre</h2>
+      <p>L’idée en proposait quatre. Le quatrième — « annoncer » — fait la même
+        chose que « du neuf », et deux boutons qui se ressemblent, c’est une
+        hésitation tous les matins.</p>
+    </div>
+    <div class="btns">
+
+      <div class="b">
+        <h4><em>①</em> Ma journée</h4>
+        <p>Le matin, une fois. Il dit sa journée, ça devient son annonce du
+          jour avec ses moments. C’est le geste dont tout le produit dépend, et
+          c’est celui qu’on cherche à rendre automatique depuis le début.</p>
+        <q>Ce matin j’ai des chocolatines jusqu’à dix heures, et une fournée de
+          pain de campagne à seize heures trente.</q>
+      </div>
+
+      <div class="b">
+        <h4><em>②</em> Du neuf</h4>
+        <p>Dans la journée, quand il se passe quelque chose. Ça part
+          immédiatement chez ses abonnés — et c’est exactement ce qui allume la
+          pastille ambre dans leur téléphone.</p>
+        <q>Il me reste six côtes de bœuf, je les fais à vingt-huit euros du
+          kilo jusqu’à la fermeture.</q>
+      </div>
+
+      <div class="b">
+        <h4><em>③</em> Écouter et répondre</h4>
+        <p><b>Le plus important des trois, et le moins évident.</b> L’anneau
+          passe à l’ambre quand un client a posé une question ou qu’un
+          collectif est complet. Il appuie, <b>le boîtier lui lit à voix
+          haute</b>, il répond en parlant.</p>
+        <q>— « Est-ce qu’il vous reste du pain sans gluten ? »<br>
+          — Oui, il m’en reste deux, je vous en mets un de côté.</q>
+      </div>
+
+    </div>
+    <p style="margin-top:22px">
+      Le troisième bouton est celui qui fait passer le commerçant d’émetteur à
+      interlocuteur — et il répond à la question laissée ouverte sur le salon :
+      <b>le commerçant n’est pas sur son téléphone, donc c’est le boîtier qui
+      lui parle</b>. Sans lui, on a un porte-voix. Avec lui, on a une relation,
+      et c’est la seule chose qu’aucune plateforme ne lui donne aujourd’hui.
+    </p>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">5</span>
+      <h2>La deuxième face — et là, tout se referme</h2>
+    </div>
+    <p>
+      Le boîtier a un dos tourné vers le client. Un petit écran e-paper — six
+      euros, aucune consommation, lisible comme du papier — qui affiche
+      <b>ce que le commerçant vient de dire</b>, et <b>le QR</b>.
+    </p>
+    <p>
+      Ce qui veut dire que l’autocollant de vitrine et le boîtier ne sont pas
+      deux projets : <b>c’est le même objet</b>. Chaque personne qui paie voit
+      l’offre du jour et le moyen de s’y abonner, au moment exact où elle est
+      contente de son achat. Le commerçant, lui, voit son propre message
+      s’afficher deux secondes après l’avoir dit — c’est la preuve immédiate
+      que le bouton a marché, et c’est ce qui fait qu’il recommence demain.
+    </p>
+    <p>
+      Et l’écran se remplit tout seul les jours où il n’appuie sur rien : il
+      affiche alors ce qui se passe dans la ville aujourd’hui. Un objet qui a
+      quelque chose à montrer tous les jours ne finit pas dans un tiroir.
+    </p>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div class="contre">
+    <h2>Le boîtier chez le client : je pense que c’est une erreur</h2>
+    <p>
+      Il faut le dire franchement, parce que c’est la moitié de l’idée. Le
+      cimetière est plein : les boutons Amazon Dash, les cadres connectés, les
+      assistants dédiés. Un habitant ne posera pas un second objet chez lui
+      pour une ville de vingt mille personnes — son téléphone est déjà dans sa
+      main, il est déjà bon, et la pastille fait déjà le travail.
+    </p>
+    <p>
+      <b>L’asymétrie est tout le raisonnement.</b> Le commerçant a les mains
+      prises et pas de téléphone sur lui : il lui faut un objet. Le client a
+      son téléphone en main toute la journée : il lui faut une pastille. Deux
+      problèmes différents, deux réponses différentes. Faire le même objet des
+      deux côtés parce que c’est symétrique, c’est résoudre un problème que
+      personne n’a — et diviser par deux les moyens consacrés à celui qui
+      existe vraiment.
+    </p>
+    <div class="sauf">
+      <p><b>Sauf sous deux formes, et celles-là sont bonnes :</b></p>
+      <p>
+        <b>Dans la ville, pas chez les gens.</b> Un écran à l’office de
+        tourisme, dans le hall du marché couvert, à l’accueil du camping, dans
+        les thermes, dans le hall d’une résidence : « ce qui se passe à Dax
+        aujourd’hui ». Il n’y a aucun coût d’adoption individuel, et c’est
+        exactement le genre de chose qui fait parler une ville. Une dizaine
+        d’écrans bien placés valent mille boîtiers de salon.
+      </p>
+      <p>
+        <b>Pour ceux qui n’ont pas de smartphone.</b> Il y en a, et à Dax ils
+        sont nombreux et ce sont les clients les plus fidèles du commerce de
+        centre-ville. Un objet simple qui ne fait qu’une chose — « les
+        nouvelles de mes commerçants », lues à voix haute — a un vrai sens pour
+        eux. Mais c’est un second produit, une fois que le premier marche. Pas
+        maintenant.
+      </p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div class="tranche">
+    <h2>Ce que je ferais maintenant — et ça ne coûte pas cher</h2>
+    <p>
+      Le piège du matériel, c’est de dépenser cinquante mille euros pour
+      découvrir que le boulanger n’appuie pas sur le bouton. Or <b>on peut
+      savoir ça en trois semaines et pour cent vingt euros</b>, parce que le
+      geste qu’on veut tester — appuyer et parler, sans sortir son téléphone —
+      ne demande pas de matériel neuf.
+    </p>
+    <ul class="etapes">
+
+      <li>
+        <span class="r">ÉTAPE 0</span>
+        <div>
+          <b>Le faux boîtier</b>
+          <p>Trois téléphones Android d’occasion à quarante euros, verrouillés
+            sur une seule page en plein écran : trois gros boutons, rien
+            d’autre. Posés sur un support incliné, branchés au secteur, sur le
+            comptoir de trois commerçants de Dax. Le geste est <em>exactement
+            le même</em> que celui du vrai boîtier — appuyer, parler, relâcher
+            — et tout le logiciel qu’on écrit là est celui qu’on gardera.</p>
+          <p>Ce qu’on regarde pendant trois semaines : <b>est-ce qu’ils
+            appuient tous les matins ?</b> Si oui, le boîtier vaut chaque euro
+            qu’il coûtera. Si non, aucun boîtier ne le sauvera — et on aura
+            appris pour le prix d’un dîner ce que d’autres apprennent pour le
+            prix d’un moule.</p>
+          <span class="prix">≈ 120 € · 2 semaines de développement</span>
+        </div>
+      </li>
+
+      <li>
+        <span class="r">ÉTAPE 1</span>
+        <div>
+          <b>Vingt vrais boîtiers</b>
+          <p>Carte ESP32 du commerce, boîtier imprimé en 3D, carte SIM
+            intégrée, la face client sur e-paper. Pas de moule, pas de série,
+            pas de jolie coque : vingt objets qui marchent, chez vingt
+            commerçants de Dax. C’est aussi, accessoirement, la démonstration
+            qui se pose sur une table devant un investisseur — et un objet
+            qu’on prend dans la main ne se compare à aucune capture d’écran.</p>
+          <span class="prix">≈ 2 000 € · 8 à 10 semaines</span>
+        </div>
+      </li>
+
+      <li>
+        <span class="r">ÉTAPE 2</span>
+        <div>
+          <b>La série</b>
+          <p>Moule, certification CE, cinq cents pièces. À ne lancer qu’avec
+            les chiffres de l’étape 1 en main : combien appuient tous les
+            jours, combien d’abonnés par commerce, combien de messages lus. Ce
+            sont ces trois nombres-là qui financent l’étape 2 — pas
+            l’idée.</p>
+          <span class="prix">40 à 90 k€ · 6 à 9 mois</span>
+        </div>
+      </li>
+
+    </ul>
+    <p style="margin-top:24px">
+      <b>Une dernière chose, sur l’ordre des priorités.</b> Le boîtier ne
+      remplace pas ce qui est en train de se construire : il en dépend. Le jour
+      où le boulanger appuie sur le bouton, il faut qu’il y ait des gens de
+      l’autre côté pour lire ce qu’il vient de dire — sinon on lui a vendu un
+      objet qui parle dans le vide, et c’est la seule façon certaine de tuer
+      les deux à la fois. L’autocollant de vitrine sert précisément à ça : il
+      remplit l’autre côté avec les gens qui passent déjà devant sa porte.
+      <b>Le QR d’abord, le faux boîtier en même temps, le vrai boîtier
+      ensuite.</b>
+    </p>
+  </div>
+
+</div>
+</body>
+</html>

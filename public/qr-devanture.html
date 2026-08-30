@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>ClikMe — le QR de devanture, un argument par métier</title>
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════════
+   AUCUNE POLICE DISTANTE, ET C'EST VOLONTAIRE.
+   Ce document se lit debout dans la rue, souvent sur un réseau qui ne
+   suit pas, et parfois hors ligne. Une page qui attend Google Fonts
+   s'affiche en blanc pendant trois secondes devant un commerçant — trois
+   secondes pendant lesquelles c'est vous qui avez l'air de ne pas
+   marcher. Les piles système font très bien l'affaire.
+
+   Les couleurs sont celles de l'application : le noir vert de l'écran, la
+   menthe de ce qui est vivant, l'ambre de ce qui engage.
+   ═══════════════════════════════════════════════════════════════════════ */
+:root{
+  --nuit:#F7F5EE; --nuit2:#FFFFFF; --encre:#0E1614; --encre2:#4A5A53;
+  --encre3:#7C8C84; --trait:rgba(14,22,20,.13);
+  --menthe:#0B8F63; --ambre:#9A6200; --rouge:#B3261E; --pose:#FBF8F0;
+  --serif:Georgia,"Times New Roman",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --nuit:#05090C; --nuit2:#0C1412; --encre:#EAF2EC; --encre2:#93A79C;
+    --encre3:#6C8078; --trait:rgba(234,242,236,.13);
+    --menthe:#3DE2A6; --ambre:#F0B429; --rouge:#FF8A80; --pose:#0A1210;
+  }
+}
+:root[data-theme="dark"]{
+  --nuit:#05090C; --nuit2:#0C1412; --encre:#EAF2EC; --encre2:#93A79C;
+  --encre3:#6C8078; --trait:rgba(234,242,236,.13);
+  --menthe:#3DE2A6; --ambre:#F0B429; --rouge:#FF8A80; --pose:#0A1210;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--nuit);color:var(--encre);font-family:var(--sans);
+  font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.enveloppe{max-width:1020px;margin:0 auto;
+  padding:clamp(22px,5vw,60px) clamp(15px,4vw,44px) 90px}
+
+.oeil{margin:0 0 10px;font-family:var(--mono);font-size:11px;font-weight:700;
+  letter-spacing:.24em;text-transform:uppercase;color:var(--menthe)}
+h1{margin:0;font-family:var(--serif);font-weight:700;
+  font-size:clamp(28px,5.2vw,50px);line-height:1.04;letter-spacing:-.025em}
+.chapo{margin:16px 0 0;max-width:64ch;font-size:clamp(15px,1.6vw,17.5px);
+  line-height:1.62;color:var(--encre2)}
+.chapo b{color:var(--encre);font-weight:700}
+
+/* ── LA RÈGLE ─────────────────────────────────────────────────────────
+   Elle est avant la liste, et pas après, parce que la liste ne sert à
+   rien sans elle : le jour où vous rencontrez un métier qui n'y est pas,
+   c'est la règle qui vous donne la réponse, pas le tableau. */
+.regle{margin:30px 0 0;padding:clamp(18px,3vw,26px);border-radius:18px;
+  background:var(--pose);border:1px solid var(--trait)}
+.regle h2{margin:0 0 4px;font-family:var(--serif);font-weight:700;
+  font-size:clamp(19px,2.6vw,25px);letter-spacing:-.02em;line-height:1.15}
+.regle>p{margin:0 0 18px;font-size:14.5px;color:var(--encre3);max-width:70ch}
+.tests{list-style:none;margin:0;padding:0;display:grid;gap:14px;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.tests li{display:block}
+.tests b{display:block;font-size:15px;line-height:1.32;letter-spacing:-.01em}
+.tests span{display:block;margin-top:4px;font-size:13.5px;line-height:1.5;
+  color:var(--encre2)}
+.tests i{font-style:normal;font-family:var(--mono);font-size:10.5px;
+  font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ambre);display:block;margin-bottom:5px}
+
+/* ── LES MÉTIERS ──────────────────────────────────────────────────── */
+section{margin-top:clamp(38px,6vh,64px)}
+.tete{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+  padding-bottom:12px;border-bottom:2px solid var(--encre)}
+.num{font-family:var(--mono);font-size:12px;font-weight:700;
+  letter-spacing:.12em;color:var(--ambre)}
+h2.t{margin:0;font-family:var(--serif);font-weight:700;
+  font-size:clamp(21px,3vw,30px);line-height:1.06;letter-spacing:-.025em}
+.tete p{margin:0;flex-basis:100%;font-size:14px;color:var(--encre3);max-width:72ch}
+
+.grille{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  margin-top:20px}
+.m{border:1px solid var(--trait);border-radius:16px;padding:16px 17px 17px;
+  background:var(--nuit2)}
+.m>h3{margin:0;font-size:16.5px;font-weight:800;letter-spacing:-.015em;
+  display:flex;align-items:center;gap:8px}
+.m>h3 em{font-style:normal;font-size:19px;line-height:1}
+/* CE QU'IL SAIT ET QUE LA VITRINE NE DIT PAS. C'est la seule ligne qui
+   demande de la réflexion : tout le reste en découle. */
+.sait{margin:9px 0 0;font-size:13.8px;line-height:1.5;color:var(--encre2)}
+.sait b{color:var(--encre);font-weight:650}
+/* LA PHRASE DE L'AUTOCOLLANT — celle qui sera imprimée, en grand, et
+   qu'un passant lit en marchant. Elle est mise en évidence parce que
+   c'est le seul texte du document qui sortira tel quel. */
+.colle{margin:13px 0 0;padding:11px 13px;border-radius:12px;
+  border:1px dashed color-mix(in srgb,var(--menthe) 46%,transparent);
+  background:color-mix(in srgb,var(--menthe) 8%,transparent)}
+.colle i{font-style:normal;display:block;font-family:var(--mono);font-size:9.5px;
+  font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--menthe);margin-bottom:5px}
+.colle p{margin:0;font-family:var(--serif);font-size:16.5px;line-height:1.26;
+  font-weight:700;letter-spacing:-.015em}
+/* CE QUE VOUS LUI DITES, À LUI. Une phrase, pas un argumentaire : sur le
+   pas de sa porte, à 11 h, vous avez une phrase et pas deux. */
+.dit{margin:11px 0 0;padding-left:12px;
+  border-left:2px solid color-mix(in srgb,var(--ambre) 55%,transparent);
+  font-size:13.6px;line-height:1.5;color:var(--encre2)}
+.dit b{color:var(--encre);font-weight:650}
+
+/* ── LES PIÈGES ───────────────────────────────────────────────────── */
+.pieges{margin-top:clamp(38px,6vh,64px);padding:clamp(20px,3vw,30px);
+  border-radius:18px;background:var(--pose);
+  border:1px solid color-mix(in srgb,var(--rouge) 34%,transparent)}
+.pieges h2{margin:0;font-family:var(--serif);font-weight:700;
+  font-size:clamp(19px,2.6vw,26px);letter-spacing:-.02em}
+.pieges ul{list-style:none;margin:16px 0 0;padding:0;display:flex;
+  flex-direction:column;gap:14px}
+.pieges li{font-size:15px;line-height:1.55;color:var(--encre2);
+  padding-left:26px;position:relative}
+.pieges li::before{content:"✕";position:absolute;left:0;top:0;
+  color:var(--rouge);font-weight:800;font-size:14px}
+.pieges b{color:var(--encre)}
+
+.bas{margin-top:clamp(34px,5vh,54px);padding-top:22px;
+  border-top:1px solid var(--trait);font-size:14.5px;color:var(--encre2);
+  max-width:72ch}
+.bas b{color:var(--encre)}
+</style>
+</head>
+<body>
+<div class="enveloppe">
+
+  <p class="oeil">ClikMe · l’autocollant de vitrine</p>
+  <h1>Ce qu’on gagne à photographier ce QR, métier par métier.</h1>
+  <p class="chapo">
+    Le QR sur la vitre ne dit jamais « téléchargez notre application ». Il promet
+    <b>une information que le commerçant est seul à avoir, qui change tous les
+    jours, et qu’on ne peut pas obtenir sans entrer</b>. C’est tout le contrat.
+    Un autocollant qui promet autre chose que ça n’est pas photographié, et un
+    autocollant qu’on ne photographie pas coûte plus cher qu’il ne rapporte —
+    il apprend au commerçant que ClikMe ne marche pas.
+  </p>
+
+  <div class="regle">
+    <h2>Les trois questions à se poser avant d’écrire une promesse</h2>
+    <p>
+      Le tableau qui suit couvre les métiers de Dax. Le jour où vous tombez sur
+      un métier absent, ce sont ces trois questions qui donnent la réponse —
+      pas le tableau.
+    </p>
+    <ul class="tests">
+      <li>
+        <i>Test 1 · l’enfermement</i>
+        <b>Est-ce que je peux l’obtenir sans entrer ?</b>
+        <span>Si l’enseigne, la vitrine ou Google le disent déjà, le QR ne sert
+          à rien. « Nos horaires », « notre carte », « nos coordonnées » : tout
+          ça est déjà dehors.</span>
+      </li>
+      <li>
+        <i>Test 2 · la péremption</i>
+        <b>Est-ce que ça change aujourd’hui ?</b>
+        <span>Si l’information est la même dans quinze jours, ce n’est pas du
+          direct, c’est un site web. Et un site web, on ne le rouvre pas.</span>
+      </li>
+      <li>
+        <i>Test 3 · l’évitement</i>
+        <b>Est-ce que ça m’évite un déplacement ou une déception ?</b>
+        <span>Savoir qu’il n’en reste plus vaut autant que savoir qu’il en
+          reste. C’est ce qui transforme la curiosité en habitude.</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">1</span>
+      <h2 class="t">Les métiers de bouche</h2>
+      <p>Les plus faciles : leur marchandise change tous les jours, et personne
+        dehors ne sait ce qu’il y a dedans.</p>
+    </div>
+    <div class="grille">
+
+      <div class="m">
+        <h3><em>🥖</em> Boulangerie</h3>
+        <p class="sait">Les <b>heures de fournée</b> et ce qu’il reste. Deux
+          questions qu’on lui pose au téléphone toute la journée, et pour
+          lesquelles il n’a jamais de réponse écrite nulle part.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Ce qui sort du four aujourd’hui, et à quelle heure.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Vos clients vous
+          appellent pour savoir s’il reste des pains aux céréales. Ils n’auront
+          plus à le faire, et ceux qui n’osaient pas appeler viendront. »</p>
+      </div>
+
+      <div class="m">
+        <h3><em>🥩</em> Boucherie · charcuterie</h3>
+        <p class="sait">La <b>pièce du jour</b>, ce qui est maturé et depuis
+          combien de jours, ce qu’il a préparé le matin, et le nombre de parts
+          restantes sur une belle pièce.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Ce qu’il y a sur l’étal aujourd’hui, et combien il en reste.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Une côte de bœuf
+          maturée 40 jours, vous ne pouvez pas l’écrire sur votre vitre tous
+          les matins. Là, vous le dites une fois et ceux qui la cherchent le
+          savent avant midi. »</p>
+      </div>
+
+      <div class="m">
+        <h3><em>🐟</em> Poissonnerie</h3>
+        <p class="sait">L’<b>arrivage du matin</b> : ce qui est arrivé, d’où,
+          et de quel bateau. C’est l’information la plus périssable de toute la
+          rue commerçante — et la plus recherchée.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Ce qui est arrivé ce matin, et d’où il vient.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Votre arrivage est
+          différent tous les jours et personne ne le sait avant d’être devant
+          l’étal. Vos clients organisent leur repas la veille au soir. »</p>
+      </div>
+
+      <div class="m">
+        <h3><em>🧀</em> Fromagerie</h3>
+        <p class="sait">Ce qui est <b>à point cette semaine</b>. Un fromager
+          sait au jour près ce qu’il faut manger maintenant — c’est son métier,
+          et c’est invisible de la rue.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Les fromages à point aujourd’hui. Pas ceux qui le seront dans
+            dix jours.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « C’est votre conseil qui
+          vous distingue de la grande surface, et aujourd’hui il ne sort pas de
+          votre boutique. »</p>
+      </div>
+
+      <div class="m">
+        <h3><em>🥬</em> Primeur · épicerie</h3>
+        <p class="sait">Ce qui est <b>arrivé le matin et à quel prix</b>. Chez
+          un primeur les prix bougent toutes les semaines, parfois tous les
+          jours, et c’est précisément ce qu’on veut savoir avant de sortir.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Les prix du jour, et ce qui est arrivé ce matin.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Quand vos melons sont
+          arrivés bons et pas chers, tout le monde le saura le matin même. »</p>
+      </div>
+
+      <div class="m">
+        <h3><em>🍰</em> Pâtisserie · chocolaterie</h3>
+        <p class="sait">Les <b>pièces du jour en quantité limitée</b>, et les
+          dates de commande pour les fêtes. Ce qui part en deux heures un
+          samedi ne se saura jamais autrement.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Les pièces du jour — et jusqu’à quand on peut commander.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Vous en faites douze,
+          elles partent en deux heures, et ceux qui seraient venus l’ignorent.
+          Prévenez-les à 8 h. »</p>
+      </div>
+
+      <div class="m">
+        <h3><em>🍽️</em> Restaurant</h3>
+        <p class="sait">Le <b>menu du jour</b> — l’exemple d’école — et, à midi
+          moins le quart, <b>s’il reste une table</b>. Deux informations que
+          l’ardoise sur le trottoir donne mal et tard.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Le menu de midi, à jour, avant de vous asseoir.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Votre ardoise n’est lue
+          que par ceux qui passent devant à 11 h 45. Là, elle est lue par ceux
+          qui décident à 10 h où ils déjeunent. »</p>
+      </div>
+
+      <div class="m">
+        <h3><em>🍷</em> Caviste</h3>
+        <p class="sait">Les <b>bouteilles ouvertes à la dégustation</b>
+          aujourd’hui, et les arrivages en petite quantité. Personne ne sait,
+          en passant devant, qu’il y a un vigneron dans la boutique ce
+          samedi.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Ce qui est ouvert à la dégustation aujourd’hui.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Vous ouvrez trois
+          bouteilles par semaine et seuls ceux qui poussent la porte le
+          découvrent. »</p>
+      </div>
+
+      <div class="m">
+        <h3><em>🍺</em> Bar · café</h3>
+        <p class="sait">Ce qui se passe <b>ce soir</b> : le concert, le match
+          diffusé, les tapas, la nouvelle bière à la pression. Et l’état de la
+          terrasse à 19 h.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Ce qui se passe ici ce soir.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Votre affiche de
+          concert est vue par ceux qui passent. Elle sera vue par tous ceux qui
+          sont déjà venus une fois. »</p>
+      </div>
+
+      <div class="m">
+        <h3><em>🥘</em> Traiteur</h3>
+        <p class="sait">Les <b>plats cuisinés du jour</b> et l’heure à laquelle
+          ils sortent — plus ce qui reste en fin de service, qu’il préfère
+          vendre que jeter.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Ce qui est cuisiné aujourd’hui, et à partir de quelle heure.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Ce qu’il vous reste à
+          18 h 30, dites-le à 18 h 30 : ça se vend au lieu de partir à la
+          poubelle. »</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">2</span>
+      <h2 class="t">Ce qui se vend en rayon</h2>
+      <p>Ici l’information n’est pas ce qui est arrivé, c’est <em>ce qu’il
+        reste</em> — et c’est ce qui évite un déplacement pour rien.</p>
+    </div>
+    <div class="grille">
+
+      <div class="m">
+        <h3><em>👗</em> Magasin de vêtements</h3>
+        <p class="sait">Les <b>tailles qui restent sur la pièce en vitrine</b>.
+          C’est le seul commerce où l’on se déplace, où l’on tombe amoureux
+          d’une pièce, et où l’on repart sans rien parce qu’il ne reste que du
+          XS.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>La pièce en vitrine : dans quelles tailles il en reste.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Vous perdez des ventes
+          sur des gens qui sont venus. Et vous en perdez d’autres sur des gens
+          qui ne sont pas venus parce qu’ils ne savaient pas que la pièce était
+          arrivée. »</p>
+      </div>
+
+      <div class="m">
+        <h3><em>👟</em> Chaussures</h3>
+        <p class="sait">Les <b>pointures restantes</b> sur le modèle exposé, et
+          les fins de série. Exactement le même problème, en plus aigu : on ne
+          se déplace pas deux fois pour une paire.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Le modèle en vitrine : les pointures encore là.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Un client qui vient
+          pour du 44 et repart sans rien ne revient pas. Dites-lui avant. »</p>
+      </div>
+
+      <div class="m">
+        <h3><em>📚</em> Librairie</h3>
+        <p class="sait">Ce qui est <b>arrivé et physiquement en rayon</b>
+          aujourd’hui. Savoir qu’un livre est là, maintenant, à trois cents
+          mètres, est la seule chose qu’une librairie peut opposer à une
+          commande en ligne.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Ce qui est arrivé cette semaine, et ce qui est en rayon
+            aujourd’hui.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Votre seul avantage,
+          c’est <b>tout de suite</b>. Il faut que ça se sache avant qu’ils
+          commandent. »</p>
+      </div>
+
+      <div class="m">
+        <h3><em>💐</em> Fleuriste</h3>
+        <p class="sait">Ce qui est <b>arrivé du marché ce matin</b>. Les fleurs
+          sont la marchandise la plus périssable de la rue : ce qui est beau
+          aujourd’hui ne le sera plus jeudi, et c’est invisible de dehors.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Ce qui est arrivé du marché ce matin.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Vos pivoines arrivent
+          le mardi et le vendredi. Ceux qui les attendent ne savent jamais
+          quand elles sont là. »</p>
+      </div>
+
+      <div class="m">
+        <h3><em>🐾</em> Animalerie</h3>
+        <p class="sait">Les <b>arrivages et les ruptures</b> sur les marques de
+          croquettes — un client d’animalerie achète toujours la même chose, et
+          une rupture le pousse à commander en ligne pour de bon.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Ce qui est en stock aujourd’hui, marque par marque.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Une rupture, et votre
+          client s’abonne en ligne. Il ne revient plus jamais. »</p>
+      </div>
+
+      <div class="m">
+        <h3><em>📰</em> Tabac · presse</h3>
+        <p class="sait">L’<b>arrivage presse du jour</b>, les hors-séries, et
+          les colis à retirer. Le seul commerce où la marchandise a une durée
+          de vie d’une journée.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Ce qui est arrivé aujourd’hui.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Le numéro que vos
+          habitués attendent, vous êtes le seul à savoir qu’il est arrivé. »</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">3</span>
+      <h2 class="t">Ceux qui vendent du temps</h2>
+      <p>Chez eux la marchandise n’est pas sur une étagère : c’est un créneau.
+        Un créneau annulé le matin est perdu à jamais s’il ne se sait pas.</p>
+    </div>
+    <div class="grille">
+
+      <div class="m">
+        <h3><em>✂️</em> Coiffeur</h3>
+        <p class="sait">L’<b>attente réelle maintenant</b>, et les créneaux qui
+          se libèrent sur une annulation. Un fauteuil vide à 15 h ne se rattrape
+          pas le lendemain.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Y a-t-il de la place aujourd’hui, et combien d’attente
+            maintenant.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Une annulation à 14 h,
+          c’est une heure payée pour rien. En trente secondes vous la
+          remplissez. »</p>
+      </div>
+
+      <div class="m">
+        <h3><em>💅</em> Onglerie · institut</h3>
+        <p class="sait">Les <b>créneaux annulés du jour</b> et les prestations
+          courtes qui peuvent se glisser entre deux rendez-vous.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Les rendez-vous qui se libèrent aujourd’hui.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Vos clientes vous
+          envoient des messages pour savoir si vous avez de la place. Vous
+          répondez entre deux poses. »</p>
+      </div>
+
+      <div class="m">
+        <h3><em>🔧</em> Garage</h3>
+        <p class="sait">Le <b>délai réel</b> de la semaine et la disponibilité
+          d’un véhicule de prêt. Deux questions qui décident du choix du
+          garage, et qu’on ne peut poser qu’au téléphone.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>À partir de quand on peut vous prendre, cette semaine.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « On vous appelle dix
+          fois par jour pour la même question, en plein travail. »</p>
+      </div>
+
+      <div class="m">
+        <h3><em>👓</em> Opticien</h3>
+        <p class="sait">Le <b>délai de fabrication du moment</b> et l’heure des
+          rendez-vous libres. Un délai annoncé juste vaut mieux qu’un délai
+          court : c’est le mensonge qui perd le client.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Le délai réel pour vos verres, aujourd’hui.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Quand vous êtes rapide
+          cette semaine, dites-le. C’est votre meilleur argument et il change
+          tous les quinze jours. »</p>
+      </div>
+
+      <div class="m">
+        <h3><em>👔</em> Pressing · retouches</h3>
+        <p class="sait">La <b>charge du jour</b>, donc le délai réel — et les
+          pièces prêtes qui attendent depuis trois semaines.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Ce qui est prêt, et pour quand si vous déposez aujourd’hui.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Vos clients ne savent
+          jamais si c’est prêt. Vous, vous stockez. »</p>
+      </div>
+
+      <div class="m">
+        <h3><em>🏋️</em> Salle de sport</h3>
+        <p class="sait">L’<b>affluence en direct</b> et les places restantes au
+          cours du soir. L’affluence est la première raison pour laquelle on
+          renonce à y aller.</p>
+        <div class="colle"><i>Sur l’autocollant</i>
+          <p>Combien de monde il y a maintenant, et les places au cours de
+            ce soir.</p></div>
+        <p class="dit"><b>Ce que vous lui dites :</b> « Vos abonnés ne viennent
+          pas parce qu’ils croient que c’est plein. Souvent, ça ne l’est
+          pas. »</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">4</span>
+      <h2 class="t">Ce qui est écrit sur tous les autocollants</h2>
+      <p>La phrase du métier est en haut, en gros. Ces trois lignes-là sont les
+        mêmes partout, en petit, sous le QR.</p>
+    </div>
+    <div class="grille">
+      <div class="m">
+        <h3><em>①</em> Ce qu’on ne demande pas</h3>
+        <div class="colle"><i>Sous le QR</i>
+          <p>Rien à installer. Pas de compte, pas de numéro.</p></div>
+        <p class="sait">C’est la première objection d’un passant devant
+          n’importe quel QR, et elle se règle avant d’être posée. Toute
+          l’application est une page web : le QR l’ouvre, point.</p>
+      </div>
+      <div class="m">
+        <h3><em>②</em> Ce qui se passe ensuite</h3>
+        <div class="colle"><i>Sous le QR</i>
+          <p>Vous serez prévenu quand il y a du neuf ici. Vous pouvez arrêter
+            quand vous voulez.</p></div>
+        <p class="sait">Le QR ne sert pas seulement à lire une fois : il sert à
+          <b>s’abonner</b>. C’est là que le passage d’aujourd’hui devient une
+          audience pour demain — la chose que le commerçant ne peut construire
+          par aucun autre moyen.</p>
+      </div>
+      <div class="m">
+        <h3><em>③</em> Qui est derrière</h3>
+        <div class="colle"><i>Sous le QR</i>
+          <p>ClikMe · le direct de Dax</p></div>
+        <p class="sait">Une ligne, pas un logo qui écrase l’enseigne. Sur une
+          vitrine, la marque du commerçant passe avant la nôtre : c’est sa
+          vitre, et un autocollant qui prend toute la place finit décollé.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div class="pieges">
+    <h2>Ce qu’il ne faut promettre à personne</h2>
+    <ul>
+      <li><b>« −10 % pour les abonnés ».</b> Ça marche une fois, ça coûte sa
+        marge, et surtout ça change la nature de la chose : on ne s’abonne plus
+        à un commerçant, on collectionne des bons de réduction. Le jour où il
+        arrête la remise, tout s’arrête. L’information, elle, ne coûte rien à
+        produire et ne se dévalue pas.</li>
+      <li><b>« Notre carte », « nos horaires », « notre histoire ».</b> Échoue
+        au test 2 : c’est identique dans six mois. C’est un site web — et un
+        site web, on ne le rouvre pas.</li>
+      <li><b>« Suivez-nous ».</b> Ne promet rien du tout. Personne n’a jamais
+        photographié un QR pour avoir le droit de suivre quelqu’un ; on le
+        photographie pour obtenir quelque chose maintenant.</li>
+      <li><b>Une promesse que le commerçant ne tiendra pas.</b> C’est le seul
+        piège vraiment grave. « L’heure des fournées » sur la vitre d’un
+        boulanger qui ne publie pas est pire que pas d’autocollant du tout :
+        le passant a essayé, il n’a rien trouvé, et il n’essaiera plus jamais —
+        ni chez lui, ni chez le voisin. <b>On ne colle qu’après avoir vu le
+        commerçant publier trois matins de suite.</b></li>
+    </ul>
+  </div>
+
+  <div class="bas">
+    <p><b>Le point commun de toute la liste, et c’est lui l’argument de
+      vente :</b> aucune de ces informations ne demande au commerçant de
+      travailler plus. Il les a déjà, dans sa tête, à 7 h du matin. On ne lui
+      demande pas de produire du contenu — on lui demande de dire tout haut ce
+      qu’il sait déjà. C’est la seule raison pour laquelle il le fera tous les
+      jours.</p>
+  </div>
+
+</div>
+</body>
+</html>

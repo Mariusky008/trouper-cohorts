@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Le Direct — cahier des charges</title>
+
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════════
+   LE MONDE DE L'APPLICATION, PAS CELUI D'UN DOCUMENT DE PROJET.
+   Le noir vert d'un écran ouvert dans la rue, la menthe de ce qui est
+   vivant, l'ambre de ce qui engage. Ce sont les jetons de /autour-de-moi
+   et du deck : le cahier des charges appartient au même objet que ce
+   qu'il décrit.
+   ═══════════════════════════════════════════════════════════════════════ */
+:root{
+  --nuit:#F7F5EE; --nuit2:#FFFFFF; --encre:#0E1614; --encre2:#4A5A53;
+  --encre3:#7C8C84; --trait:rgba(14,22,20,.13);
+  --menthe:#0B8F63; --ambre:#9A6200; --bleu:#2B5FB8; --rose:#B03E7A;
+  --pose:#FBF8F0;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --nuit:#05090C; --nuit2:#0C1412; --encre:#EAF2EC; --encre2:#93A79C;
+    --encre3:#6C8078; --trait:rgba(234,242,236,.13);
+    --menthe:#3DE2A6; --ambre:#F0B429; --bleu:#7DA8FF; --rose:#F472B6;
+    --pose:#0A1210;
+  }
+}
+:root[data-theme="dark"]{
+  --nuit:#05090C; --nuit2:#0C1412; --encre:#EAF2EC; --encre2:#93A79C;
+  --encre3:#6C8078; --trait:rgba(234,242,236,.13);
+  --menthe:#3DE2A6; --ambre:#F0B429; --bleu:#7DA8FF; --rose:#F472B6;
+  --pose:#0A1210;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--nuit);color:var(--encre);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.enveloppe{max-width:1000px;margin:0 auto;padding:clamp(24px,5vw,64px) clamp(16px,4vw,44px) 96px}
+
+/* ── L'OUVERTURE ──────────────────────────────────────────────────── */
+.oeil{margin:0 0 10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;
+  font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--menthe)}
+h1{margin:0;font-family:Georgia,"Times New Roman",serif;font-weight:900;
+  font-size:clamp(30px,5.4vw,52px);line-height:1.02;letter-spacing:-.035em;
+  text-wrap:balance}
+.chapo{margin:16px 0 0;max-width:62ch;font-size:clamp(15px,1.6vw,17.5px);
+  line-height:1.6;color:var(--encre2)}
+.chapo b{color:var(--encre);font-weight:700}
+
+/* ── LA LÉGENDE DES ÉTATS ─────────────────────────────────────────────
+   Elle est en haut parce que toute la lecture en dépend : ce document
+   sert à cocher, et un état mal compris fait cocher de travers. */
+.legende{margin:26px 0 0;padding:16px 18px;border-radius:14px;
+  background:var(--pose);border:1px solid var(--trait);
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px 22px}
+.legende div{display:flex;align-items:baseline;gap:9px;font-size:13.5px;
+  color:var(--encre2);line-height:1.45}
+.legende b{color:var(--encre)}
+
+/* ── LES PASTILLES D'ÉTAT ─────────────────────────────────────────────
+   Une forme ET une couleur : la couleur seule ne se lit pas en gris, et
+   ce document se relit en marchant. */
+.et{flex:none;display:inline-flex;align-items:center;gap:6px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:10px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;
+  border-radius:999px;padding:4px 10px;border:1px solid}
+.et.fait{color:var(--menthe);border-color:color-mix(in srgb,var(--menthe) 42%,transparent);
+  background:color-mix(in srgb,var(--menthe) 12%,transparent)}
+.et.partiel{color:var(--ambre);border-color:color-mix(in srgb,var(--ambre) 45%,transparent);
+  background:color-mix(in srgb,var(--ambre) 12%,transparent)}
+.et.neuf{color:var(--bleu);border-color:color-mix(in srgb,var(--bleu) 45%,transparent);
+  background:color-mix(in srgb,var(--bleu) 12%,transparent)}
+.et.sommeil{color:var(--encre3);border-color:var(--trait);background:transparent}
+
+/* ── LES SECTIONS ─────────────────────────────────────────────────── */
+section{margin-top:clamp(40px,6vh,68px)}
+.tete{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+  padding-bottom:12px;border-bottom:2px solid var(--encre)}
+.num{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;font-weight:700;
+  letter-spacing:.12em;color:var(--ambre)}
+h2{margin:0;font-family:Georgia,"Times New Roman",serif;font-weight:900;
+  font-size:clamp(21px,3vw,30px);line-height:1.05;letter-spacing:-.03em}
+.tete p{margin:0;flex-basis:100%;font-size:14px;color:var(--encre3);max-width:70ch}
+
+/* ── UNE FONCTIONNALITÉ ───────────────────────────────────────────────
+   Le code de gauche n'est pas décoratif : c'est la référence qui servira
+   à dire « il manque V11 » quand on comparera avec /ville/dax. */
+ul.f{list-style:none;margin:0;padding:0}
+ul.f li{display:grid;grid-template-columns:58px minmax(0,1fr) auto;
+  gap:6px 16px;align-items:baseline;
+  padding:15px 0;border-bottom:1px solid var(--trait)}
+ul.f li:last-child{border-bottom:0}
+.code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;font-weight:700;
+  color:var(--encre3);font-variant-numeric:tabular-nums}
+.quoi b{display:block;font-size:16px;font-weight:700;letter-spacing:-.01em;
+  line-height:1.3}
+.quoi p{margin:4px 0 0;font-size:14px;line-height:1.5;color:var(--encre2);
+  max-width:66ch}
+.quoi em{font-style:normal;color:var(--encre);font-weight:600}
+
+@media(max-width:620px){
+  ul.f li{grid-template-columns:52px minmax(0,1fr);gap:4px 12px}
+  ul.f li .et{grid-column:2;justify-self:start;margin-top:6px}
+}
+
+/* ── CE QUI BLOQUE ────────────────────────────────────────────────────
+   Un encadré, un seul dans tout le document, parce qu'il n'y a qu'une
+   liste dont la lecture ne peut pas être remise à plus tard. */
+.bloque{margin-top:clamp(40px,6vh,68px);padding:clamp(20px,3vw,30px);
+  border-radius:18px;background:var(--pose);
+  border:1px solid color-mix(in srgb,var(--ambre) 34%,transparent)}
+.bloque h2{font-size:clamp(19px,2.6vw,26px)}
+.bloque ol{margin:18px 0 0;padding-left:22px;display:flex;
+  flex-direction:column;gap:13px}
+.bloque li{font-size:15px;line-height:1.55;color:var(--encre2)}
+.bloque li b{color:var(--encre)}
+
+.suite{margin-top:clamp(36px,5vh,56px);padding-top:22px;
+  border-top:1px solid var(--trait);font-size:14.5px;color:var(--encre2);
+  max-width:70ch}
+.suite b{color:var(--encre)}
+.suite ol{padding-left:20px;display:flex;flex-direction:column;gap:8px;
+  margin:12px 0 0}
+</style>
+
+</head>
+<body>
+<div class="enveloppe">
+
+  <p class="oeil">Clikme · Le Direct</p>
+  <h1>Tout ce que fait l’application, écran par écran.</h1>
+  <p class="chapo">
+    Relevé dans le code de <b>/autour-de-moi</b>, la maquette qui sert aux
+    démonstrations. C’est la liste de ce qu’il faudra retrouver dans le produit
+    qui remplacera <b>/ville/(ville)</b>. Chaque ligne porte un code —
+    <b>D4</b>, <b>S9</b>, <b>V11</b> — pour qu’on puisse dire « il manque V11 »
+    au lieu de « il manque le signalement ».
+  </p>
+
+  <div class="legende">
+    <div><span class="et fait">Fait</span> Construit et démontrable aujourd’hui. À porter tel quel.</div>
+    <div><span class="et partiel">Partiel</span> L’écran existe, le mécanisme derrière est simulé.</div>
+    <div><span class="et neuf">À bâtir</span> Décidé, jamais construit.</div>
+    <div><span class="et sommeil">En sommeil</span> Construit, puis éteint volontairement.</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">1</span>
+      <h2>Le paquet — la face de l’annonce</h2>
+      <p>Le premier écran, et celui qu’on regarde debout dans la rue. Un seul objet, un seul geste.</p>
+    </div>
+    <ul class="f">
+      <li><span class="code">D1</span><span class="quoi"><b>Le balayage à trois issues</b>
+        <p>Gauche : passer. Droite : en parler. Un tampon glisse avec la carte, comme sur Tinder. La barre du bas porte les mêmes trois gestes pour ceux qui ne balaient pas.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">D2</span><span class="quoi"><b>Le geste montré une seule fois</b>
+        <p>Au tout premier lancement, la carte part et revient d’elle-même en 3,4 s. Jamais de fenêtre à fermer. Ne se rejoue plus ensuite.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">D3</span><span class="quoi"><b>La carte</b>
+        <p>Photo plein cadre, nature du moment, l’offre en grand, deux lignes de détail, le prix, le prix barré, puis <em>le commerce · la ville · la distance</em>. Le voile est sous le texte, jamais sur la photo entière.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">D4</span><span class="quoi"><b>La pastille du moment en cours</b>
+        <p>En ambre : « 11 h · manger avec l’équipe ». Elle dit <em>quand ça se passe</em>, pas une échéance.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">D5</span><span class="quoi"><b>Le raccourci vers le bas</b>
+        <p>« 5 moments aujourd’hui » — le libellé porte à la fois le geste et son contenu. Il descend sur la fiche.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">D6</span><span class="quoi"><b>La mention du collectif</b>
+        <p>« 👥 4 sur 6 », dans le même raccourci, donc zéro hauteur en plus. Un signal, pas une seconde porte.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">D7</span><span class="quoi"><b>Les quatre natures d’annonce</b>
+        <p>Le menu du jour, l’invitation (or), l’événement de la ville (rose), l’embauche (bleu). Chacune a sa couleur et son contenu sous le pli.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">D8</span><span class="quoi"><b>Le cœur garde, le chiffre ouvre</b>
+        <p>Deux gestes, deux moitiés d’une même pastille. Le cœur met de côté l’annonce qu’on regarde ; le chiffre ouvre <b>Mes commerces</b>. Confondus dans un seul bouton, on perd l’un en cherchant l’autre.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">D12</span><span class="quoi"><b>La pastille des nouvelles du jour</b>
+        <p>Le chiffre comptait les annonces gardées — un stock, qui ne bouge pas : on apprend en trois jours à ne plus le regarder. Il compte désormais ce que les commerces <em>suivis</em> ont publié aujourd’hui. Ambre tant qu’on ne l’a pas ouvert, éteint après, rallumé le lendemain : c’est une <b>date</b> qui est gardée, pas un état. Sans rien de neuf, la pastille redevient verte et compte les gardés — la couleur dit lequel des deux nombres on lit, et la porte ne disparaît jamais.</p>
+        <p>C’est la promesse vérifiable faite au commerçant : <em>« vos abonnés ont une pastille qui s’allume quand vous publiez, et qui ne s’allume pas quand vous ne publiez pas. »</em></p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">D13</span><span class="quoi"><b>Mes commerces — la page derrière le cœur</b>
+        <p>Deux blocs, jamais dans le désordre. <b>Aujourd’hui</b> : une ligne par commerce suivi, avec ce qu’il a publié, l’heure et le prix. <b>Gardés</b> ensuite, parce que ça attendra. Chaque ligne rouvre l’annonce en tête du paquet.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">D14</span><span class="quoi"><b>« Rien aujourd’hui »</b>
+        <p>Le commerce suivi qui n’a rien publié garde sa ligne, en pointillés, sans photo ni chevron — et <em>au milieu des autres</em>, jamais relégué en bas : c’est la comparaison qui travaille. C’est mot pour mot ce que ses clients lisent le jour où il ne fait pas son planning du matin. Aucun argumentaire ne remplace cette ligne-là.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">D9</span><span class="quoi"><b>La profondeur du paquet</b>
+        <p>La carte suivante se devine sous celle du dessus. On sait qu’il y a autre chose derrière.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">D10</span><span class="quoi"><b>L’épinglage</b>
+        <p>Revenir sur une annonce précise depuis un salon ou depuis les gardées : elle sort de son rang le temps qu’on la regarde, sans casser le tri par distance.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">D11</span><span class="quoi"><b>La fin du paquet</b>
+        <p>Quand tout est passé, un écran qui le dit et qui propose de recommencer ou d’élargir.</p></span><span class="et fait">Fait</span></li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">2</span>
+      <h2>Choisir ce qu’on regarde</h2>
+      <p>Une seule pastille en haut à gauche, et tout le filtrage derrière.</p>
+    </div>
+    <ul class="f">
+      <li><span class="code">F1</span><span class="quoi"><b>Les six familles</b>
+        <p>Restaurants (métiers de bouche compris), Mode, Bars, Coiffeurs, Fleuristes, Ongleries. Chacune porte son compte de commerces ouverts maintenant.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">F2</span><span class="quoi"><b>Les envies, par métier</b>
+        <p>« Moins de 15 € », « tout de suite », « à emporter », « table à partager »… Les libellés changent avec la famille. Le nombre d’envies actives se voit sur la pastille.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">F3</span><span class="quoi"><b>Ce que la ville organise</b>
+        <p>Concerts, marchés, nocturnes, vide-greniers — publiés par la mairie, un musée, une association. Mélangés au paquet ou seuls.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">F4</span><span class="quoi"><b>Ceux qui recrutent</b>
+        <p>Un mode à part : les envies n’ont plus de sens sur une offre de poste.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">F5</span><span class="quoi"><b>« Je cherche… » — la demande à la ville</b>
+        <p>La demande part aux commerces ouverts autour, ils répondent, et leurs réponses arrivent en invitations dorées dans le paquet. Tout le mécanisme est écrit et fonctionne&nbsp;; la porte d’entrée est fermée par une constante — jugé « trop d’options » à l’essai.</p></span><span class="et sommeil">En sommeil</span></li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">3</span>
+      <h2>Sous le pli — la fiche du commerce</h2>
+      <p>Ce qu’on lit quand la photo a donné envie. C’est la partie la plus dense de l’application.</p>
+    </div>
+    <ul class="f">
+      <li><span class="code">P1</span><span class="quoi"><b>La journée</b>
+        <p>Les moments horodatés, dans l’ordre : heure, titre, deux lignes, prix, prix barré, étiquette, places restantes. Ce qui est passé se grise, ce qui se joue maintenant s’allume.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">P2</span><span class="quoi"><b>L’action, dans ses mots</b>
+        <p>« Réserver » chez un restaurateur, « Gardez-m’en une part » chez un boucher, « Mettez-m’en un de côté » chez une fleuriste.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">P3</span><span class="quoi"><b>« À plusieurs » — le collectif</b>
+        <p>La jauge, le prix de groupe, la phrase qui dit ce qu’il manque, et le bouton <em>Rejoindre</em>. Collé au prix pour une personne, juste au-dessus : c’est la comparaison qui lui donne son sens.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">P4</span><span class="quoi"><b>La vidéo du moment</b>
+        <p>Dix secondes, muette, en boucle, jamais chargée avant qu’on descende. Jamais sur la face de la carte.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">P5</span><span class="quoi"><b>Les avis, sous le moment qu’ils concernent</b>
+        <p>C’est le plat qu’on note, pas le commerce — et les avis le suivent quand il revient à la carte. Avec les photos prises par les clients.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">P6</span><span class="quoi"><b>« Faites-le revenir »</b>
+        <p>Le seul chiffre du produit qui vienne des habitants : combien de voisins ont demandé que ça revienne. Et la réponse du commerçant — « revient jeudi » — qui prévient ceux qui l’avaient demandé.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">P7</span><span class="quoi"><b>Le catalogue</b>
+        <p>Ce qu’il propose d’habitude, par rayon, avec prix et photos. La référence permanente, à côté de l’actualité du jour. Absent : aucun bouton — on n’ouvre jamais sur une pièce vide.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">P8</span><span class="quoi"><b>Ses photos, légendées</b>
+        <p>Reprises de sa fiche Google au moment où on lui fabrique son site. « La salle », « un autre jour » — la légende évite de croire que le plat est servi aujourd’hui.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">P9</span><span class="quoi"><b>Le mur des clients</b>
+        <p>Séparé de ses photos à lui, et jamais mélangé : les siennes sont choisies, les leurs sont vraies.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">P10</span><span class="quoi"><b>Ses habitués</b>
+        <p>Qui revient, et combien de fois. Un pouce n’est pas un like : il compte des retours.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">P11</span><span class="quoi"><b>La fiche</b>
+        <p>Où, les horaires du jour, et son mot à lui.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">P12</span><span class="quoi"><b>Y aller</b>
+        <p>L’itinéraire, en bas de la fiche, là où on le prend une fois qu’on a choisi — jamais sur la photo.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">P13</span><span class="quoi"><b>Suivre le commerçant</b>
+        <p>« Soyez prévenu avant les autres de ce qu’il propose. »</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">P14</span><span class="quoi"><b>Le poste, et « je passe »</b>
+        <p>Le contrat, la paye, ses mots à lui sur le métier, et le remplacement du formulaire : pas de CV, pas de lettre — on passe tel jour, à telle heure.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">P15</span><span class="quoi"><b>L’événement</b>
+        <p>Ce qu’il faut savoir, le pratique, l’organisateur, la gratuité.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">P16</span><span class="quoi"><b>Poser l’application sur l’écran d’accueil</b>
+        <p>Au bon moment, pas à l’arrivée. Une seule invite sur iPhone, où l’installation se fait à la main.</p></span><span class="et fait">Fait</span></li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">4</span>
+      <h2>Le salon privé — « En parler »</h2>
+      <p>Une conversation attachée à une annonce, qui meurt avec elle. Elle n’existe pas avant qu’on l’ouvre.</p>
+    </div>
+    <ul class="f">
+      <li><span class="code">S1</span><span class="quoi"><b>Attaché au moment, pas au commerce</b>
+        <p>« Le menu du 25 août », pas « discussion avec Chez Bergine ». Deux personnes qui l’ouvrent le même jour sur le même service se retrouvent au même endroit&nbsp;; demain, c’est un autre salon.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">S2</span><span class="quoi"><b>Il s’ouvre vide</b>
+        <p>Personne ne répond à votre place. Un salon ne contient que les gens qu’on y met — et un seul geste est proposé : inviter.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">S3</span><span class="quoi"><b>Inviter par WhatsApp</b>
+        <p>Le lien EST l’application : celui qui le reçoit l’ouvre dans son navigateur, voit le salon et écrit dedans. Rien à installer, rien à créer.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">S4</span><span class="quoi"><b>L’objet en tête</b>
+        <p>La photo, ce qui mène, le prix, ce qu’il en reste, la distance — et une pastille pour ouvrir l’annonce complète.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">S5</span><span class="quoi"><b>Proposer autre chose</b>
+        <p>Pas écrire une phrase : poser une <em>annonce réelle</em> — son menu, son prix, sa distance. C’est ce qu’une messagerie ne saura jamais faire.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">S6</span><span class="quoi"><b>Voter</b>
+        <p>Une voix par personne, qu’on déplace. Pas de pouce en bas : un « 👎 » public contre le choix de quelqu’un est une petite humiliation devant le groupe.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">S7</span><span class="quoi"><b>Qui vient, qui hésite</b>
+        <p>Trois états : l’hôte, ceux qui viennent, ceux que ça intéresse. Le troisième est le plus utile — sans lui, celui qui hésite choisit le silence.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">S8</span><span class="quoi"><b>Réserver pour le groupe</b>
+        <p>Ce qui a gagné, pour ceux qui viennent. Le message part sur le WhatsApp du commerçant.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">S9</span><span class="quoi"><b>Ce que le commerçant reçoit</b>
+        <p>L’écran d’en face, montré dans le salon : l’heure, le nombre, les prénoms, et <em>ce qu’ils ont choisi</em>. Aucune plateforme de réservation ne lui donne le plat.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">S10</span><span class="quoi"><b>Le direct depuis le lieu</b>
+        <p>Quelqu’un y est et le montre — photo ou vidéo muette, sa distance, depuis combien de temps, et combien de minutes pour le rejoindre. Ne s’allume jamais tout seul.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">S11</span><span class="quoi"><b>Faire trancher ceux qui ne sont pas là</b>
+        <p>Deux nuances photographiées depuis le fauteuil, une question, et le vote de ses amies. Se déclenche depuis une photo, jamais depuis une étape à saisir.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">S12</span><span class="quoi"><b>Réactions</b>
+        <p>Un compte par emoji, jamais la liste de qui a réagi : dans un groupe de quatre, savoir qui n’a <em>pas</em> réagi est une information qu’on ne veut donner à personne.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">S13</span><span class="quoi"><b>Public ou privé</b>
+        <p>Public par défaut — un salon privé ne sert que ceux qui étaient déjà d’accord pour sortir, c’est-à-dire WhatsApp. Seul celui qui l’a ouvert peut basculer, et la question se pose au moment d’inviter.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">S14</span><span class="quoi"><b>Écrire, et les façons de dire</b>
+        <p>Le champ, et derrière un « + » : photo, vidéo, direct. Pas au même rang que la réservation.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">S15</span><span class="quoi"><b>Il meurt, mais il reste</b>
+        <p>Quand le moment est passé on n’écrit plus. Terminé ne veut pas dire effacé : on retrouve ce qu’on a vécu, et pourquoi on avait ouvert la conversation.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">S16</span><span class="quoi"><b>Le prénom, demandé au moment de parler</b>
+        <p>On peut lire un salon sans rien donner. On ne peut pas y engager quatre personnes anonymement.</p></span><span class="et fait">Fait</span></li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">5</span>
+      <h2>Le salon public — le collectif</h2>
+      <p>Il existait avant vous, il n’y en a qu’un par moment, et on le rejoint. C’est ce que personne d’autre ne fait.</p>
+    </div>
+    <ul class="f">
+      <li><span class="code">C1</span><span class="quoi"><b>Une seule salle par moment</b>
+        <p>Condition arithmétique du mécanisme : sinon dix groupes de trois au lieu d’un de trente, et aucun n’atteint son seuil.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">C2</span><span class="quoi"><b>La jauge, deux temps</b>
+        <p>Avant le seuil, elle compte des inscrits. Après, elle compte des <em>confirmés</em> et le dit — sans quoi une barre pleine se lit comme un acquis, là où tout peut encore tomber.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">C3</span><span class="quoi"><b>Le second geste</b>
+        <p>« C’est bon, confirmez avant 15 h. » Le même clic redemandé quelques heures avant sépare les curieux des vrais. C’est ce qui remplace l’empreinte bancaire.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">C4</span><span class="quoi"><b>« J’en parle autour de moi »</b>
+        <p>Le vrai moteur : mon intérêt ici n’est pas de bavarder, c’est d’amener les trois qui manquent. Le lien ouvre <em>ce</em> salon.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">C5</span><span class="quoi"><b>Qui peut vous lire, en permanence</b>
+        <p>« 7 personnes que vous ne connaissez pas ». Le vrai danger n’est pas d’appuyer sur le mauvais bouton, c’est d’écrire quelque chose de personnel devant des inconnus.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">C6</span><span class="quoi"><b>Trois natures de seuil</b>
+        <p>Il fait tomber un prix (pantalon, menu, coupe), il déclenche une production (la fournée, la bête), ou il fait venir quelqu’un (le vigneron). Ce n’est pas un système de remises.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">C7</span><span class="quoi"><b>La fiabilité</b>
+        <p>« Vous : 4 sur 4 honorés ». Le commerçant verra l’agrégat — « 9 confirmés, dont 7 qui viennent toujours ». Affichée dans la maquette&nbsp;; le calcul et l’historique restent à écrire.</p></span><span class="et partiel">Partiel</span></li>
+      <li><span class="code">C8</span><span class="quoi"><b>La suspension après deux lapins</b>
+        <p>Ce qui donne du poids à la fiabilité. C’est aussi, exactement, le mécanisme de modération qui manque au salon public et à La Ville : un seul système règle les trois.</p></span><span class="et neuf">À bâtir</span></li>
+      <li><span class="code">C9</span><span class="quoi"><b>Le seuil au-dessus du besoin réel</b>
+        <p>Il lui faut huit, il demande douze. Réglage de l’espace commerçant. Ne coûte rien à construire et absorbe la casse.</p></span><span class="et neuf">À bâtir</span></li>
+      <li><span class="code">C10</span><span class="quoi"><b>Le texte libre entre inconnus</b>
+        <p>Retiré volontairement jusqu’à ce que C8 existe. Ce qui fait tourner un collectif est le compteur et le partage, pas la conversation.</p></span><span class="et sommeil">En sommeil</span></li>
+      <li><span class="code">C11</span><span class="quoi"><b>C’est le commerçant qui lance</b>
+        <p>Il n’est jamais engagé par un compteur : il appuie sur « je lance » avec le nombre de confirmés sous les yeux. Espace commerçant.</p></span><span class="et neuf">À bâtir</span></li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">6</span>
+      <h2>La Ville</h2>
+      <p>Le Direct, ce sont les commerces qui parlent. Ici, ce sont les habitants. Tout s’efface au bout de quelques heures.</p>
+    </div>
+    <ul class="f">
+      <li><span class="code">V1</span><span class="quoi"><b>Dire quelque chose</b>
+        <p>Pas de titre, pas de catégorie à choisir, pas de brouillon : une phrase. C’est l’application qui range.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">V2</span><span class="quoi"><b>Cinq natures, devinées du texte</b>
+        <p>Question, événement, bon plan, coup de cœur, je cherche. On range après coup&nbsp;; on ne demande jamais à quelqu’un de se classer avant d’avoir parlé — et on peut corriger.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">V3</span><span class="quoi"><b>Une photo</b></span><span class="et fait">Fait</span></li>
+      <li><span class="code">V4</span><span class="quoi"><b>Tout disparaît</b>
+        <p>Vraiment supprimé du stockage, pas masqué. Quand on ouvre à midi, on ne voit pas hier. C’est ce qui empêche le forum de quartier.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">V5</span><span class="quoi"><b>Ce qui prolonge la vie d’un message</b>
+        <p>Les réactions et les réponses, jamais le temps qui passe. Le seul classement qu’on s’autorise, et il ne dépend pas de nous.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">V6</span><span class="quoi"><b>Répondre</b></span><span class="et fait">Fait</span></li>
+      <li><span class="code">V7</span><span class="quoi"><b>« Ça m’intéresse »</b>
+        <p>Et à partir de deux intéressés sur une recherche, un salon peut s’ouvrir.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">V8</span><span class="quoi"><b>Ouvrir un salon depuis un message</b></span><span class="et fait">Fait</span></li>
+      <li><span class="code">V9</span><span class="quoi"><b>Un lieu, une heure, une distance</b>
+        <p>Ce qui n’est ni ici ni maintenant n’a pas de place où s’accrocher. Le fil est trié par distance, et chaque message dit combien de temps il lui reste.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">V10</span><span class="quoi"><b>Filtrer par nature</b></span><span class="et fait">Fait</span></li>
+      <li><span class="code">V11</span><span class="quoi"><b>Signaler un message, suspendre quelqu’un</b>
+        <p><em>Rien n’existe aujourd’hui.</em> C’est la seule raison pour laquelle La Ville ne peut pas s’ouvrir à de vrais habitants. Même mécanisme que C8.</p></span><span class="et neuf">À bâtir</span></li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">7</span>
+      <h2>Mes salons</h2>
+    </div>
+    <ul class="f">
+      <li><span class="code">M1</span><span class="quoi"><b>Ouverts maintenant</b>
+        <p>Ceux où l’on est, avec un point qui bat quand quelqu’un y est en direct.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">M2</span><span class="quoi"><b>À découvrir</b>
+        <p>Les salons publics où l’on n’est pas encore. C’est la seule chose qu’une messagerie ne saura jamais : voir que des gens vont quelque part ce soir, et pouvoir s’y joindre sans connaître personne.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">M3</span><span class="quoi"><b>Passés</b>
+        <p>On n’y écrit plus, on les relit.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">M4</span><span class="quoi"><b>Les salons circulent entre téléphones</b>
+        <p>Dans la maquette, un salon vit dans le navigateur qui l’a ouvert. En vrai, celui qui reçoit le lien doit voir le même. <em>C’est le seul point de cette liste qui demande un serveur.</em></p></span><span class="et neuf">À bâtir</span></li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">8</span>
+      <h2>Mon espace</h2>
+      <p>Trois listes qui ne demandent rien et qu’on relit.</p>
+    </div>
+    <ul class="f">
+      <li><span class="code">E1</span><span class="quoi"><b>Suivis</b>
+        <p>Les commerces dont on veut être prévenu. Ils ne sont plus listés ici en toutes lettres : une seule ligne mène à <b>Mes commerces</b> (D13). La même liste à deux endroits est un défaut — on ne sait jamais lequel des deux dit vrai — et celle-ci ne donnait que des noms, pas ce qu’ils ont publié.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">E2</span><span class="quoi"><b>Gardés</b> <p>Les annonces mises de côté. On les rouvre, elles reviennent en tête du paquet.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">E3</span><span class="quoi"><b>Prévu</b> <p>Ce qu’on a réservé, et le code à présenter au commerçant.</p></span><span class="et partiel">Partiel</span></li>
+      <li><span class="code">E4</span><span class="quoi"><b>Demandé</b> <p>Ce qu’on a demandé de faire revenir, et le jour où ça revient.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">E5</span><span class="quoi"><b>Vous, sans compte</b>
+        <p>Un prénom, une initiale, une distance. Pas de visage, pas de nom de famille, pas de profil qu’on puisse suivre. Le prénom se change ici.</p></span><span class="et fait">Fait</span></li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">9</span>
+      <h2>Ce qui traverse tous les écrans</h2>
+    </div>
+    <ul class="f">
+      <li><span class="code">T1</span><span class="quoi"><b>Aucun compte, nulle part</b>
+        <p>Pas d’inscription, pas de numéro, pas de mot de passe. Le prénom est demandé au moment de prendre la parole, jamais à l’arrivée.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">T2</span><span class="quoi"><b>Les trois règles de dégradation</b>
+        <p>Ce qui s’affiche quand la donnée manque : pas de compteur en dessous d’un seuil, pas de zéro affiché, pas de faux plein. Un écran qui ment le premier jour ne se rattrape pas.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">T3</span><span class="quoi"><b>Ce qu’on n’explique qu’une fois</b>
+        <p>Le balayage, le salon, le direct : chaque chose se montre une seule fois et ne revient plus.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">T4</span><span class="quoi"><b>Le menu du bas, toujours là</b>
+        <p>Y compris dans un salon et dans les gardées — défaut relevé à l’essai : « le menu du bas a disparu et ils ne savaient plus comment revenir ».</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">T5</span><span class="quoi"><b>Les alertes de dernière minute</b>
+        <p>Quand ça vaut la peine d’interrompre — un créneau qui se libère chez un commerce suivi, un seuil sur le point de tomber. La permission est demandée au bon moment, pas à l’ouverture.</p></span><span class="et partiel">Partiel</span></li>
+      <li><span class="code">T6</span><span class="quoi"><b>Partager une annonce hors de l’application</b>
+        <p>Vers WhatsApp, avec l’image et le lien. Le geste le plus fait, et celui qui amène les gens.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">T7</span><span class="quoi"><b>La hauteur d’écran réelle</b>
+        <p>Mesurée en continu : la barre d’adresse d’un iPhone mange 90 points qui n’existent pas dans les unités du navigateur.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">T8</span><span class="quoi"><b>L’instrumentation du parcours</b>
+        <p>Ce qu’on regarde, ce qu’on passe, où l’on s’arrête. Sans quoi on discutera d’opinions.</p></span><span class="et fait">Fait</span></li>
+      <li><span class="code">T9</span><span class="quoi"><b>Pas de planning, pas de carte</b>
+        <p>Un commerce qui n’a rien publié n’est nulle part dans la journée : ni dans son métier, ni dans « tout », et le compteur du métier le déduit. Sa recherche d’employé reste, elle ne dépend pas du jour. C’est la règle qui donne son poids à D14 — sans elle, « Rien aujourd’hui » serait une punition inventée.</p></span><span class="et fait">Fait</span></li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">10</span>
+      <h2>L’outil de terrain</h2>
+      <p>Il ne fait pas partie du produit. Aucun habitant ne le verra.</p>
+    </div>
+    <ul class="f">
+      <li><span class="code">O1</span><span class="quoi"><b>Préparer la tournée</b>
+        <p>La veille, sept champs par commerce. Le lendemain, sa carte est la première du paquet. Tout reste sur l’appareil, rien n’est publié — et la carte porte « prête à publier », parce qu’un commerçant qui découvrirait après coup qu’on a mis sa devanture en ligne ne reviendrait pas.</p></span><span class="et fait">Fait</span></li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="tete">
+      <span class="num">11</span>
+      <h2>Ce qui n’est pas dans l’écran</h2>
+      <p>Les deux endroits où ClikMe touche le monde réel. Aucun des deux n’est bâti.</p>
+    </div>
+    <ul class="f">
+      <li><span class="code">R1</span><span class="quoi"><b>Le QR de devanture</b>
+        <p>Un autocollant sur la vitre. Il ne dit pas « téléchargez notre application » — il promet <em>une information que la vitrine ne donne pas et qu’on ne peut pas obtenir sans entrer</em>, et elle change tous les jours. Le menu du jour chez le restaurant, l’heure de la prochaine fournée chez le boulanger, l’attente réelle chez le coiffeur. Un argument par métier : voir <b>le document séparé</b>.</p>
+        <p>Il transforme le passage qu’il a <em>déjà</em> en abonnés. C’est la seule réponse honnête au démarrage à froid : il n’a pas besoin qu’on lui amène des clients, il a besoin de pouvoir parler à ceux qui passent devant.</p></span><span class="et neuf">À bâtir</span></li>
+      <li><span class="code">R2</span><span class="quoi"><b>Le boîtier du comptoir</b>
+        <p>Trois boutons et un micro, posés près de la caisse. Il appuie, il parle dix secondes, ça devient sa journée publiée. Il n’a pas à sortir son téléphone, à le déverrouiller, à trouver l’application — c’est-à-dire qu’on retire le dernier obstacle, celui qui reste après tout ce qu’on a simplifié dans l’écran.</p>
+        <p>Étudié à part : faisabilité, coût réel, ce qui est difficile, et ce qu’il faut refuser d’en faire.</p></span><span class="et neuf">À bâtir</span></li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div class="bloque">
+    <div class="tete"><span class="num">!</span><h2>Ce qui bloque une ouverture à de vrais habitants</h2></div>
+    <ol>
+      <li><b>Le signalement et la suspension (V11 · C8).</b> Un seul système règle La Ville, le salon public et les lapins du collectif. Rien n’existe aujourd’hui, et c’est la seule raison pour laquelle La Ville n’est pas ouverte.</li>
+      <li><b>Les salons entre téléphones (M4).</b> Aujourd’hui un salon vit dans le navigateur qui l’a ouvert. C’est le seul point de tout ce cahier qui demande un serveur.</li>
+      <li><b>L’espace commerçant (C9 · C11, et tout le reste).</b> Le seuil au-dessus du besoin, le bouton « je lance », le récapitulatif du matin. À traiter séparément.</li>
+    </ol>
+  </div>
+
+  <div class="suite">
+    <p><b>La suite, dans l’ordre convenu :</b></p>
+    <ol>
+      <li>Vous relisez cette liste et vous dites ce qui manque.</li>
+      <li>On la compare ligne à ligne avec <b>/ville/(ville)</b> : ce qui y est déjà, ce qui manque, ce qui est à jeter.</li>
+      <li>On reprend l’espace du commerçant pour que chaque geste tienne en quelques secondes — et qu’à chaque planning du matin, il reçoive un récapitulatif qui lui dit ce que ça a produit.</li>
+    </ol>
+  </div>
+
+</div>
+
+</body>
+</html>
