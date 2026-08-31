@@ -250,3 +250,27 @@ filigrane et de visage : `tables-libres`, `terrasse-au-soleil`, `plat-axoa`,
 d'image juste — un fournil et un laboratoire ne se remplacent pas par une salle
 de restaurant. Et rien pour les métiers hors bouche. Il faudrait **deux ou trois
 photos par commerce** : le lieu, la devanture, un produit.
+
+## Les deux vidéos, et pourquoi aucune ne peut servir de portrait
+
+Vérifiées image par image le jour où l'on a voulu les mettre dans le rond de la
+voix du commerçant, qui s'agrandit sur appui.
+
+- **`coiffure.mp4` / `.webm` — INUTILISABLE.** Deux visages reconnaissables, de
+  face, en gros plan pendant toute la séquence. C'est le cas le plus net
+  d'interdiction de ce document. Le fichier n'est utilisé nulle part dans le
+  produit ; il ne doit pas commencer à l'être.
+- **`service-cuisine.mp4` / `.webm` — GARDÉE, ARBITRAGE RENDU.** Une **enseigne
+  lisible** apparaît au second plan, sur une carte de menu posée sur la table.
+  Décision : « c'est une démo, donc personne ne la verra, donc ce n'est pas
+  important s'il y a une enseigne ». Elle sert donc de doublure à la voix de
+  Margot, en plus du moment où elle était déjà.
+  **Ce qui reste à savoir** : le rond de la voix s'agrandit sur appui, donc
+  l'enseigne devient lisible là où elle ne l'était pas. Le fichier disparaîtra
+  le jour où un vrai commerçant filmera la sienne.
+
+**La différence entre les deux n'est pas une question de degré.** Une enseigne
+au second plan est une question de marque, et elle s'arbitre. Un visage est le
+droit à l'image d'une personne qui n'a rien signé, et il ne s'arbitre pas au
+motif que l'audience est petite — c'est précisément l'argument qui ne tient
+devant personne. `coiffure` reste donc dehors.

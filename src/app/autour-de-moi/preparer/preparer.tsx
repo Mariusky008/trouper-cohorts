@@ -112,6 +112,7 @@ export function Preparer() {
   const [liste, setListe] = useState<CommercePrepare[]>([]);
   const [f, setF] = useState({ ...VIDE });
   const [photo, setPhoto] = useState<string | undefined>();
+  const [video, setVideo] = useState<string | undefined>();
   const [echo, setEcho] = useState("");
 
   useEffect(() => setListe(chargerPreparation()), []);
@@ -139,10 +140,12 @@ export function Preparer() {
       prenom: f.prenom.trim() || undefined,
       role: f.role.trim() || undefined,
       conseil: f.conseil.trim() || undefined,
+      video,
     });
     setListe(chargerPreparation());
     setF({ ...VIDE, branche: f.branche });
     setPhoto(undefined);
+    setVideo(undefined);
     setEcho(`« ${f.nom.trim()} » est prête.`);
   }
 
@@ -293,6 +296,39 @@ export function Preparer() {
               </button>
             ))}
           </div>
+
+          {/* SA VIDÉO SE TOURNE MAINTENANT, OU JAMAIS. « Quand vous aurez le
+              temps » revient à ne jamais l'avoir : trois secondes de geste
+              pendant qu'on est devant lui, et c'est réglé. Muette et courte —
+              un rond de quarante pixels n'est pas une tribune. */}
+          <label className="pp-l pp-2">
+            <span>Sa vidéo — trois secondes, un geste, sans parler</span>
+            <input
+              type="file"
+              accept="video/*"
+              capture="environment"
+              onChange={(e) => {
+                const x = e.target.files?.[0];
+                if (!x) return;
+                // PAS DE RÉDUCTION ICI : on ne réencode pas une vidéo dans un
+                // navigateur de téléphone sans le faire chauffer une minute.
+                // Le garde-fou est la TAILLE — au-delà, le stockage local
+                // déborde et on perd toute la tournée préparée.
+                if (x.size > 3_000_000) {
+                  setEcho("Cette vidéo est trop lourde. Trois secondes suffisent.");
+                  return;
+                }
+                const l = new FileReader();
+                l.onload = () => setVideo(String(l.result));
+                l.readAsDataURL(x);
+              }}
+            />
+          </label>
+          {video && (
+            <p className="pp-n pp-2">
+              Vidéo prête. Elle reste sur cet appareil, comme la photo.
+            </p>
+          )}
 
           <label className="pp-l pp-2">
             <span>Sa photo — facultative</span>

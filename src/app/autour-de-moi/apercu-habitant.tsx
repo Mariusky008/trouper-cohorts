@@ -694,6 +694,17 @@ export function ApercuHabitant() {
    * sienne.
    */
   const [arrivee, setArrivee] = useState("");
+  /**
+   * SA VIDÉO, EN GRAND ET AVEC LE SON — sur appui, jamais autrement.
+   *
+   * Le rond fait quarante pixels : muet, il porte un geste, et c'est tout ce
+   * qu'on lui demande. Le son et la parole existent, mais à la demande — un
+   * téléphone qui se met à parler dans une file d'attente se referme.
+   */
+  const [voixOuverte, setVoixOuverte] = useState<null | {
+    nom: string;
+    voix: NonNullable<CarteAutour["voix"]>;
+  }>(null);
   useEffect(() => {
     try {
       const chez = new URLSearchParams(window.location.search).get("chez");
@@ -1491,6 +1502,18 @@ export function ApercuHabitant() {
       dessus.distance,
     );
   }
+  /**
+   * LA VIDÉO DU ROND NE VIT QUE SUR LA CARTE DU DESSUS.
+   *
+   * Trente vidéos qui se chargent dans un paquet qu'on balaie rendent
+   * l'application inutilisable en 4G dans la rue et vident la batterie en une
+   * demi-heure. La carte qui se devine derrière garde son rond — avec
+   * l'affiche ou l'initiale — et personne ne voit la différence, puisqu'elle
+   * est floue et à moitié cachée.
+   */
+  const sansVideo = (k: CarteDirect): CarteDirect =>
+    k.voix?.video ? { ...k, voix: { ...k.voix, video: undefined } } : k;
+
   /** La carte à dessiner : un événement, un poste, une invitation, ou l'annonce. */
   const carteDe = (x: ItemPaquet) => {
     if (estEvenement(x)) return carteDEvenement(x, heure);
@@ -4421,7 +4444,7 @@ export function ApercuHabitant() {
                 {dessous && (
                   <CarteSwipe
                     key={`d-${dessous.id}`}
-                    carte={carteDe(dessous)}
+                    carte={sansVideo(carteDe(dessous))}
                     variante="seconde"
                     className="ap-carte dessous"
                   />
@@ -5350,14 +5373,39 @@ export function ApercuHabitant() {
                             elle, la fiche est exactement celle d'avant. */}
                         {dessus.voix && (
                           <div className="ap-voix">
-                            <span className="ap-voix-t" aria-hidden="true">
-                              {dessus.voix.portrait ? (
+                            <button
+                              type="button"
+                              className={`ap-voix-t${dessus.voix.video ? " film" : ""}`}
+                              disabled={!dessus.voix.video}
+                              aria-label={`Voir ${dessus.voix.prenom}`}
+                              onPointerDown={(ev) => ev.stopPropagation()}
+                              onClick={() => {
+                                if (!dessus.voix?.video) return;
+                                noter("video", 0, "voix-ouverte");
+                                setVoixOuverte({ nom: dessus.nom, voix: dessus.voix });
+                              }}
+                            >
+                              {dessus.voix.video ? (
+                                <video
+                                  poster={dessus.voix.video.affiche}
+                                  muted
+                                  loop
+                                  autoPlay
+                                  playsInline
+                                  preload="metadata"
+                                >
+                                  {dessus.voix.video.webm && (
+                                    <source src={dessus.voix.video.webm} type="video/webm" />
+                                  )}
+                                  <source src={dessus.voix.video.mp4} type="video/mp4" />
+                                </video>
+                              ) : dessus.voix.portrait ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img src={dessus.voix.portrait} alt="" />
                               ) : (
                                 dessus.voix.prenom.slice(0, 1)
                               )}
-                            </span>
+                            </button>
                             <span>
                               <b>
                                 {dessus.voix.prenom}
@@ -6686,14 +6734,41 @@ export function ApercuHabitant() {
                     d'avant. */}
                 {carteArrivee.voix && (
                   <div className="ap-voix arr">
-                    <span className="ap-voix-t" aria-hidden="true">
-                      {carteArrivee.voix.portrait ? (
+                    <button
+                      type="button"
+                      className={`ap-voix-t${carteArrivee.voix.video ? " film" : ""}`}
+                      disabled={!carteArrivee.voix.video}
+                      aria-label={`Voir ${carteArrivee.voix.prenom}`}
+                      onClick={() => {
+                        if (!carteArrivee.voix?.video) return;
+                        noter("video", 0, "voix-porte");
+                        setVoixOuverte({
+                          nom: carteArrivee.nom,
+                          voix: carteArrivee.voix,
+                        });
+                      }}
+                    >
+                      {carteArrivee.voix.video ? (
+                        <video
+                          poster={carteArrivee.voix.video.affiche}
+                          muted
+                          loop
+                          autoPlay
+                          playsInline
+                          preload="metadata"
+                        >
+                          {carteArrivee.voix.video.webm && (
+                            <source src={carteArrivee.voix.video.webm} type="video/webm" />
+                          )}
+                          <source src={carteArrivee.voix.video.mp4} type="video/mp4" />
+                        </video>
+                      ) : carteArrivee.voix.portrait ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={carteArrivee.voix.portrait} alt="" />
                       ) : (
                         carteArrivee.voix.prenom.slice(0, 1)
                       )}
-                    </span>
+                    </button>
                     <span>
                       <b>
                         {carteArrivee.voix.prenom}
@@ -6764,6 +6839,55 @@ export function ApercuHabitant() {
                 </button>
               </div>
             </div>
+          )}
+
+          {/* ─── SA VIDÉO EN GRAND, AVEC LE SON ───
+              Le rond fait quarante pixels : muet, il porte un geste, et c'est
+              tout ce qu'on lui demande. Ici, sur appui, on l'entend — c'est
+              l'inverse de Twitch, où la bulle parle par-dessus un contenu
+              qu'on regarde plusieurs minutes. On ne regarde une carte que deux
+              secondes ; le son ne peut être qu'une demande. */}
+          {voixOuverte && (
+            <>
+              <button
+                type="button"
+                className="ap-fond"
+                aria-label="Fermer"
+                onClick={() => setVoixOuverte(null)}
+              />
+              <div className="ap-film" role="dialog" aria-modal="true">
+                <video
+                  poster={voixOuverte.voix.video?.affiche}
+                  autoPlay
+                  loop
+                  playsInline
+                  controls
+                  preload="metadata"
+                >
+                  {voixOuverte.voix.video?.webm && (
+                    <source src={voixOuverte.voix.video.webm} type="video/webm" />
+                  )}
+                  <source src={voixOuverte.voix.video?.mp4} type="video/mp4" />
+                </video>
+                <p className="ap-film-q">
+                  <b>
+                    {voixOuverte.voix.prenom}
+                    {voixOuverte.voix.role ? `, ${voixOuverte.voix.role}` : ""}
+                  </b>
+                  {voixOuverte.nom}
+                </p>
+                {voixOuverte.voix.signature && (
+                  <p className="ap-film-s">{voixOuverte.voix.signature}</p>
+                )}
+                <button
+                  type="button"
+                  className="ap-film-x"
+                  onClick={() => setVoixOuverte(null)}
+                >
+                  Fermer
+                </button>
+              </div>
+            </>
           )}
 
           {/* ─── PRÉVENEZ-LE — le dernier centimètre ───
@@ -9367,7 +9491,34 @@ export function ApercuHabitant() {
           display:flex;align-items:center;justify-content:center;overflow:hidden;
           font-size:17px;font-weight:850;color:#04150E;
           background:linear-gradient(140deg,#7EE6C0,#3DE2A6);}
-        .ap-voix-t img{width:100%;height:100%;object-fit:cover;}
+        .ap-voix-t{font:inherit;border:0;padding:0;cursor:default;}
+        .ap-voix-t img,.ap-voix-t video{width:100%;height:100%;object-fit:cover;}
+        /* CE QUI DIT QU'ON PEUT APPUYER : un anneau, et rien d'autre. Une
+           pastille « lecture » posee sur un rond de quarante pixels le
+           transformerait en bouton de lecteur video, c'est-a-dire en objet
+           technique — exactement ce qu'on evite. */
+        .ap-voix-t.film{cursor:pointer;
+          box-shadow:0 0 0 2px rgba(61,226,166,.55),0 0 0 4px rgba(5,9,12,.9);}
+        .ap-voix-t.film:active{transform:scale(.95);}
+
+        /* SA VIDEO EN GRAND. Verticale, parce qu'elle est filmee au telephone
+           et qu'un cadre paysage la mettrait en boite noire. */
+        .ap-film{position:absolute;left:14px;right:14px;bottom:14px;z-index:22;
+          padding:14px;border-radius:22px;background:#0B1411;
+          border:1px solid rgba(126,230,192,.28);
+          box-shadow:0 22px 60px rgba(0,0,0,.6);
+          animation:apFeuille .3s cubic-bezier(.22,1.1,.4,1);}
+        .ap-film video{width:100%;max-height:46vh;border-radius:16px;
+          background:#000;display:block;}
+        .ap-film-q{margin:12px 0 0;font-size:12px;color:#8FA79B;}
+        .ap-film-q b{display:block;font-size:16px;font-weight:850;color:#EAF2EC;
+          letter-spacing:-.01em;}
+        .ap-film-s{margin:8px 0 0;font-family:Georgia,"Times New Roman",serif;
+          font-size:13.5px;line-height:1.4;color:#C6D6CD;}
+        .ap-film-x{margin-top:14px;width:100%;font:inherit;font-size:14.5px;
+          font-weight:800;cursor:pointer;color:#C7D3CC;
+          background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);
+          border-radius:14px;padding:13px;}
         .ap-voix>span:last-child{flex:1;min-width:0;
           font-family:Georgia,"Times New Roman",serif;font-size:13px;
           line-height:1.38;color:#C6D6CD;}

@@ -61,8 +61,20 @@ export type CarteDirect = {
    * commerçant qui ne veut rien dire ne perd pas une ligne.
    */
   conseil?: string;
-  /** Qui parle. Le portrait est facultatif : sinon, l'initiale dans un rond. */
-  voix?: { prenom: string; role?: string; portrait?: string };
+  /**
+   * QUI PARLE. Le portrait est facultatif ; la vidéo l'est encore plus.
+   *
+   * LA VIDÉO N'EST DONNÉE QUE SUR LA CARTE DU DESSUS. Trente vidéos qui se
+   * chargent dans un paquet qu'on balaie rendent l'application inutilisable en
+   * 4G dans la rue et vident la batterie. L'écran retire donc le champ des
+   * cartes qui ne sont pas devant — voir `carteDe` côté application.
+   */
+  voix?: {
+    prenom: string;
+    role?: string;
+    portrait?: string;
+    video?: { mp4: string; webm?: string; affiche?: string };
+  };
   prix?: string;
   /** Le prix d'avant, barré. */
   prixBarre?: string;
@@ -299,8 +311,27 @@ export function CarteSwipe({
                 seul qu'on retient. */}
             {c.conseil && c.voix ? (
               <p className="cd-conseil">
+                {/* ─── LE ROND, ET CE QU'IL Y A DEDANS ───
+                    Trois états, du plus riche au plus pauvre, et le dernier
+                    est celui de presque tout le monde : sa vidéo, sa photo,
+                    ou son initiale. La taille ne change jamais — c'est elle
+                    qui fait que la vidéo n'est pas une performance. */}
                 <span className="cd-tete" aria-hidden="true">
-                  {c.voix.portrait ? (
+                  {c.voix.video ? (
+                    <video
+                      poster={c.voix.video.affiche}
+                      muted
+                      loop
+                      autoPlay
+                      playsInline
+                      preload="metadata"
+                    >
+                      {c.voix.video.webm && (
+                        <source src={c.voix.video.webm} type="video/webm" />
+                      )}
+                      <source src={c.voix.video.mp4} type="video/mp4" />
+                    </video>
+                  ) : c.voix.portrait ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={c.voix.portrait} alt="" />
                   ) : (
@@ -596,7 +627,7 @@ export function StylesDirect() {
           font-family:system-ui,sans-serif;font-size:15px;font-weight:850;
           color:#04150E;background:linear-gradient(140deg,#7EE6C0,#3DE2A6);
           box-shadow:0 2px 10px rgba(0,0,0,.4);}
-        .cd-tete img{width:100%;height:100%;object-fit:cover;}
+        .cd-tete img,.cd-tete video{width:100%;height:100%;object-fit:cover;}
         .cd-prixg{margin:9px 0 0;font-size:clamp(24px,7.4vw,34px);font-weight:850;
           letter-spacing:-.03em;line-height:1;color:#fff;
           font-variant-numeric:tabular-nums;}

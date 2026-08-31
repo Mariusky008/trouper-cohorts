@@ -434,6 +434,143 @@ dire(!/\?\./.test(dem), "sans double ponctuation");
 await p.screenshot({ path: "/tmp/ce-qui-revient.png", fullPage: true });
 await ctx.close();
 
+// ═══ 8 · LA VIDÉO DANS LE ROND ═══
+//
+// « Le rond est petit et pas trop dévalorisant. » C'est exactement ça qui
+// retire la honte : une vidéo plein écran est une performance, un rond de
+// quarante pixels est un clin d'œil.
+//
+// ON VÉRIFIE LE MÉCANISME PAR SON VRAI CHEMIN : l'outil de terrain filme trois
+// secondes et la carte préparée la porte. Le test tourne son propre clip,
+// neutre et jetable — c'est aussi ce qui prouve que le chemin du terrain
+// fonctionne, et pas seulement la fixture.
+console.log("\n══ la vidéo dans le rond ══");
+{
+  const c4 = await nav.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  const q = await c4.newPage();
+  q.on("pageerror", (e) => erreurs.push(String(e)));
+  q.on("console", (m) => { if (m.type() === "error") erreurs.push(m.text()); });
+  await q.goto(`${BASE}/autour-de-moi`, { waitUntil: "networkidle" });
+
+  // ON TOURNE UN CLIP NEUTRE DANS LE NAVIGATEUR — un carré de couleur qui
+  // bouge, trois dixièmes de seconde. Il ne ressemble à personne, il ne
+  // sort jamais du test, et il passe par exactement le même chemin qu'une
+  // vidéo filmée devant un commerçant.
+  const clip = await q.evaluate(async () => {
+    const c = document.createElement("canvas");
+    c.width = 120; c.height = 160;
+    const x = c.getContext("2d");
+    let n = 0;
+    const t = setInterval(() => {
+      x.fillStyle = `hsl(${(n += 24) % 360} 60% 45%)`;
+      x.fillRect(0, 0, 120, 160);
+    }, 60);
+    const flux = c.captureStream(25);
+    const bouts = [];
+    const enr = new MediaRecorder(flux, { mimeType: "video/webm" });
+    enr.ondataavailable = (e) => bouts.push(e.data);
+    enr.start();
+    await new Promise((r) => setTimeout(r, 500));
+    enr.stop();
+    clearInterval(t);
+    await new Promise((r) => { enr.onstop = r; });
+    const b = new Blob(bouts, { type: "video/webm" });
+    return await new Promise((r) => {
+      const l = new FileReader();
+      l.onload = () => r(String(l.result));
+      l.readAsDataURL(b);
+    });
+  });
+  dire(clip.startsWith("data:video/webm"), `le clip du test est tourné (${clip.length} car.)`);
+
+  // ON PRÉPARE UN COMMERCE AVEC SA VOIX ET SA VIDÉO, par le vrai magasin.
+  await q.evaluate((v) => {
+    localStorage.setItem("clikme.preparation.v1", JSON.stringify([{
+      id: "prep-essai", nom: "Boucherie Lasserre", metier: "Boucherie",
+      branche: "restaurant", adresse: "12 rue Saint-Vincent",
+      horaires: "7 h – 13 h", distance: "180 m", metres: 180,
+      quoi: "La côte de bœuf maturée", prix: "34 €/kg",
+      prenom: "Serge", role: "boucher",
+      conseil: "La côte, attendez jeudi. Prenez la bavette.",
+      video: v,
+    }]));
+  }, clip);
+  await q.goto(`${BASE}/autour-de-moi`, { waitUntil: "networkidle" });
+  await q.waitForTimeout(4600);
+
+  const rond = await q.evaluate(() => {
+    const t = document.querySelector(".ap-dessus .cd-tete");
+    const v = t?.querySelector("video");
+    const r = t?.getBoundingClientRect();
+    return {
+      chez: document.querySelector(".ap-dessus .cd-chez")?.textContent
+        .replace(/\s+/g, " ").split("·")[0].trim() ?? "",
+      video: !!v,
+      muet: v?.muted ?? null,
+      boucle: v?.loop ?? null,
+      taille: r ? Math.round(r.width) : 0,
+      // ET LA CARTE DU DESSOUS N'EN CHARGE AUCUNE : voir `sansVideo`.
+      dessous: !!document.querySelector(".ap-dessous video"),
+    };
+  });
+  console.log(`  ${rond.chez} · rond de ${rond.taille} px · vidéo ${rond.video ? "oui" : "non"}`);
+  dire(rond.video, "la vidéo est dans le rond de la carte");
+  dire(rond.taille <= 40, `et il garde sa taille (${rond.taille} px)`);
+  dire(rond.muet === true, "elle est muette");
+  dire(rond.boucle === true, "et elle tourne en boucle");
+  dire(!rond.dessous, "la carte du dessous n'en charge aucune");
+  await q.screenshot({ path: "/tmp/voix-video.png" });
+
+  // ── LE SON, SUR APPUI ──
+  await q.click(".ap-vers-bas", { force: true });
+  await q.waitForTimeout(900);
+  await q.$eval(".ap-voix-t", (e) => e.scrollIntoView({ block: "center", behavior: "instant" }));
+  await q.waitForTimeout(300);
+  await q.click(".ap-voix-t.film");
+  await q.waitForTimeout(900);
+  const grand = await q.evaluate(() => {
+    const d = document.querySelector(".ap-film");
+    const v = d?.querySelector("video");
+    return {
+      ouvert: !!d,
+      // ICI LE SON EST PERMIS : c'est une demande, pas une interruption.
+      muet: v?.muted ?? null,
+      commandes: v?.hasAttribute("controls") ?? null,
+      qui: d?.querySelector(".ap-film-q b")?.textContent.trim() ?? "",
+    };
+  });
+  console.log(`  en grand : ${grand.qui}`);
+  dire(grand.ouvert, "l'appui l'ouvre en grand");
+  dire(grand.muet === false, "avec le son");
+  dire(grand.commandes === true, "et les commandes");
+  dire(/boucher/.test(grand.qui), `elle dit qui c'est (${grand.qui})`);
+  await q.screenshot({ path: "/tmp/voix-grand.png" });
+  await c4.close();
+}
+
+// ET LA FICHE EN PORTE UNE AUSSI — arbitrage rendu sur l'enseigne du second
+// plan, voir LISEZ-MOI.md. La vidéo aux deux visages, elle, reste dehors :
+// un visage n'est pas une enseigne.
+{
+  const c5 = await nav.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  const q = await c5.newPage();
+  await q.goto(`${BASE}/autour-de-moi?chez=emporter`, { waitUntil: "networkidle" });
+  await q.waitForTimeout(1500);
+  const rien = await q.evaluate(() => ({
+    rond: !!document.querySelector(".ap-arrivee .ap-voix-t"),
+    film: !!document.querySelector(".ap-arrivee .ap-voix-t video"),
+  }));
+  dire(rien.rond, "le rond de la porte est là");
+  dire(rien.film, "et il porte la vidéo de la fiche");
+  await c5.close();
+}
+
 dire(erreurs.length === 0, `aucune erreur${erreurs.length ? " : " + erreurs[0] : ""}`);
 await nav.close();
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT PASSE");

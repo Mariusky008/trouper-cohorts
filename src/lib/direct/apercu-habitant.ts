@@ -740,6 +740,35 @@ export type Voix = {
    */
   portrait?: string;
   /**
+   * SA VIDÉO — trois secondes, muette, en boucle, dans le même petit rond.
+   *
+   * POURQUOI LE ROND EST LA BONNE TAILLE, ET C'EST TOUT LE SUJET. Ce qui bloque
+   * les commerçants devant une caméra n'est pas la caméra, c'est le FORMAT :
+   * une vidéo plein écran est une performance, et personne ne veut faire
+   * l'acteur. Un rond de quarante pixels n'est pas une performance, c'est un
+   * clin d'œil — « petit et pas trop dévalorisant », et c'est exactement ça qui
+   * retire la honte.
+   *
+   * MUETTE ET COURTE, JAMAIS UNE TÊTE PARLANTE. À quarante pixels on ne lit
+   * aucune bouche, et le son qui démarre tout seul dans une file d'attente est
+   * la façon la plus rapide de faire fermer une application — sur iPhone il est
+   * de toute façon bloqué. On y met un GESTE : il sort une plaque du four, il
+   * hausse les épaules, il fait signe. Le son existe, mais sur appui : on
+   * touche le rond, il s'agrandit, et là on l'entend.
+   *
+   * JAMAIS RÉCLAMÉE, TOUJOURS CHANGEABLE. La règle n'est pas « filmée une
+   * fois » mais « jamais obligatoire » : qu'il la refasse le jour où il a une
+   * nouvelle devanture ou une idée, tant mieux. Ce qu'il ne faut pas, c'est que
+   * le produit la lui demande tous les matins — c'est ainsi que meurent les
+   * vlogs, en neuf jours.
+   *
+   * ELLE N'APPARAÎT QUE LÀ OÙ LE ROND EST DÉJÀ : avec sa phrase, sur sa fiche,
+   * sur sa porte. Rien de neuf ne se pose sur la photo — c'est la règle qu'on
+   * a mis des semaines à tenir, et une vidéo posée dans un coin serait un objet
+   * de plus entre l'œil et le plat.
+   */
+  video?: { mp4: string; webm?: string; affiche?: string };
+  /**
    * ÉCRITE UNE FOIS POUR TOUTES : « Ma pâte lève 18 heures », « Je désosse
    * moi-même », « Je vais chercher mes fleurs à Bordeaux le mardi ».
    *
@@ -1310,6 +1339,29 @@ const CARTES: CarteAutour[] = [
       prenom: "Margot",
       role: "cuisinière",
       signature: "Je fais mes pâtes le matin même.",
+      // ─── LA DOUBLURE DE LA MAQUETTE, ET CE QU'ON EN SAIT ───
+      //
+      // C'est le plan de service qui existe déjà dans le produit. Vérification
+      // faite image par image : une ENSEIGNE LISIBLE apparaît au second plan,
+      // sur une carte de menu posée sur la table. Arbitrage rendu — « c'est une
+      // démo, donc personne ne la verra, donc ce n'est pas important s'il y a
+      // une enseigne » — et il tient : le fichier est déjà en ligne sur un
+      // moment, l'enseigne est petite, et c'est une maquette.
+      //
+      // CE QUI RESTE VRAI QUAND MÊME, ET QUI EST NOTÉ DANS LISEZ-MOI.md : le
+      // rond s'agrandit sur appui, donc l'enseigne devient lisible là où elle
+      // ne l'était pas. Le jour où un vrai commerçant filme la sienne, ce
+      // fichier disparaît de toute façon.
+      //
+      // L'AUTRE VIDÉO DISPONIBLE RESTE DEHORS, et ce n'est pas la même
+      // question : `coiffure` montre DEUX VISAGES reconnaissables, de face,
+      // en gros plan. Une enseigne au second plan est une question de marque ;
+      // un visage est le droit à l'image de quelqu'un qui n'a rien signé.
+      video: {
+        mp4: "/direct/service-cuisine.mp4",
+        webm: "/direct/service-cuisine.webm",
+        affiche: "/direct/service-cuisine.jpg",
+      },
     },
     catalogue: [
       { id: "e-1", rayon: "Sur place", nom: "Lasagnes maison", detail: "Faites le matin.", prix: "11 €", photo: "/direct/plat-lasagnes.jpg" },
@@ -2131,6 +2183,13 @@ const CARTES: CarteAutour[] = [
   // ── COIFFEURS ────────────────────────────────────────────────────────────
   {
     id: "coif-centre",
+    voix: {
+      prenom: "Yann",
+      role: "coiffeur",
+      signature: "Je coupe seul, je prends le temps.",
+      // Pas de vidéo non plus — voir la note chez Margot : les deux fichiers
+      // disponibles violent les règles de photos du produit.
+    },
     catalogue: [
       { id: "k-1", rayon: "Coupes", nom: "Coupe femme", detail: "Shampoing, coupe, brushing.", prix: "38 €", photo: "/direct/avis-coupe.jpg" },
       { id: "k-2", rayon: "Coupes", nom: "Coupe homme", prix: "22 €" },
