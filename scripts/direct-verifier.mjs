@@ -152,6 +152,72 @@ dire(/suivant/i.test(apres.entete), "la bande confirme en trois mots");
 dire(apres.detail === "", `et n'explique plus ce qu'on vient de faire (${apres.detail})`);
 await ctx.close();
 
+// ═══ 4 · LA VOIX DU COMMERÇANT ═══
+//
+// « Il manque toujours la dimension humaine. » Trois choses doivent être
+// vraies, et la troisième est celle qui décide si la fonction est acceptable :
+//
+//   1. LE CONSEIL EST UN JUGEMENT, pas une description. C'est ce qu'aucune
+//      plateforme ne peut copier, parce qu'il n'appartient qu'à celui qui le
+//      porte.
+//   2. IL PREND LA PLACE DU DÉTAIL, il ne s'ajoute pas — l'annonce est déjà
+//      chargée, et on ne gagne pas un pixel.
+//   3. ET SANS VOIX, LA CARTE EST EXACTEMENT CELLE D'AVANT. Une fonction qui
+//      punit ceux qui ne s'en servent pas se fait détester par les trois
+//      quarts de la ville.
+console.log("\n══ la voix du commerçant ══");
+({ ctx, p } = await ouvrir());
+const voix = await p.evaluate(() => {
+  const d = document.querySelector(".ap-dessus");
+  const c = d.querySelector(".cd-conseil");
+  return {
+    chez: d.querySelector(".cd-chez")?.textContent.replace(/\s+/g, " ").split("·")[0].trim() ?? "",
+    conseil: c?.querySelector("span:last-child")?.childNodes[0]?.textContent.trim() ?? "",
+    qui: c?.querySelector("s")?.textContent.trim() ?? "",
+    tete: c?.querySelector(".cd-tete")?.textContent.trim() ?? "",
+    detail: d.querySelector(".cd-detail")?.textContent.trim() ?? "",
+  };
+});
+console.log(`  ${voix.chez} — « ${voix.conseil} » — ${voix.qui} (${voix.tete})`);
+dire(!!voix.conseil, "la carte porte un conseil");
+dire(!!voix.qui, `signé d'un prénom et d'un métier (${voix.qui})`);
+dire(voix.tete.length === 1, `avec son rond, à défaut de portrait (${voix.tete})`);
+// LE POINT QUI COMPTE : il REMPLACE la description, il ne s'y ajoute pas.
+dire(voix.detail === "",
+  `et la ligne de détail a cédé sa place, pas gagné une voisine (${voix.detail})`);
+
+// SANS VOIX, RIEN NE CHANGE. On passe jusqu'à une carte qui n'en a pas.
+let sansVoix = null;
+for (let k = 0; k < 14; k++) {
+  await p.click(".ap-rond");
+  await p.waitForTimeout(320);
+  const e = await p.evaluate(() => ({
+    chez: document.querySelector(".ap-dessus .cd-chez")?.textContent
+      .replace(/\s+/g, " ").split("·")[0].trim() ?? "",
+    conseil: !!document.querySelector(".ap-dessus .cd-conseil"),
+    detail: document.querySelector(".ap-dessus .cd-detail")?.textContent.trim() ?? "",
+  }));
+  if (!e.conseil && e.detail) { sansVoix = e; break; }
+}
+console.log(`  sans voix : ${sansVoix?.chez} → « ${sansVoix?.detail} »`);
+dire(!!sansVoix, "un commerce sans voix garde sa ligne de détail");
+
+// ET LA SIGNATURE DE MÉTIER VIT SOUS LE PLI, écrite une fois pour toutes.
+await p.goto(`${BASE}/autour-de-moi?chez=boulange`, { waitUntil: "networkidle" });
+await p.waitForSelector(".ap-arrivee");
+const arr = await p.evaluate(() => {
+  const v = document.querySelector(".ap-arrivee .ap-voix");
+  return {
+    qui: v?.querySelector("b")?.textContent.trim() ?? "",
+    signature: v?.querySelector("span:last-child")?.lastChild?.textContent.trim() ?? "",
+  };
+});
+console.log(`  sur sa porte : ${arr.qui} — « ${arr.signature} »`);
+dire(/boulanger/.test(arr.qui), `la porte dit qui est derrière (${arr.qui})`);
+dire(/heures/.test(arr.signature), `et sa signature de métier (${arr.signature})`);
+await p.screenshot({ path: "/tmp/voix-porte.png", fullPage: true });
+await ctx.close();
+
 dire(erreurs.length === 0, `aucune erreur${erreurs.length ? " : " + erreurs[0] : ""}`);
 await nav.close();
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT PASSE");

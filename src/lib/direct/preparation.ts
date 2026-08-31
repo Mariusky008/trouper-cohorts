@@ -57,6 +57,22 @@ export type CommercePrepare = {
   quoi: string;
   detail?: string;
   prix?: string;
+  /**
+   * SA VOIX — le prénom et le conseil du jour. Voir `Voix` dans les fiches.
+   *
+   * POURQUOI C'EST DANS L'OUTIL DE TERRAIN. C'est la seule chose de tout ce
+   * formulaire qu'on ne peut pas préparer la veille : il faut être devant lui
+   * et lui poser la question. Et c'est précisément le moment où elle se pose
+   * le mieux — « qu'est-ce que vous conseilleriez à quelqu'un qui entre
+   * aujourd'hui ? ». Il répond en trois secondes, sans y penser, parce qu'il
+   * l'a déjà dit dix fois ce matin. On note, et sa carte cesse d'être une
+   * fiche produit avant même qu'il ait dit oui.
+   *
+   * FACULTATIF, comme le reste de la voix.
+   */
+  prenom?: string;
+  role?: string;
+  conseil?: string;
   /** Ce qu'il pourrait débloquer à plusieurs. Facultatif : la plupart des
    *  premières visites se font très bien sans. */
   collectif?: {
@@ -188,6 +204,7 @@ export function carteDuPrepare(c: CommercePrepare): CarteAutour {
     action: action(c.branche, c.metier),
     envies: [],
     collectif: c.collectif,
+    conseil: c.conseil || undefined,
   };
   return {
     id: c.id,
@@ -206,6 +223,9 @@ export function carteDuPrepare(c: CommercePrepare): CarteAutour {
       mot: "",
     },
     moments: [m],
+    // SA VOIX N'EXISTE QUE S'IL A DONNÉ UN PRÉNOM. Sans lui, on ne signe rien :
+    // une carte signée « — , boucher » serait pire que pas de signature.
+    voix: c.prenom ? { prenom: c.prenom, role: c.role || undefined } : undefined,
     // LE MARQUEUR EST PORTÉ PAR LA CARTE, pas par un réglage global : on peut
     // avoir préparé six commerces et en croiser un vrai entre deux.
     prepare: true,

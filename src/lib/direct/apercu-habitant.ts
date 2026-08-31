@@ -359,6 +359,20 @@ export type MomentJour = {
   titre: string;
   /** Le détail, une ou deux lignes. */
   lignes?: string[];
+  /**
+   * SON CONSEIL DU JOUR — voir `Voix`.
+   *
+   * IL EST SUR LE MOMENT ET NON SUR LE COMMERCE, parce qu'il change avec ce
+   * qu'il a : « prenez plutôt la bavette » n'a de sens que le jour où la côte
+   * est moins belle. Une phrase attachée à la boutique deviendrait un slogan,
+   * et un slogan ne se relit pas deux fois.
+   *
+   * IL PREND LA PLACE DU DÉTAIL, IL NE S'AJOUTE PAS. La carte affiche
+   * aujourd'hui une ligne écrite par le produit — « Salade de saison · Prêtes
+   * tout de suite, à emporter » — que personne n'a jamais lue. On remplace du
+   * texte mort par une voix : zéro pixel de plus sur un écran déjà chargé.
+   */
+  conseil?: string;
   prix?: string;
   prixBarre?: string;
   etiquette?: string;
@@ -681,8 +695,64 @@ export type Bulletin = {
   tour?: TourDeRole;
 };
 
+/**
+ * LA VOIX DU COMMERÇANT — et tout y est facultatif, sans exception.
+ *
+ * LE CONSTAT D'OÙ ELLE SORT. « Il manque toujours la dimension humaine ; le
+ * personal branding est ce qui fonctionne le mieux pour vendre et aucun
+ * commerçant ne sait le faire. » C'est exact, et la raison est simple : tout
+ * ce qu'on leur propose depuis quinze ans suppose qu'ils PRODUISENT quelque
+ * chose — des photos, des vidéos, des publications, une ligne éditoriale. Ils
+ * n'ont ni le temps, ni l'envie, ni le métier pour ça. Alors ils ne font rien,
+ * et on en conclut qu'ils ne veulent pas.
+ *
+ * CE QU'ON DEMANDE À LA PLACE, ET C'EST TOUTE L'ASTUCE : rien de nouveau. Un
+ * commerçant CONSEILLE toute la journée — « prenez plutôt la bavette
+ * aujourd'hui, la côte je la trouve moins belle ». Il le dit cinquante fois
+ * par jour, gratuitement, sans y penser, et ça ne sort jamais de sa boutique.
+ * On lui demande d'écrire une fois ce qu'il vient de dire à voix haute.
+ *
+ * ET C'EST STRICTEMENT INCOPIABLE. Un prix se copie, une photo se copie, une
+ * promotion se copie. Un jugement, non : il n'appartient qu'à celui qui le
+ * porte. Ni un supermarché, ni une chaîne, ni le voisin de la même rue ne
+ * peuvent reprendre « la côte, je la trouve moins belle aujourd'hui ».
+ *
+ * TOUT EST FACULTATIF, ET LA CARTE SANS VOIX EST EXACTEMENT CELLE D'AVANT.
+ * Un commerçant qui ne veut rien dire ne dit rien, et son annonce ne perd pas
+ * une ligne : elle retombe sur sa description. Une fonction qui punit ceux qui
+ * ne s'en servent pas se fait détester par les trois quarts de la ville.
+ */
+export type Voix = {
+  /** Son prénom, tel qu'il se présente à son comptoir. */
+  prenom: string;
+  /** À la première personne : « boulanger », « cuisinière », « fleuriste ». */
+  role?: string;
+  /**
+   * SA PHOTO, À LUI — et elle est absente de toute la maquette, exprès.
+   *
+   * `public/direct/LISEZ-MOI.md` interdit les visages reconnaissables : les
+   * commerces d'ici sont inventés, et coller le visage d'un inconnu trouvé sur
+   * une banque d'images sur une fausse boulangerie est exactement ce qu'on
+   * s'interdit. La démonstration montre donc l'initiale dans un rond — qui est
+   * aussi, et c'est heureux, la dégradation du vrai produit pour le commerçant
+   * qui ne veut pas donner sa tête.
+   */
+  portrait?: string;
+  /**
+   * ÉCRITE UNE FOIS POUR TOUTES : « Ma pâte lève 18 heures », « Je désosse
+   * moi-même », « Je vais chercher mes fleurs à Bordeaux le mardi ».
+   *
+   * C'est la réponse permanente à « pourquoi chez lui plutôt qu'en grande
+   * surface » — celle qu'un artisan sait dire en trois mots et n'écrit nulle
+   * part. Elle ne change jamais, donc elle ne coûte rien à entretenir.
+   */
+  signature?: string;
+};
+
 export type CarteAutour = {
   id: string;
+  /** Voir `Voix`. Absente chez la plupart, et c'est le cas normal. */
+  voix?: Voix;
   branche: CleMetier;
   photo?: string;
   /**
@@ -1185,6 +1255,16 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "emporter",
+    // ─── LA PREMIÈRE VOIX DE LA MAQUETTE ───
+    // C'est la carte à menu qu'on rencontre le plus tôt : c'est donc elle qui
+    // doit montrer ce que la fonction change. Pas de portrait — LISEZ-MOI.md
+    // interdit les visages reconnaissables, et l'initiale est de toute façon
+    // la dégradation du vrai produit pour qui ne veut pas donner sa tête.
+    voix: {
+      prenom: "Margot",
+      role: "cuisinière",
+      signature: "Je fais mes pâtes le matin même.",
+    },
     catalogue: [
       { id: "e-1", rayon: "Sur place", nom: "Lasagnes maison", detail: "Faites le matin.", prix: "11 €", photo: "/direct/plat-lasagnes.jpg" },
       { id: "e-2", rayon: "Sur place", nom: "Curry de légumes", detail: "Végétarien.", prix: "11 €" },
@@ -1237,6 +1317,11 @@ const CARTES: CarteAutour[] = [
       {
         de: 11, a: 13, quand: "11 h – 13 h", icone: "🍲",
         titre: "Les deux plats du jour",
+        // UN JUGEMENT, PAS UNE DESCRIPTION — voir `conseil`. « Faites le
+        // matin » serait une information de plus ; « prenez les lasagnes »
+        // est quelqu'un qui choisit à votre place, et c'est ce qu'on ne
+        // trouve nulle part ailleurs.
+        conseil: "Prenez les lasagnes, la pâte est de ce matin.",
         lignes: ["Lasagnes maison", "Curry de légumes"],
         prix: "11 €", places: 14, action: "Gardez-m'en une part", envies: ["italien", "moins15", "maintenant", "emporter"],
         // LA COMMANDE GROUPEE DU MIDI — le cas le plus banal qui soit dans un
@@ -1362,6 +1447,11 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "boulange",
+    voix: {
+      prenom: "Amanieu",
+      role: "boulanger",
+      signature: "Ma pâte lève dix-huit heures.",
+    },
     // LE BULLETIN LE PLUS IMPORTANT DE LA MAQUETTE, et c'est celui qui porte
     // le tour de rôle. « Il me reste deux croissants » est l'exemple exact
     // qu'aucune plateforme ne sait traiter — voir `TourDeRole`.
@@ -1451,6 +1541,7 @@ const CARTES: CarteAutour[] = [
       {
         de: 14, a: 17, quand: "17 h", icone: "🔥",
         titre: "La fournée de 17 h",
+        conseil: "Le pain de campagne d'aujourd'hui est meilleur que la tradition.",
         lignes: ["Pain de campagne au levain", "Seulement si vous êtes douze"],
         prix: "4,20 €", places: 12, envies: ["maintenant", "emporter"],
         // CELUI-CI EST AU DEUXIÈME TEMPS, ET C'EST DÉLIBÉRÉ : les autres
@@ -1498,6 +1589,11 @@ const CARTES: CarteAutour[] = [
   // est propre — verifie sur les quatre bords, la ou un filigrane se cache.
   {
     id: "boucher",
+    voix: {
+      prenom: "Serge",
+      role: "boucher",
+      signature: "Je désosse et je découpe moi-même.",
+    },
     bulletin: {
       humeur: { emoji: "😄", mot: "content" },
       mot: "J'ai eu la bazadaise que j'attendais depuis trois semaines. Elle est au frigo, elle en a pour quarante jours.",
@@ -1537,6 +1633,12 @@ const CARTES: CarteAutour[] = [
       {
         de: 7, a: 13, quand: "ce matin", icone: "🔪",
         titre: "La côte de bœuf maturée",
+        // IL DÉCONSEILLE SA PIÈCE LA PLUS CHÈRE, ET C'EST TOUT LE SUJET. Un
+        // commerçant qui dit « celle-là, pas aujourd'hui » gagne en une
+        // phrase une confiance qu'aucune promotion n'achète. C'est aussi la
+        // preuve que ce n'est pas de la publicité déguisée : une plateforme
+        // n'écrirait jamais ça à sa place.
+        conseil: "La côte, attendez jeudi. Aujourd'hui, prenez la bavette.",
         lignes: ["Bazadaise, 40 jours de maturation", "Coupée à l’épaisseur que vous voulez"],
         prix: "34 €/kg", places: 6, action: "Gardez-la-moi",
         envies: ["maintenant"],
@@ -2498,6 +2600,11 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
       icone: "🍽️",
       quoi: c.menu.plat,
       lignes: [c.menu.description],
+      // SA VOIX, SI ELLE EXISTE — voir `Voix` et `MomentJour.conseil`. Le
+      // conseil vient du moment en cours : c'est ce qu'il conseille
+      // AUJOURD'HUI, pas une phrase de vitrine.
+      conseil: m?.conseil,
+      voix: c.voix,
       prix: c.menu.prix,
       etiquette: "MENU DU JOUR",
     };
@@ -2530,6 +2637,8 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
     icone: m?.icone ?? "📍",
     quoi: m?.titre ?? "",
     lignes: m?.lignes,
+    conseil: m?.conseil,
+    voix: c.voix,
     prix: m?.prix,
     prixBarre: m?.prixBarre,
     etiquette: m?.etiquette,

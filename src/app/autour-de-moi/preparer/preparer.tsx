@@ -85,7 +85,28 @@ const VIDE = {
   quoi: "",
   detail: "",
   prix: "",
+  prenom: "",
+  role: "",
+  conseil: "",
 };
+
+/**
+ * LES TROIS AMORCES — et c'est elles qui règlent le vrai problème.
+ *
+ * « Écrivez un conseil » donne une page blanche, et une page blanche devant un
+ * commerçant qui a trente secondes donne un champ vide. Ce qui marche, c'est
+ * une question qu'il a déjà entendue cent fois de la bouche de ses clients :
+ * il finit la phrase sans y penser, parce qu'il l'a dite ce matin.
+ *
+ * ELLES NE SONT PAS DES MODÈLES À COCHER MAIS DES DÉBUTS À COMPLÉTER : on les
+ * pose dans le champ, le curseur est à la fin, il continue. La différence est
+ * énorme — un modèle demande de choisir, un début demande de parler.
+ */
+const AMORCES = [
+  "Prenez plutôt ",
+  "Ce que je prendrais à votre place : ",
+  "Si vous ne devez goûter qu'une chose : ",
+];
 
 export function Preparer() {
   const [liste, setListe] = useState<CommercePrepare[]>([]);
@@ -115,6 +136,9 @@ export function Preparer() {
       quoi: f.quoi.trim(),
       detail: f.detail.trim() || undefined,
       prix: f.prix.trim() || undefined,
+      prenom: f.prenom.trim() || undefined,
+      role: f.role.trim() || undefined,
+      conseil: f.conseil.trim() || undefined,
     });
     setListe(chargerPreparation());
     setF({ ...VIDE, branche: f.branche });
@@ -222,6 +246,53 @@ export function Preparer() {
               placeholder="34 €/kg"
             />
           </label>
+
+          {/* ═══ SA VOIX ═══
+              La seule chose de ce formulaire qu'on ne peut pas préparer la
+              veille : il faut être devant lui. Et c'est le bon moment —
+              « qu'est-ce que vous conseilleriez à quelqu'un qui entre
+              aujourd'hui ? » se répond en trois secondes, parce qu'il l'a
+              déjà dit dix fois ce matin. */}
+          <p className="pp-titre">
+            Sa voix — facultatif, et c’est ce qui change tout
+          </p>
+          <label className="pp-l">
+            <span>Son prénom</span>
+            <input
+              value={f.prenom}
+              onChange={(e) => setF({ ...f, prenom: e.target.value })}
+              placeholder="Serge"
+            />
+          </label>
+          <label className="pp-l">
+            <span>Il se présente comment</span>
+            <input
+              value={f.role}
+              onChange={(e) => setF({ ...f, role: e.target.value })}
+              placeholder="boucher"
+            />
+          </label>
+          <label className="pp-l pp-2 pp-clef">
+            <span>Son conseil du jour</span>
+            <input
+              value={f.conseil}
+              onChange={(e) => setF({ ...f, conseil: e.target.value })}
+              placeholder="La côte, attendez jeudi. Aujourd’hui, prenez la bavette."
+            />
+          </label>
+          {/* CE QUI ÉVITE LA PAGE BLANCHE. Voir AMORCES : on ne lui demande
+              pas d'écrire, on lui donne un début de phrase à finir. */}
+          <div className="pp-amorces pp-2">
+            {AMORCES.map((a) => (
+              <button
+                key={a}
+                type="button"
+                onClick={() => setF({ ...f, conseil: a })}
+              >
+                {a.trim()}…
+              </button>
+            ))}
+          </div>
 
           <label className="pp-l pp-2">
             <span>Sa photo — facultative</span>

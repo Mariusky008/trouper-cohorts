@@ -5226,6 +5226,33 @@ export function ApercuHabitant() {
 
                       <div className="ap-bloc">
                         <h3>Le commerce</h3>
+                        {/* ─── QUI EST DERRIÈRE, ET SA SIGNATURE DE MÉTIER ───
+                            Écrite une fois pour toutes — « ma pâte lève dix-
+                            huit heures », « je désosse moi-même » — elle est
+                            la réponse permanente à « pourquoi chez lui plutôt
+                            qu'en grande surface ». C'est ce qu'un artisan sait
+                            dire en trois mots et n'écrit nulle part.
+                            Facultative comme tout le reste de la voix : sans
+                            elle, la fiche est exactement celle d'avant. */}
+                        {dessus.voix && (
+                          <div className="ap-voix">
+                            <span className="ap-voix-t" aria-hidden="true">
+                              {dessus.voix.portrait ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={dessus.voix.portrait} alt="" />
+                              ) : (
+                                dessus.voix.prenom.slice(0, 1)
+                              )}
+                            </span>
+                            <span>
+                              <b>
+                                {dessus.voix.prenom}
+                                {dessus.voix.role ? `, ${dessus.voix.role}` : ""}
+                              </b>
+                              {dessus.voix.signature}
+                            </span>
+                          </div>
+                        )}
                         <p className="ap-mot">{dessus.fiche.mot}</p>
 
                         <div className="ap-l">
@@ -6433,6 +6460,33 @@ export function ApercuHabitant() {
                 <p className="ap-arr-m">
                   {carteArrivee.metier} · {carteArrivee.fiche.ou}
                 </p>
+
+                {/* ─── QUI EST DERRIÈRE — la première chose qu'un nouveau voit ───
+                    C'est ici que la porte du commerçant cesse d'être une fiche.
+                    Quelqu'un vient de photographier un autocollant sur une
+                    vitre : ce qu'on peut lui donner de mieux, avant même ce
+                    qu'il y a à vendre, c'est de savoir chez QUI il est entré.
+                    Facultatif : sans voix, l'écran est exactement celui
+                    d'avant. */}
+                {carteArrivee.voix && (
+                  <div className="ap-voix arr">
+                    <span className="ap-voix-t" aria-hidden="true">
+                      {carteArrivee.voix.portrait ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={carteArrivee.voix.portrait} alt="" />
+                      ) : (
+                        carteArrivee.voix.prenom.slice(0, 1)
+                      )}
+                    </span>
+                    <span>
+                      <b>
+                        {carteArrivee.voix.prenom}
+                        {carteArrivee.voix.role ? `, ${carteArrivee.voix.role}` : ""}
+                      </b>
+                      {carteArrivee.voix.signature}
+                    </span>
+                  </div>
+                )}
 
                 {/* CE QU'IL A AUJOURD'HUI, TOUT DE SUITE. C'est la promesse de
                     l'autocollant, et elle doit être tenue avant qu'on demande
@@ -9040,6 +9094,26 @@ export function ApercuHabitant() {
           font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;
           color:#8FA79B;background:none;border:0;padding:6px 0;}
         .ap-arr-ville s{text-decoration:none;}
+
+        /* ═══ SA SIGNATURE DE MÉTIER ═══
+           Écrite une fois pour toutes, elle ne change jamais : « ma pâte lève
+           dix-huit heures ». Le serif dit que c'est quelqu'un qui parle ; le
+           rond donne le visage que les fiches Google n'ont jamais. */
+        .ap-voix{display:flex;align-items:center;gap:11px;margin:0 0 12px;
+          padding:11px 12px;border-radius:15px;
+          background:rgba(61,226,166,.08);
+          border:1px solid rgba(126,230,192,.24);}
+        .ap-voix-t{flex:none;width:40px;height:40px;border-radius:50%;
+          display:flex;align-items:center;justify-content:center;overflow:hidden;
+          font-size:17px;font-weight:850;color:#04150E;
+          background:linear-gradient(140deg,#7EE6C0,#3DE2A6);}
+        .ap-voix-t img{width:100%;height:100%;object-fit:cover;}
+        .ap-voix>span:last-child{flex:1;min-width:0;
+          font-family:Georgia,"Times New Roman",serif;font-size:13px;
+          line-height:1.38;color:#C6D6CD;}
+        .ap-voix b{display:block;font-family:system-ui,sans-serif;font-size:12px;
+          font-weight:850;color:#8FE9C4;letter-spacing:-.01em;margin-bottom:2px;}
+        .ap-voix.arr{margin:16px 0 0;}
 
         /* ─── CE QUI VOUS ATTEND, SOUS LA PASTILLE ───
            Elle remplace la bande qui vivait au milieu de l'annonce. Elle est

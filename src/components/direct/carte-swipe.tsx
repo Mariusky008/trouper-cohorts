@@ -48,6 +48,21 @@ export type CarteDirect = {
   quoi: string;
   /** Le détail — les lignes d'un menu, par exemple. */
   lignes?: string[];
+  /**
+   * SON CONSEIL DU JOUR, ET QUI LE DIT — voir `Voix` côté données.
+   *
+   * IL REMPLACE LE DÉTAIL, IL NE S'AJOUTE PAS À LUI. « Salade de saison ·
+   * Prêtes tout de suite, à emporter » est une ligne écrite par le produit,
+   * que personne ne lit ; « Prenez les lasagnes, la pâte est de ce matin —
+   * Margot » est quelqu'un qui parle. Même place, même hauteur, et l'annonce
+   * cesse d'être une fiche produit.
+   *
+   * ABSENT, TOUT REDEVIENT COMME AVANT. C'est la règle de la fonction : un
+   * commerçant qui ne veut rien dire ne perd pas une ligne.
+   */
+  conseil?: string;
+  /** Qui parle. Le portrait est facultatif : sinon, l'initiale dans un rond. */
+  voix?: { prenom: string; role?: string; portrait?: string };
   prix?: string;
   /** Le prix d'avant, barré. */
   prixBarre?: string;
@@ -275,8 +290,35 @@ export function CarteSwipe({
                 composition du plat. Deux lignes au maximum, et petites : entre
                 le titre en serif et le prix, il n'a aucune chance de prendre
                 le dessus. */}
-            {!!c.lignes?.length && (
-              <p className="cd-detail">{c.lignes.slice(0, 2).join(" · ")}</p>
+            {/* ─── SA VOIX PREND LA PLACE DU DÉTAIL ───
+                Et seulement si elle existe : sans conseil, la ligne de détail
+                est exactement celle d'avant. Le conseil est en serif et entre
+                guillemets — c'est quelqu'un qui parle, pas une description —
+                et il est signé d'un rond et d'un prénom. Dans un paquet de
+                huit restaurants, celui qui a un visage et une phrase est le
+                seul qu'on retient. */}
+            {c.conseil && c.voix ? (
+              <p className="cd-conseil">
+                <span className="cd-tete" aria-hidden="true">
+                  {c.voix.portrait ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={c.voix.portrait} alt="" />
+                  ) : (
+                    c.voix.prenom.slice(0, 1)
+                  )}
+                </span>
+                <span>
+                  <em>{c.conseil}</em>
+                  <s>
+                    {c.voix.prenom}
+                    {c.voix.role ? `, ${c.voix.role}` : ""}
+                  </s>
+                </span>
+              </p>
+            ) : (
+              !!c.lignes?.length && (
+                <p className="cd-detail">{c.lignes.slice(0, 2).join(" · ")}</p>
+              )
             )}
             {(c.prix || c.prixBarre) && (
               <p className="cd-prixg">
@@ -525,6 +567,36 @@ export function StylesDirect() {
           line-height:1.35;color:#C8D6CD;text-wrap:balance;
           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
           overflow:hidden;}
+        /* ─── SA VOIX ───
+           Meme place et meme hauteur que le detail qu'elle remplace : on ne
+           gagne pas un pixel, on remplace du texte mort par quelqu'un. Le
+           serif et les guillemets font la difference entre une description et
+           une parole ; le rond a gauche donne le visage que les fiches Google
+           n'ont jamais. */
+        .cd-conseil{margin:7px 0 0;max-width:33ch;display:flex;align-items:center;
+          gap:9px;font-family:Georgia,'Times New Roman',serif;font-size:13.5px;
+          line-height:1.32;color:#EAF2EC;text-align:left;}
+        .cd-conseil>span:last-child{min-width:0;}
+        /* LES GUILLEMETS ENCADRENT LA PHRASE, PAS LA SIGNATURE. Sans
+           l'element intermediaire, le guillemet fermant se serait pose apres
+           « — Serge, boucher », c'est-a-dire au mauvais endroit. */
+        .cd-conseil em{font-style:normal;}
+        .cd-conseil em::before{content:"\\201C";}
+        .cd-conseil em::after{content:"\\201D";}
+        .cd-conseil>span:last-child s{display:block;margin-top:3px;
+          text-decoration:none;font-family:inherit;font-size:11px;
+          font-style:italic;color:#9FB5AA;}
+        .cd-conseil>span:last-child s::before{content:"— ";}
+        /* L'INITIALE QUAND IL N'Y A PAS DE PHOTO — et c'est le cas de toute la
+           maquette : LISEZ-MOI.md interdit les visages reconnaissables, et
+           c'est aussi la degradation du vrai produit pour celui qui ne veut
+           pas donner sa tete. */
+        .cd-tete{flex:none;width:34px;height:34px;border-radius:50%;
+          display:flex;align-items:center;justify-content:center;overflow:hidden;
+          font-family:system-ui,sans-serif;font-size:15px;font-weight:850;
+          color:#04150E;background:linear-gradient(140deg,#7EE6C0,#3DE2A6);
+          box-shadow:0 2px 10px rgba(0,0,0,.4);}
+        .cd-tete img{width:100%;height:100%;object-fit:cover;}
         .cd-prixg{margin:9px 0 0;font-size:clamp(24px,7.4vw,34px);font-weight:850;
           letter-spacing:-.03em;line-height:1;color:#fff;
           font-variant-numeric:tabular-nums;}

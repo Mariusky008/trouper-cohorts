@@ -70,6 +70,20 @@ function Styles() {
 .pp-vignette{grid-column:1 / -1;width:110px;border-radius:12px;
   border:1px solid var(--trait)}
 
+/* ─── SA VOIX ───
+   Un intertitre, parce que ces trois champs ne sont pas de la meme nature que
+   les autres : les six premiers se preparent la veille sur une fiche Google,
+   ceux-la demandent d'etre devant lui et de lui poser la question. */
+.pp-titre{grid-column:1 / -1;margin:14px 0 -2px;font-size:12px;font-weight:850;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--menthe)}
+/* LES AMORCES. « Ecrivez un conseil » donne une page blanche ; un debut de
+   phrase se finit tout seul, parce qu'il l'a dite ce matin. */
+.pp-amorces{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:7px;margin-top:-4px}
+.pp-amorces button{font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;
+  color:var(--craie2);background:var(--nuit2);border:1px solid var(--trait);
+  border-radius:999px;padding:7px 13px}
+.pp-amorces button:hover{border-color:var(--menthe);color:var(--craie)}
+
 .pp-actions{margin-top:16px;display:flex;align-items:center;gap:14px;
   flex-wrap:wrap}
 .pp-b{font:inherit;font-size:15px;font-weight:850;color:#04150E;cursor:pointer;
