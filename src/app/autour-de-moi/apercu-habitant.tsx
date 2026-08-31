@@ -84,6 +84,13 @@ import {
 } from "@/lib/direct/suivis";
 import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
 import {
+  abonnerFile,
+  AUCUNE_FILE,
+  basculerFile,
+  chargerFile,
+  fileVide,
+} from "@/lib/direct/file-attente";
+import {
   abonnerVille,
   caMInteresse,
   chargerVille,
@@ -1035,6 +1042,14 @@ export function ApercuHabitant() {
    * fournée à 17 h n'allumait plus rien.
    */
   const lues = useSyncExternalStore(abonnerLecture, chargerLues, luesServeur);
+  /**
+   * LES FILES OÙ L'ON EST INSCRIT — voir `file-attente.ts`.
+   *
+   * C'est ce qui donne au tour de rôle des gens à qui parler : l'offre du soir
+   * ne part plus vers des inconnus, elle descend dans une file où l'on s'est
+   * mis le matin.
+   */
+  const files = useSyncExternalStore(abonnerFile, chargerFile, fileVide);
 
   function allerA_onglet(o: "direct" | "ville" | "salons" | "profil") {
     // ON FERME CE QUI EST PAR-DESSUS, ET C'EST INDISPENSABLE DEPUIS QUE LA
@@ -1807,6 +1822,8 @@ export function ApercuHabitant() {
    * voisins qui ont quelque chose, comprend en une seconde ce que son matin
    * vaut — et personne n'a besoin de le lui expliquer.
    */
+  /** Les files où l'on s'est inscrit ce matin. Voir `file-attente.ts`. */
+  const mesAttentes = toutes.filter((c) => files.includes(c.id) && c.file);
   const nouvelles = mesSuivis.map((c) => ({ c, n: nouvelleDuJour(c, heure) }));
   const combienDeNouvelles = nouvelles.filter((x) => x.n).length;
   /**
@@ -1866,6 +1883,13 @@ export function ApercuHabitant() {
   useEffect(() => {
     if (combienDeNouvelles === 0 || arrivee || avisDuMatinDejaEnvoye()) return;
     const t = setTimeout(() => {
+      // UN GESTE DÉLIBÉRÉ PASSE TOUJOURS AVANT UN AVIS AUTOMATIQUE. Mesuré
+      // deux fois : l'avis partait 2,6 s après l'ouverture et effaçait
+      // l'écho qu'on venait de déclencher soi-même — « vous suivez Le
+      // Pétrin », « c'est noté, vous aurez cinq minutes ». C'est le seul
+      // message automatique du produit ; c'est donc à lui de céder, et il
+      // repartira demain.
+      if (echoRef.current) return;
       const premier = nouvelles.find((x) => x.n);
       const texte =
         combienDeNouvelles > 1
@@ -2039,6 +2063,39 @@ export function ApercuHabitant() {
     setPassees([]);
     setEpingle(c.id);
     setArrivee("");
+  }
+
+  const jeSuisDansLaFile = !!dessus && files.includes(dessus.id);
+  /** L'écho courant, lu sans réarmer l'avis du matin. Voir son effet. */
+  const echoRef = useRef("");
+  echoRef.current = echo;
+
+  /**
+   * ENTRER DANS LA FILE — et c'est ICI qu'on demande la permission de sonner.
+   *
+   * C'est le seul instant de tout le produit où « on vous préviendra » est une
+   * phrase à la fois vraie et attendue : la personne vient de la demander. La
+   * permission réclamée à l'ouverture, ou même au moment de suivre un commerce,
+   * arrive avant qu'on ait promis quoi que ce soit de précis — et se refuse.
+   *
+   * ET SUR IPHONE, IL FAUT QUE L'APPLICATION SOIT POSÉE SUR L'ÉCRAN D'ACCUEIL
+   * pour qu'une notification existe. Ce n'est pas un détail technique : c'est
+   * la condition de tout le mécanisme, et le bon moment pour la demander est
+   * celui-ci, pas l'arrivée.
+   */
+  function entrerDansLaFile(c: CarteAutour) {
+    const dedans = basculerFile(c.id);
+    noter(dedans ? "rappel-demande" : "je-passe", 0, "file");
+    if (!dedans) return;
+    setEchoIcone("⏳");
+    setEcho(
+      `C'est noté. S'il reste ${c.file?.quoi} ${c.file?.quand}, ` +
+        `vous serez prévenu — vous aurez cinq minutes.`,
+    );
+    noter("notif-proposee", 0, "file");
+    void demanderAvertissement().then((r) =>
+      noter(r === "granted" ? "notif-acceptee" : "notif-refusee", 0, "file"),
+    );
   }
 
   /** La porte des nouvelles : la pastille, et la bulle qui la désigne. */
@@ -2930,6 +2987,31 @@ export function ApercuHabitant() {
                       ),
                     )}
                   </div>
+                )}
+                {mesAttentes.length > 0 && (
+                  <>
+                    {/* CE QU'ON ATTEND CE SOIR. Une file où l'on s'est inscrit
+                        le matin et qu'on ne retrouve nulle part est une file
+                        oubliée — et le jour où la notification n'arrive pas,
+                        on ne saura même pas qu'on l'attendait. */}
+                    <h4 className="ap-nouv-t">Vous attendez</h4>
+                    {mesAttentes.map((c) => (
+                      <div key={c.id} className="ap-nouv-e attente">
+                        <div className="ap-nouv-l">
+                          <i aria-hidden="true">⏳</i>
+                          <span>
+                            <u>
+                              <i>{c.nom}</i>
+                            </u>
+                            <b>
+                              S&apos;il reste {c.file?.quoi} {c.file?.quand}
+                            </b>
+                            <em>On vous préviendra · cinq minutes pour répondre</em>
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </>
                 )}
                 {mesGardes.length > 0 && nouvelles.length > 0 && (
                   <h4 className="ap-nouv-t">Gardés</h4>
@@ -4252,9 +4334,21 @@ export function ApercuHabitant() {
                     {/* CE QUE CETTE LIGNE FAIT VRAIMENT : elle dit que ce
                         n'est ni une loterie ni une course de rapidité, mais
                         une file — et que si l'on passe, ça ne se perd pas. */}
+                    {/* D'OÙ ÇA VIENT, ET C'EST CE QUI REND L'INTERRUPTION
+                        ACCEPTABLE. Sans cette ligne, une offre qui surgit avec
+                        cinq minutes au compteur est une publicité pressante.
+                        Avec elle, c'est la réponse à quelque chose qu'on a
+                        demandé le matin même — et le rappel qu'on n'est pas
+                        tombé dessus par hasard, mais parce qu'on était
+                        premier. */}
                     <p className="ap-tour-f">
-                      {tour.apres} personne{tour.apres > 1 ? "s" : ""} après vous
-                      si vous ne répondez pas.
+                      {files.includes(tourCarte.id)
+                        ? `Vous étiez premier dans la file. ${tour.apres} personne${
+                            tour.apres > 1 ? "s" : ""
+                          } après vous.`
+                        : `${tour.apres} personne${
+                            tour.apres > 1 ? "s" : ""
+                          } après vous si vous ne répondez pas.`}
                     </p>
                   </>
                 ) : tourEtat === "pris" ? (
@@ -5346,6 +5440,57 @@ export function ApercuHabitant() {
                           🧭 Y aller
                         </a>
                       </div>
+
+                      {/* ═══ LA FILE DU MATIN ═══
+                          « Il y a peu de chances que les gens tombent pile poil
+                          sur les offres avec le compteur de 5 minutes. » Exact,
+                          et c'était la vraie faiblesse du tour de rôle : il
+                          n'atteignait que ceux qui ouvraient l'application au
+                          bon moment, c'est-à-dire personne.
+
+                          ON A RETOURNÉ LA FENÊTRE. On se met dans la file LE
+                          MATIN, quand on est déjà là, en un appui. Le soir,
+                          l'offre descend dans cette file-là — et la
+                          notification arrive chez quelqu'un QUI L'A DEMANDÉE LE
+                          MATIN MÊME. Ce n'est plus une interruption, c'est une
+                          réponse.
+
+                          ELLE EST AVANT « SUIVRE » ET C'EST DÉLIBÉRÉ : suivre
+                          est un abonnement à tout ce qu'il fera, la file est
+                          une chose précise, pour ce soir. Le concret se décide
+                          plus vite que l'abstrait. */}
+                      {dessus.file && (
+                        <div className="ap-bloc">
+                          <div className="ap-file">
+                            <span className="ap-file-i" aria-hidden="true">⏳</span>
+                            <div className="ap-file-d">
+                              {/* « S'IL EN RESTE » — jamais « il en restera ».
+                                  Un boulanger qui a tout vendu ne doit pas se
+                                  retrouver en faute d'avoir bien travaillé,
+                                  et c'est la phrase qui l'en protège. */}
+                              <b>
+                                S&apos;il reste {dessus.file.quoi}{" "}
+                                {dessus.file.quand}
+                              </b>
+                              <em>
+                                {jeSuisDansLaFile
+                                  ? `Vous êtes ${dessus.file.combien + 1}${
+                                      dessus.file.combien + 1 === 1 ? "er" : "e"
+                                    } dans la file. On vous préviendra, vous aurez cinq minutes.`
+                                  : `${dessus.file.combien} personnes attendent déjà. L'ordre est celui de l'inscription.`}
+                              </em>
+                            </div>
+                            <button
+                              type="button"
+                              className={`ap-file-b${jeSuisDansLaFile ? " on" : ""}`}
+                              onPointerDown={(ev) => ev.stopPropagation()}
+                              onClick={() => entrerDansLaFile(dessus)}
+                            >
+                              {jeSuisDansLaFile ? "✓ J’attends" : "Prévenez-moi"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       {/* ─── SUIVRE, EN DERNIER ET C'EST SA PLACE ───
                           Il était au milieu du bloc du commerce, juste après le
@@ -9095,6 +9240,27 @@ export function ApercuHabitant() {
           color:#8FA79B;background:none;border:0;padding:6px 0;}
         .ap-arr-ville s{text-decoration:none;}
 
+        /* ═══ LA FILE DU MATIN ═══
+           Ambre comme le tour de role, parce que c'est la meme chose a deux
+           moments : on s'inscrit le matin, l'offre descend le soir. Deux
+           couleurs pour un seul mecanisme le couperaient en deux. */
+        .ap-file{display:flex;align-items:center;gap:12px;}
+        .ap-file-i{flex:none;width:40px;height:40px;border-radius:12px;
+          display:flex;align-items:center;justify-content:center;font-size:19px;
+          background:rgba(240,180,41,.14);
+          border:1px solid rgba(240,180,41,.3);}
+        .ap-file-d{flex:1;min-width:0;}
+        .ap-file-d b{display:block;font-size:14px;font-weight:850;color:#EAF2EC;
+          letter-spacing:-.01em;line-height:1.25;}
+        .ap-file-d em{display:block;margin-top:3px;font-style:normal;
+          font-size:11.5px;line-height:1.4;color:#8FA79B;}
+        .ap-file-b{flex:none;font:inherit;font-size:13px;font-weight:850;
+          cursor:pointer;border-radius:999px;padding:10px 15px;color:#2A1B00;
+          background:#F7C948;border:0;}
+        .ap-file-b.on{color:#F0DFB6;background:rgba(240,180,41,.14);
+          border:1px solid rgba(240,180,41,.4);}
+        .ap-file-b:active{transform:scale(.97);}
+
         /* ═══ SA SIGNATURE DE MÉTIER ═══
            Écrite une fois pour toutes, elle ne change jamais : « ma pâte lève
            dix-huit heures ». Le serif dit que c'est quelqu'un qui parle ; le
@@ -9468,6 +9634,10 @@ export function ApercuHabitant() {
            pas de photo, pas de chevron, pas de vert : ce n'est pas un endroit
            ou aller aujourd'hui. Mais il reste a sa place dans la liste, entre
            deux voisins qui ont quelque chose — c'est tout l'interet. */
+        .ap-nouv-e.attente{background:rgba(240,180,41,.08);
+          border-color:rgba(240,180,41,.3);}
+        .ap-nouv-e.attente u{color:#F7C948;}
+        .ap-nouv-e.attente .ap-nouv-l>i{background:rgba(240,180,41,.12);}
         .ap-nouv-e.muet{background:transparent;border-style:dashed;
           border-color:rgba(255,255,255,.13);}
         .ap-nouv-e.muet .ap-nouv-l{cursor:default;}

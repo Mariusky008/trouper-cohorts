@@ -53,10 +53,11 @@ const face = await p.evaluate(() => ({
     .replace(/\s+/g, " ").trim() ?? "",
 }));
 console.log(`  ${face.etiquette} · ${face.quoi} · pastille « ${face.pastille} »`);
-dire(!!face.pastille, "la pastille est là");
-// « CE MATIN », « 11 h – 13 h », « jusqu'à 19 h » : le libellé est celui du
-// commerçant, pas une horloge. Ce qui compte est qu'il dise QUAND.
-dire(face.pastille.length > 2, `elle dit quand (${face.pastille})`);
+// ELLE N'EST PLUS SUR TOUTES LES CARTES, ET C'EST LA CORRECTION : « ce
+// rectangle prend de la place sur chaque annonce et ne sert à rien ». Elle ne
+// survit que devant une vraie borne horaire — voir la section 5.
+dire(!face.pastille || /\d/.test(face.pastille),
+  `pas de rectangle, ou une vraie heure (${face.pastille || "aucun"})`);
 // LE TEST QUI COMPTE : elle ne redit pas ce qui est déjà écrit en gros.
 const motsDuPlat = face.quoi.toLowerCase().split(/\s+/).filter((w) => w.length > 4);
 dire(!motsDuPlat.some((w) => face.pastille.toLowerCase().includes(w)),
@@ -216,6 +217,98 @@ console.log(`  sur sa porte : ${arr.qui} — « ${arr.signature} »`);
 dire(/boulanger/.test(arr.qui), `la porte dit qui est derrière (${arr.qui})`);
 dire(/heures/.test(arr.signature), `et sa signature de métier (${arr.signature})`);
 await p.screenshot({ path: "/tmp/voix-porte.png", fullPage: true });
+await ctx.close();
+
+// ═══ 5 · LE RECTANGLE JAUNE NE DIT PLUS « MAINTENANT · CE MATIN » ═══
+//
+// « Ce rectangle prend de la place sur chaque annonce et ne sert à rien. » Sur
+// la boucherie il disait deux fois la même chose, sur une carte qui est de
+// toute façon celle d'aujourd'hui. Il ne survit que devant une vraie borne.
+console.log("\n══ le rectangle jaune ══");
+({ ctx, p } = await ouvrir());
+const bornes = [];
+for (let k = 0; k < 10; k++) {
+  bornes.push(await p.evaluate(() => ({
+    chez: document.querySelector(".ap-dessus .cd-chez")?.textContent
+      .replace(/\s+/g, " ").split("·")[0].trim() ?? "",
+    pill: document.querySelector(".ap-dessus .cd-quand")?.textContent
+      .replace(/\s+/g, " ").trim() ?? "",
+  })));
+  if (await p.$eval(".ap-rond", (b) => b.disabled).catch(() => true)) break;
+  await p.click(".ap-rond");
+  await p.waitForTimeout(320);
+}
+for (const b of bornes.slice(0, 6))
+  console.log(`  ${b.chez} → ${b.pill || "(pas de rectangle)"}`);
+dire(!bornes.some((b) => /ce matin|aujourd|cette semaine|toute la journ/i.test(b.pill)),
+  "plus jamais « ce matin » ni « aujourd'hui » dans le rectangle");
+dire(bornes.every((b) => !b.pill || /\d/.test(b.pill)),
+  "il ne reste que les vraies heures");
+dire(bornes.some((b) => !b.pill), "et beaucoup de cartes n'en ont plus du tout");
+await ctx.close();
+
+// ═══ 6 · LA FILE DU MATIN ═══
+//
+// « Il y a peu de chances que les gens tombent pile poil sur les offres avec le
+// compteur de 5 minutes. » On retourne la fenêtre : on s'inscrit le matin, et
+// l'offre du soir descend dans cette file-là.
+console.log("\n══ la file du matin ══");
+({ ctx, p } = await ouvrir("/autour-de-moi?chez=boulange"));
+await p.click(".ap-arr-ville");
+await p.waitForTimeout(1300);
+await p.click(".ap-vers-bas", { force: true });
+await p.waitForTimeout(900);
+const f0 = await p.evaluate(() => {
+  const d = document.querySelector(".ap-file");
+  if (!d) return null;
+  return {
+    quoi: d.querySelector("b").textContent.replace(/\s+/g, " ").trim(),
+    combien: d.querySelector("em").textContent.replace(/\s+/g, " ").trim(),
+    bouton: d.querySelector(".ap-file-b").textContent.trim(),
+  };
+});
+if (!f0) { dire(false, "la ligne de la file est sous le pli"); }
+else {
+  console.log(`  « ${f0.quoi} »`);
+  console.log(`  ${f0.combien} → ${f0.bouton}`);
+  // « S'IL EN RESTE », JAMAIS « IL EN RESTERA » : un boulanger qui a tout
+  // vendu ne doit pas se retrouver en faute d'avoir bien travaillé.
+  dire(/^S’il reste|^S'il reste/.test(f0.quoi), `elle ne promet rien (${f0.quoi})`);
+  dire(/attendent déjà/.test(f0.combien), "elle dit combien attendent");
+  dire(/inscription/.test(f0.combien),
+    "et que l'ordre est celui de l'inscription, pas de la vitesse de clic");
+  dire(f0.bouton === "Prévenez-moi", `un seul geste (${f0.bouton})`);
+}
+await p.click(".ap-file-b");
+await p.waitForTimeout(900);
+const f1 = await p.evaluate(() => ({
+  bouton: document.querySelector(".ap-file-b")?.textContent.trim() ?? "",
+  rang: document.querySelector(".ap-file-d em")?.textContent.replace(/\s+/g, " ").trim() ?? "",
+  echo: document.querySelector(".ap-echo")?.textContent.replace(/\s+/g, " ").trim() ?? "",
+  garde: JSON.parse(localStorage.getItem("clikme-file-v1") ?? "[]"),
+}));
+console.log(`  → ${f1.bouton} · ${f1.rang}`);
+console.log(`  « ${f1.echo} »`);
+dire(/attends/i.test(f1.bouton), "on est dans la file");
+dire(/dans la file/.test(f1.rang), `et on connaît son rang (${f1.rang})`);
+dire(/cinq minutes/.test(f1.echo), "l'écho annonce les cinq minutes");
+dire(f1.garde.includes("boulange"), "et ça survit à la fermeture");
+
+// ET ON LA RETROUVE DANS « MES COMMERCES » — une file qu'on ne retrouve nulle
+// part est une file oubliée.
+await p.click(".ap-fav2 .nb");
+await p.waitForTimeout(900);
+const att = await p.evaluate(() => {
+  const e = document.querySelector(".ap-nouv-e.attente");
+  return {
+    titre: [...document.querySelectorAll(".ap-nouv-t")].map((x) => x.textContent.trim()),
+    ligne: e?.textContent.replace(/\s+/g, " ").trim() ?? "",
+  };
+});
+console.log(`  ${JSON.stringify(att.titre)} → ${att.ligne}`);
+dire(att.titre.includes("Vous attendez"), "« Mes commerces » a un bloc « Vous attendez »");
+dire(/Pétrin/.test(att.ligne), `avec le commerce (${att.ligne.slice(0, 60)})`);
+await p.screenshot({ path: "/tmp/file-commerces.png", fullPage: true });
 await ctx.close();
 
 dire(erreurs.length === 0, `aucune erreur${erreurs.length ? " : " + erreurs[0] : ""}`);

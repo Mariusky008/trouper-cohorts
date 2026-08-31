@@ -749,8 +749,33 @@ export type Voix = {
   signature?: string;
 };
 
+/**
+ * CE QU'IL PENSE AVOIR CE SOIR — la file du matin.
+ *
+ * Voir `file-attente.ts` pour le raisonnement complet. En deux lignes : le tour
+ * de rôle n'atteignait que les gens qui ouvraient l'application au bon moment,
+ * c'est-à-dire personne. On se met donc dans la file LE MATIN, en un appui, et
+ * l'offre du soir descend dans cette file-là.
+ *
+ * IL NE PROMET RIEN, ET C'EST ÉCRIT COMME TEL. « S'il en reste » : un
+ * boulanger qui aurait tout vendu ne doit pas se retrouver en faute d'avoir
+ * bien travaillé. C'est la différence entre une file d'attente et une
+ * réservation, et elle doit se lire dans la phrase elle-même.
+ */
+export type FileDuSoir = {
+  /** Ce qu'on attend, dans ses mots : « des croissants », « de la bavette ». */
+  quoi: string;
+  /** Quand il saura : « ce soir vers 18 h », « en fin de matinée ». */
+  quand: string;
+  /** Combien attendent déjà. Jamais inventé — voir les règles de dégradation. */
+  combien: number;
+};
+
 export type CarteAutour = {
   id: string;
+  /** Voir `FileDuSoir`. Absente chez la plupart : elle ne vaut que là où il y a
+   *  vraiment un reste possible, et c'est lui qui l'arme le matin. */
+  file?: FileDuSoir;
   /** Voir `Voix`. Absente chez la plupart, et c'est le cas normal. */
   voix?: Voix;
   branche: CleMetier;
@@ -1255,6 +1280,7 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "emporter",
+    file: { quoi: "des parts à emporter", quand: "après 13 h", combien: 11 },
     // ─── LA PREMIÈRE VOIX DE LA MAQUETTE ───
     // C'est la carte à menu qu'on rencontre le plus tôt : c'est donc elle qui
     // doit montrer ce que la fonction change. Pas de portrait — LISEZ-MOI.md
@@ -1447,6 +1473,13 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "boulange",
+    // LE CAS D'ÉCOLE : c'est de ces croissants-là que le tour de rôle parle le
+    // soir. La file et le tour de rôle sont les deux moitiés d'une même chose.
+    file: {
+      quoi: "des viennoiseries",
+      quand: "en fin de journée",
+      combien: 7,
+    },
     voix: {
       prenom: "Amanieu",
       role: "boulanger",
@@ -1589,6 +1622,7 @@ const CARTES: CarteAutour[] = [
   // est propre — verifie sur les quatre bords, la ou un filigrane se cache.
   {
     id: "boucher",
+    file: { quoi: "de la bavette", quand: "vers 18 h", combien: 4 },
     voix: {
       prenom: "Serge",
       role: "boucher",
@@ -2570,6 +2604,26 @@ export function photosDeLAnnonce(c: CarteAutour, heure: number): string[] {
   return liste;
 }
 
+/**
+ * L'HEURE, ET SEULEMENT SI C'EN EST UNE.
+ *
+ * LE DÉFAUT, RELEVÉ À L'ESSAI : « ce rectangle jaune prend de la place sur
+ * chaque annonce et ne sert à rien ». Sur la boucherie il disait « MAINTENANT ·
+ * CE MATIN » — deux fois la même chose, sur une carte qui est de toute façon
+ * celle d'aujourd'hui. « Aujourd'hui », « ce matin », « cette semaine », « toute
+ * la journée » : aucun n'apprend rien à quelqu'un qui regarde l'annonce du
+ * jour, et chacun coûtait un rectangle sur toutes les cartes.
+ *
+ * CE QUI RESTE, ET C'EST LA SEULE CHOSE QUI MANQUAIT VRAIMENT : une BORNE.
+ * « 11 h – 13 h », « jusqu'à 19 h », « 17 h » répondent à « est-ce que je peux
+ * encore y aller », et rien d'autre sur la carte n'y répond — ni le plat, ni le
+ * prix, ni le nom, ni la distance. La règle tient donc en une ligne : s'il y a
+ * un chiffre, c'est une heure et elle sert ; sinon, il n'y a pas de rectangle.
+ */
+function borneHoraire(quand: string): boolean {
+  return /\d/.test(quand);
+}
+
 export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
   const m = momentEnCours(c, heure);
   // QUAND IL Y A UN MENU DU JOUR, C'EST LUI QU'ON MONTRE — photo comprise. Le
@@ -2596,7 +2650,10 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
       // plat, ni le prix, ni le nom, ni la distance ne répondent à « est-ce
       // que je peux encore y aller ». C'est la seule chose qui manquait, et
       // c'est la seule que la pastille garde.
-      reste: m ? `${seJoueMaintenant(m, heure) ? m.icone + " " : ""}${m.quand}` : "",
+      reste:
+        m && borneHoraire(m.quand)
+          ? `${seJoueMaintenant(m, heure) ? m.icone + " " : ""}${m.quand}`
+          : "",
       icone: "🍽️",
       quoi: c.menu.plat,
       lignes: [c.menu.description],
@@ -2628,12 +2685,15 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
     // · maintenant » chez la prothésiste, « Maintenant · aujourd'hui » sur une
     // carte préparée : le préfixe existe pour dire qu'un moment se joue en ce
     // moment, et quand le libellé le dit déjà il se lit comme un bégaiement.
-    reste: m
-      ? seJoueMaintenant(m, heure) &&
-        !/^(maintenant|aujourd|toute la journ)/i.test(m.quand.trim())
-        ? `Maintenant · ${m.quand}`
-        : m.quand
-      : "",
+    // MÊME RÈGLE QUE PLUS HAUT — voir `borneHoraire`. Le préfixe « Maintenant »
+    // ne survit que devant une vraie borne : « Maintenant · ce matin » disait
+    // deux fois la même chose et occupait un rectangle sur chaque annonce.
+    reste:
+      m && borneHoraire(m.quand)
+        ? seJoueMaintenant(m, heure)
+          ? `Maintenant · ${m.quand}`
+          : m.quand
+        : "",
     icone: m?.icone ?? "📍",
     quoi: m?.titre ?? "",
     lignes: m?.lignes,
