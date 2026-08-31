@@ -128,6 +128,7 @@ import {
   comptesParMetier,
   momentEnCours,
   momentsRestants,
+  nommerApresUnVerbe,
   nouvelleDuJour,
   promesseDeSuivi,
   avisNotes,
@@ -1991,7 +1992,10 @@ export function ApercuHabitant() {
     noter(suit ? "rappel-demande" : "je-passe", 0, "suivre");
     if (!suit) return;
     setEchoIcone("🔔");
-    setEcho(`Vous suivez ${c.nom}. Vous recevrez en priorité ${promesseDeSuivi(c)}.`);
+    setEcho(
+      `Vous suivez ${nommerApresUnVerbe(c.nom)}. ` +
+        `Vous recevrez en priorité ${promesseDeSuivi(c)}.`,
+    );
     noter("notif-proposee", 0, "suivre");
     void demanderAvertissement().then((r) =>
       noter(r === "granted" ? "notif-acceptee" : "notif-refusee", 0, "suivre"),
@@ -4272,13 +4276,15 @@ export function ApercuHabitant() {
                         <i aria-hidden="true">→</i>Passé au suivant
                       </span>
                     </div>
-                    {/* ON DIT CE QUI SE PASSE ENSUITE, ET C'EST TOUT LE
-                        CONTRAIRE D'UNE PERTE : personne n'a rien à faire, et
-                        les croissants ne finiront pas à la poubelle. */}
-                    <p className="ap-tour-d">
-                      Proposé à la personne suivante. Vous repassez devant la
-                      prochaine fois.
-                    </p>
+                    {/* PLUS DE PHRASE SOUS L'EN-TÊTE. Il y avait « Proposé à
+                        la personne suivante. Vous repassez devant la prochaine
+                        fois. » — « c'est inutile cette précision », et c'est
+                        vrai : on vient d'appuyer sur « Je passe », donc on
+                        sait qu'on passe. Trois mots suffisent à confirmer, et
+                        la bande s'efface cinq secondes plus tard. La règle du
+                        tour de rôle, elle, se lit avant de décider — sur
+                        l'offre, « 4 personnes après vous » — c'est-à-dire au
+                        seul moment où elle sert à quelque chose. */}
                   </>
                 )}
               </div>
@@ -4642,7 +4648,7 @@ export function ApercuHabitant() {
                                     choses posée sous un infinitif ne s'adresse
                                     à personne. Avec un destinataire et un
                                     verbe, elle dit ce qu'on reçoit. */}
-                                <b>Suivre {dessus.nom}</b>
+                                <b>Suivre {nommerApresUnVerbe(dessus.nom)}</b>
                                 Recevez en priorité {promesseDeSuivi(dessus)}.
                               </span>
                             </button>
@@ -5353,8 +5359,8 @@ export function ApercuHabitant() {
                           <span>
                             <b>
                               {suivis.includes(dessus.id)
-                                ? `Vous suivez ${dessus.nom}`
-                                : `Suivre ${dessus.nom}`}
+                                ? `Vous suivez ${nommerApresUnVerbe(dessus.nom)}`
+                                : `Suivre ${nommerApresUnVerbe(dessus.nom)}`}
                             </b>
                             {suivis.includes(dessus.id)
                               ? `Vous recevez en priorité ${promesseDeSuivi(dessus)}.`

@@ -2297,12 +2297,38 @@ export function promesseDeSuivi(c: CarteAutour): string {
   if (/ongle|ongul|institut|esthé|esthe|beauté|beaute/.test(m))
     return "les créneaux annulés du jour";
   if (/cavist/.test(m)) return "ce qui est ouvert à la dégustation";
-  if (/bar|café|cafe|brasser/.test(m)) return "ce qui se passe ici ce soir";
+  // « CE QUI SE PASSE ICI CE SOIR » — sauf qu'on n'y est pas. La promesse se
+  // lit sur une annonce, à distance : « ici » y désigne le téléphone, pas le
+  // bar. Le pronom règle la question sans rallonger la phrase.
+  if (/bar|café|cafe|brasser/.test(m)) return "ce qui s'y passe le soir";
   if (/mode|vêtement|vetement|friperie|prêt-à|pret-a|chaussur/.test(m))
     return "les nouveautés et les tailles qu'il reste";
   if (/traiteur/.test(m)) return "les plats cuisinés du jour";
   if (/restaur|table|brasser/.test(m)) return "le menu du jour et les dernières places";
   return "ses offres du jour";
+}
+
+/**
+ * COMMENT ON NOMME UN COMMERCE APRÈS UN VERBE — « Suivre… ».
+ *
+ * LE DÉFAUT, RELEVÉ À L'ESSAI : « Suivre Un bar à vins », « la formulation est
+ * étrange ». Elle l'est. Les commerces de la maquette sont anonymes — « Un bar
+ * à vins », « Une boucherie du centre » — parce qu'ils sont inventés et qu'on
+ * ne met pas une vraie enseigne dans une démonstration. Mais un article
+ * indéfini collé derrière un verbe donne une phrase qui n'existe pas en
+ * français : on ne suit pas « un » bar, on suit CE bar-là.
+ *
+ * L'ARTICLE PORTE LE GENRE, et c'est ce qui rend la règle exacte sans qu'on
+ * ait à déclarer le genre de chaque fiche : « Un bar » → « ce bar », « Une
+ * boucherie » → « cette boucherie ». Les noms propres et les enseignes qui
+ * commencent par un article défini ne bougent pas : « Suivre Le Pétrin
+ * d'Amanieu » se dit très bien.
+ */
+export function nommerApresUnVerbe(nom: string): string {
+  if (/^Une /.test(nom)) return `cette ${nom.slice(4)}`;
+  if (/^Un [aeiouyéèêh]/i.test(nom)) return `cet ${nom.slice(3)}`;
+  if (/^Un /.test(nom)) return `ce ${nom.slice(3)}`;
+  return nom;
 }
 
 export function nouvelleDuJour(
@@ -2456,14 +2482,19 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
       ville: c.ville,
       distance: c.distance,
       itineraire: c.itineraire,
-      // COURT, PARCE QUE LA PASTILLE PARTAGE SA LIGNE AVEC « Y ALLER ». Le
-      // titre du moment porte l'information ; l'heure seule ne dit rien, et
-      // les deux ensemble ne tiennent pas.
-      reste: m
-        ? seJoueMaintenant(m, heure)
-          ? `${m.icone} ${m.titre}`
-          : `${m.quand} · ${m.titre}`
-        : "",
+      // ─── LA PASTILLE NE RÉPÈTE PLUS LE MENU, ELLE DIT JUSQU'À QUAND ───
+      //
+      // Elle affichait le titre du moment : « 🍲 Les deux plats du jour » —
+      // au-dessus d'une carte qui dit déjà « MENU DU JOUR · LASAGNES MAISON ·
+      // 11 € ». Trois façons d'écrire la même chose sur un écran dont toute la
+      // promesse est qu'on le comprenne en une seconde. « Est-ce vraiment
+      // utile, cette mention ? » — pas sous cette forme.
+      //
+      // CE QUE LA CARTE NE DIT NULLE PART, en revanche, c'est L'HEURE : ni le
+      // plat, ni le prix, ni le nom, ni la distance ne répondent à « est-ce
+      // que je peux encore y aller ». C'est la seule chose qui manquait, et
+      // c'est la seule que la pastille garde.
+      reste: m ? `${seJoueMaintenant(m, heure) ? m.icone + " " : ""}${m.quand}` : "",
       icone: "🍽️",
       quoi: c.menu.plat,
       lignes: [c.menu.description],
