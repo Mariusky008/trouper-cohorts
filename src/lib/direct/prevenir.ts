@@ -91,11 +91,22 @@ export function commentPrevenir(a: {
   prenom?: string;
   /** « Je passe avant la fermeture », « Je serai là à 12 h 30 »… */
   quand?: string;
+  /**
+   * ON DEMANDE AU LIEU DE PRENDRE — et ce n'est pas la même phrase.
+   *
+   * Depuis « ce qui revient », on écrit à propos d'une chose qu'il faisait
+   * il y a dix jours : « je prends la garbure » annonce une commande pour
+   * quelque chose qui n'existe peut-être plus, et met le commerçant en faute
+   * de ne pas l'avoir. La question, elle, ne l'engage à rien.
+   */
+  demande?: boolean;
 }): CommentPrevenir {
   const signature = a.prenom ? ` — ${a.prenom}` : "";
-  const texte =
-    `Bonjour, je prends ${a.quoi} (vu sur ClikMe). ` +
-    `${a.quand ?? "Je passe avant la fermeture"}.${signature}`;
+  const texte = a.demande
+    ? `Bonjour, est-ce que vous avez encore ${a.quoi} en ce moment ? ` +
+      `(vu sur ClikMe)${signature}`
+    : `Bonjour, je prends ${a.quoi} (vu sur ClikMe). ` +
+      `${a.quand ?? "Je passe avant la fermeture"}.${signature}`;
   const num = international(a.telephone);
   return {
     whatsapp: `https://wa.me/${num}?text=${encodeURIComponent(texte)}`,

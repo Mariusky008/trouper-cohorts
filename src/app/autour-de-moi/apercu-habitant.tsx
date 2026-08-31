@@ -84,6 +84,14 @@ import {
 } from "@/lib/direct/suivis";
 import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
 import {
+  abonnerRemises,
+  avecLesRemises,
+  ceQuiRevient,
+  chargerRemises,
+  phraseHabitude,
+  remisesVides,
+} from "@/lib/direct/historique";
+import {
   abonnerFile,
   AUCUNE_FILE,
   basculerFile,
@@ -837,6 +845,8 @@ export function ApercuHabitant() {
     telephone: string;
     quoi: string;
     quand?: string;
+    /** On demande s'il en a encore, au lieu d'annoncer qu'on prend. */
+    demande?: boolean;
     /** Joué seulement si l'on confirme avoir prévenu. */
     alors?: () => void;
   }>(null);
@@ -1336,7 +1346,15 @@ export function ApercuHabitant() {
   );
   const cartesPreparees = prepares.map(carteDuPrepare);
 
-  const toutes = toutesLesCartes();
+  /**
+   * CE QU'IL VIENT DE REMETTRE EN LIGNE — voir `historique.ts`.
+   *
+   * Un commerçant qui appuie sur « Remettre » depuis son écran doit voir sa
+   * carte changer DANS LE PAQUET, tout de suite. Sans ça, le bouton demande de
+   * croire qu'il a marché, et un bouton qu'il faut croire ne se réappuie pas.
+   */
+  const remises = useSyncExternalStore(abonnerRemises, chargerRemises, remisesVides);
+  const toutes = toutesLesCartes().map((c) => avecLesRemises(c, remises));
   const embauchent = ceuxQuiRecrutent();
   // LES ENVIES NE S'APPLIQUENT PAS AUX EMBAUCHES — « moins de 15 € » n'a aucun
   // sens sur une offre de poste. Le mode embauche court-circuite tout le filtre.
@@ -2066,6 +2084,8 @@ export function ApercuHabitant() {
   }
 
   const jeSuisDansLaFile = !!dessus && files.includes(dessus.id);
+  /** Ce qui revient chez lui, déduit de ce qu'il a publié. Voir `historique.ts`. */
+  const habitudesDuSommet = dessus ? ceQuiRevient(dessus.passees) : [];
   /** L'écho courant, lu sans réarmer l'avis du matin. Voir son effet. */
   const echoRef = useRef("");
   echoRef.current = echo;
@@ -5441,6 +5461,57 @@ export function ApercuHabitant() {
                         </a>
                       </div>
 
+                      {/* ═══ CE QUI REVIENT CHEZ LUI ═══
+                          « Est-ce qu'on peut consulter ses anciennes annonces
+                          et lui demander s'il a encore ce produit ? » Oui, mais
+                          jamais sous forme d'archive : une liste d'offres
+                          périmées est un cimetière, et un cimetière fait
+                          paraître mort un produit dont toute la promesse est
+                          d'être vivant.
+
+                          C'EST LA MÊME DONNÉE, RETOURNÉE. La question qu'on se
+                          pose n'est pas « qu'a-t-il fait le 12 » mais EST-CE
+                          QU'IL REFAIT ÇA, ET QUAND — et ça, l'historique sait y
+                          répondre. On calcule, on n'affiche pas.
+
+                          ET ON NE NOMME UN JOUR QUE SI DEUX TIERS DES FOIS
+                          tombent dessus : voir `ceQuiRevient`. En dessous, on
+                          dit combien de fois et on se tait sur le quand. */}
+                      {habitudesDuSommet.length > 0 && (
+                        <div className="ap-bloc">
+                          <h3>Ce qui revient</h3>
+                          <ul className="ap-hab">
+                            {habitudesDuSommet.slice(0, 3).map((h) => (
+                              <li key={h.titre}>
+                                <span>
+                                  <b>{h.titre}</b>
+                                  {phraseHabitude(h)}
+                                </span>
+                                {/* SA MEILLEURE RÉPONSE N'EST PAS UNE ARCHIVE,
+                                    C'EST UN MESSAGE. On a le tuyau depuis
+                                    « prévenez-le » : autant s'en servir. */}
+                                <button
+                                  type="button"
+                                  className="ap-hab-b"
+                                  onPointerDown={(ev) => ev.stopPropagation()}
+                                  onClick={() =>
+                                    setPrevenir({
+                                      nom: dessus.nom,
+                                      telephone:
+                                        dessus.telephone ?? numeroDeFiction(dessus.id),
+                                      quoi: h.titre.toLowerCase(),
+                                      demande: true,
+                                    })
+                                  }
+                                >
+                                  En redemander
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
                       {/* ═══ LA FILE DU MATIN ═══
                           « Il y a peu de chances que les gens tombent pile poil
                           sur les offres avec le compteur de 5 minutes. » Exact,
@@ -6716,14 +6787,19 @@ export function ApercuHabitant() {
                     quoi: prevenir.quoi,
                     prenom: monPrenom() || undefined,
                     quand: prevenir.quand,
+                    demande: prevenir.demande,
                   });
                   return (
                     <>
                       <div className="ap-f-tete">
-                        <b>Prévenez {prevenir.nom}</b>
+                        <b>
+                          {prevenir.demande ? "Demandez à " : "Prévenez "}
+                          {prevenir.nom}
+                        </b>
                         <span className="simple">
-                          Sinon il ne le saura pas : il est devant son four, pas
-                          devant un écran.
+                          {prevenir.demande
+                            ? "Il vous répondra lui-même. C’est le plus court chemin."
+                            : "Sinon il ne le saura pas : il est devant son four, pas devant un écran."}
                         </span>
                       </div>
                       {/* LE MESSAGE EXACT, AVANT D'OUVRIR WHATSAPP. On envoie
@@ -9239,6 +9315,24 @@ export function ApercuHabitant() {
           font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;
           color:#8FA79B;background:none;border:0;padding:6px 0;}
         .ap-arr-ville s{text-decoration:none;}
+
+        /* ═══ CE QUI REVIENT ═══
+           Deduit, jamais declare. Le trait ambre a gauche le rattache au monde
+           des rythmes — ce qui a lieu a une heure, ce qui revient un jour —
+           plutot qu'a celui des offres. */
+        .ap-hab{list-style:none;margin:0;padding:0;display:flex;
+          flex-direction:column;gap:10px;}
+        .ap-hab li{display:flex;align-items:center;gap:11px;padding-left:11px;
+          border-left:2px solid rgba(240,180,41,.5);}
+        .ap-hab span{flex:1;min-width:0;font-size:11.5px;line-height:1.35;
+          color:#F0B429;}
+        .ap-hab b{display:block;font-size:14px;font-weight:850;color:#EAF2EC;
+          letter-spacing:-.01em;}
+        .ap-hab-b{flex:none;font:inherit;font-size:12px;font-weight:800;
+          cursor:pointer;color:#C7D3CC;background:rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.14);border-radius:999px;
+          padding:8px 13px;}
+        .ap-hab-b:active{transform:scale(.97);}
 
         /* ═══ LA FILE DU MATIN ═══
            Ambre comme le tour de role, parce que c'est la meme chose a deux

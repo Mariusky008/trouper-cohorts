@@ -31,6 +31,7 @@
 // horodatée a débloqués, donc ceux qu'on montre le plus. Voir
 // `public/direct/LISEZ-MOI.md` pour le cadrage et la règle d'anonymat.
 import type { CarteDirect } from "@/components/direct/carte-swipe";
+import type { AnnoncePassee } from "@/lib/direct/historique";
 
 /**
  * LES MÉTIERS, TELS QU'ON LES CHOISIT DANS LE BANDEAU.
@@ -776,6 +777,17 @@ export type CarteAutour = {
   /** Voir `FileDuSoir`. Absente chez la plupart : elle ne vaut que là où il y a
    *  vraiment un reste possible, et c'est lui qui l'arme le matin. */
   file?: FileDuSoir;
+  /**
+   * CE QU'IL A DÉJÀ PUBLIÉ — voir `historique.ts`.
+   *
+   * ON NE L'AFFICHE JAMAIS TEL QUEL. Une liste d'annonces périmées est un
+   * cimetière, et un cimetière fait paraître mort un produit dont toute la
+   * promesse est d'être vivant. On s'en sert pour deux choses : lui permettre
+   * de REMETTRE une annonce en un appui, et déduire CE QUI REVIENT — « la
+   * garbure, plutôt le jeudi », qui est la seule question que les gens se
+   * posent vraiment.
+   */
+  passees?: AnnoncePassee[];
   /** Voir `Voix`. Absente chez la plupart, et c'est le cas normal. */
   voix?: Voix;
   branche: CleMetier;
@@ -1280,6 +1292,14 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "emporter",
+    passees: [
+      { ilYa: 1, titre: "Les deux plats du jour", prix: "11 €", vues: 302, pris: 22 },
+      { ilYa: 3, titre: "Les deux plats du jour", prix: "11 €", vues: 288, pris: 19 },
+      { ilYa: 7, titre: "La garbure landaise", prix: "13 €", vues: 341, pris: 31 },
+      { ilYa: 8, titre: "Les deux plats du jour", prix: "11 €", vues: 276, pris: 17 },
+      { ilYa: 14, titre: "La garbure landaise", prix: "13 €", vues: 355, pris: 34 },
+      { ilYa: 21, titre: "La garbure landaise", prix: "13 €", vues: 328, pris: 29 },
+    ],
     file: { quoi: "des parts à emporter", quand: "après 13 h", combien: 11 },
     // ─── LA PREMIÈRE VOIX DE LA MAQUETTE ───
     // C'est la carte à menu qu'on rencontre le plus tôt : c'est donc elle qui
@@ -1473,6 +1493,21 @@ const CARTES: CarteAutour[] = [
   },
   {
     id: "boulange",
+    // ─── SON MOIS, TEL QU'IL S'EST PASSÉ ───
+    // Les décalages sont en JOURS et non en dates : une date en dur vieillit,
+    // et la maquette dirait « jeudi 28 août » six mois plus tard. Le jour de
+    // la semaine se recalcule — c'est exactement ce dont `ceQuiRevient` a
+    // besoin pour oser dire « plutôt le mercredi ».
+    passees: [
+      { ilYa: 1, titre: "La fournée de 17 h", prix: "4,20 €", vues: 214, pris: 9 },
+      { ilYa: 2, titre: "La fournée de 17 h", prix: "4,20 €", vues: 198, pris: 6 },
+      { ilYa: 3, titre: "Pain de campagne au levain", prix: "4,80 €", vues: 176, pris: 11 },
+      { ilYa: 4, titre: "La fournée de 17 h", prix: "4,20 €", vues: 203, pris: 7 },
+      { ilYa: 7, titre: "Pain de campagne au levain", prix: "4,80 €", vues: 188, pris: 14 },
+      { ilYa: 8, titre: "La fournée de 17 h", prix: "4,20 €", vues: 191, pris: 5 },
+      { ilYa: 10, titre: "Pain de campagne au levain", prix: "4,80 €", vues: 169, pris: 12 },
+      { ilYa: 11, titre: "La fournée de 17 h", prix: "4,20 €", vues: 205, pris: 8 },
+    ],
     // LE CAS D'ÉCOLE : c'est de ces croissants-là que le tour de rôle parle le
     // soir. La file et le tour de rôle sont les deux moitiés d'une même chose.
     file: {
@@ -1622,6 +1657,14 @@ const CARTES: CarteAutour[] = [
   // est propre — verifie sur les quatre bords, la ou un filigrane se cache.
   {
     id: "boucher",
+    passees: [
+      { ilYa: 2, titre: "La côte de bœuf maturée", prix: "34 €/kg", vues: 241, pris: 6 },
+      { ilYa: 6, titre: "Les plats cuisinés du jour", prix: "12 €", vues: 132, pris: 18 },
+      { ilYa: 9, titre: "La côte de bœuf maturée", prix: "34 €/kg", vues: 233, pris: 5 },
+      { ilYa: 13, titre: "Les plats cuisinés du jour", prix: "12 €", vues: 141, pris: 21 },
+      { ilYa: 16, titre: "La côte de bœuf maturée", prix: "34 €/kg", vues: 219, pris: 7 },
+      { ilYa: 20, titre: "Les plats cuisinés du jour", prix: "12 €", vues: 128, pris: 16 },
+    ],
     file: { quoi: "de la bavette", quand: "vers 18 h", combien: 4 },
     voix: {
       prenom: "Serge",

@@ -311,6 +311,129 @@ dire(/Pétrin/.test(att.ligne), `avec le commerce (${att.ligne.slice(0, 60)})`);
 await p.screenshot({ path: "/tmp/file-commerces.png", fullPage: true });
 await ctx.close();
 
+// ═══ 7 · REMETTRE UNE ANNONCE, ET CE QUI REVIENT ═══
+//
+// « Est-ce que le commerçant peut stocker ces annonces quelque part ? » Oui,
+// mais pas comme une archive : une liste d'offres périmées est un cimetière,
+// et un cimetière fait paraître mort un produit dont toute la promesse est
+// d'être vivant. L'historique sert à DEUX choses, et on vérifie les deux :
+//
+//   1. DE SON CÔTÉ — « remettre celle-là aujourd'hui », le geste qui
+//      l'accroche. Et sa carte doit changer DANS LE PAQUET tout de suite :
+//      un bouton qu'il faut croire ne se réappuie pas.
+//   2. DU CÔTÉ DES CLIENTS — « ce qui revient », déduit et jamais déclaré.
+//      La vraie question n'est pas « qu'a-t-il fait le 12 » mais « est-ce
+//      qu'il refait ça, et quand ».
+console.log("\n══ mon commerce ══");
+{
+  const c3 = await nav.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  const q = await c3.newPage();
+  q.on("pageerror", (e) => erreurs.push(String(e)));
+  q.on("console", (m) => { if (m.type() === "error") erreurs.push(m.text()); });
+  await q.goto(`${BASE}/autour-de-moi/mon-commerce?chez=boulange`, {
+    waitUntil: "networkidle",
+  });
+  await q.waitForTimeout(900);
+
+  const mc = await q.evaluate(() => ({
+    nom: document.querySelector(".mc h1")?.textContent.trim() ?? "",
+    // LA RÉCOMPENSE AVANT LA CORVÉE : le bilan d'hier doit être AU-DESSUS de
+    // la liste. Un écran qui ouvre sur « qu'allez-vous publier ? » est un
+    // formulaire ; celui qui ouvre sur « voilà ce que ça a produit » est une
+    // raison de l'ouvrir.
+    ordre:
+      (document.querySelector(".mc-bilan")?.getBoundingClientRect().top ?? 1e9) <
+      (document.querySelector(".mc-liste")?.getBoundingClientRect().top ?? 0),
+    chiffres: [...document.querySelectorAll(".mc-chiffres span")].map((e) =>
+      e.textContent.replace(/\s+/g, " ").trim()),
+    lignes: [...document.querySelectorAll(".mc-liste li b")].map((e) =>
+      e.textContent.trim()),
+    habitudes: [...document.querySelectorAll(".mc-hab li")].map((e) =>
+      e.textContent.replace(/\s+/g, " ").trim()),
+  }));
+  console.log(`  ${mc.nom}`);
+  console.log(`  hier : ${mc.chiffres.join(" · ")}`);
+  for (const h of mc.habitudes) console.log(`  ↻ ${h}`);
+  dire(/Pétrin/.test(mc.nom), `l'écran est celui du commerce (${mc.nom})`);
+  dire(mc.ordre, "le bilan d'hier passe avant la liste : la récompense d'abord");
+  // DEUX CHIFFRES, JAMAIS DOUZE. Un tableau de bord de commerçant qui affiche
+  // un taux de conversion ne se relit pas une deuxième fois.
+  dire(mc.chiffres.length === 2, `deux chiffres, pas douze (${mc.chiffres.length})`);
+  console.log(`  à remettre : ${JSON.stringify(mc.lignes)}`);
+  dire(mc.lignes.length >= 2, `ses annonces sont là (${mc.lignes.length})`);
+  // CHAQUE ANNONCE UNE SEULE FOIS. La liste affichait « La fournée de 17 h »
+  // quatre fois de suite : exact, et parfaitement inutile — il n'a pas à
+  // choisir laquelle des quatre fournées identiques remettre.
+  dire(new Set(mc.lignes).size === mc.lignes.length,
+    "et chacune une seule fois");
+  // ON NE NOMME UN JOUR QUE SI DEUX TIERS DES FOIS TOMBENT DESSUS.
+  dire(mc.habitudes.length > 0, "et ce qui revient est déduit");
+  await q.screenshot({ path: "/tmp/mon-commerce.png", fullPage: true });
+
+  // ── LE GESTE ──
+  await q.click(".mc-liste li:first-child .mc-b");
+  await q.waitForTimeout(700);
+  const apresRemise = await q.evaluate(() => ({
+    bouton: document.querySelector(".mc-liste li:first-child .mc-b")?.textContent.trim() ?? "",
+    ok: document.querySelector(".mc-ok")?.textContent.replace(/\s+/g, " ").trim() ?? "",
+    garde: JSON.parse(localStorage.getItem("clikme-remises-v1") ?? "[]").length,
+  }));
+  console.log(`  → ${apresRemise.bouton} · ${apresRemise.ok}`);
+  dire(/En ligne/.test(apresRemise.bouton), "le bouton dit que c'est en ligne");
+  dire(/tête de votre journée/.test(apresRemise.ok),
+    `et où elle est allée (${apresRemise.ok.slice(0, 44)})`);
+  dire(apresRemise.garde === 1, "c'est enregistré");
+
+  // ── ET ÇA SE VOIT DANS LE PAQUET, TOUT DE SUITE ──
+  await q.goto(`${BASE}/autour-de-moi?chez=boulange`, { waitUntil: "networkidle" });
+  await q.waitForTimeout(1800);
+  const enLigne = await q.evaluate(() =>
+    [...document.querySelectorAll(".ap-arr-jour b")].map((e) => e.textContent.trim()));
+  console.log(`  sa journée, vue par ses clients : ${JSON.stringify(enLigne.slice(0, 3))}`);
+  dire(enLigne.length > 0 && /fournée/i.test(enLigne[0]),
+    `l'annonce remise est en tête de sa journée (${enLigne[0]})`);
+  await c3.close();
+}
+
+// ── ET « CE QUI REVIENT » CÔTÉ CLIENT, SOUS LE PLI ──
+console.log("\n══ ce qui revient, côté client ══");
+({ ctx, p } = await ouvrir("/autour-de-moi?chez=emporter"));
+await p.click(".ap-arr-ville");
+await p.waitForTimeout(1300);
+await p.click(".ap-vers-bas", { force: true });
+await p.waitForTimeout(900);
+const hab = await p.evaluate(() =>
+  [...document.querySelectorAll(".ap-hab li")].map((e) => ({
+    t: e.querySelector("b")?.textContent.trim() ?? "",
+    q: e.querySelector("span")?.lastChild?.textContent.trim() ?? "",
+    b: e.querySelector(".ap-hab-b")?.textContent.trim() ?? "",
+  })));
+for (const h of hab) console.log(`  ${h.t} — ${h.q} → ${h.b}`);
+dire(hab.length > 0, "la fiche dit ce qui revient");
+// LE JOUR N'EST NOMMÉ QUE QUAND IL DOMINE VRAIMENT — deux tiers des fois.
+dire(hab.some((h) => /plutôt le/.test(h.q)),
+  "et nomme le jour quand il y en a un");
+// SA MEILLEURE RÉPONSE N'EST PAS UNE ARCHIVE, C'EST UN MESSAGE.
+dire(hab.every((h) => /redemander/i.test(h.b)),
+  "avec le moyen de lui demander s'il en a encore");
+await p.click(".ap-hab-b");
+await p.waitForTimeout(800);
+const dem = await p.evaluate(() =>
+  document.querySelector(".ap-prev .ap-conf-mot")?.textContent.replace(/\s+/g, " ").trim() ?? "");
+console.log(`  « ${dem} »`);
+// ON DEMANDE, ON NE PREND PAS. « Je prends la garbure » annonce une commande
+// pour quelque chose qui n'existe peut-être plus, et met le commerçant en
+// faute de ne pas l'avoir.
+dire(/est-ce que vous avez encore/i.test(dem),
+  `le message est une question (${dem.slice(0, 72)})`);
+dire(!/je prends/i.test(dem), "et n'annonce pas une commande");
+dire(!/\?\./.test(dem), "sans double ponctuation");
+await p.screenshot({ path: "/tmp/ce-qui-revient.png", fullPage: true });
+await ctx.close();
+
 dire(erreurs.length === 0, `aucune erreur${erreurs.length ? " : " + erreurs[0] : ""}`);
 await nav.close();
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT PASSE");
