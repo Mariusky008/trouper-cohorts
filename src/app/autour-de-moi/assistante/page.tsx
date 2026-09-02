@@ -348,13 +348,18 @@ body{background:#05090C}
 /* LA PHOTO SUR LA CARTE DE VALIDATION. Le bouton se voit quand Lea l'a
    demandee, et reste discret sinon : elle est facultative, et une image
    reclamee a chaque annonce se fait ignorer des le troisieme jour. */
-.as-photo{display:block;margin-top:12px;cursor:pointer}
-.as-photo input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-.as-photo span{display:block;text-align:center;font-size:14px;font-weight:800;
+/* DEUX BOUTONS COTE A COTE : il ne choisit pas un FORMAT, il choisit ce qu'il a
+   sous la main. Le plat qui sort du four se filme mieux qu'il ne se
+   photographie, et l'inverse est vrai d'une ardoise. */
+.as-media{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.as-media label{display:block;cursor:pointer}
+.as-media input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.as-media span{display:block;text-align:center;font-size:13.5px;font-weight:800;
   color:var(--craie2);background:rgba(5,9,12,.5);border:1px dashed var(--trait);
-  border-radius:13px;padding:14px}
-.as-photo.demande span{color:var(--or);border-style:solid;
+  border-radius:13px;padding:13px 8px}
+.as-media label.demande span{color:var(--or);border-style:solid;
   border-color:rgba(240,180,41,.55);background:rgba(240,180,41,.09)}
+.as-vid{margin:9px 0 0;font-size:12.5px;color:var(--menthe)}
 .as-vue{display:block;width:100%;margin-top:12px;border-radius:13px;
   aspect-ratio:16/10;object-fit:cover;cursor:pointer}
 /* LA FICHE GOOGLE, ET ON NE FAIT PAS SEMBLANT. Publier tout seul dessus demande
@@ -362,12 +367,29 @@ body{background:#05090C}
    enregistre la photo et ouvre sa fiche : deux gestes au lieu de cinq, et
    aucune promesse tenue a moitie. Discret, parce que c'est un service en plus
    et non l'action principale. */
-.as-google{display:block;margin-top:9px;padding:11px 13px;border-radius:13px;
-  text-decoration:none;background:rgba(5,9,12,.5);
-  border:1px solid var(--trait)}
+.as-google{display:flex;align-items:center;gap:11px;width:100%;text-align:left;
+  font:inherit;cursor:pointer;margin-top:9px;padding:11px 13px;border-radius:13px;
+  background:rgba(5,9,12,.5);border:1px solid var(--trait)}
+.as-google i{flex:none;width:26px;height:26px;border-radius:50%;font-style:normal;
+  font-size:14px;font-weight:850;display:flex;align-items:center;
+  justify-content:center;color:var(--craie3);border:1px solid var(--trait)}
 .as-google b{display:block;font-size:13.5px;font-weight:750;color:var(--craie2)}
 .as-google em{display:block;margin-top:2px;font-style:normal;font-size:11.5px;
   color:var(--craie3)}
+.as-google.on{background:rgba(61,226,166,.08);border-color:rgba(61,226,166,.32)}
+.as-google.on i{color:#04150E;background:var(--menthe);border-color:var(--menthe)}
+.as-google.on b{color:var(--craie)}
+
+/* LES AMORCES — trois debuts de phrase, pas trois categories. On ne lui demande
+   pas de quoi il veut parler : on lui met les premiers mots dans la bouche, il
+   appuie, et il finit. Le choix est fait sans qu'il ait eu l'impression de
+   choisir. Elles n'apparaissent qu'au RETOUR : le matin, la question fermee de
+   Lea fait mieux. */
+.as-amorces{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+.as-amorces button{font:inherit;font-size:13px;font-weight:700;cursor:pointer;
+  color:var(--craie2);background:rgba(18,32,28,.6);
+  border:1px solid rgba(126,230,192,.2);border-radius:999px;padding:9px 15px}
+.as-amorces button:active{transform:scale(.97)}
 
 /* MAINS LIBRES. Petit, parce qu'on n'y touche presque jamais ; visible, parce
    que le jour ou il faut le couper il faut le trouver tout de suite. */

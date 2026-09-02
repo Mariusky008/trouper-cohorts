@@ -5154,7 +5154,14 @@ export function ApercuHabitant() {
                                       onPointerDown={(ev) => ev.stopPropagation()}
                                       onPlay={() => noterUneFois("video", "video-vue")}
                                     >
-                                      <source src={m.video.webm} type="video/webm" />
+                                      {/* UNE SOURCE VIDE N'EN EST PAS UNE : la
+                                          vidéo filmée depuis l'assistante n'a
+                                          qu'un seul encodage, et un `src` vide
+                                          ferait échouer la lecture avant même
+                                          d'essayer le format suivant. */}
+                                      {m.video.webm && (
+                                        <source src={m.video.webm} type="video/webm" />
+                                      )}
                                       <source src={m.video.mp4} type="video/mp4" />
                                     </video>
                                     <span>

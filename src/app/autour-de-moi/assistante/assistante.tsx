@@ -170,6 +170,34 @@ const BILAN = {
   heure: 14.5,
 };
 
+/**
+ * PAR OÙ IL ENTRE QUAND CE N'EST PLUS LE PLAT DU JOUR.
+ *
+ * LA QUESTION POSÉE, ET ELLE EST JUSTE : « comment va-t-on faire pour que ce
+ * soit très clair quand, durant la journée, le commerçant veut rajouter une
+ * vidéo de son plat, ou dire quelque chose, ou annoncer un événement en dehors
+ * de son plat du jour ? Pour le moment tout est axé sur le plat du jour. »
+ *
+ * CE QU'ON NE FERA PAS : un menu de catégories. « Plat / Événement / Vidéo /
+ * Promotion » ramènerait exactement ce qu'on a passé des semaines à enlever —
+ * choisir avant de parler. Le commerçant ne sait pas dans quelle case ranger
+ * « Sophie est pas là, on ferme à 14 h ».
+ *
+ * CE QU'ON FAIT À LA PLACE : DES DÉBUTS DE PHRASE. On ne lui demande pas de
+ * quoi il veut parler, on lui met les trois premiers mots dans la bouche. Il
+ * appuie, le micro s'ouvre, et il finit sa phrase — le choix est déjà fait sans
+ * qu'il ait eu l'impression de choisir. C'est le même remède que les amorces du
+ * conseil dans l'outil de terrain, et il marche pour la même raison : une page
+ * blanche paralyse, un début de phrase se finit tout seul.
+ *
+ * ELLES N'APPARAISSENT QU'AU RETOUR. Le matin, la question fermée de Léa suffit
+ * et fait mieux : « quel est votre plat du jour ? » a sa réponse dans sa tête
+ * depuis six heures. Les amorces servent l'autre moment — celui où il revient
+ * à 15 h avec quelque chose en tête, et où une question ouverte le laisserait
+ * sans prise.
+ */
+const AMORCES = ["Il me reste…", "Ce soir, on…", "Je vous montre…"];
+
 type Tour = { role: "user" | "assistant"; content: string };
 type Carte = {
   nature: "nouvelle" | "maj";
@@ -371,6 +399,25 @@ export function Assistante() {
   // CE QUI DIT QUE L'AUTORISATION NE SERA PLUS REDEMANDÉE. Un micro qui reste
   // ouvert doit se voir : c'est la contrepartie honnête de « toujours branché ».
   const [branche, setBranche] = useState(false);
+  // MIS PAR DÉFAUT : c'est ce qu'il voudra neuf fois sur dix, et une case à
+  // cocher qu'il faut penser à cocher n'est jamais cochée.
+  const [google, setGoogle] = useState(true);
+  const [video, setVideo] = useState("");
+  /**
+   * LE FIL À JOUR, ET PAS CELUI DU DERNIER RENDU.
+   *
+   * LE DÉFAUT QUE ÇA CORRIGE, ET IL EFFAÇAIT UNE PHRASE. `parler` construisait
+   * la suite de la conversation à partir du `tours` capturé au rendu où il a été
+   * créé. Or on ajoute une bulle JUSTE AVANT de l'appeler — « C'est en ligne,
+   * vos voisins le voient maintenant » — par une mise à jour fonctionnelle que
+   * ce `tours`-là ne contient pas. La réponse de Léa écrasait donc le tableau
+   * entier et la confirmation disparaissait, une seconde après être apparue.
+   *
+   * Une référence tenue à jour à chaque rendu règle les deux : `parler` lit
+   * toujours l'état réel, et il cesse de se recréer à chaque tour.
+   */
+  const toursRef = useRef<Tour[]>([]);
+  toursRef.current = tours;
   const bas = useRef<HTMLDivElement | null>(null);
   const micro = useRef<ReturnType<typeof ouvrirEcoute> | null>(null);
   const son = useRef<HTMLAudioElement | null>(null);
@@ -516,7 +563,8 @@ export function Assistante() {
       micro.current = null;
       setEcoute(false);
       setVivant("");
-      const suite: Tour[] = dit ? [...tours, { role: "user", content: dit }] : tours;
+      const courant = toursRef.current;
+      const suite: Tour[] = dit ? [...courant, { role: "user", content: dit }] : courant;
       if (dit) setTours(suite);
       setCarte(null);
       setAttend(true);
@@ -571,7 +619,7 @@ export function Assistante() {
         setAttend(false);
       }
     },
-    [dire, journee, tours],
+    [dire, journee],
   );
 
   const finDeService = useCallback(() => {
@@ -705,6 +753,7 @@ export function Assistante() {
       icone: carte.icone,
       titre: carte.titre,
       photo: photo || undefined,
+      video: video ? { mp4: video, webm: "", affiche: photo || "", mot: "" } : undefined,
       lignes: carte.detail ? [carte.detail] : undefined,
       prix: carte.prix || undefined,
       places: carte.quantite ?? undefined,
@@ -745,11 +794,21 @@ export function Assistante() {
     // Les deux tiennent ensemble : le fait reste écrit par l'écran, et Léa
     // reprend la parole juste après. C'est elle qui a le dernier mot, comme
     // dans une vraie conversation.
-    const mot = `C’est en ligne. ${carte.titre} — vos voisins le voient maintenant.`;
-    setTours((t) => [...t, { role: "assistant", content: mot }]);
+    const mot =
+      photo && google
+        ? `C’est en ligne. ${carte.titre} — et la photo part aussi sur votre fiche Google.`
+        : `C’est en ligne. ${carte.titre} — vos voisins le voient maintenant.`;
+    // ON POSE LA BULLE **ET** LA RÉFÉRENCE, dans le même geste. Une référence ne
+    // se met à jour qu'au rendu suivant : `parler`, appelé juste après, lirait
+    // encore le fil d'avant et écraserait cette confirmation en répondant —
+    // c'est ce qui la faisait disparaître une seconde après être apparue.
+    const avecMot: Tour[] = [...toursRef.current, { role: "assistant", content: mot }];
+    toursRef.current = avecMot;
+    setTours(avecMot);
     setPhoto("");
+    setVideo("");
     parler(`(je viens de valider « ${carte.titre} », c’est publié)`, heure);
-  }, [carte, heure, journee, parler, photo]);
+  }, [carte, google, heure, journee, parler, photo, video]);
 
   if (!journee) {
     return (
@@ -919,58 +978,88 @@ export function Assistante() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img className="as-vue" src={photo} alt="" onClick={() => setPhoto("")} />
                 {/* ─── ET AUSSI SUR SA FICHE GOOGLE ───
-                    « J'aimerais que Léa me demande si elle en profite pour
-                    mettre la photo sur ma fiche Google, si c'est possible
-                    qu'elle puisse le faire bien sûr. »
+                    « Pour le moment on va juste mettre ça dans la démo pour
+                    montrer ce que ça peut faire ; cette démo est faite pour
+                    voir qui sera intéressé, alors autant montrer ce qu'on
+                    pourra leur proposer. »
 
-                    LA RÉSERVE ÉTAIT JUSTIFIÉE, ET VOICI CE QU'ON PEUT TENIR
-                    AUJOURD'HUI. Publier tout seul sur une fiche Google demande
-                    que le commerçant relie son compte Google au produit — donc
-                    une autorisation, un jeton gardé, et l'accès à l'interface
-                    professionnelle de Google, qui se demande et s'obtient. Rien
-                    de tout ça n'existe encore.
+                    C'est légitime, et c'est le même arbitrage que les chiffres
+                    du bilan : l'écran entier est marqué DÉMO en bas, et il est
+                    tenu par quelqu'un qui explique. Ce qu'on montre ici, c'est
+                    donc le geste tel qu'il sera — un interrupteur déjà mis, pas
+                    une case à cocher de plus.
 
-                    ON NE FAIT DONC PAS SEMBLANT. Le bouton enregistre la photo
-                    dans son téléphone et ouvre sa fiche : deux gestes au lieu
-                    de cinq, et zéro promesse tenue à moitié. Le jour où le
-                    compte sera relié, ce même bouton le fera tout seul et rien
-                    ne changera pour lui. */}
-                <a
-                  className="as-google"
-                  href={photo}
-                  download="clikme-photo.jpg"
-                  onClick={() => {
-                    setTimeout(() => {
-                      window.open("https://business.google.com/posts", "_blank");
-                    }, 400);
-                  }}
+                    CE QUI RESTE VRAI : rien ne part chez Google aujourd'hui. Le
+                    jour où le compte sera relié, c'est exactement ce bouton-là
+                    qui le fera, et le commerçant ne verra aucune différence. */}
+                <button
+                  type="button"
+                  className={`as-google${google ? " on" : ""}`}
+                  aria-pressed={google}
+                  onClick={() => setGoogle(!google)}
                 >
-                  <b>📍 Aussi sur ma fiche Google</b>
-                  <em>La photo est enregistrée, votre fiche s’ouvre</em>
-                </a>
+                  <i aria-hidden="true">{google ? "✓" : "＋"}</i>
+                  <span>
+                    <b>Aussi sur votre fiche Google</b>
+                    <em>
+                      {google
+                        ? "La photo y sera ajoutée en même temps"
+                        : "Une seule photo, deux endroits"}
+                    </em>
+                  </span>
+                </button>
               </>
             ) : (
-              // LE BOUTON NE DÉPEND PLUS DE L'HUMEUR DU MODÈLE. Il était affiché
-              // en clair quand Léa avait mis `photo` à vrai, et discret sinon —
-              // sauf qu'elle ne l'a pas mis, et l'annonce est partie sans image :
-              // « ni demande de photo ». Une garantie qui repose sur un modèle
-              // n'en est pas une. Le bouton est donc toujours là, et bien
-              // visible ; `photo` ne fait plus que le colorer et ajouter la
-              // demande parlée.
-              <label className={`as-photo${carte.photo ? " demande" : ""}`}>
-                <span>
-                  📷 {carte.photo ? "Photographiez-le" : "Ajouter une photo"}
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={async (e) => {
-                    const x = e.target.files?.[0];
-                    if (x) setPhoto(await reduire(x));
-                  }}
-                />
-              </label>
+              /* ─── UNE IMAGE, OU DIX SECONDES DE VIDÉO ───
+                 « Quand, durant la journée, le commerçant veut rajouter une
+                 vidéo de son plat… » Le même geste, deux boutons côte à côte :
+                 il ne choisit pas un FORMAT, il choisit ce qu'il a sous la
+                 main. Le plat qui sort du four se filme mieux qu'il ne se
+                 photographie. */
+              <div className="as-media">
+                <label className={carte.photo ? "demande" : ""}>
+                  <span>📷 {carte.photo ? "Photographiez-le" : "Une photo"}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={async (e) => {
+                      const x = e.target.files?.[0];
+                      if (x) setPhoto(await reduire(x));
+                    }}
+                  />
+                </label>
+                <label>
+                  <span>🎥 Une vidéo</span>
+                  <input
+                    type="file"
+                    accept="video/*"
+                    capture="environment"
+                    onChange={(e) => {
+                      const x = e.target.files?.[0];
+                      if (!x) return;
+                      // LA LIMITE EST CELLE DU TÉLÉPHONE, ET ELLE EST RÉELLE :
+                      // la journée entière tient dans son stockage local tant
+                      // qu'il n'y a pas de compte. Une vidéo de dix secondes en
+                      // 1080p suffit à la remplir — on le dit au lieu de perdre
+                      // ses annonces en silence.
+                      if (x.size > 3_000_000) {
+                        setEcho(
+                          "Vidéo trop lourde pour ce téléphone. Passez la caméra en 720p.",
+                        );
+                        return;
+                      }
+                      const l = new FileReader();
+                      l.onload = () => setVideo(String(l.result));
+                      l.readAsDataURL(x);
+                    }}
+                  />
+                </label>
+              </div>
+            )}
+
+            {video && (
+              <p className="as-vid">🎥 Vidéo prête — elle sera sur l’annonce.</p>
             )}
 
             <ul className="as-cles">
@@ -1053,6 +1142,26 @@ export function Assistante() {
         {ecoute && (
           <p className="as-vivant">{vivant || "Je vous écoute… (arrêtez de parler pour envoyer)"}</p>
         )}
+        {/* LES AMORCES : trois débuts de phrase, et seulement quand il revient
+            sur une journée déjà commencée. Appuyer ouvre le micro avec les
+            premiers mots déjà posés — voir `AMORCES`. */}
+        {!!journee.moments.length && !carte && !ecoute && !attend && (
+          <div className="as-amorces">
+            {AMORCES.map((a) => (
+              <button
+                key={a}
+                type="button"
+                onClick={() => {
+                  setTape(a.replace("…", " "));
+                  demarrerMicro();
+                }}
+              >
+                {a}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="as-saisie">
           <button
             type="button"
