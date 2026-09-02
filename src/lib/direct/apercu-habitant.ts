@@ -380,6 +380,21 @@ export type MomentJour = {
    * l'est. La fraîcheur doit rester rare pour valoir quelque chose.
    */
   publie?: number;
+  /**
+   * LA PHOTO DE CE MOMENT-LÀ — et elle passe devant celle du commerce.
+   *
+   * LE DÉFAUT QUI L'A FAIT NAÎTRE : « on ne me demande pas de prendre la photo,
+   * donc quand on voit l'annonce il n'y a aucune image, ce qui fait très vide ».
+   * C'est exact, et c'est plus grave que « vide » : une carte sans image dans un
+   * paquet qu'on balaie ne se regarde pas. Le plat est ce qui donne faim, pas le
+   * nom du plat.
+   *
+   * POURQUOI SUR LE MOMENT ET PAS SUR LE COMMERCE. La photo du commerce est une
+   * devanture : elle ne change jamais et ne dit rien d'aujourd'hui. Celle-ci est
+   * l'assiette d'aujourd'hui, l'arrivage de ce matin, l'ardoise de midi. Deux
+   * moments d'un même commerce n'ont aucune raison de partager une image.
+   */
+  photo?: string;
   /** L'heure telle qu'on l'écrit. */
   quand: string;
   /** Ce que c'est, en trois mots. */
@@ -2893,7 +2908,10 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
     };
   }
   return {
-    photo: c.photo,
+    // LA PHOTO DU MOMENT PASSE DEVANT CELLE DU COMMERCE — voir `MomentJour.photo`.
+    // Ce qu'il vient de sortir du four vaut mieux que sa devanture, qui ne dit
+    // rien d'aujourd'hui.
+    photo: m?.photo || c.photo,
     cadrage: c.cadrage,
     nom: c.nom,
     metier: c.metier,

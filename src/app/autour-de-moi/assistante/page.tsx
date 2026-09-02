@@ -141,6 +141,28 @@ function Styles() {
 .as-demo button:disabled{opacity:.35}
 .as-raz{margin-left:auto;text-decoration:underline;border:0 !important}
 
+/* LA PHOTO SUR LA CARTE DE VALIDATION. Le bouton se voit quand Lea l'a
+   demandee, et reste discret sinon : elle est facultative, et une image
+   reclamee a chaque annonce se fait ignorer des le troisieme jour. */
+.as-photo{display:block;margin-top:12px;cursor:pointer}
+.as-photo input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.as-photo span{display:block;text-align:center;font-size:14px;font-weight:800;
+  color:var(--craie2);background:rgba(5,9,12,.5);border:1px dashed var(--trait);
+  border-radius:13px;padding:14px}
+.as-photo.demande span{color:var(--or);border-style:solid;
+  border-color:rgba(240,180,41,.55);background:rgba(240,180,41,.09)}
+.as-vue{display:block;width:100%;margin-top:12px;border-radius:13px;
+  aspect-ratio:16/10;object-fit:cover;cursor:pointer}
+
+/* MAINS LIBRES. Petit, parce qu'on n'y touche presque jamais ; visible, parce
+   que le jour ou il faut le couper il faut le trouver tout de suite. */
+.as-mains{display:flex;align-items:center;gap:9px;margin-top:10px}
+.as-mains button{font:inherit;font-size:11.5px;font-weight:750;cursor:pointer;
+  color:var(--craie3);background:transparent;border:1px solid var(--trait);
+  border-radius:999px;padding:5px 12px}
+.as-mains button.on{color:var(--menthe);border-color:rgba(61,226,166,.4)}
+.as-mains em{font-style:normal;font-size:11.5px;color:var(--menthe)}
+
 .as-voir{display:block;margin-top:11px;text-align:center;text-decoration:none;
   font-size:14px;font-weight:800;color:var(--menthe)}
 

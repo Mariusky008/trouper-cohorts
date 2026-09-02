@@ -123,7 +123,38 @@ type Carte = {
   a: number;
   icone: string;
   epuise: boolean;
+  /** Vrai si Léa vient de demander une image — voir le prompt. */
+  photo: boolean;
 };
+
+/**
+ * LA PHOTO, RÉDUITE AVANT D'ÊTRE GARDÉE.
+ *
+ * Une photo d'iPhone pèse trois à cinq mégaoctets et le stockage local en tient
+ * cinq en tout : deux annonces et la journée est perdue. Mille pixels de large
+ * suffisent très largement à une carte qu'on regarde sur un téléphone, et le
+ * réencodage tient en six lignes parce qu'on ne fait que dessiner l'image dans
+ * une toile plus petite.
+ */
+async function reduire(fichier: File): Promise<string> {
+  const url = URL.createObjectURL(fichier);
+  try {
+    const img = await new Promise<HTMLImageElement>((ok, ko) => {
+      const i = new Image();
+      i.onload = () => ok(i);
+      i.onerror = ko;
+      i.src = url;
+    });
+    const large = Math.min(1000, img.naturalWidth || 1000);
+    const c = document.createElement("canvas");
+    c.width = large;
+    c.height = Math.round((img.naturalHeight / (img.naturalWidth || 1)) * large);
+    c.getContext("2d")?.drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", 0.72);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
 
 const hhmm = (h: number) =>
   `${Math.floor(h)} h ${String(Math.round((h % 1) * 60)).padStart(2, "0")}`;
@@ -140,8 +171,18 @@ export function Assistante() {
   const [tape, setTape] = useState("");
   const [dictee, setDictee] = useState(true);
   const [echo, setEcho] = useState("");
+  const [photo, setPhoto] = useState("");
+  // MAINS LIBRES : Léa parle, puis elle écoute, puis elle répond. Sans ça il
+  // faut deux appuis par phrase — « je dois appuyer sur le bouton à chaque fois
+  // pour parler et envoyer mon message » — c'est-à-dire exactement le geste
+  // qu'on prétendait lui épargner, et impossible avec les mains dans la farine.
+  const [libres, setLibres] = useState(true);
+  const [parle, setParle] = useState(false);
   const bas = useRef<HTMLDivElement | null>(null);
   const micro = useRef<ReturnType<typeof ouvrirEcoute> | null>(null);
+  const son = useRef<HTMLAudioElement | null>(null);
+  /** Ce qu'elle vient de dire et qui n'a pas encore été prononcé. */
+  const aDire = useRef("");
 
   useEffect(() => {
     setHeure(new Date().getHours() + new Date().getMinutes() / 60);
@@ -153,6 +194,60 @@ export function Assistante() {
   }, [tours, carte, attend]);
 
   /**
+   * LÉA PARLE — et l'enchaînement se fait ici.
+   *
+   * POURQUOI LA VOIX N'EST PAS UN ORNEMENT. On demande à un commerçant de
+   * PARLER à quelque chose. S'il parle et qu'on lui répond par écrit, ce n'est
+   * pas une conversation : c'est un formulaire déguisé, et il retombe dans le
+   * geste qu'on voulait lui éviter — regarder l'écran, chercher un bouton.
+   *
+   * LA PROMESSE EST TENUE MÊME QUAND LA VOIX ÉCHOUE. Pas de clé, panne, réseau
+   * lent : on enchaîne quand même sur l'écoute. La voix est un confort, la
+   * réponse est le produit — et une conversation qui s'arrêterait faute de son
+   * serait bien pire que le silence.
+   */
+  const dire = useCallback(
+    async (texte: string, puisEcouter: boolean) => {
+      const suite = () => {
+        setParle(false);
+        if (puisEcouter && libres) demarrerMicroRef.current?.();
+      };
+      if (!texte.trim()) return suite();
+      setParle(true);
+      try {
+        const rep = await fetch("/api/direct/parler", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ texte }),
+        });
+        if (!rep.ok) return suite();
+        const b = await rep.blob();
+        const url = URL.createObjectURL(b);
+        const a = son.current ?? new Audio();
+        son.current = a;
+        a.src = url;
+        // ON N'ATTEND PAS LA FIN POUR LIBÉRER L'ADRESSE : `onended` sert aussi
+        // de fin de tour, et un `finally` la révoquerait avant la lecture.
+        a.onended = () => {
+          URL.revokeObjectURL(url);
+          suite();
+        };
+        a.onerror = () => {
+          URL.revokeObjectURL(url);
+          suite();
+        };
+        // iOS EXIGE UN GESTE POUR LE PREMIER SON. Le choix du métier et l'appui
+        // sur le micro en sont : à partir de là, la lecture passe. Si elle est
+        // quand même refusée, on enchaîne au lieu de rester muet et bloqué.
+        await a.play().catch(() => suite());
+      } catch {
+        suite();
+      }
+    },
+    [libres],
+  );
+
+  /**
    * UN TOUR DE CONVERSATION.
    *
    * `dit` vide veut dire « ouvre la conversation » : la première phrase vient du
@@ -162,6 +257,17 @@ export function Assistante() {
   const parler = useCallback(
     async (dit: string, h: number) => {
       if (!journee) return;
+      // ON FERME LE MICRO AVANT DE PARLER. Vu à l'écran : on tape sa phrase au
+      // clavier alors que Léa écoutait encore, et la lampe rouge reste allumée
+      // par-dessus la carte à valider. Un micro ouvert pendant qu'on attend un
+      // appui écoute la boutique pour rien — et se referme sur une phrase que
+      // personne n'a voulu dire.
+      // `annuler` et non `arreter` : ce qui a été capté est abandonné, sinon on
+      // rentrerait dans ce même tour par la porte de derrière.
+      micro.current?.annuler();
+      micro.current = null;
+      setEcoute(false);
+      setVivant("");
       const suite: Tour[] = dit ? [...tours, { role: "user", content: dit }] : tours;
       if (dit) setTours(suite);
       setCarte(null);
@@ -183,9 +289,16 @@ export function Assistante() {
           setEcho(String(d?.erreur || "L’assistante n’a pas répondu."));
           return;
         }
-        setTours([...suite, { role: "assistant", content: String(d.dire || "") }]);
-        setCarte((d.carte ?? null) as Carte | null);
+        const dit = String(d.dire || "");
+        setTours([...suite, { role: "assistant", content: dit }]);
+        const k = (d.carte ?? null) as Carte | null;
+        setCarte(k);
         if (d.retour) setRetour(d.retour);
+        // ELLE NE REPART PAS EN ÉCOUTE QUAND ELLE ATTEND UN APPUI. Une carte à
+        // valider ou une photo à prendre demandent la main, pas la voix : ouvrir
+        // le micro par-dessus ferait parler dans le vide.
+        aDire.current = dit;
+        dire(dit, !k);
       } catch {
         setEcho("Pas de réseau — l’assistante n’a pas pu répondre.");
       } finally {
@@ -221,12 +334,24 @@ export function Assistante() {
     else setEcho(r.erreur || "Je n’ai rien entendu.");
   }, [heure, parler]);
 
+  const arreterRef = useRef<() => void>(() => {});
+  arreterRef.current = () => {
+    void arreterMicro();
+  };
+
   const demarrerMicro = useCallback(() => {
+    if (micro.current) return;
     setEcho("");
     setVivant("");
-    micro.current = ouvrirEcoute(setVivant);
+    // LE SILENCE REMPLACE LE DEUXIÈME APPUI — voir `SILENCE_MS` dans le micro.
+    micro.current = ouvrirEcoute(setVivant, {
+      surSilence: () => arreterRef.current(),
+    });
     setEcoute(true);
   }, []);
+
+  const demarrerMicroRef = useRef<() => void>(() => {});
+  demarrerMicroRef.current = demarrerMicro;
 
   useEffect(() => () => micro.current?.annuler(), []);
 
@@ -242,6 +367,7 @@ export function Assistante() {
       quand: `${hhmm(carte.de)} – ${hhmm(carte.a)}`,
       icone: carte.icone,
       titre: carte.titre,
+      photo: photo || undefined,
       lignes: carte.detail ? [carte.detail] : undefined,
       prix: carte.prix || undefined,
       places: carte.quantite ?? undefined,
@@ -254,6 +380,7 @@ export function Assistante() {
         {
           places: carte.epuise ? 0 : (carte.quantite ?? undefined),
           prix: carte.prix || undefined,
+          photo: photo || undefined,
           lignes: carte.detail ? [carte.detail] : undefined,
         },
         heure,
@@ -265,14 +392,11 @@ export function Assistante() {
     // LA CONFIRMATION EST ÉCRITE PAR L'ÉCRAN, PAS PAR LE MODÈLE. C'est un fait —
     // « c'est en ligne » — et un fait ne se fait pas rédiger : si le modèle
     // l'annonçait, il pourrait l'annoncer sans que ce soit vrai.
-    setTours((t) => [
-      ...t,
-      {
-        role: "assistant",
-        content: `C’est en ligne. ${carte.titre} — vos voisins le voient maintenant.`,
-      },
-    ]);
-  }, [carte, heure, journee]);
+    const mot = `C’est en ligne. ${carte.titre} — vos voisins le voient maintenant.`;
+    setTours((t) => [...t, { role: "assistant", content: mot }]);
+    setPhoto("");
+    dire(mot, true);
+  }, [carte, dire, heure, journee, photo]);
 
   if (!journee) {
     return (
@@ -282,7 +406,7 @@ export function Assistante() {
           <a href="/autour-de-moi">Le direct</a>
         </header>
         <div className="as-choix">
-          <h1>Votre assistante</h1>
+          <h1>Léa, votre assistante</h1>
           <p>
             Vous ne remplissez rien. Vous lui racontez votre journée, elle s’occupe
             du reste.
@@ -344,6 +468,35 @@ export function Assistante() {
               {carte.nature === "maj" && <em>mise à jour</em>}
             </h2>
             {carte.detail && <p className="as-d">{carte.detail}</p>}
+
+            {/* ─── LA PHOTO, ET ELLE SE PREND ICI ───
+                « On ne me demande pas de prendre la photo, donc quand on voit
+                l'annonce il n'y a aucune image, ce qui fait très vide. » C'est
+                pire que vide : une carte sans image ne se regarde pas dans un
+                paquet qu'on balaie — le plat donne faim, pas son nom.
+
+                ELLE EST SUR LA CARTE, PAS APRÈS. Ce qu'il valide doit être ce
+                qui part en ligne, image comprise : une photo demandée après
+                coup serait une deuxième démarche, donc une démarche qu'on ne
+                fait pas. Et elle reste facultative — il publie sans, s'il veut. */}
+            {photo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="as-vue" src={photo} alt="" onClick={() => setPhoto("")} />
+            ) : (
+              <label className={`as-photo${carte.photo ? " demande" : ""}`}>
+                <span>📷 {carte.photo ? "Photographiez-le" : "Ajouter une photo"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={async (e) => {
+                    const x = e.target.files?.[0];
+                    if (x) setPhoto(await reduire(x));
+                  }}
+                />
+              </label>
+            )}
+
             <ul className="as-cles">
               <li>
                 <b>{carte.prix || "—"}</b>
@@ -390,7 +543,9 @@ export function Assistante() {
           demande pas d'apprendre un geste. Mais le clavier ne se cache pas —
           s'il rate deux fois, il doit pouvoir taper sans chercher. */}
       <div className="as-bas">
-        {ecoute && <p className="as-vivant">{vivant || "Je vous écoute…"}</p>}
+        {ecoute && (
+          <p className="as-vivant">{vivant || "Je vous écoute… (arrêtez de parler pour envoyer)"}</p>
+        )}
         <div className="as-saisie">
           <button
             type="button"
@@ -423,6 +578,32 @@ export function Assistante() {
           >
             ↑
           </button>
+        </div>
+
+        {/* MAINS LIBRES, ET ÇA SE COUPE. Dans une pièce très bruyante le silence
+            n'arrive jamais et le micro resterait ouvert ; dans une conversation
+            à côté, il partirait tout seul. Le réglage est petit parce qu'on n'y
+            touche presque jamais, et visible parce que le jour où il faut le
+            couper, il faut le trouver tout de suite. */}
+        <div className="as-mains">
+          <button
+            type="button"
+            className={libres ? "on" : ""}
+            aria-pressed={libres}
+            onClick={() => {
+              const v = !libres;
+              setLibres(v);
+              if (!v) {
+                micro.current?.annuler();
+                micro.current = null;
+                setEcoute(false);
+                setVivant("");
+              }
+            }}
+          >
+            {libres ? "🔊 Mains libres" : "🔇 Mains libres coupées"}
+          </button>
+          {parle && <em>Léa parle…</em>}
         </div>
 
         {/* LA BARRE DE DÉMONSTRATION. Discrète, en bas, hors du chemin : elle ne

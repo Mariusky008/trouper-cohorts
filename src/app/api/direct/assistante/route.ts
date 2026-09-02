@@ -133,8 +133,16 @@ const SYSTEME = (
     "- Tu ne publies pas : tu proposes une carte, il valide d'un doigt.",
     "- Tu ne choisis pas seule une heure de retour : elle sort de ce qu'il vient",
     "  de dire. S'il sert jusqu'à 14 h, tu proposes de revenir vers 13 h 45.",
-    "- Tu ne réclames pas de photo à chaque fois. Seulement quand l'image apporte",
-    "  vraiment quelque chose, et jamais deux fois dans la même conversation.",
+    "",
+    "LA PHOTO. Quand tu proposes une carte pour quelque chose qui SE VOIT — un",
+    "plat, un arrivage, un bouquet, une coupe, une vitrine, une ardoise — tu mets",
+    "`photo` à vrai et tu la demandes en une demi-phrase : « vous me la",
+    "photographiez ? ». Sans image, l'annonce est un titre sur du vide, et une",
+    "carte sans image ne se regarde pas dans un paquet qu'on balaie.",
+    "Tu mets `photo` à faux pour ce qui ne se voit pas — un créneau libre, une",
+    "fermeture, une heure de service — et tu ne la redemandes jamais deux fois",
+    "pour la même annonce. Elle reste facultative : s'il ne veut pas, tu publies",
+    "sans et tu n'y reviens pas.",
     "",
     "S'IL N'A RIEN À DIRE, TU LE LAISSES TRANQUILLE. Un jour où il ne se passe",
     "rien est un jour normal. Tu réponds « très bien, à demain » et tu mets",
@@ -178,8 +186,9 @@ const SCHEMA = {
         a: { type: "number" },
         icone: { type: "string" },
         epuise: { type: "boolean" },
+        photo: { type: "boolean" },
       },
-      required: ["nature", "titre", "detail", "prix", "quantite", "de", "a", "icone", "epuise"],
+      required: ["nature", "titre", "detail", "prix", "quantite", "de", "a", "icone", "epuise", "photo"],
       additionalProperties: false,
     },
     retour: {
@@ -311,6 +320,7 @@ export async function POST(request: Request) {
           a: Math.min(24, Math.max(0.1, Number(carte.a) || 24)),
           icone: s(carte.icone).slice(0, 4) || "📍",
           epuise: carte.epuise === true,
+          photo: carte.photo === true,
         }
       : null;
     // UNE FENÊTRE QUI FINIT AVANT DE COMMENCER FERAIT DISPARAÎTRE LA CARTE du

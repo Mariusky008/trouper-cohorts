@@ -79,7 +79,38 @@ export function dicteeDisponible(): boolean {
  * et une raison, jamais une exception. Un micro qui lève une erreur au milieu
  * d'une démonstration ferme l'écran.
  */
-export function ouvrirEcoute(enDirect: (t: string) => void): {
+/**
+ * LE SILENCE QUI DIT « J'AI FINI ».
+ *
+ * LE DÉFAUT MESURÉ : « je dois appuyer sur le bouton à chaque fois pour parler
+ * et envoyer mon message ». Deux appuis par phrase, c'est-à-dire exactement le
+ * geste qu'on prétendait lui épargner — et impossible avec les mains dans la
+ * farine, ce qui est le seul moment où il aurait le temps de parler.
+ *
+ * LE SEUIL EST BAS ET L'ATTENTE EST LONGUE, et les deux vont ensemble. Un
+ * commerçant s'interrompt : il compte ses portions, il sert quelqu'un, il
+ * cherche un mot. Couper au bout de six cents millisecondes lui vole la moitié
+ * de sa phrase, et une assistante qui coupe la parole ne se fait pas pardonner.
+ * Une seconde et demie laisse passer une hésitation sans faire attendre.
+ *
+ * ET ON NE COUPE QU'APRÈS AVOIR ENTENDU QUELQUE CHOSE. Sans ça, un micro ouvert
+ * dans une pièce calme se fermerait aussitôt, et on aurait l'air de ne pas
+ * écouter. S'il ne dit rien du tout, on rend la main après huit secondes plutôt
+ * que de laisser une lampe rouge allumée.
+ */
+const SEUIL = 0.012;
+const SILENCE_MS = 1500;
+const RIEN_MS = 8000;
+
+export type Reglages = {
+  /** Appelé quand il s'est tu — c'est ce qui remplace le deuxième appui. */
+  surSilence?: () => void;
+};
+
+export function ouvrirEcoute(
+  enDirect: (t: string) => void,
+  reglages: Reglages = {},
+): {
   arreter: () => Promise<Ecoute>;
   annuler: () => void;
 } {
@@ -91,6 +122,11 @@ export function ouvrirEcoute(enDirect: (t: string) => void): {
   let fini = "";
   let vivant = "";
   let coupe = false;
+  let guet = 0;
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  let ctxSon: any = null;
+  /** Vrai dès qu'on a entendu quelque chose — voir `SEUIL`. */
+  let aParle = false;
 
   const Moteur = moteur();
   if (Moteur) {
@@ -140,12 +176,60 @@ export function ouvrirEcoute(enDirect: (t: string) => void): {
       };
       m.start();
       enr = m;
+
+      // ── L'OREILLE QUI GUETTE LE SILENCE ──
+      // On mesure le niveau du micro, pas les mots : c'est dix lignes et ça
+      // marche partout, là où le moteur de dictée du navigateur ne dit pas
+      // toujours quand il considère qu'une phrase est finie.
+      if (reglages.surSilence) {
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+        const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
+        if (AC) {
+          ctxSon = new AC();
+          const an = ctxSon.createAnalyser();
+          an.fftSize = 1024;
+          ctxSon.createMediaStreamSource(f).connect(an);
+          const tampon = new Float32Array(an.fftSize);
+          const debut = Date.now();
+          let dernierSon = 0;
+          guet = window.setInterval(() => {
+            an.getFloatTimeDomainData(tampon);
+            let somme = 0;
+            for (let i = 0; i < tampon.length; i++) somme += tampon[i] * tampon[i];
+            const niveau = Math.sqrt(somme / tampon.length);
+            const t = Date.now();
+            if (niveau > SEUIL) {
+              aParle = true;
+              dernierSon = t;
+              return;
+            }
+            const fini = aParle
+              ? dernierSon && t - dernierSon > SILENCE_MS
+              : t - debut > RIEN_MS;
+            if (fini) {
+              window.clearInterval(guet);
+              guet = 0;
+              reglages.surSilence?.();
+            }
+          }, 120);
+        }
+      }
     } catch {
       /* Micro refusé : la dictée peut encore marcher, et sinon on le dira. */
     }
   })();
 
   const fermer = () => {
+    if (guet) {
+      window.clearInterval(guet);
+      guet = 0;
+    }
+    try {
+      ctxSon?.close();
+    } catch {
+      /* déjà fermé */
+    }
+    ctxSon = null;
     try {
       rec?.stop();
     } catch {
