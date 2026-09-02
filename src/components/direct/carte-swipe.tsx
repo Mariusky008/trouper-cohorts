@@ -80,6 +80,20 @@ export type CarteDirect = {
   prixBarre?: string;
   /** L'étiquette jaune : « GRATUIT », « -30 % ». */
   etiquette?: string;
+  /**
+   * ÇA VIENT DE TOMBER — « à l'instant », « il y a 12 min ».
+   *
+   * LA SEULE CHOSE QU'UNE FICHE GOOGLE NE SAURA JAMAIS DIRE. Des horaires, une
+   * adresse, un menu : tout le monde les a. « Il vient de se passer quelque
+   * chose, il y a douze minutes, à trois cents mètres » n'existe nulle part —
+   * et c'est pour ça que ça se lit AVANT le métier, tout en haut de la carte.
+   *
+   * ET CE N'EST PAS UNE ÉTIQUETTE DE PLUS. L'étiquette jaune dit ce que
+   * l'offre EST (« −30 % ») ; celle-ci dit QUAND elle a été dite. Les deux
+   * peuvent coexister sur une carte sans se répéter — mais rarement, parce
+   * qu'une annonce fraîche est rare par construction (voir `FRAICHEUR_MIN`).
+   */
+  frais?: string;
   /** Ce que d'autres ont déjà fait : « 3 ont réservé ». Jamais inventé. */
   social?: string;
   /**
@@ -292,6 +306,19 @@ export function CarteSwipe({
              bas — la ligne du commerce ne porte que son nom, sa ville et sa
              distance. */
           <div className="cd-dit">
+            {/* ─── LE MOMENT, ET IL PASSE AVANT LE MÉTIER ───
+                Un point qui bat, et l'heure. Rien d'autre : le mot « direct »
+                a été écarté exprès — il promet une caméra allumée, donc
+                quelqu'un qui parle, donc une performance, c'est-à-dire tout ce
+                qui fait fuir un commerçant. Ici on ne lui demande rien de plus
+                que ce qu'il fait déjà ; c'est le produit qui date ce qu'il
+                dit. */}
+            {c.frais && (
+              <p className="cd-frais">
+                <i aria-hidden="true" />
+                {c.frais}
+              </p>
+            )}
             {(c.etiquette || c.metier) && (
               <p className="cd-nature">{c.etiquette || c.metier}</p>
             )}
@@ -597,6 +624,38 @@ export function StylesDirect() {
           width:100%;min-width:0;}
         .cd-nature{margin:0;font-size:11px;font-weight:800;letter-spacing:.24em;
           text-transform:uppercase;color:#EFEAD9;opacity:.92;}
+        /* ═══ CA VIENT DE TOMBER ═══
+           UNE QUATRIEME COULEUR, ET LES TROIS AUTRES ETAIENT PRISES. Le vert
+           veut dire GARDER, le corail #FF6B6B veut dire PASSER — c'est le
+           tampon qui apparait sous le doigt quand on balaie — et l'ambre veut
+           dire « c'est a vous ». Les trois parlent d'une ACTION. La fraicheur
+           n'est pas une action mais un ETAT, et le premier essai l'avait mise
+           en corail : la pastille se retrouvait a deux centimetres d'un tampon
+           « PASSER » de la meme couleur, ce qui revenait a dire « nouveau » et
+           « refuser » avec le meme signe.
+           LE VIOLET EST LIBRE SUR LA CARTE, et c'est la couleur du direct dans
+           le vocabulaire que tout le monde connait deja — celui de Twitch, cite
+           par le produit lui-meme quand le rond video est ne. */
+        .cd-frais{display:inline-flex;align-items:center;gap:6px;
+          margin:0 0 9px;padding:5px 11px 5px 9px;border-radius:999px;
+          font-size:10.5px;font-weight:850;letter-spacing:.12em;
+          text-transform:uppercase;color:#E7D9FF;
+          background:rgba(139,92,246,.28);
+          border:1px solid rgba(185,140,255,.55);
+          backdrop-filter:blur(6px);}
+        .cd-frais i{width:7px;height:7px;border-radius:50%;background:#C4A0FF;
+          box-shadow:0 0 0 0 rgba(185,140,255,.75);animation:cdBat 2s ease-out infinite;}
+        /* IL BAT, IL NE CLIGNOTE PAS. Un clignotement fait fermer une
+           application ; une pulsation lente se remarque sans agresser, et
+           s'arrete net pour qui a demande moins d'animations. */
+        @keyframes cdBat{
+          0%{box-shadow:0 0 0 0 rgba(185,140,255,.75);}
+          70%{box-shadow:0 0 0 7px rgba(185,140,255,0);}
+          100%{box-shadow:0 0 0 0 rgba(185,140,255,0);}
+        }
+        @media (prefers-reduced-motion:reduce){
+          .cd-frais i{animation:none;}
+        }
         /* LE PLAT EST LA PLUS GROSSE LIGNE DE LA CARTE. C'est tout le
            correctif : avant, c'etait le nom du commerce. */
         .cd-offre{margin:8px 0 0;font-family:Georgia,'Times New Roman',serif;

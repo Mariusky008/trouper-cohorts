@@ -142,6 +142,7 @@ import {
   toutesLesCartes,
   comptesParMetier,
   momentEnCours,
+  momentFrais,
   momentsRestants,
   nommerApresUnVerbe,
   nouvelleDuJour,
@@ -1424,12 +1425,47 @@ export function ApercuHabitant() {
     //
     // LE TRI PAR DISTANCE SURVIT DERRIÈRE. On ne mélange pas : les suivis
     // d'abord dans leur ordre de distance, puis tous les autres dans le leur.
+    // ─── ET CE QUI VIENT DE TOMBER PASSE ENCORE DEVANT ───
+    //
+    // « CE N'EST PAS GRAVE SI ON RESSEMBLE À FACEBOOK OU INSTAGRAM, PARCE QU'ON
+    // N'A PAS BESOIN DE CHERCHER À DIX ENDROITS POUR TROUVER LES INFOS DE LA
+    // VILLE. » C'est juste, mais la ressemblance ne suffit pas : ces deux-là
+    // tiennent debout parce que des créateurs produisent tous les jours, et un
+    // commerçant de Dax ne produira pas tous les jours. Ce qu'on copie, c'est
+    // donc la LECTURE, jamais la production.
+    //
+    // ET CE QU'ON MET EN TÊTE N'EST PAS UN DIRECT. Le mot a été écarté : il
+    // promet une caméra allumée, quelqu'un qui parle, une performance — il y
+    // aurait trois directs le premier mois et zéro le deuxième. Ce qui remonte,
+    // c'est un MOMENT : quelque chose de vrai maintenant, qui vient d'être dit,
+    // et qui disparaîtra tout seul. Le commerçant n'a rien de plus à faire que
+    // ce qu'il fait déjà ; c'est le produit qui date ce qu'il dit.
+    //
+    // POURQUOI DEVANT LES SUIVIS, QUI PASSAIENT DEVANT JUSQU'ICI. « Mon
+    // boulanger a publié ce matin » est une raison d'ouvrir ; « il vient de
+    // sortir douze pains à moitié prix, il y a six minutes, à trois cents
+    // mètres » est une raison de SORTIR. Entre les deux, le second gagne — et
+    // c'est la seule information qu'aucune fiche Google ne saura jamais donner.
+    //
+    // LE PLUS RÉCENT D'ABORD, PUIS LA DISTANCE. Deux annonces fraîches se
+    // départagent par l'heure, pas par les mètres : à fraîcheur égale, on
+    // retombe sur la règle de toujours.
     const aMoi = (c: ItemPaquet) => suivis.includes(c.id);
     const restant = dispo.filter((c) => !passees.includes(c.id));
+    const fraisDe = (c: ItemPaquet) =>
+      estEvenement(c) ? null : momentFrais(c, heure);
+    const frais = restant
+      .filter((c) => fraisDe(c) != null)
+      .sort(
+        (a, b) =>
+          (fraisDe(a)?.ilYa ?? 0) - (fraisDe(b)?.ilYa ?? 0) || a.metres - b.metres,
+      );
+    const reste = restant.filter((c) => !frais.includes(c));
     const p = [
       ...cartesPreparees.filter((c) => !passees.includes(c.id)),
-      ...restant.filter(aMoi),
-      ...restant.filter((c) => !aMoi(c)),
+      ...frais,
+      ...reste.filter(aMoi),
+      ...reste.filter((c) => !aMoi(c)),
     ];
     if (!epingle) return p;
     const i = p.findIndex((c) => c.id === epingle);

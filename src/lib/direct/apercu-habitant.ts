@@ -354,6 +354,32 @@ export type MomentJour = {
   /** Début et fin en heures décimales — 11.5 vaut 11 h 30. */
   de: number;
   a: number;
+  /**
+   * QUAND IL L'A DIT — et c'est autre chose que `de`.
+   *
+   * LA DIFFÉRENCE QUI FAIT TOUT LE SUJET. `de` et `a` disent quand la chose est
+   * VRAIE : le plat est servi de midi à 14 h. `publie` dit quand le commerçant
+   * l'a ANNONCÉE. Les deux se confondent rarement : il prévient à 10 h pour un
+   * service de midi, ou il sort de sa cuisine à 13 h 20 parce qu'il lui reste
+   * trois portions et qu'il vient de le décider.
+   *
+   * CE QU'ON EN FAIT. Une annonce qui vient de tomber remonte en tête du paquet
+   * et porte son heure. C'est la seule chose qu'aucune fiche Google, aucun site
+   * et aucun horaire d'ouverture ne saura jamais dire : « il vient de se passer
+   * quelque chose, il y a douze minutes, à trois cents mètres ».
+   *
+   * ET CE N'EST PAS UN DIRECT. On a hésité avec le mot, et il est faux : un
+   * « direct » promet une caméra allumée, donc quelqu'un qui parle, donc une
+   * performance — exactement ce qui bloque les commerçants depuis quinze ans, et
+   * exactement ce qu'on vient de désamorcer avec le rond muet. Il y aurait trois
+   * directs le premier mois et zéro le deuxième. Un MOMENT ne demande rien de
+   * plus que ce qu'il fait déjà : il apparaît, il vit, il disparaît.
+   *
+   * FACULTATIF, ET L'ABSENCE VEUT DIRE QUELQUE CHOSE. Sans `publie`, le moment
+   * n'est jamais frais. C'est voulu : si tout le paquet est frais, plus rien ne
+   * l'est. La fraîcheur doit rester rare pour valoir quelque chose.
+   */
+  publie?: number;
   /** L'heure telle qu'on l'écrit. */
   quand: string;
   /** Ce que c'est, en trois mots. */
@@ -1306,14 +1332,14 @@ const CARTES: CarteAutour[] = [
         ],
       },
       {
-        de: 14, a: 15, quand: "14 h", icone: "🥡",
+        de: 14, a: 15, quand: "14 h", icone: "🥡", publie: 14,
         titre: "Les restes, à emporter",
         lignes: ["Ce qui n'est pas parti du service", "Sur place, tant qu'il y en a"],
         prix: "7 €", places: 5, action: "Gardez-m'en une part", envies: ["moins15", "maintenant", "emporter"],
         rappels: 3,
       },
       {
-        de: 19, a: 22, quand: "19 h – 22 h", icone: "🌙",
+        de: 19, a: 22, quand: "19 h – 22 h", icone: "🌙", publie: 21,
         titre: "Service du soir",
         lignes: ["Entrée + plat + dessert", "Dernière commande à 21 h 30"],
         prix: "26 €", places: 6, action: "Réserver", envies: [],
@@ -1450,7 +1476,7 @@ const CARTES: CarteAutour[] = [
         },
       },
       {
-        de: 13, a: 17, quand: "à partir de 13 h", icone: "🔥",
+        de: 13, a: 17, quand: "à partir de 13 h", icone: "🔥", publie: 13.2,
         titre: "Dernières portions",
         lignes: ["Lasagnes maison", "Prêtes tout de suite"],
         prix: "8 €", etiquette: "IL EN RESTE 8", places: 8,
@@ -1518,7 +1544,7 @@ const CARTES: CarteAutour[] = [
     },
     moments: [
       {
-        de: 11, a: 14, quand: "ce midi", icone: "🕐",
+        de: 11, a: 14, quand: "ce midi", icone: "🕐", publie: 11.5,
         titre: "Il reste 4 tables",
         lignes: ["Plat + dessert", "Sans attendre"],
         prix: "16 €", places: 4, action: "Réserver", envies: ["maintenant"],
@@ -1650,7 +1676,7 @@ const CARTES: CarteAutour[] = [
     },
     moments: [
       {
-        de: 8, a: 11, quand: "ce matin", icone: "🥐",
+        de: 8, a: 11, quand: "ce matin", icone: "🥐", publie: 8,
         titre: "La fournée de 7 h",
         lignes: ["Pains au levain", "Viennoiseries encore tièdes"],
         prix: "1,30 €", places: 40, envies: ["moins15", "maintenant", "emporter"],
@@ -1690,7 +1716,7 @@ const CARTES: CarteAutour[] = [
         },
       },
       {
-        de: 18, a: 19.5, quand: "18 h", icone: "🏷️",
+        de: 18, a: 19.5, quand: "18 h", icone: "🏷️", publie: 18,
         titre: "Ce qui reste, à moitié prix",
         lignes: ["Pains et viennoiseries du jour", "Jusqu'à la fermeture"],
         prix: "0,65 €", prixBarre: "1,30 €", etiquette: "−50 %", places: 12,
@@ -1804,7 +1830,7 @@ const CARTES: CarteAutour[] = [
         },
       },
       {
-        de: 15.5, a: 19.5, quand: "18 h", icone: "🏷️",
+        de: 15.5, a: 19.5, quand: "18 h", icone: "🏷️", publie: 15.5,
         titre: "Les plats cuisinés du jour",
         lignes: ["Ce qui a été préparé le matin", "Jusqu’à la fermeture"],
         prix: "6 €", prixBarre: "9 €", etiquette: "−30 %", places: 8,
@@ -1855,7 +1881,7 @@ const CARTES: CarteAutour[] = [
     },
     moments: [
       {
-        de: 17, a: 23, quand: "20 h", icone: "🎲",
+        de: 17, a: 23, quand: "20 h", icone: "🎲", publie: 19.5,
         titre: "La grande table des inconnus",
         lignes: ["6 places, on s'assoit ensemble", "Plat + verre compris"],
         prix: "17 €", places: 2, action: "Réserver", envies: ["partager"],
@@ -1912,7 +1938,7 @@ const CARTES: CarteAutour[] = [
     },
     moments: [
       {
-        de: 10, a: 18, quand: "toute la journée", icone: "🍱",
+        de: 10, a: 18, quand: "toute la journée", icone: "🍱", publie: 10,
         titre: "Les barquettes du jour",
         lignes: ["Six plats au choix", "À emporter"],
         prix: "12 €", places: 25, action: "Gardez-m'en une",
@@ -2061,7 +2087,7 @@ const CARTES: CarteAutour[] = [
     },
     moments: [
       {
-        de: 11, a: 19, quand: "aujourd'hui", icone: "🧥",
+        de: 11, a: 19, quand: "aujourd'hui", icone: "🧥", publie: 11,
         titre: "40 pièces sorties ce matin",
         lignes: ["Manteaux et vestes d'hiver", "Une seule de chaque"],
         prix: "à partir de 12 €", places: 40, envies: ["arrivage", "maintenant"],
@@ -2179,7 +2205,7 @@ const CARTES: CarteAutour[] = [
     },
     moments: [
       {
-        de: 8, a: 20, quand: "toute la journée", icone: "☀️",
+        de: 8, a: 20, quand: "toute la journée", icone: "☀️", publie: 12,
         titre: "Il reste 3 tables dehors",
         lignes: ["En terrasse, plein sud", "Sans réserver"],
         places: 3, envies: ["maintenant", "terrasse"],
@@ -2246,7 +2272,12 @@ const CARTES: CarteAutour[] = [
     },
     moments: [
       {
-        de: 8, a: 19, quand: "dans 20 min", icone: "💇",
+        // UN DÉSISTEMENT NE DURE PAS ONZE HEURES. Ce moment courait de 8 h à
+        // 19 h en annonçant « dans 20 min » : à neuf heures du matin comme à six
+        // heures du soir, la même place venait de se libérer. C'était faux, et
+        // c'est devenu visible en horodatant les annonces — une place libérée à
+        // 8 h qu'on dit fraîche à 18 h ne trompe personne deux fois.
+        de: 14, a: 15.5, quand: "à 14 h 30", icone: "💇", publie: 14,
         titre: "Une place vient de se libérer",
         lignes: ["Coupe + brushing", "45 minutes"],
         prix: "28 €", places: 1, action: "Réserver", envies: ["maintenant", "moins30"],
@@ -2397,7 +2428,7 @@ const CARTES: CarteAutour[] = [
         ],
       },
       {
-        de: 17, a: 19, quand: "18 h", icone: "🌿",
+        de: 17, a: 19, quand: "18 h", icone: "🌿", publie: 17,
         titre: "Il reste 4 bouquets",
         lignes: ["Composés ce matin", "À emporter"],
         prix: "12 €", prixBarre: "18 €", etiquette: "−30 %", places: 4,
@@ -2432,7 +2463,8 @@ const CARTES: CarteAutour[] = [
     },
     moments: [
       {
-        de: 8, a: 19, quand: "maintenant", icone: "💅",
+        // MÊME CORRECTION QUE CHEZ LE COIFFEUR : un désistement a une heure.
+        de: 11, a: 13, quand: "à 11 h 30", icone: "💅", publie: 11,
         titre: "Un désistement",
         lignes: ["Remplissage", "45 minutes"],
         prix: "30 €", places: 1, action: "Réserver", envies: ["maintenant", "moins35"],
@@ -2477,6 +2509,62 @@ export function momentEnCours(c: CarteAutour, heure: number): MomentJour | null 
 /** Vrai si le moment se passe en ce moment même, faux s'il est à venir. */
 export function seJoueMaintenant(m: MomentJour, heure: number): boolean {
   return heure >= m.de && heure < m.a;
+}
+
+/**
+ * COMBIEN DE TEMPS UNE ANNONCE RESTE « FRAÎCHE » — quatre-vingt-dix minutes.
+ *
+ * PLUS COURT, ON NE LA VOIT PAS. Personne n'ouvre l'application dans les dix
+ * minutes qui suivent une publication ; une fraîcheur de quart d'heure ne
+ * servirait qu'à ceux qui y sont déjà.
+ *
+ * PLUS LONG, ELLE NE VEUT PLUS RIEN DIRE. « Il y a quatre heures » n'est pas
+ * une nouvelle, c'est la journée. Et surtout : au-delà, la moitié du paquet
+ * serait en tête, ce qui revient à n'avoir plus de tête du tout.
+ */
+export const FRAICHEUR_MIN = 90;
+
+/**
+ * DEPUIS COMBIEN DE TEMPS, EN MINUTES — ou `null` s'il ne l'a pas annoncé,
+ * si c'était il y a trop longtemps, ou si l'annonce n'est plus vraie.
+ *
+ * LES TROIS CONDITIONS COMPTENT AUTANT. La dernière est celle qu'on oublie :
+ * une annonce publiée il y a vingt minutes POUR CE SOIR n'est pas un moment,
+ * c'est une prévision. Ce qui remonte en tête, c'est ce qui est vrai
+ * MAINTENANT et qui vient d'être dit.
+ */
+export function fraicheur(m: MomentJour, heure: number): number | null {
+  if (m.publie == null) return null;
+  if (!seJoueMaintenant(m, heure)) return null;
+  const min = Math.round((heure - m.publie) * 60);
+  return min >= 0 && min <= FRAICHEUR_MIN ? min : null;
+}
+
+/** Le moment frais d'un commerce — le plus récent s'il y en a plusieurs. */
+export function momentFrais(
+  c: CarteAutour,
+  heure: number,
+): { moment: MomentJour; ilYa: number } | null {
+  let mieux: { moment: MomentJour; ilYa: number } | null = null;
+  for (const m of c.moments) {
+    const f = fraicheur(m, heure);
+    if (f != null && (!mieux || f < mieux.ilYa)) mieux = { moment: m, ilYa: f };
+  }
+  return mieux;
+}
+
+/**
+ * COMMENT ON L'ÉCRIT — et jamais en secondes ni en « 0 min ».
+ *
+ * « À L'INSTANT » PLUTÔT QU'UN CHIFFRE SOUS LA MINUTE. Un compteur qui affiche
+ * « il y a 0 min » a l'air cassé, et un qui descend à la seconde transforme une
+ * nouvelle en chronomètre — on a déjà un compte à rebours dans ce produit, et
+ * un seul suffit.
+ */
+export function ilYa(min: number): string {
+  if (min < 1) return "à l’instant";
+  if (min < 60) return `il y a ${min} min`;
+  return "il y a 1 h";
 }
 
 /**
@@ -2739,12 +2827,34 @@ function borneHoraire(quand: string): boolean {
   return /\d/.test(quand);
 }
 
+/** La fraîcheur telle qu'elle s'écrit sur la carte, ou rien. */
+function fraicheurEcrite(m: MomentJour, heure: number): string | undefined {
+  const f = fraicheur(m, heure);
+  return f == null ? undefined : ilYa(f);
+}
+
 export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
-  const m = momentEnCours(c, heure);
+  // ─── CE QUI VIENT DE TOMBER PREND LA CARTE ───
+  //
+  // LE DÉFAUT QUE ÇA CORRIGE, ET IL S'EST VU AU PREMIER ESSAI. La carte
+  // remontait bien en tête du paquet, mais elle continuait d'afficher le moment
+  // « en cours » — c'est-à-dire le premier de la liste dont la fenêtre couvre
+  // l'heure. À 8 h 18, la boulangerie remontait pour sa fournée de 7 h et
+  // montrait « MENU DU JOUR · La formule du midi », avec la pastille « il y a
+  // 18 min » posée à côté. Le classement disait une chose et la carte en
+  // montrait une autre.
+  //
+  // LA RÈGLE EST DONC LA MÊME DES DEUX CÔTÉS : ce qui fait remonter la carte
+  // est ce que la carte montre. Un menu du jour est une permanence, une annonce
+  // fraîche est un événement — et un événement passe devant une permanence. Le
+  // menu ne disparaît pas pour autant : il attend sous le pli, comme le reste
+  // de la journée.
+  const f = momentFrais(c, heure);
+  const m = f?.moment ?? momentEnCours(c, heure);
   // QUAND IL Y A UN MENU DU JOUR, C'EST LUI QU'ON MONTRE — photo comprise. Le
   // moment en cours ne disparaît pas : il passe dans la pastille du haut, qui
   // dit ce qui se joue en ce moment, et le programme complet attend sous le pli.
-  if (c.menu) {
+  if (c.menu && !f) {
     return {
       photo: c.menu.photo,
       cadrage: c.menu.cadrage ?? c.cadrage,
@@ -2779,6 +2889,7 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
       voix: c.voix,
       prix: c.menu.prix,
       etiquette: "MENU DU JOUR",
+      frais: m ? fraicheurEcrite(m, heure) : undefined,
     };
   }
   return {
@@ -2817,6 +2928,7 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
     prix: m?.prix,
     prixBarre: m?.prixBarre,
     etiquette: m?.etiquette,
+    frais: m ? fraicheurEcrite(m, heure) : undefined,
     // PAS DE LIGNE « SOCIAL » ICI. Le nombre de moments y était écrit une
     // première fois, et la pastille de défilement le répétait dix pixels plus
     // bas, avec en prime le cœur vert qui veut dire « gardé » partout ailleurs

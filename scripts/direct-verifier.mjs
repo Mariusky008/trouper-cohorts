@@ -171,17 +171,29 @@ await ctx.close();
 //      quarts de la ville.
 console.log("\n══ la voix du commerçant ══");
 ({ ctx, p } = await ouvrir());
-const voix = await p.evaluate(() => {
-  const d = document.querySelector(".ap-dessus");
-  const c = d.querySelector(".cd-conseil");
-  return {
-    chez: d.querySelector(".cd-chez")?.textContent.replace(/\s+/g, " ").split("·")[0].trim() ?? "",
-    conseil: c?.querySelector("span:last-child")?.childNodes[0]?.textContent.trim() ?? "",
-    qui: c?.querySelector("s")?.textContent.trim() ?? "",
-    tete: c?.querySelector(".cd-tete")?.textContent.trim() ?? "",
-    detail: d.querySelector(".cd-detail")?.textContent.trim() ?? "",
-  };
-});
+// ON CHERCHE LA CARTE À CONSEIL, ON NE SUPPOSE PLUS QU'ELLE EST EN TÊTE.
+// Elle l'était tant que les commerces suivis ouvraient le paquet ; depuis que
+// ce qui vient de tomber passe devant, la tête dépend de l'heure qu'il est. Ce
+// que cette section vérifie, c'est le RENDU d'un conseil — pas son rang, qui
+// se vérifie dans « le moment ».
+const lireVoix = () =>
+  p.evaluate(() => {
+    const d = document.querySelector(".ap-dessus");
+    const c = d?.querySelector(".cd-conseil");
+    return {
+      chez: d?.querySelector(".cd-chez")?.textContent.replace(/\s+/g, " ").split("·")[0].trim() ?? "",
+      conseil: c?.querySelector("span:last-child")?.childNodes[0]?.textContent.trim() ?? "",
+      qui: c?.querySelector("s")?.textContent.trim() ?? "",
+      tete: c?.querySelector(".cd-tete")?.textContent.trim() ?? "",
+      detail: d?.querySelector(".cd-detail")?.textContent.trim() ?? "",
+    };
+  });
+let voix = await lireVoix();
+for (let k = 0; k < 14 && !voix.conseil; k++) {
+  await p.click(".ap-rond");
+  await p.waitForTimeout(320);
+  voix = await lireVoix();
+}
 console.log(`  ${voix.chez} — « ${voix.conseil} » — ${voix.qui} (${voix.tete})`);
 dire(!!voix.conseil, "la carte porte un conseil");
 dire(!!voix.qui, `signé d'un prénom et d'un métier (${voix.qui})`);
@@ -588,6 +600,102 @@ console.log("\n══ la vidéo dans le rond ══");
   // absurde qu'il y soit plus petit que sur la carte qu'on traverse.
   dire(rien.taille >= 70, `et on l'y voit en grand (${rien.taille} px)`);
   await c5.close();
+}
+
+// ═══ 9 · LE MOMENT — CE QUI VIENT DE TOMBER ═══
+//
+// CE QU'AUCUNE FICHE GOOGLE NE SAIT DIRE. Des horaires, une adresse, un menu :
+// tout le monde les a. « Il vient de se passer quelque chose, il y a douze
+// minutes, à trois cents mètres » n'existe nulle part ailleurs.
+//
+// TROIS CHOSES DOIVENT ÊTRE VRAIES, et la troisième est celle qui a lâché au
+// premier essai :
+//
+//   1. LA CARTE FRAÎCHE EST EN TÊTE du paquet, devant les commerces suivis.
+//   2. ELLE PORTE SON HEURE, et c'est la seule qui la porte — si tout le paquet
+//      était frais, plus rien ne le serait.
+//   3. ELLE MONTRE LE MOMENT QUI L'A FAIT REMONTER. La carte remontait bien,
+//      mais affichait le premier moment dont la fenêtre couvrait l'heure : à
+//      8 h 18 la boulangerie remontait pour sa fournée de 7 h et montrait
+//      « MENU DU JOUR · La formule du midi », pastille « il y a 18 min » à
+//      côté. Le classement disait une chose, la carte en montrait une autre.
+//
+// ON BALAIE LA JOURNÉE AVEC UNE HORLOGE FAUSSE : c'est le seul moyen de voir
+// une fonction qui, par construction, n'est vraie que quatre-vingt-dix minutes.
+console.log("\n══ le moment ══");
+{
+  // Chaque heure porte le titre attendu en tête de paquet. Les trous sont
+  // volontaires et ils comptent autant : à 17 h personne n'a rien publié, et la
+  // rareté est ce qui donne du poids aux autres heures.
+  const journee = [
+    [8.3, "La fournée de 7 h"],
+    [11.7, "Il reste 4 tables"],
+    [13.5, "Dernières portions"],
+    [16, "Les plats cuisinés du jour"],
+    [17.5, null],
+    [18.3, "Ce qui reste, à moitié prix"],
+    [21.4, "Service du soir"],
+  ];
+  let bons = 0;
+  for (const [h, attendu] of journee) {
+    const ctx9 = await nav.newContext({
+      viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+      isMobile: true, hasTouch: true, locale: "fr-FR",
+    });
+    await ctx9.clock.setFixedTime(
+      new Date(2026, 8, 2, Math.floor(h), Math.round((h % 1) * 60), 0),
+    );
+    const p9 = await ctx9.newPage();
+    p9.on("pageerror", (e) => erreurs.push(String(e)));
+    await p9.goto(`${BASE}/autour-de-moi`, { waitUntil: "networkidle" });
+    await p9.waitForTimeout(1200);
+    const r = await p9.evaluate(() => ({
+      frais: document.querySelector(".ap-dessus .cd-frais")?.textContent.trim() ?? "",
+      quoi: document.querySelector(".ap-dessus .cd-offre")?.textContent.trim() ?? "",
+      // COMBIEN DE PASTILLES DANS TOUT LE PAQUET : au-delà de deux cartes
+      // fraîches visibles, la tête du paquet n'en est plus une.
+      combien: document.querySelectorAll(".cd-frais").length,
+    }));
+    const hh = `${Math.floor(h)} h ${String(Math.round((h % 1) * 60)).padStart(2, "0")}`;
+    // LA CASSE VIENT DU CSS, PAS DU TEXTE : `.cd-offre` est en `uppercase`,
+    // donc `textContent` rend l'original. On compare sans en tenir compte.
+    const ok = attendu
+      ? r.quoi.toLowerCase() === attendu.toLowerCase()
+        && /il y a|instant/.test(r.frais)
+        && r.combien <= 2
+      : r.frais === "";
+    if (ok) bons++;
+    console.log(`  ${hh} → ${r.frais ? `[${r.frais}] ` : "· "}${r.quoi || "(rien)"}`);
+    if (!ok) console.log(`      attendu : ${attendu ?? "aucune pastille"}`);
+    if (h === 13.5) await p9.screenshot({ path: "/tmp/moment.png" });
+    await ctx9.close();
+  }
+  dire(bons === journee.length, `la journée se lit heure par heure (${bons}/${journee.length})`);
+
+  // ─── ET LA COULEUR N'EST PAS CELLE DE « PASSER » ───
+  // Le premier essai avait mis la pastille en corail, à deux centimètres d'un
+  // tampon « PASSER » en #FF6B6B : « nouveau » et « refuser » du même signe.
+  const ctxC = await nav.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  await ctxC.clock.setFixedTime(new Date(2026, 8, 2, 13, 30, 0));
+  const pc = await ctxC.newPage();
+  await pc.goto(`${BASE}/autour-de-moi`, { waitUntil: "networkidle" });
+  await pc.waitForTimeout(1200);
+  const teintes = await pc.evaluate(() => {
+    const pt = document.querySelector(".cd-frais i");
+    const tp = document.querySelector(".ap-tampon.non");
+    const lire = (e) => (e ? getComputedStyle(e) : null);
+    return {
+      point: lire(pt)?.backgroundColor ?? "",
+      tampon: lire(tp)?.color ?? "",
+    };
+  });
+  console.log(`  point ${teintes.point} · tampon « passer » ${teintes.tampon}`);
+  dire(!!teintes.point && teintes.point !== teintes.tampon,
+    "la fraîcheur n'a pas la couleur de « passer »");
+  await ctxC.close();
 }
 
 dire(erreurs.length === 0, `aucune erreur${erreurs.length ? " : " + erreurs[0] : ""}`);
