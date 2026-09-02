@@ -150,6 +150,7 @@ const SYSTEME = (
   dejaPublie: string[],
   souvenirs: string[],
   chiffres: { vues: number; reservations: number; abonnes: number; quoi: string } | null,
+  photoPrise: boolean,
 ) => {
   const hh = `${Math.floor(heure)} h ${String(Math.round((heure % 1) * 60)).padStart(2, "0")}`;
   return [
@@ -220,10 +221,17 @@ const SYSTEME = (
     "pour la même annonce. Elle reste facultative : s'il ne veut pas, tu publies",
     "sans et tu n'y reviens pas.",
     "",
-    "ET QUAND IL VIENT D'AJOUTER UNE PHOTO, tu lui proposes UNE SEULE FOIS de la",
-    "mettre aussi sur sa fiche Google — « je la mets aussi sur votre fiche",
-    "Google ? ». Un bouton apparaît sous la photo pour ça. Tu ne dis jamais que",
-    "c'est déjà fait : c'est lui qui appuie.",
+    "LA FICHE GOOGLE : tu n'en parles QUE si une photo a vraiment été prise —",
+    "l'information t'est donnée plus bas. Tant qu'il n'y en a pas, tu ne la",
+    "mentionnes pas ; proposer de mettre sur Google une photo qui n'existe pas",
+    "fait passer l'assistante pour quelqu'un qui n'écoute pas. Et tu ne dis",
+    "jamais que c'est fait : c'est lui qui appuie.",
+    "",
+    "S'IL TE DIT QUE TA CARTE EST FAUSSE — le message « (non, il y a une erreur",
+    "dans ce que vous proposez) » vient de l'écran, il a appuyé sur Corriger —",
+    "tu ne la reproposes SURTOUT pas telle quelle. Tu demandes ce qui ne va pas,",
+    "en quatre mots : « Qu'est-ce qui ne va pas ? », et tu rends `carte` à null.",
+    "C'est lui qui te corrige, tu ne devines pas.",
     "",
     chiffres
       ? [
@@ -246,6 +254,10 @@ const SYSTEME = (
     "rien est un jour normal. Tu réponds « très bien, à demain » et tu mets",
     "`fini` à vrai. Ne fabrique jamais une annonce pour remplir : « plat du jour",
     "comme d'habitude » publié tous les jours vide le Direct de son intérêt.",
+    "",
+    photoPrise
+      ? "UNE PHOTO EST DÉJÀ ATTACHÉE à la carte en cours."
+      : "AUCUNE PHOTO N'EST ATTACHÉE pour le moment.",
     "",
     "QUAND IL VIENT DE VALIDER UNE PUBLICATION, l'écran le lui a déjà confirmé —",
     "tu ne redis donc pas « c'est en ligne ». Tu enchaînes : ce que tu as",
@@ -406,6 +418,9 @@ export async function POST(request: Request) {
           quoi: s(c2.quoi).slice(0, 60),
         }
       : null;
+  // L'ÉCRAN SAIT S'IL Y A UNE PHOTO ; le modèle ne peut que le supposer, et il
+  // le supposait mal — il proposait la fiche Google pour une photo jamais prise.
+  const photoPrise = p?.photoPrise === true;
   const tours = Array.isArray(p?.messages) ? (p.messages as unknown[]) : [];
   const messages = tours
     .slice(-MAX_TOURS)
@@ -435,7 +450,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model: MODELE,
         max_tokens: 1500,
-        system: SYSTEME(commerce, heure, dejaPublie, souvenirs, chiffres),
+        system: SYSTEME(commerce, heure, dejaPublie, souvenirs, chiffres, photoPrise),
         messages: conversation,
         output_config: {
           // IL ATTEND DEBOUT. Démêler trois faits d'une phrase ne demande pas de

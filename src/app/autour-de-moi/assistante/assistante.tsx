@@ -587,6 +587,7 @@ export function Assistante() {
             // quelqu'un, on ne cherche pas un bouton. Les chiffres viennent
             // d'ici — ce sont des faits, et un fait ne se fait pas rédiger.
             chiffres: BILAN,
+            photoPrise: !!photo,
             messages: suite,
           }),
         });
@@ -606,6 +607,14 @@ export function Assistante() {
         aDire.current = dit;
         dire(dit, !k, () => {
           setTours([...suite, { role: "assistant", content: dit }]);
+          // UNE CARTE NEUVE PART DE ZÉRO. Sans ça, la photo prise pour une
+          // annonce qu'on a corrigée restait accrochée à la suivante — et
+          // partait avec elle sans que personne ne l'ait voulu.
+          if (k) {
+            setPhoto("");
+            setVideo("");
+            setGoogle(true);
+          }
           setCarte(k);
           if (d.retour) setRetour(d.retour);
           // C'EST ELLE QUI OUVRE LE RÉCAPITULATIF quand il le lui demande.
@@ -619,7 +628,7 @@ export function Assistante() {
         setAttend(false);
       }
     },
-    [dire, journee],
+    [dire, journee, photo],
   );
 
   const finDeService = useCallback(() => {
@@ -794,10 +803,20 @@ export function Assistante() {
     // Les deux tiennent ensemble : le fait reste écrit par l'écran, et Léa
     // reprend la parole juste après. C'est elle qui a le dernier mot, comme
     // dans une vraie conversation.
+    // CE QU'ELLE ANNONCE EST CE QUI SE PASSE, ET RIEN D'AUTRE.
+    //
+    // « Ça serait sympa aussi qu'elle dise : je le mets sur le direct de ClikMe
+    // et j'avertis aussi tous vos abonnés. » C'est juste, et c'est même le
+    // meilleur argument du produit — un commerçant ne sait pas qu'il a des
+    // abonnés qui l'attendent. On le lui dit à chaque publication.
+    //
+    // ET LA FICHE GOOGLE N'EST CITÉE QUE S'IL Y A UNE PHOTO ET QU'IL L'A
+    // LAISSÉE MISE. Défaut vu à l'écran : elle annonçait la fiche Google pour
+    // une photo qui n'avait jamais été prise.
     const mot =
       photo && google
-        ? `C’est en ligne. ${carte.titre} — et la photo part aussi sur votre fiche Google.`
-        : `C’est en ligne. ${carte.titre} — vos voisins le voient maintenant.`;
+        ? `C’est sur Le Direct de Dax, et je préviens vos abonnés. La photo part aussi sur votre fiche Google.`
+        : `C’est sur Le Direct de Dax — et je préviens vos abonnés.`;
     // ON POSE LA BULLE **ET** LA RÉFÉRENCE, dans le même geste. Une référence ne
     // se met à jour qu'au rendu suivant : `parler`, appelé juste après, lirait
     // encore le fil d'avant et écraserait cette confirmation en répondant —
@@ -1084,8 +1103,24 @@ export function Assistante() {
                 type="button"
                 className="as-non"
                 onClick={() => {
+                  // ─── « CORRIGER » DOIT LE DIRE À LÉA ───
+                  //
+                  // LE DÉFAUT MESURÉ, ET IL EST GRAVE : « quand j'ai appuyé sur
+                  // Corriger parce qu'il y avait une erreur, la fenêtre a
+                  // disparu et j'ai eu "parfait, je m'occupe du reste" alors que
+                  // je n'avais rien modifié ».
+                  //
+                  // C'est exactement ce que faisait le code : on effaçait la
+                  // carte à l'écran, et RIEN N'ÉTAIT DIT à Léa. Pour elle, sa
+                  // proposition tenait toujours ; le tour suivant repartait donc
+                  // comme si tout allait bien. Un refus qui ne remonte pas n'est
+                  // pas un refus, c'est un écran qu'on ferme.
+                  //
+                  // Maintenant il lui parle : elle apprend que sa carte est
+                  // fausse et demande ce qui ne va pas. Le commerçant n'a plus
+                  // à deviner qu'il doit reparler — c'est elle qui relance.
                   setCarte(null);
-                  setEcho("Dites-lui ce qui est faux — « non, quinze euros ».");
+                  parler("(non, il y a une erreur dans ce que vous proposez)", heure);
                 }}
               >
                 Corriger
