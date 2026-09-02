@@ -69,6 +69,12 @@ import {
   chargerPreparation,
   preparationVide,
 } from "@/lib/direct/preparation";
+import {
+  abonnerJournee,
+  carteDeLaJournee,
+  chargerJournee,
+  journeeVide,
+} from "@/lib/direct/journee";
 import { abonnerVus, chargerVus, marquerVu, RIEN_VU } from "@/lib/direct/premiere-fois";
 import {
   abonnerLecture,
@@ -598,7 +604,32 @@ export function ApercuHabitant() {
     () => new Date().getHours() + new Date().getMinutes() / 60,
     () => 12,
   );
-  const heure = heureVraie >= HEURE_MIN && heureVraie <= HEURE_MAX ? heureVraie : 12;
+  /**
+   * L'HORLOGE DE LA DÉMONSTRATION — `?h=13.75`.
+   *
+   * POURQUOI ELLE EXISTE. L'assistante permet de dérouler une journée entière en
+   * quelques secondes devant un commerçant : il dicte son plat à « 10 h », elle
+   * revient à « 12 h 30 » pour les portions restantes, et à « 13 h 45 » pour les
+   * dernières. Sans horloge commune, on lui montrerait ensuite un paquet réglé
+   * sur l'heure qu'il est vraiment, où son annonce de 13 h 45 n'existe pas —
+   * c'est-à-dire la seule chose qu'on voulait lui montrer.
+   *
+   * ELLE NE FALSIFIE RIEN, ELLE DÉPLACE LE REGARD. Aucune donnée n'est modifiée :
+   * on lit la même journée à une autre heure, exactement comme un habitant qui
+   * ouvrirait l'application à ce moment-là. Et elle est bornée aux heures
+   * d'ouverture, comme l'horloge vraie.
+   */
+  const heureUrl = useSyncExternalStore(
+    () => () => {},
+    () => {
+      const v = Number(new URLSearchParams(window.location.search).get("h"));
+      return Number.isFinite(v) && v >= HEURE_MIN && v <= HEURE_MAX ? v : 0;
+    },
+    () => 0,
+  );
+  const heure =
+    heureUrl ||
+    (heureVraie >= HEURE_MIN && heureVraie <= HEURE_MAX ? heureVraie : 12);
 
   const [branche, setBranche] = useState<CleMetier>("restaurant");
   const [envies, setEnvies] = useState<string[]>([]);
@@ -1366,7 +1397,24 @@ export function ApercuHabitant() {
    * croire qu'il a marché, et un bouton qu'il faut croire ne se réappuie pas.
    */
   const remises = useSyncExternalStore(abonnerRemises, chargerRemises, remisesVides);
-  const toutes = toutesLesCartes().map((c) => avecLesRemises(c, remises));
+  /**
+   * CE QU'IL VIENT DE DICTER À SON ASSISTANTE — voir `journee.ts`.
+   *
+   * C'EST LA FIN DE LA DÉMONSTRATION, ET C'EST TOUT SON INTÉRÊT. Il parle, il
+   * valide trois chiffres, et sa carte est là, en tête du paquet, avec la
+   * pastille « à l'instant ». Aucune explication n'a été nécessaire : il voit ce
+   * que ses voisins voient, dans le même écran qu'eux.
+   *
+   * ELLE N'EST PAS MARQUÉE « PRÉPARÉE ». La carte de l'outil de démarchage porte
+   * « pas encore en ligne » parce qu'elle montre le commerce de quelqu'un qui
+   * n'a rien signé ; celle-ci, il l'a publiée lui-même.
+   */
+  const journee = useSyncExternalStore(abonnerJournee, chargerJournee, journeeVide);
+  const carteJournee = journee ? carteDeLaJournee(journee) : null;
+  const toutes = [
+    ...(carteJournee ? [carteJournee] : []),
+    ...toutesLesCartes().map((c) => avecLesRemises(c, remises)),
+  ];
   const embauchent = ceuxQuiRecrutent();
   // LES ENVIES NE S'APPLIQUENT PAS AUX EMBAUCHES — « moins de 15 € » n'a aucun
   // sens sur une offre de poste. Le mode embauche court-circuite tout le filtre.
@@ -1392,7 +1440,23 @@ export function ApercuHabitant() {
             ].sort(
               (a, b) => a.metres - b.metres,
             )
-          : selonEnvies(autourDeMoi(heure, branche), envies, heure);
+          : selonEnvies(
+              [
+                // SA PROPRE CARTE ENTRE DANS SON MÉTIER, pas ailleurs, et
+                // seulement s'il lui reste un moment dans la journée — la même
+                // règle que pour tous les autres commerces. Elle ne remonte pas
+                // ici : c'est sa FRAÎCHEUR qui la met en tête, comme n'importe
+                // quelle annonce qui vient de tomber.
+                ...(carteJournee &&
+                carteJournee.branche === branche &&
+                momentsRestants(carteJournee, heure).length
+                  ? [carteJournee]
+                  : []),
+                ...autourDeMoi(heure, branche),
+              ],
+              envies,
+              heure,
+            );
   /** UNE INVITATION PASSE DEVANT TOUT LE RESTE, dans l'ordre d'arrivée : triée
    *  par distance comme les autres, elle se noierait dans le paquet et on ne
    *  verrait pas qu'elle vient de tomber. */
