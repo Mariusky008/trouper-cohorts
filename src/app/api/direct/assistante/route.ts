@@ -41,6 +41,7 @@
 // dire qu'il sert jusqu'à 14 h. C'est ce qui sépare une assistante d'une
 // application à notifications.
 import { NextResponse } from "next/server";
+import { carteAMontrer } from "@/lib/direct/carte-a-valider";
 import { aEteCoupee, aRefuse, texteDuModele } from "@/lib/site-internet/reponse-modele";
 
 export const dynamic = "force-dynamic";
@@ -126,19 +127,34 @@ const SYSTEME = (
     "  « ClikMe » comme d'un outil. Tu dis « je le mets en ligne », « vos voisins",
     "  le verront ».",
     "",
+    "QUAND TU PROPOSES LA CARTE — et c'est la règle la plus importante.",
+    "TU NE LA PROPOSES QU'AU MOMENT OÙ TU N'AS PLUS AUCUNE QUESTION À POSER",
+    "DESSUS. La carte est un récapitulatif à valider, pas un brouillon : elle",
+    "veut dire « voilà ce qui part en ligne, appuyez ». Sortir une carte au prix",
+    "vide PUIS demander le prix, c'est lui montrer le résultat avant la fin de la",
+    "conversation — il ne sait plus s'il doit répondre ou appuyer.",
+    "TANT QU'IL TE MANQUE QUELQUE CHOSE, tu rends `carte` à null et tu poses ta",
+    "question, une seule à la fois. Pour un plat il te faut au minimum le prix ;",
+    "pour un arrivage ou une pièce, un prix ou un ordre de prix ; pour un créneau",
+    "libre ou une fermeture, l'heure suffit et tu peux proposer tout de suite.",
+    "UNE RÉPONSE QUI CONTIENT UNE QUESTION NE PORTE JAMAIS DE CARTE.",
+    "",
     "CE QUE TU NE FAIS JAMAIS.",
     "- TU N'INVENTES AUCUN CHIFFRE. Pas un prix, pas une quantité, pas une heure.",
-    "  S'il n'a pas dit le prix, le champ reste vide et tu poses la question. Un",
-    "  prix faux publié à toute une ville lui coûte un client et sa confiance.",
+    "  Tu poses la question et tu attends la réponse. Un prix faux publié à toute",
+    "  une ville lui coûte un client et sa confiance.",
     "- Tu ne publies pas : tu proposes une carte, il valide d'un doigt.",
     "- Tu ne choisis pas seule une heure de retour : elle sort de ce qu'il vient",
     "  de dire. S'il sert jusqu'à 14 h, tu proposes de revenir vers 13 h 45.",
     "",
-    "LA PHOTO. Quand tu proposes une carte pour quelque chose qui SE VOIT — un",
-    "plat, un arrivage, un bouquet, une coupe, une vitrine, une ardoise — tu mets",
-    "`photo` à vrai et tu la demandes en une demi-phrase : « vous me la",
-    "photographiez ? ». Sans image, l'annonce est un titre sur du vide, et une",
-    "carte sans image ne se regarde pas dans un paquet qu'on balaie.",
+    "LA PHOTO. Dès que la carte porte quelque chose qui SE VOIT — un plat, un",
+    "arrivage, un bouquet, une coupe, une vitrine, une ardoise, une pièce — tu",
+    "mets `photo` à VRAI. C'est le cas le plus courant, et dans le doute c'est",
+    "vrai. Tu ajoutes la demande à la fin de ta phrase, en quatre mots : « vous",
+    "me la photographiez ? ». Ce n'est pas une question qui bloque : la carte",
+    "reste proposée en même temps, il peut valider avec ou sans image. Sans",
+    "photo, l'annonce est un titre sur du vide, et une carte sans image ne se",
+    "regarde pas dans un paquet qu'on balaie.",
     "Tu mets `photo` à faux pour ce qui ne se voit pas — un créneau libre, une",
     "fermeture, une heure de service — et tu ne la redemandes jamais deux fois",
     "pour la même annonce. Elle reste facultative : s'il ne veut pas, tu publies",
@@ -328,6 +344,20 @@ export async function POST(request: Request) {
     // instant précis.
     if (propre && propre.a <= propre.de) propre.a = Math.min(24, propre.de + 1);
 
+    // ─── ON NE MONTRE PAS LE RÉSULTAT PENDANT QU'ON POSE ENCORE LA QUESTION ───
+    //
+    // LE DÉFAUT MESURÉ : « elle me donne le résultat de notre conversation après
+    // une seule question, et c'est APRÈS qu'elle me demande le prix ». La carte
+    // sortait vide de son prix, suivie de « et c'est à combien ? » — le
+    // commerçant ne sait plus s'il doit répondre ou appuyer, et s'il appuie il
+    // publie une annonce sans prix.
+    //
+    // LA CONSIGNE EST DANS LE PROMPT, MAIS UNE CONSIGNE N'EST PAS UNE GARANTIE.
+    // La règle est dans `carte-a-valider.ts`, à part, parce qu'elle se vérifie :
+    // un garde-fou qu'on ne peut pas éprouver n'en est pas un.
+    const dit = s(r.dire).slice(0, 400) || PANNE.dire;
+    const carteRendue = carteAMontrer(dit, propre) ? propre : null;
+
     const ret = (r.retour ?? null) as Record<string, unknown> | null;
     const retour =
       ret && Number.isFinite(Number(ret.heure))
@@ -335,8 +365,8 @@ export async function POST(request: Request) {
         : null;
 
     return NextResponse.json({
-      dire: s(r.dire).slice(0, 400) || PANNE.dire,
-      carte: propre,
+      dire: dit,
+      carte: carteRendue,
       // UN RETOUR DANS LE PASSÉ N'EN EST PAS UN. Le modèle propose parfois une
       // heure déjà écoulée quand la conversation a duré ; on la jette plutôt que
       // d'annoncer un rendez-vous qui n'aura jamais lieu.

@@ -698,6 +698,35 @@ console.log("\n══ le moment ══");
   await ctxC.close();
 }
 
+// ═══ 10 · LA CARTE NE SORT PAS PENDANT QU'ELLE QUESTIONNE ═══
+//
+// « Elle me donne le résultat de notre conversation après une seule question, et
+// c'est APRÈS qu'elle me demande le prix. » La carte sortait sans prix, suivie de
+// « et c'est à combien ? » : le commerçant ne sait plus s'il doit répondre ou
+// appuyer — et s'il appuie, il publie une annonce sans prix à toute la ville.
+//
+// LA CONSIGNE EST DANS LE PROMPT, MAIS ON NE VÉRIFIE PAS UN PROMPT. On vérifie
+// le garde-fou qui tient le jour où le modèle se trompe, c'est-à-dire le jour de
+// la démonstration.
+console.log("\n══ la carte et la question ══");
+{
+  const { carteAMontrer } = await import("../src/lib/direct/carte-a-valider.ts");
+  const cas = [
+    ["Et c'est à combien ?", { prix: "", quantite: null }, false,
+      "prix vide pendant qu'elle demande le prix : pas de carte"],
+    ["Et c'est à combien ?", { prix: "14 €", quantite: null }, true,
+      "le prix est connu : la carte peut sortir malgré la question"],
+    ["Le créneau se libère à 14 h 30, je le mets en ligne ?", { prix: "", quantite: 1 }, true,
+      "un créneau n'a pas de prix et doit pouvoir se proposer"],
+    ["Je le mets en ligne.", { prix: "", quantite: null }, true,
+      "sans question, rien ne retient la carte"],
+    ["Et c'est à combien ?", null, false, "pas de carte du tout"],
+  ];
+  for (const [dit, c, attendu, quoi] of cas) {
+    dire(carteAMontrer(dit, c) === attendu, quoi);
+  }
+}
+
 dire(erreurs.length === 0, `aucune erreur${erreurs.length ? " : " + erreurs[0] : ""}`);
 await nav.close();
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT PASSE");

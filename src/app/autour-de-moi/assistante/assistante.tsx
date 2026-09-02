@@ -156,6 +156,39 @@ async function reduire(fichier: File): Promise<string> {
   }
 }
 
+/**
+ * DÉBLOQUER LE SON — et il faut le faire DANS le geste, pas après.
+ *
+ * LE DÉFAUT MESURÉ SUR IPHONE : « aucune voix ». Safari n'autorise la lecture
+ * d'un son que si elle part d'un geste de l'utilisateur. Léa, elle, parle APRÈS
+ * un aller-retour réseau — on demande la synthèse, on attend, et quand le son
+ * arrive la permission accordée par l'appui a expiré. La lecture est refusée en
+ * silence : pas d'erreur, pas de voix, rien à comprendre.
+ *
+ * LA PARADE EST CONNUE ET TIENT EN DEUX LIGNES : on fait jouer UN SON VIDE au
+ * moment exact de l'appui, ce qui « bénit » l'élément audio pour le reste de la
+ * session. Ensuite on ne fait plus que changer sa source, et Safari laisse
+ * passer. Le même élément sert donc à toutes les phrases de Léa — en créer un
+ * nouveau à chaque fois annulerait la permission.
+ */
+const MUET =
+  "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+let hautParleur: HTMLAudioElement | null = null;
+
+function debloquerSon(): HTMLAudioElement {
+  if (!hautParleur) hautParleur = new Audio();
+  const a = hautParleur;
+  try {
+    a.src = MUET;
+    // On ne se soucie pas du résultat : si c'est refusé, on n'aura pas de voix,
+    // et l'écran le dira. Ce qui compte est que la tentative parte du geste.
+    void a.play().then(() => a.pause()).catch(() => {});
+  } catch {
+    /* Un navigateur sans audio : la conversation continue à l'écrit. */
+  }
+  return a;
+}
+
 const hhmm = (h: number) =>
   `${Math.floor(h)} h ${String(Math.round((h % 1) * 60)).padStart(2, "0")}`;
 
@@ -178,6 +211,7 @@ export function Assistante() {
   // qu'on prétendait lui épargner, et impossible avec les mains dans la farine.
   const [libres, setLibres] = useState(true);
   const [parle, setParle] = useState(false);
+  const [voixKo, setVoixKo] = useState("");
   const bas = useRef<HTMLDivElement | null>(null);
   const micro = useRef<ReturnType<typeof ouvrirEcoute> | null>(null);
   const son = useRef<HTMLAudioElement | null>(null);
@@ -220,10 +254,26 @@ export function Assistante() {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ texte }),
         });
-        if (!rep.ok) return suite();
+        if (!rep.ok) {
+          // ON DIT POURQUOI ELLE SE TAIT. Un échec silencieux se diagnostique
+          // mal : « aucune voix » peut vouloir dire une clé absente, un refus
+          // du navigateur ou une panne, et sans le message il n'y a aucun moyen
+          // de savoir lequel. Une fois suffit, et discrètement.
+          let quoi = `voix indisponible (HTTP ${rep.status})`;
+          try {
+            const d = await rep.json();
+            if (d?.erreur) quoi = String(d.erreur);
+          } catch {
+            /* réponse illisible : le code HTTP suffit */
+          }
+          setVoixKo(quoi);
+          return suite();
+        }
         const b = await rep.blob();
         const url = URL.createObjectURL(b);
-        const a = son.current ?? new Audio();
+        // LE MÊME ÉLÉMENT QUE CELUI QU'ON A BÉNI AU PREMIER APPUI — voir
+        // `debloquerSon`. En créer un nouveau perdrait la permission d'iOS.
+        const a = son.current ?? hautParleur ?? new Audio();
         son.current = a;
         a.src = url;
         // ON N'ATTEND PAS LA FIN POUR LIBÉRER L'ADRESSE : `onended` sert aussi
@@ -234,12 +284,16 @@ export function Assistante() {
         };
         a.onerror = () => {
           URL.revokeObjectURL(url);
+          setVoixKo("le téléphone a refusé de lire le son");
           suite();
         };
         // iOS EXIGE UN GESTE POUR LE PREMIER SON. Le choix du métier et l'appui
         // sur le micro en sont : à partir de là, la lecture passe. Si elle est
         // quand même refusée, on enchaîne au lieu de rester muet et bloqué.
-        await a.play().catch(() => suite());
+        await a.play().catch((e) => {
+          setVoixKo(`lecture refusée par le navigateur (${(e as Error)?.name || "refus"})`);
+          suite();
+        });
       } catch {
         suite();
       }
@@ -309,6 +363,10 @@ export function Assistante() {
   );
 
   const choisir = useCallback((c: CommerceAssiste) => {
+    // LE PREMIER GESTE DE LA SESSION, ET DONC LE SEUL MOMENT OÙ IPHONE ACCORDE
+    // LE SON. Voir `debloquerSon` : c'est ici, et pas dans la réponse de Léa
+    // qui arrive une seconde trop tard.
+    son.current = debloquerSon();
     ouvrirJournee(c);
     setTours([]);
     setCarte(null);
@@ -341,6 +399,9 @@ export function Assistante() {
 
   const demarrerMicro = useCallback(() => {
     if (micro.current) return;
+    // Deuxième occasion de bénir le haut-parleur, pour qui arrive par le micro
+    // sans être passé par le choix du métier (une journée déjà ouverte).
+    if (!son.current) son.current = debloquerSon();
     setEcho("");
     setVivant("");
     // LE SILENCE REMPLACE LE DEUXIÈME APPUI — voir `SILENCE_MS` dans le micro.
@@ -483,8 +544,17 @@ export function Assistante() {
               // eslint-disable-next-line @next/next/no-img-element
               <img className="as-vue" src={photo} alt="" onClick={() => setPhoto("")} />
             ) : (
+              // LE BOUTON NE DÉPEND PLUS DE L'HUMEUR DU MODÈLE. Il était affiché
+              // en clair quand Léa avait mis `photo` à vrai, et discret sinon —
+              // sauf qu'elle ne l'a pas mis, et l'annonce est partie sans image :
+              // « ni demande de photo ». Une garantie qui repose sur un modèle
+              // n'en est pas une. Le bouton est donc toujours là, et bien
+              // visible ; `photo` ne fait plus que le colorer et ajouter la
+              // demande parlée.
               <label className={`as-photo${carte.photo ? " demande" : ""}`}>
-                <span>📷 {carte.photo ? "Photographiez-le" : "Ajouter une photo"}</span>
+                <span>
+                  📷 {carte.photo ? "Photographiez-le" : "Ajouter une photo"}
+                </span>
                 <input
                   type="file"
                   accept="image/*"
@@ -604,7 +674,13 @@ export function Assistante() {
             {libres ? "🔊 Mains libres" : "🔇 Mains libres coupées"}
           </button>
           {parle && <em>Léa parle…</em>}
+          {voixKo && <u title={voixKo}>voix muette</u>}
         </div>
+        {/* POURQUOI ELLE SE TAIT, EN CLAIR ET UNE SEULE FOIS. « Aucune voix »
+            peut vouloir dire une cle absente, un refus du navigateur ou une
+            panne : sans le dire, il n'y a aucun moyen de savoir lequel, et on
+            cherche un defaut la ou il n'y en a pas. */}
+        {voixKo && <p className="as-muette">Léa ne parle pas — {voixKo}.</p>}
 
         {/* LA BARRE DE DÉMONSTRATION. Discrète, en bas, hors du chemin : elle ne
             fait pas partie du produit du commerçant. Elle déplace l'horloge et

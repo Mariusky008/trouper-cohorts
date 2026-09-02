@@ -162,6 +162,8 @@ function Styles() {
   border-radius:999px;padding:5px 12px}
 .as-mains button.on{color:var(--menthe);border-color:rgba(61,226,166,.4)}
 .as-mains em{font-style:normal;font-size:11.5px;color:var(--menthe)}
+.as-mains u{text-decoration:none;font-size:11.5px;color:var(--rouge)}
+.as-muette{margin:7px 0 0;font-size:11.5px;line-height:1.45;color:var(--rouge)}
 
 .as-voir{display:block;margin-top:11px;text-align:center;text-decoration:none;
   font-size:14px;font-weight:800;color:var(--menthe)}
