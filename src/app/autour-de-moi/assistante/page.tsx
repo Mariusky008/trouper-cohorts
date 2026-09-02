@@ -46,23 +46,132 @@ function Styles() {
         __html: `
 /* AUSSI SIMPLE QU'UNE MESSAGERIE, ET C'EST LE TEST A PASSER : on doit pouvoir
    dire a un commercant « voila votre assistante, parlez-lui » sans rien ajouter.
-   S'il cherche ou creer son annonce, l'ecran a echoue. */
+   S'il cherche ou creer son annonce, l'ecran a echoue.
+
+   MAIS SIMPLE NE VEUT PAS DIRE NEUTRE, et c'est ce qui manquait : « il faut
+   vraiment qu'il y ait un enorme wahoo, pour le moment c'est tres neutre ».
+   Une messagerie est un OUTIL, et un outil de plus ne bluffe personne — il y en
+   a deja six sur son telephone. Ce qui suit ne rajoute aucun bouton et aucune
+   chose a comprendre : ca donne une PRESENCE et une lumiere. */
+/* LE FOND DU SITE NE DOIT PAS APPARAITRE SOUS L'ECRAN. Le corps de page porte
+   le beige de clikme.fr ; au moindre pixel de decalage — barre d'adresse qui se
+   retracte, clavier qui se ferme, capture d'ecran — une bande claire apparait
+   sous l'application. Sur un ecran qu'on tend a quelqu'un, ca suffit a le faire
+   ressembler a une page web posee dans une autre. */
+body{background:#05090C}
+
 .as{--nuit:#05090C;--nuit2:#0E1614;--craie:#EAF2EC;--craie2:#93A79C;
-  --craie3:#6C8078;--menthe:#3DE2A6;--or:#F0B429;--rouge:#FF6B6B;
+  --craie3:#6C8078;--menthe:#3DE2A6;--menthe2:#7EE6C0;--or:#F0B429;
+  --rouge:#FF6B6B;--violet:#B98CFF;
   --trait:rgba(234,242,236,.13);
+  position:relative;isolation:isolate;overflow:hidden;
   min-height:100dvh;display:flex;flex-direction:column;
   background:var(--nuit);color:var(--craie);
   font-family:'Inter',system-ui,-apple-system,sans-serif}
 .as *{box-sizing:border-box}
+
+/* ═══ LA LUMIERE DE LA PIECE ═══
+   Deux halos tres flous qui derivent lentement. Deux div, zero octet de reseau,
+   et un aplat noir devient une piece eclairee. Ils accelerent quand Lea parle :
+   la piece respire avec elle, ce qui se sent sans se remarquer. */
+/* LA LUMIERE DOIT SE VOIR, SINON ELLE NE SERT A RIEN. Premiere version a 50 %
+   d'opacite : indiscernable d'un aplat noir sur une capture, donc invisible
+   dans une boutique eclairee au neon. On monte, et on remonte encore quand Lea
+   parle. */
+/* ═══ OU SE POSE LA LUMIERE ═══
+   FIXE, ET PAS ABSOLU. La conversation s'allonge : en absolu, les halos
+   s'etiraient sur toute la hauteur du fil et se diluaient jusqu'a disparaitre.
+   Fixes, ils restent la lumiere de la PIECE — celle qui ne bouge pas quand on
+   fait defiler ce qu'il y a dedans.
+
+   ET LA GEOMETRIE SE MESURE, ELLE NE SE DEVINE PAS. Le conteneur avait un
+   retrait negatif de 20 %, ce qui decalait son origine a (-78,-169) ; les halos,
+   places par rapport a LUI, tombaient a x=-117 pour 273 px de large — presque
+   entierement hors de l'ecran. On en voyait un coin, donc rien. Le conteneur
+   colle maintenant a la fenetre, et les halos sont assez larges pour qu'une
+   bonne moitie soit toujours dedans. */
+.as-halo{position:fixed;inset:0;z-index:-1;pointer-events:none;
+  filter:blur(64px);opacity:1}
+.as-halo span{position:absolute;display:block;border-radius:50%}
+.as-halo span:first-child{width:95vw;height:95vw;left:-25vw;top:-10vh;
+  background:radial-gradient(circle,rgba(61,226,166,.6),transparent 66%);
+  animation:asDerive1 26s ease-in-out infinite alternate}
+.as-halo span:last-child{width:95vw;height:95vw;right:-25vw;bottom:-8vh;
+  background:radial-gradient(circle,rgba(139,92,246,.62),transparent 66%);
+  animation:asDerive2 32s ease-in-out infinite alternate}
+.as.ambiance .as-halo{opacity:1;transition:opacity .8s ease}
+@keyframes asDerive1{
+  0%{transform:translate3d(0,0,0) scale(1)}
+  100%{transform:translate3d(14vw,10vh,0) scale(1.18)}
+}
+@keyframes asDerive2{
+  0%{transform:translate3d(0,0,0) scale(1.1)}
+  100%{transform:translate3d(-12vw,-9vh,0) scale(.92)}
+}
+@media (prefers-reduced-motion:reduce){
+  .as-halo span{animation:none}
+}
 
 .as-h{flex:none;display:flex;align-items:center;justify-content:space-between;
   padding:14px clamp(14px,4vw,26px);border-bottom:1px solid var(--trait)}
 .as-h b{font-size:15px;font-weight:850;letter-spacing:-.02em;color:var(--menthe)}
 .as-h a{text-decoration:none;font-size:13px;font-weight:750;color:var(--craie3)}
 
-.as-qui{flex:none;padding:18px clamp(14px,4vw,26px) 6px}
-.as-qui h1{margin:0;font-size:clamp(22px,5.5vw,30px);letter-spacing:-.03em}
-.as-qui p{margin:4px 0 0;font-size:13px;color:var(--craie3)}
+.as-qui{flex:none;display:flex;align-items:center;gap:14px;
+  padding:18px clamp(14px,4vw,26px) 8px}
+.as-nom{min-width:0}
+.as-qui h1{margin:0;font-size:clamp(21px,5.2vw,28px);letter-spacing:-.035em;
+  line-height:1.1}
+.as-qui p{margin:4px 0 0;font-size:12.5px;color:var(--craie3);
+  transition:color .3s ease}
+.as-lea.parle~.as-nom p,.as-lea.ecoute~.as-nom p{color:var(--menthe2)}
+
+/* ═══ LEA ═══
+   TROIS ANNEAUX ET UNE INITIALE, ET C'EST LA SEULE CHOSE DE CET ECRAN QUI SOIT
+   VRAIMENT NEUVE. Au repos elle respire ; quand elle parle, les anneaux
+   partent vers l'exterieur ; quand elle ecoute, ils rentrent. Ce n'est pas une
+   decoration : c'est la difference entre « j'ecris a un logiciel » et
+   « quelqu'un m'ecoute ». Le commercant a qui l'on tend le telephone ne lit pas
+   une interface, il rencontre quelqu'un. */
+.as-lea{position:relative;flex:none;width:58px;height:58px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center}
+.as-lea b{position:relative;z-index:2;width:44px;height:44px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:19px;font-weight:850;color:#04150E;letter-spacing:-.02em;
+  background:linear-gradient(140deg,var(--menthe2),var(--menthe));
+  box-shadow:0 6px 22px rgba(61,226,166,.45);
+  animation:asRespire 4.5s ease-in-out infinite}
+.as-lea i{position:absolute;inset:0;border-radius:50%;
+  border:1.5px solid rgba(126,230,192,.5);opacity:0}
+.as-lea.parle i{animation:asOnde 2.1s ease-out infinite}
+.as-lea.parle i:nth-child(2){animation-delay:.7s}
+.as-lea.parle i:nth-child(3){animation-delay:1.4s}
+.as-lea.parle b{animation:asRespire 1.4s ease-in-out infinite}
+/* ECOUTER, C'EST L'INVERSE DE PARLER : les anneaux vont vers le centre. On le
+   comprend sans que personne ne l'explique, et c'est pour ca qu'on ne l'ecrit
+   nulle part a l'ecran. */
+.as-lea.ecoute i{border-color:rgba(255,107,107,.55);animation:asAspire 1.8s ease-in infinite}
+.as-lea.ecoute i:nth-child(2){animation-delay:.6s}
+.as-lea.ecoute i:nth-child(3){animation-delay:1.2s}
+.as-lea.ecoute b{background:linear-gradient(140deg,#FFB4B4,var(--rouge));
+  color:#2A0505;box-shadow:0 6px 22px rgba(255,107,107,.45)}
+@keyframes asRespire{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.07)}
+}
+@keyframes asOnde{
+  0%{transform:scale(.76);opacity:.85}
+  100%{transform:scale(1.5);opacity:0}
+}
+@keyframes asAspire{
+  0%{transform:scale(1.5);opacity:0}
+  40%{opacity:.8}
+  100%{transform:scale(.78);opacity:0}
+}
+@media (prefers-reduced-motion:reduce){
+  .as-lea b,.as-lea i{animation:none}
+  .as-lea i{opacity:.35}
+}
 
 /* ─── LE FIL ───
    Deux bulles, et rien d'autre. Pas d'horodatage, pas d'avatar, pas d'accuse de
@@ -71,12 +180,29 @@ function Styles() {
 .as-fil{flex:1;min-height:0;overflow-y:auto;
   padding:14px clamp(14px,4vw,26px) 8px;
   display:flex;flex-direction:column;gap:10px}
-.as-elle,.as-lui{margin:0;max-width:86%;padding:12px 15px;border-radius:18px;
-  font-size:15.5px;line-height:1.45}
-.as-elle{align-self:flex-start;border-bottom-left-radius:6px;
-  color:var(--craie);background:var(--nuit2);border:1px solid var(--trait)}
-.as-lui{align-self:flex-end;border-bottom-right-radius:6px;
-  color:#04150E;background:var(--menthe);font-weight:600}
+/* LES BULLES ARRIVENT, ELLES N'APPARAISSENT PAS. Trois dixiemes de seconde de
+   montee : c'est ce qui fait qu'une reponse est DONNEE plutot qu'affichee, et
+   ca ne coute rien a personne. */
+.as-elle,.as-lui{margin:0;max-width:86%;padding:13px 16px;border-radius:20px;
+  font-size:15.5px;line-height:1.45;
+  animation:asMonte .34s cubic-bezier(.22,1.1,.4,1) both}
+@keyframes asMonte{
+  from{opacity:0;transform:translate3d(0,10px,0) scale(.985)}
+  to{opacity:1;transform:none}
+}
+@media (prefers-reduced-motion:reduce){.as-elle,.as-lui{animation:none}}
+/* SA BULLE A ELLE EST EN VERRE : un fond translucide sur la lumiere du fond,
+   et non un rectangle opaque pose dessus. C'est ce qui fait qu'elle appartient
+   a la piece au lieu d'y etre collee. */
+.as-elle{align-self:flex-start;border-bottom-left-radius:7px;
+  color:var(--craie);background:rgba(18,32,28,.66);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(126,230,192,.16);
+  box-shadow:0 8px 26px rgba(0,0,0,.35)}
+.as-lui{align-self:flex-end;border-bottom-right-radius:7px;
+  color:#04150E;font-weight:650;
+  background:linear-gradient(140deg,var(--menthe2),var(--menthe));
+  box-shadow:0 8px 24px rgba(61,226,166,.28)}
 .as-points{display:flex;gap:5px;align-items:center;padding:16px 17px}
 .as-points i{width:6px;height:6px;border-radius:50%;background:var(--craie3);
   animation:asPense 1.2s ease-in-out infinite}
@@ -91,8 +217,12 @@ function Styles() {
    valeurs qui peuvent etre fausses — le prix, la quantite, l'heure — sorties du
    texte et grossies, parce que c'est exactement la que le vocal se trompe. Une
    erreur coute alors un doigt au lieu d'une journee. */
-.as-carte{align-self:stretch;margin:4px 0;padding:15px 16px;border-radius:18px;
-  background:rgba(61,226,166,.07);border:1px solid rgba(61,226,166,.35)}
+.as-carte{align-self:stretch;margin:6px 0;padding:16px 17px;border-radius:20px;
+  background:linear-gradient(160deg,rgba(61,226,166,.13),rgba(18,32,28,.72));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid rgba(61,226,166,.42);
+  box-shadow:0 14px 44px rgba(0,0,0,.45),0 0 0 1px rgba(61,226,166,.08) inset;
+  animation:asMonte .38s cubic-bezier(.22,1.1,.4,1) both}
 .as-carte h2{margin:0;font-size:17px;font-weight:850;letter-spacing:-.02em;
   display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
 .as-carte h2 em{font-style:normal;font-size:10.5px;font-weight:850;
@@ -107,11 +237,44 @@ function Styles() {
 .as-cles em{display:block;margin-top:2px;font-style:normal;font-size:10.5px;
   letter-spacing:.06em;text-transform:uppercase;color:var(--craie3)}
 .as-valide{display:flex;gap:9px;margin-top:13px}
-.as-oui{flex:1;font:inherit;font-size:16px;font-weight:850;color:#04150E;
-  cursor:pointer;border:0;border-radius:14px;padding:15px;background:var(--menthe)}
+.as-oui{flex:1;font:inherit;font-size:16.5px;font-weight:850;color:#04150E;
+  cursor:pointer;border:0;border-radius:15px;padding:16px;
+  background:linear-gradient(140deg,var(--menthe2),var(--menthe));
+  box-shadow:0 8px 24px rgba(61,226,166,.35)}
+.as-oui:active{transform:scale(.985)}
 .as-non{flex:none;font:inherit;font-size:14px;font-weight:750;color:var(--craie2);
   cursor:pointer;background:transparent;border:1px solid var(--trait);
   border-radius:14px;padding:15px 17px}
+
+/* ═══ LA FIN DE JOURNEE ═══
+   LA PLUS GRANDE CARTE DE L'ECRAN, ET C'EST VOULU. C'est le seul retour qu'un
+   commercant ait jamais de sa journee : ni sa fiche Google, ni son site, ni ses
+   reseaux ne reviennent le soir avec un chiffre. C'est ce qui le fait
+   recommencer demain, donc c'est ce qui doit rester en memoire quand il rend le
+   telephone. */
+.as-bilan{align-self:stretch;margin:8px 0;padding:20px 18px;border-radius:22px;
+  text-align:center;
+  background:linear-gradient(165deg,rgba(139,92,246,.2),rgba(61,226,166,.12) 55%,rgba(10,18,16,.8));
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border:1px solid rgba(185,140,255,.4);
+  box-shadow:0 18px 60px rgba(0,0,0,.5);
+  animation:asMonte .5s cubic-bezier(.22,1.1,.4,1) both}
+.as-bilan-t{display:block;font-size:10.5px;font-weight:850;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--violet)}
+.as-bilan-h{margin:9px 0 0;font-family:Georgia,'Times New Roman',serif;
+  font-size:22px;line-height:1.2;color:#fff}
+.as-bilan ul{list-style:none;margin:18px 0 0;padding:0;display:grid;
+  grid-template-columns:repeat(3,1fr);gap:10px}
+.as-bilan li{padding:13px 8px;border-radius:15px;background:rgba(5,9,12,.45);
+  border:1px solid rgba(234,242,236,.1)}
+/* LES CHIFFRES SONT ENORMES PARCE QU'ILS SONT LE SUJET. Tout le reste de la
+   carte est une phrase autour d'eux. */
+.as-bilan b{display:block;font-size:30px;font-weight:850;letter-spacing:-.04em;
+  line-height:1;color:#fff;font-variant-numeric:tabular-nums}
+.as-bilan em{display:block;margin-top:6px;font-style:normal;font-size:10.5px;
+  line-height:1.3;color:var(--craie3)}
+.as-bilan-m{margin:16px 0 0;font-size:14px;line-height:1.45;color:var(--craie2)}
+.as-bilan-d{margin:14px 0 0;font-size:17px;font-weight:800;color:var(--menthe2)}
 
 .as-retour{align-self:flex-start;margin:0;font-size:12.5px;color:var(--or)}
 .as-echo{align-self:flex-start;margin:0;font-size:12.5px;color:var(--rouge)}
@@ -182,19 +345,55 @@ function Styles() {
 .as-mains u{text-decoration:none;font-size:11.5px;color:var(--rouge)}
 .as-muette{margin:7px 0 0;font-size:11.5px;line-height:1.45;color:var(--rouge)}
 
-.as-voir{display:block;margin-top:11px;text-align:center;text-decoration:none;
-  font-size:14px;font-weight:800;color:var(--menthe)}
+/* ═══ VOIR LE RESULTAT ═══
+   « Le bouton pour voir le resultat sur le direct est tres cache et tres
+   discret. » Il l'etait : un lien en petit vert, sous une barre de reglages,
+   ecrit « voir ce que vos clients voient » — une phrase qui decrit une
+   intention au lieu d'annoncer un resultat.
+
+   C'EST POURTANT LA CHUTE DE TOUTE LA DEMONSTRATION. Le commercant vient de
+   parler trente secondes ; c'est ici qu'il decouvre que ca a produit quelque
+   chose de reel. Toute la largeur, un compte, une fleche, et un halo qui
+   respire pour qu'on ne puisse pas ne pas le voir. */
+.as-voir{display:flex;align-items:center;gap:12px;margin-top:12px;
+  padding:15px 17px;border-radius:17px;text-decoration:none;color:#04150E;
+  background:linear-gradient(140deg,var(--menthe2),var(--menthe));
+  box-shadow:0 10px 30px rgba(61,226,166,.32);
+  animation:asAppelle 3.4s ease-in-out infinite}
+.as-voir span{flex:1;min-width:0}
+.as-voir b{display:block;font-size:15.5px;font-weight:850;letter-spacing:-.02em}
+.as-voir em{display:block;margin-top:2px;font-style:normal;font-size:12.5px;
+  font-weight:650;color:rgba(4,21,14,.7)}
+.as-voir i{flex:none;font-style:normal;font-size:21px;font-weight:850}
+.as-voir:active{transform:scale(.99)}
+@keyframes asAppelle{
+  0%,100%{box-shadow:0 10px 30px rgba(61,226,166,.28)}
+  50%{box-shadow:0 10px 38px rgba(61,226,166,.5)}
+}
+@media (prefers-reduced-motion:reduce){.as-voir{animation:none}}
+
+/* FIN DE SERVICE : le dernier temps de la demonstration, donc le bouton le plus
+   marque de la barre. */
+.as-fin{color:var(--violet) !important;
+  border-color:rgba(185,140,255,.45) !important;
+  background:rgba(139,92,246,.12) !important}
 
 /* ─── LE CHOIX DU METIER, AU DEBUT DE LA DEMONSTRATION ─── */
-.as-choix{flex:1;padding:26px clamp(14px,4vw,26px)}
-.as-choix h1{margin:0;font-size:clamp(24px,6vw,34px);letter-spacing:-.03em}
+.as-choix{flex:1;padding:32px clamp(14px,4vw,26px);
+  animation:asMonte .5s cubic-bezier(.22,1.1,.4,1) both}
+.as-choix h1{margin:0;font-size:clamp(27px,7vw,38px);letter-spacing:-.04em;
+  line-height:1.08}
 .as-choix p{margin:10px 0 0;font-size:15px;line-height:1.55;color:var(--craie2);
   max-width:42ch}
 .as-choix .as-n{font-size:12.5px;color:var(--craie3)}
 .as-metiers{margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .as-metiers button{font:inherit;text-align:left;cursor:pointer;
-  padding:14px 15px;border-radius:15px;color:var(--craie);
-  background:var(--nuit2);border:1px solid var(--trait)}
+  padding:15px 16px;border-radius:16px;color:var(--craie);
+  background:rgba(18,32,28,.6);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:1px solid rgba(126,230,192,.16);
+  transition:border-color .2s ease,transform .2s ease}
+.as-metiers button:active{transform:scale(.985)}
 .as-metiers button:hover{border-color:var(--menthe)}
 .as-metiers b{display:block;font-size:15px;font-weight:800}
 .as-metiers em{display:block;margin-top:3px;font-style:normal;font-size:12px;

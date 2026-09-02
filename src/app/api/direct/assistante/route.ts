@@ -79,13 +79,55 @@ function tropSouvent(qui: string): boolean {
 }
 
 /**
+ * SA PREMIÈRE PHRASE, ET ELLE EST ÉCRITE MOT POUR MOT.
+ *
+ * LE DÉFAUT MESURÉ : « bonjour, comment se passe le service aujourd'hui,
+ * qu'est-ce que vous avez envie de raconter — c'est bien trop vague ». C'est
+ * exact, et c'est la pire faute possible au premier tour. Un commerçant à qui
+ * l'on tend un téléphone en disant « parlez-lui » ne sait pas quoi dire ; une
+ * question OUVERTE lui demande d'inventer le sujet, c'est-à-dire de faire le
+ * travail qu'on prétend lui enlever. Il rend le téléphone.
+ *
+ * UNE QUESTION FERMÉE, ELLE, SE RÉPOND SANS RÉFLÉCHIR. « Quel est votre plat du
+ * jour ? » a une réponse dans sa tête depuis six heures du matin. C'est là que
+ * la démonstration se gagne ou se perd, et ça ne se laisse pas à
+ * l'improvisation d'un modèle.
+ */
+const OUVERTURE: Record<string, string> = {
+  restaurant: "Quel est votre plat du jour ?",
+  bar: "Qu’est-ce qui se passe chez vous ce soir ?",
+  coiffeur: "Il vous reste des créneaux aujourd’hui ?",
+  ongles: "Il vous reste des créneaux aujourd’hui ?",
+  mode: "Qu’est-ce que vous avez reçu ou mis en vitrine aujourd’hui ?",
+  fleuriste: "Qu’est-ce que vous avez de beau ce matin ?",
+};
+
+/**
+ * L'ORDRE DES QUESTIONS, UNE PAR TOUR.
+ *
+ * CE N'EST PAS UN SCÉNARIO À DÉROULER — c'est l'ordre dans lequel les choses
+ * manquent. S'il donne le prix en même temps que le plat, on saute la deuxième
+ * et on passe à la troisième ; s'il dit trois choses d'un coup, on prend ce
+ * qu'il a donné et on demande le reste. Ce que cette liste garantit, c'est
+ * qu'on ne demande jamais deux choses à la fois et qu'on ne s'arrête pas avant
+ * d'avoir de quoi publier.
+ */
+const ORDRE: Record<string, string> = {
+  restaurant: "le plat → le prix → le nombre de portions → la photo",
+  bar: "ce qui se passe → à quelle heure → le prix s’il y en a un → la photo",
+  coiffeur: "le créneau libre → à quelle heure → le prix de la prestation → la photo",
+  ongles: "le créneau libre → à quelle heure → le prix de la prestation → la photo",
+  mode: "la pièce ou l’arrivage → le prix → combien il en reste → la photo",
+  fleuriste: "ce qu’il a → le prix → combien il en reste → la photo",
+};
+
+/**
  * CE QU'ELLE PEUT DEMANDER, PAR MÉTIER.
  *
- * PAS UN SCÉNARIO — UNE LISTE DE CE QUI EXISTE CHEZ LUI. La différence est
- * entière : un scénario impose un ordre et casse dès qu'on en sort ; une liste
- * dit au modèle de quoi ce métier est fait, et il pose la question qui manque.
- * « Combien de portions » n'a aucun sens chez un coiffeur, et « quels créneaux
- * vous reste-t-il » n'en a aucun chez un boucher.
+ * PAS UN SCÉNARIO — UNE LISTE DE CE QUI EXISTE CHEZ LUI. Un scénario impose un
+ * ordre et casse dès qu'on en sort ; une liste dit au modèle de quoi ce métier
+ * est fait, et il pose la question qui manque. « Combien de portions » n'a
+ * aucun sens chez un coiffeur.
  */
 const MATIERE: Record<string, string> = {
   restaurant:
@@ -106,6 +148,7 @@ const SYSTEME = (
   commerce: { prenom: string; nom: string; metier: string; branche: string },
   heure: number,
   dejaPublie: string[],
+  souvenirs: string[],
 ) => {
   const hh = `${Math.floor(heure)} h ${String(Math.round((heure % 1) * 60)).padStart(2, "0")}`;
   return [
@@ -116,6 +159,18 @@ const SYSTEME = (
     "le Direct de Dax, que ses voisins lisent sur leur téléphone. Il ne remplit",
     "aucun formulaire, ne choisit aucune catégorie, n'écrit aucun titre. C'est toi",
     "qui absorbes tout ça.",
+    "",
+    "TA TOUTE PREMIÈRE PHRASE, quand la conversation s'ouvre, est exactement",
+    `celle-ci : « Bonjour ${commerce.prenom}, j'espère que ce début de journée`,
+    `commence bien. On prépare votre journée ? ${OUVERTURE[commerce.branche] ?? OUVERTURE.restaurant} »`,
+    "Tu ne l'inventes pas et tu ne la reformules pas. Une question ouverte — «",
+    "qu'est-ce que vous avez envie de raconter ? » — oblige le commerçant à",
+    "trouver le sujet lui-même, c'est-à-dire à faire le travail qu'on prétend lui",
+    "enlever. Il rend le téléphone. Une question fermée se répond sans réfléchir.",
+    "",
+    `L'ORDRE DANS LEQUEL TU DEMANDES : ${ORDRE[commerce.branche] ?? ORDRE.restaurant}.`,
+    "Une seule chose par tour. S'il t'a déjà donné le prix en même temps que le",
+    "plat, tu sautes cette étape — tu ne redemandes jamais ce que tu sais.",
     "",
     "COMMENT TU PARLES.",
     "- Vouvoiement. S'il te tutoie, tu peux le tutoyer en retour, jamais avant.",
@@ -175,6 +230,21 @@ const SYSTEME = (
     "Ce n'est pas un questionnaire à dérouler : c'est ce qui existe chez lui.",
     "Pose la question qui manque, pas la suivante d'une liste.",
     "",
+    souvenirs.length
+      ? [
+          "CE QUE TU TE RAPPELLES DE SES JOURNÉES PASSÉES :",
+          ...souvenirs.map((x) => `- ${x}`),
+          "",
+          "TU T'EN SERS UNE SEULE FOIS, ET AU BON MOMENT : quand tu viens de",
+          "boucler une annonce et que tu n'as plus de question. Tu proposes alors",
+          "quelque chose de CONCRET qui en découle — « mardi dernier il vous en",
+          "restait six à 14 h ; je prépare une offre de dernière minute au cas où",
+          "ça recommence ? ». C'est ce qui fait la différence entre un outil qui",
+          "enregistre et quelqu'un qui suit son commerce. Jamais deux fois dans",
+          "la même conversation, et jamais pour meubler.",
+          "",
+        ].join("\n")
+      : "",
     dejaPublie.length
       ? `DÉJÀ EN LIGNE AUJOURD'HUI : ${dejaPublie.join(" ; ")}. Pour en modifier une (« il m'en reste trois »), rends une carte de nature « maj » avec le titre EXACT ci-dessus. N'en crée pas une deuxième pour le même plat : c'est la même annonce qui vit.`
       : "RIEN N'EST ENCORE EN LIGNE aujourd'hui.",
@@ -264,6 +334,9 @@ export async function POST(request: Request) {
   const dejaPublie = Array.isArray(p?.publie)
     ? (p.publie as unknown[]).map((x) => s(x)).filter(Boolean).slice(0, 12)
     : [];
+  const souvenirs = Array.isArray(p?.souvenirs)
+    ? (p.souvenirs as unknown[]).map((x) => s(x).slice(0, 200)).filter(Boolean).slice(0, 6)
+    : [];
   const tours = Array.isArray(p?.messages) ? (p.messages as unknown[]) : [];
   const messages = tours
     .slice(-MAX_TOURS)
@@ -293,7 +366,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model: MODELE,
         max_tokens: 1500,
-        system: SYSTEME(commerce, heure, dejaPublie),
+        system: SYSTEME(commerce, heure, dejaPublie, souvenirs),
         messages: conversation,
         output_config: {
           // IL ATTEND DEBOUT. Démêler trois faits d'une phrase ne demande pas de

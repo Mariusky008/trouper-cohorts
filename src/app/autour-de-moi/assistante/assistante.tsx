@@ -64,36 +64,71 @@ import { useSyncExternalStore } from "react";
  * leurs noms sont assez ordinaires pour qu'un prospect se reconnaisse, et assez
  * neutres pour ne désigner personne.
  */
-const COMMERCES: (CommerceAssiste & { titre: string })[] = [
+/**
+ * CE QU'ELLE SE RAPPELLE DE LEURS JOURNÉES PASSÉES.
+ *
+ * C'EST CE QUI SÉPARE UN OUTIL QUI ENREGISTRE DE QUELQU'UN QUI SUIT SON
+ * COMMERCE. « Mardi dernier il vous en restait six à 14 h ; je prépare une
+ * offre de dernière minute au cas où ça recommence ? » — aucune plateforme ne
+ * dit ça, parce qu'aucune ne regarde ce qui s'est passé la semaine d'avant.
+ * C'est le moment où le commerçant lève la tête.
+ *
+ * EN DÉMONSTRATION ILS SONT SEMÉS, DANS LE VRAI PRODUIT ILS SE CALCULENT. Le
+ * chemin est le même — la mémoire arrive par la même porte, `souvenirs` dans
+ * l'appel — et c'est tout l'intérêt : ce qu'on montre au prospect est
+ * exactement le mécanisme qu'il aura, avec ses chiffres à lui au lieu des
+ * nôtres.
+ */
+const COMMERCES: (CommerceAssiste & { titre: string; souvenirs: string[] })[] = [
   {
     id: "as-resto", titre: "Restaurant", prenom: "Margot", nom: "La Table de Margot",
     metier: "Restaurant", branche: "restaurant", adresse: "Rue des Carmes",
     horaires: "12 h – 14 h · 19 h – 22 h", distance: "220 m", metres: 220,
+    souvenirs: [
+      "Mardi dernier, il lui restait 6 portions de son plat du jour à 14 h.",
+      "Ses annonces de dernière minute partent en moins de vingt minutes.",
+    ],
   },
   {
     id: "as-coif", titre: "Coiffeur", prenom: "Yann", nom: "L’Atelier de Yann",
     metier: "Coiffeur", branche: "coiffeur", adresse: "Place de la Fontaine",
     horaires: "9 h – 19 h", distance: "340 m", metres: 340,
+    souvenirs: [
+      "Jeudi dernier, deux créneaux de l\u2019après-midi sont restés vides.",
+      "Ses désistements publiés avant 11 h se remplissent presque toujours.",
+    ],
   },
   {
     id: "as-ongle", titre: "Onglerie", prenom: "Sophie", nom: "Institut Sophie",
     metier: "Prothésiste ongulaire", branche: "ongles", adresse: "Rue Neuve",
     horaires: "9 h 30 – 18 h 30", distance: "410 m", metres: 410,
+    souvenirs: [
+      "La semaine dernière, son créneau de 15 h est parti en dix minutes.",
+    ],
   },
   {
     id: "as-mode", titre: "Boutique", prenom: "Claire", nom: "Le Dressing",
     metier: "Prêt-à-porter", branche: "mode", adresse: "Cours Verdun",
     horaires: "10 h – 19 h", distance: "180 m", metres: 180,
+    souvenirs: [
+      "Ses arrivages annoncés le matin sont vus deux fois plus que ceux du soir.",
+    ],
   },
   {
     id: "as-fleur", titre: "Fleuriste", prenom: "Élise", nom: "Au Jardin d’Élise",
     metier: "Fleuriste", branche: "fleuriste", adresse: "Halles du marché",
     horaires: "8 h – 19 h", distance: "500 m", metres: 500,
+    souvenirs: [
+      "Vendredi dernier, il lui restait 4 bouquets à 18 h.",
+    ],
   },
   {
     id: "as-bar", titre: "Bar", prenom: "Thomas", nom: "Le Comptoir",
     metier: "Bar à vins", branche: "bar", adresse: "Rue Saint-Vincent",
     horaires: "17 h – 1 h", distance: "290 m", metres: 290,
+    souvenirs: [
+      "Ses annonces de concert remplissent la terrasse le jeudi.",
+    ],
   },
 ];
 
@@ -109,8 +144,30 @@ const SAUTS: { h: number; l: string }[] = [
   { h: 10, l: "10 h" },
   { h: 12.5, l: "12 h 30" },
   { h: 13.75, l: "13 h 45" },
-  { h: 15, l: "15 h" },
 ];
+
+/**
+ * LA FIN DE SERVICE — et c'est la boucle qui fait revenir demain.
+ *
+ * POURQUOI ELLE COMPTE PLUS QUE TOUT LE RESTE. Un commerçant qui raconte sa
+ * journée le fait une fois par curiosité. Ce qui le fait recommencer, c'est de
+ * savoir que ça a servi à quelque chose — et personne ne le lui dit jamais. Ni
+ * sa fiche Google, ni son site, ni ses réseaux ne reviennent le soir avec un
+ * chiffre. C'est le seul retour qu'il ait de sa journée.
+ *
+ * LES CHIFFRES SONT ÉCRITS PAR L'ÉCRAN, PAS PAR LE MODÈLE. Ce sont des FAITS.
+ * Un fait ne se fait pas rédiger : si le modèle les annonçait, il pourrait les
+ * annoncer sans qu'ils soient vrais, et un chiffre gonflé une seule fois fait
+ * perdre le commerçant pour toujours. Dans le vrai produit ils viennent du
+ * compteur ; ici ils sont posés, et ils montrent ce qui l'attend.
+ */
+const BILAN = {
+  vues: 142,
+  reservations: 4,
+  abonnes: 8,
+  quoi: "dernières portions",
+  heure: 14.5,
+};
 
 type Tour = { role: "user" | "assistant"; content: string };
 type Carte = {
@@ -212,6 +269,7 @@ export function Assistante() {
   const [libres, setLibres] = useState(true);
   const [parle, setParle] = useState(false);
   const [voixKo, setVoixKo] = useState("");
+  const [bilan, setBilan] = useState(false);
   const bas = useRef<HTMLDivElement | null>(null);
   const micro = useRef<ReturnType<typeof ouvrirEcoute> | null>(null);
   const son = useRef<HTMLAudioElement | null>(null);
@@ -335,6 +393,10 @@ export function Assistante() {
             commerce: journee.commerce,
             heure: h,
             publie: journee.moments.map((m) => m.titre),
+            // SA MÉMOIRE — voir `COMMERCES`. Même porte en démonstration et
+            // dans le vrai produit ; seule la source des souvenirs change.
+            souvenirs:
+              COMMERCES.find((x) => x.id === journee.commerce.id)?.souvenirs ?? [],
             messages: suite,
           }),
         });
@@ -361,6 +423,28 @@ export function Assistante() {
     },
     [journee, tours],
   );
+
+  const finDeService = useCallback(() => {
+    setHeure(BILAN.heure);
+    setCarte(null);
+    setBilan(true);
+    // LA BULLE EST COURTE, LA VOIX EST ENTIERE — et ce n'est pas la même chose.
+    // Vu à l'écran : Léa répétait mot pour mot ce que la carte affiche juste en
+    // dessous, soit les mêmes chiffres deux fois à dix pixels d'intervalle. Ce
+    // qui se LIT est dans la carte ; ce qui s'ENTEND doit être complet, parce
+    // qu'en mains libres il n'y a rien à regarder.
+    setTours((t) => [
+      ...t,
+      { role: "assistant", content: "Voilà pour aujourd’hui ❤️" },
+    ]);
+    dire(
+      `Voilà pour aujourd'hui. ${BILAN.vues} personnes ont vu vos annonces, ` +
+        `${BILAN.reservations} réservations, ${BILAN.abonnes} nouveaux abonnés. ` +
+        `Votre annonce « ${BILAN.quoi} » a particulièrement bien fonctionné. ` +
+        `On recommence demain ?`,
+      false,
+    );
+  }, [dire]);
 
   const choisir = useCallback((c: CommerceAssiste) => {
     // LE PREMIER GESTE DE LA SESSION, ET DONC LE SEUL MOMENT OÙ IPHONE ACCORDE
@@ -462,6 +546,10 @@ export function Assistante() {
   if (!journee) {
     return (
       <div className="as">
+        <div className="as-halo" aria-hidden="true">
+          <span />
+          <span />
+        </div>
         <header className="as-h">
           <b>ClikMe</b>
           <a href="/autour-de-moi">Le direct</a>
@@ -490,17 +578,54 @@ export function Assistante() {
   const enLigne = carteDeLaJournee(journee);
 
   return (
-    <div className="as">
+    <div className={`as${parle ? " ambiance" : ""}`}>
+      {/* LE FOND N'EST PAS UNE IMAGE, C'EST UNE LUMIERE. Deux halos très flous
+          qui dérivent lentement : ça coûte deux div et zéro octet de réseau, et
+          ça transforme un aplat noir en pièce éclairée. Ils s'animent plus vite
+          quand Léa parle — la pièce respire avec elle. */}
+      <div className="as-halo" aria-hidden="true">
+        <span />
+        <span />
+      </div>
       <header className="as-h">
         <b>ClikMe</b>
         <a href={`/autour-de-moi?h=${heure.toFixed(2)}`}>Le direct</a>
       </header>
 
+      {/* ═══ LÉA, ET C'EST TOUT LE SUJET DE CET ÉCRAN ═══
+          « Il faut vraiment qu'il y ait un énorme wahoo, pour le moment c'est
+          très neutre. » C'était juste, et la raison était structurelle : on
+          avait fait une messagerie. Une messagerie est un OUTIL, et un outil de
+          plus ne bluffe personne — il y en a déjà six sur son téléphone.
+
+          CE QUI CHANGE TOUT, C'EST QU'ELLE EXISTE. Un rond qui respire quand
+          elle attend, qui pousse des ondes quand elle parle, qui frémit quand
+          elle écoute. Ce n'est pas une décoration : c'est la différence entre
+          « j'écris à un logiciel » et « quelqu'un m'écoute ». Le commerçant à
+          qui on tend le téléphone ne lit pas une interface, il rencontre
+          quelqu'un — et ça, aucune fiche Google ne le fait. */}
       <div className="as-qui">
-        <h1>Bonjour {c.prenom}</h1>
-        <p>
-          {c.nom} · {c.metier}
-        </p>
+        <div
+          className={`as-lea${parle ? " parle" : ecoute ? " ecoute" : ""}`}
+          aria-hidden="true"
+        >
+          <i />
+          <i />
+          <i />
+          <b>L</b>
+        </div>
+        <div className="as-nom">
+          <h1>Bonjour {c.prenom}</h1>
+          <p>
+            {parle
+              ? "Léa vous parle"
+              : ecoute
+                ? "Léa vous écoute"
+                : attend
+                  ? "Léa réfléchit"
+                  : `${c.nom} · ${c.metier}`}
+          </p>
+        </div>
       </div>
 
       <div className="as-fil">
@@ -596,6 +721,37 @@ export function Assistante() {
                 Corriger
               </button>
             </div>
+          </div>
+        )}
+
+        {/* ═══ LA FIN DE JOURNÉE ═══
+            Le seul retour qu'un commerçant ait jamais de sa journée. Ni sa
+            fiche Google, ni son site, ni ses réseaux ne reviennent le soir avec
+            un chiffre. C'est ce qui le fait recommencer demain — et c'est pour
+            ça que cette carte est la plus grande de l'écran. */}
+        {bilan && (
+          <div className="as-bilan">
+            <span className="as-bilan-t">La fin de journée</span>
+            <p className="as-bilan-h">Voilà pour aujourd’hui ❤️</p>
+            <ul>
+              <li>
+                <b>{BILAN.vues}</b>
+                <em>personnes ont vu vos annonces</em>
+              </li>
+              <li>
+                <b>{BILAN.reservations}</b>
+                <em>réservations</em>
+              </li>
+              <li>
+                <b>{BILAN.abonnes}</b>
+                <em>nouveaux abonnés</em>
+              </li>
+            </ul>
+            <p className="as-bilan-m">
+              Votre annonce «&nbsp;{BILAN.quoi}&nbsp;» a particulièrement bien
+              fonctionné.
+            </p>
+            <p className="as-bilan-d">On recommence demain ?</p>
           </div>
         )}
 
@@ -704,21 +860,48 @@ export function Assistante() {
           ))}
           <button
             type="button"
+            className="as-fin"
+            disabled={attend || bilan}
+            onClick={finDeService}
+          >
+            Fin de service (14 h 30)
+          </button>
+          <button
+            type="button"
             className="as-raz"
             onClick={() => {
               viderJournee();
               setTours([]);
               setCarte(null);
               setRetour(null);
+              setBilan(false);
             }}
           >
             Recommencer
           </button>
         </div>
 
+        {/* ═══ VOIR LE RÉSULTAT ═══
+            « Le bouton pour voir le résultat sur le direct est très caché et
+            très discret. » Il l'était : un lien en petit vert, sous une barre
+            de réglages, écrit « voir ce que vos clients voient » — une phrase
+            qui décrit une intention au lieu de promettre un résultat.
+
+            C'EST POURTANT LA CHUTE DE TOUTE LA DÉMONSTRATION. Le commerçant
+            vient de parler trente secondes ; ce bouton est l'endroit où il
+            découvre que ça a produit quelque chose de réel. Il compte ses
+            annonces, il porte une flèche, et il occupe toute la largeur. */}
         {enLigne && (
           <a className="as-voir" href={`/autour-de-moi?h=${heure.toFixed(2)}`}>
-            Voir ce que vos clients voient →
+            <span>
+              <b>
+                {journee.moments.length === 1
+                  ? "Votre annonce est en ligne"
+                  : `Vos ${journee.moments.length} annonces sont en ligne`}
+              </b>
+              <em>Voir Le Direct de Dax</em>
+            </span>
+            <i aria-hidden="true">→</i>
           </a>
         )}
       </div>
