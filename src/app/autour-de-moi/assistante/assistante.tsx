@@ -54,7 +54,7 @@ import {
   viderJournee,
   type CommerceAssiste,
 } from "@/lib/direct/journee";
-import { dicteeDisponible, ouvrirEcoute } from "@/lib/direct/voix-micro";
+import { dicteeDisponible, libererMicro, microBranche, ouvrirEcoute } from "@/lib/direct/voix-micro";
 import { useSyncExternalStore } from "react";
 
 /**
@@ -368,6 +368,9 @@ export function Assistante() {
   const [parle, setParle] = useState(false);
   const [voixKo, setVoixKo] = useState("");
   const [bilan, setBilan] = useState(false);
+  // CE QUI DIT QUE L'AUTORISATION NE SERA PLUS REDEMANDÉE. Un micro qui reste
+  // ouvert doit se voir : c'est la contrepartie honnête de « toujours branché ».
+  const [branche, setBranche] = useState(false);
   const bas = useRef<HTMLDivElement | null>(null);
   const micro = useRef<ReturnType<typeof ouvrirEcoute> | null>(null);
   const son = useRef<HTMLAudioElement | null>(null);
@@ -417,11 +420,40 @@ export function Assistante() {
    * serait bien pire que le silence.
    */
   const dire = useCallback(
-    async (texte: string, puisEcouter: boolean) => {
+    async (texte: string, puisEcouter: boolean, montrer?: () => void) => {
+      /**
+       * LE TEXTE ARRIVE AVEC LA VOIX, PAS AVANT.
+       *
+       * LE DÉFAUT MESURÉ : « toujours un décalage entre le texte affiché et la
+       * voix de Léa, deux à trois secondes ». C'était mécanique : la réponse du
+       * modèle s'affichait dès son arrivée, puis on demandait la synthèse, et la
+       * voix partait une à trois secondes plus tard. On lisait, puis on
+       * entendait la même chose — ce qui donne l'impression d'un doublage raté
+       * et casse l'illusion de quelqu'un qui parle.
+       *
+       * On révèle donc la bulle AU MOMENT où le son démarre. Les trois points
+       * de réflexion restent jusque-là : l'attente devient lisible au lieu
+       * d'être un décalage. Et si la voix échoue ou tarde, un garde-temps la
+       * montre quand même — on ne cache jamais une réponse derrière un son.
+       */
+      let vu = false;
+      const reveler = () => {
+        if (vu) return;
+        vu = true;
+        montrer?.();
+      };
+      // LE GARDE-TEMPS. Au-delà d'une seconde et demie, mieux vaut le décalage
+      // que le vide : c'est la limite où l'on croit que rien ne s'est passé.
+      const secours = setTimeout(reveler, 1500);
+      const fin = () => {
+        clearTimeout(secours);
+        reveler();
+      };
       // `lu` : vrai quand sa voix a porté la phrase jusqu'au bout. Faux quand
       // elle s'est tue — et alors on laisse le temps de LIRE avant de rouvrir
       // le micro, sinon on écoute quelqu'un qui est encore en train de lire.
       const suite = (lu: boolean) => {
+        fin();
         setParle(false);
         if (!puisEcouter || !libres) return;
         if (lu) return demarrerMicroRef.current?.();
@@ -469,7 +501,11 @@ export function Assistante() {
         // affiché même quand la voix revenait — « même quand elle parle le
         // message reste » — ce qui faisait douter d'une panne alors qu'on
         // l'entendait.
-        a.onplaying = () => setVoixKo("");
+        // C'EST ICI QUE LA BULLE APPARAÎT : au premier son, pas à la réception.
+        a.onplaying = () => {
+          setVoixKo("");
+          fin();
+        };
         a.onerror = () => {
           URL.revokeObjectURL(url);
           setVoixKo("le téléphone a refusé de lire le son");
@@ -533,25 +569,31 @@ export function Assistante() {
         const d = await rep.json();
         if (!rep.ok) {
           setEcho(String(d?.erreur || "L’assistante n’a pas répondu."));
+          setAttend(false);
           return;
         }
         const dit = String(d.dire || "");
-        setTours([...suite, { role: "assistant", content: dit }]);
         const k = (d.carte ?? null) as Carte | null;
-        setCarte(k);
-        if (d.retour) setRetour(d.retour);
-        // ELLE NE REPART PAS EN ÉCOUTE QUAND ELLE ATTEND UN APPUI. Une carte à
-        // valider ou une photo à prendre demandent la main, pas la voix : ouvrir
-        // le micro par-dessus ferait parler dans le vide.
+        // TOUT APPARAÎT ENSEMBLE, AU MOMENT OÙ ELLE COMMENCE À PARLER : la
+        // bulle, la carte à valider et l'heure de retour. Les révéler
+        // séparément ferait trois arrivées pour une seule réponse — et les
+        // révéler AVANT le son remettrait le décalage qu'on vient d'enlever.
+        // Les trois points de réflexion tiennent jusque-là.
         aDire.current = dit;
-        dire(dit, !k);
+        dire(dit, !k, () => {
+          setTours([...suite, { role: "assistant", content: dit }]);
+          setCarte(k);
+          if (d.retour) setRetour(d.retour);
+          setAttend(false);
+        });
+        // ELLE NE REPART PAS EN ÉCOUTE QUAND ELLE ATTEND UN APPUI : une carte à
+        // valider ou une photo à prendre demandent la main, pas la voix.
       } catch {
         setEcho("Pas de réseau — l’assistante n’a pas pu répondre.");
-      } finally {
         setAttend(false);
       }
     },
-    [journee, tours],
+    [dire, journee, tours],
   );
 
   const finDeService = useCallback(() => {
@@ -639,12 +681,24 @@ export function Assistante() {
       surSilence: () => arreterRef.current(),
     });
     setEcoute(true);
+    // On le relit APRÈS l'ouverture : c'est elle qui branche le micro la
+    // première fois, et l'indicateur ne doit pas mentir avant.
+    setTimeout(() => setBranche(microBranche()), 600);
   }, []);
 
   const demarrerMicroRef = useRef<() => void>(() => {});
   demarrerMicroRef.current = demarrerMicro;
 
-  useEffect(() => () => micro.current?.annuler(), []);
+  // LE MICRO RESTE BRANCHÉ PENDANT TOUTE LA CONVERSATION — c'est le correctif
+  // qui fait qu'elle entend au deuxième tour comme au premier. On ne le relâche
+  // qu'en quittant l'écran, sinon la lampe resterait allumée après.
+  useEffect(
+    () => () => {
+      micro.current?.annuler();
+      libererMicro();
+    },
+    [],
+  );
 
   /**
    * CHAQUE APPUI EST UNE CHANCE DE PLUS. Le premier geste peut échouer — page
@@ -1047,6 +1101,7 @@ export function Assistante() {
             {libres ? "🔊 Mains libres" : "🔇 Mains libres coupées"}
           </button>
           {parle && <em>Léa parle…</em>}
+          {!parle && branche && <em className="pret">Micro branché</em>}
           {voixKo && <u title={voixKo}>voix muette</u>}
         </div>
         {/* POURQUOI ELLE SE TAIT, EN CLAIR ET UNE SEULE FOIS. « Aucune voix »

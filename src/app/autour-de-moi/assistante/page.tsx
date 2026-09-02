@@ -366,6 +366,11 @@ body{background:#05090C}
   border-radius:999px;padding:5px 12px}
 .as-mains button.on{color:var(--menthe);border-color:rgba(61,226,166,.4)}
 .as-mains em{font-style:normal;font-size:11.5px;color:var(--menthe)}
+/* LE MICRO RESTE BRANCHE, ET CA SE VOIT. C'est la contrepartie honnete de
+   « on ne redemande plus l'autorisation » : une entree qui reste ouverte ne
+   doit pas etre silencieuse a l'ecran. Discret, parce que c'est un etat normal
+   et non une alerte. */
+.as-mains em.pret{color:var(--craie3)}
 .as-mains u{text-decoration:none;font-size:11.5px;color:var(--rouge)}
 .as-muette{margin:7px 0 0;font-size:11.5px;line-height:1.45;color:var(--rouge)}
 

@@ -21,11 +21,46 @@ let echecs = 0;
 const erreurs = [];
 const dire = (ok, t) => { if (!ok) echecs++; console.log(`${ok ? "  ok  " : "ÉCHEC "} ${t}`); };
 
-const ouvrir = async (url = "/autour-de-moi") => {
+/**
+ * PASSER À LA CARTE SUIVANTE — et renoncer proprement quand il n'y en a plus.
+ *
+ * LE BOUTON SE DÉSACTIVE EN FIN DE PAQUET, et lire son état avant de cliquer ne
+ * suffit pas : entre la lecture et le clic, un rendu peut l'éteindre. Le
+ * vérifieur s'acharnait alors trente secondes sur un bouton mort et expirait —
+ * ce qui est pire qu'un échec, parce qu'un expiré ne dit pas ce qui ne va pas.
+ * On tente le clic avec un délai court, et un refus veut dire « paquet fini ».
+ */
+const avancer = async (page) => {
+  try {
+    await page.click(".ap-rond", { timeout: 1500 });
+    await page.waitForTimeout(320);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * OUVRIR L'APPLICATION, éventuellement À UNE HEURE FIXÉE.
+ *
+ * POURQUOI L'HEURE COMPTE MAINTENANT. Le conseil du commerçant est porté par un
+ * MOMENT, pas par le commerce : « la côte, attendez jeudi » n'a de sens que le
+ * jour où la côte est moins belle. La carte qui l'affiche n'est donc dans le
+ * paquet qu'à certaines heures — vérifié : présente à 9 h, 11 h et 16 h, absente
+ * à 13 h et 19 h. Un test qui dépend de l'heure du conteneur passe le matin et
+ * échoue l'après-midi, ce qui est la pire espèce de test : on finit par ne plus
+ * le croire. Les sections qui visent un contenu précis fixent donc l'horloge.
+ */
+const ouvrir = async (url = "/autour-de-moi", heure) => {
   const ctx = await nav.newContext({
     viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
+  if (heure != null) {
+    await ctx.clock.setFixedTime(
+      new Date(2026, 8, 2, Math.floor(heure), Math.round((heure % 1) * 60), 0),
+    );
+  }
   const p = await ctx.newPage();
   p.on("pageerror", (e) => erreurs.push(String(e)));
   p.on("console", (m) => { if (m.type() === "error") erreurs.push(m.text()); });
@@ -105,18 +140,14 @@ for (let k = 0; k < 12; k++) {
   const t = await p.$eval(".ap-suivre-face:not(.suivi) span", (e) =>
     e.textContent.replace(/\s+/g, " ").trim()).catch(() => "");
   if (t) vus.push(t);
-  if (await p.$eval(".ap-rond", (b) => b.disabled).catch(() => true)) break;
-  await p.click(".ap-rond");
-  await p.waitForTimeout(340);
+  if (!(await avancer(p))) break;
 }
 await familles();
 for (let k = 0; k < 6; k++) {
   const t = await p.$eval(".ap-suivre-face:not(.suivi) span", (e) =>
     e.textContent.replace(/\s+/g, " ").trim()).catch(() => "");
   if (t) vus.push(t);
-  if (await p.$eval(".ap-rond", (b) => b.disabled).catch(() => true)) break;
-  await p.click(".ap-rond");
-  await p.waitForTimeout(340);
+  if (!(await avancer(p))) break;
 }
 for (const t of vus.slice(-6)) console.log(`  ${t}`);
 dire(vus.length > 0, `on a croisé ${vus.length} boutons « Suivre »`);
@@ -170,7 +201,9 @@ await ctx.close();
 //      punit ceux qui ne s'en servent pas se fait détester par les trois
 //      quarts de la ville.
 console.log("\n══ la voix du commerçant ══");
-({ ctx, p } = await ouvrir());
+// ONZE HEURES : c'est une heure où la carte à conseil est dans le paquet. Ce
+// qu'on vérifie ici est le RENDU d'un conseil, pas le hasard de l'horloge.
+({ ctx, p } = await ouvrir("/autour-de-moi", 11));
 // ON CHERCHE LA CARTE À CONSEIL, ON NE SUPPOSE PLUS QU'ELLE EST EN TÊTE.
 // Elle l'était tant que les commerces suivis ouvraient le paquet ; depuis que
 // ce qui vient de tomber passe devant, la tête dépend de l'heure qu'il est. Ce
@@ -190,8 +223,7 @@ const lireVoix = () =>
   });
 let voix = await lireVoix();
 for (let k = 0; k < 14 && !voix.conseil; k++) {
-  await p.click(".ap-rond");
-  await p.waitForTimeout(320);
+  if (!(await avancer(p))) break;
   voix = await lireVoix();
 }
 console.log(`  ${voix.chez} — « ${voix.conseil} » — ${voix.qui} (${voix.tete})`);
@@ -205,8 +237,7 @@ dire(voix.detail === "",
 // SANS VOIX, RIEN NE CHANGE. On passe jusqu'à une carte qui n'en a pas.
 let sansVoix = null;
 for (let k = 0; k < 14; k++) {
-  await p.click(".ap-rond");
-  await p.waitForTimeout(320);
+  if (!(await avancer(p))) break;
   const e = await p.evaluate(() => ({
     chez: document.querySelector(".ap-dessus .cd-chez")?.textContent
       .replace(/\s+/g, " ").split("·")[0].trim() ?? "",
@@ -249,9 +280,7 @@ for (let k = 0; k < 10; k++) {
     pill: document.querySelector(".ap-dessus .cd-quand")?.textContent
       .replace(/\s+/g, " ").trim() ?? "",
   })));
-  if (await p.$eval(".ap-rond", (b) => b.disabled).catch(() => true)) break;
-  await p.click(".ap-rond");
-  await p.waitForTimeout(320);
+  if (!(await avancer(p))) break;
 }
 for (const b of bornes.slice(0, 6))
   console.log(`  ${b.chez} → ${b.pill || "(pas de rectangle)"}`);

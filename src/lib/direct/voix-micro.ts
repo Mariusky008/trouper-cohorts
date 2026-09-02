@@ -1,32 +1,45 @@
-// LE MICRO DE L'ASSISTANTE — le téléphone d'abord, le serveur en filet.
+// LE MICRO DE L'ASSISTANTE — branché une fois, gardé toute la conversation.
 //
-// ─── LA DÉCISION VIENT D'UNE MESURE, PAS D'UN AVIS ────────────────────────
+// ─── LA DÉCISION DE DÉPART VIENT D'UNE MESURE ─────────────────────────────
 //
 // `/autour-de-moi/essai-voix` a fait parler les deux chemins en même temps, sur
-// la même phrase, sur un vrai iPhone : LES DEUX TIENNENT. C'est le meilleur cas,
-// et il commande l'architecture qui suit.
+// la même phrase, sur un vrai iPhone : LES DEUX TIENNENT.
 //
 //   · LE TÉLÉPHONE EN PREMIER, parce qu'il sait faire une chose que le serveur
 //     ne saura jamais : ÉCRIRE PENDANT QU'ON PARLE. Voir les mots apparaître est
 //     ce qui apprend au commerçant qu'il est entendu — sans ça, il parle à un
 //     bouton et il s'arrête au bout de trois mots pour vérifier.
 //
-//   · LE SERVEUR EN FILET, parce que le moteur du navigateur se coupe. C'est son
-//     défaut connu : un silence de deux secondes — celui de quelqu'un qui
-//     réfléchit — et il rend la main. On enregistre donc TOUJOURS en parallèle,
-//     et si le téléphone ne rend rien d'exploitable, le serveur reprend la
-//     phrase entière, celle qu'on a captée en entier.
+//   · LE SERVEUR EN FILET, parce que le moteur du navigateur se coupe. On
+//     enregistre donc TOUJOURS en parallèle, et si le téléphone ne rend rien
+//     d'exploitable, le serveur reprend la phrase entière.
 //
-// ON N'EN CHOISIT PAS UN : on garde les deux, et le filet ne coûte que lorsqu'il
-// sert. L'enregistrement n'est envoyé au serveur QUE si le téléphone a échoué.
+// ─── ET LE MICRO NE SE REDEMANDE PLUS À CHAQUE TOUR ───────────────────────
+//
+// LE DÉFAUT MESURÉ, ET IL TUAIT LA CONVERSATION : « à partir du deuxième
+// message elle ne m'entend plus, elle m'entend seulement la première fois quand
+// j'autorise le micro ». La question qui suivait était la bonne : « peut-on
+// toujours avoir le micro branché sans avoir à autoriser ? »
+//
+// OUI, ET C'EST MÊME LA SEULE FAÇON QUE ÇA MARCHE. On réclamait un flux neuf à
+// chaque prise de parole, et on coupait ses pistes à la fin. Sur iPhone, chaque
+// nouvelle demande rouvre la session audio — et une session qu'on rouvre juste
+// après avoir joué la voix de Léa revient parfois muette, sans erreur et sans
+// refus visible. La première fonctionnait parce qu'elle suivait l'autorisation ;
+// les suivantes tombaient dans ce trou.
+//
+// LE FLUX EST DONC OUVERT UNE FOIS ET GARDÉ. Entre deux tours on n'arrête que
+// l'enregistreur, jamais le micro lui-même. L'autorisation n'est demandée qu'une
+// fois, la session ne bascule plus, et le deuxième tour entend exactement comme
+// le premier. Le micro n'est relâché qu'en quittant l'écran — voir
+// `libererMicro`.
 //
 // ─── ET RIEN DE TOUT ÇA NE DISPENSE DE LA VALIDATION ──────────────────────
 //
 // Aucune transcription n'est fiable à cent pour cent dans un commerce en
-// activité — le four, la machine à café, trois clients. « Quatorze euros »
-// entendu « quatre euros » et publié à toute une ville coûte un commerçant.
-// La carte de validation n'est donc pas un confort : c'est la condition qui
-// autorise le vocal à exister.
+// activité. « Quatorze euros » entendu « quatre euros » et publié à toute une
+// ville coûte un commerçant : la carte de validation est ce qui autorise le
+// vocal à exister.
 
 /** Ce qu'une écoute a produit, et par quel chemin. */
 export type Ecoute = {
@@ -73,31 +86,101 @@ export function dicteeDisponible(): boolean {
 /**
  * LE SILENCE QUI DIT « J'AI FINI ».
  *
- * LE DÉFAUT MESURÉ : « je dois appuyer sur le bouton à chaque fois pour parler
- * et envoyer mon message ». Deux appuis par phrase, c'est-à-dire exactement le
- * geste qu'on prétendait lui épargner — et impossible avec les mains dans la
- * farine, ce qui est le seul moment où il aurait le temps de parler.
- *
  * LE SEUIL EST BAS ET L'ATTENTE EST GÉNÉREUSE, et les deux vont ensemble. Un
  * commerçant s'interrompt : il compte ses portions, il sert quelqu'un, il
  * cherche un mot. Couper au bout de six cents millisecondes lui vole la moitié
  * de sa phrase, et une assistante qui coupe la parole ne se fait pas pardonner.
+ * Mille deux cents laisse passer une hésitation sans faire attendre.
  *
  * ET ON NE COUPE QU'APRÈS AVOIR ENTENDU QUELQUE CHOSE. Sans ça, un micro ouvert
- * dans une pièce calme se fermerait aussitôt, et on aurait l'air de ne pas
- * écouter. S'il ne dit rien du tout, on rend la main après huit secondes plutôt
- * que de laisser une lampe rouge allumée.
+ * dans une pièce calme se fermerait aussitôt. S'il ne dit rien du tout, on rend
+ * la main après huit secondes plutôt que de laisser une lampe rouge allumée.
  */
 const SEUIL = 0.012;
-/**
- * MILLE DEUX CENTS PLUTÔT QUE MILLE CINQ CENTS. « Ça manque vraiment de
- * fluidité » : trois dixièmes de seconde à chaque tour, sur six tours, font
- * deux secondes d'attente pure sur une conversation qui en dure trente. C'est
- * assez pour laisser passer une hésitation, et assez court pour que l'envoi
- * suive la fin de la phrase au lieu de la faire attendre.
- */
 const SILENCE_MS = 1200;
 const RIEN_MS = 8000;
+
+/** En dessous, ce n'est pas quelqu'un qui parle bas : c'est un micro sourd. */
+const SOURD = 0.002;
+
+// ─── CE QUI VIT PLUS LONGTEMPS QU'UNE ÉCOUTE ─────────────────────────────
+// Le flux du micro et le contexte d'analyse sont ouverts une fois et gardés
+// pour toute la visite. C'est tout le correctif : voir l'en-tête du fichier.
+let fluxPartage: MediaStream | null = null;
+let demande: Promise<MediaStream | null> | null = null;
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+let ctxSon: any = null;
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+let analyseur: any = null;
+
+async function obtenirMicro(): Promise<MediaStream | null> {
+  // UN FLUX VIVANT SE REDONNE TEL QUEL. On vérifie qu'il l'est encore : le
+  // système peut le couper tout seul (appel entrant, écran verrouillé), et on
+  // en redemande alors un — c'est le seul cas où l'on redemande.
+  if (fluxPartage && fluxPartage.getAudioTracks().some((t) => t.readyState === "live")) {
+    return fluxPartage;
+  }
+  fluxPartage = null;
+  if (!demande) {
+    demande = navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then((f) => {
+        fluxPartage = f;
+        return f;
+      })
+      .catch(() => null)
+      .finally(() => {
+        demande = null;
+      });
+  }
+  return demande;
+}
+
+/**
+ * L'OREILLE QUI GUETTE LE SILENCE, elle aussi montée une seule fois.
+ *
+ * On mesure le NIVEAU, pas les mots : dix lignes, ça marche partout, là où le
+ * moteur de dictée ne dit pas toujours quand il considère qu'une phrase est
+ * finie. Le contexte s'ouvre en sommeil quand un son vient d'être joué — et Léa
+ * vient justement de parler — donc on le réveille à chaque fois.
+ */
+async function preparerOreille(flux: MediaStream) {
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
+  if (!AC) return null;
+  if (!ctxSon) {
+    ctxSon = new AC();
+    analyseur = ctxSon.createAnalyser();
+    analyseur.fftSize = 1024;
+    ctxSon.createMediaStreamSource(flux).connect(analyseur);
+  }
+  if (ctxSon.state === "suspended") {
+    try {
+      await ctxSon.resume();
+    } catch {
+      /* Refusé : on écoutera quand même, sans détection de silence. */
+    }
+  }
+  return analyseur;
+}
+
+/** Tout relâcher — en quittant l'écran, et nulle part ailleurs. */
+export function libererMicro() {
+  fluxPartage?.getTracks().forEach((t) => t.stop());
+  fluxPartage = null;
+  try {
+    ctxSon?.close();
+  } catch {
+    /* déjà fermé */
+  }
+  ctxSon = null;
+  analyseur = null;
+}
+
+/** Vrai si le micro est déjà branché — l'autorisation ne sera pas redemandée. */
+export function microBranche(): boolean {
+  return !!fluxPartage?.getAudioTracks().some((t) => t.readyState === "live");
+}
 
 export type Reglages = {
   /** Appelé quand il s'est tu — c'est ce qui remplace le deuxième appui. */
@@ -107,11 +190,9 @@ export type Reglages = {
 /**
  * UNE ÉCOUTE. On l'ouvre, elle écrit en direct, on l'arrête, elle rend le texte.
  *
- * `enDirect` reçoit les mots au fur et à mesure — c'est ce qui va à l'écran
- * pendant qu'il parle. La promesse de la fonction, elle, n'est tenue qu'à
- * l'arrêt, et elle est tenue MÊME si tout échoue : elle rend alors un texte vide
- * et une raison, jamais une exception. Un micro qui lève une erreur au milieu
- * d'une démonstration ferme l'écran.
+ * La promesse n'est tenue qu'à l'arrêt, et elle est tenue MÊME si tout échoue :
+ * elle rend alors un texte vide et une raison, jamais une exception. Un micro
+ * qui lève une erreur au milieu d'une démonstration ferme l'écran.
  */
 export function ouvrirEcoute(
   enDirect: (t: string) => void,
@@ -122,28 +203,14 @@ export function ouvrirEcoute(
 } {
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   let rec: any = null;
-  let flux: MediaStream | null = null;
   let enr: MediaRecorder | null = null;
   const bouts: Blob[] = [];
   let fini = "";
   let vivant = "";
   let coupe = false;
   let guet = 0;
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  let ctxSon: any = null;
-  /** Vrai dès qu'on a entendu quelque chose — voir `SEUIL`. */
   let aParle = false;
-  /**
-   * LE NIVEAU LE PLUS FORT QU'ON AIT VU, et il vaut un diagnostic entier.
-   *
-   * « Je l'entends bien mais elle ne m'entend pas. » Un micro qui rend un
-   * niveau strictement nul pendant huit secondes n'est pas un micro dans lequel
-   * on a parlé trop bas : c'est un micro qui ne capte RIEN — autorisation
-   * refusée, entrée prise par autre chose, ou session audio restée en lecture
-   * après que Léa a parlé. Envoyer ce silence au serveur ne peut rien donner de
-   * bon, et c'est ce qui faisait revenir le texte du contexte à la place de sa
-   * phrase.
-   */
+  /** Le niveau le plus fort entendu — un zéro strict vaut un diagnostic. */
   let niveauMax = 0;
 
   const Moteur = moteur();
@@ -168,7 +235,7 @@ export function ouvrirEcoute(
       };
       // ON NE TRAITE PAS L'ERREUR : elle est normale. « no-speech », « aborted »,
       // « audio-capture » arrivent, et c'est exactement pour ça que le filet
-      // existe. La signaler ferait paniquer pour un cas qui se rattrape seul.
+      // existe.
       r.start();
       rec = r;
     } catch {
@@ -176,91 +243,68 @@ export function ouvrirEcoute(
     }
   }
 
-  // L'ENREGISTREMENT TOURNE TOUJOURS, même quand la dictée marche. On ne peut
-  // pas savoir qu'elle a échoué avant qu'elle échoue, et on ne va pas demander
-  // au commerçant de répéter sa phrase.
-  const pretFlux = (async () => {
+  const pret = (async () => {
+    const flux = await obtenirMicro();
+    if (!flux || coupe) return;
     try {
-      const f = await navigator.mediaDevices.getUserMedia({ audio: true });
-      if (coupe) {
-        f.getTracks().forEach((t) => t.stop());
-        return;
-      }
-      flux = f;
       const type = conteneur();
-      const m = type ? new MediaRecorder(f, { mimeType: type }) : new MediaRecorder(f);
+      const m = type
+        ? new MediaRecorder(flux, { mimeType: type })
+        : new MediaRecorder(flux);
       m.ondataavailable = (ev) => {
         if (ev.data && ev.data.size) bouts.push(ev.data);
       };
       m.start();
       enr = m;
-
-      // ── L'OREILLE QUI GUETTE LE SILENCE ──
-      // On mesure le niveau du micro, pas les mots : c'est dix lignes et ça
-      // marche partout, là où le moteur de dictée du navigateur ne dit pas
-      // toujours quand il considère qu'une phrase est finie.
-      if (reglages.surSilence) {
-        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-        const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
-        if (AC) {
-          ctxSon = new AC();
-          // IOS OUVRE LE CONTEXTE EN SOMMEIL quand un son vient d'être joué —
-          // et Léa vient justement de parler. Sans ce réveil, l'analyseur rend
-          // des zéros et on croit que personne ne parle.
-          if (ctxSon.state === "suspended") void ctxSon.resume();
-          const an = ctxSon.createAnalyser();
-          an.fftSize = 1024;
-          ctxSon.createMediaStreamSource(f).connect(an);
-          const tampon = new Float32Array(an.fftSize);
-          const debut = Date.now();
-          let dernierSon = 0;
-          guet = window.setInterval(() => {
-            an.getFloatTimeDomainData(tampon);
-            let somme = 0;
-            for (let i = 0; i < tampon.length; i++) somme += tampon[i] * tampon[i];
-            const niveau = Math.sqrt(somme / tampon.length);
-            if (niveau > niveauMax) niveauMax = niveau;
-            const t = Date.now();
-            if (niveau > SEUIL) {
-              aParle = true;
-              dernierSon = t;
-              return;
-            }
-            const fini = aParle
-              ? dernierSon && t - dernierSon > SILENCE_MS
-              : t - debut > RIEN_MS;
-            if (fini) {
-              window.clearInterval(guet);
-              guet = 0;
-              reglages.surSilence?.();
-            }
-          }, 120);
-        }
-      }
     } catch {
-      /* Micro refusé : la dictée peut encore marcher, et sinon on le dira. */
+      return;
     }
+
+    if (!reglages.surSilence) return;
+    const an = await preparerOreille(flux);
+    if (!an || coupe) return;
+    const tampon = new Float32Array(an.fftSize);
+    const debut = Date.now();
+    let dernierSon = 0;
+    guet = window.setInterval(() => {
+      an.getFloatTimeDomainData(tampon);
+      let somme = 0;
+      for (let i = 0; i < tampon.length; i++) somme += tampon[i] * tampon[i];
+      const niveau = Math.sqrt(somme / tampon.length);
+      if (niveau > niveauMax) niveauMax = niveau;
+      const t = Date.now();
+      if (niveau > SEUIL) {
+        aParle = true;
+        dernierSon = t;
+        return;
+      }
+      const termine = aParle
+        ? dernierSon && t - dernierSon > SILENCE_MS
+        : t - debut > RIEN_MS;
+      if (termine) {
+        window.clearInterval(guet);
+        guet = 0;
+        reglages.surSilence?.();
+      }
+    }, 120);
   })();
 
+  /**
+   * ON FERME L'ENREGISTREUR, JAMAIS LE MICRO. C'est tout le correctif : couper
+   * les pistes entre deux tours obligeait à redemander un flux, et le deuxième
+   * revenait muet.
+   */
   const fermer = () => {
     if (guet) {
       window.clearInterval(guet);
       guet = 0;
     }
     try {
-      ctxSon?.close();
-    } catch {
-      /* déjà fermé */
-    }
-    ctxSon = null;
-    try {
       rec?.stop();
     } catch {
       /* déjà arrêté */
     }
     rec = null;
-    flux?.getTracks().forEach((t) => t.stop());
-    flux = null;
   };
 
   return {
@@ -275,10 +319,7 @@ export function ouvrirEcoute(
       fermer();
     },
     arreter: async () => {
-      await pretFlux;
-      // L'ENREGISTREMENT S'ARRÊTE EN PREMIER, la dictée après : le moteur du
-      // navigateur rend souvent son dernier morceau au moment où on le coupe, et
-      // le couper trop tôt perdrait la fin de la phrase.
+      await pret;
       let audio = "";
       if (enr) {
         const m = enr;
@@ -301,23 +342,22 @@ export function ouvrirEcoute(
         }
       }
       enr = null;
+      // LE MOTEUR DU TÉLÉPHONE S'ARRÊTE APRÈS L'ENREGISTREUR : il rend souvent
+      // son dernier morceau au moment où on le coupe, et le couper trop tôt
+      // perdrait la fin de la phrase.
       await new Promise((r) => setTimeout(r, 300));
       const duTelephone = (fini || vivant).trim();
-      const sourd = !!reglages.surSilence && niveauMax < 0.002;
+      const sourd = !!reglages.surSilence && niveauMax < SOURD;
       fermer();
 
-      // ── CE QUE LE TÉLÉPHONE A DONNÉ SUFFIT-IL ? ──
-      // Le seuil est bas et il est en MOTS, pas en signes : « oui » est une
-      // réponse complète, « ma » est un début de phrase coupée. Sous deux mots,
-      // on préfère le filet — il ne coûte qu'une seconde et il a la phrase
-      // entière.
+      // CE QUE LE TÉLÉPHONE A DONNÉ SUFFIT-IL ? Le seuil est en MOTS : « oui »
+      // est une réponse complète, « ma » est un début de phrase coupée.
       if (duTelephone.split(/\s+/).filter(Boolean).length >= 2) {
         return { texte: duTelephone, par: "telephone" };
       }
 
       // ─── ON N'ENVOIE PAS DU SILENCE AU SERVEUR ───
-      // C'est la racine du défaut le plus visible de la démonstration : sur un
-      // enregistrement muet, le service de transcription rend le texte de
+      // Sur un enregistrement muet, le service de transcription rend le texte de
       // contexte qu'on lui a soufflé, et cet écho partait dans la conversation
       // comme si le commerçant l'avait dit. La route le filtre aussi, mais le
       // vrai correctif est ici : ne rien envoyer quand il n'y a rien.
