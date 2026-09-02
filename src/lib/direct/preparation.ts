@@ -78,9 +78,10 @@ export type CommercePrepare = {
    *
    * ELLE SE TOURNE DEVANT LUI, ET C'EST LE SEUL MOMENT OÙ ELLE SE TOURNERA.
    * Lui demander de la faire « quand il aura le temps » revient à ne jamais
-   * l'avoir : trois secondes de geste, pendant qu'on est là, et c'est réglé.
-   * Muette, courte, jamais une tête parlante — voir le raisonnement complet
-   * en tête de `Voix`.
+   * l'avoir : un geste filmé pendant qu'on est là, et c'est réglé. Une dizaine
+   * de secondes — assez pour que le geste aille jusqu'au bout, et pas une de
+   * plus. Muette, jamais une tête parlante — voir le raisonnement complet en
+   * tête de `Voix`.
    *
    * Elle reste sur l'appareil, comme la photo : rien n'est publié avant son
    * accord. `LISEZ-MOI.md` vaut pour la vidéo autant que pour l'image.

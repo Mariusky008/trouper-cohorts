@@ -134,6 +134,12 @@ dire(vus.every((t) => /Recevez en priorité/.test(t)),
 await ctx.close();
 
 // ═══ 3 · LE TOUR DE RÔLE NE SE JUSTIFIE PLUS APRÈS COUP ═══
+//
+// LA RÈGLE SE LIT AVANT, ET RIEN NE SE LIT APRÈS. On appuie sur « Je passe » :
+// le geste est son propre accusé de réception, et la bande qui le répétait
+// était une fenêtre à fermer pour une décision déjà prise — « une pop-up qui
+// ne sert à rien ». Ce qui doit rester vrai maintenant, c'est qu'il ne reste
+// RIEN : ni bandeau, ni détail, ni bouton à refermer.
 console.log("\n══ je passe ══");
 ({ ctx, p } = await ouvrir());
 await p.waitForSelector(".ap-tour");
@@ -143,14 +149,11 @@ dire(/après vous/.test(avant), "la règle se lit AVANT de décider, sur l'offre
 await p.click(".ap-tour-b button:not(.fort)");
 await p.waitForTimeout(700);
 const apres = await p.evaluate(() => ({
-  entete: document.querySelector(".ap-tour-q")?.textContent.replace(/\s+/g, " ").trim() ?? "",
-  detail: document.querySelector(".ap-tour .ap-tour-d")?.textContent.trim() ?? "",
+  bande: !!document.querySelector(".ap-tour"),
+  reste: document.querySelector(".ap-tour")?.textContent.replace(/\s+/g, " ").trim() ?? "",
 }));
-console.log(`  après : « ${apres.entete} »${apres.detail ? " + " + apres.detail : ""}`);
-dire(/suivant/i.test(apres.entete), "la bande confirme en trois mots");
-// « C'EST INUTILE CETTE PRÉCISION » : on vient d'appuyer sur « Je passe », donc
-// on sait qu'on passe.
-dire(apres.detail === "", `et n'explique plus ce qu'on vient de faire (${apres.detail})`);
+console.log(`  après : « ${apres.reste || "(plus rien)"} »`);
+dire(!apres.bande, "après « Je passe », la bande a disparu sans rien dire");
 await ctx.close();
 
 // ═══ 4 · LA VOIX DU COMMERÇANT ═══
@@ -436,14 +439,17 @@ await ctx.close();
 
 // ═══ 8 · LA VIDÉO DANS LE ROND ═══
 //
-// « Le rond est petit et pas trop dévalorisant. » C'est exactement ça qui
-// retire la honte : une vidéo plein écran est une performance, un rond de
-// quarante pixels est un clin d'œil.
+// LE ROND DOIT TENIR LES DEUX BOUTS, ET C'EST TOUT LE TEST. Trop grand, il
+// devient une vidéo plein écran, c'est-à-dire une performance, et personne ne
+// veut faire l'acteur. Trop petit — c'était la première version, trente-quatre
+// pixels — et « on ne voit quasiment rien » : il ne reste qu'une vignette qui
+// scintille. On vérifie donc un ENCADREMENT, pas une valeur : assez large pour
+// qu'un geste s'y lise, assez étroit pour rester en marge de l'annonce.
 //
-// ON VÉRIFIE LE MÉCANISME PAR SON VRAI CHEMIN : l'outil de terrain filme trois
-// secondes et la carte préparée la porte. Le test tourne son propre clip,
-// neutre et jetable — c'est aussi ce qui prouve que le chemin du terrain
-// fonctionne, et pas seulement la fixture.
+// ON VÉRIFIE LE MÉCANISME PAR SON VRAI CHEMIN : l'outil de terrain filme le
+// geste et la carte préparée le porte. Le test tourne son propre clip, neutre
+// et jetable — c'est aussi ce qui prouve que le chemin du terrain fonctionne,
+// et pas seulement la fixture.
 console.log("\n══ la vidéo dans le rond ══");
 {
   const c4 = await nav.newContext({
@@ -512,13 +518,18 @@ console.log("\n══ la vidéo dans le rond ══");
       muet: v?.muted ?? null,
       boucle: v?.loop ?? null,
       taille: r ? Math.round(r.width) : 0,
+      // LA LARGEUR DE L'ÉCRAN SERT DE RÈGLE : un rond se juge par rapport à ce
+      // qui l'entoure, pas en pixels absolus.
+      ecran: window.innerWidth,
       // ET LA CARTE DU DESSOUS N'EN CHARGE AUCUNE : voir `sansVideo`.
       dessous: !!document.querySelector(".ap-dessous video"),
     };
   });
-  console.log(`  ${rond.chez} · rond de ${rond.taille} px · vidéo ${rond.video ? "oui" : "non"}`);
+  const part = Math.round((rond.taille / rond.ecran) * 100);
+  console.log(`  ${rond.chez} · rond de ${rond.taille} px (${part} % de l'écran) · vidéo ${rond.video ? "oui" : "non"}`);
   dire(rond.video, "la vidéo est dans le rond de la carte");
-  dire(rond.taille <= 40, `et il garde sa taille (${rond.taille} px)`);
+  dire(rond.taille >= 60, `on y voit enfin quelque chose (${rond.taille} px)`);
+  dire(part <= 25, `et il reste en marge de l'annonce (${part} % de la largeur)`);
   dire(rond.muet === true, "elle est muette");
   dire(rond.boucle === true, "et elle tourne en boucle");
   dire(!rond.dessous, "la carte du dessous n'en charge aucune");
@@ -562,12 +573,20 @@ console.log("\n══ la vidéo dans le rond ══");
   const q = await c5.newPage();
   await q.goto(`${BASE}/autour-de-moi?chez=emporter`, { waitUntil: "networkidle" });
   await q.waitForTimeout(1500);
-  const rien = await q.evaluate(() => ({
-    rond: !!document.querySelector(".ap-arrivee .ap-voix-t"),
-    film: !!document.querySelector(".ap-arrivee .ap-voix-t video"),
-  }));
+  const rien = await q.evaluate(() => {
+    const t = document.querySelector(".ap-arrivee .ap-voix-t");
+    return {
+      rond: !!t,
+      film: !!t?.querySelector("video"),
+      taille: t ? Math.round(t.getBoundingClientRect().width) : 0,
+    };
+  });
   dire(rien.rond, "le rond de la porte est là");
   dire(rien.film, "et il porte la vidéo de la fiche");
+  // SUR LA FICHE ON EST À L'ARRÊT, PLUS EN TRAIN DE BALAYER : c'est l'endroit
+  // où le rond peut prendre le plus de place sans rien bousculer, et il serait
+  // absurde qu'il y soit plus petit que sur la carte qu'on traverse.
+  dire(rien.taille >= 70, `et on l'y voit en grand (${rien.taille} px)`);
   await c5.close();
 }
 

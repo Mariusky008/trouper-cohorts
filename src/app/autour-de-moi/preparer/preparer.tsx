@@ -298,11 +298,16 @@ export function Preparer() {
           </div>
 
           {/* SA VIDÉO SE TOURNE MAINTENANT, OU JAMAIS. « Quand vous aurez le
-              temps » revient à ne jamais l'avoir : trois secondes de geste
-              pendant qu'on est devant lui, et c'est réglé. Muette et courte —
-              un rond de quarante pixels n'est pas une tribune. */}
+              temps » revient à ne jamais l'avoir : un geste filmé pendant
+              qu'on est devant lui, et c'est réglé.
+
+              DIX SECONDES, PAS TROIS. Trois secondes coupaient le geste en
+              deux et donnaient une saccade — « ce n'est pas assez long ». Un
+              geste a un début et une fin ; on laisse passer les deux. Ça ne
+              demande pas plus au commerçant : c'est toujours une seule prise,
+              un seul geste, et toujours sans parler. */}
           <label className="pp-l pp-2">
-            <span>Sa vidéo — trois secondes, un geste, sans parler</span>
+            <span>Sa vidéo — une dizaine de secondes, un geste, sans parler</span>
             <input
               type="file"
               accept="video/*"
@@ -314,8 +319,21 @@ export function Preparer() {
                 // navigateur de téléphone sans le faire chauffer une minute.
                 // Le garde-fou est la TAILLE — au-delà, le stockage local
                 // déborde et on perd toute la tournée préparée.
+                //
+                // ET IL FAUT DIRE OÙ EST LA LIMITE, PARCE QU'ELLE NE TOMBE PAS
+                // AU MÊME ENDROIT QUE LA DURÉE. Dix secondes en 1080p font
+                // quinze mégaoctets : c'est le RÉGLAGE DE LA CAMÉRA qui décide,
+                // pas la longueur. Un message qui dirait « filmez plus court »
+                // ferait raccourcir le geste alors qu'il suffit de baisser la
+                // qualité — et raccourcir le geste est justement ce qu'on vient
+                // de corriger. Cette limite n'existe que dans l'outil de
+                // terrain, qui garde tout dans le téléphone du démarcheur ; la
+                // vidéo du commerçant, elle, part sur le serveur.
                 if (x.size > 3_000_000) {
-                  setEcho("Cette vidéo est trop lourde. Trois secondes suffisent.");
+                  setEcho(
+                    "Trop lourde pour ce téléphone. Repassez la caméra en 720p " +
+                      "et refilmez le même geste — ne le raccourcissez pas.",
+                  );
                   return;
                 }
                 const l = new FileReader();

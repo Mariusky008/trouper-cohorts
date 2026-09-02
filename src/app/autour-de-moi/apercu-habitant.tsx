@@ -1991,7 +1991,13 @@ export function ApercuHabitant() {
   // « Prévu ».
   useEffect(() => {
     if (tourEtat !== "pris" && tourEtat !== "passe") return;
-    const t = setTimeout(() => setTourEtat("fini"), tourEtat === "pris" ? 8000 : 5200);
+    // « J'AI UNE POP-UP QUI SERT À RIEN : LA SUPPRIMER. » Juste : on vient
+    // d'appuyer sur « Je passe », donc on sait qu'on passe, et la bande qui le
+    // répétait était un accusé de réception pour un geste qui n'en demandait
+    // pas. Elle disparaît sur-le-champ ; celle qui confirme une prise reste
+    // quelques secondes, parce qu'elle, elle apprend quelque chose — où aller
+    // chercher les croissants.
+    const t = setTimeout(() => setTourEtat("fini"), tourEtat === "pris" ? 8000 : 0);
     return () => clearTimeout(t);
   }, [tourEtat]);
 
@@ -4406,24 +4412,7 @@ export function ApercuHabitant() {
                       Il vous les met de côté. Passez chez {tourCarte.nom}.
                     </p>
                   </>
-                ) : (
-                  <>
-                    <div className="ap-tour-h">
-                      <span className="ap-tour-q">
-                        <i aria-hidden="true">→</i>Passé au suivant
-                      </span>
-                    </div>
-                    {/* PLUS DE PHRASE SOUS L'EN-TÊTE. Il y avait « Proposé à
-                        la personne suivante. Vous repassez devant la prochaine
-                        fois. » — « c'est inutile cette précision », et c'est
-                        vrai : on vient d'appuyer sur « Je passe », donc on
-                        sait qu'on passe. Trois mots suffisent à confirmer, et
-                        la bande s'efface cinq secondes plus tard. La règle du
-                        tour de rôle, elle, se lit avant de décider — sur
-                        l'offre, « 4 personnes après vous » — c'est-à-dire au
-                        seul moment où elle sert à quelque chose. */}
-                  </>
-                )}
+                ) : null}
               </div>
             )}
           </div>
@@ -9494,10 +9483,16 @@ export function ApercuHabitant() {
         .ap-voix-t{font:inherit;border:0;padding:0;cursor:default;}
         .ap-voix-t img,.ap-voix-t video{width:100%;height:100%;object-fit:cover;}
         /* CE QUI DIT QU'ON PEUT APPUYER : un anneau, et rien d'autre. Une
-           pastille « lecture » posee sur un rond de quarante pixels le
-           transformerait en bouton de lecteur video, c'est-a-dire en objet
-           technique — exactement ce qu'on evite. */
-        .ap-voix-t.film{cursor:pointer;
+           pastille « lecture » posee sur le rond le transformerait en bouton
+           de lecteur video, c'est-a-dire en objet technique — exactement ce
+           qu'on evite.
+
+           ET LE ROND GRANDIT QUAND IL PORTE UN FILM. Quarante pixels, c'etait
+           la taille d'une initiale : pour une initiale, elle est juste ; pour
+           un geste, « on ne voit quasiment rien ». Ici on est sur la fiche,
+           donc a l'arret et non plus en train de balayer — c'est l'endroit ou
+           l'on peut prendre le plus de place sans rien bousculer. */
+        .ap-voix-t.film{cursor:pointer;width:78px;height:78px;
           box-shadow:0 0 0 2px rgba(61,226,166,.55),0 0 0 4px rgba(5,9,12,.9);}
         .ap-voix-t.film:active{transform:scale(.95);}
 
@@ -9508,7 +9503,7 @@ export function ApercuHabitant() {
           border:1px solid rgba(126,230,192,.28);
           box-shadow:0 22px 60px rgba(0,0,0,.6);
           animation:apFeuille .3s cubic-bezier(.22,1.1,.4,1);}
-        .ap-film video{width:100%;max-height:46vh;border-radius:16px;
+        .ap-film video{width:100%;max-height:58vh;border-radius:16px;
           background:#000;display:block;}
         .ap-film-q{margin:12px 0 0;font-size:12px;color:#8FA79B;}
         .ap-film-q b{display:block;font-size:16px;font-weight:850;color:#EAF2EC;

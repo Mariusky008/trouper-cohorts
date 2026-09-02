@@ -740,21 +740,34 @@ export type Voix = {
    */
   portrait?: string;
   /**
-   * SA VIDÉO — trois secondes, muette, en boucle, dans le même petit rond.
+   * SA VIDÉO — une dizaine de secondes, muette, en boucle, dans le rond.
    *
-   * POURQUOI LE ROND EST LA BONNE TAILLE, ET C'EST TOUT LE SUJET. Ce qui bloque
-   * les commerçants devant une caméra n'est pas la caméra, c'est le FORMAT :
-   * une vidéo plein écran est une performance, et personne ne veut faire
-   * l'acteur. Un rond de quarante pixels n'est pas une performance, c'est un
-   * clin d'œil — « petit et pas trop dévalorisant », et c'est exactement ça qui
-   * retire la honte.
+   * DEUX CORRECTIONS DE TERRAIN, ET ELLES DISENT LA MÊME CHOSE. La première
+   * version tenait dans trente-quatre pixels et durait trois secondes ; verdict
+   * sur l'iPhone : « la vidéo est minuscule, on ne voit quasiment rien, et trois
+   * secondes c'est trop court ». Les deux défauts n'en font qu'un : à cette
+   * taille et à cette durée, il ne s'est RIEN PASSÉ. On voit qu'il y a une
+   * image, on ne voit pas ce qu'elle montre.
    *
-   * MUETTE ET COURTE, JAMAIS UNE TÊTE PARLANTE. À quarante pixels on ne lit
-   * aucune bouche, et le son qui démarre tout seul dans une file d'attente est
-   * la façon la plus rapide de faire fermer une application — sur iPhone il est
-   * de toute façon bloqué. On y met un GESTE : il sort une plaque du four, il
-   * hausse les épaules, il fait signe. Le son existe, mais sur appui : on
-   * touche le rond, il s'agrandit, et là on l'entend.
+   * OÙ EST LA BONNE TAILLE, ALORS. La peur n'a jamais été celle des pixels,
+   * c'est celle du FORMAT : une vidéo plein écran est une performance, et
+   * personne ne veut faire l'acteur. Un rond, même large, n'est pas une
+   * performance — il ne prend pas la place de l'annonce, il ne se met pas
+   * au-dessus du plat, il ne demande pas de cadrage. On peut donc le doubler
+   * sans rien réveiller de ce qui bloquait : ce qui protégeait le commerçant,
+   * c'était la FORME ronde et la place en marge, pas la petitesse.
+   *
+   * ET LA DURÉE SUIT LA MÊME LOGIQUE. Un geste a un début et une fin : sortir
+   * une plaque du four, retourner une pièce, faire signe. Trois secondes en
+   * coupent la moitié et donnent une saccade ; une dizaine en laisse passer un
+   * entier, et la boucle cesse de clignoter. C'est plus long à filmer d'à peu
+   * près rien — on ne lui demande toujours qu'un seul geste, une seule prise.
+   *
+   * MUETTE, JAMAIS UNE TÊTE PARLANTE. Le son qui démarre tout seul dans une
+   * file d'attente est la façon la plus rapide de faire fermer une application
+   * — sur iPhone il est de toute façon bloqué. On y met un GESTE, pas un
+   * discours. Le son existe, mais sur appui : on touche le rond, il s'agrandit,
+   * et là on l'entend.
    *
    * JAMAIS RÉCLAMÉE, TOUJOURS CHANGEABLE. La règle n'est pas « filmée une
    * fois » mais « jamais obligatoire » : qu'il la refasse le jour où il a une

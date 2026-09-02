@@ -310,13 +310,22 @@ export function CarteSwipe({
                 huit restaurants, celui qui a un visage et une phrase est le
                 seul qu'on retient. */}
             {c.conseil && c.voix ? (
-              <p className="cd-conseil">
+              <p className={`cd-conseil${c.voix.video ? " film" : ""}`}>
                 {/* ─── LE ROND, ET CE QU'IL Y A DEDANS ───
                     Trois états, du plus riche au plus pauvre, et le dernier
                     est celui de presque tout le monde : sa vidéo, sa photo,
-                    ou son initiale. La taille ne change jamais — c'est elle
-                    qui fait que la vidéo n'est pas une performance. */}
-                <span className="cd-tete" aria-hidden="true">
+                    ou son initiale.
+
+                    ET LA TAILLE SUIT CE QU'IL Y A DEDANS. Une initiale n'a
+                    rien à montrer : trente-quatre pixels lui suffisent, et
+                    plus grand elle deviendrait un bandeau. Une vidéo a
+                    quelque chose à montrer, et à trente-quatre pixels elle ne
+                    le montrait pas — « on ne voit quasiment rien ». Le rond
+                    double donc quand il y a un film, et seulement là. */}
+                <span
+                  className={`cd-tete${c.voix.video ? " film" : ""}`}
+                  aria-hidden="true"
+                >
                   {c.voix.video ? (
                     <video
                       poster={c.voix.video.affiche}
@@ -608,6 +617,11 @@ export function StylesDirect() {
           gap:9px;font-family:Georgia,'Times New Roman',serif;font-size:13.5px;
           line-height:1.32;color:#EAF2EC;text-align:left;}
         .cd-conseil>span:last-child{min-width:0;}
+        /* QUAND IL Y A UN FILM, LA COLONNE DE TEXTE NE DOIT PAS PAYER LE ROND.
+           La largeur maximale porte sur la ligne entiere : garder 33ch avec un
+           rond deux fois plus large aurait rendu la phrase deux fois plus
+           haute. On rend au texte ce que le rond a pris. */
+        .cd-conseil.film{max-width:40ch;gap:12px;}
         /* LES GUILLEMETS ENCADRENT LA PHRASE, PAS LA SIGNATURE. Sans
            l'element intermediaire, le guillemet fermant se serait pose apres
            « — Serge, boucher », c'est-a-dire au mauvais endroit. */
@@ -628,6 +642,15 @@ export function StylesDirect() {
           color:#04150E;background:linear-gradient(140deg,#7EE6C0,#3DE2A6);
           box-shadow:0 2px 10px rgba(0,0,0,.4);}
         .cd-tete img,.cd-tete video{width:100%;height:100%;object-fit:cover;}
+        /* ─── LE ROND QUAND IL Y A UN FILM ───
+           « La video est minuscule, on ne voit quasiment rien. » Soixante-
+           dix pixels au lieu de trente-quatre : quatre fois la surface, donc
+           un geste enfin lisible sans que le rond devienne un lecteur video.
+           L'anneau vert dit qu'il y a quelque chose a regarder — c'est la
+           seule chose qui distingue un film d'une photo tant qu'on n'a pas
+           appuye. */
+        .cd-tete.film{width:70px;height:70px;
+          box-shadow:0 0 0 2px rgba(61,226,166,.5),0 3px 14px rgba(0,0,0,.45);}
         .cd-prixg{margin:9px 0 0;font-size:clamp(24px,7.4vw,34px);font-weight:850;
           letter-spacing:-.03em;line-height:1;color:#fff;
           font-variant-numeric:tabular-nums;}
