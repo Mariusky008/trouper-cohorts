@@ -18,8 +18,25 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: { absolute: `Votre assistante — ${MARQUE}` },
+  title: { absolute: `Léa, votre assistante — ${MARQUE}` },
   robots: { index: false, follow: false },
+  // SON PROPRE MANIFESTE, ET C'EST TOUT LE SUJET. Sans lui, « ajouter à l'écran
+  // d'accueil » posait bien une icône, mais l'ouvrir renvoyait sur clikme.fr :
+  // le manifeste racine porte `start_url: "/"`, et le téléphone suit le
+  // manifeste, jamais la page depuis laquelle on installe. Voir le fichier.
+  manifest: "/autour-de-moi/assistante/manifest.webmanifest",
+  // Sur iPhone, ces deux-là décident du nom sous l'icône et du fait que la
+  // barre de Safari disparaisse. Sans eux on ouvre un onglet, pas une
+  // application — et un onglet, un commerçant le referme.
+  appleWebApp: { capable: true, title: "Léa", statusBarStyle: "black-translucent" },
+  icons: {
+    icon: [
+      { url: "/direct/icone-autour.svg", type: "image/svg+xml" },
+      { url: "/direct/icone-autour-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: "/direct/icone-autour-512.png",
+    apple: "/direct/icone-autour-180.png",
+  },
 };
 
 function Styles() {

@@ -727,6 +727,39 @@ console.log("\n══ la carte et la question ══");
   }
 }
 
+// ═══ 11 · CE QU'ON POSE SUR L'ÉCRAN D'ACCUEIL S'OUVRE AU BON ENDROIT ═══
+//
+// « Je n'arrive pas à mettre le lien de l'assistante sur ma page d'accueil du
+// téléphone sans que ça me ramène à la page d'accueil clikme.fr. »
+//
+// LE TÉLÉPHONE NE RETIENT PAS LA PAGE DEPUIS LAQUELLE ON INSTALLE : il retient
+// le `start_url` du manifeste. Sans manifeste à elle, une page hérite de celui
+// de la racine — qui porte `start_url: "/"` — et devient inatteignable une fois
+// posée sur l'écran d'accueil. Le défaut avait été corrigé pour « Autour de
+// moi » ; l'assistante est arrivée après, et personne n'y a pensé. Il se
+// reproduira à chaque nouvel écran, donc il se vérifie.
+console.log("\n══ l'écran d'accueil du téléphone ══");
+{
+  const aInstaller = ["/autour-de-moi", "/autour-de-moi/assistante"];
+  for (const page of aInstaller) {
+    const html = await (await fetch(`${BASE}${page}`)).text();
+    const lien = /<link rel="manifest" href="([^"]+)"/.exec(html)?.[1] ?? "";
+    dire(!!lien && lien !== "/manifest.json",
+      `${page} a son propre manifeste (${lien || "aucun"})`);
+    if (!lien || lien === "/manifest.json") continue;
+    const m = await (await fetch(`${BASE}${lien}`)).json();
+    console.log(`  ${page} → ouvre « ${m.start_url} », icône « ${m.short_name} »`);
+    // C'EST LA SEULE ASSERTION QUI COMPTE : ce qui s'ouvre est bien cette page.
+    dire(m.start_url === page, `et il ouvre cette page-là, pas la racine`);
+    // ET IL NE RETOMBE PAS DANS SAFARI AU PREMIER LIEN.
+    dire(typeof m.scope === "string" && page.startsWith(m.scope),
+      `la navigation reste dans l'application (scope ${m.scope})`);
+    // DEUX INSTALLATIONS NE DOIVENT PAS S'ÉCRASER : un commerçant a besoin des
+    // deux, la sienne et celle de ses voisins.
+    dire(m.id === page, `et il ne remplace pas l'autre installation (id ${m.id})`);
+  }
+}
+
 dire(erreurs.length === 0, `aucune erreur${erreurs.length ? " : " + erreurs[0] : ""}`);
 await nav.close();
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT PASSE");
