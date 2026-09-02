@@ -255,7 +255,18 @@ const SYSTEME = (
         ].join("\n")
       : "",
     dejaPublie.length
-      ? `DÉJÀ EN LIGNE AUJOURD'HUI : ${dejaPublie.join(" ; ")}. Pour en modifier une (« il m'en reste trois »), rends une carte de nature « maj » avec le titre EXACT ci-dessus. N'en crée pas une deuxième pour le même plat : c'est la même annonce qui vit.`
+      ? [
+          `DÉJÀ EN LIGNE AUJOURD'HUI : ${dejaPublie.join(" ; ")}.`,
+          "Pour en modifier une (« il m'en reste trois »), rends une carte de",
+          "nature « maj » avec le titre EXACT ci-dessus. N'en crée pas une",
+          "deuxième pour le même plat : c'est la même annonce qui vit.",
+          "",
+          "ET S'IL REVIENT ALORS QUE LA CONVERSATION EST DÉJÀ COMMENCÉE, ta",
+          "première phrase le dit et ouvre la suite, en une ligne : « Vous avez",
+          "déjà X en ligne. Autre chose, ou on met à jour ? » Il doit savoir tout",
+          "de suite ce qui est parti et ce qui ne l'est pas — sans ça il ne sait",
+          "pas s'il doit répéter ou ajouter.",
+        ].join("\n")
       : "RIEN N'EST ENCORE EN LIGNE aujourd'hui.",
     "",
     "LA CARTE. `de` et `a` sont des heures décimales (11.5 = 11 h 30) : quand la",

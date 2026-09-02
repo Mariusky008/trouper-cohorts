@@ -173,6 +173,24 @@ body{background:#05090C}
   .as-lea i{opacity:.35}
 }
 
+/* ═══ CE QUI EST DEJA EN LIGNE ═══
+   UN ETAT, PAS UN MESSAGE. Il ne defile pas avec la conversation : il reste en
+   haut, sous le nom, et il dit ce que la ville voit EN CE MOMENT. Sans lui, ce
+   qui etait publie se perdait dans le fil au milieu des questions, et au bout
+   de six tours plus personne ne savait ce qui etait parti. */
+.as-enligne{flex:none;margin:6px clamp(14px,4vw,26px) 0;padding:10px 12px;
+  border-radius:14px;background:rgba(61,226,166,.08);
+  border:1px solid rgba(61,226,166,.26)}
+.as-enligne-t{display:block;font-size:9.5px;font-weight:850;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--menthe)}
+.as-enligne ul{list-style:none;margin:7px 0 0;padding:0;display:flex;
+  flex-direction:column;gap:5px}
+.as-enligne li{display:flex;align-items:baseline;gap:8px;min-width:0}
+.as-enligne b{flex:1;min-width:0;font-size:13.5px;font-weight:750;
+  color:var(--craie);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.as-enligne em{flex:none;font-style:normal;font-size:11.5px;color:var(--craie3);
+  font-variant-numeric:tabular-nums}
+
 /* ─── LE FIL ───
    Deux bulles, et rien d'autre. Pas d'horodatage, pas d'avatar, pas d'accuse de
    lecture : chaque ornement d'une messagerie ajouterait une chose a comprendre

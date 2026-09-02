@@ -46,6 +46,7 @@ import {
   abonnerJournee,
   carteDeLaJournee,
   chargerJournee,
+  garderConversation,
   journeeVide,
   majMoment,
   ouvrirJournee,
@@ -254,6 +255,8 @@ const MUET =
 
 let hautParleur: HTMLAudioElement | null = null;
 let beni = false;
+/** La tentative de déblocage en cours — voir `attendreLeSon`. */
+let deblocage: Promise<void> | null = null;
 
 /**
  * DÉBLOQUER LE SON — et il faut le faire DANS le geste, pas après.
@@ -275,11 +278,11 @@ let beni = false;
 function debloquerSon(): HTMLAudioElement {
   if (!hautParleur) hautParleur = new Audio();
   const a = hautParleur;
-  if (beni) return a;
+  if (beni || deblocage) return a;
   try {
     a.src = MUET;
     a.load();
-    void a
+    deblocage = a
       .play()
       .then(() => {
         beni = true;
@@ -287,12 +290,40 @@ function debloquerSon(): HTMLAudioElement {
         a.currentTime = 0;
       })
       .catch(() => {
-        /* Pas encore : on retentera au prochain appui. */
+        // Pas encore. On efface la tentative pour pouvoir en refaire une au
+        // prochain appui — sans ça, un premier échec fermerait la porte.
+        deblocage = null;
       });
   } catch {
     /* Un navigateur sans audio : la conversation continue à l'écrit. */
   }
   return a;
+}
+
+/**
+ * ATTENDRE QUE LE DÉBLOCAGE AIT ABOUTI AVANT DE PARLER.
+ *
+ * LE DÉFAUT MESURÉ, ET IL EST DE SÉQUENCE : « quand j'ouvre l'assistante la
+ * première phrase devrait être dite par Léa mais elle est silencieuse, et c'est
+ * à partir du deuxième ou troisième message qu'elle commence à parler ».
+ *
+ * Les deux se marchaient dessus. Au moment de l'appui, on lance la lecture du
+ * son vide ; une seconde plus tard la synthèse arrive et on REMPLACE la source
+ * de ce même élément — parfois avant que la lecture du silence ait abouti. Le
+ * navigateur interrompt alors la lecture en cours, la promesse est rejetée, et
+ * l'élément n'est jamais considéré comme autorisé. Il fallait deux ou trois
+ * tours pour qu'une tentative passe entre les gouttes : exactement ce qui a été
+ * observé.
+ *
+ * On attend donc que le silence ait fini de jouer avant de poser la vraie voix
+ * par-dessus. Cinquante millisecondes, et personne ne les sent.
+ */
+async function attendreLeSon(): Promise<void> {
+  try {
+    await deblocage;
+  } catch {
+    /* Le déblocage a échoué : on tente quand même, on ne perd rien. */
+  }
 }
 
 /**
@@ -353,6 +384,26 @@ export function Assistante() {
   }, [tours, carte, attend]);
 
   /**
+   * ON REPREND LA CONVERSATION LÀ OÙ ELLE S'ÉTAIT ARRÊTÉE.
+   *
+   * Sans ça, revenir sur l'écran affichait une page blanche en face d'une
+   * assistante qui se souvenait de tout : le commerçant ne voyait plus ce qu'il
+   * avait déjà dit, ni ce qui était déjà en ligne. Le fil est rechargé une
+   * seule fois, à l'ouverture, et seulement s'il date d'aujourd'hui — voir
+   * `Journee.conversation`.
+   */
+  const repris = useRef(false);
+  useEffect(() => {
+    if (repris.current || !journee?.conversation?.length) return;
+    repris.current = true;
+    setTours(journee.conversation);
+  }, [journee]);
+
+  useEffect(() => {
+    if (tours.length) garderConversation(tours);
+  }, [tours]);
+
+  /**
    * LÉA PARLE — et l'enchaînement se fait ici.
    *
    * POURQUOI LA VOIX N'EST PAS UN ORNEMENT. On demande à un commerçant de
@@ -399,6 +450,8 @@ export function Assistante() {
           setVoixKo(quoi);
           return suite(false);
         }
+        // ON NE TOUCHE PAS À L'ÉLÉMENT TANT QUE LE DÉBLOCAGE N'A PAS ABOUTI.
+        await attendreLeSon();
         const b = await rep.blob();
         const url = URL.createObjectURL(b);
         // LE MÊME ÉLÉMENT QUE CELUI QU'ON A BÉNI AU PREMIER APPUI — voir
@@ -412,6 +465,11 @@ export function Assistante() {
           URL.revokeObjectURL(url);
           suite(true);
         };
+        // ELLE A PARLÉ : le message d'échec n'a plus lieu d'être. Il restait
+        // affiché même quand la voix revenait — « même quand elle parle le
+        // message reste » — ce qui faisait douter d'une panne alors qu'on
+        // l'entendait.
+        a.onplaying = () => setVoixKo("");
         a.onerror = () => {
           URL.revokeObjectURL(url);
           setVoixKo("le téléphone a refusé de lire le son");
@@ -532,7 +590,9 @@ export function Assistante() {
   // L'OUVERTURE PART TOUTE SEULE dès qu'un commerce est choisi : elle dit
   // bonjour et pose sa première question, sans qu'on ait appuyé sur rien.
   useEffect(() => {
-    if (journee && !tours.length && !attend && heure) parler("", heure);
+    if (journee && !tours.length && !journee.conversation?.length && !attend && heure) {
+      parler("", heure);
+    }
     // On ne veut PAS relancer à chaque tour : seulement à l'ouverture.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [journee?.commerce.id, heure]);
@@ -730,12 +790,53 @@ export function Assistante() {
         </div>
       </div>
 
+      {/* ═══ CE QUI EST DÉJÀ EN LIGNE ═══
+          « Si je veux lui dire de mettre autre chose, ça a l'air compliqué de
+          faire la distinction entre ce qui s'est déjà passé et ce que je
+          voudrais lui dire de rajouter. »
+
+          C'ÉTAIT INVISIBLE, ET C'EST LE VRAI SUJET. Ce qui est publié vivait
+          dans le fil, mêlé aux questions et aux réponses ; au bout de six tours
+          on ne savait plus ce qui était parti et ce qui n'était qu'une phrase.
+          Cette bande est un ÉTAT, pas un message : elle ne défile pas, elle
+          reste en haut, et elle dit en trois mots ce que la ville voit en ce
+          moment. Le fil, lui, redevient ce qu'il doit être — ce qu'on est en
+          train de se dire. */}
+      {!!journee.moments.length && (
+        <div className="as-enligne">
+          <span className="as-enligne-t">En ligne maintenant</span>
+          <ul>
+            {journee.moments.map((m, i) => (
+              <li key={`${m.titre}-${i}`}>
+                <b>
+                  {m.icone} {m.titre}
+                </b>
+                <em>
+                  {[m.prix, m.places != null ? `${m.places} restants` : ""]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </em>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="as-fil">
-        {tours.map((t, i) => (
-          <p key={i} className={t.role === "user" ? "as-lui" : "as-elle"}>
-            {t.content}
-          </p>
-        ))}
+        {/* LES MESSAGES DE SERVICE NE S'AFFICHENT PAS.
+            Certains tours ne viennent pas du commerçant mais de l'écran : « (je
+            viens de valider X, c'est publié) », « (il est maintenant 12 h 30) ».
+            Ils sont indispensables au modèle — c'est ainsi qu'il apprend ce qui
+            s'est passé — et absurdes à l'écran, où ils apparaissaient dans une
+            bulle verte comme si le commerçant les avait prononcés. La
+            convention est la parenthèse, et elle ne sert qu'à ça. */}
+        {tours.map((t, i) =>
+          t.role === "user" && /^\(.*\)$/.test(t.content.trim()) ? null : (
+            <p key={i} className={t.role === "user" ? "as-lui" : "as-elle"}>
+              {t.content}
+            </p>
+          ),
+        )}
         {attend && (
           <p className="as-elle as-points" aria-label="Elle réfléchit">
             <i />

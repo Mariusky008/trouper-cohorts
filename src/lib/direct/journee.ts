@@ -49,12 +49,29 @@ export type CommerceAssiste = {
   photo?: string;
 };
 
+/** Un tour de conversation, tel qu'il se relit le lendemain matin. */
+export type TourDit = { role: "user" | "assistant"; content: string };
+
 /** Ce qui a été publié aujourd'hui, et à quelle date — pour ne pas le ressortir demain. */
 export type Journee = {
   commerce: CommerceAssiste;
   /** La date du jour, en `AAAA-MM-JJ`. */
   jour: string;
   moments: MomentJour[];
+  /**
+   * LA CONVERSATION ELLE-MÊME, ET ELLE SURVIT À LA FERMETURE.
+   *
+   * LE DÉFAUT QU'ELLE CORRIGE : « même quand je quitte totalement l'assistante,
+   * si je reviens ça a gardé en mémoire mon ancien menu apparemment mais sans
+   * vraiment que je le voie ». C'était exact et c'était le pire des deux mondes.
+   * Ce qui est publié survivait — donc Léa le savait — mais l'échange, lui,
+   * disparaissait avec la page. Le commerçant revenait devant un écran vierge
+   * en face de quelqu'un qui se souvenait de tout : « ce n'est pas très clair,
+   * et si je veux lui dire de mettre autre chose ça a l'air compliqué ».
+   *
+   * Les deux vivent maintenant ensemble et meurent ensemble, à la même date.
+   */
+  conversation?: TourDit[];
 };
 
 /**
@@ -166,6 +183,16 @@ export function majMoment(
   const neuf: Journee = { ...j, moments };
   garder(neuf);
   return neuf;
+}
+
+/**
+ * GARDER L'ÉCHANGE — bornée, parce qu'une journée bavarde ne doit pas remplir
+ * le stockage au point de faire perdre les photos des annonces.
+ */
+export function garderConversation(conversation: TourDit[]) {
+  const j = chargerJournee();
+  if (!j) return;
+  garder({ ...j, conversation: conversation.slice(-40) });
 }
 
 /** Tout effacer — le bouton de remise à zéro d'une démonstration. */
