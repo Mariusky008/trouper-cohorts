@@ -272,17 +272,25 @@ await ctx.close();
 // toute façon celle d'aujourd'hui. Il ne survit que devant une vraie borne.
 console.log("\n══ le rectangle jaune ══");
 ({ ctx, p } = await ouvrir());
+// ON EN REGARDE PLUS QU'AVANT, ET POUR UNE RAISON. Depuis « le moment », le
+// haut du paquet est fait de publications fraîches — elles portent toutes une
+// heure. Dix cartes ne sortaient donc plus de cette zone : le test ne voyait
+// que des rectangles pleins et concluait que le rectangle était partout, alors
+// qu'il suffisait de descendre. On échantillonne assez loin pour sortir du
+// frais, et on ne compte pas deux fois la même carte lue pendant l'animation.
 const bornes = [];
-for (let k = 0; k < 10; k++) {
-  bornes.push(await p.evaluate(() => ({
+for (let k = 0; k < 22; k++) {
+  const b = await p.evaluate(() => ({
     chez: document.querySelector(".ap-dessus .cd-chez")?.textContent
       .replace(/\s+/g, " ").split("·")[0].trim() ?? "",
     pill: document.querySelector(".ap-dessus .cd-quand")?.textContent
       .replace(/\s+/g, " ").trim() ?? "",
-  })));
+  }));
+  const d = bornes[bornes.length - 1];
+  if (!d || d.chez !== b.chez || d.pill !== b.pill) bornes.push(b);
   if (!(await avancer(p))) break;
 }
-for (const b of bornes.slice(0, 6))
+for (const b of bornes.slice(0, 8))
   console.log(`  ${b.chez} → ${b.pill || "(pas de rectangle)"}`);
 dire(!bornes.some((b) => /ce matin|aujourd|cette semaine|toute la journ/i.test(b.pill)),
   "plus jamais « ce matin » ni « aujourd'hui » dans le rectangle");

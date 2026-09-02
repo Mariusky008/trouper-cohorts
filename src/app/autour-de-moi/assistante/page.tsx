@@ -258,6 +258,15 @@ body{background:#05090C}
   border:1px solid var(--trait);text-align:center}
 .as-cles b{display:block;font-size:19px;font-weight:850;letter-spacing:-.02em;
   font-variant-numeric:tabular-nums}
+/* EN RETOUCHE, LE CHIFFRE DEVIENT UN CHAMP — meme taille, meme place, on ne
+   deplace rien. Ce qu'on touche est exactement ce qu'on lisait. */
+.as-cles input{width:100%;font:inherit;font-size:19px;font-weight:850;
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums;text-align:center;
+  color:var(--craie);background:transparent;border:0;border-bottom:2px solid var(--or);
+  padding:0 0 2px;border-radius:0}
+.as-cles input:focus{outline:none;border-bottom-color:var(--menthe)}
+.as-cles.retouche li{border-color:rgba(240,180,41,.45);
+  background:rgba(240,180,41,.07)}
 .as-cles em{display:block;margin-top:2px;font-style:normal;font-size:10.5px;
   letter-spacing:.06em;text-transform:uppercase;color:var(--craie3)}
 .as-valide{display:flex;gap:9px;margin-top:13px}

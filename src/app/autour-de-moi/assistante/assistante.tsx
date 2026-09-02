@@ -404,6 +404,21 @@ export function Assistante() {
   const [google, setGoogle] = useState(true);
   const [video, setVideo] = useState("");
   /**
+   * CORRIGER SE FAIT DANS LA CARTE, PAS DANS LA CONVERSATION.
+   *
+   * LE DÉFAUT MESURÉ : « quand je clique sur Corriger, au lieu de pouvoir
+   * directement corriger dans l'espace, l'espace disparaît et Léa me demande ce
+   * qui ne va pas ». C'est exact — et c'était ma correction précédente, qui
+   * réglait un problème en en créant un autre.
+   *
+   * LA BONNE RÉPONSE EST LA PLUS COURTE : le chiffre est faux, on touche le
+   * chiffre. Un aller-retour parlé pour changer « 4 € » en « 14 € » coûte trois
+   * secondes de synthèse, une phrase à dire et une réponse à écouter — pour un
+   * geste qui prend deux appuis. La conversation sert à RACONTER ; la carte
+   * sert à CORRIGER.
+   */
+  const [retouche, setRetouche] = useState(false);
+  /**
    * LE FIL À JOUR, ET PAS CELUI DU DERNIER RENDU.
    *
    * LE DÉFAUT QUE ÇA CORRIGE, ET IL EFFAÇAIT UNE PHRASE. `parler` construisait
@@ -489,9 +504,13 @@ export function Assistante() {
         vu = true;
         montrer?.();
       };
-      // LE GARDE-TEMPS. Au-delà d'une seconde et demie, mieux vaut le décalage
+      // LE GARDE-TEMPS. Passé neuf dixièmes de seconde, mieux vaut le décalage
       // que le vide : c'est la limite où l'on croit que rien ne s'est passé.
-      const secours = setTimeout(reveler, 1500);
+      // Il était à une seconde et demie — trois quarts de seconde d'écran noir
+      // en trop, à chaque réplique, quand la synthèse traîne. « Le rythme est
+      // toujours très lent » : cette attente-là en fait partie, et c'est la
+      // seule des trois (modèle, voix, écran) qu'on décide ici.
+      const secours = setTimeout(reveler, 900);
       const fin = () => {
         clearTimeout(secours);
         reveler();
@@ -588,6 +607,21 @@ export function Assistante() {
             // d'ici — ce sont des faits, et un fait ne se fait pas rédiger.
             chiffres: BILAN,
             photoPrise: !!photo,
+            // LA MÉMOIRE NE SE SERT QU'UNE FOIS. On regarde ce qu'elle a déjà
+            // dit : si le souvenir y est, on le lui retire du prompt. Deux
+            // consignes qui se contredisent dans un prompt se tranchent mal ;
+            // ici c'est un fait, pas une consigne.
+            souvenirDejaDit: (
+              COMMERCES.find((x) => x.id === journee.commerce.id)?.souvenirs ?? []
+            ).some((sv) => {
+              const cle = sv.split(",")[0]?.slice(0, 18).toLowerCase() ?? "";
+              return (
+                !!cle &&
+                toursRef.current.some(
+                  (t) => t.role === "assistant" && t.content.toLowerCase().includes(cle),
+                )
+              );
+            }),
             messages: suite,
           }),
         });
@@ -610,6 +644,7 @@ export function Assistante() {
           // UNE CARTE NEUVE PART DE ZÉRO. Sans ça, la photo prise pour une
           // annonce qu'on a corrigée restait accrochée à la suivante — et
           // partait avec elle sans que personne ne l'ait voulu.
+          setRetouche(false);
           if (k) {
             setPhoto("");
             setVideo("");
@@ -674,6 +709,38 @@ export function Assistante() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [journee?.commerce.id, heure]);
 
+  /**
+   * L'AMORCE ATTEND CE QU'IL VA DIRE — elle ne part jamais seule.
+   *
+   * LE DÉFAUT MESURÉ : « quand je clique sur "Je vous montre" j'obtiens "je la
+   * vois merci, elle est belle" alors que je n'ai rien fait ». Deux fautes
+   * enchaînées, et voici la première : l'amorce était posée dans le champ, le
+   * micro s'ouvrait, et si rien n'était dit, ces trois mots partaient SEULS.
+   * Léa recevait « Je vous montre » sans rien derrière — et brodait.
+   *
+   * L'amorce est maintenant un PRÉFIXE gardé de côté : elle ne rejoint la
+   * conversation qu'accolée à ce qu'il a réellement dit. Sans un mot de sa
+   * part, rien ne part.
+   */
+  const amorce = useRef("");
+
+  /**
+   * IL ENVOIE AU CLAVIER — et l'amorce s'efface avec.
+   *
+   * Le piège : il appuie sur « Je vous montre… », les trois mots se posent dans
+   * le champ, puis il change d'avis et tape la suite au clavier. Le champ part
+   * complet, très bien — mais l'amorce restait accrochée de côté et venait se
+   * recoller DEVANT sa phrase suivante, dite au micro. Une amorce ne sert
+   * qu'une fois : celle qu'on envoie, quel que soit le chemin.
+   */
+  const envoyerTape = useCallback(() => {
+    const t = tape.trim();
+    if (!t) return;
+    amorce.current = "";
+    setTape("");
+    parler(t, heure);
+  }, [heure, parler, tape]);
+
   const arreterMicro = useCallback(async () => {
     const m = micro.current;
     micro.current = null;
@@ -681,7 +748,10 @@ export function Assistante() {
     if (!m) return;
     const r = await m.arreter();
     setVivant("");
-    if (r.texte) parler(r.texte, heure);
+    const debut = amorce.current;
+    amorce.current = "";
+    setTape("");
+    if (r.texte) parler((debut + r.texte).trim(), heure);
     else setEcho(r.erreur || "Je n’ai rien entendu.");
   }, [heure, parler]);
 
@@ -784,6 +854,7 @@ export function Assistante() {
       publierMoment(m, heure);
     }
     setCarte(null);
+    setRetouche(false);
     // LA CONFIRMATION EST ÉCRITE PAR L'ÉCRAN, PAS PAR LE MODÈLE. C'est un fait —
     // « c'est en ligne » — et un fait ne se fait pas rédiger : si le modèle
     // l'annonçait, il pourrait l'annoncer sans que ce soit vrai.
@@ -826,7 +897,20 @@ export function Assistante() {
     setTours(avecMot);
     setPhoto("");
     setVideo("");
-    parler(`(je viens de valider « ${carte.titre} », c’est publié)`, heure);
+    // ─── ELLE APPREND CE QUI A ÉTÉ PUBLIÉ, PAS CE QU'ELLE AVAIT PROPOSÉ ───
+    //
+    // Depuis qu'on corrige les trois chiffres à la main dans la carte, ce qui
+    // part en ligne peut différer de ce qu'elle avait dit. Si on ne lui
+    // renvoyait que le titre, elle garderait « 4 € » en tête et le répéterait
+    // deux tours plus tard. On lui rend donc les valeurs réelles.
+    const dits = [
+      carte.prix && `à ${carte.prix}`,
+      carte.epuise ? "épuisé" : carte.quantite ? `${carte.quantite} portions` : "",
+      `de ${hhmm(carte.de)} à ${hhmm(carte.a)}`,
+    ]
+      .filter(Boolean)
+      .join(", ");
+    parler(`(je viens de valider « ${carte.titre} » ${dits}, c’est publié)`, heure);
   }, [carte, google, heure, journee, parler, photo, video]);
 
   if (!journee) {
@@ -1081,20 +1165,65 @@ export function Assistante() {
               <p className="as-vid">🎥 Vidéo prête — elle sera sur l’annonce.</p>
             )}
 
-            <ul className="as-cles">
+            {/* ═══ LES TROIS CHIFFRES, ET ON PEUT LES TOUCHER ═══
+                Ce sont les trois valeurs qui peuvent être fausses — c'est là
+                que le vocal se trompe. En lecture, elles se vérifient d'un coup
+                d'œil ; en retouche, elles se corrigent d'un doigt. Aucun
+                aller-retour parlé pour changer « 4 € » en « 14 € ». */}
+            <ul className={`as-cles${retouche ? " retouche" : ""}`}>
               <li>
-                <b>{carte.prix || "—"}</b>
+                {retouche ? (
+                  <input
+                    value={carte.prix}
+                    inputMode="decimal"
+                    aria-label="Prix"
+                    onChange={(e) => setCarte({ ...carte, prix: e.target.value })}
+                  />
+                ) : (
+                  <b>{carte.prix || "—"}</b>
+                )}
                 <em>prix</em>
               </li>
               <li>
-                <b>{carte.epuise ? "épuisé" : (carte.quantite ?? "—")}</b>
+                {retouche ? (
+                  <input
+                    value={carte.quantite ?? ""}
+                    inputMode="numeric"
+                    aria-label="Quantité"
+                    onChange={(e) => {
+                      const n = e.target.value.replace(/[^0-9]/g, "");
+                      setCarte({ ...carte, quantite: n ? Number(n) : null });
+                    }}
+                  />
+                ) : (
+                  <b>{carte.epuise ? "épuisé" : (carte.quantite ?? "—")}</b>
+                )}
                 <em>quantité</em>
               </li>
               <li>
-                <b>{hhmm(carte.de)}</b>
+                {retouche ? (
+                  <input
+                    value={hhmm(carte.de)}
+                    inputMode="numeric"
+                    aria-label="À partir de"
+                    onChange={(e) => {
+                      // « 11 h 30 », « 11h30 », « 1130 », « 11 » — on lit ce
+                      // qu'il tape comme il le tape.
+                      const c = e.target.value.replace(/[^0-9]/g, "");
+                      if (!c) return;
+                      const h = Number(c.slice(0, 2));
+                      const mn = Number(c.slice(2, 4) || 0);
+                      if (h > 23 || mn > 59) return;
+                      setCarte({ ...carte, de: h + mn / 60 });
+                    }}
+                  />
+                ) : (
+                  <b>{hhmm(carte.de)}</b>
+                )}
                 <em>à partir de</em>
               </li>
             </ul>
+
             <div className="as-valide">
               <button type="button" className="as-oui" onClick={valider}>
                 C’est bon
@@ -1103,6 +1232,18 @@ export function Assistante() {
                 type="button"
                 className="as-non"
                 onClick={() => {
+                  // ─── ON CORRIGE SUR PLACE, ET SEULEMENT SI ÇA NE SUFFIT PAS
+                  //     ON EN PARLE ───
+                  //
+                  // Premier appui : les trois chiffres deviennent modifiables,
+                  // et il tape. Deuxième appui, en retouche : c'est autre chose
+                  // qui ne va pas — le plat, la nature de l'annonce — et là,
+                  // seulement là, on rend la main à Léa.
+                  if (!retouche) {
+                    setRetouche(true);
+                    return;
+                  }
+                  setRetouche(false);
                   // ─── « CORRIGER » DOIT LE DIRE À LÉA ───
                   //
                   // LE DÉFAUT MESURÉ, ET IL EST GRAVE : « quand j'ai appuyé sur
@@ -1123,7 +1264,7 @@ export function Assistante() {
                   parler("(non, il y a une erreur dans ce que vous proposez)", heure);
                 }}
               >
-                Corriger
+                {retouche ? "Autre chose" : "Corriger"}
               </button>
             </div>
           </div>
@@ -1187,7 +1328,9 @@ export function Assistante() {
                 key={a}
                 type="button"
                 onClick={() => {
-                  setTape(a.replace("…", " "));
+                  const debut = `${a.replace("…", "")} `;
+                  amorce.current = debut;
+                  setTape(debut);
                   demarrerMicro();
                 }}
               >
@@ -1214,18 +1357,14 @@ export function Assistante() {
             onChange={(e) => setTape(e.target.value)}
             onKeyDown={(e) => {
               if (e.key !== "Enter" || !tape.trim()) return;
-              parler(tape.trim(), heure);
-              setTape("");
+              envoyerTape();
             }}
           />
           <button
             type="button"
             className="as-env"
             disabled={attend || !tape.trim()}
-            onClick={() => {
-              parler(tape.trim(), heure);
-              setTape("");
-            }}
+            onClick={envoyerTape}
           >
             ↑
           </button>
@@ -1249,6 +1388,10 @@ export function Assistante() {
                 micro.current = null;
                 setEcoute(false);
                 setVivant("");
+                // On coupe le micro en pleine amorce : elle s'en va avec lui,
+                // sinon elle attendrait la phrase suivante pour ressortir.
+                amorce.current = "";
+                setTape("");
               }
             }}
           >

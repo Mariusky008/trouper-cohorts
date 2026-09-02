@@ -55,13 +55,24 @@ const MAX_TOURS = 40;
 const MAX_SIGNES = 1200;
 
 /**
- * SONNET, ET PAS PLUS GROS. C'est une conversation courte sur un téléphone : le
- * commerçant attend, debout, au milieu de son service. La difficulté n'est pas
- * le raisonnement, c'est de démêler « j'ai fait du magret mais y'a la garbure
- * d'hier à écouler et Sophie est pas là donc on ferme à 14 h » — une phrase,
- * trois faits. Sonnet le fait, et il le fait vite.
+ * LE PLUS RAPIDE QUI FASSE LE TRAVAIL — et c'est devenu Haiku.
+ *
+ * « Le rythme est toujours très lent. » On a gagné sur la synthèse (le son part
+ * en flux), sur le silence (900 ms), sur la longueur des réponses (une phrase).
+ * Restait le plus gros morceau : l'appel au modèle lui-même.
+ *
+ * SONNET ÉTAIT LE BON CHOIX QUAND LE PROMPT ÉTAIT VAGUE. Il ne l'est plus : la
+ * première phrase est écrite mot pour mot, l'ordre des questions est donné, la
+ * réponse fait une phrase, et la carte est relue après coup par du code qui ne
+ * dépend pas du modèle. Ce qui reste à faire est de l'extraction, pas du
+ * raisonnement — et Haiku la fait en deux fois moins de temps.
+ *
+ * RÉGLABLE SANS DÉPLOIEMENT. Si la qualité manque sur la phrase à trois faits —
+ * « j'ai fait du magret mais y'a la garbure d'hier et on ferme à 14 h » — il
+ * suffit de remettre `claude-sonnet-5` dans la variable d'environnement pour
+ * comparer, sur le terrain, avec un vrai commerçant en face.
  */
-const MODELE = "claude-sonnet-5";
+const MODELE = s(process.env.DIRECT_ASSISTANTE_MODELE) || "claude-haiku-4-5-20251001";
 
 /** Le plafond horaire par adresse : la route se paie à l'appel. */
 const VU = new Map<string, { n: number; depuis: number }>();
@@ -151,6 +162,7 @@ const SYSTEME = (
   souvenirs: string[],
   chiffres: { vues: number; reservations: number; abonnes: number; quoi: string } | null,
   photoPrise: boolean,
+  souvenirDejaDit: boolean,
 ) => {
   const hh = `${Math.floor(heure)} h ${String(Math.round((heure % 1) * 60)).padStart(2, "0")}`;
   return [
@@ -199,6 +211,15 @@ const SYSTEME = (
     "pour un arrivage ou une pièce, un prix ou un ordre de prix ; pour un créneau",
     "libre ou une fermeture, l'heure suffit et tu peux proposer tout de suite.",
     "UNE RÉPONSE QUI CONTIENT UNE QUESTION NE PORTE JAMAIS DE CARTE.",
+    "",
+    "TU NE VOIS RIEN, ET C'EST IMPORTANT. Aucune image ne t'est transmise :",
+    "quand il prend une photo ou filme, tu ne reçois qu'une information — « une",
+    "photo est attachée ». Tu ne dis donc JAMAIS que tu la vois, qu'elle est",
+    "belle, qu'elle donne faim, ni ce qu'il y a dessus. Défaut relevé à l'écran :",
+    "« je la vois, merci, elle est belle » alors que rien n'avait été envoyé.",
+    "Une assistante qui commente une image qu'elle n'a pas est démasquée en une",
+    "seconde, et tout le reste devient suspect. Tu dis « c'est noté » ou « je la",
+    "mets avec l'annonce », et rien de plus.",
     "",
     "CE QUE TU NE FAIS JAMAIS.",
     "- TU N'INVENTES AUCUN CHIFFRE. Pas un prix, pas une quantité, pas une heure.",
@@ -258,6 +279,15 @@ const SYSTEME = (
     photoPrise
       ? "UNE PHOTO EST DÉJÀ ATTACHÉE à la carte en cours."
       : "AUCUNE PHOTO N'EST ATTACHÉE pour le moment.",
+    souvenirDejaDit
+      ? "TU AS DÉJÀ SERVI TA MÉMOIRE DANS CETTE CONVERSATION. Ne la ressors pas : " +
+        "répéter mot pour mot ce qu'on vient de dire est ce qui fait le plus " +
+        "vite passer une assistante pour une machine."
+      : "",
+    "",
+    "ET TU NE REDIS JAMAIS UNE PHRASE QUE TU AS DÉJÀ DITE. Relis tes réponses",
+    "précédentes avant de répondre : si ce que tu allais dire y figure déjà, dis",
+    "autre chose ou dis moins.",
     "",
     "QUAND IL VIENT DE VALIDER UNE PUBLICATION, l'écran le lui a déjà confirmé —",
     "tu ne redis donc pas « c'est en ligne ». Tu enchaînes : ce que tu as",
@@ -274,7 +304,7 @@ const SYSTEME = (
     "Ce n'est pas un questionnaire à dérouler : c'est ce qui existe chez lui.",
     "Pose la question qui manque, pas la suivante d'une liste.",
     "",
-    souvenirs.length
+    souvenirs.length && !souvenirDejaDit
       ? [
           "CE QUE TU TE RAPPELLES DE SES JOURNÉES PASSÉES :",
           ...souvenirs.map((x) => `- ${x}`),
@@ -421,6 +451,11 @@ export async function POST(request: Request) {
   // L'ÉCRAN SAIT S'IL Y A UNE PHOTO ; le modèle ne peut que le supposer, et il
   // le supposait mal — il proposait la fiche Google pour une photo jamais prise.
   const photoPrise = p?.photoPrise === true;
+  // LA MÉMOIRE NE SE SERT QU'UNE FOIS, ET C'EST L'ÉCRAN QUI LE SAIT. Le modèle
+  // avait deux consignes qui se contredisaient — « obligatoire sur la première
+  // carte » et « jamais deux fois » — et il tranchait mal : à l'écran, le
+  // rappel de mardi dernier apparaissait deux fois de suite, mot pour mot.
+  const souvenirDejaDit = p?.souvenirDejaDit === true;
   const tours = Array.isArray(p?.messages) ? (p.messages as unknown[]) : [];
   const messages = tours
     .slice(-MAX_TOURS)
@@ -450,7 +485,15 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model: MODELE,
         max_tokens: 1500,
-        system: SYSTEME(commerce, heure, dejaPublie, souvenirs, chiffres, photoPrise),
+        system: SYSTEME(
+          commerce,
+          heure,
+          dejaPublie,
+          souvenirs,
+          chiffres,
+          photoPrise,
+          souvenirDejaDit,
+        ),
         messages: conversation,
         output_config: {
           // IL ATTEND DEBOUT. Démêler trois faits d'une phrase ne demande pas de
