@@ -133,6 +133,18 @@ export function ouvrirEcoute(
   let ctxSon: any = null;
   /** Vrai dès qu'on a entendu quelque chose — voir `SEUIL`. */
   let aParle = false;
+  /**
+   * LE NIVEAU LE PLUS FORT QU'ON AIT VU, et il vaut un diagnostic entier.
+   *
+   * « Je l'entends bien mais elle ne m'entend pas. » Un micro qui rend un
+   * niveau strictement nul pendant huit secondes n'est pas un micro dans lequel
+   * on a parlé trop bas : c'est un micro qui ne capte RIEN — autorisation
+   * refusée, entrée prise par autre chose, ou session audio restée en lecture
+   * après que Léa a parlé. Envoyer ce silence au serveur ne peut rien donner de
+   * bon, et c'est ce qui faisait revenir le texte du contexte à la place de sa
+   * phrase.
+   */
+  let niveauMax = 0;
 
   const Moteur = moteur();
   if (Moteur) {
@@ -192,6 +204,10 @@ export function ouvrirEcoute(
         const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
         if (AC) {
           ctxSon = new AC();
+          // IOS OUVRE LE CONTEXTE EN SOMMEIL quand un son vient d'être joué —
+          // et Léa vient justement de parler. Sans ce réveil, l'analyseur rend
+          // des zéros et on croit que personne ne parle.
+          if (ctxSon.state === "suspended") void ctxSon.resume();
           const an = ctxSon.createAnalyser();
           an.fftSize = 1024;
           ctxSon.createMediaStreamSource(f).connect(an);
@@ -203,6 +219,7 @@ export function ouvrirEcoute(
             let somme = 0;
             for (let i = 0; i < tampon.length; i++) somme += tampon[i] * tampon[i];
             const niveau = Math.sqrt(somme / tampon.length);
+            if (niveau > niveauMax) niveauMax = niveau;
             const t = Date.now();
             if (niveau > SEUIL) {
               aParle = true;
@@ -286,6 +303,7 @@ export function ouvrirEcoute(
       enr = null;
       await new Promise((r) => setTimeout(r, 300));
       const duTelephone = (fini || vivant).trim();
+      const sourd = !!reglages.surSilence && niveauMax < 0.002;
       fermer();
 
       // ── CE QUE LE TÉLÉPHONE A DONNÉ SUFFIT-IL ? ──
@@ -295,6 +313,22 @@ export function ouvrirEcoute(
       // entière.
       if (duTelephone.split(/\s+/).filter(Boolean).length >= 2) {
         return { texte: duTelephone, par: "telephone" };
+      }
+
+      // ─── ON N'ENVOIE PAS DU SILENCE AU SERVEUR ───
+      // C'est la racine du défaut le plus visible de la démonstration : sur un
+      // enregistrement muet, le service de transcription rend le texte de
+      // contexte qu'on lui a soufflé, et cet écho partait dans la conversation
+      // comme si le commerçant l'avait dit. La route le filtre aussi, mais le
+      // vrai correctif est ici : ne rien envoyer quand il n'y a rien.
+      if (sourd) {
+        return {
+          texte: duTelephone,
+          par: duTelephone ? "telephone" : "rien",
+          erreur: duTelephone
+            ? undefined
+            : "Le micro n’a capté aucun son. Vérifiez qu’il est autorisé pour ce site.",
+        };
       }
 
       if (!audio) {

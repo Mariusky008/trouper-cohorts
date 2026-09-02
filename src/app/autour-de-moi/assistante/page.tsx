@@ -112,8 +112,14 @@ body{background:#05090C}
   .as-halo span{animation:none}
 }
 
+/* L'EN-TETE PASSE SOUS L'HORLOGE DE L'IPHONE, ET CA SE VOIT SUR LA CAPTURE :
+   « 14:16 » et la barre 5G ecrasaient « Bonjour Margot ». Une fois posee sur
+   l'ecran d'accueil, l'application occupe tout l'ecran, encoche comprise —
+   c'est le reglage viewportFit qui le veut, et c'est bien ce qu'on veut. Il faut
+   alors rendre a la barre d'etat la place qu'elle prend. */
 .as-h{flex:none;display:flex;align-items:center;justify-content:space-between;
-  padding:14px clamp(14px,4vw,26px);border-bottom:1px solid var(--trait)}
+  padding:calc(14px + env(safe-area-inset-top)) clamp(14px,4vw,26px) 14px;
+  border-bottom:1px solid var(--trait)}
 .as-h b{font-size:15px;font-weight:850;letter-spacing:-.02em;color:var(--menthe)}
 .as-h a{text-decoration:none;font-size:13px;font-weight:750;color:var(--craie3)}
 

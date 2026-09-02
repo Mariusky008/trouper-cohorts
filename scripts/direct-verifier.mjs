@@ -760,6 +760,39 @@ console.log("\n══ l'écran d'accueil du téléphone ══");
   }
 }
 
+// ═══ 12 · L'ÉCHO DU CONTEXTE NE REPART PAS COMME SA PHRASE ═══
+//
+// Vu sur la capture d'une démonstration : la bulle verte du commerçant — celle
+// qui porte SA phrase — contenait le texte de contexte qu'on envoie au service
+// de transcription, recopié à l'identique. Sur un enregistrement muet, ces
+// modèles rendent ce qu'on leur a soufflé. Léa y a répondu poliment, deux fois.
+//
+// LE RISQUE SYMÉTRIQUE SERAIT PIRE : rejeter une vraie phrase parce qu'elle
+// parle de portions et de prix, ce qui est exactement le métier. Les deux
+// moitiés se vérifient donc ensemble.
+console.log("\n══ l'écho du contexte ══");
+{
+  const { estUnEcho } = await import("../src/lib/direct/echo-transcription.ts");
+  const CTX =
+    "Commerce de proximité à Dax. Le commerçant décrit sa journée : plat du jour, " +
+    "arrivage, créneaux libres, prix en euros, nombre de portions ou de pièces.";
+  dire(estUnEcho(CTX, CTX), "le contexte entier est reconnu");
+  dire(estUnEcho("créneaux libres, prix en euros, nombre de portions ou de pièces", CTX),
+    "ses échos partiels aussi");
+  dire(estUnEcho("", CTX), "et un texte vide compte comme rien de dit");
+  const vraies = [
+    "magret de canard avec des frites maison, quatorze euros, j'en ai fait trente",
+    "il me reste six portions",
+    "on a un arrivage de robes en lin ce matin",
+    "le plat du jour c'est la garbure, douze euros",
+    "j'ai des créneaux libres cet après-midi à quinze heures",
+    "vingt-cinq portions à quatorze euros",
+  ];
+  const rejetees = vraies.filter((v) => estUnEcho(v, CTX));
+  dire(rejetees.length === 0,
+    `et aucune vraie phrase de commerçant n'est rejetée${rejetees.length ? " : " + rejetees[0] : ""}`);
+}
+
 dire(erreurs.length === 0, `aucune erreur${erreurs.length ? " : " + erreurs[0] : ""}`);
 await nav.close();
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT PASSE");

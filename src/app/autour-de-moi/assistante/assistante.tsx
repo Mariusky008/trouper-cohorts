@@ -615,6 +615,20 @@ export function Assistante() {
 
   const demarrerMicro = useCallback(() => {
     if (micro.current) return;
+    // ─── ON REND LA MAIN AU MICRO AVANT DE L'OUVRIR ───
+    //
+    // « Je l'entends bien mais elle ne m'entend pas. » Sur iPhone, la session
+    // audio est soit en LECTURE, soit en CAPTURE. Léa vient de parler ; tant que
+    // l'élément audio tient la sortie, l'entrée peut rendre du silence — sans
+    // erreur, sans permission refusée, sans rien. On le met donc en pause et on
+    // le vide avant d'ouvrir le micro. Il reste béni pour la suite : c'est la
+    // source qu'on relâche, pas l'autorisation.
+    try {
+      son.current?.pause();
+      if (son.current) son.current.currentTime = 0;
+    } catch {
+      /* Rien à relâcher : tant mieux. */
+    }
     // Deuxième occasion de bénir le haut-parleur, pour qui arrive par le micro
     // sans être passé par le choix du métier (une journée déjà ouverte).
     if (!son.current) son.current = debloquerSon();

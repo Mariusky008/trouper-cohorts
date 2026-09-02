@@ -34,6 +34,7 @@
 // vocal : on montre trois chiffres, il valide d'un doigt, et une erreur coûte
 // un doigt au lieu d'une journée.
 import { NextResponse } from "next/server";
+import { estUnEcho } from "@/lib/direct/echo-transcription";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +67,12 @@ const CONTEXTE =
   "Commerce de proximité à Dax. Le commerçant décrit sa journée : plat du jour, " +
   "arrivage, créneaux libres, prix en euros, nombre de portions ou de pièces.";
 
+/**
+ * LE MODÈLE RECRACHE LE CONTEXTE QUAND IL N'ENTEND RIEN — et il le fait mot
+ * pour mot. Le raisonnement complet et le seuil sont dans
+ * `echo-transcription.ts`, à part, parce qu'ils se vérifient : un garde-fou
+ * qu'on ne peut pas éprouver n'en est pas un.
+ */
 /**
  * UN GARDE-FOU DE DÉPENSE, ET RIEN DE PLUS. Cette route coûte à l'appel. Elle
  * n'a pas de compte à protéger — il n'y en a pas encore — mais elle ne doit pas
@@ -192,8 +199,14 @@ export async function POST(request: Request) {
         { status: 502 },
       );
     }
+    // RIEN PLUTÔT QUE L'ÉCHO. Une transcription vide fait dire « je n'ai rien
+    // entendu » ; l'écho, lui, part comme si le commerçant l'avait prononcé.
+    const texte = estUnEcho(r.texte, CONTEXTE) ? "" : r.texte;
+    if (!texte && r.texte) {
+      console.warn(`[transcrire] écho du contexte ignoré : ${r.texte.slice(0, 80)}`);
+    }
     return NextResponse.json({
-      texte: r.texte,
+      texte,
       modele,
       ms: Date.now() - debut,
       octets: a.octets.length,
