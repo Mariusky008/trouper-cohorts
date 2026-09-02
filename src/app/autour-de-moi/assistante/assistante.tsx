@@ -228,22 +228,89 @@ async function reduire(fichier: File): Promise<string> {
  * passer. Le même élément sert donc à toutes les phrases de Léa — en créer un
  * nouveau à chaque fois annulerait la permission.
  */
+/**
+ * UN VRAI SILENCE, DÉCODABLE — et c'est là qu'était le défaut.
+ *
+ * La première version envoyait un WAV de ZÉRO échantillon. Safari le refuse à
+ * la lecture, donc `play()` était rejeté, donc l'élément n'était jamais béni,
+ * donc Léa se taisait ensuite : « la plupart du temps non, lecture refusée par
+ * le navigateur (NotAllowedError) ». Le déblocage échouait en silence, ce qui
+ * est exactement la panne la plus difficile à voir.
+ *
+ * Celui-ci porte de vrais échantillons à zéro : il se décode, il se joue, et il
+ * ne s'entend pas.
+ */
 const MUET =
-  "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
-let hautParleur: HTMLAudioElement | null = null;
+  "data:audio/wav;base64," +
+  "UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICA" +
+  "gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA" +
+  "gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA" +
+  "gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA" +
+  "gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA" +
+  "gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA" +
+  "gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA" +
+  "gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA" +
+  "gICAgICAgICAgICA";
 
+let hautParleur: HTMLAudioElement | null = null;
+let beni = false;
+
+/**
+ * DÉBLOQUER LE SON — et il faut le faire DANS le geste, pas après.
+ *
+ * Safari n'autorise la lecture d'un son que si elle part d'un geste. Léa, elle,
+ * parle APRÈS un aller-retour réseau : quand le son arrive, la permission
+ * accordée par l'appui a expiré, et la lecture est refusée en silence.
+ *
+ * ON BÉNIT DONC L'ÉLÉMENT AU MOMENT EXACT DE L'APPUI, avec un son vide, ce qui
+ * l'autorise pour le reste de la session. Ensuite on ne fait plus que changer sa
+ * source. Le même élément sert à toutes les phrases de Léa — en créer un nouveau
+ * annulerait la permission.
+ *
+ * ET ON RÉESSAIE À CHAQUE APPUI TANT QUE ÇA N'A PAS PRIS. Le premier geste peut
+ * échouer pour dix raisons — page pas encore prête, appareil en mode silencieux,
+ * navigateur particulier. Une seule tentative, et Léa reste muette toute la
+ * démonstration. Toutes les tentatives sont gratuites tant qu'elle ne parle pas.
+ */
 function debloquerSon(): HTMLAudioElement {
   if (!hautParleur) hautParleur = new Audio();
   const a = hautParleur;
+  if (beni) return a;
   try {
     a.src = MUET;
-    // On ne se soucie pas du résultat : si c'est refusé, on n'aura pas de voix,
-    // et l'écran le dira. Ce qui compte est que la tentative parte du geste.
-    void a.play().then(() => a.pause()).catch(() => {});
+    a.load();
+    void a
+      .play()
+      .then(() => {
+        beni = true;
+        a.pause();
+        a.currentTime = 0;
+      })
+      .catch(() => {
+        /* Pas encore : on retentera au prochain appui. */
+      });
   } catch {
     /* Un navigateur sans audio : la conversation continue à l'écrit. */
   }
   return a;
+}
+
+/**
+ * LE TEMPS DE LIRE, QUAND ELLE NE PARLE PAS.
+ *
+ * « De manière générale tout au long du parcours ça manque vraiment de
+ * fluidité. » Une partie vient d'ici, et c'est invisible tant qu'on n'y pense
+ * pas : quand la voix échoue, on rouvrait le micro À L'INSTANT où sa réponse
+ * s'affichait. Le commerçant voit une question apparaître, et au même moment le
+ * bouton devient rouge et se met à l'écouter — avant même qu'il ait fini de
+ * lire. Il se tait, le silence se déclenche, et le tour part à vide.
+ *
+ * Quand elle parle, c'est sa voix qui donne le rythme. Quand elle se tait, il
+ * faut le fabriquer : le temps de lecture de la phrase, borné pour ne jamais
+ * faire attendre plus de trois secondes.
+ */
+function tempsDeLire(texte: string): number {
+  return Math.min(3000, Math.max(900, texte.length * 42));
 }
 
 const hhmm = (h: number) =>
@@ -300,11 +367,16 @@ export function Assistante() {
    */
   const dire = useCallback(
     async (texte: string, puisEcouter: boolean) => {
-      const suite = () => {
+      // `lu` : vrai quand sa voix a porté la phrase jusqu'au bout. Faux quand
+      // elle s'est tue — et alors on laisse le temps de LIRE avant de rouvrir
+      // le micro, sinon on écoute quelqu'un qui est encore en train de lire.
+      const suite = (lu: boolean) => {
         setParle(false);
-        if (puisEcouter && libres) demarrerMicroRef.current?.();
+        if (!puisEcouter || !libres) return;
+        if (lu) return demarrerMicroRef.current?.();
+        setTimeout(() => demarrerMicroRef.current?.(), tempsDeLire(texte));
       };
-      if (!texte.trim()) return suite();
+      if (!texte.trim()) return suite(true);
       setParle(true);
       try {
         const rep = await fetch("/api/direct/parler", {
@@ -325,7 +397,7 @@ export function Assistante() {
             /* réponse illisible : le code HTTP suffit */
           }
           setVoixKo(quoi);
-          return suite();
+          return suite(false);
         }
         const b = await rep.blob();
         const url = URL.createObjectURL(b);
@@ -338,22 +410,22 @@ export function Assistante() {
         // de fin de tour, et un `finally` la révoquerait avant la lecture.
         a.onended = () => {
           URL.revokeObjectURL(url);
-          suite();
+          suite(true);
         };
         a.onerror = () => {
           URL.revokeObjectURL(url);
           setVoixKo("le téléphone a refusé de lire le son");
-          suite();
+          suite(false);
         };
         // iOS EXIGE UN GESTE POUR LE PREMIER SON. Le choix du métier et l'appui
         // sur le micro en sont : à partir de là, la lecture passe. Si elle est
         // quand même refusée, on enchaîne au lieu de rester muet et bloqué.
         await a.play().catch((e) => {
           setVoixKo(`lecture refusée par le navigateur (${(e as Error)?.name || "refus"})`);
-          suite();
+          suite(false);
         });
       } catch {
-        suite();
+        suite(false);
       }
     },
     [libres],
@@ -501,6 +573,20 @@ export function Assistante() {
   useEffect(() => () => micro.current?.annuler(), []);
 
   /**
+   * CHAQUE APPUI EST UNE CHANCE DE PLUS. Le premier geste peut échouer — page
+   * pas encore prête, appareil particulier — et une seule tentative laisserait
+   * Léa muette pour toute la démonstration. On réessaie sur n'importe quel
+   * appui de l'écran, tant que ça n'a pas pris, et jamais après.
+   */
+  useEffect(() => {
+    const f = () => {
+      if (!beni) son.current = debloquerSon();
+    };
+    document.addEventListener("pointerdown", f, { passive: true });
+    return () => document.removeEventListener("pointerdown", f);
+  }, []);
+
+  /**
    * IL A VALIDÉ — et c'est ici, et nulle part ailleurs, que quelque chose part
    * en ligne. L'assistante n'a jamais publié : elle a proposé.
    */
@@ -537,11 +623,27 @@ export function Assistante() {
     // LA CONFIRMATION EST ÉCRITE PAR L'ÉCRAN, PAS PAR LE MODÈLE. C'est un fait —
     // « c'est en ligne » — et un fait ne se fait pas rédiger : si le modèle
     // l'annonçait, il pourrait l'annoncer sans que ce soit vrai.
+    // ─── LA CONVERSATION NE S'ARRÊTE PAS SUR NOTRE PHRASE ───
+    //
+    // LE DÉFAUT MESURÉ : « ça se termine sur "c'est en ligne, vos voisins le
+    // voient maintenant" au lieu de me dire, après que j'ai dit 25 portions :
+    // parfait, je m'occupe du reste, par contre mardi dernier... ».
+    //
+    // C'était structurel. On écrivait la confirmation nous-mêmes — parce que
+    // c'est un FAIT, et qu'un fait ne se fait pas rédiger par un modèle qui
+    // pourrait l'annoncer sans qu'il soit vrai — puis on rendait la main. Léa
+    // n'avait donc jamais son tour APRÈS la publication, c'est-à-dire au moment
+    // exact où elle a quelque chose à dire : ce qu'elle a remarqué, ce qu'elle
+    // propose pour la suite.
+    //
+    // Les deux tiennent ensemble : le fait reste écrit par l'écran, et Léa
+    // reprend la parole juste après. C'est elle qui a le dernier mot, comme
+    // dans une vraie conversation.
     const mot = `C’est en ligne. ${carte.titre} — vos voisins le voient maintenant.`;
     setTours((t) => [...t, { role: "assistant", content: mot }]);
     setPhoto("");
-    dire(mot, true);
-  }, [carte, dire, heure, journee, photo]);
+    parler(`(je viens de valider « ${carte.titre} », c’est publié)`, heure);
+  }, [carte, heure, journee, parler, photo]);
 
   if (!journee) {
     return (

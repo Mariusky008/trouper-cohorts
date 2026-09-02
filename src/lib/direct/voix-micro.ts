@@ -71,6 +71,40 @@ export function dicteeDisponible(): boolean {
 }
 
 /**
+ * LE SILENCE QUI DIT « J'AI FINI ».
+ *
+ * LE DÉFAUT MESURÉ : « je dois appuyer sur le bouton à chaque fois pour parler
+ * et envoyer mon message ». Deux appuis par phrase, c'est-à-dire exactement le
+ * geste qu'on prétendait lui épargner — et impossible avec les mains dans la
+ * farine, ce qui est le seul moment où il aurait le temps de parler.
+ *
+ * LE SEUIL EST BAS ET L'ATTENTE EST GÉNÉREUSE, et les deux vont ensemble. Un
+ * commerçant s'interrompt : il compte ses portions, il sert quelqu'un, il
+ * cherche un mot. Couper au bout de six cents millisecondes lui vole la moitié
+ * de sa phrase, et une assistante qui coupe la parole ne se fait pas pardonner.
+ *
+ * ET ON NE COUPE QU'APRÈS AVOIR ENTENDU QUELQUE CHOSE. Sans ça, un micro ouvert
+ * dans une pièce calme se fermerait aussitôt, et on aurait l'air de ne pas
+ * écouter. S'il ne dit rien du tout, on rend la main après huit secondes plutôt
+ * que de laisser une lampe rouge allumée.
+ */
+const SEUIL = 0.012;
+/**
+ * MILLE DEUX CENTS PLUTÔT QUE MILLE CINQ CENTS. « Ça manque vraiment de
+ * fluidité » : trois dixièmes de seconde à chaque tour, sur six tours, font
+ * deux secondes d'attente pure sur une conversation qui en dure trente. C'est
+ * assez pour laisser passer une hésitation, et assez court pour que l'envoi
+ * suive la fin de la phrase au lieu de la faire attendre.
+ */
+const SILENCE_MS = 1200;
+const RIEN_MS = 8000;
+
+export type Reglages = {
+  /** Appelé quand il s'est tu — c'est ce qui remplace le deuxième appui. */
+  surSilence?: () => void;
+};
+
+/**
  * UNE ÉCOUTE. On l'ouvre, elle écrit en direct, on l'arrête, elle rend le texte.
  *
  * `enDirect` reçoit les mots au fur et à mesure — c'est ce qui va à l'écran
@@ -79,34 +113,6 @@ export function dicteeDisponible(): boolean {
  * et une raison, jamais une exception. Un micro qui lève une erreur au milieu
  * d'une démonstration ferme l'écran.
  */
-/**
- * LE SILENCE QUI DIT « J'AI FINI ».
- *
- * LE DÉFAUT MESURÉ : « je dois appuyer sur le bouton à chaque fois pour parler
- * et envoyer mon message ». Deux appuis par phrase, c'est-à-dire exactement le
- * geste qu'on prétendait lui épargner — et impossible avec les mains dans la
- * farine, ce qui est le seul moment où il aurait le temps de parler.
- *
- * LE SEUIL EST BAS ET L'ATTENTE EST LONGUE, et les deux vont ensemble. Un
- * commerçant s'interrompt : il compte ses portions, il sert quelqu'un, il
- * cherche un mot. Couper au bout de six cents millisecondes lui vole la moitié
- * de sa phrase, et une assistante qui coupe la parole ne se fait pas pardonner.
- * Une seconde et demie laisse passer une hésitation sans faire attendre.
- *
- * ET ON NE COUPE QU'APRÈS AVOIR ENTENDU QUELQUE CHOSE. Sans ça, un micro ouvert
- * dans une pièce calme se fermerait aussitôt, et on aurait l'air de ne pas
- * écouter. S'il ne dit rien du tout, on rend la main après huit secondes plutôt
- * que de laisser une lampe rouge allumée.
- */
-const SEUIL = 0.012;
-const SILENCE_MS = 1500;
-const RIEN_MS = 8000;
-
-export type Reglages = {
-  /** Appelé quand il s'est tu — c'est ce qui remplace le deuxième appui. */
-  surSilence?: () => void;
-};
-
 export function ouvrirEcoute(
   enDirect: (t: string) => void,
   reglages: Reglages = {},
