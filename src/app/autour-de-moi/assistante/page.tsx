@@ -357,6 +357,17 @@ body{background:#05090C}
   border-color:rgba(240,180,41,.55);background:rgba(240,180,41,.09)}
 .as-vue{display:block;width:100%;margin-top:12px;border-radius:13px;
   aspect-ratio:16/10;object-fit:cover;cursor:pointer}
+/* LA FICHE GOOGLE, ET ON NE FAIT PAS SEMBLANT. Publier tout seul dessus demande
+   que le commercant relie son compte — ca n'existe pas encore. Le bouton
+   enregistre la photo et ouvre sa fiche : deux gestes au lieu de cinq, et
+   aucune promesse tenue a moitie. Discret, parce que c'est un service en plus
+   et non l'action principale. */
+.as-google{display:block;margin-top:9px;padding:11px 13px;border-radius:13px;
+  text-decoration:none;background:rgba(5,9,12,.5);
+  border:1px solid var(--trait)}
+.as-google b{display:block;font-size:13.5px;font-weight:750;color:var(--craie2)}
+.as-google em{display:block;margin-top:2px;font-style:normal;font-size:11.5px;
+  color:var(--craie3)}
 
 /* MAINS LIBRES. Petit, parce qu'on n'y touche presque jamais ; visible, parce
    que le jour ou il faut le couper il faut le trouver tout de suite. */

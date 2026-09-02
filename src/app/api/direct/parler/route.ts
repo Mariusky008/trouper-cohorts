@@ -65,7 +65,36 @@ const nettoyer = (t: string) =>
     .trim()
     .slice(0, MAX_SIGNES);
 
+/**
+ * LE NAVIGATEUR LIT DIRECTEMENT CETTE ADRESSE — et c'est le gros du gain.
+ *
+ * Avant, le client faisait un POST, attendait le fichier complet, en faisait un
+ * objet local, puis le donnait au lecteur qui recommençait à zéro. Trois temps
+ * pour une phrase. Ici l'élément audio pointe sur l'adresse et joue EN
+ * TÉLÉCHARGEANT : il démarre après quelques dizaines de kilo-octets au lieu du
+ * fichier entier.
+ *
+ * IL FAUT UN GET POUR ÇA : un élément audio ne sait pas envoyer un POST. Le
+ * texte passe donc dans l'adresse, et il est déjà plafonné à quatre cents
+ * signes — la règle des deux phrases de Léa s'en charge.
+ */
+export async function GET(request: Request) {
+  const t = new URL(request.url).searchParams.get("t") ?? "";
+  return repondre(t, request);
+}
+
+/** Le POST reste, pour qui préfère ne pas mettre le texte dans une adresse. */
 export async function POST(request: Request) {
+  let p: Record<string, unknown> | null = null;
+  try {
+    p = await request.json();
+  } catch {
+    p = null;
+  }
+  return repondre(s(p?.texte), request);
+}
+
+async function repondre(brut: string, request: Request) {
   const elevenKey = s(process.env.ELEVENLABS_API_KEY);
   const openaiKey = s(process.env.OPENAI_TTS_API_KEY) || s(process.env.OPENAI_API_KEY);
   if (!elevenKey && !openaiKey) {
@@ -75,18 +104,20 @@ export async function POST(request: Request) {
   if (tropSouvent(qui)) {
     return NextResponse.json({ erreur: "Trop de synthèses sur cette heure." }, { status: 429 });
   }
-
-  let p: Record<string, unknown> | null = null;
-  try {
-    p = await request.json();
-  } catch {
-    p = null;
-  }
-  const texte = nettoyer(s(p?.texte));
+  const texte = nettoyer(brut);
   if (!texte) return NextResponse.json({ erreur: "Rien à dire." }, { status: 400 });
 
-  const son = (buf: ArrayBuffer) =>
-    new NextResponse(buf, {
+  // ON LAISSE PASSER LE FLUX AU LIEU DE L'ATTENDRE.
+  //
+  // « C'est un peu lent, ça manque de rythme, c'est moins naturel que lorsque je
+  // parle avec ChatGPT. » Une partie de l'écart est ici : on téléchargeait le
+  // fichier ENTIER avant de le rendre, puis le navigateur le retéléchargeait.
+  // Léa attendait donc deux fois la même chose. En rendant le corps de la
+  // réponse tel quel, le son commence à jouer dès les premiers octets — c'est
+  // une à deux secondes de gagnées à chaque phrase, celles qui font toute la
+  // différence entre une conversation et un échange de messages.
+  const son = (corps: ReadableStream<Uint8Array> | null) =>
+    new NextResponse(corps, {
       status: 200,
       headers: { "Content-Type": "audio/mpeg", "Cache-Control": "no-store" },
     });
@@ -114,7 +145,7 @@ export async function POST(request: Request) {
         console.error(`[parler] ElevenLabs a refusé : HTTP ${r.status}`);
         return NextResponse.json({ erreur: "Voix indisponible." }, { status: 502 });
       }
-      return son(await r.arrayBuffer());
+      return son(r.body);
     }
 
     const voix = s(process.env.OPENAI_TTS_VOICE) || "nova";
@@ -143,7 +174,7 @@ export async function POST(request: Request) {
       console.error(`[parler] OpenAI a refusé : HTTP ${r.status}`);
       return NextResponse.json({ erreur: "Voix indisponible." }, { status: 502 });
     }
-    return son(await r.arrayBuffer());
+    return son(r.body);
   } catch (e) {
     console.error(`[parler] impossible : ${(e as Error)?.message || "réseau"}`);
     return NextResponse.json({ erreur: "Voix indisponible." }, { status: 502 });

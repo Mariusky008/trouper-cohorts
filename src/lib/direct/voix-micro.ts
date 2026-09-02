@@ -97,7 +97,15 @@ export function dicteeDisponible(): boolean {
  * la main après huit secondes plutôt que de laisser une lampe rouge allumée.
  */
 const SEUIL = 0.012;
-const SILENCE_MS = 1200;
+/**
+ * NEUF CENTS. « Ça manque de rythme et de naturel, c'est moins naturel que
+ * lorsque je parle avec ChatGPT. » Une part de l'écart tient à ce seul nombre :
+ * c'est le blanc entre la fin de sa phrase et le départ de la réponse, et on
+ * l'entend à chaque tour. Mille cinq cents était prudent, mille deux cents
+ * encore perceptible. Neuf cents laisse passer une hésitation courte sans faire
+ * attendre — en dessous, on lui coupe la parole, et ça ne se pardonne pas.
+ */
+const SILENCE_MS = 900;
 const RIEN_MS = 8000;
 
 /** En dessous, ce n'est pas quelqu'un qui parle bas : c'est un micro sourd. */

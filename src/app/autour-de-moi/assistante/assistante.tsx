@@ -462,58 +462,28 @@ export function Assistante() {
       if (!texte.trim()) return suite(true);
       setParle(true);
       try {
-        const rep = await fetch("/api/direct/parler", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ texte }),
-        });
-        if (!rep.ok) {
-          // ON DIT POURQUOI ELLE SE TAIT. Un échec silencieux se diagnostique
-          // mal : « aucune voix » peut vouloir dire une clé absente, un refus
-          // du navigateur ou une panne, et sans le message il n'y a aucun moyen
-          // de savoir lequel. Une fois suffit, et discrètement.
-          let quoi = `voix indisponible (HTTP ${rep.status})`;
-          try {
-            const d = await rep.json();
-            if (d?.erreur) quoi = String(d.erreur);
-          } catch {
-            /* réponse illisible : le code HTTP suffit */
-          }
-          setVoixKo(quoi);
-          return suite(false);
-        }
-        // ON NE TOUCHE PAS À L'ÉLÉMENT TANT QUE LE DÉBLOCAGE N'A PAS ABOUTI.
+        // ON NE TÉLÉCHARGE PLUS, ON LIT EN TÉLÉCHARGEANT.
+        //
+        // « C'est un peu lent, ça manque de rythme. » On faisait un POST, on
+        // attendait le fichier ENTIER, on en faisait un objet local, puis on le
+        // donnait au lecteur qui recommençait. Trois temps pour une phrase. Ici
+        // l'élément audio pointe sur l'adresse : il démarre après quelques
+        // dizaines de kilo-octets. C'est une à deux secondes gagnées à chaque
+        // réplique — celles qui séparent une conversation d'un échange de
+        // messages.
         await attendreLeSon();
-        const b = await rep.blob();
-        const url = URL.createObjectURL(b);
-        // LE MÊME ÉLÉMENT QUE CELUI QU'ON A BÉNI AU PREMIER APPUI — voir
-        // `debloquerSon`. En créer un nouveau perdrait la permission d'iOS.
         const a = son.current ?? hautParleur ?? new Audio();
         son.current = a;
-        a.src = url;
-        // ON N'ATTEND PAS LA FIN POUR LIBÉRER L'ADRESSE : `onended` sert aussi
-        // de fin de tour, et un `finally` la révoquerait avant la lecture.
-        a.onended = () => {
-          URL.revokeObjectURL(url);
-          suite(true);
+        a.onended = () => suite(true);
+        a.onerror = () => {
+          setVoixKo("le téléphone a refusé de lire le son");
+          suite(false);
         };
-        // ELLE A PARLÉ : le message d'échec n'a plus lieu d'être. Il restait
-        // affiché même quand la voix revenait — « même quand elle parle le
-        // message reste » — ce qui faisait douter d'une panne alors qu'on
-        // l'entendait.
-        // C'EST ICI QUE LA BULLE APPARAÎT : au premier son, pas à la réception.
         a.onplaying = () => {
           setVoixKo("");
           fin();
         };
-        a.onerror = () => {
-          URL.revokeObjectURL(url);
-          setVoixKo("le téléphone a refusé de lire le son");
-          suite(false);
-        };
-        // iOS EXIGE UN GESTE POUR LE PREMIER SON. Le choix du métier et l'appui
-        // sur le micro en sont : à partir de là, la lecture passe. Si elle est
-        // quand même refusée, on enchaîne au lieu de rester muet et bloqué.
+        a.src = `/api/direct/parler?t=${encodeURIComponent(texte)}`;
         await a.play().catch((e) => {
           setVoixKo(`lecture refusée par le navigateur (${(e as Error)?.name || "refus"})`);
           suite(false);
@@ -563,6 +533,12 @@ export function Assistante() {
             // dans le vrai produit ; seule la source des souvenirs change.
             souvenirs:
               COMMERCES.find((x) => x.id === journee.commerce.id)?.souvenirs ?? [],
+            // CE QUE SES ANNONCES ONT FAIT AUJOURD'HUI. « À la fin je lui demande
+            // combien on a fait de nouveaux abonnés et de réservations, ce qui
+            // m'évite de cliquer sur le bouton. » Exactement : on parle à
+            // quelqu'un, on ne cherche pas un bouton. Les chiffres viennent
+            // d'ici — ce sont des faits, et un fait ne se fait pas rédiger.
+            chiffres: BILAN,
             messages: suite,
           }),
         });
@@ -584,6 +560,8 @@ export function Assistante() {
           setTours([...suite, { role: "assistant", content: dit }]);
           setCarte(k);
           if (d.retour) setRetour(d.retour);
+          // C'EST ELLE QUI OUVRE LE RÉCAPITULATIF quand il le lui demande.
+          if (d.bilan) setBilan(true);
           setAttend(false);
         });
         // ELLE NE REPART PAS EN ÉCOUTE QUAND ELLE ATTEND UN APPUI : une carte à
@@ -937,8 +915,40 @@ export function Assistante() {
                 coup serait une deuxième démarche, donc une démarche qu'on ne
                 fait pas. Et elle reste facultative — il publie sans, s'il veut. */}
             {photo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="as-vue" src={photo} alt="" onClick={() => setPhoto("")} />
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="as-vue" src={photo} alt="" onClick={() => setPhoto("")} />
+                {/* ─── ET AUSSI SUR SA FICHE GOOGLE ───
+                    « J'aimerais que Léa me demande si elle en profite pour
+                    mettre la photo sur ma fiche Google, si c'est possible
+                    qu'elle puisse le faire bien sûr. »
+
+                    LA RÉSERVE ÉTAIT JUSTIFIÉE, ET VOICI CE QU'ON PEUT TENIR
+                    AUJOURD'HUI. Publier tout seul sur une fiche Google demande
+                    que le commerçant relie son compte Google au produit — donc
+                    une autorisation, un jeton gardé, et l'accès à l'interface
+                    professionnelle de Google, qui se demande et s'obtient. Rien
+                    de tout ça n'existe encore.
+
+                    ON NE FAIT DONC PAS SEMBLANT. Le bouton enregistre la photo
+                    dans son téléphone et ouvre sa fiche : deux gestes au lieu
+                    de cinq, et zéro promesse tenue à moitié. Le jour où le
+                    compte sera relié, ce même bouton le fera tout seul et rien
+                    ne changera pour lui. */}
+                <a
+                  className="as-google"
+                  href={photo}
+                  download="clikme-photo.jpg"
+                  onClick={() => {
+                    setTimeout(() => {
+                      window.open("https://business.google.com/posts", "_blank");
+                    }, 400);
+                  }}
+                >
+                  <b>📍 Aussi sur ma fiche Google</b>
+                  <em>La photo est enregistrée, votre fiche s’ouvre</em>
+                </a>
+              </>
             ) : (
               // LE BOUTON NE DÉPEND PLUS DE L'HUMEUR DU MODÈLE. Il était affiché
               // en clair quand Léa avait mis `photo` à vrai, et discret sinon —

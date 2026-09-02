@@ -149,6 +149,7 @@ const SYSTEME = (
   heure: number,
   dejaPublie: string[],
   souvenirs: string[],
+  chiffres: { vues: number; reservations: number; abonnes: number; quoi: string } | null,
 ) => {
   const hh = `${Math.floor(heure)} h ${String(Math.round((heure % 1) * 60)).padStart(2, "0")}`;
   return [
@@ -174,8 +175,12 @@ const SYSTEME = (
     "",
     "COMMENT TU PARLES.",
     "- Vouvoiement. S'il te tutoie, tu peux le tutoyer en retour, jamais avant.",
-    "- Deux phrases au maximum. Il est debout, au milieu de son service, et il lit",
-    "  sur un téléphone. Une question à la fois.",
+    "- UNE PHRASE. Deux au grand maximum, et jamais plus de vingt-cinq mots en",
+    "  tout. C'est la règle qui fait le rythme : chaque mot de plus est une",
+    "  demi-seconde de voix, et une assistante qui fait des phrases est une",
+    "  assistante qu'on n'écoute plus. « Magret, très bien. À combien ? » suffit.",
+    "- Tu ne répètes pas ce qu'il vient de dire pour montrer que tu as compris.",
+    "  Un « d'accord » et la question suivante : c'est ainsi qu'on parle vite.",
     "- Chaleureuse et brève, jamais commerciale. Tu ne dis pas « super ! »,",
     "  « n'hésitez pas », « pensez à ». Tu ne le félicites pas d'avoir répondu.",
     "- Tu ne parles jamais de « publication », de « post », de « contenu », de",
@@ -215,6 +220,28 @@ const SYSTEME = (
     "pour la même annonce. Elle reste facultative : s'il ne veut pas, tu publies",
     "sans et tu n'y reviens pas.",
     "",
+    "ET QUAND IL VIENT D'AJOUTER UNE PHOTO, tu lui proposes UNE SEULE FOIS de la",
+    "mettre aussi sur sa fiche Google — « je la mets aussi sur votre fiche",
+    "Google ? ». Un bouton apparaît sous la photo pour ça. Tu ne dis jamais que",
+    "c'est déjà fait : c'est lui qui appuie.",
+    "",
+    chiffres
+      ? [
+          "CE QUE SES ANNONCES ONT FAIT AUJOURD'HUI, et tu y as accès :",
+          `- ${chiffres.vues} personnes les ont vues`,
+          `- ${chiffres.reservations} réservations`,
+          `- ${chiffres.abonnes} nouveaux abonnés`,
+          `- celle qui a le mieux marché : « ${chiffres.quoi} »`,
+          "",
+          "S'IL TE LES DEMANDE, TU RÉPONDS AVEC CES CHIFFRES-LÀ, sans en inventer",
+          "un seul et sans lui faire chercher un bouton — il te parle, tu réponds.",
+          "Et tu mets alors `bilan` à vrai : l'écran affichera le récapitulatif",
+          "complet en même temps que tu parles.",
+          "TU NE LES SORS PAS SPONTANÉMENT au milieu de sa journée : il est en",
+          "train de travailler, pas de consulter des statistiques.",
+          "",
+        ].join("\n")
+      : "",
     "S'IL N'A RIEN À DIRE, TU LE LAISSES TRANQUILLE. Un jour où il ne se passe",
     "rien est un jour normal. Tu réponds « très bien, à demain » et tu mets",
     "`fini` à vrai. Ne fabrique jamais une annonce pour remplir : « plat du jour",
@@ -307,8 +334,9 @@ const SCHEMA = {
       additionalProperties: false,
     },
     fini: { type: "boolean" },
+    bilan: { type: "boolean" },
   },
-  required: ["dire", "carte", "retour", "fini"],
+  required: ["dire", "carte", "retour", "fini", "bilan"],
   additionalProperties: false,
 } as const;
 
@@ -318,6 +346,7 @@ const PANNE = {
   carte: null,
   retour: null,
   fini: false,
+  bilan: false,
 };
 
 export async function POST(request: Request) {
@@ -357,6 +386,19 @@ export async function POST(request: Request) {
   const souvenirs = Array.isArray(p?.souvenirs)
     ? (p.souvenirs as unknown[]).map((x) => s(x).slice(0, 200)).filter(Boolean).slice(0, 6)
     : [];
+  // LES CHIFFRES DU JOUR viennent de l'écran, jamais du modèle : ce sont des
+  // FAITS. Un fait ne se fait pas rédiger — un chiffre gonflé une seule fois
+  // fait perdre le commerçant pour toujours.
+  const c2 = (p?.chiffres ?? null) as Record<string, unknown> | null;
+  const chiffres =
+    c2 && Number.isFinite(Number(c2.vues))
+      ? {
+          vues: Number(c2.vues),
+          reservations: Number(c2.reservations) || 0,
+          abonnes: Number(c2.abonnes) || 0,
+          quoi: s(c2.quoi).slice(0, 60),
+        }
+      : null;
   const tours = Array.isArray(p?.messages) ? (p.messages as unknown[]) : [];
   const messages = tours
     .slice(-MAX_TOURS)
@@ -386,7 +428,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model: MODELE,
         max_tokens: 1500,
-        system: SYSTEME(commerce, heure, dejaPublie, souvenirs),
+        system: SYSTEME(commerce, heure, dejaPublie, souvenirs, chiffres),
         messages: conversation,
         output_config: {
           // IL ATTEND DEBOUT. Démêler trois faits d'une phrase ne demande pas de
@@ -465,6 +507,11 @@ export async function POST(request: Request) {
       // d'annoncer un rendez-vous qui n'aura jamais lieu.
       retour: retour && retour.heure > heure ? retour : null,
       fini: r.fini === true,
+      // C'EST ELLE QUI OUVRE LE RÉCAPITULATIF, PAS UN BOUTON. « À la fin je lui
+      // demande combien on a fait de nouveaux abonnés et de réservations
+      // aujourd'hui, ce qui m'évite de cliquer sur le bouton fin de journée. »
+      // Exactement : on parle à quelqu'un, on ne cherche pas un bouton.
+      bilan: r.bilan === true,
     });
   } catch (e) {
     console.error(`[assistante] impossible : ${(e as Error)?.message || "réseau"}`);
