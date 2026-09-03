@@ -198,7 +198,32 @@ const BILAN = {
  */
 const AMORCES = ["Il me reste…", "Ce soir, on…", "Je vous montre…"];
 
-type Tour = { role: "user" | "assistant"; content: string };
+/**
+ * UN TOUR DE CONVERSATION — et deux d'entre eux ne sont pas des répliques.
+ *
+ * « Les moments clés ne sont pas assez mis en évidence. Par exemple quand elle
+ * dit qu'elle a envoyé l'annonce sur Le Direct et à ses abonnés. Et quand elle
+ * dit que la semaine dernière il restait des lasagnes. Il faut une énorme
+ * différence pour que ça attire l'œil du commerçant. »
+ *
+ * C'est juste, et c'est structurel avant d'être graphique. Ces deux phrases
+ * sont les deux seuls endroits où le produit PROUVE quelque chose :
+ *
+ * - `fait` : ce qu'il vient de dire est parti chez des gens. C'est la
+ *   contrepartie de ses trente secondes de parole, et c'était noyé dans une
+ *   bulle grise identique aux autres.
+ * - `souvenir` : elle se rappelle sa semaine dernière. C'est ce qui sépare une
+ *   assistante d'un formulaire, et ça passait inaperçu au milieu d'une phrase.
+ *
+ * Les marquer ici plutôt que de les reconnaître au texte : une mise en avant
+ * qui dépend d'une chaîne de caractères se casse au premier mot qui change.
+ * `genre` ne part jamais au modèle — la route ne lit que `role` et `content`.
+ */
+type Tour = {
+  role: "user" | "assistant";
+  content: string;
+  genre?: "fait" | "souvenir";
+};
 type Carte = {
   nature: "nouvelle" | "maj";
   titre: string;
@@ -661,9 +686,23 @@ export function Assistante() {
         // séparément ferait trois arrivées pour une seule réponse — et les
         // révéler AVANT le son remettrait le décalage qu'on vient d'enlever.
         // Les trois points de réflexion tiennent jusque-là.
-        aDire.current = dit;
-        dire(dit, !k, () => {
-          setTours([...suite, { role: "assistant", content: dit }]);
+        // ─── SA VOIX DIT LES DEUX, L'ÉCRAN LES SÉPARE ───
+        //
+        // Le souvenir arrive dans son propre champ pour avoir sa propre place à
+        // l'écran. Mais à l'oreille il n'y a pas deux blocs : il y a quelqu'un
+        // qui finit sa phrase et enchaîne. On les recolle donc pour la voix, et
+        // on ne les sépare que pour l'œil.
+        const memoire = d.memoire ? String(d.memoire) : "";
+        const voix = [dit, memoire].filter(Boolean).join(" ");
+        aDire.current = voix;
+        dire(voix, !k, () => {
+          setTours([
+            ...suite,
+            { role: "assistant", content: dit },
+            ...(memoire
+              ? [{ role: "assistant" as const, content: memoire, genre: "souvenir" as const }]
+              : []),
+          ]);
           // UNE CARTE NEUVE PART DE ZÉRO. Sans ça, la photo prise pour une
           // annonce qu'on a corrigée restait accrochée à la suivante — et
           // partait avec elle sans que personne ne l'ait voulu.
@@ -917,7 +956,10 @@ export function Assistante() {
     // se met à jour qu'au rendu suivant : `parler`, appelé juste après, lirait
     // encore le fil d'avant et écraserait cette confirmation en répondant —
     // c'est ce qui la faisait disparaître une seconde après être apparue.
-    const avecMot: Tour[] = [...toursRef.current, { role: "assistant", content: mot }];
+    const avecMot: Tour[] = [
+      ...toursRef.current,
+      { role: "assistant", content: mot, genre: "fait" },
+    ];
     toursRef.current = avecMot;
     setTours(avecMot);
     setPhoto("");
@@ -1063,13 +1105,55 @@ export function Assistante() {
             s'est passé — et absurdes à l'écran, où ils apparaissaient dans une
             bulle verte comme si le commerçant les avait prononcés. La
             convention est la parenthèse, et elle ne sert qu'à ça. */}
-        {tours.map((t, i) =>
-          t.role === "user" && /^\(.*\)$/.test(t.content.trim()) ? null : (
+        {tours.map((t, i) => {
+          if (t.role === "user" && /^\(.*\)$/.test(t.content.trim())) return null;
+          /* ═══ C'EST PARTI CHEZ DES GENS ═══
+             Le seul instant où il voit ce que ses trente secondes ont produit.
+             Ce n'est pas une réplique, c'est un reçu : il occupe toute la
+             largeur, il est vert franc, et il énumère les deux endroits — le
+             Direct, et ses abonnés, dont il ignore souvent l'existence. */
+          if (t.genre === "fait")
+            return (
+              <div key={i} className="as-fait">
+                <i aria-hidden="true">✓</i>
+                <div>
+                  <b>C’est parti</b>
+                  <ul>
+                    <li>
+                      <span aria-hidden="true">📍</span>Sur Le Direct de Dax
+                    </li>
+                    <li>
+                      <span aria-hidden="true">🔔</span>Vos abonnés sont prévenus
+                    </li>
+                    {/* La fiche Google n'est citée que s'il l'a mise : c'est
+                        écrit dans la phrase que l'écran a composée. */}
+                    {/Google/.test(t.content) && (
+                      <li>
+                        <span aria-hidden="true">🗺️</span>Et sur votre fiche Google
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            );
+          /* ═══ ELLE SE SOUVIENT DE SA SEMAINE DERNIÈRE ═══
+             L'autre moment où le produit prouve quelque chose — et le seul que
+             ni sa fiche Google, ni ses réseaux, ni son logiciel de caisse ne
+             sauront jamais lui dire. Violet : c'est la seule couleur de cet
+             écran qui ne soit pas déjà prise par le vert du produit. */
+          if (t.genre === "souvenir")
+            return (
+              <div key={i} className="as-souvenir">
+                <em>Je me souviens</em>
+                <p>{t.content}</p>
+              </div>
+            );
+          return (
             <p key={i} className={t.role === "user" ? "as-lui" : "as-elle"}>
               {t.content}
             </p>
-          ),
-        )}
+          );
+        })}
         {attend && (
           <p className="as-elle as-points" aria-label="Elle réfléchit">
             <i />

@@ -235,6 +235,76 @@ body{background:#05090C}
 @keyframes asPense{0%,60%,100%{opacity:.25}30%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.as-points i{animation:none;opacity:.6}}
 
+/* ═══════════════════════════════════════════════════════════════════════
+   LES DEUX MOMENTS QUI NE SONT PAS DES REPLIQUES
+   ═══════════════════════════════════════════════════════════════════════
+   « Les moments cles ne sont pas assez mis en evidence. » C'est juste, et
+   c'est vrai des deux seuls endroits ou ce produit PROUVE quelque chose :
+   ce qu'il a dit est parti chez des gens, et elle se souvient de sa semaine
+   derniere. Les deux etaient des bulles grises identiques a toutes les
+   autres — c'est-a-dire invisibles.
+
+   POURQUOI DEUX TRAITEMENTS ET PAS UN. Ils ne disent pas la meme chose. Le
+   premier est un RECU : c'est fait, voila ou. Le second est une SURPRISE :
+   quelqu'un a suivi sa semaine. Un seul style pour les deux les banaliserait
+   l'un l'autre au deuxieme passage.
+
+   ET POURQUOI LE VIOLET POUR LA MEMOIRE. Le vert est deja pris trois fois
+   sur cet ecran — sa bulle a lui, la carte a valider, le bouton. Une
+   quatrieme chose verte ne se remarque plus. Le violet n'apparait nulle part
+   ailleurs ici : il ne peut etre confondu avec rien. */
+
+/* ─── LE RECU : C'EST PARTI CHEZ DES GENS ─── */
+.as-fait{align-self:stretch;margin:8px 0 4px;padding:16px 17px;
+  display:flex;gap:14px;align-items:flex-start;border-radius:20px;
+  color:#04150E;
+  background:linear-gradient(135deg,var(--menthe2),var(--menthe) 62%,#28C98C);
+  box-shadow:0 16px 44px rgba(61,226,166,.34),0 2px 0 rgba(255,255,255,.28) inset;
+  animation:asRecu .5s cubic-bezier(.2,1.15,.35,1) both}
+/* LA COCHE SE POSE APRES LE PANNEAU, PAS AVEC LUI. Un dixieme de seconde de
+   decalage suffit a faire lire « c'est arrive » plutot que « c'etait la ». */
+/* LA COCHE EST UN TAMPON BLANC, ET C'EST CE QUI SEPARE LE RECU DE SA VOIX A
+   LUI. Ses bulles sont vertes elles aussi : sans un signe qui n'existe nulle
+   part ailleurs, le panneau se lisait au coup d'oeil comme quelque chose qu'il
+   venait de dire. Vu sur la capture. */
+.as-fait>i{flex:none;width:34px;height:34px;border-radius:50%;
+  display:grid;place-items:center;font-style:normal;font-size:18px;font-weight:900;
+  background:#FFF;color:#0B7A55;
+  box-shadow:0 3px 10px rgba(4,21,14,.22);
+  animation:asCoche .42s cubic-bezier(.2,1.5,.4,1) .12s both}
+.as-fait b{display:block;font-size:18px;font-weight:900;letter-spacing:-.025em}
+.as-fait ul{list-style:none;margin:7px 0 0;padding:0;
+  display:flex;flex-direction:column;gap:5px}
+.as-fait li{font-size:13.5px;font-weight:700;line-height:1.35;
+  display:flex;align-items:center;gap:7px;color:rgba(4,21,14,.82)}
+.as-fait li span{font-size:12px}
+@keyframes asRecu{
+  from{opacity:0;transform:translate3d(0,14px,0) scale(.96)}
+  to{opacity:1;transform:none}
+}
+@keyframes asCoche{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:none}}
+
+/* ─── LA PREUVE QU'ELLE SUIT SON COMMERCE ─── */
+.as-souvenir{align-self:stretch;margin:8px 0 4px;padding:15px 17px 16px;
+  border-radius:20px;position:relative;overflow:hidden;
+  background:linear-gradient(150deg,rgba(185,140,255,.19),rgba(18,14,32,.82));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid rgba(185,140,255,.5);
+  box-shadow:0 16px 44px rgba(0,0,0,.5),0 0 34px rgba(185,140,255,.14) inset;
+  animation:asMonte .5s cubic-bezier(.22,1.1,.4,1) both}
+/* UN FILET LUMINEUX SUR LE BORD GAUCHE : la marge d'un carnet. C'est le seul
+   endroit de l'ecran ou quelque chose est cite plutot que dit. */
+.as-souvenir::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,var(--violet),rgba(185,140,255,.25))}
+.as-souvenir em{display:block;font-style:normal;font-size:10.5px;font-weight:900;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--violet);
+  margin-bottom:7px}
+.as-souvenir p{margin:0;font-size:16.5px;line-height:1.42;font-weight:600;
+  color:var(--craie);letter-spacing:-.01em}
+@media (prefers-reduced-motion:reduce){
+  .as-fait,.as-fait>i,.as-souvenir{animation:none}
+}
+
 /* ═══ LA CARTE DE VALIDATION ═══
    TROIS CHIFFRES, GROS, ET UN SEUL BOUTON VERT. Ce n'est pas un apercu de
    l'annonce : un apercu se survole et se valide sans lire. Ce sont les trois

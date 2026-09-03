@@ -348,8 +348,20 @@ const SYSTEME = (
           "quelqu'un qui suit son commerce, et c'est le moment où il lève la tête.",
           "Jamais deux fois dans la même conversation, et jamais pour meubler.",
           "",
+          "ET TU LE METS DANS `memoire`, PAS DANS `dire`. C'est le seul champ à",
+          "part de toute ta réponse, et voici pourquoi : à l'écran, ce rappel",
+          "n'est pas une réplique, c'est une preuve. Il reçoit sa propre place,",
+          "sa propre couleur, et c'est là que le commerçant lève la tête. Noyé",
+          "au milieu d'une phrase, il passait inaperçu — mesuré à l'écran.",
+          "`dire` garde donc ta conclusion seule (« Parfait, je m'occupe du",
+          "reste. ») et `memoire` porte le rappel AVEC la proposition qui en",
+          "découle, en une ou deux phrases : « Mardi dernier il vous restait 6",
+          "portions à 14 h — je prépare une offre de dernière minute au cas où ",
+          "ça recommence ? » Sa voix les dit l'un après l'autre, sans coupure.",
+          "Quand tu n'as rien à rappeler, `memoire` vaut null.",
+          "",
         ].join("\n")
-      : "",
+      : "TU N'AS RIEN À LUI RAPPELER POUR L'INSTANT : `memoire` vaut null.",
     dejaPublie.length
       ? [
           `DÉJÀ EN LIGNE AUJOURD'HUI : ${dejaPublie.join(" ; ")}.`,
@@ -383,6 +395,8 @@ const SCHEMA = {
   type: "object",
   properties: {
     dire: { type: "string" },
+    // LE SOUVENIR SORT DE SA PHRASE — voir la consigne du même nom.
+    memoire: { type: ["string", "null"] },
     carte: {
       type: ["object", "null"],
       properties: {
@@ -412,7 +426,7 @@ const SCHEMA = {
     fini: { type: "boolean" },
     bilan: { type: "boolean" },
   },
-  required: ["dire", "carte", "retour", "fini", "bilan"],
+  required: ["dire", "memoire", "carte", "retour", "fini", "bilan"],
   additionalProperties: false,
 } as const;
 
@@ -618,8 +632,16 @@ export async function POST(request: Request) {
         ? { heure: Number(ret.heure), pourquoi: s(ret.pourquoi).slice(0, 120) }
         : null;
 
+    // LE SOUVENIR, RELU COMME LE RESTE. On ne le sert que s'il a de la matière :
+    // un modèle qui rend « null » sous forme de texte, ou trois mots creux,
+    // ferait apparaître à l'écran un bloc mis en avant pour rien — et une mise
+    // en avant qui ne récompense pas le regard coûte plus qu'elle ne rapporte.
+    const brut = s(r.memoire).slice(0, 300).trim();
+    const memoire = brut.length >= 20 && !/^null$/i.test(brut) ? brut : null;
+
     return NextResponse.json({
       dire: dit,
+      memoire,
       carte: carteRendue,
       // UN RETOUR DANS LE PASSÉ N'EN EST PAS UN. Le modèle propose parfois une
       // heure déjà écoulée quand la conversation a duré ; on la jette plutôt que
