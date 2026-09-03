@@ -633,6 +633,15 @@ export function Assistante() {
         }
         const dit = String(d.dire || "");
         const k = (d.carte ?? null) as Carte | null;
+        // ─── QUAND ELLE TOMBE EN PANNE, ON SAIT POURQUOI ───
+        //
+        // Vu à l'écran, deux fois de suite : « Je n'ai pas réussi à vous
+        // répondre. Redites-le-moi ? » — et rien d'autre. La cause était un
+        // appel refusé par l'API, écrit dans les journaux du serveur,
+        // c'est-à-dire nulle part quand on est debout dans une boutique.
+        // La raison s'affiche maintenant en petit sous la bulle : le commerçant
+        // n'a pas à la lire, celui qui fait la démonstration si.
+        if (d.pourquoi) setEcho(String(d.pourquoi));
         // TOUT APPARAÎT ENSEMBLE, AU MOMENT OÙ ELLE COMMENCE À PARLER : la
         // bulle, la carte à valider et l'heure de retour. Les révéler
         // séparément ferait trois arrivées pour une seule réponse — et les

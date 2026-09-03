@@ -830,6 +830,36 @@ console.log("\n══ l'écho du contexte ══");
     `et aucune vraie phrase de commerçant n'est rejetée${rejetees.length ? " : " + rejetees[0] : ""}`);
 }
 
+// ═══ 14 · LE MODÈLE SAIT FAIRE CE QU'ON LUI DEMANDE ═══
+//
+// LA PANNE MESURÉE, ET ELLE A COÛTÉ UNE JOURNÉE DE TERRAIN : Léa répondait
+// « je n'ai pas réussi à vous répondre » à chaque tour, du bonjour jusqu'à la
+// fin. On avait changé le modèle pour gagner du rythme — sans voir que la route
+// s'appuie sur `output_config` (le schéma JSON de la carte, et l'effort réduit),
+// qui n'existe que sur la génération 5. Envoyé à un modèle 4.5, ça répond 400,
+// et 400 veut dire panne à tous les tours.
+//
+// Le défaut ne se voyait NULLE PART ailleurs : le projet compile, les tests
+// passent (ils simulent la route), l'écran s'affiche. Il ne se voyait qu'avec
+// une vraie clé, c'est-à-dire seulement sur son téléphone. C'est précisément le
+// genre de faute qu'un test doit attraper à la place du terrain.
+console.log("\n══ le modèle et ce qu'on lui demande ══");
+{
+  const fs = await import("node:fs");
+  const src = fs.readFileSync("src/app/api/direct/assistante/route.ts", "utf8");
+  const defaut = src.match(/const MODELE = [^\n]*\|\|\s*"([^"]+)"/)?.[1] ?? "";
+  const reglages = /output_config/.test(src);
+  console.log(`  modèle par défaut : ${defaut || "(introuvable)"}`);
+  console.log(`  réglages génération 5 utilisés : ${reglages ? "oui" : "non"}`);
+  dire(!!defaut, "le modèle par défaut se lit dans le fichier");
+  // La génération 5 se reconnaît au nom, et elle n'est jamais datée.
+  dire(!reglages || /^claude-(opus|sonnet|fable)-5/.test(defaut),
+    `le modèle connaît « output_config » (${defaut})`);
+  dire(!/-\d{8}$/.test(defaut), "et son nom ne porte pas de date collée à la fin");
+  // La panne ne doit plus être muette : elle dit pourquoi.
+  dire(/pourquoi/.test(src), "une panne remonte sa raison jusqu'à l'écran");
+}
+
 dire(erreurs.length === 0, `aucune erreur${erreurs.length ? " : " + erreurs[0] : ""}`);
 await nav.close();
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT PASSE");

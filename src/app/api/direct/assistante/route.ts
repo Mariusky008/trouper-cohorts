@@ -55,24 +55,25 @@ const MAX_TOURS = 40;
 const MAX_SIGNES = 1200;
 
 /**
- * LE PLUS RAPIDE QUI FASSE LE TRAVAIL — et c'est devenu Haiku.
+ * LE MODÈLE, ET POURQUOI CE N'EST PAS LE PLUS RAPIDE DU CATALOGUE.
  *
- * « Le rythme est toujours très lent. » On a gagné sur la synthèse (le son part
- * en flux), sur le silence (900 ms), sur la longueur des réponses (une phrase).
- * Restait le plus gros morceau : l'appel au modèle lui-même.
+ * ON A ESSAYÉ HAIKU POUR LE RYTHME, ET ÇA A TOUT CASSÉ. Léa répondait « je n'ai
+ * pas réussi à vous répondre » à chaque tour, du bonjour jusqu'à la fin. La
+ * cause n'était pas le modèle mais ce qu'on lui demande : cette route s'appuie
+ * sur `output_config` — le schéma JSON qui garantit la forme de la carte, et
+ * `effort: low` qui écourte la réflexion. Ces deux réglages n'existent que sur
+ * la génération 5. Envoyés à Haiku 4.5, ils font répondre 400 à l'API, et 400
+ * veut dire panne à tous les tours.
  *
- * SONNET ÉTAIT LE BON CHOIX QUAND LE PROMPT ÉTAIT VAGUE. Il ne l'est plus : la
- * première phrase est écrite mot pour mot, l'ordre des questions est donné, la
- * réponse fait une phrase, et la carte est relue après coup par du code qui ne
- * dépend pas du modèle. Ce qui reste à faire est de l'extraction, pas du
- * raisonnement — et Haiku la fait en deux fois moins de temps.
+ * ON POURRAIT RETIRER LE SCHÉMA POUR GAGNER LA VITESSE. On ne le fera pas : ce
+ * schéma est ce qui empêche une carte malformée d'arriver devant un commerçant
+ * qui s'apprête à publier. La vitesse ne vaut pas ça.
  *
- * RÉGLABLE SANS DÉPLOIEMENT. Si la qualité manque sur la phrase à trois faits —
- * « j'ai fait du magret mais y'a la garbure d'hier et on ferme à 14 h » — il
- * suffit de remettre `claude-sonnet-5` dans la variable d'environnement pour
- * comparer, sur le terrain, avec un vrai commerçant en face.
+ * RÉGLABLE SANS DÉPLOIEMENT, MAIS DANS LA MÊME FAMILLE. La variable
+ * d'environnement accepte un autre modèle — à condition qu'il connaisse
+ * `output_config`, donc un modèle de la génération 5.
  */
-const MODELE = s(process.env.DIRECT_ASSISTANTE_MODELE) || "claude-haiku-4-5-20251001";
+const MODELE = s(process.env.DIRECT_ASSISTANTE_MODELE) || "claude-sonnet-5";
 
 /** Le plafond horaire par adresse : la route se paie à l'appel. */
 const VU = new Map<string, { n: number; depuis: number }>();
@@ -398,6 +399,21 @@ const PANNE = {
   bilan: false,
 };
 
+/**
+ * LA PANNE DIT POURQUOI — sinon on la cherche pendant deux jours.
+ *
+ * CE QUI S'EST PASSÉ : un mauvais nom de modèle a fait répondre 400 à l'API, à
+ * tous les tours. À l'écran, Léa disait poliment « je n'ai pas réussi à vous
+ * répondre » et rien d'autre. La vraie raison était dans les journaux du
+ * serveur, c'est-à-dire nulle part quand on est debout dans une boutique avec
+ * un téléphone à la main.
+ *
+ * `pourquoi` remonte donc jusqu'à l'écran, en petit et en gris, sous la bulle.
+ * Le commerçant n'a pas à le comprendre — mais celui qui fait la démonstration,
+ * lui, sait en trois secondes si c'est le réseau, la clé, ou le modèle.
+ */
+const panne = (pourquoi: string) => ({ ...PANNE, pourquoi });
+
 export async function POST(request: Request) {
   const cle = s(process.env.ANTHROPIC_API_KEY);
   if (!cle) {
@@ -505,16 +521,28 @@ export async function POST(request: Request) {
       }),
     });
     if (!res.ok) {
-      console.error(`[assistante] appel refusé : HTTP ${res.status}`);
-      return NextResponse.json(PANNE);
+      // On lit le corps : c'est là que l'API explique ce qu'elle a refusé, et
+      // c'est exactement ce qu'on voulait savoir depuis la boutique.
+      const dit = await res.text().catch(() => "");
+      let quoi = "";
+      try {
+        quoi = s((JSON.parse(dit)?.error ?? {}).message).slice(0, 160);
+      } catch {
+        quoi = dit.slice(0, 160);
+      }
+      console.error(`[assistante] appel refusé : HTTP ${res.status} — ${quoi}`);
+      return NextResponse.json(
+        panne(`Le modèle a refusé l’appel (HTTP ${res.status})${quoi ? ` : ${quoi}` : ""}`),
+      );
     }
     const data = await res.json();
-    if (aRefuse(data) || aEteCoupee(data)) return NextResponse.json(PANNE);
+    if (aRefuse(data)) return NextResponse.json(panne("Le modèle a préféré ne pas répondre."));
+    if (aEteCoupee(data)) return NextResponse.json(panne("La réponse a été coupée avant la fin."));
     let r: Record<string, unknown>;
     try {
       r = JSON.parse(texteDuModele(data)) as Record<string, unknown>;
     } catch {
-      return NextResponse.json(PANNE);
+      return NextResponse.json(panne("La réponse du modèle n’était pas lisible."));
     }
 
     // ─── ON RELIT CE QUI SORT, PARCE QU'UN CHAMP FAUX SE PUBLIE ───
@@ -579,7 +607,8 @@ export async function POST(request: Request) {
       bilan: r.bilan === true,
     });
   } catch (e) {
-    console.error(`[assistante] impossible : ${(e as Error)?.message || "réseau"}`);
-    return NextResponse.json(PANNE);
+    const quoi = (e as Error)?.message || "réseau";
+    console.error(`[assistante] impossible : ${quoi}`);
+    return NextResponse.json(panne(`Le serveur n’a pas pu joindre le modèle : ${quoi.slice(0, 160)}`));
   }
 }
