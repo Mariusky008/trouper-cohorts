@@ -142,7 +142,9 @@ import {
   carteDeReponse,
   ORGANISATEURS,
   carteDEvenement,
+  cequiEstOffert,
   ceuxQuiRecrutent,
+  sansCeQuiEstOffert,
   estEvenement,
   evenementsDeLaVille,
   toutesLesCartes,
@@ -715,7 +717,7 @@ export function ApercuHabitant() {
    * quand elle répond d'abord « voilà ce qui se passe autour de vous », c'est
    * autre chose, et on n'a plus besoin d'avoir envie d'acheter pour l'ouvrir.
    */
-  const [vue, setVue] = useState<"metiers" | "recrute" | "evenements" | "tout">("metiers");
+  const [vue, setVue] = useState<"metiers" | "recrute" | "evenements" | "offert" | "tout">("metiers");
 
   /**
    * ON ARRIVE PAR LE LIEN DE L'ASSISTANTE : ON OUVRE SUR SON MÉTIER.
@@ -1458,17 +1460,37 @@ export function ApercuHabitant() {
    */
   const journee = useSyncExternalStore(abonnerJournee, chargerJournee, journeeVide);
   const carteJournee = journee ? carteDeLaJournee(journee) : null;
+  // LE PAQUET PAYANT NE VOIT PAS LES DONS — voir `sansCeQuiEstOffert`. Sans
+  // cette ligne, « les viennoiseries qui restent » remontait en tête de
+  // l'onglet Restaurant, entre l'axoa et le poulet basquaise : le paquet
+  // payant montrait du gratuit, et la garantie due au commerçant tombait.
   const toutes = [
     ...(carteJournee ? [carteJournee] : []),
-    ...toutesLesCartes().map((c) => avecLesRemises(c, remises)),
+    ...toutesLesCartes().map((c) => sansCeQuiEstOffert(avecLesRemises(c, remises))),
   ];
   const embauchent = ceuxQuiRecrutent();
   // LES ENVIES NE S'APPLIQUENT PAS AUX EMBAUCHES — « moins de 15 € » n'a aucun
   // sens sur une offre de poste. Le mode embauche court-circuite tout le filtre.
   const evenements = evenementsDeLaVille();
+  /**
+   * CE QUI EST OFFERT EN VILLE — et pourquoi ça vit dans sa propre vue.
+   *
+   * Même raison que les embauches : un invendu offert au milieu des cartes
+   * payantes brouille les deux, et on ne sait plus si le paquet montre ce qu'on
+   * peut acheter ou ce qu'on peut prendre.
+   *
+   * ET C'EST LA GARANTIE QU'ON DOIT AU COMMERÇANT. Le jour où les voisins
+   * publieront ici aussi — « il me reste six parts de tarte » — une tarte
+   * offerte ne devra JAMAIS apparaître dans l'onglet « Restaurant » à côté de
+   * La Table de Margot. On pose la séparation maintenant, pendant qu'il n'y a
+   * que des commerçants dedans : c'est bien plus facile que de l'ajouter après.
+   */
+  const offerts = cequiEstOffert(heure);
   const dispoBrut: ItemPaquet[] =
     vue === "recrute"
       ? embauchent
+      : vue === "offert"
+        ? offerts
       : vue === "evenements"
         ? evenements
         // « TOUT » MÉLANGE LES TROIS, DU PLUS PRÈS AU PLUS LOIN. Pas de
@@ -1499,7 +1521,7 @@ export function ApercuHabitant() {
                 momentsRestants(carteJournee, heure).length
                   ? [carteJournee]
                   : []),
-                ...autourDeMoi(heure, branche),
+                ...autourDeMoi(heure, branche).map(sansCeQuiEstOffert),
               ],
               envies,
               heure,
@@ -4287,7 +4309,7 @@ export function ApercuHabitant() {
                 type="button"
                 className={`cd-puce ap-metier${embauches ? " embauche" : ""}${
                   vue === "evenements" ? " evenement" : ""
-                }${vue === "tout" ? " tout" : ""}`}
+                }${vue === "offert" ? " offert" : ""}${vue === "tout" ? " tout" : ""}`}
                 onClick={() => setFeuille("metier")}
                 aria-label="Changer de métier"
               >
@@ -4296,17 +4318,25 @@ export function ApercuHabitant() {
                     ? "🙋"
                     : vue === "evenements"
                       ? "🎪"
-                      : vue === "tout"
-                        ? "✨"
-                        : metier.emoji}
+                      : vue === "offert"
+                        ? "🎁"
+                        : vue === "tout"
+                          ? "✨"
+                          : metier.emoji}
                 </i>
+                {/* L'EN-TÊTE DIT OÙ L'ON EST, ET IL MENTAIT. Vu sur la capture :
+                    on entrait dans « à prendre, c'est offert » et le bandeau
+                    continuait d'annoncer « Restaurants ». C'est le seul repère
+                    de l'écran ; s'il se trompe, plus rien ne situe. */}
                 {vue === "recrute"
                   ? "Ils recrutent"
                   : vue === "evenements"
                     ? "En ville"
-                    : vue === "tout"
-                      ? "Tout"
-                      : metier.label}
+                    : vue === "offert"
+                      ? "C’est offert"
+                      : vue === "tout"
+                        ? "Tout"
+                        : metier.label}
                 {/* LES ENVIES SONT PARTIES DANS CETTE FEUILLE, DONC LEUR
                     NOMBRE DOIT SE VOIR D'ICI. Un filtre actif qu'on ne voit
                     plus est un piège : on croit que la ville est vide alors
@@ -7547,6 +7577,45 @@ export function ApercuHabitant() {
                           <b>{evenements.length}</b>
                         </button>
                       </li>
+                      {/* ═══ CE QUI EST OFFERT ═══
+                          « Est-ce que ce serait une bonne idée de mettre une
+                          partie réservée à ce qu'on vend aussi en tant que
+                          client ? » L'idée est juste — « il me reste six parts
+                          à prendre avant 18 h » a exactement la forme d'un
+                          moment. Mais la VENTE entre particuliers met un
+                          concurrent non déclaré à côté d'un commerçant qui paie
+                          un loyer, au moment précis où on va lui demander de
+                          signer. Le DON ne pose aucune de ces questions.
+
+                          ET ON COMMENCE PAR LES COMMERÇANTS, parce qu'une vue
+                          vide rend l'application plus pauvre, pas plus riche.
+                          Le boulanger qui préfère offrir ses viennoiseries de
+                          19 h plutôt que les jeter existe déjà, il est
+                          identifiable, et il remplit la vue dès le premier
+                          jour. Les voisins viendront dans un endroit qui vit. */}
+                      {!!offerts.length && (
+                        <li>
+                          <button
+                            type="button"
+                            className={`ap-m offert${vue === "offert" ? " on" : ""}`}
+                            onClick={() => {
+                              noter("metier-change", 0, "offert");
+                              setVue("offert");
+                              setEnvies([]);
+                              annulerSortie();
+                              remettre();
+                              setFeuille("");
+                            }}
+                          >
+                            <i aria-hidden="true">🎁</i>
+                            <span>
+                              À prendre, c&apos;est offert
+                              <em>Ce qui reste en fin de journée, plutôt que jeté</em>
+                            </span>
+                            <b>{offerts.length}</b>
+                          </button>
+                        </li>
+                      )}
                       <li>
                         <button
                           type="button"

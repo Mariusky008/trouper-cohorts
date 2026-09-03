@@ -418,6 +418,38 @@ export type MomentJour = {
   prix?: string;
   prixBarre?: string;
   etiquette?: string;
+  /**
+   * CE QUI EST DONNÉ, PAS VENDU — et c'est autre chose qu'un prix à zéro.
+   *
+   * ─── D'OÙ ÇA VIENT ────────────────────────────────────────────────────
+   *
+   * « Est-ce que ce serait une bonne idée de mettre une partie réservée à ce
+   * qu'on vend aussi en tant que client — je fais des portions de gâteau aux
+   * pommes à 1 €, je fais de la couture à la maison ? »
+   *
+   * L'idée est juste et elle est native : « il me reste six parts à prendre
+   * avant 18 h » a exactement la forme d'un moment — vrai maintenant, à côté,
+   * et ça disparaît tout seul. Mais la VENTE entre particuliers met un
+   * concurrent non déclaré à côté d'un commerçant qui paie un loyer et des
+   * charges, au moment précis où on va lui demander de signer. Le DON, lui,
+   * ne pose aucune de ces questions.
+   *
+   * ─── ET ON COMMENCE PAR LES COMMERÇANTS ───────────────────────────────
+   *
+   * Parce qu'une vue vide rend l'application plus pauvre, pas plus riche. Le
+   * boulanger qui préfère offrir ses six viennoiseries de 19 h plutôt que les
+   * jeter existe déjà, il est identifiable, et il remplit la vue dès le
+   * premier jour. Les voisins viendront ensuite, dans un endroit qui vit.
+   *
+   * ─── POURQUOI UN DRAPEAU ET PAS « prix: "0 €" » ───────────────────────
+   *
+   * Un prix à zéro reste un prix : il se compare, il se négocie, et il ouvre
+   * la porte au « 1 € » puis au « 3 € ». Le drapeau, lui, rend la vente
+   * IMPOSSIBLE sur cette carte — le prix est effacé à la source, pas
+   * déconseillé. C'est la même leçon que la carte à valider : ce qui compte
+   * doit être impossible, pas recommandé.
+   */
+  offert?: boolean;
   /** Combien il en reste. Zéro : c'est complet. */
   places?: number;
   /** Ce que ce moment devient à plusieurs. Absent : il n'y a rien à rejoindre,
@@ -1467,6 +1499,16 @@ const CARTES: CarteAutour[] = [
     },
     moments: [
       {
+        // LA SOUPE DU JOUR QU'ON NE RESERVIRA PAS. Une cuisine ne resert pas sa
+        // soupe le lendemain ; elle la jette. Deux litres offerts valent mieux.
+        de: 14, a: 15, quand: "à partir de 14 h", icone: "🥣", publie: 14,
+        offert: true,
+        titre: "La soupe qui reste du midi",
+        lignes: ["Apportez un contenant", "Tant qu'il y en a"],
+        places: 4, action: "Je passe la prendre",
+        envies: ["maintenant", "emporter"],
+      },
+      {
         de: 11, a: 13, quand: "11 h – 13 h", icone: "🍲",
         titre: "Les deux plats du jour",
         // UN JUGEMENT, PAS UNE DESCRIPTION — voir `conseil`. « Faites le
@@ -1690,6 +1732,17 @@ const CARTES: CarteAutour[] = [
       cadrage: "50%",
     },
     moments: [
+      {
+        // CE QUI RESTE À LA FERMETURE, ET QUI PARTAIT À LA POUBELLE. Le
+        // boulanger le fait déjà — il le donne aux habitués qui passent au bon
+        // moment. Ici, toute la rue le sait, et personne ne jette.
+        de: 18.5, a: 19.5, quand: "à partir de 18 h 30", icone: "🥐", publie: 18.5,
+        offert: true,
+        titre: "Les viennoiseries qui restent",
+        lignes: ["Ce qui n'est pas vendu à la fermeture", "À prendre au comptoir"],
+        places: 8, action: "Je passe les prendre",
+        envies: ["maintenant", "emporter"],
+      },
       {
         de: 8, a: 11, quand: "ce matin", icone: "🥐", publie: 8,
         titre: "La fournée de 7 h",
@@ -2420,6 +2473,16 @@ const CARTES: CarteAutour[] = [
     },
     moments: [
       {
+        // LES FLEURS DE FIN DE MARCHÉ. Elles ne tiendront pas jusqu'à demain,
+        // et elles sont encore belles ce soir : c'est exactement l'objet du don.
+        de: 18, a: 19, quand: "à partir de 18 h", icone: "🌹", publie: 18,
+        offert: true,
+        titre: "Les fleurs de fin de marché",
+        lignes: ["Encore belles ce soir, plus demain", "Sous la halle"],
+        places: 6, action: "Je passe les prendre",
+        envies: ["maintenant", "emporter"],
+      },
+      {
         de: 8, a: 19, quand: "jusqu'à 19 h", icone: "💐",
         titre: "Bouquet du jour",
         lignes: ["Fleurs de saison", "Prêt en cinq minutes"],
@@ -2724,6 +2787,69 @@ export function ceuxQuiRecrutent(): CarteAutour[] {
 }
 
 /**
+ * CE QUI EST OFFERT MAINTENANT, DANS TOUTE LA VILLE.
+ *
+ * ─── POURQUOI UNE VUE À PART, ET PAS UN MÉLANGE ───────────────────────────
+ *
+ * Même raison que les embauches : ça ne se glisse pas entre deux plats. Un
+ * invendu offert au milieu des cartes payantes brouille les deux — on ne sait
+ * plus si le paquet montre ce qu'on peut acheter ou ce qu'on peut prendre.
+ *
+ * ET SURTOUT, C'EST LA GARANTIE QU'ON DOIT AU COMMERÇANT. Le jour où les
+ * voisins publieront ici aussi, une tarte offerte ne devra jamais apparaître
+ * dans l'onglet « Restaurant » à côté de La Table de Margot. La séparation est
+ * posée maintenant, pendant qu'il n'y a que des commerçants dedans : c'est
+ * beaucoup plus facile que de l'ajouter après.
+ *
+ * ─── CE QUI EST PASSÉ N'EST PLUS OFFERT ───────────────────────────────────
+ *
+ * Un don a une heure de fin, et elle est vraie : les viennoiseries de 19 h ne
+ * sont plus là à 21 h. On ne montre donc que ce qui est encore à prendre —
+ * une vue de dons périmés serait pire que pas de vue du tout.
+ */
+export function cequiEstOffert(heure: number): CarteAutour[] {
+  return CARTES.filter((c) => c.moments.some((m) => estAPrendre(m, heure)))
+    .map((c) => ({ ...c, moments: c.moments.filter((m) => estAPrendre(m, heure)) }))
+    .sort((a, b) => a.metres - b.metres);
+}
+
+/**
+ * À PRENDRE VEUT DIRE MAINTENANT, PAS « PAS ENCORE FINI ».
+ *
+ * DÉFAUT MESURÉ : à midi, l'entrée annonçait deux commerces — les viennoiseries
+ * de 18 h 30 et les fleurs de 18 h. C'était vrai au sens où ça n'était pas
+ * encore passé, et faux au sens qui compte : on ne peut rien prendre à midi.
+ * Une entrée qui promet deux dons et ouvre sur deux cartes qu'on ne peut pas
+ * aller chercher est pire que pas d'entrée du tout.
+ */
+function estAPrendre(m: MomentJour, heure: number): boolean {
+  return !!m.offert && heure >= m.de && heure < m.a;
+}
+
+/** Le moment offert d'un commerce — celui qui est à prendre en ce moment. */
+export function momentOffert(c: CarteAutour, heure: number): MomentJour | null {
+  return c.moments.find((m) => estAPrendre(m, heure)) ?? null;
+}
+
+/**
+ * LE MÊME COMMERCE, SANS CE QU'IL DONNE — et c'est la garantie qu'on lui doit.
+ *
+ * DÉFAUT MESURÉ, ET IL CASSAIT LA PROMESSE : « Les viennoiseries qui restent »
+ * apparaissait en tête de l'onglet Restaurant, entre l'axoa de veau et le
+ * poulet basquaise. Le don étant frais, il remontait comme n'importe quelle
+ * annonce — donc le paquet payant montrait du gratuit.
+ *
+ * On ne peut pas décider ça carte par carte : c'est la VUE qui décide. Le
+ * paquet des métiers voit les commerces sans leurs dons ; la vue « à prendre »
+ * ne voit que les dons. Chaque écran est alors cohérent avec ce qu'il promet.
+ */
+export function sansCeQuiEstOffert(c: CarteAutour): CarteAutour {
+  return c.moments.some((m) => m.offert)
+    ? { ...c, moments: c.moments.filter((m) => !m.offert) }
+    : c;
+}
+
+/**
  * LA CARTE D'UNE RECHERCHE D'EMPLOI, dans le même composant que les autres.
  *
  * Même dessin, même geste, même photo du commerce — c'est ce qui fait qu'on ne
@@ -2943,9 +3069,20 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
     lignes: m?.lignes,
     conseil: m?.conseil,
     voix: c.voix,
-    prix: m?.prix,
-    prixBarre: m?.prixBarre,
-    etiquette: m?.etiquette,
+    // ─── CE QUI EST OFFERT LE DIT, ET N'A AUCUN PRIX ───
+    //
+    // DÉFAUT VU SUR LA CAPTURE : la carte des viennoiseries offertes ressemblait
+    // à n'importe quelle autre, en moins bien — un titre, une photo, et un vide
+    // là où les autres ont un prix. Rien ne disait que c'était donné : ça se
+    // lisait comme une carte cassée, pas comme un cadeau.
+    //
+    // ET LE PRIX EST EFFACÉ ICI AUSSI, en plus du drapeau sur le moment. Une
+    // carte offerte qui traînerait un prix — parce qu'on a coché la case sans
+    // vider le champ — vendrait quelque chose qu'on annonce comme gratuit.
+    // C'est le genre d'erreur qu'on ne rattrape pas devant toute une ville.
+    prix: m?.offert ? undefined : m?.prix,
+    prixBarre: m?.offert ? undefined : m?.prixBarre,
+    etiquette: m?.offert ? "OFFERT" : m?.etiquette,
     frais: m ? fraicheurEcrite(m, heure) : undefined,
     // PAS DE LIGNE « SOCIAL » ICI. Le nombre de moments y était écrit une
     // première fois, et la pastille de défilement le répétait dix pixels plus
