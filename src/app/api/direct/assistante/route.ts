@@ -124,22 +124,32 @@ const OUVERTURE: Record<string, string> = {
 };
 
 /**
- * L'ORDRE DES QUESTIONS, UNE PAR TOUR.
+ * CE QU'IL FAUT POUR PUBLIER — et c'est plus court qu'on ne le croyait.
  *
- * CE N'EST PAS UN SCÉNARIO À DÉROULER — c'est l'ordre dans lequel les choses
- * manquent. S'il donne le prix en même temps que le plat, on saute la deuxième
- * et on passe à la troisième ; s'il dit trois choses d'un coup, on prend ce
- * qu'il a donné et on demande le reste. Ce que cette liste garantit, c'est
- * qu'on ne demande jamais deux choses à la fois et qu'on ne s'arrête pas avant
- * d'avoir de quoi publier.
+ * CE N'EST PAS UN SCÉNARIO À DÉROULER : c'est l'ordre dans lequel les choses
+ * manquent. S'il donne le prix en même temps que le plat, on saute la deuxième.
+ *
+ * ─── LA QUANTITÉ N'EN FAIT PLUS PARTIE, ET C'EST TOUT LE CORRECTIF ────────
+ *
+ * Elle y était, et elle coûtait un tour entier à chaque annonce. Or « Bœuf
+ * bourguignon, 14 €, de midi à 14 h » est une annonce complète et vraie : le
+ * nombre de parts n'y ajoute rien tant que le service n'a pas commencé.
+ *
+ * ELLE DEVIENT INTÉRESSANTE PLUS TARD, ET SEULEMENT PLUS TARD. « Il ne m'en
+ * reste que trois » à 13 h 30, ça fait courir les gens ; « j'en ai préparé
+ * vingt » à 9 h ne fait courir personne. On la demande donc au moment où elle
+ * vaut quelque chose, pas au moment où elle coûte un aller-retour.
+ *
+ * Et elle reste modifiable d'un doigt dans la carte, pour celui qui veut la
+ * donner tout de suite.
  */
 const ORDRE: Record<string, string> = {
-  restaurant: "le plat → le prix → le nombre de portions → la photo",
-  bar: "ce qui se passe → à quelle heure → le prix s’il y en a un → la photo",
+  restaurant: "le plat → le prix → la photo",
+  bar: "ce qui se passe → à quelle heure → la photo",
   coiffeur: "le créneau libre → à quelle heure → le prix de la prestation → la photo",
   ongles: "le créneau libre → à quelle heure → le prix de la prestation → la photo",
-  mode: "la pièce ou l’arrivage → le prix → combien il en reste → la photo",
-  fleuriste: "ce qu’il a → le prix → combien il en reste → la photo",
+  mode: "la pièce ou l’arrivage → le prix → la photo",
+  fleuriste: "ce qu’il a → le prix → la photo",
 };
 
 /**
@@ -253,6 +263,16 @@ const SYSTEME = (
     "LA SEULE QUESTION QUI A LE DROIT D'ACCOMPAGNER UNE CARTE est celle de la",
     "photo : ce n'est pas une valeur qui manque, c'est un geste, et le bouton",
     "est dans la carte elle-même.",
+    "",
+    "TU NE DEMANDES JAMAIS LE NOMBRE DE PARTS POUR PUBLIER. C'est la question",
+    "qui coûtait un tour entier pour rien. « Bœuf bourguignon, 14 €, de midi à",
+    "14 h » est une annonce complète : combien il en a préparé n'y ajoute rien",
+    "avant le service. Tu proposes donc la carte SANS la quantité, et tu ne la",
+    "réclames pas. S'il te la donne spontanément, tu la mets ; sinon la case",
+    "reste vide et il la remplit d'un doigt s'il y tient.",
+    "ELLE DEVIENT INTÉRESSANTE PLUS TARD, ET C'EST LÀ QUE TU LA DEMANDES : quand",
+    "il revient en milieu de service, « il vous en reste combien ? » est une",
+    "vraie question, parce que « il n'en reste que trois » fait courir les gens.",
     "",
     "ET LE RYTHME NE SE GAGNE PAS EN MONTRANT LE RÉSULTAT PLUS TÔT — il se gagne",
     "en POSANT MOINS DE QUESTIONS. S'il te manque deux choses, tu les demandes",

@@ -1541,7 +1541,23 @@ export function Assistante() {
                     }}
                   />
                 ) : (
-                  <b>{carte.epuise ? "épuisé" : (carte.quantite ?? "—")}</b>
+                  /* ─── UNE CASE VIDE QUI S'OFFRE, PAS QUI MANQUE ───
+                     La quantité n'est plus demandée pour publier : elle coûtait
+                     un tour entier, et « j'en ai préparé vingt » à 9 h ne fait
+                     courir personne. Elle reste donc souvent vide à l'écran —
+                     et un « — » gris ressemble alors à un oubli. Ici elle se
+                     touche : un appui ouvre la retouche sur les trois chiffres,
+                     et il la remplit en deux secondes s'il y tient. */
+                  <b
+                    className={carte.quantite == null && !carte.epuise ? "vide" : ""}
+                    role={carte.quantite == null && !carte.epuise ? "button" : undefined}
+                    tabIndex={carte.quantite == null && !carte.epuise ? 0 : undefined}
+                    onClick={() => {
+                      if (carte.quantite == null && !carte.epuise) setRetouche(true);
+                    }}
+                  >
+                    {carte.epuise ? "épuisé" : (carte.quantite ?? "+")}
+                  </b>
                 )}
                 <em>quantité</em>
               </li>

@@ -328,6 +328,12 @@ body{background:#05090C}
   border:1px solid var(--trait);text-align:center}
 .as-cles b{display:block;font-size:19px;font-weight:850;letter-spacing:-.02em;
   font-variant-numeric:tabular-nums}
+/* LA CASE QUE PERSONNE N'A REMPLIE SE PROPOSE. Un « — » gris se lit comme un
+   oubli ; un « + » ambre se lit comme une place libre. La quantite n'etant plus
+   demandee pour publier, cette case est souvent vide — elle doit avoir l'air
+   offerte, et se toucher. */
+.as-cles b.vide{color:var(--or);cursor:pointer;line-height:1}
+.as-cles b.vide:active{transform:scale(.94)}
 /* EN RETOUCHE, LE CHIFFRE DEVIENT UN CHAMP — meme taille, meme place, on ne
    deplace rien. Ce qu'on touche est exactement ce qu'on lisait. */
 .as-cles input{width:100%;font:inherit;font-size:19px;font-weight:850;
