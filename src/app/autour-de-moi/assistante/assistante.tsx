@@ -54,6 +54,12 @@ import {
   viderJournee,
   type CommerceAssiste,
 } from "@/lib/direct/journee";
+import {
+  AUCUNE,
+  ditLeJour,
+  journeesPassees,
+  totalSemaine,
+} from "@/lib/direct/journees-passees";
 import { dicteeDisponible, libererMicro, microBranche, ouvrirEcoute } from "@/lib/direct/voix-micro";
 import { useSyncExternalStore } from "react";
 
@@ -457,6 +463,17 @@ export function Assistante() {
    * sert à CORRIGER.
    */
   const [retouche, setRetouche] = useState(false);
+  /**
+   * L'ONGLET OUVERT — et « aujourd'hui » l'est toujours en arrivant.
+   *
+   * « Il va falloir rajouter en bas une barre de menu, avec l'historique des
+   * jours précédents et un onglet avec le profil du commerçant. »
+   *
+   * TROIS ONGLETS, PAS QUATRE, et celui qui compte s'ouvre le premier : on tend
+   * le téléphone à quelqu'un, il doit tomber sur la conversation, pas sur un
+   * sommaire. Les deux autres se trouvent quand on les cherche.
+   */
+  const [onglet, setOnglet] = useState<"jour" | "passees" | "commerce">("jour");
   /**
    * LE FIL À JOUR, ET PAS CELUI DU DERNIER RENDU.
    *
@@ -1013,6 +1030,10 @@ export function Assistante() {
 
   const c = journee.commerce;
   const enLigne = carteDeLaJournee(journee);
+  // SES JOURNÉES D'AVANT — relues à chaque rendu de l'onglet, jamais pendant la
+  // conversation : c'est une lecture de stockage, pas un calcul.
+  const passees = onglet === "jour" ? AUCUNE : journeesPassees(c.id);
+  const semaine = totalSemaine(passees);
 
   return (
     <div className={`as${parle ? " ambiance" : ""}`}>
@@ -1077,7 +1098,7 @@ export function Assistante() {
           reste en haut, et elle dit en trois mots ce que la ville voit en ce
           moment. Le fil, lui, redevient ce qu'il doit être — ce qu'on est en
           train de se dire. */}
-      {!!journee.moments.length && (
+      {onglet === "jour" && !!journee.moments.length && (
         <div className="as-enligne">
           <span className="as-enligne-t">En ligne maintenant</span>
           <ul>
@@ -1097,7 +1118,179 @@ export function Assistante() {
         </div>
       )}
 
-      <div className="as-fil">
+      {/* ═══ SES JOURNÉES D'AVANT ═══
+          « L'historique des jours précédents, c'est-à-dire les stats, les
+          menus. » C'est le seul retour qu'un commerçant ait jamais sur ce qu'il
+          publie — ni sa fiche Google, ni ses réseaux, ni sa caisse ne
+          reviennent lui dire ce que mardi a donné.
+
+          LA SEMAINE EN PREMIER, LE DÉTAIL DESSOUS. Ce qu'il retient tient en
+          une ligne ; ce qu'il vérifie tient dans la liste. Et chaque journée
+          de démonstration le dit — il doit pouvoir séparer d'un coup d'œil ce
+          qu'il a réellement fait de ce qu'on lui montre. */}
+      {onglet === "passees" && (
+        <div className="as-vue">
+          <div className="as-semaine">
+            <span className="as-enligne-t">Vos {semaine.jours} derniers jours</span>
+            <ul>
+              <li>
+                <b>{semaine.vues}</b>
+                <em>vues</em>
+              </li>
+              <li>
+                <b>{semaine.reservations}</b>
+                <em>réservations</em>
+              </li>
+              <li>
+                <b>{semaine.abonnes}</b>
+                <em>abonnés</em>
+              </li>
+              <li>
+                <b>{semaine.annonces}</b>
+                <em>annonces</em>
+              </li>
+            </ul>
+          </div>
+          {passees.map((d) => (
+            <div className="as-jour" key={`${d.commerce}-${d.jour}`}>
+              <div className="as-jour-t">
+                <b>{ditLeJour(d.jour)}</b>
+                {d.demo && <i>démo</i>}
+              </div>
+              <ul className="as-jour-l">
+                {d.moments.map((m, i) => (
+                  <li key={`${m.titre}-${i}`}>
+                    <span aria-hidden="true">{m.icone}</span>
+                    <b>{m.titre}</b>
+                    {m.prix && <em>{m.prix}</em>}
+                  </li>
+                ))}
+              </ul>
+              {d.vues != null ? (
+                <p className="as-jour-c">
+                  <span>
+                    <b>{d.vues}</b> vues
+                  </span>
+                  <span>
+                    <b>{d.reservations}</b> réservations
+                  </span>
+                  <span>
+                    <b>{d.abonnes}</b> abonnés
+                  </span>
+                </p>
+              ) : (
+                /* PAS DE ZÉRO À LA PLACE D'UNE MESURE. Il n'y a pas encore de
+                   serveur : personne ne compte les vues d'une vraie journée.
+                   Un « 0 » se lirait comme un échec qu'on n'a pas constaté. */
+                <p className="as-jour-c vide">Chiffres pas encore mesurés</p>
+              )}
+            </div>
+          ))}
+          {!passees.length && (
+            <p className="as-rien">
+              Vos journées s’écriront ici, une par jour, à partir de demain.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ═══ SON COMMERCE ═══
+          Ce que la ville voit de lui quand elle ne regarde pas une annonce.
+          C'est aussi l'endroit où vivent les réglages de la démonstration :
+          ils encombraient la conversation, qui doit rester une conversation. */}
+      {onglet === "commerce" && (
+        <div className="as-vue">
+          <div className="as-fiche">
+            <div className="as-fiche-t">
+              <b>{c.nom}</b>
+              <em>{c.metier}</em>
+            </div>
+            <ul>
+              <li>
+                <span aria-hidden="true">📍</span>
+                {c.adresse} · Dax
+              </li>
+              <li>
+                <span aria-hidden="true">🕘</span>
+                {c.horaires}
+              </li>
+              <li>
+                <span aria-hidden="true">🚶</span>À {c.distance} du centre
+              </li>
+            </ul>
+          </div>
+
+          {/* CE QU'IL IGNORE LE PLUS SOUVENT : qu'il a des abonnés, et qu'ils
+              sont prévenus à chaque annonce. C'est le meilleur argument du
+              produit et il n'était écrit nulle part hors d'un reçu fugace. */}
+          <div className="as-abonnes">
+            <b>{semaine.abonnes}</b>
+            <span>
+              voisins vous ont suivi cette semaine
+              <em>Ils sont prévenus à chaque annonce que vous publiez.</em>
+            </span>
+          </div>
+
+          <a
+            className="as-voir"
+            href={`/autour-de-moi?h=${heure.toFixed(2)}${
+              enLigne ? `&carte=${encodeURIComponent(enLigne.id)}` : ""
+            }`}
+          >
+            <span>
+              <b>Voir votre commerce</b>
+              <em>Tel que vos voisins le voient</em>
+            </span>
+            <i aria-hidden="true">→</i>
+          </a>
+
+          <div className="as-demo">
+            <span>Démo</span>
+            {SAUTS.map((s) => (
+              <button
+                key={s.h}
+                type="button"
+                disabled={attend}
+                className={Math.abs(heure - s.h) < 0.01 ? "on" : ""}
+                onClick={() => {
+                  setOnglet("jour");
+                  setHeure(s.h);
+                  parler(`(il est maintenant ${hhmm(s.h)})`, s.h);
+                }}
+              >
+                {s.l}
+              </button>
+            ))}
+            <button
+              type="button"
+              className="as-fin"
+              disabled={attend || bilan}
+              onClick={() => {
+                setOnglet("jour");
+                finDeService();
+              }}
+            >
+              Fin de service (14 h 30)
+            </button>
+            <button
+              type="button"
+              className="as-raz"
+              onClick={() => {
+                viderJournee();
+                setTours([]);
+                setCarte(null);
+                setRetour(null);
+                setBilan(false);
+                setOnglet("jour");
+              }}
+            >
+              Recommencer
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="as-fil" hidden={onglet !== "jour"}>
         {/* LES MESSAGES DE SERVICE NE S'AFFICHENT PAS.
             Certains tours ne viennent pas du commerçant mais de l'écran : « (je
             viens de valider X, c'est publié) », « (il est maintenant 12 h 30) ».
@@ -1427,7 +1620,7 @@ export function Assistante() {
           Le micro est l'action principale : c'est la seule interface qui ne
           demande pas d'apprendre un geste. Mais le clavier ne se cache pas —
           s'il rate deux fois, il doit pouvoir taper sans chercher. */}
-      <div className="as-bas">
+      <div className="as-bas" hidden={onglet !== "jour"}>
         {ecoute && (
           <p className="as-vivant">{vivant || "Je vous écoute… (arrêtez de parler pour envoyer)"}</p>
         )}
@@ -1520,49 +1713,6 @@ export function Assistante() {
             cherche un defaut la ou il n'y en a pas. */}
         {voixKo && <p className="as-muette">Léa ne parle pas — {voixKo}.</p>}
 
-        {/* LA BARRE DE DÉMONSTRATION. Discrète, en bas, hors du chemin : elle ne
-            fait pas partie du produit du commerçant. Elle déplace l'horloge et
-            rappelle l'assistante — c'est ce qui permet de montrer une journée
-            entière debout dans une boutique. */}
-        <div className="as-demo">
-          <span>Démo</span>
-          {SAUTS.map((s) => (
-            <button
-              key={s.h}
-              type="button"
-              disabled={attend}
-              className={Math.abs(heure - s.h) < 0.01 ? "on" : ""}
-              onClick={() => {
-                setHeure(s.h);
-                parler(`(il est maintenant ${hhmm(s.h)})`, s.h);
-              }}
-            >
-              {s.l}
-            </button>
-          ))}
-          <button
-            type="button"
-            className="as-fin"
-            disabled={attend || bilan}
-            onClick={finDeService}
-          >
-            Fin de service (14 h 30)
-          </button>
-          <button
-            type="button"
-            className="as-raz"
-            onClick={() => {
-              viderJournee();
-              setTours([]);
-              setCarte(null);
-              setRetour(null);
-              setBilan(false);
-            }}
-          >
-            Recommencer
-          </button>
-        </div>
-
         {/* ═══ VOIR LE RÉSULTAT ═══
             « Le bouton pour voir le résultat sur le direct est très caché et
             très discret. » Il l'était : un lien en petit vert, sous une barre
@@ -1596,6 +1746,40 @@ export function Assistante() {
           </a>
         )}
       </div>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          LES TROIS ONGLETS
+          ═══════════════════════════════════════════════════════════════════
+          TROIS, ET PAS QUATRE. Chaque onglet de plus divise l'attention et
+          repousse le seul qui compte — celui où il parle. Ces trois-là
+          répondent aux trois seules questions qu'un commerçant se pose devant
+          son téléphone : qu'est-ce que je raconte aujourd'hui, qu'est-ce que
+          ça a donné, et de quoi j'ai l'air.
+
+          « AUJOURD'HUI » PORTE UNE PASTILLE quand quelque chose est en ligne.
+          C'est le seul badge de l'écran : il dit qu'il a déjà travaillé, ce
+          qui est une raison de revenir et pas une notification de plus. */}
+      <nav className="as-onglets" aria-label="Sections">
+        {[
+          { cle: "jour" as const, i: "💬", l: "Aujourd’hui" },
+          { cle: "passees" as const, i: "📅", l: "Mes journées" },
+          { cle: "commerce" as const, i: "🏪", l: "Mon commerce" },
+        ].map((o) => (
+          <button
+            key={o.cle}
+            type="button"
+            className={onglet === o.cle ? "on" : ""}
+            aria-current={onglet === o.cle ? "page" : undefined}
+            onClick={() => setOnglet(o.cle)}
+          >
+            <i aria-hidden="true">{o.i}</i>
+            <span>{o.l}</span>
+            {o.cle === "jour" && !!journee.moments.length && (
+              <u aria-hidden="true">{journee.moments.length}</u>
+            )}
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }

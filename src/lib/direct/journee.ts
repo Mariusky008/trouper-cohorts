@@ -30,6 +30,7 @@
 // — donc rien ne part sur un serveur au nom de quelqu'un qui n'a rien signé.
 
 import type { CarteAutour, CleMetier, MomentJour } from "@/lib/direct/apercu-habitant";
+import { archiver } from "@/lib/direct/journees-passees";
 
 const CLE = "clikme.journee.v1";
 
@@ -98,6 +99,19 @@ export function chargerJournee(): Journee | null {
     const j = brut ? (JSON.parse(brut) as Journee) : null;
     // HIER N'EST PAS AUJOURD'HUI. Une annonce qui traîne d'un jour sur l'autre
     // fait mentir tout le paquet : le pain de la veille n'est plus chaud.
+    //
+    // MAIS ON NE LA JETTE PLUS : ON LA RANGE. C'était juste tant qu'il n'y
+    // avait rien pour la relire ; maintenant qu'il a un onglet « mes journées »,
+    // effacer sa veille en silence lui enlèverait le seul retour qu'il ait
+    // jamais eu sur ce qu'il publie. L'annonce, elle, ne revient toujours pas
+    // dans le paquet — c'est sa TRACE qu'on garde, pas elle.
+    //
+    // ET ON RANGE SANS CHIFFRES, PARCE QU'ON N'EN A PAS. Il n'y a pas de
+    // serveur : personne ne compte les vues d'une vraie journée. Écrire un
+    // nombre ici serait l'inventer, et un chiffre inventé une seule fois fait
+    // perdre le commerçant pour toujours. L'écran affichera « pas encore
+    // mesuré » plutôt qu'un zéro qui ressemble à un échec.
+    if (j && j.jour !== aujourdhui()) archiver(j);
     cache = j && j.jour === aujourdhui() ? j : AUCUNE_JOURNEE;
   } catch {
     cache = AUCUNE_JOURNEE;

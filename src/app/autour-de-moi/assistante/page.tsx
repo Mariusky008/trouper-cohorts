@@ -541,6 +541,119 @@ body{background:#05090C}
   color:var(--craie3)}
 
 @media(max-width:420px){.as-metiers{grid-template-columns:1fr}}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LES TROIS ONGLETS
+   ═══════════════════════════════════════════════════════════════════════
+   Une barre du bas est une promesse : elle dit qu'il y a une VIE ici, pas
+   seulement une conversation qu'on ouvre et qu'on ferme. Trois entrees, jamais
+   quatre — chaque onglet de plus repousse le seul qui compte.
+
+   ELLE FLOTTE AU-DESSUS DU FOND, pas collee dessus : le meme verre que les
+   bulles, pour qu'elle appartienne a la piece. Et elle respecte la barre
+   d'accueil de l'iPhone, sinon le pouce tape a cote toute la journee. */
+.as-onglets{position:sticky;bottom:0;z-index:5;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:2px;
+  padding:7px 8px calc(7px + env(safe-area-inset-bottom));
+  background:rgba(5,9,12,.82);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-top:1px solid var(--trait)}
+.as-onglets button{position:relative;font:inherit;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:8px 4px 7px;border:0;border-radius:14px;background:none;
+  color:var(--craie3);transition:color .18s ease,background .18s ease}
+.as-onglets button i{font-style:normal;font-size:19px;line-height:1;
+  filter:grayscale(1) opacity(.55);transition:filter .18s ease}
+.as-onglets button span{font-size:10.5px;font-weight:750;letter-spacing:-.01em}
+.as-onglets button.on{color:var(--menthe);background:rgba(61,226,166,.1)}
+.as-onglets button.on i{filter:none}
+.as-onglets button:active{transform:scale(.96)}
+/* LA PASTILLE : le seul badge de l'ecran. Elle ne reclame rien — elle dit
+   qu'il a deja travaille aujourd'hui, ce qui est une raison de revenir. */
+.as-onglets u{position:absolute;top:4px;left:calc(50% + 7px);
+  min-width:16px;height:16px;padding:0 4px;border-radius:9px;
+  display:grid;place-items:center;text-decoration:none;
+  font-size:10px;font-weight:900;color:#04150E;background:var(--menthe);
+  box-shadow:0 2px 8px rgba(61,226,166,.4)}
+
+/* ═══ LES DEUX ECRANS QUE LES ONGLETS OUVRENT ═══
+   Ils defilent comme le fil, dans la meme gouttiere, avec la meme lumiere de
+   fond : passer d'un onglet a l'autre ne doit pas donner l'impression de
+   changer d'application. */
+.as-vue{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:14px clamp(14px,4vw,26px) 18px;
+  display:flex;flex-direction:column;gap:11px;
+  animation:asMonte .34s cubic-bezier(.22,1.1,.4,1) both}
+.as-fil[hidden],.as-bas[hidden]{display:none}
+
+/* LA SEMAINE EN UNE LIGNE. C'est ce qu'il retient ; le detail est dessous pour
+   ceux qui verifient. */
+.as-semaine{padding:15px 16px 16px;border-radius:19px;
+  background:linear-gradient(155deg,rgba(61,226,166,.14),rgba(18,32,28,.74));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid rgba(61,226,166,.34)}
+.as-semaine ul{list-style:none;margin:11px 0 0;padding:0;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.as-semaine li{text-align:center}
+.as-semaine b{display:block;font-size:22px;font-weight:900;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;color:var(--menthe2)}
+.as-semaine em{display:block;margin-top:1px;font-style:normal;font-size:10.5px;
+  font-weight:700;color:var(--craie3)}
+
+/* UNE JOURNEE PASSEE : la date, ce qu'il a publie, ce que ca a donne. */
+.as-jour{padding:13px 15px 14px;border-radius:17px;
+  background:rgba(18,32,28,.6);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:1px solid var(--trait)}
+.as-jour-t{display:flex;align-items:center;gap:8px}
+.as-jour-t b{font-size:14px;font-weight:800;letter-spacing:-.02em}
+/* LE MARQUEUR « DEMO », JOURNEE PAR JOURNEE. Il doit pouvoir separer en une
+   seconde ce qu'il a reellement fait de ce qu'on lui montre — sinon la premiere
+   fois qu'il compare avec sa caisse, il ne croit plus rien de ce qu'on affiche. */
+.as-jour-t i{font-style:normal;font-size:9px;font-weight:900;letter-spacing:.1em;
+  text-transform:uppercase;padding:2px 6px;border-radius:6px;
+  color:var(--or);background:rgba(240,180,41,.13);
+  border:1px solid rgba(240,180,41,.3)}
+.as-jour-l{list-style:none;margin:9px 0 0;padding:0;
+  display:flex;flex-direction:column;gap:5px}
+.as-jour-l li{display:flex;align-items:baseline;gap:7px;font-size:13.5px}
+.as-jour-l li span{flex:none;font-size:12px}
+.as-jour-l li b{font-weight:650;color:var(--craie)}
+.as-jour-l li em{margin-left:auto;font-style:normal;font-size:12.5px;
+  font-weight:750;color:var(--craie2);font-variant-numeric:tabular-nums}
+.as-jour-c{margin:10px 0 0;padding-top:9px;border-top:1px solid var(--trait);
+  display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--craie3)}
+.as-jour-c b{font-size:14px;font-weight:850;color:var(--craie);
+  font-variant-numeric:tabular-nums}
+.as-jour-c.vide{color:var(--craie3);font-style:italic}
+.as-rien{margin:0;padding:26px 4px;text-align:center;font-size:14px;
+  line-height:1.5;color:var(--craie3)}
+
+/* ═══ SON COMMERCE ═══ */
+.as-fiche{padding:16px;border-radius:19px;
+  background:rgba(18,32,28,.62);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(126,230,192,.16)}
+.as-fiche-t b{display:block;font-size:19px;font-weight:900;letter-spacing:-.03em}
+.as-fiche-t em{display:block;margin-top:2px;font-style:normal;font-size:13px;
+  color:var(--menthe2);font-weight:700}
+.as-fiche ul{list-style:none;margin:13px 0 0;padding:0;
+  display:flex;flex-direction:column;gap:7px}
+.as-fiche li{display:flex;align-items:center;gap:8px;font-size:13.5px;
+  color:var(--craie2)}
+.as-fiche li span{flex:none;font-size:12px}
+
+/* CE QU'IL IGNORE LE PLUS SOUVENT : qu'il a des abonnes. C'est le meilleur
+   argument du produit, et il n'etait ecrit nulle part hors d'un recu fugace. */
+.as-abonnes{display:flex;align-items:center;gap:14px;
+  padding:15px 16px;border-radius:19px;
+  background:linear-gradient(150deg,rgba(185,140,255,.17),rgba(18,14,32,.8));
+  border:1px solid rgba(185,140,255,.42)}
+.as-abonnes>b{flex:none;font-size:32px;font-weight:900;letter-spacing:-.04em;
+  color:var(--violet);font-variant-numeric:tabular-nums;line-height:1}
+.as-abonnes>span{font-size:14px;font-weight:750;line-height:1.3}
+.as-abonnes em{display:block;margin-top:4px;font-style:normal;font-size:12px;
+  font-weight:600;color:var(--craie2);line-height:1.4}
         `,
       }}
     />
