@@ -401,7 +401,21 @@ export function Assistante() {
   const [branche, setBranche] = useState(false);
   // MIS PAR DÉFAUT : c'est ce qu'il voudra neuf fois sur dix, et une case à
   // cocher qu'il faut penser à cocher n'est jamais cochée.
-  const [google, setGoogle] = useState(true);
+  /**
+   * LA FICHE GOOGLE PART ÉTEINTE — c'est à lui de la mettre.
+   *
+   * LE DÉFAUT MESURÉ, ET SON ARGUMENT EST MEILLEUR QUE MON RÉGLAGE : « Léa me
+   * dit, après avoir photographié le plat, que la photo part sur ma fiche
+   * Google sans que je l'aie autorisé. Certains jours ce sera le même plat que
+   * la semaine précédente, donc j'aurai déjà mis cette photo sur ma fiche. Il
+   * faut me le demander. »
+   *
+   * L'interrupteur était mis d'avance pour montrer le geste sans le faire
+   * chercher. Mais un interrupteur mis d'avance n'est pas un geste : c'est une
+   * décision prise à sa place, et celle-ci salit une fiche qui lui appartient
+   * et que nous ne voyons pas. Le doublon, lui, ne se rattrape pas d'un doigt.
+   */
+  const [google, setGoogle] = useState(false);
   const [video, setVideo] = useState("");
   /**
    * CORRIGER SE FAIT DANS LA CARTE, PAS DANS LA CONVERSATION.
@@ -657,7 +671,9 @@ export function Assistante() {
           if (k) {
             setPhoto("");
             setVideo("");
-            setGoogle(true);
+            // Éteinte à chaque nouvelle carte : la fiche Google se redemande
+            // pour chaque photo, elle ne se décide pas une fois pour toutes.
+            setGoogle(false);
           }
           setCarte(k);
           if (d.retour) setRetour(d.retour);
@@ -1112,11 +1128,15 @@ export function Assistante() {
                 >
                   <i aria-hidden="true">{google ? "✓" : "＋"}</i>
                   <span>
-                    <b>Aussi sur votre fiche Google</b>
+                    <b>
+                      {google
+                        ? "Aussi sur votre fiche Google"
+                        : "L’ajouter aussi à votre fiche Google ?"}
+                    </b>
                     <em>
                       {google
                         ? "La photo y sera ajoutée en même temps"
-                        : "Une seule photo, deux endroits"}
+                        : "Seulement si vous ne l’y avez pas déjà mise"}
                     </em>
                   </span>
                 </button>
@@ -1470,7 +1490,16 @@ export function Assistante() {
             découvre que ça a produit quelque chose de réel. Il compte ses
             annonces, il porte une flèche, et il occupe toute la largeur. */}
         {enLigne && (
-          <a className="as-voir" href={`/autour-de-moi?h=${heure.toFixed(2)}`}>
+          <a
+            className="as-voir"
+            // LE LIEN NOMME SA CARTE. « J'ai fait l'annonce avec Léa, mais quand
+            // j'ai appuyé sur "votre annonce est en ligne", je n'ai pas vu mon
+            // annonce. » Le lien ouvrait le paquet ; le paquet s'ouvre sur les
+            // restaurants et classe par fraîcheur puis par distance. Sa carte
+            // pouvait donc être ailleurs, ou nulle part. Elle est maintenant
+            // devant, sur son métier.
+            href={`/autour-de-moi?h=${heure.toFixed(2)}&carte=${encodeURIComponent(enLigne.id)}`}
+          >
             <span>
               <b>
                 {journee.moments.length === 1

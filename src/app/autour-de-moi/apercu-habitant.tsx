@@ -631,6 +631,28 @@ export function ApercuHabitant() {
     heureUrl ||
     (heureVraie >= HEURE_MIN && heureVraie <= HEURE_MAX ? heureVraie : 12);
 
+  /**
+   * LA CARTE QU'ON VIENT VOIR — celle que l'assistante nomme dans le lien.
+   *
+   * LE DÉFAUT MESURÉ : « j'ai fait l'annonce avec Léa, mais quand j'ai appuyé
+   * sur "votre annonce est en ligne" je n'ai pas vu mon annonce. »
+   *
+   * Le lien ouvrait le paquet, pas SON annonce. Et le paquet la classe comme
+   * toutes les autres : par fraîcheur, puis par distance. Or une annonce
+   * publiée à 9 h POUR MIDI n'est pas encore fraîche — elle n'est pas vraie
+   * maintenant — donc elle partait au milieu de vingt cartes. Il ne l'a pas
+   * vue parce qu'il aurait fallu la chercher.
+   *
+   * Le lien nomme donc la carte, et elle passe devant. C'est la seule chose
+   * qu'on change : la règle de fraîcheur reste la même pour tout le monde, on
+   * ne fausse pas le paquet de la ville pour montrer une carte à son auteur.
+   */
+  const carteUrl = useSyncExternalStore(
+    () => () => {},
+    () => new URLSearchParams(window.location.search).get("carte") || "",
+    () => "",
+  );
+
   const [branche, setBranche] = useState<CleMetier>("restaurant");
   const [envies, setEnvies] = useState<string[]>([]);
   const [passees, setPassees] = useState<string[]>([]);
@@ -694,6 +716,31 @@ export function ApercuHabitant() {
    * autre chose, et on n'a plus besoin d'avoir envie d'acheter pour l'ouvrir.
    */
   const [vue, setVue] = useState<"metiers" | "recrute" | "evenements" | "tout">("metiers");
+
+  /**
+   * ON ARRIVE PAR LE LIEN DE L'ASSISTANTE : ON OUVRE SUR SON MÉTIER.
+   *
+   * L'AUTRE MOITIÉ DU DÉFAUT « je n'ai pas vu mon annonce », et c'est la plus
+   * bête. Le paquet s'ouvre sur les restaurants. Sophie tient un institut
+   * d'ongles : sa carte n'était pas classée trop bas, elle N'ÉTAIT PAS DANS LE
+   * PAQUET DU TOUT — la vue « métiers » ne montre qu'un métier à la fois, et ce
+   * n'était pas le sien. Il pouvait balayer cent cartes sans jamais la croiser.
+   *
+   * Quand le lien nomme une carte, on se met donc sur le métier de cette
+   * carte. Une seule fois, à l'arrivée : après, c'est lui qui pilote.
+   */
+  const [ouvert, setOuvert] = useState(false);
+  useEffect(() => {
+    if (ouvert || !carteUrl) return;
+    setOuvert(true);
+    // On lit la journée directement : elle est rangée dans le téléphone, et on
+    // n'a besoin de son métier qu'à cet instant précis.
+    const b = chargerJournee()?.commerce.branche;
+    if (b && METIERS.some((m) => m.cle === b)) {
+      setBranche(b as CleMetier);
+      setVue("metiers");
+    }
+  }, [carteUrl, ouvert]);
   /**
    * UNE CARTE SORTIE DE SON RANG, LE TEMPS QU'ON LA REGARDE.
    *
@@ -1531,8 +1578,12 @@ export function ApercuHabitant() {
       ...reste.filter(aMoi),
       ...reste.filter((c) => !aMoi(c)),
     ];
-    if (!epingle) return p;
-    const i = p.findIndex((c) => c.id === epingle);
+    // LA CARTE NOMMÉE DANS LE LIEN PASSE DEVANT L'ÉPINGLE : l'épingle vient
+    // d'un geste dans le paquet, le lien vient d'ailleurs — de l'assistante qui
+    // dit « votre annonce est en ligne ». Celui qui arrive doit tomber dessus.
+    const devant = carteUrl || epingle;
+    if (!devant) return p;
+    const i = p.findIndex((c) => c.id === devant);
     return i > 0 ? [p[i], ...p.slice(0, i), ...p.slice(i + 1)] : p;
   })();
   const estInvitation = (c: ItemPaquet) => !!sortie && arrivees.includes(c.id);
