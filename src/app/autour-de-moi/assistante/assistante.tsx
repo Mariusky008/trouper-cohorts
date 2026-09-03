@@ -60,7 +60,7 @@ import {
   journeesPassees,
   totalSemaine,
 } from "@/lib/direct/journees-passees";
-import { dicteeDisponible, libererMicro, microBranche, ouvrirEcoute } from "@/lib/direct/voix-micro";
+import { dicteeDisponible, libererMicro, ouvrirEcoute } from "@/lib/direct/voix-micro";
 import { useSyncExternalStore } from "react";
 
 /**
@@ -423,13 +423,19 @@ export function Assistante() {
   // faut deux appuis par phrase — « je dois appuyer sur le bouton à chaque fois
   // pour parler et envoyer mon message » — c'est-à-dire exactement le geste
   // qu'on prétendait lui épargner, et impossible avec les mains dans la farine.
-  const [libres, setLibres] = useState(true);
+  /**
+   * L'ÉCOUTE MAINS LIBRES EST LE COMPORTEMENT, PLUS UN RÉGLAGE.
+   *
+   * « Supprime "mains libres" qui ne sert à rien et prend de la place. » Le
+   * bouton est parti ; ce qu'il faisait quand il était allumé — rouvrir le
+   * micro dès qu'elle a fini de parler — est maintenant ce que l'écran fait
+   * toujours. C'est la seule raison pour laquelle on peut poser le téléphone
+   * sur un plan de travail et continuer à parler les mains dans la farine.
+   */
+  const libres = true;
   const [parle, setParle] = useState(false);
   const [voixKo, setVoixKo] = useState("");
   const [bilan, setBilan] = useState(false);
-  // CE QUI DIT QUE L'AUTORISATION NE SERA PLUS REDEMANDÉE. Un micro qui reste
-  // ouvert doit se voir : c'est la contrepartie honnête de « toujours branché ».
-  const [branche, setBranche] = useState(false);
   // MIS PAR DÉFAUT : c'est ce qu'il voudra neuf fois sur dix, et une case à
   // cocher qu'il faut penser à cocher n'est jamais cochée.
   /**
@@ -867,9 +873,6 @@ export function Assistante() {
       surSilence: () => arreterRef.current(),
     });
     setEcoute(true);
-    // On le relit APRÈS l'ouverture : c'est elle qui branche le micro la
-    // première fois, et l'indicateur ne doit pas mentir avant.
-    setTimeout(() => setBranche(microBranche()), 600);
   }, []);
 
   const demarrerMicroRef = useRef<() => void>(() => {});
@@ -1272,19 +1275,41 @@ export function Assistante() {
             >
               Fin de service (14 h 30)
             </button>
+          </div>
+
+          {/* ═══ RECOMMENCER À ZÉRO ═══
+              « Je n'ai plus la possibilité de recommencer à zéro. » Il l'avait
+              encore — mais écrit en petit, souligné, coincé au bout de la barre
+              de démonstration derrière quatre autres boutons. Autant dire nulle
+              part : quand on fait une démonstration debout devant quelqu'un, on
+              n'a pas trois secondes pour chercher.
+
+              C'EST LE BOUTON LE PLUS UTILISÉ DE LA DÉMONSTRATION, puisqu'il
+              sert entre chaque commerçant à qui l'on tend le téléphone. Il a
+              donc sa place à lui, sa ligne d'explication, et il est le dernier
+              de l'écran — là où l'on finit toujours par descendre. Rouge,
+              parce qu'il efface. */}
+          <div className="as-zero">
+            <div>
+              <b>Recommencer à zéro</b>
+              <em>Efface la journée en cours et la conversation. Rien ne part.</em>
+            </div>
             <button
               type="button"
-              className="as-raz"
               onClick={() => {
                 viderJournee();
                 setTours([]);
+                toursRef.current = [];
                 setCarte(null);
                 setRetour(null);
                 setBilan(false);
+                setPhoto("");
+                setVideo("");
+                setEcho("");
                 setOnglet("jour");
               }}
             >
-              Recommencer
+              Tout effacer
             </button>
           </div>
         </div>
@@ -1676,37 +1701,21 @@ export function Assistante() {
           </button>
         </div>
 
-        {/* MAINS LIBRES, ET ÇA SE COUPE. Dans une pièce très bruyante le silence
-            n'arrive jamais et le micro resterait ouvert ; dans une conversation
-            à côté, il partirait tout seul. Le réglage est petit parce qu'on n'y
-            touche presque jamais, et visible parce que le jour où il faut le
-            couper, il faut le trouver tout de suite. */}
-        <div className="as-mains">
-          <button
-            type="button"
-            className={libres ? "on" : ""}
-            aria-pressed={libres}
-            onClick={() => {
-              const v = !libres;
-              setLibres(v);
-              if (!v) {
-                micro.current?.annuler();
-                micro.current = null;
-                setEcoute(false);
-                setVivant("");
-                // On coupe le micro en pleine amorce : elle s'en va avec lui,
-                // sinon elle attendrait la phrase suivante pour ressortir.
-                amorce.current = "";
-                setTape("");
-              }
-            }}
-          >
-            {libres ? "🔊 Mains libres" : "🔇 Mains libres coupées"}
-          </button>
-          {parle && <em>Léa parle…</em>}
-          {!parle && branche && <em className="pret">Micro branché</em>}
-          {voixKo && <u title={voixKo}>voix muette</u>}
-        </div>
+        {/* ─── « MAINS LIBRES » EST PARTI, ET C'ÉTAIT JUSTE ───
+            « Supprime "mains libres" qui ne sert à rien et prend de la place. »
+
+            Il avait raison sur les deux points. Ce réglage existait pour un cas
+            qui ne s'est jamais produit — la pièce si bruyante que le silence
+            n'arrive jamais et que le micro reste ouvert — et il le payait à
+            chaque écran, sur la ligne la plus précieuse : celle juste au-dessus
+            du micro. Le bouton d'arrêt du micro, lui, est toujours là, gros et
+            rouge, à portée du pouce. Il y avait donc DEUX façons de couper une
+            écoute, et une seule sert.
+
+            L'écoute mains libres, elle, reste : c'est le comportement, plus un
+            réglage. Le seul indicateur qu'on garde est celui qui dit pourquoi
+            elle se tait, plus bas — parce que celui-là répond à une question
+            qu'on se pose vraiment. */}
         {/* POURQUOI ELLE SE TAIT, EN CLAIR ET UNE SEULE FOIS. « Aucune voix »
             peut vouloir dire une cle absente, un refus du navigateur ou une
             panne : sans le dire, il n'y a aucun moyen de savoir lequel, et on

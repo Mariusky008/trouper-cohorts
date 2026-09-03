@@ -422,7 +422,6 @@ body{background:#05090C}
   border-radius:999px;padding:5px 11px}
 .as-demo button.on{color:#04150E;background:var(--or);border-color:var(--or)}
 .as-demo button:disabled{opacity:.35}
-.as-raz{margin-left:auto;text-decoration:underline;border:0 !important}
 
 /* LA PHOTO SUR LA CARTE DE VALIDATION. Le bouton se voit quand Lea l'a
    demandee, et reste discret sinon : elle est facultative, et une image
@@ -470,20 +469,10 @@ body{background:#05090C}
   border:1px solid rgba(126,230,192,.2);border-radius:999px;padding:9px 15px}
 .as-amorces button:active{transform:scale(.97)}
 
-/* MAINS LIBRES. Petit, parce qu'on n'y touche presque jamais ; visible, parce
-   que le jour ou il faut le couper il faut le trouver tout de suite. */
-.as-mains{display:flex;align-items:center;gap:9px;margin-top:10px}
-.as-mains button{font:inherit;font-size:11.5px;font-weight:750;cursor:pointer;
-  color:var(--craie3);background:transparent;border:1px solid var(--trait);
-  border-radius:999px;padding:5px 12px}
-.as-mains button.on{color:var(--menthe);border-color:rgba(61,226,166,.4)}
-.as-mains em{font-style:normal;font-size:11.5px;color:var(--menthe)}
-/* LE MICRO RESTE BRANCHE, ET CA SE VOIT. C'est la contrepartie honnete de
-   « on ne redemande plus l'autorisation » : une entree qui reste ouverte ne
-   doit pas etre silencieuse a l'ecran. Discret, parce que c'est un etat normal
-   et non une alerte. */
-.as-mains em.pret{color:var(--craie3)}
-.as-mains u{text-decoration:none;font-size:11.5px;color:var(--rouge)}
+/* « MAINS LIBRES » N'EXISTE PLUS. Le reglage servait un cas qui ne s'est
+   jamais produit, et il le payait sur la ligne la plus precieuse de l'ecran :
+   celle juste au-dessus du micro. Le bouton d'arret du micro, gros et rouge,
+   fait deja le seul geste dont on ait besoin. */
 .as-muette{margin:7px 0 0;font-size:11.5px;line-height:1.45;color:var(--rouge)}
 
 /* ═══ VOIR LE RESULTAT ═══
@@ -654,6 +643,30 @@ body{background:#05090C}
 .as-abonnes>span{font-size:14px;font-weight:750;line-height:1.3}
 .as-abonnes em{display:block;margin-top:4px;font-style:normal;font-size:12px;
   font-weight:600;color:var(--craie2);line-height:1.4}
+
+/* ═══ RECOMMENCER A ZERO ═══
+   « Je n'ai plus la possibilite de recommencer a zero. » Il l'avait encore,
+   mais ecrit en petit, souligne, coince au bout de la barre de demonstration
+   derriere quatre autres boutons — autant dire nulle part. C'est pourtant le
+   bouton le plus utilise de la demonstration, puisqu'il sert entre chaque
+   commercant a qui l'on tend le telephone.
+
+   IL A DONC SA PLACE A LUI, ET IL EST LE DERNIER DE L'ECRAN — la ou l'on finit
+   toujours par descendre. Rouge, parce qu'il efface ; avec sa ligne
+   d'explication, parce qu'un bouton qui efface doit dire ce qu'il efface. */
+.as-zero{display:flex;align-items:center;gap:12px;margin-top:4px;
+  padding:14px 15px;border-radius:17px;
+  background:rgba(255,107,107,.07);
+  border:1px solid rgba(255,107,107,.28)}
+.as-zero>div{flex:1;min-width:0}
+.as-zero b{display:block;font-size:14.5px;font-weight:800;letter-spacing:-.02em}
+.as-zero em{display:block;margin-top:3px;font-style:normal;font-size:12px;
+  line-height:1.4;color:var(--craie2)}
+.as-zero button{flex:none;font:inherit;font-size:13px;font-weight:800;
+  cursor:pointer;padding:10px 15px;border-radius:12px;
+  color:#2A0A0A;background:var(--rouge);border:0;
+  box-shadow:0 6px 18px rgba(255,107,107,.28)}
+.as-zero button:active{transform:scale(.97)}
         `,
       }}
     />
