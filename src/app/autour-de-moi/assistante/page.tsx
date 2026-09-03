@@ -579,6 +579,14 @@ body{background:#05090C}
   padding:14px clamp(14px,4vw,26px) 18px;
   display:flex;flex-direction:column;gap:11px;
   animation:asMonte .34s cubic-bezier(.22,1.1,.4,1) both}
+/* CHAQUE BLOC GARDE SA HAUTEUR, ET C'EST INDISPENSABLE ICI.
+   DEFAUT VU SUR LA CAPTURE : le planning etait ECRASE par le bloc suivant —
+   « Votre journee avec Lea » coupe en deux, la liste des rendez-vous invisible,
+   « Recommencer a zero » posee par-dessus. C'est le piege classique du
+   conteneur flex en colonne : ses enfants se retrecissent par defaut, donc
+   quand le contenu depasse la hauteur disponible, ils se compriment au lieu de
+   faire defiler. Tant que les blocs etaient courts, ca ne se voyait pas. */
+.as-vue > *{flex:none}
 .as-fil[hidden],.as-bas[hidden]{display:none}
 
 /* LA SEMAINE EN UNE LIGNE. C'est ce qu'il retient ; le detail est dessous pour
@@ -649,6 +657,67 @@ body{background:#05090C}
 .as-abonnes>span{font-size:14px;font-weight:750;line-height:1.3}
 .as-abonnes em{display:block;margin-top:4px;font-style:normal;font-size:12px;
   font-weight:600;color:var(--craie2);line-height:1.4}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LE FIL DE SA JOURNEE
+   ═══════════════════════════════════════════════════════════════════════
+   « Il faut un planning clair accessible au commercant qu'on peut meme
+   modifier s'il le veut. » Il se LIT d'abord, et il se regle ensuite : les
+   heures sont a gauche en gros chiffres, ce qu'elles declenchent a cote. On
+   doit comprendre sa journee en trois secondes sans rien toucher.
+
+   ET IL SE REGLE SANS OUVRIR DE FENETRE. L'heure est un champ, l'interrupteur
+   est a cote — pas d'ecran de reglages, pas de bouton « enregistrer ». Ce qu'on
+   touche est ce qu'on lisait, comme dans la carte a valider. */
+.as-fil{padding:15px 16px 16px;border-radius:19px;
+  background:rgba(18,32,28,.62);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(126,230,192,.16)}
+.as-fil-t b{display:block;font-size:15.5px;font-weight:850;letter-spacing:-.02em}
+.as-fil-t em{display:block;margin-top:4px;font-style:normal;font-size:12.5px;
+  line-height:1.45;color:var(--craie2)}
+.as-fil ul{list-style:none;margin:13px 0 0;padding:0;
+  display:flex;flex-direction:column;gap:7px}
+.as-fil li{display:flex;align-items:center;gap:11px;
+  padding:9px 10px;border-radius:13px;background:rgba(5,9,12,.42);
+  border:1px solid var(--trait)}
+/* CE QUI EST ETEINT RESTE LISIBLE, mais cesse de reclamer le regard : c'est un
+   choix qu'il a fait, pas une erreur a corriger. */
+.as-fil li.off{opacity:.42}
+.as-fil-h{width:74px;flex:none;font:inherit;font-size:15px;font-weight:850;
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums;text-align:center;
+  color:var(--menthe2);background:transparent;
+  border:0;border-bottom:1.5px solid rgba(126,230,192,.3);
+  border-radius:0;padding:2px 0}
+.as-fil-h:focus{outline:none;border-bottom-color:var(--menthe)}
+.as-fil li>span{flex:1;min-width:0;font-size:13.5px;font-weight:650;
+  line-height:1.3}
+.as-fil-on{flex:none;width:30px;height:30px;border-radius:50%;font:inherit;
+  font-size:13px;font-weight:900;cursor:pointer;
+  color:var(--craie3);background:transparent;border:1px solid var(--trait)}
+.as-fil-on.on{color:#04150E;background:var(--menthe);border-color:var(--menthe)}
+.as-fil-on:active{transform:scale(.92)}
+
+/* SES JOURS DE FERMETURE — la moitie la plus importante d'un planning, parce
+   que c'est ce qu'on ne fait PAS. Un assistant qui parle le jour de fermeture
+   est un assistant qu'on coupe. */
+.as-off{margin-top:14px;padding-top:13px;border-top:1px solid var(--trait)}
+.as-off>em{display:block;font-style:normal;font-size:11px;font-weight:850;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--craie3)}
+.as-off>div{margin-top:9px;display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.as-off button{font:inherit;font-size:12px;font-weight:750;cursor:pointer;
+  padding:8px 0;border-radius:10px;color:var(--craie2);
+  background:rgba(5,9,12,.42);border:1px solid var(--trait)}
+.as-off button.off{color:var(--violet);background:rgba(185,140,255,.14);
+  border-color:rgba(185,140,255,.45)}
+.as-off button:active{transform:scale(.94)}
+.as-off>span{display:block;margin-top:9px;font-size:12px;line-height:1.4;
+  color:var(--craie3)}
+
+/* LE JOUR OU IL EST FERME, ET CA SE VOIT DES L'OUVERTURE. */
+.as-repos{margin:0 clamp(14px,4vw,26px);padding:12px 14px;border-radius:15px;
+  font-size:13px;line-height:1.45;color:var(--craie2);
+  background:rgba(185,140,255,.1);border:1px solid rgba(185,140,255,.32)}
 
 /* ═══ RECOMMENCER A ZERO ═══
    « Je n'ai plus la possibilite de recommencer a zero. » Il l'avait encore,

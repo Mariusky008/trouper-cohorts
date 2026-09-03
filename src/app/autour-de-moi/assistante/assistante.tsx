@@ -61,6 +61,16 @@ import {
   totalSemaine,
 } from "@/lib/direct/journees-passees";
 import { carteAMontrer } from "@/lib/direct/carte-a-valider";
+import {
+  apresCa,
+  enregistrerFil,
+  estJourOff,
+  filDuJour,
+  type FilDuJour,
+  hhmm as hhmmFil,
+  JOURS,
+  ouEnEstOn,
+} from "@/lib/direct/fil-du-jour";
 import { dicteeDisponible, libererMicro, ouvrirEcoute } from "@/lib/direct/voix-micro";
 import { useSyncExternalStore } from "react";
 
@@ -482,6 +492,15 @@ export function Assistante() {
    */
   const [onglet, setOnglet] = useState<"jour" | "passees" | "commerce">("jour");
   /**
+   * ON RELIT LE FIL APRÈS CHAQUE RÉGLAGE — et pas avec `useSyncExternalStore`.
+   *
+   * `filDuJour` compose le fil par défaut du métier avec ce qu'il a réglé : il
+   * rend donc un objet NEUF à chaque appel. `useSyncExternalStore` compare les
+   * instantanés par identité et bouclerait jusqu'à l'écran blanc — c'est arrivé
+   * une fois dans ce produit. Un simple compteur suffit et ne ment pas.
+   */
+  const [majFil, setMajFil] = useState(0);
+  /**
    * LE FIL À JOUR, ET PAS CELUI DU DERNIER RENDU.
    *
    * LE DÉFAUT QUE ÇA CORRIGE, ET IL EFFAÇAIT UNE PHRASE. `parler` construisait
@@ -496,6 +515,29 @@ export function Assistante() {
    */
   const toursRef = useRef<Tour[]>([]);
   toursRef.current = tours;
+  /**
+   * OÙ ON EN EST DANS SA JOURNÉE, À PORTÉE DE `parler`.
+   *
+   * `parler` est déclaré bien avant que le planning soit lu — il est appelé par
+   * le micro, par le clavier, par les sauts d'heure. Une référence tenue à jour
+   * à chaque rendu évite de remonter tout le fichier pour déplacer un calcul,
+   * et c'est le même remède que `toursRef` : ce qui est lu DANS un rappel doit
+   * venir d'une référence, jamais d'une valeur figée à la création.
+   */
+  const reglerFil = useCallback(
+    (f: FilDuJour) => {
+      enregistrerFil(cId.current, f);
+      setMajFil((n) => n + 1);
+    },
+    [],
+  );
+  const cId = useRef("");
+  /** Vrai le jour où il a fermé — voir l'ouverture automatique. */
+  const offRef = useRef(false);
+  const rdvRef = useRef<{
+    rdv: { quoi: string; question: string; heure: string } | null;
+    apres: { quoi: string; heure: string } | null;
+  }>({ rdv: null, apres: null });
   const bas = useRef<HTMLDivElement | null>(null);
   const micro = useRef<ReturnType<typeof ouvrirEcoute> | null>(null);
   const son = useRef<HTMLAudioElement | null>(null);
@@ -685,6 +727,10 @@ export function Assistante() {
                 )
               );
             }),
+            // OÙ ON EN EST DANS SA JOURNÉE. Sans ça, elle demandait le plat
+            // du jour à 15 h — voir `fil-du-jour.ts`.
+            rdv: rdvRef.current.rdv,
+            apres: rdvRef.current.apres,
             messages: suite,
           }),
         });
@@ -803,6 +849,11 @@ export function Assistante() {
   // L'OUVERTURE PART TOUTE SEULE dès qu'un commerce est choisi : elle dit
   // bonjour et pose sa première question, sans qu'on ait appuyé sur rien.
   useEffect(() => {
+    // SAUF LE JOUR OÙ IL EST FERMÉ. « Où il pourra aussi mettre ses jours
+    // off » — et un jour off doit VOULOIR DIRE quelque chose, sinon ce n'est
+    // qu'une case à cocher. Léa ne pose aucune question ce jour-là ; il peut
+    // toujours lui parler s'il en a envie, c'est elle qui se tait, pas lui.
+    if (offRef.current) return;
     if (journee && !tours.length && !journee.conversation?.length && !attend && heure) {
       parler("", heure);
     }
@@ -1050,6 +1101,30 @@ export function Assistante() {
   // SES JOURNÉES D'AVANT — relues à chaque rendu de l'onglet, jamais pendant la
   // conversation : c'est une lecture de stockage, pas un calcul.
   const passees = onglet === "jour" ? AUCUNE : journeesPassees(c.id);
+  /**
+   * SON PLANNING — et c'est lui qui décide de ce que Léa demande.
+   *
+   * « Si le commerçant oublie de mettre son menu à 10 h et qu'il ouvre Léa à
+   * 15 h, elle va quand même lui demander son plat du jour. » Le fil dit où on
+   * en est ; l'écran l'envoie avec chaque tour, et Léa ouvre sur le bon moment.
+   */
+  // PAS DE `useMemo` ICI, ET C'EST UNE ERREUR QUE LE TEST A ATTRAPÉE. Cette
+  // ligne est APRÈS le retour anticipé de l'écran de choix du métier : un hook
+  // posé là s'exécute à certains rendus et pas aux autres, et React refuse tout
+  // net (« rendered more hooks than during the previous render »). L'écran ne
+  // s'ouvrait plus du tout. Lire le fil coûte un accès au stockage local ; le
+  // compteur `majFil` suffit à le relire après chaque réglage.
+  void majFil;
+  const fil = filDuJour(c.id, c.branche);
+  cId.current = c.id;
+  const jourOff = estJourOff(fil);
+  offRef.current = jourOff;
+  const rdv = ouEnEstOn(fil, heure);
+  const apres = apresCa(fil, heure);
+  rdvRef.current = {
+    rdv: rdv ? { quoi: rdv.quoi, question: rdv.question, heure: hhmmFil(rdv.heure) } : null,
+    apres: apres ? { quoi: apres.quoi, heure: hhmmFil(apres.heure) } : null,
+  };
   const semaine = totalSemaine(passees);
 
   return (
@@ -1115,6 +1190,13 @@ export function Assistante() {
           reste en haut, et elle dit en trois mots ce que la ville voit en ce
           moment. Le fil, lui, redevient ce qu'il doit être — ce qu'on est en
           train de se dire. */}
+      {onglet === "jour" && jourOff && (
+        <p className="as-repos">
+          🌙 C’est un de vos jours de fermeture — Léa ne vous demandera rien
+          aujourd’hui. Vous pouvez lui parler quand même.
+        </p>
+      )}
+
       {onglet === "jour" && !!journee.moments.length && (
         <div className="as-enligne">
           <span className="as-enligne-t">En ligne maintenant</span>
@@ -1289,6 +1371,105 @@ export function Assistante() {
             >
               Fin de service (14 h 30)
             </button>
+          </div>
+
+          {/* ═══ LE FIL DE SA JOURNÉE ═══
+              « Il faut un planning clair accessible au commerçant qu'on peut
+              même modifier s'il le veut, et où il pourra aussi mettre ses
+              jours off. » C'est juste : nos heures sont une hypothèse sur un
+              métier, pas une connaissance de SON commerce. Celui qui ferme le
+              lundi et sert jusqu'à 15 h doit pouvoir le dire une fois.
+
+              ET ÇA RÉPOND AU DÉFAUT DE FOND : Léa ouvre sur le moment où l'on
+              est, pas sur le premier de la liste. À 15 h elle ne demande plus
+              le plat de midi. */}
+          <div className="as-fil">
+            <div className="as-fil-t">
+              <b>Votre journée avec Léa</b>
+              <em>
+                Elle vous parle du moment où vous êtes. Décalez une heure, ou
+                éteignez ce qui ne vous concerne pas.
+              </em>
+            </div>
+            <ul>
+              {fil.rendezvous.map((r) => (
+                <li key={r.cle} className={r.actif ? "" : "off"}>
+                  <input
+                    className="as-fil-h"
+                    value={hhmmFil(r.heure)}
+                    inputMode="numeric"
+                    aria-label={`Heure de « ${r.quoi} »`}
+                    onChange={(e) => {
+                      // « 11 h 30 », « 11h30 », « 1130 », « 11 » — on lit ce
+                      // qu'il tape comme il le tape, comme dans la carte.
+                      const ch = e.target.value.replace(/[^0-9]/g, "");
+                      if (!ch) return;
+                      const h = Number(ch.slice(0, 2));
+                      const mn = Number(ch.slice(2, 4) || 0);
+                      if (h > 23 || mn > 59) return;
+                      reglerFil({
+                        ...fil,
+                        rendezvous: fil.rendezvous.map((x) =>
+                          x.cle === r.cle ? { ...x, heure: h + mn / 60 } : x,
+                        ),
+                      });
+                    }}
+                  />
+                  <span>{r.quoi}</span>
+                  <button
+                    type="button"
+                    className={`as-fil-on${r.actif ? " on" : ""}`}
+                    aria-pressed={r.actif}
+                    aria-label={r.actif ? "Éteindre ce moment" : "Allumer ce moment"}
+                    onClick={() =>
+                      reglerFil({
+                        ...fil,
+                        rendezvous: fil.rendezvous.map((x) =>
+                          x.cle === r.cle ? { ...x, actif: !x.actif } : x,
+                        ),
+                      })
+                    }
+                  >
+                    {r.actif ? "✓" : "＋"}
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            {/* SES JOURS OFF. Léa se tait ce jour-là — c'est la moitié la plus
+                importante d'un planning : ce qu'on ne fait PAS. Un assistant
+                qui parle le jour de fermeture est un assistant qu'on coupe. */}
+            <div className="as-off">
+              <em>Vos jours de fermeture</em>
+              <div>
+                {JOURS.map((j) => {
+                  const off = fil.joursOff.includes(j.n);
+                  return (
+                    <button
+                      key={j.n}
+                      type="button"
+                      className={off ? "off" : ""}
+                      aria-pressed={off}
+                      onClick={() =>
+                        reglerFil({
+                          ...fil,
+                          joursOff: off
+                            ? fil.joursOff.filter((x) => x !== j.n)
+                            : [...fil.joursOff, j.n],
+                        })
+                      }
+                    >
+                      {j.l}
+                    </button>
+                  );
+                })}
+              </div>
+              <span>
+                {fil.joursOff.length
+                  ? "Ces jours-là, Léa ne vous demande rien."
+                  : "Aucun jour de fermeture — Léa vous parle tous les jours."}
+              </span>
+            </div>
           </div>
 
           {/* ═══ RECOMMENCER À ZÉRO ═══

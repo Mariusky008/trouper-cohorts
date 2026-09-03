@@ -183,6 +183,8 @@ const SYSTEME = (
   chiffres: { vues: number; reservations: number; abonnes: number; quoi: string } | null,
   photoPrise: boolean,
   souvenirDejaDit: boolean,
+  rdv: { quoi: string; question: string; heure: string } | null,
+  apres: { quoi: string; heure: string } | null,
 ) => {
   const hh = `${Math.floor(heure)} h ${String(Math.round((heure % 1) * 60)).padStart(2, "0")}`;
   return [
@@ -196,12 +198,34 @@ const SYSTEME = (
     "",
     "TA TOUTE PREMIÈRE PHRASE, quand la conversation s'ouvre, est exactement",
     `celle-ci : « Bonjour ${commerce.prenom}, j'espère que ce début de journée`,
-    `commence bien. On prépare votre journée ? ${OUVERTURE[commerce.branche] ?? OUVERTURE.restaurant} »`,
+    `commence bien. On prépare votre journée ? ${rdv?.question ?? OUVERTURE[commerce.branche] ?? OUVERTURE.restaurant} »`,
     "Tu ne l'inventes pas et tu ne la reformules pas. Une question ouverte — «",
     "qu'est-ce que vous avez envie de raconter ? » — oblige le commerçant à",
     "trouver le sujet lui-même, c'est-à-dire à faire le travail qu'on prétend lui",
     "enlever. Il rend le téléphone. Une question fermée se répond sans réfléchir.",
     "",
+    ...(rdv
+      ? [
+          "OÙ ON EN EST DANS SA JOURNÉE, ET C'EST CE QUI DÉCIDE DE TA QUESTION.",
+          `Il est ${hh}. Le moment de sa journée est : « ${rdv.quoi} », qui a`,
+          `commencé à ${rdv.heure}.`,
+          apres ? `Ensuite viendra « ${apres.quoi} », vers ${apres.heure}.` : "",
+          "",
+          "TU NE POSES JAMAIS LA QUESTION D'UN MOMENT DÉJÀ PASSÉ. Défaut relevé,",
+          "et il est grave : « s'il oublie de mettre son menu à 10 h et qu'il",
+          "ouvre à 15 h, elle va quand même lui demander son plat du jour ». À",
+          "15 h le service est fini. Une assistante qui demande le plat de midi",
+          "à 15 h prouve en une phrase qu'elle ne sait pas quelle heure il est,",
+          "donc qu'elle ne suit rien — et tout le reste s'effondre derrière.",
+          "",
+          "S'IL A MANQUÉ UN MOMENT, TU LE DIS EN PASSANT, SANS REPROCHE, ET TU",
+          "PASSES À LA SUITE. « Rien en ligne pour ce midi. On prépare ce",
+          "soir ? » — une phrase, et on avance. Tu ne lui fais jamais la morale",
+          "et tu ne lui proposes pas de rattraper quelque chose qui n'a plus",
+          "lieu d'être : personne ne réserve un plat du jour à 15 h.",
+          "",
+        ]
+      : []),
     `CE QU'IL TE FAUT, DANS CET ORDRE : ${ORDRE[commerce.branche] ?? ORDRE.restaurant}.`,
     "",
     "MAIS TU COMPTES LES TOURS, PAS LES QUESTIONS — et c'est le cœur du rythme.",
@@ -574,6 +598,15 @@ export async function POST(request: Request) {
   // carte » et « jamais deux fois » — et il tranchait mal : à l'écran, le
   // rappel de mardi dernier apparaissait deux fois de suite, mot pour mot.
   const souvenirDejaDit = p?.souvenirDejaDit === true;
+  // OÙ ON EN EST DANS SA JOURNÉE — c'est l'écran qui le sait, parce que c'est
+  // lui qui tient le planning du commerçant. Voir `fil-du-jour.ts`.
+  const lireRdv = (x: unknown) => {
+    const o = (x ?? {}) as Record<string, unknown>;
+    const quoi = s(o.quoi);
+    return quoi ? { quoi: quoi.slice(0, 60), question: s(o.question).slice(0, 160), heure: s(o.heure).slice(0, 12) } : null;
+  };
+  const rdv = lireRdv(p?.rdv);
+  const apres = lireRdv(p?.apres);
   const tours = Array.isArray(p?.messages) ? (p.messages as unknown[]) : [];
   const messages = tours
     .slice(-MAX_TOURS)
@@ -611,6 +644,8 @@ export async function POST(request: Request) {
           chiffres,
           photoPrise,
           souvenirDejaDit,
+          rdv,
+          apres,
         ),
         messages: conversation,
         output_config: {
