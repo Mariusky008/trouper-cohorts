@@ -60,6 +60,7 @@ import {
   journeesPassees,
   totalSemaine,
 } from "@/lib/direct/journees-passees";
+import { carteAMontrer } from "@/lib/direct/carte-a-valider";
 import { dicteeDisponible, libererMicro, ouvrirEcoute } from "@/lib/direct/voix-micro";
 import { useSyncExternalStore } from "react";
 
@@ -694,7 +695,20 @@ export function Assistante() {
           return;
         }
         const dit = String(d.dire || "");
-        const k = (d.carte ?? null) as Carte | null;
+        // ─── LE MÊME BARRAGE, DE CE CÔTÉ-CI AUSSI ───
+        //
+        // « On me donne le résultat et ensuite on me demande le nombre de
+        // portions. » Signalé deux fois, à deux semaines d'écart. Le serveur
+        // retient déjà ces cartes-là — mais un défaut vu deux fois mérite deux
+        // barrages, et celui-ci a un avantage que l'autre n'a pas : il est
+        // vérifiable de bout en bout dans le navigateur, alors que le garde-fou
+        // du serveur ne peut être éprouvé qu'à part.
+        //
+        // C'est la MÊME fonction des deux côtés, importée du même fichier :
+        // deux règles écrites deux fois finiraient par diverger, et c'est
+        // précisément comme ça que ce défaut est revenu.
+        const brute = (d.carte ?? null) as Carte | null;
+        const k = carteAMontrer(String(d.dire || ""), brute) ? brute : null;
         // ─── QUAND ELLE TOMBE EN PANNE, ON SAIT POURQUOI ───
         //
         // Vu à l'écran, deux fois de suite : « Je n'ai pas réussi à vous

@@ -742,6 +742,13 @@ console.log("\n══ le moment ══");
 // « et c'est à combien ? » : le commerçant ne sait plus s'il doit répondre ou
 // appuyer — et s'il appuie, il publie une annonce sans prix à toute la ville.
 //
+// ET IL EST REVENU, DEUX SEMAINES PLUS TARD : « on me donne le résultat et
+// ensuite on me demande le nombre de portions ». C'est nous qui l'avions
+// réintroduit, en autorisant la carte à sortir dès qu'UN chiffre était connu
+// pour gagner un tour. À l'écran, ça donne une case QUANTITÉ à « — » sous la
+// question « combien de portions ? », avec un bouton « C'est bon » dessous.
+// Cette section porte donc les deux signalements, et le second en premier.
+//
 // LA CONSIGNE EST DANS LE PROMPT, MAIS ON NE VÉRIFIE PAS UN PROMPT. On vérifie
 // le garde-fou qui tient le jour où le modèle se trompe, c'est-à-dire le jour de
 // la démonstration.
@@ -749,12 +756,16 @@ console.log("\n══ la carte et la question ══");
 {
   const { carteAMontrer } = await import("../src/lib/direct/carte-a-valider.ts");
   const cas = [
+    ["Combien de portions avez-vous prévu ?", { prix: "14 €", quantite: null }, false,
+      "SA CAPTURE : quantité à « — » pendant qu'elle demande les portions"],
     ["Et c'est à combien ?", { prix: "", quantite: null }, false,
       "prix vide pendant qu'elle demande le prix : pas de carte"],
     ["Et c'est à combien ?", { prix: "14 €", quantite: null }, true,
-      "le prix est connu : la carte peut sortir malgré la question"],
+      "mais le prix est là : cette question-là ne contredit rien"],
     ["Le créneau se libère à 14 h 30, je le mets en ligne ?", { prix: "", quantite: 1 }, true,
       "un créneau n'a pas de prix et doit pouvoir se proposer"],
+    ["Vous me le photographiez ?", { prix: "14 €", quantite: null }, true,
+      "la photo est la seule question qui accompagne une carte : le bouton y est"],
     ["Je le mets en ligne.", { prix: "", quantite: null }, true,
       "sans question, rien ne retient la carte"],
     ["Et c'est à combien ?", null, false, "pas de carte du tout"],
