@@ -104,8 +104,18 @@ const SEUIL = 0.012;
  * l'entend à chaque tour. Mille cinq cents était prudent, mille deux cents
  * encore perceptible. Neuf cents laisse passer une hésitation courte sans faire
  * attendre — en dessous, on lui coupe la parole, et ça ne se pardonne pas.
+ *
+ * ─── SEPT CENTS, MAINTENANT, ET C'EST LA LIMITE ───
+ *
+ * On reprend deux dixièmes, parce qu'ils se paient à CHAQUE tour et qu'ils sont
+ * les seuls du budget qui ne dépendent d'aucun réseau. Ce qu'on annonce sur les
+ * trois phrases dites plus haut — le plat, le prix, les portions — ne contient
+ * pas d'hésitation longue : ce sont des choses qu'il sait depuis six heures du
+ * matin. On ne descendra pas plus bas : sous six cents, on coupe une respiration
+ * pour un silence, et se faire couper la parole par une assistante est
+ * exactement ce qu'on ne pardonne pas.
  */
-const SILENCE_MS = 900;
+const SILENCE_MS = 700;
 const RIEN_MS = 8000;
 
 /** En dessous, ce n'est pas quelqu'un qui parle bas : c'est un micro sourd. */
