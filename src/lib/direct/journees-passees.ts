@@ -54,6 +54,15 @@ export type JourneePassee = {
   vues?: number;
   reservations?: number;
   abonnes?: number;
+  /**
+   * CE QUI A LE MIEUX MARCHÉ CE JOUR-LÀ.
+   *
+   * « L'UX est mauvaise, les résultats ne se voient pas assez, tout se
+   * ressemble. » C'était vrai, et la cause n'était pas graphique : six journées
+   * qui n'affichent que trois nombres du même format SONT identiques. Il
+   * manquait ce qui distingue un jour d'un autre — ce qui a marché.
+   */
+  phare?: string;
   /** Vrai pour les journées de démonstration : elles le disent à l'écran. */
   demo?: boolean;
 };
@@ -147,37 +156,37 @@ export function ditLeJour(jour: string): string {
  * réservations, un ou deux abonnés par jour. Des milliers de vues le feraient
  * sourire, et il aurait raison.
  */
-const DEMO: Record<string, { titres: [string, string, string?][]; v: number; r: number; a: number }[]> = {
+const DEMO: Record<string, { titres: [string, string, string?][]; v: number; r: number; a: number; p?: string }[]> = {
   "as-resto": [
-    { titres: [["Magret-frites du jour", "🍽️", "14 €"], ["Garbure maison", "🥣", "9 €"]], v: 168, r: 6, a: 4 },
-    { titres: [["Lasagnes maison", "🍽️", "13 €"]], v: 142, r: 4, a: 8 },
-    { titres: [["Confit de canard", "🍽️", "16 €"], ["Dernières parts à 9 €", "⏳", "9 €"]], v: 201, r: 9, a: 3 },
+    { titres: [["Magret-frites du jour", "🍽️", "14 €"], ["Garbure maison", "🥣", "9 €"]], v: 168, r: 6, a: 4, p: "Magret-frites du jour" },
+    { titres: [["Lasagnes maison", "🍽️", "13 €"]], v: 142, r: 4, a: 8, p: "Lasagnes maison" },
+    { titres: [["Confit de canard", "🍽️", "16 €"], ["Dernières parts à 9 €", "⏳", "9 €"]], v: 201, r: 9, a: 3, p: "Dernières parts à 9 €" },
     { titres: [["Poulet basquaise", "🍽️", "12 €"]], v: 97, r: 2, a: 1 },
-    { titres: [["Soirée tapas", "🍷"], ["Plat du jour : axoa", "🍽️", "13 €"]], v: 233, r: 11, a: 6 },
+    { titres: [["Soirée tapas", "🍷"], ["Plat du jour : axoa", "🍽️", "13 €"]], v: 233, r: 11, a: 6, p: "Soirée tapas" },
   ],
   "as-coif": [
     { titres: [["Deux créneaux libres cet après-midi", "✂️"]], v: 88, r: 2, a: 2 },
-    { titres: [["Désistement à 15 h", "⏳"]], v: 124, r: 3, a: 5 },
+    { titres: [["Désistement à 15 h", "⏳"]], v: 124, r: 3, a: 5, p: "Désistement à 15 h" },
     { titres: [["Nouvelle prestation : soin cuir chevelu", "💆", "28 €"]], v: 76, r: 1, a: 2 },
     { titres: [["Créneau de 11 h libéré", "⏳"]], v: 143, r: 4, a: 3 },
   ],
   "as-ongle": [
     { titres: [["Créneau de 15 h libre", "💅"]], v: 91, r: 3, a: 4 },
-    { titres: [["Pose gel — nouvelle collection", "💅", "35 €"]], v: 118, r: 2, a: 6 },
+    { titres: [["Pose gel — nouvelle collection", "💅", "35 €"]], v: 118, r: 2, a: 6, p: "Pose gel — nouvelle collection" },
     { titres: [["Désistement à 10 h 30", "⏳"]], v: 64, r: 1, a: 1 },
   ],
   "as-mode": [
     { titres: [["Arrivage lin d'été", "👗"]], v: 154, r: 0, a: 7 },
-    { titres: [["Dernières tailles — fin de série", "🏷️", "-40 %"]], v: 209, r: 0, a: 5 },
+    { titres: [["Dernières tailles — fin de série", "🏷️", "-40 %"]], v: 209, r: 0, a: 5, p: "Dernières tailles — fin de série" },
     { titres: [["Nouvelle collection en vitrine", "👗"]], v: 96, r: 0, a: 2 },
   ],
   "as-fleur": [
-    { titres: [["Arrivage pivoines", "💐", "18 €"]], v: 131, r: 5, a: 4 },
+    { titres: [["Arrivage pivoines", "💐", "18 €"]], v: 131, r: 5, a: 4, p: "Arrivage pivoines" },
     { titres: [["4 bouquets à emporter ce soir", "⏳", "12 €"]], v: 87, r: 3, a: 1 },
     { titres: [["Bouquets de la Saint-Vincent", "💐", "22 €"]], v: 165, r: 6, a: 3 },
   ],
   "as-bar": [
-    { titres: [["Concert ce soir — trio jazz", "🎷"]], v: 287, r: 0, a: 12 },
+    { titres: [["Concert ce soir — trio jazz", "🎷"]], v: 287, r: 0, a: 12, p: "Concert ce soir — trio jazz" },
     { titres: [["Terrasse ouverte", "🍷"], ["Ardoise du jour", "🧀"]], v: 112, r: 0, a: 3 },
     { titres: [["Dégustation vins nature", "🍷", "12 €"]], v: 176, r: 8, a: 6 },
   ],
@@ -209,6 +218,7 @@ export function journeesPassees(commerce: string): JourneePassee[] {
     vues: d.v,
     reservations: d.r,
     abonnes: d.a,
+    phare: d.p,
     demo: true,
   }));
   return [...vraies, ...demo.filter((d) => !dejaLa.has(d.jour))];

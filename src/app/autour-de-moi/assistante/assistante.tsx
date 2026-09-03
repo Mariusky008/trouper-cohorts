@@ -61,6 +61,7 @@ import {
   totalSemaine,
 } from "@/lib/direct/journees-passees";
 import { carteAMontrer } from "@/lib/direct/carte-a-valider";
+import { enregistrerReglages, reglages } from "@/lib/direct/reglages-commercant";
 import {
   apresCa,
   enregistrerFil,
@@ -68,6 +69,7 @@ import {
   filDuJour,
   type FilDuJour,
   hhmm as hhmmFil,
+  jourParticulier,
   JOURS,
   ouEnEstOn,
 } from "@/lib/direct/fil-du-jour";
@@ -501,6 +503,25 @@ export function Assistante() {
    */
   const [majFil, setMajFil] = useState(0);
   /**
+   * LA VOIX DE LÉA, ET C'EST SON CHOIX À LUI.
+   *
+   * Lu du stockage à l'ouverture, pas à la construction : sur le serveur il n'y
+   * a pas de stockage, et une valeur différente entre le rendu du serveur et
+   * celui du navigateur fait crier React. L'effet règle ça une fois.
+   */
+  const [voixCoupee, setVoixCoupee] = useState(false);
+  useEffect(() => {
+    setVoixCoupee(reglages().voixCoupee);
+  }, []);
+  /**
+   * LE JOUR QU'IL EST EN TRAIN DE RÉGLER — `null` veut dire « toute la semaine ».
+   *
+   * « Ce serait encore mieux de pouvoir éditer chaque jour spécifiquement :
+   * mercredi c'est peut-être la journée enfants. » On ouvre donc sur la
+   * semaine, et il entre dans un jour seulement s'il en a besoin.
+   */
+  const [jourRegle, setJourRegle] = useState<number | null>(null);
+  /**
    * LE FIL À JOUR, ET PAS CELUI DU DERNIER RENDU.
    *
    * LE DÉFAUT QUE ÇA CORRIGE, ET IL EFFAÇAIT UNE PHRASE. `parler` construisait
@@ -524,18 +545,44 @@ export function Assistante() {
    * et c'est le même remède que `toursRef` : ce qui est lu DANS un rappel doit
    * venir d'une référence, jamais d'une valeur figée à la création.
    */
-  const reglerFil = useCallback(
-    (f: FilDuJour) => {
-      enregistrerFil(cId.current, f);
-      setMajFil((n) => n + 1);
-    },
-    [],
-  );
+  /**
+   * IL RÈGLE, ET ON ÉCRIT AU BON ENDROIT.
+   *
+   * Sans jour choisi, il règle LA SEMAINE : la liste de base change, et tous
+   * les jours qui n'ont pas la leur suivent. Avec un jour choisi, on n'écrit
+   * QUE dans ce jour-là — le mercredi des enfants ne doit pas déplacer le
+   * service de midi du mardi.
+   */
+  const reglerFil = useCallback((f: FilDuJour) => {
+    const j = jourRef.current;
+    const avant = filBrutRef.current;
+    enregistrerFil(
+      cId.current,
+      j == null
+        ? { ...avant, rendezvous: f.rendezvous, joursOff: f.joursOff }
+        : {
+            ...avant,
+            joursOff: f.joursOff,
+            parJour: { ...(avant.parJour ?? {}), [j]: f.rendezvous },
+          },
+    );
+    setMajFil((n) => n + 1);
+  }, []);
+  const jourRef = useRef<number | null>(null);
+  /** Le fil tel qu'il est STOCKÉ — pour ne pas écraser ce qu'on ne règle pas. */
+  const filBrutRef = useRef<FilDuJour>({ rendezvous: [], joursOff: [] });
   const cId = useRef("");
   /** Vrai le jour où il a fermé — voir l'ouverture automatique. */
   const offRef = useRef(false);
+  /**
+   * SA VOIX EST-ELLE COUPÉE — lue par `dire`, qui est créé une fois.
+   *
+   * Même remède que `toursRef` et `rdvRef` : ce qui est lu DANS un rappel vient
+   * d'une référence, jamais d'une valeur figée à la création de la fonction.
+   */
+  const voixCoupeeRef = useRef(false);
   const rdvRef = useRef<{
-    rdv: { quoi: string; question: string; heure: string } | null;
+    rdv: { quoi: string; question: string; heure: string; premier: boolean } | null;
     apres: { quoi: string; heure: string } | null;
   }>({ rdv: null, apres: null });
   const bas = useRef<HTMLDivElement | null>(null);
@@ -631,6 +678,22 @@ export function Assistante() {
         setTimeout(() => demarrerMicroRef.current?.(), tempsDeLire(texte));
       };
       if (!texte.trim()) return suite(true);
+      // ─── LA VOIX COUPÉE : L'ÉCRIT, ET RIEN D'AUTRE ───
+      //
+      // « Je veux pouvoir couper la voix si je veux et utiliser juste
+      // l'écriture aussi pour aller plus vite si j'en ai envie. »
+      //
+      // On sort AVANT la synthèse, pas après : rien n'est demandé au serveur,
+      // rien n'est attendu, la bulle s'affiche à l'instant où la réponse
+      // arrive et le micro se rouvre aussitôt. C'est le chemin le plus court
+      // qui existe dans cet écran — huit mots parlés coûtent deux secondes et
+      // demie, et le micro attendait la fin de la phrase.
+      //
+      // `suite(true)` et non `suite(false)` : le faux sert au cas où la voix a
+      // ÉCHOUÉ — on laisse alors le temps de lire avant de réécouter. Ici il
+      // n'y a pas d'échec, il y a un choix, et quelqu'un qui a coupé la voix
+      // lit à son rythme sans qu'on le fasse attendre.
+      if (voixCoupeeRef.current) return suite(true);
       setParle(true);
       try {
         // ON NE TÉLÉCHARGE PLUS, ON LIT EN TÉLÉCHARGEANT.
@@ -1115,14 +1178,32 @@ export function Assistante() {
   // s'ouvrait plus du tout. Lire le fil coûte un accès au stockage local ; le
   // compteur `majFil` suffit à le relire après chaque réglage.
   void majFil;
-  const fil = filDuJour(c.id, c.branche);
+  // DEUX LECTURES, ET ELLES NE SERVENT PAS À LA MÊME CHOSE. `fil` est celui
+  // d'AUJOURD'HUI — c'est lui qui décide de ce que Léa dit. `filRegle` est
+  // celui qu'il est en train de modifier : la semaine, ou un jour précis.
+  const fil = filDuJour(c.id, c.branche, new Date().getDay());
+  const filRegle = filDuJour(c.id, c.branche, jourRegle ?? undefined);
   cId.current = c.id;
+  voixCoupeeRef.current = voixCoupee;
+  jourRef.current = jourRegle;
+  filBrutRef.current = filDuJour(c.id, c.branche);
   const jourOff = estJourOff(fil);
   offRef.current = jourOff;
   const rdv = ouEnEstOn(fil, heure);
   const apres = apresCa(fil, heure);
+  const premierRdv = fil.rendezvous
+    .filter((r) => r.actif)
+    .sort((a, b) => a.heure - b.heure)[0];
   rdvRef.current = {
-    rdv: rdv ? { quoi: rdv.quoi, question: rdv.question, heure: hhmmFil(rdv.heure) } : null,
+    rdv: rdv
+      ? {
+          quoi: rdv.quoi,
+          question: rdv.question,
+          heure: hhmmFil(rdv.heure),
+          // LE BONJOUR COMPLET N'EST DÛ QU'AU PREMIER MOMENT DE LA JOURNÉE.
+          premier: rdv.cle === premierRdv?.cle,
+        }
+      : null,
     apres: apres ? { quoi: apres.quoi, heure: hhmmFil(apres.heure) } : null,
   };
   const semaine = totalSemaine(passees);
@@ -1229,62 +1310,121 @@ export function Assistante() {
           qu'il a réellement fait de ce qu'on lui montre. */}
       {onglet === "passees" && (
         <div className="as-vue">
-          <div className="as-semaine">
-            <span className="as-enligne-t">Vos {semaine.jours} derniers jours</span>
-            <ul>
-              <li>
-                <b>{semaine.vues}</b>
-                <em>vues</em>
-              </li>
-              <li>
-                <b>{semaine.reservations}</b>
-                <em>réservations</em>
-              </li>
-              <li>
-                <b>{semaine.abonnes}</b>
-                <em>abonnés</em>
-              </li>
-              <li>
-                <b>{semaine.annonces}</b>
-                <em>annonces</em>
-              </li>
-            </ul>
-          </div>
-          {passees.map((d) => (
-            <div className="as-jour" key={`${d.commerce}-${d.jour}`}>
-              <div className="as-jour-t">
-                <b>{ditLeJour(d.jour)}</b>
-                {d.demo && <i>démo</i>}
+          {/* ═══════════════════════════════════════════════════════════════
+              SES JOURNÉES — REFAITES
+              ═══════════════════════════════════════════════════════════════
+              « L'UX est mauvaise, les résultats ne se voient pas assez, tout
+              se ressemble. » C'était juste, et la cause n'était pas graphique :
+              six journées qui n'affichent que trois nombres du même format SONT
+              identiques. Aucune ne dit si elle a bien marché, parce qu'un
+              nombre seul ne veut rien dire — 168 vues, c'est beaucoup ou peu ?
+
+              CE QU'UN CHIFFRE SEUL NE PEUT PAS DIRE, UNE FORME LE DIT. Sept
+              barres côte à côte, et on voit sa semaine en un coup d'œil : le
+              creux du lundi, le pic du vendredi. Rien à lire, rien à comparer
+              de tête. La plus haute est marquée, et c'est la seule information
+              qu'il retiendra vraiment.
+
+              PUIS UNE HIÉRARCHIE, AU LIEU DE TROIS NOMBRES ÉGAUX. Les vues en
+              gros à gauche — c'est la portée, ce qui varie —, le reste en
+              petit, et ce qui a MARCHÉ ce jour-là écrit en clair. C'est ça qui
+              distingue un jour d'un autre, pas un troisième nombre. */}
+          {!!passees.length && (
+            <div className="as-courbe">
+              <span className="as-enligne-t">Vos {semaine.jours} derniers jours</span>
+              <div className="as-barres">
+                {[...passees].slice(0, 7).reverse().map((d) => {
+                  const v = d.vues ?? 0;
+                  const haut = Math.max(...passees.slice(0, 7).map((x) => x.vues ?? 0), 1);
+                  const jour = new Date(`${d.jour}T12:00:00`);
+                  return (
+                    <div
+                      key={`${d.commerce}-${d.jour}`}
+                      className={`as-barre${v === haut && v > 0 ? " haut" : ""}`}
+                    >
+                      <b>{v || "—"}</b>
+                      {/* LA HAUTEUR EST PROPORTIONNELLE, ET LE MINIMUM EST 8 % :
+                          une barre de zéro pixel ne se lit pas comme « peu »,
+                          elle se lit comme un bug. */}
+                      <i style={{ height: `${Math.max(8, (v / haut) * 100)}%` }} />
+                      <em>
+                        {jour.toLocaleDateString("fr-FR", { weekday: "short" }).slice(0, 3)}
+                      </em>
+                    </div>
+                  );
+                })}
               </div>
-              <ul className="as-jour-l">
-                {d.moments.map((m, i) => (
-                  <li key={`${m.titre}-${i}`}>
-                    <span aria-hidden="true">{m.icone}</span>
-                    <b>{m.titre}</b>
-                    {m.prix && <em>{m.prix}</em>}
-                  </li>
-                ))}
-              </ul>
-              {d.vues != null ? (
-                <p className="as-jour-c">
-                  <span>
-                    <b>{d.vues}</b> vues
-                  </span>
-                  <span>
-                    <b>{d.reservations}</b> réservations
-                  </span>
-                  <span>
-                    <b>{d.abonnes}</b> abonnés
-                  </span>
-                </p>
-              ) : (
-                /* PAS DE ZÉRO À LA PLACE D'UNE MESURE. Il n'y a pas encore de
-                   serveur : personne ne compte les vues d'une vraie journée.
-                   Un « 0 » se lirait comme un échec qu'on n'a pas constaté. */
-                <p className="as-jour-c vide">Chiffres pas encore mesurés</p>
-              )}
+              <p className="as-courbe-p">
+                <span>
+                  <b>{semaine.reservations}</b> réservations
+                </span>
+                <span>
+                  <b>{semaine.abonnes}</b> nouveaux abonnés
+                </span>
+                <span>
+                  <b>{semaine.annonces}</b> annonces
+                </span>
+              </p>
             </div>
-          ))}
+          )}
+
+          {passees.map((d) => {
+            const haut = Math.max(...passees.slice(0, 7).map((x) => x.vues ?? 0), 1);
+            const meilleur = (d.vues ?? 0) === haut && (d.vues ?? 0) > 0;
+            return (
+              <div className={`as-jour${meilleur ? " meilleur" : ""}`} key={`${d.commerce}-${d.jour}`}>
+                <div className="as-jour-t">
+                  <b>{ditLeJour(d.jour)}</b>
+                  {meilleur && <s>Meilleur jour</s>}
+                  {d.demo && <i>démo</i>}
+                </div>
+
+                <div className="as-jour-c2">
+                  {d.vues != null ? (
+                    <>
+                      <div className="as-jour-v">
+                        <b>{d.vues}</b>
+                        <em>vues</em>
+                      </div>
+                      <ul className="as-jour-p">
+                        <li>
+                          <b>{d.reservations}</b> réservations
+                        </li>
+                        <li>
+                          <b>{d.abonnes}</b> abonnés
+                        </li>
+                      </ul>
+                    </>
+                  ) : (
+                    /* PAS DE ZÉRO À LA PLACE D'UNE MESURE. Il n'y a pas encore
+                       de serveur : personne ne compte les vues d'une vraie
+                       journée. Un « 0 » se lirait comme un échec constaté. */
+                    <p className="as-jour-vide">Chiffres pas encore mesurés</p>
+                  )}
+                </div>
+
+                {/* CE QUI A MARCHÉ, EN CLAIR. C'est la ligne qui distingue
+                    enfin un jour d'un autre — et la seule qu'il peut réutiliser
+                    demain. */}
+                {d.phare && (
+                  <p className="as-phare">
+                    <span aria-hidden="true">↗</span>
+                    <b>{d.phare}</b> a le mieux marché
+                  </p>
+                )}
+
+                <ul className="as-jour-l">
+                  {d.moments.map((m, i) => (
+                    <li key={`${m.titre}-${i}`}>
+                      <span aria-hidden="true">{m.icone}</span>
+                      <b>{m.titre}</b>
+                      {m.prix && <em>{m.prix}</em>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
           {!passees.length && (
             <p className="as-rien">
               Vos journées s’écriront ici, une par jour, à partir de demain.
@@ -1373,6 +1513,42 @@ export function Assistante() {
             </button>
           </div>
 
+          {/* ═══ LA VOIX DE LÉA ═══
+              « Je veux pouvoir couper la voix si je veux et utiliser juste
+              l'écriture aussi pour aller plus vite si j'en ai envie. »
+
+              C'EST LA BONNE RÉPONSE À UNE QUESTION QU'ON S'ÉTAIT MAL POSÉE. On
+              avait débattu de SUPPRIMER la voix pour gagner du rythme, et
+              conclu qu'il fallait la garder — c'est le seul « wahou » de cet
+              écran. Les deux étaient vrais, à deux moments différents : la voix
+              impressionne celui à qui l'on fait la démonstration, et elle
+              ralentit celui qui s'en sert tous les jours. Ce n'était donc pas à
+              nous de trancher une fois pour tout le monde.
+
+              CE QUE ÇA GAGNE, ET C'EST MESURABLE : sa phrase n'est plus dite,
+              donc plus attendue. Huit mots prennent deux secondes et demie à
+              prononcer, et le micro ne se rouvrait qu'à la fin. */}
+          <button
+            type="button"
+            className={`as-voix${voixCoupee ? " coupee" : ""}`}
+            aria-pressed={!voixCoupee}
+            onClick={() => {
+              const v = !voixCoupee;
+              setVoixCoupee(v);
+              enregistrerReglages({ voixCoupee: v });
+            }}
+          >
+            <i aria-hidden="true">{voixCoupee ? "✍️" : "🔊"}</i>
+            <span>
+              <b>{voixCoupee ? "Léa écrit, elle ne parle pas" : "Léa vous parle"}</b>
+              <em>
+                {voixCoupee
+                  ? "Ses réponses arrivent tout de suite. Appuyez pour lui rendre la voix."
+                  : "Coupez sa voix pour aller plus vite : elle répondra par écrit."}
+              </em>
+            </span>
+          </button>
+
           {/* ═══ LE FIL DE SA JOURNÉE ═══
               « Il faut un planning clair accessible au commerçant qu'on peut
               même modifier s'il le veut, et où il pourra aussi mettre ses
@@ -1387,54 +1563,164 @@ export function Assistante() {
             <div className="as-fil-t">
               <b>Votre journée avec Léa</b>
               <em>
-                Elle vous parle du moment où vous êtes. Décalez une heure, ou
-                éteignez ce qui ne vous concerne pas.
+                Voilà ce qu’elle vous dira, et quand. Changez l’heure, changez
+                sa phrase, éteignez ce qui ne vous concerne pas.
               </em>
             </div>
+
+            {/* ─── LA SEMAINE, OU UN JOUR PRÉCIS ───
+                « Mercredi c'est peut-être la journée enfants et je veux
+                pouvoir annoncer quelque chose pour le goûter des enfants. »
+                Une semaine de commerce n'est pas plate.
+
+                ON OUVRE SUR LA SEMAINE, ET C'EST VOULU : sept colonnes à
+                remplir avant que ça serve est le piège de tout planning. Un
+                jour ne devient particulier que s'il le décide, et il repart de
+                la semaine, déjà remplie. Le point vert dit lesquels ont leur
+                propre journée. */}
+            <div className="as-fil-j">
+              <button
+                type="button"
+                className={jourRegle == null ? "on" : ""}
+                onClick={() => setJourRegle(null)}
+              >
+                Toute la semaine
+              </button>
+              {JOURS.map((j) => (
+                <button
+                  key={j.n}
+                  type="button"
+                  className={`${jourRegle === j.n ? "on" : ""}${
+                    jourParticulier(filBrutRef.current, j.n) ? " propre" : ""
+                  }`}
+                  onClick={() => setJourRegle(j.n)}
+                >
+                  {j.l}
+                </button>
+              ))}
+            </div>
+            {jourRegle != null && (
+              <p className="as-fil-note">
+                {jourParticulier(filBrutRef.current, jourRegle)
+                  ? `Ce ${JOURS.find((x) => x.n === jourRegle)?.l.toLowerCase()}. a sa propre journée.`
+                  : `Vous partez de la semaine. Dès que vous changez quelque chose, ce jour devient à part.`}
+              </p>
+            )}
             <ul>
-              {fil.rendezvous.map((r) => (
+              {filRegle.rendezvous.map((r) => (
                 <li key={r.cle} className={r.actif ? "" : "off"}>
-                  <input
-                    className="as-fil-h"
-                    value={hhmmFil(r.heure)}
-                    inputMode="numeric"
-                    aria-label={`Heure de « ${r.quoi} »`}
-                    onChange={(e) => {
-                      // « 11 h 30 », « 11h30 », « 1130 », « 11 » — on lit ce
-                      // qu'il tape comme il le tape, comme dans la carte.
-                      const ch = e.target.value.replace(/[^0-9]/g, "");
-                      if (!ch) return;
-                      const h = Number(ch.slice(0, 2));
-                      const mn = Number(ch.slice(2, 4) || 0);
-                      if (h > 23 || mn > 59) return;
+                  <div className="as-fil-l">
+                    <input
+                      className="as-fil-h"
+                      value={hhmmFil(r.heure)}
+                      inputMode="numeric"
+                      aria-label={`Heure de « ${r.quoi} »`}
+                      onChange={(e) => {
+                        // « 11 h 30 », « 11h30 », « 1130 », « 11 » — on lit ce
+                        // qu'il tape comme il le tape, comme dans la carte.
+                        const ch = e.target.value.replace(/[^0-9]/g, "");
+                        if (!ch) return;
+                        const h = Number(ch.slice(0, 2));
+                        const mn = Number(ch.slice(2, 4) || 0);
+                        if (h > 23 || mn > 59) return;
+                        reglerFil({
+                          ...filRegle,
+                          rendezvous: filRegle.rendezvous.map((x) =>
+                            x.cle === r.cle ? { ...x, heure: h + mn / 60 } : x,
+                          ),
+                        });
+                      }}
+                    />
+                    <b>{r.sien ? "Votre rappel" : r.quoi}</b>
+                    {r.sien && (
+                      <button
+                        type="button"
+                        className="as-fil-x"
+                        aria-label="Supprimer ce rappel"
+                        onClick={() =>
+                          reglerFil({
+                            ...filRegle,
+                            rendezvous: filRegle.rendezvous.filter((x) => x.cle !== r.cle),
+                          })
+                        }
+                      >
+                        ✕
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className={`as-fil-on${r.actif ? " on" : ""}`}
+                      aria-pressed={r.actif}
+                      aria-label={r.actif ? "Éteindre ce moment" : "Allumer ce moment"}
+                      onClick={() =>
+                        reglerFil({
+                          ...filRegle,
+                          rendezvous: filRegle.rendezvous.map((x) =>
+                            x.cle === r.cle ? { ...x, actif: !x.actif } : x,
+                          ),
+                        })
+                      }
+                    >
+                      {r.actif ? "✓" : "＋"}
+                    </button>
+                  </div>
+                  {/* ─── SA PHRASE, ET IL PEUT L'ÉCRIRE ───
+                      « Si je veux qu'elle me dise à 16 h "hey n'oublie pas
+                      d'envoyer à tous tes abonnés une photo de toi en
+                      rigolant" : ça je ne peux pas ? » Non, et c'était la
+                      vraie limite du planning : il réglait QUAND elle parle,
+                      jamais CE QU'ELLE DIT. Nos phrases sont ce qu'on croit
+                      savoir de son métier ; la sienne est ce qu'il sait de son
+                      commerce. C'est ce champ-là qui part chez Léa mot pour
+                      mot — voir `rdv.question` dans la route. */}
+                  <textarea
+                    className="as-fil-q"
+                    value={r.question}
+                    rows={2}
+                    placeholder="Ce que Léa doit vous dire à cette heure-là"
+                    aria-label={`Ce que Léa dit à ${hhmmFil(r.heure)}`}
+                    onChange={(e) =>
                       reglerFil({
-                        ...fil,
-                        rendezvous: fil.rendezvous.map((x) =>
-                          x.cle === r.cle ? { ...x, heure: h + mn / 60 } : x,
-                        ),
-                      });
-                    }}
-                  />
-                  <span>{r.quoi}</span>
-                  <button
-                    type="button"
-                    className={`as-fil-on${r.actif ? " on" : ""}`}
-                    aria-pressed={r.actif}
-                    aria-label={r.actif ? "Éteindre ce moment" : "Allumer ce moment"}
-                    onClick={() =>
-                      reglerFil({
-                        ...fil,
-                        rendezvous: fil.rendezvous.map((x) =>
-                          x.cle === r.cle ? { ...x, actif: !x.actif } : x,
+                        ...filRegle,
+                        rendezvous: filRegle.rendezvous.map((x) =>
+                          x.cle === r.cle ? { ...x, question: e.target.value.slice(0, 200) } : x,
                         ),
                       })
                     }
-                  >
-                    {r.actif ? "✓" : "＋"}
-                  </button>
+                  />
                 </li>
               ))}
             </ul>
+
+            {/* ─── UN MOMENT À LUI ───
+                Nos rendez-vous sont une hypothèse sur un métier ; les siens
+                n'ont aucune raison de leur ressembler. Et ils se suppriment —
+                un rappel qu'on ne peut pas enlever devient un rappel qu'on
+                coupe en entier. */}
+            <button
+              type="button"
+              className="as-fil-plus"
+              onClick={() =>
+                reglerFil({
+                  ...filRegle,
+                  rendezvous: [
+                    ...filRegle.rendezvous,
+                    {
+                      cle: `sien-${Date.now().toString(36)}`,
+                      // 16 h : ni le service, ni la fermeture. Le creux de
+                      // l'après-midi est l'heure où l'on a le temps.
+                      heure: 16,
+                      quoi: "Votre rappel",
+                      question: "",
+                      actif: true,
+                      sien: true,
+                    },
+                  ],
+                })
+              }
+            >
+              ＋ Ajouter un moment à vous
+            </button>
 
             {/* SES JOURS OFF. Léa se tait ce jour-là — c'est la moitié la plus
                 importante d'un planning : ce qu'on ne fait PAS. Un assistant

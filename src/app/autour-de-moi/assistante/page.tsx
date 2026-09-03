@@ -589,27 +589,63 @@ body{background:#05090C}
 .as-vue > *{flex:none}
 .as-fil[hidden],.as-bas[hidden]{display:none}
 
-/* LA SEMAINE EN UNE LIGNE. C'est ce qu'il retient ; le detail est dessous pour
-   ceux qui verifient. */
-.as-semaine{padding:15px 16px 16px;border-radius:19px;
+/* ═══════════════════════════════════════════════════════════════════════
+   SES JOURNEES : UNE FORME D'ABORD, DES NOMBRES ENSUITE
+   ═══════════════════════════════════════════════════════════════════════
+   « L'UX est mauvaise, les resultats ne se voient pas assez, tout se
+   ressemble. » Juste, et la cause n'etait pas graphique : six journees qui
+   n'affichent que trois nombres du meme format SONT identiques. Et 168 vues,
+   tout seul, ne veut rien dire — c'est beaucoup ou peu ?
+
+   CE QU'UN CHIFFRE SEUL NE DIT PAS, UNE FORME LE DIT. Sept barres cote a cote,
+   et sa semaine se lit en un coup d'oeil : le creux du lundi, le pic du
+   vendredi. Rien a comparer de tete. */
+.as-courbe{padding:15px 16px 16px;border-radius:19px;
   background:linear-gradient(155deg,rgba(61,226,166,.14),rgba(18,32,28,.74));
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   border:1px solid rgba(61,226,166,.34)}
-.as-semaine ul{list-style:none;margin:11px 0 0;padding:0;
-  display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.as-semaine li{text-align:center}
-.as-semaine b{display:block;font-size:22px;font-weight:900;letter-spacing:-.03em;
-  font-variant-numeric:tabular-nums;color:var(--menthe2)}
-.as-semaine em{display:block;margin-top:1px;font-style:normal;font-size:10.5px;
-  font-weight:700;color:var(--craie3)}
+.as-barres{margin-top:14px;display:grid;grid-auto-flow:column;
+  grid-auto-columns:1fr;gap:6px;align-items:end;height:132px}
+.as-barre{display:flex;flex-direction:column;align-items:center;
+  justify-content:flex-end;height:100%;gap:5px}
+.as-barre b{font-size:11.5px;font-weight:800;color:var(--craie3);
+  font-variant-numeric:tabular-nums;line-height:1}
+.as-barre i{width:100%;max-width:30px;border-radius:6px 6px 3px 3px;
+  background:rgba(126,230,192,.26);
+  transition:height .45s cubic-bezier(.22,1.1,.4,1)}
+.as-barre em{font-style:normal;font-size:10px;font-weight:700;
+  color:var(--craie3);text-transform:capitalize}
+/* LA PLUS HAUTE EST MARQUEE, et c'est la seule information qu'il retiendra
+   vraiment de cet ecran : quel jour a marche. */
+.as-barre.haut b{color:var(--menthe2);font-size:13px}
+.as-barre.haut i{background:linear-gradient(180deg,var(--menthe2),var(--menthe));
+  box-shadow:0 0 18px rgba(61,226,166,.45)}
+.as-barre.haut em{color:var(--menthe2)}
+.as-courbe-p{margin:14px 0 0;padding-top:12px;
+  border-top:1px solid rgba(126,230,192,.18);
+  display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--craie3)}
+.as-courbe-p b{font-size:16px;font-weight:850;color:var(--craie);
+  font-variant-numeric:tabular-nums}
 
-/* UNE JOURNEE PASSEE : la date, ce qu'il a publie, ce que ca a donne. */
+/* UNE JOURNEE PASSEE : les vues en gros, le reste en petit, et ce qui a
+   MARCHE ecrit en clair. Trois nombres egaux ne creent aucune hierarchie ;
+   un gros et deux petits, si. */
 .as-jour{padding:13px 15px 14px;border-radius:17px;
   background:rgba(18,32,28,.6);
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   border:1px solid var(--trait)}
-.as-jour-t{display:flex;align-items:center;gap:8px}
+/* LE MEILLEUR JOUR NE SE DEVINE PAS, IL SE VOIT. Un lisere vert et un fond
+   plus clair : c'est le seul jour de la liste qui ait le droit d'attirer
+   l'oeil, et c'est celui qu'il veut refaire. */
+.as-jour.meilleur{
+  background:linear-gradient(160deg,rgba(61,226,166,.12),rgba(18,32,28,.7));
+  border-color:rgba(61,226,166,.42);
+  box-shadow:0 8px 26px rgba(61,226,166,.12)}
+.as-jour-t{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .as-jour-t b{font-size:14px;font-weight:800;letter-spacing:-.02em}
+.as-jour-t s{text-decoration:none;font-size:9px;font-weight:900;
+  letter-spacing:.09em;text-transform:uppercase;padding:2px 7px;
+  border-radius:6px;color:#04150E;background:var(--menthe)}
 /* LE MARQUEUR « DEMO », JOURNEE PAR JOURNEE. Il doit pouvoir separer en une
    seconde ce qu'il a reellement fait de ce qu'on lui montre — sinon la premiere
    fois qu'il compare avec sa caisse, il ne croit plus rien de ce qu'on affiche. */
@@ -617,18 +653,36 @@ body{background:#05090C}
   text-transform:uppercase;padding:2px 6px;border-radius:6px;
   color:var(--or);background:rgba(240,180,41,.13);
   border:1px solid rgba(240,180,41,.3)}
-.as-jour-l{list-style:none;margin:9px 0 0;padding:0;
-  display:flex;flex-direction:column;gap:5px}
-.as-jour-l li{display:flex;align-items:baseline;gap:7px;font-size:13.5px}
-.as-jour-l li span{flex:none;font-size:12px}
-.as-jour-l li b{font-weight:650;color:var(--craie)}
-.as-jour-l li em{margin-left:auto;font-style:normal;font-size:12.5px;
-  font-weight:750;color:var(--craie2);font-variant-numeric:tabular-nums}
-.as-jour-c{margin:10px 0 0;padding-top:9px;border-top:1px solid var(--trait);
-  display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--craie3)}
-.as-jour-c b{font-size:14px;font-weight:850;color:var(--craie);
+
+/* LA HIERARCHIE : un gros nombre, deux petits. */
+.as-jour-c2{margin-top:11px;display:flex;align-items:center;gap:14px}
+.as-jour-v{flex:none;display:flex;align-items:baseline;gap:6px}
+.as-jour-v b{font-size:30px;font-weight:900;letter-spacing:-.04em;line-height:1;
+  font-variant-numeric:tabular-nums;color:var(--craie)}
+.as-jour.meilleur .as-jour-v b{color:var(--menthe2)}
+.as-jour-v em{font-style:normal;font-size:12px;font-weight:700;color:var(--craie3)}
+.as-jour-p{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;
+  gap:3px;font-size:11.5px;color:var(--craie3)}
+.as-jour-p b{font-size:13px;font-weight:800;color:var(--craie2);
   font-variant-numeric:tabular-nums}
-.as-jour-c.vide{color:var(--craie3);font-style:italic}
+.as-jour-vide{margin:0;font-size:12.5px;font-style:italic;color:var(--craie3)}
+
+/* CE QUI A MARCHE, EN CLAIR — la ligne qui distingue enfin un jour d'un autre,
+   et la seule qu'il peut reutiliser demain. */
+.as-phare{margin:11px 0 0;padding:8px 10px;border-radius:11px;
+  display:flex;align-items:baseline;gap:7px;
+  font-size:12.5px;line-height:1.35;color:var(--craie2);
+  background:rgba(61,226,166,.09);border:1px solid rgba(61,226,166,.22)}
+.as-phare span{flex:none;color:var(--menthe);font-weight:900}
+.as-phare b{font-weight:800;color:var(--craie)}
+
+.as-jour-l{list-style:none;margin:11px 0 0;padding:0;
+  display:flex;flex-direction:column;gap:5px}
+.as-jour-l li{display:flex;align-items:baseline;gap:7px;font-size:13px}
+.as-jour-l li span{flex:none;font-size:12px}
+.as-jour-l li b{font-weight:650;color:var(--craie2)}
+.as-jour-l li em{margin-left:auto;font-style:normal;font-size:12px;
+  font-weight:750;color:var(--craie3);font-variant-numeric:tabular-nums}
 .as-rien{margin:0;padding:26px 4px;text-align:center;font-size:14px;
   line-height:1.5;color:var(--craie3)}
 
@@ -658,6 +712,37 @@ body{background:#05090C}
 .as-abonnes em{display:block;margin-top:4px;font-style:normal;font-size:12px;
   font-weight:600;color:var(--craie2);line-height:1.4}
 
+/* ═══ LA VOIX DE LEA, ET C'EST SON CHOIX ═══
+   Un seul bouton, qui dit son etat en clair et ce qu'il change. Pas un
+   interrupteur muet a cote d'un mot : « Lea vous parle » / « Lea ecrit, elle
+   ne parle pas » se lit sans apprendre. */
+.as-voix{display:flex;align-items:flex-start;gap:13px;width:100%;text-align:left;
+  font:inherit;cursor:pointer;padding:14px 15px;border-radius:19px;
+  color:var(--craie);background:rgba(61,226,166,.1);
+  border:1px solid rgba(61,226,166,.34)}
+.as-voix.coupee{background:rgba(234,242,236,.05);border-color:var(--trait)}
+.as-voix i{flex:none;font-style:normal;font-size:20px;line-height:1.1}
+.as-voix b{display:block;font-size:14.5px;font-weight:800;letter-spacing:-.02em}
+.as-voix em{display:block;margin-top:3px;font-style:normal;font-size:12px;
+  line-height:1.4;color:var(--craie2)}
+.as-voix:active{transform:scale(.99)}
+
+/* ═══ LA SEMAINE, OU UN JOUR PRECIS ═══
+   Sept colonnes a remplir avant que ca serve est le piege de tout planning :
+   on ouvre donc sur la semaine. Le point vert dit quels jours ont deja leur
+   propre journee — c'est la seule information qu'on ne peut pas deviner. */
+.as-fil-j{display:flex;gap:5px;overflow-x:auto;margin-top:12px;
+  padding-bottom:3px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.as-fil-j::-webkit-scrollbar{display:none}
+.as-fil-j button{position:relative;flex:none;font:inherit;font-size:12px;
+  font-weight:750;cursor:pointer;padding:7px 11px;border-radius:999px;
+  color:var(--craie2);background:rgba(5,9,12,.42);border:1px solid var(--trait)}
+.as-fil-j button.on{color:#04150E;background:var(--menthe);border-color:var(--menthe)}
+.as-fil-j button.propre::after{content:"";position:absolute;top:4px;right:5px;
+  width:5px;height:5px;border-radius:50%;background:var(--menthe)}
+.as-fil-j button.on.propre::after{background:#04150E}
+.as-fil-note{margin:9px 0 0;font-size:12px;line-height:1.4;color:var(--craie3)}
+
 /* ═══════════════════════════════════════════════════════════════════════
    LE FIL DE SA JOURNEE
    ═══════════════════════════════════════════════════════════════════════
@@ -678,9 +763,28 @@ body{background:#05090C}
   line-height:1.45;color:var(--craie2)}
 .as-fil ul{list-style:none;margin:13px 0 0;padding:0;
   display:flex;flex-direction:column;gap:7px}
-.as-fil li{display:flex;align-items:center;gap:11px;
+.as-fil li{display:flex;flex-direction:column;gap:7px;
   padding:9px 10px;border-radius:13px;background:rgba(5,9,12,.42);
   border:1px solid var(--trait)}
+.as-fil-l{display:flex;align-items:center;gap:10px}
+/* SA PHRASE EST LE CONTENU DE LA LIGNE, pas un reglage cache derriere un
+   crayon. C'est ce que Lea DIRA : il doit le lire sans rien ouvrir, et le
+   reecrire sans rien ouvrir non plus. */
+.as-fil-q{width:100%;font:inherit;font-size:13px;line-height:1.4;resize:none;
+  color:var(--craie);background:rgba(5,9,12,.55);
+  border:1px solid var(--trait);border-radius:10px;padding:8px 10px}
+.as-fil-q:focus{outline:none;border-color:rgba(126,230,192,.45)}
+.as-fil-q::placeholder{color:var(--craie3)}
+.as-fil-x{flex:none;width:26px;height:26px;border-radius:50%;font:inherit;
+  font-size:11px;cursor:pointer;color:var(--rouge);background:transparent;
+  border:1px solid rgba(255,107,107,.3)}
+/* AJOUTER UN MOMENT A LUI. En pointilles : c'est une place vide qui attend,
+   pas un bouton d'action de plus. */
+.as-fil-plus{width:100%;margin-top:9px;font:inherit;font-size:13px;
+  font-weight:750;cursor:pointer;padding:11px;border-radius:13px;
+  color:var(--menthe2);background:transparent;
+  border:1.5px dashed rgba(126,230,192,.32)}
+.as-fil-plus:active{transform:scale(.985)}
 /* CE QUI EST ETEINT RESTE LISIBLE, mais cesse de reclamer le regard : c'est un
    choix qu'il a fait, pas une erreur a corriger. */
 .as-fil li.off{opacity:.42}
@@ -690,7 +794,7 @@ body{background:#05090C}
   border:0;border-bottom:1.5px solid rgba(126,230,192,.3);
   border-radius:0;padding:2px 0}
 .as-fil-h:focus{outline:none;border-bottom-color:var(--menthe)}
-.as-fil li>span{flex:1;min-width:0;font-size:13.5px;font-weight:650;
+.as-fil-l>b{flex:1;min-width:0;font-size:13.5px;font-weight:750;
   line-height:1.3}
 .as-fil-on{flex:none;width:30px;height:30px;border-radius:50%;font:inherit;
   font-size:13px;font-weight:900;cursor:pointer;

@@ -50,12 +50,43 @@ export type Rendezvous = {
   question: string;
   /** Éteint : elle passe au suivant. Un bar n'a pas de service de midi. */
   actif: boolean;
+  /**
+   * LE SIEN, ET IL PEUT L'ÉCRIRE LUI-MÊME.
+   *
+   * « Si je veux qu'elle me dise à 16 h "hey n'oublie pas d'envoyer à tous tes
+   * abonnés une photo de toi en rigolant" : ça je ne peux pas ? » Non, et
+   * c'était une vraie limite : il ne réglait que l'heure et l'interrupteur.
+   *
+   * Nos rendez-vous sont ce qu'on croit savoir de son métier. Les siens sont ce
+   * qu'il sait de son commerce, et ils n'ont aucune raison de ressembler aux
+   * nôtres. Un rendez-vous à lui se supprime aussi — un rappel qu'on ne peut
+   * pas enlever devient un rappel qu'on coupe en entier.
+   */
+  sien?: boolean;
 };
 
 export type FilDuJour = {
   rendezvous: Rendezvous[];
   /** Les jours où elle ne dit rien. 0 = dimanche, 1 = lundi… */
   joursOff: number[];
+  /**
+   * UN JOUR QUI NE RESSEMBLE PAS AUX AUTRES.
+   *
+   * « Ce serait encore mieux de pouvoir éditer chaque jour spécifiquement pour
+   * plus de précision : mercredi c'est peut-être la journée enfants et je veux
+   * pouvoir annoncer quelque chose pour le goûter des enfants. »
+   *
+   * C'est juste, et ça n'était pas possible : le fil était le même du lundi au
+   * dimanche. Or une semaine de commerce n'est pas plate — le mercredi des
+   * enfants, le samedi du marché, le vendredi soir. Un jour qui a sa propre
+   * liste l'utilise ; les autres suivent celle de la semaine.
+   *
+   * ET ON NE LUI DEMANDE PAS DE REMPLIR SEPT JOURS. C'est le piège de tout
+   * planning : sept colonnes vides à configurer avant que ça serve à rien.
+   * Par défaut il n'y a QUE la semaine ; un jour ne devient particulier que
+   * s'il le décide, et il repart de la semaine, déjà remplie.
+   */
+  parJour?: Record<number, Rendezvous[]>;
 };
 
 /**
@@ -167,20 +198,44 @@ export function abonnerFil(f: () => void): () => void {
 }
 
 /** Son fil, tel qu'il l'a réglé — ou celui de son métier s'il n'y a pas touché. */
-export function filDuJour(commerce: string, branche: CleMetier | string): FilDuJour {
+export function filDuJour(
+  commerce: string,
+  branche: CleMetier | string,
+  jour?: number,
+): FilDuJour {
   const v = lire()[commerce];
   if (!v) return parDefaut(branche);
   // ON REPART TOUJOURS DU DÉFAUT ET ON APPLIQUE SES RÉGLAGES PAR-DESSUS : le
   // jour où l'on ajoute un rendez-vous au métier, ceux qui ont déjà réglé leur
   // fil doivent le voir apparaître, pas rester avec la liste de l'an dernier.
-  const sien = new Map(v.rendezvous?.map((r) => [r.cle, r]) ?? []);
-  return {
-    rendezvous: parDefaut(branche).rendezvous.map((r) => {
-      const s = sien.get(r.cle);
-      return s ? { ...r, heure: s.heure, actif: s.actif } : r;
-    }),
-    joursOff: Array.isArray(v.joursOff) ? v.joursOff : [],
+  const composer = (regles: Rendezvous[] | undefined) => {
+    const garde = new Map((regles ?? []).map((r) => [r.cle, r]));
+    const nôtres = parDefaut(branche).rendezvous.map((r) => {
+      const g = garde.get(r.cle);
+      // SA QUESTION L'EMPORTE SUR LA NÔTRE, mais elle ne la remplace que s'il
+      // en a écrit une : sinon on garde la nôtre, qui suit le métier.
+      return g
+        ? { ...r, heure: g.heure, actif: g.actif, question: g.question?.trim() || r.question }
+        : r;
+    });
+    // LES SIENS VIENNENT S'AJOUTER, et ils ne se perdent pas quand on retouche
+    // les rendez-vous d'un métier : ils ne sont dans aucune de nos listes.
+    const siens = (regles ?? []).filter((r) => r.sien);
+    return [...nôtres, ...siens].sort((a, b) => a.heure - b.heure);
   };
+  // LE JOUR PARTICULIER L'EMPORTE SUR LA SEMAINE — voir `parJour`. Sans jour
+  // demandé, on rend la semaine : c'est ce que lit l'écran de réglage.
+  const propre = jour != null ? v.parJour?.[jour] : undefined;
+  return {
+    rendezvous: composer(propre ?? v.rendezvous),
+    joursOff: Array.isArray(v.joursOff) ? v.joursOff : [],
+    parJour: v.parJour,
+  };
+}
+
+/** Vrai si ce jour-là a sa propre liste, différente de celle de la semaine. */
+export function jourParticulier(f: FilDuJour, jour: number): boolean {
+  return Array.isArray(f.parJour?.[jour]);
 }
 
 export function enregistrerFil(commerce: string, f: FilDuJour) {

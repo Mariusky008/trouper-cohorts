@@ -183,7 +183,7 @@ const SYSTEME = (
   chiffres: { vues: number; reservations: number; abonnes: number; quoi: string } | null,
   photoPrise: boolean,
   souvenirDejaDit: boolean,
-  rdv: { quoi: string; question: string; heure: string } | null,
+  rdv: { quoi: string; question: string; heure: string; premier: boolean } | null,
   apres: { quoi: string; heure: string } | null,
 ) => {
   const hh = `${Math.floor(heure)} h ${String(Math.round((heure % 1) * 60)).padStart(2, "0")}`;
@@ -196,9 +196,23 @@ const SYSTEME = (
     "aucun formulaire, ne choisit aucune catégorie, n'écrit aucun titre. C'est toi",
     "qui absorbes tout ça.",
     "",
+    // ─── LE BONJOUR EST PROPORTIONNÉ À L'HEURE ───
+    //
+    // « J'espère que ce début de journée commence bien » n'a de sens qu'au
+    // PREMIER rendez-vous. Servi à 16 h sur un rappel qu'il a écrit lui-même,
+    // c'est une formule de politesse plaquée sur autre chose — et huit mots de
+    // voix perdus, soit près de trois secondes d'attente pour rien.
     "TA TOUTE PREMIÈRE PHRASE, quand la conversation s'ouvre, est exactement",
-    `celle-ci : « Bonjour ${commerce.prenom}, j'espère que ce début de journée`,
-    `commence bien. On prépare votre journée ? ${rdv?.question ?? OUVERTURE[commerce.branche] ?? OUVERTURE.restaurant} »`,
+    ...(rdv && !rdv.premier
+      ? [
+          `celle-ci : « ${commerce.prenom} — ${rdv.question} »`,
+          "Court, parce qu'on n'est plus au début de la journée : il a déjà",
+          "travaillé, et on ne recommence pas par les politesses du matin.",
+        ]
+      : [
+          `celle-ci : « Bonjour ${commerce.prenom}, j'espère que ce début de journée`,
+          `commence bien. On prépare votre journée ? ${rdv?.question ?? OUVERTURE[commerce.branche] ?? OUVERTURE.restaurant} »`,
+        ]),
     "Tu ne l'inventes pas et tu ne la reformules pas. Une question ouverte — «",
     "qu'est-ce que vous avez envie de raconter ? » — oblige le commerçant à",
     "trouver le sujet lui-même, c'est-à-dire à faire le travail qu'on prétend lui",
@@ -603,7 +617,14 @@ export async function POST(request: Request) {
   const lireRdv = (x: unknown) => {
     const o = (x ?? {}) as Record<string, unknown>;
     const quoi = s(o.quoi);
-    return quoi ? { quoi: quoi.slice(0, 60), question: s(o.question).slice(0, 160), heure: s(o.heure).slice(0, 12) } : null;
+    return quoi
+      ? {
+          quoi: quoi.slice(0, 60),
+          question: s(o.question).slice(0, 200),
+          heure: s(o.heure).slice(0, 12),
+          premier: o.premier === true,
+        }
+      : null;
   };
   const rdv = lireRdv(p?.rdv);
   const apres = lireRdv(p?.apres);
