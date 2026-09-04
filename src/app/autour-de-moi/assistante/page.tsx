@@ -201,7 +201,7 @@ body{background:#05090C}
    Deux bulles, et rien d'autre. Pas d'horodatage, pas d'avatar, pas d'accuse de
    lecture : chaque ornement d'une messagerie ajouterait une chose a comprendre
    a quelqu'un qui n'a rien demande. */
-.as-fil{flex:1;min-height:0;overflow-y:auto;
+.as-plan{flex:1;min-height:0;overflow-y:auto;
   padding:14px clamp(14px,4vw,26px) 8px;
   display:flex;flex-direction:column;gap:10px}
 /* LES BULLES ARRIVENT, ELLES N'APPARAISSENT PAS. Trois dixiemes de seconde de
@@ -712,6 +712,61 @@ body{background:#05090C}
 .as-abonnes em{display:block;margin-top:4px;font-style:normal;font-size:12px;
   font-weight:600;color:var(--craie2);line-height:1.4}
 
+/* ═══ CE QU'IL PROPOSE TOUS LES JOURS ═══
+   Coche une fois ici, propose a chaque annonce. Les chiffres n'apparaissent
+   qu'une fois coche : regler une option qu'on ne veut pas est du travail pour
+   rien, et quatre lignes de reglages sous chaque case rendraient l'ecran
+   illisible avant meme d'avoir choisi. */
+.as-cat{padding:15px 16px 16px;border-radius:19px;
+  background:rgba(18,32,28,.62);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(126,230,192,.16)}
+.as-cat ul{list-style:none;margin:13px 0 0;padding:0;
+  display:flex;flex-direction:column;gap:8px}
+.as-cat li{border-radius:14px;background:rgba(5,9,12,.42);
+  border:1px solid var(--trait);overflow:hidden}
+.as-cat li.on{border-color:rgba(61,226,166,.4);background:rgba(61,226,166,.07)}
+.as-cat-t{display:flex;align-items:flex-start;gap:11px;width:100%;
+  text-align:left;font:inherit;cursor:pointer;padding:11px 12px;
+  color:var(--craie);background:transparent;border:0}
+.as-cat-t i{flex:none;width:26px;height:26px;border-radius:50%;
+  display:grid;place-items:center;font-style:normal;font-size:13px;
+  background:rgba(234,242,236,.07)}
+.as-cat li.on .as-cat-t i{color:#04150E;background:var(--menthe);font-weight:900}
+.as-cat-t b{display:block;font-size:14px;font-weight:800;letter-spacing:-.02em}
+.as-cat-t em{display:block;margin-top:2px;font-style:normal;font-size:12px;
+  line-height:1.4;color:var(--craie2)}
+.as-cat-r{display:flex;flex-wrap:wrap;gap:8px;padding:0 12px 11px 49px}
+.as-cat-r label{display:flex;align-items:center;gap:5px;font-size:11.5px;
+  color:var(--craie3)}
+.as-cat-r input{width:56px;font:inherit;font-size:13px;font-weight:850;
+  text-align:center;font-variant-numeric:tabular-nums;color:var(--menthe2);
+  background:rgba(5,9,12,.55);border:1px solid var(--trait);
+  border-radius:8px;padding:4px 2px}
+.as-cat-r input:focus{outline:none;border-color:rgba(126,230,192,.45)}
+
+/* ═══ LES OPTIONS ATTACHEES A LA CARTE ═══
+   Dans la carte, pas a cote : une annonce et ses options sont une seule chose
+   qui part en ligne. Le croix les enleve POUR AUJOURD'HUI — le reglage
+   permanent, lui, ne bouge pas. */
+.as-opts{margin-top:13px;padding-top:12px;border-top:1px solid var(--trait)}
+.as-opts>em{display:block;font-style:normal;font-size:10.5px;font-weight:850;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--craie3)}
+.as-opts ul{list-style:none;margin:9px 0 0;padding:0;
+  display:flex;flex-direction:column;gap:6px}
+.as-opts li{display:flex;align-items:center;gap:9px;padding:8px 10px;
+  border-radius:11px;background:rgba(5,9,12,.45);
+  border:1px solid rgba(61,226,166,.22)}
+.as-opts li i{flex:none;font-style:normal;font-size:14px}
+.as-opts li span{flex:1;min-width:0}
+.as-opts li b{display:block;font-size:12.5px;font-weight:750;line-height:1.25}
+.as-opts li u{display:block;margin-top:2px;text-decoration:none;font-size:11px;
+  color:var(--craie3);font-variant-numeric:tabular-nums}
+.as-opts li button{flex:none;width:24px;height:24px;border-radius:50%;
+  font:inherit;font-size:10px;cursor:pointer;color:var(--craie3);
+  background:transparent;border:1px solid var(--trait)}
+.as-opts li button:active{transform:scale(.9)}
+
 /* ═══ LA VOIX DE LEA, ET C'EST SON CHOIX ═══
    Un seul bouton, qui dit son etat en clair et ce qu'il change. Pas un
    interrupteur muet a cote d'un mot : « Lea vous parle » / « Lea ecrit, elle
@@ -731,20 +786,27 @@ body{background:#05090C}
    Sept colonnes a remplir avant que ca serve est le piege de tout planning :
    on ouvre donc sur la semaine. Le point vert dit quels jours ont deja leur
    propre journee — c'est la seule information qu'on ne peut pas deviner. */
-.as-fil-j{display:flex;gap:5px;overflow-x:auto;margin-top:12px;
+.as-plan-j{display:flex;gap:5px;overflow-x:auto;margin-top:12px;
   padding-bottom:3px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.as-fil-j::-webkit-scrollbar{display:none}
-.as-fil-j button{position:relative;flex:none;font:inherit;font-size:12px;
+.as-plan-j::-webkit-scrollbar{display:none}
+.as-plan-j button{position:relative;flex:none;font:inherit;font-size:12px;
   font-weight:750;cursor:pointer;padding:7px 11px;border-radius:999px;
   color:var(--craie2);background:rgba(5,9,12,.42);border:1px solid var(--trait)}
-.as-fil-j button.on{color:#04150E;background:var(--menthe);border-color:var(--menthe)}
-.as-fil-j button.propre::after{content:"";position:absolute;top:4px;right:5px;
+.as-plan-j button.on{color:#04150E;background:var(--menthe);border-color:var(--menthe)}
+.as-plan-j button.propre::after{content:"";position:absolute;top:4px;right:5px;
   width:5px;height:5px;border-radius:50%;background:var(--menthe)}
-.as-fil-j button.on.propre::after{background:#04150E}
-.as-fil-note{margin:9px 0 0;font-size:12px;line-height:1.4;color:var(--craie3)}
+.as-plan-j button.on.propre::after{background:#04150E}
+.as-plan-note{margin:9px 0 0;font-size:12px;line-height:1.4;color:var(--craie3)}
 
 /* ═══════════════════════════════════════════════════════════════════════
-   LE FIL DE SA JOURNEE
+   LE PLANNING DE SA JOURNEE
+
+   IL S'APPELAIT « as-fil », ET C'ETAIT UNE COLLISION SERIEUSE : « as-fil » est
+   deja le FIL DE LA CONVERSATION, plus haut dans ce fichier. Toutes les listes
+   du fil — les deux lignes du recu « c'est parti », les options attachees a la
+   carte — heritaient donc de la mise en colonne du planning : l'icone passait
+   AU-DESSUS du texte au lieu d'etre a cote. Vu sur une capture, trouve en
+   demandant au navigateur quelle regle s'appliquait plutot qu'en relisant.
    ═══════════════════════════════════════════════════════════════════════
    « Il faut un planning clair accessible au commercant qu'on peut meme
    modifier s'il le veut. » Il se LIT d'abord, et il se regle ensuite : les
@@ -754,53 +816,53 @@ body{background:#05090C}
    ET IL SE REGLE SANS OUVRIR DE FENETRE. L'heure est un champ, l'interrupteur
    est a cote — pas d'ecran de reglages, pas de bouton « enregistrer ». Ce qu'on
    touche est ce qu'on lisait, comme dans la carte a valider. */
-.as-fil{padding:15px 16px 16px;border-radius:19px;
+.as-plan{padding:15px 16px 16px;border-radius:19px;
   background:rgba(18,32,28,.62);
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   border:1px solid rgba(126,230,192,.16)}
-.as-fil-t b{display:block;font-size:15.5px;font-weight:850;letter-spacing:-.02em}
-.as-fil-t em{display:block;margin-top:4px;font-style:normal;font-size:12.5px;
+.as-plan-t b{display:block;font-size:15.5px;font-weight:850;letter-spacing:-.02em}
+.as-plan-t em{display:block;margin-top:4px;font-style:normal;font-size:12.5px;
   line-height:1.45;color:var(--craie2)}
-.as-fil ul{list-style:none;margin:13px 0 0;padding:0;
+.as-plan ul{list-style:none;margin:13px 0 0;padding:0;
   display:flex;flex-direction:column;gap:7px}
-.as-fil li{display:flex;flex-direction:column;gap:7px;
+.as-plan li{display:flex;flex-direction:column;gap:7px;
   padding:9px 10px;border-radius:13px;background:rgba(5,9,12,.42);
   border:1px solid var(--trait)}
-.as-fil-l{display:flex;align-items:center;gap:10px}
+.as-plan-l{display:flex;align-items:center;gap:10px}
 /* SA PHRASE EST LE CONTENU DE LA LIGNE, pas un reglage cache derriere un
    crayon. C'est ce que Lea DIRA : il doit le lire sans rien ouvrir, et le
    reecrire sans rien ouvrir non plus. */
-.as-fil-q{width:100%;font:inherit;font-size:13px;line-height:1.4;resize:none;
+.as-plan-q{width:100%;font:inherit;font-size:13px;line-height:1.4;resize:none;
   color:var(--craie);background:rgba(5,9,12,.55);
   border:1px solid var(--trait);border-radius:10px;padding:8px 10px}
-.as-fil-q:focus{outline:none;border-color:rgba(126,230,192,.45)}
-.as-fil-q::placeholder{color:var(--craie3)}
-.as-fil-x{flex:none;width:26px;height:26px;border-radius:50%;font:inherit;
+.as-plan-q:focus{outline:none;border-color:rgba(126,230,192,.45)}
+.as-plan-q::placeholder{color:var(--craie3)}
+.as-plan-x{flex:none;width:26px;height:26px;border-radius:50%;font:inherit;
   font-size:11px;cursor:pointer;color:var(--rouge);background:transparent;
   border:1px solid rgba(255,107,107,.3)}
 /* AJOUTER UN MOMENT A LUI. En pointilles : c'est une place vide qui attend,
    pas un bouton d'action de plus. */
-.as-fil-plus{width:100%;margin-top:9px;font:inherit;font-size:13px;
+.as-plan-plus{width:100%;margin-top:9px;font:inherit;font-size:13px;
   font-weight:750;cursor:pointer;padding:11px;border-radius:13px;
   color:var(--menthe2);background:transparent;
   border:1.5px dashed rgba(126,230,192,.32)}
-.as-fil-plus:active{transform:scale(.985)}
+.as-plan-plus:active{transform:scale(.985)}
 /* CE QUI EST ETEINT RESTE LISIBLE, mais cesse de reclamer le regard : c'est un
    choix qu'il a fait, pas une erreur a corriger. */
-.as-fil li.off{opacity:.42}
-.as-fil-h{width:74px;flex:none;font:inherit;font-size:15px;font-weight:850;
+.as-plan li.off{opacity:.42}
+.as-plan-h{width:74px;flex:none;font:inherit;font-size:15px;font-weight:850;
   letter-spacing:-.02em;font-variant-numeric:tabular-nums;text-align:center;
   color:var(--menthe2);background:transparent;
   border:0;border-bottom:1.5px solid rgba(126,230,192,.3);
   border-radius:0;padding:2px 0}
-.as-fil-h:focus{outline:none;border-bottom-color:var(--menthe)}
-.as-fil-l>b{flex:1;min-width:0;font-size:13.5px;font-weight:750;
+.as-plan-h:focus{outline:none;border-bottom-color:var(--menthe)}
+.as-plan-l>b{flex:1;min-width:0;font-size:13.5px;font-weight:750;
   line-height:1.3}
-.as-fil-on{flex:none;width:30px;height:30px;border-radius:50%;font:inherit;
+.as-plan-on{flex:none;width:30px;height:30px;border-radius:50%;font:inherit;
   font-size:13px;font-weight:900;cursor:pointer;
   color:var(--craie3);background:transparent;border:1px solid var(--trait)}
-.as-fil-on.on{color:#04150E;background:var(--menthe);border-color:var(--menthe)}
-.as-fil-on:active{transform:scale(.92)}
+.as-plan-on.on{color:#04150E;background:var(--menthe);border-color:var(--menthe)}
+.as-plan-on:active{transform:scale(.92)}
 
 /* SES JOURS DE FERMETURE — la moitie la plus importante d'un planning, parce
    que c'est ce qu'on ne fait PAS. Un assistant qui parle le jour de fermeture

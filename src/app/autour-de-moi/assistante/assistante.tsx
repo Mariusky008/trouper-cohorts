@@ -61,6 +61,12 @@ import {
   totalSemaine,
 } from "@/lib/direct/journees-passees";
 import { carteAMontrer } from "@/lib/direct/carte-a-valider";
+import {
+  enregistrerOptions,
+  momentDeLOption,
+  type OptionAnnonce,
+  optionsDe,
+} from "@/lib/direct/options-annonce";
 import { enregistrerReglages, reglages } from "@/lib/direct/reglages-commercant";
 import {
   apresCa,
@@ -522,6 +528,17 @@ export function Assistante() {
    */
   const [jourRegle, setJourRegle] = useState<number | null>(null);
   /**
+   * CE QU'IL A RETIRÉ POUR AUJOURD'HUI, ET SEULEMENT POUR AUJOURD'HUI.
+   *
+   * « Ces options pourront être d'un clic supprimées si certaines ne lui
+   * paraissent pas possibles pour le jour en question. » La distinction est
+   * tout le sujet : cocher décide de ce qui est PROPOSÉ, retirer décide de ce
+   * qui part CE MATIN. Un jour sans reste ne doit pas obliger à décocher un
+   * réglage permanent qu'il faudrait recocher demain.
+   */
+  const [retirees, setRetirees] = useState<string[]>([]);
+  const [majOpt, setMajOpt] = useState(0);
+  /**
    * LE FIL À JOUR, ET PAS CELUI DU DERNIER RENDU.
    *
    * LE DÉFAUT QUE ÇA CORRIGE, ET IL EFFAÇAIT UNE PHRASE. `parler` construisait
@@ -575,16 +592,36 @@ export function Assistante() {
   /** Vrai le jour où il a fermé — voir l'ouverture automatique. */
   const offRef = useRef(false);
   /**
+   * LES OPTIONS QUI PARTIRONT AVEC L'ANNONCE, à portée de `valider`.
+   *
+   * SANS CETTE RÉFÉRENCE, LE ✕ NE SERVIRAIT À RIEN : `valider` n'est recréé
+   * que sur ses dépendances, et « ce qu'il a retiré ce matin » n'en fait pas
+   * partie. Il aurait donc publié l'option qu'il venait d'enlever sous ses
+   * yeux — le genre de défaut qu'on ne voit qu'en le vivant.
+   */
+  const proposeesRef = useRef<OptionAnnonce[]>([]);
+  /**
    * SA VOIX EST-ELLE COUPÉE — lue par `dire`, qui est créé une fois.
    *
    * Même remède que `toursRef` et `rdvRef` : ce qui est lu DANS un rappel vient
    * d'une référence, jamais d'une valeur figée à la création de la fonction.
    */
   const voixCoupeeRef = useRef(false);
-  const rdvRef = useRef<{
-    rdv: { quoi: string; question: string; heure: string; premier: boolean } | null;
-    apres: { quoi: string; heure: string } | null;
-  }>({ rdv: null, apres: null });
+  /**
+   * SON FIL, À PORTÉE DE `parler` — ET PAS LE MOMENT DÉJÀ CALCULÉ.
+   *
+   * LE DÉFAUT MESURÉ, ET IL N'ÉTAIT PAS DANS LE TEST : on garde d'abord ici le
+   * rendez-vous COURANT, calculé au rendu. Or quand l'heure saute — le bouton
+   * de démonstration, ou l'horloge qui franchit un créneau — `setHeure` puis
+   * `parler` s'enchaînent dans le MÊME geste, avant le rendu suivant. Léa
+   * recevait donc le moment de l'heure d'avant : à 13 h 45 elle demandait
+   * encore le plat du jour, c'est-à-dire exactement le défaut qu'on venait de
+   * corriger.
+   *
+   * On garde le FIL, qui ne dépend pas de l'heure, et on calcule le moment
+   * avec l'heure réellement passée à `parler`.
+   */
+  const filRef = useRef<FilDuJour>({ rendezvous: [], joursOff: [] });
   const bas = useRef<HTMLDivElement | null>(null);
   const micro = useRef<ReturnType<typeof ouvrirEcoute> | null>(null);
   const son = useRef<HTMLAudioElement | null>(null);
@@ -730,6 +767,35 @@ export function Assistante() {
   );
 
   /**
+   * OÙ ON EN EST, À L'HEURE QU'ON LUI DONNE.
+   *
+   * Le moment ne se lit pas dans une référence figée au rendu précédent : on le
+   * calcule ici avec `h`, l'heure réellement passée à `parler`. Sinon le saut
+   * d'heure — bouton de démonstration, ou horloge qui franchit un créneau —
+   * envoie à Léa le moment d'avant, et elle demande le plat du jour à 13 h 45.
+   */
+  const ouSituer = useCallback((h: number) => {
+    const f = filRef.current;
+    const r = ouEnEstOn(f, h);
+    const a = apresCa(f, h);
+    const premier = f.rendezvous
+      .filter((x) => x.actif)
+      .sort((x, y) => x.heure - y.heure)[0];
+    return {
+      rdv: r
+        ? {
+            quoi: r.quoi,
+            question: r.question,
+            heure: hhmmFil(r.heure),
+            // LE BONJOUR COMPLET N'EST DÛ QU'AU PREMIER MOMENT DE LA JOURNÉE.
+            premier: r.cle === premier?.cle,
+          }
+        : null,
+      apres: a ? { quoi: a.quoi, heure: hhmmFil(a.heure) } : null,
+    };
+  }, []);
+
+  /**
    * UN TOUR DE CONVERSATION.
    *
    * `dit` vide veut dire « ouvre la conversation » : la première phrase vient du
@@ -792,8 +858,10 @@ export function Assistante() {
             }),
             // OÙ ON EN EST DANS SA JOURNÉE. Sans ça, elle demandait le plat
             // du jour à 15 h — voir `fil-du-jour.ts`.
-            rdv: rdvRef.current.rdv,
-            apres: rdvRef.current.apres,
+            // CE QU'IL PROPOSE TOUS LES JOURS : elle doit le savoir pour ne
+            // pas le redemander, et ne jamais en parler — c'est réglé.
+            options: proposeesRef.current.map((o) => o.titre),
+            ...ouSituer(h),
             messages: suite,
           }),
         });
@@ -873,7 +941,7 @@ export function Assistante() {
         setAttend(false);
       }
     },
-    [dire, journee, photo],
+    [dire, journee, photo, ouSituer],
   );
 
   const finDeService = useCallback(() => {
@@ -1065,6 +1133,23 @@ export function Assistante() {
     } else {
       publierMoment(m, heure);
     }
+    // ─── LES OPTIONS PARTENT AVEC L'ANNONCE ───
+    //
+    // Chacune devient un MOMENT à part entière — sa fenêtre, son prix barré,
+    // son bouton — exactement comme s'il l'avait dictée. C'est ce qui garantit
+    // qu'une case cochée produit quelque chose de visible dans le paquet, et
+    // pas une décoration dans la carte à valider.
+    //
+    // ELLES S'APPUIENT SUR L'ANNONCE PRINCIPALE : le titre du plat et son
+    // prix. On les publie donc APRÈS elle, jamais avant.
+    for (const o of proposeesRef.current) {
+      const m = momentDeLOption(o, { titre: carte.titre, prix: carte.prix, icone: carte.icone }, heure);
+      if (m) publierMoment(m, heure);
+    }
+    // CE QU'IL A RETIRÉ NE VAUT QUE POUR CETTE ANNONCE-LÀ. La suivante repart
+    // de ce qu'il a coché : sinon un « pas de tablée ce midi » vaudrait aussi
+    // pour le service du soir, et il ne comprendrait pas pourquoi.
+    setRetirees([]);
     setCarte(null);
     setRetouche(false);
     // LA CONFIRMATION EST ÉCRITE PAR L'ÉCRAN, PAS PAR LE MODÈLE. C'est un fait —
@@ -1181,6 +1266,17 @@ export function Assistante() {
   // DEUX LECTURES, ET ELLES NE SERVENT PAS À LA MÊME CHOSE. `fil` est celui
   // d'AUJOURD'HUI — c'est lui qui décide de ce que Léa dit. `filRegle` est
   // celui qu'il est en train de modifier : la semaine, ou un jour précis.
+  void majOpt;
+  /**
+   * SES OPTIONS PERMANENTES — celles qu'il a cochées une fois.
+   *
+   * `proposees` est ce que Léa attache à la carte du jour : les cochées, moins
+   * celles qu'il a retirées ce matin. C'est la seule liste que l'écran montre
+   * à côté de la carte, et c'est elle qui part en ligne à la validation.
+   */
+  const options = optionsDe(c.id, c.branche);
+  const proposees = options.filter((o) => o.cochee && !retirees.includes(o.cle));
+  proposeesRef.current = proposees;
   const fil = filDuJour(c.id, c.branche, new Date().getDay());
   const filRegle = filDuJour(c.id, c.branche, jourRegle ?? undefined);
   cId.current = c.id;
@@ -1189,23 +1285,9 @@ export function Assistante() {
   filBrutRef.current = filDuJour(c.id, c.branche);
   const jourOff = estJourOff(fil);
   offRef.current = jourOff;
-  const rdv = ouEnEstOn(fil, heure);
-  const apres = apresCa(fil, heure);
-  const premierRdv = fil.rendezvous
-    .filter((r) => r.actif)
-    .sort((a, b) => a.heure - b.heure)[0];
-  rdvRef.current = {
-    rdv: rdv
-      ? {
-          quoi: rdv.quoi,
-          question: rdv.question,
-          heure: hhmmFil(rdv.heure),
-          // LE BONJOUR COMPLET N'EST DÛ QU'AU PREMIER MOMENT DE LA JOURNÉE.
-          premier: rdv.cle === premierRdv?.cle,
-        }
-      : null,
-    apres: apres ? { quoi: apres.quoi, heure: hhmmFil(apres.heure) } : null,
-  };
+  // ON GARDE LE FIL, PAS LE MOMENT. Le moment se calcule au moment de parler,
+  // avec l'heure réellement passée — voir `filRef` et `ouSituer`.
+  filRef.current = fil;
   const semaine = totalSemaine(passees);
 
   return (
@@ -1513,6 +1595,87 @@ export function Assistante() {
             </button>
           </div>
 
+          {/* ═══ CE QU'IL PROPOSE TOUS LES JOURS ═══
+              Coché une fois ici, proposé à chaque annonce par Léa. Ce sont des
+              façons de remplir une journée, pas des fonctionnalités : le creux
+              de 11 h, ce qui va partir à la poubelle, la table de quatre
+              occupée par deux.
+
+              RIEN N'EST COCHÉ D'AVANCE. Une case cochée par défaut est une
+              décision prise à sa place — la même faute que la fiche Google
+              mise d'office, qu'il a relevée. */}
+          <div className="as-cat">
+            <div className="as-plan-t">
+              <b>Ce que vous proposez tous les jours</b>
+              <em>
+                Léa l’ajoutera à chaque annonce, et vous pourrez l’enlever d’un
+                doigt les jours où ça ne colle pas.
+              </em>
+            </div>
+            <ul>
+              {options.map((o) => (
+                <li key={o.cle} className={o.cochee ? "on" : ""}>
+                  <button
+                    type="button"
+                    className="as-cat-t"
+                    aria-pressed={o.cochee}
+                    onClick={() => {
+                      const v = options.map((x) =>
+                        x.cle === o.cle ? { ...x, cochee: !x.cochee } : x,
+                      );
+                      enregistrerOptions(c.id, v);
+                      setMajOpt((n) => n + 1);
+                    }}
+                  >
+                    <i aria-hidden="true">{o.cochee ? "✓" : o.icone}</i>
+                    <span>
+                      <b>{o.titre}</b>
+                      <em>{o.quoi}</em>
+                    </span>
+                  </button>
+                  {/* LES CHIFFRES N'APPARAISSENT QU'UNE FOIS COCHÉ : régler
+                      une option qu'on ne veut pas est du travail pour rien, et
+                      quatre lignes de réglages sous chaque case rendraient
+                      l'écran illisible avant même d'avoir choisi. */}
+                  {o.cochee && !!o.reglages.length && (
+                    <div className="as-cat-r">
+                      {o.reglages.map((r) => (
+                        <label key={r.cle}>
+                          <input
+                            value={r.unite === "h" ? hhmm(r.valeur) : String(r.valeur)}
+                            inputMode="numeric"
+                            onChange={(e) => {
+                              const ch = e.target.value.replace(/[^0-9]/g, "");
+                              if (!ch) return;
+                              const n =
+                                r.unite === "h"
+                                  ? Number(ch.slice(0, 2)) + Number(ch.slice(2, 4) || 0) / 60
+                                  : Number(ch);
+                              if (!Number.isFinite(n) || n < 0 || (r.unite === "h" && n > 24)) return;
+                              const v = options.map((x) =>
+                                x.cle === o.cle
+                                  ? {
+                                      ...x,
+                                      reglages: x.reglages.map((y) =>
+                                        y.cle === r.cle ? { ...y, valeur: n } : y,
+                                      ),
+                                    }
+                                  : x,
+                              );
+                              enregistrerOptions(c.id, v);
+                              setMajOpt((n2) => n2 + 1);
+                            }}
+                          />
+                          <span>{r.unite === "h" ? r.label : `${r.unite} ${r.label}`}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+
           {/* ═══ LA VOIX DE LÉA ═══
               « Je veux pouvoir couper la voix si je veux et utiliser juste
               l'écriture aussi pour aller plus vite si j'en ai envie. »
@@ -1559,8 +1722,8 @@ export function Assistante() {
               ET ÇA RÉPOND AU DÉFAUT DE FOND : Léa ouvre sur le moment où l'on
               est, pas sur le premier de la liste. À 15 h elle ne demande plus
               le plat de midi. */}
-          <div className="as-fil">
-            <div className="as-fil-t">
+          <div className="as-plan">
+            <div className="as-plan-t">
               <b>Votre journée avec Léa</b>
               <em>
                 Voilà ce qu’elle vous dira, et quand. Changez l’heure, changez
@@ -1578,7 +1741,7 @@ export function Assistante() {
                 jour ne devient particulier que s'il le décide, et il repart de
                 la semaine, déjà remplie. Le point vert dit lesquels ont leur
                 propre journée. */}
-            <div className="as-fil-j">
+            <div className="as-plan-j">
               <button
                 type="button"
                 className={jourRegle == null ? "on" : ""}
@@ -1600,7 +1763,7 @@ export function Assistante() {
               ))}
             </div>
             {jourRegle != null && (
-              <p className="as-fil-note">
+              <p className="as-plan-note">
                 {jourParticulier(filBrutRef.current, jourRegle)
                   ? `Ce ${JOURS.find((x) => x.n === jourRegle)?.l.toLowerCase()}. a sa propre journée.`
                   : `Vous partez de la semaine. Dès que vous changez quelque chose, ce jour devient à part.`}
@@ -1609,9 +1772,9 @@ export function Assistante() {
             <ul>
               {filRegle.rendezvous.map((r) => (
                 <li key={r.cle} className={r.actif ? "" : "off"}>
-                  <div className="as-fil-l">
+                  <div className="as-plan-l">
                     <input
-                      className="as-fil-h"
+                      className="as-plan-h"
                       value={hhmmFil(r.heure)}
                       inputMode="numeric"
                       aria-label={`Heure de « ${r.quoi} »`}
@@ -1635,7 +1798,7 @@ export function Assistante() {
                     {r.sien && (
                       <button
                         type="button"
-                        className="as-fil-x"
+                        className="as-plan-x"
                         aria-label="Supprimer ce rappel"
                         onClick={() =>
                           reglerFil({
@@ -1649,7 +1812,7 @@ export function Assistante() {
                     )}
                     <button
                       type="button"
-                      className={`as-fil-on${r.actif ? " on" : ""}`}
+                      className={`as-plan-on${r.actif ? " on" : ""}`}
                       aria-pressed={r.actif}
                       aria-label={r.actif ? "Éteindre ce moment" : "Allumer ce moment"}
                       onClick={() =>
@@ -1674,7 +1837,7 @@ export function Assistante() {
                       commerce. C'est ce champ-là qui part chez Léa mot pour
                       mot — voir `rdv.question` dans la route. */}
                   <textarea
-                    className="as-fil-q"
+                    className="as-plan-q"
                     value={r.question}
                     rows={2}
                     placeholder="Ce que Léa doit vous dire à cette heure-là"
@@ -1699,7 +1862,7 @@ export function Assistante() {
                 coupe en entier. */}
             <button
               type="button"
-              className="as-fil-plus"
+              className="as-plan-plus"
               onClick={() =>
                 reglerFil({
                   ...filRegle,
@@ -2051,6 +2214,52 @@ export function Assistante() {
                 <em>à partir de</em>
               </li>
             </ul>
+
+            {/* ═══ CE QU'IL PROPOSE TOUS LES JOURS ═══
+                « Ces options devraient être proposées automatiquement dans son
+                annonce s'il a coché les cases sur son profil, et elles
+                pourront être d'un clic supprimées si certaines ne lui
+                paraissent pas possibles pour le jour en question. »
+
+                ELLES SONT DANS LA CARTE, PAS À CÔTÉ. Une annonce et ses
+                options sont une seule chose qui part en ligne : les séparer
+                obligerait à valider deux fois, et il finirait par en oublier
+                une. Le ✕ les enlève POUR AUJOURD'HUI — le réglage permanent,
+                lui, ne bouge pas : un jour sans reste ne doit pas obliger à
+                décocher une case qu'il faudrait recocher demain. */}
+            {!!proposees.length && (
+              <div className="as-opts">
+                <em>Et comme d’habitude, avec ça</em>
+                <ul>
+                  {proposees.map((o) => (
+                    <li key={o.cle}>
+                      <i aria-hidden="true">{o.icone}</i>
+                      <span>
+                        <b>{o.titre}</b>
+                        {!!o.reglages.length && (
+                          <u>
+                            {o.reglages
+                              .map((r) =>
+                                r.unite === "h"
+                                  ? `${r.label} ${hhmm(r.valeur)}`
+                                  : `${r.valeur}${r.unite} ${r.label}`,
+                              )
+                              .join(" · ")}
+                          </u>
+                        )}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={`Retirer « ${o.titre} » pour aujourd’hui`}
+                        onClick={() => setRetirees((v) => [...v, o.cle])}
+                      >
+                        ✕
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             <div className="as-valide">
               <button type="button" className="as-oui" onClick={valider}>

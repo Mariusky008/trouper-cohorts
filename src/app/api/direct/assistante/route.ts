@@ -184,6 +184,7 @@ const SYSTEME = (
   photoPrise: boolean,
   souvenirDejaDit: boolean,
   rdv: { quoi: string; question: string; heure: string; premier: boolean } | null,
+  options: string[],
   apres: { quoi: string; heure: string } | null,
 ) => {
   const hh = `${Math.floor(heure)} h ${String(Math.round((heure % 1) * 60)).padStart(2, "0")}`;
@@ -319,6 +320,19 @@ const SYSTEME = (
     "Pour un créneau libre ou une fermeture, l'heure suffit et tu proposes tout",
     "de suite.",
     "",
+    ...(options.length
+      ? [
+          "CE QU'IL PROPOSE TOUS LES JOURS, ET QUI EST DÉJÀ ATTACHÉ À LA CARTE :",
+          ...options.map((x) => `- ${x}`),
+          "",
+          "TU NE LES DEMANDES PAS ET TU N'EN PARLES PAS. Il les a cochées une",
+          "fois sur son profil ; l'écran les ajoute tout seul sous la carte, et",
+          "il en retire d'un doigt celles qui ne collent pas aujourd'hui. Les",
+          "mentionner reviendrait à lui redemander chaque matin ce qu'il a réglé",
+          "une fois pour toutes — exactement ce qu'on prétend lui enlever.",
+          "",
+        ]
+      : []),
     "TU NE VOIS RIEN, ET C'EST IMPORTANT. Aucune image ne t'est transmise :",
     "quand il prend une photo ou filme, tu ne reçois qu'une information — « une",
     "photo est attachée ». Tu ne dis donc JAMAIS que tu la vois, qu'elle est",
@@ -627,6 +641,10 @@ export async function POST(request: Request) {
       : null;
   };
   const rdv = lireRdv(p?.rdv);
+  // CE QU'IL PROPOSE TOUS LES JOURS — pour qu'elle ne le redemande pas.
+  const options = Array.isArray(p?.options)
+    ? (p.options as unknown[]).map((x) => s(x).slice(0, 80)).filter(Boolean).slice(0, 8)
+    : [];
   const apres = lireRdv(p?.apres);
   const tours = Array.isArray(p?.messages) ? (p.messages as unknown[]) : [];
   const messages = tours
@@ -667,6 +685,7 @@ export async function POST(request: Request) {
           souvenirDejaDit,
           rdv,
           apres,
+          options,
         ),
         messages: conversation,
         output_config: {
