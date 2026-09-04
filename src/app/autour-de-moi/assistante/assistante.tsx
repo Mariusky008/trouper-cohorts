@@ -1143,7 +1143,11 @@ export function Assistante() {
     // ELLES S'APPUIENT SUR L'ANNONCE PRINCIPALE : le titre du plat et son
     // prix. On les publie donc APRÈS elle, jamais avant.
     for (const o of proposeesRef.current) {
-      const m = momentDeLOption(o, { titre: carte.titre, prix: carte.prix, icone: carte.icone }, heure);
+      const m = momentDeLOption(
+        o,
+        { titre: carte.titre, prix: carte.prix, icone: carte.icone, photo: photo || undefined },
+        heure,
+      );
       if (m) publierMoment(m, heure);
     }
     // CE QU'IL A RETIRÉ NE VAUT QUE POUR CETTE ANNONCE-LÀ. La suivante repart

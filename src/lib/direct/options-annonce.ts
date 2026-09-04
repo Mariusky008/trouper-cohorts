@@ -319,11 +319,26 @@ function reduit(prix: string, remise: number): string {
  */
 export function momentDeLOption(
   o: OptionAnnonce,
-  base: { titre: string; prix: string; icone: string },
+  base: { titre: string; prix: string; icone: string; photo?: string },
   heure: number,
 ): Omit<MomentJour, "publie"> | null {
   if (!base.titre.trim()) return null;
-  const commun = { envies: [] as string[], icone: o.icone };
+  // ─── ELLES PARTAGENT LA PHOTO DU PLAT, PARCE QUE C'EST LE MÊME PLAT ───
+  //
+  // « Il m'en reste : dernières portions » et « je remplis mes heures creuses »
+  // ne sont pas d'autres produits : ce sont d'autres façons de proposer CELUI
+  // qu'il vient de photographier. Sans cette ligne, ces cartes-là repartaient
+  // sur la devanture du commerce — le commerçant photographie son plat une fois
+  // et le voit disparaître sur deux annonces sur trois.
+  //
+  // « Ce qui reste, plutôt que jeté » est le seul cas qui garde sa distance :
+  // ce qu'on donne le soir n'est pas forcément l'assiette de midi, et montrer
+  // le plat du jour sur un don promettrait quelque chose qu'on ne tient pas.
+  const commun = {
+    envies: [] as string[],
+    icone: o.icone,
+    photo: o.cle === "don" ? undefined : base.photo || undefined,
+  };
 
   if (o.cle === "creux") {
     const de = val(o, "de", 11);

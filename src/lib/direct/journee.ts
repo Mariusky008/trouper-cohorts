@@ -187,11 +187,29 @@ export function majMoment(
 ): Journee | null {
   const j = chargerJournee();
   if (!j) return null;
+  // ─── CE QU'UNE MISE À JOUR NE DIT PAS, ELLE NE L'EFFACE PAS ───
+  //
+  // LE DÉFAUT MESURÉ : « la photo que j'ai prise pour le menu du jour pour Léa
+  // n'apparaît pas sur Le Direct. » Elle y était à la publication ; c'est le
+  // tour SUIVANT qui la retirait. Il photographie son plat à 11 h 30, puis à
+  // 13 h 30 Léa demande « il vous en reste combien ? » — et cette mise à jour
+  // là ne porte pas de photo, parce que chaque carte neuve repart de zéro.
+  //
+  // OR L'ÉTALEMENT RECOPIE AUSSI LES CHAMPS ABSENTS : « photo: undefined » est
+  // une valeur, et elle écrase. Sa photo disparaissait donc au moment précis où
+  // son annonce devenait la plus intéressante — quand il ne reste que huit
+  // portions. Le prix et les lignes couraient le même risque.
+  //
+  // METTRE À JOUR, C'EST CHANGER CE QU'ON NOMME. Ce qui n'est pas nommé reste :
+  // on ne recopie que les champs réellement renseignés.
+  const nomme = Object.fromEntries(
+    Object.entries(changement).filter(([, v]) => v !== undefined),
+  ) as Partial<MomentJour>;
   let touche = false;
   const moments = j.moments.map((m) => {
     if (touche || m.titre !== titre) return m;
     touche = true;
-    return { ...m, ...changement, titre: m.titre, publie: heure };
+    return { ...m, ...nomme, titre: m.titre, publie: heure };
   });
   if (!touche) return j;
   const neuf: Journee = { ...j, moments };
