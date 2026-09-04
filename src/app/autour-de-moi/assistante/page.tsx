@@ -65,6 +65,18 @@ body{background:#05090C}
   --rouge:#FF6B6B;--violet:#B98CFF;
   --trait:rgba(234,242,236,.13);
   position:relative;isolation:isolate;overflow:hidden;
+  /* L'ECRAN FAIT EXACTEMENT LA HAUTEUR DE LA FENETRE, ET PAS « AU MOINS ».
+     CE QU'IL A VU : « Le menu en bas devrait etre statique et toujours
+     visible. » Il ne l'etait pas, et « min-height » en etait la cause : des
+     que la conversation depassait un ecran, c'etait le DOCUMENT ENTIER qui
+     grandissait — mesure a 1797 points de haut apres six echanges — au lieu du
+     seul fil. La barre, posee au bout de cette colonne, descendait avec.
+     « position:sticky » ne pouvait rien y faire : elle ne colle qu'a un
+     ancetre qui defile, et ici c'etait la page.
+     Avec une hauteur FERMEE, le fil redevient le seul endroit qui defile, et
+     la barre est toujours a sa place — parce qu'elle n'a plus nulle part ou
+     aller. */
+  height:100dvh;max-height:100dvh;
   min-height:100dvh;display:flex;flex-direction:column;
   background:var(--nuit);color:var(--craie);
   font-family:'Inter',system-ui,-apple-system,sans-serif}
@@ -215,6 +227,15 @@ body{background:#05090C}
 .as-fil{flex:1;min-height:0;overflow-y:auto;
   padding:14px clamp(14px,4vw,26px) 8px;
   display:flex;flex-direction:column;gap:10px}
+/* ET CHAQUE BULLE GARDE SA HAUTEUR — MEME PIEGE QUE LES ONGLETS, DEUXIEME FOIS.
+   Tant que la page entiere grandissait, le fil grandissait avec elle et rien
+   n'etait comprime ; le jour ou on l'a ferme a la hauteur de la fenetre, il est
+   devenu une VRAIE colonne flexible — et les enfants d'une colonne flexible se
+   retrecissent par defaut au lieu de faire defiler. Mesure par le test : le
+   rappel violet est passe de sa hauteur normale a 33 points, ecrase entre deux
+   bulles. On ne le voyait pas venir parce que le defaut n'apparait qu'au
+   moment ou le conteneur cesse de pouvoir grandir. */
+.as-fil > *{flex:none}
 /* LES BULLES ARRIVENT, ELLES N'APPARAISSENT PAS. Trois dixiemes de seconde de
    montee : c'est ce qui fait qu'une reponse est DONNEE plutot qu'affichee, et
    ca ne coute rien a personne. */
@@ -399,7 +420,10 @@ body{background:#05090C}
 .as-retour{align-self:flex-start;margin:0;font-size:12.5px;color:var(--or)}
 .as-echo{align-self:flex-start;margin:0;font-size:12.5px;color:var(--rouge)}
 
-.as-bas{flex:none;padding:10px clamp(14px,4vw,26px) calc(12px + env(safe-area-inset-bottom));
+/* LA MARGE DE L'IPHONE EST PORTEE PAR LA BARRE, ET UNE SEULE FOIS. Les deux la
+   reservaient : le champ d'ecriture gardait donc trente points de vide sous
+   lui, au milieu de l'ecran, alors qu'il n'est plus le dernier element. */
+.as-bas{flex:none;padding:10px clamp(14px,4vw,26px) 12px;
   border-top:1px solid var(--trait);background:var(--nuit)}
 .as-vivant{margin:0 0 9px;font-size:14.5px;line-height:1.4;color:var(--craie2)}
 .as-saisie{display:flex;align-items:center;gap:9px}
@@ -563,7 +587,7 @@ body{background:#05090C}
    ELLE FLOTTE AU-DESSUS DU FOND, pas collee dessus : le meme verre que les
    bulles, pour qu'elle appartienne a la piece. Et elle respecte la barre
    d'accueil de l'iPhone, sinon le pouce tape a cote toute la journee. */
-.as-onglets{position:sticky;bottom:0;z-index:5;
+.as-onglets{flex:none;z-index:5;
   display:grid;grid-template-columns:repeat(3,1fr);gap:2px;
   padding:7px 8px calc(7px + env(safe-area-inset-bottom));
   background:rgba(5,9,12,.82);

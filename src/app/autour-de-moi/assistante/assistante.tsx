@@ -711,6 +711,21 @@ export function Assistante() {
         fin();
         setParle(false);
         if (!puisEcouter || !libres) return;
+        // ─── LA VOIX COUPÉE VAUT DES DEUX CÔTÉS ───
+        //
+        // « Je veux que ce soit aussi pareil pour moi et que ce soit par écrit,
+        // parce que lorsque quelqu'un parle à côté de moi, ça devient
+        // bordélique. »
+        //
+        // C'est le défaut : on coupait la voix de Léa et le micro continuait de
+        // s'ouvrir tout seul après chaque réponse. Dans une boulangerie à
+        // 11 h il y a toujours quelqu'un qui parle — et c'est cette
+        // conversation-là que Léa recevait, en croyant que c'était la sienne.
+        //
+        // COUPER LA VOIX, C'EST DONC PASSER À L'ÉCRIT, PAS LA METTRE EN
+        // SOURDINE. Rien ne s'ouvre plus de soi-même ; le micro reste à portée
+        // du pouce, mais il ne se déclenche que s'il le décide.
+        if (voixCoupeeRef.current) return;
         if (lu) return demarrerMicroRef.current?.();
         setTimeout(() => demarrerMicroRef.current?.(), tempsDeLire(texte));
       };
@@ -1073,6 +1088,28 @@ export function Assistante() {
 
   const demarrerMicroRef = useRef<() => void>(() => {});
   demarrerMicroRef.current = demarrerMicro;
+
+  /**
+   * LE TALKIE-WALKIE — on maintient, on parle, on lâche.
+   *
+   * « Ou alors avoir un mode talkie-walkie que je maintiens et que je lâche
+   * quand j'ai terminé de parler. »
+   *
+   * POURQUOI C'EST LE BON GESTE DANS UN COMMERCE, et pas une préférence. Le
+   * micro se refermait sur un SILENCE ; or dans une boutique il n'y en a pas.
+   * Un client qui commande, la radio, la machine à café : la détection ne
+   * tombait jamais, ou tombait sur la phrase de quelqu'un d'autre. Le doigt,
+   * lui, sait exactement quand il a fini de parler — c'est la seule mesure
+   * fiable de cet écran.
+   *
+   * ET ON GARDE L'APPUI SIMPLE, parce que les deux ne se gênent pas. Sous le
+   * tiers de seconde c'est un appui : le micro reste ouvert, comme avant, pour
+   * une longue phrase qu'on ne veut pas tenir. Au-delà, c'est un maintien : on
+   * envoie au relâchement. Un seul bouton, et personne n'a rien à apprendre.
+   */
+  const TENU_MS = 350;
+  /** Le début du maintien, ou 0 si cet appui-là servait à ARRÊTER l'écoute. */
+  const presse = useRef(0);
 
   // LE MICRO RESTE BRANCHÉ PENDANT TOUTE LA CONVERSATION — c'est le correctif
   // qui fait qu'elle entend au deuxième tour comme au premier. On ne le relâche
@@ -1707,11 +1744,15 @@ export function Assistante() {
           >
             <i aria-hidden="true">{voixCoupee ? "✍️" : "🔊"}</i>
             <span>
-              <b>{voixCoupee ? "Léa écrit, elle ne parle pas" : "Léa vous parle"}</b>
+              {/* LE LIBELLÉ DIT MAINTENANT LES DEUX CÔTÉS. Il ne parlait que
+                  d'elle — « Léa écrit, elle ne parle pas » — alors que le micro
+                  continuait de s'ouvrir tout seul. Un réglage qui ne fait que
+                  la moitié de ce qu'il annonce est pire qu'un réglage absent. */}
+              <b>{voixCoupee ? "Tout par écrit" : "Léa vous parle"}</b>
               <em>
                 {voixCoupee
-                  ? "Ses réponses arrivent tout de suite. Appuyez pour lui rendre la voix."
-                  : "Coupez sa voix pour aller plus vite : elle répondra par écrit."}
+                  ? "Elle écrit, et le micro ne s’ouvre plus tout seul. Maintenez-le pour parler."
+                  : "Passez à l’écrit : c’est plus rapide, et rien ne s’ouvre sans vous."}
               </em>
             </span>
           </button>
@@ -2386,8 +2427,37 @@ export function Assistante() {
             type="button"
             className={`as-micro${ecoute ? " on" : ""}`}
             disabled={attend}
-            onClick={() => (ecoute ? arreterMicro() : demarrerMicro())}
-            aria-label={ecoute ? "J’ai fini" : "Parler"}
+            // ON CAPTURE LE POINTEUR : sans ça, un doigt qui glisse hors du
+            // bouton pendant qu'on parle ne rend jamais son relâchement, et le
+            // micro reste ouvert sur la boutique.
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture?.(e.pointerId);
+              if (ecoute) {
+                presse.current = 0;
+                return;
+              }
+              presse.current = Date.now();
+              demarrerMicro();
+            }}
+            onPointerUp={() => {
+              // Cet appui-là servait à arrêter une écoute déjà ouverte.
+              if (!presse.current) return void arreterMicro();
+              const tenu = Date.now() - presse.current >= TENU_MS;
+              presse.current = 0;
+              // MAINTENU : on envoie en lâchant. APPUYÉ : le micro reste ouvert.
+              if (tenu) void arreterMicro();
+            }}
+            onPointerCancel={() => {
+              presse.current = 0;
+              void arreterMicro();
+            }}
+            // LE CLAVIER N'A PAS DE DOIGT. `detail === 0` désigne l'activation
+            // au clavier : elle bascule, comme avant.
+            onClick={(e) => {
+              if (e.detail !== 0) return;
+              void (ecoute ? arreterMicro() : demarrerMicro());
+            }}
+            aria-label={ecoute ? "J’ai fini" : "Maintenir pour parler"}
           >
             {ecoute ? "■" : "🎙"}
           </button>
