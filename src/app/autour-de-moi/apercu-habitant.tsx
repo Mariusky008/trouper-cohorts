@@ -1518,7 +1518,11 @@ export function ApercuHabitant() {
   const vitrine = (() => {
     const vus = new Set<string>();
     const pris: { photo: string; quoi: string }[] = [];
-    for (const c of toutes) {
+    // LE MUR MONTRE CE QUI EST OUVERT MAINTENANT, pas le catalogue de la ville :
+    // c'est un échantillon du paquet qu'on va ouvrir trois secondes plus tard,
+    // et il doit donc obéir à la même règle que lui.
+    const ouvertsMaintenant = toutes.filter((c) => momentsRestants(c, heure).length > 0);
+    for (const c of ouvertsMaintenant) {
       if (vus.has(c.branche) || !c.photo) continue;
       const m = momentEnCours(c, heure);
       vus.add(c.branche);
@@ -1527,7 +1531,7 @@ export function ApercuHabitant() {
     }
     // S'IL MANQUE DES MÉTIERS, on complète avec ce qu'il y a : un mur troué se
     // lit comme un chargement raté, et c'est la première image de l'application.
-    for (const c of toutes) {
+    for (const c of ouvertsMaintenant) {
       if (pris.length === 6) break;
       if (!c.photo || pris.some((x) => x.photo === c.photo)) continue;
       pris.push({ photo: c.photo, quoi: momentEnCours(c, heure)?.titre ?? c.metier });
@@ -1535,9 +1539,36 @@ export function ApercuHabitant() {
     return pris;
   })();
 
+  /**
+   * CEUX QUI ONT ENCORE QUELQUE CHOSE À PROPOSER, MAINTENANT.
+   *
+   * « Lorsqu'un commerçant n'a plus rien à proposer dans la journée, il reste
+   * quand même dans les annonces du jour, alors qu'il devrait disparaître
+   * jusqu'à ce qu'il propose de nouveau quelque chose. »
+   *
+   * DEUX ENDROITS LISENT CETTE LISTE, ET C'EST TOUT LE SUJET. La composition du
+   * paquet — qui entre — et le DESSIN de la carte — sous quelle forme. Écrite à
+   * un seul des deux, la règle produisait des cartes vides : un commerce qui
+   * recrute entrait bien par son offre d'emploi, mais l'écran le dessinait
+   * quand même en carte de commerce, avec un titre vide et pas un prix. Une
+   * seule définition, lue aux deux endroits.
+   */
   const embauchent = ceuxQuiRecrutent();
   // LES ENVIES NE S'APPLIQUENT PAS AUX EMBAUCHES — « moins de 15 € » n'a aucun
   // sens sur une offre de poste. Le mode embauche court-circuite tout le filtre.
+  /**
+   * LA LISTE, ET ELLE EST DÉCLARÉE ICI POUR ÊTRE LUE DEUX FOIS — voir plus haut.
+   *
+   * LA RÈGLE COMPLÈTE TIENT EN DEUX CONDITIONS : il a fait son planning
+   * (`!silencieux`), et il lui reste quelque chose à cette heure-ci. La seconde
+   * manquait dans « tout », et elle est la plus visible : une boulangerie vide à
+   * 19 h occupait une carte entière dans le paquet de quelqu'un qui cherche où
+   * dîner. Un paquet qui garde les commerces éteints redevient un annuaire — on
+   * y trouve tout le monde, donc plus rien n'y veut dire « maintenant ».
+   */
+  const ouverts = toutes.filter(
+    (c) => !c.silencieux && momentsRestants(c, heure).length > 0,
+  );
   const evenements = evenementsDeLaVille();
   /**
    * CE QUI EST OFFERT EN VILLE — et pourquoi ça vit dans sa propre vue.
@@ -1566,16 +1597,35 @@ export function ApercuHabitant() {
         // vient d'enlever. La distance est le seul tri qui ait du sens quand on
         // demande « qu'est-ce qui se passe autour de moi ».
         : vue === "tout"
-          ? [
-              // MÊME RÈGLE QUE `autourDeMoi` : celui qui n'a pas fait son
-              // planning n'a pas de carte aujourd'hui, y compris dans « tout ».
-              // Son annonce d'emploi, elle, arrive par `embauchent`.
-              ...toutes.filter((c) => !c.silencieux),
-              ...embauchent.filter((c) => c.silencieux || !toutes.includes(c)),
-              ...evenements,
-            ].sort(
-              (a, b) => a.metres - b.metres,
-            )
+          ? ((): ItemPaquet[] => {
+              // ═══ CELUI QUI N'A PLUS RIEN À PROPOSER QUITTE LE PAQUET ═══
+              //
+              // « Lorsqu'un commerçant n'a plus rien à proposer dans la journée,
+              // il reste quand même dans les annonces du jour, alors qu'il
+              // devrait disparaître jusqu'à ce qu'il propose de nouveau quelque
+              // chose. » C'est exact, et le commentaire d'à côté annonçait
+              // pourtant « MÊME RÈGLE QUE `autourDeMoi` » : il n'en copiait que
+              // la moitié — le silence du matin, pas la journée finie.
+              //
+              // LA RÈGLE COMPLÈTE TIENT EN DEUX CONDITIONS : il a fait son
+              // planning (`!silencieux`), et il lui reste quelque chose à cette
+              // heure-ci. La seconde manquait, et elle est la plus visible :
+              // une boulangerie vide à 19 h occupait une carte entière dans le
+              // paquet de quelqu'un qui cherche où dîner.
+              //
+              // ET C'EST TOUTE LA PROMESSE DU DIRECT. Un paquet qui garde les
+              // commerces éteints redevient un annuaire — on y trouve tout le
+              // monde, donc plus rien ne veut dire « maintenant ». La rareté du
+              // paquet est ce qui donne du prix à ce qui y reste.
+              return [
+                ...ouverts,
+                // SON ANNONCE D'EMPLOI, ELLE, N'A PAS D'HEURE. Un poste ne se
+                // périme pas à 14 h : il entre par `embauchent`, et seulement
+                // s'il n'est pas déjà dans le paquet par ses moments.
+                ...embauchent.filter((c) => !ouverts.includes(c)),
+                ...evenements,
+              ].sort((a, b) => a.metres - b.metres);
+            })()
           : selonEnvies(
               [
                 // SA PROPRE CARTE ENTRE DANS SON MÉTIER, pas ailleurs, et
@@ -1757,7 +1807,12 @@ export function ApercuHabitant() {
   /** La carte à dessiner : un événement, un poste, une invitation, ou l'annonce. */
   const carteDe = (x: ItemPaquet) => {
     if (estEvenement(x)) return carteDEvenement(x, heure);
-    if (vue === "recrute" || (vue === "tout" && x.recrute && !toutes.includes(x)))
+    // LA MÊME NOTION QUE LA COMPOSITION, ET C'EST LE CORRECTIF. On testait
+    // `!toutes.includes(x)` — la liste NON filtrée — alors que le paquet, lui,
+    // n'admet que les commerces encore ouverts. Résultat à 22 h : quatre
+    // commerces qui recrutent entraient par leur offre d'emploi et étaient
+    // dessinés en carte de commerce, sans titre, sans prix et sans heure.
+    if (vue === "recrute" || (vue === "tout" && x.recrute && !ouverts.includes(x)))
       return carteDeRecrutement(x);
     return estInvitation(x) ? carteDeReponse(x, heure) : carteAffichee(x, heure);
   };
