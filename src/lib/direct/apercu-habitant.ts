@@ -31,6 +31,7 @@
 // horodatée a débloqués, donc ceux qu'on montre le plus. Voir
 // `public/direct/LISEZ-MOI.md` pour le cadrage et la règle d'anonymat.
 import type { CarteDirect } from "@/components/direct/carte-swipe";
+import { flashEnCours, partEcoulee, tempsQuiReste } from "./flash";
 import type { AnnoncePassee } from "@/lib/direct/historique";
 
 /**
@@ -418,6 +419,19 @@ export type MomentJour = {
   prix?: string;
   prixBarre?: string;
   etiquette?: string;
+  /**
+   * ⚡ UNE OFFRE QUI SE PÉRIME EN TRENTE MINUTES — voir `flash.ts`.
+   *
+   * POURQUOI C'EST UN CHAMP DU MOMENT ET PAS UN TYPE À PART. « Je ne ferais pas
+   * du Flash le cœur de ClikMe : ce serait une mécanique puissante À
+   * L'INTÉRIEUR du Direct. » Un type séparé aurait demandé un second classement,
+   * un second archivage, une seconde façon de remonter dans le paquet — et
+   * aurait fini par vivre à côté du produit au lieu de dedans. Ici il hérite de
+   * tout : la fraîcheur qui le met en tête, la journée qui le porte, le soir qui
+   * le range. La carte lit ce champ pour se dessiner autrement, et c'est la
+   * seule chose qui change.
+   */
+  flash?: import("./flash").Flash;
   /**
    * CE QUI EST DONNÉ, PAS VENDU — et c'est autre chose qu'un prix à zéro.
    *
@@ -3083,6 +3097,13 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
     prix: m?.offert ? undefined : m?.prix,
     prixBarre: m?.offert ? undefined : m?.prixBarre,
     etiquette: m?.offert ? "OFFERT" : m?.etiquette,
+    // ⚡ CE QUI SE PÉRIME DANS QUELQUES MINUTES — voir `flash.ts`. On ne passe
+    // que le compte et la part écoulée : la carte n'a pas à connaître la
+    // mécanique, seulement le temps qu'il reste.
+    flash:
+      m?.flash && flashEnCours(m.flash, heure)
+        ? { reste: tempsQuiReste(m.flash, heure), part: partEcoulee(m.flash, heure) }
+        : undefined,
     frais: m ? fraicheurEcrite(m, heure) : undefined,
     // PAS DE LIGNE « SOCIAL » ICI. Le nombre de moments y était écrit une
     // première fois, et la pastille de défilement le répétait dix pixels plus

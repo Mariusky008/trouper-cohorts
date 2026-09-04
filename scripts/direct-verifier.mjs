@@ -160,8 +160,18 @@ dire(vus.some((t) => /^Suivre (ce|cet|cette) /.test(t)),
 // ET LA PROMESSE NE DIT PAS « ICI » : elle se lit à distance, sur une annonce.
 dire(!vus.some((t) => /\bici\b/.test(t)),
   "aucune promesse ne dit « ici » — on n'y est pas");
-dire(vus.every((t) => /Recevez en priorité/.test(t)),
+// ELLES S'ADRESSENT À QUELQU'UN, ET ELLES PROMETTENT UN RANG.
+//
+// LA RÈGLE A ÉTÉ RESSERRÉE, ET IL FAUT LE DIRE : elle exigeait la formule exacte
+// « Recevez en priorité ». Une formule n'est pas une règle — elle interdit de
+// mieux dire la même chose. Ce qui compte est double, et se mesure : un
+// destinataire (« vous »), et le rang qu'on y gagne. « Ses annonces vous
+// arriveront AVANT LES AUTRES » dit les deux, et le dit mieux qu'une priorité,
+// qui est un mot d'administration.
+dire(vus.every((t) => /\bvous\b/i.test(t)),
   "et toutes s'adressent à quelqu'un");
+dire(vus.every((t) => /avant les autres|en priorité/i.test(t)),
+  "et toutes promettent un RANG, pas une notification");
 await ctx.close();
 
 // ═══ 3 · LE TOUR DE RÔLE NE SE JUSTIFIE PLUS APRÈS COUP ═══
@@ -380,7 +390,12 @@ dire(f1.garde.includes("boulange"), "et ça survit à la fermeture");
 
 // ET ON LA RETROUVE DANS « MES COMMERCES » — une file qu'on ne retrouve nulle
 // part est une file oubliée.
-await p.click(".ap-fav2 .nb");
+// ON Y ENTRE PAR LA CLOCHE. La pastille chiffrée collée au cœur ouvrait la même
+// page, mais elle comptait DEUX choses selon sa couleur — les nouvelles quand
+// elle était ambre, les annonces gardées quand elle était verte — et « le cœur
+// et les notifications en haut à droite, c'est incompréhensible ». Elle est
+// partie ; la cloche, elle, n'a jamais dit qu'une chose.
+await p.click(".ap-jai");
 await p.waitForTimeout(900);
 const att = await p.evaluate(() => {
   const e = document.querySelector(".ap-nouv-e.attente");

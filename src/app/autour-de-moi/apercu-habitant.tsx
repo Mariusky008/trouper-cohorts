@@ -694,6 +694,8 @@ export function ApercuHabitant() {
    */
   const [sousLaBarre, setSousLaBarre] = useState(false);
   const [coeurVole, setCoeurVole] = useState(false);
+  /** L'instant du dernier appui simple — voir la double tape sur la carte. */
+  const dernierAppui = useRef(0);
   const [feuille, setFeuille] = useState<
     "" | "metier" | "resa" | "sortie" | "jyvais" | "embauche"
   >("");
@@ -2271,7 +2273,9 @@ export function ApercuHabitant() {
     const suit = basculerSuivi(c.id);
     noter(suit ? "rappel-demande" : "je-passe", 0, "suivre");
     if (!suit) return;
-    setEchoIcone("🔔");
+    // LE MEME SYMBOLE QUE LE GESTE. On repondait par une cloche a quelqu'un qui
+    // vient de taper deux fois sur un coeur : deux langages pour une action.
+    setEchoIcone("💚");
     setEcho(
       `Vous suivez ${nommerApresUnVerbe(c.nom)}. ` +
         `Vous recevrez en priorité ${promesseDeSuivi(c)}.`,
@@ -4482,50 +4486,24 @@ export function ApercuHabitant() {
                 >
                   {gardeSommet ? "💚" : "♡"}
                 </button>
-                {/* ─── LE CHIFFRE EST DEVENU LA PORTE DES NOUVELLES ───
-                    Il comptait les annonces gardées. Un stock ne bouge pas :
-                    la pastille affichait le même nombre pendant des semaines,
-                    et on apprend en trois jours à ne plus la regarder.
+                {/* ─── LE CHIFFRE AMBIGU A DISPARU ───
+                    « Le cœur et les notifications en haut à droite, c'est
+                    incompréhensible. Il faudrait qu'ils soient séparés. »
 
-                    Elle compte maintenant CE QUE LES COMMERCES SUIVIS ONT
-                    PUBLIÉ AUJOURD'HUI — un flux, qui arrive le matin et se
-                    périme le soir. C'est ce qui donne au commerçant une
-                    promesse qu'il peut vérifier : « vos abonnés ont une
-                    pastille qui s'allume quand vous publiez ; si vous ne
-                    publiez pas, elle ne s'allume pas. »
+                    C'est exactement ça, et la cause était écrite noir sur
+                    blanc dans le commentaire qu'on vient d'enlever : UNE
+                    pastille comptait DEUX choses — les nouvelles quand elle
+                    était ambre, les annonces gardées quand elle était verte —
+                    et c'était à la couleur de dire laquelle. Personne ne lit
+                    une couleur comme une unité.
 
-                    LES DEUX NOMBRES NE SE MÉLANGENT JAMAIS. Quand il y a du
-                    neuf non lu, la pastille est ambre et compte les
-                    nouvelles ; sinon elle redevient verte et compte les
-                    gardés. La couleur dit laquelle des deux on lit, et la
-                    porte ne disparaît jamais. */}
-                <button
-                  type="button"
-                  className={`nb${nonLues.length > 0 ? " neuf" : ""}`}
-                  onClick={ouvrirMesCommerces}
-                  aria-label={
-                    nonLues.length > 0
-                      ? `Mes commerces · ${nonLues.length} ${
-                          nonLues.length > 1 ? "nouvelles" : "nouvelle"
-                        }`
-                      : `Mes commerces · ${gardees.length} gardé${
-                          gardees.length > 1 ? "s" : ""
-                        }`
-                  }
-                >
-                  {/* JAMAIS « 0 » — RELEVÉ À L'ESSAI, ET C'EST NOTRE PROPRE
-                      RÈGLE (T2 : pas de zéro affiché). Une fois la pastille
-                      lue, elle revenait au compte des gardés ; sans rien de
-                      gardé, elle affichait « 0 » — une porte étiquetée zéro,
-                      qui donne l'impression que la fonction est morte. Le
-                      chevron dit la même chose honnêtement : il y a quelque
-                      chose derrière, mais rien de neuf. */}
-                  {nonLues.length > 0
-                    ? nonLues.length
-                    : gardees.length > 0
-                      ? gardees.length
-                      : "›"}
-                </button>
+                    ELLE FAISAIT EN PLUS DOUBLON : la cloche, juste dessous,
+                    ouvre la même page et compte déjà les nouvelles. Deux portes
+                    pour un endroit, dont l'une changeait de sens.
+
+                    Il reste donc le cœur, qui garde une annonce, et la cloche,
+                    qui dit ce qui est arrivé. Deux objets, deux sens, aucune
+                    couleur à traduire. */}
               </div>
             </div>
 
@@ -4794,9 +4772,38 @@ export function ApercuHabitant() {
                         · rien sur un bouton — « Y aller », le cœur, « voir la
                           conversation » et le pli sont dans cette zone, et un
                           appui dessus ne doit pas AUSSI tourner la photo. */
-                    if (!p || p.axe || !carrousel || descendu) return;
+                    if (!p || p.axe || descendu) return;
                     const cible = e.target as HTMLElement;
                     if (cible.closest("button, a, label, input")) return;
+                    // ═══ DEUX APPUIS SUIVENT LE COMMERCE ═══
+                    //
+                    // « Le cœur, il faudrait qu'on puisse avec une double tape
+                    // sur l'écran l'avoir. » C'est le geste que tout le monde
+                    // connaît déjà, et il tombe bien ici : sur cet écran, la
+                    // seule chose qu'on ait envie de faire en voyant quelque
+                    // chose de bon, c'est le garder de vue.
+                    //
+                    // ET IL SUIT LE COMMERÇANT, PAS L'ANNONCE. « En le likant,
+                    // on aura ses news en premier » : c'est ça qu'on veut dire
+                    // quand on tape deux fois sur une assiette. Une annonce
+                    // gardée se périme ce soir ; un commerce suivi tient.
+                    //
+                    // TROIS CENTS MILLISECONDES, comme partout ailleurs. Plus
+                    // court, un doigt un peu lent tourne la photo ; plus long,
+                    // deux appuis délibérés sur les côtés de l'image sont pris
+                    // pour un cœur.
+                    const t = Date.now();
+                    if (t - dernierAppui.current < 300) {
+                      dernierAppui.current = 0;
+                      if (!suivis.includes(sommet.id)) {
+                        setCoeurVole(true);
+                        window.setTimeout(() => setCoeurVole(false), 800);
+                        suivreCeCommerce(sommet);
+                      }
+                      return;
+                    }
+                    dernierAppui.current = t;
+                    if (!carrousel) return;
                     const b = e.currentTarget.getBoundingClientRect();
                     const versLaDroite = e.clientX - b.left > b.width / 2;
                     noter("photo-ajoutee", rangPhoto + 1, "carrousel");
@@ -5061,7 +5068,12 @@ export function ApercuHabitant() {
                               onPointerDown={(ev) => ev.stopPropagation()}
                               onClick={() => suivreCeCommerce(dessus)}
                             >
-                              <i aria-hidden="true">🔔</i>
+                              {/* LE MÊME CŒUR QU'AILLEURS. Celui-ci portait
+                                  encore une cloche — donc, sur le même écran,
+                                  deux symboles pour un seul geste : le cœur
+                                  qu'on obtient en tapant deux fois, et une
+                                  cloche qui fait exactement la même chose. */}
+                              <i aria-hidden="true">♡</i>
                               <span>
                                 {/* LE NOM DU COMMERCE EST DANS LE BOUTON, ET
                                     LA PROMESSE EST UNE PHRASE. « Suivre » puis
@@ -5072,7 +5084,7 @@ export function ApercuHabitant() {
                                     à personne. Avec un destinataire et un
                                     verbe, elle dit ce qu'on reçoit. */}
                                 <b>Suivre {nommerApresUnVerbe(dessus.nom)}</b>
-                                Recevez en priorité {promesseDeSuivi(dessus)}.
+                                Ses annonces vous arriveront avant les autres.
                               </span>
                             </button>
                           )}
@@ -5972,8 +5984,19 @@ export function ApercuHabitant() {
                           onPointerDown={(ev) => ev.stopPropagation()}
                           onClick={() => suivreCeCommerce(dessus)}
                         >
+                          {/* ─── UN CŒUR, ET LE MÊME QU'EN HAUT ───
+                              « Le cœur, il faudrait le trouver aussi autre
+                              part, pour liker ce commerçant, et qu'on comprenne
+                              qu'en le likant on aura ses news en premier. »
+
+                              La cloche disait « on vous préviendra » — une
+                              mécanique. Le cœur dit « celui-là, je le garde »,
+                              et c'est le même symbole que la double tape sur la
+                              photo : deux chemins, un seul geste à comprendre.
+                              La phrase, elle, ne promet plus une notification
+                              mais un RANG : avant les autres. */}
                           <i aria-hidden="true">
-                            {suivis.includes(dessus.id) ? "✓" : "🔔"}
+                            {suivis.includes(dessus.id) ? "💚" : "♡"}
                           </i>
                           <span>
                             <b>
@@ -5982,8 +6005,8 @@ export function ApercuHabitant() {
                                 : `Suivre ${nommerApresUnVerbe(dessus.nom)}`}
                             </b>
                             {suivis.includes(dessus.id)
-                              ? `Vous recevez en priorité ${promesseDeSuivi(dessus)}.`
-                              : `Recevez en priorité ${promesseDeSuivi(dessus)}.`}
+                              ? `Ses annonces vous arrivent avant les autres.`
+                              : `Ses annonces vous arriveront avant les autres — ${promesseDeSuivi(dessus)}.`}
                           </span>
                         </button>
                       </div>

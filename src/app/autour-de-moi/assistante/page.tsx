@@ -456,6 +456,59 @@ body{background:#05090C}
    lui, au milieu de l'ecran, alors qu'il n'est plus le dernier element. */
 .as-bas{flex:none;padding:10px clamp(14px,4vw,26px) 12px;
   border-top:1px solid var(--trait);background:var(--nuit)}
+/* ═══════════════════════════════════════════════════════════════════════
+   ⚡ LE FLASH, COTE COMMERCANT
+   ═══════════════════════════════════════════════════════════════════════
+   L'AMBRE, ET PAS LE VERT. Le vert est la couleur de tout ce qu'il fait
+   d'habitude — publier, valider, parler a Lea. Le Flash est l'exception de sa
+   semaine : il n'en a que trois. Une couleur a lui, c'est ce qui fait qu'on ne
+   l'appuie pas par habitude. */
+.as-flash-b{display:flex;align-items:center;gap:11px;width:100%;margin:0 0 9px;
+  font:inherit;text-align:left;cursor:pointer;padding:10px 12px;border-radius:15px;
+  color:var(--craie);background:rgba(240,180,41,.1);
+  border:1px solid rgba(240,180,41,.42)}
+.as-flash-b i{flex:none;font-style:normal;font-size:19px;line-height:1}
+.as-flash-b span{flex:1;min-width:0}
+.as-flash-b b{display:block;font-size:14px;font-weight:850;letter-spacing:-.02em}
+.as-flash-b em{display:block;margin-top:2px;font-style:normal;font-size:11.5px;
+  line-height:1.35;color:var(--craie2)}
+/* LE COMPTE DE LA SEMAINE EST SUR LE BOUTON, pas dans un reglage. C'est au
+   moment de le depenser qu'on veut savoir ce qu'il en reste. */
+.as-flash-b u{flex:none;text-decoration:none;font-size:12.5px;font-weight:850;
+  font-variant-numeric:tabular-nums;color:var(--or)}
+.as-flash-b.vide{opacity:.5;cursor:default}
+.as-flash-b:active{transform:scale(.99)}
+
+.as-flash{margin:0 0 9px;padding:13px 13px 12px;border-radius:17px;
+  background:rgba(28,20,5,.72);border:1px solid rgba(240,180,41,.42)}
+.as-flash-t{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.as-flash-t b{font-size:14.5px;font-weight:850;letter-spacing:-.02em;color:var(--or)}
+.as-flash-t button{font:inherit;font-size:15px;cursor:pointer;width:28px;height:28px;
+  border-radius:50%;color:var(--craie2);background:rgba(5,9,12,.5);
+  border:1px solid var(--trait)}
+.as-flash-l{display:block;margin-top:9px}
+.as-flash-l span{display:block;margin-bottom:4px;font-size:10px;font-weight:850;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--craie3)}
+.as-flash-l input{width:100%;font:inherit;font-size:14.5px;font-weight:750;
+  color:var(--craie);background:rgba(5,9,12,.55);border:1px solid var(--trait);
+  border-radius:11px;padding:9px 11px}
+.as-flash-l input:focus{outline:none;border-color:rgba(240,180,41,.55)}
+.as-flash-r,.as-flash-d{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.as-flash-r button,.as-flash-d button{font:inherit;font-size:12px;font-weight:800;
+  cursor:pointer;padding:7px 10px;border-radius:10px;color:var(--craie2);
+  background:rgba(5,9,12,.5);border:1px solid var(--trait)}
+.as-flash-r button.on,.as-flash-d button.on{color:#1A1204;background:var(--or);
+  border-color:var(--or)}
+/* TROIS CHAMPS SUR UNE LIGNE : avant, apres, combien. Empiles, ils faisaient
+   descendre le bouton de lancement sous le pli — et un Flash qu'il faut aller
+   chercher n'est plus un Flash. */
+.as-flash-p{display:grid;grid-template-columns:1fr 1fr 72px;gap:7px}
+.as-flash-go{width:100%;margin-top:11px;font:inherit;font-size:15px;font-weight:850;
+  cursor:pointer;padding:13px;border-radius:13px;color:#1A1204;border:0;
+  background:linear-gradient(140deg,#F7C948,#E09B18)}
+.as-flash-go:disabled{opacity:.45;cursor:default}
+.as-flash-n{margin:8px 0 0;font-size:11px;line-height:1.45;color:var(--craie3)}
+
 .as-vivant{margin:0 0 9px;font-size:14.5px;line-height:1.4;color:var(--craie2)}
 .as-saisie{display:flex;align-items:center;gap:9px}
 /* LE MICRO EST L'ACTION PRINCIPALE : c'est la seule interface qui ne demande pas

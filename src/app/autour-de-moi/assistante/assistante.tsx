@@ -79,6 +79,13 @@ import {
   JOURS,
   ouEnEstOn,
 } from "@/lib/direct/fil-du-jour";
+import {
+  FLASH_MINUTES,
+  FLASH_PAR_SEMAINE,
+  flashRestants,
+  momentDuFlash,
+  noterUnFlash,
+} from "@/lib/direct/flash";
 import { dicteeDisponible, libererMicro, ouvrirEcoute } from "@/lib/direct/voix-micro";
 import { useSyncExternalStore } from "react";
 
@@ -533,6 +540,23 @@ export function Assistante() {
    * titre suffisent à savoir ce que la ville voit, le détail est à un appui.
    */
   const [enligneOuvert, setEnligneOuvert] = useState(false);
+  /**
+   * ⚡ LE FLASH QU'IL EST EN TRAIN DE PRÉPARER — voir `flash.ts`.
+   *
+   * « Un clic, prix avant et prix après et une photo, et ça part sur Le Direct
+   * de l'application. » C'est la promesse, et elle tient dans cinq champs. Rien
+   * n'est demandé qu'on puisse deviner : la durée est à trente minutes, l'heure
+   * est celle qu'il est, et le titre est déjà rempli avec ce qui est en ligne.
+   */
+  const [flash, setFlash] = useState<null | {
+    quoi: string;
+    avantage: string;
+    avant: string;
+    apres: string;
+    combien: string;
+    minutes: number;
+    photo: string;
+  }>(null);
   /**
    * LE JOUR QU'IL EST EN TRAIN DE RÉGLER — `null` veut dire « toute la semaine ».
    *
@@ -2467,7 +2491,200 @@ export function Assistante() {
         {/* LES AMORCES : trois débuts de phrase, et seulement quand il revient
             sur une journée déjà commencée. Appuyer ouvre le micro avec les
             premiers mots déjà posés — voir `AMORCES`. */}
-        {!!journee.moments.length && !carte && !ecoute && !attend && (
+        {/* ═══════════════════════════════════════════════════════════════
+            ⚡ LE FLASH
+            ═══════════════════════════════════════════════════════════════
+            « Un clic, prix avant et prix après et une photo, et ça part sur Le
+            Direct de l'application. »
+
+            POURQUOI IL EST ICI ET PAS DANS UN MENU. Un Flash naît d'un problème
+            qui a lieu maintenant : « il me reste huit plats », « j'ai une
+            annulation à 16 h », « personne n'a pris le créneau de 18 h ». Le
+            geste doit être à portée de pouce au moment où le problème apparaît,
+            sinon il n'existe pas. Deux appuis pour aller le chercher, et il ne
+            servira jamais.
+
+            ET LE COMPTE DE LA SEMAINE EST ÉCRIT DESSUS. « Ça crée de la rareté
+            du côté du commerçant aussi, et ça protège la valeur du mécanisme. »
+            Le voir descendre fait réfléchir avant de le dépenser. */}
+        {/* IL RESTE LA MEME PENDANT QU'ELLE ECOUTE. Un Flash naît d'un
+            imprévu — « il m'en reste huit » — et l'imprévu tombe souvent au
+            milieu d'une phrase. Le cacher dès que le micro s'ouvre, c'est-à-dire
+            la moitié du temps, revenait à le cacher tout court. */}
+        {!carte && !attend && !flash && (
+          <button
+            type="button"
+            className={`as-flash-b${flashRestants(c.id) === 0 ? " vide" : ""}`}
+            disabled={flashRestants(c.id) === 0}
+            onClick={() =>
+              setFlash({
+                // CE QUI EST DÉJÀ EN LIGNE EST DÉJÀ ÉCRIT. Neuf fois sur dix le
+                // Flash porte sur le plat du jour : le retaper serait une
+                // question à laquelle on connaît la réponse.
+                quoi: journee.moments[0]?.titre ?? "",
+                avantage: "−30 %",
+                avant: journee.moments[0]?.prix ?? "",
+                apres: "",
+                combien: "",
+                minutes: FLASH_MINUTES,
+                photo: journee.moments[0]?.photo ?? "",
+              })
+            }
+          >
+            <i aria-hidden="true">⚡</i>
+            <span>
+              <b>Lancer un Flash</b>
+              <em>
+                {flashRestants(c.id) === 0
+                  ? "Vous les avez tous utilisés cette semaine"
+                  : "Une offre. 30 minutes. Maintenant."}
+              </em>
+            </span>
+            <u>
+              {flashRestants(c.id)}/{FLASH_PAR_SEMAINE}
+            </u>
+          </button>
+        )}
+
+        {flash && (
+          <div className="as-flash">
+            <div className="as-flash-t">
+              <b>⚡ Lancer un Flash</b>
+              <button type="button" onClick={() => setFlash(null)} aria-label="Annuler">
+                ✕
+              </button>
+            </div>
+            <label className="as-flash-l">
+              <span>Sur quoi ?</span>
+              <input
+                value={flash.quoi}
+                onChange={(e) => setFlash({ ...flash, quoi: e.target.value })}
+                placeholder="Lasagnes maison"
+              />
+            </label>
+            {/* ─── L'AVANTAGE S'ÉCRIT, IL NE SE CHOISIT PAS DANS UNE GRILLE ───
+                « Le Flash ne devrait pas forcément être une réduction : deux
+                achetés = un offert, dessert offert, dernières places à −20 %. »
+                Une grille de promotions l'obligerait à traduire son idée dans
+                nos cases ; les quatre boutons ne sont donc que des raccourcis
+                vers le champ, qui reste libre. */}
+            <label className="as-flash-l">
+              <span>L’avantage</span>
+              <input
+                value={flash.avantage}
+                onChange={(e) => setFlash({ ...flash, avantage: e.target.value })}
+                placeholder="−30 %"
+              />
+            </label>
+            <div className="as-flash-r">
+              {["−20 %", "−30 %", "2 achetés = 1 offert", "Dessert offert"].map((a) => (
+                <button
+                  key={a}
+                  type="button"
+                  className={flash.avantage === a ? "on" : ""}
+                  onClick={() => setFlash({ ...flash, avantage: a })}
+                >
+                  {a}
+                </button>
+              ))}
+            </div>
+            <div className="as-flash-p">
+              <label className="as-flash-l">
+                <span>Prix avant</span>
+                <input
+                  value={flash.avant}
+                  onChange={(e) => setFlash({ ...flash, avant: e.target.value })}
+                  placeholder="14 €"
+                />
+              </label>
+              <label className="as-flash-l">
+                <span>Prix après</span>
+                <input
+                  value={flash.apres}
+                  onChange={(e) => setFlash({ ...flash, apres: e.target.value })}
+                  placeholder="9,80 €"
+                />
+              </label>
+              <label className="as-flash-l">
+                <span>Combien</span>
+                <input
+                  inputMode="numeric"
+                  value={flash.combien}
+                  onChange={(e) => setFlash({ ...flash, combien: e.target.value })}
+                  placeholder="8"
+                />
+              </label>
+            </div>
+            {/* LA PHOTO EST CELLE DE L'ANNONCE, SI ELLE EXISTE. Redemander une
+                photo du même plat une heure après l'avoir prise est le genre de
+                geste qui fait abandonner. */}
+            {flash.photo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="as-apercu" src={flash.photo} alt="" />
+            ) : (
+              <div className="as-media">
+                <label>
+                  <span>📷 Une photo</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={async (e) => {
+                      const x = e.target.files?.[0];
+                      if (x) setFlash({ ...flash, photo: await reduire(x) });
+                    }}
+                  />
+                </label>
+              </div>
+            )}
+            <div className="as-flash-d">
+              {[15, 30, 60].map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  className={flash.minutes === m ? "on" : ""}
+                  onClick={() => setFlash({ ...flash, minutes: m })}
+                >
+                  {m} min
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="as-flash-go"
+              disabled={!flash.quoi.trim() || !flash.avantage.trim()}
+              onClick={() => {
+                const m = momentDuFlash({
+                  quoi: flash.quoi.trim(),
+                  avantage: flash.avantage.trim(),
+                  avant: flash.avant.trim() || undefined,
+                  apres: flash.apres.trim() || undefined,
+                  combien: Number(flash.combien) || undefined,
+                  photo: flash.photo || undefined,
+                  lance: heure,
+                  fin: heure + flash.minutes / 60,
+                });
+                publierMoment(m, heure);
+                noterUnFlash(c.id);
+                setFlash(null);
+                // ELLE L'ANNONCE ELLE-MÊME. Un Flash lancé en silence
+                // ressemblerait à un formulaire envoyé ; ici quelqu'un confirme.
+                parler(
+                  `(je viens de lancer un Flash : ${flash.quoi.trim()}, ${flash.avantage.trim()}, pendant ${flash.minutes} minutes)`,
+                  heure,
+                );
+              }}
+            >
+              🔥 Lancer le Flash
+            </button>
+            <p className="as-flash-n">
+              Il partira tout de suite sur Le Direct, et vos abonnés seront
+              prévenus. Il s’éteint tout seul dans {flash.minutes} minutes.
+            </p>
+          </div>
+        )}
+
+        {!!journee.moments.length && !carte && !ecoute && !attend && !flash && (
           <div className="as-amorces">
             {AMORCES.map((a) => (
               <button

@@ -43,6 +43,17 @@ export type CarteDirect = {
   ville: string;
   /** Ce qui reste avant que ça disparaisse : « Jusqu'à 14 h », « 2 h 10 ». */
   reste?: string;
+  /**
+   * ⚡ CE QUI SE PÉRIME DANS QUELQUES MINUTES — voir `flash.ts`.
+   *
+   * DEUX CHAMPS SEULEMENT, ET C'EST VOULU. La carte n'a pas besoin de savoir ce
+   * qu'est un Flash : elle a besoin de savoir combien de temps il reste et
+   * quelle part est écoulée. Tout le reste — le prix barré, l'étiquette, le
+   * titre — passe par les champs qui existent déjà. Une carte qui connaîtrait
+   * la mécanique du Flash serait une carte à modifier le jour où la mécanique
+   * change.
+   */
+  flash?: { reste: string; part: number };
   /** L'emoji et l'intitulé de ce qui est proposé. */
   icone: string;
   quoi: string;
@@ -313,11 +324,39 @@ export function CarteSwipe({
                 qui fait fuir un commerçant. Ici on ne lui demande rien de plus
                 que ce qu'il fait déjà ; c'est le produit qui date ce qu'il
                 dit. */}
-            {c.frais && (
-              <p className="cd-frais">
-                <i aria-hidden="true" />
-                {c.frais}
+            {/* ═══ ⚡ LE TEMPS QUI PASSE EST L'INFORMATION ═══
+                « Le minuteur est essentiel. Mais attention : pas un gros
+                compteur anxiogène façon site de e-commerce. Quelque chose de
+                très simple : encore 23 min, avec une petite barre qui descend.
+                Le temps qui passe devient lui-même une information. »
+
+                PAS DE SECONDES, ET C'EST LE POINT. Un chronomètre à la seconde
+                transforme une bonne nouvelle en pression — le genre de pression
+                qu'on ne pardonne pas à un commerce de son quartier. La minute
+                suffit à faire comprendre qu'il faut décider maintenant.
+
+                ET IL REMPLACE LA FRAÎCHEUR. « Il y a 12 min » et « encore
+                23 min » sont deux comptes de temps qui vont dans des directions
+                opposées ; posés l'un sur l'autre, on ne sait plus lequel
+                compte. Sur un Flash, un seul compte : celui qui descend. */}
+            {c.flash ? (
+              <p className="cd-flash">
+                <span>
+                  <i aria-hidden="true">⚡</i>
+                  Flash
+                </span>
+                <b>{c.flash.reste}</b>
+                <s aria-hidden="true">
+                  <u style={{ width: `${Math.round((1 - c.flash.part) * 100)}%` }} />
+                </s>
               </p>
+            ) : (
+              c.frais && (
+                <p className="cd-frais">
+                  <i aria-hidden="true" />
+                  {c.frais}
+                </p>
+              )
             )}
             {(c.etiquette || c.metier) && (
               <p className="cd-nature">{c.etiquette || c.metier}</p>
@@ -739,6 +778,27 @@ export function StylesDirect() {
            L'INVENTER. On ne sait pas combien il reste de parts — un commercant
            photographie son ardoise le matin et ne decompte rien pendant le
            service. L'heure, elle, on la connait sans rien demander a personne. */
+        /* ⚡ LE FLASH SE VOIT DE LOIN, ET IL EST LE SEUL AMBRE DE LA CARTE.
+           « Il faut que ce soit completement identifiable dans le Direct. » Le
+           vert est la couleur de tout le reste ; l'ambre ne sert qu'ici et sur
+           l'engagement. Une carte Flash ne se confond avec aucune autre, meme
+           en balayant vite. */
+        .cd-flash{display:flex;flex-direction:column;align-items:center;gap:5px;
+          margin:0 0 9px;padding:7px 14px 8px;border-radius:16px;
+          background:rgba(240,180,41,.16);border:1px solid rgba(247,201,72,.6);
+          -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+        .cd-flash>span{display:flex;align-items:center;gap:5px;font-size:10.5px;
+          font-weight:850;letter-spacing:.2em;text-transform:uppercase;color:#F7C948;}
+        .cd-flash>span i{font-style:normal;font-size:12px;letter-spacing:0;}
+        .cd-flash b{font-size:13px;font-weight:850;letter-spacing:-.01em;color:#FFF3D6;
+          font-variant-numeric:tabular-nums;}
+        /* LA BARRE QUI DESCEND. Elle ne clignote pas et ne change pas de couleur
+           en fin de course : le temps qui passe est une information, pas une
+           alarme. */
+        .cd-flash s{display:block;width:104px;height:3px;border-radius:2px;
+          text-decoration:none;background:rgba(255,255,255,.2);overflow:hidden;}
+        .cd-flash s u{display:block;height:100%;text-decoration:none;
+          background:#F7C948;transition:width .9s linear;}
         .cd-quand{display:inline-block;margin-top:11px;font-size:11.5px;
           font-weight:850;letter-spacing:.05em;text-transform:uppercase;
           color:#04150E;background:#F0B429;border-radius:999px;padding:5px 12px;}
