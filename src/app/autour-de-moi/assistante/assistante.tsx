@@ -2554,6 +2554,10 @@ export function Assistante() {
                 ✕
               </button>
             </div>
+            {/* CE QUI DEFILE, ET CE QUI NE DEFILE PAS. Les champs sont dedans,
+                le bouton de lancement est dehors : il reste sous le pouce quelle
+                que soit la hauteur du telephone. */}
+            <div className="as-flash-corps">
             <label className="as-flash-l">
               <span>Sur quoi ?</span>
               <input
@@ -2618,9 +2622,25 @@ export function Assistante() {
             {/* LA PHOTO EST CELLE DE L'ANNONCE, SI ELLE EXISTE. Redemander une
                 photo du même plat une heure après l'avoir prise est le genre de
                 geste qui fait abandonner. */}
+            {/* UNE VIGNETTE, PAS UN APERÇU PLEINE LARGEUR. « J'ai du mal à
+                atteindre le bouton pour valider le Flash. » La photo en 16/10
+                sur toute la largeur coûtait à elle seule deux cents points, et
+                poussait « Lancer le Flash » sous le bord de l'écran. Ici on ne
+                regarde pas la photo, on vérifie que c'est la bonne — soixante
+                points y suffisent. */}
             {flash.photo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="as-apercu" src={flash.photo} alt="" />
+              <div className="as-flash-ph">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={flash.photo} alt="" />
+                <span>La photo de votre annonce</span>
+                <button
+                  type="button"
+                  onClick={() => setFlash({ ...flash, photo: "" })}
+                  aria-label="Retirer la photo"
+                >
+                  ✕
+                </button>
+              </div>
             ) : (
               <div className="as-media">
                 <label>
@@ -2638,6 +2658,7 @@ export function Assistante() {
               </div>
             )}
             <div className="as-flash-d">
+              <span>Pendant</span>
               {[15, 30, 60].map((m) => (
                 <button
                   key={m}
@@ -2649,11 +2670,32 @@ export function Assistante() {
                 </button>
               ))}
             </div>
+            </div>
             <button
               type="button"
               className="as-flash-go"
               disabled={!flash.quoi.trim() || !flash.avantage.trim()}
               onClick={() => {
+                // ═══ LE FLASH EST À L'HEURE VRAIE, PAS À L'HEURE DE DÉMO ═══
+                //
+                // LE DÉFAUT MESURÉ, ET IL TUAIT LA FONCTIONNALITÉ ENTIÈRE : « une
+                // fois validé, quand je vais sur l'app je ne vois pas l'annonce
+                // du flash avec le compteur qui aurait dû démarrer. »
+                //
+                // Cet écran travaille à l'heure qu'on lui donne — les boutons de
+                // démonstration font sauter à 13 h 45 pour montrer « la dernière
+                // minute ». Le paquet, lui, lit l'horloge du téléphone. Un Flash
+                // lancé à la démo de 13 h 45 alors qu'il est 17 h 02 courait donc
+                // de 13 h 45 à 14 h 15 : déjà terminé au moment même où il partait
+                // en ligne. La carte s'affichait sans compte à rebours, ou pas du
+                // tout, et rien ne le disait.
+                //
+                // TOUT LE RESTE PEUT SE JOUER À UNE HEURE FICTIVE — un menu de
+                // midi, un créneau du soir. Le Flash est la seule chose du
+                // produit dont le sens EST « maintenant » : il n'a pas le droit
+                // d'être ailleurs que dans le présent.
+                const d = new Date();
+                const maintenant = d.getHours() + d.getMinutes() / 60;
                 const m = momentDuFlash({
                   quoi: flash.quoi.trim(),
                   avantage: flash.avantage.trim(),
@@ -2661,10 +2703,13 @@ export function Assistante() {
                   apres: flash.apres.trim() || undefined,
                   combien: Number(flash.combien) || undefined,
                   photo: flash.photo || undefined,
-                  lance: heure,
-                  fin: heure + flash.minutes / 60,
+                  lance: maintenant,
+                  fin: maintenant + flash.minutes / 60,
                 });
-                publierMoment(m, heure);
+                // ET IL EST HORODATÉ PAREIL. `publie` est ce qui le fait remonter
+                // en tête du paquet ; posé à l'heure de démo, il serait arrivé
+                // « il y a trois heures » et se serait rangé au milieu.
+                publierMoment(m, maintenant);
                 noterUnFlash(c.id);
                 setFlash(null);
                 // ELLE L'ANNONCE ELLE-MÊME. Un Flash lancé en silence

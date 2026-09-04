@@ -6222,17 +6222,29 @@ export function ApercuHabitant() {
               qu'une fois. */}
           {passees.length < 3 && !sortie && sommet && (
             <div className="ap-glissez" aria-hidden="true">
+              {/* ─── LE GESTE EST DANS LE LIBELLÉ, PAS SEULEMENT DANS LA
+                  POSITION ───
+                  « Les deux "Proposer" et "Passer" ne permettent toujours pas
+                  de comprendre que c'est en balayant à droite ou à gauche que
+                  ça marchera. »
+
+                  C'est juste, et j'avais fait la moitié du chemin : les
+                  étiquettes nommaient la DESTINATION et laissaient le geste à
+                  deviner de leur position. Or une étiquette posée en haut à
+                  gauche se lit comme un bouton — on appuie dessus, il ne se
+                  passe rien, et on conclut que l'écran est cassé. Le verbe est
+                  donc écrit : « glissez ». Il ne reste rien à deviner. */}
               <span className="ap-gl-g">
                 <i>←</i>
                 <span>
-                  <b>Passer</b>
-                  <em>au suivant</em>
+                  <b>Glissez</b>
+                  <em>pour passer</em>
                 </span>
               </span>
               <span className="ap-gl-d">
                 <span>
-                  <b>Proposer</b>
-                  <em>à mes amis</em>
+                  <b>Glissez</b>
+                  <em>pour proposer</em>
                 </span>
                 <i>→</i>
               </span>
@@ -10624,6 +10636,10 @@ export function ApercuHabitant() {
            PAS DE fill-mode : a la fin, chacun retrouve sa valeur en ligne,
            c'est-a-dire l'etat du vrai geste. */
         .ap-dessus.montre{animation:apMontre ${MONTRE_MS}ms cubic-bezier(.4,0,.25,1) 1;}
+        /* LES DEUX SENS, ET DANS L'ORDRE OU ON LES LIT : a droite d'abord —
+           proposer — puis a gauche — passer. Les deux tampons suivent, chacun
+           dans son sens. La demonstration MONTRE donc deja le geste ; ce qui
+           manquait etait de l'ECRIRE, et c'est fait dans les deux etiquettes. */
         @keyframes apMontre{
           0%,5%{transform:translate3d(0,0,0) rotate(0);}
           22%{transform:translate3d(78px,0,0) rotate(3.1deg);}

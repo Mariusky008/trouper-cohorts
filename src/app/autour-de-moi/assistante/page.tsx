@@ -479,8 +479,29 @@ body{background:#05090C}
 .as-flash-b.vide{opacity:.5;cursor:default}
 .as-flash-b:active{transform:scale(.99)}
 
-.as-flash{margin:0 0 9px;padding:13px 13px 12px;border-radius:17px;
+/* ─── IL DEFILE, ET LE BOUTON NE DEFILE PAS ───
+   « J'ai du mal a atteindre le bouton pour valider le Flash. » Ce formulaire
+   vit dans la barre du bas, qui ne defile pas : au-dela d'une certaine hauteur,
+   sa fin passait sous le bord de l'ecran et rien ne permettait d'y aller. On
+   borne donc sa hauteur, le contenu defile dedans, et le bouton de lancement
+   reste COLLE en bas — visible quoi qu'il arrive, sur n'importe quel telephone.
+   Un formulaire dont on ne peut pas atteindre la fin n'est pas un formulaire. */
+.as-flash{display:flex;flex-direction:column;
+  max-height:min(72dvh,560px);margin:0 0 9px;
+  padding:13px 13px 12px;border-radius:17px;
   background:rgba(28,20,5,.72);border:1px solid rgba(240,180,41,.42)}
+.as-flash-corps{flex:1;min-height:0;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;padding-right:2px}
+.as-flash-corps > *{flex:none}
+/* LA VIGNETTE : on verifie l'image, on ne la contemple pas. */
+.as-flash-ph{display:flex;align-items:center;gap:10px;margin-top:9px;
+  padding:7px;border-radius:12px;background:rgba(5,9,12,.45);
+  border:1px solid var(--trait)}
+.as-flash-ph img{flex:none;width:56px;height:44px;object-fit:cover;border-radius:8px}
+.as-flash-ph span{flex:1;min-width:0;font-size:12px;color:var(--craie2)}
+.as-flash-ph button{flex:none;width:26px;height:26px;border-radius:50%;font:inherit;
+  font-size:13px;cursor:pointer;color:var(--craie3);background:rgba(5,9,12,.6);
+  border:1px solid var(--trait)}
 .as-flash-t{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .as-flash-t b{font-size:14.5px;font-weight:850;letter-spacing:-.02em;color:var(--or)}
 .as-flash-t button{font:inherit;font-size:15px;cursor:pointer;width:28px;height:28px;
@@ -493,7 +514,10 @@ body{background:#05090C}
   color:var(--craie);background:rgba(5,9,12,.55);border:1px solid var(--trait);
   border-radius:11px;padding:9px 11px}
 .as-flash-l input:focus{outline:none;border-color:rgba(240,180,41,.55)}
-.as-flash-r,.as-flash-d{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.as-flash-r,.as-flash-d{display:flex;flex-wrap:wrap;align-items:center;
+  gap:6px;margin-top:8px}
+.as-flash-d span{margin-right:2px;font-size:10px;font-weight:850;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--craie3)}
 .as-flash-r button,.as-flash-d button{font:inherit;font-size:12px;font-weight:800;
   cursor:pointer;padding:7px 10px;border-radius:10px;color:var(--craie2);
   background:rgba(5,9,12,.5);border:1px solid var(--trait)}
@@ -503,7 +527,7 @@ body{background:#05090C}
    descendre le bouton de lancement sous le pli — et un Flash qu'il faut aller
    chercher n'est plus un Flash. */
 .as-flash-p{display:grid;grid-template-columns:1fr 1fr 72px;gap:7px}
-.as-flash-go{width:100%;margin-top:11px;font:inherit;font-size:15px;font-weight:850;
+.as-flash-go{flex:none;width:100%;margin-top:11px;font:inherit;font-size:15px;font-weight:850;
   cursor:pointer;padding:13px;border-radius:13px;color:#1A1204;border:0;
   background:linear-gradient(140deg,#F7C948,#E09B18)}
 .as-flash-go:disabled{opacity:.45;cursor:default}
