@@ -646,14 +646,21 @@ export function StylesDirect() {
            LE VIOLET EST LIBRE SUR LA CARTE, et c'est la couleur du direct dans
            le vocabulaire que tout le monde connait deja — celui de Twitch, cite
            par le produit lui-meme quand le rond video est ne. */
+        /* ─── LA FRAICHEUR A CESSE D'ETRE UNE PASTILLE ───
+           « Depuis combien de temps l'annonce existe n'est pas ce qui interesse
+           le client. Ce qui l'interesse est : est-ce encore disponible ?
+           IL Y A 16 MIN → une petite indication, beaucoup plus discrete. »
+
+           C'etait le TROISIEME signal de temps de la meme carte, et le plus
+           gros des trois : une pastille violette a bord lumineux au-dessus de
+           l'etiquette qui, elle, dit ce qui compte — « il en reste 8 ». Elle
+           garde son point qui bat, parce que c'est lui qui dit que la carte est
+           vivante ; elle perd son cadre, ses majuscules et sa couleur. */
         .cd-frais{display:inline-flex;align-items:center;gap:6px;
-          margin:0 0 9px;padding:5px 11px 5px 9px;border-radius:999px;
-          font-size:10.5px;font-weight:850;letter-spacing:.12em;
-          text-transform:uppercase;color:#E7D9FF;
-          background:rgba(139,92,246,.28);
-          border:1px solid rgba(185,140,255,.55);
-          backdrop-filter:blur(6px);}
-        .cd-frais i{width:7px;height:7px;border-radius:50%;background:#C4A0FF;
+          margin:0 0 7px;padding:0;
+          font-size:10.5px;font-weight:750;letter-spacing:.04em;
+          color:rgba(234,242,236,.62);text-shadow:0 1px 6px rgba(0,0,0,.75);}
+        .cd-frais i{width:6px;height:6px;border-radius:50%;background:#C4A0FF;
           box-shadow:0 0 0 0 rgba(185,140,255,.75);animation:cdBat 2s ease-out infinite;}
         /* IL BAT, IL NE CLIGNOTE PAS. Un clignotement fait fermer une
            application ; une pulsation lente se remarque sans agresser, et

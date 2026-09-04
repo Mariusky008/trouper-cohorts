@@ -4978,6 +4978,16 @@ export function ApercuHabitant() {
                             garde sa place sous le pli, où il est nommé. */}
                         {sommet && restants.length > 0 && (
                           <div className="ap-journee">
+                            {/* ─── À QUI APPARTIENT CE PLANNING ───
+                                « L'utilisateur doit comprendre : ce n'est pas
+                                un planning général de ClikMe, c'est ce qui va
+                                se passer aujourd'hui chez Margot. » Sans le
+                                nom, deux lignes horaires posées sur une photo
+                                peuvent se lire comme les horaires
+                                d'ouverture — ou comme un agenda de la ville. */}
+                            <span className="ap-journee-t">
+                              Aujourd’hui chez {dessus?.voix?.prenom || dessus?.nom}
+                            </span>
                             <ul>
                               {restants.slice(0, 2).map((m, i) => (
                                 <li key={`${m.titre}-${i}`} className={i ? "" : "on"}>
@@ -4993,10 +5003,15 @@ export function ApercuHabitant() {
                               onPointerDown={(ev) => ev.stopPropagation()}
                               onClick={versLeBas}
                             >
+                              {/* « VOIR TOUT » ET PAS « VOIR LA JOURNÉE ».
+                                  « Journée peut faire penser aux horaires
+                                  d'ouverture. » C'était vrai tant que rien ne
+                                  disait à qui appartient ce bloc ; maintenant
+                                  que le titre le dit, deux mots suffisent — et
+                                  ils ne promettent rien d'autre que la suite
+                                  de ce qu'on est en train de lire. */}
                               {dessus?.prepare ? "Prête à publier · " : ""}
-                              {restants.length > 2
-                                ? `Voir la journée (${restants.length})`
-                                : "Voir la journée"}
+                              {restants.length > 2 ? `Voir tout (${restants.length})` : "Voir tout"}
                               <i aria-hidden="true">→</i>
                             </button>
                           </div>
@@ -6076,9 +6091,26 @@ export function ApercuHabitant() {
                   >
                     En parler
                   </span>
-                  {!descendu && (montrerLeTuto || !aJoue) && (
-                    <span className="ap-doigt" aria-hidden="true">👆</span>
-                  )}
+                  {/* ─── LE DOIGT NE S'INVITE PLUS, IL SE DEMANDE ───
+                      « Le doigt jaune au milieu de l'écran est de trop. Il
+                      attire énormément l'attention vers une zone qui n'est pas
+                      une action. Je ferais plutôt une petite animation très
+                      discrète, puis elle disparaît. Pas de doigt permanent. »
+
+                      Et il y en avait DEUX pour un seul geste depuis qu'on a
+                      ajouté « Glissez pour découvrir » : une pastille qui le
+                      dit en mots et un doigt qui le mime, au milieu de la
+                      photo. Deux façons d'enseigner la même chose s'annulent.
+                      Le doigt reste pour qui le DEMANDE — la démonstration du
+                      geste, depuis le profil — et ne s'impose plus à personne. */}
+                  {/* IL N'Y A PLUS DE DOIGT DU TOUT. Il restait pour la
+                      démonstration d'ouverture — mais cette démonstration fait
+                      DÉJÀ glisser la carte sous les yeux, ce qui montre le
+                      geste sans rien poser sur la photo. Le doigt ne faisait
+                      que le répéter, en grand, au milieu de l'image, et la
+                      pastille « Glissez pour découvrir » le dit une troisième
+                      fois. Trois enseignements pour un geste : on garde celui
+                      qui ne coûte rien à regarder, et celui qui l'écrit. */}
 
                   {/* ─── LE BALAYAGE NE S'EXPLIQUE PLUS, IL SE MONTRE ───
                       CE QU'IL Y AVAIT : une boîte de dialogue posée sur la
@@ -8615,11 +8647,22 @@ export function ApercuHabitant() {
            seconde est en retrait : on lit « et apres ? » sans que ce soit
            ecrit. Un fond sombre translucide, parce que ca se pose sur la photo
            et qu'un texte blanc sur une assiette claire ne se lit pas. */
+        /* ─── ET LE RECTANGLE AMBRE S'EFFACE QUAND CE BLOC EST LA ───
+           « MAINTENANT · A PARTIR DE 13 H » disait mot pour mot ce que la
+           premiere ligne du planning dit juste dessous. « On a applique les
+           recommandations, mais on a ajoute de l'information sans retirer
+           l'ancienne » : c'est exactement ce cas-la, et c'est le plus visible.
+           On l'efface uniquement quand le planning est present — les cartes qui
+           n'en ont pas gardent leur rectangle, qui est alors leur seule heure. */
+        .ap-dessus:has(.ap-journee) .cd-quand{display:none;}
         .ap-journee{width:min(100%,340px);margin-top:10px;
           display:flex;flex-direction:column;align-items:stretch;gap:0;
           border-radius:15px;padding:9px 11px 8px;
           background:rgba(4,8,6,.52);border:1px solid rgba(255,255,255,.14);
           -webkit-backdrop-filter:blur(9px);backdrop-filter:blur(9px);}
+        .ap-journee-t{display:block;margin:0 0 7px;font-size:9.5px;font-weight:850;
+          letter-spacing:.15em;text-transform:uppercase;color:rgba(234,242,236,.5);
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
         .ap-journee ul{list-style:none;margin:0;padding:0;
           display:flex;flex-direction:column;gap:5px;}
         .ap-journee li{display:flex;align-items:baseline;gap:9px;min-width:0;
@@ -10570,7 +10613,13 @@ export function ApercuHabitant() {
            se posait pile sur le prix et sur la ligne de composition du plat —
            une aide qui cache l'information qu'elle aide a trouver. Le tiers
            haut de l'image est le seul endroit vide de toutes les cartes. */
-        .ap-glissez{position:absolute;left:50%;top:92px;z-index:6;
+        /* SOUS LA BARRE DE PROGRESSION, ET PAS DESSUS. Premier essai a 92 : la
+           pastille se posait pile sur la barre qui compte les cartes — cachant
+           la seule chose de l'ecran qui disait deja qu'il y a une suite. Le
+           decalage suit l'encoche du telephone, sinon il derive d'un modele a
+           l'autre : l'en-tete grandit avec elle, la pastille aussi. */
+        .ap-glissez{position:absolute;left:50%;
+          top:calc(env(safe-area-inset-top) + 124px);z-index:6;
           transform:translateX(-50%);margin:0;pointer-events:none;
           display:flex;align-items:center;gap:9px;white-space:nowrap;
           font-size:12.5px;font-weight:800;letter-spacing:.01em;color:#EAF2EC;
@@ -10716,7 +10765,7 @@ export function ApercuHabitant() {
         .ap-agir{min-width:0;display:flex;align-items:center;
           justify-content:center;gap:6px;font:inherit;font-size:13.5px;
           font-weight:850;letter-spacing:-.015em;cursor:pointer;border:0;
-          border-radius:15px;padding:10px 7px;white-space:nowrap;
+          border-radius:14px;padding:8px 7px;white-space:nowrap;
           overflow:hidden;text-overflow:ellipsis;
           transition:transform .12s ease;}
         .ap-tente{grid-column:1 / -1;margin:0 0 1px;padding-left:2px;
