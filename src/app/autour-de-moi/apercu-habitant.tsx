@@ -695,6 +695,9 @@ export function ApercuHabitant() {
    */
   const [sousLaBarre, setSousLaBarre] = useState(false);
   const [coeurVole, setCoeurVole] = useState(false);
+  /** La carte d'arrivée qu'on est en train de glisser — voir plus bas. */
+  const [accueilDx, setAccueilDx] = useState(0);
+  const priseAccueil = useRef<number | null>(null);
   /** L'instant du dernier appui simple — voir la double tape sur la carte. */
   const dernierAppui = useRef(0);
   const [feuille, setFeuille] = useState<
@@ -4711,6 +4714,95 @@ export function ApercuHabitant() {
               <Attente demande={sortie.texte} sollicites={sollicites} ecrivent={ecrivent} />
             ) : (
               <>
+            {/* ═══════════════════════════════════════════════════════════
+                LA CARTE D'ARRIVÉE — UNE FOIS, ET ELLE SE PASSE COMME UNE AUTRE
+                ═══════════════════════════════════════════════════════════
+                « Est-ce que ce ne serait pas bien que, pour la première fois
+                qu'on arrive sur l'application, on ait un premier écran d'accueil
+                qui permette de comprendre rapidement l'application et l'intérêt
+                de l'utiliser ? »
+
+                OUI POUR LE BESOIN, NON POUR L'ÉCRAN — et c'est sa propre règle :
+                « sans tutoriel, sans explication, sans mode d'emploi », et
+                « l'utilisateur n'a pas besoin de comprendre le produit, il a
+                besoin de comprendre ce qu'il doit faire maintenant ». Un
+                carrousel d'accueil se tape trois fois sans être lu, retarde la
+                seule chose qui convainc — la photo du plat — et laisse quand
+                même la personne devant une carte qu'elle ne sait pas manipuler.
+
+                CE QUI MANQUAIT VRAIMENT est plus court : où je suis, ce que je
+                regarde. « Un lien qu'on m'envoie » ne dit ni que c'est ma ville,
+                ni que ça change dans la journée. Trois lignes suffisent.
+
+                ET ELLE SE PASSE AVEC LE GESTE QU'ON VEUT LUI APPRENDRE. C'est
+                tout l'intérêt de la mettre DANS le paquet plutôt qu'avant : on
+                ne la referme pas avec un bouton « J'ai compris » — on glisse,
+                et le premier geste de l'application est déjà fait. Elle ne
+                revient jamais. */}
+            {sommet && !vus.includes("accueil") && !sortie && !embauches && (
+              <div
+                className={`ap-accueil${accueilDx ? " part" : ""}`}
+                style={{ transform: `translate3d(${accueilDx}px,0,0) rotate(${accueilDx * 0.04}deg)` }}
+                onPointerDown={(e) => {
+                  priseAccueil.current = e.clientX;
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                }}
+                onPointerMove={(e) => {
+                  if (priseAccueil.current == null) return;
+                  setAccueilDx(e.clientX - priseAccueil.current);
+                }}
+                onPointerUp={() => {
+                  const d = accueilDx;
+                  priseAccueil.current = null;
+                  // TRENTE POINTS SUFFISENT. On n'exige pas le vrai seuil du
+                  // paquet : ici le geste n'a pas de conséquence, il s'apprend.
+                  if (Math.abs(d) > 30) marquerVu("accueil");
+                  else setAccueilDx(0);
+                }}
+                onPointerCancel={() => {
+                  priseAccueil.current = null;
+                  setAccueilDx(0);
+                }}
+              >
+                <span className="ap-acc-t">Le direct de Dax</span>
+                <h2>Ce qui se passe ici, maintenant.</h2>
+                <p>
+                  Les commerces d’à côté disent ce qu’ils ont aujourd’hui — et
+                  ça change d’heure en heure.
+                </p>
+                <ul>
+                  <li>
+                    <i aria-hidden="true">🍽️</i>
+                    <span>
+                      <b>Le plat qui vient de sortir</b>
+                      Pas la carte du restaurant : ce qu’il y a à midi.
+                    </span>
+                  </li>
+                  <li>
+                    <i aria-hidden="true">⚡</i>
+                    <span>
+                      <b>Des offres de trente minutes</b>
+                      Il reste huit parts&nbsp;? Le prix tombe, et ça se voit.
+                    </span>
+                  </li>
+                  <li>
+                    <i aria-hidden="true">👥</i>
+                    <span>
+                      <b>Et on y va à plusieurs</b>
+                      On propose à ses amis, on choisit ensemble.
+                    </span>
+                  </li>
+                </ul>
+                {/* PAS DE BOUTON « J'AI COMPRIS ». Le geste EST le bouton, et
+                    c'est le seul qu'il y ait à apprendre. */}
+                <span className="ap-acc-g">
+                  <i aria-hidden="true">←</i>
+                  Glissez pour commencer
+                  <i aria-hidden="true">→</i>
+                </span>
+              </div>
+            )}
+
             {sommet ? (
               <div className="ap-pile">
                 {dessous && (
@@ -8667,6 +8759,51 @@ export function ApercuHabitant() {
            l'assombrissement de .ap-carte.dessous, qui suffisent a dire qu'il y
            en a une autre derriere. */
         .ap-vue{flex:1;min-height:0;display:flex;padding:0;}
+        /* ═══ LA CARTE D'ARRIVEE ═══
+           ELLE A LA FORME D'UNE CARTE, PAS D'UN ECRAN. C'est ce qui fait qu'on
+           la glisse sans y penser : elle occupe la meme place, elle a les memes
+           coins, et le meme geste la fait partir. Un panneau pleine page aurait
+           demande un bouton, donc un geste de plus, donc un geste different de
+           celui qu'on veut enseigner. */
+        .ap-accueil{position:absolute;inset:0;z-index:8;
+          display:flex;flex-direction:column;justify-content:center;
+          padding:26px 22px;border-radius:26px;cursor:grab;touch-action:pan-y;
+          background:linear-gradient(160deg,#0F2A22 0%,#0A1614 52%,#0A1210 100%);
+          border:1px solid rgba(61,226,166,.28);
+          box-shadow:0 30px 70px -30px rgba(0,0,0,.9);
+          animation:apMonteAcc .4s cubic-bezier(.22,1.1,.4,1) both;}
+        .ap-accueil.part{transition:transform .05s linear;}
+        @keyframes apMonteAcc{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+        .ap-acc-t{font-size:10.5px;font-weight:850;letter-spacing:.22em;
+          text-transform:uppercase;color:#3DE2A6;}
+        .ap-accueil h2{margin:9px 0 0;font-family:Georgia,'Times New Roman',serif;
+          font-size:clamp(25px,7.2vw,32px);font-weight:400;line-height:1.12;
+          letter-spacing:-.01em;color:#fff;}
+        .ap-accueil>p{margin:11px 0 0;font-size:14.5px;line-height:1.45;
+          color:#B4C6BB;max-width:32ch;}
+        .ap-accueil ul{list-style:none;margin:22px 0 0;padding:0;
+          display:flex;flex-direction:column;gap:13px;}
+        .ap-accueil li{display:flex;align-items:flex-start;gap:12px;}
+        .ap-accueil li i{flex:none;width:34px;height:34px;border-radius:11px;
+          display:flex;align-items:center;justify-content:center;font-style:normal;
+          font-size:17px;background:rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.1);}
+        .ap-accueil li span{flex:1;min-width:0;font-size:12.5px;line-height:1.4;
+          color:#8C9C94;}
+        .ap-accueil li b{display:block;font-size:14px;font-weight:800;
+          letter-spacing:-.01em;color:#EAF2EC;margin-bottom:2px;}
+        /* LE GESTE EST LE BOUTON. Il respire vers ses deux bords, comme les
+           etiquettes du paquet — meme mouvement, meme promesse. */
+        .ap-acc-g{display:flex;align-items:center;justify-content:center;gap:10px;
+          margin-top:26px;padding:11px;border-radius:999px;
+          font-size:13.5px;font-weight:850;color:#04150E;background:var(--menthe,#3DE2A6);
+          animation:apAccG 2.4s ease-in-out infinite;}
+        .ap-acc-g i{font-style:normal;font-size:15px;line-height:1;opacity:.8;}
+        @keyframes apAccG{
+          0%,100%{transform:translateX(0);}
+          30%{transform:translateX(-6px);}
+          65%{transform:translateX(6px);}
+        }
         .ap-pile{position:relative;flex:1;min-height:0;}
         /* LE RAPPORT D'ASPECT SE RETIRE ICI, PAS SEULEMENT SUR LA CARTE DU
            DESSUS. LE DEFAUT, MESURE A 360x640 : la carte du DESSOUS gardait le
@@ -10978,6 +11115,7 @@ export function ApercuHabitant() {
           .ap-app{border-radius:34px;overflow:hidden;}
         }
         @media (prefers-reduced-motion:reduce){
+          .ap-accueil,.ap-acc-g,
           .ap-doigt,.ap-vers-bas,.ap-trois i,.ap-prog li.on::before,
           .ap-direct-h i{animation:none;}
           .ap-dessus.invit .cd-carte{animation:none;}

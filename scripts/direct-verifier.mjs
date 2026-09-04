@@ -56,6 +56,14 @@ const ouvrir = async (url = "/autour-de-moi", heure) => {
     viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
+  // ─── ON N'EST PLUS « LA PREMIÈRE FOIS » ───
+  // Depuis la carte d'arrivée, un navigateur neuf ouvre sur elle. C'est le bon
+  // comportement pour un habitant, et un faux départ pour une garde qui vérifie
+  // autre chose : on note qu'elle a déjà été vue, comme après un premier
+  // passage. Sa propre garde vit dans la suite « accueil ».
+  await ctx.addInitScript(() => {
+    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); } catch {}
+  });
   if (heure != null) {
     await ctx.clock.setFixedTime(
       new Date(2026, 8, 2, Math.floor(heure), Math.round((heure % 1) * 60), 0),
@@ -429,6 +437,9 @@ console.log("\n══ mon commerce ══");
     viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
+  await c3.addInitScript(() => {
+    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); } catch {}
+  });
   const q = await c3.newPage();
   q.on("pageerror", (e) => erreurs.push(String(e)));
   q.on("console", (m) => { if (m.type() === "error") erreurs.push(m.text()); });
@@ -552,6 +563,9 @@ console.log("\n══ la vidéo dans le rond ══");
     viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
+  await c4.addInitScript(() => {
+    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); } catch {}
+  });
   const q = await c4.newPage();
   q.on("pageerror", (e) => erreurs.push(String(e)));
   q.on("console", (m) => { if (m.type() === "error") erreurs.push(m.text()); });
@@ -665,6 +679,9 @@ console.log("\n══ la vidéo dans le rond ══");
   const c5 = await nav.newContext({
     viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
     isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  await c5.addInitScript(() => {
+    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); } catch {}
   });
   const q = await c5.newPage();
   await q.goto(`${BASE}/autour-de-moi?chez=emporter`, { waitUntil: "networkidle" });
