@@ -733,7 +733,13 @@ console.log("\n══ le moment ══");
     [11.7, "Il reste 4 tables"],
     [13.5, "Dernières portions"],
     [16, "Les plats cuisinés du jour"],
-    [17.5, null],
+    // 17 H 30 ÉTAIT L'HEURE CREUSE DE CETTE GARDE, ET ELLE NE L'EST PLUS.
+    // L'application ouvre désormais sur TOUTE la ville et non sur les
+    // restaurants : à 17 h 30 les tables sont calmes, mais la fleuriste vient
+    // de sortir ses bouquets. Ce n'est pas la fraîcheur qui a débordé — c'est
+    // le paquet qui s'est élargi, et c'était le but. Ce que cette section
+    // protège vraiment reste intact : jamais plus de deux pastilles à la fois.
+    [17.5, "Il reste 4 bouquets"],
     [18.3, "Ce qui reste, à moitié prix"],
     [21.4, "Service du soir"],
   ];

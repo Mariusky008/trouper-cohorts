@@ -723,7 +723,24 @@ export function ApercuHabitant() {
    * quand elle répond d'abord « voilà ce qui se passe autour de vous », c'est
    * autre chose, et on n'a plus besoin d'avoir envie d'acheter pour l'ouvrir.
    */
-  const [vue, setVue] = useState<"metiers" | "recrute" | "evenements" | "offert" | "tout">("metiers");
+  /**
+   * ET ON OUVRE SUR « TOUT », PAS SUR LES RESTAURANTS.
+   *
+   * « Le concept c'est le direct de la ville, ce qu'il s'y passe maintenant —
+   * donc pas que les restaurants : tous les commerces avec ce qu'ils proposent
+   * à l'instant T, les événements, ce que les habitants disent, proposent. »
+   *
+   * C'ÉTAIT LE PLUS GROS MALENTENDU DE L'ÉCRAN, ET IL TENAIT EN UN MOT. Ouvrir
+   * sur « Restaurants » annonce un guide de restaurants ; on juge une
+   * application sur sa première seconde, et la première seconde disait autre
+   * chose que le produit. Le commentaire ci-dessus le savait — « tant qu'on doit
+   * choisir un métier avant de voir quoi que ce soit, l'application est un
+   * annuaire » — et l'état initial disait quand même « metiers ».
+   *
+   * LE LIEN DE L'ASSISTANTE, LUI, CONTINUE D'OUVRIR SUR SON MÉTIER : quelqu'un
+   * qui vient voir SA carte n'est pas quelqu'un qui découvre la ville.
+   */
+  const [vue, setVue] = useState<"metiers" | "recrute" | "evenements" | "offert" | "tout">("tout");
 
   /**
    * ON ARRIVE PAR LE LIEN DE L'ASSISTANTE : ON OUVRE SUR SON MÉTIER.
@@ -1486,6 +1503,38 @@ export function ApercuHabitant() {
     ...(carteJournee ? [carteJournee] : []),
     ...toutesLesCartes().map((c) => sansCeQuiEstOffert(avecLesRemises(c, remises))),
   ];
+  /**
+   * SIX VRAIES PHOTOS POUR LA CARTE D'ARRIVÉE — et de six métiers différents.
+   *
+   * « Le concept c'est le direct de la VILLE, donc pas que les restaurants. »
+   * Six assiettes ne diraient que « restaurants » ; on prend donc UNE carte par
+   * métier, dans l'ordre où le paquet les donne. C'est la seule façon de faire
+   * comprendre l'étendue sans l'écrire.
+   *
+   * ET CE SONT LES VRAIES, pas des images de garnissage : ce mur est un
+   * échantillon du paquet qu'on va ouvrir trois secondes plus tard. Montrer
+   * autre chose que le produit serait une promesse à tenir deux fois.
+   */
+  const vitrine = (() => {
+    const vus = new Set<string>();
+    const pris: { photo: string; quoi: string }[] = [];
+    for (const c of toutes) {
+      if (vus.has(c.branche) || !c.photo) continue;
+      const m = momentEnCours(c, heure);
+      vus.add(c.branche);
+      pris.push({ photo: c.photo, quoi: m?.titre ?? c.metier });
+      if (pris.length === 6) break;
+    }
+    // S'IL MANQUE DES MÉTIERS, on complète avec ce qu'il y a : un mur troué se
+    // lit comme un chargement raté, et c'est la première image de l'application.
+    for (const c of toutes) {
+      if (pris.length === 6) break;
+      if (!c.photo || pris.some((x) => x.photo === c.photo)) continue;
+      pris.push({ photo: c.photo, quoi: momentEnCours(c, heure)?.titre ?? c.metier });
+    }
+    return pris;
+  })();
+
   const embauchent = ceuxQuiRecrutent();
   // LES ENVIES NE S'APPLIQUENT PAS AUX EMBAUCHES — « moins de 15 € » n'a aucun
   // sens sur une offre de poste. Le mode embauche court-circuite tout le filtre.
@@ -4493,6 +4542,32 @@ export function ApercuHabitant() {
                 >
                   {gardeSommet ? "💚" : "♡"}
                 </button>
+            {/* ─── ELLE NE CONCURRENCE PLUS L'ANNONCE ───
+                    « Le bandeau est très visible, mais il concurrence l'annonce.
+                    L'utilisateur est en train de regarder LES LASAGNES : il ne
+                    devrait pas avoir simultanément "regarde cette annonce" et "va
+                    voir 5 autres choses". Je mettrais les notifications beaucoup
+                    plus discrètement — 🔔 5 — et basta. »
+
+                    C'est exactement ça : deux appels à l'attention sur le même
+                    écran s'annulent. La cloche garde son compte et sa couleur,
+                    elle perd sa phrase et sa largeur — une pastille au lieu d'une
+                    bande. Ce qu'elle ouvre n'a pas changé. */}
+                {nonLues.length > 0 && !sortie && (
+                  <button
+                    type="button"
+                    className="ap-jai"
+                    onClick={ouvrirMesCommerces}
+                    aria-label={
+                      quiAduNeuf.length === 1
+                        ? `Une nouvelle ${deChez(quiAduNeuf[0].c.nom)}`
+                        : `${nonLues.length} nouvelles de vos commerces`
+                    }
+                  >
+                    <i aria-hidden="true">🔔</i>
+                    {nonLues.length}
+                  </button>
+                )}
                 {/* ─── LE CHIFFRE AMBIGU A DISPARU ───
                     « Le cœur et les notifications en haut à droite, c'est
                     incompréhensible. Il faudrait qu'ils soient séparés. »
@@ -4530,32 +4605,7 @@ export function ApercuHabitant() {
 
                 ELLE S'EFFACE À LA LECTURE, et pas au bout de quelques
                 secondes : ce qu'on n'a pas ouvert doit rester visible. */}
-            {/* ─── ELLE NE CONCURRENCE PLUS L'ANNONCE ───
-                « Le bandeau est très visible, mais il concurrence l'annonce.
-                L'utilisateur est en train de regarder LES LASAGNES : il ne
-                devrait pas avoir simultanément "regarde cette annonce" et "va
-                voir 5 autres choses". Je mettrais les notifications beaucoup
-                plus discrètement — 🔔 5 — et basta. »
 
-                C'est exactement ça : deux appels à l'attention sur le même
-                écran s'annulent. La cloche garde son compte et sa couleur,
-                elle perd sa phrase et sa largeur — une pastille au lieu d'une
-                bande. Ce qu'elle ouvre n'a pas changé. */}
-            {nonLues.length > 0 && !sortie && (
-              <button
-                type="button"
-                className="ap-jai"
-                onClick={ouvrirMesCommerces}
-                aria-label={
-                  quiAduNeuf.length === 1
-                    ? `Une nouvelle ${deChez(quiAduNeuf[0].c.nom)}`
-                    : `${nonLues.length} nouvelles de vos commerces`
-                }
-              >
-                <i aria-hidden="true">🔔</i>
-                {nonLues.length}
-              </button>
-            )}
 
             {/* ─── LE BANDEAU N'A PLUS QU'UNE LIGNE, ET C'EST TOUT LE SUJET ───
                 On y trouvait, empilés au-dessus de la photo : la marque, le
@@ -4764,42 +4814,94 @@ export function ApercuHabitant() {
                   setAccueilDx(0);
                 }}
               >
-                <span className="ap-acc-t">Le direct de Dax</span>
-                <h2>Ce qui se passe ici, maintenant.</h2>
-                <p>
-                  Les commerces d’à côté disent ce qu’ils ont aujourd’hui — et
-                  ça change d’heure en heure.
-                </p>
-                <ul>
-                  <li>
-                    <i aria-hidden="true">🍽️</i>
+                {/* ─── CE QU'ON VOIT AVANT DE LIRE : LA VILLE ELLE-MÊME ───
+                    « C'est pas beau, pas fun, pas très interactif — et c'est le
+                    premier écran que le client va voir, donc il faut que ce soit
+                    beaucoup plus wahoo. »
+
+                    UNE LISTE D'ARGUMENTS NE FERA JAMAIS ÇA. Ce qui impressionne
+                    n'est pas ce qu'on promet, c'est ce qu'on MONTRE : six vraies
+                    photos de six vrais commerces de Dax, en éventail, qui
+                    dérivent doucement. On comprend en une demi-seconde qu'il y a
+                    quelque chose derrière — avant même d'avoir lu le titre.
+
+                    ET ELLES BOUGENT AVEC LE DOIGT. Chaque rangée suit le
+                    glissement à une vitesse différente : le geste qu'on va lui
+                    apprendre produit une réponse AVANT d'être terminé, ce qui
+                    est la seule façon d'apprendre un geste sans notice. */}
+                <div className="ap-acc-mur" aria-hidden="true">
+                  {[0, 1].map((rang) => (
+                    <div
+                      key={rang}
+                      className={`ap-acc-r r${rang}`}
+                      style={{ transform: `translate3d(${accueilDx * (rang ? -0.32 : 0.5)}px,0,0)` }}
+                    >
+                      {vitrine
+                        .slice(rang * 3, rang * 3 + 3)
+                        .concat(vitrine.slice(rang * 3, rang * 3 + 3))
+                        .map((v, i) => (
+                          <span key={`${v.photo}-${i}`} style={{ backgroundImage: `url("${v.photo}")` }}>
+                            <b>{v.quoi}</b>
+                          </span>
+                        ))}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="ap-acc-mot">
+                  <span className="ap-acc-t">
+                    <i aria-hidden="true" />
+                    Le direct de Dax
+                  </span>
+                  {/* LE TITRE PARLE DE LA VILLE, PAS D'UN MÉTIER. « Le concept
+                      c'est le direct de la ville, ce qu'il s'y passe maintenant
+                      — donc pas que les restaurants. » */}
+                  <h2>
+                    Toute la ville,
+                    <em>en ce moment.</em>
+                  </h2>
+                  {/* ET LE COMPTE EST VRAI. Il est lu dans le paquet à
+                      l'instant où l'écran s'ouvre : un chiffre inventé une
+                      seule fois fait perdre quelqu'un pour toujours. */}
+                  <p className="ap-acc-n">
+                    <b>{toutes.length + evenements.length}</b>
                     <span>
-                      <b>Le plat qui vient de sortir</b>
-                      Pas la carte du restaurant : ce qu’il y a à midi.
+                      commerces et événements
+                      <s>autour de vous, aujourd’hui</s>
                     </span>
-                  </li>
-                  <li>
-                    <i aria-hidden="true">⚡</i>
-                    <span>
-                      <b>Des offres de trente minutes</b>
-                      Il reste huit parts&nbsp;? Le prix tombe, et ça se voit.
-                    </span>
-                  </li>
-                  <li>
-                    <i aria-hidden="true">👥</i>
-                    <span>
-                      <b>Et on y va à plusieurs</b>
-                      On propose à ses amis, on choisit ensemble.
-                    </span>
-                  </li>
-                </ul>
-                {/* PAS DE BOUTON « J'AI COMPRIS ». Le geste EST le bouton, et
-                    c'est le seul qu'il y ait à apprendre. */}
-                <span className="ap-acc-g">
-                  <i aria-hidden="true">←</i>
-                  Glissez pour commencer
-                  <i aria-hidden="true">→</i>
-                </span>
+                  </p>
+                  <ul>
+                    <li>
+                      <i aria-hidden="true">🥖</i>
+                      <span>
+                        <b>Ce qu’ils ont maintenant</b>
+                        Le plat qui sort du four, les places qui restent, la
+                        vitrine du jour.
+                      </span>
+                    </li>
+                    <li>
+                      <i aria-hidden="true">⚡</i>
+                      <span>
+                        <b>Des offres de trente minutes</b>
+                        Il reste huit parts&nbsp;? Le prix tombe, et ça se voit.
+                      </span>
+                    </li>
+                    <li>
+                      <i aria-hidden="true">🏛️</i>
+                      <span>
+                        <b>Et ce qui se passe en ville</b>
+                        Les événements, et ce que les habitants proposent.
+                      </span>
+                    </li>
+                  </ul>
+                  {/* PAS DE BOUTON « J'AI COMPRIS ». Le geste EST le bouton, et
+                      c'est le seul qu'il y ait à apprendre. */}
+                  <span className="ap-acc-g">
+                    <i aria-hidden="true">←</i>
+                    Glissez pour entrer
+                    <i aria-hidden="true">→</i>
+                  </span>
+                </div>
               </div>
             )}
 
@@ -8390,7 +8492,7 @@ export function ApercuHabitant() {
            garde. Deux gestes differents : confondus dans un seul bouton, on
            perd l'un en cherchant l'autre. C'est aussi ce qui a permis de
            retirer « Garder » de la photo. */
-        .ap-fav2{flex:none;display:flex;align-items:center;overflow:hidden;
+        .ap-fav2{flex:none;display:flex;align-items:center;gap:7px;
           border-radius:999px;border:1px solid rgba(126,230,192,.28);
           background:rgba(18,185,129,.14);
           transition:transform .28s cubic-bezier(.34,1.5,.64,1);}
@@ -8765,40 +8867,98 @@ export function ApercuHabitant() {
            coins, et le meme geste la fait partir. Un panneau pleine page aurait
            demande un bouton, donc un geste de plus, donc un geste different de
            celui qu'on veut enseigner. */
-        .ap-accueil{position:absolute;inset:0;z-index:8;
-          display:flex;flex-direction:column;justify-content:center;
-          padding:26px 22px;border-radius:26px;cursor:grab;touch-action:pan-y;
-          background:linear-gradient(160deg,#0F2A22 0%,#0A1614 52%,#0A1210 100%);
-          border:1px solid rgba(61,226,166,.28);
-          box-shadow:0 30px 70px -30px rgba(0,0,0,.9);
-          animation:apMonteAcc .4s cubic-bezier(.22,1.1,.4,1) both;}
-        .ap-accueil.part{transition:transform .05s linear;}
-        @keyframes apMonteAcc{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
-        .ap-acc-t{font-size:10.5px;font-weight:850;letter-spacing:.22em;
-          text-transform:uppercase;color:#3DE2A6;}
-        .ap-accueil h2{margin:9px 0 0;font-family:Georgia,'Times New Roman',serif;
-          font-size:clamp(25px,7.2vw,32px);font-weight:400;line-height:1.12;
-          letter-spacing:-.01em;color:#fff;}
-        .ap-accueil>p{margin:11px 0 0;font-size:14.5px;line-height:1.45;
-          color:#B4C6BB;max-width:32ch;}
-        .ap-accueil ul{list-style:none;margin:22px 0 0;padding:0;
-          display:flex;flex-direction:column;gap:13px;}
-        .ap-accueil li{display:flex;align-items:flex-start;gap:12px;}
-        .ap-accueil li i{flex:none;width:34px;height:34px;border-radius:11px;
-          display:flex;align-items:center;justify-content:center;font-style:normal;
-          font-size:17px;background:rgba(255,255,255,.06);
-          border:1px solid rgba(255,255,255,.1);}
-        .ap-accueil li span{flex:1;min-width:0;font-size:12.5px;line-height:1.4;
-          color:#8C9C94;}
-        .ap-accueil li b{display:block;font-size:14px;font-weight:800;
-          letter-spacing:-.01em;color:#EAF2EC;margin-bottom:2px;}
+        /* ═══════════════════════════════════════════════════════════════
+           LA CARTE D'ARRIVEE — CE QU'ON MONTRE AVANT DE FAIRE LIRE
+           ═══════════════════════════════════════════════════════════════
+           « C'est pas beau, pas fun, pas tres interactif — et c'est le premier
+           ecran que le client va voir. »
+
+           UNE LISTE D'ARGUMENTS N'IMPRESSIONNE PERSONNE. Ce qui impressionne,
+           c'est ce qu'on MONTRE : deux rangees de vraies photos qui defilent en
+           sens inverse, un degrade sombre par-dessus, et le texte dessus. On
+           comprend qu'il y a quelque chose derriere avant d'avoir lu un mot. */
+        .ap-accueil{position:absolute;inset:0;z-index:8;overflow:hidden;
+           display:flex;flex-direction:column;justify-content:flex-end;
+           border-radius:26px;cursor:grab;touch-action:pan-y;background:#050908;
+           box-shadow:0 30px 70px -30px rgba(0,0,0,.9);
+           animation:apMonteAcc .45s cubic-bezier(.22,1.1,.4,1) both;}
+        @keyframes apMonteAcc{from{opacity:0;transform:scale(.97);}to{opacity:1;transform:none;}}
+
+        /* LE MUR. Deux rangees inclinees, qui glissent en sens contraires : le
+           mouvement croise donne la sensation d'une ville qui bouge, la ou une
+           seule rangee aurait fait bandeau publicitaire. */
+        /* LE MUR MONTE JUSQU'EN HAUT. A 56 % en partant de zero, la rotation
+           laissait une bande noire de deux cents points au-dessus des photos :
+           le premier tiers de la premiere image de l'application etait vide. */
+        .ap-acc-mur{position:absolute;left:-16%;right:-16%;top:-7%;height:64%;
+           display:flex;flex-direction:column;gap:10px;justify-content:center;
+           transform:rotate(-7deg);pointer-events:none;}
+        .ap-acc-r{display:flex;gap:10px;width:max-content;}
+        .ap-acc-r.r0{animation:apMur0 34s linear infinite;}
+        .ap-acc-r.r1{animation:apMur1 40s linear infinite;}
+        @keyframes apMur0{from{margin-left:0;}to{margin-left:-50%;}}
+        @keyframes apMur1{from{margin-left:-50%;}to{margin-left:0;}}
+        .ap-acc-r span{position:relative;flex:none;width:148px;height:118px;
+           border-radius:16px;background-size:cover;background-position:center;
+           box-shadow:0 12px 30px -14px rgba(0,0,0,.9);}
+        .ap-acc-r span b{position:absolute;left:8px;right:8px;bottom:7px;
+           font-size:10.5px;font-weight:800;line-height:1.2;color:#fff;
+           text-shadow:0 1px 6px rgba(0,0,0,.95);
+           overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        /* LE VOILE QUI REND LE TEXTE LISIBLE. Sans lui, un titre blanc sur six
+           photos claires ne se lit sur aucune. */
+        .ap-accueil::after{content:"";position:absolute;inset:0;pointer-events:none;
+           background:linear-gradient(180deg,rgba(5,9,8,.35) 0%,rgba(5,9,8,.72) 34%,
+             rgba(5,9,8,.96) 56%,#050908 72%);}
+
+        .ap-acc-mot{position:relative;z-index:2;padding:0 22px 26px;}
+        .ap-acc-t{display:inline-flex;align-items:center;gap:7px;
+           font-size:10.5px;font-weight:850;letter-spacing:.22em;
+           text-transform:uppercase;color:#3DE2A6;}
+        /* LE POINT QUI BAT — c'est le mot « direct », et il ne s'ecrit pas. */
+        .ap-acc-t i{width:7px;height:7px;border-radius:50%;background:#3DE2A6;
+           box-shadow:0 0 0 0 rgba(61,226,166,.7);animation:apAccBat 2s ease-out infinite;}
+        @keyframes apAccBat{
+          0%{box-shadow:0 0 0 0 rgba(61,226,166,.7);}
+          70%,100%{box-shadow:0 0 0 9px rgba(61,226,166,0);}
+        }
+        .ap-accueil h2{margin:10px 0 0;font-family:Georgia,'Times New Roman',serif;
+           font-size:clamp(30px,9vw,42px);font-weight:400;line-height:1.04;
+           letter-spacing:-.02em;color:#fff;}
+        .ap-accueil h2 em{display:block;font-style:normal;color:#3DE2A6;}
+        /* LE COMPTE, EN GROS. C'est le seul chiffre de l'ecran, et il est vrai. */
+        .ap-acc-n{display:flex;align-items:center;gap:11px;margin:16px 0 0;}
+        .ap-acc-n b{font-size:34px;font-weight:850;letter-spacing:-.03em;
+           line-height:1;color:#fff;font-variant-numeric:tabular-nums;}
+        .ap-acc-n>span{font-size:13px;font-weight:800;line-height:1.25;color:#EAF2EC;}
+        .ap-acc-n s{display:block;text-decoration:none;font-weight:600;color:#8C9C94;}
+        .ap-accueil ul{list-style:none;margin:18px 0 0;padding:0;
+           display:flex;flex-direction:column;gap:11px;}
+        /* CHAQUE LIGNE ARRIVE APRES LA PRECEDENTE. Trois dixiemes d'ecart : on
+           les LIT au lieu de les balayer d'un coup d'oeil. */
+        .ap-accueil li{display:flex;align-items:flex-start;gap:11px;
+           animation:apAccLi .5s cubic-bezier(.22,1.1,.4,1) both;}
+        .ap-accueil li:nth-child(1){animation-delay:.16s;}
+        .ap-accueil li:nth-child(2){animation-delay:.28s;}
+        .ap-accueil li:nth-child(3){animation-delay:.4s;}
+        @keyframes apAccLi{from{opacity:0;transform:translateY(9px);}to{opacity:1;transform:none;}}
+        .ap-accueil li i{flex:none;width:32px;height:32px;border-radius:11px;
+           display:flex;align-items:center;justify-content:center;font-style:normal;
+           font-size:16px;background:rgba(255,255,255,.07);
+           border:1px solid rgba(255,255,255,.11);}
+        .ap-accueil li span{flex:1;min-width:0;font-size:12px;line-height:1.38;
+           color:#8C9C94;}
+        .ap-accueil li b{display:block;font-size:13.5px;font-weight:800;
+           letter-spacing:-.01em;color:#EAF2EC;margin-bottom:1px;}
         /* LE GESTE EST LE BOUTON. Il respire vers ses deux bords, comme les
            etiquettes du paquet — meme mouvement, meme promesse. */
         .ap-acc-g{display:flex;align-items:center;justify-content:center;gap:10px;
-          margin-top:26px;padding:11px;border-radius:999px;
-          font-size:13.5px;font-weight:850;color:#04150E;background:var(--menthe,#3DE2A6);
-          animation:apAccG 2.4s ease-in-out infinite;}
-        .ap-acc-g i{font-style:normal;font-size:15px;line-height:1;opacity:.8;}
+           margin-top:20px;padding:13px;border-radius:999px;
+           font-size:14px;font-weight:850;color:#04150E;
+           background:linear-gradient(140deg,#7EE6C0,#3DE2A6);
+           box-shadow:0 14px 34px -16px rgba(61,226,166,.9);
+           animation:apAccG 2.4s ease-in-out infinite;}
+        .ap-acc-g i{font-style:normal;font-size:15px;line-height:1;opacity:.7;}
         @keyframes apAccG{
           0%,100%{transform:translateX(0);}
           30%{transform:translateX(-6px);}
@@ -10257,7 +10417,12 @@ export function ApercuHabitant() {
            photo n'apprenait pas. Ambre comme la pastille qu'elle designe —
            deux objets d'une meme phrase ne peuvent pas etre de deux
            couleurs. */
-        .ap-jai{display:flex;align-items:center;gap:5px;margin:8px 0 0 auto;
+        /* LA CLOCHE EST SUR LA MEME LIGNE QUE LE COEUR. « Le coeur et les
+           notifs sont l'un en dessous de l'autre au lieu d'etre sur la meme
+           ligne pour gagner de la place. » Elle occupait une DEUXIEME rangee
+           dans l'en-tete pour un objet de cinquante points de large — trente-
+           cinq points de haut pris sur la photo, sur chaque carte, pour rien. */
+        .ap-jai{display:flex;align-items:center;gap:5px;margin:0;
           font:inherit;font-size:12.5px;font-weight:850;cursor:pointer;
           color:#F7C948;background:rgba(240,180,41,.13);
           border:1px solid rgba(240,180,41,.4);border-radius:999px;
