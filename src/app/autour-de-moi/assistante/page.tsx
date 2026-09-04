@@ -196,12 +196,43 @@ body{background:#05090C}
    haut, sous le nom, et il dit ce que la ville voit EN CE MOMENT. Sans lui, ce
    qui etait publie se perdait dans le fil au milieu des questions, et au bout
    de six tours plus personne ne savait ce qui etait parti. */
-.as-enligne{flex:none;margin:6px clamp(14px,4vw,26px) 0;padding:10px 12px;
+/* IL SE REPLIE, ET C'EST DEVENU INDISPENSABLE.
+   « La partie reservee au chat est toute petite parce que le bloc du haut prend
+   toute la place. » Mesure sur son ecran : le fil n'avait plus que 244 points
+   sur 852 — 29 %. Ce bloc faisait deux lignes du temps ou une journee valait
+   une annonce ; depuis qu'il coche ses options, une seule dictee en publie cinq
+   et il les listait toutes. Un etat qui grandit avec le contenu n'est plus un
+   etat, c'est une page. */
+.as-enligne{flex:none;margin:6px clamp(14px,4vw,26px) 0;padding:8px 10px 8px 12px;
   border-radius:14px;background:rgba(61,226,166,.08);
   border:1px solid rgba(61,226,166,.26)}
-.as-enligne-t{display:block;font-size:9.5px;font-weight:850;letter-spacing:.16em;
+.as-enligne-h{display:flex;align-items:center;gap:8px}
+.as-enligne-b{flex:1;min-width:0;display:flex;align-items:baseline;gap:7px;
+  font:inherit;text-align:left;cursor:pointer;
+  padding:3px 0;border:0;background:none;color:inherit}
+.as-enligne-t{flex:none;display:flex;align-items:center;gap:5px;
+  font-size:9.5px;font-weight:850;letter-spacing:.16em;
   text-transform:uppercase;color:var(--menthe)}
-.as-enligne ul{list-style:none;margin:7px 0 0;padding:0;display:flex;
+/* LE COMPTE EST UNE PASTILLE, PAS UN MOT DE PLUS. « En ligne maintenant · 5 »
+   se lit d'un coup ; « cinq annonces en ligne maintenant » se lit. */
+.as-enligne-t u{text-decoration:none;display:inline-flex;align-items:center;
+  justify-content:center;min-width:16px;height:16px;padding:0 4px;
+  border-radius:8px;font-size:10.5px;letter-spacing:0;
+  color:#04150E;background:var(--menthe)}
+/* REPLIE, ON NOMME QUAND MEME CE QUI EST PARTI : un compte seul se lit comme un
+   badge de notification, le titre du plat dit que c'est bien SON annonce. */
+.as-enligne-r{flex:1;min-width:0;font-size:12.5px;font-weight:650;
+  color:var(--craie2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.as-enligne-b i{flex:none;font-style:normal;font-size:12px;color:var(--menthe)}
+/* LE LIEN VERS LE DIRECT A REMPLACE LA GRANDE BANDE DU BAS : meme geste, meme
+   destination, soixante-quatorze points de moins. */
+.as-enligne-v{flex:none;display:flex;align-items:center;gap:4px;
+  text-decoration:none;font-size:12.5px;font-weight:800;
+  padding:7px 10px;border-radius:11px;
+  color:#04150E;background:var(--menthe)}
+.as-enligne-v i{font-style:normal}
+.as-enligne-v:active{transform:scale(.96)}
+.as-enligne ul{list-style:none;margin:8px 0 2px;padding:0;display:flex;
   flex-direction:column;gap:5px}
 .as-enligne li{display:flex;align-items:baseline;gap:8px;min-width:0}
 .as-enligne b{flex:1;min-width:0;font-size:13.5px;font-weight:750;

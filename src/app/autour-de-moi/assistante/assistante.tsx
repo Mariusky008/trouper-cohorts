@@ -520,6 +520,20 @@ export function Assistante() {
     setVoixCoupee(reglages().voixCoupee);
   }, []);
   /**
+   * LA LISTE DE CE QUI EST EN LIGNE EST-ELLE DÉPLIÉE.
+   *
+   * « La partie réservée au chat est toute petite parce que le bloc du haut
+   * prend toute la place. » Mesuré sur son écran : le fil n'avait plus que
+   * 244 points sur 852, soit 29 % — le reste était du mobilier.
+   *
+   * ET LE MOBILIER A GRANDI TOUT SEUL. Ce bloc faisait deux lignes du temps où
+   * une journée valait une annonce ; depuis qu'il coche ses options, une seule
+   * dictée en publie cinq, et le bloc les liste toutes. Ce qui était un état en
+   * trois mots est devenu une page. Il se replie donc : le nombre et le premier
+   * titre suffisent à savoir ce que la ville voit, le détail est à un appui.
+   */
+  const [enligneOuvert, setEnligneOuvert] = useState(false);
+  /**
    * LE JOUR QU'IL EST EN TRAIN DE RÉGLER — `null` veut dire « toute la semaine ».
    *
    * « Ce serait encore mieux de pouvoir éditer chaque jour spécifiquement :
@@ -1401,23 +1415,73 @@ export function Assistante() {
         </p>
       )}
 
+      {/* ─── UN ÉTAT QUI TIENT EN UNE LIGNE, ET LE LIEN AVEC ───
+          Deux blocs disaient la même chose sur le même écran : celui-ci en
+          haut, et « Vos 5 annonces sont en ligne » en bas. Deux cent quarante
+          points pour une seule information, pris sur la conversation. Ils n'en
+          font plus qu'un : l'état, le compte, et la flèche vers Le Direct. */}
       {onglet === "jour" && !!journee.moments.length && (
-        <div className="as-enligne">
-          <span className="as-enligne-t">En ligne maintenant</span>
-          <ul>
-            {journee.moments.map((m, i) => (
-              <li key={`${m.titre}-${i}`}>
-                <b>
-                  {m.icone} {m.titre}
-                </b>
-                <em>
-                  {[m.prix, m.places != null ? `${m.places} restants` : ""]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </em>
-              </li>
-            ))}
-          </ul>
+        <div className={`as-enligne${enligneOuvert ? " ouvert" : ""}`}>
+          <div className="as-enligne-h">
+            <button
+              type="button"
+              className="as-enligne-b"
+              aria-expanded={enligneOuvert}
+              onClick={() => setEnligneOuvert(!enligneOuvert)}
+            >
+              {/* « EN LIGNE » ET PAS « EN LIGNE MAINTENANT ». Le mot de trop
+                  coûtait quatre-vingt-dix points de largeur, et c'est le résumé
+                  qui les payait : il sortait tronqué à « 🍽️ Ma… ». Le
+                  « maintenant » était déjà dit par le présent du verbe. */}
+              <span className="as-enligne-t">
+                En ligne
+                <u>{journee.moments.length}</u>
+              </span>
+              {/* REPLIÉ, ON NOMME QUAND MÊME CE QUI EST PARTI. Un compte seul
+                  se lit comme un badge de notification ; le titre du plat, lui,
+                  dit qu'il s'agit bien de SON annonce. */}
+              {/* LA PASTILLE DIT COMBIEN, LE TEXTE DIT LAQUELLE. Le résumé
+                  portait « et 4 autres » en plus du compte : la même
+                  information deux fois, et le titre du plat sortait tronqué
+                  pour la place que ça coûtait. */}
+              {!enligneOuvert && (
+                <span className="as-enligne-r">
+                  {journee.moments[0].icone} {journee.moments[0].titre}
+                </span>
+              )}
+              <i aria-hidden="true">{enligneOuvert ? "⌃" : "⌄"}</i>
+            </button>
+            <a
+              // PAS LA MEME CLASSE QUE LA GRANDE BANDE DE « MON COMMERCE » :
+              // c'est le meme geste mais pas le meme objet, et deux objets sous
+              // un seul nom heritent l'un de l'autre — trois fois paye ici.
+              className="as-enligne-v"
+              // LE LIEN NOMME SA CARTE. « J'ai fait l'annonce avec Léa, mais
+              // quand j'ai appuyé sur "votre annonce est en ligne", je n'ai pas
+              // vu mon annonce. » Le paquet s'ouvre sur les restaurants et
+              // classe par fraîcheur puis par distance : sa carte pouvait être
+              // ailleurs. Elle est maintenant devant, sur son métier.
+              href={`/autour-de-moi?h=${heure.toFixed(2)}&carte=${encodeURIComponent(journee.commerce.id)}`}
+            >
+              Voir <i aria-hidden="true">→</i>
+            </a>
+          </div>
+          {enligneOuvert && (
+            <ul>
+              {journee.moments.map((m, i) => (
+                <li key={`${m.titre}-${i}`}>
+                  <b>
+                    {m.icone} {m.titre}
+                  </b>
+                  <em>
+                    {[m.prix, m.places != null ? `${m.places} restants` : ""]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </em>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
@@ -2502,38 +2566,19 @@ export function Assistante() {
             cherche un defaut la ou il n'y en a pas. */}
         {voixKo && <p className="as-muette">Léa ne parle pas — {voixKo}.</p>}
 
-        {/* ═══ VOIR LE RÉSULTAT ═══
-            « Le bouton pour voir le résultat sur le direct est très caché et
-            très discret. » Il l'était : un lien en petit vert, sous une barre
-            de réglages, écrit « voir ce que vos clients voient » — une phrase
-            qui décrit une intention au lieu de promettre un résultat.
+        {/* ═══ VOIR LE RÉSULTAT — IL A DÉMÉNAGÉ EN HAUT ═══
+            « La partie réservée au chat est toute petite parce que le bloc du
+            haut prend toute la place. » Deux blocs disaient la même chose sur
+            le même écran : « En ligne maintenant » avec la liste en haut, et
+            cette bande « Vos 5 annonces sont en ligne » en bas. Ensemble ils
+            prenaient 239 points sur 852 — pour UNE information, et pris sur la
+            seule chose qui compte ici, la conversation.
 
-            C'EST POURTANT LA CHUTE DE TOUTE LA DÉMONSTRATION. Le commerçant
-            vient de parler trente secondes ; ce bouton est l'endroit où il
-            découvre que ça a produit quelque chose de réel. Il compte ses
-            annonces, il porte une flèche, et il occupe toute la largeur. */}
-        {enLigne && (
-          <a
-            className="as-voir"
-            // LE LIEN NOMME SA CARTE. « J'ai fait l'annonce avec Léa, mais quand
-            // j'ai appuyé sur "votre annonce est en ligne", je n'ai pas vu mon
-            // annonce. » Le lien ouvrait le paquet ; le paquet s'ouvre sur les
-            // restaurants et classe par fraîcheur puis par distance. Sa carte
-            // pouvait donc être ailleurs, ou nulle part. Elle est maintenant
-            // devant, sur son métier.
-            href={`/autour-de-moi?h=${heure.toFixed(2)}&carte=${encodeURIComponent(enLigne.id)}`}
-          >
-            <span>
-              <b>
-                {journee.moments.length === 1
-                  ? "Votre annonce est en ligne"
-                  : `Vos ${journee.moments.length} annonces sont en ligne`}
-              </b>
-              <em>Voir Le Direct de Dax</em>
-            </span>
-            <i aria-hidden="true">→</i>
-          </a>
-        )}
+            LA CHUTE DE LA DÉMONSTRATION RESTE INTACTE : la flèche vers Le
+            Direct est maintenant dans le bloc du haut, à côté du compte
+            d'annonces, et le reçu « C'est parti » célèbre toujours la
+            publication dans le fil au moment où elle a lieu. Ce qu'on a
+            supprimé, c'est le doublon — pas le résultat. */}
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════
