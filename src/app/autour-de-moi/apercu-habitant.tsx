@@ -2070,6 +2070,23 @@ export function ApercuHabitant() {
   const tourCarte = toutes.find((c) => suivis.includes(c.id) && c.bulletin?.tour);
   const tour = tourCarte?.bulletin?.tour;
   const tourMinutes = tour?.minutes ?? 0;
+  /**
+   * SON TOUR ATTEND QU'IL AIT REGARDÉ DEUX ANNONCES.
+   *
+   * CE QU'IL A VU : « Peut-on la voir arriver plutôt au 2ᵉ ou 3ᵉ balayage et
+   * pas directement dès la première annonce, pour que ça ne soit pas trop
+   * dense tout de suite au démarrage ? » C'est juste, et pour une raison que
+   * la bande elle-même explique : elle INTERROMPT. Une interruption posée
+   * avant qu'on ait rien vu n'interrompt rien — elle devient le premier écran,
+   * et c'est un compte à rebours qui accueille les gens.
+   *
+   * DEUX ANNONCES, PARCE QUE C'EST LE MOMENT OÙ LE GESTE EST COMPRIS. On a
+   * balayé, il s'est passé quelque chose, on sait ce qu'on regarde ; la bande
+   * arrive alors dans une page qu'on lit déjà, et pas dans une page qu'on
+   * découvre. Même seuil que la bande d'installation, plus bas — pour les
+   * mêmes raisons.
+   */
+  const tourMur = passees.length >= 2;
 
   /**
    * L'AVIS DU MATIN — UN SEUL, ET GROUPÉ.
@@ -2128,10 +2145,17 @@ export function ApercuHabitant() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [combienDeNouvelles, arrivee]);
 
-  // ON ARME LE COMPTE UNE FOIS, quand l'offre apparaît.
+  // ON ARME LE COMPTE QUAND LA BANDE APPARAÎT, PAS À L'OUVERTURE.
+  //
+  // C'EST LA MOITIÉ QUI COMPTE DE L'ATTENTE POSÉE PLUS HAUT. Si le compte
+  // partait à l'ouverture pendant que la bande attend deux balayages, quelqu'un
+  // qui prend son temps la découvrirait à « 1:12 » — ou ne la verrait jamais,
+  // l'offre ayant expiré avant d'être montrée. Cinq minutes pour répondre
+  // veulent dire cinq minutes À PARTIR DU MOMENT OÙ ON LES VOIT ; c'est le seul
+  // compte à rebours du produit, et c'est le seul endroit où l'on peut mentir.
   useEffect(() => {
-    if (tourMinutes > 0) setTourReste(tourMinutes * 60);
-  }, [tourMinutes]);
+    if (tourMinutes > 0 && tourMur) setTourReste(tourMinutes * 60);
+  }, [tourMinutes, tourMur]);
 
   // ET IL DESCEND D'UNE SECONDE PAR SECONDE. Un `setTimeout` qui se replante
   // à chaque tour plutôt qu'un `setInterval` : si l'onglet est mis en veille
@@ -4523,7 +4547,7 @@ export function ApercuHabitant() {
                 contrepartie de l'abonnement, celle qu'on ne trouve nulle part
                 ailleurs, et c'est ce qui donne au geste « prévenez-moi » une
                 raison d'être autre chose qu'une politesse. */}
-            {tourCarte && tour && tourEtat !== "fini" && (
+            {tourCarte && tour && tourMur && tourEtat !== "fini" && (
               <div className={`ap-tour ${tourEtat}`}>
                 {tourEnCours ? (
                   <>
@@ -6016,7 +6040,13 @@ export function ApercuHabitant() {
           {!inviteFermee &&
             !installation.deja &&
             installation.chemin !== "aucune" &&
-            passees.length >= 2 &&
+            // ET PLUS AU MÊME BALAYAGE QUE LE TOUR DE RÔLE. Les deux bandes
+            // attendaient deux annonces : elles arrivaient donc ensemble, sur
+            // la même carte, et deux interruptions simultanées font exactement
+            // la densité qu'on vient d'enlever. Celle-ci n'a aucune urgence —
+            // l'application sera toujours installable au dixième balayage,
+            // alors que les croissants, eux, ont cinq minutes.
+            passees.length >= 5 &&
             !sortie && (
               <div className="ap-poser-bande">
                 <i aria-hidden="true">📲</i>

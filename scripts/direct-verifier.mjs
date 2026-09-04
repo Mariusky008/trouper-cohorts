@@ -173,7 +173,26 @@ await ctx.close();
 // RIEN : ni bandeau, ni détail, ni bouton à refermer.
 console.log("\n══ je passe ══");
 ({ ctx, p } = await ouvrir());
-await p.waitForSelector(".ap-tour");
+// ─── ELLE N'ACCUEILLE PLUS PERSONNE ───
+//
+// « Peut-on la voir arriver plutôt au 2ᵉ ou 3ᵉ balayage et pas directement dès
+// la première annonce, pour que ça ne soit pas trop dense tout de suite au
+// démarrage ? » Une interruption posée avant qu'on ait rien vu n'interrompt
+// rien : elle devient le premier écran, et c'est un compte à rebours qui
+// accueille les gens. Elle attend donc deux annonces.
+dire(!(await p.$(".ap-tour")), "« c'est à vous » n'accueille personne à l'ouverture");
+for (let k = 0; k < 2; k++) {
+  await p.click(".ap-rond");
+  await p.waitForTimeout(700);
+}
+await p.waitForSelector(".ap-tour", { timeout: 8000 });
+// ET SES CINQ MINUTES PARTENT DE LÀ. Armées à l'ouverture, elles se seraient
+// écoulées derrière une bande que personne ne voyait — l'offre aurait pu
+// expirer avant d'être montrée. C'est le seul compte à rebours du produit.
+const dessus = await p.$eval(".ap-tour-h b", (e) => e.textContent.trim());
+console.log(`  quand elle arrive, il lui reste : ${dessus}`);
+const [mn, sc] = dessus.split(":").map(Number);
+dire(mn * 60 + sc > 4 * 60 + 40, "ses cinq minutes commencent quand on la VOIT");
 const avant = await p.$eval(".ap-tour-f", (e) => e.textContent.replace(/\s+/g, " ").trim());
 console.log(`  avant de décider : « ${avant} »`);
 dire(/après vous/.test(avant), "la règle se lit AVANT de décider, sur l'offre");
