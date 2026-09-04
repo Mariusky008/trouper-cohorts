@@ -257,7 +257,15 @@ export function CarteSwipe({
   const c = carte;
   const sec = variante === "seconde";
   return (
-    <div className={`cd-carte${sec ? " sec" : ""} ${className}`} style={style}>
+    /* ⚡ UNE CARTE FLASH NE RESSEMBLE À AUCUNE AUTRE — c'est la demande, et
+       c'était le défaut : « l'annonce ne fait pas différente d'une autre alors
+       qu'elle devrait être très différente pour montrer l'exceptionnel de ce
+       moment ». Une pastille ambre sur une carte identique ne suffit pas : on
+       balaie, et rien n'arrête l'œil. La classe teinte la carte ENTIÈRE. */
+    <div
+      className={`cd-carte${sec ? " sec" : ""}${c.flash ? " flash" : ""} ${className}`}
+      style={style}
+    >
       {/* DEUX COUCHES, PAS UNE, et c'est un filet de sécurité.
           L'image est empilée SUR un dégradé. Si le fichier manque ou tarde, la
           couche du dessous reste : la carte est sombre et propre au lieu d'être
@@ -339,16 +347,30 @@ export function CarteSwipe({
                 23 min » sont deux comptes de temps qui vont dans des directions
                 opposées ; posés l'un sur l'autre, on ne sait plus lequel
                 compte. Sur un Flash, un seul compte : celui qui descend. */}
+            {/* ─── LE CHRONO EST LE PERSONNAGE PRINCIPAL ───
+                « Le chrono devrait être très différent, comme l'acteur
+                principal, et le prix aussi. » C'est juste : sur un Flash, la
+                seule question est « est-ce que j'ai le temps ? ». Le nombre de
+                minutes est donc écrit à la taille d'un prix, l'unité en petit à
+                côté, et la barre passe dessous sur toute la largeur du bloc.
+                Ce qui était une pastille de douze points devient le premier
+                objet que l'œil rencontre. */}
             {c.flash ? (
               <p className="cd-flash">
-                <span>
+                <span className="cd-flash-t">
                   <i aria-hidden="true">⚡</i>
                   Flash
                 </span>
-                <b>{c.flash.reste}</b>
-                <s aria-hidden="true">
+                <span className="cd-flash-n">
+                  <b>{c.flash.reste.replace(/[^0-9]/g, "") || "0"}</b>
+                  <em>
+                    min
+                    <s>restantes</s>
+                  </em>
+                </span>
+                <span className="cd-flash-j" aria-hidden="true">
                   <u style={{ width: `${Math.round((1 - c.flash.part) * 100)}%` }} />
-                </s>
+                </span>
               </p>
             ) : (
               c.frais && (
@@ -436,10 +458,16 @@ export function CarteSwipe({
                 <p className="cd-detail">{c.lignes.slice(0, 2).join(" · ")}</p>
               )
             )}
+            {/* ─── ET LE PRIX PORTE LA MÊME EXCEPTION ───
+                Sur un Flash, l'ancien prix n'est pas une mention légale : c'est
+                la MOITIÉ de l'information. Il passe donc à gauche, gros et
+                barré, et le nouveau à droite en ambre — on lit la chute, pas un
+                prix avec une note de bas de page. */}
             {(c.prix || c.prixBarre) && (
-              <p className="cd-prixg">
+              <p className={`cd-prixg${c.flash ? " flash" : ""}`}>
+                {c.flash && c.prixBarre && <s>{c.prixBarre}</s>}
                 {c.prix}
-                {c.prixBarre && <s>{c.prixBarre}</s>}
+                {!c.flash && c.prixBarre && <s>{c.prixBarre}</s>}
               </p>
             )}
             {/* LE NOM DU COMMERCE EST LISIBLE, ET IL N'EST PLUS LE TITRE.
@@ -770,6 +798,13 @@ export function StylesDirect() {
           letter-spacing:-.03em;line-height:1;color:#fff;
           font-variant-numeric:tabular-nums;}
         .cd-prixg s{margin-left:9px;font-size:14px;font-weight:600;color:#9DB0A6;}
+        /* ⚡ SUR UN FLASH, L'ANCIEN PRIX EST LA MOITIE DE L'INFORMATION. Il
+           passe devant, gros et barre ; le nouveau suit en ambre. On lit la
+           CHUTE, pas un prix avec une note de bas de page. */
+        .cd-prixg.flash{display:flex;align-items:baseline;justify-content:center;
+          gap:12px;color:#FFD75E;text-shadow:0 2px 18px rgba(240,180,41,.45);}
+        .cd-prixg.flash s{margin:0;font-size:clamp(17px,5vw,23px);font-weight:750;
+          color:rgba(255,255,255,.5);}
         .cd-chez{margin:11px 0 0;font-size:14.5px;font-weight:650;
           line-height:1.25;color:#EAF2EC;text-wrap:balance;}
         .cd-chez s{text-decoration:none;font-weight:400;color:#B4C6BB;}
@@ -783,22 +818,54 @@ export function StylesDirect() {
            vert est la couleur de tout le reste ; l'ambre ne sert qu'ici et sur
            l'engagement. Une carte Flash ne se confond avec aucune autre, meme
            en balayant vite. */
-        .cd-flash{display:flex;flex-direction:column;align-items:center;gap:5px;
-          margin:0 0 9px;padding:7px 14px 8px;border-radius:16px;
-          background:rgba(240,180,41,.16);border:1px solid rgba(247,201,72,.6);
-          -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
-        .cd-flash>span{display:flex;align-items:center;gap:5px;font-size:10.5px;
-          font-weight:850;letter-spacing:.2em;text-transform:uppercase;color:#F7C948;}
-        .cd-flash>span i{font-style:normal;font-size:12px;letter-spacing:0;}
-        .cd-flash b{font-size:13px;font-weight:850;letter-spacing:-.01em;color:#FFF3D6;
-          font-variant-numeric:tabular-nums;}
+        /* ═══ ⚡ LA CARTE ENTIERE EST DIFFERENTE ═══
+           « L'annonce ne fait pas differente d'une autre alors qu'elle devrait
+           etre TRES differente pour montrer l'exceptionnel de ce moment. »
+
+           UNE PASTILLE NE SUFFIT PAS, ET C'EST LA LECON. On balaie ce paquet a
+           la seconde ; un petit objet ambre sur une carte par ailleurs
+           identique ne se voit pas. Ce qui se voit, c'est une CARTE d'une autre
+           couleur : un liseré ambre tout autour, une lueur chaude, et un voile
+           qui rechauffe la photo. On sait que c'est autre chose avant d'avoir
+           lu un seul mot. */
+        /* LE LISERE EST A L'INTERIEUR, ET C'EST UNE CORRECTION MESUREE : la
+           carte du dessus occupe tout l'ecran, donc un contour POSE AUTOUR
+           tombe hors du cadre et ne se voit jamais. Vu sur la capture — la
+           regle etait ecrite, l'effet invisible. La lueur exterieure reste pour
+           la carte du dessous, qui, elle, a des marges. */
+        .cd-carte.flash{box-shadow:inset 0 0 0 2px rgba(247,201,72,.8),
+          inset 0 0 90px -20px rgba(240,180,41,.55),
+          0 26px 60px -24px rgba(240,180,41,.75);}
+        .cd-carte.flash .cd-voile{background:linear-gradient(180deg,
+          rgba(60,32,0,.42) 0%,rgba(24,14,2,.66) 46%,rgba(10,6,1,.92) 100%);}
+
+        /* ─── LE CHRONO EST L'ACTEUR PRINCIPAL ───
+           « Le chrono devrait etre tres different, comme l'acteur principal. »
+           Le nombre de minutes est ecrit a la taille d'un prix ; c'est la seule
+           question qu'on se pose devant un Flash — est-ce que j'ai le temps ? */
+        .cd-flash{display:flex;flex-direction:column;align-items:center;gap:2px;
+          margin:0 0 10px;padding:9px 18px 11px;border-radius:20px;
+          background:rgba(60,36,0,.5);border:1px solid rgba(247,201,72,.65);
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+        .cd-flash-t{display:flex;align-items:center;gap:6px;font-size:10.5px;
+          font-weight:850;letter-spacing:.24em;text-transform:uppercase;color:#F7C948;}
+        .cd-flash-t i{font-style:normal;font-size:13px;letter-spacing:0;}
+        .cd-flash-n{display:flex;align-items:baseline;gap:7px;}
+        .cd-flash-n b{font-size:38px;font-weight:850;letter-spacing:-.04em;
+          line-height:1;color:#FFD75E;font-variant-numeric:tabular-nums;}
+        .cd-flash-n em{display:flex;flex-direction:column;align-items:flex-start;
+          font-style:normal;font-size:13px;font-weight:850;line-height:1.05;
+          color:#FFD75E;}
+        .cd-flash-n em s{text-decoration:none;font-size:9.5px;font-weight:700;
+          letter-spacing:.1em;text-transform:uppercase;color:rgba(255,215,94,.7);}
         /* LA BARRE QUI DESCEND. Elle ne clignote pas et ne change pas de couleur
            en fin de course : le temps qui passe est une information, pas une
            alarme. */
-        .cd-flash s{display:block;width:104px;height:3px;border-radius:2px;
-          text-decoration:none;background:rgba(255,255,255,.2);overflow:hidden;}
-        .cd-flash s u{display:block;height:100%;text-decoration:none;
-          background:#F7C948;transition:width .9s linear;}
+        .cd-flash-j{display:block;width:100%;height:4px;margin-top:7px;
+          border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden;}
+        .cd-flash-j u{display:block;height:100%;text-decoration:none;
+          background:linear-gradient(90deg,#FFD75E,#F0B429);
+          transition:width .9s linear;}
         .cd-quand{display:inline-block;margin-top:11px;font-size:11.5px;
           font-weight:850;letter-spacing:.05em;text-transform:uppercase;
           color:#04150E;background:#F0B429;border-radius:999px;padding:5px 12px;}

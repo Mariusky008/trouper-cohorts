@@ -85,6 +85,8 @@ import {
   flashRestants,
   momentDuFlash,
   noterUnFlash,
+  raccourcisDuFlash,
+  viderLesFlash,
 } from "@/lib/direct/flash";
 import { dicteeDisponible, libererMicro, ouvrirEcoute } from "@/lib/direct/voix-micro";
 import { useSyncExternalStore } from "react";
@@ -1019,6 +1021,18 @@ export function Assistante() {
     );
   }, [dire]);
 
+  /**
+   * ON NE GARDE PAS UN FORMULAIRE D'UN COMMERCE À L'AUTRE.
+   *
+   * Le Flash à moitié rempli chez Margot n'a plus aucun sens chez Yann — et il
+   * s'y rouvrait tel quel, prix et titre compris. Un état de formulaire qui
+   * traverse un changement de contexte finit toujours par publier la donnée de
+   * quelqu'un d'autre.
+   */
+  useEffect(() => {
+    setFlash(null);
+  }, [journee?.commerce.id]);
+
   const choisir = useCallback((c: CommerceAssiste) => {
     // LE PREMIER GESTE DE LA SESSION, ET DONC LE SEUL MOMENT OÙ IPHONE ACCORDE
     // LE SON. Voir `debloquerSon` : c'est ici, et pas dans la réponse de Léa
@@ -1353,6 +1367,29 @@ export function Assistante() {
    * celles qu'il a retirées ce matin. C'est la seule liste que l'écran montre
    * à côté de la carte, et c'est elle qui part en ligne à la validation.
    */
+  /**
+   * SUR QUOI PORTE LE FLASH, PAR DÉFAUT — et ça vient de SON commerce.
+   *
+   * LE DÉFAUT VU SUR SA CAPTURE : chez le coiffeur, le formulaire s'ouvrait sur
+   * « Lasagnes maison ». Le champ était rempli avec la première annonce de la
+   * journée en cours — juste tant qu'on reste dans le même commerce, faux dès
+   * qu'on en change, parce que le formulaire garde son état pendant que la
+   * journée, elle, se recharge. On lit donc la journée AU MOMENT DU RENDU, et
+   * seulement si elle appartient bien au commerce ouvert.
+   *
+   * SANS RIEN À REPRENDRE, ON NE PROPOSE RIEN. Un champ vide se remplit ; un
+   * champ rempli avec le plat de quelqu'un d'autre se corrige, et on ne le
+   * corrige pas — on le publie.
+   */
+  const flashDeBase =
+    journee.commerce.id === c.id && journee.moments.length
+      ? {
+          titre: journee.moments[0].titre,
+          prix: journee.moments[0].prix ?? "",
+          photo: journee.moments[0].photo ?? "",
+        }
+      : { titre: "", prix: "", photo: "" };
+
   const options = optionsDe(c.id, c.branche);
   const proposees = options.filter((o) => o.cochee && !retirees.includes(o.cle));
   proposeesRef.current = proposees;
@@ -2075,6 +2112,12 @@ export function Assistante() {
               type="button"
               onClick={() => {
                 viderJournee();
+              // ET LE JOURNAL DES FLASH AVEC. « Dès le départ je vois 2/3 alors
+              // que je n'ai fait aucun Flash » : la remise à zéro effaçait la
+              // journée mais pas le compte de la semaine, qui vit dans son
+              // propre stockage. Un compteur qui survit à une remise à zéro
+              // n'est plus un compteur, c'est un souvenir.
+              viderLesFlash();
                 setTours([]);
                 toursRef.current = [];
                 setCarte(null);
@@ -2521,13 +2564,13 @@ export function Assistante() {
                 // CE QUI EST DÉJÀ EN LIGNE EST DÉJÀ ÉCRIT. Neuf fois sur dix le
                 // Flash porte sur le plat du jour : le retaper serait une
                 // question à laquelle on connaît la réponse.
-                quoi: journee.moments[0]?.titre ?? "",
+                quoi: flashDeBase.titre,
                 avantage: "−30 %",
-                avant: journee.moments[0]?.prix ?? "",
+                avant: flashDeBase.prix,
                 apres: "",
                 combien: "",
                 minutes: FLASH_MINUTES,
-                photo: journee.moments[0]?.photo ?? "",
+                photo: flashDeBase.photo,
               })
             }
           >
@@ -2581,7 +2624,7 @@ export function Assistante() {
               />
             </label>
             <div className="as-flash-r">
-              {["−20 %", "−30 %", "2 achetés = 1 offert", "Dessert offert"].map((a) => (
+              {raccourcisDuFlash(c.branche).map((a) => (
                 <button
                   key={a}
                   type="button"

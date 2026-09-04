@@ -90,6 +90,49 @@ export type Flash = {
   fin: number;
 };
 
+/**
+ * LES QUATRE RACCOURCIS, ET ILS PARLENT SON MÉTIER.
+ *
+ * LE DÉFAUT MESURÉ : « quand je suis sur coiffeur, on me propose dans Flash des
+ * lasagnes et des desserts gratuits — ce n'est pas en corrélation avec le
+ * métier. » Un coiffeur à qui l'on propose « dessert offert » comprend en une
+ * seconde que l'outil n'a pas été fait pour lui, et il a raison : ces
+ * raccourcis-là venaient d'un restaurant, écrits en dur.
+ *
+ * DEUX REMISES PARTOUT, DEUX IDÉES DE SON MÉTIER. Les pourcentages marchent
+ * pour tout le monde ; les deux autres doivent être des phrases qu'il aurait pu
+ * dire lui-même. Le champ reste libre — ce ne sont que des raccourcis — mais un
+ * raccourci qui ne va nulle part est pire qu'aucun raccourci.
+ */
+const RACCOURCIS: Record<string, string[]> = {
+  restaurant: ["−20 %", "−30 %", "2 achetés = 1 offert", "Dessert offert"],
+  bar: ["−20 %", "−30 %", "2 achetés = 1 offert", "L’apéro offert"],
+  coiffeur: ["−20 %", "−30 %", "Le créneau qui vient de se libérer", "Shampoing offert"],
+  ongles: ["−20 %", "−30 %", "Le créneau qui vient de se libérer", "La pose de couleur offerte"],
+  mode: ["−20 %", "−30 %", "2 achetés = 1 offert", "Les retouches offertes"],
+  fleuriste: ["−20 %", "−30 %", "Le bouquet du jour", "La livraison offerte"],
+};
+
+/** Ce qu'on lui propose en un appui, selon son métier. */
+export function raccourcisDuFlash(branche: string): string[] {
+  return RACCOURCIS[branche] ?? ["−20 %", "−30 %", "−40 %", "Le dernier créneau"];
+}
+
+/**
+ * UN PRIX S'ÉCRIT AVEC SON UNITÉ.
+ *
+ * VU SUR SA CAPTURE : il a tapé « 10 » dans « prix avant », et la carte a
+ * affiché « 10 » — un nombre nu, à côté d'un « 9,80 € » qui, lui, portait son
+ * euro. Deux prix côte à côte dont un seul a son unité se lisent comme une
+ * erreur d'affichage. On ne le corrige pas à sa place dans le champ — il écrit
+ * ce qu'il veut, « 10 min » ou « à partir de 10 » — mais un nombre SEUL n'a
+ * qu'une lecture possible.
+ */
+export function prixEcrit(v: string): string {
+  const t = v.trim();
+  return /^\d+([.,]\d+)?$/.test(t) ? `${t} €` : t;
+}
+
 /** Le journal des Flash d'un commerce, pour tenir le compte de la semaine. */
 export type JournalFlash = { commerce: string; jour: string; lance: number }[];
 
@@ -218,8 +261,8 @@ export function momentDuFlash(f: Flash): Omit<MomentJour, "publie"> {
     icone: "⚡",
     titre: f.quoi,
     lignes: [f.avantage],
-    prix: f.apres || undefined,
-    prixBarre: f.avant || undefined,
+    prix: f.apres ? prixEcrit(f.apres) : undefined,
+    prixBarre: f.avant ? prixEcrit(f.avant) : undefined,
     photo: f.photo || undefined,
     places: f.combien || undefined,
     // PAS D'ÉTIQUETTE « FLASH » : LA PASTILLE LE DIT DÉJÀ. Vu à l'écran, l'un

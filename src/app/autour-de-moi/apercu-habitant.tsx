@@ -62,6 +62,7 @@ import {
   ouvrirSalon,
   type Salon,
 } from "@/lib/direct/salons";
+import { flashEnCours } from "@/lib/direct/flash";
 import { suivreHauteurEcran } from "@/lib/direct/hauteur-ecran";
 import {
   abonnerPreparation,
@@ -2005,6 +2006,9 @@ export function ApercuHabitant() {
    * centimètres carrés d'image.
    */
   const gardeSommet = !!sommet && gardees.includes(sommet.id);
+  /** ⚡ La carte du dessus porte-t-elle un Flash en cours — voir `flash.ts`. */
+  const flashDuSommet =
+    !!dessus && dessus.moments.some((m) => m.flash && flashEnCours(m.flash, heure));
   function garderLeSommet() {
     if (!sommet) return;
     noter("garde", passees.length + 1, "bandeau");
@@ -6429,15 +6433,22 @@ export function ApercuHabitant() {
                   tout court se lit « une table » ; on ne sait pas ce qui va se
                   passer. Le complément ne s'invente que là où il est vrai : on
                   ne réserve pas un plat chez une fleuriste. */}
+              {/* ⚡ SUR UN FLASH, ON NE RÉSERVE PAS : ON EN PROFITE. « Réserver »
+                  se projette dans plus tard ; un Flash n'a pas de plus tard, il
+                  a vingt-neuf minutes. Le verbe doit dire la même urgence que le
+                  chrono au-dessus, sinon les deux moitiés de la carte se
+                  contredisent. */}
               {dessusEv
                 ? "Y aller"
                 : embauches
                   ? "Je passe"
                   : dessus && estInvitation(dessus)
                     ? "J’y vais"
-                    : dessus && ["restaurant", "bar", "boulangerie"].includes(dessus.branche)
-                      ? "Réserver mon plat"
-                      : "Réserver"}
+                    : flashDuSommet
+                      ? "J’en profite"
+                      : dessus && ["restaurant", "bar", "boulangerie"].includes(dessus.branche)
+                        ? "Réserver mon plat"
+                        : "Réserver"}
             </button>
             {/* LE QUATRIÈME ROND A DISPARU, ET IL N'EST PAS PERDU. « Détails »
                 est remonté sur la photo, où il dit ce qu'il y a derrière —
