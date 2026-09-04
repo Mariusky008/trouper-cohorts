@@ -1258,6 +1258,18 @@ export function ApercuHabitant() {
   }, [montrerLeTuto]);
 
   const salon: Salon | undefined = salons[salonOuvert];
+  /**
+   * IL VIENT D'ARRIVER, ET IL EST ENCORE SEUL.
+   *
+   * « À ce moment précis, il n'y a qu'une seule chose que l'utilisateur doit
+   * faire : INVITER. Tout le reste peut attendre. » C'est juste, et c'est ce
+   * booléen qui le rend vrai à l'écran : tant qu'il est vrai, l'écran ne montre
+   * que le geste suivant. Réserver n'a pas de sens — réserver quoi, pour qui ?
+   * Proposer autre chose non plus — autre chose que ce qu'on vient de proposer,
+   * à personne. Les deux reviennent dès que quelqu'un arrive.
+   */
+  const salonSeul =
+    !!salon && !salon.collectif && salon.presents.length <= 1 && salon.messages.length === 0;
 
   /**
    * LA CLÉ D'UN SALON — l'annonce, jamais le commerçant.
@@ -3358,8 +3370,28 @@ export function ApercuHabitant() {
                     point vert reste — il dit que le salon est encore vivant, et
                     ils meurent le soir même — mais il rejoint l'heure au lieu
                     d'occuper un objet à lui. */}
+                {/* ═══ CE QUE LE TITRE DIT QUAND ON VIENT D'ARRIVER ═══
+                    « Quand je clique sur "proposer à mes amis", je m'attends à
+                    ce que ClikMe m'aide à l'envoyer à mes amis. Or j'arrive
+                    dans un écran qui ressemble à une conversation vide. Je me
+                    demande : OK… et maintenant ? »
+
+                    C'EST LA TRANSITION QUI MANQUAIT. L'en-tête portait le nom
+                    du commerce — « Une boucherie du centre » — c'est-à-dire
+                    exactement ce qu'on venait de quitter. Rien ne disait qu'il
+                    s'était passé quelque chose. Tant qu'on est seul, il dit
+                    donc ce qui vient d'être créé, et avec un mot qui n'a pas
+                    besoin d'être appris : ON CHOISIT ENSEMBLE. Dès que
+                    quelqu'un arrive, le titre reprend son travail normal —
+                    dire où on va. */}
                 <span className="ap-page-t">
-                  <b>{(salon.propositions?.length ?? 0) > 1 ? "Où on va ?" : salon.ou}</b>
+                  <b>
+                    {salonSeul
+                      ? "On choisit ensemble"
+                      : (salon.propositions?.length ?? 0) > 1
+                        ? "Où on va ?"
+                        : salon.ou}
+                  </b>
                   <em>
                     <u>
                       <i aria-hidden="true">●</i>
@@ -3572,7 +3604,13 @@ export function ApercuHabitant() {
                         pour qu'un onzième propose un autre magasin : le groupe
                         n'existe que par cet article-là, à ce seuil-là. Le
                         bouton part avec sa ligne. */}
-                    {!salon.collectif && (
+                    {/* ET IL ATTEND QU'IL Y AIT QUELQU'UN. « Pas forcément
+                        comme une énorme action alors que le salon est vide » :
+                        proposer autre chose que ce qu'on vient de proposer, à
+                        personne, ne veut rien dire. Il revient au premier
+                        arrivant — c'est là qu'il devient la chose la plus
+                        originale de l'écran. */}
+                    {!salon.collectif && !salonSeul && (
                     <div className="ap-obj-fin">
                       <button
                         type="button"
@@ -3777,25 +3815,50 @@ export function ApercuHabitant() {
                   </p>
                 )}
 
+                {/* ═══ UN MESSAGE D'ACTION, PAS UN MESSAGE D'ÉTAT ═══
+                    « "Il n'y a personne d'autre pour l'instant" est
+                    techniquement vrai, mais ça ne donne aucune direction. Nous
+                    avons besoin d'un message d'action. »
+
+                    ET SURTOUT : « L'utilisateur n'a pas besoin de comprendre le
+                    produit. Il a besoin de comprendre ce qu'il doit faire
+                    maintenant. » On expliquait le mécanisme — « un salon ne
+                    contient que les gens que vous y mettez » — c'est-à-dire une
+                    notice, à quelqu'un qui vient de faire un geste et attend la
+                    suite. La notice part ; ce qui reste est ce qu'il fait
+                    maintenant, et la seule phrase qui dise POURQUOI ça vaut le
+                    coup : chacun peut proposer autre chose. */}
+                {/* CE QU'IL VIENT DE PROPOSER, NOMMÉ COMME TEL. La carte
+                    au-dessus est la même que sur Le Direct : sans un mot, rien
+                    ne dit qu'elle a changé de statut — qu'elle est passée de
+                    « une annonce que je regarde » à « ce que je propose ». Deux
+                    mots suffisent, et ils font la transition que l'écran ne
+                    faisait pas. */}
+                {salonSeul && <p className="ap-vousprop">Vous proposez</p>}
+
                 {salon.messages.length === 0 && !salon.collectif && (
                   <div className="ap-sal-neuf">
-                    <span aria-hidden="true">👋</span>
-                    <b>Il n&apos;y a personne d&apos;autre, pour l&apos;instant.</b>
+                    <span aria-hidden="true">👥</span>
+                    <b>À vous de jouer</b>
                     <i>
-                      Un salon ne contient que les gens que vous y mettez.
-                      Invitez ceux avec qui vous voulez y aller — ils
-                      n&apos;ont rien à installer pour répondre.
+                      Invitez ceux avec qui vous voulez y aller. Ils verront
+                      votre proposition — et pourront en faire une autre.
                     </i>
                     <button type="button" onClick={() => void inviterAuSalon(salon)}>
                       👥 Inviter mes amis
                     </button>
+                    {/* POURQUOI ÇA VAUT MIEUX QU'UN MESSAGE. Une phrase, sous
+                        le bouton, et le concept n'a plus besoin d'être
+                        expliqué ailleurs. */}
+                    <u>Vous choisissez ensemble : chacun peut proposer une autre idée.</u>
                     {/* LA NOTE SUR LA VISIBILITÉ EST ICI, pas dans un
                         réglage qu'on ne trouve pas : c'est au moment
-                        d'inviter qu'on se demande qui verra. */}
+                        d'inviter qu'on se demande qui verra. Elle ne dit plus
+                        « salon » : le mot n'est compris que de nous. */}
                     <s>
                       {salon.prive
-                        ? "🔒 Ce salon est privé : seuls ceux que vous invitez le voient."
-                        : "🌍 Ce salon est public : ceux qui sont autour peuvent le voir et s'y joindre. Vous pouvez le passer en privé juste au-dessus."}
+                        ? "🔒 Fermé : seuls ceux que vous invitez le voient."
+                        : "🌍 Ouvert : ceux qui sont autour peuvent le voir et s'y joindre. Vous pouvez le fermer juste au-dessus."}
                     </s>
                   </div>
                 )}
@@ -3862,7 +3925,15 @@ export function ApercuHabitant() {
                       est le vrai. Dans un collectif, l'engagement EST la jauge —
                       « je viens » et « ça m'intéresse » sont les nuances du
                       salon des amis, où rien ne se compte. */}
-                  {!salon.collectif && (
+                  {/* ─── ET LA RANGÉE DES GENS ATTEND D'AVOIR DES GENS ───
+                      Seul dans le groupe, elle affiche votre initiale, « 1 vient »
+                      et un bouton « ✓ Vous venez » déjà coché : trois objets pour
+                      dire que celui qui vient de proposer une sortie compte y
+                      aller. C'est le genre d'évidence qui remplit un écran sans
+                      rien apprendre — et qui fait qu'on ne voit plus le seul
+                      geste qui compte. Elle revient avec le premier arrivant,
+                      où elle dit enfin quelque chose : qui vient, et qui hésite. */}
+                  {!salon.collectif && !salonSeul && (
                   <div className="ap-gens">
                     <div className="ap-gens-t">
                       {salon.presents.slice(0, 5).map((q) => {
@@ -4149,7 +4220,15 @@ export function ApercuHabitant() {
                   paires qui ne se ressemblent pas : on se demande laquelle des
                   deux compte. Le bandeau garde les siens, qui sont attachés au
                   compteur ; la barre s'efface. */}
-              {!salon.collectif && (
+              {/* ─── ET ELLE NE S'AFFICHE PAS DANS UN SALON VIDE ───
+                  « Réserver quoi ? Pour qui ? Ça donne l'impression qu'on peut
+                  réserver immédiatement, alors que le concept est justement :
+                  je propose → mes amis réagissent → nous choisissons → nous
+                  réservons. » Et « Inviter » y refaisait, en petit et en gris,
+                  le grand bouton vert posé juste au-dessus. Deux fois le même
+                  geste, dont l'un a l'air secondaire : on se demande lequel
+                  compte. La barre revient avec le premier arrivant. */}
+              {!salon.collectif && !salonSeul && (
               <div className="ap-page-actions">
                 <button
                   type="button"
@@ -6185,11 +6264,17 @@ export function ApercuHabitant() {
             >
               <i aria-hidden="true">👥</i>
               <span>
-                Proposer à mes amis
-                {/* CE QUE ÇA OUVRE, EN TROIS MOTS. Sans ça, « proposer » reste
-                    un envoi ; c'est « ensemble » qui dit que les autres
-                    répondent, votent, et que la décision se prend là. */}
-                <em>Décidez ensemble</em>
+                {/* « CHOISIR » ET PAS « PROPOSER », ET C'EST TOUTE LA
+                    DIFFÉRENCE. « Proposer signifie : je leur montre quelque
+                    chose. Choisir avec mes amis signifie : nous allons décider
+                    ensemble. Et c'est précisément l'innovation. » Le bouton dit
+                    maintenant la FINALITÉ, pas le premier geste — et l'écran
+                    qui s'ouvre derrière porte les mêmes mots. */}
+                Choisir avec mes amis
+                {/* ET CE QU'AUCUNE AUTRE APPLICATION NE FAIT, en cinq mots.
+                    C'est la seule ligne qui explique pourquoi passer par là
+                    plutôt que par un message. */}
+                <em>Chacun peut proposer autre chose</em>
               </span>
             </button>
             {/* LE TROISIÈME GESTE PORTE L'ENGAGEMENT DU MOMENT, et il change de
@@ -10106,6 +10191,9 @@ export function ApercuHabitant() {
           border:1px solid rgba(255,255,255,.12);}
 
         /* UN SALON NEUF EST VIDE, ET LE DIT. */
+        .ap-vousprop{flex:none;margin:-4px 0 8px;padding-left:2px;
+          font-size:10px;font-weight:850;letter-spacing:.18em;
+          text-transform:uppercase;color:#7F988B;}
         .ap-sal-neuf{flex:none;text-align:center;padding:22px 16px 18px;
           background:rgba(61,226,166,.07);border:1px solid rgba(61,226,166,.22);
           border-radius:18px;margin-bottom:12px;}
@@ -10117,6 +10205,13 @@ export function ApercuHabitant() {
         .ap-sal-neuf button{width:100%;margin-top:14px;font:inherit;font-size:14.5px;
           font-weight:850;cursor:pointer;color:#04150E;border:0;border-radius:13px;
           padding:12px;background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
+        /* LA PHRASE QUI DIT POURQUOI. Sous le bouton, en menthe : ce n'est pas
+           une note de bas de page, c'est la raison de passer par la plutot que
+           par un message. Elle remplace le paragraphe qui expliquait comment
+           marche un salon — une notice, la ou on attendait la suite. */
+        .ap-sal-neuf u{display:block;text-decoration:none;margin:10px auto 0;
+          max-width:32ch;font-size:12px;line-height:1.4;font-weight:700;
+          color:#7EE6C0;}
         .ap-sal-neuf s{display:block;text-decoration:none;font-size:11px;
           line-height:1.4;color:#7F988B;margin-top:12px;padding-top:11px;
           border-top:1px solid rgba(255,255,255,.09);}
