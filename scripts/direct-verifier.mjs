@@ -228,45 +228,58 @@ console.log("\n══ la voix du commerçant ══");
 // ce qui vient de tomber passe devant, la tête dépend de l'heure qu'il est. Ce
 // que cette section vérifie, c'est le RENDU d'un conseil — pas son rang, qui
 // se vérifie dans « le moment ».
-const lireVoix = () =>
+// ═══ ELLE A DESCENDU D'UNE COUCHE, ET C'ÉTAIT DEMANDÉ ═══
+//
+// « La citation est jolie. Mais dans une interface où l'utilisateur est déjà
+// confronté à beaucoup d'informations, ce n'est pas prioritaire. Ça peut être
+// excellent dans une deuxième couche : appui sur l'annonce → détails. »
+//
+// CE QU'ON VÉRIFIE A DONC CHANGÉ DE SENS, et il faut le dire : cette section
+// exigeait la citation SUR LA FACE. Elle exige maintenant qu'elle n'y soit
+// plus — et qu'elle soit bien sous le pli, signée. Une garde qu'on retourne
+// sans le dire est pire qu'une garde absente.
+const voixSurLaFace = () =>
   p.evaluate(() => {
     const d = document.querySelector(".ap-dessus");
-    const c = d?.querySelector(".cd-conseil");
     return {
       chez: d?.querySelector(".cd-chez")?.textContent.replace(/\s+/g, " ").split("·")[0].trim() ?? "",
-      conseil: c?.querySelector("span:last-child")?.childNodes[0]?.textContent.trim() ?? "",
-      qui: c?.querySelector("s")?.textContent.trim() ?? "",
-      tete: c?.querySelector(".cd-tete")?.textContent.trim() ?? "",
+      // Le conseil EN TEXTE n'a plus sa place sur la face. Le film, si : ce
+      // n'est pas une phrase à lire, c'est un visage, et il se regarde en une
+      // demi-seconde.
+      conseilTexte: !!d?.querySelector(".cd-conseil:not(.film)"),
       detail: d?.querySelector(".cd-detail")?.textContent.trim() ?? "",
     };
   });
-let voix = await lireVoix();
-for (let k = 0; k < 14 && !voix.conseil; k++) {
+let sansCitation = await voixSurLaFace();
+for (let k = 0; k < 14 && !sansCitation.detail; k++) {
   if (!(await avancer(p))) break;
-  voix = await lireVoix();
+  sansCitation = await voixSurLaFace();
 }
-console.log(`  ${voix.chez} — « ${voix.conseil} » — ${voix.qui} (${voix.tete})`);
-dire(!!voix.conseil, "la carte porte un conseil");
-dire(!!voix.qui, `signé d'un prénom et d'un métier (${voix.qui})`);
-dire(voix.tete.length === 1, `avec son rond, à défaut de portrait (${voix.tete})`);
-// LE POINT QUI COMPTE : il REMPLACE la description, il ne s'y ajoute pas.
-dire(voix.detail === "",
-  `et la ligne de détail a cédé sa place, pas gagné une voisine (${voix.detail})`);
+console.log(`  sur la face : ${sansCitation.chez} → « ${sansCitation.detail} »`);
+dire(!sansCitation.conseilTexte, "aucune citation sur la face : le prix et l'heure passent avant");
+dire(!!sansCitation.detail, `la ligne de détail a repris sa place (${sansCitation.detail})`);
 
-// SANS VOIX, RIEN NE CHANGE. On passe jusqu'à une carte qui n'en a pas.
-let sansVoix = null;
+// ET ON LA RETROUVE SOUS LE PLI, ENTIÈRE. Descendre est un geste délibéré :
+// c'est là que la voix du commerçant a sa valeur, et pas avant.
+await p.goto(`${BASE}/autour-de-moi?h=12.6`, { waitUntil: "networkidle" });
+await p.waitForTimeout(1200);
+let motDit = null;
 for (let k = 0; k < 14; k++) {
+  await p.click(".ap-vers-bas").catch(() => {});
+  await p.waitForTimeout(700);
+  motDit = await p.evaluate(() => {
+    const m = document.querySelector(".ap-motdit");
+    return m
+      ? { mot: m.querySelector("em")?.textContent.trim() ?? "",
+          qui: m.querySelector("s")?.textContent.trim() ?? "" }
+      : null;
+  });
+  if (motDit?.mot) break;
   if (!(await avancer(p))) break;
-  const e = await p.evaluate(() => ({
-    chez: document.querySelector(".ap-dessus .cd-chez")?.textContent
-      .replace(/\s+/g, " ").split("·")[0].trim() ?? "",
-    conseil: !!document.querySelector(".ap-dessus .cd-conseil"),
-    detail: document.querySelector(".ap-dessus .cd-detail")?.textContent.trim() ?? "",
-  }));
-  if (!e.conseil && e.detail) { sansVoix = e; break; }
 }
-console.log(`  sans voix : ${sansVoix?.chez} → « ${sansVoix?.detail} »`);
-dire(!!sansVoix, "un commerce sans voix garde sa ligne de détail");
+console.log(`  sous le pli : « ${motDit?.mot} » — ${motDit?.qui}`);
+dire(!!motDit?.mot, "la citation vit une couche plus bas, pas à la poubelle");
+dire(/,/.test(motDit?.qui ?? ""), `signée d'un prénom et d'un métier (${motDit?.qui})`);
 
 // ET LA SIGNATURE DE MÉTIER VIT SOUS LE PLI, écrite une fois pour toutes.
 await p.goto(`${BASE}/autour-de-moi?chez=boulange`, { waitUntil: "networkidle" });

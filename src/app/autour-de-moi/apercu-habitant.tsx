@@ -4466,13 +4466,30 @@ export function ApercuHabitant() {
 
                 ELLE S'EFFACE À LA LECTURE, et pas au bout de quelques
                 secondes : ce qu'on n'a pas ouvert doit rester visible. */}
+            {/* ─── ELLE NE CONCURRENCE PLUS L'ANNONCE ───
+                « Le bandeau est très visible, mais il concurrence l'annonce.
+                L'utilisateur est en train de regarder LES LASAGNES : il ne
+                devrait pas avoir simultanément "regarde cette annonce" et "va
+                voir 5 autres choses". Je mettrais les notifications beaucoup
+                plus discrètement — 🔔 5 — et basta. »
+
+                C'est exactement ça : deux appels à l'attention sur le même
+                écran s'annulent. La cloche garde son compte et sa couleur,
+                elle perd sa phrase et sa largeur — une pastille au lieu d'une
+                bande. Ce qu'elle ouvre n'a pas changé. */}
             {nonLues.length > 0 && !sortie && (
-              <button type="button" className="ap-jai" onClick={ouvrirMesCommerces}>
+              <button
+                type="button"
+                className="ap-jai"
+                onClick={ouvrirMesCommerces}
+                aria-label={
+                  quiAduNeuf.length === 1
+                    ? `Une nouvelle ${deChez(quiAduNeuf[0].c.nom)}`
+                    : `${nonLues.length} nouvelles de vos commerces`
+                }
+              >
                 <i aria-hidden="true">🔔</i>
-                {quiAduNeuf.length === 1
-                  ? `Une nouvelle ${deChez(quiAduNeuf[0].c.nom)}`
-                  : `${nonLues.length} nouvelles de vos commerces`}
-                <s aria-hidden="true">›</s>
+                {nonLues.length}
               </button>
             )}
 
@@ -4859,83 +4876,64 @@ export function ApercuHabitant() {
                             qu'un seul moment ont tous quelque chose sous le
                             pli ; c'est le libellé qui s'adapte, pas la
                             présence du bouton. */}
-                        {sommet && (
+                        {/* ═══ SA JOURNÉE SE LIT SUR LA CARTE ═══
+                            « En l'état, le planning de la journée est presque
+                            invisible. Tu demandes à l'utilisateur de faire une
+                            action qu'il n'a aucune raison de faire : descendre
+                            pour découvrir qu'il y a autre chose. Il ne sait pas
+                            qu'il y a quelque chose à découvrir, donc il ne
+                            scrollera pas. »
+
+                            C'EST EXACT, ET C'ÉTAIT LE DÉFAUT LE PLUS COÛTEUX :
+                            le fil des heures est précisément ce qui distingue
+                            ClikMe d'une fiche restaurant, et il vivait sous le
+                            pli derrière un compte — « 2 moments aujourd'hui ».
+                            Un compte n'est pas une invitation à descendre ; il
+                            faut MONTRER les heures pour qu'on comprenne que ce
+                            commerce bouge pendant la journée.
+
+                            ET « 3 SUR 5 » A DISPARU D'ICI. « Trois sur cinq
+                            quoi ? Tables, personnes, portions, votes ? Si une
+                            donnée nécessite une explication, elle ne doit
+                            probablement pas être affichée là. » Le collectif
+                            garde sa place sous le pli, où il est nommé. */}
+                        {sommet && restants.length > 0 && (
+                          <div className="ap-journee">
+                            <ul>
+                              {restants.slice(0, 2).map((m, i) => (
+                                <li key={`${m.titre}-${i}`} className={i ? "" : "on"}>
+                                  <b>{m.quand}</b>
+                                  <span>{m.titre}</span>
+                                  {m.prix && <em>{m.prix}</em>}
+                                </li>
+                              ))}
+                            </ul>
+                            <button
+                              type="button"
+                              className="ap-vers-bas"
+                              onPointerDown={(ev) => ev.stopPropagation()}
+                              onClick={versLeBas}
+                            >
+                              {dessus?.prepare ? "Prête à publier · " : ""}
+                              {restants.length > 2
+                                ? `Voir la journée (${restants.length})`
+                                : "Voir la journée"}
+                              <i aria-hidden="true">→</i>
+                            </button>
+                          </div>
+                        )}
+                        {/* SANS AUCUN MOMENT À VENIR — un événement, une
+                            invitation — il n'y a pas de journée à lire : le
+                            raccourci reste seul, et il dit ce qu'il ouvre. */}
+                        {sommet && restants.length === 0 && (
                           <button
                             type="button"
                             className="ap-vers-bas"
                             onPointerDown={(ev) => ev.stopPropagation()}
                             onClick={versLeBas}
                           >
-                            {/* LE LIBELLÉ DIT CE QU'IL Y A DERRIÈRE, ET IL LE
-                                DIT DÈS LE PREMIER MOMENT. Il ne comptait qu'à
-                                partir de deux et retombait sinon sur « Voir le
-                                détail », qui ne dit rien : « 1 moment
-                                aujourd'hui » est déjà une information. */}
-                            {dessusEv
-                              ? "Ce qu’il faut savoir"
-                              : restants.length > 0
-                                ? `${restants.length} moment${
-                                    restants.length > 1 ? "s" : ""
-                                  } aujourd’hui`
-                                : "Voir le détail"}
-                            {/* ─── LA MENTION DU COLLECTIF ───
-                                POURQUOI ELLE EXISTE : le collectif vit dans
-                                les options, sous le pli. Or tout ce produit
-                                est fait pour qu'on balaie SANS descendre —
-                                donc la moitié des gens ne le verraient jamais,
-                                et un mécanisme invisible ne vaut rien.
-
-                                POURQUOI ELLE ENTRE DANS CE BOUTON-CI AU LIEU
-                                D'EN AVOIR UN À ELLE. Deux raisons, toutes deux
-                                mesurées à l'écran :
-
-                                  • LE POIDS. Une pastille de plus en faisait
-                                    trois empilées sous le prix, sur une photo
-                                    qui n'en veut pas tant. Ici, zéro pixel de
-                                    plus : les deux disent la même chose — ce
-                                    qu'il y a plus bas.
-                                  • LE MENSONGE. Elle portait « 18 € à 6 »
-                                    juste sous « 19 € », et le collectif est
-                                    sur le service du SOIR, à 26 €. On lisait
-                                    une remise sur le menu affiché. Le prix
-                                    reste donc en bas, collé au moment auquel
-                                    il appartient, et la face ne porte que le
-                                    compte — un signal, pas une offre.
-
-                                ET CE N'EST TOUJOURS PAS UNE SECONDE PORTE :
-                                l'appui descend, il n'ouvre rien. Deux endroits
-                                pour entrer dans un salon rouvriraient
-                                exactement la confusion qu'on vient de fermer. */}
-                            {dessus?.prepare && (
-                              <em className="ap-vb-prep">
-                                <i aria-hidden="true">✎</i>
-                                Prête à publier
-                              </em>
-                            )}
-                            {colDessus && (
-                              <em className="ap-vb-col">
-                                <i aria-hidden="true">👥</i>
-                                {colDessus.col.participants} sur{" "}
-                                {colDessus.col.objectif}
-                              </em>
-                            )}
-                            {/* ─── POURQUOI CETTE CARTE EST LA PREMIÈRE ───
-                                Les commerces suivis passent devant tout le
-                                reste. Sans le dire, le tri par distance a
-                                l'air cassé — « pourquoi la boulangerie avant
-                                le restaurant d'à côté ? ». Trois mots
-                                suffisent, et ils ne coûtent aucune hauteur :
-                                ils vivent dans le raccourci vers le bas,
-                                comme la mention du collectif. */}
-                            {/* « VOUS LE SUIVEZ » N'EST PAS ICI, ET C'EST UNE
-                                MESURE. Avec la mention du collectif, la bande
-                                passait à 56 px au lieu de 28 — deux lignes —
-                                et poussait la photo. Même réduite à la seule
-                                cloche, elle ne rentrait pas. Elle vit donc à
-                                l'emplacement du bouton « Suivre », juste
-                                dessous : un seul endroit, deux états, et la
-                                carte ne saute pas quand on s'abonne. */}
-                            <i aria-hidden="true">⌄</i>
+                            {dessusEv ? "Ce qu’il faut savoir" : "Voir le détail"}
+                            <i aria-hidden="true">→</i>
                           </button>
                         )}
                         {/* ─── SUIVRE, SUR LA FACE ───
@@ -5122,6 +5120,41 @@ export function ApercuHabitant() {
                           >
                             Je passe
                           </button>
+                        </div>
+                      )}
+
+                      {/* ═══ CE QU'IL EN DIT, ET C'EST ICI QUE ÇA VIT ═══
+                          « La citation est jolie. Mais dans une interface où
+                          l'utilisateur est déjà confronté à beaucoup
+                          d'informations, ce n'est pas prioritaire. Ça peut être
+                          excellent dans une deuxième couche. »
+
+                          C'est juste, et ça ne l'enlève pas du produit — dans
+                          un paquet de huit restaurants, celui qui a un visage
+                          et une phrase reste le seul qu'on retienne. Mais sur
+                          la face, elle passait AVANT le prix et l'heure, c'est
+                          -à-dire avant les deux choses qui font décider. Elle
+                          descend d'une couche : on la trouve quand on a déjà
+                          envie d'en savoir plus. */}
+                      {!embauches && dessus?.voix?.prenom && dessus.moments.some((m) => m.conseil) && (
+                        <div className="ap-bloc ap-motdit">
+                          <span className="ap-motdit-q" aria-hidden="true">
+                            {dessus.voix.portrait ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={dessus.voix.portrait} alt="" />
+                            ) : (
+                              dessus.voix.prenom.slice(0, 1)
+                            )}
+                          </span>
+                          <span>
+                            <em>
+                              {dessus.moments.find((m) => m.conseil)?.conseil}
+                            </em>
+                            <s>
+                              {dessus.voix.prenom}
+                              {dessus.voix.role ? `, ${dessus.voix.role}` : ""}
+                            </s>
+                          </span>
                         </div>
                       )}
 
@@ -6018,6 +6051,24 @@ export function ApercuHabitant() {
           </div>
 
           {coeurVole && <span className="ap-coeur" aria-hidden="true">♥</span>}
+          {/* ═══ LE GESTE PRINCIPAL S'APPREND EN TROIS CARTES ═══
+              « Si la barre blanche représente le balayage entre les annonces,
+              elle est visuellement intéressante mais pas forcément
+              compréhensible pour un nouveau venu. Je mettrais "glissez pour
+              découvrir" pendant 2 ou 3 cartes seulement, puis ça disparaît
+              définitivement. »
+
+              C'EST LE SEUL GESTE QU'IL FAUT SAVOIR, et il n'était écrit nulle
+              part : une barre de progression dit qu'il y a une suite, pas
+              comment y aller. Trois cartes, parce qu'au troisième balayage le
+              geste est acquis — et parce qu'une aide qui reste devient un
+              meuble qu'on ne lit plus. Elle ne compte pas les ouvertures : elle
+              compte les cartes vues, donc elle disparaît en étant SUIVIE. */}
+          {passees.length < 3 && !sortie && sommet && (
+            <p className="ap-glissez" aria-hidden="true">
+              <i>←</i>Glissez pour découvrir<i>→</i>
+            </p>
+          )}
 
 
 
@@ -6079,6 +6130,23 @@ export function ApercuHabitant() {
             className={`ap-gestes${descendu ? " pose" : ""}`}
             ref={barreGestes}
           >
+            {/* ═══ LA QUESTION QUI TRANSFORME DEUX BOUTONS EN RÉPONSE ═══
+                « Aujourd'hui l'écran dit : regarde tout ce que ClikMe sait
+                faire. Alors qu'il devrait dire : ça te plaît ? voilà exactement
+                ce que tu peux faire. »
+
+                C'est tout le diagnostic en deux phrases, et cette ligne-là est
+                ce qui les sépare. Sans elle, on lit deux boutons — des
+                fonctions, à comprendre. Avec elle, on lit une question et ses
+                deux réponses : il n'y a plus rien à comprendre, il y a à
+                répondre. Vingt points de haut pour ça.
+
+                ELLE NE S'AFFICHE PAS SUR TOUT. Sur un poste ou un événement,
+                « ça vous tente ? » sonnerait faux — ce ne sont pas des envies
+                du même ordre. */}
+            {!dessusEv && !embauches && (
+              <p className="ap-tente">Ça vous tente ?</p>
+            )}
             {/* ─── PASSER RESTE UN ROND, ET IL EST LE SEUL ───
                 C'est le geste qu'on fait sans y penser, et il a déjà son
                 balayage. Lui donner la même largeur que les deux actions
@@ -6092,34 +6160,37 @@ export function ApercuHabitant() {
             >
               ✕
             </button>
-            {/* ─── LES DEUX ACTIONS ONT EXACTEMENT LE MÊME POIDS ───
-                Ce n'est pas de l'indécision, c'est la seule position honnête
-                aujourd'hui, et elle a été discutée.
+            {/* ─── LES DEUX ACTIONS SONT L'UNE AU-DESSUS DE L'AUTRE ───
+                « Les deux boutons ne doivent pas avoir le même poids : ils
+                correspondent à deux moments différents. Ça me plaît → je le
+                propose → on décide ensemble → on réserve. »
 
-                « EN PARLER » EST CE QUE PERSONNE D'AUTRE NE FAIT. C'est le
-                mécanisme sur lequel tout le produit repose — salon,
-                invitation, vote, décision — et le seul geste qui fasse entrer
-                trois autres personnes dans l'application. Réserver, en
-                revanche, fait sortir de l'application quelqu'un qui serait de
-                toute façon allé chez Google ou au téléphone.
+                CE QUE L'ÉGALITÉ RÉPONDAIT, ET POURQUOI CE N'ÉTAIT PAS LA BONNE
+                QUESTION. On voulait MESURER lequel est pressé — c'est un vrai
+                sujet, à six mois. Mais la question du premier jour est autre :
+                que fait quelqu'un qui découvre ? Il ne réserve pas seul un plat
+                qu'il vient de voir. Il l'envoie.
 
-                MAIS « RÉSERVER » EST LA SEULE ACTION QUE LE COMMERÇANT PEUT
-                MESURER, et c'est elle qui justifie sa présence : « vous avez
-                eu onze réservations » se comprend, « trente-quatre personnes
-                en ont parlé » ne remplit pas encore une salle.
-
-                Alors on ne tranche pas à la place des gens : même taille, même
-                corps, deux teintes seulement pour qu'on ne les confonde pas.
-                Lequel est pressé devient une mesure — et cette mesure est
-                exactement ce qu'on aura à montrer au bout de six mois. */}
+                POURQUOI EMPILÉS ET PAS CÔTE À CÔTE. Essayé, mesuré : « Proposer
+                à mes amis » demande 151 points et « Réserver mon plat » 150 ;
+                la barre en offre 311 à deux. Les deux sortaient tronqués. Un
+                libellé coupé ne dit rien du tout — et c'est précisément le
+                défaut qu'on répare. Empilés, chacun a toute la largeur, et
+                l'ordre de lecture EST le parcours. */}
             <button
               type="button"
               className="ap-agir parler"
               onClick={() => partir("droite")}
               disabled={!sommet}
             >
-              <i aria-hidden="true">💬</i>
-              En parler
+              <i aria-hidden="true">👥</i>
+              <span>
+                Proposer à mes amis
+                {/* CE QUE ÇA OUVRE, EN TROIS MOTS. Sans ça, « proposer » reste
+                    un envoi ; c'est « ensemble » qui dit que les autres
+                    répondent, votent, et que la décision se prend là. */}
+                <em>Décidez ensemble</em>
+              </span>
             </button>
             {/* LE TROISIÈME GESTE PORTE L'ENGAGEMENT DU MOMENT, et il change de
                 nature avec ce qu'on regarde. Sur une invitation on ne réserve
@@ -6173,13 +6244,19 @@ export function ApercuHabitant() {
                       ? "🚶"
                       : "📅"}
               </i>
+              {/* « RÉSERVER MON PLAT » PLUTÔT QUE « RÉSERVER ». « Réserver »
+                  tout court se lit « une table » ; on ne sait pas ce qui va se
+                  passer. Le complément ne s'invente que là où il est vrai : on
+                  ne réserve pas un plat chez une fleuriste. */}
               {dessusEv
                 ? "Y aller"
                 : embauches
                   ? "Je passe"
                   : dessus && estInvitation(dessus)
                     ? "J’y vais"
-                    : "Réserver"}
+                    : dessus && ["restaurant", "bar", "boulangerie"].includes(dessus.branche)
+                      ? "Réserver mon plat"
+                      : "Réserver"}
             </button>
             {/* LE QUATRIÈME ROND A DISPARU, ET IL N'EST PAS PERDU. « Détails »
                 est remonté sur la photo, où il dit ce qu'il y a derrière —
@@ -8447,6 +8524,32 @@ export function ApercuHabitant() {
 
         /* L'INDICE DE DEFILEMENT. Sans lui, personne ne devine que la carte
            continue : Happn a la meme pastille, au meme endroit. */
+        /* ═══ SA JOURNEE, LISIBLE SANS DESCENDRE ═══
+           Deux lignes : l'heure a gauche, ce qui s'y passe au milieu, le prix a
+           droite. La premiere est allumee — c'est celle de maintenant — la
+           seconde est en retrait : on lit « et apres ? » sans que ce soit
+           ecrit. Un fond sombre translucide, parce que ca se pose sur la photo
+           et qu'un texte blanc sur une assiette claire ne se lit pas. */
+        .ap-journee{width:min(100%,340px);margin-top:10px;
+          display:flex;flex-direction:column;align-items:stretch;gap:0;
+          border-radius:15px;padding:9px 11px 8px;
+          background:rgba(4,8,6,.52);border:1px solid rgba(255,255,255,.14);
+          -webkit-backdrop-filter:blur(9px);backdrop-filter:blur(9px);}
+        .ap-journee ul{list-style:none;margin:0;padding:0;
+          display:flex;flex-direction:column;gap:5px;}
+        .ap-journee li{display:flex;align-items:baseline;gap:9px;min-width:0;
+          font-size:12.5px;line-height:1.3;color:rgba(234,242,236,.62);}
+        .ap-journee li.on{color:#EAF2EC;}
+        .ap-journee li b{flex:none;font-weight:800;font-variant-numeric:tabular-nums;
+          font-size:11.5px;letter-spacing:-.01em;}
+        .ap-journee li.on b{color:#F7C948;}
+        .ap-journee li span{flex:1;min-width:0;font-weight:650;text-align:left;
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .ap-journee li em{flex:none;font-style:normal;font-weight:800;
+          font-variant-numeric:tabular-nums;}
+        .ap-journee .ap-vers-bas{align-self:flex-start;margin-top:7px;
+          padding:5px 10px;font-size:11.5px;background:rgba(255,255,255,.09);
+          animation:none;}
         .ap-vers-bas{display:inline-flex;align-items:center;gap:7px;margin-top:11px;
           font:inherit;font-size:12.5px;font-weight:750;color:#EAF2EC;cursor:pointer;
           background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.18);
@@ -8479,6 +8582,27 @@ export function ApercuHabitant() {
           border-radius:20px;padding:16px;}
         .ap-bloc h3{margin:0 0 12px;font-size:11px;font-weight:850;letter-spacing:.14em;
           text-transform:uppercase;color:#7F988B;}
+        /* CE QU'IL EN DIT — la citation descendue de la face. Elle garde son
+           rond et sa signature : c'est quelqu'un qui parle, pas une notice. */
+        .ap-motdit{display:flex;align-items:center;gap:13px;}
+        .ap-motdit-q{flex:none;width:44px;height:44px;border-radius:50%;
+          overflow:hidden;display:flex;align-items:center;justify-content:center;
+          font-size:17px;font-weight:850;color:#04150E;
+          background:linear-gradient(140deg,#7EE6C0,#3DE2A6);}
+        .ap-motdit-q img{width:100%;height:100%;object-fit:cover;}
+        .ap-motdit>span:last-child{min-width:0;}
+        .ap-motdit em{display:block;font-style:normal;
+          font-family:Georgia,'Times New Roman',serif;font-size:16px;
+          line-height:1.35;color:#EAF2EC;}
+        /* LES GUILLEMETS SONT ECHAPPES DEUX FOIS, ET C'EST OBLIGATOIRE ICI :
+           cette feuille vit dans un litteral de gabarit, ou une barre suivie
+           d'un chiffre est une sequence octale — interdite, et l'erreur de
+           compilation qu'elle produit parle d'autre chose, trois mille lignes
+           plus bas. Meme famille de piege que l'accent grave. */
+        .ap-motdit em::before{content:"\\201C";}
+        .ap-motdit em::after{content:"\\201D";}
+        .ap-motdit s{display:block;margin-top:5px;text-decoration:none;
+          font-size:12px;font-weight:700;color:#7F988B;}
 
         /* LA DATE ET L'HEURE. Discrètes : elles répondent à une question qu'on
            ne pose qu'une fois — quel jour on est — et ne doivent pas prendre la
@@ -9785,13 +9909,12 @@ export function ApercuHabitant() {
            photo n'apprenait pas. Ambre comme la pastille qu'elle designe —
            deux objets d'une meme phrase ne peuvent pas etre de deux
            couleurs. */
-        .ap-jai{display:flex;align-items:center;gap:8px;margin:8px 0 0 auto;
-          font:inherit;font-size:12px;font-weight:800;cursor:pointer;
+        .ap-jai{display:flex;align-items:center;gap:5px;margin:8px 0 0 auto;
+          font:inherit;font-size:12.5px;font-weight:850;cursor:pointer;
           color:#F7C948;background:rgba(240,180,41,.13);
           border:1px solid rgba(240,180,41,.4);border-radius:999px;
-          padding:7px 12px;}
+          padding:6px 11px;}
         .ap-jai i{font-style:normal;font-size:13px;line-height:1;flex:none;}
-        .ap-jai s{text-decoration:none;font-size:12px;opacity:.7;flex:none;}
         .ap-jai:active{transform:scale(.98);}
 
         /* ─── CE QUI EST SUR LA TABLE ───
@@ -10348,6 +10471,24 @@ export function ApercuHabitant() {
         /* Le coeur vise la pastille des favoris : on anime la position, pas une
            translation en pixels, pour que l'arrivee tombe juste sur tous les
            formats. */
+        /* HAUT DE LA PHOTO, ET PAS AU MILIEU. Premier essai a mi-hauteur : elle
+           se posait pile sur le prix et sur la ligne de composition du plat —
+           une aide qui cache l'information qu'elle aide a trouver. Le tiers
+           haut de l'image est le seul endroit vide de toutes les cartes. */
+        .ap-glissez{position:absolute;left:50%;top:92px;z-index:6;
+          transform:translateX(-50%);margin:0;pointer-events:none;
+          display:flex;align-items:center;gap:9px;white-space:nowrap;
+          font-size:12.5px;font-weight:800;letter-spacing:.01em;color:#EAF2EC;
+          padding:8px 14px;border-radius:999px;
+          background:rgba(4,8,6,.55);border:1px solid rgba(255,255,255,.16);
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+          animation:apGlisse 2.4s ease-in-out infinite;}
+        .ap-glissez i{font-style:normal;font-size:14px;line-height:1;opacity:.75;}
+        @keyframes apGlisse{
+          0%,100%{transform:translateX(-50%);}
+          38%{transform:translateX(calc(-50% - 7px));}
+          68%{transform:translateX(calc(-50% + 7px));}
+        }
         .ap-coeur{position:absolute;left:50%;top:55%;z-index:7;font-size:44px;color:#3DE2A6;
           pointer-events:none;filter:drop-shadow(0 6px 18px rgba(18,185,129,.7));
           animation:apCoeur ${COEUR_MS}ms cubic-bezier(.5,0,.35,1) forwards;}
@@ -10434,7 +10575,10 @@ export function ApercuHabitant() {
            les onglets. Deux fonds superposes se voyaient l'un l'autre. */
         .ap-gestes{position:absolute;left:0;right:0;
           bottom:var(--ap-onglets-h, 51px);z-index:4;
-          display:flex;align-items:center;gap:9px;
+          /* DEUX RANGEES, ET LE ROND TIENT LA COLONNE DE GAUCHE SUR LES DEUX.
+             L'ordre de lecture est le parcours : on propose, puis on reserve. */
+          display:grid;grid-template-columns:auto minmax(0,1fr);
+          align-items:center;gap:7px 9px;
           padding:10px 12px 8px;pointer-events:none;
           background:linear-gradient(0deg,rgba(4,8,6,.94) 0%,rgba(4,8,6,.82) 52%,rgba(4,8,6,0) 100%);}
         .ap-app.direct .ap-gestes{bottom:0;
@@ -10450,23 +10594,45 @@ export function ApercuHabitant() {
         .ap-gestes.pose{background:#0A1210;
           box-shadow:0 -1px 0 rgba(255,255,255,.07);}
 
-        .ap-rond{flex:none;width:46px;height:46px;border-radius:50%;font:inherit;
-          font-size:18px;line-height:1;cursor:pointer;color:#D6DEE4;
+        /* LE ROND « PASSER » A MAIGRI. « Le bouton X me parait etrange : je
+           ferais Passer, ou aucun bouton si le balayage suffit. » Il reste —
+           le balayage n'est pas encore un reflexe pour qui decouvre — mais il
+           cesse d'occuper la place d'une action, ce qu'il n'est pas. Les
+           points rendus vont aux deux libelles, qui sortaient tronques. */
+        .ap-rond{flex:none;width:40px;height:40px;border-radius:50%;font:inherit;
+          font-size:16px;line-height:1;cursor:pointer;color:#D6DEE4;
           display:flex;align-items:center;justify-content:center;
           border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);
           transition:transform .12s ease;}
         .ap-rond:active{transform:scale(.92);}
 
-        /* Les deux actions se partagent ce qui reste, a parts strictement
-           egales. flex:1 avec min-width:0, sinon un libelle plus long — « Je
-           passe » contre « En parler » — donnerait a l'un quelques points de
-           plus que l'autre, et l'egalite ne serait plus vraie a l'oeil. */
-        .ap-agir{flex:1;min-width:0;display:flex;align-items:center;
-          justify-content:center;gap:7px;font:inherit;font-size:14.5px;
-          font-weight:850;letter-spacing:-.01em;cursor:pointer;border:0;
-          border-radius:15px;padding:14px 8px;white-space:nowrap;
+        /* ─── ELLES N'ONT PLUS LE MEME POIDS, ET C'EST UN CHANGEMENT DE FOND ───
+           « Les deux boutons ne doivent pas avoir le meme poids : ils
+           correspondent a deux moments differents. Ca me plait → je le propose
+           → on decide ensemble → on reserve. »
+
+           C'est juste, et l'egalite d'avant repondait a une autre question —
+           laquelle mesurer — pas a celle-ci : que fait quelqu'un qui DECOUVRE.
+           Il ne reserve pas seul un plat qu'il vient de voir ; il l'envoie.
+           Le vert prend donc les trois cinquiemes de la barre, l'ambre le
+           reste. On garde deux teintes et une seule ligne : empiler les deux
+           doublait la hauteur d'une barre posee sur la photo, et la densite
+           est justement ce qu'on est en train d'enlever. */
+        .ap-agir{min-width:0;display:flex;align-items:center;
+          justify-content:center;gap:6px;font:inherit;font-size:13.5px;
+          font-weight:850;letter-spacing:-.015em;cursor:pointer;border:0;
+          border-radius:15px;padding:10px 7px;white-space:nowrap;
           overflow:hidden;text-overflow:ellipsis;
           transition:transform .12s ease;}
+        .ap-tente{grid-column:1 / -1;margin:0 0 1px;padding-left:2px;
+          font-size:12.5px;font-weight:750;color:rgba(234,242,236,.72);}
+        .ap-rond{grid-column:1;grid-row:auto / span 2;}
+        .ap-agir.parler{grid-column:2;}
+        .ap-agir.engage{grid-column:2;}
+        .ap-agir span{display:flex;flex-direction:column;align-items:center;
+          min-width:0;line-height:1.15;}
+        .ap-agir em{font-style:normal;font-size:10px;font-weight:700;
+          letter-spacing:.02em;opacity:.72;margin-top:2px;}
         .ap-agir i{font-style:normal;font-size:15px;line-height:1;flex:none;}
         .ap-agir:active{transform:scale(.98);}
         /* Deux teintes, pas deux tailles : le vert est celui du balayage a

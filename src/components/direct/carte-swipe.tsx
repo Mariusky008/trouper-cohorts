@@ -336,7 +336,17 @@ export function CarteSwipe({
                 et il est signé d'un rond et d'un prénom. Dans un paquet de
                 huit restaurants, celui qui a un visage et une phrase est le
                 seul qu'on retient. */}
-            {c.conseil && c.voix ? (
+            {/* ─── LA CITATION A DESCENDU D'UNE COUCHE ───
+                « Dans une interface où l'utilisateur est déjà confronté à
+                beaucoup d'informations, ce n'est pas prioritaire. » Elle
+                passait AVANT le prix et l'heure — avant les deux choses qui
+                font décider — et elle coûtait cinquante points sur la seule
+                zone où l'on choisit d'y aller ou non. On la retrouve sous le
+                pli, dans « Ce qu'il en dit », au moment où l'on veut en savoir
+                plus. Le FILM, lui, reste : ce n'est pas une phrase à lire,
+                c'est un visage qui bouge, et il se regarde en une demi-seconde
+                sans rien coûter à la lecture. */}
+            {c.conseil && c.voix?.video ? (
               <p className={`cd-conseil${c.voix.video ? " film" : ""}`}>
                 {/* ─── LE ROND, ET CE QU'IL Y A DEDANS ───
                     Trois états, du plus riche au plus pauvre, et le dernier
