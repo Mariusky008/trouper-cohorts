@@ -6089,7 +6089,11 @@ export function ApercuHabitant() {
                     }}
                     aria-hidden="true"
                   >
-                    En parler
+                    {/* LE TAMPON DIT LE MOT DU BOUTON. Il portait encore
+                        « En parler », qui n'existe plus nulle part ailleurs :
+                        c'est pourtant l'instant où le geste s'apprend — celui
+                        où l'on voit ce qu'on est en train de faire. */}
+                    Proposer
                   </span>
                   {/* ─── LE DOIGT NE S'INVITE PLUS, IL SE DEMANDE ───
                       « Le doigt jaune au milieu de l'écran est de trop. Il
@@ -6175,10 +6179,41 @@ export function ApercuHabitant() {
               geste est acquis — et parce qu'une aide qui reste devient un
               meuble qu'on ne lit plus. Elle ne compte pas les ouvertures : elle
               compte les cartes vues, donc elle disparaît en étant SUIVIE. */}
+          {/* ═══ CHAQUE CÔTÉ DIT CE QU'IL FAIT ═══
+              « "Glissez pour découvrir" n'est pas du tout explicite, on ne
+              comprend pas. Il faut qu'on comprenne qu'en glissant à droite on
+              propose ce menu à nos amis, et qu'à gauche on passe au menu
+              suivant. Il faudrait mieux voir le mouvement, très très
+              explicitement, les premières fois. »
+
+              C'EST JUSTE : « découvrir » ne nomme aucun des deux gestes, et un
+              balayage a deux sens qui ne font pas du tout la même chose. Une
+              phrase au milieu ne pouvait pas les distinguer — elle était au
+              milieu, précisément. Les deux étiquettes vont donc CHACUNE de son
+              côté, portent le mot exact du geste, et repartent vers leur bord
+              en boucle : on ne lit pas une consigne, on voit le mouvement.
+
+              ET CE SONT LES MÊMES MOTS QU'AILLEURS — « Proposer » est écrit sur
+              le bouton vert et sur le tampon qui apparaît pendant le glissé.
+              Trois endroits, un seul mot : c'est ce qui fait qu'on n'apprend
+              qu'une fois. */}
           {passees.length < 3 && !sortie && sommet && (
-            <p className="ap-glissez" aria-hidden="true">
-              <i>←</i>Glissez pour découvrir<i>→</i>
-            </p>
+            <div className="ap-glissez" aria-hidden="true">
+              <span className="ap-gl-g">
+                <i>←</i>
+                <span>
+                  <b>Passer</b>
+                  <em>au suivant</em>
+                </span>
+              </span>
+              <span className="ap-gl-d">
+                <span>
+                  <b>Proposer</b>
+                  <em>à mes amis</em>
+                </span>
+                <i>→</i>
+              </span>
+            </div>
           )}
 
 
@@ -6294,19 +6329,22 @@ export function ApercuHabitant() {
               onClick={() => partir("droite")}
               disabled={!sommet}
             >
-              <i aria-hidden="true">👥</i>
+              {/* ─── PAS D'ÉMOJI SUR LES DEUX ACTIONS ───
+                  « Les émoticônes des deux boutons du bas sont-elles
+                  essentielles ? » Non, et elles coûtaient. Elles ne disent rien
+                  que le mot ne dise déjà — un bonhomme devant « à mes amis »,
+                  un calendrier devant « réserver » — et le calendrier d'Apple
+                  arrive avec sa date du 17 juillet en couleurs, ce qui se lit
+                  comme une information alors que ce n'en est pas une. Elles
+                  prenaient enfin les vingt points de largeur qui faisaient
+                  tronquer les libellés. */}
               <span>
-                {/* « CHOISIR » ET PAS « PROPOSER », ET C'EST TOUTE LA
-                    DIFFÉRENCE. « Proposer signifie : je leur montre quelque
-                    chose. Choisir avec mes amis signifie : nous allons décider
-                    ensemble. Et c'est précisément l'innovation. » Le bouton dit
-                    maintenant la FINALITÉ, pas le premier geste — et l'écran
-                    qui s'ouvre derrière porte les mêmes mots. */}
-                Choisir avec mes amis
-                {/* ET CE QU'AUCUNE AUTRE APPLICATION NE FAIT, en cinq mots.
-                    C'est la seule ligne qui explique pourquoi passer par là
-                    plutôt que par un message. */}
-                <em>Chacun peut proposer autre chose</em>
+                {/* « PROPOSER » ET NON « CHOISIR AVEC ». Essayé, et il le
+                    reprend : « proposer à mes amis, je trouve ça plus
+                    explicite. » C'est son mot ; ce qui manquait à « proposer »,
+                    c'était la suite — elle est dessous. */}
+                Proposer à mes amis
+                <em>Décidez ensemble</em>
               </span>
             </button>
             {/* LE TROISIÈME GESTE PORTE L'ENGAGEMENT DU MOMENT, et il change de
@@ -6352,15 +6390,6 @@ export function ApercuHabitant() {
                       : !aReserver.length
               }
             >
-              <i aria-hidden="true">
-                {dessusEv
-                  ? "🧭"
-                  : embauches
-                    ? "👋"
-                    : dessus && estInvitation(dessus)
-                      ? "🚶"
-                      : "📅"}
-              </i>
               {/* « RÉSERVER MON PLAT » PLUTÔT QUE « RÉSERVER ». « Réserver »
                   tout court se lit « une table » ; on ne sait pas ce qui va se
                   passer. Le complément ne s'invente que là où il est vrai : on
@@ -9178,7 +9207,15 @@ export function ApercuHabitant() {
         /* LE MOT QUI CONFIRME QUE LE COUP DE POUCE EST ARRIVÉ. Sans lui on
            appuie, rien ne bouge, et on n'appuie plus jamais. Il s'efface seul :
            une confirmation qui reste devient un décor. */
-        .ap-echo{position:absolute;left:12px;right:12px;bottom:92px;z-index:6;
+        /* ELLE SE POSE AU-DESSUS DES GESTES, ET ELLE MESURE LEUR HAUTEUR.
+           DEFAUT VU SUR LA CAPTURE : « 3 de vos commerces ont publie » recouvrait
+           « Proposer a mes amis ». Le 92 etait juste tant que la barre tenait sur
+           une ligne ; depuis qu'elle porte une question et deux boutons empiles,
+           il tombe dedans. Un message automatique qui cache l'action principale
+           est le pire des deux mondes : on ne lit ni l'un ni l'autre. La barre
+           publie deja sa hauteur — on s'en sert au lieu de la deviner. */
+        .ap-echo{position:absolute;left:12px;right:12px;
+          bottom:calc(var(--ap-gestes-h, 92px) + 10px);z-index:6;
           display:flex;align-items:center;gap:9px;font-size:13px;font-weight:750;
           color:#FFD9BE;background:rgba(28,14,6,.92);
           -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
@@ -10618,20 +10655,36 @@ export function ApercuHabitant() {
            la seule chose de l'ecran qui disait deja qu'il y a une suite. Le
            decalage suit l'encoche du telephone, sinon il derive d'un modele a
            l'autre : l'en-tete grandit avec elle, la pastille aussi. */
-        .ap-glissez{position:absolute;left:50%;
+        .ap-glissez{position:absolute;left:0;right:0;
           top:calc(env(safe-area-inset-top) + 124px);z-index:6;
-          transform:translateX(-50%);margin:0;pointer-events:none;
-          display:flex;align-items:center;gap:9px;white-space:nowrap;
-          font-size:12.5px;font-weight:800;letter-spacing:.01em;color:#EAF2EC;
-          padding:8px 14px;border-radius:999px;
-          background:rgba(4,8,6,.55);border:1px solid rgba(255,255,255,.16);
-          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-          animation:apGlisse 2.4s ease-in-out infinite;}
-        .ap-glissez i{font-style:normal;font-size:14px;line-height:1;opacity:.75;}
-        @keyframes apGlisse{
-          0%,100%{transform:translateX(-50%);}
-          38%{transform:translateX(calc(-50% - 7px));}
-          68%{transform:translateX(calc(-50% + 7px));}
+          display:flex;align-items:center;justify-content:space-between;
+          padding:0 10px;margin:0;pointer-events:none;}
+        .ap-glissez>span{display:flex;align-items:center;gap:8px;
+          padding:7px 12px;border-radius:999px;white-space:nowrap;
+          background:rgba(4,8,6,.6);border:1px solid rgba(255,255,255,.16);
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+        .ap-glissez b{display:block;font-size:12.5px;font-weight:850;
+          letter-spacing:-.01em;color:#EAF2EC;line-height:1.15;}
+        .ap-glissez em{display:block;font-style:normal;font-size:10.5px;
+          font-weight:700;color:rgba(234,242,236,.62);line-height:1.15;}
+        .ap-glissez i{font-style:normal;font-size:17px;line-height:1;flex:none;}
+        /* CHACUNE PART VERS SON BORD, ET C'EST TOUT L'ENSEIGNEMENT : le sens du
+           mouvement EST la consigne. Celle de droite porte le vert du bouton
+           qu'elle annonce, celle de gauche reste neutre — on ne colore pas un
+           refus. */
+        .ap-gl-g{animation:apGlG 2.6s ease-in-out infinite;}
+        .ap-gl-d{animation:apGlD 2.6s ease-in-out infinite;
+          border-color:rgba(61,226,166,.45);}
+        .ap-gl-d b{color:#7EE6C0;}
+        .ap-gl-d i{color:#3DE2A6;}
+        @keyframes apGlG{
+          0%,55%,100%{transform:translateX(0);opacity:.85;}
+          78%{transform:translateX(-11px);opacity:1;}
+        }
+        @keyframes apGlD{
+          0%,100%{transform:translateX(0);opacity:.85;}
+          22%{transform:translateX(11px);opacity:1;}
+          45%{transform:translateX(0);opacity:.85;}
         }
         .ap-coeur{position:absolute;left:50%;top:55%;z-index:7;font-size:44px;color:#3DE2A6;
           pointer-events:none;filter:drop-shadow(0 6px 18px rgba(18,185,129,.7));
