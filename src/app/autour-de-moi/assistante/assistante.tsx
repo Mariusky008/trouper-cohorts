@@ -2050,7 +2050,7 @@ export function Assistante() {
             {photo ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="as-vue" src={photo} alt="" onClick={() => setPhoto("")} />
+                <img className="as-apercu" src={photo} alt="" onClick={() => setPhoto("")} />
                 {/* ─── ET AUSSI SUR SA FICHE GOOGLE ───
                     « Pour le moment on va juste mettre ça dans la démo pour
                     montrer ce que ça peut faire ; cette démo est faite pour

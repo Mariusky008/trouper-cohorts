@@ -14,17 +14,42 @@
 // mesure, et on rend une phrase qui dit quoi faire.
 //
 //   node scripts/verifier-styles-en-ligne.mjs
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 
-const FICHIERS = [
-  "src/app/le-direct/page.tsx",
-  "src/app/autour-de-moi/apercu-habitant.tsx",
-  "src/app/essai-annonce/essai-annonce.tsx",
-  // LA CARTE DU PRODUIT PORTE SA PROPRE FEUILLE, et elle est servie à cinq
-  // écrans. Une coupure ici ne casse pas une page, elle les casse toutes —
-  // c'est le fichier de la liste qui a le plus à perdre, et il y manquait.
-  "src/components/direct/carte-swipe.tsx",
-];
+/**
+ * ON NE TIENT PLUS LA LISTE À LA MAIN — ELLE ÉTAIT INCOMPLÈTE, ET ÇA A COÛTÉ
+ * DEUX DÉFAUTS D'UN COUP.
+ *
+ * `src/app/autour-de-moi/assistante/page.tsx` porte la plus grosse feuille du
+ * projet et n'y était pas. Cette garde-là passait donc au vert pendant que,
+ * dans ce fichier :
+ *   — un accent grave dans un commentaire cassait la compilation (la 9ᵉ fois) ;
+ *   — « .as-plan » se retrouvait déclaré à deux endroits éloignés, ce que la
+ *     seconde garde de ce script détecte précisément — le fil de la
+ *     conversation avait perdu toute sa mise en page, et le commerçant l'a vu
+ *     avant moi : « le design est très ramassé sur lui-même, étrangement ».
+ *
+ * Une liste écrite à la main vieillit à chaque écran ajouté. On cherche donc
+ * les fichiers, et un écran neuf est couvert le jour où il est écrit.
+ */
+function fichiersAvecFeuille(dossier, trouves = []) {
+  for (const e of readdirSync(new URL(`../${dossier}`, import.meta.url), { withFileTypes: true })) {
+    if (e.name === "node_modules" || e.name.startsWith(".")) continue;
+    const rel = `${dossier}/${e.name}`;
+    if (e.isDirectory()) fichiersAvecFeuille(rel, trouves);
+    else if (/\.tsx$/.test(e.name)) {
+      // UN LITTÉRAL DE GABARIT, PAS N'IMPORTE QUEL `__html`. Beaucoup d'écrans
+      // injectent une variable déjà construite ; ceux-là n'ont pas de feuille à
+      // couper, et les compter en fautes désarmerait la garde d'un coup.
+      if (/__html:\s*`/.test(readFileSync(new URL(`../${rel}`, import.meta.url), "utf8"))) {
+        trouves.push(rel);
+      }
+    }
+  }
+  return trouves;
+}
+
+const FICHIERS = fichiersAvecFeuille("src").sort();
 
 /**
  * Le contenu de chaque littéral de gabarit passé à `__html`, et CE QUI SUIT

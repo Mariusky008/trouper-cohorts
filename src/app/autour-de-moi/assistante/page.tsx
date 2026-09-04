@@ -201,7 +201,18 @@ body{background:#05090C}
    Deux bulles, et rien d'autre. Pas d'horodatage, pas d'avatar, pas d'accuse de
    lecture : chaque ornement d'une messagerie ajouterait une chose a comprendre
    a quelqu'un qui n'a rien demande. */
-.as-plan{flex:1;min-height:0;overflow-y:auto;
+/* LE FIL DE LA CONVERSATION — ET IL S'APPELLE BIEN « as-fil ».
+   CE QU'IL A VU : « le design est tres ramasse sur lui-meme, etrangement. »
+   Il l'etait : ses bulles a lui etaient collees a GAUCHE, du meme cote que
+   celles de Lea, les cartes touchaient les deux bords de l'ecran, et tout se
+   suivait sans respiration. Cette regle-ci avait disparu.
+   POURQUOI : en corrigeant la collision de nom du planning, j'ai renomme la
+   CHAINE « as-fil » et non la REGLE. Les deux blocs portaient ce nom ; le
+   renommage a emporte les deux, et le fil s'est retrouve sans mise en page du
+   tout — donc sans gouttiere, sans espace entre les blocs, et surtout sans
+   conteneur flexible, ce qui annulait les alignements qui mettent chacun de
+   son cote. Une seule ligne manquante, trois defauts visibles. */
+.as-fil{flex:1;min-height:0;overflow-y:auto;
   padding:14px clamp(14px,4vw,26px) 8px;
   display:flex;flex-direction:column;gap:10px}
 /* LES BULLES ARRIVENT, ELLES N'APPARAISSENT PAS. Trois dixiemes de seconde de
@@ -444,7 +455,12 @@ body{background:#05090C}
 .as-media label.demande span{color:var(--or);border-style:solid;
   border-color:rgba(240,180,41,.55);background:rgba(240,180,41,.09)}
 .as-vid{margin:9px 0 0;font-size:12.5px;color:var(--menthe)}
-.as-vue{display:block;width:100%;margin-top:12px;border-radius:13px;
+/* LA PHOTO QU'IL VIENT DE PRENDRE. Elle s'appelait « as-vue », comme la vue
+   d'un onglet trois cents lignes plus bas : la vue heritait donc d'un cadrage
+   16/10 et d'un coin arrondi qui n'avaient rien a y faire, et la photo d'un
+   conteneur flexible qui n'a rien a faire sur une image. Quatrieme collision
+   de nom du projet, trouvee le jour ou la garde a enfin regarde ce fichier. */
+.as-apercu{display:block;width:100%;margin-top:12px;border-radius:13px;
   aspect-ratio:16/10;object-fit:cover;cursor:pointer}
 /* LA FICHE GOOGLE, ET ON NE FAIT PAS SEMBLANT. Publier tout seul dessus demande
    que le commercant relie son compte — ca n'existe pas encore. Le bouton
