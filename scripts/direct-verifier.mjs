@@ -84,7 +84,12 @@ const ouvrir = async (url = "/autour-de-moi", heure) => {
 // déjà « MENU DU JOUR · LASAGNES MAISON · 11 € ». Ce que la carte ne dit nulle
 // part, c'est jusqu'à quand on peut y aller.
 console.log("\n══ la pastille de la carte ══");
-let { ctx, p } = await ouvrir();
+// L'HORLOGE EST FIXÉE ICI AUSSI, ET ELLE MANQUAIT. Cette section lit la carte
+// de tête, qui dépend de l'heure : le conteneur a tourné à 18 h 46 et la tête
+// du paquet était une offre d'emploi, dont la pastille dit « il y a une
+// semaine » et jamais une heure. La garde échouait sur une carte parfaitement
+// correcte — c'est-à-dire qu'elle mesurait l'heure du conteneur.
+let { ctx, p } = await ouvrir("/autour-de-moi", 12.5);
 const face = await p.evaluate(() => ({
   etiquette: document.querySelector(".ap-dessus .cd-nature")?.textContent.trim() ?? "",
   quoi: document.querySelector(".ap-dessus .cd-offre")?.textContent.trim() ?? "",

@@ -1424,12 +1424,29 @@ export function ApercuHabitant() {
    * service du midi du 25 août » est un endroit qui naît et qui meurt. Demain,
    * autre menu, autre salon. C'est cette clé-là qui fait toute la différence.
    */
-  const cleSalonMoment = (c: CarteAutour, m: MomentJour) =>
+  const cleSalonMoment = (c: CarteAutour, titre: string, flash = false) =>
     // QUAND IL Y A UN MENU DU JOUR, C'EST LUI L'OBJET DE LA CONVERSATION, pas le
     // créneau. On parle de « la garbure d'aujourd'hui », pas du « service de
     // 12 h – 14 h » : sinon le salon change à chaque heure de la journée, et
     // celui qu'un voisin a ouvert à midi devient introuvable à 14 h 05.
-    c.menu ? `${c.id}|menu` : `${c.id}|${m.titre}`;
+    //
+    // AILLEURS, LA CLÉ EST LE TITRE QUE LA CARTE AFFICHE, et plus celui du
+    // « moment en cours ». Les deux se ressemblent la plupart du temps et
+    // divergent exactement là où ça compte : la carte montre le Flash qui
+    // court, tandis que le moment en cours reste le menu de midi. On ouvrait
+    // alors le salon du menu en croyant proposer le Flash. Une seule source —
+    // ce qui est écrit sur la carte — et les deux ne peuvent plus se croiser.
+    //
+    // ⚡ ET UN FLASH A SON PROPRE SALON, MÊME À TITRE ÉGAL. Le formulaire
+    // pré-remplit le Flash avec l'annonce du jour : neuf fois sur dix il porte
+    // exactement le même titre, et pourtant ce n'est pas la même chose — trente
+    // minutes, un autre prix, un compte à rebours. Sans cette marque, proposer
+    // son Flash rouvrait le salon du menu de midi, avec le prix de midi. Le
+    // salon meurt avec le Flash, ce qui est très exactement ce qu'un salon doit
+    // faire : naître et mourir avec ce dont il parle.
+    c.menu && !flash
+      ? `${c.id}|menu`
+      : `${c.id}|${flash ? "⚡" : ""}${titre}`;
   const cleSalonEv = (e: EvenementVille) => `ev|${e.id}`;
 
   /**
@@ -1454,7 +1471,49 @@ export function ApercuHabitant() {
     setSalonPage(true);
     setFeuille("");
     setMotSalon("");
-    if (existe) return;
+    if (existe) {
+      // ═══ « PROPOSER » DOIT TOUJOURS PROPOSER ═══
+      //
+      // LE DÉFAUT MESURÉ : « quand je clique sur "proposer à mes amis", c'est
+      // pas la bonne annonce. »
+      //
+      // ON REJOIGNAIT LE SALON SANS RIEN Y METTRE. Un salon porte une clé —
+      // l'annonce dont on parle — et quand il existait déjà, cette fonction
+      // s'arrêtait là : elle l'ouvrait, et c'est tout. Tant que la clé désigne
+      // exactement l'annonce qu'on regarde, ça se tient. Mais deux annonces
+      // d'un même commerce peuvent partager une clé — un Flash porte le titre
+      // du plat qu'il remise, un menu du jour vit sous la clé « menu » toute la
+      // journée — et alors on ouvrait une conversation sur AUTRE CHOSE que ce
+      // qu'on venait de proposer. Vu du téléphone : j'appuie sur « proposer à
+      // mes amis » depuis mon Flash, et j'arrive sur mon menu de midi.
+      //
+      // ON LA MET DONC SUR LA TABLE. Le salon sait porter plusieurs
+      // propositions — c'est même sa raison d'être, « ＋ proposer autre chose ».
+      // Si la nôtre n'y est pas encore, elle y entre, avec notre voix. Si elle y
+      // est déjà, on ne fait rien : on ne double pas une proposition parce
+      // qu'on est repassé devant l'annonce.
+      const cleP = `p|${annonce ?? sujet}`;
+      const surLaTable =
+        existe.sujet === sujet ||
+        existe.annonce === (annonce ?? sujet) ||
+        (existe.propositions ?? []).some((x) => x.cle === cleP);
+      if (!surLaTable) {
+        proposer(
+          cle,
+          {
+            cle: cleP,
+            par: monPrenom() || "Vous",
+            quoi: annonce ?? sujet,
+            ou,
+            prix,
+            distance,
+            photo: illustration,
+          },
+          monPrenom() || "Vous",
+        );
+      }
+      return;
+    }
     ouvrirSalon({
       cle,
       sujet,
@@ -1666,6 +1725,29 @@ export function ApercuHabitant() {
    * seule définition, lue aux deux endroits.
    */
   const embauchent = ceuxQuiRecrutent();
+  /**
+   * CETTE CARTE EST-ELLE UNE OFFRE D'EMPLOI — la question posée à trois
+   * endroits, et qui n'avait qu'une réponse sur trois.
+   *
+   * « LES ANNONCES DE CERTAINS MÉTIERS ONT DISPARU. » Elles étaient enterrées,
+   * et par DEUX chemins différents. Le premier était le tri : le paquet se
+   * rangeait par distance et rien d'autre, donc une offre vieille d'une semaine
+   * ouvrait le produit dès qu'elle venait du commerce le plus proche.
+   *
+   * LE SECOND EST PLUS SOURNOIS, ET C'EST CELUI-CI. La tête du paquet est
+   * réservée à ce qui vient d'être publié — c'est toute la promesse du direct.
+   * Or cette fraîcheur se lisait sur les MOMENTS du commerce, sans regarder ce
+   * que la carte allait dessiner. Une boulangerie sans planning du jour est
+   * dessinée en offre d'emploi ; ses moments, eux, existent toujours dans les
+   * données, et l'un d'eux venait d'être publié. Résultat à 18 h 46 : la carte
+   * « SANS CV · quelqu'un pour la vente, le matin » passait DEVANT tout le
+   * monde au titre d'une fraîcheur qu'elle n'affichait nulle part.
+   *
+   * Une seule définition, lue par le tri, par la fraîcheur et par le dessin.
+   */
+  const estPoste = (c: ItemPaquet) =>
+    !estEvenement(c) &&
+    (vue === "recrute" || (vue === "tout" && !!c.recrute && !ouverts.includes(c)));
   // LES ENVIES NE S'APPLIQUENT PAS AUX EMBAUCHES — « moins de 15 € » n'a aucun
   // sens sur une offre de poste. Le mode embauche court-circuite tout le filtre.
   /**
@@ -1729,6 +1811,24 @@ export function ApercuHabitant() {
               // commerces éteints redevient un annuaire — on y trouve tout le
               // monde, donc plus rien ne veut dire « maintenant ». La rareté du
               // paquet est ce qui donne du prix à ce qui y reste.
+              // ═══ CE QUI SE PASSE MAINTENANT PASSE DEVANT UN POSTE À POURVOIR ═══
+              //
+              // LE DÉFAUT MESURÉ : « les annonces de certains métiers ont
+              // disparu. » Elles n'avaient pas disparu — elles avaient été
+              // POUSSÉES DERRIÈRE. Le paquet se rangeait par distance et rien
+              // d'autre ; à 18 h 46, la première carte de tout le produit était
+              // « SANS CV · quelqu'un pour la vente, le matin », pastille « il y
+              // a une semaine », parce que cette boulangerie est la plus proche.
+              // Il faut balayer plusieurs offres d'emploi avant d'atteindre ce
+              // qui se passe ce soir. Vu du téléphone, les annonces ont bien
+              // disparu.
+              //
+              // UN POSTE N'EST PAS UN MOMENT. Il ne se périme pas à 14 h — c'est
+              // pour ça qu'il entre par `embauchent` — mais il a une semaine, et
+              // le produit s'appelle « le direct ». Il reste dans le paquet,
+              // parce qu'il a été demandé et qu'il y trouve des gens ; il passe
+              // simplement après ce qui est vrai maintenant, et garde son tri
+              // par distance entre postes.
               return [
                 ...ouverts,
                 // SON ANNONCE D'EMPLOI, ELLE, N'A PAS D'HEURE. Un poste ne se
@@ -1736,7 +1836,10 @@ export function ApercuHabitant() {
                 // s'il n'est pas déjà dans le paquet par ses moments.
                 ...embauchent.filter((c) => !ouverts.includes(c)),
                 ...evenements,
-              ].sort((a, b) => a.metres - b.metres);
+              ].sort(
+                (a, b) =>
+                  Number(estPoste(a)) - Number(estPoste(b)) || a.metres - b.metres,
+              );
             })()
           : selonEnvies(
               [
@@ -1814,8 +1917,11 @@ export function ApercuHabitant() {
     // retombe sur la règle de toujours.
     const aMoi = (c: ItemPaquet) => suivis.includes(c.id);
     const restant = dispo.filter((c) => !passees.includes(c.id));
+    // UN POSTE N'EST JAMAIS « FRAIS » — voir `estPoste`. Sa carte ne montre pas
+    // de moment : lui en compter un le faisait passer devant les annonces au
+    // nom d'une fraîcheur invisible à l'écran.
     const fraisDe = (c: ItemPaquet) =>
-      estEvenement(c) ? null : momentFrais(c, heure);
+      estEvenement(c) || estPoste(c) ? null : momentFrais(c, heure);
     const frais = restant
       .filter((c) => fraisDe(c) != null)
       .sort(
@@ -1823,11 +1929,18 @@ export function ApercuHabitant() {
           (fraisDe(a)?.ilYa ?? 0) - (fraisDe(b)?.ilYa ?? 0) || a.metres - b.metres,
       );
     const reste = restant.filter((c) => !frais.includes(c));
+    // ET LES POSTES FERMENT LA MARCHE, MÊME CEUX D'UN COMMERCE SUIVI. « Mes
+    // commerces passent devant » est une bonne règle pour ce qu'ils PUBLIENT ;
+    // appliquée à une offre d'emploi vieille d'une semaine, elle remettait un
+    // poste devant les annonces du soir par la petite porte. Un poste ne se
+    // périme pas — c'est pour ça qu'il reste dans le paquet — mais il ne passe
+    // jamais devant ce qui est vrai maintenant.
     const p = [
       ...cartesPreparees.filter((c) => !passees.includes(c.id)),
       ...frais,
-      ...reste.filter(aMoi),
-      ...reste.filter((c) => !aMoi(c)),
+      ...reste.filter((c) => aMoi(c) && !estPoste(c)),
+      ...reste.filter((c) => !aMoi(c) && !estPoste(c)),
+      ...reste.filter(estPoste),
     ];
     // LA CARTE NOMMÉE DANS LE LIEN PASSE DEVANT L'ÉPINGLE : l'épingle vient
     // d'un geste dans le paquet, le lien vient d'ailleurs — de l'assistante qui
@@ -1878,8 +1991,7 @@ export function ApercuHabitant() {
     // n'admet que les commerces encore ouverts. Résultat à 22 h : quatre
     // commerces qui recrutent entraient par leur offre d'emploi et étaient
     // dessinés en carte de commerce, sans titre, sans prix et sans heure.
-    if (vue === "recrute" || (vue === "tout" && x.recrute && !ouverts.includes(x)))
-      return carteDeRecrutement(x);
+    if (estPoste(x)) return carteDeRecrutement(x);
     return estInvitation(x) ? carteDeReponse(x, heure) : carteAffichee(x, heure);
   };
 
@@ -1892,9 +2004,7 @@ export function ApercuHabitant() {
   const cleDuSommet = dessusEv
     ? cleSalonEv(dessusEv)
     : dessus
-      ? momentDuSommet
-        ? cleSalonMoment(dessus, momentDuSommet)
-        : `${dessus.id}|${carteDe(dessus).quoi}`
+      ? cleSalonMoment(dessus, carteDe(dessus).quoi, !!carteDe(dessus).flash)
       : "";
   const salonDuSommet = cleDuSommet ? salons[cleDuSommet] : undefined;
 
@@ -1942,7 +2052,7 @@ export function ApercuHabitant() {
     // annonce, c'est une de trop — et c'est toujours la seconde qui ment.
     const face = carteDe(dessus);
     enParler(
-      momentDuSommet ? cleSalonMoment(dessus, momentDuSommet) : `${dessus.id}|${face.quoi}`,
+      cleSalonMoment(dessus, face.quoi, !!face.flash),
       face.quoi,
       dessus.nom,
       // « QUAND » RESTE CELUI DU MOMENT quand il y en a un — c'est la seule
@@ -2833,7 +2943,10 @@ export function ApercuHabitant() {
       .map((c) => {
         const m = momentEnCours(c, heure) ?? c.moments[0];
         return {
-          cle: c.menu ? `${c.id}|menu` : m ? cleSalonMoment(c, m) : `${c.id}|`,
+          // LA MÊME CLÉ QU'AILLEURS — voir `cleSalonMoment`. Deux façons de la
+          // calculer et « proposer autre chose » ouvrirait un second salon sur
+          // la même annonce.
+          cle: cleSalonMoment(c, c.menu ? c.menu.plat : (m?.titre ?? c.nom)),
           quoi: c.menu ? c.menu.plat : (m?.titre ?? c.nom),
           ou: c.nom,
           prix: c.menu?.prix ?? m?.prix,
