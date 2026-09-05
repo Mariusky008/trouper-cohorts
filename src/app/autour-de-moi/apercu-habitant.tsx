@@ -1870,11 +1870,31 @@ export function ApercuHabitant() {
    * ouvrent la conversation le même jour sur le même service se retrouvent au
    * même endroit, et celle qui l'ouvre demain en a un neuf.
    */
+  /** La carte à dessiner : un événement, un poste, une invitation, ou l'annonce. */
+  const carteDe = (x: ItemPaquet) => {
+    if (estEvenement(x)) return carteDEvenement(x, heure);
+    // LA MÊME NOTION QUE LA COMPOSITION, ET C'EST LE CORRECTIF. On testait
+    // `!toutes.includes(x)` — la liste NON filtrée — alors que le paquet, lui,
+    // n'admet que les commerces encore ouverts. Résultat à 22 h : quatre
+    // commerces qui recrutent entraient par leur offre d'emploi et étaient
+    // dessinés en carte de commerce, sans titre, sans prix et sans heure.
+    if (vue === "recrute" || (vue === "tout" && x.recrute && !ouverts.includes(x)))
+      return carteDeRecrutement(x);
+    return estInvitation(x) ? carteDeReponse(x, heure) : carteAffichee(x, heure);
+  };
+
   const momentDuSommet = dessus ? momentEnCours(dessus, heure) : null;
+  // LA CLÉ EST CALCULÉE ICI ET DANS `ouvrirLeSalonDuSommet` DE LA MÊME FAÇON.
+  // Sans moment en cours — un poste à pourvoir, une annonce sans borne horaire
+  // — on prend le titre que la carte affiche : c'est ce dont on parle, et c'est
+  // ce qui permet de RETROUVER le salon qu'on vient d'ouvrir. Deux calculs
+  // différents et le salon existerait sans que la carte le sache.
   const cleDuSommet = dessusEv
     ? cleSalonEv(dessusEv)
-    : dessus && momentDuSommet
-      ? cleSalonMoment(dessus, momentDuSommet)
+    : dessus
+      ? momentDuSommet
+        ? cleSalonMoment(dessus, momentDuSommet)
+        : `${dessus.id}|${carteDe(dessus).quoi}`
       : "";
   const salonDuSommet = cleDuSommet ? salons[cleDuSommet] : undefined;
 
@@ -1892,18 +1912,64 @@ export function ApercuHabitant() {
       );
       return;
     }
-    if (!dessus || !momentDuSommet) return;
+    if (!dessus) return;
+    // ═══ ON PROPOSE CE QUI EST ÉCRIT SUR LA CARTE, ET RIEN D'AUTRE ═══
+    //
+    // LE DÉFAUT MESURÉ : « ça marche bien mais que pour les restaurants et pas
+    // pour les autres annonces », et « derrière, c'est l'annonce suivante,
+    // étrangement, qui s'est mise ».
+    //
+    // DEUX CAUSES, ET TOUTES DEUX SONT LA MÊME ERREUR : cette fonction
+    // recomposait l'annonce au lieu de LIRE celle qui est à l'écran.
+    //
+    //   • ELLE PROPOSAIT AUTRE CHOSE. Sur un commerce à menu, elle envoyait
+    //     `menu.plat` — la carte affichait « De la place, sans attendre » et le
+    //     salon s'ouvrait sur « Axoa de veau », avec la photo du plat. Sur une
+    //     carte d'offre d'emploi, elle envoyait le premier moment du commerce :
+    //     « Un coiffeur ou une coiffeuse » devenait « Couleur + coupe, 55 € ».
+    //     Vu du téléphone, on propose une annonce et il en part une autre.
+    //
+    //   • ET SANS MOMENT, ELLE NE FAISAIT RIEN DU TOUT. `momentDuSommet` est
+    //     nul dès qu'un commerce n'a plus d'heure en cours — un poste à
+    //     pourvoir, une annonce sans borne horaire. Le garde `return` silencieux
+    //     transformait le bouton principal du produit en bouton mort, et
+    //     seulement sur certaines cartes : « ça marche pour les restaurants et
+    //     pas pour les autres ».
+    //
+    // LA CARTE EST DONC LA SOURCE UNIQUE. `carteDe` est ce que l'écran dessine,
+    // menu, emploi et invitation compris ; le salon reprend son titre, sa
+    // photo et son prix, sans les recalculer. Deux façons de décrire la même
+    // annonce, c'est une de trop — et c'est toujours la seconde qui ment.
+    const face = carteDe(dessus);
     enParler(
-      cleSalonMoment(dessus, momentDuSommet),
-      dessus.menu ? dessus.menu.plat : momentDuSommet.titre,
+      momentDuSommet ? cleSalonMoment(dessus, momentDuSommet) : `${dessus.id}|${face.quoi}`,
+      face.quoi,
       dessus.nom,
-      momentDuSommet.quand,
-      dessus.menu?.photo ?? dessus.photo,
-      dessus.menu ? dessus.menu.plat : momentDuSommet.titre,
-      dessus.menu?.prix ?? momentDuSommet.prix,
+      // « QUAND » RESTE CELUI DU MOMENT quand il y en a un — c'est la seule
+      // chose que la carte ne porte pas toujours en toutes lettres.
+      momentDuSommet?.quand ?? face.reste ?? "aujourd’hui",
+      face.photo ?? dessus.photo,
+      face.quoi,
+      face.prix ?? momentDuSommet?.prix,
       dessus.distance,
     );
   }
+  /**
+   * LA PHOTO QUI DÉPASSE AU-DESSUS DE LA FEUILLE — celle de la carte quittée.
+   *
+   * « Ça monte bien vers le haut, mais derrière c'est l'annonce suivante,
+   * étrangement, qui s'est mise. » La bande prenait la PREMIÈRE proposition du
+   * salon. Sur un salon neuf c'est la bonne ; sur un salon qui existait déjà —
+   * parce qu'on y était passé, ou qu'un voisin l'a ouvert — c'est la plus
+   * ancienne, donc une autre annonce. Et sur un commerce à menu, la
+   * proposition portait le plat quand la carte, elle, montrait le créneau.
+   *
+   * ON LA PREND DONC OÙ ELLE EST VRAIE : sur la carte du dessus, qui attend
+   * sous la feuille exprès pour ça (voir `partir`). La même image que celle
+   * qu'on regardait une demi-seconde plus tôt, et aucune autre.
+   */
+  const photoDeLaFeuille = sommet ? carteDe(sommet).photo : undefined;
+
   /**
    * LA VIDÉO DU ROND NE VIT QUE SUR LA CARTE DU DESSUS.
    *
@@ -1915,19 +1981,6 @@ export function ApercuHabitant() {
    */
   const sansVideo = (k: CarteDirect): CarteDirect =>
     k.voix?.video ? { ...k, voix: { ...k.voix, video: undefined } } : k;
-
-  /** La carte à dessiner : un événement, un poste, une invitation, ou l'annonce. */
-  const carteDe = (x: ItemPaquet) => {
-    if (estEvenement(x)) return carteDEvenement(x, heure);
-    // LA MÊME NOTION QUE LA COMPOSITION, ET C'EST LE CORRECTIF. On testait
-    // `!toutes.includes(x)` — la liste NON filtrée — alors que le paquet, lui,
-    // n'admet que les commerces encore ouverts. Résultat à 22 h : quatre
-    // commerces qui recrutent entraient par leur offre d'emploi et étaient
-    // dessinés en carte de commerce, sans titre, sans prix et sans heure.
-    if (vue === "recrute" || (vue === "tout" && x.recrute && !ouverts.includes(x)))
-      return carteDeRecrutement(x);
-    return estInvitation(x) ? carteDeReponse(x, heure) : carteAffichee(x, heure);
-  };
 
   /**
    * LES PHOTOS DE LA CARTE DU DESSUS. Vide pour un événement ou une offre
@@ -3697,12 +3750,8 @@ export function ApercuHabitant() {
                 className="ap-feuille-dos"
                 aria-hidden="true"
                 style={
-                  (salon.propositions ?? [])[0]?.photo
-                    ? {
-                        backgroundImage: `url("${encodeURI(
-                          (salon.propositions ?? [])[0]!.photo!,
-                        )}")`,
-                      }
+                  photoDeLaFeuille
+                    ? { backgroundImage: `url("${encodeURI(photoDeLaFeuille)}")` }
                     : undefined
                 }
               />
