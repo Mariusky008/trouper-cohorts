@@ -127,45 +127,64 @@ dire(!motsDuPlat.some((w) => face.pastille.toLowerCase().includes(w)),
   await c2.close();
 }
 
-// ═══ 2 · « SUIVRE CE BAR À VINS », PAS « SUIVRE UN BAR À VINS » ═══
-console.log("\n══ mettre en favori, et la langue ══");
-// ═══ L'ENCART « SUIVRE » A DISPARU DE L'ANNONCE, ET CETTE GARDE AVEC ═══
+// ═══ 2 · LE CŒUR GARDE UNE ANNONCE, ET ON VOIT OÙ ELLE VA ═══
+console.log("\n══ mettre une annonce de côté ══");
+// ═══ CE QUE CETTE SECTION A MESURÉ, ET CE QU'ELLE MESURE MAINTENANT ═══
 //
-// « Je retirerais complètement le gros encart "suivre cette terrasse au
-// soleil" : il casse le parcours principal. » Cette section comptait ces
-// encarts et vérifiait leur français — « suivre CETTE terrasse » et non
-// « suivre UNE terrasse ». L'objet n'existe plus.
+// ELLE A D'ABORD COMPTÉ UN ENCART. « Je retirerais complètement le gros encart
+// "suivre cette terrasse au soleil" : il casse le parcours principal. » Elle
+// vérifiait le français de cet encart — « suivre CETTE terrasse » et non
+// « suivre UNE terrasse ». L'objet a disparu, et la garde a suivi le geste : le
+// nom du commerce se retrouvait dans l'écho qui répondait après l'appui.
 //
-// CE QU'ELLE GARDE EST DÉPLACÉ, PAS PERDU. Le nom du commerce est maintenant
-// écrit dans l'écho qui répond APRÈS l'appui sur le cœur, et c'est là que la
-// langue peut encore fauter. On mesure donc ce texte-là.
+// ELLE NE MESURE PLUS UNE PHRASE, PARCE QU'IL N'Y EN A PLUS. Le cœur ne suit
+// plus un commerce : il garde l'ANNONCE. « Si je mets trois annonces menu en
+// favori, je peux revenir dessus et faire un choix final. » Une phrase qui dit
+// « ajouté » puis s'efface apprend moins qu'une poche qu'on voit se remplir, et
+// c'est cette poche qui répond désormais. Aucune phrase à conjuguer, donc
+// aucune faute possible : la garde de langue n'a plus d'objet et elle part.
 //
-// ET LA GARDE VÉRIFIE D'ABORD L'ABSENCE : une règle qu'on retourne sans le dire
-// est pire qu'une règle absente.
+// ELLE VÉRIFIE D'ABORD LES ABSENCES : une règle qu'on retourne sans le dire est
+// pire qu'une règle absente.
 dire(!(await p.$(".ap-suivre-face")),
   "aucun encart ne demande de s'abonner au milieu de l'annonce");
-const dits = [];
-for (let k = 0; k < 10; k++) {
-  const nom = await p.$eval(".ap-dessus .cd-chez", (e) =>
-    e.textContent.split("·")[0].trim()).catch(() => "");
-  if (nom) {
-    await p.click(".ap-fav2 button:first-child").catch(() => {});
-    await p.waitForTimeout(420);
-    const e = await p.$eval(".ap-echo", (x) =>
-      x.textContent.replace(/\s+/g, " ").trim()).catch(() => "");
-    if (e) dits.push(e);
-  }
+dire(!(await p.$(".ap-haut .ap-jai")),
+  "et aucune cloche sur l'annonce : elle est descendue sur l'onglet Profil");
+const poche = () => p.$eval(".ap-poche", (e) =>
+  Number(e.textContent.replace(/[^0-9]/g, "")) || 0).catch(() => -1);
+dire((await poche()) === 0, "la poche est là, vide, avant qu'on ait rien gardé");
+const nomDuSommet = () => p.$eval(".ap-dessus .cd-chez", (e) =>
+  e.textContent.split("\u00b7")[0].trim()).catch(() => "");
+const gardes = [];
+for (let k = 0; k < 3; k++) {
+  const nom = await nomDuSommet();
+  if (!nom) break;
+  await p.click(".ap-fav2 button:first-child").catch(() => {});
+  await p.waitForTimeout(420);
+  gardes.push(nom);
   if (!(await avancer(p))) break;
+  // ON ATTEND QUE LA CARTE AIT VRAIMENT CHANGÉ. Le vol dure plus longtemps que
+  // le délai d'`avancer` : sans cette attente, le tour suivant retrouve la MÊME
+  // carte et le second appui sur le cœur la RETIRE des favoris. La garde
+  // mesurait alors sa propre impatience.
+  for (let t = 0; t < 20 && (await nomDuSommet()) === nom; t++) {
+    await p.waitForTimeout(120);
+  }
 }
-for (const t of dits.slice(-4)) console.log(`  ${t}`);
-dire(dits.length > 0, `le cœur répond ${dits.length} fois`);
-// LA RÉPONSE VIENT APRÈS LE GESTE, ELLE NE LE DEMANDE PAS.
-dire(dits.every((t) => /favoris/i.test(t)),
-  "et elle dit ce qui vient de se passer, pas ce qu'on devrait faire");
-dire(dits.every((t) => !/\bSuivre\b/i.test(t)),
-  "sans le mot « suivre », qui fait penser à un réseau social");
-dire(dits.every((t) => /prévenu|annonces/i.test(t)),
-  "et elle dit ce qu'on y gagne — après, jamais avant");
+const compte = await poche();
+console.log(`  gardées : ${gardes.join(" · ")} → la poche affiche ${compte}`);
+dire(compte === gardes.length,
+  `la poche compte ce qu'on y a mis (${compte} pour ${gardes.length})`);
+// ET ON LES RETROUVE : c'est la seule raison pour laquelle on appuie.
+await p.click(".ap-poche");
+await p.waitForTimeout(700);
+const titre = await p.$eval(".ap-page-t b", (e) => e.textContent.trim()).catch(() => "");
+const listees = await p.$$eval(".ap-liste .ap-ligne b", (es) =>
+  es.map((e) => e.textContent.trim()));
+console.log(`  « ${titre} » → ${listees.join(" · ")}`);
+dire(/favoris/i.test(titre), "la poche ouvre une page qui porte leur nom");
+dire(gardes.every((n) => listees.includes(n)),
+  "et les trois annonces mises de côté y sont, pour trancher");
 await ctx.close();
 
 // ═══ 3 · LE TOUR DE RÔLE NE SE JUSTIFIE PLUS APRÈS COUP ═══
@@ -413,12 +432,14 @@ dire(f1.garde.includes("boulange"), "et ça survit à la fermeture");
 
 // ET ON LA RETROUVE DANS « MES COMMERCES » — une file qu'on ne retrouve nulle
 // part est une file oubliée.
-// ON Y ENTRE PAR LA CLOCHE. La pastille chiffrée collée au cœur ouvrait la même
-// page, mais elle comptait DEUX choses selon sa couleur — les nouvelles quand
-// elle était ambre, les annonces gardées quand elle était verte — et « le cœur
-// et les notifications en haut à droite, c'est incompréhensible ». Elle est
-// partie ; la cloche, elle, n'a jamais dit qu'une chose.
-await p.click(".ap-jai");
+// ON Y ENTRE PAR LA POCHE, À CÔTÉ DU CŒUR. Cette page a porté trois portes
+// successives, et chacune est tombée pour la même raison : elle disait deux
+// choses à la fois. D'abord une pastille chiffrée qui comptait les nouvelles en
+// ambre et les annonces gardées en vert — « le cœur et les notifications en
+// haut à droite, c'est incompréhensible ». Puis une cloche, partie sur l'onglet
+// Profil parce que « ce sont deux intentions totalement différentes ». Reste la
+// poche, qui ne dit qu'une chose : ce que le cœur y a rangé.
+await p.click(".ap-poche");
 await p.waitForTimeout(900);
 const att = await p.evaluate(() => {
   const e = document.querySelector(".ap-nouv-e.attente");

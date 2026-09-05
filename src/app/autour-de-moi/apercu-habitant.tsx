@@ -785,6 +785,16 @@ export function ApercuHabitant() {
    * que la règle des effets interdit ici.
    */
   const vus = useSyncExternalStore(abonnerVus, chargerVus, () => RIEN_VU);
+  /**
+   * LE NAVIGATEUR A-T-IL REPRIS LA MAIN — voir l'écran d'accueil.
+   *
+   * Tant que c'est faux, on est dans le HTML rendu par le serveur, qui ne sait
+   * rien de ce téléphone : ni ce qu'il a déjà vu, ni ce qu'il a gardé. Tout ce
+   * qui dépend de sa mémoire attend cette bascule plutôt que de s'afficher puis
+   * de se rétracter sous les yeux de la personne.
+   */
+  const [monte, setMonte] = useState(false);
+  useEffect(() => setMonte(true), []);
 
   const [descendu, setDescendu] = useState(false);
   /**
@@ -969,6 +979,8 @@ export function ApercuHabitant() {
   const [echo, setEcho] = useState("");
   const prise = useRef<{ x0: number; y0: number; axe: "" | "x" | "y"; t0: number } | null>(null);
   const minuteries = useRef<number[]>([]);
+  /** L'annonce restée sous la feuille du salon — voir `partir` et `rangerCeQuiAttend`. */
+  const aRanger = useRef("");
   const defilement = useRef<HTMLDivElement | null>(null);
   const filSalon = useRef<HTMLDivElement | null>(null);
 
@@ -1296,6 +1308,9 @@ export function ApercuHabitant() {
     const parDessus = salonPage || favorisPage;
     if (o === onglet && !parDessus) return;
     arreterLeDirect();
+    // ON REFERME LA FEUILLE : la carte qui attendait dessous rejoint les
+    // passées — voir `rangerCeQuiAttend`.
+    rangerCeQuiAttend();
     setSalonPage(false);
     setSalonOuvert("");
     setFavorisPage(false);
@@ -2114,6 +2129,29 @@ export function ApercuHabitant() {
 
     minuteries.current.push(
       window.setTimeout(() => {
+        // ═══ LA CARTE ATTEND SOUS LA FEUILLE ═══
+        //
+        // « Ça donne l'impression qu'il n'y a aucun lien avec l'annonce. Peut-
+        // être que ça pourrait être cette page qui arriverait du bas, et qui
+        // s'arrête avant la fin de l'annonce pour qu'on comprenne que c'est
+        // bien en lien avec l'annonce sur laquelle on est. »
+        //
+        // LA FEUILLE NE SUFFISAIT PAS : elle s'arrêtait bien avant le haut de
+        // l'écran, mais ce qu'on voyait dans la bande était noir. La carte
+        // était déjà rangée dans les passées à l'instant où la feuille montait,
+        // donc le repère qu'il demande — l'annonce dont on parle — n'existait
+        // plus. Le lien était promis par la forme et démenti par le fond.
+        //
+        // ELLE EST DONC MISE EN ATTENTE, PAS RANGÉE. Tant que la feuille est
+        // ouverte, la carte reste en tête du paquet, dessous, et c'est elle
+        // qu'on aperçoit. Elle rejoint les passées quand on referme — c'est-à-
+        // dire au moment où « proposer » est réellement fini.
+        if (sens === "droite") {
+          aRanger.current = id;
+          setDx(0);
+          setSortant("");
+          return;
+        }
         setPassees((p) => [...p, id]);
         setDx(0);
         setSortant("");
@@ -2121,6 +2159,22 @@ export function ApercuHabitant() {
         defilement.current?.scrollTo({ top: 0 });
       }, VOL_MS),
     );
+  }
+
+  /**
+   * LA CARTE QUI ATTEND SOUS LA FEUILLE — voir `partir`.
+   *
+   * Une référence et pas un état : personne ne la DESSINE, elle ne sert qu'au
+   * moment de refermer. Un état de plus ferait un rendu de plus à chaque
+   * proposition, pour rien.
+   */
+  function rangerCeQuiAttend() {
+    const id = aRanger.current;
+    if (!id) return;
+    aRanger.current = "";
+    setPassees((p) => (p.includes(id) ? p : [...p, id]));
+    setDescendu(false);
+    defilement.current?.scrollTo({ top: 0 });
   }
 
   /**
@@ -2575,6 +2629,19 @@ export function ApercuHabitant() {
     void demanderAvertissement().then((r) =>
       noter(r === "granted" ? "notif-acceptee" : "notif-refusee", 0, "file"),
     );
+  }
+
+  /**
+   * LA POCHE : là où le cœur range ce qu'on veut comparer.
+   *
+   * ELLE NE MARQUE RIEN COMME LU, et c'est toute la différence avec la porte
+   * des nouvelles juste dessous. On vient y relire trois menus pour trancher ;
+   * éteindre au passage les nouvelles de ses commerces serait éteindre une
+   * chose en en regardant une autre.
+   */
+  function ouvrirMesFavoris() {
+    noter("onglet", gardees.length, "favoris");
+    setFavorisPage(true);
   }
 
   /** La porte des nouvelles : la pastille, et la bulle qui la désigne. */
@@ -3287,6 +3354,9 @@ export function ApercuHabitant() {
     // faisait rien de visible. Trouve en verifiant, pas en relisant.
     noter("onglet", 0, "annonce");
     setOnglet("direct");
+    // ON REVIENT À UNE ANNONCE PRÉCISE : celle qui attendait sous la feuille
+    // n'a plus à être gardée en tête du paquet.
+    rangerCeQuiAttend();
     setSalonPage(false);
     setSalonOuvert("");
     setFeuille("");
@@ -3359,15 +3429,108 @@ export function ApercuHabitant() {
                   <i aria-hidden="true">←</i>
                   {NOM_ONGLET[onglet]}
                 </button>
+                {/* LE TITRE DIT CE QU'ON EST VENU CHERCHER. « Mes commerces »
+                    nommait la seconde liste ; c'est la première qu'on ouvre
+                    maintenant, et elle a un nom que le cœur a rendu évident. */}
                 <span className="ap-page-t">
-                  <b>Mes commerces</b>
+                  <b>Vos favoris du jour</b>
                   <em>
-                    {mesSuivis.length} suivi{mesSuivis.length > 1 ? "s" : ""} ·{" "}
-                    {mesGardes.length} gardé{mesGardes.length > 1 ? "s" : ""}
+                    {mesGardes.length} gardée{mesGardes.length > 1 ? "s" : ""} ·{" "}
+                    {mesSuivis.length} commerce{mesSuivis.length > 1 ? "s" : ""} suivi
+                    {mesSuivis.length > 1 ? "s" : ""}
                   </em>
                 </span>
               </div>
               <div className="ap-sal-corps">
+                {/* ═══ CE QU'ON A GARDÉ PASSE DEVANT ═══
+
+                    L'ORDRE SUIVAIT L'ANCIEN SENS DU CŒUR. Tant qu'il servait
+                    à suivre un commerce, cette page était d'abord « ce que mes
+                    commerces ont dit aujourd'hui », et les annonces gardées
+                    attendaient en bas. Le cœur garde maintenant une ANNONCE,
+                    et on vient ici pour une raison précise : « si je mets trois
+                    annonces menu en favori, je peux revenir dessus et faire un
+                    choix final. » Ce qu'on vient chercher se met en haut.
+
+                    LES NOUVELLES NE PARTENT PAS POUR AUTANT — elles descendent
+                    sous les favoris, avec leur propre titre. Deux listes, deux
+                    raisons d'être là, et l'une n'efface pas l'autre. */}
+                {mesGardes.length > 0 && nouvelles.length > 0 && (
+                  <h4 className="ap-nouv-t">
+                    Gardés aujourd&apos;hui<b>{mesGardes.length}</b>
+                  </h4>
+                )}
+                {mesGardes.length === 0 ? (
+                  /* LE GRAND VIDE NE S'AFFICHE QUE SI LA PAGE EST VRAIMENT
+                     VIDE. Une pleine page « rien de gardé » sous trois
+                     nouvelles du jour ferait croire qu'on est arrivé au mauvais
+                     endroit ; une ligne suffit. */
+                  nouvelles.length > 0 ? (
+                    <p className="ap-nouv-rien">
+                      Rien de gardé — le cœur, en haut, range une annonce ici.
+                    </p>
+                  ) : (
+                    <div className="ap-moi-vide">
+                      <span aria-hidden="true">💚</span>
+                      <b>Rien de gardé pour l&apos;instant.</b>
+                      {/* ELLE DIT À QUOI ÇA SERT, PAS COMMENT ÇA MARCHE. « Je
+                          mets trois annonces en favori et je fais un choix
+                          final » : c'est ce qu'on vient faire ici, et c'est la
+                          seule phrase qui donne envie d'appuyer sur le cœur. */}
+                      <i>
+                        Le cœur, en haut de l&apos;annonce, la range ici. Mettez-en
+                        deux ou trois de côté, et choisissez ensuite.
+                      </i>
+                    </div>
+                  )
+                ) : (
+                  <div className="ap-liste">
+                    {mesGardes.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className="ap-ligne"
+                        onClick={() => {
+                          setFavorisPage(false);
+                          setEmbauches(false);
+                          setBranche(c.branche);
+                          setVue("metiers");
+                          setEnvies([]);
+                          setPassees([]);
+                          setEpingle(c.id);
+                        }}
+                      >
+                        {c.photo ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={c.photo} alt="" loading="lazy" />
+                        ) : (
+                          <i aria-hidden="true">💚</i>
+                        )}
+                        <span>
+                          <b>{c.nom}</b>
+                          <u>{c.metier}</u>
+                          <em>
+                            {c.ville} · {c.distance}
+                          </em>
+                        </span>
+                        {/* On peut retirer d'ici : c'est le seul endroit où
+                            l'on voit tout ce qu'on a gardé, donc le seul où
+                            faire le ménage a du sens. */}
+                        <s
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Retirer ${c.nom}`}
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            setGardees((g) => g.filter((x) => x !== c.id));
+                          }}
+                        >
+                          ✕
+                        </s>
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {nouvelles.length > 0 && (
                   <div className="ap-nouv">
                     <h4>
@@ -3492,86 +3655,66 @@ export function ApercuHabitant() {
                     ))}
                   </>
                 )}
-                {mesGardes.length > 0 && nouvelles.length > 0 && (
-                  <h4 className="ap-nouv-t">Gardés</h4>
-                )}
-                {mesGardes.length === 0 ? (
-                  /* LE GRAND VIDE NE S'AFFICHE QUE SI LA PAGE EST VRAIMENT
-                     VIDE. Une pleine page « rien de gardé » sous trois
-                     nouvelles du jour ferait croire qu'on est arrivé au mauvais
-                     endroit ; une ligne suffit. */
-                  nouvelles.length > 0 ? (
-                    <p className="ap-nouv-rien">
-                      Rien de gardé — le cœur, en haut, range une annonce ici.
-                    </p>
-                  ) : (
-                    <div className="ap-moi-vide">
-                      <span aria-hidden="true">💚</span>
-                      <b>Rien de gardé pour l&apos;instant.</b>
-                      <i>
-                        Le cœur sur la photo d&apos;une annonce la range ici,
-                        pour la retrouver plus tard.
-                      </i>
-                    </div>
-                  )
-                ) : (
-                  <div className="ap-liste">
-                    {mesGardes.map((c) => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        className="ap-ligne"
-                        onClick={() => {
-                          setFavorisPage(false);
-                          setEmbauches(false);
-                          setBranche(c.branche);
-                          setVue("metiers");
-                          setEnvies([]);
-                          setPassees([]);
-                          setEpingle(c.id);
-                        }}
-                      >
-                        {c.photo ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={c.photo} alt="" loading="lazy" />
-                        ) : (
-                          <i aria-hidden="true">💚</i>
-                        )}
-                        <span>
-                          <b>{c.nom}</b>
-                          <u>{c.metier}</u>
-                          <em>
-                            {c.ville} · {c.distance}
-                          </em>
-                        </span>
-                        {/* On peut retirer d'ici : c'est le seul endroit où
-                            l'on voit tout ce qu'on a gardé, donc le seul où
-                            faire le ménage a du sens. */}
-                        <s
-                          role="button"
-                          tabIndex={0}
-                          aria-label={`Retirer ${c.nom}`}
-                          onClick={(ev) => {
-                            ev.stopPropagation();
-                            setGardees((g) => g.filter((x) => x !== c.id));
-                          }}
-                        >
-                          ✕
-                        </s>
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           ) : salonPage && salon ? (
-            <div className="ap-page">
+            /* ═══ ELLE MONTE DU BAS, ET ELLE S'ARRÊTE AVANT L'ANNONCE ═══
+
+               « Quand je clique sur "proposer à mes amis", on arrive
+               subitement sur une nouvelle page et ça donne l'impression qu'il
+               n'y a aucun lien avec l'annonce. Peut-être que ça pourrait être
+               cette page qui arriverait du bas comme une pop-up, et qui
+               s'arrête avant la fin de l'annonce pour qu'on comprenne que
+               c'est bien en lien avec l'annonce sur laquelle on est. »
+
+               IL A RAISON, ET ÇA CORRIGE UN CHOIX QUE J'AVAIS FAIT DANS
+               L'AUTRE SENS. Le salon avait été passé en page pleine pour dire
+               « ceci n'est pas un aparté, c'est l'endroit où se passe la seule
+               chose que le produit fait ». C'est vrai de ce que le salon EST,
+               et faux de la façon dont on y arrive : une page pleine qui
+               remplace tout efface ce qu'on venait d'y mettre. On ne se
+               souvient plus de quel plat on parlait.
+
+               UNE FEUILLE RÉPOND AUX DEUX. Elle monte du bas — donc elle vient
+               de l'annonce et non d'ailleurs — et elle laisse le haut de la
+               carte visible, ce qui répond en permanence à « on parle de
+               quoi ? ». Elle prend malgré tout presque tout l'écran : ce n'est
+               pas un aparté de trois lignes, c'est là qu'on décide.
+
+               ET CE QUI DÉPASSE EST ASSOMBRI, pas cliquable : la bande du haut
+               est un repère, pas un bouton — on revient par la flèche, qui dit
+               où elle ramène. */
+            <>
+              {/* ─── CE QU'ON APERÇOIT AU-DESSUS DE LA FEUILLE ───
+                  C'est l'annonce elle-même, et c'est tout l'objet de la
+                  demande : « pour qu'on comprenne que c'est bien en lien avec
+                  l'annonce sur laquelle on est. » Une bande noire aurait dit
+                  « une autre page » ; sa photo dit « on parle de ça ».
+                  Assombrie, sans texte et sans bouton — c'est un repère, pas un
+                  second écran actif : on revient par la flèche, qui dit où elle
+                  ramène. */}
+              <div
+                className="ap-feuille-dos"
+                aria-hidden="true"
+                style={
+                  (salon.propositions ?? [])[0]?.photo
+                    ? {
+                        backgroundImage: `url("${encodeURI(
+                          (salon.propositions ?? [])[0]!.photo!,
+                        )}")`,
+                      }
+                    : undefined
+                }
+              />
+            <div className="ap-page feuille">
+              <span className="ap-feuille-p" aria-hidden="true" />
               <div className="ap-page-h">
                 <button
                   type="button"
                   className="ap-page-r"
                   onClick={() => {
                     arreterLeDirect();
+                    rangerCeQuiAttend();
                     setSalonPage(false);
                     setSalonOuvert("");
                   }}
@@ -4600,6 +4743,7 @@ export function ApercuHabitant() {
               </form>
               )}
             </div>
+            </>
           ) : (
           <>
           {onglet === "direct" && (
@@ -4682,121 +4826,77 @@ export function ApercuHabitant() {
                   <b>{reserves.length}</b>
                 </button>
               )}
-              {/* ─── LA PASTILLE A DEUX MOITIÉS, ET C'EST DÉLIBÉRÉ ───
-                  Il y a DEUX gestes différents et ils ne doivent pas se
-                  disputer un même bouton : le cœur GARDE l'annonce qu'on
-                  regarde, le chiffre OUVRE ce qu'on a déjà gardé. Confondus,
-                  on perd l'un en cherchant l'autre.
+              {/* ═══ LE CŒUR GARDE L'ANNONCE, ET LA POCHE LA RETROUVE ═══
 
-                  C'EST AUSSI CE QUI A LIBÉRÉ LA PHOTO. « Garder » était une
-                  pastille posée sur l'image, à gauche, en face de « Y aller » :
-                  deux objets de plus entre l'œil et le plat. Le geste n'a pas
-                  disparu, il a remonté à l'endroit où l'on va déjà chercher ce
-                  qu'on a mis de côté. */}
-              {/* ═══ LE CŒUR EST UNE ACTION SILENCIEUSE ═══
-                  « Le cœur est une action silencieuse. L'utilisateur voit une
-                  annonce, il aime le commerce : ❤️ → favori. Il n'a pas besoin
-                  de lire une explication. »
+                  CE QU'IL A DEMANDÉ, ET C'EST UN CHANGEMENT DE SENS : « le
+                  cœur va devenir plutôt un acte pour mettre une ANNONCE en
+                  favori, pour pouvoir la retrouver. Si je mets trois annonces
+                  menu en favori, je peux revenir dessus et faire un choix
+                  final. »
 
-                  ET IL SUIT LE COMMERCE, PLUS L'ANNONCE. Le geste garde ce
-                  qu'on veut RETROUVER ; une annonce se périme ce soir, un
-                  commerce reste. C'est aussi ce que fait la double tape sur la
-                  photo : un seul geste, deux chemins.
+                  C'EST L'USAGE RÉEL DU PRODUIT. On ne choisit pas où déjeuner
+                  sur la première carte : on en met deux ou trois de côté, on
+                  finit le paquet, et on tranche. Le cœur servait jusqu'ici à
+                  suivre un COMMERCE — un geste de long terme, qui n'aide pas
+                  à décider ce midi. Suivre un commerce n'a pas disparu pour
+                  autant : c'est la double tape sur la photo, et c'est elle qui
+                  alimente les nouvelles.
 
-                  PAS DE COMPTEUR COLLÉ. « ❤️ 4 peut être compris comme
-                  4 likes » — c'est exactement ce qu'on lisait. Le compte vit
-                  dans le profil, où il désigne une liste et pas une popularité.
+                  ET IL FAUT VOIR OÙ ÇA VA. « À côté du cœur il me faut quelque
+                  chose pour retrouver les favoris, et on voit le cœur aller
+                  quelque part. » Un geste dont on ne voit pas la destination
+                  s'oublie : deux minutes plus tard on ne sait plus si on a
+                  gardé quelque chose, ni où. La poche est donc collée au
+                  cœur, elle porte le compte, et le cœur y VOLE à chaque appui.
+                  L'animation n'est pas un ornement — c'est la seule chose qui
+                  apprenne l'adresse.
 
-                  ET « FAVORI » PLUTÔT QUE « SUIVRE » : suivre fait penser à
-                  Instagram, alors que le comportement réel est « je garde ce
-                  commerce parce qu'il m'intéresse ». */}
+                  LA CLOCHE, ELLE, EST PARTIE EN BAS. « Peut-être que ça peut
+                  être à la place de la cloche, et la cloche des notifications
+                  on la met autre part. » Elle est sur l'onglet Profil, où vit
+                  déjà « Mes commerces » : deux intentions totalement
+                  différentes, enfin à deux endroits différents — c'est la
+                  troisième fois qu'il le demande. */}
               <div className={`ap-fav2${coeurVole ? " pop" : ""}`}>
                 <button
                   type="button"
-                  className={suiviSommet ? "on" : ""}
+                  className={gardeSommet ? "on" : ""}
                   disabled={!sommet}
-                  aria-label={suiviSommet ? "Retirer des favoris" : "Mettre en favori"}
-                  onClick={() => {
-                    if (!dessus) return garderLeSommet();
-                    if (suivis.includes(dessus.id)) {
-                      basculerSuivi(dessus.id);
-                      noter("je-passe", 0, "favori-retire");
-                      return;
-                    }
-                    setCoeurVole(true);
-                    window.setTimeout(() => setCoeurVole(false), 800);
-                    suivreCeCommerce(dessus);
-                  }}
+                  aria-label={
+                    gardeSommet ? "Retirer de vos favoris" : "Mettre cette annonce en favori"
+                  }
+                  onClick={garderLeSommet}
                 >
-                  {suiviSommet ? "❤️" : "♡"}
+                  {gardeSommet ? "❤️" : "♡"}
                 </button>
-            {/* ─── ELLE NE CONCURRENCE PLUS L'ANNONCE ───
-                    « Le bandeau est très visible, mais il concurrence l'annonce.
-                    L'utilisateur est en train de regarder LES LASAGNES : il ne
-                    devrait pas avoir simultanément "regarde cette annonce" et "va
-                    voir 5 autres choses". Je mettrais les notifications beaucoup
-                    plus discrètement — 🔔 5 — et basta. »
-
-                    C'est exactement ça : deux appels à l'attention sur le même
-                    écran s'annulent. La cloche garde son compte et sa couleur,
-                    elle perd sa phrase et sa largeur — une pastille au lieu d'une
-                    bande. Ce qu'elle ouvre n'a pas changé. */}
-                {/* ═══ LA CLOCHE NE DISPARAÎT PLUS QUAND ON L'A LUE ═══
-
-                    LE DÉFAUT MESURÉ : « les notifications disparaissent quand
-                    j'appuie dessus et je ne peux pas y accéder de nouveau, et à
-                    côté du cœur je n'ai pas de numéro qui s'affiche. »
-
-                    C'ÉTAIT ÉCRIT DANS LA CONDITION : la cloche n'existait que
-                    tant qu'il restait du non-lu. L'appui marquait tout comme lu
-                    — ce qui est juste — et le bouton s'effaçait dans le même
-                    rendu. On ouvrait ses nouvelles une fois, et la porte
-                    disparaissait avec elles. Pour les relire il fallait passer
-                    par Profil, un bloc qui n'apparaît lui-même que si l'on suit
-                    déjà quelqu'un : personne ne trouve ça.
-
-                    UNE PORTE NE SE FERME PAS PARCE QU'ON EST ENTRÉ. La cloche
-                    est donc là en permanence. Ce qui change, c'est ce qu'elle
-                    porte : un chiffre ambre tant qu'il y a du neuf, la cloche
-                    seule et éteinte une fois tout lu. Le chiffre compte ce qui
-                    n'a pas été lu et rien d'autre — un badge qui ne s'éteint
-                    jamais ne veut plus rien dire, et c'est bien pour ça qu'il
-                    s'éteint. */}
+                {/* LE CŒUR QUI VOLE. Il part du bouton et se range dans la
+                    poche, en trois cents millisecondes. C'est le seul moment où
+                    l'on peut apprendre où vont ses favoris sans l'écrire. */}
+                {coeurVole && (
+                  <span className="ap-vol" aria-hidden="true">
+                    ❤️
+                  </span>
+                )}
+                {/* LA POCHE EST TOUJOURS LÀ, MÊME VIDE — c'est une destination,
+                    pas une notification. Vide, elle est éteinte et discrète ;
+                    dès qu'elle contient quelque chose, elle porte son compte.
+                    Une poche qui apparaît au premier favori n'apprendrait rien :
+                    on l'aurait déjà envoyé quelque part sans savoir où. */}
                 {!sortie && (
                   <button
                     type="button"
-                    className={`ap-jai${nonLues.length ? " neuf" : ""}`}
-                    onClick={ouvrirMesCommerces}
+                    className={`ap-poche${gardees.length ? " plein" : ""}`}
+                    onClick={ouvrirMesFavoris}
                     aria-label={
-                      nonLues.length === 0
-                        ? "Vos commerces suivis"
-                        : quiAduNeuf.length === 1
-                          ? `Une nouvelle ${deChez(quiAduNeuf[0].c.nom)}`
-                          : `${nonLues.length} nouvelles de vos commerces`
+                      gardees.length === 0
+                        ? "Vos favoris du jour, pour l'instant vides"
+                        : `Vos favoris du jour (${gardees.length})`
                     }
                   >
-                    <i aria-hidden="true">🔔</i>
-                    {nonLues.length > 0 && nonLues.length}
+                    <i aria-hidden="true">🗂️</i>
+                    {gardees.length > 0 && gardees.length}
                   </button>
                 )}
-                {/* ─── LE CHIFFRE AMBIGU A DISPARU ───
-                    « Le cœur et les notifications en haut à droite, c'est
-                    incompréhensible. Il faudrait qu'ils soient séparés. »
-
-                    C'est exactement ça, et la cause était écrite noir sur
-                    blanc dans le commentaire qu'on vient d'enlever : UNE
-                    pastille comptait DEUX choses — les nouvelles quand elle
-                    était ambre, les annonces gardées quand elle était verte —
-                    et c'était à la couleur de dire laquelle. Personne ne lit
-                    une couleur comme une unité.
-
-                    ELLE FAISAIT EN PLUS DOUBLON : la cloche, juste dessous,
-                    ouvre la même page et compte déjà les nouvelles. Deux portes
-                    pour un endroit, dont l'une changeait de sens.
-
-                    Il reste donc le cœur, qui garde une annonce, et la cloche,
-                    qui dit ce qui est arrivé. Deux objets, deux sens, aucune
-                    couleur à traduire. */}
               </div>
             </div>
 
@@ -5000,7 +5100,26 @@ export function ApercuHabitant() {
                 ne la referme pas avec un bouton « J'ai compris » — on glisse,
                 et le premier geste de l'application est déjà fait. Elle ne
                 revient jamais. */}
-            {sommet && !vus.includes("accueil") && !sortie && !embauches && (
+            {/* ═══ ELLE NE CLIGNOTE PLUS À CHAQUE OUVERTURE ═══
+
+                LE DÉFAUT MESURÉ : « quand j'ouvre l'application, pendant une
+                demi-seconde j'ai l'écran de présentation, à chaque fois. »
+
+                LA CAUSE EST DANS L'ORDRE DES CHOSES. Ce qu'on a déjà vu est
+                noté dans le téléphone ; le serveur, lui, ne connaît pas ce
+                téléphone et rend donc la page comme pour un premier passage.
+                L'écran d'accueil partait dans le HTML, s'affichait le temps que
+                le navigateur reprenne la main, puis disparaissait. Une demi-
+                seconde de mur de photos à chaque ouverture, chez quelqu'un qui
+                l'a déjà passé — c'est-à-dire tout le monde sauf une fois.
+                Et à force, l'application a l'air de recharger au lieu d'ouvrir.
+
+                ON ATTEND DONC DE SAVOIR. `monte` ne devient vrai qu'une fois le
+                navigateur aux commandes, c'est-à-dire au moment exact où l'on
+                peut lire ce que ce téléphone a déjà vu. Pour un premier
+                passage, l'écran arrive une image plus tard, ce qui ne se voit
+                pas ; pour tous les autres, il n'arrive plus du tout. */}
+            {monte && sommet && !vus.includes("accueil") && !sortie && !embauches && (
               <div
                 className={`ap-accueil${accueilDx ? " part" : ""}`}
                 style={{ transform: `translate3d(${accueilDx}px,0,0) rotate(${accueilDx * 0.04}deg)` }}
@@ -7482,7 +7601,24 @@ export function ApercuHabitant() {
             >
               <i aria-hidden="true">🙂</i>
               Profil
-              {gardees.length > 0 && <b>{gardees.length}</b>}
+              {/* ═══ LA CLOCHE A DÉMÉNAGÉ ICI ═══
+
+                  « Peut-être que ça peut être à la place de la cloche, et la
+                  cloche des notifications on la met autre part. » Elle était
+                  collée au cœur, et c'est la troisième fois qu'il disait que
+                  les deux ne racontent pas la même histoire : garder une
+                  annonce pour ce midi, et apprendre qu'un commerce suivi vient
+                  de publier, n'ont rien à faire dans le même centimètre.
+
+                  ELLE VA LÀ OÙ SON CONTENU VIT DÉJÀ. « Mes commerces » est la
+                  première ligne du profil ; le badge ambre ne fait que dire
+                  qu'il y a quelque chose à y lire. Le compte des favoris, qui
+                  occupait ce badge, est remonté dans la poche à côté du cœur —
+                  chacun son endroit, et aucun chiffre ne compte deux choses.
+
+                  AMBRE ET PAS VERT, comme la cloche qu'il remplace : dans tout
+                  le produit, le vert dit « à vous » et l'ambre « du neuf ». */}
+              {nonLues.length > 0 && <b className="neuf">{nonLues.length}</b>}
             </button>
           </nav>
 
@@ -8758,7 +8894,7 @@ export function ApercuHabitant() {
            il s'est passe quelque chose. Le filet vertical dit qu'on change de
            sujet, et il coute deux points de large la ou une seconde rangee en
            coutait trente-cinq de haut. */
-        .ap-fav2{flex:none;display:flex;align-items:center;gap:11px;
+        .ap-fav2{position:relative;flex:none;display:flex;align-items:center;gap:11px;
           border-radius:999px;border:1px solid rgba(126,230,192,.28);
           background:rgba(18,185,129,.14);
           transition:transform .28s cubic-bezier(.34,1.5,.64,1);}
@@ -8785,6 +8921,38 @@ export function ApercuHabitant() {
           .ap-fav2 .nb.neuf{animation:none;}
         }
         .ap-fav2 button:focus-visible{outline:2px solid #3DE2A6;outline-offset:-2px;}
+
+        /* ═══ LA POCHE, ET LE COEUR QUI Y VOLE ═══
+           « Il me faut quelque chose pour retrouver les favoris, et on voit le
+           coeur aller quelque part. » La poche est la destination : collee au
+           coeur, toujours presente, eteinte tant qu'elle est vide. Le compte
+           n'apparait qu'a partir du premier favori — « 0 » serait un echec
+           affiche a l'ouverture de l'application. */
+        .ap-poche{display:flex;align-items:center;gap:5px;
+          font-size:12.5px;font-weight:850;
+          color:rgba(234,242,236,.6);}
+        .ap-poche i{font-style:normal;font-size:14px;line-height:1;
+          filter:grayscale(1);opacity:.66;}
+        .ap-poche.plein{color:#8FE9C4;}
+        .ap-poche.plein i{filter:none;opacity:1;}
+        /* LE VOL. Trois cents millisecondes, du bouton jusqu'a la poche — la
+           seule chose qui apprenne l'adresse sans l'ecrire. Il est hors du flux
+           pour ne pas pousser les deux boutons pendant qu'il passe. */
+        .ap-vol{position:absolute;left:11px;top:50%;margin-top:-9px;
+          font-size:16px;line-height:1;pointer-events:none;z-index:3;
+          animation:apVol .5s cubic-bezier(.4,0,.55,1) forwards;}
+        @keyframes apVol{
+          0%{transform:translate(0,0) scale(1);opacity:0;}
+          14%{transform:translate(2px,-12px) scale(1.25);opacity:1;}
+          100%{transform:translate(52px,0) scale(.42);opacity:0;}}
+        @media (prefers-reduced-motion:reduce){
+          .ap-vol{animation-duration:.01s;}
+        }
+        /* LA POCHE TRESSAILLE QUAND ELLE RECOIT — sinon le coeur disparait
+           dans le vide et on ne sait pas s'il est arrive. */
+        .ap-fav2.pop .ap-poche{animation:apRecu .42s ease .22s both;}
+        @keyframes apRecu{0%{transform:scale(1);}44%{transform:scale(1.3);}
+          100%{transform:scale(1);}}
 
         /* ─── CE QUI EST DESCENDU DANS LA FEUILLE ─── */
         /* flex:none SUR LES TROIS — CE N'EST PAS UNE PRECAUTION.
@@ -10129,6 +10297,38 @@ export function ApercuHabitant() {
           background:#0A0F0D;animation:apPage .22s ease both;}
         @keyframes apPage{from{opacity:0;transform:translateX(16px);}
           to{opacity:1;transform:none;}}
+
+        /* ═══ LA FEUILLE DU SALON ═══
+           « Ca donne l'impression qu'il n'y a aucun lien avec l'annonce. »
+           Elle monte du bas et s'arrete avant le haut de la carte : la bande
+           qui depasse est le lien, et elle repond en permanence a « on parle de
+           quoi ? ». Quatre-vingts points suffisent — on y voit le titre de
+           l'annonce et le nom du commerce, c'est-a-dire tout le sujet. */
+        .ap-page.feuille{top:80px;border-radius:22px 22px 0 0;
+          padding-top:12px;overflow:hidden;
+          box-shadow:0 -1px 0 rgba(126,230,192,.22),0 -22px 44px rgba(0,0,0,.6);
+          animation:apFeuille .3s cubic-bezier(.2,.85,.25,1) both;}
+        @keyframes apFeuille{from{transform:translateY(100%);}
+          to{transform:none;}}
+        /* LA POIGNEE. Elle ne sert a rien fonctionnellement — on revient par la
+           fleche — et c'est justement ce qui la rend utile : c'est le signe
+           universel « ceci est pose par-dessus, et ce qu'il y a dessous est
+           toujours la ». */
+        .ap-feuille-p{display:block;flex:none;width:38px;height:4px;
+          margin:0 auto 10px;border-radius:999px;
+          background:rgba(234,242,236,.26);}
+        /* LA BANDE QUI DEPASSE, C'EST L'ANNONCE. Sa photo, assombrie, sans
+           texte ni bouton : un repere, pas un second ecran actif. Sans elle on
+           voyait du noir, ce qui disait « une autre page » — exactement ce
+           qu'on cherchait a corriger. */
+        .ap-feuille-dos{position:absolute;left:0;right:0;top:0;height:96px;
+          z-index:5;background:#0D1A15;background-size:cover;
+          background-position:center 42%;}
+        .ap-feuille-dos::after{content:"";position:absolute;inset:0;
+          background:linear-gradient(180deg,rgba(4,8,6,.5),rgba(4,8,6,.78));}
+        @media (prefers-reduced-motion:reduce){
+          .ap-page.feuille{animation-duration:.01s;}
+        }
         /* UN ONGLET N'EST PAS UNE PAGE PAR-DESSUS : il vit DANS la colonne, au
            dessus de la barre des trois onglets. Sans ce retour au flux, le
            panneau absolu recouvrait la barre et on ne pouvait plus en sortir.
@@ -10298,6 +10498,11 @@ export function ApercuHabitant() {
           min-width:16px;font-size:9.5px;font-weight:850;line-height:16px;
           text-align:center;color:#04150E;background:#3DE2A6;border-radius:999px;
           padding:0 4px;}
+        /* LE BADGE DES NOUVELLES EST AMBRE — c'est la cloche qui a demenage
+           ici. Dans tout le produit le vert dit « a vous » et l'ambre « du
+           neuf » ; changer la couleur en changeant d'endroit ferait perdre la
+           seule chose qu'on n'a pas eu a expliquer. */
+        .ap-onglets button b.neuf{background:#F0B429;}
 
         /* ─── METTRE L'APPLICATION SUR L'ECRAN D'ACCUEIL ───
            Le vert de l'application : c'est elle qu'on installe, ce n'est ni
@@ -10691,30 +10896,14 @@ export function ApercuHabitant() {
            photo n'apprenait pas. Ambre comme la pastille qu'elle designe —
            deux objets d'une meme phrase ne peuvent pas etre de deux
            couleurs. */
-        /* LA CLOCHE EST SUR LA MEME LIGNE QUE LE COEUR. « Le coeur et les
-           notifs sont l'un en dessous de l'autre au lieu d'etre sur la meme
-           ligne pour gagner de la place. » Elle occupait une DEUXIEME rangee
-           dans l'en-tete pour un objet de cinquante points de large — trente-
-           cinq points de haut pris sur la photo, sur chaque carte, pour rien. */
+        /* LE GESTE ET SA DESTINATION, COTE A COTE. Le trait separe les deux
+           moities d'une meme histoire : a gauche on garde, a droite on
+           retrouve. La cloche, qui racontait une AUTRE histoire, a quitte cette
+           barre pour l'onglet Profil — voir le badge ambre en bas. */
         .ap-fav2::before{content:"";order:1;width:1px;height:20px;
-          background:rgba(234,242,236,.22);}
+           background:rgba(234,242,236,.22);}
         .ap-fav2>button:first-child{order:0;}
-        .ap-fav2>.ap-jai{order:2;}
-        /* LA CLOCHE RESTE, SON CHIFFRE PART. Eteinte, elle a la discretion
-           d'un coeur non rempli — une porte, pas un appel. Ambre et chiffree,
-           elle redevient une nouvelle. Deux etats d'un meme objet, jamais deux
-           objets. */
-        .ap-jai{display:flex;align-items:center;gap:5px;margin:0;
-          font:inherit;font-size:12.5px;font-weight:850;cursor:pointer;
-          color:rgba(234,242,236,.62);background:transparent;
-          border:1px solid transparent;border-radius:999px;
-          padding:6px 9px;}
-        .ap-jai.neuf{color:#F7C948;background:rgba(240,180,41,.13);
-          border-color:rgba(240,180,41,.4);padding:6px 11px;}
-        .ap-jai i{font-style:normal;font-size:13px;line-height:1;flex:none;
-          filter:grayscale(1);opacity:.72;}
-        .ap-jai.neuf i{filter:none;opacity:1;}
-        .ap-jai:active{transform:scale(.98);}
+        .ap-fav2>.ap-poche{order:2;}
 
         /* ─── CE QUI EST SUR LA TABLE ───
            Le salon cesse d'etre une conversation pour devenir une petite salle
