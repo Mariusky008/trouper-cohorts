@@ -181,7 +181,25 @@ import {
 import { MARQUE } from "@/lib/marque";
 
 /** Au-delà de cette distance en pixels, le doigt a décidé : la carte part. */
-const SEUIL = 84;
+/**
+ * COMBIEN IL FAUT POUSSER POUR QUE LA CARTE PARTE.
+ *
+ * « Le swipe ne fonctionne pas très très bien, ça ne marche pas tout le temps. »
+ *
+ * QUATRE-VINGT-QUATRE POINTS, C'ÉTAIT UN QUART DE L'ÉCRAN. Sur un téléphone
+ * tenu d'une main, le pouce décrit un arc : il monte en même temps qu'il va sur
+ * le côté, et il s'arrête bien avant le quart de la largeur. Le geste était
+ * donc juste, et la carte revenait quand même en place — ce qui se lit comme
+ * une panne, pas comme un refus.
+ *
+ * CINQUANTE-DEUX, ET SURTOUT LA VITESSE. Un geste vif de trente points est un
+ * balayage franc ; un glissement lent de soixante est une hésitation. On
+ * regarde donc les deux : la distance OU l'élan. C'est ce que font toutes les
+ * applications où ce geste s'est appris, et c'est ce qui manquait ici.
+ */
+const SEUIL = 52;
+/** Points par milliseconde au-delà desquels un geste bref suffit. */
+const ELAN = 0.45;
 /**
  * COMBIEN DE TEMPS LA CARTE SE MONTRE ELLE-MÊME, à la première ouverture.
  * Deux allers-retours complets — à droite, puis à gauche — avec le temps de
@@ -244,17 +262,44 @@ const LES_ENVIES = false;
  * entre aussi dans un salon depuis « Mes salons », et on y revient. Le libellé
  * suit donc l'onglet sur lequel on va effectivement retomber.
  */
+/**
+ * « PROPOSITIONS » ET PLUS « MES SALONS ».
+ *
+ * « Pour quelqu'un qui ne connaît pas ClikMe, "mes salons" ne veut pas dire
+ * grand-chose. Et surtout, ce n'est pas ce que contient réellement cette
+ * rubrique : ce sont des endroits où je suis en train de décider, discuter,
+ * organiser quelque chose avec d'autres personnes. »
+ *
+ * C'EST JUSTE, ET LE MOT NOUS VENAIT DE NOUS. « Salon » désigne l'objet dans le
+ * code ; il n'a jamais désigné quoi que ce soit pour quelqu'un qui découvre —
+ * on l'avait d'ailleurs déjà retiré de l'écran d'arrivée d'un groupe, où il
+ * fallait le définir pour être compris. Un mot qu'il faut définir dans l'écran
+ * est un mot qui a perdu.
+ *
+ * « PROPOSITIONS » DIT CE QU'ON Y TROUVE : ce que j'ai proposé, ce qu'on m'a
+ * proposé, et ce qu'on est en train de décider. C'est aussi le mot du bouton
+ * qui les crée — « proposer à mes amis » —, ce qui ferme la boucle : le geste
+ * et l'endroit portent enfin le même nom.
+ */
 const NOM_ONGLET = {
   direct: "Le direct",
   ville: "La Ville",
-  salons: "Mes salons",
+  salons: "Propositions",
   profil: "Profil",
 } as const;
 /** À partir de cette descente dans la carte, on considère qu'on LIT — et le
  *  balayage horizontal se désarme pour ne pas emporter la carte qu'on lit. */
 const SEUIL_PLI = 90;
 /** Le déplacement à partir duquel on sait si le geste est horizontal ou vertical. */
-const VERROU = 8;
+/**
+ * SIX POINTS, ET PLUS HUIT.
+ *
+ * C'est la distance au bout de laquelle on décide si le geste est horizontal ou
+ * vertical. Trop grande, les huit premiers points d'un balayage sont perdus —
+ * la carte ne bouge pas encore alors que le doigt, lui, a commencé : on croit
+ * que l'écran ne répond pas, et on relâche.
+ */
+const VERROU = 6;
 /** La durée de l'envol, la même qu'en CSS. */
 const VOL_MS = 420;
 /** La durée du vol du cœur vers les favoris, la même qu'en CSS. */
@@ -859,7 +904,7 @@ export function ApercuHabitant() {
   const [creneau, setCreneau] = useState("");
   /** Le mot qui confirme qu'un coup de pouce est arrivé. Vide : rien à dire. */
   const [echo, setEcho] = useState("");
-  const prise = useRef<{ x0: number; y0: number; axe: "" | "x" | "y" } | null>(null);
+  const prise = useRef<{ x0: number; y0: number; axe: "" | "x" | "y"; t0: number } | null>(null);
   const minuteries = useRef<number[]>([]);
   const defilement = useRef<HTMLDivElement | null>(null);
   const filSalon = useRef<HTMLDivElement | null>(null);
@@ -2113,6 +2158,8 @@ export function ApercuHabitant() {
    * centimètres carrés d'image.
    */
   const gardeSommet = !!sommet && gardees.includes(sommet.id);
+  /** Le commerce de la carte du dessus est-il en favori. */
+  const suiviSommet = !!dessus && suivis.includes(dessus.id);
   /** ⚡ La carte du dessus porte-t-elle un Flash en cours — voir `flash.ts`. */
   const flashDuSommet =
     !!dessus && dessus.moments.some((m) => m.flash && flashEnCours(m.flash, heure));
@@ -2386,10 +2433,17 @@ export function ApercuHabitant() {
     if (!suit) return;
     // LE MEME SYMBOLE QUE LE GESTE. On repondait par une cloche a quelqu'un qui
     // vient de taper deux fois sur un coeur : deux langages pour une action.
-    setEchoIcone("💚");
+    // LE MEME COEUR QUE LE BOUTON, ET DE LA MEME COULEUR. Un coeur vert en
+    // reponse a un coeur rouge fait douter d'avoir appuye au bon endroit.
+    setEchoIcone("❤️");
+    // APRÈS LE GESTE, ET SEULEMENT APRÈS. « Un petit message très discret
+    // apparaît pendant une seconde, puis disparaît. Et éventuellement : vous
+    // serez prévenu de ses prochaines annonces. Mais seulement APRÈS l'action. »
+    // C'est toute la différence avec l'encart qu'on vient de retirer : celui-ci
+    // ne demandait rien, il constate.
     setEcho(
-      `Vous suivez ${nommerApresUnVerbe(c.nom)}. ` +
-        `Vous recevrez en priorité ${promesseDeSuivi(c)}.`,
+      `${c.nom} ajouté à vos favoris. ` +
+        `Vous serez prévenu de ses prochaines annonces.`,
     );
     noter("notif-proposee", 0, "suivre");
     void demanderAvertissement().then((r) =>
@@ -4587,15 +4641,42 @@ export function ApercuHabitant() {
                   deux objets de plus entre l'œil et le plat. Le geste n'a pas
                   disparu, il a remonté à l'endroit où l'on va déjà chercher ce
                   qu'on a mis de côté. */}
+              {/* ═══ LE CŒUR EST UNE ACTION SILENCIEUSE ═══
+                  « Le cœur est une action silencieuse. L'utilisateur voit une
+                  annonce, il aime le commerce : ❤️ → favori. Il n'a pas besoin
+                  de lire une explication. »
+
+                  ET IL SUIT LE COMMERCE, PLUS L'ANNONCE. Le geste garde ce
+                  qu'on veut RETROUVER ; une annonce se périme ce soir, un
+                  commerce reste. C'est aussi ce que fait la double tape sur la
+                  photo : un seul geste, deux chemins.
+
+                  PAS DE COMPTEUR COLLÉ. « ❤️ 4 peut être compris comme
+                  4 likes » — c'est exactement ce qu'on lisait. Le compte vit
+                  dans le profil, où il désigne une liste et pas une popularité.
+
+                  ET « FAVORI » PLUTÔT QUE « SUIVRE » : suivre fait penser à
+                  Instagram, alors que le comportement réel est « je garde ce
+                  commerce parce qu'il m'intéresse ». */}
               <div className={`ap-fav2${coeurVole ? " pop" : ""}`}>
                 <button
                   type="button"
-                  className={gardeSommet ? "on" : ""}
+                  className={suiviSommet ? "on" : ""}
                   disabled={!sommet}
-                  aria-label={gardeSommet ? "Retirer des favoris" : "Garder cette annonce"}
-                  onClick={garderLeSommet}
+                  aria-label={suiviSommet ? "Retirer des favoris" : "Mettre en favori"}
+                  onClick={() => {
+                    if (!dessus) return garderLeSommet();
+                    if (suivis.includes(dessus.id)) {
+                      basculerSuivi(dessus.id);
+                      noter("je-passe", 0, "favori-retire");
+                      return;
+                    }
+                    setCoeurVole(true);
+                    window.setTimeout(() => setCoeurVole(false), 800);
+                    suivreCeCommerce(dessus);
+                  }}
                 >
-                  {gardeSommet ? "💚" : "♡"}
+                  {suiviSommet ? "❤️" : "♡"}
                 </button>
             {/* ─── ELLE NE CONCURRENCE PLUS L'ANNONCE ───
                     « Le bandeau est très visible, mais il concurrence l'annonce.
@@ -4985,7 +5066,9 @@ export function ApercuHabitant() {
                     // PAS DE CAPTURE ICI. La capture au premier contact volerait
                     // le défilement au navigateur : on ne la prend qu'une fois
                     // sûr que le geste est horizontal.
-                    prise.current = { x0: e.clientX, y0: e.clientY, axe: "" };
+                    // ON NOTE L'INSTANT ET LA POSITION : l'élan se mesure au
+                    // relâchement, et sans le départ il n'y a rien à mesurer.
+                    prise.current = { x0: e.clientX, y0: e.clientY, axe: "", t0: Date.now() };
                   }}
                   onPointerMove={(e) => {
                     const p = prise.current;
@@ -5006,8 +5089,17 @@ export function ApercuHabitant() {
                     const p = prise.current;
                     prise.current = null;
                     if (p && p.axe === "x") {
-                      if (dx > SEUIL) partir("droite");
-                      else if (dx < -SEUIL) partir("gauche");
+                      // ═══ LA DISTANCE OU L'ÉLAN ═══
+                      // « Le swipe ne fonctionne pas très très bien. » Un geste
+                      // vif de trente points est un balayage franc ; un
+                      // glissement lent de soixante est une hésitation. On
+                      // regarde donc les deux — c'est ce que font toutes les
+                      // applications où ce geste s'est appris, et c'est ce qui
+                      // manquait ici.
+                      const duree = Math.max(1, Date.now() - (p.t0 ?? Date.now()));
+                      const vif = Math.abs(dx) / duree >= ELAN && Math.abs(dx) > 24;
+                      if (dx > SEUIL || (vif && dx > 0)) partir("droite");
+                      else if (dx < -SEUIL || (vif && dx < 0)) partir("gauche");
                       else setDx(0);
                       return;
                     }
@@ -5245,8 +5337,18 @@ export function ApercuHabitant() {
                                 nom, deux lignes horaires posées sur une photo
                                 peuvent se lire comme les horaires
                                 d'ouverture — ou comme un agenda de la ville. */}
+                            {/* SON PRÉNOM, OU RIEN. « Aujourd'hui chez une
+                                prothésiste ongulaire » sortait tronqué à
+                                « … ONGUL… » : le nom anonyme d'une enseigne est
+                                trop long pour une ligne de titre, et il est
+                                déjà écrit en toutes lettres trois lignes plus
+                                haut. Quand il y a un prénom on le dit — c'est
+                                ce qui fait la différence entre un commerce et
+                                quelqu'un ; sinon « Aujourd'hui » suffit. */}
                             <span className="ap-journee-t">
-                              Aujourd’hui chez {dessus?.voix?.prenom || dessus?.nom}
+                              {dessus?.voix?.prenom
+                                ? `Aujourd’hui chez ${dessus.voix.prenom}`
+                                : "Aujourd’hui"}
                             </span>
                             <ul>
                               {restants.slice(0, 2).map((m, i) => (
@@ -5301,46 +5403,25 @@ export function ApercuHabitant() {
                             « l'heure des fournées » chez le boulanger, « la
                             pièce du jour » chez le boucher. La même phrase
                             pour tous ne dit rien à personne. */}
-                        {dessus &&
-                          !embauches &&
-                          !suivis.includes(dessus.id) && (
-                            /* RIEN POUR CEUX QU'ON SUIT DÉJÀ, ET C'EST UNE
-                               CORRECTION MESURÉE. On y avait mis « Vous le
-                               suivez » pour expliquer pourquoi la carte passe
-                               devant — mais `.ap-suivi-vu`, trente lignes plus
-                               haut, le dit déjà et le dit mieux : « Le Pétrin
-                               d'Amanieu vient de publier · vous êtes parmi les
-                               premiers informés ». Sur la capture, les deux
-                               empilés faisaient QUATRE bandeaux entre la photo
-                               et les actions. Un doublon dans un écran plein
-                               n'est pas une redondance inoffensive : c'est ce
-                               qui fait qu'on ne lit plus aucun des deux. */
-                            <button
-                              type="button"
-                              className="ap-suivre-face"
-                              onPointerDown={(ev) => ev.stopPropagation()}
-                              onClick={() => suivreCeCommerce(dessus)}
-                            >
-                              {/* LE MÊME CŒUR QU'AILLEURS. Celui-ci portait
-                                  encore une cloche — donc, sur le même écran,
-                                  deux symboles pour un seul geste : le cœur
-                                  qu'on obtient en tapant deux fois, et une
-                                  cloche qui fait exactement la même chose. */}
-                              <i aria-hidden="true">♡</i>
-                              <span>
-                                {/* LE NOM DU COMMERCE EST DANS LE BOUTON, ET
-                                    LA PROMESSE EST UNE PHRASE. « Suivre » puis
-                                    « Ce qu'il a aujourd'hui, avant les
-                                    autres » — « c'est très étrange comme
-                                    texte », et c'est vrai : une liste de
-                                    choses posée sous un infinitif ne s'adresse
-                                    à personne. Avec un destinataire et un
-                                    verbe, elle dit ce qu'on reçoit. */}
-                                <b>Suivre {nommerApresUnVerbe(dessus.nom)}</b>
-                                Ses annonces vous arriveront avant les autres.
-                              </span>
-                            </button>
-                          )}
+                        {/* ═══ L'ENCART « SUIVRE » A DISPARU DE L'ANNONCE ═══
+                            « Je retirerais complètement le gros encart "suivre
+                            cette terrasse au soleil". Il casse le parcours
+                            principal. L'utilisateur était en train de découvrir
+                            "terrasse au soleil", et ClikMe lui demande soudain
+                            "veux-tu t'abonner à ce commerce ?" — ça ajoute une
+                            décision alors qu'il n'en avait pas demandé. »
+
+                            C'est juste, et c'est une faute que le produit
+                            connaissait déjà ailleurs : on avait retiré la même
+                            interruption du groupe vide, pour la même raison. Un
+                            encart qui pose une question au milieu d'une lecture
+                            fait perdre les deux — la lecture et la question.
+
+                            LE CŒUR EN HAUT FAIT LA MÊME CHOSE, EN SILENCE. Il
+                            est là, il ne demande rien, et il répond APRÈS le
+                            geste au lieu d'interrompre avant. Quatre-vingts
+                            points rendus au milieu de la carte, entre le prix
+                            et les actions. */}
                       </CarteSwipe>
                     </div>
 
@@ -6581,18 +6662,27 @@ export function ApercuHabitant() {
             {!dessusEv && !embauches && (
               <p className="ap-tente">Ça vous tente ?</p>
             )}
-            {/* ─── PASSER RESTE UN ROND, ET IL EST LE SEUL ───
-                C'est le geste qu'on fait sans y penser, et il a déjà son
-                balayage. Lui donner la même largeur que les deux actions
-                reviendrait à proposer de partir aussi fort que de venir. */}
+            {/* ─── « SUIVANTE », ET PLUS UNE CROIX ───
+                « Je ne garderais pas un X, parce que X signifie presque
+                universellement fermer / quitter / annuler. Il faut deux façons
+                de passer à l'annonce suivante : le geste naturel, et une action
+                explicite pour quelqu'un qui ne comprend pas le balayage, qui a
+                du mal à le faire, ou qui utilise l'écran autrement. »
+
+                C'est juste, et la croix mentait deux fois : elle ne ferme rien,
+                et elle donnait l'impression de refuser le commerce plutôt que
+                de passer à la suite. Le bouton porte donc le mot et la flèche
+                du geste qu'il remplace — même sens, même vocabulaire que
+                l'étiquette « Glissez pour passer » posée au-dessus. */}
             <button
               type="button"
               className="ap-rond"
-              aria-label="Passer à la suivante"
+              aria-label="Passer à l’annonce suivante"
               onClick={() => partir("gauche")}
               disabled={!sommet}
             >
-              ✕
+              Suivante
+              <i aria-hidden="true">→</i>
             </button>
             {/* ─── LES DEUX ACTIONS SONT L'UNE AU-DESSUS DE L'AUTRE ───
                 « Les deux boutons ne doivent pas avoir le même poids : ils
@@ -7267,7 +7357,7 @@ export function ApercuHabitant() {
               onClick={() => allerA_onglet("salons")}
             >
               <i aria-hidden="true">💬</i>
-              Mes salons
+              {NOM_ONGLET.salons}
               {/* Le badge compte tout ce qui est VIVANT : les siens et ceux
                   qu'on peut rejoindre. Ne compter que les siens le faisait
                   disparaitre a la premiere visite, au moment precis ou il y a
@@ -8547,7 +8637,19 @@ export function ApercuHabitant() {
            garde. Deux gestes differents : confondus dans un seul bouton, on
            perd l'un en cherchant l'autre. C'est aussi ce qui a permis de
            retirer « Garder » de la photo. */
-        .ap-fav2{flex:none;display:flex;align-items:center;gap:7px;
+        /* ═══ LE COEUR ET LA CLOCHE SONT SEPARES, SANS PRENDRE DEUX RANGEES ═══
+           « Je pense que le coeur et les notifications doivent etre visuellement
+           separes, parce qu'ils correspondent a deux intentions totalement
+           differentes. Si les deux sont cote a cote mais trop proches,
+           l'utilisateur peut se demander : est-ce que ce sont deux facons
+           differentes de recevoir des notifications ? »
+
+           DEUX FORMES, DEUX COULEURS, UN TRAIT ENTRE ELLES. Le coeur est un
+           rond nu — mon interet ; la cloche est une pastille ambre chiffree —
+           il s'est passe quelque chose. Le filet vertical dit qu'on change de
+           sujet, et il coute deux points de large la ou une seconde rangee en
+           coutait trente-cinq de haut. */
+        .ap-fav2{flex:none;display:flex;align-items:center;gap:11px;
           border-radius:999px;border:1px solid rgba(126,230,192,.28);
           background:rgba(18,185,129,.14);
           transition:transform .28s cubic-bezier(.34,1.5,.64,1);}
@@ -10477,6 +10579,10 @@ export function ApercuHabitant() {
            ligne pour gagner de la place. » Elle occupait une DEUXIEME rangee
            dans l'en-tete pour un objet de cinquante points de large — trente-
            cinq points de haut pris sur la photo, sur chaque carte, pour rien. */
+        .ap-fav2::before{content:"";order:1;width:1px;height:20px;
+          background:rgba(234,242,236,.22);}
+        .ap-fav2>button:first-child{order:0;}
+        .ap-fav2>.ap-jai{order:2;}
         .ap-jai{display:flex;align-items:center;gap:5px;margin:0;
           font:inherit;font-size:12.5px;font-weight:850;cursor:pointer;
           color:#F7C948;background:rgba(240,180,41,.13);
@@ -11203,12 +11309,21 @@ export function ApercuHabitant() {
            le balayage n'est pas encore un reflexe pour qui decouvre — mais il
            cesse d'occuper la place d'une action, ce qu'il n'est pas. Les
            points rendus vont aux deux libelles, qui sortaient tronques. */
-        .ap-rond{flex:none;width:40px;height:40px;border-radius:50%;font:inherit;
-          font-size:16px;line-height:1;cursor:pointer;color:#D6DEE4;
+        /* IL N'EST PLUS UN ROND, ET IL PORTE SON NOM. Une croix ne dit pas
+           « suivante » : elle dit « fermer ». Le bouton s'allonge juste assez
+           pour tenir le mot, reste en colonne de gauche sur les deux rangees,
+           et garde son poids secondaire — passer n'est pas une action, c'est la
+           suite. */
+        .ap-rond{flex:none;display:flex;flex-direction:column;align-items:center;
+          justify-content:center;gap:1px;width:64px;min-height:40px;
+          border-radius:15px;font:inherit;
+          font-size:11px;font-weight:800;letter-spacing:-.01em;line-height:1.1;
+          cursor:pointer;color:#D6DEE4;padding:7px 4px;
           display:flex;align-items:center;justify-content:center;
           border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);
           transition:transform .12s ease;}
-        .ap-rond:active{transform:scale(.92);}
+        .ap-rond i{font-style:normal;font-size:13px;line-height:1;opacity:.7;}
+        .ap-rond:active{transform:scale(.94);}
 
         /* ─── ELLES N'ONT PLUS LE MEME POIDS, ET C'EST UN CHANGEMENT DE FOND ───
            « Les deux boutons ne doivent pas avoir le meme poids : ils

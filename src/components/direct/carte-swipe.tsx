@@ -370,19 +370,29 @@ export function CarteSwipe({
                 côté, et la barre passe dessous sur toute la largeur du bloc.
                 Ce qui était une pastille de douze points devient le premier
                 objet que l'œil rencontre. */}
-            {c.flash ? (
+            {/* ─── ⚡ ET « IL Y A N MIN » A DISPARU ───
+                « Il y a 1 h : cette indication n'a aucun intérêt, donc à
+                supprimer en haut de l'annonce. »
+
+                C'est juste, et on l'avait déjà à moitié admis en la réduisant à
+                un texte discret. Ce qui intéresse quelqu'un devant une annonce
+                n'est pas depuis quand elle existe, c'est si c'est encore
+                disponible — et ça, la journée juste dessous le dit heure par
+                heure. Une information qu'on garde parce qu'elle est vraie, et
+                non parce qu'elle sert, finit par occuper la place de celles qui
+                servent.
+
+                LE COMPTE À REBOURS DU FLASH, LUI, RESTE : il ne dit pas depuis
+                quand, il dit COMBIEN DE TEMPS ENCORE. Ce sont deux mesures de
+                temps opposées, et une seule fait décider. */}
+            {c.flash && (
               <p className="cd-flash">
                 {/* ─── LE MOT QUI MANQUAIT : « RARE » ───
-                    « L'offre Flash ne ressemble toujours pas à une offre Flash.
-                    Il faudrait quelque chose qui permette en une seconde de
-                    comprendre que c'est une annonce spéciale ET RARE. »
-
-                    Le second mot était le trou. La carte disait « c'est
-                    urgent » — le compte à rebours le dit très bien — et ne
-                    disait nulle part que ça n'arrive presque jamais. Or la
-                    rareté est la moitié de la valeur : trois par semaine et pas
-                    une de plus, c'est écrit dans le code depuis le premier jour
-                    et ça ne se lisait sur aucun écran d'habitant. */}
+                    Le compte à rebours dit « c'est urgent » ; rien ne disait que
+                    ça n'arrive presque jamais. Or la rareté est la moitié de la
+                    valeur : trois par semaine et pas une de plus, c'est écrit
+                    dans le code depuis le premier jour et ça ne se lisait sur
+                    aucun écran d'habitant. */}
                 <span className="cd-flash-t">
                   <i aria-hidden="true">⚡</i>
                   Flash
@@ -399,19 +409,7 @@ export function CarteSwipe({
                   <u style={{ width: `${Math.round((1 - c.flash.part) * 100)}%` }} />
                 </span>
               </p>
-            ) : (
-              c.frais && (
-                <p className="cd-frais">
-                  <i aria-hidden="true" />
-                  {c.frais}
-                </p>
-              )
             )}
-            {/* ─── LE MÉTIER TOUJOURS, LA NATURE EN PLUS ───
-                La nature remplaçait le métier : sur une carte marquée « MENU DU
-                JOUR » ou « −30 % », plus rien ne disait chez qui on était. Les
-                deux tiennent sur la même ligne — le métier d'abord, parce que
-                c'est lui qui situe. */}
             {(c.etiquette || c.metier) && (
               <p className="cd-nature">
                 {c.metier && (
@@ -675,8 +673,19 @@ export function StylesDirect() {
         .cd-photo.sans{display:flex;align-items:center;justify-content:center;
           background:linear-gradient(155deg,#22463A,#0D1A15 70%);}
         .cd-ph{font-size:74px;opacity:.5;}
+        /* ═══ LE DEGRADE SERT LE TEXTE, IL N'ASSOMBRIT PAS LA PHOTO ═══
+           « Je ne chercherais pas a assombrir fortement l'image. Le risque est
+           que ClikMe perde justement ce qui fait son interet : voir le commerce
+           reel. Le degrade sert le texte, il ne devient pas un element graphique
+           en lui-meme. La photo doit rester la star. »
+
+           CE QUI CHANGE : le haut de l'image etait deja voile a 30 % pour rien —
+           il n'y a aucun texte la-haut. Il redevient transparent. Le bas
+           s'assombrit plus TARD et plus FRANCHEMENT, la ou le texte commence :
+           on gagne un tiers d'image visible ET du contraste sous les mots. */
         .cd-voile{position:absolute;inset:0;
-          background:linear-gradient(180deg,rgba(4,8,6,.3) 0%,rgba(4,8,6,0) 24%,rgba(4,8,6,.68) 56%,rgba(4,8,6,.96) 100%);}
+          background:linear-gradient(180deg,rgba(4,8,6,0) 0%,rgba(4,8,6,0) 38%,
+            rgba(4,8,6,.34) 55%,rgba(4,8,6,.82) 76%,rgba(4,8,6,.97) 100%);}
         .cd-reste{position:absolute;left:14px;top:14px;display:flex;align-items:center;gap:6px;
           font-size:12px;font-weight:800;color:#fff;background:rgba(8,12,10,.62);
           -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
@@ -791,10 +800,25 @@ export function StylesDirect() {
         }
         /* LE PLAT EST LA PLUS GROSSE LIGNE DE LA CARTE. C'est tout le
            correctif : avant, c'etait le nom du commerce. */
-        .cd-offre{margin:8px 0 0;font-family:Georgia,'Times New Roman',serif;
-          font-weight:700;font-size:clamp(27px,8.6vw,40px);line-height:1.03;
-          letter-spacing:-.02em;text-transform:uppercase;color:#fff;
-          text-shadow:0 2px 18px rgba(0,0,0,.55);}
+        /* ═══ SANS-SERIF, ET UNE VRAIE HIERARCHIE DE GRAISSES ═══
+           « Police sans-serif geometrique et moderne : oui. Mais attention au
+           mot "grasse" — si tout est gras, plus rien n'est important. »
+
+           LE TEST QU'IL DEMANDE : comprendre « 40 PIECES SORTIES CE MATIN » en
+           moins d'une seconde, sans s'arreter. Une serif elegante se lit ligne
+           par ligne ; une sans-serif epaisse se lit d'un coup, et c'est ce
+           qu'il faut pour un ecran qu'on balaie. La serif reste ou elle a du
+           sens — le mot du commercant, sous le pli, qui est une VOIX et pas une
+           information.
+
+           TROIS GRAISSES, ET PAS UNE : le message a 900, le nom du commerce a
+           650, la ville et la distance a 400. C'est la hierarchie qui fait lire
+           vite, pas l'epaisseur. */
+        .cd-offre{margin:8px 0 0;
+          font-family:'Inter',system-ui,-apple-system,sans-serif;
+          font-weight:900;font-size:clamp(26px,8.2vw,38px);line-height:1.05;
+          letter-spacing:-.035em;text-transform:uppercase;color:#fff;
+          text-shadow:0 2px 14px rgba(0,0,0,.5);}
         .cd-detail{margin:7px 0 0;max-width:31ch;font-size:12.5px;
           line-height:1.35;color:#C8D6CD;text-wrap:balance;
           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
@@ -854,9 +878,11 @@ export function StylesDirect() {
           gap:12px;color:#FFD75E;text-shadow:0 2px 18px rgba(240,180,41,.45);}
         .cd-prixg.flash s{margin:0;font-size:clamp(17px,5vw,23px);font-weight:750;
           color:rgba(255,255,255,.5);}
+        /* LE NOM A 650, LA VILLE ET LA DISTANCE A 400 : trois niveaux avec le
+           titre. « Si tout est gras, plus rien n'est important. » */
         .cd-chez{margin:11px 0 0;font-size:14.5px;font-weight:650;
           line-height:1.25;color:#EAF2EC;text-wrap:balance;}
-        .cd-chez s{text-decoration:none;font-weight:400;color:#B4C6BB;}
+        .cd-chez s{text-decoration:none;font-weight:400;color:#A9BDB2;}
         .cd-carte.sec .cd-social{align-self:center;margin-top:9px;}
         /* « JUSQU'A QUAND » EST LA SEULE RARETE QU'ON PUISSE ECRIRE SANS
            L'INVENTER. On ne sait pas combien il reste de parts — un commercant

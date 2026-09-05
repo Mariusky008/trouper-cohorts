@@ -2899,7 +2899,7 @@ export function carteDeRecrutement(c: CarteAutour): CarteDirect {
     cadrage: c.cadrage,
     nom: c.nom,
     metier: c.metier,
-    metierEmoji: emojiDuMetier(c.branche),
+    metierEmoji: emojiDuMetier(c.branche, c.metier),
     ville: c.ville,
     distance: c.distance,
     itineraire: c.itineraire,
@@ -3015,7 +3015,36 @@ function fraicheurEcrite(m: MomentJour, heure: number): string | undefined {
  * constante recopiée quatre fois se désynchronise à la première correction, et
  * le métier disparaîtrait sur trois cartes sur quatre sans que rien ne le dise.
  */
-export function emojiDuMetier(branche: string): string {
+const EMOJI_METIER: [RegExp, string][] = [
+  [/boucher/i, "🥩"],
+  [/boulanger|p[âa]tisser/i, "🥖"],
+  [/friperie|v[êe]tement|pr[êe]t-[àa]-porter/i, "👗"],
+  [/fleurist/i, "💐"],
+  [/coiffeur|coiffure|salon/i, "💇"],
+  [/ongl|proth[ée]siste/i, "💅"],
+  [/bar\b|cave|vins?/i, "🍸"],
+  [/traiteur|[ée]picerie/i, "🥘"],
+  [/restaurant|bistrot|brasserie/i, "🍽️"],
+];
+
+/**
+ * SON PICTOGRAMME — LU SUR SON MÉTIER, PAS SUR SON RAYON.
+ *
+ * LE DÉFAUT MESURÉ : une boucherie affichait la fourchette et le couteau du
+ * restaurant. Le paquet la range dans « Restaurants » — c'est son RAYON, la
+ * catégorie qu'on choisit pour parcourir la ville — mais son métier est
+ * boucher, et c'est ce mot-là que la carte écrit juste à côté. Un pictogramme
+ * qui contredit le mot qu'il accompagne fait douter des deux.
+ *
+ * ON LIT DONC LE MÉTIER D'ABORD, le rayon ensuite. Une friperie n'est pas une
+ * boutique de mode, un traiteur n'est pas un restaurant, et ce sont exactement
+ * les nuances qui font dire « ah, il y a ÇA à côté de chez moi ».
+ */
+export function emojiDuMetier(branche: string, metier?: string): string {
+  if (metier) {
+    const t = EMOJI_METIER.find(([r]) => r.test(metier));
+    if (t) return t[1];
+  }
   return METIERS.find((m) => m.cle === branche)?.emoji ?? "📍";
 }
 
@@ -3062,8 +3091,8 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
       cadrage: c.menu.cadrage ?? c.cadrage,
       nom: c.nom,
       metier: c.metier,
-      metierEmoji: emojiDuMetier(c.branche),
-    metierEmoji: emojiDuMetier(c.branche),
+      metierEmoji: emojiDuMetier(c.branche, c.metier),
+    metierEmoji: emojiDuMetier(c.branche, c.metier),
       ville: c.ville,
       distance: c.distance,
       itineraire: c.itineraire,
@@ -3104,7 +3133,7 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
     cadrage: c.cadrage,
     nom: c.nom,
     metier: c.metier,
-    metierEmoji: emojiDuMetier(c.branche),
+    metierEmoji: emojiDuMetier(c.branche, c.metier),
     ville: c.ville,
     distance: c.distance,
     itineraire: c.itineraire,
@@ -3235,7 +3264,7 @@ export function carteDeReponse(c: CarteAutour, heure: number): CarteDirect {
     cadrage: c.cadrage,
     nom: c.nom,
     metier: c.metier,
-    metierEmoji: emojiDuMetier(c.branche),
+    metierEmoji: emojiDuMetier(c.branche, c.metier),
     ville: c.ville,
     distance: c.distance,
     itineraire: c.itineraire,

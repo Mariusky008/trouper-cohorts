@@ -128,58 +128,44 @@ dire(!motsDuPlat.some((w) => face.pastille.toLowerCase().includes(w)),
 }
 
 // ═══ 2 · « SUIVRE CE BAR À VINS », PAS « SUIVRE UN BAR À VINS » ═══
-console.log("\n══ suivre, et la langue ══");
-// ON PASSE PAR LES BARS ET LES COMMERCES DE BOUCHE : les enseignes anonymes
-// de la maquette — « Un bar à vins », « Une boucherie du centre » — sont
-// celles qui déclenchent le démonstratif, et elles ne sont pas toutes dans la
-// même famille de métiers.
-const vus = [];
-const familles = async () => {
-  await p.click(".ap-metier");
-  await p.waitForTimeout(500);
-  await p.evaluate(() => {
-    const b = [...document.querySelectorAll(".ap-m")].find((e) =>
-      /bar/i.test(e.querySelector("span")?.textContent ?? ""));
-    b?.click();
-  });
-  await p.waitForTimeout(1100);
-};
-for (let k = 0; k < 12; k++) {
-  const t = await p.$eval(".ap-suivre-face:not(.suivi) span", (e) =>
-    e.textContent.replace(/\s+/g, " ").trim()).catch(() => "");
-  if (t) vus.push(t);
-  if (!(await avancer(p))) break;
-}
-await familles();
-for (let k = 0; k < 6; k++) {
-  const t = await p.$eval(".ap-suivre-face:not(.suivi) span", (e) =>
-    e.textContent.replace(/\s+/g, " ").trim()).catch(() => "");
-  if (t) vus.push(t);
-  if (!(await avancer(p))) break;
-}
-for (const t of vus.slice(-6)) console.log(`  ${t}`);
-dire(vus.length > 0, `on a croisé ${vus.length} boutons « Suivre »`);
-// UN ARTICLE INDÉFINI DERRIÈRE UN VERBE DONNE UNE PHRASE QUI N'EXISTE PAS :
-// on ne suit pas « un » bar, on suit CE bar-là.
-dire(!vus.some((t) => /^Suivre Une? /.test(t)),
-  "jamais « Suivre un… » ni « Suivre une… »");
-dire(vus.some((t) => /^Suivre (ce|cet|cette) /.test(t)),
-  "les enseignes anonymes prennent le démonstratif");
-// ET LA PROMESSE NE DIT PAS « ICI » : elle se lit à distance, sur une annonce.
-dire(!vus.some((t) => /\bici\b/.test(t)),
-  "aucune promesse ne dit « ici » — on n'y est pas");
-// ELLES S'ADRESSENT À QUELQU'UN, ET ELLES PROMETTENT UN RANG.
+console.log("\n══ mettre en favori, et la langue ══");
+// ═══ L'ENCART « SUIVRE » A DISPARU DE L'ANNONCE, ET CETTE GARDE AVEC ═══
 //
-// LA RÈGLE A ÉTÉ RESSERRÉE, ET IL FAUT LE DIRE : elle exigeait la formule exacte
-// « Recevez en priorité ». Une formule n'est pas une règle — elle interdit de
-// mieux dire la même chose. Ce qui compte est double, et se mesure : un
-// destinataire (« vous »), et le rang qu'on y gagne. « Ses annonces vous
-// arriveront AVANT LES AUTRES » dit les deux, et le dit mieux qu'une priorité,
-// qui est un mot d'administration.
-dire(vus.every((t) => /\bvous\b/i.test(t)),
-  "et toutes s'adressent à quelqu'un");
-dire(vus.every((t) => /avant les autres|en priorité/i.test(t)),
-  "et toutes promettent un RANG, pas une notification");
+// « Je retirerais complètement le gros encart "suivre cette terrasse au
+// soleil" : il casse le parcours principal. » Cette section comptait ces
+// encarts et vérifiait leur français — « suivre CETTE terrasse » et non
+// « suivre UNE terrasse ». L'objet n'existe plus.
+//
+// CE QU'ELLE GARDE EST DÉPLACÉ, PAS PERDU. Le nom du commerce est maintenant
+// écrit dans l'écho qui répond APRÈS l'appui sur le cœur, et c'est là que la
+// langue peut encore fauter. On mesure donc ce texte-là.
+//
+// ET LA GARDE VÉRIFIE D'ABORD L'ABSENCE : une règle qu'on retourne sans le dire
+// est pire qu'une règle absente.
+dire(!(await p.$(".ap-suivre-face")),
+  "aucun encart ne demande de s'abonner au milieu de l'annonce");
+const dits = [];
+for (let k = 0; k < 10; k++) {
+  const nom = await p.$eval(".ap-dessus .cd-chez", (e) =>
+    e.textContent.split("·")[0].trim()).catch(() => "");
+  if (nom) {
+    await p.click(".ap-fav2 button:first-child").catch(() => {});
+    await p.waitForTimeout(420);
+    const e = await p.$eval(".ap-echo", (x) =>
+      x.textContent.replace(/\s+/g, " ").trim()).catch(() => "");
+    if (e) dits.push(e);
+  }
+  if (!(await avancer(p))) break;
+}
+for (const t of dits.slice(-4)) console.log(`  ${t}`);
+dire(dits.length > 0, `le cœur répond ${dits.length} fois`);
+// LA RÉPONSE VIENT APRÈS LE GESTE, ELLE NE LE DEMANDE PAS.
+dire(dits.every((t) => /favoris/i.test(t)),
+  "et elle dit ce qui vient de se passer, pas ce qu'on devrait faire");
+dire(dits.every((t) => !/\bSuivre\b/i.test(t)),
+  "sans le mot « suivre », qui fait penser à un réseau social");
+dire(dits.every((t) => /prévenu|annonces/i.test(t)),
+  "et elle dit ce qu'on y gagne — après, jamais avant");
 await ctx.close();
 
 // ═══ 3 · LE TOUR DE RÔLE NE SE JUSTIFIE PLUS APRÈS COUP ═══
@@ -738,17 +724,23 @@ console.log("\n══ la vidéo dans le rond ══");
 // tout le monde les a. « Il vient de se passer quelque chose, il y a douze
 // minutes, à trois cents mètres » n'existe nulle part ailleurs.
 //
-// TROIS CHOSES DOIVENT ÊTRE VRAIES, et la troisième est celle qui a lâché au
+// DEUX CHOSES DOIVENT ÊTRE VRAIES, et la seconde est celle qui a lâché au
 // premier essai :
 //
 //   1. LA CARTE FRAÎCHE EST EN TÊTE du paquet, devant les commerces suivis.
-//   2. ELLE PORTE SON HEURE, et c'est la seule qui la porte — si tout le paquet
-//      était frais, plus rien ne le serait.
-//   3. ELLE MONTRE LE MOMENT QUI L'A FAIT REMONTER. La carte remontait bien,
+//   2. ELLE MONTRE LE MOMENT QUI L'A FAIT REMONTER. La carte remontait bien,
 //      mais affichait le premier moment dont la fenêtre couvrait l'heure : à
 //      8 h 18 la boulangerie remontait pour sa fournée de 7 h et montrait
-//      « MENU DU JOUR · La formule du midi », pastille « il y a 18 min » à
-//      côté. Le classement disait une chose, la carte en montrait une autre.
+//      « MENU DU JOUR · La formule du midi » alors qu'elle remontait pour le
+//      pain. Le classement disait une chose, la carte en montrait une autre.
+//
+// IL Y AVAIT UNE TROISIÈME CHOSE, ET ELLE A ÉTÉ RETIRÉE DU PRODUIT. La carte
+// portait une pastille « il y a 18 min », et cette garde la comptait. Le
+// signalement : « il y a 1 h : cette indication n'a aucun intérêt, donc à
+// supprimer en haut de l'annonce. » Il a raison — sur un direct, tout ce qu'on
+// voit est de maintenant ; dater chaque carte n'ajoutait qu'un chiffre de plus
+// dans un écran qu'on venait justement d'alléger. `.cd-frais` n'existe plus,
+// et ce qui la mesurait est parti avec elle plutôt que d'être contourné.
 //
 // ON BALAIE LA JOURNÉE AVEC UNE HORLOGE FAUSSE : c'est le seul moyen de voir
 // une fonction qui, par construction, n'est vraie que quatre-vingt-dix minutes.
@@ -767,8 +759,7 @@ console.log("\n══ le moment ══");
     // L'application ouvre désormais sur TOUTE la ville et non sur les
     // restaurants : à 17 h 30 les tables sont calmes, mais la fleuriste vient
     // de sortir ses bouquets. Ce n'est pas la fraîcheur qui a débordé — c'est
-    // le paquet qui s'est élargi, et c'était le but. Ce que cette section
-    // protège vraiment reste intact : jamais plus de deux pastilles à la fois.
+    // le paquet qui s'est élargi, et c'était le but.
     [17.5, "Il reste 4 bouquets"],
     [18.3, "Ce qui reste, à moitié prix"],
     [21.4, "Service du soir"],
@@ -787,52 +778,32 @@ console.log("\n══ le moment ══");
     await p9.goto(`${BASE}/autour-de-moi`, { waitUntil: "networkidle" });
     await p9.waitForTimeout(1200);
     const r = await p9.evaluate(() => ({
-      frais: document.querySelector(".ap-dessus .cd-frais")?.textContent.trim() ?? "",
       quoi: document.querySelector(".ap-dessus .cd-offre")?.textContent.trim() ?? "",
-      // COMBIEN DE PASTILLES DANS TOUT LE PAQUET : au-delà de deux cartes
-      // fraîches visibles, la tête du paquet n'en est plus une.
-      combien: document.querySelectorAll(".cd-frais").length,
+      // ON VÉRIFIE AUSSI QUE LA PASTILLE N'EST PAS REVENUE. Elle a été retirée
+      // sur signalement ; une garde qui ne surveille plus rien laisserait la
+      // porte ouverte à sa réapparition au prochain ajout.
+      datee: document.querySelectorAll(".cd-frais").length,
     }));
     const hh = `${Math.floor(h)} h ${String(Math.round((h % 1) * 60)).padStart(2, "0")}`;
     // LA CASSE VIENT DU CSS, PAS DU TEXTE : `.cd-offre` est en `uppercase`,
     // donc `textContent` rend l'original. On compare sans en tenir compte.
-    const ok = attendu
-      ? r.quoi.toLowerCase() === attendu.toLowerCase()
-        && /il y a|instant/.test(r.frais)
-        && r.combien <= 2
-      : r.frais === "";
+    const ok = r.quoi.toLowerCase() === attendu.toLowerCase() && r.datee === 0;
     if (ok) bons++;
-    console.log(`  ${hh} → ${r.frais ? `[${r.frais}] ` : "· "}${r.quoi || "(rien)"}`);
-    if (!ok) console.log(`      attendu : ${attendu ?? "aucune pastille"}`);
+    console.log(`  ${hh} → ${r.quoi || "(rien)"}`);
+    if (!ok) console.log(`      attendu : ${attendu}${r.datee ? " — et aucune date" : ""}`);
     if (h === 13.5) await p9.screenshot({ path: "/tmp/moment.png" });
     await ctx9.close();
   }
   dire(bons === journee.length, `la journée se lit heure par heure (${bons}/${journee.length})`);
 
-  // ─── ET LA COULEUR N'EST PAS CELLE DE « PASSER » ───
-  // Le premier essai avait mis la pastille en corail, à deux centimètres d'un
-  // tampon « PASSER » en #FF6B6B : « nouveau » et « refuser » du même signe.
-  const ctxC = await nav.newContext({
-    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
-    isMobile: true, hasTouch: true, locale: "fr-FR",
-  });
-  await ctxC.clock.setFixedTime(new Date(2026, 8, 2, 13, 30, 0));
-  const pc = await ctxC.newPage();
-  await pc.goto(`${BASE}/autour-de-moi`, { waitUntil: "networkidle" });
-  await pc.waitForTimeout(1200);
-  const teintes = await pc.evaluate(() => {
-    const pt = document.querySelector(".cd-frais i");
-    const tp = document.querySelector(".ap-tampon.non");
-    const lire = (e) => (e ? getComputedStyle(e) : null);
-    return {
-      point: lire(pt)?.backgroundColor ?? "",
-      tampon: lire(tp)?.color ?? "",
-    };
-  });
-  console.log(`  point ${teintes.point} · tampon « passer » ${teintes.tampon}`);
-  dire(!!teintes.point && teintes.point !== teintes.tampon,
-    "la fraîcheur n'a pas la couleur de « passer »");
-  await ctxC.close();
+  // ─── UNE GARDE RETIRÉE AVEC L'OBJET QU'ELLE GARDAIT ───
+  //
+  // Il y avait ici « la fraîcheur n'a pas la couleur de « passer » » : le
+  // premier essai avait mis la pastille en corail, à deux centimètres d'un
+  // tampon « PASSER » en #FF6B6B — « nouveau » et « refuser » du même signe.
+  // La pastille n'existe plus (voir plus haut), donc la garde non plus. On ne
+  // la remplace pas par une mesure creuse : la seule chose qu'il reste à
+  // vérifier, « aucune carte n'est datée », est faite heure par heure au-dessus.
 }
 
 // ═══ 10 · LA CARTE NE SORT PAS PENDANT QU'ELLE QUESTIONNE ═══
