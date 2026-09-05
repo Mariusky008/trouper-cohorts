@@ -82,9 +82,11 @@ import {
 import {
   FLASH_MINUTES,
   FLASH_PAR_SEMAINE,
+  finDuFlash,
   flashRestants,
   momentDuFlash,
   noterUnFlash,
+  prixApres,
   raccourcisDuFlash,
   viderLesFlash,
 } from "@/lib/direct/flash";
@@ -2629,7 +2631,19 @@ export function Assistante() {
                   key={a}
                   type="button"
                   className={flash.avantage === a ? "on" : ""}
-                  onClick={() => setFlash({ ...flash, avantage: a })}
+                  // ELLE FAIT LE CALCUL, PARCE QUE C'EST SON MÉTIER. Choisir
+                  // « −20 % » quand le prix du jour est connu remplit la case
+                  // « prix après » — voir `prixApres`. Sans ça, l'habitant
+                  // lisait « −20 % » puis « 14 € » et comprenait « 14 € ».
+                  // La case reste modifiable : c'est une proposition, pas un
+                  // verrou, et un commerçant qui arrondit à 11 € a raison.
+                  onClick={() =>
+                    setFlash({
+                      ...flash,
+                      avantage: a,
+                      apres: prixApres(flash.avant, a) || flash.apres,
+                    })
+                  }
                 >
                   {a}
                 </button>
@@ -2747,7 +2761,10 @@ export function Assistante() {
                   combien: Number(flash.combien) || undefined,
                   photo: flash.photo || undefined,
                   lance: maintenant,
-                  fin: maintenant + flash.minutes / 60,
+                  // JAMAIS APRÈS MINUIT — voir `finDuFlash`. Un Flash lancé à
+                  // 23 h 45 s'arrête à 23 h 59 plutôt que de promettre un quart
+                  // d'heure que le changement de date effacerait.
+                  fin: finDuFlash(maintenant, flash.minutes),
                 });
                 // ET IL EST HORODATÉ PAREIL. `publie` est ce qui le fait remonter
                 // en tête du paquet ; posé à l'heure de démo, il serait arrivé

@@ -3177,11 +3177,51 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
     prixBarre: m?.offert ? undefined : m?.prixBarre,
     etiquette: m?.offert ? "OFFERT" : m?.etiquette,
     // ⚡ CE QUI SE PÉRIME DANS QUELQUES MINUTES — voir `flash.ts`. On ne passe
-    // que le compte et la part écoulée : la carte n'a pas à connaître la
-    // mécanique, seulement le temps qu'il reste.
+    // que le compte, la part écoulée, l'avantage, et ce qui continue derrière :
+    // la carte n'a pas à connaître la mécanique.
+    //
+    // L'AVANTAGE MONTE SUR LA CARTE, ET C'ÉTAIT LE PLUS GROS DÉFAUT DU FLASH.
+    // Il descendait dans `lignes`, c'est-à-dire en gris clair, douze points de
+    // haut, sous le titre : « −20 % » avait exactement le poids d'une liste
+    // d'ingrédients. Or c'est LA raison d'être de l'annonce — ce qu'on obtient
+    // en se levant tout de suite.
+    //
+    // ET « CE QUI CONTINUE » RÉPOND À SA QUESTION : « quand il y a le menu du
+    // jour affiché et qu'en même temps il y a un Flash, y a-t-il deux annonces
+    // séparées ou une seule, et alors que montre-t-on ? » Une seule — un
+    // commerce n'occupe jamais deux cartes, sinon le paquet se remplit de
+    // doublons du même commerçant. Pendant le Flash, la carte EST le Flash ; le
+    // reste de la journée ne disparaît pas pour autant, il est nommé sur la
+    // carte et il reprend la place tout seul quand le compte tombe à zéro.
     flash:
       m?.flash && flashEnCours(m.flash, heure)
-        ? { reste: tempsQuiReste(m.flash, heure), part: partEcoulee(m.flash, heure) }
+        ? {
+            reste: tempsQuiReste(m.flash, heure),
+            part: partEcoulee(m.flash, heure),
+            avantage: m.flash.avantage,
+            continue: (() => {
+              const autre = c.moments.find(
+                (x) => !x.flash && heure >= x.de && heure < x.a,
+              );
+              if (!autre) return undefined;
+              // « ENSUITE » PLUTÔT QUE « AUSSI ». Le Flash n'est pas une
+              // seconde offre parallèle qu'il faudrait choisir : c'est la
+              // même journée, à un moment où elle coûte moins cher. Dire ce
+              // qui vient après, c'est dire que rien n'a été annulé.
+              //
+              // ET QUAND C'EST LE MÊME PLAT — le cas le plus fréquent, puisque
+              // le formulaire pré-remplit le Flash avec l'annonce du jour —
+              // répéter son nom ne dit rien : « Ensuite : Lasagnes maison »
+              // sous un titre « LASAGNES MAISON ». Ce qu'on veut savoir, c'est
+              // qu'il sera encore là, et à quel prix.
+              if (autre.titre === m.titre) {
+                return autre.prix
+                  ? `Ensuite, au prix habituel : ${autre.prix}`
+                  : "Ensuite, au prix habituel";
+              }
+              return `Ensuite : ${autre.titre}${autre.prix ? ` · ${autre.prix}` : ""}`;
+            })(),
+          }
         : undefined,
     frais: m ? fraicheurEcrite(m, heure) : undefined,
     // PAS DE LIGNE « SOCIAL » ICI. Le nombre de moments y était écrit une

@@ -125,6 +125,32 @@ export function journeeVide(): Journee | null {
 
 const abonnes = new Set<() => void>();
 
+/**
+ * L'AUTRE ÉCRAN N'EST PAS LE MÊME DOCUMENT — et c'est ce qui manquait.
+ *
+ * LE DÉFAUT MESURÉ : « quand je fais un Flash, il n'apparaît pas dans les
+ * annonces. » Deuxième cause, indépendante de l'heure : `abonnes` ne contient
+ * que les écouteurs de LA PAGE EN COURS. Léa et Le Direct sont deux pages —
+ * deux onglets, ou deux applications installées sur l'écran d'accueil, ce qui
+ * est exactement l'usage qu'on lui a montré. Il publie dans l'une ; l'autre,
+ * déjà ouverte à côté, garde en mémoire une journée d'il y a dix minutes et
+ * n'apprend rien tant qu'on ne la recharge pas à la main.
+ *
+ * `storage` EST LE SEUL SIGNAL QUI TRAVERSE. Le navigateur l'émet dans les
+ * AUTRES documents de la même origine — jamais dans celui qui écrit, d'où le
+ * `abonnes.forEach` de `garder` qui reste indispensable. On jette le cache et
+ * on prévient : au prochain rendu, l'écran d'à côté lit la journée écrite par
+ * l'autre.
+ */
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key !== null && e.key !== CLE) return;
+    lu = false;
+    cache = null;
+    abonnes.forEach((f) => f());
+  });
+}
+
 export function abonnerJournee(f: () => void): () => void {
   abonnes.add(f);
   return () => abonnes.delete(f);

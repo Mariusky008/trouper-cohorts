@@ -61,6 +61,19 @@ export const FLASH_PAR_SEMAINE = 3;
 export const FLASH_MINUTES = 30;
 
 /**
+ * QUAND IL S'ÉTEINT — et jamais après minuit.
+ *
+ * UN FLASH LANCÉ À 23 H 45 POUR TRENTE MINUTES FINIRAIT À « 24 H 15 ». Écrit
+ * tel quel sur la carte, et surtout invisible : la journée entière est rangée
+ * au changement de date (voir `journee.ts`), si bien que la moitié d'après
+ * minuit n'existerait dans aucun écran. On préfère un Flash plus court à un
+ * Flash qui promet un quart d'heure qu'il ne tiendra pas.
+ */
+export function finDuFlash(lance: number, minutes: number): number {
+  return Math.min(lance + minutes / 60, 23 + 59 / 60);
+}
+
+/**
  * CE QU'UN FLASH MET EN AVANT — et ce n'est pas forcément une remise.
  *
  * « Le Flash ne devrait pas forcément être une réduction : deux achetés = un
@@ -131,6 +144,32 @@ export function raccourcisDuFlash(branche: string): string[] {
 export function prixEcrit(v: string): string {
   const t = v.trim();
   return /^\d+([.,]\d+)?$/.test(t) ? `${t} €` : t;
+}
+
+/**
+ * LE PRIX D'APRÈS, CALCULÉ — parce que « −20 % » n'est pas un prix.
+ *
+ * LE DÉFAUT VU À L'ÉCRAN : la carte annonçait « −20 % » puis « 14 € », l'un
+ * sous l'autre et tous deux en ambre. Personne ne peut lire ça autrement que
+ * « le Flash est à 14 € », c'est-à-dire le prix d'avant. Et personne, devant
+ * une vitrine, ne fait 14 × 0,8 de tête.
+ *
+ * IL A DEMANDÉ « PRIX AVANT, PRIX APRÈS » DÈS LE PREMIER JOUR, et c'est
+ * exactement la bonne forme : ce sont deux nombres, pas un nombre et une
+ * opération. Quand le raccourci choisi est un pourcentage et que le prix du
+ * jour est connu, on remplit donc la case pour lui — il garde la main dessus,
+ * c'est un champ comme les autres.
+ *
+ * ON REND « 11,20 » ET PAS « 11.2 » : c'est un prix français, et il va être
+ * relu par le commerçant avant de partir.
+ */
+export function prixApres(avant: string, avantage: string): string {
+  const p = Number(avant.replace(",", ".").replace(/[^0-9.]/g, ""));
+  const pc = /(\d+(?:[.,]\d+)?)\s*%/.exec(avantage);
+  if (!p || !pc) return "";
+  const v = p * (1 - Number(pc[1].replace(",", ".")) / 100);
+  if (!(v > 0)) return "";
+  return (Math.round(v * 100) / 100).toFixed(2).replace(/[.,]00$/, "").replace(".", ",");
 }
 
 /** Le journal des Flash d'un commerce, pour tenir le compte de la semaine. */
@@ -260,9 +299,23 @@ export function momentDuFlash(f: Flash): Omit<MomentJour, "publie"> {
     quand: `${hhmm(f.lance)} – ${hhmm(f.fin)}`,
     icone: "⚡",
     titre: f.quoi,
-    lignes: [f.avantage],
-    prix: f.apres ? prixEcrit(f.apres) : undefined,
-    prixBarre: f.avant ? prixEcrit(f.avant) : undefined,
+    // L'AVANTAGE N'EST PLUS UNE LIGNE DE DÉTAIL — il est passé acteur principal
+    // sur la carte (voir `cd-flash-a`). Le laisser ici l'écrirait deux fois,
+    // une grosse et une petite, à quinze points d'écart.
+    lignes: [],
+    // ─── ON NE BARRE UN PRIX QUE SI UN AUTRE LE REMPLACE ───
+    //
+    // VU À L'ÉCRAN : « 14 € » seul, barré, et rien à côté. Le formulaire
+    // pré-remplit le prix du jour dans « avant » ; si le commerçant s'arrête
+    // là — ce que fait n'importe qui dont l'avantage est « −20 % » ou « le
+    // dessert offert » —, la carte annonçait un prix supprimé sans successeur.
+    // Un prix barré tout seul se lit « ce n'est plus valable », c'est-à-dire
+    // le contraire exact de ce qu'un Flash veut dire.
+    //
+    // SANS PRIX D'APRÈS, LE PRIX RESTE UN PRIX. La chute, elle, est dite par
+    // l'avantage, et il a désormais sa place à lui sur la carte.
+    prix: f.apres ? prixEcrit(f.apres) : f.avant ? prixEcrit(f.avant) : undefined,
+    prixBarre: f.apres && f.avant ? prixEcrit(f.avant) : undefined,
     photo: f.photo || undefined,
     places: f.combien || undefined,
     // PAS D'ÉTIQUETTE « FLASH » : LA PASTILLE LE DIT DÉJÀ. Vu à l'écran, l'un

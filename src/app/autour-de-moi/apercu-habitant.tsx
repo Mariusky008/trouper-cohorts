@@ -645,11 +645,44 @@ function Attente({
 }
 
 export function ApercuHabitant() {
+  /**
+   * CE QU'IL VIENT DE DICTER À SON ASSISTANTE — voir `journee.ts`.
+   *
+   * C'EST LA FIN DE LA DÉMONSTRATION, ET C'EST TOUT SON INTÉRÊT. Il parle, il
+   * valide trois chiffres, et sa carte est là, en tête du paquet. Aucune
+   * explication n'a été nécessaire : il voit ce que ses voisins voient, dans le
+   * même écran qu'eux.
+   *
+   * ELLE N'EST PAS MARQUÉE « PRÉPARÉE ». La carte de l'outil de démarchage porte
+   * « pas encore en ligne » parce qu'elle montre le commerce de quelqu'un qui
+   * n'a rien signé ; celle-ci, il l'a publiée lui-même.
+   *
+   * ELLE EST LUE ICI, TOUT EN HAUT, PARCE QUE L'HEURE EN DÉPEND — voir juste
+   * dessous : un Flash en cours a le droit de tenir l'écran ouvert quand la
+   * ville est officiellement fermée.
+   */
+  const journee = useSyncExternalStore(abonnerJournee, chargerJournee, journeeVide);
   // L'HEURE DU VISITEUR, SANS CASSER L'HYDRATATION : le serveur ne connaît pas
   // son fuseau. Instantané serveur à midi, instantané client réel.
+  //
+  // ─── ET ELLE AVANCE PENDANT QU'UN FLASH COURT ───
+  //
+  // Partout ailleurs, une horloge figée à l'ouverture de la page ne coûte rien :
+  // un menu de midi reste un menu de midi. Le Flash est l'exception, et c'est
+  // même toute sa nature — le compte à rebours EST l'annonce. Figé, il affiche
+  // « 30 min restantes » pendant une demi-heure, puis ment.
+  //
+  // ON NE FAIT BATTRE L'ÉCRAN QUE PENDANT CE TEMPS-LÀ. Un rendu toutes les
+  // quinze secondes en permanence coûterait de la batterie et couperait les
+  // animations de balayage pour rien ; ici il n'y en a que le quart d'heure où
+  // quelque chose se périme sous les yeux de la personne.
+  const [bat, setBat] = useState(0);
   const heureVraie = useSyncExternalStore(
     () => () => {},
-    () => new Date().getHours() + new Date().getMinutes() / 60,
+    () => {
+      void bat;
+      return new Date().getHours() + new Date().getMinutes() / 60;
+    },
     () => 12,
   );
   /**
@@ -675,9 +708,39 @@ export function ApercuHabitant() {
     },
     () => 0,
   );
+  /**
+   * ⚡ UN FLASH EN COURS, À L'HORLOGE DU TÉLÉPHONE.
+   *
+   * LE DÉFAUT MESURÉ : « quand je fais un Flash, il n'apparaît pas dans les
+   * annonces. » Il est reproductible et sa cause est juste en dessous — c'est
+   * le repli de l'heure.
+   *
+   * LE PAQUET SE REPLIE SUR MIDI HORS DES HEURES D'OUVERTURE, et c'est une
+   * bonne règle : à 3 h du matin, un paquet vide se lit comme une application
+   * cassée, alors qu'il n'y a simplement personne dans la rue. Mais un Flash
+   * lancé à 23 h 20 vit, lui, à 23 h 20 — et le paquet le cherchait à midi, où
+   * il n'a évidemment jamais existé. L'annonce partait, le compteur démarrait,
+   * et l'écran d'à côté n'en savait rien. Il testait le soir : il ne pouvait
+   * pas le voir une seule fois.
+   *
+   * LE FLASH EST DONC LA SEULE CHOSE QUI TIENT L'HORLOGE OUVERTE. Tant qu'il
+   * court, on lit l'heure vraie même hors des heures d'ouverture ; dès qu'il
+   * s'éteint, le repli reprend. C'est cohérent avec ce qu'il est : la seule
+   * annonce du produit dont le sens EST « maintenant ».
+   */
+  const flashVif = !!journee?.moments.some(
+    (m) => m.flash && flashEnCours(m.flash, heureVraie),
+  );
+  useEffect(() => {
+    if (!flashVif) return;
+    const t = window.setInterval(() => setBat((n) => n + 1), 15000);
+    return () => window.clearInterval(t);
+  }, [flashVif]);
   const heure =
     heureUrl ||
-    (heureVraie >= HEURE_MIN && heureVraie <= HEURE_MAX ? heureVraie : 12);
+    (flashVif || (heureVraie >= HEURE_MIN && heureVraie <= HEURE_MAX)
+      ? heureVraie
+      : 12);
 
   /**
    * LA CARTE QU'ON VIENT VOIR — celle que l'assistante nomme dans le lien.
@@ -1526,19 +1589,8 @@ export function ApercuHabitant() {
    * croire qu'il a marché, et un bouton qu'il faut croire ne se réappuie pas.
    */
   const remises = useSyncExternalStore(abonnerRemises, chargerRemises, remisesVides);
-  /**
-   * CE QU'IL VIENT DE DICTER À SON ASSISTANTE — voir `journee.ts`.
-   *
-   * C'EST LA FIN DE LA DÉMONSTRATION, ET C'EST TOUT SON INTÉRÊT. Il parle, il
-   * valide trois chiffres, et sa carte est là, en tête du paquet, avec la
-   * pastille « à l'instant ». Aucune explication n'a été nécessaire : il voit ce
-   * que ses voisins voient, dans le même écran qu'eux.
-   *
-   * ELLE N'EST PAS MARQUÉE « PRÉPARÉE ». La carte de l'outil de démarchage porte
-   * « pas encore en ligne » parce qu'elle montre le commerce de quelqu'un qui
-   * n'a rien signé ; celle-ci, il l'a publiée lui-même.
-   */
-  const journee = useSyncExternalStore(abonnerJournee, chargerJournee, journeeVide);
+  // SA JOURNÉE EST LUE TOUT EN HAUT DU COMPOSANT — l'heure du paquet en dépend
+  // quand un Flash court. Il ne reste ici que la carte qu'on en tire.
   const carteJournee = journee ? carteDeLaJournee(journee) : null;
   // LE PAQUET PAYANT NE VOIT PAS LES DONS — voir `sansCeQuiEstOffert`. Sans
   // cette ligne, « les viennoiseries qui restent » remontait en tête de
@@ -4689,19 +4741,42 @@ export function ApercuHabitant() {
                     écran s'annulent. La cloche garde son compte et sa couleur,
                     elle perd sa phrase et sa largeur — une pastille au lieu d'une
                     bande. Ce qu'elle ouvre n'a pas changé. */}
-                {nonLues.length > 0 && !sortie && (
+                {/* ═══ LA CLOCHE NE DISPARAÎT PLUS QUAND ON L'A LUE ═══
+
+                    LE DÉFAUT MESURÉ : « les notifications disparaissent quand
+                    j'appuie dessus et je ne peux pas y accéder de nouveau, et à
+                    côté du cœur je n'ai pas de numéro qui s'affiche. »
+
+                    C'ÉTAIT ÉCRIT DANS LA CONDITION : la cloche n'existait que
+                    tant qu'il restait du non-lu. L'appui marquait tout comme lu
+                    — ce qui est juste — et le bouton s'effaçait dans le même
+                    rendu. On ouvrait ses nouvelles une fois, et la porte
+                    disparaissait avec elles. Pour les relire il fallait passer
+                    par Profil, un bloc qui n'apparaît lui-même que si l'on suit
+                    déjà quelqu'un : personne ne trouve ça.
+
+                    UNE PORTE NE SE FERME PAS PARCE QU'ON EST ENTRÉ. La cloche
+                    est donc là en permanence. Ce qui change, c'est ce qu'elle
+                    porte : un chiffre ambre tant qu'il y a du neuf, la cloche
+                    seule et éteinte une fois tout lu. Le chiffre compte ce qui
+                    n'a pas été lu et rien d'autre — un badge qui ne s'éteint
+                    jamais ne veut plus rien dire, et c'est bien pour ça qu'il
+                    s'éteint. */}
+                {!sortie && (
                   <button
                     type="button"
-                    className="ap-jai"
+                    className={`ap-jai${nonLues.length ? " neuf" : ""}`}
                     onClick={ouvrirMesCommerces}
                     aria-label={
-                      quiAduNeuf.length === 1
-                        ? `Une nouvelle ${deChez(quiAduNeuf[0].c.nom)}`
-                        : `${nonLues.length} nouvelles de vos commerces`
+                      nonLues.length === 0
+                        ? "Vos commerces suivis"
+                        : quiAduNeuf.length === 1
+                          ? `Une nouvelle ${deChez(quiAduNeuf[0].c.nom)}`
+                          : `${nonLues.length} nouvelles de vos commerces`
                     }
                   >
                     <i aria-hidden="true">🔔</i>
-                    {nonLues.length}
+                    {nonLues.length > 0 && nonLues.length}
                   </button>
                 )}
                 {/* ─── LE CHIFFRE AMBIGU A DISPARU ───
@@ -5350,14 +5425,48 @@ export function ApercuHabitant() {
                                 ? `Aujourd’hui chez ${dessus.voix.prenom}`
                                 : "Aujourd’hui"}
                             </span>
+                            {/* ═══ LE FLASH SE NOMME DANS LA JOURNÉE ═══
+
+                                « Quand il y a le menu du jour affiché et qu'en
+                                même temps il y a un Flash, y a-t-il deux
+                                annonces séparées ou une seule ? »
+
+                                CE BLOC ÉTAIT LA CAUSE DE LA QUESTION. Il
+                                listait le Flash comme un moment de plus, avec
+                                le même titre que le menu — on lisait « 12 h –
+                                14 h Lasagnes maison » puis « 12 h 30 – 13 h
+                                Lasagnes maison », deux lignes jumelles sans
+                                rien pour les distinguer. C'est bien la même
+                                journée et la même carte ; il manquait juste le
+                                mot qui dit laquelle des deux lignes se périme.
+
+                                ET LE FLASH PASSE EN TÊTE, parce que c'est lui
+                                qui court : la ligne « en cours » du bloc doit
+                                être celle qu'on est en train de regarder. */}
                             <ul>
-                              {restants.slice(0, 2).map((m, i) => (
-                                <li key={`${m.titre}-${i}`} className={i ? "" : "on"}>
-                                  <b>{m.quand}</b>
-                                  <span>{m.titre}</span>
-                                  {m.prix && <em>{m.prix}</em>}
-                                </li>
-                              ))}
+                              {[...restants]
+                                .sort(
+                                  (a, b) =>
+                                    Number(!!b.flash && flashEnCours(b.flash, heure)) -
+                                    Number(!!a.flash && flashEnCours(a.flash, heure)),
+                                )
+                                .slice(0, 2)
+                                .map((m, i) => {
+                                  const vif = !!m.flash && flashEnCours(m.flash, heure);
+                                  return (
+                                    <li
+                                      key={`${m.titre}-${i}`}
+                                      className={`${i ? "" : "on"}${vif ? " eclair" : ""}`}
+                                    >
+                                      <b>
+                                        {vif && <u aria-hidden="true">⚡</u>}
+                                        {m.quand}
+                                      </b>
+                                      <span>{m.titre}</span>
+                                      {vif ? <em>Flash</em> : m.prix && <em>{m.prix}</em>}
+                                    </li>
+                                  );
+                                })}
                             </ul>
                             <button
                               type="button"
@@ -9202,6 +9311,14 @@ export function ApercuHabitant() {
         .ap-journee li.on b{color:#F7C948;}
         .ap-journee li span{flex:1;min-width:0;font-weight:650;text-align:left;
           overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        /* LA LIGNE DU FLASH SE VOIT SANS SE LIRE — l'eclair devant l'heure et
+           le mot « Flash » a la place du prix. Deux lignes qui portaient le
+           meme titre sont devenues deux choses differentes. */
+        .ap-journee li.eclair b{color:#FFD75E;}
+        .ap-journee li.eclair b u{text-decoration:none;margin-right:4px;}
+        .ap-journee li.eclair em{color:#04150E;background:#F0B429;
+          border-radius:999px;padding:2px 7px;font-size:9.5px;
+          letter-spacing:.07em;text-transform:uppercase;}
         .ap-journee li em{flex:none;font-style:normal;font-weight:800;
           font-variant-numeric:tabular-nums;}
         .ap-journee .ap-vers-bas{align-self:flex-start;margin-top:7px;
@@ -10583,12 +10700,20 @@ export function ApercuHabitant() {
           background:rgba(234,242,236,.22);}
         .ap-fav2>button:first-child{order:0;}
         .ap-fav2>.ap-jai{order:2;}
+        /* LA CLOCHE RESTE, SON CHIFFRE PART. Eteinte, elle a la discretion
+           d'un coeur non rempli — une porte, pas un appel. Ambre et chiffree,
+           elle redevient une nouvelle. Deux etats d'un meme objet, jamais deux
+           objets. */
         .ap-jai{display:flex;align-items:center;gap:5px;margin:0;
           font:inherit;font-size:12.5px;font-weight:850;cursor:pointer;
-          color:#F7C948;background:rgba(240,180,41,.13);
-          border:1px solid rgba(240,180,41,.4);border-radius:999px;
-          padding:6px 11px;}
-        .ap-jai i{font-style:normal;font-size:13px;line-height:1;flex:none;}
+          color:rgba(234,242,236,.62);background:transparent;
+          border:1px solid transparent;border-radius:999px;
+          padding:6px 9px;}
+        .ap-jai.neuf{color:#F7C948;background:rgba(240,180,41,.13);
+          border-color:rgba(240,180,41,.4);padding:6px 11px;}
+        .ap-jai i{font-style:normal;font-size:13px;line-height:1;flex:none;
+          filter:grayscale(1);opacity:.72;}
+        .ap-jai.neuf i{filter:none;opacity:1;}
         .ap-jai:active{transform:scale(.98);}
 
         /* ─── CE QUI EST SUR LA TABLE ───

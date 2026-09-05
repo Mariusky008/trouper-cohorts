@@ -61,14 +61,21 @@ export type CarteDirect = {
   /**
    * ⚡ CE QUI SE PÉRIME DANS QUELQUES MINUTES — voir `flash.ts`.
    *
-   * DEUX CHAMPS SEULEMENT, ET C'EST VOULU. La carte n'a pas besoin de savoir ce
-   * qu'est un Flash : elle a besoin de savoir combien de temps il reste et
-   * quelle part est écoulée. Tout le reste — le prix barré, l'étiquette, le
-   * titre — passe par les champs qui existent déjà. Une carte qui connaîtrait
-   * la mécanique du Flash serait une carte à modifier le jour où la mécanique
-   * change.
+   * QUATRE CHAMPS, ET AUCUNE MÉCANIQUE. La carte ne sait pas ce qu'est un
+   * Flash : elle sait le temps qui reste, la part écoulée, l'avantage à
+   * afficher et, le cas échéant, ce qui continue derrière lui. Le prix barré,
+   * l'étiquette et le titre passent par les champs qui existent déjà. Une carte
+   * qui connaîtrait la mécanique serait une carte à modifier le jour où la
+   * mécanique change.
    */
-  flash?: { reste: string; part: number };
+  flash?: {
+    reste: string;
+    part: number;
+    /** « −20 % », « Le dessert offert » — la raison de se lever maintenant. */
+    avantage?: string;
+    /** « Le menu du jour continue » — ce que le Flash ne remplace pas. */
+    continue?: string;
+  };
   /** L'emoji et l'intitulé de ce qui est proposé. */
   icone: string;
   quoi: string;
@@ -501,13 +508,37 @@ export function CarteSwipe({
                 la MOITIÉ de l'information. Il passe donc à gauche, gros et
                 barré, et le nouveau à droite en ambre — on lit la chute, pas un
                 prix avec une note de bas de page. */}
+            {/* ─── L'AVANTAGE, ENFIN À SA TAILLE ───
+                Il vivait dans le détail : « −20 % » en gris clair de douze
+                points, sous le titre, au milieu des ingrédients. C'est
+                pourtant la seule chose qui fasse sortir de chez soi dans les
+                trente minutes qui viennent. Ambre comme le chrono — l'un dit
+                combien de temps il reste, l'autre dit pourquoi se lever, et
+                ils ne se lisent pas l'un sans l'autre. */}
+            {c.flash?.avantage && <p className="cd-flash-a">{c.flash.avantage}</p>}
+            {/* ─── L'AMBRE EST RÉSERVÉE À UNE VRAIE CHUTE ───
+                Un prix ambre sur un Flash veut dire « voilà ce que ça coûte
+                MAINTENANT ». Quand le commerçant n'a pas donné de prix
+                d'après — son avantage est « le dessert offert » —, le seul
+                nombre affiché est le prix habituel : le peindre en ambre sous
+                « −20 % » le ferait passer pour le prix remisé. Il reste donc
+                blanc, comme sur n'importe quelle autre carte, et c'est
+                l'avantage juste au-dessus qui porte la couleur. */}
             {(c.prix || c.prixBarre) && (
-              <p className={`cd-prixg${c.flash ? " flash" : ""}`}>
+              <p className={`cd-prixg${c.flash && c.prixBarre ? " flash" : ""}`}>
                 {c.flash && c.prixBarre && <s>{c.prixBarre}</s>}
                 {c.prix}
                 {!c.flash && c.prixBarre && <s>{c.prixBarre}</s>}
               </p>
             )}
+            {/* ─── CE QUE LE FLASH NE REMPLACE PAS ───
+                « Quand il y a le menu du jour affiché et qu'en même temps il y
+                a un Flash, y a-t-il deux annonces séparées ou une seule, et
+                alors que montre-t-on ? » Une seule : un commerce n'occupe
+                jamais deux cartes. Pendant le Flash, la carte EST le Flash — et
+                cette ligne dit ce qui l'attend derrière, pour qu'on ne croie
+                pas que le reste de la journée a été annulé. */}
+            {c.flash?.continue && <p className="cd-flash-s">{c.flash.continue}</p>}
             {/* LE NOM DU COMMERCE EST LISIBLE, ET IL N'EST PLUS LE TITRE.
                 Demande explicite, et elle est juste : « si c'est un restaurant
                 que je n'aime pas, alors quoi qu'il serve je n'irai pas, donc
@@ -968,6 +999,20 @@ export function StylesDirect() {
         .cd-flash-j u{display:block;height:100%;text-decoration:none;
           background:linear-gradient(90deg,#FFD75E,#F0B429);
           transition:width .9s linear;}
+        /* ─── L'AVANTAGE : LE SECOND ACTEUR ───
+           Il est ambre comme le chrono, et presque aussi gros que le titre.
+           Aucune autre carte du produit ne porte d'ambre a cette taille : c'est
+           ce qui fait qu'un Flash se reconnait de loin, avant meme d'etre lu.
+           Il reste sous le titre en taille : le titre dit QUOI, l'avantage dit
+           combien on gagne — dans cet ordre. */
+        .cd-flash-a{margin:7px 0 0;font-family:'Inter',system-ui,-apple-system,sans-serif;
+          font-size:clamp(20px,6.2vw,27px);font-weight:900;letter-spacing:-.02em;
+          line-height:1.05;color:#FFD75E;
+          text-shadow:0 2px 14px rgba(4,8,6,.6);}
+        /* ET CE QUI CONTINUE DERRIERE, a la taille d'une note de bas de page :
+           c'est une reponse a une inquietude, pas une seconde offre. */
+        .cd-flash-s{margin:7px 0 0;font-size:12px;font-weight:650;
+          line-height:1.3;color:#A9BDB2;}
         .cd-quand{display:inline-block;margin-top:11px;font-size:11.5px;
           font-weight:850;letter-spacing:.05em;text-transform:uppercase;
           color:#04150E;background:#F0B429;border-radius:999px;padding:5px 12px;}
