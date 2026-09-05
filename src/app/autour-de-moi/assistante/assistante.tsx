@@ -283,6 +283,56 @@ type Carte = {
  * réencodage tient en six lignes parce qu'on ne fait que dessiner l'image dans
  * une toile plus petite.
  */
+/**
+ * LE POIDS QU'UN TÉLÉPHONE ACCEPTE DE GARDER — voir le bouton vidéo.
+ *
+ * Tant qu'il n'y a pas de compte commerçant, tout vit dans le stockage local,
+ * qui tient cinq mégaoctets en tout. Trois pour un film, c'est déjà la moitié
+ * d'une journée ; au-delà on refuse en le disant, plutôt que de faire perdre
+ * les annonces déjà publiées.
+ */
+const FILM_MAX = 3_000_000;
+
+/**
+ * CE QU'IL A SOUS LA MAIN — une image ou un film, et on ne lui demande pas.
+ *
+ * LE DÉFAUT MESURÉ : « au lieu de mettre une photo j'ai mis une vidéo, et
+ * l'annonce n'affiche rien. » Deux moitiés de cause, et celle-ci est la
+ * première : le bouton « photo » passait TOUT à `reduire`, qui dessine le
+ * fichier dans une toile. Un film n'est pas une image — le chargement échoue,
+ * la promesse est rejetée, et comme personne ne l'attrapait, l'appui n'avait
+ * simplement aucun effet. Pas d'erreur, pas de photo, rien à comprendre.
+ *
+ * OR SUR IPHONE, LA PELLICULE NE SÉPARE PAS LES DEUX : `accept="image/*"` est
+ * un souhait, pas une barrière, et on choisit un film sans même le remarquer.
+ * Le geste est donc unique — « ce que j'ai sous la main » — et c'est le type
+ * du fichier qui décide de la suite. Ce que le produit voulait déjà dire avec
+ * ses deux boutons côte à côte ; il ne le tenait qu'à moitié.
+ */
+async function medias(
+  fichier: File,
+): Promise<{ photo?: string; film?: string; ennui?: string }> {
+  if (fichier.type.startsWith("video/")) {
+    if (fichier.size > FILM_MAX) {
+      return { ennui: "Vidéo trop lourde pour ce téléphone. Passez la caméra en 720p." };
+    }
+    const film = await new Promise<string>((ok) => {
+      const l = new FileReader();
+      l.onload = () => ok(String(l.result));
+      l.onerror = () => ok("");
+      l.readAsDataURL(fichier);
+    });
+    return film ? { film } : { ennui: "Cette vidéo n’a pas pu être lue." };
+  }
+  try {
+    return { photo: await reduire(fichier) };
+  } catch {
+    // ON LE DIT. Une photo qui ne s'ouvre pas — un format que le navigateur ne
+    // connaît pas — doit produire une phrase, pas un bouton qui ne fait rien.
+    return { ennui: "Cette image n’a pas pu être lue. Réessayez avec une photo." };
+  }
+}
+
 async function reduire(fichier: File): Promise<string> {
   const url = URL.createObjectURL(fichier);
   try {
@@ -560,6 +610,8 @@ export function Assistante() {
     combien: string;
     minutes: number;
     photo: string;
+    /** Le film du Flash — voir `medias`. L'un OU l'autre, jamais les deux. */
+    video: string;
   }>(null);
   /**
    * LE JOUR QU'IL EST EN TRAIN DE RÉGLER — `null` veut dire « toute la semaine ».
@@ -1217,6 +1269,11 @@ export function Assistante() {
           places: carte.epuise ? 0 : (carte.quantite ?? undefined),
           prix: carte.prix || undefined,
           photo: photo || undefined,
+          // LE FILM SUIT LA MÊME RÈGLE QUE LA PHOTO — voir `majMoment`. Ce qui
+          // n'est pas nommé n'est pas effacé, mais ce qu'il vient de filmer à
+          // 13 h doit remplacer celui de 11 h. Sans cette ligne, une mise à
+          // jour ne pouvait jamais porter de vidéo.
+          video: video ? { mp4: video, webm: "", affiche: photo || "", mot: "" } : undefined,
           lignes: carte.detail ? [carte.detail] : undefined,
         },
         heure,
@@ -1389,8 +1446,12 @@ export function Assistante() {
           titre: journee.moments[0].titre,
           prix: journee.moments[0].prix ?? "",
           photo: journee.moments[0].photo ?? "",
+          // ON REPREND AUSSI SON FILM. Il vient de filmer son plat pour
+          // l'annonce du jour ; lui redemander de le refilmer pour le Flash
+          // trois heures plus tard est exactement le geste qui fait renoncer.
+          video: journee.moments[0].video?.mp4 ?? "",
         }
-      : { titre: "", prix: "", photo: "" };
+      : { titre: "", prix: "", photo: "", video: "" };
 
   const options = optionsDe(c.id, c.branche);
   const proposees = options.filter((o) => o.cochee && !retirees.includes(o.cle));
@@ -2275,13 +2336,23 @@ export function Assistante() {
               <div className="as-media">
                 <label className={carte.photo ? "demande" : ""}>
                   <span>📷 {carte.photo ? "Photographiez-le" : "Une photo"}</span>
+                  {/* LES DEUX BOUTONS ACCEPTENT LES DEUX CHOSES — voir
+                      `medias`. Sur iPhone, la pellicule ne sépare pas les
+                      images des films : celui qui appuie sur « Une photo » et
+                      choisit une vidéo doit obtenir une vidéo, pas un bouton
+                      qui ne fait rien. Les deux boutons restent, parce qu'ils
+                      disent ce qu'on peut faire ; ils ne trient plus. */}
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,video/*"
                     capture="environment"
                     onChange={async (e) => {
                       const x = e.target.files?.[0];
-                      if (x) setPhoto(await reduire(x));
+                      if (!x) return;
+                      const r = await medias(x);
+                      if (r.ennui) setEcho(r.ennui);
+                      if (r.photo) setPhoto(r.photo);
+                      if (r.film) setVideo(r.film);
                     }}
                   />
                 </label>
@@ -2289,25 +2360,15 @@ export function Assistante() {
                   <span>🎥 Une vidéo</span>
                   <input
                     type="file"
-                    accept="video/*"
+                    accept="video/*,image/*"
                     capture="environment"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const x = e.target.files?.[0];
                       if (!x) return;
-                      // LA LIMITE EST CELLE DU TÉLÉPHONE, ET ELLE EST RÉELLE :
-                      // la journée entière tient dans son stockage local tant
-                      // qu'il n'y a pas de compte. Une vidéo de dix secondes en
-                      // 1080p suffit à la remplir — on le dit au lieu de perdre
-                      // ses annonces en silence.
-                      if (x.size > 3_000_000) {
-                        setEcho(
-                          "Vidéo trop lourde pour ce téléphone. Passez la caméra en 720p.",
-                        );
-                        return;
-                      }
-                      const l = new FileReader();
-                      l.onload = () => setVideo(String(l.result));
-                      l.readAsDataURL(x);
+                      const r = await medias(x);
+                      if (r.ennui) setEcho(r.ennui);
+                      if (r.photo) setPhoto(r.photo);
+                      if (r.film) setVideo(r.film);
                     }}
                   />
                 </label>
@@ -2569,10 +2630,15 @@ export function Assistante() {
                 quoi: flashDeBase.titre,
                 avantage: "−30 %",
                 avant: flashDeBase.prix,
-                apres: "",
+                // LE PRIX D'APRÈS EST DÉJÀ CALCULÉ — voir `prixApres`. Le
+                // raccourci par défaut est « −30 % » : ouvrir le formulaire
+                // avec une case vide à côté d'un pourcentage, c'est demander
+                // au commerçant de faire la règle de trois.
+                apres: prixApres(flashDeBase.prix, "−30 %"),
                 combien: "",
                 minutes: FLASH_MINUTES,
                 photo: flashDeBase.photo,
+                video: flashDeBase.video,
               })
             }
           >
@@ -2685,15 +2751,27 @@ export function Assistante() {
                 poussait « Lancer le Flash » sous le bord de l'écran. Ici on ne
                 regarde pas la photo, on vérifie que c'est la bonne — soixante
                 points y suffisent. */}
-            {flash.photo ? (
+            {/* ─── ET LE FLASH FILME AUSSI ───
+                « Idem pour Flash. » Il n'avait qu'un bouton photo, et ce
+                bouton passait tout à `reduire` : filmer son Flash donnait une
+                annonce sans image. Or c'est l'annonce du produit qui gagne le
+                plus à être filmée — la file qui se vide, le four qui sort.
+                Même geste, mêmes deux boutons que l'annonce du jour. */}
+            {flash.photo || flash.video ? (
               <div className="as-flash-ph">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={flash.photo} alt="" />
-                <span>La photo de votre annonce</span>
+                {flash.video ? (
+                  <video src={flash.video} muted autoPlay loop playsInline />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={flash.photo} alt="" />
+                )}
+                <span>
+                  {flash.video ? "La vidéo de votre Flash" : "La photo de votre annonce"}
+                </span>
                 <button
                   type="button"
-                  onClick={() => setFlash({ ...flash, photo: "" })}
-                  aria-label="Retirer la photo"
+                  onClick={() => setFlash({ ...flash, photo: "", video: "" })}
+                  aria-label={flash.video ? "Retirer la vidéo" : "Retirer la photo"}
                 >
                   ✕
                 </button>
@@ -2704,11 +2782,41 @@ export function Assistante() {
                   <span>📷 Une photo</span>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,video/*"
                     capture="environment"
                     onChange={async (e) => {
                       const x = e.target.files?.[0];
-                      if (x) setFlash({ ...flash, photo: await reduire(x) });
+                      if (!x) return;
+                      const r = await medias(x);
+                      if (r.ennui) setEcho(r.ennui);
+                      if (r.photo || r.film) {
+                        setFlash({
+                          ...flash,
+                          photo: r.photo ?? "",
+                          video: r.film ?? "",
+                        });
+                      }
+                    }}
+                  />
+                </label>
+                <label>
+                  <span>🎥 Une vidéo</span>
+                  <input
+                    type="file"
+                    accept="video/*,image/*"
+                    capture="environment"
+                    onChange={async (e) => {
+                      const x = e.target.files?.[0];
+                      if (!x) return;
+                      const r = await medias(x);
+                      if (r.ennui) setEcho(r.ennui);
+                      if (r.photo || r.film) {
+                        setFlash({
+                          ...flash,
+                          photo: r.photo ?? "",
+                          video: r.film ?? "",
+                        });
+                      }
                     }}
                   />
                 </label>
@@ -2760,6 +2868,7 @@ export function Assistante() {
                   apres: flash.apres.trim() || undefined,
                   combien: Number(flash.combien) || undefined,
                   photo: flash.photo || undefined,
+                  video: flash.video || undefined,
                   lance: maintenant,
                   // JAMAIS APRÈS MINUIT — voir `finDuFlash`. Un Flash lancé à
                   // 23 h 45 s'arrête à 23 h 59 plutôt que de promettre un quart

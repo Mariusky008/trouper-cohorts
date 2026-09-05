@@ -98,6 +98,14 @@ export type Flash = {
   /** Combien il y en a. Zéro veut dire « on ne compte pas ». */
   combien?: number;
   photo?: string;
+  /**
+   * LE FILM DU FLASH, S'IL A FILMÉ PLUTÔT QUE PHOTOGRAPHIÉ.
+   *
+   * « Idem pour Flash » : le formulaire n'acceptait qu'une image, et l'annonce
+   * ressortait sans rien. C'est pourtant l'annonce qui gagne le plus à être
+   * filmée — trente minutes, une file qui se vide, un four qui sort.
+   */
+  video?: string;
   /** L'heure décimale de lancement, et celle de fin. */
   lance: number;
   fin: number;
@@ -317,6 +325,11 @@ export function momentDuFlash(f: Flash): Omit<MomentJour, "publie"> {
     prix: f.apres ? prixEcrit(f.apres) : f.avant ? prixEcrit(f.avant) : undefined,
     prixBarre: f.apres && f.avant ? prixEcrit(f.avant) : undefined,
     photo: f.photo || undefined,
+    // LE FILM SUIT LE MÊME CHEMIN QUE CELUI D'UNE ANNONCE ORDINAIRE — voir
+    // `MomentJour.video`. La photo, quand il y en a une, lui sert d'affiche.
+    video: f.video
+      ? { mp4: f.video, webm: "", affiche: f.photo || "", mot: "" }
+      : undefined,
     places: f.combien || undefined,
     // PAS D'ÉTIQUETTE « FLASH » : LA PASTILLE LE DIT DÉJÀ. Vu à l'écran, l'un
     // sous l'autre — la pastille ambre « ⚡ FLASH · Encore 30 min », puis le mot

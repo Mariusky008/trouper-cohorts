@@ -36,6 +36,18 @@ export type CarteDirect = {
    * cadrage : c'est le seul réglage qui rattrape une image sans la retoucher.
    */
   cadrage?: string;
+  /**
+   * LE FILM DE L'ANNONCE, PLEIN CADRE — et il passe devant la photo.
+   *
+   * « Le plat qui sort du four se filme mieux qu'il ne se photographie » :
+   * c'est pour ça que le bouton existe dans l'assistante. Il manquait la
+   * moitié du chemin — ce qui est filmé doit s'afficher.
+   *
+   * `affiche` est l'image d'attente : la photo du moment si elle existe, sinon
+   * celle du commerce. Sans elle, la carte est noire une demi-seconde, ce qui
+   * sur un paquet qu'on balaie est exactement une carte vide.
+   */
+  film?: { mp4: string; affiche?: string };
   /** Le nom du commerce, tel qu'il l'écrit. */
   nom: string;
   /** « Restaurant », « Boulangerie »… */
@@ -305,6 +317,50 @@ export function CarteSwipe({
             : undefined
         }
       >
+        {/* ═══ SI C'EST UN FILM, IL PASSE DEVANT LA PHOTO ═══
+
+            LE DÉFAUT MESURÉ : « j'ai créé avec Léa une annonce et au lieu de
+            mettre une photo j'ai mis une vidéo, mais l'annonce n'affiche rien,
+            ni photo ni vidéo. »
+
+            LE FILM ÉTAIT BIEN ENREGISTRÉ, ET IL N'ARRIVAIT NULLE PART. La carte
+            n'avait qu'un fond CSS, c'est-à-dire une image et rien d'autre : un
+            commerçant qui filmait son plat au lieu de le photographier publiait
+            une annonce sans aucun visuel — le pire des trois résultats
+            possibles, puisqu'il croyait avoir fait le geste le plus généreux.
+
+            MUET, EN BOUCLE, SANS COMMANDES. Une annonce qu'on traverse en
+            balayant ne peut pas démarrer un son ni demander qu'on appuie sur
+            « lire » : elle a une seconde pour se faire comprendre. `playsInline`
+            n'est pas décoratif — sans lui, iOS ouvre le lecteur plein écran
+            par-dessus le paquet dès que la vidéo démarre.
+
+            ET LA PHOTO RESTE DESSOUS. `poster` couvre le temps de chargement,
+            et le dégradé couvre le poster s'il manque : trois couches pour que
+            l'écran ne soit jamais vide. */}
+        {c.film && (
+          <video
+            className="cd-film"
+            poster={c.film.affiche}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            aria-hidden="true"
+            style={{ objectPosition: `center ${c.cadrage || "50%"}` }}
+          >
+            <source src={c.film.mp4} type="video/mp4" />
+          </video>
+        )}
+        {/* ─── ET IL Y A TOUJOURS QUELQUE CHOSE SOUS LE FILM ───
+            Une vidéo qui ne se décode pas ne peint RIEN — pas une erreur, pas
+            un cadre gris : un rectangle transparent. Sans couche en dessous,
+            l'écran serait noir de bord à bord, ce qui est exactement le défaut
+            qu'on est en train de corriger, déplacé d'un cran. Le dégradé et
+            l'emoji du métier restent donc là, sous le film, sur toutes les
+            cartes qui n'ont pas de photo. On ne les voit jamais quand tout va
+            bien : ils ne servent que le jour où ça ne va pas. */}
         {!c.photo && <span className="cd-ph" aria-hidden="true">{c.icone}</span>}
       </div>
       {/* Le voile n'est pas un effet : sans lui, un texte blanc posé sur une
@@ -701,6 +757,11 @@ export function StylesDirect() {
           background:#0C1310;box-shadow:0 40px 80px -30px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.07);
           font-family:'Inter',system-ui,sans-serif;isolation:isolate;}
         .cd-photo{position:absolute;inset:0;background-size:cover;background-position:center;background-repeat:no-repeat;}
+        /* LE FILM OCCUPE EXACTEMENT LA PLACE DE LA PHOTO — meme cadre, meme
+           recouvrement. « La photo doit rester la star » vaut pour lui aussi :
+           il est le fond, jamais un lecteur pose dessus. */
+        .cd-film{position:absolute;inset:0;width:100%;height:100%;
+          object-fit:cover;border:0;background:transparent;pointer-events:none;}
         .cd-photo.sans{display:flex;align-items:center;justify-content:center;
           background:linear-gradient(155deg,#22463A,#0D1A15 70%);}
         .cd-ph{font-size:74px;opacity:.5;}

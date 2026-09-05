@@ -3092,7 +3092,6 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
       nom: c.nom,
       metier: c.metier,
       metierEmoji: emojiDuMetier(c.branche, c.metier),
-    metierEmoji: emojiDuMetier(c.branche, c.metier),
       ville: c.ville,
       distance: c.distance,
       itineraire: c.itineraire,
@@ -3130,6 +3129,21 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
     // Ce qu'il vient de sortir du four vaut mieux que sa devanture, qui ne dit
     // rien d'aujourd'hui.
     photo: m?.photo || c.photo,
+    // ─── ET SON FILM PASSE DEVANT SA PHOTO ───
+    //
+    // « Au lieu de mettre une photo j'ai mis une vidéo, mais l'annonce
+    // n'affiche rien, ni photo ni vidéo. » Le film était enregistré sur le
+    // moment depuis le début ; personne ne le lisait ici, donc la carte
+    // repartait avec `photo: undefined` et un fond vide. Un commerçant qui
+    // filme son plat au lieu de le photographier faisait le geste le plus
+    // généreux et obtenait l'annonce la plus pauvre.
+    //
+    // L'IMAGE D'ATTENTE EST CELLE QU'ON A SOUS LA MAIN : la photo du moment
+    // s'il en a pris une, sinon la devanture. Une vidéo qui charge sur un fond
+    // noir, dans un paquet qu'on balaie, est une carte vide.
+    film: m?.video?.mp4
+      ? { mp4: m.video.mp4, affiche: m.video.affiche || m.photo || c.photo }
+      : undefined,
     cadrage: c.cadrage,
     nom: c.nom,
     metier: c.metier,
