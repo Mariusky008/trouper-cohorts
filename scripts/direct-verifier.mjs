@@ -237,6 +237,35 @@ await ctx.close();
 //   3. ET SANS VOIX, LA CARTE EST EXACTEMENT CELLE D'AVANT. Une fonction qui
 //      punit ceux qui ne s'en servent pas se fait détester par les trois
 //      quarts de la ville.
+// ═══ ON N'ANNONCE PAS UN NOMBRE QU'IL NE PEUT PAS TENIR ═══
+//
+// « Il est écrit souvent "il reste 4 tables", or nous ne pouvons pas savoir
+// combien de tables il reste puisque le restaurateur ne nous le dit pas. »
+//
+// LA DISTINCTION EST NETTE, ET ELLE SE GARDE ICI. Un STOCK qu'il a préparé, il
+// le connaît : vingt portions le matin, douze vendues, il en reste huit, et
+// c'est lui qui le dit à Léa. Une CAPACITÉ, non : les tables se libèrent et se
+// reprennent toute la journée, personne ne recompte la salle entre deux
+// services. Un chiffre écrit là est inventé — et un chiffre inventé une seule
+// fois fait perdre quelqu'un pour toujours.
+console.log("\n══ les nombres qu'on n'invente pas ══");
+{
+  const fs = await import("node:fs");
+  const src = fs.readFileSync("src/lib/direct/apercu-habitant.ts", "utf8");
+  const fautifs = [...src.matchAll(/titre:\s*"([^"]*)"/g)]
+    .map((m) => m[1])
+    .filter((t) => /\b\d+\s*(tables?|places?|couverts?|fauteuils?)\b/i.test(t));
+  console.log(`  titres qui comptent une capacité : ${fautifs.length ? JSON.stringify(fautifs) : "aucun"}`);
+  dire(fautifs.length === 0,
+    "aucune annonce ne compte des tables ou des places — on ne peut pas le savoir");
+  const stocks = [...src.matchAll(/titre:\s*"([^"]*)"/g)]
+    .map((m) => m[1])
+    .filter((t) => /\b\d+\s*(portions?|parts?|bouquets?|pains?|pi[èe]ces?)\b/i.test(t));
+  console.log(`  titres qui comptent un stock préparé : ${stocks.length ? JSON.stringify(stocks) : "aucun"}`);
+  dire(stocks.length > 0,
+    "mais un stock qu'il a préparé se compte encore : c'est lui qui nous l'a dit");
+}
+
 console.log("\n══ la voix du commerçant ══");
 // ONZE HEURES : c'est une heure où la carte à conseil est dans le paquet. Ce
 // qu'on vérifie ici est le RENDU d'un conseil, pas le hasard de l'horloge.
@@ -730,7 +759,8 @@ console.log("\n══ le moment ══");
   // rareté est ce qui donne du poids aux autres heures.
   const journee = [
     [8.3, "La fournée de 7 h"],
-    [11.7, "Il reste 4 tables"],
+    // ON NE COMPTE PLUS LES TABLES — voir « les nombres qu'on n'invente pas ».
+    [11.7, "De la place, sans attendre"],
     [13.5, "Dernières portions"],
     [16, "Les plats cuisinés du jour"],
     // 17 H 30 ÉTAIT L'HEURE CREUSE DE CETTE GARDE, ET ELLE NE L'EST PLUS.

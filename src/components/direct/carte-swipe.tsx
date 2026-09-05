@@ -40,6 +40,21 @@ export type CarteDirect = {
   nom: string;
   /** « Restaurant », « Boulangerie »… */
   metier: string;
+  /**
+   * SON EMOJI DE MÉTIER — et il n'est pas décoratif.
+   *
+   * « Quand on est sur l'app on ne sait pas trop ce qu'on regarde : on n'a
+   * aucune indication rapide si c'est un magasin de vêtements, une boucherie ou
+   * un coiffeur. » C'était vrai, et la cause tenait à une seule ligne : la
+   * nature de l'annonce REMPLAÇAIT le métier. « MENU DU JOUR » ou « −30 % » ne
+   * disent pas chez qui l'on est, et l'en-tête ne le dit plus non plus depuis
+   * qu'on ouvre sur toute la ville.
+   *
+   * Un pictogramme se lit avant un mot, et les deux ensemble se lisent avant
+   * n'importe quelle phrase : c'est la seule information de la carte qui doit
+   * arriver en moins d'une seconde.
+   */
+  metierEmoji?: string;
   ville: string;
   /** Ce qui reste avant que ça disparaisse : « Jusqu'à 14 h », « 2 h 10 ». */
   reste?: string;
@@ -357,9 +372,21 @@ export function CarteSwipe({
                 objet que l'œil rencontre. */}
             {c.flash ? (
               <p className="cd-flash">
+                {/* ─── LE MOT QUI MANQUAIT : « RARE » ───
+                    « L'offre Flash ne ressemble toujours pas à une offre Flash.
+                    Il faudrait quelque chose qui permette en une seconde de
+                    comprendre que c'est une annonce spéciale ET RARE. »
+
+                    Le second mot était le trou. La carte disait « c'est
+                    urgent » — le compte à rebours le dit très bien — et ne
+                    disait nulle part que ça n'arrive presque jamais. Or la
+                    rareté est la moitié de la valeur : trois par semaine et pas
+                    une de plus, c'est écrit dans le code depuis le premier jour
+                    et ça ne se lisait sur aucun écran d'habitant. */}
                 <span className="cd-flash-t">
                   <i aria-hidden="true">⚡</i>
                   Flash
+                  <s>3 fois par semaine, pas plus</s>
                 </span>
                 <span className="cd-flash-n">
                   <b>{c.flash.reste.replace(/[^0-9]/g, "") || "0"}</b>
@@ -380,8 +407,21 @@ export function CarteSwipe({
                 </p>
               )
             )}
+            {/* ─── LE MÉTIER TOUJOURS, LA NATURE EN PLUS ───
+                La nature remplaçait le métier : sur une carte marquée « MENU DU
+                JOUR » ou « −30 % », plus rien ne disait chez qui on était. Les
+                deux tiennent sur la même ligne — le métier d'abord, parce que
+                c'est lui qui situe. */}
             {(c.etiquette || c.metier) && (
-              <p className="cd-nature">{c.etiquette || c.metier}</p>
+              <p className="cd-nature">
+                {c.metier && (
+                  <b>
+                    {c.metierEmoji && <i aria-hidden="true">{c.metierEmoji}</i>}
+                    {c.metier}
+                  </b>
+                )}
+                {c.etiquette && <s>{c.etiquette}</s>}
+              </p>
             )}
             <h2 className="cd-offre">{c.quoi}</h2>
             {/* LE DÉTAIL RESTE, MAIS IL A CESSÉ D'ÊTRE UN BLOC. Sur une
@@ -699,6 +739,15 @@ export function StylesDirect() {
         .cd-carte.sec .cd-bas{align-items:center;text-align:center;gap:0;}
         .cd-dit{display:flex;flex-direction:column;align-items:center;
           width:100%;min-width:0;}
+        /* LE METIER PORTE SON PICTOGRAMME ET SA COULEUR ; la nature de l'annonce
+           suit, separee par un point, en plus discret. On lit « chez qui » avant
+           « quoi », et c'est le bon ordre : on ne va pas chez une boucherie pour
+           un menu du jour. */
+        .cd-nature b{display:inline-flex;align-items:center;gap:5px;
+          font-weight:850;color:#EAF2EC;}
+        .cd-nature b i{font-style:normal;font-size:13px;letter-spacing:0;}
+        .cd-nature s{text-decoration:none;color:#9DB0A6;}
+        .cd-nature s::before{content:" · ";}
         .cd-nature{margin:0;font-size:11px;font-weight:800;letter-spacing:.24em;
           text-transform:uppercase;color:#EFEAD9;opacity:.92;}
         /* ═══ CA VIENT DE TOMBER ═══
@@ -833,9 +882,21 @@ export function StylesDirect() {
            tombe hors du cadre et ne se voit jamais. Vu sur la capture — la
            regle etait ecrite, l'effet invisible. La lueur exterieure reste pour
            la carte du dessous, qui, elle, a des marges. */
-        .cd-carte.flash{box-shadow:inset 0 0 0 2px rgba(247,201,72,.8),
-          inset 0 0 90px -20px rgba(240,180,41,.55),
-          0 26px 60px -24px rgba(240,180,41,.75);}
+        /* ═══ ELLE RESPIRE, ET C'EST CE QUI LA REND VIVANTE ═══
+           « Il faudrait que ça fasse beaucoup plus SPECIAL. » Un liseré fixe se
+           regarde comme un cadre ; un liseré qui respire se regarde comme
+           quelque chose qui SE PASSE. Deux secondes et demie par cycle — le
+           rythme d'une respiration calme, pas d'une alarme : on veut donner
+           envie, pas mettre la pression. */
+        .cd-carte.flash{animation:cdFlashVit 2.6s ease-in-out infinite;}
+        @keyframes cdFlashVit{
+          0%,100%{box-shadow:inset 0 0 0 2px rgba(247,201,72,.72),
+            inset 0 0 90px -20px rgba(240,180,41,.42),
+            0 26px 60px -24px rgba(240,180,41,.6);}
+          50%{box-shadow:inset 0 0 0 3px rgba(255,215,94,1),
+            inset 0 0 120px -18px rgba(240,180,41,.72),
+            0 26px 70px -22px rgba(240,180,41,.95);}
+        }
         .cd-carte.flash .cd-voile{background:linear-gradient(180deg,
           rgba(60,32,0,.42) 0%,rgba(24,14,2,.66) 46%,rgba(10,6,1,.92) 100%);}
 
@@ -847,9 +908,24 @@ export function StylesDirect() {
           margin:0 0 10px;padding:9px 18px 11px;border-radius:20px;
           background:rgba(60,36,0,.5);border:1px solid rgba(247,201,72,.65);
           -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
-        .cd-flash-t{display:flex;align-items:center;gap:6px;font-size:10.5px;
-          font-weight:850;letter-spacing:.24em;text-transform:uppercase;color:#F7C948;}
-        .cd-flash-t i{font-style:normal;font-size:13px;letter-spacing:0;}
+        .cd-flash-t{display:flex;flex-direction:column;align-items:center;gap:2px;
+          font-size:11.5px;font-weight:850;letter-spacing:.28em;
+          text-transform:uppercase;color:#F7C948;}
+        /* L'ECLAIR CLIGNOTE COMME UN ECLAIR : deux battements secs, puis rien.
+           C'est le seul element anime du paquet, et c'est voulu — il ne sert a
+           rien de crier partout si on veut etre entendu quelque part. */
+        .cd-flash-t i{font-style:normal;font-size:15px;letter-spacing:0;
+          margin-bottom:1px;animation:cdEclair 2.6s ease-in-out infinite;}
+        @keyframes cdEclair{
+          0%,14%,100%{opacity:1;transform:scale(1);}
+          6%{opacity:.25;transform:scale(.86);}
+          10%{opacity:1;transform:scale(1.22);}
+        }
+        /* LA RARETE, ECRITE. Le compte a rebours dit « c'est urgent » ; cette
+           ligne dit « ca n'arrive presque jamais ». Sans elle, un Flash se lit
+           comme une promotion de plus. */
+        .cd-flash-t s{text-decoration:none;font-size:8.5px;font-weight:750;
+          letter-spacing:.1em;color:rgba(255,215,94,.72);}
         .cd-flash-n{display:flex;align-items:baseline;gap:7px;}
         .cd-flash-n b{font-size:38px;font-weight:850;letter-spacing:-.04em;
           line-height:1;color:#FFD75E;font-variant-numeric:tabular-nums;}

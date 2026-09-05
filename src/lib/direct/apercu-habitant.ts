@@ -1616,8 +1616,25 @@ const CARTES: CarteAutour[] = [
     moments: [
       {
         de: 11, a: 14, quand: "ce midi", icone: "🕐", publie: 11.5,
-        titre: "Il reste 4 tables",
-        lignes: ["Plat + dessert", "Sans attendre"],
+        // ─── ON N'ANNONCE PAS UN NOMBRE QU'IL NE PEUT PAS TENIR ───
+        //
+        // « Il est écrit souvent "il reste 4 tables", or nous ne pouvons pas
+        // savoir combien de tables il reste puisque le restaurateur ne nous le
+        // dit pas. »
+        //
+        // C'est exact, et la distinction est nette : un STOCK qu'il a préparé,
+        // il le connaît — vingt portions le matin, douze vendues, il en reste
+        // huit, et c'est lui qui le dit à Léa. Une CAPACITÉ, non : les tables se
+        // libèrent et se reprennent toute la journée, personne ne recompte la
+        // salle entre deux services. Écrire un chiffre là revient à l'inventer,
+        // et un chiffre inventé une seule fois fait perdre quelqu'un pour
+        // toujours — c'est la règle qu'on s'est déjà donnée pour les vues et les
+        // réservations.
+        //
+        // `places` reste, parce qu'il sert à savoir s'il y a de la place —
+        // pas à l'afficher.
+        titre: "De la place, sans attendre",
+        lignes: ["Plat + dessert", "On vous installe"],
         prix: "16 €", places: 4, action: "Réserver", envies: ["maintenant"],
         avis: [
           { note: 5, texte: "Servi en dix minutes, et c'était bon.", qui: "Bruno", quand: "mardi dernier",
@@ -2288,8 +2305,9 @@ const CARTES: CarteAutour[] = [
     moments: [
       {
         de: 8, a: 20, quand: "toute la journée", icone: "☀️", publie: 12,
-        titre: "Il reste 3 tables dehors",
-        lignes: ["En terrasse, plein sud", "Sans réserver"],
+        // MÊME RÈGLE QUE PLUS HAUT : une terrasse ne se recompte pas.
+        titre: "De la place en terrasse",
+        lignes: ["Plein sud", "Sans réserver"],
         places: 3, envies: ["maintenant", "terrasse"],
         avis: [
           { note: 5, texte: "Plein soleil jusqu'à sept heures.", qui: "Rémi", quand: "dimanche",
@@ -2881,6 +2899,7 @@ export function carteDeRecrutement(c: CarteAutour): CarteDirect {
     cadrage: c.cadrage,
     nom: c.nom,
     metier: c.metier,
+    metierEmoji: emojiDuMetier(c.branche),
     ville: c.ville,
     distance: c.distance,
     itineraire: c.itineraire,
@@ -2988,6 +3007,18 @@ function fraicheurEcrite(m: MomentJour, heure: number): string | undefined {
   return f == null ? undefined : ilYa(f);
 }
 
+/**
+ * LE PICTOGRAMME DE SON MÉTIER — voir `CarteDirect.metierEmoji`.
+ *
+ * DÉCLARÉ ICI ET PAS RECOPIÉ : quatre fonctions fabriquent des cartes
+ * (l'annonce, l'événement, le recrutement, la réponse à une invitation). Une
+ * constante recopiée quatre fois se désynchronise à la première correction, et
+ * le métier disparaîtrait sur trois cartes sur quatre sans que rien ne le dise.
+ */
+export function emojiDuMetier(branche: string): string {
+  return METIERS.find((m) => m.cle === branche)?.emoji ?? "📍";
+}
+
 export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
   // ─── CE QUI VIENT DE TOMBER PREND LA CARTE ───
   //
@@ -3004,17 +3035,35 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
   // fraîche est un événement — et un événement passe devant une permanence. Le
   // menu ne disparaît pas pour autant : il attend sous le pli, comme le reste
   // de la journée.
+  // ═══ ⚡ UN FLASH EN COURS PASSE DEVANT TOUT LE RESTE ═══
+  //
+  // LE DÉFAUT MESURÉ : le plat du jour et le Flash publiés dans la même minute,
+  // la carte montrait le plat. `momentFrais` départage à l'horodatage, et à
+  // égalité c'est le premier publié qui gagne — donc l'ordinaire devant
+  // l'exceptionnel, exactement l'inverse de ce qu'on veut.
+  //
+  // ET CE N'EST PAS QU'UNE HISTOIRE D'ÉGALITÉ. Un Flash dure trente minutes et
+  // disparaît ; le menu du jour sera encore là dans deux heures. Entre les deux,
+  // celui qui se périme passe devant — c'est la même règle que la fraîcheur,
+  // poussée d'un cran pour la seule chose du produit qui ait un compte à
+  // rebours.
+  const enFlash = c.moments.find((m) => m.flash && flashEnCours(m.flash, heure));
   const f = momentFrais(c, heure);
-  const m = f?.moment ?? momentEnCours(c, heure);
+  const m = enFlash ?? f?.moment ?? momentEnCours(c, heure);
   // QUAND IL Y A UN MENU DU JOUR, C'EST LUI QU'ON MONTRE — photo comprise. Le
   // moment en cours ne disparaît pas : il passe dans la pastille du haut, qui
   // dit ce qui se joue en ce moment, et le programme complet attend sous le pli.
-  if (c.menu && !f) {
+  // ET LE MENU DU JOUR CÈDE AUSSI. Sans ce `!enFlash`, un restaurant qui a un
+  // menu voyait son Flash recouvert par sa formule de midi : la carte reprenait
+  // son dessin habituel, et le compte à rebours n'apparaissait nulle part.
+  if (c.menu && !f && !enFlash) {
     return {
       photo: c.menu.photo,
       cadrage: c.menu.cadrage ?? c.cadrage,
       nom: c.nom,
       metier: c.metier,
+      metierEmoji: emojiDuMetier(c.branche),
+    metierEmoji: emojiDuMetier(c.branche),
       ville: c.ville,
       distance: c.distance,
       itineraire: c.itineraire,
@@ -3055,6 +3104,7 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
     cadrage: c.cadrage,
     nom: c.nom,
     metier: c.metier,
+    metierEmoji: emojiDuMetier(c.branche),
     ville: c.ville,
     distance: c.distance,
     itineraire: c.itineraire,
@@ -3185,6 +3235,7 @@ export function carteDeReponse(c: CarteAutour, heure: number): CarteDirect {
     cadrage: c.cadrage,
     nom: c.nom,
     metier: c.metier,
+    metierEmoji: emojiDuMetier(c.branche),
     ville: c.ville,
     distance: c.distance,
     itineraire: c.itineraire,
