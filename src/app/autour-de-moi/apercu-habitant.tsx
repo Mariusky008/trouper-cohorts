@@ -136,6 +136,7 @@ import {
   motDuMetier,
   SORTIES,
   autourDeMoi,
+  avecFlashDemo,
   avisDuMoment,
   brancheDeLaDemande,
   carteAffichee,
@@ -327,6 +328,26 @@ const COEUR_MS = 1500;
 const BOND_MS = 980;
 
 /**
+ * ═══ LE BOND DORE, QUAND UN FLASH ATTEND DERRIERE ═══
+ *
+ * « Quand l'annonce suivante arrive et que c'est une offre Flash, est-ce que le
+ * fantome peut devenir tout en or, plus gros, aller plus haut et lancer des
+ * coeurs avant de revenir a sa position initiale ? »
+ *
+ * CE QUE CA CHANGE VRAIMENT, ET C'EST PLUS QU'UNE FETE. Un Flash dure trente
+ * minutes et n'arrive que trois fois par semaine : c'est la seule chose du
+ * produit qu'on peut RATER. Or rien, jusqu'ici, ne prevenait avant de la voir —
+ * on tombait dessus, ou pas. Le bouton qui fait avancer devient l'endroit ou le
+ * dire, une demi-seconde avant : on appuie, il s'illumine, et on sait qu'il y a
+ * quelque chose derriere avant meme que la carte arrive.
+ *
+ * PLUS LONG, PARCE QUE PLUS RARE. Le bond ordinaire dure moins d'une seconde et
+ * doit s'effacer devant la carte suivante ; celui-la a le droit de se faire
+ * attendre, precisement parce qu'il ne se produit presque jamais.
+ */
+const BOND_OR_MS = 1500;
+
+/**
  * ═══ LE PETIT SON DU BOND ═══
  *
  * « Un petit son sympathique, pour que l'animation se voie vraiment et soit
@@ -359,7 +380,7 @@ const BOND_MS = 980;
  * se passe rien, et surtout le bond continue. Un son est un supplément ; il n'a
  * jamais le droit d'empêcher l'écran de répondre.
  */
-function sonDuBond() {
+function sonDuBond(dore = false) {
   try {
     if (typeof window === "undefined") return;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
@@ -373,11 +394,23 @@ function sonDuBond() {
     const t0 = ctx.currentTime;
     // LA PREMIÈRE NOTE GLISSE VERS LE HAUT : c'est le « boing » de l'élan,
     // celui qui se produit pendant que le fantôme s'écrase avant de partir.
-    const notes: Array<[number, number, number, number]> = [
-      // [depart Hz, arrivee Hz, debut s, duree s]
-      [523.25, 784, 0, 0.16],
-      [1046.5, 1046.5, 0.09, 0.19],
-    ];
+    // ⚡ DEUX NOTES POUR UN PASSAGE, QUATRE POUR UN FLASH. Le bond dore dure une
+    // seconde et demie ; le laisser sur le meme « boup » de deux notes aurait
+    // fait un silence de plus d'une seconde au milieu de la seule animation du
+    // produit qui se veut une recompense. L'arpege monte au lieu de sauter :
+    // c'est ce qui fait entendre qu'il se passe quelque chose de plus.
+    const notes: Array<[number, number, number, number]> = dore
+      ? [
+          [523.25, 523.25, 0, 0.14],
+          [659.25, 659.25, 0.1, 0.14],
+          [783.99, 783.99, 0.2, 0.16],
+          [1046.5, 1318.5, 0.31, 0.4],
+        ]
+      : [
+          // [depart Hz, arrivee Hz, debut s, duree s]
+          [523.25, 784, 0, 0.16],
+          [1046.5, 1046.5, 0.09, 0.19],
+        ];
     notes.forEach(([de, a, quand, duree]) => {
       const o = ctx.createOscillator();
       const g = ctx.createGain();
@@ -399,7 +432,7 @@ function sonDuBond() {
       } catch {
         /* deja ferme : sans importance */
       }
-    }, 700);
+    }, dore ? 1400 : 700);
   } catch {
     /* pas de son -> le bond a lieu quand meme */
   }
@@ -991,8 +1024,15 @@ export function ApercuHabitant() {
    * de se rétracter sous les yeux de la personne.
    */
   const [monte, setMonte] = useState(false);
-  /** Le clin d'oeil du smiley, le temps de son animation — voir `.ap-suiv`. */
-  const [clin, setClin] = useState(false);
+  /**
+   * LE BOND DU FANTOME, ET SA NATURE — voir `.ap-suiv` et `BOND_OR_MS`.
+   *
+   * TROIS ETATS PLUTOT QU'UN BOOLEEN : rien, le bond ordinaire, et le bond dore
+   * qui annonce un Flash. Un second booleen aurait permis d'ecrire les deux a
+   * la fois, ce qui n'a pas de sens — un bond est de l'une ou l'autre nature,
+   * jamais des deux, et c'est le type qui doit l'empecher.
+   */
+  const [clin, setClin] = useState<"" | "simple" | "or">("");
   useEffect(() => setMonte(true), []);
 
   const [descendu, setDescendu] = useState(false);
@@ -1904,7 +1944,16 @@ export function ApercuHabitant() {
   // payant montrait du gratuit, et la garantie due au commerçant tombait.
   const toutes = [
     ...(carteJournee ? [carteJournee] : []),
-    ...toutesLesCartes().map((c) => sansCeQuiEstOffert(avecLesRemises(c, remises))),
+    // ⚡ LE FLASH DE DEMONSTRATION ENTRE ICI — voir `avecFlashDemo`.
+    //
+    // C'EST LE PAQUET PRINCIPAL, ET JE L'AVAIS MANQUE. Je l'avais pose dans
+    // `autourDeMoi`, qui sert les vues par metier ; la vue « tout » — celle
+    // qu'on voit en ouvrant — passe par `toutesLesCartes`. Resultat mesure : le
+    // Flash n'apparaissait nulle part. Deux chemins vers le meme paquet, et
+    // c'est toujours celui qu'on n'a pas regarde qui compte.
+    ...toutesLesCartes().map((c) =>
+      avecFlashDemo(sansCeQuiEstOffert(avecLesRemises(c, remises)), heure),
+    ),
   ];
   /**
    * SIX VRAIES PHOTOS POUR LA CARTE D'ARRIVÉE — et de six métiers différents.
@@ -2154,11 +2203,26 @@ export function ApercuHabitant() {
     // nom d'une fraîcheur invisible à l'écran.
     const fraisDe = (c: ItemPaquet) =>
       estEvenement(c) || estPoste(c) ? null : momentFrais(c, heure);
+    // ⚡ UN FLASH EN COURS PASSE DEVANT TOUTE AUTRE FRAICHEUR.
+    //
+    // MESURE QUI L'A IMPOSE : le Flash de demonstration se retrouvait en
+    // NEUVIEME position a 12 h 20. La fraicheur se compte en minutes depuis la
+    // publication, et une annonce postee il y a cinq minutes passait devant un
+    // Flash lance il y a vingt. C'est faux du point de vue de celui qui
+    // regarde : les deux sont fraiches, mais une seule EXPIRE — et c'est la
+    // seule chose du produit qu'on puisse rater.
+    //
+    // « Recent » et « urgent » ne sont pas la meme grandeur, et jusqu'ici on ne
+    // triait que sur la premiere.
+    const enFlash = (c: ItemPaquet) =>
+      !estEvenement(c) && c.moments.some((m) => m.flash && flashEnCours(m.flash, heure));
     const frais = restant
       .filter((c) => fraisDe(c) != null)
       .sort(
         (a, b) =>
-          (fraisDe(a)?.ilYa ?? 0) - (fraisDe(b)?.ilYa ?? 0) || a.metres - b.metres,
+          Number(enFlash(b)) - Number(enFlash(a)) ||
+          (fraisDe(a)?.ilYa ?? 0) - (fraisDe(b)?.ilYa ?? 0) ||
+          a.metres - b.metres,
       );
     const reste = restant.filter((c) => !frais.includes(c));
     // ET LES POSTES FERMENT LA MARCHE, MÊME CEUX D'UN COMMERCE SUIVI. « Mes
@@ -2174,6 +2238,42 @@ export function ApercuHabitant() {
       ...reste.filter((c) => !aMoi(c) && !estPoste(c)),
       ...reste.filter(estPoste),
     ];
+    // ⚡ ═══ LE FLASH ARRIVE EN DEUXIEME, ET C'EST DELIBERE ═══
+    //
+    // IL ETAIT EN TETE, PARCE QU'IL EST LE PLUS FRAIS. Consequence mesuree sur
+    // un paquet entier : on ouvre l'application et on est DEJA dessus. On ne
+    // l'approche donc jamais — arrivees sur un Flash au cours d'une traversee
+    // complete : zero. Le bond dore du fantome, qui existe pour l'annoncer,
+    // n'avait par construction aucune occasion de se declencher.
+    //
+    // UNE CARTE D'ECART SUFFIT A TOUT CHANGER. Le Flash passe derriere la
+    // premiere carte : on appuie une fois, le fantome s'illumine et lance ses
+    // coeurs, et le Flash arrive. Il est ANNONCE au lieu d'etre subi, et la
+    // difference n'est pas cosmetique — c'est la seule offre du produit qu'on
+    // peut rater, et la seule qui gagne a etre attendue une seconde.
+    //
+    // IL NE RECULE JAMAIS PLUS LOIN QUE LA DEUXIEME PLACE. On echange avec la
+    // carte qui le precede, pas davantage : deux secondes de retard sur une
+    // offre de trente minutes, et il reste devant tout le reste du paquet.
+    const iFlash = p.findIndex(
+      (c) =>
+        !estEvenement(c) && c.moments.some((m) => m.flash && flashEnCours(m.flash, heure)),
+    );
+    //
+    // ET C'EST UN PLACEMENT DE DEPART, PAS UNE REGLE PERMANENTE. Premiere
+    // version : « si le Flash est en tete, l'echanger avec le second ». Mesure :
+    // il repassait en tete a chaque rendu, donc on l'echangeait a nouveau, donc
+    // il restait eternellement DEUXIEME et n'arrivait jamais — et le fantome
+    // etait dore a chacun des dix appuis. Une regle qui se reapplique a un etat
+    // qu'elle vient de produire ne deplace rien : elle bloque.
+    //
+    // ON NE LE FAIT DONC QU'AU DEPART, quand aucune carte n'a encore ete
+    // passee. Un seul appui separe alors le Flash de l'ouverture : il est
+    // annonce, puis il arrive, puis le paquet reprend sa regle habituelle.
+    if (iFlash === 0 && p.length > 1 && passees.length === 0) {
+      const [f, second, ...suite] = p;
+      p.splice(0, p.length, second, f, ...suite);
+    }
     // LA CARTE NOMMÉE DANS LE LIEN PASSE DEVANT L'ÉPINGLE : l'épingle vient
     // d'un geste dans le paquet, le lien vient d'ailleurs — de l'assistante qui
     // dit « votre annonce est en ligne ». Celui qui arrive doit tomber dessus.
@@ -2716,6 +2816,18 @@ export function ApercuHabitant() {
   /** ⚡ La carte du dessus porte-t-elle un Flash en cours — voir `flash.ts`. */
   const flashDuSommet =
     !!dessus && dessus.moments.some((m) => m.flash && flashEnCours(m.flash, heure));
+  /**
+   * ⚡ ET LE FLASH QUI ATTEND JUSTE DERRIERE — voir `BOND_OR_MS`.
+   *
+   * ON REGARDE `pile[1]`, c'est-a-dire la carte sur laquelle on va tomber en
+   * appuyant. Un evenement n'a pas de moments et n'a donc jamais de Flash : le
+   * garde n'est pas une precaution, sans lui `.moments` n'existe pas et l'ecran
+   * blanchit.
+   */
+  const flashDuSuivant =
+    !!dessous &&
+    !estEvenement(dessous) &&
+    dessous.moments.some((m) => m.flash && flashEnCours(m.flash, heure));
   /**
    * LE VOL DU CŒUR, D'UN SEUL ENDROIT — voir `coeurOu`.
    *
@@ -8295,17 +8407,20 @@ export function ApercuHabitant() {
                 avance avec lui. */}
             <button
               type="button"
-              className={`ap-suiv${clin ? " clin" : ""}`}
+              className={`ap-suiv${clin ? " clin" : ""}${clin === "or" ? " or" : ""}`}
               aria-label="Passer à l’annonce suivante"
               disabled={!sommet || onglet !== "direct"}
               onClick={() => {
-                setClin(true);
+                // ⚡ ON REGARDE CE QUI ATTEND DERRIERE AVANT DE SAUTER.
+                const dore = flashDuSuivant;
+                setClin(dore ? "or" : "simple");
                 // LE SON PART AVANT LE MOUVEMENT, d'un cheveu : c'est l'ordre
                 // naturel — on entend l'elan, puis on voit le saut.
-                sonDuBond();
+                sonDuBond(dore);
                 // La cabriole dure BOND_MS : la couper avant la faisait
                 // disparaitre en plein saut, et c'est ce qui la rendait seche.
-                window.setTimeout(() => setClin(false), BOND_MS);
+                // Le bond dore dure plus longtemps, son minuteur aussi.
+                window.setTimeout(() => setClin(""), dore ? BOND_OR_MS : BOND_MS);
                 partir("gauche");
               }}
             >
@@ -8371,6 +8486,16 @@ export function ApercuHabitant() {
                     <stop offset="0" stopColor="#5E9E85" stopOpacity=".34" />
                     <stop offset="1" stopColor="#5E9E85" stopOpacity="0" />
                   </radialGradient>
+                  {/* ⚡ LE CORPS DORE, POUR LE BOND QUI ANNONCE UN FLASH. Il est
+                      declare ici et jamais utilise par defaut : c'est la feuille
+                      de style qui bascule le remplissage sous `.ap-suiv.or`.
+                      Un second fantome aurait double le trace pour changer
+                      trois couleurs. */}
+                  <linearGradient id="apFgOr" x1=".2" y1="0" x2=".82" y2="1">
+                    <stop offset="0" stopColor="#FFF6D8" />
+                    <stop offset=".5" stopColor="#FFD75E" />
+                    <stop offset="1" stopColor="#E09A17" />
+                  </linearGradient>
                   {/* L'OEIL EST UNE BILLE, pas un point : un degre du haut vers
                       le bas suffit a le bomber. */}
                   <radialGradient id="apFy" cx=".38" cy=".3" r=".8">
@@ -8426,6 +8551,21 @@ export function ApercuHabitant() {
                 </g>
                 <g transform="translate(31 34)">
                   <path className="ap-f-etoile c" d="M0-2.2.6-.6 2.2 0 .6.6 0 2.2-.6.6-2.2 0-.6-.6Z" />
+                </g>
+                {/* ⚡ ═══ LES COEURS DU BOND DORE ═══
+                    « Qu'il lance des coeurs avant de revenir a sa position
+                    initiale. » Ils n'existent que pendant ce bond-la : cinq
+                    coeurs qui montent en s'ecartant, decales de quelques
+                    centiemes pour qu'ils ne partent pas comme un seul objet.
+                    C'EST LA RECOMPENSE DU PRODUIT, et elle est rare par
+                    construction — un Flash, trois fois par semaine. Une fete
+                    qui arrive a chaque appui n'est plus une fete. */}
+                <g transform="translate(20 22)">
+                  <path className="ap-f-coeur a" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
+                  <path className="ap-f-coeur b" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
+                  <path className="ap-f-coeur c" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
+                  <path className="ap-f-coeur d" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
+                  <path className="ap-f-coeur e" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
                 </g>
               </svg>
             </button>
@@ -11768,6 +11908,85 @@ export function ApercuHabitant() {
             d:path("M14.8 25c2.4 4.2 8 4.2 10.4 0");}}
         @keyframes apJoues{0%,100%{opacity:.55;transform:scale(1);}
           45%{opacity:1;transform:scale(1.2);}}
+        /* ⚡ ═══ LE BOND DORE ═══
+           « Est-ce que le fantome peut devenir tout en or, plus gros, aller
+           plus haut et lancer des coeurs avant de revenir a sa position
+           initiale, donc l'animation serait plus longue ? »
+
+           C'EST LA MEME ANIMATION, HABILLEE ET ETIREE. Un second jeu de
+           keyframes complet aurait double tout ce qui doit rester d'accord —
+           les yeux, la bouche, les joues, l'ombre — pour changer trois valeurs.
+           Seuls le corps, la taille, la hauteur et la duree different ; le
+           reste herite, donc le reste ne peut pas diverger.
+
+           ET IL REVIENT EXACTEMENT D'OU IL EST PARTI. La derniere image du
+           saut remet la transformation a zero : quelle que soit la hauteur,
+           le fantome retombe a sa place au point pres. C'etait la demande, et
+           c'est aussi ce qui permet d'etirer la trajectoire sans rien casser. */
+        .ap-suiv.or{background:linear-gradient(150deg,#FFF0BC,#F0B429);
+          box-shadow:0 14px 34px rgba(240,180,41,.55),
+            0 0 0 5px var(--ap-barre-fond, #070C0A);}
+        .ap-suiv.or .ap-f-corps{fill:url(#apFgOr);
+          filter:drop-shadow(0 2px 4px rgba(120,70,4,.4));}
+        .ap-suiv.or .ap-f-bras{fill:#F2CE7A;}
+        .ap-suiv.or .ap-f-fil{stroke:url(#apFr);opacity:.9;}
+        /* L'ONDE SUIT LA COULEUR, sinon un cercle vert part d'une bulle doree. */
+        .ap-suiv.clin.or::after{border-color:rgba(255,215,94,.95);
+          animation:apOnde 1s ease-out;}
+        /* ═══ LA BULLE NE BOUGE PAS PENDANT LE BOND DORE ═══
+           MESURE QUI L'A IMPOSE : la marche du verifieur s'arretait net sur la
+           carte Flash. Le bouton portait `apBond`, qui met sa boite a l'echelle
+           pendant une seconde et demie — donc la CIBLE bougeait sous le doigt
+           tout ce temps, et l'appui suivant ne trouvait rien de stable.
+           C'EST AUSSI PLUS JUSTE A REGARDER. La bulle est le sol ; c'est le
+           fantome qui saute. Les faire bouger ensemble annulait justement
+           l'effet qu'on cherchait — sortir de sa bulle suppose que la bulle
+           reste. Le bond ordinaire garde son ressort : il dure moins d'une
+           seconde et c'est le retour au doigt de l'appui lui-meme. */
+        .ap-suiv.clin.or{animation:none;}
+        .ap-suiv.clin.or .ap-fantome{
+          animation:apCabrioleOr 1.5s cubic-bezier(.24,1,.32,1);}
+        .ap-suiv.clin.or .ap-f-oeil{animation:apYeux 1.5s ease;}
+        .ap-suiv.clin.or .ap-f-bouche{animation:apSourire 1.5s ease;}
+        .ap-suiv.clin.or .ap-f-joue{animation:apJoues 1.5s ease;}
+        .ap-suiv.clin.or .ap-f-ombre{animation:apOmbre2 1.5s ease;}
+        .ap-suiv.clin.or .ap-f-bras.g{animation:apBrasHautG 1.5s cubic-bezier(.3,1.3,.5,1);}
+        .ap-suiv.clin.or .ap-f-bras.d{animation:apBrasHautD 1.5s cubic-bezier(.3,1.3,.5,1);}
+        /* IL MONTE DEUX FOIS PLUS HAUT ET GROSSIT D'UN TIERS, et il TIENT en
+           l'air : le sommet occupe le tiers du milieu de l'animation. C'est la
+           pause qui rend un saut spectaculaire, pas la hauteur seule. */
+        @keyframes apCabrioleOr{
+          0%{transform:translateY(6px) scale(1.34,.7) rotate(0);}
+          14%{transform:translateY(-44px) scale(.84,1.34) rotate(-6deg);}
+          30%{transform:translateY(-78px) scale(1.34,1.34) rotate(-13deg);}
+          48%{transform:translateY(-82px) scale(1.42,1.42) rotate(6deg);}
+          64%{transform:translateY(-64px) scale(1.32,1.32) rotate(-4deg);}
+          82%{transform:translateY(-18px) scale(1.08,.94) rotate(5deg);}
+          93%{transform:translateY(4px) scale(1.22,.82) rotate(2deg);}
+          100%{transform:none;}}
+        /* LES COEURS. Invisibles partout ailleurs — ils n'ont pas de regle
+           d'animation hors du bond dore, donc ils ne coutent rien au repos. */
+        .ap-f-coeur{fill:#FF6E8A;opacity:0;
+          transform-box:fill-box;transform-origin:50% 50%;}
+        .ap-suiv.clin.or .ap-f-coeur{animation:apCoeurJete 1.1s ease-out;}
+        .ap-suiv.clin.or .ap-f-coeur.a{animation-delay:.22s;}
+        .ap-suiv.clin.or .ap-f-coeur.b{animation-delay:.3s;--ap-jx:-20px;}
+        .ap-suiv.clin.or .ap-f-coeur.c{animation-delay:.38s;--ap-jx:19px;}
+        .ap-suiv.clin.or .ap-f-coeur.d{animation-delay:.46s;--ap-jx:-11px;}
+        .ap-suiv.clin.or .ap-f-coeur.e{animation-delay:.54s;--ap-jx:12px;}
+        /* ILS MONTENT EN S'ECARTANT ET S'ALLEGENT : un coeur qui monte tout
+           droit retombe comme une bulle de dessin technique. */
+        @keyframes apCoeurJete{
+          0%{opacity:0;transform:translate(0,0) scale(.3) rotate(0);}
+          22%{opacity:1;transform:translate(calc(var(--ap-jx,0px) * .35),-14px) scale(1.1) rotate(-8deg);}
+          100%{opacity:0;transform:translate(var(--ap-jx,0px),-46px) scale(.55) rotate(12deg);}}
+        @media (prefers-reduced-motion:reduce){
+          .ap-suiv.clin.or,.ap-suiv.clin.or::after,
+          .ap-suiv.clin.or .ap-fantome,.ap-suiv.clin.or .ap-f-oeil,
+          .ap-suiv.clin.or .ap-f-bouche,.ap-suiv.clin.or .ap-f-joue,
+          .ap-suiv.clin.or .ap-f-ombre,.ap-suiv.clin.or .ap-f-bras,
+          .ap-suiv.clin.or .ap-f-coeur{animation:none;}
+        }
         @media (prefers-reduced-motion:reduce){
           .ap-fantome,.ap-f-ombre,.ap-f-bras,.ap-f-oeil,
           .ap-suiv.clin,.ap-suiv.clin::after,

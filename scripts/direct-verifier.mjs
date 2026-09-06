@@ -48,7 +48,10 @@ const versLaFiche = async (page) => {
 
 const avancer = async (page) => {
   try {
-    await page.click(".ap-suiv", { timeout: 1500 });
+    // LA MARGE COUVRE LE BOND LE PLUS LONG. Le bond dore du fantome dure une
+    // seconde et demie ; a 1500 ms le delai etait exactement sa duree, donc une
+    // course. On ne mesure pas la vitesse du bouton ici, on traverse le paquet.
+    await page.click(".ap-suiv", { timeout: 4000 });
     await page.waitForTimeout(320);
     return true;
   } catch {

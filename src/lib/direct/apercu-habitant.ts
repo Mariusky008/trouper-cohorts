@@ -31,7 +31,8 @@
 // horodatée a débloqués, donc ceux qu'on montre le plus. Voir
 // `public/direct/LISEZ-MOI.md` pour le cadrage et la règle d'anonymat.
 import type { CarteDirect } from "@/components/direct/carte-swipe";
-import { flashEnCours, partEcoulee, tempsQuiReste } from "./flash";
+import { flashEnCours, momentDuFlash, partEcoulee, tempsQuiReste } from "./flash";
+import type { Flash } from "./flash";
 import type { AnnoncePassee } from "@/lib/direct/historique";
 
 /**
@@ -160,6 +161,32 @@ export const MOT_DU_METIER: Record<CleMetier, MotDuMetier> = {
   // vient regarder ce sont les modèles, le prix ne vient qu'après.
   ongles: { carte: "Les poses", journee: "Sa journée", icone: "ongles" },
 };
+
+/**
+ * ⚡ ═══ UN FLASH DE DEMONSTRATION ═══
+ *
+ * « Y a-t-il une annonce Flash de créée ? Si ce n'est pas le cas, mets-en une. »
+ *
+ * IL N'Y EN AVAIT AUCUNE, ET C'ETAIT UN VRAI TROU. Un Flash n'existait que si
+ * un commerçant en publiait un par Léa — donc, sur un téléphone qui ouvre
+ * simplement l'application, jamais. Toute la mécanique était pourtant là : la
+ * carte différente, l'anneau qui compte, la règle des trois par semaine, et
+ * depuis peu le bond doré du fantôme. Rien de tout cela n'était atteignable.
+ *
+ * IL VIT LA PREMIERE DEMI-HEURE DE CHAQUE HEURE, et c'est un compromis assumé.
+ * Une fenêtre fixe — « 12 h 15 – 12 h 45 » — ne se serait montrée qu'une fois
+ * par jour ; un Flash perpétuel aurait fait mentir la seule phrase que la carte
+ * écrit sur elle-même, « 3 fois par semaine, pas plus », et surtout il
+ * n'aurait jamais compté à rebours pour de bon. Là il démarre à l'heure pile,
+ * descend de trente à zéro, s'éteint, et revient à l'heure suivante : on voit
+ * le vrai comportement, la fin comprise.
+ *
+ * IL N'ELARGIT PAS LA PRESENCE DE LA CARTE — voir `momentsRestants` : il ne
+ * s'ajoute que si le commerce a déjà quelque chose à proposer à cette heure-là.
+ * Sans ce garde-fou, un commerce fermé entrerait dans le paquet par son Flash,
+ * ce qui est exactement la règle qu'on a passé une semaine à poser.
+ */
+export type FlashDemo = Omit<Flash, "lance" | "fin">;
 
 /** Une envie cochable. Les libellés changent avec le métier. */
 export type Envie = { cle: string; label: string; emoji: string };
@@ -1152,6 +1179,15 @@ export type CarteAutour = {
    * ceux-là auront toujours ces initiales.
    */
   logo?: string;
+  /**
+   * ⚡ SON FLASH DE DEMONSTRATION — voir `FlashDemo` et `momentsRestants`.
+   *
+   * UN SEUL COMMERCE LE PORTE, ET C'EST LE SUJET. Un Flash qui court partout
+   * n'est plus un Flash : la rareté n'est pas un reglage, c'est ce qui lui
+   * donne sa valeur. En production ce champ n'existe pas — le Flash vient de
+   * ce que le commercant publie par Lea, et de rien d'autre.
+   */
+  flashDemo?: FlashDemo;
   /** Ce que la fiche ajoute quand on descend. */
   fiche: { ou: string; horaires: string; mot: string };
   /** Ce qu'il propose à quelqu'un qui vient d'annoncer qu'il sort. Absent : il
@@ -2361,6 +2397,28 @@ const CARTES: CarteAutour[] = [
     photo: "/direct/verre-au-comptoir.jpg",
     cadrage: "50%",
     nom: "Un bar à vins",
+    /**
+     * ⚡ LE FLASH DE LA DEMONSTRATION — voir `FlashDemo` et `momentsRestants`.
+     *
+     * POURQUOI CELUI-LA, ET PAS UN AUTRE. Il fallait un commerce present a
+     * TOUTE heure ou le paquet vit : mesure faite sur les moments de chaque
+     * carte, le bar a vins est le seul qui couvre 8 h a 23 h d'un bout a
+     * l'autre. Un Flash pose sur la fleuriste se serait eteint a 19 h, sur la
+     * boulangerie a 19 h 30 — c'est-a-dire juste avant les heures ou l'on teste
+     * une application de sortie.
+     *
+     * ET IL EST SEUL. « 3 fois par semaine, pas plus » est ecrit sur la carte
+     * elle-meme : deux commerces en Flash permanent auraient fait de cette
+     * phrase un decor. Un seul, une demi-heure sur deux, reste croyable.
+     */
+    flashDemo: {
+      quoi: "La planche à partager",
+      avantage: "−40 %",
+      avant: "14 €",
+      apres: "8,40 €",
+      combien: 6,
+      photo: "/direct/verre-au-comptoir.jpg",
+    },
     google: { note: "4,7", avis: 89 },
     metier: "Bar à vins",
     ville: VILLE,
@@ -2758,6 +2816,49 @@ export function momentsRestants(c: CarteAutour, heure: number): MomentJour[] {
 }
 
 /**
+ * ⚡ LA CARTE, AVEC SON FLASH DE DEMONSTRATION S'IL EN A UN — voir `FlashDemo`.
+ *
+ * ═══ POURQUOI ICI ET PAS DANS `momentsRestants` ═══
+ *
+ * PREMIERE VERSION, ET ELLE ETAIT INVISIBLE. Le Flash etait fabrique dans
+ * `momentsRestants`, donc il n'existait QUE pour ce qui passe par cette
+ * fonction. Or presque tout le reste du produit lit `c.moments` directement :
+ * la fraicheur, le tri du paquet, « y a-t-il un Flash sur cette carte », le
+ * bond dore du fantome. Mesure : le Flash apparaissait bien dans le paquet,
+ * mais en NEUVIEME position, et le fantome ne s'illuminait jamais — chacun de
+ * ces calculs regardait un tableau ou il ne figurait pas.
+ *
+ * UNE SEULE VERITE, DONC : il entre dans `moments`, a la source, et tout le
+ * monde le voit de la meme facon. C'est la meme regle que partout ailleurs
+ * ici — deux facons de decrire la meme chose, c'est une de trop.
+ *
+ * IL N'OUVRE PAS UN COMMERCE FERME : `autourDeMoi` filtre AVANT d'appeler
+ * ceci. Un Flash ne fait pas entrer dans le paquet une boutique qui n'a rien a
+ * proposer a cette heure-la.
+ */
+export function avecFlashDemo(c: CarteAutour, heure: number): CarteAutour {
+  if (!c.flashDemo) return c;
+  // ⚡ UN FLASH N'OUVRE JAMAIS UN COMMERCE FERME, ET LA GARANTIE EST ICI.
+  //
+  // Elle vivait dans l'ordre des appels — filtrer, puis injecter. Un ordre est
+  // une convention : il tient tant que personne n'ajoute un troisieme appel
+  // ailleurs, et il y en avait deja un que j'avais manque (le paquet « tout »
+  // ne passe pas par `autourDeMoi`). Dans la fonction, la regle voyage avec
+  // elle et ne peut plus etre oubliee.
+  if (momentsRestants(c, heure).length === 0) return c;
+  // IL DEMARRE A L'HEURE PILE ET DURE TRENTE MINUTES. Une fenetre ecrite en dur
+  // ne se serait montree qu'une fois par jour ; celle-ci revient chaque heure,
+  // compte vraiment a rebours, et s'eteint pour de bon a la demie.
+  const lance = Math.floor(heure);
+  const fin = lance + 0.5;
+  if (heure > fin) return c;
+  const m: MomentJour = { ...momentDuFlash({ ...c.flashDemo, lance, fin }), publie: lance };
+  return { ...c, moments: [m, ...c.moments] };
+}
+
+
+
+/**
  * LE MOMENT QUE LA CARTE AFFICHE — celui qui se passe, sinon le prochain.
  *
  * C'est ce qui fait qu'une seule annonce ne montre pas la même chose à 11 h et
@@ -2841,7 +2942,11 @@ export function autourDeMoi(heure: number, branche: CleMetier): CarteAutour[] {
   // produit, pas une exception de maquette.
   return CARTES.filter(
     (c) => c.branche === branche && !c.silencieux && momentsRestants(c, heure).length > 0,
-  ).sort((a, b) => a.metres - b.metres);
+  )
+    // ⚡ LE FLASH DE DEMONSTRATION ENTRE ICI — voir `avecFlashDemo`, qui refuse
+    // de lui-meme d'ouvrir un commerce sans rien a proposer.
+    .map((c) => avecFlashDemo(c, heure))
+    .sort((a, b) => a.metres - b.metres);
 }
 
 /**
