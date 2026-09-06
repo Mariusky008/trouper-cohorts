@@ -1270,7 +1270,7 @@ export function ApercuHabitant() {
    * quelque chose sur quoi les autres peuvent voter.
    */
   const [catalogue, setCatalogue] = useState<
-    null | { c: CarteAutour; pourProposer: boolean }
+    null | { c: CarteAutour; pourProposer: boolean; duJour?: boolean }
   >(null);
   /**
    * SUIVRE UN COMMERÇANT — et la différence avec garder est tout le sujet.
@@ -5659,16 +5659,39 @@ export function ApercuHabitant() {
                               type="button"
                               className="cd-anneau porte"
                               onPointerDown={(ev) => ev.stopPropagation()}
-                              onClick={versLeBas}
+                              onClick={() => {
+                                // ─── ET ELLE OUVRE UNE VRAIE CARTE ───
+                                // « Quand on clique sur voir le menu, il faut
+                                // que ça ouvre une pop-up avec la photo du menu
+                                // du jour et le menu du jour, et en dessous, en
+                                // scrollant, la carte entière du restaurant. »
+                                // C'est exactement l'ordre du produit : ce qui
+                                // est AUJOURD'HUI d'abord, ce qu'il y a
+                                // D'HABITUDE ensuite.
+                                if (!dessus) return;
+                                noter("pli-ouvert", 0, "anneau");
+                                setCatalogue({
+                                  c: dessus,
+                                  pourProposer: false,
+                                  duJour: true,
+                                });
+                              }}
+                              aria-label="Voir la carte du jour"
                             >
-                              <i aria-hidden="true">
-                                {dessus?.menu || dessus?.catalogue ? "🍽️" : "📋"}
-                              </i>
-                              <span>
-                                {dessus?.menu || dessus?.catalogue
-                                  ? "Voir la carte"
-                                  : "Voir la journée"}
+                              <span className="cd-an-t">
+                                {dessus?.menu || dessus?.catalogue?.length
+                                  ? "La carte"
+                                  : "Sa journée"}
                               </span>
+                              {/* UN PICTOGRAMME AU TRAIT, PAS UN EMOJI : un
+                                  emoji change de dessin selon le téléphone et
+                                  cassait l'harmonie du cercle. */}
+                              <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M4 3v7a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V3" />
+                                <path d="M6 12v9" />
+                                <path d="M17 3c-1.7 1.3-2.5 3.2-2.5 5.5S15.3 12.7 17 14v7" />
+                              </svg>
+                              <em>Voir</em>
                             </button>
                           ) : undefined
                         }
@@ -7216,9 +7239,11 @@ export function ApercuHabitant() {
                 ELLE NE S'AFFICHE PAS SUR TOUT. Sur un poste ou un événement,
                 « ça vous tente ? » sonnerait faux — ce ne sont pas des envies
                 du même ordre. */}
-            {!dessusEv && !embauches && (
-              <p className="ap-tente">Ça vous tente ?</p>
-            )}
+            {/* « ÇA VOUS TENTE ? » N'EST PAS DANS LA MAQUETTE, et elle a
+                raison : la question etait la quand les deux actions se
+                ressemblaient et qu'il fallait dire laquelle repondait a quoi.
+                Depuis que le vert prend toute la largeur et porte sa fleche,
+                l'ecran ne pose plus de question — il en propose une. */}
             {/* ─── « SUIVANTE », ET PLUS UNE CROIX ───
                 « Je ne garderais pas un X, parce que X signifie presque
                 universellement fermer / quitter / annuler. Il faut deux façons
@@ -8002,12 +8027,41 @@ export function ApercuHabitant() {
                 aria-hidden="true"
                 focusable="false"
               >
+                {/* ─── IL A DU RELIEF, ET C'ÉTAIT LA DEMANDE ───
+                    « Le smiley au milieu du menu n'est pas très bien fait, il
+                    manque de représentation 3D. » Un aplat blanc est un
+                    pictogramme, pas un personnage. Trois choses suffisent à lui
+                    donner un volume, et ce sont celles que fait un illustrateur :
+                    un dégradé du haut vers le bas (la lumière vient d'en haut),
+                    une ombre portée sous le corps, et un reflet clair sur
+                    l'épaule gauche. Les yeux gagnent leur point de lumière — ce
+                    petit blanc est ce qui fait qu'un œil est vivant. */}
+                <defs>
+                  <linearGradient id="apFg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor="#ffffff" />
+                    <stop offset=".55" stopColor="#F4FBF7" />
+                    <stop offset="1" stopColor="#CDE8DB" />
+                  </linearGradient>
+                  <radialGradient id="apFl" cx=".33" cy=".26" r=".42">
+                    <stop offset="0" stopColor="#ffffff" stopOpacity=".95" />
+                    <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+                  </radialGradient>
+                </defs>
+                <ellipse className="ap-f-ombre" cx="20" cy="41.5" rx="11" ry="2.4" />
                 <path
                   className="ap-f-corps"
                   d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"
                 />
+                <path
+                  className="ap-f-lueur"
+                  d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"
+                />
+                <ellipse className="ap-f-joue g" cx="10.6" cy="24.4" rx="2.6" ry="1.7" />
+                <ellipse className="ap-f-joue d" cx="29.4" cy="24.4" rx="2.6" ry="1.7" />
                 <ellipse className="ap-f-oeil g" cx="14.2" cy="19" rx="2.5" ry="3.3" />
                 <ellipse className="ap-f-oeil d" cx="25.8" cy="19" rx="2.5" ry="3.3" />
+                <circle className="ap-f-eclat g" cx="15.1" cy="17.8" r=".85" />
+                <circle className="ap-f-eclat d" cx="26.7" cy="17.8" r=".85" />
                 <path className="ap-f-bouche" d="M16.4 26.2c1.5 2 5.7 2 7.2 0" />
               </svg>
             </button>
@@ -8606,6 +8660,60 @@ export function ApercuHabitant() {
                       devient une colonne. Sans ce span, elle se lisait « Ce qui
                       est / aujourd'hui / est dans l'annonce » sur trois blocs
                       decales. */}
+                  {/* ═══ CE QUI EST AUJOURD'HUI, AVANT CE QU'IL Y A D'HABITUDE ═══
+
+                      « Quand on clique sur voir le menu, il faut que ça ouvre
+                      une pop-up avec la photo du menu du jour et le menu du
+                      jour, et en dessous, en scrollant, la carte entière du
+                      restaurant. »
+
+                      C'EST L'ORDRE MÊME DU PRODUIT. Le Direct dit ce qui se
+                      passe MAINTENANT, le catalogue dit ce qu'il y a
+                      D'HABITUDE ; la feuille ne faisait que le second, et on
+                      arrivait sur une carte de restaurant sans savoir ce qu'on
+                      y sert aujourd'hui. La photo en grand, le plat, l'heure,
+                      le prix — puis on descend, et la carte entière suit. */}
+                  {catalogue.duJour &&
+                    (() => {
+                      const c = catalogue.c;
+                      const jour = momentsRestants(c, heure);
+                      const photo = c.menu?.photo ?? jour.find((m) => m.photo)?.photo ?? c.photo;
+                      if (!jour.length && !c.menu) return null;
+                      return (
+                        <div className="ap-jour-h">
+                          {photo && (
+                            <span
+                              className="ap-jour-ph"
+                              style={{ backgroundImage: `url("${encodeURI(photo)}")` }}
+                              aria-hidden="true"
+                            />
+                          )}
+                          <h4>
+                            {c.menu ? "Le menu du jour" : "Aujourd’hui"}
+                            <b>{c.ville}</b>
+                          </h4>
+                          <ul>
+                            {c.menu && (
+                              <li className="on">
+                                <b>{c.menu.plat}</b>
+                                <span>{c.menu.description}</span>
+                                {c.menu.prix && <em>{c.menu.prix}</em>}
+                              </li>
+                            )}
+                            {jour.map((m, i) => (
+                              <li key={`${m.titre}-${i}`}>
+                                <b>{m.titre}</b>
+                                <span>{m.quand}</span>
+                                {m.prix && <em>{m.prix}</em>}
+                              </li>
+                            ))}
+                          </ul>
+                          <p className="ap-jour-s">
+                            Et en dessous, ce qu&apos;il y a d&apos;habitude.
+                          </p>
+                        </div>
+                      );
+                    })()}
                   <p className="ap-cata-rappel">
                     <i aria-hidden="true">⚡</i>
                     <span>
@@ -9316,11 +9424,17 @@ export function ApercuHabitant() {
            verte disait « ceci est un reglage » ; ce n'en est plus un, c'est le
            repere de l'ecran. Le chevron reste, tout petit : il faut bien que ca
            s'ouvre. */
-        .ap-metier{font:inherit;font-size:11.5px;font-weight:850;cursor:pointer;
+        /* SUR LA MAQUETTE C'EST DU TEXTE, PAS UN BOUTON. « Dax maintenant :
+           c'est pas bien fait non plus. » La pastille verte pleine criait
+           « reglage » au milieu de l'en-tete et pesait plus lourd que tout le
+           reste de la ligne ; le repere de l'ecran n'a pas a etre l'objet le
+           plus colore. Il reste cliquable — c'est toujours la porte du filtre —
+           mais il en a l'air d'un titre. */
+        .ap-metier{font:inherit;font-size:12px;font-weight:800;cursor:pointer;
           margin:0 auto;transition:transform .12s ease;
-          background:none;border:0;color:#EAF2EC;padding:6px 4px;
-          letter-spacing:.13em;text-transform:uppercase;
-          display:inline-flex;align-items:center;gap:6px;}
+          background:none;border:0;color:rgba(234,242,236,.72);padding:6px 4px;
+          letter-spacing:.14em;text-transform:uppercase;
+          display:inline-flex;align-items:center;gap:7px;}
         .ap-metier>i{display:none;}
         .ap-ville{color:#fff;}
         /* LE POINT QUI BAT, entre la ville et le moment : la seule chose de
@@ -9358,10 +9472,23 @@ export function ApercuHabitant() {
            il s'est passe quelque chose. Le filet vertical dit qu'on change de
            sujet, et il coute deux points de large la ou une seconde rangee en
            coutait trente-cinq de haut. */
-        .ap-fav2{position:relative;flex:none;display:flex;align-items:center;gap:11px;
-          border-radius:999px;border:1px solid rgba(126,230,192,.28);
-          background:rgba(18,185,129,.14);
+        /* DEUX CERCLES SEPARES, comme sur la maquette : chacun le sien, aucun
+           cadre commun. Un cadre commun disait « ces deux boutons vont
+           ensemble », ce qui est exactement le contraire de ce qu'on a passe
+           trois iterations a etablir. */
+        .ap-fav2{position:relative;flex:none;display:flex;align-items:center;
+          gap:9px;border:0;background:none;
           transition:transform .28s cubic-bezier(.34,1.5,.64,1);}
+        .ap-fav2>.ap-poche,.ap-fav2>.ap-cloche{
+          width:38px;height:38px;border-radius:50%;padding:0;
+          justify-content:center;
+          background:rgba(9,12,10,.55);
+          border:1px solid rgba(234,242,236,.16);
+          -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+        .ap-fav2>.ap-poche.plein{border-color:rgba(255,138,155,.55);
+          background:rgba(255,138,155,.12);}
+        .ap-fav2>.ap-cloche.neuf{border-color:rgba(240,180,41,.45);
+          background:rgba(240,180,41,.12);}
         .ap-fav2.pop{transform:scale(1.18);}
         .ap-fav2 button{font:inherit;font-size:15px;line-height:1;cursor:pointer;
           border:0;background:none;color:#8FE9C4;padding:7px 10px;
@@ -10467,7 +10594,14 @@ export function ApercuHabitant() {
         /* Le rose de l'evenement est pose plus haut, sur les lignes de la
            seconde face (.cd-offre, .cd-nature, .cd-quand). */
         .ap-metier.evenement{color:#2A0716;background:#F472B6;border-color:transparent;}
-        .ap-metier.tout{color:#04150E;background:#3DE2A6;border-color:transparent;}
+        /* PLUS DE PASTILLE VERTE SUR « TOUT ». C'etait la vue par defaut, donc
+           la pastille etait pleine neuf fois sur dix : l'objet le plus colore de
+           l'ecran designait un reglage auquel personne n'avait touche. Le repere
+           du haut est du TEXTE — voir la regle .ap-metier — et la vue en cours se
+           lit dans ses mots, pas dans son fond. */
+        .cd-barre .ap-metier{background:none;border:0;padding:6px 4px;}
+        .ap-metier.tout{color:rgba(234,242,236,.72);background:none;
+          border-color:transparent;}
         .ap-m.evenement em{display:block;margin-top:3px;font-style:normal;font-size:12px;
           font-weight:650;color:#8FA3AC;}
         .ap-m.evenement{align-items:flex-start;}
@@ -11076,9 +11210,18 @@ export function ApercuHabitant() {
         .ap-onglets .ap-suiv b{display:none;}
         .ap-fantome{width:34px;height:37px;overflow:visible;
           transform-origin:50% 62%;}
-        .ap-f-corps{fill:#fff;}
-        .ap-f-oeil{fill:#06231A;transition:transform .1s ease;}
-        .ap-f-bouche{fill:none;stroke:#06231A;stroke-width:2.1;
+        /* LE VOLUME : un degrade du haut vers le bas (la lumiere vient d'en
+           haut), une ombre portee sous le corps, un reflet sur l'epaule gauche,
+           et deux joues rosees. Un aplat blanc est un pictogramme ; ceci est un
+           personnage. */
+        .ap-f-corps{fill:url(#apFg);
+          filter:drop-shadow(0 1.5px 1.5px rgba(4,40,26,.22));}
+        .ap-f-lueur{fill:url(#apFl);}
+        .ap-f-ombre{fill:rgba(4,40,26,.22);}
+        .ap-f-joue{fill:#FFB4C4;opacity:.5;}
+        .ap-f-oeil{fill:#0A2E22;transition:transform .1s ease;}
+        .ap-f-eclat{fill:#fff;opacity:.9;}
+        .ap-f-bouche{fill:none;stroke:#0A2E22;stroke-width:2.1;
           stroke-linecap:round;}
         /* IL FLOTTE, MEME AU REPOS — un fantome pose ne vit pas. Trois points de
            haut, six secondes : on le remarque sans qu'il attire. */
@@ -11088,24 +11231,45 @@ export function ApercuHabitant() {
         /* ET IL SAUTE QUAND ON L'APPUIE : il monte, penche la tete, ferme les
            yeux et sourit plus grand. Six cents millisecondes — le temps que la
            carte suivante arrive, pas plus. */
-        .ap-suiv.clin{animation:apBond .6s cubic-bezier(.34,1.5,.5,1);}
-        .ap-suiv.clin .ap-fantome{animation:apSaut .6s cubic-bezier(.3,1.4,.5,1);}
-        .ap-suiv.clin .ap-f-oeil{animation:apYeux .6s ease;}
-        .ap-suiv.clin .ap-f-bouche{animation:apSourire .6s ease;}
-        @keyframes apBond{0%{transform:scale(.88);}
-          40%{transform:scale(1.12);}
+        /* ═══ ET IL FAIT UNE VRAIE CABRIOLE ═══
+           « Il manque une animation marrante quand il est cliqué. » Un saut
+           droit n'est pas drole ; ce qui l'est, c'est l'ECRASEMENT puis
+           l'ETIREMENT — la premiere regle des dessins animes. Il s'aplatit,
+           jaillit en s'etirant, part en arriere en tournant, retombe en
+           s'ecrasant un peu, puis se remet. Les yeux se ferment au sommet, la
+           bouche s'ouvre en grand, et le cercle envoie une onde. */
+        .ap-suiv.clin{animation:apBond .78s cubic-bezier(.3,1.2,.4,1);}
+        .ap-suiv.clin::after{content:"";position:absolute;inset:0;
+          border-radius:50%;border:2px solid rgba(140,240,204,.9);
+          animation:apOnde .78s ease-out;pointer-events:none;}
+        .ap-suiv.clin .ap-fantome{animation:apCabriole .78s cubic-bezier(.28,1.1,.4,1);}
+        .ap-suiv.clin .ap-f-oeil{animation:apYeux .78s ease;}
+        .ap-suiv.clin .ap-f-bouche{animation:apSourire .78s ease;}
+        .ap-suiv.clin .ap-f-joue{animation:apJoues .78s ease;}
+        @keyframes apBond{0%{transform:scale(.9);}
+          30%{transform:scale(1.14);}
+          60%{transform:scale(.97);}
           100%{transform:none;}}
-        @keyframes apSaut{0%{transform:translateY(0) rotate(0);}
-          35%{transform:translateY(-7px) rotate(-9deg);}
-          70%{transform:translateY(1px) rotate(5deg);}
+        @keyframes apOnde{0%{transform:scale(1);opacity:.85;}
+          100%{transform:scale(1.75);opacity:0;}}
+        @keyframes apCabriole{
+          0%{transform:translateY(2px) scale(1.22,.78) rotate(0);}
+          18%{transform:translateY(-11px) scale(.82,1.24) rotate(-6deg);}
+          42%{transform:translateY(-14px) scale(1,1) rotate(-16deg);}
+          64%{transform:translateY(-4px) scale(1.05,.95) rotate(9deg);}
+          82%{transform:translateY(2px) scale(1.16,.86) rotate(3deg);}
           100%{transform:none;}}
         @keyframes apYeux{0%,100%{transform:scaleY(1);}
-          30%,45%{transform:scaleY(.18);}}
-        @keyframes apSourire{0%,100%{stroke-width:2.1;d:path("M16.4 26.2c1.5 2 5.7 2 7.2 0");}
-          45%{stroke-width:2.6;d:path("M15.2 25.4c2.2 3.4 7.4 3.4 9.6 0");}}
+          22%,44%{transform:scaleY(.16);}}
+        @keyframes apSourire{0%,100%{stroke-width:2.1;
+            d:path("M16.4 26.2c1.5 2 5.7 2 7.2 0");}
+          40%{stroke-width:2.7;
+            d:path("M14.8 25c2.4 4.2 8 4.2 10.4 0");}}
+        @keyframes apJoues{0%,100%{opacity:.5;}45%{opacity:.95;}}
         @media (prefers-reduced-motion:reduce){
-          .ap-fantome,.ap-suiv.clin,.ap-suiv.clin .ap-fantome,
-          .ap-suiv.clin .ap-f-oeil,.ap-suiv.clin .ap-f-bouche{animation:none;}
+          .ap-fantome,.ap-suiv.clin,.ap-suiv.clin::after,
+          .ap-suiv.clin .ap-fantome,.ap-suiv.clin .ap-f-oeil,
+          .ap-suiv.clin .ap-f-bouche,.ap-suiv.clin .ap-f-joue{animation:none;}
         }
         }
 
@@ -11505,8 +11669,7 @@ export function ApercuHabitant() {
            moities d'une meme histoire : a gauche on garde, a droite on
            retrouve. La cloche, qui racontait une AUTRE histoire, a quitte cette
            barre pour l'onglet Profil — voir le badge ambre en bas. */
-        .ap-fav2::before{content:"";order:1;width:1px;height:20px;
-           background:rgba(234,242,236,.22);}
+
         .ap-fav2>button:first-child{order:0;}
         .ap-fav2>.ap-poche{order:0;}
         .ap-fav2>.ap-cloche{order:2;}
@@ -11632,6 +11795,33 @@ export function ApercuHabitant() {
           color:#8C9C94;margin-top:2px;}
         .ap-cata-ligne s{text-decoration:none;color:#8FE9C4;font-weight:800;}
         .ap-cata-ligne:active{transform:scale(.99);}
+
+        /* ═══ LE JOUR, EN HAUT DE LA FEUILLE DE LA CARTE ═══
+           La photo en grand, puis ce qui se sert aujourd'hui, heure par heure.
+           C'est ce qu'on est venu voir en appuyant sur l'anneau ; la carte
+           d'habitude suit dessous, et le passage de l'un a l'autre est ecrit. */
+        .ap-jour-h{margin:0 0 14px;border-radius:16px;overflow:hidden;
+          background:rgba(234,242,236,.05);
+          border:1px solid rgba(234,242,236,.1);}
+        .ap-jour-ph{display:block;width:100%;height:150px;
+          background-size:cover;background-position:center 55%;}
+        .ap-jour-h h4{display:flex;align-items:baseline;justify-content:space-between;
+          gap:10px;margin:0;padding:12px 14px 2px;font-size:11px;font-weight:850;
+          letter-spacing:.14em;text-transform:uppercase;color:#7EE6C0;}
+        .ap-jour-h h4 b{font-size:10px;font-weight:700;letter-spacing:.1em;
+          color:rgba(234,242,236,.45);}
+        .ap-jour-h ul{list-style:none;margin:0;padding:6px 14px 0;}
+        .ap-jour-h li{display:grid;grid-template-columns:1fr auto;
+          gap:2px 10px;padding:8px 0;
+          border-bottom:1px solid rgba(234,242,236,.07);}
+        .ap-jour-h li:last-child{border-bottom:0;}
+        .ap-jour-h li b{grid-column:1;font-size:14px;font-weight:800;color:#EAF2EC;}
+        .ap-jour-h li span{grid-column:1;font-size:12px;color:rgba(234,242,236,.55);}
+        .ap-jour-h li em{grid-column:2;grid-row:1 / span 2;align-self:center;
+          font-style:normal;font-size:15px;font-weight:850;color:#3DE2A6;}
+        .ap-jour-h li.on b{color:#fff;}
+        .ap-jour-s{margin:0;padding:10px 14px 12px;font-size:11.5px;
+          font-weight:700;color:rgba(234,242,236,.42);}
 
         /* LE RAPPEL QUI TIENT LA PROMESSE. Sans lui, une carte complete finit
            par avoir l'air plus fiable que l'ardoise du jour — et c'est
@@ -12276,8 +12466,9 @@ export function ApercuHabitant() {
         .ap-suite{display:flex;align-items:center;justify-content:center;
           gap:6px;padding:2px 0 0;}
         .ap-suite s{width:6px;height:6px;border-radius:50%;
-          background:rgba(234,242,236,.26);text-decoration:none;}
-        .ap-suite s.on{width:18px;border-radius:999px;background:#3DE2A6;}
+          background:rgba(234,242,236,.24);text-decoration:none;}
+        .ap-suite s.on{width:8px;height:8px;background:#F0B429;
+          box-shadow:0 0 10px -1px rgba(240,180,41,.7);}
         .ap-agir span{display:flex;flex-direction:column;align-items:center;
           min-width:0;line-height:1.15;}
         .ap-agir em{font-style:normal;font-size:10px;font-weight:700;

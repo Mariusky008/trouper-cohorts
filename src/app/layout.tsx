@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { SITE_URL } from "@/lib/site-url";
 import { MARQUE } from "@/lib/marque";
-import { Geist, Geist_Mono, Archivo_Black } from "next/font/google";
+import { Geist, Geist_Mono, Anton } from "next/font/google";
 import { Toaster } from "sonner";
 import { RecoveryRedirectGuard } from "@/components/auth/recovery-redirect-guard";
 import "./globals.css";
@@ -19,17 +19,20 @@ const geistMono = Geist_Mono({
 /**
  * LA FONTE D'AFFICHE DU DIRECT — « 8 LASAGNES », « 9 € ».
  *
- * POURQUOI UNE FONTE DE PLUS. Le titre d'une annonce doit se lire d'un trottoir
- * à l'autre, dans une main qui bouge, en une seconde. Une graisse 900 d'Inter y
- * arrive presque, mais elle est LARGE : « La côte de bœuf maturée » passait sur
- * trois lignes et perdait sa force. Une grotesque compacte tient la même phrase
- * en deux lignes à la même taille — c'est de la lisibilité, pas du décor.
+ * POURQUOI CELLE-CI ET PAS UNE AUTRE. « La police d'écriture n'est pas aussi
+ * bien que sur le mock-up, qui a beaucoup plus de caractère. » C'était juste :
+ * Archivo Black est une grotesque LARGE et ronde — lisible, mais sage. La
+ * maquette porte une condensée d'affiche, haute et serrée, celle des ardoises
+ * et des affiches de marché. Anton est exactement cette lettre-là : à taille
+ * égale elle est un tiers plus étroite, donc plus haute pour la même largeur,
+ * donc plus forte. Ce n'est pas du décor : « La côte de bœuf maturée » y tient
+ * en deux lignes quand la précédente en demandait trois.
  *
  * ELLE EST SERVIE PAR LE SITE, PAS PAR GOOGLE. `next/font` la télécharge au
  * BUILD et l'héberge avec nous : aucune requête vers un tiers depuis le
  * téléphone d'un habitant, et rien à charger avant que le texte s'affiche.
  */
-const archivoBlack = Archivo_Black({
+const anton = Anton({
   variable: "--font-affiche",
   subsets: ["latin"],
   weight: "400",
@@ -92,7 +95,7 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning className="scroll-smooth">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${archivoBlack.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} antialiased`}
         suppressHydrationWarning
       >
         <RecoveryRedirectGuard />

@@ -1044,15 +1044,29 @@ export function StylesDirect() {
            coupe par des points de suspension ne dit plus rien du tout — c'est
            le defaut qu'on repare, pas un detail de gout. Trois paliers, poses
            par la carte selon le nombre de caracteres. */
-        .cd-offre{margin:9px 0 0;
+        .cd-offre{margin:6px 0 0;
           font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
-          font-weight:400;font-size:clamp(38px,12vw,58px);line-height:.92;
-          letter-spacing:-.01em;text-transform:uppercase;color:#fff;
+          font-weight:400;font-size:clamp(46px,14.5vw,70px);line-height:.88;
+          letter-spacing:.004em;text-transform:uppercase;color:#fff;
           text-shadow:0 3px 22px rgba(0,0,0,.62);
           display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
           overflow:hidden;}
-        .cd-offre.moyen{font-size:clamp(30px,9vw,42px);}
-        .cd-offre.long{font-size:clamp(25px,7.2vw,34px);line-height:1;}
+        .cd-offre.moyen{font-size:clamp(37px,11vw,52px);}
+        .cd-offre.long{font-size:clamp(30px,8.6vw,41px);line-height:.94;}
+        /* ─── LE GRAIN D'AFFICHE ───
+           « Beaucoup plus de caractere. » Une lettre pleine et lisse est une
+           lettre d'application ; une lettre legerement mangee est une lettre
+           IMPRIMEE — c'est ce que la maquette montre, et c'est ce qui donne
+           l'impression d'une ardoise plutot que d'un ecran.
+           C'EST UN MASQUE, PAS UNE COULEUR : si le navigateur ne le comprend
+           pas, le titre reste blanc plein. Un titre invisible pour un grain
+           serait un tres mauvais marche. */
+        @supports (-webkit-mask-image:url("")) or (mask-image:url("")){
+          .cd-offre,.cd-prixg b{
+            -webkit-mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='1.4' numOctaves='2'/><feColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .17 0 0 0 .83'/></filter><rect width='220' height='220' filter='url(%23g)'/></svg>");
+            mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='1.4' numOctaves='2'/><feColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .17 0 0 0 .83'/></filter><rect width='220' height='220' filter='url(%23g)'/></svg>");
+            -webkit-mask-size:220px 220px;mask-size:220px 220px;}
+        }
         .cd-detail{margin:7px 0 0;max-width:31ch;font-size:12.5px;
           line-height:1.35;color:#D9E4DC;text-wrap:balance;
           text-shadow:0 2px 10px rgba(4,8,6,.8);
@@ -1108,18 +1122,18 @@ export function StylesDirect() {
            petit, decale, comme sur une ardoise de marche. C'est la lecture la
            plus rapide qui existe pour une remise : on voit la chute avant
            d'avoir lu les chiffres. */
-        .cd-prixg{margin:4px 0 0;display:flex;align-items:baseline;gap:9px;
+        .cd-prixg{margin:2px 0 0;display:flex;align-items:baseline;gap:10px;
           font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
-          font-size:clamp(40px,13vw,62px);font-weight:400;
-          letter-spacing:-.015em;line-height:1;color:#fff;
+          font-size:clamp(52px,16.5vw,80px);font-weight:400;
+          letter-spacing:.004em;line-height:.96;color:#fff;
           text-shadow:0 3px 22px rgba(0,0,0,.62);
           font-variant-numeric:tabular-nums;}
         .cd-prixg b{font-weight:inherit;}
         /* L'ASTERISQUE EST EN EXPOSANT ET PETIT : il signale, il n'annonce pas. */
         .cd-prixg b em{font-style:normal;font-size:.42em;vertical-align:super;
           margin-left:.04em;color:rgba(255,255,255,.72);}
-        .cd-prixg s{margin:0;font-family:'Inter',system-ui,sans-serif;
-          font-size:clamp(16px,4.8vw,22px);font-weight:800;
+        .cd-prixg s{margin:0;font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
+          font-size:clamp(20px,6vw,28px);font-weight:400;
           color:#FF6B6B;text-decoration-color:#FF6B6B;
           text-decoration-thickness:2.5px;}
         /* ⚡ SUR UN FLASH, L'ANCIEN PRIX EST LA MOITIE DE L'INFORMATION — il
@@ -1282,28 +1296,40 @@ export function StylesDirect() {
            de l'ecran, ou il tombait sur l'etiquette « Glissez pour proposer »
            des trois premieres cartes. Deux objets poses au meme endroit, c'est
            toujours le plus recent qui a tort. */
-        .cd-anneau{position:absolute;right:14px;top:30%;z-index:3;
-          width:112px;height:112px;border-radius:50%;
+        /* ═══ L'ANNEAU ═══
+           « Le rond est terriblement vilain et pas du tout harmonieux. »
+           C'etait vrai, et la cause tenait a son epaisseur : six points de
+           rouge plein faisaient une bouee posee sur la photo. La maquette
+           montre un FILET — deux points et demi, chaud, avec une lueur autour —
+           et l'interieur presque noir. Le cercle cesse d'etre un objet pour
+           redevenir un cadran.
+           LES DEUX ETATS ONT LE MEME DESSIN : le chrono et la porte de la carte
+           ne different que par ce qu'ils contiennent. Deux cercles differents
+           au meme endroit, c'etait la moitie du probleme. */
+        .cd-anneau{position:absolute;right:18px;top:29%;z-index:3;
+          width:98px;height:98px;border-radius:50%;
           display:flex;flex-direction:column;align-items:center;
-          justify-content:center;gap:0;text-align:center;
-          font:inherit;color:#fff;cursor:default;
-          border:6px solid #FF5A4E;
-          background:rgba(6,9,7,.86);
-          -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
-          box-shadow:0 12px 34px rgba(0,0,0,.55),
-            0 0 26px -6px rgba(255,90,78,.55);}
-        /* LE TOUR QUI DESCEND est pose SUR l'anneau rouge, en plus sombre : on
-           voit ce qui reste sans que le cercle cesse d'etre un cercle rouge. */
-        .cd-anneau u{position:absolute;inset:-6px;border-radius:50%;
-          text-decoration:none;z-index:-1;opacity:.55;
-          -webkit-mask:radial-gradient(circle, transparent 0 50px, #000 50px);
-          mask:radial-gradient(circle, transparent 0 50px, #000 50px);}
+          justify-content:center;gap:1px;text-align:center;
+          font:inherit;color:#fff;cursor:default;border:0;padding:0;
+          background:
+            linear-gradient(rgba(6,9,7,.9),rgba(6,9,7,.9)) padding-box,
+            linear-gradient(150deg,#FF8A5B,#FF4E63) border-box;
+          border:2.5px solid transparent;
+          -webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);
+          box-shadow:0 10px 30px rgba(0,0,0,.5),
+            0 0 24px -4px rgba(255,110,90,.5);}
+        /* LE TOUR QUI DESCEND se pose SUR le filet, en clair : on voit ce qui
+           reste sans que le cercle cesse d'etre un cercle. */
+        .cd-anneau u{position:absolute;inset:-2.5px;border-radius:50%;
+          text-decoration:none;z-index:1;opacity:.85;pointer-events:none;
+          -webkit-mask:radial-gradient(circle, transparent 0 46.5px, #000 46.5px);
+          mask:radial-gradient(circle, transparent 0 46.5px, #000 46.5px);}
         .cd-anneau .cd-an-t{display:flex;align-items:center;gap:4px;
-          font-size:9.5px;font-weight:850;letter-spacing:.1em;
-          text-transform:uppercase;color:#FFB3A8;}
-        .cd-anneau .cd-an-t i{font-style:normal;font-size:10px;}
+          font-size:9px;font-weight:850;letter-spacing:.12em;
+          text-transform:uppercase;color:#FFB9AC;}
+        .cd-anneau .cd-an-t i{font-style:normal;font-size:9.5px;}
         .cd-anneau b{font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
-          font-size:42px;font-weight:400;line-height:1.02;letter-spacing:-.02em;
+          font-size:40px;font-weight:400;line-height:1;letter-spacing:.01em;
           font-variant-numeric:tabular-nums;}
         .cd-anneau em{font-style:normal;font-size:9.5px;font-weight:850;
           letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.72);}
@@ -1315,12 +1341,22 @@ export function StylesDirect() {
           text-decoration:none;font-size:9px;font-weight:800;line-height:1.25;
           letter-spacing:.05em;text-transform:uppercase;text-align:center;
           color:rgba(255,215,94,.82);text-shadow:0 2px 10px rgba(4,8,6,.9);}
-        .cd-anneau.porte{cursor:pointer;border:2px solid rgba(61,226,166,.55);
-          padding:0 10px;}
-        .cd-anneau.porte i{font-style:normal;font-size:20px;line-height:1;
-          margin-bottom:4px;}
-        .cd-anneau.porte span{font-size:11px;font-weight:850;line-height:1.15;
-          letter-spacing:.02em;color:#EAF2EC;}
+        /* LA PORTE DE LA CARTE : le meme filet, en vert — la couleur de ce
+           qu'on peut faire — et la meme structure a trois etages que le chrono.
+           Un pictogramme au trait au milieu, pas un emoji : l'emoji change de
+           dessin selon le telephone et cassait l'harmonie du cercle. */
+        .cd-anneau.porte{cursor:pointer;
+          background:
+            linear-gradient(rgba(6,9,7,.9),rgba(6,9,7,.9)) padding-box,
+            linear-gradient(150deg,#8CF0CC,#2FD39A) border-box;
+          box-shadow:0 10px 30px rgba(0,0,0,.5),
+            0 0 24px -4px rgba(61,226,166,.45);}
+        .cd-anneau.porte .cd-an-t{color:#9BEBCB;}
+        .cd-anneau.porte svg{width:30px;height:30px;margin:2px 0 1px;
+          stroke:#EAF2EC;stroke-width:1.7;fill:none;
+          stroke-linecap:round;stroke-linejoin:round;}
+        .cd-anneau.porte em{font-style:normal;font-size:9px;font-weight:850;
+          letter-spacing:.12em;text-transform:uppercase;color:#9BEBCB;}
         .cd-anneau.porte:active{transform:scale(.95);}
         @media (prefers-reduced-motion:reduce){.cd-tombe{animation:none;}}
 
