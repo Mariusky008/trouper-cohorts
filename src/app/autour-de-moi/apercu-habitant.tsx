@@ -11935,8 +11935,8 @@ export function ApercuHabitant() {
           animation:apOnde 1s ease-out;}
         /* ═══ LA BULLE NE BOUGE PAS PENDANT LE BOND DORE ═══
            MESURE QUI L'A IMPOSE : la marche du verifieur s'arretait net sur la
-           carte Flash. Le bouton portait `apBond`, qui met sa boite a l'echelle
-           pendant une seconde et demie — donc la CIBLE bougeait sous le doigt
+           carte Flash. Le bouton portait l'animation apBond, qui met sa boite a
+           l'echelle pendant 1,5 s — donc la CIBLE bougeait sous le doigt
            tout ce temps, et l'appui suivant ne trouvait rien de stable.
            C'EST AUSSI PLUS JUSTE A REGARDER. La bulle est le sol ; c'est le
            fantome qui saute. Les faire bouger ensemble annulait justement
