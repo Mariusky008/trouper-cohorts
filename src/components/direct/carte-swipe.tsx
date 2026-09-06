@@ -925,10 +925,20 @@ export function StylesDirect() {
            commerce. Mesure faite sur une terrasse en plein soleil, la photo la
            plus claire du paquet : sans ces deux epaisseurs, « Il en reste 3 »
            et le nom du commerce disparaissent. */
+        /* ═══ LA PHOTO EST UNE BANDE, PAS UN FOND ═══
+           « Ca ne ressemble toujours pas du tout a ce que je t'ai donne. »
+           C'etait le plus gros ecart, et il tenait a ce voile. Sur la maquette,
+           le texte est pose sur du NOIR, et la photo commence nettement en
+           dessous : deux zones, une arete franche entre les deux. Un degrade
+           doux sur toute la hauteur donne l'inverse — une image sale partout,
+           du texte gris sur une soupe, et rien qui ressemble a une affiche.
+           Le voile est donc opaque en haut, s'ouvre d'un coup, laisse la photo
+           EN ENTIER sur un quart de l'ecran, et se referme sous elle. La photo
+           y perd de la surface et y gagne d'exister. */
         .cd-carte.sec .cd-voile{background:linear-gradient(180deg,
-          rgba(4,8,6,.94) 0%,rgba(4,8,6,.92) 26%,rgba(4,8,6,.80) 36%,
-          rgba(4,8,6,.18) 44%,rgba(4,8,6,0) 50%,rgba(4,8,6,0) 60%,
-          rgba(4,8,6,.30) 68%,rgba(4,8,6,.80) 80%,rgba(4,8,6,.96) 100%);}
+          #050807 0%,#050807 34%,rgba(5,8,7,.55) 37.5%,
+          rgba(5,8,7,0) 41%,rgba(5,8,7,0) 62%,
+          rgba(5,8,7,.62) 66%,#050807 70%,#050807 100%);}
 
         /* ═══ LA NOUVELLE ORGANISATION : LE TITRE EN HAUT, A GAUCHE ═══
 

@@ -4991,10 +4991,21 @@ export function ApercuHabitant() {
                           ? "✨"
                           : metier.emoji}
                 </i>
-                {/* L'EN-TÊTE DIT OÙ L'ON EST, ET IL MENTAIT. Vu sur la capture :
-                    on entrait dans « à prendre, c'est offert » et le bandeau
-                    continuait d'annoncer « Restaurants ». C'est le seul repère
-                    de l'écran ; s'il se trompe, plus rien ne situe. */}
+                {/* ═══ « DAX · MAINTENANT » ═══
+
+                    C'EST CE QUE LA MAQUETTE MET AU MILIEU, et c'est mieux que
+                    ce qu'il y avait. L'en-tête annonçait un FILTRE — « ✨ Tout
+                    ▾ » — c'est-à-dire un réglage, alors que la première chose
+                    à savoir en ouvrant est : où suis-je, et de quand ça date.
+                    « DAX » et « MAINTENANT » répondent aux deux en trois mots,
+                    et le point vert bat entre les deux.
+
+                    LE FILTRE N'EST PAS PERDU : le même appui l'ouvre, et le
+                    mot du milieu devient celui de la vue en cours dès qu'on
+                    quitte « tout ». On lit donc « DAX · MAINTENANT » par
+                    défaut, et « DAX · C'EST OFFERT » quand on a choisi. */}
+                <span className="ap-ville">Dax</span>
+                <em className="ap-bat" aria-hidden="true" />
                 {vue === "recrute"
                   ? "Ils recrutent"
                   : vue === "evenements"
@@ -5002,7 +5013,7 @@ export function ApercuHabitant() {
                     : vue === "offert"
                       ? "C’est offert"
                       : vue === "tout"
-                        ? "Tout"
+                        ? "Maintenant"
                         : metier.label}
                 {/* LES ENVIES SONT PARTIES DANS CETTE FEUILLE, DONC LEUR
                     NOMBRE DOIT SE VOIR D'ICI. Un filtre actif qu'on ne voit
@@ -9301,8 +9312,25 @@ export function ApercuHabitant() {
         /* LE FILTRE AU MILIEU : il dit d'abord ou l'on est, ensuite ce qu'on
            regarde. La marge automatique le centre entre la distance et les deux
            ronds, quelle que soit leur largeur. */
-        .ap-metier{font:inherit;font-size:11.5px;font-weight:700;cursor:pointer;
-          margin:0 auto;transition:transform .12s ease;}
+        /* « DAX · MAINTENANT » : capitales, espacees, sans fond. La pastille
+           verte disait « ceci est un reglage » ; ce n'en est plus un, c'est le
+           repere de l'ecran. Le chevron reste, tout petit : il faut bien que ca
+           s'ouvre. */
+        .ap-metier{font:inherit;font-size:11.5px;font-weight:850;cursor:pointer;
+          margin:0 auto;transition:transform .12s ease;
+          background:none;border:0;color:#EAF2EC;padding:6px 4px;
+          letter-spacing:.13em;text-transform:uppercase;
+          display:inline-flex;align-items:center;gap:6px;}
+        .ap-metier>i{display:none;}
+        .ap-ville{color:#fff;}
+        /* LE POINT QUI BAT, entre la ville et le moment : la seule chose de
+           l'en-tete qui dise que l'ecran est vivant. */
+        .ap-bat{width:6px;height:6px;border-radius:50%;background:#3DE2A6;
+          box-shadow:0 0 0 0 rgba(61,226,166,.55);
+          animation:apBat 2.4s ease-out infinite;}
+        @keyframes apBat{0%{box-shadow:0 0 0 0 rgba(61,226,166,.55);}
+          60%,100%{box-shadow:0 0 0 7px rgba(61,226,166,0);}}
+        @media (prefers-reduced-motion:reduce){.ap-bat{animation:none;}}
         .ap-metier em{font-style:normal;font-size:10px;opacity:.65;margin-left:1px;}
         .ap-metier:active{transform:scale(.95);}
         /* Le compte des envies actives, sur la pastille qui ouvre la feuille
@@ -11018,6 +11046,14 @@ export function ApercuHabitant() {
            neuf » ; changer la couleur en changeant d'endroit ferait perdre la
            seule chose qu'on n'a pas eu a expliquer. */
         .ap-onglets button b.neuf{background:#F0B429;}
+        /* LES LIBELLES EN CAPITALES ESPACEES — c'est ce que montre la maquette,
+           et ca les distingue des mots de la carte, qui sont des phrases. */
+        .ap-onglets>button:not(.ap-suiv){font-size:9px;font-weight:850;
+          letter-spacing:.07em;text-transform:uppercase;
+          /* SUR UNE SEULE LIGNE : « LE DIRECT » passait a la ligne des qu'on
+             est passe aux capitales, et un onglet sur deux rangees decale toute
+             la barre. */
+          white-space:nowrap;}
 
         /* ═══ LE FANTOME QUI PASSE A LA SUIVANTE ═══
            Rond, vert plein, deborde de la barre vers le haut : il ne ressemble
@@ -12251,9 +12287,11 @@ export function ApercuHabitant() {
         /* Deux teintes, pas deux tailles : le vert est celui du balayage a
            droite, qui ouvre le meme salon ; l'ambre est celui de l'engagement.
            Deux boutons verts se confondraient. */
-        .ap-agir.parler{color:#04150E;
-          background:linear-gradient(140deg,#3DE2A6,#0BA97B);
-          box-shadow:0 12px 26px -16px rgba(18,185,129,.9);}
+        /* LE VERT DE LA MAQUETTE EST UN TILLEUL, pas un menthe : plus jaune,
+           plus franc, et il tranche sur le noir au lieu de s'y fondre. */
+        .ap-agir.parler{color:#0B2010;
+          background:linear-gradient(140deg,#B6EA5B,#86D63F);
+          box-shadow:0 14px 30px -14px rgba(150,220,80,.55);}
         /* LES DEUX BOUTONS DU BAS SONT EN CONTOUR — la maquette ne garde qu'un
            seul aplat, le vert. Deux boutons pleins cote a cote se disputaient
            l'oeil avec lui, et c'est exactement ce qu'on venait de regler en
