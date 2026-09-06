@@ -2846,12 +2846,25 @@ export function avecFlashDemo(c: CarteAutour, heure: number): CarteAutour {
   // ne passe pas par `autourDeMoi`). Dans la fonction, la regle voyage avec
   // elle et ne peut plus etre oubliee.
   if (momentsRestants(c, heure).length === 0) return c;
-  // IL DEMARRE A L'HEURE PILE ET DURE TRENTE MINUTES. Une fenetre ecrite en dur
-  // ne se serait montree qu'une fois par jour ; celle-ci revient chaque heure,
-  // compte vraiment a rebours, et s'eteint pour de bon a la demie.
-  const lance = Math.floor(heure);
+  // ═══ DEUX FENETRES PAR HEURE, BOUT A BOUT ═══
+  //
+  // PREMIERE VERSION : une seule fenetre, de l'heure pile a la demie. Elle
+  // comptait bien a rebours et s'eteignait pour de bon — mais elle laissait
+  // trente minutes de trou par heure, et c'est exactement dans ce trou qu'il a
+  // ouvert l'application : « je ne vois pas l'annonce Flash sur l'app. » Une
+  // pile ou face silencieuse, sans rien a l'ecran pour dire pourquoi.
+  //
+  // ELLE REDEMARRE DONC A LA DEMIE. Le Flash reste ce qu'il est — trente
+  // minutes, un compte a rebours qui descend jusqu'a zero, une carte qui reprend
+  // sa place ensuite — mais il y en a toujours un en cours.
+  //
+  // ET C'EST LE SEUL ENDROIT OU LA DEMONSTRATION CONTREDIT LE PRODUIT. La carte
+  // ecrit « 3 fois par semaine, pas plus » ; ici il tourne en boucle. C'est
+  // assume : ce champ n'existe pas en production, ou le Flash vient de ce que
+  // le commercant publie. Une regle qu'on ne peut jamais voir a l'oeuvre ne
+  // vaut pas mieux qu'une regle fausse.
+  const lance = Math.floor(heure * 2) / 2;
   const fin = lance + 0.5;
-  if (heure > fin) return c;
   const m: MomentJour = { ...momentDuFlash({ ...c.flashDemo, lance, fin }), publie: lance };
   return { ...c, moments: [m, ...c.moments] };
 }
