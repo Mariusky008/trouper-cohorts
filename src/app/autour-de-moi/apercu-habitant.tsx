@@ -1040,7 +1040,24 @@ export function ApercuHabitant() {
    * personnel ; leur donner un onglet les mettrait au même rang que ce qui fait
    * l'application.
    */
-  const [favorisPage, setFavorisPage] = useState(false);
+  /**
+   * LA PAGE POSÉE PAR-DESSUS LE PAQUET — laquelle, et plus « oui ou non ».
+   *
+   * LE DÉFAUT MESURÉ : « le bouton cœur et le bouton des notifications à côté
+   * montrent la même chose, or le cœur montre normalement les favoris et les
+   * notifications tout le reste. »
+   *
+   * C'ÉTAIT EXACT, ET C'EST MA FAUTE : les deux appelaient la même page, qui
+   * portait les deux listes l'une sous l'autre. Deux portes qui donnent sur la
+   * même pièce ne sont pas deux portes — c'est le défaut qu'on avait justement
+   * corrigé en les séparant à l'écran, et il était resté entier derrière.
+   *
+   * DEUX PAGES, DEUX CONTENUS, ET RIEN EN COMMUN. « favoris » ne montre que ce
+   * que le cœur y a rangé ; « nouvelles » ne montre que ce que les commerces
+   * suivis ont dit, et les files où l'on attend. Aucune des deux ne mentionne
+   * l'autre : on y arrive par le bouton qui la nomme.
+   */
+  const [favorisPage, setFavorisPage] = useState<"" | "favoris" | "nouvelles">("");
 
   /**
    * LE TOUR DE RÔLE — voir `TourDeRole` dans les fiches.
@@ -1315,7 +1332,7 @@ export function ApercuHabitant() {
     rangerCeQuiAttend();
     setSalonPage(false);
     setSalonOuvert("");
-    setFavorisPage(false);
+    setFavorisPage("");
     noter("onglet", 0, o);
     setOnglet(o);
     setFeuille("");
@@ -2825,7 +2842,7 @@ export function ApercuHabitant() {
    */
   function ouvrirMesFavoris() {
     noter("onglet", gardees.length, "favoris");
-    setFavorisPage(true);
+    setFavorisPage("favoris");
   }
 
   /** La porte des nouvelles : la pastille, et la bulle qui la désigne. */
@@ -2834,7 +2851,7 @@ export function ApercuHabitant() {
     // ON MARQUE CE QU'ON OUVRE, PAS LA JOURNÉE. Ce qui sera publié après —
     // la fournée de 17 h — rallumera la pastille, comme il se doit.
     marquerLues(clesNouvelles);
-    setFavorisPage(true);
+    setFavorisPage("nouvelles");
   }
 
   function jeNePreviensPas() {
@@ -3600,31 +3617,41 @@ export function ApercuHabitant() {
               l'écran entier, avec sa propre barre en haut et ses actions en bas,
               et le paquet attend derrière. */}
           {favorisPage ? (
-            /* ─── MES COMMERCES ───
-               C'était « mes favoris », une liste de noms qu'on a gardés. Il y
-               manquait la moitié qui vit : ce que ces commerces DISENT. La
-               page porte donc deux choses, et jamais dans le désordre — ce
-               qu'ils ont publié aujourd'hui d'abord, parce que c'est ce qui se
-               périme ; ce qu'on a mis de côté ensuite, parce que ça attendra. */
+            /* ═══ DEUX PAGES, ET PLUS UNE SEULE À DEUX ÉTAGES ═══
+
+               « Le bouton cœur et le bouton des notifications à côté montrent
+               la même chose, or le cœur montre normalement les favoris et les
+               notifications tout le reste. »
+
+               C'ÉTAIT EXACT. Les deux boutons appelaient cette page, qui
+               portait les deux listes l'une sous l'autre : deux portes qui
+               donnent sur la même pièce ne sont pas deux portes. On avait
+               séparé les objets à l'écran et laissé le contenu confondu
+               derrière — la moitié du travail.
+
+               ELLES N'ONT PLUS RIEN EN COMMUN. « Favoris » ne montre que ce
+               que le cœur y a rangé. « Nouvelles » ne montre que ce que les
+               commerces suivis ont dit, et les files où l'on attend. Chacune
+               porte le nom du bouton qui l'ouvre, et aucune ne mentionne
+               l'autre. */
             <div className="ap-page">
               <div className="ap-page-h">
                 <button
                   type="button"
                   className="ap-page-r"
-                  onClick={() => setFavorisPage(false)}
+                  onClick={() => setFavorisPage("")}
                 >
                   <i aria-hidden="true">←</i>
                   {NOM_ONGLET[onglet]}
                 </button>
-                {/* LE TITRE DIT CE QU'ON EST VENU CHERCHER. « Mes commerces »
-                    nommait la seconde liste ; c'est la première qu'on ouvre
-                    maintenant, et elle a un nom que le cœur a rendu évident. */}
                 <span className="ap-page-t">
-                  <b>Vos favoris du jour</b>
+                  <b>
+                    {favorisPage === "favoris" ? "Vos favoris du jour" : "Vos commerces"}
+                  </b>
                   <em>
-                    {mesGardes.length} gardée{mesGardes.length > 1 ? "s" : ""} ·{" "}
-                    {mesSuivis.length} commerce{mesSuivis.length > 1 ? "s" : ""} suivi
-                    {mesSuivis.length > 1 ? "s" : ""}
+                    {favorisPage === "favoris"
+                      ? `${mesGardes.length} annonce${mesGardes.length > 1 ? "s" : ""} gardée${mesGardes.length > 1 ? "s" : ""}`
+                      : `${mesSuivis.length} suivi${mesSuivis.length > 1 ? "s" : ""} · ${combienDeNouvelles} ${combienDeNouvelles > 1 ? "ont publié" : "a publié"} aujourd’hui`}
                   </em>
                 </span>
               </div>
@@ -3642,21 +3669,8 @@ export function ApercuHabitant() {
                     LES NOUVELLES NE PARTENT PAS POUR AUTANT — elles descendent
                     sous les favoris, avec leur propre titre. Deux listes, deux
                     raisons d'être là, et l'une n'efface pas l'autre. */}
-                {mesGardes.length > 0 && nouvelles.length > 0 && (
-                  <h4 className="ap-nouv-t">
-                    Gardés aujourd&apos;hui<b>{mesGardes.length}</b>
-                  </h4>
-                )}
-                {mesGardes.length === 0 ? (
-                  /* LE GRAND VIDE NE S'AFFICHE QUE SI LA PAGE EST VRAIMENT
-                     VIDE. Une pleine page « rien de gardé » sous trois
-                     nouvelles du jour ferait croire qu'on est arrivé au mauvais
-                     endroit ; une ligne suffit. */
-                  nouvelles.length > 0 ? (
-                    <p className="ap-nouv-rien">
-                      Rien de gardé — le cœur, en haut, range une annonce ici.
-                    </p>
-                  ) : (
+                {favorisPage === "favoris" &&
+                  (mesGardes.length === 0 ? (
                     <div className="ap-moi-vide">
                       <span aria-hidden="true">💚</span>
                       <b>Rien de gardé pour l&apos;instant.</b>
@@ -3669,8 +3683,7 @@ export function ApercuHabitant() {
                         deux ou trois de côté, et choisissez ensuite.
                       </i>
                     </div>
-                  )
-                ) : (
+                  ) : (
                   <div className="ap-liste">
                     {mesGardes.map((c) => (
                       <button
@@ -3678,7 +3691,7 @@ export function ApercuHabitant() {
                         type="button"
                         className="ap-ligne"
                         onClick={() => {
-                          setFavorisPage(false);
+                          setFavorisPage("");
                           setEmbauches(false);
                           setBranche(c.branche);
                           setVue("metiers");
@@ -3717,8 +3730,23 @@ export function ApercuHabitant() {
                       </button>
                     ))}
                   </div>
+                  ))}
+                {/* ─── ET LES NOUVELLES SONT L'AUTRE PAGE ───
+                    Ce que les commerces suivis ont dit aujourd'hui, et les
+                    files où l'on attend. On y arrive par la cloche, jamais par
+                    le cœur : ce sont deux questions différentes. */}
+                {favorisPage === "nouvelles" && nouvelles.length === 0 && (
+                  <div className="ap-moi-vide">
+                    <span aria-hidden="true">🔔</span>
+                    <b>Rien de neuf pour l&apos;instant.</b>
+                    <i>
+                      Deux tapes sur la photo d&apos;une annonce suivent le
+                      commerce. Ce qu&apos;il publiera arrivera ici, avant tout
+                      le monde.
+                    </i>
+                  </div>
                 )}
-                {nouvelles.length > 0 && (
+                {favorisPage === "nouvelles" && nouvelles.length > 0 && (
                   <div className="ap-nouv">
                     <h4>
                       Aujourd&apos;hui
@@ -3741,7 +3769,7 @@ export function ApercuHabitant() {
                             type="button"
                             className="ap-nouv-l"
                             onClick={() => {
-                              setFavorisPage(false);
+                              setFavorisPage("");
                               setEmbauches(false);
                               setBranche(c.branche);
                               setVue("metiers");
@@ -3817,7 +3845,9 @@ export function ApercuHabitant() {
                     )}
                   </div>
                 )}
-                {mesAttentes.length > 0 && (
+                {/* LES FILES SONT DES NOUVELLES QUI N'ONT PAS ENCORE EU LIEU :
+                    elles vivent avec la cloche, pas avec le coeur. */}
+                {favorisPage === "nouvelles" && mesAttentes.length > 0 && (
                   <>
                     {/* CE QU'ON ATTEND CE SOIR. Une file où l'on s'est inscrit
                         le matin et qu'on ne retrouve nulle part est une file
@@ -7997,7 +8027,9 @@ export function ApercuHabitant() {
               disabled={!sommet || onglet !== "direct"}
               onClick={() => {
                 setClin(true);
-                window.setTimeout(() => setClin(false), 460);
+                // La cabriole dure .78s : la couper a 460 ms la faisait
+                // disparaitre en plein saut, et c'est ce qui la rendait seche.
+                window.setTimeout(() => setClin(false), 800);
                 partir("gauche");
               }}
             >
@@ -8037,32 +8069,88 @@ export function ApercuHabitant() {
                     l'épaule gauche. Les yeux gagnent leur point de lumière — ce
                     petit blanc est ce qui fait qu'un œil est vivant. */}
                 <defs>
-                  <linearGradient id="apFg" x1="0" y1="0" x2="0" y2="1">
+                  {/* LA LUMIERE VIENT D'EN HAUT A GAUCHE, ET TOUT EN DECOULE :
+                      le degre du corps, le liseré clair sur cette epaule-la, et
+                      l'ombre qui se creuse a l'oppose. Un seul soleil : c'est ce
+                      qui separe un dessin d'un collage. */}
+                  <linearGradient id="apFg" x1=".2" y1="0" x2=".82" y2="1">
                     <stop offset="0" stopColor="#ffffff" />
-                    <stop offset=".55" stopColor="#F4FBF7" />
-                    <stop offset="1" stopColor="#CDE8DB" />
+                    <stop offset=".5" stopColor="#F3FAF6" />
+                    <stop offset="1" stopColor="#BFDFD0" />
                   </linearGradient>
-                  <radialGradient id="apFl" cx=".33" cy=".26" r=".42">
+                  <radialGradient id="apFl" cx=".32" cy=".24" r=".44">
                     <stop offset="0" stopColor="#ffffff" stopOpacity=".95" />
                     <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
                   </radialGradient>
+                  {/* LE LISERE. Un trait clair qui ne fait que le quart haut
+                      gauche, et s'efface : c'est ce que fait la lumiere sur un
+                      volume, et c'est ce qui manquait le plus. */}
+                  <linearGradient id="apFr" x1=".05" y1="0" x2=".7" y2=".55">
+                    <stop offset="0" stopColor="#ffffff" stopOpacity=".95" />
+                    <stop offset=".55" stopColor="#ffffff" stopOpacity="0" />
+                  </linearGradient>
+                  {/* L'OMBRE INTERNE, en bas a droite : sans elle le corps est
+                      un aplat, avec elle il est rond. */}
+                  <radialGradient id="apFo" cx=".74" cy=".82" r=".55">
+                    <stop offset="0" stopColor="#5E9E85" stopOpacity=".34" />
+                    <stop offset="1" stopColor="#5E9E85" stopOpacity="0" />
+                  </radialGradient>
+                  {/* L'OEIL EST UNE BILLE, pas un point : un degre du haut vers
+                      le bas suffit a le bomber. */}
+                  <radialGradient id="apFy" cx=".38" cy=".3" r=".8">
+                    <stop offset="0" stopColor="#2A5C4A" />
+                    <stop offset="1" stopColor="#07211A" />
+                  </radialGradient>
                 </defs>
-                <ellipse className="ap-f-ombre" cx="20" cy="41.5" rx="11" ry="2.4" />
+                <ellipse className="ap-f-ombre" cx="20" cy="41.6" rx="11" ry="2.4" />
+                {/* ─── LES BRAS ───
+                    Ils sont dessines AVANT le corps, donc derriere lui : ils
+                    sortent de dessous, comme les bras d'une peluche, et on ne
+                    voit jamais ou ils s'attachent. Deux moignons suffisent — ce
+                    qui fait le personnage, c'est qu'ils BOUGENT : ils balancent
+                    au repos et se lancent en l'air quand on l'appuie. */}
+                <ellipse className="ap-f-bras g" cx="3.4" cy="27.2" rx="4" ry="2.7" />
+                <ellipse className="ap-f-bras d" cx="36.6" cy="27.2" rx="4" ry="2.7" />
                 <path
                   className="ap-f-corps"
+                  d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"
+                />
+                <path
+                  className="ap-f-creux"
                   d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"
                 />
                 <path
                   className="ap-f-lueur"
                   d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"
                 />
-                <ellipse className="ap-f-joue g" cx="10.6" cy="24.4" rx="2.6" ry="1.7" />
-                <ellipse className="ap-f-joue d" cx="29.4" cy="24.4" rx="2.6" ry="1.7" />
-                <ellipse className="ap-f-oeil g" cx="14.2" cy="19" rx="2.5" ry="3.3" />
-                <ellipse className="ap-f-oeil d" cx="25.8" cy="19" rx="2.5" ry="3.3" />
-                <circle className="ap-f-eclat g" cx="15.1" cy="17.8" r=".85" />
-                <circle className="ap-f-eclat d" cx="26.7" cy="17.8" r=".85" />
+                <path
+                  className="ap-f-fil"
+                  d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"
+                />
+                <ellipse className="ap-f-joue g" cx="10.4" cy="24.6" rx="2.8" ry="1.8" />
+                <ellipse className="ap-f-joue d" cx="29.6" cy="24.6" rx="2.8" ry="1.8" />
+                <ellipse className="ap-f-oeil g" cx="14.2" cy="19" rx="2.6" ry="3.4" />
+                <ellipse className="ap-f-oeil d" cx="25.8" cy="19" rx="2.6" ry="3.4" />
+                <circle className="ap-f-eclat g" cx="15.1" cy="17.7" r=".95" />
+                <circle className="ap-f-eclat d" cx="26.7" cy="17.7" r=".95" />
+                <circle className="ap-f-eclat2 g" cx="13.3" cy="20.5" r=".45" />
+                <circle className="ap-f-eclat2 d" cx="24.9" cy="20.5" r=".45" />
                 <path className="ap-f-bouche" d="M16.4 26.2c1.5 2 5.7 2 7.2 0" />
+                {/* ─── LES ETINCELLES ───
+                    Invisibles au repos, elles jaillissent au moment du saut.
+                    C'est le detail qui fait rire : le personnage ne se contente
+                    pas de bouger, il PRODUIT quelque chose. Chacune est dans un
+                    groupe qui porte sa position, pour que l'animation CSS ne
+                    marche pas sur la meme propriete que le placement. */}
+                <g transform="translate(34.5 9.5)">
+                  <path className="ap-f-etoile a" d="M0-3.4.9-.9 3.4 0 .9.9 0 3.4-.9.9-3.4 0-.9-.9Z" />
+                </g>
+                <g transform="translate(6 8)">
+                  <path className="ap-f-etoile b" d="M0-2.6.7-.7 2.6 0 .7.7 0 2.6-.7.7-2.6 0-.7-.7Z" />
+                </g>
+                <g transform="translate(31 34)">
+                  <path className="ap-f-etoile c" d="M0-2.2.6-.6 2.2 0 .6.6 0 2.2-.6.6-2.2 0-.6-.6Z" />
+                </g>
               </svg>
             </button>
             <button
@@ -11210,34 +11298,81 @@ export function ApercuHabitant() {
         .ap-onglets .ap-suiv b{display:none;}
         .ap-fantome{width:34px;height:37px;overflow:visible;
           transform-origin:50% 62%;}
-        /* LE VOLUME : un degrade du haut vers le bas (la lumiere vient d'en
-           haut), une ombre portee sous le corps, un reflet sur l'epaule gauche,
-           et deux joues rosees. Un aplat blanc est un pictogramme ; ceci est un
-           personnage. */
+        /* ═══ LE VOLUME ═══
+           « Le fantome, tu peux faire vraiment encore beaucoup mieux. »
+
+           CE QUI LUI MANQUAIT : UN SEUL SOLEIL. Il avait un degrade et une
+           ombre, mais rien ne disait D'OU venait la lumiere, et un volume sans
+           direction reste un aplat. Quatre couches le donnent, dans l'ordre ou
+           un illustrateur les pose : le corps degrade en diagonale, un CREUX en
+           bas a droite (l'ombre propre), un reflet en haut a gauche, puis un
+           LISERE clair sur cette meme epaule. La lumiere arrive du haut gauche
+           et tout la suit — c'est la regle, et c'est ce qui fait basculer le
+           dessin du pictogramme au personnage.
+
+           CHAQUE PIECE QUI BOUGE A SON ORIGINE. transform-box:fill-box est
+           obligatoire dans un SVG : sans lui, un scale se calcule depuis le
+           coin de la zone de dessin, et l'oeil qui devait cligner PART en
+           diagonale. C'est exactement ce que faisait l'ancien clignement. */
         .ap-f-corps{fill:url(#apFg);
-          filter:drop-shadow(0 1.5px 1.5px rgba(4,40,26,.22));}
+          filter:drop-shadow(0 1.5px 1.6px rgba(4,40,26,.24));}
+        .ap-f-creux{fill:url(#apFo);}
         .ap-f-lueur{fill:url(#apFl);}
-        .ap-f-ombre{fill:rgba(4,40,26,.22);}
-        .ap-f-joue{fill:#FFB4C4;opacity:.5;}
-        .ap-f-oeil{fill:#0A2E22;transition:transform .1s ease;}
-        .ap-f-eclat{fill:#fff;opacity:.9;}
-        .ap-f-bouche{fill:none;stroke:#0A2E22;stroke-width:2.1;
+        .ap-f-fil{fill:none;stroke:url(#apFr);stroke-width:1.3;}
+        .ap-f-ombre{fill:rgba(4,40,26,.22);
+          transform-box:fill-box;transform-origin:50% 50%;
+          animation:apOmbre 4.6s ease-in-out infinite;}
+        .ap-f-bras{fill:#CFE9DC;transform-box:fill-box;
+          filter:drop-shadow(0 1px 1px rgba(4,40,26,.18));}
+        .ap-f-bras.g{transform-origin:88% 50%;
+          animation:apBrasG 4.6s ease-in-out infinite;}
+        .ap-f-bras.d{transform-origin:12% 50%;
+          animation:apBrasD 4.6s ease-in-out infinite;}
+        .ap-f-joue{fill:#FF9DB4;opacity:.55;
+          transform-box:fill-box;transform-origin:50% 50%;}
+        .ap-f-oeil{fill:url(#apFy);
+          transform-box:fill-box;transform-origin:50% 50%;
+          animation:apCligne 6.2s infinite;}
+        .ap-f-eclat{fill:#fff;opacity:.92;}
+        .ap-f-eclat2{fill:#fff;opacity:.5;}
+        .ap-f-bouche{fill:none;stroke:#07211A;stroke-width:2.1;
           stroke-linecap:round;}
-        /* IL FLOTTE, MEME AU REPOS — un fantome pose ne vit pas. Trois points de
-           haut, six secondes : on le remarque sans qu'il attire. */
+        .ap-f-etoile{fill:#FFF2B8;opacity:0;
+          transform-box:fill-box;transform-origin:50% 50%;}
+        /* ═══ IL EST VIVANT MEME QUAND PERSONNE NE LE TOUCHE ═══
+           Un bouton immobile n'appelle pas le doigt. Trois choses tres lentes
+           et tres faibles suffisent, et aucune ne doit se remarquer seule : il
+           flotte, son ombre respire avec lui (elle retrecit quand il monte —
+           sinon il glisse au lieu de voler), ses bras balancent, et il CLIGNE
+           toutes les six secondes. Le clignement est ce qui fait passer un
+           dessin pour un etre : on ne le voit pas, on le sent. */
         .ap-fantome{animation:apFlotte 4.6s ease-in-out infinite;}
-        @keyframes apFlotte{0%,100%{transform:translateY(0);}
-          50%{transform:translateY(-2.5px);}}
-        /* ET IL SAUTE QUAND ON L'APPUIE : il monte, penche la tete, ferme les
-           yeux et sourit plus grand. Six cents millisecondes — le temps que la
-           carte suivante arrive, pas plus. */
+        @keyframes apFlotte{0%,100%{transform:translateY(0) rotate(0);}
+          33%{transform:translateY(-2.6px) rotate(-1.6deg);}
+          66%{transform:translateY(-1.2px) rotate(1.4deg);}}
+        @keyframes apOmbre{0%,100%{transform:scaleX(1);opacity:1;}
+          33%{transform:scaleX(.82);opacity:.6;}
+          66%{transform:scaleX(.92);opacity:.8;}}
+        /* LES BRAS PENDENT, ILS NE SONT PAS EN CROIX. Un moignon horizontal
+           fait une aile ; incline vers le bas, il fait un bras au repos — et
+           c'est toute la difference entre un pictogramme et une peluche. */
+        @keyframes apBrasG{0%,100%{transform:rotate(17deg);}
+          33%{transform:rotate(4deg);}66%{transform:rotate(24deg);}}
+        @keyframes apBrasD{0%,100%{transform:rotate(-17deg);}
+          33%{transform:rotate(-4deg);}66%{transform:rotate(-24deg);}}
+        @keyframes apCligne{0%,95.5%,100%{transform:scaleY(1);}
+          97%{transform:scaleY(.08);}98.5%{transform:scaleY(1);}}
         /* ═══ ET IL FAIT UNE VRAIE CABRIOLE ═══
-           « Il manque une animation marrante quand il est cliqué. » Un saut
+           « Il manque une animation marrante quand il est clique. » Un saut
            droit n'est pas drole ; ce qui l'est, c'est l'ECRASEMENT puis
            l'ETIREMENT — la premiere regle des dessins animes. Il s'aplatit,
            jaillit en s'etirant, part en arriere en tournant, retombe en
            s'ecrasant un peu, puis se remet. Les yeux se ferment au sommet, la
-           bouche s'ouvre en grand, et le cercle envoie une onde. */
+           bouche s'ouvre en grand, les bras partent en l'air, trois etincelles
+           jaillissent en decale, et le cercle envoie une onde.
+
+           TOUT DURE .78s, LE TEMPS QUE LA CARTE SUIVANTE ARRIVE. Une animation
+           qui depasse l'action qu'elle accompagne devient une attente. */
         .ap-suiv.clin{animation:apBond .78s cubic-bezier(.3,1.2,.4,1);}
         .ap-suiv.clin::after{content:"";position:absolute;inset:0;
           border-radius:50%;border:2px solid rgba(140,240,204,.9);
@@ -11246,6 +11381,12 @@ export function ApercuHabitant() {
         .ap-suiv.clin .ap-f-oeil{animation:apYeux .78s ease;}
         .ap-suiv.clin .ap-f-bouche{animation:apSourire .78s ease;}
         .ap-suiv.clin .ap-f-joue{animation:apJoues .78s ease;}
+        .ap-suiv.clin .ap-f-ombre{animation:apOmbre2 .78s ease;}
+        .ap-suiv.clin .ap-f-bras.g{animation:apBrasHautG .78s cubic-bezier(.3,1.3,.5,1);}
+        .ap-suiv.clin .ap-f-bras.d{animation:apBrasHautD .78s cubic-bezier(.3,1.3,.5,1);}
+        .ap-suiv.clin .ap-f-etoile{animation:apEtoile .6s ease-out;}
+        .ap-suiv.clin .ap-f-etoile.b{animation-delay:.07s;}
+        .ap-suiv.clin .ap-f-etoile.c{animation-delay:.14s;}
         @keyframes apBond{0%{transform:scale(.9);}
           30%{transform:scale(1.14);}
           60%{transform:scale(.97);}
@@ -11259,17 +11400,30 @@ export function ApercuHabitant() {
           64%{transform:translateY(-4px) scale(1.05,.95) rotate(9deg);}
           82%{transform:translateY(2px) scale(1.16,.86) rotate(3deg);}
           100%{transform:none;}}
+        @keyframes apOmbre2{0%,100%{transform:scaleX(1);opacity:1;}
+          40%{transform:scaleX(.6);opacity:.35;}}
+        @keyframes apBrasHautG{0%,100%{transform:rotate(17deg);}
+          25%{transform:rotate(-56deg);}60%{transform:rotate(-32deg);}}
+        @keyframes apBrasHautD{0%,100%{transform:rotate(-17deg);}
+          25%{transform:rotate(56deg);}60%{transform:rotate(32deg);}}
+        @keyframes apEtoile{0%{opacity:0;transform:scale(.2) rotate(0);}
+          35%{opacity:1;transform:scale(1.15) rotate(70deg);}
+          100%{opacity:0;transform:scale(.35) rotate(150deg);}}
         @keyframes apYeux{0%,100%{transform:scaleY(1);}
-          22%,44%{transform:scaleY(.16);}}
+          22%,44%{transform:scaleY(.14);}}
         @keyframes apSourire{0%,100%{stroke-width:2.1;
             d:path("M16.4 26.2c1.5 2 5.7 2 7.2 0");}
           40%{stroke-width:2.7;
             d:path("M14.8 25c2.4 4.2 8 4.2 10.4 0");}}
-        @keyframes apJoues{0%,100%{opacity:.5;}45%{opacity:.95;}}
+        @keyframes apJoues{0%,100%{opacity:.55;transform:scale(1);}
+          45%{opacity:1;transform:scale(1.2);}}
         @media (prefers-reduced-motion:reduce){
-          .ap-fantome,.ap-suiv.clin,.ap-suiv.clin::after,
+          .ap-fantome,.ap-f-ombre,.ap-f-bras,.ap-f-oeil,
+          .ap-suiv.clin,.ap-suiv.clin::after,
           .ap-suiv.clin .ap-fantome,.ap-suiv.clin .ap-f-oeil,
-          .ap-suiv.clin .ap-f-bouche,.ap-suiv.clin .ap-f-joue{animation:none;}
+          .ap-suiv.clin .ap-f-bouche,.ap-suiv.clin .ap-f-joue,
+          .ap-suiv.clin .ap-f-ombre,.ap-suiv.clin .ap-f-bras,
+          .ap-suiv.clin .ap-f-etoile{animation:none;}
         }
         }
 

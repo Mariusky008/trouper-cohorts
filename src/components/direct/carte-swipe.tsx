@@ -392,21 +392,47 @@ export function CarteSwipe({
           le commerçant propose en ce moment — l'écran le fournit. */}
       {sec && c.flash && (
         <div className="cd-anneau chrono" aria-label={`Il reste ${c.flash.reste}`}>
-          <span className="cd-an-t">
-            <i aria-hidden="true">🕐</i>
-            Il reste
-          </span>
+          {/* ═══ LE CADRAN EST DESSINÉ, PLUS BRICOLÉ ═══
+              « Le rond flash est très mal réalisé, il faut revoir le visuel
+              pour que ce soit parfait. »
+
+              IL ÉTAIT FAIT DE BORDURES ET DE MASQUES. Un cercle en `border`, un
+              second en dégradé conique masqué par un radial : trois techniques
+              empilées pour dessiner deux cercles, avec un demi-pixel de décalage
+              entre elles selon la densité de l'écran — d'où l'aspect sale.
+
+              DEUX CERCLES SVG FONT LA MÊME CHOSE, EXACTEMENT. Une piste, un arc
+              qui la recouvre sur la part écoulée, tracés au même rayon, sur la
+              même grille : aucun décalage possible, et l'arc part de midi et
+              tourne dans le sens des aiguilles, comme sur une montre. */}
+          <svg className="cd-an-c" viewBox="0 0 100 100" aria-hidden="true">
+            {/* L'ARC N'EST PAS D'UNE SEULE COULEUR : il chauffe en descendant,
+                comme la lumiere du soir sur la maquette. Un degre de plus, et
+                l'oeil suit le sens de rotation sans y penser. */}
+            <defs>
+              <linearGradient id="cdAnG" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#FFC46B" />
+                <stop offset="55%" stopColor="#FF8A5B" />
+                <stop offset="100%" stopColor="#FF4E63" />
+              </linearGradient>
+            </defs>
+            <circle className="cd-an-p" cx="50" cy="50" r="45.5" />
+            <circle
+              className="cd-an-a"
+              cx="50"
+              cy="50"
+              r="45.5"
+              style={{
+                strokeDasharray: `${(1 - c.flash.part) * 285.9} 285.9`,
+              }}
+            />
+          </svg>
+          <span className="cd-an-t">Il reste</span>
           <b>{c.flash.reste.replace(/[^0-9]/g, "") || "0"}</b>
           <em>min</em>
           {/* LA PART ÉCOULÉE FAIT LE TOUR DU DISQUE. Une barre droite disait le
               temps qui passe ; sur un disque, le tour est plus fort — on lit un
               cadran sans avoir à lire un chiffre. */}
-          <u
-            aria-hidden="true"
-            style={{
-              background: `conic-gradient(#FF5A4E ${Math.round((1 - c.flash.part) * 360)}deg, rgba(255,255,255,.14) 0deg)`,
-            }}
-          />
           {/* ─── ET LA RARETÉ RESTE ÉCRITE ───
               « Il faudrait quelque chose qui permette en une seconde de
               comprendre que c'est une annonce spéciale ET RARE. » Le compte à
@@ -1297,62 +1323,81 @@ export function StylesDirect() {
            des trois premieres cartes. Deux objets poses au meme endroit, c'est
            toujours le plus recent qui a tort. */
         /* ═══ L'ANNEAU ═══
-           « Le rond est terriblement vilain et pas du tout harmonieux. »
-           C'etait vrai, et la cause tenait a son epaisseur : six points de
-           rouge plein faisaient une bouee posee sur la photo. La maquette
-           montre un FILET — deux points et demi, chaud, avec une lueur autour —
-           et l'interieur presque noir. Le cercle cesse d'etre un objet pour
-           redevenir un cadran.
-           LES DEUX ETATS ONT LE MEME DESSIN : le chrono et la porte de la carte
-           ne different que par ce qu'ils contiennent. Deux cercles differents
-           au meme endroit, c'etait la moitie du probleme. */
+           « Le rond flash est tres mal realise encore, il faut revoir le
+           visuel pour que ce soit parfait visuellement. »
+
+           CE QUI CLOCHAIT N'ETAIT PAS LA COULEUR, C'ETAIT LA CONSTRUCTION.
+           Le cadran etait fait de trois techniques empilees : une bordure en
+           degrade sur deux fonds (padding-box + border-box), puis un second
+           cercle en degrade conique decoupe par un masque radial exprime EN
+           PIXELS. Trois grilles differentes pour dessiner deux cercles : sur
+           un ecran a 2x ou 3x, le masque tombait a un demi-pixel de la
+           bordure, et ce demi-pixel se voyait comme une bavure tout autour.
+           D'ou l'aspect sale, qui revenait quel que soit le reglage.
+
+           MAINTENANT LE CADRAN EST DESSINE, EN SVG, DANS UNE SEULE GRILLE.
+           Une piste et un arc, memes centre et meme rayon, tracees par le
+           moteur vectoriel : aucun decalage possible a aucune densite. L'arc
+           part de midi et tourne dans le sens des aiguilles, comme une montre
+           que tout le monde sait lire, et il s'arrondit au bout au lieu de se
+           couper net. Le fond redevient un simple disque sombre : plus de
+           bordure a faire coincider avec quoi que ce soit.
+
+           LES DEUX ETATS ONT LE MEME DESSIN : le chrono et la porte de la
+           carte ne different que par ce qu'ils contiennent. */
         .cd-anneau{position:absolute;right:18px;top:29%;z-index:3;
-          width:98px;height:98px;border-radius:50%;
+          width:104px;height:104px;border-radius:50%;
           display:flex;flex-direction:column;align-items:center;
-          justify-content:center;gap:1px;text-align:center;
+          justify-content:center;gap:0;text-align:center;
           font:inherit;color:#fff;cursor:default;border:0;padding:0;
-          background:
-            linear-gradient(rgba(6,9,7,.9),rgba(6,9,7,.9)) padding-box,
-            linear-gradient(150deg,#FF8A5B,#FF4E63) border-box;
-          border:2.5px solid transparent;
-          -webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);
-          box-shadow:0 10px 30px rgba(0,0,0,.5),
-            0 0 24px -4px rgba(255,110,90,.5);}
-        /* LE TOUR QUI DESCEND se pose SUR le filet, en clair : on voit ce qui
-           reste sans que le cercle cesse d'etre un cercle. */
-        .cd-anneau u{position:absolute;inset:-2.5px;border-radius:50%;
-          text-decoration:none;z-index:1;opacity:.85;pointer-events:none;
-          -webkit-mask:radial-gradient(circle, transparent 0 46.5px, #000 46.5px);
-          mask:radial-gradient(circle, transparent 0 46.5px, #000 46.5px);}
+          background:radial-gradient(circle at 50% 38%,
+            rgba(30,16,13,.93) 0%, rgba(7,10,8,.95) 72%);
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+          box-shadow:0 12px 34px rgba(0,0,0,.55),
+            0 0 26px -6px rgba(255,110,90,.45);}
+        /* LE CADRAN. Il deborde de deux points sur le disque : la lueur de
+           l'arc a besoin de place pour ne pas etre coupee au bord. */
+        .cd-an-c{position:absolute;inset:0;width:100%;height:100%;
+          transform:rotate(-90deg);overflow:visible;pointer-events:none;}
+        .cd-an-p{fill:none;stroke:rgba(255,255,255,.14);stroke-width:3;}
+        .cd-an-a{fill:none;stroke:url(#cdAnG);stroke-width:3.4;
+          stroke-linecap:round;
+          filter:drop-shadow(0 0 4px rgba(255,110,90,.75));
+          transition:stroke-dasharray .9s linear;}
         .cd-anneau .cd-an-t{display:flex;align-items:center;gap:4px;
-          font-size:9px;font-weight:850;letter-spacing:.12em;
+          margin-bottom:1px;
+          font-size:8.5px;font-weight:850;letter-spacing:.14em;
           text-transform:uppercase;color:#FFB9AC;}
         .cd-anneau .cd-an-t i{font-style:normal;font-size:9.5px;}
         .cd-anneau b{font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
-          font-size:40px;font-weight:400;line-height:1;letter-spacing:.01em;
-          font-variant-numeric:tabular-nums;}
-        .cd-anneau em{font-style:normal;font-size:9.5px;font-weight:850;
-          letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.72);}
-        /* LA PORTE, SANS FLASH : deux lignes, un pictogramme, et un cercle
-           vert — la couleur de ce qu'on peut faire, partout dans le produit. */
+          font-size:38px;font-weight:400;line-height:.92;letter-spacing:.01em;
+          font-variant-numeric:tabular-nums;
+          text-shadow:0 2px 12px rgba(0,0,0,.6);}
+        .cd-anneau em{font-style:normal;font-size:9px;font-weight:850;
+          margin-top:2px;
+          letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.7);}
         /* LA RARETE, SOUS L'ANNEAU. Deux lignes de neuf points, centrees sur le
            disque : on ne la lit pas d'abord, on la trouve quand on s'arrete. */
         .cd-an-r{position:absolute;top:calc(100% + 7px);left:-14px;right:-14px;
           text-decoration:none;font-size:9px;font-weight:800;line-height:1.25;
           letter-spacing:.05em;text-transform:uppercase;text-align:center;
           color:rgba(255,215,94,.82);text-shadow:0 2px 10px rgba(4,8,6,.9);}
-        /* LA PORTE DE LA CARTE : le meme filet, en vert — la couleur de ce
+        /* LA PORTE DE LA CARTE : le meme disque, en vert — la couleur de ce
            qu'on peut faire — et la meme structure a trois etages que le chrono.
-           Un pictogramme au trait au milieu, pas un emoji : l'emoji change de
-           dessin selon le telephone et cassait l'harmonie du cercle. */
+           Son cercle est un trait interieur, pas une bordure : une bordure
+           agrandit la boite et decale le contenu d'un demi-point, un trait
+           interieur ne bouge rien. Un pictogramme au trait au milieu, pas un
+           emoji : l'emoji change de dessin selon le telephone et cassait
+           l'harmonie du cercle. */
         .cd-anneau.porte{cursor:pointer;
-          background:
-            linear-gradient(rgba(6,9,7,.9),rgba(6,9,7,.9)) padding-box,
-            linear-gradient(150deg,#8CF0CC,#2FD39A) border-box;
-          box-shadow:0 10px 30px rgba(0,0,0,.5),
-            0 0 24px -4px rgba(61,226,166,.45);}
+          background:radial-gradient(circle at 50% 38%,
+            rgba(10,30,23,.93) 0%, rgba(6,12,9,.95) 72%);
+          box-shadow:inset 0 0 0 2.2px rgba(112,235,187,.6),
+            0 12px 34px rgba(0,0,0,.55),
+            0 0 26px -6px rgba(61,226,166,.45);
+          transition:transform .18s cubic-bezier(.34,1.4,.64,1);}
         .cd-anneau.porte .cd-an-t{color:#9BEBCB;}
-        .cd-anneau.porte svg{width:30px;height:30px;margin:2px 0 1px;
+        .cd-anneau.porte>svg{width:30px;height:30px;margin:2px 0 1px;
           stroke:#EAF2EC;stroke-width:1.7;fill:none;
           stroke-linecap:round;stroke-linejoin:round;}
         .cd-anneau.porte em{font-style:normal;font-size:9px;font-weight:850;
