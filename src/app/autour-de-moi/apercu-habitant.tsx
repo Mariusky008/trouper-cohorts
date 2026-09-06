@@ -304,6 +304,95 @@ const VERROU = 6;
 const VOL_MS = 420;
 /** La durée du vol du cœur vers les favoris, la même qu'en CSS. */
 const COEUR_MS = 900;
+
+/**
+ * LA DURÉE DU BOND DU FANTÔME, LA MÊME QU'EN CSS.
+ *
+ * ELLE EXISTE PARCE QU'ELLE A DÉJÀ MENTI UNE FOIS. La classe était retirée à
+ * 460 ms pour une animation de 780 : le fantôme disparaissait en plein saut, et
+ * c'est ce qui la rendait sèche. Une constante partagée entre le CSS et le
+ * minuteur est le seul moyen de ne pas repayer ça au prochain réglage.
+ */
+const BOND_MS = 980;
+
+/**
+ * ═══ LE PETIT SON DU BOND ═══
+ *
+ * « Un petit son sympathique, pour que l'animation se voie vraiment et soit
+ * addictive. »
+ *
+ * IL EST SYNTHÉTISÉ, PAS CHARGÉ. Un fichier audio, c'est une requête réseau
+ * avant le premier bond — donc un premier appui muet, précisément celui qui
+ * décide si le geste est agréable — et un octet de plus à télécharger sur un
+ * produit qui s'ouvre dans la rue en 4G. Trois oscillateurs coûtent zéro.
+ *
+ * CE QU'IL DIT : deux notes qui MONTENT, très courtes, sur une quinte (do–sol),
+ * avec un léger glissando sur la première. Un son qui monte accompagne un objet
+ * qui monte ; un son qui descend le contredirait, et l'oreille s'en aperçoit
+ * avant l'œil. Il dure 280 ms — moins que le bond, pour qu'il l'annonce au lieu
+ * de le suivre.
+ *
+ * IL EST DISCRET, ET C'EST UNE CONTRAINTE, PAS UN RÉGLAGE. Ce bouton s'appuie
+ * des dizaines de fois par session. Un son qui plaît la première fois et fatigue
+ * à la dixième est pire que pas de son du tout : on coupe le téléphone, et on
+ * perd aussi le reste. D'où le volume bas (.06) et l'extinction rapide.
+ *
+ * ET IL SE TAIT QUAND ON A DEMANDÉ LE SILENCE. `prefers-reduced-motion` est le
+ * seul signal que le téléphone nous donne : quelqu'un qui coupe les animations
+ * ne veut pas non plus qu'on lui fasse du bruit. C'est aussi la même case qui
+ * coupe déjà la cabriole, donc le son ne resterait pas orphelin d'un mouvement
+ * qui n'a pas lieu.
+ *
+ * L'ÉCHEC EST SILENCIEUX, DANS TOUS LES SENS. Safari refuse l'audio hors d'un
+ * geste, certains navigateurs n'ont pas de contexte du tout : dans ce cas il ne
+ * se passe rien, et surtout le bond continue. Un son est un supplément ; il n'a
+ * jamais le droit d'empêcher l'écran de répondre.
+ */
+function sonDuBond() {
+  try {
+    if (typeof window === "undefined") return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const w = window as unknown as {
+      AudioContext?: typeof AudioContext;
+      webkitAudioContext?: typeof AudioContext;
+    };
+    const Ctor = w.AudioContext || w.webkitAudioContext;
+    if (!Ctor) return;
+    const ctx = new Ctor();
+    const t0 = ctx.currentTime;
+    // LA PREMIÈRE NOTE GLISSE VERS LE HAUT : c'est le « boing » de l'élan,
+    // celui qui se produit pendant que le fantôme s'écrase avant de partir.
+    const notes: Array<[number, number, number, number]> = [
+      // [depart Hz, arrivee Hz, debut s, duree s]
+      [523.25, 784, 0, 0.16],
+      [1046.5, 1046.5, 0.09, 0.19],
+    ];
+    notes.forEach(([de, a, quand, duree]) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(de, t0 + quand);
+      if (a !== de) o.frequency.exponentialRampToValueAtTime(a, t0 + quand + duree * 0.7);
+      g.gain.setValueAtTime(0.0001, t0 + quand);
+      g.gain.exponentialRampToValueAtTime(0.06, t0 + quand + 0.018);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + quand + duree);
+      o.connect(g).connect(ctx.destination);
+      o.start(t0 + quand);
+      o.stop(t0 + quand + duree + 0.02);
+    });
+    // ON REFERME LE CONTEXTE. Un contexte audio par appui, jamais fermé, finit
+    // par atteindre la limite du navigateur — et alors plus AUCUN son ne part.
+    window.setTimeout(() => {
+      try {
+        void ctx.close();
+      } catch {
+        /* deja ferme : sans importance */
+      }
+    }, 700);
+  } catch {
+    /* pas de son -> le bond a lieu quand meme */
+  }
+}
 /** Combien de temps un commerce « écrit » avant que sa réponse apparaisse.
  *  Assez long pour que les trois points apparaissent presque tout de suite —
  *  mesuré : à 1,5 s, l'écran restait deux secondes sans rien, et deux secondes
@@ -1248,6 +1337,34 @@ export function ApercuHabitant() {
    */
   const [salonPage, setSalonPage] = useState(false);
   /**
+   * ═══ LA PHOTO DERRIÈRE LA FEUILLE, GELÉE À L'OUVERTURE ═══
+   *
+   * LE DÉFAUT MESURÉ, ET IL A SURVÉCU À TROIS CORRECTIONS : « dès que je clique
+   * sur "proposer à mes amis", j'ai bien la pop-up qui arrive par-dessus, mais
+   * derrière, l'annonce change. »
+   *
+   * LES TROIS FOIS PRÉCÉDENTES, J'AI RÉPARÉ LE MAUVAIS OBJET. J'ai cherché
+   * quelle annonce partait dans le salon — elle était juste ; puis pourquoi la
+   * carte s'envolait avant que la feuille monte — c'était vrai et c'est corrigé.
+   * Les deux fois, je regardais LE PAQUET. Or ce qu'il voit derrière la feuille
+   * n'est pas le paquet : le paquet est démonté à ce moment-là. C'est une bande
+   * à part, `.ap-feuille-dos`, et elle ne porte qu'une PHOTO.
+   *
+   * ET CETTE PHOTO SE RECALCULAIT À CHAQUE RENDU. Elle était lue ainsi :
+   * `sommet ? carteDe(sommet).photo : undefined`, et `sommet` vaut `pile[0]` —
+   * une valeur recomposée à chaque rendu à partir de `passees`, de l'heure et
+   * de l'épingle. À la seconde où la carte regardée est rangée, `pile[0]`
+   * devient LA SUIVANTE, et la bande passe à sa photo. « Derrière, c'est
+   * l'annonce suivante qui s'est mise » — au sens propre, et c'était la seule
+   * chose à l'écran capable de changer toute seule.
+   *
+   * ON LA GÈLE DONC AU MOMENT DE L'APPUI. Une photo est un fait daté : celle de
+   * l'annonce qu'on avait sous les yeux quand on a appuyé. Rien ne doit pouvoir
+   * la recalculer tant que la feuille est ouverte, et c'est précisément ce
+   * qu'un état gelé garantit là où une expression dérivée ne le peut pas.
+   */
+  const [dosFeuille, setDosFeuille] = useState<string | undefined>(undefined);
+  /**
    * LES FAÇONS DE PARLER, REPLIÉES.
    *
    * La barre du bas portait CINQ boutons de poids égal — Inviter, Réserver,
@@ -2044,6 +2161,9 @@ export function ApercuHabitant() {
 
   function ouvrirLeSalonDuSommet() {
     if (dessusEv) {
+      // LA BANDE DU HAUT EST FIXÉE ICI, avant tout changement d'état : c'est le
+      // dernier instant où « l'annonce sur laquelle on est » a encore un sens.
+      setDosFeuille(dessusEv.photo);
       enParler(
         cleSalonEv(dessusEv),
         dessusEv.quoi,
@@ -2085,6 +2205,9 @@ export function ApercuHabitant() {
     // photo et son prix, sans les recalculer. Deux façons de décrire la même
     // annonce, c'est une de trop — et c'est toujours la seconde qui ment.
     const face = carteDe(dessus);
+    // LA MÊME FACE SERT AU SALON ET À LA BANDE DU HAUT. Deux lectures de
+    // l'annonce, c'est une de trop — et c'est toujours la seconde qui ment.
+    setDosFeuille(face.photo);
     enParler(
       cleSalonMoment(dessus, face.quoi, !!face.flash),
       face.quoi,
@@ -2112,7 +2235,16 @@ export function ApercuHabitant() {
    * sous la feuille exprès pour ça (voir `partir`). La même image que celle
    * qu'on regardait une demi-seconde plus tôt, et aucune autre.
    */
-  const photoDeLaFeuille = sommet ? carteDe(sommet).photo : undefined;
+  /**
+   * CE QUI PASSE DERRIÈRE LA FEUILLE — voir `dosFeuille`.
+   *
+   * L'ORDRE DES DEUX SOURCES EST LA CORRECTION. La valeur gelée à l'appui passe
+   * d'abord ; `salon.photo` ne sert que pour un salon ouvert d'ailleurs — depuis
+   * l'onglet Propositions, par exemple — où il n'y a pas eu d'appui sur une
+   * carte à geler. Le paquet, lui, n'est plus consulté du tout : c'est lui qui
+   * bougeait.
+   */
+  const photoDeLaFeuille = dosFeuille ?? salon?.photo;
   /** La carte du dessus, telle que l'écran la dessine — pour la fiche et l'anneau. */
   const dessusCarte = dessus ? carteDe(dessus) : undefined;
 
@@ -2370,6 +2502,11 @@ export function ApercuHabitant() {
    * proposition, pour rien.
    */
   function rangerCeQuiAttend() {
+    // LA BANDE GELÉE MEURT AVEC LA FEUILLE, et AVANT le garde-fou ci-dessous :
+    // un salon ouvert depuis l'onglet Propositions n'a rien à ranger, mais il a
+    // tout de même posé une photo. La libérer ici, c'est la libérer partout —
+    // les trois endroits qui referment la feuille passent par cette fonction.
+    setDosFeuille(undefined);
     const id = aRanger.current;
     if (!id) return;
     aRanger.current = "";
@@ -7430,21 +7567,54 @@ export function ApercuHabitant() {
             </button>
             </div>
             {/* ─── LES POINTS DE LA MAQUETTE ───
-                Cinq points sous les boutons, le premier allumé. Ils disent la
-                seule chose qu'un paquet ne dit pas de lui-même : qu'il y a une
-                suite, et à peu près combien. Sans eux, une carte pleine écran
-                se lit comme une page unique — et personne ne balaie une page
-                unique. Ils comptent ce qui reste vraiment, plafonné à cinq :
-                au-delà, un chapelet de points ne se compte plus, il décore. */}
-            {sommet && (
-              <div className="ap-suite" aria-hidden="true">
-                {Array.from({ length: Math.min(5, Math.max(2, pile.length)) }).map(
-                  (_, i) => (
-                    <s key={i} className={i === 0 ? "on" : ""} />
-                  ),
-                )}
-              </div>
-            )}
+                Cinq points sous les boutons. Ils disent la seule chose qu'un
+                paquet ne dit pas de lui-même : qu'il y a une suite, et à peu
+                près combien. Sans eux, une carte pleine écran se lit comme une
+                page unique — et personne ne balaie une page unique.
+
+                ═══ ET MAINTENANT ILS AVANCENT ═══
+                « Les cinq petits points au-dessus du menu ne changent pas,
+                donc les enlever ou les faire bouger. »
+
+                IL AVAIT RAISON, ET C'ÉTAIT PIRE QUE STATIQUE : le point allumé
+                était TOUJOURS le premier (`i === 0`), et le nombre de points se
+                déduisait de ce qui restait — donc il bougeait à peine, et
+                jamais dans le sens de la lecture. Un indicateur de progression
+                qui n'indique pas la progression ne décore pas : il ment.
+
+                LE REPÈRE, C'EST CE QU'ON A DÉJÀ VU. `passees.length` est le
+                rang réel dans le paquet, quelle que soit la façon d'avancer —
+                le balayage, le fantôme, ou la carte qu'on range. Le point
+                allumé le suit, donc il bouge à chaque appui sur le fantôme,
+                ce qu'il demandait.
+
+                ET LA FENÊTRE GLISSE AU-DELÀ DE CINQ. Un chapelet de trente
+                points ne se compte plus. Au-delà de cinq, on garde cinq points
+                et c'est la FENÊTRE qui se déplace : le point allumé reste au
+                milieu, et les deux points de bout disent qu'il y a encore
+                quelque chose avant et après. */}
+            {sommet && (() => {
+              const total = passees.length + pile.length;
+              const rang = passees.length;
+              const combien = Math.min(5, Math.max(2, total));
+              // La fenetre se cale sur le rang, puis se borne aux deux bouts :
+              // sans ce dernier bornage, elle depasserait la fin du paquet et
+              // le point allume sortirait par la droite.
+              const debut = Math.max(0, Math.min(rang - 2, total - combien));
+              return (
+                <div className="ap-suite" aria-hidden="true">
+                  {Array.from({ length: combien }).map((_, i) => {
+                    const n = debut + i;
+                    return (
+                      <s
+                        key={i}
+                        className={`${n === rang ? "on" : ""}${n < rang ? " vu" : ""}`}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            })()}
             {/* LE QUATRIÈME ROND A DISPARU, ET IL N'EST PAS PERDU. « Détails »
                 est remonté sur la photo, où il dit ce qu'il y a derrière —
                 « 3 moments aujourd'hui » — au lieu d'une flèche muette. */}
@@ -8027,9 +8197,12 @@ export function ApercuHabitant() {
               disabled={!sommet || onglet !== "direct"}
               onClick={() => {
                 setClin(true);
-                // La cabriole dure .78s : la couper a 460 ms la faisait
+                // LE SON PART AVANT LE MOUVEMENT, d'un cheveu : c'est l'ordre
+                // naturel — on entend l'elan, puis on voit le saut.
+                sonDuBond();
+                // La cabriole dure BOND_MS : la couper avant la faisait
                 // disparaitre en plein saut, et c'est ce qui la rendait seche.
-                window.setTimeout(() => setClin(false), 800);
+                window.setTimeout(() => setClin(false), BOND_MS);
                 partir("gauche");
               }}
             >
@@ -11075,17 +11248,28 @@ export function ApercuHabitant() {
            texte ni bouton : un repere, pas un second ecran actif. Sans elle on
            voyait du noir, ce qui disait « une autre page » — exactement ce
            qu'on cherchait a corriger. */
+        /* ON CADRE SUR LE HAUT DE LA PHOTO, PAS SUR SON MILIEU. Cette image
+           couvre toute la hauteur de l'ecran, mais on n'en VOIT qu'une bande de
+           cent cinquante points au-dessus de la feuille : cadrer au centre y
+           faisait tomber le haut du cliche, souvent le plus sombre. */
         .ap-feuille-dos{position:absolute;left:0;right:0;top:0;
           bottom:var(--ap-onglets-h, 51px);
           z-index:5;background:#0D1A15;background-size:cover;
-          background-position:center 42%;}
+          background-position:center 22%;}
         /* ELLE OCCUPE TOUTE LA HAUTEUR, ET PAS SEULEMENT LA BANDE QUI DEPASSE.
            La feuille monte PAR-DESSUS l'annonce : entre l'appui et son arrivee,
            ce qu'on voit doit etre l'annonce, pas un fond noir. Le paquet, lui,
            n'est plus monte a cet instant — c'est cette image qui tient l'ecran
            pendant les trois cents millisecondes de la montee. */
+        /* ET L'ASSOMBRISSEMENT S'ALLEGE EN HAUT. Il etait uniforme et fort —
+           calibre a l'epoque ou cette bande ne portait presque jamais la bonne
+           image, donc ou il n'y avait rien a voir dedans. Maintenant qu'elle
+           porte l'annonce sur laquelle on a appuye, elle doit se RECONNAITRE :
+           c'est toute sa raison d'etre. Le bas reste sombre, mais il est de
+           toute facon sous la feuille. */
         .ap-feuille-dos::after{content:"";position:absolute;inset:0;
-          background:linear-gradient(180deg,rgba(4,8,6,.5),rgba(4,8,6,.78));}
+          background:linear-gradient(180deg,rgba(4,8,6,.24) 0,
+            rgba(4,8,6,.52) 34%,rgba(4,8,6,.8) 100%);}
         @media (prefers-reduced-motion:reduce){
           .ap-page.feuille{animation-duration:.01s;}
         }
@@ -11286,18 +11470,41 @@ export function ApercuHabitant() {
            le telephone — le pire defaut possible pour un personnage qu'on veut
            reconnaitre. Le dome et les trois vaguelettes du bas font le fantome ;
            deux points et une courbe n'en faisaient qu'une bouille ronde. */
-        .ap-onglets .ap-suiv{position:relative;flex:none;width:60px;height:60px;
-          margin:-22px 4px 0;padding:0;border-radius:50%;border:0;
+        /* ═══ IL EST PLUS GROS, ET C'EST UNE DEMANDE ═══
+           « Est-ce que le bouton du fantome peut etre plus gros ? » Oui, et
+           c'etait deja la bonne direction : c'est le geste le plus repete du
+           produit, et il partageait sa largeur avec quatre onglets de dix
+           points. A 74 il devient le centre de gravite de la barre, et le
+           fantome a enfin la place d'etre un personnage plutot qu'un
+           pictogramme. La bulle remonte d'autant pour ne pas manger la barre. */
+        .ap-onglets .ap-suiv{position:relative;flex:none;width:74px;height:74px;
+          margin:-30px 4px 0;padding:0;border-radius:50%;border:0;
           display:flex;align-items:center;justify-content:center;
           background:linear-gradient(150deg,#8CF0CC,#2FD39A);
-          box-shadow:0 10px 26px rgba(47,211,154,.4),
+          box-shadow:0 12px 30px rgba(47,211,154,.42),
             0 0 0 5px var(--ap-barre-fond, #070C0A);
           transition:transform .16s cubic-bezier(.34,1.6,.64,1);}
         .ap-onglets .ap-suiv:disabled{opacity:.45;}
         .ap-onglets .ap-suiv:active{transform:scale(.9);}
         .ap-onglets .ap-suiv b{display:none;}
-        .ap-fantome{width:34px;height:37px;overflow:visible;
-          transform-origin:50% 62%;}
+        .ap-fantome{width:44px;height:48px;overflow:visible;
+          transform-origin:50% 62%;
+          animation:apFlotte 4.6s ease-in-out infinite;}
+        /* ═══ ET IL SORT DE SA BULLE ═══
+           « Le fantome bondit EN DEHORS de la bulle, un peu plus haut, pour que
+           l'animation se voie vraiment. »
+           IL EN SORTAIT DEJA UN PEU, ET PERSONNE NE LE VOYAIT : quatorze points
+           de saut dans un disque de soixante, c'est un mouvement INTERIEUR — le
+           fantome bougeait DANS son bouton. Il monte maintenant de quarante-deux
+           points, soit plus que le rayon de la bulle : il la QUITTE, passe
+           au-dessus de la barre, et se detache sur l'annonce. C'est la meme
+           animation ; c'est le fait de franchir un bord qui la rend visible.
+           RIEN NE LE COUPE SUR SON PASSAGE. La barre ne decoupe pas, et le
+           bloc .ap-direct — qui, lui, decoupe — ne la contient pas : elle est
+           posee par-dessus, en absolu, dans .ap-app. Le z-index le met au
+           premier plan pendant le vol, sinon l'ombre de la bulle lui passerait
+           devant au moment ou il en sort. */
+        .ap-suiv.clin .ap-fantome{position:relative;z-index:3;}
         /* ═══ LE VOLUME ═══
            « Le fantome, tu peux faire vraiment encore beaucoup mieux. »
 
@@ -11346,7 +11553,6 @@ export function ApercuHabitant() {
            sinon il glisse au lieu de voler), ses bras balancent, et il CLIGNE
            toutes les six secondes. Le clignement est ce qui fait passer un
            dessin pour un etre : on ne le voit pas, on le sent. */
-        .ap-fantome{animation:apFlotte 4.6s ease-in-out infinite;}
         @keyframes apFlotte{0%,100%{transform:translateY(0) rotate(0);}
           33%{transform:translateY(-2.6px) rotate(-1.6deg);}
           66%{transform:translateY(-1.2px) rotate(1.4deg);}}
@@ -11373,17 +11579,17 @@ export function ApercuHabitant() {
 
            TOUT DURE .78s, LE TEMPS QUE LA CARTE SUIVANTE ARRIVE. Une animation
            qui depasse l'action qu'elle accompagne devient une attente. */
-        .ap-suiv.clin{animation:apBond .78s cubic-bezier(.3,1.2,.4,1);}
+        .ap-suiv.clin{animation:apBond .98s cubic-bezier(.3,1.2,.4,1);}
         .ap-suiv.clin::after{content:"";position:absolute;inset:0;
           border-radius:50%;border:2px solid rgba(140,240,204,.9);
           animation:apOnde .78s ease-out;pointer-events:none;}
-        .ap-suiv.clin .ap-fantome{animation:apCabriole .78s cubic-bezier(.28,1.1,.4,1);}
-        .ap-suiv.clin .ap-f-oeil{animation:apYeux .78s ease;}
-        .ap-suiv.clin .ap-f-bouche{animation:apSourire .78s ease;}
-        .ap-suiv.clin .ap-f-joue{animation:apJoues .78s ease;}
-        .ap-suiv.clin .ap-f-ombre{animation:apOmbre2 .78s ease;}
-        .ap-suiv.clin .ap-f-bras.g{animation:apBrasHautG .78s cubic-bezier(.3,1.3,.5,1);}
-        .ap-suiv.clin .ap-f-bras.d{animation:apBrasHautD .78s cubic-bezier(.3,1.3,.5,1);}
+        .ap-suiv.clin .ap-fantome{animation:apCabriole .98s cubic-bezier(.24,1.05,.36,1);}
+        .ap-suiv.clin .ap-f-oeil{animation:apYeux .98s ease;}
+        .ap-suiv.clin .ap-f-bouche{animation:apSourire .98s ease;}
+        .ap-suiv.clin .ap-f-joue{animation:apJoues .98s ease;}
+        .ap-suiv.clin .ap-f-ombre{animation:apOmbre2 .98s ease;}
+        .ap-suiv.clin .ap-f-bras.g{animation:apBrasHautG .98s cubic-bezier(.3,1.3,.5,1);}
+        .ap-suiv.clin .ap-f-bras.d{animation:apBrasHautD .98s cubic-bezier(.3,1.3,.5,1);}
         .ap-suiv.clin .ap-f-etoile{animation:apEtoile .6s ease-out;}
         .ap-suiv.clin .ap-f-etoile.b{animation-delay:.07s;}
         .ap-suiv.clin .ap-f-etoile.c{animation-delay:.14s;}
@@ -11393,15 +11599,19 @@ export function ApercuHabitant() {
           100%{transform:none;}}
         @keyframes apOnde{0%{transform:scale(1);opacity:.85;}
           100%{transform:scale(1.75);opacity:0;}}
+        /* LA COURBE D'UN SAUT N'EST PAS SYMETRIQUE : on part vite et on flotte
+           en haut. D'ou le sommet tenu entre 34 et 52 % — c'est la « pause en
+           l'air » des dessins animes, et c'est elle qu'on retient. */
         @keyframes apCabriole{
-          0%{transform:translateY(2px) scale(1.22,.78) rotate(0);}
-          18%{transform:translateY(-11px) scale(.82,1.24) rotate(-6deg);}
-          42%{transform:translateY(-14px) scale(1,1) rotate(-16deg);}
-          64%{transform:translateY(-4px) scale(1.05,.95) rotate(9deg);}
-          82%{transform:translateY(2px) scale(1.16,.86) rotate(3deg);}
+          0%{transform:translateY(4px) scale(1.28,.74) rotate(0);}
+          16%{transform:translateY(-26px) scale(.78,1.3) rotate(-7deg);}
+          34%{transform:translateY(-42px) scale(1.02,.98) rotate(-17deg);}
+          52%{transform:translateY(-39px) scale(1,1) rotate(-6deg);}
+          70%{transform:translateY(-16px) scale(1.04,.96) rotate(11deg);}
+          86%{transform:translateY(3px) scale(1.2,.83) rotate(4deg);}
           100%{transform:none;}}
         @keyframes apOmbre2{0%,100%{transform:scaleX(1);opacity:1;}
-          40%{transform:scaleX(.6);opacity:.35;}}
+          40%{transform:scaleX(.42);opacity:.18;}}
         @keyframes apBrasHautG{0%,100%{transform:rotate(17deg);}
           25%{transform:rotate(-56deg);}60%{transform:rotate(-32deg);}}
         @keyframes apBrasHautD{0%,100%{transform:rotate(-17deg);}
@@ -12619,8 +12829,16 @@ export function ApercuHabitant() {
            l'autre — c'est un defaut deja paye trois fois ici. */
         .ap-suite{display:flex;align-items:center;justify-content:center;
           gap:6px;padding:2px 0 0;}
+        /* ILS BOUGENT, DONC ILS SE DEPLACENT DOUCEMENT. Un point qui change
+           d'etat d'un seul coup ne se voit pas : c'est le GLISSEMENT qui dit
+           « on a avance ». Deux dixiemes, le temps que la carte arrive. */
         .ap-suite s{width:6px;height:6px;border-radius:50%;
-          background:rgba(234,242,236,.24);text-decoration:none;}
+          background:rgba(234,242,236,.24);text-decoration:none;
+          transition:width .22s ease,height .22s ease,
+            background .22s ease,box-shadow .22s ease;}
+        /* CE QU'ON A DEJA VU RESTE VISIBLE, EN SOURDINE : sans lui, on sait
+           qu'il y a une suite mais pas ou l'on en est dedans. */
+        .ap-suite s.vu{background:rgba(240,180,41,.42);}
         .ap-suite s.on{width:8px;height:8px;background:#F0B429;
           box-shadow:0 0 10px -1px rgba(240,180,41,.7);}
         .ap-agir span{display:flex;flex-direction:column;align-items:center;
