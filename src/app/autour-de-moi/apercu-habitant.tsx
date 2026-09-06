@@ -2277,44 +2277,46 @@ export function ApercuHabitant() {
     // la flamme sur la photo.
     if (epingle === sommet.id) setEpingle("");
     setAJoue(true);
-    setSortant(sens);
-    setDx(sens === "droite" ? 420 : -420);
     const id = sommet.id;
 
-    // L'OUVERTURE SE FAIT ICI, PAS DANS LE BOUTON. Elle était accrochée au
-    // seul bouton « En parler » : au doigt, la carte partait vers la droite et
-    // rien ne s'ouvrait — le geste principal de l'écran ne menait nulle part.
-    // On l'attend la fin du vol : ouvrir pendant donnerait deux animations
-    // concurrentes.
+    // ═══ VERS LA DROITE, LA CARTE NE S'EN VA PAS ═══
+    //
+    // LE DÉFAUT MESURÉ, ET IL A RÉSISTÉ À DEUX CORRECTIONS : « dès que je clique
+    // sur "proposer à mes amis", j'ai bien la pop-up qui arrive par-dessus, mais
+    // derrière, l'annonce change. »
+    //
+    // C'ÉTAIT LA CHORÉGRAPHIE, PAS LES DONNÉES. Les deux fois précédentes, j'ai
+    // cherché QUELLE annonce partait dans le salon, puis quelle photo passait
+    // derrière la feuille — et les deux étaient devenues justes. Filmée image
+    // par image, la séquence disait autre chose : pendant les quatre cents
+    // millisecondes qui suivent l'appui, la carte S'ENVOLE vers la droite,
+    // découvrant l'annonce suivante, et c'est seulement après que la feuille
+    // monte. On voit donc, dans cet ordre : mon annonce, puis une autre, puis la
+    // feuille. « Derrière, l'annonce change » — au sens propre.
+    //
+    // LE VOL VENAIT D'UN AUTRE PRODUIT. Balayer à droite était « je garde »,
+    // puis « j'en parle » : dans les deux cas la carte quittait le paquet, donc
+    // elle s'envolait. Depuis qu'elle ATTEND sous la feuille pour servir de
+    // repère, l'envol dit exactement le contraire de ce qui se passe.
+    //
+    // ELLE RESTE DONC EN PLACE, et si le doigt l'avait tirée, elle revient au
+    // centre pendant que la feuille monte par-dessus. Un seul mouvement à
+    // l'écran, et c'est le bon : quelque chose arrive, rien ne part.
     if (sens === "droite") {
-      minuteries.current.push(window.setTimeout(ouvrirLeSalonDuSommet, VOL_MS + 30));
+      aRanger.current = id;
+      setSortant("");
+      setDx(0);
+      // LE TEMPS QUE LA CARTE REVIENNE AU CENTRE, ET PAS UNE IMAGE DE PLUS.
+      // Attendre la fin d'un vol qui n'a plus lieu ferait un blanc de quatre
+      // cents millisecondes entre l'appui et la réponse.
+      minuteries.current.push(window.setTimeout(ouvrirLeSalonDuSommet, 90));
+      return;
     }
 
+    setSortant(sens);
+    setDx(-420);
     minuteries.current.push(
       window.setTimeout(() => {
-        // ═══ LA CARTE ATTEND SOUS LA FEUILLE ═══
-        //
-        // « Ça donne l'impression qu'il n'y a aucun lien avec l'annonce. Peut-
-        // être que ça pourrait être cette page qui arriverait du bas, et qui
-        // s'arrête avant la fin de l'annonce pour qu'on comprenne que c'est
-        // bien en lien avec l'annonce sur laquelle on est. »
-        //
-        // LA FEUILLE NE SUFFISAIT PAS : elle s'arrêtait bien avant le haut de
-        // l'écran, mais ce qu'on voyait dans la bande était noir. La carte
-        // était déjà rangée dans les passées à l'instant où la feuille montait,
-        // donc le repère qu'il demande — l'annonce dont on parle — n'existait
-        // plus. Le lien était promis par la forme et démenti par le fond.
-        //
-        // ELLE EST DONC MISE EN ATTENTE, PAS RANGÉE. Tant que la feuille est
-        // ouverte, la carte reste en tête du paquet, dessous, et c'est elle
-        // qu'on aperçoit. Elle rejoint les passées quand on referme — c'est-à-
-        // dire au moment où « proposer » est réellement fini.
-        if (sens === "droite") {
-          aRanger.current = id;
-          setDx(0);
-          setSortant("");
-          return;
-        }
         setPassees((p) => [...p, id]);
         setDx(0);
         setSortant("");
@@ -10483,9 +10485,15 @@ export function ApercuHabitant() {
            texte ni bouton : un repere, pas un second ecran actif. Sans elle on
            voyait du noir, ce qui disait « une autre page » — exactement ce
            qu'on cherchait a corriger. */
-        .ap-feuille-dos{position:absolute;left:0;right:0;top:0;height:96px;
+        .ap-feuille-dos{position:absolute;left:0;right:0;top:0;
+          bottom:var(--ap-onglets-h, 51px);
           z-index:5;background:#0D1A15;background-size:cover;
           background-position:center 42%;}
+        /* ELLE OCCUPE TOUTE LA HAUTEUR, ET PAS SEULEMENT LA BANDE QUI DEPASSE.
+           La feuille monte PAR-DESSUS l'annonce : entre l'appui et son arrivee,
+           ce qu'on voit doit etre l'annonce, pas un fond noir. Le paquet, lui,
+           n'est plus monte a cet instant — c'est cette image qui tient l'ecran
+           pendant les trois cents millisecondes de la montee. */
         .ap-feuille-dos::after{content:"";position:absolute;inset:0;
           background:linear-gradient(180deg,rgba(4,8,6,.5),rgba(4,8,6,.78));}
         @media (prefers-reduced-motion:reduce){
