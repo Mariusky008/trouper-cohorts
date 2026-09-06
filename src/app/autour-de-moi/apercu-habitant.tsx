@@ -8405,9 +8405,30 @@ export function ApercuHabitant() {
                 visiblement au doigt, il ne vaut pas mieux que le balayage qui
                 rate. Il s'enfonce, cligne, et repart d'un bond — et le paquet
                 avance avec lui. */}
+            {/* ═══ L'OR EST UN ETAT, LE SAUT EST UN GESTE ═══
+
+                  « Le fantome saute en or mais redevient vert alors que je suis
+                  encore sur l'annonce Flash ; il faudrait qu'il reste en or
+                  jusqu'a mon prochain clic. »
+
+                  IL AVAIT RAISON, ET C'ETAIT UNE CONFUSION DANS LE CODE : une
+                  seule classe portait la couleur ET l'animation. L'or ne vivait
+                  donc que le temps du bond, alors qu'il dit quelque chose de
+                  PERMANENT — « ce que tu regardes expire ». Il s'eteignait
+                  pendant que le compte a rebours, lui, tournait encore.
+
+                  DEUX CLASSES DESORMAIS. `or` est la couleur, et elle suit
+                  l'annonce : elle reste tant que la carte du dessus est un
+                  Flash. `saut-or` est le bond, et il ne dure que son temps.
+                  Les separer etait obligatoire, pas elegant : en partant d'un
+                  Flash vers une carte ordinaire, la couleur est encore la
+                  pendant que la carte tourne — et l'ancienne classe unique
+                  aurait alors declenche le grand saut sur un depart banal. */}
             <button
               type="button"
-              className={`ap-suiv${clin ? " clin" : ""}${clin === "or" ? " or" : ""}`}
+              className={`ap-suiv${clin ? " clin" : ""}${
+                clin === "or" || flashDuSommet ? " or" : ""
+              }${clin === "or" ? " saut-or" : ""}`}
               aria-label="Passer à l’annonce suivante"
               disabled={!sommet || onglet !== "direct"}
               onClick={() => {
@@ -8566,6 +8587,10 @@ export function ApercuHabitant() {
                   <path className="ap-f-coeur c" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
                   <path className="ap-f-coeur d" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
                   <path className="ap-f-coeur e" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
+                  <path className="ap-f-coeur f" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
+                  <path className="ap-f-coeur g" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
+                  <path className="ap-f-coeur h" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
+                  <path className="ap-f-coeur i" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
                 </g>
               </svg>
             </button>
@@ -11931,7 +11956,7 @@ export function ApercuHabitant() {
         .ap-suiv.or .ap-f-bras{fill:#F2CE7A;}
         .ap-suiv.or .ap-f-fil{stroke:url(#apFr);opacity:.9;}
         /* L'ONDE SUIT LA COULEUR, sinon un cercle vert part d'une bulle doree. */
-        .ap-suiv.clin.or::after{border-color:rgba(255,215,94,.95);
+        .ap-suiv.clin.saut-or::after{border-color:rgba(255,215,94,.95);
           animation:apOnde 1s ease-out;}
         /* ═══ LA BULLE NE BOUGE PAS PENDANT LE BOND DORE ═══
            MESURE QUI L'A IMPOSE : la marche du verifieur s'arretait net sur la
@@ -11943,49 +11968,60 @@ export function ApercuHabitant() {
            l'effet qu'on cherchait — sortir de sa bulle suppose que la bulle
            reste. Le bond ordinaire garde son ressort : il dure moins d'une
            seconde et c'est le retour au doigt de l'appui lui-meme. */
-        .ap-suiv.clin.or{animation:none;}
-        .ap-suiv.clin.or .ap-fantome{
+        .ap-suiv.clin.saut-or{animation:none;}
+        .ap-suiv.clin.saut-or .ap-fantome{
           animation:apCabrioleOr 1.5s cubic-bezier(.24,1,.32,1);}
-        .ap-suiv.clin.or .ap-f-oeil{animation:apYeux 1.5s ease;}
-        .ap-suiv.clin.or .ap-f-bouche{animation:apSourire 1.5s ease;}
-        .ap-suiv.clin.or .ap-f-joue{animation:apJoues 1.5s ease;}
-        .ap-suiv.clin.or .ap-f-ombre{animation:apOmbre2 1.5s ease;}
-        .ap-suiv.clin.or .ap-f-bras.g{animation:apBrasHautG 1.5s cubic-bezier(.3,1.3,.5,1);}
-        .ap-suiv.clin.or .ap-f-bras.d{animation:apBrasHautD 1.5s cubic-bezier(.3,1.3,.5,1);}
+        .ap-suiv.clin.saut-or .ap-f-oeil{animation:apYeux 1.5s ease;}
+        .ap-suiv.clin.saut-or .ap-f-bouche{animation:apSourire 1.5s ease;}
+        .ap-suiv.clin.saut-or .ap-f-joue{animation:apJoues 1.5s ease;}
+        .ap-suiv.clin.saut-or .ap-f-ombre{animation:apOmbre2 1.5s ease;}
+        .ap-suiv.clin.saut-or .ap-f-bras.g{animation:apBrasHautG 1.5s cubic-bezier(.3,1.3,.5,1);}
+        .ap-suiv.clin.saut-or .ap-f-bras.d{animation:apBrasHautD 1.5s cubic-bezier(.3,1.3,.5,1);}
         /* IL MONTE DEUX FOIS PLUS HAUT ET GROSSIT D'UN TIERS, et il TIENT en
            l'air : le sommet occupe le tiers du milieu de l'animation. C'est la
            pause qui rend un saut spectaculaire, pas la hauteur seule. */
         @keyframes apCabrioleOr{
-          0%{transform:translateY(6px) scale(1.34,.7) rotate(0);}
-          14%{transform:translateY(-44px) scale(.84,1.34) rotate(-6deg);}
-          30%{transform:translateY(-78px) scale(1.34,1.34) rotate(-13deg);}
-          48%{transform:translateY(-82px) scale(1.42,1.42) rotate(6deg);}
-          64%{transform:translateY(-64px) scale(1.32,1.32) rotate(-4deg);}
-          82%{transform:translateY(-18px) scale(1.08,.94) rotate(5deg);}
-          93%{transform:translateY(4px) scale(1.22,.82) rotate(2deg);}
+          0%{transform:translateY(6px) scale(1.38,.68) rotate(0);}
+          13%{transform:translateY(-62px) scale(.82,1.4) rotate(-6deg);}
+          29%{transform:translateY(-114px) scale(1.42,1.42) rotate(-14deg);}
+          47%{transform:translateY(-122px) scale(1.52,1.52) rotate(7deg);}
+          63%{transform:translateY(-96px) scale(1.4,1.4) rotate(-5deg);}
+          81%{transform:translateY(-26px) scale(1.1,.94) rotate(6deg);}
+          93%{transform:translateY(5px) scale(1.24,.8) rotate(2deg);}
           100%{transform:none;}}
         /* LES COEURS. Invisibles partout ailleurs — ils n'ont pas de regle
            d'animation hors du bond dore, donc ils ne coutent rien au repos. */
         .ap-f-coeur{fill:#FF6E8A;opacity:0;
           transform-box:fill-box;transform-origin:50% 50%;}
-        .ap-suiv.clin.or .ap-f-coeur{animation:apCoeurJete 1.1s ease-out;}
-        .ap-suiv.clin.or .ap-f-coeur.a{animation-delay:.22s;}
-        .ap-suiv.clin.or .ap-f-coeur.b{animation-delay:.3s;--ap-jx:-20px;}
-        .ap-suiv.clin.or .ap-f-coeur.c{animation-delay:.38s;--ap-jx:19px;}
-        .ap-suiv.clin.or .ap-f-coeur.d{animation-delay:.46s;--ap-jx:-11px;}
-        .ap-suiv.clin.or .ap-f-coeur.e{animation-delay:.54s;--ap-jx:12px;}
-        /* ILS MONTENT EN S'ECARTANT ET S'ALLEGENT : un coeur qui monte tout
-           droit retombe comme une bulle de dessin technique. */
+        /* ⚡ « DES COEURS UN PEU PLUS ECARTES ET PARTOUT. » Ils etaient cinq et
+           montaient presque en colonne — vingt points de part et d'autre,
+           c'est-a-dire la largeur du fantome. Ils sont neuf, ils s'ouvrent
+           jusqu'a cinquante points, et deux partent vers le BAS : une gerbe qui
+           ne va que vers le haut se lit comme une fumee, pas comme une fete.
+           Chacun a sa direction et son retard. */
+        .ap-suiv.clin.saut-or .ap-f-coeur{animation:apCoeurJete 1.2s ease-out;}
+        .ap-suiv.clin.saut-or .ap-f-coeur.a{animation-delay:.2s;--ap-jx:-4px;--ap-jy:-64px;}
+        .ap-suiv.clin.saut-or .ap-f-coeur.b{animation-delay:.25s;--ap-jx:-34px;--ap-jy:-48px;}
+        .ap-suiv.clin.saut-or .ap-f-coeur.c{animation-delay:.3s;--ap-jx:33px;--ap-jy:-52px;}
+        .ap-suiv.clin.saut-or .ap-f-coeur.d{animation-delay:.36s;--ap-jx:-50px;--ap-jy:-22px;}
+        .ap-suiv.clin.saut-or .ap-f-coeur.e{animation-delay:.42s;--ap-jx:49px;--ap-jy:-26px;}
+        .ap-suiv.clin.saut-or .ap-f-coeur.f{animation-delay:.48s;--ap-jx:-22px;--ap-jy:-74px;}
+        .ap-suiv.clin.saut-or .ap-f-coeur.g{animation-delay:.54s;--ap-jx:24px;--ap-jy:-72px;}
+        .ap-suiv.clin.saut-or .ap-f-coeur.h{animation-delay:.34s;--ap-jx:-46px;--ap-jy:16px;}
+        .ap-suiv.clin.saut-or .ap-f-coeur.i{animation-delay:.44s;--ap-jx:47px;--ap-jy:14px;}
+        /* ILS S'ECARTENT EN S'ALLEGEANT : un coeur qui va tout droit retombe
+           comme une bulle de dessin technique. La courbe s'ouvre d'abord d'un
+           tiers, puis va au bout — c'est ce qui donne la gerbe. */
         @keyframes apCoeurJete{
-          0%{opacity:0;transform:translate(0,0) scale(.3) rotate(0);}
-          22%{opacity:1;transform:translate(calc(var(--ap-jx,0px) * .35),-14px) scale(1.1) rotate(-8deg);}
-          100%{opacity:0;transform:translate(var(--ap-jx,0px),-46px) scale(.55) rotate(12deg);}}
+          0%{opacity:0;transform:translate(0,0) scale(.25) rotate(0);}
+          20%{opacity:1;transform:translate(calc(var(--ap-jx,0px) * .3),calc(var(--ap-jy,-46px) * .28)) scale(1.15) rotate(-9deg);}
+          100%{opacity:0;transform:translate(var(--ap-jx,0px),var(--ap-jy,-46px)) scale(.5) rotate(14deg);}}
         @media (prefers-reduced-motion:reduce){
-          .ap-suiv.clin.or,.ap-suiv.clin.or::after,
-          .ap-suiv.clin.or .ap-fantome,.ap-suiv.clin.or .ap-f-oeil,
-          .ap-suiv.clin.or .ap-f-bouche,.ap-suiv.clin.or .ap-f-joue,
-          .ap-suiv.clin.or .ap-f-ombre,.ap-suiv.clin.or .ap-f-bras,
-          .ap-suiv.clin.or .ap-f-coeur{animation:none;}
+          .ap-suiv.clin.saut-or,.ap-suiv.clin.saut-or::after,
+          .ap-suiv.clin.saut-or .ap-fantome,.ap-suiv.clin.saut-or .ap-f-oeil,
+          .ap-suiv.clin.saut-or .ap-f-bouche,.ap-suiv.clin.saut-or .ap-f-joue,
+          .ap-suiv.clin.saut-or .ap-f-ombre,.ap-suiv.clin.saut-or .ap-f-bras,
+          .ap-suiv.clin.saut-or .ap-f-coeur{animation:none;}
         }
         @media (prefers-reduced-motion:reduce){
           .ap-fantome,.ap-f-ombre,.ap-f-bras,.ap-f-oeil,
