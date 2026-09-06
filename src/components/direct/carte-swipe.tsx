@@ -512,13 +512,33 @@ export function CarteSwipe({
                 Deux objets qui se voient de loin, au lieu d'un paragraphe. */}
             {c.flash && (
               <span className="cd-tombe">
+                {/* LES ÉTINCELLES DE LA MAQUETTE — trois traits de chaque côté,
+                    comme un « pop » de bande dessinée. Elles ne disent rien de
+                    plus que la pastille ; elles disent qu'il faut la regarder,
+                    et c'est exactement ce qu'on lui demande. */}
+                <b aria-hidden="true" />
                 <i aria-hidden="true">⚡</i>
                 Ça vient de tomber !
+                <b aria-hidden="true" />
               </span>
             )}
-            {(c.etiquette || c.metier) && (
+            {/* ─── LE MÉTIER DESCEND, L'ÉTIQUETTE RESTE ───
+                LA MAQUETTE NE VEUT PAS DE « RESTAURANT » AU-DESSUS DU TITRE, et
+                elle a raison : c'est une ligne qu'on lit avant celle qui
+                compte. Le métier n'est pas perdu pour autant — « quand on est
+                sur l'app on ne sait pas trop ce qu'on regarde, si c'est un
+                magasin de vêtements, une boucherie ou un coiffeur » — il
+                descend dans la fiche du commerce, à côté de sa note, là où l'on
+                répond à « chez qui ».
+
+                L'ÉTIQUETTE, ELLE, NE BOUGE PAS. « OFFERT », « MENU DU JOUR » ne
+                disent pas chez qui : elles disent ce QU'EST cette annonce, et
+                leur place est donc collée au titre. Retirées avec le métier,
+                elles emportaient « OFFERT » — c'est-à-dire la seule mention qui
+                change le sens d'un prix. */}
+            {(c.etiquette || (!sec && c.metier)) && (
               <p className="cd-nature">
-                {c.metier && (
+                {!sec && c.metier && (
                   <b>
                     {c.metierEmoji && <i aria-hidden="true">{c.metierEmoji}</i>}
                     {c.metier}
@@ -631,9 +651,17 @@ export function CarteSwipe({
                 l'avantage juste au-dessus qui porte la couleur. */}
             {(c.prix || c.prixBarre) && (
               <p className={`cd-prixg${c.flash && c.prixBarre ? " flash" : ""}`}>
-                {c.flash && c.prixBarre && <s>{c.prixBarre}</s>}
-                {c.prix}
-                {!c.flash && c.prixBarre && <s>{c.prixBarre}</s>}
+                <b>
+                  {c.prix}
+                  {/* L'ASTÉRISQUE DE LA MAQUETTE. Un prix d'annonce a toujours
+                      une condition — dans la limite du stock, sur place, pendant
+                      le Flash — et l'astérisque est le signe que tout le monde
+                      lit sans y penser. Ce qu'il annonce est écrit juste
+                      dessous, en toutes lettres : « il en reste 8 », « ensuite,
+                      au prix habituel ». */}
+                  {c.prixBarre && <em>*</em>}
+                </b>
+                {c.prixBarre && <s>{c.prixBarre}</s>}
               </p>
             )}
             {/* ─── CE QUE LE FLASH NE REMPLACE PAS ───
@@ -898,9 +926,9 @@ export function StylesDirect() {
            plus claire du paquet : sans ces deux epaisseurs, « Il en reste 3 »
            et le nom du commerce disparaissent. */
         .cd-carte.sec .cd-voile{background:linear-gradient(180deg,
-          rgba(4,8,6,.88) 0%,rgba(4,8,6,.72) 16%,rgba(4,8,6,.34) 30%,
-          rgba(4,8,6,.06) 42%,rgba(4,8,6,0) 52%,
-          rgba(4,8,6,.28) 66%,rgba(4,8,6,.72) 80%,rgba(4,8,6,.94) 100%);}
+          rgba(4,8,6,.94) 0%,rgba(4,8,6,.92) 26%,rgba(4,8,6,.80) 36%,
+          rgba(4,8,6,.18) 44%,rgba(4,8,6,0) 50%,rgba(4,8,6,0) 60%,
+          rgba(4,8,6,.30) 68%,rgba(4,8,6,.80) 80%,rgba(4,8,6,.96) 100%);}
 
         /* ═══ LA NOUVELLE ORGANISATION : LE TITRE EN HAUT, A GAUCHE ═══
 
@@ -933,6 +961,9 @@ export function StylesDirect() {
         .cd-nature b i{font-style:normal;font-size:13px;letter-spacing:0;}
         .cd-nature s{text-decoration:none;color:#9DB0A6;}
         .cd-nature s::before{content:" · ";}
+        /* SEULE SUR LA FACE « UNE SECONDE » : l'etiquette n'a plus de metier
+           devant elle, donc plus de point de separation a porter. */
+        .cd-carte.sec .cd-nature s::before{content:none;}
         .cd-nature{margin:0;font-size:11px;font-weight:800;letter-spacing:.24em;
           text-transform:uppercase;color:#EFEAD9;opacity:.92;}
         /* ═══ CA VIENT DE TOMBER ═══
@@ -1067,16 +1098,20 @@ export function StylesDirect() {
            petit, decale, comme sur une ardoise de marche. C'est la lecture la
            plus rapide qui existe pour une remise : on voit la chute avant
            d'avoir lu les chiffres. */
-        .cd-prixg{margin:4px 0 0;display:flex;align-items:baseline;gap:10px;
+        .cd-prixg{margin:4px 0 0;display:flex;align-items:baseline;gap:9px;
           font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
-          font-size:clamp(38px,12vw,56px);font-weight:400;
-          letter-spacing:-.01em;line-height:1;color:#fff;
+          font-size:clamp(40px,13vw,62px);font-weight:400;
+          letter-spacing:-.015em;line-height:1;color:#fff;
           text-shadow:0 3px 22px rgba(0,0,0,.62);
           font-variant-numeric:tabular-nums;}
+        .cd-prixg b{font-weight:inherit;}
+        /* L'ASTERISQUE EST EN EXPOSANT ET PETIT : il signale, il n'annonce pas. */
+        .cd-prixg b em{font-style:normal;font-size:.42em;vertical-align:super;
+          margin-left:.04em;color:rgba(255,255,255,.72);}
         .cd-prixg s{margin:0;font-family:'Inter',system-ui,sans-serif;
-          font-size:clamp(15px,4.4vw,20px);font-weight:750;
+          font-size:clamp(16px,4.8vw,22px);font-weight:800;
           color:#FF6B6B;text-decoration-color:#FF6B6B;
-          text-decoration-thickness:2px;}
+          text-decoration-thickness:2.5px;}
         /* ⚡ SUR UN FLASH, L'ANCIEN PRIX EST LA MOITIE DE L'INFORMATION — il
            reste a cote du neuf, et c'est le meme dessin : une seule facon
            d'ecrire un prix dans tout le produit. */
@@ -1195,14 +1230,33 @@ export function StylesDirect() {
            ne saura jamais dire. Elle remplace un bloc de quatre lignes — le mot
            Flash, la rarete, le nombre de minutes, une barre — dont le compte a
            rebours est parti former l'anneau. */
-        .cd-tombe{align-self:center;display:inline-flex;align-items:center;
-          gap:7px;margin:2px 0 2px;padding:7px 15px;border-radius:999px;
-          font-size:12.5px;font-weight:850;letter-spacing:.04em;
+        .cd-tombe{position:relative;align-self:center;display:inline-flex;
+          align-items:center;gap:7px;margin:4px 0 6px;padding:9px 18px;
+          border-radius:999px;
+          font-size:13px;font-weight:850;letter-spacing:.03em;
           text-transform:uppercase;color:#2A1C00;
           background:linear-gradient(140deg,#FFD75E,#F0B429);
-          box-shadow:0 4px 18px rgba(240,180,41,.42);
+          box-shadow:0 6px 22px rgba(240,180,41,.45);
           animation:cdTombe 2.8s ease-in-out infinite;}
         .cd-tombe i{font-style:normal;font-size:14px;line-height:1;}
+        /* LES ETINCELLES : trois traits en eventail, de chaque cote. Dessines
+           par un fond conique masque plutot que par six elements — un « pop »
+           de bande dessinee ne merite pas six noeuds dans le DOM. */
+        .cd-tombe b{position:absolute;top:50%;width:20px;height:26px;
+          margin-top:-13px;pointer-events:none;
+          background:
+            linear-gradient(#F7C948,#F7C948) center/100% 2.4px no-repeat,
+            linear-gradient(#F7C948,#F7C948) center/100% 2.4px no-repeat,
+            linear-gradient(#F7C948,#F7C948) center/100% 2.4px no-repeat;
+          background-position:0 4px, 0 13px, 0 22px;
+          border-radius:2px;opacity:.9;}
+        .cd-tombe b:first-child{right:calc(100% + 6px);
+          transform:scaleX(-1);
+          -webkit-mask:linear-gradient(90deg,#000 40%,transparent);
+          mask:linear-gradient(90deg,#000 40%,transparent);}
+        .cd-tombe b:last-child{left:calc(100% + 6px);
+          -webkit-mask:linear-gradient(90deg,#000 40%,transparent);
+          mask:linear-gradient(90deg,#000 40%,transparent);}
         @keyframes cdTombe{0%,88%,100%{transform:none;}
           92%{transform:rotate(-2.2deg) scale(1.04);}
           96%{transform:rotate(2.2deg) scale(1.04);}}
@@ -1218,24 +1272,28 @@ export function StylesDirect() {
            de l'ecran, ou il tombait sur l'etiquette « Glissez pour proposer »
            des trois premieres cartes. Deux objets poses au meme endroit, c'est
            toujours le plus recent qui a tort. */
-        .cd-anneau{position:absolute;right:16px;top:30%;z-index:3;
-          width:104px;height:104px;border-radius:50%;
+        .cd-anneau{position:absolute;right:14px;top:30%;z-index:3;
+          width:112px;height:112px;border-radius:50%;
           display:flex;flex-direction:column;align-items:center;
           justify-content:center;gap:0;text-align:center;
-          font:inherit;color:#fff;cursor:default;border:0;
-          background:rgba(9,12,10,.72);
+          font:inherit;color:#fff;cursor:default;
+          border:6px solid #FF5A4E;
+          background:rgba(6,9,7,.86);
           -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
-          box-shadow:0 10px 30px rgba(0,0,0,.5);}
-        .cd-anneau u{position:absolute;inset:-3px;border-radius:50%;
-          text-decoration:none;z-index:-1;
-          -webkit-mask:radial-gradient(circle, transparent 0 47px, #000 47px);
-          mask:radial-gradient(circle, transparent 0 47px, #000 47px);}
+          box-shadow:0 12px 34px rgba(0,0,0,.55),
+            0 0 26px -6px rgba(255,90,78,.55);}
+        /* LE TOUR QUI DESCEND est pose SUR l'anneau rouge, en plus sombre : on
+           voit ce qui reste sans que le cercle cesse d'etre un cercle rouge. */
+        .cd-anneau u{position:absolute;inset:-6px;border-radius:50%;
+          text-decoration:none;z-index:-1;opacity:.55;
+          -webkit-mask:radial-gradient(circle, transparent 0 50px, #000 50px);
+          mask:radial-gradient(circle, transparent 0 50px, #000 50px);}
         .cd-anneau .cd-an-t{display:flex;align-items:center;gap:4px;
-          font-size:9px;font-weight:850;letter-spacing:.12em;
-          text-transform:uppercase;color:#FF8A7A;}
+          font-size:9.5px;font-weight:850;letter-spacing:.1em;
+          text-transform:uppercase;color:#FFB3A8;}
         .cd-anneau .cd-an-t i{font-style:normal;font-size:10px;}
         .cd-anneau b{font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
-          font-size:38px;font-weight:400;line-height:1;letter-spacing:-.02em;
+          font-size:42px;font-weight:400;line-height:1.02;letter-spacing:-.02em;
           font-variant-numeric:tabular-nums;}
         .cd-anneau em{font-style:normal;font-size:9.5px;font-weight:850;
           letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.72);}

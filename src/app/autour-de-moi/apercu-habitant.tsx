@@ -5825,14 +5825,34 @@ export function ApercuHabitant() {
                               </span>
                               <span className="ap-fi-id">
                                 <b>{dessus?.nom}</b>
-                                {dessus?.google && (
-                                  <em>
-                                    <i aria-hidden="true">★</i>
-                                    {dessus.google.note}
-                                    <s>({dessus.google.avis} avis)</s>
-                                  </em>
-                                )}
-                                <u>
+                                {/* LE MÉTIER EST ICI, DEVANT LA NOTE. Il a
+                                    quitté le haut de la carte avec la maquette,
+                                    et il ne pouvait pas disparaître : « quand
+                                    on est sur l'app on ne sait pas trop ce
+                                    qu'on regarde, si c'est un magasin de
+                                    vêtements, une boucherie ou un coiffeur ».
+                                    Sur la même ligne que les avis, il coûte
+                                    zéro rang et se lit avec le nom. */}
+                                <em>
+                                  {dessusCarte?.metier && (
+                                    <u className="ap-fi-met">
+                                      {dessusCarte.metierEmoji && (
+                                        <i aria-hidden="true">
+                                          {dessusCarte.metierEmoji}
+                                        </i>
+                                      )}
+                                      {dessusCarte.metier}
+                                    </u>
+                                  )}
+                                  {dessus?.google && (
+                                    <>
+                                      <i aria-hidden="true">★</i>
+                                      {dessus.google.note}
+                                      <s>({dessus.google.avis} avis)</s>
+                                    </>
+                                  )}
+                                </em>
+                                <u className="ap-fi-jour">
                                   <i aria-hidden="true">📅</i>
                                   {dessus?.voix?.prenom
                                     ? `Aujourd’hui chez ${dessus.voix.prenom}`
@@ -7098,36 +7118,18 @@ export function ApercuHabitant() {
               le bouton vert et sur le tampon qui apparaît pendant le glissé.
               Trois endroits, un seul mot : c'est ce qui fait qu'on n'apprend
               qu'une fois. */}
-          {passees.length < 3 && !sortie && sommet && (
-            <div className="ap-glissez" aria-hidden="true">
-              {/* ─── LE GESTE EST DANS LE LIBELLÉ, PAS SEULEMENT DANS LA
-                  POSITION ───
-                  « Les deux "Proposer" et "Passer" ne permettent toujours pas
-                  de comprendre que c'est en balayant à droite ou à gauche que
-                  ça marchera. »
+          {/* ─── LES DEUX ÉTIQUETTES « GLISSEZ » SONT PARTIES ───
+              « Tu peux supprimer les tutos "glisser". »
 
-                  C'est juste, et j'avais fait la moitié du chemin : les
-                  étiquettes nommaient la DESTINATION et laissaient le geste à
-                  deviner de leur position. Or une étiquette posée en haut à
-                  gauche se lit comme un bouton — on appuie dessus, il ne se
-                  passe rien, et on conclut que l'écran est cassé. Le verbe est
-                  donc écrit : « glissez ». Il ne reste rien à deviner. */}
-              <span className="ap-gl-g">
-                <i>←</i>
-                <span>
-                  <b>Glissez</b>
-                  <em>pour passer</em>
-                </span>
-              </span>
-              <span className="ap-gl-d">
-                <span>
-                  <b>Glissez</b>
-                  <em>pour proposer</em>
-                </span>
-                <i>→</i>
-              </span>
-            </div>
-          )}
+              ELLES ONT SERVI, ET ELLES ONT CESSÉ DE SERVIR. Elles répondaient à
+              « les deux boutons ne permettent pas de comprendre que c'est en
+              balayant que ça marche » — c'était vrai quand le balayage était le
+              seul moyen d'avancer. Il ne l'est plus : le fantôme, au milieu de
+              la barre, fait la même chose sous le pouce et se voit sans qu'on
+              l'explique. Une consigne qui double un bouton visible n'apprend
+              plus rien ; elle prend juste deux cents points sur la photo.
+
+              LE BALAYAGE, LUI, N'A PAS BOUGÉ. */}
 
 
 
@@ -7261,14 +7263,17 @@ export function ApercuHabitant() {
                   comme une information alors que ce n'en est pas une. Elles
                   prenaient enfin les vingt points de largeur qui faisaient
                   tronquer les libellés. */}
-              <span>
-                {/* « PROPOSER » ET NON « CHOISIR AVEC ». Essayé, et il le
-                    reprend : « proposer à mes amis, je trouve ça plus
-                    explicite. » C'est son mot ; ce qui manquait à « proposer »,
-                    c'était la suite — elle est dessous. */}
-                Proposer à mes amis
-                <em>Décidez ensemble</em>
-              </span>
+              {/* ─── LE BOUTON DE LA MAQUETTE ───
+                  Un pictogramme à gauche, le libellé en capitales, une flèche à
+                  droite. Le sous-titre « Décidez ensemble » saute : il
+                  expliquait le mot « proposer » à une époque où le salon
+                  n'existait pas encore à l'écran ; maintenant qu'on y arrive en
+                  une seconde par une feuille qui monte, la phrase répétait ce
+                  que le geste montre. Les capitales et la flèche font le reste
+                  — c'est la seule action pleine de l'écran. */}
+              <i className="ap-agir-i" aria-hidden="true">👥</i>
+              <span>Proposer à mes amis</span>
+              <s aria-hidden="true">→</s>
             </button>
             {/* ═══ LA SECONDE RANGÉE : DEUX GESTES CÔTE À CÔTE ═══
 
@@ -7358,6 +7363,22 @@ export function ApercuHabitant() {
               {gardeSommet ? "Dans vos favoris" : "Mettre en favori"}
             </button>
             </div>
+            {/* ─── LES POINTS DE LA MAQUETTE ───
+                Cinq points sous les boutons, le premier allumé. Ils disent la
+                seule chose qu'un paquet ne dit pas de lui-même : qu'il y a une
+                suite, et à peu près combien. Sans eux, une carte pleine écran
+                se lit comme une page unique — et personne ne balaie une page
+                unique. Ils comptent ce qui reste vraiment, plafonné à cinq :
+                au-delà, un chapelet de points ne se compte plus, il décore. */}
+            {sommet && (
+              <div className="ap-suite" aria-hidden="true">
+                {Array.from({ length: Math.min(5, Math.max(2, pile.length)) }).map(
+                  (_, i) => (
+                    <s key={i} className={i === 0 ? "on" : ""} />
+                  ),
+                )}
+              </div>
+            )}
             {/* LE QUATRIÈME ROND A DISPARU, ET IL N'EST PAS PERDU. « Détails »
                 est remonté sur la photo, où il dit ce qu'il y a derrière —
                 « 3 moments aujourd'hui » — au lieu d'une flèche muette. */}
@@ -7944,11 +7965,40 @@ export function ApercuHabitant() {
                 partir("gauche");
               }}
             >
-              <span className="ap-suiv-f" aria-hidden="true">
-                <s />
-                <s />
-                <u />
-              </span>
+              {/* ═══ UN PETIT FANTÔME, ET IL BOUGE QUAND ON L'APPUIE ═══
+
+                  « Concernant le logo animé, là aussi tu es très loin ; refais
+                  ce logo au plus proche — un petit fantôme sympathique — et
+                  qu'il bouge quand on clique dessus pour passer à l'annonce
+                  suivante. »
+
+                  IL EST DESSINÉ, PAS ÉCRIT. Deux points et une courbe en CSS
+                  faisaient une bouille ronde, pas un fantôme : il fallait la
+                  silhouette — le dôme et les trois vaguelettes du bas. Un tracé
+                  vectoriel la donne exactement, à toutes les tailles, et il est
+                  le même sur tous les téléphones — ce qu'un emoji ne garantit
+                  jamais, et c'est précisément le problème pour une mascotte.
+
+                  CE QU'IL FAIT QUAND ON L'APPUIE : il s'enfonce, saute, penche
+                  la tête, ferme les yeux et sourit plus grand, pendant que ses
+                  vaguelettes ondulent. Ce n'est pas de l'ornement — il existe
+                  pour ceux dont le balayage ne prend pas, et un bouton de
+                  secours qui ne répond pas visiblement au doigt ne vaut pas
+                  mieux que le geste qu'il remplace. */}
+              <svg
+                className="ap-fantome"
+                viewBox="0 0 40 44"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  className="ap-f-corps"
+                  d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"
+                />
+                <ellipse className="ap-f-oeil g" cx="14.2" cy="19" rx="2.5" ry="3.3" />
+                <ellipse className="ap-f-oeil d" cx="25.8" cy="19" rx="2.5" ry="3.3" />
+                <path className="ap-f-bouche" d="M16.4 26.2c1.5 2 5.7 2 7.2 0" />
+              </svg>
             </button>
             <button
               type="button"
@@ -9891,12 +9941,22 @@ export function ApercuHabitant() {
         .ap-fi-id em{display:flex;align-items:center;gap:5px;font-style:normal;
           font-size:12px;font-weight:850;color:#EAF2EC;}
         .ap-fi-id em i{font-style:normal;color:#FFC400;}
+        /* LE METIER, DEVANT LA NOTE : meme ligne, poids moindre, et un filet
+           les separe. On lit « boucherie » puis « 4,8 », dans cet ordre. */
+        .ap-fi-met{display:inline-flex;align-items:center;gap:4px;
+          text-decoration:none;font-weight:800;color:#BFD3C7;
+          padding-right:8px;margin-right:2px;
+          border-right:1px solid rgba(234,242,236,.2);}
+        .ap-fi-met i{font-style:normal;font-size:12px;color:inherit;}
         .ap-fi-id em s{text-decoration:none;font-weight:600;
           color:rgba(234,242,236,.55);}
-        .ap-fi-id u{display:flex;align-items:center;gap:5px;text-decoration:none;
+        /* LA DATE PORTE SON NOM DE CLASSE : le metier, juste au-dessus, est un
+           un u lui aussi, et « le premier u de la fiche » designait tantot
+           l'un, tantot l'autre, selon l'ordre d'ecriture. */
+        .ap-fi-jour{display:flex;align-items:center;gap:5px;text-decoration:none;
           font-size:11.5px;font-weight:650;color:rgba(234,242,236,.6);
           overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-        .ap-fi-id u i{font-style:normal;font-size:11px;}
+        .ap-fi-jour i{font-style:normal;font-size:11px;}
         .ap-fi-vue{flex:none;width:74px;height:52px;border-radius:11px;
           overflow:hidden;background:rgba(0,0,0,.35);}
         .ap-fi-vue img,.ap-fi-vue video{width:100%;height:100%;object-fit:cover;
@@ -9908,8 +9968,8 @@ export function ApercuHabitant() {
         .ap-duo{display:flex;gap:10px;}
         .ap-duo>.ap-agir{flex:1;min-width:0;}
         .ap-agir.favori{display:flex;align-items:center;justify-content:center;
-          gap:7px;background:transparent;color:#EAF2EC;
-          border:1.5px solid rgba(234,242,236,.28);}
+          gap:7px;background:transparent;color:#F2D9DE;
+          border:1.5px solid rgba(255,138,155,.42);}
         .ap-agir.favori i{font-style:normal;font-size:15px;line-height:1;}
         .ap-agir.favori.on{color:#FF8A9B;border-color:rgba(255,138,155,.5);
           background:rgba(255,138,155,.10);}
@@ -10959,53 +11019,58 @@ export function ApercuHabitant() {
            seule chose qu'on n'a pas eu a expliquer. */
         .ap-onglets button b.neuf{background:#F0B429;}
 
-        /* ═══ LE SMILEY QUI PASSE A LA SUIVANTE ═══
+        /* ═══ LE FANTOME QUI PASSE A LA SUIVANTE ═══
            Rond, vert plein, deborde de la barre vers le haut : il ne ressemble
            a aucun onglet, parce qu'il n'en est pas un. C'est le geste le plus
            repete du produit, enfin sous le pouce.
 
-           SON ANIMATION EST SA RAISON D'ETRE. Il existe pour ceux dont le
-           balayage ne prend pas ; s'il ne repondait pas visiblement au doigt,
-           il ne vaudrait pas mieux qu'un balayage qui rate. Il s'enfonce sous
-           la pression, cligne des yeux, puis repart d'un bond. */
-        .ap-onglets .ap-suiv{position:relative;flex:none;width:58px;height:58px;
-          margin:-20px 2px 0;padding:0;border-radius:50%;border:0;
-          background:linear-gradient(150deg,#7EE6C0,#2FD39A);
-          box-shadow:0 8px 22px rgba(47,211,154,.35),
+           SA MASCOTTE EST UN TRACE, PAS UN EMOJI. Un emoji change de tete selon
+           le telephone — le pire defaut possible pour un personnage qu'on veut
+           reconnaitre. Le dome et les trois vaguelettes du bas font le fantome ;
+           deux points et une courbe n'en faisaient qu'une bouille ronde. */
+        .ap-onglets .ap-suiv{position:relative;flex:none;width:60px;height:60px;
+          margin:-22px 4px 0;padding:0;border-radius:50%;border:0;
+          display:flex;align-items:center;justify-content:center;
+          background:linear-gradient(150deg,#8CF0CC,#2FD39A);
+          box-shadow:0 10px 26px rgba(47,211,154,.4),
             0 0 0 5px var(--ap-barre-fond, #070C0A);
           transition:transform .16s cubic-bezier(.34,1.6,.64,1);}
         .ap-onglets .ap-suiv:disabled{opacity:.45;}
         .ap-onglets .ap-suiv:active{transform:scale(.9);}
         .ap-onglets .ap-suiv b{display:none;}
-        /* LE VISAGE : deux yeux et une bouche, dessines en CSS. Trois elements
-           valent mieux qu'un emoji — un emoji change de tete selon le telephone,
-           et celui-ci doit etre le meme partout parce qu'il devient un
-           personnage. */
-        .ap-suiv-f{position:absolute;inset:0;}
-        .ap-suiv-f s,.ap-suiv-f u{position:absolute;background:#06231A;
-          text-decoration:none;}
-        .ap-suiv-f s{top:20px;width:6px;height:8px;border-radius:3px;
-          transition:height .12s ease, top .12s ease;}
-        .ap-suiv-f s:first-child{left:17px;}
-        .ap-suiv-f s:nth-child(2){right:17px;}
-        .ap-suiv-f u{left:19px;right:19px;top:34px;height:8px;
-          border-radius:0 0 10px 10px;}
-        /* LE CLIN D'OEIL : les yeux se ferment, le rond bondit, la bouche
-           s'elargit. Quatre cent soixante millisecondes — le temps que la carte
-           suivante arrive, pas plus. */
-        .ap-suiv.clin{animation:apBond .46s cubic-bezier(.34,1.5,.5,1);}
-        .ap-suiv.clin .ap-suiv-f s{animation:apClin .46s ease;}
-        .ap-suiv.clin .ap-suiv-f u{animation:apSourire .46s ease;}
-        @keyframes apBond{0%{transform:scale(.86);}
-          45%{transform:scale(1.14) translateY(-4px);}
+        .ap-fantome{width:34px;height:37px;overflow:visible;
+          transform-origin:50% 62%;}
+        .ap-f-corps{fill:#fff;}
+        .ap-f-oeil{fill:#06231A;transition:transform .1s ease;}
+        .ap-f-bouche{fill:none;stroke:#06231A;stroke-width:2.1;
+          stroke-linecap:round;}
+        /* IL FLOTTE, MEME AU REPOS — un fantome pose ne vit pas. Trois points de
+           haut, six secondes : on le remarque sans qu'il attire. */
+        .ap-fantome{animation:apFlotte 4.6s ease-in-out infinite;}
+        @keyframes apFlotte{0%,100%{transform:translateY(0);}
+          50%{transform:translateY(-2.5px);}}
+        /* ET IL SAUTE QUAND ON L'APPUIE : il monte, penche la tete, ferme les
+           yeux et sourit plus grand. Six cents millisecondes — le temps que la
+           carte suivante arrive, pas plus. */
+        .ap-suiv.clin{animation:apBond .6s cubic-bezier(.34,1.5,.5,1);}
+        .ap-suiv.clin .ap-fantome{animation:apSaut .6s cubic-bezier(.3,1.4,.5,1);}
+        .ap-suiv.clin .ap-f-oeil{animation:apYeux .6s ease;}
+        .ap-suiv.clin .ap-f-bouche{animation:apSourire .6s ease;}
+        @keyframes apBond{0%{transform:scale(.88);}
+          40%{transform:scale(1.12);}
           100%{transform:none;}}
-        @keyframes apClin{0%,100%{height:8px;top:20px;}
-          40%{height:2px;top:23px;}}
-        @keyframes apSourire{0%,100%{left:19px;right:19px;height:8px;}
-          45%{left:15px;right:15px;height:12px;}}
+        @keyframes apSaut{0%{transform:translateY(0) rotate(0);}
+          35%{transform:translateY(-7px) rotate(-9deg);}
+          70%{transform:translateY(1px) rotate(5deg);}
+          100%{transform:none;}}
+        @keyframes apYeux{0%,100%{transform:scaleY(1);}
+          30%,45%{transform:scaleY(.18);}}
+        @keyframes apSourire{0%,100%{stroke-width:2.1;d:path("M16.4 26.2c1.5 2 5.7 2 7.2 0");}
+          45%{stroke-width:2.6;d:path("M15.2 25.4c2.2 3.4 7.4 3.4 9.6 0");}}
         @media (prefers-reduced-motion:reduce){
-          .ap-suiv.clin,.ap-suiv.clin .ap-suiv-f s,.ap-suiv.clin .ap-suiv-f u{
-            animation:none;}
+          .ap-fantome,.ap-suiv.clin,.ap-suiv.clin .ap-fantome,
+          .ap-suiv.clin .ap-f-oeil,.ap-suiv.clin .ap-f-bouche{animation:none;}
+        }
         }
 
         /* ─── METTRE L'APPLICATION SUR L'ECRAN D'ACCUEIL ───
@@ -11999,42 +12064,12 @@ export function ApercuHabitant() {
            la seule chose de l'ecran qui disait deja qu'il y a une suite. Le
            decalage suit l'encoche du telephone, sinon il derive d'un modele a
            l'autre : l'en-tete grandit avec elle, la pastille aussi. */
-        /* ELLES DESCENDENT DANS LA BANDE LIBRE DE LA PHOTO. Le titre est
-           remonte en haut a gauche et prend desormais deux lignes d'affiche :
-           a 124 points, les deux etiquettes lui passaient dessus et on lisait
-           « 8 LA...SAGNES ». Elles se posent donc au tiers de l'ecran, la ou il
-           n'y a que l'image — et elles ne durent que trois cartes. */
-        .ap-glissez{position:absolute;left:0;right:0;
-          top:47%;z-index:6;
-          display:flex;align-items:center;justify-content:space-between;
-          padding:0 10px;margin:0;pointer-events:none;}
-        .ap-glissez>span{display:flex;align-items:center;gap:8px;
-          padding:7px 12px;border-radius:999px;white-space:nowrap;
-          background:rgba(4,8,6,.6);border:1px solid rgba(255,255,255,.16);
-          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
-        .ap-glissez b{display:block;font-size:12.5px;font-weight:850;
-          letter-spacing:-.01em;color:#EAF2EC;line-height:1.15;}
-        .ap-glissez em{display:block;font-style:normal;font-size:10.5px;
-          font-weight:700;color:rgba(234,242,236,.62);line-height:1.15;}
-        .ap-glissez i{font-style:normal;font-size:17px;line-height:1;flex:none;}
-        /* CHACUNE PART VERS SON BORD, ET C'EST TOUT L'ENSEIGNEMENT : le sens du
-           mouvement EST la consigne. Celle de droite porte le vert du bouton
-           qu'elle annonce, celle de gauche reste neutre — on ne colore pas un
-           refus. */
-        .ap-gl-g{animation:apGlG 2.6s ease-in-out infinite;}
-        .ap-gl-d{animation:apGlD 2.6s ease-in-out infinite;
-          border-color:rgba(61,226,166,.45);}
-        .ap-gl-d b{color:#7EE6C0;}
-        .ap-gl-d i{color:#3DE2A6;}
-        @keyframes apGlG{
-          0%,55%,100%{transform:translateX(0);opacity:.85;}
-          78%{transform:translateX(-11px);opacity:1;}
-        }
-        @keyframes apGlD{
-          0%,100%{transform:translateX(0);opacity:.85;}
-          22%{transform:translateX(11px);opacity:1;}
-          45%{transform:translateX(0);opacity:.85;}
-        }
+        /* LES ETIQUETTES « GLISSEZ » ONT ETE RETIREES — voir le commentaire
+           dans le rendu. Le fantome de la barre du bas fait la meme chose, sous
+           le pouce, et se voit sans qu'on l'explique ; une consigne qui double
+           un bouton visible n'apprend rien et prend deux cents points sur la
+           photo. Leurs styles partent avec elles : une regle qui ne s'applique
+           a rien finit par etre recopiee ailleurs par erreur. */
         .ap-coeur{position:absolute;left:50%;top:55%;z-index:7;font-size:44px;color:#3DE2A6;
           pointer-events:none;filter:drop-shadow(0 6px 18px rgba(18,185,129,.7));
           animation:apCoeur ${COEUR_MS}ms cubic-bezier(.5,0,.35,1) forwards;}
@@ -12129,8 +12164,10 @@ export function ApercuHabitant() {
           display:flex;flex-direction:column;gap:8px;
           padding:10px 12px 8px;pointer-events:none;
           background:linear-gradient(0deg,rgba(4,8,6,.94) 0%,rgba(4,8,6,.82) 52%,rgba(4,8,6,0) 100%);}
+        /* LE FANTOME DEBORDE DE VINGT-DEUX POINTS AU-DESSUS DE LA BARRE : sans
+           cette marge, les points du paquet se posaient derriere lui. */
         .ap-app.direct .ap-gestes{bottom:0;
-          padding-bottom:calc(var(--ap-onglets-h, 51px) + 8px);
+          padding-bottom:calc(var(--ap-onglets-h, 51px) + 30px);
           background:linear-gradient(0deg,rgba(4,8,6,.97) 0%,rgba(4,8,6,.95) 34%,
             rgba(4,8,6,.86) 58%,rgba(4,8,6,.55) 80%,rgba(4,8,6,0) 100%);}
         .ap-gestes>*{pointer-events:auto;}
@@ -12186,7 +12223,25 @@ export function ApercuHabitant() {
         /* LE VERT PREND TOUTE LA LARGEUR : c'est le geste du produit, et la
            maquette le veut plein, avec sa fleche. Les deux autres se partagent
            la rangee du dessous, a poids egal. */
-        .ap-agir.parler{padding:12px 14px;font-size:15px;border-radius:16px;}
+        /* LE BOUTON PLEIN DE LA MAQUETTE : un vert franc, des capitales, un
+           pictogramme a gauche et une fleche a droite. C'est la seule action
+           pleine de l'ecran, et elle doit se voir comme telle. */
+        .ap-agir.parler{padding:14px 16px;font-size:15px;border-radius:18px;
+          gap:10px;letter-spacing:.02em;text-transform:uppercase;
+          font-weight:850;justify-content:center;}
+        .ap-agir.parler .ap-agir-i{font-size:18px;}
+        .ap-agir.parler s{text-decoration:none;font-size:17px;line-height:1;
+          margin-left:2px;}
+        /* LES POINTS QUI DISENT QU'IL Y A UNE SUITE : cinq au plus, le premier
+           allume. Ils ne s'appellent pas « ap-points » : ce nom existe deja
+           ailleurs dans ce fichier pour les points de reflexion de l'assistante,
+           et deux objets sans rapport sous le meme nom heritent l'un de
+           l'autre — c'est un defaut deja paye trois fois ici. */
+        .ap-suite{display:flex;align-items:center;justify-content:center;
+          gap:6px;padding:2px 0 0;}
+        .ap-suite s{width:6px;height:6px;border-radius:50%;
+          background:rgba(234,242,236,.26);text-decoration:none;}
+        .ap-suite s.on{width:18px;border-radius:999px;background:#3DE2A6;}
         .ap-agir span{display:flex;flex-direction:column;align-items:center;
           min-width:0;line-height:1.15;}
         .ap-agir em{font-style:normal;font-size:10px;font-weight:700;
