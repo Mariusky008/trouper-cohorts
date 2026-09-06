@@ -1016,6 +1016,33 @@ export type CarteAutour = {
    * inconnu. Le vrai produit portera le numéro déclaré par le commerçant.
    */
   telephone?: string;
+  /**
+   * SA NOTE GOOGLE, TELLE QU'ELLE EST DÉJÀ SUR SON PROFIL CLIKME.
+   *
+   * D'OÙ ELLE VIENT, ET POURQUOI ON A LE DROIT DE L'ÉCRIRE. Le produit lit la
+   * fiche Google du commerçant au moment où il s'inscrit — c'est ce qui permet
+   * de lui fabriquer son site en trois minutes. La note et le nombre d'avis
+   * sont donc à nous, déclarés par lui, et pas une statistique qu'on invente :
+   * la règle du produit reste « on n'écrit jamais un chiffre qu'on ne sait
+   * pas », et celui-ci, on le sait.
+   *
+   * CE QU'ELLE FAIT SUR LA CARTE. « 4,8 · 128 avis » répond en trois
+   * caractères à la question qui reste quand on a vu le plat et le prix : est-ce
+   * que c'est bien ? Aucune annonce ne peut y répondre elle-même, et c'est la
+   * seule chose que les gens vont chercher ailleurs — donc la seule qui les
+   * fasse quitter l'application.
+   */
+  google?: { note: string; avis: number };
+  /**
+   * SON LOGO, ROND, DANS LA FICHE DU COMMERCE.
+   *
+   * À BRANCHER SUR L'ESPACE COMMERÇANT — c'est noté, et ce n'est pas fait :
+   * il n'y a pas encore de compte commerçant, donc pas d'endroit où il déposerait
+   * son logo. En attendant, la fiche affiche ses initiales dans le même rond,
+   * ce qui n'est pas un pis-aller : beaucoup de commerces n'ont pas de logo, et
+   * ceux-là auront toujours ces initiales.
+   */
+  logo?: string;
   /** Ce que la fiche ajoute quand on descend. */
   fiche: { ou: string; horaires: string; mot: string };
   /** Ce qu'il propose à quelqu'un qui vient d'annoncer qu'il sort. Absent : il
@@ -1310,6 +1337,7 @@ const CARTES: CarteAutour[] = [
     photo: "/direct/plat-du-jour.jpg",
     cadrage: "68%",
     nom: "Chez Bergine",
+    google: { note: "4,8", avis: 128 },
     metier: "Restaurant",
     ville: VILLE,
     itineraire: YALLER,
@@ -1483,6 +1511,7 @@ const CARTES: CarteAutour[] = [
     photo: "/direct/portion-a-emporter.jpg",
     cadrage: "50%",
     nom: "Le Bocal de Margot",
+    google: { note: "4,7", avis: 96 },
     metier: "Restaurant",
     ville: VILLE,
     itineraire: YALLER,
@@ -1584,6 +1613,7 @@ const CARTES: CarteAutour[] = [
     photo: "/direct/tables-libres.jpg",
     cadrage: "100%",
     nom: "L'Ardoise Landaise",
+    google: { note: "4,6", avis: 212 },
     metier: "Restaurant",
     ville: VILLE,
     itineraire: YALLER,
@@ -1735,6 +1765,7 @@ const CARTES: CarteAutour[] = [
     photo: "/direct/sortie-du-four.jpg",
     cadrage: "100%",
     nom: "Le Pétrin d'Amanieu",
+    google: { note: "4,9", avis: 74 },
     metier: "Boulangerie",
     ville: VILLE,
     itineraire: YALLER,
@@ -1876,6 +1907,7 @@ const CARTES: CarteAutour[] = [
     photo: "/direct/etal-boucher.jpg",
     cadrage: "50%",
     nom: "Une boucherie du centre",
+    google: { note: "4,8", avis: 58 },
     metier: "Boucherie",
     ville: VILLE,
     itineraire: YALLER,
@@ -1959,6 +1991,7 @@ const CARTES: CarteAutour[] = [
     photo: "/direct/tablee-du-soir.jpg",
     cadrage: "50%",
     nom: "La Grande Tablée",
+    google: { note: "4,5", avis: 41 },
     metier: "Restaurant",
     ville: VILLE,
     itineraire: YALLER,
@@ -2004,6 +2037,7 @@ const CARTES: CarteAutour[] = [
     photo: "/direct/vitrine-du-soir.jpg",
     cadrage: "72%",
     nom: "Maison Lartigue",
+    google: { note: "4,7", avis: 133 },
     metier: "Traiteur",
     ville: VILLE,
     itineraire: YALLER,
@@ -2086,6 +2120,7 @@ const CARTES: CarteAutour[] = [
     photo: "/direct/vitrine-mode.jpg",
     cadrage: "50%",
     nom: "Une boutique de la rue piétonne",
+    google: { note: "4,4", avis: 27 },
     metier: "Prêt-à-porter",
     ville: VILLE,
     itineraire: YALLER,
@@ -2174,6 +2209,7 @@ const CARTES: CarteAutour[] = [
     photo: "/direct/friperie-rayon.jpg",
     cadrage: "50%",
     nom: "Une friperie du vieux centre",
+    google: { note: "4,6", avis: 33 },
     metier: "Friperie",
     ville: VILLE,
     itineraire: YALLER,
@@ -2216,6 +2252,7 @@ const CARTES: CarteAutour[] = [
     photo: "/direct/verre-au-comptoir.jpg",
     cadrage: "50%",
     nom: "Un bar à vins",
+    google: { note: "4,7", avis: 89 },
     metier: "Bar à vins",
     ville: VILLE,
     itineraire: YALLER,
@@ -2283,6 +2320,7 @@ const CARTES: CarteAutour[] = [
     photo: "/direct/terrasse-au-soleil.jpg",
     cadrage: "50%",
     nom: "Une terrasse au soleil",
+    google: { note: "4,5", avis: 154 },
     metier: "Bar",
     ville: VILLE,
     itineraire: YALLER,
@@ -2349,6 +2387,7 @@ const CARTES: CarteAutour[] = [
     photo: "/direct/fauteuil-coiffeur.jpg",
     cadrage: "50%",
     nom: "Un salon du centre",
+    google: { note: "4,8", avis: 62 },
     metier: "Coiffeur",
     ville: VILLE,
     itineraire: YALLER,
@@ -2431,6 +2470,7 @@ const CARTES: CarteAutour[] = [
     photo: "/direct/salon-neuf.jpg",
     cadrage: "50%",
     nom: "Un salon qui vient d'ouvrir",
+    google: { note: "5,0", avis: 9 },
     metier: "Coiffeur",
     ville: VILLE,
     itineraire: YALLER,
@@ -2492,6 +2532,7 @@ const CARTES: CarteAutour[] = [
     photo: "/direct/bouquet-du-jour.jpg",
     cadrage: "50%",
     nom: "Une fleuriste du marché",
+    google: { note: "4,9", avis: 47 },
     metier: "Fleuriste",
     ville: VILLE,
     itineraire: YALLER,
@@ -2561,6 +2602,7 @@ const CARTES: CarteAutour[] = [
     photo: "/direct/pose-ongles.jpg",
     cadrage: "50%",
     nom: "Une prothésiste ongulaire",
+    google: { note: "4,8", avis: 51 },
     metier: "Prothésiste ongulaire",
     ville: VILLE,
     itineraire: YALLER,
@@ -3189,6 +3231,10 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
     // C'est le genre d'erreur qu'on ne rattrape pas devant toute une ville.
     prix: m?.offert ? undefined : m?.prix,
     prixBarre: m?.offert ? undefined : m?.prixBarre,
+    // COMBIEN IL EN RESTE, S'IL L'A DIT — voir `CarteDirect.combien`. On ne
+    // compte jamais à sa place : « il reste 4 tables » a déjà été retiré du
+    // produit une fois, parce que le restaurateur ne nous le dit pas.
+    combien: m?.places,
     etiquette: m?.offert ? "OFFERT" : m?.etiquette,
     // ⚡ CE QUI SE PÉRIME DANS QUELQUES MINUTES — voir `flash.ts`. On ne passe
     // que le compte, la part écoulée, l'avantage, et ce qui continue derrière :

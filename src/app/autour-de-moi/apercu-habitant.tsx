@@ -794,6 +794,8 @@ export function ApercuHabitant() {
    * de se rétracter sous les yeux de la personne.
    */
   const [monte, setMonte] = useState(false);
+  /** Le clin d'oeil du smiley, le temps de son animation — voir `.ap-suiv`. */
+  const [clin, setClin] = useState(false);
   useEffect(() => setMonte(true), []);
 
   const [descendu, setDescendu] = useState(false);
@@ -1983,6 +1985,21 @@ export function ApercuHabitant() {
    * ouvrent la conversation le même jour sur le même service se retrouvent au
    * même endroit, et celle qui l'ouvre demain en a un neuf.
    */
+  /**
+   * LES INITIALES D'UNE ENSEIGNE — quand elle n'a pas de logo.
+   *
+   * Deux lettres au plus : « Chez Bergine » donne CB, « Le Pétrin d'Amanieu »
+   * donne LP. Les mots-outils sautent — « de », « du », « la » — sinon la
+   * moitié des commerces de Dax s'appelleraient « LD ».
+   */
+  const initialesDe = (nom: string) =>
+    nom
+      .split(/[\s'’-]+/)
+      .filter((m) => m.length > 2 && !/^(le|la|les|du|de|des|un|une|chez|aux?)$/i.test(m))
+      .slice(0, 2)
+      .map((m) => m[0]?.toUpperCase() ?? "")
+      .join("") || (nom[0]?.toUpperCase() ?? "?");
+
   /** La carte à dessiner : un événement, un poste, une invitation, ou l'annonce. */
   const carteDe = (x: ItemPaquet) => {
     if (estEvenement(x)) return carteDEvenement(x, heure);
@@ -2079,6 +2096,8 @@ export function ApercuHabitant() {
    * qu'on regardait une demi-seconde plus tôt, et aucune autre.
    */
   const photoDeLaFeuille = sommet ? carteDe(sommet).photo : undefined;
+  /** La carte du dessus, telle que l'écran la dessine — pour la fiche et l'anneau. */
+  const dessusCarte = dessus ? carteDe(dessus) : undefined;
 
   /**
    * LA VIDÉO DU ROND NE VIT QUE SUR LA CARTE DU DESSUS.
@@ -4937,6 +4956,22 @@ export function ApercuHabitant() {
                   Écrit une quatrième fois PAR-DESSUS le plat, ce n'était plus
                   de l'identité, c'était du bruit — et c'est le premier mot que
                   l'œil rencontre là où il devrait rencontrer la photo. */}
+              {/* ═══ LA DISTANCE À GAUCHE, LA VILLE AU MILIEU ═══
+
+                  CE QUE LA MAQUETTE MET EN HAUT : « 📍 350 m », puis « DAX ·
+                  MAINTENANT », puis les deux ronds. C'est le cadre du produit
+                  en une ligne — où je suis, quand, et mes deux poches — et il
+                  ne parle plus de filtres.
+
+                  LE FILTRE N'A PAS DISPARU, IL EST DEVENU LE MILIEU. « DAX ·
+                  TOUT » s'ouvre au même appui que l'ancienne pastille « ✨ Tout
+                  ▾ » : c'est le même bouton, il dit simplement d'abord où l'on
+                  est. Quelqu'un qui découvre ne cherche pas un filtre ; il
+                  cherche à savoir ce qu'il regarde. */}
+              <span className="ap-loin" aria-hidden="true">
+                <i>📍</i>
+                {dessus?.distance ?? dessusEv?.distance ?? "Dax"}
+              </span>
               <button
                 type="button"
                 className={`cd-puce ap-metier${embauches ? " embauche" : ""}${
@@ -5022,20 +5057,33 @@ export function ApercuHabitant() {
                   différentes, enfin à deux endroits différents — c'est la
                   troisième fois qu'il le demande. */}
               <div className={`ap-fav2${coeurVole ? " pop" : ""}`}>
+                {/* ─── EN HAUT, LE COEUR EST LA POCHE ───
+                    La maquette met deux ronds en haut à droite : un cœur et
+                    une cloche. Le cœur n'y est plus le GESTE — l'acte « Mettre
+                    en favori » est descendu près de « Réserver », avec les
+                    autres décisions — il est la PORTE de ce qu'on a gardé.
+                    C'est la seule lecture qui tienne : en haut on retrouve, en
+                    bas on décide. */}
                 <button
                   type="button"
-                  className={gardeSommet ? "on" : ""}
-                  disabled={!sommet}
+                  className={`ap-poche${gardees.length ? " plein" : ""}`}
+                  onClick={ouvrirMesFavoris}
                   aria-label={
-                    gardeSommet ? "Retirer de vos favoris" : "Mettre cette annonce en favori"
+                    gardees.length === 0
+                      ? "Vos favoris du jour, pour l'instant vides"
+                      : `Vos favoris du jour (${gardees.length})`
                   }
-                  onClick={garderLeSommet}
                 >
-                  {gardeSommet ? "❤️" : "♡"}
+                  <i aria-hidden="true">{gardees.length ? "❤️" : "♡"}</i>
+                  {gardees.length > 0 && gardees.length}
                 </button>
-                {/* LE CŒUR QUI VOLE. Il part du bouton et se range dans la
-                    poche, en trois cents millisecondes. C'est le seul moment où
-                    l'on peut apprendre où vont ses favoris sans l'écrire. */}
+                {/* LE CŒUR QUI VOLE, ET IL TRAVERSE MAINTENANT TOUT L'ÉCRAN.
+                    Le geste est descendu près de « Réserver », la poche est
+                    restée en haut : entre les deux il y a la hauteur d'un
+                    téléphone, et c'est tant mieux — un vol de cinquante points
+                    ne s'était jamais vraiment vu. Il part du bas, monte en
+                    diagonale, et se range. C'est la seule chose qui apprenne
+                    l'adresse de ses favoris sans l'écrire nulle part. */}
                 {coeurVole && (
                   <span className="ap-vol" aria-hidden="true">
                     ❤️
@@ -5046,19 +5094,26 @@ export function ApercuHabitant() {
                     dès qu'elle contient quelque chose, elle porte son compte.
                     Une poche qui apparaît au premier favori n'apprendrait rien :
                     on l'aurait déjà envoyé quelque part sans savoir où. */}
+                {/* ─── ET LA CLOCHE REVIENT À CÔTÉ, COMME DANS LA MAQUETTE ───
+                    Elle était descendue sur l'onglet Profil pour cesser d'être
+                    confondue avec le cœur ; la maquette les remet côte à côte,
+                    et cette fois ils ne se disputent plus rien : deux ronds de
+                    même taille, l'un qui ouvre ce que J'AI gardé, l'autre ce
+                    qu'ON m'a dit. Le geste, lui, est ailleurs — c'est ce qui
+                    les rendait illisibles. */}
                 {!sortie && (
                   <button
                     type="button"
-                    className={`ap-poche${gardees.length ? " plein" : ""}`}
-                    onClick={ouvrirMesFavoris}
+                    className={`ap-cloche${nonLues.length ? " neuf" : ""}`}
+                    onClick={ouvrirMesCommerces}
                     aria-label={
-                      gardees.length === 0
-                        ? "Vos favoris du jour, pour l'instant vides"
-                        : `Vos favoris du jour (${gardees.length})`
+                      nonLues.length === 0
+                        ? "Vos commerces suivis"
+                        : `${nonLues.length} nouvelles de vos commerces`
                     }
                   >
-                    <i aria-hidden="true">🗂️</i>
-                    {gardees.length > 0 && gardees.length}
+                    <i aria-hidden="true">🔔</i>
+                    {nonLues.length > 0 && <b>{nonLues.length}</b>}
                   </button>
                 )}
               </div>
@@ -5574,6 +5629,38 @@ export function ApercuHabitant() {
                            ne devait changer ailleurs. */
                         variante="seconde"
                         className="ap-carte"
+                        /* ─── L'ANNEAU, QUAND IL N'Y A PAS DE FLASH ───
+                           « Le compteur est là quand il y a une offre flash,
+                           autrement il est remplacé par l'offre du moment dans
+                           le planning du commerçant : le cercle avec "voir
+                           l'ardoise de midi" ou "🍽️ Voir la carte". »
+
+                           J'AI RETENU « VOIR LA CARTE », et le mot n'est pas
+                           indifférent : « ardoise » veut dire le tableau du
+                           midi dans une moitié de la France et l'addition qu'on
+                           laisse courir dans l'autre. « La carte » ne se
+                           discute nulle part. Et il suit le métier — on ne
+                           demande pas la carte à une fleuriste : ailleurs, le
+                           disque ouvre la journée du commerce. */
+                        anneau={
+                          restants.length > 0 ? (
+                            <button
+                              type="button"
+                              className="cd-anneau porte"
+                              onPointerDown={(ev) => ev.stopPropagation()}
+                              onClick={versLeBas}
+                            >
+                              <i aria-hidden="true">
+                                {dessus?.menu || dessus?.catalogue ? "🍽️" : "📋"}
+                              </i>
+                              <span>
+                                {dessus?.menu || dessus?.catalogue
+                                  ? "Voir la carte"
+                                  : "Voir la journée"}
+                              </span>
+                            </button>
+                          ) : undefined
+                        }
                       >
                         {/* ─── « GARDER » A QUITTÉ LA PHOTO ───
                             Il y était depuis qu'il avait remplacé la flamme du
@@ -5703,11 +5790,76 @@ export function ApercuHabitant() {
                                 haut. Quand il y a un prénom on le dit — c'est
                                 ce qui fait la différence entre un commerce et
                                 quelqu'un ; sinon « Aujourd'hui » suffit. */}
-                            <span className="ap-journee-t">
-                              {dessus?.voix?.prenom
-                                ? `Aujourd’hui chez ${dessus.voix.prenom}`
-                                : "Aujourd’hui"}
-                            </span>
+                            {/* ═══ LA FICHE DU COMMERCE, EN HAUT DU RECTANGLE ═══
+
+                                CE QUE LA MAQUETTE DEMANDE, ET POURQUOI C'EST
+                                JUSTE : « récupérer sur l'admin du commerçant
+                                son logo, et mettre dans ce rectangle les infos
+                                essentielles — les avis récupérés sur sa fiche
+                                Google, le programme du jour, et une photo ou la
+                                vidéo qu'il aura prise. »
+
+                                LE RECTANGLE RÉPOND À « CHEZ QUI ». Le haut de
+                                l'écran dit ce que c'est et combien ; il restait
+                                une question, la seule à laquelle une annonce ne
+                                peut pas répondre elle-même : est-ce que c'est
+                                bien ? C'est ce que les gens vont chercher
+                                ailleurs, donc la seule chose qui les fasse
+                                quitter l'application. Sa note Google y répond
+                                en trois caractères.
+
+                                LE LOGO EST NOTÉ, PAS FAIT. Il n'y a pas encore
+                                de compte commerçant, donc pas d'endroit où il
+                                le déposerait — voir `CarteAutour.logo`. En
+                                attendant, ses initiales dans le même rond, ce
+                                qui restera vrai pour tous ceux qui n'ont pas de
+                                logo, et ils sont nombreux. */}
+                            <div className="ap-fi-h">
+                              <span className="ap-fi-logo" aria-hidden="true">
+                                {dessus?.logo ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={dessus.logo} alt="" />
+                                ) : (
+                                  initialesDe(dessus?.nom ?? "")
+                                )}
+                              </span>
+                              <span className="ap-fi-id">
+                                <b>{dessus?.nom}</b>
+                                {dessus?.google && (
+                                  <em>
+                                    <i aria-hidden="true">★</i>
+                                    {dessus.google.note}
+                                    <s>({dessus.google.avis} avis)</s>
+                                  </em>
+                                )}
+                                <u>
+                                  <i aria-hidden="true">📅</i>
+                                  {dessus?.voix?.prenom
+                                    ? `Aujourd’hui chez ${dessus.voix.prenom}`
+                                    : "Aujourd’hui"}
+                                </u>
+                              </span>
+                              {/* SA PHOTO — OU SON FILM. Celui qu'il vient de
+                                  prendre passe devant la devanture : c'est ce
+                                  qu'il a voulu montrer aujourd'hui. */}
+                              {(dessusCarte?.film?.mp4 || dessus?.photo) && (
+                                <span className="ap-fi-vue" aria-hidden="true">
+                                  {dessusCarte?.film?.mp4 ? (
+                                    <video
+                                      src={dessusCarte.film.mp4}
+                                      poster={dessusCarte.film.affiche}
+                                      muted
+                                      loop
+                                      autoPlay
+                                      playsInline
+                                    />
+                                  ) : (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={dessus!.photo} alt="" loading="lazy" />
+                                  )}
+                                </span>
+                              )}
+                            </div>
                             {/* ═══ LE FLASH SE NOMME DANS LA JOURNÉE ═══
 
                                 « Quand il y a le menu du jour affiché et qu'en
@@ -7066,16 +7218,17 @@ export function ApercuHabitant() {
                 de passer à la suite. Le bouton porte donc le mot et la flèche
                 du geste qu'il remplace — même sens, même vocabulaire que
                 l'étiquette « Glissez pour passer » posée au-dessus. */}
-            <button
-              type="button"
-              className="ap-rond"
-              aria-label="Passer à l’annonce suivante"
-              onClick={() => partir("gauche")}
-              disabled={!sommet}
-            >
-              Suivante
-              <i aria-hidden="true">→</i>
-            </button>
+            {/* ET IL A DÉMÉNAGÉ AU MILIEU DE LA BARRE DU BAS. « On a un nouveau
+                bouton au milieu qui permettra de passer à l'annonce suivante ;
+                le système de swipe reste, mais s'il marche mal on aura ce petit
+                smiley très sympathique qui bougera quand on appuiera dessus. »
+
+                C'EST LA BONNE PLACE, ET PAS SEULEMENT PARCE QUE C'EST JOLI.
+                Le geste qu'on répète le plus souvent doit tomber sous le pouce
+                sans le déplacer ; il était au-dessus des deux actions, dans la
+                zone qu'on traverse pour les atteindre. Là, il ne dispute plus
+                rien à personne, et il rend les quarante points qu'il prenait
+                sur la carte. Voir `.ap-suiv` dans la barre. */}
             {/* ─── LES DEUX ACTIONS SONT L'UNE AU-DESSUS DE L'AUTRE ───
                 « Les deux boutons ne doivent pas avoir le même poids : ils
                 correspondent à deux moments différents. Ça me plaît → je le
@@ -7117,11 +7270,25 @@ export function ApercuHabitant() {
                 <em>Décidez ensemble</em>
               </span>
             </button>
-            {/* LE TROISIÈME GESTE PORTE L'ENGAGEMENT DU MOMENT, et il change de
-                nature avec ce qu'on regarde. Sur une invitation on ne réserve
-                pas : on y va. Sur un poste on ne postule pas : on passe. C'est
-                la même main qui fait les trois, et c'est ce qui fait qu'on
-                n'apprend qu'un seul geste pour toute l'application. */}
+            {/* ═══ LA SECONDE RANGÉE : DEUX GESTES CÔTE À CÔTE ═══
+
+                CE QUE LA MAQUETTE CHANGE. « Proposer à mes amis » garde toute
+                la largeur et devient vert plein — c'est le geste du produit.
+                Dessous, deux boutons en contour, de même poids l'un que
+                l'autre : « Réserver », et « Mettre en favori » qui redescend du
+                haut de l'écran.
+
+                POURQUOI LE FAVORI DESCEND ICI. Le cœur du haut désigne
+                maintenant la POCHE — l'endroit où l'on retrouve ce qu'on a
+                gardé — et l'ACTE de garder n'a rien à faire au même
+                centimètre : « je mets trois annonces de côté et je choisis
+                ensuite » est un geste de décision, il vit avec les deux autres.
+                Deux objets, deux endroits, plus rien à traduire.
+
+                ET DEUX BOUTONS TIENNENT CÔTE À CÔTE ICI ALORS QUE « Proposer à
+                mes amis » et « Réserver mon plat » n'y tenaient pas : ces
+                deux-là font huit et quinze caractères. */}
+            <div className="ap-duo">
             <button
               type="button"
               className="ap-agir engage"
@@ -7181,6 +7348,16 @@ export function ApercuHabitant() {
                         ? "Réserver mon plat"
                         : "Réserver"}
             </button>
+            <button
+              type="button"
+              className={`ap-agir favori${gardeSommet ? " on" : ""}`}
+              disabled={!sommet}
+              onClick={garderLeSommet}
+            >
+              <i aria-hidden="true">{gardeSommet ? "❤️" : "♡"}</i>
+              {gardeSommet ? "Dans vos favoris" : "Mettre en favori"}
+            </button>
+            </div>
             {/* LE QUATRIÈME ROND A DISPARU, ET IL N'EST PAS PERDU. « Détails »
                 est remonté sur la photo, où il dit ce qu'il y a derrière —
                 « 3 moments aujourd'hui » — au lieu d'une flèche muette. */}
@@ -7743,6 +7920,36 @@ export function ApercuHabitant() {
               La Ville
               {ville.length > 0 && <b>{ville.length}</b>}
             </button>
+            {/* ═══ LE SMILEY, AU MILIEU, QUI PASSE À LA SUIVANTE ═══
+
+                IL N'EST PAS UN ONGLET, ET C'EST POURQUOI IL EN SORT. Les quatre
+                autres boutons changent d'endroit ; celui-ci agit sur ce qu'on
+                regarde. Un objet qui fait autre chose doit avoir une autre
+                forme — rond, vert plein, débordant vers le haut — sinon on
+                cherche « la page smiley ».
+
+                L'ANIMATION EST LA FONCTION, pas la décoration. Il existe pour
+                ceux dont le balayage ne prend pas ; s'il ne répond pas
+                visiblement au doigt, il ne vaut pas mieux que le balayage qui
+                rate. Il s'enfonce, cligne, et repart d'un bond — et le paquet
+                avance avec lui. */}
+            <button
+              type="button"
+              className={`ap-suiv${clin ? " clin" : ""}`}
+              aria-label="Passer à l’annonce suivante"
+              disabled={!sommet || onglet !== "direct"}
+              onClick={() => {
+                setClin(true);
+                window.setTimeout(() => setClin(false), 460);
+                partir("gauche");
+              }}
+            >
+              <span className="ap-suiv-f" aria-hidden="true">
+                <s />
+                <s />
+                <u />
+              </span>
+            </button>
             <button
               type="button"
               className={onglet === "salons" ? "on" : ""}
@@ -7782,7 +7989,11 @@ export function ApercuHabitant() {
 
                   AMBRE ET PAS VERT, comme la cloche qu'il remplace : dans tout
                   le produit, le vert dit « à vous » et l'ambre « du neuf ». */}
-              {nonLues.length > 0 && <b className="neuf">{nonLues.length}</b>}
+              {/* LE BADGE DU PROFIL REDEVIENT CELUI DES FAVORIS. La cloche est
+                  remontee en haut a droite, dans la maquette, a cote du coeur ;
+                  laisser son chiffre ici l'ecrirait deux fois. Ce qui reste,
+                  c'est ce qu'on trouve DANS le profil : ses annonces gardees. */}
+              {gardees.length > 0 && <b>{gardees.length}</b>}
             </button>
           </nav>
 
@@ -9029,8 +9240,19 @@ export function ApercuHabitant() {
            donc le metier qui pousse, par sa marge : sans cette ligne, les deux
            objets se collent a gauche et le bandeau redevient une rangee.
            ATTENTION : jamais d'accent grave dans ces commentaires CSS. */
+        /* LA DISTANCE, A GAUCHE, EN PREMIER. Elle n'est pas un bouton : c'est
+           le seul chiffre de l'ecran qui ne demande rien et qui situe tout. */
+        .ap-loin{flex:none;display:inline-flex;align-items:center;gap:4px;
+          font-size:11.5px;font-weight:800;color:rgba(234,242,236,.82);
+          background:rgba(9,12,10,.5);border:1px solid rgba(234,242,236,.14);
+          border-radius:999px;padding:6px 11px;
+          -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+        .ap-loin i{font-style:normal;font-size:11px;}
+        /* LE FILTRE AU MILIEU : il dit d'abord ou l'on est, ensuite ce qu'on
+           regarde. La marge automatique le centre entre la distance et les deux
+           ronds, quelle que soit leur largeur. */
         .ap-metier{font:inherit;font-size:11.5px;font-weight:700;cursor:pointer;
-          margin-right:auto;transition:transform .12s ease;}
+          margin:0 auto;transition:transform .12s ease;}
         .ap-metier em{font-style:normal;font-size:10px;opacity:.65;margin-left:1px;}
         .ap-metier:active{transform:scale(.95);}
         /* Le compte des envies actives, sur la pastille qui ouvre la feuille
@@ -9102,13 +9324,19 @@ export function ApercuHabitant() {
         /* LE VOL. Trois cents millisecondes, du bouton jusqu'a la poche — la
            seule chose qui apprenne l'adresse sans l'ecrire. Il est hors du flux
            pour ne pas pousser les deux boutons pendant qu'il passe. */
-        .ap-vol{position:absolute;left:11px;top:50%;margin-top:-9px;
-          font-size:16px;line-height:1;pointer-events:none;z-index:3;
-          animation:apVol .5s cubic-bezier(.4,0,.55,1) forwards;}
+        /* IL PART DU BOUTON « METTRE EN FAVORI », EN BAS A DROITE, ET MONTE
+           JUSQU'A LA POCHE. Position fixe : le vol traverse des blocs qui ont
+           chacun leur debordement, et un element en absolu s'y ferait couper au
+           premier bord. La courbe monte d'abord, puis rentre — c'est ce qui se
+           lit comme « ca a ete range » plutot que « ca a disparu ». */
+        .ap-vol{position:fixed;right:34px;bottom:132px;
+          font-size:24px;line-height:1;pointer-events:none;z-index:60;
+          animation:apVol .74s cubic-bezier(.45,0,.3,1) forwards;}
         @keyframes apVol{
-          0%{transform:translate(0,0) scale(1);opacity:0;}
-          14%{transform:translate(2px,-12px) scale(1.25);opacity:1;}
-          100%{transform:translate(52px,0) scale(.42);opacity:0;}}
+          0%{transform:translate(0,0) scale(.7);opacity:0;}
+          12%{transform:translate(0,-16px) scale(1.3);opacity:1;}
+          70%{opacity:1;}
+          100%{transform:translate(24px,calc(-100vh + 220px)) scale(.4);opacity:0;}}
         @media (prefers-reduced-motion:reduce){
           .ap-vol{animation-duration:.01s;}
         }
@@ -9625,6 +9853,10 @@ export function ApercuHabitant() {
            On l'efface uniquement quand le planning est present — les cartes qui
            n'en ont pas gardent leur rectangle, qui est alors leur seule heure. */
         .ap-dessus:has(.ap-journee) .cd-quand{display:none;}
+        /* ET LE NOM NE S'ECRIT PLUS DEUX FOIS. Il vit dans la fiche du
+           commerce, en gros, avec sa note et son logo ; le repeter sous le prix
+           faisait deux fois la meme ligne a trois centimetres d'ecart. */
+        .ap-dessus:has(.ap-fi-h) .cd-chez{display:none;}
         .ap-journee{width:min(100%,340px);margin-top:10px;
           display:flex;flex-direction:column;align-items:stretch;gap:0;
           border-radius:15px;padding:9px 11px 8px;
@@ -9633,6 +9865,54 @@ export function ApercuHabitant() {
         .ap-journee-t{display:block;margin:0 0 7px;font-size:9.5px;font-weight:850;
           letter-spacing:.15em;text-transform:uppercase;color:rgba(234,242,236,.5);
           overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+        /* ═══ LA FICHE DU COMMERCE, EN HAUT DU RECTANGLE ═══
+           Le logo (ou les initiales), le nom, sa note Google, la date — et sa
+           photo ou son film a droite. Trois colonnes, une seule rangee : c'est
+           la carte de visite, pas un second ecran. */
+        .ap-fi-h{display:flex;align-items:center;gap:11px;margin:0 0 11px;}
+        .ap-fi-logo{flex:none;display:flex;align-items:center;justify-content:center;
+          width:46px;height:46px;border-radius:50%;overflow:hidden;
+          font-size:15px;font-weight:850;letter-spacing:.02em;color:#EAF2EC;
+          background:rgba(234,242,236,.09);
+          border:1px solid rgba(234,242,236,.18);}
+        .ap-fi-logo img{width:100%;height:100%;object-fit:cover;}
+        .ap-fi-id{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+        /* LE NOM TIENT SUR DEUX LIGNES PLUTOT QUE DE SE COUPER. « Une terrasse
+           au soleil » sortait « UNE TERRASSE AU … » : une enseigne tronquee ne
+           designe plus personne, et c'est le seul mot de la fiche qui doit
+           etre lu en entier. */
+        .ap-fi-id b{font-size:14px;font-weight:850;letter-spacing:.01em;
+          line-height:1.15;text-transform:uppercase;color:#fff;
+          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+          overflow:hidden;}
+        /* LA NOTE EN AMBRE, LE NOMBRE D'AVIS EN GRIS : on lit la note, on
+           verifie le nombre. L'inverse serait un chiffre a interpreter. */
+        .ap-fi-id em{display:flex;align-items:center;gap:5px;font-style:normal;
+          font-size:12px;font-weight:850;color:#EAF2EC;}
+        .ap-fi-id em i{font-style:normal;color:#FFC400;}
+        .ap-fi-id em s{text-decoration:none;font-weight:600;
+          color:rgba(234,242,236,.55);}
+        .ap-fi-id u{display:flex;align-items:center;gap:5px;text-decoration:none;
+          font-size:11.5px;font-weight:650;color:rgba(234,242,236,.6);
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .ap-fi-id u i{font-style:normal;font-size:11px;}
+        .ap-fi-vue{flex:none;width:74px;height:52px;border-radius:11px;
+          overflow:hidden;background:rgba(0,0,0,.35);}
+        .ap-fi-vue img,.ap-fi-vue video{width:100%;height:100%;object-fit:cover;
+          display:block;}
+
+        /* ═══ LES DEUX GESTES DE LA SECONDE RANGEE ═══
+           Meme largeur, meme poids, en contour : ni l'un ni l'autre ne dispute
+           quoi que ce soit au bouton vert du dessus. */
+        .ap-duo{display:flex;gap:10px;}
+        .ap-duo>.ap-agir{flex:1;min-width:0;}
+        .ap-agir.favori{display:flex;align-items:center;justify-content:center;
+          gap:7px;background:transparent;color:#EAF2EC;
+          border:1.5px solid rgba(234,242,236,.28);}
+        .ap-agir.favori i{font-style:normal;font-size:15px;line-height:1;}
+        .ap-agir.favori.on{color:#FF8A9B;border-color:rgba(255,138,155,.5);
+          background:rgba(255,138,155,.10);}
         .ap-journee ul{list-style:none;margin:0;padding:0;
           display:flex;flex-direction:column;gap:5px;}
         .ap-journee li{display:flex;align-items:baseline;gap:9px;min-width:0;
@@ -10606,7 +10886,12 @@ export function ApercuHabitant() {
            ouverts ni les anciens, parce qu'ils vivaient au fond d'une feuille.
            Une application sans ossature visible n'a pas de deuxieme visite.
            ATTENTION : jamais d'accent grave dans ces commentaires CSS. */
-        .ap-onglets{flex:none;display:grid;grid-template-columns:repeat(4,1fr);
+        .ap-onglets{flex:none;display:grid;
+          /* CINQ ENFANTS, ET CELUI DU MILIEU N'EST PAS UN ONGLET. Les quatre
+             onglets se partagent la largeur a parts egales ; le smiley prend
+             sa taille propre au centre. Reste a repeat(4,1fr) et Profil
+             passait a la ligne. */
+          grid-template-columns:1fr 1fr auto 1fr 1fr;
           gap:4px;padding:4px 8px calc(4px + env(safe-area-inset-bottom));
           border-top:1px solid rgba(255,255,255,.09);
           background:rgba(8,12,10,.75);-webkit-backdrop-filter:blur(12px);
@@ -10673,6 +10958,55 @@ export function ApercuHabitant() {
            neuf » ; changer la couleur en changeant d'endroit ferait perdre la
            seule chose qu'on n'a pas eu a expliquer. */
         .ap-onglets button b.neuf{background:#F0B429;}
+
+        /* ═══ LE SMILEY QUI PASSE A LA SUIVANTE ═══
+           Rond, vert plein, deborde de la barre vers le haut : il ne ressemble
+           a aucun onglet, parce qu'il n'en est pas un. C'est le geste le plus
+           repete du produit, enfin sous le pouce.
+
+           SON ANIMATION EST SA RAISON D'ETRE. Il existe pour ceux dont le
+           balayage ne prend pas ; s'il ne repondait pas visiblement au doigt,
+           il ne vaudrait pas mieux qu'un balayage qui rate. Il s'enfonce sous
+           la pression, cligne des yeux, puis repart d'un bond. */
+        .ap-onglets .ap-suiv{position:relative;flex:none;width:58px;height:58px;
+          margin:-20px 2px 0;padding:0;border-radius:50%;border:0;
+          background:linear-gradient(150deg,#7EE6C0,#2FD39A);
+          box-shadow:0 8px 22px rgba(47,211,154,.35),
+            0 0 0 5px var(--ap-barre-fond, #070C0A);
+          transition:transform .16s cubic-bezier(.34,1.6,.64,1);}
+        .ap-onglets .ap-suiv:disabled{opacity:.45;}
+        .ap-onglets .ap-suiv:active{transform:scale(.9);}
+        .ap-onglets .ap-suiv b{display:none;}
+        /* LE VISAGE : deux yeux et une bouche, dessines en CSS. Trois elements
+           valent mieux qu'un emoji — un emoji change de tete selon le telephone,
+           et celui-ci doit etre le meme partout parce qu'il devient un
+           personnage. */
+        .ap-suiv-f{position:absolute;inset:0;}
+        .ap-suiv-f s,.ap-suiv-f u{position:absolute;background:#06231A;
+          text-decoration:none;}
+        .ap-suiv-f s{top:20px;width:6px;height:8px;border-radius:3px;
+          transition:height .12s ease, top .12s ease;}
+        .ap-suiv-f s:first-child{left:17px;}
+        .ap-suiv-f s:nth-child(2){right:17px;}
+        .ap-suiv-f u{left:19px;right:19px;top:34px;height:8px;
+          border-radius:0 0 10px 10px;}
+        /* LE CLIN D'OEIL : les yeux se ferment, le rond bondit, la bouche
+           s'elargit. Quatre cent soixante millisecondes — le temps que la carte
+           suivante arrive, pas plus. */
+        .ap-suiv.clin{animation:apBond .46s cubic-bezier(.34,1.5,.5,1);}
+        .ap-suiv.clin .ap-suiv-f s{animation:apClin .46s ease;}
+        .ap-suiv.clin .ap-suiv-f u{animation:apSourire .46s ease;}
+        @keyframes apBond{0%{transform:scale(.86);}
+          45%{transform:scale(1.14) translateY(-4px);}
+          100%{transform:none;}}
+        @keyframes apClin{0%,100%{height:8px;top:20px;}
+          40%{height:2px;top:23px;}}
+        @keyframes apSourire{0%,100%{left:19px;right:19px;height:8px;}
+          45%{left:15px;right:15px;height:12px;}}
+        @media (prefers-reduced-motion:reduce){
+          .ap-suiv.clin,.ap-suiv.clin .ap-suiv-f s,.ap-suiv.clin .ap-suiv-f u{
+            animation:none;}
+        }
 
         /* ─── METTRE L'APPLICATION SUR L'ECRAN D'ACCUEIL ───
            Le vert de l'application : c'est elle qu'on installe, ce n'est ni
@@ -11073,7 +11407,20 @@ export function ApercuHabitant() {
         .ap-fav2::before{content:"";order:1;width:1px;height:20px;
            background:rgba(234,242,236,.22);}
         .ap-fav2>button:first-child{order:0;}
-        .ap-fav2>.ap-poche{order:2;}
+        .ap-fav2>.ap-poche{order:0;}
+        .ap-fav2>.ap-cloche{order:2;}
+        /* LES DEUX RONDS DU HAUT — meme taille, meme allure, deux sens.
+           A gauche ce que J'AI garde, a droite ce qu'ON m'a dit. */
+        .ap-cloche{position:relative;display:flex;align-items:center;
+          justify-content:center;font:inherit;font-size:15px;line-height:1;
+          cursor:pointer;border:0;background:none;color:#8FE9C4;padding:7px 10px;
+          transition:transform .12s ease;}
+        .ap-cloche i{font-style:normal;filter:grayscale(1);opacity:.7;}
+        .ap-cloche.neuf i{filter:none;opacity:1;}
+        .ap-cloche b{position:absolute;top:-1px;right:0;min-width:15px;
+          font-size:9px;font-weight:850;line-height:15px;text-align:center;
+          color:#2A0B08;background:#FF5A4E;border-radius:999px;padding:0 3px;}
+        .ap-cloche:active{transform:scale(.9);}
 
         /* ─── CE QUI EST SUR LA TABLE ───
            Le salon cesse d'etre une conversation pour devenir une petite salle
@@ -11652,8 +11999,13 @@ export function ApercuHabitant() {
            la seule chose de l'ecran qui disait deja qu'il y a une suite. Le
            decalage suit l'encoche du telephone, sinon il derive d'un modele a
            l'autre : l'en-tete grandit avec elle, la pastille aussi. */
+        /* ELLES DESCENDENT DANS LA BANDE LIBRE DE LA PHOTO. Le titre est
+           remonte en haut a gauche et prend desormais deux lignes d'affiche :
+           a 124 points, les deux etiquettes lui passaient dessus et on lisait
+           « 8 LA...SAGNES ». Elles se posent donc au tiers de l'ecran, la ou il
+           n'y a que l'image — et elles ne durent que trois cartes. */
         .ap-glissez{position:absolute;left:0;right:0;
-          top:calc(env(safe-area-inset-top) + 124px);z-index:6;
+          top:47%;z-index:6;
           display:flex;align-items:center;justify-content:space-between;
           padding:0 10px;margin:0;pointer-events:none;}
         .ap-glissez>span{display:flex;align-items:center;gap:8px;
@@ -11769,10 +12121,12 @@ export function ApercuHabitant() {
            les onglets. Deux fonds superposes se voyaient l'un l'autre. */
         .ap-gestes{position:absolute;left:0;right:0;
           bottom:var(--ap-onglets-h, 51px);z-index:4;
-          /* DEUX RANGEES, ET LE ROND TIENT LA COLONNE DE GAUCHE SUR LES DEUX.
-             L'ordre de lecture est le parcours : on propose, puis on reserve. */
-          display:grid;grid-template-columns:auto minmax(0,1fr);
-          align-items:center;gap:7px 9px;
+          /* UNE SEULE COLONNE, TROIS RANGEES. Le rond « Suivante » tenait la
+             colonne de gauche sur deux rangees ; il est parti au milieu de la
+             barre du bas, sous le pouce, et la grille n'a plus rien a caler
+             de travers. L'ordre de lecture est le parcours : ca me tente, je
+             propose, puis je reserve ou je garde. */
+          display:flex;flex-direction:column;gap:8px;
           padding:10px 12px 8px;pointer-events:none;
           background:linear-gradient(0deg,rgba(4,8,6,.94) 0%,rgba(4,8,6,.82) 52%,rgba(4,8,6,0) 100%);}
         .ap-app.direct .ap-gestes{bottom:0;
@@ -11827,11 +12181,12 @@ export function ApercuHabitant() {
           border-radius:14px;padding:8px 7px;white-space:nowrap;
           overflow:hidden;text-overflow:ellipsis;
           transition:transform .12s ease;}
-        .ap-tente{grid-column:1 / -1;margin:0 0 1px;padding-left:2px;
+        .ap-tente{margin:0 0 1px;padding-left:2px;
           font-size:12.5px;font-weight:750;color:rgba(234,242,236,.72);}
-        .ap-rond{grid-column:1;grid-row:auto / span 2;}
-        .ap-agir.parler{grid-column:2;}
-        .ap-agir.engage{grid-column:2;}
+        /* LE VERT PREND TOUTE LA LARGEUR : c'est le geste du produit, et la
+           maquette le veut plein, avec sa fleche. Les deux autres se partagent
+           la rangee du dessous, a poids egal. */
+        .ap-agir.parler{padding:12px 14px;font-size:15px;border-radius:16px;}
         .ap-agir span{display:flex;flex-direction:column;align-items:center;
           min-width:0;line-height:1.15;}
         .ap-agir em{font-style:normal;font-size:10px;font-weight:700;
@@ -11844,6 +12199,14 @@ export function ApercuHabitant() {
         .ap-agir.parler{color:#04150E;
           background:linear-gradient(140deg,#3DE2A6,#0BA97B);
           box-shadow:0 12px 26px -16px rgba(18,185,129,.9);}
+        /* LES DEUX BOUTONS DU BAS SONT EN CONTOUR — la maquette ne garde qu'un
+           seul aplat, le vert. Deux boutons pleins cote a cote se disputaient
+           l'oeil avec lui, et c'est exactement ce qu'on venait de regler en
+           donnant au vert toute la largeur. */
+        .ap-duo .ap-agir.engage{background:transparent;color:#EAF2EC;
+          border:1.5px solid rgba(240,180,41,.45);box-shadow:none;}
+        .ap-duo .ap-agir.engage:disabled{border-color:rgba(234,242,236,.16);
+          color:rgba(234,242,236,.4);}
         .ap-agir.engage{color:#0A1410;
           background:linear-gradient(140deg,#F7C948,#E09B18);
           box-shadow:0 12px 26px -16px rgba(240,180,41,.9);}

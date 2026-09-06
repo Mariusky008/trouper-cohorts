@@ -32,7 +32,7 @@ const dire = (ok, t) => { if (!ok) echecs++; console.log(`${ok ? "  ok  " : "ÉC
  */
 const avancer = async (page) => {
   try {
-    await page.click(".ap-rond", { timeout: 1500 });
+    await page.click(".ap-suiv", { timeout: 1500 });
     await page.waitForTimeout(320);
     return true;
   } catch {
@@ -158,13 +158,18 @@ dire(!(await p.$(".ap-haut .ap-jai")),
 const poche = () => p.$eval(".ap-poche", (e) =>
   Number(e.textContent.replace(/[^0-9]/g, "")) || 0).catch(() => -1);
 dire((await poche()) === 0, "la poche est là, vide, avant qu'on ait rien gardé");
-const nomDuSommet = () => p.$eval(".ap-dessus .cd-chez", (e) =>
-  e.textContent.split("\u00b7")[0].trim()).catch(() => "");
+// ─── LE NOM SE LIT DANS LA FICHE DU COMMERCE, PAS SOUS LE PRIX ───
+// La maquette a descendu l'enseigne dans le rectangle, avec son logo et sa note
+// Google : `.cd-chez` n'existe plus sur cette face, et le lire renvoyait une
+// chaîne vide — donc la même carte à chaque tour, et un cœur qui s'allumait
+// puis s'éteignait. La poche comptait alors moins que ce qu'on croyait y mettre.
+const nomDuSommet = () => p.$eval(".ap-dessus .ap-fi-id b", (e) =>
+  e.textContent.trim()).catch(() => "");
 const gardes = [];
 for (let k = 0; k < 3; k++) {
   const nom = await nomDuSommet();
   if (!nom) break;
-  await p.click(".ap-fav2 button:first-child").catch(() => {});
+  await p.click(".ap-agir.favori").catch(() => {});
   await p.waitForTimeout(420);
   gardes.push(nom);
   if (!(await avancer(p))) break;
@@ -210,7 +215,7 @@ console.log("\n══ je passe ══");
 // accueille les gens. Elle attend donc deux annonces.
 dire(!(await p.$(".ap-tour")), "« c'est à vous » n'accueille personne à l'ouverture");
 for (let k = 0; k < 2; k++) {
-  await p.click(".ap-rond");
+  await p.click(".ap-suiv");
   await p.waitForTimeout(700);
 }
 await p.waitForSelector(".ap-tour", { timeout: 8000 });
@@ -299,7 +304,8 @@ const voixSurLaFace = () =>
   p.evaluate(() => {
     const d = document.querySelector(".ap-dessus");
     return {
-      chez: d?.querySelector(".cd-chez")?.textContent.replace(/\s+/g, " ").split("·")[0].trim() ?? "",
+      chez: (d?.querySelector(".ap-fi-id b") ?? d?.querySelector(".cd-chez"))
+        ?.textContent.replace(/\s+/g, " ").split("·")[0].trim() ?? "",
       // Le conseil EN TEXTE n'a plus sa place sur la face. Le film, si : ce
       // n'est pas une phrase à lire, c'est un visage, et il se regarde en une
       // demi-seconde.
@@ -370,7 +376,8 @@ console.log("\n══ le rectangle jaune ══");
 const bornes = [];
 for (let k = 0; k < 22; k++) {
   const b = await p.evaluate(() => ({
-    chez: document.querySelector(".ap-dessus .cd-chez")?.textContent
+    chez: (document.querySelector(".ap-dessus .ap-fi-id b")
+      ?? document.querySelector(".ap-dessus .cd-chez"))?.textContent
       .replace(/\s+/g, " ").split("·")[0].trim() ?? "",
     pill: document.querySelector(".ap-dessus .cd-quand")?.textContent
       .replace(/\s+/g, " ").trim() ?? "",
@@ -663,7 +670,8 @@ console.log("\n══ la vidéo dans le rond ══");
     const v = t?.querySelector("video");
     const r = t?.getBoundingClientRect();
     return {
-      chez: document.querySelector(".ap-dessus .cd-chez")?.textContent
+      chez: (document.querySelector(".ap-dessus .ap-fi-id b")
+      ?? document.querySelector(".ap-dessus .cd-chez"))?.textContent
         .replace(/\s+/g, " ").split("·")[0].trim() ?? "",
       video: !!v,
       muet: v?.muted ?? null,

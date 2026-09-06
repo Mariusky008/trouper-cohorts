@@ -89,6 +89,12 @@ export type CarteDirect = {
     continue?: string;
   };
   /** L'emoji et l'intitulé de ce qui est proposé. */
+  /**
+   * COMBIEN IL EN RESTE — le nombre que le commerçant a donné, jamais un
+   * autre. Absent quand il ne l'a pas dit : « il reste 4 tables » a déjà été
+   * retiré une fois du produit parce qu'on ne peut pas le savoir.
+   */
+  combien?: number;
   icone: string;
   quoi: string;
   /** Le détail — les lignes d'un menu, par exemple. */
@@ -266,6 +272,7 @@ export function CarteSwipe({
   className = "",
   variante = "fiche",
   children,
+  anneau,
 }: {
   carte: CarteDirect;
   style?: CSSProperties;
@@ -287,6 +294,17 @@ export function CarteSwipe({
    * produit, ils remonteront dans le type — pas avant.
    */
   children?: ReactNode;
+  /**
+   * L'ANNEAU POSÉ SUR LA PHOTO, À DROITE.
+   *
+   * IL A DEUX VIES, ET UNE SEULE FORME. Sur un Flash, la carte le dessine
+   * elle-même : le temps qui reste est une donnée de la carte, et personne ne
+   * clique dessus. Le reste du temps, il devient une PORTE — « Voir la carte »,
+   * « Voir la journée » — et une porte appartient à l'écran qui sait où elle
+   * mène, pas à la carte. L'écran la glisse donc ici, et elle prend exactement
+   * la place et l'allure du chrono : un seul objet à cet endroit, jamais deux.
+   */
+  anneau?: ReactNode;
 }) {
   const c = carte;
   const sec = variante === "seconde";
@@ -366,6 +384,43 @@ export function CarteSwipe({
       {/* Le voile n'est pas un effet : sans lui, un texte blanc posé sur une
           photo claire devient illisible une fois sur deux. */}
       <div className="cd-voile" aria-hidden="true" />
+
+      {/* ═══ L'ANNEAU ═══
+          « Le chrono devrait être très différent, comme l'acteur principal. »
+          Il l'est enfin : un disque cerclé de rouge, posé à cheval sur la
+          photo, à la hauteur du regard. Sans Flash, le même disque porte ce que
+          le commerçant propose en ce moment — l'écran le fournit. */}
+      {sec && c.flash && (
+        <div className="cd-anneau chrono" aria-label={`Il reste ${c.flash.reste}`}>
+          <span className="cd-an-t">
+            <i aria-hidden="true">🕐</i>
+            Il reste
+          </span>
+          <b>{c.flash.reste.replace(/[^0-9]/g, "") || "0"}</b>
+          <em>min</em>
+          {/* LA PART ÉCOULÉE FAIT LE TOUR DU DISQUE. Une barre droite disait le
+              temps qui passe ; sur un disque, le tour est plus fort — on lit un
+              cadran sans avoir à lire un chiffre. */}
+          <u
+            aria-hidden="true"
+            style={{
+              background: `conic-gradient(#FF5A4E ${Math.round((1 - c.flash.part) * 360)}deg, rgba(255,255,255,.14) 0deg)`,
+            }}
+          />
+          {/* ─── ET LA RARETÉ RESTE ÉCRITE ───
+              « Il faudrait quelque chose qui permette en une seconde de
+              comprendre que c'est une annonce spéciale ET RARE. » Le compte à
+              rebours dit « c'est urgent » ; rien ne dit « ça n'arrive presque
+              jamais », et la rareté est la moitié de la valeur.
+
+              LA MAQUETTE N'EN VOULAIT PLUS DANS LE TITRE, et elle a raison —
+              c'était la quatrième ligne d'un bloc qui en avait déjà trois. Elle
+              descend donc sous l'anneau, en petit : elle annote l'objet dont
+              elle parle, et ne dispute plus rien au plat. */}
+          <s className="cd-an-r">3 fois par semaine, pas plus</s>
+        </div>
+      )}
+      {sec && !c.flash && anneau}
 
       {/* LA PASTILLE DU HAUT N'EXISTE QUE SUR LA FICHE. Sur la seconde face,
           « jusqu'à quand » est descendu dans le bloc central, avec le reste de
@@ -448,30 +503,18 @@ export function CarteSwipe({
                 LE COMPTE À REBOURS DU FLASH, LUI, RESTE : il ne dit pas depuis
                 quand, il dit COMBIEN DE TEMPS ENCORE. Ce sont deux mesures de
                 temps opposées, et une seule fait décider. */}
+            {/* ═══ « ÇA VIENT DE TOMBER ! » ═══
+                La maquette met en haut, centrée, une pastille ambre à éclair.
+                Elle dit en trois mots ce que l'ancien bloc disait en quatre
+                lignes empilées — Flash, « 3 fois par semaine », le nombre de
+                minutes, une barre. Le compte à rebours, lui, a quitté le texte
+                pour devenir un objet : l'anneau, à droite, posé sur la photo.
+                Deux objets qui se voient de loin, au lieu d'un paragraphe. */}
             {c.flash && (
-              <p className="cd-flash">
-                {/* ─── LE MOT QUI MANQUAIT : « RARE » ───
-                    Le compte à rebours dit « c'est urgent » ; rien ne disait que
-                    ça n'arrive presque jamais. Or la rareté est la moitié de la
-                    valeur : trois par semaine et pas une de plus, c'est écrit
-                    dans le code depuis le premier jour et ça ne se lisait sur
-                    aucun écran d'habitant. */}
-                <span className="cd-flash-t">
-                  <i aria-hidden="true">⚡</i>
-                  Flash
-                  <s>3 fois par semaine, pas plus</s>
-                </span>
-                <span className="cd-flash-n">
-                  <b>{c.flash.reste.replace(/[^0-9]/g, "") || "0"}</b>
-                  <em>
-                    min
-                    <s>restantes</s>
-                  </em>
-                </span>
-                <span className="cd-flash-j" aria-hidden="true">
-                  <u style={{ width: `${Math.round((1 - c.flash.part) * 100)}%` }} />
-                </span>
-              </p>
+              <span className="cd-tombe">
+                <i aria-hidden="true">⚡</i>
+                Ça vient de tomber !
+              </span>
             )}
             {(c.etiquette || c.metier) && (
               <p className="cd-nature">
@@ -484,7 +527,13 @@ export function CarteSwipe({
                 {c.etiquette && <s>{c.etiquette}</s>}
               </p>
             )}
-            <h2 className="cd-offre">{c.quoi}</h2>
+            <h2
+              className={`cd-offre${
+                c.quoi.length > 34 ? " long" : c.quoi.length > 18 ? " moyen" : ""
+              }`}
+            >
+              {c.quoi}
+            </h2>
             {/* LE DÉTAIL RESTE, MAIS IL A CESSÉ D'ÊTRE UN BLOC. Sur une
                 invitation, c'est le mot du commerçant : le supprimer ferait
                 d'un message adressé une annonce de plus. Sur un menu, c'est la
@@ -594,6 +643,18 @@ export function CarteSwipe({
                 jamais deux cartes. Pendant le Flash, la carte EST le Flash — et
                 cette ligne dit ce qui l'attend derrière, pour qu'on ne croie
                 pas que le reste de la journée a été annulé. */}
+            {/* ─── COMBIEN IL EN RESTE, SOUS LE PRIX ───
+                La maquette l'écrit petit, juste sous le chiffre, avec le
+                nombre en ambre : « Il en reste 8 ». C'est la troisième
+                question de quelqu'un qui regarde une annonce — après « c'est
+                quoi » et « c'est combien » — et elle n'avait sa réponse que
+                sous le pli. Elle ne s'affiche que si le commerçant l'a dite :
+                on ne compte jamais à sa place. */}
+            {c.combien != null && c.combien > 0 && (
+              <p className="cd-encore">
+                Il en reste <b>{c.combien}</b>
+              </p>
+            )}
             {c.flash?.continue && <p className="cd-flash-s">{c.flash.continue}</p>}
             {/* LE NOM DU COMMERCE EST LISIBLE, ET IL N'EST PLUS LE TITRE.
                 Demande explicite, et elle est juste : « si c'est un restaurant
@@ -829,17 +890,40 @@ export function StylesDirect() {
            la meme annonce avec une photo de commercant ordinaire — claire,
            plate, au neon : sans voile, le titre et le prix se perdent dans
            l'assiette. La face ne tient que parce que ce degrade est la. */
+        /* LE VOILE A SUIVI LE TEXTE. Il s'epaississait en bas, parce que le
+           bloc y vivait ; le titre est remonte en haut a gauche et le voile
+           avec lui. Le milieu de l'image reste en pleine lumiere — c'est la
+           seule chose qui donne faim — et il redescend sous la fiche du
+           commerce. Mesure faite sur une terrasse en plein soleil, la photo la
+           plus claire du paquet : sans ces deux epaisseurs, « Il en reste 3 »
+           et le nom du commerce disparaissent. */
         .cd-carte.sec .cd-voile{background:linear-gradient(180deg,
-          rgba(4,8,6,.52) 0%,rgba(4,8,6,.10) 13%,rgba(4,8,6,0) 27%,
-          rgba(4,8,6,.12) 44%,rgba(4,8,6,.44) 63%,rgba(4,8,6,.80) 82%,
-          rgba(4,8,6,.94) 100%);}
+          rgba(4,8,6,.88) 0%,rgba(4,8,6,.72) 16%,rgba(4,8,6,.34) 30%,
+          rgba(4,8,6,.06) 42%,rgba(4,8,6,0) 52%,
+          rgba(4,8,6,.28) 66%,rgba(4,8,6,.72) 80%,rgba(4,8,6,.94) 100%);}
 
-        /* CENTRE, ET C'EST STRUCTUREL : un bloc centre sur une photo se lit
-           d'un coup ; aligne a gauche, il se lit ligne apres ligne, ce qui est
-           exactement le temps qu'on n'a pas. */
-        .cd-carte.sec .cd-bas{align-items:center;text-align:center;gap:0;}
-        .cd-dit{display:flex;flex-direction:column;align-items:center;
-          width:100%;min-width:0;}
+        /* ═══ LA NOUVELLE ORGANISATION : LE TITRE EN HAUT, A GAUCHE ═══
+
+           CE QUI CHANGE, ET POURQUOI. Le bloc etait centre et pose en bas de la
+           photo : « un bloc centre se lit d'un coup », ce qui etait vrai tant
+           qu'il tenait en quatre lignes moyennes. La maquette demande autre
+           chose, et c'est plus juste — un titre d'AFFICHE, cale en haut a
+           gauche, ou l'oeil commence. Centre, un titre de deux mots flotte ;
+           cale a gauche, il a un bord, donc une force.
+
+           ET LE BAS SE LIBERE POUR LA FICHE DU COMMERCE. Le nom, ses avis, son
+           programme et sa photo forment maintenant un rectangle pose sur la
+           photo — voir .ap-fiche dans l'ecran habitant. Le haut dit CE QUE C'EST
+           ET COMBIEN, le bas dit CHEZ QUI. Deux blocs, deux questions, et
+           plus rien d'empile. */
+        .cd-carte.sec .cd-bas{inset:0;justify-content:flex-start;
+          align-items:stretch;text-align:left;gap:0;
+          padding:calc(8px + env(safe-area-inset-top)) 16px 14px;}
+        /* LE TITRE EN HAUT, LE RESTE EN BAS, ET LA PHOTO RESPIRE ENTRE LES DEUX.
+           La marge automatique fait tout le travail : ce qui suit le bloc de
+           tete est pousse au bas de la carte, quel que soit son nombre. */
+        .cd-dit{display:flex;flex-direction:column;align-items:flex-start;
+          width:100%;min-width:0;flex:none;margin-bottom:auto;}
         /* LE METIER PORTE SON PICTOGRAMME ET SA COULEUR ; la nature de l'annonce
            suit, separee par un point, en plus discret. On lit « chez qui » avant
            « quoi », et c'est le bon ordre : on ne va pas chez une boucherie pour
@@ -906,13 +990,31 @@ export function StylesDirect() {
            TROIS GRAISSES, ET PAS UNE : le message a 900, le nom du commerce a
            650, la ville et la distance a 400. C'est la hierarchie qui fait lire
            vite, pas l'epaisseur. */
-        .cd-offre{margin:8px 0 0;
-          font-family:'Inter',system-ui,-apple-system,sans-serif;
-          font-weight:900;font-size:clamp(26px,8.2vw,38px);line-height:1.05;
-          letter-spacing:-.035em;text-transform:uppercase;color:#fff;
-          text-shadow:0 2px 14px rgba(0,0,0,.5);}
+        /* ═══ LE TITRE EST UNE AFFICHE ═══
+           Une grotesque compacte (voir --font-affiche), en capitales, sur deux
+           lignes au plus. La graisse 900 d'Inter tenait la meme force mais
+           prenait un tiers de plus en largeur : « La cote de boeuf maturee »
+           passait sur trois lignes et se lisait comme un paragraphe. Ici le
+           titre garde la taille d'un titre meme quand il est long.
+           Le -0.01em de chasse n'est pas du gout : cette fonte est deja tres
+           serree, et sans lui les capitales se touchent aux grandes tailles. */
+        /* SA TAILLE SUIT SA LONGUEUR. « 8 LASAGNES » tient en un souffle a
+           58 points ; « La cote de boeuf maturee » n'y tient pas, et un titre
+           coupe par des points de suspension ne dit plus rien du tout — c'est
+           le defaut qu'on repare, pas un detail de gout. Trois paliers, poses
+           par la carte selon le nombre de caracteres. */
+        .cd-offre{margin:9px 0 0;
+          font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
+          font-weight:400;font-size:clamp(38px,12vw,58px);line-height:.92;
+          letter-spacing:-.01em;text-transform:uppercase;color:#fff;
+          text-shadow:0 3px 22px rgba(0,0,0,.62);
+          display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
+          overflow:hidden;}
+        .cd-offre.moyen{font-size:clamp(30px,9vw,42px);}
+        .cd-offre.long{font-size:clamp(25px,7.2vw,34px);line-height:1;}
         .cd-detail{margin:7px 0 0;max-width:31ch;font-size:12.5px;
-          line-height:1.35;color:#C8D6CD;text-wrap:balance;
+          line-height:1.35;color:#D9E4DC;text-wrap:balance;
+          text-shadow:0 2px 10px rgba(4,8,6,.8);
           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
           overflow:hidden;}
         /* ─── SA VOIX ───
@@ -959,17 +1061,30 @@ export function StylesDirect() {
            appuye. */
         .cd-tete.film{width:70px;height:70px;
           box-shadow:0 0 0 2px rgba(61,226,166,.5),0 3px 14px rgba(0,0,0,.45);}
-        .cd-prixg{margin:9px 0 0;font-size:clamp(24px,7.4vw,34px);font-weight:850;
-          letter-spacing:-.03em;line-height:1;color:#fff;
+        /* ═══ LE PRIX EST LE SECOND ACTEUR, ET IL A LA TAILLE DU TITRE ═══
+           La maquette l'ecrit aussi gros que « 8 LASAGNES », dans la meme
+           fonte d'affiche, avec l'ancien prix BARRE EN ROUGE juste a cote —
+           petit, decale, comme sur une ardoise de marche. C'est la lecture la
+           plus rapide qui existe pour une remise : on voit la chute avant
+           d'avoir lu les chiffres. */
+        .cd-prixg{margin:4px 0 0;display:flex;align-items:baseline;gap:10px;
+          font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
+          font-size:clamp(38px,12vw,56px);font-weight:400;
+          letter-spacing:-.01em;line-height:1;color:#fff;
+          text-shadow:0 3px 22px rgba(0,0,0,.62);
           font-variant-numeric:tabular-nums;}
-        .cd-prixg s{margin-left:9px;font-size:14px;font-weight:600;color:#9DB0A6;}
-        /* ⚡ SUR UN FLASH, L'ANCIEN PRIX EST LA MOITIE DE L'INFORMATION. Il
-           passe devant, gros et barre ; le nouveau suit en ambre. On lit la
-           CHUTE, pas un prix avec une note de bas de page. */
-        .cd-prixg.flash{display:flex;align-items:baseline;justify-content:center;
-          gap:12px;color:#FFD75E;text-shadow:0 2px 18px rgba(240,180,41,.45);}
-        .cd-prixg.flash s{margin:0;font-size:clamp(17px,5vw,23px);font-weight:750;
-          color:rgba(255,255,255,.5);}
+        .cd-prixg s{margin:0;font-family:'Inter',system-ui,sans-serif;
+          font-size:clamp(15px,4.4vw,20px);font-weight:750;
+          color:#FF6B6B;text-decoration-color:#FF6B6B;
+          text-decoration-thickness:2px;}
+        /* ⚡ SUR UN FLASH, L'ANCIEN PRIX EST LA MOITIE DE L'INFORMATION — il
+           reste a cote du neuf, et c'est le meme dessin : une seule facon
+           d'ecrire un prix dans tout le produit. */
+        .cd-prixg.flash{color:#fff;}
+        /* COMBIEN IL EN RESTE : petit, sous le prix, le nombre en ambre. */
+        .cd-encore{margin:6px 0 0;font-size:13px;font-weight:800;
+          color:#EAF2EC;text-shadow:0 2px 12px rgba(4,8,6,.9);}
+        .cd-encore b{font-weight:850;color:#FFC400;}
         /* LE NOM A 650, LA VILLE ET LA DISTANCE A 400 : trois niveaux avec le
            titre. « Si tout est gras, plus rien n'est important. » */
         .cd-chez{margin:11px 0 0;font-size:14.5px;font-weight:650;
@@ -1074,6 +1189,73 @@ export function StylesDirect() {
            c'est une reponse a une inquietude, pas une seconde offre. */
         .cd-flash-s{margin:7px 0 0;font-size:12px;font-weight:650;
           line-height:1.3;color:#A9BDB2;}
+        /* ═══ « CA VIENT DE TOMBER ! » ═══
+           En haut, centree, ambre pleine sur noir : c'est la premiere chose que
+           l'oeil rencontre, et elle dit la seule chose qu'aucune fiche Google
+           ne saura jamais dire. Elle remplace un bloc de quatre lignes — le mot
+           Flash, la rarete, le nombre de minutes, une barre — dont le compte a
+           rebours est parti former l'anneau. */
+        .cd-tombe{align-self:center;display:inline-flex;align-items:center;
+          gap:7px;margin:2px 0 2px;padding:7px 15px;border-radius:999px;
+          font-size:12.5px;font-weight:850;letter-spacing:.04em;
+          text-transform:uppercase;color:#2A1C00;
+          background:linear-gradient(140deg,#FFD75E,#F0B429);
+          box-shadow:0 4px 18px rgba(240,180,41,.42);
+          animation:cdTombe 2.8s ease-in-out infinite;}
+        .cd-tombe i{font-style:normal;font-size:14px;line-height:1;}
+        @keyframes cdTombe{0%,88%,100%{transform:none;}
+          92%{transform:rotate(-2.2deg) scale(1.04);}
+          96%{transform:rotate(2.2deg) scale(1.04);}}
+
+        /* ═══ L'ANNEAU ═══
+           « Le chrono devrait etre tres different, comme l'acteur principal. »
+           Un disque de cent points, cercle de rouge, pose a cheval sur la photo
+           a hauteur de regard. Le tour du disque montre la part qui reste — un
+           cadran se lit sans qu'on ait a lire un chiffre. Sans Flash, le meme
+           disque porte une porte : « Voir la carte », « Voir la journee ». Un
+           seul objet a cet endroit, jamais deux. */
+        /* IL EST HAUT, SOUS LE PRIX, COMME DANS LA MAQUETTE — et pas au milieu
+           de l'ecran, ou il tombait sur l'etiquette « Glissez pour proposer »
+           des trois premieres cartes. Deux objets poses au meme endroit, c'est
+           toujours le plus recent qui a tort. */
+        .cd-anneau{position:absolute;right:16px;top:30%;z-index:3;
+          width:104px;height:104px;border-radius:50%;
+          display:flex;flex-direction:column;align-items:center;
+          justify-content:center;gap:0;text-align:center;
+          font:inherit;color:#fff;cursor:default;border:0;
+          background:rgba(9,12,10,.72);
+          -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+          box-shadow:0 10px 30px rgba(0,0,0,.5);}
+        .cd-anneau u{position:absolute;inset:-3px;border-radius:50%;
+          text-decoration:none;z-index:-1;
+          -webkit-mask:radial-gradient(circle, transparent 0 47px, #000 47px);
+          mask:radial-gradient(circle, transparent 0 47px, #000 47px);}
+        .cd-anneau .cd-an-t{display:flex;align-items:center;gap:4px;
+          font-size:9px;font-weight:850;letter-spacing:.12em;
+          text-transform:uppercase;color:#FF8A7A;}
+        .cd-anneau .cd-an-t i{font-style:normal;font-size:10px;}
+        .cd-anneau b{font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
+          font-size:38px;font-weight:400;line-height:1;letter-spacing:-.02em;
+          font-variant-numeric:tabular-nums;}
+        .cd-anneau em{font-style:normal;font-size:9.5px;font-weight:850;
+          letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.72);}
+        /* LA PORTE, SANS FLASH : deux lignes, un pictogramme, et un cercle
+           vert — la couleur de ce qu'on peut faire, partout dans le produit. */
+        /* LA RARETE, SOUS L'ANNEAU. Deux lignes de neuf points, centrees sur le
+           disque : on ne la lit pas d'abord, on la trouve quand on s'arrete. */
+        .cd-an-r{position:absolute;top:calc(100% + 7px);left:-14px;right:-14px;
+          text-decoration:none;font-size:9px;font-weight:800;line-height:1.25;
+          letter-spacing:.05em;text-transform:uppercase;text-align:center;
+          color:rgba(255,215,94,.82);text-shadow:0 2px 10px rgba(4,8,6,.9);}
+        .cd-anneau.porte{cursor:pointer;border:2px solid rgba(61,226,166,.55);
+          padding:0 10px;}
+        .cd-anneau.porte i{font-style:normal;font-size:20px;line-height:1;
+          margin-bottom:4px;}
+        .cd-anneau.porte span{font-size:11px;font-weight:850;line-height:1.15;
+          letter-spacing:.02em;color:#EAF2EC;}
+        .cd-anneau.porte:active{transform:scale(.95);}
+        @media (prefers-reduced-motion:reduce){.cd-tombe{animation:none;}}
+
         .cd-quand{display:inline-block;margin-top:11px;font-size:11.5px;
           font-weight:850;letter-spacing:.05em;text-transform:uppercase;
           color:#04150E;background:#F0B429;border-radius:999px;padding:5px 12px;}
