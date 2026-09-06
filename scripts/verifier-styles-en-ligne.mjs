@@ -15,6 +15,52 @@
 //
 //   node scripts/verifier-styles-en-ligne.mjs
 import { readdirSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+
+/**
+ * ═══ ON NE DEVINE PLUS : ON FAIT LIRE LE FICHIER PAR UN VRAI ANALYSEUR ═══
+ *
+ * CE QUE LES DEUX GARDES DU DESSOUS SAVENT FAIRE, ET CE QU'ELLES NE SAVENT PAS.
+ * Elles lisent le TEXTE : où commence le bloc, ce qui suit l'accent grave de
+ * fermeture, quels noms de classes se répètent. C'est la bonne façon de dire
+ * « ce nom est pris deux fois » — un analyseur JavaScript, lui, ne sait rien du
+ * CSS qu'il transporte. Mais pour dire « ce fichier compile-t-il », lire le
+ * texte est un pari : il faut supposer où le littéral finit, et une supposition
+ * finit toujours par tomber sur un cas qu'on n'avait pas prévu.
+ *
+ * LE CAS QUI L'A IMPOSÉ. Un commentaire citait un nom d'animation entre deux
+ * accents graves. UNE PAIRE ne coupe pas le texte : elle le referme puis le
+ * rouvre. Le fichier a compilé ici et levé une Syntax Error au déploiement,
+ * parce que les deux analyseurs ne traitent pas la même construction de la même
+ * façon. Aucune lecture de texte ne peut trancher ce genre de chose — seul un
+ * analyseur le peut, et il rend en prime le numéro de ligne exact.
+ *
+ * ET IL NE SE TAIT JAMAIS EN SILENCE. Si le module n'est pas installé, on le
+ * DIT et on échoue. Une vérification qui se désactive toute seule est pire que
+ * pas de vérification : on continue de lui faire confiance.
+ */
+const exiger = createRequire(import.meta.url);
+let analyser = null;
+let pourquoiPasDAnalyseur = "";
+try {
+  analyser = exiger("@babel/parser").parse;
+} catch (e) {
+  pourquoiPasDAnalyseur = String(e?.message ?? e).split("\n")[0];
+}
+
+function erreurDeSyntaxe(source) {
+  try {
+    analyser(source, { sourceType: "module", plugins: ["jsx", "typescript"] });
+    return null;
+  } catch (e) {
+    return {
+      message: String(e?.message ?? e),
+      ligne: e?.loc?.line ?? 0,
+      colonne: e?.loc?.column ?? 0,
+    };
+  }
+}
+
 
 /**
  * ON NE TIENT PLUS LA LISTE À LA MAIN — ELLE ÉTAIT INCOMPLÈTE, ET ÇA A COÛTÉ
@@ -147,6 +193,29 @@ let fautes = 0;
 for (const rel of FICHIERS) {
   const source = readFileSync(new URL(`../${rel}`, import.meta.url), "utf8");
   const blocs = blocsDeStyle(source);
+  // ─── D'ABORD : EST-CE QUE CE FICHIER SE LIT ? ───
+  // Avant de raisonner sur le contenu du bloc, on demande a un analyseur si le
+  // fichier tient debout. C'est la seule verification qui ne suppose rien, et
+  // c'est celle qui aurait attrape la paire d'accents graves des deux cotes.
+  if (analyser) {
+    const mal = erreurDeSyntaxe(source);
+    if (mal) {
+      const ligne = (source.split("\n")[mal.ligne - 1] ?? "").trim();
+      console.error(
+        `✗ ${rel}:${mal.ligne}:${mal.colonne} — ce fichier ne compile pas :\n` +
+          `    ${mal.message}\n` +
+          `    ${ligne.slice(0, 100)}\n` +
+          `    Dans un bloc de style, la cause la plus frequente est un ACCENT\n` +
+          `    GRAVE dans un commentaire CSS — seul il coupe le litteral, PAR\n` +
+          `    PAIRE il le referme puis le rouvre, ce qui passe ici et casse au\n` +
+          `    deploiement. Retirez-le, y compris autour d'un simple nom.`,
+      );
+      fautes++;
+      // Le reste du script raisonne sur un fichier suppose valide : inutile
+      // d'empiler des messages derives d'une lecture qui n'a plus de sens.
+      continue;
+    }
+  }
   if (!blocs.length) {
     console.error(`✗ ${rel} : aucune feuille de style en ligne trouvée.`);
     fautes++;
@@ -185,6 +254,15 @@ for (const rel of FICHIERS) {
   if (!fautes) console.log(`✓ ${rel} — ${blocs.length} bloc(s), refermé(s) au bon endroit, aucun nom repris.`);
 }
 
+if (!analyser) {
+  console.error(
+    `\n✗ L'ANALYSEUR SYNTAXIQUE EST ABSENT : ${pourquoiPasDAnalyseur}\n` +
+      `    La verification la plus sure de ce script ne peut pas tourner, et\n` +
+      `    une garde qui se desactive toute seule est pire que pas de garde :\n` +
+      `    on continue de lui faire confiance. Installez @babel/parser.`,
+  );
+  process.exit(1);
+}
 if (fautes) {
   console.error(`\n${fautes} faute(s).`);
   process.exit(1);
