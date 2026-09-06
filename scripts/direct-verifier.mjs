@@ -444,14 +444,22 @@ dire(f1.garde.includes("boulange"), "et ça survit à la fermeture");
 
 // ET ON LA RETROUVE DANS « MES COMMERCES » — une file qu'on ne retrouve nulle
 // part est une file oubliée.
-// ON Y ENTRE PAR LA POCHE, À CÔTÉ DU CŒUR. Cette page a porté trois portes
-// successives, et chacune est tombée pour la même raison : elle disait deux
-// choses à la fois. D'abord une pastille chiffrée qui comptait les nouvelles en
-// ambre et les annonces gardées en vert — « le cœur et les notifications en
-// haut à droite, c'est incompréhensible ». Puis une cloche, partie sur l'onglet
-// Profil parce que « ce sont deux intentions totalement différentes ». Reste la
-// poche, qui ne dit qu'une chose : ce que le cœur y a rangé.
-await p.click(".ap-poche");
+// ON Y ENTRE PAR LA CLOCHE, ET C'EST UNE CORRECTION DE CE FICHIER.
+//
+// CETTE PAGE A PORTÉ QUATRE PORTES SUCCESSIVES, et chacune est tombée pour la
+// même raison : elle disait deux choses à la fois. D'abord une pastille chiffrée
+// qui comptait les nouvelles en ambre et les annonces gardées en vert — « le
+// cœur et les notifications en haut à droite, c'est incompréhensible ». Puis une
+// cloche partie sur l'onglet Profil. Puis la poche, à côté du cœur.
+//
+// LA DERNIÈRE SÉPARATION EST CELLE QUI COMPTE : « le bouton cœur et le bouton
+// des notifications à côté montrent la même chose, or le cœur montre les favoris
+// et les notifications tout le reste. » Ce sont maintenant deux pages distinctes.
+// La FILE D'ATTENTE n'est pas un favori — on ne l'a pas choisie, elle nous
+// prévient — donc elle vit avec les nouvelles, derrière la cloche. Ce test
+// entrait encore par la poche et n'y trouvait plus rien : il mesurait la page
+// d'avant, pas le défaut.
+await p.click(".ap-cloche");
 await p.waitForTimeout(900);
 const att = await p.evaluate(() => {
   const e = document.querySelector(".ap-nouv-e.attente");
