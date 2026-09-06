@@ -39,7 +39,7 @@
 // délicat : on verrouille la direction au premier mouvement, et le balayage est
 // désactivé dès qu'on a commencé à descendre. Sans ça, lire le programme ferait
 // partir la carte.
-import { useEffect, useRef, useState, useSyncExternalStore, useLayoutEffect } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, useLayoutEffect, type ReactNode } from "react";
 import { noter, noterUneFois } from "@/lib/direct/parcours";
 import {
   SALONS_VIDES,
@@ -133,6 +133,7 @@ import {
   HEURE_MAX,
   HEURE_MIN,
   METIERS,
+  motDuMetier,
   SORTIES,
   autourDeMoi,
   avisDuMoment,
@@ -165,6 +166,7 @@ import {
   type CarteAutour,
   type ArticleCatalogue,
   motCatalogue,
+  type CleIcone,
   type CleMetier,
   type EvenementVille,
   type ItemPaquet,
@@ -302,8 +304,17 @@ const SEUIL_PLI = 90;
 const VERROU = 6;
 /** La durée de l'envol, la même qu'en CSS. */
 const VOL_MS = 420;
-/** La durée du vol du cœur vers les favoris, la même qu'en CSS. */
-const COEUR_MS = 900;
+/**
+ * LA DURÉE DU VOL DU CŒUR VERS LES FAVORIS, LA MÊME QU'EN CSS.
+ *
+ * « L'animation du cœur est trop rapide pour voir le cœur monter vers le cœur
+ * en haut à droite. » Elle durait 900 ms, dont 700 de trajet — ce qui SEMBLE
+ * confortable et ne l'est pas : l'œil ne part pas en même temps que l'objet. Il
+ * lui faut d'abord trouver ce qui vient d'apparaître au centre, et pendant ce
+ * temps-là le cœur est déjà parti. Ce n'est donc pas le trajet qu'il fallait
+ * allonger en premier, c'est le TEMPS D'ARRÊT avant qu'il commence.
+ */
+const COEUR_MS = 1500;
 
 /**
  * LA DURÉE DU BOND DU FANTÔME, LA MÊME QU'EN CSS.
@@ -656,6 +667,103 @@ async function demanderAvertissement(): Promise<NotificationPermission> {
 // la page restait vide, sans la moindre erreur dans la console.
 //
 
+/**
+ * ═══ LE PICTOGRAMME DU ROND, PAR MÉTIER ═══
+ *
+ * LE MOT NE SUFFISAIT PAS À CORRIGER LE DÉFAUT. « L'appellation à l'intérieur
+ * de ce cercle devait être différente selon le métier » — mais sous le mot, il
+ * y avait UNE FOURCHETTE ET UN COUTEAU, pour tout le monde. Écrire « Les
+ * tarifs » sous des couverts chez un coiffeur aurait déplacé le contresens d'un
+ * étage, pas réparé quoi que ce soit : c'est le dessin qu'on voit en premier.
+ *
+ * AU TRAIT, JAMAIS UN EMOJI. Un emoji change de dessin selon le téléphone —
+ * défaut rédhibitoire pour un objet qui doit se reconnaître — et il arrive avec
+ * ses couleurs, qui cassent l'harmonie du cercle. Six tracés, même grille de
+ * 24, même épaisseur : ils se ressemblent entre eux autant qu'ils diffèrent du
+ * voisin, ce qui est exactement ce qu'on demande à une famille d'icônes.
+ */
+function PictoMetier({ icone }: { icone: CleIcone }) {
+  const traces: Record<CleIcone, ReactNode> = {
+    // Fourchette et couteau — le seul qui existait, et le seul qui était juste.
+    restaurant: (
+      <>
+        <path d="M4 3v7a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V3" />
+        <path d="M6 12v9" />
+        <path d="M17 3c-1.7 1.3-2.5 3.2-2.5 5.5S15.3 12.7 17 14v7" />
+      </>
+    ),
+    // Un verre a cocktail : c'est la silhouette du bar, pas celle du repas.
+    bar: (
+      <>
+        <path d="M4.5 4.5h15l-7.5 8.5z" />
+        <path d="M12 13v6.5" />
+        <path d="M8.5 20.5h7" />
+      </>
+    ),
+    // Des ciseaux. Deux anneaux en bas, deux lames croisees : la seule image
+    // qu'un coiffeur reconnait sans la lire.
+    coiffeur: (
+      <>
+        <circle cx="6.2" cy="18" r="2.3" />
+        <circle cx="17.8" cy="18" r="2.3" />
+        <path d="M7.8 16.4 19 4" />
+        <path d="M16.2 16.4 5 4" />
+      </>
+    ),
+    // Un cintre : l'objet du magasin de vetements, friperie comprise.
+    mode: (
+      <>
+        <path d="M12 5.6a1.7 1.7 0 1 1 1.7 1.7c-.9 0-1.7.8-1.7 1.7v1.2" />
+        <path d="m12 10.2-8.4 5.4c-.8.5-.4 1.9.6 1.9h15.6c1 0 1.4-1.4.6-1.9L12 10.2z" />
+      </>
+    ),
+    // Une tulipe. Une marguerite demande cinq petales et devient une tache a
+    // cette taille ; une tulipe garde sa silhouette a trente points.
+    fleuriste: (
+      <>
+        <path d="M7.8 4.6c0 4.2 1.8 6.8 4.2 6.8s4.2-2.6 4.2-6.8c-1.4 1.1-2.7 1.6-4.2 1.6S9.2 5.7 7.8 4.6z" />
+        <path d="M12 11.4V20.5" />
+        <path d="M12 16.4c-2.1 0-3.7-1.3-3.7-3.2" />
+      </>
+    ),
+    // Un flacon de vernis : l'objet, pas la main — une main au trait a cette
+    // taille ne se lit jamais.
+    ongles: (
+      <>
+        <path d="M10.4 2.6h3.2v3.6h-3.2z" />
+        <path d="M9 10.3c0-2.1 1.3-4.1 3-4.1s3 2 3 4.1v8.4a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z" />
+        <path d="M9.3 13.2h5.4" />
+      </>
+    ),
+    // ─── DEUX DESSINS QUE LES SIX BRANCHES NE COUVRAIENT PAS ───
+    // Un boucher et un boulanger sont rangés sous « restaurant » faute de
+    // branche a eux ; leur laisser la fourchette et le couteau redisait le
+    // defaut d'un cran plus bas.
+    // L'etal : l'auvent et le comptoir, la silhouette du marche couvert.
+    etal: (
+      <>
+        <path d="M3 9.5 5 4h14l2 5.5z" />
+        <path d="M3 9.5h18" />
+        <path d="M4.8 9.5V20h14.4V9.5" />
+        <path d="M8.6 20v-5.4h6.8V20" />
+      </>
+    ),
+    // Le pain : une miche et ses deux entailles.
+    pain: (
+      <>
+        <path d="M3.2 12.6c0-3.4 3.9-6.1 8.8-6.1s8.8 2.7 8.8 6.1c0 3.1-3.9 4.9-8.8 4.9s-8.8-1.8-8.8-4.9z" />
+        <path d="M9 9.6 7.4 14.8" />
+        <path d="M13.4 9.4 11.8 14.6" />
+      </>
+    ),
+  };
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      {traces[icone] ?? traces.restaurant}
+    </svg>
+  );
+}
+
 function Etoiles({ note }: { note: number }) {
   return (
     <span className="ap-et" aria-label={`${note} sur 5`}>
@@ -904,6 +1012,22 @@ export function ApercuHabitant() {
    */
   const [sousLaBarre, setSousLaBarre] = useState(false);
   const [coeurVole, setCoeurVole] = useState(false);
+  /**
+   * ═══ OÙ LE CŒUR ATTERRIT, LU SUR L'ÉCRAN ═══
+   *
+   * IL VISAIT LA CLOCHE. La cible était écrite en dur dans la feuille de style,
+   * `calc(100% - 30px)` — vrai le jour où le cœur était le dernier bouton de la
+   * barre du haut. Depuis qu'il a été séparé des notifications, la poche est à
+   * 312 points et la cloche à 359 : mesuré au navigateur, le cœur volait vers
+   * la cloche. « On ne voit pas le cœur monter vers le cœur en haut à droite »
+   * — il n'y montait pas.
+   *
+   * ON LIT DONC LA POSITION RÉELLE AU MOMENT DU VOL. Une coordonnée écrite en
+   * dur est une copie de la mise en page, et toute copie finit par diverger de
+   * l'original ; celle-ci a mis une refonte à le faire. La mesure, elle, ne peut
+   * pas se tromper de bouton — et elle survivra au prochain déplacement.
+   */
+  const [coeurOu, setCoeurOu] = useState<{ x: number; y: number } | null>(null);
   /** La carte d'arrivée qu'on est en train de glisser — voir plus bas. */
   const [accueilDx, setAccueilDx] = useState(0);
   const priseAccueil = useRef<number | null>(null);
@@ -2247,6 +2371,22 @@ export function ApercuHabitant() {
   const photoDeLaFeuille = dosFeuille ?? salon?.photo;
   /** La carte du dessus, telle que l'écran la dessine — pour la fiche et l'anneau. */
   const dessusCarte = dessus ? carteDe(dessus) : undefined;
+  /**
+   * CE QUE LE ROND PROMET, DANS LES MOTS DU MÉTIER — voir `MOT_DU_METIER`.
+   *
+   * DEUX CAS, ET LE SECOND EST LE PLUS HONNÊTE. Quand le commerce a quelque
+   * chose de posé à montrer — un menu, un catalogue — le rond le nomme : la
+   * carte, l'ardoise, les tarifs, les pièces. Quand il n'a que son programme du
+   * jour, il retombe sur « Sa journée », qui ne promet rien de plus que ce
+   * qu'on trouvera derrière. Un rond qui annonce « les tarifs » et n'ouvre
+   * qu'un horaire ferait perdre le geste pour toujours.
+   */
+  const rondDuMetier = dessus
+    ? motDuMetier(dessus.metier, dessus.branche)
+    : undefined;
+  const motDuRond =
+    rondDuMetier?.[dessus?.menu || dessus?.catalogue?.length ? "carte" : "journee"] ??
+    "Sa journée";
 
   /**
    * LA VIDÉO DU ROND NE VIT QUE SUR LA CARTE DU DESSUS.
@@ -2607,14 +2747,33 @@ export function ApercuHabitant() {
   /** ⚡ La carte du dessus porte-t-elle un Flash en cours — voir `flash.ts`. */
   const flashDuSommet =
     !!dessus && dessus.moments.some((m) => m.flash && flashEnCours(m.flash, heure));
+  /**
+   * LE VOL DU CŒUR, D'UN SEUL ENDROIT — voir `coeurOu`.
+   *
+   * IL PARTAIT DE DEUX ENDROITS AVEC DEUX DURÉES : 900 ms depuis le bouton
+   * « mettre en favori », 800 ms depuis le double appui sur la photo. Deux
+   * chiffres pour un seul geste, dont un qui ne correspondait à aucune
+   * animation — le second coupait donc le vol avant la fin. Une seule fonction,
+   * une seule durée.
+   */
+  function lancerLeCoeur() {
+    // ON MESURE AVANT DE MONTRER : le cœur doit connaître sa cible dès la
+    // première image, sinon il part au centre puis se corrige, ce qui se voit.
+    const cible = document.querySelector(".ap-poche")?.getBoundingClientRect();
+    setCoeurOu(
+      cible ? { x: Math.round(cible.left + cible.width / 2), y: Math.round(cible.top + cible.height / 2) } : null,
+    );
+    setCoeurVole(true);
+    minuteries.current.push(window.setTimeout(() => setCoeurVole(false), COEUR_MS));
+  }
+
   function garderLeSommet() {
     if (!sommet) return;
     noter("garde", passees.length + 1, "bandeau");
     setGardees((g) =>
       g.includes(sommet.id) ? g.filter((x) => x !== sommet.id) : [...g, sommet.id],
     );
-    setCoeurVole(true);
-    minuteries.current.push(window.setTimeout(() => setCoeurVole(false), COEUR_MS));
+    lancerLeCoeur();
   }
 
   const listeEnvies = ENVIES[branche];
@@ -5732,8 +5891,7 @@ export function ApercuHabitant() {
                     if (t - dernierAppui.current < 300) {
                       dernierAppui.current = 0;
                       if (!suivis.includes(sommet.id)) {
-                        setCoeurVole(true);
-                        window.setTimeout(() => setCoeurVole(false), 800);
+                        lancerLeCoeur();
                         suivreCeCommerce(sommet);
                       }
                       return;
@@ -5843,21 +6001,20 @@ export function ApercuHabitant() {
                                   duJour: true,
                                 });
                               }}
-                              aria-label="Voir la carte du jour"
+                              aria-label={`Voir ${motDuRond.toLowerCase()} — ${dessus?.nom ?? "ce commerce"}`}
                             >
-                              <span className="cd-an-t">
-                                {dessus?.menu || dessus?.catalogue?.length
-                                  ? "La carte"
-                                  : "Sa journée"}
-                              </span>
-                              {/* UN PICTOGRAMME AU TRAIT, PAS UN EMOJI : un
-                                  emoji change de dessin selon le téléphone et
-                                  cassait l'harmonie du cercle. */}
-                              <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M4 3v7a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V3" />
-                                <path d="M6 12v9" />
-                                <path d="M17 3c-1.7 1.3-2.5 3.2-2.5 5.5S15.3 12.7 17 14v7" />
-                              </svg>
+                              {/* ─── LE MOT EST CELUI DU MÉTIER ───
+                                  « Le rond où il est écrit "la carte du jour"
+                                  est la même opération pour un coiffeur ou un
+                                  magasin de vêtements ; or l'appellation devait
+                                  être différente selon le métier. »
+                                  Voir `MOT_DU_METIER` : l'ardoise du bar, les
+                                  tarifs du coiffeur, les pièces de la friperie.
+                                  Le pictogramme suit le même chemin — un mot
+                                  juste sous des couverts n'aurait fait que
+                                  déplacer le contresens. */}
+                              <span className="cd-an-t">{motDuRond}</span>
+                              <PictoMetier icone={rondDuMetier?.icone ?? "restaurant"} />
                               <em>Voir</em>
                             </button>
                           ) : undefined
@@ -7287,7 +7444,19 @@ export function ApercuHabitant() {
             )}
           </div>
 
-          {coeurVole && <span className="ap-coeur" aria-hidden="true">♥</span>}
+          {coeurVole && (
+            <span
+              className="ap-coeur"
+              aria-hidden="true"
+              style={
+                coeurOu
+                  ? ({ "--ap-cx": `${coeurOu.x}px`, "--ap-cy": `${coeurOu.y}px` } as React.CSSProperties)
+                  : undefined
+              }
+            >
+              ♥
+            </span>
+          )}
           {/* ═══ LE GESTE PRINCIPAL S'APPREND EN TROIS CARTES ═══
               « Si la barre blanche représente le balayage entre les annonces,
               elle est visuellement intéressante mais pas forcément
@@ -11234,7 +11403,22 @@ export function ApercuHabitant() {
         .ap-page.feuille{top:80px;border-radius:22px 22px 0 0;
           padding-top:12px;overflow:hidden;
           box-shadow:0 -1px 0 rgba(126,230,192,.22),0 -22px 44px rgba(0,0,0,.6);
-          animation:apFeuille .3s cubic-bezier(.2,.85,.25,1) both;}
+          /* ELLE MONTE ASSEZ LENTEMENT POUR QU'ON VOIE D'OU ELLE VIENT.
+             « La montee de la pop-up est trop rapide, on n'a pas le temps de
+             voir que ca vient du bas de la carte. » A trois dixiemes, elle
+             etait DEJA LA avant qu'on ait regarde : on ne percevait pas un
+             mouvement, on percevait un changement d'ecran — c'est-a-dire
+             exactement ce qu'on cherchait a supprimer en la faisant monter.
+             Le lien entre l'annonce et le salon EST ce trajet ; s'il n'est
+             pas vu, la feuille ne sert a rien.
+
+             ET LA COURBE COMPTE AUTANT QUE LA DUREE. Un premier essai a .62s
+             gardait une courbe tres chargee au debut : mesuree au navigateur,
+             la feuille etait arrivee au bout de 270 ms sur les 620 — allonger
+             la duree n'avait fait qu'ajouter du temps APRES le mouvement. La
+             courbe est maintenant presque droite au depart : le trajet occupe
+             vraiment les six dixiemes, et c'est lui qu'on voit. */
+          animation:apFeuille .62s cubic-bezier(.34,.62,.28,1) both;}
         @keyframes apFeuille{from{transform:translateY(100%);}
           to{transform:none;}}
         /* LA POIGNEE. Elle ne sert a rien fonctionnellement — on revient par la
@@ -12660,13 +12844,28 @@ export function ApercuHabitant() {
            un bouton visible n'apprend rien et prend deux cents points sur la
            photo. Leurs styles partent avec elles : une regle qui ne s'applique
            a rien finit par etre recopiee ailleurs par erreur. */
-        .ap-coeur{position:absolute;left:50%;top:55%;z-index:7;font-size:44px;color:#3DE2A6;
+        /* LE COEUR QUI MONTE VERS LES FAVORIS.
+           SA CIBLE EST MESUREE, PAS ECRITE — voir coeurOu dans le composant.
+           Le repli sert au cas ou la poche ne serait pas a l'ecran : il vise
+           la ou elle est, et non plus le bord droit, qui est la cloche. */
+        .ap-coeur{position:absolute;left:50%;top:55%;z-index:9;font-size:44px;color:#3DE2A6;
           pointer-events:none;filter:drop-shadow(0 6px 18px rgba(18,185,129,.7));
-          animation:apCoeur ${COEUR_MS}ms cubic-bezier(.5,0,.35,1) forwards;}
+          animation:apCoeur ${COEUR_MS}ms cubic-bezier(.36,0,.28,1) forwards;}
+        /* IL S'ARRETE AVANT DE PARTIR, ET C'EST LA CORRECTION.
+           « L'animation est trop rapide pour voir le coeur monter. » Il
+           n'apparaissait que 200 ms au centre avant de filer : le temps de le
+           trouver des yeux, il etait deja en haut. Il tient maintenant sa
+           place un tiers du temps — on le voit NAITRE, puis on le suit. Le
+           trajet lui-meme est plus long, et il s'attarde en arrivant au lieu
+           de disparaitre en route. */
         @keyframes apCoeur{
           0%{left:50%;top:55%;transform:translate(-50%,-50%) scale(.4);opacity:0;}
-          22%{left:50%;top:55%;transform:translate(-50%,-50%) scale(1.25);opacity:1;}
-          100%{left:calc(100% - 30px);top:34px;transform:translate(-50%,-50%) scale(.3);opacity:.1;}
+          12%{left:50%;top:55%;transform:translate(-50%,-50%) scale(1.3);opacity:1;}
+          22%{left:50%;top:55%;transform:translate(-50%,-50%) scale(1.05);opacity:1;}
+          34%{left:50%;top:55%;transform:translate(-50%,-50%) scale(1.12);opacity:1;}
+          88%{opacity:1;}
+          100%{left:var(--ap-cx, calc(100% - 78px));top:var(--ap-cy, 27px);
+            transform:translate(-50%,-50%) scale(.34);opacity:.15;}
         }
 
         .ap-vide{flex:1;display:flex;flex-direction:column;align-items:center;

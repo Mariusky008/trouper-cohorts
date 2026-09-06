@@ -52,6 +52,115 @@ export const METIERS = [
 
 export type CleMetier = (typeof METIERS)[number]["cle"];
 
+/**
+ * ═══ CE QU'IL Y A À VOIR, DIT DANS LES MOTS DU MÉTIER ═══
+ *
+ * LE DÉFAUT MESURÉ : « le rond dans lequel il est écrit "la carte du jour" est
+ * aussi la même opération pour un coiffeur ou un magasin de vêtements ; or
+ * l'appellation à l'intérieur de ce cercle devait être différente selon le
+ * métier. »
+ *
+ * C'ÉTAIT VRAI, ET CE N'EST PAS UN DÉTAIL DE VOCABULAIRE. Un coiffeur n'a pas
+ * de carte, un fleuriste non plus, et une friperie encore moins. « La carte »
+ * posée sur leur photo ne dit pas seulement un mot de travers : elle dit que
+ * l'application a été pensée pour les restaurants et qu'eux sont tolérés
+ * dedans. C'est précisément ce qu'il ne faut pas qu'un commerçant ressente au
+ * premier écran.
+ *
+ * DEUX LIBELLÉS PAR MÉTIER, ET PAS UN SEUL. `carte` sert quand le commerce a
+ * quelque chose de posé à montrer — un menu, un catalogue. `journee` est le
+ * repli, quand il n'y a que le programme du jour : il reste neutre, parce que
+ * là il n'y a vraiment rien de plus précis à promettre.
+ *
+ * ILS SONT COURTS PARCE QUE LE CERCLE EST PETIT. Cent quatre points de
+ * diamètre, en capitales espacées : au-delà d'une douzaine de signes le mot se
+ * coupe, et un libellé coupé ne vaut pas mieux que le mauvais libellé.
+ */
+/**
+ * LE MOT ET LE DESSIN VIENNENT ENSEMBLE, ET C'EST VOLONTAIRE.
+ *
+ * Ils ont été séparés une première fois, et le résultat était pire que le
+ * défaut d'origine : le rond disait « La fournée » sous une fourchette et un
+ * couteau. Un mot juste sous le mauvais dessin ne corrige rien — on voit le
+ * dessin avant de lire. Une seule table, une seule décision.
+ */
+export type CleIcone = CleMetier | "etal" | "pain";
+export type MotDuMetier = { carte: string; journee: string; icone: CleIcone };
+
+/**
+ * ═══ ET LE MÉTIER ÉCRIT PASSE AVANT LA BRANCHE ═══
+ *
+ * PARCE QUE LA BRANCHE N'EST PAS LE MÉTIER. `branche` ne compte que six
+ * valeurs — ce sont les ONGLETS de filtrage, pas les métiers du monde réel. Une
+ * boucherie, une boulangerie et un traiteur sont donc rangés sous
+ * « restaurant », faute de mieux, et le rond leur écrivait « La carte ».
+ * C'est le défaut signalé, exactement, à un étage de plus : un boucher n'a pas
+ * de carte, il a un étal.
+ *
+ * ON LIT DONC D'ABORD CE QUE LE COMMERÇANT A ÉCRIT. `metier` est son mot à lui
+ * — « Boucherie », « Prothésiste ongulaire » — et c'est la source la plus
+ * fiable qu'on ait. La branche ne sert que de repli, pour un métier qu'on n'a
+ * pas encore rencontré.
+ *
+ * LA COMPARAISON EST SOUPLE PAR NÉCESSITÉ : le champ est libre, donc « Bar à
+ * vins » doit tomber sur « bar », et « Boulangerie-pâtisserie » sur
+ * « boulangerie ». On cherche donc le premier mot-clé CONTENU dans le libellé,
+ * du plus précis au plus général — l'ordre du tableau est significatif.
+ */
+export const MOT_DU_LIBELLE: Array<[string, MotDuMetier]> = [
+  // Les métiers de bouche que la branche « restaurant » avalait.
+  ["boulanger", { carte: "La fournée", journee: "Sa journée", icone: "pain" }],
+  ["pâtisser", { carte: "La vitrine", journee: "Sa journée", icone: "pain" }],
+  ["patisser", { carte: "La vitrine", journee: "Sa journée", icone: "pain" }],
+  ["boucher", { carte: "L'étal", journee: "Sa journée", icone: "etal" }],
+  ["charcut", { carte: "L'étal", journee: "Sa journée", icone: "etal" }],
+  ["poissonn", { carte: "L'étal", journee: "Sa journée", icone: "etal" }],
+  ["primeur", { carte: "L'étal", journee: "Sa journée", icone: "etal" }],
+  ["fromager", { carte: "L'étal", journee: "Sa journée", icone: "etal" }],
+  ["traiteur", { carte: "Les plats", journee: "Sa journée", icone: "restaurant" }],
+  ["caviste", { carte: "Les vins", journee: "Sa journée", icone: "bar" }],
+  // Puis les six branches, sous leur nom écrit.
+  ["prothésiste", { carte: "Les poses", journee: "Sa journée", icone: "ongles" }],
+  ["onglerie", { carte: "Les poses", journee: "Sa journée", icone: "ongles" }],
+  ["coiffeur", { carte: "Les tarifs", journee: "Sa journée", icone: "coiffeur" }],
+  ["coiffure", { carte: "Les tarifs", journee: "Sa journée", icone: "coiffeur" }],
+  ["barbier", { carte: "Les tarifs", journee: "Sa journée", icone: "coiffeur" }],
+  ["fleurist", { carte: "Les fleurs", journee: "Sa journée", icone: "fleuriste" }],
+  ["friperie", { carte: "Les pièces", journee: "Sa journée", icone: "mode" }],
+  ["prêt-à-porter", { carte: "Les pièces", journee: "Sa journée", icone: "mode" }],
+  ["pret-a-porter", { carte: "Les pièces", journee: "Sa journée", icone: "mode" }],
+  ["boutique", { carte: "Les pièces", journee: "Sa journée", icone: "mode" }],
+  ["bar", { carte: "L'ardoise", journee: "Sa journée", icone: "bar" }],
+  ["brasserie", { carte: "L'ardoise", journee: "Sa journée", icone: "bar" }],
+  ["restaurant", { carte: "La carte", journee: "Sa journée", icone: "restaurant" }],
+];
+
+/**
+ * Le mot du rond pour un commerce donné : son libellé d'abord, sa branche
+ * ensuite. Voir `MOT_DU_LIBELLE` pour la raison de cet ordre.
+ */
+export function motDuMetier(metier: string | undefined, branche: CleMetier): MotDuMetier {
+  const bas = (metier ?? "").toLowerCase();
+  const trouve = bas ? MOT_DU_LIBELLE.find(([cle]) => bas.includes(cle)) : undefined;
+  return trouve ? trouve[1] : (MOT_DU_METIER[branche] ?? MOT_DU_METIER.restaurant);
+}
+
+export const MOT_DU_METIER: Record<CleMetier, MotDuMetier> = {
+  restaurant: { carte: "La carte", journee: "Sa journée", icone: "restaurant" },
+  // L'ardoise est le mot du bar, et c'est celui qu'ils emploient entre eux.
+  bar: { carte: "L'ardoise", journee: "Sa journée", icone: "bar" },
+  // Un coiffeur ne montre pas des produits : il montre ce qu'il fait et
+  // combien ça coûte. « Les tarifs » est le mot de sa vitrine.
+  coiffeur: { carte: "Les tarifs", journee: "Sa journée", icone: "coiffeur" },
+  // Une boutique de mode montre des PIÈCES — c'est le mot du métier, et il
+  // marche pour la friperie comme pour le prêt-à-porter.
+  mode: { carte: "Les pièces", journee: "Sa journée", icone: "mode" },
+  fleuriste: { carte: "Les fleurs", journee: "Sa journée", icone: "fleuriste" },
+  // « Les poses » plutôt que « les tarifs » : chez une prothésiste, ce qu'on
+  // vient regarder ce sont les modèles, le prix ne vient qu'après.
+  ongles: { carte: "Les poses", journee: "Sa journée", icone: "ongles" },
+};
+
 /** Une envie cochable. Les libellés changent avec le métier. */
 export type Envie = { cle: string; label: string; emoji: string };
 
