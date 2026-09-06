@@ -133,7 +133,9 @@ dire(!motsDuPlat.some((w) => face.pastille.toLowerCase().includes(w)),
 // ET SUR UNE CARTE À MENU — le cas exact du reproche : « 🍲 Les deux plats du
 // jour » au-dessus de « MENU DU JOUR · LASAGNES MAISON · 11 € ».
 {
-  const { ctx: c2, p: p2 } = await ouvrir("/autour-de-moi?chez=centre");
+  // L'HEURE EST FIXEE : ce restaurant sert de 11 h a 15 h puis de 19 h a 22 h.
+  // Lu a l'heure du conteneur, la garde tombait sur un paquet ou il n'est plus.
+  const { ctx: c2, p: p2 } = await ouvrir("/autour-de-moi?chez=centre", 12.5);
   await p2.click(".ap-arr-ville");
   await p2.waitForTimeout(1200);
   const menu = await p2.evaluate(() => ({
@@ -224,7 +226,7 @@ await ctx.close();
 // ne sert à rien ». Ce qui doit rester vrai maintenant, c'est qu'il ne reste
 // RIEN : ni bandeau, ni détail, ni bouton à refermer.
 console.log("\n══ je passe ══");
-({ ctx, p } = await ouvrir());
+({ ctx, p } = await ouvrir("/autour-de-moi", 12.5));
 // ─── ELLE N'ACCUEILLE PLUS PERSONNE ───
 //
 // « Peut-on la voir arriver plutôt au 2ᵉ ou 3ᵉ balayage et pas directement dès
@@ -385,7 +387,13 @@ await ctx.close();
 // la boucherie il disait deux fois la même chose, sur une carte qui est de
 // toute façon celle d'aujourd'hui. Il ne survit que devant une vraie borne.
 console.log("\n══ le rectangle jaune ══");
-({ ctx, p } = await ouvrir());
+// ─── ET ELLE AUSSI FIXE SON HEURE ───
+// Cette section traverse le paquet pour trouver des cartes SANS rectangle. Le
+// paquet change avec l'heure : a 19 h il est fait de commerces du soir, qui
+// portent presque tous une borne horaire, et la garde echouait par
+// intermittence selon la minute ou on la lancait. Un test qui depend de
+// l'heure du conteneur ne se croit plus au bout de deux fois.
+({ ctx, p } = await ouvrir("/autour-de-moi", 12.5));
 // ON EN REGARDE PLUS QU'AVANT, ET POUR UNE RAISON. Depuis « le moment », le
 // haut du paquet est fait de publications fraîches — elles portent toutes une
 // heure. Dix cartes ne sortaient donc plus de cette zone : le test ne voyait
@@ -420,7 +428,13 @@ await ctx.close();
 // compteur de 5 minutes. » On retourne la fenêtre : on s'inscrit le matin, et
 // l'offre du soir descend dans cette file-là.
 console.log("\n══ la file du matin ══");
-({ ctx, p } = await ouvrir("/autour-de-moi?chez=boulange"));
+// ─── ET L'HORLOGE EST FIXEE, PARCE QUE LE BOULANGER FERME ───
+// Cette section lisait l'heure du conteneur. A 19 h 47, la boulangerie n'a plus
+// rien a proposer — ses moments s'arretent a 19 h 30 — donc elle quitte le
+// paquet, ce qui est la regle du produit et pas un defaut. La garde echouait
+// alors sur une file parfaitement saine : elle mesurait l'heure du conteneur.
+// On se met a 18 h 12, quand « ce qui reste, a moitie prix » tourne.
+({ ctx, p } = await ouvrir("/autour-de-moi?chez=boulange", 18.2));
 await p.click(".ap-arr-ville");
 await p.waitForTimeout(1300);
 await versLaFiche(p);
@@ -585,7 +599,10 @@ console.log("\n══ mon commerce ══");
 
 // ── ET « CE QUI REVIENT » CÔTÉ CLIENT, SOUS LE PLI ──
 console.log("\n══ ce qui revient, côté client ══");
-({ ctx, p } = await ouvrir("/autour-de-moi?chez=emporter"));
+// L'HEURE EST FIXEE : ce commerce sert de 11 h a 17 h. A 19 h 55 il a ferme,
+// donc il quitte le paquet — c'est la regle du produit, et la garde echouait
+// dessus en croyant mesurer sa fiche.
+({ ctx, p } = await ouvrir("/autour-de-moi?chez=emporter", 12.5));
 await p.click(".ap-arr-ville");
 await p.waitForTimeout(1300);
 await versLaFiche(p);
