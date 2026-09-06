@@ -5297,6 +5297,13 @@ export function ApercuHabitant() {
               <span className="ap-loin" aria-hidden="true">
                 <i>📍</i>
                 {dessus?.distance ?? dessusEv?.distance ?? "Dax"}
+                {/* LE POINT QUI BAT A SUIVI LE LIEU. Il battait entre « Dax » et
+                    « Maintenant », au milieu de l'en-tête ; ce milieu est
+                    redevenu le filtre, et un point vert clignotant à côté d'un
+                    bouton de réglage se lit comme un état du réglage. Il
+                    accompagne donc la distance, qui est ce qu'il qualifiait
+                    vraiment : ici, maintenant, à trois cents mètres. */}
+                <em className="ap-bat" />
               </span>
               <button
                 type="button"
@@ -5304,7 +5311,7 @@ export function ApercuHabitant() {
                   vue === "evenements" ? " evenement" : ""
                 }${vue === "offert" ? " offert" : ""}${vue === "tout" ? " tout" : ""}`}
                 onClick={() => setFeuille("metier")}
-                aria-label="Changer de métier"
+                aria-label="Choisir ce que vous cherchez"
               >
                 <i aria-hidden="true">
                   {vue === "recrute"
@@ -5330,8 +5337,36 @@ export function ApercuHabitant() {
                     mot du milieu devient celui de la vue en cours dès qu'on
                     quitte « tout ». On lit donc « DAX · MAINTENANT » par
                     défaut, et « DAX · C'EST OFFERT » quand on a choisi. */}
-                <span className="ap-ville">Dax</span>
-                <em className="ap-bat" aria-hidden="true" />
+                {/* ═══ CE N'EST PLUS « DAX · MAINTENANT », C'EST LE FILTRE ═══
+
+                    CE QU'IL A DIT, ET C'EST LE FOND DU PROBLÈME : « Dax
+                    maintenant ne veut rien dire, et surtout ça ne donne pas
+                    l'intuition qu'il faut cliquer dessus pour choisir une
+                    catégorie. »
+
+                    LES DEUX REPROCHES SONT VRAIS, ET LE SECOND EST LE GRAVE.
+                    « Maintenant » n'apportait rien — tout est maintenant dans
+                    un direct, c'est le nom du produit. Mais surtout : c'était
+                    du TEXTE. Je l'avais dépouillé exprès, la fois d'avant,
+                    parce que la pastille verte pleine criait « réglage » au
+                    milieu de l'en-tête. J'ai corrigé le bruit et supprimé
+                    l'affordance avec : un bouton qui ressemble à un titre n'est
+                    plus un bouton. Personne ne clique sur un titre.
+
+                    IL REDEVIENT DONC UN CONTRÔLE, SANS REDEVENIR UN CRI. Un
+                    contour et un fond très légers — assez pour dire « ceci
+                    s'appuie », pas assez pour dominer la ligne — un pictogramme
+                    de filtre à gauche, et le chevron à droite. Le mot est
+                    l'ÉTAT du filtre : « Tout » au départ, puis la catégorie
+                    choisie. C'est ce qu'il a demandé, mot pour mot.
+
+                    LA VILLE N'EST PAS PERDUE : elle est à gauche, dans la
+                    pastille de distance, qui dit déjà « 380 m » ou « Dax ». */}
+                <svg className="ap-filtre-i" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3.5 6.5h17" />
+                  <path d="M6.5 12h11" />
+                  <path d="M9.5 17.5h5" />
+                </svg>
                 {vue === "recrute"
                   ? "Ils recrutent"
                   : vue === "evenements"
@@ -5339,7 +5374,7 @@ export function ApercuHabitant() {
                     : vue === "offert"
                       ? "C’est offert"
                       : vue === "tout"
-                        ? "Maintenant"
+                        ? "Tout"
                         : metier.label}
                 {/* LES ENVIES SONT PARTIES DANS CETTE FEUILLE, DONC LEUR
                     NOMBRE DOIT SE VOIR D'ICI. Un filtre actif qu'on ne voit
@@ -7643,7 +7678,21 @@ export function ApercuHabitant() {
                   une seconde par une feuille qui monte, la phrase répétait ce
                   que le geste montre. Les capitales et la flèche font le reste
                   — c'est la seule action pleine de l'écran. */}
-              <i className="ap-agir-i" aria-hidden="true">👥</i>
+              {/* ─── PLUS D'EMOJI, UN TRACE ───
+                  « Supprimer l'emoticone des gens pour mettre une icone comme
+                  sur la photo originale, plus moderne, ou aucune. »
+                  L'EMOJI ARRIVAIT AVEC SES COULEURS ET SON DESSIN. Deux
+                  bonshommes bleus sur un bouton vert : la seule tache froide de
+                  l'ecran, et elle changeait de forme selon le telephone. Le
+                  trace, lui, prend la couleur du texte et reste le meme
+                  partout — et il rejoint la famille des pictogrammes du rond,
+                  meme grille de 24, meme epaisseur. */}
+              <svg className="ap-agir-i" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="9" cy="8" r="3.2" />
+                <path d="M2.8 20c0-3.4 2.8-5.6 6.2-5.6s6.2 2.2 6.2 5.6" />
+                <path d="M16.2 5.4a3.2 3.2 0 0 1 0 6" />
+                <path d="M17.6 14.9c2.3.6 3.8 2.5 3.8 5.1" />
+              </svg>
               <span>Proposer à mes amis</span>
               <s aria-hidden="true">→</s>
             </button>
@@ -7735,55 +7784,20 @@ export function ApercuHabitant() {
               {gardeSommet ? "Dans vos favoris" : "Mettre en favori"}
             </button>
             </div>
-            {/* ─── LES POINTS DE LA MAQUETTE ───
-                Cinq points sous les boutons. Ils disent la seule chose qu'un
-                paquet ne dit pas de lui-même : qu'il y a une suite, et à peu
-                près combien. Sans eux, une carte pleine écran se lit comme une
-                page unique — et personne ne balaie une page unique.
+            {/* ─── LES CINQ POINTS SONT PARTIS ───
+                « Supprimer les cinq points qui ne servent a rien. »
 
-                ═══ ET MAINTENANT ILS AVANCENT ═══
-                « Les cinq petits points au-dessus du menu ne changent pas,
-                donc les enlever ou les faire bouger. »
+                IL A RAISON, ET LA CORRECTION PRECEDENTE LE PROUVE. Ils ne
+                bougeaient pas ; je les ai fait bouger — le point allume suivait
+                enfin le rang reel dans le paquet. Et une fois qu'ils
+                bougeaient, on a pu voir ce qu'ils apportaient : rien. Le paquet
+                n'a pas de fin qu'on attend, personne ne compte les cartes, et
+                savoir qu'on en est a la troisieme ne change aucune decision.
+                Ils repondaient a une question que personne ne se pose.
 
-                IL AVAIT RAISON, ET C'ÉTAIT PIRE QUE STATIQUE : le point allumé
-                était TOUJOURS le premier (`i === 0`), et le nombre de points se
-                déduisait de ce qui restait — donc il bougeait à peine, et
-                jamais dans le sens de la lecture. Un indicateur de progression
-                qui n'indique pas la progression ne décore pas : il ment.
-
-                LE REPÈRE, C'EST CE QU'ON A DÉJÀ VU. `passees.length` est le
-                rang réel dans le paquet, quelle que soit la façon d'avancer —
-                le balayage, le fantôme, ou la carte qu'on range. Le point
-                allumé le suit, donc il bouge à chaque appui sur le fantôme,
-                ce qu'il demandait.
-
-                ET LA FENÊTRE GLISSE AU-DELÀ DE CINQ. Un chapelet de trente
-                points ne se compte plus. Au-delà de cinq, on garde cinq points
-                et c'est la FENÊTRE qui se déplace : le point allumé reste au
-                milieu, et les deux points de bout disent qu'il y a encore
-                quelque chose avant et après. */}
-            {sommet && (() => {
-              const total = passees.length + pile.length;
-              const rang = passees.length;
-              const combien = Math.min(5, Math.max(2, total));
-              // La fenetre se cale sur le rang, puis se borne aux deux bouts :
-              // sans ce dernier bornage, elle depasserait la fin du paquet et
-              // le point allume sortirait par la droite.
-              const debut = Math.max(0, Math.min(rang - 2, total - combien));
-              return (
-                <div className="ap-suite" aria-hidden="true">
-                  {Array.from({ length: combien }).map((_, i) => {
-                    const n = debut + i;
-                    return (
-                      <s
-                        key={i}
-                        className={`${n === rang ? "on" : ""}${n < rang ? " vu" : ""}`}
-                      />
-                    );
-                  })}
-                </div>
-              );
-            })()}
+                CE QU'ILS DEVAIENT DIRE EST DIT AILLEURS, ET MIEUX : qu'il y a
+                une suite, c'est le fantome sous le pouce qui le dit, et il le
+                dit en invitant a appuyer plutot qu'en informant. */}
             {/* LE QUATRIÈME ROND A DISPARU, ET IL N'EST PAS PERDU. « Détails »
                 est remonté sur la photo, où il dit ce qu'il y a derrière —
                 « 3 moments aujourd'hui » — au lieu d'une flèche muette. */}
@@ -9860,15 +9874,27 @@ export function ApercuHabitant() {
            reste de la ligne ; le repere de l'ecran n'a pas a etre l'objet le
            plus colore. Il reste cliquable — c'est toujours la porte du filtre —
            mais il en a l'air d'un titre. */
-        .ap-metier{font:inherit;font-size:12px;font-weight:800;cursor:pointer;
-          margin:0 auto;transition:transform .12s ease;
-          background:none;border:0;color:rgba(234,242,236,.72);padding:6px 4px;
-          letter-spacing:.14em;text-transform:uppercase;
-          display:inline-flex;align-items:center;gap:7px;}
+        /* ═══ IL A L'AIR D'UN BOUTON, PARCE QUE C'EN EST UN ═══
+           « Ca ne donne pas l'intuition qu'il faut cliquer dessus pour choisir
+           une categorie. » Il etait ecrit comme un titre : ni fond, ni bord, ni
+           rien qui s'appuie. Un contour a 18 % et un fond a 8 % suffisent — en
+           dessous on ne voit rien, au-dessus on retombe sur la pastille pleine
+           qui criait « reglage » et qu'on venait justement d'enlever. */
+        .ap-metier{font:inherit;font-size:12px;font-weight:850;cursor:pointer;
+          margin:0 auto;transition:transform .12s ease,background .16s ease;
+          background:rgba(255,255,255,.08);
+          border:1px solid rgba(255,255,255,.2);border-radius:999px;
+          color:#EAF2EC;padding:6px 12px 6px 10px;
+          letter-spacing:.1em;text-transform:uppercase;
+          display:inline-flex;align-items:center;gap:6px;}
         .ap-metier>i{display:none;}
-        .ap-ville{color:#fff;}
-        /* LE POINT QUI BAT, entre la ville et le moment : la seule chose de
-           l'en-tete qui dise que l'ecran est vivant. */
+        .ap-filtre-i{width:15px;height:15px;flex:none;fill:none;
+          stroke:currentColor;stroke-width:2;stroke-linecap:round;
+          opacity:.8;}
+        /* LE POINT QUI BAT vit maintenant sur la pastille de distance, a
+           gauche : c'est elle qui porte le lieu depuis que le milieu est
+           redevenu le filtre. Il reste la seule chose de l'en-tete qui dise que
+           l'ecran est vivant. */
         .ap-bat{width:6px;height:6px;border-radius:50%;background:#3DE2A6;
           box-shadow:0 0 0 0 rgba(61,226,166,.55);
           animation:apBat 2.4s ease-out infinite;}
@@ -11029,9 +11055,12 @@ export function ApercuHabitant() {
            l'ecran designait un reglage auquel personne n'avait touche. Le repere
            du haut est du TEXTE — voir la regle .ap-metier — et la vue en cours se
            lit dans ses mots, pas dans son fond. */
-        .cd-barre .ap-metier{background:none;border:0;padding:6px 4px;}
-        .ap-metier.tout{color:rgba(234,242,236,.72);background:none;
-          border-color:transparent;}
+        /* CES DEUX REGLES REMETTAIENT LE MILIEU A PLAT, et c'etait le defaut :
+           elles annulaient le fond et le bord, donc le bouton redevenait un
+           titre. Elles ne servent plus qu'a garder « Tout » un cran plus
+           discret que les vues choisies — meme forme, moins de couleur. */
+        .ap-metier.tout{color:#D6E4DC;background:rgba(255,255,255,.07);
+          border-color:rgba(255,255,255,.17);}
         .ap-m.evenement em{display:block;margin-top:3px;font-style:normal;font-size:12px;
           font-weight:650;color:#8FA3AC;}
         .ap-m.evenement{align-items:flex-start;}
@@ -13018,28 +13047,11 @@ export function ApercuHabitant() {
         .ap-agir.parler{padding:14px 16px;font-size:15px;border-radius:18px;
           gap:10px;letter-spacing:.02em;text-transform:uppercase;
           font-weight:850;justify-content:center;}
-        .ap-agir.parler .ap-agir-i{font-size:18px;}
+        .ap-agir.parler .ap-agir-i{width:21px;height:21px;flex:none;
+          fill:none;stroke:currentColor;stroke-width:1.9;
+          stroke-linecap:round;stroke-linejoin:round;}
         .ap-agir.parler s{text-decoration:none;font-size:17px;line-height:1;
           margin-left:2px;}
-        /* LES POINTS QUI DISENT QU'IL Y A UNE SUITE : cinq au plus, le premier
-           allume. Ils ne s'appellent pas « ap-points » : ce nom existe deja
-           ailleurs dans ce fichier pour les points de reflexion de l'assistante,
-           et deux objets sans rapport sous le meme nom heritent l'un de
-           l'autre — c'est un defaut deja paye trois fois ici. */
-        .ap-suite{display:flex;align-items:center;justify-content:center;
-          gap:6px;padding:2px 0 0;}
-        /* ILS BOUGENT, DONC ILS SE DEPLACENT DOUCEMENT. Un point qui change
-           d'etat d'un seul coup ne se voit pas : c'est le GLISSEMENT qui dit
-           « on a avance ». Deux dixiemes, le temps que la carte arrive. */
-        .ap-suite s{width:6px;height:6px;border-radius:50%;
-          background:rgba(234,242,236,.24);text-decoration:none;
-          transition:width .22s ease,height .22s ease,
-            background .22s ease,box-shadow .22s ease;}
-        /* CE QU'ON A DEJA VU RESTE VISIBLE, EN SOURDINE : sans lui, on sait
-           qu'il y a une suite mais pas ou l'on en est dedans. */
-        .ap-suite s.vu{background:rgba(240,180,41,.42);}
-        .ap-suite s.on{width:8px;height:8px;background:#F0B429;
-          box-shadow:0 0 10px -1px rgba(240,180,41,.7);}
         .ap-agir span{display:flex;flex-direction:column;align-items:center;
           min-width:0;line-height:1.15;}
         .ap-agir em{font-style:normal;font-size:10px;font-weight:700;
@@ -13049,11 +13061,21 @@ export function ApercuHabitant() {
         /* Deux teintes, pas deux tailles : le vert est celui du balayage a
            droite, qui ouvre le meme salon ; l'ambre est celui de l'engagement.
            Deux boutons verts se confondraient. */
-        /* LE VERT DE LA MAQUETTE EST UN TILLEUL, pas un menthe : plus jaune,
-           plus franc, et il tranche sur le noir au lieu de s'y fondre. */
-        .ap-agir.parler{color:#0B2010;
-          background:linear-gradient(140deg,#B6EA5B,#86D63F);
-          box-shadow:0 14px 30px -14px rgba(150,220,80,.55);}
+        /* ═══ LE MEME VERT QUE LA BARRE DU BAS ═══
+           « La couleur de fond de "Proposer a mes amis" devrait etre de la meme
+           couleur que les couleurs du menu du bas. »
+
+           IL Y AVAIT DEUX VERTS DANS LE PRODUIT, ET RIEN NE LES SEPARAIT. Un
+           tilleul jaune ici, un menthe emeraude sur la bulle du fantome, les
+           pastilles et l'onglet en cours. Deux verts voisins mais distincts ne
+           se lisent pas comme deux familles : ils se lisent comme une erreur
+           d'impression. Or c'est le meme geste — le bouton propose, la bulle
+           avance — donc c'est la meme couleur, celle qu'on voit deja sous le
+           pouce a chaque carte.
+           Le degrade est exactement celui de .ap-suiv, aux memes arrets. */
+        .ap-agir.parler{color:#04241A;
+          background:linear-gradient(150deg,#8CF0CC,#2FD39A);
+          box-shadow:0 14px 30px -14px rgba(47,211,154,.6);}
         /* LES DEUX BOUTONS DU BAS SONT EN CONTOUR — la maquette ne garde qu'un
            seul aplat, le vert. Deux boutons pleins cote a cote se disputaient
            l'oeil avec lui, et c'est exactement ce qu'on venait de regler en

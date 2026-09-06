@@ -410,20 +410,29 @@ export function CarteSwipe({
                 comme la lumiere du soir sur la maquette. Un degre de plus, et
                 l'oeil suit le sens de rotation sans y penser. */}
             <defs>
-              <linearGradient id="cdAnG" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#FFC46B" />
-                <stop offset="55%" stopColor="#FF8A5B" />
-                <stop offset="100%" stopColor="#FF4E63" />
+              {/* ─── ORANGE VERS ROUGE FEU, COMME LA MAQUETTE ───
+                  « La couleur du cercle devrait etre un degrade orange rouge
+                  feu comme sur la photo originale. » Le premier degrade partait
+                  d'un abricot pale : sur une photo de plat, deja chaude et deja
+                  claire, il se fondait dedans. Il part maintenant d'un orange
+                  franc et finit sur un rouge, et c'est ce contraste-la qui fait
+                  qu'un cadran se voit avant d'etre lu. */}
+              <linearGradient id="cdAnG" x1="0" y1="0" x2=".85" y2="1">
+                <stop offset="0%" stopColor="#FFB02E" />
+                <stop offset="48%" stopColor="#FF6A1F" />
+                <stop offset="100%" stopColor="#F5232E" />
               </linearGradient>
             </defs>
-            <circle className="cd-an-p" cx="50" cy="50" r="45.5" />
+            <circle className="cd-an-p" cx="50" cy="50" r="44.5" />
             <circle
               className="cd-an-a"
               cx="50"
               cy="50"
-              r="45.5"
+              r="44.5"
               style={{
-                strokeDasharray: `${(1 - c.flash.part) * 285.9} 285.9`,
+                // 2 pi r, avec r = 44.5 : le rayon a baisse d'un point pour que
+                // le trait epaissi tienne dans la boite, la circonference suit.
+                strokeDasharray: `${(1 - c.flash.part) * 279.6} 279.6`,
               }}
             />
           </svg>
@@ -1148,16 +1157,28 @@ export function StylesDirect() {
            petit, decale, comme sur une ardoise de marche. C'est la lecture la
            plus rapide qui existe pour une remise : on voit la chute avant
            d'avoir lu les chiffres. */
+        /* ═══ LE PRIX N'EST PLUS BLANC ═══
+           « Le chiffre devrait etre d'une autre couleur pour attirer
+           l'attention, comme le chiffre en dessous "il en reste 12". »
+
+           IL AVAIT LA COULEUR DE TOUT LE RESTE. Titre blanc, prix blanc, nom du
+           commerce blanc : sur une carte ou tout est blanc, la taille est le
+           seul rang, et la taille se lit APRES la couleur. Le prix est pourtant
+           la deuxieme question de celui qui regarde — juste apres « c'est
+           quoi » — et rien ne le designait.
+           C'EST L'AMBRE DE « IL EN RESTE 12 », le meme code exactement. Deux
+           ambres differents pour deux chiffres voisins auraient fait croire a
+           deux natures d'information. */
         .cd-prixg{margin:2px 0 0;display:flex;align-items:baseline;gap:10px;
           font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
           font-size:clamp(52px,16.5vw,80px);font-weight:400;
-          letter-spacing:.004em;line-height:.96;color:#fff;
+          letter-spacing:.004em;line-height:.96;color:#FFC400;
           text-shadow:0 3px 22px rgba(0,0,0,.62);
           font-variant-numeric:tabular-nums;}
         .cd-prixg b{font-weight:inherit;}
         /* L'ASTERISQUE EST EN EXPOSANT ET PETIT : il signale, il n'annonce pas. */
         .cd-prixg b em{font-style:normal;font-size:.42em;vertical-align:super;
-          margin-left:.04em;color:rgba(255,255,255,.72);}
+          margin-left:.04em;color:rgba(255,196,0,.7);}
         .cd-prixg s{margin:0;font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
           font-size:clamp(20px,6vw,28px);font-weight:400;
           color:#FF6B6B;text-decoration-color:#FF6B6B;
@@ -1165,7 +1186,7 @@ export function StylesDirect() {
         /* ⚡ SUR UN FLASH, L'ANCIEN PRIX EST LA MOITIE DE L'INFORMATION — il
            reste a cote du neuf, et c'est le meme dessin : une seule facon
            d'ecrire un prix dans tout le produit. */
-        .cd-prixg.flash{color:#fff;}
+        .cd-prixg.flash{color:#FFC400;}
         /* COMBIEN IL EN RESTE : petit, sous le prix, le nombre en ambre. */
         .cd-encore{margin:6px 0 0;font-size:13px;font-weight:800;
           color:#EAF2EC;text-shadow:0 2px 12px rgba(4,8,6,.9);}
@@ -1359,23 +1380,32 @@ export function StylesDirect() {
            l'arc a besoin de place pour ne pas etre coupee au bord. */
         .cd-an-c{position:absolute;inset:0;width:100%;height:100%;
           transform:rotate(-90deg);overflow:visible;pointer-events:none;}
-        .cd-an-p{fill:none;stroke:rgba(255,255,255,.14);stroke-width:3;}
-        .cd-an-a{fill:none;stroke:url(#cdAnG);stroke-width:3.4;
+        /* ET LE TRAIT EST PLUS EPAIS. « L'epaisseur du cercle devrait etre un
+           peu plus epaisse. » A trois points, l'anneau etait un filet : juste
+           au bord de disparaitre sur une photo chargee, et surtout trop leger
+           pour un objet qui est cense etre l'acteur principal de la carte.
+           A cinq, il redevient un cadran. */
+        .cd-an-p{fill:none;stroke:rgba(255,255,255,.16);stroke-width:5;}
+        .cd-an-a{fill:none;stroke:url(#cdAnG);stroke-width:5.4;
           stroke-linecap:round;
-          filter:drop-shadow(0 0 4px rgba(255,110,90,.75));
+          filter:drop-shadow(0 0 5px rgba(255,106,31,.8));
           transition:stroke-dasharray .9s linear;}
+        /* LE TEXTE DEDANS EST GRAS, COMME SUR LA MAQUETTE. Il etait deja a 850
+           mais en petit et en clair : sur un fond sombre, un caractere fin et
+           pale se lit comme une legende, pas comme une etiquette. Un cran de
+           plus, plus grand, et blanc casse. */
         .cd-anneau .cd-an-t{display:flex;align-items:center;gap:4px;
           margin-bottom:1px;
-          font-size:8.5px;font-weight:850;letter-spacing:.14em;
-          text-transform:uppercase;color:#FFB9AC;}
+          font-size:9.5px;font-weight:900;letter-spacing:.12em;
+          text-transform:uppercase;color:#FFD2C4;}
         .cd-anneau .cd-an-t i{font-style:normal;font-size:9.5px;}
         .cd-anneau b{font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
           font-size:38px;font-weight:400;line-height:.92;letter-spacing:.01em;
           font-variant-numeric:tabular-nums;
           text-shadow:0 2px 12px rgba(0,0,0,.6);}
-        .cd-anneau em{font-style:normal;font-size:9px;font-weight:850;
+        .cd-anneau em{font-style:normal;font-size:10px;font-weight:900;
           margin-top:2px;
-          letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.7);}
+          letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.86);}
         /* LA RARETE, SOUS L'ANNEAU. Deux lignes de neuf points, centrees sur le
            disque : on ne la lit pas d'abord, on la trouve quand on s'arrete. */
         .cd-an-r{position:absolute;top:calc(100% + 7px);left:-14px;right:-14px;
@@ -1392,16 +1422,16 @@ export function StylesDirect() {
         .cd-anneau.porte{cursor:pointer;
           background:radial-gradient(circle at 50% 38%,
             rgba(10,30,23,.93) 0%, rgba(6,12,9,.95) 72%);
-          box-shadow:inset 0 0 0 2.2px rgba(112,235,187,.6),
+          box-shadow:inset 0 0 0 4px rgba(112,235,187,.62),
             0 12px 34px rgba(0,0,0,.55),
             0 0 26px -6px rgba(61,226,166,.45);
           transition:transform .18s cubic-bezier(.34,1.4,.64,1);}
-        .cd-anneau.porte .cd-an-t{color:#9BEBCB;}
+        .cd-anneau.porte .cd-an-t{color:#B4F2D9;}
         .cd-anneau.porte>svg{width:30px;height:30px;margin:2px 0 1px;
           stroke:#EAF2EC;stroke-width:1.7;fill:none;
           stroke-linecap:round;stroke-linejoin:round;}
-        .cd-anneau.porte em{font-style:normal;font-size:9px;font-weight:850;
-          letter-spacing:.12em;text-transform:uppercase;color:#9BEBCB;}
+        .cd-anneau.porte em{font-style:normal;font-size:10px;font-weight:900;
+          letter-spacing:.12em;text-transform:uppercase;color:#B4F2D9;}
         .cd-anneau.porte:active{transform:scale(.95);}
         @media (prefers-reduced-motion:reduce){.cd-tombe{animation:none;}}
 
