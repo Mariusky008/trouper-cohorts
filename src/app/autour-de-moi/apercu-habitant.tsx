@@ -1461,34 +1461,6 @@ export function ApercuHabitant() {
    */
   const [salonPage, setSalonPage] = useState(false);
   /**
-   * ═══ LA PHOTO DERRIÈRE LA FEUILLE, GELÉE À L'OUVERTURE ═══
-   *
-   * LE DÉFAUT MESURÉ, ET IL A SURVÉCU À TROIS CORRECTIONS : « dès que je clique
-   * sur "proposer à mes amis", j'ai bien la pop-up qui arrive par-dessus, mais
-   * derrière, l'annonce change. »
-   *
-   * LES TROIS FOIS PRÉCÉDENTES, J'AI RÉPARÉ LE MAUVAIS OBJET. J'ai cherché
-   * quelle annonce partait dans le salon — elle était juste ; puis pourquoi la
-   * carte s'envolait avant que la feuille monte — c'était vrai et c'est corrigé.
-   * Les deux fois, je regardais LE PAQUET. Or ce qu'il voit derrière la feuille
-   * n'est pas le paquet : le paquet est démonté à ce moment-là. C'est une bande
-   * à part, `.ap-feuille-dos`, et elle ne porte qu'une PHOTO.
-   *
-   * ET CETTE PHOTO SE RECALCULAIT À CHAQUE RENDU. Elle était lue ainsi :
-   * `sommet ? carteDe(sommet).photo : undefined`, et `sommet` vaut `pile[0]` —
-   * une valeur recomposée à chaque rendu à partir de `passees`, de l'heure et
-   * de l'épingle. À la seconde où la carte regardée est rangée, `pile[0]`
-   * devient LA SUIVANTE, et la bande passe à sa photo. « Derrière, c'est
-   * l'annonce suivante qui s'est mise » — au sens propre, et c'était la seule
-   * chose à l'écran capable de changer toute seule.
-   *
-   * ON LA GÈLE DONC AU MOMENT DE L'APPUI. Une photo est un fait daté : celle de
-   * l'annonce qu'on avait sous les yeux quand on a appuyé. Rien ne doit pouvoir
-   * la recalculer tant que la feuille est ouverte, et c'est précisément ce
-   * qu'un état gelé garantit là où une expression dérivée ne le peut pas.
-   */
-  const [dosFeuille, setDosFeuille] = useState<string | undefined>(undefined);
-  /**
    * LES FAÇONS DE PARLER, REPLIÉES.
    *
    * La barre du bas portait CINQ boutons de poids égal — Inviter, Réserver,
@@ -2206,8 +2178,26 @@ export function ApercuHabitant() {
     // d'un geste dans le paquet, le lien vient d'ailleurs — de l'assistante qui
     // dit « votre annonce est en ligne ». Celui qui arrive doit tomber dessus.
     const devant = carteUrl || epingle;
-    if (!devant) return p;
-    const i = p.findIndex((c) => c.id === devant);
+    // ═══ ET TANT QUE LA FEUILLE EST OUVERTE, LE SOMMET EST GELE ═══
+    //
+    // MAINTENANT QUE L'ANNONCE RESTE MONTEE DERRIERE LA FEUILLE, elle est
+    // VISIBLE — donc tout ce qui pourrait la remplacer se verrait. Or ce
+    // tableau se recompose a chaque rendu, a partir de l'heure, des cartes
+    // deja passees et de l'epingle. Le premier cas suffit : `partir` efface
+    // l'epingle de la carte qu'on vient de proposer, et si c'est l'epingle qui
+    // la mettait en tete, la suivante prend sa place a l'instant meme. Ensuite
+    // l'heure avance de quinze secondes pendant un Flash, et la fraicheur
+    // reclasse tout le paquet.
+    //
+    // LA CARTE QUI ATTEND SOUS LA FEUILLE EST DEJA CONNUE : c'est `aRanger`,
+    // posee par `partir` au moment de l'appui. On la remet en tete tant que la
+    // feuille est la. Ce n'est pas une precaution : c'est la seule facon que
+    // « derriere » veuille dire quelque chose de stable, quoi qu'il arrive au
+    // reste du paquet pendant ce temps-la.
+    const gele = salonPage ? aRanger.current : "";
+    const tete = gele || devant;
+    if (!tete) return p;
+    const i = p.findIndex((c) => c.id === tete);
     return i > 0 ? [p[i], ...p.slice(0, i), ...p.slice(i + 1)] : p;
   })();
   const estInvitation = (c: ItemPaquet) => !!sortie && arrivees.includes(c.id);
@@ -2285,9 +2275,6 @@ export function ApercuHabitant() {
 
   function ouvrirLeSalonDuSommet() {
     if (dessusEv) {
-      // LA BANDE DU HAUT EST FIXÉE ICI, avant tout changement d'état : c'est le
-      // dernier instant où « l'annonce sur laquelle on est » a encore un sens.
-      setDosFeuille(dessusEv.photo);
       enParler(
         cleSalonEv(dessusEv),
         dessusEv.quoi,
@@ -2329,9 +2316,6 @@ export function ApercuHabitant() {
     // photo et son prix, sans les recalculer. Deux façons de décrire la même
     // annonce, c'est une de trop — et c'est toujours la seconde qui ment.
     const face = carteDe(dessus);
-    // LA MÊME FACE SERT AU SALON ET À LA BANDE DU HAUT. Deux lectures de
-    // l'annonce, c'est une de trop — et c'est toujours la seconde qui ment.
-    setDosFeuille(face.photo);
     enParler(
       cleSalonMoment(dessus, face.quoi, !!face.flash),
       face.quoi,
@@ -2359,16 +2343,6 @@ export function ApercuHabitant() {
    * sous la feuille exprès pour ça (voir `partir`). La même image que celle
    * qu'on regardait une demi-seconde plus tôt, et aucune autre.
    */
-  /**
-   * CE QUI PASSE DERRIÈRE LA FEUILLE — voir `dosFeuille`.
-   *
-   * L'ORDRE DES DEUX SOURCES EST LA CORRECTION. La valeur gelée à l'appui passe
-   * d'abord ; `salon.photo` ne sert que pour un salon ouvert d'ailleurs — depuis
-   * l'onglet Propositions, par exemple — où il n'y a pas eu d'appui sur une
-   * carte à geler. Le paquet, lui, n'est plus consulté du tout : c'est lui qui
-   * bougeait.
-   */
-  const photoDeLaFeuille = dosFeuille ?? salon?.photo;
   /** La carte du dessus, telle que l'écran la dessine — pour la fiche et l'anneau. */
   const dessusCarte = dessus ? carteDe(dessus) : undefined;
   /**
@@ -2642,11 +2616,6 @@ export function ApercuHabitant() {
    * proposition, pour rien.
    */
   function rangerCeQuiAttend() {
-    // LA BANDE GELÉE MEURT AVEC LA FEUILLE, et AVANT le garde-fou ci-dessous :
-    // un salon ouvert depuis l'onglet Propositions n'a rien à ranger, mais il a
-    // tout de même posé une photo. La libérer ici, c'est la libérer partout —
-    // les trois endroits qui referment la feuille passent par cette fonction.
-    setDosFeuille(undefined);
     const id = aRanger.current;
     if (!id) return;
     aRanger.current = "";
@@ -4170,1089 +4139,6 @@ export function ApercuHabitant() {
                 )}
               </div>
             </div>
-          ) : salonPage && salon ? (
-            /* ═══ ELLE MONTE DU BAS, ET ELLE S'ARRÊTE AVANT L'ANNONCE ═══
-
-               « Quand je clique sur "proposer à mes amis", on arrive
-               subitement sur une nouvelle page et ça donne l'impression qu'il
-               n'y a aucun lien avec l'annonce. Peut-être que ça pourrait être
-               cette page qui arriverait du bas comme une pop-up, et qui
-               s'arrête avant la fin de l'annonce pour qu'on comprenne que
-               c'est bien en lien avec l'annonce sur laquelle on est. »
-
-               IL A RAISON, ET ÇA CORRIGE UN CHOIX QUE J'AVAIS FAIT DANS
-               L'AUTRE SENS. Le salon avait été passé en page pleine pour dire
-               « ceci n'est pas un aparté, c'est l'endroit où se passe la seule
-               chose que le produit fait ». C'est vrai de ce que le salon EST,
-               et faux de la façon dont on y arrive : une page pleine qui
-               remplace tout efface ce qu'on venait d'y mettre. On ne se
-               souvient plus de quel plat on parlait.
-
-               UNE FEUILLE RÉPOND AUX DEUX. Elle monte du bas — donc elle vient
-               de l'annonce et non d'ailleurs — et elle laisse le haut de la
-               carte visible, ce qui répond en permanence à « on parle de
-               quoi ? ». Elle prend malgré tout presque tout l'écran : ce n'est
-               pas un aparté de trois lignes, c'est là qu'on décide.
-
-               ET CE QUI DÉPASSE EST ASSOMBRI, pas cliquable : la bande du haut
-               est un repère, pas un bouton — on revient par la flèche, qui dit
-               où elle ramène. */
-            <>
-              {/* ─── CE QU'ON APERÇOIT AU-DESSUS DE LA FEUILLE ───
-                  C'est l'annonce elle-même, et c'est tout l'objet de la
-                  demande : « pour qu'on comprenne que c'est bien en lien avec
-                  l'annonce sur laquelle on est. » Une bande noire aurait dit
-                  « une autre page » ; sa photo dit « on parle de ça ».
-                  Assombrie, sans texte et sans bouton — c'est un repère, pas un
-                  second écran actif : on revient par la flèche, qui dit où elle
-                  ramène. */}
-              <div
-                className="ap-feuille-dos"
-                aria-hidden="true"
-                style={
-                  photoDeLaFeuille
-                    ? { backgroundImage: `url("${encodeURI(photoDeLaFeuille)}")` }
-                    : undefined
-                }
-              />
-            <div className="ap-page feuille">
-              <span className="ap-feuille-p" aria-hidden="true" />
-              <div className="ap-page-h">
-                <button
-                  type="button"
-                  className="ap-page-r"
-                  onClick={() => {
-                    arreterLeDirect();
-                    rangerCeQuiAttend();
-                    setSalonPage(false);
-                    setSalonOuvert("");
-                  }}
-                >
-                  <i aria-hidden="true">←</i>
-                  {NOM_ONGLET[onglet]}
-                </button>
-                {/* DÈS QU'IL Y A DEUX PROPOSITIONS, LE SALON N'EST PLUS
-                    CELUI D'UN COMMERCE. Garder « Le Bocal de Margot » en titre
-                    pendant que le groupe discute d'un autre restaurant fait
-                    mentir l'en-tête ; le nom du lieu vit dans le bandeau, qui
-                    suit ce qui mène. */}
-                {/* UNE SEULE LIGNE SOUS LE TITRE, ET RIEN D'AUTRE.
-                    Elle portait « 2 propositions · 2 voix · 18 h – 20 h », et à
-                    côté une pastille « ● ouvert » : quatre informations dans un
-                    en-tête, dont trois qu'on relit sans jamais s'en servir. Le
-                    point vert reste — il dit que le salon est encore vivant, et
-                    ils meurent le soir même — mais il rejoint l'heure au lieu
-                    d'occuper un objet à lui. */}
-                {/* ═══ CE QUE LE TITRE DIT QUAND ON VIENT D'ARRIVER ═══
-                    « Quand je clique sur "proposer à mes amis", je m'attends à
-                    ce que ClikMe m'aide à l'envoyer à mes amis. Or j'arrive
-                    dans un écran qui ressemble à une conversation vide. Je me
-                    demande : OK… et maintenant ? »
-
-                    C'EST LA TRANSITION QUI MANQUAIT. L'en-tête portait le nom
-                    du commerce — « Une boucherie du centre » — c'est-à-dire
-                    exactement ce qu'on venait de quitter. Rien ne disait qu'il
-                    s'était passé quelque chose. Tant qu'on est seul, il dit
-                    donc ce qui vient d'être créé, et avec un mot qui n'a pas
-                    besoin d'être appris : ON CHOISIT ENSEMBLE. Dès que
-                    quelqu'un arrive, le titre reprend son travail normal —
-                    dire où on va. */}
-                <span className="ap-page-t">
-                  <b>
-                    {salonSeul
-                      ? "On choisit ensemble"
-                      : (salon.propositions?.length ?? 0) > 1
-                        ? "Où on va ?"
-                        : salon.ou}
-                  </b>
-                  <em>
-                    <u>
-                      <i aria-hidden="true">●</i>
-                      {salon.quand}
-                    </u>
-                    {/* PAS LE COMPTE DES PRÉSENTS DANS UN COLLECTIF : il en
-                        faisait un TROISIÈME, après « 4 sur 6 » et « 4 personnes
-                        que vous ne connaissez pas », et il ne disait pas la même
-                        chose que les deux autres — cinq dans la salle, quatre
-                        engagés, six attendus. Trois nombres pour une salle, on
-                        ne sait plus lequel compte. Seule la jauge compte : c'est
-                        elle qui fait tomber le prix. */}
-                    {!salon.collectif && (
-                      <>
-                        {" · "}
-                        {salon.presents.length}{" "}
-                        {salon.presents.length > 1 ? "personnes" : "personne"}
-                      </>
-                    )}
-                  </em>
-                </span>
-                {/* ─── PUBLIC OU PRIVÉ, DANS L'EN-TÊTE ───
-                    C'était un bloc pleine largeur au milieu de la page, avec un
-                    titre, une phrase d'explication et un interrupteur : un
-                    sixième de l'écran pour un RÉGLAGE, entre deux choses qu'on
-                    vient y faire. Un réglage se range là où on range les
-                    réglages — près du titre de ce qu'il règle. La phrase, elle,
-                    n'est pas perdue : elle est dite au moment d'inviter, qui est
-                    le seul moment où l'on se demande qui verra.
-                    Public par défaut, et c'est le seul défaut qui rende le
-                    produit possible : un salon privé ne sert que ceux qui
-                    étaient déjà d'accord pour sortir, c'est-à-dire WhatsApp. */}
-                {cestMoi(salon.parQui) ? (
-                  <button
-                    type="button"
-                    className={`ap-page-vu${salon.prive ? " prive" : ""}`}
-                    aria-label={
-                      salon.prive
-                        ? "Salon privé — le rendre public"
-                        : "Salon public — le rendre privé"
-                    }
-                    onClick={() => {
-                      const prive = basculerVisibilite(salon.cle);
-                      setEchoIcone(prive ? "🔒" : "🌍");
-                      setEcho(
-                        prive
-                          ? "Salon privé : seuls ceux que vous invitez le voient."
-                          : "Salon public : ceux qui sont autour peuvent le découvrir.",
-                      );
-                    }}
-                  >
-                    {salon.prive ? "🔒" : "🌍"}
-                  </button>
-                ) : null}
-              </div>
-
-              <div className="ap-sal-corps" ref={filSalon}>
-                {/* ─── CE DONT ON PARLE, EN GRAND ET EN PREMIER ───
-                    Une photo de vignette en haut à droite ne dit rien : elle
-                    décore une conversation. Ici l'annonce EST l'écran d'accueil
-                    du salon — la photo pleine largeur, le nom du plat, le prix,
-                    ce qu'il en reste — parce que c'est la seule raison pour
-                    laquelle quatre personnes se parlent à cet endroit. Le texte
-                    est posé SUR la photo, comme sur la carte du paquet, pour
-                    que la page reste la même chose que celle qu'on vient de
-                    balayer et pas un nouvel écran à comprendre. */}
-                {/* SANS PHOTO, ON NE LAISSE PAS UN BLOC À MOITIÉ VIDE.
-                    Défaut relevé : « les photos dans les salons de l'annonce
-                    n'apparaissent pas toujours ». C'est vrai des salons ouverts
-                    depuis La Ville : un message d'habitant n'a pas forcément
-                    d'image, et le bloc tombait de 178 à 113 pixels sans qu'on
-                    sache si ça chargeait ou si c'était cassé. Un fond franc et
-                    un grand signe disent que c'est voulu. */}
-                {/* LE BANDEAU MONTRE CE QUI EST EN TÊTE, PAS CE QUI A
-                    LANCÉ LE SALON. C'est tout le sujet : quand une autre
-                    proposition passe devant, le haut du salon change — et avec
-                    lui la réservation. */}
-                {/* ─── UN SEUL OBJET, ET PAS QUATRE BLOCS EMPILÉS ───
-                    DÉFAUT RELEVÉ AU TEST : « c'est très lourd, beaucoup de
-                    choses les unes sous les autres, ça ne marche pas ». Il y
-                    avait raison : le bandeau, les propositions, « proposer autre
-                    chose » et « voir l'annonce complète » étaient QUATRE objets
-                    encadrés, du même poids visuel, qui parlaient tous de la même
-                    question — où on va. L'œil ne trouvait aucune hiérarchie,
-                    donc il n'en trouvait aucune.
-                    Ils n'en font plus qu'un : la photo, ce qui mène, ce qui est
-                    sur la table, et le moyen d'en ajouter. Un cadre, un sujet. */}
-                {(() => {
-                  const p = tete;
-                  const photo = p?.photo ?? salon.photo;
-                  const a = annonceDuSalon(salon);
-                  const ouvrable = !!(a.carte || a.evenement);
-                  return (
-                    <div className="ap-obj">
-                    {/* LA PHOTO EST LE BOUTON. « Voir l'annonce complète » était
-                        une ligne encadrée de plus, sous les propositions, alors
-                        que l'image dont elle parle est juste au-dessus. On
-                        appuie sur ce qu'on regarde.
-                        Pas de bouton quand l'annonce n'existe plus : un salon de
-                        samedi dernier renvoie à un menu qui n'est plus servi, et
-                        un bouton qui ne mène nulle part est pire qu'une
-                        absence. */}
-                    <div className={`ap-page-objet${photo ? "" : " nu"}`}>
-                      {photo ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={photo} alt="" />
-                      ) : (
-                        <i className="ap-page-nu" aria-hidden="true">
-                          💬
-                        </i>
-                      )}
-                      {/* SEULE LA PASTILLE OUVRE L'ANNONCE, PAS TOUTE LA PHOTO.
-                          DÉFAUT RELEVÉ AU TEST : « la photo en haut parfois
-                          n'apparaît pas ». Elle apparaissait — elle partait. La
-                          photo fait 172 points de haut EN TÊTE D'UNE ZONE QUI
-                          DÉFILE : un pouce qui la pousse pour lire la suite, ou
-                          qui la touche sans intention, relâchait sur un bouton
-                          et l'annonce s'ouvrait. On quittait le salon sans
-                          l'avoir demandé, et de l'autre côté de l'écran ça se
-                          lit exactement comme une photo qui a disparu.
-                          Une cible large n'est un service que si l'on veut
-                          l'atteindre ; posée sous le doigt qui défile, c'est un
-                          piège. La pastille, elle, se vise. */}
-                      {ouvrable && (
-                        <button
-                          type="button"
-                          className="ap-obj-voir"
-                          onClick={() => voirLAnnonce(salon)}
-                        >
-                          <i aria-hidden="true">🔎</i>
-                          L&apos;annonce
-                        </button>
-                      )}
-                      <div className="ap-page-objet-t">
-                        {(salon.propositions?.length ?? 0) > 1 && (
-                          <s className="ap-tete-dit">
-                            🏆 en tête · {p?.voix.length ?? 0} sur {voixExprimees}
-                          </s>
-                        )}
-                        <b>{p?.quoi ?? salon.annonce ?? salon.sujet}</b>
-                        <span>
-                          {p?.ou && <u className="ou">{p.ou}</u>}
-                          {(p?.prix ?? salon.prix) && <em>{p?.prix ?? salon.prix}</em>}
-                          {/* CE QUI RESTE N'APPARTIENT QU'À L'ANNONCE D'ORIGINE.
-                              DÉFAUT VU EN CAPTURE : quand une autre proposition
-                              passait en tête, le bandeau affichait le nouveau
-                              commerce, le nouveau prix, la nouvelle distance —
-                              et gardait « 8 portions restantes » de l'ancien.
-                              Le bandeau mentait sur le seul chiffre qui pousse
-                              à se décider vite. */}
-                          {salon.reste && (!p || p.cle === salon.cle) && <s>{salon.reste}</s>}
-                          {(p?.distance ?? salon.distance) && (
-                            <u>📍 {p?.distance ?? salon.distance}</u>
-                          )}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* ─── CE QUI EST SUR LA TABLE ───
-                        DES LIGNES, PLUS DES CARTES. Chaque proposition était une
-                        carte encadrée avec vignette, nom, plat, prix et « proposé
-                        par » sur trois niveaux — trois cartes du même poids que
-                        le bandeau au-dessus, pour dire une chose que le bandeau
-                        disait déjà. Une ligne suffit : qui, quoi, combien de
-                        voix. Celle qui mène porte un filet vert à gauche, la
-                        vôtre un point ; le reste est du gris.
-                        UNE VOIX PAR PERSONNE, QU'ON DÉPLACE. Pas de pouce en bas :
-                        un « 👎 1 » public contre le choix de quelqu'un est une
-                        petite humiliation devant le groupe, et c'est précisément
-                        ce que les gens évitent — ce qui explique la bouillie
-                        WhatsApp, où personne ne veut être celui qui dit non. */}
-                    {(salon.propositions?.length ?? 0) > 1 && (
-                      <div className="ap-propos-l">
-                        {salon.propositions!.map((x) => {
-                          const moi = x.voix.includes(prenom || "Vous");
-                          const gagne = x.cle === tete?.cle;
-                          return (
-                            <button
-                              key={x.cle}
-                              type="button"
-                              className={`ap-propo${gagne ? " tete" : ""}${moi ? " moi" : ""}`}
-                              onClick={() => avecMonPrenom(() => voterPour(x.cle))}
-                            >
-                              <span>
-                                <b>{x.ou}</b>
-                                <em>
-                                  {x.quoi}
-                                  {x.prix ? ` · ${x.prix}` : ""}
-                                </em>
-                              </span>
-                              <s>{x.voix.length || "—"}</s>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                    {/* LE CATALOGUE PARTAGE LA LIGNE DE « PROPOSER », et ce
-                        n'est pas une économie de place gratuite. Sur sa propre
-                        ligne, il repoussait le début de la conversation de
-                        37 points SOUS le pli — mesuré : 491 pour 454
-                        disponibles. Or tout le travail sur ce salon a consisté
-                        à faire qu'on voie parler les gens sans défiler. Les
-                        deux boutons disent la même chose — « et sinon ? » —
-                        donc ils tiennent ensemble.
-                        Le compte « n autour de vous » cède la place quand le
-                        catalogue est là : trois informations sur une ligne,
-                        c'est la densité qu'on vient de retirer d'ici. */}
-                    {/* « PROPOSER AUTRE CHOSE » N'A PAS DE SENS DANS UN
-                        COLLECTIF. On ne se regroupe pas à dix sur un pantalon
-                        pour qu'un onzième propose un autre magasin : le groupe
-                        n'existe que par cet article-là, à ce seuil-là. Le
-                        bouton part avec sa ligne. */}
-                    {/* ET IL ATTEND QU'IL Y AIT QUELQU'UN. « Pas forcément
-                        comme une énorme action alors que le salon est vide » :
-                        proposer autre chose que ce qu'on vient de proposer, à
-                        personne, ne veut rien dire. Il revient au premier
-                        arrivant — c'est là qu'il devient la chose la plus
-                        originale de l'écran. */}
-                    {!salon.collectif && !salonSeul && (
-                    <div className="ap-obj-fin">
-                      <button
-                        type="button"
-                        className="ap-propo-plus"
-                        onClick={() => {
-                          noter("champ-touche", 0, "proposition");
-                          setProposeOuvert(true);
-                        }}
-                      >
-                        ＋ Proposer autre chose
-                        {alternatives.length > 0 &&
-                          !(commerceDuSalon?.catalogue?.length ?? 0) && (
-                            <em>{alternatives.length} autour de vous</em>
-                          )}
-                      </button>
-                      {(commerceDuSalon?.catalogue?.length ?? 0) > 0 && (
-                        <button
-                          type="button"
-                          className="ap-cata-b mini"
-                          onClick={() =>
-                            setCatalogue({ c: commerceDuSalon!, pourProposer: true })
-                          }
-                        >
-                          <i aria-hidden="true">
-                            {motCatalogue(commerceDuSalon!.metier).emoji}
-                          </i>
-                          {motCatalogue(commerceDuSalon!.metier).titre}
-                          <s aria-hidden="true">→</s>
-                        </button>
-                      )}
-                    </div>
-                    )}
-                    </div>
-                  );
-                })()}
-
-                {/* ─── LE BANDEAU DU COLLECTIF ───
-                    EN TÊTE, PARCE QUE C'EST LA RAISON D'ÊTRE DE LA SALLE. On
-                    n'est pas venu bavarder avec des inconnus, on est venu pour
-                    que le prix tombe. La jauge, le prix et le geste passent donc
-                    avant tout le reste.
-
-                    DEUX BOUTONS, ET LE SECOND EST LE MOTEUR. « Je prends ma
-                    place » est ce qu'on vient faire ; « J'en parle autour de
-                    moi » est ce qui fait monter le compteur, et donc la seule
-                    chose qui puisse faire aboutir le premier. Mon intérêt ici
-                    n'est pas de discuter, c'est d'amener trois personnes.
-
-                    ET « CEUX QUE VOUS NE CONNAISSEZ PAS » RESTE SOUS LES YEUX.
-                    Le vrai danger de deux salons n'est pas d'appuyer sur le
-                    mauvais bouton, c'est d'écrire quelque chose de personnel
-                    devant des inconnus en croyant parler à ses amis. Ça se dit
-                    en permanence, pas une fois à l'entrée. */}
-                {salon.collectif && (
-                  <div
-                    className={`ap-colsal${
-                      salon.collectif.participants >= salon.collectif.objectif ? " plein" : ""
-                    }`}
-                  >
-                    {/* LE DEUXIÈME TEMPS SE DIT AVANT LE CHIFFRE. Une barre
-                        pleine à « 12 sur 12 » se lit comme « c'est acquis » —
-                        or c'est exactement là que tout peut encore tomber. La
-                        ligne d'alerte le dit en clair, au-dessus. */}
-                    {salon.collectif.fenetre && (
-                      <p className="ap-colsal-f">
-                        <i aria-hidden="true">⏳</i>
-                        {/* LA PHRASE EST UN SEUL BLOC. En enfants directs d'un
-                            conteneur flex, le sablier ET le gras devenaient
-                            deux objets a part : « 15 h » se retrouvait coupe en
-                            deux au milieu de la phrase, sur sa propre colonne.
-                            Une grille a deux colonnes, et le texte reste du
-                            texte. */}
-                        <span>
-                          Le compte y est. Confirmez avant{" "}
-                          <b>{salon.collectif.fenetre.jusqua}</b> — seuls les
-                          confirmés comptent.
-                        </span>
-                      </p>
-                    )}
-                    <div className="ap-colsal-h">
-                      <b>
-                        {compteCollectif(salon.collectif).fait} sur{" "}
-                        {salon.collectif.objectif}
-                      </b>
-                      {compteCollectif(salon.collectif).mot && (
-                        <em className="ap-colsal-m">
-                          {compteCollectif(salon.collectif).mot}
-                        </em>
-                      )}
-                      {salon.collectif.prixGroupe && (
-                        <span>
-                          {salon.prix && <s>{salon.prix}</s>}
-                          <u>{salon.collectif.prixGroupe}</u>
-                        </span>
-                      )}
-                    </div>
-                    <div
-                      className="ap-colsal-j"
-                      aria-hidden="true"
-                      style={
-                        {
-                          "--part": `${Math.round(
-                            partCollectif(salon.collectif) * 100,
-                          )}%`,
-                        } as React.CSSProperties
-                      }
-                    >
-                      <i />
-                    </div>
-                    <p className="ap-colsal-x">{phraseCollectif(salon.collectif)}</p>
-                    <div className="ap-colsal-b">
-                      <button
-                        type="button"
-                        className="ap-colsal-p"
-                        onClick={() => {
-                          const c = salon.collectif!;
-                          setEchoIcone(c.fenetre ? "✅" : "👥");
-                          if (c.fenetre) {
-                            const r = Math.max(0, c.objectif - c.fenetre.confirmes - 1);
-                            setEcho(
-                              r > 0
-                                ? `C’est confirmé. Encore ${r} avant ${c.fenetre.jusqua} et c’est lancé.`
-                                : "C’est confirmé, et le compte y est. C’est lancé.",
-                            );
-                          } else {
-                            const r = manqueCollectif(c) - 1;
-                            setEcho(
-                              r > 0
-                                ? `Votre place est prise. Il en manque ${r} — parlez-en autour de vous.`
-                                : "Votre place est prise. Le compte y est : vous serez prévenu pour confirmer.",
-                            );
-                          }
-                        }}
-                      >
-                        {salon.collectif.fenetre ? "Je confirme" : "Je prends ma place"}
-                      </button>
-                      <button
-                        type="button"
-                        className="ap-colsal-s"
-                        onClick={() => void inviterAuSalon(salon)}
-                      >
-                        J&apos;en parle autour de moi
-                      </button>
-                    </div>
-                    <p className="ap-colsal-q">
-                      <i aria-hidden="true">👁️</i>
-                      {salon.presents.length - 1 > 0
-                        ? `${salon.presents.length - 1} personne${
-                            salon.presents.length - 1 > 1 ? "s" : ""
-                          } que vous ne connaissez pas`
-                        : "Un groupe ouvert"}
-                      {/* CE QUI REMPLACE L'EMPREINTE BANCAIRE. Un clic gratuit
-                          ne vaut rien tant que rien ne suit celui qui ne vient
-                          pas. Ici, honorer ses engagements se voit — et deux
-                          lapins de suite ferment l'accès aux collectifs pour un
-                          temps. Dans une ville de vingt mille habitants, ça
-                          pèse plus qu'une caution, et ça ne coûte rien.
-                          C'est aussi, exactement, le mécanisme de suspension
-                          qui manque au salon public : un seul système. */}
-                      <b className="ap-colsal-fi">Vous : 4 sur 4 honorés</b>
-                    </p>
-                  </div>
-                )}
-
-                  {/* ─── UN SALON NEUF EST VIDE, ET LE DIT ───
-                    Défaut relevé au test : « les gens pensaient que c'était
-                    des gens qui parlaient avec des inconnus ». Trois amis
-                    répondaient tout seuls à l'ouverture ; pour celui qui
-                    découvrait, c'étaient des voisins inconnus en train de
-                    discuter chez lui — la démonstration prouvait le contraire
-                    de ce qu'elle voulait montrer. Il n'y a donc plus rien, et
-                    une seule chose à faire. */}
-                {/* PAS DANS UN COLLECTIF : « il n'y a personne d'autre » y
-                    serait un mensonge — sept personnes y sont, c'est écrit
-                    trois lignes plus haut — et « invitez ceux avec qui vous
-                    voulez y aller » décrit l'autre salon, celui des amis. */}
-                {/* LE VIDE DU COLLECTIF A SA PROPRE PHRASE. Sous le bandeau, il
-                    restait quatre cents points de noir avant le champ
-                    d'écriture, et un blanc de cette taille se lit comme un
-                    écran qui n'a pas fini de charger. Une ligne suffit — et
-                    elle redit ce qu'on est venu faire ici, qui n'est pas
-                    bavarder. */}
-                {salon.collectif && (
-                  <p className="ap-colsal-vide">
-                    {salon.collectif.fenetre ? (
-                      <>
-                        On ne discute pas ici, on compte. Chacun confirme de son
-                        côté&nbsp;; à {salon.collectif.fenetre.jusqua}, on saura.
-                      </>
-                    ) : manqueCollectif(salon.collectif) > 0 ? (
-                      <>
-                        Rien à écrire ici&nbsp;: ce qui fait avancer le compteur,
-                        c’est d’en parler autour de vous. Il manque{" "}
-                        {manqueCollectif(salon.collectif)}
-                        {manqueCollectif(salon.collectif) > 1
-                          ? " personnes."
-                          : " personne."}
-                      </>
-                    ) : (
-                      <>Le compte y est. Vous serez prévenu pour confirmer.</>
-                    )}
-                  </p>
-                )}
-
-                {/* ═══ UN MESSAGE D'ACTION, PAS UN MESSAGE D'ÉTAT ═══
-                    « "Il n'y a personne d'autre pour l'instant" est
-                    techniquement vrai, mais ça ne donne aucune direction. Nous
-                    avons besoin d'un message d'action. »
-
-                    ET SURTOUT : « L'utilisateur n'a pas besoin de comprendre le
-                    produit. Il a besoin de comprendre ce qu'il doit faire
-                    maintenant. » On expliquait le mécanisme — « un salon ne
-                    contient que les gens que vous y mettez » — c'est-à-dire une
-                    notice, à quelqu'un qui vient de faire un geste et attend la
-                    suite. La notice part ; ce qui reste est ce qu'il fait
-                    maintenant, et la seule phrase qui dise POURQUOI ça vaut le
-                    coup : chacun peut proposer autre chose. */}
-                {/* CE QU'IL VIENT DE PROPOSER, NOMMÉ COMME TEL. La carte
-                    au-dessus est la même que sur Le Direct : sans un mot, rien
-                    ne dit qu'elle a changé de statut — qu'elle est passée de
-                    « une annonce que je regarde » à « ce que je propose ». Deux
-                    mots suffisent, et ils font la transition que l'écran ne
-                    faisait pas. */}
-                {salonSeul && <p className="ap-vousprop">Vous proposez</p>}
-
-                {salon.messages.length === 0 && !salon.collectif && (
-                  <div className="ap-sal-neuf">
-                    <span aria-hidden="true">👥</span>
-                    <b>À vous de jouer</b>
-                    <i>
-                      Invitez ceux avec qui vous voulez y aller. Ils verront
-                      votre proposition — et pourront en faire une autre.
-                    </i>
-                    <button type="button" onClick={() => void inviterAuSalon(salon)}>
-                      👥 Inviter mes amis
-                    </button>
-                    {/* POURQUOI ÇA VAUT MIEUX QU'UN MESSAGE. Une phrase, sous
-                        le bouton, et le concept n'a plus besoin d'être
-                        expliqué ailleurs. */}
-                    <u>Vous choisissez ensemble : chacun peut proposer une autre idée.</u>
-                    {/* LA NOTE SUR LA VISIBILITÉ EST ICI, pas dans un
-                        réglage qu'on ne trouve pas : c'est au moment
-                        d'inviter qu'on se demande qui verra. Elle ne dit plus
-                        « salon » : le mot n'est compris que de nous. */}
-                    <s>
-                      {salon.prive
-                        ? "🔒 Fermé : seuls ceux que vous invitez le voient."
-                        : "🌍 Ouvert : ceux qui sont autour peuvent le voir et s'y joindre. Vous pouvez le fermer juste au-dessus."}
-                    </s>
-                  </div>
-                )}
-
-                {/* ─── L'APERÇU DU DIRECT ───
-                    L'image est celle de la caméra, pour de bon. Ce qui n'est
-                    pas vrai, c'est la diffusion : la maquette n'a pas de
-                    serveur de flux. On l'écrit sous l'image plutôt que de le
-                    laisser croire. */}
-                {enLigne && (
-                  <div className="ap-live-boite">
-                    <video ref={video} autoPlay playsInline muted />
-                    <span className="ap-live-pt">
-                      <i aria-hidden="true">●</i>
-                      EN DIRECT
-                    </span>
-                    <button
-                      type="button"
-                      className="ap-live-stop"
-                      onClick={() => arreterLeDirect(salon.cle)}
-                    >
-                      Arrêter
-                    </button>
-                    <s>
-                      Dans cette maquette, l&apos;image ne quitte pas votre
-                      téléphone : il n&apos;y a pas encore de serveur de
-                      diffusion.
-                    </s>
-                  </div>
-                )}
-
-                {/* CELUI QUI DÉCOUVRE N'A QUE LA PHOTO ET LE TITRE, et c'est le
-                    cas CENTRAL du produit : il arrive par un lien, tombe dans une
-                    conversation, et doit pouvoir savoir ce qu'est ce commerce —
-                    ses horaires, sa journée, ses avis, son menu. Le chemin n'a
-                    pas disparu, il a changé de place : c'est la photo elle-même
-                    qui ouvre l'annonce, juste au-dessus. On appuie sur ce qu'on
-                    regarde, et l'écran perd une ligne encadrée.
-                    Le réglage public/privé a lui aussi remonté, dans l'en-tête :
-                    voir le commentaire qui l'accompagne. */}
-
-                  {/* ─── QUI VIENT ? ───
-                      Trois états, pas plus : l'hôte, ceux qui viennent, ceux
-                      que ça intéresse sans qu'ils s'engagent. Le troisième est
-                      le plus utile — sans lui, celui qui hésite n'a que « je
-                      viens » ou le silence, et il choisit le silence.
-                      Les avatars sont des initiales : inventer des visages
-                      dans une maquette de voisins anonymes serait la seule
-                      chose de tout l'écran qui mentirait. */}
-                  {/* UNE LIGNE, PLUS UN BLOC. C'était un cadre avec un titre en
-                      capitales, une colonne de vignettes de 58 points avec nom ET
-                      statut écrits sous chacune, un bouton vert pleine largeur, et
-                      juste dessous un second cadre pour « ouvert maintenant · y
-                      aller ensemble ». Deux cadres, quatre niveaux de texte, pour
-                      dire qui vient. Les initiales se chevauchent maintenant en
-                      une seule rangée — la forme qu'on lit sans l'apprendre — le
-                      compte est écrit une fois, et le geste tient dans une
-                      pastille. L'itinéraire, qui est la seule chose qu'une
-                      messagerie ne saura jamais dire, se replie au bout. */}
-                  {/* PAS DANS UN COLLECTIF, ET C'EST UN DÉFAUT VU À L'ÉCRAN :
-                      cette rangée affichait « 1 vient · 4 intéressés » trois
-                      lignes sous « 4 sur 6 ». Deux compteurs qui ne disent pas
-                      la même chose sur la même salle, et on ne sait plus lequel
-                      est le vrai. Dans un collectif, l'engagement EST la jauge —
-                      « je viens » et « ça m'intéresse » sont les nuances du
-                      salon des amis, où rien ne se compte. */}
-                  {/* ─── ET LA RANGÉE DES GENS ATTEND D'AVOIR DES GENS ───
-                      Seul dans le groupe, elle affiche votre initiale, « 1 vient »
-                      et un bouton « ✓ Vous venez » déjà coché : trois objets pour
-                      dire que celui qui vient de proposer une sortie compte y
-                      aller. C'est le genre d'évidence qui remplit un écran sans
-                      rien apprendre — et qui fait qu'on ne voit plus le seul
-                      geste qui compte. Elle revient avec le premier arrivant,
-                      où elle dit enfin quelque chose : qui vient, et qui hésite. */}
-                  {!salon.collectif && !salonSeul && (
-                  <div className="ap-gens">
-                    <div className="ap-gens-t">
-                      {salon.presents.slice(0, 5).map((q) => {
-                        const st =
-                          salon.statuts?.[q] ??
-                          (salon.viennent.includes(q) ? "vient" : "interesse");
-                        return (
-                          <i
-                            key={q}
-                            className={`ap-av a${q.charCodeAt(0) % 5} ${st}`}
-                            title={`${q} — ${
-                              st === "hote" ? "hôte" : st === "vient" ? "vient" : "intéressé"
-                            }`}
-                          >
-                            {q.slice(0, 1).toUpperCase()}
-                          </i>
-                        );
-                      })}
-                      {salon.presents.length > 5 && (
-                        <i className="ap-av reste">+{salon.presents.length - 5}</i>
-                      )}
-                    </div>
-                    <span className="ap-gens-d">
-                      <b>
-                        {salon.viennent.length}{" "}
-                        {salon.viennent.length > 1 ? "viennent" : "vient"}
-                      </b>
-                      {(() => {
-                        // Un seul curieux n'est pas « 1 intéressés ».
-                        const n = salon.presents.length - salon.viennent.length;
-                        return n > 0 ? `${n} intéressé${n > 1 ? "s" : ""}` : "";
-                      })()}
-                    </span>
-                    {/* LE GESTE ET L'ITINÉRAIRE VONT ENSEMBLE, dans un même
-                        groupe : sinon, quand la ligne passe à deux rangs sur un
-                        petit écran, le petit bouton de marche se retrouve seul
-                        sur une ligne à lui, et un objet orphelin se lit comme
-                        une erreur de mise en page. */}
-                    <span className="ap-gens-a">
-                    <button
-                      type="button"
-                      className={`ap-gens-b${jySuis(salon.viennent) ? " on" : ""}`}
-                      onClick={() =>
-                        avecMonPrenom(() => {
-                          // ON VIENT SOUS SON PRÉNOM. Laisser la valeur par
-                          // défaut ajoutait « Vous » À CÔTÉ de Camille : la
-                          // même personne comptée deux fois dans « qui vient »,
-                          // exactement le défaut déjà payé sur les voix.
-                          basculerVenue(salon.cle, monPrenom() || "Vous");
-                          noter("jy-vais", 0, "salon");
-                        })
-                      }
-                    >
-                      {jySuis(salon.viennent) ? "✓ Vous venez" : "Je viens"}
-                    </button>
-                    {salon.distance && (
-                      <a
-                        className="ap-gens-y"
-                        href="https://www.google.com/maps/dir/?api=1&destination=Dax"
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        aria-label="Y aller ensemble"
-                      >
-                        🚶
-                      </a>
-                    )}
-                    </span>
-                  </div>
-                  )}
-
-                  {/* ─── QUELQU'UN Y EST, ET ON LE VOIT ───
-                      WhatsApp dit « Pauline m'envoie une photo ». Ici on dit où
-                      elle est, depuis quand, à quelle distance, et combien de
-                      minutes pour la rejoindre. C'est une autre proposition, et
-                      c'est la seule que le lieu rende possible.
-
-                      C'ÉTAIENT TROIS LIGNES DE TEXTE dans un encadré rouge, et
-                      c'est devenu une image plein cadre. La raison tient en une
-                      phrase : ce dont ce bloc parle est, par nature, une image —
-                      quelqu'un est quelque part et le montre. Un encadré de
-                      texte demande de croire ; une image montre.
-
-                      LA VIDÉO EST MUETTE ET EN BOUCLE. Un son qui démarre tout
-                      seul dans un salon de coiffure est la façon la plus rapide
-                      de faire fermer l'application. playsInline pour qu'iOS ne
-                      la passe pas en plein écran de lui-même, et l'image sert
-                      d'affiche pendant le chargement.
-
-                      LES DEUX ACTIONS SONT POSÉES SUR L'IMAGE : « la rejoindre »
-                      et « prendre le même » ne se comprennent que là où l'on
-                      voit qu'elle y est. Sous l'image, elles redeviendraient
-                      deux boutons de plus. */}
-                  {salon.enDirect && (
-                    <div className={`ap-direct${salon.enDirect.image || salon.enDirect.video ? " vu" : ""}`}>
-                      {salon.enDirect.video ? (
-                        <video
-                          className="ap-direct-f"
-                          poster={salon.enDirect.image}
-                          autoPlay
-                          muted
-                          loop
-                          playsInline
-                          preload="metadata"
-                        >
-                          <source src={salon.enDirect.video.webm} type="video/webm" />
-                          <source src={salon.enDirect.video.mp4} type="video/mp4" />
-                        </video>
-                      ) : salon.enDirect.image ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img className="ap-direct-f" src={salon.enDirect.image} alt="" />
-                      ) : null}
-                      <span className="ap-direct-v" aria-hidden="true" />
-
-                      <span className="ap-direct-h">
-                        <i aria-hidden="true">●</i>
-                        En direct
-                      </span>
-
-                      <div className="ap-direct-d">
-                        {/* ON NE RÉPÈTE PAS LE LIEU. Le bandeau de la page le
-                            nomme déjà, deux centimètres au-dessus, et « Camille
-                            est chez Un salon du centre » se lisait mal —
-                            l'article indéfini d'un commerce anonymisé ne passe
-                            pas dans cette tournure. Ce que ce bloc apporte,
-                            c'est QUI et DEPUIS QUAND, pas où. */}
-                        <b>{salon.enDirect.qui} y est en ce moment</b>
-                        <span className="ap-direct-l">
-                          depuis {salon.enDirect.depuis} · {salon.enDirect.distance} de vous
-                          {" · "}
-                          {salon.enDirect.aPied} à pied
-                        </span>
-                        <div className="ap-direct-b">
-                          <a
-                            href="https://www.google.com/maps/dir/?api=1&destination=Dax"
-                            target="_blank"
-                            rel="noreferrer noopener"
-                          >
-                            🚶 La rejoindre
-                          </a>
-                          {/* « Prendre le même » appelait lui aussi la feuille du
-                              paquet : on réservait chez le commerce en tête du
-                              PAQUET, pas chez celui où l'amie se trouve. */}
-                          <button
-                            type="button"
-                            onClick={() => avecMonPrenom(() => setAConfirmer({ pourUnSeul: true }))}
-                          >
-                            📅 Prendre le même
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ─── LE VOTE ───
-                      Le geste qui justifie tout le reste : elle est dans le
-                      fauteuil, elle photographie deux nuances, elle demande
-                      laquelle. Ça se fait déjà par SMS, tous les jours, et
-                      c'est invisible. */}
-                  {salon.vote && (
-                    <div className="ap-vote">
-                      <b>{salon.vote.question}</b>
-                      {salon.vote.options.map((o) => {
-                        const total = salon.vote!.options.reduce((t, x) => t + x.voix, 0) || 1;
-                        const pc = Math.round((o.voix / total) * 100);
-                        return (
-                          <button
-                            key={o.cle}
-                            type="button"
-                            className={`ap-vote-o${salon.vote!.monVote === o.cle ? " on" : ""}`}
-                            onClick={() => {
-                              voter(salon.cle, o.cle);
-                              noter("note-donnee", pc, "vote");
-                            }}
-                          >
-                            <span className="ap-vote-j" style={{ width: `${pc}%` }} />
-                            <span className="ap-vote-t">{o.label}</span>
-                            <span className="ap-vote-p">{pc}&nbsp;%</span>
-                          </button>
-                        );
-                      })}
-                      <span className="ap-vote-n">
-                        {salon.vote.options.reduce((t, x) => t + x.voix, 0)} voix ·{" "}
-                        {salon.enDirect?.qui ?? salon.parQui} voit le résultat tout de suite
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="ap-sal-fil">
-                    {salon.messages.map((m) =>
-                      m.carte ? (
-                        <div
-                          className={`ap-sal-carte${m.carte.pro ? " pro" : ""}`}
-                          key={m.id}
-                        >
-                          {/* L'AUTRE CÔTÉ SE PRÉSENTE COMME TEL. Sans ce
-                              libellé, la carte se lirait comme un message de
-                              plus du groupe — or c'est un écran d'ailleurs,
-                              et c'est justement ce qui la rend intéressante. */}
-                          {m.carte.pro && (
-                            <span className="ap-sal-pro-t">
-                              Ce que {m.qui} reçoit
-                            </span>
-                          )}
-                          <i aria-hidden="true">{m.carte.pro ? "🔔" : "📅"}</i>
-                          <span>
-                            <b>{m.carte.titre}</b>
-                            <em>{m.carte.detail}</em>
-                            {m.carte.tampon && (
-                              <s>{m.carte.pro ? "👥 " : "✓ "}{m.carte.tampon}</s>
-                            )}
-                          </span>
-                          <u>{m.quand}</u>
-                        </div>
-                      ) : m.voix === "systeme" ? (
-                        /* ─── UNE ANNONCE N'EST PAS QUELQU'UN QUI PARLE ───
-                           DÉFAUT VU DANS LE FIL : « 🏆 Chez Bergine passe en
-                           tête » s'affichait comme un message, avec une pastille
-                           « C », le nom « Clikme », une bulle et un cœur. On
-                           pouvait donc AIMER une annonce du système, et une
-                           machine avait un avatar au milieu de quatre amis.
-                           C'est un fait qui arrive, pas une prise de parole :
-                           une ligne fine, centrée, sans visage et sans réaction.
-                           Ce qui a une vraie carte — une réservation — garde la
-                           sienne, juste au-dessus. */
-                        <div key={m.id} className="ap-sal-dit">
-                          <span>{m.texte}</span>
-                        </div>
-                      ) : (
-                        <div key={m.id} className={`ap-sal-m ${m.voix}`}>
-                          {m.voix !== "moi" && (
-                            <b>
-                              <i className={`ap-av a${m.qui.charCodeAt(0) % 5}`} aria-hidden="true">
-                                {m.qui.slice(0, 1).toUpperCase()}
-                              </i>
-                              {m.qui}
-                            </b>
-                          )}
-                          {m.texte && <span>{m.texte}</span>}
-                          {m.photo && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={m.photo} alt={`Envoyée par ${m.qui}`} loading="lazy" />
-                          )}
-                          <i>{m.quand}</i>
-                          {/* UN CŒUR COÛTE UN APPUI et dit ce qu'une réponse
-                              écrite ne dirait pas mieux. On montre le COMPTE,
-                              jamais qui a réagi : dans un groupe de quatre,
-                              savoir qui n'a PAS réagi est une information
-                              qu'on ne veut donner à personne. */}
-                          <button
-                            type="button"
-                            className={`ap-reac${m.maReaction ? " on" : ""}`}
-                            aria-label="J'aime"
-                            onClick={() => reagir(salon.cle, m.id, "❤️")}
-                          >
-                            ❤️
-                            {(m.reactions?.["❤️"] ?? 0) > 0 && <b>{m.reactions!["❤️"]}</b>}
-                          </button>
-                        </div>
-                      ),
-                    )}
-                    {amisEcrivent.map((q) => (
-                      <div className="ap-sal-m ami ecrit" key={`e-${q}`}>
-                        <b>{q}</b>
-                        <span className="ap-trois" aria-label="écrit…">
-                          <i /><i /><i />
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  </div>
-
-              {/* ─── DEUX ACTIONS, PAS CINQ ───
-                  La barre en portait cinq de poids égal : Inviter, Réserver,
-                  Photo, Vidéo, Direct. Or elles ne font pas la même chose.
-                  Inviter et réserver font AVANCER la sortie — ce sont les deux
-                  seules qui la changent. Photo, vidéo et direct sont des façons
-                  de DIRE quelque chose : leur place est au bord du champ
-                  d'écriture, dépliées d'un « ＋ », et pas au même rang que la
-                  réservation. */}
-              {/* DANS UN COLLECTIF, CETTE BARRE EST UN DOUBLON — VU À L'ÉCRAN.
-                  « Inviter » refait « J'en parle autour de moi » et « Réserver »
-                  refait « Je prends ma place », tous deux posés en tête, dans le
-                  bandeau ambre. Quatre boutons pour deux gestes, dont deux
-                  paires qui ne se ressemblent pas : on se demande laquelle des
-                  deux compte. Le bandeau garde les siens, qui sont attachés au
-                  compteur ; la barre s'efface. */}
-              {/* ─── ET ELLE NE S'AFFICHE PAS DANS UN SALON VIDE ───
-                  « Réserver quoi ? Pour qui ? Ça donne l'impression qu'on peut
-                  réserver immédiatement, alors que le concept est justement :
-                  je propose → mes amis réagissent → nous choisissons → nous
-                  réservons. » Et « Inviter » y refaisait, en petit et en gris,
-                  le grand bouton vert posé juste au-dessus. Deux fois le même
-                  geste, dont l'un a l'air secondaire : on se demande lequel
-                  compte. La barre revient avec le premier arrivant. */}
-              {!salon.collectif && !salonSeul && (
-              <div className="ap-page-actions">
-                <button
-                  type="button"
-                  className="ap-act"
-                  onClick={() => void inviterAuSalon(salon)}
-                >
-                  <i aria-hidden="true">👥</i>
-                  Inviter
-                </button>
-                {/* Il réserve CE QUI A GAGNÉ, pour CEUX QUI VIENNENT — et non
-                    chez le commerce en tête du paquet, ce que faisait l'ancien
-                    bouton. */}
-                <button
-                  type="button"
-                  className="ap-act fort"
-                  onClick={() => avecMonPrenom(() => setAConfirmer({ pourUnSeul: false }))}
-                >
-                  <i aria-hidden="true">📅</i>
-                  Réserver
-                  {salon.viennent.length > 1 && <b>{salon.viennent.length}</b>}
-                </button>
-              </div>
-              )}
-
-              {/* LES FAÇONS DE DIRE, DÉPLIÉES SEULEMENT SI ON LES DEMANDE. */}
-              {outils && (
-                <div className="ap-outils">
-                  <label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={async (ev) => {
-                        const f = ev.target.files?.[0];
-                        ev.target.value = "";
-                        if (!f) return;
-                        setOutils(false);
-                        try {
-                          const photo = await reduirePhoto(f);
-                          noter("photo-ajoutee", 0, "salon");
-                          ecrireDansSalon(salon.cle, {
-                            qui: monPrenom() || "Vous",
-                            voix: "moi",
-                            texte: "",
-                            quand: heureCourte(),
-                            photo,
-                          });
-                        } catch {
-                          /* Image illisible : on ne casse rien. */
-                        }
-                      }}
-                    />
-                    <i aria-hidden="true">📷</i>
-                    Photo
-                  </label>
-                  <label>
-                    <input
-                      type="file"
-                      accept="video/*"
-                      capture="environment"
-                      onChange={(ev) => {
-                        const f = ev.target.files?.[0];
-                        ev.target.value = "";
-                        if (!f) return;
-                        setOutils(false);
-                        // LA VIDÉO N'EST PAS GARDÉE DANS LA MAQUETTE, et il vaut
-                        // mieux le dire que le faire à moitié : dix secondes
-                        // pèsent des mégaoctets, le stockage du navigateur en
-                        // accepte cinq en tout, et la première tuerait les avis,
-                        // les photos et les salons déjà écrits.
-                        noter("video-vue", 0, "salon");
-                        ecrireDansSalon(salon.cle, {
-                          qui: monPrenom() || "Vous",
-                          voix: "moi",
-                          texte: "🎬 Vidéo envoyée au groupe",
-                          quand: heureCourte(),
-                        });
-                      }}
-                    />
-                    <i aria-hidden="true">🎬</i>
-                    Vidéo
-                  </label>
-                  {/* Le direct ne se fait nulle part ailleurs : c'est la seule
-                      de ces trois qui n'a pas d'équivalent dans une messagerie. */}
-                  <button
-                    type="button"
-                    className={enLigne ? "ap-en-direct" : ""}
-                    onClick={() => {
-                      setOutils(false);
-                      avecMonPrenom(() => void lancerLeDirect(salon.cle));
-                    }}
-                  >
-                    <i aria-hidden="true">{enLigne ? "⏹️" : "🔴"}</i>
-                    {enLigne ? "Arrêter le direct" : "Direct"}
-                  </button>
-                </div>
-              )}
-
-              {/* ─── PAS DE TEXTE LIBRE DANS UN COLLECTIF, ET C'EST UN
-                  CHOIX DE LANCEMENT ───
-                  Une salle d'inconnus avec un champ d'écriture demande un
-                  bouton de signalement et un moyen de suspendre quelqu'un.
-                  Ni l'un ni l'autre n'existent — c'est exactement ce qui
-                  retient La Ville. Or ce qui fait tourner un collectif n'est
-                  pas la conversation : c'est le compteur et le fait d'amener
-                  du monde. On ouvre l'écriture le jour où le signalement
-                  existe, c'est-à-dire en même temps que la fiabilité qui suit
-                  ceux qui ne viennent pas. Un seul système, une seule date. */}
-              {!salon.collectif && (
-              <form
-                className="ap-page-champ"
-                onSubmit={(ev) => {
-                  ev.preventDefault();
-                  const t = motSalon.trim();
-                  if (!t) return;
-                  // ON DEMANDE LE PRÉNOM AU MOMENT DE PRENDRE LA PAROLE, jamais
-                  // à l'arrivée : on peut lire un salon sans rien donner.
-                  avecMonPrenom(() => {
-                    ecrireDansSalon(salon.cle, {
-                      qui: monPrenom() || "Vous",
-                      voix: "moi",
-                      texte: t,
-                      quand: heureCourte(),
-                    });
-                    setMotSalon("");
-                  });
-                }}
-              >
-                <button
-                  type="button"
-                  className={`ap-champ-plus${outils ? " on" : ""}`}
-                  aria-expanded={outils}
-                  aria-label={outils ? "Fermer" : "Photo, vidéo, direct"}
-                  onClick={() => setOutils((v) => !v)}
-                >
-                  ＋
-                </button>
-                <input
-                  value={motSalon}
-                  onChange={(ev) => setMotSalon(ev.target.value)}
-                  maxLength={200}
-                  placeholder="Écrire un message…"
-                  aria-label="Votre message"
-                />
-                <button type="submit" disabled={!motSalon.trim()} aria-label="Envoyer">
-                  ↑
-                </button>
-              </form>
-              )}
-            </div>
-            </>
           ) : (
           <>
           {onglet === "direct" && (
@@ -8327,6 +7213,1107 @@ export function ApercuHabitant() {
             </>
           )}
 
+
+          {/* ═══ LA FEUILLE EST POSEE SUR L'ANNONCE, PAS A SA PLACE ═══
+
+              LE DEFAUT, QUATRIEME RAPPORT : « j'ai la pop-up qui vient d'en
+              bas mais derriere, ca change d'annonce. »
+
+              LES TROIS CORRECTIONS PRECEDENTES ONT RATE LA CAUSE, et la cause
+              etait ici, dans la FORME de ce rendu. Un ternaire : soit le
+              paquet, SOIT la feuille. Filme image par image, ca donnait ceci —
+              a 133 ms la carte est DETRUITE, et ce qui prend sa place est une
+              photo nue, recadree autrement, sans titre, sans prix, sans nom de
+              commerce. Meme quand c'est la bonne photo — et je l'avais deja
+              corrigee pour qu'elle le soit — une image sans un seul mot dessus
+              n'est pas l'annonce : c'est une autre image. Vu du telephone,
+              « derriere, ca change d'annonce », au sens propre.
+
+              JE CHERCHAIS QUELLE IMAGE METTRE DERRIERE. La bonne question
+              etait : pourquoi mettre quoi que ce soit ? L'annonce est deja la,
+              montee, exacte, avec son titre et son prix. Elle reste donc
+              montee, et la feuille se pose PAR-DESSUS. Rien ne la remplace,
+              donc plus rien ne peut se tromper de remplacement.
+
+              CE QUI DEPASSE EST ASSOMBRI ET NEUTRALISE — voir .ap-feuille-dos,
+              qui n'est plus une photo mais un simple voile. La bande du haut
+              est un repere, pas un second ecran : on revient par la fleche. */}
+          {salonPage && salon && (
+            /* ═══ ELLE MONTE DU BAS, ET ELLE S'ARRÊTE AVANT L'ANNONCE ═══
+
+               « Quand je clique sur "proposer à mes amis", on arrive
+               subitement sur une nouvelle page et ça donne l'impression qu'il
+               n'y a aucun lien avec l'annonce. Peut-être que ça pourrait être
+               cette page qui arriverait du bas comme une pop-up, et qui
+               s'arrête avant la fin de l'annonce pour qu'on comprenne que
+               c'est bien en lien avec l'annonce sur laquelle on est. »
+
+               IL A RAISON, ET ÇA CORRIGE UN CHOIX QUE J'AVAIS FAIT DANS
+               L'AUTRE SENS. Le salon avait été passé en page pleine pour dire
+               « ceci n'est pas un aparté, c'est l'endroit où se passe la seule
+               chose que le produit fait ». C'est vrai de ce que le salon EST,
+               et faux de la façon dont on y arrive : une page pleine qui
+               remplace tout efface ce qu'on venait d'y mettre. On ne se
+               souvient plus de quel plat on parlait.
+
+               UNE FEUILLE RÉPOND AUX DEUX. Elle monte du bas — donc elle vient
+               de l'annonce et non d'ailleurs — et elle laisse le haut de la
+               carte visible, ce qui répond en permanence à « on parle de
+               quoi ? ». Elle prend malgré tout presque tout l'écran : ce n'est
+               pas un aparté de trois lignes, c'est là qu'on décide.
+
+               ET CE QUI DÉPASSE EST ASSOMBRI, pas cliquable : la bande du haut
+               est un repère, pas un bouton — on revient par la flèche, qui dit
+               où elle ramène. */
+            <>
+              {/* ─── CE QU'ON APERÇOIT AU-DESSUS DE LA FEUILLE ───
+                  C'est l'annonce elle-même, et c'est tout l'objet de la
+                  demande : « pour qu'on comprenne que c'est bien en lien avec
+                  l'annonce sur laquelle on est. » Une bande noire aurait dit
+                  « une autre page » ; sa photo dit « on parle de ça ».
+                  Assombrie, sans texte et sans bouton — c'est un repère, pas un
+                  second écran actif : on revient par la flèche, qui dit où elle
+                  ramène. */}
+              <div className="ap-feuille-dos" aria-hidden="true" />
+            <div className="ap-page feuille">
+              <span className="ap-feuille-p" aria-hidden="true" />
+              <div className="ap-page-h">
+                <button
+                  type="button"
+                  className="ap-page-r"
+                  onClick={() => {
+                    arreterLeDirect();
+                    rangerCeQuiAttend();
+                    setSalonPage(false);
+                    setSalonOuvert("");
+                  }}
+                >
+                  <i aria-hidden="true">←</i>
+                  {NOM_ONGLET[onglet]}
+                </button>
+                {/* DÈS QU'IL Y A DEUX PROPOSITIONS, LE SALON N'EST PLUS
+                    CELUI D'UN COMMERCE. Garder « Le Bocal de Margot » en titre
+                    pendant que le groupe discute d'un autre restaurant fait
+                    mentir l'en-tête ; le nom du lieu vit dans le bandeau, qui
+                    suit ce qui mène. */}
+                {/* UNE SEULE LIGNE SOUS LE TITRE, ET RIEN D'AUTRE.
+                    Elle portait « 2 propositions · 2 voix · 18 h – 20 h », et à
+                    côté une pastille « ● ouvert » : quatre informations dans un
+                    en-tête, dont trois qu'on relit sans jamais s'en servir. Le
+                    point vert reste — il dit que le salon est encore vivant, et
+                    ils meurent le soir même — mais il rejoint l'heure au lieu
+                    d'occuper un objet à lui. */}
+                {/* ═══ CE QUE LE TITRE DIT QUAND ON VIENT D'ARRIVER ═══
+                    « Quand je clique sur "proposer à mes amis", je m'attends à
+                    ce que ClikMe m'aide à l'envoyer à mes amis. Or j'arrive
+                    dans un écran qui ressemble à une conversation vide. Je me
+                    demande : OK… et maintenant ? »
+
+                    C'EST LA TRANSITION QUI MANQUAIT. L'en-tête portait le nom
+                    du commerce — « Une boucherie du centre » — c'est-à-dire
+                    exactement ce qu'on venait de quitter. Rien ne disait qu'il
+                    s'était passé quelque chose. Tant qu'on est seul, il dit
+                    donc ce qui vient d'être créé, et avec un mot qui n'a pas
+                    besoin d'être appris : ON CHOISIT ENSEMBLE. Dès que
+                    quelqu'un arrive, le titre reprend son travail normal —
+                    dire où on va. */}
+                <span className="ap-page-t">
+                  <b>
+                    {salonSeul
+                      ? "On choisit ensemble"
+                      : (salon.propositions?.length ?? 0) > 1
+                        ? "Où on va ?"
+                        : salon.ou}
+                  </b>
+                  <em>
+                    <u>
+                      <i aria-hidden="true">●</i>
+                      {salon.quand}
+                    </u>
+                    {/* PAS LE COMPTE DES PRÉSENTS DANS UN COLLECTIF : il en
+                        faisait un TROISIÈME, après « 4 sur 6 » et « 4 personnes
+                        que vous ne connaissez pas », et il ne disait pas la même
+                        chose que les deux autres — cinq dans la salle, quatre
+                        engagés, six attendus. Trois nombres pour une salle, on
+                        ne sait plus lequel compte. Seule la jauge compte : c'est
+                        elle qui fait tomber le prix. */}
+                    {!salon.collectif && (
+                      <>
+                        {" · "}
+                        {salon.presents.length}{" "}
+                        {salon.presents.length > 1 ? "personnes" : "personne"}
+                      </>
+                    )}
+                  </em>
+                </span>
+                {/* ─── PUBLIC OU PRIVÉ, DANS L'EN-TÊTE ───
+                    C'était un bloc pleine largeur au milieu de la page, avec un
+                    titre, une phrase d'explication et un interrupteur : un
+                    sixième de l'écran pour un RÉGLAGE, entre deux choses qu'on
+                    vient y faire. Un réglage se range là où on range les
+                    réglages — près du titre de ce qu'il règle. La phrase, elle,
+                    n'est pas perdue : elle est dite au moment d'inviter, qui est
+                    le seul moment où l'on se demande qui verra.
+                    Public par défaut, et c'est le seul défaut qui rende le
+                    produit possible : un salon privé ne sert que ceux qui
+                    étaient déjà d'accord pour sortir, c'est-à-dire WhatsApp. */}
+                {cestMoi(salon.parQui) ? (
+                  <button
+                    type="button"
+                    className={`ap-page-vu${salon.prive ? " prive" : ""}`}
+                    aria-label={
+                      salon.prive
+                        ? "Salon privé — le rendre public"
+                        : "Salon public — le rendre privé"
+                    }
+                    onClick={() => {
+                      const prive = basculerVisibilite(salon.cle);
+                      setEchoIcone(prive ? "🔒" : "🌍");
+                      setEcho(
+                        prive
+                          ? "Salon privé : seuls ceux que vous invitez le voient."
+                          : "Salon public : ceux qui sont autour peuvent le découvrir.",
+                      );
+                    }}
+                  >
+                    {salon.prive ? "🔒" : "🌍"}
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="ap-sal-corps" ref={filSalon}>
+                {/* ─── CE DONT ON PARLE, EN GRAND ET EN PREMIER ───
+                    Une photo de vignette en haut à droite ne dit rien : elle
+                    décore une conversation. Ici l'annonce EST l'écran d'accueil
+                    du salon — la photo pleine largeur, le nom du plat, le prix,
+                    ce qu'il en reste — parce que c'est la seule raison pour
+                    laquelle quatre personnes se parlent à cet endroit. Le texte
+                    est posé SUR la photo, comme sur la carte du paquet, pour
+                    que la page reste la même chose que celle qu'on vient de
+                    balayer et pas un nouvel écran à comprendre. */}
+                {/* SANS PHOTO, ON NE LAISSE PAS UN BLOC À MOITIÉ VIDE.
+                    Défaut relevé : « les photos dans les salons de l'annonce
+                    n'apparaissent pas toujours ». C'est vrai des salons ouverts
+                    depuis La Ville : un message d'habitant n'a pas forcément
+                    d'image, et le bloc tombait de 178 à 113 pixels sans qu'on
+                    sache si ça chargeait ou si c'était cassé. Un fond franc et
+                    un grand signe disent que c'est voulu. */}
+                {/* LE BANDEAU MONTRE CE QUI EST EN TÊTE, PAS CE QUI A
+                    LANCÉ LE SALON. C'est tout le sujet : quand une autre
+                    proposition passe devant, le haut du salon change — et avec
+                    lui la réservation. */}
+                {/* ─── UN SEUL OBJET, ET PAS QUATRE BLOCS EMPILÉS ───
+                    DÉFAUT RELEVÉ AU TEST : « c'est très lourd, beaucoup de
+                    choses les unes sous les autres, ça ne marche pas ». Il y
+                    avait raison : le bandeau, les propositions, « proposer autre
+                    chose » et « voir l'annonce complète » étaient QUATRE objets
+                    encadrés, du même poids visuel, qui parlaient tous de la même
+                    question — où on va. L'œil ne trouvait aucune hiérarchie,
+                    donc il n'en trouvait aucune.
+                    Ils n'en font plus qu'un : la photo, ce qui mène, ce qui est
+                    sur la table, et le moyen d'en ajouter. Un cadre, un sujet. */}
+                {(() => {
+                  const p = tete;
+                  const photo = p?.photo ?? salon.photo;
+                  const a = annonceDuSalon(salon);
+                  const ouvrable = !!(a.carte || a.evenement);
+                  return (
+                    <div className="ap-obj">
+                    {/* LA PHOTO EST LE BOUTON. « Voir l'annonce complète » était
+                        une ligne encadrée de plus, sous les propositions, alors
+                        que l'image dont elle parle est juste au-dessus. On
+                        appuie sur ce qu'on regarde.
+                        Pas de bouton quand l'annonce n'existe plus : un salon de
+                        samedi dernier renvoie à un menu qui n'est plus servi, et
+                        un bouton qui ne mène nulle part est pire qu'une
+                        absence. */}
+                    <div className={`ap-page-objet${photo ? "" : " nu"}`}>
+                      {photo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={photo} alt="" />
+                      ) : (
+                        <i className="ap-page-nu" aria-hidden="true">
+                          💬
+                        </i>
+                      )}
+                      {/* SEULE LA PASTILLE OUVRE L'ANNONCE, PAS TOUTE LA PHOTO.
+                          DÉFAUT RELEVÉ AU TEST : « la photo en haut parfois
+                          n'apparaît pas ». Elle apparaissait — elle partait. La
+                          photo fait 172 points de haut EN TÊTE D'UNE ZONE QUI
+                          DÉFILE : un pouce qui la pousse pour lire la suite, ou
+                          qui la touche sans intention, relâchait sur un bouton
+                          et l'annonce s'ouvrait. On quittait le salon sans
+                          l'avoir demandé, et de l'autre côté de l'écran ça se
+                          lit exactement comme une photo qui a disparu.
+                          Une cible large n'est un service que si l'on veut
+                          l'atteindre ; posée sous le doigt qui défile, c'est un
+                          piège. La pastille, elle, se vise. */}
+                      {ouvrable && (
+                        <button
+                          type="button"
+                          className="ap-obj-voir"
+                          onClick={() => voirLAnnonce(salon)}
+                        >
+                          <i aria-hidden="true">🔎</i>
+                          L&apos;annonce
+                        </button>
+                      )}
+                      <div className="ap-page-objet-t">
+                        {(salon.propositions?.length ?? 0) > 1 && (
+                          <s className="ap-tete-dit">
+                            🏆 en tête · {p?.voix.length ?? 0} sur {voixExprimees}
+                          </s>
+                        )}
+                        <b>{p?.quoi ?? salon.annonce ?? salon.sujet}</b>
+                        <span>
+                          {p?.ou && <u className="ou">{p.ou}</u>}
+                          {(p?.prix ?? salon.prix) && <em>{p?.prix ?? salon.prix}</em>}
+                          {/* CE QUI RESTE N'APPARTIENT QU'À L'ANNONCE D'ORIGINE.
+                              DÉFAUT VU EN CAPTURE : quand une autre proposition
+                              passait en tête, le bandeau affichait le nouveau
+                              commerce, le nouveau prix, la nouvelle distance —
+                              et gardait « 8 portions restantes » de l'ancien.
+                              Le bandeau mentait sur le seul chiffre qui pousse
+                              à se décider vite. */}
+                          {salon.reste && (!p || p.cle === salon.cle) && <s>{salon.reste}</s>}
+                          {(p?.distance ?? salon.distance) && (
+                            <u>📍 {p?.distance ?? salon.distance}</u>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* ─── CE QUI EST SUR LA TABLE ───
+                        DES LIGNES, PLUS DES CARTES. Chaque proposition était une
+                        carte encadrée avec vignette, nom, plat, prix et « proposé
+                        par » sur trois niveaux — trois cartes du même poids que
+                        le bandeau au-dessus, pour dire une chose que le bandeau
+                        disait déjà. Une ligne suffit : qui, quoi, combien de
+                        voix. Celle qui mène porte un filet vert à gauche, la
+                        vôtre un point ; le reste est du gris.
+                        UNE VOIX PAR PERSONNE, QU'ON DÉPLACE. Pas de pouce en bas :
+                        un « 👎 1 » public contre le choix de quelqu'un est une
+                        petite humiliation devant le groupe, et c'est précisément
+                        ce que les gens évitent — ce qui explique la bouillie
+                        WhatsApp, où personne ne veut être celui qui dit non. */}
+                    {(salon.propositions?.length ?? 0) > 1 && (
+                      <div className="ap-propos-l">
+                        {salon.propositions!.map((x) => {
+                          const moi = x.voix.includes(prenom || "Vous");
+                          const gagne = x.cle === tete?.cle;
+                          return (
+                            <button
+                              key={x.cle}
+                              type="button"
+                              className={`ap-propo${gagne ? " tete" : ""}${moi ? " moi" : ""}`}
+                              onClick={() => avecMonPrenom(() => voterPour(x.cle))}
+                            >
+                              <span>
+                                <b>{x.ou}</b>
+                                <em>
+                                  {x.quoi}
+                                  {x.prix ? ` · ${x.prix}` : ""}
+                                </em>
+                              </span>
+                              <s>{x.voix.length || "—"}</s>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {/* LE CATALOGUE PARTAGE LA LIGNE DE « PROPOSER », et ce
+                        n'est pas une économie de place gratuite. Sur sa propre
+                        ligne, il repoussait le début de la conversation de
+                        37 points SOUS le pli — mesuré : 491 pour 454
+                        disponibles. Or tout le travail sur ce salon a consisté
+                        à faire qu'on voie parler les gens sans défiler. Les
+                        deux boutons disent la même chose — « et sinon ? » —
+                        donc ils tiennent ensemble.
+                        Le compte « n autour de vous » cède la place quand le
+                        catalogue est là : trois informations sur une ligne,
+                        c'est la densité qu'on vient de retirer d'ici. */}
+                    {/* « PROPOSER AUTRE CHOSE » N'A PAS DE SENS DANS UN
+                        COLLECTIF. On ne se regroupe pas à dix sur un pantalon
+                        pour qu'un onzième propose un autre magasin : le groupe
+                        n'existe que par cet article-là, à ce seuil-là. Le
+                        bouton part avec sa ligne. */}
+                    {/* ET IL ATTEND QU'IL Y AIT QUELQU'UN. « Pas forcément
+                        comme une énorme action alors que le salon est vide » :
+                        proposer autre chose que ce qu'on vient de proposer, à
+                        personne, ne veut rien dire. Il revient au premier
+                        arrivant — c'est là qu'il devient la chose la plus
+                        originale de l'écran. */}
+                    {!salon.collectif && !salonSeul && (
+                    <div className="ap-obj-fin">
+                      <button
+                        type="button"
+                        className="ap-propo-plus"
+                        onClick={() => {
+                          noter("champ-touche", 0, "proposition");
+                          setProposeOuvert(true);
+                        }}
+                      >
+                        ＋ Proposer autre chose
+                        {alternatives.length > 0 &&
+                          !(commerceDuSalon?.catalogue?.length ?? 0) && (
+                            <em>{alternatives.length} autour de vous</em>
+                          )}
+                      </button>
+                      {(commerceDuSalon?.catalogue?.length ?? 0) > 0 && (
+                        <button
+                          type="button"
+                          className="ap-cata-b mini"
+                          onClick={() =>
+                            setCatalogue({ c: commerceDuSalon!, pourProposer: true })
+                          }
+                        >
+                          <i aria-hidden="true">
+                            {motCatalogue(commerceDuSalon!.metier).emoji}
+                          </i>
+                          {motCatalogue(commerceDuSalon!.metier).titre}
+                          <s aria-hidden="true">→</s>
+                        </button>
+                      )}
+                    </div>
+                    )}
+                    </div>
+                  );
+                })()}
+
+                {/* ─── LE BANDEAU DU COLLECTIF ───
+                    EN TÊTE, PARCE QUE C'EST LA RAISON D'ÊTRE DE LA SALLE. On
+                    n'est pas venu bavarder avec des inconnus, on est venu pour
+                    que le prix tombe. La jauge, le prix et le geste passent donc
+                    avant tout le reste.
+
+                    DEUX BOUTONS, ET LE SECOND EST LE MOTEUR. « Je prends ma
+                    place » est ce qu'on vient faire ; « J'en parle autour de
+                    moi » est ce qui fait monter le compteur, et donc la seule
+                    chose qui puisse faire aboutir le premier. Mon intérêt ici
+                    n'est pas de discuter, c'est d'amener trois personnes.
+
+                    ET « CEUX QUE VOUS NE CONNAISSEZ PAS » RESTE SOUS LES YEUX.
+                    Le vrai danger de deux salons n'est pas d'appuyer sur le
+                    mauvais bouton, c'est d'écrire quelque chose de personnel
+                    devant des inconnus en croyant parler à ses amis. Ça se dit
+                    en permanence, pas une fois à l'entrée. */}
+                {salon.collectif && (
+                  <div
+                    className={`ap-colsal${
+                      salon.collectif.participants >= salon.collectif.objectif ? " plein" : ""
+                    }`}
+                  >
+                    {/* LE DEUXIÈME TEMPS SE DIT AVANT LE CHIFFRE. Une barre
+                        pleine à « 12 sur 12 » se lit comme « c'est acquis » —
+                        or c'est exactement là que tout peut encore tomber. La
+                        ligne d'alerte le dit en clair, au-dessus. */}
+                    {salon.collectif.fenetre && (
+                      <p className="ap-colsal-f">
+                        <i aria-hidden="true">⏳</i>
+                        {/* LA PHRASE EST UN SEUL BLOC. En enfants directs d'un
+                            conteneur flex, le sablier ET le gras devenaient
+                            deux objets a part : « 15 h » se retrouvait coupe en
+                            deux au milieu de la phrase, sur sa propre colonne.
+                            Une grille a deux colonnes, et le texte reste du
+                            texte. */}
+                        <span>
+                          Le compte y est. Confirmez avant{" "}
+                          <b>{salon.collectif.fenetre.jusqua}</b> — seuls les
+                          confirmés comptent.
+                        </span>
+                      </p>
+                    )}
+                    <div className="ap-colsal-h">
+                      <b>
+                        {compteCollectif(salon.collectif).fait} sur{" "}
+                        {salon.collectif.objectif}
+                      </b>
+                      {compteCollectif(salon.collectif).mot && (
+                        <em className="ap-colsal-m">
+                          {compteCollectif(salon.collectif).mot}
+                        </em>
+                      )}
+                      {salon.collectif.prixGroupe && (
+                        <span>
+                          {salon.prix && <s>{salon.prix}</s>}
+                          <u>{salon.collectif.prixGroupe}</u>
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      className="ap-colsal-j"
+                      aria-hidden="true"
+                      style={
+                        {
+                          "--part": `${Math.round(
+                            partCollectif(salon.collectif) * 100,
+                          )}%`,
+                        } as React.CSSProperties
+                      }
+                    >
+                      <i />
+                    </div>
+                    <p className="ap-colsal-x">{phraseCollectif(salon.collectif)}</p>
+                    <div className="ap-colsal-b">
+                      <button
+                        type="button"
+                        className="ap-colsal-p"
+                        onClick={() => {
+                          const c = salon.collectif!;
+                          setEchoIcone(c.fenetre ? "✅" : "👥");
+                          if (c.fenetre) {
+                            const r = Math.max(0, c.objectif - c.fenetre.confirmes - 1);
+                            setEcho(
+                              r > 0
+                                ? `C’est confirmé. Encore ${r} avant ${c.fenetre.jusqua} et c’est lancé.`
+                                : "C’est confirmé, et le compte y est. C’est lancé.",
+                            );
+                          } else {
+                            const r = manqueCollectif(c) - 1;
+                            setEcho(
+                              r > 0
+                                ? `Votre place est prise. Il en manque ${r} — parlez-en autour de vous.`
+                                : "Votre place est prise. Le compte y est : vous serez prévenu pour confirmer.",
+                            );
+                          }
+                        }}
+                      >
+                        {salon.collectif.fenetre ? "Je confirme" : "Je prends ma place"}
+                      </button>
+                      <button
+                        type="button"
+                        className="ap-colsal-s"
+                        onClick={() => void inviterAuSalon(salon)}
+                      >
+                        J&apos;en parle autour de moi
+                      </button>
+                    </div>
+                    <p className="ap-colsal-q">
+                      <i aria-hidden="true">👁️</i>
+                      {salon.presents.length - 1 > 0
+                        ? `${salon.presents.length - 1} personne${
+                            salon.presents.length - 1 > 1 ? "s" : ""
+                          } que vous ne connaissez pas`
+                        : "Un groupe ouvert"}
+                      {/* CE QUI REMPLACE L'EMPREINTE BANCAIRE. Un clic gratuit
+                          ne vaut rien tant que rien ne suit celui qui ne vient
+                          pas. Ici, honorer ses engagements se voit — et deux
+                          lapins de suite ferment l'accès aux collectifs pour un
+                          temps. Dans une ville de vingt mille habitants, ça
+                          pèse plus qu'une caution, et ça ne coûte rien.
+                          C'est aussi, exactement, le mécanisme de suspension
+                          qui manque au salon public : un seul système. */}
+                      <b className="ap-colsal-fi">Vous : 4 sur 4 honorés</b>
+                    </p>
+                  </div>
+                )}
+
+                  {/* ─── UN SALON NEUF EST VIDE, ET LE DIT ───
+                    Défaut relevé au test : « les gens pensaient que c'était
+                    des gens qui parlaient avec des inconnus ». Trois amis
+                    répondaient tout seuls à l'ouverture ; pour celui qui
+                    découvrait, c'étaient des voisins inconnus en train de
+                    discuter chez lui — la démonstration prouvait le contraire
+                    de ce qu'elle voulait montrer. Il n'y a donc plus rien, et
+                    une seule chose à faire. */}
+                {/* PAS DANS UN COLLECTIF : « il n'y a personne d'autre » y
+                    serait un mensonge — sept personnes y sont, c'est écrit
+                    trois lignes plus haut — et « invitez ceux avec qui vous
+                    voulez y aller » décrit l'autre salon, celui des amis. */}
+                {/* LE VIDE DU COLLECTIF A SA PROPRE PHRASE. Sous le bandeau, il
+                    restait quatre cents points de noir avant le champ
+                    d'écriture, et un blanc de cette taille se lit comme un
+                    écran qui n'a pas fini de charger. Une ligne suffit — et
+                    elle redit ce qu'on est venu faire ici, qui n'est pas
+                    bavarder. */}
+                {salon.collectif && (
+                  <p className="ap-colsal-vide">
+                    {salon.collectif.fenetre ? (
+                      <>
+                        On ne discute pas ici, on compte. Chacun confirme de son
+                        côté&nbsp;; à {salon.collectif.fenetre.jusqua}, on saura.
+                      </>
+                    ) : manqueCollectif(salon.collectif) > 0 ? (
+                      <>
+                        Rien à écrire ici&nbsp;: ce qui fait avancer le compteur,
+                        c’est d’en parler autour de vous. Il manque{" "}
+                        {manqueCollectif(salon.collectif)}
+                        {manqueCollectif(salon.collectif) > 1
+                          ? " personnes."
+                          : " personne."}
+                      </>
+                    ) : (
+                      <>Le compte y est. Vous serez prévenu pour confirmer.</>
+                    )}
+                  </p>
+                )}
+
+                {/* ═══ UN MESSAGE D'ACTION, PAS UN MESSAGE D'ÉTAT ═══
+                    « "Il n'y a personne d'autre pour l'instant" est
+                    techniquement vrai, mais ça ne donne aucune direction. Nous
+                    avons besoin d'un message d'action. »
+
+                    ET SURTOUT : « L'utilisateur n'a pas besoin de comprendre le
+                    produit. Il a besoin de comprendre ce qu'il doit faire
+                    maintenant. » On expliquait le mécanisme — « un salon ne
+                    contient que les gens que vous y mettez » — c'est-à-dire une
+                    notice, à quelqu'un qui vient de faire un geste et attend la
+                    suite. La notice part ; ce qui reste est ce qu'il fait
+                    maintenant, et la seule phrase qui dise POURQUOI ça vaut le
+                    coup : chacun peut proposer autre chose. */}
+                {/* CE QU'IL VIENT DE PROPOSER, NOMMÉ COMME TEL. La carte
+                    au-dessus est la même que sur Le Direct : sans un mot, rien
+                    ne dit qu'elle a changé de statut — qu'elle est passée de
+                    « une annonce que je regarde » à « ce que je propose ». Deux
+                    mots suffisent, et ils font la transition que l'écran ne
+                    faisait pas. */}
+                {salonSeul && <p className="ap-vousprop">Vous proposez</p>}
+
+                {salon.messages.length === 0 && !salon.collectif && (
+                  <div className="ap-sal-neuf">
+                    <span aria-hidden="true">👥</span>
+                    <b>À vous de jouer</b>
+                    <i>
+                      Invitez ceux avec qui vous voulez y aller. Ils verront
+                      votre proposition — et pourront en faire une autre.
+                    </i>
+                    <button type="button" onClick={() => void inviterAuSalon(salon)}>
+                      👥 Inviter mes amis
+                    </button>
+                    {/* POURQUOI ÇA VAUT MIEUX QU'UN MESSAGE. Une phrase, sous
+                        le bouton, et le concept n'a plus besoin d'être
+                        expliqué ailleurs. */}
+                    <u>Vous choisissez ensemble : chacun peut proposer une autre idée.</u>
+                    {/* LA NOTE SUR LA VISIBILITÉ EST ICI, pas dans un
+                        réglage qu'on ne trouve pas : c'est au moment
+                        d'inviter qu'on se demande qui verra. Elle ne dit plus
+                        « salon » : le mot n'est compris que de nous. */}
+                    <s>
+                      {salon.prive
+                        ? "🔒 Fermé : seuls ceux que vous invitez le voient."
+                        : "🌍 Ouvert : ceux qui sont autour peuvent le voir et s'y joindre. Vous pouvez le fermer juste au-dessus."}
+                    </s>
+                  </div>
+                )}
+
+                {/* ─── L'APERÇU DU DIRECT ───
+                    L'image est celle de la caméra, pour de bon. Ce qui n'est
+                    pas vrai, c'est la diffusion : la maquette n'a pas de
+                    serveur de flux. On l'écrit sous l'image plutôt que de le
+                    laisser croire. */}
+                {enLigne && (
+                  <div className="ap-live-boite">
+                    <video ref={video} autoPlay playsInline muted />
+                    <span className="ap-live-pt">
+                      <i aria-hidden="true">●</i>
+                      EN DIRECT
+                    </span>
+                    <button
+                      type="button"
+                      className="ap-live-stop"
+                      onClick={() => arreterLeDirect(salon.cle)}
+                    >
+                      Arrêter
+                    </button>
+                    <s>
+                      Dans cette maquette, l&apos;image ne quitte pas votre
+                      téléphone : il n&apos;y a pas encore de serveur de
+                      diffusion.
+                    </s>
+                  </div>
+                )}
+
+                {/* CELUI QUI DÉCOUVRE N'A QUE LA PHOTO ET LE TITRE, et c'est le
+                    cas CENTRAL du produit : il arrive par un lien, tombe dans une
+                    conversation, et doit pouvoir savoir ce qu'est ce commerce —
+                    ses horaires, sa journée, ses avis, son menu. Le chemin n'a
+                    pas disparu, il a changé de place : c'est la photo elle-même
+                    qui ouvre l'annonce, juste au-dessus. On appuie sur ce qu'on
+                    regarde, et l'écran perd une ligne encadrée.
+                    Le réglage public/privé a lui aussi remonté, dans l'en-tête :
+                    voir le commentaire qui l'accompagne. */}
+
+                  {/* ─── QUI VIENT ? ───
+                      Trois états, pas plus : l'hôte, ceux qui viennent, ceux
+                      que ça intéresse sans qu'ils s'engagent. Le troisième est
+                      le plus utile — sans lui, celui qui hésite n'a que « je
+                      viens » ou le silence, et il choisit le silence.
+                      Les avatars sont des initiales : inventer des visages
+                      dans une maquette de voisins anonymes serait la seule
+                      chose de tout l'écran qui mentirait. */}
+                  {/* UNE LIGNE, PLUS UN BLOC. C'était un cadre avec un titre en
+                      capitales, une colonne de vignettes de 58 points avec nom ET
+                      statut écrits sous chacune, un bouton vert pleine largeur, et
+                      juste dessous un second cadre pour « ouvert maintenant · y
+                      aller ensemble ». Deux cadres, quatre niveaux de texte, pour
+                      dire qui vient. Les initiales se chevauchent maintenant en
+                      une seule rangée — la forme qu'on lit sans l'apprendre — le
+                      compte est écrit une fois, et le geste tient dans une
+                      pastille. L'itinéraire, qui est la seule chose qu'une
+                      messagerie ne saura jamais dire, se replie au bout. */}
+                  {/* PAS DANS UN COLLECTIF, ET C'EST UN DÉFAUT VU À L'ÉCRAN :
+                      cette rangée affichait « 1 vient · 4 intéressés » trois
+                      lignes sous « 4 sur 6 ». Deux compteurs qui ne disent pas
+                      la même chose sur la même salle, et on ne sait plus lequel
+                      est le vrai. Dans un collectif, l'engagement EST la jauge —
+                      « je viens » et « ça m'intéresse » sont les nuances du
+                      salon des amis, où rien ne se compte. */}
+                  {/* ─── ET LA RANGÉE DES GENS ATTEND D'AVOIR DES GENS ───
+                      Seul dans le groupe, elle affiche votre initiale, « 1 vient »
+                      et un bouton « ✓ Vous venez » déjà coché : trois objets pour
+                      dire que celui qui vient de proposer une sortie compte y
+                      aller. C'est le genre d'évidence qui remplit un écran sans
+                      rien apprendre — et qui fait qu'on ne voit plus le seul
+                      geste qui compte. Elle revient avec le premier arrivant,
+                      où elle dit enfin quelque chose : qui vient, et qui hésite. */}
+                  {!salon.collectif && !salonSeul && (
+                  <div className="ap-gens">
+                    <div className="ap-gens-t">
+                      {salon.presents.slice(0, 5).map((q) => {
+                        const st =
+                          salon.statuts?.[q] ??
+                          (salon.viennent.includes(q) ? "vient" : "interesse");
+                        return (
+                          <i
+                            key={q}
+                            className={`ap-av a${q.charCodeAt(0) % 5} ${st}`}
+                            title={`${q} — ${
+                              st === "hote" ? "hôte" : st === "vient" ? "vient" : "intéressé"
+                            }`}
+                          >
+                            {q.slice(0, 1).toUpperCase()}
+                          </i>
+                        );
+                      })}
+                      {salon.presents.length > 5 && (
+                        <i className="ap-av reste">+{salon.presents.length - 5}</i>
+                      )}
+                    </div>
+                    <span className="ap-gens-d">
+                      <b>
+                        {salon.viennent.length}{" "}
+                        {salon.viennent.length > 1 ? "viennent" : "vient"}
+                      </b>
+                      {(() => {
+                        // Un seul curieux n'est pas « 1 intéressés ».
+                        const n = salon.presents.length - salon.viennent.length;
+                        return n > 0 ? `${n} intéressé${n > 1 ? "s" : ""}` : "";
+                      })()}
+                    </span>
+                    {/* LE GESTE ET L'ITINÉRAIRE VONT ENSEMBLE, dans un même
+                        groupe : sinon, quand la ligne passe à deux rangs sur un
+                        petit écran, le petit bouton de marche se retrouve seul
+                        sur une ligne à lui, et un objet orphelin se lit comme
+                        une erreur de mise en page. */}
+                    <span className="ap-gens-a">
+                    <button
+                      type="button"
+                      className={`ap-gens-b${jySuis(salon.viennent) ? " on" : ""}`}
+                      onClick={() =>
+                        avecMonPrenom(() => {
+                          // ON VIENT SOUS SON PRÉNOM. Laisser la valeur par
+                          // défaut ajoutait « Vous » À CÔTÉ de Camille : la
+                          // même personne comptée deux fois dans « qui vient »,
+                          // exactement le défaut déjà payé sur les voix.
+                          basculerVenue(salon.cle, monPrenom() || "Vous");
+                          noter("jy-vais", 0, "salon");
+                        })
+                      }
+                    >
+                      {jySuis(salon.viennent) ? "✓ Vous venez" : "Je viens"}
+                    </button>
+                    {salon.distance && (
+                      <a
+                        className="ap-gens-y"
+                        href="https://www.google.com/maps/dir/?api=1&destination=Dax"
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        aria-label="Y aller ensemble"
+                      >
+                        🚶
+                      </a>
+                    )}
+                    </span>
+                  </div>
+                  )}
+
+                  {/* ─── QUELQU'UN Y EST, ET ON LE VOIT ───
+                      WhatsApp dit « Pauline m'envoie une photo ». Ici on dit où
+                      elle est, depuis quand, à quelle distance, et combien de
+                      minutes pour la rejoindre. C'est une autre proposition, et
+                      c'est la seule que le lieu rende possible.
+
+                      C'ÉTAIENT TROIS LIGNES DE TEXTE dans un encadré rouge, et
+                      c'est devenu une image plein cadre. La raison tient en une
+                      phrase : ce dont ce bloc parle est, par nature, une image —
+                      quelqu'un est quelque part et le montre. Un encadré de
+                      texte demande de croire ; une image montre.
+
+                      LA VIDÉO EST MUETTE ET EN BOUCLE. Un son qui démarre tout
+                      seul dans un salon de coiffure est la façon la plus rapide
+                      de faire fermer l'application. playsInline pour qu'iOS ne
+                      la passe pas en plein écran de lui-même, et l'image sert
+                      d'affiche pendant le chargement.
+
+                      LES DEUX ACTIONS SONT POSÉES SUR L'IMAGE : « la rejoindre »
+                      et « prendre le même » ne se comprennent que là où l'on
+                      voit qu'elle y est. Sous l'image, elles redeviendraient
+                      deux boutons de plus. */}
+                  {salon.enDirect && (
+                    <div className={`ap-direct${salon.enDirect.image || salon.enDirect.video ? " vu" : ""}`}>
+                      {salon.enDirect.video ? (
+                        <video
+                          className="ap-direct-f"
+                          poster={salon.enDirect.image}
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                          preload="metadata"
+                        >
+                          <source src={salon.enDirect.video.webm} type="video/webm" />
+                          <source src={salon.enDirect.video.mp4} type="video/mp4" />
+                        </video>
+                      ) : salon.enDirect.image ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img className="ap-direct-f" src={salon.enDirect.image} alt="" />
+                      ) : null}
+                      <span className="ap-direct-v" aria-hidden="true" />
+
+                      <span className="ap-direct-h">
+                        <i aria-hidden="true">●</i>
+                        En direct
+                      </span>
+
+                      <div className="ap-direct-d">
+                        {/* ON NE RÉPÈTE PAS LE LIEU. Le bandeau de la page le
+                            nomme déjà, deux centimètres au-dessus, et « Camille
+                            est chez Un salon du centre » se lisait mal —
+                            l'article indéfini d'un commerce anonymisé ne passe
+                            pas dans cette tournure. Ce que ce bloc apporte,
+                            c'est QUI et DEPUIS QUAND, pas où. */}
+                        <b>{salon.enDirect.qui} y est en ce moment</b>
+                        <span className="ap-direct-l">
+                          depuis {salon.enDirect.depuis} · {salon.enDirect.distance} de vous
+                          {" · "}
+                          {salon.enDirect.aPied} à pied
+                        </span>
+                        <div className="ap-direct-b">
+                          <a
+                            href="https://www.google.com/maps/dir/?api=1&destination=Dax"
+                            target="_blank"
+                            rel="noreferrer noopener"
+                          >
+                            🚶 La rejoindre
+                          </a>
+                          {/* « Prendre le même » appelait lui aussi la feuille du
+                              paquet : on réservait chez le commerce en tête du
+                              PAQUET, pas chez celui où l'amie se trouve. */}
+                          <button
+                            type="button"
+                            onClick={() => avecMonPrenom(() => setAConfirmer({ pourUnSeul: true }))}
+                          >
+                            📅 Prendre le même
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ─── LE VOTE ───
+                      Le geste qui justifie tout le reste : elle est dans le
+                      fauteuil, elle photographie deux nuances, elle demande
+                      laquelle. Ça se fait déjà par SMS, tous les jours, et
+                      c'est invisible. */}
+                  {salon.vote && (
+                    <div className="ap-vote">
+                      <b>{salon.vote.question}</b>
+                      {salon.vote.options.map((o) => {
+                        const total = salon.vote!.options.reduce((t, x) => t + x.voix, 0) || 1;
+                        const pc = Math.round((o.voix / total) * 100);
+                        return (
+                          <button
+                            key={o.cle}
+                            type="button"
+                            className={`ap-vote-o${salon.vote!.monVote === o.cle ? " on" : ""}`}
+                            onClick={() => {
+                              voter(salon.cle, o.cle);
+                              noter("note-donnee", pc, "vote");
+                            }}
+                          >
+                            <span className="ap-vote-j" style={{ width: `${pc}%` }} />
+                            <span className="ap-vote-t">{o.label}</span>
+                            <span className="ap-vote-p">{pc}&nbsp;%</span>
+                          </button>
+                        );
+                      })}
+                      <span className="ap-vote-n">
+                        {salon.vote.options.reduce((t, x) => t + x.voix, 0)} voix ·{" "}
+                        {salon.enDirect?.qui ?? salon.parQui} voit le résultat tout de suite
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="ap-sal-fil">
+                    {salon.messages.map((m) =>
+                      m.carte ? (
+                        <div
+                          className={`ap-sal-carte${m.carte.pro ? " pro" : ""}`}
+                          key={m.id}
+                        >
+                          {/* L'AUTRE CÔTÉ SE PRÉSENTE COMME TEL. Sans ce
+                              libellé, la carte se lirait comme un message de
+                              plus du groupe — or c'est un écran d'ailleurs,
+                              et c'est justement ce qui la rend intéressante. */}
+                          {m.carte.pro && (
+                            <span className="ap-sal-pro-t">
+                              Ce que {m.qui} reçoit
+                            </span>
+                          )}
+                          <i aria-hidden="true">{m.carte.pro ? "🔔" : "📅"}</i>
+                          <span>
+                            <b>{m.carte.titre}</b>
+                            <em>{m.carte.detail}</em>
+                            {m.carte.tampon && (
+                              <s>{m.carte.pro ? "👥 " : "✓ "}{m.carte.tampon}</s>
+                            )}
+                          </span>
+                          <u>{m.quand}</u>
+                        </div>
+                      ) : m.voix === "systeme" ? (
+                        /* ─── UNE ANNONCE N'EST PAS QUELQU'UN QUI PARLE ───
+                           DÉFAUT VU DANS LE FIL : « 🏆 Chez Bergine passe en
+                           tête » s'affichait comme un message, avec une pastille
+                           « C », le nom « Clikme », une bulle et un cœur. On
+                           pouvait donc AIMER une annonce du système, et une
+                           machine avait un avatar au milieu de quatre amis.
+                           C'est un fait qui arrive, pas une prise de parole :
+                           une ligne fine, centrée, sans visage et sans réaction.
+                           Ce qui a une vraie carte — une réservation — garde la
+                           sienne, juste au-dessus. */
+                        <div key={m.id} className="ap-sal-dit">
+                          <span>{m.texte}</span>
+                        </div>
+                      ) : (
+                        <div key={m.id} className={`ap-sal-m ${m.voix}`}>
+                          {m.voix !== "moi" && (
+                            <b>
+                              <i className={`ap-av a${m.qui.charCodeAt(0) % 5}`} aria-hidden="true">
+                                {m.qui.slice(0, 1).toUpperCase()}
+                              </i>
+                              {m.qui}
+                            </b>
+                          )}
+                          {m.texte && <span>{m.texte}</span>}
+                          {m.photo && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={m.photo} alt={`Envoyée par ${m.qui}`} loading="lazy" />
+                          )}
+                          <i>{m.quand}</i>
+                          {/* UN CŒUR COÛTE UN APPUI et dit ce qu'une réponse
+                              écrite ne dirait pas mieux. On montre le COMPTE,
+                              jamais qui a réagi : dans un groupe de quatre,
+                              savoir qui n'a PAS réagi est une information
+                              qu'on ne veut donner à personne. */}
+                          <button
+                            type="button"
+                            className={`ap-reac${m.maReaction ? " on" : ""}`}
+                            aria-label="J'aime"
+                            onClick={() => reagir(salon.cle, m.id, "❤️")}
+                          >
+                            ❤️
+                            {(m.reactions?.["❤️"] ?? 0) > 0 && <b>{m.reactions!["❤️"]}</b>}
+                          </button>
+                        </div>
+                      ),
+                    )}
+                    {amisEcrivent.map((q) => (
+                      <div className="ap-sal-m ami ecrit" key={`e-${q}`}>
+                        <b>{q}</b>
+                        <span className="ap-trois" aria-label="écrit…">
+                          <i /><i /><i />
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  </div>
+
+              {/* ─── DEUX ACTIONS, PAS CINQ ───
+                  La barre en portait cinq de poids égal : Inviter, Réserver,
+                  Photo, Vidéo, Direct. Or elles ne font pas la même chose.
+                  Inviter et réserver font AVANCER la sortie — ce sont les deux
+                  seules qui la changent. Photo, vidéo et direct sont des façons
+                  de DIRE quelque chose : leur place est au bord du champ
+                  d'écriture, dépliées d'un « ＋ », et pas au même rang que la
+                  réservation. */}
+              {/* DANS UN COLLECTIF, CETTE BARRE EST UN DOUBLON — VU À L'ÉCRAN.
+                  « Inviter » refait « J'en parle autour de moi » et « Réserver »
+                  refait « Je prends ma place », tous deux posés en tête, dans le
+                  bandeau ambre. Quatre boutons pour deux gestes, dont deux
+                  paires qui ne se ressemblent pas : on se demande laquelle des
+                  deux compte. Le bandeau garde les siens, qui sont attachés au
+                  compteur ; la barre s'efface. */}
+              {/* ─── ET ELLE NE S'AFFICHE PAS DANS UN SALON VIDE ───
+                  « Réserver quoi ? Pour qui ? Ça donne l'impression qu'on peut
+                  réserver immédiatement, alors que le concept est justement :
+                  je propose → mes amis réagissent → nous choisissons → nous
+                  réservons. » Et « Inviter » y refaisait, en petit et en gris,
+                  le grand bouton vert posé juste au-dessus. Deux fois le même
+                  geste, dont l'un a l'air secondaire : on se demande lequel
+                  compte. La barre revient avec le premier arrivant. */}
+              {!salon.collectif && !salonSeul && (
+              <div className="ap-page-actions">
+                <button
+                  type="button"
+                  className="ap-act"
+                  onClick={() => void inviterAuSalon(salon)}
+                >
+                  <i aria-hidden="true">👥</i>
+                  Inviter
+                </button>
+                {/* Il réserve CE QUI A GAGNÉ, pour CEUX QUI VIENNENT — et non
+                    chez le commerce en tête du paquet, ce que faisait l'ancien
+                    bouton. */}
+                <button
+                  type="button"
+                  className="ap-act fort"
+                  onClick={() => avecMonPrenom(() => setAConfirmer({ pourUnSeul: false }))}
+                >
+                  <i aria-hidden="true">📅</i>
+                  Réserver
+                  {salon.viennent.length > 1 && <b>{salon.viennent.length}</b>}
+                </button>
+              </div>
+              )}
+
+              {/* LES FAÇONS DE DIRE, DÉPLIÉES SEULEMENT SI ON LES DEMANDE. */}
+              {outils && (
+                <div className="ap-outils">
+                  <label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={async (ev) => {
+                        const f = ev.target.files?.[0];
+                        ev.target.value = "";
+                        if (!f) return;
+                        setOutils(false);
+                        try {
+                          const photo = await reduirePhoto(f);
+                          noter("photo-ajoutee", 0, "salon");
+                          ecrireDansSalon(salon.cle, {
+                            qui: monPrenom() || "Vous",
+                            voix: "moi",
+                            texte: "",
+                            quand: heureCourte(),
+                            photo,
+                          });
+                        } catch {
+                          /* Image illisible : on ne casse rien. */
+                        }
+                      }}
+                    />
+                    <i aria-hidden="true">📷</i>
+                    Photo
+                  </label>
+                  <label>
+                    <input
+                      type="file"
+                      accept="video/*"
+                      capture="environment"
+                      onChange={(ev) => {
+                        const f = ev.target.files?.[0];
+                        ev.target.value = "";
+                        if (!f) return;
+                        setOutils(false);
+                        // LA VIDÉO N'EST PAS GARDÉE DANS LA MAQUETTE, et il vaut
+                        // mieux le dire que le faire à moitié : dix secondes
+                        // pèsent des mégaoctets, le stockage du navigateur en
+                        // accepte cinq en tout, et la première tuerait les avis,
+                        // les photos et les salons déjà écrits.
+                        noter("video-vue", 0, "salon");
+                        ecrireDansSalon(salon.cle, {
+                          qui: monPrenom() || "Vous",
+                          voix: "moi",
+                          texte: "🎬 Vidéo envoyée au groupe",
+                          quand: heureCourte(),
+                        });
+                      }}
+                    />
+                    <i aria-hidden="true">🎬</i>
+                    Vidéo
+                  </label>
+                  {/* Le direct ne se fait nulle part ailleurs : c'est la seule
+                      de ces trois qui n'a pas d'équivalent dans une messagerie. */}
+                  <button
+                    type="button"
+                    className={enLigne ? "ap-en-direct" : ""}
+                    onClick={() => {
+                      setOutils(false);
+                      avecMonPrenom(() => void lancerLeDirect(salon.cle));
+                    }}
+                  >
+                    <i aria-hidden="true">{enLigne ? "⏹️" : "🔴"}</i>
+                    {enLigne ? "Arrêter le direct" : "Direct"}
+                  </button>
+                </div>
+              )}
+
+              {/* ─── PAS DE TEXTE LIBRE DANS UN COLLECTIF, ET C'EST UN
+                  CHOIX DE LANCEMENT ───
+                  Une salle d'inconnus avec un champ d'écriture demande un
+                  bouton de signalement et un moyen de suspendre quelqu'un.
+                  Ni l'un ni l'autre n'existent — c'est exactement ce qui
+                  retient La Ville. Or ce qui fait tourner un collectif n'est
+                  pas la conversation : c'est le compteur et le fait d'amener
+                  du monde. On ouvre l'écriture le jour où le signalement
+                  existe, c'est-à-dire en même temps que la fiabilité qui suit
+                  ceux qui ne viennent pas. Un seul système, une seule date. */}
+              {!salon.collectif && (
+              <form
+                className="ap-page-champ"
+                onSubmit={(ev) => {
+                  ev.preventDefault();
+                  const t = motSalon.trim();
+                  if (!t) return;
+                  // ON DEMANDE LE PRÉNOM AU MOMENT DE PRENDRE LA PAROLE, jamais
+                  // à l'arrivée : on peut lire un salon sans rien donner.
+                  avecMonPrenom(() => {
+                    ecrireDansSalon(salon.cle, {
+                      qui: monPrenom() || "Vous",
+                      voix: "moi",
+                      texte: t,
+                      quand: heureCourte(),
+                    });
+                    setMotSalon("");
+                  });
+                }}
+              >
+                <button
+                  type="button"
+                  className={`ap-champ-plus${outils ? " on" : ""}`}
+                  aria-expanded={outils}
+                  aria-label={outils ? "Fermer" : "Photo, vidéo, direct"}
+                  onClick={() => setOutils((v) => !v)}
+                >
+                  ＋
+                </button>
+                <input
+                  value={motSalon}
+                  onChange={(ev) => setMotSalon(ev.target.value)}
+                  maxLength={200}
+                  placeholder="Écrire un message…"
+                  aria-label="Votre message"
+                />
+                <button type="submit" disabled={!motSalon.trim()} aria-label="Envoyer">
+                  ↑
+                </button>
+              </form>
+              )}
+            </div>
+            </>
+          )}
           </>
           )}
 
@@ -11429,7 +11416,15 @@ export function ApercuHabitant() {
            qui depasse est le lien, et elle repond en permanence a « on parle de
            quoi ? ». Quatre-vingts points suffisent — on y voit le titre de
            l'annonce et le nom du commerce, c'est-a-dire tout le sujet. */
-        .ap-page.feuille{top:80px;border-radius:22px 22px 0 0;
+        /* ELLE S'ARRETE PLUS BAS, ET C'EST LE BUT DE TOUTE L'AFFAIRE.
+           A quatre-vingts points, ce qui depassait etait l'EN-TETE DE
+           L'APPLICATION — la distance, le filtre, le coeur — pas l'annonce. On
+           voyait donc bien quelque chose au-dessus de la feuille, mais rien qui
+           reponde a « on parle de quoi ». A cent cinquante, la bande porte le
+           titre de l'annonce et le haut de sa photo : elle repond en
+           permanence, ce qui etait la demande. La feuille defile a l'interieur,
+           elle ne perd donc rien de ce qu'elle contient. */
+        .ap-page.feuille{top:150px;border-radius:22px 22px 0 0;
           padding-top:12px;overflow:hidden;
           box-shadow:0 -1px 0 rgba(126,230,192,.22),0 -22px 44px rgba(0,0,0,.6);
           /* ELLE MONTE ASSEZ LENTEMENT POUR QU'ON VOIE D'OU ELLE VIENT.
@@ -11461,28 +11456,24 @@ export function ApercuHabitant() {
            texte ni bouton : un repere, pas un second ecran actif. Sans elle on
            voyait du noir, ce qui disait « une autre page » — exactement ce
            qu'on cherchait a corriger. */
-        /* ON CADRE SUR LE HAUT DE LA PHOTO, PAS SUR SON MILIEU. Cette image
-           couvre toute la hauteur de l'ecran, mais on n'en VOIT qu'une bande de
-           cent cinquante points au-dessus de la feuille : cadrer au centre y
-           faisait tomber le haut du cliche, souvent le plus sombre. */
+        /* ═══ CE N'EST PLUS UNE PHOTO, C'EST UN VOILE ═══
+           Il portait une COPIE de l'image de l'annonce, parce que l'annonce
+           elle-meme etait demontee quand la feuille montait. Elle reste montee
+           desormais : il n'y a plus rien a copier, donc plus rien qui puisse
+           differer de l'original. Ce qui depasse EST l'annonce, assombrie.
+           IL BLOQUE LE DOIGT, et c'est sa seconde raison d'etre : la bande du
+           haut est un repere, pas un second ecran actif. Sans lui on pourrait
+           balayer la carte pendant que la feuille est ouverte — et le paquet
+           avancerait derriere, ce qui est exactement le defaut qu'on repare. */
         .ap-feuille-dos{position:absolute;left:0;right:0;top:0;
           bottom:var(--ap-onglets-h, 51px);
-          z-index:5;background:#0D1A15;background-size:cover;
-          background-position:center 22%;}
-        /* ELLE OCCUPE TOUTE LA HAUTEUR, ET PAS SEULEMENT LA BANDE QUI DEPASSE.
-           La feuille monte PAR-DESSUS l'annonce : entre l'appui et son arrivee,
-           ce qu'on voit doit etre l'annonce, pas un fond noir. Le paquet, lui,
-           n'est plus monte a cet instant — c'est cette image qui tient l'ecran
-           pendant les trois cents millisecondes de la montee. */
-        /* ET L'ASSOMBRISSEMENT S'ALLEGE EN HAUT. Il etait uniforme et fort —
-           calibre a l'epoque ou cette bande ne portait presque jamais la bonne
-           image, donc ou il n'y avait rien a voir dedans. Maintenant qu'elle
-           porte l'annonce sur laquelle on a appuye, elle doit se RECONNAITRE :
-           c'est toute sa raison d'etre. Le bas reste sombre, mais il est de
-           toute facon sous la feuille. */
+          z-index:5;background:rgba(4,8,6,.55);}
+        /* IL S'ALLEGE EN HAUT. La bande qui depasse doit rester RECONNAISSABLE
+           — c'est toute la raison d'etre d'une feuille qui s'arrete avant la fin
+           de l'annonce. Le bas peut etre plus sombre : il est sous la feuille. */
         .ap-feuille-dos::after{content:"";position:absolute;inset:0;
-          background:linear-gradient(180deg,rgba(4,8,6,.24) 0,
-            rgba(4,8,6,.52) 34%,rgba(4,8,6,.8) 100%);}
+          background:linear-gradient(180deg,rgba(4,8,6,0) 0,
+            rgba(4,8,6,.16) 42%,rgba(4,8,6,.48) 100%);}
         @media (prefers-reduced-motion:reduce){
           .ap-page.feuille{animation-duration:.01s;}
         }
