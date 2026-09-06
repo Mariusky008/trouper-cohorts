@@ -30,6 +30,22 @@ const dire = (ok, t) => { if (!ok) echecs++; console.log(`${ok ? "  ok  " : "ÉC
  * ce qui est pire qu'un échec, parce qu'un expiré ne dit pas ce qui ne va pas.
  * On tente le clic avec un délai court, et un refus veut dire « paquet fini ».
  */
+/**
+ * DESCENDRE SUR LA FICHE DU COMMERCE.
+ *
+ * IL Y AVAIT UN SEUL BOUTON, `.ap-vers-bas`, et il portait « Voir tout » sous le
+ * planning pose sur l'annonce. Ce bloc a maigri — « il prend beaucoup de place
+ * et pourrait faire passer le client a cote du message principal » — et le
+ * geste vit maintenant dans « Infos boutique », la premiere des deux portes de
+ * la ligne d'identite. `.ap-vers-bas` existe toujours, mais seulement sur les
+ * cartes sans journee : viser l'un OU l'autre couvre les deux cas, et le
+ * verifieur cesse d'expirer trente secondes sur un bouton qui n'existe plus.
+ */
+const versLaFiche = async (page) => {
+  const porte = ".ap-dessus .ap-ident-d button:first-child, .ap-dessus .ap-vers-bas";
+  await page.click(porte, { force: true, timeout: 4000 });
+};
+
 const avancer = async (page) => {
   try {
     await page.click(".ap-suiv", { timeout: 1500 });
@@ -163,7 +179,7 @@ dire((await poche()) === 0, "la poche est là, vide, avant qu'on ait rien gardé
 // Google : `.cd-chez` n'existe plus sur cette face, et le lire renvoyait une
 // chaîne vide — donc la même carte à chaque tour, et un cœur qui s'allumait
 // puis s'éteignait. La poche comptait alors moins que ce qu'on croyait y mettre.
-const nomDuSommet = () => p.$eval(".ap-dessus .ap-fi-id b", (e) =>
+const nomDuSommet = () => p.$eval(".ap-dessus .ap-ident-l b", (e) =>
   e.textContent.trim()).catch(() => "");
 const gardes = [];
 for (let k = 0; k < 3; k++) {
@@ -304,7 +320,7 @@ const voixSurLaFace = () =>
   p.evaluate(() => {
     const d = document.querySelector(".ap-dessus");
     return {
-      chez: (d?.querySelector(".ap-fi-id b") ?? d?.querySelector(".cd-chez"))
+      chez: (d?.querySelector(".ap-ident-l b") ?? d?.querySelector(".cd-chez"))
         ?.textContent.replace(/\s+/g, " ").split("·")[0].trim() ?? "",
       // Le conseil EN TEXTE n'a plus sa place sur la face. Le film, si : ce
       // n'est pas une phrase à lire, c'est un visage, et il se regarde en une
@@ -328,7 +344,7 @@ await p.goto(`${BASE}/autour-de-moi?h=12.6`, { waitUntil: "networkidle" });
 await p.waitForTimeout(1200);
 let motDit = null;
 for (let k = 0; k < 14; k++) {
-  await p.click(".ap-vers-bas").catch(() => {});
+  await versLaFiche(p).catch(() => {});
   await p.waitForTimeout(700);
   motDit = await p.evaluate(() => {
     const m = document.querySelector(".ap-motdit");
@@ -376,7 +392,7 @@ console.log("\n══ le rectangle jaune ══");
 const bornes = [];
 for (let k = 0; k < 22; k++) {
   const b = await p.evaluate(() => ({
-    chez: (document.querySelector(".ap-dessus .ap-fi-id b")
+    chez: (document.querySelector(".ap-dessus .ap-ident-l b")
       ?? document.querySelector(".ap-dessus .cd-chez"))?.textContent
       .replace(/\s+/g, " ").split("·")[0].trim() ?? "",
     pill: document.querySelector(".ap-dessus .cd-quand")?.textContent
@@ -404,7 +420,7 @@ console.log("\n══ la file du matin ══");
 ({ ctx, p } = await ouvrir("/autour-de-moi?chez=boulange"));
 await p.click(".ap-arr-ville");
 await p.waitForTimeout(1300);
-await p.click(".ap-vers-bas", { force: true });
+await versLaFiche(p);
 await p.waitForTimeout(900);
 const f0 = await p.evaluate(() => {
   const d = document.querySelector(".ap-file");
@@ -569,7 +585,7 @@ console.log("\n══ ce qui revient, côté client ══");
 ({ ctx, p } = await ouvrir("/autour-de-moi?chez=emporter"));
 await p.click(".ap-arr-ville");
 await p.waitForTimeout(1300);
-await p.click(".ap-vers-bas", { force: true });
+await versLaFiche(p);
 await p.waitForTimeout(900);
 const hab = await p.evaluate(() =>
   [...document.querySelectorAll(".ap-hab li")].map((e) => ({
@@ -678,7 +694,7 @@ console.log("\n══ la vidéo dans le rond ══");
     const v = t?.querySelector("video");
     const r = t?.getBoundingClientRect();
     return {
-      chez: (document.querySelector(".ap-dessus .ap-fi-id b")
+      chez: (document.querySelector(".ap-dessus .ap-ident-l b")
       ?? document.querySelector(".ap-dessus .cd-chez"))?.textContent
         .replace(/\s+/g, " ").split("·")[0].trim() ?? "",
       video: !!v,
@@ -703,7 +719,7 @@ console.log("\n══ la vidéo dans le rond ══");
   await q.screenshot({ path: "/tmp/voix-video.png" });
 
   // ── LE SON, SUR APPUI ──
-  await q.click(".ap-vers-bas", { force: true });
+  await versLaFiche(q);
   await q.waitForTimeout(900);
   await q.$eval(".ap-voix-t", (e) => e.scrollIntoView({ block: "center", behavior: "instant" }));
   await q.waitForTimeout(300);

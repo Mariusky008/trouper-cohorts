@@ -5053,172 +5053,105 @@ export function ApercuHabitant() {
                             probablement pas être affichée là. » Le collectif
                             garde sa place sous le pli, où il est nommé. */}
                         {sommet && restants.length > 0 && (
-                          <div className="ap-journee">
-                            {/* ─── À QUI APPARTIENT CE PLANNING ───
-                                « L'utilisateur doit comprendre : ce n'est pas
-                                un planning général de ClikMe, c'est ce qui va
-                                se passer aujourd'hui chez Margot. » Sans le
-                                nom, deux lignes horaires posées sur une photo
-                                peuvent se lire comme les horaires
-                                d'ouverture — ou comme un agenda de la ville. */}
-                            {/* SON PRÉNOM, OU RIEN. « Aujourd'hui chez une
-                                prothésiste ongulaire » sortait tronqué à
-                                « … ONGUL… » : le nom anonyme d'une enseigne est
-                                trop long pour une ligne de titre, et il est
-                                déjà écrit en toutes lettres trois lignes plus
-                                haut. Quand il y a un prénom on le dit — c'est
-                                ce qui fait la différence entre un commerce et
-                                quelqu'un ; sinon « Aujourd'hui » suffit. */}
-                            {/* ═══ LA FICHE DU COMMERCE, EN HAUT DU RECTANGLE ═══
+                          <div className="ap-ident">
+                            {/* ═══ LE RECTANGLE CENTRAL A MAIGRI ═══
 
-                                CE QUE LA MAQUETTE DEMANDE, ET POURQUOI C'EST
-                                JUSTE : « récupérer sur l'admin du commerçant
-                                son logo, et mettre dans ce rectangle les infos
-                                essentielles — les avis récupérés sur sa fiche
-                                Google, le programme du jour, et une photo ou la
-                                vidéo qu'il aura prise. »
+                                CE QU'IL A DIT, ET C'EST LE BON DIAGNOSTIC :
+                                « ce bloc prend beaucoup de place, il pourrait
+                                fatiguer visuellement le client potentiel et le
+                                faire passer à côté du message principal. »
 
-                                LE RECTANGLE RÉPOND À « CHEZ QUI ». Le haut de
-                                l'écran dit ce que c'est et combien ; il restait
-                                une question, la seule à laquelle une annonce ne
-                                peut pas répondre elle-même : est-ce que c'est
-                                bien ? C'est ce que les gens vont chercher
-                                ailleurs, donc la seule chose qui les fasse
-                                quitter l'application. Sa note Google y répond
-                                en trois caractères.
+                                IL RÉPÉTAIT L'ÉCRAN, VOILÀ POURQUOI IL PESAIT.
+                                Le titre en capitales dit l'offre, le prix la
+                                chiffre, l'anneau la nomme, le bouton vert
+                                l'engage — et ce bloc redisait la même offre en
+                                petit, sous le nom, avec son heure et son prix.
+                                Une information répétée ne coûte pas seulement
+                                sa place : elle coûte le rang de tout ce qui
+                                l'entoure. Quatre objets se disputaient l'œil là
+                                où l'annonce n'en veut qu'un.
 
-                                LE LOGO EST NOTÉ, PAS FAIT. Il n'y a pas encore
-                                de compte commerçant, donc pas d'endroit où il
-                                le déposerait — voir `CarteAutour.logo`. En
-                                attendant, ses initiales dans le même rond, ce
-                                qui restera vrai pour tous ceux qui n'ont pas de
-                                logo, et ils sont nombreux. */}
-                            <div className="ap-fi-h">
-                              <span className="ap-fi-logo" aria-hidden="true">
-                                {dessus?.logo ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={dessus.logo} alt="" />
-                                ) : (
-                                  initialesDe(dessus?.nom ?? "")
-                                )}
-                              </span>
-                              <span className="ap-fi-id">
-                                <b>{dessus?.nom}</b>
-                                {/* LE MÉTIER EST ICI, DEVANT LA NOTE. Il a
-                                    quitté le haut de la carte avec la maquette,
-                                    et il ne pouvait pas disparaître : « quand
-                                    on est sur l'app on ne sait pas trop ce
-                                    qu'on regarde, si c'est un magasin de
-                                    vêtements, une boucherie ou un coiffeur ».
-                                    Sur la même ligne que les avis, il coûte
-                                    zéro rang et se lit avec le nom. */}
-                                <em>
-                                  {dessusCarte?.metier && (
-                                    <u className="ap-fi-met">
-                                      {dessusCarte.metierEmoji && (
-                                        <i aria-hidden="true">
-                                          {dessusCarte.metierEmoji}
-                                        </i>
-                                      )}
-                                      {dessusCarte.metier}
-                                    </u>
-                                  )}
-                                  {dessus?.google && (
-                                    <>
-                                      <i aria-hidden="true">★</i>
-                                      {dessus.google.note}
-                                      <s>({dessus.google.avis} avis)</s>
-                                    </>
-                                  )}
-                                </em>
-                                <u className="ap-fi-jour">
-                                  <i aria-hidden="true">📅</i>
-                                  {dessus?.voix?.prenom
-                                    ? `Aujourd’hui chez ${dessus.voix.prenom}`
-                                    : "Aujourd’hui"}
+                                CE QUI RESTE EST CE QUE L'ANNONCE NE PEUT PAS
+                                DIRE D'ELLE-MÊME : chez qui, quel métier, et
+                                est-ce que c'est bien. La note Google en trois
+                                caractères est la seule chose de cet écran qui
+                                empêche quelqu'un d'aller la chercher ailleurs —
+                                c'est-à-dire de quitter l'application.
+
+                                ET RIEN N'EST PERDU, TOUT EST DERRIÈRE UNE PORTE
+                                NOMMÉE. Le programme du jour n'a pas disparu, il
+                                a cessé d'être imposé : deux liens le disent, et
+                                celui qui veut sait où appuyer. Un lien qui
+                                annonce ce qu'il ouvre vaut mieux qu'un bloc
+                                qu'on subit.
+
+                                LE LOGO DU COMMERÇANT ATTENDAIT ICI, et il perd
+                                sa place avec le rond des initiales — voir
+                                `CarteAutour.logo`. Il n'y avait de toute façon
+                                pas encore de compte commerçant pour le
+                                déposer ; quand il existera, sa place sera à
+                                reprendre, et ce sera un choix à faire, pas un
+                                oubli. */}
+                            {/* CHAQUE FILET APPARTIENT AU SEGMENT QU'IL
+                                INTRODUIT, jamais a celui qu'il termine. Poses
+                                entre les deux, ils restaient seuls en bout de
+                                ligne quand le nom du commerce etait long — un
+                                « | » orphelin en fin de ligne se lit comme une
+                                coquille. A l'interieur, ils passent a la ligne
+                                avec ce qu'ils annoncent. */}
+                            <p className="ap-ident-l">
+                              <b>{dessus?.nom}</b>
+                              {dessusCarte?.metier && (
+                                <u>
+                                  <s aria-hidden="true">|</s>
+                                  {dessusCarte.metier}
                                 </u>
-                              </span>
-                              {/* SA PHOTO — OU SON FILM. Celui qu'il vient de
-                                  prendre passe devant la devanture : c'est ce
-                                  qu'il a voulu montrer aujourd'hui. */}
-                              {(dessusCarte?.film?.mp4 || dessus?.photo) && (
-                                <span className="ap-fi-vue" aria-hidden="true">
-                                  {dessusCarte?.film?.mp4 ? (
-                                    <video
-                                      src={dessusCarte.film.mp4}
-                                      poster={dessusCarte.film.affiche}
-                                      muted
-                                      loop
-                                      autoPlay
-                                      playsInline
-                                    />
-                                  ) : (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={dessus!.photo} alt="" loading="lazy" />
-                                  )}
-                                </span>
                               )}
+                              {dessus?.google && (
+                                <em>
+                                  <s aria-hidden="true">|</s>
+                                  <i aria-hidden="true">★</i>
+                                  {dessus.google.note}
+                                  <span>({dessus.google.avis} avis)</span>
+                                </em>
+                              )}
+                            </p>
+                            {/* DEUX PORTES, ET ELLES N'OUVRENT PAS LA MEME
+                                CHOSE. « Infos boutique » descend sur la fiche —
+                                ses mots, ses photos, son adresse, ceux qui y
+                                vont. « Voir le planning du jour » ouvre la
+                                feuille des heures, la meme que l'anneau pose
+                                sur la photo : deux portes vers la meme piece
+                                est acceptable quand l'une se voit d'un coup
+                                d'oeil et l'autre se lit. */}
+                            <div className="ap-ident-d">
+                              <button
+                                type="button"
+                                onPointerDown={(ev) => ev.stopPropagation()}
+                                onClick={versLeBas}
+                              >
+                                Infos boutique<i aria-hidden="true">→</i>
+                              </button>
+                              <button
+                                type="button"
+                                onPointerDown={(ev) => ev.stopPropagation()}
+                                onClick={() => {
+                                  if (!dessus) return;
+                                  noter("pli-ouvert", 0, "planning");
+                                  setCatalogue({ c: dessus, pourProposer: false, duJour: true });
+                                }}
+                              >
+                                {/* « VOIR LE PLANNING », PAS « DU JOUR ». Les
+                                    quatre lettres de trop faisaient passer la
+                                    seconde porte a la ligne : deux liens
+                                    empiles se lisent comme une liste de
+                                    reglages, cote a cote comme un choix. Et
+                                    « du jour » ne dit rien de plus — tout, sur
+                                    cet ecran, est d'aujourd'hui. */}
+                                {dessus?.prepare ? "Prête à publier" : "Voir le planning"}
+                                <i aria-hidden="true">→</i>
+                              </button>
                             </div>
-                            {/* ═══ LE FLASH SE NOMME DANS LA JOURNÉE ═══
-
-                                « Quand il y a le menu du jour affiché et qu'en
-                                même temps il y a un Flash, y a-t-il deux
-                                annonces séparées ou une seule ? »
-
-                                CE BLOC ÉTAIT LA CAUSE DE LA QUESTION. Il
-                                listait le Flash comme un moment de plus, avec
-                                le même titre que le menu — on lisait « 12 h –
-                                14 h Lasagnes maison » puis « 12 h 30 – 13 h
-                                Lasagnes maison », deux lignes jumelles sans
-                                rien pour les distinguer. C'est bien la même
-                                journée et la même carte ; il manquait juste le
-                                mot qui dit laquelle des deux lignes se périme.
-
-                                ET LE FLASH PASSE EN TÊTE, parce que c'est lui
-                                qui court : la ligne « en cours » du bloc doit
-                                être celle qu'on est en train de regarder. */}
-                            <ul>
-                              {[...restants]
-                                .sort(
-                                  (a, b) =>
-                                    Number(!!b.flash && flashEnCours(b.flash, heure)) -
-                                    Number(!!a.flash && flashEnCours(a.flash, heure)),
-                                )
-                                .slice(0, 2)
-                                .map((m, i) => {
-                                  const vif = !!m.flash && flashEnCours(m.flash, heure);
-                                  return (
-                                    <li
-                                      key={`${m.titre}-${i}`}
-                                      className={`${i ? "" : "on"}${vif ? " eclair" : ""}`}
-                                    >
-                                      <b>
-                                        {vif && <u aria-hidden="true">⚡</u>}
-                                        {m.quand}
-                                      </b>
-                                      <span>{m.titre}</span>
-                                      {vif ? <em>Flash</em> : m.prix && <em>{m.prix}</em>}
-                                    </li>
-                                  );
-                                })}
-                            </ul>
-                            <button
-                              type="button"
-                              className="ap-vers-bas"
-                              onPointerDown={(ev) => ev.stopPropagation()}
-                              onClick={versLeBas}
-                            >
-                              {/* « VOIR TOUT » ET PAS « VOIR LA JOURNÉE ».
-                                  « Journée peut faire penser aux horaires
-                                  d'ouverture. » C'était vrai tant que rien ne
-                                  disait à qui appartient ce bloc ; maintenant
-                                  que le titre le dit, deux mots suffisent — et
-                                  ils ne promettent rien d'autre que la suite
-                                  de ce qu'on est en train de lire. */}
-                              {dessus?.prepare ? "Prête à publier · " : ""}
-                              {restants.length > 2 ? `Voir tout (${restants.length})` : "Voir tout"}
-                              <i aria-hidden="true">→</i>
-                            </button>
                           </div>
                         )}
                         {/* SANS AUCUN MOMENT À VENIR — un événement, une
@@ -9131,13 +9064,46 @@ export function ApercuHabitant() {
                                 {c.menu.prix && <em>{c.menu.prix}</em>}
                               </li>
                             )}
-                            {jour.map((m, i) => (
-                              <li key={`${m.titre}-${i}`}>
-                                <b>{m.titre}</b>
-                                <span>{m.quand}</span>
-                                {m.prix && <em>{m.prix}</em>}
-                              </li>
-                            ))}
+                            {/* ═══ LA LIGNE DU FLASH PORTE SON NOM, ICI AUSSI ═══
+                                « Quand il y a le menu du jour affiché et qu'en
+                                même temps il y a un Flash, y a-t-il deux
+                                annonces séparées ou une seule ? »
+
+                                C'ÉTAIT RÉGLÉ SUR LA CARTE, ET J'ALLAIS LE
+                                PERDRE EN DÉMÉNAGEANT. Le planning vivait sur
+                                l'annonce et y distinguait les deux lignes — le
+                                Flash nommé, le menu gardant son prix. En le
+                                déplaçant dans cette feuille je l'aurais fait
+                                retomber sur deux lignes jumelles portant le
+                                même titre, c'est-à-dire exactement la question
+                                qu'il avait posée. Une correction qu'on déplace
+                                sans l'emporter est une régression.
+
+                                ET LE FLASH PASSE EN TÊTE, parce que c'est lui
+                                qui court : la ligne « en cours » doit être la
+                                première qu'on lit. */}
+                            {[...jour]
+                              .sort(
+                                (a, b) =>
+                                  Number(!!b.flash && flashEnCours(b.flash, heure)) -
+                                  Number(!!a.flash && flashEnCours(a.flash, heure)),
+                              )
+                              .map((m, i) => {
+                                const vif = !!m.flash && flashEnCours(m.flash, heure);
+                                return (
+                                  <li
+                                    key={`${m.titre}-${i}`}
+                                    className={vif ? "eclair" : undefined}
+                                  >
+                                    <b>
+                                      {vif && <u aria-hidden="true">⚡</u>}
+                                      {m.titre}
+                                    </b>
+                                    <span>{m.quand}</span>
+                                    {vif ? <em>Flash</em> : m.prix && <em>{m.prix}</em>}
+                                  </li>
+                                );
+                              })}
                           </ul>
                           <p className="ap-jour-s">
                             Et en dessous, ce qu&apos;il y a d&apos;habitude.
@@ -10500,65 +10466,59 @@ export function ApercuHabitant() {
            l'ancienne » : c'est exactement ce cas-la, et c'est le plus visible.
            On l'efface uniquement quand le planning est present — les cartes qui
            n'en ont pas gardent leur rectangle, qui est alors leur seule heure. */
-        .ap-dessus:has(.ap-journee) .cd-quand{display:none;}
+        .ap-dessus:has(.ap-ident) .cd-quand{display:none;}
         /* ET LE NOM NE S'ECRIT PLUS DEUX FOIS. Il vit dans la fiche du
            commerce, en gros, avec sa note et son logo ; le repeter sous le prix
            faisait deux fois la meme ligne a trois centimetres d'ecart. */
-        .ap-dessus:has(.ap-fi-h) .cd-chez{display:none;}
-        .ap-journee{width:min(100%,340px);margin-top:10px;
-          display:flex;flex-direction:column;align-items:stretch;gap:0;
-          border-radius:15px;padding:9px 11px 8px;
-          background:rgba(4,8,6,.52);border:1px solid rgba(255,255,255,.14);
-          -webkit-backdrop-filter:blur(9px);backdrop-filter:blur(9px);}
-        .ap-journee-t{display:block;margin:0 0 7px;font-size:9.5px;font-weight:850;
-          letter-spacing:.15em;text-transform:uppercase;color:rgba(234,242,236,.5);
-          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-
-        /* ═══ LA FICHE DU COMMERCE, EN HAUT DU RECTANGLE ═══
-           Le logo (ou les initiales), le nom, sa note Google, la date — et sa
-           photo ou son film a droite. Trois colonnes, une seule rangee : c'est
-           la carte de visite, pas un second ecran. */
-        .ap-fi-h{display:flex;align-items:center;gap:11px;margin:0 0 11px;}
-        .ap-fi-logo{flex:none;display:flex;align-items:center;justify-content:center;
-          width:46px;height:46px;border-radius:50%;overflow:hidden;
-          font-size:15px;font-weight:850;letter-spacing:.02em;color:#EAF2EC;
-          background:rgba(234,242,236,.09);
-          border:1px solid rgba(234,242,236,.18);}
-        .ap-fi-logo img{width:100%;height:100%;object-fit:cover;}
-        .ap-fi-id{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
-        /* LE NOM TIENT SUR DEUX LIGNES PLUTOT QUE DE SE COUPER. « Une terrasse
-           au soleil » sortait « UNE TERRASSE AU … » : une enseigne tronquee ne
-           designe plus personne, et c'est le seul mot de la fiche qui doit
-           etre lu en entier. */
-        .ap-fi-id b{font-size:14px;font-weight:850;letter-spacing:.01em;
-          line-height:1.15;text-transform:uppercase;color:#fff;
-          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-          overflow:hidden;}
+        .ap-dessus:has(.ap-ident) .cd-chez{display:none;}
+        /* ═══ L'IDENTITE, EN UNE LIGNE ═══
+           « Ce bloc prend beaucoup de place et pourrait fatiguer visuellement
+           le client potentiel, et le faire passer a cote du message
+           principal. »
+           IL N'A PLUS DE CADRE, ET C'EST L'ESSENTIEL DU GAIN. Un rectangle
+           avec son fond, son bord et son flou est un OBJET : il pese autant
+           que le titre et que le bouton vert, et l'oeil doit trancher entre
+           trois. Deux lignes de texte posees sur la photo ne pesent rien et
+           disent la meme chose. Le voile de la carte suffit a les rendre
+           lisibles — c'est deja son travail pour le titre juste au-dessus. */
+        .ap-ident{width:min(100%,340px);margin-top:10px;
+          display:flex;flex-direction:column;align-items:flex-start;gap:9px;}
+        /* LE NOM, LE METIER, LA NOTE — separes par des filets, dans l'ordre ou
+           on se pose les questions : chez qui, quel metier, est-ce que c'est
+           bien. Tout tient sur une ligne, qui se replie si le nom est long. */
+        .ap-ident-l{display:flex;align-items:center;flex-wrap:wrap;gap:0 7px;
+          margin:0;font-size:12.5px;line-height:1.35;color:#EAF2EC;
+          text-shadow:0 2px 12px rgba(4,8,6,.95);}
+        .ap-ident-l b{font-weight:850;letter-spacing:.01em;
+          text-transform:uppercase;color:#8CF0CC;}
+        /* LE FILET RESPIRE A DROITE, PAS A GAUCHE : il est colle au mot qui le
+           precede par la gouttiere du flex, et il lui faut sa propre marge de
+           l'autre cote, sinon on lit « |BAR ». */
+        .ap-ident-l s{text-decoration:none;margin-right:6px;
+          color:rgba(234,242,236,.34);}
+        .ap-ident-l u{text-decoration:none;font-weight:700;
+          text-transform:uppercase;letter-spacing:.04em;
+          font-size:11.5px;color:rgba(234,242,236,.78);}
         /* LA NOTE EN AMBRE, LE NOMBRE D'AVIS EN GRIS : on lit la note, on
            verifie le nombre. L'inverse serait un chiffre a interpreter. */
-        .ap-fi-id em{display:flex;align-items:center;gap:5px;font-style:normal;
-          font-size:12px;font-weight:850;color:#EAF2EC;}
-        .ap-fi-id em i{font-style:normal;color:#FFC400;}
-        /* LE METIER, DEVANT LA NOTE : meme ligne, poids moindre, et un filet
-           les separe. On lit « boucherie » puis « 4,8 », dans cet ordre. */
-        .ap-fi-met{display:inline-flex;align-items:center;gap:4px;
-          text-decoration:none;font-weight:800;color:#BFD3C7;
-          padding-right:8px;margin-right:2px;
-          border-right:1px solid rgba(234,242,236,.2);}
-        .ap-fi-met i{font-style:normal;font-size:12px;color:inherit;}
-        .ap-fi-id em s{text-decoration:none;font-weight:600;
-          color:rgba(234,242,236,.55);}
-        /* LA DATE PORTE SON NOM DE CLASSE : le metier, juste au-dessus, est un
-           un u lui aussi, et « le premier u de la fiche » designait tantot
-           l'un, tantot l'autre, selon l'ordre d'ecriture. */
-        .ap-fi-jour{display:flex;align-items:center;gap:5px;text-decoration:none;
-          font-size:11.5px;font-weight:650;color:rgba(234,242,236,.6);
-          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-        .ap-fi-jour i{font-style:normal;font-size:11px;}
-        .ap-fi-vue{flex:none;width:74px;height:52px;border-radius:11px;
-          overflow:hidden;background:rgba(0,0,0,.35);}
-        .ap-fi-vue img,.ap-fi-vue video{width:100%;height:100%;object-fit:cover;
-          display:block;}
+        .ap-ident-l em{display:inline-flex;align-items:center;gap:4px;
+          font-style:normal;font-weight:800;}
+        .ap-ident-l em i{font-style:normal;color:#FFC400;}
+        .ap-ident-l em span{font-weight:600;color:rgba(234,242,236,.55);}
+        /* LES DEUX PORTES. En contour leger, cote a cote : ce sont des liens,
+           pas des actions — les actions sont plus bas et elles sont pleines. */
+        .ap-ident-d{display:flex;flex-wrap:wrap;gap:8px;max-width:100%;}
+        .ap-ident-d button{white-space:nowrap;}
+        .ap-ident-d button{display:inline-flex;align-items:center;gap:7px;
+          font:inherit;font-size:12px;font-weight:700;cursor:pointer;
+          color:#DCE8E1;background:rgba(4,8,6,.45);
+          border:1px solid rgba(234,242,236,.24);border-radius:999px;
+          padding:7px 13px;transition:transform .12s ease,background .14s ease;
+          -webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);}
+        .ap-ident-d button i{font-style:normal;font-size:13px;line-height:1;
+          color:#8CF0CC;}
+        .ap-ident-d button:active{transform:scale(.97);
+          background:rgba(234,242,236,.12);}
 
         /* ═══ LES DEUX GESTES DE LA SECONDE RANGEE ═══
            Meme largeur, meme poids, en contour : ni l'un ni l'autre ne dispute
@@ -10571,29 +10531,6 @@ export function ApercuHabitant() {
         .ap-agir.favori i{font-style:normal;font-size:15px;line-height:1;}
         .ap-agir.favori.on{color:#FF8A9B;border-color:rgba(255,138,155,.5);
           background:rgba(255,138,155,.10);}
-        .ap-journee ul{list-style:none;margin:0;padding:0;
-          display:flex;flex-direction:column;gap:5px;}
-        .ap-journee li{display:flex;align-items:baseline;gap:9px;min-width:0;
-          font-size:12.5px;line-height:1.3;color:rgba(234,242,236,.62);}
-        .ap-journee li.on{color:#EAF2EC;}
-        .ap-journee li b{flex:none;font-weight:800;font-variant-numeric:tabular-nums;
-          font-size:11.5px;letter-spacing:-.01em;}
-        .ap-journee li.on b{color:#F7C948;}
-        .ap-journee li span{flex:1;min-width:0;font-weight:650;text-align:left;
-          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-        /* LA LIGNE DU FLASH SE VOIT SANS SE LIRE — l'eclair devant l'heure et
-           le mot « Flash » a la place du prix. Deux lignes qui portaient le
-           meme titre sont devenues deux choses differentes. */
-        .ap-journee li.eclair b{color:#FFD75E;}
-        .ap-journee li.eclair b u{text-decoration:none;margin-right:4px;}
-        .ap-journee li.eclair em{color:#04150E;background:#F0B429;
-          border-radius:999px;padding:2px 7px;font-size:9.5px;
-          letter-spacing:.07em;text-transform:uppercase;}
-        .ap-journee li em{flex:none;font-style:normal;font-weight:800;
-          font-variant-numeric:tabular-nums;}
-        .ap-journee .ap-vers-bas{align-self:flex-start;margin-top:7px;
-          padding:5px 10px;font-size:11.5px;background:rgba(255,255,255,.09);
-          animation:none;}
         .ap-vers-bas{display:inline-flex;align-items:center;gap:7px;margin-top:11px;
           font:inherit;font-size:12.5px;font-weight:750;color:#EAF2EC;cursor:pointer;
           background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.18);
@@ -12373,6 +12310,14 @@ export function ApercuHabitant() {
           border:1px solid rgba(234,242,236,.1);}
         .ap-jour-ph{display:block;width:100%;height:150px;
           background-size:cover;background-position:center 55%;}
+        /* LA LIGNE DU FLASH SE VOIT SANS SE LIRE — l'eclair devant le titre et
+           le mot « Flash » a la place du prix. Deux lignes qui portaient le meme
+           titre sont devenues deux choses differentes. */
+        .ap-jour-h li.eclair b{color:#FFD75E;}
+        .ap-jour-h li.eclair b u{text-decoration:none;margin-right:5px;}
+        .ap-jour-h li.eclair em{color:#04150E;background:#F0B429;
+          border-radius:999px;padding:1px 7px;font-size:10.5px;font-weight:850;
+          letter-spacing:.06em;text-transform:uppercase;}
         .ap-jour-h h4{display:flex;align-items:baseline;justify-content:space-between;
           gap:10px;margin:0;padding:12px 14px 2px;font-size:11px;font-weight:850;
           letter-spacing:.14em;text-transform:uppercase;color:#7EE6C0;}
