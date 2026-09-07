@@ -4085,6 +4085,61 @@ export function ApercuHabitant() {
     setAConfirmer({ pourUnSeul, ouvert: true });
   }
 
+  /**
+   * ═══ QUI S'EST DEJA CHARGE DE RESERVER ═══
+   *
+   * LE DEFAUT, ET C'EST MOI QUI L'AI SIGNALE : le bouton « Reserver » est
+   * visible par tout le monde, sans aucun test de qui a lance la discussion.
+   * Quatre personnes qui le voient, ce sont quatre personnes qui peuvent
+   * reserver la meme table — et le commercant recoit quatre demandes pour un
+   * seul groupe.
+   *
+   * INTERDIRE AUX AUTRES SERAIT PIRE. Celui qui a lance la conversation n'est
+   * pas toujours celui qui a le telephone en main ; c'est meme rarement lui,
+   * puisqu'il a deja fait sa part. Le geste reste donc ouvert a tous, mais UNE
+   * SEULE FOIS : des que quelqu'un s'en charge, le bouton dit qui, et pour
+   * combien.
+   *
+   * ON LE LIT DANS LA CONVERSATION, PAS DANS UN ETAT A PART. La demande y est
+   * deja ecrite, en carte de service — c'est la source de verite, elle survit
+   * au rechargement et elle est la meme pour tout le monde. Un second etat, a
+   * cote, aurait fini par diverger d'elle.
+   */
+  const demandeEnCours = (() => {
+    if (!salon) return undefined;
+    for (let i = salon.messages.length - 1; i >= 0; i--) {
+      const m = salon.messages[i];
+      const t = m.carte?.titre ?? "";
+      // L'ANNULATION EFFACE LA DEMANDE, et on lit du plus recent au plus
+      // ancien : le dernier mot du fil est celui qui fait foi.
+      if (/annule la demande/i.test(t)) return undefined;
+      // DEUX FORMULATIONS, UNE SEULE VERITE. Celle qu'ecrit reserverPourLeSalon
+      // (« Alice demande pour 4 ») et celle deja confirmee par le commerce
+      // (« Pauline a reserve pour 4 »). Ne reconnaitre que la premiere laissait
+      // le bouton dire « Reserver » sous une reservation deja faite.
+      const d = /^(.+?) (?:demande|a réservé) pour (\d+)/.exec(t);
+      if (m.voix === "systeme" && d) return { qui: d[1], combien: Number(d[2]) };
+    }
+    return undefined;
+  })();
+
+  /** Annuler la demande — seul celui qui l'a faite le peut. */
+  function annulerLaDemande() {
+    if (!salon || !demandeEnCours) return;
+    noter("reserve", 0, "annule");
+    ecrireDansSalon(salon.cle, {
+      qui: monPrenom() || "Vous",
+      voix: "systeme",
+      texte: "",
+      quand: heureCourte(),
+      carte: {
+        titre: `${demandeEnCours.qui} annule la demande`,
+        detail: "Personne n'a encore réservé : quelqu'un peut reprendre la main.",
+        tampon: "Annulée",
+      },
+    });
+  }
+
   function reserverPourLeSalon(pourUnSeul = false) {
     if (!salon) return;
     const { ou, quoi, combien } = demandeDuSalon(salon, pourUnSeul);
@@ -8608,6 +8663,33 @@ export function ApercuHabitant() {
                 {/* Il réserve CE QUI A GAGNÉ, pour CEUX QUI VIENNENT — et non
                     chez le commerce en tête du paquet, ce que faisait l'ancien
                     bouton. */}
+                {/* ═══ UN SEUL GESTE, VISIBLE DE TOUS, REVERSIBLE ═══
+                    Des que quelqu'un s'en charge, le bouton cesse d'etre une
+                    invitation a le refaire : il dit QUI et POUR COMBIEN. Celui
+                    qui l'a fait peut revenir en arriere ; les autres lisent, et
+                    n'envoient pas une seconde demande au commercant pour le
+                    meme groupe. */}
+                {demandeEnCours ? (
+                  <button
+                    type="button"
+                    className={`ap-act pris${cestMoi(demandeEnCours.qui) ? " mien" : ""}`}
+                    onClick={() => {
+                      if (cestMoi(demandeEnCours.qui)) {
+                        annulerLaDemande();
+                        return;
+                      }
+                      setEchoIcone("📅");
+                      setEcho(
+                        `${demandeEnCours.qui} s'en charge. Inutile de demander deux fois pour le même groupe.`,
+                      );
+                    }}
+                  >
+                    <i aria-hidden="true">📅</i>
+                    {cestMoi(demandeEnCours.qui) ? "Vous réservez" : `${demandeEnCours.qui} réserve`}
+                    {` pour ${demandeEnCours.combien}`}
+                    {cestMoi(demandeEnCours.qui) && <s aria-hidden="true">✕</s>}
+                  </button>
+                ) : (
                 <button
                   type="button"
                   className="ap-act fort"
@@ -8617,6 +8699,7 @@ export function ApercuHabitant() {
                   Réserver
                   {salon.viennent.length > 1 && <b>{salon.viennent.length}</b>}
                 </button>
+                )}
               </div>
               )}
 
@@ -11935,6 +12018,16 @@ export function ApercuHabitant() {
         .ap-act.fort{color:#FFC400;font-weight:850;
           border-color:rgba(255,196,0,.45);background:rgba(255,196,0,.1);}
         .ap-act.fort:active{background:rgba(255,196,0,.18);}
+        /* ─── QUAND QUELQU'UN S'EN CHARGE DEJA ───
+           Le bouton n'invite plus : il rend compte. Il perd donc sa couleur
+           d'appel et prend celle d'un etat — sauf pour celui qui l'a fait, a
+           qui il reste une porte de sortie, marquee par la croix. */
+        .ap-act.pris{color:#9FB2A8;border-color:rgba(255,255,255,.13);
+          background:rgba(255,255,255,.05);cursor:default;font-weight:700;}
+        .ap-act.pris.mien{color:#FFC400;border-color:rgba(255,196,0,.35);
+          background:rgba(255,196,0,.08);cursor:pointer;}
+        .ap-act.pris s{text-decoration:none;margin-left:2px;font-size:12px;
+          opacity:.7;}
         /* Le nombre de convives sur le bouton : la difference entre « il reste
            de la place ? » et « une table pour quatre ? ». */
         .ap-act b{position:absolute;top:-6px;right:-4px;min-width:18px;
