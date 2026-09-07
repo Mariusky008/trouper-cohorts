@@ -42,14 +42,39 @@ import type { AnnoncePassee } from "@/lib/direct/historique";
  * dire tant qu'une annonce était une « carte du jour ». Avec la journée
  * horodatée, il a enfin un programme comme les autres.
  */
+/**
+ * ═══ DEUX LIBELLES, ET LE SECOND N'EST PAS UN LUXE ═══
+ *
+ * `label` est le nom complet, celui de la liste : on y a toute la largeur de
+ * l'ecran et une ligne de description sous le titre. `court` est celui de la
+ * PASTILLE du haut, qui partage sa ligne avec la distance, le coeur et la
+ * cloche — et qui ecrit en capitales espacees.
+ *
+ * MESURE : « CREATEURS & INDEPENDANTS » y fait cent quatre-vingts points sur
+ * un ecran de trois cent quatre-vingt-dix. La pastille aurait pousse la cloche
+ * hors du bord, ou coupe le mot au milieu. Les six premiers metiers tiennent
+ * dans leur nom complet — ils gardent donc le meme des deux cotes, et rien
+ * n'est duplique pour le plaisir de l'etre.
+ */
 export const METIERS = [
-  { cle: "restaurant", label: "Restaurants", emoji: "🍽️" },
-  { cle: "mode", label: "Mode", emoji: "👗" },
-  { cle: "bar", label: "Bars", emoji: "🍸" },
-  { cle: "coiffeur", label: "Coiffeurs", emoji: "💇" },
-  { cle: "fleuriste", label: "Fleuristes", emoji: "💐" },
-  { cle: "ongles", label: "Ongleries", emoji: "💅" },
-  /* ═══ LES ARTISANS ═══
+  { cle: "restaurant", label: "Restaurants", court: "Restaurants", emoji: "🍽️" },
+  { cle: "mode", label: "Mode", court: "Mode", emoji: "👗" },
+  { cle: "bar", label: "Bars", court: "Bars", emoji: "🍸" },
+  { cle: "coiffeur", label: "Coiffeurs", court: "Coiffeurs", emoji: "💇" },
+  { cle: "fleuriste", label: "Fleuristes", court: "Fleuristes", emoji: "💐" },
+  { cle: "ongles", label: "Ongleries", court: "Ongleries", emoji: "💅" },
+  /* ═══ LES CREATEURS ET INDEPENDANTS ═══
+     ═══ POURQUOI PAS « ARTISANS », QUI ETAIT LE PREMIER NOM ═══
+     Il l'avait demande sous ce mot-la, et il avait raison de le demander :
+     c'est celui qui vient. Mais les trois annonces qu'il voulait dedans
+     comprenaient un HYPNOTHERAPEUTE — qui ne fabrique rien. Un mot qui ne
+     couvre pas ce qu'il range se paie tout de suite : le client qui cherche
+     une seance ne clique pas sur « Artisans », et l'hypnotherapeute qui voit
+     sa fiche rangee la se demande si le produit a compris son metier.
+     « CREATEURS & INDEPENDANTS » LES COUVRE TOUS LES TROIS sans forcer aucun,
+     et il ouvre la porte a tout ce qui viendra ensuite — un tatoueur, une
+     naturopathe, un reparateur de velos. C'est la categorie de ceux qui
+     travaillent seuls et vendent leur temps ou leurs pieces.
 
      « Rajouter un métier sur l'app : Artisan, et donc rajouter trois annonces
      d'artisans créateurs (bougie par exemple, et fabricant de bracelets :
@@ -62,7 +87,7 @@ export const METIERS = [
      une séance d'une heure. C'est le premier métier de la liste dont l'annonce
      naturelle n'est pas « il m'en reste » mais « je fabrique maintenant, venez
      voir », et c'est précisément ce que la journée horodatée sait raconter. */
-  { cle: "artisan", label: "Artisans", emoji: "🕯️" },
+  { cle: "artisan", label: "Créateurs & indépendants", court: "Créateurs", emoji: "🕯️" },
 ] as const;
 
 export type CleMetier = (typeof METIERS)[number]["cle"];
@@ -2877,20 +2902,24 @@ const CARTES: CarteAutour[] = [
   //   · /direct/cabinet-hypnose.jpeg ✓ le fauteuil et la lumiere douce. Elle
   //     porte un visage de face, ce que la regle d'anonymat ecarte : elle est
   //     branchee parce qu'elle a ete deposee pour ca, et le point est signale.
-  //   · /direct/atelier-bougies.jpg  — MANQUANTE. Des bougies fraichement
-  //     demoulees, ou la cire qui coule. La cirière reste sur son repli en
-  //     attendant, et le champ reste absent : un chemin ecrit vers un fichier
-  //     qui n'existe pas est une requete 404 a chaque affichage, pas un repli.
+  //   · /direct/atelier-bougies.jpeg ✓ une bougie coulee dans un pot de gres,
+  //     avec ses fleurs sechees posees dans la cire. Ni visage ni enseigne.
   {
     id: "cirier",
     catalogue: [
-      { id: "ci-1", rayon: "Bougies", nom: "Bougie 180 g, cire de colza", detail: "Environ 35 h de combustion.", prix: "22 €" },
+      // LE CATALOGUE DIT CE QUE LA PHOTO MONTRE. Elle est arrivee apres le
+      // texte : un pot de gres, des fleurs sechees posees dans la cire, une
+      // meche en bois. Ecrire « cire de colza, meche coton » sous cette
+      // image-la aurait ete la seule chose que personne ne pardonne a une
+      // annonce — dire autre chose que ce qu'on voit.
+      { id: "ci-1", rayon: "Bougies", nom: "Bougie fleurie, pot de grès", detail: "Fleurs séchées coulées dans la cire.", prix: "22 €" },
       { id: "ci-2", rayon: "Bougies", nom: "Petit modèle 90 g", detail: "Le format à offrir.", prix: "14 €" },
-      { id: "ci-3", rayon: "Parfums", nom: "Pin des Landes", detail: "Résine et aiguille fraîche." },
-      { id: "ci-4", rayon: "Parfums", nom: "Figue de l'Adour", detail: "Vert, un peu lacté." },
+      { id: "ci-3", rayon: "Fleurs", nom: "Roses et gypsophile", detail: "Les fleurs changent avec la saison." },
+      { id: "ci-4", rayon: "Fleurs", nom: "Immortelles blanches", detail: "Elles ne fanent pas." },
       { id: "ci-5", rayon: "Recharges", nom: "Recharge, contenant rapporté", detail: "Ramenez le pot vide.", prix: "16 €" },
     ],
     branche: "artisan",
+    photo: "/direct/atelier-bougies.jpeg",
     nom: "Une cirière",
     google: { note: "4,9", avis: 38 },
     metier: "Cirière",
@@ -2901,7 +2930,7 @@ const CARTES: CarteAutour[] = [
     fiche: {
       ou: "Atelier-boutique, rue derrière les halles",
       horaires: "Aujourd'hui, 10 h – 18 h 30",
-      mot: "Je coule le matin, je démoule l'après-midi. Ce qui sort du moule part souvent le jour même.",
+      mot: "Je coule le matin, je démoule l'après-midi. Les fleurs sont posées une par une, donc aucune n'est identique.",
     },
     moments: [
       {
@@ -2911,7 +2940,7 @@ const CARTES: CarteAutour[] = [
         // traverser la rue.
         de: 15, a: 18.5, quand: "à 15 h", icone: "🕯️", publie: 14.5,
         titre: "Douze bougies sortent du moule",
-        lignes: ["Cire de colza, mèche coton", "Parfum du jour : figue de l'Adour"],
+        lignes: ["Fleurs séchées coulées dans la cire", "Mèche bois, pot de grès réutilisable"],
         prix: "22 €", places: 12, action: "Réserver",
         envies: ["maintenant", "devantvous", "offrir"],
         avis: [

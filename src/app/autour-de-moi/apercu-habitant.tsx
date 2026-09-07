@@ -5113,7 +5113,10 @@ export function ApercuHabitant() {
                       ? "C’est offert"
                       : vue === "tout"
                         ? "Tout"
-                        : metier.label}
+                        : /* LA FORME COURTE ICI, LA COMPLETE DANS LA LISTE —
+                             voir METIERS. La pastille partage sa ligne avec
+                             trois autres objets ; la liste a l'ecran entier. */
+                          metier.court}
                 {/* LES ENVIES SONT PARTIES DANS CETTE FEUILLE, DONC LEUR
                     NOMBRE DOIT SE VOIR D'ICI. Un filtre actif qu'on ne voit
                     plus est un piège : on croit que la ville est vide alors

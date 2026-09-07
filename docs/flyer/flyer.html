@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>ClikMe — Le Direct · flyer commerçant</title>
+<style>
+  @font-face{font-family:Anton;src:url(1Ptgg87LROyAm0K0.ttf) format('truetype');font-weight:400;}
+  @font-face{font-family:Inter;src:url(UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf) format('truetype');font-weight:400;}
+  @font-face{font-family:Inter;src:url(UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYMZg.ttf) format('truetype');font-weight:600;}
+  @font-face{font-family:Inter;src:url(UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuDyYMZg.ttf) format('truetype');font-weight:800;}
+  @font-face{font-family:Inter;src:url(UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuBWYMZg.ttf) format('truetype');font-weight:900;}
+
+  @page{size:148mm 210mm;margin:0;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:#fff;}
+  body{font-family:Inter,'Liberation Sans',Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+
+  .page{position:relative;width:148mm;height:210mm;overflow:hidden;
+    background:#05100C;color:#E8F4EE;page-break-after:always;}
+  .page:last-child{page-break-after:auto;}
+  /* LA LUMIERE DU FOND. Deux sources, comme sur l'ecran du produit : le vert
+     de ce qu'on peut faire en haut a gauche, l'ambre de ce qui expire en bas a
+     droite. Sans elles, un aplat noir imprime gris sale. */
+  .page::before{content:"";position:absolute;inset:0;
+    background:
+      radial-gradient(120% 80% at 8% -6%, rgba(61,226,166,.20), transparent 58%),
+      radial-gradient(90% 70% at 108% 104%, rgba(255,150,40,.16), transparent 60%);}
+  .page>*{position:relative;}
+
+  /* ── L'EN-TETE ─────────────────────────────────────────────────────── */
+  .tete{display:flex;align-items:center;gap:8px;padding:9mm 10mm 0;}
+  .marque{display:flex;align-items:center;gap:6px;font-weight:900;font-size:14px;
+    letter-spacing:-.02em;color:#fff;}
+  .marque svg{width:20px;height:22px;}
+  .marque em{font-style:normal;color:#3DE2A6;}
+  .lieu{margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.16em;
+    text-transform:uppercase;color:#7F988B;}
+
+  .kicker{margin:7mm 10mm 0;font-size:8.5px;font-weight:900;letter-spacing:.2em;
+    text-transform:uppercase;color:#3DE2A6;}
+
+  h1{margin:3.5mm 10mm 0;font-family:Anton,'Liberation Sans',sans-serif;
+    font-weight:400;font-size:44px;line-height:.93;letter-spacing:.005em;
+    text-transform:uppercase;color:#fff;}
+  h1 b{font-weight:400;color:#FFC400;}
+
+  .chapo{margin:5mm 10mm 0;font-size:11px;line-height:1.5;color:#B9CCC2;max-width:118mm;}
+  .chapo strong{color:#fff;font-weight:800;}
+  .chapo u{text-decoration:none;color:#8CF0CC;font-weight:800;}
+  .chapo i{font-style:normal;color:#FFC400;font-weight:800;}
+
+  /* ── LE TELEPHONE ──────────────────────────────────────────────────── */
+  .scene{position:absolute;left:0;right:0;bottom:0;height:112mm;}
+  .tel{position:absolute;width:47mm;height:76mm;border-radius:5mm;overflow:hidden;
+    border:1.1px solid rgba(255,255,255,.22);
+    box-shadow:0 6mm 14mm rgba(0,0,0,.6), 0 0 0 .9mm rgba(255,255,255,.05);}
+  /* ON GARDE LE HAUT DE L'ECRAN. Une capture de 390x844 est deux fois
+     plus haute que large ; posee entiere sur un flyer, elle devient une
+     bande ou plus rien ne se lit. Le cadrage par le haut garde ce qui fait
+     l'effet — le titre, le prix, le cadran — et coupe la barre du bas, dont
+     le fantome est de toute facon dessine en grand a cote. */
+  .tel img{display:block;width:100%;height:100%;object-fit:cover;object-position:top center;}
+  .tel.un{left:8mm;top:1mm;transform:rotate(-3.5deg);}
+  .tel.deux{right:8mm;top:9mm;transform:rotate(4deg);}
+
+  /* LE FANTOME EN GRAND, ET C'EST UN CHOIX ASSUME : dans la barre du telephone
+     il fait deux millimetres a l'impression, c'est-a-dire rien. Ici il est le
+     personnage, a la taille ou on le reconnait. */
+  .fantome{position:absolute;right:2mm;top:-4mm;width:46mm;}
+  .fantome svg{width:100%;overflow:visible;
+    filter:drop-shadow(0 4mm 8mm rgba(240,160,20,.35));}
+
+  .legende{position:absolute;font-size:8px;font-weight:800;line-height:1.35;
+    letter-spacing:.02em;color:#8FA79A;}
+  .legende b{display:block;color:#FFC400;font-size:8.5px;letter-spacing:.1em;
+    text-transform:uppercase;margin-bottom:1mm;}
+
+  /* ── LES PREUVES ───────────────────────────────────────────────────── */
+  /* ELLE A SON PROPRE FOND, ET CE N'EST PAS UN DETAIL : le telephone
+     penche passe dessous, et sans aplat ses angles ressortaient au milieu
+     des chiffres. */
+  .preuves{position:absolute;left:0;right:0;bottom:0;
+    display:grid;grid-template-columns:repeat(3,1fr);gap:0;
+    background:#040C09;border-top:1px solid rgba(255,255,255,.14);}
+  .preuves div{padding:5mm 5mm 6mm;border-left:1px solid rgba(255,255,255,.09);}
+  .preuves div:first-child{border-left:0;}
+  .preuves b{display:block;font-family:Anton,sans-serif;font-weight:400;
+    font-size:23px;line-height:1;color:#3DE2A6;margin-bottom:1.6mm;}
+  .preuves span{display:block;font-size:8.5px;line-height:1.4;color:#A9BBB1;}
+  .preuves em{font-style:normal;color:#fff;font-weight:800;}
+
+  /* ── VERSO ─────────────────────────────────────────────────────────── */
+  h2{margin:0 10mm;font-family:Anton,'Liberation Sans',sans-serif;font-weight:400;
+    font-size:24px;line-height:1.02;text-transform:uppercase;color:#fff;}
+  h2 b{font-weight:400;color:#3DE2A6;}
+  .sous{margin:5mm 10mm 0;font-size:9.4px;line-height:1.5;color:#B9CCC2;}
+
+  .duo{display:grid;grid-template-columns:44mm 1fr;gap:6mm;
+    margin:5mm 10mm 0;align-items:start;}
+  /* ═══ ON CADRE SUR LA BULLE, PAS SUR LE HAUT DE L'ECRAN ═══
+     Premiere version : le meme cadrage par le haut que sur le recto. Resultat
+     verifie a l'image — on voyait la liste des salons, et la bulle du fantome,
+     c'est-a-dire LA SEULE CHOSE QUE CETTE PAGE RACONTE, tombait hors du cadre.
+     Le point de cadrage descend a 62 % : on garde la carte de l'annonce en
+     haut, ceux qui viennent au milieu, et la phrase du fantome en bas. */
+  .duo .tel{position:static;transform:none;width:44mm;height:66mm;}
+  .duo .tel img{object-position:center 62%;}
+
+  .points{display:flex;flex-direction:column;gap:4.4mm;}
+  .pt{display:grid;grid-template-columns:5mm 1fr;gap:3mm;}
+  .pt i{font-style:normal;width:5mm;height:5mm;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:7px;font-weight:900;color:#04150E;background:#3DE2A6;margin-top:.4mm;}
+  .pt b{display:block;font-size:10px;font-weight:900;color:#fff;line-height:1.2;
+    margin-bottom:1mm;}
+  .pt span{display:block;font-size:8.6px;line-height:1.45;color:#A9BBB1;}
+
+  /* LA CARTE QUE RECOIT LE COMMERCANT. C'est la piece qui decide, donc elle est
+     traitee comme un objet a part : encadree, ambre, et litteralement recopiee
+     de l'ecran du produit. */
+  .recu{margin:6mm 10mm 0;padding:4.6mm 5mm;border-radius:3.4mm;
+    border:1px solid rgba(255,196,0,.42);
+    background:linear-gradient(150deg, rgba(255,196,0,.10), rgba(255,196,0,.03));}
+  .recu b{display:block;font-size:8px;font-weight:900;letter-spacing:.16em;
+    text-transform:uppercase;color:#FFC400;margin-bottom:2.2mm;}
+  .recu p{font-size:11.5px;line-height:1.45;color:#fff;font-weight:800;}
+  .recu p span{color:#FFC400;}
+  .recu s{display:block;margin-top:2.4mm;text-decoration:none;
+    font-size:8.6px;line-height:1.45;color:#A9BBB1;font-weight:400;}
+
+  /* LE PIED A SON PROPRE FOND — sans lui, le paragraphe qui le precede
+     passait dessous et les deux se lisaient l'un dans l'autre. */
+  .fin{position:absolute;left:0;right:0;bottom:0;padding:6mm 10mm 8mm;
+    background:#040C09;border-top:1px solid rgba(255,255,255,.14);}
+  .fin h3{font-family:Anton,sans-serif;font-weight:400;font-size:21px;
+    text-transform:uppercase;color:#fff;margin-bottom:2.4mm;}
+  .fin p{font-size:9.4px;line-height:1.5;color:#A9BBB1;}
+  .fin .coord{display:flex;align-items:center;gap:5mm;margin-top:4mm;}
+  .fin .coord b{font-size:12px;font-weight:900;color:#3DE2A6;}
+  .fin .coord u{text-decoration:none;font-size:10px;font-weight:800;color:#fff;
+    padding:2.2mm 4mm;border-radius:999px;border:1px dashed rgba(255,255,255,.35);
+    color:#8FA79A;}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════ RECTO ══════════════════════════ -->
+<section class="page">
+  <div class="tete">
+    <span class="marque">
+      <svg viewBox="0 0 40 44" aria-hidden="true">
+        <defs>
+          <linearGradient id="mg" x1=".2" y1="0" x2=".82" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#F3FAF6"/>
+            <stop offset="1" stop-color="#BFDFD0"/>
+          </linearGradient>
+        </defs>
+        <path fill="url(#mg)" d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"/>
+        <ellipse fill="#07211A" cx="14.2" cy="19" rx="2.4" ry="3.2"/>
+        <ellipse fill="#07211A" cx="25.8" cy="19" rx="2.4" ry="3.2"/>
+        <path fill="none" stroke="#07211A" stroke-width="2" stroke-linecap="round" d="M16.4 26.2c1.5 2 5.7 2 7.2 0"/>
+      </svg>
+      ClikMe <em>· Le Direct</em>
+    </span>
+    <span class="lieu">Dax</span>
+  </div>
+
+  <p class="kicker">La première application de commerce local en direct</p>
+
+  <h1>ILS DÉCIDENT<br>ENSEMBLE.<br><b>ILS VIENNENT<br>CHEZ VOUS.</b></h1>
+
+  <p class="chapo">
+    La première application qui permet <u>aux commerçants</u> de remplir une
+    table, une place ou une fournée <strong>en trois minutes</strong> — et
+    <i>à leurs clients</i> de ne plus choisir seuls.
+  </p>
+
+  <div class="scene">
+    <div class="tel un"><img src="flyer-flash.png" alt=""></div>
+
+    <div class="fantome">
+      <svg viewBox="-16 -30 72 82" aria-hidden="true">
+        <defs>
+          <linearGradient id="or" x1=".18" y1="-.05" x2=".8" y2="1.05">
+            <stop offset="0" stop-color="#FFF8DF"/><stop offset=".38" stop-color="#FFD75E"/>
+            <stop offset=".76" stop-color="#F0A81C"/><stop offset="1" stop-color="#C87A06"/>
+          </linearGradient>
+          <radialGradient id="orAo" cx=".7" cy=".9" r=".6">
+            <stop offset="0" stop-color="#8A5400" stop-opacity=".45"/>
+            <stop offset="1" stop-color="#8A5400" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="orSp" cx=".3" cy=".18" r=".3">
+            <stop offset="0" stop-color="#fff" stop-opacity=".95"/>
+            <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <!-- LES COEURS. Ils montent en s'ecartant, comme dans l'application :
+             c'est la recompense du Flash, et elle est rare par construction. -->
+        <g fill="#FF6E8A">
+          <path opacity=".95" transform="translate(-2 -18) scale(1.5)"  d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z"/>
+          <path opacity=".75" transform="translate(10 -26) scale(1.15)" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z"/>
+          <path opacity=".85" transform="translate(30 -22) scale(1.35)" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z"/>
+          <path opacity=".55" transform="translate(42 -12) scale(.95)"  d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z"/>
+          <path opacity=".6"  transform="translate(-11 -6) scale(1.05)" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z"/>
+        </g>
+        <!-- LE FANTOME, PENCHE COMME AU SOMMET DE SON BOND. L'inclinaison
+             n'est pas decorative : c'est la valeur exacte de la keyframe a
+             47 %, c'est-a-dire l'instant ou il est le plus haut. -->
+        <g transform="rotate(7 20 22)">
+          <ellipse fill="#4A3000" opacity=".3" cx="20" cy="49" rx="12" ry="2.6"/>
+          <ellipse fill="#F2C558" cx="3.4" cy="27.2" rx="4" ry="2.7"/>
+          <ellipse fill="#F2C558" cx="36.6" cy="27.2" rx="4" ry="2.7"/>
+          <path fill="url(#or)"   d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"/>
+          <path fill="url(#orAo)" d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"/>
+          <path fill="url(#orSp)" d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"/>
+          <ellipse fill="#FF9DB4" opacity=".6" cx="10.4" cy="25.4" rx="2.9" ry="1.9"/>
+          <ellipse fill="#FF9DB4" opacity=".6" cx="29.6" cy="25.4" rx="2.9" ry="1.9"/>
+          <!-- LES YEUX FERMES DE CONTENTEMENT : c'est ce que fait le fantome
+               au sommet du bond dore, et c'est ce qui le distingue du fantome
+               au repos, qui a les yeux ouverts. -->
+          <path fill="none" stroke="#5A3A00" stroke-width="2.4" stroke-linecap="round" d="M11.6 19.6c1.2-2.7 3.8-2.7 4.9 0"/>
+          <path fill="none" stroke="#5A3A00" stroke-width="2.4" stroke-linecap="round" d="M23.5 19.6c1.2-2.7 3.8-2.7 4.9 0"/>
+          <path fill="#5A3A00" d="M15.4 25.2h9.2c0 3.8-2 6.1-4.6 6.1s-4.6-2.3-4.6-6.1z"/>
+          <path fill="#FF7E9B" d="M17.7 29.6c.5-.8 1.4-1.3 2.3-1.3s1.8.5 2.3 1.3c-.6.7-1.4 1.2-2.3 1.2s-1.7-.5-2.3-1.2z"/>
+        </g>
+      </svg>
+    </div>
+
+    <p class="legende" style="right:10mm;top:44mm;width:44mm;text-align:right;">
+      <b>Une offre éclair</b>
+      Vous dictez à Léa « il me reste six planches », elle écrit l’annonce.
+      Trente minutes de compte à rebours, et tout le quartier la voit.
+    </p>
+
+    <div class="preuves">
+      <div><b>3 min</b><span>Vous <em>dictez</em>, c’est publié. Rien à saisir, rien à installer.</span></div>
+      <div><b>à 3 ou 4</b><span>Ils en parlent entre eux et <em>viennent ensemble</em>, pas tout seuls.</span></div>
+      <div><b>0 pub</b><span>Ce sont vos <em>voisins à 300 m</em>, pas une audience achetée.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════ VERSO ══════════════════════════ -->
+<section class="page">
+  <div class="tete" style="padding-top:8mm;">
+    <span class="lieu" style="margin-left:0;color:#3DE2A6;">Ce qui change pour vous</span>
+  </div>
+
+  <h2 style="margin-top:5mm;">Une messagerie<br>vous envoie <b>« table de 4 ».</b><br>Nous, on vous dit<br><b>ce qu’ils ont choisi.</b></h2>
+
+  <div class="recu">
+    <b>Ce que vous recevez sur votre téléphone</b>
+    <p>4 personnes · ce soir 20 h<br><span>Ils ont choisi : poulet basquaise ×3, garbure ×1</span></p>
+    <s>Vous savez quoi sortir du frigo avant qu’ils entrent. Aucune plateforme
+    de réservation ne vous donne cette ligne-là — elle ne connaît pas votre carte.</s>
+  </div>
+
+  <div class="duo">
+    <div class="tel"><img src="flyer-salon.png" alt=""></div>
+    <div class="points">
+      <div class="pt"><i>1</i><div>
+        <b>Ils en parlent dans l’application</b>
+        <span>Pas dans un groupe WhatsApp où la décision meurt de fatigue. La
+        conversation est attachée à VOTRE annonce, et elle meurt avec elle le soir.</span>
+      </div></div>
+      <div class="pt"><i>2</i><div>
+        <b>Le fantôme les aide à trancher</b>
+        <span>Il compte les voix à voix haute — « 2 pour les lasagnes, 1 pour
+        autre chose » — et propose un seul geste : voter, ou réserver pour tout
+        le groupe. Jamais un menu, jamais un chatbot.</span>
+      </div></div>
+      <div class="pt"><i>3</i><div>
+        <b>Une seule demande vous arrive</b>
+        <span>Pas quatre pour la même table. Dès que quelqu’un s’en charge, le
+        bouton dit qui — et les autres le voient.</span>
+      </div></div>
+    </div>
+  </div>
+
+  <p class="sous">
+    <strong style="color:#fff;font-weight:800;">Et un créneau qui se libère n’est plus un créneau perdu.</strong>
+    Un désistement à 16 h, une place en terrasse, une fournée de trop : trois
+    phrases dictées, et les gens qui sont à trois cents mètres le savent.
+  </p>
+
+  <div class="fin">
+    <h3>Vous voulez l’essayer&nbsp;?</h3>
+    <p>Je passe vous montrer l’application sur votre comptoir, en cinq minutes,
+    sans rien vous demander. Vous verrez votre commerce dedans avant de décider
+    quoi que ce soit.</p>
+    <div class="coord">
+      <b>clikme.fr</b>
+      <u>votre nom et votre numéro ici</u>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
