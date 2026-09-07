@@ -5573,18 +5573,35 @@ export function ApercuHabitant() {
                         <ol className="ap-prog">
                           {dessus.moments.map((m) => {
                             const passe = heure >= m.a;
+                            // ⚡ CETTE LIGNE EST-ELLE LE FLASH EN COURS ?
+                            const vif = !!m.flash && flashEnCours(m.flash, heure);
                             const av = avisDe(dessus, m);
                             const maNote = notes[cleMoment(dessus, m)] ?? 0;
                             return (
                               <li
                                 key={m.titre}
-                                className={
+                                className={`${
                                   seJoueMaintenant(m, heure) ? "on" : passe ? "passe" : ""
-                                }
+                                }${vif ? " eclair" : ""}`}
                               >
                                 <div className="ap-prog-h">
                                   <b>{m.quand}</b>
-                                  {seJoueMaintenant(m, heure) && (
+                                  {/* ═══ LA LIGNE DU FLASH SE NOMME, ICI AUSSI ═══
+                                      « Y a-t-il deux annonces séparées ou une
+                                      seule, et alors que montre-t-on ? »
+
+                                      C'ETAIT REGLE SUR LA CARTE, PUIS DANS LA
+                                      FEUILLE DU JOUR, ET J'ALLAIS LE PERDRE UNE
+                                      TROISIEME FOIS. Depuis que « Voir le
+                                      planning » descend ICI au lieu d'ouvrir une
+                                      feuille, c'est cette liste qu'il regardera
+                                      — et elle affichait deux lignes portant le
+                                      meme titre, sans rien pour dire laquelle
+                                      se perime. La correction doit suivre la
+                                      porte, sinon deplacer la porte annule la
+                                      correction. */}
+                                  {vif && <span className="ap-prog-f">Flash</span>}
+                                  {seJoueMaintenant(m, heure) && !vif && (
                                     <span className="ap-live">en cours</span>
                                   )}
                                   {passe && <span className="ap-fini">c&apos;est passé</span>}
@@ -13145,6 +13162,13 @@ export function ApercuHabitant() {
            un bouton visible n'apprend rien et prend deux cents points sur la
            photo. Leurs styles partent avec elles : une regle qui ne s'applique
            a rien finit par etre recopiee ailleurs par erreur. */
+        /* ⚡ LA LIGNE DU FLASH, DANS LA JOURNEE SOUS LE PLI. Meme code couleur
+           que partout ailleurs : l'ambre ne sert qu'a ce qui expire. */
+        .ap-prog-f{display:inline-flex;align-items:center;
+          color:#04150E;background:#F0B429;border-radius:999px;
+          padding:1px 8px;font-size:10.5px;font-weight:850;
+          letter-spacing:.06em;text-transform:uppercase;}
+        .ap-prog li.eclair .ap-prog-t{color:#FFD75E;}
         /* LE REPERE DU DEFILEMENT : il descend en s'effacant, dans l'axe du
            mouvement qu'il annonce. Pose au-dessus de la carte mais sous la
            barre du bas, et il n'intercepte rien — on peut continuer a toucher
