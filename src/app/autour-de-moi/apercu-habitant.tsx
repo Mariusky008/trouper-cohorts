@@ -715,6 +715,146 @@ async function demanderAvertissement(): Promise<NotificationPermission> {
  * 24, même épaisseur : ils se ressemblent entre eux autant qu'ils diffèrent du
  * voisin, ce qui est exactement ce qu'on demande à une famille d'icônes.
  */
+/**
+ * ═══ LE FANTOME, DESSINE UNE SEULE FOIS ═══
+ *
+ * Il vivait en clair dans la barre du bas. La page d'invitation le demande en
+ * grand — « que le design de ce chat soit aussi fun que sur l'annonce » — et le
+ * copier aurait fait deux traces a maintenir : au premier ajustement, l'un des
+ * deux aurait pris du retard, et c'est toujours celui qu'on ne regarde pas.
+ *
+ * LES DEGRADES PORTENT LES MEMES IDENTIFIANTS AUX DEUX ENDROITS, et c'est sans
+ * consequence : ils sont identiques, et le navigateur prend le premier.
+ */
+function Fantome({ classe = "ap-fantome" }: { classe?: string }) {
+  return (
+    <svg className={classe} viewBox="0 0 40 44" aria-hidden="true" focusable="false">
+
+                {/* ─── IL A DU RELIEF, ET C'ÉTAIT LA DEMANDE ───
+                    « Le smiley au milieu du menu n'est pas très bien fait, il
+                    manque de représentation 3D. » Un aplat blanc est un
+                    pictogramme, pas un personnage. Trois choses suffisent à lui
+                    donner un volume, et ce sont celles que fait un illustrateur :
+                    un dégradé du haut vers le bas (la lumière vient d'en haut),
+                    une ombre portée sous le corps, et un reflet clair sur
+                    l'épaule gauche. Les yeux gagnent leur point de lumière — ce
+                    petit blanc est ce qui fait qu'un œil est vivant. */}
+                <defs>
+                  {/* LA LUMIERE VIENT D'EN HAUT A GAUCHE, ET TOUT EN DECOULE :
+                      le degre du corps, le liseré clair sur cette epaule-la, et
+                      l'ombre qui se creuse a l'oppose. Un seul soleil : c'est ce
+                      qui separe un dessin d'un collage. */}
+                  <linearGradient id="apFg" x1=".2" y1="0" x2=".82" y2="1">
+                    <stop offset="0" stopColor="#ffffff" />
+                    <stop offset=".5" stopColor="#F3FAF6" />
+                    <stop offset="1" stopColor="#BFDFD0" />
+                  </linearGradient>
+                  <radialGradient id="apFl" cx=".32" cy=".24" r=".44">
+                    <stop offset="0" stopColor="#ffffff" stopOpacity=".95" />
+                    <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+                  </radialGradient>
+                  {/* LE LISERE. Un trait clair qui ne fait que le quart haut
+                      gauche, et s'efface : c'est ce que fait la lumiere sur un
+                      volume, et c'est ce qui manquait le plus. */}
+                  <linearGradient id="apFr" x1=".05" y1="0" x2=".7" y2=".55">
+                    <stop offset="0" stopColor="#ffffff" stopOpacity=".95" />
+                    <stop offset=".55" stopColor="#ffffff" stopOpacity="0" />
+                  </linearGradient>
+                  {/* L'OMBRE INTERNE, en bas a droite : sans elle le corps est
+                      un aplat, avec elle il est rond. */}
+                  <radialGradient id="apFo" cx=".74" cy=".82" r=".55">
+                    <stop offset="0" stopColor="#5E9E85" stopOpacity=".34" />
+                    <stop offset="1" stopColor="#5E9E85" stopOpacity="0" />
+                  </radialGradient>
+                  {/* ⚡ LE CORPS DORE, POUR LE BOND QUI ANNONCE UN FLASH. Il est
+                      declare ici et jamais utilise par defaut : c'est la feuille
+                      de style qui bascule le remplissage sous `.ap-suiv.or`.
+                      Un second fantome aurait double le trace pour changer
+                      trois couleurs. */}
+                  <linearGradient id="apFgOr" x1=".2" y1="0" x2=".82" y2="1">
+                    <stop offset="0" stopColor="#FFF6D8" />
+                    <stop offset=".5" stopColor="#FFD75E" />
+                    <stop offset="1" stopColor="#E09A17" />
+                  </linearGradient>
+                  {/* L'OEIL EST UNE BILLE, pas un point : un degre du haut vers
+                      le bas suffit a le bomber. */}
+                  <radialGradient id="apFy" cx=".38" cy=".3" r=".8">
+                    <stop offset="0" stopColor="#2A5C4A" />
+                    <stop offset="1" stopColor="#07211A" />
+                  </radialGradient>
+                </defs>
+                <ellipse className="ap-f-ombre" cx="20" cy="41.6" rx="11" ry="2.4" />
+                {/* ─── LES BRAS ───
+                    Ils sont dessines AVANT le corps, donc derriere lui : ils
+                    sortent de dessous, comme les bras d'une peluche, et on ne
+                    voit jamais ou ils s'attachent. Deux moignons suffisent — ce
+                    qui fait le personnage, c'est qu'ils BOUGENT : ils balancent
+                    au repos et se lancent en l'air quand on l'appuie. */}
+                <ellipse className="ap-f-bras g" cx="3.4" cy="27.2" rx="4" ry="2.7" />
+                <ellipse className="ap-f-bras d" cx="36.6" cy="27.2" rx="4" ry="2.7" />
+                <path
+                  className="ap-f-corps"
+                  d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"
+                />
+                <path
+                  className="ap-f-creux"
+                  d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"
+                />
+                <path
+                  className="ap-f-lueur"
+                  d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"
+                />
+                <path
+                  className="ap-f-fil"
+                  d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"
+                />
+                <ellipse className="ap-f-joue g" cx="10.4" cy="24.6" rx="2.8" ry="1.8" />
+                <ellipse className="ap-f-joue d" cx="29.6" cy="24.6" rx="2.8" ry="1.8" />
+                <ellipse className="ap-f-oeil g" cx="14.2" cy="19" rx="2.6" ry="3.4" />
+                <ellipse className="ap-f-oeil d" cx="25.8" cy="19" rx="2.6" ry="3.4" />
+                <circle className="ap-f-eclat g" cx="15.1" cy="17.7" r=".95" />
+                <circle className="ap-f-eclat d" cx="26.7" cy="17.7" r=".95" />
+                <circle className="ap-f-eclat2 g" cx="13.3" cy="20.5" r=".45" />
+                <circle className="ap-f-eclat2 d" cx="24.9" cy="20.5" r=".45" />
+                <path className="ap-f-bouche" d="M16.4 26.2c1.5 2 5.7 2 7.2 0" />
+                {/* ─── LES ETINCELLES ───
+                    Invisibles au repos, elles jaillissent au moment du saut.
+                    C'est le detail qui fait rire : le personnage ne se contente
+                    pas de bouger, il PRODUIT quelque chose. Chacune est dans un
+                    groupe qui porte sa position, pour que l'animation CSS ne
+                    marche pas sur la meme propriete que le placement. */}
+                <g transform="translate(34.5 9.5)">
+                  <path className="ap-f-etoile a" d="M0-3.4.9-.9 3.4 0 .9.9 0 3.4-.9.9-3.4 0-.9-.9Z" />
+                </g>
+                <g transform="translate(6 8)">
+                  <path className="ap-f-etoile b" d="M0-2.6.7-.7 2.6 0 .7.7 0 2.6-.7.7-2.6 0-.7-.7Z" />
+                </g>
+                <g transform="translate(31 34)">
+                  <path className="ap-f-etoile c" d="M0-2.2.6-.6 2.2 0 .6.6 0 2.2-.6.6-2.2 0-.6-.6Z" />
+                </g>
+                {/* ⚡ ═══ LES COEURS DU BOND DORE ═══
+                    « Qu'il lance des coeurs avant de revenir a sa position
+                    initiale. » Ils n'existent que pendant ce bond-la : cinq
+                    coeurs qui montent en s'ecartant, decales de quelques
+                    centiemes pour qu'ils ne partent pas comme un seul objet.
+                    C'EST LA RECOMPENSE DU PRODUIT, et elle est rare par
+                    construction — un Flash, trois fois par semaine. Une fete
+                    qui arrive a chaque appui n'est plus une fete. */}
+                <g transform="translate(20 22)">
+                  <path className="ap-f-coeur a" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
+                  <path className="ap-f-coeur b" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
+                  <path className="ap-f-coeur c" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
+                  <path className="ap-f-coeur d" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
+                  <path className="ap-f-coeur e" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
+                  <path className="ap-f-coeur f" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
+                  <path className="ap-f-coeur g" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
+                  <path className="ap-f-coeur h" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
+                  <path className="ap-f-coeur i" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
+                </g>
+                  </svg>
+  );
+}
+
 function PictoMetier({ icone }: { icone: CleIcone }) {
   const traces: Record<CleIcone, ReactNode> = {
     // Fourchette et couteau — le seul qui existait, et le seul qui était juste.
@@ -1909,6 +2049,34 @@ export function ApercuHabitant() {
 
 
   /**
+   * COPIER LE LIEN DU SALON — la seconde porte de l'invitation.
+   *
+   * POURQUOI ELLE EXISTE A COTE DE WHATSAPP. Tout le monde n'invite pas par
+   * WhatsApp : il y a les SMS, Messenger, un message dans un groupe de
+   * quartier. `inviterAuSalon` ouvrait WhatsApp et ne retombait sur le
+   * presse-papiers qu'en cas d'echec — c'est-a-dire jamais, sur un telephone ou
+   * WhatsApp est installe. Celui qui voulait juste le lien n'avait aucun moyen
+   * de l'obtenir.
+   *
+   * ET ON NE PRETEND PAS QUE CA A MARCHE. Le presse-papiers se refuse — page
+   * non securisee, permission refusee — et dans ce cas on le dit, plutot que
+   * d'afficher « copie » sur un presse-papiers vide.
+   */
+  async function copierLeLien(s: Salon) {
+    const lien = typeof window === "undefined" ? "" : `${window.location.origin}/autour-de-moi`;
+    const texte = `${s.sujet} — ${s.ou} · ${s.quand}. J'ai trouvé ça sur Clikme, qui vient ? ${lien}`;
+    try {
+      await navigator.clipboard.writeText(texte);
+      noter("partage", 0, "lien-copie");
+      setEchoIcone("🔗");
+      setEcho("Lien copié. Collez-le où vous voulez : ils n'ont rien à installer.");
+    } catch {
+      setEchoIcone("⚠️");
+      setEcho("Votre téléphone a refusé le presse-papiers. Passez par le bouton vert.");
+    }
+  }
+
+  /**
    * LES COMMERCES PRÉPARÉS POUR LA VISITE, EN TÊTE DU PAQUET.
    *
    * ILS PASSENT DEVANT LA DISTANCE, ET C'EST TOUT LE POINT : le paquet est
@@ -2445,6 +2613,18 @@ export function ApercuHabitant() {
    */
   /** La carte du dessus, telle que l'écran la dessine — pour la fiche et l'anneau. */
   const dessusCarte = dessus ? carteDe(dessus) : undefined;
+  /**
+   * ⚡ LE FLASH DE L'ANNONCE QU'ON PROPOSE — pour la page d'invitation.
+   *
+   * IL NE S'AFFICHE QUE SI C'EST BIEN LA MEME. Un salon peut s'ouvrir depuis
+   * l'onglet Propositions, sur une annonce sans rapport avec la carte du
+   * dessus : poser un compte a rebours dessus serait un mensonge de quinze
+   * points de haut, et c'est le genre de mensonge qu'on ne rattrape jamais.
+   */
+  const flashDuSalon =
+    dessusCarte?.flash && salon?.annonce === dessusCarte.quoi
+      ? dessusCarte.flash
+      : undefined;
   /**
    * CE QUE LE ROND PROMET, DANS LES MOTS DU MÉTIER — voir `MOT_DU_METIER`.
    *
@@ -7555,7 +7735,19 @@ export function ApercuHabitant() {
                     donc il n'en trouvait aucune.
                     Ils n'en font plus qu'un : la photo, ce qui mène, ce qui est
                     sur la table, et le moyen d'en ajouter. Un cadre, un sujet. */}
-                {(() => {
+                {/* ═══ ET IL S'EFFACE SUR LA PAGE D'INVITATION ═══
+                    Dans un salon vide, cette grande photo dit exactement ce que
+                    dit le rappel de l'offre juste en dessous — meme image, meme
+                    titre, meme prix. Deux fois la meme chose, et la seconde est
+                    la plus complete : elle porte le compte a rebours.
+                    LE COUT ETAIT MESURABLE. Mesure a l'ecran : le bouton vert
+                    « Inviter mes amis » tombait SOUS LE PLI, c'est-a-dire que
+                    l'action principale de cet ecran demandait un defilement pour
+                    etre trouvee. Rien ne justifie ca, surtout pas un doublon.
+                    Des le premier message, la photo revient : la conversation
+                    s'allonge, et il faut alors un rappel en tete de ce dont on
+                    parle. */}
+                {salon.messages.length > 0 && (() => {
                   const p = tete;
                   const photo = p?.photo ?? salon.photo;
                   const a = annonceDuSalon(salon);
@@ -7913,29 +8105,128 @@ export function ApercuHabitant() {
                 {salonSeul && <p className="ap-vousprop">Vous proposez</p>}
 
                 {salon.messages.length === 0 && !salon.collectif && (
-                  <div className="ap-sal-neuf">
-                    <span aria-hidden="true">👥</span>
-                    <b>À vous de jouer</b>
-                    <i>
-                      Invitez ceux avec qui vous voulez y aller. Ils verront
-                      votre proposition — et pourront en faire une autre.
-                    </i>
-                    <button type="button" onClick={() => void inviterAuSalon(salon)}>
-                      👥 Inviter mes amis
+                  <div className="ap-invite">
+                    {/* ═══ LA PAGE D'INVITATION, D'APRES SA MAQUETTE ═══
+
+                        « J'aimerais que le design de ce chat soit aussi fun que
+                        sur l'annonce principale. »
+
+                        CE QU'ELLE ETAIT : un cadre menthe, un emoji de trente
+                        points, un titre, un paragraphe, un bouton, deux notes.
+                        Correct, et parfaitement muet — rien n'y disait qu'on
+                        venait de faire quelque chose d'un peu excitant.
+
+                        CE QU'ELLE DEVIENT : le fantome en grand, le titre qui
+                        s'adresse a quelqu'un, et surtout L'OFFRE RAPPELEE avec
+                        son prix et son compte a rebours. C'est la piece qui
+                        manquait : on invite ses amis A QUELQUE CHOSE, et cette
+                        chose doit etre sous les yeux au moment ou l'on tape le
+                        bouton — sinon on envoie un lien vide de sens. */}
+                    <div className="ap-invite-h">
+                      <span className="ap-invite-f" aria-hidden="true">
+                        <Fantome classe="ap-invite-d" />
+                      </span>
+                      <p className="ap-invite-t">
+                        Envoyez cette offre
+                        <b>à vos amis&nbsp;!</b>
+                      </p>
+                    </div>
+                    <p className="ap-invite-s">
+                      Ils verront votre proposition, pourront en discuter et
+                      même en proposer d&apos;autres.
+                    </p>
+
+                    {/* ─── L'OFFRE, RAPPELEE ───
+                        Photo, titre, prix, distance — et le compte a rebours
+                        quand c'est un Flash. Il n'apparait que si l'annonce
+                        proposee EST celle qui court : afficher un chrono sur
+                        autre chose serait un mensonge de quinze points de
+                        haut. */}
+                    <div className="ap-invite-o">
+                      {salon.photo && (
+                        <span
+                          className="ap-invite-ph"
+                          style={{ backgroundImage: `url("${encodeURI(salon.photo)}")` }}
+                          aria-hidden="true"
+                        />
+                      )}
+                      <span className="ap-invite-q">
+                        <b>{salon.annonce ?? salon.sujet}</b>
+                        <em>
+                          {salon.prix && <u>{salon.prix}</u>}
+                          {flashDuSalon?.prixBarre && <s>{flashDuSalon.prixBarre}</s>}
+                        </em>
+                        <i>
+                          📍 {salon.distance ?? ""} {salon.ou ? `· ${salon.ou}` : ""}
+                        </i>
+                      </span>
+                      {flashDuSalon && (
+                        <span className="ap-invite-c" aria-hidden="true">
+                          <svg viewBox="0 0 100 100">
+                            <circle className="cd-an-p" cx="50" cy="50" r="44.5" />
+                            <circle
+                              className="cd-an-a"
+                              cx="50"
+                              cy="50"
+                              r="44.5"
+                              style={{
+                                strokeDasharray: `${(1 - flashDuSalon.part) * 279.6} 279.6`,
+                              }}
+                            />
+                          </svg>
+                          <em>Il reste</em>
+                          <b>{flashDuSalon.reste.replace(/[^0-9]/g, "") || "0"}</b>
+                          <u>min</u>
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      className="ap-invite-b"
+                      onClick={() => void inviterAuSalon(salon)}
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M20.5 11.6a8.5 8.5 0 0 1-12.6 7.4L3.5 20.5l1.6-4.3A8.5 8.5 0 1 1 20.5 11.6z" />
+                        <path d="M8.9 8.3c.2-.5.5-.5.8-.5h.6c.2 0 .5 0 .7.5l.7 1.7c.1.3 0 .5-.1.7l-.4.5c-.2.2-.3.4-.1.7a6 6 0 0 0 2.8 2.4c.3.1.5.1.7-.1l.6-.7c.2-.2.4-.2.7-.1l1.6.8c.3.1.4.3.4.5v.6c0 .4-.3.8-.7 1a2.4 2.4 0 0 1-1.6.3c-1-.2-2.6-.8-4.2-2.4s-2.2-3.2-2.4-4.2a2.4 2.4 0 0 1 .3-1.6z" />
+                      </svg>
+                      Inviter mes amis
+                      <s aria-hidden="true">→</s>
                     </button>
-                    {/* POURQUOI ÇA VAUT MIEUX QU'UN MESSAGE. Une phrase, sous
-                        le bouton, et le concept n'a plus besoin d'être
-                        expliqué ailleurs. */}
-                    <u>Vous choisissez ensemble : chacun peut proposer une autre idée.</u>
-                    {/* LA NOTE SUR LA VISIBILITÉ EST ICI, pas dans un
-                        réglage qu'on ne trouve pas : c'est au moment
-                        d'inviter qu'on se demande qui verra. Elle ne dit plus
-                        « salon » : le mot n'est compris que de nous. */}
-                    <s>
+
+                    <button
+                      type="button"
+                      className="ap-invite-l"
+                      onClick={() => void copierLeLien(salon)}
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M10 13.5a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 1 0-5.7-5.7l-1.4 1.4" />
+                        <path d="M14 10.5a4 4 0 0 0-5.7 0l-2.8 2.8a4 4 0 1 0 5.7 5.7l1.4-1.4" />
+                      </svg>
+                      Copier le lien du chat
+                    </button>
+
+                    {/* LA NOTE DIT CE QU'ILS VIVRONT, PAS COMMENT CA MARCHE.
+                        « Un salon ne contient que les gens que vous y mettez »
+                        etait une notice ; celle-ci est une promesse. */}
+                    <p className="ap-invite-i">
+                      <i aria-hidden="true">ⓘ</i>
+                      Vos amis découvriront l&apos;offre et pourront discuter
+                      avec vous, sans rien installer.
+                    </p>
+
+                    {/* LA VISIBILITE RESTE ICI : c'est au moment d'inviter
+                        qu'on se demande qui verra. */}
+                    <p className="ap-invite-v">
                       {salon.prive
                         ? "🔒 Fermé : seuls ceux que vous invitez le voient."
-                        : "🌍 Ouvert : ceux qui sont autour peuvent le voir et s'y joindre. Vous pouvez le fermer juste au-dessus."}
-                    </s>
+                        : "🌍 Ouvert : ceux qui sont autour peuvent le voir et s’y joindre."}
+                    </p>
+
+                    <p className="ap-invite-p">
+                      <i aria-hidden="true">💬</i>
+                      Parlons-en ensemble&nbsp;!
+                    </p>
                   </div>
                 )}
 
@@ -8563,134 +8854,7 @@ export function ApercuHabitant() {
                   pour ceux dont le balayage ne prend pas, et un bouton de
                   secours qui ne répond pas visiblement au doigt ne vaut pas
                   mieux que le geste qu'il remplace. */}
-              <svg
-                className="ap-fantome"
-                viewBox="0 0 40 44"
-                aria-hidden="true"
-                focusable="false"
-              >
-                {/* ─── IL A DU RELIEF, ET C'ÉTAIT LA DEMANDE ───
-                    « Le smiley au milieu du menu n'est pas très bien fait, il
-                    manque de représentation 3D. » Un aplat blanc est un
-                    pictogramme, pas un personnage. Trois choses suffisent à lui
-                    donner un volume, et ce sont celles que fait un illustrateur :
-                    un dégradé du haut vers le bas (la lumière vient d'en haut),
-                    une ombre portée sous le corps, et un reflet clair sur
-                    l'épaule gauche. Les yeux gagnent leur point de lumière — ce
-                    petit blanc est ce qui fait qu'un œil est vivant. */}
-                <defs>
-                  {/* LA LUMIERE VIENT D'EN HAUT A GAUCHE, ET TOUT EN DECOULE :
-                      le degre du corps, le liseré clair sur cette epaule-la, et
-                      l'ombre qui se creuse a l'oppose. Un seul soleil : c'est ce
-                      qui separe un dessin d'un collage. */}
-                  <linearGradient id="apFg" x1=".2" y1="0" x2=".82" y2="1">
-                    <stop offset="0" stopColor="#ffffff" />
-                    <stop offset=".5" stopColor="#F3FAF6" />
-                    <stop offset="1" stopColor="#BFDFD0" />
-                  </linearGradient>
-                  <radialGradient id="apFl" cx=".32" cy=".24" r=".44">
-                    <stop offset="0" stopColor="#ffffff" stopOpacity=".95" />
-                    <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
-                  </radialGradient>
-                  {/* LE LISERE. Un trait clair qui ne fait que le quart haut
-                      gauche, et s'efface : c'est ce que fait la lumiere sur un
-                      volume, et c'est ce qui manquait le plus. */}
-                  <linearGradient id="apFr" x1=".05" y1="0" x2=".7" y2=".55">
-                    <stop offset="0" stopColor="#ffffff" stopOpacity=".95" />
-                    <stop offset=".55" stopColor="#ffffff" stopOpacity="0" />
-                  </linearGradient>
-                  {/* L'OMBRE INTERNE, en bas a droite : sans elle le corps est
-                      un aplat, avec elle il est rond. */}
-                  <radialGradient id="apFo" cx=".74" cy=".82" r=".55">
-                    <stop offset="0" stopColor="#5E9E85" stopOpacity=".34" />
-                    <stop offset="1" stopColor="#5E9E85" stopOpacity="0" />
-                  </radialGradient>
-                  {/* ⚡ LE CORPS DORE, POUR LE BOND QUI ANNONCE UN FLASH. Il est
-                      declare ici et jamais utilise par defaut : c'est la feuille
-                      de style qui bascule le remplissage sous `.ap-suiv.or`.
-                      Un second fantome aurait double le trace pour changer
-                      trois couleurs. */}
-                  <linearGradient id="apFgOr" x1=".2" y1="0" x2=".82" y2="1">
-                    <stop offset="0" stopColor="#FFF6D8" />
-                    <stop offset=".5" stopColor="#FFD75E" />
-                    <stop offset="1" stopColor="#E09A17" />
-                  </linearGradient>
-                  {/* L'OEIL EST UNE BILLE, pas un point : un degre du haut vers
-                      le bas suffit a le bomber. */}
-                  <radialGradient id="apFy" cx=".38" cy=".3" r=".8">
-                    <stop offset="0" stopColor="#2A5C4A" />
-                    <stop offset="1" stopColor="#07211A" />
-                  </radialGradient>
-                </defs>
-                <ellipse className="ap-f-ombre" cx="20" cy="41.6" rx="11" ry="2.4" />
-                {/* ─── LES BRAS ───
-                    Ils sont dessines AVANT le corps, donc derriere lui : ils
-                    sortent de dessous, comme les bras d'une peluche, et on ne
-                    voit jamais ou ils s'attachent. Deux moignons suffisent — ce
-                    qui fait le personnage, c'est qu'ils BOUGENT : ils balancent
-                    au repos et se lancent en l'air quand on l'appuie. */}
-                <ellipse className="ap-f-bras g" cx="3.4" cy="27.2" rx="4" ry="2.7" />
-                <ellipse className="ap-f-bras d" cx="36.6" cy="27.2" rx="4" ry="2.7" />
-                <path
-                  className="ap-f-corps"
-                  d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"
-                />
-                <path
-                  className="ap-f-creux"
-                  d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"
-                />
-                <path
-                  className="ap-f-lueur"
-                  d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"
-                />
-                <path
-                  className="ap-f-fil"
-                  d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"
-                />
-                <ellipse className="ap-f-joue g" cx="10.4" cy="24.6" rx="2.8" ry="1.8" />
-                <ellipse className="ap-f-joue d" cx="29.6" cy="24.6" rx="2.8" ry="1.8" />
-                <ellipse className="ap-f-oeil g" cx="14.2" cy="19" rx="2.6" ry="3.4" />
-                <ellipse className="ap-f-oeil d" cx="25.8" cy="19" rx="2.6" ry="3.4" />
-                <circle className="ap-f-eclat g" cx="15.1" cy="17.7" r=".95" />
-                <circle className="ap-f-eclat d" cx="26.7" cy="17.7" r=".95" />
-                <circle className="ap-f-eclat2 g" cx="13.3" cy="20.5" r=".45" />
-                <circle className="ap-f-eclat2 d" cx="24.9" cy="20.5" r=".45" />
-                <path className="ap-f-bouche" d="M16.4 26.2c1.5 2 5.7 2 7.2 0" />
-                {/* ─── LES ETINCELLES ───
-                    Invisibles au repos, elles jaillissent au moment du saut.
-                    C'est le detail qui fait rire : le personnage ne se contente
-                    pas de bouger, il PRODUIT quelque chose. Chacune est dans un
-                    groupe qui porte sa position, pour que l'animation CSS ne
-                    marche pas sur la meme propriete que le placement. */}
-                <g transform="translate(34.5 9.5)">
-                  <path className="ap-f-etoile a" d="M0-3.4.9-.9 3.4 0 .9.9 0 3.4-.9.9-3.4 0-.9-.9Z" />
-                </g>
-                <g transform="translate(6 8)">
-                  <path className="ap-f-etoile b" d="M0-2.6.7-.7 2.6 0 .7.7 0 2.6-.7.7-2.6 0-.7-.7Z" />
-                </g>
-                <g transform="translate(31 34)">
-                  <path className="ap-f-etoile c" d="M0-2.2.6-.6 2.2 0 .6.6 0 2.2-.6.6-2.2 0-.6-.6Z" />
-                </g>
-                {/* ⚡ ═══ LES COEURS DU BOND DORE ═══
-                    « Qu'il lance des coeurs avant de revenir a sa position
-                    initiale. » Ils n'existent que pendant ce bond-la : cinq
-                    coeurs qui montent en s'ecartant, decales de quelques
-                    centiemes pour qu'ils ne partent pas comme un seul objet.
-                    C'EST LA RECOMPENSE DU PRODUIT, et elle est rare par
-                    construction — un Flash, trois fois par semaine. Une fete
-                    qui arrive a chaque appui n'est plus une fete. */}
-                <g transform="translate(20 22)">
-                  <path className="ap-f-coeur a" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
-                  <path className="ap-f-coeur b" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
-                  <path className="ap-f-coeur c" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
-                  <path className="ap-f-coeur d" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
-                  <path className="ap-f-coeur e" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
-                  <path className="ap-f-coeur f" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
-                  <path className="ap-f-coeur g" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
-                  <path className="ap-f-coeur h" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
-                  <path className="ap-f-coeur i" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
-                </g>
-              </svg>
+              <Fantome />
             </button>
             <button
               type="button"
@@ -11572,12 +11736,26 @@ export function ApercuHabitant() {
         .ap-sal-m b{display:flex;align-items:center;gap:6px;}
         .ap-sal-m b .ap-av{width:20px;height:20px;font-size:10px;}
         .ap-sal-m.ami{align-self:flex-start;background:rgba(255,255,255,.07);}
-        .ap-sal-m.moi{align-self:flex-end;background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
+        /* ═══ MA BULLE PREND L'AMBRE DE L'ANNONCE ═══
+           « Harmonise aussi les couleurs avec l'annonce pour etre raccord —
+           peut-etre le jaune orange des chiffres du prix, une couleur flashy
+           qui donne du peps. »
+           IL A RAISON SUR LE FOND : le salon parle d'une annonce, et il n'en
+           reprenait aucune couleur. Le vert etait celui du produit — le bouton,
+           la bulle du fantome, l'onglet en cours — donc ma bulle avait la
+           couleur de l'APPLICATION, pas celle de ce dont on parle.
+           ET L'AMBRE EST DEJA CELLE DE CE QUI COMPTE : le prix, le Flash, le
+           compte a rebours. Ma parole rejoint cette famille ; celle des autres
+           reste neutre, sinon la conversation devient un mur de couleur ou plus
+           rien ne ressort. */
+        .ap-sal-m.moi{align-self:flex-end;
+          background:linear-gradient(140deg,#FFD75E,#F0B429);}
         .ap-sal-m b{font-size:11.5px;font-weight:850;color:#8FE9C4;}
+        .ap-sal-m.moi b{color:#5C4405;}
         .ap-sal-m span{font-size:14.5px;line-height:1.4;color:#EAF2EC;}
-        .ap-sal-m.moi span{color:#04150E;font-weight:600;}
+        .ap-sal-m.moi span{color:#2A1B00;font-weight:650;}
         .ap-sal-m i{font-style:normal;font-size:10px;color:#6C8078;align-self:flex-end;}
-        .ap-sal-m.moi i{color:rgba(4,21,14,.55);}
+        .ap-sal-m.moi i{color:rgba(42,27,0,.55);}
         .ap-sal-m img{display:block;width:100%;max-width:210px;border-radius:11px;
           margin-top:3px;}
         .ap-sal-m.ecrit{padding:6px 10px;}
@@ -11732,16 +11910,31 @@ export function ApercuHabitant() {
            trois-la sont parties au bord du champ d'ecriture, depliees d'un
            « plus ». Ce qui reste tient sur une ligne, et « Reserver » est la
            seule chose verte de tout le bas : c'est elle qui conclut. */
-        .ap-page-actions{flex:none;display:flex;gap:9px;padding:11px 0 3px;}
-        .ap-act{position:relative;flex:1;display:flex;align-items:center;
-          justify-content:center;gap:7px;font:inherit;font-size:13.5px;
-          font-weight:800;cursor:pointer;color:#C7D3CC;
-          background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
-          border-radius:13px;padding:11px 8px;}
-        .ap-act i{font-style:normal;font-size:15px;line-height:1;}
-        .ap-act:active{transform:scale(.98);}
-        .ap-act.fort{color:#04150E;border-color:transparent;font-weight:850;
-          background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
+        /* ═══ LES DEUX GESTES DU SALON SE FONT DISCRETS ═══
+           « Revoir les boutons Reserver et Inviter pour qu'ils soient un peu
+           plus discrets et pas aussi imposants. »
+           IL A RAISON, ET C'EST UNE QUESTION DE MOMENT. Dans le salon, la chose
+           principale est la CONVERSATION : deux boutons pleine largeur poses
+           dessus disent « decide maintenant » a des gens qui sont justement en
+           train de se decider. Ils reculent d'un cran — plus petits, en
+           contour, sans aplat — et le vert plein ne revient que sur celui qui
+           conclut, quand il y a quelqu'un pour conclure. */
+        .ap-page-actions{flex:none;display:flex;gap:8px;padding:8px 0 2px;
+          justify-content:flex-end;}
+        .ap-act{position:relative;display:inline-flex;align-items:center;
+          justify-content:center;gap:6px;font:inherit;font-size:12.5px;
+          font-weight:800;cursor:pointer;color:#B9C9C0;
+          background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.13);
+          border-radius:999px;padding:8px 14px;
+          transition:transform .12s ease,background .14s ease;}
+        .ap-act i{font-style:normal;font-size:14px;line-height:1;}
+        .ap-act:active{transform:scale(.97);background:rgba(255,255,255,.1);}
+        /* CELUI QUI CONCLUT GARDE UNE COULEUR, mais en contour ambre plutot
+           qu'en aplat vert : c'est l'ambre de l'annonce — le prix, le Flash,
+           tout ce qui engage — et il ne pese plus autant qu'un titre. */
+        .ap-act.fort{color:#FFC400;font-weight:850;
+          border-color:rgba(255,196,0,.45);background:rgba(255,196,0,.1);}
+        .ap-act.fort:active{background:rgba(255,196,0,.18);}
         /* Le nombre de convives sur le bouton : la difference entre « il reste
            de la place ? » et « une table pour quatre ? ». */
         .ap-act b{position:absolute;top:-6px;right:-4px;min-width:18px;
@@ -12771,27 +12964,115 @@ export function ApercuHabitant() {
         .ap-vousprop{flex:none;margin:-4px 0 8px;padding-left:2px;
           font-size:10px;font-weight:850;letter-spacing:.18em;
           text-transform:uppercase;color:#7F988B;}
-        .ap-sal-neuf{flex:none;text-align:center;padding:22px 16px 18px;
-          background:rgba(61,226,166,.07);border:1px solid rgba(61,226,166,.22);
-          border-radius:18px;margin-bottom:12px;}
-        .ap-sal-neuf>span{font-size:30px;line-height:1;}
-        .ap-sal-neuf b{display:block;font-size:15.5px;font-weight:850;color:#fff;
-          letter-spacing:-.02em;margin:9px 0 6px;}
-        .ap-sal-neuf i{display:block;font-style:normal;font-size:12.5px;
-          line-height:1.45;color:#8C9C94;max-width:34ch;margin:0 auto;}
-        .ap-sal-neuf button{width:100%;margin-top:14px;font:inherit;font-size:14.5px;
-          font-weight:850;cursor:pointer;color:#04150E;border:0;border-radius:13px;
-          padding:12px;background:linear-gradient(140deg,#3DE2A6,#0BA97B);}
-        /* LA PHRASE QUI DIT POURQUOI. Sous le bouton, en menthe : ce n'est pas
-           une note de bas de page, c'est la raison de passer par la plutot que
-           par un message. Elle remplace le paragraphe qui expliquait comment
-           marche un salon — une notice, la ou on attendait la suite. */
-        .ap-sal-neuf u{display:block;text-decoration:none;margin:10px auto 0;
-          max-width:32ch;font-size:12px;line-height:1.4;font-weight:700;
-          color:#7EE6C0;}
-        .ap-sal-neuf s{display:block;text-decoration:none;font-size:11px;
-          line-height:1.4;color:#7F988B;margin-top:12px;padding-top:11px;
-          border-top:1px solid rgba(255,255,255,.09);}
+        /* ═══ LA PAGE D'INVITATION ═══
+           « J'aimerais que le design de ce chat soit aussi fun que sur
+           l'annonce principale. » Elle etait correcte et muette : un cadre
+           menthe, un emoji, un titre, un paragraphe. Rien n'y disait qu'on
+           venait de faire quelque chose d'un peu excitant.
+           LES COULEURS SONT CELLES DE L'ANNONCE, et c'est la demande : l'ambre
+           du prix pour ce qui accroche, le vert du produit pour ce qui s'appuie,
+           le meme noir profond dessous. Un salon qui ne ressemble pas a
+           l'annonce dont il parle se lit comme une autre application. */
+        .ap-invite{flex:none;display:flex;flex-direction:column;
+          align-items:stretch;text-align:center;padding:4px 2px 2px;}
+        .ap-invite-h{display:flex;align-items:center;gap:14px;text-align:left;}
+        .ap-invite-f{flex:none;display:flex;align-items:center;
+          justify-content:center;width:80px;height:80px;}
+        .ap-invite-d{width:64px;height:70px;overflow:visible;
+          transform-origin:50% 62%;
+          filter:drop-shadow(0 10px 22px rgba(0,0,0,.55));
+          animation:apFlotte 4.6s ease-in-out infinite;}
+        /* LE TITRE S'ADRESSE A QUELQU'UN, et sa seconde ligne porte la couleur :
+           c'est elle qui dit A QUI, donc c'est elle qu'on lit en premier. */
+        .ap-invite-t{margin:0;font-size:20px;font-weight:850;line-height:1.15;
+          letter-spacing:-.02em;color:#fff;text-wrap:balance;}
+        .ap-invite-t b{display:block;font-weight:850;color:#8CF0CC;}
+        .ap-invite-s{margin:10px 0 0;font-size:12.5px;line-height:1.45;
+          color:#9FB2A8;text-align:left;}
+        /* ─── L'OFFRE RAPPELEE ───
+           C'est la piece qui manquait : on invite ses amis A QUELQUE CHOSE, et
+           cette chose doit etre sous les yeux au moment ou l'on tape le bouton.
+           Sans elle on envoie un lien vide de sens. */
+        .ap-invite-o{display:flex;align-items:center;gap:12px;margin-top:13px;
+          padding:11px;border-radius:16px;text-align:left;
+          background:rgba(255,255,255,.05);
+          border:1px solid rgba(255,255,255,.12);}
+        .ap-invite-ph{flex:none;width:58px;height:58px;border-radius:12px;
+          background-size:cover;background-position:center 50%;}
+        .ap-invite-q{flex:1;min-width:0;}
+        .ap-invite-q b{display:block;font-size:13px;font-weight:850;
+          text-transform:uppercase;letter-spacing:.02em;color:#fff;
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        /* LE PRIX EN AMBRE, COMME SUR L'ANNONCE. Un prix qui change de couleur
+           entre l'annonce et le salon fait croire a deux offres. */
+        .ap-invite-q em{display:flex;align-items:baseline;gap:8px;margin-top:3px;
+          font-style:normal;}
+        .ap-invite-q em u{text-decoration:none;
+          font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
+          font-size:23px;line-height:1;color:#FFC400;
+          font-variant-numeric:tabular-nums;}
+        .ap-invite-q em s{font-size:13px;color:#FF6B6B;
+          text-decoration-color:#FF6B6B;text-decoration-thickness:2px;}
+        .ap-invite-q i{display:block;margin-top:4px;font-style:normal;
+          font-size:11.5px;color:#8C9C94;
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        /* LE COMPTE A REBOURS, EN PLUS PETIT MAIS DU MEME DESSIN QUE SUR LA
+           CARTE : meme piste, meme arc, memes couleurs. Deux chronos differents
+           pour la meme offre feraient douter des deux. */
+        .ap-invite-c{position:relative;flex:none;width:62px;height:62px;
+          display:flex;flex-direction:column;align-items:center;
+          justify-content:center;border-radius:50%;
+          background:radial-gradient(circle at 50% 38%,
+            rgba(30,16,13,.93) 0%, rgba(7,10,8,.95) 72%);}
+        .ap-invite-c svg{position:absolute;inset:0;width:100%;height:100%;
+          transform:rotate(-90deg);overflow:visible;}
+        .ap-invite-c em{font-style:normal;font-size:7px;font-weight:900;
+          letter-spacing:.1em;text-transform:uppercase;color:#FFD2C4;}
+        .ap-invite-c b{font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
+          font-size:22px;font-weight:400;line-height:1;color:#fff;
+          font-variant-numeric:tabular-nums;}
+        .ap-invite-c u{text-decoration:none;font-size:7.5px;font-weight:900;
+          letter-spacing:.12em;text-transform:uppercase;
+          color:rgba(255,255,255,.8);}
+        /* LE GESTE PRINCIPAL GARDE LE VERT DU PRODUIT — celui de la bulle du
+           fantome et de « Proposer a mes amis ». Trois verts differents pour le
+           meme geste, c'est trois produits. */
+        .ap-invite-b{display:flex;align-items:center;justify-content:center;
+          gap:10px;width:100%;margin-top:16px;font:inherit;font-size:15px;
+          font-weight:850;cursor:pointer;color:#04241A;border:0;
+          border-radius:16px;padding:14px;
+          background:linear-gradient(150deg,#8CF0CC,#2FD39A);
+          box-shadow:0 14px 30px -14px rgba(47,211,154,.6);
+          transition:transform .12s ease;}
+        .ap-invite-b svg{width:21px;height:21px;flex:none;fill:none;
+          stroke:currentColor;stroke-width:1.7;
+          stroke-linecap:round;stroke-linejoin:round;}
+        .ap-invite-b s{text-decoration:none;font-size:17px;line-height:1;}
+        .ap-invite-b:active{transform:scale(.98);}
+        /* LA SECONDE PORTE EST EN CONTOUR : elle sert a ceux qui n'invitent pas
+           par WhatsApp, et elle ne doit pas disputer la premiere. */
+        .ap-invite-l{display:flex;align-items:center;justify-content:center;
+          gap:9px;width:100%;margin-top:10px;font:inherit;font-size:13.5px;
+          font-weight:800;cursor:pointer;color:#CFE3D8;
+          background:none;border:1px solid rgba(140,240,204,.4);
+          border-radius:16px;padding:12px;transition:background .14s ease;}
+        .ap-invite-l svg{width:18px;height:18px;flex:none;fill:none;
+          stroke:#8CF0CC;stroke-width:1.8;
+          stroke-linecap:round;stroke-linejoin:round;}
+        .ap-invite-l:active{background:rgba(140,240,204,.12);}
+        .ap-invite-i{display:flex;align-items:flex-start;gap:7px;
+          margin:14px 0 0;font-size:11.5px;line-height:1.45;color:#7F988B;
+          text-align:left;}
+        .ap-invite-i i{font-style:normal;flex:none;color:#5E7268;}
+        .ap-invite-v{margin:10px 0 0;font-size:11px;line-height:1.4;
+          color:#7F988B;text-align:left;}
+        /* LA DERNIERE LIGNE EST UNE INVITATION, PAS UNE NOTE. En ambre, au
+           milieu : c'est la phrase qu'on relit en attendant les reponses. */
+        .ap-invite-p{display:flex;align-items:center;justify-content:center;
+          gap:8px;margin:13px 0 2px;padding-top:12px;
+          border-top:1px solid rgba(255,255,255,.09);
+          font-size:13px;font-weight:850;color:#FFC400;}
+        .ap-invite-p i{font-style:normal;font-size:15px;}
 
         /* LE HERO SANS PHOTO. Un fond franc plutot qu'un bloc a moitie vide :
            on doit voir que c'est voulu, pas que ca n'a pas charge. */
@@ -12955,13 +13236,24 @@ export function ApercuHabitant() {
            sans elle, la barre gestuelle d'Android mange le bouton d'envoi. */
         .ap-page-champ{flex:none;display:flex;gap:8px;align-items:center;
           padding-bottom:calc(12px + env(safe-area-inset-bottom));}
+        /* ═══ LE CHAMP PASSE AU-DESSUS DU FANTOME ═══
+           « Il faudrait que le chat soit un peu plus haut pour ne pas toucher
+           le fantome quand la conversation a demarre. »
+           LA BULLE DEBORDE DE TRENTE POINTS AU-DESSUS DE LA BARRE — c'est ce
+           qui la fait exister comme objet, et on ne va pas le lui reprendre.
+           C'est donc au champ de laisser la place : il est plus bas que tout le
+           reste de la feuille, et rien d'autre ne passe la. */
+        .ap-page.feuille .ap-page-champ{
+          padding-bottom:calc(46px + env(safe-area-inset-bottom));}
         .ap-page-champ input{flex:1;min-width:0;font:inherit;font-size:15px;color:#EAF2EC;
           background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);
           border-radius:999px;padding:12px 16px;}
         .ap-page-champ input::placeholder{color:#6C8078;}
+        /* LE BOUTON D'ENVOI SUIT MA BULLE : c'est le meme geste, il serait
+           etrange qu'il change de couleur entre l'appui et le resultat. */
         .ap-page-champ button{flex:none;width:44px;height:44px;border-radius:50%;
-          font:inherit;font-size:19px;font-weight:850;cursor:pointer;color:#04150E;
-          background:#3DE2A6;border:0;}
+          font:inherit;font-size:19px;font-weight:850;cursor:pointer;color:#2A1B00;
+          background:#F0B429;border:0;}
         .ap-page-champ button:disabled{opacity:.35;cursor:default;}
 
         /* MON ESPACE. */
