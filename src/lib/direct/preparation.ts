@@ -107,9 +107,15 @@ function icone(branche: CleMetier, metier: string): string {
   if (/fromag/.test(m)) return "🧀";
   if (/caviste|vin/.test(m)) return "🍷";
   if (/primeur|fruit|légume|legume/.test(m)) return "🥕";
-  return { restaurant: "🍽️", mode: "👗", bar: "🍸", coiffeur: "💇", fleuriste: "💐", ongles: "💅" }[
-    branche
-  ];
+  // Les artisans créateurs, chacun sous son signe : la branche seule dirait
+  // « bougie » à un hypnothérapeute.
+  if (/bougie|cirier|cirière/.test(m)) return "🕯️";
+  if (/bijou|bracelet|collier|joaill/.test(m)) return "📿";
+  if (/hypno|sophro/.test(m)) return "🕰️";
+  return {
+    restaurant: "🍽️", mode: "👗", bar: "🍸", coiffeur: "💇",
+    fleuriste: "💐", ongles: "💅", artisan: "🕯️",
+  }[branche];
 }
 
 /**

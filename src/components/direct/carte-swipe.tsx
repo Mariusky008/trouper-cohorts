@@ -1419,19 +1419,78 @@ export function StylesDirect() {
            interieur ne bouge rien. Un pictogramme au trait au milieu, pas un
            emoji : l'emoji change de dessin selon le telephone et cassait
            l'harmonie du cercle. */
+        /* LE FOND DU DISQUE : deux verts qui s'eteignent vers le bas, plus la
+           teinte du haut qui recoit la lumiere. Un aplat sombre uniforme
+           faisait un trou dans la photo ; un degrade fait un objet POSE
+           dessus. */
         .cd-anneau.porte{cursor:pointer;
-          background:radial-gradient(circle at 50% 38%,
-            rgba(10,30,23,.93) 0%, rgba(6,12,9,.95) 72%);
-          box-shadow:inset 0 0 0 4px rgba(112,235,187,.62),
-            0 12px 34px rgba(0,0,0,.55),
-            0 0 26px -6px rgba(61,226,166,.45);
+          background:radial-gradient(circle at 50% 26%,
+            rgba(22,54,42,.94) 0%, rgba(9,24,18,.95) 58%, rgba(4,10,8,.96) 100%);
+          box-shadow:0 14px 38px rgba(0,0,0,.58),
+            0 0 30px -8px rgba(61,226,166,.5);
           transition:transform .18s cubic-bezier(.34,1.4,.64,1);}
-        .cd-anneau.porte .cd-an-t{color:#B4F2D9;}
-        .cd-anneau.porte>svg{width:30px;height:30px;margin:2px 0 1px;
-          stroke:#EAF2EC;stroke-width:1.7;fill:none;
-          stroke-linecap:round;stroke-linejoin:round;}
-        .cd-anneau.porte em{font-style:normal;font-size:10px;font-weight:900;
-          letter-spacing:.12em;text-transform:uppercase;color:#B4F2D9;}
+        /* LES TROIS COUCHES DU CADRAN — voir le commentaire du trace.
+           L'ORDRE EST CELUI DU DESSIN : le halo derriere, le reflet sur le
+           fond, l'anneau par-dessus tout. Inverse, l'anneau passerait sous le
+           voile blanc et perdrait sa saturation. */
+        .cd-po-c{position:absolute;inset:0;width:100%;height:100%;
+          overflow:visible;pointer-events:none;}
+        .cd-po-h{fill:none;stroke:rgba(61,226,166,.2);stroke-width:1.5;}
+        .cd-po-l{fill:url(#cdPorteL);}
+        /* QUATRE POINTS ET DEMI, PAS CINQ ET DEUX. Premiere mesure a l'ecran :
+           a 5,2 sur un rayon de 43, l'anneau MANGEAIT le mot du metier —
+           « L'ARDOISE » depassait des deux cotes. Le trait s'affine et le
+           cercle s'elargit : l'aire libre a l'interieur gagne cinq points de
+           chaque cote, ce qui est exactement ce qui manquait. */
+        .cd-po-a{fill:none;stroke:url(#cdPorteG);stroke-width:4.5;
+          filter:drop-shadow(0 0 6px rgba(61,226,166,.42));}
+        /* ET LE MOT SE RANGE DANS CE QU'IL RESTE. Il est place au-dessus du
+           centre, donc la corde disponible y est plus courte qu'au diametre :
+           une largeur maximale explicite vaut mieux qu'un mot qui deborde des
+           qu'un metier porte un nom un peu long. */
+        /* IL PASSE EN BLOC, ET C'EST CE QUI LE FAIT REVENIR A LA LIGNE.
+           Mesure a l'ecran avec « LES BOUGIES » : en flex, le mot restait sur
+           une seule ligne et debordait de l'anneau des deux cotes, malgre la
+           largeur maximale — un texte nu dans un conteneur flex forme un item
+           anonyme qui ne se plie pas comme on l'attend. En bloc il se coupe
+           proprement sur deux lignes, ce dont un metier au nom long a besoin. */
+        /* IL PASSE EN BLOC, ET SA LARGEUR EST CELLE DE LA CORDE, PAS DU DISQUE.
+           MESURE, ET C'EST LA QUE J'AVAIS FAUX : le mot n'est pas pose au
+           diametre, il est vingt-huit points AU-DESSUS du centre. A cette
+           hauteur, la corde libre a l'interieur de l'anneau ne fait plus
+           quatre-vingt-dix points mais soixante-dix — « LES BOUGIES » a neuf
+           points en faisait soixante-douze, et venait donc mordre le trait des
+           deux cotes. Un demi-point de moins sur la fonte, et la marge revient.
+           LE RETOUR A LA LIGNE RESTE, EN FILET DE SECURITE : le champ du metier
+           est libre, et le jour ou quelqu'un ecrit « Les compositions », mieux
+           vaut deux lignes qu'un mot coupe par un cercle. */
+        .cd-anneau.porte .cd-an-t{display:block;color:#D8FFEE;font-size:8.5px;
+          max-width:70px;letter-spacing:.04em;line-height:1.15;
+          text-align:center;text-wrap:balance;
+          text-shadow:0 1px 8px rgba(0,0,0,.7);}
+        /* LE PICTOGRAMME SEUL, ET PAS LE CADRAN. Le selecteur portait sur tous
+           les enfants svg ; depuis que le cadran en est un, il faut l'excepter
+           — sans quoi l'anneau se retrouvait a trente points au milieu du
+           disque. */
+        .cd-anneau.porte>svg:not(.cd-po-c){width:32px;height:32px;
+          margin:3px 0 2px;position:relative;z-index:1;
+          stroke:#F2FBF6;stroke-width:1.7;fill:none;
+          stroke-linecap:round;stroke-linejoin:round;
+          filter:drop-shadow(0 1px 6px rgba(0,0,0,.55));}
+        /* « VOIR » PORTE SON CHEVRON. Deux mots au meme rang — le metier en
+           haut, l'action en bas — ne disaient pas lequel des deux est le
+           geste ; le chevron le dit sans ajouter de ligne. */
+        .cd-anneau.porte em{position:relative;z-index:1;
+          display:inline-flex;align-items:center;gap:3px;
+          font-style:normal;font-size:10px;font-weight:900;
+          letter-spacing:.12em;text-transform:uppercase;color:#8CF0CC;
+          text-shadow:0 1px 8px rgba(0,0,0,.7);}
+        /* LE CHEVRON EST ECRIT EN CLAIR, PAS EN ECHAPPEMENT. Un « \u00e9chappement
+           unicode » dans un litteral de gabarit est lu par JavaScript avant
+           d'atteindre la feuille de style : il casse la compilation, et le
+           verificateur l'a pris au vol. */
+        .cd-anneau.porte em::after{content:"›";font-size:13px;
+          font-weight:700;line-height:1;letter-spacing:0;opacity:.9;}
         .cd-anneau.porte:active{transform:scale(.95);}
         @media (prefers-reduced-motion:reduce){.cd-tombe{animation:none;}}
 

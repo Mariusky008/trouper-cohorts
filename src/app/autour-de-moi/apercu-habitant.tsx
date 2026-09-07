@@ -763,7 +763,7 @@ function Fantome({ classe = "ap-fantome", clin = false }: { classe?: string; cli
          cadre est la seule correction qui ne touche ni au trace ni a l'echelle
          du fantome ordinaire — les coordonnees sont les memes, c'est la fenetre
          qui s'ouvre. */
-      viewBox={clin ? "-3 1 46 44" : "0 0 40 44"}
+      viewBox={clin ? "-4.5 1 49 44" : "0 0 40 44"}
       aria-hidden="true"
       focusable="false"
     >
@@ -1008,14 +1008,25 @@ function Fantome({ classe = "ap-fantome", clin = false }: { classe?: string; cli
                      signe, et l'ecran dit justement « envoyez ». Ils sortent du
                      cadre a gauche, ce que permet overflow visible. */
                   <g className="ap-f-vites">
-                    <path d="M-1.5 12.5 3.5 9.7" />
-                    <path d="M-2.4 19.4 3.1 18.2" />
-                    <path d="M-.6 26.2 4.2 26.6" />
-                    {/* ET DEUX A DROITE, PLUS COURTS. Sur sa maquette ils
-                        encadrent le personnage des deux cotes ; n'en mettre que
-                        d'un seul le fait pencher, comme s'il partait de biais. */}
-                    <path d="M36.8 9.4 40.4 7.2" />
-                    <path d="M39.4 14.6 42.6 13.6" />
+                    {/* ILS RAYONNENT DEPUIS LA TETE, ET C'EST UNE CORRECTION.
+                        « Les traits sur les cotes sont mal positionnes. » Ils
+                        l'etaient : celui du bas partait a l'horizontale a
+                        hauteur du BRAS, les trois de gauche descendaient du
+                        crane jusqu'au moignon, et les deux de droite se
+                        serraient tout en haut. Resultat, ils ne partaient pas
+                        du meme point — donc ils ne disaient plus « il arrive »,
+                        ils faisaient trois traits et deux traits.
+                        MAINTENANT ILS SONT TROIS PAIRES DE MEME HAUTEUR, ecartes
+                        du meme angle de part et d'autre du visage : c'est ce
+                        qui les fait lire comme un rayonnement, et c'est ce que
+                        montre sa maquette. Le troisieme de droite est absent
+                        exprès — sa maquette n'en met que deux de ce cote, et
+                        cette legere asymetrie evite le motif de tampon. */}
+                    <path d="M5.2 8.2 .6 4.8" />
+                    <path d="M2.6 14.6-2.6 13.2" />
+                    <path d="M3.4 21-1.4 23.2" />
+                    <path d="M34.8 8.2 39.4 4.8" />
+                    <path d="M37.4 14.6 42.6 13.2" />
                   </g>
                 )}
                 {/* ─── LES ETINCELLES ───
@@ -1120,6 +1131,49 @@ function PictoMetier({ icone }: { icone: CleIcone }) {
         <path d="M3 9.5h18" />
         <path d="M4.8 9.5V20h14.4V9.5" />
         <path d="M8.6 20v-5.4h6.8V20" />
+      </>
+    ),
+    // L'ARTISAN SANS METIER ECRIT tombe sur la bougie : c'est le repli de la
+    // branche, et il vaut mieux qu'un pictogramme neutre qui ne dit rien.
+    artisan: (
+      <>
+        <path d="M7.5 10.5h9v10a1.5 1.5 0 0 1-1.5 1.5H9a1.5 1.5 0 0 1-1.5-1.5z" />
+        <path d="M12 10.5V8.4" />
+        <path d="M12 2.6c2.1 2 3 3.3 3 4.3a3 3 0 0 1-6 0c0-1 .9-2.3 3-4.3z" />
+      </>
+    ),
+    // ─── LES TROIS ARTISANS ───
+    // MEME GRILLE DE 24, MEME EPAISSEUR QUE LES SIX AUTRES : c'est ce qui fait
+    // une famille d'icones, et c'est la seule chose qui compte ici. Un dessin
+    // plus detaille que ses voisins saute aux yeux comme une faute.
+    // La bougie : le pot, la meche, la flamme. La flamme est une goutte
+    // pointue vers le haut — ronde, elle devient une ampoule.
+    bougie: (
+      <>
+        <path d="M7.5 10.5h9v10a1.5 1.5 0 0 1-1.5 1.5H9a1.5 1.5 0 0 1-1.5-1.5z" />
+        <path d="M12 10.5V8.4" />
+        <path d="M12 2.6c2.1 2 3 3.3 3 4.3a3 3 0 0 1-6 0c0-1 .9-2.3 3-4.3z" />
+      </>
+    ),
+    // Le bijou : un fil qui fait le tour, et la pierre au milieu. Un collier
+    // se reconnait a sa RETOMBEE, pas a son cercle : c'est le V du bas qui le
+    // distingue d'un anneau.
+    bijou: (
+      <>
+        <path d="M5 4.2c0 6.6 3.1 10.6 7 12.6 3.9-2 7-6 7-12.6" />
+        <path d="M12 16.8v1.4" />
+        <path d="m12 18.2 2.4 2.1-2.4 1.9-2.4-1.9z" />
+      </>
+    ),
+    // La seance : un fauteuil vu de trois quarts, et rien d'autre. Un cerveau
+    // ou une spirale auraient dit « hypnose de spectacle » — exactement ce que
+    // ce metier passe son temps a corriger.
+    seance: (
+      <>
+        <path d="M6.6 12.4V6.8a2.4 2.4 0 0 1 2.4-2.4h6a2.4 2.4 0 0 1 2.4 2.4v5.6" />
+        <path d="M4.6 12.4h14.8v4.2a1.6 1.6 0 0 1-1.6 1.6H6.2a1.6 1.6 0 0 1-1.6-1.6z" />
+        <path d="M7.4 18.2v2.4" />
+        <path d="M16.6 18.2v2.4" />
       </>
     ),
     // Le pain : une miche et ses deux entailles.
@@ -3302,10 +3356,38 @@ export function ApercuHabitant() {
   function lancerLeCoeur() {
     // ON MESURE AVANT DE MONTRER : le cœur doit connaître sa cible dès la
     // première image, sinon il part au centre puis se corrige, ce qui se voit.
+    //
+    // ═══ ON MESURE UN DÉPLACEMENT, PLUS UNE POSITION ═══
+    //
+    // « Le cœur part sur la droite au lieu de partir vers le haut, au niveau
+    // du cœur en haut à droite. »
+    //
+    // CE QU'IL VOYAIT EST UNE MOITIÉ D'ANIMATION. L'ancienne version animait
+    // `left` et `top` d'un pourcentage (50 %, 55 %) vers une longueur en
+    // pixels. Interpoler un POURCENTAGE vers une LONGUEUR oblige le navigateur
+    // à passer par un calc() interne, et WebKit le rate quand la valeur
+    // d'arrivée vient d'une variable CSS : il garde alors la propriété qu'il
+    // sait faire et laisse tomber l'autre. Le cœur partait donc vers la droite
+    // sans jamais monter. Sur Chromium, la même feuille marche — c'est
+    // exactement pourquoi je ne l'avais pas vu : ma mesure disait « trajectoire
+    // correcte » sur le seul moteur qui n'a pas le défaut.
+    //
+    // LA CORRECTION SUPPRIME LE PROBLÈME AU LIEU DE LE CONTOURNER : on
+    // n'anime plus que `transform`, avec deux déplacements en pixels. Aucune
+    // unité mélangée, rien à convertir, et c'est en prime la seule propriété
+    // que le compositeur sait animer sans repeindre.
+    const boite = document.querySelector(".ap-app")?.getBoundingClientRect();
     const cible = document.querySelector(".ap-poche")?.getBoundingClientRect();
-    setCoeurOu(
-      cible ? { x: Math.round(cible.left + cible.width / 2), y: Math.round(cible.top + cible.height / 2) } : null,
-    );
+    if (boite && cible) {
+      // Le point de départ est écrit dans la feuille (50 % / 55 %) : on le
+      // recalcule ici pour que le déplacement soit exact, plutôt que de
+      // supposer que les deux resteront d'accord.
+      const dx = cible.left + cible.width / 2 - (boite.left + boite.width * 0.5);
+      const dy = cible.top + cible.height / 2 - (boite.top + boite.height * 0.55);
+      setCoeurOu({ x: Math.round(dx), y: Math.round(dy) });
+    } else {
+      setCoeurOu(null);
+    }
     setCoeurVole(true);
     minuteries.current.push(window.setTimeout(() => setCoeurVole(false), COEUR_MS));
   }
@@ -5697,6 +5779,55 @@ export function ApercuHabitant() {
                                   Le pictogramme suit le même chemin — un mot
                                   juste sous des couverts n'aurait fait que
                                   déplacer le contresens. */}
+                              {/* ═══ LE DISQUE EST DESSINE, PLUS BORDE ═══
+
+                                  « Améliore le design du rond sur l'annonce :
+                                  plus de dégradé et de nuance, un rond plus
+                                  soigné et plus sympa, parce que c'est très
+                                  moyen ce rond avec le menu à l'intérieur. »
+
+                                  IL AVAIT RAISON, ET LA COMPARAISON LE DIT
+                                  MIEUX QUE MOI : sur la MEME carte, le chrono
+                                  du Flash est un cadran — un arc en dégradé de
+                                  feu, une lueur, un tracé qui tourne. Celui-ci
+                                  était une BORDURE : quatre points de vert
+                                  uniforme posés par une ombre interne, sans
+                                  aucune variation d'un bout à l'autre du
+                                  cercle. Deux objets ronds de même taille sur
+                                  la même photo, dont l'un est dessiné et
+                                  l'autre encadré — l'écart se voit tout de
+                                  suite, même sans savoir le nommer.
+
+                                  TROIS COUCHES REMPLACENT LA BORDURE. Un halo
+                                  extérieur très fin qui décolle le disque de la
+                                  photo ; un reflet en haut, comme sur du verre,
+                                  qui lui donne son épaisseur ; et l'anneau
+                                  lui-même en dégradé — menthe clair là où la
+                                  lumière tombe, émeraude au milieu, vert
+                                  profond en bas. C'est la même grammaire que
+                                  l'arc du Flash, dans la couleur de ce qu'on
+                                  peut faire. */}
+                              <svg className="cd-po-c" viewBox="0 0 100 100" aria-hidden="true">
+                                <defs>
+                                  {/* LA LUMIERE VIENT DU MEME COIN QUE PARTOUT
+                                      AILLEURS — haut gauche. Un dégradé qui
+                                      contredit l'éclairage du reste de la carte
+                                      se remarque sans qu'on sache pourquoi. */}
+                                  <linearGradient id="cdPorteG" x1=".12" y1="0" x2=".88" y2="1">
+                                    <stop offset="0" stopColor="#DFFFF2" />
+                                    <stop offset=".34" stopColor="#5CF0BC" />
+                                    <stop offset=".68" stopColor="#17B98A" />
+                                    <stop offset="1" stopColor="#0A6A50" />
+                                  </linearGradient>
+                                  <linearGradient id="cdPorteL" x1=".5" y1="0" x2=".5" y2=".66">
+                                    <stop offset="0" stopColor="#ffffff" stopOpacity=".22" />
+                                    <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+                                  </linearGradient>
+                                </defs>
+                                <circle className="cd-po-h" cx="50" cy="50" r="48.2" />
+                                <circle className="cd-po-l" cx="50" cy="50" r="45.4" />
+                                <circle className="cd-po-a" cx="50" cy="50" r="45.4" />
+                              </svg>
                               <span className="cd-an-t">{motDuRond}</span>
                               <PictoMetier icone={rondDuMetier?.icone ?? "restaurant"} />
                               <em>Voir</em>
@@ -7092,11 +7223,17 @@ export function ApercuHabitant() {
               aria-hidden="true"
               style={
                 coeurOu
-                  ? ({ "--ap-cx": `${coeurOu.x}px`, "--ap-cy": `${coeurOu.y}px` } as React.CSSProperties)
+                  ? ({ "--ap-dx": `${coeurOu.x}px`, "--ap-dy": `${coeurOu.y}px` } as React.CSSProperties)
                   : undefined
               }
             >
-              ♥
+              {/* DEUX ÉLÉMENTS, ET C'EST CE QUI REND LE VOL SÛR. L'extérieur
+                  porte le centrage (translate -50 %) et ne bouge jamais ;
+                  l'intérieur ne porte QUE le déplacement, en pixels. Aucune
+                  keyframe ne mélange donc jamais un pourcentage et une
+                  longueur — la faute exacte que WebKit ne sait pas
+                  interpoler. */}
+              <i aria-hidden="true">♥</i>
             </span>
           )}
           {/* ═══ LE GESTE PRINCIPAL S'APPREND EN TROIS CARTES ═══
@@ -12920,6 +13057,23 @@ export function ApercuHabitant() {
            le probleme etait le trace. « .gros » n'est pose que par cette
            variante, il n'a donc pas besoin d'un parent pour etre precis. */
         .gros{filter:none;}
+        /* ═══ IL FLOTTE, MAIS IL NE TOURNE PLUS ═══
+           « Le fantome est encore un peu flou. »
+           C'ETAIT LA DERNIERE SOURCE, ET LA MOINS VISIBLE : le balancement
+           contient un rotate de un degre et demi. Une rotation promeut
+           l'element en calque composite, et un calque tourne est RASTERISE UNE
+           FOIS puis reechantillonne a chaque image — c'est du filtrage
+           bilineaire applique en continu a un dessin vectoriel, ce qui produit
+           exactement le flou doux qu'il decrit, et qu'aucune ombre portee
+           n'expliquait plus.
+           A QUARANTE POINTS DANS LA BARRE, LE BALANCEMENT VAUT LE FLOU : il
+           donne sa vie au personnage et personne ne compte les pixels d'une
+           icone. A cent, sur un dessin qu'on regarde, c'est l'inverse. La
+           grande version monte et redescend d'un nombre ENTIER de points —
+           aucune rotation, aucune fraction, donc aucun reechantillonnage. */
+        .gros{animation-name:apFlotteNet;}
+        @keyframes apFlotteNet{0%,100%{transform:translateY(0);}
+          50%{transform:translateY(-3px);}}
         .gros .ap-f-corps{fill:url(#apFgLux);filter:none;}
         .gros .ap-f-creux,
         .gros .ap-f-lueur{display:none;}
@@ -14337,24 +14491,43 @@ export function ApercuHabitant() {
            SA CIBLE EST MESUREE, PAS ECRITE — voir coeurOu dans le composant.
            Le repli sert au cas ou la poche ne serait pas a l'ecran : il vise
            la ou elle est, et non plus le bord droit, qui est la cloche. */
-        .ap-coeur{position:absolute;left:50%;top:55%;z-index:9;font-size:44px;color:#3DE2A6;
-          pointer-events:none;filter:drop-shadow(0 6px 18px rgba(18,185,129,.7));
-          animation:apCoeur ${COEUR_MS}ms cubic-bezier(.36,0,.28,1) forwards;}
+        /* ═══ LE COEUR MONTE VERS LES FAVORIS ═══
+           L'EXTERIEUR NE PORTE QUE LE CENTRAGE, ET IL NE BOUGE JAMAIS. Tout le
+           vol est dans l'element interieur, en pixels : voir la fonction qui
+           lance le coeur pour pourquoi aucune keyframe ne doit melanger un
+           pourcentage et une longueur. */
+        .ap-coeur{position:absolute;left:50%;top:55%;z-index:9;
+          transform:translate(-50%,-50%);pointer-events:none;
+          display:block;line-height:1;}
+        .ap-coeur i{display:block;font-style:normal;font-size:44px;color:#3DE2A6;
+          filter:drop-shadow(0 6px 18px rgba(18,185,129,.7));
+          animation:apCoeur ${COEUR_MS}ms cubic-bezier(.32,0,.3,1) forwards;}
         /* IL S'ARRETE AVANT DE PARTIR, ET C'EST LA CORRECTION.
            « L'animation est trop rapide pour voir le coeur monter. » Il
            n'apparaissait que 200 ms au centre avant de filer : le temps de le
            trouver des yeux, il etait deja en haut. Il tient maintenant sa
-           place un tiers du temps — on le voit NAITRE, puis on le suit. Le
-           trajet lui-meme est plus long, et il s'attarde en arrivant au lieu
-           de disparaitre en route. */
+           place un tiers du temps — on le voit NAITRE, puis on le suit.
+           ═══ ET IL MONTE D'ABORD, IL NE FILE PAS EN DIAGONALE ═══
+           « Qu'il parte vers le HAUT, au niveau du coeur en haut a droite. »
+           Une droite du centre vers le coin se lit comme un depart de cote,
+           meme quand elle est a quinze degres de la verticale — parce qu'on
+           voit le mouvement, pas l'angle. Le palier a 62 % consomme les trois
+           quarts de la montee pour moins d'un tiers du deplacement lateral :
+           le coeur MONTE, puis il rejoint. Deux gestes lisibles au lieu d'un
+           seul ambigu, et c'est ce qu'on lit comme « il va dans les
+           favoris ». */
         @keyframes apCoeur{
-          0%{left:50%;top:55%;transform:translate(-50%,-50%) scale(.4);opacity:0;}
-          12%{left:50%;top:55%;transform:translate(-50%,-50%) scale(1.3);opacity:1;}
-          22%{left:50%;top:55%;transform:translate(-50%,-50%) scale(1.05);opacity:1;}
-          34%{left:50%;top:55%;transform:translate(-50%,-50%) scale(1.12);opacity:1;}
+          0%{transform:translate(0,0) scale(.4);opacity:0;}
+          12%{transform:translate(0,0) scale(1.3);opacity:1;}
+          22%{transform:translate(0,0) scale(1.05);opacity:1;}
+          34%{transform:translate(0,0) scale(1.12);opacity:1;}
+          55%{transform:translate(calc(var(--ap-dx, 117px) * .04),
+              calc(var(--ap-dy, -437px) * .46)) scale(.95);opacity:1;}
+          74%{transform:translate(calc(var(--ap-dx, 117px) * .2),
+              calc(var(--ap-dy, -437px) * .82)) scale(.72);opacity:1;}
           88%{opacity:1;}
-          100%{left:var(--ap-cx, calc(100% - 78px));top:var(--ap-cy, 27px);
-            transform:translate(-50%,-50%) scale(.34);opacity:.15;}
+          100%{transform:translate(var(--ap-dx, 117px), var(--ap-dy, -437px))
+              scale(.34);opacity:.15;}
         }
 
         .ap-vide{flex:1;display:flex;flex-direction:column;align-items:center;

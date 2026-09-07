@@ -49,6 +49,20 @@ export const METIERS = [
   { cle: "coiffeur", label: "Coiffeurs", emoji: "💇" },
   { cle: "fleuriste", label: "Fleuristes", emoji: "💐" },
   { cle: "ongles", label: "Ongleries", emoji: "💅" },
+  /* ═══ LES ARTISANS ═══
+
+     « Rajouter un métier sur l'app : Artisan, et donc rajouter trois annonces
+     d'artisans créateurs (bougie par exemple, et fabricant de bracelets :
+     collier, hypnothérapeute…). »
+
+     CE QU'ILS APPORTENT QUE LES SIX AUTRES N'AVAIENT PAS. Les six métiers en
+     place ont tous une chose en commun : ils vendent ce qu'ils ont EN STOCK ce
+     jour-là. L'artisan créateur, lui, vend surtout DU TEMPS et des pièces
+     uniques — une série de douze bougies, un bracelet qu'on fait devant vous,
+     une séance d'une heure. C'est le premier métier de la liste dont l'annonce
+     naturelle n'est pas « il m'en reste » mais « je fabrique maintenant, venez
+     voir », et c'est précisément ce que la journée horodatée sait raconter. */
+  { cle: "artisan", label: "Artisans", emoji: "🕯️" },
 ] as const;
 
 export type CleMetier = (typeof METIERS)[number]["cle"];
@@ -85,7 +99,7 @@ export type CleMetier = (typeof METIERS)[number]["cle"];
  * couteau. Un mot juste sous le mauvais dessin ne corrige rien — on voit le
  * dessin avant de lire. Une seule table, une seule décision.
  */
-export type CleIcone = CleMetier | "etal" | "pain";
+export type CleIcone = CleMetier | "etal" | "pain" | "bougie" | "bijou" | "seance";
 export type MotDuMetier = { carte: string; journee: string; icone: CleIcone };
 
 /**
@@ -131,6 +145,17 @@ export const MOT_DU_LIBELLE: Array<[string, MotDuMetier]> = [
   ["prêt-à-porter", { carte: "Les pièces", journee: "Sa journée", icone: "mode" }],
   ["pret-a-porter", { carte: "Les pièces", journee: "Sa journée", icone: "mode" }],
   ["boutique", { carte: "Les pièces", journee: "Sa journée", icone: "mode" }],
+  // Les artisans créateurs, chacun sous SON mot. « L'atelier » ne convient
+  // qu'en repli : une cirière montre ses parfums, un bijoutier ses pièces, et
+  // un hypnothérapeute ne montre rien du tout — il propose des séances.
+  ["cirier", { carte: "Les bougies", journee: "Sa journée", icone: "bougie" }],
+  ["cirière", { carte: "Les bougies", journee: "Sa journée", icone: "bougie" }],
+  ["bougie", { carte: "Les bougies", journee: "Sa journée", icone: "bougie" }],
+  ["bijou", { carte: "Les pièces", journee: "Sa journée", icone: "bijou" }],
+  ["joaill", { carte: "Les pièces", journee: "Sa journée", icone: "bijou" }],
+  ["créatrice de bracelets", { carte: "Les pièces", journee: "Sa journée", icone: "bijou" }],
+  ["hypno", { carte: "Les séances", journee: "Sa journée", icone: "seance" }],
+  ["sophro", { carte: "Les séances", journee: "Sa journée", icone: "seance" }],
   ["bar", { carte: "L'ardoise", journee: "Sa journée", icone: "bar" }],
   ["brasserie", { carte: "L'ardoise", journee: "Sa journée", icone: "bar" }],
   ["restaurant", { carte: "La carte", journee: "Sa journée", icone: "restaurant" }],
@@ -160,6 +185,11 @@ export const MOT_DU_METIER: Record<CleMetier, MotDuMetier> = {
   // « Les poses » plutôt que « les tarifs » : chez une prothésiste, ce qu'on
   // vient regarder ce sont les modèles, le prix ne vient qu'après.
   ongles: { carte: "Les poses", journee: "Sa journée", icone: "ongles" },
+  // « L'ATELIER » PLUTOT QUE « LES PIECES », et c'est le repli le plus large
+  // possible pour cette branche : un artisan créateur montre d'abord OU il
+  // travaille — c'est ce qui distingue sa pièce d'un objet de boutique. Chaque
+  // métier écrit remplace ce mot par le sien, voir MOT_DU_LIBELLE.
+  artisan: { carte: "L'atelier", journee: "Sa journée", icone: "bougie" },
 };
 
 /**
@@ -225,6 +255,16 @@ export const ENVIES: Record<CleMetier, Envie[]> = {
     { cle: "maintenant", label: "Tout de suite", emoji: "⚡" },
     { cle: "pose", label: "Pose complète", emoji: "💅" },
     { cle: "moins35", label: "Moins de 35 €", emoji: "💶" },
+  ],
+  // LES ENVIES DE L'ARTISAN NE SONT PAS DES RAYONS. « Fait devant vous » et
+  // « pièce unique » sont les deux raisons pour lesquelles on traverse la
+  // ville pour un objet qu'on trouverait moins cher ailleurs ; « à offrir »
+  // est la troisième, et c'est celle qui fait acheter.
+  artisan: [
+    { cle: "maintenant", label: "Tout de suite", emoji: "⚡" },
+    { cle: "devantvous", label: "Fait devant vous", emoji: "🖐️" },
+    { cle: "unique", label: "Pièce unique", emoji: "✨" },
+    { cle: "offrir", label: "À offrir", emoji: "🎁" },
   ],
 };
 
@@ -2804,6 +2844,169 @@ const CARTES: CarteAutour[] = [
         avis: [
           { note: 5, texte: "Elle a tenu trois semaines sans un éclat.", qui: "Sarah", quand: "le mois dernier",
             photo: "/direct/avis-ongles.jpg" },
+        ],
+      },
+    ],
+  },
+
+  // ── ARTISANS ─────────────────────────────────────────────────────────────
+  //
+  // TROIS ANNONCES, ET AUCUNE NE RESSEMBLE AUX AUTRES — c'est ce qui les rend
+  // utiles a montrer. La ciriere vend une SERIE qui sort du moule a une heure
+  // precise ; la creatrice de bracelets vend un GESTE qu'on regarde faire ; et
+  // l'hypnotherapeute vend un CRENEAU qui, sinon, est perdu. Les six metiers
+  // deja en place disaient tous « il m'en reste » ; ces trois-la disent « ca se
+  // passe maintenant », ce que seule la journee horodatee sait raconter.
+  //
+  // ═══ LES PHOTOS N'EXISTENT PAS ENCORE, ET LE CHAMP EST DONC ABSENT ═══
+  //
+  // PREMIERE VERSION : le chemin etait ecrit, en pariant que le composant
+  // tomberait proprement sur son repli. Le verificateur a dit non — « aucune
+  // erreur : 404 ». Un fichier annonce qui n'existe pas n'est pas un repli,
+  // c'est une requete morte a chaque affichage de la carte, et elle salit la
+  // console de tout le monde.
+  //
+  // SANS LE CHAMP, LE REPLI EST PROPRE : degrade et emoji, ce qui dit
+  // clairement « image a venir » sans rien demander au reseau. Illustrer une
+  // bougie avec une assiette de lasagnes aurait ete pire — un repli franc vaut
+  // mieux qu'une image qui ment.
+  //
+  // CE QU'IL FAUT DEPOSER POUR LES ALLUMER, une ligne par carte :
+  //   · /direct/atelier-bougies.jpg  — des bougies fraichement demoulees, ou
+  //     la cire qui coule. Sans visage, sans enseigne : voir LISEZ-MOI.md.
+  //   · /direct/atelier-bijoux.jpg   — l'etabli, un bracelet en cours, les
+  //     pinces et le fil. Les mains sont admises, pas les visages.
+  //   · /direct/cabinet-hypnose.jpg  — un fauteuil, une lumiere douce, une
+  //     piece vide. Personne dedans : un cabinet occupe ne se photographie pas.
+  {
+    id: "cirier",
+    catalogue: [
+      { id: "ci-1", rayon: "Bougies", nom: "Bougie 180 g, cire de colza", detail: "Environ 35 h de combustion.", prix: "22 €" },
+      { id: "ci-2", rayon: "Bougies", nom: "Petit modèle 90 g", detail: "Le format à offrir.", prix: "14 €" },
+      { id: "ci-3", rayon: "Parfums", nom: "Pin des Landes", detail: "Résine et aiguille fraîche." },
+      { id: "ci-4", rayon: "Parfums", nom: "Figue de l'Adour", detail: "Vert, un peu lacté." },
+      { id: "ci-5", rayon: "Recharges", nom: "Recharge, contenant rapporté", detail: "Ramenez le pot vide.", prix: "16 €" },
+    ],
+    branche: "artisan",
+    nom: "Une cirière",
+    google: { note: "4,9", avis: 38 },
+    metier: "Cirière",
+    ville: VILLE,
+    itineraire: YALLER,
+    metres: 480,
+    distance: "480 m",
+    fiche: {
+      ou: "Atelier-boutique, rue derrière les halles",
+      horaires: "Aujourd'hui, 10 h – 18 h 30",
+      mot: "Je coule le matin, je démoule l'après-midi. Ce qui sort du moule part souvent le jour même.",
+    },
+    moments: [
+      {
+        // LE DEMOULAGE A UNE HEURE, ET C'EST TOUTE L'ANNONCE. Une bougie qui
+        // vient d'etre demoulee n'est pas meilleure qu'une autre — mais elle
+        // n'existe QUE maintenant, en douze exemplaires, et c'est ca qui fait
+        // traverser la rue.
+        de: 15, a: 18.5, quand: "à 15 h", icone: "🕯️", publie: 14.5,
+        titre: "Douze bougies sortent du moule",
+        lignes: ["Cire de colza, mèche coton", "Parfum du jour : figue de l'Adour"],
+        prix: "22 €", places: 12, action: "Réserver",
+        envies: ["maintenant", "devantvous", "offrir"],
+        avis: [
+          { note: 5, texte: "Elle brûle droit jusqu'au bord, ce que les miennes ne font jamais.", qui: "Nadia", quand: "le mois dernier" },
+        ],
+      },
+      {
+        de: 10, a: 18.5, quand: "toute la journée", icone: "♻️",
+        titre: "Recharge, si vous rapportez le pot",
+        lignes: ["Le contenant est repris et relavé", "Six euros de moins qu'une neuve"],
+        prix: "16 €", places: 6, action: "Réserver", envies: ["unique"],
+      },
+    ],
+  },
+  {
+    id: "bijoux-atelier",
+    catalogue: [
+      { id: "bj-1", rayon: "Bracelets", nom: "Bracelet cordon, fermoir argent", detail: "Ajusté au poignet, sur place.", prix: "28 €" },
+      { id: "bj-2", rayon: "Bracelets", nom: "Jonc martelé, laiton doré", prix: "34 €" },
+      { id: "bj-3", rayon: "Colliers", nom: "Collier maille fine, 45 cm", prix: "46 €" },
+      { id: "bj-4", rayon: "Colliers", nom: "Pendentif pierre brute", detail: "Chaque pierre est différente.", prix: "52 €" },
+      { id: "bj-5", rayon: "Réparation", nom: "Remise en état d'un fermoir", detail: "Rendu sous 48 h.", prix: "12 €" },
+    ],
+    branche: "artisan",
+    nom: "Une créatrice de bijoux",
+    google: { note: "4,8", avis: 64 },
+    metier: "Créatrice de bracelets et colliers",
+    ville: VILLE,
+    itineraire: YALLER,
+    metres: 260,
+    distance: "260 m",
+    fiche: {
+      ou: "Petite boutique, rue piétonne",
+      horaires: "Aujourd'hui, 10 h 30 – 19 h",
+      mot: "L'établi est dans la boutique. On peut regarder, et repartir avec ce qu'on a vu se faire.",
+    },
+    moments: [
+      {
+        // « FAIT DEVANT VOUS » EST LE PRODUIT, PAS UN ARGUMENT. C'est la seule
+        // chose qu'aucune boutique en ligne ne peut copier, et c'est aussi la
+        // seule qui justifie de venir A CETTE HEURE-LA plutot qu'a une autre.
+        de: 14, a: 18, quand: "de 14 h à 18 h", icone: "🖐️", publie: 13.5,
+        titre: "Bracelet monté devant vous",
+        lignes: ["Cordon et fermoir au choix", "Ajusté au poignet, vingt minutes"],
+        prix: "28 €", places: 4, action: "Réserver",
+        envies: ["maintenant", "devantvous", "offrir"],
+        avis: [
+          { note: 5, texte: "On choisit le fil, elle le monte pendant qu'on discute. Ma fille n'a pas bougé de la boutique.", qui: "Chloé", quand: "samedi dernier" },
+        ],
+      },
+      {
+        de: 10.5, a: 19, quand: "toute la journée", icone: "✨",
+        titre: "Trois pendentifs, trois pierres",
+        lignes: ["Aucune n'est identique", "Montées ce matin"],
+        prix: "52 €", places: 3, action: "Réserver", envies: ["unique", "offrir"],
+      },
+    ],
+  },
+  {
+    id: "hypno",
+    catalogue: [
+      { id: "hy-1", rayon: "Séances", nom: "Première séance", detail: "Entretien puis pratique, 1 h 15.", prix: "70 €" },
+      { id: "hy-2", rayon: "Séances", nom: "Séance de suivi", detail: "Une heure.", prix: "60 €" },
+      { id: "hy-3", rayon: "Accompagnements", nom: "Arrêt du tabac", detail: "Deux séances, la seconde incluse.", prix: "160 €" },
+      { id: "hy-4", rayon: "Accompagnements", nom: "Sommeil", detail: "Trois à quatre séances en général." },
+    ],
+    branche: "artisan",
+    nom: "Un hypnothérapeute",
+    google: { note: "4,9", avis: 96 },
+    metier: "Hypnothérapeute",
+    ville: VILLE,
+    itineraire: YALLER,
+    metres: 610,
+    distance: "610 m",
+    fiche: {
+      ou: "Cabinet au calme, premier étage",
+      horaires: "Aujourd'hui, 9 h – 19 h",
+      mot: "Un créneau qui se libère est un créneau perdu. Je les annonce ici plutôt que de les laisser vides.",
+    },
+    moments: [
+      {
+        // LE DESISTEMENT, ET C'EST LE MEME MECANISME QUE CHEZ LE COIFFEUR. Un
+        // metier sur rendez-vous perd de l'argent a chaque trou, et personne ne
+        // sait que le trou existe : c'est exactement ce que cette application
+        // sait dire, et c'est la raison la plus honnete de l'installer.
+        de: 16, a: 17.5, quand: "à 16 h 30", icone: "🕰️", publie: 15,
+        titre: "Un créneau se libère",
+        lignes: ["Séance d'une heure", "Désistement de ce matin"],
+        prix: "60 €", places: 1, action: "Réserver",
+        envies: ["maintenant"],
+      },
+      {
+        de: 9, a: 19, quand: "sur rendez-vous", icone: "🌙",
+        titre: "Sommeil : les trois prochains créneaux",
+        lignes: ["Première séance, 1 h 15", "Entretien avant toute pratique"],
+        prix: "70 €", places: 3, action: "Réserver", envies: ["unique"],
+        avis: [
+          { note: 5, texte: "Rien de spectaculaire, et c'est précisément ce qui m'a mis en confiance.", qui: "Marc", quand: "il y a trois semaines" },
         ],
       },
     ],
