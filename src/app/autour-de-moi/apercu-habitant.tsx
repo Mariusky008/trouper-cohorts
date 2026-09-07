@@ -4065,6 +4065,26 @@ export function ApercuHabitant() {
      quelque chose a dire il arbitre, sinon il se tait et reste eteint. Un
      bouton dont la fonction depend de l'etat d'un groupe est un bouton dont on
      ne peut rien prevoir. */
+  /* ═══ ET IL PREND LA COULEUR DE LA SECTION OU L'ON EST ═══
+
+     « Le fantôme, quand c'est sur une annonce "Ce qui se passe en ville" ou
+     "Ils recrutent", doit avoir la couleur de la section : par exemple
+     événements c'est du rose, et recrutement une sorte de bleu. »
+
+     CES DEUX COULEURS EXISTENT DEJA, ET C'EST TOUT L'INTERET. Le sélecteur de
+     catégorie les porte depuis le début — rose pour la ville, bleu pour les
+     embauches — mais elles s'éteignaient à la seconde où l'on refermait la
+     feuille. On choisissait une section dans une couleur, et on se retrouvait
+     dans un paquet vert, sans rien pour dire dans quoi on était. Le fantôme est
+     le seul objet visible en permanence : c'est donc lui qui doit la porter.
+
+     LES CATEGORIES SANS COULEUR N'EN RECOIVENT PAS. « C'est offert » n'a pas
+     de teinte dans le sélecteur, et lui en inventer une aurait pose un
+     probleme concret : la seule qui aurait convenu — l'ambre du cadeau — est
+     deja celle du Flash sur ce meme bouton. Deux sens pour un aplat, et celui
+     qui compte le plus se serait fait manger. */
+  const tonDeSection =
+    vue === "evenements" ? "evenement" : vue === "recrute" ? "recrute" : "";
   const horsDuPaquet = salonPage || onglet !== "direct";
   const arbitre =
     horsDuPaquet && veilleActive && veilleActive.ton !== "calme" ? veilleActive : undefined;
@@ -9463,10 +9483,10 @@ export function ApercuHabitant() {
             <button
               type="button"
               className={`ap-suiv${clin ? " clin" : ""}${
-                clin === "or" || flashDuSommet ? " or" : ""
-              }${clin === "or" ? " saut-or" : ""}${
-                tonDeLaVeille ? ` veille ${tonDeLaVeille}` : ""
-              }`}
+                tonDeSection ? ` sec ${tonDeSection}` : ""
+              }${clin === "or" || flashDuSommet ? " or" : ""}${
+                clin === "or" ? " saut-or" : ""
+              }${tonDeLaVeille ? ` veille ${tonDeLaVeille}` : ""}`}
               aria-label={
                 arbitre
                   ? `Le fantôme a quelque chose à dire : ${arbitre.phrase}`
@@ -12814,6 +12834,31 @@ export function ApercuHabitant() {
         .ap-onglets .ap-suiv:disabled{opacity:.45;}
         .ap-onglets .ap-suiv:active{transform:scale(.9);}
         .ap-onglets .ap-suiv b{display:none;}
+        /* ═══ LA COULEUR DE LA SECTION OU L'ON EST ═══
+           Les memes teintes que le selecteur de categorie : rose pour ce qui
+           se passe en ville, bleu pour les embauches. Elles disent OU L'ON EST,
+           donc elles ne bougent pas et ne scintillent pas — c'est ce qui les
+           distingue de la veille, qui dit qu'il se PASSE quelque chose.
+           ELLES SONT ECRITES AVANT LA VEILLE ET AVANT L'OR, et l'ordre est la
+           regle : un signal d'evenement passe devant un reperage de lieu, et
+           l'or du Flash passe devant tout — il parle de l'annonce qu'on a sous
+           les yeux. Trois couches, une seule visible a la fois, et jamais de
+           doute sur laquelle. */
+        .ap-onglets .ap-suiv.sec{
+          background:var(--ap-sec-f, linear-gradient(150deg,#8CF0CC,#2FD39A));
+          box-shadow:0 12px 30px var(--ap-sec-h, rgba(47,211,154,.42)),
+            0 0 0 5px var(--ap-barre-fond, #070C0A);}
+        .ap-onglets .ap-suiv.sec .ap-f-corps{fill:var(--ap-sec-p, url(#apFg));}
+        .ap-onglets .ap-suiv.sec .ap-f-bras{fill:var(--ap-sec-b, #CFE9DC);}
+        .ap-onglets .ap-suiv.sec .ap-f-lueur{opacity:.4;}
+        .ap-onglets .ap-suiv.sec.evenement{
+          --ap-sec-f:linear-gradient(150deg,#FFC5E4,#D6379B);
+          --ap-sec-h:rgba(214,55,155,.45);
+          --ap-sec-p:#FFD9EC;--ap-sec-b:#F0AAD0;}
+        .ap-onglets .ap-suiv.sec.recrute{
+          --ap-sec-f:linear-gradient(150deg,#C3D9FF,#3B6FE0);
+          --ap-sec-h:rgba(59,111,224,.45);
+          --ap-sec-p:#DCE8FF;--ap-sec-b:#AEC4F0;}
         /* ═══ LE FANTOME VEILLE, ET C'EST LUI QUI CHANGE DE COULEUR ═══
 
            « J'aimerais que l'anneau ne soit pas le differenciateur de couleur,

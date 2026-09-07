@@ -2871,13 +2871,16 @@ const CARTES: CarteAutour[] = [
   // bougie avec une assiette de lasagnes aurait ete pire — un repli franc vaut
   // mieux qu'une image qui ment.
   //
-  // CE QU'IL FAUT DEPOSER POUR LES ALLUMER, une ligne par carte :
-  //   · /direct/atelier-bougies.jpg  — des bougies fraichement demoulees, ou
-  //     la cire qui coule. Sans visage, sans enseigne : voir LISEZ-MOI.md.
-  //   · /direct/atelier-bijoux.jpg   — l'etabli, un bracelet en cours, les
-  //     pinces et le fil. Les mains sont admises, pas les visages.
-  //   · /direct/cabinet-hypnose.jpg  — un fauteuil, une lumiere douce, une
-  //     piece vide. Personne dedans : un cabinet occupe ne se photographie pas.
+  // DEUX SONT ARRIVEES, LA TROISIEME MANQUE ENCORE :
+  //   · /direct/atelier-bijoux.jpg   ✓ l'etabli, des mains qui montent une
+  //     bague, aucun visage — exactement la regle du LISEZ-MOI.
+  //   · /direct/cabinet-hypnose.jpeg ✓ le fauteuil et la lumiere douce. Elle
+  //     porte un visage de face, ce que la regle d'anonymat ecarte : elle est
+  //     branchee parce qu'elle a ete deposee pour ca, et le point est signale.
+  //   · /direct/atelier-bougies.jpg  — MANQUANTE. Des bougies fraichement
+  //     demoulees, ou la cire qui coule. La cirière reste sur son repli en
+  //     attendant, et le champ reste absent : un chemin ecrit vers un fichier
+  //     qui n'existe pas est une requete 404 a chaque affichage, pas un repli.
   {
     id: "cirier",
     catalogue: [
@@ -2933,6 +2936,11 @@ const CARTES: CarteAutour[] = [
       { id: "bj-5", rayon: "Réparation", nom: "Remise en état d'un fermoir", detail: "Rendu sous 48 h.", prix: "12 €" },
     ],
     branche: "artisan",
+    photo: "/direct/atelier-bijoux.jpg",
+    // LE CADRAGE EST BAS PARCE QUE LE SUJET L'EST. La photo est large, et le
+    // geste — les deux mains qui montent la bague — se trouve dans son tiers
+    // inferieur ; centree, la carte n'aurait montre qu'un plan de travail.
+    cadrage: "62%",
     nom: "Une créatrice de bijoux",
     google: { note: "4,8", avis: 64 },
     metier: "Créatrice de bracelets et colliers",
@@ -2976,6 +2984,7 @@ const CARTES: CarteAutour[] = [
       { id: "hy-4", rayon: "Accompagnements", nom: "Sommeil", detail: "Trois à quatre séances en général." },
     ],
     branche: "artisan",
+    photo: "/direct/cabinet-hypnose.jpeg",
     nom: "Un hypnothérapeute",
     google: { note: "4,9", avis: 96 },
     metier: "Hypnothérapeute",
