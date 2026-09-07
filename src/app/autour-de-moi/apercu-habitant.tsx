@@ -2716,10 +2716,26 @@ export function ApercuHabitant() {
    * proposition, pour rien.
    */
   function rangerCeQuiAttend() {
-    const id = aRanger.current;
-    if (!id) return;
+    // ═══ ON REVIENT SUR L'ANNONCE, ON N'EN CHANGE PAS ═══
+    //
+    // LE DEFAUT, ET C'EST SA CINQUIEME FORME : « quand je clique sur revenir au
+    // direct, l'annonce change, alors que je veux continuer a voir cette
+    // annonce. » Les quatre fois d'avant, l'annonce changeait PENDANT que la
+    // feuille etait la ; c'est repare, elle reste montee derriere. Celle-ci est
+    // differente et je l'avais ecrite moi-meme : en refermant, cette fonction
+    // rangeait la carte dans les passees, donc la suivante prenait sa place.
+    //
+    // C'ETAIT UN CHOIX, ET IL ETAIT MAUVAIS. Il partait de l'idee qu'une
+    // annonce proposee est une annonce traitee : on l'a envoyee, on passe. Mais
+    // proposer n'est pas decider — on propose PUIS on attend une reponse, et
+    // entre les deux on veut relire ce qu'on vient d'envoyer. Le renvoyer a la
+    // carte suivante, c'est lui reprendre l'annonce a la seconde ou elle
+    // devient interessante.
+    //
+    // LE PAQUET N'AVANCE DONC PLUS TOUT SEUL. Il avance quand on le lui
+    // demande — le fantome, le balayage — et jamais parce qu'on a referme
+    // quelque chose.
     aRanger.current = "";
-    setPassees((p) => (p.includes(id) ? p : [...p, id]));
     setDescendu(false);
     defilement.current?.scrollTo({ top: 0 });
   }
@@ -2799,6 +2815,50 @@ export function ApercuHabitant() {
   function versLeBas() {
     const el = defilement.current;
     if (el) el.scrollTo({ top: el.clientHeight - 90, behavior: "smooth" });
+  }
+
+  /**
+   * ═══ CHAQUE PORTE MENE A SA SECTION, ET ON VOIT LE CHEMIN ═══
+   *
+   * « Les boutons "Infos boutique" et "planning" ne mènent pas au bon endroit :
+   * Infos boutique doit amener sur la section "le commerce", et il faut une
+   * animation qui montre que c'est un scroll down, pour éduquer le client et
+   * lui montrer où se trouve l'information. »
+   *
+   * LES DEUX FAISAIENT LA MEME CHOSE, ET AUCUNE NE VISAIT RIEN. Elles
+   * appelaient `versLeBas`, qui descend d'une hauteur d'ecran — un saut a
+   * l'aveugle qui tombait ou il tombait. Deux portes qui annoncent deux pieces
+   * differentes et ouvrent sur la meme sont pires qu'une seule.
+   *
+   * ET LE TRAJET EST L'ENSEIGNEMENT. Un saut instantane apprend qu'il existe un
+   * ailleurs ; un defilement montre QUE C'EST EN DESSOUS, et donc que le doigt
+   * peut y aller seul la prochaine fois. C'est la raison du `smooth` et du
+   * repere qui descend avec : on ne transporte pas le client, on lui montre le
+   * chemin une fois pour qu'il le refasse sans nous.
+   */
+  const blocJournee = useRef<HTMLDivElement>(null);
+  const blocCommerce = useRef<HTMLDivElement>(null);
+  const [geste, setGeste] = useState(false);
+
+  function versLaSection(cible: React.RefObject<HTMLDivElement | null>) {
+    const el = defilement.current;
+    if (!el) return;
+    setGeste(true);
+    minuteries.current.push(window.setTimeout(() => setGeste(false), 1000));
+    const b = cible.current;
+    // SANS REPERE, ON RETOMBE SUR L'ANCIEN COMPORTEMENT plutot que de ne rien
+    // faire : une porte qui n'ouvre pas est pire qu'une porte qui ouvre a peu
+    // pres. Le cas existe — un evenement n'a ni journee ni commerce.
+    if (!b) {
+      el.scrollTo({ top: el.clientHeight - 90, behavior: "smooth" });
+      return;
+    }
+    // ON MESURE LA POSITION PAR RAPPORT AU CONTENEUR QUI DEFILE, pas par
+    // `offsetTop` : les blocs sont imbriques, et `offsetTop` compte depuis le
+    // premier parent positionne, qui n'est pas celui-la.
+    const y =
+      el.scrollTop + b.getBoundingClientRect().top - el.getBoundingClientRect().top - 12;
+    el.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
   }
 
   /**
@@ -4454,7 +4514,20 @@ export function ApercuHabitant() {
                     ne s'était jamais vraiment vu. Il part du bas, monte en
                     diagonale, et se range. C'est la seule chose qui apprenne
                     l'adresse de ses favoris sans l'écrire nulle part. */}
-                {coeurVole && (
+                {/* ─── LE REPERE QUI DESCEND ───
+                « Il faut une animation qui montre que c'est un scroll down,
+                pour éduquer le client et lui montrer où se trouve
+                l'information. » Une flèche qui part du milieu et file vers le
+                bas pendant que l'écran défile : elle ne transporte pas, elle
+                DÉSIGNE le geste. Une seconde, une seule fois par appui, et
+                jamais au repos — un indicateur permanent redevient un décor
+                qu'on cesse de voir. */}
+            {geste && (
+              <span className="ap-geste" aria-hidden="true">
+                <i>↓</i>
+              </span>
+            )}
+            {coeurVole && (
                   <span className="ap-vol" aria-hidden="true">
                     ❤️
                   </span>
@@ -5240,7 +5313,7 @@ export function ApercuHabitant() {
                               <button
                                 type="button"
                                 onPointerDown={(ev) => ev.stopPropagation()}
-                                onClick={versLeBas}
+                                onClick={() => versLaSection(blocCommerce)}
                               >
                                 Infos boutique<i aria-hidden="true">→</i>
                               </button>
@@ -5250,7 +5323,15 @@ export function ApercuHabitant() {
                                 onClick={() => {
                                   if (!dessus) return;
                                   noter("pli-ouvert", 0, "planning");
-                                  setCatalogue({ c: dessus, pourProposer: false, duJour: true });
+                                  // ─── ELLE DESCEND, ELLE N'OUVRE PLUS ───
+                                  // Elle ouvrait la feuille du jour, c'est-a-dire
+                                  // un second ecran pose par-dessus. Il en
+                                  // demandait un DEPLACEMENT : « ca doit amener a
+                                  // la partie du debut de la section la
+                                  // journee. » Ce n'est pas la meme chose —
+                                  // l'une montre, l'autre recouvre — et seule
+                                  // celle qui montre apprend ou c'est range.
+                                  versLaSection(blocJournee);
                                 }}
                               >
                                 {/* « VOIR LE PLANNING », PAS « DU JOUR ». Les
@@ -5395,19 +5476,19 @@ export function ApercuHabitant() {
 
                           ET IL N'APPARAÎT PAS S'IL EST VIDE : on ne montre
                           jamais une porte qui ouvre sur une pièce vide. */}
-                      {!embauches && (dessus.catalogue?.length ?? 0) > 0 && (
-                        <button
-                          type="button"
-                          className="ap-cata-b"
-                          onPointerDown={(ev) => ev.stopPropagation()}
-                          onClick={() => setCatalogue({ c: dessus, pourProposer: false })}
-                        >
-                          <i aria-hidden="true">{motCatalogue(dessus.metier).emoji}</i>
-                          {motCatalogue(dessus.metier).verbe}
-                          <s aria-hidden="true">→</s>
-                        </button>
-                      )}
+                      {/* ─── « VOIR LA CARTE » A DISPARU D'ICI ───
+                          « Quand on scrolle, juste avant "la journée", c'est
+                          redondant puisqu'on l'a déjà dans l'annonce. »
 
+                          IL A RAISON, ET C'EST MOI QUI AI CREE LE DOUBLON. Ce
+                          bouton existait quand la carte du commerce n'avait
+                          aucune autre porte. Depuis, l'anneau pose sur la photo
+                          l'ouvre — « La carte », « L'ardoise », « L'etal »,
+                          selon le metier — et il se voit d'un coup d'oeil sans
+                          rien defiler. Deux portes vers la meme piece, dont une
+                          qu'il faut chercher : c'est la seconde qui doit
+                          partir, et elle enleve avec elle le grand vide noir
+                          qui la separait des deux liens du dessus. */}
                       {/* EN MODE EMBAUCHE, LE PLI PORTE LE POSTE. On ne descend
                           pas pour lire le menu de midi quand on regarde un
                           travail : les horaires, la paye, le mot du patron, et
@@ -5487,7 +5568,7 @@ export function ApercuHabitant() {
                       )}
 
                       {!embauches && (
-                      <div className="ap-bloc">
+                      <div className="ap-bloc" ref={blocJournee}>
                         <h3>La journée</h3>
                         <ol className="ap-prog">
                           {dessus.moments.map((m) => {
@@ -5923,7 +6004,7 @@ export function ApercuHabitant() {
                       </div>
                       )}
 
-                      <div className="ap-bloc">
+                      <div className="ap-bloc" ref={blocCommerce}>
                         <h3>Le commerce</h3>
                         {/* ─── QUI EST DERRIÈRE, ET SA SIGNATURE DE MÉTIER ───
                             Écrite une fois pour toutes — « ma pâte lève dix-
@@ -13064,6 +13145,24 @@ export function ApercuHabitant() {
            un bouton visible n'apprend rien et prend deux cents points sur la
            photo. Leurs styles partent avec elles : une regle qui ne s'applique
            a rien finit par etre recopiee ailleurs par erreur. */
+        /* LE REPERE DU DEFILEMENT : il descend en s'effacant, dans l'axe du
+           mouvement qu'il annonce. Pose au-dessus de la carte mais sous la
+           barre du bas, et il n'intercepte rien — on peut continuer a toucher
+           l'ecran pendant qu'il passe. */
+        .ap-geste{position:absolute;left:50%;top:38%;z-index:8;
+          pointer-events:none;display:flex;align-items:center;
+          justify-content:center;width:46px;height:46px;border-radius:50%;
+          margin:-23px 0 0 -23px;
+          color:#04150E;background:rgba(255,255,255,.92);
+          box-shadow:0 10px 26px rgba(0,0,0,.45);
+          animation:apGeste 1s cubic-bezier(.3,.7,.3,1) forwards;}
+        .ap-geste i{font-style:normal;font-size:24px;line-height:1;font-weight:700;}
+        @keyframes apGeste{
+          0%{opacity:0;transform:translateY(-18px) scale(.7);}
+          18%{opacity:1;transform:translateY(0) scale(1);}
+          70%{opacity:1;transform:translateY(120px) scale(1);}
+          100%{opacity:0;transform:translateY(190px) scale(.8);}}
+        @media (prefers-reduced-motion:reduce){.ap-geste{display:none;}}
         /* LE COEUR QUI MONTE VERS LES FAVORIS.
            SA CIBLE EST MESUREE, PAS ECRITE — voir coeurOu dans le composant.
            Le repli sert au cas ou la poche ne serait pas a l'ecran : il vise
