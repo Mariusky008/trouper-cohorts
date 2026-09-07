@@ -754,7 +754,19 @@ async function demanderAvertissement(): Promise<NotificationPermission> {
  */
 function Fantome({ classe = "ap-fantome", clin = false }: { classe?: string; clin?: boolean }) {
   return (
-    <svg className={classe} viewBox="0 0 40 44" aria-hidden="true" focusable="false">
+    <svg
+      className={`${classe}${clin ? " gros" : ""}`}
+      /* LE CADRE S'ELARGIT POUR LA VARIANTE, IL NE LA ROGNE PAS.
+         Le pouce va jusqu'a 42,6 et les traits de vitesse jusqu'a -2,4 : sur
+         une zone de dessin de 40, la variante deborde de douze pour cent, et
+         `overflow:visible` la laissait passer SOUS le titre a cote. Agrandir le
+         cadre est la seule correction qui ne touche ni au trace ni a l'echelle
+         du fantome ordinaire — les coordonnees sont les memes, c'est la fenetre
+         qui s'ouvre. */
+      viewBox={clin ? "-3 1 46 44" : "0 0 40 44"}
+      aria-hidden="true"
+      focusable="false"
+    >
 
                 {/* ─── IL A DU RELIEF, ET C'ÉTAIT LA DEMANDE ───
                     « Le smiley au milieu du menu n'est pas très bien fait, il
@@ -802,6 +814,60 @@ function Fantome({ classe = "ap-fantome", clin = false }: { classe?: string; cli
                     <stop offset=".5" stopColor="#FFD75E" />
                     <stop offset="1" stopColor="#E09A17" />
                   </linearGradient>
+                  {/* ═══ LES ENCRES DE LA VERSION EN GRAND ═══
+
+                      « Il est un peu flou, et beaucoup moins fun et qualitatif
+                      que ce que je t'avais montre, qui est mieux modelise, avec
+                      des effets et de la profondeur. »
+
+                      LE FLOU N'ETAIT PAS UN DEFAUT DE DESSIN, C'ETAIT UN
+                      EMPILEMENT DE FILTRES. Trois ombres portees se cumulaient
+                      sur le meme trace — une sur le conteneur, une sur le corps,
+                      une sur la main. Chacune force le navigateur a rasteriser
+                      la couche, et trois rasterisations successives sur
+                      soixante-quatre points rendent exactement ce qu'il a vu :
+                      un dessin qui a l'air imprime sur du papier humide. Elles
+                      partent ; l'ombre redevient une ELLIPSE, c'est-a-dire de la
+                      geometrie, qui reste nette a toutes les tailles.
+
+                      ET LA PROFONDEUR SE FAIT AVEC DES COUCHES, PAS AVEC DU
+                      FLOU. Ce que fait un rendu 3D, et ce que sa maquette
+                      montre : une lumiere franche en haut a gauche, un
+                      assombrissement progressif vers le bas, une occlusion
+                      marquee la ou le corps se replie, et un rebond de lumiere
+                      qui remonte du sol sur le bord inferieur. Ce dernier est
+                      celui qu'on oublie toujours, et c'est celui qui fait qu'un
+                      volume POSE au lieu de flotter. */}
+                  <linearGradient id="apFgLux" x1=".18" y1="-.05" x2=".8" y2="1.05">
+                    <stop offset="0" stopColor="#ffffff" />
+                    <stop offset=".36" stopColor="#FAFEFC" />
+                    <stop offset=".72" stopColor="#DDEFE6" />
+                    <stop offset="1" stopColor="#AECFC0" />
+                  </linearGradient>
+                  {/* L'OCCLUSION : franche, basse, decentree a droite — c'est
+                      elle qui creuse le volume. Beaucoup plus dense que celle de
+                      la petite version, qui n'a que quarante points pour tout
+                      dire et se contente d'une suggestion. */}
+                  <radialGradient id="apFaoLux" cx=".68" cy=".9" r=".62">
+                    <stop offset="0" stopColor="#3E7864" stopOpacity=".5" />
+                    <stop offset=".55" stopColor="#3E7864" stopOpacity=".16" />
+                    <stop offset="1" stopColor="#3E7864" stopOpacity="0" />
+                  </radialGradient>
+                  {/* LE REFLET SPECULAIRE : petit, vif, tres haut a gauche. Un
+                      reflet large fait du brouillard ; un reflet serre fait une
+                      surface. */}
+                  <radialGradient id="apFspLux" cx=".3" cy=".18" r=".3">
+                    <stop offset="0" stopColor="#ffffff" stopOpacity="1" />
+                    <stop offset=".55" stopColor="#ffffff" stopOpacity=".45" />
+                    <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+                  </radialGradient>
+                  {/* LE REBOND DU SOL. La lumiere qui remonte sous l'objet :
+                      c'est ce detail-la qui separe un volume pose d'un
+                      autocollant. */}
+                  <linearGradient id="apFrebond" x1=".5" y1="1" x2=".5" y2=".62">
+                    <stop offset="0" stopColor="#E9FFF6" stopOpacity=".85" />
+                    <stop offset="1" stopColor="#E9FFF6" stopOpacity="0" />
+                  </linearGradient>
                   {/* L'OEIL EST UNE BILLE, pas un point : un degre du haut vers
                       le bas suffit a le bomber. */}
                   <radialGradient id="apFy" cx=".38" cy=".3" r=".8">
@@ -836,6 +902,18 @@ function Fantome({ classe = "ap-fantome", clin = false }: { classe?: string; cli
                   className="ap-f-fil"
                   d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"
                 />
+                {clin && (
+                  /* ─── LES QUATRE COUCHES DE LA VERSION EN GRAND ───
+                     Dans l'ordre ou un illustrateur les pose, et cet ordre est
+                     la moitie du resultat : l'occlusion CREUSE, le rebond du sol
+                     RELEVE le bord inferieur, le reflet POSE la surface. Les
+                     inverser donne une bouillie claire. */
+                  <>
+                    <path className="ap-f-ao" d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z" />
+                    <path className="ap-f-rebond" d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z" />
+                    <path className="ap-f-sp" d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z" />
+                  </>
+                )}
                 <ellipse className="ap-f-joue g" cx="10.4" cy="24.6" rx="2.8" ry="1.8" />
                 <ellipse className="ap-f-joue d" cx="29.6" cy="24.6" rx="2.8" ry="1.8" />
                 {clin ? (
@@ -852,9 +930,26 @@ function Fantome({ classe = "ap-fantome", clin = false }: { classe?: string; cli
                     <circle className="ap-f-eclat2 g" cx="13.3" cy="20.5" r=".45" />
                   </>
                 )}
-                <ellipse className="ap-f-oeil d" cx="25.8" cy="19" rx="2.6" ry="3.4" />
-                <circle className="ap-f-eclat d" cx="26.7" cy="17.7" r=".95" />
-                <circle className="ap-f-eclat2 d" cx="24.9" cy="20.5" r=".45" />
+                {clin ? (
+                  /* ─── L'OEIL DE SA MAQUETTE ───
+                     PLUS GROS, ET LE REFLET EN HAUT A GAUCHE. C'est de la que
+                     vient tout le caractere : sur sa maquette l'oeil occupe
+                     presque le quart de la tete et porte une tache blanche
+                     franche, du cote d'ou vient la lumiere. Le mien la portait a
+                     DROITE — c'est-a-dire a l'oppose du soleil du dessin — et un
+                     reflet qui contredit la lumiere fait un oeil mort. */
+                  <>
+                    <ellipse className="ap-f-oeil d" cx="25.9" cy="18.9" rx="3.3" ry="4.1" />
+                    <circle className="ap-f-eclat d" cx="24.7" cy="17.3" r="1.35" />
+                    <circle className="ap-f-eclat2 d" cx="27.3" cy="20.6" r=".62" />
+                  </>
+                ) : (
+                  <>
+                    <ellipse className="ap-f-oeil d" cx="25.8" cy="19" rx="2.6" ry="3.4" />
+                    <circle className="ap-f-eclat d" cx="26.7" cy="17.7" r=".95" />
+                    <circle className="ap-f-eclat2 d" cx="24.9" cy="20.5" r=".45" />
+                  </>
+                )}
                 {clin ? (
                   /* LA BOUCHE OUVERTE, AVEC SA LANGUE. Un sourire au trait
                      suffit quand le fantome est petit ; a cette taille il
@@ -916,6 +1011,11 @@ function Fantome({ classe = "ap-fantome", clin = false }: { classe?: string; cli
                     <path d="M-1.5 12.5 3.5 9.7" />
                     <path d="M-2.4 19.4 3.1 18.2" />
                     <path d="M-.6 26.2 4.2 26.6" />
+                    {/* ET DEUX A DROITE, PLUS COURTS. Sur sa maquette ils
+                        encadrent le personnage des deux cotes ; n'en mettre que
+                        d'un seul le fait pencher, comme s'il partait de biais. */}
+                    <path d="M36.8 9.4 40.4 7.2" />
+                    <path d="M39.4 14.6 42.6 13.6" />
                   </g>
                 )}
                 {/* ─── LES ETINCELLES ───
@@ -8482,8 +8582,20 @@ export function ApercuHabitant() {
                       </p>
                     </div>
                     <p className="ap-invite-s">
-                      Ils verront votre proposition, pourront en discuter et
-                      même en proposer d&apos;autres.
+                      {/* ELLE DIT LES QUATRE CHOSES QU'ILS POURRONT FAIRE, et
+                          la quatrieme est la seule qui compte vraiment : on ne
+                          discute pas pour discuter, on finit par RESERVER. La
+                          phrase precedente s'arretait a « en proposer
+                          d'autres » — elle decrivait une conversation, pas une
+                          sortie.
+                          ACCORDEE AU PLURIEL D'« ILS », ce que la dictee ne
+                          l'etait pas : « Ils verront votre proposition, en
+                          discuter ici » laisse les trois verbes suivants sans
+                          sujet. Un seul « pourront » les rattache tous les
+                          trois, et rien n'est perdu. */}
+                      Ils verront votre proposition, pourront en discuter ici,
+                      proposer autre chose si vous changez d&apos;avis, et
+                      réserver.
                     </p>
 
                     {/* ─── L'OFFRE, RAPPELEE ───
@@ -12788,9 +12900,64 @@ export function ApercuHabitant() {
           stroke-linecap:round;}
         .ap-f-rire{fill:#07211A;}
         .ap-f-langue{fill:#FF7E9B;}
-        .ap-f-pouce path{fill:#DFF3E8;stroke:#5E9E85;stroke-width:1.4;
-          stroke-linejoin:round;stroke-linecap:round;
-          filter:drop-shadow(-1.4px 1px 1.6px rgba(4,40,26,.3));}
+        /* ═══ LA VERSION EN GRAND : DE LA PROFONDEUR, ET PLUS DE FLOU ═══
+           « Il est un peu flou, et beaucoup moins fun et qualitatif que ce que
+           je t'avais montre. »
+           LES OMBRES PORTEES PARTENT. Trois se cumulaient sur le meme trace, et
+           chacune force une rasterisation : a soixante-quatre points, le dessin
+           finissait imprime sur du papier humide. L'ombre au sol redevient une
+           ellipse — de la geometrie, nette a toutes les tailles.
+           CE QUI LES REMPLACE FAIT LE TRAVAIL QU'ELLES NE FAISAIENT PAS : un
+           degrade a quatre paliers, une occlusion franche en bas a droite, le
+           rebond du sol sur le bord inferieur, et un reflet serre en haut a
+           gauche. Quatre couches valent mieux qu'une ombre. */
+        /* LE QUALIFICATEUR EST « .gros » SEUL, ET C'EST UNE CORRECTION APRES
+           MESURE. Je les avais ecrites « .gros » — or le fantome de
+           la page d'invitation porte « .ap-invite-d », pas « .ap-fantome ».
+           AUCUNE de ces regles ne s'appliquait, et le seul effet visible etait
+           celui des couches SVG, qui ne dependent pas de la feuille de style :
+           le dessin gardait son lisere gris et son corps plat, et j'ai cru que
+           le probleme etait le trace. « .gros » n'est pose que par cette
+           variante, il n'a donc pas besoin d'un parent pour etre precis. */
+        .gros{filter:none;}
+        .gros .ap-f-corps{fill:url(#apFgLux);filter:none;}
+        .gros .ap-f-creux,
+        .gros .ap-f-lueur{display:none;}
+        .ap-f-ao{fill:url(#apFaoLux);}
+        .ap-f-rebond{fill:url(#apFrebond);}
+        .ap-f-sp{fill:url(#apFspLux);}
+        /* LE LISERE DISPARAIT, ET C'EST UNE CORRECTION APRES MESURE. Il est
+           dessine avec un degrade blanc qui s'eteint ; sur un corps deja blanc
+           il ne se voyait que la ou il s'eteignait — c'est-a-dire qu'il faisait
+           une ARETE GRISE en haut a gauche, exactement la ou la lumiere doit
+           etre la plus franche. Il servait a poser la lumiere quand le corps
+           n'avait qu'un degrade ; le reflet speculaire le fait mieux, et il ne
+           laisse pas de trace sale. */
+        .gros .ap-f-fil{display:none;}
+        /* LA MAIN PERD SON CONTOUR VERT. Un contour dit « pictogramme » ; sa
+           maquette montre un volume. Elle prend donc le meme degrade que le
+           corps et se detache par sa propre ombre interne, comme le reste. */
+        .gros .ap-f-pouce path{fill:url(#apFgLux);
+          stroke:rgba(62,120,100,.34);stroke-width:.9;}
+        .gros .ap-f-pouce path.pli{fill:none;
+          stroke:rgba(62,120,100,.42);stroke-width:1;}
+        /* L'OMBRE AU SOL S'ELARGIT ET S'ADOUCIT. Plus large que le corps, elle
+           dit que la lumiere est haute ; c'est ce qui pose le personnage. */
+        .gros .ap-f-ombre{fill:rgba(4,40,26,.34);}
+        /* ═══ LES YEUX DE SA MAQUETTE : DES BILLES NOIRES ET BRILLANTES ═══
+           Les miens etaient vert sombre et petits — corrects a quarante points,
+           timides a quatre-vingts. Sur sa maquette ils sont NOIRS, GROS, et le
+           reflet y est franc : c'est de la que vient tout le caractere du
+           personnage. Un oeil terne fait une peluche, un oeil brillant fait
+           quelqu'un. */
+        .gros .ap-f-oeil{fill:#08120F;}
+        .gros .ap-f-eclat{opacity:1;}
+        .gros .ap-f-eclat2{opacity:.72;}
+        .gros .ap-f-joue{opacity:.7;}
+        /* LA MAIN NON PLUS N'A PLUS D'OMBRE PORTEE : c'etait la troisieme du
+           tas. Son contour suffit a la detacher du corps, et il est net. */
+        .ap-f-pouce path{fill:#F2FBF7;stroke:#6BAA91;stroke-width:1.3;
+          stroke-linejoin:round;stroke-linecap:round;}
         .ap-f-pouce path.pli{fill:none;stroke:#9BC6B2;stroke-width:1.2;
           filter:none;}
         /* LE VERT DES TRAITS EST CELUI DE LA MARQUE, et il est le seul element
@@ -13649,10 +13816,13 @@ export function ApercuHabitant() {
           align-items:stretch;text-align:center;padding:4px 2px 2px;}
         .ap-invite-h{display:flex;align-items:center;gap:14px;text-align:left;}
         .ap-invite-f{flex:none;display:flex;align-items:center;
-          justify-content:center;width:80px;height:80px;}
-        .ap-invite-d{width:64px;height:70px;overflow:visible;
+          justify-content:center;width:104px;height:100px;}
+        /* PLUS GRAND, ET SANS OMBRE PORTEE. L'ombre du conteneur etait la
+           premiere des trois qui le rendaient flou ; le corps porte desormais
+           sa propre lumiere, et l'ellipse au sol fait le reste. Douze points de
+           plus parce qu'il y a maintenant quelque chose a regarder dedans. */
+        .ap-invite-d{width:100px;height:96px;overflow:visible;
           transform-origin:50% 62%;
-          filter:drop-shadow(0 10px 22px rgba(0,0,0,.55));
           animation:apFlotte 4.6s ease-in-out infinite;}
         /* LE TITRE S'ADRESSE A QUELQU'UN, et sa seconde ligne porte la couleur :
            c'est elle qui dit A QUI, donc c'est elle qu'on lit en premier. */
