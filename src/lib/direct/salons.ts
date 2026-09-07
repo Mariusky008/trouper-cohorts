@@ -1048,3 +1048,267 @@ export function entrerDansSalon(cle: string, qui: string, vient: boolean) {
     },
   });
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  LE FANTÔME VEILLE SUR LA DISCUSSION
+// ═════════════════════════════════════════════════════════════════════════════
+//
+// « Les gens ne viendront pas sur ce chat comme ils iraient sur WhatsApp, donc
+//  pas certain qu'ils le voient — mais j'aime bien l'idée de changer de couleur
+//  pour une raison spécifique, et qu'en appuyant dessus… »
+//
+// PAS UN CHATBOT, PAS UN MENU, PAS UN ASSISTANT : UN ARBITRE. La différence
+// n'est pas de ton, elle est de forme. Cinq états qui OUVRENT UN MENU obligent
+// à réfléchir à quoi cliquer — c'est un assistant, et un assistant se referme.
+// Cinq états qui déclenchent UNE SEULE ACTION DÉJÀ DÉCIDÉE ne demandent qu'un
+// oui — c'est un arbitre, et un arbitre on l'écoute. D'où la règle qui tient
+// tout ce fichier : `action` est au singulier, et le restera.
+//
+// ET IL NE DEVINE RIEN. Chaque état ci-dessous se déduit de données qui
+// existent déjà — les voix des propositions, ceux qui viennent, ce qu'il reste,
+// les cartes du fil. Aucun compte à rebours inventé, aucune humeur simulée : un
+// arbitre qui se trompe sur l'état du jeu perd son autorité au premier appel.
+//
+// POURQUOI C'EST ICI ET PAS DANS L'ÉCRAN. La barre du bas doit connaître cet
+// état SANS ouvrir le salon — c'est même toute l'idée : le fantôme est le seul
+// objet visible en permanence, donc c'est lui qui ramène. Une fonction pure,
+// dans la couche basse, se lit depuis la barre comme depuis le salon, et se
+// vérifie sans navigateur.
+
+export type TonDuFantome = "calme" | "neuf" | "hesite" | "decide" | "presse";
+
+export type EtatDuFantome = {
+  ton: TonDuFantome;
+  /** Le salon concerné : la barre doit savoir où emmener. */
+  cle: string;
+  /** Ce qu'il dit, en une phrase, comme on le dirait à table. */
+  phrase: string;
+  /**
+   * LE SEUL GESTE PROPOSÉ, et il n'y en aura jamais deux. Absent quand il n'y
+   * a rien à faire — un arbitre qui parle pour ne rien trancher est un bavard.
+   */
+  action?: {
+    libelle: string;
+    faire: "voter" | "reserver" | "ouvrir";
+    /** La proposition à départager, pour « voter ». */
+    propo?: string;
+  };
+};
+
+/** Ce qu'il reste, quand c'est un nombre de parts et pas une phrase. */
+export function placesRestantes(s: Salon): number | undefined {
+  if (!s.reste || !/place|portion|part\b/i.test(s.reste)) return undefined;
+  const n = /(\d+)/.exec(s.reste);
+  return n ? Number(n[1]) : undefined;
+}
+
+/**
+ * LA DEMANDE EN COURS, LUE DANS LE FIL. Elle y est déjà écrite, en carte de
+ * service : c'est la source de vérité, elle survit au rechargement et elle est
+ * la même pour tout le monde. Un second état, à côté, aurait fini par diverger.
+ *
+ * DEUX FORMULATIONS : celle qu'écrit la demande (« Alice demande pour 4 ») et
+ * celle déjà confirmée par le commerce (« Pauline a réservé pour 4 »).
+ */
+export function demandeDuFil(s: Salon): { qui: string; combien: number } | undefined {
+  for (let i = s.messages.length - 1; i >= 0; i--) {
+    const m = s.messages[i];
+    const t = m.carte?.titre ?? "";
+    if (/annule la demande/i.test(t)) return undefined;
+    const d = /^(.+?) (?:demande|a réservé) pour (\d+)/.exec(t);
+    if (m.voix === "systeme" && d) return { qui: d[1], combien: Number(d[2]) };
+  }
+  return undefined;
+}
+
+/**
+ * ═══ CE QU'ON A DÉJÀ LU, PAR SALON ═══
+ *
+ * UN MAGASIN, PAS UNE LECTURE DIRECTE, ET C'EST UNE CORRECTION. La première
+ * version lisait `localStorage` depuis `etatDuSalon`. Mesuré : en sortant d'un
+ * salon, le compteur était bien écrit, et le fantôme restait violet — rien
+ * n'avait prévenu React que quoi que ce soit avait changé. Un état qui ne se
+ * rafraîchit pas est pire qu'un état absent : il dit du neuf sur du lu.
+ *
+ * ET `etatDuSalon` REÇOIT LA CARTE PLUTÔT QUE D'ALLER LA CHERCHER. Une
+ * fonction qui décide de ce que le produit affiche doit se vérifier sans
+ * navigateur, et une lecture cachée du stockage lui interdisait exactement ça.
+ */
+const CLE_LUS = "clikme-salons-lus-v1";
+export const AUCUN_LU: Record<string, number> = {};
+let memoireLus: Record<string, number> | null = null;
+const abonnesLus = new Set<() => void>();
+
+export function chargerLus(): Record<string, number> {
+  if (memoireLus) return memoireLus;
+  try {
+    memoireLus = JSON.parse(window.localStorage.getItem(CLE_LUS) ?? "{}") ?? {};
+  } catch {
+    memoireLus = {};
+  }
+  return memoireLus ?? AUCUN_LU;
+}
+
+export function abonnerLus(f: () => void) {
+  abonnesLus.add(f);
+  return () => void abonnesLus.delete(f);
+}
+
+/**
+ * ON NOTE CE QU'ON A VU EN SORTANT DU SALON, PAS EN Y ENTRANT. Marquer à
+ * l'entrée effaçait l'état « neuf » avant que la personne ait eu le temps de
+ * lire ce qui l'avait fait venir — le fantôme s'éteignait pile au moment où il
+ * aurait dû montrer pourquoi il s'était allumé.
+ */
+export function marquerLu(cle: string, combien: number) {
+  const avant = chargerLus();
+  if (avant[cle] === combien) return;
+  memoireLus = { ...avant, [cle]: combien };
+  try {
+    window.localStorage.setItem(CLE_LUS, JSON.stringify(memoireLus));
+  } catch {
+    /* Refusé : le compte vit quand même le temps de la visite. */
+  }
+  abonnesLus.forEach((f) => f());
+}
+
+/**
+ * L'ÉTAT D'UN SALON, DANS L'ORDRE DE CE QUI PRESSE.
+ *
+ * L'ORDRE EST LA MOITIÉ DE LA FONCTION. Un groupe qui hésite ALORS QUE la
+ * table va manquer n'a pas besoin qu'on l'invite à voter : il a besoin qu'on
+ * lui dise qu'il va rester dehors. Chaque test ci-dessous ne se lit donc que si
+ * tous ceux d'au-dessus ont échoué, et c'est ce qui garantit une seule phrase.
+ */
+export function etatDuSalon(
+  s: Salon,
+  moi: string,
+  lus: Record<string, number> = AUCUN_LU,
+): EtatDuFantome {
+  const calme: EtatDuFantome = { ton: "calme", cle: s.cle, phrase: "" };
+  if (!s.ouvert) return calme;
+
+  const deja = demandeDuFil(s);
+  const propos = s.propositions ?? [];
+  const chef = enTete(s);
+  const combien = Math.max(s.viennent.length, 1);
+
+  // ─── 1. ÇA PRESSE : il manquera de la place, et personne n'a encore réservé.
+  //     LE SEUL SIGNAL D'URGENCE QU'ON AIT VRAIMENT. Un compte à rebours en
+  //     minutes aurait été plus spectaculaire, mais le salon ne connaît pas
+  //     l'heure de fin du moment — l'inventer aurait fait mentir l'arbitre au
+  //     premier essai, et un arbitre pris en défaut ne se rattrape pas.
+  const restant = placesRestantes(s);
+  if (!deja && restant !== undefined && restant < s.viennent.length) {
+    return {
+      ton: "presse",
+      cle: s.cle,
+      phrase: `Attention : ${s.reste}, et vous êtes ${s.viennent.length}.`,
+      action: { libelle: "Réserver maintenant", faire: "reserver" },
+    };
+  }
+
+  // ─── 2. C'EST DÉCIDÉ : il ne reste plus qu'à le dire au commerce.
+  //     « DÉCIDÉ » NE VEUT PAS DIRE UNANIME. Une voix d'avance suffit à trancher
+  //     quand personne ne réclame le contraire ; attendre l'unanimité, c'est
+  //     exactement la panne qu'on répare — la table se prend pendant qu'on
+  //     s'assure que tout le monde est bien d'accord.
+  if (!deja && s.viennent.length >= 2) {
+    const second = propos
+      .filter((p) => p.cle !== chef?.cle)
+      .reduce((m, x) => (!m || x.voix.length > m.voix.length ? x : m), undefined as Proposition | undefined);
+    const tranche = propos.length <= 1 || (chef && chef.voix.length - (second?.voix.length ?? 0) >= 2);
+    if (tranche) {
+      // LE TITRE GARDE SA CASSE, ENTRE GUILLEMETS. Le mettre en minuscules
+      // pour qu'il coule dans la phrase donnait « pour concert au kiosque ·
+      // trio de jazz » : un nom propre écrasé, et un point médian au milieu
+      // d'une phrase parlée. Les guillemets disent que c'est une citation, et
+      // la phrase se lit sans qu'on ait à toucher au titre du commerce.
+      const quoi = chef?.quoi ?? s.annonce ?? s.sujet;
+      return {
+        ton: "decide",
+        cle: s.cle,
+        phrase: `Ça a l'air décidé ! Vous êtes ${combien} pour « ${quoi} ».`,
+        action: { libelle: `Réserver pour ${combien}`, faire: "reserver" },
+      };
+    }
+  }
+
+  // ─── 3. ÇA HÉSITE : deux idées se tiennent, et quelqu'un doit départager.
+  //     ON NE TRANCHE PAS À LEUR PLACE, ON LEUR REND LA MAIN. Le fantôme dit ce
+  //     qu'il voit — le décompte, à voix haute — et propose le geste qui sort de
+  //     l'ornière. C'est la seule chose qui manque à un groupe qui hésite : non
+  //     pas un avis de plus, mais quelqu'un qui demande de lever la main.
+  if (!deja && propos.length >= 2 && chef) {
+    const compte = [...propos]
+      .sort((a, b) => b.voix.length - a.voix.length)
+      .slice(0, 2)
+      .map((p) => `${p.voix.length} → ${p.quoi}`)
+      .join(", ");
+    const sansVoix = s.presents.filter((q) => !propos.some((p) => p.voix.includes(q)));
+    const serre =
+      chef.voix.length - (propos.filter((p) => p.cle !== chef.cle).reduce((m, x) => Math.max(m, x.voix.length), 0)) <= 1;
+    if (serre || sansVoix.length) {
+      return {
+        ton: "hesite",
+        cle: s.cle,
+        phrase: `Je crois que vous hésitez… ${compte}. Je vous propose de choisir ?`,
+        // LE LIBELLÉ NE PROMET QUE CE QUE LE BOUTON FAIT. « Relancer le vote »,
+        // pour qui a déjà voté, laisse croire qu'on va prévenir les autres —
+        // et rien, ici, ne prévient personne. Il montre où ça en est ; il le
+        // dit. Un arbitre qui promet ce qu'il ne tient pas cesse d'être cru.
+        action: {
+          libelle: propos.some((p) => p.voix.includes(moi)) ? "Voir où ça en est" : "Voter",
+          faire: "voter",
+          propo: chef.cle,
+        },
+      };
+    }
+  }
+
+  // ─── 4. C'EST NEUF : un ami a parlé depuis mon dernier passage.
+  //     LE PLUS FAIBLE DES QUATRE, ET IL VIENT DONC EN DERNIER. « Quelqu'un a
+  //     répondu » n'est pas une décision à prendre : c'est une invitation à
+  //     lire. Il ne porte pas d'action — il ouvre la porte, rien de plus.
+  const vu = lus[s.cle] ?? 0;
+  const neufs = s.messages.length - vu;
+  if (neufs > 0 && vu > 0) {
+    const dernier = [...s.messages].reverse().find((m) => m.voix === "ami");
+    return {
+      ton: "neuf",
+      cle: s.cle,
+      phrase: dernier
+        ? `${dernier.qui} a répondu — ${neufs} message${neufs > 1 ? "s" : ""} depuis votre passage.`
+        : `${neufs} message${neufs > 1 ? "s" : ""} depuis votre passage.`,
+      action: { libelle: "Voir la discussion", faire: "ouvrir" },
+    };
+  }
+
+  return calme;
+}
+
+/**
+ * CE QUE LE FANTÔME DE LA BARRE PORTE — l'état le plus pressant de MES salons.
+ *
+ * C'EST ICI QUE L'IDÉE TIENT OU TOMBE. Un indicateur posé DANS le salon a
+ * exactement le défaut qu'on lui reprochait : personne ne revient le voir. Le
+ * fantôme, lui, est à l'écran en permanence — c'est le seul objet du produit
+ * dont ce soit vrai. Mettre l'état là, et pas seulement dans la conversation,
+ * est ce qui fait la différence entre un signal joli et un signal qui ramène.
+ */
+export function etatDesSalons(
+  salons: Record<string, Salon>,
+  moi: string,
+  lesMiens: (s: Salon) => boolean,
+  lus: Record<string, number> = AUCUN_LU,
+): EtatDuFantome | undefined {
+  const rang: Record<TonDuFantome, number> = { presse: 4, decide: 3, hesite: 2, neuf: 1, calme: 0 };
+  let meilleur: EtatDuFantome | undefined;
+  for (const s of Object.values(salons)) {
+    if (!lesMiens(s)) continue;
+    const e = etatDuSalon(s, moi, lus);
+    if (e.ton === "calme") continue;
+    if (!meilleur || rang[e.ton] > rang[meilleur.ton]) meilleur = e;
+  }
+  return meilleur;
+}

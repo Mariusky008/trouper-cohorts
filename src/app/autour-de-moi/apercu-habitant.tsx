@@ -60,6 +60,14 @@ import {
   entrerDansSalon,
   heureCourte,
   ouvrirSalon,
+  etatDesSalons,
+  etatDuSalon,
+  demandeDuFil,
+  marquerLu,
+  abonnerLus,
+  chargerLus,
+  AUCUN_LU,
+  type EtatDuFantome,
   type Salon,
 } from "@/lib/direct/salons";
 import { flashEnCours } from "@/lib/direct/flash";
@@ -1383,6 +1391,8 @@ export function ApercuHabitant() {
   const mesRappels = useSyncExternalStore(abonnerRappels, chargerRappels, () => RIEN);
   const mesFlammes = useSyncExternalStore(abonnerFlammes, chargerFlammes, () => AUCUNE);
   const salons = useSyncExternalStore(abonnerSalons, chargerSalons, () => SALONS_VIDES);
+  /** Combien de messages on avait déjà lus, par salon. Voir le fantôme veilleur. */
+  const lus = useSyncExternalStore(abonnerLus, chargerLus, () => AUCUN_LU);
   /**
    * METTRE L'APPLICATION SUR L'ÉCRAN D'ACCUEIL.
    *
@@ -2789,6 +2799,25 @@ export function ApercuHabitant() {
     if (restant < 80) el.scrollTop = el.scrollHeight;
   }, [salonPage, salonOuvert, nbMessages, amisEcrivent.length]);
 
+  /* ═══ ON NOTE CE QU'ON A VU EN SORTANT, PAS EN ENTRANT ═══
+
+     C'est ce qui permet au fantôme de dire « Paul a répondu » sans le dire
+     éternellement. Marquer à l'entrée éteignait l'état neuf AVANT que la
+     personne ait lu ce qui l'avait fait venir : le fantôme redevenait calme
+     pendant qu'on cherchait encore pourquoi il s'était allumé.
+
+     LE NETTOYAGE RELIT LE MAGASIN plutôt que d'utiliser `salon` : entre le
+     rendu qui a posé cet effet et le moment où l'on quitte, des messages ont
+     pu arriver, et on marquerait alors comme lus des messages jamais affichés. */
+  useEffect(() => {
+    if (!salonPage || !salonOuvert) return;
+    const cle = salonOuvert;
+    return () => {
+      const s = chargerSalons()[cle];
+      if (s) marquerLu(cle, s.messages.length);
+    };
+  }, [salonPage, salonOuvert]);
+
   // Le mot s'efface tout seul : une confirmation qui reste devient un décor.
   useEffect(() => {
     if (!echo) return;
@@ -3704,6 +3733,55 @@ export function ApercuHabitant() {
   );
   const salonsPasses = Object.values(salons).filter((x) => !x.ouvert);
 
+  /* ═══ CE QUE LE FANTÔME VOIT DU GROUPE ═══
+
+     « Les gens ne viendront pas sur ce chat comme ils iraient sur WhatsApp,
+     donc pas certain qu'ils voient le changement de couleur. »
+
+     C'EST EXACT, ET C'EST POURQUOI L'ÉTAT NE VIT PAS QUE DANS LE SALON. Un
+     indicateur posé dans la conversation a le défaut qu'on lui reprochait :
+     il attend qu'on vienne le voir. Le fantôme de la barre, lui, est à
+     l'écran en permanence — c'est le seul objet du produit dont ce soit vrai.
+     `veille` est l'état le plus pressant de MES salons, et il est calculé
+     partout, quel que soit l'onglet : c'est lui qui ramène.
+
+     `veilleIci` est le même état, mais du salon ouvert : dedans, le fantôme
+     ne parle que de la conversation qu'on lit — sinon il annoncerait une
+     urgence qui se passe ailleurs, juste au-dessus du texte qui la contredit. */
+  const veille = etatDesSalons(salons, monPrenom() || "Vous", dansLeSalon, lus);
+  /* IL NE PARLE QUE DES GROUPES DONT JE FAIS PARTIE, et c'est une correction,
+     pas une precaution : mesure faite, il annoncait « Ça a l'air décidé, vous
+     êtes 4 » sur un salon PUBLIC que je n'avais fait qu'ouvrir pour regarder.
+     Un arbitre qui compte des gens a votre place dans une sortie qui n'est pas
+     la votre ne se rattrape pas. Le meme test que la liste « Mes salons ». */
+  const veilleIci =
+    salon && dansLeSalon(salon)
+      ? etatDuSalon(salon, monPrenom() || "Vous", lus)
+      : undefined;
+  /** Celui qui compte ici et maintenant : le salon ouvert prime sur le reste. */
+  const veilleActive = salonPage ? veilleIci : veille;
+  const tonDeLaVeille = veilleActive && veilleActive.ton !== "calme" ? veilleActive.ton : "";
+  /* ═══ QUAND LE FANTÔME ARBITRE, ET QUAND IL NE FAIT QUE SIGNALER ═══
+
+     SUR LE PAQUET, SON GESTE NE SE NÉGOCIE PAS. Un appui y passe à l'annonce
+     suivante, et c'est le geste le plus répété du produit : lui en donner un
+     second sens selon l'humeur d'un salon aurait rendu le bouton imprévisible,
+     ce qui est le pire défaut d'un bouton qu'on appuie dix fois par visite. Il
+     y porte donc la COULEUR seulement — un halo, pas une action. La couleur
+     dit « il se passe quelque chose chez vous », l'appui continue de faire ce
+     qu'il a toujours fait, et c'est en allant voir qu'on trouve l'arbitre.
+
+     PARTOUT AILLEURS IL N'AVAIT AUCUN RÔLE : il était éteint, à 45 % d'opacité,
+     au centre exact de la barre. C'est cette place vide qui devient l'arbitre. */
+  const arbitre =
+    (salonPage || onglet !== "direct") && veilleActive && veilleActive.ton !== "calme"
+      ? veilleActive
+      : undefined;
+  /** La bulle de l'arbitre est ouverte : une phrase, un geste, rien d'autre. */
+  const [arbitreOuvert, setArbitreOuvert] = useState(false);
+  /** Le décompte des voix s'allume, le temps qu'on le trouve des yeux. */
+  const [montreLeVote, setMontreLeVote] = useState(false);
+
   const mesDemandes = mesRappels.flatMap((cle) => {
     const [id, titre] = cle.split("|");
     const c = toutes.find((x) => x.id === id);
@@ -4104,24 +4182,14 @@ export function ApercuHabitant() {
    * deja ecrite, en carte de service — c'est la source de verite, elle survit
    * au rechargement et elle est la meme pour tout le monde. Un second etat, a
    * cote, aurait fini par diverger d'elle.
+   *
+   * ELLE EST LUE DANS `salons.ts`, ET C'EST OBLIGATOIRE DEPUIS L'ARBITRE. Le
+   * fantome doit savoir, SANS ouvrir le salon, si quelqu'un s'en est deja
+   * charge — sinon il proposerait de reserver une table deja prise. Deux
+   * lectures du meme fil auraient fini par ne plus dire la meme chose ; il n'y
+   * en a donc qu'une, et l'ecran s'y branche comme la barre.
    */
-  const demandeEnCours = (() => {
-    if (!salon) return undefined;
-    for (let i = salon.messages.length - 1; i >= 0; i--) {
-      const m = salon.messages[i];
-      const t = m.carte?.titre ?? "";
-      // L'ANNULATION EFFACE LA DEMANDE, et on lit du plus recent au plus
-      // ancien : le dernier mot du fil est celui qui fait foi.
-      if (/annule la demande/i.test(t)) return undefined;
-      // DEUX FORMULATIONS, UNE SEULE VERITE. Celle qu'ecrit reserverPourLeSalon
-      // (« Alice demande pour 4 ») et celle deja confirmee par le commerce
-      // (« Pauline a reserve pour 4 »). Ne reconnaitre que la premiere laissait
-      // le bouton dire « Reserver » sous une reservation deja faite.
-      const d = /^(.+?) (?:demande|a réservé) pour (\d+)/.exec(t);
-      if (m.voix === "systeme" && d) return { qui: d[1], combien: Number(d[2]) };
-    }
-    return undefined;
-  })();
+  const demandeEnCours = salon ? demandeDuFil(salon) : undefined;
 
   /** Annuler la demande — seul celui qui l'a faite le peut. */
   function annulerLaDemande() {
@@ -4138,6 +4206,36 @@ export function ApercuHabitant() {
         tampon: "Annulée",
       },
     });
+  }
+
+  /**
+   * ═══ LE GESTE UNIQUE DE L'ARBITRE ═══
+   *
+   * IL FAIT CE QU'IL A DIT, ET RIEN D'AUTRE. Chaque état ne porte qu'une
+   * action, donc cette fonction n'a que trois branches — et si elle devait un
+   * jour en avoir sept, c'est que l'arbitre serait redevenu un menu.
+   *
+   * IL OUVRE D'ABORD LE SALON, TOUJOURS. Le fantôme parle depuis la barre, donc
+   * on peut lui répondre depuis n'importe où : agir sans montrer OÙ l'on agit
+   * ferait apparaître une réservation dans une conversation que la personne n'a
+   * pas sous les yeux. On l'emmène, puis on agit.
+   */
+  function agirPourLaVeille(e: EtatDuFantome) {
+    const cible = salons[e.cle];
+    if (!cible) return;
+    setSalonOuvert(e.cle);
+    setSalonPage(true);
+    noter("onglet", 0, `veille-${e.action?.faire ?? "ouvrir"}`);
+    if (e.action?.faire === "reserver") {
+      // LE MEME CHEMIN QUE LE BOUTON, PAS UN RACCOURCI. La confirmation reste :
+      // ce que l'arbitre propose, il ne l'envoie pas à votre place.
+      window.setTimeout(() => setAConfirmer({ pourUnSeul: false }), 260);
+    } else if (e.action?.faire === "voter") {
+      // ON NE VOTE PAS À LEUR PLACE — on montre où se lève la main. Le décompte
+      // s'allume le temps qu'on le voie, et le doigt fait le reste.
+      window.setTimeout(() => setMontreLeVote(true), 300);
+      window.setTimeout(() => setMontreLeVote(false), 2600);
+    }
   }
 
   function reserverPourLeSalon(pourUnSeul = false) {
@@ -7887,7 +7985,7 @@ export function ApercuHabitant() {
                         ce que les gens évitent — ce qui explique la bouillie
                         WhatsApp, où personne ne veut être celui qui dit non. */}
                     {(salon.propositions?.length ?? 0) > 1 && (
-                      <div className="ap-propos-l">
+                      <div className={`ap-propos-l${montreLeVote ? " appel" : ""}`}>
                         {salon.propositions!.map((x) => {
                           const moi = x.voix.includes(prenom || "Vous");
                           const gagne = x.cle === tete?.cle;
@@ -8900,10 +8998,28 @@ export function ApercuHabitant() {
               type="button"
               className={`ap-suiv${clin ? " clin" : ""}${
                 clin === "or" || flashDuSommet ? " or" : ""
-              }${clin === "or" ? " saut-or" : ""}`}
-              aria-label="Passer à l’annonce suivante"
-              disabled={!sommet || onglet !== "direct"}
+              }${clin === "or" ? " saut-or" : ""}${
+                tonDeLaVeille ? ` veille ${tonDeLaVeille}` : ""
+              }`}
+              aria-label={
+                arbitre
+                  ? `Le fantôme a quelque chose à dire : ${arbitre.phrase}`
+                  : "Passer à l’annonce suivante"
+              }
+              disabled={arbitre ? false : !sommet || onglet !== "direct"}
               onClick={() => {
+                // ─── L'ARBITRE PARLE, LE PAQUET NE BOUGE PAS.
+                // Hors du paquet, l'appui ouvre la bulle : une phrase, un
+                // geste. Le petit clin d'oeil part quand meme — c'est ce qui
+                // dit que le fantome a entendu le doigt.
+                if (arbitre) {
+                  setClin("simple");
+                  sonDuBond(false);
+                  window.setTimeout(() => setClin(""), BOND_MS);
+                  noter("onglet", 0, `veille-${arbitre.ton}`);
+                  setArbitreOuvert((v) => !v);
+                  return;
+                }
                 // ⚡ ON REGARDE CE QUI ATTEND DERRIERE AVANT DE SAUTER.
                 const dore = flashDuSuivant;
                 setClin(dore ? "or" : "simple");
@@ -8985,6 +9101,46 @@ export function ApercuHabitant() {
               {gardees.length > 0 && <b>{gardees.length}</b>}
             </button>
           </nav>
+
+          {/* ═══ CE QUE L'ARBITRE A À DIRE ═══
+
+              UNE PHRASE, UN GESTE, ET C'EST TOUT LE CONCEPT. Un menu à trois
+              entrées aurait fait de lui un assistant : il aurait fallu
+              RÉFLÉCHIR À QUOI CLIQUER, et un objet qui demande de réfléchir au
+              moment où le groupe est déjà fatigué de décider ne sert à rien.
+              Une seule action, déjà choisie par lui, ne demande qu'un oui.
+              C'est exactement la différence entre « on vous aide à choisir » et
+              « choisissez » — c'est-à-dire toute la promesse.
+
+              IL SE FERME AU MOINDRE APPUI À CÔTÉ. Un arbitre qui reste sur
+              l'écran est un bandeau publicitaire : il dit sa phrase, on lui
+              répond ou on l'écarte, et il se tait. */}
+          {arbitre && arbitreOuvert && (
+            <>
+              <button
+                type="button"
+                className="ap-fond nu"
+                aria-label="Fermer"
+                onClick={() => setArbitreOuvert(false)}
+              />
+              <div className={`ap-veille ${arbitre.ton}`} role="status">
+                <Fantome classe="ap-fantome ap-veille-f" />
+                <p>{arbitre.phrase}</p>
+                {arbitre.action && (
+                  <button
+                    type="button"
+                    className="ap-veille-b"
+                    onClick={() => {
+                      setArbitreOuvert(false);
+                      agirPourLaVeille(arbitre);
+                    }}
+                  >
+                    {arbitre.action.libelle}
+                  </button>
+                )}
+              </div>
+            </>
+          )}
 
           {/* ─── COMMENT VOUS APPELEZ-VOUS ? ───
               Question posée au test : « comment connaît-on les initiales des
@@ -12177,6 +12333,103 @@ export function ApercuHabitant() {
         .ap-onglets .ap-suiv:disabled{opacity:.45;}
         .ap-onglets .ap-suiv:active{transform:scale(.9);}
         .ap-onglets .ap-suiv b{display:none;}
+        /* ═══ LE FANTOME VEILLE, ET CA SE VOIT DE PARTOUT ═══
+
+           « J'aime bien l'idee de changer de couleur pour une raison
+           specifique, et qu'en appuyant dessus… »
+
+           C'EST UN HALO, PAS UN REMPLISSAGE, et la raison est nette : le corps
+           du fantome porte deja une couleur qui veut dire autre chose — l'or
+           du Flash, qui parle de l'ANNONCE qu'on regarde. Repeindre le corps
+           aurait fait dire deux choses au meme aplat, et l'une aurait efface
+           l'autre pile au moment ou les deux comptent. L'anneau est autour :
+           il ceint le fantome sans le deguiser, et les deux signaux tiennent
+           ensemble sur soixante-quatorze points.
+
+           IL RESPIRE, ET C'EST CE QUI LE DISTINGUE DU REPOS. Un anneau vert
+           immobile autour d'un bouton vert ne se remarque pas ; le meme qui
+           enfle et retombe toutes les deux secondes attrape l'oeil en
+           peripherie — c'est-a-dire exactement la ou se trouve la barre quand
+           on lit autre chose. La respiration EST le signal ; la couleur ne
+           fait qu'en dire la raison.
+
+           ET IL SE TAIT SI ON LUI DEMANDE. Une pulsation permanente au bas de
+           l'ecran est insupportable pour qui y est sensible : quand le systeme
+           demande moins d'animation, l'anneau reste, fixe. Le signal survit,
+           le battement non. */
+        .ap-onglets .ap-suiv.veille{box-shadow:
+            0 12px 30px rgba(47,211,154,.42),
+            0 0 0 5px var(--ap-barre-fond, #070C0A),
+            0 0 0 8px var(--ap-veille-c, #2FD39A),
+            0 0 22px 4px var(--ap-veille-h, rgba(47,211,154,.55));
+          animation:apVeille 2.2s ease-in-out infinite;}
+        .ap-onglets .ap-suiv.veille.presse{--ap-veille-c:#F5232E;
+          --ap-veille-h:rgba(245,35,46,.6);}
+        .ap-onglets .ap-suiv.veille.decide{--ap-veille-c:#3DE2A6;
+          --ap-veille-h:rgba(61,226,166,.6);}
+        .ap-onglets .ap-suiv.veille.hesite{--ap-veille-c:#FFC400;
+          --ap-veille-h:rgba(255,196,0,.55);}
+        .ap-onglets .ap-suiv.veille.neuf{--ap-veille-c:#B98CF5;
+          --ap-veille-h:rgba(185,140,245,.55);}
+        @keyframes apVeille{
+          0%,100%{box-shadow:0 12px 30px rgba(47,211,154,.42),
+            0 0 0 5px var(--ap-barre-fond, #070C0A),
+            0 0 0 6px var(--ap-veille-c, #2FD39A),
+            0 0 14px 2px var(--ap-veille-h, rgba(47,211,154,.55));}
+          50%{box-shadow:0 12px 30px rgba(47,211,154,.42),
+            0 0 0 5px var(--ap-barre-fond, #070C0A),
+            0 0 0 10px var(--ap-veille-c, #2FD39A),
+            0 0 30px 8px var(--ap-veille-h, rgba(47,211,154,.55));}}
+        @media (prefers-reduced-motion:reduce){
+          .ap-onglets .ap-suiv.veille{animation:none;}}
+
+        /* ═══ CE QU'IL DIT, ET LE SEUL GESTE QU'IL PROPOSE ═══
+           UNE PHRASE ET UN BOUTON, jamais une liste. Elle sort du fantome, au
+           ras de la barre, et elle est assez large pour qu'on la lise d'un
+           coup d'oeil sans avoir a viser. La couleur du filet est celle de
+           l'anneau : c'est le meme objet qui parle. */
+        .ap-veille{position:absolute;left:12px;right:12px;z-index:9;
+          bottom:calc(var(--ap-onglets-h, 51px) + 34px);
+          display:grid;grid-template-columns:auto 1fr;gap:4px 10px;
+          align-items:center;padding:12px 14px;
+          background:#101A16;border-radius:18px;
+          border:1px solid var(--ap-veille-c, #2FD39A);
+          box-shadow:0 18px 40px rgba(0,0,0,.55);
+          animation:apVeilleE .28s cubic-bezier(.34,1.4,.64,1);}
+        .ap-veille.presse{--ap-veille-c:#F5232E;}
+        .ap-veille.decide{--ap-veille-c:#3DE2A6;}
+        .ap-veille.hesite{--ap-veille-c:#FFC400;}
+        .ap-veille.neuf{--ap-veille-c:#B98CF5;}
+        @keyframes apVeilleE{from{opacity:0;transform:translateY(10px) scale(.96);}
+          to{opacity:1;transform:none;}}
+        .ap-veille-f{width:34px;height:37px;grid-row:span 2;align-self:start;}
+        .ap-veille p{margin:0;font-size:13.5px;line-height:1.35;color:#E8F4EE;
+          font-weight:650;}
+        /* LE BOUTON PORTE LA COULEUR DE L'ETAT, en aplat : c'est le seul geste
+           de la bulle, et rien ne doit avoir a le chercher. Le texte passe au
+           sombre sur les couleurs claires — l'ambre en blanc est illisible. */
+        .ap-veille-b{grid-column:2;justify-self:start;margin-top:8px;
+          font:inherit;font-size:13px;font-weight:850;cursor:pointer;
+          border:0;border-radius:999px;padding:9px 18px;
+          color:#062018;background:var(--ap-veille-c, #2FD39A);
+          transition:transform .12s ease;}
+        .ap-veille.presse .ap-veille-b{color:#fff;}
+        .ap-veille-b:active{transform:scale(.96);}
+        /* LE FOND NU : il ferme au moindre appui a cote, sans rien assombrir.
+           Un voile noir sur la conversation aurait fait de l'arbitre une
+           interruption ; il n'en est pas une, il donne un avis. */
+        .ap-fond.nu{background:none;-webkit-backdrop-filter:none;
+          backdrop-filter:none;}
+        /* ON MONTRE OU SE LEVE LA MAIN. Le decompte s'allume trois secondes
+           quand l'arbitre a propose de voter : c'est le seul moment ou il faut
+           trouver ces lignes-la vite, et elles sont sous le pli le reste du
+           temps. */
+        .ap-propos-l.appel{animation:apAppel 1.1s ease-in-out 2;
+          border-radius:12px;}
+        @keyframes apAppel{0%,100%{box-shadow:0 0 0 0 rgba(255,196,0,0);}
+          50%{box-shadow:0 0 0 3px rgba(255,196,0,.55);}}
+        @media (prefers-reduced-motion:reduce){
+          .ap-propos-l.appel{animation:none;box-shadow:0 0 0 3px rgba(255,196,0,.55);}}
         .ap-fantome{width:44px;height:48px;overflow:visible;
           transform-origin:50% 62%;
           animation:apFlotte 4.6s ease-in-out infinite;}
