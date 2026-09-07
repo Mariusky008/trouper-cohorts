@@ -68,6 +68,22 @@ const CONTEXTE =
   "arrivage, créneaux libres, prix en euros, nombre de portions ou de pièces.";
 
 /**
+ * ═══ ET IL PEUT ÊTRE REMPLACÉ, PARCE QU'IL NE VAUT QUE POUR UN COMMERCE ═══
+ *
+ * Ce contexte-là est soufflé au modèle pour qu'il entende « quatorze euros »
+ * plutôt que « quatre euros » dans une boulangerie. Envoyé sous un DÉBAT
+ * enregistré par `/battle`, il tire au contraire vers un vocabulaire qui n'a
+ * rien à y faire — et une transcription orientée est pire qu'une transcription
+ * nue, parce qu'elle invente au lieu de laisser un blanc.
+ *
+ * L'APPELANT PEUT DONC DONNER LE SIEN, et la valeur par défaut ne bouge pas
+ * d'un caractère : le chemin du commerçant est exactement celui d'avant. Le
+ * garde-fou de l'écho suit le contexte réellement employé, sinon il laisserait
+ * passer la répétition du nouveau.
+ */
+const MAX_CONTEXTE = 400;
+
+/**
  * LE MODÈLE RECRACHE LE CONTEXTE QUAND IL N'ENTEND RIEN — et il le fait mot
  * pour mot. Le raisonnement complet et le seuil sont dans
  * `echo-transcription.ts`, à part, parce qu'ils se vérifient : un garde-fou
@@ -121,6 +137,7 @@ async function transcrire(
   fichier: Blob,
   nom: string,
   modele: string,
+  contexte: string,
 ): Promise<{ ok: true; texte: string } | { ok: false; statut: number; detail: string }> {
   const form = new FormData();
   form.append("file", fichier, nom);
@@ -128,7 +145,7 @@ async function transcrire(
   // LA LANGUE EST DITE, PAS DEVINÉE. Sans elle, une phrase courte et bruitée se
   // fait parfois prendre pour de l'anglais, et le résultat est du charabia.
   form.append("language", "fr");
-  form.append("prompt", CONTEXTE);
+  form.append("prompt", contexte);
   const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
     method: "POST",
     headers: { authorization: `Bearer ${cle}` },
@@ -179,10 +196,12 @@ export async function POST(request: Request) {
     );
   }
 
+  const contexte = s(p?.contexte).slice(0, MAX_CONTEXTE) || CONTEXTE;
+
   const debut = Date.now();
   try {
     const fichier = new Blob([new Uint8Array(a.octets)], { type: a.type });
-    let r = await transcrire(cle, fichier, a.nom, MODELE);
+    let r = await transcrire(cle, fichier, a.nom, MODELE, contexte);
     // LE REPLI SUR LE SOCLE. Un compte sans accès au modèle récent rend un 400
     // ou un 404 sur le nom du modèle : on refait l'appel avec `whisper-1` plutôt
     // que de renvoyer une panne pour une question de droits.
@@ -190,7 +209,7 @@ export async function POST(request: Request) {
     if (!r.ok && MODELE !== SOCLE && (r.statut === 400 || r.statut === 404)) {
       console.warn(`[transcrire] ${MODELE} refusé (${r.statut}), repli sur ${SOCLE}`);
       modele = SOCLE;
-      r = await transcrire(cle, fichier, a.nom, SOCLE);
+      r = await transcrire(cle, fichier, a.nom, SOCLE, contexte);
     }
     if (!r.ok) {
       console.error(`[transcrire] refusé : HTTP ${r.statut} ${r.detail}`);
@@ -201,7 +220,7 @@ export async function POST(request: Request) {
     }
     // RIEN PLUTÔT QUE L'ÉCHO. Une transcription vide fait dire « je n'ai rien
     // entendu » ; l'écho, lui, part comme si le commerçant l'avait prononcé.
-    const texte = estUnEcho(r.texte, CONTEXTE) ? "" : r.texte;
+    const texte = estUnEcho(r.texte, contexte) ? "" : r.texte;
     if (!texte && r.texte) {
       console.warn(`[transcrire] écho du contexte ignoré : ${r.texte.slice(0, 80)}`);
     }

@@ -32,6 +32,7 @@ import {
   FORMATS,
   MOI,
   ROBOTS,
+  SUJETS,
   SUJETS_JOUABLES,
   THEMES,
   arbitrer,
@@ -44,12 +45,29 @@ import {
 
 type Ecran =
   | "accueil"
+  | "noms"
   | "recherche"
   | "trouve"
   | "avant"
   | "combat"
   | "arbitrage"
   | "resultat";
+
+/** Un tour de parole, tel qu'il revient de la transcription. */
+type Tour = { qui: "a" | "b"; round: number; texte: string };
+
+/**
+ * ═══ CE QU'ON SOUFFLE AU MODELE DE TRANSCRIPTION ═══
+ *
+ * Le contexte par defaut de la route parle d'un commerce de Dax — plats,
+ * arrivages, prix en euros. Envoye sous un debat, il TIRE : le modele entend
+ * des chiffres et des produits la ou il y a des arguments. Celui-ci dit ce
+ * qu'on enregistre vraiment, et rien de plus : un contexte trop precis
+ * inventerait dans l'autre sens.
+ */
+const CONTEXTE_BATTLE =
+  "Débat oral en français. Une personne défend une position sur une question " +
+  "de société, argumente et répond à son adversaire.";
 
 type Onglet = "battle" | "classement" | "profil";
 
@@ -72,6 +90,33 @@ export function Battle() {
   const [sujet, setSujet] = useState<Sujet>(SUJETS_JOUABLES[0]);
   /** Vrai quand l'adversaire est un robot : l'écran le dit, il ne le cache pas. */
   const [entrainement, setEntrainement] = useState(false);
+
+  /* ═══ LE DUEL RÉEL ═══
+
+     « Je veux pouvoir vraiment jouer contre un membre de ma famille. »
+
+     DEUX JOUEURS, UN SEUL TÉLÉPHONE, ET C'EST LE BON CHOIX POUR CE SOIR. Un
+     vrai duel à distance demande des comptes, un serveur de parties, un
+     appariement — trois semaines pour répondre à une question qui se règle en
+     se passant le téléphone. Ici le micro tourne pour de bon, la parole est
+     transcrite pour de bon, et l'arbitre est un vrai modèle : tout ce qui
+     décide si le jeu est bon est réel, et rien d'autre n'est simulé.
+
+     LE RESTE DE LA PAGE RESTE UNE DÉMONSTRATION, et l'écran le dit. */
+  const [reel, setReel] = useState(false);
+  const [nomA, setNomA] = useState("");
+  const [nomB, setNomB] = useState("");
+  const [tours, setTours] = useState<Tour[]>([]);
+  /** Combien de tours attendent encore leur transcription — voir `transcrire`. */
+  const [enAttente, setEnAttente] = useState(0);
+  const [erreur, setErreur] = useState("");
+  const [entendu, setEntendu] = useState(false);
+
+  const flux = useRef<MediaStream | null>(null);
+  const enregistreur = useRef<MediaRecorder | null>(null);
+  const morceaux = useRef<Blob[]>([]);
+  /** À qui appartient l'enregistrement en cours : le `onstop` arrive plus tard. */
+  const tourEnCours = useRef<{ qui: "a" | "b"; round: number } | null>(null);
 
   const fmt = FORMATS.find((f) => f.cle === format) ?? FORMATS[1];
 
@@ -122,20 +167,144 @@ export function Battle() {
    */
   function passerLaParole() {
     setTime(true);
+    // LE MICRO SE COUPE AU SIFFLET, PAS APRÈS. Une seconde et demie de plus,
+    // et c'est le début du tour suivant qui se retrouve dans l'enregistrement
+    // du précédent — donc dans la bouche du mauvais joueur.
+    arreterLEnregistrement();
     const finDuTour = quiParle === "lui";
     const dernier = finDuTour && round >= fmt.rounds;
+    const suivant = finDuTour ? round + 1 : round;
     minuteries.current.push(
       window.setTimeout(() => {
         setTime(false);
         if (dernier) {
+          fermerLeMicro();
           setEcran("arbitrage");
           return;
         }
-        if (finDuTour) setRound((r) => r + 1);
+        if (finDuTour) setRound(suivant);
         setQuiParle(finDuTour ? "moi" : "lui");
         setReste(fmt.duree);
+        enregistrerLeTour(finDuTour ? "a" : "b", suivant);
       }, 1500),
     );
+  }
+
+  /**
+   * ═══ LE MICRO S'OUVRE UNE FOIS, AU DÉBUT DU DUEL ═══
+   *
+   * ET PAS À CHAQUE TOUR, pour deux raisons qui se voient toutes les deux :
+   * l'autorisation du navigateur ne se redemande pas à chaque prise de parole
+   * — ce serait insupportable au bout de six tours — et l'ouverture d'un flux
+   * prend un instant qu'on ne peut pas se permettre entre « TIME » et le mot
+   * suivant. Le flux reste ouvert du début à la fin du match, et se ferme avec
+   * lui : un micro qui reste allumé après la partie est exactement le genre de
+   * chose qu'on ne pardonne pas.
+   */
+  async function ouvrirLeMicro(): Promise<boolean> {
+    if (flux.current) return true;
+    try {
+      flux.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+      return true;
+    } catch {
+      setErreur(
+        "Le micro est refusé. Sur iPhone : Réglages → Safari → Microphone, " +
+          "puis rechargez la page.",
+      );
+      return false;
+    }
+  }
+
+  function fermerLeMicro() {
+    flux.current?.getTracks().forEach((t) => t.stop());
+    flux.current = null;
+  }
+
+  useEffect(() => () => fermerLeMicro(), []);
+
+  /**
+   * ON TRANSCRIT LE TOUR PENDANT QUE L'AUTRE PARLE.
+   *
+   * C'EST LA SEULE FAÇON DE NE PAS FAIRE ATTENDRE À LA FIN. Transcrire six
+   * tours après le dernier mot, c'est une minute de sablier au moment précis
+   * où la tension est à son sommet. Envoyé dès la fin de chaque tour, tout est
+   * déjà revenu quand le dernier se termine — il ne reste qu'un seul aller-
+   * retour, celui du tour qu'on vient de finir.
+   */
+  async function transcrire(blob: Blob, qui: "a" | "b", round: number) {
+    setEnAttente((n) => n + 1);
+    try {
+      const dataUrl: string = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onloadend = () => res(String(r.result ?? ""));
+        r.onerror = () => rej(new Error("lecture"));
+        r.readAsDataURL(blob);
+      });
+      const rep = await fetch("/api/direct/transcrire", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ audio: dataUrl, contexte: CONTEXTE_BATTLE }),
+      });
+      const d = await rep.json();
+      if (!rep.ok) {
+        setErreur(String(d?.erreur ?? "La transcription a échoué."));
+        setTours((t) => [...t, { qui, round, texte: "" }]);
+        return;
+      }
+      setTours((t) => [...t, { qui, round, texte: String(d?.texte ?? "") }]);
+    } catch {
+      setErreur("La transcription n’a pas abouti — réseau ?");
+      setTours((t) => [...t, { qui, round, texte: "" }]);
+    } finally {
+      setEnAttente((n) => n - 1);
+    }
+  }
+
+  /** Ouvre l'enregistrement du tour qui commence. */
+  function enregistrerLeTour(qui: "a" | "b", r: number) {
+    if (!reel || !flux.current) return;
+    morceaux.current = [];
+    tourEnCours.current = { qui, round: r };
+    try {
+      /* ═══ TRENTE-DEUX KILOBITS, ET C'EST UN CALCUL, PAS UN RÉGLAGE ═══
+         La route de transcription refuse au-delà de dix mégaoctets, et le
+         base64 gonfle de trente-trois pour cent. Au débit par défaut d'un
+         iPhone — autour de 128 kbps — un tour de dix minutes en format Expert
+         pèse neuf mégaoctets, soit douze une fois encodé : REFUSÉ, à la fin
+         d'un match, sans que personne comprenne pourquoi. À 32, le même tour
+         en pèse deux et demi, et la voix reste parfaitement transcriptible —
+         c'est de la parole, pas de la musique. L'envoi est trois fois plus
+         rapide par-dessus le marché.
+         LE RÉGLAGE PEUT ÊTRE REFUSÉ par un navigateur qui ne connaît pas
+         l'option ; on retombe alors sur le débit par défaut plutôt que de ne
+         pas enregistrer du tout. */
+      let mr: MediaRecorder;
+      try {
+        mr = new MediaRecorder(flux.current, { audioBitsPerSecond: 32000 });
+      } catch {
+        mr = new MediaRecorder(flux.current);
+      }
+      mr.ondataavailable = (e) => {
+        if (e.data && e.data.size) morceaux.current.push(e.data);
+      };
+      mr.onstop = () => {
+        const t = tourEnCours.current;
+        const bouts = morceaux.current;
+        morceaux.current = [];
+        if (!t || !bouts.length) return;
+        void transcrire(new Blob(bouts, { type: bouts[0].type }), t.qui, t.round);
+      };
+      enregistreur.current = mr;
+      mr.start();
+    } catch {
+      setErreur("Cet appareil ne sait pas enregistrer depuis le navigateur.");
+    }
+  }
+
+  function arreterLEnregistrement() {
+    const mr = enregistreur.current;
+    enregistreur.current = null;
+    if (mr && mr.state !== "inactive") mr.stop();
   }
 
   function lancerLeCombat() {
@@ -143,7 +312,11 @@ export function Battle() {
     setQuiParle("moi");
     setReste(fmt.duree);
     setTime(false);
+    setTours([]);
+    setErreur("");
+    setEntendu(false);
     setEcran("combat");
+    enregistrerLeTour("a", 1);
   }
 
   // ── L'ARBITRAGE ──────────────────────────────────────────────────────────
@@ -168,6 +341,10 @@ export function Battle() {
     if (ecran !== "arbitrage") return;
     setAnalyse(0);
     setPaye(false);
+    // EN DÉMONSTRATION, LES NOTES SONT ÉCRITES : on déroule la grille et on
+    // passe au résultat. Le duel réel, lui, attend un vrai modèle — voir
+    // l'effet suivant.
+    if (reel) return;
     const a = arbitrer(sujet, MOI.id, adversaire.id);
     setArbitrage(a);
     CRITERES.forEach((_, i) => {
@@ -178,10 +355,94 @@ export function Battle() {
     minuteries.current.push(
       window.setTimeout(() => setEcran("resultat"), 420 * CRITERES.length + 700),
     );
-  }, [ecran, sujet, adversaire]);
+  }, [ecran, sujet, adversaire, reel]);
+
+  /* ═══ L'ARBITRAGE RÉEL ═══
+
+     IL NE PART QUE QUAND TOUT EST TRANSCRIT. `enAttente` tombe à zéro dès que
+     le dernier tour est revenu ; comme les cinq autres sont partis au fil du
+     match, c'est en général une seule attente de deux ou trois secondes.
+
+     LA GARDE `lance` EST OBLIGATOIRE : cet effet dépend d'un compteur qui
+     change plusieurs fois, et sans elle une battle partirait deux fois chez le
+     modèle — deux verdicts différents pour un même match, et la facture avec. */
+  const lance = useRef(false);
+  useEffect(() => {
+    if (ecran !== "arbitrage") lance.current = false;
+  }, [ecran]);
+  useEffect(() => {
+    if (ecran !== "arbitrage" || !reel || enAttente > 0 || lance.current) return;
+    lance.current = true;
+    // La grille se remplit pendant l'attente : même écran que la démonstration,
+    // mais cette fois le modèle travaille vraiment derrière.
+    CRITERES.forEach((_, i) => {
+      minuteries.current.push(
+        window.setTimeout(() => setAnalyse(i + 1), 700 * (i + 1)),
+      );
+    });
+    const ordonnes = [...tours].sort(
+      (x, y) => x.round - y.round || (x.qui === "a" ? -1 : 1),
+    );
+    void (async () => {
+      try {
+        const rep = await fetch("/api/battle/arbitrer", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            sujet: sujet.question,
+            a: nomA || "A",
+            b: nomB || "B",
+            format: fmt.nom,
+            tours: ordonnes,
+          }),
+        });
+        const d = await rep.json();
+        if (!rep.ok) {
+          setErreur(String(d?.erreur ?? "L’arbitre n’a pas répondu."));
+          setEcran("resultat");
+          return;
+        }
+        // ON REMET LA RÉPONSE DANS LA FORME DE L'ÉCRAN. Le modèle rend « a » et
+        // « b » ; le résultat lit des identifiants de camp. Une seule
+        // conversion, ici, plutôt qu'un `si réel` dans chaque ligne du rendu.
+        const notes = (d?.notes ?? {}) as Record<string, Record<string, number | null>>;
+        const propre = (o: Record<string, number | null> = {}) =>
+          Object.fromEntries(
+            Object.entries(o).filter(([, v]) => typeof v === "number"),
+          ) as Record<string, number>;
+        setArbitrage({
+          notes: { a: propre(notes.a), b: propre(notes.b) },
+          vainqueur: String(d?.vainqueur ?? "a"),
+          verdict: String(d?.verdict ?? ""),
+          analyse: Array.isArray(d?.analyse) ? d.analyse.map(String) : [],
+          releves: Array.isArray(d?.releves)
+            ? d.releves.map((r: Record<string, unknown>) => ({
+                qui: String(r?.qui ?? "a"),
+                genre: String(r?.genre ?? "fort") as "faute" | "sophisme" | "fort" | "hors",
+                quoi: String(r?.quoi ?? ""),
+              }))
+            : [],
+          sansFait: !!d?.sansFait,
+        });
+        setEcran("resultat");
+      } catch {
+        setErreur("L’arbitre est injoignable — réseau ?");
+        setEcran("resultat");
+      }
+    })();
+  }, [ecran, reel, enAttente, tours, sujet, nomA, nomB, fmt.nom]);
 
   // ── CE QUI SE PASSE APRÈS ────────────────────────────────────────────────
-  const jaiGagne = arbitrage?.vainqueur === MOI.id;
+  /* ═══ LES DEUX CAMPS, SOUS UN SEUL NOM ═══
+     La démonstration oppose « Vous » à un adversaire de la liste ; le duel réel
+     oppose deux prénoms saisis. Plutôt que de mettre un « si réel » dans chaque
+     ligne du résultat — donc de le mettre une fois de trop —, on nomme les deux
+     camps ici, et tout ce qui suit ne connaît plus que A et B. */
+  const cleA = reel ? "a" : MOI.id;
+  const cleB = reel ? "b" : adversaire.id;
+  const prenomA = reel ? nomA || "A" : MOI.prenom;
+  const prenomB = reel ? nomB || "B" : adversaire.prenom;
+  const jaiGagne = arbitrage?.vainqueur === cleA;
   /** L'Elo bouge : c'est la seule chose qui donne du poids à une victoire. */
   const gain = arbitrage
     ? jaiGagne
@@ -264,7 +525,28 @@ export function Battle() {
                 <s className="bt-score">{MOI.score}</s>
               </div>
 
-              <h2 className="bt-t">Trouvez quelqu’un</h2>
+              {/* ═══ LE DUEL RÉEL PASSE DEVANT ═══
+                  C'est le seul endroit de la page où tout est vrai — le micro,
+                  la transcription, l'arbitre. Le reste est une démonstration,
+                  et l'écran le dit deux lignes plus bas plutôt que de laisser
+                  quelqu'un croire qu'il a joué alors qu'il a regardé. */}
+              <h2 className="bt-t">Jouer pour de vrai</h2>
+              <button
+                type="button"
+                className="bt-gros or"
+                onClick={() => {
+                  setReel(true);
+                  setErreur("");
+                  setEcran("noms");
+                }}
+              >
+                <i aria-hidden="true">🎙️</i>
+                <b>Duel à deux, sur ce téléphone</b>
+                <span>Vous parlez chacun votre tour. Un vrai arbitre décide.</span>
+                <u aria-hidden="true">→</u>
+              </button>
+
+              <h2 className="bt-t">Démonstration</h2>
               <button type="button" className="bt-gros" onClick={() => chercher()}>
                 <i aria-hidden="true">🎯</i>
                 <b>Battle aléatoire</b>
@@ -284,7 +566,7 @@ export function Battle() {
                   vide, et la personne referme. Les robots sont la porte
                   d'entrée du produit, pas son confort — on joue sa première
                   battle dans les dix secondes, sans attendre personne. */}
-              <h2 className="bt-t">Ou entraînez-vous tout de suite</h2>
+              <h2 className="bt-t">Entraînement (démonstration)</h2>
               <div className="bt-robots">
                 {ROBOTS.map((r) => (
                   <button key={r.id} type="button" className="bt-robot" onClick={() => chercher(r)}>
@@ -312,6 +594,102 @@ export function Battle() {
                 ))}
               </div>
               <p className="bt-note">{fmt.quoi}</p>
+            </div>
+          )}
+
+          {/* ═══════════════ LE DUEL RÉEL : QUI JOUE ═══════════════ */}
+          {ecran === "noms" && (
+            <div className="bt-plein">
+              <b className="bt-flash or">Duel à deux</b>
+              <p className="bt-explique">
+                Posez le téléphone entre vous. Chacun parle à son tour, le micro
+                tourne, et l’arbitre lit les deux.
+              </p>
+
+              <div className="bt-noms">
+                <label className="bleu">
+                  <span>Camp bleu</span>
+                  <input
+                    value={nomA}
+                    onChange={(e) => setNomA(e.target.value.slice(0, 20))}
+                    placeholder="Prénom"
+                    autoComplete="off"
+                  />
+                </label>
+                <i aria-hidden="true">⚔</i>
+                <label className="rouge">
+                  <span>Camp rouge</span>
+                  <input
+                    value={nomB}
+                    onChange={(e) => setNomB(e.target.value.slice(0, 20))}
+                    placeholder="Prénom"
+                    autoComplete="off"
+                  />
+                </label>
+              </div>
+
+              <div className="bt-sujet">
+                <i aria-hidden="true">{themeDe(sujet.theme)?.emoji}</i>
+                <em>{fmt.nom} · {fmt.rounds} rounds · {chrono(fmt.duree)} chacun</em>
+                <p>{sujet.question}</p>
+              </div>
+
+              <div className="bt-formats">
+                {FORMATS.map((f) => (
+                  <button
+                    key={f.cle}
+                    type="button"
+                    className={`bt-format${format === f.cle ? " on" : ""}`}
+                    onClick={() => setFormat(f.cle)}
+                  >
+                    <i aria-hidden="true">{f.emoji}</i>
+                    <b>{f.nom}</b>
+                    <em>{f.duree < 60 ? `${f.duree} s` : `${f.duree / 60} min`}</em>
+                  </button>
+                ))}
+              </div>
+
+              <div className="bt-duo">
+                <button
+                  type="button"
+                  className="bt-b creux"
+                  /* LES DIX SUJETS, ET PAS SEULEMENT LES TROIS JOUABLES.
+                     La restriction n'existe que pour la démonstration, dont
+                     les verdicts sont écrits à la main : ici c'est un vrai
+                     modèle qui arbitre, donc n'importe quelle question
+                     fonctionne. */
+                  onClick={() =>
+                    setSujet(SUJETS[Math.floor(Math.random() * SUJETS.length)])
+                  }
+                >
+                  Autre sujet
+                </button>
+                <button
+                  type="button"
+                  className="bt-b plein"
+                  disabled={!nomA.trim() || !nomB.trim()}
+                  onClick={async () => {
+                    if (await ouvrirLeMicro()) setEcran("avant");
+                  }}
+                >
+                  Ouvrir le micro
+                </button>
+              </div>
+
+              {erreur && <p className="bt-erreur">{erreur}</p>}
+
+              {/* ON LE DIT, PARCE QU'ON ENREGISTRE VRAIMENT. Le reste de la
+                  page est une mise en scène ; ici le micro tourne, et personne
+                  ne doit le découvrir après coup. */}
+              <p className="bt-note">
+                Le micro s’ouvre pour la durée du match et se coupe à la fin.
+                Chaque tour est envoyé pour être transcrit, puis lu par
+                l’arbitre. Rien n’est conservé.
+              </p>
+
+              <button type="button" className="bt-quitter" onClick={() => { setReel(false); setEcran("accueil"); }}>
+                Revenir
+              </button>
             </div>
           )}
 
@@ -380,20 +758,26 @@ export function Battle() {
           {/* ═══════════════ L'AVANT-MATCH ═══════════════ */}
           {ecran === "avant" && (
             <div className="bt-plein">
-              <b className="bt-flash">Battle #{1284 + MOI.battles}</b>
+              <b className="bt-flash">{reel ? "Prêts ?" : `Battle #${1284 + MOI.battles}`}</b>
+              {reel && (
+                <p className="bt-explique">
+                  {prenomA} parle en premier. Posez le téléphone entre vous et
+                  parlez normalement, à voix haute.
+                </p>
+              )}
               <div className="bt-face">
                 <div className="bt-cote bleu">
-                  <span className="bt-av bleu grand">V</span>
-                  <b>{MOI.prenom}</b>
-                  <em>{MOI.score}</em>
+                  <span className="bt-av bleu grand">{prenomA[0]}</span>
+                  <b>{prenomA}</b>
+                  <em>{reel ? "commence" : MOI.score}</em>
                 </div>
                 <i className="bt-vs" aria-hidden="true">VS</i>
                 <div className="bt-cote rouge">
                   <span className={`bt-av rouge grand${adversaire.robot ? " robot" : ""}`}>
-                    {adversaire.prenom[0]}
+                    {prenomB[0]}
                   </span>
-                  <b>{adversaire.prenom}</b>
-                  <em>{adversaire.score}</em>
+                  <b>{prenomB}</b>
+                  <em>{reel ? "répond" : adversaire.score}</em>
                 </div>
               </div>
 
@@ -426,9 +810,9 @@ export function Battle() {
                   temps. Il reste, éteint, à un tiers de la hauteur. */}
               <div className={`bt-camp rouge${quiParle === "lui" ? " actif" : ""}`}>
                 <span className={`bt-av rouge${adversaire.robot ? " robot" : ""}`}>
-                  {adversaire.prenom[0]}
+                  {prenomB[0]}
                 </span>
-                <b>{adversaire.prenom}</b>
+                <b>{prenomB}</b>
                 {quiParle === "lui" && (
                   <div className="bt-onde" aria-hidden="true">
                     <i /><i /><i /><i /><i /><i /><i /><i /><i />
@@ -438,12 +822,12 @@ export function Battle() {
 
               <div className="bt-chrono">
                 <b>{chrono(reste)}</b>
-                <em>{quiParle === "moi" ? "À vous" : `${adversaire.prenom} parle`}</em>
+                <em>{quiParle === "moi" ? (reel ? `${prenomA} parle` : "À vous") : `${prenomB} parle`}</em>
               </div>
 
               <div className={`bt-camp bleu${quiParle === "moi" ? " actif" : ""}`}>
-                <span className="bt-av bleu">V</span>
-                <b>{MOI.prenom}</b>
+                <span className="bt-av bleu">{prenomA[0]}</span>
+                <b>{prenomA}</b>
                 {quiParle === "moi" && (
                   <div className="bt-onde" aria-hidden="true">
                     <i /><i /><i /><i /><i /><i /><i /><i /><i />
@@ -452,7 +836,9 @@ export function Battle() {
               </div>
 
               <button type="button" className="bt-fini" onClick={passerLaParole}>
-                J’ai fini — à lui
+                {reel
+                  ? `J’ai fini — au tour de ${quiParle === "moi" ? prenomB : prenomA}`
+                  : "J’ai fini — à lui"}
               </button>
 
               {/* LE COUP DE SIFFLET. Il traverse toute la page, il est illisible
@@ -478,6 +864,11 @@ export function Battle() {
                   </li>
                 ))}
               </ul>
+              {reel && enAttente > 0 && (
+                <p className="bt-explique">
+                  On finit de transcrire le dernier tour…
+                </p>
+              )}
               <p className="bt-note">
                 Il ne juge pas qui a raison. Il juge comment chacun a défendu sa
                 position — et il vérifie les faits, quand il y en a.
@@ -489,16 +880,26 @@ export function Battle() {
           {ecran === "resultat" && arbitrage && (
             <div className="bt-page">
               <div className={`bt-verdict${jaiGagne ? " gagne" : ""}`}>
-                <i aria-hidden="true">{jaiGagne ? "🏆" : "💀"}</i>
-                <b>{jaiGagne ? "VICTOIRE" : "DÉFAITE"}</b>
+                <i aria-hidden="true">{jaiGagne ? "🏆" : reel ? "🏆" : "💀"}</i>
+                {/* DANS UN DUEL RÉEL, LE TITRE NOMME LE VAINQUEUR. « DÉFAITE »
+                    n'a de sens que quand l'écran s'adresse à quelqu'un en
+                    particulier ; ici les deux joueurs regardent le même
+                    téléphone, et l'un des deux vient de gagner. */}
+                <b>{reel ? (jaiGagne ? prenomA : prenomB) : jaiGagne ? "VICTOIRE" : "DÉFAITE"}</b>
                 <em>
-                  {total(arbitrage.notes[MOI.id])} — {total(arbitrage.notes[adversaire.id])}
+                  {total(arbitrage.notes[cleA])} — {total(arbitrage.notes[cleB])}
                 </em>
-                <s className={gain > 0 ? "plus" : "moins"}>
-                  {gain > 0 ? "+" : ""}{gain} points
-                </s>
+                {/* L'ELO N'A DE SENS QUE DANS LA DÉMONSTRATION : un duel joué
+                    sur un téléphone, sans compte, ne classe personne. Afficher
+                    « +19 points » y serait un chiffre inventé. */}
+                {!reel && (
+                  <s className={gain > 0 ? "plus" : "moins"}>
+                    {gain > 0 ? "+" : ""}{gain} points
+                  </s>
+                )}
               </div>
 
+              {erreur && <p className="bt-erreur">{erreur}</p>}
               <p className="bt-mot">{arbitrage.verdict}</p>
 
               {/* LA GRILLE, CÔTE À CÔTE. On ne lit pas deux tableaux l'un après
@@ -508,12 +909,12 @@ export function Battle() {
               <div className="bt-grille">
                 <div className="bt-grille-h">
                   <span />
-                  <b className="bleu">{MOI.prenom}</b>
-                  <b className="rouge">{adversaire.prenom}</b>
+                  <b className="bleu">{prenomA}</b>
+                  <b className="rouge">{prenomB}</b>
                 </div>
                 {CRITERES.map((c) => {
-                  const a = arbitrage.notes[MOI.id][c.cle];
-                  const b = arbitrage.notes[adversaire.id][c.cle];
+                  const a = arbitrage.notes[cleA][c.cle];
+                  const b = arbitrage.notes[cleB][c.cle];
                   if (a === undefined && b === undefined) {
                     return (
                       <div key={c.cle} className="bt-ligne vide">
@@ -565,7 +966,7 @@ export function Battle() {
                         <i aria-hidden="true">
                           {r.genre === "faute" ? "⚠️" : r.genre === "sophisme" ? "🚩" : r.genre === "hors" ? "↗" : "★"}
                         </i>
-                        <b>{r.qui === MOI.id ? MOI.prenom : adversaire.prenom}</b>
+                        <b>{r.qui === cleA ? prenomA : prenomB}</b>
                         <span>{r.quoi}</span>
                       </div>
                     ))}
@@ -582,32 +983,132 @@ export function Battle() {
                 </button>
               )}
 
+              {/* ═══ CE QUI A ÉTÉ ENTENDU ═══
+
+                  LA PIÈCE LA PLUS IMPORTANTE D'UN PREMIER ESSAI RÉEL, et elle
+                  n'a rien à voir avec le jeu. La transcription est le maillon
+                  qui décide de tout : si le micro a compris « quatre » pour
+                  « quarante », l'arbitre a jugé autre chose que ce qui a été
+                  dit, et son verdict est faux sans que personne puisse le
+                  savoir. On peut donc relire, et vérifier l'arbitre.
+
+                  Elle est repliée : elle sert à contrôler, pas à être lue à
+                  chaque partie. */}
+              {reel && tours.length > 0 && (
+                <div className="bt-entendu">
+                  <button type="button" onClick={() => setEntendu((v) => !v)}>
+                    <b>Ce qui a été entendu</b>
+                    <u>{entendu ? "Masquer" : "Voir"}</u>
+                  </button>
+                  {entendu && (
+                    <div className="bt-tours">
+                      {[...tours]
+                        .sort((x, y) => x.round - y.round || (x.qui === "a" ? -1 : 1))
+                        .map((t, i) => (
+                          <p key={i} className={t.qui === "a" ? "bleu" : "rouge"}>
+                            <b>
+                              {t.qui === "a" ? prenomA : prenomB} · round {t.round}
+                            </b>
+                            {t.texte || "(rien d’audible — le micro n’a pas capté)"}
+                          </p>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* LA CARTE DE COMBAT. Elle existe pour sortir de l'application :
                   un résultat qu'on peut montrer est la seule publicité qu'un
                   jeu de ce genre puisse s'offrir. */}
               <div className="bt-carte">
                 <span className="bt-carte-n">BATTLE #{1284 + MOI.battles}</span>
                 <div className="bt-carte-d">
-                  <b className="bleu">{MOI.prenom}</b>
+                  <b className="bleu">{prenomA}</b>
                   <i aria-hidden="true">⚔</i>
-                  <b className="rouge">{adversaire.prenom}</b>
+                  <b className="rouge">{prenomB}</b>
                 </div>
                 <p>{sujet.question}</p>
                 <div className="bt-carte-s">
-                  <b>{jaiGagne ? MOI.prenom : adversaire.prenom}</b>
+                  <b>{jaiGagne ? prenomA : prenomB}</b>
                   <em>
-                    {total(arbitrage.notes[MOI.id])} — {total(arbitrage.notes[adversaire.id])}
+                    {total(arbitrage.notes[cleA])} — {total(arbitrage.notes[cleB])}
                   </em>
                 </div>
                 <button type="button" className="bt-partage">Partager</button>
               </div>
 
               <div className="bt-duo">
-                <button type="button" className="bt-b creux" onClick={() => setEcran("accueil")}>
+                <button
+                  type="button"
+                  className="bt-b creux"
+                  onClick={() => {
+                    fermerLeMicro();
+                    setReel(false);
+                    setEcran("accueil");
+                  }}
+                >
                   Terminer
                 </button>
-                <button type="button" className="bt-b plein" onClick={() => setEcran("avant")}>
+                {/* LA REVANCHE ROUVRE LE MICRO : il a été coupé à la fin du
+                    match, et un duel qui repart sans son micro enregistre le
+                    silence pendant trois minutes. */}
+                <button
+                  type="button"
+                  className="bt-b plein"
+                  onClick={async () => {
+                    if (reel && !(await ouvrirLeMicro())) return;
+                    setEcran("avant");
+                  }}
+                >
                   ⚔ Revanche
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* L'ARBITRE A ÉCHOUÉ, ET ON NE FAIT PAS SEMBLANT. Rendre un verdict
+              inventé après un vrai match serait la seule faute impardonnable de
+              cette page. On dit ce qui s'est passé, et on rend les tours. */}
+          {ecran === "resultat" && !arbitrage && (
+            <div className="bt-page">
+              <div className="bt-verdict">
+                <i aria-hidden="true">⚠️</i>
+                <b>PAS DE VERDICT</b>
+              </div>
+              <p className="bt-mot">{erreur || "L’arbitre n’a pas répondu."}</p>
+              {tours.length > 0 && (
+                <div className="bt-tours" style={{ marginTop: "14px" }}>
+                  {[...tours]
+                    .sort((x, y) => x.round - y.round || (x.qui === "a" ? -1 : 1))
+                    .map((t, i) => (
+                      <p key={i} className={t.qui === "a" ? "bleu" : "rouge"}>
+                        <b>{t.qui === "a" ? prenomA : prenomB} · round {t.round}</b>
+                        {t.texte || "(rien d’audible)"}
+                      </p>
+                    ))}
+                </div>
+              )}
+              <div className="bt-duo">
+                <button
+                  type="button"
+                  className="bt-b creux"
+                  onClick={() => {
+                    fermerLeMicro();
+                    setReel(false);
+                    setEcran("accueil");
+                  }}
+                >
+                  Terminer
+                </button>
+                <button
+                  type="button"
+                  className="bt-b plein"
+                  onClick={async () => {
+                    if (reel && !(await ouvrirLeMicro())) return;
+                    setEcran("avant");
+                  }}
+                >
+                  ⚔ Rejouer
                 </button>
               </div>
             </div>
@@ -837,6 +1338,62 @@ export function Battle() {
           color:#8A93A6;}
         .bt-robot s{grid-column:3;grid-row:1 / 3;align-self:center;
           text-decoration:none;font-size:12px;font-weight:900;color:#7A8396;}
+
+        /* ── LE DUEL REEL ─────────────────────────────────────────────── */
+        /* L'OR DIT « ICI, C'EST VRAI ». Il ne servait qu'au verdict ; il sert
+           maintenant aussi a la seule porte de la page ou rien n'est simule.
+           Les deux emplois se tiennent : dans les deux cas, c'est le moment ou
+           quelque chose se joue pour de bon. */
+        .bt-gros.or{color:#07070A;
+          background:linear-gradient(140deg,#FFE07A,#FFB43C);}
+        .bt-gros.or span{color:#5A3A00;opacity:.85;}
+
+        .bt-explique{font-size:12.5px;line-height:1.5;color:#A8B2C2;
+          text-align:center;max-width:290px;}
+
+        .bt-noms{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;
+          align-items:end;width:100%;}
+        .bt-noms label{display:flex;flex-direction:column;gap:5px;}
+        .bt-noms label span{font-size:9.5px;font-weight:900;letter-spacing:.16em;
+          text-transform:uppercase;color:#7A8396;}
+        .bt-noms label.bleu span{color:#7FC2FF;}
+        .bt-noms label.rouge span{color:#FF9AA0;}
+        .bt-noms input{width:100%;padding:13px 14px;font:inherit;font-size:16px;
+          font-weight:800;color:#fff;border-radius:14px;
+          background:rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.14);}
+        .bt-noms label.bleu input{border-color:rgba(59,155,255,.4);}
+        .bt-noms label.rouge input{border-color:rgba(255,59,71,.4);}
+        .bt-noms input:focus{outline:2px solid rgba(255,196,0,.6);outline-offset:-2px;}
+        .bt-noms>i{font-style:normal;font-size:17px;color:#4A5266;
+          padding-bottom:14px;}
+
+        .bt-b:disabled{opacity:.4;cursor:default;}
+
+        /* L'ERREUR EST ROUGE ET ELLE RESTE. Une panne de micro ou d'arbitre au
+           milieu d'un essai doit se lire, pas s'effacer au bout de trois
+           secondes comme une confirmation. */
+        .bt-erreur{width:100%;padding:11px 13px;border-radius:13px;
+          font-size:12px;line-height:1.45;font-weight:700;color:#FFC4C8;
+          background:rgba(255,59,71,.12);border:1px solid rgba(255,59,71,.36);}
+
+        /* CE QUI A ETE ENTENDU. Replie par defaut : c'est un outil de controle,
+           pas une lecture de chaque partie. */
+        .bt-entendu{margin-top:14px;border-radius:16px;overflow:hidden;
+          border:1px solid rgba(255,255,255,.11);}
+        .bt-entendu>button{display:flex;align-items:center;width:100%;
+          padding:12px 14px;font:inherit;cursor:pointer;border:0;
+          color:#EDEFF3;background:rgba(255,255,255,.05);}
+        .bt-entendu>button b{font-size:12.5px;font-weight:900;}
+        .bt-entendu>button u{margin-left:auto;text-decoration:none;
+          font-size:11px;font-weight:900;color:#FFC400;}
+        .bt-tours{display:flex;flex-direction:column;gap:9px;padding:12px 14px;
+          background:rgba(0,0,0,.3);}
+        .bt-tours p{font-size:12px;line-height:1.5;color:#C2CAD8;}
+        .bt-tours p b{display:block;font-size:10px;font-weight:900;
+          letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;}
+        .bt-tours p.bleu b{color:#7FC2FF;}
+        .bt-tours p.rouge b{color:#FF9AA0;}
 
         .bt-formats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
         .bt-format{display:flex;flex-direction:column;align-items:center;gap:3px;
