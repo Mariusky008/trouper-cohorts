@@ -734,7 +734,25 @@ async function demanderAvertissement(): Promise<NotificationPermission> {
  * LES DEGRADES PORTENT LES MEMES IDENTIFIANTS AUX DEUX ENDROITS, et c'est sans
  * consequence : ils sont identiques, et le navigateur prend le premier.
  */
-function Fantome({ classe = "ap-fantome" }: { classe?: string }) {
+/**
+ * ═══ ET LA VARIANTE QUI FAIT UN CLIN D'OEIL ═══
+ *
+ * « Essaye de copier ce fantome, au moins dans la pop-up de discussion en haut
+ * avant d'envoyer les invitations, comme sur la photo que je t'avais donnee. »
+ *
+ * C'EST UNE VARIANTE, PAS UN SECOND FANTOME, et c'est la reponse a l'autre
+ * moitie de sa remarque — « il n'est pas le meme partout ». Deux traces auraient
+ * diverge au premier ajustement, et c'est toujours celui qu'on ne regarde pas
+ * qui prend du retard. Le corps, les joues, l'ombre et le volume sont donc les
+ * memes lignes ; seuls CHANGENT les trois choses qui font l'expression de sa
+ * maquette : l'oeil gauche se ferme, la bouche s'ouvre en grand, et le bras
+ * droit devient un pouce leve. Les traits de vitesse viennent avec.
+ *
+ * ELLE NE VA QUE LA. Sur soixante-quatre points dans la barre, un pouce leve
+ * n'est plus qu'une tache ; a quatre-vingts sur la page d'invitation, il porte
+ * exactement ce qu'on veut dire a cet instant — vas-y, envoie.
+ */
+function Fantome({ classe = "ap-fantome", clin = false }: { classe?: string; clin?: boolean }) {
   return (
     <svg className={classe} viewBox="0 0 40 44" aria-hidden="true" focusable="false">
 
@@ -799,7 +817,9 @@ function Fantome({ classe = "ap-fantome" }: { classe?: string }) {
                     qui fait le personnage, c'est qu'ils BOUGENT : ils balancent
                     au repos et se lancent en l'air quand on l'appuie. */}
                 <ellipse className="ap-f-bras g" cx="3.4" cy="27.2" rx="4" ry="2.7" />
-                <ellipse className="ap-f-bras d" cx="36.6" cy="27.2" rx="4" ry="2.7" />
+                {/* LE MOIGNON DROIT DISPARAIT DANS LA VARIANTE : il est remplace
+                    par le pouce leve, dessine plus bas — DEVANT le corps. */}
+                {!clin && <ellipse className="ap-f-bras d" cx="36.6" cy="27.2" rx="4" ry="2.7" />}
                 <path
                   className="ap-f-corps"
                   d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"
@@ -818,13 +838,86 @@ function Fantome({ classe = "ap-fantome" }: { classe?: string }) {
                 />
                 <ellipse className="ap-f-joue g" cx="10.4" cy="24.6" rx="2.8" ry="1.8" />
                 <ellipse className="ap-f-joue d" cx="29.6" cy="24.6" rx="2.8" ry="1.8" />
-                <ellipse className="ap-f-oeil g" cx="14.2" cy="19" rx="2.6" ry="3.4" />
+                {clin ? (
+                  /* L'OEIL FERME EST UN TRAIT, PAS UNE ELLIPSE APLATIE. Ecrase
+                     verticalement, l'oeil garde son contour sombre et ressemble
+                     a une paupiere gonflee ; l'arc, lui, se lit tout de suite
+                     comme un clin d'oeil — c'est la meme convention que le
+                     dessin de sa maquette. */
+                  <path className="ap-f-clin" d="M11.8 20.1c1.2-2.7 3.7-2.7 4.8 0" />
+                ) : (
+                  <>
+                    <ellipse className="ap-f-oeil g" cx="14.2" cy="19" rx="2.6" ry="3.4" />
+                    <circle className="ap-f-eclat g" cx="15.1" cy="17.7" r=".95" />
+                    <circle className="ap-f-eclat2 g" cx="13.3" cy="20.5" r=".45" />
+                  </>
+                )}
                 <ellipse className="ap-f-oeil d" cx="25.8" cy="19" rx="2.6" ry="3.4" />
-                <circle className="ap-f-eclat g" cx="15.1" cy="17.7" r=".95" />
                 <circle className="ap-f-eclat d" cx="26.7" cy="17.7" r=".95" />
-                <circle className="ap-f-eclat2 g" cx="13.3" cy="20.5" r=".45" />
                 <circle className="ap-f-eclat2 d" cx="24.9" cy="20.5" r=".45" />
-                <path className="ap-f-bouche" d="M16.4 26.2c1.5 2 5.7 2 7.2 0" />
+                {clin ? (
+                  /* LA BOUCHE OUVERTE, AVEC SA LANGUE. Un sourire au trait
+                     suffit quand le fantome est petit ; a cette taille il
+                     devient timide, et sa maquette montre exactement l'inverse —
+                     quelqu'un de franchement content. */
+                  <>
+                    <path
+                      className="ap-f-rire"
+                      d="M15 25.4h10c0 4.1-2.2 6.6-5 6.6s-5-2.5-5-6.6z"
+                    />
+                    <path
+                      className="ap-f-langue"
+                      d="M17.4 30.1c.6-.9 1.5-1.4 2.6-1.4s2 .5 2.6 1.4c-.7.8-1.6 1.3-2.6 1.3s-1.9-.5-2.6-1.3z"
+                    />
+                  </>
+                ) : (
+                  <path className="ap-f-bouche" d="M16.4 26.2c1.5 2 5.7 2 7.2 0" />
+                )}
+                {clin && (
+                  /* ─── LE POUCE LEVE, DEVANT LE CORPS ───
+                     PREMIERE VERSION : dessine a la place du moignon, c'est-a-dire
+                     AVANT le corps. Resultat verifie a l'ecran — le corps le
+                     recouvrait aux trois quarts, et il ne restait qu'une bosse
+                     claire au bord droit. Les moignons peuvent passer derriere
+                     parce qu'ils ne veulent rien dire ; une main qui fait un
+                     signe doit etre lue, donc elle passe devant.
+                     LE LISERE SOMBRE N'EST PAS UN ORNEMENT : pose sur un corps
+                     de la meme famille de vert, la main s'y fondrait sans lui —
+                     c'est le contour qui la detache, comme dans sa maquette. */
+                  <g className="ap-f-pouce">
+                    {/* UNE SEULE SILHOUETTE, POING ET POUCE COMPRIS.
+                        DEUXIEME VERSION : le poing et le pouce etaient deux
+                        traces, et le pouce n'etait qu'un contour ouvert. A
+                        l'ecran, les deux formes se lisaient comme un anse sur
+                        une boite — un cadenas, pas une main. Un contour unique
+                        n'a pas de couture a l'interieur, donc rien qui puisse
+                        se lire comme une seconde piece. */}
+                    <path d="M32.6 31.5V23.2a1.35 1.35 0 0 1 2.7 0v2.6h2.6a2.3 2.3 0 0 1 2.3 2.3v3.4a2.3 2.3 0 0 1-2.3 2.3h-3a2.3 2.3 0 0 1-2.3-2.3z" />
+                    {/* LES PLIS DES DOIGTS. TROISIEME VERSION, et les deux
+                        premieres disaient la meme chose : un poing centre sous
+                        un pouce centre, c'est un CADENAS — l'anse et le boitier.
+                        Deux corrections ensemble le defont : le pouce descend au
+                        bord gauche, la ou il s'attache vraiment sur une main vue
+                        de cote, et deux plis a droite disent que le reste sont
+                        des doigts replies. Un dessin ne se lit pas par ses
+                        pieces mais par ce qu'elles laissent reconnaitre. */}
+                    <path className="pli" d="M36.6 28.9h2.6" />
+                    <path className="pli" d="M36.6 31.3h2.6" />
+                  </g>
+                )}
+                {clin && (
+                  /* ─── LES TRAITS DE VITESSE ───
+                     Ils sont sur sa maquette et ils ne sont pas decoratifs :
+                     sans eux le fantome est POSE, avec eux il ARRIVE. C'est la
+                     difference entre une mascotte et quelqu'un qui vous fait
+                     signe, et l'ecran dit justement « envoyez ». Ils sortent du
+                     cadre a gauche, ce que permet overflow visible. */
+                  <g className="ap-f-vites">
+                    <path d="M-1.5 12.5 3.5 9.7" />
+                    <path d="M-2.4 19.4 3.1 18.2" />
+                    <path d="M-.6 26.2 4.2 26.6" />
+                  </g>
+                )}
                 {/* ─── LES ETINCELLES ───
                     Invisibles au repos, elles jaillissent au moment du saut.
                     C'est le detail qui fait rire : le personnage ne se contente
@@ -3773,10 +3866,26 @@ export function ApercuHabitant() {
 
      PARTOUT AILLEURS IL N'AVAIT AUCUN RÔLE : il était éteint, à 45 % d'opacité,
      au centre exact de la barre. C'est cette place vide qui devient l'arbitre. */
+  /* ═══ ET SURTOUT : DANS UN SALON, IL NE TOUCHE JAMAIS AU PAQUET ═══
+
+     « Quand j'arrive sur le salon de discussion, le fantome, au lieu d'avoir
+     une fonctionnalite particuliere dans le salon, eh bien quand personne n'a
+     ete invite encore, alors il change l'annonce derriere le salon. »
+
+     C'ETAIT MON DEFAUT, ET IL VENAIT D'UNE CONDITION ECRITE A L'ENVERS. Je
+     n'avais detourne le bouton que lorsque l'arbitre avait quelque chose a
+     dire ; dans un salon vide il n'a rien a dire — il retombait donc dans la
+     branche du paquet, et faisait tourner l'annonce SOUS la conversation. Le
+     bug qu'il traque depuis six tours, refabrique par le correctif d'a cote.
+
+     LE ROLE SE DECIDE PAR L'ENDROIT, PAS PAR L'HUMEUR. Dans un salon, ou hors
+     du paquet, le fantome n'est plus le bouton du paquet — point. S'il a
+     quelque chose a dire il arbitre, sinon il se tait et reste eteint. Un
+     bouton dont la fonction depend de l'etat d'un groupe est un bouton dont on
+     ne peut rien prevoir. */
+  const horsDuPaquet = salonPage || onglet !== "direct";
   const arbitre =
-    (salonPage || onglet !== "direct") && veilleActive && veilleActive.ton !== "calme"
-      ? veilleActive
-      : undefined;
+    horsDuPaquet && veilleActive && veilleActive.ton !== "calme" ? veilleActive : undefined;
   /** La bulle de l'arbitre est ouverte : une phrase, un geste, rien d'autre. */
   const [arbitreOuvert, setArbitreOuvert] = useState(false);
   /** Le décompte des voix s'allume, le temps qu'on le trouve des yeux. */
@@ -4233,9 +4342,45 @@ export function ApercuHabitant() {
     } else if (e.action?.faire === "voter") {
       // ON NE VOTE PAS À LEUR PLACE — on montre où se lève la main. Le décompte
       // s'allume le temps qu'on le voie, et le doigt fait le reste.
-      window.setTimeout(() => setMontreLeVote(true), 300);
-      window.setTimeout(() => setMontreLeVote(false), 2600);
+      //
+      // ET ON L'AMÈNE DESSUS, CE QUI MANQUAIT. « En version téléphone, ça ne me
+      // remonte pas sur l'info. » C'est vrai, et c'était grave : sur un écran
+      // de 390 points, le décompte des voix est SOUS LE PLI dès qu'un salon a
+      // quelques messages. On allumait donc une lumière sur une pièce que la
+      // personne ne regardait pas — le défaut exact qu'on reprochait au reste.
+      window.setTimeout(() => versLeVote(), 300);
+    } else if (e.action?.faire === "ouvrir") {
+      // « Voir la discussion » emmène au dernier message, pas en haut du salon :
+      // ce qu'on vient lire est ce qui vient d'être écrit.
+      window.setTimeout(() => {
+        const el = filSalon.current;
+        if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+      }, 340);
     }
+  }
+
+  /**
+   * AMENER LE DÉCOMPTE DES VOIX SOUS LES YEUX, PUIS L'ALLUMER.
+   *
+   * L'ORDRE COMPTE : on défile D'ABORD, on allume ENSUITE. L'inverse fait
+   * partir l'animation pendant que la page glisse — on arrive après la fête, et
+   * il ne reste qu'un cadre qui s'éteint. Le retard vaut la durée du glissement.
+   */
+  function versLeVote() {
+    const el = filSalon.current;
+    const cible = el?.querySelector(".ap-propos-l") as HTMLElement | null;
+    if (el && cible) {
+      const b = cible.getBoundingClientRect();
+      const c = el.getBoundingClientRect();
+      // Au TIERS de la hauteur visible, pas collé en haut : au ras du bord on
+      // ne voit pas ce qui l'entoure, et on ne sait donc pas où on a atterri.
+      el.scrollTo({
+        top: Math.max(0, el.scrollTop + b.top - c.top - c.height / 3),
+        behavior: "smooth",
+      });
+    }
+    window.setTimeout(() => setMontreLeVote(true), el && cible ? 420 : 0);
+    window.setTimeout(() => setMontreLeVote(false), 4200);
   }
 
   function reserverPourLeSalon(pourUnSeul = false) {
@@ -7753,6 +7898,30 @@ export function ApercuHabitant() {
               <div className="ap-feuille-dos" aria-hidden="true" />
             <div className="ap-page feuille">
               <span className="ap-feuille-p" aria-hidden="true" />
+              {/* ═══ L'EN-TETE DISPARAIT TANT QU'ON EST SEUL ═══
+
+                  « Lorsqu'on ouvre pour la premiere fois le salon apres
+                  "proposer a mes amis", tout ceci est inutile et pollue
+                  visuellement : peut-etre qu'avant qu'on ait invite des amis on
+                  peut enlever cette section pour avoir l'essentiel. »
+
+                  IL A RAISON, ET CHAQUE MORCEAU LE PROUVE SEPAREMENT. « ← Le
+                  direct » repete ce que dit deja la photo assombrie derriere.
+                  « On choisit ensemble » est un titre que j'avais ajoute pour
+                  faire une transition — mais la page d'invitation, juste
+                  dessous, fait cette transition BEAUCOUP mieux, et en montrant
+                  l'offre. « 12 h – 12 h 30 · 1 personne » compte une personne :
+                  soi. Un compteur qui dit « vous etes seul » a quelqu'un dont
+                  on veut precisement qu'il invite du monde.
+
+                  QUARANTE-SIX POINTS RENDUS A L'ESSENTIEL. Ce n'est pas un
+                  gain d'esthetique : c'est ce qui remonte le bouton vert
+                  « Inviter mes amis » plus haut dans l'ecran, et il n'y a
+                  qu'une chose a faire ici.
+
+                  DES LE PREMIER MESSAGE, L'EN-TETE REVIENT. Le titre redevient
+                  utile quand il y a du monde a situer, et le retour aussi. */}
+              {!salonSeul && (
               <div className="ap-page-h">
                 <button
                   type="button"
@@ -7856,8 +8025,9 @@ export function ApercuHabitant() {
                   </button>
                 ) : null}
               </div>
+              )}
 
-              <div className="ap-sal-corps" ref={filSalon}>
+              <div className={`ap-sal-corps${salonSeul ? " seul" : ""}`} ref={filSalon}>
                 {/* ─── CE DONT ON PARLE, EN GRAND ET EN PREMIER ───
                     Une photo de vignette en haut à droite ne dit rien : elle
                     décore une conversation. Ici l'annonce EST l'écran d'accueil
@@ -8255,7 +8425,34 @@ export function ApercuHabitant() {
                     « une annonce que je regarde » à « ce que je propose ». Deux
                     mots suffisent, et ils font la transition que l'écran ne
                     faisait pas. */}
-                {salonSeul && <p className="ap-vousprop">Vous proposez</p>}
+                {/* ═══ ET LE RETOUR PREND SA PLACE, EN DISCRET ═══
+                    « Un bouton discret pour revenir au direct a la place de
+                    "Vous proposez". »
+                    « VOUS PROPOSEZ » AVAIT FAIT SON TRAVAIL, ET N'EN A PLUS.
+                    Ces deux mots existaient pour nommer la carte qui etait juste
+                    dessous — dire qu'elle avait change de statut. Cette carte a
+                    disparu de la page d'invitation depuis qu'elle faisait
+                    doublon avec le rappel de l'offre : le libelle ne nomme donc
+                    plus rien. Il ne reste qu'a rendre sa ligne au seul geste
+                    qu'on peut vouloir faire d'autre — repartir.
+                    IL EST LE SEUL RETOUR DE CET ECRAN, mais il n'a pas a etre
+                    gros pour autant : ce qu'on veut ici, c'est inviter. Une
+                    fleche et deux mots, en gris, alignes a gauche. */}
+                {salonSeul && (
+                  <button
+                    type="button"
+                    className="ap-sal-retour"
+                    onClick={() => {
+                      arreterLeDirect();
+                      rangerCeQuiAttend();
+                      setSalonPage(false);
+                      setSalonOuvert("");
+                    }}
+                  >
+                    <i aria-hidden="true">←</i>
+                    {NOM_ONGLET[onglet]}
+                  </button>
+                )}
 
                 {salon.messages.length === 0 && !salon.collectif && (
                   <div className="ap-invite">
@@ -8277,7 +8474,7 @@ export function ApercuHabitant() {
                         bouton — sinon on envoie un lien vide de sens. */}
                     <div className="ap-invite-h">
                       <span className="ap-invite-f" aria-hidden="true">
-                        <Fantome classe="ap-invite-d" />
+                        <Fantome classe="ap-invite-d" clin />
                       </span>
                       <p className="ap-invite-t">
                         Envoyez cette offre
@@ -8368,13 +8565,33 @@ export function ApercuHabitant() {
                       avec vous, sans rien installer.
                     </p>
 
-                    {/* LA VISIBILITE RESTE ICI : c'est au moment d'inviter
-                        qu'on se demande qui verra. */}
-                    <p className="ap-invite-v">
+                    {/* LA VISIBILITE RESTE ICI, ET ELLE DEVIENT LE BOUTON.
+                        C'est au moment d'inviter qu'on se demande qui verra —
+                        elle etait deja ecrite ici, mais en simple phrase, le
+                        reglage vivant dans l'en-tete. Or l'en-tete disparait
+                        tant qu'on est seul : sans ce changement, le globe
+                        aurait disparu avec lui, et il a demande deux fois qu'on
+                        le garde. La phrase qui DIT l'etat devient donc celle qui
+                        le CHANGE — c'est un objet de moins, pas un de plus. */}
+                    <button
+                      type="button"
+                      className={`ap-invite-v${salon.prive ? " prive" : ""}`}
+                      onClick={() => {
+                        const prive = basculerVisibilite(salon.cle);
+                        setEchoIcone(prive ? "🔒" : "🌍");
+                        setEcho(
+                          prive
+                            ? "Salon privé : seuls ceux que vous invitez le voient."
+                            : "Salon public : ceux qui sont autour peuvent le découvrir.",
+                        );
+                      }}
+                    >
+                      <i aria-hidden="true">{salon.prive ? "🔒" : "🌍"}</i>
                       {salon.prive
-                        ? "🔒 Fermé : seuls ceux que vous invitez le voient."
-                        : "🌍 Ouvert : ceux qui sont autour peuvent le voir et s’y joindre."}
-                    </p>
+                        ? "Fermé : seuls ceux que vous invitez le voient."
+                        : "Ouvert : ceux qui sont autour peuvent le voir et s’y joindre."}
+                      <s aria-hidden="true">{salon.prive ? "Ouvrir" : "Fermer"}</s>
+                    </button>
 
                     <p className="ap-invite-p">
                       <i aria-hidden="true">💬</i>
@@ -9006,13 +9223,20 @@ export function ApercuHabitant() {
                   ? `Le fantôme a quelque chose à dire : ${arbitre.phrase}`
                   : "Passer à l’annonce suivante"
               }
-              disabled={arbitre ? false : !sommet || onglet !== "direct"}
+              // HORS DU PAQUET IL N'A QUE DEUX ETATS : arbitre, ou eteint.
+              // Jamais celui du paquet — voir `horsDuPaquet`.
+              disabled={horsDuPaquet ? !arbitre : !sommet}
               onClick={() => {
                 // ─── L'ARBITRE PARLE, LE PAQUET NE BOUGE PAS.
                 // Hors du paquet, l'appui ouvre la bulle : une phrase, un
                 // geste. Le petit clin d'oeil part quand meme — c'est ce qui
                 // dit que le fantome a entendu le doigt.
-                if (arbitre) {
+                // LA GARDE PORTE SUR L'ENDROIT, PAS SUR L'ARBITRE : depuis un
+                // salon sans rien a dire, le bouton est eteint, mais un appui
+                // qui passerait quand meme ne doit pas faire tourner l'annonce
+                // sous la conversation.
+                if (horsDuPaquet) {
+                  if (!arbitre) return;
                   setClin("simple");
                   sonDuBond(false);
                   window.setTimeout(() => setClin(""), BOND_MS);
@@ -12320,11 +12544,19 @@ export function ApercuHabitant() {
            « Est-ce que le bouton du fantome peut etre plus gros ? » Oui, et
            c'etait deja la bonne direction : c'est le geste le plus repete du
            produit, et il partageait sa largeur avec quatre onglets de dix
-           points. A 74 il devient le centre de gravite de la barre, et le
-           fantome a enfin la place d'etre un personnage plutot qu'un
-           pictogramme. La bulle remonte d'autant pour ne pas manger la barre. */
-        .ap-onglets .ap-suiv{position:relative;flex:none;width:74px;height:74px;
-          margin:-30px 4px 0;padding:0;border-radius:50%;border:0;
+           points. Il devient le centre de gravite de la barre, et le fantome a
+           enfin la place d'etre un personnage plutot qu'un pictogramme.
+           ═══ MAIS 74 ETAIT TROP ═══
+           « Tu as agrandi le cercle du fantome et ca prend pas mal de place. »
+           Il avait raison, et le calcul le dit : a 74 dans une barre de 51, le
+           disque debordait de trente points SUR l'annonce — c'est-a-dire qu'il
+           mangeait la photo au lieu de flotter dessus. A 62 il deborde de
+           vingt-deux, reste le plus gros objet de la barre, et rend a l'image
+           un bandeau entier. On ne perd rien de ce qu'on avait gagne : le
+           fantome tient toujours a quarante points, ce qui etait le point de
+           depart de la demande. */
+        .ap-onglets .ap-suiv{position:relative;flex:none;width:62px;height:62px;
+          margin:-22px 4px 0;padding:0;border-radius:50%;border:0;
           display:flex;align-items:center;justify-content:center;
           background:linear-gradient(150deg,#8CF0CC,#2FD39A);
           box-shadow:0 12px 30px rgba(47,211,154,.42),
@@ -12333,55 +12565,100 @@ export function ApercuHabitant() {
         .ap-onglets .ap-suiv:disabled{opacity:.45;}
         .ap-onglets .ap-suiv:active{transform:scale(.9);}
         .ap-onglets .ap-suiv b{display:none;}
-        /* ═══ LE FANTOME VEILLE, ET CA SE VOIT DE PARTOUT ═══
+        /* ═══ LE FANTOME VEILLE, ET C'EST LUI QUI CHANGE DE COULEUR ═══
 
-           « J'aime bien l'idee de changer de couleur pour une raison
-           specifique, et qu'en appuyant dessus… »
+           « J'aimerais que l'anneau ne soit pas le differenciateur de couleur,
+           mais que ce soit le fantome et le background qui changent de couleur
+           et qui scintillent. »
 
-           C'EST UN HALO, PAS UN REMPLISSAGE, et la raison est nette : le corps
-           du fantome porte deja une couleur qui veut dire autre chose — l'or
-           du Flash, qui parle de l'ANNONCE qu'on regarde. Repeindre le corps
-           aurait fait dire deux choses au meme aplat, et l'une aurait efface
-           l'autre pile au moment ou les deux comptent. L'anneau est autour :
-           il ceint le fantome sans le deguiser, et les deux signaux tiennent
-           ensemble sur soixante-quatorze points.
+           IL AVAIT RAISON, ET J'AVAIS PRIS LA MAUVAISE DECISION POUR UNE BONNE
+           RAISON. J'avais mis la couleur dans un anneau pour ne pas entrer en
+           conflit avec l'or du Flash, qui repeint deja le corps. Sauf qu'un
+           anneau autour d'un bouton est un LISERE : a soixante-deux points, sur
+           un fond sombre, il fait deux points de large et il se lit comme une
+           bordure — de la finition, pas un signal. Ce qu'on voit d'un objet, en
+           peripherie, c'est sa MASSE : le disque et le personnage dessus. Peindre
+           la masse, c'est peindre ce que l'oeil attrape.
 
-           IL RESPIRE, ET C'EST CE QUI LE DISTINGUE DU REPOS. Un anneau vert
-           immobile autour d'un bouton vert ne se remarque pas ; le meme qui
-           enfle et retombe toutes les deux secondes attrape l'oeil en
-           peripherie — c'est-a-dire exactement la ou se trouve la barre quand
-           on lit autre chose. La respiration EST le signal ; la couleur ne
-           fait qu'en dire la raison.
+           ET LE CONFLIT AVEC L'OR SE REGLE PAR L'ORDRE, PAS PAR LA SEPARATION.
+           L'or dit « l'annonce que tu regardes expire » ; la veille dit « ton
+           groupe a besoin de toi ». Les deux comptent, mais jamais autant : sur
+           le paquet, l'or gagne, parce qu'on est en train de regarder cette
+           annonce-la. Ailleurs — et c'est la que la veille agit — il n'y a pas
+           d'or du tout. La regle de cascade suffit donc, et il n'y a plus rien a
+           partager.
 
-           ET IL SE TAIT SI ON LUI DEMANDE. Une pulsation permanente au bas de
-           l'ecran est insupportable pour qui y est sensible : quand le systeme
-           demande moins d'animation, l'anneau reste, fixe. Le signal survit,
-           le battement non. */
-        .ap-onglets .ap-suiv.veille{box-shadow:
-            0 12px 30px rgba(47,211,154,.42),
-            0 0 0 5px var(--ap-barre-fond, #070C0A),
-            0 0 0 8px var(--ap-veille-c, #2FD39A),
-            0 0 22px 4px var(--ap-veille-h, rgba(47,211,154,.55));
-          animation:apVeille 2.2s ease-in-out infinite;}
-        .ap-onglets .ap-suiv.veille.presse{--ap-veille-c:#F5232E;
-          --ap-veille-h:rgba(245,35,46,.6);}
-        .ap-onglets .ap-suiv.veille.decide{--ap-veille-c:#3DE2A6;
-          --ap-veille-h:rgba(61,226,166,.6);}
-        .ap-onglets .ap-suiv.veille.hesite{--ap-veille-c:#FFC400;
-          --ap-veille-h:rgba(255,196,0,.55);}
-        .ap-onglets .ap-suiv.veille.neuf{--ap-veille-c:#B98CF5;
-          --ap-veille-h:rgba(185,140,245,.55);}
+           LE SCINTILLEMENT, ET PAS UNE PULSATION DE TAILLE. Un objet qui enfle
+           et retombe au bas de l'ecran devient vite une nuisance ; une lumiere
+           qui passe dessus attrape l'oeil sans bouger la mise en page. C'est un
+           reflet qui traverse le disque, plus une respiration de luminosite.
+
+           ET IL SE TAIT SI ON LUI DEMANDE. Quand le systeme demande moins
+           d'animation, la couleur reste et le scintillement s'arrete : le signal
+           survit, le battement non. */
+        .ap-onglets .ap-suiv.veille{
+          background:var(--ap-veille-f, linear-gradient(150deg,#8CF0CC,#2FD39A));
+          box-shadow:0 12px 30px var(--ap-veille-h, rgba(47,211,154,.5)),
+            0 0 0 5px var(--ap-barre-fond, #070C0A);
+          animation:apVeille 2.4s ease-in-out infinite;}
+        /* LE CORPS DU FANTOME PREND LA TEINTE CLAIRE DE L'ETAT, le disque la
+           teinte profonde. Deux valeurs de la meme couleur : le personnage
+           reste lisible sur son fond, ce qu'un aplat unique ne permet pas. */
+        .ap-onglets .ap-suiv.veille .ap-f-corps{fill:var(--ap-veille-p, url(#apFg));}
+        .ap-onglets .ap-suiv.veille .ap-f-bras{fill:var(--ap-veille-b, #CFE9DC);}
+        /* LE REFLET DU VOLUME S'ATTENUE SOUS LA VEILLE, ET IL LE FAUT.
+           Mesure a l'ecran : le corps prenait bien la teinte, et on voyait un
+           fantome BLANC — la lueur blanche a 95 % qui lui donne son relief
+           couvre justement le haut du corps, c'est-a-dire les deux tiers qu'on
+           regarde. Peindre dessous une couleur qu'on recouvre ne peint rien. */
+        .ap-onglets .ap-suiv.veille .ap-f-lueur{opacity:.34;}
+        .ap-onglets .ap-suiv.veille .ap-f-fil{opacity:.5;}
+        .ap-onglets .ap-suiv.veille.presse{
+          --ap-veille-f:linear-gradient(150deg,#FF7A6A,#D80D1C);
+          --ap-veille-h:rgba(216,13,28,.55);
+          --ap-veille-p:#FFB4A6;--ap-veille-b:#EE9080;}
+        .ap-onglets .ap-suiv.veille.decide{
+          --ap-veille-f:linear-gradient(150deg,#7BFFD4,#06B87E);
+          --ap-veille-h:rgba(6,184,126,.6);
+          --ap-veille-p:#A9F2D5;--ap-veille-b:#7ED9B4;}
+        .ap-onglets .ap-suiv.veille.hesite{
+          --ap-veille-f:linear-gradient(150deg,#FFDE7A,#E29200);
+          --ap-veille-h:rgba(226,146,0,.55);
+          --ap-veille-p:#FFDD9B;--ap-veille-b:#EFC469;}
+        .ap-onglets .ap-suiv.veille.neuf{
+          --ap-veille-f:linear-gradient(150deg,#CFAAFF,#6D28D9);
+          --ap-veille-h:rgba(109,40,217,.55);
+          --ap-veille-p:#D6BAFF;--ap-veille-b:#BC9AF0;}
+        /* L'OR RESTE PRIORITAIRE SUR LE PAQUET : c'est la seule ou les deux
+           signaux coexistent, et celui de l'annonce qu'on regarde passe devant.
+           Ecrit APRES la veille pour gagner a specificite egale. */
+        .ap-onglets .ap-suiv.or.veille{
+          background:linear-gradient(150deg,#FFE9A8,#E0A21A);
+          box-shadow:0 12px 30px rgba(224,162,26,.5),
+            0 0 0 5px var(--ap-barre-fond, #070C0A);}
+        .ap-onglets .ap-suiv.or.veille .ap-f-corps{fill:url(#apFgOr);}
         @keyframes apVeille{
-          0%,100%{box-shadow:0 12px 30px rgba(47,211,154,.42),
-            0 0 0 5px var(--ap-barre-fond, #070C0A),
-            0 0 0 6px var(--ap-veille-c, #2FD39A),
-            0 0 14px 2px var(--ap-veille-h, rgba(47,211,154,.55));}
-          50%{box-shadow:0 12px 30px rgba(47,211,154,.42),
-            0 0 0 5px var(--ap-barre-fond, #070C0A),
-            0 0 0 10px var(--ap-veille-c, #2FD39A),
-            0 0 30px 8px var(--ap-veille-h, rgba(47,211,154,.55));}}
+          0%,100%{filter:brightness(1) saturate(1);}
+          45%{filter:brightness(1.24) saturate(1.15);}}
+        /* LE REFLET QUI TRAVERSE LE DISQUE.
+           C'EST LE FOND QUI GLISSE, PAS L'ELEMENT, et ce n'est pas un detail de
+           style : deplacer le pseudo-element l'aurait fait sortir du disque, et
+           le rattraper aurait demande un overflow:hidden sur le bouton — ce qui
+           aurait COUPE LE BOND du fantome hors de sa bulle, c'est-a-dire
+           l'animation qu'il avait demandee. Un degrade large qu'on fait defiler
+           donne exactement le meme reflet et ne franchit jamais le bord. */
+        .ap-onglets .ap-suiv.veille::after{content:"";position:absolute;
+          inset:0;border-radius:50%;pointer-events:none;
+          background:linear-gradient(115deg,transparent 38%,
+            rgba(255,255,255,.75) 50%,transparent 62%);
+          background-size:260% 100%;background-repeat:no-repeat;
+          animation:apLueur 2.4s ease-in-out infinite;}
+        @keyframes apLueur{
+          0%{background-position:150% 0;}
+          100%{background-position:-50% 0;}}
         @media (prefers-reduced-motion:reduce){
-          .ap-onglets .ap-suiv.veille{animation:none;}}
+          .ap-onglets .ap-suiv.veille{animation:none;}
+          .ap-onglets .ap-suiv.veille::after{display:none;}}
 
         /* ═══ CE QU'IL DIT, ET LE SEUL GESTE QU'IL PROPOSE ═══
            UNE PHRASE ET UN BOUTON, jamais une liste. Elle sort du fantome, au
@@ -12420,16 +12697,31 @@ export function ApercuHabitant() {
            interruption ; il n'en est pas une, il donne un avis. */
         .ap-fond.nu{background:none;-webkit-backdrop-filter:none;
           backdrop-filter:none;}
-        /* ON MONTRE OU SE LEVE LA MAIN. Le decompte s'allume trois secondes
-           quand l'arbitre a propose de voter : c'est le seul moment ou il faut
-           trouver ces lignes-la vite, et elles sont sous le pli le reste du
-           temps. */
-        .ap-propos-l.appel{animation:apAppel 1.1s ease-in-out 2;
-          border-radius:12px;}
-        @keyframes apAppel{0%,100%{box-shadow:0 0 0 0 rgba(255,196,0,0);}
-          50%{box-shadow:0 0 0 3px rgba(255,196,0,.55);}}
+        /* ═══ ON MONTRE OU SE LEVE LA MAIN, ET ON LE MONTRE VRAIMENT ═══
+           « Cette info montree est tres, voire trop discrete : on ne voit pas
+           vraiment l'animation. »
+           IL AVAIT RAISON, ET LA MESURE EST SIMPLE : un liseré de trois points
+           qui s'allume et s'eteint deux fois, sur un fond deja borde de blanc a
+           13 %, c'est un changement de contraste qu'on ne remarque QUE si on
+           regardait deja au bon endroit. Or on vient precisement d'arriver.
+           TROIS CHOSES A LA FOIS, PARCE QU'UNE SEULE NE SUFFIT PAS : l'anneau
+           passe a cinq points ET s'accompagne d'un halo, le fond du bloc
+           s'eclaire en ambre, et l'ensemble respire legerement. Trois canaux
+           valent mieux qu'un seul plus fort — c'est ce qui rend un mouvement
+           visible en vision peripherique comme au centre. Et il bat quatre
+           fois au lieu de deux : le temps d'arriver, de voir, et de comprendre
+           ce qu'on regarde. */
+        .ap-propos-l.appel{animation:apAppel 1s ease-in-out 4;}
+        @keyframes apAppel{
+          0%,100%{box-shadow:0 0 0 0 rgba(255,196,0,0);
+            background:rgba(255,196,0,0);transform:scale(1);}
+          45%{box-shadow:0 0 0 5px rgba(255,196,0,.85),
+              0 0 26px 6px rgba(255,196,0,.4);
+            background:rgba(255,196,0,.14);transform:scale(1.025);}}
         @media (prefers-reduced-motion:reduce){
-          .ap-propos-l.appel{animation:none;box-shadow:0 0 0 3px rgba(255,196,0,.55);}}
+          .ap-propos-l.appel{animation:none;
+            box-shadow:0 0 0 5px rgba(255,196,0,.85);
+            background:rgba(255,196,0,.14);}}
         .ap-fantome{width:44px;height:48px;overflow:visible;
           transform-origin:50% 62%;
           animation:apFlotte 4.6s ease-in-out infinite;}
@@ -12486,6 +12778,24 @@ export function ApercuHabitant() {
         .ap-f-eclat{fill:#fff;opacity:.92;}
         .ap-f-eclat2{fill:#fff;opacity:.5;}
         .ap-f-bouche{fill:none;stroke:#07211A;stroke-width:2.1;
+          stroke-linecap:round;}
+        /* ─── LES PIECES DE LA VARIANTE CLIN D'OEIL ───
+           Elles reprennent les encres du visage : le meme sombre pour l'oeil et
+           la bouche, la meme rose pour la langue que pour les joues. Une
+           nouvelle couleur ici aurait fait deux fantomes de familles
+           differentes, ce qui est exactement ce qu'on cherche a eviter. */
+        .ap-f-clin{fill:none;stroke:#07211A;stroke-width:2.3;
+          stroke-linecap:round;}
+        .ap-f-rire{fill:#07211A;}
+        .ap-f-langue{fill:#FF7E9B;}
+        .ap-f-pouce path{fill:#DFF3E8;stroke:#5E9E85;stroke-width:1.4;
+          stroke-linejoin:round;stroke-linecap:round;
+          filter:drop-shadow(-1.4px 1px 1.6px rgba(4,40,26,.3));}
+        .ap-f-pouce path.pli{fill:none;stroke:#9BC6B2;stroke-width:1.2;
+          filter:none;}
+        /* LE VERT DES TRAITS EST CELUI DE LA MARQUE, et il est le seul element
+           colore du dessin : c'est lui qui rattache le personnage au produit. */
+        .ap-f-vites path{fill:none;stroke:#3DE2A6;stroke-width:2.3;
           stroke-linecap:round;}
         .ap-f-etoile{fill:#FFF2B8;opacity:0;
           transform-box:fill-box;transform-origin:50% 50%;}
@@ -13108,7 +13418,7 @@ export function ApercuHabitant() {
            rien et font du bruit.
            « PROPOSE PAR » AUSSI. Dans un groupe de quatre, on sait qui a
            propose quoi — c'est ecrit dans la conversation, une ligne plus bas. */
-        .ap-propos-l{display:flex;flex-direction:column;}
+        .ap-propos-l{display:flex;flex-direction:column;border-radius:14px;}
         .ap-propo{display:flex;align-items:center;gap:12px;width:100%;font:inherit;
           text-align:left;cursor:pointer;color:#A9BBB1;background:none;border:0;
           border-top:1px solid rgba(255,255,255,.07);padding:13px 15px;
@@ -13310,6 +13620,22 @@ export function ApercuHabitant() {
         .ap-vousprop{flex:none;margin:-4px 0 8px;padding-left:2px;
           font-size:10px;font-weight:850;letter-spacing:.18em;
           text-transform:uppercase;color:#7F988B;}
+        /* ─── LE RETOUR DE LA PAGE D'INVITATION ───
+           Il prend la ligne de l'ancien libelle et il est le seul retour de cet
+           ecran, mais il n'a pas a etre gros pour autant : ce qu'on vient faire
+           ici, c'est inviter. Une fleche, deux mots, en gris — assez pour etre
+           trouve, assez peu pour ne pas concurrencer le bouton vert. */
+        .ap-sal-retour{flex:none;align-self:flex-start;display:inline-flex;
+          align-items:center;gap:6px;margin:-2px 0 10px;padding:5px 10px 5px 6px;
+          font:inherit;font-size:12px;font-weight:750;cursor:pointer;
+          color:#8FA79A;background:none;border:0;border-radius:999px;
+          transition:color .14s ease,background .14s ease;}
+        .ap-sal-retour i{font-style:normal;font-size:14px;line-height:1;}
+        .ap-sal-retour:active{color:#D8E8E0;background:rgba(255,255,255,.06);}
+        /* SANS EN-TETE, LE CORPS PART PLUS HAUT. Les douze points de respiration
+           servaient a decoller le fil du titre ; sans titre ils ne decollent
+           plus rien, et c'est la que la place rendue se voit. */
+        .ap-sal-corps.seul{padding-top:2px;}
         /* ═══ LA PAGE D'INVITATION ═══
            « J'aimerais que le design de ce chat soit aussi fun que sur
            l'annonce principale. » Elle etait correcte et muette : un cadre
@@ -13410,8 +13736,20 @@ export function ApercuHabitant() {
           margin:14px 0 0;font-size:11.5px;line-height:1.45;color:#7F988B;
           text-align:left;}
         .ap-invite-i i{font-style:normal;flex:none;color:#5E7268;}
-        .ap-invite-v{margin:10px 0 0;font-size:11px;line-height:1.4;
-          color:#7F988B;text-align:left;}
+        /* ELLE DIT L'ETAT ET ELLE LE CHANGE — voir le commentaire du bouton.
+           Le mot d'action est a droite, en vert : sans lui, une phrase grise
+           cliquable ne dit pas qu'elle est cliquable, et le reglage disparait
+           pour de bon avec l'en-tete. */
+        .ap-invite-v{display:flex;align-items:center;gap:8px;width:100%;
+          margin:10px 0 0;padding:9px 10px;font:inherit;font-size:11px;
+          line-height:1.4;cursor:pointer;color:#7F988B;text-align:left;
+          background:rgba(255,255,255,.04);border-radius:12px;
+          border:1px solid rgba(255,255,255,.09);}
+        .ap-invite-v i{font-style:normal;font-size:13px;line-height:1;flex:none;}
+        .ap-invite-v s{margin-left:auto;flex:none;text-decoration:none;
+          font-size:11px;font-weight:850;color:#8CF0CC;}
+        .ap-invite-v.prive s{color:#F0B429;}
+        .ap-invite-v:active{background:rgba(255,255,255,.08);}
         /* LA DERNIERE LIGNE EST UNE INVITATION, PAS UNE NOTE. En ambre, au
            milieu : c'est la phrase qu'on relit en attendant les reponses. */
         .ap-invite-p{display:flex;align-items:center;justify-content:center;
