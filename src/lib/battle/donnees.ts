@@ -77,23 +77,43 @@ export const THEMES = [
 export type CleTheme = (typeof THEMES)[number]["cle"];
 
 /**
- * LES FORMATS.
+ * ═══ LES FORMATS, COMPTÉS EN TOURS ET PAS EN ROUNDS ═══
  *
- * LE TEMPS EST LE VRAI GARDE-FOU CONTRE LA TRICHE, et c'est pour ça qu'il y a
- * un Blitz. Sur un format long, certains liront un texte préparé à côté — on
- * ne peut pas l'empêcher, on peut rendre ça inutile. Trente secondes en direct
- * ne se lisent pas : ça se pense.
+ * DÉFAUT RAPPORTÉ, ET IL RENDAIT LE JEU INJOUABLE : « ça nous redemande de
+ * parler trois minutes indéfiniment ». Ce n'était pas une boucle — c'était
+ * l'arithmétique. Trois rounds veulent dire SIX prises de parole, et six fois
+ * trois minutes font DIX-HUIT MINUTES de parole d'affilée. Personne ne tient,
+ * et au quatrième tour on croit que le match est cassé.
+ *
+ * QUATRE TOURS, ET C'EST LE MINIMUM D'UN VRAI ÉCHANGE : A ouvre, B répond, A
+ * réplique, B conclut. En dessous il n'y a pas de débat, il y a deux monologues
+ * — et au-dessus il n'y a plus de tension, il y a de l'endurance.
+ *
+ * ET C'EST LA DURÉE TOTALE QU'ON MONTRE, pas le temps par tour. « 3 minutes
+ * chacun » ne dit rien de ce qu'on s'engage à faire ; « 6 minutes en tout » le
+ * dit exactement. C'est le seul chiffre qu'on regarde avant d'accepter une
+ * partie, aux échecs comme ici.
+ *
+ * LE TEMPS RESTE LE GARDE-FOU CONTRE LA TRICHE. Sur un format long, certains
+ * liront un texte préparé à côté — on ne peut pas l'empêcher, on peut rendre ça
+ * inutile. Trente secondes en direct ne se lisent pas : ça se pense.
  */
 export const FORMATS = [
-  { cle: "blitz", nom: "Blitz", duree: 30, rounds: 3, emoji: "⚡",
-    quoi: "30 secondes chacun. Pas le temps de lire une fiche." },
-  { cle: "classic", nom: "Classic", duree: 180, rounds: 3, emoji: "⚔️",
-    quoi: "3 minutes chacun. Le format de référence." },
-  { cle: "expert", nom: "Expert", duree: 600, rounds: 3, emoji: "🎓",
-    quoi: "10 minutes chacun. Pour ceux qui construisent." },
-  { cle: "roast", nom: "Roast", duree: 90, rounds: 3, emoji: "🔥",
-    quoi: "90 secondes, sujet volontairement provocateur." },
+  { cle: "blitz", nom: "Blitz", duree: 30, tours: 4, emoji: "⚡",
+    quoi: "30 secondes par tour. Pas le temps de lire une fiche." },
+  { cle: "classic", nom: "Classic", duree: 90, tours: 4, emoji: "⚔️",
+    quoi: "1 min 30 par tour. Le format de référence." },
+  { cle: "expert", nom: "Expert", duree: 180, tours: 4, emoji: "🎓",
+    quoi: "3 minutes par tour. Pour ceux qui construisent." },
+  { cle: "roast", nom: "Roast", duree: 45, tours: 4, emoji: "🔥",
+    quoi: "45 secondes, sujet volontairement provocateur." },
 ] as const;
+
+/** La durée totale d'un match, écrite comme on l'annonce : « 6 min ». */
+export function dureeTotale(duree: number, tours: number): string {
+  const s = duree * tours;
+  return s < 120 ? `${s} s` : `${Math.round(s / 60)} min`;
+}
 
 export type CleFormat = (typeof FORMATS)[number]["cle"];
 

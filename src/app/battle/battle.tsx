@@ -30,6 +30,7 @@ import {
   CLASSEMENT,
   CRITERES,
   FORMATS,
+  dureeTotale,
   MOI,
   ROBOTS,
   SUJETS,
@@ -111,6 +112,8 @@ export function Battle() {
   const [enAttente, setEnAttente] = useState(0);
   const [erreur, setErreur] = useState("");
   const [entendu, setEntendu] = useState(false);
+  /** La démonstration est repliée par défaut — voir l'accueil. */
+  const [demo, setDemo] = useState(false);
 
   const flux = useRef<MediaStream | null>(null);
   const enregistreur = useRef<MediaRecorder | null>(null);
@@ -121,14 +124,29 @@ export function Battle() {
   const fmt = FORMATS.find((f) => f.cle === format) ?? FORMATS[1];
 
   // ── LE COMBAT ────────────────────────────────────────────────────────────
-  const [round, setRound] = useState(1);
-  const [quiParle, setQuiParle] = useState<"moi" | "lui">("moi");
+  /* ═══ UN SEUL COMPTEUR, ET C'EST LE TOUR ═══
+
+     « Ça nous redemande de parler trois minutes indéfiniment. »
+
+     LE DÉFAUT N'ÉTAIT PAS UNE BOUCLE, C'ÉTAIT L'ARITHMÉTIQUE — trois rounds
+     font six prises de parole — MAIS L'ÉCRAN L'AGGRAVAIT. Il affichait
+     « Round 1 / 3 » pendant que les DEUX joueurs parlaient : on parlait, on
+     passait la main, et le compteur n'avait pas bougé. Il fallait quatre tours
+     pour le voir avancer d'un cran, donc on croyait qu'il ne bougeait jamais.
+
+     UN SEUL NOMBRE RÈGLE LES DEUX PROBLÈMES : `tour` va de 1 à 4, il avance à
+     CHAQUE prise de parole, et l'écran écrit « TOUR 3 / 4 ». Qui parle s'en
+     déduit — impair au bleu, pair au rouge — donc les deux ne peuvent plus se
+     contredire, ce qui était possible avec deux états séparés. */
+  const [tour, setTour] = useState(1);
   /* LE TYPE EST ECRIT, ET C'EST OBLIGATOIRE ICI. `FORMATS` est declare
      `as const`, donc `duree` n'est pas un nombre mais l'union des quatre
      valeurs litterales — et le compilateur refusait alors `r - 1`, qui n'en
      fait partie d'aucune. Le chrono compte des secondes, pas des durees de
      format : il faut le dire. */
   const [reste, setReste] = useState<number>(fmt.duree);
+  /** Impair au camp bleu, pair au camp rouge. Il n'y a rien à synchroniser. */
+  const quiParle: "moi" | "lui" = tour % 2 === 1 ? "moi" : "lui";
   /** « TIME » traverse l'écran : c'est ce qui rend le passage de parole physique. */
   const [time, setTime] = useState(false);
   const minuteries = useRef<number[]>([]);
@@ -171,21 +189,19 @@ export function Battle() {
     // et c'est le début du tour suivant qui se retrouve dans l'enregistrement
     // du précédent — donc dans la bouche du mauvais joueur.
     arreterLEnregistrement();
-    const finDuTour = quiParle === "lui";
-    const dernier = finDuTour && round >= fmt.rounds;
-    const suivant = finDuTour ? round + 1 : round;
+    const suivant = tour + 1;
     minuteries.current.push(
       window.setTimeout(() => {
         setTime(false);
-        if (dernier) {
+        if (suivant > fmt.tours) {
           fermerLeMicro();
           setEcran("arbitrage");
           return;
         }
-        if (finDuTour) setRound(suivant);
-        setQuiParle(finDuTour ? "moi" : "lui");
+        setTour(suivant);
         setReste(fmt.duree);
-        enregistrerLeTour(finDuTour ? "a" : "b", suivant);
+        // Le round sert au modèle à situer l'échange : deux tours par round.
+        enregistrerLeTour(suivant % 2 === 1 ? "a" : "b", Math.ceil(suivant / 2));
       }, 1500),
     );
   }
@@ -308,8 +324,7 @@ export function Battle() {
   }
 
   function lancerLeCombat() {
-    setRound(1);
-    setQuiParle("moi");
+    setTour(1);
     setReste(fmt.duree);
     setTime(false);
     setTours([]);
@@ -546,19 +561,38 @@ export function Battle() {
                 <u aria-hidden="true">→</u>
               </button>
 
-              <h2 className="bt-t">Démonstration</h2>
-              <button type="button" className="bt-gros" onClick={() => chercher()}>
-                <i aria-hidden="true">🎯</i>
-                <b>Battle aléatoire</b>
-                <span>On vous cherche quelqu’un de votre niveau</span>
-                <u aria-hidden="true">→</u>
-              </button>
-              <button type="button" className="bt-gros creux" onClick={() => chercher()}>
-                <i aria-hidden="true">👥</i>
-                <b>Défier un ami</b>
-                <span>Vous choisissez qui, puis le sujet</span>
-                <u aria-hidden="true">→</u>
-              </button>
+              {/* ═══ LA DÉMONSTRATION SE REPLIE ═══
+
+                  « Je ne peux pas inviter mon frère : ça me donne Lucas, et
+                  donc mon frère doit parler pour Lucas. »
+
+                  IL EST TOMBÉ DANS LA DÉMONSTRATION SANS LE VOIR, et c'est ma
+                  faute : deux gros boutons bleus « Battle aléatoire » et
+                  « Défier un ami » juste sous le vrai duel, avec le mot
+                  « Démonstration » écrit en petit gris au-dessus. Un titre de
+                  section ne protège de rien quand ce qu'il coiffe a l'air plus
+                  cliquable que le reste.
+
+                  ELLE PASSE DERRIÈRE UN LIEN. Elle sert encore — c'est elle
+                  qu'on montre quand on n'a personne en face — mais elle ne
+                  peut plus être prise pour une vraie partie. */}
+              {!demo ? (
+                <button type="button" className="bt-lien" onClick={() => setDemo(true)}>
+                  Voir la démonstration (adversaires fictifs) →
+                </button>
+              ) : (
+                <>
+                  <h2 className="bt-t">Démonstration — personne en face</h2>
+                  <p className="bt-note" style={{ marginBottom: "10px" }}>
+                    Ces adversaires sont inventés et les verdicts sont écrits
+                    d’avance. C’est là pour montrer le jeu, pas pour y jouer.
+                  </p>
+                  <button type="button" className="bt-gros creux" onClick={() => chercher()}>
+                    <i aria-hidden="true">🎯</i>
+                    <b>Battle aléatoire</b>
+                    <span>Un adversaire fictif, un verdict écrit d’avance</span>
+                    <u aria-hidden="true">→</u>
+                  </button>
 
               {/* ═══ L'ENTRAÎNEMENT N'EST PAS EN BAS DE LA LISTE ═══
                   Un jeu à deux en direct a un problème que rien d'autre n'a :
@@ -566,34 +600,41 @@ export function Battle() {
                   vide, et la personne referme. Les robots sont la porte
                   d'entrée du produit, pas son confort — on joue sa première
                   battle dans les dix secondes, sans attendre personne. */}
-              <h2 className="bt-t">Entraînement (démonstration)</h2>
-              <div className="bt-robots">
-                {ROBOTS.map((r) => (
-                  <button key={r.id} type="button" className="bt-robot" onClick={() => chercher(r)}>
-                    <span className="bt-av rouge robot">{r.prenom[0]}</span>
-                    <b>{r.prenom}</b>
-                    <em>{r.robot?.style}</em>
-                    <s>{r.score}</s>
+                  <div className="bt-robots">
+                    {ROBOTS.map((r) => (
+                      <button key={r.id} type="button" className="bt-robot" onClick={() => chercher(r)}>
+                        <span className="bt-av rouge robot">{r.prenom[0]}</span>
+                        <b>{r.prenom}</b>
+                        <em>{r.robot?.style}</em>
+                        <s>{r.score}</s>
+                      </button>
+                    ))}
+                  </div>
+                  {/* LE FORMAT RESTE AVEC CE QU'IL RÈGLE. Il était sur
+                      l'accueil, où il ne réglait rien de visible ; il vit
+                      maintenant dans les deux endroits où l'on prépare un
+                      match — ici pour la démonstration, et sur l'écran des
+                      prénoms pour le duel réel. */}
+                  <div className="bt-formats" style={{ marginTop: "12px" }}>
+                    {FORMATS.map((f) => (
+                      <button
+                        key={f.cle}
+                        type="button"
+                        className={`bt-format${format === f.cle ? " on" : ""}`}
+                        onClick={() => setFormat(f.cle)}
+                      >
+                        <i aria-hidden="true">{f.emoji}</i>
+                        <b>{f.nom}</b>
+                        <em>{dureeTotale(f.duree, f.tours)}</em>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="bt-note">{fmt.quoi}</p>
+                  <button type="button" className="bt-lien" onClick={() => setDemo(false)}>
+                    Masquer la démonstration
                   </button>
-                ))}
-              </div>
-
-              <h2 className="bt-t">Le format</h2>
-              <div className="bt-formats">
-                {FORMATS.map((f) => (
-                  <button
-                    key={f.cle}
-                    type="button"
-                    className={`bt-format${format === f.cle ? " on" : ""}`}
-                    onClick={() => setFormat(f.cle)}
-                  >
-                    <i aria-hidden="true">{f.emoji}</i>
-                    <b>{f.nom}</b>
-                    <em>{f.duree < 60 ? `${f.duree} s` : `${f.duree / 60} min`}</em>
-                  </button>
-                ))}
-              </div>
-              <p className="bt-note">{fmt.quoi}</p>
+                </>
+              )}
             </div>
           )}
 
@@ -630,7 +671,7 @@ export function Battle() {
 
               <div className="bt-sujet">
                 <i aria-hidden="true">{themeDe(sujet.theme)?.emoji}</i>
-                <em>{fmt.nom} · {fmt.rounds} rounds · {chrono(fmt.duree)} chacun</em>
+                <em>{fmt.nom} · {fmt.tours} tours · {dureeTotale(fmt.duree, fmt.tours)} en tout</em>
                 <p>{sujet.question}</p>
               </div>
 
@@ -644,7 +685,7 @@ export function Battle() {
                   >
                     <i aria-hidden="true">{f.emoji}</i>
                     <b>{f.nom}</b>
-                    <em>{f.duree < 60 ? `${f.duree} s` : `${f.duree / 60} min`}</em>
+                    <em>{dureeTotale(f.duree, f.tours)}</em>
                   </button>
                 ))}
               </div>
@@ -783,7 +824,7 @@ export function Battle() {
 
               <div className="bt-sujet">
                 <i aria-hidden="true">{themeDe(sujet.theme)?.emoji}</i>
-                <em>{fmt.nom} · {fmt.rounds} rounds · {chrono(fmt.duree)} chacun</em>
+                <em>{fmt.nom} · {fmt.tours} tours · {dureeTotale(fmt.duree, fmt.tours)} en tout</em>
                 <p>{sujet.question}</p>
               </div>
 
@@ -800,7 +841,15 @@ export function Battle() {
           {ecran === "combat" && (
             <div className={`bt-ring ${quiParle === "moi" ? "bleu" : "rouge"}`}>
               <div className="bt-ring-h">
-                <span>Round {round} / {fmt.rounds}</span>
+                {/* LE COMPTEUR AVANCE À CHAQUE PRISE DE PAROLE, et la barre
+                    montre ce qui reste : c'est la seule façon de ne pas croire
+                    que le match ne finira jamais. */}
+                <span>Tour {tour} / {fmt.tours}</span>
+                <div className="bt-jauge" aria-hidden="true">
+                  {Array.from({ length: fmt.tours }, (_, i) => (
+                    <i key={i} className={i < tour ? "fait" : ""} />
+                  ))}
+                </div>
                 <em>{sujet.question}</em>
               </div>
 
@@ -836,9 +885,11 @@ export function Battle() {
               </div>
 
               <button type="button" className="bt-fini" onClick={passerLaParole}>
-                {reel
-                  ? `J’ai fini — au tour de ${quiParle === "moi" ? prenomB : prenomA}`
-                  : "J’ai fini — à lui"}
+                {tour >= fmt.tours
+                  ? "J’ai fini — au verdict"
+                  : reel
+                    ? `J’ai fini — au tour de ${quiParle === "moi" ? prenomB : prenomA}`
+                    : "J’ai fini — à lui"}
               </button>
 
               {/* LE COUP DE SIFFLET. Il traverse toute la page, il est illisible
@@ -1350,6 +1401,13 @@ export function Battle() {
 
         .bt-explique{font-size:12.5px;line-height:1.5;color:#A8B2C2;
           text-align:center;max-width:290px;}
+        /* UN LIEN, PAS UN BOUTON. C'est exactement la difference qu'on veut
+           faire sentir entre la demonstration et le vrai duel : l'une se
+           trouve si on la cherche, l'autre saute aux yeux. */
+        .bt-lien{display:block;width:100%;margin:6px 0 2px;padding:12px;
+          font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;
+          color:#7A8396;background:none;border:0;text-decoration:underline;
+          text-underline-offset:3px;}
 
         .bt-noms{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;
           align-items:end;width:100%;}
@@ -1488,6 +1546,13 @@ export function Battle() {
         .bt-ring-h{flex:none;text-align:center;}
         .bt-ring-h span{font-size:10.5px;font-weight:900;letter-spacing:.2em;
           text-transform:uppercase;color:#7A8396;}
+        /* LA JAUGE DES TOURS. Quatre traits, un par prise de parole : on voit
+           ce qui reste sans avoir a le compter, et c'est ce qui manquait le
+           plus a l'ecran precedent. */
+        .bt-jauge{display:flex;gap:4px;justify-content:center;margin-top:7px;}
+        .bt-jauge i{width:26px;height:3px;border-radius:2px;
+          background:rgba(255,255,255,.16);transition:background .3s ease;}
+        .bt-jauge i.fait{background:#FFC400;}
         .bt-ring-h em{display:block;margin-top:5px;font-style:normal;
           font-size:12.5px;line-height:1.35;color:#C2CAD8;}
 
