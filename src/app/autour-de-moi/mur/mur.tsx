@@ -1,177 +1,220 @@
 "use client";
 
-// 👻 LE MUR DU JOUR — l'écran.
+// 👻 LE MUR DU JOUR — la feuille qui monte sur la page du commerce.
 //
-// Le pourquoi est en tête de `page.tsx`, le concept en tête de
-// `lib/direct/fantomes.ts`. Ici, les cinq décisions d'écran, et elles découlent
-// toutes du test : « en une seconde, ai-je envie de voir le suivant ? »
+// ═══ CE QUI A CHANGÉ, ET POURQUOI LA PREMIÈRE VERSION ÉTAIT À CÔTÉ ════════
 //
-// ═══ 1. UN FANTÔME PAR ÉCRAN, ET LA PHOTO EST L'ÉCRAN ═════════════════════
+// « J'ai l'impression qu'on est très très loin de ce que j'attends. »
 //
-// La leçon du paquet, reprise telle quelle : « l'image semble être dans un
-// rectangle, et quand on scrolle on voit trop les bordures ; chez eux la photo
-// prend tout le cadre et c'est plus beau. » Une photo encadrée se regarde, une
-// photo plein cadre se REGARDE. Le mot et le geste se posent dessus, sur un
-// voile dégradé — jamais sur un fond plein, qui serait une bordure de plus.
+// TROIS ERREURS, ET ELLES VENAIENT TOUTES DE LA MÊME : j'avais gardé la
+// grammaire du paquet là où ce n'est pas un paquet.
 //
-// ═══ 2. LE GESTE EST TOUJOURS AU MÊME ENDROIT ═════════════════════════════
+//   1. CE N'EST PAS UNE PAGE, C'EST UNE FEUILLE. Elle monte PAR-DESSUS la page
+//      du commerce, qui reste visible en haut — on ne quitte pas le commerce
+//      pour voir son mur, on le regarde depuis chez lui.
+//   2. LE MUR N'EST PAS UN PAQUET QU'ON BALAIE. C'est une grille : les fantômes
+//      de la maison en grand, les clients du jour en dessous, tout visible d'un
+//      coup. Un fantôme par écran obligeait à en traverser six pour savoir s'il
+//      s'y passait quelque chose — or ce qu'on veut savoir en arrivant, c'est
+//      justement : est-ce qu'il s'y passe quelque chose ?
+//   3. DÉPOSER EST UN DEUXIÈME ÉCRAN, PAS UN BOUTON. Un verbe, une phrase, une
+//      photo — et pour les métiers d'essai, autre chose encore.
 //
-// « Ça m'intéresse » ne bouge pas d'un fantôme à l'autre, ne change pas de
-// taille et ne change pas de couleur. Un bouton qu'on retrouve sans le chercher
-// se presse ; un bouton qu'on relocalise à chaque écran se lit d'abord, et lire
-// coûte la seconde qu'on n'a pas.
+// ═══ LES DEUX DÉPÔTS, ET C'EST LE LIEU QUI DÉCIDE ═════════════════════════
 //
-// ═══ 3. « SUIVANT » DOIT ÊTRE PLUS FACILE QUE TOUT LE RESTE ═══════════════
+// ANNONCE — restaurant, bar, commerce : un verbe pris dans une liste fermée,
+// cent cinquante signes, une photo facultative.
 //
-// Trois chemins pour le même geste, et ce n'est pas du luxe : le balayage pour
-// qui connaît, la moitié droite de l'écran pour qui essaie, les flèches pour qui
-// doute. Le mur ne vaut que si l'on en voit six ; s'il faut viser, on en voit
-// deux.
+// ESSAI — bijou, ongles, coiffure, objet chez soi : LE CLIENT PHOTOGRAPHIE CE
+// QUI VA RECEVOIR LA CHOSE. Son poignet pour un bracelet, sa main pour une pose,
+// sa table de salon pour une bougie. La photo du commerçant vient s'y poser.
+// C'est ce qui rend la mécanique possible SANS VISAGE : on ne photographie pas
+// la personne, on photographie l'endroit où la chose va.
 //
-// ═══ 4. LE COMPTEUR RESTE PETIT ═══════════════════════════════════════════
+// CE QUE CETTE MAQUETTE NE PROUVE PAS, ET IL FAUT LE SAVOIR EN REGARDANT :
+// l'étape de composition. Poser le bracelet sur le poignet demande un modèle
+// d'image, une facture par essai et quelques secondes d'attente ; rien de cela
+// ne se vérifie depuis ici. L'écran met en scène le parcours entier — cadrer,
+// choisir, attendre, décider — et la seule chose simulée est l'image finale.
 //
-// « Ça m'intéresse · 8 » n'est pas un score. Le jour où le chiffre devient gros,
-// on a refabriqué le like — et un like est gratuit, donc il ne veut rien dire.
-// Celui-ci engage : huit, ce sont huit personnes prêtes à parler.
+// ═══ CE QUE JE N'AI PAS SUIVI DANS LES MAQUETTES, ET IL FAUT EN PARLER ════
 //
-// ═══ 5. CE QUI SUIT L'APPUI EST UNE MISE EN RELATION, PAS UN MERCI ════════
-//
-// C'est là que le produit se gagne ou se perd. « Merci pour votre retour »
-// tuerait la mécanique en trois mots : on n'a pas voté, on a dit qu'on était
-// disponible. La feuille qui monte dit donc ce que CETTE personne cherche, et
-// propose de lui écrire.
+// LES VISAGES. Les deux maquettes montrent des portraits sur chaque carte.
+// `public/direct/LISEZ-MOI.md` l'interdit — « aucun visage reconnaissable » — et
+// le dépôt n'en contient aucun. Mais la raison de produit pèse plus lourd que la
+// règle : une photo de son propre visage est un geste social lourd, et un mur
+// qui l'exige reste vide. Les cartes montrent donc CE QUE LA PERSONNE MONTRE, et
+// la personne est présente autrement — son prénom, son fantôme, son heure. Si
+// c'est le portrait qui est voulu, il faudra de vraies photos consenties et
+// changer la règle du dépôt : c'est une décision, pas un détail d'images.
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
+  HEURES_PAR_DEFAUT,
+  HUMEURS,
   MURS,
   QUOTA_DU_JOUR,
+  VERBES,
+  humeurDe,
   miseEnRelation,
-  motDeLIntention,
-  motDuVerbe,
+  verbeDe,
   type Fantome,
+  type Mur as TypeMur,
+  type Piece,
 } from "@/lib/direct/fantomes";
 
-/** Le dessin du fantôme, en petit : la signature, pas une illustration. */
+/**
+ * « CHEZ QUI », ÉCRIT COMME ON LE DIRAIT.
+ *
+ * Les commerces de la maquette sont des voisins anonymes — « Une prothésiste
+ * ongulaire », « Un bar à vins » — et coller « à » devant donnait « à Une
+ * prothésiste ongulaire ». Ce n'est pas un détail de style : c'est la première
+ * ligne de l'écran, et une faute de français à cet endroit fait douter du reste.
+ * Un nom propre prend « chez », un nom commun prend « chez » en minuscule, et
+ * « Chez Margot » ne se redouble pas.
+ */
+function chezQui(lieu: string): string {
+  if (/^Chez /i.test(lieu)) return lieu;
+  if (/^(Un|Une|Le|La|Les|L’|L')\s?/i.test(lieu)) {
+    return `chez ${lieu.charAt(0).toLowerCase()}${lieu.slice(1)}`;
+  }
+  return `chez ${lieu}`;
+}
+
+/** Le dessin du fantôme. Une seule forme, trois tailles, jamais deux dessins. */
 function Signe({ classe }: { classe?: string }) {
   return (
     <svg className={classe} viewBox="0 0 40 44" aria-hidden="true">
       <path
-        className="fm-f-corps"
+        className="mu-f-corps"
         d="M20 2.5c-8.7 0-15.6 6.6-15.6 15.1v18.6c0 2.2 2.3 3.3 3.9 1.9l2.4-2.1c.9-.8 2.2-.8 3.1 0l2.3 2c.9.8 2.2.8 3.1 0l2.3-2c.9-.8 2.2-.8 3.1 0l2.4 2.1c1.6 1.4 3.9.3 3.9-1.9V17.6C35.6 9.1 28.7 2.5 20 2.5Z"
       />
-      <ellipse className="fm-f-oeil" cx="14.4" cy="18.4" rx="2.1" ry="2.6" />
-      <ellipse className="fm-f-oeil" cx="25.6" cy="18.4" rx="2.1" ry="2.6" />
-      <path className="fm-f-bouche" d="M16.2 25.6c1 1.5 2.3 2.2 3.8 2.2s2.8-.7 3.8-2.2" />
+      <ellipse className="mu-f-oeil" cx="14.4" cy="18.4" rx="2.1" ry="2.6" />
+      <ellipse className="mu-f-oeil" cx="25.6" cy="18.4" rx="2.1" ry="2.6" />
+      <path className="mu-f-bouche" d="M16.2 25.6c1 1.5 2.3 2.2 3.8 2.2s2.8-.7 3.8-2.2" />
     </svg>
   );
 }
 
+/** La pastille d'humeur : ce que la personne vient chercher ici. */
+function Humeur({ cle }: { cle?: string }) {
+  const h = humeurDe(cle);
+  if (!h) return null;
+  return (
+    <span className={`mu-hum ${h.teinte}`}>
+      <i aria-hidden="true">{h.emoji}</i>
+      {h.mot}
+    </span>
+  );
+}
+
 /**
- * L'ÉTIQUETTE DE GENRE — ce que ce fantôme est venu faire.
+ * UNE CARTE DU MUR.
  *
- * ELLE PASSE AVANT LE MOT, ET C'EST L'ORDRE DE LECTURE : « JE CHERCHE » dit en
- * un coup d'oeil qu'il va falloir répondre quelque chose, « ESSAYÉ ICI » qu'on
- * regarde une hésitation. Sans elle, six fantômes de natures différentes
- * défilent avec la même tête, et on ne sait plus ce qu'on lit.
+ * DEUX TAILLES, ET C'EST LA HIÉRARCHIE DU MUR : la maison en grand, les clients
+ * en dessous. Ce n'est pas une question de place, c'est la règle du démarrage —
+ * un mur ne commence jamais vide, et ce qu'on voit en premier doit être le
+ * commerce qui accueille.
  */
-function Etiquette({ f }: { f: Fantome }) {
-  if (f.genre === "demande") {
-    return <span className="fm-eti demande">{motDuVerbe(f.verbe)?.mot}</span>;
-  }
-  if (f.genre === "intention") {
-    const i = motDeLIntention(f.intention);
-    return (
-      <span className="fm-eti intention">
-        <i aria-hidden="true">{i?.emoji}</i>
-        {i?.mot}
-      </span>
-    );
-  }
-  if (f.genre === "essai") {
-    return (
-      <span className="fm-eti essai">
-        <i aria-hidden="true">✨</i>
-        Essayé ici · {f.essai?.quoi}
-      </span>
-    );
-  }
-  return null;
+function Carte({
+  f,
+  grande,
+  dit,
+  onDit,
+}: {
+  f: Fantome;
+  grande?: boolean;
+  dit: boolean;
+  onDit: (f: Fantome) => void;
+}) {
+  const v = verbeDe(f.verbe);
+  return (
+    <article className={`mu-c${grande ? " grande" : ""}`}>
+      <div className="mu-c-p">
+        {f.photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={f.photo} alt="" loading="lazy" />
+        ) : (
+          <div className="mu-c-vide" aria-hidden="true" />
+        )}
+        {/* LE FANTÔME EST L'AVATAR. C'est lui qui tient la place du portrait :
+            la personne est là, sans que sa tête y soit. */}
+        <span className="mu-c-av">
+          <Signe classe="mu-c-signe" />
+        </span>
+        {f.maison ? (
+          <span className="mu-c-b staff">Staff</span>
+        ) : v ? (
+          <span className="mu-c-b verbe">{v.mot}</span>
+        ) : f.essai ? (
+          <span className="mu-c-b essai">✨ Essayé ici</span>
+        ) : null}
+      </div>
+      <div className="mu-c-t">
+        {/* L'HEURE EST MONTEE SUR LA LIGNE DU NOM, ET C'EST UNE CORRECTION DE
+            MESURE : a cote du bouton, elle lui prenait quarante points sur une
+            carte qui en fait cent soixante-quatorze, et « Ca m'interesse »
+            s'affichait « Ca m'i... 12 ». Un geste dont on ne lit pas le nom
+            n'est plus un geste. */}
+        <div className="mu-c-n">
+          <b>{f.qui}</b>
+          {f.role && <u>· {f.role}</u>}
+          <s>{f.heure}</s>
+        </div>
+        <p>{f.mot}</p>
+        {f.essai && <span className="mu-c-e">{f.essai.quoi}</span>}
+        <Humeur cle={f.humeur} />
+        <div className="mu-c-f">
+          <button
+            type="button"
+            className={`mu-int${dit ? " on" : ""}`}
+            aria-pressed={dit}
+            onClick={() => onDit(f)}
+          >
+            <i aria-hidden="true">👍</i>
+            <span>Ça m’intéresse</span>
+            <em>{(f.interesses ?? 0) + (dit ? 1 : 0)}</em>
+          </button>
+        </div>
+        {f.jusqua && (
+          <span className="mu-c-d">
+            <i aria-hidden="true">⏳</i>
+            {f.jusqua}
+          </span>
+        )}
+      </div>
+    </article>
+  );
 }
 
 export function Mur() {
   const [cle, setCle] = useState("margot");
   const mur = useMemo(() => MURS.find((m) => m.cle === cle) ?? MURS[0], [cle]);
-  const [rang, setRang] = useState(0);
-  /** Ceux sur lesquels on a appuyé. Le compteur monte d'un, jamais de deux. */
+  /** Où l'on en est dans la feuille : le mur, ou le dépôt. */
+  const [ecran, setEcran] = useState<"mur" | "depot">("mur");
   const [dits, setDits] = useState<string[]>([]);
-  /** La feuille de mise en relation, quand elle est ouverte. */
   const [relation, setRelation] = useState<Fantome | null>(null);
-  const [sens, setSens] = useState<"avant" | "arriere">("avant");
-
-  const f = mur.fantomes[Math.min(rang, mur.fantomes.length - 1)];
-  const dit = dits.includes(f.id);
+  /** Les fantômes posés pendant la démonstration, en tête des clients. */
+  const [poses, setPoses] = useState<Fantome[]>([]);
 
   useEffect(() => {
-    setRang(0);
+    setEcran("mur");
     setRelation(null);
+    setPoses([]);
   }, [cle]);
 
-  const bouger = (pas: number) => {
-    setSens(pas > 0 ? "avant" : "arriere");
-    setRang((r) => {
-      const n = r + pas;
-      if (n < 0) return 0;
-      if (n > mur.fantomes.length - 1) return mur.fantomes.length - 1;
-      return n;
-    });
-    setRelation(null);
-  };
-
-  /**
-   * LE BALAYAGE, ET IL NE SE DÉCLENCHE QUE SUR UN VRAI GESTE.
-   *
-   * QUARANTE POINTS ET PLUS HORIZONTAL QUE VERTICAL. En dessous, c'est un doigt
-   * qui se pose pour appuyer, et une carte qui part sous le pouce au moment où
-   * l'on vise « Ça m'intéresse » est la façon la plus rapide de faire lâcher
-   * l'écran.
-   */
-  const depart = useRef<{ x: number; y: number } | null>(null);
-  const onDown = (e: React.PointerEvent) => {
-    depart.current = { x: e.clientX, y: e.clientY };
-  };
-  const onUp = (e: React.PointerEvent) => {
-    const d = depart.current;
-    depart.current = null;
-    if (!d) return;
-    const dx = e.clientX - d.x;
-    const dy = e.clientY - d.y;
-    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
-    bouger(dx < 0 ? 1 : -1);
-  };
-
-  const interesse = () => {
-    if (dit) {
-      setRelation(f);
-      return;
-    }
-    setDits((l) => [...l, f.id]);
-    setRelation(f);
-  };
-
-  const combien = f.interesses + (dit ? 1 : 0);
-  const rel = miseEnRelation(f);
+  const clients = [...poses, ...mur.clients];
+  const restants = Math.max(0, QUOTA_DU_JOUR - poses.length);
 
   return (
-    <div className="fm">
+    <div className="mu">
       <Styles />
 
       {/* ─── LE SELECTEUR DE MAQUETTE ───
-          TROIS MURS ET PAS UN, parce qu'ils sont trois EPREUVES et pas trois
-          exemples : un restaurant dont le mur parle surtout d'autre chose, un
-          bar ou le contenu est une intention, une onglerie ou c'est un essai.
-          Si le meme ecran tient les trois sans se tordre, le concept tient.
-          Il disparait a l'atterrissage. */}
-      <div className="fm-maq">
+          Trois EPREUVES et pas trois exemples : un restaurant dont le mur parle
+          surtout d'autre chose, un bar ou ce qui compte est l'humeur, une
+          onglerie ou le fantome est un essai. Il disparait a l'atterrissage. */}
+      <div className="mu-maq">
         {MURS.map((m) => (
           <button
             key={m.cle}
@@ -184,169 +227,568 @@ export function Mur() {
         ))}
       </div>
 
-      <div className="fm-ecran" onPointerDown={onDown} onPointerUp={onUp}>
-        {/* LA PHOTO EST L'ECRAN. Le voile la garde lisible sans l'encadrer. */}
-        {f.photo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className={`fm-photo ${sens}`} key={f.id} src={f.photo} alt="" />
-        ) : (
-          <div className="fm-photo vide" aria-hidden="true" />
-        )}
-        <div className="fm-voile" aria-hidden="true" />
-
-        <header className="fm-haut">
-          <Link className="fm-retour" href="/autour-de-moi" prefetch={false}>
-            <i aria-hidden="true">←</i>
-          </Link>
-          <div className="fm-titre">
-            <b>Le mur du jour</b>
-            <em>
-              {mur.lieu} · {mur.ville}
-            </em>
-          </div>
-          {/* LE QUOTA EST ECRIT D'AVANCE. Un mur invisible sur lequel on se
-              cogne est une panne ; annonce, il devient une raison de choisir ou
-              l'on se pose. */}
-          {/* UN CHIFFRE NU A COTE D'UN FANTOME SE LIT « TROIS FANTOMES ICI »,
-              c'est-a-dire l'inverse de ce qu'il dit. Le mot coute six lettres
-              et enleve l'ambiguite. */}
-          <span className="fm-quota">
-            <Signe classe="fm-quota-s" />
-            {QUOTA_DU_JOUR} restants
-          </span>
-        </header>
-
-        {/* LES DEUX MOITIES DE L'ECRAN AVANCENT ET RECULENT. Elles sont sous
-            tout le reste : elles ne prennent le doigt que la ou il n'y a rien. */}
-        <button
-          type="button"
-          className="fm-zone gauche"
-          aria-label="Fantôme précédent"
-          onClick={() => bouger(-1)}
-        />
-        <button
-          type="button"
-          className="fm-zone droite"
-          aria-label="Fantôme suivant"
-          onClick={() => bouger(1)}
-        />
-
-        <div className={`fm-bas ${sens}`} key={`${f.id}-bas`}>
-          <div className="fm-qui">
-            <Signe classe="fm-signe" />
-            <b>{f.qui}</b>
-            {/* LES FANTOMES DE LA MAISON SONT MARQUES, ET CE N'EST PAS
-                NEGOCIABLE : un fantome du patron qui passerait pour un client,
-                c'est un faux avis.
-                UNE SEULE PASTILLE, PAS DEUX. Il y en avait une pour le role et
-                une pour « ici » : « CHEF ICI » se lisait comme deux etiquettes
-                sans rapport. Le role EST la marque — un client n'en a jamais —
-                et la menthe suffit a le dire. */}
-            {f.role && <u className={f.maison ? "maison" : undefined}>{f.role}</u>}
-            <em>{f.depuis}</em>
-          </div>
-
-          <Etiquette f={f} />
-
-          <p className="fm-mot">{f.mot}</p>
-
-          <div className="fm-pied">
-            {/* LA DUREE EST ECRITE SUR CHAQUE FANTOME. C'est ce qui le
-                distingue d'une publication : il n'est pas archive, il
-                s'efface — et savoir quand change la facon de le lire. */}
-            <span className="fm-duree">
-              <i aria-hidden="true">⏳</i>
-              {f.jusqua}
-            </span>
-            <span className="fm-rang">
-              {rang + 1} / {mur.fantomes.length}
-            </span>
-          </div>
-
-          <button
-            type="button"
-            className={`fm-int${dit ? " on" : ""}`}
-            aria-pressed={dit}
-            onClick={interesse}
-          >
-            <i aria-hidden="true">👍</i>
-            <b>Ça m’intéresse</b>
-            <em>{combien}</em>
-          </button>
-
-          {/* LA SORTIE, DISCRETE ET PERMANENTE. Le fantome laisse ici remonte
-              dans le fil de la ville avec son tampon de lieu : le lieu ancre,
-              il n'enferme pas. Sans cette phrase, le mur a l'air d'etre le mur
-              du restaurant — et c'est exactement le contresens qu'on veut
-              eviter. */}
-          <p className="fm-ville">
-            Ces fantômes apparaissent aussi dans <b>Le Direct de {mur.ville}</b>.
-          </p>
-        </div>
-
-        {/* LES FLECHES, POUR QUI NE DEVINE NI LE BALAYAGE NI LES ZONES. */}
-        <div className="fm-fleches">
-          <button
-            type="button"
-            disabled={rang === 0}
-            aria-label="Précédent"
-            onClick={() => bouger(-1)}
-          >
+      {/* ─── LA PAGE DU COMMERCE, DERRIERE ───
+          Elle reste visible : on ne quitte pas le commerce pour voir son mur, on
+          le regarde depuis chez lui. C'est ce qui donne son sens au mot « ici »,
+          qui est repete partout dans cette feuille. */}
+      <header className="mu-fond">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={mur.photoLieu} alt="" />
+        <div className="mu-fond-v" aria-hidden="true" />
+        <div className="mu-fond-b">
+          <Link className="mu-fond-r" href="/autour-de-moi" prefetch={false}>
             ←
-          </button>
-          <button
-            type="button"
-            disabled={rang >= mur.fantomes.length - 1}
-            aria-label="Suivant"
-            onClick={() => bouger(1)}
-          >
-            →
-          </button>
+          </Link>
+          <b>{mur.lieu}</b>
+          <span className="mu-fond-c" aria-hidden="true">
+            ♡
+          </span>
         </div>
-      </div>
+        <div className="mu-fond-t">
+          <span className="mu-fond-k">{mur.metier}</span>
+          <h1>{mur.lieu}</h1>
+          <p>
+            <i aria-hidden="true">★</i>
+            <b>{mur.note}</b>
+            <s>({mur.avis} avis)</s>
+            <i aria-hidden="true">📍</i>
+            {mur.distance}
+          </p>
+          <div className="mu-fond-e">
+            {mur.etiquettes.map((e) => (
+              <span key={e}>{e}</span>
+            ))}
+          </div>
+        </div>
+      </header>
 
-      {/* ─── LA MISE EN RELATION ───
-          CE N'EST PAS UNE CONFIRMATION. « Merci pour votre retour » tuerait la
-          mecanique en trois mots : on n'a pas vote, on a dit qu'on etait
-          disponible. La feuille dit donc ce que CETTE personne cherche, et
-          propose de lui ecrire. La conversation est privee et temporaire — elle
-          ne fabrique ni profil, ni fil, ni abonne. */}
+      <section className="mu-feuille" aria-label="Votre fantôme">
+        {ecran === "mur" ? (
+          <EcranMur
+            mur={mur}
+            clients={clients}
+            restants={restants}
+            dits={dits}
+            onDit={(f) => {
+              if (!dits.includes(f.id)) setDits((l) => [...l, f.id]);
+              setRelation(f);
+            }}
+            onDeposer={() => setEcran("depot")}
+          />
+        ) : (
+          <EcranDepot
+            mur={mur}
+            clients={clients}
+            restants={restants}
+            dits={dits}
+            onDit={(f) => {
+              if (!dits.includes(f.id)) setDits((l) => [...l, f.id]);
+              setRelation(f);
+            }}
+            onFerme={() => setEcran("mur")}
+            onPose={(f) => {
+              setPoses((l) => [f, ...l]);
+              setEcran("mur");
+            }}
+          />
+        )}
+      </section>
+
       {relation && (
         <>
           <button
             type="button"
-            className="fm-fond"
+            className="mu-fondu"
             aria-label="Fermer"
             onClick={() => setRelation(null)}
           />
-          <div className="fm-feuille" role="dialog" aria-modal="true">
-            {/* ─── LE TITRE DE LA FEUILLE, ET IL A ETE FAUX ───
-                Il disait « votre fantome s'est manifeste ». C'est l'inverse de
-                ce qui vient de se passer : personne n'a reagi a MON fantome,
-                c'est MOI qui viens de me declarer disponible. Cette phrase-la
-                est celle de la notification qu'on recoit plus tard, et la
-                confondre brouille exactement la mecanique qu'on essaie de faire
-                comprendre. Ce qui doit s'ecrire ici est la promesse du produit,
-                mot pour mot : ClikMe vous met en relation. */}
-            <div className="fm-f-t">
-              <Signe classe="fm-f-signe" />
+          <div className="mu-rel" role="dialog" aria-modal="true">
+            <div className="mu-rel-t">
+              <Signe classe="mu-rel-s" />
+              {/* CE N'EST PAS UNE CONFIRMATION. On n'a pas vote, on a dit qu'on
+                  etait disponible : ce qui suit doit donc etre une mise en
+                  relation. « Merci pour votre retour » tuerait la mecanique. */}
               <b>ClikMe vous met en relation</b>
             </div>
-            <p className="fm-f-q">{rel.quoi}</p>
-            <button type="button" className="fm-f-b">
-              {rel.geste}
+            <p className="mu-rel-q">{miseEnRelation(relation).quoi}</p>
+            <button type="button" className="mu-rel-b">
+              {miseEnRelation(relation).geste}
             </button>
-            <p className="fm-f-n">
+            <p className="mu-rel-n">
               Conversation privée, le temps que le fantôme vit. Ni profil, ni abonnement, ni
               historique public.
             </p>
-            <button type="button" className="fm-f-x" onClick={() => setRelation(null)}>
+            <button type="button" className="mu-rel-x" onClick={() => setRelation(null)}>
               Plus tard
             </button>
           </div>
         </>
       )}
     </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ÉCRAN 1 — LE MUR
+   ════════════════════════════════════════════════════════════════════════ */
+
+function EcranMur({
+  mur,
+  clients,
+  restants,
+  dits,
+  onDit,
+  onDeposer,
+}: {
+  mur: TypeMur;
+  clients: Fantome[];
+  restants: number;
+  dits: string[];
+  onDit: (f: Fantome) => void;
+  onDeposer: () => void;
+}) {
+  return (
+    <>
+      <div className="mu-tete">
+        <Signe classe="mu-gros" />
+        <div>
+          <b>Ton Fantôme</b>
+          <em>aujourd’hui {chezQui(mur.lieu)}</em>
+        </div>
+      </div>
+
+      <p className="mu-intro">
+        Laisse ton fantôme pour faire partie de l’ambiance du jour, découvrir ce que les autres
+        choisissent et voir ce qui se passe ici&nbsp;!
+      </p>
+
+      {/* LE GESTE, EN GRAND ET EN VIOLET. C'est la seule chose de tout le
+          produit qui porte cette couleur : le fantome n'est ni une action du
+          commerce (menthe) ni une urgence (ambre), c'est autre chose. */}
+      <button type="button" className="mu-cta" onClick={onDeposer}>
+        <Signe classe="mu-cta-s" />
+        <span>
+          <b>Je laisse mon Fantôme</b>
+          <em>En 1 clic, sans prise de tête</em>
+        </span>
+        <i aria-hidden="true">→</i>
+      </button>
+
+      {/* ─── LE QUOTA, ECRIT A LA MAIN ───
+          IL ETAIT AU BOUT DE LA RANGEE DES FANTOMES DE LA MAISON, comme dans la
+          maquette. Mesure a l'ecran : deux cartes de deux cent quarante-six
+          points ne tiennent pas dans trois cent quatre-vingt-treize, donc
+          l'annotation tombait hors du cadre et personne ne la lisait jamais.
+          Un quota qu'on decouvre en le heurtant est un mur invisible — il vaut
+          mieux le voir a la bonne place que bien range dans le vide. */}
+      <div className="mu-sect">
+        <span className="mu-sect-i" aria-hidden="true">
+          👥
+        </span>
+        <h2>Le mur du jour</h2>
+        <b className="mu-sect-j">Aujourd’hui</b>
+        <span className="mu-sect-v">Voir tout →</span>
+      </div>
+
+      <p className="mu-note">
+        {restants} fantôme{restants > 1 ? "s" : ""} aujourd’hui encore&nbsp;!
+        <i aria-hidden="true">↙</i>
+      </p>
+
+      {/* ─── LES FANTOMES DE LA MAISON, EN GRAND ET EN PREMIER ───
+          UN MUR NE DEMARRE JAMAIS VIDE : c'est une regle, pas une astuce de
+          lancement. Personne ne veut etre le premier a parler dans une piece
+          silencieuse. Ils sont marques « Staff », et ce n'est pas negociable —
+          un fantome du patron qui passerait pour un client est un faux avis. */}
+      <div className="mu-rang maison">
+        {mur.maison.map((f) => (
+          <Carte key={f.id} f={f} grande dit={dits.includes(f.id)} onDit={onDit} />
+        ))}
+      </div>
+
+      <div className="mu-sect petit">
+        <span className="mu-sect-i" aria-hidden="true">
+          ＋👥
+        </span>
+        <h2>Les clients du jour</h2>
+      </div>
+
+      <div className="mu-rang">
+        {clients.map((f) => (
+          <Carte key={f.id} f={f} dit={dits.includes(f.id)} onDit={onDit} />
+        ))}
+      </div>
+
+      {/* LE SEUL ENDROIT DE LA FEUILLE OU LE COMMERCE PARLE DE CE QU'IL VEND.
+          Il est en bas, apres le mur : la feuille appartient aux gens qui sont
+          passes, pas a la carte. */}
+      {mur.contexte && (
+        <div className="mu-ctx">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={mur.contexte.photo} alt="" loading="lazy" />
+          <div>
+            <span>{mur.contexte.titre}</span>
+            <b>{mur.contexte.quoi}</b>
+            <em>{mur.contexte.detail}</em>
+          </div>
+          <button type="button" className="mu-ctx-b">
+            {mur.contexte.geste} →
+          </button>
+        </div>
+      )}
+
+      <p className="mu-ailleurs">
+        <i aria-hidden="true">👥</i>
+        Découvre aussi les autres murs des commerces et événements autour de toi.
+        <b aria-hidden="true">→</b>
+      </p>
+    </>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ÉCRAN 2 — LE DÉPÔT
+   ════════════════════════════════════════════════════════════════════════ */
+
+function EcranDepot({
+  mur,
+  clients,
+  restants,
+  dits,
+  onDit,
+  onFerme,
+  onPose,
+}: {
+  mur: TypeMur;
+  clients: Fantome[];
+  restants: number;
+  dits: string[];
+  onDit: (f: Fantome) => void;
+  onFerme: () => void;
+  onPose: (f: Fantome) => void;
+}) {
+  return (
+    <>
+      <button type="button" className="mu-x" aria-label="Revenir au mur" onClick={onFerme}>
+        ✕
+      </button>
+
+      <div className="mu-tete centre">
+        <Signe classe="mu-gros" />
+        <p className="mu-manus">
+          Ton Fantôme laisse
+          <br />
+          une trace ici&nbsp;!<i aria-hidden="true">↙</i>
+        </p>
+      </div>
+
+      <h2 className="mu-d-t">
+        Laisse ton <b>Fantôme</b>
+        <br />
+        {chezQui(mur.lieu)}
+      </h2>
+
+      {mur.depot === "essai" ? (
+        <Essai mur={mur} restants={restants} onPose={onPose} />
+      ) : (
+        <Annonce mur={mur} restants={restants} onPose={onPose} />
+      )}
+
+      <div className="mu-sect">
+        <Signe classe="mu-sect-s" />
+        <h2>Le mur du jour</h2>
+        <b className="mu-sect-j">{mur.lieu}</b>
+        <span className="mu-sect-v">Voir tout →</span>
+      </div>
+
+      <div className="mu-rang">
+        {[...mur.maison.slice(0, 1), ...clients].slice(0, 5).map((f) => (
+          <Carte key={f.id} f={f} dit={dits.includes(f.id)} onDit={onDit} />
+        ))}
+      </div>
+
+      <p className="mu-ailleurs">
+        <i aria-hidden="true">👥</i>
+        Découvre aussi les autres murs des commerces et événements autour de toi.
+        <b aria-hidden="true">→</b>
+      </p>
+    </>
+  );
+}
+
+/** LE DÉPÔT PAR ANNONCE — un verbe, une phrase, une photo facultative. */
+function Annonce({
+  mur,
+  restants,
+  onPose,
+}: {
+  mur: TypeMur;
+  restants: number;
+  onPose: (f: Fantome) => void;
+}) {
+  const [verbe, setVerbe] = useState(mur.verbes[0] ?? "cherche");
+  const [humeur, setHumeur] = useState(mur.humeurs[0] ?? "");
+  const [texte, setTexte] = useState("");
+  const verbes = VERBES.filter((v) => mur.verbes.includes(v.cle));
+  const humeurs = HUMEURS.filter((h) => mur.humeurs.includes(h.cle));
+  const pret = texte.trim().length > 3 && restants > 0;
+
+  return (
+    <>
+      <p className="mu-d-i">
+        Partage une annonce, une envie, une opportunité ou un petit besoin.
+        <br />
+        Ta trace sera visible ici et liée à ce lieu pendant {HEURES_PAR_DEFAUT} heures.
+      </p>
+
+      <div className="mu-verbes">
+        {verbes.map((v) => (
+          <button
+            key={v.cle}
+            type="button"
+            className={v.cle === verbe ? "on" : ""}
+            onClick={() => setVerbe(v.cle)}
+          >
+            <i aria-hidden="true">{v.emoji}</i>
+            {v.mot}
+          </button>
+        ))}
+      </div>
+
+      <div className="mu-champ">
+        <textarea
+          maxLength={150}
+          value={texte}
+          onChange={(e) => setTexte(e.target.value)}
+          placeholder="Ex. : Je cherche 2 places pour le concert de vendredi…"
+        />
+        <span className="mu-compte">{texte.length}/150</span>
+        <button type="button" className="mu-photo">
+          <i aria-hidden="true">🖼️</i>
+          Ajouter une photo (optionnel)
+        </button>
+      </div>
+
+      {/* L'HUMEUR EST FACULTATIVE ET ELLE EST APRES LE TEXTE : ce qu'on a a dire
+          passe avant ce qu'on vient chercher. Elle n'est proposee que la ou le
+          lieu en offre — un artisan n'en a pas. */}
+      {humeurs.length > 0 && (
+        <div className="mu-humeurs">
+          <span>Et aujourd’hui, vous venez…</span>
+          <div>
+            {humeurs.map((h) => (
+              <button
+                key={h.cle}
+                type="button"
+                className={`${h.teinte}${h.cle === humeur ? " on" : ""}`}
+                onClick={() => setHumeur(h.cle === humeur ? "" : h.cle)}
+              >
+                <i aria-hidden="true">{h.emoji}</i>
+                {h.mot}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <button
+        type="button"
+        className="mu-cta plein"
+        disabled={!pret}
+        onClick={() =>
+          onPose({
+            id: `pose-${Date.now()}`,
+            qui: "Vous",
+            photo: mur.photoLieu,
+            verbe,
+            humeur: humeur || undefined,
+            mot: texte.trim(),
+            heure: new Date().toTimeString().slice(0, 5),
+            interesses: 0,
+            jusqua: `encore ${HEURES_PAR_DEFAUT} h`,
+          })
+        }
+      >
+        <Signe classe="mu-cta-s" />
+        <span>
+          <b>Laisser mon Fantôme</b>
+          {restants > 0 ? (
+            <em>
+              Il vous en reste {restants} aujourd’hui
+            </em>
+          ) : (
+            <em>Vous n’en avez plus aujourd’hui</em>
+          )}
+        </span>
+        <i aria-hidden="true">→</i>
+      </button>
+    </>
+  );
+}
+
+/**
+ * LE DÉPÔT PAR ESSAI.
+ *
+ * QUATRE ÉTAPES, ET LA PREMIÈRE EST LA MÉCANIQUE ENTIÈRE : le client
+ * photographie CE QUI VA RECEVOIR LA CHOSE — son poignet, sa main, sa table de
+ * salon — et la photo du commerçant vient s'y poser. C'est ce qui rend l'essai
+ * possible sans visage : on ne photographie pas la personne.
+ *
+ * L'IMAGE FINALE EST SIMULÉE ICI, ET C'EST LE SEUL MORCEAU QUI L'EST. Poser un
+ * bracelet sur un poignet demande un modèle d'image, une facture par essai et
+ * quelques secondes d'attente. Le parcours, lui, est complet : cadrer, choisir,
+ * attendre, décider — et le fantôme se pose sur le mur DANS LES DEUX CAS, pris
+ * ou pas. « Cette pièce a été essayée par quatorze personnes, deux l'ont
+ * prise » est un chiffre qu'aucun commerçant n'a jamais eu.
+ */
+function Essai({
+  mur,
+  restants,
+  onPose,
+}: {
+  mur: TypeMur;
+  restants: number;
+  onPose: (f: Fantome) => void;
+}) {
+  const [etape, setEtape] = useState<"cadrer" | "choisir" | "calcul" | "rendu">("cadrer");
+  const [piece, setPiece] = useState<Piece | null>(null);
+  const [pct, setPct] = useState(0);
+  const minuteur = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (etape !== "calcul") return;
+    setPct(0);
+    minuteur.current = window.setInterval(() => {
+      setPct((p) => {
+        if (p >= 100) return 100;
+        return p + 7;
+      });
+    }, 110);
+    return () => {
+      if (minuteur.current) window.clearInterval(minuteur.current);
+    };
+  }, [etape]);
+
+  useEffect(() => {
+    if (etape === "calcul" && pct >= 100) setEtape("rendu");
+  }, [etape, pct]);
+
+  const poser = (verdict: "pris" | "passe") =>
+    onPose({
+      id: `pose-${Date.now()}`,
+      qui: "Vous",
+      photo: piece?.photo ?? mur.photoLieu,
+      essai: { quoi: piece?.nom ?? "", verdict },
+      mot:
+        verdict === "pris"
+          ? "Essayé à l’instant, je passe la prendre."
+          : "Essayé à l’instant. Pas pour moi, mais ça m’a évité de me tromper.",
+      heure: new Date().toTimeString().slice(0, 5),
+      interesses: 0,
+      jusqua: "encore 2 jours",
+    });
+
+  return (
+    <>
+      <p className="mu-d-i">
+        Photographiez {mur.essai?.partie}, choisissez la pièce&nbsp;: votre fantôme l’essaie pour
+        vous.
+        <br />
+        Il reste sur le mur que vous la preniez ou non.
+      </p>
+
+      <ol className="mu-pas">
+        <li className={etape === "cadrer" ? "on" : "fait"}>1 · Cadrer</li>
+        <li className={etape === "choisir" ? "on" : etape === "cadrer" ? "" : "fait"}>
+          2 · Choisir
+        </li>
+        <li className={etape === "rendu" ? "on" : ""}>3 · Décider</li>
+      </ol>
+
+      {etape === "cadrer" && (
+        <div className="mu-cadrer">
+          <div className="mu-viseur" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
+          <p>{mur.essai?.consigne}</p>
+          <button type="button" className="mu-cta plein" onClick={() => setEtape("choisir")}>
+            <i aria-hidden="true">📷</i>
+            <span>
+              <b>Photographier {mur.essai?.partie}</b>
+              <em>Rien n’est publié tant que vous n’avez pas décidé</em>
+            </span>
+          </button>
+        </div>
+      )}
+
+      {etape === "choisir" && (
+        <div className="mu-pieces">
+          {mur.essai?.pieces.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => {
+                setPiece(p);
+                setEtape("calcul");
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={p.photo} alt="" />
+              <b>{p.nom}</b>
+              <em>{p.prix}</em>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {etape === "calcul" && (
+        <div className="mu-calcul">
+          <Signe classe="mu-calcul-s" />
+          <b>Ton Fantôme prépare ton essayage…</b>
+          <div className="mu-jauge" aria-hidden="true">
+            <i style={{ width: `${Math.min(100, pct)}%` }} />
+          </div>
+          <em>{Math.min(100, pct)} %</em>
+        </div>
+      )}
+
+      {etape === "rendu" && piece && (
+        <div className="mu-rendu">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={piece.photo} alt={`Essai : ${piece.nom}`} />
+          <span className="mu-rendu-b">Rendu simulé dans la maquette</span>
+          <div className="mu-rendu-t">
+            <b>{piece.nom}</b>
+            <em>{piece.prix}</em>
+          </div>
+          <div className="mu-rendu-g">
+            <button
+              type="button"
+              className="oui"
+              disabled={restants < 1}
+              onClick={() => poser("pris")}
+            >
+              Je la prends
+            </button>
+            <button
+              type="button"
+              className="non"
+              disabled={restants < 1}
+              onClick={() => poser("passe")}
+            >
+              Je passe
+            </button>
+          </div>
+          <p className="mu-rendu-n">
+            Dans les deux cas, votre fantôme reste sur le mur&nbsp;: c’est ce qui dit au
+            commerçant ce qui plaît, et aux autres ce qu’ils peuvent essayer.
+          </p>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -358,212 +800,434 @@ function Styles() {
         /* ATTENTION : pas d'accent grave dans ces commentaires, ce bloc est un
            litteral de gabarit et un seul terminerait la chaine. */
 
-        html:has(.fm),body:has(.fm){height:100%;margin:0;background:#05090C;
-          overflow:hidden;overscroll-behavior:none;}
+        html:has(.mu),body:has(.mu){margin:0;background:#070B12;
+          overscroll-behavior-y:none;}
 
-        .fm{--fm-menthe:#3DE2A6;--fm-encre:#EAF2EC;--fm-pale:#A9BDB1;
-          position:fixed;inset:0;display:flex;flex-direction:column;
-          background:#05090C;color:var(--fm-encre);
+        /* ─── LA COULEUR DU FANTOME ───
+           VIOLET, ET C'EST LA SEULE CHOSE DU PRODUIT QUI LA PORTE. La menthe est
+           la couleur du commerce (reserver, y aller), l'ambre celle de l'urgence
+           (le flash, le prix). Le fantome n'est ni l'un ni l'autre : il est ce
+           qu'on laisse de soi. Lui donner la menthe l'aurait range parmi les
+           actions du commerce, et c'est exactement ce qu'il n'est pas. */
+        .mu{--mu-fond:#0C121D;--mu-encre:#EAF0F6;--mu-pale:#8A9AAE;
+          --mu-ligne:rgba(255,255,255,.08);--mu-carte:rgba(255,255,255,.045);
+          --mu-v1:#8B7DF6;--mu-v2:#C77DF0;--mu-menthe:#3DE2A6;--mu-ambre:#FFC400;
+          background:#070B12;color:var(--mu-encre);
           font-family:'Inter',system-ui,-apple-system,sans-serif;
+          max-width:560px;margin:0 auto;min-height:100vh;
           -webkit-font-smoothing:antialiased;}
-        .fm *{box-sizing:border-box;}
+        .mu *{box-sizing:border-box;}
 
-        .fm-maq{flex:none;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;
-          background:#0B1218;border-bottom:1px solid rgba(255,255,255,.08);
+        .mu-maq{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;
+          background:#080D15;border-bottom:1px solid var(--mu-ligne);
           padding:calc(7px + env(safe-area-inset-top)) 10px 8px;}
-        .fm-maq::-webkit-scrollbar{display:none;}
-        .fm-maq button{flex:none;font-family:inherit;font-size:11.5px;font-weight:700;
-          border:1px solid rgba(255,255,255,.12);background:transparent;color:#9FB3A7;
+        .mu-maq::-webkit-scrollbar{display:none;}
+        .mu-maq button{flex:none;font-family:inherit;font-size:11.5px;font-weight:700;
+          border:1px solid var(--mu-ligne);background:transparent;color:#93A3B6;
           border-radius:20px;padding:6px 11px;white-space:nowrap;cursor:pointer;}
-        .fm-maq button.on{background:var(--fm-menthe);color:#04150E;border-color:transparent;}
+        .mu-maq button.on{background:linear-gradient(120deg,var(--mu-v1),var(--mu-v2));
+          color:#0B0714;border-color:transparent;}
 
-        /* ─── LA PHOTO EST L'ECRAN ───
-           Pas de marge, pas de coin arrondi, pas de cadre : trois bordures entre
-           l'oeil et l'image suffisent a ce qu'on ne la regarde plus. */
-        .fm-ecran{position:relative;flex:1;min-height:0;overflow:hidden;
-          touch-action:pan-y;user-select:none;-webkit-user-select:none;}
-        .fm-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-          display:block;}
-        .fm-photo.vide{background:linear-gradient(160deg,#16242E,#0A1310);}
-        .fm-voile{position:absolute;inset:0;
-          background:linear-gradient(180deg,rgba(4,8,6,.72) 0%,rgba(4,8,6,.12) 26%,
-            rgba(4,8,6,.28) 44%,rgba(4,8,6,.86) 72%,rgba(5,9,12,.97) 100%);}
-
-        /* ─── LE BANDEAU ───
-           Il flotte sur la photo. Le quota y est, ecrit d'avance. */
-        .fm-haut{position:absolute;top:0;left:0;right:0;z-index:5;
-          display:flex;align-items:center;gap:11px;padding:12px 13px;}
-        .fm-retour{flex:none;display:inline-flex;align-items:center;justify-content:center;
-          width:34px;height:34px;border-radius:50%;text-decoration:none;
-          color:var(--fm-menthe);font-size:16px;background:rgba(4,10,8,.5);
-          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
-        .fm-retour i{font-style:normal;}
-        .fm-titre{flex:1;min-width:0;}
-        .fm-titre b{display:block;font-size:12px;font-weight:900;letter-spacing:.15em;
-          text-transform:uppercase;color:var(--fm-menthe);}
-        /* SUR UNE LIGNE, COUPEE S'IL LE FAUT. « Une prothesiste ongulaire ·
-           Dax » passait a la ligne et poussait le quota hors de son rang : le
-           bandeau grandissait selon la longueur du nom du commerce. */
-        .fm-titre em{display:block;font-style:normal;font-size:12.5px;font-weight:600;
-          color:#DCE8E1;margin-top:1px;white-space:nowrap;overflow:hidden;
-          text-overflow:ellipsis;text-shadow:0 1px 10px rgba(0,0,0,.7);}
-        .fm-quota{flex:none;display:inline-flex;align-items:center;gap:5px;
-          white-space:nowrap;font-size:11.5px;font-weight:800;color:#DCE8E1;
-          background:rgba(4,10,8,.5);border-radius:20px;padding:6px 11px 6px 8px;
-          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
-        .fm-quota-s{width:15px;height:16px;}
-        .fm-quota-s .fm-f-corps{fill:var(--fm-menthe);}
-        .fm-quota-s .fm-f-oeil{fill:#05221A;}
-        .fm-quota-s .fm-f-bouche{fill:none;stroke:#05221A;stroke-width:1.6;
-          stroke-linecap:round;}
-
-        /* Les deux moities avancent. Sous tout le reste : elles ne prennent le
-           doigt que la ou il n'y a rien a toucher. */
-        .fm-zone{position:absolute;top:64px;bottom:44%;width:50%;z-index:1;
-          border:none;background:none;padding:0;cursor:pointer;
-          -webkit-tap-highlight-color:transparent;}
-        .fm-zone.gauche{left:0;}
-        .fm-zone.droite{right:0;}
-
-        /* ─── LE BAS, QUI PORTE TOUT ─── */
-        .fm-bas{position:absolute;left:0;right:0;bottom:0;z-index:4;
-          padding:0 16px calc(14px + env(safe-area-inset-bottom));}
-        .fm-bas.avant{animation:fmEntreD .26s ease both;}
-        .fm-bas.arriere{animation:fmEntreG .26s ease both;}
-        @keyframes fmEntreD{from{opacity:0;transform:translateX(16px);}
-          to{opacity:1;transform:translateX(0);}}
-        @keyframes fmEntreG{from{opacity:0;transform:translateX(-16px);}
-          to{opacity:1;transform:translateX(0);}}
-        .fm-photo.avant{animation:fmPhoto .34s ease both;}
-        .fm-photo.arriere{animation:fmPhoto .34s ease both;}
-        @keyframes fmPhoto{from{opacity:0;transform:scale(1.04);}
-          to{opacity:1;transform:scale(1);}}
-
-        .fm-qui{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px;}
-        .fm-signe{width:22px;height:24px;flex:none;
-          filter:drop-shadow(0 2px 8px rgba(0,0,0,.6));}
-        .fm-signe .fm-f-corps{fill:#F2FBF6;}
-        .fm-signe .fm-f-oeil{fill:#0B1A14;}
-        .fm-signe .fm-f-bouche{fill:none;stroke:#0B1A14;stroke-width:1.7;
-          stroke-linecap:round;}
-        .fm-qui b{font-size:19px;font-weight:800;
+        /* ─── LA PAGE DU COMMERCE, DERRIERE ───
+           Elle n'est pas un decor : c'est elle qui donne son sens au mot « ici ».
+           On ne quitte pas le commerce pour voir son mur. */
+        /* 290 ET PAS 248 : les etiquettes du commerce passaient sous la feuille,
+           qui remonte de vingt-six points. Une page qui coupe sa propre premiere
+           ligne se lit comme une erreur de mise en page, pas comme une
+           superposition voulue. */
+        .mu-fond{position:relative;height:290px;overflow:hidden;}
+        .mu-fond img{width:100%;height:100%;object-fit:cover;display:block;}
+        .mu-fond-v{position:absolute;inset:0;
+          background:linear-gradient(180deg,rgba(7,11,18,.62) 0%,rgba(7,11,18,.1) 34%,
+            rgba(7,11,18,.72) 78%,rgba(7,11,18,.96) 100%);}
+        .mu-fond-b{position:absolute;top:12px;left:12px;right:12px;z-index:2;
+          display:flex;align-items:center;gap:10px;}
+        .mu-fond-r,.mu-fond-c{flex:none;display:inline-flex;align-items:center;
+          justify-content:center;width:36px;height:36px;border-radius:50%;
+          text-decoration:none;font-size:16px;color:#EAF0F6;background:rgba(6,10,16,.55);
+          -webkit-backdrop-filter:blur(9px);backdrop-filter:blur(9px);}
+        .mu-fond-b>b{flex:1;text-align:center;font-size:16px;font-weight:700;
           text-shadow:0 2px 12px rgba(0,0,0,.7);}
-        .fm-qui u{text-decoration:none;font-size:11.5px;font-weight:800;
-          letter-spacing:.05em;text-transform:uppercase;color:#DCE8E1;
-          background:rgba(255,255,255,.16);border-radius:20px;padding:3px 8px;}
-        /* LA MENTHE EST LA MARQUE DE LA MAISON, et c'est la seule chose de
-           l'ecran qui la porte a cet endroit. Voir le commentaire du composant :
-           un fantome du patron qui passerait pour un client est un faux avis. */
-        .fm-qui u.maison{background:var(--fm-menthe);color:#04150E;font-weight:900;}
-        .fm-qui em{font-style:normal;font-size:11.5px;color:var(--fm-pale);
-          margin-left:auto;text-shadow:0 1px 8px rgba(0,0,0,.7);}
+        .mu-fond-t{position:absolute;left:16px;right:16px;bottom:36px;z-index:2;}
+        .mu-fond-k{display:block;font-size:10px;font-weight:900;letter-spacing:.15em;
+          text-transform:uppercase;color:var(--mu-pale);margin-bottom:2px;}
+        .mu-fond-t h1{margin:0;font-size:26px;font-weight:800;line-height:1.08;
+          text-shadow:0 2px 16px rgba(0,0,0,.75);}
+        .mu-fond-t p{margin:5px 0 0;display:flex;align-items:center;gap:5px;
+          font-size:12.5px;color:#C7D4E2;}
+        .mu-fond-t p i{font-style:normal;}
+        .mu-fond-t p i:first-child{color:var(--mu-ambre);}
+        .mu-fond-t p b{font-weight:800;}
+        .mu-fond-t p s{text-decoration:none;color:var(--mu-pale);margin-right:6px;}
+        .mu-fond-e{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap;}
+        .mu-fond-e span{font-size:11.5px;font-weight:600;color:#C7D4E2;
+          background:rgba(255,255,255,.1);border-radius:20px;padding:5px 11px;}
 
-        /* ─── L'ETIQUETTE DE GENRE ───
-           Elle passe AVANT le mot : « JE CHERCHE » dit en un coup d'oeil qu'il
-           faudra repondre, « ESSAYE ICI » qu'on regarde une hesitation. */
-        .fm-eti{display:inline-flex;align-items:center;gap:6px;margin-bottom:8px;
-          font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;
-          border-radius:20px;padding:5px 11px;}
-        .fm-eti i{font-style:normal;font-size:12px;letter-spacing:0;}
-        .fm-eti.demande{background:#FFC400;color:#2A1A00;}
-        .fm-eti.intention{background:rgba(255,255,255,.17);color:#F2FBF6;
-          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
-        .fm-eti.essai{background:rgba(109,40,217,.86);color:#F0E6FF;}
+        /* ─── LA FEUILLE ───
+           Elle MONTE sur la page, elle ne la remplace pas : les coins arrondis
+           en haut et le retrait de la photo disent qu'il y a quelque chose
+           dessous, et c'est ce qui evite qu'on la prenne pour un autre ecran. */
+        .mu-feuille{position:relative;z-index:3;margin-top:-26px;
+          background:var(--mu-fond);border-radius:26px 26px 0 0;
+          border-top:1px solid rgba(139,125,246,.26);
+          box-shadow:0 -24px 60px -30px rgba(0,0,0,.9);
+          padding:22px 16px calc(26px + env(safe-area-inset-bottom));}
 
-        /* LE MOT, EN GRAND. C'est lui qu'on lit en une seconde ; tout le reste
-           est autour. Deux tailles selon la longueur : une phrase de vingt
-           signes et une de cent n'ont pas le meme corps juste. */
-        .fm-mot{margin:0 0 12px;font-size:20px;line-height:1.32;font-weight:600;
-          text-wrap:pretty;text-shadow:0 2px 16px rgba(0,0,0,.75);}
+        .mu-x{position:absolute;top:16px;right:14px;z-index:4;width:34px;height:34px;
+          border-radius:50%;border:none;cursor:pointer;font-size:14px;
+          color:#C7D4E2;background:rgba(255,255,255,.09);}
 
-        .fm-pied{display:flex;align-items:center;gap:10px;margin-bottom:11px;}
-        .fm-duree{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;
-          font-weight:700;color:var(--fm-pale);}
-        .fm-duree i{font-style:normal;font-size:12px;}
-        .fm-rang{margin-left:auto;font-size:11.5px;font-weight:800;color:var(--fm-pale);
-          font-variant-numeric:tabular-nums;}
+        /* ─── LE FANTOME, EN TETE ─── */
+        .mu-tete{display:flex;align-items:center;gap:14px;margin-bottom:12px;}
+        .mu-tete.centre{flex-direction:column;gap:6px;text-align:center;}
+        .mu-gros{width:74px;height:80px;flex:none;
+          filter:drop-shadow(0 8px 26px rgba(139,125,246,.6));}
+        .mu-gros .mu-f-corps{fill:#F3F0FF;}
+        .mu-gros .mu-f-oeil{fill:#2A1E4D;}
+        .mu-gros .mu-f-bouche{fill:none;stroke:#2A1E4D;stroke-width:1.9;
+          stroke-linecap:round;}
+        .mu-tete>div>b{display:block;font-size:26px;font-weight:800;line-height:1.05;}
+        .mu-tete>div>em{display:block;font-style:normal;font-size:15px;font-weight:600;
+          color:var(--mu-pale);margin-top:3px;}
 
-        /* ─── LE GESTE ───
-           TOUJOURS AU MEME ENDROIT, MEME TAILLE, MEME COULEUR. Un bouton qu'on
-           retrouve sans le chercher se presse ; un bouton qu'on relocalise a
-           chaque ecran se lit d'abord, et lire coute la seconde qu'on n'a pas.
-           LE COMPTEUR RESTE PETIT : le jour ou il devient gros, on a refabrique
-           le like — et un like est gratuit, donc il ne veut rien dire. */
-        .fm-int{display:flex;align-items:center;gap:10px;width:100%;
-          font-family:inherit;cursor:pointer;border:none;border-radius:26px;
-          padding:15px 18px;background:var(--fm-menthe);color:#04150E;
-          box-shadow:0 16px 38px -20px rgba(61,226,166,.95);
+        /* L'ANNOTATION A LA MAIN. Elle n'est pas decorative : elle dit une chose
+           que le produit doit dire et que personne ne lirait dans un paragraphe. */
+        .mu-manus{margin:0;font-size:13.5px;line-height:1.35;font-style:italic;
+          font-weight:600;color:#C9BCFF;transform:rotate(-3deg);position:relative;}
+        .mu-manus i{font-style:normal;display:block;font-size:17px;margin-top:2px;}
+
+        .mu-intro{margin:0 0 16px;font-size:13.5px;line-height:1.55;text-align:center;
+          color:#B9C6D6;}
+        .mu-d-t{margin:2px 0 8px;font-size:26px;font-weight:800;line-height:1.15;
+          text-align:center;}
+        .mu-d-t b{background:linear-gradient(100deg,var(--mu-v1),var(--mu-v2));
+          -webkit-background-clip:text;background-clip:text;color:transparent;}
+        .mu-d-i{margin:0 0 16px;font-size:12.5px;line-height:1.55;text-align:center;
+          color:var(--mu-pale);}
+
+        /* ─── LE GESTE ─── */
+        .mu-cta{display:flex;align-items:center;gap:12px;width:100%;
+          font-family:inherit;cursor:pointer;border:none;border-radius:30px;
+          padding:13px 18px 13px 13px;
+          background:linear-gradient(100deg,var(--mu-v1),var(--mu-v2));color:#160D28;
+          box-shadow:0 18px 42px -20px rgba(160,120,246,.95);
+          transition:transform .12s ease,opacity .16s ease;}
+        .mu-cta.plein{margin-top:14px;}
+        .mu-cta:disabled{opacity:.42;cursor:default;box-shadow:none;}
+        .mu-cta:not(:disabled):active{transform:scale(.98);}
+        .mu-cta-s{width:34px;height:37px;flex:none;}
+        .mu-cta-s .mu-f-corps{fill:#fff;}
+        .mu-cta-s .mu-f-oeil{fill:#3B2A6B;}
+        .mu-cta-s .mu-f-bouche{fill:none;stroke:#3B2A6B;stroke-width:1.9;
+          stroke-linecap:round;}
+        .mu-cta>span{flex:1;min-width:0;text-align:left;}
+        .mu-cta b{display:block;font-size:16px;font-weight:800;}
+        .mu-cta em{display:block;font-style:normal;font-size:11.5px;font-weight:600;
+          opacity:.72;margin-top:1px;}
+        .mu-cta>i{flex:none;font-style:normal;font-size:19px;font-weight:700;}
+
+        /* ─── LES INTITULES DE SECTION ─── */
+        .mu-sect{display:flex;align-items:center;gap:8px;margin:24px 0 12px;}
+        .mu-sect.petit{margin-top:20px;}
+        .mu-sect-i{flex:none;font-size:13px;width:32px;height:32px;border-radius:11px;
+          display:flex;align-items:center;justify-content:center;
+          background:rgba(255,255,255,.07);}
+        .mu-sect-s{flex:none;width:22px;height:24px;}
+        .mu-sect-s .mu-f-corps{fill:#F3F0FF;}
+        .mu-sect-s .mu-f-oeil{fill:#2A1E4D;}
+        .mu-sect-s .mu-f-bouche{fill:none;stroke:#2A1E4D;stroke-width:1.9;
+          stroke-linecap:round;}
+        .mu-sect h2{margin:0;font-size:17px;font-weight:800;white-space:nowrap;}
+        /* LE NOM DU LIEU EST COUPE, PAS LE TITRE. « Une prothesiste ongulaire »
+           poussait « Le mur du jour » sur deux lignes : c'est l'intitule fixe
+           qui doit tenir, et l'etiquette variable qui cede. */
+        .mu-sect-j{min-width:0;overflow:hidden;text-overflow:ellipsis;
+          white-space:nowrap;font-size:12px;font-weight:700;color:#C9BCFF;
+          font-style:italic;}
+        .mu-sect-j::before{content:"◆ ";font-size:8px;vertical-align:middle;}
+        .mu-sect-v{margin-left:auto;font-size:12px;font-weight:700;color:var(--mu-pale);
+          white-space:nowrap;}
+
+        /* ─── LE MUR ───
+           UNE GRILLE QUI DEFILE, PAS UN PAQUET QU'ON BALAIE. Ce qu'on veut savoir
+           en arrivant, c'est « est-ce qu'il s'y passe quelque chose ? » — et ca
+           se voit d'un coup d'oeil, pas en traversant six ecrans. */
+        .mu-rang{display:flex;gap:11px;overflow-x:auto;scrollbar-width:none;
+          padding-bottom:4px;-webkit-overflow-scrolling:touch;}
+        .mu-rang::-webkit-scrollbar{display:none;}
+
+        .mu-c{flex:none;width:174px;background:var(--mu-carte);
+          border:1px solid var(--mu-ligne);border-radius:18px;overflow:hidden;
+          display:flex;flex-direction:column;}
+        .mu-c.grande{width:246px;}
+        .mu-c-p{position:relative;height:106px;background:#101825;}
+        .mu-c.grande .mu-c-p{height:126px;}
+        .mu-c-p img{width:100%;height:100%;object-fit:cover;display:block;}
+        .mu-c-vide{width:100%;height:100%;
+          background:linear-gradient(150deg,#1B2436,#0E141F);}
+        /* LE FANTOME TIENT LA PLACE DU PORTRAIT : la personne est la, sans que
+           sa tete y soit. Voir l'en-tete du fichier. */
+        .mu-c-av{position:absolute;left:9px;bottom:-13px;width:32px;height:32px;
+          border-radius:50%;display:flex;align-items:center;justify-content:center;
+          background:linear-gradient(150deg,#2A2150,#150F2C);
+          border:1px solid rgba(139,125,246,.5);
+          box-shadow:0 6px 16px -8px rgba(0,0,0,.9);}
+        .mu-c-signe{width:16px;height:17px;}
+        .mu-c-signe .mu-f-corps{fill:#E9E2FF;}
+        .mu-c-signe .mu-f-oeil{fill:#2A1E4D;}
+        .mu-c-signe .mu-f-bouche{fill:none;stroke:#2A1E4D;stroke-width:2;
+          stroke-linecap:round;}
+        .mu-c-b{position:absolute;top:8px;right:8px;font-size:9.5px;font-weight:900;
+          letter-spacing:.06em;text-transform:uppercase;border-radius:20px;
+          padding:4px 9px;}
+        .mu-c-b.staff{background:var(--mu-menthe);color:#04150E;}
+        .mu-c-b.verbe{background:linear-gradient(110deg,var(--mu-v1),var(--mu-v2));
+          color:#150C26;}
+        .mu-c-b.essai{background:rgba(109,40,217,.92);color:#F0E6FF;}
+
+        .mu-c-t{flex:1;display:flex;flex-direction:column;padding:17px 11px 11px;}
+        .mu-c-n{display:flex;align-items:baseline;gap:5px;flex-wrap:wrap;}
+        .mu-c-n b{font-size:13.5px;font-weight:800;}
+        .mu-c-n u{text-decoration:none;font-size:11.5px;font-weight:700;
+          color:#C9BCFF;}
+        .mu-c-n s{text-decoration:none;margin-left:auto;font-size:10.5px;
+          color:var(--mu-pale);font-variant-numeric:tabular-nums;}
+        .mu-c-t p{margin:5px 0 0;font-size:12.5px;line-height:1.4;color:#C7D4E2;}
+        .mu-c-e{display:block;margin-top:5px;font-size:11px;font-weight:700;
+          color:#C9BCFF;}
+        .mu-c-f{display:flex;align-items:center;gap:7px;margin-top:auto;padding-top:10px;}
+        .mu-c-d{display:inline-flex;align-items:center;gap:4px;margin-top:6px;
+          font-size:10.5px;font-weight:700;color:var(--mu-pale);}
+        .mu-c-d i{font-style:normal;}
+
+        /* ─── L'HUMEUR ───
+           Quatre teintes, pas douze : au-dela, plus rien ne tranche. */
+        .mu-hum{display:inline-flex;align-items:center;gap:5px;margin-top:8px;
+          align-self:flex-start;font-size:10.5px;font-weight:800;
+          border-radius:20px;padding:4px 9px;}
+        .mu-hum i{font-style:normal;font-size:11px;}
+        .mu-hum.menthe{background:rgba(61,226,166,.16);color:#7DF0C4;}
+        .mu-hum.violet{background:rgba(139,125,246,.2);color:#C9BCFF;}
+        .mu-hum.ambre{background:rgba(255,196,0,.16);color:#FFD866;}
+        .mu-hum.bleu{background:rgba(93,160,255,.18);color:#9CC6FF;}
+
+        /* ─── « CA M'INTERESSE » ───
+           IL RESTE PETIT, ET C'EST LA REGLE. Le jour ou le chiffre devient gros,
+           on a refabrique le like — et un like est gratuit, donc il ne veut rien
+           dire. Celui-ci engage : on accepte d'etre mis en relation. */
+        .mu-int{flex:1;min-width:0;display:flex;align-items:center;gap:6px;
+          font-family:inherit;font-size:11px;font-weight:800;cursor:pointer;
+          border:1px solid rgba(139,125,246,.34);background:rgba(139,125,246,.1);
+          color:#D6CCFF;border-radius:20px;padding:6px 9px;
           transition:transform .12s ease;}
-        .fm-int i{font-style:normal;font-size:18px;line-height:1;}
-        .fm-int b{flex:1;text-align:left;font-size:15.5px;font-weight:900;
-          letter-spacing:.01em;}
-        .fm-int em{font-style:normal;font-size:13px;font-weight:800;
-          font-variant-numeric:tabular-nums;opacity:.72;}
-        .fm-int:active{transform:scale(.975);}
-        /* Appuye : il reste lisible et cesse de crier. On ne le desactive pas —
-           on doit pouvoir rouvrir la mise en relation. */
-        .fm-int.on{background:rgba(61,226,166,.17);color:#BFF6E0;
-          box-shadow:inset 0 0 0 1px rgba(61,226,166,.5);}
-        .fm-int.on em{opacity:1;color:var(--fm-menthe);}
+        .mu-int i{font-style:normal;font-size:12px;}
+        .mu-int span{flex:1;min-width:0;text-align:left;overflow:hidden;
+          text-overflow:ellipsis;white-space:nowrap;}
+        .mu-int em{font-style:normal;font-variant-numeric:tabular-nums;opacity:.8;}
+        .mu-int:active{transform:scale(.96);}
+        .mu-int.on{background:linear-gradient(110deg,var(--mu-v1),var(--mu-v2));
+          color:#150C26;border-color:transparent;}
+        .mu-int.on em{opacity:1;}
 
-        .fm-ville{margin:10px 0 0;font-size:11px;line-height:1.4;text-align:center;
-          color:var(--fm-pale);}
-        .fm-ville b{color:#DCE8E1;font-weight:700;}
+        /* LE QUOTA, ECRIT A LA MAIN, JUSTE AU-DESSUS DU MUR. */
+        .mu-note{display:flex;align-items:center;justify-content:flex-end;gap:6px;
+          margin:-4px 4px 8px 0;font-size:12.5px;line-height:1.3;font-style:italic;
+          font-weight:700;color:#C9BCFF;}
+        .mu-note i{font-style:normal;font-size:17px;transform:rotate(-8deg);}
 
-        .fm-fleches{position:absolute;z-index:5;left:0;right:0;top:50%;
-          transform:translateY(-50%);display:flex;justify-content:space-between;
-          padding:0 8px;pointer-events:none;}
-        .fm-fleches button{pointer-events:auto;width:38px;height:38px;border-radius:50%;
-          border:none;cursor:pointer;font-size:17px;font-family:inherit;
-          color:#EAF2EC;background:rgba(4,10,8,.42);
-          -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
-          transition:opacity .16s ease;}
-        .fm-fleches button:disabled{opacity:0;pointer-events:none;}
+        /* ─── LE CONTEXTE DU COMMERCE ───
+           Le seul endroit de la feuille ou le commerce parle de ce qu'il vend, et
+           il est en bas : la feuille appartient aux gens qui sont passes. */
+        .mu-ctx{display:flex;align-items:center;gap:12px;margin-top:20px;
+          background:var(--mu-carte);border:1px solid var(--mu-ligne);
+          border-radius:18px;padding:11px;}
+        .mu-ctx img{flex:none;width:78px;height:64px;border-radius:13px;
+          object-fit:cover;display:block;}
+        .mu-ctx>div{flex:1;min-width:0;}
+        .mu-ctx span{display:block;font-size:10.5px;font-weight:800;
+          letter-spacing:.08em;text-transform:uppercase;color:var(--mu-pale);}
+        .mu-ctx b{display:block;font-size:15px;font-weight:800;margin-top:2px;}
+        .mu-ctx em{display:block;font-style:normal;font-size:11.5px;color:var(--mu-pale);
+          margin-top:1px;}
+        .mu-ctx-b{flex:none;font-family:inherit;font-size:11.5px;font-weight:800;
+          cursor:pointer;color:#EAF0F6;background:rgba(255,255,255,.09);
+          border:1px solid var(--mu-ligne);border-radius:20px;padding:9px 12px;
+          white-space:nowrap;}
+
+        /* LA SORTIE : le lieu ancre, il n'enferme pas. */
+        .mu-ailleurs{display:flex;align-items:center;gap:9px;margin:16px 0 0;
+          font-size:12px;line-height:1.4;color:var(--mu-pale);
+          background:rgba(255,255,255,.04);border:1px solid var(--mu-ligne);
+          border-radius:18px;padding:13px 14px;}
+        .mu-ailleurs i{font-style:normal;font-size:14px;}
+        .mu-ailleurs b{margin-left:auto;font-size:15px;color:#C9BCFF;}
+
+        /* ─── LE DEPOT PAR ANNONCE ─── */
+        .mu-verbes{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;
+          padding-bottom:3px;margin-bottom:12px;}
+        .mu-verbes::-webkit-scrollbar{display:none;}
+        .mu-verbes button{flex:none;display:inline-flex;flex-direction:column;
+          align-items:center;gap:5px;font-family:inherit;font-size:11.5px;
+          font-weight:700;cursor:pointer;color:#C7D4E2;
+          background:rgba(255,255,255,.045);border:1px solid var(--mu-ligne);
+          border-radius:16px;padding:11px 12px;min-width:88px;}
+        .mu-verbes button i{font-style:normal;font-size:17px;}
+        .mu-verbes button.on{border-color:rgba(139,125,246,.85);
+          background:rgba(139,125,246,.14);color:#E4DCFF;
+          box-shadow:0 0 0 1px rgba(139,125,246,.5);}
+
+        .mu-champ{position:relative;background:rgba(255,255,255,.04);
+          border:1px solid var(--mu-ligne);border-radius:18px;padding:13px 13px 9px;}
+        .mu-champ textarea{width:100%;min-height:82px;resize:none;border:none;
+          background:none;color:var(--mu-encre);font-family:inherit;font-size:14px;
+          line-height:1.45;outline:none;}
+        .mu-champ textarea::placeholder{color:#66748A;}
+        /* EN BAS A DROITE, PAS EN HAUT : pose sur la premiere ligne, le compteur
+           passait par-dessus l'exemple ecrit dans le champ et on lisait
+           « ...le concert de0/150 ». */
+        .mu-compte{position:absolute;right:14px;bottom:16px;font-size:10.5px;
+          color:var(--mu-pale);font-variant-numeric:tabular-nums;}
+        .mu-photo{display:inline-flex;align-items:center;gap:8px;font-family:inherit;
+          font-size:12px;font-weight:600;cursor:pointer;color:var(--mu-pale);
+          background:none;border:none;padding:6px 0 0;}
+        .mu-photo i{font-style:normal;font-size:15px;width:28px;height:28px;
+          border-radius:50%;display:inline-flex;align-items:center;
+          justify-content:center;background:rgba(255,255,255,.07);}
+
+        .mu-humeurs{margin-top:14px;}
+        .mu-humeurs>span{display:block;font-size:11.5px;font-weight:700;
+          color:var(--mu-pale);margin-bottom:7px;}
+        .mu-humeurs>div{display:flex;gap:7px;flex-wrap:wrap;}
+        .mu-humeurs button{display:inline-flex;align-items:center;gap:5px;
+          font-family:inherit;font-size:11px;font-weight:800;cursor:pointer;
+          border-radius:20px;padding:6px 11px;border:1px solid transparent;}
+        .mu-humeurs button i{font-style:normal;font-size:12px;}
+        .mu-humeurs button.menthe{background:rgba(61,226,166,.13);color:#7DF0C4;}
+        .mu-humeurs button.violet{background:rgba(139,125,246,.16);color:#C9BCFF;}
+        .mu-humeurs button.ambre{background:rgba(255,196,0,.13);color:#FFD866;}
+        .mu-humeurs button.bleu{background:rgba(93,160,255,.15);color:#9CC6FF;}
+        .mu-humeurs button.on{border-color:currentColor;}
+
+        /* ─── LE DEPOT PAR ESSAI ─── */
+        .mu-pas{list-style:none;display:flex;gap:7px;margin:0 0 14px;padding:0;}
+        .mu-pas li{flex:1;text-align:center;font-size:10.5px;font-weight:800;
+          letter-spacing:.05em;text-transform:uppercase;color:#56637A;
+          border-bottom:2px solid rgba(255,255,255,.08);padding-bottom:7px;}
+        .mu-pas li.on{color:#C9BCFF;border-bottom-color:var(--mu-v1);}
+        .mu-pas li.fait{color:var(--mu-menthe);border-bottom-color:rgba(61,226,166,.5);}
+
+        .mu-cadrer{text-align:center;}
+        /* LE VISEUR DIT CE QU'ON PHOTOGRAPHIE, ET C'EST LA MOITIE DE LA
+           MECANIQUE : on ne cadre pas une personne, on cadre L'ENDROIT OU LA
+           CHOSE VA. */
+        .mu-viseur{position:relative;height:150px;border-radius:18px;
+          background:repeating-linear-gradient(135deg,rgba(255,255,255,.03) 0 10px,
+            transparent 10px 20px),rgba(255,255,255,.03);}
+        .mu-viseur span{position:absolute;width:26px;height:26px;
+          border:2px solid rgba(139,125,246,.8);}
+        .mu-viseur span:nth-child(1){top:14px;left:14px;border-right:none;
+          border-bottom:none;border-radius:8px 0 0 0;}
+        .mu-viseur span:nth-child(2){top:14px;right:14px;border-left:none;
+          border-bottom:none;border-radius:0 8px 0 0;}
+        .mu-viseur span:nth-child(3){bottom:14px;left:14px;border-right:none;
+          border-top:none;border-radius:0 0 0 8px;}
+        .mu-viseur span:nth-child(4){bottom:14px;right:14px;border-left:none;
+          border-top:none;border-radius:0 0 8px 0;}
+        .mu-cadrer>p{margin:12px 0 0;font-size:12.5px;line-height:1.5;
+          color:var(--mu-pale);}
+        .mu-cadrer .mu-cta{text-align:left;}
+        .mu-cadrer .mu-cta>i{font-size:20px;}
+
+        .mu-pieces{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;
+          padding-bottom:4px;}
+        .mu-pieces::-webkit-scrollbar{display:none;}
+        .mu-pieces button{flex:none;width:132px;font-family:inherit;cursor:pointer;
+          background:var(--mu-carte);border:1px solid var(--mu-ligne);
+          border-radius:16px;overflow:hidden;padding:0 0 10px;color:var(--mu-encre);}
+        .mu-pieces img{width:100%;height:96px;object-fit:cover;display:block;}
+        .mu-pieces b{display:block;font-size:13px;font-weight:700;padding:9px 10px 0;
+          text-align:left;}
+        .mu-pieces em{display:block;font-style:normal;font-size:12.5px;font-weight:800;
+          color:var(--mu-ambre);padding:3px 10px 0;text-align:left;}
+
+        .mu-calcul{text-align:center;padding:18px 0 6px;}
+        .mu-calcul-s{width:56px;height:61px;
+          animation:muFlotte 1.6s ease-in-out infinite;
+          filter:drop-shadow(0 8px 24px rgba(139,125,246,.7));}
+        .mu-calcul-s .mu-f-corps{fill:#F3F0FF;}
+        .mu-calcul-s .mu-f-oeil{fill:#2A1E4D;}
+        .mu-calcul-s .mu-f-bouche{fill:none;stroke:#2A1E4D;stroke-width:1.9;
+          stroke-linecap:round;}
+        @keyframes muFlotte{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
+        .mu-calcul b{display:block;margin-top:10px;font-size:15px;font-weight:700;}
+        .mu-jauge{height:7px;border-radius:20px;margin:13px auto 7px;max-width:230px;
+          background:rgba(255,255,255,.09);overflow:hidden;}
+        .mu-jauge i{display:block;height:100%;border-radius:20px;
+          background:linear-gradient(90deg,var(--mu-v1),var(--mu-v2));
+          transition:width .12s linear;}
+        .mu-calcul em{font-style:normal;font-size:12px;font-weight:800;
+          color:#C9BCFF;font-variant-numeric:tabular-nums;}
+
+        .mu-rendu{text-align:center;}
+        .mu-rendu>img{width:100%;height:220px;object-fit:cover;border-radius:20px;
+          display:block;}
+        /* ON DIT QUE LE RENDU EST SIMULE. Une image presentee comme un essai
+           reel alors qu'elle ne l'est pas ferait croire que la mecanique est
+           branchee — et c'est la seule chose de cet ecran qui ne l'est pas. */
+        .mu-rendu-b{display:inline-block;margin-top:-30px;position:relative;
+          font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+          color:#E4DCFF;background:rgba(20,12,38,.82);border-radius:20px;
+          padding:5px 11px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+        .mu-rendu-t{display:flex;align-items:baseline;justify-content:center;gap:9px;
+          margin-top:14px;}
+        .mu-rendu-t b{font-size:17px;font-weight:800;}
+        .mu-rendu-t em{font-style:normal;font-size:15px;font-weight:800;
+          color:var(--mu-ambre);}
+        .mu-rendu-g{display:flex;gap:9px;margin-top:14px;}
+        .mu-rendu-g button{flex:1;font-family:inherit;font-size:14px;font-weight:800;
+          cursor:pointer;border-radius:24px;padding:14px 12px;border:none;}
+        .mu-rendu-g .oui{background:linear-gradient(100deg,var(--mu-v1),var(--mu-v2));
+          color:#160D28;}
+        .mu-rendu-g .non{background:transparent;color:#C7D4E2;
+          border:1px solid rgba(255,255,255,.2);}
+        .mu-rendu-g button:disabled{opacity:.4;cursor:default;}
+        .mu-rendu-n{margin:12px 0 0;font-size:11.5px;line-height:1.5;
+          color:var(--mu-pale);}
 
         /* ─── LA MISE EN RELATION ─── */
-        .fm-fond{position:fixed;inset:0;z-index:30;border:none;padding:0;
-          background:rgba(3,7,5,.62);cursor:pointer;
+        .mu-fondu{position:fixed;inset:0;z-index:40;border:none;padding:0;
+          background:rgba(4,7,12,.66);cursor:pointer;
           -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
-          animation:fmFond .18s ease both;}
-        @keyframes fmFond{from{opacity:0;}to{opacity:1;}}
-        .fm-feuille{position:fixed;z-index:31;left:0;right:0;bottom:0;
+          animation:muFondu .18s ease both;}
+        @keyframes muFondu{from{opacity:0;}to{opacity:1;}}
+        .mu-rel{position:fixed;z-index:41;left:0;right:0;bottom:0;
           max-width:560px;margin:0 auto;
-          background:linear-gradient(180deg,#101C17,#08110D);
-          border-top:1px solid rgba(61,226,166,.28);
-          border-radius:26px 26px 0 0;
+          background:linear-gradient(180deg,#1A1330,#0C0A18);
+          border-top:1px solid rgba(139,125,246,.4);border-radius:26px 26px 0 0;
           padding:20px 18px calc(20px + env(safe-area-inset-bottom));
-          animation:fmMonte .24s cubic-bezier(.2,.8,.25,1) both;}
-        @keyframes fmMonte{from{transform:translateY(100%);}to{transform:translateY(0);}}
-        .fm-f-t{display:flex;align-items:center;gap:9px;margin-bottom:10px;}
-        .fm-f-signe{width:24px;height:26px;flex:none;}
-        .fm-f-signe .fm-f-corps{fill:var(--fm-menthe);}
-        .fm-f-signe .fm-f-oeil{fill:#05221A;}
-        .fm-f-signe .fm-f-bouche{fill:none;stroke:#05221A;stroke-width:1.7;
+          animation:muMonte .24s cubic-bezier(.2,.8,.25,1) both;}
+        @keyframes muMonte{from{transform:translateY(100%);}to{transform:translateY(0);}}
+        .mu-rel-t{display:flex;align-items:center;gap:9px;margin-bottom:10px;}
+        .mu-rel-s{width:24px;height:26px;flex:none;}
+        .mu-rel-s .mu-f-corps{fill:#E9E2FF;}
+        .mu-rel-s .mu-f-oeil{fill:#2A1E4D;}
+        .mu-rel-s .mu-f-bouche{fill:none;stroke:#2A1E4D;stroke-width:1.9;
           stroke-linecap:round;}
-        .fm-f-t b{font-size:12px;font-weight:900;letter-spacing:.12em;
-          text-transform:uppercase;color:var(--fm-menthe);}
-        .fm-f-q{margin:0 0 16px;font-size:18px;line-height:1.35;font-weight:600;}
-        .fm-f-b{display:block;width:100%;font-family:inherit;font-size:15px;
+        .mu-rel-t b{font-size:12px;font-weight:900;letter-spacing:.12em;
+          text-transform:uppercase;color:#C9BCFF;}
+        .mu-rel-q{margin:0 0 16px;font-size:18px;line-height:1.35;font-weight:600;}
+        .mu-rel-b{display:block;width:100%;font-family:inherit;font-size:15px;
           font-weight:900;cursor:pointer;border:none;border-radius:24px;
-          padding:15px 16px;background:var(--fm-menthe);color:#04150E;}
-        .fm-f-b:active{transform:scale(.98);}
-        .fm-f-n{margin:12px 0 0;font-size:11.5px;line-height:1.5;text-align:center;
-          color:var(--fm-pale);}
-        .fm-f-x{display:block;width:100%;margin-top:6px;font-family:inherit;
+          padding:15px 16px;background:linear-gradient(100deg,var(--mu-v1),var(--mu-v2));
+          color:#160D28;}
+        .mu-rel-n{margin:12px 0 0;font-size:11.5px;line-height:1.5;text-align:center;
+          color:var(--mu-pale);}
+        .mu-rel-x{display:block;width:100%;margin-top:6px;font-family:inherit;
           font-size:13px;font-weight:700;cursor:pointer;border:none;background:none;
-          color:var(--fm-pale);padding:10px;}
+          color:var(--mu-pale);padding:10px;}
 
-        @media (min-width:560px){
-          .fm-ecran{max-width:560px;margin:0 auto;width:100%;
-            border-left:1px solid rgba(255,255,255,.07);
-            border-right:1px solid rgba(255,255,255,.07);}
-          .fm-mot{font-size:22px;}
-        }
-
-        /* Moins d'animation n'est pas moins d'information : seuls les
-           mouvements tombent. */
         @media (prefers-reduced-motion:reduce){
-          .fm *{animation:none !important;transition:none !important;}
+          .mu *{animation:none !important;transition:none !important;}
         }
       `,
       }}

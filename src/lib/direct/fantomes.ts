@@ -4,42 +4,43 @@
 //
 //   LE FANTÔME, C'EST VOUS QUAND VOUS N'ÊTES PAS LÀ.
 //
-//   Vous laissez une photo, quelques mots, un lieu et une durée. Votre fantôme
-//   reste là. Quelqu'un peut le découvrir. S'il est intéressé : « Ça
-//   m'intéresse ». ClikMe vous met en relation. Et votre fantôme revient vous
-//   raconter ce qui s'est passé.
+//   Vous laissez une trace dans un lieu — une photo, quelques mots, une envie,
+//   un essai. Elle y reste quelques heures. Les autres la découvrent. S'ils
+//   sont intéressés : « Ça m'intéresse ». ClikMe met en relation. Et votre
+//   fantôme revient vous raconter ce qui s'est passé.
 //
-// CETTE PHRASE FAIT PLUS QUE DÉFINIR : ELLE RÉCONCILIE. Il y avait jusqu'ici
-// DEUX fantômes dans le produit, avec le même dessin — celui qui veille sur une
+// CETTE PHRASE FAIT PLUS QUE DÉFINIR : ELLE RÉCONCILIE. Il y avait deux
+// fantômes dans le produit avec le même dessin — celui qui veille sur une
 // discussion et vous rapporte ce qui s'y passe (`salons.ts`, cinq états), et
-// celui qu'on laisse quelque part. « Deux animaux, un seul visage » était le
-// trou du concept. Ce n'en est plus un : veiller n'est pas une seconde
-// fonction, c'est le fantôme que vous avez laissé qui vous fait son rapport.
+// celui qu'on laisse quelque part. Veiller n'est pas une seconde fonction :
+// c'est le fantôme qu'on a laissé qui fait son rapport.
 //
-// CONSÉQUENCE QU'ON TIENT PARTOUT : IL N'Y EN A QU'UN. Pas un fantôme par
+// CONSÉQUENCE TENUE PARTOUT : IL N'Y EN A QU'UN. Pas un fantôme par
 // publication — un fantôme, le vôtre, qui se déplace. C'est ce qui donne son
 // sens au quota : ce n'est pas « trois publications par jour », c'est « votre
 // fantôme ne peut pas être à plus de trois endroits à la fois ».
 //
-// ═══ UN GESTE, PLUSIEURS EXPRESSIONS ══════════════════════════════════════
+// ═══ UN GESTE, DEUX FAÇONS DE LE REMPLIR ══════════════════════════════════
 //
-// LE PIÈGE ÉTAIT D'EN FAIRE TROIS PRODUITS. Essayage, présence, petite annonce :
-// trois mécaniques, trois données, trois modérations — et un utilisateur qui
-// apprend un comportement chez le bijoutier, le rejoue chez le restaurateur, et
-// tombe sur autre chose. Une signature qui ne tient pas sa promesse une fois sur
-// deux n'est plus une signature.
+// Le geste est identique partout — je suis ici, je laisse mon fantôme, il reste
+// — et c'est le LIEU qui décide de ce qu'on y met. Deux dépôts, et deux
+// seulement :
 //
-// CE N'EST PAS CE QU'ON FAIT. Le geste est identique partout — je suis ici, je
-// laisse mon fantôme, il reste — et seul le CONTENU change avec le lieu. Quatre
-// façons de le remplir, et elles partagent toutes la même carte :
+//   · ANNONCE — restaurant, café, bar, commerce. Une photo, quelques mots, et
+//     un verbe pris dans une liste fermée. Plus une humeur : ce qu'on vient
+//     chercher ici aujourd'hui.
+//   · ESSAI — bijou, vêtement, coiffure, ongles, objet chez soi. LE CLIENT
+//     PHOTOGRAPHIE CE QUI VA RECEVOIR LA CHOSE — son poignet, sa main, sa
+//     table de salon — et la photo du commerçant vient s'y poser. Le fantôme
+//     reste sur le mur qu'on ait pris ou non : « cette bague a été essayée par
+//     quatorze personnes et deux l'ont prise » est un chiffre qu'aucun
+//     commerçant n'a jamais eu.
 //
-//   · ESSAI      — bijou, vêtement, coupe, ongles, objet chez soi. Une trace de
-//                  désir : la chose essayée reste, qu'on l'ait prise ou non.
-//   · EXPRESSION — restaurant, café, commerce de bouche. Une photo, des mots.
-//   · INTENTION  — bar, événement. Pas « qui est là », mais CE QUE LA PERSONNE
-//                  VIENT CHERCHER. C'est ça qui rend une soirée lisible.
-//   · DEMANDE    — je cherche, je donne, je propose, je prête. Le lieu n'est
-//                  qu'un ancrage : le contenu concerne la ville entière.
+// CE QUI SERAIT UNE ERREUR : EN FAIRE DEUX PRODUITS. Ils partagent la carte, le
+// mur, la durée, le quota, « Ça m'intéresse » et la mise en relation. Seul
+// l'écran de dépôt diffère, et il diffère parce que le lieu diffère — c'est
+// exactement ce que l'application fait déjà pour le mot du métier : un coiffeur
+// n'a pas de « carte », il n'a pas non plus le même fantôme.
 //
 // ═══ LE MUR EST UNE FENÊTRE, PAS UNE CAGE ═════════════════════════════════
 //
@@ -49,226 +50,265 @@
 // qu'elle décide de la taille du produit : « je donne vingt vinyles » n'a rien à
 // voir avec un restaurant, et c'est précisément pour ça que ça vaut le coup.
 //
-// ET LE MÊME FANTÔME EXISTE DANS LE DIRECT, avec son tampon de lieu — « Léa ·
-// chez Margot · il y a 18 min ». Le lieu ancre, il n'enferme pas. Sans cette
-// remontée, le vinyle de Camille serait vu par les douze personnes qui déjeunent
-// là, et le mur mourrait de faim.
+// ET LE MÊME FANTÔME EXISTE AILLEURS, avec son tampon de lieu. Sans cette
+// remontée, les vinyles de Thomas seraient vus par les douze personnes qui
+// déjeunent là, et le mur mourrait de faim.
 //
-// ═══ LA DURÉE SUIT LA CHOSE, PAS L'HORLOGE ════════════════════════════════
+// ═══ UN MUR NE DÉMARRE JAMAIS VIDE ════════════════════════════════════════
 //
-// PAS DE DISPARITION À MINUIT. « Je cherche deux places pour vendredi » publié un
-// mardi mourrait le mardi soir, et c'est exactement l'annonce qui avait le plus
-// de valeur. Le fantôme reste jusqu'à ce que ce qu'il porte n'ait plus de sens,
-// SEPT JOURS AU MAXIMUM. C'est la logique du fil, qui trie par ordre de
-// disparition ; il n'y a rien de neuf à inventer, seulement à ne pas coder
-// « minuit » par réflexe.
+// C'est une règle, pas une astuce de lancement. Le mur vide tue les surfaces
+// contributives : personne ne veut être le premier à parler dans une pièce
+// silencieuse. À l'ouverture, ce sont donc les fantômes de LA MAISON qu'on voit
+// — le chef, la patronne — et les clients prennent le relais tout seuls. Ils
+// sont marqués, et ce n'est pas négociable : un fantôme du patron qui passerait
+// pour un client, c'est un faux avis.
 //
 // ═══ CE QU'ON S'INTERDIT AU LANCEMENT ═════════════════════════════════════
 //
-// PAS DE « JE VENDS ». Chercher, donner, proposer, prêter, aider : oui. Vendre :
-// non. Dès qu'on vend, la page publique et indexée d'un commerce devient une
-// place de marché, avec ce qui va avec — signalement, retrait, identification du
-// vendeur. Ça retire l'essentiel du risque et ne coûte presque rien : l'exemple
-// qui a fait naître le mur, les vinyles, est un don.
-//
-// PAS DE VISAGE, ET LA RÈGLE EXISTAIT DÉJÀ. `public/direct/LISEZ-MOI.md` :
-// « aucun visage reconnaissable ». La photo montre CE QU'ON MONTRE — la bague au
-// poignet, l'assiette, les vinyles, la coupe de dos — et la personne est
-// présente autrement : son prénom, son fantôme, son heure. Ce n'est pas
-// seulement une précaution : une photo de son propre visage est un geste social
-// lourd, et un mur qui l'exige reste vide. Sur Instagram les gens photographient
-// leur assiette, pas leur tête.
+// PAS DE « JE VENDS ». Chercher, proposer, donner, prêter, aider : oui. Vendre :
+// non. Dès qu'on vend, la page publique d'un commerce devient une place de
+// marché, avec ce qui va avec — signalement, retrait, identification du vendeur.
+// La liste des verbes est fermée POUR ÇA : un champ libre laisserait la vente
+// entrer par la phrase.
 
-/** Les quatre façons de remplir le même geste. */
-export type GenreDeFantome = "essai" | "expression" | "intention" | "demande";
+/** Ce que le lieu propose de déposer. Décide de l'écran, et de lui seul. */
+export type Depot = "annonce" | "essai";
 
 /**
- * CE QUE LA PERSONNE VIENT CHERCHER — les bars et les événements, et eux seuls.
+ * L'HUMEUR — ce qu'on vient chercher ici, aujourd'hui.
  *
- * POURQUOI CE N'EST PAS UN STATUT DE PRÉSENCE. « Thomas est ici » ne sert à
- * personne : dans un bar plein, tout le monde est ici. Ce qui manque, et
- * qu'aucune application ne dit, c'est POURQUOI on y est — et c'est la seule
- * information qui permette à deux inconnus de se parler sans que ce soit gênant.
+ * CE N'EST PAS UN STATUT DE PRÉSENCE. « Thomas est ici » ne sert à personne :
+ * dans une salle pleine, tout le monde est ici. Ce qui manque, et qu'aucune
+ * application ne dit, c'est POURQUOI on y est — et c'est la seule information
+ * qui permette à deux inconnus de se parler sans que ce soit gênant.
+ *
+ * ELLE N'EST PAS RÉSERVÉE AUX BARS. Un restaurant en a autant besoin : « avec
+ * mon groupe » et « ouvert aux rencontres » ne décrivent pas le même déjeuner,
+ * et c'est ce qui rend une salle lisible depuis la rue.
  */
-export const INTENTIONS = [
-  { cle: "amis", emoji: "🍻", mot: "Entre amis" },
-  { cle: "monde", emoji: "🫶", mot: "Rencontrer du monde" },
-  { cle: "fete", emoji: "🎉", mot: "Faire la fête" },
-  { cle: "musique", emoji: "🎶", mot: "Pour la musique" },
-  { cle: "decouvre", emoji: "👀", mot: "Je découvre" },
-] as const;
+export type Humeur = {
+  cle: string;
+  emoji: string;
+  mot: string;
+  /** La teinte de la pastille. Quatre, pas douze : au-delà, plus rien ne tranche. */
+  teinte: "menthe" | "violet" | "ambre" | "bleu";
+};
 
-export type CleIntention = (typeof INTENTIONS)[number]["cle"];
+export const HUMEURS: Humeur[] = [
+  { cle: "chill", emoji: "😌", mot: "En mode chill", teinte: "menthe" },
+  { cle: "gourmand", emoji: "🍴", mot: "Gourmand", teinte: "violet" },
+  { cle: "groupe", emoji: "👥", mot: "Avec mon groupe", teinte: "ambre" },
+  { cle: "rencontres", emoji: "💙", mot: "Ouvert aux rencontres", teinte: "bleu" },
+  { cle: "amis", emoji: "🍻", mot: "Entre amis", teinte: "ambre" },
+  { cle: "monde", emoji: "🫶", mot: "Rencontrer du monde", teinte: "bleu" },
+  { cle: "musique", emoji: "🎶", mot: "Pour la musique", teinte: "violet" },
+  { cle: "decouvre", emoji: "👀", mot: "Je découvre", teinte: "menthe" },
+  { cle: "hesite", emoji: "🤔", mot: "J’hésite encore", teinte: "violet" },
+  { cle: "offrir", emoji: "🎁", mot: "C’est pour offrir", teinte: "ambre" },
+];
+
+export function humeurDe(cle: string | undefined): Humeur | undefined {
+  return HUMEURS.find((h) => h.cle === cle);
+}
 
 /**
- * LES VERBES AUTORISÉS SUR UNE DEMANDE.
+ * LES VERBES, ET LA LISTE EST LA RÈGLE.
  *
- * LA LISTE EST LA RÈGLE, ET C'EST POUR ÇA QU'ELLE EST ICI ET PAS DANS L'ÉCRAN.
- * « Je vends » n'y est pas, et son absence est une décision de produit, pas un
- * oubli : voir l'en-tête. Un champ libre laisserait la vente entrer par la
- * phrase ; une liste fermée oblige à choisir un verbe qu'on assume.
+ * Elle est ici et pas dans l'écran parce que c'en est une : « je vends » n'y est
+ * pas, et son absence est une décision de produit. Voir l'en-tête.
  */
-export const VERBES = [
-  { cle: "cherche", mot: "Je cherche" },
-  { cle: "donne", mot: "Je donne" },
-  { cle: "propose", mot: "Je propose" },
-  { cle: "prete", mot: "Je prête" },
-  { cle: "aide", mot: "Je peux aider" },
-] as const;
+export type Verbe = { cle: string; emoji: string; mot: string };
 
-export type CleVerbe = (typeof VERBES)[number]["cle"];
+export const VERBES: Verbe[] = [
+  { cle: "cherche", emoji: "📣", mot: "Je cherche" },
+  { cle: "propose", emoji: "🤲", mot: "Je propose" },
+  { cle: "places", emoji: "🎟️", mot: "J’ai 2 places" },
+  { cle: "donne", emoji: "🎁", mot: "Je donne" },
+  { cle: "aide", emoji: "🤝", mot: "Je peux aider" },
+];
+
+export function verbeDe(cle: string | undefined): Verbe | undefined {
+  return VERBES.find((v) => v.cle === cle);
+}
 
 export type Fantome = {
   id: string;
   /** Prénom seul. Ce sont des voisins, pas des comptes. */
   qui: string;
-  /**
-   * LE FANTÔME DE LA MAISON — le patron, le chef, le personnel.
-   *
-   * UN MUR NE DOIT JAMAIS DÉMARRER VIDE, et c'est une règle, pas une astuce de
-   * lancement. Le mur vide tue les surfaces contributives : personne ne veut
-   * être le premier à parler dans une pièce silencieuse. À l'ouverture, ce sont
-   * donc ceux de la maison qu'on voit — le commerce accueille, et les clients
-   * prennent le relais tout seuls.
-   *
-   * ILS SONT MARQUÉS, ET C'EST NON NÉGOCIABLE. Un fantôme de la maison qui
-   * passerait pour un client, c'est un faux avis.
-   */
-  maison?: boolean;
-  /** « Chef », « Patronne ». Seulement pour les fantômes de la maison. */
+  /** « Chef », « Patronne ». Marque le fantôme de la maison — voir l'en-tête. */
   role?: string;
-  genre: GenreDeFantome;
-  /** Ce qu'on montre : jamais un visage. Voir l'en-tête. */
-  photo?: string;
-  /** Ses mots à elle ou à lui. Une ou deux phrases, jamais un paragraphe. */
-  mot: string;
-  /** ESSAI : ce qui a été essayé, et ce qui en a été décidé. */
-  essai?: {
-    quoi: string;
-    /**
-     * `null` = pas encore décidé. LES TROIS CAS COMPTENT, et le refus le plus :
-     * « cette bague a été essayée par quatorze personnes et deux l'ont prise »
-     * est une information qu'aucun commerçant n'a jamais eue.
-     */
-    verdict: "pris" | "passe" | null;
-  };
-  /** INTENTION : la pastille, et rien d'autre. */
-  intention?: CleIntention;
-  /** DEMANDE : le verbe, pris dans la liste fermée. */
-  verbe?: CleVerbe;
-  /** « il y a 12 min ». */
-  depuis: string;
+  maison?: boolean;
   /**
-   * JUSQU'À QUAND ÇA A ENCORE DU SENS. Écrit comme on le dirait — « encore 3 h »,
-   * « jusqu'à vendredi ». Sept jours au maximum, voir l'en-tête.
+   * CE QU'ON MONTRE, ET JAMAIS UN VISAGE.
+   *
+   * `public/direct/LISEZ-MOI.md` l'interdit, et la raison de produit pèse plus
+   * lourd que la précaution : une photo de son propre visage est un geste social
+   * lourd, et un mur qui l'exige reste vide. Sur Instagram les gens
+   * photographient leur assiette, pas leur tête. La personne est présente
+   * autrement — son prénom, son fantôme, son heure.
    */
-  jusqua: string;
+  photo?: string;
+  mot: string;
+  /** L'heure telle qu'on l'écrit : « 11:03 ». */
+  heure: string;
+  humeur?: string;
+  verbe?: string;
+  /** ESSAI : ce qui a été essayé, et ce qui en a été décidé. */
+  essai?: { quoi: string; verdict: "pris" | "passe" | null };
   /**
    * COMBIEN ONT DIT « ÇA M'INTÉRESSE ».
    *
    * CE N'EST PAS UN SCORE, ET LA DIFFÉRENCE EST TOUT LE SUJET. Un « j'aime » est
    * gratuit, donc il ne veut rien dire. Celui-ci ENGAGE — on accepte d'être mis
-   * en relation — et c'est ce coût qui rend le compteur honnête : huit, ce sont
-   * huit personnes prêtes à parler. Corollaire tenu à l'écran : il reste petit.
-   * Le jour où il devient gros, on a refabriqué le like.
+   * en relation — et c'est ce coût qui rend le compteur honnête. Corollaire tenu
+   * à l'écran : il reste petit. Le jour où il devient gros, on a refait le like.
    */
-  interesses: number;
+  interesses?: number;
+  /**
+   * JUSQU'À QUAND ÇA A ENCORE DU SENS.
+   *
+   * PAS DE DISPARITION À MINUIT PAR RÉFLEXE. Une trace posée dans un lieu vit
+   * quelques heures — c'est le cas ordinaire, et c'est ce que dit l'écran de
+   * dépôt. Mais « je cherche deux places pour vendredi » publié un mardi
+   * mourrait le mardi soir, et c'est justement l'annonce qui vaut le plus : la
+   * durée suit donc LA CHOSE, sept jours au maximum. C'est la logique du fil,
+   * qui trie par ordre de disparition.
+   */
+  jusqua?: string;
 };
+
+/** Une pièce du catalogue du commerçant, pour l'essai. */
+export type Piece = { id: string; nom: string; prix: string; photo: string };
 
 export type Mur = {
   cle: string;
-  /** Le commerce où ces fantômes ont été laissés. */
   lieu: string;
   metier: string;
   ville: string;
-  /** Ce que le lieu propose de laisser : décide de l'écran de dépôt. */
-  offre: GenreDeFantome;
-  fantomes: Fantome[];
+  distance: string;
+  note: string;
+  avis: number;
+  /** Deux ou trois mots sous le nom : « Cuisine française », « Terrasse ». */
+  etiquettes: string[];
+  photoLieu: string;
+  depot: Depot;
+  /** Les humeurs proposées ici. Vide = on ne demande pas d'humeur. */
+  humeurs: string[];
+  /** Les verbes proposés ici. */
+  verbes: string[];
+  /**
+   * L'ESSAI, ET CE QU'IL DEMANDE AU CLIENT.
+   *
+   * `partie` est ce qu'il photographie — son poignet, sa main, sa table de
+   * salon. C'est le cœur de la mécanique et ce qui la rend possible sans
+   * visage : on ne photographie pas la personne, on photographie L'ENDROIT OÙ
+   * LA CHOSE VA.
+   */
+  essai?: { partie: string; consigne: string; pieces: Piece[] };
+  /**
+   * CE QUE LE LIEU MET SOUS LE MUR — le plat du jour, la pièce du jour.
+   * C'est le seul endroit de la feuille où le commerce parle de ce qu'il vend.
+   */
+  contexte?: { titre: string; quoi: string; detail: string; photo: string; geste: string };
+  /** Les fantômes de la maison. Ils ouvrent le mur : voir l'en-tête. */
+  maison: Fantome[];
+  clients: Fantome[];
 };
 
 /**
- * TROIS MURS, ET ILS NE SONT PAS TROIS EXEMPLES : CE SONT TROIS ÉPREUVES.
+ * TROIS MURS, ET CE SONT TROIS ÉPREUVES, PAS TROIS EXEMPLES.
  *
  * Un restaurant, dont le mur parle surtout d'autre chose que du restaurant — le
- * cas qui décide si l'idée est grande ou petite. Un bar, où le contenu n'est
- * plus une photo mais une intention. Une onglerie, où le fantôme est un essai.
- * Si le même écran tient les trois sans se tordre, le concept tient.
+ * cas qui décide si l'idée est grande ou petite. Un bar, où ce qui compte est
+ * l'humeur. Une onglerie, où le fantôme est un essai. Si la même feuille tient
+ * les trois sans se tordre, le concept tient.
  */
 export const MURS: Mur[] = [
   {
     cle: "margot",
-    lieu: "Le Bocal de Margot",
+    lieu: "Chez Margot",
     metier: "Restaurant",
     ville: "Dax",
-    offre: "expression",
-    fantomes: [
+    distance: "350 m",
+    note: "4,7",
+    avis: 124,
+    etiquettes: ["Cuisine française", "Terrasse"],
+    photoLieu: "/direct/tables-libres.jpg",
+    depot: "annonce",
+    humeurs: ["chill", "gourmand", "groupe", "rencontres"],
+    verbes: ["cherche", "propose", "places", "donne", "aide"],
+    contexte: {
+      titre: "Le plat du jour",
+      quoi: "Magret de canard",
+      detail: "Purée maison & légumes de saison",
+      photo: "/direct/plat-du-jour.jpg",
+      geste: "Voir la carte",
+    },
+    maison: [
       {
         id: "m-marc",
         qui: "Marc",
         role: "Chef",
         maison: true,
-        genre: "expression",
-        photo: "/direct/plat-lasagnes.jpg",
-        mot: "Les lasagnes sortent du four. La pâte est de ce matin 😋",
-        depuis: "il y a 1 h",
-        jusqua: "encore 4 h",
+        photo: "/direct/plat-du-jour.jpg",
+        mot: "Le magret est particulièrement réussi aujourd’hui 😋",
+        heure: "10:24",
         interesses: 12,
       },
       {
-        id: "m-margot",
-        qui: "Margot",
+        id: "m-brigitte",
+        qui: "Brigitte",
         role: "Patronne",
         maison: true,
-        genre: "expression",
-        photo: "/direct/tables-libres.jpg",
-        mot: "On vous attend ce midi. Il reste de la place en terrasse.",
-        depuis: "il y a 2 h",
-        jusqua: "encore 3 h",
+        photo: "/direct/terrasse-au-soleil.jpg",
+        mot: "Bienvenue chez Margot ! On vous attend pour un bon moment.",
+        heure: "09:12",
         interesses: 4,
       },
+    ],
+    clients: [
       {
         id: "m-lea",
         qui: "Léa",
-        genre: "demande",
-        verbe: "cherche",
         photo: "/direct/concert-kiosque.jpg",
-        mot: "2 places pour le concert de vendredi soir. J'échange contre un repas ici 🙂",
-        depuis: "il y a 18 min",
-        // ELLE NE MEURT PAS CE SOIR, ET C'EST TOUT LE POINT DE LA REGLE DE DUREE.
+        verbe: "cherche",
+        mot: "Je cherche 2 places pour le concert de vendredi au Tube !",
+        heure: "11:03",
+        humeur: "chill",
+        interesses: 12,
         jusqua: "jusqu’à vendredi",
-        interesses: 8,
       },
       {
         id: "m-thomas",
         qui: "Thomas",
-        genre: "demande",
-        verbe: "donne",
         photo: "/direct/vide-grenier.jpg",
-        mot: "20 vinyles rock des années 80. À récupérer ici, je passe tous les midis.",
-        depuis: "il y a 40 min",
+        verbe: "donne",
+        mot: "Je donne 20 vinyles rock des années 80, à récupérer ici.",
+        heure: "11:27",
+        humeur: "gourmand",
+        interesses: 8,
         jusqua: "encore 6 jours",
-        interesses: 5,
       },
       {
-        id: "m-julie",
-        qui: "Julie",
-        genre: "expression",
-        photo: "/direct/portion-a-emporter.jpg",
-        mot: "Première fois ici. J'en ai repris une part pour ce soir.",
-        depuis: "il y a 2 h",
-        jusqua: "encore 2 h",
-        interesses: 3,
-      },
-      {
-        id: "m-karim",
-        qui: "Karim",
-        genre: "demande",
-        verbe: "propose",
+        id: "m-chloe",
+        qui: "Chloé",
         photo: "/direct/marche-producteurs.jpg",
-        mot: "Je descends au marché de Saint-Vincent samedi matin. Une place dans la voiture.",
-        depuis: "il y a 3 h",
-        jusqua: "jusqu’à samedi",
+        verbe: "aide",
+        mot: "Je peux aider pour un covoiturage vers le concert de vendredi.",
+        heure: "11:41",
+        humeur: "groupe",
         interesses: 6,
+        jusqua: "jusqu’à vendredi",
+      },
+      {
+        id: "m-nico",
+        qui: "Nico",
+        photo: "/direct/portion-a-emporter.jpg",
+        mot: "Un café et c’est reparti !",
+        heure: "12:08",
+        humeur: "rencontres",
+        interesses: 3,
+        jusqua: "encore 3 h",
       },
     ],
   },
@@ -277,58 +317,84 @@ export const MURS: Mur[] = [
     lieu: "Un bar à vins",
     metier: "Bar",
     ville: "Dax",
-    offre: "intention",
-    fantomes: [
+    distance: "480 m",
+    note: "4,6",
+    avis: 71,
+    etiquettes: ["Vins nature", "Comptoir"],
+    photoLieu: "/direct/verre-au-comptoir.jpg",
+    depot: "annonce",
+    humeurs: ["amis", "monde", "musique", "decouvre"],
+    verbes: ["cherche", "propose", "places", "aide"],
+    contexte: {
+      titre: "Ce soir au comptoir",
+      quoi: "Trois blancs des Landes",
+      detail: "Dégustation à partir de 19 h",
+      photo: "/direct/verre-au-comptoir.jpg",
+      geste: "Voir l’ardoise",
+    },
+    maison: [
       {
-        id: "b-patron",
+        id: "b-serge",
         qui: "Serge",
         role: "Patron",
         maison: true,
-        genre: "expression",
         photo: "/direct/verre-au-comptoir.jpg",
-        mot: "Dégustation de trois blancs des Landes à partir de 19 h, au comptoir.",
-        depuis: "il y a 2 h",
-        jusqua: "encore 5 h",
+        mot: "Dégustation de trois blancs des Landes à partir de 19 h.",
+        heure: "17:40",
         interesses: 9,
       },
       {
+        id: "b-lou",
+        qui: "Lou",
+        role: "En salle",
+        maison: true,
+        photo: "/direct/tablee-du-soir.jpg",
+        mot: "La grande table du fond est libre ce soir, si vous êtes nombreux.",
+        heure: "18:05",
+        interesses: 3,
+      },
+    ],
+    clients: [
+      {
         id: "b-clara",
         qui: "Clara",
-        genre: "intention",
-        intention: "monde",
-        // PAS `avis-verre.jpg` ICI, ET LE CHANGEMENT DE TAILLE EST LA RAISON.
-        // `LISEZ-MOI.md` la classe parmi les deux exceptions datées — une marque
-        // lisible sur trois verres — tolérées « en vignette carrée » sur une page
-        // en noindex. Sur ce mur elle n'est plus une vignette : elle occupe
-        // l'écran entier, et la marque avec. Une exception se juge à ce qu'elle
-        // montre, pas à ce qu'elle était le jour où on l'a écrite.
         photo: "/direct/tablee-du-soir.jpg",
-        mot: "Je viens d'arriver à Dax, je ne connais personne ici.",
-        depuis: "maintenant",
-        jusqua: "encore 3 h",
+        mot: "Je viens d’arriver à Dax, je ne connais personne ici.",
+        heure: "19:12",
+        humeur: "monde",
         interesses: 12,
+        jusqua: "encore 3 h",
       },
       {
         id: "b-thomas",
         qui: "Thomas",
-        genre: "intention",
-        intention: "amis",
         photo: "/direct/terrasse-au-soleil.jpg",
         mot: "On est quatre en terrasse, il reste de la place à la table.",
-        depuis: "il y a 25 min",
-        jusqua: "encore 2 h",
+        heure: "19:26",
+        humeur: "amis",
         interesses: 7,
+        jusqua: "encore 2 h",
       },
       {
         id: "b-ines",
         qui: "Inès",
-        genre: "intention",
-        intention: "musique",
         photo: "/direct/concert-kiosque.jpg",
-        mot: "Il y a un groupe qui joue à 21 h. Je reste jusqu'à la fin.",
-        depuis: "il y a 10 min",
-        jusqua: "encore 4 h",
+        mot: "Il y a un groupe qui joue à 21 h, je reste jusqu’à la fin.",
+        heure: "19:38",
+        humeur: "musique",
         interesses: 5,
+        jusqua: "encore 4 h",
+      },
+      {
+        id: "b-karim",
+        qui: "Karim",
+        photo: "/direct/vitrine-du-soir.jpg",
+        verbe: "places",
+        mot: "J’ai 2 places pour la nocturne du musée samedi.",
+        heure: "19:51",
+        humeur: "decouvre",
+        interesses: 9,
+        jusqua: "jusqu’à samedi",
       },
     ],
   },
@@ -337,56 +403,108 @@ export const MURS: Mur[] = [
     lieu: "Une prothésiste ongulaire",
     metier: "Prothésiste ongulaire",
     ville: "Dax",
-    offre: "essai",
-    fantomes: [
+    distance: "210 m",
+    note: "4,8",
+    avis: 51,
+    etiquettes: ["Pose complète", "Sans rendez-vous"],
+    photoLieu: "/direct/pose-ongles.jpg",
+    depot: "essai",
+    humeurs: ["hesite", "offrir", "decouvre"],
+    verbes: [],
+    /**
+     * L'ESSAI, MONTRÉ SUR LE MÉTIER OÙ ON PEUT VRAIMENT LE MONTRER.
+     *
+     * Il l'a décrit sur le bijoutier — le client photographie son poignet, la
+     * photo du bracelet vient s'y poser. La mécanique est la même ici, et c'est
+     * le seul métier du dépôt pour lequel `public/direct/` contient à la fois un
+     * AVANT crédible (une main) et un APRÈS (des ongles posés). Le bijoutier
+     * suivra le jour où on aura ses deux images : un poignet nu, et un bracelet
+     * détouré sur fond neutre. Faire l'essai avec des images qui ne se
+     * correspondent pas ne démontrerait rien du tout — sinon qu'on peut coller
+     * deux photos.
+     */
+    essai: {
+      partie: "votre main",
+      consigne: "Posez votre main à plat, paume vers le bas, à la lumière du jour.",
+      pieces: [
+        { id: "p-coeurs", nom: "Motif cœurs", prix: "45 €", photo: "/direct/pose-ongles.jpg" },
+        { id: "p-french", nom: "French classique", prix: "38 €", photo: "/direct/avis-ongles.jpg" },
+        { id: "p-nude", nom: "Nude mat", prix: "32 €", photo: "/direct/avis-ongles.jpg" },
+      ],
+    },
+    contexte: {
+      titre: "La pose du moment",
+      quoi: "Motif cœurs",
+      detail: "Pose complète, 1 h 15",
+      photo: "/direct/pose-ongles.jpg",
+      geste: "Voir les prestations",
+    },
+    maison: [
       {
-        id: "o-patronne",
+        id: "o-sandra",
         qui: "Sandra",
         role: "Prothésiste",
         maison: true,
-        genre: "expression",
         photo: "/direct/pose-ongles.jpg",
         mot: "Les nouveaux motifs sont arrivés. Essayez-les avant de venir 💅",
-        depuis: "il y a 3 h",
-        jusqua: "encore 5 h",
+        heure: "09:30",
         interesses: 6,
       },
       {
+        id: "o-elodie",
+        qui: "Élodie",
+        role: "En cabine",
+        maison: true,
+        photo: "/direct/avis-ongles.jpg",
+        mot: "Il me reste un créneau à 16 h aujourd’hui.",
+        heure: "10:15",
+        interesses: 2,
+      },
+    ],
+    clients: [
+      {
         id: "o-julie",
         qui: "Julie",
-        genre: "essai",
-        // L'ETIQUETTE DIT CE QUE MONTRE LA PHOTO, et ce n'etait pas le cas :
-        // « chrome, ongles courts » sous une main aux ongles longs a motif. Sur
-        // un ecran ou l'image occupe tout, un libelle qui contredit ce qu'on
-        // voit se remarque avant tout le reste.
-        essai: { quoi: "Motif cœurs, ongles longs", verdict: null },
         photo: "/direct/pose-ongles.jpg",
-        mot: "J'hésite entre celui-ci et le nude tout simple. Vos avis ?",
-        depuis: "il y a 22 min",
-        jusqua: "encore 2 jours",
+        essai: { quoi: "Motif cœurs", verdict: null },
+        mot: "J’hésite entre celui-ci et le nude tout simple. Vos avis ?",
+        heure: "11:12",
+        humeur: "hesite",
         interesses: 6,
+        jusqua: "encore 2 jours",
       },
       {
         id: "o-nadia",
         qui: "Nadia",
-        genre: "essai",
-        essai: { quoi: "French, ongles longs", verdict: "pris" },
         photo: "/direct/avis-ongles.jpg",
+        essai: { quoi: "French classique", verdict: "pris" },
         mot: "Essayé ce matin, rendez-vous pris pour jeudi.",
-        depuis: "il y a 1 h",
-        jusqua: "encore 2 jours",
+        heure: "10:48",
+        humeur: "decouvre",
         interesses: 4,
+        jusqua: "encore 2 jours",
       },
       {
         id: "o-camille",
         qui: "Camille",
-        genre: "essai",
-        essai: { quoi: "Rouge mat", verdict: "passe" },
         photo: "/direct/avis-ongles.jpg",
-        mot: "Pas pour moi finalement, mais ça m'a évité de me tromper.",
-        depuis: "il y a 4 h",
-        jusqua: "encore 2 jours",
+        essai: { quoi: "Nude mat", verdict: "passe" },
+        mot: "Pas pour moi finalement, mais ça m’a évité de me tromper.",
+        heure: "09:55",
+        humeur: "hesite",
         interesses: 2,
+        jusqua: "encore 2 jours",
+      },
+      {
+        id: "o-sofia",
+        qui: "Sofia",
+        photo: "/direct/pose-ongles.jpg",
+        essai: { quoi: "Motif cœurs", verdict: null },
+        mot: "C’est pour le mariage de ma sœur. Trop ou pas assez ?",
+        heure: "12:20",
+        humeur: "offrir",
+        interesses: 7,
+        jusqua: "encore 2 jours",
       },
     ],
   },
@@ -397,61 +515,50 @@ export const MURS: Mur[] = [
  *
  * TROIS, ET LE CHIFFRE COMPTE MOINS QUE LA RAISON. Ce n'est pas un anti-spam :
  * c'est ce qui donne sa valeur au geste. Un fantôme illimité ne vaut rien — et
- * comme il n'y en a qu'UN, votre fantôme, la règle se dit dans le monde plutôt
- * que dans les réglages : il ne peut pas être à plus de trois endroits à la fois.
+ * comme il n'y en a qu'UN, la règle se dit dans le monde plutôt que dans les
+ * réglages : il ne peut pas être à plus de trois endroits à la fois.
  *
  * IL DOIT ÊTRE VISIBLE. Un quota qu'on découvre en le heurtant est un mur
  * invisible ; écrit d'avance, il devient une raison de choisir où l'on se pose.
  */
 export const QUOTA_DU_JOUR = 3;
 
-/** Le libellé de l'intention, pour l'écran. */
-export function motDeLIntention(cle: CleIntention | undefined) {
-  return INTENTIONS.find((i) => i.cle === cle);
-}
-
-/** Le libellé du verbe, pour l'écran. */
-export function motDuVerbe(cle: CleVerbe | undefined) {
-  return VERBES.find((v) => v.cle === cle);
-}
+/** Combien de temps une trace vit dans un lieu, par défaut. */
+export const HEURES_PAR_DEFAUT = 4;
 
 /**
  * CE QUE CLIKME DIT QUAND ON APPUIE SUR « ÇA M'INTÉRESSE ».
  *
  * LA PHRASE EST LE PRODUIT. Le bouton ne « like » pas et ne commente pas : il
  * déclare une disponibilité, et ce qui suit doit donc être une MISE EN RELATION,
- * pas une confirmation. « Merci pour votre retour » tuerait la mécanique en un
- * mot.
- *
- * ELLE EST ÉCRITE DEPUIS LE FANTÔME, jamais depuis le lecteur : c'est ce que
- * cette personne cherche qui décide de ce qu'on propose de faire.
+ * pas une confirmation. « Merci pour votre retour » tuerait la mécanique en trois
+ * mots. Elle est écrite depuis le fantôme, jamais depuis le lecteur : c'est ce
+ * que CETTE personne cherche qui décide de ce qu'on propose de faire.
  */
 export function miseEnRelation(f: Fantome): { quoi: string; geste: string } {
-  if (f.genre === "demande") {
-    const v = motDuVerbe(f.verbe)?.mot ?? "propose";
+  if (f.verbe) {
+    const v = verbeDe(f.verbe)?.mot ?? "propose";
     return {
-      quoi: `${f.qui} ${v.replace(/^Je /, "").toLowerCase()} — vous avez peut-être ce qu’il faut.`,
+      quoi: `${f.qui} ${v.replace(/^J’?e? ?/, "").toLowerCase()} — vous avez peut-être ce qu’il faut.`,
       geste: `Écrire à ${f.qui}`,
     };
   }
-  if (f.genre === "intention") {
+  if (f.essai) {
     return {
-      quoi: `${f.qui} est ${motDeLIntention(f.intention)?.mot.toLowerCase()} — et vous y allez aussi.`,
-      geste: `Dire bonjour à ${f.qui}`,
-    };
-  }
-  if (f.genre === "essai") {
-    return {
-      quoi: `${f.qui} hésite. Votre avis compte plus que celui du vendeur.`,
+      quoi:
+        f.essai.verdict === null
+          ? `${f.qui} hésite. Votre avis compte plus que celui du vendeur.`
+          : `${f.qui} a essayé la même chose que vous regardez.`,
       geste: `Répondre à ${f.qui}`,
     };
   }
+  if (f.maison) {
+    return {
+      quoi: `${f.qui} vous répond directement — c’est la maison, pas un robot.`,
+      geste: `Écrire à ${f.qui}`,
+    };
+  }
   return {
-    // L'EXPRESSION EST LE CAS LE PLUS DIFFICILE, et il l'est parce que la
-    // personne ne demande rien. Ce qu'on peut proposer, ce n'est donc pas de
-    // répondre à une demande — c'est que quelqu'un qui y était PEUT DIRE CE QUE
-    // ÇA VAUT. « Vous étiez tenté par la même chose » était faux : rien ne dit
-    // qu'on l'était, et une phrase qui présume tue la confiance dans le reste.
     quoi: `${f.qui} y était avant vous. C’est la personne à qui demander si ça vaut le détour.`,
     geste: `Poser la question à ${f.qui}`,
   };
