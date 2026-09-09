@@ -177,8 +177,28 @@ export type Fantome = {
   jusqua?: string;
 };
 
-/** Une pièce du catalogue du commerçant, pour l'essai. */
-export type Piece = { id: string; nom: string; prix: string; photo: string };
+/**
+ * UNE PIÈCE DU CATALOGUE, POUR L'ESSAI.
+ *
+ * `photo` est la pièce telle que le commerçant la montre — détourée, sur fond
+ * neutre. `rendu` est ce que ça donne SUR LA PHOTO DU CLIENT, et c'est la seule
+ * chose qui compte : sans lui, on montre un catalogue de plus.
+ *
+ * `bientot` DIT LA VÉRITÉ PLUTÔT QUE DE LA MAQUILLER. Une pièce dont on n'a pas
+ * encore le rendu se voit, se lit, et ne se choisit pas. La tentation était de
+ * fabriquer le rendu manquant en collant l'image détourée sur le poignet : essai
+ * fait, résultat sans appel — le bijou FLOTTE. Il ne suit ni la courbe du bras,
+ * ni sa lumière, ni son ombre, et ça se voit en un dixième de seconde. Montrer
+ * ça reviendrait à prouver le contraire de ce qu'on veut prouver.
+ */
+export type Piece = {
+  id: string;
+  nom: string;
+  prix: string;
+  photo: string;
+  rendu?: string;
+  bientot?: boolean;
+};
 
 export type Mur = {
   cle: string;
@@ -204,7 +224,21 @@ export type Mur = {
    * visage : on ne photographie pas la personne, on photographie L'ENDROIT OÙ
    * LA CHOSE VA.
    */
-  essai?: { partie: string; consigne: string; pieces: Piece[] };
+  essai?: {
+    partie: string;
+    consigne: string;
+    /**
+     * LA PHOTO QUE LE CLIENT VIENT DE PRENDRE.
+     *
+     * Dans le produit elle sort de l'appareil ; ici elle est fournie, et elle
+     * doit être LE MÊME CADRE que les rendus — même bras, même lumière, même
+     * fond. C'est la seule condition pour que l'avant-après démontre quelque
+     * chose : deux photos différentes ne prouvent rien, sinon qu'on sait
+     * afficher deux images l'une après l'autre.
+     */
+    avant: string;
+    pieces: Piece[];
+  };
   /**
    * CE QUE LE LIEU MET SOUS LE MUR — le plat du jour, la pièce du jour.
    * C'est le seul endroit de la feuille où le commerce parle de ce qu'il vend.
@@ -270,7 +304,7 @@ export const MURS: Mur[] = [
       {
         id: "m-lea",
         qui: "Léa",
-        photo: "/direct/concert-kiosque.jpg",
+        photo: "/direct/billets-concert.jpg",
         verbe: "cherche",
         mot: "Je cherche 2 places pour le concert de vendredi au Tube !",
         heure: "11:03",
@@ -281,7 +315,7 @@ export const MURS: Mur[] = [
       {
         id: "m-thomas",
         qui: "Thomas",
-        photo: "/direct/vide-grenier.jpg",
+        photo: "/direct/vinyles-a-donner.jpeg",
         verbe: "donne",
         mot: "Je donne 20 vinyles rock des années 80, à récupérer ici.",
         heure: "11:27",
@@ -426,10 +460,14 @@ export const MURS: Mur[] = [
     essai: {
       partie: "votre main",
       consigne: "Posez votre main à plat, paume vers le bas, à la lumière du jour.",
+      // ON N'A PAS DE MAIN NUE DANS LE DEPOT : l'avant est donc la main posee,
+      // et l'essai de ce metier reste le moins demonstratif des trois. C'est
+      // ecrit ici plutot que masque a l'ecran.
+      avant: "/direct/pose-ongles.jpg",
       pieces: [
-        { id: "p-coeurs", nom: "Motif cœurs", prix: "45 €", photo: "/direct/pose-ongles.jpg" },
-        { id: "p-french", nom: "French classique", prix: "38 €", photo: "/direct/avis-ongles.jpg" },
-        { id: "p-nude", nom: "Nude mat", prix: "32 €", photo: "/direct/avis-ongles.jpg" },
+        { id: "p-coeurs", nom: "Motif cœurs", prix: "45 €", photo: "/direct/pose-ongles.jpg", rendu: "/direct/pose-ongles.jpg" },
+        { id: "p-french", nom: "French classique", prix: "38 €", photo: "/direct/avis-ongles.jpg", rendu: "/direct/avis-ongles.jpg" },
+        { id: "p-nude", nom: "Nude mat", prix: "32 €", photo: "/direct/avis-ongles.jpg", bientot: true },
       ],
     },
     contexte: {
@@ -504,6 +542,222 @@ export const MURS: Mur[] = [
         heure: "12:20",
         humeur: "offrir",
         interesses: 7,
+        jusqua: "encore 2 jours",
+      },
+    ],
+  },
+  {
+    cle: "bijoux",
+    lieu: "Une créatrice de bijoux",
+    metier: "Créatrice de bracelets et colliers",
+    ville: "Dax",
+    distance: "540 m",
+    note: "4,8",
+    avis: 64,
+    etiquettes: ["Pièces uniques", "Sur mesure"],
+    photoLieu: "/direct/atelier-bijoux.jpg",
+    depot: "essai",
+    humeurs: ["hesite", "offrir", "decouvre"],
+    verbes: [],
+    /**
+     * LE MÉTIER QU'IL AVAIT DÉCRIT, ET LA SEULE PAIRE QUI DÉMONTRE QUELQUE CHOSE.
+     *
+     * `poignet-avant.jpg` et `poignet-bracelet.jpg` sont LE MÊME BRAS, la même
+     * lumière, le même fond — le premier est un cadrage du second, pris avant le
+     * bijou. C'est la seule condition pour qu'un avant-après prouve autre chose
+     * que la capacité à afficher deux images.
+     *
+     * LES DEUX AUTRES PIÈCES SONT MARQUÉES « BIENTÔT », et c'est un aveu écrit
+     * plutôt qu'un trucage. On a essayé de fabriquer leur rendu en posant l'image
+     * détourée sur le poignet : le bijou flotte, il ne suit ni la courbe du bras
+     * ni sa lumière, et ça se voit en un dixième de seconde. Il faut, pour
+     * chacune, une VRAIE paire — le même poignet nu, puis portant la pièce.
+     */
+    essai: {
+      partie: "votre poignet",
+      consigne: "Posez votre poignet à plat, à la lumière du jour, sans montre.",
+      avant: "/direct/poignet-avant.jpg",
+      pieces: [
+        {
+          id: "j-chaine",
+          nom: "Chaîne fine, pierre noire",
+          prix: "89 €",
+          photo: "/direct/poignet-bracelet.jpg",
+          rendu: "/direct/poignet-bracelet.jpg",
+        },
+        {
+          id: "j-riviere",
+          nom: "Bracelet rivière",
+          prix: "240 €",
+          photo: "/direct/bracelet-seul.png",
+          bientot: true,
+        },
+        {
+          id: "j-collier",
+          nom: "Collier pierre bleue",
+          prix: "120 €",
+          photo: "/direct/collier-seul.png",
+          bientot: true,
+        },
+      ],
+    },
+    contexte: {
+      titre: "La pièce du moment",
+      quoi: "Chaîne fine, pierre noire",
+      detail: "Montée à l’atelier, 89 €",
+      photo: "/direct/poignet-bracelet.jpg",
+      geste: "Voir les créations",
+    },
+    maison: [
+      {
+        id: "j-lucie",
+        qui: "Lucie",
+        role: "Créatrice",
+        maison: true,
+        photo: "/direct/atelier-bijoux.jpg",
+        mot: "Je monte les chaînes ici, à l’établi. Essayez-les avant de passer ✨",
+        heure: "09:40",
+        interesses: 7,
+      },
+      {
+        id: "j-atelier",
+        qui: "Lucie",
+        role: "Atelier",
+        maison: true,
+        photo: "/direct/poignet-bracelet.jpg",
+        mot: "La pierre noire est revenue en stock, en trois longueurs.",
+        heure: "10:55",
+        interesses: 3,
+      },
+    ],
+    clients: [
+      {
+        id: "j-julie",
+        qui: "Julie",
+        photo: "/direct/poignet-bracelet.jpg",
+        essai: { quoi: "Chaîne fine, pierre noire", verdict: null },
+        mot: "Sur moi ça donne ça. Trop discret pour un cadeau, vous pensez ?",
+        heure: "11:20",
+        humeur: "offrir",
+        interesses: 9,
+        jusqua: "encore 2 jours",
+      },
+      {
+        id: "j-nadia",
+        qui: "Nadia",
+        photo: "/direct/poignet-nu.jpg",
+        essai: { quoi: "Bracelet rivière", verdict: "passe" },
+        mot: "Essayé, pas pour tous les jours. Mais j’y repense depuis ce matin.",
+        heure: "10:12",
+        humeur: "hesite",
+        interesses: 5,
+        jusqua: "encore 2 jours",
+      },
+      {
+        id: "j-sofia",
+        qui: "Sofia",
+        photo: "/direct/collier-seul.png",
+        essai: { quoi: "Collier pierre bleue", verdict: "pris" },
+        mot: "Pris pour l’anniversaire de ma mère. Elle ne l’a pas encore vu 🤫",
+        heure: "12:04",
+        humeur: "offrir",
+        interesses: 6,
+        jusqua: "encore 2 jours",
+      },
+    ],
+  },
+  {
+    cle: "bougies",
+    lieu: "Une cirière",
+    metier: "Cirière",
+    ville: "Dax",
+    distance: "620 m",
+    note: "4,9",
+    avis: 38,
+    etiquettes: ["Cire végétale", "Fleurs séchées"],
+    photoLieu: "/direct/atelier-bougies.jpeg",
+    depot: "essai",
+    humeurs: ["offrir", "decouvre", "hesite"],
+    verbes: [],
+    /**
+     * L'ESSAI CHEZ SOI, ET C'EST LE CAS LE PLUS FACILE À TENIR.
+     *
+     * Un objet POSÉ sur une surface se compose bien : il a une base, une ombre
+     * de contact et rien à épouser. Un bijou doit suivre une courbe, une lumière
+     * et une peau — c'est pour ça que celui-ci fonctionne avec une pièce montée à
+     * la main et que l'autre attend une vraie photo.
+     */
+    essai: {
+      partie: "votre table de salon",
+      consigne: "Reculez d’un pas et cadrez la table entière, de trois quarts.",
+      avant: "/direct/table-salon.jpeg",
+      pieces: [
+        {
+          id: "c-trio",
+          nom: "Trio bougies & houx",
+          prix: "34 €",
+          photo: "/direct/bougie-seule.png",
+          rendu: "/direct/table-salon-bougie.jpg",
+        },
+        {
+          id: "c-fleurs",
+          nom: "Bougie fleurs séchées",
+          prix: "22 €",
+          photo: "/direct/atelier-bougies.jpeg",
+          bientot: true,
+        },
+      ],
+    },
+    contexte: {
+      titre: "La série du moment",
+      quoi: "Trio bougies & houx",
+      detail: "Cire végétale, mèche bois",
+      photo: "/direct/bougie-seule.png",
+      geste: "Voir les bougies",
+    },
+    maison: [
+      {
+        id: "c-alice",
+        qui: "Alice",
+        role: "Cirière",
+        maison: true,
+        photo: "/direct/atelier-bougies.jpeg",
+        mot: "Je coule le matin, je démoule l’après-midi. Voyez-les chez vous 🕯️",
+        heure: "09:15",
+        interesses: 8,
+      },
+      {
+        id: "c-serie",
+        qui: "Alice",
+        role: "Atelier",
+        maison: true,
+        photo: "/direct/table-salon-bougie.jpg",
+        mot: "Le trio de Noël est sorti du moule. Il reste douze pièces.",
+        heure: "11:30",
+        interesses: 4,
+      },
+    ],
+    clients: [
+      {
+        id: "c-camille",
+        qui: "Camille",
+        photo: "/direct/table-salon-bougie.jpg",
+        essai: { quoi: "Trio bougies & houx", verdict: "pris" },
+        mot: "Chez moi ça rend mieux que sur la photo de la boutique. Pris.",
+        heure: "12:10",
+        humeur: "decouvre",
+        interesses: 11,
+        jusqua: "encore 2 jours",
+      },
+      {
+        id: "c-marc",
+        qui: "Marc",
+        photo: "/direct/table-salon.jpeg",
+        essai: { quoi: "Trio bougies & houx", verdict: null },
+        mot: "Ma table est plus petite. Quelqu’un l’a mise sur une console ?",
+        heure: "11:48",
+        humeur: "hesite",
+        interesses: 4,
         jusqua: "encore 2 jours",
       },
     ],

@@ -677,6 +677,15 @@ function Essai({
   const [etape, setEtape] = useState<"cadrer" | "choisir" | "calcul" | "rendu">("cadrer");
   const [piece, setPiece] = useState<Piece | null>(null);
   const [pct, setPct] = useState(0);
+  /**
+   * L'AVANT-APRÈS, SUR APPUI.
+   *
+   * C'EST LA SEULE CHOSE QUI PROUVE QUELQUE CHOSE. Un rendu montré seul se
+   * regarde comme une photo de catalogue ; c'est le RETOUR à sa propre photo,
+   * au même cadrage, qui fait comprendre que la pièce a été posée sur soi. On
+   * touche l'image, elle revient à l'avant ; on relâche, elle repart.
+   */
+  const [avant, setAvant] = useState(false);
   const minuteur = useRef<number | null>(null);
 
   useEffect(() => {
@@ -731,11 +740,19 @@ function Essai({
 
       {etape === "cadrer" && (
         <div className="mu-cadrer">
-          <div className="mu-viseur" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-            <span />
+          {/* LE VISEUR EST POSE SUR LA PHOTO, PAS SUR DU VIDE. Un cadre vide
+              demande d'imaginer ce qu'on photographie ; la photo dessous le
+              montre, et c'est elle qui reviendra au rendu — meme bras, meme
+              lumiere, meme fond. */}
+          <div className="mu-viseur">
+            {mur.essai?.avant && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={mur.essai.avant} alt="" />
+            )}
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
           </div>
           <p>{mur.essai?.consigne}</p>
           <button type="button" className="mu-cta plein" onClick={() => setEtape("choisir")}>
@@ -754,8 +771,11 @@ function Essai({
             <button
               key={p.id}
               type="button"
+              className={p.bientot ? "bientot" : undefined}
+              disabled={p.bientot}
               onClick={() => {
                 setPiece(p);
+                setAvant(false);
                 setEtape("calcul");
               }}
             >
@@ -763,6 +783,11 @@ function Essai({
               <img src={p.photo} alt="" />
               <b>{p.nom}</b>
               <em>{p.prix}</em>
+              {/* ON DIT CE QU'ON N'A PAS. Une piece dont le rendu n'existe pas
+                  encore se voit, se lit, et ne se choisit pas — plutot que de
+                  servir une image collee qui prouverait le contraire de ce
+                  qu'on veut prouver. Voir `Piece` dans lib/direct/fantomes. */}
+              {p.bientot && <s>Bientôt essayable</s>}
             </button>
           ))}
         </div>
@@ -781,8 +806,24 @@ function Essai({
 
       {etape === "rendu" && piece && (
         <div className="mu-rendu">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={piece.photo} alt={`Essai : ${piece.nom}`} />
+          <button
+            type="button"
+            className="mu-rendu-i"
+            aria-label={avant ? "Voir le rendu" : "Revoir votre photo"}
+            onPointerDown={() => setAvant(true)}
+            onPointerUp={() => setAvant(false)}
+            onPointerLeave={() => setAvant(false)}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={avant ? mur.essai?.avant : (piece.rendu ?? piece.photo)}
+              alt={avant ? "Votre photo" : `Essai : ${piece.nom}`}
+            />
+            <span className="mu-rendu-t2">{avant ? "Votre photo" : "Avec la pièce"}</span>
+            <span className="mu-rendu-g2" aria-hidden="true">
+              Maintenir pour comparer
+            </span>
+          </button>
           <span className="mu-rendu-b">Rendu simulé dans la maquette</span>
           <div className="mu-rendu-t">
             <b>{piece.nom}</b>
@@ -1144,9 +1185,11 @@ function Styles() {
         /* LE VISEUR DIT CE QU'ON PHOTOGRAPHIE, ET C'EST LA MOITIE DE LA
            MECANIQUE : on ne cadre pas une personne, on cadre L'ENDROIT OU LA
            CHOSE VA. */
-        .mu-viseur{position:relative;height:150px;border-radius:18px;
+        .mu-viseur{position:relative;height:210px;border-radius:18px;overflow:hidden;
           background:repeating-linear-gradient(135deg,rgba(255,255,255,.03) 0 10px,
             transparent 10px 20px),rgba(255,255,255,.03);}
+        .mu-viseur img{width:100%;height:100%;object-fit:cover;display:block;
+          opacity:.9;}
         .mu-viseur span{position:absolute;width:26px;height:26px;
           border:2px solid rgba(139,125,246,.8);}
         .mu-viseur span:nth-child(1){top:14px;left:14px;border-right:none;
@@ -1173,6 +1216,13 @@ function Styles() {
           text-align:left;}
         .mu-pieces em{display:block;font-style:normal;font-size:12.5px;font-weight:800;
           color:var(--mu-ambre);padding:3px 10px 0;text-align:left;}
+        /* CE QU'ON N'A PAS ENCORE SE VOIT ET NE SE TOUCHE PAS. Grise, pas
+           cachee : une piece absente du catalogue ferait croire qu'elle
+           n'existe pas, alors qu'il manque seulement sa photo portee. */
+        .mu-pieces button.bientot{opacity:.5;cursor:default;}
+        .mu-pieces s{display:block;text-decoration:none;font-size:10.5px;
+          font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+          color:#C9BCFF;padding:5px 10px 0;text-align:left;}
 
         .mu-calcul{text-align:center;padding:18px 0 6px;}
         .mu-calcul-s{width:56px;height:61px;
@@ -1193,8 +1243,21 @@ function Styles() {
           color:#C9BCFF;font-variant-numeric:tabular-nums;}
 
         .mu-rendu{text-align:center;}
-        .mu-rendu>img{width:100%;height:220px;object-fit:cover;border-radius:20px;
-          display:block;}
+        .mu-rendu-i{position:relative;display:block;width:100%;padding:0;border:none;
+          background:none;cursor:pointer;border-radius:20px;overflow:hidden;
+          -webkit-tap-highlight-color:transparent;}
+        .mu-rendu-i img{width:100%;height:300px;object-fit:cover;display:block;}
+        /* LES DEUX ETIQUETTES DISENT CE QU'ON REGARDE ET CE QU'ON PEUT FAIRE.
+           Sans la seconde, personne ne devine qu'on peut maintenir le doigt —
+           et c'est justement le geste qui prouve tout. */
+        .mu-rendu-t2{position:absolute;left:10px;top:10px;font-size:10.5px;
+          font-weight:900;letter-spacing:.05em;text-transform:uppercase;
+          color:#E9E2FF;background:rgba(20,12,38,.78);border-radius:20px;
+          padding:5px 11px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+        .mu-rendu-g2{position:absolute;right:10px;bottom:10px;font-size:10.5px;
+          font-weight:700;color:#E9E2FF;background:rgba(20,12,38,.7);
+          border-radius:20px;padding:5px 11px;
+          -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
         /* ON DIT QUE LE RENDU EST SIMULE. Une image presentee comme un essai
            reel alors qu'elle ne l'est pas ferait croire que la mecanique est
            branchee — et c'est la seule chose de cet ecran qui ne l'est pas. */

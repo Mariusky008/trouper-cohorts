@@ -275,55 +275,51 @@ droit à l'image d'une personne qui n'a rien signé, et il ne s'arbitre pas au
 motif que l'audience est petite — c'est précisément l'argument qui ne tient
 devant personne. `coiffure` reste donc dehors.
 
-## 👻 Les photos qu'il manque pour le fantôme
+## 👻 Les photos du fantôme — ce qui est arrivé, ce qui manque encore
 
-Le mur du jour (`/autour-de-moi/mur`) tourne aujourd'hui avec des images
-empruntées aux commerces. Deux choses ne peuvent pas s'en contenter, et la
-première est celle qui décide si la mécanique se démontre ou pas.
+Huit fichiers ont été livrés. Trois portaient un nom qui ne correspondait pas à
+ce qui était demandé, et ils ont été renommés à l'arrivée : `bougie-seule.png.png`
+→ `bougie-seule.png`, et deux `.jpeg` gardés tels quels (`table-salon.jpeg`,
+`vinyles-a-donner.jpeg`).
 
-### 1. L'essai chez le bijoutier — LE CAS À MONTRER
+### Ce qui marche, et pourquoi
 
-Le client photographie **ce qui va recevoir la chose**, pas lui-même. La démo ne
-vaut que si l'AVANT et l'APRÈS sont **le même poignet, au même cadrage** : deux
-images qui ne se correspondent pas ne prouvent rien, sinon qu'on sait coller
-deux photos.
+| Fichier | Ce qu'il fait |
+|---|---|
+| `poignet-avant.jpg` | **Fabriqué ici**, par recadrage de `poignet-bracelet.jpg` sur la partie sans bijou. C'est l'AVANT de l'essai chez la bijoutière. |
+| `poignet-bracelet.jpg` | L'APRÈS. **Le même bras, la même lumière, le même fond** — c'est la seule condition pour qu'un avant-après démontre quelque chose. |
+| `table-salon.jpeg` | L'AVANT de l'essai chez la cirière : la table vide. |
+| `table-salon-bougie.jpg` | **Fabriqué ici**, en posant `bougie-seule.png` sur la table avec une ombre de contact. Un objet posé sur une surface se compose bien : il a une base et rien à épouser. |
+| `vinyles-a-donner.jpeg` | La carte « je donne 20 vinyles » sur le mur de Margot. |
+| `billets-concert.jpg` | La carte « je cherche 2 places ». |
+| `poignet-nu.jpg` | Une carte du mur de la bijoutière. Ce n'est pas un poignet nu — c'est un buste, bras croisés — donc il ne sert pas à l'essai. |
+
+### Ce qui manque encore, et ce n'est pas une préférence
+
+`bracelet-seul.png` et `collier-seul.png` sont deux **découpes de produit
+impeccables**, et elles ne suffisent pas. Essai fait, résultat sans appel :
+poser une découpe sur un poignet donne un bijou **qui flotte**. Il ne suit ni la
+courbe du bras, ni sa lumière, ni son ombre, et ça se voit en un dixième de
+seconde. Le montrer prouverait le contraire de ce qu'on veut prouver.
+
+Ces deux pièces sont donc marquées **« Bientôt essayable »** à l'écran — visibles,
+lisibles, non sélectionnables. Pour les débloquer, il faut pour **chacune** :
 
 | Fichier | Ce qu'il montre |
 |---|---|
-| `poignet-nu.jpg` | Un avant-bras et un poignet **nus** — ni montre, ni bracelet, ni bague. De trois quarts, fond uni clair, lumière du jour. **Aucun visage.** Vertical, 1200 × 1600. |
-| `poignet-bracelet.jpg` | **Le même poignet, au même cadrage**, portant le bracelet. C'est le rendu : il tient la place de ce que le modèle d'image produira plus tard. |
-| `bracelet-seul.png` | Le bracelet seul, **détouré**, fond transparent. Vu de dessus, ouvert en arc. 1200 px de large. |
-| `collier-seul.png` | Idem pour un collier, avec sa retombée visible. |
+| `poignet-riviere.jpg` | Le même poignet que `poignet-avant.jpg`, portant le bracelet rivière. |
+| `cou-collier.jpg` | Un décolleté portant le collier — même règle : pas de visage, et un `cou-nu.jpg` au même cadrage. |
+| `table-salon-fleurs.jpg` | La table de `table-salon.jpeg`, avec la bougie aux fleurs séchées. |
 
-### 2. L'essai chez soi — la bougie, la déco
+**La règle tient en une phrase : deux photos qui ne se correspondent pas ne
+prouvent rien, sinon qu'on sait afficher deux images l'une après l'autre.**
 
-Même règle : c'est **l'endroit** qu'on photographie, pas la personne.
+### Un arbitrage à confirmer
 
-| Fichier | Ce qu'il montre |
-|---|---|
-| `table-salon.jpg` | Une table basse ou une console **vide**, de trois quarts, dans un salon, lumière naturelle. Aucun visage. |
-| `table-salon-bougie.jpg` | La même table, même cadrage, avec la bougie posée dessus. |
-| `bougie-seule.png` | La bougie seule, détourée, fond transparent. |
+`vinyles-a-donner.jpeg` montre des pochettes de disques avec des **visages
+imprimés reconnaissables** (Louis Armstrong, Joan Baez) et des marques de labels.
+Ce sont des objets photographiés, pas des personnes présentes — et c'est
+exactement la photo que quelqu'un prendrait pour donner ses vinyles. Elle est
+donc gardée, dans le même esprit que les deux exceptions datées plus haut, **et
+elle attend la même validation explicite qu'elles.**
 
-### 3. Le mur — pour que les cartes cessent de se répéter
-
-Trois fantômes du mur empruntent aujourd'hui l'image d'un commerce, faute de
-mieux. Ce ne sont pas des photos de commerce : ce sont des photos de client,
-prises au téléphone, et elles doivent en avoir l'air.
-
-| Fichier | Ce qu'il montre |
-|---|---|
-| `vinyles-a-donner.jpg` | Une pile ou un bac de vinyles, chez quelqu'un. |
-| `billets-concert.jpg` | Deux billets posés sur une table. |
-
-### Ce qui vaut pour toutes
-
-- **Aucun visage reconnaissable, aucune enseigne lisible, aucun logo, aucun
-  filigrane** — c'est la règle de ce document, et elle ne s'assouplit pas ici :
-  ces images passent en **plein écran** sur le mur, là où les autres n'étaient
-  que des vignettes.
-- **Vérifier le filigrane comme on l'a appris** : on découpe les quatre bords, on
-  les redresse et on les agrandit. Trente secondes, et ça évite un tirage à
-  jeter. Deux envois d'`etal-boucher.jpg` sont passés à travers sans ça.
-- JPEG qualité 80, 1200 à 1600 px de large, moins de 400 Ko. PNG détourés avec
-  vraie transparence.
