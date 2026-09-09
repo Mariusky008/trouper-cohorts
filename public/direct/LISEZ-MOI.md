@@ -274,3 +274,56 @@ au second plan est une question de marque, et elle s'arbitre. Un visage est le
 droit à l'image d'une personne qui n'a rien signé, et il ne s'arbitre pas au
 motif que l'audience est petite — c'est précisément l'argument qui ne tient
 devant personne. `coiffure` reste donc dehors.
+
+## 👻 Les photos qu'il manque pour le fantôme
+
+Le mur du jour (`/autour-de-moi/mur`) tourne aujourd'hui avec des images
+empruntées aux commerces. Deux choses ne peuvent pas s'en contenter, et la
+première est celle qui décide si la mécanique se démontre ou pas.
+
+### 1. L'essai chez le bijoutier — LE CAS À MONTRER
+
+Le client photographie **ce qui va recevoir la chose**, pas lui-même. La démo ne
+vaut que si l'AVANT et l'APRÈS sont **le même poignet, au même cadrage** : deux
+images qui ne se correspondent pas ne prouvent rien, sinon qu'on sait coller
+deux photos.
+
+| Fichier | Ce qu'il montre |
+|---|---|
+| `poignet-nu.jpg` | Un avant-bras et un poignet **nus** — ni montre, ni bracelet, ni bague. De trois quarts, fond uni clair, lumière du jour. **Aucun visage.** Vertical, 1200 × 1600. |
+| `poignet-bracelet.jpg` | **Le même poignet, au même cadrage**, portant le bracelet. C'est le rendu : il tient la place de ce que le modèle d'image produira plus tard. |
+| `bracelet-seul.png` | Le bracelet seul, **détouré**, fond transparent. Vu de dessus, ouvert en arc. 1200 px de large. |
+| `collier-seul.png` | Idem pour un collier, avec sa retombée visible. |
+
+### 2. L'essai chez soi — la bougie, la déco
+
+Même règle : c'est **l'endroit** qu'on photographie, pas la personne.
+
+| Fichier | Ce qu'il montre |
+|---|---|
+| `table-salon.jpg` | Une table basse ou une console **vide**, de trois quarts, dans un salon, lumière naturelle. Aucun visage. |
+| `table-salon-bougie.jpg` | La même table, même cadrage, avec la bougie posée dessus. |
+| `bougie-seule.png` | La bougie seule, détourée, fond transparent. |
+
+### 3. Le mur — pour que les cartes cessent de se répéter
+
+Trois fantômes du mur empruntent aujourd'hui l'image d'un commerce, faute de
+mieux. Ce ne sont pas des photos de commerce : ce sont des photos de client,
+prises au téléphone, et elles doivent en avoir l'air.
+
+| Fichier | Ce qu'il montre |
+|---|---|
+| `vinyles-a-donner.jpg` | Une pile ou un bac de vinyles, chez quelqu'un. |
+| `billets-concert.jpg` | Deux billets posés sur une table. |
+
+### Ce qui vaut pour toutes
+
+- **Aucun visage reconnaissable, aucune enseigne lisible, aucun logo, aucun
+  filigrane** — c'est la règle de ce document, et elle ne s'assouplit pas ici :
+  ces images passent en **plein écran** sur le mur, là où les autres n'étaient
+  que des vignettes.
+- **Vérifier le filigrane comme on l'a appris** : on découpe les quatre bords, on
+  les redresse et on les agrandit. Trente secondes, et ça évite un tirage à
+  jeter. Deux envois d'`etal-boucher.jpg` sont passés à travers sans ça.
+- JPEG qualité 80, 1200 à 1600 px de large, moins de 400 Ko. PNG détourés avec
+  vraie transparence.

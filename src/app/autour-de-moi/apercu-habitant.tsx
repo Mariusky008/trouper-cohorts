@@ -811,7 +811,7 @@ function Fantome({ classe = "ap-fantome", clin = false }: { classe?: string; cli
                   </radialGradient>
                   {/* ⚡ LE CORPS DORE, POUR LE BOND QUI ANNONCE UN FLASH. Il est
                       declare ici et jamais utilise par defaut : c'est la feuille
-                      de style qui bascule le remplissage sous `.ap-suiv.or`.
+                      de style qui bascule le remplissage sous `.ap-monfantome.or`.
                       Un second fantome aurait double le trace pour changer
                       trois couleurs. */}
                   <linearGradient id="apFgOr" x1=".2" y1="0" x2=".82" y2="1">
@@ -1300,7 +1300,7 @@ export function ApercuHabitant() {
    */
   const [monte, setMonte] = useState(false);
   /**
-   * LE BOND DU FANTOME, ET SA NATURE — voir `.ap-suiv` et `BOND_OR_MS`.
+   * LE BOND DU FANTOME, ET SA NATURE — voir `.ap-monfantome` et `BOND_OR_MS`.
    *
    * TROIS ETATS PLUTOT QU'UN BOOLEEN : rien, le bond ordinaire, et le bond dore
    * qui annonce un Flash. Un second booleen aurait permis d'ecrire les deux a
@@ -7046,7 +7046,7 @@ export function ApercuHabitant() {
                 sans le déplacer ; il était au-dessus des deux actions, dans la
                 zone qu'on traverse pour les atteindre. Là, il ne dispute plus
                 rien à personne, et il rend les quarante points qu'il prenait
-                sur la carte. Voir `.ap-suiv` dans la barre. */}
+                sur la carte. Voir `.ap-monfantome` dans la barre. */}
             {/* ─── LES DEUX ACTIONS SONT L'UNE AU-DESSUS DE L'AUTRE ───
                 « Les deux boutons ne doivent pas avoir le même poids : ils
                 correspondent à deux moments différents. Ça me plaît → je le
@@ -9127,7 +9127,7 @@ export function ApercuHabitant() {
                   aurait alors declenche le grand saut sur un depart banal. */}
             <button
               type="button"
-              className={`ap-suiv${clin ? " clin" : ""}${
+              className={`ap-monfantome${clin ? " clin" : ""}${
                 tonDeSection ? ` sec ${tonDeSection}` : ""
               }${clin === "or" || flashDuSommet ? " or" : ""}${
                 clin === "or" ? " saut-or" : ""
@@ -9135,22 +9135,30 @@ export function ApercuHabitant() {
               aria-label={
                 arbitre
                   ? `Le fantôme a quelque chose à dire : ${arbitre.phrase}`
-                  : "Passer à l’annonce suivante"
+                  : "Mon fantôme : ce qui a été laissé ici aujourd’hui"
               }
-              // HORS DU PAQUET IL N'A QUE DEUX ETATS : arbitre, ou eteint.
-              // Jamais celui du paquet — voir `horsDuPaquet`.
-              disabled={horsDuPaquet ? !arbitre : !sommet}
               onClick={() => {
-                // ─── L'ARBITRE PARLE, LE PAQUET NE BOUGE PAS.
-                // Hors du paquet, l'appui ouvre la bulle : une phrase, un
-                // geste. Le petit clin d'oeil part quand meme — c'est ce qui
-                // dit que le fantome a entendu le doigt.
-                // LA GARDE PORTE SUR L'ENDROIT, PAS SUR L'ARBITRE : depuis un
-                // salon sans rien a dire, le bouton est eteint, mais un appui
-                // qui passerait quand meme ne doit pas faire tourner l'annonce
-                // sous la conversation.
-                if (horsDuPaquet) {
-                  if (!arbitre) return;
+                /* ═══ IL A CHANGÉ DE RÔLE ═══
+
+                   IL FAISAIT AVANCER LE PAQUET. C'était le geste le plus
+                   répété du produit, et il était bien placé — mais c'était un
+                   contresens sur ce qu'est le fantôme. « Dans le menu du bas
+                   on appuie sur le fantôme et une pop-up arrive » : il ouvre
+                   maintenant SON mur, c'est-à-dire ce qui a été laissé ici
+                   aujourd'hui. « Suivante » a pris sa propre place dans la
+                   barre, à droite — le geste n'est pas perdu, il est rendu à
+                   ce qu'il est : une navigation dans le paquet, pas le
+                   fantôme.
+
+                   L'ARBITRE PASSE DEVANT, ET C'EST VOULU. Quand il a quelque
+                   chose à dire, l'appui ouvre sa bulle plutôt que le mur : le
+                   rapport porte sur une décision en cours, et il est plus
+                   urgent qu'un mur qui, lui, attendra. C'est cohérent avec la
+                   définition — « le fantôme que vous avez laissé qui vous fait
+                   son rapport » — et ça deviendra la première ligne DU mur le
+                   jour où celui-ci sera une feuille posée ici plutôt qu'une
+                   page à part. */
+                if (arbitre) {
                   setClin("simple");
                   sonDuBond(false);
                   window.setTimeout(() => setClin(""), BOND_MS);
@@ -9158,17 +9166,17 @@ export function ApercuHabitant() {
                   setArbitreOuvert((v) => !v);
                   return;
                 }
-                // ⚡ ON REGARDE CE QUI ATTEND DERRIERE AVANT DE SAUTER.
-                const dore = flashDuSuivant;
-                setClin(dore ? "or" : "simple");
-                // LE SON PART AVANT LE MOUVEMENT, d'un cheveu : c'est l'ordre
-                // naturel — on entend l'elan, puis on voit le saut.
-                sonDuBond(dore);
-                // La cabriole dure BOND_MS : la couper avant la faisait
-                // disparaitre en plein saut, et c'est ce qui la rendait seche.
-                // Le bond dore dure plus longtemps, son minuteur aussi.
-                window.setTimeout(() => setClin(""), dore ? BOND_OR_MS : BOND_MS);
-                partir("gauche");
+                setClin("simple");
+                sonDuBond(false);
+                window.setTimeout(() => setClin(""), BOND_MS);
+                noter("onglet", 0, "mur");
+                // LE MUR EST ENCORE UNE PAGE A PART, et c'est provisoire : il
+                // doit devenir une feuille qui monte ici, sans quitter le
+                // paquet. Le lien porte le metier de la carte du dessus pour
+                // ouvrir le bon mur — voir `MURS` dans lib/direct/fantomes.
+                window.location.href = `/autour-de-moi/mur?metier=${
+                  dessus?.branche ?? "restaurant"
+                }`;
               }}
             >
               {/* ═══ UN PETIT FANTÔME, ET IL BOUGE QUAND ON L'APPUIE ═══
@@ -9193,12 +9201,73 @@ export function ApercuHabitant() {
                   mieux que le geste qu'il remplace. */}
               <Fantome />
             </button>
+            {/* ═══ « SUIVANTE » A SA PROPRE PLACE ═══
+
+                LE GESTE LE PLUS REPETE DU PRODUIT N'A PAS DISPARU AVEC LE
+                CHANGEMENT DE ROLE DU FANTOME : il a pris la cinquieme place de
+                la barre, a droite du fantome, la ou le pouce le trouve aussi.
+
+                IL RESTE UN ONGLET D'APPARENCE ET UNE ACTION DE NATURE, et c'est
+                assume : les quatre autres changent d'endroit, celui-ci agit sur
+                ce qu'on regarde. C'etait deja le cas du fantome, qui reglait le
+                probleme par sa FORME — rond, plein, debordant. Ici la forme
+                reste celle d'un onglet parce que la place manque : le signe
+                distinctif est la fleche, et l'extinction hors du paquet.
+
+                IL GARDE LA CLASSE `ap-suiv`, ET CE N'EST PAS UN DETAIL. C'est
+                le selecteur que trente-six suites utilisent pour traverser le
+                paquet. Le deplacer sur un autre nom aurait casse toutes les
+                gardes d'un coup pour ne rien prouver : ce qui a change, c'est
+                l'apparence et la place, pas le geste. */}
+            <button
+              type="button"
+              className={`ap-suiv${onglet === "direct" ? "" : " loin"}`}
+              aria-label="Passer à l’annonce suivante"
+              disabled={horsDuPaquet ? true : !sommet}
+              onClick={() => {
+                if (horsDuPaquet) return;
+                // ⚡ ON REGARDE CE QUI ATTEND DERRIERE AVANT DE SAUTER : le
+                // fantome se dore quand la carte suivante est un Flash, et le
+                // saut dure plus longtemps.
+                const dore = flashDuSuivant;
+                setClin(dore ? "or" : "simple");
+                // LE SON PART AVANT LE MOUVEMENT, d'un cheveu : c'est l'ordre
+                // naturel — on entend l'elan, puis on voit le saut.
+                sonDuBond(dore);
+                window.setTimeout(() => setClin(""), dore ? BOND_OR_MS : BOND_MS);
+                partir("gauche");
+              }}
+            >
+              {/* ─── UNE FLECHE, ET PAS UN MOT ───
+                  SIX LIBELLES NE TIENNENT PAS SUR UN TELEPHONE DE 375 POINTS.
+                  Mesure faite : « PROPOSITIONS » demande soixante-six points, la
+                  colonne en offre cinquante-cinq. Deux lignes coupaient les mots
+                  au milieu — « PROPOSI / TIONS », « SUIVANT / E » — et raccourcir
+                  le mot defaisait une decision mesuree.
+                  CELUI-CI EST LE SEUL QU'ON PEUT ENLEVER, ET C'EST AUSSI LE SEUL
+                  QU'ON DOIT : les cinq autres emmenent quelque part, celui-ci
+                  agit sur ce qu'on regarde. C'est exactement la distinction que
+                  le fantome tenait deja par sa forme, et un objet qui fait autre
+                  chose n'a pas a se nommer comme les autres — une fleche le dit
+                  mieux qu'un verbe. */}
+              <i aria-hidden="true">➔</i>
+            </button>
             <button
               type="button"
               className={onglet === "salons" ? "on" : ""}
               onClick={() => allerA_onglet("salons")}
             >
               <i aria-hidden="true">💬</i>
+              {/* ─── ET SURTOUT PAS « SALONS » ───
+                  Raccourci ainsi pour tenir dans une barre passee a six places,
+                  ce libelle a fait tomber une garde qui existait depuis
+                  longtemps : le mot « salon » a QUITTE la barre parce qu'il
+                  n'avait jamais rien dit a personne, et l'onglet porte le mot
+                  du bouton qui les cree — « Proposer a mes amis ». Ce n'etait
+                  pas une preference de vocabulaire, c'etait une decision
+                  mesuree, et la place qui manque n'est pas une raison de la
+                  defaire. C'est la BARRE qui s'adapte, pas le mot : voir
+                  `.ap-onglets` et ses libelles sur deux lignes. */}
               {NOM_ONGLET.salons}
               {/* Le badge compte tout ce qui est VIVANT : les siens et ceux
                   qu'on peut rejoindre. Ne compter que les siens le faisait
@@ -12389,11 +12458,15 @@ export function ApercuHabitant() {
            Une application sans ossature visible n'a pas de deuxieme visite.
            ATTENTION : jamais d'accent grave dans ces commentaires CSS. */
         .ap-onglets{flex:none;display:grid;
-          /* CINQ ENFANTS, ET CELUI DU MILIEU N'EST PAS UN ONGLET. Les quatre
-             onglets se partagent la largeur a parts egales ; le smiley prend
-             sa taille propre au centre. Reste a repeat(4,1fr) et Profil
-             passait a la ligne. */
-          grid-template-columns:1fr 1fr auto 1fr 1fr;
+          /* SIX ENFANTS, ET CELUI DU MILIEU N'EST PAS UN ONGLET. Les cinq
+             onglets se partagent la largeur a parts egales ; le fantome prend
+             sa taille propre au centre. Reste a cinq colonnes et « Profil »
+             passait a la ligne des que « Suivante » a pris sa place — mesure
+             sur un iPhone de 375 points, ou la barre gagnait une rangee.
+             MINMAX A ZERO ET PAS 1FR TOUT SEUL : sans le minimum a zero, une colonne
+             de grille ne descend jamais sous la largeur de son contenu, et
+             c'est le libelle le plus long qui decide de la largeur des six. */
+          grid-template-columns:repeat(2,minmax(0,1fr)) auto auto repeat(2,minmax(0,1fr));
           gap:4px;padding:4px 8px calc(4px + env(safe-area-inset-bottom));
           border-top:1px solid rgba(255,255,255,.09);
           background:rgba(8,12,10,.75);-webkit-backdrop-filter:blur(12px);
@@ -12462,12 +12535,41 @@ export function ApercuHabitant() {
         .ap-onglets button b.neuf{background:#F0B429;}
         /* LES LIBELLES EN CAPITALES ESPACEES — c'est ce que montre la maquette,
            et ca les distingue des mots de la carte, qui sont des phrases. */
-        .ap-onglets>button:not(.ap-suiv){font-size:9px;font-weight:850;
-          letter-spacing:.07em;text-transform:uppercase;
-          /* SUR UNE SEULE LIGNE : « LE DIRECT » passait a la ligne des qu'on
-             est passe aux capitales, et un onglet sur deux rangees decale toute
-             la barre. */
+        /* ─── LA CINQUIEME PLACE ───
+           « Suivante » est un onglet d'apparence et une action de nature. Il
+           porte donc la meme typographie que les quatre autres, et une fleche
+           au lieu d'un pictogramme : c'est elle qui dit que ca n'emmene nulle
+           part. Il s'eteint des qu'on quitte le paquet, comme le fantome
+           s'eteignait avant lui — un bouton qui ferait tourner l'annonce sous
+           une conversation serait pire qu'un bouton absent. */
+        .ap-onglets .ap-suiv i{font-size:15px;}
+        .ap-onglets .ap-suiv:disabled,.ap-onglets .ap-suiv.loin{opacity:.34;}
+        /* ─── LES LIBELLES TIENNENT SUR DEUX LIGNES, ET TOUS EN RESERVENT DEUX ───
+
+           LA GARDE D'AVANT DISAIT « SUR UNE SEULE LIGNE », et elle avait
+           raison de son temps : un seul onglet qui passait a la ligne montait
+           son pictogramme plus haut que les cinq autres, et toute la barre
+           paraissait de travers.
+
+           CE N'EST PLUS LE MEME PROBLEME. La barre est passee a six places pour
+           accueillir « Suivante », et « PROPOSITIONS » — douze signes — ne rentre
+           plus dans une colonne de cinquante-cinq points. On a d'abord raccourci
+           le mot ; c'etait defaire une decision mesuree (voir l'onglet lui-meme).
+
+           ON RESERVE DONC DEUX LIGNES A TOUT LE MONDE : le bloc du libelle a une
+           hauteur fixe, les mots courts se centrent dedans, et les pictogrammes
+           restent alignes puisque plus rien ne les pousse. La barre gagne dix
+           points de haut, une fois, et ne bouge plus jamais. */
+        .ap-onglets>button:not(.ap-monfantome){font-size:8.5px;font-weight:850;
+          letter-spacing:.03em;text-transform:uppercase;
+          /* SUR UNE SEULE LIGNE, ET C'EST REDEVENU POSSIBLE depuis que
+             « Suivante » n'est plus qu'une fleche : un onglet sur deux rangees
+             monte son pictogramme plus haut que les autres et fait paraitre
+             toute la barre de travers. */
           white-space:nowrap;}
+        /* LA FLECHE EST UNE ACTION : elle ne prend que sa largeur, et rend le
+           reste aux quatre libelles. */
+        .ap-onglets .ap-suiv{padding-left:9px;padding-right:9px;}
 
         /* ═══ LE FANTOME QUI PASSE A LA SUIVANTE ═══
            Rond, vert plein, deborde de la barre vers le haut : il ne ressemble
@@ -12493,16 +12595,16 @@ export function ApercuHabitant() {
            un bandeau entier. On ne perd rien de ce qu'on avait gagne : le
            fantome tient toujours a quarante points, ce qui etait le point de
            depart de la demande. */
-        .ap-onglets .ap-suiv{position:relative;flex:none;width:62px;height:62px;
+        .ap-onglets .ap-monfantome{position:relative;flex:none;width:62px;height:62px;
           margin:-22px 4px 0;padding:0;border-radius:50%;border:0;
           display:flex;align-items:center;justify-content:center;
           background:linear-gradient(150deg,#8CF0CC,#2FD39A);
           box-shadow:0 12px 30px rgba(47,211,154,.42),
             0 0 0 5px var(--ap-barre-fond, #070C0A);
           transition:transform .16s cubic-bezier(.34,1.6,.64,1);}
-        .ap-onglets .ap-suiv:disabled{opacity:.45;}
-        .ap-onglets .ap-suiv:active{transform:scale(.9);}
-        .ap-onglets .ap-suiv b{display:none;}
+        .ap-onglets .ap-monfantome:disabled{opacity:.45;}
+        .ap-onglets .ap-monfantome:active{transform:scale(.9);}
+        .ap-onglets .ap-monfantome b{display:none;}
         /* ═══ LA COULEUR DE LA SECTION OU L'ON EST ═══
            Les memes teintes que le selecteur de categorie : rose pour ce qui
            se passe en ville, bleu pour les embauches. Elles disent OU L'ON EST,
@@ -12513,18 +12615,18 @@ export function ApercuHabitant() {
            l'or du Flash passe devant tout — il parle de l'annonce qu'on a sous
            les yeux. Trois couches, une seule visible a la fois, et jamais de
            doute sur laquelle. */
-        .ap-onglets .ap-suiv.sec{
+        .ap-onglets .ap-monfantome.sec{
           background:var(--ap-sec-f, linear-gradient(150deg,#8CF0CC,#2FD39A));
           box-shadow:0 12px 30px var(--ap-sec-h, rgba(47,211,154,.42)),
             0 0 0 5px var(--ap-barre-fond, #070C0A);}
-        .ap-onglets .ap-suiv.sec .ap-f-corps{fill:var(--ap-sec-p, url(#apFg));}
-        .ap-onglets .ap-suiv.sec .ap-f-bras{fill:var(--ap-sec-b, #CFE9DC);}
-        .ap-onglets .ap-suiv.sec .ap-f-lueur{opacity:.4;}
-        .ap-onglets .ap-suiv.sec.evenement{
+        .ap-onglets .ap-monfantome.sec .ap-f-corps{fill:var(--ap-sec-p, url(#apFg));}
+        .ap-onglets .ap-monfantome.sec .ap-f-bras{fill:var(--ap-sec-b, #CFE9DC);}
+        .ap-onglets .ap-monfantome.sec .ap-f-lueur{opacity:.4;}
+        .ap-onglets .ap-monfantome.sec.evenement{
           --ap-sec-f:linear-gradient(150deg,#FFC5E4,#D6379B);
           --ap-sec-h:rgba(214,55,155,.45);
           --ap-sec-p:#FFD9EC;--ap-sec-b:#F0AAD0;}
-        .ap-onglets .ap-suiv.sec.recrute{
+        .ap-onglets .ap-monfantome.sec.recrute{
           --ap-sec-f:linear-gradient(150deg,#C3D9FF,#3B6FE0);
           --ap-sec-h:rgba(59,111,224,.45);
           --ap-sec-p:#DCE8FF;--ap-sec-b:#AEC4F0;}
@@ -12559,7 +12661,7 @@ export function ApercuHabitant() {
            ET IL SE TAIT SI ON LUI DEMANDE. Quand le systeme demande moins
            d'animation, la couleur reste et le scintillement s'arrete : le signal
            survit, le battement non. */
-        .ap-onglets .ap-suiv.veille{
+        .ap-onglets .ap-monfantome.veille{
           background:var(--ap-veille-f, linear-gradient(150deg,#8CF0CC,#2FD39A));
           box-shadow:0 12px 30px var(--ap-veille-h, rgba(47,211,154,.5)),
             0 0 0 5px var(--ap-barre-fond, #070C0A);
@@ -12567,39 +12669,39 @@ export function ApercuHabitant() {
         /* LE CORPS DU FANTOME PREND LA TEINTE CLAIRE DE L'ETAT, le disque la
            teinte profonde. Deux valeurs de la meme couleur : le personnage
            reste lisible sur son fond, ce qu'un aplat unique ne permet pas. */
-        .ap-onglets .ap-suiv.veille .ap-f-corps{fill:var(--ap-veille-p, url(#apFg));}
-        .ap-onglets .ap-suiv.veille .ap-f-bras{fill:var(--ap-veille-b, #CFE9DC);}
+        .ap-onglets .ap-monfantome.veille .ap-f-corps{fill:var(--ap-veille-p, url(#apFg));}
+        .ap-onglets .ap-monfantome.veille .ap-f-bras{fill:var(--ap-veille-b, #CFE9DC);}
         /* LE REFLET DU VOLUME S'ATTENUE SOUS LA VEILLE, ET IL LE FAUT.
            Mesure a l'ecran : le corps prenait bien la teinte, et on voyait un
            fantome BLANC — la lueur blanche a 95 % qui lui donne son relief
            couvre justement le haut du corps, c'est-a-dire les deux tiers qu'on
            regarde. Peindre dessous une couleur qu'on recouvre ne peint rien. */
-        .ap-onglets .ap-suiv.veille .ap-f-lueur{opacity:.34;}
-        .ap-onglets .ap-suiv.veille .ap-f-fil{opacity:.5;}
-        .ap-onglets .ap-suiv.veille.presse{
+        .ap-onglets .ap-monfantome.veille .ap-f-lueur{opacity:.34;}
+        .ap-onglets .ap-monfantome.veille .ap-f-fil{opacity:.5;}
+        .ap-onglets .ap-monfantome.veille.presse{
           --ap-veille-f:linear-gradient(150deg,#FF7A6A,#D80D1C);
           --ap-veille-h:rgba(216,13,28,.55);
           --ap-veille-p:#FFB4A6;--ap-veille-b:#EE9080;}
-        .ap-onglets .ap-suiv.veille.decide{
+        .ap-onglets .ap-monfantome.veille.decide{
           --ap-veille-f:linear-gradient(150deg,#7BFFD4,#06B87E);
           --ap-veille-h:rgba(6,184,126,.6);
           --ap-veille-p:#A9F2D5;--ap-veille-b:#7ED9B4;}
-        .ap-onglets .ap-suiv.veille.hesite{
+        .ap-onglets .ap-monfantome.veille.hesite{
           --ap-veille-f:linear-gradient(150deg,#FFDE7A,#E29200);
           --ap-veille-h:rgba(226,146,0,.55);
           --ap-veille-p:#FFDD9B;--ap-veille-b:#EFC469;}
-        .ap-onglets .ap-suiv.veille.neuf{
+        .ap-onglets .ap-monfantome.veille.neuf{
           --ap-veille-f:linear-gradient(150deg,#CFAAFF,#6D28D9);
           --ap-veille-h:rgba(109,40,217,.55);
           --ap-veille-p:#D6BAFF;--ap-veille-b:#BC9AF0;}
         /* L'OR RESTE PRIORITAIRE SUR LE PAQUET : c'est la seule ou les deux
            signaux coexistent, et celui de l'annonce qu'on regarde passe devant.
            Ecrit APRES la veille pour gagner a specificite egale. */
-        .ap-onglets .ap-suiv.or.veille{
+        .ap-onglets .ap-monfantome.or.veille{
           background:linear-gradient(150deg,#FFE9A8,#E0A21A);
           box-shadow:0 12px 30px rgba(224,162,26,.5),
             0 0 0 5px var(--ap-barre-fond, #070C0A);}
-        .ap-onglets .ap-suiv.or.veille .ap-f-corps{fill:url(#apFgOr);}
+        .ap-onglets .ap-monfantome.or.veille .ap-f-corps{fill:url(#apFgOr);}
         @keyframes apVeille{
           0%,100%{filter:brightness(1) saturate(1);}
           45%{filter:brightness(1.24) saturate(1.15);}}
@@ -12610,7 +12712,7 @@ export function ApercuHabitant() {
            aurait COUPE LE BOND du fantome hors de sa bulle, c'est-a-dire
            l'animation qu'il avait demandee. Un degrade large qu'on fait defiler
            donne exactement le meme reflet et ne franchit jamais le bord. */
-        .ap-onglets .ap-suiv.veille::after{content:"";position:absolute;
+        .ap-onglets .ap-monfantome.veille::after{content:"";position:absolute;
           inset:0;border-radius:50%;pointer-events:none;
           background:linear-gradient(115deg,transparent 38%,
             rgba(255,255,255,.75) 50%,transparent 62%);
@@ -12620,8 +12722,8 @@ export function ApercuHabitant() {
           0%{background-position:150% 0;}
           100%{background-position:-50% 0;}}
         @media (prefers-reduced-motion:reduce){
-          .ap-onglets .ap-suiv.veille{animation:none;}
-          .ap-onglets .ap-suiv.veille::after{display:none;}}
+          .ap-onglets .ap-monfantome.veille{animation:none;}
+          .ap-onglets .ap-monfantome.veille::after{display:none;}}
 
         /* ═══ CE QU'IL DIT, ET LE SEUL GESTE QU'IL PROPOSE ═══
            UNE PHRASE ET UN BOUTON, jamais une liste. Elle sort du fantome, au
@@ -12702,7 +12804,7 @@ export function ApercuHabitant() {
            posee par-dessus, en absolu, dans .ap-app. Le z-index le met au
            premier plan pendant le vol, sinon l'ombre de la bulle lui passerait
            devant au moment ou il en sort. */
-        .ap-suiv.clin .ap-fantome{position:relative;z-index:3;}
+        .ap-monfantome.clin .ap-fantome{position:relative;z-index:3;}
         /* ═══ LE VOLUME ═══
            « Le fantome, tu peux faire vraiment encore beaucoup mieux. »
 
@@ -12867,20 +12969,20 @@ export function ApercuHabitant() {
 
            TOUT DURE .78s, LE TEMPS QUE LA CARTE SUIVANTE ARRIVE. Une animation
            qui depasse l'action qu'elle accompagne devient une attente. */
-        .ap-suiv.clin{animation:apBond .98s cubic-bezier(.3,1.2,.4,1);}
-        .ap-suiv.clin::after{content:"";position:absolute;inset:0;
+        .ap-monfantome.clin{animation:apBond .98s cubic-bezier(.3,1.2,.4,1);}
+        .ap-monfantome.clin::after{content:"";position:absolute;inset:0;
           border-radius:50%;border:2px solid rgba(140,240,204,.9);
           animation:apOnde .78s ease-out;pointer-events:none;}
-        .ap-suiv.clin .ap-fantome{animation:apCabriole .98s cubic-bezier(.24,1.05,.36,1);}
-        .ap-suiv.clin .ap-f-oeil{animation:apYeux .98s ease;}
-        .ap-suiv.clin .ap-f-bouche{animation:apSourire .98s ease;}
-        .ap-suiv.clin .ap-f-joue{animation:apJoues .98s ease;}
-        .ap-suiv.clin .ap-f-ombre{animation:apOmbre2 .98s ease;}
-        .ap-suiv.clin .ap-f-bras.g{animation:apBrasHautG .98s cubic-bezier(.3,1.3,.5,1);}
-        .ap-suiv.clin .ap-f-bras.d{animation:apBrasHautD .98s cubic-bezier(.3,1.3,.5,1);}
-        .ap-suiv.clin .ap-f-etoile{animation:apEtoile .6s ease-out;}
-        .ap-suiv.clin .ap-f-etoile.b{animation-delay:.07s;}
-        .ap-suiv.clin .ap-f-etoile.c{animation-delay:.14s;}
+        .ap-monfantome.clin .ap-fantome{animation:apCabriole .98s cubic-bezier(.24,1.05,.36,1);}
+        .ap-monfantome.clin .ap-f-oeil{animation:apYeux .98s ease;}
+        .ap-monfantome.clin .ap-f-bouche{animation:apSourire .98s ease;}
+        .ap-monfantome.clin .ap-f-joue{animation:apJoues .98s ease;}
+        .ap-monfantome.clin .ap-f-ombre{animation:apOmbre2 .98s ease;}
+        .ap-monfantome.clin .ap-f-bras.g{animation:apBrasHautG .98s cubic-bezier(.3,1.3,.5,1);}
+        .ap-monfantome.clin .ap-f-bras.d{animation:apBrasHautD .98s cubic-bezier(.3,1.3,.5,1);}
+        .ap-monfantome.clin .ap-f-etoile{animation:apEtoile .6s ease-out;}
+        .ap-monfantome.clin .ap-f-etoile.b{animation-delay:.07s;}
+        .ap-monfantome.clin .ap-f-etoile.c{animation-delay:.14s;}
         @keyframes apBond{0%{transform:scale(.9);}
           30%{transform:scale(1.14);}
           60%{transform:scale(.97);}
@@ -12930,15 +13032,15 @@ export function ApercuHabitant() {
            saut remet la transformation a zero : quelle que soit la hauteur,
            le fantome retombe a sa place au point pres. C'etait la demande, et
            c'est aussi ce qui permet d'etirer la trajectoire sans rien casser. */
-        .ap-suiv.or{background:linear-gradient(150deg,#FFF0BC,#F0B429);
+        .ap-monfantome.or{background:linear-gradient(150deg,#FFF0BC,#F0B429);
           box-shadow:0 14px 34px rgba(240,180,41,.55),
             0 0 0 5px var(--ap-barre-fond, #070C0A);}
-        .ap-suiv.or .ap-f-corps{fill:url(#apFgOr);
+        .ap-monfantome.or .ap-f-corps{fill:url(#apFgOr);
           filter:drop-shadow(0 2px 4px rgba(120,70,4,.4));}
-        .ap-suiv.or .ap-f-bras{fill:#F2CE7A;}
-        .ap-suiv.or .ap-f-fil{stroke:url(#apFr);opacity:.9;}
+        .ap-monfantome.or .ap-f-bras{fill:#F2CE7A;}
+        .ap-monfantome.or .ap-f-fil{stroke:url(#apFr);opacity:.9;}
         /* L'ONDE SUIT LA COULEUR, sinon un cercle vert part d'une bulle doree. */
-        .ap-suiv.clin.saut-or::after{border-color:rgba(255,215,94,.95);
+        .ap-monfantome.clin.saut-or::after{border-color:rgba(255,215,94,.95);
           animation:apOnde 1s ease-out;}
         /* ═══ LA BULLE NE BOUGE PAS PENDANT LE BOND DORE ═══
            MESURE QUI L'A IMPOSE : la marche du verifieur s'arretait net sur la
@@ -12950,15 +13052,15 @@ export function ApercuHabitant() {
            l'effet qu'on cherchait — sortir de sa bulle suppose que la bulle
            reste. Le bond ordinaire garde son ressort : il dure moins d'une
            seconde et c'est le retour au doigt de l'appui lui-meme. */
-        .ap-suiv.clin.saut-or{animation:none;}
-        .ap-suiv.clin.saut-or .ap-fantome{
+        .ap-monfantome.clin.saut-or{animation:none;}
+        .ap-monfantome.clin.saut-or .ap-fantome{
           animation:apCabrioleOr 1.5s cubic-bezier(.24,1,.32,1);}
-        .ap-suiv.clin.saut-or .ap-f-oeil{animation:apYeux 1.5s ease;}
-        .ap-suiv.clin.saut-or .ap-f-bouche{animation:apSourire 1.5s ease;}
-        .ap-suiv.clin.saut-or .ap-f-joue{animation:apJoues 1.5s ease;}
-        .ap-suiv.clin.saut-or .ap-f-ombre{animation:apOmbre2 1.5s ease;}
-        .ap-suiv.clin.saut-or .ap-f-bras.g{animation:apBrasHautG 1.5s cubic-bezier(.3,1.3,.5,1);}
-        .ap-suiv.clin.saut-or .ap-f-bras.d{animation:apBrasHautD 1.5s cubic-bezier(.3,1.3,.5,1);}
+        .ap-monfantome.clin.saut-or .ap-f-oeil{animation:apYeux 1.5s ease;}
+        .ap-monfantome.clin.saut-or .ap-f-bouche{animation:apSourire 1.5s ease;}
+        .ap-monfantome.clin.saut-or .ap-f-joue{animation:apJoues 1.5s ease;}
+        .ap-monfantome.clin.saut-or .ap-f-ombre{animation:apOmbre2 1.5s ease;}
+        .ap-monfantome.clin.saut-or .ap-f-bras.g{animation:apBrasHautG 1.5s cubic-bezier(.3,1.3,.5,1);}
+        .ap-monfantome.clin.saut-or .ap-f-bras.d{animation:apBrasHautD 1.5s cubic-bezier(.3,1.3,.5,1);}
         /* IL MONTE DEUX FOIS PLUS HAUT ET GROSSIT D'UN TIERS, et il TIENT en
            l'air : le sommet occupe le tiers du milieu de l'animation. C'est la
            pause qui rend un saut spectaculaire, pas la hauteur seule. */
@@ -12981,16 +13083,16 @@ export function ApercuHabitant() {
            jusqu'a cinquante points, et deux partent vers le BAS : une gerbe qui
            ne va que vers le haut se lit comme une fumee, pas comme une fete.
            Chacun a sa direction et son retard. */
-        .ap-suiv.clin.saut-or .ap-f-coeur{animation:apCoeurJete 1.2s ease-out;}
-        .ap-suiv.clin.saut-or .ap-f-coeur.a{animation-delay:.2s;--ap-jx:-4px;--ap-jy:-64px;}
-        .ap-suiv.clin.saut-or .ap-f-coeur.b{animation-delay:.25s;--ap-jx:-34px;--ap-jy:-48px;}
-        .ap-suiv.clin.saut-or .ap-f-coeur.c{animation-delay:.3s;--ap-jx:33px;--ap-jy:-52px;}
-        .ap-suiv.clin.saut-or .ap-f-coeur.d{animation-delay:.36s;--ap-jx:-50px;--ap-jy:-22px;}
-        .ap-suiv.clin.saut-or .ap-f-coeur.e{animation-delay:.42s;--ap-jx:49px;--ap-jy:-26px;}
-        .ap-suiv.clin.saut-or .ap-f-coeur.f{animation-delay:.48s;--ap-jx:-22px;--ap-jy:-74px;}
-        .ap-suiv.clin.saut-or .ap-f-coeur.g{animation-delay:.54s;--ap-jx:24px;--ap-jy:-72px;}
-        .ap-suiv.clin.saut-or .ap-f-coeur.h{animation-delay:.34s;--ap-jx:-46px;--ap-jy:16px;}
-        .ap-suiv.clin.saut-or .ap-f-coeur.i{animation-delay:.44s;--ap-jx:47px;--ap-jy:14px;}
+        .ap-monfantome.clin.saut-or .ap-f-coeur{animation:apCoeurJete 1.2s ease-out;}
+        .ap-monfantome.clin.saut-or .ap-f-coeur.a{animation-delay:.2s;--ap-jx:-4px;--ap-jy:-64px;}
+        .ap-monfantome.clin.saut-or .ap-f-coeur.b{animation-delay:.25s;--ap-jx:-34px;--ap-jy:-48px;}
+        .ap-monfantome.clin.saut-or .ap-f-coeur.c{animation-delay:.3s;--ap-jx:33px;--ap-jy:-52px;}
+        .ap-monfantome.clin.saut-or .ap-f-coeur.d{animation-delay:.36s;--ap-jx:-50px;--ap-jy:-22px;}
+        .ap-monfantome.clin.saut-or .ap-f-coeur.e{animation-delay:.42s;--ap-jx:49px;--ap-jy:-26px;}
+        .ap-monfantome.clin.saut-or .ap-f-coeur.f{animation-delay:.48s;--ap-jx:-22px;--ap-jy:-74px;}
+        .ap-monfantome.clin.saut-or .ap-f-coeur.g{animation-delay:.54s;--ap-jx:24px;--ap-jy:-72px;}
+        .ap-monfantome.clin.saut-or .ap-f-coeur.h{animation-delay:.34s;--ap-jx:-46px;--ap-jy:16px;}
+        .ap-monfantome.clin.saut-or .ap-f-coeur.i{animation-delay:.44s;--ap-jx:47px;--ap-jy:14px;}
         /* ILS S'ECARTENT EN S'ALLEGEANT : un coeur qui va tout droit retombe
            comme une bulle de dessin technique. La courbe s'ouvre d'abord d'un
            tiers, puis va au bout — c'est ce qui donne la gerbe. */
@@ -12999,19 +13101,19 @@ export function ApercuHabitant() {
           20%{opacity:1;transform:translate(calc(var(--ap-jx,0px) * .3),calc(var(--ap-jy,-46px) * .28)) scale(1.15) rotate(-9deg);}
           100%{opacity:0;transform:translate(var(--ap-jx,0px),var(--ap-jy,-46px)) scale(.5) rotate(14deg);}}
         @media (prefers-reduced-motion:reduce){
-          .ap-suiv.clin.saut-or,.ap-suiv.clin.saut-or::after,
-          .ap-suiv.clin.saut-or .ap-fantome,.ap-suiv.clin.saut-or .ap-f-oeil,
-          .ap-suiv.clin.saut-or .ap-f-bouche,.ap-suiv.clin.saut-or .ap-f-joue,
-          .ap-suiv.clin.saut-or .ap-f-ombre,.ap-suiv.clin.saut-or .ap-f-bras,
-          .ap-suiv.clin.saut-or .ap-f-coeur{animation:none;}
+          .ap-monfantome.clin.saut-or,.ap-monfantome.clin.saut-or::after,
+          .ap-monfantome.clin.saut-or .ap-fantome,.ap-monfantome.clin.saut-or .ap-f-oeil,
+          .ap-monfantome.clin.saut-or .ap-f-bouche,.ap-monfantome.clin.saut-or .ap-f-joue,
+          .ap-monfantome.clin.saut-or .ap-f-ombre,.ap-monfantome.clin.saut-or .ap-f-bras,
+          .ap-monfantome.clin.saut-or .ap-f-coeur{animation:none;}
         }
         @media (prefers-reduced-motion:reduce){
           .ap-fantome,.ap-f-ombre,.ap-f-bras,.ap-f-oeil,
-          .ap-suiv.clin,.ap-suiv.clin::after,
-          .ap-suiv.clin .ap-fantome,.ap-suiv.clin .ap-f-oeil,
-          .ap-suiv.clin .ap-f-bouche,.ap-suiv.clin .ap-f-joue,
-          .ap-suiv.clin .ap-f-ombre,.ap-suiv.clin .ap-f-bras,
-          .ap-suiv.clin .ap-f-etoile{animation:none;}
+          .ap-monfantome.clin,.ap-monfantome.clin::after,
+          .ap-monfantome.clin .ap-fantome,.ap-monfantome.clin .ap-f-oeil,
+          .ap-monfantome.clin .ap-f-bouche,.ap-monfantome.clin .ap-f-joue,
+          .ap-monfantome.clin .ap-f-ombre,.ap-monfantome.clin .ap-f-bras,
+          .ap-monfantome.clin .ap-f-etoile{animation:none;}
         }
         }
 
@@ -14419,7 +14521,7 @@ export function ApercuHabitant() {
            d'impression. Or c'est le meme geste — le bouton propose, la bulle
            avance — donc c'est la meme couleur, celle qu'on voit deja sous le
            pouce a chaque carte.
-           Le degrade est exactement celui de .ap-suiv, aux memes arrets. */
+           Le degrade est exactement celui de .ap-monfantome, aux memes arrets. */
         .ap-agir.parler{color:#04241A;
           background:linear-gradient(150deg,#8CF0CC,#2FD39A);
           box-shadow:0 14px 30px -14px rgba(47,211,154,.6);}

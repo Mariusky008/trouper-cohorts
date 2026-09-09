@@ -187,8 +187,32 @@ function Carte({
   );
 }
 
+/**
+ * QUEL MUR OUVRIR, QUAND ON ARRIVE DEPUIS LE PAQUET.
+ *
+ * Le fantome de la barre porte la BRANCHE de la carte qu'on regardait. Trois
+ * murs existent pour dix-huit commerces : on ramene donc la branche a celui qui
+ * lui ressemble, et le reste retombe sur le restaurant. C'est une maquette —
+ * dans le produit, chaque commerce aura le sien.
+ */
+function murDeLaBranche(branche: string | null): string {
+  if (branche === "bar") return "bar";
+  if (branche === "ongles" || branche === "coiffeur" || branche === "mode") return "ongles";
+  return "margot";
+}
+
 export function Mur() {
   const [cle, setCle] = useState("margot");
+  /**
+   * MONTE APRES LE PREMIER RENDU, et pas avant. Lire l'adresse pendant le rendu
+   * du serveur donnerait deux resultats differents des deux cotes, et React
+   * refuserait l'hydratation — c'est la meme raison qui fait monter l'heure
+   * apres coup sur la page boutique.
+   */
+  useEffect(() => {
+    const m = new URLSearchParams(window.location.search).get("metier");
+    if (m) setCle(murDeLaBranche(m));
+  }, []);
   const mur = useMemo(() => MURS.find((m) => m.cle === cle) ?? MURS[0], [cle]);
   /** Où l'on en est dans la feuille : le mur, ou le dépôt. */
   const [ecran, setEcran] = useState<"mur" | "depot">("mur");
