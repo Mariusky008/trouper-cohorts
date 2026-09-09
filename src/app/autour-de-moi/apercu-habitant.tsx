@@ -40,6 +40,10 @@
 // désactivé dès qu'on a commencé à descendre. Sans ça, lire le programme ferait
 // partir la carte.
 import { useEffect, useRef, useState, useSyncExternalStore, useLayoutEffect } from "react";
+// Depuis que la fiche du commerce a quitte le pli, le paquet a une SORTIE :
+// deux liens vers la page boutique, celui du bandeau d'identite et celui du
+// bas du pli. Voir le grand commentaire au pied de la journee.
+import Link from "next/link";
 import { noter, noterUneFois } from "@/lib/direct/parcours";
 import {
   SALONS_VIDES,
@@ -101,9 +105,7 @@ import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
 import {
   abonnerRemises,
   avecLesRemises,
-  ceQuiRevient,
   chargerRemises,
-  phraseHabitude,
   remisesVides,
 } from "@/lib/direct/historique";
 import {
@@ -2811,45 +2813,12 @@ export function ApercuHabitant() {
   /** Les photos d'une liste d'avis, dans l'ordre, sans les avis muets. */
   const photosDe = (avis: AvisPlat[]) =>
     avis.map((a) => a.photo).filter((p): p is string => !!p);
-  /**
-   * LE MUR DU COMMERCE : toutes les photos de tous ses moments, mises en commun.
-   *
-   * C'est ce que le mur de Google ne sait pas faire — les siennes sont collées à
-   * l'établissement et datent de trois ans. Ici chaque photo reste attachée à ce
-   * qu'elle montre, et le mur n'est qu'une VUE par-dessus : on peut à la fois
-   * voir tout ce qui a été photographié chez lui, et voir revenir les bonnes
-   * photos avec le bon plat.
-   */
-  /**
-   * EST-CE D'AUJOURD'HUI ?
-   *
-   * DÉFAUT VU EN CAPTURE : la section s'appelait « Vu chez eux aujourd'hui » et
-   * la première photo était légendée « mardi dernier ». Le titre contredisait la
-   * légende, à trois centimètres d'écart — et c'est précisément le genre de
-   * détail qui décide si l'on croit le reste de l'écran.
-   * La date d'un avis est du texte libre, écrit comme on parle : on ne calcule
-   * donc pas, on reconnaît les quelques tournures qui veulent dire aujourd'hui.
-   * Tout le reste est traité comme ancien, ce qui est le bon sens du doute.
-   */
-  const duJour = (quand: string) =>
-    /^(à l'instant|aujourd'hui|ce (midi|matin|soir)|il y a \d+ (min|h)|maintenant)/i.test(
-      quand.trim(),
-    );
-
-  const murDe = (c: CarteAutour) =>
-    c.moments.flatMap((m) =>
-      avisDe(c, m)
-        .filter((a) => a.photo)
-        // ELLES PORTENT UN PRÉNOM ET UNE HEURE, et ce n'est pas de la
-        // décoration. « Photos des clients » est une catégorie ; « 📸 Camille,
-        // à 12 h 40 » est un fait daté, c'est-à-dire exactement ce que ce
-        // produit vend. La même photo, sans ces deux mots, ne prouve plus rien.
-        .map((a) => ({ src: a.photo as string, qui: a.qui, quand: a.quand })),
-    )
-      // CELLES DU JOUR EN PREMIER : la section promet le direct, elle doit le
-      // montrer d'abord. Tri stable, donc l'ordre des moments est conservé
-      // entre photos de même fraîcheur.
-      .sort((a, b) => Number(duJour(b.quand)) - Number(duJour(a.quand)));
+  /* ─── LE MUR DES CLIENTS A DEMENAGE ───
+     `murDe` et `duJour` vivaient ici pour le bloc « Vu chez eux » du pli. Ce
+     bloc est parti sur la page boutique, ou il a plus de sens : une photo de
+     client est une preuve permanente, pas une information du jour, et elle
+     repond a « c'est comment chez lui ? » plutot qu'a « j'y vais ? ».
+     Les deux fonctions n'avaient plus qu'un seul appelant : elles-memes. */
   /**
    * SES HABITUÉS, MOI COMPRIS, DU PLUS ASSIDU AU MOINS.
    *
@@ -3171,7 +3140,6 @@ export function ApercuHabitant() {
    * chemin une fois pour qu'il le refasse sans nous.
    */
   const blocJournee = useRef<HTMLDivElement>(null);
-  const blocCommerce = useRef<HTMLDivElement>(null);
   const [geste, setGeste] = useState(false);
 
   function versLaSection(cible: React.RefObject<HTMLDivElement | null>) {
@@ -3598,7 +3566,6 @@ export function ApercuHabitant() {
 
   const jeSuisDansLaFile = !!dessus && files.includes(dessus.id);
   /** Ce qui revient chez lui, déduit de ce qu'il a publié. Voir `historique.ts`. */
-  const habitudesDuSommet = dessus ? ceQuiRevient(dessus.passees) : [];
   /** L'écho courant, lu sans réarmer l'avis du matin. Voir son effet. */
   const echoRef = useRef("");
   echoRef.current = echo;
@@ -5911,22 +5878,29 @@ export function ApercuHabitant() {
                                 </em>
                               )}
                             </p>
-                            {/* DEUX PORTES, ET ELLES N'OUVRENT PAS LA MEME
-                                CHOSE. « Infos boutique » descend sur la fiche —
-                                ses mots, ses photos, son adresse, ceux qui y
-                                vont. « Voir le planning du jour » ouvre la
-                                feuille des heures, la meme que l'anneau pose
-                                sur la photo : deux portes vers la meme piece
-                                est acceptable quand l'une se voit d'un coup
-                                d'oeil et l'autre se lit. */}
+                            {/* DEUX PORTES, ET ELLES N'OUVRENT PLUS LE MEME
+                                MONDE. « Voir le planning » descend dans la
+                                carte — la journee y est restee, c'est ce qui
+                                sert a decider maintenant. « Infos boutique »,
+                                lui, SORT vers la page du commerce : la fiche
+                                n'est plus dans le pli, elle est la-bas, en
+                                entier et une seule fois.
+                                IL AVAIT DEMANDE QUE CE BOUTON DESCENDE plutot
+                                que d'ouvrir un ecran par-dessus, et ce n'est
+                                plus ce qu'il fait. C'est la contrepartie
+                                assumee de n'avoir plus qu'un seul endroit ou
+                                lire la fiche d'un commerce : tant qu'il y en
+                                avait deux, elles se recouvraient a l'identique
+                                et la page n'avait aucune raison d'exister. */}
                             <div className="ap-ident-d">
-                              <button
-                                type="button"
+                              <Link
+                                href="/autour-de-moi/boutique"
+                                prefetch={false}
                                 onPointerDown={(ev) => ev.stopPropagation()}
-                                onClick={() => versLaSection(blocCommerce)}
+                                onClick={() => noter("pli-ouvert", 0, "boutique-ident")}
                               >
                                 Infos boutique<i aria-hidden="true">→</i>
-                              </button>
+                              </Link>
                               <button
                                 type="button"
                                 onPointerDown={(ev) => ev.stopPropagation()}
@@ -6572,263 +6546,53 @@ export function ApercuHabitant() {
                       </div>
                       )}
 
-                      {/* ─── VU CHEZ EUX AUJOURD'HUI ─────────────────────
-                          C'ÉTAIT « PHOTOS DES CLIENTS », AU FOND DE LA FICHE
-                          DU COMMERCE. Le titre en faisait une catégorie ; ce
-                          sont des FAITS DATÉS, et c'est exactement ce que ce
-                          produit vend. Chaque photo porte maintenant le prénom
-                          de qui l'a prise et l'heure — la même image, sans ces
-                          deux mots, ne prouve plus rien.
-                          ELLE PASSE AVANT LA FICHE, et c'est l'ordre de la
-                          décision : ce qui a été servi aujourd'hui pèse plus,
-                          pour quelqu'un qui hésite, que l'adresse et les
-                          horaires du commerce.
-                          C'EST CE QUE GOOGLE NE SAIT PAS FAIRE : ses photos
-                          sont collées à l'établissement et datent de trois ans.
-                          Ici chacune reste attachée au moment qu'elle montre, et
-                          revient avec lui quand le plat revient à la carte. */}
-                      {!embauches && (
-                      <div className="ap-bloc">
-                        {/* LE TITRE SUIT CE QU'IL Y A DESSOUS. « Aujourd'hui »
-                            est la promesse du produit : écrite au-dessus de
-                            photos vieilles de deux semaines, elle se retourne
-                            contre lui. */}
-                        <h3>
-                          {murDe(dessus).some((ph) => duJour(ph.quand))
-                            ? "Vu chez eux aujourd'hui"
-                            : "Vu chez eux"}
-                        </h3>
-                        {murDe(dessus).length > 0 ? (
-                          <div className="ap-vu">
-                            {murDe(dessus).map((ph, n) => (
-                              <figure key={`${ph.src}-${n}`}>
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                  src={ph.src}
-                                  alt={`Chez ${dessus.nom}, photo de ${ph.qui}`}
-                                  loading="lazy"
-                                />
-                                <figcaption>
-                                  <b>📸 {ph.qui}</b>
-                                  <em className={duJour(ph.quand) ? "jour" : ""}>
-                                    {ph.quand}
-                                  </em>
-                                </figcaption>
-                              </figure>
-                            ))}
-                          </div>
-                        ) : (
-                          /* LE VIDE EST DIT, PAS CACHÉ. C'est le démarrage à
-                             froid : tant que personne n'a photographié, il n'y a
-                             rien — et l'écrire est ce qui donne envie d'être le
-                             premier. */
-                          <div className="ap-vu-vide">
-                            <i aria-hidden="true">📷</i>
-                            Personne n&apos;a encore photographié ce qui a été
-                            servi ici aujourd&apos;hui.
-                          </div>
-                        )}
-                      </div>
-                      )}
+                      {/* ═══ LE PLI S'ARRÊTE ICI, ET LA FICHE DESCEND ═══
 
-                      <div className="ap-bloc" ref={blocCommerce}>
-                        <h3>Le commerce</h3>
-                        {/* ─── QUI EST DERRIÈRE, ET SA SIGNATURE DE MÉTIER ───
-                            Écrite une fois pour toutes — « ma pâte lève dix-
-                            huit heures », « je désosse moi-même » — elle est
-                            la réponse permanente à « pourquoi chez lui plutôt
-                            qu'en grande surface ». C'est ce qu'un artisan sait
-                            dire en trois mots et n'écrit nulle part.
-                            Facultative comme tout le reste de la voix : sans
-                            elle, la fiche est exactement celle d'avant. */}
-                        {dessus.voix && (
-                          <div className="ap-voix">
-                            <button
-                              type="button"
-                              className={`ap-voix-t${dessus.voix.video ? " film" : ""}`}
-                              disabled={!dessus.voix.video}
-                              aria-label={`Voir ${dessus.voix.prenom}`}
-                              onPointerDown={(ev) => ev.stopPropagation()}
-                              onClick={() => {
-                                if (!dessus.voix?.video) return;
-                                noter("video", 0, "voix-ouverte");
-                                setVoixOuverte({ nom: dessus.nom, voix: dessus.voix });
-                              }}
-                            >
-                              {dessus.voix.video ? (
-                                <video
-                                  poster={dessus.voix.video.affiche}
-                                  muted
-                                  loop
-                                  autoPlay
-                                  playsInline
-                                  preload="metadata"
-                                >
-                                  {dessus.voix.video.webm && (
-                                    <source src={dessus.voix.video.webm} type="video/webm" />
-                                  )}
-                                  <source src={dessus.voix.video.mp4} type="video/mp4" />
-                                </video>
-                              ) : dessus.voix.portrait ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={dessus.voix.portrait} alt="" />
-                              ) : (
-                                dessus.voix.prenom.slice(0, 1)
-                              )}
-                            </button>
-                            <span>
-                              <b>
-                                {dessus.voix.prenom}
-                                {dessus.voix.role ? `, ${dessus.voix.role}` : ""}
-                              </b>
-                              {dessus.voix.signature}
-                            </span>
-                          </div>
-                        )}
-                        <p className="ap-mot">{dessus.fiche.mot}</p>
+                          MESURE, SUR LE MÊME COMMERCE : le pli faisait 2 518
+                          points de haut, la page boutique 2 248. La « fiche
+                          succincte » était plus longue que la page entière, et
+                          trois de ses cinq blocs s'y retrouvaient à
+                          l'identique — d'où le verdict à l'essai : « je ne vois
+                          pas de différence si ce n'est le menu du bas ».
 
-                        <div className="ap-l">
-                          <i aria-hidden="true">📍</i>
-                          {dessus.fiche.ou} · {dessus.distance}
-                        </div>
-                        <div className="ap-l">
-                          <i aria-hidden="true">🕘</i>
-                          {dessus.fiche.horaires}
-                        </div>
+                          CE N'ÉTAIT PAS LA PAGE QU'IL FALLAIT REDESSINER, MAIS
+                          LE PLI QU'IL FALLAIT VIDER. Tant que le pli fait le
+                          travail de la page, aucune page ne peut sembler
+                          différente : la repeindre autrement n'aurait été que
+                          du maquillage.
 
-                        {/* ─── SES PHOTOS À LUI ────────────────────────────
-                            DÉFAUT RELEVÉ AU TEST : « à part une photo du menu,
-                            il n'y a pas grand-chose comme info dans l'annonce
-                            quand on scrolle ». C'était vrai — on demandait de
-                            choisir un endroit sur une seule image, cadrée sur
-                            une assiette.
-                            ELLES VIENNENT DE SA FICHE GOOGLE, reprises quand on
-                            lui fabrique son site : il ne photographie rien de
-                            plus, et son annonce n'est pas vide le premier jour.
-                            C'est la seule réponse honnête au démarrage à froid.
-                            LÉGENDÉES, ET SÉPARÉES DU MUR DES CLIENTS qui suit :
-                            les siennes sont choisies, les leurs sont vraies.
-                            Sans la légende, on ne saurait pas si le plat montré
-                            est servi AUJOURD'HUI — la confusion exacte qu'une
-                            carte du jour existe pour éviter. */}
-                        {dessus.sesPhotos && dessus.sesPhotos.length > 0 && (
-                          <div className="ap-sien">
-                            <h4>Ses photos</h4>
-                            <div className="ap-sien-bande">
-                              {dessus.sesPhotos.map((ph) => (
-                                <figure key={ph.src + ph.quoi}>
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img src={ph.src} alt={ph.quoi} loading="lazy" />
-                                  <figcaption>{ph.quoi}</figcaption>
-                                </figure>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                          CE QUI RESTE ICI RÉPOND À « J'Y VAIS ? » — la journée,
+                          la file, suivre, en parler. Tout ce qui répond à
+                          « c'est qui ? » est parti sur la page : le mur des
+                          clients, sa signature, ses photos, son adresse, ses
+                          horaires, ce qui revient chez lui, son recrutement.
 
-                        {/* « IL RECRUTE » VIT SUR LA FICHE DU COMMERCE, et c'est
-                            là que ça devait aller depuis le début : une
-                            recherche d'employé n'est pas un moment de la
-                            journée, c'est un état du commerçant qui dure trois
-                            semaines. Donc on la trouve en lisant sa fiche,
-                            même quand on était venu pour le menu — et c'est
-                            comme ça qu'on tombe dessus sans la chercher. */}
-                        {!embauches && dessus.recrute && (
-                          <button
-                            type="button"
-                            className="ap-recrute-l"
-                            onPointerDown={(ev) => ev.stopPropagation()}
-                            onClick={() => {
-                              noter("embauches-vues", 0, "fiche");
-                              setEmbauches(true);
-                              setEnvies([]);
-                              annulerSortie();
-                              remettre();
-                            }}
-                          >
-                            <i aria-hidden="true">🙋</i>
-                            <span>
-                              <b>Il recrute</b>
-                              {dessus.recrute.poste.toLowerCase()} ·{" "}
-                              {dessus.recrute.paye}
-                            </span>
-                            <em aria-hidden="true">›</em>
-                          </button>
-                        )}
-
-                        {/* SON SITE. Affiché et pas cliquable, délibérément :
-                            les commerces d'ici sont inventés, et un domaine
-                            inventé qui existerait vraiment enverrait un testeur
-                            chez un inconnu. Le vrai produit porte l'adresse que
-                            le commerçant a déclarée. */}
-                        {dessus.site && (
-                          <div className="ap-l">
-                            <i aria-hidden="true">🌐</i>
-                            {dessus.site}
-                          </div>
-                        )}
-
-                        <a
-                          className="ap-yaller plein"
-                          href={dessus.itineraire}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                          onPointerDown={(ev) => ev.stopPropagation()}
-                        >
-                          🧭 Y aller
-                        </a>
-                      </div>
-
-                      {/* ═══ CE QUI REVIENT CHEZ LUI ═══
-                          « Est-ce qu'on peut consulter ses anciennes annonces
-                          et lui demander s'il a encore ce produit ? » Oui, mais
-                          jamais sous forme d'archive : une liste d'offres
-                          périmées est un cimetière, et un cimetière fait
-                          paraître mort un produit dont toute la promesse est
-                          d'être vivant.
-
-                          C'EST LA MÊME DONNÉE, RETOURNÉE. La question qu'on se
-                          pose n'est pas « qu'a-t-il fait le 12 » mais EST-CE
-                          QU'IL REFAIT ÇA, ET QUAND — et ça, l'historique sait y
-                          répondre. On calcule, on n'affiche pas.
-
-                          ET ON NE NOMME UN JOUR QUE SI DEUX TIERS DES FOIS
-                          tombent dessus : voir `ceQuiRevient`. En dessous, on
-                          dit combien de fois et on se tait sur le quand. */}
-                      {habitudesDuSommet.length > 0 && (
-                        <div className="ap-bloc">
-                          <h3>Ce qui revient</h3>
-                          <ul className="ap-hab">
-                            {habitudesDuSommet.slice(0, 3).map((h) => (
-                              <li key={h.titre}>
-                                <span>
-                                  <b>{h.titre}</b>
-                                  {phraseHabitude(h)}
-                                </span>
-                                {/* SA MEILLEURE RÉPONSE N'EST PAS UNE ARCHIVE,
-                                    C'EST UN MESSAGE. On a le tuyau depuis
-                                    « prévenez-le » : autant s'en servir. */}
-                                <button
-                                  type="button"
-                                  className="ap-hab-b"
-                                  onPointerDown={(ev) => ev.stopPropagation()}
-                                  onClick={() =>
-                                    setPrevenir({
-                                      nom: dessus.nom,
-                                      telephone:
-                                        dessus.telephone ?? numeroDeFiction(dessus.id),
-                                      quoi: h.titre.toLowerCase(),
-                                      demande: true,
-                                    })
-                                  }
-                                >
-                                  En redemander
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                          LE PRIX EST RÉEL ET IL EST ASSUMÉ : il avait demandé
+                          que « Infos boutique » DESCENDE au lieu d'ouvrir un
+                          écran par-dessus. Ceci transforme ce déplacement en
+                          changement de page. C'est la contrepartie de n'avoir
+                          plus qu'un seul endroit où lire la fiche d'un
+                          commerce, et elle a été posée avant d'être prise. */}
+                      <Link
+                        href="/autour-de-moi/boutique"
+                        prefetch={false}
+                        className="ap-tout"
+                        onPointerDown={(ev) => ev.stopPropagation()}
+                        onClick={() => noter("pli-ouvert", 0, "boutique")}
+                      >
+                        <span>
+                          <b>Tout sur ce commerce</b>
+                          {/* PAS DE PRONOM. Le produit ne connait pas le genre
+                              du commercant, et « chez lui » ecrit sous le nom
+                              d'une cuisiniere est une faute qui se voit tout de
+                              suite — sur la moitie des quatorze fiches. */}
+                          <em>
+                            Sa carte, ses photos, ses horaires, et ce qui revient
+                            d&apos;habitude
+                          </em>
+                        </span>
+                        <i aria-hidden="true">→</i>
+                      </Link>
 
                       {/* ═══ LA FILE DU MATIN ═══
                           « Il y a peu de chances que les gens tombent pile poil
@@ -11548,17 +11312,41 @@ export function ApercuHabitant() {
         /* LES DEUX PORTES. En contour leger, cote a cote : ce sont des liens,
            pas des actions — les actions sont plus bas et elles sont pleines. */
         .ap-ident-d{display:flex;flex-wrap:wrap;gap:8px;max-width:100%;}
-        .ap-ident-d button{white-space:nowrap;}
-        .ap-ident-d button{display:inline-flex;align-items:center;gap:7px;
+        /* « Infos boutique » est devenu un LIEN et non plus un bouton — il sort
+           du paquet au lieu d'y descendre. Le selecteur porte donc sur les deux
+           balises : les deux portes doivent rester jumelles a l'oeil, quoi
+           qu'elles ouvrent. */
+        .ap-ident-d button,.ap-ident-d a{white-space:nowrap;text-decoration:none;}
+        .ap-ident-d button,.ap-ident-d a{display:inline-flex;align-items:center;gap:7px;
           font:inherit;font-size:12px;font-weight:700;cursor:pointer;
           color:#DCE8E1;background:rgba(4,8,6,.45);
           border:1px solid rgba(234,242,236,.24);border-radius:999px;
           padding:7px 13px;transition:transform .12s ease,background .14s ease;
           -webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);}
-        .ap-ident-d button i{font-style:normal;font-size:13px;line-height:1;
+        .ap-ident-d button i,.ap-ident-d a i{font-style:normal;font-size:13px;line-height:1;
           color:#8CF0CC;}
-        .ap-ident-d button:active{transform:scale(.97);
+        .ap-ident-d button:active,.ap-ident-d a:active{transform:scale(.97);
           background:rgba(234,242,236,.12);}
+
+        /* ═══ LA SORTIE DU PLI — « TOUT SUR CE COMMERCE » ═══
+           ELLE EST LA SEULE PORTE DU PAQUET VERS UNE PAGE, et elle doit donc se
+           voir sans crier. En contour menthe plutot qu'en aplat : un aplat au
+           bas du pli entrerait en concurrence avec « En parler » et
+           « Reserver », qui sont les gestes, alors que celle-ci n'est qu'un
+           deplacement. Elle dit ce qu'il y a derriere — sans quoi personne
+           n'appuie sur une porte fermee. */
+        .ap-tout{display:flex;align-items:center;gap:12px;text-decoration:none;
+          margin:0 0 12px;padding:13px 15px;border-radius:18px;
+          color:#EAF2EC;background:rgba(61,226,166,.07);
+          border:1px solid rgba(61,226,166,.3);
+          transition:transform .12s ease,background .14s ease;}
+        .ap-tout span{flex:1;min-width:0;}
+        .ap-tout b{display:block;font-size:14px;font-weight:800;line-height:1.2;}
+        .ap-tout em{display:block;margin-top:3px;font-style:normal;font-size:11.5px;
+          line-height:1.35;color:#93A69B;}
+        .ap-tout i{flex:none;font-style:normal;font-size:18px;font-weight:700;
+          color:#3DE2A6;}
+        .ap-tout:active{transform:scale(.985);background:rgba(61,226,166,.13);}
 
         /* ═══ LES DEUX GESTES DE LA SECONDE RANGEE ═══
            Meme largeur, meme poids, en contour : ni l'un ni l'autre ne dispute

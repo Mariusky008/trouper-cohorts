@@ -74,6 +74,7 @@ import {
   type MomentJour,
 } from "@/lib/direct/apercu-habitant";
 import { ceQuiRevient, phraseHabitude } from "@/lib/direct/historique";
+import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
 import { AnneauMetier, PictoMetier } from "@/components/direct/picto-metier";
 
 /** Une seule décimale, virgule française : « 4,7 ». */
@@ -114,6 +115,43 @@ function avisDuCommerce(c: CarteAutour): AvisPlat[] {
   return tous;
 }
 
+/**
+ * CE QUI VEUT DIRE « AUJOURD'HUI », DANS UNE DATE ÉCRITE À LA MAIN.
+ *
+ * La date d'un avis est du texte libre — « ce midi », « samedi dernier », « en
+ * mars ». On ne calcule donc pas, on reconnaît les quelques tournures qui
+ * disent aujourd'hui, et tout le reste est traité comme ancien : c'est le bon
+ * sens du doute. Un titre « Vu chez eux aujourd'hui » posé au-dessus d'une
+ * photo légendée « mardi dernier » se contredit à trois centimètres d'écart, et
+ * c'est le genre de détail qui décide si l'on croit le reste de l'écran.
+ */
+function duJour(quand: string): boolean {
+  return /^(à l'instant|aujourd'hui|ce (midi|matin|soir)|il y a \d+ (min|h)|maintenant)/i.test(
+    quand.trim(),
+  );
+}
+
+/**
+ * LE MUR DES CLIENTS — toutes les photos de tous ses moments, mises en commun.
+ *
+ * IL A QUITTÉ LE PLI POUR VENIR ICI, et il y est mieux : une photo prise par un
+ * client est une preuve PERMANENTE, pas une information du jour. Elle répond à
+ * « c'est comment chez lui ? », pas à « j'y vais ? » — donc à la question de
+ * cette page et pas à celle du paquet.
+ *
+ * C'EST CE QUE GOOGLE NE SAIT PAS FAIRE : ses photos sont collées à
+ * l'établissement et datent de trois ans. Ici chacune reste attachée au moment
+ * qu'elle montre, et revient avec lui quand le plat revient à la carte.
+ */
+function murDuCommerce(c: CarteAutour): Array<{ src: string; qui: string; quand: string }> {
+  return avisDuCommerce(c)
+    .filter((a) => a.photo)
+    .map((a) => ({ src: a.photo as string, qui: a.qui, quand: a.quand }))
+    // Celles du jour en premier. Tri stable : l'ordre des moments est conservé
+    // entre photos de meme fraicheur.
+    .sort((a, b) => Number(duJour(b.quand)) - Number(duJour(a.quand)));
+}
+
 /** Le catalogue, groupé par rayon, dans l'ordre où les rayons apparaissent. */
 function parRayon(articles: ArticleCatalogue[]): Array<[string, ArticleCatalogue[]]> {
   const ordre: string[] = [];
@@ -132,6 +170,8 @@ function parRayon(articles: ArticleCatalogue[]): Array<[string, ArticleCatalogue
 export function Boutique() {
   const cartes = useMemo(() => toutesLesCartes(), []);
   const [id, setId] = useState("emporter");
+  /** Le rond de la voix, agrandi et sonore. Il se referme en changeant de commerce. */
+  const [voixOuverte, setVoixOuverte] = useState(false);
   const c = useMemo(() => cartes.find((x) => x.id === id) ?? cartes[0], [cartes, id]);
 
   /**
@@ -172,6 +212,7 @@ export function Boutique() {
   const mots = catal.titre === "Le catalogue" ? { ...catal, titre: rond.carte } : catal;
   const habitudes = useMemo(() => ceQuiRevient(c.passees), [c.passees]);
   const avis = useMemo(() => avisDuCommerce(c), [c]);
+  const mur = useMemo(() => murDuCommerce(c), [c]);
   const rayons = useMemo(() => parRayon(c.catalogue ?? []), [c.catalogue]);
   const enCours = c.moments.filter((m) => etatDuMoment(m, heure) === "en-cours");
   const aVenir = c.moments.filter((m) => etatDuMoment(m, heure) === "a-venir");
@@ -208,6 +249,7 @@ export function Boutique() {
               className={x.id === c.id ? "on" : ""}
               onClick={() => {
                 setId(x.id);
+                setVoixOuverte(false);
                 window.scrollTo({ top: 0 });
               }}
             >
@@ -390,13 +432,34 @@ export function Boutique() {
             qu’on a vu passer.
           </p>
           <ul className="bq-hab">
-            {habitudes.map((h) => (
-              <li key={h.titre}>
-                <b>{h.titre}</b>
-                <span>{phraseHabitude(h)}</span>
-                {h.prix && <em>{h.prix}</em>}
-              </li>
-            ))}
+            {habitudes.map((h) => {
+              /* SA MEILLEURE RÉPONSE N'EST PAS UNE ARCHIVE, C'EST UN MESSAGE.
+                 Le geste existait dans le pli et il descend avec le bloc — sans
+                 lui, « ce qui revient » ne serait qu'une statistique, et une
+                 statistique ne se touche pas.
+                 ICI C'EST UN LIEN, PLUS UNE FEUILLE. Dans le paquet il fallait
+                 une feuille par-dessus : on ne quitte pas une pile qu'on
+                 balaie. Sur une page, WhatsApp s'ouvre directement — un écran
+                 de moins pour le même geste.
+                 ET C'EST UNE QUESTION, PAS UNE COMMANDE. « Je prends la
+                 garbure » engage le commerçant sur une chose qui n'existe
+                 peut-être plus et le met en faute de ne pas l'avoir. */
+              const ecrire = commentPrevenir({
+                telephone: c.telephone ?? numeroDeFiction(c.id),
+                quoi: h.titre.toLowerCase(),
+                demande: true,
+              });
+              return (
+                <li key={h.titre}>
+                  <b>{h.titre}</b>
+                  <span>{phraseHabitude(h)}</span>
+                  {h.prix && <em>{h.prix}</em>}
+                  <a className="bq-hab-b" href={ecrire.whatsapp} target="_blank" rel="noreferrer">
+                    En redemander
+                  </a>
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}
@@ -460,20 +523,47 @@ export function Boutique() {
       {(c.voix || c.fiche.mot) && (
         <section className="bq-s alt" id="qui">
           <div className="bq-k">Qui c’est</div>
-          <div className="bq-voix">
+          {/* ─── LE ROND S'OUVRE, ET IL FALLAIT QU'IL LE FASSE ───
+              Dans le pli, toucher le rond ouvrait la vidéo par-dessus l'écran
+              avec le son : « le son existe, mais sur appui ». Le bloc a
+              déménagé ici, et le geste serait mort avec le déménagement si on
+              n'avait rien fait — on aurait retiré une fonction en croyant
+              ranger une page.
+              PAS DE FEUILLE PAR-DESSUS ICI, ET C'EST LA DIFFÉRENCE ENTRE LES
+              DEUX ÉCRANS. Dans un paquet qu'on balaie, on ne quitte pas la
+              pile : il faut recouvrir. Sur une page, le rond peut simplement
+              s'agrandir sur place — un écran de moins pour le même geste.
+              MUET AU DÉPART, TOUJOURS. Le son qui démarre tout seul dans une
+              file d'attente est la façon la plus rapide de faire fermer une
+              application. */}
+          <div className={`bq-voix${voixOuverte ? " ouverte" : ""}`}>
             <div className="bq-voix-r">
               {c.voix?.video ? (
-                <video
-                  poster={c.voix.video.affiche}
-                  muted
-                  loop
-                  autoPlay
-                  playsInline
-                  preload="metadata"
+                <button
+                  type="button"
+                  className={`bq-voix-t${voixOuverte ? " on" : ""}`}
+                  aria-label={
+                    voixOuverte
+                      ? "Refermer la vidéo"
+                      : `Voir et entendre ${c.voix.prenom}`
+                  }
+                  aria-pressed={voixOuverte}
+                  onClick={() => setVoixOuverte((v) => !v)}
                 >
-                  {c.voix.video.webm && <source src={c.voix.video.webm} type="video/webm" />}
-                  <source src={c.voix.video.mp4} type="video/mp4" />
-                </video>
+                  <video
+                    key={c.id}
+                    poster={c.voix.video.affiche}
+                    muted={!voixOuverte}
+                    loop
+                    autoPlay
+                    playsInline
+                    preload="metadata"
+                  >
+                    {c.voix.video.webm && <source src={c.voix.video.webm} type="video/webm" />}
+                    <source src={c.voix.video.mp4} type="video/mp4" />
+                  </video>
+                  <i aria-hidden="true">{voixOuverte ? "▾" : "🔊"}</i>
+                </button>
               ) : (
                 <span>{(c.voix?.prenom || c.nom).slice(0, 1)}</span>
               )}
@@ -518,36 +608,66 @@ export function Boutique() {
           disent AUTRE CHOSE, qui est ce que quelqu'un a mange precisement, un
           jour precis. Deux natures de preuve, jamais melangees — melanger une
           vitrine et un temoignage est ce qui rend les avis illisibles ailleurs. */}
-      {avis.length > 0 && (
+      {/* UNE SEULE SECTION POUR LES DEUX PREUVES, ET C'EST LA LEÇON QU'ON VIENT
+          D'APPRENDRE. Le mur montre les photos, les avis donnent les mots — mais
+          ce sont LES MÊMES AVIS. Deux sections auraient affiché deux fois la
+          photo de Camille à quinze centimètres d'écart, c'est-à-dire le doublon
+          exact qu'on vient de retirer du pli. Les vignettes ont donc quitté les
+          cartes d'avis : l'image est en haut, une fois, datée et signée.
+          LE VIDE EST DIT, PAS CACHÉ. C'est le démarrage à froid : tant que
+          personne n'a photographié il n'y a rien, et l'écrire est ce qui donne
+          envie d'être le premier. */}
+      {(mur.length > 0 || avis.length > 0) && (
         <section className="bq-s" id="avis">
           <div className="bq-k">Sur place</div>
-          <h2 className="bq-h">Ce qu’ils en disent</h2>
-          <div className="bq-note">
-            <b>{note1(moyenneAvis(avis))}</b>
-            <div>
-              <Etoiles note={moyenneAvis(avis)} />
-              <span>
-                {avis.length} avis laissés ici
-                {c.google ? ` · ${c.google.note} sur Google (${c.google.avis})` : ""}
-              </span>
+          <h2 className="bq-h">
+            {mur.some((ph) => duJour(ph.quand)) ? "Vu chez eux aujourd’hui" : "Vu chez eux"}
+          </h2>
+
+          {mur.length > 0 ? (
+            <div className="bq-vu">
+              {mur.map((ph, n) => (
+                <figure key={`${ph.src}-${n}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={ph.src} alt={`Chez ${c.nom}, photo de ${ph.qui}`} loading="lazy" />
+                  <figcaption>
+                    <b>📸 {ph.qui}</b>
+                    <em className={duJour(ph.quand) ? "jour" : ""}>{ph.quand}</em>
+                  </figcaption>
+                </figure>
+              ))}
             </div>
-          </div>
-          <ul className="bq-avis">
-            {avis.slice(0, 4).map((a, i) => (
-              <li key={`${a.qui}-${i}`}>
-                {a.photo && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={a.photo} alt="" />
-                )}
+          ) : (
+            <div className="bq-vu-vide">
+              <i aria-hidden="true">📷</i>
+              Personne n’a encore photographié ce qui a été servi ici.
+            </div>
+          )}
+
+          {avis.length > 0 && (
+            <>
+              <div className="bq-note">
+                <b>{note1(moyenneAvis(avis))}</b>
                 <div>
-                  <p>«&nbsp;{a.texte}&nbsp;»</p>
+                  <Etoiles note={moyenneAvis(avis)} />
                   <span>
-                    <Etoiles note={a.note} /> {a.qui} · {a.quand}
+                    {avis.length} avis laissés ici
+                    {c.google ? ` · ${c.google.note} sur Google (${c.google.avis})` : ""}
                   </span>
                 </div>
-              </li>
-            ))}
-          </ul>
+              </div>
+              <ul className="bq-avis">
+                {avis.slice(0, 4).map((a, i) => (
+                  <li key={`${a.qui}-${i}`}>
+                    <p>«&nbsp;{a.texte}&nbsp;»</p>
+                    <span>
+                      <Etoiles note={a.note} /> {a.qui} · {a.quand}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </section>
       )}
 
@@ -572,6 +692,24 @@ export function Boutique() {
             <dt>Les horaires</dt>
             <dd>{c.fiche.horaires}</dd>
           </div>
+          {/* IL RECRUTE — descendu du pli, et c'est ici qu'il tient.
+              Une recherche de bras dure trois semaines : elle ne dépend pas du
+              jour, donc elle n'avait rien à faire dans un paquet trié par ordre
+              de disparition. Elle est en revanche exactement ce qu'on veut
+              trouver sur la page permanente d'un commerce. */}
+          {c.recrute && (
+            <div>
+              <dt>Il recrute</dt>
+              <dd>
+                {c.recrute.poste}
+                <s>
+                  {c.recrute.contrat} · {c.recrute.paye}
+                  <br />
+                  Passez {c.recrute.passez}
+                </s>
+              </dd>
+            </div>
+          )}
           {c.site && (
             <div>
               <dt>Son site</dt>
@@ -825,6 +963,13 @@ function Styles() {
         .bq-hab span{font-size:12px;color:var(--bq-pale);}
         .bq-hab em{margin-left:auto;font-style:normal;font-size:13px;font-weight:800;
           color:var(--bq-ambre);font-variant-numeric:tabular-nums;}
+        /* EN CONTOUR, PAS EN APLAT. C'est une question posee au commercant, pas
+           une commande : le geste doit se voir sans peser autant que
+           « Reserver », qui est plus haut et qui engage. */
+        .bq-hab-b{flex:none;text-decoration:none;font-size:11.5px;font-weight:800;
+          color:var(--bq-menthe);border:1px solid rgba(61,226,166,.34);
+          border-radius:20px;padding:6px 11px;white-space:nowrap;}
+        .bq-hab-b:active{background:rgba(61,226,166,.13);}
 
         /* ─── LE CATALOGUE ─── */
         .bq-ray{margin-top:16px;}
@@ -852,10 +997,30 @@ function Styles() {
         .bq-voix-r{flex:none;width:88px;height:88px;border-radius:50%;overflow:hidden;
           background:linear-gradient(150deg,#1D3A2E,#0C1A14);
           border:1px solid rgba(61,226,166,.26);
-          display:flex;align-items:center;justify-content:center;}
+          display:flex;align-items:center;justify-content:center;
+          transition:width .26s ease,height .26s ease,border-radius .26s ease;}
         .bq-voix-r video{width:100%;height:100%;object-fit:cover;display:block;}
         .bq-voix-r span{font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
           font-size:34px;color:var(--bq-menthe);}
+        .bq-voix-t{position:relative;width:100%;height:100%;padding:0;border:none;
+          background:none;cursor:pointer;display:block;}
+        /* LA PASTILLE DIT CE QUE FAIT L'APPUI. Un rond qui joue une video muette
+           sans rien afficher ne se touche pas : on croit regarder une image. */
+        .bq-voix-t i{position:absolute;right:5px;bottom:5px;font-style:normal;
+          font-size:11px;line-height:1;padding:4px 5px;border-radius:50%;
+          background:rgba(4,10,8,.66);
+          -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+        /* ─── OUVERT : LE ROND DEVIENT UN CARRE ARRONDI, PLEINE LARGEUR ───
+           LA FORME RONDE ETAIT LA PROTECTION DU COMMERCANT — un rond en marge
+           n'est pas une performance, une video plein ecran en est une. Ici on ne
+           la met pas plein ecran : elle prend la largeur de la colonne, en
+           quatre-tiers, et le texte descend dessous. C'est assez pour voir un
+           geste, et ca ne demande toujours a personne de faire l'acteur. */
+        .bq-voix.ouverte{flex-direction:column;gap:12px;}
+        .bq-voix.ouverte .bq-voix-r{width:100%;height:auto;aspect-ratio:4/3;
+          border-radius:20px;}
+        .bq-voix.ouverte .bq-voix-t i{right:9px;bottom:9px;font-size:14px;padding:7px 9px;
+          border-radius:14px;}
         .bq-voix-c{flex:1;min-width:0;}
         .bq-voix-n{font-size:15px;font-weight:800;}
         .bq-voix-n s{text-decoration:none;font-weight:600;color:var(--bq-pale);}
@@ -878,13 +1043,32 @@ function Styles() {
         .bq-et i.on{color:var(--bq-ambre);}
         .bq-avis{list-style:none;margin:14px 0 0;padding:0;display:flex;
           flex-direction:column;gap:11px;}
-        .bq-avis li{display:flex;gap:11px;align-items:flex-start;
-          background:var(--bq-carte);border-radius:16px;padding:12px;}
-        .bq-avis img{flex:none;width:52px;height:52px;border-radius:12px;object-fit:cover;
-          display:block;}
-        .bq-avis li>div{flex:1;min-width:0;}
+        .bq-avis li{background:var(--bq-carte);border-radius:16px;padding:12px;}
         .bq-avis p{margin:0;font-size:13.5px;line-height:1.45;}
         .bq-avis span{display:block;margin-top:5px;font-size:11px;color:var(--bq-pale);}
+
+        /* ─── LE MUR DES CLIENTS ───
+           EN BANDE QUI DEFILE, pas en grille. Une grille dit « galerie » et se
+           parcourt du regard sans qu'on s'arrete ; une bande fait defiler une
+           photo a la fois, avec son prenom et son heure sous elle. Ce sont ces
+           deux mots qui font la preuve — la meme image sans eux ne prouve plus
+           rien. */
+        .bq-vu{display:flex;gap:9px;overflow-x:auto;margin-top:14px;
+          scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+        .bq-vu::-webkit-scrollbar{display:none;}
+        .bq-vu figure{flex:none;width:154px;margin:0;}
+        .bq-vu img{width:154px;height:120px;object-fit:cover;border-radius:14px;display:block;}
+        .bq-vu figcaption{margin-top:6px;display:flex;align-items:baseline;gap:6px;
+          flex-wrap:wrap;font-size:11px;}
+        .bq-vu figcaption b{font-weight:800;color:#DCE8E1;}
+        .bq-vu figcaption em{font-style:normal;color:var(--bq-pale);}
+        /* Celles du jour portent la menthe : c'est la seule chose qui distingue
+           une preuve d'aujourd'hui d'une preuve de mars. */
+        .bq-vu figcaption em.jour{color:var(--bq-menthe);font-weight:700;}
+        .bq-vu-vide{margin-top:14px;display:flex;align-items:center;gap:10px;
+          background:var(--bq-carte);border-radius:16px;padding:14px 15px;
+          font-size:12.5px;line-height:1.5;color:var(--bq-pale);}
+        .bq-vu-vide i{font-style:normal;font-size:17px;}
 
         /* ─── LE PRATIQUE ─── */
         .bq-inf{margin:14px 0 0;}

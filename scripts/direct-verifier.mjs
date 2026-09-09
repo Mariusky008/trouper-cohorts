@@ -36,13 +36,17 @@ const dire = (ok, t) => { if (!ok) echecs++; console.log(`${ok ? "  ok  " : "ÉC
  * IL Y AVAIT UN SEUL BOUTON, `.ap-vers-bas`, et il portait « Voir tout » sous le
  * planning pose sur l'annonce. Ce bloc a maigri — « il prend beaucoup de place
  * et pourrait faire passer le client a cote du message principal » — et le
- * geste vit maintenant dans « Infos boutique », la premiere des deux portes de
- * la ligne d'identite. `.ap-vers-bas` existe toujours, mais seulement sur les
- * cartes sans journee : viser l'un OU l'autre couvre les deux cas, et le
- * verifieur cesse d'expirer trente secondes sur un bouton qui n'existe plus.
+ * geste est passe dans la ligne d'identite.
+ *
+ * ET « INFOS BOUTIQUE » N'EST PLUS UNE DESCENTE. Depuis que la fiche du
+ * commerce a quitte le pli, cette porte-la SORT vers /autour-de-moi/boutique :
+ * la viser ici ferait quitter la page au verifieur au lieu de descendre dedans.
+ * La seule descente qui reste est « Voir le planning », c'est-a-dire le seul
+ * bouton encore present dans `.ap-ident-d` — les liens en sont exclus par la
+ * balise. Sur les cartes sans journee, `.ap-vers-bas` prend le relais.
  */
 const versLaFiche = async (page) => {
-  const porte = ".ap-dessus .ap-ident-d button:first-child, .ap-dessus .ap-vers-bas";
+  const porte = ".ap-dessus .ap-ident-d button, .ap-dessus .ap-vers-bas";
   await page.click(porte, { force: true, timeout: 4000 });
 };
 
@@ -597,35 +601,53 @@ console.log("\n══ mon commerce ══");
   await c3.close();
 }
 
-// ── ET « CE QUI REVIENT » CÔTÉ CLIENT, SOUS LE PLI ──
+// ── ET « CE QUI REVIENT » CÔTÉ CLIENT, SUR LA PAGE DU COMMERCE ──
+//
+// IL ÉTAIT SOUS LE PLI ET IL EST PARTI SUR /autour-de-moi/boutique, avec « Vu
+// chez eux », la fiche du commerce et le recrutement. Raison : mesuré sur le
+// même commerce, le pli faisait 2 490 points de haut et trois de ses cinq blocs
+// se retrouvaient à l'identique sur la page — « je ne vois pas de différence si
+// ce n'est le menu du bas ». Ce n'était pas la page qu'il fallait redessiner,
+// c'était le pli qu'il fallait vider.
+//
+// LE PLI GARDE CE QUI RÉPOND À « J'Y VAIS ? » : la journée, la file, suivre, en
+// parler. La page répond à « c'est qui ? ». Un seul bloc les recouvre encore,
+// la journée, et c'est le bon : c'est lui qui fait le lien entre les deux.
 console.log("\n══ ce qui revient, côté client ══");
-// L'HEURE EST FIXEE : ce commerce sert de 11 h a 17 h. A 19 h 55 il a ferme,
-// donc il quitte le paquet — c'est la regle du produit, et la garde echouait
-// dessus en croyant mesurer sa fiche.
-({ ctx, p } = await ouvrir("/autour-de-moi?chez=emporter", 12.5));
-await p.click(".ap-arr-ville");
-await p.waitForTimeout(1300);
-await versLaFiche(p);
+// `ouvrir` attend `.ap-fav2`, qui est le paquet : la page du commerce n'en a
+// pas, et n'a pas non plus de carte d'arrivée à écarter. On l'ouvre donc
+// simplement.
+ctx = await nav.newContext({
+  viewport: { width: 393, height: 852 }, deviceScaleFactor: 2,
+  isMobile: true, hasTouch: true, locale: "fr-FR",
+});
+p = await ctx.newPage();
+p.on("pageerror", (e) => erreurs.push(String(e)));
+p.on("console", (m) => { if (m.type() === "error") erreurs.push(m.text()); });
+await p.goto(`${BASE}/autour-de-moi/boutique`, { waitUntil: "networkidle" });
+await p.waitForSelector(".bq-hero");
 await p.waitForTimeout(900);
 const hab = await p.evaluate(() =>
-  [...document.querySelectorAll(".ap-hab li")].map((e) => ({
+  [...document.querySelectorAll(".bq-hab li")].map((e) => ({
     t: e.querySelector("b")?.textContent.trim() ?? "",
-    q: e.querySelector("span")?.lastChild?.textContent.trim() ?? "",
-    b: e.querySelector(".ap-hab-b")?.textContent.trim() ?? "",
+    q: e.querySelector("span")?.textContent.trim() ?? "",
+    b: e.querySelector(".bq-hab-b")?.textContent.trim() ?? "",
+    lien: e.querySelector(".bq-hab-b")?.getAttribute("href") ?? "",
   })));
 for (const h of hab) console.log(`  ${h.t} — ${h.q} → ${h.b}`);
-dire(hab.length > 0, "la fiche dit ce qui revient");
+dire(hab.length > 0, "la page dit ce qui revient");
 // LE JOUR N'EST NOMMÉ QUE QUAND IL DOMINE VRAIMENT — deux tiers des fois.
 dire(hab.some((h) => /plutôt le/.test(h.q)),
   "et nomme le jour quand il y en a un");
-// SA MEILLEURE RÉPONSE N'EST PAS UNE ARCHIVE, C'EST UN MESSAGE.
+// SA MEILLEURE RÉPONSE N'EST PAS UNE ARCHIVE, C'EST UN MESSAGE. Sur une page,
+// c'est un lien direct : plus besoin d'une feuille par-dessus pour ne pas
+// quitter la pile, puisqu'on n'est plus dans la pile.
 dire(hab.every((h) => /redemander/i.test(h.b)),
   "avec le moyen de lui demander s'il en a encore");
-await p.click(".ap-hab-b");
-await p.waitForTimeout(800);
-const dem = await p.evaluate(() =>
-  document.querySelector(".ap-prev .ap-conf-mot")?.textContent.replace(/\s+/g, " ").trim() ?? "");
+const dem = decodeURIComponent((hab[0]?.lien ?? "").split("text=")[1] ?? "");
 console.log(`  « ${dem} »`);
+dire(/^https:\/\/wa\.me\//.test(hab[0]?.lien ?? ""),
+  "le geste ouvre directement le message");
 // ON DEMANDE, ON NE PREND PAS. « Je prends la garbure » annonce une commande
 // pour quelque chose qui n'existe peut-être plus, et met le commerçant en
 // faute de ne pas l'avoir.
@@ -634,6 +656,35 @@ dire(/est-ce que vous avez encore/i.test(dem),
 dire(!/je prends/i.test(dem), "et n'annonce pas une commande");
 dire(!/\?\./.test(dem), "sans double ponctuation");
 await p.screenshot({ path: "/tmp/ce-qui-revient.png", fullPage: true });
+await ctx.close();
+
+// ── ET LE PLI, LUI, NE LES PORTE PLUS ──
+//
+// C'EST LA MOITIÉ DU TEST, ET LA PLUS FRAGILE : une fonction déplacée qui
+// resterait aussi à son ancienne place ne serait pas un déménagement, ce serait
+// un doublon de plus — celui-là même qu'on vient de retirer.
+console.log("\n══ le pli ne garde que ce qui décide ══");
+({ ctx, p } = await ouvrir("/autour-de-moi?chez=emporter", 12.5));
+await p.click(".ap-arr-ville");
+await p.waitForTimeout(1300);
+await versLaFiche(p);
+await p.waitForTimeout(900);
+const pli = await p.evaluate(() => ({
+  blocs: [...document.querySelectorAll(".ap-bloc")]
+    .map((b) => (b.querySelector("h3")?.textContent ?? "(geste)").trim()),
+  sortie: document.querySelector(".ap-tout b")?.textContent.trim() ?? "",
+  href: document.querySelector(".ap-tout")?.getAttribute("href") ?? "",
+  porte: document.querySelector(".ap-ident-d a")?.getAttribute("href") ?? "",
+}));
+console.log(`  ${pli.blocs.join(" · ")}`);
+dire(pli.blocs.includes("La journée"), "la journée reste : c'est ce qui décide maintenant");
+dire(pli.blocs.includes("En parler"), "les gestes restent");
+dire(!pli.blocs.includes("Le commerce"), "la fiche du commerce n'y est plus");
+dire(!pli.blocs.includes("Vu chez eux"), "le mur des clients non plus");
+dire(!pli.blocs.includes("Ce qui revient"), "ni ce qui revient");
+dire(pli.href === "/autour-de-moi/boutique", `et le pli a une sortie (${pli.sortie})`);
+dire(pli.porte === "/autour-de-moi/boutique",
+  "« Infos boutique » mène au même endroit, plus au bloc d'en dessous");
 await ctx.close();
 
 // ═══ 8 · LA VIDÉO DANS LE ROND ═══
@@ -738,29 +789,50 @@ console.log("\n══ la vidéo dans le rond ══");
   dire(!rond.dessous, "la carte du dessous n'en charge aucune");
   await q.screenshot({ path: "/tmp/voix-video.png" });
 
-  // ── LE SON, SUR APPUI ──
-  await versLaFiche(q);
+  // ── LE SON, SUR APPUI — MAIS SUR LA PAGE DU COMMERCE ──
+  //
+  // IL ÉTAIT SOUS LE PLI, DANS « LE COMMERCE ». Ce bloc a déménagé sur
+  // /autour-de-moi/boutique : le pli faisait le travail de la page, les deux
+  // écrans se recouvraient à l'identique, et « je ne vois pas de différence si
+  // ce n'est le menu du bas ». La fonction, elle, n'a pas été perdue dans le
+  // déménagement — c'est exactement ce que ce test garde.
+  //
+  // ET LA FORME A CHANGÉ AVEC LE LIEU. Dans un paquet qu'on balaie il fallait
+  // RECOUVRIR : on ne quitte pas la pile. Sur une page, le rond s'agrandit sur
+  // place — un écran de moins pour le même geste. On ne cherche donc plus
+  // `.ap-film` mais l'ouverture du rond lui-même.
+  await q.goto(`${BASE}/autour-de-moi/boutique`, { waitUntil: "networkidle" });
   await q.waitForTimeout(900);
-  await q.$eval(".ap-voix-t", (e) => e.scrollIntoView({ block: "center", behavior: "instant" }));
+  const avantAppui = await q.evaluate(() => {
+    const v = document.querySelector(".bq-voix-t video");
+    return { muet: v?.muted ?? null, largeur: Math.round(
+      document.querySelector(".bq-voix-r")?.getBoundingClientRect().width ?? 0) };
+  });
+  dire(avantAppui.muet === true, "au repos le rond de la page est muet");
+  await q.$eval(".bq-voix-t", (e) => e.scrollIntoView({ block: "center", behavior: "instant" }));
   await q.waitForTimeout(300);
-  await q.click(".ap-voix-t.film");
+  await q.click(".bq-voix-t");
   await q.waitForTimeout(900);
   const grand = await q.evaluate(() => {
-    const d = document.querySelector(".ap-film");
+    const d = document.querySelector(".bq-voix.ouverte");
     const v = d?.querySelector("video");
     return {
       ouvert: !!d,
       // ICI LE SON EST PERMIS : c'est une demande, pas une interruption.
       muet: v?.muted ?? null,
-      commandes: v?.hasAttribute("controls") ?? null,
-      qui: d?.querySelector(".ap-film-q b")?.textContent.trim() ?? "",
+      boucle: v?.loop ?? null,
+      largeur: Math.round(
+        document.querySelector(".bq-voix-r")?.getBoundingClientRect().width ?? 0),
+      qui: document.querySelector(".bq-voix-n")?.textContent.trim() ?? "",
     };
   });
-  console.log(`  en grand : ${grand.qui}`);
+  console.log(`  en grand : ${grand.qui} · ${avantAppui.largeur} → ${grand.largeur} px`);
   dire(grand.ouvert, "l'appui l'ouvre en grand");
   dire(grand.muet === false, "avec le son");
-  dire(grand.commandes === true, "et les commandes");
-  dire(/boucher/.test(grand.qui), `elle dit qui c'est (${grand.qui})`);
+  dire(grand.largeur > avantAppui.largeur + 60,
+    `et il grandit vraiment (${avantAppui.largeur} → ${grand.largeur} px)`);
+  dire(grand.boucle === true, "sans cesser de tourner en boucle");
+  dire(/,/.test(grand.qui), `elle dit qui c'est (${grand.qui})`);
   await q.screenshot({ path: "/tmp/voix-grand.png" });
   await c4.close();
 }
