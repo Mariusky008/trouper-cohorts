@@ -154,6 +154,19 @@ export async function poserVernis(opts: {
   photo: string;
   vernis: Vernis;
   largeur?: number;
+  /**
+   * LE MODE REPÈRES — pour que la capture d'écran d'un testeur DISE quelque chose.
+   *
+   * IL EXISTE PARCE QUE DEUX CORRECTIONS DE SUITE ONT RATÉ. Elles ont raté pour
+   * la même raison : je réglais une géométrie sur une photo que je n'avais pas,
+   * à partir d'images d'écran où l'on voit le résultat mais aucune des mesures
+   * qui l'ont produit. Une capture ne disait donc jamais POURQUOI.
+   *
+   * Avec ce mode, elle le dit : les points du modèle, l'axe de chaque doigt, le
+   * bout mesuré, et le contour calculé de l'ongle. Un aller-retour au lieu de
+   * cinq.
+   */
+  reperes?: boolean;
 }): Promise<PoseOngles> {
   const modele = await chargerLaMain();
   /**
@@ -228,6 +241,7 @@ export async function poserVernis(opts: {
   };
 
   const alpha = new Float32Array(L * H);
+  const traces: { a: {x:number;y:number}; b: {x:number;y:number}; Ld: number; W: number; bout: number; T0: number; T1: number; RW: number; fond: boolean }[] = [];
   const longueur = opts.vernis.longueur ?? LONGUEURS.moyenne;
   let ongles = 0;
 
@@ -343,27 +357,78 @@ export async function poserVernis(opts: {
     if (!(W > 0.05)) continue;
 
     /**
-     * ON MESURE TOUT SUR LA LARGEUR DU DOIGT, PLUS SUR SA LONGUEUR.
+     * NI LA LONGUEUR SEULE, NI LA LARGEUR SEULE : LE BOUT DU DOIGT, MESURÉ.
      *
-     * CE QUI A RATÉ SUR UN VRAI TÉLÉPHONE, ET LA CAUSE EST GÉOMÉTRIQUE : tout
-     * était calé sur la distance articulation→bout. Or CETTE DISTANCE RACCOURCIT
-     * EN PROJECTION dès que la main n'est pas de profil — une main posée à plat,
-     * photographiée d'au-dessus, écrase ses dernières phalanges. Les ongles
-     * dessinés devenaient donc petits et remontaient vers les articulations,
-     * exactement ce qu'on a vu : « les ovales sont posés sous les ongles ».
+     * DEUX ÉCHECS SUR UN VRAI TÉLÉPHONE, ET ILS SE RÉPONDENT :
      *
-     * LA LARGEUR DU DOIGT, ELLE, NE S'ÉCRASE PAS de la même façon : elle est
-     * perpendiculaire à l'axe autour duquel le doigt bascule. C'est donc une
-     * bien meilleure règle, et elle est stable d'une pose à l'autre.
+     *   1. Tout calé sur la distance articulation→bout. Cette distance RACCOURCIT
+     *      EN PROJECTION quand la main est vue d'au-dessus : les ongles devenaient
+     *      petits et remontaient sur les articulations.
+     *   2. Tout calé sur la largeur du doigt, qui elle ne raccourcit pas. Sur une
+     *      main très écrasée, la largeur vaut alors DEUX FOIS la phalange
+     *      projetée, et l'ongle partait au-delà du doigt, sur le tapis du bureau.
      *
-     * Deux rapports, lus sur photo et non devinés : la cuticule est à un peu
-     * plus d'une demi-largeur de l'articulation, et un ongle est à peu près aussi
-     * long que le doigt est large.
+     * LA LEÇON EST QU'AUCUNE PROPORTION NE SURVIT SEULE À LA PERSPECTIVE. Il faut
+     * un point mesuré dans l'image, et il y en a un : LE BOUT DU DOIGT. Droit
+     * devant lui il n'y a plus de doigt, donc on peut le trouver — et il ne
+     * dépend ni de l'angle de la main, ni de la couleur de l'ongle.
+     *
+     * L'ONGLE FINIT AU BOUT DU DOIGT et remonte d'une longueur d'ongle. La pose
+     * du salon, elle, DÉPASSE — c'est ce qu'elle vend.
      */
-    const LARG = 2 * W;                 // la largeur du doigt, en unités de Ld
-    const T0 = 0.55 * LARG;
-    const ONGLE = 1.15 * LARG;
-    const T1 = T0 + ONGLE * longueur;
+    const en2 = (t: number, o: number) => ({
+      X: a.x + ux * t * Ld + nx * o * Ld,
+      Y: a.y + uy * t * Ld + ny * o * Ld,
+    });
+
+    // Le fond : de part et d'autre du doigt, là où il n'y a plus de doigt.
+    const ech: number[][] = [];
+    for (const o of [-2.1, -1.7, 1.7, 2.1]) {
+      for (const t of [0.2, 0.6, 1.0]) {
+        const g = en2(t, o * W);
+        if (dedans(g.X, g.Y)) ech.push(lire(g.X, g.Y));
+      }
+    }
+    let fond: number[] | null = null;
+    if (ech.length >= 6) {
+      const med = (k: number) => {
+        const v = ech.map((e) => e[k]).sort((x, y) => x - y);
+        return v[v.length >> 1];
+      };
+      const f = [med(0), med(1), med(2)];
+      // S'il ressemble à la peau, ce n'est pas le fond : c'est un autre doigt.
+      if (ecart(mes.peau, f) > 26) fond = f;
+    }
+
+    /**
+     * L'ANCRE EST LE BOUT DU DOIGT DE MEDIAPIPE, ET C'EST LUI LE PLUS FIABLE.
+     *
+     * On a essayé de le mesurer dans l'image, en marchant le long du doigt
+     * jusqu'au fond. LE MODE REPÈRES A MONTRÉ QUE ÇA NE TIENT PAS : sur
+     * l'auriculaire de la photo de référence, la marche est partie jusqu'à la
+     * butée — deux fois la phalange — et dessinait un ongle dans le vide. Un
+     * ongle rose clair sur un fond bleu clair ne se distingue pas assez pour
+     * qu'on arrête une marche dessus.
+     *
+     * LE POINT DU MODÈLE, LUI, N'EST JAMAIS ABSURDE. Il est approximatif — posé
+     * sur la chair, un ongle long le dépasse — mais il est toujours SUR le
+     * doigt, et c'est ce qui compte le plus après deux essais partis ailleurs.
+     * Mieux vaut une pose un peu courte qu'une pose sur le tapis du bureau.
+     */
+    const bout = 1;
+
+    /**
+     * LA LONGUEUR DE L'ONGLE, BORNÉE DES DEUX CÔTÉS.
+     *
+     * Environ une largeur de doigt — c'est le rapport le plus stable — mais
+     * JAMAIS plus que la phalange visible. C'est cette borne qui manquait quand
+     * les ongles sont partis au-delà des doigts : sur une main très écrasée, la
+     * largeur vaut deux fois la phalange projetée, et sans borne l'ongle sortait
+     * du doigt.
+     */
+    const ONGLE = Math.min(1.15 * 2 * W, 0.85);
+    const T1 = bout + (longueur - 1) * ONGLE;
+    const T0 = T1 - ONGLE;
     const RW = W * 0.86;
     const bx0 = Math.max(0, Math.min(a.x, b.x) - 2 * Ld) | 0;
     const by0 = Math.max(0, Math.min(a.y, b.y) - 2 * Ld) | 0;
@@ -384,12 +449,19 @@ export async function poserVernis(opts: {
         const demi = RW * Math.sqrt(Math.max(0, 1 - Math.pow(Math.abs(2 * u - 1), 2.8)));
         const r = Math.abs(o) / Math.max(1e-6, demi);
         if (r > 1) continue;
+        // ON NE PEINT PAS LE FOND, ET C'EST LA GARDE QUI REND L'ABSURDE
+        // IMPOSSIBLE. Trois ovales bruns posés sur un tapis de bureau, c'est ce
+        // qu'on a vu quand la géométrie s'est trompée. Au-delà du bout du doigt
+        // on accepte — c'est le dépassement de la pose, il est censé être dans
+        // le vide — mais en deçà, un pixel qui est du fond n'est pas un ongle.
+        if (fond && t < bout && ecart(lire(X, Y), fond) < 26) continue;
         const i = Y * L + X;
         alpha[i] = Math.max(alpha[i], r > 0.88 ? (1 - r) / 0.12 : 1);
         touche++;
       }
     }
     if (touche > 0) ongles++;
+    if (opts.reperes) traces.push({ a, b, Ld, W, bout, T0, T1, RW, fond: !!fond });
   }
 
   if (!ongles) {
@@ -469,6 +541,68 @@ export async function poserVernis(opts: {
     }
   }
   ctx.putImageData(im, 0, 0);
+
+  if (opts.reperes) {
+    const e2 = Math.max(1, L / 380);
+    ctx.lineWidth = 2 * e2;
+    ctx.font = `bold ${11 * e2}px system-ui, sans-serif`;
+    for (const t of traces) {
+      const ux = (t.b.x - t.a.x) / t.Ld;
+      const uy = (t.b.y - t.a.y) / t.Ld;
+      const nx = -uy;
+      const ny = ux;
+      const pt = (u: number, o: number) => [
+        t.a.x + ux * u * t.Ld + nx * o * t.Ld,
+        t.a.y + uy * u * t.Ld + ny * o * t.Ld,
+      ];
+      // le contour calcule de l'ongle
+      ctx.strokeStyle = "#00E5FF";
+      ctx.beginPath();
+      for (let k = 0; k <= 60; k++) {
+        const u = t.T0 + ((t.T1 - t.T0) * k) / 60;
+        const v = (u - t.T0) / (t.T1 - t.T0);
+        const demi = t.RW * Math.sqrt(Math.max(0, 1 - Math.pow(Math.abs(2 * v - 1), 2.8)));
+        const [x1, y1] = pt(u, demi);
+        if (k === 0) ctx.moveTo(x1, y1);
+        else ctx.lineTo(x1, y1);
+      }
+      for (let k = 60; k >= 0; k--) {
+        const u = t.T0 + ((t.T1 - t.T0) * k) / 60;
+        const v = (u - t.T0) / (t.T1 - t.T0);
+        const demi = t.RW * Math.sqrt(Math.max(0, 1 - Math.pow(Math.abs(2 * v - 1), 2.8)));
+        const [x1, y1] = pt(u, -demi);
+        ctx.lineTo(x1, y1);
+      }
+      ctx.closePath();
+      ctx.stroke();
+      // l'axe, l'articulation, le bout du modele, le bout mesure
+      ctx.strokeStyle = "#FF2D9B";
+      ctx.beginPath();
+      ctx.moveTo(t.a.x, t.a.y);
+      ctx.lineTo(t.b.x, t.b.y);
+      ctx.stroke();
+      const rond = (x: number, y: number, col: string) => {
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.arc(x, y, 4 * e2, 0, 7);
+        ctx.fill();
+      };
+      rond(t.a.x, t.a.y, "#FF2D9B");
+      rond(t.b.x, t.b.y, "#FFD400");
+      const [bx, by] = pt(t.bout, 0);
+      rond(bx, by, t.fond ? "#00FF88" : "#FF5A3C");  // vert : le fond a ete lu, donc le decoupage protege
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillText(`W${t.W.toFixed(2)} b${t.bout.toFixed(2)}`, t.a.x + 6 * e2, t.a.y - 6 * e2);
+    }
+    ctx.fillStyle = "rgba(0,0,0,.6)";
+    ctx.fillRect(0, 0, L, 22 * e2);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillText(
+      `${L}x${H} · ${ongles} ongles · rose=articulation jaune=bout-modele vert=bout-mesure`,
+      6 * e2,
+      15 * e2,
+    );
+  }
 
   return { image: c.toDataURL("image/jpeg", 0.92), ms: Date.now() - t0, ongles };
 }

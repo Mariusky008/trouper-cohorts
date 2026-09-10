@@ -1056,7 +1056,16 @@ function Essai({
       // première fois : dire « ton fantôme prépare » pendant ce temps-là serait
       // mentir sur ce qui se passe, et sur ce que ça coûte à la cliente en 4G.
       setTelecharge(!laMainEstPrete());
-      poserVernis({ photo: laPhoto, vernis: piece.vernis })
+      poserVernis({
+        photo: laPhoto,
+        vernis: piece.vernis,
+        // `?reperes=1` DANS L'ADRESSE. Rien dans l'interface : c'est un outil de
+        // mise au point pour comprendre une photo qu'on n'a pas sous la main, pas
+        // une fonctionnalité. Voir `poserVernis`.
+        reperes:
+          typeof window !== "undefined" &&
+          new URLSearchParams(window.location.search).get("reperes") === "1",
+      })
         .then((p) => finir({ image: p.image, ms: p.ms, souci: p.ongles ? undefined : p.souci }))
         // UN ÉCHEC MONTRE VOTRE PHOTO ET LE DIT — JAMAIS LE CATALOGUE.
         // C'est ce `catch` qui a fait le plus de dégâts : il retombait sur

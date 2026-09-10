@@ -536,6 +536,23 @@ export const MURS: Mur[] = [
       // Rien à placer : c'est le modèle qui trouve les doigts. Voir `Gabarit`.
       gabarit: { forme: "main" },
       pieces: [
+        /**
+         * L'ORDRE DES COULEURS EST UN CHOIX, PAS UN HASARD.
+         *
+         * « On ne voit pas les couleurs. » Le nude était en deuxième, donc c'est
+         * lui qui a été essayé — et un nude sur une peau claire est INVISIBLE PAR
+         * CONSTRUCTION : c'est ce qu'on lui demande d'être. Impossible de juger
+         * un placement avec, alors que c'est justement ce qu'on cherche à juger.
+         * Les deux couleurs franches passent devant ; le nude reste, en dernier,
+         * parce que c'est un vrai produit.
+         */
+        {
+          id: "p-nuit",
+          nom: "Bleu nuit, pose longue",
+          prix: "52 €",
+          photo: "/direct/pose-ongles.jpg",
+          vernis: { couleur: "#1E2E5A", longueur: 1.9 },
+        },
         {
           id: "p-bordeaux",
           nom: "Bordeaux, pose moyenne",
@@ -549,13 +566,6 @@ export const MURS: Mur[] = [
           prix: "32 €",
           photo: "/direct/avis-ongles.jpg",
           vernis: { couleur: "#C89684", longueur: 1 },
-        },
-        {
-          id: "p-nuit",
-          nom: "Bleu nuit, pose longue",
-          prix: "52 €",
-          photo: "/direct/pose-ongles.jpg",
-          vernis: { couleur: "#1E2E5A", longueur: 1.9 },
         },
         // LE MOTIF RESTE « BIENTÔT », ET C'EST LA LIMITE ÉCRITE DE `ongles.ts` :
         // on pose une couleur, pas un dessin. Un motif demande de savoir où est
