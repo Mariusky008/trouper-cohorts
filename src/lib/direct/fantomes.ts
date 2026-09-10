@@ -541,21 +541,21 @@ export const MURS: Mur[] = [
           nom: "Bordeaux, pose moyenne",
           prix: "45 €",
           photo: "/direct/pose-ongles.jpg",
-          vernis: { couleur: "#8E1B3F", longueur: 1.22 },
+          vernis: { couleur: "#8E1B3F", longueur: 1.4 },
         },
         {
           id: "p-nude",
           nom: "Nude mat, pose courte",
           prix: "32 €",
           photo: "/direct/avis-ongles.jpg",
-          vernis: { couleur: "#C89684", longueur: 0.95 },
+          vernis: { couleur: "#C89684", longueur: 1 },
         },
         {
           id: "p-nuit",
           nom: "Bleu nuit, pose longue",
           prix: "52 €",
           photo: "/direct/pose-ongles.jpg",
-          vernis: { couleur: "#1E2E5A", longueur: 1.55 },
+          vernis: { couleur: "#1E2E5A", longueur: 1.9 },
         },
         // LE MOTIF RESTE « BIENTÔT », ET C'EST LA LIMITE ÉCRITE DE `ongles.ts` :
         // on pose une couleur, pas un dessin. Un motif demande de savoir où est

@@ -51,10 +51,11 @@ export type Vernis = {
   /** En hexadécimal, `#RRGGBB`. */
   couleur: string;
   /**
-   * LA LONGUEUR DE LA POSE, en fraction de la dernière phalange.
+   * DE COMBIEN LA POSE DÉPASSE LE BOUT DU DOIGT.
    *
    * Ce n'est pas un réglage technique, c'est CE QUE LE SALON VEND : une pose
-   * courte, moyenne ou longue. Elle est donc écrite sur la pièce, pas devinée.
+   * courte, moyenne ou longue. Voir `LONGUEURS` pour l'échelle, et pourquoi
+   * c'est un dépassement et non une position.
    */
   longueur?: number;
 };
@@ -67,20 +68,27 @@ export type PoseOngles = {
   souci?: string;
 };
 
-/** Court, moyen, long — les trois longueurs qu'un salon propose. */
-export const LONGUEURS = { courte: 0.95, moyenne: 1.22, longue: 1.55 } as const;
-
-/** Où commence l'ongle sur la dernière phalange. Voir `POURQUOI PAS LE BOUT`. */
-const BASE = 0.47;
+/**
+ * COURT, MOYEN, LONG — ET C'EST UN DÉPASSEMENT, PAS UNE POSITION.
+ *
+ * 1 veut dire « au ras du doigt » ; 1,4 veut dire « quatre dixièmes d'ongle en
+ * plus ». C'est ce qu'une prothésiste vend, et ça reste juste sur n'importe
+ * quelle main — contrairement à une position absolue, qui ne valait que pour la
+ * main sur laquelle elle avait été calibrée.
+ */
+export const LONGUEURS = { courte: 1, moyenne: 1.4, longue: 1.9 } as const;
 
 /**
- * POURQUOI PAS LE BOUT DU DOIGT DE MEDIAPIPE.
+ * CE QUE MEDIAPIPE DONNE, ET CE QU'IL NE FAUT PAS LUI DEMANDER.
  *
- * Le point « bout du doigt » (8, 12, 16, 20) est posé sur la CHAIR, pas au bout
- * de l'ongle — un ongle un peu long le dépasse largement. Mesuré sur photo : la
- * cuticule tombe vers 0,47 de la distance articulation→bout, et une pose moyenne
- * s'arrête vers 1,74. Ces deux nombres sont anatomiques, donc stables d'une main
- * à l'autre, ce qui est exactement ce qu'il faut pour s'en servir.
+ * Il donne l'ARTICULATION et le BOUT de chaque doigt, très fiablement, et la
+ * DIRECTION du doigt s'en déduit. C'est tout ce qu'on lui prend.
+ *
+ * ON NE LUI PREND PAS UNE ÉCHELLE. La distance articulation→bout raccourcit en
+ * projection dès que la main bascule — une main à plat vue d'au-dessus l'écrase.
+ * S'en servir comme règle a produit, sur un vrai téléphone, des ongles trop
+ * petits remontés sur les articulations. L'échelle vient de la LARGEUR du doigt,
+ * mesurée dans l'image : voir plus bas.
  */
 const DOIGTS: [number, number, number][] = [
   [6, 7, 8],
@@ -147,8 +155,17 @@ export async function poserVernis(opts: {
   vernis: Vernis;
   largeur?: number;
 }): Promise<PoseOngles> {
-  const t0 = Date.now();
   const modele = await chargerLaMain();
+  /**
+   * LE CHRONOMÈTRE PART APRÈS LE MODÈLE, ET PAS AVANT.
+   *
+   * Il partait avant : l'écran affichait « calculé sur votre téléphone en
+   * 5451 ms » alors que cinq secondes sur les cinq et demie étaient le
+   * TÉLÉCHARGEMENT du moteur, une fois pour toutes. C'est un mensonge dans
+   * l'autre sens — il fait passer pour lent un calcul qui ne l'est pas, et il le
+   * fera à chaque fois alors que l'attente, elle, n'arrive qu'une fois.
+   */
+  const t0 = Date.now();
 
   const img = await new Promise<HTMLImageElement>((ok, non) => {
     const i = new Image();
@@ -223,7 +240,7 @@ export async function poserVernis(opts: {
    * VOISINES : quand un doigt refuse de se mesurer, la médiane des autres est
    * une bien meilleure réponse que le silence.
    */
-  const mesures = new Map<number, { W: number; peau: number[] }>();
+  const mesures = new Map<number, { W: number; peau: number[]; Ld: number }>();
 
   for (const [PIP, DIP, TIP] of DOIGTS) {
     const a = pts[DIP];
@@ -284,11 +301,32 @@ export async function poserVernis(opts: {
       }
     }
     larg.sort((u, v) => u - v);
-    mesures.set(DIP, { W: Math.min(0.8, larg[larg.length >> 1]), peau });
+    mesures.set(DIP, { W: Math.min(0.8, larg[larg.length >> 1]), peau, Ld });
   }
 
-  const bonnes = [...mesures.values()].map((v) => v.W).filter((w) => w >= 0.15).sort((a, b) => a - b);
-  const secours = bonnes.length ? bonnes[bonnes.length >> 1] * 0.82 : 0;
+  /**
+   * LES LARGEURS SE COMPARENT EN PIXELS, PAS EN FRACTIONS DE PHALANGE.
+   *
+   * Elles étaient comparées en fractions — or la phalange n'a pas la même
+   * longueur projetée d'un doigt à l'autre, donc deux doigts de la même largeur
+   * réelle donnaient deux fractions très différentes. Sur la photo de référence :
+   * 0,43 · 0,31 · 0,43 · 0,16 pour une seule main. Aucune main n'a un auriculaire
+   * trois fois plus fin que son index.
+   *
+   * ET LES DOIGTS D'UNE MAIN SE RESSEMBLENT. On ramène donc chaque mesure dans
+   * une fourchette autour de la médiane des quatre : assez large pour que
+   * l'auriculaire reste plus fin, assez serrée pour qu'une mesure ratée ne
+   * produise plus un ongle minuscule.
+   */
+  const enPx = [...mesures.values()].map((v) => v.W * v.Ld).filter((w) => w > 4).sort((a, b) => a - b);
+  const medPx = enPx.length ? enPx[enPx.length >> 1] : 0;
+  if (medPx > 0) {
+    for (const m of mesures.values()) {
+      const px = m.W * m.Ld;
+      const borne = Math.max(medPx * 0.74, Math.min(medPx * 1.22, px > 4 ? px : medPx));
+      m.W = borne / m.Ld;
+    }
+  }
 
   for (const [, DIP, TIP] of DOIGTS) {
     const mes = mesures.get(DIP);
@@ -301,11 +339,31 @@ export async function poserVernis(opts: {
     const uy = (b.y - a.y) / Ld;
     const nx = -uy;
     const ny = ux;
-    const W = mes.W >= 0.15 ? mes.W : secours;
-    if (W < 0.1) continue;
+    const W = mes.W;
+    if (!(W > 0.05)) continue;
 
-    const T0 = BASE;
-    const T1 = BASE + longueur;
+    /**
+     * ON MESURE TOUT SUR LA LARGEUR DU DOIGT, PLUS SUR SA LONGUEUR.
+     *
+     * CE QUI A RATÉ SUR UN VRAI TÉLÉPHONE, ET LA CAUSE EST GÉOMÉTRIQUE : tout
+     * était calé sur la distance articulation→bout. Or CETTE DISTANCE RACCOURCIT
+     * EN PROJECTION dès que la main n'est pas de profil — une main posée à plat,
+     * photographiée d'au-dessus, écrase ses dernières phalanges. Les ongles
+     * dessinés devenaient donc petits et remontaient vers les articulations,
+     * exactement ce qu'on a vu : « les ovales sont posés sous les ongles ».
+     *
+     * LA LARGEUR DU DOIGT, ELLE, NE S'ÉCRASE PAS de la même façon : elle est
+     * perpendiculaire à l'axe autour duquel le doigt bascule. C'est donc une
+     * bien meilleure règle, et elle est stable d'une pose à l'autre.
+     *
+     * Deux rapports, lus sur photo et non devinés : la cuticule est à un peu
+     * plus d'une demi-largeur de l'articulation, et un ongle est à peu près aussi
+     * long que le doigt est large.
+     */
+    const LARG = 2 * W;                 // la largeur du doigt, en unités de Ld
+    const T0 = 0.55 * LARG;
+    const ONGLE = 1.15 * LARG;
+    const T1 = T0 + ONGLE * longueur;
     const RW = W * 0.86;
     const bx0 = Math.max(0, Math.min(a.x, b.x) - 2 * Ld) | 0;
     const by0 = Math.max(0, Math.min(a.y, b.y) - 2 * Ld) | 0;
