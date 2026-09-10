@@ -70,6 +70,11 @@
 // marché, avec ce qui va avec — signalement, retrait, identification du vendeur.
 // La liste des verbes est fermée POUR ÇA : un champ libre laisserait la vente
 // entrer par la phrase.
+//
+// `import type` ET PAS `import` : `essai.ts` vit dans le navigateur — il touche
+// `document` — alors que ce fichier est lu aussi par le serveur. Un import de
+// TYPE disparaît à la compilation et ne fait donc entrer aucun code.
+import type { Gabarit } from "./essai";
 
 /** Ce que le lieu propose de déposer. Décide de l'écran, et de lui seul. */
 export type Depot = "annonce" | "essai";
@@ -206,18 +211,28 @@ export type Fantome = {
  * neutre. `rendu` est ce que ça donne SUR LA PHOTO DU CLIENT, et c'est la seule
  * chose qui compte : sans lui, on montre un catalogue de plus.
  *
- * `bientot` DIT LA VÉRITÉ PLUTÔT QUE DE LA MAQUILLER. Une pièce dont on n'a pas
- * encore le rendu se voit, se lit, et ne se choisit pas. La tentation était de
- * fabriquer le rendu manquant en collant l'image détourée sur le poignet : essai
- * fait, résultat sans appel — le bijou FLOTTE. Il ne suit ni la courbe du bras,
- * ni sa lumière, ni son ombre, et ça se voit en un dixième de seconde. Montrer
- * ça reviendrait à prouver le contraire de ce qu'on veut prouver.
+ * `decoupe` EST CE QUI A REMPLACÉ LE RENDU TOUT FAIT, et c'est le changement le
+ * plus important de cette version. Avant, chaque pièce exigeait une photo du
+ * résultat, prise à l'avance, sur un bras précis : impossible à tenir pour un
+ * commerçant qui publie UNE PIÈCE PAR JOUR. Maintenant elle n'exige que sa
+ * propre découpe — le PNG détouré de la photo qu'il a prise ce matin — et le
+ * rendu se calcule dans le téléphone du client, sur SA photo à lui.
+ *
+ * `bientot` DIT LA VÉRITÉ PLUTÔT QUE DE LA MAQUILLER, et il reste. La première
+ * tentative de poser l'image détourée sur le poignet avait donné un bijou qui
+ * FLOTTE, et les deux pièces concernées avaient été marquées ainsi. Ce qui
+ * manquait a été trouvé depuis — l'arc arrière doit passer DERRIÈRE le bras, et
+ * la pièce doit prendre la lumière de la peau — donc elles s'essaient. Ce qui
+ * n'a pas de découpe, lui, se marque toujours.
  */
 export type Piece = {
   id: string;
   nom: string;
   prix: string;
   photo: string;
+  /** Le PNG détouré de la pièce. C'est lui qu'on pose sur la photo du client. */
+  decoupe?: string;
+  /** Un rendu tout prêt, quand il en existe un de meilleur que le calcul. */
   rendu?: string;
   bientot?: boolean;
 };
@@ -259,6 +274,18 @@ export type Mur = {
      * afficher deux images l'une après l'autre.
      */
     avant: string;
+    /**
+     * LE GABARIT — CE QUE L'ÉCRAN DE PRISE DE VUE A DEMANDÉ.
+     *
+     * IL N'EST PAS UNE CONTRAINTE IMPOSÉE AU CLIENT, C'EST CE QUI REND L'ESSAI
+     * GRATUIT. Parce que l'écran a demandé de mettre le poignet LÀ, on sait où
+     * il est ; parce qu'on sait où il est, on n'a pas besoin d'un modèle pour le
+     * chercher ; et parce qu'on n'a pas besoin d'un modèle, l'essai ne coûte
+     * rien, ne s'envoie nulle part et sort instantanément.
+     *
+     * Sans gabarit, la pièce n'est pas essayable : voir `bientot`.
+     */
+    gabarit?: Gabarit;
     pieces: Piece[];
   };
   /**
@@ -582,23 +609,37 @@ export const MURS: Mur[] = [
     humeurs: ["hesite", "offrir", "decouvre"],
     verbes: [],
     /**
-     * LE MÉTIER QU'IL AVAIT DÉCRIT, ET LA SEULE PAIRE QUI DÉMONTRE QUELQUE CHOSE.
+     * LE MÉTIER QU'IL AVAIT DÉCRIT, ET CE QUI A CHANGÉ DEPUIS.
      *
      * `poignet-avant.jpg` et `poignet-bracelet.jpg` sont LE MÊME BRAS, la même
      * lumière, le même fond — le premier est un cadrage du second, pris avant le
-     * bijou. C'est la seule condition pour qu'un avant-après prouve autre chose
-     * que la capacité à afficher deux images.
+     * bijou. C'est la seule paire vraie du dépôt, et elle reste la référence.
      *
-     * LES DEUX AUTRES PIÈCES SONT MARQUÉES « BIENTÔT », et c'est un aveu écrit
-     * plutôt qu'un trucage. On a essayé de fabriquer leur rendu en posant l'image
-     * détourée sur le poignet : le bijou flotte, il ne suit ni la courbe du bras
-     * ni sa lumière, et ça se voit en un dixième de seconde. Il faut, pour
-     * chacune, une VRAIE paire — le même poignet nu, puis portant la pièce.
+     * LES DEUX AUTRES PIÈCES ÉTAIENT MARQUÉES « BIENTÔT », ET ELLES NE LE SONT
+     * PLUS. L'aveu était honnête : le bijou flottait. Ce qui manquait a été
+     * trouvé — l'arc arrière doit passer DERRIÈRE le bras, et la pièce doit
+     * prendre la lumière de la peau. Leur rendu n'est donc plus une photo prise
+     * à l'avance : il se CALCULE, dans le téléphone, sur la photo du client.
+     *
+     * ET C'EST CE QUI REND LA MÉCANIQUE TENABLE. Une pièce par jour et par
+     * commerce, ça n'a jamais pu vouloir dire une séance photo par jour : ça veut
+     * dire une photo du produit sur un fond uni, détourée en cent millisecondes,
+     * et posée ensuite sur n'importe quel poignet.
      */
     essai: {
       partie: "votre poignet",
       consigne: "Posez votre poignet à plat, à la lumière du jour, sans montre.",
       avant: "/direct/poignet-avant.jpg",
+      // Mesuré sur `poignet-avant.jpg` : le bras y court à environ trente
+      // degrés, et il occupe un peu moins de la moitié de la largeur.
+      gabarit: {
+        forme: "cylindre",
+        axe: [
+          [0.158, 0.649],
+          [0.789, 0.321],
+        ],
+        diametre: 0.52,
+      },
       pieces: [
         {
           id: "j-chaine",
@@ -612,8 +653,24 @@ export const MURS: Mur[] = [
           nom: "Bracelet rivière",
           prix: "240 €",
           photo: "/direct/bracelet-seul.png",
-          bientot: true,
+          decoupe: "/direct/decoupe-bracelet.png",
         },
+        /**
+         * CELLE-CI RESTE « BIENTÔT », ET LA RAISON A CHANGÉ.
+         *
+         * Ce n'est plus le calcul qui manque : sa découpe existe
+         * (`decoupe-collier.png`, produite par notre propre détourage) et le
+         * composite sait la poser. CE QUI MANQUE EST UNE PHOTO DE COU.
+         *
+         * On l'a essayée sur le poignet du mur — le seul gabarit disponible — et
+         * le résultat est sans appel : un collier drapé sur une main. Un essai
+         * n'est juste que si la partie du corps est la bonne, et un gabarit de
+         * poignet ne peut pas mentir sur ce point.
+         *
+         * `cou-nu.jpg` LA DÉBLOQUE, ET RIEN D'AUTRE. C'est déjà la demande écrite
+         * dans `public/direct/LISEZ-MOI.md` ; elle vaut maintenant beaucoup moins
+         * cher qu'avant, puisqu'il ne faut plus la PAIRE — juste le cou nu.
+         */
         {
           id: "j-collier",
           nom: "Collier pierre bleue",
@@ -702,24 +759,31 @@ export const MURS: Mur[] = [
     humeurs: ["offrir", "decouvre", "hesite"],
     verbes: [],
     /**
-     * L'ESSAI CHEZ SOI, ET C'EST LE CAS LE PLUS FACILE À TENIR.
+     * L'ESSAI CHEZ SOI, ET C'EST LÀ QUE L'EFFET RECHERCHÉ SE TROUVE.
      *
-     * Un objet POSÉ sur une surface se compose bien : il a une base, une ombre
-     * de contact et rien à épouser. Un bijou doit suivre une courbe, une lumière
-     * et une peau — c'est pour ça que celui-ci fonctionne avec une pièce montée à
-     * la main et que l'autre attend une vraie photo.
+     * UN OBJET POSÉ SUR UNE SURFACE SE COMPOSE VRAIMENT BIEN. Il a une base, une
+     * ombre couchée, et rien à épouser : la lumière du salon prend dessus,
+     * l'ombre le pose sur le bois, et le résultat se tient. Mesuré, pas supposé.
+     *
+     * ET C'EST LA CATÉGORIE LA PLUS LARGE, PAS UN CAS PARTICULIER : tout ce qui
+     * se met dans un lieu plutôt que sur un corps — déco, luminaire, plante,
+     * mobilier, un plat sur une nappe. L'essai gratuit y couvre tout le métier.
      */
     essai: {
       partie: "votre table de salon",
       consigne: "Reculez d’un pas et cadrez la table entière, de trois quarts.",
       avant: "/direct/table-salon.jpeg",
+      // Le pied se pose au centre gauche du plateau, devant les livres — mesuré
+      // sur `table-salon.jpeg`, bord avant compris : un objet à cheval sur
+      // l'arête de la table se voit tout de suite.
+      gabarit: { forme: "plan", pied: [0.365, 0.455], hauteur: 0.235, lumiere: -0.7 },
       pieces: [
         {
           id: "c-trio",
           nom: "Trio bougies & houx",
           prix: "34 €",
           photo: "/direct/bougie-seule.png",
-          rendu: "/direct/table-salon-bougie.jpg",
+          decoupe: "/direct/decoupe-bougies.png",
         },
         {
           id: "c-fleurs",

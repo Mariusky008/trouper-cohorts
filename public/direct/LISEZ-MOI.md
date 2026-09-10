@@ -289,30 +289,47 @@ ce qui était demandé, et ils ont été renommés à l'arrivée : `bougie-seule
 | `poignet-avant.jpg` | **Fabriqué ici**, par recadrage de `poignet-bracelet.jpg` sur la partie sans bijou. C'est l'AVANT de l'essai chez la bijoutière. |
 | `poignet-bracelet.jpg` | L'APRÈS. **Le même bras, la même lumière, le même fond** — c'est la seule condition pour qu'un avant-après démontre quelque chose. |
 | `table-salon.jpeg` | L'AVANT de l'essai chez la cirière : la table vide. |
-| `table-salon-bougie.jpg` | **Fabriqué ici**, en posant `bougie-seule.png` sur la table avec une ombre de contact. Un objet posé sur une surface se compose bien : il a une base et rien à épouser. |
+| `table-salon-bougie.jpg` | **Fabriqué ici** à la main, avant que le calcul existe. L'écran ne s'en sert plus : il compose la même image tout seul, en direct. Gardé comme point de comparaison. |
 | `vinyles-a-donner.jpeg` | La carte « je donne 20 vinyles » sur le mur de Margot. |
 | `billets-concert.jpg` | La carte « je cherche 2 places ». |
 | `poignet-nu.jpg` | Une carte du mur de la bijoutière. Ce n'est pas un poignet nu — c'est un buste, bras croisés — donc il ne sert pas à l'essai. |
 
-### Ce qui manque encore, et ce n'est pas une préférence
+### Ce qui a changé : on n'a plus besoin de paires
 
-`bracelet-seul.png` et `collier-seul.png` sont deux **découpes de produit
-impeccables**, et elles ne suffisent pas. Essai fait, résultat sans appel :
-poser une découpe sur un poignet donne un bijou **qui flotte**. Il ne suit ni la
-courbe du bras, ni sa lumière, ni son ombre, et ça se voit en un dixième de
-seconde. Le montrer prouverait le contraire de ce qu'on veut prouver.
+Cette section demandait des **paires** — le même poignet nu puis portant le
+bijou, la même table vide puis garnie — parce que poser une découpe sur un
+poignet donnait un bijou **qui flottait**, et qu'il fallait donc photographier
+chaque résultat à l'avance.
 
-Ces deux pièces sont donc marquées **« Bientôt essayable »** à l'écran — visibles,
-lisibles, non sélectionnables. Pour les débloquer, il faut pour **chacune** :
+**Ce n'est plus vrai, et ça change ce qu'on doit demander.** Le rendu se calcule
+maintenant dans le téléphone, sur la photo du client, en une soixantaine de
+millisecondes (`src/lib/direct/essai.ts`). Une pièce n'a donc plus besoin de sa
+photo de résultat : elle a besoin de **sa propre découpe**, une seule fois.
 
-| Fichier | Ce qu'il montre |
+Ce qui manquait au bijou n'était pas une photo, c'étaient deux choses : l'arc
+arrière doit passer **derrière** le bras, et la pièce doit prendre **la lumière
+de la peau**. Les deux sont faites.
+
+#### Les découpes fabriquées ici
+
+| Fichier | D'où il vient |
 |---|---|
-| `poignet-riviere.jpg` | Le même poignet que `poignet-avant.jpg`, portant le bracelet rivière. |
-| `cou-collier.jpg` | Un décolleté portant le collier — même règle : pas de visage, et un `cou-nu.jpg` au même cadrage. |
-| `table-salon-fleurs.jpg` | La table de `table-salon.jpeg`, avec la bougie aux fleurs séchées. |
+| `decoupe-bracelet.png` | Produit par **notre propre détourage** (`src/lib/direct/detourage.ts`) à partir de `bracelet-seul.png` reposé sur un fond de papier, avec ombre et grain — c'est-à-dire « la photo telle que le commerçant l'aurait prise ». |
+| `decoupe-collier.png` | Idem, sur fond gris. Le détourage a percé tout seul la boucle fermée du collier ET son buste d'exposition. |
+| `decoupe-bougies.png` | Idem, sur fond bois. |
 
-**La règle tient en une phrase : deux photos qui ne se correspondent pas ne
-prouvent rien, sinon qu'on sait afficher deux images l'une après l'autre.**
+#### Ce qui manque encore, et ce n'est plus le même besoin
+
+| Fichier | Ce qu'il montre | Ce qu'il débloque |
+|---|---|---|
+| `cou-nu.jpg` | Un décolleté **nu**, sans visage, à plat et à la lumière du jour. | Le collier. Un collier essayé sur un **poignet** donne une chaîne drapée sur une main — le calcul fait ce qu'on lui demande, c'est la demande qui est fausse. Il faut le bon endroit du corps, pas une paire. |
+| `table-salon-fleurs.jpg` *(ou une découpe)* | La bougie aux fleurs séchées. | Une découpe sur fond uni suffit maintenant — la photo de la table garnie n'est plus nécessaire. |
+
+`poignet-riviere.jpg` **n'est plus demandé** : le bracelet rivière s'essaie.
+
+**La règle a donc changé de forme mais pas de fond : ce qu'on montre doit avoir
+été fabriqué pour la personne qui regarde. Avant on le photographiait, maintenant
+on le calcule — mais on ne l'emprunte toujours pas.**
 
 ### Un arbitrage à confirmer
 

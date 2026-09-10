@@ -31,11 +31,18 @@
 // C'est ce qui rend la mécanique possible SANS VISAGE : on ne photographie pas
 // la personne, on photographie l'endroit où la chose va.
 //
-// CE QUE CETTE MAQUETTE NE PROUVE PAS, ET IL FAUT LE SAVOIR EN REGARDANT :
-// l'étape de composition. Poser le bracelet sur le poignet demande un modèle
-// d'image, une facture par essai et quelques secondes d'attente ; rien de cela
-// ne se vérifie depuis ici. L'écran met en scène le parcours entier — cadrer,
-// choisir, attendre, décider — et la seule chose simulée est l'image finale.
+// L'IMAGE FINALE N'EST PLUS SIMULÉE, ET C'EST LE CHANGEMENT DE CETTE VERSION.
+// Cette note disait qu'une composition demanderait « un modèle d'image, une
+// facture par essai et quelques secondes d'attente ». C'était l'hypothèse, et
+// elle était fausse : `lib/direct/essai.ts` la calcule DANS LE TÉLÉPHONE, en une
+// soixantaine de millisecondes, sans clé, sans serveur et sans qu'un seul octet
+// de la photo du client parte quelque part. L'écran affiche le temps réel du
+// calcul plutôt qu'un adjectif.
+//
+// CE QU'ELLE NE FAIT TOUJOURS PAS, ET C'EST ÉCRIT LÀ-BAS EN DÉTAIL : les ongles,
+// la coiffure et le vêtement. Il faut, pour ceux-là, savoir où est l'ongle, la
+// mèche, l'épaule — donc un modèle, donc une facture. Le calcul gratuit couvre
+// ce qui se POSE dans un lieu et ce qui CEINT un poignet ; le reste attend.
 //
 // ═══ CE QUE JE N'AI PAS SUIVI DANS LES MAQUETTES, ET IL FAUT EN PARLER ════
 //
@@ -62,6 +69,7 @@ import {
   type Mur as TypeMur,
   type Piece,
 } from "@/lib/direct/fantomes";
+import { composer, type Gabarit } from "@/lib/direct/essai";
 
 /**
  * « CHEZ QUI », ÉCRIT COMME ON LE DIRAIT.
@@ -738,6 +746,128 @@ function Annonce({
  * ou pas. « Cette pièce a été essayée par quatorze personnes, deux l'ont
  * prise » est un chiffre qu'aucun commerçant n'a jamais eu.
  */
+/**
+ * LE VISEUR, ET LE GABARIT DESSINÉ DEDANS.
+ *
+ * SANS CE DESSIN, LE GABARIT N'EXISTE QUE DANS LE CODE. On demanderait au
+ * client de « poser son poignet à plat » et on espérerait qu'il tombe là où le
+ * calcul l'attend — c'est-à-dire qu'on ferait reposer la gratuité de l'essai sur
+ * un vœu. Deux traits, et la contrainte devient évidente : on met son poignet
+ * ENTRE les traits, et à partir de là on sait tout ce qu'il faut savoir.
+ *
+ * ═══ POURQUOI UN SVG ET PAS DES DIV ═══════════════════════════════════════
+ *
+ * PARCE QUE LA PHOTO EST RECADRÉE. Le viseur est un rectangle fixe et la photo
+ * n'a pas son rapport : `object-fit: cover` en rogne les bords. Des repères
+ * posés en pourcentages du VISEUR se décaleraient donc de la photo — et un
+ * gabarit décalé est pire qu'un gabarit absent.
+ *
+ * `preserveAspectRatio="xMidYMid slice"` EST L'ÉQUIVALENT EXACT DE `cover`. En
+ * donnant au SVG le viewBox de la photo — d'où la lecture de sa taille réelle au
+ * chargement — les deux subissent le même rognage, au pixel près.
+ */
+function Viseur({ photo, gabarit }: { photo?: string; gabarit?: Gabarit }) {
+  const [dim, setDim] = useState<{ l: number; h: number } | null>(null);
+  const guide = () => {
+    if (!dim || !gabarit) return null;
+    const { l, h } = dim;
+    if (gabarit.forme === "cylindre") {
+      const [[axn, ayn], [bxn, byn]] = gabarit.axe;
+      const ax = axn * l;
+      const ay = ayn * h;
+      const bx = bxn * l;
+      const by = byn * h;
+      const a = Math.atan2(by - ay, bx - ax);
+      const d = (gabarit.diametre * l) / 2;
+      const nx = -Math.sin(a) * d;
+      const ny = Math.cos(a) * d;
+      return (
+        <>
+          {/* PAS DE REMPLISSAGE ENTRE LES DEUX TRAITS. Il a été essayé : sur un
+              viseur court et une photo verticale, le rognage fait que la bande
+              occupe tout le cadre, et le voile se lit comme un filtre posé sur
+              la photo plutôt que comme un repère. Deux traits suffisent à dire
+              « entre les deux ». */}
+          <line
+            x1={ax}
+            y1={ay}
+            x2={bx}
+            y2={by}
+            stroke="rgba(139,214,255,.45)"
+            strokeWidth={Math.max(1.5, l / 300)}
+            strokeDasharray={`${l / 80} ${l / 55}`}
+          />
+          {[1, -1].map((s) => (
+            <line
+              key={s}
+              x1={ax + nx * s}
+              y1={ay + ny * s}
+              x2={bx + nx * s}
+              y2={by + ny * s}
+              stroke="rgba(139,214,255,.92)"
+              strokeWidth={Math.max(2, l / 190)}
+              strokeLinecap="round"
+            />
+          ))}
+        </>
+      );
+    }
+    const px = gabarit.pied[0] * l;
+    const py = gabarit.pied[1] * h;
+    const rx = l * 0.15;
+    return (
+      <>
+        <line
+          x1={px}
+          y1={py}
+          x2={px}
+          y2={py - gabarit.hauteur * h}
+          stroke="rgba(139,214,255,.6)"
+          strokeWidth={Math.max(2, l / 240)}
+          strokeDasharray={`${l / 90} ${l / 70}`}
+        />
+        <ellipse
+          cx={px}
+          cy={py}
+          rx={rx}
+          ry={rx * 0.3}
+          fill="rgba(139,214,255,.12)"
+          stroke="rgba(139,214,255,.92)"
+          strokeWidth={Math.max(2, l / 190)}
+        />
+      </>
+    );
+  };
+  return (
+    <div className="mu-viseur">
+      {photo && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={photo}
+          alt=""
+          onLoad={(e) =>
+            setDim({ l: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
+          }
+        />
+      )}
+      {dim && gabarit && (
+        <svg
+          className="mu-viseur-g"
+          viewBox={`0 0 ${dim.l} ${dim.h}`}
+          preserveAspectRatio="xMidYMid slice"
+          aria-hidden="true"
+        >
+          {guide()}
+        </svg>
+      )}
+      <span aria-hidden="true" />
+      <span aria-hidden="true" />
+      <span aria-hidden="true" />
+      <span aria-hidden="true" />
+    </div>
+  );
+}
+
 function Essai({
   mur,
   restants,
@@ -751,6 +881,30 @@ function Essai({
   const [piece, setPiece] = useState<Piece | null>(null);
   const [pct, setPct] = useState(0);
   /**
+   * LE RENDU CALCULÉ, ET IL A REMPLACÉ LE RENDU TOUT FAIT.
+   *
+   * Jusqu'ici l'écran affichait `piece.rendu` — une photo prise à l'avance, sur
+   * un bras précis. C'était la maquette qui trichait, et c'était écrit. Ce que
+   * ce champ contient maintenant est calculé PENDANT l'essai, dans le
+   * navigateur, sur la photo `avant` du mur : voir `lib/direct/essai.ts`.
+   *
+   * `ms` est le temps réel du calcul, et il est affiché tel quel. Une promesse
+   * d'instantanéité qu'on peut chiffrer vaut mieux qu'un adjectif.
+   */
+  const [rendu, setRendu] = useState<{ image: string; ms: number } | null>(null);
+  /**
+   * LE VERDICT SUR LE RENDU LUI-MÊME, ET IL EST SÉPARÉ DE L'ACHAT.
+   *
+   * « Je passe » veut dire « la pièce ne me va pas ». « Le rendu n'est pas bon »
+   * veut dire « je n'ai pas pu juger ». Ce sont DEUX choses, et les confondre
+   * empoisonnerait la seule mesure qui nous dise si l'essai fonctionne : on
+   * lirait un refus de produit là où il y a un défaut d'image.
+   *
+   * CELUI-CI NE PUBLIE RIEN ET NE COMPTE PAS. Il n'a pas à laisser de fantôme
+   * sur le mur — un rendu raté n'est l'avis de personne sur rien.
+   */
+  const [rate, setRate] = useState(false);
+  /**
    * L'AVANT-APRÈS, SUR APPUI.
    *
    * C'EST LA SEULE CHOSE QUI PROUVE QUELQUE CHOSE. Un rendu montré seul se
@@ -761,23 +915,58 @@ function Essai({
   const [avant, setAvant] = useState(false);
   const minuteur = useRef<number | null>(null);
 
+  /**
+   * LE CALCUL, ET LE PLANCHER DE TEMPS QUI L'ACCOMPAGNE.
+   *
+   * LA COMPOSITION PREND DEUX CENTS MILLISECONDES. Passer de la grille des
+   * pièces au résultat en un clignement ne se lit pas : on ne voit pas que
+   * quelque chose a été fabriqué pour soi, on croit avoir ouvert une photo. On
+   * garde donc la jauge, et on lui donne un plancher — assez pour que le geste
+   * se voie, trop peu pour qu'on attende.
+   *
+   * ET LA JAUGE NE MENT PAS DEUX FOIS : elle avance pendant un vrai calcul, et
+   * l'écran suivant affiche le temps que ce calcul a réellement pris.
+   */
+  const PLANCHER = 900;
   useEffect(() => {
-    if (etape !== "calcul") return;
+    if (etape !== "calcul" || !piece) return;
+    let vivant = true;
+    const debut = Date.now();
     setPct(0);
     minuteur.current = window.setInterval(() => {
-      setPct((p) => {
-        if (p >= 100) return 100;
-        return p + 7;
-      });
-    }, 110);
+      setPct((p) => Math.min(96, p + 7));
+    }, 60);
+
+    const finir = (r: { image: string; ms: number } | null) => {
+      const reste = Math.max(0, PLANCHER - (Date.now() - debut));
+      window.setTimeout(() => {
+        if (!vivant) return;
+        setPct(100);
+        setRendu(r);
+        setEtape("rendu");
+      }, reste);
+    };
+
+    const gabarit = mur.essai?.gabarit;
+    if (!gabarit || !piece.decoupe || !mur.essai?.avant) {
+      // Pas de gabarit ou pas de découpe : on retombe sur ce que la pièce
+      // fournit. C'est le cas de la paire vraie du bijoutier, qui reste
+      // meilleure que tout calcul.
+      finir(null);
+    } else {
+      composer({ lieu: mur.essai.avant, piece: piece.decoupe, gabarit })
+        .then((p) => finir({ image: p.image, ms: p.ms }))
+        // UN ÉCHEC RETOMBE SUR LA PHOTO DE LA PIÈCE plutôt que de bloquer
+        // l'écran : le parcours continue, et le bouton « le rendu n'est pas
+        // bon » est là pour le dire.
+        .catch(() => finir(null));
+    }
+
     return () => {
+      vivant = false;
       if (minuteur.current) window.clearInterval(minuteur.current);
     };
-  }, [etape]);
-
-  useEffect(() => {
-    if (etape === "calcul" && pct >= 100) setEtape("rendu");
-  }, [etape, pct]);
+  }, [etape, piece, mur]);
 
   const poser = (verdict: "pris" | "passe") =>
     onPose({
@@ -817,16 +1006,7 @@ function Essai({
               demande d'imaginer ce qu'on photographie ; la photo dessous le
               montre, et c'est elle qui reviendra au rendu — meme bras, meme
               lumiere, meme fond. */}
-          <div className="mu-viseur">
-            {mur.essai?.avant && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={mur.essai.avant} alt="" />
-            )}
-            <span aria-hidden="true" />
-            <span aria-hidden="true" />
-            <span aria-hidden="true" />
-            <span aria-hidden="true" />
-          </div>
+          <Viseur photo={mur.essai?.avant} gabarit={mur.essai?.gabarit} />
           <p>{mur.essai?.consigne}</p>
           <button type="button" className="mu-cta plein" onClick={() => setEtape("choisir")}>
             <i aria-hidden="true">📷</i>
@@ -849,6 +1029,8 @@ function Essai({
               onClick={() => {
                 setPiece(p);
                 setAvant(false);
+                setRendu(null);
+                setRate(false);
                 setEtape("calcul");
               }}
             >
@@ -889,7 +1071,7 @@ function Essai({
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={avant ? mur.essai?.avant : (piece.rendu ?? piece.photo)}
+              src={avant ? mur.essai?.avant : (rendu?.image ?? piece.rendu ?? piece.photo)}
               alt={avant ? "Votre photo" : `Essai : ${piece.nom}`}
             />
             <span className="mu-rendu-t2">{avant ? "Votre photo" : "Avec la pièce"}</span>
@@ -897,32 +1079,58 @@ function Essai({
               Maintenir pour comparer
             </span>
           </button>
-          <span className="mu-rendu-b">Rendu simulé dans la maquette</span>
+          {/* CE QUE CET ÉCRAN AFFICHE VRAIMENT, ET IL FAUT QUE ÇA SE LISE. Un
+              rendu CALCULÉ dit son temps de calcul ; un rendu tout fait dit
+              qu'il est tout fait. La maquette ne doit jamais laisser croire
+              qu'elle a fabriqué ce qu'elle a seulement affiché. */}
+          <span className="mu-rendu-b">
+            {rendu
+              ? `Calculé sur votre téléphone en ${rendu.ms} ms · rien n’a été envoyé`
+              : "Rendu photographié à l’avance"}
+          </span>
           <div className="mu-rendu-t">
             <b>{piece.nom}</b>
             <em>{piece.prix}</em>
           </div>
-          <div className="mu-rendu-g">
-            <button
-              type="button"
-              className="oui"
-              disabled={restants < 1}
-              onClick={() => poser("pris")}
-            >
-              Je la prends
-            </button>
-            <button
-              type="button"
-              className="non"
-              disabled={restants < 1}
-              onClick={() => poser("passe")}
-            >
-              Je passe
-            </button>
-          </div>
+          {rate ? (
+            <p className="mu-rendu-r">
+              C’est noté, et ça ne compte pas comme un avis sur la pièce.
+              <br />
+              <b>Rien n’a été publié.</b>
+            </p>
+          ) : (
+            <>
+              <div className="mu-rendu-g">
+                <button
+                  type="button"
+                  className="oui"
+                  disabled={restants < 1}
+                  onClick={() => poser("pris")}
+                >
+                  Je la prends
+                </button>
+                <button
+                  type="button"
+                  className="non"
+                  disabled={restants < 1}
+                  onClick={() => poser("passe")}
+                >
+                  Je passe
+                </button>
+              </div>
+              {/* LE TROISIÈME BOUTON, ET IL EST À PART EXPRÈS. Il n'est pas une
+                  troisième réponse à « la pièce vous plaît ? » : il dit que la
+                  question n'a pas pu être posée. D'où sa place sous les deux
+                  autres, et son absence de couleur. */}
+              <button type="button" className="mu-rendu-x" onClick={() => setRate(true)}>
+                Le rendu n’est pas bon
+              </button>
+            </>
+          )}
           <p className="mu-rendu-n">
-            Dans les deux cas, votre fantôme reste sur le mur&nbsp;: c’est ce qui dit au
-            commerçant ce qui plaît, et aux autres ce qu’ils peuvent essayer.
+            {rate
+              ? "Merci : c’est ce qui nous dit sur quels métiers l’essai tient debout."
+              : "Dans les deux cas, votre fantôme reste sur le mur : c’est ce qui dit au commerçant ce qui plaît, et aux autres ce qu’ils peuvent essayer."}
           </p>
         </div>
       )}
@@ -1293,6 +1501,11 @@ function Styles() {
           border-top:none;border-radius:0 0 0 8px;}
         .mu-viseur span:nth-child(4){bottom:14px;right:14px;border-left:none;
           border-top:none;border-radius:0 0 8px 0;}
+        /* LE GABARIT SE SUPERPOSE AU PIXEL PRES. Le meme rognage que la photo :
+           voir le composant Viseur pour la raison. */
+        .mu-viseur-g{position:absolute;inset:0;width:100%;height:100%;
+          display:block;pointer-events:none;
+          filter:drop-shadow(0 0 6px rgba(10,20,40,.55));}
         .mu-cadrer>p{margin:12px 0 0;font-size:12.5px;line-height:1.5;
           color:var(--mu-pale);}
         .mu-cadrer .mu-cta{text-align:left;}
@@ -1370,6 +1583,16 @@ function Styles() {
         .mu-rendu-g .non{background:transparent;color:#C7D4E2;
           border:1px solid rgba(255,255,255,.2);}
         .mu-rendu-g button:disabled{opacity:.4;cursor:default;}
+        /* LE TROISIEME BOUTON N'EST PAS UN TROISIEME CHOIX. Il repond a une
+           autre question que les deux du dessus, donc il ne partage ni leur
+           ligne, ni leur poids, ni leur couleur — juste un texte souligne. */
+        .mu-rendu-x{display:block;margin:10px auto 0;padding:6px 4px;
+          background:none;border:none;font-family:inherit;font-size:12.5px;
+          font-weight:600;color:var(--mu-pale);cursor:pointer;
+          text-decoration:underline;text-underline-offset:3px;}
+        .mu-rendu-r{margin:14px 0 0;font-size:13.5px;line-height:1.55;
+          color:#DDE8F4;}
+        .mu-rendu-r b{font-weight:800;}
         .mu-rendu-n{margin:12px 0 0;font-size:11.5px;line-height:1.5;
           color:var(--mu-pale);}
 
