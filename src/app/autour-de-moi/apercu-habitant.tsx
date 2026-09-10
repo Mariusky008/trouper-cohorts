@@ -142,6 +142,10 @@ import { CarteSwipe, StylesDirect } from "@/components/direct/carte-swipe";
 // anneau en tête de la fiche du commerce. Voir le fichier : c'est la copie qui
 // aurait été dangereuse, pas le partage.
 import { PictoMetier } from "@/components/direct/picto-metier";
+// 👻 LE MUR MONTE ICI, sur l'annonce, et ne l'emmene nulle part. Voir le
+// commentaire du bouton dans la barre.
+import { MurContenu } from "@/components/direct/mur-contenu";
+import { murDeLaCarte } from "@/lib/direct/fantomes";
 import {
   ENVIES,
   HEURE_MAX,
@@ -1272,6 +1276,8 @@ export function ApercuHabitant() {
   const [branche, setBranche] = useState<CleMetier>("restaurant");
   const [envies, setEnvies] = useState<string[]>([]);
   const [passees, setPassees] = useState<string[]>([]);
+  /** Le mur du commerce qu'on regarde, quand il est ouvert. Voir `MurContenu`. */
+  const [murOuvert, setMurOuvert] = useState(false);
   const [gardees, setGardees] = useState<string[]>([]);
   const [reserves, setReserves] = useState<string[]>([]);
   const [dx, setDx] = useState(0);
@@ -2939,6 +2945,26 @@ export function ApercuHabitant() {
     setDx(0);
     setSortant("");
     setCoeurVole(false);
+    setDescendu(false);
+    defilement.current?.scrollTo({ top: 0 });
+  }
+
+  /**
+   * REVENIR À L'ANNONCE PRÉCÉDENTE.
+   *
+   * ELLE N'EXISTAIT PAS, ET C'ÉTAIT LE SEUL GESTE DU PAQUET QU'ON NE POUVAIT PAS
+   * FAIRE. Tant que « suivante » vivait au milieu d'une barre d'onglets, il n'y
+   * avait pas la place pour son inverse ; sur les deux bords de la photo, si.
+   *
+   * ON DÉPILE `passees`, ET C'EST TOUT. La pile se recompose à chaque rendu à
+   * partir de l'heure et de ce qui a déjà été vu : retirer le dernier identifiant
+   * remet la carte exactement là où elle était, sans avoir à mémoriser un
+   * historique en plus de celui qui existe déjà.
+   */
+  function revenir() {
+    if (!passees.length || sortant) return;
+    noter("balayage", passees.length, "retour");
+    setPassees((p) => p.slice(0, -1));
     setDescendu(false);
     defilement.current?.scrollTo({ top: 0 });
   }
@@ -9063,6 +9089,105 @@ export function ApercuHabitant() {
           </>
           )}
 
+          {/* ═══ LE MUR DU COMMERCE, EN FEUILLE SUR L'ANNONCE ═══
+
+              Elle monte comme celle de « Proposer à mes amis », elle laisse
+              l'annonce visible dessous, et tout ce qu'elle montre vient de
+              CETTE annonce : le nom, le métier, la photo, la note, la distance.
+              Aucun onglet, aucun sélecteur, aucune autre annonce.
+
+              LA POIGNÉE ET LE FOND SONT CEUX DE TOUTES LES FEUILLES DU PRODUIT.
+              Un module qui invente sa propre façon de se fermer se paie au
+              premier essai : on cherche la croix là où elle est partout
+              ailleurs. */}
+          {murOuvert && dessus && (
+            <>
+              <button
+                type="button"
+                className="ap-fond"
+                aria-label="Fermer"
+                onClick={() => setMurOuvert(false)}
+              />
+              <div className="ap-feuille ap-murf" role="dialog" aria-modal="true">
+                <span className="ap-feuille-p" aria-hidden="true" />
+                <button
+                  type="button"
+                  className="ap-f-x"
+                  aria-label="Fermer"
+                  onClick={() => setMurOuvert(false)}
+                >
+                  ✕
+                </button>
+                <div className="mu dans-feuille">
+                  <MurContenu
+                    key={dessus.id}
+                    mur={murDeLaCarte({
+                      id: dessus.id,
+                      nom: dessus.nom,
+                      metier: dessus.metier,
+                      branche: dessus.branche,
+                      ville: dessus.ville,
+                      distance: dessus.distance,
+                      photo: dessus.photo,
+                      google: dessus.google,
+                    })}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ═══ PRÉCÉDENTE ET SUIVANTE, SUR LA PHOTO ═══
+
+              « J'ai peur que les gens ne voient pas la flèche, ou touchent le
+              bouton à côté. N'y aurait-il pas un endroit plus évident ? »
+
+              IL AVAIT RAISON DEUX FOIS. Une flèche muette au milieu d'une barre
+              d'onglets se lit comme un onglet de plus, et ses voisins sont à
+              quatre points — sur un pouce de onze millimètres, c'est une
+              loterie.
+
+              ELLES REVIENNENT DONC SUR LA CARTE, aux deux bords, à mi-hauteur.
+              C'est le geste que tout le monde connaît — un carrousel, une
+              galerie de photos, un article — et il n'a personne à côté de lui.
+              Le pouce tombe dessus sans viser.
+
+              ET « PRÉCÉDENTE » EXISTE ENFIN. La barre n'en avait pas la place ;
+              ici les deux bords sont libres, et revenir en arrière était le seul
+              geste du paquet qu'on ne pouvait pas faire.
+
+              LA CLASSE `ap-suiv` NE BOUGE PAS. C'est le sélecteur que
+              trente-six suites utilisent pour traverser le paquet : ce qui
+              change est la place et la forme, pas le geste. */}
+          {onglet === "direct" && !salonPage && (
+            <div className="ap-nav" aria-hidden={false}>
+              <button
+                type="button"
+                className="ap-prec"
+                aria-label="Annonce précédente"
+                disabled={!passees.length}
+                onClick={() => revenir()}
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                className="ap-suiv"
+                aria-label="Annonce suivante"
+                disabled={!sommet}
+                onClick={() => {
+                  const dore = flashDuSuivant;
+                  setClin(dore ? "or" : "simple");
+                  sonDuBond(dore);
+                  window.setTimeout(() => setClin(""), dore ? BOND_OR_MS : BOND_MS);
+                  partir("gauche");
+                }}
+              >
+                ›
+              </button>
+            </div>
+          )}
+
           {/* ─── LA BARRE EST DEHORS, ET C'EST TOUT LE CORRECTIF ───
               Elle vivait DANS la dernière branche du grand choix — celle du
               paquet, de La Ville, des salons et du profil. Une page de salon
@@ -9137,6 +9262,10 @@ export function ApercuHabitant() {
                   ? `Le fantôme a quelque chose à dire : ${arbitre.phrase}`
                   : "Mon fantôme : ce qui a été laissé ici aujourd’hui"
               }
+              // SANS COMMERCE SOUS LES YEUX, IL N'Y A PAS DE MUR A OUVRIR : un
+              // evenement de la ville n'a pas de comptoir. Le fantome s'eteint,
+              // sauf si l'arbitre a quelque chose a dire.
+              disabled={!arbitre && !dessus}
               onClick={() => {
                 /* ═══ IL A CHANGÉ DE RÔLE ═══
 
@@ -9166,17 +9295,19 @@ export function ApercuHabitant() {
                   setArbitreOuvert((v) => !v);
                   return;
                 }
+                // ─── LA FEUILLE MONTE, ON NE CHANGE PAS DE PAGE ───
+                // « Ce n'est pas une pop-up qui monte, c'est carrement une
+                // autre page qui n'a rien a voir avec l'annonce, et je vois
+                // d'autres onglets avec d'autres annonces. » C'etait exact :
+                // le mur etait une route. Il est maintenant une feuille, comme
+                // celle de « Proposer a mes amis », et tout ce qu'elle montre
+                // vient de l'annonce qu'on regarde — voir `murDeLaCarte`.
+                if (!dessus) return;
                 setClin("simple");
                 sonDuBond(false);
                 window.setTimeout(() => setClin(""), BOND_MS);
                 noter("onglet", 0, "mur");
-                // LE MUR EST ENCORE UNE PAGE A PART, et c'est provisoire : il
-                // doit devenir une feuille qui monte ici, sans quitter le
-                // paquet. Le lien porte le metier de la carte du dessus pour
-                // ouvrir le bon mur — voir `MURS` dans lib/direct/fantomes.
-                window.location.href = `/autour-de-moi/mur?metier=${
-                  dessus?.branche ?? "restaurant"
-                }`;
+                setMurOuvert(true);
               }}
             >
               {/* ═══ UN PETIT FANTÔME, ET IL BOUGE QUAND ON L'APPUIE ═══
@@ -9200,57 +9331,6 @@ export function ApercuHabitant() {
                   secours qui ne répond pas visiblement au doigt ne vaut pas
                   mieux que le geste qu'il remplace. */}
               <Fantome />
-            </button>
-            {/* ═══ « SUIVANTE » A SA PROPRE PLACE ═══
-
-                LE GESTE LE PLUS REPETE DU PRODUIT N'A PAS DISPARU AVEC LE
-                CHANGEMENT DE ROLE DU FANTOME : il a pris la cinquieme place de
-                la barre, a droite du fantome, la ou le pouce le trouve aussi.
-
-                IL RESTE UN ONGLET D'APPARENCE ET UNE ACTION DE NATURE, et c'est
-                assume : les quatre autres changent d'endroit, celui-ci agit sur
-                ce qu'on regarde. C'etait deja le cas du fantome, qui reglait le
-                probleme par sa FORME — rond, plein, debordant. Ici la forme
-                reste celle d'un onglet parce que la place manque : le signe
-                distinctif est la fleche, et l'extinction hors du paquet.
-
-                IL GARDE LA CLASSE `ap-suiv`, ET CE N'EST PAS UN DETAIL. C'est
-                le selecteur que trente-six suites utilisent pour traverser le
-                paquet. Le deplacer sur un autre nom aurait casse toutes les
-                gardes d'un coup pour ne rien prouver : ce qui a change, c'est
-                l'apparence et la place, pas le geste. */}
-            <button
-              type="button"
-              className={`ap-suiv${onglet === "direct" ? "" : " loin"}`}
-              aria-label="Passer à l’annonce suivante"
-              disabled={horsDuPaquet ? true : !sommet}
-              onClick={() => {
-                if (horsDuPaquet) return;
-                // ⚡ ON REGARDE CE QUI ATTEND DERRIERE AVANT DE SAUTER : le
-                // fantome se dore quand la carte suivante est un Flash, et le
-                // saut dure plus longtemps.
-                const dore = flashDuSuivant;
-                setClin(dore ? "or" : "simple");
-                // LE SON PART AVANT LE MOUVEMENT, d'un cheveu : c'est l'ordre
-                // naturel — on entend l'elan, puis on voit le saut.
-                sonDuBond(dore);
-                window.setTimeout(() => setClin(""), dore ? BOND_OR_MS : BOND_MS);
-                partir("gauche");
-              }}
-            >
-              {/* ─── UNE FLECHE, ET PAS UN MOT ───
-                  SIX LIBELLES NE TIENNENT PAS SUR UN TELEPHONE DE 375 POINTS.
-                  Mesure faite : « PROPOSITIONS » demande soixante-six points, la
-                  colonne en offre cinquante-cinq. Deux lignes coupaient les mots
-                  au milieu — « PROPOSI / TIONS », « SUIVANT / E » — et raccourcir
-                  le mot defaisait une decision mesuree.
-                  CELUI-CI EST LE SEUL QU'ON PEUT ENLEVER, ET C'EST AUSSI LE SEUL
-                  QU'ON DOIT : les cinq autres emmenent quelque part, celui-ci
-                  agit sur ce qu'on regarde. C'est exactement la distinction que
-                  le fantome tenait deja par sa forme, et un objet qui fait autre
-                  chose n'a pas a se nommer comme les autres — une fleche le dit
-                  mieux qu'un verbe. */}
-              <i aria-hidden="true">➔</i>
             </button>
             <button
               type="button"
@@ -12457,6 +12537,40 @@ export function ApercuHabitant() {
            ouverts ni les anciens, parce qu'ils vivaient au fond d'une feuille.
            Une application sans ossature visible n'a pas de deuxieme visite.
            ATTENTION : jamais d'accent grave dans ces commentaires CSS. */
+        /* ═══ PRECEDENTE ET SUIVANTE, AUX DEUX BORDS DE LA PHOTO ═══
+           A MI-HAUTEUR, LA OU LE POUCE TOMBE SANS VISER, et surtout AVEC
+           PERSONNE A COTE : c'est ce qui manquait a la fleche de la barre, dont
+           les voisins etaient a quatre points.
+           EN VERRE PLUTOT QU'EN PLEIN : elles se posent sur une photo qui doit
+           rester la chose qu'on regarde. Assez visibles pour qu'on les trouve,
+           assez discretes pour qu'on ne voie qu'elles. */
+        .ap-nav{position:absolute;left:0;right:0;top:42%;z-index:4;
+          display:flex;justify-content:space-between;padding:0 8px;
+          pointer-events:none;}
+        .ap-nav button{pointer-events:auto;width:42px;height:42px;border-radius:50%;
+          border:1px solid rgba(255,255,255,.16);cursor:pointer;
+          font:inherit;font-size:24px;line-height:1;color:#EAF2EC;
+          background:rgba(4,10,8,.42);
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+          transition:transform .12s ease,opacity .16s ease;}
+        .ap-nav button:active{transform:scale(.9);background:rgba(4,10,8,.7);}
+        /* ETEINTE, ELLE DISPARAIT PLUTOT QUE DE GRISER : une fleche a moitie
+           visible se touche quand meme, et ne fait rien. */
+        .ap-nav button:disabled{opacity:0;pointer-events:none;}
+
+        /* ═══ LA FEUILLE DU MUR ═══
+           Elle est plus haute que les autres — il y a un mur dedans — et son
+           contenu defile seul. Le fond de la boite du mur est neutralise : la
+           feuille a
+           deja le sien, et deux fonds superposes font une bordure. */
+        .ap-feuille.ap-murf{max-height:92%;padding-left:0;padding-right:0;}
+        .ap-murf .mu.dans-feuille{flex:1;min-height:0;overflow-y:auto;
+          -webkit-overflow-scrolling:touch;background:none;max-width:none;
+          margin:0;padding:2px 16px 18px;}
+        /* LA CROIX EST AU-DESSUS DU TITRE : on lui laisse sa place plutot que de
+           faire passer le nom du commerce dessous. */
+        .ap-murf .mu-tete{padding-right:44px;}
+
         .ap-onglets{flex:none;display:grid;
           /* SIX ENFANTS, ET CELUI DU MILIEU N'EST PAS UN ONGLET. Les cinq
              onglets se partagent la largeur a parts egales ; le fantome prend
@@ -12466,7 +12580,7 @@ export function ApercuHabitant() {
              MINMAX A ZERO ET PAS 1FR TOUT SEUL : sans le minimum a zero, une colonne
              de grille ne descend jamais sous la largeur de son contenu, et
              c'est le libelle le plus long qui decide de la largeur des six. */
-          grid-template-columns:repeat(2,minmax(0,1fr)) auto auto repeat(2,minmax(0,1fr));
+          grid-template-columns:repeat(2,minmax(0,1fr)) auto repeat(2,minmax(0,1fr));
           gap:4px;padding:4px 8px calc(4px + env(safe-area-inset-bottom));
           border-top:1px solid rgba(255,255,255,.09);
           background:rgba(8,12,10,.75);-webkit-backdrop-filter:blur(12px);
@@ -12542,8 +12656,6 @@ export function ApercuHabitant() {
            part. Il s'eteint des qu'on quitte le paquet, comme le fantome
            s'eteignait avant lui — un bouton qui ferait tourner l'annonce sous
            une conversation serait pire qu'un bouton absent. */
-        .ap-onglets .ap-suiv i{font-size:15px;}
-        .ap-onglets .ap-suiv:disabled,.ap-onglets .ap-suiv.loin{opacity:.34;}
         /* ─── LES LIBELLES TIENNENT SUR DEUX LIGNES, ET TOUS EN RESERVENT DEUX ───
 
            LA GARDE D'AVANT DISAIT « SUR UNE SEULE LIGNE », et elle avait
@@ -12567,9 +12679,6 @@ export function ApercuHabitant() {
              monte son pictogramme plus haut que les autres et fait paraitre
              toute la barre de travers. */
           white-space:nowrap;}
-        /* LA FLECHE EST UNE ACTION : elle ne prend que sa largeur, et rend le
-           reste aux quatre libelles. */
-        .ap-onglets .ap-suiv{padding-left:9px;padding-right:9px;}
 
         /* ═══ LE FANTOME QUI PASSE A LA SUIVANTE ═══
            Rond, vert plein, deborde de la barre vers le haut : il ne ressemble

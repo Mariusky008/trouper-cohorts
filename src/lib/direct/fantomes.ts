@@ -117,14 +117,36 @@ export function humeurDe(cle: string | undefined): Humeur | undefined {
  * Elle est ici et pas dans l'écran parce que c'en est une : « je vends » n'y est
  * pas, et son absence est une décision de produit. Voir l'en-tête.
  */
-export type Verbe = { cle: string; emoji: string; mot: string };
+export type Verbe = {
+  cle: string;
+  emoji: string;
+  mot: string;
+  /**
+   * CE QU'ON ÉCRIT DERRIÈRE CE VERBE-LÀ.
+   *
+   * « Quand je clique sur une des options, rien ne se passe, ça ne produit aucun
+   * changement. » C'était vrai à l'œil : seule une bordure changeait. L'exemple
+   * du champ change maintenant AVEC le verbe — c'est la preuve visible que
+   * l'appui a fait quelque chose, et c'est aussi ce qui apprend quoi écrire.
+   */
+  exemple: string;
+};
 
 export const VERBES: Verbe[] = [
-  { cle: "cherche", emoji: "📣", mot: "Je cherche" },
-  { cle: "propose", emoji: "🤲", mot: "Je propose" },
-  { cle: "places", emoji: "🎟️", mot: "J’ai 2 places" },
-  { cle: "donne", emoji: "🎁", mot: "Je donne" },
-  { cle: "aide", emoji: "🤝", mot: "Je peux aider" },
+  { cle: "cherche", emoji: "📣", mot: "Je cherche", exemple: "Je cherche 2 places pour le concert de vendredi…" },
+  { cle: "propose", emoji: "🤲", mot: "Je propose", exemple: "Je propose une place dans ma voiture pour le marché de samedi…" },
+  /**
+   * « J'Y SERAI » A REMPLACÉ « J'AI 2 PLACES ».
+   *
+   * « Cette option est étrange » — et elle l'était : un verbe entier consacré à
+   * un cas particulier, alors que les quatre autres décrivent des intentions.
+   * Ce qui manquait, c'était le verbe qui SERT LE LIEU : dire qu'on y sera, à
+   * quelle heure, et qu'il reste de la place à sa table. C'est celui-là qui fait
+   * venir les gens chez le commerçant — c'est-à-dire tout l'objet du mur.
+   */
+  { cle: "serai", emoji: "🙋", mot: "J’y serai", exemple: "Je serai là ce midi vers 12 h 30, il reste de la place à ma table…" },
+  { cle: "donne", emoji: "🎁", mot: "Je donne", exemple: "Je donne 20 vinyles rock, à récupérer ici…" },
+  { cle: "aide", emoji: "🤝", mot: "Je peux aider", exemple: "Je peux aider à monter un meuble ce week-end…" },
 ];
 
 export function verbeDe(cle: string | undefined): Verbe | undefined {
@@ -270,7 +292,7 @@ export const MURS: Mur[] = [
     photoLieu: "/direct/tables-libres.jpg",
     depot: "annonce",
     humeurs: ["chill", "gourmand", "groupe", "rencontres"],
-    verbes: ["cherche", "propose", "places", "donne", "aide"],
+    verbes: ["cherche", "propose", "serai", "donne", "aide"],
     contexte: {
       titre: "Le plat du jour",
       quoi: "Magret de canard",
@@ -358,7 +380,7 @@ export const MURS: Mur[] = [
     photoLieu: "/direct/verre-au-comptoir.jpg",
     depot: "annonce",
     humeurs: ["amis", "monde", "musique", "decouvre"],
-    verbes: ["cherche", "propose", "places", "aide"],
+    verbes: ["cherche", "propose", "serai", "aide"],
     contexte: {
       titre: "Ce soir au comptoir",
       quoi: "Trois blancs des Landes",
@@ -423,8 +445,8 @@ export const MURS: Mur[] = [
         id: "b-karim",
         qui: "Karim",
         photo: "/direct/vitrine-du-soir.jpg",
-        verbe: "places",
-        mot: "J’ai 2 places pour la nocturne du musée samedi.",
+        verbe: "propose",
+        mot: "J’ai 2 places pour la nocturne du musée samedi, je les donne.",
         heure: "19:51",
         humeur: "decouvre",
         interesses: 9,
@@ -763,6 +785,59 @@ export const MURS: Mur[] = [
     ],
   },
 ];
+
+/**
+ * LE MUR DE LA CARTE QU'ON REGARDE.
+ *
+ * ═══ POURQUOI CETTE FONCTION EXISTE ═══════════════════════════════════════
+ *
+ * « Je veux que la pop-up soit spécifique à l'annonce que je suis en train de
+ * visionner. Je ne veux pas voir autre chose : tous les éléments de ce module
+ * doivent être liés à l'annonce que je regarde. »
+ *
+ * Le fantôme de la barre ouvre donc le mur DE CE COMMERCE-LÀ — son nom, son
+ * métier, sa photo, sa note, sa distance. Rien de ce qui s'affiche ne vient
+ * d'ailleurs, et il n'y a plus d'onglet, plus de sélecteur, plus d'autre
+ * annonce.
+ *
+ * ═══ CE QUI EST ENCORE UNE MAQUETTE, ET IL FAUT LE SAVOIR ════════════════
+ *
+ * Les fantômes eux-mêmes sont empruntés au mur modèle de la branche : il y a
+ * cinq murs écrits à la main pour dix-huit commerces. Dans le produit, chaque
+ * commerce a les siens — ce sont ceux que ses clients y auront laissés. Ce qui
+ * se démontre ici est la MÉCANIQUE et la façon dont elle épouse le métier : un
+ * bar montre des humeurs, une bijoutière un essai, un restaurant des annonces.
+ */
+export function murDeLaCarte(c: {
+  id: string;
+  nom: string;
+  metier: string;
+  branche: string;
+  ville: string;
+  distance: string;
+  photo?: string;
+  google?: { note: string; avis: number };
+}): Mur {
+  const modele =
+    MURS.find((m) => {
+      if (c.branche === "bar") return m.cle === "bar";
+      if (c.branche === "ongles" || c.branche === "coiffeur") return m.cle === "ongles";
+      if (c.branche === "mode") return m.cle === "bijoux";
+      if (c.branche === "artisan" || c.branche === "fleuriste") return m.cle === "bougies";
+      return m.cle === "margot";
+    }) ?? MURS[0];
+  return {
+    ...modele,
+    cle: c.id,
+    lieu: c.nom,
+    metier: c.metier,
+    ville: c.ville,
+    distance: c.distance,
+    note: c.google?.note ?? modele.note,
+    avis: c.google?.avis ?? modele.avis,
+    photoLieu: c.photo || modele.photoLieu,
+  };
+}
 
 /**
  * COMBIEN DE FANTÔMES IL RESTE AUJOURD'HUI.

@@ -62,3 +62,13 @@ next-env.d.ts
 /public/robots.txt
 /public/sitemap.xml
 /public/sitemap-*.xml
+
+# Captures de maquette : elles sont produites dans le bac a sable, jamais ici.
+/bij-*.png
+/cir-*.png
+/f-*.png
+/mu-*.png
+/mur-*.png
+/barre-*.png
+/pli*.png
+/boutique-*.png
