@@ -943,6 +943,17 @@ function Essai({
    */
   const [rate, setRate] = useState(false);
   /**
+   * LA PHOTO DE LA CLIENTE, ET C'EST ELLE QUI MANQUAIT.
+   *
+   * `null` veut dire « on n'a pas encore pris de photo », et l'écran retombe
+   * alors sur l'exemple du mur — en le DISANT. Tout le reste de l'essai lit
+   * `laPhoto` et jamais `mur.essai.avant` directement : le viseur, le calcul, et
+   * la comparaison avant/après.
+   */
+  const [photo, setPhoto] = useState<string | null>(null);
+  const fichier = useRef<HTMLInputElement>(null);
+  const laPhoto = photo ?? mur.essai?.avant;
+  /**
    * L'AVANT-APRÈS, SUR APPUI.
    *
    * C'EST LA SEULE CHOSE QUI PROUVE QUELQUE CHOSE. Un rendu montré seul se
@@ -986,12 +997,12 @@ function Essai({
     };
 
     const gabarit = mur.essai?.gabarit;
-    if (gabarit?.forme === "main" && piece.vernis && mur.essai?.avant) {
+    if (gabarit?.forme === "main" && piece.vernis && laPhoto) {
       // ON PRÉVIENT SI LE MODÈLE N'EST PAS ENCORE LÀ. Dix-neuf mégaoctets la
       // première fois : dire « ton fantôme prépare » pendant ce temps-là serait
       // mentir sur ce qui se passe, et sur ce que ça coûte à la cliente en 4G.
       setTelecharge(!laMainEstPrete());
-      poserVernis({ photo: mur.essai.avant, vernis: piece.vernis })
+      poserVernis({ photo: laPhoto, vernis: piece.vernis })
         .then((p) => finir({ image: p.image, ms: p.ms, souci: p.ongles ? undefined : p.souci }))
         .catch(() => finir(null));
       return () => {
@@ -999,13 +1010,13 @@ function Essai({
         if (minuteur.current) window.clearInterval(minuteur.current);
       };
     }
-    if (!gabarit || gabarit.forme === "main" || !piece.decoupe || !mur.essai?.avant) {
+    if (!gabarit || gabarit.forme === "main" || !piece.decoupe || !laPhoto) {
       // Pas de gabarit ou pas de découpe : on retombe sur ce que la pièce
       // fournit. C'est le cas de la paire vraie du bijoutier, qui reste
       // meilleure que tout calcul.
       finir(null);
     } else {
-      composer({ lieu: mur.essai.avant, piece: piece.decoupe, gabarit })
+      composer({ lieu: laPhoto, piece: piece.decoupe, gabarit })
         .then((p) => finir({ image: p.image, ms: p.ms }))
         // UN ÉCHEC RETOMBE SUR LA PHOTO DE LA PIÈCE plutôt que de bloquer
         // l'écran : le parcours continue, et le bouton « le rendu n'est pas
@@ -1017,7 +1028,7 @@ function Essai({
       vivant = false;
       if (minuteur.current) window.clearInterval(minuteur.current);
     };
-  }, [etape, piece, mur]);
+  }, [etape, piece, mur, laPhoto]);
 
   const poser = (verdict: "pris" | "passe") =>
     onPose({
@@ -1057,15 +1068,81 @@ function Essai({
               demande d'imaginer ce qu'on photographie ; la photo dessous le
               montre, et c'est elle qui reviendra au rendu — meme bras, meme
               lumiere, meme fond. */}
-          <Viseur photo={mur.essai?.avant} gabarit={mur.essai?.gabarit} />
+          <Viseur photo={laPhoto} gabarit={mur.essai?.gabarit} />
           <p>{mur.essai?.consigne}</p>
-          <button type="button" className="mu-cta plein" onClick={() => setEtape("choisir")}>
-            <i aria-hidden="true">📷</i>
-            <span>
-              <b>Photographier {mur.essai?.partie}</b>
-              <em>Rien n’est publié tant que vous n’avez pas décidé</em>
-            </span>
-          </button>
+          {/* LE BOUTON OUVRE VRAIMENT L'APPAREIL PHOTO.
+              Il ne le faisait pas : il faisait avancer l'écran, et l'essai se
+              calculait sur une photo du dépôt. « J'arrive sur photographier ma
+              main, je clique, et j'ai le résultat sur la main de quelqu'un
+              d'autre. » Tant que le rendu était simulé le défaut passait
+              inaperçu ; du jour où il est calculé, il vide l'essai de son sens —
+              tout ClikMe tient dans « SUR MOI ».
+              Pas d'attribut `capture` : sur iPhone, le laisser force l'appareil
+              et retire « Photothèque ». Or on veut les deux — une main à plat se
+              photographie souvent mieux à deux mains, donc avant. */}
+          <input
+            ref={fichier}
+            type="file"
+            accept="image/*"
+            className="mu-fichier"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              const lecteur = new FileReader();
+              lecteur.onload = () => {
+                setPhoto(String(lecteur.result));
+                setRendu(null);
+                setPiece(null);
+                // ON RESTE SUR LE VISEUR, ET C'EST VOULU. La photo revient AVEC
+                // le repère par-dessus : c'est le seul moment où l'on peut voir
+                // si son poignet, sa table ou sa main tombent où le calcul les
+                // attend — et reprendre si ce n'est pas le cas. Enchaîner
+                // directement sur le choix rendrait le gabarit décoratif.
+              };
+              lecteur.readAsDataURL(f);
+              e.target.value = "";
+            }}
+          />
+          {photo ? (
+            <>
+              <button type="button" className="mu-cta plein" onClick={() => setEtape("choisir")}>
+                <i aria-hidden="true">👉</i>
+                <span>
+                  <b>Choisir sur cette photo</b>
+                  <em>Vérifiez que le repère tombe bien sur {mur.essai?.partie}</em>
+                </span>
+              </button>
+              <button type="button" className="mu-exemple" onClick={() => fichier.current?.click()}>
+                Reprendre la photo
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="mu-cta plein" onClick={() => fichier.current?.click()}>
+                <i aria-hidden="true">📷</i>
+                <span>
+                  <b>Photographier {mur.essai?.partie}</b>
+                  <em>Votre photo reste sur votre téléphone — rien n’est envoyé</em>
+                </span>
+              </button>
+              {/* LA PHOTO D'EXEMPLE RESTE ACCESSIBLE, ET ELLE EST NOMMEE COMME
+                  TELLE. Une maquette qu'on fait essayer doit pouvoir se montrer
+                  sans que celui qui la tient sorte sa propre main — mais alors
+                  il faut que l'écran DISE que ce n'est pas la sienne, ce qui
+                  manquait justement. */}
+              <button
+                type="button"
+                className="mu-exemple"
+                onClick={() => {
+                  setRendu(null);
+                  setPiece(null);
+                  setEtape("choisir");
+                }}
+              >
+                Voir avec la photo d’exemple
+              </button>
+            </>
+          )}
         </div>
       )}
 
@@ -1128,7 +1205,7 @@ function Essai({
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={avant ? mur.essai?.avant : (rendu?.image ?? piece.rendu ?? piece.photo)}
+              src={avant ? laPhoto : (rendu?.image ?? piece.rendu ?? piece.photo)}
               alt={avant ? "Votre photo" : `Essai : ${piece.nom}`}
             />
             <span className="mu-rendu-t2">{avant ? "Votre photo" : "Avec la pièce"}</span>
@@ -1140,13 +1217,30 @@ function Essai({
               rendu CALCULÉ dit son temps de calcul ; un rendu tout fait dit
               qu'il est tout fait. La maquette ne doit jamais laisser croire
               qu'elle a fabriqué ce qu'elle a seulement affiché. */}
-          <span className={rendu?.souci ? "mu-rendu-b rate" : "mu-rendu-b"}>
+          {/* CE BADGE DOIT DIRE SUR QUELLE PHOTO ON A CALCULÉ, et c'est
+              exactement l'information qui manquait : sans elle, un résultat
+              impeccable sur la main d'une inconnue passe pour le sien. */}
+          <span className={rendu?.souci || !photo ? "mu-rendu-b rate" : "mu-rendu-b"}>
             {rendu?.souci
               ? rendu.souci
-              : rendu
-                ? `Calculé sur votre téléphone en ${rendu.ms} ms · rien n’a été envoyé`
-                : "Rendu photographié à l’avance"}
+              : !photo
+                ? "Photo d’exemple — ce n’est pas la vôtre"
+                : rendu
+                  ? `Sur VOTRE photo, calculé sur votre téléphone en ${rendu.ms} ms`
+                  : "Rendu photographié à l’avance"}
           </span>
+          {/* LA DIFFERENCE ENTRE LES DEUX MECANIQUES SE DIT, PARCE QU'ELLE SE
+              VOIT. Pour les ongles, un modele CHERCHE la main : le cadrage est
+              libre. Pour un bijou ou un objet, le gabarit est a coordonnees
+              fixes — la piece se pose sur le repere, et sur une photo cadree
+              autrement elle tombe a cote. Le dire ici, c'est donner le geste qui
+              repare ; se taire, c'est laisser croire que le calcul s'est trompe. */}
+          {photo && mur.essai?.gabarit && mur.essai.gabarit.forme !== "main" && (
+            <p className="mu-rendu-a">
+              La pièce se pose sur le repère du viseur. Si elle tombe à côté,
+              reprenez la photo en alignant {mur.essai.partie} sur les traits.
+            </p>
+          )}
           <div className="mu-rendu-t">
             <b>{piece.nom}</b>
             <em>{piece.prix}</em>
@@ -1570,6 +1664,15 @@ function Styles() {
           filter:drop-shadow(0 0 6px rgba(10,20,40,.55));}
         .mu-cadrer>p{margin:12px 0 0;font-size:12.5px;line-height:1.5;
           color:var(--mu-pale);}
+        /* Le champ de fichier ne se voit jamais : c'est le bouton qui le
+           declenche. Mais il reste DANS le flux et focalisable, sinon le clavier
+           et les lecteurs d'ecran perdent le seul moyen de prendre la photo. */
+        .mu-fichier{position:absolute;width:1px;height:1px;opacity:0;
+          pointer-events:none;}
+        .mu-exemple{display:block;margin:10px auto 0;padding:6px 4px;
+          background:none;border:none;font-family:inherit;font-size:12.5px;
+          font-weight:600;color:var(--mu-pale);cursor:pointer;
+          text-decoration:underline;text-underline-offset:3px;}
         .mu-cadrer .mu-cta{text-align:left;}
         .mu-cadrer .mu-cta>i{font-size:20px;}
 
@@ -1656,6 +1759,9 @@ function Styles() {
           border-color:rgba(255,138,90,.4);}
         .mu-calcul-p{display:block;margin-top:6px;font-style:normal;font-size:11.5px;
           font-weight:600;color:var(--mu-pale);}
+        .mu-rendu-a{margin:10px 0 0;font-size:12px;line-height:1.5;
+          color:#FFC9A8;background:rgba(255,138,90,.12);
+          border:1px solid rgba(255,138,90,.28);border-radius:12px;padding:9px 11px;}
         .mu-rendu-r{margin:14px 0 0;font-size:13.5px;line-height:1.55;
           color:#DDE8F4;}
         .mu-rendu-r b{font-weight:800;}
