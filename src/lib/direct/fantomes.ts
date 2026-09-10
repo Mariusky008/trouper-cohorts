@@ -234,6 +234,15 @@ export type Piece = {
   decoupe?: string;
   /** Un rendu tout prêt, quand il en existe un de meilleur que le calcul. */
   rendu?: string;
+  /**
+   * LA COULEUR DE LA POSE, POUR UN MÉTIER QUI VEND UNE COULEUR.
+   *
+   * Une onglerie n'a pas d'objet à découper : elle a une teinte et une longueur.
+   * La pièce ne porte donc pas une découpe mais un vernis, et c'est
+   * `lib/direct/ongles.ts` qui le pose. Voir ce fichier pour pourquoi on dessine
+   * l'ongle DU SALON plutôt que de chercher celui de la cliente.
+   */
+  vernis?: { couleur: string; longueur?: number };
   bientot?: boolean;
 };
 
@@ -508,15 +517,50 @@ export const MURS: Mur[] = [
      */
     essai: {
       partie: "votre main",
-      consigne: "Posez votre main à plat, paume vers le bas, à la lumière du jour.",
-      // ON N'A PAS DE MAIN NUE DANS LE DEPOT : l'avant est donc la main posee,
-      // et l'essai de ce metier reste le moins demonstratif des trois. C'est
-      // ecrit ici plutot que masque a l'ecran.
-      avant: "/direct/pose-ongles.jpg",
+      consigne: "Toute la main dans le cadre, à plat, paume vers le bas, à la lumière du jour.",
+      /**
+       * L'AVANT A CHANGÉ DE PHOTO, ET POUR UNE RAISON MESURÉE.
+       *
+       * C'était `pose-ongles.jpg`. Le modèle de main N'Y TROUVE RIEN, à aucun
+       * réglage : la main y est repliée, à contre-jour, sur du noir. Essai fait,
+       * quatre cadrages, deux délégués, zéro détection. `avis-ongles.jpg` est la
+       * même onglerie, bien éclairée, main entière — et elle est reconnue en
+       * quatre-vingt-dix millisecondes.
+       *
+       * ET C'EST UN CAS DUR, PAS UN CAS FACILE : cette main porte déjà un vernis
+       * rose à paillettes avec un dégradé. On repeint PAR-DESSUS, ce qui est la
+       * situation la plus fréquente — on essaie une couleur quand on en porte
+       * déjà une.
+       */
+      avant: "/direct/avis-ongles.jpg",
+      // Rien à placer : c'est le modèle qui trouve les doigts. Voir `Gabarit`.
+      gabarit: { forme: "main" },
       pieces: [
-        { id: "p-coeurs", nom: "Motif cœurs", prix: "45 €", photo: "/direct/pose-ongles.jpg", rendu: "/direct/pose-ongles.jpg" },
-        { id: "p-french", nom: "French classique", prix: "38 €", photo: "/direct/avis-ongles.jpg", rendu: "/direct/avis-ongles.jpg" },
-        { id: "p-nude", nom: "Nude mat", prix: "32 €", photo: "/direct/avis-ongles.jpg", bientot: true },
+        {
+          id: "p-bordeaux",
+          nom: "Bordeaux, pose moyenne",
+          prix: "45 €",
+          photo: "/direct/pose-ongles.jpg",
+          vernis: { couleur: "#8E1B3F", longueur: 1.22 },
+        },
+        {
+          id: "p-nude",
+          nom: "Nude mat, pose courte",
+          prix: "32 €",
+          photo: "/direct/avis-ongles.jpg",
+          vernis: { couleur: "#C89684", longueur: 0.95 },
+        },
+        {
+          id: "p-nuit",
+          nom: "Bleu nuit, pose longue",
+          prix: "52 €",
+          photo: "/direct/pose-ongles.jpg",
+          vernis: { couleur: "#1E2E5A", longueur: 1.55 },
+        },
+        // LE MOTIF RESTE « BIENTÔT », ET C'EST LA LIMITE ÉCRITE DE `ongles.ts` :
+        // on pose une couleur, pas un dessin. Un motif demande de savoir où est
+        // le haut de l'ongle dans le plan de l'image, ce qui n'est pas calculé.
+        { id: "p-coeurs", nom: "Motif cœurs", prix: "45 €", photo: "/direct/pose-ongles.jpg", bientot: true },
       ],
     },
     contexte: {

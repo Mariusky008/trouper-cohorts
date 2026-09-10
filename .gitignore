@@ -74,3 +74,7 @@ next-env.d.ts
 /boutique-*.png
 /q-*.png
 /c-*.png
+
+# Le moteur et le modele de l'essai d'ongles : 19 Mo, reconstitues par
+# scripts/poser-mediapipe.sh. Voir ce fichier pour le pourquoi.
+/public/mediapipe

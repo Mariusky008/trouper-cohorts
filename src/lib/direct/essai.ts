@@ -68,7 +68,18 @@ export type Gabarit =
   /** L'objet est POSÉ sur une surface : son pied touche `pied`, il fait `hauteur` de haut. */
   | { forme: "plan"; pied: [number, number]; hauteur: number; lumiere?: number }
   /** L'objet FAIT LE TOUR d'un cylindre : le poignet court le long de `axe`, large de `diametre`. */
-  | { forme: "cylindre"; axe: [[number, number], [number, number]]; diametre: number };
+  | { forme: "cylindre"; axe: [[number, number], [number, number]]; diametre: number }
+  /**
+   * UNE MAIN, ET C'EST LE MODÈLE QUI LA TROUVE — pas des coordonnées.
+   *
+   * Les deux formes ci-dessus disent OÙ va la pièce, parce qu'on le sait
+   * d'avance : le gabarit l'a imposé au cadrage. Une main, non — elle a cinq
+   * doigts qui bougent, et il faut les localiser dans la photo. C'est
+   * `lib/direct/ongles.ts` qui s'en charge, avec un modèle qui tourne dans le
+   * téléphone ; ce gabarit-ci ne porte donc aucune coordonnée, il dit seulement
+   * « ici, on cherche une main ».
+   */
+  | { forme: "main" };
 
 export type Pose = {
   /** Le rendu, en `data:` — prêt à être montré, gardé, publié. */
@@ -291,6 +302,10 @@ export async function composer(opts: {
   const { c, ctx } = toile(L, H);
   ctx.drawImage(lieu, 0, 0, L, H);
 
+  if (opts.gabarit.forme === "main") {
+    // Une main ne se compose pas, elle se PEINT : voir `lib/direct/ongles.ts`.
+    throw new Error("le gabarit « main » passe par poserVernis, pas par composer");
+  }
   if (opts.gabarit.forme === "cylindre") {
     ceindre(ctx, piece, opts.gabarit, L, H);
   } else {

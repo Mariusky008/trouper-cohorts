@@ -70,6 +70,7 @@ import {
   type Piece,
 } from "@/lib/direct/fantomes";
 import { composer, type Gabarit } from "@/lib/direct/essai";
+import { laMainEstPrete, poserVernis } from "@/lib/direct/ongles";
 
 /**
  * « CHEZ QUI », ÉCRIT COMME ON LE DIRAIT.
@@ -812,6 +813,32 @@ function Viseur({ photo, gabarit }: { photo?: string; gabarit?: Gabarit }) {
         </>
       );
     }
+    if (gabarit.forme === "main") {
+      /**
+       * LE REPÈRE D'UNE MAIN N'EST PAS UN EMPLACEMENT, C'EST UNE MARGE.
+       *
+       * Mesuré, et c'est ce qui décide de tout : une main qui TOUCHE les bords du
+       * cadre n'est pas reconnue — zéro détection, à tous les réglages. La même
+       * photo avec un quart de marge autour est reconnue en quatre-vingt-dix
+       * millisecondes. Le cadre dessiné ici est donc l'unique consigne qui
+       * compte, et elle ne se devine pas : « toute la main, et de l'air autour ».
+       */
+      const mx = l * 0.14;
+      const my = h * 0.14;
+      return (
+        <rect
+          x={mx}
+          y={my}
+          width={l - 2 * mx}
+          height={h - 2 * my}
+          rx={Math.min(l, h) * 0.07}
+          fill="none"
+          stroke="rgba(139,214,255,.92)"
+          strokeWidth={Math.max(2, l / 190)}
+          strokeDasharray={`${l / 24} ${l / 40}`}
+        />
+      );
+    }
     const px = gabarit.pied[0] * l;
     const py = gabarit.pied[1] * h;
     const rx = l * 0.15;
@@ -838,8 +865,17 @@ function Viseur({ photo, gabarit }: { photo?: string; gabarit?: Gabarit }) {
       </>
     );
   };
+  /**
+   * LE CADRE D'UNE MAIN SE MONTRE EN ENTIER, ET C'EST LE SEUL QUI L'EXIGE.
+   *
+   * Le viseur rogne la photo pour remplir son rectangle, ce qui va très bien à un
+   * repère posé AU MILIEU de l'image — un poignet, une table. Mais le repère
+   * d'une main EST sa marge : rogné, il ne restait que ses deux côtés, et la
+   * seule consigne qui compte devenait invisible.
+   */
+  const entier = gabarit?.forme === "main";
   return (
-    <div className="mu-viseur">
+    <div className={entier ? "mu-viseur entier" : "mu-viseur"}>
       {photo && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -854,7 +890,7 @@ function Viseur({ photo, gabarit }: { photo?: string; gabarit?: Gabarit }) {
         <svg
           className="mu-viseur-g"
           viewBox={`0 0 ${dim.l} ${dim.h}`}
-          preserveAspectRatio="xMidYMid slice"
+          preserveAspectRatio={entier ? "xMidYMid meet" : "xMidYMid slice"}
           aria-hidden="true"
         >
           {guide()}
@@ -891,7 +927,9 @@ function Essai({
    * `ms` est le temps réel du calcul, et il est affiché tel quel. Une promesse
    * d'instantanéité qu'on peut chiffrer vaut mieux qu'un adjectif.
    */
-  const [rendu, setRendu] = useState<{ image: string; ms: number } | null>(null);
+  const [rendu, setRendu] = useState<{ image: string; ms: number; souci?: string } | null>(null);
+  /** Vrai pendant le premier téléchargement du modèle de main. Voir `EcranCalcul`. */
+  const [telecharge, setTelecharge] = useState(false);
   /**
    * LE VERDICT SUR LE RENDU LUI-MÊME, ET IL EST SÉPARÉ DE L'ACHAT.
    *
@@ -937,7 +975,7 @@ function Essai({
       setPct((p) => Math.min(96, p + 7));
     }, 60);
 
-    const finir = (r: { image: string; ms: number } | null) => {
+    const finir = (r: { image: string; ms: number; souci?: string } | null) => {
       const reste = Math.max(0, PLANCHER - (Date.now() - debut));
       window.setTimeout(() => {
         if (!vivant) return;
@@ -948,7 +986,20 @@ function Essai({
     };
 
     const gabarit = mur.essai?.gabarit;
-    if (!gabarit || !piece.decoupe || !mur.essai?.avant) {
+    if (gabarit?.forme === "main" && piece.vernis && mur.essai?.avant) {
+      // ON PRÉVIENT SI LE MODÈLE N'EST PAS ENCORE LÀ. Dix-neuf mégaoctets la
+      // première fois : dire « ton fantôme prépare » pendant ce temps-là serait
+      // mentir sur ce qui se passe, et sur ce que ça coûte à la cliente en 4G.
+      setTelecharge(!laMainEstPrete());
+      poserVernis({ photo: mur.essai.avant, vernis: piece.vernis })
+        .then((p) => finir({ image: p.image, ms: p.ms, souci: p.ongles ? undefined : p.souci }))
+        .catch(() => finir(null));
+      return () => {
+        vivant = false;
+        if (minuteur.current) window.clearInterval(minuteur.current);
+      };
+    }
+    if (!gabarit || gabarit.forme === "main" || !piece.decoupe || !mur.essai?.avant) {
       // Pas de gabarit ou pas de découpe : on retombe sur ce que la pièce
       // fournit. C'est le cas de la paire vraie du bijoutier, qui reste
       // meilleure que tout calcul.
@@ -1051,7 +1102,13 @@ function Essai({
       {etape === "calcul" && (
         <div className="mu-calcul">
           <Signe classe="mu-calcul-s" />
-          <b>Ton Fantôme prépare ton essayage…</b>
+          {/* CE QU'ON DIT PENDANT L'ATTENTE DÉPEND DE CE QU'ON FAIT VRAIMENT. La
+              première pose d'ongles télécharge dix-neuf mégaoctets ; annoncer
+              « ton fantôme prépare » pendant ce temps-là mentirait sur ce qui se
+              passe et sur ce que ça coûte en données. Une fois pour toutes, et
+              on le dit. */}
+          <b>{telecharge ? "Première pose : on installe l’essayage…" : "Ton Fantôme prépare ton essayage…"}</b>
+          {telecharge && <em className="mu-calcul-p">19 Mo, une seule fois — ensuite c’est instantané, et hors ligne</em>}
           <div className="mu-jauge" aria-hidden="true">
             <i style={{ width: `${Math.min(100, pct)}%` }} />
           </div>
@@ -1083,10 +1140,12 @@ function Essai({
               rendu CALCULÉ dit son temps de calcul ; un rendu tout fait dit
               qu'il est tout fait. La maquette ne doit jamais laisser croire
               qu'elle a fabriqué ce qu'elle a seulement affiché. */}
-          <span className="mu-rendu-b">
-            {rendu
-              ? `Calculé sur votre téléphone en ${rendu.ms} ms · rien n’a été envoyé`
-              : "Rendu photographié à l’avance"}
+          <span className={rendu?.souci ? "mu-rendu-b rate" : "mu-rendu-b"}>
+            {rendu?.souci
+              ? rendu.souci
+              : rendu
+                ? `Calculé sur votre téléphone en ${rendu.ms} ms · rien n’a été envoyé`
+                : "Rendu photographié à l’avance"}
           </span>
           <div className="mu-rendu-t">
             <b>{piece.nom}</b>
@@ -1489,6 +1548,9 @@ function Styles() {
         .mu-viseur{position:relative;height:210px;border-radius:18px;overflow:hidden;
           background:repeating-linear-gradient(135deg,rgba(255,255,255,.03) 0 10px,
             transparent 10px 20px),rgba(255,255,255,.03);}
+        /* Voir le composant Viseur : seul le gabarit « main » se montre entier. */
+        .mu-viseur.entier{height:250px;background:#0B1220;}
+        .mu-viseur.entier img{object-fit:contain;}
         .mu-viseur img{width:100%;height:100%;object-fit:cover;display:block;
           opacity:.9;}
         .mu-viseur span{position:absolute;width:26px;height:26px;
@@ -1590,6 +1652,10 @@ function Styles() {
           background:none;border:none;font-family:inherit;font-size:12.5px;
           font-weight:600;color:var(--mu-pale);cursor:pointer;
           text-decoration:underline;text-underline-offset:3px;}
+        .mu-rendu-b.rate{background:rgba(255,138,90,.18);color:#FFC9A8;
+          border-color:rgba(255,138,90,.4);}
+        .mu-calcul-p{display:block;margin-top:6px;font-style:normal;font-size:11.5px;
+          font-weight:600;color:var(--mu-pale);}
         .mu-rendu-r{margin:14px 0 0;font-size:13.5px;line-height:1.55;
           color:#DDE8F4;}
         .mu-rendu-r b{font-weight:800;}

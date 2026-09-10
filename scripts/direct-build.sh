@@ -32,4 +32,11 @@ export NEXT_PUBLIC_APP_URL="${NEXT_PUBLIC_APP_URL:-https://www.clikme.fr}"
 # aperçoive — déjà payé six fois. Le vérificateur coûte deux secondes.
 node scripts/verifier-styles-en-ligne.mjs
 
+# LE MOTEUR DE L'ESSAI D'ONGLES ENSUITE. Il n'est pas dans le depot — dix-neuf
+# megaoctets — donc il se remet en place a chaque compilation. Sans lui la page
+# se construit quand meme et l'essai retombe sur la photo de la piece, ce qui est
+# silencieux : mieux vaut le poser toujours que de chercher un jour pourquoi
+# l'onglerie ne rend rien.
+bash scripts/poser-mediapipe.sh
+
 npm run build
