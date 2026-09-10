@@ -632,6 +632,21 @@ function Annonce({
   const [verbe, setVerbe] = useState(mur.verbes[0] ?? "cherche");
   const [humeur, setHumeur] = useState(mur.humeurs[0] ?? "");
   const [texte, setTexte] = useState("");
+  /**
+   * LA PHOTO DE L'ANNONCE, ET ELLE N'EXISTAIT PAS.
+   *
+   * « Ajouter une photo » était un bouton SANS gestionnaire : il ne faisait
+   * rien, et le fantôme déposé partait avec `mur.photoLieu` — la photo du
+   * commerce. On publiait donc la vitrine du bar à la place de ce que la
+   * personne voulait montrer, sans que rien ne le dise.
+   *
+   * C'est le même défaut que celui trouvé sur l'essai, au même endroit du
+   * parcours, et il vaut la peine de le nommer : DANS UNE MAQUETTE, UN BOUTON
+   * QUI NE FAIT RIEN NE SE VOIT PAS. Tout le reste répond, on suppose qu'il
+   * répond aussi.
+   */
+  const [photo, setPhoto] = useState<string | null>(null);
+  const fichier = useRef<HTMLInputElement>(null);
   const verbes = VERBES.filter((v) => mur.verbes.includes(v.cle));
   const humeurs = HUMEURS.filter((h) => mur.humeurs.includes(h.cle));
   const pret = texte.trim().length > 3 && restants > 0;
@@ -669,10 +684,39 @@ function Annonce({
           placeholder={`Ex. : ${verbeDe(verbe)?.exemple ?? ""}`}
         />
         <span className="mu-compte">{texte.length}/150</span>
-        <button type="button" className="mu-photo">
-          <i aria-hidden="true">🖼️</i>
-          Ajouter une photo (optionnel)
+        <input
+          ref={fichier}
+          type="file"
+          accept="image/*"
+          className="mu-fichier"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (!f) return;
+            const lecteur = new FileReader();
+            lecteur.onload = () => setPhoto(String(lecteur.result));
+            lecteur.readAsDataURL(f);
+            e.target.value = "";
+          }}
+        />
+        <button type="button" className="mu-photo" onClick={() => fichier.current?.click()}>
+          {photo ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={photo} alt="" className="mu-photo-v" />
+              Changer la photo
+            </>
+          ) : (
+            <>
+              <i aria-hidden="true">🖼️</i>
+              Ajouter une photo (optionnel)
+            </>
+          )}
         </button>
+        {photo && (
+          <button type="button" className="mu-photo-x" onClick={() => setPhoto(null)}>
+            Retirer
+          </button>
+        )}
       </div>
 
       {/* L'HUMEUR EST FACULTATIVE ET ELLE EST APRES LE TEXTE : ce qu'on a a dire
@@ -705,7 +749,9 @@ function Annonce({
           onPose({
             id: `pose-${Date.now()}`,
             qui: "Vous",
-            photo: mur.photoLieu,
+            // SA PHOTO D'ABORD. `mur.photoLieu` ne reste qu'un defaut quand la
+            // personne n'en a pas mis — pas un remplacant silencieux.
+            photo: photo ?? mur.photoLieu,
             verbe,
             humeur: humeur || undefined,
             mot: texte.trim(),
@@ -1034,7 +1080,20 @@ function Essai({
     onPose({
       id: `pose-${Date.now()}`,
       qui: "Vous",
-      photo: piece?.photo ?? mur.photoLieu,
+      /**
+       * LE FANTÔME PORTE VOTRE RENDU, PAS LA PHOTO DU CATALOGUE.
+       *
+       * Il portait `piece.photo` — l'image du produit chez le commerçant. Le mur
+       * affichait donc une vignette de catalogue sous votre prénom, exactement
+       * comme si vous n'aviez rien essayé. C'est le même défaut que le bouton
+       * qui ne photographiait pas : ce qui est montré n'est pas ce qui a été
+       * fait.
+       *
+       * ET C'EST TOUT L'INTÉRÊT DU MUR : ce qui donne envie d'essayer, c'est de
+       * voir la chose sur QUELQU'UN, pas sur fond blanc. Un mur de vignettes
+       * produit est un catalogue de plus.
+       */
+      photo: rendu?.image ?? piece?.rendu ?? piece?.photo ?? mur.photoLieu,
       essai: { quoi: piece?.nom ?? "", verdict },
       mot:
         verdict === "pris"
@@ -1669,6 +1728,11 @@ function Styles() {
            et les lecteurs d'ecran perdent le seul moyen de prendre la photo. */
         .mu-fichier{position:absolute;width:1px;height:1px;opacity:0;
           pointer-events:none;}
+        .mu-photo-v{width:26px;height:26px;border-radius:7px;object-fit:cover;
+          display:block;}
+        .mu-photo-x{background:none;border:none;font-family:inherit;
+          font-size:11.5px;font-weight:600;color:var(--mu-pale);cursor:pointer;
+          padding:4px 6px;text-decoration:underline;text-underline-offset:3px;}
         .mu-exemple{display:block;margin:10px auto 0;padding:6px 4px;
           background:none;border:none;font-family:inherit;font-size:12.5px;
           font-weight:600;color:var(--mu-pale);cursor:pointer;
