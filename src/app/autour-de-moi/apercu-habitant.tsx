@@ -39,7 +39,15 @@
 // délicat : on verrouille la direction au premier mouvement, et le balayage est
 // désactivé dès qu'on a commencé à descendre. Sans ça, lire le programme ferait
 // partir la carte.
-import { useEffect, useRef, useState, useSyncExternalStore, useLayoutEffect } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useLayoutEffect,
+  type ReactNode,
+} from "react";
+import { useGlisserPourFermer } from "@/lib/direct/glisser";
 // Depuis que la fiche du commerce a quitte le pli, le paquet a une SORTIE :
 // deux liens vers la page boutique, celui du bandeau d'identite et celui du
 // bas du pli. Voir le grand commentaire au pied de la journee.
@@ -1073,6 +1081,38 @@ function Fantome({ classe = "ap-fantome", clin = false }: { classe?: string; cli
                   <path className="ap-f-coeur i" d="M0 3.1C-3.6.6-3.6-2.8-1.5-2.8-.5-2.8 0-2.1 0-1.7 0-2.1.5-2.8 1.5-2.8 3.6-2.8 3.6.6 0 3.1Z" />
                 </g>
                   </svg>
+  );
+}
+
+/**
+ * UNE FEUILLE QUI SE FERME EN GLISSANT.
+ *
+ * TOUTES LES FEUILLES DU PRODUIT PASSENT PAR ICI, et c'est le but : un module
+ * qui invente sa propre façon de se fermer se paie au premier essai. Le geste,
+ * ses trois gardes et la raison de chacune sont dans `lib/direct/glisser`.
+ *
+ * LA CROIX RESTE. Elle sert au clavier, à la souris, et à ceux qui ne
+ * connaissent pas encore le geste — elle n'est simplement plus le seul chemin.
+ */
+function Feuille({
+  classe,
+  fermer,
+  enfants,
+}: {
+  classe?: string;
+  fermer: () => void;
+  enfants: ReactNode;
+}) {
+  const g = useGlisserPourFermer(fermer);
+  return (
+    <div
+      className={`ap-feuille${classe ? ` ${classe}` : ""}`}
+      role="dialog"
+      aria-modal="true"
+      {...g.poignee}
+    >
+      {enfants}
+    </div>
   );
 }
 
@@ -7695,7 +7735,10 @@ export function ApercuHabitant() {
                 aria-label="Fermer"
                 onClick={() => setComposeVille(false)}
               />
-              <div className="ap-feuille" role="dialog" aria-modal="true">
+              <Feuille
+                fermer={() => setComposeVille(false)}
+                enfants={
+                  <>
                 <div className="ap-f-tete">
                   <b>Dire quelque chose</b>
                   <span className="simple">
@@ -7758,7 +7801,9 @@ export function ApercuHabitant() {
                     Le dire à la ville
                   </button>
                 </div>
-              </div>
+                  </>
+                }
+              />
             </>
           )}
 
@@ -9108,7 +9153,10 @@ export function ApercuHabitant() {
                 aria-label="Fermer"
                 onClick={() => setMurOuvert(false)}
               />
-              <div className="ap-feuille ap-murf" role="dialog" aria-modal="true">
+              <Feuille classe="ap-murf"
+                fermer={() => setMurOuvert(false)}
+                enfants={
+                  <>
                 <span className="ap-feuille-p" aria-hidden="true" />
                 <button
                   type="button"
@@ -9133,7 +9181,9 @@ export function ApercuHabitant() {
                     })}
                   />
                 </div>
-              </div>
+                  </>
+                }
+              />
             </>
           )}
 
@@ -9471,7 +9521,10 @@ export function ApercuHabitant() {
                 aria-label="Fermer"
                 onClick={() => setAConfirmer(null)}
               />
-              <div className="ap-feuille" role="dialog" aria-modal="true">
+              <Feuille
+                fermer={() => setAConfirmer(null)}
+                enfants={
+                  <>
                 {(() => {
                   const d = demandeDuSalon(salon, aConfirmer.pourUnSeul);
                   return (
@@ -9563,7 +9616,9 @@ export function ApercuHabitant() {
                     </>
                   );
                 })()}
-              </div>
+                  </>
+                }
+              />
             </>
           )}
 
@@ -9771,7 +9826,10 @@ export function ApercuHabitant() {
                 aria-label="Fermer"
                 onClick={jeNePreviensPas}
               />
-              <div className="ap-feuille ap-prev" role="dialog" aria-modal="true">
+              <Feuille classe="ap-prev"
+                fermer={() => jeNePreviensPas()}
+                enfants={
+                  <>
                 {(() => {
                   const c = commentPrevenir({
                     telephone: prevenir.telephone,
@@ -9846,7 +9904,9 @@ export function ApercuHabitant() {
                     </>
                   );
                 })()}
-              </div>
+                  </>
+                }
+              />
             </>
           )}
 
@@ -9858,7 +9918,10 @@ export function ApercuHabitant() {
                 aria-label="Fermer"
                 onClick={() => setProposeOuvert(false)}
               />
-              <div className="ap-feuille" role="dialog" aria-modal="true">
+              <Feuille
+                fermer={() => setProposeOuvert(false)}
+                enfants={
+                  <>
                 <div className="ap-f-tete">
                   <b>Proposer autre chose</b>
                   <span className="simple">
@@ -9925,7 +9988,9 @@ export function ApercuHabitant() {
                     </div>
                   )}
                 </div>
-              </div>
+                  </>
+                }
+              />
             </>
           )}
 
@@ -9951,7 +10016,10 @@ export function ApercuHabitant() {
                 aria-label="Fermer"
                 onClick={() => setCatalogue(null)}
               />
-              <div className="ap-feuille" role="dialog" aria-modal="true">
+              <Feuille
+                fermer={() => setCatalogue(null)}
+                enfants={
+                  <>
                 <span className="ap-poignee" aria-hidden="true" />
                 <button
                   type="button"
@@ -10121,7 +10189,9 @@ export function ApercuHabitant() {
                     ));
                   })()}
                 </div>
-              </div>
+                  </>
+                }
+              />
             </>
           )}
 
@@ -10133,7 +10203,10 @@ export function ApercuHabitant() {
                 aria-label="Fermer"
                 onClick={() => setDemandePrenom(null)}
               />
-              <div className="ap-feuille" role="dialog" aria-modal="true">
+              <Feuille
+                fermer={() => setDemandePrenom(null)}
+                enfants={
+                  <>
                 <div className="ap-f-tete">
                   <b>Comment vous appelez-vous&nbsp;?</b>
                   <span className="simple">
@@ -10176,7 +10249,9 @@ export function ApercuHabitant() {
                     Continuer
                   </button>
                 </form>
-              </div>
+                  </>
+                }
+              />
             </>
           )}
 
@@ -10188,7 +10263,10 @@ export function ApercuHabitant() {
                 aria-label="Fermer"
                 onClick={() => setFeuille("")}
               />
-              <div className="ap-feuille" role="dialog">
+              <Feuille
+                fermer={() => setFeuille("")}
+                enfants={
+                  <>
                 <span className="ap-poignee" aria-hidden="true" />
                 <button
                   type="button"
@@ -10674,7 +10752,9 @@ export function ApercuHabitant() {
                     )}
                   </>
                 )}
-              </div>
+                  </>
+                }
+              />
             </>
           )}
         </div>
@@ -12566,7 +12646,13 @@ export function ApercuHabitant() {
         .ap-feuille.ap-murf{max-height:92%;padding-left:0;padding-right:0;}
         .ap-murf .mu.dans-feuille{flex:1;min-height:0;overflow-y:auto;
           -webkit-overflow-scrolling:touch;background:none;max-width:none;
-          margin:0;padding:2px 16px 18px;}
+          margin:0;padding:2px 16px 18px;
+          /* PAS DE BARRE DE DEFILEMENT. Elle apparaissait a droite du mur des
+             qu'on le touchait : sur un telephone, une barre visible est un
+             objet de bureau pose dans une feuille, et elle mange le bord de la
+             derniere carte. Le defilement se sent, il n'a pas a se voir. */
+          scrollbar-width:none;}
+        .ap-murf .mu.dans-feuille::-webkit-scrollbar{display:none;}
         /* LA CROIX EST AU-DESSUS DU TITRE : on lui laisse sa place plutot que de
            faire passer le nom du commerce dessous. */
         .ap-murf .mu-tete{padding-right:44px;}

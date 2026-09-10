@@ -237,12 +237,15 @@ export function MurContenu({ mur }: { mur: TypeMur }) {
   const [passage, setPassage] = useState<Fantome | null>(null);
   /** Les fantômes posés pendant la démonstration, en tête des clients. */
   const [poses, setPoses] = useState<Fantome[]>([]);
+  /** Le mur déplié : les rangées deviennent une grille, rien ne dépasse du bord. */
+  const [tout, setTout] = useState(false);
 
   useEffect(() => {
     setEcran("mur");
     setPassage(null);
     setPoses([]);
     setDits({});
+    setTout(false);
   }, [mur.cle]);
 
   const clients = [...poses, ...mur.clients];
@@ -259,6 +262,8 @@ export function MurContenu({ mur }: { mur: TypeMur }) {
           dits={dits}
           onDit={setPassage}
           onDeposer={() => setEcran("depot")}
+          tout={tout}
+          onTout={setTout}
         />
       ) : (
         <EcranDepot
@@ -407,7 +412,11 @@ function EcranMur({
   dits,
   onDit,
   onDeposer,
+  tout,
+  onTout,
 }: {
+  tout: boolean;
+  onTout: (v: boolean) => void;
   mur: TypeMur;
   clients: Fantome[];
   restants: number;
@@ -455,7 +464,20 @@ function EcranMur({
         </span>
         <h2>Le mur du jour</h2>
         <b className="mu-sect-j">Aujourd’hui</b>
-        <span className="mu-sect-v">Voir tout →</span>
+        {/* ─── « VOIR TOUT » EN EST UN, MAINTENANT ───
+            C'ETAIT UN MOT PEINT, et il ne faisait rien : « Voir tout ne
+            fonctionne pas. » Il ouvre le mur en entier — les rangees qui
+            defilaient de cote se deplient en grille, et plus rien n'est cache
+            au-dela du bord droit. C'est le seul endroit ou le mur cesse d'etre
+            un aperçu, donc le seul ou il peut etre long. */}
+        <button
+          type="button"
+          className="mu-sect-v"
+          aria-expanded={tout}
+          onClick={() => onTout(!tout)}
+        >
+          {tout ? "Réduire ↑" : "Voir tout →"}
+        </button>
       </div>
 
       <p className="mu-note">
@@ -468,7 +490,7 @@ function EcranMur({
           lancement. Personne ne veut etre le premier a parler dans une piece
           silencieuse. Ils sont marques « Staff », et ce n'est pas negociable —
           un fantome du patron qui passerait pour un client est un faux avis. */}
-      <div className="mu-rang maison">
+      <div className={`mu-rang maison${tout ? " tout" : ""}`}>
         {mur.maison.map((f) => (
           <Carte key={f.id} f={f} grande quand={dits[f.id]} onDit={onDit} />
         ))}
@@ -481,7 +503,7 @@ function EcranMur({
         <h2>Les clients du jour</h2>
       </div>
 
-      <div className="mu-rang">
+      <div className={`mu-rang${tout ? " tout" : ""}`}>
         {clients.map((f) => (
           <Carte key={f.id} f={f} quand={dits[f.id]} onDit={onDit} />
         ))}
@@ -997,8 +1019,13 @@ function Styles() {
         .mu-tete{display:flex;align-items:center;gap:14px;margin-bottom:12px;}
         .mu-tete.centre{flex-direction:column;gap:6px;text-align:center;}
         .mu-tete.centre.depot{padding-top:14px;}
-        .mu-gros{width:74px;height:80px;flex:none;
-          filter:drop-shadow(0 8px 26px rgba(139,125,246,.6));}
+        /* ─── PAS DE HALO SUR LE GRAND FANTOME ───
+           Une ombre portee de vingt-six points deborde de la boite qui defile,
+           et une boite qui defile coupe aussi en largeur : le halo se
+           terminait par un BORD DROIT net, ce qui donnait un fantome
+           « coupe sur sa partie droite ». Un dessin blanc sur un fond quasi
+           noir n'a besoin d'aucune lueur pour se voir. */
+        .mu-gros{width:74px;height:80px;flex:none;}
         .mu-gros .mu-f-corps{fill:#F3F0FF;}
         .mu-gros .mu-f-oeil{fill:#2A1E4D;}
         .mu-gros .mu-f-bouche{fill:none;stroke:#2A1E4D;stroke-width:1.9;
@@ -1062,8 +1089,18 @@ function Styles() {
           white-space:nowrap;font-size:12px;font-weight:700;color:#C9BCFF;
           font-style:italic;}
         .mu-sect-j::before{content:"◆ ";font-size:8px;vertical-align:middle;}
-        .mu-sect-v{margin-left:auto;font-size:12px;font-weight:700;color:var(--mu-pale);
-          white-space:nowrap;}
+        .mu-sect-v{margin-left:auto;font-family:inherit;font-size:12px;font-weight:700;
+          color:#C9BCFF;white-space:nowrap;cursor:pointer;border:none;
+          background:rgba(139,125,246,.13);border-radius:20px;padding:6px 11px;}
+        .mu-sect-v:active{transform:scale(.96);}
+        /* ─── LE MUR DEPLIE ───
+           La rangee qui defile de cote devient une grille de deux colonnes :
+           tout est la, rien ne se cache derriere le bord droit. Les cartes de la
+           maison gardent leur taille — c'est la hierarchie du mur. */
+        .mu-rang.tout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+          overflow:visible;}
+        .mu-rang.tout .mu-c,.mu-rang.tout .mu-c.grande{width:auto;}
+        .mu-rang.maison.tout{grid-template-columns:minmax(0,1fr);}
 
         /* ─── LE MUR ───
            UNE GRILLE QUI DEFILE, PAS UN PAQUET QU'ON BALAIE. Ce qu'on veut savoir
@@ -1282,8 +1319,7 @@ function Styles() {
 
         .mu-calcul{text-align:center;padding:18px 0 6px;}
         .mu-calcul-s{width:56px;height:61px;
-          animation:muFlotte 1.6s ease-in-out infinite;
-          filter:drop-shadow(0 8px 24px rgba(139,125,246,.7));}
+          animation:muFlotte 1.6s ease-in-out infinite;}
         .mu-calcul-s .mu-f-corps{fill:#F3F0FF;}
         .mu-calcul-s .mu-f-oeil{fill:#2A1E4D;}
         .mu-calcul-s .mu-f-bouche{fill:none;stroke:#2A1E4D;stroke-width:1.9;
