@@ -587,7 +587,15 @@ export const MURS: Mur[] = [
         role: "Prothésiste",
         maison: true,
         photo: "/direct/pose-ongles.jpg",
-        mot: "Les nouveaux motifs sont arrivés. Essayez-les avant de venir 💅",
+        /**
+         * ELLE NE PROMET PLUS CE QUE L'ESSAI NE SAIT PAS FAIRE.
+         *
+         * Elle disait « les nouveaux MOTIFS sont arrivés, essayez-les » au-dessus
+         * d'une photo d'ongles à cœurs — alors que l'essai pose UNE COULEUR, et
+         * que le motif est marqué « Bientôt essayable » deux écrans plus loin.
+         * On promettait donc en haut du mur exactement ce qu'on refusait en bas.
+         */
+        mot: "Les nouvelles couleurs sont arrivées. Essayez-les avant de venir 💅",
         heure: "09:30",
         interesses: 6,
       },

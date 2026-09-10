@@ -1126,6 +1126,43 @@ function Essai({
 
   return (
     <>
+      {/* LE CHAMP DE FICHIER VIT AU-DESSUS DES ÉTAPES, ET PAS DANS L'UNE
+          D'ELLES. Il était dans l'écran « cadrer » : depuis l'écran de rendu, où
+          l'on propose maintenant de reprendre la photo, il n'existait plus.
+          Un bouton qui pointe vers un champ démonté ne fait rien — et un bouton
+          qui ne fait rien, on a déjà payé pour savoir que ça ne se voit pas. */}
+      <input
+        ref={fichier}
+        type="file"
+        accept="image/*"
+        className="mu-fichier"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (!f) return;
+          const lecteur = new FileReader();
+          lecteur.onload = () => {
+            setPhoto(String(lecteur.result));
+            setRendu(null);
+            setPiece(null);
+            setRate(false);
+            // ON REVIENT TOUJOURS AU VISEUR, D'OÙ QUE PARTE LA REPRISE.
+            //
+            // La photo revient AVEC le repère par-dessus : c'est le seul moment
+            // où l'on peut voir si son poignet, sa table ou sa main tombent là
+            // où le calcul les attend, et reprendre sinon. Enchaîner directement
+            // sur le choix rendrait le gabarit décoratif.
+            //
+            // ET C'EST INDISPENSABLE DEPUIS L'ÉCRAN DE RENDU, où l'on peut
+            // désormais reprendre : sans ça, on restait sur « 3 · Décider » avec
+            // une nouvelle photo et plus aucune pièce choisie — donc un écran
+            // vide.
+            setEtape("cadrer");
+          };
+          lecteur.readAsDataURL(f);
+          e.target.value = "";
+        }}
+      />
+
       <p className="mu-d-i">
         Photographiez {mur.essai?.partie}, choisissez la pièce&nbsp;: votre fantôme l’essaie pour
         vous.
@@ -1159,29 +1196,6 @@ function Essai({
               Pas d'attribut `capture` : sur iPhone, le laisser force l'appareil
               et retire « Photothèque ». Or on veut les deux — une main à plat se
               photographie souvent mieux à deux mains, donc avant. */}
-          <input
-            ref={fichier}
-            type="file"
-            accept="image/*"
-            className="mu-fichier"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (!f) return;
-              const lecteur = new FileReader();
-              lecteur.onload = () => {
-                setPhoto(String(lecteur.result));
-                setRendu(null);
-                setPiece(null);
-                // ON RESTE SUR LE VISEUR, ET C'EST VOULU. La photo revient AVEC
-                // le repère par-dessus : c'est le seul moment où l'on peut voir
-                // si son poignet, sa table ou sa main tombent où le calcul les
-                // attend — et reprendre si ce n'est pas le cas. Enchaîner
-                // directement sur le choix rendrait le gabarit décoratif.
-              };
-              lecteur.readAsDataURL(f);
-              e.target.value = "";
-            }}
-          />
           {photo ? (
             <>
               <button type="button" className="mu-cta plein" onClick={() => setEtape("choisir")}>
@@ -1241,8 +1255,20 @@ function Essai({
                 setEtape("calcul");
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.photo} alt="" />
+              {/* UNE VIGNETTE DE VERNIS MONTRE LE VERNIS, PAS UNE PHOTO VOISINE.
+                  « C'est les ongles que j'ai choisis, mais le résultat est
+                  complètement différent. » Il avait raison : la vignette du
+                  bordeaux affichait la photo des ongles blancs à cœurs rouges du
+                  mur. On choisissait donc des cœurs et on recevait un aplat.
+                  Une teinte se dessine — elle est toujours exacte, elle ne peut
+                  pas se désynchroniser de ce que le calcul va poser, et elle ne
+                  coûte pas une image. */}
+              {p.vernis ? (
+                <span className="mu-teinte" style={{ background: p.vernis.couleur }} aria-hidden="true" />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={p.photo} alt="" />
+              )}
               <b>{p.nom}</b>
               <em>{p.prix}</em>
               {/* ON DIT CE QU'ON N'A PAS. Une piece dont le rendu n'existe pas
@@ -1324,7 +1350,27 @@ function Essai({
             <b>{piece.nom}</b>
             <em>{piece.prix}</em>
           </div>
-          {rate ? (
+          {/* QUAND LE RENDU A RATÉ, ON NE DEMANDE PAS DE DÉCIDER.
+              « On me dit que ma main n'est pas bien positionnée, mais on ne me
+              propose pas d'en prendre une nouvelle : je dois sortir et
+              recommencer tout le parcours. » Exact — et c'était doublement
+              absurde, parce qu'on continuait à proposer « Je la prends » sous une
+              image où la pièce n'a pas pu être posée. On ne peut pas juger une
+              pièce qu'on n'a pas vue : le seul geste utile est de reprendre. */}
+          {rendu?.souci ? (
+            <>
+              <button type="button" className="mu-cta plein" onClick={() => fichier.current?.click()}>
+                <i aria-hidden="true">📷</i>
+                <span>
+                  <b>Reprendre la photo</b>
+                  <em>{mur.essai?.consigne}</em>
+                </span>
+              </button>
+              <button type="button" className="mu-exemple" onClick={() => setEtape("choisir")}>
+                Essayer une autre couleur
+              </button>
+            </>
+          ) : rate ? (
             <p className="mu-rendu-r">
               C’est noté, et ça ne compte pas comme un avis sur la pièce.
               <br />
@@ -1357,6 +1403,14 @@ function Essai({
               <button type="button" className="mu-rendu-x" onClick={() => setRate(true)}>
                 Le rendu n’est pas bon
               </button>
+              {/* ET REPRENDRE LA PHOTO RESTE OFFERT MÊME QUAND ÇA A MARCHÉ : un
+                  cadrage moyen donne un rendu moyen, et il faut pouvoir y
+                  revenir sans quitter la feuille. */}
+              {photo && (
+                <button type="button" className="mu-exemple" onClick={() => fichier.current?.click()}>
+                  Reprendre la photo
+                </button>
+              )}
             </>
           )}
           <p className="mu-rendu-n">
@@ -1767,6 +1821,11 @@ function Styles() {
           background:var(--mu-carte);border:1px solid var(--mu-ligne);
           border-radius:16px;overflow:hidden;padding:0 0 10px;color:var(--mu-encre);}
         .mu-pieces img{width:100%;height:96px;object-fit:cover;display:block;}
+        /* La teinte, dessinee en forme d'ongle : voir la vignette plus haut. */
+        .mu-teinte{display:block;width:100%;height:96px;
+          border-radius:0 0 46% 46%/0 0 30% 30%;
+          box-shadow:inset 0 -14px 22px -12px rgba(0,0,0,.55),
+            inset 0 12px 18px -10px rgba(255,255,255,.42);}
         .mu-pieces b{display:block;font-size:13px;font-weight:700;padding:9px 10px 0;
           text-align:left;}
         .mu-pieces em{display:block;font-style:normal;font-size:12.5px;font-weight:800;
