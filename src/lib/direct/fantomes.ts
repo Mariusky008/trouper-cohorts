@@ -248,6 +248,15 @@ export type Piece = {
 
 export type Mur = {
   cle: string;
+  /**
+   * DE QUEL MODÈLE CE MUR EST TIRÉ.
+   *
+   * `cle` porte l'identité DU COMMERCE (l'identifiant de sa carte), pas celle du
+   * modèle — c'est ce qui fait que deux ongleries n'ont pas le même mur. Le
+   * modèle se perdait donc à la construction, et sans lui on ne peut pas
+   * reconstituer le mur plus tard à partir d'un souvenir. Voir `murDuSouvenir`.
+   */
+  modele?: string;
   lieu: string;
   metier: string;
   ville: string;
@@ -954,6 +963,7 @@ export function murDeLaCarte(c: {
     }) ?? MURS[0];
   return {
     ...modele,
+    modele: modele.cle,
     cle: c.id,
     lieu: c.nom,
     metier: c.metier,
@@ -962,6 +972,41 @@ export function murDeLaCarte(c: {
     note: c.google?.note ?? modele.note,
     avis: c.google?.avis ?? modele.avis,
     photoLieu: c.photo || modele.photoLieu,
+  };
+}
+
+/**
+ * REFAIRE UN MUR À PARTIR D'UN SOUVENIR, SANS LE PAQUET.
+ *
+ * C'EST CE QUI PERMET DE REVENIR CHEZ UN COMMERCE FERMÉ. Le paquet ne garde que
+ * ce qui est ouvert maintenant — règle juste pour une table libre à midi, mais
+ * qui rendait injoignable le mur d'une onglerie le soir, c'est-à-dire à l'heure
+ * où l'on essaie des ongles. Le fantôme qu'on y a laissé porte de quoi rouvrir
+ * la porte tout seul.
+ */
+export function murDuSouvenir(s: {
+  cle: string;
+  modele: string;
+  lieu: string;
+  metier: string;
+  ville: string;
+  distance: string;
+  note: string;
+  avis: number;
+  photoLieu: string;
+}): Mur {
+  const modele = MURS.find((m) => m.cle === s.modele) ?? MURS[0];
+  return {
+    ...modele,
+    modele: modele.cle,
+    cle: s.cle,
+    lieu: s.lieu,
+    metier: s.metier,
+    ville: s.ville,
+    distance: s.distance,
+    note: s.note,
+    avis: s.avis,
+    photoLieu: s.photoLieu,
   };
 }
 

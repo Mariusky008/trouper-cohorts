@@ -153,7 +153,8 @@ import { PictoMetier } from "@/components/direct/picto-metier";
 // 👻 LE MUR MONTE ICI, sur l'annonce, et ne l'emmene nulle part. Voir le
 // commentaire du bouton dans la barre.
 import { MurContenu } from "@/components/direct/mur-contenu";
-import { murDeLaCarte } from "@/lib/direct/fantomes";
+import { murDeLaCarte, murDuSouvenir, QUOTA_DU_JOUR } from "@/lib/direct/fantomes";
+import { mesFantomes, rappelerFantome, SIGNAL as SIGNAL_FANTOMES, tempsRestant, type FantomePose } from "@/lib/direct/mes-fantomes";
 import {
   ENVIES,
   HEURE_MAX,
@@ -1318,6 +1319,35 @@ export function ApercuHabitant() {
   const [passees, setPassees] = useState<string[]>([]);
   /** Le mur du commerce qu'on regarde, quand il est ouvert. Voir `MurContenu`. */
   const [murOuvert, setMurOuvert] = useState(false);
+  /**
+   * LE MUR OUVERT DEPUIS UN SOUVENIR, ET PAS DEPUIS LE PAQUET.
+   *
+   * « Comment accéder au mur du commerçant si on n'a plus accès à son profil ? »
+   * Le paquet ne garde que ce qui est OUVERT MAINTENANT — juste pour une table
+   * libre à midi, mais ça rendait injoignable le mur d'une onglerie le soir,
+   * c'est-à-dire à l'heure où l'on essaie des ongles. Quand ce champ porte un
+   * fantôme, la feuille se monte sur SON lieu à lui, que le commerce soit dans
+   * le paquet ou non.
+   */
+  const [murRevisite, setMurRevisite] = useState<FantomePose | null>(null);
+  /** Les lieux où l'on s'est posé. Relus à l'ouverture de « Profil ». */
+  const [mesTraces, setMesTraces] = useState<FantomePose[]>([]);
+  /**
+   * ON LIT LA MÉMOIRE APRÈS LE PREMIER RENDU, ET PAS PENDANT.
+   *
+   * `localStorage` n'existe pas sur le serveur : le lire pendant le rendu
+   * donnerait deux résultats différents des deux côtés, et React refuserait
+   * l'hydratation. C'est la même raison que pour la lecture de l'adresse dans la
+   * maquette du mur.
+   */
+  useEffect(() => {
+    const relire = () => setMesTraces(mesFantomes());
+    relire();
+    // Le mur est monté dans une feuille : il ne peut pas remonter son état ici.
+    // Voir `SIGNAL` dans `mes-fantomes.ts`.
+    window.addEventListener(SIGNAL_FANTOMES, relire);
+    return () => window.removeEventListener(SIGNAL_FANTOMES, relire);
+  }, []);
   const [gardees, setGardees] = useState<string[]>([]);
   const [reserves, setReserves] = useState<string[]>([]);
   const [dx, setDx] = useState(0);
@@ -1892,6 +1922,10 @@ export function ApercuHabitant() {
   const files = useSyncExternalStore(abonnerFile, chargerFile, fileVide);
 
   function allerA_onglet(o: "direct" | "ville" | "salons" | "profil") {
+    // ON RELIT LA MÉMOIRE EN ARRIVANT, PAS UNE FOIS POUR TOUTES : un fantôme
+    // s'éteint tout seul, et un fantôme posé il y a dix secondes doit apparaître
+    // sans recharger la page.
+    if (o === "profil") setMesTraces(mesFantomes());
     // ON FERME CE QUI EST PAR-DESSUS, ET C'EST INDISPENSABLE DEPUIS QUE LA
     // BARRE RESTE VISIBLE DANS UN SALON. Sans ces deux lignes, appuyer sur
     // « Le direct » depuis un salon changeait bien l'onglet — mais la page du
@@ -7712,6 +7746,64 @@ export function ApercuHabitant() {
                     </span>
                   </div>
                 </div>
+
+                {/* ═══ OÙ EST MON FANTÔME ═══
+                    « Comment accéder au mur du commerçant si on n'a plus accès à
+                    son profil ? Il faudrait que lorsqu'on a laissé un fantôme
+                    quelque part, on puisse accéder à sa page depuis quelque
+                    part. »
+
+                    LA RÉPONSE N'EST PAS UN FAVORI, C'EST LE FANTÔME LUI-MÊME.
+                    Un lieu où l'on s'est posé est par définition un lieu qu'on
+                    veut pouvoir rouvrir — et ça reste vrai quand le commerce a
+                    quitté le paquet parce qu'il est fermé, ce qui est justement
+                    le cas qui bloquait.
+
+                    ET ÇA REND ENFIN VRAIE LA DÉFINITION VERROUILLÉE : « le
+                    fantôme, c'est vous quand vous n'êtes pas là ». Il ne
+                    survivait pas à la fermeture de la feuille ; le quota de trois
+                    ne comptait donc rien. Voir `lib/direct/mes-fantomes.ts`. */}
+                {mesTraces.length > 0 && (
+                  <div className="ap-traces">
+                    <span className="ap-traces-t">
+                      <b>Où est mon fantôme</b>
+                      <em>
+                        {mesTraces.length} sur {QUOTA_DU_JOUR} — il ne peut pas être à
+                        plus de trois endroits à la fois.
+                      </em>
+                    </span>
+                    {mesTraces.map((f) => (
+                      <div key={f.id} className="ap-trace">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={f.photo ?? f.souvenir.photoLieu} alt="" />
+                        <span className="ap-trace-c">
+                          <b>{f.souvenir.lieu}</b>
+                          <em>{f.essai ? `Essayé : ${f.essai.quoi}` : f.mot}</em>
+                          <s>{tempsRestant(f)}</s>
+                        </span>
+                        <span className="ap-trace-g">
+                          <button
+                            type="button"
+                            className="ap-trace-y"
+                            onClick={() => {
+                              setMurRevisite(f);
+                              allerA_onglet("direct");
+                            }}
+                          >
+                            Revoir le mur
+                          </button>
+                          <button
+                            type="button"
+                            className="ap-trace-x"
+                            onClick={() => setMesTraces(rappelerFantome(f.id))}
+                          >
+                            Rappeler
+                          </button>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {blocInstaller}
                 {monEspace}
               </div>
@@ -9145,16 +9237,16 @@ export function ApercuHabitant() {
               Un module qui invente sa propre façon de se fermer se paie au
               premier essai : on cherche la croix là où elle est partout
               ailleurs. */}
-          {murOuvert && dessus && (
+          {(murOuvert || murRevisite) && (dessus || murRevisite) && (
             <>
               <button
                 type="button"
                 className="ap-fond"
                 aria-label="Fermer"
-                onClick={() => setMurOuvert(false)}
+                onClick={() => { setMurOuvert(false); setMurRevisite(null); }}
               />
               <Feuille classe="ap-murf"
-                fermer={() => setMurOuvert(false)}
+                fermer={() => { setMurOuvert(false); setMurRevisite(null); }}
                 enfants={
                   <>
                 <span className="ap-feuille-p" aria-hidden="true" />
@@ -9162,24 +9254,34 @@ export function ApercuHabitant() {
                   type="button"
                   className="ap-f-x"
                   aria-label="Fermer"
-                  onClick={() => setMurOuvert(false)}
+                  onClick={() => { setMurOuvert(false); setMurRevisite(null); }}
                 >
                   ✕
                 </button>
                 <div className="mu dans-feuille">
-                  <MurContenu
-                    key={dessus.id}
-                    mur={murDeLaCarte({
-                      id: dessus.id,
-                      nom: dessus.nom,
-                      metier: dessus.metier,
-                      branche: dessus.branche,
-                      ville: dessus.ville,
-                      distance: dessus.distance,
-                      photo: dessus.photo,
-                      google: dessus.google,
-                    })}
-                  />
+                  {/* LE SOUVENIR PASSE DEVANT L'ANNONCE DU DESSUS : si l'on est
+                      revenu par son fantôme, c'est SON lieu qu'on veut, même si
+                      le paquet montre autre chose derrière. */}
+                  {murRevisite ? (
+                    <MurContenu
+                      key={murRevisite.souvenir.cle}
+                      mur={murDuSouvenir(murRevisite.souvenir)}
+                    />
+                  ) : dessus ? (
+                    <MurContenu
+                      key={dessus.id}
+                      mur={murDeLaCarte({
+                        id: dessus.id,
+                        nom: dessus.nom,
+                        metier: dessus.metier,
+                        branche: dessus.branche,
+                        ville: dessus.ville,
+                        distance: dessus.distance,
+                        photo: dessus.photo,
+                        google: dessus.google,
+                      })}
+                    />
+                  ) : null}
                 </div>
                   </>
                 }
@@ -9360,6 +9462,14 @@ export function ApercuHabitant() {
                 setMurOuvert(true);
               }}
             >
+              {/* LE COMPTE DES LIEUX OÙ L'ON S'EST POSÉ.
+                  Sans lui, on ne sait pas qu'on a un fantôme dehors — donc on ne
+                  pense pas à aller le chercher, donc la porte de retour ouverte
+                  dans « Profil » n'existe pour personne. Un chiffre sur le
+                  fantôme est le seul endroit où cette information est à sa
+                  place : c'est lui qui est parti quelque part. */}
+              {mesTraces.length > 0 && <b className="ap-mf-n">{mesTraces.length}</b>}
+
               {/* ═══ UN PETIT FANTÔME, ET IL BOUGE QUAND ON L'APPUIE ═══
 
                   « Concernant le logo animé, là aussi tu es très loin ; refais
@@ -14113,6 +14223,38 @@ export function ApercuHabitant() {
         .ap-ligne s.reste{color:#F0B429;}
 
         /* VOUS, SANS COMPTE. */
+        /* ─── OÙ EST MON FANTÔME ─── voir le bloc du même nom dans « Profil ». */
+        /* Le compte sur le fantôme de la barre : voir le bouton. */
+        .ap-mf-n{position:absolute;top:-2px;right:-4px;min-width:17px;height:17px;
+          padding:0 4px;border-radius:9px;background:#8BD6FF;color:#0B1220;
+          font-size:10.5px;font-weight:900;line-height:17px;text-align:center;
+          box-shadow:0 0 0 2px rgba(11,18,32,.9);pointer-events:none;}
+        .ap-traces{flex:none;margin-bottom:16px;}
+        .ap-traces-t{display:block;margin-bottom:9px;}
+        .ap-traces-t b{display:block;font-size:15px;font-weight:850;color:#fff;
+          letter-spacing:-.02em;}
+        .ap-traces-t em{display:block;font-style:normal;font-size:12px;
+          line-height:1.45;color:rgba(255,255,255,.62);margin-top:3px;}
+        .ap-trace{display:flex;gap:11px;align-items:center;padding:10px;
+          background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.11);
+          border-radius:16px;margin-bottom:8px;}
+        .ap-trace img{flex:none;width:52px;height:52px;border-radius:12px;
+          object-fit:cover;display:block;}
+        .ap-trace-c{flex:1;min-width:0;}
+        .ap-trace-c b{display:block;font-size:13.5px;font-weight:800;color:#fff;
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .ap-trace-c em{display:block;font-style:normal;font-size:12px;
+          line-height:1.4;color:rgba(255,255,255,.66);margin-top:2px;
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .ap-trace-c s{display:block;text-decoration:none;font-size:11px;
+          font-weight:700;color:#8BD6FF;margin-top:3px;}
+        .ap-trace-g{flex:none;display:flex;flex-direction:column;gap:5px;}
+        .ap-trace-y{font-family:inherit;font-size:12px;font-weight:800;
+          color:#0B1220;background:#8BD6FF;border:none;border-radius:11px;
+          padding:7px 11px;cursor:pointer;white-space:nowrap;}
+        .ap-trace-x{font-family:inherit;font-size:11px;font-weight:600;
+          color:rgba(255,255,255,.6);background:none;border:none;cursor:pointer;
+          padding:2px 4px;text-decoration:underline;text-underline-offset:3px;}
         .ap-moi-qui{flex:none;text-align:center;
           background:rgba(61,226,166,.08);border:1px solid rgba(61,226,166,.24);
           border-radius:18px;padding:16px 14px 13px;margin-bottom:16px;}

@@ -70,6 +70,7 @@ import {
   type Piece,
 } from "@/lib/direct/fantomes";
 import { composer, type Gabarit } from "@/lib/direct/essai";
+import { fantomesDuLieu, mesFantomes, poserFantome, tempsRestant } from "@/lib/direct/mes-fantomes";
 import { laMainEstPrete, poserVernis } from "@/lib/direct/ongles";
 
 /**
@@ -244,21 +245,44 @@ export function MurContenu({ mur }: { mur: TypeMur }) {
   const [dits, setDits] = useState<Record<string, string>>({});
   /** Le fantôme sur lequel on vient d'appuyer, et à qui on dit quand on passe. */
   const [passage, setPassage] = useState<Fantome | null>(null);
-  /** Les fantômes posés pendant la démonstration, en tête des clients. */
+  /**
+   * LES FANTÔMES QU'ON A POSÉS ICI, ET ILS SURVIVENT MAINTENANT À LA FEUILLE.
+   *
+   * Ils vivaient dans cet état seul, remis à zéro à chaque changement de mur :
+   * le fantôme disparaissait à la seconde où l'on quittait l'écran. « Le fantôme,
+   * c'est vous quand vous n'êtes pas là » était donc exactement ce que la
+   * maquette ne savait pas faire. Voir `lib/direct/mes-fantomes.ts`.
+   */
   const [poses, setPoses] = useState<Fantome[]>([]);
+  /** Combien de places il reste, comptées sur la mémoire et non sur l'écran. */
+  const [dehors, setDehors] = useState(0);
   /** Le mur déplié : les rangées deviennent une grille, rien ne dépasse du bord. */
   const [tout, setTout] = useState(false);
 
   useEffect(() => {
     setEcran("mur");
     setPassage(null);
-    setPoses([]);
     setDits({});
     setTout(false);
-  }, [mur.cle]);
+    // ON RELIT LA MÉMOIRE À CHAQUE MUR : ce qu'on a laissé ICI revient en tête,
+    // et le quota se compte sur TOUS les lieux, pas sur celui-ci.
+    setPoses(
+      fantomesDuLieu(mur.cle).map((f) => ({
+        id: f.id,
+        qui: "Vous",
+        photo: f.photo ?? mur.photoLieu,
+        essai: f.essai,
+        mot: f.mot,
+        heure: new Date(f.depose).toTimeString().slice(0, 5),
+        interesses: 0,
+        jusqua: tempsRestant(f),
+      })),
+    );
+    setDehors(mesFantomes().length);
+  }, [mur.cle, mur.photoLieu]);
 
   const clients = [...poses, ...mur.clients];
-  const restants = Math.max(0, QUOTA_DU_JOUR - poses.length);
+  const restants = Math.max(0, QUOTA_DU_JOUR - dehors);
 
   return (
     <>
@@ -283,6 +307,36 @@ export function MurContenu({ mur }: { mur: TypeMur }) {
           onDit={setPassage}
           onFerme={() => setEcran("mur")}
           onPose={(f) => {
+            /**
+             * ON ÉCRIT DANS LA MÉMOIRE AVANT D'AFFICHER.
+             *
+             * Un essai reste deux jours, une annonce quelques heures : la durée
+             * vient du dépôt lui-même, pas d'une constante unique.
+             */
+            const heures = f.essai ? 48 : HEURES_PAR_DEFAUT;
+            const reste = poserFantome(
+              {
+                id: f.id,
+                souvenir: {
+                  cle: mur.cle,
+                  modele: mur.modele ?? mur.cle,
+                  lieu: mur.lieu,
+                  metier: mur.metier,
+                  ville: mur.ville,
+                  distance: mur.distance,
+                  note: mur.note,
+                  avis: mur.avis,
+                  photoLieu: mur.photoLieu,
+                },
+                mot: f.mot,
+                photo: f.photo,
+                essai: f.essai,
+                depose: Date.now(),
+                jusqua: Date.now() + heures * 3600_000,
+              },
+              QUOTA_DU_JOUR,
+            );
+            setDehors(reste.length);
             setPoses((l) => [f, ...l]);
             setEcran("mur");
           }}
