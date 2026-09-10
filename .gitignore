@@ -75,6 +75,8 @@ next-env.d.ts
 /q-*.png
 /c-*.png
 
-# Le moteur et le modele de l'essai d'ongles : 19 Mo, reconstitues par
-# scripts/poser-mediapipe.sh. Voir ce fichier pour le pourquoi.
-/public/mediapipe
+# LE MOTEUR de l'essai d'ongles (11 Mo) est recopie depuis node_modules par
+# scripts/poser-mediapipe.sh, appele en `prebuild` : il n'a rien a faire ici.
+# LE MODELE, LUI, EST VERSIONNE — voir ce script pour pourquoi ce partage.
+/public/mediapipe/vision_wasm_*
+/public/mediapipe/vision_bundle.mjs

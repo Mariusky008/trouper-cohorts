@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
+    "prebuild": "bash scripts/poser-mediapipe.sh",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",

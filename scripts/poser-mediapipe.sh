@@ -1,12 +1,24 @@
 #!/usr/bin/env bash
 # 💅 METTRE LE MOTEUR ET LE MODÈLE DE L'ESSAI D'ONGLES À LEUR PLACE.
 #
-# ═══ POURQUOI CES FICHIERS NE SONT PAS DANS LE DÉPÔT ══════════════════════
+# ═══ CE QUI EST VERSIONNÉ ET CE QUI NE L'EST PAS, ET POURQUOI CE PARTAGE ══
 #
-# ILS PÈSENT DIX-NEUF MÉGAOCTETS. Un dépôt les porterait dans CHAQUE clone, pour
-# toujours, y compris chez qui ne touchera jamais à l'onglerie — et Git ne sait
-# pas oublier un binaire. Ils sont donc reconstitués depuis `node_modules` et
-# depuis Google, et `public/mediapipe/` est ignoré.
+# LE MOTEUR (onze mégaoctets) VIENT DE `node_modules`. Il est donc garanti
+# présent à la compilation, où que ce soit, sans réseau — le recopier ici est un
+# `cp`, et le versionner alourdirait chaque clone pour rien.
+#
+# LE MODÈLE (sept mégaoctets et demi) EST DANS LE DÉPÔT, et ça a été payé cher.
+# Il était téléchargé ici, par ce script, appelé par `direct-build.sh` — MAIS LA
+# PRODUCTION NE LANCE PAS `direct-build.sh`, elle lance `next build`. En ligne,
+# `/mediapipe/…` répondait donc 404, l'essai d'ongles levait une exception, et
+# l'écran retombait sur la photo du catalogue sans rien dire. « J'ai pris la
+# photo de ma main et au résultat j'ai la photo des ongles de la photo que j'ai
+# choisie. »
+#
+# DEUX LEÇONS, ET ELLES SONT DANS LE CODE MAINTENANT : ce script est appelé en
+# `prebuild` dans `package.json`, donc par TOUTE compilation ; et un fichier dont
+# dépend une fonctionnalité en ligne ne se télécharge pas au moment de compiler,
+# il voyage avec le code.
 #
 # ET ILS SONT SERVIS DEPUIS CHEZ NOUS, PAS DEPUIS UN CDN TIERS. La photo de la
 # main ne quitte jamais le téléphone — c'est tout l'intérêt d'un modèle qui

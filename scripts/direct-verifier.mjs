@@ -1092,6 +1092,41 @@ console.log("\n══ le modèle et ce qu'on lui demande ══");
   dire(/pourquoi/.test(src), "une panne remonte sa raison jusqu'à l'écran");
 }
 
+// ═══ CE QUE L'ESSAI D'ONGLES A BESOIN DE TROUVER EN LIGNE ═════════════════
+//
+// LE DÉFAUT QUE CE BLOC EXISTE POUR ATTRAPER, ET IL A ÉTÉ TROUVÉ SUR UN
+// TÉLÉPHONE : `public/mediapipe/` était ignoré par git et reconstitué par
+// `direct-build.sh`. Mais la production ne lance pas `direct-build.sh`, elle
+// lance `next build`. En ligne, ces deux fichiers répondaient 404, le calcul
+// levait une exception, et l'écran retombait sur la photo du catalogue.
+//
+// LE PROJET COMPILAIT, LES TRENTE-SIX SUITES PASSAIENT, ET L'ÉCRAN S'AFFICHAIT.
+// Rien ne pouvait le voir, parce que tout fonctionnait ICI — c'est exactement la
+// même famille que le modèle de l'assistante juste au-dessus : une faute qui ne
+// se voit qu'en ligne doit être attrapée par un test, pas par le terrain.
+console.log("\n══ le moteur de l'essai d'ongles ══");
+{
+  for (const [chemin, poidsMini] of [
+    ["/mediapipe/hand_landmarker.task", 5_000_000],
+    ["/mediapipe/vision_wasm_internal.wasm", 5_000_000],
+    ["/mediapipe/vision_wasm_internal.js", 50_000],
+  ]) {
+    let code = 0;
+    let poids = 0;
+    try {
+      const r = await fetch(BASE + chemin);
+      code = r.status;
+      poids = (await r.arrayBuffer()).byteLength;
+    } catch {
+      /* code reste à zéro : c'est ce qu'on veut dire */
+    }
+    dire(
+      code === 200 && poids >= poidsMini,
+      `${chemin} est servi (${code}, ${(poids / 1048576).toFixed(1)} Mo)`,
+    );
+  }
+}
+
 dire(erreurs.length === 0, `aucune erreur${erreurs.length ? " : " + erreurs[0] : ""}`);
 await nav.close();
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT PASSE");

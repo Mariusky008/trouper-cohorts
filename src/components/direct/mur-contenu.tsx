@@ -950,6 +950,14 @@ function Viseur({ photo, gabarit }: { photo?: string; gabarit?: Gabarit }) {
   );
 }
 
+/**
+ * CE QU'ON DIT QUAND LE CALCUL N'A PAS PU SE FAIRE.
+ *
+ * Assez précis pour qu'on sache que ce n'est pas la photo qui est en cause, et
+ * assez court pour tenir sous l'image.
+ */
+const SOUCI_MOTEUR = "L’essayage n’a pas pu se charger. Votre photo est intacte — réessayez dans un instant.";
+
 function Essai({
   mur,
   restants,
@@ -1050,7 +1058,12 @@ function Essai({
       setTelecharge(!laMainEstPrete());
       poserVernis({ photo: laPhoto, vernis: piece.vernis })
         .then((p) => finir({ image: p.image, ms: p.ms, souci: p.ongles ? undefined : p.souci }))
-        .catch(() => finir(null));
+        // UN ÉCHEC MONTRE VOTRE PHOTO ET LE DIT — JAMAIS LE CATALOGUE.
+        // C'est ce `catch` qui a fait le plus de dégâts : il retombait sur
+        // `piece.photo`, donc sur des ongles impeccables photographiés chez la
+        // prothésiste, présentés comme le résultat d'un essai qui n'avait pas
+        // eu lieu. Un calcul raté doit ressembler à un calcul raté.
+        .catch(() => finir({ image: laPhoto, ms: 0, souci: SOUCI_MOTEUR }));
       return () => {
         vivant = false;
         if (minuteur.current) window.clearInterval(minuteur.current);
@@ -1064,10 +1077,8 @@ function Essai({
     } else {
       composer({ lieu: laPhoto, piece: piece.decoupe, gabarit })
         .then((p) => finir({ image: p.image, ms: p.ms }))
-        // UN ÉCHEC RETOMBE SUR LA PHOTO DE LA PIÈCE plutôt que de bloquer
-        // l'écran : le parcours continue, et le bouton « le rendu n'est pas
-        // bon » est là pour le dire.
-        .catch(() => finir(null));
+        // Même règle ici : on rend SA photo et on dit que ça n'a pas marché.
+        .catch(() => finir({ image: laPhoto, ms: 0, souci: SOUCI_MOTEUR }));
     }
 
     return () => {
