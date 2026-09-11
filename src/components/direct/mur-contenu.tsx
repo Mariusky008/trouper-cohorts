@@ -73,6 +73,7 @@ import {
 import { composer, type Gabarit } from "@/lib/direct/essai";
 import { fantomesDuLieu, mesFantomes, poserFantome, tempsRestant } from "@/lib/direct/mes-fantomes";
 import { laMainEstPrete, poserVernis } from "@/lib/direct/ongles";
+import { essayerSurMoi, estUnRendu } from "@/lib/direct/essai-genere";
 
 /**
  * « CHEZ QUI », ÉCRIT COMME ON LE DIRAIT.
@@ -1150,7 +1151,13 @@ function Essai({
    * `ms` est le temps réel du calcul, et il est affiché tel quel. Une promesse
    * d'instantanéité qu'on peut chiffrer vaut mieux qu'un adjectif.
    */
-  const [rendu, setRendu] = useState<{ image: string; ms: number; souci?: string } | null>(null);
+  const [rendu, setRendu] = useState<{
+    image: string;
+    ms: number;
+    souci?: string;
+    /** Vrai quand la photo a dû partir chez un tiers. L'écran doit le dire. */
+    envoye?: boolean;
+  } | null>(null);
   /** Vrai pendant le premier téléchargement du modèle de main. Voir `EcranCalcul`. */
   const [telecharge, setTelecharge] = useState(false);
   /**
@@ -1205,11 +1212,15 @@ function Essai({
     let vivant = true;
     const debut = Date.now();
     setPct(0);
+    // LA JAUGE AVANCE MOINS VITE QU'AVANT, ET C'EST UNE MESURE : un rendu
+    // distant prend quelques secondes, pas deux cents millisecondes. Une jauge
+    // qui atteint la fin en une demi-seconde puis ne bouge plus fait croire à
+    // une panne.
     minuteur.current = window.setInterval(() => {
-      setPct((p) => Math.min(96, p + 7));
-    }, 60);
+      setPct((p) => Math.min(94, p + (p < 60 ? 3 : 1)));
+    }, 120);
 
-    const finir = (r: { image: string; ms: number; souci?: string } | null) => {
+    const finir = (r: { image: string; ms: number; souci?: string; envoye?: boolean } | null) => {
       const reste = Math.max(0, PLANCHER - (Date.now() - debut));
       window.setTimeout(() => {
         if (!vivant) return;
@@ -1220,6 +1231,40 @@ function Essai({
     };
 
     const gabarit = mur.essai?.gabarit;
+
+    /**
+     * LE CHEMIN PRINCIPAL : LA PHOTO DU COMMERÇANT, POSÉE SUR LA VÔTRE.
+     *
+     * Il passe avant tous les autres parce qu'il est le seul à atteindre la barre
+     * posée par le terrain : « si le résultat n'est pas parfait, ça n'ira pas —
+     * on ne peut pas proposer quelque chose de mauvais ou de moyen. » Voir
+     * `app/api/direct/essayer/route.ts` pour pourquoi le moteur géométrique ne
+     * pouvait pas y arriver, et pourquoi on ne retombe pas dessus en cas de
+     * panne.
+     */
+    if (piece.reference && laPhoto) {
+      setTelecharge(false);
+      essayerSurMoi({
+        photo: laPhoto,
+        reference: piece.reference,
+        partie: mur.essai?.partie ?? "la zone concernée",
+      })
+        .then((r) =>
+          estUnRendu(r)
+            ? finir({ image: r.image, ms: r.ms, envoye: true })
+            : finir({
+                image: laPhoto,
+                ms: 0,
+                souci: r.pourquoi ? `${r.erreur} (${r.pourquoi})` : r.erreur,
+              }),
+        )
+        .catch(() => finir({ image: laPhoto, ms: 0, souci: SOUCI_MOTEUR }));
+      return () => {
+        vivant = false;
+        if (minuteur.current) window.clearInterval(minuteur.current);
+      };
+    }
+
     if (gabarit?.forme === "main" && piece.vernis && laPhoto) {
       // ON PRÉVIENT SI LE MODÈLE N'EST PAS ENCORE LÀ. Dix-neuf mégaoctets la
       // première fois : dire « ton fantôme prépare » pendant ce temps-là serait
@@ -1459,7 +1504,15 @@ function Essai({
               passe et sur ce que ça coûte en données. Une fois pour toutes, et
               on le dit. */}
           <b>{telecharge ? "Première pose : on installe l’essayage…" : "Ton Fantôme prépare ton essayage…"}</b>
-          {telecharge && <em className="mu-calcul-p">19 Mo, une seule fois — ensuite c’est instantané, et hors ligne</em>}
+          {/* CE QU'ON ANNONCE PENDANT L'ATTENTE DOIT ÊTRE CE QU'ON FAIT. Le
+              rendu part chez un modèle : quelques secondes, et la photo sort du
+              téléphone. Promettre « instantané et hors ligne » sur ce chemin-là
+              serait un mensonge de plus, et on en a déjà payé deux. */}
+          <em className="mu-calcul-p">
+            {telecharge
+              ? "19 Mo, une seule fois — ensuite c’est instantané, et hors ligne"
+              : "Quelques secondes — votre photo part le temps du rendu, et n’est pas conservée"}
+          </em>
           <div className="mu-jauge" aria-hidden="true">
             <i style={{ width: `${Math.min(100, pct)}%` }} />
           </div>
@@ -1499,9 +1552,11 @@ function Essai({
               ? rendu.souci
               : !photo
                 ? "Photo d’exemple — ce n’est pas la vôtre"
-                : rendu
-                  ? `Sur VOTRE photo, calculé sur votre téléphone en ${rendu.ms} ms`
-                  : "Rendu photographié à l’avance"}
+                : rendu?.envoye
+                  ? `Sur VOTRE photo, en ${rendu.ms < 1000 ? `${rendu.ms} ms` : `${(rendu.ms / 1000).toFixed(1)} s`} · votre photo a été envoyée pour le rendu, rien n’est conservé`
+                  : rendu
+                    ? `Sur VOTRE photo, calculé sur votre téléphone en ${rendu.ms} ms`
+                    : "Rendu photographié à l’avance"}
           </span>
           {/* LA DIFFERENCE ENTRE LES DEUX MECANIQUES SE DIT, PARCE QU'ELLE SE
               VOIT. Pour les ongles, un modele CHERCHE la main : le cadrage est

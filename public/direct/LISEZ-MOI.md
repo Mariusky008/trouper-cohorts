@@ -340,3 +340,44 @@ exactement la photo que quelqu'un prendrait pour donner ses vinyles. Elle est
 donc gardée, dans le même esprit que les deux exceptions datées plus haut, **et
 elle attend la même validation explicite qu'elles.**
 
+
+---
+
+## 🪞 L'essayage sur soi — ce qu'il faut fournir, et ce qu'il coûte
+
+L'essai ne calcule plus le rendu lui-même. Il envoie **deux photos** à un modèle
+d'image : celle du client, et **celle du commerçant**. Cette bascule vient d'une
+démonstration faite sur le terrain — la même main et la même photo de référence
+données à ChatGPT ou Gemini rendent un résultat parfait, là où le calcul
+géométrique rendait des taches de couleur.
+
+### Ce qu'une pièce doit porter
+
+| Champ | Ce que c'est |
+|---|---|
+| `reference` | **La photo du travail fini, sur une vraie personne.** C'est elle qu'on essaie, et c'est elle qu'on voit dans la grille. Un aplat de couleur ne se désire pas. |
+| `photo` | Ce qui s'affiche sur la vignette. En général la même image. |
+
+**La photo de référence est le produit.** Plus elle est nette, bien éclairée et
+cadrée serré sur la zone (les ongles, le poignet), meilleur est le rendu. Une
+photo de catalogue sur fond blanc marche moins bien qu'une photo prise sur une
+cliente : le modèle a besoin de voir comment la chose se pose sur une peau.
+
+### Ce qu'il faut sur le serveur
+
+`GEMINI_API_KEY` (recommandé) ou `OPENAI_API_KEY`. Sans l'une des deux, l'écran
+affiche la raison et propose de reprendre la photo — **il ne retombe jamais sur
+l'ancien moteur**, dont le rendu a été jugé sans appel.
+
+Réglages facultatifs : `GEMINI_IMAGE_MODEL`, `OPENAI_IMAGE_MODEL`,
+`GEMINI_BASE_URL`, `OPENAI_BASE_URL` (ces deux dernières servent à pointer vers
+un faux fournisseur en recette, pour éprouver tout le chemin sans dépenser).
+
+### Ce que ça coûte, et ce que ça implique
+
+Quelques centimes et quelques secondes par essai. Le quota de trois fantômes par
+jour, qui existait pour une raison de produit, plafonne aussi la facture.
+
+**Et la photo du client sort du téléphone.** C'était l'argument du moteur
+précédent (« rien n'est envoyé »). L'écran le dit désormais en toutes lettres au
+moment du rendu, et rien n'est conservé côté serveur.

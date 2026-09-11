@@ -235,12 +235,29 @@ export type Piece = {
   /** Un rendu tout prêt, quand il en existe un de meilleur que le calcul. */
   rendu?: string;
   /**
-   * LA COULEUR DE LA POSE, POUR UN MÉTIER QUI VEND UNE COULEUR.
+   * LA PHOTO DU TRAVAIL FINI, ET C'EST ELLE QU'ON ESSAIE.
    *
-   * Une onglerie n'a pas d'objet à découper : elle a une teinte et une longueur.
-   * La pièce ne porte donc pas une découpe mais un vernis, et c'est
-   * `lib/direct/ongles.ts` qui le pose. Voir ce fichier pour pourquoi on dessine
-   * l'ongle DU SALON plutôt que de chercher celui de la cliente.
+   * « Je n'ai plus que des choix de couleurs, mais plus le choix qu'on voit sur
+   * une photo prise par le commerçant qui aurait mis les ongles d'une cliente
+   * avec des motifs. »
+   *
+   * IL AVAIT RAISON, ET C'ÉTAIT MA FAUTE. J'avais transformé les pièces en
+   * teintes parce que mon moteur ne savait poser qu'une couleur — c'est-à-dire
+   * que j'avais mis le MODÈLE DE DONNÉES au service de ma limite technique. Ce
+   * qu'une cliente veut essayer, c'est le travail de la prothésiste : un motif,
+   * une french, un dégradé. Une pastille de couleur ne se désire pas.
+   *
+   * C'est cette image qui part au modèle avec la photo du client. Voir
+   * `app/api/direct/essayer/route.ts`.
+   */
+  reference?: string;
+  /**
+   * LA COULEUR SEULE — l'ancien moteur géométrique.
+   *
+   * GARDÉE, MAIS PLUS UTILISÉE PAR L'ONGLERIE. Elle ne sait poser qu'un aplat, ce
+   * qui a été jugé sans appel sur un vrai téléphone. Voir
+   * `lib/direct/ongles.ts`, qui reste en place et documenté : le jour où l'on
+   * voudra un essai hors ligne, dégradé et gratuit, c'est là qu'il est.
    */
   vernis?: { couleur: string; longueur?: number };
   bientot?: boolean;
@@ -546,40 +563,32 @@ export const MURS: Mur[] = [
       gabarit: { forme: "main" },
       pieces: [
         /**
-         * L'ORDRE DES COULEURS EST UN CHOIX, PAS UN HASARD.
+         * CE QU'ON ESSAIE EST LE TRAVAIL DE LA PROTHÉSISTE, PAS UNE PASTILLE.
          *
-         * « On ne voit pas les couleurs. » Le nude était en deuxième, donc c'est
-         * lui qui a été essayé — et un nude sur une peau claire est INVISIBLE PAR
-         * CONSTRUCTION : c'est ce qu'on lui demande d'être. Impossible de juger
-         * un placement avec, alors que c'est justement ce qu'on cherche à juger.
-         * Les deux couleurs franches passent devant ; le nude reste, en dernier,
-         * parce que c'est un vrai produit.
+         * Chaque pièce porte la PHOTO du résultat sur une vraie main. C'est elle
+         * qu'on voit dans la grille, c'est elle qui part au modèle avec la photo
+         * de la cliente, et c'est elle qu'on désire — un aplat de couleur ne se
+         * désire pas.
+         *
+         * ET LE MOTIF N'EST PLUS « BIENTÔT ». Il l'était parce que le moteur
+         * géométrique ne savait poser qu'une couleur ; un modèle qui reproduit
+         * une image n'a pas cette limite. C'était la pièce la plus demandée du
+         * mur, et c'est maintenant la première.
          */
         {
-          id: "p-nuit",
-          nom: "Bleu nuit, pose longue",
-          prix: "52 €",
-          photo: "/direct/pose-ongles.jpg",
-          vernis: { couleur: "#1E2E5A", longueur: 1.9 },
-        },
-        {
-          id: "p-bordeaux",
-          nom: "Bordeaux, pose moyenne",
+          id: "p-coeurs",
+          nom: "Motif cœurs, pose amande",
           prix: "45 €",
           photo: "/direct/pose-ongles.jpg",
-          vernis: { couleur: "#8E1B3F", longueur: 1.4 },
+          reference: "/direct/pose-ongles.jpg",
         },
         {
-          id: "p-nude",
-          nom: "Nude mat, pose courte",
-          prix: "32 €",
+          id: "p-paillettes",
+          nom: "Dégradé pailleté",
+          prix: "52 €",
           photo: "/direct/avis-ongles.jpg",
-          vernis: { couleur: "#C89684", longueur: 1 },
+          reference: "/direct/avis-ongles.jpg",
         },
-        // LE MOTIF RESTE « BIENTÔT », ET C'EST LA LIMITE ÉCRITE DE `ongles.ts` :
-        // on pose une couleur, pas un dessin. Un motif demande de savoir où est
-        // le haut de l'ongle dans le plan de l'image, ce qui n'est pas calculé.
-        { id: "p-coeurs", nom: "Motif cœurs", prix: "45 €", photo: "/direct/pose-ongles.jpg", bientot: true },
       ],
     },
     contexte: {
@@ -717,14 +726,14 @@ export const MURS: Mur[] = [
           nom: "Chaîne fine, pierre noire",
           prix: "89 €",
           photo: "/direct/poignet-bracelet.jpg",
-          rendu: "/direct/poignet-bracelet.jpg",
+          reference: "/direct/poignet-bracelet.jpg",
         },
         {
           id: "j-riviere",
           nom: "Bracelet rivière",
           prix: "240 €",
           photo: "/direct/bracelet-seul.png",
-          decoupe: "/direct/decoupe-bracelet.png",
+          reference: "/direct/bracelet-seul.png",
         },
         /**
          * CELLE-CI RESTE « BIENTÔT », ET LA RAISON A CHANGÉ.

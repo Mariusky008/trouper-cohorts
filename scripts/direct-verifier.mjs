@@ -1127,6 +1127,44 @@ console.log("\n══ le moteur de l'essai d'ongles ══");
   }
 }
 
+// ═══ LA ROUTE D'ESSAYAGE RÉPOND-ELLE, ET RÉPOND-ELLE HONNÊTEMENT ? ═══════
+//
+// MÊME FAMILLE QUE LES DEUX BLOCS AU-DESSUS : une route d'image ne se vérifie
+// pas à l'œil, et ce qui ne casse qu'en ligne se paie sur le terrain. On ne
+// teste pas la QUALITÉ du rendu — ça demande une vraie clé — mais les trois
+// choses qui font qu'un défaut reste invisible : la route existe, elle refuse
+// ce qui est illisible, et quand elle ne peut pas travailler elle DIT POURQUOI
+// au lieu de rendre n'importe quoi.
+console.log("\n══ l'essayage sur soi ══");
+{
+  const pixel =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAHElEQVQoU2NkYGD4z0AEYBxVSFNAmRoZGRkZAADUAAdSbJQSAAAAAElFTkSuQmCC";
+  const poster = async (corps) => {
+    try {
+      const r = await fetch(`${BASE}/api/direct/essayer`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(corps),
+      });
+      return { code: r.status, j: await r.json().catch(() => ({})) };
+    } catch (e) {
+      return { code: 0, j: { erreur: String(e) } };
+    }
+  };
+  const vide = await poster({});
+  dire(vide.code === 400, `une requête sans photo est refusée (${vide.code})`);
+  const bon = await poster({ photo: pixel, reference: pixel, partie: "votre main" });
+  // Deux issues acceptables, et aucune des deux n'est muette : soit un rendu,
+  // soit une panne QUI SE NOMME. Ce qui serait faux, c'est un 200 sans image.
+  const rendu = bon.code === 200 && typeof bon.j.image === "string";
+  const franc = bon.code >= 400 && !!bon.j.erreur && !!bon.j.pourquoi;
+  dire(rendu || franc,
+    rendu
+      ? `elle rend une image (${bon.code})`
+      : `elle dit pourquoi elle ne peut pas (${bon.code} · ${String(bon.j.pourquoi).slice(0, 60)})`);
+  dire(bon.code !== 200 || rendu, "et elle ne répond jamais « tout va bien » sans image");
+}
+
 dire(erreurs.length === 0, `aucune erreur${erreurs.length ? " : " + erreurs[0] : ""}`);
 await nav.close();
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT PASSE");
