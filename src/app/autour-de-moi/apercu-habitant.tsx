@@ -5350,18 +5350,32 @@ export function ApercuHabitant() {
                           c'est lui qui dit que ce n'est pas une publicité. */}
                       <b aria-label={`Il vous reste ${tourMinSec}`}>{tourMinSec}</b>
                     </div>
-                    <p className="ap-tour-t">{tour.quoi}</p>
-                    <p className="ap-tour-d">
-                      {tourCarte.nom} · {tourCarte.distance}
+                    {/* ═══ SIX RANGEES POUR UNE INTERRUPTION DE CINQ MINUTES ═══
+
+                        MESURE SUR IPHONE A 390 POINTS : la bande faisait 189
+                        points dans une barre de 261, et cette barre est posee
+                        PAR-DESSUS l'annonce. Un tiers de l'ecran — donc le tiers
+                        haut de la photo, celui qu'on regarde en premier — etait
+                        mange par une bande qui empile six lignes.
+
+                        CE QUI EST ESSENTIEL TIENT EN QUATRE : quoi, combien,
+                        combien de temps, et les deux gestes. Le prix rejoint le
+                        titre, qu'il qualifie ; le detail rejoint le lieu, qui le
+                        situe. Rien n'est retire — c'est de l'empilement qui
+                        disparait, pas de l'information. */}
+                    <p className="ap-tour-t">
+                      {tour.quoi}
                       {tour.prix ? (
                         <>
-                          {" · "}
                           <u>{tour.prix}</u>
                           {tour.prixBarre && <s>{tour.prixBarre}</s>}
                         </>
                       ) : null}
                     </p>
-                    {tour.detail && <p className="ap-tour-x">{tour.detail}</p>}
+                    <p className="ap-tour-d">
+                      {tourCarte.nom} · {tourCarte.distance}
+                      {tour.detail ? ` · ${tour.detail}` : ""}
+                    </p>
                     <div className="ap-tour-b">
                       <button type="button" className="fort" onClick={jePrendsLeTour}>
                         Je prends
@@ -11317,7 +11331,7 @@ export function ApercuHabitant() {
            vous » devenait illisible, et l'objet le plus urgent de l'ecran
            passait pour un calque decoratif. La couleur en dernier dans le
            raccourci est peinte DESSOUS le degrade. */
-        .ap-tour{margin-top:9px;padding:10px 13px 11px;border-radius:17px;
+        .ap-tour{margin-top:7px;padding:9px 13px 10px;border-radius:16px;
           background:linear-gradient(180deg,rgba(240,180,41,.22),rgba(240,180,41,.1)),
             #0B1411;
           border:1px solid rgba(240,180,41,.5);
@@ -11333,20 +11347,27 @@ export function ApercuHabitant() {
            qu'il ne saute pas d'un pixel a chaque seconde. */
         .ap-tour-h b{flex:none;font-size:19px;font-weight:850;color:#F7C948;
           font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
-        .ap-tour-t{margin:5px 0 0;font-size:16.5px;font-weight:850;color:#FFF6E2;
-          letter-spacing:-.02em;line-height:1.2;}
-        .ap-tour-d{margin:3px 0 0;font-size:12.5px;color:#E7D3A6;}
-        .ap-tour-d u{text-decoration:none;font-weight:850;color:#FFF6E2;}
-        .ap-tour-d s{margin-left:5px;font-size:11.5px;color:#BFA672;}
-        .ap-tour-x{margin:4px 0 0;font-size:12px;line-height:1.4;color:#C9B587;}
-        .ap-tour-b{display:flex;gap:8px;margin-top:10px;}
+        /* LE PRIX REJOINT LE TITRE, qu'il qualifie. En ligne et plus petit :
+           c'est la condition du « quoi », pas une rangee a lui. */
+        .ap-tour-t{margin:4px 0 0;font-size:16.5px;font-weight:850;color:#FFF6E2;
+           letter-spacing:-.02em;line-height:1.2;}
+        .ap-tour-t u{text-decoration:none;margin-left:8px;font-size:14.5px;
+           font-weight:850;color:#F7C948;}
+        .ap-tour-t s{margin-left:5px;font-size:12px;font-weight:700;color:#BFA672;}
+        /* LE DETAIL REJOINT LE LIEU, qui le situe. Une seule ligne, coupee
+           proprement plutot que repliee sur deux : la bande est posee sur la
+           photo, chaque rangee gagnee est de la photo rendue. */
+        .ap-tour-d{margin:3px 0 0;font-size:12px;line-height:1.35;color:#E7D3A6;
+           overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .ap-tour-b{display:flex;gap:8px;margin-top:9px;}
         .ap-tour-b button{flex:1;font:inherit;font-size:14px;font-weight:850;
-          line-height:1;cursor:pointer;border-radius:999px;padding:10px;
+          line-height:1;cursor:pointer;border-radius:999px;padding:9px 10px;
           color:#F0DFB6;background:rgba(255,255,255,.07);
           border:1px solid rgba(240,180,41,.36);}
         .ap-tour-b button.fort{color:#2A1B00;background:#F7C948;border-color:transparent;}
         .ap-tour-b button:active{transform:scale(.97);}
-        .ap-tour-f{margin:8px 0 0;font-size:11px;line-height:1.4;color:#CBB27C;}
+        .ap-tour-f{margin:6px 0 0;font-size:10.5px;line-height:1.3;color:#CBB27C;
+           overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
         /* UNE FOIS REPONDU, LA BANDE SE CALME : elle ne demande plus rien, elle
            confirme — et elle s'efface toute seule quelques secondes apres. */
         .ap-tour.pris{background:rgba(61,226,166,.13);border-color:rgba(61,226,166,.42);}
@@ -12838,14 +12859,28 @@ export function ApercuHabitant() {
            EN VERRE PLUTOT QU'EN PLEIN : elles se posent sur une photo qui doit
            rester la chose qu'on regarde. Assez visibles pour qu'on les trouve,
            assez discretes pour qu'on ne voie qu'elles. */
-        .ap-nav{position:absolute;left:0;right:0;top:42%;z-index:4;
-          display:flex;justify-content:space-between;padding:0 8px;
+        /* ═══ LES FLECHES SONT POSEES SUR LE TEXTE, ET IL N'Y A PAS DE PLACE ═══
+
+           MESURE SUR LES DOUZE PREMIERES CARTES DU PAQUET, a 390 points : le
+           bloc de texte finit entre 327 et 515 points, la ligne du commerce
+           commence entre 489 et 590, et les fleches occupent 354-396. DIX
+           CARTES SUR DOUZE ont donc une fleche sur du texte — et sur la pire,
+           le texte finit A 515 QUAND LA LIGNE DU COMMERCE COMMENCE A 489 : il
+           n'existe aucune bande libre ou les descendre.
+           CE N'EST PAS UN DEFAUT DE PLACEMENT, c'est un element de trop sur une
+           carte pleine — le balayage fait deja ce geste. En attendant cette
+           decision, elles se font aussi discretes que possible : plus petites,
+           collees au bord, et leur fond est assez opaque pour que le texte qui
+           passe dessous ne se lise pas a moitie. Un mot a 40 % est pire qu'un
+           mot cache. */
+        .ap-nav{position:absolute;left:0;right:0;top:44%;z-index:4;
+          display:flex;justify-content:space-between;padding:0 4px;
           pointer-events:none;}
-        .ap-nav button{pointer-events:auto;width:42px;height:42px;border-radius:50%;
-          border:1px solid rgba(255,255,255,.16);cursor:pointer;
-          font:inherit;font-size:24px;line-height:1;color:#EAF2EC;
-          background:rgba(4,10,8,.42);
-          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+        .ap-nav button{pointer-events:auto;width:34px;height:34px;border-radius:50%;
+          border:1px solid rgba(255,255,255,.14);cursor:pointer;
+          font:inherit;font-size:19px;line-height:1;color:#DCE6DF;
+          background:rgba(4,10,8,.78);
+          -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
           transition:transform .12s ease,opacity .16s ease;}
         .ap-nav button:active{transform:scale(.9);background:rgba(4,10,8,.7);}
         /* ETEINTE, ELLE DISPARAIT PLUTOT QUE DE GRISER : une fleche a moitie

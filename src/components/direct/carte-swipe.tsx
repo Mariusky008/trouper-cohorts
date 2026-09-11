@@ -20,6 +20,25 @@
 // geste, aucun état. Les gestes appartiennent à l'écran qui l'utilise.
 import type { CSSProperties, ReactNode } from "react";
 
+/**
+ * SÉPARER LE QUALIFICATIF DU MONTANT.
+ *
+ * « à partir de 12 € » → { avant: "à partir de", nombre: "12 €" }
+ * « 15 € »             → { avant: "",            nombre: "15 €" }
+ * « Gratuit »          → { avant: "",            nombre: "Gratuit" }
+ *
+ * ON COUPE AU PREMIER CHIFFRE, et rien d'autre. Une liste de préfixes connus
+ * (« dès », « à partir de », « environ ») se serait fait prendre en défaut au
+ * premier commerçant qui écrit « à partir seulement de » — et un prix qu'on ne
+ * sait pas découper doit s'afficher entier, jamais amputé.
+ */
+function qualifie(prix?: string): { avant: string; nombre: string } {
+  const t = (prix ?? "").trim();
+  const m = /^(\D*?)\s*(\d.*)$/.exec(t);
+  if (!m || !m[1]) return { avant: "", nombre: t };
+  return { avant: m[1].trim(), nombre: m[2] };
+}
+
 export type CarteDirect = {
   /** La photo, plein cadre. Sans elle, un fond dégradé et l'emoji du métier. */
   photo?: string;
@@ -730,7 +749,20 @@ export function CarteSwipe({
             {(c.prix || c.prixBarre) && (
               <p className={`cd-prixg${c.flash && c.prixBarre ? " flash" : ""}`}>
                 <b>
-                  {c.prix}
+                  {/* ═══ « À PARTIR DE » N'EST PAS UN PRIX ═══
+
+                      MESURE : « à partir de 12 € » s'affichait en quatre-vingts
+                      points, débordait sur deux lignes et passait sous l'anneau
+                      du métier. Le nombre, lui, tient en un mot.
+
+                      LE QUALIFICATIF EST UNE CONDITION, PAS UN MONTANT. « Dès »,
+                      « environ », « à partir de » disent COMMENT lire le chiffre ;
+                      les composer à la taille du chiffre, c'est crier une nuance.
+                      Il passe en petit au-dessus, le nombre garde sa taille
+                      d'affiche, et la carte cesse de déborder — sans qu'on ait
+                      rapetissé le seul élément qui fait décider. */}
+                  {qualifie(c.prix).avant ? <u>{qualifie(c.prix).avant}</u> : null}
+                  {qualifie(c.prix).nombre}
                   {/* L'ASTÉRISQUE DE LA MAQUETTE. Un prix d'annonce a toujours
                       une condition — dans la limite du stock, sur place, pendant
                       le Flash — et l'astérisque est le signe que tout le monde
@@ -1281,6 +1313,18 @@ export function StylesDirect() {
           text-shadow:0 2px 10px rgba(0,0,0,.72),0 4px 30px rgba(0,0,0,.55);
           font-variant-numeric:tabular-nums;}
         .cd-prixg b{font-weight:inherit;}
+        /* LE QUALIFICATIF EST PETIT ET SUR SA LIGNE : il dit comment lire le
+           chiffre, il n'est pas le chiffre. Pas de soulignement — la balise
+           porte le sens, pas le trait. */
+        .cd-prixg u{display:block;text-decoration:none;
+          font-family:'Inter',system-ui,-apple-system,sans-serif;
+          font-size:12.5px;font-weight:800;letter-spacing:.04em;
+          text-transform:uppercase;line-height:1.1;margin-bottom:1px;
+          color:rgba(255,196,0,.78);}
+        /* MEME RESERVE QUE LE TITRE : l'anneau du metier couvre la bande
+           245-349 points, et le prix y tombe. Mesure sur iPhone a 390 points —
+           « a partir de 12 € » passait dessous. */
+        .cd-prixg{padding-right:114px;}
         /* L'ASTERISQUE EST EN EXPOSANT ET PETIT : il signale, il n'annonce pas. */
         .cd-prixg b em{font-style:normal;font-size:.42em;vertical-align:super;
           margin-left:.04em;color:rgba(255,196,0,.7);}

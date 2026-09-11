@@ -1398,6 +1398,122 @@ console.log("\n══ neuf langages, une seule structure ══");
   await c8.close();
 }
 
+// ═══ RIEN NE PASSE SOUS L'ANNEAU, ET L'INTERRUPTION RESTE UNE BANDE ══════
+//
+// DEUX MESURES, ET AUCUNE DES DEUX NE SE VOIT EN RELISANT LE CODE : les blocs
+// en cause sont corrects chacun de son côté, c'est leur SUPERPOSITION qui est
+// fausse. Elles ne se voient qu'en lisant des coordonnées dans un vrai
+// navigateur, à la vraie largeur.
+//
+//   · L'ANNEAU DU MÉTIER est posé en absolu à droite et couvre une bande de
+//     cent points de haut. « BOUQUET DU JOUR » s'affichait « BOUQUET DU J », et
+//     « à partir de 12 € » débordait dessous en quatre-vingts points.
+//   · LA BANDE « C'EST À VOUS » est posée par-dessus l'annonce. Elle empilait
+//     six rangées, soit cent quatre-vingt-neuf points sur une barre de deux cent
+//     soixante et un : un tiers de l'écran, donc le tiers haut de la photo.
+console.log("\n══ ce qui est posé par-dessus la carte ══");
+{
+  const { ctx: c9, p: p9 } = await ouvrir("/autour-de-moi", 12.5);
+  /** Deux rectangles se chevauchent-ils vraiment ? */
+  const croise = (a, b) =>
+    !!a && !!b && a.x < b.x + b.l && b.x < a.x + a.l && a.y < b.y + b.h && b.y < a.y + a.h;
+
+  let sousLAnneau = null;
+  let bande = null;
+  let vues = 0;
+  for (let i = 0; i < 14; i++) {
+    const m = await p9.evaluate(() => {
+      const r = (s) => {
+        const e = document.querySelector(s);
+        if (!e) return null;
+        const b = e.getBoundingClientRect();
+        return { x: Math.round(b.x), y: Math.round(b.y), l: Math.round(b.width), h: Math.round(b.height) };
+      };
+      /**
+       * ON MESURE LA ZONE DE CONTENU, PAS LA BOÎTE.
+       *
+       * Premier jet de cette garde : elle comparait les rectangles complets et
+       * criait au chevauchement. C'était LA GARDE qui avait tort — la réserve
+       * faite pour l'anneau est un `padding-right` DANS la boîte, donc la boîte
+       * touche l'anneau par construction et le texte, lui, s'arrête avant. Ce
+       * qu'il faut mesurer est le bord droit du CONTENU.
+       */
+      const contenu = (s) => {
+        const e = document.querySelector(s);
+        if (!e) return null;
+        const b = e.getBoundingClientRect();
+        const st = getComputedStyle(e);
+        const pg = parseFloat(st.paddingLeft) || 0;
+        const pd = parseFloat(st.paddingRight) || 0;
+        return {
+          x: Math.round(b.x + pg),
+          y: Math.round(b.y),
+          l: Math.round(b.width - pg - pd),
+          h: Math.round(b.height),
+        };
+      };
+      return {
+        anneau: r(".cd-anneau"),
+        titre: contenu(".cd-offre"),
+        prix: contenu(".cd-prixg"),
+        // ET LE TEXTE NE DOIT PAS DÉBORDER DE CE QU'ON LUI LAISSE : un mot plus
+        // large que la colonne sort de sa boîte et repart sous l'anneau.
+        titreDeborde: (() => {
+          const e = document.querySelector(".cd-offre");
+          return e ? e.scrollWidth > e.clientWidth + 1 : false;
+        })(),
+        prixDeborde: (() => {
+          const e = document.querySelector(".cd-prixg");
+          return e ? e.scrollWidth > e.clientWidth + 1 : false;
+        })(),
+        tour: r(".ap-tour"),
+        haut: r(".ap-haut"),
+      };
+    });
+    if (m?.anneau && (m.titre || m.prix)) {
+      vues++;
+      const faute = croise(m.anneau, m.titre)
+        ? "le titre passe sous l'anneau"
+        : croise(m.anneau, m.prix)
+          ? "le prix passe sous l'anneau"
+          : m.titreDeborde
+            ? "le titre déborde de sa colonne"
+            : m.prixDeborde
+              ? "le prix déborde de sa colonne"
+              : null;
+      if (faute && !sousLAnneau) sousLAnneau = { ...m, faute };
+    }
+    if (m?.tour && !bande) bande = m;
+    const suiv = await p9.$(".ap-suiv");
+    if (!suiv || !(await suiv.isEnabled())) break;
+    await suiv.click();
+    await p9.waitForTimeout(420);
+  }
+  dire(vues >= 4, `au moins quatre cartes mesurées (${vues})`);
+  dire(
+    !sousLAnneau,
+    sousLAnneau
+      ? `${sousLAnneau.faute} — titre ${JSON.stringify(sousLAnneau.titre)}, prix ${JSON.stringify(sousLAnneau.prix)}, anneau ${JSON.stringify(sousLAnneau.anneau)}`
+      : "ni le titre ni le prix ne passent sous l'anneau du métier",
+  );
+  // LA BANDE A UN PLAFOND. Cent soixante points la laissent dire quoi, combien,
+  // combien de temps et les deux gestes ; au-delà, elle réempile des rangées et
+  // reprend la photo.
+  if (bande) {
+    dire(
+      bande.tour.h <= 160,
+      `la bande « C'est à vous » tient en quatre rangées (${bande.tour.h} points)`,
+    );
+    dire(
+      bande.haut.h <= 235,
+      `et la barre qu'elle habite ne prend pas le tiers de l'écran (${bande.haut.h} points)`,
+    );
+  } else {
+    console.log("   (la bande « C'est à vous » ne s'est pas montrée à cette heure-ci)");
+  }
+  await c9.close();
+}
+
 dire(erreurs.length === 0, `aucune erreur${erreurs.length ? " : " + erreurs[0] : ""}`);
 await nav.close();
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT PASSE");
