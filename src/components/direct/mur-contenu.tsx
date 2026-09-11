@@ -66,6 +66,7 @@ import {
   miseEnRelation,
   verbeDe,
   type Fantome,
+  type Depot,
   type Mur as TypeMur,
   type Piece,
 } from "@/lib/direct/fantomes";
@@ -92,6 +93,18 @@ function chezQui(lieu: string): string {
 }
 
 /** Le dessin du fantôme. Une seule forme, trois tailles, jamais deux dessins. */
+/**
+ * LE MOMENT CHOISI, RECOLLÉ DANS UNE PHRASE.
+ *
+ * Les quatre choix sont écrits pour des BOUTONS — « J'y suis » se lit très bien
+ * seul. Recollé derrière « ici », il donne « Vous pourrez retrouver Marc ici
+ * J'y suis », ce qu'un test a sorti en clair. La conversion existait déjà dans
+ * `Passage`, en dur ; elle est ici pour que tout le monde s'en serve.
+ */
+function quandDit(q: string): string {
+  return q === "J’y suis" ? "maintenant" : q;
+}
+
 function Signe({ classe }: { classe?: string }) {
   return (
     <svg className={classe} viewBox="0 0 40 44" aria-hidden="true">
@@ -127,6 +140,7 @@ function Humeur({ cle }: { cle?: string }) {
  * commerce qui accueille.
  */
 function Carte({
+  depot,
   f,
   grande,
   quand,
@@ -137,8 +151,19 @@ function Carte({
   /** Quand on a dit qu'on passait. Vide : on ne l'a pas encore dit. */
   quand?: string;
   onDit: (f: Fantome) => void;
+  /**
+   * CE QUE LE LIEU PROPOSE, PARCE QUE LE GESTE N'A PAS LE MÊME SENS.
+   *
+   * Chez un restaurant, s'intéresser à un fantôme veut dire « on pourra en
+   * parler sur place ». Chez une onglerie, ça veut dire « je veux essayer la
+   * même chose » — on ne vient pas y rencontrer celle qui a essayé le bordeaux,
+   * on vient l'essayer soi-même. Une seule phrase pour les deux serait fausse
+   * une fois sur deux.
+   */
+  depot?: Depot;
 }) {
   const v = verbeDe(f.verbe);
+  const essai = depot === "essai";
   return (
     <article className={`mu-c${grande ? " grande" : ""}`}>
       <div className="mu-c-p">
@@ -180,6 +205,26 @@ function Carte({
             relation se fait SUR PLACE, chez le commercant, et pas dans une
             conversation. Une fois qu'on a dit quand on passe, le bouton porte
             l'heure — c'est un engagement, il doit rester lisible. */}
+        {/* ═══ CE N'EST PAS UN LIKE, ET ÇA DOIT SE LIRE AVANT L'APPUI ═══
+
+            « 👍 Ça m'intéresse · 6 ressemble énormément à un like. Or ce n'est
+            absolument pas ce que tu veux. »
+
+            C'ÉTAIT EXACT, ET LE CHIFFRE COLLÉ AU POUCE FAISAIT LE GROS DU MAL :
+            un pouce suivi d'un nombre est la forme universelle du like, donc on
+            lisait « six personnes ont aimé » au lieu de « six personnes veulent
+            en parler sur place ». Trois corrections, toutes dans la même
+            direction :
+
+              · LE CHIFFRE QUITTE LE BOUTON. Il descend dessous, en toutes
+                lettres — « 6 personnes intéressées » ne peut pas se confondre
+                avec un compteur de pouces.
+              · LE BOUTON DIT SA CONSÉQUENCE, pas son sentiment : « On pourra en
+                parler sur place » est écrit SOUS le geste, avant qu'on appuie.
+              · APRÈS L'APPUI, IL DEVIENT UN ENGAGEMENT et nomme la personne :
+                « Vous pourrez retrouver Léa ici ce midi. » Le fantôme devient
+                une présence différée — elle n'est plus là, je n'y suis pas
+                encore, et pourtant on se retrouvera. */}
         <div className="mu-c-f">
           <button
             type="button"
@@ -187,10 +232,37 @@ function Carte({
             aria-pressed={!!quand}
             onClick={() => onDit(f)}
           >
-            <i aria-hidden="true">{quand ? "🚶" : "👍"}</i>
-            <span>{quand ? `Vous passez ${quand}` : "Ça m’intéresse"}</span>
-            <em>{(f.interesses ?? 0) + (quand ? 1 : 0)}</em>
+            <i aria-hidden="true">{quand ? "✓" : "👍"}</i>
+            {/* UN SEUL LIBELLÉ AVANT L'APPUI, DANS LES DEUX MÉTIERS.
+                J'avais écrit « Ça m'intéresse aussi » chez l'onglerie : plus
+                long, donc tronqué en « Ça m'intéresse … » sur une carte étroite
+                — et un geste dont on ne lit pas le nom n'est plus un geste.
+                C'est LA PHRASE DU DESSOUS qui porte la différence, et c'est sa
+                place : « un seul concept ». */}
+            <span>
+              {quand
+                ? essai
+                  ? "Je veux l’essayer"
+                  : "Je veux en parler sur place"
+                : "Ça m’intéresse"}
+            </span>
           </button>
+          <em className="mu-int-d">
+            {quand
+              ? essai
+                ? `${f.qui} l’a essayé ici. À vous d’essayer.`
+                : `Vous pourrez retrouver ${f.qui} ici ${quandDit(quand)}.`
+              : essai
+                ? "Essayez la même chose sur vous"
+                : "On pourra en parler sur place"}
+          </em>
+          {(f.interesses ?? 0) + (quand ? 1 : 0) > 0 && (
+            <s className="mu-int-n">
+              {(f.interesses ?? 0) + (quand ? 1 : 0)} personne
+              {(f.interesses ?? 0) + (quand ? 1 : 0) > 1 ? "s" : ""} intéressée
+              {(f.interesses ?? 0) + (quand ? 1 : 0) > 1 ? "s" : ""}
+            </s>
+          )}
         </div>
         {f.jusqua && (
           <span className="mu-c-d">
@@ -281,6 +353,25 @@ export function MurContenu({ mur }: { mur: TypeMur }) {
     setDehors(mesFantomes().length);
   }, [mur.cle, mur.photoLieu]);
 
+  /**
+   * CE QUE FAIT LE POUCE, ET ÇA DÉPEND DU MÉTIER.
+   *
+   * Chez un restaurant il ouvre « Vous passez quand ? » : la mise en relation se
+   * fait SUR PLACE, et c'est tout le sens du geste.
+   *
+   * CHEZ UNE ONGLERIE, DEMANDER QUAND ON PASSE EST UN CONTRESENS. La carte dit
+   * « Essayez la même chose sur vous » — si l'appui ouvre un choix d'horaire, la
+   * phrase ment. Il envoie donc à l'essai, immédiatement, ce qui est aussi ce
+   * qu'on veut mettre en avant partout sur ces murs-là.
+   */
+  const interesse = (f: Fantome) => {
+    if (mur.depot === "essai") {
+      setEcran("depot");
+      return;
+    }
+    setPassage(f);
+  };
+
   const clients = [...poses, ...mur.clients];
   const restants = Math.max(0, QUOTA_DU_JOUR - dehors);
 
@@ -293,7 +384,7 @@ export function MurContenu({ mur }: { mur: TypeMur }) {
           clients={clients}
           restants={restants}
           dits={dits}
-          onDit={setPassage}
+          onDit={interesse}
           onDeposer={() => setEcran("depot")}
           tout={tout}
           onTout={setTout}
@@ -304,7 +395,7 @@ export function MurContenu({ mur }: { mur: TypeMur }) {
           clients={clients}
           restants={restants}
           dits={dits}
-          onDit={setPassage}
+          onDit={interesse}
           onFerme={() => setEcran("mur")}
           onPose={(f) => {
             /**
@@ -424,7 +515,7 @@ function Passage({
         {quand ? (
           <>
             <p className="mu-rel-q">
-              {f.qui} saura que quelqu’un passe {quand === "J’y suis" ? "maintenant" : quand}.
+              {f.qui} saura que quelqu’un passe {quandDit(quand)}.
             </p>
             <p className="mu-rel-n">
               Vous verrez son fantôme sur le mur en arrivant — c’est comme ça que vous vous
@@ -489,88 +580,112 @@ function EcranMur({
 }) {
   return (
     <>
-      <div className="mu-tete">
-        <Signe classe="mu-gros" />
-        <div>
-          <b>Ton Fantôme</b>
-          <em>aujourd’hui {chezQui(mur.lieu)}</em>
+      {/* ═══ UNE SEULE TÊTE, ET ELLE DIT POURQUOI ON REGARDE ═══
+
+          « Une fois qu'on a cliqué sur le fantôme, c'est très compliqué à
+          comprendre : il y a trop d'infos visuelles. »
+
+          IL Y AVAIT TROIS TITRES ET DEUX INTRODUCTIONS AVANT LA PREMIÈRE CARTE :
+          « Ton Fantôme », « Le mur du jour », « Les clients du jour », plus le
+          quota et « Aujourd'hui ». Cinq façons de nommer une seule chose. Le
+          vocabulaire a disparu : il ne reste QUE ce qui est vrai — des gens ont
+          laissé quelque chose ici, et on peut leur répondre en venant.
+
+          ET LES DEUX MÉTIERS NE DISENT PAS LA MÊME PHRASE, parce qu'ils ne
+          proposent pas la même chose. Un restaurant propose de SE CROISER ; une
+          onglerie propose d'ESSAYER. Voir `Depot` dans `lib/direct/fantomes.ts`. */}
+      {mur.depot === "essai" ? (
+        <div className="mu-haut essai">
+          <Signe classe="mu-haut-s" />
+          <h2>
+            Essayez-le sur vous, <i>maintenant</i>
+          </h2>
+          <p>
+            Prenez {mur.essai?.partie} en photo&nbsp;: la pièce s’y pose en une seconde, sur
+            votre téléphone. Rien n’est envoyé, rien n’est publié tant que vous n’avez pas
+            décidé.
+          </p>
+          {/* LE GESTE DU MÉTIER EN PREMIER, ET EN GRAND. « Pour les autres il
+              faut mettre le focus immédiatement sur l'essai et dire vraiment
+              directement d'essayer le produit. » L'écran ne commence donc plus
+              par une explication du fantôme : il commence par le produit sur soi,
+              et le fantôme n'est que ce qu'il en reste après. */}
+          <button type="button" className="mu-cta plein" onClick={onDeposer}>
+            <i aria-hidden="true">📷</i>
+            <span>
+              <b>Essayer sur moi</b>
+              <em>Gratuit, instantané, sans rendez-vous</em>
+            </span>
+          </button>
+          <span className="mu-haut-q">
+            Ce que vous essayez reste ici&nbsp;: c’est ce qui dit aux autres ce qu’ils peuvent
+            essayer à leur tour.
+          </span>
         </div>
-      </div>
+      ) : (
+        <div className="mu-haut">
+          <Signe classe="mu-haut-s" />
+          <h2>
+            Ce que les gens ont laissé ici <i>aujourd’hui</i>
+          </h2>
+          <p>
+            Des infos, des envies, des messages laissés par les personnes qui passent ici.
+          </p>
+          {/* ═══ LA PHRASE QUI DONNE SON SENS AU POUCE ═══
+              « Ça m'intéresse ressemble énormément à un like. Or ce n'est
+              absolument pas ça : l'utilisateur dit qu'il s'y intéresse assez pour
+              qu'ON EN PARLE SUR PLACE quand il y sera. »
+              C'est la phrase la plus importante de l'écran, donc elle est
+              au-dessus de la première carte et non en légende quelque part. */}
+          <strong className="mu-haut-cle">
+            Quelque chose vous parle&nbsp;? Signalez-le. Vous pourrez en parler sur place avec la
+            personne quand vous y serez.
+          </strong>
+          <button type="button" className="mu-haut-b" onClick={onDeposer}>
+            <Signe classe="mu-haut-bs" />
+            Laisser mon Fantôme
+            <em>
+              {restants} sur {QUOTA_DU_JOUR}
+            </em>
+          </button>
+        </div>
+      )}
 
-      <p className="mu-intro">
-        Laisse ton fantôme pour faire partie de l’ambiance du jour, découvrir ce que les autres
-        choisissent et voir ce qui se passe ici&nbsp;!
-      </p>
-
-      {/* LE GESTE, EN GRAND ET EN VIOLET. C'est la seule chose de tout le
-          produit qui porte cette couleur : le fantome n'est ni une action du
-          commerce (menthe) ni une urgence (ambre), c'est autre chose. */}
-      <button type="button" className="mu-cta" onClick={onDeposer}>
-        <Signe classe="mu-cta-s" />
-        <span>
-          <b>Je laisse mon Fantôme</b>
-          <em>En 1 clic, sans prise de tête</em>
-        </span>
-        <i aria-hidden="true">→</i>
-      </button>
-
-      {/* ─── LE QUOTA, ECRIT A LA MAIN ───
-          IL ETAIT AU BOUT DE LA RANGEE DES FANTOMES DE LA MAISON, comme dans la
-          maquette. Mesure a l'ecran : deux cartes de deux cent quarante-six
-          points ne tiennent pas dans trois cent quatre-vingt-treize, donc
-          l'annotation tombait hors du cadre et personne ne la lisait jamais.
-          Un quota qu'on decouvre en le heurtant est un mur invisible — il vaut
-          mieux le voir a la bonne place que bien range dans le vide. */}
-      <div className="mu-sect">
-        <span className="mu-sect-i" aria-hidden="true">
-          👥
-        </span>
-        <h2>Le mur du jour</h2>
-        <b className="mu-sect-j">Aujourd’hui</b>
-        {/* ─── « VOIR TOUT » EN EST UN, MAINTENANT ───
-            C'ETAIT UN MOT PEINT, et il ne faisait rien : « Voir tout ne
-            fonctionne pas. » Il ouvre le mur en entier — les rangees qui
-            defilaient de cote se deplient en grille, et plus rien n'est cache
-            au-dela du bord droit. C'est le seul endroit ou le mur cesse d'etre
-            un aperçu, donc le seul ou il peut etre long. */}
-        <button
-          type="button"
-          className="mu-sect-v"
-          aria-expanded={tout}
-          onClick={() => onTout(!tout)}
-        >
-          {tout ? "Réduire ↑" : "Voir tout →"}
-        </button>
-      </div>
-
-      <p className="mu-note">
-        {restants} fantôme{restants > 1 ? "s" : ""} aujourd’hui encore&nbsp;!
-        <i aria-hidden="true">↙</i>
-      </p>
-
-      {/* ─── LES FANTOMES DE LA MAISON, EN GRAND ET EN PREMIER ───
-          UN MUR NE DEMARRE JAMAIS VIDE : c'est une regle, pas une astuce de
-          lancement. Personne ne veut etre le premier a parler dans une piece
-          silencieuse. Ils sont marques « Staff », et ce n'est pas negociable —
-          un fantome du patron qui passerait pour un client est un faux avis. */}
+      {/* ─── UN SEUL FLUX, SANS TITRE DE SECTION ───
+          LES FANTÔMES DE LA MAISON RESTENT EN TÊTE : un mur ne démarre jamais
+          vide, personne ne veut parler le premier dans une pièce silencieuse.
+          Mais ils n'ont plus besoin d'un titre pour ça — leur pastille dit déjà
+          « Chef », « Propriétaire », et cette pastille-là n'est pas du
+          vocabulaire : c'est la garantie qu'un fantôme du patron ne passe jamais
+          pour celui d'un client. */}
       <div className={`mu-rang maison${tout ? " tout" : ""}`}>
         {mur.maison.map((f) => (
-          <Carte key={f.id} f={f} grande quand={dits[f.id]} onDit={onDit} />
+          <Carte key={f.id} f={f} grande quand={dits[f.id]} onDit={onDit} depot={mur.depot} />
         ))}
-      </div>
-
-      <div className="mu-sect petit">
-        <span className="mu-sect-i" aria-hidden="true">
-          ＋👥
-        </span>
-        <h2>Les clients du jour</h2>
       </div>
 
       <div className={`mu-rang${tout ? " tout" : ""}`}>
         {clients.map((f) => (
-          <Carte key={f.id} f={f} quand={dits[f.id]} onDit={onDit} />
+          <Carte key={f.id} f={f} quand={dits[f.id]} onDit={onDit} depot={mur.depot} />
         ))}
       </div>
+
+      {/* LE PIED COMPTE, ET C'EST LUI QUI DÉPLIE. « Voir tout » était un mot posé
+          dans un titre de section ; les titres ont disparu, et le compte est un
+          bien meilleur endroit pour ce geste — il dit combien il y en a, donc il
+          dit qu'il en reste à voir. */}
+      <button
+        type="button"
+        className="mu-pied"
+        aria-expanded={tout}
+        onClick={() => onTout(!tout)}
+      >
+        <span aria-hidden="true">👥</span>
+        <b>
+          {mur.maison.length + clients.length} Fantômes laissés ici aujourd’hui
+        </b>
+        <i aria-hidden="true">{tout ? "↑" : "→"}</i>
+      </button>
 
       {/* LE SEUL ENDROIT DE LA FEUILLE OU LE COMMERCE PARLE DE CE QU'IL VEND.
           Il est en bas, apres le mur : la feuille appartient aux gens qui sont
@@ -1588,8 +1703,6 @@ function Styles() {
           font-weight:600;color:#C9BCFF;transform:rotate(-3deg);position:relative;}
         .mu-manus i{font-style:normal;display:block;font-size:17px;margin-top:2px;}
 
-        .mu-intro{margin:0 0 16px;font-size:13.5px;line-height:1.55;text-align:center;
-          color:#B9C6D6;}
         .mu-d-t{margin:2px 0 8px;font-size:26px;font-weight:800;line-height:1.15;
           text-align:center;}
         .mu-d-t b{background:linear-gradient(100deg,var(--mu-v1),var(--mu-v2));
@@ -1697,7 +1810,12 @@ function Styles() {
         .mu-c-t p{margin:5px 0 0;font-size:12.5px;line-height:1.4;color:#C7D4E2;}
         .mu-c-e{display:block;margin-top:5px;font-size:11px;font-weight:700;
           color:#C9BCFF;}
-        .mu-c-f{display:flex;align-items:center;gap:7px;margin-top:auto;padding-top:10px;}
+        /* LE PIED S'EMPILE, IL NE SE PARTAGE PLUS LA LIGNE.
+           Le bouton et sa phrase etaient cote a cote : sur une carte de deux
+           cents points, « On pourra en parler sur place » se repliait en colonne
+           de deux mots a cote du pouce — illisible, et mesure a l'ecran. Le
+           geste prend sa ligne, sa consequence prend la suivante. */
+        .mu-c-f{margin-top:auto;padding-top:10px;}
         .mu-c-d{display:inline-flex;align-items:center;gap:4px;margin-top:6px;
           font-size:10.5px;font-weight:700;color:var(--mu-pale);}
         .mu-c-d i{font-style:normal;}
@@ -1717,7 +1835,7 @@ function Styles() {
            IL RESTE PETIT, ET C'EST LA REGLE. Le jour ou le chiffre devient gros,
            on a refabrique le like — et un like est gratuit, donc il ne veut rien
            dire. Celui-ci engage : on accepte d'etre mis en relation. */
-        .mu-int{flex:1;min-width:0;display:flex;align-items:center;gap:6px;
+        .mu-int{width:100%;display:flex;align-items:center;gap:6px;
           font-family:inherit;font-size:11px;font-weight:800;cursor:pointer;
           border:1px solid rgba(139,125,246,.34);background:rgba(139,125,246,.1);
           color:#D6CCFF;border-radius:20px;padding:6px 9px;
@@ -1725,17 +1843,11 @@ function Styles() {
         .mu-int i{font-style:normal;font-size:12px;}
         .mu-int span{flex:1;min-width:0;text-align:left;overflow:hidden;
           text-overflow:ellipsis;white-space:nowrap;}
-        .mu-int em{font-style:normal;font-variant-numeric:tabular-nums;opacity:.8;}
         .mu-int:active{transform:scale(.96);}
         .mu-int.on{background:linear-gradient(110deg,var(--mu-v1),var(--mu-v2));
           color:#150C26;border-color:transparent;}
-        .mu-int.on em{opacity:1;}
 
         /* LE QUOTA, ECRIT A LA MAIN, JUSTE AU-DESSUS DU MUR. */
-        .mu-note{display:flex;align-items:center;justify-content:flex-end;gap:6px;
-          margin:-4px 4px 8px 0;font-size:12.5px;line-height:1.3;font-style:italic;
-          font-weight:700;color:#C9BCFF;}
-        .mu-note i{font-style:normal;font-size:17px;transform:rotate(-8deg);}
 
         /* ─── LE CONTEXTE DU COMMERCE ───
            Le seul endroit de la feuille ou le commerce parle de ce qu'il vend, et
@@ -1821,6 +1933,61 @@ function Styles() {
           border-bottom:2px solid rgba(255,255,255,.08);padding-bottom:7px;}
         .mu-pas li.on{color:#C9BCFF;border-bottom-color:var(--mu-v1);}
         .mu-pas li.fait{color:var(--mu-menthe);border-bottom-color:rgba(61,226,166,.5);}
+
+        /* ═══ LA TÊTE DU MUR ═══ voir le composant EcranMur : une seule tête,
+           deux phrases selon le métier, et plus aucun titre de section. */
+        .mu-haut{text-align:center;padding:2px 2px 16px;}
+        .mu-haut-s{width:54px;height:59px;margin:0 auto;display:block;}
+        .mu-haut-s .mu-f-corps{fill:#F3F0FF;}
+        .mu-haut-s .mu-f-oeil{fill:#2A1E4D;}
+        .mu-haut-s .mu-f-bouche{fill:none;stroke:#2A1E4D;stroke-width:1.9;
+          stroke-linecap:round;}
+        .mu-haut h2{margin:9px 0 0;font-size:24px;line-height:1.16;
+          font-weight:850;letter-spacing:-.03em;color:#fff;}
+        .mu-haut h2 i{font-style:italic;color:var(--mu-v2);}
+        .mu-haut>p{margin:9px 0 0;font-size:13.5px;line-height:1.5;
+          color:var(--mu-pale);}
+        /* La phrase qui donne son sens au pouce : elle est encadrée parce
+           qu'elle explique le geste, elle ne le décore pas. */
+        .mu-haut-cle{display:block;margin:13px 0 0;padding:11px 13px;
+          font-size:13.5px;line-height:1.5;font-weight:600;color:#E8DEFF;
+          background:linear-gradient(180deg,rgba(139,106,255,.19),rgba(139,106,255,.09));
+          border:1px solid rgba(139,106,255,.34);border-radius:15px;}
+        .mu-haut-b{display:inline-flex;align-items:center;gap:8px;margin-top:13px;
+          padding:9px 15px 9px 10px;font-family:inherit;font-size:14px;
+          font-weight:800;color:#fff;cursor:pointer;
+          background:linear-gradient(100deg,var(--mu-v1),var(--mu-v2));
+          border:none;border-radius:99px;}
+        .mu-haut-bs{width:22px;height:24px;flex:none;}
+        .mu-haut-bs .mu-f-corps{fill:#fff;}
+        .mu-haut-bs .mu-f-oeil{fill:#2A1E4D;}
+        .mu-haut-bs .mu-f-bouche{fill:none;stroke:#2A1E4D;stroke-width:2.4;
+          stroke-linecap:round;}
+        .mu-haut-b em{font-style:normal;font-size:11.5px;font-weight:700;
+          opacity:.8;padding-left:3px;border-left:1px solid rgba(255,255,255,.32);
+          margin-left:2px;}
+        /* L'essai ne commence pas par une explication du fantôme : il commence
+           par le produit sur soi. */
+        .mu-haut.essai .mu-cta{margin-top:14px;text-align:left;}
+        .mu-haut.essai .mu-cta>i{font-size:20px;}
+        .mu-haut-q{display:block;margin-top:11px;font-size:11.5px;line-height:1.5;
+          color:var(--mu-pale);}
+
+        /* Le pied compte et déplie : voir EcranMur. */
+        .mu-pied{display:flex;align-items:center;gap:10px;width:100%;
+          margin-top:14px;padding:12px 14px;font-family:inherit;cursor:pointer;
+          background:rgba(255,255,255,.05);
+          border:1px solid rgba(255,255,255,.12);border-radius:17px;}
+        .mu-pied>span{font-size:17px;}
+        .mu-pied b{flex:1;text-align:left;font-size:13.5px;font-weight:800;
+          color:#fff;}
+        .mu-pied i{font-style:normal;font-size:15px;color:var(--mu-pale);}
+
+        /* Le chiffre a quitté le bouton : voir le grand commentaire dans Carte. */
+        .mu-int-d{display:block;margin-top:5px;font-style:normal;font-size:11px;
+          line-height:1.4;color:var(--mu-pale);}
+        .mu-int-n{display:block;margin-top:3px;text-decoration:none;
+          font-size:11px;font-weight:700;color:#8BD6FF;}
 
         .mu-cadrer{text-align:center;}
         /* LE VISEUR DIT CE QU'ON PHOTOGRAPHIE, ET C'EST LA MOITIE DE LA
