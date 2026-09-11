@@ -4977,9 +4977,38 @@ export function ApercuHabitant() {
                   ▾ » : c'est le même bouton, il dit simplement d'abord où l'on
                   est. Quelqu'un qui découvre ne cherche pas un filtre ; il
                   cherche à savoir ce qu'il regarde. */}
+              {/* ═══ ON DIT CHEZ QUI ON EST, PAS SEULEMENT À QUELLE DISTANCE ═══
+
+                  « Au lieu d'avoir simplement tout en haut à gauche "180 m",
+                  j'aimerais qu'on ait le type de commerce — exemple :
+                  restaurant — plus le nom du commerce. »
+
+                  IL AVAIT RAISON, ET LE DÉFAUT ÉTAIT PLUS GRAVE QUE LA LIGNE.
+                  « 180 m » tout seul répond à une question qu'on ne pose qu'en
+                  DEUXIÈME : on veut d'abord savoir de qui il s'agit. Le nom du
+                  commerce était bien sur la carte, mais en bas, sous la photo et
+                  sous l'offre — c'est-à-dire après avoir décidé si l'offre
+                  intéresse. On lisait donc « magret de canard, 19 € » sans
+                  savoir chez qui, et la seule chose écrite en haut était un
+                  nombre de mètres.
+
+                  LE MÉTIER EST LA MOITIÉ QUI MANQUE : « Chez Margot » ne dit
+                  rien à qui ne connaît pas Dax, « Restaurant · Chez Margot » dit
+                  tout. C'est aussi ce qui distingue deux annonces voisines quand
+                  on en traverse quinze. */}
               <span className="ap-loin" aria-hidden="true">
                 <i>📍</i>
-                {dessus?.distance ?? dessusEv?.distance ?? "Dax"}
+                <span className="ap-loin-t">
+                  <b>{dessus?.nom ?? dessusEv?.nom ?? "Autour de moi"}</b>
+                  <em>
+                    {[
+                      dessus?.metier ?? (dessusEv ? "Événement" : null),
+                      dessus?.distance ?? dessusEv?.distance,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </em>
+                </span>
                 {/* LE POINT QUI BAT A SUIVI LE LIEU. Il battait entre « Dax » et
                     « Maintenant », au milieu de l'en-tête ; ce milieu est
                     redevenu le filtre, et un point vert clignotant à côté d'un
@@ -10962,12 +10991,24 @@ export function ApercuHabitant() {
            ATTENTION : jamais d'accent grave dans ces commentaires CSS. */
         /* LA DISTANCE, A GAUCHE, EN PREMIER. Elle n'est pas un bouton : c'est
            le seul chiffre de l'ecran qui ne demande rien et qui situe tout. */
-        .ap-loin{flex:none;display:inline-flex;align-items:center;gap:4px;
-          font-size:11.5px;font-weight:800;color:rgba(234,242,236,.82);
+        /* LE NOM SUR UNE LIGNE, LE METIER ET LA DISTANCE SOUS LUI. Voir le
+           composant : « 180 m » tout seul repondait a la deuxieme question.
+           La largeur est bornee et le nom se coupe proprement — l'en-tete porte
+           aussi le filtre et deux ronds, et un nom long ne doit pas les pousser
+           hors de l'ecran. */
+        .ap-loin{flex:none;max-width:57%;display:inline-flex;align-items:center;
+          gap:6px;color:rgba(234,242,236,.82);
           background:rgba(9,12,10,.5);border:1px solid rgba(234,242,236,.14);
-          border-radius:999px;padding:6px 11px;
+          border-radius:999px;padding:5px 11px 5px 10px;
           -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
-        .ap-loin i{font-style:normal;font-size:11px;}
+        .ap-loin>i{font-style:normal;font-size:11px;flex:none;}
+        .ap-loin-t{min-width:0;display:flex;flex-direction:column;
+          align-items:flex-start;line-height:1.2;}
+        .ap-loin-t b{max-width:100%;font-size:12px;font-weight:800;color:#EAF2EC;
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .ap-loin-t em{max-width:100%;font-style:normal;font-size:10px;
+          font-weight:700;color:rgba(234,242,236,.62);
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
         /* LE FILTRE AU MILIEU : il dit d'abord ou l'on est, ensuite ce qu'on
            regarde. La marge automatique le centre entre la distance et les deux
            ronds, quelle que soit leur largeur. */

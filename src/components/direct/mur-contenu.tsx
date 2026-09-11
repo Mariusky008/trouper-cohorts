@@ -276,22 +276,11 @@ function Carte({
   );
 }
 
-/**
- * QUEL MUR OUVRIR, QUAND ON ARRIVE DEPUIS LE PAQUET.
- *
- * Le fantome de la barre porte la BRANCHE de la carte qu'on regardait. Trois
- * murs existent pour dix-huit commerces : on ramene donc la branche a celui qui
- * lui ressemble, et le reste retombe sur le restaurant. C'est une maquette —
- * dans le produit, chaque commerce aura le sien.
- */
-function murDeLaBranche(branche: string | null): string {
-  if (branche === "bar") return "bar";
-  if (branche === "ongles") return "ongles";
-  if (branche === "coiffeur") return "coiffeur";
-  if (branche === "mode") return "mode";
-  return "margot";
-}
-
+/* LA TROISIÈME COPIE DE LA TABLE DE ROUTAGE VIVAIT ICI, ET PERSONNE NE
+   L'APPELAIT. Elle ignorait la fleuriste et l'artisan, comme celle de la
+   maquette : trois copies, trois états différents. Une copie morte est pire
+   qu'une copie vivante — elle ne fait rien de faux aujourd'hui, et elle attend
+   qu'on l'appelle. Il ne reste que `modeleDeLaBranche` dans `fantomes.ts`. */
 
 /**
  * LE CONTENU DU MUR — les deux écrans, et rien autour.
@@ -397,6 +386,21 @@ export function MurContenu({ mur }: { mur: TypeMur }) {
   return (
     <>
       <Styles />
+      {/* ═══ CHEZ QUI SOMMES-NOUS ? ═══════════════════════════════════════════
+
+          LA FEUILLE NE LE DISAIT NULLE PART. Elle monte par-dessus l'annonce,
+          donc le nom est caché DERRIÈRE elle au moment précis où l'on en a
+          besoin — et le mot « ici », répété à chaque ligne de cet écran, ne
+          renvoyait visuellement à rien. Un bandeau, une ligne, deux niveaux :
+          le nom, puis le métier et la distance. C'est la même information que la
+          barre du haut de l'application, au même endroit, dans le même ordre. */}
+      <div className="mu-chez">
+        <i aria-hidden="true">📍</i>
+        <span>
+          <b>{mur.lieu}</b>
+          <em>{[mur.metier, mur.ville, mur.distance].filter(Boolean).join(" · ")}</em>
+        </span>
+      </div>
       {ecran === "mur" ? (
         <EcranMur
           mur={mur}
@@ -646,11 +650,31 @@ function EcranMur({
           </button>
         </div>
       ) : (
+        /* ═══ LA TÊTE TENAIT CINQ BLOCS EMPILÉS ═══════════════════════════════
+
+           « Pour les bars, restaurants et événements, quand on clique sur le
+           fantôme c'est encore très confus. »
+
+           IL FALLAIT DESCENDRE À TRAVERS CINQ CHOSES AVANT LA PREMIÈRE CARTE :
+           le fantôme dessiné en grand et centré, le titre, une phrase, un cadre
+           violet, puis le bouton. Chacune se défendait ; ensemble elles
+           repoussaient le mur sous la ligne de flottaison, c'est-à-dire qu'elles
+           cachaient ce qu'on était venu voir.
+
+           LE FANTÔME ET LE TITRE PARTAGENT MAINTENANT UNE LIGNE, et le geste est
+           une pastille à leur droite. Trois blocs deviennent un, et la première
+           carte remonte de deux cents points. */
         <div className="mu-haut">
-          <Signe classe="mu-haut-s" />
-          <h2>
-            Ce que les gens ont laissé ici <i>aujourd’hui</i>
-          </h2>
+          <div className="mu-haut-r">
+            <Signe classe="mu-haut-s" />
+            <h2>
+              Ce que les gens ont laissé ici <i>aujourd’hui</i>
+            </h2>
+            <button type="button" className="mu-haut-p" onClick={onDeposer}>
+              <Signe classe="mu-haut-ps" />
+              Laisser mon Fantôme
+            </button>
+          </div>
           <p>
             Des infos, des envies, des messages laissés par les personnes qui passent ici.
           </p>
@@ -660,17 +684,15 @@ function EcranMur({
               qu'ON EN PARLE SUR PLACE quand il y sera. »
               C'est la phrase la plus importante de l'écran, donc elle est
               au-dessus de la première carte et non en légende quelque part. */}
+          {/* ELLE RESTE, ET ELLE MAIGRIT. Elle était un cadre violet de trois
+              lignes, aussi lourd que le titre au-dessus ; c'est une légende de
+              geste, pas une deuxième annonce. Le quota, lui, a quitté la tête :
+              « 3 sur 3 » ne veut rien dire avant qu'on ait compris de quoi il
+              s'agit, et il est déjà sur l'écran de dépôt. */}
           <strong className="mu-haut-cle">
-            Quelque chose vous parle&nbsp;? Signalez-le. Vous pourrez en parler sur place avec la
-            personne quand vous y serez.
+            Quelque chose vous parle&nbsp;? Signalez-le, et vous pourrez en parler sur place quand
+            vous y serez.
           </strong>
-          <button type="button" className="mu-haut-b" onClick={onDeposer}>
-            <Signe classe="mu-haut-bs" />
-            Laisser mon Fantôme
-            <em>
-              {restants} sur {QUOTA_DU_JOUR}
-            </em>
-          </button>
         </div>
       )}
 
@@ -704,9 +726,13 @@ function EcranMur({
         onClick={() => onTout(!tout)}
       >
         <span aria-hidden="true">👥</span>
-        <b>
-          {mur.maison.length + clients.length} Fantômes laissés ici aujourd’hui
-        </b>
+        {/* LE PIED DIT LE COMPTE ET CE QU'IL ANNONCE. Un nombre seul est un
+            bilan ; « et ce n'est sûrement pas fini » dit que le mur est vivant,
+            ce qui est la seule raison d'y revenir en fin de journée. */}
+        <span className="mu-pied-t">
+          <b>{mur.maison.length + clients.length} Fantômes laissés ici aujourd’hui</b>
+          <em>Et ce n’est sûrement pas fini…</em>
+        </span>
         <i aria-hidden="true">{tout ? "↑" : "→"}</i>
       </button>
 
@@ -1999,31 +2025,42 @@ function Styles() {
            La rangee qui defile de cote devient une grille de deux colonnes :
            tout est la, rien ne se cache derriere le bord droit. Les cartes de la
            maison gardent leur taille — c'est la hierarchie du mur. */
-        .mu-rang.tout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
-          overflow:visible;}
-        .mu-rang.tout .mu-c,.mu-rang.tout .mu-c.grande{width:auto;}
-        .mu-rang.maison.tout{grid-template-columns:minmax(0,1fr);}
+        /* ─── LE MUR : UNE SEULE LISTE, QUI DESCEND ───
+           « Pour les bars, restaurants et evenements, quand on clique sur le
+           fantome c'est encore tres confus ; je prefere un agencement plus
+           clair. »
+           IL Y AVAIT DEUX RANGEES QUI DEFILAIENT SUR LE COTE, a deux tailles
+           differentes, et la deuxieme carte de chaque rangee etait COUPEE par le
+           bord de l'ecran. On ne pouvait donc ni compter ce qu'il y avait, ni
+           lire une carte en entier sans la faire glisser — et rien ne disait
+           qu'il fallait la faire glisser. Une liste qui descend se lit avec le
+           pouce, comme tout le reste du telephone.
+           LA CARTE DEVIENT HORIZONTALE : la photo a gauche, ce qui est ecrit a
+           droite. C'est ce qui permet d'en voir cinq d'un coup au lieu de deux et
+           demie, et la photo garde une taille ou l'on voit de quoi il s'agit. */
+        .mu-rang{display:flex;flex-direction:column;gap:10px;}
+        /* « Voir tout » ne change plus la forme : tout est deja deplie et lisible.
+           La classe reste pour le pied qui compte. */
+        .mu-rang.tout{display:flex;}
 
-        /* ─── LE MUR ───
-           UNE GRILLE QUI DEFILE, PAS UN PAQUET QU'ON BALAIE. Ce qu'on veut savoir
-           en arrivant, c'est « est-ce qu'il s'y passe quelque chose ? » — et ca
-           se voit d'un coup d'oeil, pas en traversant six ecrans. */
-        .mu-rang{display:flex;gap:11px;overflow-x:auto;scrollbar-width:none;
-          padding-bottom:4px;-webkit-overflow-scrolling:touch;}
-        .mu-rang::-webkit-scrollbar{display:none;}
-
-        .mu-c{flex:none;width:174px;background:var(--mu-carte);
+        .mu-c{width:100%;background:var(--mu-carte);
           border:1px solid var(--mu-ligne);border-radius:18px;overflow:hidden;
-          display:flex;flex-direction:column;}
-        .mu-c.grande{width:246px;}
-        .mu-c-p{position:relative;height:106px;background:#101825;}
-        .mu-c.grande .mu-c-p{height:126px;}
-        .mu-c-p img{width:100%;height:100%;object-fit:cover;display:block;}
+          display:flex;flex-direction:row;align-items:stretch;}
+        /* LA PHOTO NE S'ETIRE PAS AVEC LE TEXTE : un mot long ne doit pas
+           agrandir l'image, sinon deux cartes voisines n'ont plus la meme. */
+        .mu-c-p{position:relative;flex:none;width:114px;align-self:stretch;
+          min-height:114px;background:#101825;}
+        .mu-c.grande .mu-c-p{width:124px;min-height:124px;}
+        .mu-c-p img{width:100%;height:100%;object-fit:cover;display:block;
+          position:absolute;inset:0;}
         .mu-c-vide{width:100%;height:100%;
           background:linear-gradient(150deg,#1B2436,#0E141F);}
         /* LE FANTOME TIENT LA PLACE DU PORTRAIT : la personne est la, sans que
            sa tete y soit. Voir l'en-tete du fichier. */
-        .mu-c-av{position:absolute;left:9px;bottom:-13px;width:32px;height:32px;
+        /* L'AVATAR RENTRE DANS LA PHOTO. Il debordait vers le bas quand la carte
+           etait verticale ; sur une carte horizontale ce bas-la est le milieu du
+           texte. Il se pose donc dans le coin de l'image. */
+        .mu-c-av{position:absolute;left:7px;bottom:7px;width:30px;height:30px;
           border-radius:50%;display:flex;align-items:center;justify-content:center;
           background:linear-gradient(150deg,#2A2150,#150F2C);
           border:1px solid rgba(139,125,246,.5);
@@ -2033,15 +2070,19 @@ function Styles() {
         .mu-c-signe .mu-f-oeil{fill:#2A1E4D;}
         .mu-c-signe .mu-f-bouche{fill:none;stroke:#2A1E4D;stroke-width:2;
           stroke-linecap:round;}
-        .mu-c-b{position:absolute;top:8px;right:8px;font-size:9.5px;font-weight:900;
-          letter-spacing:.06em;text-transform:uppercase;border-radius:20px;
-          padding:4px 9px;}
+        /* LA PASTILLE PASSE EN HAUT A GAUCHE : a droite, elle tombait sur le
+           bord de la photo, qui ne fait plus toute la largeur de la carte. */
+        .mu-c-b{position:absolute;top:7px;left:7px;font-size:9px;font-weight:900;
+          letter-spacing:.05em;text-transform:uppercase;border-radius:20px;
+          padding:3px 7px;max-width:calc(100% - 14px);overflow:hidden;
+          text-overflow:ellipsis;white-space:nowrap;}
         .mu-c-b.staff{background:var(--mu-menthe);color:#04150E;}
         .mu-c-b.verbe{background:linear-gradient(110deg,var(--mu-v1),var(--mu-v2));
           color:#150C26;}
         .mu-c-b.essai{background:rgba(109,40,217,.92);color:#F0E6FF;}
 
-        .mu-c-t{flex:1;display:flex;flex-direction:column;padding:17px 11px 11px;}
+        .mu-c-t{flex:1;min-width:0;display:flex;flex-direction:column;
+          padding:10px 11px 10px 12px;}
         .mu-c-n{display:flex;align-items:baseline;gap:5px;flex-wrap:wrap;}
         .mu-c-n b{font-size:13.5px;font-weight:800;}
         .mu-c-n u{text-decoration:none;font-size:11.5px;font-weight:700;
@@ -2195,23 +2236,53 @@ function Styles() {
 
         /* ═══ LA TÊTE DU MUR ═══ voir le composant EcranMur : une seule tête,
            deux phrases selon le métier, et plus aucun titre de section. */
-        .mu-haut{text-align:center;padding:2px 2px 16px;}
-        .mu-haut-s{width:54px;height:59px;margin:0 auto;display:block;}
+        /* ─── CHEZ QUI ON EST ───
+           En haut de la feuille, avant tout le reste, et dans les deux ecrans :
+           l'annonce est cachee DERRIERE la feuille, donc « ici » ne renvoyait a
+           rien. La croix de fermeture occupe le coin droit — d'ou la marge. */
+        .mu-chez{display:flex;align-items:center;gap:8px;
+          padding:0 44px 12px 2px;}
+        .mu-chez>i{font-style:normal;font-size:14px;flex:none;}
+        .mu-chez>span{min-width:0;display:flex;flex-direction:column;
+          line-height:1.25;}
+        .mu-chez b{font-size:15px;font-weight:850;color:#fff;
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .mu-chez em{font-style:normal;font-size:11.5px;font-weight:700;
+          color:var(--mu-pale);overflow:hidden;text-overflow:ellipsis;
+          white-space:nowrap;}
+
+        .mu-haut{text-align:center;padding:2px 2px 14px;}
+        /* LE FANTOME, LE TITRE ET LE GESTE SUR UNE SEULE LIGNE. Voir le
+           composant : cinq blocs empiles repoussaient le mur hors de l'ecran. */
+        .mu-haut-r{display:flex;align-items:center;gap:11px;text-align:left;
+          flex-wrap:wrap;}
+        .mu-haut-r h2{flex:1;min-width:150px;margin:0;}
+        .mu-haut-p{flex:none;display:inline-flex;align-items:center;gap:7px;
+          padding:8px 13px 8px 9px;font-family:inherit;font-size:12.5px;
+          font-weight:800;color:#EDE7FF;cursor:pointer;
+          background:rgba(139,125,246,.16);
+          border:1px solid rgba(139,125,246,.44);border-radius:99px;}
+        .mu-haut-ps{width:18px;height:20px;flex:none;}
+        .mu-haut-ps .mu-f-corps{fill:#EDE7FF;}
+        .mu-haut-ps .mu-f-oeil{fill:#2A1E4D;}
+        .mu-haut-ps .mu-f-bouche{fill:none;stroke:#2A1E4D;stroke-width:2.4;
+          stroke-linecap:round;}
+        .mu-haut-s{width:46px;height:50px;flex:none;display:block;}
         .mu-haut-s .mu-f-corps{fill:#F3F0FF;}
         .mu-haut-s .mu-f-oeil{fill:#2A1E4D;}
         .mu-haut-s .mu-f-bouche{fill:none;stroke:#2A1E4D;stroke-width:1.9;
           stroke-linecap:round;}
-        .mu-haut h2{margin:9px 0 0;font-size:24px;line-height:1.16;
+        .mu-haut h2{margin:9px 0 0;font-size:21px;line-height:1.14;
           font-weight:850;letter-spacing:-.03em;color:#fff;}
         .mu-haut h2 i{font-style:italic;color:var(--mu-v2);}
-        .mu-haut>p{margin:9px 0 0;font-size:13.5px;line-height:1.5;
-          color:var(--mu-pale);}
+        .mu-haut>p{margin:10px 0 0;font-size:12.5px;line-height:1.5;
+          text-align:left;color:var(--mu-pale);}
         /* La phrase qui donne son sens au pouce : elle est encadrée parce
            qu'elle explique le geste, elle ne le décore pas. */
-        .mu-haut-cle{display:block;margin:13px 0 0;padding:11px 13px;
-          font-size:13.5px;line-height:1.5;font-weight:600;color:#E8DEFF;
-          background:linear-gradient(180deg,rgba(139,106,255,.19),rgba(139,106,255,.09));
-          border:1px solid rgba(139,106,255,.34);border-radius:15px;}
+        .mu-haut-cle{display:block;margin:10px 0 0;padding:9px 11px;text-align:left;
+          font-size:12px;line-height:1.45;font-weight:600;color:#D9CEFF;
+          background:rgba(139,106,255,.1);
+          border:1px solid rgba(139,106,255,.26);border-radius:13px;}
         .mu-haut-b{display:inline-flex;align-items:center;gap:8px;margin-top:13px;
           padding:9px 15px 9px 10px;font-family:inherit;font-size:14px;
           font-weight:800;color:#fff;cursor:pointer;
@@ -2238,8 +2309,10 @@ function Styles() {
           background:rgba(255,255,255,.05);
           border:1px solid rgba(255,255,255,.12);border-radius:17px;}
         .mu-pied>span{font-size:17px;}
-        .mu-pied b{flex:1;text-align:left;font-size:13.5px;font-weight:800;
-          color:#fff;}
+        .mu-pied-t{flex:1;text-align:left;min-width:0;}
+        .mu-pied b{display:block;font-size:13.5px;font-weight:800;color:#fff;}
+        .mu-pied em{display:block;margin-top:2px;font-style:normal;font-size:11.5px;
+          color:var(--mu-pale);}
         .mu-pied i{font-style:normal;font-size:15px;color:var(--mu-pale);}
 
         /* Le chiffre a quitté le bouton : voir le grand commentaire dans Carte. */
