@@ -10926,7 +10926,12 @@ export function ApercuHabitant() {
         .ap-haut{position:absolute;top:0;left:0;right:0;z-index:4;
           padding:calc(8px + env(safe-area-inset-top)) 12px 10px;
           display:flex;flex-direction:column;gap:7px;pointer-events:none;
-          background:linear-gradient(180deg,rgba(4,8,6,.82) 0%,rgba(4,8,6,.62) 55%,rgba(4,8,6,0) 100%);
+          /* DEUX VOILES SE CUMULAIENT ICI, ET C'EST CE QUI RENDAIT LE HAUT
+             OPAQUE. Celui de la carte et celui-ci : .82 sur .74, soit presque
+             du noir plein sur le premier tiers de l'ecran. Les pastilles de
+             cette barre ont deja leur propre fond flou — elles n'ont pas besoin
+             d'un bandeau derriere elles, juste d'un peu d'assise. */
+          background:linear-gradient(180deg,rgba(4,8,6,.52) 0%,rgba(4,8,6,.3) 55%,rgba(4,8,6,0) 100%);
           transition:background .18s ease;}
         /* DES QU'ON DESCEND, LA BARRE DEVIENT UN SOL. Sur la photo au repos le
            degrade laisse tout passer ; sous du texte qui defile il faut que ce

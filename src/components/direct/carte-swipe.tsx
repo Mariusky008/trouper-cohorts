@@ -960,20 +960,34 @@ export function StylesDirect() {
            commerce. Mesure faite sur une terrasse en plein soleil, la photo la
            plus claire du paquet : sans ces deux epaisseurs, « Il en reste 3 »
            et le nom du commerce disparaissent. */
-        /* ═══ LA PHOTO EST UNE BANDE, PAS UN FOND ═══
-           « Ca ne ressemble toujours pas du tout a ce que je t'ai donne. »
-           C'etait le plus gros ecart, et il tenait a ce voile. Sur la maquette,
-           le texte est pose sur du NOIR, et la photo commence nettement en
-           dessous : deux zones, une arete franche entre les deux. Un degrade
-           doux sur toute la hauteur donne l'inverse — une image sale partout,
-           du texte gris sur une soupe, et rien qui ressemble a une affiche.
-           Le voile est donc opaque en haut, s'ouvre d'un coup, laisse la photo
-           EN ENTIER sur un quart de l'ecran, et se referme sous elle. La photo
-           y perd de la surface et y gagne d'exister. */
+        /* ═══ LA PHOTO EST UN FOND, PLUS UNE BANDE ═══
+
+           CETTE REGLE A ETE ECRITE DEUX FOIS, DANS LES DEUX SENS, ET LES DEUX
+           FOIS SUR MAQUETTE. La precedente disait « le texte est pose sur du
+           NOIR, et la photo commence nettement en dessous » : un volet opaque de
+           zero a trente-quatre pour cent, une ouverture franche, un second volet
+           a partir de soixante-dix. Mesure de ce que ca donnait : LA PHOTO
+           N'ETAIT VISIBLE QUE SUR VINGT ET UN POUR CENT DE LA HAUTEUR.
+
+           « La photo aussi est entiere depuis le haut, alors que pour l'instant
+           elle est au centre et cachee en haut ? » — exact, et c'est le chiffre
+           ci-dessus. Chez un fleuriste, un boulanger, un restaurant, LA PHOTO
+           EST LA DECISION : en cacher les quatre cinquiemes pour qu'un titre
+           soit propre est un prix trop eleve.
+
+           LE REMEDE N'EST NI LE VOLET NI LE TEXTE NU. Un volet garantit la
+           lisibilite mais tue l'image ; du blanc pose sur une photo claire
+           devient illisible des qu'on tombe sur une assiette blanche ou une
+           terrasse en plein soleil — mesure deja faite, c'est ce qui avait
+           justifie le volet. Un degrade CONTINU fait les deux : dense sur le
+           premier tiers ou vit le titre, transparent au milieu, et se refermant
+           sous la fiche du commerce. La photo court du haut de l'ecran jusqu'aux
+           boutons, sans coupure. */
         .cd-carte.sec .cd-voile{background:linear-gradient(180deg,
-          #050807 0%,#050807 34%,rgba(5,8,7,.55) 37.5%,
-          rgba(5,8,7,0) 41%,rgba(5,8,7,0) 62%,
-          rgba(5,8,7,.62) 66%,#050807 70%,#050807 100%);}
+          rgba(5,8,7,.74) 0%,rgba(5,8,7,.58) 12%,rgba(5,8,7,.34) 24%,
+          rgba(5,8,7,.12) 34%,rgba(5,8,7,0) 44%,rgba(5,8,7,0) 57%,
+          rgba(5,8,7,.42) 67%,rgba(5,8,7,.78) 78%,
+          rgba(5,8,7,.94) 89%,#050807 100%);}
 
         /* ═══ LA NOUVELLE ORGANISATION : LE TITRE EN HAUT, A GAUCHE ═══
 
@@ -1083,7 +1097,7 @@ export function StylesDirect() {
           font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
           font-weight:400;font-size:clamp(46px,14.5vw,70px);line-height:.88;
           letter-spacing:.004em;text-transform:uppercase;color:#fff;
-          text-shadow:0 3px 22px rgba(0,0,0,.62);
+          text-shadow:0 2px 10px rgba(0,0,0,.72),0 4px 30px rgba(0,0,0,.55);
           display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
           overflow:hidden;}
         .cd-offre.moyen{font-size:clamp(37px,11vw,52px);}
@@ -1173,7 +1187,7 @@ export function StylesDirect() {
           font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
           font-size:clamp(52px,16.5vw,80px);font-weight:400;
           letter-spacing:.004em;line-height:.96;color:#FFC400;
-          text-shadow:0 3px 22px rgba(0,0,0,.62);
+          text-shadow:0 2px 10px rgba(0,0,0,.72),0 4px 30px rgba(0,0,0,.55);
           font-variant-numeric:tabular-nums;}
         .cd-prixg b{font-weight:inherit;}
         /* L'ASTERISQUE EST EN EXPOSANT ET PETIT : il signale, il n'annonce pas. */
