@@ -2754,7 +2754,15 @@ const CARTES: CarteAutour[] = [
     // quelque chose que ses abonnés n'auraient nulle part ailleurs.
     bulletin: { humeur: { emoji: "🥰", mot: "amoureuse" } },
     catalogue: [
-      { id: "f-1", rayon: "Bouquets", nom: "Bouquet du marché", detail: "Ce qui est arrivé le matin.", prix: "18 €", photo: "/direct/bouquet-du-jour.jpg" },
+      // CE QUE L'ANNONCE MET EN AVANT DOIT ÊTRE ESSAYABLE. La carte vend
+      // « Bouquet du jour · 15 € » et le mur ne proposait que « Bouquet du
+      // marché · 18 € » : on regardait une chose et on en essayait une autre.
+      // Le moment de la carte ne peut pas devenir une pièce tout seul — chez un
+      // coiffeur ou une boutique, la photo de la carte est la VITRINE, pas le
+      // produit, et on proposerait d'essayer un fauteuil de salon. Il faut donc
+      // que le produit du jour existe dans le catalogue, avec sa photo.
+      { id: "f-0", rayon: "Bouquets", nom: "Bouquet du jour", detail: "Fleurs de saison, prêt en cinq minutes.", prix: "15 €", photo: "/direct/bouquet-du-jour.jpg" },
+      { id: "f-1", rayon: "Bouquets", nom: "Bouquet du marché", detail: "Ce qui est arrivé le matin.", prix: "18 €", photo: "/direct/avis-bouquet.jpg" },
       { id: "f-2", rayon: "Bouquets", nom: "Bouquet rond blanc", detail: "Renoncules et eucalyptus.", prix: "32 €" },
       { id: "f-3", rayon: "Plantes", nom: "Plante verte d'intérieur", detail: "Pot compris.", prix: "24 €" },
       { id: "f-4", rayon: "Occasions", nom: "Composition deuil", detail: "Sur commande, même jour.", prix: "à partir de 55 €" },

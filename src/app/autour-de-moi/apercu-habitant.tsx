@@ -9279,6 +9279,12 @@ export function ApercuHabitant() {
                         distance: dessus.distance,
                         photo: dessus.photo,
                         google: dessus.google,
+                        // CE QUE CE COMMERCE VEND, ET CE QU'IL ANNONCE
+                        // MAINTENANT. Sans ces deux lignes, le mur montre le
+                        // catalogue du modèle : « Trio bougies & houx » sous une
+                        // annonce de fleuriste. Voir `murDeLaCarte`.
+                        catalogue: dessus.catalogue,
+                        moment: momentDuSommet,
                       })}
                     />
                   ) : null}

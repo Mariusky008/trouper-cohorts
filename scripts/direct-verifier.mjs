@@ -1215,6 +1215,84 @@ console.log("\n══ l'essai, et rien d'autre ══");
   await c6.close();
 }
 
+// ═══ LE MUR QUI S'OUVRE EST CELUI DU COMMERCE QU'ON REGARDE ══════════════
+//
+// « Je suis sur une annonce de fleuriste — "Bouquet du jour · Fleurs de saison ·
+// 15 €" — et quand je clique sur le fantôme, au lieu d'avoir le texte coordonné
+// avec l'annonce, j'ai "Cette bougie, chez vous". »
+//
+// C'EST LA TROISIÈME FOIS QUE CE DÉFAUT REVIENT, ET C'EST POUR ÇA QU'IL A UNE
+// GARDE. Le coiffeur tombait sur l'onglerie, le prêt-à-porter sur la
+// bijoutière, la fleuriste et l'hypnothérapeute sur la cirière. À chaque fois
+// c'était un repli écrit quand trois murs devaient couvrir dix-huit commerces,
+// et à chaque fois il a survécu au mur qu'on venait d'ajouter — parce qu'un
+// repli vers un mur d'essai A L'AIR DE MARCHER. L'écran s'affiche, les boutons
+// répondent, et seuls les MOTS sont ceux d'un autre métier. Rien dans le code
+// ne peut le voir ; il faut ouvrir le fantôme et lire.
+//
+// LA GARDE MARCHE DANS LE VRAI PAQUET, pas dans la maquette : c'est là que le
+// routage a lieu, et la maquette en avait justement une copie divergente.
+console.log("\n══ l'annonce et son mur disent la même chose ══");
+{
+  const ATTENDU = [
+    ["Une fleuriste du marché", /bouquet/i],
+    ["Une prothésiste ongulaire", /ongle/i],
+    ["Une cirière", /bougie/i],
+    ["Une créatrice de bijoux", /bijou/i],
+    ["Un salon du centre", /coupe/i],
+    ["Un salon qui vient d’ouvrir", /coupe/i],
+    ["Une boutique de la rue piétonne", /pièce|vous/i],
+    ["Une friperie du vieux centre", /pièce|vous/i],
+    // ON N'ESSAIE PAS UNE SÉANCE D'HYPNOSE. « artisan » est un sac qui
+    // contenait une cirière, une bijoutière ET un hypnothérapeute : celui-ci
+    // recevait « Photographier ma table ». Il doit n'avoir aucun essai.
+    ["Un hypnothérapeute", null],
+  ];
+  const { ctx: c7, p: p7 } = await ouvrir("/autour-de-moi", 12.5);
+  const vus = new Map();
+  // ON PARCOURT LE PAQUET ET ON NOTE CE QU'ON CROISE. La carte du dessus est
+  // celle SANS « dessous » — l'autre est la suivante, déjà dans le DOM.
+  for (let i = 0; i < 24 && vus.size < ATTENDU.length; i++) {
+    const chez = await p7
+      .locator(".cd-carte:not(.dessous) .cd-chez")
+      .first()
+      .textContent()
+      .catch(() => null);
+    const nom = (chez ?? "").split("·")[0].trim();
+    const cible = ATTENDU.find(([n]) => n === nom);
+    if (cible && !vus.has(nom)) {
+      await p7.click(".ap-monfantome");
+      await p7.waitForTimeout(900);
+      const titre = await p7
+        .locator(".mu-e-tete h2")
+        .textContent()
+        .catch(() => null);
+      vus.set(nom, titre ? titre.trim() : null);
+      const x = await p7.$(".ap-f-x");
+      if (x) await x.click();
+      await p7.waitForTimeout(400);
+    }
+    // LE BOUTON SE DÉSACTIVE EN FIN DE PAQUET, et un clic qui attend trente
+    // secondes sur un bouton mort fait passer une garde pour une panne.
+    const suiv = await p7.$(".cd-suiv, .cd-passer, [aria-label*='suivant' i]");
+    if (!suiv || !(await suiv.isEnabled())) break;
+    await suiv.click();
+    await p7.waitForTimeout(420);
+  }
+  for (const [nom, motif] of ATTENDU) {
+    if (!vus.has(nom)) continue; // pas croisé à cette heure-ci : on ne juge pas
+    const titre = vus.get(nom);
+    dire(
+      motif ? !!titre && motif.test(titre) : titre === null,
+      motif
+        ? `${nom} → « ${titre ?? "aucun essai"} »`
+        : `${nom} n'a pas d'essai, et c'est voulu${titre ? ` — or il dit « ${titre} »` : ""}`,
+    );
+  }
+  dire(vus.size >= 3, `au moins trois commerces d'essai croisés dans le paquet (${vus.size})`);
+  await c7.close();
+}
+
 dire(erreurs.length === 0, `aucune erreur${erreurs.length ? " : " + erreurs[0] : ""}`);
 await nav.close();
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT PASSE");

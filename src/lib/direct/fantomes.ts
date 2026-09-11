@@ -599,7 +599,7 @@ export const MURS: Mur[] = [
         choisir: "Choisissez la pose",
         reserver: "Je réserve ma séance",
         autres: "Voir les autres poses du jour",
-        mur: "Voir ce que les clientes ont essayé",
+        mur: "Voir les poses portées par les clientes",
       },
       pieces: [
         /**
@@ -1025,7 +1025,7 @@ export const MURS: Mur[] = [
         choisir: "Choisissez la coupe",
         reserver: "Je réserve mon créneau",
         autres: "Voir les autres coupes du salon",
-        mur: "Voir ce que les clients ont essayé",
+        mur: "Voir les coupes faites dans ce salon",
       },
       pieces: [
         {
@@ -1202,6 +1202,126 @@ export const MURS: Mur[] = [
       },
     ],
   },
+  /**
+   * LA FLEURISTE, ET ELLE PARLAIT AVEC LA VOIX DE LA CIRIÈRE.
+   *
+   * « Je suis sur une annonce comme le fleuriste : "Les fleurs · Bouquet du
+   * jour · Fleurs de saison · Prêt en cinq minutes · 15 €". Et quand je clique
+   * sur le fantôme, au lieu d'avoir le texte coordonné avec l'annonce, j'ai
+   * "Cette bougie, chez vous". »
+   *
+   * LE REPLI ENVOYAIT « fleuriste » ET « artisan » SUR LE MUR DES BOUGIES. Il
+   * était écrit quand trois murs devaient couvrir dix-huit commerces, et il a
+   * survécu à chaque mur ajouté — c'est la troisième fois qu'on le trouve, après
+   * le coiffeur et le prêt-à-porter. La leçon est que le repli lui-même est le
+   * défaut : voir `murDeLaCarte`, où il ne mène plus jamais à un essai.
+   *
+   * LA MÉCANIQUE EST BIEN CELLE DE LA CIRIÈRE, ET C'EST LÉGITIME : un bouquet,
+   * comme une bougie, se pose sur une surface et prend la lumière de la pièce.
+   * Ce qui ne l'était pas, c'est de garder AUSSI ses mots et son catalogue. Un
+   * bouquet n'est pas une bougie, et « chez vous » ne veut pas dire la même
+   * chose quand ce qu'on regarde tiendra huit jours.
+   */
+  {
+    cle: "fleurs",
+    lieu: "Une fleuriste du marché",
+    metier: "Fleuriste",
+    ville: "Dax",
+    distance: "150 m",
+    note: "4,9",
+    avis: 47,
+    etiquettes: ["Producteurs des Landes", "Composé le matin"],
+    photoLieu: "/direct/bouquet-du-jour.jpg",
+    depot: "essai",
+    humeurs: ["offrir", "decouvre", "hesite"],
+    verbes: [],
+    essai: {
+      partie: "l’endroit où il ira",
+      consigne: "Cadrez la table ou la console entière, de trois quarts, à hauteur d’yeux.",
+      avant: "/direct/table-salon.jpeg",
+      // Même point d'appui que la cirière : la mesure porte sur la photo, pas
+      // sur le métier. Un bouquet est plus haut qu'une bougie, d'où la hauteur.
+      gabarit: { forme: "plan", pied: [0.365, 0.455], hauteur: 0.38, lumiere: -0.7 },
+      mots: {
+        titre: "Ce bouquet, chez vous",
+        phrase: "Photographiez la table où il ira : il s’y pose, à sa vraie taille.",
+        geste: "Photographier où il ira",
+        choisir: "Choisissez le bouquet",
+        reserver: "Je le fais mettre de côté",
+        autres: "Voir les autres bouquets du jour",
+        mur: "Voir ces bouquets chez d’autres",
+      },
+      pieces: [
+        {
+          id: "f-jour",
+          nom: "Bouquet du jour",
+          prix: "15 €",
+          photo: "/direct/bouquet-du-jour.jpg",
+          reference: "/direct/bouquet-du-jour.jpg",
+        },
+        {
+          id: "f-marche",
+          nom: "Bouquet du marché",
+          prix: "18 €",
+          photo: "/direct/avis-bouquet.jpg",
+          reference: "/direct/avis-bouquet.jpg",
+        },
+      ],
+    },
+    contexte: {
+      titre: "Le bouquet du jour",
+      quoi: "Fleurs de saison",
+      detail: "Prêt en cinq minutes",
+      photo: "/direct/bouquet-du-jour.jpg",
+      geste: "Voir les bouquets",
+    },
+    maison: [
+      {
+        id: "f-claire",
+        qui: "Claire",
+        role: "Fleuriste",
+        maison: true,
+        photo: "/direct/bouquet-du-jour.jpg",
+        mot: "Composé ce matin avec ce qui est monté des Landes. Voyez-le chez vous 💐",
+        heure: "08:40",
+        interesses: 7,
+      },
+      {
+        id: "f-halle",
+        qui: "Claire",
+        role: "Sous la halle",
+        maison: true,
+        photo: "/direct/avis-bouquet.jpg",
+        mot: "Il reste des renoncules. Après 18 h, ce qui reste part pour rien.",
+        heure: "11:20",
+        interesses: 5,
+      },
+    ],
+    clients: [
+      {
+        id: "f-maryse",
+        qui: "Maryse",
+        photo: "/direct/avis-bouquet.jpg",
+        essai: { quoi: "Bouquet du jour", verdict: "pris" },
+        mot: "Sur ma console il était trop haut, sur la table c’est parfait. Pris.",
+        heure: "10:05",
+        humeur: "decouvre",
+        interesses: 9,
+        jusqua: "encore 2 jours",
+      },
+      {
+        id: "f-chloe",
+        qui: "Chloé",
+        photo: "/direct/bouquet-du-jour.jpg",
+        essai: { quoi: "Bouquet du marché", verdict: null },
+        mot: "Je le voulais pour offrir, je l’ai essayé chez moi et je le garde.",
+        heure: "12:15",
+        humeur: "offrir",
+        interesses: 6,
+        jusqua: "encore 2 jours",
+      },
+    ],
+  },
 ];
 
 /**
@@ -1226,6 +1346,72 @@ export const MURS: Mur[] = [
  * se démontre ici est la MÉCANIQUE et la façon dont elle épouse le métier : un
  * bar montre des humeurs, une bijoutière un essai, un restaurant des annonces.
  */
+/**
+ * QUEL MUR POUR QUELLE BRANCHE — ET IL N'Y A QU'UNE TABLE.
+ *
+ * ELLE ÉTAIT ÉCRITE DEUX FOIS : ici et dans la maquette de jugement des murs.
+ * Les deux copies ont divergé exactement comme deux copies divergent — le
+ * coiffeur et le prêt-à-porter ont été corrigés d'un côté seulement, et on l'a
+ * découvert en cherchant pourquoi une fleuriste parlait de bougies.
+ *
+ * CHAQUE MÉTIER D'ESSAI A SON MUR, ET LE REPLI N'EN DONNE PLUS AUCUN. Le
+ * coiffeur tombait sur l'onglerie, la mode sur la bijoutière, la fleuriste sur
+ * la cirière — trois fois la même faute, à trois moments différents, parce
+ * qu'un repli vers un mur d'essai A L'AIR DE MARCHER : l'écran s'affiche, les
+ * boutons répondent, et seuls les MOTS sont ceux de quelqu'un d'autre. Un
+ * métier qu'on ne connaît pas va donc sur le mur d'annonces, qui ne prétend
+ * rien savoir de ce qu'il vend.
+ */
+export function modeleDeLaBranche(
+  branche: string | null | undefined,
+  metier?: string | null,
+): string {
+  if (branche === "bar") return "bar";
+  if (branche === "ongles") return "ongles";
+  if (branche === "coiffeur") return "coiffeur";
+  if (branche === "mode") return "mode";
+  if (branche === "fleuriste") return "fleurs";
+  /**
+   * « ARTISAN » N'EST PAS UN MÉTIER, C'EST UN SAC.
+   *
+   * Il contient une cirière, une créatrice de bijoux — et un hypnothérapeute,
+   * qui recevait donc « Cette bougie, chez vous ». Le sac se vide sur le métier,
+   * et CE QUI N'EN SORT PAS N'A PAS D'ESSAI : on n'essaie pas une séance
+   * d'hypnose sur une photo, et lui proposer de photographier sa table serait
+   * la même faute que celle de la fleuriste, en plus absurde.
+   */
+  if (branche === "artisan") {
+    const m = (metier ?? "").toLowerCase();
+    if (/cir|bougie/.test(m)) return "bougies";
+    if (/bijou|bracelet|collier|joaill/.test(m)) return "bijoux";
+    return "margot";
+  }
+  return "margot";
+}
+
+/**
+ * CE QU'UN COMMERCE VEND, TEL QUE SA CARTE LE DIT DÉJÀ.
+ *
+ * On n'en prend que les entrées QUI ONT UNE PHOTO : une pièce sans image ne
+ * s'essaie pas, et la faire figurer grisée dans la grille apprendrait au client
+ * que la moitié du catalogue est morte.
+ */
+type EntreeCatalogue = { id: string; nom: string; detail?: string; prix?: string; photo?: string };
+
+/**
+ * LE MOMENT EN COURS — ce que la carte affiche à cette heure-ci.
+ * `titre` + `lignes` + `prix`, c'est exactement le bloc que l'écran montrait.
+ *
+ * IL DEVIENT LE CONTEXTE, JAMAIS UNE PIÈCE À ESSAYER. C'est tentant : le moment
+ * EST ce que l'annonce vend, et il porterait la photo de la carte. Mais chez un
+ * coiffeur cette photo est `fauteuil-coiffeur.jpg`, chez une boutique
+ * `vitrine-mode.jpg`, chez la cirière `atelier-bougies.jpeg` — la VITRINE, pas
+ * le produit. On proposerait d'essayer un fauteuil de salon sur sa tête. Pour
+ * qu'un produit du jour soit essayable, il doit exister dans le catalogue AVEC
+ * sa photo ; voir la fleuriste dans `lib/direct/apercu-habitant.ts`.
+ */
+type MomentCourant = { titre: string; lignes?: string[]; prix?: string; photo?: string };
+
 export function murDeLaCarte(c: {
   id: string;
   nom: string;
@@ -1235,19 +1421,89 @@ export function murDeLaCarte(c: {
   distance: string;
   photo?: string;
   google?: { note: string; avis: number };
+  /**
+   * LE CATALOGUE DU COMMERÇANT, ET IL MANQUAIT.
+   *
+   * « Au lieu d'avoir le texte coordonné avec l'annonce, j'ai "Cette bougie,
+   * chez vous". »
+   *
+   * LE MUR NE RECEVAIT QUE L'IDENTITÉ DU COMMERCE — nom, métier, photo, note.
+   * Tout le reste restait celui du modèle, donc la grille d'essai proposait
+   * « Trio bougies & houx, 34 € » à qui regardait une annonce de fleuriste. Le
+   * bon mur ne suffisait pas : même bien aiguillée, une fleuriste n'a pas le
+   * catalogue de la cirière.
+   *
+   * CE QUI VIENT DU MODÈLE ET CE QUI VIENT DU COMMERÇANT SE PARTAGENT
+   * MAINTENANT NETTEMENT. Le modèle porte la MÉCANIQUE — ce qu'on photographie,
+   * la consigne de cadrage, le gabarit mesuré, les mots du métier. Le commerçant
+   * porte CE QU'IL VEND — ses pièces, leurs noms, leurs prix, et le bloc du
+   * moment sous le mur.
+   */
+  catalogue?: EntreeCatalogue[];
+  /** Le moment que la carte affiche à cette heure-ci. Devient `contexte`. */
+  moment?: MomentCourant | null;
 }): Mur {
-  const modele =
-    MURS.find((m) => {
-      if (c.branche === "bar") return m.cle === "bar";
-      if (c.branche === "ongles") return m.cle === "ongles";
-      // LE COIFFEUR ET LA MODE ONT LEUR MUR MAINTENANT. Ils tombaient sur ceux
-      // de l'onglerie et de la bijoutière — un repli écrit quand trois murs
-      // devaient couvrir dix-huit commerces, et resté longtemps après.
-      if (c.branche === "coiffeur") return m.cle === "coiffeur";
-      if (c.branche === "mode") return m.cle === "mode";
-      if (c.branche === "artisan" || c.branche === "fleuriste") return m.cle === "bougies";
-      return m.cle === "margot";
-    }) ?? MURS[0];
+  const modele = MURS.find((m) => m.cle === modeleDeLaBranche(c.branche, c.metier)) ?? MURS[0];
+
+  /**
+   * LES PIÈCES DU COMMERÇANT REMPLACENT CELLES DU MODÈLE.
+   *
+   * `reference` EST LA PHOTO DU CATALOGUE, et c'est juste : c'est la photo du
+   * produit fini, prise par le commerçant — exactement ce que le modèle d'image
+   * doit reproduire sur la photo du client. Ce qu'on ne reprend pas, c'est la
+   * `decoupe` du modèle : un PNG détouré est fait POUR UNE PIÈCE, et le coller
+   * sous le nom d'une autre reproduirait la faute qu'on vient de corriger.
+   */
+  const siennes: Piece[] = (c.catalogue ?? [])
+    .filter((e) => !!e.photo)
+    .map((e) => ({
+      id: e.id,
+      nom: e.nom,
+      prix: e.prix ?? "",
+      photo: e.photo as string,
+      reference: e.photo as string,
+    }));
+
+  /**
+   * LES SIENNES D'ABORD, PUIS CELLES DU MODÈLE — ET JAMAIS MOINS QU'AVANT.
+   *
+   * Remplacer purement la grille rétrécissait la démonstration : la fleuriste
+   * n'a qu'une entrée photographiée dans son catalogue, si bien que passer au
+   * « vrai » catalogue faisait tomber la grille de deux pièces à une. On met
+   * donc les siennes en tête et on complète avec celles du modèle, en écartant
+   * les doublons de photo.
+   *
+   * CE MÉLANGE N'EST PLUS UN MENSONGE DEPUIS QUE CHAQUE MÉTIER A SON MUR : les
+   * pièces du modèle sont désormais toujours du bon métier. Il l'était tant
+   * qu'une fleuriste pouvait hériter des bougies — c'est ce qui vient d'être
+   * corrigé, et c'est pour ça que ces deux changements vont ensemble.
+   */
+  // ON ÉCARTE LE DOUBLON SUR LA PHOTO **ET** SUR LE NOM. Sur la photo seule, la
+  // grille de la fleuriste affichait « Bouquet du marché · 18 € » deux fois,
+  // avec deux images différentes : le catalogue et le modèle nomment la même
+  // chose, chacun avec sa photo.
+  const pareil = (a: string) => a.toLowerCase().replace(/[^a-zà-ÿ0-9]/g, "");
+  const complement = (modele.essai?.pieces ?? []).filter(
+    (p) => !siennes.some((s) => s.photo === p.photo || pareil(s.nom) === pareil(p.nom)),
+  );
+  const essai =
+    modele.essai && siennes.length > 0
+      ? { ...modele.essai, pieces: [...siennes, ...complement].slice(0, 6) }
+      : modele.essai;
+
+  // LE BLOC SOUS LE MUR DIT CE QUE LA CARTE DIT, MOT POUR MOT. C'est le seul
+  // endroit où le commerce parle de ce qu'il vend ; qu'il annonce autre chose
+  // que l'annonce qu'on vient de quitter n'a aucun sens.
+  const contexte = c.moment
+    ? {
+        titre: c.moment.titre,
+        quoi: c.moment.lignes?.[0] ?? c.moment.titre,
+        detail: [c.moment.lignes?.[1], c.moment.prix].filter(Boolean).join(" · "),
+        photo: c.moment.photo || c.photo || modele.photoLieu,
+        geste: modele.contexte?.geste ?? "Voir",
+      }
+    : modele.contexte;
+
   return {
     ...modele,
     modele: modele.cle,
@@ -1259,6 +1515,8 @@ export function murDeLaCarte(c: {
     note: c.google?.note ?? modele.note,
     avis: c.google?.avis ?? modele.avis,
     photoLieu: c.photo || modele.photoLieu,
+    essai,
+    contexte,
   };
 }
 

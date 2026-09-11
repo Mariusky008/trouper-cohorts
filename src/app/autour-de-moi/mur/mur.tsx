@@ -18,24 +18,18 @@
 // ELLE DISPARAÎT À L'ATTERRISSAGE, comme le sélecteur qu'elle porte.
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { MURS } from "@/lib/direct/fantomes";
+import { MURS, modeleDeLaBranche } from "@/lib/direct/fantomes";
 import { MurContenu } from "@/components/direct/mur-contenu";
 
 /**
  * QUEL MUR OUVRIR, QUAND ON ARRIVE AVEC UN MÉTIER DANS L'ADRESSE.
  *
- * Cinq murs pour dix-huit commerces : on ramène la branche à celui qui lui
- * ressemble. C'est une maquette — dans le produit, chaque commerce a le sien.
+ * LA TABLE DE ROUTAGE ÉTAIT RECOPIÉE ICI, ET ELLE A DIVERGÉ. Le coiffeur et le
+ * prêt-à-porter ont reçu leur mur dans `fantomes.ts` sans que cette copie soit
+ * touchée : la maquette qui sert justement à JUGER les murs montrait encore les
+ * anciens replis. Elle appelle maintenant `modeleDeLaBranche`, qui est la seule
+ * table qui existe.
  */
-function murDeLaBranche(branche: string | null): string {
-  if (branche === "bar") return "bar";
-  if (branche === "ongles") return "ongles";
-  if (branche === "coiffeur") return "coiffeur";
-  if (branche === "mode") return "mode";
-  if (branche === "artisan" || branche === "fleuriste") return "bougies";
-  return "margot";
-}
-
 export function Mur() {
   const [cle, setCle] = useState("margot");
   const mur = useMemo(() => MURS.find((m) => m.cle === cle) ?? MURS[0], [cle]);
@@ -47,7 +41,7 @@ export function Mur() {
    */
   useEffect(() => {
     const m = new URLSearchParams(window.location.search).get("metier");
-    if (m) setCle(murDeLaBranche(m));
+    if (m) setCle(modeleDeLaBranche(m));
   }, []);
 
   return (
