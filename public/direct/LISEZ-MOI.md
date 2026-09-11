@@ -420,19 +420,30 @@ une photo de face et une référence de dos, et devait deviner le reste. Un mêm
 angle des deux côtés n'est pas un agrément, c'est la condition pour que le rendu
 tienne.
 
-| Fichier à déposer dans `public/direct/` | Ce qu'il doit montrer | Ce qu'il débloque |
-|---|---|---|
-| `coiffure-homme-face.jpg` | Un homme **de face**, buste, coupe **finie**, cheveux dégagés, lumière du jour. Visage flouté ou cadré sous les yeux — la règle du dépôt tient. | La pièce « Coupe homme, de face ». |
-| `coiffure-femme-face.jpg` | Une femme **de face**, même cadrage, coupe finie, sans chapeau ni lunettes. | La pièce « Coupe femme, de face ». |
-| `atelier-tatouage.jpg` | L'atelier d'un tatoueur : table, lampe, flashs au mur. C'est la **photo de la carte**, pas une référence d'essai. | La carte du tatoueur dans le paquet, et le fond de son mur. |
-| `tatouage-serpent.jpg` | **Un tatouage fini sur un avant-bras**, à plat, lumière du jour, trait net et lisible. Aucun visage. C'est la **référence** : c'est ce dessin-là que le modèle reproduira. | La pièce « Serpent fin, avant-bras » — la seule essayable du tatoueur. |
-| `avant-bras.jpg` | **Un avant-bras nu**, à plat, manche remontée, sans tatouage et sans ombre portée. | La photo d'exemple du tatoueur — « voir sans sortir son téléphone ». |
+**Les cinq sont arrivées.** Deux portent un autre nom que celui demandé, et
+c'est le code qui s'est aligné sur les fichiers — renommer une image livrée est
+le meilleur moyen de perdre la trace de ce qu'elle montre.
 
-**Tant qu'un fichier manque, sa pièce est marquée « bientôt essayable »** et ne
-se choisit pas. C'est la règle du dépôt depuis le début : on ne sert jamais une
-image de catalogue à la place d'un essai qui n'a pas eu lieu. Le jour où la photo
-arrive, il suffit d'ajouter `reference` à la pièce et de retirer `bientot` —
-voir `lib/direct/fantomes.ts`.
+| Fichier livré | Ce qu'il montre | Ce qu'il débloque |
+|---|---|---|
+| `coiffure-homme-face.jpg` | Un homme de face, boucles courtes travaillées. | La pièce « Boucles courtes, de face », **et la photo d'exemple du coiffeur** — enfin un visage de face au lieu d'une nuque. |
+| `coiffure-femme-face.jpg` | Une femme de face, carré long dégradé. | La pièce « Carré long, de face ». |
+| `atelier-tatouage.jpeg` | L'atelier. *Livrée en 2500 × 3320 pour 2 Mo* — **réduite ici à 1054 × 1400 (275 Ko)** : c'est un fond de carte de 390 points, et deux mégaoctets en 4G se paient au premier chargement. | La carte du tatoueur, et le fond de son mur. |
+| `cartoon-santa-muerte-portrait-1.webp` | **Une planche de flash** — un dessin sur fond blanc, pas un tatouage sur peau. C'est exactement la bonne référence : c'est ce que le tatoueur propose, et le modèle a pour travail de le poser sur l'avant-bras. | La pièce « Santa Muerte à la rose ». *La pièce a été renommée pour ce que la photo montre* — elle s'appelait « Serpent fin » en attendant l'image, et garder ce nom aurait refait la faute de la vignette de vernis : on choisit une chose et on en reçoit une autre. |
+| `avant-bras.jpg` | Un avant-bras nu sur fond blanc. | La photo d'exemple du tatoueur. |
+
+**Ce qui manque encore :** un balayage fini (`coiffure-balayage.jpg`) et une robe
+à carreaux (`mode-robe.jpg`). Leurs pièces restent « bientôt essayables » et ne
+se choisissent pas — on ne sert jamais une image de catalogue à la place d'un
+essai qui n'a pas eu lieu. Le jour où la photo arrive, il suffit d'ajouter
+`reference` à la pièce et de retirer `bientot` dans `lib/direct/fantomes.ts`.
+
+**Une réserve à connaître sur les deux photos de coiffure.** Elles montrent des
+visages parfaitement reconnaissables, alors que la règle du dépôt écrite plus
+haut demande de l'éviter. C'est assumé et c'est différent : ce ne sont pas des
+illustrations d'ambiance, ce sont des **références de coupe**, et une coupe ne se
+montre pas sans tête. Elles jouent ici le rôle qu'elles jouent dans n'importe
+quel salon — le book qu'on feuillette avant de s'asseoir.
 
 **Pour le coiffeur, la photo d'exemple ne prouve rien aujourd'hui** : le dépôt n'a
 aucun portrait utilisable, donc l'« avant » et la référence sont la même image.

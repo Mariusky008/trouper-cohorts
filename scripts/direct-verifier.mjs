@@ -1673,6 +1673,72 @@ console.log("\n══ la page du commerce ══");
     `et elle occupe l'écran au lieu d'une colonne de téléphone (${Math.round(surOrdi.largeurUtile)} points)`,
   );
   dire(surOrdi.mur, "le mur du commerce est sur sa page");
+
+  /**
+   * ═══ LA PAGE RACONTE UNE HISTOIRE, DANS L'ORDRE ═══════════════════════════
+   *
+   * « C'est impossible de s'y retrouver. Il faut des sections claires, des
+   * titres pour qu'on sache où on est, et que la page raconte une histoire où
+   * l'on va de section en section en comprenant ce qui se passe. »
+   *
+   * TROIS CHOSES SE MESURENT, ET AUCUNE NE SE VOIT EN LISANT LE CODE :
+   *
+   *   · LES CHAPITRES SONT NUMÉROTÉS ET DANS L'ORDRE. Le défaut trouvé au
+   *     premier jet : ils se lisaient 1, 2, 6, 3, 4, 5 — j'avais renuméroté
+   *     sans déplacer le bloc. Un rang qui recule au milieu d'une page détruit
+   *     exactement ce qu'il est censé donner.
+   *   · CHACUN DIT À QUOI IL RÉPOND. C'est ce qui fait l'histoire plutôt qu'une
+   *     table des matières.
+   *   · LA PAGE RESPIRE. Mesure avant : onze mille deux cents points sur un
+   *     téléphone, sans un seul repère.
+   */
+  const histoire = await pB.evaluate(() =>
+    [...document.querySelectorAll(".bq-s")]
+      .map((sec) => {
+        const ch = sec.querySelector(".bq-ch");
+        if (!ch) return null;
+        return {
+          n: Number(ch.querySelector(".bq-ch-n b")?.textContent ?? 0),
+          titre: ch.querySelector("h2")?.textContent?.trim() ?? "",
+          dit: ch.querySelector("p")?.textContent?.trim() ?? "",
+        };
+      })
+      .filter(Boolean),
+  );
+  dire(histoire.length >= 6, `la page est faite de chapitres (${histoire.length})`);
+  const rangs = histoire.map((x) => x.n);
+  dire(
+    rangs.every((n, i) => i === 0 || n > rangs[i - 1]),
+    `et ils se suivent dans l'ordre (${rangs.join(" ")})`,
+  );
+  dire(
+    histoire.every((x) => x.titre && x.dit.length > 25),
+    "chaque chapitre a un titre et dit à quoi il répond",
+  );
+  // AUCUN CHAPITRE NE RÉPÈTE UN AUTRE : deux titres identiques, c'est deux
+  // sections qu'on ne saura pas distinguer en revenant en arrière.
+  const titres = histoire.map((x) => x.titre);
+  dire(new Set(titres).size === titres.length, "et aucun ne répète le titre d'un autre");
+
+  // ET LE REPÈRE SUIT LE DÉFILEMENT — un titre ne dit où l'on est qu'au moment
+  // où on le croise ; trois écrans plus bas, on ne sait déjà plus.
+  const auSommet = await pB.$eval(".bq-ou", (e) => e.classList.contains("vu")).catch(() => null);
+  dire(auSommet === false, "au sommet, le repère de chapitre se tait");
+  await pB.evaluate(() => scrollTo(0, Math.round(document.documentElement.scrollHeight * 0.55)));
+  await pB.waitForTimeout(600);
+  const enRoute = await pB.$eval(".bq-ou", (e) => e.innerText.replace(/\s+/g, " ").trim());
+  dire(/\d\s*\/\s*\d/.test(enRoute), `et il dit où l'on est en descendant (« ${enRoute} »)`);
+  await pB.evaluate(() => scrollTo(0, 0));
+  await pB.waitForTimeout(400);
+
+  // LE FOND DE LA PAGE RESTE LE SIEN. La feuille du mur porte une règle qui
+  // repeint le document entier ; montée en section, elle changeait la couleur
+  // de toute la boutique. Mesure : rgb(7,11,18) au lieu de rgb(5,9,12).
+  const fond = await pB.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  dire(
+    fond.replace(/\s/g, "") === "rgb(5,9,12)",
+    `et le mur ne repeint pas la page qui l'accueille (${fond})`,
+  );
   dire(!surOrdi.deborde, "et rien ne déborde sur le côté");
 
   // L'ESSAI EST LA, EN DIRECT, CHEZ LES MÉTIERS QUI EN ONT UN. C'est le point
@@ -1682,23 +1748,43 @@ console.log("\n══ la page du commerce ══");
     await onglerie.click();
     await pB.waitForTimeout(1000);
     const e = await pB.evaluate(() => ({
-      titre: document.querySelector("#mur .mu-e-tete h2")?.textContent?.trim() ?? null,
+      // ON LIT LE TITRE DU CHAPITRE, PAS CELUI DU COMPOSANT. Celui du
+      // composant existe encore dans le document mais il est masque : une
+      // garde qui lit un texte invisible mesure le code, pas l'ecran.
+      titre: document.querySelector("#mur .bq-ch h2")?.textContent?.trim() ?? null,
       geste: document.querySelector("#mur .mu-cta.plein b")?.textContent?.trim() ?? null,
-      // LE MUR NE DOIT PAS S'ÉTIRER SUR TOUTE LA COLONNE : il couvre les
-      // rangées pour ne pas les déformer, il ne les remplit pas.
+      /**
+       * LE CREUX SE MESURE SOUS LE DERNIER CONTENU, PAS SOUS LE CADRE.
+       *
+       * PREMIER JET : on comparait le bas de la section au bas du mur, et on
+       * lisait « 23 points » pendant que quatre cent quatorze points de vide
+       * s'étalaient DANS le mur. La feuille du mur porte `min-height:100vh`,
+       * écrite pour un écran entier ; rendue à l'intérieur de la page, elle
+       * passe APRÈS celle de la page et gagne à spécificité égale. Le panneau
+       * faisait exactement la hauteur de l'écran — la signature du défaut.
+       *
+       * ON MESURE DONC DEPUIS LE DERNIER ENFANT VISIBLE. Une garde qui regarde
+       * le cadre ne voit jamais ce qu'il y a dedans.
+       */
       creux: (() => {
         const m = document.querySelector("#mur");
         const d = m?.querySelector(".bq-mu");
         if (!m || !d) return 0;
-        return Math.round(m.getBoundingClientRect().bottom - d.getBoundingClientRect().bottom);
+        const enfants = [...d.children].filter((e) => e.getBoundingClientRect().height > 1);
+        const dernier = enfants[enfants.length - 1];
+        if (!dernier) return 0;
+        return Math.round(m.getBoundingClientRect().bottom - dernier.getBoundingClientRect().bottom);
       })(),
     }));
-    dire(!!e.titre, `l'essai s'ouvre directement sur sa page (« ${e.titre ?? "absent"} »)`);
+    dire(
+      !!e.titre && /ongle/i.test(e.titre),
+      `l'essai s'ouvre sur sa page, dans les mots du metier (« ${e.titre ?? "absent"} »)`,
+    );
     dire(
       !!e.geste && /photograph|prendre/i.test(e.geste),
       `et il propose le geste du métier (« ${e.geste ?? "absent"} »)`,
     );
-    dire(e.creux < 80, `sans creux sous le panneau (${e.creux} points)`);
+    dire(e.creux < 90, `sans creux sous le dernier contenu du panneau (${e.creux} points)`);
   }
 
   // ET SUR TÉLÉPHONE, RIEN N'A BOUGÉ : une seule colonne, le mur toujours là.

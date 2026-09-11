@@ -4120,8 +4120,27 @@ export function ApercuHabitant() {
    * pour un bond en cours — le geste de quelqu'un passe toujours avant le
    * nôtre.
    */
+  /**
+   * ON DÉPEND DE L'IDENTIFIANT, PAS DE L'OBJET — ET C'EST TOUTE LA DIFFÉRENCE.
+   *
+   * DÉFAUT MESURÉ PAR UNE GARDE, ET IL RENDAIT L'APPEL INVISIBLE : sur vingt
+   * secondes d'observation image par image, le fantôme portait la classe
+   * pendant DEUX IMAGES. L'animation était bien appliquée — elle n'avait
+   * simplement pas le temps de commencer.
+   *
+   * LA CAUSE : `dessus` est un objet reconstruit à chaque rendu. En le mettant
+   * dans les dépendances, l'effet se démontait et se remontait sans arrêt, et
+   * son nettoyage — `setAppel(false)` — éteignait l'appel dans la foulée de
+   * l'allumage. Le pire est que `setAppel(true)` provoque lui-même un rendu :
+   * l'effet se détruisait donc à cause de ce qu'il venait de faire.
+   *
+   * C'EST LE GENRE DE FAUTE QU'ON NE VOIT PAS EN RELISANT : le code se lit
+   * juste, la boucle est correcte, et rien ne bouge à l'écran. Il a fallu
+   * compter les images dans un vrai navigateur.
+   */
+  const idDuDessus = dessus?.id ?? null;
   useEffect(() => {
-    if (dejaOuvert || horsDuPaquet || feuille || murOuvert || !dessus) return;
+    if (dejaOuvert || horsDuPaquet || feuille || murOuvert || !idDuDessus) return;
     // LE MOUVEMENT RÉDUIT EST UN RÉGLAGE D'ACCESSIBILITÉ, PAS UNE PRÉFÉRENCE
     // D'AMBIANCE : quelqu'un qui l'active peut avoir mal au cœur devant une
     // animation. On ne l'appelle pas, et le produit reste utilisable — c'est le
@@ -4146,7 +4165,7 @@ export function ApercuHabitant() {
       window.clearInterval(t);
       setAppel(false);
     };
-  }, [dejaOuvert, horsDuPaquet, feuille, murOuvert, dessus]);
+  }, [dejaOuvert, horsDuPaquet, feuille, murOuvert, idDuDessus]);
 
   const arbitre =
     horsDuPaquet && veilleActive && veilleActive.ton !== "calme" ? veilleActive : undefined;

@@ -170,6 +170,73 @@ function parRayon(articles: ArticleCatalogue[]): Array<[string, ArticleCatalogue
   return ordre.map((r) => [r, par.get(r)!] as [string, ArticleCatalogue[]]);
 }
 
+/**
+ * ═══ UN CHAPITRE, ET LA PAGE EN RACONTE HUIT ══════════════════════════════
+ *
+ * « C'est impossible de s'y retrouver et c'est très mal fait. Il faut quelque
+ * chose de beaucoup plus aéré, avec des sections claires, des titres pour qu'on
+ * sache où on est, et que la page du commerçant raconte une histoire où l'on va
+ * de section en section en comprenant ce qui se passe. »
+ *
+ * MESURE AVANT : ONZE MILLE DEUX CENTS POINTS DE DÉFILEMENT SUR UN TÉLÉPHONE.
+ * Vingt-sept écrans, sans un seul repère — les sections s'enchaînaient au même
+ * rythme, avec la même graisse, et rien ne disait ni où l'on était, ni combien
+ * il restait, ni pourquoi cette section venait après l'autre.
+ *
+ * UN CHAPITRE PORTE TROIS CHOSES, ET LA TROISIÈME EST LA NOUVELLE :
+ *
+ *   · SON RANG — « 3 / 8 ». C'est ce qui manquait le plus : sans lui, on ne
+ *     sait pas si l'on est au début ou à la fin, donc on ne sait pas s'il faut
+ *     continuer. Un lecteur qui ne sait pas où il en est s'arrête.
+ *   · SON TITRE, en grand, et il nomme la section — pas le produit.
+ *   · CE À QUOI IL RÉPOND, en une ligne. « Ce qu'il vend tous les jours, pas
+ *     seulement aujourd'hui » explique en huit mots pourquoi cette section
+ *     existe et pourquoi elle vient APRÈS le présent. C'est ça, raconter une
+ *     histoire : chaque section répond à la question que la précédente a
+ *     laissée ouverte.
+ *
+ * ET IL EST LE MÊME PARTOUT. Huit en-têtes écrits à la main auraient huit
+ * graisses, huit espacements et huit tons — c'est exactement ce qui donnait
+ * l'impression d'un flux continu.
+ */
+function Chapitre({
+  n,
+  sur,
+  titre,
+  dit,
+  ton,
+}: {
+  n: number;
+  sur: number;
+  titre: string;
+  /** La question à laquelle ce chapitre répond. Une ligne, jamais deux. */
+  dit: string;
+  /** « essai » pour le mur, qui est le seul chapitre violet. */
+  ton?: string;
+}) {
+  return (
+    <header className={`bq-ch${ton ? ` ${ton}` : ""}`}>
+      <span className="bq-ch-n" aria-hidden="true">
+        <b>{n}</b>
+        <i>/{sur}</i>
+      </span>
+      <h2>{titre}</h2>
+      <p>{dit}</p>
+    </header>
+  );
+}
+
+/**
+ * COMBIEN DE CHAPITRES — le dénominateur du « 3 / 8 ».
+ *
+ * IL EST FIXE, ET C'EST VOLONTAIRE. Un commerce sans avis n'affiche pas le
+ * chapitre 5, et son numéro manque dans la suite : c'est ce qu'il faut. Un
+ * dénominateur qui change d'un commerce à l'autre ferait croire que la page
+ * elle-même change, alors que c'est le commerce qui a moins à montrer. Le rang
+ * dit où l'on est dans L'HISTOIRE, pas dans cette page-là.
+ */
+const CHAPITRES = 8;
+
 export function Boutique() {
   const cartes = useMemo(() => toutesLesCartes(), []);
   const [id, setId] = useState("emporter");
@@ -304,6 +371,53 @@ export function Boutique() {
    * variable CSS. C'est la seule information que la feuille de style ne peut
    * pas déduire seule.
    */
+  /**
+   * ═══ OU SUIS-JE DANS L'HISTOIRE ═══════════════════════════════════════════
+   *
+   * « Des titres pour qu'on sache où on est. »
+   *
+   * LES TITRES NE SUFFISENT PAS, ET C'EST LE POINT. Un titre dit où l'on est
+   * AU MOMENT OÙ ON LE CROISE ; trois écrans plus bas, on ne sait déjà plus
+   * dans quelle section on lit. Sur une page de six mille points, c'est
+   * l'essentiel du temps qu'on y passe.
+   *
+   * UN BANDEAU COLLANT PORTE LE CHAPITRE COURANT. Il apparaît quand on a
+   * dépassé la tête de page et dit « 3 / 8 · La carte ». Rien de plus : ce
+   * n'est pas un menu, c'est un repère.
+   *
+   * L'OBSERVATEUR PLUTOT QU'UN CALCUL AU DEFILEMENT. Écouter le défilement
+   * oblige à mesurer huit positions à chaque pixel parcouru ; l'observateur ne
+   * réveille le navigateur que lorsqu'une section franchit la ligne. Sur un
+   * téléphone, la différence se sent au doigt.
+   */
+  const [chapitre, setChapitre] = useState<{ n: number; titre: string } | null>(null);
+  useEffect(() => {
+    const sections = Array.from(document.querySelectorAll<HTMLElement>(".bq-s"));
+    if (!sections.length) return;
+    const obs = new IntersectionObserver(
+      (entrees) => {
+        // CELLE QUI OCCUPE LE HAUT DE L'ECRAN GAGNE. Deux sections sont
+        // visibles en même temps la moitié du temps ; sans ce tri, le bandeau
+        // clignote entre les deux à chaque pixel.
+        const vues = entrees
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        const cible = vues[0]?.target as HTMLElement | undefined;
+        if (!cible) return;
+        const ch = cible.querySelector(".bq-ch");
+        const n = Number(ch?.querySelector(".bq-ch-n b")?.textContent ?? 0);
+        const titre = ch?.querySelector("h2")?.textContent ?? "";
+        if (n && titre) setChapitre({ n, titre });
+      },
+      // LA LIGNE EST AU QUART HAUT DE L'ECRAN : c'est là que l'oeil lit, pas
+      // au bord. Une marge négative en bas empêche qu'une section à peine
+      // entrée par le bas prenne la main.
+      { rootMargin: "-22% 0px -68% 0px", threshold: 0 },
+    );
+    for (const x of sections) obs.observe(x);
+    return () => obs.disconnect();
+  }, [c.id]);
+
   const rangsAGauche =
     1 + // « Aujourd'hui » est toujours là
     (habitudes.length > 0 ? 1 : 0) +
@@ -408,15 +522,35 @@ export function Boutique() {
           ce matin doit le voir ecrit sur sa propre page. C'est ce qui rend le
           geste du matin non negociable, et c'est exactement le role du drapeau
           `silencieux` dans le fil. */}
+      {/* LE REPERE DU CHAPITRE COURANT — voir `chapitre` plus haut. Il est
+          au-dessus des sections dans le document pour qu'un lecteur d'ecran le
+          rencontre avant elles, et `aria-hidden` parce qu'il REPETE un titre
+          qui existe deja : l'annoncer deux fois ferait perdre le fil a qui
+          n'utilise pas les yeux, ce que ce bandeau cherche precisement a
+          eviter pour les autres. */}
+      <div className={`bq-ou${chapitre ? " vu" : ""}`} aria-hidden="true">
+        {chapitre && (
+          <>
+            <b>{chapitre.n}</b>
+            <i>/{CHAPITRES}</i>
+            <span>{chapitre.titre}</span>
+          </>
+        )}
+      </div>
+
       <section className="bq-s" id="aujourdhui">
-        <div className="bq-k">Aujourd’hui</div>
-        <h2 className="bq-h">
-          {enCours.length
-            ? "En ce moment"
-            : aVenir.length
-              ? "Ce qui arrive"
-              : "Rien d’annoncé aujourd’hui"}
-        </h2>
+        <Chapitre
+          n={1}
+          sur={CHAPITRES}
+          titre={
+            enCours.length
+              ? "En ce moment"
+              : aVenir.length
+                ? "Ce qui arrive"
+                : "Rien d’annoncé aujourd’hui"
+          }
+          dit="Ce qui se passe ici à cette heure-ci. C’est la seule chose qui ne sera plus vraie demain."
+        />
 
         {!c.moments.length && (
           <p className="bq-vide">
@@ -513,64 +647,32 @@ export function Boutique() {
             laisse ici » suivi de « Ce que les gens ont laisse ici aujourd'hui ».
             Le mur sait deja se presenter, dans les mots de son metier — il ne
             reste que l'etiquette de section, qui dit ou l'on est dans la page. */}
-        <div className="bq-k">{onEssaie ? "Sans rendez-vous" : "Ici, aujourd’hui"}</div>
+        {/* LE CHAPITRE PORTE LE TITRE DU MÉTIER, IL NE LE REMPLACE PAS.
+            Premier jet : j'avais écrit « Essayez sur vous » ici et masqué la
+            tête du composant — ce qui effaçait « Vos ongles, avant de venir »,
+            c'est-à-dire précisément le travail fait pour qu'un coiffeur et une
+            onglerie ne disent pas la même chose. Les mots du métier remontent
+            donc dans le chapitre ; rien n'est écrit deux fois, et rien n'est
+            perdu. Voir `Mur.essai.mots` dans `lib/direct/fantomes.ts`. */}
+        <Chapitre
+          n={2}
+          sur={CHAPITRES}
+          ton={onEssaie ? "essai" : undefined}
+          titre={
+            onEssaie
+              ? (murDuLieu.essai?.mots.titre ?? "Essayez sur vous")
+              : "Ce que les gens laissent ici"
+          }
+          dit={
+            onEssaie
+              ? `${murDuLieu.essai?.mots.phrase ?? ""} Rien n’est publié tant que vous n’avez pas décidé.`
+              : "Des messages laissés par les personnes qui passent. Vous pourrez leur en parler sur place."
+          }
+        />
         <div className="mu bq-mu">
           <MurContenu key={c.id} mur={murDuLieu} />
         </div>
       </section>
-
-      {/* ─── CE QUI REVIENT ───
-          Voir le point 3 en tete de fichier. Deduit, jamais declare, et absent
-          des que l'historique est trop court pour qu'on ait le droit d'en
-          parler — `ceQuiRevient` exige trois occurrences avant de nommer une
-          habitude, et deux tiers du meme jour avant de nommer un jour. */}
-      {habitudes.length > 0 && (
-        <section className="bq-s alt" id="revient">
-          <div className="bq-k">D’habitude</div>
-          {/* PAS DE PRONOM, ET CE N'EST PAS UN DÉTAIL DE STYLE. Le produit ne
-              connaît pas le genre du commerçant — il connaît un prénom quand il
-              y en a un, et rien d'autre. « Ce qu'il a publié » écrit sous le nom
-              d'une cuisinière est une faute que le lecteur voit tout de suite,
-              et elle se répète sur la moitié des quatorze fiches. */}
-          <h2 className="bq-h">
-            {c.voix?.prenom ? `Ce qui revient chez ${c.voix.prenom}` : "Ce qui revient ici"}
-          </h2>
-          <p className="bq-int">
-            Déduit de ce qui a été publié le mois dernier. Ce n’est pas une promesse&nbsp;: c’est ce
-            qu’on a vu passer.
-          </p>
-          <ul className="bq-hab">
-            {habitudes.map((h) => {
-              /* SA MEILLEURE RÉPONSE N'EST PAS UNE ARCHIVE, C'EST UN MESSAGE.
-                 Le geste existait dans le pli et il descend avec le bloc — sans
-                 lui, « ce qui revient » ne serait qu'une statistique, et une
-                 statistique ne se touche pas.
-                 ICI C'EST UN LIEN, PLUS UNE FEUILLE. Dans le paquet il fallait
-                 une feuille par-dessus : on ne quitte pas une pile qu'on
-                 balaie. Sur une page, WhatsApp s'ouvre directement — un écran
-                 de moins pour le même geste.
-                 ET C'EST UNE QUESTION, PAS UNE COMMANDE. « Je prends la
-                 garbure » engage le commerçant sur une chose qui n'existe
-                 peut-être plus et le met en faute de ne pas l'avoir. */
-              const ecrire = commentPrevenir({
-                telephone: c.telephone ?? numeroDeFiction(c.id),
-                quoi: h.titre.toLowerCase(),
-                demande: true,
-              });
-              return (
-                <li key={h.titre}>
-                  <b>{h.titre}</b>
-                  <span>{phraseHabitude(h)}</span>
-                  {h.prix && <em>{h.prix}</em>}
-                  <a className="bq-hab-b" href={ecrire.whatsapp} target="_blank" rel="noreferrer">
-                    En redemander
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
 
       {/* ─── SA CARTE ───
           LE SEUL ENDROIT DU PRODUIT OU LE CATALOGUE A LE DROIT D'ETRE UNE
@@ -588,8 +690,12 @@ export function Boutique() {
               d'un hypnotherapeute dit de surcroit autre chose que ce qu'il y a
               dessous. Un intitule est une etiquette, pas un emplacement
               d'icone. */}
-          <div className="bq-k">Toujours</div>
-          <h2 className="bq-h">{mots.titre}</h2>
+          <Chapitre
+            n={3}
+            sur={CHAPITRES}
+            titre={mots.titre}
+            dit="Ce qu’on trouve ici tous les jours, et pas seulement aujourd’hui."
+          />
           {rayons.map(([rayon, articles]) => (
             <div className="bq-ray" key={rayon || "sans-rayon"}>
               {rayon && <div className="bq-ray-t">{rayon}</div>}
@@ -630,7 +736,12 @@ export function Boutique() {
           Google ne contient. */}
       {(c.voix || c.fiche.mot) && (
         <section className="bq-s alt" id="qui">
-          <div className="bq-k">Qui c’est</div>
+          <Chapitre
+            n={4}
+            sur={CHAPITRES}
+            titre="Qui vous recevra"
+            dit="Une personne, pas une enseigne. C’est elle que vous verrez en poussant la porte."
+          />
           {/* ─── LE ROND S'OUVRE, ET IL FALLAIT QU'IL LE FASSE ───
               Dans le pli, toucher le rond ouvrait la vidéo par-dessus l'écran
               avec le son : « le son existe, mais sur appui ». Le bloc a
@@ -727,10 +838,12 @@ export function Boutique() {
           envie d'être le premier. */}
       {(mur.length > 0 || avis.length > 0) && (
         <section className="bq-s" id="avis">
-          <div className="bq-k">Sur place</div>
-          <h2 className="bq-h">
-            {mur.some((ph) => duJour(ph.quand)) ? "Vu chez eux aujourd’hui" : "Vu chez eux"}
-          </h2>
+          <Chapitre
+            n={5}
+            sur={CHAPITRES}
+            titre={mur.some((ph) => duJour(ph.quand)) ? "Vu chez eux aujourd’hui" : "Vu chez eux"}
+            dit="Des photos et des mots laissés par des gens qui y sont allés. Rien n’est écrit par le commerce."
+          />
 
           {mur.length > 0 ? (
             <div className="bq-vu">
@@ -779,13 +892,76 @@ export function Boutique() {
         </section>
       )}
 
+      {/* ─── CE QUI REVIENT ───
+          Voir le point 3 en tete de fichier. Deduit, jamais declare, et absent
+          des que l'historique est trop court pour qu'on ait le droit d'en
+          parler — `ceQuiRevient` exige trois occurrences avant de nommer une
+          habitude, et deux tiers du meme jour avant de nommer un jour. */}
+      {habitudes.length > 0 && (
+        <section className="bq-s alt" id="revient">
+          <Chapitre
+            n={6}
+            sur={CHAPITRES}
+            titre={c.voix?.prenom ? `Ce qui revient chez ${c.voix.prenom}` : "Ce qui revient ici"}
+            dit="Son rythme, déduit du mois dernier. Utile pour savoir quand revenir."
+          />
+          {/* PAS DE PRONOM, ET CE N'EST PAS UN DÉTAIL DE STYLE. Le produit ne
+              connaît pas le genre du commerçant — il connaît un prénom quand il
+              y en a un, et rien d'autre. « Ce qu'il a publié » écrit sous le nom
+              d'une cuisinière est une faute que le lecteur voit tout de suite,
+              et elle se répète sur la moitié des quatorze fiches. */}
+          {/* LE TITRE ET LA PHRASE SONT MONTES DANS LE CHAPITRE. Les laisser
+              ici les aurait ecrits deux fois a dix points d'ecart — c'est
+              exactement ce qui donnait l'impression d'un flux sans reperes. Ce
+              qui reste est la seule chose que le chapitre ne dit pas : que
+              c'est une DEDUCTION, et pas une promesse du commercant. */}
+          <p className="bq-int">
+            Ce n’est pas une promesse&nbsp;: c’est ce qu’on a vu passer.
+          </p>
+          <ul className="bq-hab">
+            {habitudes.map((h) => {
+              /* SA MEILLEURE RÉPONSE N'EST PAS UNE ARCHIVE, C'EST UN MESSAGE.
+                 Le geste existait dans le pli et il descend avec le bloc — sans
+                 lui, « ce qui revient » ne serait qu'une statistique, et une
+                 statistique ne se touche pas.
+                 ICI C'EST UN LIEN, PLUS UNE FEUILLE. Dans le paquet il fallait
+                 une feuille par-dessus : on ne quitte pas une pile qu'on
+                 balaie. Sur une page, WhatsApp s'ouvre directement — un écran
+                 de moins pour le même geste.
+                 ET C'EST UNE QUESTION, PAS UNE COMMANDE. « Je prends la
+                 garbure » engage le commerçant sur une chose qui n'existe
+                 peut-être plus et le met en faute de ne pas l'avoir. */
+              const ecrire = commentPrevenir({
+                telephone: c.telephone ?? numeroDeFiction(c.id),
+                quoi: h.titre.toLowerCase(),
+                demande: true,
+              });
+              return (
+                <li key={h.titre}>
+                  <b>{h.titre}</b>
+                  <span>{phraseHabitude(h)}</span>
+                  {h.prix && <em>{h.prix}</em>}
+                  <a className="bq-hab-b" href={ecrire.whatsapp} target="_blank" rel="noreferrer">
+                    En redemander
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {/* ─── LE PRATIQUE ───
           Il vient tard EXPRES. C'est ce qu'on cherche quand on a deja decide,
           donc ce qu'on cherche en descendant — le mettre en haut reviendrait a
           dire que cette page est un horaire d'ouverture. */}
       <section className="bq-s alt" id="infos">
-        <div className="bq-k">Y aller</div>
-        <h2 className="bq-h">Où, et quand</h2>
+        <Chapitre
+          n={7}
+          sur={CHAPITRES}
+          titre="Y aller"
+          dit="L’adresse, les horaires, et de quoi le prévenir avant de passer."
+        />
         <dl className="bq-inf">
           <div>
             <dt>L’adresse</dt>
@@ -846,8 +1022,12 @@ export function Boutique() {
           initiale, jamais plus : ce sont des voisins, pas des comptes. */}
       {c.pouces && c.pouces.length > 0 && (
         <section className="bq-s" id="habitues">
-          <div className="bq-k">Ses habitués</div>
-          <h2 className="bq-h">Ceux qui font connaître ce commerce</h2>
+          <Chapitre
+            n={8}
+            sur={CHAPITRES}
+            titre="Ceux qui le font connaître"
+            dit="Les habitants qui l’ont proposé à leurs amis. C’est ce qui remplit une salle, pas la publicité."
+          />
           <ul className="bq-po">
             {c.pouces.map((p) => (
               <li key={p.qui}>
@@ -1000,13 +1180,72 @@ function Styles() {
            blocs sans dessiner de cadres. Sur un fond quasi noir, une bordure
            franche fabrique des boites, et une page en boites se lit comme un
            formulaire. */
-        .bq-s{padding:26px 16px 24px;}
-        .bq-s.alt{background:rgba(255,255,255,.028);
-          border-top:1px solid var(--bq-ligne);border-bottom:1px solid var(--bq-ligne);}
+        /* ═══ L'AIR EST LA MOITIE DE LA REFONTE ═══
+           « Il faut quelque chose de beaucoup plus aere, avec des sections
+           claires. » Mesure avant : onze mille deux cents points de defilement
+           sur un telephone, vingt-sept ecrans au meme rythme. Le probleme
+           n'etait pas la quantite — c'est une page de boutique, elle a le droit
+           d'etre longue — mais le RYTHME : rien ne separait deux sections, donc
+           tout se lisait comme une seule liste sans fin.
+           QUARANTE-DEUX POINTS EN HAUT, TRENTE-HUIT EN BAS, ET UN FILET. Un
+           lecteur a besoin de savoir qu'il a fini quelque chose avant de
+           commencer autre chose ; c'est ce blanc-la qui le lui dit, et rien
+           d'autre ne peut le faire a sa place. */
+        .bq-s{padding:42px 18px 38px;position:relative;}
+        .bq-s + .bq-s::before{content:"";position:absolute;left:18px;right:18px;
+          top:0;height:1px;background:var(--bq-ligne);}
+        .bq-s.alt{background:rgba(255,255,255,.028);}
         .bq-k{font-size:9.5px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;
           color:var(--bq-menthe);margin-bottom:7px;}
         .bq-h{margin:0 0 4px;font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
           font-size:25px;font-weight:400;line-height:1.06;letter-spacing:.005em;}
+
+        /* ═══ LE REPERE DU CHAPITRE COURANT ═══
+           Il est collant en haut de la page et ne montre qu'une chose : ou l'on
+           est. Fond floute, pas de fond plein — il passe par-dessus des photos,
+           et un bandeau opaque de quarante points sur un telephone coute un
+           dixieme de l'ecran a chaque instant.
+           IL N'APPARAIT QU'UNE FOIS LA TETE DE PAGE DEPASSEE : au sommet, le nom
+           du commerce est deja sous les yeux, et un repere qui repete ce qu'on
+           voit n'est que du bruit. */
+        .bq-ou{position:sticky;top:0;z-index:12;display:flex;align-items:center;
+          gap:7px;height:0;overflow:hidden;padding:0 16px;
+          opacity:0;transition:opacity .18s ease,height .18s ease;
+          background:linear-gradient(180deg,rgba(5,9,12,.94),rgba(5,9,12,.82));
+          -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+          border-bottom:1px solid transparent;}
+        .bq-ou.vu{height:38px;opacity:1;border-bottom-color:var(--bq-ligne);}
+        .bq-ou b{font-size:12.5px;font-weight:900;color:var(--bq-menthe);
+          font-variant-numeric:tabular-nums;}
+        .bq-ou i{font-style:normal;font-size:10.5px;font-weight:800;
+          color:rgba(61,226,166,.5);margin-left:-4px;}
+        .bq-ou span{min-width:0;overflow:hidden;text-overflow:ellipsis;
+          white-space:nowrap;font-size:12.5px;font-weight:800;color:#D6E2DA;}
+
+        /* ═══ LE CHAPITRE ═══ voir le composant Chapitre.
+           SON RANG EST LA CHOSE NOUVELLE : « 3 / 8 » dit d'un coup d'oeil ou
+           l'on est et combien il reste. Sans lui, un lecteur qui ne sait pas
+           s'il est au debut ou a la fin s'arrete. */
+        .bq-ch{margin:0 0 22px;}
+        .bq-ch-n{display:inline-flex;align-items:baseline;gap:2px;margin-bottom:12px;
+          padding:4px 11px 4px 10px;border-radius:99px;
+          background:rgba(61,226,166,.12);border:1px solid rgba(61,226,166,.3);}
+        .bq-ch-n b{font-size:12.5px;font-weight:900;color:var(--bq-menthe);
+          font-variant-numeric:tabular-nums;}
+        .bq-ch-n i{font-style:normal;font-size:10.5px;font-weight:800;
+          color:rgba(61,226,166,.55);}
+        .bq-ch h2{margin:0;font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
+          font-size:clamp(29px,8.2vw,36px);font-weight:400;line-height:1.02;
+          letter-spacing:.004em;color:#fff;}
+        /* LA LIGNE QUI DIT A QUOI CE CHAPITRE REPOND. C'est elle qui fait
+           l'histoire : chaque section repond a la question que la precedente a
+           laissee ouverte, et elle l'ecrit au lieu de compter dessus. */
+        .bq-ch p{margin:10px 0 0;max-width:34em;font-size:13.5px;line-height:1.55;
+          color:var(--bq-pale);}
+        .bq-ch.essai .bq-ch-n{background:rgba(139,125,246,.14);
+          border-color:rgba(139,125,246,.34);}
+        .bq-ch.essai .bq-ch-n b{color:#C9BCFF;}
+        .bq-ch.essai .bq-ch-n i{color:rgba(201,188,255,.55);}
         .bq-int{margin:9px 0 0;font-size:12.5px;line-height:1.5;color:var(--bq-pale);}
         .bq-vide{margin:12px 0 0;font-size:13px;line-height:1.55;color:var(--bq-pale);
           background:var(--bq-carte);border-radius:16px;padding:14px 15px;}
@@ -1235,8 +1474,38 @@ function Styles() {
            ces trois-la creaient un trou noir de huit cents points au milieu du
            contenu. On les neutralise ici plutot que de les retirer la-bas : la
            feuille du fil en a besoin, cette page non. */
-        .bq-mu{background:transparent;max-width:none;min-height:0;margin:12px 0 0;}
-        .bq-mu .mu-chez{display:none;}
+        /* ═══ LA FEUILLE DU MUR REPEIGNAIT TOUT LE DOCUMENT ═══
+           Elle porte html:has(.mu),body:has(.mu){background:#070B12} — juste
+           quand le mur EST la page, faux des qu'il n'en est qu'une section. Le
+           fond de la boutique passait du bleu-vert #05090C au bleu du mur, sur
+           toute la page, et ca ne se voit qu'en comparant deux ecrans cote a
+           cote. Mesure : rgb(7,11,18) au lieu de rgb(5,9,12).
+           ON REPREND LA MAIN AVEC UN SELECTEUR PLUS PRECIS plutot que de
+           retirer la regle la-bas : la feuille du fil en a besoin, et une regle
+           supprimee pour un appelant se paie chez l'autre. */
+        html:has(.bq):has(.mu),body:has(.bq):has(.mu){background:var(--bq-fond,#05090C);}
+        /* DEUX CLASSES, PAS UNE, ET CE N'EST PAS DU ZELE.
+           .mu et .bq-mu ont la MEME specificite, et la feuille du mur est
+           rendue a l'interieur de cet element — donc APRES celle de la page dans
+           le document. A egalite, c'est la derniere qui gagne : min-height:100vh
+           l'emportait, et le panneau d'essai tenait neuf cents points pour quatre
+           cent quatre-vingt-dix de contenu. Mesure a 1440x900 : exactement la
+           hauteur de l'ecran, ce qui est la signature de ce defaut.
+           .mu.bq-mu passe devant sans rien changer chez l'autre appelant. */
+        .mu.bq-mu{background:transparent;max-width:none;min-height:0;margin:12px 0 0;}
+        /* LE COMPOSANT SE PRESENTE DEJA — ICI, C'EST LE CHAPITRE QUI LE FAIT.
+           La page affichait « Ce que les gens laissent ici » puis « Ce que les
+           gens ont laisse ici aujourd'hui » a dix points d'ecart. Le nom du
+           commerce, le titre et la phrase montent dans l'en-tete de chapitre ;
+           ce qui reste du composant est ce qu'il est seul a savoir faire : le
+           geste, la legende du pouce, et les cartes. */
+        .bq-mu .mu-chez,
+        .bq-mu .mu-haut>h2,
+        .bq-mu .mu-haut-r h2,
+        .bq-mu .mu-haut>p,
+        .bq-mu .mu-e-tete{display:none;}
+        .bq-mu .mu-haut{padding-top:0;}
+        .bq-mu .mu-haut-r{justify-content:flex-start;}
         .bq-mur.essai{background:linear-gradient(180deg,rgba(139,125,246,.1),
           rgba(139,125,246,.03) 60%,transparent);
           border-top:1px solid rgba(139,125,246,.24);}

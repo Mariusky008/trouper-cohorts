@@ -1043,7 +1043,22 @@ export const MURS: Mur[] = [
     essai: {
       partie: "votre tête",
       consigne: "Face à une fenêtre, cheveux dégagés, sans casquette ni lunettes de soleil.",
-      avant: "/direct/avis-coupe.jpg",
+      /**
+       * LA PHOTO D'EXEMPLE EST ENFIN UN VISAGE DE FACE.
+       *
+       * ELLE ETAIT UNE NUQUE, ET C'ETAIT LE DEFAUT DE FOND. On se photographie
+       * DE FACE ; le modele recevait une photo de face et une reference de dos,
+       * et devait deviner le reste. « Il faudrait une coupe de devant pour homme
+       * et une coupe de devant pour femme » — c'etait la meme remarque, vue de
+       * l'autre bout.
+       *
+       * L'HOMME SERT DE CLIENT D'EXEMPLE, la femme de reference a essayer sur
+       * lui : deux angles identiques, une vraie transformation a voir. Essayer
+       * SA propre coupe sur lui donnerait l'identite, ce qui ne demontre rien —
+       * mais l'ecran dit deja « photo d'exemple, ce n'est pas la votre », donc
+       * personne ne s'y trompe.
+       */
+      avant: "/direct/coiffure-homme-face.jpg",
       gabarit: { forme: "cadre" },
       mots: {
         titre: "Votre coupe, avant le rendez-vous",
@@ -1084,8 +1099,10 @@ export const MURS: Mur[] = [
          * `bientot`. Servir la photo du salon à la place serait un catalogue
          * déguisé en essai.
          */
-        { id: "c-homme", nom: "Coupe homme, de face", prix: "26 €", photo: "/direct/coiffure-homme-face.jpg", bientot: true },
-        { id: "c-femme", nom: "Coupe femme, de face", prix: "38 €", photo: "/direct/coiffure-femme-face.jpg", bientot: true },
+        { id: "c-homme", nom: "Boucles courtes, de face", prix: "26 €",
+          photo: "/direct/coiffure-homme-face.jpg", reference: "/direct/coiffure-homme-face.jpg" },
+        { id: "c-femme", nom: "Carré long, de face", prix: "38 €",
+          photo: "/direct/coiffure-femme-face.jpg", reference: "/direct/coiffure-femme-face.jpg" },
         { id: "c-balayage", nom: "Balayage miel", prix: "95 €", photo: "/direct/salon-neuf.jpg", bientot: true },
         { id: "c-carre", nom: "Carré dégradé", prix: "45 €", photo: "/direct/fauteuil-coiffeur.jpg", bientot: true },
       ],
@@ -1396,15 +1413,14 @@ export const MURS: Mur[] = [
     note: "4,9",
     avis: 64,
     etiquettes: ["Flash du mois", "Sur rendez-vous"],
-    // PAS DE PHOTO TANT QU'ELLE N'EXISTE PAS. Les fichiers sont nommés dans
-    // `LISEZ-MOI.md` ; le jour où ils arrivent, une ligne suffit.
+    photoLieu: "/direct/atelier-tatouage.jpeg",
     depot: "essai",
     humeurs: ["hesite", "decouvre", "offrir"],
     verbes: [],
     essai: {
       partie: "votre avant-bras",
       consigne: "Avant-bras à plat, manche remontée, à la lumière du jour, sans ombre portée.",
-      avant: "",
+      avant: "/direct/avant-bras.jpg",
       gabarit: { forme: "cadre" },
       mots: {
         titre: "Ce flash, sur votre peau",
@@ -1416,8 +1432,23 @@ export const MURS: Mur[] = [
         mur: "Voir les flashs déjà posés",
       },
       pieces: [
-        { id: "t-serpent", nom: "Serpent fin, avant-bras", prix: "180 €", photo: "", bientot: true },
-        { id: "t-fleur", nom: "Branche fleurie, poignet", prix: "120 €", photo: "", bientot: true },
+        /**
+         * LA PIECE PORTE LE NOM DE CE QUE LA PHOTO MONTRE.
+         *
+         * J'avais ecrit « Serpent fin » en attendant l'image ; la planche
+         * livree est une Santa Muerte a la rose. Garder l'ancien nom aurait
+         * refait, en petit, la faute de la vignette de vernis : on choisit une
+         * chose et on en recoit une autre.
+         *
+         * UN FLASH EST UNE PLANCHE, PAS UNE PHOTO DE PEAU, et c'est exactement
+         * la bonne reference : c'est le dessin que le tatoueur propose, et le
+         * modele a pour travail de le poser sur l'avant-bras.
+         */
+        { id: "t-muerte", nom: "Santa Muerte à la rose", prix: "180 €",
+          photo: "/direct/cartoon-santa-muerte-portrait-1.webp",
+          reference: "/direct/cartoon-santa-muerte-portrait-1.webp" },
+        { id: "t-fleur", nom: "Branche fleurie, poignet", prix: "120 €",
+          photo: "/direct/atelier-tatouage.jpeg", bientot: true },
       ],
     },
 
@@ -1427,6 +1458,7 @@ export const MURS: Mur[] = [
         qui: "Nine",
         role: "Tatoueuse",
         maison: true,
+        photo: "/direct/atelier-tatouage.jpeg",
         mot: "Trois flashs dessinés cette semaine. Essayez-les avant de venir 🪡",
         heure: "10:20",
         interesses: 11,
@@ -1436,7 +1468,8 @@ export const MURS: Mur[] = [
       {
         id: "t-lise",
         qui: "Lise",
-        essai: { quoi: "Serpent fin, avant-bras", verdict: null },
+        photo: "/direct/cartoon-santa-muerte-portrait-1.webp",
+        essai: { quoi: "Santa Muerte à la rose", verdict: null },
         mot: "Je l\u2019ai essayé trois fois avant de me décider sur le placement.",
         heure: "11:55",
         humeur: "hesite",

@@ -3030,14 +3030,13 @@ const CARTES: CarteAutour[] = [
   {
     id: "tatoueur",
     catalogue: [
-      { id: "ta-1", rayon: "Flashs", nom: "Serpent fin, avant-bras", detail: "Environ 2 h.", prix: "180 €" },
+      { id: "ta-1", rayon: "Flashs", nom: "Santa Muerte à la rose", detail: "Environ 2 h.", prix: "180 €", photo: "/direct/cartoon-santa-muerte-portrait-1.webp" },
       { id: "ta-2", rayon: "Flashs", nom: "Branche fleurie, poignet", detail: "Environ 1 h 30.", prix: "120 €" },
       { id: "ta-3", rayon: "Sur mesure", nom: "Projet personnalisé", detail: "Rendez-vous de dessin avant la séance." },
       { id: "ta-4", rayon: "Soins", nom: "Retouche", detail: "Offerte dans les six mois." },
     ],
     branche: "artisan",
-    // PAS DE PHOTO TANT QU'ELLE N'EXISTE PAS : la carte prend son degrade et
-    // son pictogramme de metier. Voir `LISEZ-MOI.md` pour les fichiers attendus.
+    photo: "/direct/atelier-tatouage.jpeg",
     nom: "Un tatoueur du centre",
     google: { note: "4,9", avis: 64 },
     metier: "Tatoueur",
@@ -3054,7 +3053,7 @@ const CARTES: CarteAutour[] = [
       {
         de: 11, a: 19, quand: "ce mois-ci", icone: "🪡",
         titre: "Trois flashs dessinés",
-        lignes: ["Serpent fin, branche fleurie, vague", "Essayables sur votre avant-bras"],
+        lignes: ["Santa Muerte, branche fleurie, vague", "Essayables sur votre avant-bras"],
         prix: "à partir de 120 €", places: 3, action: "Demander un rendez-vous",
         envies: ["unique", "saison"],
       },
