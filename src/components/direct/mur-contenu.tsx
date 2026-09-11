@@ -314,9 +314,25 @@ function murDeLaBranche(branche: string | null): string {
  * feuille qui monte sur le paquet, et la maquette de jugement qui permet de
  * comparer cinq commerces côte à côte.
  */
+/**
+ * PAR OÙ ON ENTRE, ET ÇA DÉPEND DU MÉTIER.
+ *
+ * « Il y a trop de distraction ici avec le mur qui apparaît déjà, alors que ce
+ * qu'on veut c'est juste essayer sur soi. Il faut vraiment mettre le focus sur
+ * l'essayage dès le départ, sans avoir le mur — avec un seul bouton quelque part
+ * qui dit voir le mur du commerçant. »
+ *
+ * CHEZ UN RESTAURANT, LE MUR EST LE PRODUIT : ce qu'on vient voir, ce sont les
+ * gens qui sont passés. Chez une onglerie, un coiffeur, une boutique, le mur est
+ * la PREUVE — il n'a d'intérêt qu'après qu'on a compris qu'on peut essayer. Le
+ * montrer d'abord, c'est faire lire vingt vignettes avant la seule phrase qui
+ * compte.
+ */
+const entree = (mur: TypeMur): "mur" | "depot" => (mur.depot === "essai" ? "depot" : "mur");
+
 export function MurContenu({ mur }: { mur: TypeMur }) {
-  /** Où l'on en est : le mur, ou le dépôt. */
-  const [ecran, setEcran] = useState<"mur" | "depot">("mur");
+  /** Où l'on en est : le mur, ou le dépôt. Voir `entree`. */
+  const [ecran, setEcran] = useState<"mur" | "depot">(() => entree(mur));
   const [dits, setDits] = useState<Record<string, string>>({});
   /** Le fantôme sur lequel on vient d'appuyer, et à qui on dit quand on passe. */
   const [passage, setPassage] = useState<Fantome | null>(null);
@@ -335,7 +351,7 @@ export function MurContenu({ mur }: { mur: TypeMur }) {
   const [tout, setTout] = useState(false);
 
   useEffect(() => {
-    setEcran("mur");
+    setEcran(mur.depot === "essai" ? "depot" : "mur");
     setPassage(null);
     setDits({});
     setTout(false);
@@ -354,7 +370,7 @@ export function MurContenu({ mur }: { mur: TypeMur }) {
       })),
     );
     setDehors(mesFantomes().length);
-  }, [mur.cle, mur.photoLieu]);
+  }, [mur.cle, mur.photoLieu, mur.depot]);
 
   /**
    * CE QUE FAIT LE POUCE, ET ÇA DÉPEND DU MÉTIER.
@@ -432,7 +448,17 @@ export function MurContenu({ mur }: { mur: TypeMur }) {
             );
             setDehors(reste.length);
             setPoses((l) => [f, ...l]);
-            setEcran("mur");
+            /**
+             * UN DÉPÔT D'ANNONCE FINIT SUR LE MUR ; UN ESSAI N'EN BOUGE PAS.
+             *
+             * Écrire une annonce puis voir sa carte apparaître au milieu des
+             * autres, c'est la récompense du geste. Mais renvoyer au mur
+             * quelqu'un qui vient de décider après un essai, c'est lui reprendre
+             * son rendu pour lui montrer vingt vignettes — exactement la
+             * distraction qu'on vient d'enlever de l'entrée. L'essai dit lui-même
+             * que le rendu est parti sur le mur, et propose d'aller le voir.
+             */
+            if (mur.depot !== "essai") setEcran("mur");
           }}
         />
       )}
@@ -598,32 +624,26 @@ function EcranMur({
           proposent pas la même chose. Un restaurant propose de SE CROISER ; une
           onglerie propose d'ESSAYER. Voir `Depot` dans `lib/direct/fantomes.ts`. */}
       {mur.depot === "essai" ? (
+        /* CE MUR-LÀ N'EST PLUS L'ENTRÉE, C'EST LA PREUVE. On n'y arrive que par
+           le bouton du bas de l'essai — voir `entree` et `mots.mur`. Sa tête n'a
+           donc plus à vendre l'essai : elle dit ce qu'on regarde, et elle rend le
+           chemin du retour évident. */
         <div className="mu-haut essai">
           <Signe classe="mu-haut-s" />
           <h2>
-            Essayez-le sur vous, <i>maintenant</i>
+            Ce que les clients ont <i>essayé ici</i>
           </h2>
           <p>
-            Prenez {mur.essai?.partie} en photo&nbsp;: la pièce s’y pose en une seconde, sur
-            votre téléphone. Rien n’est envoyé, rien n’est publié tant que vous n’avez pas
-            décidé.
+            Chaque image est un essai fait sur la photo de quelqu’un, pas une photo de
+            catalogue.
           </p>
-          {/* LE GESTE DU MÉTIER EN PREMIER, ET EN GRAND. « Pour les autres il
-              faut mettre le focus immédiatement sur l'essai et dire vraiment
-              directement d'essayer le produit. » L'écran ne commence donc plus
-              par une explication du fantôme : il commence par le produit sur soi,
-              et le fantôme n'est que ce qu'il en reste après. */}
           <button type="button" className="mu-cta plein" onClick={onDeposer}>
             <i aria-hidden="true">📷</i>
             <span>
-              <b>Essayer sur moi</b>
-              <em>Gratuit, instantané, sans rendez-vous</em>
+              <b>{mur.essai?.mots.geste ?? "Essayer sur moi"}</b>
+              <em>{mur.essai?.mots.titre ?? "Gratuit, sans rendez-vous"}</em>
             </span>
           </button>
-          <span className="mu-haut-q">
-            Ce que vous essayez reste ici&nbsp;: c’est ce qui dit aux autres ce qu’ils peuvent
-            essayer à leur tour.
-          </span>
         </div>
       ) : (
         <div className="mu-haut">
@@ -738,6 +758,26 @@ function EcranDepot({
   onFerme: () => void;
   onPose: (f: Fantome) => void;
 }) {
+  /**
+   * ═══ L'ESSAI EST SEUL À L'ÉCRAN ═══════════════════════════════════════════
+   *
+   * « Ce qu'on veut c'est juste essayer sur soi, donc il faut vraiment mettre le
+   * focus sur l'essayage et avoir une expérience parfaite, focus juste sur ça dès
+   * le départ. »
+   *
+   * TOUT CE QUI SUIT A ÉTÉ RETIRÉ DE CET ÉCRAN-LÀ, et chaque ligne était un
+   * regard volé à la seule chose qu'on demande : le grand fantôme dessiné et sa
+   * phrase manuscrite, le titre « Laisse ton Fantôme chez… », la rangée de cinq
+   * cartes du mur, et l'invitation à aller voir les autres commerces. Il reste
+   * l'essai, et UN lien vers le mur — voir `mots.mur`.
+   *
+   * L'ANNONCE GARDE TOUT : là, le mur EST le produit, et le fantôme qu'on pose
+   * n'a de sens qu'à côté de ceux des autres.
+   */
+  if (mur.depot === "essai") {
+    return <Essai mur={mur} restants={restants} onPose={onPose} onMur={onFerme} />;
+  }
+
   return (
     <>
       <button type="button" className="mu-x" aria-label="Revenir au mur" onClick={onFerme}>
@@ -763,11 +803,7 @@ function EcranDepot({
         {chezQui(mur.lieu)}
       </h2>
 
-      {mur.depot === "essai" ? (
-        <Essai mur={mur} restants={restants} onPose={onPose} />
-      ) : (
-        <Annonce mur={mur} restants={restants} onPose={onPose} />
-      )}
+      <Annonce mur={mur} restants={restants} onPose={onPose} />
 
       <div className="mu-sect">
         <Signe classe="mu-sect-s" />
@@ -1134,10 +1170,13 @@ function Essai({
   mur,
   restants,
   onPose,
+  onMur,
 }: {
   mur: TypeMur;
   restants: number;
   onPose: (f: Fantome) => void;
+  /** Le seul chemin vers le mur depuis l'essai. Voir `mots.mur`. */
+  onMur: () => void;
 }) {
   const [etape, setEtape] = useState<"cadrer" | "choisir" | "calcul" | "rendu">("cadrer");
   const [piece, setPiece] = useState<Piece | null>(null);
@@ -1194,6 +1233,26 @@ function Essai({
    * touche l'image, elle revient à l'avant ; on relâche, elle repart.
    */
   const [avant, setAvant] = useState(false);
+  /**
+   * LE RENDU EN GRAND, ET C'EST UN GESTE SÉPARÉ DE LA COMPARAISON.
+   *
+   * « Une fois qu'on a le résultat, qu'on peut agrandir si on le veut. »
+   *
+   * L'appui long compare, il ne peut donc pas aussi agrandir : un même doigt ne
+   * peut pas faire deux choses sur la même image sans qu'on se trompe une fois
+   * sur deux. L'agrandissement a son propre bouton, dans le coin, et il ouvre le
+   * rendu plein écran — c'est là qu'on juge un vernis ou une mèche, pas dans une
+   * vignette de trois centimètres.
+   */
+  const [loupe, setLoupe] = useState(false);
+  /**
+   * CE QUI RESTE À L'ÉCRAN QUAND ON A DÉCIDÉ.
+   *
+   * Le dépôt renvoyait au mur. On reste ici : le rendu est parti sur le mur tout
+   * seul, l'écran le dit, et il propose les deux seules suites qui aient du sens
+   * — réessayer autre chose, ou aller voir le mur.
+   */
+  const [decide, setDecide] = useState<"pris" | "passe" | null>(null);
   const minuteur = useRef<number | null>(null);
 
   /**
@@ -1312,7 +1371,8 @@ function Essai({
     };
   }, [etape, piece, mur, laPhoto]);
 
-  const poser = (verdict: "pris" | "passe") =>
+  const poser = (verdict: "pris" | "passe") => {
+    setDecide(verdict);
     onPose({
       id: `pose-${Date.now()}`,
       qui: "Vous",
@@ -1339,6 +1399,23 @@ function Essai({
       interesses: 0,
       jusqua: "encore 2 jours",
     });
+  };
+
+  /**
+   * LES MOTS DU MÉTIER. Sans eux, cet écran n'a rien à dire : voir `Mur.essai`
+   * dans `lib/direct/fantomes.ts`. Le garde est là pour le type, pas pour un cas
+   * qui arrive — un mur d'essai sans mots ne compile pas.
+   */
+  const mots = mur.essai?.mots;
+  if (!mur.essai || !mots) return null;
+
+  /** Le lien vers le mur : un seul, discret, toujours au même endroit. */
+  const versLeMur = (
+    <button type="button" className="mu-e-mur" onClick={onMur}>
+      {mots.mur}
+      <i aria-hidden="true">→</i>
+    </button>
+  );
 
   return (
     <>
@@ -1379,20 +1456,33 @@ function Essai({
         }}
       />
 
-      <p className="mu-d-i">
-        Photographiez {mur.essai?.partie}, choisissez la pièce&nbsp;: votre fantôme l’essaie pour
-        vous.
-        <br />
-        Il reste sur le mur que vous la preniez ou non.
-      </p>
+      {/* ═══ UNE PHRASE, ET C'EST TOUT ═══════════════════════════════════════
 
-      <ol className="mu-pas">
-        <li className={etape === "cadrer" ? "on" : "fait"}>1 · Cadrer</li>
-        <li className={etape === "choisir" ? "on" : etape === "cadrer" ? "" : "fait"}>
-          2 · Choisir
-        </li>
-        <li className={etape === "rendu" ? "on" : ""}>3 · Décider</li>
-      </ol>
+          « Là aussi c'est super compliqué. Il faut simplifier le message, pour
+          que ce soit clair, simple et compréhensible immédiatement. »
+
+          IL Y AVAIT QUATRE CHOSES À LIRE AVANT LE VISEUR : « Laisse ton Fantôme
+          chez une prothésiste ongulaire », « Photographiez votre main,
+          choisissez la pièce : votre fantôme l'essaie pour vous », « Il reste sur
+          le mur que vous la preniez ou non », et la frise « 1 · CADRER
+          2 · CHOISIR 3 · DÉCIDER ». Trois d'entre elles parlaient du fantôme et
+          du mur — c'est-à-dire de ce qui se passe APRÈS, pour quelqu'un qui n'a
+          pas encore compris ce qu'on lui propose.
+
+          LA FRISE DES TROIS ÉTAPES EST PARTIE AVEC. Un parcours de trois écrans
+          n'a pas besoin qu'on l'annonce : chaque écran ne montre qu'une chose,
+          et la montrer suffit. Une frise numérotée sur un parcours aussi court ne
+          rassure pas, elle prévient qu'il va falloir en faire trois.
+
+          IL RESTE LE TITRE DU MÉTIER ET SA PHRASE. Elles ne sont pas écrites ici :
+          elles viennent du mur, parce qu'un coiffeur et une onglerie ne disent pas
+          la même chose. Voir `mots` dans `lib/direct/fantomes.ts`. */}
+      {etape !== "calcul" && etape !== "rendu" && (
+        <div className="mu-e-tete">
+          <h2>{etape === "choisir" ? mots.choisir : mots.titre}</h2>
+          {etape === "cadrer" && <p>{mots.phrase}</p>}
+        </div>
+      )}
 
       {etape === "cadrer" && (
         <div className="mu-cadrer">
@@ -1417,8 +1507,8 @@ function Essai({
               <button type="button" className="mu-cta plein" onClick={() => setEtape("choisir")}>
                 <i aria-hidden="true">👉</i>
                 <span>
-                  <b>Choisir sur cette photo</b>
-                  <em>Vérifiez que le repère tombe bien sur {mur.essai?.partie}</em>
+                  <b>{mots.choisir}</b>
+                  <em>Vérifiez que le repère tombe bien sur {mur.essai.partie}</em>
                 </span>
               </button>
               <button type="button" className="mu-exemple" onClick={() => fichier.current?.click()}>
@@ -1427,11 +1517,15 @@ function Essai({
             </>
           ) : (
             <>
+              {/* LE GESTE PORTE LE MOT DU MÉTIER. « Photographier votre main »
+                  chez une onglerie, « Me prendre en photo » chez un coiffeur :
+                  ce n'est pas du style, c'est ce qu'il faut faire, et ce n'est
+                  pas le même geste. */}
               <button type="button" className="mu-cta plein" onClick={() => fichier.current?.click()}>
                 <i aria-hidden="true">📷</i>
                 <span>
-                  <b>Photographier {mur.essai?.partie}</b>
-                  <em>Votre photo reste sur votre téléphone — rien n’est envoyé</em>
+                  <b>{mots.geste}</b>
+                  <em>Gratuit, sans rendez-vous — rien n’est publié sans vous</em>
                 </span>
               </button>
               {/* LA PHOTO D'EXEMPLE RESTE ACCESSIBLE, ET ELLE EST NOMMEE COMME
@@ -1457,7 +1551,7 @@ function Essai({
 
       {etape === "choisir" && (
         <div className="mu-pieces">
-          {mur.essai?.pieces.map((p) => (
+          {mur.essai.pieces.map((p) => (
             <button
               key={p.id}
               type="button"
@@ -1495,6 +1589,12 @@ function Essai({
             </button>
           ))}
         </div>
+      )}
+
+      {etape === "choisir" && (
+        <button type="button" className="mu-exemple" onClick={() => setEtape("cadrer")}>
+          ← Revenir à la photo
+        </button>
       )}
 
       {etape === "calcul" && (
@@ -1537,10 +1637,25 @@ function Essai({
               src={avant ? laPhoto : (rendu?.image ?? piece.rendu ?? piece.photo)}
               alt={avant ? "Votre photo" : `Essai : ${piece.nom}`}
             />
-            <span className="mu-rendu-t2">{avant ? "Votre photo" : "Avec la pièce"}</span>
+            {/* CE QUE PORTE L'ÉTIQUETTE, C'EST LE NOM DE LA CHOSE ESSAYÉE. « Avec
+                la pièce » était générique partout, donc juste nulle part : chez
+                un coiffeur on n'essaie pas une pièce. Le nom de la pose ou de la
+                coupe est ce qu'il y a de plus précis, et il vient du commerçant. */}
+            <span className="mu-rendu-t2">{avant ? "Votre photo" : piece.nom}</span>
             <span className="mu-rendu-g2" aria-hidden="true">
               Maintenir pour comparer
             </span>
+          </button>
+          {/* AGRANDIR EST UN BOUTON À PART, POSÉ SUR L'IMAGE. Il ne peut pas être
+              l'appui sur l'image elle-même : celui-là compare déjà. */}
+          <button
+            type="button"
+            className="mu-rendu-z"
+            aria-label="Voir le rendu en grand"
+            onClick={() => setLoupe(true)}
+          >
+            <i aria-hidden="true">⤢</i>
+            Agrandir
           </button>
           {/* CE QUE CET ÉCRAN AFFICHE VRAIMENT, ET IL FAUT QUE ÇA SE LISE. Un
               rendu CALCULÉ dit son temps de calcul ; un rendu tout fait dit
@@ -1593,7 +1708,7 @@ function Essai({
                 </span>
               </button>
               <button type="button" className="mu-exemple" onClick={() => setEtape("choisir")}>
-                Essayer une autre couleur
+                {mots.autres}
               </button>
             </>
           ) : rate ? (
@@ -1602,16 +1717,51 @@ function Essai({
               <br />
               <b>Rien n’a été publié.</b>
             </p>
+          ) : decide ? (
+            /* ═══ CE QU'ON VOIT UNE FOIS QU'ON A DÉCIDÉ ═══════════════════════
+
+               « Le résultat ira dans le mur du commerçant automatiquement. »
+
+               IL Y VA, ET ON RESTE ICI. Avant, décider renvoyait au mur : on
+               perdait son rendu de vue pour tomber sur les vignettes des autres,
+               c'est-à-dire la distraction qu'on venait d'enlever de l'entrée.
+               L'écran dit donc ce qui a été fait, en une ligne, et laisse les
+               deux seules suites qui aient du sens — réessayer, ou aller voir. */
+            <div className="mu-rendu-ok">
+              {/* MÊME LA CONFIRMATION NOMME LE LIEU. « Le commerçant vous
+                  attend » était la dernière phrase générique du parcours, et
+                  c'est celle qu'on relit en arrivant sur place. */}
+              <b>
+                {decide === "pris"
+                  ? `C’est noté : on vous attend ${chezQui(mur.lieu)}.`
+                  : "C’est noté — au moins, vous savez."}
+              </b>
+              <em>Votre essai est sur le mur, ici, pendant deux jours.</em>
+              <button
+                type="button"
+                className="mu-e-autres"
+                onClick={() => {
+                  setDecide(null);
+                  setEtape("choisir");
+                }}
+              >
+                {mots.autres}
+              </button>
+            </div>
           ) : (
             <>
               <div className="mu-rendu-g">
+                {/* LE GESTE D'ACHAT N'EST PAS LE MÊME MÉTIER À MÉTIER. On réserve
+                    une séance chez une prothésiste, un créneau chez un coiffeur,
+                    et on met une pièce de côté dans une boutique — « Je la
+                    prends » ne voulait rien dire dans deux cas sur trois. */}
                 <button
                   type="button"
                   className="oui"
                   disabled={restants < 1}
                   onClick={() => poser("pris")}
                 >
-                  Je la prends
+                  {mots.reserver}
                 </button>
                 <button
                   type="button"
@@ -1622,6 +1772,11 @@ function Essai({
                   Je passe
                 </button>
               </div>
+              {/* ESSAYER AUTRE CHOSE EST LE TROISIÈME GESTE, ET C'EST LE PLUS
+                  FRÉQUENT. On ne choisit presque jamais la première pose. */}
+              <button type="button" className="mu-e-autres" onClick={() => setEtape("choisir")}>
+                {mots.autres}
+              </button>
               {/* LE TROISIÈME BOUTON, ET IL EST À PART EXPRÈS. Il n'est pas une
                   troisième réponse à « la pièce vous plaît ? » : il dit que la
                   question n'a pas pu être posée. D'où sa place sous les deux
@@ -1639,11 +1794,40 @@ function Essai({
               )}
             </>
           )}
-          <p className="mu-rendu-n">
-            {rate
-              ? "Merci : c’est ce qui nous dit sur quels métiers l’essai tient debout."
-              : "Dans les deux cas, votre fantôme reste sur le mur : c’est ce qui dit au commerçant ce qui plaît, et aux autres ce qu’ils peuvent essayer."}
-          </p>
+          {!decide && (
+            <p className="mu-rendu-n">
+              {rate
+                ? "Merci : c’est ce qui nous dit sur quels métiers l’essai tient debout."
+                : "Dans les deux cas, votre essai reste sur le mur : c’est ce qui dit au commerçant ce qui plaît, et aux autres ce qu’ils peuvent essayer."}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* LE MUR, ET IL TIENT EN UN BOUTON. « Avec un seul bouton quelque part qui
+          dit voir le mur du commerçant ou voir ce que les clients ont essayé. »
+          Il est en bas, après l'essai, et il est le seul de l'écran à ne pas
+          parler d'essayer. Pendant le calcul il disparaît : on ne propose pas de
+          partir au milieu d'une attente de quelques secondes. */}
+      {etape !== "calcul" && versLeMur}
+
+      {/* LE RENDU EN PLEIN ÉCRAN. Fond noir, aucune commande sauf fermer : ce
+          qu'on vient juger, c'est une couleur et une forme, et tout ce qui est
+          autour ment sur les deux. */}
+      {loupe && piece && (
+        <div
+          className="mu-loupe"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${piece.nom}, en grand`}
+          onClick={() => setLoupe(false)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={rendu?.image ?? piece.rendu ?? piece.photo} alt={`Essai : ${piece.nom}`} />
+          <button type="button" className="mu-loupe-x" aria-label="Fermer">
+            ✕
+          </button>
+          <span className="mu-loupe-n">{piece.nom}</span>
         </div>
       )}
     </>
@@ -1983,13 +2167,31 @@ function Styles() {
         .mu-humeurs button.bleu{background:rgba(93,160,255,.15);color:#9CC6FF;}
         .mu-humeurs button.on{border-color:currentColor;}
 
-        /* ─── LE DEPOT PAR ESSAI ─── */
-        .mu-pas{list-style:none;display:flex;gap:7px;margin:0 0 14px;padding:0;}
-        .mu-pas li{flex:1;text-align:center;font-size:10.5px;font-weight:800;
-          letter-spacing:.05em;text-transform:uppercase;color:#56637A;
-          border-bottom:2px solid rgba(255,255,255,.08);padding-bottom:7px;}
-        .mu-pas li.on{color:#C9BCFF;border-bottom-color:var(--mu-v1);}
-        .mu-pas li.fait{color:var(--mu-menthe);border-bottom-color:rgba(61,226,166,.5);}
+        /* ─── LE DEPOT PAR ESSAI ───
+           LA FRISE 1-2-3 A ETE RETIREE avec son style : sur un parcours de trois
+           ecrans qui ne montrent qu'une chose chacun, elle ne rassurait pas, elle
+           prevenait qu'il allait falloir en faire trois. Il reste un titre et une
+           phrase, tous deux ecrits par le metier. */
+        .mu-e-tete{text-align:center;padding:2px 2px 15px;}
+        .mu-e-tete h2{margin:0;font-size:25px;line-height:1.14;font-weight:850;
+          letter-spacing:-.03em;color:#fff;}
+        .mu-e-tete p{margin:9px 0 0;font-size:13.5px;line-height:1.5;
+          color:var(--mu-pale);}
+
+        /* LE SEUL LIEN VERS LE MUR. Il est volontairement sans couleur et sans
+           fond : tout ce qui brille sur cet ecran doit mener a l'essai. */
+        .mu-e-mur{display:flex;align-items:center;justify-content:center;gap:7px;
+          width:100%;margin:20px 0 0;padding:11px 12px;font-family:inherit;
+          font-size:12.5px;font-weight:700;color:#93A3B6;cursor:pointer;
+          background:transparent;border:1px solid var(--mu-ligne);
+          border-radius:13px;}
+        .mu-e-mur i{font-style:normal;font-size:13px;}
+
+        /* Essayer autre chose : le geste le plus frequent apres un rendu. */
+        .mu-e-autres{display:block;width:100%;margin:9px 0 0;padding:10px 12px;
+          font-family:inherit;font-size:13px;font-weight:800;color:#C9BCFF;
+          cursor:pointer;background:rgba(139,125,246,.12);
+          border:1px solid rgba(139,125,246,.3);border-radius:13px;}
 
         /* ═══ LA TÊTE DU MUR ═══ voir le composant EcranMur : une seule tête,
            deux phrases selon le métier, et plus aucun titre de section. */
@@ -2133,11 +2335,16 @@ function Styles() {
         .mu-calcul em{font-style:normal;font-size:12px;font-weight:800;
           color:#C9BCFF;font-variant-numeric:tabular-nums;}
 
-        .mu-rendu{text-align:center;}
+        .mu-rendu{text-align:center;position:relative;}
         .mu-rendu-i{position:relative;display:block;width:100%;padding:0;border:none;
           background:none;cursor:pointer;border-radius:20px;overflow:hidden;
           -webkit-tap-highlight-color:transparent;}
-        .mu-rendu-i img{width:100%;height:300px;object-fit:cover;display:block;}
+        /* LE RENDU NE SE ROGNE PLUS. Il etait en cover sur trois cents points
+           de haut : sur une main a plat, ca coupait deux doigts ; sur un buste,
+           la tete. On ne peut pas juger ce qu'on ne voit pas en entier, et c'est
+           la seule chose que cet ecran ait a faire. */
+        .mu-rendu-i img{width:100%;height:auto;max-height:58vh;object-fit:contain;
+          display:block;background:#090D15;}
         /* LES DEUX ETIQUETTES DISENT CE QU'ON REGARDE ET CE QU'ON PEUT FAIRE.
            Sans la seconde, personne ne devine qu'on peut maintenir le doigt —
            et c'est justement le geste qui prouve tout. */
@@ -2188,6 +2395,43 @@ function Styles() {
         .mu-rendu-r b{font-weight:800;}
         .mu-rendu-n{margin:12px 0 0;font-size:11.5px;line-height:1.5;
           color:var(--mu-pale);}
+
+        /* AGRANDIR — pose sur le coin de l'image, en face de l'etiquette. */
+        .mu-rendu-z{position:absolute;right:10px;top:10px;display:inline-flex;
+          align-items:center;gap:5px;font-family:inherit;font-size:10.5px;
+          font-weight:800;color:#E9E2FF;cursor:pointer;
+          background:rgba(20,12,38,.78);border:none;border-radius:20px;
+          padding:6px 11px;-webkit-backdrop-filter:blur(6px);
+          backdrop-filter:blur(6px);}
+        .mu-rendu-z i{font-style:normal;font-size:12px;}
+
+        /* CE QUI RESTE APRES LA DECISION. Menthe : c'est la couleur du commerce,
+           et ce qui vient de se passer appartient au commerce. */
+        .mu-rendu-ok{margin-top:15px;padding:14px 14px 13px;
+          background:rgba(61,226,166,.1);border:1px solid rgba(61,226,166,.3);
+          border-radius:16px;}
+        .mu-rendu-ok b{display:block;font-size:15px;font-weight:850;color:#9CF3D0;}
+        .mu-rendu-ok em{display:block;margin-top:5px;font-style:normal;
+          font-size:12px;line-height:1.5;color:var(--mu-pale);}
+        .mu-rendu-ok .mu-e-autres{margin-top:12px;}
+
+        /* ─── LE RENDU EN GRAND ───
+           Plein ecran, fond noir, rien autour : on juge une couleur et une forme,
+           et tout ce qui les entoure ment sur les deux. */
+        .mu-loupe{position:fixed;inset:0;z-index:60;display:flex;
+          align-items:center;justify-content:center;background:#05070B;
+          padding:calc(12px + env(safe-area-inset-top)) 12px
+            calc(12px + env(safe-area-inset-bottom));
+          animation:muFondu .16s ease both;cursor:zoom-out;}
+        .mu-loupe img{max-width:100%;max-height:100%;object-fit:contain;
+          border-radius:14px;}
+        .mu-loupe-x{position:absolute;right:12px;
+          top:calc(12px + env(safe-area-inset-top));width:38px;height:38px;
+          font-size:16px;color:#EAF0F6;cursor:pointer;
+          background:rgba(255,255,255,.1);border:none;border-radius:50%;}
+        .mu-loupe-n{position:absolute;left:0;right:0;
+          bottom:calc(16px + env(safe-area-inset-bottom));text-align:center;
+          font-size:12.5px;font-weight:800;color:#B9C6D6;}
 
         /* ─── LA MISE EN RELATION ─── */
         .mu-fondu{position:fixed;inset:0;z-index:40;border:none;padding:0;

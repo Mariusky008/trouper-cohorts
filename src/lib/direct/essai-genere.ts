@@ -35,8 +35,15 @@ export type Souci = {
   pourquoi?: string;
 };
 
-/** Le plus grand côté envoyé au modèle. Au-delà on paie du réseau pour rien. */
-const COTE = 1200;
+/**
+ * LE PLUS GRAND CÔTÉ ENVOYÉ AU MODÈLE.
+ *
+ * BAISSÉ DE DOUZE CENTS À HUIT CENTS APRÈS UN 504. Deux photos de douze cents
+ * points en base64, c'est plusieurs mégaoctets qui montent depuis un téléphone
+ * en 4G avant même que le modèle commence — et le temps de la fonction est
+ * compté. Le modèle redimensionne de toute façon à l'arrivée.
+ */
+const COTE = 800;
 
 /** Charge une image et la rend en `data:` JPEG, réduite. */
 async function reduire(source: string, cote = COTE): Promise<string> {
@@ -102,6 +109,20 @@ export async function essayerSurMoi(opts: {
   try {
     j = (await r.json()) as typeof j;
   } catch {
+    /**
+     * UNE RÉPONSE QUI N'EST PAS DU JSON EST PRESQUE TOUJOURS LA PASSERELLE.
+     *
+     * « Réponse illisible du serveur (HTTP 504) » s'est affiché sur un vrai
+     * téléphone, et ça n'aide personne : ce n'est pas la réponse qui est
+     * illisible, c'est qu'il n'y en a pas eu. Un 502/504 renvoie une page HTML
+     * d'erreur d'hébergeur — donc on le nomme.
+     */
+    if (r.status === 504 || r.status === 502 || r.status === 408) {
+      return {
+        erreur: "L’essayage a mis trop de temps.",
+        pourquoi: `le serveur a coupé avant la fin du rendu (HTTP ${r.status})`,
+      };
+    }
     return { erreur: "Réponse illisible du serveur.", pourquoi: `HTTP ${r.status}` };
   }
   if (!r.ok || !j.image) {

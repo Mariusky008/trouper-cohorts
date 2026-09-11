@@ -50,6 +50,16 @@ export const maxDuration = 60;
 /** Au-delà, c'est une photo qu'on n'a pas redimensionnée avant d'envoyer. */
 const POIDS_MAX = 6_000_000;
 
+/**
+ * ON RENONCE AVANT QUE LA PASSERELLE NE COUPE.
+ *
+ * `maxDuration` dit combien de temps la fonction a le droit de vivre ; au-delà,
+ * c'est un 504 dont le corps est une page HTML — donc illisible côté navigateur,
+ * et c'est exactement ce qui s'est affiché : « Réponse illisible du serveur ».
+ * En abandonnant quelques secondes avant, on garde la main et on explique.
+ */
+const DELAI_MAX = 52_000;
+
 const s = (v: string | undefined) => (v ?? "").trim();
 
 /** `data:image/jpeg;base64,…` → les deux morceaux dont les API ont besoin. */
@@ -131,6 +141,7 @@ async function parGemini(
           },
         ],
       }),
+      signal: AbortSignal.timeout(DELAI_MAX),
     },
   );
   if (!r.ok) {
@@ -161,6 +172,27 @@ async function parOpenAI(
   forme.append("model", modele);
   forme.append("prompt", consigne(partie));
   forme.append("n", "1");
+  /**
+   * TROIS RÉGLAGES QUI DÉCIDENT SI LE RENDU ARRIVE, OU PAS DU TOUT.
+   *
+   * CE QUI A RATÉ SUR LE TÉLÉPHONE : « HTTP 504 ». Un 504 n'est pas une panne du
+   * modèle, c'est la passerelle qui coupe — la génération a mis plus longtemps
+   * que le temps alloué à la fonction. En qualité maximale, une édition d'image
+   * dépasse couramment la minute.
+   *
+   *   · `quality: low` divise l'attente par deux à trois. Pour un essai qu'on
+   *     regarde sur un téléphone avant de décider, c'est le bon compromis — et
+   *     c'est réglable sans redéployer par `OPENAI_IMAGE_QUALITY`.
+   *   · `size` fixe la sortie au carré le plus petit utile. Sans lui, le modèle
+   *     choisit, et il choisit grand.
+   *   · `input_fidelity: high` est l'inverse : il COÛTE du temps, mais c'est lui
+   *     qui garde le visage, la peau et la pose de la personne. Sans lui, le
+   *     modèle « améliore » la photo et la cliente ne se reconnaît plus — ce qui
+   *     vide l'essai de son sens.
+   */
+  forme.append("quality", s(process.env.OPENAI_IMAGE_QUALITY) || "low");
+  forme.append("size", s(process.env.OPENAI_IMAGE_SIZE) || "1024x1024");
+  forme.append("input_fidelity", "high");
   const enFichier = (x: { type: string; donnees: string }, nom: string) =>
     new File([Buffer.from(x.donnees, "base64")], nom, { type: x.type });
   forme.append("image[]", enFichier(photo, "client.png"));
@@ -170,6 +202,9 @@ async function parOpenAI(
     method: "POST",
     headers: { authorization: `Bearer ${cle}` },
     body: forme,
+    // ON ABANDONNE AVANT LA PASSERELLE, pour rendre une raison plutôt qu'un 504
+    // muet dont la page d'erreur n'est même pas du JSON.
+    signal: AbortSignal.timeout(DELAI_MAX),
   });
   if (!r.ok) {
     const txt = await r.text().catch(() => "");
@@ -239,7 +274,14 @@ export async function POST(req: Request) {
       }
       essais.push(r.erreur);
     } catch (e) {
-      essais.push(e instanceof Error ? e.message : String(e));
+      const nom = e instanceof Error ? e.name : "";
+      essais.push(
+        nom === "TimeoutError" || nom === "AbortError"
+          ? "le rendu a dépassé le temps imparti"
+          : e instanceof Error
+            ? e.message
+            : String(e),
+      );
     }
   }
 

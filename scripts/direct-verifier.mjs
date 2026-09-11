@@ -1165,6 +1165,56 @@ console.log("\n══ l'essayage sur soi ══");
   dire(bon.code !== 200 || rendu, "et elle ne répond jamais « tout va bien » sans image");
 }
 
+// ═══ L'ESSAI EST SEUL À L'ÉCRAN, ET IL PARLE LE MÉTIER ═══════════════════
+//
+// « Il y a trop de distraction ici avec le mur qui apparaît déjà, alors que ce
+// qu'on veut c'est juste essayer sur soi. » Le défaut ne se voyait pas en lisant
+// le code : chaque morceau était correct, c'est leur ORDRE qui était faux. Et il
+// est du genre à revenir — il suffit qu'un jour un `setEcran("mur")` reparaisse
+// dans l'effet de remise à zéro.
+//
+// ET LE SECOND DÉFAUT NE SE VOIT PAS DU TOUT À L'ŒIL : des textes génériques
+// s'installent un par un, chacun sans conséquence, jusqu'à ce que cinq métiers
+// disent la même phrase. On compare donc les métiers entre eux.
+console.log("\n══ l'essai, et rien d'autre ══");
+{
+  // PAS `ouvrir` ICI : il attend `.ap-fav2`, qui n'existe que sur la page des
+  // cartes. La maquette de jugement des murs est une page à elle.
+  const c6 = await nav.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  await c6.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
+  const p6 = await c6.newPage();
+  p6.on("pageerror", (e) => erreurs.push(String(e)));
+  await p6.goto(`${BASE}/autour-de-moi/mur`, { waitUntil: "networkidle" });
+  await p6.waitForSelector(".mu-maq button");
+  const murs = await p6.$$eval(".mu-maq button", (b) => b.map((x) => x.textContent.trim()));
+  const vus = [];
+  for (const nom of murs) {
+    await p6.click(`.mu-maq button:text-is("${nom}")`);
+    await p6.waitForTimeout(260);
+    const tete = await p6.$eval(".mu-e-tete h2", (e) => e.textContent.trim()).catch(() => null);
+    if (!tete) continue; // un mur d'annonce : il ouvre sur le mur, c'est voulu
+    const geste = await p6.$eval(".mu-cta.plein b", (e) => e.textContent.trim()).catch(() => "");
+    const liens = await p6.$$eval(".mu-e-mur", (b) => b.map((x) => x.textContent.trim()));
+    dire(!(await p6.$(".mu-pas")), `${nom} : pas de frise 1-2-3 avant l'essai`);
+    dire(!(await p6.$(".mu-rang")), `${nom} : le mur n'est pas là à l'ouverture`);
+    dire(liens.length === 1, `${nom} : un seul lien vers le mur (${liens.length})`);
+    vus.push({ nom, tete, geste, mur: liens[0] ?? "" });
+  }
+  dire(vus.length >= 5, `au moins cinq métiers ouvrent sur l'essai (${vus.length})`);
+  // AUCUNE DES TROIS PHRASES NE SE PARTAGE. C'est la seule mesure qui attrape un
+  // texte générique : un mot juste chez deux métiers est un mot creux chez les
+  // deux.
+  for (const champ of ["tete", "geste", "mur"]) {
+    const pris = vus.map((v) => v[champ]);
+    const doubles = pris.filter((t, i) => pris.indexOf(t) !== i);
+    dire(doubles.length === 0, `le texte « ${champ} » diffère d'un métier à l'autre${doubles.length ? ` — repris : ${doubles[0]}` : ""}`);
+  }
+  await c6.close();
+}
+
 dire(erreurs.length === 0, `aucune erreur${erreurs.length ? " : " + erreurs[0] : ""}`);
 await nav.close();
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT PASSE");

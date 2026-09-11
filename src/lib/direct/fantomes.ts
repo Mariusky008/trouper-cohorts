@@ -321,6 +321,37 @@ export type Mur = {
      * Sans gabarit, la pièce n'est pas essayable : voir `bientot`.
      */
     gabarit?: Gabarit;
+    /**
+     * LES MOTS DU MÉTIER, ET ILS NE SE PARTAGENT PAS.
+     *
+     * « Il faut aussi que chaque texte soit vraiment en fonction du métier, et
+     * donc pas le même texte pour un coiffeur, une onglerie ou un magasin de
+     * vêtements. »
+     *
+     * C'EST JUSTE, ET C'EST PLUS QU'UNE QUESTION DE TON. « Choisissez la pièce »
+     * ne veut rien dire chez un coiffeur ; « Je réserve ma séance » ne veut rien
+     * dire dans une boutique de vêtements. Un mot générique force le client à
+     * traduire, et traduire coûte une seconde à chaque écran.
+     *
+     * LES MOTS SONT DONC DES DONNÉES, PAS DU CODE. Ajouter un métier, c'est
+     * écrire ses sept phrases — pas ouvrir un composant et y mettre un `if`.
+     */
+    mots: {
+      /** Le titre de l'écran d'essai. Court, et il nomme la partie du corps. */
+      titre: string;
+      /** Une phrase, une seule, qui dit ce qui va se passer. */
+      phrase: string;
+      /** Le grand bouton de prise de vue. */
+      geste: string;
+      /** Ce qu'on choisit ensuite : une pose, une coupe, une pièce. */
+      choisir: string;
+      /** Le geste d'achat, après le rendu. */
+      reserver: string;
+      /** Revenir choisir autre chose. */
+      autres: string;
+      /** Le seul lien vers le mur, depuis l'essai. */
+      mur: string;
+    };
     pieces: Piece[];
   };
   /**
@@ -561,6 +592,15 @@ export const MURS: Mur[] = [
       avant: "/direct/avis-ongles.jpg",
       // Rien à placer : c'est le modèle qui trouve les doigts. Voir `Gabarit`.
       gabarit: { forme: "main" },
+      mots: {
+        titre: "Vos ongles, avant de venir",
+        phrase: "Prenez votre main en photo : la pose du salon s’y installe en quelques secondes.",
+        geste: "Photographier ma main",
+        choisir: "Choisissez la pose",
+        reserver: "Je réserve ma séance",
+        autres: "Voir les autres poses du jour",
+        mur: "Voir ce que les clientes ont essayé",
+      },
       pieces: [
         /**
          * CE QU'ON ESSAIE EST LE TRAVAIL DE LA PROTHÉSISTE, PAS UNE PASTILLE.
@@ -720,6 +760,15 @@ export const MURS: Mur[] = [
         ],
         diametre: 0.52,
       },
+      mots: {
+        titre: "Ce bijou, à votre poignet",
+        phrase: "Posez votre poignet à plat et photographiez-le : la pièce vient s’y poser.",
+        geste: "Photographier mon poignet",
+        choisir: "Choisissez la pièce",
+        reserver: "Je la réserve",
+        autres: "Voir les autres pièces de l’atelier",
+        mur: "Voir les bijoux portés par les clientes",
+      },
       pieces: [
         {
           id: "j-chaine",
@@ -857,6 +906,15 @@ export const MURS: Mur[] = [
       // sur `table-salon.jpeg`, bord avant compris : un objet à cheval sur
       // l'arête de la table se voit tout de suite.
       gabarit: { forme: "plan", pied: [0.365, 0.455], hauteur: 0.235, lumiere: -0.7 },
+      mots: {
+        titre: "Cette bougie, chez vous",
+        phrase: "Photographiez l’endroit où elle irait : elle s’y pose, à la bonne échelle.",
+        geste: "Photographier ma table",
+        choisir: "Choisissez la bougie",
+        reserver: "Je la réserve",
+        autres: "Voir les autres bougies du moment",
+        mur: "Voir ces bougies chez d’autres",
+      },
       pieces: [
         {
           id: "c-trio",
@@ -960,6 +1018,15 @@ export const MURS: Mur[] = [
       consigne: "Face à une fenêtre, cheveux dégagés, sans casquette ni lunettes de soleil.",
       avant: "/direct/avis-coupe.jpg",
       gabarit: { forme: "cadre" },
+      mots: {
+        titre: "Votre coupe, avant le rendez-vous",
+        phrase: "Prenez-vous en photo : la coupe du salon s’installe sur vos cheveux.",
+        geste: "Me photographier de face",
+        choisir: "Choisissez la coupe",
+        reserver: "Je réserve mon créneau",
+        autres: "Voir les autres coupes du salon",
+        mur: "Voir ce que les clients ont essayé",
+      },
       pieces: [
         {
           id: "c-motif",
@@ -1054,6 +1121,15 @@ export const MURS: Mur[] = [
       consigne: "Debout face à une fenêtre, bras le long du corps, buste entier dans le cadre.",
       avant: "/direct/poignet-nu.jpg",
       gabarit: { forme: "cadre" },
+      mots: {
+        titre: "Cette pièce, sur vous",
+        phrase: "Prenez-vous en photo en buste : le vêtement de la boutique s’y met.",
+        geste: "Me photographier en buste",
+        choisir: "Choisissez la pièce",
+        reserver: "Je la mets de côté",
+        autres: "Voir les autres pièces rentrées",
+        mur: "Voir ces pièces portées par d’autres",
+      },
       pieces: [
         {
           id: "m-combinaison",
