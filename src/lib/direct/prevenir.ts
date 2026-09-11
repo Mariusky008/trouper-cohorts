@@ -85,6 +85,57 @@ export type CommentPrevenir = {
  * nom de quelqu'un : il doit l'avoir lu avant, sans avoir à changer
  * d'application pour le découvrir.
  */
+/**
+ * PRÉVENIR APRÈS UN ESSAI — et ce n'est pas le même message.
+ *
+ * « Quand j'ai terminé et que je dis "je réserve ma place", j'ai cet écran au
+ * lieu d'avoir le WhatsApp qui s'ouvre avec la photo et le message pré-rempli à
+ * envoyer sur le WhatsApp du commerçant. »
+ *
+ * C'EST LE MÊME DERNIER CENTIMÈTRE QUE LES CROISSANTS, et il manquait au seul
+ * endroit où le produit fait quelque chose d'unique. Une cliente essaie une
+ * pose, elle la veut, et l'information s'arrêtait dans un écran vert.
+ *
+ * ═══ CE QUE WHATSAPP SAIT FAIRE, ET CE QU'IL NE SAIT PAS ═══════════════════
+ *
+ * `wa.me?text=` NE TRANSPORTE QUE DU TEXTE. Aucun paramètre d'image n'existe,
+ * et il n'y en aura pas : WhatsApp ne laisse pas un site joindre un fichier à
+ * une conversation par une simple adresse. La photo ne peut donc PAS partir par
+ * ce chemin, et écrire « voici ma photo » dans un message qui n'en contient
+ * aucune serait exactement le mensonge que ce fichier existe pour éviter.
+ *
+ * LA PHOTO PART PAR LE PARTAGE DU TÉLÉPHONE. `navigator.share({ files })` ouvre
+ * la feuille de partage d'iOS avec l'image ET le texte ; WhatsApp y est une
+ * destination parmi d'autres, et la cliente choisit. C'est un geste de plus —
+ * et c'est le seul qui envoie vraiment la photo. Voir `partagerLEssai`.
+ *
+ * LE MESSAGE EST DONC ÉCRIT EN DEUX VERSIONS, une par chemin, parce qu'il ne
+ * peut pas parler de la photo quand elle n'est pas jointe.
+ */
+export function prevenirPourEssai(a: {
+  telephone: string;
+  /** « Motif cœurs, pose amande » — ce qui a été essayé. */
+  quoi: string;
+  /** Ce qu'on vient réserver, dans les mots du métier : « ma séance ». */
+  geste: string;
+  prenom?: string;
+  /** Vrai quand la photo part avec le message. Change ce qu'il dit. */
+  avecPhoto?: boolean;
+}): CommentPrevenir {
+  const signature = a.prenom ? ` — ${a.prenom}` : "";
+  const texte = a.avecPhoto
+    ? `Bonjour, je viens d'essayer « ${a.quoi} » sur ClikMe (voici le rendu). ` +
+      `${a.geste} — auriez-vous un créneau ?${signature}`
+    : `Bonjour, je viens d'essayer « ${a.quoi} » sur ClikMe et ça me plaît. ` +
+      `${a.geste} — auriez-vous un créneau ?${signature}`;
+  const num = international(a.telephone);
+  return {
+    whatsapp: `https://wa.me/${num}?text=${encodeURIComponent(texte)}`,
+    appel: `tel:+${num}`,
+    texte,
+  };
+}
+
 export function commentPrevenir(a: {
   telephone: string;
   quoi: string;

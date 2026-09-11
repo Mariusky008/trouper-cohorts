@@ -373,6 +373,16 @@ const BOND_MS = 980;
  * attendre, precisement parce qu'il ne se produit presque jamais.
  */
 const BOND_OR_MS = 1500;
+/**
+ * CE QUI FAIT TAIRE L'APPEL DU FANTÔME, POUR DE BON.
+ *
+ * Une seule ouverture suffit : à partir de là, la personne SAIT. Le stockage
+ * est local au téléphone, comme tout le reste de la mémoire du produit.
+ */
+const FANTOME_CONNU = "clikme-fantome-connu";
+/** Combien de fois il s'appelle par visite, et à quel rythme. */
+const APPEL_MAX = 5;
+const APPEL_TOUTES_LES = 7000;
 
 /**
  * ═══ LE PETIT SON DU BOND ═══
@@ -1386,6 +1396,45 @@ export function ApercuHabitant() {
    */
   const [clin, setClin] = useState<"" | "simple" | "or">("");
   useEffect(() => setMonte(true), []);
+
+  /**
+   * ═══ LE FANTÔME S'APPELLE TOUT SEUL ═══════════════════════════════════════
+   *
+   * « Est-ce que le petit fantôme pourrait bouger un peu plus ou sautiller juste
+   * en dehors de sa bulle pour attirer l'attention ? Les clients risquent de ne
+   * pas y faire attention et de ne pas savoir qu'ils peuvent essayer le produit
+   * ou laisser un message. »
+   *
+   * LE DÉFAUT EST RÉEL ET IL EST DE DÉCOUVERTE, PAS DE DESSIN. Le rond vert du
+   * bas est le seul chemin vers l'essai et vers le mur — c'est-à-dire vers les
+   * deux choses que le produit fait et que personne d'autre ne fait — et rien ne
+   * dit ce qu'il y a derrière. Une barre d'onglets se regarde une fois au
+   * premier lancement, puis jamais.
+   *
+   * IL S'ARRÊTE DE LUI-MÊME, ET C'EST LA MOITIÉ QUI COMPTE. Un élément qui
+   * bouge en boucle sur un écran qu'on consulte tous les jours cesse d'être un
+   * appel et devient une nuisance — celle qu'on apprend à ne plus voir, ce qui
+   * est exactement le contraire du but. Trois règles :
+   *
+   *   · IL NE S'APPELLE QUE TANT QU'ON NE L'A PAS OUVERT. Le premier appui le
+   *     fait taire pour de bon, sur ce téléphone. Quelqu'un qui sait déjà n'a
+   *     pas besoin qu'on le lui rappelle.
+   *   · CINQ FOIS AU PLUS PAR VISITE, toutes les sept secondes. Au-delà on
+   *     insiste, et insister est ce qui fait désinstaller.
+   *   · JAMAIS PENDANT AUTRE CHOSE. Une feuille ouverte, un autre onglet, un
+   *     bond en cours : le geste de quelqu'un passe toujours avant le nôtre.
+   */
+  const [appel, setAppel] = useState(false);
+  const [dejaOuvert, setDejaOuvert] = useState(true);
+  useEffect(() => {
+    try {
+      setDejaOuvert(localStorage.getItem(FANTOME_CONNU) === "1");
+    } catch {
+      // Un navigateur qui refuse le stockage ne doit pas se faire agiter le
+      // fantôme à chaque visite : dans le doute, on se tait.
+      setDejaOuvert(true);
+    }
+  }, []);
 
   const [descendu, setDescendu] = useState(false);
   /**
@@ -4061,6 +4110,44 @@ export function ApercuHabitant() {
   const tonDeSection =
     vue === "evenements" ? "evenement" : vue === "recrute" ? "recrute" : "";
   const horsDuPaquet = salonPage || onglet !== "direct";
+
+  /**
+   * LE MINUTEUR DE L'APPEL — voir le grand commentaire sur `appel`.
+   *
+   * IL EST ICI, ET PAS PLUS HAUT, parce qu'il lui faut `horsDuPaquet` : un
+   * fantôme qui gigote pendant qu'on lit sa boîte de propositions n'appelle
+   * plus, il dérange. Les mêmes conditions valent pour une feuille ouverte et
+   * pour un bond en cours — le geste de quelqu'un passe toujours avant le
+   * nôtre.
+   */
+  useEffect(() => {
+    if (dejaOuvert || horsDuPaquet || feuille || murOuvert || !dessus) return;
+    // LE MOUVEMENT RÉDUIT EST UN RÉGLAGE D'ACCESSIBILITÉ, PAS UNE PRÉFÉRENCE
+    // D'AMBIANCE : quelqu'un qui l'active peut avoir mal au cœur devant une
+    // animation. On ne l'appelle pas, et le produit reste utilisable — c'est le
+    // seul endroit de cet appel qui n'est pas négociable.
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+    let fois = 0;
+    const t = window.setInterval(() => {
+      if (fois >= APPEL_MAX) {
+        window.clearInterval(t);
+        return;
+      }
+      fois += 1;
+      setAppel(true);
+      window.setTimeout(() => setAppel(false), 1250);
+    }, APPEL_TOUTES_LES);
+    return () => {
+      window.clearInterval(t);
+      setAppel(false);
+    };
+  }, [dejaOuvert, horsDuPaquet, feuille, murOuvert, dessus]);
+
   const arbitre =
     horsDuPaquet && veilleActive && veilleActive.ton !== "calme" ? veilleActive : undefined;
   /** La bulle de l'arbitre est ouverte : une phrase, un geste, rien d'autre. */
@@ -9495,6 +9582,8 @@ export function ApercuHabitant() {
             <button
               type="button"
               className={`ap-monfantome${clin ? " clin" : ""}${
+                appel && !clin ? " appel" : ""
+              }${
                 tonDeSection ? ` sec ${tonDeSection}` : ""
               }${clin === "or" || flashDuSommet ? " or" : ""}${
                 clin === "or" ? " saut-or" : ""
@@ -9509,6 +9598,17 @@ export function ApercuHabitant() {
               // sauf si l'arbitre a quelque chose a dire.
               disabled={!arbitre && !dessus}
               onClick={() => {
+                // LE PREMIER APPUI FAIT TAIRE L'APPEL POUR DE BON. Voir
+                // `FANTOME_CONNU` : quelqu'un qui sait n'a pas besoin qu'on le
+                // lui rappelle, et un appel qu'on n'eteint jamais devient la
+                // chose qu'on apprend a ne plus voir.
+                setAppel(false);
+                setDejaOuvert(true);
+                try {
+                  localStorage.setItem(FANTOME_CONNU, "1");
+                } catch {
+                  /* pas de stockage : l'appel se taira au moins pour la visite */
+                }
                 /* ═══ IL A CHANGÉ DE RÔLE ═══
 
                    IL FAISAIT AVANCER LE PAQUET. C'était le geste le plus
@@ -11051,7 +11151,19 @@ export function ApercuHabitant() {
            La largeur est bornee et le nom se coupe proprement — l'en-tete porte
            aussi le filtre et deux ronds, et un nom long ne doit pas les pousser
            hors de l'ecran. */
-        .ap-loin{flex:none;max-width:57%;display:inline-flex;align-items:center;
+        /* ═══ LA CLOCHE SORTAIT DE L'ECRAN ═══
+           « En haut a gauche, "une boutique de la rue…" pousse la cloche en
+           dehors de l'ecran tout a droite. »
+           LA PASTILLE ETAIT EN flex:none : elle ne pouvait pas retrecir, donc
+           avec un nom long les trois objets de la ligne demandaient plus que la
+           largeur et le dernier — la cloche — passait par-dessus bord. Un nom
+           coupe est une gene ; un bouton hors de l'ecran est une fonction
+           perdue, et on ne peut pas la retrouver en faisant defiler.
+           ELLE PLIE MAINTENANT LA PREMIERE, parce qu'elle est la seule des trois
+           dont le contenu supporte d'etre raccourci : le nom s'abrege, le filtre
+           et les deux ronds gardent leur taille. */
+        .ap-loin{flex:0 1 auto;min-width:0;max-width:50%;
+          display:inline-flex;align-items:center;
           gap:6px;color:rgba(234,242,236,.82);
           background:rgba(9,12,10,.5);border:1px solid rgba(234,242,236,.14);
           border-radius:999px;padding:5px 11px 5px 10px;
@@ -13413,6 +13525,56 @@ export function ApercuHabitant() {
 
            TOUT DURE .78s, LE TEMPS QUE LA CARTE SUIVANTE ARRIVE. Une animation
            qui depasse l'action qu'elle accompagne devient une attente. */
+        /* ═══ L'APPEL — IL SORT DE SA BULLE ═══
+           « Est-ce que le petit fantome pourrait bouger un peu plus ou sautiller
+           juste en dehors de sa bulle pour attirer l'attention ? »
+
+           C'EST LA SORTIE QUI FAIT L'APPEL, PAS L'AGITATION. Un element qui
+           tremble dans son cadre se lit comme un chargement ; un personnage qui
+           SORT de son cadre se lit comme quelqu'un qui fait signe. D'ou le
+           depassement vers le haut — le rond reste en place, le fantome le
+           quitte et y retombe.
+
+           IL EST PLUS SAGE QUE LE BOND DU DOIGT, et c'est voulu : celui-la
+           repond a un geste, celui-ci l'INVITE. Un appel aussi spectaculaire
+           qu'une reponse rendrait la reponse muette. Deux petits sauts, un
+           regard, et le halo qui respire une fois.
+
+           LE DEBORDEMENT RESTE VISIBLE SUR LE BOUTON : sans quoi le fantome serait
+           coupe net au bord du disque, ce qui est exactement l'inverse de
+           l'effet. */
+        .ap-onglets .ap-monfantome{overflow:visible;}
+        .ap-monfantome.appel .ap-fantome{
+          animation:apAppel 1.25s cubic-bezier(.28,1.05,.4,1);}
+        .ap-monfantome.appel::after{content:"";position:absolute;inset:0;
+          border-radius:50%;border:2px solid rgba(140,240,204,.75);
+          animation:apOnde 1.25s ease-out;pointer-events:none;}
+        .ap-monfantome.appel .ap-f-oeil{animation:apYeux 1.25s ease;}
+        .ap-monfantome.appel .ap-f-bras.g{
+          animation:apBrasHautG 1.25s cubic-bezier(.3,1.2,.5,1);}
+        .ap-monfantome.appel .ap-f-bras.d{
+          animation:apBrasHautD 1.25s cubic-bezier(.3,1.2,.5,1);}
+        .ap-monfantome.appel .ap-f-ombre{animation:apOmbre2 1.25s ease;}
+        /* DEUX SAUTS, LE SECOND PLUS PETIT — une balle qui rebondit. Un saut
+           unique se lit comme un a-coup ; deux se lisent comme une intention. */
+        @keyframes apAppel{
+          0%{transform:none;}
+          8%{transform:translateY(3px) scale(1.16,.86);}
+          26%{transform:translateY(-22px) scale(.9,1.14) rotate(-6deg);}
+          40%{transform:translateY(-26px) scale(1,1) rotate(-2deg);}
+          54%{transform:translateY(2px) scale(1.14,.88);}
+          68%{transform:translateY(-11px) scale(.95,1.06) rotate(4deg);}
+          82%{transform:translateY(1px) scale(1.07,.94);}
+          100%{transform:none;}}
+        @media (prefers-reduced-motion:reduce){
+          .ap-monfantome.appel .ap-fantome,
+          .ap-monfantome.appel::after,
+          .ap-monfantome.appel .ap-f-oeil,
+          .ap-monfantome.appel .ap-f-bras.g,
+          .ap-monfantome.appel .ap-f-bras.d,
+          .ap-monfantome.appel .ap-f-ombre{animation:none;}
+        }
+
         .ap-monfantome.clin{animation:apBond .98s cubic-bezier(.3,1.2,.4,1);}
         .ap-monfantome.clin::after{content:"";position:absolute;inset:0;
           border-radius:50%;border:2px solid rgba(140,240,204,.9);

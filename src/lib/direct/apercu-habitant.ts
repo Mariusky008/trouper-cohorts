@@ -3017,6 +3017,56 @@ const CARTES: CarteAutour[] = [
       },
     ],
   },
+  /**
+   * LE TATOUEUR — demandé depuis le terrain : « c'est un commerce qui est
+   * souvent demandé ».
+   *
+   * SES DEUX MOMENTS DISENT CE QUE LE MÉTIER A DE PARTICULIER. Un flash est un
+   * dessin déjà fait, qui attend quelqu'un — c'est la seule chose d'un tatoueur
+   * qui soit disponible « maintenant ». Et un désistement sur un créneau de deux
+   * heures coûte une demi-journée : c'est le même mécanisme que chez le
+   * coiffeur, en plus cher.
+   */
+  {
+    id: "tatoueur",
+    catalogue: [
+      { id: "ta-1", rayon: "Flashs", nom: "Serpent fin, avant-bras", detail: "Environ 2 h.", prix: "180 €" },
+      { id: "ta-2", rayon: "Flashs", nom: "Branche fleurie, poignet", detail: "Environ 1 h 30.", prix: "120 €" },
+      { id: "ta-3", rayon: "Sur mesure", nom: "Projet personnalisé", detail: "Rendez-vous de dessin avant la séance." },
+      { id: "ta-4", rayon: "Soins", nom: "Retouche", detail: "Offerte dans les six mois." },
+    ],
+    branche: "artisan",
+    // PAS DE PHOTO TANT QU'ELLE N'EXISTE PAS : la carte prend son degrade et
+    // son pictogramme de metier. Voir `LISEZ-MOI.md` pour les fichiers attendus.
+    nom: "Un tatoueur du centre",
+    google: { note: "4,9", avis: 64 },
+    metier: "Tatoueur",
+    ville: VILLE,
+    itineraire: YALLER,
+    metres: 480,
+    distance: "480 m",
+    fiche: {
+      ou: "Atelier au premier, sur rendez-vous",
+      horaires: "Aujourd'hui, 11 h – 19 h",
+      mot: "Les flashs du mois sont dessinés et attendent quelqu'un. Essayez-les avant de venir.",
+    },
+    moments: [
+      {
+        de: 11, a: 19, quand: "ce mois-ci", icone: "🪡",
+        titre: "Trois flashs dessinés",
+        lignes: ["Serpent fin, branche fleurie, vague", "Essayables sur votre avant-bras"],
+        prix: "à partir de 120 €", places: 3, action: "Demander un rendez-vous",
+        envies: ["unique", "saison"],
+      },
+      {
+        de: 15, a: 17, quand: "à 15 h", icone: "🕰️", publie: 13,
+        titre: "Un créneau se libère",
+        lignes: ["Deux heures", "Désistement de ce matin"],
+        prix: "180 €", places: 1, action: "Demander un rendez-vous",
+        envies: ["maintenant"],
+      },
+    ],
+  },
   {
     id: "hypno",
     catalogue: [

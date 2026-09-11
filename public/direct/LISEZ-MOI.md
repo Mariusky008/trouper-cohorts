@@ -402,6 +402,38 @@ et de la bijoutière : « Photographiez votre main » chez un coiffeur.
 | `mode-robe.jpg` | La robe à carreaux seule, sur mannequin ou à plat. | La pièce « Robe à carreaux ». |
 | `portrait-avant.jpg` | **Une tête, de face, cheveux dégagés, sans visage reconnaissable** — un défi, mais c'est la seule chose qui manque pour que le chemin « voir avec la photo d'exemple » démontre quelque chose chez le coiffeur. | La démonstration sans sortir son téléphone. |
 
+### Les coupes de face, et le tatoueur — ce qu'il faut déposer
+
+Deux demandes du terrain, le même besoin : **une référence vue du même angle que
+la photo du client.**
+
+> « Il faudrait une coupe de devant pour homme et une coupe de devant pour femme,
+> si besoin de photo tu me donnes les intitulés et je les mets. »
+
+> « Il faut aussi le rajouter dans cette démo dans la section des artisans :
+> tatoueur, parce que c'est un commerce qui est souvent demandé. »
+
+**Le défaut que ça corrige est plus profond qu'un manque de choix.** La seule
+référence de coiffure essayable est `avis-coupe.jpg` : un motif rasé sur une
+**nuque**, donc vue de dos. Or on se photographie **de face**. Le modèle recevait
+une photo de face et une référence de dos, et devait deviner le reste. Un même
+angle des deux côtés n'est pas un agrément, c'est la condition pour que le rendu
+tienne.
+
+| Fichier à déposer dans `public/direct/` | Ce qu'il doit montrer | Ce qu'il débloque |
+|---|---|---|
+| `coiffure-homme-face.jpg` | Un homme **de face**, buste, coupe **finie**, cheveux dégagés, lumière du jour. Visage flouté ou cadré sous les yeux — la règle du dépôt tient. | La pièce « Coupe homme, de face ». |
+| `coiffure-femme-face.jpg` | Une femme **de face**, même cadrage, coupe finie, sans chapeau ni lunettes. | La pièce « Coupe femme, de face ». |
+| `atelier-tatouage.jpg` | L'atelier d'un tatoueur : table, lampe, flashs au mur. C'est la **photo de la carte**, pas une référence d'essai. | La carte du tatoueur dans le paquet, et le fond de son mur. |
+| `tatouage-serpent.jpg` | **Un tatouage fini sur un avant-bras**, à plat, lumière du jour, trait net et lisible. Aucun visage. C'est la **référence** : c'est ce dessin-là que le modèle reproduira. | La pièce « Serpent fin, avant-bras » — la seule essayable du tatoueur. |
+| `avant-bras.jpg` | **Un avant-bras nu**, à plat, manche remontée, sans tatouage et sans ombre portée. | La photo d'exemple du tatoueur — « voir sans sortir son téléphone ». |
+
+**Tant qu'un fichier manque, sa pièce est marquée « bientôt essayable »** et ne
+se choisit pas. C'est la règle du dépôt depuis le début : on ne sert jamais une
+image de catalogue à la place d'un essai qui n'a pas eu lieu. Le jour où la photo
+arrive, il suffit d'ajouter `reference` à la pièce et de retirer `bientot` —
+voir `lib/direct/fantomes.ts`.
+
 **Pour le coiffeur, la photo d'exemple ne prouve rien aujourd'hui** : le dépôt n'a
 aucun portrait utilisable, donc l'« avant » et la référence sont la même image.
 Le vrai chemin — on se photographie soi-même — fonctionne. C'est écrit ici plutôt

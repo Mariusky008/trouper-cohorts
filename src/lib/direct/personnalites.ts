@@ -60,6 +60,15 @@ export type Personnalite = {
   /** L'encre lisible SUR l'accent — calculée à la main, pas devinée. */
   encre: string;
   /**
+   * L'ACCENT DÉLAYÉ, POUR CE QUI L'ENTOURE — halo, piste de cadran, filet.
+   *
+   * IL EST ÉCRIT, PAS CALCULÉ. `color-mix()` le produirait en une ligne, mais
+   * il ne s'affiche pas partout et une couleur qui disparaît sur un téléphone
+   * se remarque par son ABSENCE, ce qui ne se débogue pas. Quatre caractères de
+   * plus par métier valent mieux qu'un halo qui manque sur un iPhone.
+   */
+  halo: string;
+  /**
    * LA PERSONNALITÉ DU TITRE.
    *
    * · `gras` — condensé, capitales, très serré. Le plat, l'offre, l'urgence.
@@ -117,6 +126,7 @@ const LANGAGES: Personnalite[] = [
     cle: "restaurant",
     accent: "#FF9E5A",
     encre: "#2A1205",
+    halo: "rgba(255,158,90,.42)",
     titre: "gras",
     tag: "⚡ En ce moment",
     reserver: "Réserver mon plat",
@@ -132,6 +142,7 @@ const LANGAGES: Personnalite[] = [
     cle: "bar",
     accent: "#FF4D8D",
     encre: "#2A0715",
+    halo: "rgba(255,77,141,.42)",
     titre: "gras",
     tag: "🔥 Ce soir",
     reserver: "Réserver une table",
@@ -146,6 +157,7 @@ const LANGAGES: Personnalite[] = [
     cle: "mode",
     accent: "#E8C9A0",
     encre: "#241A0D",
+    halo: "rgba(232,201,160,.38)",
     titre: "editorial",
     tag: "🆕 Vient d’arriver",
     reserver: "Mettre de côté",
@@ -160,6 +172,7 @@ const LANGAGES: Personnalite[] = [
     cle: "coiffeur",
     accent: "#C9A7FF",
     encre: "#1B1030",
+    halo: "rgba(201,167,255,.42)",
     titre: "editorial",
     tag: "🆕 Nouveau look",
     reserver: "Prendre rendez-vous",
@@ -174,6 +187,7 @@ const LANGAGES: Personnalite[] = [
     cle: "ongles",
     accent: "#FF9ECF",
     encre: "#2D0C1E",
+    halo: "rgba(255,158,207,.42)",
     titre: "editorial",
     tag: "🆕 Nouveau",
     reserver: "Prendre rendez-vous",
@@ -188,6 +202,7 @@ const LANGAGES: Personnalite[] = [
     cle: "fleuriste",
     accent: "#7FE3B0",
     encre: "#062218",
+    halo: "rgba(127,227,176,.42)",
     titre: "editorial",
     tag: "⚡ En ce moment",
     reserver: "M’en mettre un de côté",
@@ -203,11 +218,37 @@ const LANGAGES: Personnalite[] = [
     cle: "createur",
     accent: "#D8C7A6",
     encre: "#211A0E",
+    halo: "rgba(216,199,166,.38)",
     titre: "editorial",
     tag: "🆕 Nouvelle création",
     reserver: "Réserver la pièce",
     ailleurs: "Découvrir l’atelier",
     unite: ["pièce", "pièces"],
+  },
+  /**
+   * 🪡 LE TATOUEUR — demandé depuis le terrain : « c'est un commerce qui est
+   * souvent demandé ».
+   *
+   * CE N'EST PAS UN CRÉATEUR PARMI D'AUTRES, ET L'ESSAI EXPLIQUE POURQUOI. Une
+   * céramiste vend un objet qu'on pose chez soi ; un tatoueur pose un dessin SUR
+   * VOUS, et pour toujours. C'est le métier où « voir avant » vaut le plus cher :
+   * on ne revient pas sur un tatouage, et l'hésitation est la règle, pas
+   * l'exception. La même mécanique que les ongles et la coupe, sur l'avant-bras.
+   *
+   * L'ACCENT EST ENCRE ET CUIVRE, PAS FLUO. Le métier a son esthétique — noir,
+   * trait net, peu de couleurs — et lui coller un rose de salon de beauté serait
+   * exactement le genre de faute que ce fichier existe pour empêcher.
+   */
+  {
+    cle: "tatoueur",
+    accent: "#D9A066",
+    encre: "#241305",
+    halo: "rgba(217,160,102,.4)",
+    titre: "editorial",
+    tag: "🆕 Nouveau flash",
+    reserver: "Demander un rendez-vous",
+    ailleurs: "Voir les flashs",
+    unite: ["créneau", "créneaux"],
   },
   /**
    * 🎪 CE QUI SE PASSE EN VILLE — « date, heure et lieu sont prioritaires. Ne
@@ -217,6 +258,7 @@ const LANGAGES: Personnalite[] = [
     cle: "evenement",
     accent: "#8BD6FF",
     encre: "#05202E",
+    halo: "rgba(139,214,255,.42)",
     titre: "clair",
     tag: "📅 Aujourd’hui",
     reserver: "Y aller",
@@ -232,6 +274,7 @@ const LANGAGES: Personnalite[] = [
     cle: "recrute",
     accent: "#9FB4CC",
     encre: "#0B141E",
+    halo: "rgba(159,180,204,.36)",
     titre: "clair",
     tag: "🙋 Ils recrutent",
     reserver: "Je postule",
@@ -245,6 +288,7 @@ const DEFAUT: Personnalite = {
   cle: "defaut",
   accent: "#B9C6D6",
   encre: "#0B141E",
+  halo: "rgba(185,198,214,.34)",
   titre: "clair",
   tag: "⚡ En ce moment",
   reserver: "Réserver",
@@ -289,6 +333,7 @@ export function personnaliteDe(a: {
     // vend une séance — et « Nouvelle création · Réserver la pièce » sur une
     // consultation serait la même absurdité que de lui proposer d'essayer une
     // bougie sur sa table.
+    if (/tatou|tattoo|pierc/.test(m)) return par("tatoueur");
     if (/cir|bougie|bijou|bracelet|collier|joaill|ceram|céram|potier|atelier|creat|créat/.test(m)) {
       return par("createur");
     }

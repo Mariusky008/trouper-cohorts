@@ -45,7 +45,7 @@ export type Souvenir = {
   distance: string;
   note: string;
   avis: number;
-  photoLieu: string;
+  photoLieu?: string;
 };
 
 export type FantomePose = {

@@ -207,6 +207,7 @@ export type CarteDirect = {
     cle: string;
     accent: string;
     encre: string;
+    halo: string;
     titre: "gras" | "editorial" | "clair";
     unite: [string, string];
   };
@@ -371,6 +372,7 @@ export function CarteSwipe({
               ...style,
               "--cd-accent": c.langage.accent,
               "--cd-accent-encre": c.langage.encre,
+              "--cd-halo": c.langage.halo,
             } as React.CSSProperties)
           : style
       }
@@ -965,6 +967,7 @@ export function StylesDirect() {
            LA VALEUR PAR DEFAUT EST LE BLANC D'AVANT : une carte sans langage
            est exactement celle d'hier. */
         .cd-carte{--cd-accent:#EAF2EC;--cd-accent-encre:#0B141E;
+          --cd-halo:rgba(61,226,166,.5);
           position:relative;width:100%;max-width:340px;aspect-ratio:3/4.15;border-radius:26px;overflow:hidden;
           text-align:left;
           background:#0C1310;box-shadow:0 40px 80px -30px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.07);
@@ -1577,9 +1580,9 @@ export function StylesDirect() {
            dessus. */
         .cd-anneau.porte{cursor:pointer;
           background:radial-gradient(circle at 50% 26%,
-            rgba(22,54,42,.94) 0%, rgba(9,24,18,.95) 58%, rgba(4,10,8,.96) 100%);
+            rgba(16,20,18,.95) 0%, rgba(9,13,11,.96) 58%, rgba(4,7,6,.97) 100%);
           box-shadow:0 14px 38px rgba(0,0,0,.58),
-            0 0 30px -8px rgba(61,226,166,.5);
+            0 0 30px -8px var(--cd-halo);
           transition:transform .18s cubic-bezier(.34,1.4,.64,1);}
         /* LES TROIS COUCHES DU CADRAN — voir le commentaire du trace.
            L'ORDRE EST CELUI DU DESSIN : le halo derriere, le reflet sur le
@@ -1587,15 +1590,27 @@ export function StylesDirect() {
            voile blanc et perdrait sa saturation. */
         .cd-po-c{position:absolute;inset:0;width:100%;height:100%;
           overflow:visible;pointer-events:none;}
-        .cd-po-h{fill:none;stroke:rgba(61,226,166,.2);stroke-width:1.5;}
+        /* ═══ L'ANNEAU PORTE LA COULEUR DU METIER ═══
+           « Je ne vois pas vraiment de differences de design entre les
+           differents metiers. »
+           IL AVAIT RAISON, ET LA CAUSE ETAIT UNE QUESTION DE SURFACE. L'accent
+           ne touchait que deux lignes de TEXTE — le metier en petites capitales
+           et le nom du commerce — pendant que le plus gros objet colore de la
+           carte, un disque de cent points pose a hauteur de regard, restait
+           menthe sur les dix-huit commerces. On comparait deux mots la ou l'oeil
+           compare des aplats.
+           ET CE DISQUE PEUT LA PORTER SANS RIEN CASSER : il n'est pas un bouton
+           d'action, c'est une PORTE — « Les fleurs · Voir ». La menthe des
+           gestes d'engagement reste intacte en bas de l'ecran. */
+        .cd-po-h{fill:none;stroke:var(--cd-halo);stroke-width:1.5;opacity:.45;}
         .cd-po-l{fill:url(#cdPorteL);}
         /* QUATRE POINTS ET DEMI, PAS CINQ ET DEUX. Premiere mesure a l'ecran :
            a 5,2 sur un rayon de 43, l'anneau MANGEAIT le mot du metier —
            « L'ARDOISE » depassait des deux cotes. Le trait s'affine et le
            cercle s'elargit : l'aire libre a l'interieur gagne cinq points de
            chaque cote, ce qui est exactement ce qui manquait. */
-        .cd-po-a{fill:none;stroke:url(#cdPorteG);stroke-width:4.5;
-          filter:drop-shadow(0 0 6px rgba(61,226,166,.42));}
+        .cd-po-a{fill:none;stroke:var(--cd-accent);stroke-width:4.5;
+          filter:drop-shadow(0 0 6px var(--cd-halo));}
         /* ET LE MOT SE RANGE DANS CE QU'IL RESTE. Il est place au-dessus du
            centre, donc la corde disponible y est plus courte qu'au diametre :
            une largeur maximale explicite vaut mieux qu'un mot qui deborde des
@@ -1635,7 +1650,7 @@ export function StylesDirect() {
         .cd-anneau.porte em{position:relative;z-index:1;
           display:inline-flex;align-items:center;gap:3px;
           font-style:normal;font-size:10px;font-weight:900;
-          letter-spacing:.12em;text-transform:uppercase;color:#8CF0CC;
+          letter-spacing:.12em;text-transform:uppercase;color:var(--cd-accent);
           text-shadow:0 1px 8px rgba(0,0,0,.7);}
         /* LE CHEVRON EST ECRIT EN CLAIR, PAS EN ECHAPPEMENT. Un « \u00e9chappement
            unicode » dans un litteral de gabarit est lu par JavaScript avant

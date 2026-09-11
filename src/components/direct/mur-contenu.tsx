@@ -74,6 +74,8 @@ import { composer, type Gabarit } from "@/lib/direct/essai";
 import { fantomesDuLieu, mesFantomes, poserFantome, tempsRestant } from "@/lib/direct/mes-fantomes";
 import { laMainEstPrete, poserVernis } from "@/lib/direct/ongles";
 import { essayerSurMoi, estUnRendu } from "@/lib/direct/essai-genere";
+import { prevenirPourEssai, numeroDeFiction } from "@/lib/direct/prevenir";
+import { partagerLEssai, type Sortie } from "@/lib/direct/partager-essai";
 
 /**
  * « CHEZ QUI », ÉCRIT COMME ON LE DIRAIT.
@@ -1397,8 +1399,58 @@ function Essai({
     };
   }, [etape, piece, mur, laPhoto]);
 
+  /**
+   * CE QU'A FAIT LE PARTAGE, ET PAS CE QU'ON ESPÈRE QU'IL A FAIT.
+   *
+   * `null` tant qu'on n'a rien ouvert. Voir `partagerLEssai` : ni la feuille de
+   * partage ni WhatsApp n'ENVOIENT — ils ouvrent. L'écran pose donc la question
+   * au lieu d'annoncer.
+   */
+  const [envoi, setEnvoi] = useState<Sortie | null>(null);
+
+  /**
+   * PRÉVENIR LE COMMERÇANT AVEC LA PHOTO.
+   *
+   * « Quand je dis "je réserve ma place", j'ai cet écran au lieu d'avoir le
+   * WhatsApp qui s'ouvre avec la photo et le message pré-rempli. »
+   *
+   * IL FAUT UN VRAI RENDU POUR QUE ÇA AIT UN SENS. Sur la photo d'exemple ou
+   * après un échec, l'image n'est pas la sienne : l'envoyer au salon en disant
+   * « voici le rendu » serait faux. On retombe alors sur le message sans photo,
+   * qui reste vrai.
+   */
+  const prevenir = async (p: Piece) => {
+    const tel = mur.telephone ?? numeroDeFiction(mur.cle);
+    const sienne = !!photo && !!rendu && !rendu.souci;
+    const geste = (mur.essai?.mots.reserver ?? "Je réserve").replace(/^Je\s+/i, "Je ");
+    const msg = prevenirPourEssai({
+      telephone: tel,
+      quoi: p.nom,
+      geste,
+      avecPhoto: sienne,
+    });
+    if (!sienne) {
+      // Pas de rendu à soi : WhatsApp directement, avec le texte qui ne promet
+      // aucune photo.
+      window.open(msg.whatsapp, "_blank", "noopener,noreferrer");
+      setEnvoi({ par: "whatsapp" });
+      return;
+    }
+    const sortie = await partagerLEssai({
+      image: rendu.image,
+      nom: `essai-${p.id}`,
+      texteAvecPhoto: msg.texte,
+      whatsapp: prevenirPourEssai({ telephone: tel, quoi: p.nom, geste, avecPhoto: false }).whatsapp,
+    });
+    setEnvoi(sortie);
+  };
+
   const poser = (verdict: "pris" | "passe") => {
     setDecide(verdict);
+    // ON PRÉVIENT LE COMMERÇANT AVANT DE POSER LE FANTÔME : le partage doit
+    // partir du geste de la personne, sans écran intercalé. Un `window.open`
+    // déclenché après un rendu d'écran se fait bloquer par Safari.
+    if (verdict === "pris" && piece) void prevenir(piece);
     onPose({
       id: `pose-${Date.now()}`,
       qui: "Vous",
@@ -1757,12 +1809,46 @@ function Essai({
               {/* MÊME LA CONFIRMATION NOMME LE LIEU. « Le commerçant vous
                   attend » était la dernière phrase générique du parcours, et
                   c'est celle qu'on relit en arrivant sur place. */}
+              {/* ═══ ON NE DIT JAMAIS « C'EST RÉSERVÉ » ═══
+
+                  Ni la feuille de partage ni WhatsApp n'ENVOIENT : ils ouvrent,
+                  et c'est encore à la personne d'appuyer sur « envoyer ». Dire
+                  « on vous attend » avant ça lui ferait croire que c'est fait,
+                  et le salon ne saurait rien — le défaut qu'on corrige, en pire,
+                  parce que cette fois elle y croit. Même règle que les
+                  croissants : voir `lib/direct/prevenir.ts`. */}
               <b>
-                {decide === "pris"
-                  ? `C’est noté : on vous attend ${chezQui(mur.lieu)}.`
-                  : "C’est noté — au moins, vous savez."}
+                {decide === "passe"
+                  ? "C’est noté — au moins, vous savez."
+                  : envoi?.par === "partage" || envoi?.par === "whatsapp"
+                    ? `Envoyez le message, et ${chezQui(mur.lieu)} vous répondra.`
+                    : envoi?.par === "abandon"
+                      ? "Vous avez refermé le partage."
+                      : "On prépare votre message…"}
               </b>
-              <em>Votre essai est sur le mur, ici, pendant deux jours.</em>
+              <em>
+                {decide === "pris" && envoi?.par === "whatsapp"
+                  ? "WhatsApp s’est ouvert avec le message. La photo ne peut pas y être jointe automatiquement — ajoutez-la depuis vos photos si vous le souhaitez."
+                  : decide === "pris" && envoi?.par === "abandon"
+                    ? "Rien n’a été envoyé. Votre essai reste sur le mur, ici, pendant deux jours."
+                    : "Votre essai est sur le mur, ici, pendant deux jours."}
+              </em>
+              {/* LE GESTE RESTE OFFERT TANT QU'IL N'A PAS ABOUTI. Une feuille
+                  de partage refermée par erreur ne doit pas coûter tout le
+                  parcours. */}
+              {decide === "pris" && piece && envoi?.par !== "partage" && (
+                <button
+                  type="button"
+                  className="mu-cta plein"
+                  onClick={() => void prevenir(piece)}
+                >
+                  <i aria-hidden="true">💬</i>
+                  <span>
+                    <b>{envoi ? "Renvoyer le message" : mur.essai?.mots.reserver}</b>
+                    <em>Avec votre rendu, par WhatsApp ou un autre canal</em>
+                  </span>
+                </button>
+              )}
               <button
                 type="button"
                 className="mu-e-autres"

@@ -77,6 +77,8 @@
 import type { Gabarit } from "./essai";
 
 /** Ce que le lieu propose de déposer. Décide de l'écran, et de lui seul. */
+import { numeroDeFiction } from "@/lib/direct/prevenir";
+
 export type Depot = "annonce" | "essai";
 
 /**
@@ -282,7 +284,20 @@ export type Mur = {
   avis: number;
   /** Deux ou trois mots sous le nom : « Cuisine française », « Terrasse ». */
   etiquettes: string[];
-  photoLieu: string;
+  /**
+   * LA PHOTO DU LIEU, ET ELLE PEUT MANQUER.
+   *
+   * UN MÉTIER PEUT ENTRER DANS LA DÉMONSTRATION AVANT SES PHOTOS. Le tatoueur
+   * a été demandé depuis le terrain ; ses images arriveront après. Deux
+   * mauvaises réponses étaient possibles : lui prêter la photo d'un autre
+   * commerce — la faute qui a donné le mur des bougies à un hypnothérapeute —
+   * ou pointer un fichier absent, ce qui fabrique une erreur 404 dans la
+   * console. Une console qui crie pour une raison connue est une console où
+   * plus personne ne voit les vraies erreurs.
+   *
+   * ABSENTE, LE MUR PREND UN FOND SOMBRE ET NE PRÉTEND RIEN.
+   */
+  photoLieu?: string;
   depot: Depot;
   /** Les humeurs proposées ici. Vide = on ne demande pas d'humeur. */
   humeurs: string[];
@@ -354,6 +369,18 @@ export type Mur = {
     };
     pieces: Piece[];
   };
+  /**
+   * SON NUMÉRO, POUR LE PRÉVENIR APRÈS UN ESSAI.
+   *
+   * « Quand je dis "je réserve ma place", j'ai cet écran au lieu d'avoir le
+   * WhatsApp qui s'ouvre. » Le mur ne savait pas joindre le commerçant : il
+   * portait son nom, sa note et sa distance, mais rien par quoi lui parler.
+   *
+   * DANS LA MAQUETTE C'EST UN NUMÉRO DE FICTION, et c'est une règle de
+   * sécurité : un numéro inventé au hasard existe vraiment chez quelqu'un. Voir
+   * `numeroDeFiction` dans `lib/direct/prevenir.ts`.
+   */
+  telephone?: string;
   /**
    * CE QUE LE LIEU MET SOUS LE MUR — le plat du jour, la pièce du jour.
    * C'est le seul endroit de la feuille où le commerce parle de ce qu'il vend.
@@ -1038,6 +1065,27 @@ export const MURS: Mur[] = [
         // CE QUI MANQUE EST UNE PHOTO, PAS UN CALCUL. Le modèle sait reproduire
         // une coupe ou une couleur ; il lui faut la photo du travail fini, prise
         // par le salon. Voir `LISEZ-MOI.md`.
+        /**
+         * UNE COUPE DE FACE POUR CHACUN, ET C'ÉTAIT LE MANQUE.
+         *
+         * « Il faudrait une coupe de devant pour homme et une coupe de devant
+         * pour femme. »
+         *
+         * JUSTE, ET PLUS PROFOND QU'UN MANQUE DE CHOIX. La seule référence
+         * essayable était un motif rasé sur une NUQUE — c'est-à-dire vue de
+         * dos. Or on se photographie de face : le modèle recevait une photo de
+         * face et une référence de dos, et devait deviner. Une coupe vue du même
+         * angle que la photo du client est la condition pour que le rendu
+         * tienne, pas un agrément.
+         *
+         * ELLES SONT « BIENTÔT ESSAYABLES » TANT QUE LES PHOTOS N'EXISTENT PAS.
+         * Les deux fichiers sont nommés et décrits dans `LISEZ-MOI.md` — le jour
+         * où ils arrivent, il suffit d'ajouter `reference` et de retirer
+         * `bientot`. Servir la photo du salon à la place serait un catalogue
+         * déguisé en essai.
+         */
+        { id: "c-homme", nom: "Coupe homme, de face", prix: "26 €", photo: "/direct/coiffure-homme-face.jpg", bientot: true },
+        { id: "c-femme", nom: "Coupe femme, de face", prix: "38 €", photo: "/direct/coiffure-femme-face.jpg", bientot: true },
         { id: "c-balayage", nom: "Balayage miel", prix: "95 €", photo: "/direct/salon-neuf.jpg", bientot: true },
         { id: "c-carre", nom: "Carré dégradé", prix: "45 €", photo: "/direct/fauteuil-coiffeur.jpg", bientot: true },
       ],
@@ -1322,6 +1370,81 @@ export const MURS: Mur[] = [
       },
     ],
   },
+  /**
+   * LE TATOUEUR — « c'est un commerce qui est souvent demandé ».
+   *
+   * C'EST LE MÉTIER OÙ « VOIR AVANT » VAUT LE PLUS CHER. Une pose d'ongles se
+   * refait dans trois semaines, une coupe repousse ; un tatouage ne revient
+   * pas. L'hésitation y est la règle et non l'exception — et c'est exactement
+   * ce qu'un essai supprime.
+   *
+   * MÊME MÉCANIQUE QUE LES ONGLES : la photo du flash chez le tatoueur, posée
+   * sur la photo de l'avant-bras du client par le modèle d'image. Rien de
+   * nouveau côté moteur, seulement une partie du corps de plus.
+   *
+   * LES PHOTOS MANQUENT ENCORE, ET C'EST ÉCRIT PLUTÔT QUE MASQUÉ : voir
+   * `LISEZ-MOI.md`. Une pièce sans référence est marquée « bientôt essayable »
+   * — on ne sert jamais une image de catalogue à la place d'un essai qui n'a
+   * pas eu lieu.
+   */
+  {
+    cle: "tatouage",
+    lieu: "Un tatoueur du centre",
+    metier: "Tatoueur",
+    ville: "Dax",
+    distance: "480 m",
+    note: "4,9",
+    avis: 64,
+    etiquettes: ["Flash du mois", "Sur rendez-vous"],
+    // PAS DE PHOTO TANT QU'ELLE N'EXISTE PAS. Les fichiers sont nommés dans
+    // `LISEZ-MOI.md` ; le jour où ils arrivent, une ligne suffit.
+    depot: "essai",
+    humeurs: ["hesite", "decouvre", "offrir"],
+    verbes: [],
+    essai: {
+      partie: "votre avant-bras",
+      consigne: "Avant-bras à plat, manche remontée, à la lumière du jour, sans ombre portée.",
+      avant: "",
+      gabarit: { forme: "cadre" },
+      mots: {
+        titre: "Ce flash, sur votre peau",
+        phrase: "Photographiez votre avant-bras : le dessin s\u2019y pose, à la bonne échelle.",
+        geste: "Photographier mon avant-bras",
+        choisir: "Choisissez le flash",
+        reserver: "Demander un rendez-vous",
+        autres: "Voir les autres flashs du mois",
+        mur: "Voir les flashs déjà posés",
+      },
+      pieces: [
+        { id: "t-serpent", nom: "Serpent fin, avant-bras", prix: "180 €", photo: "", bientot: true },
+        { id: "t-fleur", nom: "Branche fleurie, poignet", prix: "120 €", photo: "", bientot: true },
+      ],
+    },
+
+    maison: [
+      {
+        id: "t-nine",
+        qui: "Nine",
+        role: "Tatoueuse",
+        maison: true,
+        mot: "Trois flashs dessinés cette semaine. Essayez-les avant de venir 🪡",
+        heure: "10:20",
+        interesses: 11,
+      },
+    ],
+    clients: [
+      {
+        id: "t-lise",
+        qui: "Lise",
+        essai: { quoi: "Serpent fin, avant-bras", verdict: null },
+        mot: "Je l\u2019ai essayé trois fois avant de me décider sur le placement.",
+        heure: "11:55",
+        humeur: "hesite",
+        interesses: 9,
+        jusqua: "encore 2 jours",
+      },
+    ],
+  },
 ];
 
 /**
@@ -1382,6 +1505,7 @@ export function modeleDeLaBranche(
    */
   if (branche === "artisan") {
     const m = (metier ?? "").toLowerCase();
+    if (/tatou|tattoo/.test(m)) return "tatouage";
     if (/cir|bougie/.test(m)) return "bougies";
     if (/bijou|bracelet|collier|joaill/.test(m)) return "bijoux";
     return "margot";
@@ -1421,6 +1545,8 @@ export function murDeLaCarte(c: {
   distance: string;
   photo?: string;
   google?: { note: string; avis: number };
+  /** Son numéro, quand il en a déclaré un. Sinon, un numéro de fiction. */
+  telephone?: string;
   /**
    * LE CATALOGUE DU COMMERÇANT, ET IL MANQUAIT.
    *
@@ -1499,7 +1625,10 @@ export function murDeLaCarte(c: {
         titre: c.moment.titre,
         quoi: c.moment.lignes?.[0] ?? c.moment.titre,
         detail: [c.moment.lignes?.[1], c.moment.prix].filter(Boolean).join(" · "),
-        photo: c.moment.photo || c.photo || modele.photoLieu,
+        // LA PHOTO DU BLOC PEUT MANQUER DES TROIS COTES : moment, commerce,
+        // modele. Une chaine vide vaut mieux qu'un `undefined` qui se glisse
+        // dans un attribut `src` et fabrique une requete vers la page courante.
+        photo: c.moment.photo || c.photo || modele.photoLieu || "",
         geste: modele.contexte?.geste ?? "Voir",
       }
     : modele.contexte;
@@ -1515,6 +1644,10 @@ export function murDeLaCarte(c: {
     note: c.google?.note ?? modele.note,
     avis: c.google?.avis ?? modele.avis,
     photoLieu: c.photo || modele.photoLieu,
+    // LE NUMÉRO SUIT LE COMMERCE, PAS LE MODÈLE. Un mur emprunté au modèle de
+    // la branche ne doit jamais emprunter AUSSI son numéro : on écrirait à
+    // quelqu'un d'autre. Voir `numeroDeFiction` pour la maquette.
+    telephone: c.telephone ?? numeroDeFiction(c.id),
     essai,
     contexte,
   };
