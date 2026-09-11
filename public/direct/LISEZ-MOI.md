@@ -381,3 +381,39 @@ jour, qui existait pour une raison de produit, plafonne aussi la facture.
 **Et la photo du client sort du téléphone.** C'était l'argument du moteur
 précédent (« rien n'est envoyé »). L'écran le dit désormais en toutes lettres au
 moment du rendu, et rien n'est conservé côté serveur.
+
+### Le coiffeur et le prêt-à-porter — ce qui existe, ce qui manque
+
+Deux murs d'essai ont été ajoutés. Ils tombaient jusque-là sur ceux de l'onglerie
+et de la bijoutière : « Photographiez votre main » chez un coiffeur.
+
+| Fichier | D'où il vient | Ce qu'il fait |
+|---|---|---|
+| `mode-combinaison.jpg` | **Découpé ici** dans `vitrine-mode.jpg` (le mannequin central) | Référence de la combinaison beige. Aucun visage. Un peu molle : la source ne fait que 387 points de large. |
+| `mode-chemise-jean.jpg` | **Découpé ici** dans `avis-cabine.jpg` (le vêtement seul) | Référence de la chemise en jean. **Le recadrage retire le visage** qui se trouvait dans la source — une dérivation qui améliore la règle au lieu de l'entamer. |
+| `avis-coupe.jpg` | Déjà présent | Référence du motif rasé sur la nuque. Vu de dos, aucun visage : c'est la meilleure référence de coiffure du dépôt. |
+
+#### Ce qui manque, et ce n'est plus un problème de calcul
+
+| Fichier | Ce qu'il montre | Ce qu'il débloque |
+|---|---|---|
+| `coiffure-balayage.jpg` | Une tête vue de trois quarts, **balayage fini**, sans visage reconnaissable de préférence. | La pièce « Balayage miel ». |
+| `coiffure-carre.jpg` | Un carré dégradé fini, même règle. | La pièce « Carré dégradé ». |
+| `mode-robe.jpg` | La robe à carreaux seule, sur mannequin ou à plat. | La pièce « Robe à carreaux ». |
+| `portrait-avant.jpg` | **Une tête, de face, cheveux dégagés, sans visage reconnaissable** — un défi, mais c'est la seule chose qui manque pour que le chemin « voir avec la photo d'exemple » démontre quelque chose chez le coiffeur. | La démonstration sans sortir son téléphone. |
+
+**Pour le coiffeur, la photo d'exemple ne prouve rien aujourd'hui** : le dépôt n'a
+aucun portrait utilisable, donc l'« avant » et la référence sont la même image.
+Le vrai chemin — on se photographie soi-même — fonctionne. C'est écrit ici plutôt
+que masqué à l'écran.
+
+#### Une décision qui reste à prendre : le visage
+
+Une coupe de cheveux ne s'essaie pas sans tête. La photo du client contient donc
+son visage, et elle part chez le modèle le temps du rendu.
+
+Ce n'est PAS une entorse à la règle ci-dessus : cette règle porte sur **les
+photos d'illustration du dépôt**, celles qui montrent des inconnus à tout le
+monde. Ici, c'est **sa propre photo**, prise par lui, jamais publiée tant qu'il
+n'a pas appuyé sur « Je la prends » ou « Je passe ». L'écran le dit au moment du
+rendu.

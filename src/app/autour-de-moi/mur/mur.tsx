@@ -29,8 +29,9 @@ import { MurContenu } from "@/components/direct/mur-contenu";
  */
 function murDeLaBranche(branche: string | null): string {
   if (branche === "bar") return "bar";
-  if (branche === "ongles" || branche === "coiffeur") return "ongles";
-  if (branche === "mode") return "bijoux";
+  if (branche === "ongles") return "ongles";
+  if (branche === "coiffeur") return "coiffeur";
+  if (branche === "mode") return "mode";
   if (branche === "artisan" || branche === "fleuriste") return "bougies";
   return "margot";
 }

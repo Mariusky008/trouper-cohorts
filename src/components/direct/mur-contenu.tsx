@@ -286,7 +286,9 @@ function Carte({
  */
 function murDeLaBranche(branche: string | null): string {
   if (branche === "bar") return "bar";
-  if (branche === "ongles" || branche === "coiffeur" || branche === "mode") return "ongles";
+  if (branche === "ongles") return "ongles";
+  if (branche === "coiffeur") return "coiffeur";
+  if (branche === "mode") return "mode";
   return "margot";
 }
 
@@ -1029,7 +1031,7 @@ function Viseur({ photo, gabarit }: { photo?: string; gabarit?: Gabarit }) {
         </>
       );
     }
-    if (gabarit.forme === "main") {
+    if (gabarit.forme === "main" || gabarit.forme === "cadre") {
       /**
        * LE REPÈRE D'UNE MAIN N'EST PAS UN EMPLACEMENT, C'EST UNE MARGE.
        *
@@ -1089,7 +1091,7 @@ function Viseur({ photo, gabarit }: { photo?: string; gabarit?: Gabarit }) {
    * d'une main EST sa marge : rogné, il ne restait que ses deux côtés, et la
    * seule consigne qui compte devenait invisible.
    */
-  const entier = gabarit?.forme === "main";
+  const entier = gabarit?.forme === "main" || gabarit?.forme === "cadre";
   return (
     <div className={entier ? "mu-viseur entier" : "mu-viseur"}>
       {photo && (
@@ -1292,7 +1294,7 @@ function Essai({
         if (minuteur.current) window.clearInterval(minuteur.current);
       };
     }
-    if (!gabarit || gabarit.forme === "main" || !piece.decoupe || !laPhoto) {
+    if (!gabarit || gabarit.forme === "main" || gabarit.forme === "cadre" || !piece.decoupe || !laPhoto) {
       // Pas de gabarit ou pas de découpe : on retombe sur ce que la pièce
       // fournit. C'est le cas de la paire vraie du bijoutier, qui reste
       // meilleure que tout calcul.
@@ -1564,7 +1566,7 @@ function Essai({
               fixes — la piece se pose sur le repere, et sur une photo cadree
               autrement elle tombe a cote. Le dire ici, c'est donner le geste qui
               repare ; se taire, c'est laisser croire que le calcul s'est trompe. */}
-          {photo && mur.essai?.gabarit && mur.essai.gabarit.forme !== "main" && (
+          {photo && mur.essai?.gabarit && mur.essai.gabarit.forme !== "main" && mur.essai.gabarit.forme !== "cadre" && (
             <p className="mu-rendu-a">
               La pièce se pose sur le repère du viseur. Si elle tombe à côté,
               reprenez la photo en alignant {mur.essai.partie} sur les traits.

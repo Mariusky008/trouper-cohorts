@@ -79,7 +79,16 @@ export type Gabarit =
    * téléphone ; ce gabarit-ci ne porte donc aucune coordonnée, il dit seulement
    * « ici, on cherche une main ».
    */
-  | { forme: "main" };
+  | { forme: "main" }
+  /**
+   * UN SIMPLE CADRE, QUAND IL N'Y A RIEN À MESURER.
+   *
+   * Depuis que le rendu passe par un modèle d'image, le gabarit ne sert plus à
+   * placer quoi que ce soit : il sert à DIRE CE QU'ON DOIT PHOTOGRAPHIER. Pour
+   * une tête ou un buste, ça tient en un cadre et une phrase — le modèle trouve
+   * le reste tout seul, et lui imposer une géométrie ne l'aiderait pas.
+   */
+  | { forme: "cadre" };
 
 export type Pose = {
   /** Le rendu, en `data:` — prêt à être montré, gardé, publié. */
@@ -302,9 +311,9 @@ export async function composer(opts: {
   const { c, ctx } = toile(L, H);
   ctx.drawImage(lieu, 0, 0, L, H);
 
-  if (opts.gabarit.forme === "main") {
+  if (opts.gabarit.forme === "main" || opts.gabarit.forme === "cadre") {
     // Une main ne se compose pas, elle se PEINT : voir `lib/direct/ongles.ts`.
-    throw new Error("le gabarit « main » passe par poserVernis, pas par composer");
+    throw new Error("ce gabarit passe par le modèle d’image, pas par composer");
   }
   if (opts.gabarit.forme === "cylindre") {
     ceindre(ctx, piece, opts.gabarit, L, H);

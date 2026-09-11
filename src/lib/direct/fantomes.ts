@@ -928,6 +928,204 @@ export const MURS: Mur[] = [
       },
     ],
   },
+  /**
+   * LE COIFFEUR, ET IL N'AVAIT PAS DE MUR.
+   *
+   * Il tombait sur celui de l'onglerie : « Photographiez votre main » chez un
+   * coiffeur. Le défaut venait d'un repli dans `murDeLaCarte`, écrit quand trois
+   * murs devaient couvrir dix-huit commerces — et il est resté longtemps après
+   * que ce ne soit plus vrai.
+   *
+   * SA PHOTO « AVANT » NE DÉMONTRE RIEN, ET C'EST ÉCRIT PLUTÔT QUE MASQUÉ. Le
+   * dépôt n'a aucun portrait sans visage reconnaissable, donc le chemin « voir
+   * avec la photo d'exemple » ne prouve rien ici. Le vrai chemin — on se
+   * photographie soi-même — fonctionne. `LISEZ-MOI.md` nomme la photo qui
+   * manque.
+   */
+  {
+    cle: "coiffeur",
+    lieu: "Un salon de coiffure",
+    metier: "Coiffeur",
+    ville: "Dax",
+    distance: "260 m",
+    note: "4,7",
+    avis: 88,
+    etiquettes: ["Sur rendez-vous", "Colorations"],
+    photoLieu: "/direct/salon-neuf.jpg",
+    depot: "essai",
+    humeurs: ["hesite", "decouvre", "offrir"],
+    verbes: [],
+    essai: {
+      partie: "votre tête",
+      consigne: "Face à une fenêtre, cheveux dégagés, sans casquette ni lunettes de soleil.",
+      avant: "/direct/avis-coupe.jpg",
+      gabarit: { forme: "cadre" },
+      pieces: [
+        {
+          id: "c-motif",
+          nom: "Motif rasé, nuque",
+          prix: "28 €",
+          photo: "/direct/avis-coupe.jpg",
+          reference: "/direct/avis-coupe.jpg",
+        },
+        // CE QUI MANQUE EST UNE PHOTO, PAS UN CALCUL. Le modèle sait reproduire
+        // une coupe ou une couleur ; il lui faut la photo du travail fini, prise
+        // par le salon. Voir `LISEZ-MOI.md`.
+        { id: "c-balayage", nom: "Balayage miel", prix: "95 €", photo: "/direct/salon-neuf.jpg", bientot: true },
+        { id: "c-carre", nom: "Carré dégradé", prix: "45 €", photo: "/direct/fauteuil-coiffeur.jpg", bientot: true },
+      ],
+    },
+    contexte: {
+      titre: "La coupe du moment",
+      quoi: "Motif rasé",
+      detail: "Environ 30 minutes",
+      photo: "/direct/avis-coupe.jpg",
+      geste: "Voir les tarifs",
+    },
+    maison: [
+      {
+        id: "co-yann",
+        qui: "Yann",
+        role: "Coiffeur",
+        maison: true,
+        photo: "/direct/avis-coupe.jpg",
+        mot: "Il me reste deux créneaux cet après-midi. Essayez avant de venir ✂️",
+        heure: "09:10",
+        interesses: 5,
+      },
+      {
+        id: "co-salon",
+        qui: "Le salon",
+        role: "Accueil",
+        maison: true,
+        photo: "/direct/salon-neuf.jpg",
+        mot: "Un désistement à 16 h, la place est pour qui la prend.",
+        heure: "11:40",
+        interesses: 3,
+      },
+    ],
+    clients: [
+      {
+        id: "co-hugo",
+        qui: "Hugo",
+        photo: "/direct/avis-coupe.jpg",
+        essai: { quoi: "Motif rasé, nuque", verdict: "pris" },
+        mot: "Essayé hier soir, rendez-vous pris pour samedi.",
+        heure: "10:20",
+        humeur: "decouvre",
+        interesses: 6,
+        jusqua: "encore 2 jours",
+      },
+      {
+        id: "co-leo",
+        qui: "Léo",
+        photo: "/direct/salon-neuf.jpg",
+        essai: { quoi: "Motif rasé, nuque", verdict: null },
+        mot: "J’hésite avec quelque chose de plus sobre. Vos avis ?",
+        heure: "12:05",
+        humeur: "hesite",
+        interesses: 4,
+        jusqua: "encore 2 jours",
+      },
+    ],
+  },
+  /**
+   * LE PRÊT-À-PORTER, ET IL MANQUAIT AUSSI.
+   *
+   * LES DEUX RÉFÉRENCES SONT DÉCOUPÉES DANS DES PHOTOS DU DÉPÔT, et le recadrage
+   * de la cabine RETIRE le visage qui s'y trouvait — une dérivation qui améliore
+   * la règle au lieu de l'entamer. Voir `LISEZ-MOI.md`.
+   */
+  {
+    cle: "mode",
+    lieu: "Une boutique de prêt-à-porter",
+    metier: "Prêt-à-porter",
+    ville: "Dax",
+    distance: "180 m",
+    note: "4,6",
+    avis: 42,
+    etiquettes: ["Pièces uniques", "Retouches offertes"],
+    photoLieu: "/direct/vitrine-mode.jpg",
+    depot: "essai",
+    humeurs: ["hesite", "decouvre", "offrir"],
+    verbes: [],
+    essai: {
+      partie: "vous, en buste",
+      consigne: "Debout face à une fenêtre, bras le long du corps, buste entier dans le cadre.",
+      avant: "/direct/poignet-nu.jpg",
+      gabarit: { forme: "cadre" },
+      pieces: [
+        {
+          id: "m-combinaison",
+          nom: "Combinaison beige, ceinturée",
+          prix: "129 €",
+          photo: "/direct/mode-combinaison.jpg",
+          reference: "/direct/mode-combinaison.jpg",
+        },
+        {
+          id: "m-chemise",
+          nom: "Chemise en jean",
+          prix: "69 €",
+          photo: "/direct/mode-chemise-jean.jpg",
+          reference: "/direct/mode-chemise-jean.jpg",
+        },
+        { id: "m-robe", nom: "Robe à carreaux", prix: "89 €", photo: "/direct/vitrine-mode.jpg", bientot: true },
+      ],
+    },
+    contexte: {
+      titre: "La pièce du moment",
+      quoi: "Combinaison beige",
+      detail: "Tailles 36 à 44",
+      photo: "/direct/mode-combinaison.jpg",
+      geste: "Voir la boutique",
+    },
+    maison: [
+      {
+        id: "mo-claire",
+        qui: "Claire",
+        role: "Vendeuse",
+        maison: true,
+        photo: "/direct/mode-combinaison.jpg",
+        mot: "La combinaison est rentrée ce matin, en quatre tailles. Essayez-la 👗",
+        heure: "09:45",
+        interesses: 7,
+      },
+      {
+        id: "mo-vitrine",
+        qui: "La boutique",
+        role: "Vitrine",
+        maison: true,
+        photo: "/direct/vitrine-mode.jpg",
+        mot: "Les retouches sont offertes jusqu’à samedi.",
+        heure: "10:30",
+        interesses: 2,
+      },
+    ],
+    clients: [
+      {
+        id: "mo-julie",
+        qui: "Julie",
+        photo: "/direct/mode-chemise-jean.jpg",
+        essai: { quoi: "Chemise en jean", verdict: "pris" },
+        mot: "Essayée depuis mon canapé, je passe la chercher ce soir.",
+        heure: "11:15",
+        humeur: "decouvre",
+        interesses: 5,
+        jusqua: "encore 2 jours",
+      },
+      {
+        id: "mo-sarah",
+        qui: "Sarah",
+        photo: "/direct/mode-combinaison.jpg",
+        essai: { quoi: "Combinaison beige, ceinturée", verdict: null },
+        mot: "Je la trouve très belle mais j’hésite sur la taille.",
+        heure: "12:40",
+        humeur: "hesite",
+        interesses: 8,
+        jusqua: "encore 2 jours",
+      },
+    ],
+  },
 ];
 
 /**
@@ -965,8 +1163,12 @@ export function murDeLaCarte(c: {
   const modele =
     MURS.find((m) => {
       if (c.branche === "bar") return m.cle === "bar";
-      if (c.branche === "ongles" || c.branche === "coiffeur") return m.cle === "ongles";
-      if (c.branche === "mode") return m.cle === "bijoux";
+      if (c.branche === "ongles") return m.cle === "ongles";
+      // LE COIFFEUR ET LA MODE ONT LEUR MUR MAINTENANT. Ils tombaient sur ceux
+      // de l'onglerie et de la bijoutière — un repli écrit quand trois murs
+      // devaient couvrir dix-huit commerces, et resté longtemps après.
+      if (c.branche === "coiffeur") return m.cle === "coiffeur";
+      if (c.branche === "mode") return m.cle === "mode";
       if (c.branche === "artisan" || c.branche === "fleuriste") return m.cle === "bougies";
       return m.cle === "margot";
     }) ?? MURS[0];
