@@ -1293,6 +1293,111 @@ console.log("\n══ l'annonce et son mur disent la même chose ══");
   await c7.close();
 }
 
+// ═══ UNE SEULE STRUCTURE, NEUF LANGAGES ══════════════════════════════════
+//
+// « Ne conçois pas neuf types d'annonces. Conçois un système d'annonces qui
+// sait parler neuf langages. »
+//
+// LA GARDE MESURE LES DEUX MOITIÉS DE CETTE PHRASE, et elle doit les mesurer
+// ENSEMBLE : chacune prise seule est facile à satisfaire, et les satisfaire
+// séparément donne soit neuf applications, soit une seule voix.
+//
+//   · NEUF LANGAGES — l'accent, le ton du titre, le mot de ce qu'on compte et
+//     le verbe du geste doivent DIFFÉRER d'un métier à l'autre. Le défaut
+//     mesuré : un bar proposait « Réserver mon plat », écrit dans une chaîne de
+//     ternaires à quatorze mille lignes du début du fichier, où « bar » figurait
+//     depuis le premier jour.
+//   · UNE STRUCTURE — l'ordre des blocs et le grand bouton doivent être les
+//     MÊMES. C'est le garde-fou de l'autre : neuf personnalités qui déplacent
+//     chacune un bloc, ce sont neuf applications.
+console.log("\n══ neuf langages, une seule structure ══");
+{
+  const { ctx: c8, p: p8 } = await ouvrir("/autour-de-moi", 12.5);
+  const vus = new Map();
+  for (let i = 0; i < 22; i++) {
+    const d = await p8.evaluate(() => {
+      const c = document.querySelector(".cd-carte:not(.dessous)");
+      if (!c) return null;
+      const h2 = c.querySelector(".cd-offre");
+      return {
+        cle: [...c.classList].find((x) => x.startsWith("m-")) ?? null,
+        accent: getComputedStyle(c).getPropertyValue("--cd-accent").trim(),
+        ton: [...(h2?.classList ?? [])].find((x) => x.startsWith("t-")) ?? null,
+        unite: (c.querySelector(".cd-encore")?.textContent ?? "").replace(/\d+/g, "").trim(),
+        // LA STRUCTURE : l'ordre dans lequel les blocs apparaissent.
+        ordre: [...c.querySelectorAll(".cd-nature,.cd-offre,.cd-prixg,.cd-encore,.cd-chez")]
+          .map((e) => e.className.split(" ")[0])
+          .join(">"),
+      };
+    });
+    if (d?.cle && !vus.has(d.cle)) {
+      const geste = (await p8.locator(".ap-agir.engage").textContent().catch(() => "")).trim();
+      vus.set(d.cle, { ...d, geste });
+    }
+    const suiv = await p8.$(".cd-suiv, .cd-passer, [aria-label*='suivant' i]");
+    if (!suiv || !(await suiv.isEnabled())) break;
+    await suiv.click();
+    await p8.waitForTimeout(420);
+  }
+  const l = [...vus.values()];
+  dire(l.length >= 6, `au moins six langages croisés dans le paquet (${l.length})`);
+
+  // AUCUN ACCENT NE SE PARTAGE. Deux métiers de la même couleur, c'est deux
+  // métiers qu'on confond au premier coup d'oeil — la demande exacte.
+  const accents = l.map((x) => x.accent);
+  dire(
+    new Set(accents).size === accents.length,
+    `chaque langage a sa couleur (${new Set(accents).size}/${accents.length})`,
+  );
+  // LE VERBE DU GESTE NE SE PARTAGE PAS NON PLUS, sauf là où il est vrai deux
+  // fois : on prend bien rendez-vous chez un coiffeur ET chez une prothésiste.
+  const gestes = l.map((x) => x.geste).filter(Boolean);
+  dire(
+    new Set(gestes).size >= gestes.length - 1,
+    `le verbe du geste suit le métier (${new Set(gestes).size}/${gestes.length}) : ${[...new Set(gestes)].join(" · ")}`,
+  );
+  // ON DIT TROIS QUOI. « Il reste 3 » est vrai partout et ne veut rien dire
+  // nulle part.
+  const unites = l.map((x) => x.unite).filter((u) => u && u.length > 8);
+  dire(
+    new Set(unites).size >= 3,
+    `ce qu'on compte porte un nom (${[...new Set(unites)].join(" · ") || "aucun"})`,
+  );
+
+  /**
+   * ET LA STRUCTURE NE BOUGE PAS — MAIS UN BLOC ABSENT N'EST PAS UN DÉSORDRE.
+   *
+   * Premier jet de cette garde : « trois agencements », donc échec. C'était LA
+   * GARDE qui avait tort. Un bar sans prix n'a pas de bloc prix, une annonce
+   * sans compte n'a pas de « il reste » — et c'est voulu : « les blocs 2 et 4
+   * sont OPTIONNELS ; s'ils sont vides, le composant se replie proprement sans
+   * casser le rythme visuel ». Comparer les chaînes entières mesurait donc la
+   * présence, pas l'ordre.
+   *
+   * CE QU'IL FAUT VÉRIFIER EST QUE CE QUI EST LÀ EST DANS LE BON ORDRE : la
+   * suite des blocs présents doit être une sous-suite de l'ordre canonique.
+   * Replier un bloc est permis ; en déplacer un ne l'est pas.
+   */
+  const CANON = ["cd-nature", "cd-offre", "cd-prixg", "cd-encore", "cd-chez"];
+  const dansLOrdre = (suite) => {
+    let i = 0;
+    for (const bloc of suite) {
+      const j = CANON.indexOf(bloc, i);
+      if (j < 0) return false;
+      i = j + 1;
+    }
+    return true;
+  };
+  const horsOrdre = l.filter((x) => x.ordre && !dansLOrdre(x.ordre.split(">")));
+  dire(
+    horsOrdre.length === 0,
+    `l'ordre des blocs est le même d'un métier à l'autre${
+      horsOrdre.length ? ` — ${horsOrdre[0].cle} : ${horsOrdre[0].ordre}` : ""
+    }`,
+  );
+  await c8.close();
+}
+
 dire(erreurs.length === 0, `aucune erreur${erreurs.length ? " : " + erreurs[0] : ""}`);
 await nav.close();
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT PASSE");

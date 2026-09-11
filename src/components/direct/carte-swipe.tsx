@@ -168,6 +168,29 @@ export type CarteDirect = {
    * coûte plus cher que son absence.
    */
   itineraire?: string;
+  /**
+   * LE LANGAGE DU MÉTIER — voir `lib/direct/personnalites.ts`.
+   *
+   * « Pour bien reconnaître un type de commerçant d'un autre et ne pas avoir
+   * l'impression que c'est le même type de commerçant. »
+   *
+   * IL NE PORTE QUE TROIS CHOSES, ET C'EST VOULU : la couleur d'accent, la
+   * personnalité du titre, et le mot de ce qu'on compte. La STRUCTURE ne s'en
+   * sert jamais — l'ordre des blocs, la place de la photo, du prix et du pied
+   * est la même pour les neuf. On veut un système qui parle neuf langages, pas
+   * neuf applications.
+   *
+   * ABSENT, LA CARTE EST EXACTEMENT CELLE D'AVANT. C'est la règle : un appelant
+   * qui ne sait pas de quel métier il s'agit ne doit pas obtenir un métier au
+   * hasard — c'est la faute qui a donné le mur des bougies à un hypnothérapeute.
+   */
+  langage?: {
+    cle: string;
+    accent: string;
+    encre: string;
+    titre: "gras" | "editorial" | "clair";
+    unite: [string, string];
+  };
 };
 
 /**
@@ -314,9 +337,24 @@ export function CarteSwipe({
        qu'elle devrait être très différente pour montrer l'exceptionnel de ce
        moment ». Une pastille ambre sur une carte identique ne suffit pas : on
        balaie, et rien n'arrête l'œil. La classe teinte la carte ENTIÈRE. */
+    /* L'ACCENT DU MÉTIER VOYAGE EN VARIABLE, PAS EN CLASSE. Neuf classes
+       auraient demandé neuf blocs de style dupliqués ; une variable se pose une
+       fois et sert partout dans la carte — et elle ne touche AUCUN bouton
+       d'action : la menthe veut dire « ceci vous engage » dans tout le produit.
+       Voir `lib/direct/personnalites.ts`. */
     <div
-      className={`cd-carte${sec ? " sec" : ""}${c.flash ? " flash" : ""} ${className}`}
-      style={style}
+      className={`cd-carte${sec ? " sec" : ""}${c.flash ? " flash" : ""}${
+        c.langage ? ` m-${c.langage.cle}` : ""
+      } ${className}`}
+      style={
+        c.langage
+          ? ({
+              ...style,
+              "--cd-accent": c.langage.accent,
+              "--cd-accent-encre": c.langage.encre,
+            } as React.CSSProperties)
+          : style
+      }
     >
       {/* DEUX COUCHES, PAS UNE, et c'est un filet de sécurité.
           L'image est empilée SUR un dégradé. Si le fichier manque ou tarde, la
@@ -582,8 +620,13 @@ export function CarteSwipe({
                 {c.etiquette && <s>{c.etiquette}</s>}
               </p>
             )}
+            {/* LE TITRE CHANGE DE TON, PAS DE PLACE NI DE TAILLE.
+                `gras` crie l'offre (un plat, une tournée), `editorial` la
+                présente (une pièce, une coupe, un bouquet), `clair` l'annonce
+                (un concert, un poste). Trois tons, pas neuf polices : une police
+                par métier ferait neuf applications. Voir `Personnalite.titre`. */}
             <h2
-              className={`cd-offre${
+              className={`cd-offre t-${c.langage?.titre ?? "gras"}${
                 c.quoi.length > 34 ? " long" : c.quoi.length > 18 ? " moyen" : ""
               }`}
             >
@@ -713,9 +756,14 @@ export function CarteSwipe({
                 quoi » et « c'est combien » — et elle n'avait sa réponse que
                 sous le pli. Elle ne s'affiche que si le commerçant l'a dite :
                 on ne compte jamais à sa place. */}
+            {/* ON DIT TROIS QUOI. « Il en reste 3 » est vrai partout et ne veut
+                rien dire nulle part : trois tables, trois bouquets, trois
+                créneaux ? Le mot compte plus que le nombre — il dit ce qu'on
+                vient chercher. Voir `Personnalite.unite`. */}
             {c.combien != null && c.combien > 0 && (
               <p className="cd-encore">
-                Il en reste <b>{c.combien}</b>
+                Il reste <b>{c.combien}</b>
+                {c.langage ? ` ${c.langage.unite[c.combien > 1 ? 1 : 0]}` : ""}
               </p>
             )}
             {c.flash?.continue && <p className="cd-flash-s">{c.flash.continue}</p>}
@@ -876,7 +924,16 @@ export function StylesDirect() {
            visite guidée, par exemple). Sans elle, le menu s'affichait centré
            dans la démonstration et à gauche dans le vrai fil — deux cartes
            différentes, ce que ce fichier existe précisément pour empêcher. */
-        .cd-carte{position:relative;width:100%;max-width:340px;aspect-ratio:3/4.15;border-radius:26px;overflow:hidden;
+        /* ─── L'ACCENT DU METIER, POSE ICI ET NULLE PART AILLEURS ───
+           IL SE LIT SUR LE METIER ET SOUS LE NOM DU COMMERCE, jamais sur un
+           bouton : la menthe veut dire « ceci vous engage » dans tout le
+           produit. Deux points d'ancrage suffisent pour qu'une friperie et un
+           bar ne se ressemblent pas, sans qu'aucun des deux cesse d'etre
+           ClikMe. Voir lib/direct/personnalites.ts.
+           LA VALEUR PAR DEFAUT EST LE BLANC D'AVANT : une carte sans langage
+           est exactement celle d'hier. */
+        .cd-carte{--cd-accent:#EAF2EC;--cd-accent-encre:#0B141E;
+          position:relative;width:100%;max-width:340px;aspect-ratio:3/4.15;border-radius:26px;overflow:hidden;
           text-align:left;
           background:#0C1310;box-shadow:0 40px 80px -30px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.07);
           font-family:'Inter',system-ui,sans-serif;isolation:isolate;}
@@ -1016,7 +1073,7 @@ export function StylesDirect() {
            « quoi », et c'est le bon ordre : on ne va pas chez une boucherie pour
            un menu du jour. */
         .cd-nature b{display:inline-flex;align-items:center;gap:5px;
-          font-weight:850;color:#EAF2EC;}
+          font-weight:850;color:var(--cd-accent);}
         .cd-nature b i{font-style:normal;font-size:13px;letter-spacing:0;}
         .cd-nature s{text-decoration:none;color:#9DB0A6;}
         .cd-nature s::before{content:" · ";}
@@ -1100,8 +1157,42 @@ export function StylesDirect() {
           text-shadow:0 2px 10px rgba(0,0,0,.72),0 4px 30px rgba(0,0,0,.55);
           display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
           overflow:hidden;}
+        /* ═══ LE TITRE NE PASSE PLUS SOUS L'ANNEAU ═══
+           MESURE : « BOUQUET DU JOUR » s'affichait « BOUQUET DU J », et
+           « 40 PIECES SORTIES CE MATIN » perdait son S — l'anneau du metier est
+           pose en absolu a droite, a 29 % de hauteur, sur 104 points, et rien ne
+           lui reservait sa place. Le titre passait DESSOUS, ce qui ne se voit
+           pas en relisant le code : les deux blocs sont corrects chacun de son
+           cote.
+           ON RESERVE, ON NE RAPETISSE PAS. Le titre garde sa taille et passe a
+           la ligne plus tot : deux lignes lisibles valent mieux qu'une ligne
+           coupee. Le detail juste dessous tombe dans la meme bande, donc il
+           recoit la meme reserve ; le prix et le reste sont plus bas que
+           l'anneau et gardent toute la largeur. */
+        .cd-offre,.cd-detail{padding-right:114px;}
         .cd-offre.moyen{font-size:clamp(37px,11vw,52px);}
         .cd-offre.long{font-size:clamp(30px,8.6vw,41px);line-height:.94;}
+        /* ─── TROIS TONS DE TITRE, MEME PLACE ET MEME TAILLE ───
+           « La structure UX est quasiment sacree ; le contenu et la personnalite
+           visuelle peuvent evoluer selon le metier. » On ne touche donc ni a la
+           position, ni au nombre de lignes, ni aux tailles calculees au-dessus :
+           seules la chasse et la casse changent.
+           GRAS : l'affiche d'origine, serree et en capitales — un plat, une
+           tournee, ce qui se crie.
+           EDITORIAL : capitales aerees, une fraction de taille en moins. Un
+           vetement, une coupe, un bouquet se presentent, ils ne se crient pas.
+           CLAIR : casse normale, pas d'espacement. Un concert municipal ou une
+           offre d'emploi cries se lisent comme une publicite — et une offre
+           d'emploi qui ressemble a une publicite a l'air d'une arnaque. */
+        .cd-offre.t-editorial{letter-spacing:.05em;
+          font-size:clamp(38px,11.6vw,56px);line-height:.98;}
+        .cd-offre.t-editorial.moyen{font-size:clamp(32px,9.4vw,45px);}
+        .cd-offre.t-editorial.long{font-size:clamp(26px,7.6vw,36px);line-height:1.04;}
+        .cd-offre.t-clair{text-transform:none;letter-spacing:-.01em;
+          font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:800;
+          font-size:clamp(34px,10.4vw,48px);line-height:1.04;}
+        .cd-offre.t-clair.moyen{font-size:clamp(29px,8.4vw,40px);}
+        .cd-offre.t-clair.long{font-size:clamp(24px,6.8vw,32px);line-height:1.12;}
         /* ─── LE GRAIN D'AFFICHE ───
            « Beaucoup plus de caractere. » Une lettre pleine et lisse est une
            lettre d'application ; une lettre legerement mangee est une lettre
@@ -1207,8 +1298,11 @@ export function StylesDirect() {
         .cd-encore b{font-weight:850;color:#FFC400;}
         /* LE NOM A 650, LA VILLE ET LA DISTANCE A 400 : trois niveaux avec le
            titre. « Si tout est gras, plus rien n'est important. » */
-        .cd-chez{margin:11px 0 0;font-size:14.5px;font-weight:650;
-          line-height:1.25;color:#EAF2EC;text-wrap:balance;}
+        /* LE NOM DU COMMERCE PORTE UN FILET A SA COULEUR. C'est le second point
+           d'ancrage de l'accent : la derniere chose lue avant de decider. */
+        .cd-chez{margin:11px 0 0;padding-left:9px;font-size:14.5px;font-weight:650;
+          line-height:1.25;color:#EAF2EC;text-wrap:balance;
+          border-left:2.5px solid var(--cd-accent);}
         .cd-chez s{text-decoration:none;font-weight:400;color:#A9BDB2;}
         .cd-carte.sec .cd-social{align-self:center;margin-top:9px;}
         /* « JUSQU'A QUAND » EST LA SEULE RARETE QU'ON PUISSE ECRIRE SANS

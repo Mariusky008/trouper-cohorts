@@ -34,6 +34,7 @@ import type { CarteDirect } from "@/components/direct/carte-swipe";
 import { flashEnCours, momentDuFlash, partEcoulee, tempsQuiReste } from "./flash";
 import type { Flash } from "./flash";
 import type { AnnoncePassee } from "@/lib/direct/historique";
+import { personnaliteDe } from "@/lib/direct/personnalites";
 
 /**
  * LES MÉTIERS, TELS QU'ON LES CHOISIT DANS LE BANDEAU.
@@ -1503,6 +1504,10 @@ export function carteDEvenement(e: EvenementVille, heure: number): CarteDirect {
     cadrage: e.cadrage,
     nom: e.quoi,
     metier: e.qui,
+    // « NE PAS PRESENTER UN EVENEMENT MUNICIPAL COMME UN PRODUIT COMMERCIAL. »
+    // Casse normale, accent froid, et le mot compte des « places » et non des
+    // parts. Voir `personnaliteDe`.
+    langage: personnaliteDe({ evenement: true }),
     ville: VILLE,
     distance: e.distance,
     itineraire: e.itineraire,
@@ -3418,6 +3423,11 @@ export function carteDeRecrutement(c: CarteAutour): CarteDirect {
     nom: c.nom,
     metier: c.metier,
     metierEmoji: emojiDuMetier(c.branche, c.metier),
+    // UNE OFFRE D'EMPLOI N'EST PAS UNE PROMOTION. Le metier du commerce passe
+    // derriere l'etat de l'annonce : ce jour-la, ce n'est pas un restaurant
+    // qu'on regarde, c'est un poste — et un poste crie en capitales ressemble a
+    // une arnaque. Voir `personnaliteDe`.
+    langage: personnaliteDe({ branche: c.branche, metier: c.metier, recrute: true }),
     ville: c.ville,
     distance: c.distance,
     itineraire: c.itineraire,
@@ -3610,6 +3620,7 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
       nom: c.nom,
       metier: c.metier,
       metierEmoji: emojiDuMetier(c.branche, c.metier),
+      langage: personnaliteDe({ branche: c.branche, metier: c.metier }),
       ville: c.ville,
       distance: c.distance,
       itineraire: c.itineraire,
@@ -3666,6 +3677,7 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
     nom: c.nom,
     metier: c.metier,
     metierEmoji: emojiDuMetier(c.branche, c.metier),
+    langage: personnaliteDe({ branche: c.branche, metier: c.metier }),
     ville: c.ville,
     distance: c.distance,
     itineraire: c.itineraire,
@@ -3841,6 +3853,7 @@ export function carteDeReponse(c: CarteAutour, heure: number): CarteDirect {
     nom: c.nom,
     metier: c.metier,
     metierEmoji: emojiDuMetier(c.branche, c.metier),
+    langage: personnaliteDe({ branche: c.branche, metier: c.metier }),
     ville: c.ville,
     distance: c.distance,
     itineraire: c.itineraire,

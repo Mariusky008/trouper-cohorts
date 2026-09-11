@@ -83,6 +83,7 @@ import {
   type Salon,
 } from "@/lib/direct/salons";
 import { flashEnCours } from "@/lib/direct/flash";
+import { personnaliteDe } from "@/lib/direct/personnalites";
 import { suivreHauteurEcran } from "@/lib/direct/hauteur-ecran";
 import {
   abonnerPreparation,
@@ -2830,6 +2831,35 @@ export function ApercuHabitant() {
    */
   /** La carte du dessus, telle que l'écran la dessine — pour la fiche et l'anneau. */
   const dessusCarte = dessus ? carteDe(dessus) : undefined;
+  /**
+   * LE LANGAGE DE L'ANNONCE QU'ON REGARDE — voir `lib/direct/personnalites.ts`.
+   *
+   * « Pour bien reconnaître un type de commerçant d'un autre et ne pas avoir
+   * l'impression que c'est le même type de commerçant… »
+   *
+   * IL NE CHANGE NI LA STRUCTURE NI LES COULEURS D'ACTION. La menthe veut dire
+   * « ceci vous engage » dans tout le produit ; l'accent du métier se pose
+   * ailleurs. Ce qu'il change vraiment, ce sont LES MOTS — un bar proposait
+   * « Réserver mon plat », écrit dans une chaîne de ternaires à quatorze mille
+   * lignes d'ici, et « bar » y était depuis le premier jour.
+   */
+  const langage = personnaliteDe({
+    branche: dessus?.branche,
+    metier: dessus?.metier,
+    /**
+     * LE TEST EST CELUI DE `carteDe`, PAS CELUI DU MODE DE VUE.
+     *
+     * MESURE : une carte de recrutement d'un salon de coiffure etait DESSINEE
+     * en offre d'emploi — casse normale, accent froid, parce que `carteDe`
+     * appelle `carteDeRecrutement` des que `estPoste` est vrai — et son bouton
+     * disait « Prendre rendez-vous », parce qu'ici le test etait `embauches`,
+     * c'est-a-dire l'onglet choisi. Deux tests differents pour une seule
+     * question donnent deux reponses, et c'est exactement le defaut que ce
+     * systeme existe pour supprimer.
+     */
+    recrute: !!(dessus && estPoste(dessus)),
+    evenement: !!dessusEv,
+  });
   /**
    * ⚡ LE FLASH DE L'ANNONCE QU'ON PROPOSE — pour la page d'invitation.
    *
@@ -7265,7 +7295,10 @@ export function ApercuHabitant() {
                   window.open(dessusEv.itineraire, "_blank", "noopener,noreferrer");
                   return;
                 }
-                if (embauches && dessus?.recrute) {
+                // MEME TEST QUE LE LIBELLE. Le bouton dit « Je postule » des
+                // que la carte est une offre d'emploi ; il doit alors ouvrir la
+                // feuille de candidature, et pas celle des reservations.
+                if (dessus && estPoste(dessus)) {
                   noter("je-passe");
                   setOuvertReponse(dessus);
                   setFeuille("embauche");
@@ -7282,13 +7315,9 @@ export function ApercuHabitant() {
                 setFeuille("resa");
               }}
               disabled={
-                dessusEv
+                dessusEv || (dessus && (estPoste(dessus) || estInvitation(dessus)))
                   ? false
-                  : embauches
-                    ? !dessus?.recrute
-                    : dessus && estInvitation(dessus)
-                      ? false
-                      : !aReserver.length
+                  : !aReserver.length
               }
             >
               {/* « RÉSERVER MON PLAT » PLUTÔT QUE « RÉSERVER ». « Réserver »
@@ -7300,17 +7329,29 @@ export function ApercuHabitant() {
                   a vingt-neuf minutes. Le verbe doit dire la même urgence que le
                   chrono au-dessus, sinon les deux moitiés de la carte se
                   contredisent. */}
-              {dessusEv
-                ? "Y aller"
-                : embauches
-                  ? "Je passe"
-                  : dessus && estInvitation(dessus)
-                    ? "J’y vais"
-                    : flashDuSommet
-                      ? "J’en profite"
-                      : dessus && ["restaurant", "bar", "boulangerie"].includes(dessus.branche)
-                        ? "Réserver mon plat"
-                        : "Réserver"}
+              {/* ═══ LE VERBE VIENT DU MÉTIER, ET IL EST ÉCRIT AILLEURS ═══
+
+                  IL ÉTAIT ICI, DANS CETTE CHAÎNE MÊME :
+
+                      ["restaurant","bar","boulangerie"].includes(branche)
+                        ? "Réserver mon plat" : "Réserver"
+
+                  Un bar proposait donc « Réserver mon plat », et « bar » était
+                  dans cette liste depuis le premier jour. Personne ne relit une
+                  condition à quatorze mille lignes du début d'un fichier : c'est
+                  précisément pourquoi les mots d'un métier sont maintenant des
+                  DONNÉES, à côté des huit autres métiers, où une phrase fausse
+                  se voit en lisant la ligne du dessus.
+
+                  LES QUATRE ÉTATS RESTENT DEVANT LE MÉTIER : une invitation, un
+                  Flash, un poste et un événement ne sont pas des variantes de
+                  commerce, ce sont d'autres choses. Voir `personnaliteDe`, qui
+                  fait le même tri pour l'accent et l'étiquette. */}
+              {dessus && estInvitation(dessus)
+                ? "J’y vais"
+                : flashDuSommet
+                  ? "J’en profite"
+                  : langage.reserver}
             </button>
             <button
               type="button"
@@ -11684,8 +11725,19 @@ export function ApercuHabitant() {
         .ap-ident-l{display:flex;align-items:center;flex-wrap:wrap;gap:0 7px;
           margin:0;font-size:12.5px;line-height:1.35;color:#EAF2EC;
           text-shadow:0 2px 12px rgba(4,8,6,.95);}
+        /* ═══ LE NOM DU COMMERCE PORTE LA COULEUR DE SON METIER ═══
+           « Pour bien reconnaitre un type de commercant d'un autre et ne pas
+           avoir l'impression que c'est le meme type de commercant. »
+           IL ETAIT EN MENTHE POUR LES DIX-HUIT. C'est la couleur du commerce
+           dans tout le produit, donc elle ne distingue rien — et c'est
+           exactement la ligne ou l'oeil cherche « chez qui suis-je ». La
+           variable est posee sur la carte par CarteDirect.langage ; sans
+           langage, elle vaut la menthe d'avant. Voir lib/direct/personnalites.
+           LES BOUTONS N'Y TOUCHENT PAS : la menthe veut dire « ceci vous
+           engage », et la repeindre par metier lui ferait perdre ce sens
+           partout ailleurs. */
         .ap-ident-l b{font-weight:850;letter-spacing:.01em;
-          text-transform:uppercase;color:#8CF0CC;}
+          text-transform:uppercase;color:var(--cd-accent,#8CF0CC);}
         /* LE FILET RESPIRE A DROITE, PAS A GAUCHE : il est colle au mot qui le
            precede par la gouttiere du flex, et il lui faut sa propre marge de
            l'autre cote, sinon on lit « |BAR ». */
