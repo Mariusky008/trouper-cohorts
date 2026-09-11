@@ -167,6 +167,19 @@ function Carte({
 }) {
   const v = verbeDe(f.verbe);
   const essai = depot === "essai";
+  /**
+   * ON NE S'INTÉRESSE PAS À SON PROPRE FANTÔME.
+   *
+   * « Ça m'intéresse » veut dire « je veux en parler sur place avec cette
+   * personne » — or cette personne, c'est soi. Le bouton s'affichait quand même,
+   * et il devenait franchement absurde dans le panneau qui montre ce qu'on vient
+   * de poser : un geste proposé sur sa propre trace, à la seconde où on l'a
+   * laissée.
+   *
+   * LE TEST PORTE SUR LE PRÉNOM PARCE QUE C'EST LUI QUI FAIT FOI ICI : tout ce
+   * qu'on dépose est signé « Vous », et rien d'autre ne l'est. Voir `poser`.
+   */
+  const mien = f.qui === "Vous";
   return (
     <article className={`mu-c${grande ? " grande" : ""}`}>
       <div className="mu-c-p">
@@ -229,6 +242,11 @@ function Carte({
                 une présence différée — elle n'est plus là, je n'y suis pas
                 encore, et pourtant on se retrouvera. */}
         <div className="mu-c-f">
+          {mien ? (
+            <em className="mu-int-d">
+              {essai ? "Votre essai, visible par les autres." : "Votre trace, visible par les autres."}
+            </em>
+          ) : (
           <button
             type="button"
             className={`mu-int${quand ? " on" : ""}`}
@@ -250,6 +268,8 @@ function Carte({
                 : "Ça m’intéresse"}
             </span>
           </button>
+          )}
+          {!mien && (
           <em className="mu-int-d">
             {quand
               ? essai
@@ -259,7 +279,8 @@ function Carte({
                 ? "Essayez la même chose sur vous"
                 : "On pourra en parler sur place"}
           </em>
-          {(f.interesses ?? 0) + (quand ? 1 : 0) > 0 && (
+          )}
+          {!mien && (f.interesses ?? 0) + (quand ? 1 : 0) > 0 && (
             <s className="mu-int-n">
               {(f.interesses ?? 0) + (quand ? 1 : 0)} personne
               {(f.interesses ?? 0) + (quand ? 1 : 0) > 1 ? "s" : ""} intéressée
@@ -1281,6 +1302,25 @@ function Essai({
    * — réessayer autre chose, ou aller voir le mur.
    */
   const [decide, setDecide] = useState<"pris" | "passe" | null>(null);
+  /**
+   * LE FANTÔME QU'ON VIENT DE POSER, POUR LE MONTRER PLUTÔT QUE LE DIRE.
+   *
+   * « Quand je prends une photo et que je dis "je prends rendez-vous" ou "je
+   * passe", je n'ai pas l'impression que c'est sauvegardé sur le mur du
+   * commerçant. »
+   *
+   * MESURÉ : IL L'ÉTAIT. La mémoire contenait bien le dépôt et « Vous »
+   * figurait bien sur le mur — on ne le voyait simplement NULLE PART au moment
+   * où l'on décidait. C'est moi qui ai fabriqué cette impression : en
+   * supprimant le renvoi vers le mur pour garder le focus sur l'essai, j'ai
+   * remplacé la preuve par la phrase « votre essai est sur le mur ».
+   *
+   * UNE PHRASE N'EST PAS UNE PREUVE, et c'est la même règle que partout
+   * ailleurs ici : on ne dit jamais qu'une chose a eu lieu, on la montre. La
+   * carte déposée s'affiche donc dans le panneau, telle qu'elle sera sur le
+   * mur — même dessin, même vignette, même pastille.
+   */
+  const [pose, setPose] = useState<Fantome | null>(null);
   const minuteur = useRef<number | null>(null);
 
   /**
@@ -1451,7 +1491,10 @@ function Essai({
     // partir du geste de la personne, sans écran intercalé. Un `window.open`
     // déclenché après un rendu d'écran se fait bloquer par Safari.
     if (verdict === "pris" && piece) void prevenir(piece);
-    onPose({
+    // ON CONSTRUIT LE FANTÔME UNE FOIS, ET ON S'EN SERT DEUX FOIS : la mémoire
+    // le reçoit, l'écran le montre. Deux constructions séparées finiraient par
+    // diverger — ce serait alors un aperçu qui ment sur ce qui a été posé.
+    const f: Fantome = {
       id: `pose-${Date.now()}`,
       qui: "Vous",
       /**
@@ -1476,7 +1519,9 @@ function Essai({
       heure: new Date().toTimeString().slice(0, 5),
       interesses: 0,
       jusqua: "encore 2 jours",
-    });
+    };
+    setPose(f);
+    onPose(f);
   };
 
   /**
@@ -1830,9 +1875,25 @@ function Essai({
                 {decide === "pris" && envoi?.par === "whatsapp"
                   ? "WhatsApp s’est ouvert avec le message. La photo ne peut pas y être jointe automatiquement — ajoutez-la depuis vos photos si vous le souhaitez."
                   : decide === "pris" && envoi?.par === "abandon"
-                    ? "Rien n’a été envoyé. Votre essai reste sur le mur, ici, pendant deux jours."
-                    : "Votre essai est sur le mur, ici, pendant deux jours."}
+                    ? "Rien n’a été envoyé, mais votre essai est bien posé :"
+                    : "Voilà ce qui vient d’être posé sur le mur, ici, pour deux jours :"}
               </em>
+              {/* ═══ LA PREUVE, PAS L'ANNONCE ═══
+
+                  « Je n'ai pas l'impression que c'est sauvegardé sur le mur du
+                  commerçant. » Mesuré : ça l'était. La mémoire contenait le
+                  dépôt et « Vous » figurait bien sur le mur — on ne le voyait
+                  simplement nulle part au moment de décider.
+
+                  C'EST LA MÊME CARTE QUE SUR LE MUR, pas un aperçu fabriqué
+                  pour l'occasion : même composant, même fantôme, même vignette.
+                  Un aperçu qui se dessine à part finit toujours par mentir sur
+                  ce qui a été posé. */}
+              {pose && (
+                <div className="mu-rendu-preuve">
+                  <Carte f={pose} depot="essai" onDit={onMur} />
+                </div>
+              )}
               {/* LE GESTE RESTE OFFERT TANT QU'IL N'A PAS ABOUTI. Une feuille
                   de partage refermée par erreur ne doit pas coûter tout le
                   parcours. */}
@@ -2573,6 +2634,13 @@ function Styles() {
         .mu-rendu-ok em{display:block;margin-top:5px;font-style:normal;
           font-size:12px;line-height:1.5;color:var(--mu-pale);}
         .mu-rendu-ok .mu-e-autres{margin-top:12px;}
+        /* LA CARTE DEPOSEE, DANS LE PANNEAU. Elle garde son dessin de mur — le
+           fond du panneau est deja menthe, donc la carte reprend le sien pour
+           qu'on la reconnaisse comme ce qu'elle est : une carte du mur, pas une
+           vignette de confirmation. */
+        .mu-rendu-preuve{margin-top:10px;text-align:left;}
+        .mu-rendu-preuve .mu-c{background:rgba(6,18,14,.55);
+          border-color:rgba(61,226,166,.28);}
 
         /* ─── LE RENDU EN GRAND ───
            Plein ecran, fond noir, rien autour : on juge une couleur et une forme,

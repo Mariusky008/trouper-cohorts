@@ -1398,6 +1398,129 @@ console.log("\n══ neuf langages, une seule structure ══");
   await c8.close();
 }
 
+// ═══ CE QU'ON DÉPOSE SE VOIT, IL NE SE RACONTE PAS ══════════════════════
+//
+// « Quand je prends une photo et que je dis "je prends rendez-vous" ou "je
+// passe", je n'ai pas l'impression que c'est sauvegardé sur le mur du
+// commerçant. »
+//
+// MESURÉ AVANT DE CORRIGER : ÇA L'ÉTAIT. La mémoire contenait le dépôt et
+// « Vous » figurait bien sur le mur. Ce qui manquait était la PREUVE — on ne
+// voyait sa carte nulle part au moment de décider, et l'écran se contentait
+// d'écrire « votre essai est sur le mur ». Une phrase n'est pas une preuve, et
+// un produit qui affirme au lieu de montrer n'est pas cru.
+//
+// LA GARDE VÉRIFIE LES DEUX MOITIÉS, parce que l'une sans l'autre ne vaut rien :
+// la carte est à l'écran au moment de la décision, ET elle est réellement dans
+// la mémoire du téléphone. Montrer sans écrire serait le mensonge inverse.
+console.log("\n══ ce qu'on dépose se voit et s'écrit ══");
+{
+  /**
+   * CETTE GARDE OUVRE SON PROPRE NAVIGATEUR, ET C'EST POUR UNE RAISON PRECISE.
+   *
+   * `ouvrir` collecte les erreurs de console dans le compte global. Or cette
+   * garde-ci ESSAIE DES PIECES jusqu'a en trouver une qui rende — et sur un
+   * serveur sans cle d'image, les autres repondent 503. C'est le comportement
+   * attendu, honnete, et deja mesure par le bloc « l'essayage sur soi ». Le
+   * laisser tomber dans le compte global faisait echouer la garde SUR SA PROPRE
+   * METHODE : elle fabriquait l'erreur qu'elle signalait ensuite.
+   */
+  const cA = await nav.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  await cA.addInitScript(() => {
+    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); } catch {}
+  });
+  await cA.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
+  const pA = await cA.newPage();
+  pA.on("pageerror", (e) => erreurs.push(String(e)));
+  await pA.goto(`${BASE}/autour-de-moi`, { waitUntil: "networkidle" });
+  await pA.waitForSelector(".ap-fav2");
+  await pA.waitForTimeout(4600);
+  /**
+   * ON VISE LA CIRIÈRE, ET C'EST UN CHOIX DE MESURE.
+   *
+   * Les autres métiers d'essai passent par le modèle d'image, donc par une clé
+   * — que ce conteneur n'a pas. Leur rendu échoue, il n'y a pas de décision à
+   * prendre, et la garde se contenterait de dire « pas de décision » en
+   * passant : une garde qui ne mesure rien est pire qu'une garde absente,
+   * parce qu'elle rassure.
+   *
+   * LA BIJOUTIÈRE ET LA CIRIÈRE, ELLES, RENDENT SANS SORTIR DU NAVIGATEUR —
+   * une paire photographiée à l'avance pour l'une, un PNG détouré posé sur un
+   * gabarit mesuré pour l'autre. Le dépôt qui suit est le même pour tous les
+   * métiers : c'est lui qu'on vérifie, pas le moteur. On accepte les deux,
+   * parce que le paquet ne montre pas les mêmes commerces à toute heure.
+   */
+  let trouve = false;
+  for (let i = 0; i < 22; i++) {
+    const n = await pA.$eval(".ap-loin-t b", (e) => e.textContent.trim()).catch(() => "");
+    if (/bijou|cirière|ciriere/i.test(n)) { trouve = true; break; }
+    const b = await pA.$(".ap-suiv");
+    if (!b || !(await b.isEnabled())) break;
+    await b.click();
+    await pA.waitForTimeout(400);
+  }
+  if (!trouve) {
+    console.log("   (ni bijoutière ni cirière croisées à cette heure-ci)");
+  } else {
+    await pA.click(".ap-monfantome");
+    await pA.waitForTimeout(1000);
+    // ON PASSE PAR LA PHOTO D'EXEMPLE : la garde ne dispose pas d'appareil, et
+    // ce chemin dépose exactement le même fantôme.
+    const ex = await pA.$(".mu-exemple");
+    if (ex) await ex.click();
+    await pA.waitForTimeout(500);
+    /**
+     * ON ESSAIE LES PIÈCES JUSQU'À CE QU'UNE RENDE.
+     *
+     * Sur ce conteneur il n'y a pas de clé d'image : les pièces qui passent par
+     * le modèle répondent 503, l'écran le dit honnêtement et ne propose AUCUNE
+     * décision — ce qui est le bon comportement, mais ne mesure rien. Certaines
+     * pièces rendent pourtant sans sortir du navigateur (une paire
+     * photographiée à l'avance, un PNG détouré sur un gabarit). La garde les
+     * cherche au lieu de supposer que la première marche.
+     */
+    const combien = await pA.$$eval(".mu-pieces button:not([disabled])", (l) => l.length);
+    let passe = null;
+    for (let k = 0; k < combien && !passe; k++) {
+      const boutons = await pA.$$(".mu-pieces button:not([disabled])");
+      if (!boutons[k]) break;
+      await boutons[k].click();
+      await pA.waitForTimeout(7000);
+      passe = await pA.$(".mu-rendu-g .non");
+      if (!passe) {
+        const retour = await pA.$(".mu-exemple, .mu-e-autres");
+        if (retour) await retour.click();
+        await pA.waitForTimeout(500);
+      }
+    }
+    {
+      if (!passe) {
+        console.log("   (aucune pièce ne rend sans clé d'image : rien à mesurer ici)");
+      } else {
+        await passe.click();
+        await pA.waitForTimeout(900);
+        const carte = await pA.$(".mu-rendu-preuve .mu-c");
+        dire(!!carte, "la carte déposée s'affiche au moment où l'on décide");
+        const memoire = await pA.evaluate(() => {
+          try {
+            const b = localStorage.getItem("clikme-fantomes-v1");
+            return b ? (JSON.parse(b) || []).length : 0;
+          } catch { return -1; }
+        });
+        dire(memoire >= 1, `et elle est vraiment dans la mémoire du téléphone (${memoire})`);
+        // ET ON NE S'INTÉRESSE PAS À SA PROPRE TRACE : « Ça m'intéresse » veut
+        // dire « je veux en parler avec cette personne », or c'est soi.
+        const pouce = carte ? await carte.$(".mu-int") : null;
+        dire(!pouce, "et on ne nous propose pas de nous intéresser à nous-même");
+      }
+    }
+  }
+  await cA.close();
+}
+
 // ═══ RIEN NE PASSE SOUS L'ANNEAU, ET L'INTERRUPTION RESTE UNE BANDE ══════
 //
 // DEUX MESURES, ET AUCUNE DES DEUX NE SE VOIT EN RELISANT LE CODE : les blocs
@@ -1512,6 +1635,91 @@ console.log("\n══ ce qui est posé par-dessus la carte ══");
     console.log("   (la bande « C'est à vous » ne s'est pas montrée à cette heure-ci)");
   }
   await c9.close();
+}
+
+// ═══ LA PAGE DU COMMERCE : SON MUR EN VEDETTE, ET UNE VRAIE PAGE D'ECRAN ══
+//
+// « Il faut mettre en vedette les murs des commerçants, avec possibilité de
+// faire des essayages en direct sur leur page d'accueil. N'oublie pas aussi de
+// faire une version ordinateur, parce que cette page est plus une page pour
+// téléphone que ordinateur ou tablette. »
+//
+// MESURE AVANT CORRECTION : à 1440 points de large, la page était une colonne
+// de 560 posée au milieu de deux gouttières noires de 440 chacune — soixante
+// pour cent de l'écran pour rien. Et le mur n'y figurait nulle part : la seule
+// chose que le produit sache faire et qu'un site vitrine ne saura jamais.
+console.log("\n══ la page du commerce ══");
+{
+  const large = await nav.newContext({ viewport: { width: 1440, height: 900 }, locale: "fr-FR" });
+  await large.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
+  const pB = await large.newPage();
+  pB.on("pageerror", (e) => erreurs.push(String(e)));
+  await pB.goto(`${BASE}/autour-de-moi/boutique`, { waitUntil: "networkidle" });
+  await pB.waitForTimeout(1200);
+
+  const surOrdi = await pB.evaluate(() => {
+    const bq = document.querySelector(".bq");
+    const col = bq ? getComputedStyle(bq).gridTemplateColumns.split(" ").filter(Boolean) : [];
+    return {
+      colonnes: col.length,
+      largeurUtile: col.reduce((n, x) => n + parseFloat(x), 0),
+      mur: !!document.querySelector("#mur .mu"),
+      deborde: document.documentElement.scrollWidth > window.innerWidth + 1,
+    };
+  });
+  dire(surOrdi.colonnes === 2, `sur un ordinateur, la page tient en deux colonnes (${surOrdi.colonnes})`);
+  dire(
+    surOrdi.largeurUtile > 900,
+    `et elle occupe l'écran au lieu d'une colonne de téléphone (${Math.round(surOrdi.largeurUtile)} points)`,
+  );
+  dire(surOrdi.mur, "le mur du commerce est sur sa page");
+  dire(!surOrdi.deborde, "et rien ne déborde sur le côté");
+
+  // L'ESSAI EST LA, EN DIRECT, CHEZ LES MÉTIERS QUI EN ONT UN. C'est le point
+  // de toute la section : on essaie depuis la page du commerçant.
+  const onglerie = await pB.$(".bq-maq-c button:text-matches('prothésiste', 'i')");
+  if (onglerie) {
+    await onglerie.click();
+    await pB.waitForTimeout(1000);
+    const e = await pB.evaluate(() => ({
+      titre: document.querySelector("#mur .mu-e-tete h2")?.textContent?.trim() ?? null,
+      geste: document.querySelector("#mur .mu-cta.plein b")?.textContent?.trim() ?? null,
+      // LE MUR NE DOIT PAS S'ÉTIRER SUR TOUTE LA COLONNE : il couvre les
+      // rangées pour ne pas les déformer, il ne les remplit pas.
+      creux: (() => {
+        const m = document.querySelector("#mur");
+        const d = m?.querySelector(".bq-mu");
+        if (!m || !d) return 0;
+        return Math.round(m.getBoundingClientRect().bottom - d.getBoundingClientRect().bottom);
+      })(),
+    }));
+    dire(!!e.titre, `l'essai s'ouvre directement sur sa page (« ${e.titre ?? "absent"} »)`);
+    dire(
+      !!e.geste && /photograph|prendre/i.test(e.geste),
+      `et il propose le geste du métier (« ${e.geste ?? "absent"} »)`,
+    );
+    dire(e.creux < 80, `sans creux sous le panneau (${e.creux} points)`);
+  }
+
+  // ET SUR TÉLÉPHONE, RIEN N'A BOUGÉ : une seule colonne, le mur toujours là.
+  const petit = await nav.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  await petit.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
+  const pC = await petit.newPage();
+  await pC.goto(`${BASE}/autour-de-moi/boutique`, { waitUntil: "networkidle" });
+  await pC.waitForTimeout(900);
+  const surTel = await pC.evaluate(() => ({
+    grille: getComputedStyle(document.querySelector(".bq")).display,
+    mur: !!document.querySelector("#mur .mu"),
+    deborde: document.documentElement.scrollWidth > window.innerWidth + 1,
+  }));
+  dire(surTel.grille !== "grid", "sur téléphone, la page reste une seule colonne");
+  dire(surTel.mur, "et le mur y est aussi");
+  dire(!surTel.deborde, "sans débordement horizontal");
+  await petit.close();
+  await large.close();
 }
 
 dire(erreurs.length === 0, `aucune erreur${erreurs.length ? " : " + erreurs[0] : ""}`);

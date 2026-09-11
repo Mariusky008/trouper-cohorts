@@ -74,6 +74,9 @@ import {
   type MomentJour,
 } from "@/lib/direct/apercu-habitant";
 import { ceQuiRevient, phraseHabitude } from "@/lib/direct/historique";
+import { momentEnCours } from "@/lib/direct/apercu-habitant";
+import { murDeLaCarte } from "@/lib/direct/fantomes";
+import { MurContenu } from "@/components/direct/mur-contenu";
 import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
 import { AnneauMetier, PictoMetier } from "@/components/direct/picto-metier";
 
@@ -210,7 +213,27 @@ export function Boutique() {
    */
   const catal = motCatalogue(c.metier);
   const mots = catal.titre === "Le catalogue" ? { ...catal, titre: rond.carte } : catal;
-  const habitudes = useMemo(() => ceQuiRevient(c.passees), [c.passees]);
+  /**
+   * ═══ « CE QUI REVIENT » SE CALCULE APRÈS LE MONTAGE, ET C'EST OBLIGATOIRE ══
+   *
+   * DÉFAUT TROUVÉ PAR UNE GARDE, ET IL ÉTAIT LÀ DEPUIS LE DÉBUT. Le serveur
+   * écrivait « plutôt le jeudi » et le navigateur « plutôt le mardi » : React
+   * refusait l'hydratation de toute la page (erreur 418), et plus rien ne
+   * répondait au doigt en dessous.
+   *
+   * LA CAUSE EST DANS `jourDe` : une annonce est datée « il y a 12 jours », et
+   * le jour de la semaine se déduit d'AUJOURD'HUI. Or cette page est prérendue —
+   * son HTML est écrit à la compilation. « Plutôt le jeudi » était donc le jour
+   * qu'il faisait LE JOUR DU DÉPLOIEMENT, et il se contredisait dès le
+   * lendemain.
+   *
+   * UNE DÉDUCTION RELATIVE À AUJOURD'HUI NE PEUT PAS ÊTRE PRÉRENDUE. C'est la
+   * même règle que l'heure, trois lignes plus haut, écrite pour la même raison :
+   * le serveur et le navigateur ne sont pas le même jour. La section apparaît
+   * donc après le montage, ce qui est exact — avant, on n'a pas l'information.
+   */
+  const [habitudes, setHabitudes] = useState<ReturnType<typeof ceQuiRevient>>([]);
+  useEffect(() => setHabitudes(ceQuiRevient(c.passees)), [c.passees]);
   const avis = useMemo(() => avisDuCommerce(c), [c]);
   const mur = useMemo(() => murDuCommerce(c), [c]);
   const rayons = useMemo(() => parRayon(c.catalogue ?? []), [c.catalogue]);
@@ -228,8 +251,70 @@ export function Boutique() {
    */
   const photoTete = c.sesPhotos?.[0]?.src || c.photo || c.moments[0]?.photo || "";
 
+  /**
+   * ═══ LE MUR DU COMMERCE, ET L'ESSAI EN DIRECT, SUR SA PAGE ════════════════
+   *
+   * « Il faut aussi mettre en vedette les murs des commerçants, avec
+   * possibilité de faire des essayages en direct sur leur page d'accueil. »
+   *
+   * ON MONTE LE MÊME COMPOSANT, PAS UN SECOND. `MurContenu` sait déjà tout
+   * faire : il ouvre sur l'essai chez les métiers qui en ont un, sur le mur
+   * chez les autres, il parle les mots du métier, il dépose et il prévient le
+   * commerçant. En réécrire une version « pour la page » garantirait qu'un jour
+   * les deux divergent — c'est exactement la faute qui a donné trois copies de
+   * la table de routage, et qui les a fait diverger toutes les trois.
+   *
+   * IL RECOIT LE MÊME MUR QUE LA FEUILLE DU FIL, construit par `murDeLaCarte`
+   * avec le catalogue et le moment du commerce : ce qu'on essaie ici est ce que
+   * l'annonce vend, comme là-bas.
+   */
+  const murDuLieu = useMemo(
+    () =>
+      murDeLaCarte({
+        id: c.id,
+        nom: c.nom,
+        metier: c.metier,
+        branche: c.branche,
+        ville: c.ville,
+        distance: c.distance,
+        photo: c.photo,
+        google: c.google,
+        telephone: c.telephone,
+        catalogue: c.catalogue,
+        moment: momentEnCours(c, heure),
+      }),
+    [c, heure],
+  );
+  const onEssaie = murDuLieu.depot === "essai";
+
+  /**
+   * COMBIEN DE SECTIONS DANS LA COLONNE DE GAUCHE — et pourquoi on les compte.
+   *
+   * Sur ordinateur, la page est une grille de deux colonnes. Le mur est seul à
+   * droite et il est beaucoup plus haut que la section qui lui fait face : une
+   * grille partageant ses rangées, la rangée entière prenait la hauteur du mur
+   * et laissait un vide de cinq cents points sous « En ce moment ». Mesuré à
+   * 1440 points.
+   *
+   * LE MUR DOIT DONC COUVRIR TOUTES LES RANGÉES DE LA COLONNE DE GAUCHE, et
+   * leur nombre dépend de ce que ce commerce a — un hypnothérapeute n'a ni
+   * habitudes, ni avis, ni habitués. En couvrir trop fabrique des rangées vides
+   * à la fin, en couvrir trop peu ramène le vide. On les compte donc ici, où
+   * l'on sait exactement lesquelles vont s'afficher, et le nombre part dans une
+   * variable CSS. C'est la seule information que la feuille de style ne peut
+   * pas déduire seule.
+   */
+  const rangsAGauche =
+    1 + // « Aujourd'hui » est toujours là
+    (habitudes.length > 0 ? 1 : 0) +
+    (rayons.length > 0 ? 1 : 0) +
+    (c.voix || c.fiche.mot ? 1 : 0) +
+    (mur.length > 0 || avis.length > 0 ? 1 : 0) +
+    1 + // « Où, et quand » est toujours là
+    (c.pouces && c.pouces.length > 0 ? 1 : 0);
+
   return (
-    <div className="bq">
+    <div className="bq" style={{ "--bq-rangs": rangsAGauche } as React.CSSProperties}>
       <Styles />
 
       {/* ─── LE SÉLECTEUR DE MAQUETTE ───
@@ -409,6 +494,29 @@ export function Boutique() {
             );
           })}
         </ol>
+      </section>
+
+      {/* ═══ LE MUR, ET L'ESSAI EN DIRECT ═══════════════════════════════════
+
+          IL EST EN DEUXIEME POSITION, ET C'EST L'ORDRE QUI COMPTE. Le present
+          garde le haut de page — c'est la regle de cette page depuis le premier
+          jour. Mais juste apres vient la seule chose qu'un site vitrine ne
+          saura jamais faire : essayer le produit sur soi, et voir ce que les
+          autres ont essaye ici aujourd'hui. Le catalogue, l'histoire et les
+          horaires attendent en dessous ; ils attendent deja.
+
+          C'EST LE MEME COMPOSANT QUE DANS LE FIL, monte tel quel. Voir
+          `murDuLieu` plus haut pour pourquoi on n'en ecrit pas un second. */}
+      <section className={`bq-s bq-mur${onEssaie ? " essai" : ""}`} id="mur">
+        {/* UN SEUL TITRE, ET C'EST CELUI DU COMPOSANT. Premier jet : j'avais
+            ecrit le mien au-dessus, et la page affichait « Ce que les gens ont
+            laisse ici » suivi de « Ce que les gens ont laisse ici aujourd'hui ».
+            Le mur sait deja se presenter, dans les mots de son metier — il ne
+            reste que l'etiquette de section, qui dit ou l'on est dans la page. */}
+        <div className="bq-k">{onEssaie ? "Sans rendez-vous" : "Ici, aujourd’hui"}</div>
+        <div className="mu bq-mu">
+          <MurContenu key={c.id} mur={murDuLieu} />
+        </div>
       </section>
 
       {/* ─── CE QUI REVIENT ───
@@ -1120,10 +1228,86 @@ function Styles() {
         .bq-pied{margin:20px 16px 0;font-size:10.5px;line-height:1.5;color:#5F7268;
           text-align:center;}
 
+        /* ═══ LE MUR MONTE SUR LA PAGE ═══
+           LE COMPOSANT APPORTE SON PROPRE DECOR, et il est fait pour une
+           feuille qui occupe tout l'ecran : un fond opaque, une largeur maximale
+           et une hauteur minimale d'ecran entier. Pose dans une section de page,
+           ces trois-la creaient un trou noir de huit cents points au milieu du
+           contenu. On les neutralise ici plutot que de les retirer la-bas : la
+           feuille du fil en a besoin, cette page non. */
+        .bq-mu{background:transparent;max-width:none;min-height:0;margin:12px 0 0;}
+        .bq-mu .mu-chez{display:none;}
+        .bq-mur.essai{background:linear-gradient(180deg,rgba(139,125,246,.1),
+          rgba(139,125,246,.03) 60%,transparent);
+          border-top:1px solid rgba(139,125,246,.24);}
+        .bq-mur.essai .bq-k{color:#C9BCFF;}
+
         @media (min-width:600px){
           .bq{border-left:1px solid var(--bq-ligne);border-right:1px solid var(--bq-ligne);}
           .bq-hero{height:320px;}
           .bq-hero-c h1{font-size:38px;}
+        }
+
+        /* ═══ SUR UN ORDINATEUR, CE N'EST PLUS UN TELEPHONE ETIRE ═══════════
+           « Cette page est plus une page pour telephone que ordinateur ou
+           tablette. »
+           MESURE : a 1440 points de large, la page etait une colonne de 560
+           posee au milieu de deux gouttieres noires de 440 chacune. Soixante
+           pour cent de l'ecran ne servaient a rien, et il fallait faire defiler
+           quatre mille points pour atteindre les horaires.
+           DEUX COLONNES, ET LE CHOIX DE CE QUI VA A DROITE EST LE SUJET. A
+           gauche, ce qu'on LIT dans l'ordre : ce qui se passe, ce qui revient,
+           la carte, qui c'est, les avis. A droite, ce sur quoi on AGIT, et qui
+           doit rester sous les yeux pendant qu'on lit le reste : l'essai ou le
+           mur, puis le chemin et les horaires. La colonne de droite est donc
+           collante — c'est la seule chose que le telephone ne peut pas offrir,
+           et la seule raison d'avoir deux colonnes.
+           L'ORDRE DE LECTURE NE CHANGE PAS. Les blocs restent dans le meme
+           ordre dans le document : un lecteur d'ecran et un telephone lisent la
+           meme page. Seule la mise en colonnes bouge. */
+        @media (min-width:1040px){
+          .bq{max-width:1160px;display:grid;
+            grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);
+            column-gap:30px;align-items:start;
+            padding-bottom:calc(40px + env(safe-area-inset-bottom));}
+          .bq-maq,.bq-hero,.bq-porte,.bq-pied{grid-column:1 / -1;}
+          .bq-hero{height:380px;}
+          .bq-hero-c h1{font-size:46px;}
+          /* A GAUCHE, TOUT CE QU'ON LIT — y compris les horaires et le chemin :
+             ce sont des informations, pas un panneau d'action. */
+          #aujourdhui,#revient,#carte,#qui,#avis,#infos,#habitues{grid-column:1;}
+          /* A DROITE, LE MUR SEUL, ET IL COUVRE TOUTE LA COLONNE.
+             Voir rangsAGauche dans le composant : sans ce recouvrement, la
+             rangee qu'il partage prend SA hauteur et laisse cinq cents points
+             de vide sous « En ce moment ». Mesure a 1440 points. */
+          #mur{grid-column:2;grid-row:3 / span var(--bq-rangs, 6);
+            /* IL COUVRE LES RANGEES, IL NE LES REMPLIT PAS. Sans align-self,
+               la section s'etire sur toute la hauteur de la
+               colonne de gauche : chez une onglerie, dont l'essai tient en cinq
+               cents points, le cadre continuait sur trois cents points de vide.
+               Couvrir sert a ne pas deformer les rangees ; occuper n'a jamais
+               ete le but. */
+            align-self:start;}
+          /* LES BANDES PLEINE LARGEUR N'ONT PLUS DE SENS EN COLONNES : elles
+             coupaient l'ecran en travers des deux colonnes a la fois. Chaque
+             section devient une carte, et garde sa nuance. */
+          .bq-s{padding:24px 22px 22px;border-radius:20px;
+            border:1px solid var(--bq-ligne);margin-bottom:22px;}
+          .bq-s.alt{border-top:1px solid var(--bq-ligne);
+            border-bottom:1px solid var(--bq-ligne);}
+          /* LE MUR RESTE SOUS LES YEUX PENDANT QU'ON LIT LA CARTE. La marge du
+             haut evite qu'il se colle au bandeau du navigateur. */
+          #mur{position:sticky;top:16px;}
+          .bq-mur.essai{border-color:rgba(139,125,246,.3);}
+          /* LA GRILLE DU CATALOGUE ET LES AVIS RESPIRENT : la colonne de gauche
+             fait sept cents points, pas trois cent cinquante. */
+          .bq-av-l{columns:2;column-gap:16px;}
+          .bq-av-l>*{break-inside:avoid;}
+        }
+        /* AU-DELA, ON N'ELARGIT PLUS : une ligne de texte de mille points ne se
+           lit pas, elle se parcourt. On centre et on s'arrete. */
+        @media (min-width:1400px){
+          .bq{max-width:1260px;}
         }
 
         /* Une personne qui a demande moins d'animation n'a pas demande moins
