@@ -1,55 +1,75 @@
-// LA PAGE D'ACCUEIL DES HABITANTS — pour quelqu'un qui ne connaît pas Clikme.
+// LA PAGE D'ACCUEIL DES HABITANTS — d'après la maquette du propriétaire.
 //
-// CE QU'ELLE DOIT FAIRE, ET DANS CET ORDRE : faire UNE promesse — « avant d'y
-// aller, voyez ce que ça donne sur vous » —, la démontrer sans un mot, dire ce
-// qu'on va lui demander, montrer chez qui ça marche, puis pourquoi il y
-// reviendra demain. La forme et le texte sont dans `histoire.tsx`, qui porte
-// le raisonnement ; ce fichier ne tient que l'enveloppe et la feuille de style.
+// « Oula, c'est beaucoup trop compliqué à comprendre, ça manque de simplicité !
+// J'ai fait un mock-up que tu peux répliquer et animer. »
+//
+// LA MAQUETTE A RAISON CONTRE LA VERSION D'AVANT. Six chapitres qui démontraient
+// chacun une chose vraie faisaient une page qu'il fallait LIRE ; celle-ci dit la
+// même chose en quatre écrans et donne un objet à manipuler. Le raisonnement et
+// le texte sont dans `histoire.tsx` ; ce fichier ne tient que l'enveloppe, les
+// polices et la feuille de style.
 //
 // LA MARQUE EST CLIKME, ET « LE DIRECT » EST LE NOM D'UN ÉCRAN À L'INTÉRIEUR.
-// Décidé avec le propriétaire du produit. « Le direct de votre ville » était le
-// titre de cette page : c'est du vocabulaire d'initié — un inconnu ne sait pas
-// ce qu'est « le direct », et le titre lui décrivait notre technologie plutôt
-// que son problème à lui. L'adresse reste `/le-direct` parce qu'elle est
-// partagée par lien à des testeurs ; rien d'autre ne porte ce mot.
+// L'adresse reste `/le-direct` parce qu'elle est partagée par lien à des
+// testeurs ; rien d'autre ne porte ce mot en titre.
 //
 // NOINDEX, toujours : la maquette qu'elle annonce n'est pas le produit ouvert,
 // et cette page ne doit pas devenir le premier résultat pour « clikme » tant
-// qu'elle n'accueille pas de vrais commerçants. Une seule ligne à changer le
-// jour où ça bascule.
+// qu'elle n'accueille pas de vrais commerçants.
 import type { Metadata, Viewport } from "next";
+import { Caveat } from "next/font/google";
 import { MARQUE } from "@/lib/marque";
 import { Histoire } from "./histoire";
+
+/**
+ * L'ÉCRITURE MANUSCRITE DES ANNOTATIONS.
+ *
+ * ELLE FAIT LA MOITIÉ DU TON DE LA MAQUETTE. Les quatre petites phrases en
+ * travers — « Un swipe. Une envie. Une réponse. », « Votre fantôme vous
+ * accompagne » — sont ce qui empêche la page de ressembler à une brochure. En
+ * caractères d'imprimerie elles deviennent des légendes ; à la main, elles
+ * deviennent quelqu'un qui vous montre son produit.
+ *
+ * ELLE EST SERVIE PAR LE SITE, PAS PAR GOOGLE : `next/font` la télécharge à la
+ * compilation et la sert depuis notre domaine. Pas de requête vers un tiers au
+ * chargement, et pas de saut de texte quand elle arrive.
+ */
+const caveat = Caveat({
+  variable: "--ld-main",
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  display: "swap",
+});
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#05090C",
+  themeColor: "#0B0A18",
 };
 
 export const metadata: Metadata = {
-  title: { absolute: `${MARQUE} — avant d’y aller, voyez ce que ça donne sur vous` },
+  title: { absolute: `${MARQUE} — votre ville bouge, voyez ce qui se passe` },
   description:
-    "Une coupe, une monture, une tenue, un tatouage : les commerçants de votre ville publient ce qu’ils proposent aujourd’hui, et vous le voyez sur votre photo avant de vous déplacer.",
+    "Le Direct vous montre en temps réel ce qui est disponible autour de vous. Et vous pouvez l’essayer sur vous — une coupe, une tenue, des ongles, un tatouage — avant de vous déplacer.",
   robots: { index: false, follow: false },
   openGraph: {
-    title: `${MARQUE} — avant d’y aller, voyez ce que ça donne sur vous`,
+    title: `${MARQUE} — votre ville bouge, voyez ce qui se passe`,
     description:
-      "Les commerçants de votre ville publient ce qu’ils ont aujourd’hui. Vous l’essayez sur votre photo, vous en parlez à vos amis, et vous y allez — ou pas.",
+      "Voyez. Essayez. Décidez. Ce que les commerçants de votre ville proposent aujourd’hui, essayé sur votre photo avant de vous déplacer.",
     locale: "fr_FR",
     type: "website",
   },
 };
 
 /**
- * LA FEUILLE DE STYLE EST POSÉE ICI, comme sur `/autour-de-moi` : cette page
- * ne partage rien avec le reste du site, et un fichier global de plus pour
- * deux écrans serait une dette pour personne.
+ * LA FEUILLE DE STYLE EST POSÉE ICI, comme sur `/autour-de-moi` : cette page ne
+ * partage rien avec le reste du site, et un fichier global de plus pour un écran
+ * serait une dette pour personne.
  *
  * ATTENTION : PAS D'ACCENT GRAVE DANS LES COMMENTAIRES CSS ci-dessous. Ce bloc
- * est un littéral de gabarit — un seul accent grave terminerait la chaîne et
- * casserait la compilation. Le défaut a été payé sept fois sur ce projet, et
+ * est un litteral de gabarit — un seul accent grave terminerait la chaine et
+ * casserait la compilation. Le defaut a ete paye huit fois sur ce projet, et
  * `npm run verifier:styles` le mesure.
  */
 function StylesLeDirect() {
@@ -58,114 +78,227 @@ function StylesLeDirect() {
       dangerouslySetInnerHTML={{
         __html: `
 /* ═══════════════════════════════════════════════════════════════════════
-   LE MONDE DE L'APPLICATION, PAS CELUI D'UNE PAGE DE VENTE.
-   Le noir vert d'un ecran ouvert dans la rue, la menthe de ce qui est
-   vivant, l'or d'une place qui se libere, le rose de ce que la ville
-   organise, le bleu d'un poste. Quelqu'un qui descend cette page puis
-   appuie sur le bouton doit arriver dans le meme endroit — sinon la page
-   promet un produit et en livre un autre.
+   LE VIOLET PREND LA PLACE DE LA MENTHE, ET C'EST LA MAQUETTE QUI TRANCHE.
+   Le reste du produit est menthe sur noir ; cette page est violette sur
+   blanc. L'ecart se defend : le violet EST la couleur de l'essai dans
+   l'application — le bouton « Je reserve mon creneau », le fantome, la
+   pastille du rendu — et l'essai est le sujet de cette page. Quelqu'un qui
+   descend puis appuie arrive donc dans le meme monde, pas dans un autre.
    ATTENTION : jamais d'accent grave dans ces commentaires.
    ═══════════════════════════════════════════════════════════════════════ */
-.ld{--nuit:#05090C;--nuit2:#0A1210;--craie:#EAF2EC;--craie2:#93A79C;
-  --craie3:#6C8078;--menthe:#3DE2A6;--menthe2:#0BA97B;--or:#F0B429;
-  --rose:#F472B6;--bleu:#7DA8FF;
-  /* LE MAUVE EST CELUI DU COIFFEUR DANS LE PRODUIT ; LE SPECTRE N'EST LE
-     METIER DE PERSONNE — c'est la couleur du fantome, et elle ne doit
-     appartenir a aucun commerce. */
-  --mauve:#C9A7FF;--spectre:#B9C9FF;
-  --trait:rgba(234,242,236,.11);
-  background:var(--nuit);color:var(--craie);
+.ld{--violet:#7C5CFF;--violet2:#A78BFA;--violet3:#5B3FD9;
+  --encre:#14122B;--encre2:#4B4A63;--encre3:#8B8AA3;
+  --blanc:#FFFFFF;--gris:#F5F5FA;--trait:rgba(20,18,43,.1);
+  --nuit:#0B0A18;--nuit2:#161431;
+  background:var(--blanc);color:var(--encre);
   font-family:'Inter',system-ui,-apple-system,sans-serif;
   min-height:100vh;overflow-x:hidden}
 .ld *{box-sizing:border-box}
-.ld h1,.ld h2{font-family:Georgia,'Times New Roman',serif;font-weight:700;
-  letter-spacing:-.03em;line-height:1.02;margin:0;text-wrap:balance}
+.ld h1,.ld h2{font-weight:800;letter-spacing:-.035em;line-height:1.06;
+  margin:0;text-wrap:balance}
 
 /* ── CE QUI APPARAIT EN ARRIVANT DESSUS ─────────────────────────────────
    Une seule regle pour toute la page, et un retard par element (--d) pour
-   que les choses arrivent les unes apres les autres au lieu de surgir
-   ensemble. Rien ne se rejoue : la classe est posee une fois. */
-.ld [data-r]{opacity:0;transform:translate3d(0,18px,0);
-  transition:opacity .62s cubic-bezier(.16,1,.3,1) var(--d,0ms),
-             transform .62s cubic-bezier(.16,1,.3,1) var(--d,0ms)}
+   que les choses arrivent les unes apres les autres. Rien ne se rejoue. */
+.ld [data-r]{opacity:0;transform:translate3d(0,16px,0);
+  transition:opacity .6s cubic-bezier(.16,1,.3,1) var(--d,0ms),
+             transform .6s cubic-bezier(.16,1,.3,1) var(--d,0ms)}
 .ld [data-r].vu{opacity:1;transform:none}
 
-/* ── LA BARRE ───────────────────────────────────────────────────────── */
-.ld-nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;
+/* ── L'ECRITURE A LA MAIN ───────────────────────────────────────────────
+   Quatre petites phrases en travers, et elles font la moitie du ton. En
+   caracteres d'imprimerie elles deviennent des legendes ; a la main, elles
+   deviennent quelqu'un qui vous montre son produit.
+   ELLES SONT DECORATIVES : aria-hidden partout, et elles disparaissent sur
+   les ecrans etroits ou il n'y a pas de marge pour elles. */
+.ld-main{font-family:var(--ld-main),'Bradley Hand','Segoe Script',cursive;
+  font-size:clamp(17px,1.5vw,21px);line-height:1.3;color:var(--violet);
+  margin:0;pointer-events:none}
+
+/* ── LA BARRE ───────────────────────────────────────────────────────────
+   Elle flotte sur l'ouverture sombre, puis devient blanche en descendant :
+   une barre sombre sur une section blanche disparaitrait, et une barre
+   blanche sur l'ouverture sombre ecraserait le titre. */
+/* ELLE EST OPAQUE, ET C'EST UN ECART ASSUME A LA MAQUETTE. La maquette la
+   pose transparente sur la photo de l'ouverture — c'est joli, et ca ne tient
+   pas debout des qu'on descend : collee en haut, une barre translucide sombre
+   passe sur les sections BLANCHES et devient une bande grise sale. Mesure
+   faite, c'est exactement ce qu'on voyait. Soit elle est transparente et ne
+   colle pas, soit elle colle et elle est opaque. Elle colle. */
+.ld-nav{position:sticky;top:0;z-index:30;display:flex;align-items:center;
   justify-content:space-between;gap:16px;
-  padding:12px clamp(16px,4vw,40px);
-  background:rgba(5,9,12,.72);border-bottom:1px solid var(--trait);
-  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
-.ld-marque{display:inline-flex;align-items:center;gap:7px;
-  font-size:18px;font-weight:850;letter-spacing:-.03em;color:#fff}
-.ld-marque i{font-style:normal;font-size:15px;line-height:1;color:var(--menthe)}
-.ld-marque.grand{font-size:26px}
+  padding:14px clamp(16px,4vw,44px);
+  background:var(--nuit);border-bottom:1px solid rgba(255,255,255,.08)}
+.ld-marque{display:inline-flex;align-items:center;gap:9px;text-decoration:none;
+  font-size:21px;font-weight:850;letter-spacing:-.04em;color:#fff}
+.ld-marque b{color:var(--violet2);font-weight:850}
+.ld-marque i{display:block;width:26px;height:26px;color:var(--violet)}
+.ld-marque i svg{width:100%;height:100%;display:block}
+.ld-marque.grand{font-size:30px;color:var(--encre)}
+.ld-marque.grand b{color:var(--violet)}
+.ld-nav-l{display:flex;align-items:center;gap:clamp(14px,2.4vw,30px)}
+/* LES DEUX LIENS DISPARAISSENT SUR TELEPHONE, ET CE N'EST PAS DE LA PARESSE :
+   mesure a 390 points, « Decouvrir » + « Comment ca marche » + le bouton ne
+   tiennent pas, et c'est LE BOUTON qui sortait de l'ecran par la droite. Deux
+   raccourcis vers des sections qu'on atteint en faisant defiler ne valent pas
+   le seul geste que la page demande. */
+/* « :not(.ld-cta) » N'EST PAS UNE PRECAUTION, C'EST UNE CORRECTION. Ecrite
+   sans lui, la regle masquait AUSSI le bouton — un lien est un lien, et
+   celui-la en est un. Resultat mesure a 390 points : la barre ne portait plus
+   que le logo, et le seul geste que la page demande avait disparu de son
+   endroit le plus visible. */
+.ld-nav-l a:not(.ld-cta){display:none;text-decoration:none;font-size:14px;
+  font-weight:650;color:rgba(255,255,255,.82)}
+@media (min-width:720px){ .ld-nav-l a:not(.ld-cta){display:inline} }
+.ld-nav-l a:not(.ld-cta):hover{color:#fff}
 
-/* ── LE BOUTON ──────────────────────────────────────────────────────── */
-.ld-cta{display:inline-flex;align-items:center;gap:9px;text-decoration:none;
-  font-size:15.5px;font-weight:850;color:#04150E;border-radius:14px;
-  padding:14px 22px;background:linear-gradient(140deg,var(--menthe),var(--menthe2));
-  box-shadow:0 16px 34px -16px rgba(18,185,129,.9);
-  transition:transform .16s ease,box-shadow .16s ease}
-.ld-cta:hover{transform:translateY(-2px);box-shadow:0 22px 44px -18px rgba(18,185,129,1)}
+/* ── LE BOUTON ──────────────────────────────────────────────────────────
+   Un seul dessin pour tous, et il ne change que de taille. Trois boutons
+   de trois formes sur une page font trois promesses differentes. */
+.ld-cta{display:inline-flex;align-items:center;gap:10px;text-decoration:none;
+  font-size:15px;font-weight:750;color:#fff;border-radius:999px;
+  padding:14px 26px;
+  background:linear-gradient(120deg,var(--violet),var(--violet3));
+  box-shadow:0 14px 34px -12px rgba(124,92,255,.75);
+  transition:transform .16s ease,box-shadow .16s ease;white-space:nowrap}
+.ld-cta s{text-decoration:none;font-size:15px;line-height:1;
+  transition:transform .18s ease}
+.ld-cta:hover{transform:translateY(-2px);box-shadow:0 20px 44px -14px rgba(124,92,255,.9)}
+.ld-cta:hover s{transform:translateX(3px)}
 .ld-cta:active{transform:scale(.98)}
-.ld-cta:focus-visible{outline:2px solid var(--menthe);outline-offset:3px}
-.ld-cta.grand{font-size:17px;padding:17px 30px}
-.ld-cta.petit{font-size:13.5px;padding:9px 16px;border-radius:11px}
+.ld-cta:focus-visible{outline:2px solid var(--violet2);outline-offset:3px}
+.ld-cta.grand{font-size:16.5px;padding:17px 34px}
+.ld-cta.petit{font-size:13.5px;padding:10px 18px;
+  background:transparent;color:#fff;box-shadow:none;
+  border:1px solid rgba(255,255,255,.32)}
+.ld-cta.petit:hover{background:rgba(255,255,255,.1);transform:none}
+/* LE BOUTON CREUX — le second geste d'une section. Il est un lien souligne
+   par sa bordure et non un bouton plein : deux boutons pleins de meme poids
+   obligent a choisir, et on ne choisit pas, on referme. */
+.ld-creux{display:inline-flex;align-items:center;gap:9px;text-decoration:none;
+  font-size:14.5px;font-weight:700;color:var(--encre);
+  border:1px solid var(--trait);border-radius:999px;padding:13px 24px;
+  background:var(--blanc);transition:border-color .16s ease,transform .16s ease}
+.ld-creux s{text-decoration:none;color:var(--violet);
+  transition:transform .18s ease}
+.ld-creux:hover{border-color:var(--violet);transform:translateY(-1px)}
+.ld-creux:hover s{transform:translateX(3px)}
 
-/* ── L'OUVERTURE ────────────────────────────────────────────────────── */
-.ld-hero{position:relative;overflow:hidden;
-  padding:clamp(56px,11vh,120px) clamp(20px,5vw,48px) clamp(40px,7vh,80px)}
-.ld-hero-mot{position:relative;z-index:1;max-width:900px;margin:0 auto;
-  display:flex;flex-direction:column;align-items:center;gap:20px;
-  text-align:center}
-/* LES TROIS HALOS. Ils bougent lentement — vingt-deux secondes pour un
-   tour — parce que c'est la seule animation qui tourne en continu sur
-   cette page : au-dela, on la sent, et une page qui palpite fatigue. */
-.ld-halo{position:absolute;inset:-20% -10% auto;height:120%;pointer-events:none;
-  filter:blur(70px);opacity:.5}
-.ld-halo i{position:absolute;display:block;border-radius:50%}
-.ld-halo i:nth-child(1){width:44vw;height:44vw;left:4%;top:-6%;
-  background:rgba(61,226,166,.34);animation:ldFlotte 22s ease-in-out infinite}
-.ld-halo i:nth-child(2){width:36vw;height:36vw;right:2%;top:6%;
-  background:rgba(125,168,255,.26);animation:ldFlotte 27s ease-in-out infinite reverse}
-.ld-halo i:nth-child(3){width:30vw;height:30vw;left:38%;top:34%;
-  background:rgba(244,114,182,.2);animation:ldFlotte 32s ease-in-out infinite}
-@keyframes ldFlotte{
-  0%,100%{transform:translate3d(0,0,0) scale(1)}
-  50%{transform:translate3d(4%,6%,0) scale(1.12)}
-}
-.ld-oeil{margin:0;font-size:11px;font-weight:850;letter-spacing:.2em;
-  text-transform:uppercase;color:var(--menthe)}
-.ld-t1{font-size:clamp(40px,7.6vw,88px)}
-.ld-t2{font-size:clamp(28px,4.4vw,52px)}
-.ld-t2 span{display:block;color:var(--menthe)}
-.ld-s{margin:0;font-size:clamp(15px,1.55vw,19px);line-height:1.6;
-  color:var(--craie2);max-width:52ch}
-.ld-s b{color:var(--craie);font-weight:700}
-.ld-n{margin:0;font-size:12.5px;color:var(--craie3)}
-.ld-hero-b{display:flex;flex-direction:column;align-items:center;gap:11px}
+/* ── 1 · L'OUVERTURE ────────────────────────────────────────────────────
+   PAS DE PHOTO DE VILLE, ET CE N'EST PAS UN OUBLI. Le depot n'en contient
+   aucune qui respecte sa propre regle — ni enseigne lisible, ni visage. On
+   pose donc une texture chaude, floutee et assombrie au point que rien n'y
+   est identifiable, et le jour ou une photo de Dax arrive elle prend sa
+   place en changeant une ligne. */
+.ld-hero{position:relative;overflow:hidden;background:var(--nuit);
+  padding:clamp(44px,7vh,80px) clamp(20px,5vw,44px) clamp(40px,6vh,70px)}
+.ld-hero-fond{position:absolute;inset:0;
+  background:
+    radial-gradient(80% 70% at 78% 40%,rgba(124,92,255,.3),transparent 62%),
+    radial-gradient(60% 60% at 12% 18%,rgba(255,168,90,.18),transparent 64%),
+    url('/direct/terrasse-au-soleil.jpg') center/cover;
+  filter:blur(2px) saturate(.85);opacity:.42}
+.ld-hero::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(11,10,24,.72),rgba(11,10,24,.42) 40%,
+    rgba(11,10,24,.9))}
+.ld-hero-in{position:relative;z-index:2;max-width:1180px;margin:0 auto;
+  display:grid;gap:clamp(26px,4vw,50px);align-items:center;
+  grid-template-columns:1fr}
+.ld-hero-mot{display:flex;flex-direction:column;align-items:flex-start;gap:18px}
+.ld-oeil{margin:0;font-size:11px;font-weight:800;letter-spacing:.17em;
+  text-transform:uppercase;color:rgba(255,255,255,.66)}
+.ld-oeil.v{color:var(--violet)}
+.ld-t1{font-size:clamp(36px,5.6vw,62px);color:#fff}
+.ld-t1 span{display:block;color:var(--violet2)}
+.ld-t2{font-size:clamp(28px,3.7vw,44px)}
+.ld-t2 span{display:block;color:var(--violet)}
+.ld-hero .ld-t2 span{color:var(--violet2)}
+.ld-s{margin:0;font-size:clamp(15px,1.35vw,18px);line-height:1.6;
+  color:rgba(255,255,255,.8);max-width:34ch}
+.ld-s b{color:#fff;font-weight:700}
+.ld-hero-b{display:flex;flex-wrap:wrap;align-items:center;gap:14px}
+/* LE TELEPHONE EST INCLINE, COMME DANS LA MAQUETTE. Pose droit il a l'air
+   d'une capture d'ecran ; incline de six degres il a l'air tenu. */
+/* IL EST INCLINE ET PLUS PETIT QUE DANS LE RESTE DU PRODUIT. Pose droit il a
+   l'air d'une capture d'ecran ; incline de cinq degres il a l'air tenu. Et a
+   l'echelle de l'application il remplissait toute l'ouverture : ici il est une
+   illustration a cote d'un titre, pas l'ecran principal. */
+.ld-hero-tel{position:relative;display:flex;justify-content:center;
+  transform:rotate(-5deg)}
+.ld-hero-tel .ld-vitrine{margin:0}
+.ld-hero-tel .ld-vt{--ld-vt-k:.58}
+@media (min-width:900px){ .ld-hero-tel .ld-vt{--ld-vt-k:.66} }
+.ld-main.a{position:absolute;right:-6px;top:8%;transform:rotate(-7deg);
+  text-align:left;color:#fff;display:none}
 
-/* ── LE SOMMAIRE EN QUATRE GESTES A DISPARU ─────────────────────────────
-   « Je vois · J'essaie · J'en parle · On y va » resumait une page qui
-   racontait quatre situations. La page n'en raconte plus aucune : elle fait
-   une promesse, la demontre, puis l'ouvre. Un sommaire qui annonce un plan
-   qui n'existe plus est la premiere chose qu'on retire. */
-   LA VITRINE VIVANTE — voir vitrine.tsx pour le pourquoi.
+/* ── LES SECTIONS CLAIRES, EN DEUX COLONNES ─────────────────────────────
+   MEME GABARIT POUR LES DEUX, et la seconde inverse l'ordre. Deux mises en
+   page differentes pour deux sections qui font la meme chose obligeraient a
+   reapprendre a lire au milieu de la page. */
+.ld-clair{background:var(--blanc);
+  padding:clamp(52px,8vh,104px) clamp(20px,5vw,44px)}
+.ld-clair.gris{background:var(--gris)}
+.ld-deux{position:relative;max-width:1180px;margin:0 auto;display:grid;
+  gap:clamp(26px,4vw,58px);align-items:center;grid-template-columns:1fr}
+.ld-deux-d{display:flex;flex-direction:column;align-items:flex-start;gap:16px}
+.ld-p{margin:0;font-size:clamp(15px,1.3vw,17px);line-height:1.65;
+  color:var(--encre2);max-width:42ch}
+.ld-deux-f{display:none}
+.ld-main.b{text-align:right;transform:rotate(-6deg)}
+.ld-main.c{position:absolute;right:0;bottom:14%;transform:rotate(-6deg);
+  text-align:left;display:none;max-width:16ch}
 
-   ELLE EST LE SEUL OBJET DE CETTE PAGE QUI BOUGE TOUT SEUL, et c'est
-   volontaire : tout ce qui bouge attire, donc il ne peut y en avoir qu'un.
-   ═══════════════════════════════════════════════════════════════════════ */
-.ld-vitrine{display:flex;flex-direction:column;align-items:center;gap:14px;
-  margin:36px auto 0;}
+/* ── 2 · LA SECTION QU'ON MANIPULE ──────────────────────────────────────
+   « Quand section 2 on clique sur un metier on a un exemple anime. »
+   Le panneau a gauche, la colonne des metiers au milieu : c'est la
+   maquette, et c'est aussi la seule facon de faire comprendre ce produit
+   sans l'expliquer — on donne un objet, pas un argumentaire. */
+.ld-es{display:grid;gap:16px;grid-template-columns:1fr auto;align-items:center}
+.ld-es-vue{border-radius:24px;overflow:hidden;background:var(--gris);
+  box-shadow:0 28px 60px -34px rgba(20,18,43,.4),
+    0 0 0 1px rgba(20,18,43,.07);
+  animation:ldEntre .45s cubic-bezier(.16,1,.3,1) both}
+@keyframes ldEntre{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+.ld-es-vue .ld-miroir{border-radius:0;border:0;box-shadow:none;aspect-ratio:4/5}
+.ld-es-vue .ld-miroir-h{margin:0;max-width:none}
+/* LA PIECE SEULE, QUAND ON N'A PAS DE PAIRE. On montre ce qu'on essaie, pas
+   un resultat : poser la photo d'un mannequin sous l'etiquette « apres »
+   serait exactement le mensonge que ce produit combat. */
+.ld-es-p{position:relative;margin:0;aspect-ratio:4/5;overflow:hidden}
+.ld-es-pi{width:100%;height:100%;object-fit:cover;display:block}
+.ld-es-p figcaption{position:absolute;left:0;right:0;bottom:0;
+  display:flex;flex-direction:column;gap:2px;padding:44px 16px 14px;
+  background:linear-gradient(180deg,transparent,rgba(11,10,24,.88))}
+.ld-es-chez{font-size:10.5px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:rgba(255,255,255,.62)}
+.ld-es-p b{font-size:17px;font-weight:800;color:#fff}
+.ld-es-p em{font-style:normal;font-size:15px;font-weight:800;color:var(--violet2)}
+/* LA COLONNE DES METIERS. Une vignette et un mot : la vignette dit de quoi
+   on parle avant qu'on ait lu le mot, et c'est elle qui donne envie
+   d'appuyer. */
+.ld-es-l{display:flex;flex-direction:column;gap:8px}
+.ld-es-l button{display:flex;align-items:center;gap:11px;font-family:inherit;
+  cursor:pointer;padding:5px 12px 5px 5px;border-radius:16px;
+  border:1px solid transparent;background:transparent;color:var(--encre2);
+  transition:background .16s ease,border-color .16s ease,color .16s ease}
+.ld-es-l button span{font-family:var(--ld-main),'Bradley Hand',cursive;
+  font-size:19px;font-weight:600;white-space:nowrap}
+.ld-es-v{width:48px;height:60px;object-fit:cover;border-radius:11px;
+  display:block;transition:transform .18s ease}
+.ld-es-l button:hover{background:rgba(124,92,255,.07);color:var(--encre)}
+.ld-es-l button.on{background:rgba(124,92,255,.11);
+  border-color:rgba(124,92,255,.34);color:var(--violet3)}
+.ld-es-l button.on .ld-es-v{transform:scale(1.06)}
+.ld-es-l button:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
 
-/* LE TELEPHONE EST DESSINE, PAS PHOTOGRAPHIE : une image de telephone pese
-   deux cents kilo-octets, vieillit avec les modeles et impose sa couleur.
-   IL S'APPELLE ld-vt ET NON ld-tel : ce nom-la existe deja plus bas, pour
-   les cadres qui entourent les captures des quatre situations. Deux objets
-   differents sous le meme nom heritent l'un de l'autre, et le resultat depend
-   de l'ordre d'ecriture — la garde des styles compte trois occasions ou ce
-   projet l'a paye. */
+/* ═══ LE TELEPHONE DESSINE ET LE MIROIR ═══════════════════════════════════
+   REPRIS TELS QUELS DE LA VERSION PRECEDENTE. Ces deux objets sont les seuls
+   que la maquette garde : le telephone incline de l'ouverture, et la
+   glissiere avant/apres de la section 2. Leur raisonnement complet — pourquoi
+   le cadre est dessine et non photographie, pourquoi le calque est masque et
+   non retreci, pourquoi le facteur d'echelle est un nombre nu — est dans les
+   commentaires ci-dessous, et chacun paie une faute deja commise. */
+
 /* ON REDUIT LA CARTE, ON NE LA RETRECIT PAS — ET C'EST TOUTE LA DIFFERENCE.
    Premier jet : la carte remplissait le cadre, donc elle etait MISE EN PAGE
    pour 282 points de large. Resultat : « MENU DU J... », « LASAGNE▌ » coupe au
@@ -239,131 +372,12 @@ function StylesLeDirect() {
   top:50%;transform:translateY(-50%);text-decoration:none;
   font-size:17px;color:var(--menthe);opacity:.8}
 
-/* ── UNE SITUATION ──────────────────────────────────────────────────── */
-.ld-cas{position:relative;padding:clamp(56px,9vh,110px) clamp(16px,4vw,48px);
-  border-top:1px solid var(--trait)}
-.ld-cas-h{max-width:760px;margin:0 auto;display:flex;flex-direction:column;
-  align-items:center;gap:14px;text-align:center}
-/* L'HEURE EN TETE DE CHAQUE CAS. C'est elle qui fait qu'on se reconnait :
-   « 11 h 45 » se lit comme un moment de sa propre journee, « restauration »
-   se lit comme une categorie. */
-.ld-quand{display:inline-flex;align-items:center;gap:8px;margin:0;
-  font-size:12px;font-weight:850;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--ton,var(--menthe));
-  background:color-mix(in srgb,var(--ton,var(--menthe)) 13%,transparent);
-  border:1px solid color-mix(in srgb,var(--ton,var(--menthe)) 34%,transparent);
-  border-radius:999px;padding:7px 15px}
-.ld-quand i{font-style:normal;font-size:9px;line-height:1;
-  animation:ldBat 2.4s ease-in-out infinite}
-@keyframes ldBat{0%,100%{opacity:1}50%{opacity:.3}}
-.ld-cas.t-menthe{--ton:var(--menthe)}
-.ld-cas.t-or{--ton:var(--or)}
-.ld-cas.t-rose{--ton:var(--rose)}
-.ld-cas.t-bleu{--ton:var(--bleu)}
-.ld-cas.t-ville{--ton:var(--menthe)}
-.ld-cas .ld-t2 span{color:var(--ton)}
-
-/* ── LA BANDE DES ECRANS ────────────────────────────────────────────────
-   Sur telephone, elle se fait defiler au doigt avec un arret sur chaque
-   ecran : trois captures empilees verticalement font une page
-   interminable. Au-dela, elles se rangent cote a cote et se lisent comme
-   une bande dessinee — c'est exactement ce qu'elles sont. */
-/* JUSTIFY-CONTENT: SAFE CENTER, ET C'EST LE CORRECTIF D'UN DEFAUT MESURE.
-   Un conteneur qui defile et dont le contenu est centre deborde des DEUX
-   cotes : le navigateur ouvre alors la page au milieu de la bande, et sur
-   telephone on arrivait sur le DEUXIEME ecran — l'histoire commencait par
-   son milieu. Vu sur la capture. Le mot-cle safe rend l'alignement au debut
-   des que ca deborde, et garde le centrage quand tout tient. */
-.ld-bande{display:flex;gap:clamp(14px,2.6vw,34px);justify-content:center;
-  justify-content:safe center;
-  align-items:flex-start;
-  margin:clamp(30px,5vh,54px) auto 0;max-width:1180px;
-  overflow-x:auto;scroll-snap-type:x mandatory;
-  padding:0 max(0px,calc((100% - 1180px)/2)) 6px;
-  scrollbar-width:none}
-.ld-bande::-webkit-scrollbar{display:none}
-.ld-ec{flex:0 0 auto;width:min(268px,64vw);margin:0;scroll-snap-align:center;
-  display:flex;flex-direction:column;gap:14px}
-.ld-tel{position:relative;border-radius:30px;padding:7px;
-  background:linear-gradient(170deg,rgba(234,242,236,.17),rgba(234,242,236,.03));
-  box-shadow:0 0 0 1px rgba(0,0,0,.7),0 40px 80px -34px rgba(0,0,0,.95);
-  transition:transform .5s cubic-bezier(.16,1,.3,1)}
-.ld-ec:hover .ld-tel{transform:translateY(-6px)}
-.ld-img{display:block;width:100%;height:auto;border-radius:23px}
-/* LE RANG DE L'ECRAN DANS L'HISTOIRE. Sans lui, trois captures cote a cote
-   sont trois options ; avec lui, ce sont trois moments. */
-.ld-rang{position:absolute;left:-9px;top:-9px;z-index:2;
-  display:flex;align-items:center;justify-content:center;
-  width:34px;height:34px;border-radius:50%;
-  font-size:15px;font-weight:850;color:#04150E;
-  background:var(--ton,var(--menthe));
-  box-shadow:0 8px 20px -8px rgba(0,0,0,.9)}
-.ld-dit{margin:0;font-size:14px;line-height:1.5;color:var(--craie2)}
-/* LE DERNIER ECRAN D'UN CAS SE DISTINGUE, et c'est tout l'argument de la
-   page : voir ce qui se passe, tout le monde le fait ; conclure, personne. */
-.ld-ec.fin .ld-tel{box-shadow:0 0 0 1px rgba(0,0,0,.7),
-  0 0 0 2px color-mix(in srgb,var(--ton,var(--menthe)) 70%,transparent),
-  0 46px 90px -34px color-mix(in srgb,var(--ton,var(--menthe)) 55%,transparent)}
-.ld-ec.fin .ld-dit{color:var(--craie)}
-/* LA PASTILLE PREND SA LIGNE. En inline-flex, la legende repartait sur la
-   meme ligne juste apres elle — « Decide en dix minutes Camille y est deja » —
-   et les deux se lisaient comme une seule phrase. Vu sur la capture. */
-.ld-fin-b{display:flex;width:fit-content;align-items:center;gap:6px;
-  margin-bottom:8px;
-  font-size:11.5px;font-weight:850;letter-spacing:.02em;
-  color:color-mix(in srgb,var(--ton,var(--menthe)) 88%,white);
-  background:color-mix(in srgb,var(--ton,var(--menthe)) 14%,transparent);
-  border:1px solid color-mix(in srgb,var(--ton,var(--menthe)) 38%,transparent);
-  border-radius:999px;padding:5px 11px}
-.ld-fin-b i{font-style:normal;font-size:11px;line-height:1}
-.ld-chute{max-width:660px;margin:clamp(26px,4vh,44px) auto 0;text-align:center;
-  font-size:clamp(16px,1.9vw,22px);line-height:1.5;color:var(--craie);
-  font-family:Georgia,'Times New Roman',serif;text-wrap:balance}
-
-/* ── LA VILLE : UN ECRAN, ET CE QUI LE PROTEGE ──────────────────────── */
-.ld-bande.une{align-items:center;overflow:visible;flex-wrap:wrap}
-.ld-atouts{flex:1 1 320px;max-width:460px;list-style:none;margin:0;padding:0;
-  display:flex;flex-direction:column;gap:10px}
-.ld-atouts li{display:grid;grid-template-columns:30px 1fr;gap:12px;
-  align-items:start;padding:14px 16px;border-radius:16px;
-  background:var(--nuit2);border:1px solid var(--trait)}
-.ld-atouts i{font-style:normal;font-size:19px;line-height:1.2}
-.ld-atouts b{display:block;font-size:15px;font-weight:800;margin-bottom:2px}
-.ld-atouts span{font-size:13.5px;line-height:1.45;color:var(--craie2)}
-
-/* ── CE QUE CHAQUE CAS APPORTE ──────────────────────────────────────────
-   Les captures montrent le mecanisme ; ces trois points disent ce qu'on y
-   gagne. Sans eux, on comprend comment ca marche et on referme sans savoir
-   pourquoi on l'installerait. */
-.ld-atouts.cas{flex:none;max-width:940px;margin:clamp(26px,4vh,44px) auto 0;
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:12px}
-.ld-atouts.cas li{border-color:color-mix(in srgb,var(--ton,var(--menthe)) 24%,transparent);
-  background:color-mix(in srgb,var(--ton,var(--menthe)) 6%,var(--nuit2))}
-.ld-atouts.cas b{color:#fff}
-.ld-atouts.cas i{color:var(--ton,var(--menthe))}
-
-/* ── L'ESSAI SUR SOI, ET LE FANTOME QU'IL LAISSE ────────────────────────
-   CES DEUX CHAPITRES MANQUAIENT, ET C'ETAIT TOUT LE DEFAUT DE LA PAGE.
-   Mesure avant ecriture : le mot « essai » n'apparaissait nulle part dans
-   cette page, le mot « fantome » non plus. Elle racontait quatre situations
-   vraies — le midi, le desistement, le concert, le poste — que n'importe
-   quelle autre application pourrait raconter. Ce qui ne se trouve nulle part
-   ailleurs etait absent.
-
-   DEUX TEINTES DE PLUS, ET ELLES SE JUSTIFIENT. Chaque chapitre porte la
-   sienne depuis le debut de cette page ; deux nouveaux chapitres sous une
-   teinte deja prise se liraient comme la suite du precedent. Le mauve est
-   celui du coiffeur dans le produit, le spectre est une couleur qu'aucun
-   commerce n'a — le fantome n'est le metier de personne. */
-.ld-cas.t-essai{--ton:var(--mauve)}
-.ld-cas.t-fantome{--ton:var(--spectre)}
 
 /* ── LE MIROIR : ON TIRE LE TRAIT, ON NE LIT PAS UNE LEGENDE ────────────
    Deux photos cote a cote laissent le lecteur chercher la difference ; une
    glissiere la lui fait produire. C'est le seul endroit de la page ou l'on
    touche quelque chose, et ce n'est pas un ornement : ce produit se joue. */
-.ld-miroir-h{display:flex;justify-content:center;
-  margin:clamp(26px,4vh,44px) auto 0;max-width:560px}
+.ld-miroir-h{display:flex;justify-content:center;margin:0 auto;max-width:560px}
 /* LE CADRE EST AU FORMAT DES PHOTOS, 4/3, ET NON CARRE. Recadrees en carre,
    les deux images perdaient la table basse par les cotes — c'est-a-dire
    l'endroit ou les bougies apparaissent. */
@@ -415,186 +429,153 @@ function StylesLeDirect() {
 .ld-mi-r::-moz-range-thumb{width:44px;height:100%;border:0;background:transparent}
 .ld-mi-r:focus-visible{outline:2px solid var(--ton);outline-offset:3px;opacity:1}
 
-/* ── LE MUR DES FANTOMES ────────────────────────────────────────────────
-   TROIS ESSAIS, TROIS VERDICTS DIFFERENTS, ET C'EST TOUT LE PROPOS : une
-   qui a pris, une qui est passee, une qui hesite encore et le dit. Un mur
-   ou tout le monde achete n'est pas un mur, c'est une page d'avis. */
-.ld-laisse{list-style:none;margin:clamp(26px,4vh,44px) auto 0;padding:0;
-  max-width:940px;display:grid;gap:12px;
-  grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
-.ld-laisse li{display:flex;gap:12px;padding:12px;border-radius:18px;
-  background:color-mix(in srgb,var(--ton) 6%,var(--nuit2));
-  border:1px solid color-mix(in srgb,var(--ton) 22%,transparent)}
-.ld-la-p{position:relative;flex:0 0 96px;width:96px;height:118px;
-  border-radius:13px;overflow:hidden;background:#0A1210}
-.ld-la-p img{width:100%;height:100%;object-fit:cover}
-/* LE VERDICT EST SUR LA PHOTO, PAS A COTE. C'est la premiere chose qu'on
-   cherche sur le mur de quelqu'un d'autre — « elle l'a pris ou pas ? » — et
-   il doit se lire sans avoir a relire le message. */
-.ld-la-v{position:absolute;left:6px;bottom:6px;display:inline-flex;
-  align-items:center;gap:4px;font-size:10px;font-weight:850;
-  letter-spacing:.06em;text-transform:uppercase;border-radius:999px;
-  padding:4px 8px;color:#05090C}
-.ld-la-v i{font-style:normal;font-size:10px;line-height:1}
-.ld-la-v.pris{background:var(--menthe)}
-.ld-la-v.passe{background:var(--craie2)}
-.ld-la-v.hesite{background:var(--mauve)}
-.ld-la-d{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:6px}
-.ld-la-q{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;margin:0}
-.ld-la-q b{font-size:14.5px;font-weight:850;color:#fff}
-.ld-la-q em{font-style:normal;font-size:12px;color:var(--ton)}
-.ld-la-q s{text-decoration:none;font-size:11px;color:var(--craie3);
-  margin-left:auto}
-.ld-la-m{margin:0;font-size:13px;line-height:1.45;color:var(--craie)}
-.ld-la-i{display:inline-flex;align-items:center;gap:6px;margin:auto 0 0;
-  font-size:11.5px;font-weight:700;color:var(--craie2)}
-.ld-la-i i{font-style:normal;color:var(--ton)}
 
-/* ── L'ESSAI, PAR-DESSUS LA PAGE ────────────────────────────────────────
+/* ── 3 · LE SALON ───────────────────────────────────────────────────────
+   Une vraie capture dans le telephone dessine. La maquette y met une
+   conversation redessinee ; on prefere celle qui existe, parce qu'une page
+   qui redessine son produit en plus joli promet un ecran qui n'existe pas. */
+/* LE TELEPHONE SE CALE A GAUCHE DE SA COLONNE SUR LES GRANDS ECRANS, et ce
+   n'est pas un choix esthetique : l'annotation manuscrite se pose a droite, et
+   centre, le telephone la recouvrait — mesure faite, cinquante points de
+   chevauchement, deux textes l'un sur l'autre. */
+.ld-sal{position:relative;display:flex;justify-content:center}
+@media (min-width:900px){ .ld-sal{justify-content:flex-start} }
+.ld-sal .ld-vt{transform:rotate(3deg)}
+.ld-sal .ld-vt-ecran img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* ── 4 · LA BANDE SOMBRE ────────────────────────────────────────────────
+   SON FOND A CHANGE, ET C'ETAIT UNE FAUTE DE REGLE. Il portait
+   vitrine-du-soir.jpg — la devanture eclairee de LA COMMANDERIE, dont
+   l'enseigne reste lisible sous six points de flou et trente pour cent
+   d'opacite. Le LISEZ-MOI du depot l'ecarte nommement pour cette raison : une
+   enseigne identifiable ferait passer un vrai commercant pour un client de
+   ClikMe sans qu'il ait rien signe, et une page d'accueil est le pire endroit
+   ou le faire. concert-kiosque.jpg ne montre que des silhouettes a
+   contre-jour : ni visage reconnaissable, ni marque, et il dit mieux ce que
+   cette bande raconte — une ville qui bouge le soir.
+   Elle ferme la page comme l'ouverture l'a commencee, et elle porte la
+   seule enumeration de la page — placee tout a la fin, apres trois
+   demonstrations, parce qu'une liste posee avant une preuve se lit comme un
+   catalogue. */
+.ld-bande{position:relative;overflow:hidden;background:var(--nuit);
+  padding:clamp(52px,8vh,100px) clamp(20px,5vw,44px)}
+.ld-bande-fond{position:absolute;inset:0;
+  background:
+    radial-gradient(70% 80% at 80% 50%,rgba(124,92,255,.28),transparent 64%),
+    url('/direct/concert-kiosque.jpg') center/cover;
+  filter:blur(6px) saturate(.7);opacity:.3}
+.ld-bande::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(11,10,24,.86),rgba(11,10,24,.7))}
+.ld-bande-in{position:relative;z-index:2;max-width:1180px;margin:0 auto;
+  display:flex;flex-direction:column;align-items:flex-start;gap:16px}
+.ld-bande .ld-t2{color:#fff}
+.ld-fam{display:flex;flex-wrap:wrap;gap:clamp(18px,3.4vw,44px);
+  list-style:none;margin:clamp(16px,3vh,30px) 0 0;padding:0}
+.ld-fam li{display:flex;flex-direction:column;align-items:center;gap:8px;
+  min-width:64px}
+.ld-fam i{font-style:normal;font-size:26px;line-height:1}
+.ld-fam span{font-size:12.5px;font-weight:650;color:rgba(255,255,255,.74);
+  white-space:nowrap}
+.ld-bande-f{display:none}
+.ld-main.d{text-align:right;transform:rotate(-5deg);color:#fff}
+
+/* ── LE FANTOME, DESSINE ────────────────────────────────────────────────
+   Il flotte lentement — sept secondes par tour — parce que c'est la seule
+   chose qui bouge en continu sur cette page, et qu'au-dela on la sent. */
+.ld-f3{display:block;width:clamp(76px,8vw,112px);
+  filter:drop-shadow(0 18px 34px rgba(124,92,255,.55));
+  animation:ldFlotteF 7s ease-in-out infinite}
+.ld-f3 svg{width:100%;height:auto;display:block}
+.ld-f3.petit{width:clamp(58px,6vw,84px)}
+@keyframes ldFlotteF{
+  0%,100%{transform:translateY(0) rotate(-2deg)}
+  50%{transform:translateY(-11px) rotate(2deg)}
+}
+
+/* ── LE PIED ────────────────────────────────────────────────────────────
+   Clair, centre, et il porte la derniere promesse : trois verbes, un
+   bouton, et l'aveu que c'est une maquette. */
+.ld-pied{position:relative;background:var(--gris);text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+  padding:clamp(50px,8vh,96px) clamp(20px,5vw,44px) clamp(38px,6vh,64px)}
+.ld-slogan{margin:6px 0 0;font-size:clamp(19px,2.6vw,30px);font-weight:850;
+  letter-spacing:.1em;color:var(--encre)}
+.ld-pied-s{margin:0;font-size:14.5px;color:var(--encre2)}
+/* LES DEUX BADGES NE SONT NI DES LIENS NI DES BOUTONS, et c'est deliberé :
+   il n'y a pas d'application a telecharger. Un badge de magasin qui ne mene
+   nulle part est la promesse la plus concrete qu'une page puisse rompre. */
+.ld-magasins{display:flex;flex-wrap:wrap;justify-content:center;gap:11px;
+  margin:8px 0 4px}
+.ld-mag{display:inline-flex;align-items:center;gap:9px;
+  padding:9px 16px;border-radius:12px;background:var(--encre);
+  color:#fff;opacity:.42;cursor:default}
+.ld-mag i{font-style:normal;font-size:18px;line-height:1}
+.ld-mag em{display:flex;flex-direction:column;font-style:normal;
+  font-size:9px;letter-spacing:.04em;text-align:left;line-height:1.25}
+.ld-mag b{font-size:13px;font-weight:750}
+.ld-main.e{margin-top:10px;transform:rotate(-4deg)}
+.ld-pied-n{margin:18px 0 0;max-width:58ch;font-size:11.5px;line-height:1.6;
+  color:var(--encre3)}
+.ld-pied-n b{color:var(--encre2);font-weight:700}
+
+/* ── L'APPLICATION, PAR-DESSUS LA PAGE ──────────────────────────────────
    DEFAUT MESURE A L'USAGE : « quand je clique dessus je pars sur une autre
    page et je ne peux pas revenir facilement, et sur telephone on sait que si
-   la personne part elle ne reviendra plus ». Une page d'accueil dont le seul
-   bouton est une porte sans poignee de retour depense en une seconde tout ce
-   qu'elle a mis deux minutes a construire.
-   L'application s'ouvre donc PAR-DESSUS, plein ecran, avec une seule chose en
-   plus : un bouton pour fermer. On ferme, on est exactement la ou l'on
-   s'etait arrete. */
-.ld-essai{position:fixed;inset:0;z-index:80;background:#05090C;
-  animation:ldEssai .22s ease both}
-@keyframes ldEssai{from{opacity:0}to{opacity:1}}
+   la personne part elle ne reviendra plus ». Elle se pose donc par-dessus,
+   avec une seule chose en plus : fermer. */
+.ld-essai{position:fixed;inset:0;z-index:80;background:var(--nuit);
+  display:flex;flex-direction:column}
 .ld-essai iframe{display:block;width:100%;height:100%;border:0}
-/* IL FLOTTE EN BAS, PAS EN HAUT. Le haut de l'application porte deja ses
-   propres commandes, et un pouce ne monte pas jusqu'au coin oppose. La marge
-   du bas evite la barre d'accueil des telephones sans bouton. */
 .ld-essai-x{position:absolute;left:50%;transform:translateX(-50%);
-  bottom:calc(14px + env(safe-area-inset-bottom));z-index:1;
-  display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:13.5px;
-  font-weight:850;cursor:pointer;color:#04150E;border:0;border-radius:999px;
-  padding:11px 20px;background:#EAF2EC;
-  box-shadow:0 12px 30px -10px rgba(0,0,0,.9)}
+  bottom:calc(14px + env(safe-area-inset-bottom));z-index:2;
+  display:inline-flex;align-items:center;gap:7px;font-family:inherit;
+  font-size:13.5px;font-weight:800;color:#fff;cursor:pointer;
+  border-radius:999px;padding:11px 20px;border:1px solid rgba(255,255,255,.2);
+  background:rgba(11,10,24,.86);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .ld-essai-x i{font-style:normal;font-size:12px;line-height:1}
 .ld-essai-x:active{transform:translateX(-50%) scale(.97)}
 
-/* ── LE SALON PRIVE, ET CE QUI A ETE RETIRE AVEC LUI ────────────────────
-   CENT CINQUANTE LIGNES DE STYLE SONT PARTIES ICI, avec les deux cartes
-   « portes », le fil de conversation dessine et la jauge animee du salon
-   public a seuil.
-   LE SALON PUBLIC ETAIT MARQUE « BIENTOT », et c'est la seule raison qui
-   compte : sur une page qui doit convaincre quelqu'un qui ne connait pas le
-   produit, une promesse non livree coute plus qu'elle ne rapporte. Il
-   reviendra le jour ou il existe dans l'application.
-   LE SALON PRIVE, LUI, RESTE — mais en UN ecran et trois points, avec les
-   classes qui servaient deja aux autres chapitres (.ld-bande, .ld-atouts).
-   Un chapitre qui demande sa propre feuille de style est un chapitre qui
-   pretend etre plus important que les autres. */
+/* ── LES ECRANS LARGES ──────────────────────────────────────────────────
+   TOUT CE QUI SUIT N'EXISTE QU'AU-DELA DE 900 POINTS : les deux colonnes,
+   les annotations manuscrites et les fantomes. Sur un telephone il n'y a de
+   place ni pour une seconde colonne ni pour une phrase en travers, et les
+   entasser ferait exactement ce qu'on vient de corriger — une page trop
+   chargee pour etre comprise. */
+@media (min-width:900px){
+  .ld-hero{padding-top:clamp(56px,9vh,110px)}
+  .ld-hero-in{grid-template-columns:1.05fr .95fr}
+  .ld-main.a{display:block}
+  .ld-deux{grid-template-columns:1.05fr .95fr}
+  .ld-deux.inverse .ld-deux-d{order:1}
+  .ld-deux.inverse .ld-deux-g{order:2}
+  .ld-main.c{display:block}
+  /* LE FANTOME ET SON ANNOTATION SE POSENT DANS LA MARGE, sans pousser la
+     mise en page : ils sont absolus, donc ils n'ont pas de hauteur. */
+  .ld-deux-f{display:flex;align-items:center;gap:12px;
+    position:absolute;right:0;top:-6px}
+  .ld-bande-f{display:flex;align-items:center;gap:14px;
+    position:absolute;right:0;bottom:6px}
+  .ld-bande-in{position:relative;padding-right:clamp(200px,22vw,330px)}
+}
 
-/* ── LES TROIS GESTES, EN TROIS VRAIES CAPTURES ─────────────────────────
-   C'est le seul mode d'emploi de la page, et il fait trois lignes. Quelqu'un
-   qui ne connait pas le produit a besoin de savoir CE QU'ON VA LUI DEMANDER
-   avant d'appuyer — pas comment l'application est faite. */
-.ld-etapes{list-style:none;margin:clamp(28px,5vh,48px) auto 0;padding:0;
-  max-width:960px;display:grid;gap:clamp(16px,3vw,28px);
-  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
-  counter-reset:etape}
-.ld-etapes li{display:flex;flex-direction:column;align-items:center;
-  gap:10px;text-align:center}
-.ld-etapes b{font-size:17px;font-weight:850;letter-spacing:-.02em;color:#fff}
-.ld-etapes em{font-style:normal;font-size:13.5px;line-height:1.5;
-  color:var(--craie2);max-width:30ch}
-
-/* ── TROIS MOMENTS DE LA MEME JOURNEE ───────────────────────────────────
-   L'essai fait venir, ceci fait revenir. Trois VRAIES cartes calculees a
-   trois heures : ce qui s'affiche ici est exactement ce qu'un habitant
-   verrait en ouvrant son telephone a midi, a quatorze heures, a dix-sept. */
-.ld-jour{display:grid;gap:clamp(14px,3vw,26px);
-  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
-  max-width:860px;margin:clamp(28px,5vh,48px) auto 0}
-.ld-jour-c{margin:0;display:flex;flex-direction:column;align-items:center;gap:10px}
-/* L'HEURE EST AU-DESSUS DE LA CARTE, ET C'EST ELLE LE SUJET DU CHAPITRE :
-   trois cartes sans heure ne prouvent rien, trois heures les rendent
-   lisibles comme une journee. */
-.ld-jour-h{font-size:12px;font-weight:850;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--or);
-  background:color-mix(in srgb,var(--or) 13%,transparent);
-  border:1px solid color-mix(in srgb,var(--or) 32%,transparent);
-  border-radius:999px;padding:6px 14px}
-.ld-jour .cd-carte{width:100%;max-width:none}
-
-/* ── CE QU'ON AVOUE AVANT QU'IL OUVRE ───────────────────────────────────
-   C'ETAIT DANS LE PIED DE PAGE, DONC APRES. Quelqu'un qui ouvre la maquette
-   et tombe sur « Chez Bergine » comprend tout seul qu'on lui a raconte une
-   histoire, et il ne le decouvre jamais au bon moment. Dit ici, le point
-   faible devient une preuve : les commerces sont inventes, l'essai ne l'est
-   pas. C'est la seule phrase de la page qui desamorce la deception d'apres. */
-.ld-aveu{margin:6px 0 0;font-size:12.5px;line-height:1.5;color:var(--craie3);
-  max-width:38ch;text-align:center}
-.ld-aveu b{color:var(--craie2);font-weight:750}
-
-/* ── LE SECOND CHEMIN, POUR QUI N'A PAS ENVIE D'ESSAYER TOUT DE SUITE ───
-   Il est un LIEN et non un bouton, et c'est voulu : deux boutons de meme
-   poids obligent a choisir, et on ne choisit pas — on referme. */
-.ld-second{display:inline-block;margin-top:4px;font-size:14px;font-weight:750;
-  color:var(--menthe);text-decoration:none;
-  border-bottom:1px solid color-mix(in srgb,var(--menthe) 40%,transparent);
-  padding-bottom:2px}
-.ld-second:hover{border-bottom-color:var(--menthe)}
-
-/* ── LA DIFFERENCE ──────────────────────────────────────────────────── */
-.ld-final{display:flex;flex-direction:column;align-items:center;gap:18px;
-  text-align:center;border-top:1px solid var(--trait);
-  padding:clamp(64px,11vh,130px) clamp(20px,5vw,48px) clamp(70px,12vh,140px);
-  background:radial-gradient(90% 60% at 50% 0%,rgba(61,226,166,.1),transparent 64%)}
-.ld-preuves{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));
-  gap:12px;list-style:none;margin:clamp(16px,3vh,30px) 0 8px;padding:0;
-  width:100%;max-width:960px}
-.ld-preuves li{display:flex;flex-direction:column;align-items:center;gap:6px;
-  padding:22px 16px;border-radius:20px;text-align:center;
-  background:var(--nuit2);border:1px solid var(--trait)}
-.ld-preuves i{font-style:normal;font-size:26px;line-height:1}
-.ld-preuves b{font-size:15px;font-weight:850;letter-spacing:-.01em;line-height:1.25}
-.ld-preuves em{font-style:normal;font-size:12.5px;line-height:1.4;color:var(--craie2)}
-
-/* ── LE PIED DE PAGE ────────────────────────────────────────────────── */
-.ld-pied{border-top:1px solid var(--trait);background:#03070A;
-  padding:clamp(38px,6vh,64px) clamp(20px,5vw,48px);
-  display:flex;flex-wrap:wrap;gap:22px 40px;align-items:flex-start;
-  justify-content:space-between;max-width:1180px;margin:0 auto}
-.ld-pied-h{display:flex;flex-direction:column;gap:5px}
-.ld-pied-h p{margin:0;font-size:14px;color:var(--craie2)}
-.ld-pied-l{display:flex;flex-direction:column;gap:9px}
-.ld-pied-l a{font-size:14px;font-weight:600;color:var(--craie2);
-  text-decoration:none;transition:color .16s ease}
-.ld-pied-l a:hover{color:var(--menthe)}
-.ld-pied-n{flex:1 1 100%;margin:0;font-size:11.5px;line-height:1.5;
-  color:var(--craie3);border-top:1px solid var(--trait);padding-top:18px}
-
-/* ── LES ECRANS ETROITS ─────────────────────────────────────────────── */
-@media (max-width:760px){
-  .ld-bande{padding-left:max(16px,calc(50% - 134px));
-    padding-right:max(16px,calc(50% - 134px))}
-  .ld-bande.une{padding-left:16px;padding-right:16px}
-  .ld-gestes li{flex:1 1 100%;max-width:none;flex-direction:row;
-    align-items:center;text-align:left;gap:13px;padding:14px 16px}
-  .ld-gestes i{font-size:22px}
-  .ld-gestes b{flex:none}
-  .ld-gestes em{flex:1}
-  .ld-fleche{display:none}
-  .ld-halo{filter:blur(52px);opacity:.42}
+/* LES METIERS PASSENT AU-DESSUS DU PANNEAU quand la largeur ne suffit plus :
+   une colonne de cinq vignettes a cote d'une image de 4/5 rend les deux
+   illisibles en dessous de 560 points. */
+@media (max-width:559px){
+  .ld-es{grid-template-columns:1fr;gap:12px}
+  .ld-es-l{flex-direction:row;overflow-x:auto;gap:6px;
+    scrollbar-width:none;padding-bottom:2px}
+  .ld-es-l::-webkit-scrollbar{display:none}
+  .ld-es-l button{flex:none;flex-direction:column;gap:6px;padding:6px}
+  .ld-es-l button span{font-size:15px}
+  .ld-es-v{width:58px;height:44px}
 }
 
 @media (prefers-reduced-motion:reduce){
-  .ld [data-r]{transition:none}
-  .ld-cta,.ld-tel{transition:none}
-  .ld-halo i,.ld-quand i{animation:none}
-  /* LE MOUVEMENT DE LA JAUGE EST UN CONFORT, PAS L'INFORMATION : sans lui
-     elle est simplement montree pleine, prix tombe. Rien ne manque. */
-  .ld-porte.public.vu .ld-pts i,.ld-porte.public.vu .ld-j-n b,
-  .ld-porte.public.vu .ld-j-n u,.ld-porte.public.vu .ld-j-n s,
-  .ld-porte.public.vu .ld-j-x span{animation:none}
-  .ld-pts i.libre{background:var(--or)}
-  .ld-j-n .av,.ld-j-x .av{opacity:0}
-  .ld-j-n .ap,.ld-j-x .ap,.ld-j-n u{opacity:1}
-  .ld-j-n s{text-decoration:line-through;opacity:.55}
+  .ld [data-r]{opacity:1;transform:none;transition:none}
+  .ld-f3,.ld-es-vue{animation:none}
+  .ld-cta,.ld-creux{transition:none}
 }
         `,
       }}
@@ -604,7 +585,7 @@ function StylesLeDirect() {
 
 export default function LeDirectPage() {
   return (
-    <main className="ld">
+    <main className={`ld ${caveat.variable}`}>
       <StylesLeDirect />
       <Histoire />
     </main>

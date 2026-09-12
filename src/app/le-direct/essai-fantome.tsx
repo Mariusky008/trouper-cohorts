@@ -69,7 +69,34 @@ import { useEffect, useRef, useState } from "react";
  * compose aujourd'hui la même chose tout seul. La page ne prétend donc rien de
  * plus que ce qu'elle montre : voici le geste, et voici à quoi il aboutit.
  */
-export function Miroir() {
+export type PaireMiroir = {
+  /** La photo du client, telle qu'il l'a prise. */
+  avant: string;
+  /** Ce que le produit a rendu SUR cette photo-là. Jamais une photo de catalogue. */
+  apres: string;
+  /** Les deux étiquettes, dans l'ordre. */
+  mots: [string, string];
+  altAvant: string;
+  altApres: string;
+};
+
+/**
+ * LA PAIRE DU SALON — la seule dont on soit sûr aujourd'hui.
+ *
+ * Le rendu d'un objet POSÉ se calcule dans le téléphone (`lib/direct/essai.ts`),
+ * sans réseau et sans clé : celui-ci est sorti ici, il est vrai, et les deux
+ * images se superposent au pixel près parce que la seconde est la première,
+ * avec les bougies en plus.
+ */
+export const PAIRE_SALON: PaireMiroir = {
+  avant: "/direct/table-salon.jpeg",
+  apres: "/direct/table-salon-bougie.jpg",
+  mots: ["Votre salon", "Avec les bougies"],
+  altAvant: "Un salon photographié au téléphone : table basse, canapé, tapis.",
+  altApres: "Le même salon, avec le trio de bougies rouges de l’atelier posé sur la table basse.",
+};
+
+export function Miroir({ paire = PAIRE_SALON }: { paire?: PaireMiroir }) {
   const [x, setX] = useState(74);
   const boite = useRef<HTMLDivElement | null>(null);
 
@@ -86,6 +113,12 @@ export function Miroir() {
    * détail qui fait lâcher l'objet.
    */
   const garde = useRef(false);
+  // ON REMET LE TRAIT À DROITE QUAND LA PAIRE CHANGE, et on relâche la garde :
+  // le balayage d'entrée doit pouvoir se rejouer pour le métier suivant.
+  useEffect(() => {
+    garde.current = false;
+    setX(74);
+  }, [paire.avant]);
   useEffect(() => {
     const el = boite.current;
     if (!el) return;
@@ -112,14 +145,19 @@ export function Miroir() {
     );
     o.observe(el);
     return () => o.disconnect();
-  }, []);
+    // LA PAIRE EST DANS LES DÉPENDANCES, ET C'EST NÉCESSAIRE DEPUIS QU'ON EN
+    // CHANGE : sans elle, passer d'un métier à l'autre laissait le trait là où
+    // le doigt l'avait posé, et la nouvelle image arrivait sans qu'on voie rien
+    // se produire. Chaque métier rejoue donc son propre balayage.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paire.avant]);
 
   return (
     <div className="ld-miroir" ref={boite} style={{ "--x": `${x}%` } as React.CSSProperties}>
       {/* LE SALON AVEC LES BOUGIES — dessous, et entier. */}
       <Image
-        src="/direct/table-salon-bougie.jpg"
-        alt="Le même salon, avec le trio de bougies rouges de l’atelier posé sur la table basse."
+        src={paire.apres}
+        alt={paire.altApres}
         width={1200}
         height={900}
         sizes="(max-width:760px) 92vw, 520px"
@@ -133,21 +171,21 @@ export function Miroir() {
           calque, elle disparaît avec ce qu'elle nomme. */}
       <div className="ld-mi-av">
         <Image
-          src="/direct/table-salon.jpeg"
-          alt="Un salon photographié au téléphone : table basse, canapé, tapis."
+          src={paire.avant}
+          alt={paire.altAvant}
           width={1200}
           height={900}
           sizes="(max-width:760px) 92vw, 520px"
           className="ld-mi-i"
           priority
         />
-        <span className="ld-mi-e a" aria-hidden="true">Votre salon</span>
+        <span className="ld-mi-e a" aria-hidden="true">{paire.mots[0]}</span>
       </div>
       {/* « AVEC LES BOUGIES », ET PAS « LES BOUGIES DE L'ATELIER » : la
           seconde se coupait à « LES BOUGIES DE L'… » dans la moitié qui lui
           revient. Une étiquette tronquée ne dit rien de plus qu'une étiquette
           absente, et elle a l'air d'un défaut. */}
-      <span className="ld-mi-e b" aria-hidden="true">Avec les bougies</span>
+      <span className="ld-mi-e b" aria-hidden="true">{paire.mots[1]}</span>
       <span className="ld-mi-t" aria-hidden="true">
         <i>↔</i>
       </span>
@@ -157,7 +195,7 @@ export function Miroir() {
         max={96}
         value={Math.round(x)}
         className="ld-mi-r"
-        aria-label="Tirer pour comparer le salon vide et le salon avec les bougies"
+        aria-label={`Tirer pour comparer : ${paire.mots[0]}, ${paire.mots[1]}`}
         onPointerDown={() => { garde.current = true; }}
         onKeyDown={() => { garde.current = true; }}
         onChange={(e) => { garde.current = true; setX(Number(e.target.value)); }}

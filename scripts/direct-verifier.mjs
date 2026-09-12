@@ -2200,150 +2200,106 @@ console.log("\n══ la page du commerce ══");
   await pD.waitForTimeout(1200);
 
   const mots = await pD.evaluate(() => document.body.innerText);
-  dire(/essay|essai/i.test(mots), "elle parle de l'essai");
+  dire(/essay/i.test(mots), "elle parle de l'essai");
   dire(/fant[oô]me/i.test(mots), "et du fantôme");
 
-  // ═══ LA PROMESSE EST DANS LE TITRE, PAS TROIS ÉCRANS PLUS BAS ═══════════
+  // ═══ LE TITRE EST CELUI DE LA MAQUETTE ══════════════════════════════════
   //
-  // CE QUE ÇA PROTÈGE : « l'essai fait venir, le direct fait revenir ». Une
-  // page d'accueil est une surface d'acquisition, donc l'hameçon prend le
-  // titre et l'argument de retour arrive derrière. Arbitrage pris avec le
-  // propriétaire du produit, et c'est exactement le genre de décision qu'une
-  // réécriture ultérieure défait sans s'en apercevoir.
+  // « Oula, c'est beaucoup trop compliqué à comprendre, ça manque de
+  // simplicité ! J'ai fait un mock-up que tu peux répliquer et animer. »
+  //
+  // LA MAQUETTE REMET LE DIRECT EN TITRE, alors qu'on avait arbitré l'inverse
+  // deux échanges plus tôt — l'essai en titre parce qu'il est l'hameçon. C'est
+  // le droit de son auteur, et l'essai reste en section 2. On garde donc trace
+  // des DEUX : le titre dit ce qui se passe en ville, et la section 2 promet
+  // l'essai sur soi. Si l'une des deux disparaît dans une réécriture, la page
+  // ne fait plus qu'une moitié de promesse.
   const h1 = await pD.$eval("h1", (e) => e.textContent.replace(/\s+/g, " ").trim());
-  dire(/sur vous/i.test(h1), `le titre promet l'essai sur soi (« ${h1} »)`);
-  // ET « LE DIRECT » N'EST PLUS UN TITRE. C'est du vocabulaire d'initié : un
-  // inconnu ne sait pas ce que c'est, et le mot lui décrivait notre
-  // technologie plutôt que son problème à lui.
-  dire(!/le direct/i.test(h1), "et il ne parle pas « du direct », que personne ne connaît");
-
-  // ═══ LE BOUTON LIVRE LA PROMESSE, PAS UN PAQUET D'ANNONCES ══════════════
-  //
-  // Un bouton qui dit « Essayer sur moi » et ouvre vingt-quatre annonces perd
-  // la moitié des gens entre la promesse et la preuve. `?essai=1` ouvre la
-  // feuille d'essai directement.
-  const boutons = await pD.$$eval(".ld-cta.grand", (l) =>
-    l.map((e) => ({ mot: e.textContent.trim(), ou: e.getAttribute("href") ?? "" })),
-  );
-  dire(boutons.length >= 2, `la page a son bouton en haut et en bas (${boutons.length})`);
+  dire(/ville/i.test(h1), `le titre parle de la ville (« ${h1} »)`);
+  const h2 = await pD.$$eval("h2", (l) => l.map((e) => e.textContent.replace(/\s+/g, " ").trim()));
   dire(
-    boutons.every((b) => /essai=1/.test(b.ou)),
-    "et les deux ouvrent l'essai, pas le paquet",
+    h2.some((t) => /sur vous/i.test(t)),
+    `et la section 2 promet l'essai sur soi (${h2.filter((t) => /sur vous/i.test(t)).join("") || "absente"})`,
   );
+
+  // ═══ LA SECTION QU'ON MANIPULE ══════════════════════════════════════════
+  //
+  // « Quand section 2 on clique sur un métier on a un exemple animé. »
+  //
+  // C'EST LE CŒUR DE LA MAQUETTE : on ne lit plus, on appuie. Une page qui
+  // perdrait cette interaction redeviendrait exactement ce qu'elle remplace.
+  const onglets = await pD.$$eval(".ld-es-l button", (l) =>
+    l.map((e) => e.textContent.trim()),
+  );
+  dire(onglets.length >= 5, `on peut choisir le métier qu'on veut voir (${onglets.length})`);
   dire(
-    new Set(boutons.map((b) => b.mot)).size === 1,
-    `avec le même mot des deux côtés (${[...new Set(boutons.map((b) => b.mot))].join(" / ")})`,
+    new Set(onglets).size === onglets.length,
+    `et chacun a son nom (${onglets.join(" · ")})`,
   );
+  // LE PANNEAU OUVERT EN ARRIVANT EST CELUI QUI DÉMONTRE. Une section dont le
+  // premier écran est une promesse plutôt qu'une preuve a déjà perdu.
+  dire(
+    !!(await pD.$(".ld-es-vue .ld-miroir")),
+    "et celui qui s'ouvre en arrivant montre un vrai avant/après",
+  );
+  // ET APPUYER CHANGE VRAIMENT LE PANNEAU. Une rangée d'onglets qui s'allument
+  // sans rien changer est le pire des deux mondes : on croit avoir agi.
+  const avant = await pD.$eval(".ld-es-vue", (e) => e.innerHTML.length);
+  await (await pD.$$(".ld-es-l button"))[0].click();
+  await pD.waitForTimeout(600);
+  const apres = await pD.$eval(".ld-es-vue", (e) => e.innerHTML.length);
+  dire(avant !== apres, "appuyer sur un métier change le panneau");
+  const allume = await pD.$$eval(".ld-es-l button.on", (l) => l.length);
+  dire(allume === 1, `et un seul métier reste allumé (${allume})`);
 
-  // ═══ ON DIT QUE C'EST UNE MAQUETTE AVANT QU'IL OUVRE ════════════════════
+  // ═══ AUCUN BADGE DE MAGASIN N'EST UN LIEN ═══════════════════════════════
   //
-  // C'ÉTAIT DANS LE PIED DE PAGE, DONC APRÈS. Quelqu'un qui ouvre et tombe sur
-  // « Chez Bergine » comprend tout seul qu'on lui a raconté une histoire, et il
-  // ne le découvre jamais au bon moment. Dit au-dessus du pli, le point faible
-  // devient une preuve.
-  const aveu = await pD.$eval(".ld-aveu", (e) => ({
-    mot: e.textContent.replace(/\s+/g, " ").trim(),
-    y: Math.round(e.getBoundingClientRect().top + window.scrollY),
-  })).catch(() => null);
-  dire(!!aveu && /invent/i.test(aveu.mot), `elle avoue que les commerces sont inventés`);
-  dire(!!aveu && aveu.y < 2600, `et elle l'avoue près du bouton, pas au pied de page (${aveu?.y ?? "?"} points)`);
-
-  // ═══ LES TROIS MOMENTS DISENT TROIS CHOSES DIFFÉRENTES ══════════════════
-  //
-  // DÉFAUT MESURÉ DEUX FOIS : une heure hors de la fenêtre d'un moment, et la
-  // carte retombe sur autre chose — l'onglerie affichait « Pose complète » au
-  // lieu de son désistement, la boulangerie « La formule du midi » au lieu de
-  // sa fournée (elle a un menu, qui passe devant). Trois cartes justes
-  // devenaient trois cartes quelconques, et le chapitre ne prouvait plus rien.
-  const moments = await pD.$$eval(".ld-jour-c", (l) =>
+  // IL N'Y A PAS D'APPLICATION À TÉLÉCHARGER. La maquette dessine les deux
+  // badges ; ils restent dessinés, marqués « bientôt », et surtout ils ne
+  // cliquent pas. Un badge « App Store » qui ne mène nulle part est la promesse
+  // la plus concrète qu'une page d'accueil puisse rompre, et elle se rompt au
+  // premier appui — c'est-à-dire au pire moment.
+  const magasins = await pD.$$eval(".ld-mag", (l) =>
     l.map((e) => ({
-      h: e.querySelector(".ld-jour-h")?.textContent?.trim() ?? "",
-      quoi: e.querySelector("h2")?.textContent?.replace(/\s+/g, " ").trim() ?? "",
+      mot: e.textContent.replace(/\s+/g, " ").trim(),
+      cliquable: !!e.closest("a") || e.tagName === "A" || e.tagName === "BUTTON",
     })),
   );
-  dire(moments.length === 3, `trois moments de la même journée (${moments.length})`);
+  dire(magasins.length === 2, `les deux badges de magasin sont dessinés (${magasins.length})`);
   dire(
-    new Set(moments.map((m) => m.quoi)).size === 3,
-    `et les trois disent trois choses différentes (${moments.map((m) => `${m.h} ${m.quoi}`).join(" · ")})`,
+    magasins.every((m) => !m.cliquable),
+    "et aucun n'est cliquable, puisqu'il n'y a rien à télécharger",
+  );
+  dire(
+    magasins.every((m) => /bient[oô]t/i.test(m.mot)),
+    `et ils le disent (${magasins.map((m) => m.mot).join(" / ")})`,
   );
 
-  // LA VITRINE EST LA VRAIE CARTE, ET ELLE CHANGE DE MÉTIER.
-  // Une capture d'écran aurait vieilli au premier changement de design — c'est
-  // exactement ce qui était arrivé à cette page. On vérifie donc que le
-  // composant du produit est monté, et qu'il tourne.
-  const cartes = await pD.$$eval(".ld-vt-c .cd-carte", (l) => l.length);
-  dire(cartes >= 4, `la vitrine monte la vraie carte, plusieurs fois (${cartes})`);
-  const premier = await pD.$eval(".ld-vt-c.on", (e) => e.textContent.slice(0, 40));
-  await pD.waitForTimeout(4200);
-  const second = await pD.$eval(".ld-vt-c.on", (e) => e.textContent.slice(0, 40));
-  dire(premier !== second, "et elle passe d'un métier à l'autre toute seule");
-
-  // ═══ LE MIROIR ═══════════════════════════════════════════════════════════
+  // ═══ ON AVOUE QUE C'EST UNE MAQUETTE ════════════════════════════════════
   //
-  // LES DEUX PHOTOS DOIVENT ÊTRE LA MÊME PHOTO. Premier jet : un poignet nu
-  // d'un côté, un poignet au bracelet de l'autre, issus de deux prises
-  // différentes. Le résultat se lisait comme deux photos de deux personnes —
-  // une glissière entre deux images qui ne se superposent pas ne montre pas un
-  // essai, elle montre un montage. On le mesure par le format : deux images de
-  // rapports différents ne peuvent pas se superposer.
-  const mi = await pD.$(".ld-miroir");
-  dire(!!mi, "on peut superposer l'avant et l'après au doigt");
-  if (mi) {
-    await mi.scrollIntoViewIfNeeded();
-    await pD.waitForTimeout(1600);
-    const paire = await pD.evaluate(() => {
-      const i = [...document.querySelectorAll(".ld-miroir img")];
-      return i.map((e) => ({ r: e.naturalWidth / e.naturalHeight, src: e.currentSrc || e.src }));
-    });
-    dire(paire.length === 2, `deux images, pas une (${paire.length})`);
-    dire(
-      paire.length === 2 && Math.abs(paire[0].r - paire[1].r) < 0.02,
-      "et elles ont le même cadrage, donc elles se superposent vraiment",
-    );
+  // Quelqu'un qui ouvre et tombe sur « Chez Bergine » comprend tout seul qu'on
+  // lui a raconté une histoire. Autant le devancer — et le point faible devient
+  // une preuve, parce que l'essai, lui, n'est pas inventé.
+  const aveu = await pD.$eval(".ld-pied-n", (e) => e.textContent.replace(/\s+/g, " ").trim())
+    .catch(() => "");
+  dire(/invent/i.test(aveu), "elle avoue que les commerces sont inventés");
+  dire(/l’essai sur votre photo, non/i.test(aveu), "et que l'essai, lui, ne l'est pas");
 
-    // LE TRAIT SE TIRE, ET IL DÉPLACE VRAIMENT LA DÉCOUPE. Une glissière qui
-    // bouge son curseur sans bouger l'image est le défaut le plus facile à ne
-    // pas voir sur une capture d'écran.
-    const b = await mi.boundingBox();
-    const lire = () => pD.$eval(".ld-miroir", (e) => e.style.getPropertyValue("--x"));
-    await pD.mouse.move(b.x + b.width * 0.82, b.y + b.height / 2);
-    await pD.mouse.down();
-    await pD.mouse.move(b.x + b.width * 0.18, b.y + b.height / 2, { steps: 10 });
-    await pD.mouse.up();
-    await pD.waitForTimeout(300);
-    const apres = parseFloat(await lire());
-    dire(apres > 0 && apres < 30, `et le tirer déplace la découpe (${apres}%)`);
-    // LA DÉCOUPE EST UN MASQUE, PAS UNE LARGEUR. Écrite width+overflow, la
-    // photo se met en page dans la largeur de la découpe : on comparerait un
-    // salon comprimé à un salon normal, c'est-à-dire deux salons.
-    const masque = await pD.$eval(".ld-mi-av", (e) => {
-      const s = getComputedStyle(e);
-      return { clip: s.clipPath, l: Math.round(e.getBoundingClientRect().width) };
-    });
-    dire(
-      masque.clip !== "none" && Math.abs(masque.l - Math.round(b.width)) < 3,
-      `le calque est masqué, pas rétréci (${masque.l} pour ${Math.round(b.width)})`,
-    );
-  }
-
-  // ═══ LE MUR DES FANTÔMES ═════════════════════════════════════════════════
+  // ═══ LE BOUTON DE LA BARRE OUVRE L'ESSAI ════════════════════════════════
   //
-  // TROIS VERDICTS DIFFÉRENTS, ET C'EST TOUT LE PROPOS. Un mur où tout le monde
-  // achète n'est pas un mur, c'est une page d'avis — et personne n'y croit.
-  const verdicts = await pD.$$eval(".ld-laisse .ld-la-v", (l) =>
-    l.map((e) => e.textContent.replace(/\s+/g, " ").trim()),
-  );
-  dire(verdicts.length >= 3, `le mur montre plusieurs fantômes (${verdicts.length})`);
+  // La maquette y met « Télécharger l'app ». Il n'y a rien à télécharger : le
+  // bouton ouvre donc l'essai, qui est ce que la page promet vraiment.
+  const barre = await pD.$eval(".ld-nav .ld-cta", (e) => ({
+    mot: e.textContent.trim(),
+    ou: e.getAttribute("href") ?? "",
+  }));
   dire(
-    new Set(verdicts).size >= 3,
-    `avec des verdicts différents (${verdicts.join(" · ")})`,
+    /essai=1/.test(barre.ou),
+    `le bouton de la barre ouvre l'essai (« ${barre.mot} » → ${barre.ou})`,
   );
-  // CHACUN DIT CE QU'IL A ESSAYÉ ET CE QU'IL EN PENSE : une photo sans phrase
-  // est un catalogue de plus.
-  const dits = await pD.$$eval(".ld-laisse .ld-la-m", (l) => l.map((e) => e.textContent.trim()));
   dire(
-    dits.length >= 3 && dits.every((d) => d.length > 25),
-    "et chacun dit ce qu'il en a pensé, dans ses mots",
+    !/t[ée]l[ée]charger/i.test(barre.mot),
+    "et il ne promet pas un téléchargement qui n'existe pas",
   );
 
   // RIEN NE DÉBORDE, NI SUR TÉLÉPHONE NI SUR ORDINATEUR. Le miroir est le seul
