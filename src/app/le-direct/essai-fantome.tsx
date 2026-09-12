@@ -59,10 +59,15 @@ import { useEffect, useRef, useState } from "react";
  * qui ne se superposent pas ne montre pas un essai : elle montre un montage.
  *
  * LE SALON, LUI, EST IDENTIQUE AU PIXEL PRÈS : même table, même canapé, même
- * tapis, même tasse — seules les bougies apparaissent. C'est un vrai résultat
- * du produit, et c'est la seule chose qui rende le geste croyable en quatre
- * secondes. On a choisi la paire sur sa capacité à prouver, pas sur le métier
- * qu'on aurait préféré montrer.
+ * tapis, même tasse — seules les bougies apparaissent. On a choisi la paire sur
+ * sa capacité à prouver, pas sur le métier qu'on aurait préféré montrer.
+ *
+ * CE QUE CETTE IMAGE EST EXACTEMENT, ET IL FAUT LE SAVOIR POUR NE PAS MENTIR
+ * DESSUS : `table-salon-bougie.jpg` a été composée À LA MAIN, avant que le
+ * calcul existe — voir `public/direct/LISEZ-MOI.md`. Ce n'est pas une sortie du
+ * modèle, c'est la RÉFÉRENCE de ce que le produit doit rendre, et l'écran
+ * compose aujourd'hui la même chose tout seul. La page ne prétend donc rien de
+ * plus que ce qu'elle montre : voici le geste, et voici à quoi il aboutit.
  */
 function Miroir() {
   const [x, setX] = useState(74);

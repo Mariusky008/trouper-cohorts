@@ -432,11 +432,43 @@ le meilleur moyen de perdre la trace de ce qu'elle montre.
 | `cartoon-santa-muerte-portrait-1.webp` | **Une planche de flash** — un dessin sur fond blanc, pas un tatouage sur peau. C'est exactement la bonne référence : c'est ce que le tatoueur propose, et le modèle a pour travail de le poser sur l'avant-bras. | La pièce « Santa Muerte à la rose ». *La pièce a été renommée pour ce que la photo montre* — elle s'appelait « Serpent fin » en attendant l'image, et garder ce nom aurait refait la faute de la vignette de vernis : on choisit une chose et on en reçoit une autre. |
 | `avant-bras.jpg` | Un avant-bras nu sur fond blanc. | La photo d'exemple du tatoueur. |
 
-**Ce qui manque encore :** un balayage fini (`coiffure-balayage.jpg`) et une robe
-à carreaux (`mode-robe.jpg`). Leurs pièces restent « bientôt essayables » et ne
-se choisissent pas — on ne sert jamais une image de catalogue à la place d'un
-essai qui n'a pas eu lieu. Le jour où la photo arrive, il suffit d'ajouter
-`reference` à la pièce et de retirer `bientot` dans `lib/direct/fantomes.ts`.
+### Onze de plus, et les dernières « bientôt » du corps sont tombées
+
+Un second envoi a réglé ce qui restait ouvert ci-dessus. Les fichiers portent
+des noms génériques — le code s'est aligné sur eux plutôt que de les renommer.
+
+| Fichier livré | Ce qu'il montre | La pièce qu'il débloque |
+|---|---|---|
+| `tattou1.jpg` | Un chat tribal au trait plein, détouré sur fond blanc. | « Chat tribal, trait plein » — une planche de flash, donc la référence exacte dont le modèle a besoin. |
+| `tattou2.jpeg` | Une hirondelle et des fleurs de cerisier, encre bleue. | « Hirondelle et fleurs de cerisier ». **Remplace la « Branche fleurie »**, qui était marquée « bientôt » et portait la photo de l'ATELIER faute de mieux. Le tatoueur annonçait trois flashs sur sa carte et n'en avait qu'un d'essayable. |
+| `coiffure1.jpg` | Une femme de face, boucles longues et frange. | « Boucles longues, frange ». **Remplace « Balayage miel »** (`coiffure-balayage.jpg`, qui n'est donc plus demandé). |
+| `coiffure2.jpg` | Une femme de face, carré cuivré dégradé. | « Carré cuivré, dégradé ». **Remplace « Carré dégradé »**, qui portait la photo d'un fauteuil. |
+| `ongles1.jpeg` | Une pose longue à décors noirs et rouges. | « Pose longue, décors noirs ». |
+| `ongles2.jpeg` | Une pose amande pastel, motif feuille blanc. | « Pastel amande, motif feuille ». |
+| `vetement1.jpeg` | Blouse imprimée et jean flare, en pied, fond neutre. | « Blouse imprimée et jean flare ». |
+| `vetement2.jpg` | Ensemble molleton rose, en pied. | « Ensemble molleton rose ». |
+| `vetement3.jpeg` | Ensemble brodé écru, en pied. *Livrée en 3248 × 4872 pour 2 Mo* — **réduite ici à 1200 × 1800 (230 Ko)**, exactement comme `atelier-tatouage.jpeg` avant elle : elle sert dans une vignette de 132 points et dans un rendu de 390, et deux mégaoctets en 4G se paient au premier chargement, debout dans la rue. | « Ensemble brodé écru ». |
+| `vetement4.jpg` | Marinière rose et pantalon vichy, en pied. | « Marinière rose et pantalon vichy ». |
+| `vetement5.jpeg` | Polaire rose à col zippé, plan serré. | « Polaire rose, col zippé ». **Remplace « Robe à carreaux »** (`mode-robe.jpg`, qui n'est donc plus demandé), laquelle proposait d'essayer une robe en montrant une devanture. |
+
+**Les cinq tenues servent deux commerces** : la boutique du centre et la
+friperie du vieux centre partagent la branche « mode », donc ce mur-là. C'est
+exactement ce que le tableau des branches est là pour faire.
+
+**Ce qui manque encore, et ce sont les deux derniers :** `cou-nu.jpg` pour le
+collier, et une découpe de la bougie aux fleurs séchées. Leurs pièces restent
+« bientôt essayables » et ne se choisissent pas — on ne sert jamais une image de
+catalogue à la place d'un essai qui n'a pas eu lieu. Le jour où la photo arrive,
+il suffit d'ajouter `reference` à la pièce et de retirer `bientot` dans
+`lib/direct/fantomes.ts`.
+
+**La même réserve vaut pour les visages.** `coiffure1` et `coiffure2` montrent
+des visages parfaitement reconnaissables, comme les deux coupes de face
+précédentes, et pour la même raison assumée : une coupe ne se montre pas sans
+tête. `ongles1` porte en plus un filigrane de studio (« DIME STUDIO ») en haut à
+droite, et `coiffure1` un monogramme au centre — ils se voient dans la grille
+des pièces. **C'est la première chose à refaire avant un argumentaire imprimé**,
+au même titre que les deux exceptions datées plus haut.
 
 **Une réserve à connaître sur les deux photos de coiffure.** Elles montrent des
 visages parfaitement reconnaissables, alors que la règle du dépôt écrite plus

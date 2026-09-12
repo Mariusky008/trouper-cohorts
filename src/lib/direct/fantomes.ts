@@ -656,6 +656,30 @@ export const MURS: Mur[] = [
           photo: "/direct/avis-ongles.jpg",
           reference: "/direct/avis-ongles.jpg",
         },
+        /**
+         * DEUX POSES DE PLUS, ET ELLES ÉLARGISSENT LE MÉTIER PLUTÔT QUE DE LE
+         * RÉPÉTER.
+         *
+         * Les deux premières sont proches — un motif cœurs et un dégradé
+         * pailleté, toutes deux en rose. Une grille où tout se ressemble ne
+         * donne pas à choisir, elle donne à valider. Le pastel amande et la
+         * pose longue noire sont aux deux bouts de ce que ce métier fait, et
+         * c'est ce qui rend le choix réel.
+         */
+        {
+          id: "p-pastel",
+          nom: "Pastel amande, motif feuille",
+          prix: "48 €",
+          photo: "/direct/ongles2.jpeg",
+          reference: "/direct/ongles2.jpeg",
+        },
+        {
+          id: "p-longue",
+          nom: "Pose longue, décors noirs",
+          prix: "65 €",
+          photo: "/direct/ongles1.jpeg",
+          reference: "/direct/ongles1.jpeg",
+        },
       ],
     },
     contexte: {
@@ -1093,18 +1117,31 @@ export const MURS: Mur[] = [
          * angle que la photo du client est la condition pour que le rendu
          * tienne, pas un agrément.
          *
-         * ELLES SONT « BIENTÔT ESSAYABLES » TANT QUE LES PHOTOS N'EXISTENT PAS.
-         * Les deux fichiers sont nommés et décrits dans `LISEZ-MOI.md` — le jour
-         * où ils arrivent, il suffit d'ajouter `reference` et de retirer
-         * `bientot`. Servir la photo du salon à la place serait un catalogue
-         * déguisé en essai.
+         * LES DEUX PHOTOS SONT ARRIVÉES et les deux pièces sont essayables. Ce
+         * qui débloquait le métier n'était pas un calcul : c'était deux images
+         * prises du bon angle.
          */
         { id: "c-homme", nom: "Boucles courtes, de face", prix: "26 €",
           photo: "/direct/coiffure-homme-face.jpg", reference: "/direct/coiffure-homme-face.jpg" },
         { id: "c-femme", nom: "Carré long, de face", prix: "38 €",
           photo: "/direct/coiffure-femme-face.jpg", reference: "/direct/coiffure-femme-face.jpg" },
-        { id: "c-balayage", nom: "Balayage miel", prix: "95 €", photo: "/direct/salon-neuf.jpg", bientot: true },
-        { id: "c-carre", nom: "Carré dégradé", prix: "45 €", photo: "/direct/fauteuil-coiffeur.jpg", bientot: true },
+        /**
+         * LES DEUX DERNIÈRES « BIENTÔT » SONT TOMBÉES.
+         *
+         * « Balayage miel » et « Carré dégradé » portaient la photo du SALON —
+         * un fauteuil, une devanture — parce qu'on n'avait pas le travail fini.
+         * Une pièce qui montre le mobilier au lieu de la coupe ne se désire pas,
+         * et elle ne s'essaie pas non plus : le modèle a besoin du résultat, pas
+         * du décor.
+         *
+         * LES DEUX LIVRÉES SONT DE FACE, comme les deux d'avant, et c'est la
+         * condition : on se photographie de face, donc la référence doit être
+         * prise du même angle, sinon le modèle doit deviner un profil.
+         */
+        { id: "c-boucles", nom: "Boucles longues, frange", prix: "68 €",
+          photo: "/direct/coiffure1.jpg", reference: "/direct/coiffure1.jpg" },
+        { id: "c-cuivre", nom: "Carré cuivré, dégradé", prix: "95 €",
+          photo: "/direct/coiffure2.jpg", reference: "/direct/coiffure2.jpg" },
       ],
     },
     contexte: {
@@ -1210,7 +1247,30 @@ export const MURS: Mur[] = [
           photo: "/direct/mode-chemise-jean.jpg",
           reference: "/direct/mode-chemise-jean.jpg",
         },
-        { id: "m-robe", nom: "Robe à carreaux", prix: "89 €", photo: "/direct/vitrine-mode.jpg", bientot: true },
+        /**
+         * CINQ PIÈCES LIVRÉES, ET LA « ROBE À CARREAUX » EST PARTIE AVEC.
+         *
+         * Elle portait la photo de la VITRINE, marquée « bientôt essayable » :
+         * on proposait d'essayer une robe en montrant une devanture. Les cinq
+         * tenues livrées sont photographiées en pied, de face, sur fond neutre —
+         * exactement ce dont le modèle a besoin pour reporter une tenue sur
+         * quelqu'un d'autre.
+         *
+         * ELLES SERVENT DEUX COMMERCES. La boutique du centre et la friperie du
+         * vieux centre partagent la branche « mode », donc ce mur-ci : c'est
+         * précisément ce que le tableau des branches est là pour faire, et
+         * c'est pourquoi on élargit le modèle plutôt que d'écrire deux listes.
+         */
+        { id: "m-boho", nom: "Blouse imprimée et jean flare", prix: "115 €",
+          photo: "/direct/vetement1.jpeg", reference: "/direct/vetement1.jpeg" },
+        { id: "m-brode", nom: "Ensemble brodé écru", prix: "149 €",
+          photo: "/direct/vetement3.jpeg", reference: "/direct/vetement3.jpeg" },
+        { id: "m-carreaux", nom: "Marinière rose et pantalon vichy", prix: "98 €",
+          photo: "/direct/vetement4.jpg", reference: "/direct/vetement4.jpg" },
+        { id: "m-molleton", nom: "Ensemble molleton rose", prix: "89 €",
+          photo: "/direct/vetement2.jpg", reference: "/direct/vetement2.jpg" },
+        { id: "m-polaire", nom: "Polaire rose, col zippé", prix: "75 €",
+          photo: "/direct/vetement5.jpeg", reference: "/direct/vetement5.jpeg" },
       ],
     },
     contexte: {
@@ -1447,8 +1507,21 @@ export const MURS: Mur[] = [
         { id: "t-muerte", nom: "Santa Muerte à la rose", prix: "180 €",
           photo: "/direct/cartoon-santa-muerte-portrait-1.webp",
           reference: "/direct/cartoon-santa-muerte-portrait-1.webp" },
-        { id: "t-fleur", nom: "Branche fleurie, poignet", prix: "120 €",
-          photo: "/direct/atelier-tatouage.jpeg", bientot: true },
+        /**
+         * LES DEUX PLANCHES MANQUANTES SONT ARRIVÉES.
+         *
+         * « Branche fleurie » était marquée « bientôt essayable » et portait la
+         * photo de l'ATELIER faute de mieux — une pièce qui montre le mur du
+         * salon au lieu du dessin qu'on va se faire tatouer. Les deux planches
+         * livrées la remplacent, et elles sont exactement ce qu'un flash doit
+         * être : un dessin détouré sur fond blanc, que le modèle a pour travail
+         * de poser sur l'avant-bras. Le tatoueur avait trois flashs annoncés sur
+         * sa carte et un seul essayable ; il en a trois.
+         */
+        { id: "t-hirondelle", nom: "Hirondelle et fleurs de cerisier", prix: "140 €",
+          photo: "/direct/tattou2.jpeg", reference: "/direct/tattou2.jpeg" },
+        { id: "t-chat", nom: "Chat tribal, trait plein", prix: "110 €",
+          photo: "/direct/tattou1.jpg", reference: "/direct/tattou1.jpg" },
       ],
     },
 

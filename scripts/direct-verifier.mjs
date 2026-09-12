@@ -1787,6 +1787,76 @@ console.log("\n══ la page du commerce ══");
     dire(e.creux < 90, `sans creux sous le dernier contenu du panneau (${e.creux} points)`);
   }
 
+  // ═══ CE QU'ON PROPOSE D'ESSAYER EST CE QU'ON VEND ════════════════════════
+  //
+  // LE DÉFAUT QUE ÇA ATTRAPE, ET IL A ÉTÉ LIVRÉ DEUX FOIS : une pièce sans
+  // référence prenait la photo du LIEU en attendant la vraie. Le tatoueur
+  // proposait « Branche fleurie » avec une photo de son atelier ; le coiffeur
+  // proposait « Carré dégradé » avec un fauteuil vide. On demandait de choisir
+  // une coupe en montrant du mobilier — et rien à l'écran ne disait que c'était
+  // une doublure.
+  //
+  // LA RÈGLE EST DONC : une pièce qu'on peut choisir montre le TRAVAIL, pas le
+  // décor. Une pièce qui n'a pas son image reste « bientôt essayable » et ne se
+  // choisit pas — c'est honnête, et c'est déjà écrit dans le produit.
+  for (const [nom, cible] of [
+    ["le tatoueur", "tatoueur"],
+    ["le coiffeur", "Un salon du centre"],
+    ["la prothésiste", "prothésiste"],
+    ["la boutique", "boutique de la rue"],
+  ]) {
+    const onglet = await pB.$(`.bq-maq-c button:text-matches("${cible}", "i")`);
+    if (!onglet) continue;
+    await onglet.click();
+    await pB.waitForTimeout(1100);
+    // LA GRILLE NE S'OUVRE QU'AU MOMENT DE CHOISIR : avant, on est sur la
+    // photo. « Voir avec la photo d'exemple » est le chemin sans appareil.
+    const exemple = await pB.$("#mur .mu-exemple");
+    if (exemple) { await exemple.click(); await pB.waitForTimeout(600); }
+    const pieces = await pB.$$eval("#mur .mu-pieces button", (l) =>
+      l.map((e) => {
+        const img = e.querySelector("img");
+        return {
+          nom: e.querySelector("b")?.textContent?.trim() ?? "?",
+          bientot: e.classList.contains("bientot"),
+          // UNE IMAGE QUI N'A PAS CHARGÉ A UNE LARGEUR NATURELLE DE ZÉRO :
+          // c'est la seule façon de voir un 404 depuis la page, la vignette
+          // gardant sa place et sa couleur de fond.
+          chargee: !img || img.naturalWidth > 0,
+          teinte: !img,
+        };
+      }),
+    );
+    dire(pieces.length >= 3, `${nom} propose de quoi choisir (${pieces.length})`);
+    dire(
+      pieces.every((p) => p.chargee),
+      `et chaque vignette a bien son image${pieces.filter((p) => !p.chargee).map((p) => " — " + p.nom).join("")}`,
+    );
+    // AUCUN NOM EN DOUBLE : le mur mêle les pièces du commerçant et celles du
+    // modèle de sa branche, et deux entrées du même nom donnent deux vignettes
+    // qu'on ne saura pas distinguer.
+    const noms = pieces.map((p) => p.nom);
+    dire(new Set(noms).size === noms.length, "et aucune pièce n'est proposée deux fois");
+  }
+  // LE TATOUEUR ANNONCE TROIS FLASHS SUR SA CARTE : il doit en avoir trois
+  // d'essayables. C'était le cas le plus voyant du défaut ci-dessus — un seul
+  // l'était, les deux autres montraient l'atelier.
+  {
+    const onglet = await pB.$('.bq-maq-c button:text-matches("tatoueur", "i")');
+    if (onglet) {
+      await onglet.click();
+      await pB.waitForTimeout(1100);
+      const ex = await pB.$("#mur .mu-exemple");
+      if (ex) { await ex.click(); await pB.waitForTimeout(600); }
+      const aVenir = await pB.$$eval("#mur .mu-pieces button.bientot", (l) => l.length);
+      const total = await pB.$$eval("#mur .mu-pieces button", (l) => l.length);
+      dire(
+        total - aVenir >= 3,
+        `le tatoueur a bien trois flashs essayables, comme sa carte l'annonce (${total - aVenir})`,
+      );
+    }
+  }
+
   // ET SUR TÉLÉPHONE, RIEN N'A BOUGÉ : une seule colonne, le mur toujours là.
   const petit = await nav.newContext({
     viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,

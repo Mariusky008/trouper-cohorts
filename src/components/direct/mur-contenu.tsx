@@ -2520,9 +2520,20 @@ function Styles() {
         .mu-pieces button{flex:none;width:132px;font-family:inherit;cursor:pointer;
           background:var(--mu-carte);border:1px solid var(--mu-ligne);
           border-radius:16px;overflow:hidden;padding:0 0 10px;color:var(--mu-encre);}
-        .mu-pieces img{width:100%;height:96px;object-fit:cover;display:block;}
+        /* LA VIGNETTE CADRE LE HAUT DU SUJET, PAS SON MILIEU.
+           DEFAUT MESURE SUR LES CINQ TENUES LIVREES : ce sont des photos EN
+           PIED, verticales. Recadrees au centre dans 96 points de haut, elles
+           ne montraient que les hanches — « Blouse imprimee et jean flare »
+           affichait un pantalon. On ne choisit pas une tenue sur ses hanches.
+           A 28 %, une photo en pied montre le buste et le vetement ; une photo
+           deja serree (un vernis, une planche de flash, une chemise a plat)
+           bouge a peine, parce que son sujet occupe tout le cadre.
+           ET LA VIGNETTE A GRANDI DE SEIZE POINTS : une tenue entiere a besoin
+           de plus de hauteur qu'un ongle, et le rang n'en tient pas moins. */
+        .mu-pieces img{width:100%;height:112px;object-fit:cover;display:block;
+          object-position:center 28%;}
         /* La teinte, dessinee en forme d'ongle : voir la vignette plus haut. */
-        .mu-teinte{display:block;width:100%;height:96px;
+        .mu-teinte{display:block;width:100%;height:112px;
           border-radius:0 0 46% 46%/0 0 30% 30%;
           box-shadow:inset 0 -14px 22px -12px rgba(0,0,0,.55),
             inset 0 12px 18px -10px rgba(255,255,255,.42);}
