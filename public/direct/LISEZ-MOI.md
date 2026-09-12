@@ -462,6 +462,37 @@ catalogue à la place d'un essai qui n'a pas eu lieu. Le jour où la photo arriv
 il suffit d'ajouter `reference` à la pièce et de retirer `bientot` dans
 `lib/direct/fantomes.ts`.
 
+### ⚠️ La référence est une AUTRE personne — le risque qui reste
+
+Deux fois de suite, le rendu a renvoyé un autre visage : d'abord « ce n'est pas
+exactement ma tête ni les mêmes lunettes », puis « il m'a changé le visage et il
+m'a mis des lunettes » sur une photo qui n'en montrait aucune. Les deux causes
+étaient dans la consigne et sont corrigées (voir `lib/direct/consigne-essai.ts`,
+qui les raconte en détail). **Un risque structurel demeure, et il est dans les
+photos, pas dans le code.**
+
+`coiffure-homme-face.jpg` montre un jeune homme blond en entier : visage, yeux,
+teint, épaules. On demande au modèle de n'en prendre que les cheveux, et la
+consigne le dit maintenant en toutes lettres — mais plus la référence ressemble
+à un portrait, plus elle tire le résultat vers ce portrait-là. C'est
+particulièrement vrai quand le client ne lui ressemble pas du tout : un homme de
+cinquante ans aux cheveux gris à qui l'on propose la coupe d'un mannequin de
+vingt ans.
+
+**Ce qui réglerait le problème à la source :** des références de coiffure
+**recadrées sur les cheveux** — le haut du crâne, la frange, les tempes, les
+côtés — coupées au niveau des yeux. On garde la forme de la coupe autour du
+visage, qui est ce qu'on essaie, et on retire le visage, qui est ce qui fuit.
+La même règle vaut pour les tenues (`vetement1`…`vetement5`) : un vêtement à
+plat ou sur mannequin sans tête fuit moins qu'une photo de mode en pied.
+
+**Le levier disponible en attendant :** `ESSAI_FOURNISSEUR=openai` renverse
+l'ordre des deux fournisseurs. `gpt-image-1` accepte `input_fidelity: high`, un
+réglage que Gemini n'a pas, et qui existe précisément pour garder le visage. Il
+coûte quelques secondes de plus par essai. Aucune comparaison n'a pu être faite
+ici — **il n'y a aucune clé d'image dans l'environnement de développement**,
+donc aucun rendu réel n'y a jamais été vu.
+
 ### 👓 Le lunetier — cinq photos, un métier de plus
 
 > « Rajouter un nouveau métier : lunetier. »

@@ -49,8 +49,38 @@ const dire = (ok, t) => { if (!ok) echecs++; console.log(`${ok ? "  ok  " : "ÉC
         "        directement. Relancez avec Node 22.6+ ou --experimental-strip-types.",
     );
   } else {
-    const t = consigne("votre tête", ["Les lunettes exactement telles qu'elles sont."]);
+    const t = consigne(
+      "votre tête",
+      ["Les lunettes exactement telles qu'elles sont."],
+      "uniquement les cheveux",
+    );
     dire(/votre tête/.test(t), "elle nomme la partie du corps qu'on a photographiée");
+    // ═══ ON NE MODIFIE PAS « VOTRE TÊTE », ON MODIFIE LES CHEVEUX ═══════════
+    //
+    // DÉFAUT MESURÉ SUR UN VRAI TÉLÉPHONE : « il m'a changé le visage ». La
+    // consigne disait « reproduis ce que montre la deuxième image sur VOTRE
+    // TÊTE » — et la deuxième image montre une AUTRE PERSONNE en entier. La
+    // phrase se lit « donne-lui cette tête-là », et c'est ce qui a été rendu.
+    dire(
+      /modifier uniquement les cheveux/.test(t),
+      "et elle dit ce qu'on modifie, aussi étroitement que possible",
+    );
+    // ET ELLE DIT CE QU'EST LA SECONDE IMAGE : quelqu'un d'autre, dont rien ne
+    // doit passer. C'est la clause qui manquait entièrement.
+    dire(
+      /RIEN de la personne de l'image 2 ne doit passer/.test(t),
+      "elle dit que la référence montre quelqu'un d'autre, et que rien ne doit passer",
+    );
+    // ═══ NOMMER UN OBJET, C'EST LE FAIRE APPARAÎTRE ═════════════════════════
+    //
+    // LA FAUTE LA PLUS CONTRE-INTUITIVE DE TOUT CE TRAVAIL : la phrase censée
+    // protéger les lunettes de quelqu'un qui en porte en a fait apparaître sur
+    // une photo qui n'en montrait aucune. Un modèle d'image qui reçoit la
+    // description détaillée d'un objet le dessine — que l'objet soit là ou non.
+    dire(
+      /NE PORTE PAS de lunettes, alors le résultat\s*\n?\s*n'en porte AUCUNE/.test(t),
+      "et elle interdit d'ajouter des lunettes à qui n'en porte pas",
+    );
     // CHAQUE TRAIT EST NOMMÉ, UN PAR UN. « Ne modifie rien d'autre » est une
     // phrase générale, et un modèle d'image l'applique généreusement.
     const traits = ["nez", "bouche", "yeux", "mâchoire", "rides", "barbe", "carnation"];
@@ -93,6 +123,43 @@ const dire = (ok, t) => { if (!ok) echecs++; console.log(`${ok ? "  ok  " : "ÉC
     !sans.length,
     `chaque mur d'essai dit ce qu'il ne faut pas toucher${sans.length ? " — sauf : " + sans.join(", ") : ""}`,
   );
+  // CHAQUE MUR D'ESSAI DIT AUSSI CE QU'IL MODIFIE. Sans ce mot, la consigne
+  // retombe sur la partie du corps photographiée — « votre tête » — et autorise
+  // le modèle à refaire le visage.
+  const sansChange = blocs
+    .filter((b) => /\n    essai: \{/.test(b) && !/\n      change: "/.test(b))
+    .map((b) => b.slice(0, b.indexOf('"')));
+  dire(
+    !sansChange.length,
+    `chaque mur d'essai dit ce qu'il modifie${sansChange.length ? " — sauf : " + sansChange.join(", ") : ""}`,
+  );
+
+  // ═══ AUCUNE LISTE NE DÉCRIT UN ACCESSOIRE COMME S'IL ÉTAIT LÀ ════════════
+  //
+  // C'EST LA GARDE QUI AURAIT ÉVITÉ LA PAIRE DE LUNETTES INVENTÉE. La liste du
+  // coiffeur disait « Les lunettes exactement telles qu'elles sont : même
+  // forme, même monture, même position sur le nez » — écrite pour PROTÉGER les
+  // lunettes de quelqu'un qui en porte, mais servie avec une photo qui n'en
+  // montrait aucune, elle décrivait un objet absent. Le modèle l'a dessiné.
+  //
+  // LA RÈGLE : toute mention d'accessoire doit être CONDITIONNELLE. On cherche
+  // donc les lignes qui nomment un objet portable sans dire « si ».
+  const OBJETS = /lunettes?|bijou|bague|bracelet|montre|chapeau|écharpe|collier|tatouages?|maquillage/i;
+  const CONDITION = /\bsi\b|n'en porte|ne porte pas|ne sont pas concern|RETIRE/i;
+  const affirmatives = [];
+  for (const b of blocs) {
+    const cle = b.slice(0, b.indexOf('"'));
+    const liste = /\n      garder: \[([\s\S]*?)\n      \],/.exec(b)?.[1] ?? "";
+    for (const l of liste.split("\n")) {
+      const txt = l.trim().replace(/^"|",$/g, "");
+      if (txt && OBJETS.test(txt) && !CONDITION.test(txt)) affirmatives.push(`${cle} : « ${txt.slice(0, 60)}… »`);
+    }
+  }
+  dire(
+    !affirmatives.length,
+    `aucune liste ne décrit un accessoire comme s'il était là${affirmatives.length ? "\n         " + affirmatives.join("\n         ") : ""}`,
+  );
+
   dire(murs.includes("lunettes"), `le lunetier a son mur (${murs.length} murs en tout)`);
   // ET SA LISTE DIT L'INVERSE DE CELLE DU COIFFEUR. C'est la démonstration que
   // ces listes ne pouvaient pas être écrites une fois pour toutes dans la route.
@@ -103,8 +170,8 @@ const dire = (ok, t) => { if (!ok) echecs++; console.log(`${ok ? "  ok  " : "ÉC
   );
   const coif = blocs.find((b) => b.startsWith("coiffeur"));
   dire(
-    !!coif && /Les lunettes exactement telles qu'elles sont/.test(coif),
-    "là où le coiffeur demande de les garder exactement telles quelles",
+    !!coif && /si l'image 1 n'en montre pas, le résultat n'en porte aucune/i.test(coif),
+    "là où le coiffeur dit de n'en ajouter aucune à qui n'en porte pas",
   );
 }
 

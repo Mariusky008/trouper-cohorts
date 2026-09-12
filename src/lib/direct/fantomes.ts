@@ -378,6 +378,30 @@ export type Mur = {
      */
     garder?: string[];
     /**
+     * CE QUE LE MODÈLE A LE DROIT DE MODIFIER, ET RIEN D'AUTRE.
+     *
+     * ═══ IL EXISTE PARCE QUE `partie` FAISAIT DEUX MÉTIERS ═══════════════════
+     *
+     * « Il m'a changé le visage et il m'a mis des lunettes. »
+     *
+     * `partie` dit CE QU'ON PHOTOGRAPHIE : « votre tête », « votre main »,
+     * « votre avant-bras ». C'est le bon mot pour l'écran de prise de vue, et
+     * c'est le mot que le client lit.
+     *
+     * MAIS LA CONSIGNE S'EN SERVAIT AUSSI POUR DIRE CE QU'ON MODIFIE, et elle
+     * écrivait donc : « reproduis ce que montre la deuxième image sur VOTRE
+     * TÊTE ». Or la deuxième image montre une AUTRE PERSONNE en entier. La
+     * phrase se lit, très raisonnablement, comme « donne-lui cette tête-là » —
+     * et c'est exactement ce que le modèle a rendu : un autre visage, plus
+     * jeune, avec les cheveux de la référence.
+     *
+     * ON PHOTOGRAPHIE UNE TÊTE POUR CHANGER DES CHEVEUX. Ce sont deux choses,
+     * et les confondre donne au modèle la permission de refaire le reste. Ce
+     * champ ne dit donc qu'une chose, et le plus étroitement possible :
+     * « uniquement les cheveux ».
+     */
+    change?: string;
+    /**
      * LES MOTS DU MÉTIER, ET ILS NE SE PARTAGENT PAS.
      *
      * « Il faut aussi que chaque texte soit vraiment en fonction du métier, et
@@ -642,10 +666,11 @@ export const MURS: Mur[] = [
      */
     essai: {
       partie: "votre main",
+      change: "uniquement les ongles des doigts",
       garder: [
         "Les mains, les doigts, leur position et leur nombre, la peau, les veines et les plis.",
-        "Les bagues et les bracelets portés, à l'identique.",
-        "La longueur naturelle du doigt : seul l'ongle change.",
+        "La longueur naturelle de chaque doigt : seul l'ongle change.",
+        "Si la personne porte des bagues ou des bracelets, ils restent identiques ; si elle n'en porte pas, n'en ajoute aucun.",
       ],
       consigne: "Toute la main dans le cadre, à plat, paume vers le bas, à la lumière du jour.",
       /**
@@ -845,9 +870,10 @@ export const MURS: Mur[] = [
      */
     essai: {
       partie: "votre poignet",
+      change: "uniquement le bijou porté au poignet",
       garder: [
         "Le poignet, la main, la peau, les taches et la pilosité.",
-        "La montre et les autres bracelets déjà portés, à l'identique.",
+        "Si la personne porte déjà une montre ou d'autres bracelets, ils restent identiques ; si elle n'en porte pas, n'en ajoute aucun.",
       ],
       consigne: "Posez votre poignet à plat, à la lumière du jour, sans montre.",
       avant: "/direct/poignet-avant.jpg",
@@ -1001,9 +1027,11 @@ export const MURS: Mur[] = [
      */
     essai: {
       partie: "votre table de salon",
+      change: "uniquement l'objet posé sur la table",
       garder: [
-        "Tous les autres objets posés dans la pièce, à leur place exacte.",
+        "Tous les autres objets déjà posés dans la pièce, à leur place exacte.",
         "Les meubles, le sol, les murs et la fenêtre.",
+        "N'ajoute aucun objet de décoration qui ne soit pas déjà dans l'image 1.",
       ],
       consigne: "Reculez d’un pas et cadrez la table entière, de trois quarts.",
       avant: "/direct/table-salon.jpeg",
@@ -1120,11 +1148,12 @@ export const MURS: Mur[] = [
     verbes: [],
     essai: {
       partie: "votre tête",
+      change: "uniquement les cheveux : leur coupe, leur longueur, leur couleur et leur implantation",
       garder: [
-        "Les lunettes exactement telles qu'elles sont : même forme, même couleur, même monture, même position sur le nez.",
-        "La barbe, la moustache et la pilosité du visage telles qu'elles sont.",
-        "Le front, la ligne des sourcils et la forme du crâne.",
-        "Seuls les cheveux changent : leur coupe, leur longueur et leur couleur.",
+        "Le visage entier : c'est la MÊME personne après un passage chez le coiffeur, pas quelqu'un d'autre.",
+        "La barbe, la moustache et la pilosité du visage restent exactement comme sur l'image 1 : on ne les taille pas, et on n'en ajoute pas.",
+        "Les lunettes ne sont pas concernées par cet essai : si l'image 1 en montre, elles restent strictement identiques ; si l'image 1 n'en montre pas, le résultat n'en porte aucune.",
+        "Le front, les tempes, les oreilles et la forme du crâne.",
       ],
       consigne: "Face à une fenêtre, cheveux dégagés, sans casquette ni lunettes de soleil.",
       /**
@@ -1280,11 +1309,11 @@ export const MURS: Mur[] = [
     verbes: [],
     essai: {
       partie: "vous, en buste",
+      change: "uniquement le vêtement porté sur le buste",
       garder: [
-        "La tête, la coupe de cheveux, la barbe et les lunettes, à l'identique.",
-        "Les bijoux et la montre portés.",
+        "La tête entière : le visage, la coupe de cheveux et la barbe telles qu'elles sont sur l'image 1.",
+        "Si la personne porte des lunettes, des bijoux ou une montre, ils restent identiques ; si elle n'en porte pas, n'en ajoute aucun.",
         "La carrure, la corpulence et la posture des épaules et des bras.",
-        "Seul le vêtement change.",
       ],
       consigne: "Debout face à une fenêtre, bras le long du corps, buste entier dans le cadre.",
       avant: "/direct/poignet-nu.jpg",
@@ -1428,6 +1457,7 @@ export const MURS: Mur[] = [
     verbes: [],
     essai: {
       partie: "l’endroit où il ira",
+      change: "uniquement l'objet qu'on pose dans le cadre",
       garder: [
         "Tout ce qui se trouve déjà dans le cadre, à sa place exacte.",
         "La matière, la couleur et l'usure du support.",
@@ -1549,11 +1579,12 @@ export const MURS: Mur[] = [
     verbes: [],
     essai: {
       partie: "votre avant-bras",
+      change: "uniquement le dessin tatoué sur la peau de l'avant-bras",
       garder: [
         "La peau, sa carnation, ses taches, sa pilosité et ses veines.",
-        "Les tatouages déjà présents, s'il y en a, à l'identique.",
-        "La montre et les bracelets portés.",
-        "Seul le dessin demandé s'ajoute, comme une encre sous la peau et non comme un autocollant.",
+        "Si l'avant-bras porte déjà des tatouages, ils restent identiques ; s'il n'en porte pas, n'en ajoute aucun autre que celui demandé.",
+        "Si la personne porte une montre ou des bracelets, ils restent identiques ; si elle n'en porte pas, n'en ajoute aucun.",
+        "Le dessin s'ajoute comme une encre SOUS la peau, en suivant sa courbure, et non comme un autocollant posé dessus.",
       ],
       consigne: "Avant-bras à plat, manche remontée, à la lumière du jour, sans ombre portée.",
       avant: "/direct/avant-bras.jpg",
@@ -1673,17 +1704,18 @@ export const MURS: Mur[] = [
        * c'est ce qu'il fait quand on lui demande d'ajouter sans lui dire de
        * retirer.
        */
+      change: "uniquement la monture de lunettes posée sur le nez",
       garder: [
-        "Si la personne porte déjà des lunettes, RETIRE-LES entièrement avant de poser la nouvelle monture. Une seule paire sur le visage.",
+        "Si la personne de l'image 1 porte déjà des lunettes, RETIRE-LES entièrement avant de poser la nouvelle monture : une seule paire sur le visage, jamais deux.",
+        "Le visage entier : c'est la MÊME personne, seule la monture change — pas quelqu'un d'autre.",
         "Les yeux, leur couleur et leur regard, visibles derrière des verres transparents.",
-        "La coupe de cheveux, la barbe, la moustache et la pilosité, à l'identique.",
+        "La coupe de cheveux, la barbe et la pilosité, exactement comme sur l'image 1 : on ne les retouche pas.",
         "La forme du nez et des oreilles : c'est sur elles que la monture repose.",
-        "Seule la monture change : sa forme, sa matière et sa couleur.",
       ],
       mots: {
         titre: "Ces montures, sur votre visage",
         phrase: "Photographiez-vous de face : la monture se pose sur votre visage, et vous vous voyez net.",
-        geste: "Me photographier de face",
+        geste: "Photographier mon visage",
         choisir: "Choisissez la monture",
         reserver: "Les essayer en boutique",
         autres: "Voir les autres montures",

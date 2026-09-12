@@ -1553,6 +1553,10 @@ function Essai({
         // `fantomes.ts` : chez le coiffeur les lunettes restent, chez le
         // lunetier elles sont ce qui change.
         garder: mur.essai?.garder,
+        // ET CE QU'IL A LE DROIT DE MODIFIER. Sans ce mot, la consigne disait
+        // « reproduis la référence sur votre tête » — et le modèle refaisait
+        // le visage, ce qui est exactement ce qui a été rapporté.
+        change: mur.essai?.change,
       })
         .then((r) =>
           estUnRendu(r)

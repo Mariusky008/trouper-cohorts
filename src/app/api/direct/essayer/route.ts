@@ -79,6 +79,7 @@ async function parGemini(
   reference: { type: string; donnees: string },
   partie: string,
   garder: string[],
+  change: string,
 ): Promise<{ image: string } | { erreur: string }> {
   const modele = s(process.env.GEMINI_IMAGE_MODEL) || "gemini-2.5-flash-image";
   /**
@@ -102,7 +103,7 @@ async function parGemini(
           {
             role: "user",
             parts: [
-              { text: consigne(partie, garder) },
+              { text: consigne(partie, garder, change) },
               { inlineData: { mimeType: photo.type, data: photo.donnees } },
               { inlineData: { mimeType: reference.type, data: reference.donnees } },
             ],
@@ -132,6 +133,7 @@ async function parOpenAI(
   reference: { type: string; donnees: string },
   partie: string,
   garder: string[],
+  change: string,
 ): Promise<{ image: string } | { erreur: string }> {
   const modele = s(process.env.OPENAI_IMAGE_MODEL) || "gpt-image-1";
   // L'API d'édition d'OpenAI prend les images en multipart, et elle accepte
@@ -139,7 +141,7 @@ async function parOpenAI(
   // référence. C'est exactement la forme dont on a besoin.
   const forme = new FormData();
   forme.append("model", modele);
-  forme.append("prompt", consigne(partie, garder));
+  forme.append("prompt", consigne(partie, garder, change));
   forme.append("n", "1");
   /**
    * TROIS RÉGLAGES QUI DÉCIDENT SI LE RENDU ARRIVE, OU PAS DU TOUT.
@@ -186,7 +188,13 @@ async function parOpenAI(
 }
 
 export async function POST(req: Request) {
-  let corps: { photo?: string; reference?: string; partie?: string; garder?: string[] };
+  let corps: {
+    photo?: string;
+    reference?: string;
+    partie?: string;
+    garder?: string[];
+    change?: string;
+  };
   try {
     corps = (await req.json()) as typeof corps;
   } catch {
@@ -210,6 +218,15 @@ export async function POST(req: Request) {
     .map((g) => s(String(g)).slice(0, 100))
     .filter(Boolean)
     .slice(0, 10);
+  /**
+   * CE QUE LE MODÈLE A LE DROIT DE MODIFIER, ET RIEN D'AUTRE.
+   *
+   * IL NE PEUT PAS SE DÉDUIRE DE `partie` — c'est précisément la confusion qui
+   * a fait rendre un autre visage. On photographie une TÊTE pour changer des
+   * CHEVEUX ; écrire « reproduis la référence sur votre tête » autorise le
+   * modèle à refaire le visage, et il le fait.
+   */
+  const change = s(corps.change).slice(0, 160);
   if (!photo) return NextResponse.json({ erreur: "Photo manquante ou illisible." }, { status: 400 });
   if (!reference) {
     return NextResponse.json({ erreur: "Photo de référence manquante." }, { status: 400 });
@@ -245,10 +262,28 @@ export async function POST(req: Request) {
 
   const debut = Date.now();
   const essais: string[] = [];
-  for (const tenter of [
-    gemini ? () => parGemini(gemini, photo, reference, partie, garder) : null,
-    openai ? () => parOpenAI(openai, photo, reference, partie, garder) : null,
-  ]) {
+  /**
+   * L'ORDRE DES DEUX FOURNISSEURS SE CHANGE SANS REDÉPLOYER, ET C'EST UTILE.
+   *
+   * GEMINI PASSE EN PREMIER PARCE QU'IL EST LE PLUS RAPIDE ET LE MOINS CHER sur
+   * l'édition avec référence, et c'est le bon défaut. Mais LA FIDÉLITÉ AU
+   * VISAGE est ce qui décide si cet essai sert à quelque chose — « ce n'est pas
+   * exactement ma tête » — et sur ce point précis, `gpt-image-1` accepte un
+   * réglage que Gemini n'a pas : `input_fidelity: high`, qui coûte du temps et
+   * garde le visage, la peau et la pose.
+   *
+   * ON NE PEUT PAS TRANCHER D'ICI : il n'y a aucune clé dans ce conteneur, donc
+   * aucun rendu réel n'a jamais été comparé. Décider à l'aveugle et recompiler à
+   * chaque hypothèse coûterait un aller-retour par essai, sur un téléphone.
+   * `ESSAI_FOURNISSEUR=openai` renverse l'ordre en une variable, et laisse la
+   * mesure se faire là où elle est possible — sur un vrai visage.
+   */
+  const dabord = s(process.env.ESSAI_FOURNISSEUR).toLowerCase();
+  const chemins = [
+    gemini ? () => parGemini(gemini, photo, reference, partie, garder, change) : null,
+    openai ? () => parOpenAI(openai, photo, reference, partie, garder, change) : null,
+  ];
+  for (const tenter of dabord === "openai" ? [...chemins].reverse() : chemins) {
     if (!tenter) continue;
     try {
       const r = await tenter();

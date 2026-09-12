@@ -87,6 +87,13 @@ export async function essayerSurMoi(opts: {
   reference: string;
   partie: string;
   garder?: string[];
+  /**
+   * CE QUE LE MODÈLE A LE DROIT DE MODIFIER, ET RIEN D'AUTRE.
+   *
+   * IL NE SE DÉDUIT PAS DE `partie`, et c'est la confusion qui a fait rendre un
+   * autre visage : on photographie une TÊTE pour changer des CHEVEUX.
+   */
+  change?: string;
   signal?: AbortSignal;
 }): Promise<Rendu | Souci> {
   let photo: string;
@@ -107,6 +114,7 @@ export async function essayerSurMoi(opts: {
         reference,
         partie: opts.partie,
         garder: opts.garder ?? [],
+        change: opts.change ?? "",
       }),
       signal: opts.signal,
     });
