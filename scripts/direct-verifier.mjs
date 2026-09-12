@@ -1808,6 +1808,145 @@ console.log("\n══ la page du commerce ══");
   await large.close();
 }
 
+// ═══ LA PAGE D'ACCUEIL DIT CE QUE LE PRODUIT A DE NOUVEAU ══════════════════
+//
+// CE QU'ELLE PROTÈGE, ET LE DÉFAUT ÉTAIT MESURABLE : « la page d'accueil est
+// désuète ». Elle racontait quatre situations vraies — le midi, un désistement,
+// un concert, un poste — que n'importe quelle application de ville pourrait
+// raconter, et elle ne prononçait ni le mot « essai » ni le mot « fantôme ».
+// Les deux seules choses du produit qu'on ne trouve nulle part ailleurs étaient
+// absentes de la page chargée de le vendre.
+//
+// CE QUE CETTE GARDE NE MESURE PAS : le goût. Elle mesure qu'on montre plutôt
+// que d'expliquer — une vraie carte qui tourne, deux photos qu'on superpose au
+// doigt, de vrais fantômes avec leurs trois verdicts — et que le sommaire du
+// haut nomme le chapitre le plus neuf. Une page peut être laide et passer ;
+// elle ne peut pas taire son produit et passer.
+{
+  console.log("\n══ la page d'accueil montre ce qui n'existe nulle part ailleurs ══");
+  const grand = await nav.newContext({
+    viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1, locale: "fr-FR",
+  });
+  await grand.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
+  const pD = await grand.newPage();
+  const bruit = [];
+  pD.on("pageerror", (e) => bruit.push(String(e)));
+  pD.on("console", (m) => { if (m.type() === "error") bruit.push(m.text()); });
+  await pD.goto(`${BASE}/le-direct`, { waitUntil: "networkidle" });
+  await pD.waitForTimeout(1200);
+
+  const mots = await pD.evaluate(() => document.body.innerText);
+  dire(/essay|essai/i.test(mots), "elle parle de l'essai");
+  dire(/fant[oô]me/i.test(mots), "et du fantôme");
+
+  // LE SOMMAIRE DU HAUT LE NOMME AUSSI. C'est l'endroit où l'on décide de
+  // descendre ou de fermer : un sommaire qui omet le chapitre le plus neuf
+  // envoie fermer avant d'y arriver.
+  const gestes = await pD.$$eval(".ld-gestes b", (l) => l.map((e) => e.textContent.trim()));
+  dire(
+    gestes.some((g) => /essa/i.test(g)),
+    `et le sommaire du haut le nomme (${gestes.join(" · ")})`,
+  );
+
+  // LA VITRINE EST LA VRAIE CARTE, ET ELLE CHANGE DE MÉTIER.
+  // Une capture d'écran aurait vieilli au premier changement de design — c'est
+  // exactement ce qui était arrivé à cette page. On vérifie donc que le
+  // composant du produit est monté, et qu'il tourne.
+  const cartes = await pD.$$eval(".ld-vt-c .cd-carte", (l) => l.length);
+  dire(cartes >= 4, `la vitrine monte la vraie carte, plusieurs fois (${cartes})`);
+  const premier = await pD.$eval(".ld-vt-c.on", (e) => e.textContent.slice(0, 40));
+  await pD.waitForTimeout(4200);
+  const second = await pD.$eval(".ld-vt-c.on", (e) => e.textContent.slice(0, 40));
+  dire(premier !== second, "et elle passe d'un métier à l'autre toute seule");
+
+  // ═══ LE MIROIR ═══════════════════════════════════════════════════════════
+  //
+  // LES DEUX PHOTOS DOIVENT ÊTRE LA MÊME PHOTO. Premier jet : un poignet nu
+  // d'un côté, un poignet au bracelet de l'autre, issus de deux prises
+  // différentes. Le résultat se lisait comme deux photos de deux personnes —
+  // une glissière entre deux images qui ne se superposent pas ne montre pas un
+  // essai, elle montre un montage. On le mesure par le format : deux images de
+  // rapports différents ne peuvent pas se superposer.
+  const mi = await pD.$(".ld-miroir");
+  dire(!!mi, "on peut superposer l'avant et l'après au doigt");
+  if (mi) {
+    await mi.scrollIntoViewIfNeeded();
+    await pD.waitForTimeout(1600);
+    const paire = await pD.evaluate(() => {
+      const i = [...document.querySelectorAll(".ld-miroir img")];
+      return i.map((e) => ({ r: e.naturalWidth / e.naturalHeight, src: e.currentSrc || e.src }));
+    });
+    dire(paire.length === 2, `deux images, pas une (${paire.length})`);
+    dire(
+      paire.length === 2 && Math.abs(paire[0].r - paire[1].r) < 0.02,
+      "et elles ont le même cadrage, donc elles se superposent vraiment",
+    );
+
+    // LE TRAIT SE TIRE, ET IL DÉPLACE VRAIMENT LA DÉCOUPE. Une glissière qui
+    // bouge son curseur sans bouger l'image est le défaut le plus facile à ne
+    // pas voir sur une capture d'écran.
+    const b = await mi.boundingBox();
+    const lire = () => pD.$eval(".ld-miroir", (e) => e.style.getPropertyValue("--x"));
+    await pD.mouse.move(b.x + b.width * 0.82, b.y + b.height / 2);
+    await pD.mouse.down();
+    await pD.mouse.move(b.x + b.width * 0.18, b.y + b.height / 2, { steps: 10 });
+    await pD.mouse.up();
+    await pD.waitForTimeout(300);
+    const apres = parseFloat(await lire());
+    dire(apres > 0 && apres < 30, `et le tirer déplace la découpe (${apres}%)`);
+    // LA DÉCOUPE EST UN MASQUE, PAS UNE LARGEUR. Écrite width+overflow, la
+    // photo se met en page dans la largeur de la découpe : on comparerait un
+    // salon comprimé à un salon normal, c'est-à-dire deux salons.
+    const masque = await pD.$eval(".ld-mi-av", (e) => {
+      const s = getComputedStyle(e);
+      return { clip: s.clipPath, l: Math.round(e.getBoundingClientRect().width) };
+    });
+    dire(
+      masque.clip !== "none" && Math.abs(masque.l - Math.round(b.width)) < 3,
+      `le calque est masqué, pas rétréci (${masque.l} pour ${Math.round(b.width)})`,
+    );
+  }
+
+  // ═══ LE MUR DES FANTÔMES ═════════════════════════════════════════════════
+  //
+  // TROIS VERDICTS DIFFÉRENTS, ET C'EST TOUT LE PROPOS. Un mur où tout le monde
+  // achète n'est pas un mur, c'est une page d'avis — et personne n'y croit.
+  const verdicts = await pD.$$eval(".ld-laisse .ld-la-v", (l) =>
+    l.map((e) => e.textContent.replace(/\s+/g, " ").trim()),
+  );
+  dire(verdicts.length >= 3, `le mur montre plusieurs fantômes (${verdicts.length})`);
+  dire(
+    new Set(verdicts).size >= 3,
+    `avec des verdicts différents (${verdicts.join(" · ")})`,
+  );
+  // CHACUN DIT CE QU'IL A ESSAYÉ ET CE QU'IL EN PENSE : une photo sans phrase
+  // est un catalogue de plus.
+  const dits = await pD.$$eval(".ld-laisse .ld-la-m", (l) => l.map((e) => e.textContent.trim()));
+  dire(
+    dits.length >= 3 && dits.every((d) => d.length > 25),
+    "et chacun dit ce qu'il en a pensé, dans ses mots",
+  );
+
+  // RIEN NE DÉBORDE, NI SUR TÉLÉPHONE NI SUR ORDINATEUR. Le miroir est le seul
+  // objet de la page dont la largeur dépend d'une variable.
+  for (const [nom, l, h] of [["ordinateur", 1280, 900], ["téléphone", 390, 844]]) {
+    const c = await nav.newContext({
+      viewport: { width: l, height: h }, deviceScaleFactor: 1,
+      isMobile: l < 500, hasTouch: l < 500, locale: "fr-FR",
+    });
+    await c.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
+    const q = await c.newPage();
+    await q.goto(`${BASE}/le-direct`, { waitUntil: "networkidle" });
+    await q.waitForTimeout(700);
+    const d = await q.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    dire(!d, `rien ne déborde sur ${nom}`);
+    await c.close();
+  }
+
+  dire(bruit.length === 0, `et la page d'accueil ne se plaint pas${bruit.length ? " : " + bruit[0].slice(0, 90) : ""}`);
+  await grand.close();
+}
+
 dire(erreurs.length === 0, `aucune erreur${erreurs.length ? " : " + erreurs[0] : ""}`);
 await nav.close();
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT PASSE");

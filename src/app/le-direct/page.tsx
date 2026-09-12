@@ -30,12 +30,12 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: { absolute: `Le direct de votre ville — ${MARQUE}` },
   description:
-    "Ce qui se passe autour de vous, à l’instant où ça se passe. Vous le voyez, vous en parlez à vos amis, et vous décidez ensemble.",
+    "Ce qui se passe autour de vous, à l’instant où ça se passe. Vous le voyez, vous l’essayez sur vous ou chez vous, vous en parlez à vos amis, et vous décidez ensemble.",
   robots: { index: false, follow: false },
   openGraph: {
     title: `Le direct de votre ville — ${MARQUE}`,
     description:
-      "On mange où ? Une place vient de se libérer. Un concert au kiosque. Ils cherchent quelqu’un. Vous voyez, vous en parlez, vous y allez.",
+      "Essayez-le avant d’entrer. On mange où ? Une place vient de se libérer. Un concert au kiosque. Ils cherchent quelqu’un. Vous voyez, vous essayez, vous en parlez, vous y allez.",
     locale: "fr_FR",
     type: "website",
   },
@@ -67,7 +67,12 @@ function StylesLeDirect() {
    ═══════════════════════════════════════════════════════════════════════ */
 .ld{--nuit:#05090C;--nuit2:#0A1210;--craie:#EAF2EC;--craie2:#93A79C;
   --craie3:#6C8078;--menthe:#3DE2A6;--menthe2:#0BA97B;--or:#F0B429;
-  --rose:#F472B6;--bleu:#7DA8FF;--trait:rgba(234,242,236,.11);
+  --rose:#F472B6;--bleu:#7DA8FF;
+  /* LE MAUVE EST CELUI DU COIFFEUR DANS LE PRODUIT ; LE SPECTRE N'EST LE
+     METIER DE PERSONNE — c'est la couleur du fantome, et elle ne doit
+     appartenir a aucun commerce. */
+  --mauve:#C9A7FF;--spectre:#B9C9FF;
+  --trait:rgba(234,242,236,.11);
   background:var(--nuit);color:var(--craie);
   font-family:'Inter',system-ui,-apple-system,sans-serif;
   min-height:100vh;overflow-x:hidden}
@@ -140,7 +145,83 @@ function StylesLeDirect() {
 .ld-n{margin:0;font-size:12.5px;color:var(--craie3)}
 .ld-hero-b{display:flex;flex-direction:column;align-items:center;gap:11px}
 
-/* ── LES TROIS GESTES ───────────────────────────────────────────────── */
+/* ── LES QUATRE GESTES ──────────────────────────────────────────────── */
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LA VITRINE VIVANTE — voir vitrine.tsx pour le pourquoi.
+
+   ELLE EST LE SEUL OBJET DE CETTE PAGE QUI BOUGE TOUT SEUL, et c'est
+   volontaire : tout ce qui bouge attire, donc il ne peut y en avoir qu'un.
+   ═══════════════════════════════════════════════════════════════════════ */
+.ld-vitrine{display:flex;flex-direction:column;align-items:center;gap:14px;
+  margin:36px auto 0;}
+
+/* LE TELEPHONE EST DESSINE, PAS PHOTOGRAPHIE : une image de telephone pese
+   deux cents kilo-octets, vieillit avec les modeles et impose sa couleur.
+   IL S'APPELLE ld-vt ET NON ld-tel : ce nom-la existe deja plus bas, pour
+   les cadres qui entourent les captures des quatre situations. Deux objets
+   differents sous le meme nom heritent l'un de l'autre, et le resultat depend
+   de l'ordre d'ecriture — la garde des styles compte trois occasions ou ce
+   projet l'a paye. */
+/* ON REDUIT LA CARTE, ON NE LA RETRECIT PAS — ET C'EST TOUTE LA DIFFERENCE.
+   Premier jet : la carte remplissait le cadre, donc elle etait MISE EN PAGE
+   pour 282 points de large. Resultat : « MENU DU J... », « LASAGNE▌ » coupe au
+   bord, le prix a cheval sur la photo. On ne montrait pas le produit, on
+   montrait le produit casse.
+   LE CADRE CONTIENT DONC UN VRAI TELEPHONE DE 390x844, ET C'EST LUI QU'ON
+   MET A L'ECHELLE. La carte se croit sur un iPhone, elle se met en page comme
+   sur un iPhone, et on la regarde de plus loin. La variable ld-vt-k est ce
+   recul, et c'est le CADRE qui se deduit d'elle, pas l'inverse.
+
+   ELLE EST UN NOMBRE NU, ET IL A FALLU UN ECRAN PLAT POUR LE COMPRENDRE. Ecrite
+   calc((min(300px,84vw) - 18px) / 390), elle vaut une LONGUEUR : une longueur
+   divisee par un nombre reste une longueur. Plus bas on demande 844px fois
+   cette valeur — px fois px n'existe pas, la hauteur devient invalide, et le
+   telephone s'ecrase a quelques points de haut. CSS ne sait pas diviser une
+   longueur par une longueur pour en tirer un nombre : le recul se choisit donc
+   a la main, par palier. */
+.ld-vt{--ld-vt-k:.723;
+  position:relative;width:calc(390px * var(--ld-vt-k) + 18px);
+  border-radius:42px;padding:9px;
+  background:linear-gradient(160deg,#1B2630,#090D11 62%);
+  box-shadow:0 50px 90px -40px rgba(0,0,0,.95),
+    0 0 0 1px rgba(255,255,255,.09),
+    inset 0 1px 0 rgba(255,255,255,.14);}
+/* L'ENCOCHE A ETE RETIREE, ET CE N'EST PAS UN OUBLI. Posee au milieu du haut,
+   elle tombait sur la premiere ligne de la carte — « MENU DU JOUR » avec un
+   galet noir au milieu. Un ornement qui abime ce qu'il encadre coute plus
+   qu'il ne rapporte : le bord arrondi et l'ombre suffisent a dire telephone.
+   La regle reste declaree pour que le composant ne casse pas s'il la rend. */
+.ld-vt-encoche{display:none;}
+.ld-vt-ecran{position:relative;width:100%;height:calc(844px * var(--ld-vt-k));
+  border-radius:34px;overflow:hidden;background:#05080B;}
+/* LES CARTES SONT TOUTES EN PLACE, UNE SEULE EST VISIBLE. On ne demonte pas
+   celles qui attendent : leurs photos restent chargees, donc le passage est
+   instantane. Demonter rechargerait l'image a chaque tour, et le premier tour
+   serait le seul beau. */
+.ld-vt-c{position:absolute;top:0;left:0;width:390px;height:844px;
+  transform-origin:top left;transform:scale(var(--ld-vt-k));
+  display:flex;align-items:stretch;
+  opacity:0;transition:opacity .62s ease;pointer-events:none;}
+.ld-vt-c.on{opacity:1;}
+.ld-vt-c .cd-carte{width:100%;max-width:none;aspect-ratio:auto;height:100%;
+  border-radius:0;box-shadow:none;}
+
+.ld-vitrine-p{display:flex;gap:7px;}
+.ld-vitrine-p i{width:6px;height:6px;border-radius:50%;
+  background:rgba(255,255,255,.2);transition:background .3s ease,width .3s ease;}
+.ld-vitrine-p i.on{width:20px;border-radius:4px;background:var(--ld-menthe,#3DE2A6);}
+
+/* LES TROIS RECULS. Sur un petit telephone le cadre doit laisser la marge de
+   la page ; sur un ordinateur on a la place de s'approcher, et la vitrine est
+   le seul objet que l'on vient regarder. */
+@media (max-width:359px){ .ld-vt{--ld-vt-k:.62;} }
+@media (min-width:900px){ .ld-vt{--ld-vt-k:.84;} }
+
+@media (prefers-reduced-motion:reduce){
+  .ld-vt-c{transition:none;}
+}
+
 .ld-gestes{position:relative;z-index:1;display:flex;flex-wrap:wrap;
   justify-content:center;gap:clamp(10px,2vw,26px);
   list-style:none;margin:clamp(34px,6vh,60px) auto 0;padding:0;max-width:940px}
@@ -257,6 +338,114 @@ function StylesLeDirect() {
   background:color-mix(in srgb,var(--ton,var(--menthe)) 6%,var(--nuit2))}
 .ld-atouts.cas b{color:#fff}
 .ld-atouts.cas i{color:var(--ton,var(--menthe))}
+
+/* ── L'ESSAI SUR SOI, ET LE FANTOME QU'IL LAISSE ────────────────────────
+   CES DEUX CHAPITRES MANQUAIENT, ET C'ETAIT TOUT LE DEFAUT DE LA PAGE.
+   Mesure avant ecriture : le mot « essai » n'apparaissait nulle part dans
+   cette page, le mot « fantome » non plus. Elle racontait quatre situations
+   vraies — le midi, le desistement, le concert, le poste — que n'importe
+   quelle autre application pourrait raconter. Ce qui ne se trouve nulle part
+   ailleurs etait absent.
+
+   DEUX TEINTES DE PLUS, ET ELLES SE JUSTIFIENT. Chaque chapitre porte la
+   sienne depuis le debut de cette page ; deux nouveaux chapitres sous une
+   teinte deja prise se liraient comme la suite du precedent. Le mauve est
+   celui du coiffeur dans le produit, le spectre est une couleur qu'aucun
+   commerce n'a — le fantome n'est le metier de personne. */
+.ld-cas.t-essai{--ton:var(--mauve)}
+.ld-cas.t-fantome{--ton:var(--spectre)}
+
+/* ── LE MIROIR : ON TIRE LE TRAIT, ON NE LIT PAS UNE LEGENDE ────────────
+   Deux photos cote a cote laissent le lecteur chercher la difference ; une
+   glissiere la lui fait produire. C'est le seul endroit de la page ou l'on
+   touche quelque chose, et ce n'est pas un ornement : ce produit se joue. */
+.ld-miroir-h{display:flex;justify-content:center;
+  margin:clamp(26px,4vh,44px) auto 0;max-width:560px}
+/* LE CADRE EST AU FORMAT DES PHOTOS, 4/3, ET NON CARRE. Recadrees en carre,
+   les deux images perdaient la table basse par les cotes — c'est-a-dire
+   l'endroit ou les bougies apparaissent. */
+.ld-miroir{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;
+  border-radius:22px;border:1px solid color-mix(in srgb,var(--ton) 30%,transparent);
+  background:var(--nuit2);touch-action:pan-y;
+  box-shadow:0 34px 70px -36px rgba(0,0,0,.9)}
+.ld-mi-i{display:block;width:100%;height:100%;object-fit:cover}
+/* LE « AVANT » EST DECOUPE, IL N'EST PAS RETRECI — ET LA NUANCE EST TOUT.
+   Ecrit width:var(--x) avec overflow:hidden, le calque garde bien la bonne
+   largeur, mais la photo dedans se met en page dans cette largeur-la : on
+   comparerait un poignet comprime a un poignet normal, c'est-a-dire deux
+   poignets differents, c'est-a-dire rien.
+   clip-path laisse le calque a la taille du cadre et se contente de MASQUER
+   ce qui depasse le trait. La photo ne bouge pas d'un pixel pendant qu'on
+   tire, et les deux moitiés se raccordent exactement. */
+.ld-mi-av{position:absolute;inset:0;
+  clip-path:inset(0 calc(100% - var(--x)) 0 0)}
+.ld-mi-av .ld-mi-i{width:100%;height:100%}
+
+/* LE TRAIT, ET SA POIGNEE. Il ne recoit aucun appui : c'est la glissiere,
+   dessous, qui les recoit tous. Sans ce mot, le trait volerait au doigt les
+   appuis destines a la glissiere, precisement la ou l'on vise. */
+.ld-mi-t{position:absolute;top:0;bottom:0;left:var(--x);width:2px;
+  background:rgba(255,255,255,.9);pointer-events:none;z-index:3;
+  box-shadow:0 0 0 1px rgba(0,0,0,.28)}
+.ld-mi-t i{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:42px;height:42px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-style:normal;font-size:17px;color:#0A1210;
+  background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+/* CHAQUE ETIQUETTE TIENT DANS SA MOITIE, ET C'EST UNE CORRECTION.
+   Sans le plafond, « Les bougies de l'atelier » depassait vers la gauche et
+   venait se poser sur « Votre salon » des que le trait passait au milieu :
+   deux legendes superposees, illisibles toutes les deux. */
+.ld-mi-e{position:absolute;bottom:12px;z-index:2;pointer-events:none;
+  max-width:46%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-size:10.5px;font-weight:850;letter-spacing:.09em;text-transform:uppercase;
+  color:#fff;background:rgba(5,9,12,.62);backdrop-filter:blur(6px);
+  border-radius:999px;padding:6px 11px}
+.ld-mi-e.a{left:12px}
+.ld-mi-e.b{right:12px;color:var(--ton)}
+/* LA GLISSIERE COUVRE TOUT LE CADRE ET NE SE VOIT PAS. C'est un vrai champ
+   de formulaire : le clavier, la molette et les lecteurs d'ecran marchent
+   sans une ligne de plus, ce qu'une glissiere ecrite a la main n'aurait pas
+   donne. Son curseur natif est efface parce qu'on en dessine un autre. */
+.ld-mi-r{position:absolute;inset:0;z-index:4;width:100%;height:100%;margin:0;
+  appearance:none;background:transparent;cursor:ew-resize;opacity:0}
+.ld-mi-r::-webkit-slider-thumb{appearance:none;width:44px;height:100%}
+.ld-mi-r::-moz-range-thumb{width:44px;height:100%;border:0;background:transparent}
+.ld-mi-r:focus-visible{outline:2px solid var(--ton);outline-offset:3px;opacity:1}
+
+/* ── LE MUR DES FANTOMES ────────────────────────────────────────────────
+   TROIS ESSAIS, TROIS VERDICTS DIFFERENTS, ET C'EST TOUT LE PROPOS : une
+   qui a pris, une qui est passee, une qui hesite encore et le dit. Un mur
+   ou tout le monde achete n'est pas un mur, c'est une page d'avis. */
+.ld-laisse{list-style:none;margin:clamp(26px,4vh,44px) auto 0;padding:0;
+  max-width:940px;display:grid;gap:12px;
+  grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+.ld-laisse li{display:flex;gap:12px;padding:12px;border-radius:18px;
+  background:color-mix(in srgb,var(--ton) 6%,var(--nuit2));
+  border:1px solid color-mix(in srgb,var(--ton) 22%,transparent)}
+.ld-la-p{position:relative;flex:0 0 96px;width:96px;height:118px;
+  border-radius:13px;overflow:hidden;background:#0A1210}
+.ld-la-p img{width:100%;height:100%;object-fit:cover}
+/* LE VERDICT EST SUR LA PHOTO, PAS A COTE. C'est la premiere chose qu'on
+   cherche sur le mur de quelqu'un d'autre — « elle l'a pris ou pas ? » — et
+   il doit se lire sans avoir a relire le message. */
+.ld-la-v{position:absolute;left:6px;bottom:6px;display:inline-flex;
+  align-items:center;gap:4px;font-size:10px;font-weight:850;
+  letter-spacing:.06em;text-transform:uppercase;border-radius:999px;
+  padding:4px 8px;color:#05090C}
+.ld-la-v i{font-style:normal;font-size:10px;line-height:1}
+.ld-la-v.pris{background:var(--menthe)}
+.ld-la-v.passe{background:var(--craie2)}
+.ld-la-v.hesite{background:var(--mauve)}
+.ld-la-d{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:6px}
+.ld-la-q{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;margin:0}
+.ld-la-q b{font-size:14.5px;font-weight:850;color:#fff}
+.ld-la-q em{font-style:normal;font-size:12px;color:var(--ton)}
+.ld-la-q s{text-decoration:none;font-size:11px;color:var(--craie3);
+  margin-left:auto}
+.ld-la-m{margin:0;font-size:13px;line-height:1.45;color:var(--craie)}
+.ld-la-i{display:inline-flex;align-items:center;gap:6px;margin:auto 0 0;
+  font-size:11.5px;font-weight:700;color:var(--craie2)}
+.ld-la-i i{font-style:normal;color:var(--ton)}
 
 /* ── L'ESSAI, PAR-DESSUS LA PAGE ────────────────────────────────────────
    DEFAUT MESURE A L'USAGE : « quand je clique dessus je pars sur une autre

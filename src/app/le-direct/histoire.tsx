@@ -37,6 +37,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { MARQUE } from "@/lib/marque";
+import { EssaiEtFantome } from "./essai-fantome";
+import { VitrineVivante } from "./vitrine";
 
 /** Un écran de l'application, avec son rang dans l'histoire et sa légende. */
 type Ecran = {
@@ -215,8 +217,19 @@ const CAS: Cas[] = [
   },
 ];
 
+/**
+ * QUATRE GESTES, ET LE DEUXIÈME EST NOUVEAU.
+ *
+ * IL Y EN AVAIT TROIS — je vois, j'en parle, on y va — et c'était le sommaire
+ * exact d'une page qui ne parlait pas de l'essai. Les trois se retrouvent dans
+ * n'importe quelle application de ville ; « j'essaie » ne se trouve nulle part
+ * ailleurs. Le laisser hors du sommaire revenait à cacher la seule ligne que
+ * personne d'autre ne peut écrire, à l'endroit exact où l'on décide de
+ * descendre ou de fermer.
+ */
 const GESTES = [
   { i: "👀", t: "Je vois", d: "ce qui se passe autour de moi, maintenant" },
+  { i: "🪞", t: "J’essaie", d: "sur moi, ou chez moi, avant d’entrer" },
   { i: "💬", t: "J’en parle", d: "à mes amis, sans quitter l’annonce" },
   { i: "🎉", t: "On y va", d: "ensemble, et c’est réservé" },
 ];
@@ -387,7 +400,7 @@ export function Histoire() {
           <p className="ld-s" data-r style={{ "--d": "160ms" } as React.CSSProperties}>
             Ce qui se passe autour de vous, <b>à l’instant où ça se passe</b>. Vous
             le voyez, vous en parlez à vos amis, et vous décidez ensemble. En
-            trois gestes.
+            quatre gestes.
           </p>
           <div className="ld-hero-b" data-r style={{ "--d": "240ms" } as React.CSSProperties}>
             <Link href="/autour-de-moi" className="ld-cta grand" onClick={ouvrir}>
@@ -397,8 +410,23 @@ export function Histoire() {
           </div>
         </div>
 
-        {/* LES TROIS GESTES, EN UNE LIGNE. C'est le sommaire de tout ce qui
-            suit : quatre cas différents, toujours les mêmes trois gestes. */}
+        {/* ═══ LA VITRINE VIVANTE ═══════════════════════════════════════════
+
+            « La page d'accueil est désuète. Il faut créer une ambiance très
+            très sympa pour montrer le concept, qui est très novateur. »
+
+            LE DÉFAUT N'ÉTAIT PAS LE GOÛT, C'ÉTAIT LA MÉTHODE : la page
+            EXPLIQUAIT le produit au lieu de le montrer. Une carte qui change de
+            métier sous les yeux — un restaurant orange, une onglerie rose, un
+            tatoueur cuivre — dit en quatre secondes ce que trois paragraphes ne
+            disent pas. Voir `vitrine.tsx` : c'est le VRAI composant du produit,
+            pas une capture, donc il ne peut pas vieillir sans qu'on le voie. */}
+        <VitrineVivante />
+
+        {/* LES QUATRE GESTES, EN UNE LIGNE. C'est le sommaire de tout ce qui
+            suit, et « j'essaie » y a sa place depuis qu'il a la sienne dans
+            la page : un sommaire qui omet le chapitre le plus neuf envoie
+            fermer la page avant d'y arriver. */}
         <ul className="ld-gestes" data-r style={{ "--d": "320ms" } as React.CSSProperties}>
           {GESTES.map((g, i) => (
             <li key={g.t}>
@@ -414,6 +442,16 @@ export function Histoire() {
           ))}
         </ul>
       </section>
+
+      {/* ─── L'ESSAI, PUIS LE FANTÔME ───
+          ILS PASSENT AVANT LES QUATRE SITUATIONS, ET LA PLACE EST LE PROPOS.
+          Les quatre situations sont vraies et utiles, mais une autre
+          application pourrait les raconter : voir un menu, apprendre un
+          désistement, annoncer un concert, publier un poste. Reléguer l'essai
+          en bas de page revenait à garder pour la fin la seule chose que
+          personne d'autre ne fait — et personne ne descend jusqu'en bas d'une
+          page d'accueil. Voir `essai-fantome.tsx`. */}
+      <EssaiEtFantome />
 
       {/* ─── LES QUATRE SITUATIONS ─── */}
       {CAS.map((c) => (
@@ -680,8 +718,14 @@ export function Histoire() {
           Partout ailleurs, ça s’arrête à l’information.
           <span>Ici, ça finit par une décision.</span>
         </h2>
+        {/* LA PREMIÈRE PREUVE EST L'ESSAI, ET ELLE A ÉTÉ AJOUTÉE ICI EXPRÈS.
+            Cette liste nomme ce que la page vient de démontrer ; tant qu'elle
+            comptait quatre lignes sans l'essai ni le fantôme, elle nommait le
+            produit d'avant. Et l'essai passe en tête parce que c'est la seule
+            des cinq dont on ne trouve l'équivalent nulle part. */}
         <ul className="ld-preuves">
           {[
+            ["🪞", "Une bougie vue sur sa propre table", "avant d’avoir poussé la porte"],
             ["🍽️", "Une table réservée pour quatre", "et confirmée par le restaurant"],
             ["✂️", "Un vote tranché", "pendant qu’elle est encore dans le fauteuil"],
             ["🎷", "Quatre personnes au kiosque", "qui savent avec qui elles y seront"],
