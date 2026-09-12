@@ -189,6 +189,47 @@ function nomsRepris(css, ligneDebut) {
   return repris;
 }
 
+/**
+ * LE MÊME NOM POUR DEUX ANIMATIONS — et celui-là, personne ne le voit.
+ *
+ * ═══ CE QUI A ÉTÉ PAYÉ ═════════════════════════════════════════════════════
+ *
+ * `@keyframes muFlotte` existait déjà pour le fantôme du dépôt ; j'en ai écrit
+ * un second, du même nom, pour le fantôme de l'écran d'attente. LE SECOND
+ * EFFACE LE PREMIER — c'est la règle du CSS, la dernière déclaration gagne — et
+ * le fantôme de l'attente a perdu son `translate(-50%,-50%)` : il se posait à
+ * soixante-cinq pour cent de large au lieu de cinquante, et à soixante et un de
+ * haut au lieu de quarante-cinq. Mesuré, pas supposé.
+ *
+ * ═══ POURQUOI IL EST PIRE QU'UNE CLASSE HOMONYME ═══════════════════════════
+ *
+ * Une classe reprise donne un objet qui hérite de propriétés étranges — une
+ * couleur de travers, une hauteur de trop. On le VOIT, et on va chercher. Une
+ * animation reprise donne un objet qui bouge presque bien : la bonne durée, le
+ * bon rythme, mais pas la bonne trajectoire. Ça ressemble à un mauvais réglage,
+ * et on passe une heure à corriger des pourcentages qui étaient justes.
+ *
+ * ═══ CE QU'ON MESURE, ET POURQUOI PAS D'ÉCART ══════════════════════════════
+ *
+ * Deux `@keyframes` du même nom dans la même feuille, à n'importe quelle
+ * distance. Contrairement aux classes, il n'existe AUCUNE raison légitime d'en
+ * déclarer deux : une classe se complète en plusieurs règles voisines, une
+ * animation se déclare une fois et se termine. Deux valent donc toujours un
+ * écrasement, jamais une continuation — la garde n'a pas besoin de seuil.
+ */
+function animationsReprises(css, ligneDebut) {
+  const vus = new Map();
+  const lignes = css.split("\n");
+  for (let i = 0; i < lignes.length; i++) {
+    const m = /@keyframes\s+([A-Za-z][\w-]*)/.exec(lignes[i].replace(/\/\*.*?\*\//g, ""));
+    if (!m) continue;
+    const liste = vus.get(m[1]) ?? [];
+    liste.push(ligneDebut + i);
+    vus.set(m[1], liste);
+  }
+  return [...vus].filter(([, ou]) => ou.length > 1).map(([nom, ou]) => ({ nom, ou }));
+}
+
 let fautes = 0;
 for (const rel of FICHIERS) {
   const source = readFileSync(new URL(`../${rel}`, import.meta.url), "utf8");
@@ -247,6 +288,19 @@ for (const rel of FICHIERS) {
           `    Deux objets sans rapport sous le même nom héritent l'un de l'autre,\n` +
           `    et le résultat dépend de l'ordre d'écriture. Déjà payé trois fois\n` +
           `    (.ap-vue, .ap-l, .ap-plus). Renommez le plus récent.`,
+      );
+      fautes++;
+    }
+    for (const { nom, ou } of animationsReprises(b.texte, b.ligne)) {
+      console.error(
+        `✗ ${rel} — l'animation « ${nom} » est déclarée deux fois : ` +
+          `lignes ${ou.join(", ")}.\n` +
+          `    La seconde EFFACE la première, entièrement. Une animation ne se\n` +
+          `    complète pas en plusieurs morceaux comme une classe : deux\n` +
+          `    déclarations valent toujours un écrasement.\n` +
+          `    Déjà payé une fois (muFlotte) : le fantôme de l'attente avait\n` +
+          `    perdu son centrage et se posait 15 points trop à droite, ce qui\n` +
+          `    ressemblait à un mauvais réglage. Renommez la plus récente.`,
       );
       fautes++;
     }

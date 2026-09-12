@@ -73,11 +73,20 @@ async function reduire(source: string, cote = COTE): Promise<string> {
  * « votre poignet », « vos cheveux ». Elle part telle quelle dans la consigne :
  * c'est le seul endroit où le métier entre dans le rendu, et c'est pour ça qu'il
  * n'y a pas une route par métier.
+ *
+ * `garder` EST LE SECOND, ET IL A ÉTÉ AJOUTÉ POUR UNE PAIRE DE LUNETTES.
+ *
+ * « Ce n'est pas exactement ma tête ni les mêmes lunettes, donc assez déçu. »
+ * Le modèle avait remplacé une monture par une autre, et personne ne lui avait
+ * dit de ne pas le faire. Cette liste nomme ce que CE métier-là ne doit pas
+ * toucher, et elle ne peut pas être écrite dans la route : chez le coiffeur les
+ * lunettes restent, chez le lunetier elles sont ce qui change.
  */
 export async function essayerSurMoi(opts: {
   photo: string;
   reference: string;
   partie: string;
+  garder?: string[];
   signal?: AbortSignal;
 }): Promise<Rendu | Souci> {
   let photo: string;
@@ -93,7 +102,12 @@ export async function essayerSurMoi(opts: {
     r = await fetch("/api/direct/essayer", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ photo, reference, partie: opts.partie }),
+      body: JSON.stringify({
+        photo,
+        reference,
+        partie: opts.partie,
+        garder: opts.garder ?? [],
+      }),
       signal: opts.signal,
     });
   } catch (e) {

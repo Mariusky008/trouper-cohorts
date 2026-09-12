@@ -2865,6 +2865,56 @@ export function ApercuHabitant() {
     );
   }
   /**
+   * ═══ L'ESSAI PART DANS LE SALON PRIVÉ ════════════════════════════════════
+   *
+   * « Un bouton qui envoie le résultat sur un salon privé — le même que si on
+   * appuyait sur le bouton de l'annonce "proposer à mes amis". Ce bouton ouvre
+   * le salon, la photo s'y place, et on invite nos amis. »
+   *
+   * C'EST LE MÊME SALON, ET C'EST TOUTE LA DEMANDE. On n'en fabrique pas un
+   * second pour l'essayage : celui de l'annonce existe déjà, avec ses
+   * propositions, son vote et sa réservation. On y entre exactement comme le
+   * bouton de la carte y entre — `ouvrirLeSalonDuSommet` — et on y dépose le
+   * rendu.
+   *
+   * IL PART COMME UN MESSAGE À SOI, PAS COMME UNE PROPOSITION. Une proposition
+   * se vote contre les autres : mettre son propre visage sur la table de vote
+   * ferait voter POUR OU CONTRE SA TÊTE, ce qui n'est pas la question qu'on
+   * pose à ses amis. La question est « ça me va ? », et elle s'écrit dans le
+   * fil, avec la photo — là où les réactions existent déjà et où personne ne
+   * perd.
+   *
+   * ET LA NOTE PART AVEC, quand on en a donné une. Elle dit ce qu'on en pense
+   * DÉJÀ : sans elle, un ami répond dans le vide ; avec elle, il sait s'il doit
+   * confirmer ou contredire, ce qui est une conversation beaucoup plus courte.
+   *
+   * ON FERME LA FEUILLE DU MUR, parce que le salon s'ouvre par-dessus et qu'on
+   * ne revient pas à l'essai après avoir posé sa question.
+   */
+  function envoyerLEssaiAuSalon(o: {
+    quoi: string;
+    prix?: string;
+    image: string;
+    note: number;
+  }) {
+    if (!dessus) return;
+    const cle = cleSalonMoment(dessus, carteDe(dessus).quoi, !!carteDe(dessus).flash);
+    setMurOuvert(false);
+    setMurRevisite(null);
+    ouvrirLeSalonDuSommet();
+    const moi = monPrenom() || "Vous";
+    ecrireDansSalon(cle, {
+      qui: moi,
+      voix: "moi",
+      texte: o.note
+        ? `J’ai essayé « ${o.quoi} »${o.prix ? ` (${o.prix})` : ""} sur moi. Je mets ${o.note}/5 — vous en pensez quoi ?`
+        : `J’ai essayé « ${o.quoi} »${o.prix ? ` (${o.prix})` : ""} sur moi. Ça me va ou pas ?`,
+      quand: heureCourte(),
+      photo: o.image,
+    });
+  }
+
+  /**
    * LA PHOTO QUI DÉPASSE AU-DESSUS DE LA FEUILLE — celle de la carte quittée.
    *
    * « Ça monte bien vers le haut, mais derrière c'est l'annonce suivante,
@@ -9456,10 +9506,12 @@ export function ApercuHabitant() {
                     <MurContenu
                       key={murRevisite.souvenir.cle}
                       mur={murDuSouvenir(murRevisite.souvenir)}
+                      onSalon={envoyerLEssaiAuSalon}
                     />
                   ) : dessus ? (
                     <MurContenu
                       key={dessus.id}
+                      onSalon={envoyerLEssaiAuSalon}
                       mur={murDeLaCarte({
                         id: dessus.id,
                         nom: dessus.nom,
@@ -13351,8 +13403,17 @@ export function ApercuHabitant() {
            visible en vision peripherique comme au centre. Et il bat quatre
            fois au lieu de deux : le temps d'arriver, de voir, et de comprendre
            ce qu'on regarde. */
-        .ap-propos-l.appel{animation:apAppel 1s ease-in-out 4;}
-        @keyframes apAppel{
+        /* ELLE S'APPELLE « apAppelPropos » ET NON « apAppel » : ce dernier existe
+           deja plus bas, pour le saut du fantome de la barre.
+           DEFAUT TROUVE PAR LA GARDE DES STYLES, PAS PAR L'OEIL. Les deux
+           portaient le meme nom ; la seconde EFFACE la premiere, entierement.
+           Cette rangee-ci ne s'eclairait donc pas en ambre : elle SAUTAIT de
+           vingt-six points comme un fantome, dans un bloc qui n'en est pas un.
+           C'est le defaut le plus sournois de cette famille — l'animation a la
+           bonne duree et le bon rythme, seule la trajectoire est celle de
+           quelqu'un d'autre, et ca ressemble a un mauvais reglage. */
+        .ap-propos-l.appel{animation:apAppelPropos 1s ease-in-out 4;}
+        @keyframes apAppelPropos{
           0%,100%{box-shadow:0 0 0 0 rgba(255,196,0,0);
             background:rgba(255,196,0,0);transform:scale(1);}
           45%{box-shadow:0 0 0 5px rgba(255,196,0,.85),

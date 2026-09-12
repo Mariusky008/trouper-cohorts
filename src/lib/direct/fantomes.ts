@@ -182,8 +182,22 @@ export type Fantome = {
   heure: string;
   humeur?: string;
   verbe?: string;
-  /** ESSAI : ce qui a été essayé, et ce qui en a été décidé. */
-  essai?: { quoi: string; verdict: "pris" | "passe" | null };
+  /**
+   * ESSAI : ce qui a été essayé, et ce qui en a été décidé.
+   *
+   * `note` EST CE QU'ON S'EST DONNÉ À SOI, DE UN À CINQ FANTÔMES. Elle est
+   * absente quand on n'a pas noté — et zéro ne veut pas dire « mauvais », il
+   * veut dire « pas noté », ce qui est une information différente qu'il ne faut
+   * pas confondre avec un avis.
+   *
+   * ELLE NE PORTE PAS SUR LE COMMERCE, ET C'EST TOUT L'INTÉRÊT. Une étoile sur
+   * une fiche note une maison : une moyenne tirée sur des années, qui ne dit
+   * rien à celui qui la lit. Ici on note UNE pièce SUR SOI, aujourd'hui. C'est
+   * la seule note de ce produit qui soit à la fois personnelle et utile à
+   * quelqu'un d'autre — le suivant qui a la même tête sait à quoi s'attendre,
+   * et le commerçant apprend ce qui plaît AVANT d'avoir vendu.
+   */
+  essai?: { quoi: string; verdict: "pris" | "passe" | null; note?: number };
   /**
    * COMBIEN ONT DIT « ÇA M'INTÉRESSE ».
    *
@@ -336,6 +350,33 @@ export type Mur = {
      * Sans gabarit, la pièce n'est pas essayable : voir `bientot`.
      */
     gabarit?: Gabarit;
+    /**
+     * CE QUE LE MODÈLE NE DOIT TOUCHER SOUS AUCUN PRÉTEXTE.
+     *
+     * LE DÉFAUT, DIT PAR CELUI QUI A ESSAYÉ SA PROPRE TÊTE : « ce n'est pas
+     * exactement ma tête ni les mêmes lunettes, donc assez déçu. » C'est le
+     * défaut le plus grave de tout l'essai, parce qu'il en annule le sens : si
+     * ce n'est pas moi, ça ne me dit rien sur moi. Une coupe magnifique sur le
+     * visage d'un autre est exactement ce qu'un catalogue faisait déjà.
+     *
+     * LA CAUSE EST DANS LA CONSIGNE, PAS DANS LE MODÈLE. Elle disait « ne
+     * modifie rien d'autre que la zone concernée » — une phrase générale, que
+     * le modèle applique généreusement : il redresse, il rajeunit, il lisse, il
+     * remplace une monture par une monture « qui va mieux ». Un modèle d'image
+     * ne sait pas ce qui compte pour la personne ; il faut le lui NOMMER.
+     *
+     * ON NOMME DONC, MÉTIER PAR MÉTIER, CE QUI FAIT L'IDENTITÉ DE LA PERSONNE
+     * DANS CETTE PHOTO-LÀ. Et ça ne peut pas être une liste unique : chez le
+     * coiffeur, les lunettes doivent rester ; chez le lunetier, elles sont
+     * précisément ce qui change. La liste appartient donc au métier, comme ses
+     * mots — c'est la même règle, et pour la même raison.
+     *
+     * LE NOYAU COMMUN (les traits du visage, la pose, le fond, l'interdiction
+     * d'embellir) est écrit une fois pour toutes dans la route : voir
+     * `consigne()` dans `api/direct/essayer/route.ts`. Ce champ ne porte que ce
+     * qui est PROPRE au métier.
+     */
+    garder?: string[];
     /**
      * LES MOTS DU MÉTIER, ET ILS NE SE PARTAGENT PAS.
      *
@@ -601,6 +642,11 @@ export const MURS: Mur[] = [
      */
     essai: {
       partie: "votre main",
+      garder: [
+        "Les mains, les doigts, leur position et leur nombre, la peau, les veines et les plis.",
+        "Les bagues et les bracelets portés, à l'identique.",
+        "La longueur naturelle du doigt : seul l'ongle change.",
+      ],
       consigne: "Toute la main dans le cadre, à plat, paume vers le bas, à la lumière du jour.",
       /**
        * L'AVANT A CHANGÉ DE PHOTO, ET POUR UNE RAISON MESURÉE.
@@ -799,6 +845,10 @@ export const MURS: Mur[] = [
      */
     essai: {
       partie: "votre poignet",
+      garder: [
+        "Le poignet, la main, la peau, les taches et la pilosité.",
+        "La montre et les autres bracelets déjà portés, à l'identique.",
+      ],
       consigne: "Posez votre poignet à plat, à la lumière du jour, sans montre.",
       avant: "/direct/poignet-avant.jpg",
       // Mesuré sur `poignet-avant.jpg` : le bras y court à environ trente
@@ -951,6 +1001,10 @@ export const MURS: Mur[] = [
      */
     essai: {
       partie: "votre table de salon",
+      garder: [
+        "Tous les autres objets posés dans la pièce, à leur place exacte.",
+        "Les meubles, le sol, les murs et la fenêtre.",
+      ],
       consigne: "Reculez d’un pas et cadrez la table entière, de trois quarts.",
       avant: "/direct/table-salon.jpeg",
       // Le pied se pose au centre gauche du plateau, devant les livres — mesuré
@@ -1066,6 +1120,12 @@ export const MURS: Mur[] = [
     verbes: [],
     essai: {
       partie: "votre tête",
+      garder: [
+        "Les lunettes exactement telles qu'elles sont : même forme, même couleur, même monture, même position sur le nez.",
+        "La barbe, la moustache et la pilosité du visage telles qu'elles sont.",
+        "Le front, la ligne des sourcils et la forme du crâne.",
+        "Seuls les cheveux changent : leur coupe, leur longueur et leur couleur.",
+      ],
       consigne: "Face à une fenêtre, cheveux dégagés, sans casquette ni lunettes de soleil.",
       /**
        * LA PHOTO D'EXEMPLE EST ENFIN UN VISAGE DE FACE.
@@ -1220,6 +1280,12 @@ export const MURS: Mur[] = [
     verbes: [],
     essai: {
       partie: "vous, en buste",
+      garder: [
+        "La tête, la coupe de cheveux, la barbe et les lunettes, à l'identique.",
+        "Les bijoux et la montre portés.",
+        "La carrure, la corpulence et la posture des épaules et des bras.",
+        "Seul le vêtement change.",
+      ],
       consigne: "Debout face à une fenêtre, bras le long du corps, buste entier dans le cadre.",
       avant: "/direct/poignet-nu.jpg",
       gabarit: { forme: "cadre" },
@@ -1362,6 +1428,10 @@ export const MURS: Mur[] = [
     verbes: [],
     essai: {
       partie: "l’endroit où il ira",
+      garder: [
+        "Tout ce qui se trouve déjà dans le cadre, à sa place exacte.",
+        "La matière, la couleur et l'usure du support.",
+      ],
       consigne: "Cadrez la table ou la console entière, de trois quarts, à hauteur d’yeux.",
       avant: "/direct/table-salon.jpeg",
       // Même point d'appui que la cirière : la mesure porte sur la photo, pas
@@ -1479,6 +1549,12 @@ export const MURS: Mur[] = [
     verbes: [],
     essai: {
       partie: "votre avant-bras",
+      garder: [
+        "La peau, sa carnation, ses taches, sa pilosité et ses veines.",
+        "Les tatouages déjà présents, s'il y en a, à l'identique.",
+        "La montre et les bracelets portés.",
+        "Seul le dessin demandé s'ajoute, comme une encre sous la peau et non comme un autocollant.",
+      ],
       consigne: "Avant-bras à plat, manche remontée, à la lumière du jour, sans ombre portée.",
       avant: "/direct/avant-bras.jpg",
       gabarit: { forme: "cadre" },
@@ -1551,6 +1627,145 @@ export const MURS: Mur[] = [
       },
     ],
   },
+  /**
+   * 👓 LE LUNETIER — « rajouter un nouveau métier : lunetier ».
+   *
+   * ═══ C'EST LE MÉTIER QUI RÉCLAMAIT L'ESSAI LE PLUS FORT ══════════════════
+   *
+   * PARCE QU'EN BOUTIQUE, ON ESSAIE FLOU. Quelqu'un qui porte des lunettes doit
+   * retirer les siennes pour en essayer d'autres — donc il ne voit pas ce qu'il
+   * essaie, donc il demande à la personne qui l'accompagne, donc il repart sur
+   * l'avis de quelqu'un d'autre. Aucun autre métier de cette liste n'a un essai
+   * en magasin AUSSI MAUVAIS que celui-là, et c'est exactement le trou que la
+   * photo comble : on se voit net, sur son propre visage, avec les montures
+   * dessus.
+   *
+   * ═══ CE QUI CHANGE, ET C'EST L'INVERSE DU COIFFEUR ═══════════════════════
+   *
+   * Chez le coiffeur, `garder` exige que les lunettes ne bougent pas. Ici,
+   * elles sont la seule chose qui doit bouger — et la consigne doit dire
+   * explicitement de RETIRER celles qui sont sur la photo, sans quoi le modèle
+   * en superpose deux paires. C'est la démonstration que cette liste ne pouvait
+   * pas être écrite une fois pour toutes dans la route.
+   */
+  {
+    cle: "lunettes",
+    lieu: "Un lunetier de la rue piétonne",
+    metier: "Lunetier",
+    ville: "Dax",
+    distance: "310 m",
+    note: "4,8",
+    avis: 52,
+    etiquettes: ["Sans rendez-vous", "Montures créateurs"],
+    photoLieu: "/direct/lunetier.jpeg",
+    depot: "essai",
+    humeurs: ["hesite", "decouvre", "offrir"],
+    verbes: [],
+    essai: {
+      partie: "votre visage",
+      consigne: "De face, à hauteur des yeux, cheveux dégagés, à la lumière du jour.",
+      avant: "/direct/lunetier.jpeg",
+      gabarit: { forme: "cadre" },
+      /**
+       * ICI, LES LUNETTES SONT CE QUI CHANGE — et il faut le dire, pas le
+       * supposer. Sans la première ligne, le modèle pose la nouvelle monture
+       * PAR-DESSUS l'ancienne et rend un visage à deux paires de lunettes :
+       * c'est ce qu'il fait quand on lui demande d'ajouter sans lui dire de
+       * retirer.
+       */
+      garder: [
+        "Si la personne porte déjà des lunettes, RETIRE-LES entièrement avant de poser la nouvelle monture. Une seule paire sur le visage.",
+        "Les yeux, leur couleur et leur regard, visibles derrière des verres transparents.",
+        "La coupe de cheveux, la barbe, la moustache et la pilosité, à l'identique.",
+        "La forme du nez et des oreilles : c'est sur elles que la monture repose.",
+        "Seule la monture change : sa forme, sa matière et sa couleur.",
+      ],
+      mots: {
+        titre: "Ces montures, sur votre visage",
+        phrase: "Photographiez-vous de face : la monture se pose sur votre visage, et vous vous voyez net.",
+        geste: "Me photographier de face",
+        choisir: "Choisissez la monture",
+        reserver: "Les essayer en boutique",
+        autres: "Voir les autres montures",
+        mur: "Voir les montures portées par les clients",
+      },
+      pieces: [
+        { id: "l-ecaille", nom: "Carrée écaille, verres dégradés", prix: "159 €",
+          photo: "/direct/lunettes1.jpg", reference: "/direct/lunettes1.jpg" },
+        { id: "l-fuchsia", nom: "Papillon fuchsia translucide", prix: "139 €",
+          photo: "/direct/lunettes2.jpeg", reference: "/direct/lunettes2.jpeg" },
+        { id: "l-verte", nom: "Œil-de-chat vert bouteille", prix: "175 €",
+          photo: "/direct/lunettes3.jpeg", reference: "/direct/lunettes3.jpeg" },
+        { id: "l-degrade", nom: "Épaisse dégradée caramel", prix: "149 €",
+          photo: "/direct/lunettes4.jpeg", reference: "/direct/lunettes4.jpeg" },
+      ],
+    },
+    telephone: "+33600000006",
+    contexte: {
+      titre: "La monture du moment",
+      quoi: "Carrée écaille",
+      detail: "Verres dégradés, montage en 48 h",
+      photo: "/direct/lunettes1.jpg",
+      geste: "Voir les montures",
+    },
+    maison: [
+      {
+        id: "l-sylvie",
+        qui: "Sylvie",
+        role: "Opticienne",
+        maison: true,
+        photo: "/direct/lunetier.jpeg",
+        mot: "La collection d’automne est arrivée. Essayez-les avant de passer 👓",
+        heure: "09:40",
+        interesses: 8,
+      },
+      {
+        id: "l-atelier",
+        qui: "L’atelier",
+        role: "Montage",
+        maison: true,
+        photo: "/direct/lunettes1.jpg",
+        mot: "Verres montés en 48 h, et la réparation est offerte.",
+        heure: "11:05",
+        interesses: 3,
+      },
+    ],
+    clients: [
+      {
+        id: "l-karim",
+        qui: "Karim",
+        photo: "/direct/lunettes4.jpeg",
+        essai: { quoi: "Épaisse dégradée caramel", verdict: "pris" },
+        mot: "Je n’aurais jamais osé les prendre en rayon. Sur moi, ça change tout.",
+        heure: "10:35",
+        humeur: "decouvre",
+        interesses: 12,
+        jusqua: "encore 2 jours",
+      },
+      {
+        id: "l-amel",
+        qui: "Amel",
+        photo: "/direct/lunettes3.jpeg",
+        essai: { quoi: "Œil-de-chat vert bouteille", verdict: null },
+        mot: "Trop vertes avec mes yeux, vous trouvez pas ? J’hésite avec les écaille.",
+        heure: "11:50",
+        humeur: "hesite",
+        interesses: 7,
+        jusqua: "encore 2 jours",
+      },
+      {
+        id: "l-pierre",
+        qui: "Pierre",
+        photo: "/direct/lunettes2.jpeg",
+        essai: { quoi: "Papillon fuchsia translucide", verdict: "passe" },
+        mot: "Essayées pour rire. Ma fille dit oui, moi non 😅",
+        heure: "12:20",
+        humeur: "offrir",
+        interesses: 5,
+        jusqua: "encore 2 jours",
+      },
+    ],
+  },
 ];
 
 /**
@@ -1600,6 +1815,9 @@ export function modeleDeLaBranche(
   if (branche === "coiffeur") return "coiffeur";
   if (branche === "mode") return "mode";
   if (branche === "fleuriste") return "fleurs";
+  // LE LUNETIER A SA PROPRE BRANCHE. Range sous « mode », il aurait herite du
+  // mur des vetements — « photographiez-vous en buste » — pour une monture.
+  if (branche === "lunetier") return "lunettes";
   /**
    * « ARTISAN » N'EST PAS UN MÉTIER, C'EST UN SAC.
    *

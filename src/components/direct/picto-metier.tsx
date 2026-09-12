@@ -76,6 +76,19 @@ export function PictoMetier({ icone }: { icone: CleIcone }) {
         <path d="M9.3 13.2h5.4" />
       </>
     ),
+    // Une paire de lunettes : deux cercles et un pont. C'est le seul objet de
+    // cette liste que tout le monde dessine de la meme facon depuis toujours,
+    // et il se lit encore a vingt points — ce qui n'est pas le cas d'un visage
+    // qui les porterait.
+    lunetier: (
+      <>
+        <circle cx="6.4" cy="14" r="3.6" />
+        <circle cx="17.6" cy="14" r="3.6" />
+        <path d="M10 13.4c.6-.7 1.4-1 2-1s1.4.3 2 1" />
+        <path d="M2.8 12.2 4.6 8.4" />
+        <path d="M21.2 12.2 19.4 8.4" />
+      </>
+    ),
     // ─── DEUX DESSINS QUE LES SIX BRANCHES NE COUVRAIENT PAS ───
     // Un boucher et un boulanger sont rangés sous « restaurant » faute de
     // branche a eux ; leur laisser la fourchette et le couteau redisait le

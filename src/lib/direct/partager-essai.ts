@@ -69,7 +69,48 @@ export async function partagerLEssai(o: {
   nom: string;
   texteAvecPhoto: string;
   whatsapp: string;
+  /**
+   * QUI DOIT RECEVOIR, ET C'EST CE QUI DÉCIDE DE L'ORDRE DES DEUX CHEMINS.
+   *
+   * ═══ LE DÉFAUT, VU SUR UN VRAI TÉLÉPHONE ════════════════════════════════
+   *
+   * « Quand je veux mettre de côté, ça ouvre WhatsApp mais sur mon répertoire,
+   * alors que je devrais être mis en contact avec le commerçant dont je ne
+   * connais évidemment pas le numéro. »
+   *
+   * C'EST EXACT, ET L'ARBITRAGE DE L'EN-TÊTE ÉTAIT LE BON — POUR L'AUTRE
+   * BOUTON. « On préfère la photo, parce que c'est elle qui rend le message
+   * utile » vaut quand on écrit à quelqu'un qu'on connaît : on le cherche dans
+   * sa liste, on le trouve. Ça ne vaut pas du tout quand le destinataire est un
+   * commerce dont on n'a pas le numéro — et c'est LE cas de ce bouton-là. La
+   * feuille de partage ouvre alors une liste d'amis pour un message adressé à
+   * un opticien, c'est-à-dire un cul-de-sac : le numéro n'est nulle part, donc
+   * le message ne peut aller nulle part.
+   *
+   * « commercant » MET DONC LE NUMÉRO D'ABORD. La photo ne part pas — c'est la
+   * contrainte de `wa.me`, elle ne se contourne pas — mais le message arrive.
+   * Un message qui arrive sans photo vaut infiniment mieux qu'une photo qu'on
+   * ne sait pas où envoyer, et l'écran propose la photo juste après, en second
+   * geste, pour qui veut.
+   *
+   * « quiconque » GARDE L'ANCIEN ORDRE, et il a toujours sa place : c'est le
+   * chemin de « je montre ça à mes amis », où le destinataire EST dans la liste.
+   */
+  viser?: "commercant" | "quiconque";
 }): Promise<Sortie> {
+  /**
+   * LE CHEMIN DU COMMERÇANT NE PASSE PAS PAR LA FEUILLE DE PARTAGE.
+   * Voir `viser` ci-dessus : sans le numéro, il n'y a pas de message.
+   */
+  if (o.viser === "commercant") {
+    try {
+      window.open(o.whatsapp, "_blank", "noopener,noreferrer");
+      return { par: "whatsapp" };
+    } catch (e) {
+      return { par: "impossible", pourquoi: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
   const n =
     typeof navigator !== "undefined"
       ? (navigator as Navigator & {

@@ -89,6 +89,19 @@ export const METIERS = [
      naturelle n'est pas « il m'en reste » mais « je fabrique maintenant, venez
      voir », et c'est précisément ce que la journée horodatée sait raconter. */
   { cle: "artisan", label: "Créateurs & indépendants", court: "Créateurs", emoji: "🕯️" },
+  /* ═══ LE LUNETIER ═══
+     « Rajouter un nouveau métier : lunetier. »
+
+     IL A SA PROPRE BRANCHE ET NON UNE PLACE DANS « MODE », et ce n'est pas une
+     question de rangement. Une monture n'est pas un vetement : on n'en change
+     pas de saison, on la porte tous les jours pendant deux ans, et on ne peut
+     PAS savoir ce qu'elle donne sans la mettre. C'est le metier ou « voir sur
+     soi avant d'entrer » vaut le plus cher apres le tatoueur — et c'est aussi
+     celui ou l'essai en boutique est le plus penible : on retire ses lunettes
+     pour en essayer d'autres, donc on ne voit rien de ce qu'on essaie.
+     Range sous « Mode », il aurait herite du mur des vetements — « photographiez
+     vous en buste » — au lieu de son propre mur. */
+  { cle: "lunetier", label: "Lunetiers", court: "Lunetiers", emoji: "👓" },
 ] as const;
 
 export type CleMetier = (typeof METIERS)[number]["cle"];
@@ -208,6 +221,10 @@ export const MOT_DU_METIER: Record<CleMetier, MotDuMetier> = {
   // marche pour la friperie comme pour le prêt-à-porter.
   mode: { carte: "Les pièces", journee: "Sa journée", icone: "mode" },
   fleuriste: { carte: "Les fleurs", journee: "Sa journée", icone: "fleuriste" },
+  // « LES MONTURES » — c'est le mot de la boutique, et c'est ce qu'on vient
+  // regarder. « Les lunettes » dirait aussi les verres, l'ordonnance et la
+  // mutuelle : trois choses dont on ne s'occupe qu'apres avoir choisi.
+  lunetier: { carte: "Les montures", journee: "Sa journée", icone: "lunetier" },
   // « Les poses » plutôt que « les tarifs » : chez une prothésiste, ce qu'on
   // vient regarder ce sont les modèles, le prix ne vient qu'après.
   ongles: { carte: "Les poses", journee: "Sa journée", icone: "ongles" },
@@ -291,6 +308,16 @@ export const ENVIES: Record<CleMetier, Envie[]> = {
     { cle: "devantvous", label: "Fait devant vous", emoji: "🖐️" },
     { cle: "unique", label: "Pièce unique", emoji: "✨" },
     { cle: "offrir", label: "À offrir", emoji: "🎁" },
+  ],
+  // LES ENVIES DU LUNETIER SONT CELLES D'UN ACHAT LONG. On ne passe pas chez
+  // l'opticien « tout de suite » comme on passe chez le boulanger : on y va
+  // quand on a une ordonnance, quand on veut voir, ou quand on a casse les
+  // siennes — et ce dernier cas est le seul qui soit vraiment urgent.
+  lunetier: [
+    { cle: "essayer", label: "Juste essayer", emoji: "🪞" },
+    { cle: "ordonnance", label: "Avec ordonnance", emoji: "📄" },
+    { cle: "reparer", label: "Réparation", emoji: "🔧" },
+    { cle: "solaire", label: "Solaires", emoji: "🕶️" },
   ],
 };
 
@@ -2829,6 +2856,67 @@ const CARTES: CarteAutour[] = [
         lignes: ["Composés ce matin", "À emporter"],
         prix: "12 €", prixBarre: "18 €", etiquette: "−30 %", places: 4,
         action: "Mettez-m'en un de côté", envies: ["maintenant", "moins20"],
+      },
+    ],
+  },
+
+  // ── LUNETIERS ────────────────────────────────────────────────────────────
+  //
+  // « Rajouter un nouveau métier : lunetier. »
+  //
+  // SON ANNONCE NE PRESSE PAS, ET C'EST CE QUI LA DISTINGUE DE TOUTES LES
+  // AUTRES. Les huit métiers déjà en place vendent quelque chose qui s'épuise
+  // dans la journée — un plat, un créneau, quatre bouquets, une fournée. Une
+  // monture, non : elle sera encore là demain, et le client met trois semaines
+  // à se décider. Son moment ne dit donc pas « il en reste deux » mais « venez
+  // les voir », et le nombre de places sert à autre chose : le nombre de
+  // montures de la collection, pas un compte à rebours.
+  //
+  // ET C'EST LE MÉTIER OÙ L'ESSAI VAUT LE PLUS CHER APRÈS LE TATOUEUR : en
+  // boutique, on retire ses lunettes pour en essayer d'autres, donc on essaie
+  // flou. Voir le mur « lunettes » dans `fantomes.ts`.
+  {
+    id: "lunetier-pietonne",
+    catalogue: [
+      { id: "lu-1", rayon: "Montures", nom: "Carrée écaille, verres dégradés", detail: "Acétate italien.", prix: "159 €", photo: "/direct/lunettes1.jpg" },
+      { id: "lu-2", rayon: "Montures", nom: "Papillon fuchsia translucide", detail: "Collection créateur.", prix: "139 €", photo: "/direct/lunettes2.jpeg" },
+      { id: "lu-3", rayon: "Montures", nom: "Œil-de-chat vert bouteille", prix: "175 €", photo: "/direct/lunettes3.jpeg" },
+      { id: "lu-4", rayon: "Montures", nom: "Épaisse dégradée caramel", prix: "149 €", photo: "/direct/lunettes4.jpeg" },
+      { id: "lu-5", rayon: "Verres", nom: "Verres unifoyers anti-reflet", detail: "Montés en 48 h.", prix: "à partir de 89 €" },
+      { id: "lu-6", rayon: "L'atelier", nom: "Réparation et réglage", detail: "Offert, même si la monture vient d'ailleurs." },
+    ],
+    branche: "lunetier",
+    photo: "/direct/lunetier.jpeg",
+    cadrage: "50%",
+    nom: "Un lunetier de la rue piétonne",
+    google: { note: "4,8", avis: 52 },
+    metier: "Lunetier",
+    ville: VILLE,
+    itineraire: YALLER,
+    metres: 310,
+    distance: "310 m",
+    fiche: {
+      ou: "Rue piétonne, en face de la halle",
+      horaires: "Aujourd'hui, 9 h 30 – 19 h",
+      mot: "Sans rendez-vous. L'examen de vue se fait sur place, et la réparation est offerte.",
+    },
+    moments: [
+      {
+        de: 9, a: 19, quand: "aujourd'hui", icone: "👓", publie: 9,
+        titre: "La collection d'automne est arrivée",
+        lignes: ["Douze montures créateurs", "Essayables depuis la rue"],
+        prix: "à partir de 139 €", places: 12,
+        action: "Les essayer", envies: ["essayer", "solaire"],
+        avis: [
+          { note: 5, texte: "Je les ai essayées sur mon téléphone avant d'entrer. Je savais déjà lesquelles je prenais.",
+            qui: "Karim", quand: "la semaine dernière", photo: "/direct/lunettes4.jpeg" },
+        ],
+      },
+      {
+        de: 14, a: 19, quand: "cet après-midi", icone: "🔧",
+        titre: "Réparation pendant que vous attendez",
+        lignes: ["Branche cassée, vis, plaquettes", "Même si elles viennent d'ailleurs"],
+        places: 6, action: "Passer", envies: ["reparer"],
       },
     ],
   },

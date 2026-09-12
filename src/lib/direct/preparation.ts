@@ -112,9 +112,10 @@ function icone(branche: CleMetier, metier: string): string {
   if (/bougie|cirier|cirière/.test(m)) return "🕯️";
   if (/bijou|bracelet|collier|joaill/.test(m)) return "📿";
   if (/hypno|sophro/.test(m)) return "🕰️";
+  if (/lunet|opticien|optique/.test(m)) return "👓";
   return {
     restaurant: "🍽️", mode: "👗", bar: "🍸", coiffeur: "💇",
-    fleuriste: "💐", ongles: "💅", artisan: "🕯️",
+    fleuriste: "💐", ongles: "💅", artisan: "🕯️", lunetier: "👓",
   }[branche];
 }
 

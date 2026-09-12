@@ -251,6 +251,30 @@ const LANGAGES: Personnalite[] = [
     unite: ["créneau", "créneaux"],
   },
   /**
+   * 👓 LE LUNETIER — le métier où l'on achète un visage, pas un objet.
+   *
+   * UNE MONTURE EST LA SEULE CHOSE QU'ON PORTE TOUS LES JOURS PENDANT DEUX ANS
+   * ET QU'ON NE PEUT PAS VOIR SUR SOI. On retire ses lunettes pour en essayer
+   * d'autres, donc on essaie flou, donc on demande à quelqu'un. C'est
+   * exactement le trou que l'essai comble, et c'est pourquoi son langage ne
+   * presse pas : « Essayer les montures », pas « Il en reste deux ».
+   *
+   * L'ENCRE BLEU ARDOISE EST CELLE DES OPTICIENS, et le langage est CLAIR —
+   * ni éditorial ni gras : ce métier vend de la précision, et un titre qui
+   * crie dessus sonne faux.
+   */
+  {
+    cle: "lunetier",
+    accent: "#8FC6E8",
+    encre: "#0B2130",
+    halo: "rgba(143,198,232,.38)",
+    titre: "clair",
+    tag: "🆕 Nouvelle collection",
+    reserver: "Essayer en boutique",
+    ailleurs: "Voir les montures",
+    unite: ["monture", "montures"],
+  },
+  /**
    * 🎪 CE QUI SE PASSE EN VILLE — « date, heure et lieu sont prioritaires. Ne
    * pas présenter un événement municipal comme un produit commercial. »
    */
@@ -326,6 +350,7 @@ export function personnaliteDe(a: {
   if (b === "coiffeur") return par("coiffeur");
   if (b === "ongles") return par("ongles");
   if (b === "fleuriste") return par("fleuriste");
+  if (b === "lunetier") return par("lunetier");
   if (b === "evenement") return par("evenement");
   if (b === "artisan") {
     const m = (a.metier ?? "").toLowerCase();

@@ -42,6 +42,7 @@
 // repli. Aucun des deux n'est câblé en dur dans l'écran : c'est la route qui
 // choisit selon la clé présente, et l'écran ne sait rien du fournisseur.
 import { NextResponse } from "next/server";
+import { consigne } from "@/lib/direct/consigne-essai";
 
 export const dynamic = "force-dynamic";
 /** Un rendu prend quelques secondes ; la valeur par défaut de la plateforme ne suffit pas. */
@@ -69,40 +70,6 @@ function decoder(src: string): { type: string; donnees: string } | null {
   return { type: m[1], donnees: m[2] };
 }
 
-/**
- * LA CONSIGNE, ET ELLE EST LA MOITIÉ DU RÉSULTAT.
- *
- * TROIS CHOSES DOIVENT Y ÊTRE, et chacune répare une façon de rater :
- *
- *   · CE QU'ON GARDE. Sans « ne change rien d'autre », le modèle redresse la
- *     main, change la lumière, remplace l'arrière-plan — et la cliente ne
- *     reconnaît plus sa propre photo, donc ne croit plus le rendu.
- *   · CE QU'ON PREND DE LA RÉFÉRENCE. Pas « inspire-toi » mais « reproduis
- *     exactement » : la forme, la longueur, la couleur, le motif. C'est le
- *     travail du commerçant qu'on essaie, pas une interprétation.
- *   · CE QU'ON N'INVENTE PAS. Une main a cinq doigts et la photo en montre
- *     peut-être quatre ; ajouter le cinquième est un mensonge visible.
- */
-function consigne(partie: string): string {
-  return [
-    `Première image : la photo d'un client, montrant ${partie}.`,
-    "Deuxième image : la photo de référence d'un professionnel, montrant le résultat à reproduire.",
-    "",
-    `Reproduis EXACTEMENT le style de la deuxième image sur ${partie} de la première image :`,
-    "la forme, la longueur, la couleur, le motif, la finition et la brillance.",
-    "",
-    "Règles impératives :",
-    "- Ne modifie RIEN d'autre que la zone concernée. La pose de la main, la peau,",
-    "  l'arrière-plan, le cadrage, la lumière et les ombres de la première image",
-    "  restent strictement identiques.",
-    "- Respecte la perspective, la courbure et l'éclairage de la première image.",
-    "- N'ajoute aucun doigt, aucun objet, aucun texte, aucun filigrane.",
-    "- Le résultat doit ressembler à une photographie prise telle quelle, pas à un montage.",
-    "",
-    "Rends uniquement l'image modifiée.",
-  ].join("\n");
-}
-
 /** Ce que Gemini rend : on cherche la première partie qui porte une image. */
 type PartieGemini = { inlineData?: { mimeType?: string; data?: string } };
 
@@ -111,6 +78,7 @@ async function parGemini(
   photo: { type: string; donnees: string },
   reference: { type: string; donnees: string },
   partie: string,
+  garder: string[],
 ): Promise<{ image: string } | { erreur: string }> {
   const modele = s(process.env.GEMINI_IMAGE_MODEL) || "gemini-2.5-flash-image";
   /**
@@ -134,7 +102,7 @@ async function parGemini(
           {
             role: "user",
             parts: [
-              { text: consigne(partie) },
+              { text: consigne(partie, garder) },
               { inlineData: { mimeType: photo.type, data: photo.donnees } },
               { inlineData: { mimeType: reference.type, data: reference.donnees } },
             ],
@@ -163,6 +131,7 @@ async function parOpenAI(
   photo: { type: string; donnees: string },
   reference: { type: string; donnees: string },
   partie: string,
+  garder: string[],
 ): Promise<{ image: string } | { erreur: string }> {
   const modele = s(process.env.OPENAI_IMAGE_MODEL) || "gpt-image-1";
   // L'API d'édition d'OpenAI prend les images en multipart, et elle accepte
@@ -170,7 +139,7 @@ async function parOpenAI(
   // référence. C'est exactement la forme dont on a besoin.
   const forme = new FormData();
   forme.append("model", modele);
-  forme.append("prompt", consigne(partie));
+  forme.append("prompt", consigne(partie, garder));
   forme.append("n", "1");
   /**
    * TROIS RÉGLAGES QUI DÉCIDENT SI LE RENDU ARRIVE, OU PAS DU TOUT.
@@ -217,7 +186,7 @@ async function parOpenAI(
 }
 
 export async function POST(req: Request) {
-  let corps: { photo?: string; reference?: string; partie?: string };
+  let corps: { photo?: string; reference?: string; partie?: string; garder?: string[] };
   try {
     corps = (await req.json()) as typeof corps;
   } catch {
@@ -227,6 +196,20 @@ export async function POST(req: Request) {
   const photo = decoder(s(corps.photo));
   const reference = decoder(s(corps.reference));
   const partie = s(corps.partie) || "la zone concernée";
+  /**
+   * CE QUE LE MÉTIER DEMANDE DE PRÉSERVER, ET IL VIENT DE L'ÉCRAN.
+   *
+   * IL NE PEUT PAS ÊTRE ÉCRIT ICI : chez le coiffeur les lunettes doivent
+   * rester, chez le lunetier elles sont précisément ce qui change. La route ne
+   * connaît pas le métier — elle connaît la partie du corps et cette liste-là.
+   * On la borne quand même : dix lignes de cent caractères suffisent à tout
+   * métier, et une consigne qui grossit sans limite est une entrée qu'on
+   * accepte sans la lire.
+   */
+  const garder = (Array.isArray(corps.garder) ? corps.garder : [])
+    .map((g) => s(String(g)).slice(0, 100))
+    .filter(Boolean)
+    .slice(0, 10);
   if (!photo) return NextResponse.json({ erreur: "Photo manquante ou illisible." }, { status: 400 });
   if (!reference) {
     return NextResponse.json({ erreur: "Photo de référence manquante." }, { status: 400 });
@@ -263,8 +246,8 @@ export async function POST(req: Request) {
   const debut = Date.now();
   const essais: string[] = [];
   for (const tenter of [
-    gemini ? () => parGemini(gemini, photo, reference, partie) : null,
-    openai ? () => parOpenAI(openai, photo, reference, partie) : null,
+    gemini ? () => parGemini(gemini, photo, reference, partie, garder) : null,
+    openai ? () => parOpenAI(openai, photo, reference, partie, garder) : null,
   ]) {
     if (!tenter) continue;
     try {

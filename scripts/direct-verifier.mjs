@@ -11,6 +11,7 @@
 // USAGE : node scripts/direct-verifier.mjs [port]
 // Il faut un serveur déjà lancé (voir scripts/direct-build.sh puis
 // `npx next start -p <port>`).
+import { readFileSync } from "node:fs";
 import pw from "/opt/node22/lib/node_modules/playwright/index.js";
 
 const PORT = process.argv[2] ?? "3000";
@@ -20,6 +21,92 @@ const nav = await pw.chromium.launch({ executablePath: "/opt/pw-browsers/chromiu
 let echecs = 0;
 const erreurs = [];
 const dire = (ok, t) => { if (!ok) echecs++; console.log(`${ok ? "  ok  " : "ÉCHEC "} ${t}`); };
+
+// ═══ LA CONSIGNE ENVOYÉE AU MODÈLE — LA MOITIÉ DU RÉSULTAT ═════════════════
+//
+// CE QU'ELLE PROTÈGE, ET C'EST LE DÉFAUT LE PLUS GRAVE QUE L'ESSAI PUISSE
+// AVOIR : « le résultat que j'ai obtenu pour une coupe de coiffure, ce n'est
+// pas exactement ma tête ni les mêmes lunettes, donc assez déçu ».
+//
+// SI CE N'EST PAS MOI, ÇA NE ME DIT RIEN SUR MOI. Une coupe magnifique sur le
+// visage d'un autre, c'est exactement ce qu'un catalogue faisait déjà — tout
+// l'essai s'effondre sur ce seul point.
+//
+// ON MESURE LE TEXTE, ET C'EST POSSIBLE PARCE QU'IL EST SORTI DE LA ROUTE. Une
+// route ne se teste qu'avec un serveur, une clé et un faux fournisseur ; une
+// fonction pure se lit en trois lignes. C'est précisément pour ça qu'elle a été
+// déplacée dans `lib/direct/consigne-essai.ts` : le seul morceau du produit
+// dont dépendait la fidélité du rendu n'était surveillé par rien.
+{
+  console.log("\n══ ce qu'on demande vraiment au modèle d'image ══");
+  const { consigne } = await import("../src/lib/direct/consigne-essai.ts").catch(() => ({}));
+  if (!consigne) {
+    // ON NE PASSE PAS EN SILENCE. Node ne lit le TypeScript qu'à partir d'une
+    // certaine version ; une garde qui se désactive sans le dire est pire que
+    // pas de garde du tout.
+    console.log(
+      "  ····  non mesurée : ce Node ne sait pas importer un fichier .ts\n" +
+        "        directement. Relancez avec Node 22.6+ ou --experimental-strip-types.",
+    );
+  } else {
+    const t = consigne("votre tête", ["Les lunettes exactement telles qu'elles sont."]);
+    dire(/votre tête/.test(t), "elle nomme la partie du corps qu'on a photographiée");
+    // CHAQUE TRAIT EST NOMMÉ, UN PAR UN. « Ne modifie rien d'autre » est une
+    // phrase générale, et un modèle d'image l'applique généreusement.
+    const traits = ["nez", "bouche", "yeux", "mâchoire", "rides", "barbe", "carnation"];
+    const manque = traits.filter((m) => !new RegExp(m, "i").test(t));
+    dire(!manque.length, `et le visage trait pour trait${manque.length ? " — manque : " + manque.join(", ") : ""}`);
+    // ET ON LUI INTERDIT D'EMBELLIR, parce qu'embellir est son penchant naturel
+    // et qu'il le prend pour un service rendu.
+    dire(/rajeunis pas/i.test(t) && /lisse pas/i.test(t), "on lui interdit de rajeunir et de lisser");
+    dire(
+      /ne remplace aucun accessoire/i.test(t),
+      "et de remplacer un accessoire porté par un autre « qui irait mieux »",
+    );
+    // LA LISTE DU MÉTIER ARRIVE JUSQU'AU MODÈLE. Sans ça, `garder` serait une
+    // donnée qu'on écrit et que personne ne lit — le pire genre de champ.
+    dire(
+      t.includes("Les lunettes exactement telles qu'elles sont."),
+      "ce que le métier demande de préserver y figure mot pour mot",
+    );
+  }
+
+  // ET CHAQUE MÉTIER QUI ESSAIE SUR LE CORPS A SA LISTE. Elle ne peut pas être
+  // écrite une fois pour toutes : chez le coiffeur les lunettes restent, chez
+  // le lunetier elles sont précisément ce qui change.
+  //
+  // ON LIT LE FICHIER PLUTÔT QUE DE L'IMPORTER, ET C'EST DÉLIBÉRÉ.
+  // `fantomes.ts` passe par l'alias `@/`, que Node ne sait pas résoudre hors
+  // du bâtisseur — un `import()` échoue avec « Cannot find package '@/lib' ».
+  // Monter une résolution d'alias pour compter des listes serait beaucoup de
+  // machinerie pour une question qui se lit dans le texte.
+  const source = readFileSync(new URL("../src/lib/direct/fantomes.ts", import.meta.url), "utf8");
+  const murs = [...source.matchAll(/\n  \{\n    cle: "([\w-]+)"/g)].map((m) => m[1]);
+  // CHAQUE MUR D'ESSAI PORTE SA LISTE. Un `essai:` sans `garder:` est un métier
+  // dont on n'a pas dit ce qu'il ne faut pas toucher — donc un métier où le
+  // modèle décidera tout seul, ce qui est exactement le défaut d'origine.
+  const blocs = source.split(/\n  \{\n    cle: "/).slice(1);
+  const sans = blocs
+    .filter((b) => /\n    essai: \{/.test(b) && !/\n      garder: \[/.test(b))
+    .map((b) => b.slice(0, b.indexOf('"')));
+  dire(
+    !sans.length,
+    `chaque mur d'essai dit ce qu'il ne faut pas toucher${sans.length ? " — sauf : " + sans.join(", ") : ""}`,
+  );
+  dire(murs.includes("lunettes"), `le lunetier a son mur (${murs.length} murs en tout)`);
+  // ET SA LISTE DIT L'INVERSE DE CELLE DU COIFFEUR. C'est la démonstration que
+  // ces listes ne pouvaient pas être écrites une fois pour toutes dans la route.
+  const lun = blocs.find((b) => b.startsWith("lunettes"));
+  dire(
+    !!lun && /RETIRE-LES/.test(lun),
+    "et il demande de RETIRER les lunettes portées avant d'en poser d'autres",
+  );
+  const coif = blocs.find((b) => b.startsWith("coiffeur"));
+  dire(
+    !!coif && /Les lunettes exactement telles qu'elles sont/.test(coif),
+    "là où le coiffeur demande de les garder exactement telles quelles",
+  );
+}
 
 /**
  * PASSER À LA CARTE SUIVANTE — et renoncer proprement quand il n'y en a plus.
@@ -1854,6 +1941,146 @@ console.log("\n══ la page du commerce ══");
         total - aVenir >= 3,
         `le tatoueur a bien trois flashs essayables, comme sa carte l'annonce (${total - aVenir})`,
       );
+    }
+  }
+
+  // ═══ L'ATTENTE, LA RÉVÉLATION ET LA NOTE ═════════════════════════════════
+  //
+  // CE QUE ÇA PROTÈGE : « cette étape avant le résultat devrait être LE moment
+  // magique », « cette page résultat n'est pas très fun », « on pourrait noter
+  // le résultat sur soi avec 1 à 5 fantômes ».
+  //
+  // ON NE MESURE PAS LE GOÛT, ON MESURE CE QUI EXISTE. Une garde ne peut pas
+  // dire si une animation est belle. Elle peut dire que le fantôme est au
+  // centre de sa scène et non quinze points à droite — défaut réel, causé par
+  // deux `@keyframes` du même nom — que la question est posée avec ses cinq
+  // fantômes, et que la note part vraiment sur le mur.
+  {
+    const onglet = await pB.$('.bq-maq-c button:text-matches("lunetier", "i")');
+    if (onglet) {
+      await onglet.click();
+      await pB.waitForTimeout(1100);
+      const ex = await pB.$("#mur .mu-exemple");
+      if (ex) { await ex.click(); await pB.waitForTimeout(600); }
+      const pc = await pB.$("#mur .mu-pieces button:not(.bientot)");
+      if (pc) {
+        await pc.click();
+        await pB.waitForSelector("#mur .mu-cal-scene", { timeout: 8000 }).catch(() => null);
+        // LE FANTÔME EST AU CENTRE DE SA SCÈNE, comme l'anneau autour de lui.
+        // DÉFAUT MESURÉ : il était à 65 % de large et 61 % de haut parce que
+        // `muFlotte` existait déjà ailleurs et que la seconde déclaration avait
+        // effacé son centrage. L'animation avait la bonne durée et le bon
+        // rythme — seule la trajectoire était celle de quelqu'un d'autre.
+        const place = await pB.evaluate(() => {
+          const s = document.querySelector(".mu-cal-scene");
+          const f = document.querySelector(".mu-cal-f");
+          if (!s || !f) return null;
+          const a = s.getBoundingClientRect();
+          const b = f.getBoundingClientRect();
+          return {
+            x: Math.round(((b.x + b.width / 2) - a.x) / a.width * 100),
+            y: Math.round(((b.y + b.height / 2) - a.y) / a.height * 100),
+            photo: !!s.querySelector(".mu-cal-fond"),
+            poudre: s.querySelectorAll(".mu-cal-poudre i").length,
+          };
+        });
+        if (place) {
+          dire(
+            Math.abs(place.x - 50) <= 4,
+            `pendant l'attente, le fantôme est au centre (${place.x} % de large)`,
+          );
+          dire(place.photo, "et c'est SA photo qu'on devine derrière lui");
+          dire(place.poudre >= 8, `avec sa poussière (${place.poudre} points)`);
+        }
+
+        await pB.waitForSelector("#mur .mu-rendu", { timeout: 40000 }).catch(() => null);
+        await pB.waitForTimeout(1500);
+        /**
+         * SANS CLÉ D'IMAGE, LA MOITIÉ DE CET ÉCRAN N'EXISTE PAS — ET ON LE DIT.
+         *
+         * La note ne s'affiche pas sur un rendu raté, et c'est voulu : noter
+         * « sur vous » une image où la pièce n'a pas pu être posée n'aurait
+         * aucun sens. Sur un serveur sans `GEMINI_API_KEY`, tous les rendus
+         * ratent, donc ces gardes-là ne mesurent rien.
+         *
+         * ON NE LES FAIT PAS PASSER EN SILENCE POUR AUTANT. Une garde qui se
+         * désactive sans le dire est pire que pas de garde : on continue de lui
+         * faire confiance. Elle imprime donc pourquoi, et la commande à taper
+         * pour la faire tourner vraiment.
+         */
+        const noteLa = await pB.$("#mur .mu-note");
+        if (!noteLa) {
+          const pourquoi = await pB
+            .$eval("#mur .mu-rendu-b", (e) => e.textContent.trim())
+            .catch(() => "raison inconnue");
+          console.log(
+            `  ····  l'écran du rendu n'est pas mesuré ici — « ${pourquoi.slice(0, 70)} ».\n` +
+              "        La note ne s'affiche pas sur un rendu raté, et c'est la règle :\n" +
+              "        on ne note pas « sur vous » une image où la pièce n'a pas pu être\n" +
+              "        posée. Relancez avec GEMINI_API_KEY pour mesurer cette partie.",
+          );
+        } else {
+        const apres = await pB.evaluate(() => ({
+          // LA RÉVÉLATION A EU LIEU : la classe est posée, donc l'animation
+          // s'est jouée. Une garde ne peut pas juger sa beauté ; elle peut
+          // refuser qu'elle disparaisse sans qu'on le voie.
+          revele: !!document.querySelector(".mu-rendu.revele"),
+          question: document.querySelector(".mu-note-q")?.textContent?.trim() ?? null,
+          fantomes: document.querySelectorAll(".mu-note-f button").length,
+          // LE PRIX NE SE COUPE PAS EN DEUX. Mesuré : « 159 € » s'affichait
+          // « 159 » puis « € » à la ligne, et un prix cassé se lit deux fois.
+          prix: (() => {
+            const e = document.querySelector(".mu-rendu-t em");
+            if (!e) return null;
+            const r = e.getBoundingClientRect();
+            return Math.round(r.height);
+          })(),
+          // L'ÉTIQUETTE NE PASSE PAS SOUS « AGRANDIR ». Les noms de pièces
+          // viennent des commerçants : on ne peut pas parier sur leur longueur.
+          chevauche: (() => {
+            const t = document.querySelector(".mu-rendu-t2");
+            const z = document.querySelector(".mu-rendu-z");
+            if (!t || !z) return false;
+            const a = t.getBoundingClientRect();
+            const b = z.getBoundingClientRect();
+            return a.right > b.left + 1 && a.top < b.bottom && a.bottom > b.top;
+          })(),
+        }));
+        dire(apres.revele, "le rendu se révèle au lieu d'apparaître");
+        // ON COMPARE SUR LES MOTS, PAS SUR LES ESPACES. Le texte de l'écran
+        // porte une espace INSÉCABLE avant le point d'interrogation — c'est la
+        // typographie française, et c'est voulu. Une garde qui compare deux
+        // chaînes au caractère près échoue donc sur un écran parfaitement juste,
+        // ce qui est la pire espèce de garde.
+        dire(
+          /sur vous.*(donne|va) quoi/i.test((apres.question ?? "").replace(/\u00a0/g, " ")),
+          `on demande ce que ça donne SUR SOI (« ${apres.question ?? "rien"} »)`,
+        );
+        dire(apres.fantomes === 5, `avec cinq fantômes à donner (${apres.fantomes})`);
+        dire(!!apres.prix && apres.prix < 30, `et le prix tient sur une ligne (${apres.prix} points)`);
+        dire(!apres.chevauche, "l'étiquette de la pièce ne passe pas sous « Agrandir »");
+
+        // LA NOTE PART SUR LE MUR, ET C'EST TOUTE SA RAISON D'ÊTRE. Noter pour
+        // soi seul n'aurait servi à rien : ce qui la rend utile, c'est que le
+        // suivant la lise à côté de la tête de celui qui l'a donnée.
+        const cinq = (await pB.$$("#mur .mu-note-f button"))[4];
+        if (cinq) {
+          await cinq.click();
+          await pB.waitForTimeout(250);
+          const mot = await pB.$eval("#mur .mu-note-m", (e) => e.textContent.trim());
+          dire(mot.length > 4 && mot !== "Facultatif", `et la note se dit en toutes lettres (« ${mot} »)`);
+          const passe = await pB.$("#mur .mu-rendu-g .non");
+          if (passe) {
+            await passe.click();
+            await pB.waitForTimeout(900);
+            const surLeMur = await pB.evaluate(
+              () => document.querySelectorAll("#mur .mu-rendu-preuve .mu-c-note .mu-c-ns.on").length,
+            );
+            dire(surLeMur === 5, `et elle se voit sur le fantôme posé (${surLeMur} fantômes allumés)`);
+          }
+        }
+        }
+      }
     }
   }
 

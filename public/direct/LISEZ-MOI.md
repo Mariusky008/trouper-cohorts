@@ -462,6 +462,40 @@ catalogue à la place d'un essai qui n'a pas eu lieu. Le jour où la photo arriv
 il suffit d'ajouter `reference` à la pièce et de retirer `bientot` dans
 `lib/direct/fantomes.ts`.
 
+### 👓 Le lunetier — cinq photos, un métier de plus
+
+> « Rajouter un nouveau métier : lunetier. »
+
+C'est le métier où l'essai vaut le plus cher après le tatoueur, et pour une
+raison très concrète : **en boutique, on essaie flou.** Quelqu'un qui porte des
+lunettes doit retirer les siennes pour en essayer d'autres, donc il ne voit pas
+ce qu'il essaie, donc il demande à la personne qui l'accompagne — et il repart
+sur l'avis de quelqu'un d'autre. Aucun autre commerce de cette liste n'a un
+essai en magasin aussi mauvais.
+
+| Fichier livré | Ce qu'il montre | Ce qu'il débloque |
+|---|---|---|
+| `lunetier.jpeg` | Un essai de réfraction chez l'opticien. | La carte du lunetier, le fond de son mur, et sa photo d'exemple. |
+| `lunettes1.jpg` | Une monture carrée écaille à verres dégradés, détourée sur fond blanc. | « Carrée écaille, verres dégradés ». |
+| `lunettes2.jpeg` | Une monture papillon fuchsia translucide, portée de face. | « Papillon fuchsia translucide ». |
+| `lunettes3.jpeg` | Une monture œil-de-chat vert bouteille, portée de face. | « Œil-de-chat vert bouteille ». |
+| `lunettes4.jpeg` | Une monture épaisse dégradée caramel, portée de face. | « Épaisse dégradée caramel ». |
+
+**Sa consigne dit l'inverse de celle du coiffeur, et c'est le point.** Chez le
+coiffeur, la liste `garder` exige que les lunettes ne bougent pas ; ici elles
+sont la seule chose qui doit bouger, et la consigne demande explicitement de
+**retirer** celles qui sont sur la photo — sans quoi le modèle en superpose deux
+paires. C'est la démonstration que cette liste ne pouvait pas être écrite une
+fois pour toutes dans la route.
+
+**Ce qui manque pour lui, et c'est le même trou que pour le coiffeur :**
+`portrait-avant.jpg` — une tête de face, sans visage reconnaissable de
+préférence. Faute de portrait dans le dépôt, la « photo d'exemple » du lunetier
+est celle de sa boutique, ce qui ne démontre rien : on voit un opticien au
+travail, pas une monture posée sur un visage. Le vrai chemin — on se
+photographie soi-même — fonctionne, et c'est écrit ici plutôt que masqué à
+l'écran.
+
 **La même réserve vaut pour les visages.** `coiffure1` et `coiffure2` montrent
 des visages parfaitement reconnaissables, comme les deux coupes de face
 précédentes, et pour la même raison assumée : une coupe ne se montre pas sans
