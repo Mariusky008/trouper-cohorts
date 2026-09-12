@@ -1592,6 +1592,34 @@ export function ApercuHabitant() {
     }
   }, []);
   /**
+   * ═══ « ?essai=1 » — ON ARRIVE DIRECTEMENT SUR L'ESSAI ════════════════════
+   *
+   * POURQUOI CE LIEN EXISTE. La page d'accueil s'adresse à quelqu'un QUI NE
+   * CONNAÎT PAS CLIKME, et sa seule promesse est « avant d'y aller, voyez ce
+   * que ça donne sur vous ». Un bouton qui tient cette promesse doit ouvrir
+   * l'essai, pas déposer le visiteur dans un paquet d'annonces où il devra
+   * deviner qu'un fantôme au milieu de la barre du bas cache la chose qu'on
+   * vient de lui promettre.
+   *
+   * UN APPUI DE PLUS ENTRE LA PROMESSE ET LA PREUVE, C'EST LA MOITIÉ DES GENS.
+   * C'est le calcul le plus banal d'une page d'accueil, et c'est celui qu'on
+   * était en train de rater : le bouton disait « Essayer sur moi » et livrait
+   * « voici vingt-quatre annonces ».
+   *
+   * IL ATTEND QUE LE PAQUET SOIT LÀ. La feuille se monte sur la carte du
+   * dessus (voir `murDeLaCarte`) : ouverte avant qu'elle existe, elle n'aurait
+   * rien à montrer. On repousse donc d'un rendu, et on n'insiste pas — sans
+   * carte, l'application s'ouvre normalement, ce qui est un repli honnête.
+   */
+  const [essaiDemande, setEssaiDemande] = useState(false);
+  useEffect(() => {
+    try {
+      if (new URLSearchParams(window.location.search).get("essai")) setEssaiDemande(true);
+    } catch {
+      /* Pas d'URL lisible : rien à faire. */
+    }
+  }, []);
+  /**
    * LA PHOTO REGARDÉE DANS LE CARROUSEL DE L'ANNONCE.
    *
    * Demandé par de vraies personnes : « on m'a demandé si on pouvait voir
@@ -2746,6 +2774,16 @@ export function ApercuHabitant() {
   const dessus = sommet && !estEvenement(sommet) ? sommet : undefined;
   const dessusEv = sommet && estEvenement(sommet) ? sommet : undefined;
   const dessous = pile[1];
+  /**
+   * ET ON OUVRE L'ESSAI DÈS QUE LA CARTE EXISTE. Voir `essaiDemande` plus haut :
+   * une seule fois, puis la demande retombe — sinon le visiteur ne pourrait plus
+   * jamais refermer la feuille, elle se rouvrirait à chaque rendu.
+   */
+  useEffect(() => {
+    if (!essaiDemande || !dessus) return;
+    setMurOuvert(true);
+    setEssaiDemande(false);
+  }, [essaiDemande, dessus]);
   const comptes = comptesParMetier(heure);
   const metier = METIERS.find((m) => m.cle === branche) ?? METIERS[0];
   // EN MODE EMBAUCHE, LA JOURNÉE DU COMMERCE N'EST PLUS LE SUJET : on ne lit pas

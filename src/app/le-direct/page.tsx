@@ -1,21 +1,22 @@
-// LA PAGE D'ACCUEIL DES HABITANTS.
+// LA PAGE D'ACCUEIL DES HABITANTS — pour quelqu'un qui ne connaît pas Clikme.
 //
-// CE QU'ELLE DOIT FAIRE, ET DANS CET ORDRE : dire de quelle application on
-// parle, poser le titre — « le direct de votre ville » —, puis raconter quatre
-// situations concrètes dans lesquelles quelqu'un se reconnaît, chacune en deux
-// ou trois écrans, chacune se terminant par quelque chose qui n'existe nulle
-// part ailleurs. La forme et le texte sont dans `histoire.tsx`, qui porte le
-// raisonnement ; ce fichier ne tient que l'enveloppe et la feuille de style.
+// CE QU'ELLE DOIT FAIRE, ET DANS CET ORDRE : faire UNE promesse — « avant d'y
+// aller, voyez ce que ça donne sur vous » —, la démontrer sans un mot, dire ce
+// qu'on va lui demander, montrer chez qui ça marche, puis pourquoi il y
+// reviendra demain. La forme et le texte sont dans `histoire.tsx`, qui porte
+// le raisonnement ; ce fichier ne tient que l'enveloppe et la feuille de style.
 //
-// LA VERSION D'AVANT RACONTAIT UNE BOUCLE ABSTRAITE — je regarde, je trouve,
-// j'en parle, on décide — et le jugement de l'usage a été net : « les écrans
-// que tu as mis sont hyper compliqués et il manque La Ville ». Une boucle ne
-// se reconnaît pas ; une situation, si.
+// LA MARQUE EST CLIKME, ET « LE DIRECT » EST LE NOM D'UN ÉCRAN À L'INTÉRIEUR.
+// Décidé avec le propriétaire du produit. « Le direct de votre ville » était le
+// titre de cette page : c'est du vocabulaire d'initié — un inconnu ne sait pas
+// ce qu'est « le direct », et le titre lui décrivait notre technologie plutôt
+// que son problème à lui. L'adresse reste `/le-direct` parce qu'elle est
+// partagée par lien à des testeurs ; rien d'autre ne porte ce mot.
 //
 // NOINDEX, toujours : la maquette qu'elle annonce n'est pas le produit ouvert,
 // et cette page ne doit pas devenir le premier résultat pour « clikme » tant
-// que Le Direct n'accueille pas de vrais habitants. Une seule ligne à changer
-// le jour où ça bascule.
+// qu'elle n'accueille pas de vrais commerçants. Une seule ligne à changer le
+// jour où ça bascule.
 import type { Metadata, Viewport } from "next";
 import { MARQUE } from "@/lib/marque";
 import { Histoire } from "./histoire";
@@ -28,14 +29,14 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: { absolute: `Le direct de votre ville — ${MARQUE}` },
+  title: { absolute: `${MARQUE} — avant d’y aller, voyez ce que ça donne sur vous` },
   description:
-    "Ce qui se passe autour de vous, à l’instant où ça se passe. Vous le voyez, vous l’essayez sur vous ou chez vous, vous en parlez à vos amis, et vous décidez ensemble.",
+    "Une coupe, une monture, une tenue, un tatouage : les commerçants de votre ville publient ce qu’ils proposent aujourd’hui, et vous le voyez sur votre photo avant de vous déplacer.",
   robots: { index: false, follow: false },
   openGraph: {
-    title: `Le direct de votre ville — ${MARQUE}`,
+    title: `${MARQUE} — avant d’y aller, voyez ce que ça donne sur vous`,
     description:
-      "Essayez-le avant d’entrer. On mange où ? Une place vient de se libérer. Un concert au kiosque. Ils cherchent quelqu’un. Vous voyez, vous essayez, vous en parlez, vous y allez.",
+      "Les commerçants de votre ville publient ce qu’ils ont aujourd’hui. Vous l’essayez sur votre photo, vous en parlez à vos amis, et vous y allez — ou pas.",
     locale: "fr_FR",
     type: "website",
   },
@@ -145,9 +146,11 @@ function StylesLeDirect() {
 .ld-n{margin:0;font-size:12.5px;color:var(--craie3)}
 .ld-hero-b{display:flex;flex-direction:column;align-items:center;gap:11px}
 
-/* ── LES QUATRE GESTES ──────────────────────────────────────────────── */
-
-/* ═══════════════════════════════════════════════════════════════════════
+/* ── LE SOMMAIRE EN QUATRE GESTES A DISPARU ─────────────────────────────
+   « Je vois · J'essaie · J'en parle · On y va » resumait une page qui
+   racontait quatre situations. La page n'en raconte plus aucune : elle fait
+   une promesse, la demontre, puis l'ouvre. Un sommaire qui annonce un plan
+   qui n'existe plus est la premiere chose qu'on retire. */
    LA VITRINE VIVANTE — voir vitrine.tsx pour le pourquoi.
 
    ELLE EST LE SEUL OBJET DE CETTE PAGE QUI BOUGE TOUT SEUL, et c'est
@@ -472,163 +475,71 @@ function StylesLeDirect() {
 .ld-essai-x i{font-style:normal;font-size:12px;line-height:1}
 .ld-essai-x:active{transform:translateX(-50%) scale(.97)}
 
-/* ── LES DEUX SALONS ────────────────────────────────────────────────────
-   DEUX CARTES QUI NE SE RESSEMBLENT PAS, ET C'EST LE FOND DU SUJET. Si les
-   deux salons se presentaient pareil, on ecrirait dans le mauvais. Celui de
-   gauche porte la menthe de la conversation, celui de droite l'ambre de
-   l'engagement — on les distingue avant d'avoir lu un mot. */
-.ld-salons{position:relative;--ton:var(--or);
-  padding:clamp(56px,9vh,110px) clamp(16px,4vw,48px);
-  border-top:1px solid var(--trait);
-  background:radial-gradient(80% 55% at 50% 0%,rgba(240,180,41,.07),transparent 62%)}
-.ld-salons .ld-quand{--ton:var(--or)}
+/* ── LE SALON PRIVE, ET CE QUI A ETE RETIRE AVEC LUI ────────────────────
+   CENT CINQUANTE LIGNES DE STYLE SONT PARTIES ICI, avec les deux cartes
+   « portes », le fil de conversation dessine et la jauge animee du salon
+   public a seuil.
+   LE SALON PUBLIC ETAIT MARQUE « BIENTOT », et c'est la seule raison qui
+   compte : sur une page qui doit convaincre quelqu'un qui ne connait pas le
+   produit, une promesse non livree coute plus qu'elle ne rapporte. Il
+   reviendra le jour ou il existe dans l'application.
+   LE SALON PRIVE, LUI, RESTE — mais en UN ecran et trois points, avec les
+   classes qui servaient deja aux autres chapitres (.ld-bande, .ld-atouts).
+   Un chapitre qui demande sa propre feuille de style est un chapitre qui
+   pretend etre plus important que les autres. */
 
-.ld-portes{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-  gap:clamp(12px,2vw,22px);max-width:980px;
-  margin:clamp(26px,4.5vh,46px) auto 0}
-.ld-porte{display:flex;flex-direction:column;gap:11px;
-  padding:clamp(18px,3vw,26px);border-radius:24px;
-  border:1px solid var(--trait);background:var(--nuit2)}
-.ld-porte.prive{--ton:var(--menthe);
-  background:linear-gradient(170deg,rgba(61,226,166,.07),var(--nuit2) 62%);
-  border-color:color-mix(in srgb,var(--menthe) 26%,transparent)}
-.ld-porte.public{--ton:var(--or);
-  background:linear-gradient(170deg,rgba(240,180,41,.08),var(--nuit2) 62%);
-  border-color:color-mix(in srgb,var(--or) 30%,transparent)}
+/* ── LES TROIS GESTES, EN TROIS VRAIES CAPTURES ─────────────────────────
+   C'est le seul mode d'emploi de la page, et il fait trois lignes. Quelqu'un
+   qui ne connait pas le produit a besoin de savoir CE QU'ON VA LUI DEMANDER
+   avant d'appuyer — pas comment l'application est faite. */
+.ld-etapes{list-style:none;margin:clamp(28px,5vh,48px) auto 0;padding:0;
+  max-width:960px;display:grid;gap:clamp(16px,3vw,28px);
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  counter-reset:etape}
+.ld-etapes li{display:flex;flex-direction:column;align-items:center;
+  gap:10px;text-align:center}
+.ld-etapes b{font-size:17px;font-weight:850;letter-spacing:-.02em;color:#fff}
+.ld-etapes em{font-style:normal;font-size:13.5px;line-height:1.5;
+  color:var(--craie2);max-width:30ch}
 
-/* L'ETIQUETTE PORTE LE MOT DU BOUTON *ET* L'ENDROIT OU ON LE TROUVE. Les
-   deux portes ne sont jamais au meme endroit sur l'annonce, et c'est la
-   seule chose qui empeche de se tromper de salon : ca s'ecrit, ca ne se
-   devine pas. */
-.ld-porte-e{margin:0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.ld-porte-e b{display:inline-flex;align-items:center;gap:7px;
-  font-size:13px;font-weight:850;letter-spacing:.04em;color:var(--ton);
-  background:color-mix(in srgb,var(--ton) 14%,transparent);
-  border:1px solid color-mix(in srgb,var(--ton) 36%,transparent);
-  border-radius:999px;padding:6px 13px}
-.ld-porte-e em{font-style:normal;font-size:12px;color:var(--craie3)}
-/* « BIENTOT » N'EST PAS UNE PRECAUTION DE STYLE : cette page ouvre
-   l'application juste a cote, et le salon public n'y est pas encore. Sans ce
-   mot, on envoie quelqu'un chercher un bouton qui n'existe pas. */
-.ld-porte-e s{margin-left:auto;text-decoration:none;font-size:11px;
-  font-weight:800;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--craie3);border:1px dashed var(--trait);
-  border-radius:999px;padding:4px 10px}
-.ld-porte h3{margin:0;font-family:Georgia,'Times New Roman',serif;
-  font-size:clamp(21px,2.6vw,29px);font-weight:800;line-height:1.12;
-  letter-spacing:-.02em;color:var(--craie)}
-.ld-porte-p{margin:0;font-size:14.5px;line-height:1.55;color:var(--craie2)}
-.ld-porte-p b{color:var(--craie);font-weight:750}
-/* QUI PEUT ME LIRE — EN PERMANENCE, PAS UNE FOIS. Le vrai danger de deux
-   salons n'est pas de se tromper de bouton, c'est de confier a des inconnus
-   ce qu'on croyait dire a ses amis. */
-.ld-porte-q{margin:auto 0 0;display:flex;align-items:center;gap:8px;
-  font-size:12.5px;color:var(--craie3);
-  border-top:1px solid var(--trait);padding-top:12px}
-.ld-porte-q i{font-style:normal;font-size:13px;line-height:1}
+/* ── TROIS MOMENTS DE LA MEME JOURNEE ───────────────────────────────────
+   L'essai fait venir, ceci fait revenir. Trois VRAIES cartes calculees a
+   trois heures : ce qui s'affiche ici est exactement ce qu'un habitant
+   verrait en ouvrant son telephone a midi, a quatorze heures, a dix-sept. */
+.ld-jour{display:grid;gap:clamp(14px,3vw,26px);
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  max-width:860px;margin:clamp(28px,5vh,48px) auto 0}
+.ld-jour-c{margin:0;display:flex;flex-direction:column;align-items:center;gap:10px}
+/* L'HEURE EST AU-DESSUS DE LA CARTE, ET C'EST ELLE LE SUJET DU CHAPITRE :
+   trois cartes sans heure ne prouvent rien, trois heures les rendent
+   lisibles comme une journee. */
+.ld-jour-h{font-size:12px;font-weight:850;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--or);
+  background:color-mix(in srgb,var(--or) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--or) 32%,transparent);
+  border-radius:999px;padding:6px 14px}
+.ld-jour .cd-carte{width:100%;max-width:none}
 
-/* ── LE FIL, DU COTE PRIVE ──────────────────────────────────────────────
-   Meme boite que la jauge — meme fond, meme rayon, meme retrait — et la
-   menthe a la place de l'or. Les deux cartes portent ainsi un objet de meme
-   poids : ce qui les separe est la couleur et l'enjeu, pas la quantite. */
-.ld-fil{display:flex;flex-direction:column;gap:9px;
-  padding:15px 16px;border-radius:18px;background:rgba(5,9,12,.55);
-  border:1px solid color-mix(in srgb,var(--menthe) 24%,transparent)}
-.ld-f-q{margin:0;font-size:12.5px;color:var(--craie3)}
-.ld-f-l{list-style:none;margin:0;padding:0;display:flex;
-  flex-direction:column;gap:6px}
-.ld-f-l li{align-self:flex-start;max-width:88%;
-  font-size:12.5px;line-height:1.4;color:var(--craie2);
-  padding:8px 11px;border-radius:13px 13px 13px 4px;
-  background:rgba(234,242,236,.06)}
-.ld-f-l li.moi{align-self:flex-end;color:var(--craie);
-  border-radius:13px 13px 4px 13px;
-  background:color-mix(in srgb,var(--menthe) 15%,transparent)}
-.ld-f-l b{display:block;font-size:11px;font-weight:800;letter-spacing:.02em;
-  color:var(--menthe);margin-bottom:2px}
-/* LA CONCLUSION N'EST PAS UNE BULLE. C'est ce que le salon a PRODUIT, et une
-   bulle de plus la ferait lire comme une phrase de quelqu'un. */
-.ld-f-c{margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-  font-size:12.5px;font-weight:750;color:var(--craie);
-  padding:9px 12px;border-radius:13px;
-  background:color-mix(in srgb,var(--menthe) 11%,transparent);
-  border:1px solid color-mix(in srgb,var(--menthe) 30%,transparent)}
-.ld-f-c i{font-style:normal;font-size:13px;line-height:1}
-.ld-f-c s{text-decoration:none;font-weight:400;font-size:11.5px;
-  color:var(--craie3)}
+/* ── CE QU'ON AVOUE AVANT QU'IL OUVRE ───────────────────────────────────
+   C'ETAIT DANS LE PIED DE PAGE, DONC APRES. Quelqu'un qui ouvre la maquette
+   et tombe sur « Chez Bergine » comprend tout seul qu'on lui a raconte une
+   histoire, et il ne le decouvre jamais au bon moment. Dit ici, le point
+   faible devient une preuve : les commerces sont inventes, l'essai ne l'est
+   pas. C'est la seule phrase de la page qui desamorce la deception d'apres. */
+.ld-aveu{margin:6px 0 0;font-size:12.5px;line-height:1.5;color:var(--craie3);
+  max-width:38ch;text-align:center}
+.ld-aveu b{color:var(--craie2);font-weight:750}
 
-/* ── LA JAUGE ───────────────────────────────────────────────────────────
-   LE SEUL OBJET NOUVEAU DU PRODUIT, ET LE MEME PARTOUT : « 7 sur 10 » chez
-   le vendeur de pantalons, « 9 sur 12 » chez le boulanger qui allumera son
-   four. Meme forme, meme place — on en apprend UN, on le retrouve dans
-   toute la ville. */
-.ld-jauge{display:flex;flex-direction:column;gap:9px;
-  padding:15px 16px;border-radius:18px;background:rgba(5,9,12,.55);
-  border:1px solid color-mix(in srgb,var(--or) 28%,transparent)}
-.ld-j-q{margin:0;font-size:12.5px;color:var(--craie3)}
-.ld-pts{display:flex;gap:5px}
-.ld-pts i{flex:1;height:9px;border-radius:99px;background:rgba(234,242,236,.12)}
-.ld-pts i.pris{background:var(--or)}
-.ld-j-n{margin:0;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-/* Les deux chiffres occupent la MEME place : l'un s'efface, l'autre arrive,
-   et le bloc ne bouge pas d'un pixel. Le gabarit est reserve a la largeur du
-   PLUS LARGE des deux — sans lui, « sur 10 » se colle au chiffre et se fait
-   recouvrir a la bascule. */
-.ld-j-g{position:relative;display:inline-block;min-width:2.4ch;height:29px}
-.ld-j-n b{position:absolute;left:0;top:0;
-  font-family:Georgia,'Times New Roman',serif;font-size:29px;font-weight:800;
-  line-height:1;color:var(--or)}
-.ld-j-n .ap{opacity:0}
-.ld-j-n em{font-style:normal;font-size:12.5px;color:var(--craie3)}
-.ld-j-n s{margin-left:auto;text-decoration:none;font-size:14px;
-  color:var(--craie3)}
-.ld-j-n u{text-decoration:none;font-family:Georgia,'Times New Roman',serif;
-  font-size:23px;font-weight:800;color:var(--menthe);opacity:0}
-.ld-j-x{position:relative;margin:0;min-height:2.6em;
-  font-size:12.5px;line-height:1.45;color:var(--craie2)}
-.ld-j-x span{display:block}
-.ld-j-x .ap{position:absolute;left:0;top:0;opacity:0;
-  color:var(--menthe);font-weight:700}
+/* ── LE SECOND CHEMIN, POUR QUI N'A PAS ENVIE D'ESSAYER TOUT DE SUITE ───
+   Il est un LIEN et non un bouton, et c'est voulu : deux boutons de meme
+   poids obligent a choisir, et on ne choisit pas — on referme. */
+.ld-second{display:inline-block;margin-top:4px;font-size:14px;font-weight:750;
+  color:var(--menthe);text-decoration:none;
+  border-bottom:1px solid color-mix(in srgb,var(--menthe) 40%,transparent);
+  padding-bottom:2px}
+.ld-second:hover{border-bottom-color:var(--menthe)}
 
-/* ELLE SE REMPLIT EN ARRIVANT A L'ECRAN, pas au chargement : une jauge deja
-   pleine quand on la decouvre montre un resultat, pas un mecanisme. La
-   classe « vu » est posee par l'observateur de la page, une seule fois. */
-.ld-porte.public.vu .ld-pts i.libre{animation:ldPrend .45s ease-out both}
-.ld-porte.public.vu .ld-pts i.l1{animation-delay:.55s}
-.ld-porte.public.vu .ld-pts i.l2{animation-delay:.9s}
-.ld-porte.public.vu .ld-pts i.l3{animation-delay:1.25s}
-.ld-porte.public.vu .ld-j-n .av{animation:ldPart .3s ease-out 1.6s both}
-.ld-porte.public.vu .ld-j-n .ap{animation:ldVient .3s ease-out 1.7s both}
-.ld-porte.public.vu .ld-j-n u{animation:ldVient .4s ease-out 1.9s both}
-.ld-porte.public.vu .ld-j-n s{animation:ldBarre .4s ease-out 1.9s both}
-.ld-porte.public.vu .ld-j-x .av{animation:ldPart .3s ease-out 2s both}
-.ld-porte.public.vu .ld-j-x .ap{animation:ldVient .35s ease-out 2.15s both}
-@keyframes ldPrend{from{background:rgba(234,242,236,.12);transform:scaleY(.55)}
-  to{background:var(--or);transform:scaleY(1)}}
-@keyframes ldPart{to{opacity:0;transform:translateY(-6px)}}
-@keyframes ldVient{from{opacity:0;transform:translateY(7px)}
-  to{opacity:1;transform:none}}
-@keyframes ldBarre{to{text-decoration:line-through;opacity:.55}}
-
-/* LA MEME JAUGE NE SERT PAS QU'A FAIRE BAISSER UN PRIX. Ce qui est en jeu
-   change de metier en metier ; la forme, jamais. */
-.ld-seuils{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
-  gap:10px;list-style:none;padding:0;max-width:980px;
-  margin:clamp(14px,2.4vh,24px) auto 0}
-.ld-seuils li{display:flex;flex-direction:column;gap:4px;
-  padding:15px 16px;border-radius:16px;
-  background:var(--nuit2);border:1px solid var(--trait)}
-.ld-seuils b{font-family:Georgia,'Times New Roman',serif;font-size:21px;
-  font-weight:800;line-height:1;color:var(--or)}
-.ld-seuils em{font-style:normal;font-size:12.5px;line-height:1.45;
-  color:var(--craie2)}
-
-@media(max-width:560px){
-  .ld-portes{grid-template-columns:1fr}
-  .ld-porte h3{font-size:21px}
-}
-
-/* ── LA DIFFERENCE, APRES QUATRE DEMONSTRATIONS ─────────────────────── */
+/* ── LA DIFFERENCE ──────────────────────────────────────────────────── */
 .ld-final{display:flex;flex-direction:column;align-items:center;gap:18px;
   text-align:center;border-top:1px solid var(--trait);
   padding:clamp(64px,11vh,130px) clamp(20px,5vw,48px) clamp(70px,12vh,140px);

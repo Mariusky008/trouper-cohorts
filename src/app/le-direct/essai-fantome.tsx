@@ -69,7 +69,7 @@ import { useEffect, useRef, useState } from "react";
  * compose aujourd'hui la même chose tout seul. La page ne prétend donc rien de
  * plus que ce qu'elle montre : voici le geste, et voici à quoi il aboutit.
  */
-function Miroir() {
+export function Miroir() {
   const [x, setX] = useState(74);
   const boite = useRef<HTMLDivElement | null>(null);
 
@@ -232,56 +232,20 @@ const VERDICT: Record<string, [string, string]> = {
   hesite: ["…", "Hésite"],
 };
 
-export function EssaiEtFantome() {
+/**
+ * ═══ LE MUR, ET IL EST DEVENU UN CHAPITRE À LUI SEUL ══════════════════════
+ *
+ * `EssaiEtFantome` MONTAIT LES DEUX ENSEMBLE, et c'était juste tant que
+ * l'essai était un chapitre au milieu de la page. Il ne l'est plus : le miroir
+ * est monté dans l'accroche, parce que c'est la promesse du titre et qu'une
+ * promesse ne se démontre pas trois écrans plus bas.
+ *
+ * LE MUR RESTE ICI, ET IL ARRIVE APRÈS. On ne peut pas expliquer à quelqu'un ce
+ * qu'il laisse avant de lui avoir montré ce qu'il essaie.
+ */
+export function LeMur() {
   return (
     <>
-      {/* ─── L'ESSAI ─── */}
-      <section className="ld-cas t-essai" aria-labelledby="t-essai">
-        <div className="ld-cas-h">
-          <p className="ld-quand" data-r>
-            <i aria-hidden="true">●</i>
-            Devant la vitrine
-          </p>
-          <h2 id="t-essai" className="ld-t2" data-r style={{ "--d": "60ms" } as React.CSSProperties}>
-            Essayez-le avant d’entrer.
-            <span>Sur vous, ou chez vous.</span>
-          </h2>
-          <p className="ld-s" data-r style={{ "--d": "120ms" } as React.CSSProperties}>
-            Les bougies sont dans la vitrine, vous êtes sur le trottoir. Vous
-            photographiez votre salon, et vous les voyez dessus — au bon
-            endroit, à la bonne taille, dans votre lumière.{" "}
-            <b>Tirez le trait pour comparer.</b>
-          </p>
-        </div>
-
-        <div className="ld-miroir-h" data-r style={{ "--d": "180ms" } as React.CSSProperties}>
-          <Miroir />
-        </div>
-
-        <ul className="ld-atouts cas" aria-label="Ce que ça apporte">
-          {[
-            ["🤳", "Chez vous, pas dans un catalogue",
-             "Votre table, votre teint, votre lumière. Une photo de catalogue ne dit jamais si ça va chez vous, à vous."],
-            ["🚪", "Avant de pousser la porte",
-             "On n’essaie plus par politesse ce qu’on n’achètera pas, et on n’entre plus pour rien. Le commerçant y gagne autant que vous."],
-            ["💇", "La coupe, les ongles, la robe, le tatouage",
-             "Même geste chez tous ceux dont le métier est de changer quelque chose sur vous. Ce qu’ils vendent, vous le voyez avant."],
-          ].map(([i, t, d], k) => (
-            <li key={t} data-r style={{ "--d": `${k * 70}ms` } as React.CSSProperties}>
-              <i aria-hidden="true">{i}</i>
-              <span>
-                <b>{t}</b>
-                {d}
-              </span>
-            </li>
-          ))}
-        </ul>
-
-        <p className="ld-chute" data-r>
-          Ce que vous achetez, vous l’avez déjà vu sur vous, ou chez vous.
-        </p>
-      </section>
-
       {/* ─── LE FANTÔME ───
           IL VIENT APRÈS L'ESSAI, ET L'ORDRE EST LE PROPOS. Le fantôme n'est
           pas une fonction de plus : c'est ce que DEVIENT un essai quand on

@@ -126,3 +126,77 @@ export function VitrineVivante() {
     </div>
   );
 }
+
+/**
+ * ⏱️ TROIS MOMENTS DE LA MÊME JOURNÉE — la raison de revenir demain.
+ *
+ * ═══ POURQUOI CE CHAPITRE EXISTE, ET POURQUOI IL EST EN QUATRIÈME ══════════
+ *
+ * L'ESSAI FAIT VENIR, LE DIRECT FAIT REVENIR. L'essayage est le seul geste que
+ * personne d'autre ne propose : c'est l'hameçon, et il prend le titre. Mais on
+ * n'essaie pas une coupe tous les jours. Ce qui fait rouvrir l'application
+ * demain, c'est qu'il y a un désistement à deux cents mètres et une fournée à
+ * dix-sept heures.
+ *
+ * UNE PAGE D'ACCUEIL EST UNE SURFACE D'ACQUISITION : l'hameçon passe donc
+ * devant, et l'argument de retour arrive juste derrière — pas l'inverse.
+ *
+ * ═══ TROIS HEURES, TROIS VRAIES CARTES ════════════════════════════════════
+ *
+ * On ne décrit pas une journée, on la montre à trois moments. Ce sont les vrais
+ * composants du produit, calculés à trois heures différentes : ce qui apparaît
+ * ici est exactement ce qu'un habitant verrait en ouvrant son téléphone à midi,
+ * à quatorze heures et à dix-sept heures.
+ *
+ * ET LES TROIS NE SE RESSEMBLENT PAS, C'EST TOUT LE PROPOS : un plat, un
+ * créneau qui se libère, une fournée. Trois cartes de restaurants n'auraient
+ * prouvé qu'une chose — que l'application sait faire les restaurants.
+ */
+/**
+ * L'HEURE EST CELLE OU L'ON REGARDE, PAS CELLE DE LA CHOSE.
+ *
+ * ET ELLE DOIT TOMBER DANS LA FENETRE DU MOMENT, sinon la carte montre autre
+ * chose. Deux fois mesure : a 14 h 10 l'onglerie n'avait plus son desistement
+ * (fenetre 11 h – 13 h) et affichait « Pose complete » ; a 17 h pile la
+ * boulangerie n'avait plus sa fournee (fenetre 14 h – 17 h) et affichait « La
+ * formule du midi ». Trois cartes justes devenaient trois cartes quelconques,
+ * et le chapitre ne prouvait plus rien.
+ *
+ * A 16 H 30 ON VOIT LA FOURNEE DE 17 H, et c'est exactement le propos : on
+ * apprend a temps ce qui va sortir, au lieu de passer devant a 17 h 30.
+ */
+const MOMENTS: [string, number, string][] = [
+  ["emporter", 12.5, "12 h 30"],
+  ["coif-centre", 14.25, "14 h 15"],
+  // LA BOULANGERIE A ETE ECARTEE POUR UNE RAISON QU'ON NE VOIT PAS DANS SES
+  // HORAIRES : elle a un MENU DU JOUR, et un menu passe devant le moment en
+  // cours sur la face de la carte (voir `carteDe`). A 16 h 30 elle affichait
+  // donc « La formule du midi » au lieu de sa fournee de 17 h.
+  // LA FLEURISTE N'A PAS DE MENU, et son moment de 17 h est le meilleur des
+  // trois pour ce chapitre : un prix qui tombe parce que la journee se termine.
+  // C'est exactement ce qu'aucun annuaire ne sait dire.
+  ["fleur-marche", 17.5, "17 h 30"],
+];
+
+export function TroisMoments() {
+  const cartes = useMemo(
+    () =>
+      MOMENTS.map(([id, h, quand]) => {
+        const c = toutesLesCartes().find((x) => x.id === id);
+        return c ? { quand, carte: carteAffichee(c, h) } : null;
+      }).filter((x): x is { quand: string; carte: ReturnType<typeof carteAffichee> } => !!x),
+    [],
+  );
+  if (!cartes.length) return null;
+  return (
+    <div className="ld-jour">
+      <StylesDirect />
+      {cartes.map((m) => (
+        <figure key={m.quand} className="ld-jour-c">
+          <span className="ld-jour-h" aria-hidden="true">{m.quand}</span>
+          <CarteSwipe carte={m.carte} variante="seconde" />
+        </figure>
+      ))}
+    </div>
+  );
+}

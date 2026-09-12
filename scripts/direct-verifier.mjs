@@ -2203,13 +2203,68 @@ console.log("\n══ la page du commerce ══");
   dire(/essay|essai/i.test(mots), "elle parle de l'essai");
   dire(/fant[oô]me/i.test(mots), "et du fantôme");
 
-  // LE SOMMAIRE DU HAUT LE NOMME AUSSI. C'est l'endroit où l'on décide de
-  // descendre ou de fermer : un sommaire qui omet le chapitre le plus neuf
-  // envoie fermer avant d'y arriver.
-  const gestes = await pD.$$eval(".ld-gestes b", (l) => l.map((e) => e.textContent.trim()));
+  // ═══ LA PROMESSE EST DANS LE TITRE, PAS TROIS ÉCRANS PLUS BAS ═══════════
+  //
+  // CE QUE ÇA PROTÈGE : « l'essai fait venir, le direct fait revenir ». Une
+  // page d'accueil est une surface d'acquisition, donc l'hameçon prend le
+  // titre et l'argument de retour arrive derrière. Arbitrage pris avec le
+  // propriétaire du produit, et c'est exactement le genre de décision qu'une
+  // réécriture ultérieure défait sans s'en apercevoir.
+  const h1 = await pD.$eval("h1", (e) => e.textContent.replace(/\s+/g, " ").trim());
+  dire(/sur vous/i.test(h1), `le titre promet l'essai sur soi (« ${h1} »)`);
+  // ET « LE DIRECT » N'EST PLUS UN TITRE. C'est du vocabulaire d'initié : un
+  // inconnu ne sait pas ce que c'est, et le mot lui décrivait notre
+  // technologie plutôt que son problème à lui.
+  dire(!/le direct/i.test(h1), "et il ne parle pas « du direct », que personne ne connaît");
+
+  // ═══ LE BOUTON LIVRE LA PROMESSE, PAS UN PAQUET D'ANNONCES ══════════════
+  //
+  // Un bouton qui dit « Essayer sur moi » et ouvre vingt-quatre annonces perd
+  // la moitié des gens entre la promesse et la preuve. `?essai=1` ouvre la
+  // feuille d'essai directement.
+  const boutons = await pD.$$eval(".ld-cta.grand", (l) =>
+    l.map((e) => ({ mot: e.textContent.trim(), ou: e.getAttribute("href") ?? "" })),
+  );
+  dire(boutons.length >= 2, `la page a son bouton en haut et en bas (${boutons.length})`);
   dire(
-    gestes.some((g) => /essa/i.test(g)),
-    `et le sommaire du haut le nomme (${gestes.join(" · ")})`,
+    boutons.every((b) => /essai=1/.test(b.ou)),
+    "et les deux ouvrent l'essai, pas le paquet",
+  );
+  dire(
+    new Set(boutons.map((b) => b.mot)).size === 1,
+    `avec le même mot des deux côtés (${[...new Set(boutons.map((b) => b.mot))].join(" / ")})`,
+  );
+
+  // ═══ ON DIT QUE C'EST UNE MAQUETTE AVANT QU'IL OUVRE ════════════════════
+  //
+  // C'ÉTAIT DANS LE PIED DE PAGE, DONC APRÈS. Quelqu'un qui ouvre et tombe sur
+  // « Chez Bergine » comprend tout seul qu'on lui a raconté une histoire, et il
+  // ne le découvre jamais au bon moment. Dit au-dessus du pli, le point faible
+  // devient une preuve.
+  const aveu = await pD.$eval(".ld-aveu", (e) => ({
+    mot: e.textContent.replace(/\s+/g, " ").trim(),
+    y: Math.round(e.getBoundingClientRect().top + window.scrollY),
+  })).catch(() => null);
+  dire(!!aveu && /invent/i.test(aveu.mot), `elle avoue que les commerces sont inventés`);
+  dire(!!aveu && aveu.y < 2600, `et elle l'avoue près du bouton, pas au pied de page (${aveu?.y ?? "?"} points)`);
+
+  // ═══ LES TROIS MOMENTS DISENT TROIS CHOSES DIFFÉRENTES ══════════════════
+  //
+  // DÉFAUT MESURÉ DEUX FOIS : une heure hors de la fenêtre d'un moment, et la
+  // carte retombe sur autre chose — l'onglerie affichait « Pose complète » au
+  // lieu de son désistement, la boulangerie « La formule du midi » au lieu de
+  // sa fournée (elle a un menu, qui passe devant). Trois cartes justes
+  // devenaient trois cartes quelconques, et le chapitre ne prouvait plus rien.
+  const moments = await pD.$$eval(".ld-jour-c", (l) =>
+    l.map((e) => ({
+      h: e.querySelector(".ld-jour-h")?.textContent?.trim() ?? "",
+      quoi: e.querySelector("h2")?.textContent?.replace(/\s+/g, " ").trim() ?? "",
+    })),
+  );
+  dire(moments.length === 3, `trois moments de la même journée (${moments.length})`);
+  dire(
+    new Set(moments.map((m) => m.quoi)).size === 3,
+    `et les trois disent trois choses différentes (${moments.map((m) => `${m.h} ${m.quoi}`).join(" · ")})`,
   );
 
   // LA VITRINE EST LA VRAIE CARTE, ET ELLE CHANGE DE MÉTIER.
