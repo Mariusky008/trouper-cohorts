@@ -41,7 +41,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Essayer } from "./essayer";
-import { VitrineVivante } from "./vitrine";
+import { EncresDuFantome, Fantome } from "./fantome";
+import { Ouverture } from "./ouverture";
+import { Suite } from "./suite";
 
 /**
  * L'ADRESSE DU BOUTON, ÉCRITE UNE FOIS.
@@ -103,26 +105,34 @@ function useRevelation() {
   return racine;
 }
 
-/** Le fantôme de la maquette : dessiné, pas photographié. */
-function Fantome({ classe }: { classe?: string }) {
+/**
+ * LA MARQUE, ET C'EST LE VRAI LOGO.
+ *
+ * « Le logo de ClikMe n'est pas le bon, il me semble. » Il ne l'était pas : la
+ * barre portait une GOUTTE DE CARTE dessinée à la main, violette, suivie du mot
+ * « ClikMe » en caractères de la page. Un repère de carte est le logo de tout le
+ * monde ; celui de ClikMe existe depuis le début du dépôt — le mot en minuscules
+ * dont le K est une flèche de curseur verte, c'est-à-dire le clic qui donne son
+ * nom au produit.
+ *
+ * DEUX FICHIERS PARCE QU'IL Y A DEUX FONDS : les lettres sont blanches sur la
+ * barre sombre, encre sur le pied clair. La flèche verte est la même dans les
+ * deux. Les redessiner en SVG « pour économiser une image » ferait un troisième
+ * logo qui divergerait au premier ajustement, et c'est toujours celui qu'on ne
+ * regarde pas qui prend du retard.
+ */
+function Marque({ clair = false }: { clair?: boolean }) {
   return (
-    <span className={`ld-f3${classe ? ` ${classe}` : ""}`} aria-hidden="true">
-      <svg viewBox="0 0 64 72" fill="none">
-        <defs>
-          <linearGradient id="ldFcorps" x1="32" y1="4" x2="32" y2="68">
-            <stop offset="0" stopColor="#FFFFFF" />
-            <stop offset="1" stopColor="#E4DCFF" />
-          </linearGradient>
-        </defs>
-        <path
-          fill="url(#ldFcorps)"
-          d="M32 4C18.7 4 8 14.7 8 28v30.5c0 3 3.5 4.6 5.8 2.7l4.6-3.9a4 4 0 0 1 5.2 0l4 3.4a4 4 0 0 0 5.2 0l4-3.4a4 4 0 0 1 5.2 0l4.2 3.6c2.3 2 5.8.3 5.8-2.7V28C56 14.7 45.3 4 32 4z"
-        />
-        <ellipse cx="23" cy="30" rx="3.4" ry="4.2" fill="#2A1E4D" />
-        <ellipse cx="41" cy="30" rx="3.4" ry="4.2" fill="#2A1E4D" />
-        <path d="M26 41c1.8 2.4 4 3.6 6 3.6s4.2-1.2 6-3.6" stroke="#2A1E4D" strokeWidth="2.6" strokeLinecap="round" />
-      </svg>
-    </span>
+    <Link href="/le-direct" className={`ld-marque${clair ? " grand" : ""}`}>
+      <Image
+        src={clair ? "/clikme-logo.png" : "/clikme-logo-blanc.png"}
+        alt="ClikMe"
+        width={800}
+        height={322}
+        priority={!clair}
+        sizes={clair ? "168px" : "112px"}
+      />
+    </Link>
   );
 }
 
@@ -185,20 +195,17 @@ export function Histoire() {
 
   return (
     <div ref={racine}>
+      {/* LES ENCRES DU FANTÔME, UNE FOIS POUR TOUTE LA PAGE, ET TOUT EN HAUT.
+          Elles étaient dans chaque fantôme, avec les mêmes identifiants : le
+          navigateur ne retenait que le premier, et le premier de cette page est
+          celui de l'ouverture, caché en dessous de 900 points. Résultat mesuré
+          sur téléphone — tous les fantômes de la page étaient sans corps et sans
+          yeux. Le raisonnement complet est dans `fantome.tsx`. */}
+      <EncresDuFantome />
+
       {/* ═══ LA BARRE ═════════════════════════════════════════════════════ */}
       <header className="ld-nav">
-        <Link href="/le-direct" className="ld-marque">
-          <i aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 2.5c-4 0-7.2 3.2-7.2 7.2 0 5.2 6.3 11.2 6.6 11.4a.9.9 0 0 0 1.2 0c.3-.2 6.6-6.2 6.6-11.4 0-4-3.2-7.2-7.2-7.2z"
-                fill="currentColor"
-              />
-              <circle cx="12" cy="9.6" r="2.7" fill="#fff" />
-            </svg>
-          </i>
-          Clik<b>Me</b>
-        </Link>
+        <Marque />
         <nav className="ld-nav-l" aria-label="Sections">
           <a href="#essayer">Découvrir</a>
           <a href="#ensemble">Comment ça marche</a>
@@ -221,13 +228,19 @@ export function Histoire() {
             <p className="ld-oeil" data-r>
               Commerçants, événements, services, sorties…
             </p>
+            {/* LE TITRE ET SA SUITE SONT DE SA MAIN, MOT POUR MOT. « Votre ville
+                bouge. Voyez ce qui s'y passe. » — et la phrase dessous dit la
+                seule chose que personne d'autre ne fait. C'est pour elle que le
+                verbe est mis en avant : on peut voir ce qui se passe autour de
+                soi dans dix applications, on ne peut l'ESSAYER nulle part. */}
             <h1 className="ld-t1" data-r style={{ "--d": "70ms" } as React.CSSProperties}>
               Votre ville bouge.
-              <span>Voyez ce qui se passe.</span>
+              <span>Voyez ce qui s’y passe.</span>
             </h1>
             <p className="ld-s" data-r style={{ "--d": "140ms" } as React.CSSProperties}>
               <b>Le Direct</b> vous montre en temps réel ce qui est disponible
-              autour de vous.
+              autour de vous et vous permet de l’<b className="ld-fort">essayer</b>{" "}
+              virtuellement.
             </p>
             <div className="ld-hero-b" data-r style={{ "--d": "210ms" } as React.CSSProperties}>
               <Link href={OUVRIR} className="ld-cta grand" onClick={ouvrir(OUVRIR)}>
@@ -235,20 +248,27 @@ export function Histoire() {
                 <s aria-hidden="true">→</s>
               </Link>
             </div>
+            {/* LE FANTÔME OUVRE LA PAGE, ET IL REGARDE LE TÉLÉPHONE. C'est le
+                même personnage que le bouton vert de la barre du bas, sur la
+                capture à côté : on le voit ici en grand, puis on le retrouve à
+                sa place dans l'application, et on comprend sans légende sur quoi
+                il faut appuyer. */}
+            <div className="ld-hero-f" aria-hidden="true">
+              <Fantome classe="ld-f-hero" regarde="droite" />
+              <p className="ld-main f">
+                C’est lui qui
+                <br />
+                vous essaie tout.
+              </p>
+            </div>
           </div>
 
-          {/* LE TÉLÉPHONE DE LA MAQUETTE. Il y montre une vraie carte ; ici il
-              en montre quatre, qui tournent — c'est le composant du produit, et
-              il prouve du même coup que les métiers ne se ressemblent pas. */}
+          {/* LE TÉLÉPHONE DE LA MAQUETTE, ET IL MONTRE LE GESTE. « J'aurais aimé
+              plutôt qu'il ait le fantôme et la barre de menu du bas, pour
+              montrer dans l'animation que lorsqu'on clique sur le fantôme on
+              peut essayer le produit. » */}
           <div className="ld-hero-tel" data-r style={{ "--d": "280ms" } as React.CSSProperties}>
-            <VitrineVivante />
-            <p className="ld-main a" aria-hidden="true">
-              Un swipe.
-              <br />
-              Une envie.
-              <br />
-              Une réponse.
-            </p>
+            <Ouverture />
           </div>
         </div>
       </section>
@@ -284,66 +304,28 @@ export function Histoire() {
           </div>
           <div className="ld-deux-f" aria-hidden="true">
             <p className="ld-main b">
-              Votre fantôme
+              Il essaie pour vous,
               <br />
-              vous accompagne
+              avant que vous sortiez.
             </p>
-            <Fantome />
+            <Fantome classe="ld-f-marge" regarde="gauche" />
           </div>
         </div>
       </section>
 
-      {/* ═══ 3 · ENSEMBLE ═════════════════════════════════════════════════ */}
+      {/* ═══ 3 · CE QUI SE PASSE APRÈS L'ESSAI ════════════════════════════
+          LA SECTION LA PLUS IMPORTANTE DE LA PAGE, et c'est lui qui l'a dit :
+          « cette étape est cruciale pour que l'histoire narrative ait un sens ».
+          Elle est jouée et non racontée — son raisonnement complet est dans
+          `suite.tsx`, qui tient à la fois le chemin de A à Z et le téléphone. */}
       <section className="ld-clair gris" id="ensemble">
-        <div className="ld-deux inverse">
-          <div className="ld-deux-d">
-            <p className="ld-oeil v" data-r>
-              Ensemble, c’est mieux
-            </p>
-            <h2 className="ld-t2" data-r style={{ "--d": "70ms" } as React.CSSProperties}>
-              Ne choisissez
-              <span>plus seul.</span>
-            </h2>
-            <p className="ld-p" data-r style={{ "--d": "140ms" } as React.CSSProperties}>
-              Proposez ce que vous trouvez à vos amis. Ils peuvent changer votre
-              choix. Et quand vous êtes d’accord, ClikMe s’occupe du reste.
-            </p>
-            <Link
-              href={OUVRIR}
-              className="ld-creux"
-              data-r
-              style={{ "--d": "210ms" } as React.CSSProperties}
-              onClick={ouvrir(OUVRIR)}
-            >
-              Explorer les propositions
-              <s aria-hidden="true">→</s>
-            </Link>
-          </div>
-          <div className="ld-deux-g" data-r style={{ "--d": "90ms" } as React.CSSProperties}>
-            {/* UNE VRAIE CAPTURE DU SALON, dans le téléphone dessiné. La
-                maquette y met une conversation redessinée ; on préfère celle
-                qui existe, parce qu'une page qui redessine son produit en plus
-                joli promet un écran qui n'existe pas. */}
-            <div className="ld-sal">
-              <div className="ld-vt">
-                <div className="ld-vt-ecran">
-                  <Image
-                    src="/le-direct/resto-salon.jpg"
-                    alt="Une conversation privée sur une annonce : trois amis répondent, et la table est réservée pour quatre."
-                    width={720}
-                    height={1502}
-                    sizes="(max-width:900px) 62vw, 280px"
-                  />
-                </div>
-              </div>
-              <p className="ld-main c" aria-hidden="true">
-                Vos amis donnent leur avis,
-                <br />
-                vous décidez.
-              </p>
-            </div>
-          </div>
-        </div>
+        <Suite />
+        <p className="ld-suite-b">
+          <Link href={ESSAYER} className="ld-creux" onClick={ouvrir(ESSAYER)}>
+            Faire tout ça maintenant
+            <s aria-hidden="true">→</s>
+          </Link>
+        </p>
       </section>
 
       {/* ═══ 4 · PARTOUT AVEC VOUS ════════════════════════════════════════ */}
@@ -371,25 +353,14 @@ export function Histoire() {
               <br />
               et découvrez ceux des autres.
             </p>
-            <Fantome classe="petit" />
+            <Fantome classe="ld-f-bande" />
           </div>
         </div>
       </section>
 
       {/* ═══ LE PIED ══════════════════════════════════════════════════════ */}
       <footer className="ld-pied">
-        <Link href="/le-direct" className="ld-marque grand">
-          <i aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 2.5c-4 0-7.2 3.2-7.2 7.2 0 5.2 6.3 11.2 6.6 11.4a.9.9 0 0 0 1.2 0c.3-.2 6.6-6.2 6.6-11.4 0-4-3.2-7.2-7.2-7.2z"
-                fill="currentColor"
-              />
-              <circle cx="12" cy="9.6" r="2.7" fill="#fff" />
-            </svg>
-          </i>
-          Clik<b>Me</b>
-        </Link>
+        <Marque clair />
         <p className="ld-slogan" data-r>
           Voyez. Essayez. Décidez.
         </p>
@@ -426,11 +397,18 @@ export function Histoire() {
           Découvrir ClikMe
           <s aria-hidden="true">→</s>
         </Link>
-        <p className="ld-main e" aria-hidden="true">
-          On se retrouve
-          <br />
-          sur ClikMe !
-        </p>
+        {/* IL FERME LA PAGE COMME IL L'A OUVERTE. C'est le même personnage à
+            l'ouverture, dans la marge de l'essai, sur le chemin de la section 3,
+            dans la bande, et ici : on ne le présente jamais, et pourtant on le
+            connaît en arrivant en bas. */}
+        <div className="ld-pied-f" aria-hidden="true">
+          <Fantome classe="ld-f-pied" />
+          <p className="ld-main e">
+            On se retrouve
+            <br />
+            sur ClikMe&nbsp;!
+          </p>
+        </div>
 
         {/* ON DIT QUE C'EST UNE MAQUETTE, ET ON LE DIT ICI PLUTÔT QU'À
             L'INTÉRIEUR. Quelqu'un qui ouvre et tombe sur « Chez Bergine »

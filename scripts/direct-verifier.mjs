@@ -2252,6 +2252,150 @@ console.log("\n══ la page du commerce ══");
   const allume = await pD.$$eval(".ld-es-l button.on", (l) => l.length);
   dire(allume === 1, `et un seul métier reste allumé (${allume})`);
 
+  // ═══ LE LOGO EST LE VRAI ════════════════════════════════════════════════
+  //
+  // « Le logo de ClikMe n'est pas le bon, il me semble. » Il ne l'était pas :
+  // la barre portait un REPÈRE DE CARTE violet dessiné à la main, suivi du mot
+  // « ClikMe » en caractères de la page. Un repère de carte est le logo de tout
+  // le monde. Celui de ClikMe existe depuis le début du dépôt — le mot en
+  // minuscules dont le K est une flèche de curseur verte.
+  //
+  // DEUX FICHIERS, PARCE QU'IL Y A DEUX FONDS : lettres blanches sur la barre
+  // sombre, encre sur le pied clair. Cette garde tombe si quelqu'un redessine
+  // un troisième logo, ou s'il met le même fichier aux deux endroits — auquel
+  // cas l'un des deux devient invisible sur son fond.
+  const logos = await pD.$$eval(".ld-marque img", (l) =>
+    l.map((e) => decodeURIComponent(e.getAttribute("src") ?? "")),
+  );
+  dire(logos.length === 2, `le logo est une image, en haut et en bas (${logos.length})`);
+  dire(
+    logos.every((s) => /clikme-logo/.test(s)),
+    "et c'est le vrai fichier du dépôt, pas un dessin refait",
+  );
+  dire(
+    logos.some((s) => /blanc/.test(s)) && logos.some((s) => !/blanc/.test(s)),
+    "chacun sur le fond qui lui va : le blanc sur la barre sombre, l'encre sur le pied clair",
+  );
+
+  // ═══ LA PROMESSE DE L'OUVERTURE ═════════════════════════════════════════
+  //
+  // « Votre ville bouge. Voyez ce qui s'y passe. » puis « Le Direct vous montre
+  // en temps réel ce qui est disponible autour de vous ET VOUS PERMET DE
+  // L'ESSAYER VIRTUELLEMENT. » Ce sont ses mots, et la seconde moitié de la
+  // phrase est la seule chose que personne d'autre ne fait : une réécriture qui
+  // la laisserait tomber ferait de cette page une application de ville de plus.
+  const promesse = await pD
+    .$eval(".ld-hero .ld-s", (e) => e.textContent.replace(/\s+/g, " ").trim())
+    .catch(() => "");
+  dire(/essayer/i.test(promesse), `l'ouverture promet l'essai (« ${promesse.slice(0, 96)} »)`);
+
+  // ═══ L'OUVERTURE MONTRE LE FANTÔME ET LA BARRE DU BAS ═══════════════════
+  //
+  // « Le screenshot à côté, j'aurais aimé plutôt qu'il ait le fantôme et la
+  // barre de menu du bas, pour montrer dans l'animation que lorsqu'on clique
+  // sur le fantôme on peut essayer le produit. »
+  //
+  // TROIS CHOSES SE MESURENT ICI, et chacune est une moitié de la démonstration :
+  // les deux captures sont bien celles de l'application, l'anneau est posé SUR
+  // le fantôme au point près, et la feuille d'essai finit vraiment par monter.
+  const ecrans = await pD.evaluate(() => {
+    const src = (s) =>
+      decodeURIComponent(document.querySelector(s)?.getAttribute("src") ?? "");
+    return { paquet: src(".ld-ouv > .ld-vt img"), essai: src(".ld-ouv-feuille img") };
+  });
+  dire(/hero-paquet/.test(ecrans.paquet), "l'ouverture montre la carte du jour avec sa barre du bas");
+  dire(/hero-essai/.test(ecrans.essai), "et la feuille d'essai qui vient par-dessus");
+
+  // L'ANNEAU EST SUR LE FANTÔME, ET C'EST MESURÉ EN POURCENTAGE DE L'ÉCRAN :
+  // le bouton vert est à 50 % de la largeur et 95,9 % de la hauteur de la
+  // capture. Posé en points, l'anneau glisserait à côté au premier palier
+  // d'échelle — le cadre en a trois.
+  const vise = await pD.evaluate(() => {
+    const c = document.querySelector(".ld-ouv-cible")?.getBoundingClientRect();
+    const e = document.querySelector(".ld-ouv .ld-vt-ecran")?.getBoundingClientRect();
+    if (!c || !e) return null;
+    return {
+      x: (c.x + c.width / 2 - e.x) / e.width,
+      y: (c.y + c.height / 2 - e.y) / e.height,
+    };
+  });
+  dire(
+    !!vise && Math.abs(vise.x - 0.5) < 0.04 && Math.abs(vise.y - 0.959) < 0.04,
+    `et l'appui est dessiné sur le fantôme (${vise ? `${(vise.x * 100).toFixed(1)} % / ${(vise.y * 100).toFixed(1)} %` : "absent"})`,
+  );
+
+  const monte = await pD
+    .waitForSelector(".ld-ouv-feuille.ouverte", { timeout: 12000 })
+    .then(() => true)
+    .catch(() => false);
+  dire(monte, "et appuyer sur le fantôme ouvre bien l'essai, tout seul, en boucle");
+
+  // ═══ LES ENCRES DU FANTÔME SONT DANS L'ARBRE DE RENDU ═══════════════════
+  //
+  // LE DÉFAUT, ET IL NE SE VOYAIT QUE SUR TÉLÉPHONE : tous les fantômes de la
+  // page étaient DÉCAPITÉS — bras, joues, bouche et points de lumière présents,
+  // corps et yeux absents. Exactement les pièces remplies par un dégradé.
+  //
+  // DEUX CAUSES QUI SE CUMULENT. Chaque fantôme portait sa copie des dégradés
+  // avec les mêmes identifiants — le navigateur ne retient que le premier — et
+  // le premier de cette page est celui de l'ouverture, en `display:none` en
+  // dessous de 900 points. Un élément retiré de l'arbre de rendu ne fournit plus
+  // ses serveurs de peinture : `fill:url(#ldfCorps)` ne résolvait plus rien.
+  //
+  // ON MESURE DONC LES DEUX CONDITIONS : un seul porteur par identifiant, et son
+  // SVG n'est ni masqué ni retiré. `display:none` ET `visibility:hidden` sont
+  // tous les deux fautifs ici, ce qui est le genre de détail qu'on ne redécouvre
+  // qu'en repayant le défaut.
+  const encres = await pD.evaluate(() => {
+    const noms = ["ldfCorps", "ldfOeil", "ldfCreux", "ldfLueur", "ldfFil"];
+    return noms.map((id) => {
+      const tous = document.querySelectorAll(`[id="${id}"]`);
+      const svg = tous[0]?.closest("svg");
+      let n = svg,
+        cache = !svg;
+      while (n && n !== document.documentElement) {
+        const c = getComputedStyle(n);
+        if (c.display === "none" || c.visibility === "hidden") { cache = true; break; }
+        n = n.parentElement;
+      }
+      return { id, combien: tous.length, cache };
+    });
+  });
+  dire(
+    encres.every((e) => e.combien === 1),
+    `chaque encre du fantôme n'est déclarée qu'une fois (${encres.map((e) => `${e.id}×${e.combien}`).join(" ")})`,
+  );
+  dire(
+    encres.every((e) => !e.cache),
+    "et aucune n'est posée dans une branche masquée, sinon les fantômes perdent leur corps",
+  );
+
+  // ═══ ET IL N'EST PAS ROGNÉ ══════════════════════════════════════════════
+  //
+  // « Il est bizarrement coupé à droite, voir photo. » Ses BRAS dépassaient la
+  // zone de dessin : le moignon droit est une ellipse à cx=36,6 et rx=4, son
+  // bord atteint 40,6 sur un cadre qui s'arrêtait à 40. Un SVG rogne son propre
+  // cadre — c'est la règle du format, pas un réglage.
+  const cadre = await pD.evaluate(() => {
+    const f = document.querySelector(".ld-f-pied") ?? document.querySelector(".ld-f");
+    if (!f) return null;
+    const v = f.viewBox.baseVal;
+    const b = f.getBBox();
+    return {
+      cadre: [v.x, v.y, v.width, v.height].map((n) => +n.toFixed(2)),
+      trace: [b.x, b.y, b.width, b.height].map((n) => +n.toFixed(2)),
+      rogne:
+        b.x < v.x - 0.01 ||
+        b.y < v.y - 0.01 ||
+        b.x + b.width > v.x + v.width + 0.01 ||
+        b.y + b.height > v.y + v.height + 0.01,
+    };
+  });
+  dire(
+    !!cadre && !cadre.rogne,
+    `le fantôme tient entier dans son cadre, bras compris (${cadre ? `trace ${cadre.trace.join(" ")} dans ${cadre.cadre.join(" ")}` : "absent"})`,
+  );
+
   // ═══ AUCUN BADGE DE MAGASIN N'EST UN LIEN ═══════════════════════════════
   //
   // IL N'Y A PAS D'APPLICATION À TÉLÉCHARGER. La maquette dessine les deux
@@ -2274,6 +2418,92 @@ console.log("\n══ la page du commerce ══");
     magasins.every((m) => /bient[oô]t/i.test(m.mot)),
     `et ils le disent (${magasins.map((m) => m.mot).join(" / ")})`,
   );
+
+  // ═══ LA SECTION 3 RACONTE LA VRAIE SUITE ════════════════════════════════
+  //
+  // « Cette section est très mal faite : on voit un screen où les gens parlent
+  // comme s'ils étaient sur Instagram. L'idée ici c'est de montrer notre
+  // différence, c'est-à-dire que lorsqu'on a essayé le produit on le note avec
+  // des fantômes de 1 à 5, et ensuite on nous demande : voulez-vous en parler
+  // avec vos amis dans un salon privé pour recueillir leurs avis ? Et c'est à
+  // ce moment qu'on a la conversation qui apparaît, ET SURTOUT AVEC LES OPTIONS
+  // DU SALON, qui est la possibilité de choisir autre chose et de réserver.
+  // Donc cette étape est cruciale pour que l'histoire narrative ait un sens :
+  // je vois une annonce qui me plaît, j'essaye le produit, je note le produit,
+  // on me demande le salon, j'en parle à mes amis avec qui on change d'idée ou
+  // pas, et on réserve. »
+  //
+  // CE QUE CETTE GARDE PROTÈGE, MAILLON PAR MAILLON. La version d'avant était
+  // une capture fixe d'une conversation : ni la note qui la déclenche, ni les
+  // options qui la concluent. Ce qui est unique n'est aucun des maillons, c'est
+  // la CHAÎNE — et une chaîne se casse toujours par le maillon qu'on a retiré
+  // « parce qu'il prenait de la place ».
+  await pD.evaluate(() => document.querySelector("#ensemble")?.scrollIntoView({ block: "center" }));
+  await pD.waitForTimeout(500);
+
+  const cinq = await pD.$$eval(".ld-su-notes span", (l) => l.length);
+  dire(cinq === 5, `on note le rendu de 1 à 5 fantômes (${cinq})`);
+  const mot = await pD
+    .$eval(".ld-su-q", (e) => e.textContent.replace(/\s+/g, " ").trim())
+    .catch(() => "");
+  dire(
+    /sur vous, ça donne quoi/i.test(mot.replace(/ /g, " ")),
+    `et la question est celle de l'application (« ${mot} »)`,
+  );
+
+  const demande = await pD
+    .$eval(".ld-su-demande", (e) => e.textContent.replace(/\s+/g, " ").trim())
+    .catch(() => "");
+  dire(
+    /demander à mes amis/i.test(demande),
+    `on nous demande ensuite le salon, avec les mots de l'application (« ${demande} »)`,
+  );
+  dire(/salon privé/i.test(demande), "et on dit que le rendu y part");
+
+  // LES OPTIONS DU SALON. C'est le « et surtout » de sa phrase, et c'est ce qui
+  // sépare ce salon d'un fil de commentaires : on peut y proposer autre chose,
+  // et on peut y réserver.
+  const options = await pD.$$eval(".ld-su-opts button", (l) =>
+    l.map((e) => e.textContent.replace(/\s+/g, " ").trim()),
+  );
+  dire(
+    options.some((t) => /proposer autre chose/i.test(t)),
+    `le salon propose de choisir autre chose (${options.join(" / ") || "aucune option"})`,
+  );
+  dire(options.some((t) => /r[ée]server/i.test(t)), "et de réserver");
+
+  // LE CHEMIN DE A À Z, DANS SES CINQ ÉTAPES. « Le fantôme doit être plus
+  // présent et au cœur des actions, donc vraiment utilise-le pour raconter
+  // l'histoire narrative et le chemin de A à Z. »
+  const chemin = await pD.$$eval(".ld-ch-l li span", (l) => l.map((e) => e.textContent.trim()));
+  dire(chemin.length === 5, `le chemin a ses cinq étapes (${chemin.join(" › ")})`);
+  dire(
+    /vois/i.test(chemin[0] ?? "") &&
+      /essaie/i.test(chemin[1] ?? "") &&
+      /note/i.test(chemin[2] ?? "") &&
+      /parle/i.test(chemin[3] ?? "") &&
+      /r[ée]serve/i.test(chemin[4] ?? ""),
+    "et elles sont dans son ordre : je vois, j'essaie, je note, j'en parle, on réserve",
+  );
+  dire(
+    !!(await pD.$(".ld-ch .ld-f")),
+    "le fantôme parcourt ce chemin lui-même, au lieu de décorer la marge",
+  );
+
+  // ON CHANGE D'IDÉE, OU PAS. « J'en parle à mes amis avec qui on change d'idée
+  // ou pas et on réserve. » C'est le seul endroit de la page où la séquence
+  // prouve quelque chose qu'une capture ne pourrait pas montrer : la pièce
+  // proposée CHANGE. Un salon où tout le monde approuve n'est qu'un compteur de
+  // « j'aime » de plus.
+  const change = await pD
+    .waitForSelector(".ld-su-prop.neuve", { timeout: 22000 })
+    .then(() => true)
+    .catch(() => false);
+  dire(change, "et la pièce proposée finit par changer : les amis servent à quelque chose");
+  const parLea = await pD
+    .$eval(".ld-su-par", (e) => e.textContent.replace(/\s+/g, " ").trim())
+    .catch(() => "");
+  dire(/propos[ée] par/i.test(parLea), `et on voit qui l'a proposée (« ${parLea} »)`);
 
   // ═══ ON AVOUE QUE C'EST UNE MAQUETTE ════════════════════════════════════
   //

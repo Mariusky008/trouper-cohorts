@@ -791,8 +791,25 @@ function Fantome({ classe = "ap-fantome", clin = false }: { classe?: string; cli
          `overflow:visible` la laissait passer SOUS le titre a cote. Agrandir le
          cadre est la seule correction qui ne touche ni au trace ni a l'echelle
          du fantome ordinaire — les coordonnees sont les memes, c'est la fenetre
-         qui s'ouvre. */
-      viewBox={clin ? "-4.5 1 49 44" : "0 0 40 44"}
+         qui s'ouvre.
+
+         ═══ ET LE FANTOME ORDINAIRE ETAIT ROGNE, LUI AUSSI ═══
+
+         « Il est bizarrement coupe a droite, voir photo. » Exact, et la cause
+         est la meme que celle qu'on avait corrigee pour la variante — on ne
+         l'avait simplement pas corrigee ici.
+
+         SES BRAS DEBORDENT DU CADRE. Le moignon droit est une ellipse a
+         cx=36,6 et rx=4 : son bord atteint 40,6 sur une zone de dessin qui
+         s'arrete a 40. Le gauche, a cx=3,4, descend a -0,6. Un `<svg>` rogne
+         son propre cadre — c'est la regle, pas un reglage — donc les deux bras
+         etaient coupes net, et le droit se voyait le plus parce qu'il est du
+         cote ou l'oeil finit sa lecture.
+
+         SIX DIXIEMES DE POINT DE CHAQUE COTE, et ca suffit a faire un
+         personnage manchot. On ouvre donc la fenetre d'un point et demi, sans
+         toucher a une seule coordonnee du dessin. */
+      viewBox={clin ? "-4.5 1 49 44" : "-1.5 0 43 44.8"}
       aria-hidden="true"
       focusable="false"
     >

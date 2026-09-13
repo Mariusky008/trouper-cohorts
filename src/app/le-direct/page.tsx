@@ -129,13 +129,22 @@ function StylesLeDirect() {
   justify-content:space-between;gap:16px;
   padding:14px clamp(16px,4vw,44px);
   background:var(--nuit);border-bottom:1px solid rgba(255,255,255,.08)}
-.ld-marque{display:inline-flex;align-items:center;gap:9px;text-decoration:none;
-  font-size:21px;font-weight:850;letter-spacing:-.04em;color:#fff}
-.ld-marque b{color:var(--violet2);font-weight:850}
-.ld-marque i{display:block;width:26px;height:26px;color:var(--violet)}
-.ld-marque i svg{width:100%;height:100%;display:block}
-.ld-marque.grand{font-size:30px;color:var(--encre)}
-.ld-marque.grand b{color:var(--violet)}
+/* ── LE VRAI LOGO, ET NON UNE GOUTTE DE CARTE DESSINEE A LA MAIN ────────
+   « Le logo de ClikMe n'est pas le bon, il me semble. » Il ne l'etait pas :
+   la barre portait un repere de carte violet suivi du mot « ClikMe » en
+   caracteres de la page. Un repere de carte est le logo de tout le monde ;
+   celui de ClikMe existe depuis le debut du depot — le mot en minuscules
+   dont le K est une fleche de curseur verte, c'est-a-dire le clic qui donne
+   son nom au produit.
+   DEUX FICHIERS PARCE QU'IL Y A DEUX FONDS : lettres blanches sur la barre
+   sombre, encre sur le pied clair, meme fleche verte dans les deux.
+   SEULE LA LARGEUR EST IMPOSEE. Le fichier fait 800 sur 322 : une hauteur
+   fixee en plus deformerait la fleche des que la police de la page change
+   la hauteur de ligne autour. */
+.ld-marque{display:inline-flex;align-items:center;text-decoration:none}
+.ld-marque img{display:block;width:108px;height:auto}
+@media (min-width:720px){ .ld-marque img{width:124px} }
+.ld-marque.grand img{width:164px}
 .ld-nav-l{display:flex;align-items:center;gap:clamp(14px,2.4vw,30px)}
 /* LES DEUX LIENS DISPARAISSENT SUR TELEPHONE, ET CE N'EST PAS DE LA PARESSE :
    mesure a 390 points, « Decouvrir » + « Comment ca marche » + le bouton ne
@@ -216,6 +225,12 @@ function StylesLeDirect() {
 .ld-s{margin:0;font-size:clamp(15px,1.35vw,18px);line-height:1.6;
   color:rgba(255,255,255,.8);max-width:34ch}
 .ld-s b{color:#fff;font-weight:700}
+/* LE VERBE QUI PORTE TOUTE LA PAGE, ET IL EST DE SA MAIN : « et vous permet
+   de l'ESSAYER virtuellement ». On peut voir ce qui se passe autour de soi
+   dans dix applications ; on ne peut l'essayer nulle part. C'est donc le
+   seul mot de l'ouverture qui change de couleur. */
+.ld-s .ld-fort{color:var(--violet2);font-weight:850;text-transform:uppercase;
+  letter-spacing:.05em}
 .ld-hero-b{display:flex;flex-wrap:wrap;align-items:center;gap:14px}
 /* LE TELEPHONE EST INCLINE, COMME DANS LA MAQUETTE. Pose droit il a l'air
    d'une capture d'ecran ; incline de six degres il a l'air tenu. */
@@ -225,11 +240,65 @@ function StylesLeDirect() {
    illustration a cote d'un titre, pas l'ecran principal. */
 .ld-hero-tel{position:relative;display:flex;justify-content:center;
   transform:rotate(-5deg)}
-.ld-hero-tel .ld-vitrine{margin:0}
 .ld-hero-tel .ld-vt{--ld-vt-k:.58}
 @media (min-width:900px){ .ld-hero-tel .ld-vt{--ld-vt-k:.66} }
-.ld-main.a{position:absolute;right:-6px;top:8%;transform:rotate(-7deg);
-  text-align:left;color:#fff;display:none}
+/* LE FANTOME OUVRE LA PAGE, et il regarde le telephone d'a cote — celui ou
+   il se trouve, au milieu de la barre du bas. On le voit ici en grand, on
+   le retrouve a sa place dans l'application, et on comprend sans legende
+   sur quoi il faut appuyer. Il n'a pas de place sur un telephone : la
+   colonne du titre y occupe toute la largeur. */
+.ld-hero-f{display:none}
+.ld-main.f{text-align:left;transform:rotate(-3deg);color:#fff}
+
+/* ── L'OUVERTURE : DEUX ECRANS ET UN APPUI ──────────────────────────────
+   « Le screenshot a cote, j'aurais aime plutot qu'il ait le fantome et la
+   barre de menu du bas, pour montrer dans l'animation que lorsqu'on clique
+   sur le fantome on peut essayer le produit. »
+   LA POSITION DE L'ANNEAU EST MESUREE SUR LA CAPTURE, pas estimee : le
+   bouton vert est a 50 pour cent de la largeur et 95,9 pour cent de la
+   hauteur, et il fait 15,9 pour cent de large. En pourcentage, donc, et
+   jamais en points : ce cadre change d'echelle trois fois selon la largeur
+   de l'ecran, et un anneau pose en points glisserait a cote du fantome des
+   le premier palier. */
+.ld-ouv{position:relative;display:flex;justify-content:center}
+.ld-ouv-i{display:block;width:100%;height:100%;object-fit:cover}
+.ld-ouv-cible{position:absolute;left:50%;top:95.9%;z-index:3;
+  width:21%;aspect-ratio:1;transform:translate(-50%,-50%);
+  pointer-events:none}
+.ld-ouv-cible i{position:absolute;inset:0;display:block;border-radius:50%}
+/* DEUX OBJETS ET PAS UN SEUL. L'anneau qui bat en continu dit « c'est
+   ici » ; le disque qui s'ecrase dit « on vient d'appuyer ». Un anneau
+   seul se lit comme une decoration, et un appui seul arrive sans prevenir,
+   donc on l'a manque.
+   IL EST BLANC, ET IL L'A ETE APRES MESURE. Premier jet en menthe : pose
+   sur le bouton du fantome, qui est un disque MENTHE, il devenait
+   invisible — on voyait un halo un peu plus clair, et rien qui ressemble a
+   un appui. Un reperage se dessine dans la couleur que l'ecran vise n'a
+   pas. */
+.ld-ouv-anneau{border:2.5px solid rgba(255,255,255,.96);
+  box-shadow:0 0 0 4px rgba(6,20,14,.32),0 0 16px 2px rgba(255,255,255,.45);
+  animation:ldCible 1.9s ease-out infinite}
+.ld-ouv-appui{background:rgba(255,255,255,.62);opacity:0;transform:scale(.2)}
+.ld-ouv-cible.tape .ld-ouv-anneau{animation:none;transform:scale(.78);
+  box-shadow:0 0 0 14px rgba(255,255,255,0)}
+.ld-ouv-cible.tape .ld-ouv-appui{animation:ldAppui .56s ease-out both}
+@keyframes ldCible{
+  0%{transform:scale(.86);opacity:.5}
+  55%{transform:scale(1.1);opacity:1}
+  100%{transform:scale(1.34);opacity:0}
+}
+@keyframes ldAppui{
+  0%{opacity:.85;transform:scale(.2)}
+  100%{opacity:0;transform:scale(1.35)}
+}
+/* LA FEUILLE D'ESSAI MONTE DU BAS, comme dans l'application, et elle est
+   toujours montee dans le document : une image qu'on insere au moment ou
+   elle doit glisser arrive en retard au premier tour — et le premier tour
+   est le seul que beaucoup verront. */
+.ld-ouv-feuille{position:absolute;inset:0;z-index:4;
+  transform:translateY(100%);opacity:0;
+  transition:transform .52s cubic-bezier(.16,1,.3,1),opacity .26s ease}
+.ld-ouv-feuille.ouverte{transform:none;opacity:1}
 
 /* ── LES SECTIONS CLAIRES, EN DEUX COLONNES ─────────────────────────────
    MEME GABARIT POUR LES DEUX, et la seconde inverse l'ordre. Deux mises en
@@ -331,32 +400,11 @@ function StylesLeDirect() {
 .ld-vt-encoche{display:none;}
 .ld-vt-ecran{position:relative;width:100%;height:calc(844px * var(--ld-vt-k));
   border-radius:34px;overflow:hidden;background:#05080B;}
-/* LES CARTES SONT TOUTES EN PLACE, UNE SEULE EST VISIBLE. On ne demonte pas
-   celles qui attendent : leurs photos restent chargees, donc le passage est
-   instantane. Demonter rechargerait l'image a chaque tour, et le premier tour
-   serait le seul beau. */
-.ld-vt-c{position:absolute;top:0;left:0;width:390px;height:844px;
-  transform-origin:top left;transform:scale(var(--ld-vt-k));
-  display:flex;align-items:stretch;
-  opacity:0;transition:opacity .62s ease;pointer-events:none;}
-.ld-vt-c.on{opacity:1;}
-.ld-vt-c .cd-carte{width:100%;max-width:none;aspect-ratio:auto;height:100%;
-  border-radius:0;box-shadow:none;}
-
-.ld-vitrine-p{display:flex;gap:7px;}
-.ld-vitrine-p i{width:6px;height:6px;border-radius:50%;
-  background:rgba(255,255,255,.2);transition:background .3s ease,width .3s ease;}
-.ld-vitrine-p i.on{width:20px;border-radius:4px;background:var(--ld-menthe,#3DE2A6);}
-
 /* LES TROIS RECULS. Sur un petit telephone le cadre doit laisser la marge de
-   la page ; sur un ordinateur on a la place de s'approcher, et la vitrine est
-   le seul objet que l'on vient regarder. */
+   la page ; sur un ordinateur on a la place de s'approcher, et le telephone
+   est le seul objet que l'on vient regarder. */
 @media (max-width:359px){ .ld-vt{--ld-vt-k:.62;} }
 @media (min-width:900px){ .ld-vt{--ld-vt-k:.84;} }
-
-@media (prefers-reduced-motion:reduce){
-  .ld-vt-c{transition:none;}
-}
 
 .ld-gestes{position:relative;z-index:1;display:flex;flex-wrap:wrap;
   justify-content:center;gap:clamp(10px,2vw,26px);
@@ -430,18 +478,227 @@ function StylesLeDirect() {
 .ld-mi-r:focus-visible{outline:2px solid var(--ton);outline-offset:3px;opacity:1}
 
 
-/* ── 3 · LE SALON ───────────────────────────────────────────────────────
-   Une vraie capture dans le telephone dessine. La maquette y met une
-   conversation redessinee ; on prefere celle qui existe, parce qu'une page
-   qui redessine son produit en plus joli promet un ecran qui n'existe pas. */
-/* LE TELEPHONE SE CALE A GAUCHE DE SA COLONNE SUR LES GRANDS ECRANS, et ce
-   n'est pas un choix esthetique : l'annotation manuscrite se pose a droite, et
-   centre, le telephone la recouvrait — mesure faite, cinquante points de
-   chevauchement, deux textes l'un sur l'autre. */
-.ld-sal{position:relative;display:flex;justify-content:center}
-@media (min-width:900px){ .ld-sal{justify-content:flex-start} }
-.ld-sal .ld-vt{transform:rotate(3deg)}
-.ld-sal .ld-vt-ecran img{width:100%;height:100%;object-fit:cover;display:block}
+/* ═══ 3 · CE QUI SE PASSE APRES L'ESSAI ═══════════════════════════════════
+
+   « Cette section est tres mal faite : on voit un screen ou les gens parlent
+   comme s'ils etaient sur Instagram. L'idee ici c'est de montrer notre
+   difference : lorsqu'on a essaye le produit on le note avec des fantomes de
+   1 a 5, et ensuite on nous demande — voulez-vous en parler avec vos amis
+   dans un salon prive pour recueillir leurs avis ? Et c'est a ce moment
+   qu'on a la conversation qui apparait, ET SURTOUT AVEC LES OPTIONS DU
+   SALON, qui est la possibilite de choisir autre chose et de reserver. »
+
+   LA VERSION D'AVANT ETAIT UNE CAPTURE FIXE, et il a raison mot pour mot :
+   une conversation posee la, sans ce qui l'a declenchee et sans ce qu'on
+   peut en faire, ressemble a n'importe quel reseau social. Ce qui est unique
+   n'est ni la note ni la conversation prises separement — c'est la CHAINE,
+   et une chaine ne se montre pas avec la photo d'un de ses maillons.
+
+   ═══ LE CHEMIN, ET LE FANTOME QUI LE PARCOURT ═══
+
+   IL SE DEPLACE EN POURCENTAGE DE LA RANGEE, et jamais en points : les cinq
+   etapes se partagent la largeur a parts egales, donc la n-ieme est centree
+   a (n + 0,5) cinquiemes, quelle que soit la largeur de la colonne. */
+.ld-ch{position:relative;width:100%;max-width:430px;margin-top:4px;
+  padding-top:54px}
+/* LA PASTILLE DERRIERE LUI N'EST PAS UN ORNEMENT. Il est blanc, le fond de
+   cette section est gris tres clair, et pose tel quel on n'en voyait que les
+   joues roses et la bouche — mesure faite. Le halo violet le detache, et il
+   le fait lire comme un pion sur un plateau, ce qu'il est ici. */
+.ld-ch-p{position:absolute;top:0;display:grid;place-items:center;
+  width:48px;height:48px;
+  left:calc((var(--i,0) + .5) * 20%);transform:translateX(-50%);
+  transition:left .55s cubic-bezier(.34,1.56,.64,1)}
+.ld-ch-p::before{content:'';position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle,rgba(124,92,255,.26),rgba(124,92,255,0) 68%)}
+/* LE POIDS DU SELECTEUR N'EST PAS UNE COQUETTERIE : le bloc du fantome est
+   declare PLUS BAS dans cette feuille, et .ld-f{width:64px} l'emportait
+   sur une classe de meme poids ecrite plus haut. Defaut mesure — les cinq
+   fantomes de la note sortaient de leurs cases et se chevauchaient. */
+.ld-f.ld-ch-f{position:relative;width:37px;
+  filter:drop-shadow(0 1px .5px rgba(20,18,43,.3))
+         drop-shadow(0 7px 12px rgba(124,92,255,.5))}
+.ld-ch-l{display:flex;list-style:none;margin:0;padding:0}
+.ld-ch-l li{position:relative;flex:1 1 0;min-width:0;display:flex;
+  flex-direction:column;align-items:center;gap:5px;text-align:center}
+/* LE TRAIT QUI RELIE LES ETAPES PASSE DERRIERE LES PASTILLES : c'est lui
+   qui fait lire la rangee comme un chemin, et non comme cinq boutons. */
+.ld-ch-l li::before{content:'';position:absolute;top:11px;left:-50%;
+  width:100%;height:2px;background:var(--trait)}
+.ld-ch-l li:first-child::before{display:none}
+.ld-ch-l li i{position:relative;z-index:1;display:grid;place-items:center;
+  width:22px;height:22px;border-radius:50%;font-style:normal;font-size:11px;
+  font-weight:850;background:var(--blanc);color:var(--encre3);
+  border:1.5px solid var(--trait);
+  transition:background .3s ease,color .3s ease,transform .3s ease}
+.ld-ch-l li span{font-size:11px;font-weight:700;line-height:1.2;
+  color:var(--encre3)}
+.ld-ch-l li.fait i{background:var(--violet2);border-color:var(--violet2);
+  color:#fff}
+.ld-ch-l li.fait span{color:var(--encre2)}
+.ld-ch-l li.ici i{background:var(--violet);border-color:var(--violet);
+  color:#fff;transform:scale(1.16)}
+.ld-ch-l li.ici span{color:var(--violet3);font-weight:850}
+
+/* ═══ LE TELEPHONE QUI JOUE LES TROIS DERNIERES ETAPES ═══
+   MEME CADRE QUE PARTOUT AILLEURS, et son ecran contient un vrai telephone
+   de 390 sur 844 mis a l'echelle : les deux ecrans se mettent donc en page
+   comme sur un iPhone et on les regarde de plus loin. Ecrits a la taille du
+   cadre, ils seraient mis en page pour 280 points et tout y serait coupe —
+   la faute a deja ete payee sur cette page.
+   IL SE CALE A GAUCHE DE SA COLONNE SUR LES GRANDS ECRANS : l'annotation
+   manuscrite se pose a droite, et centre, le telephone la recouvrait. */
+.ld-su{position:relative;display:flex;justify-content:center}
+@media (min-width:900px){ .ld-su{justify-content:flex-start} }
+.ld-su .ld-vt{transform:rotate(3deg)}
+.ld-su .ld-vt-ecran{background:#0B1310}
+.ld-su-e{position:absolute;top:0;left:0;width:390px;height:844px;
+  transform-origin:top left;transform:scale(var(--ld-vt-k));
+  display:flex;flex-direction:column;padding:20px 16px 18px;
+  font-size:14px;color:#E8EFF6;opacity:0;pointer-events:none;
+  transition:opacity .42s ease}
+.ld-su-e.on{opacity:1}
+.ld-su-h{margin:0 0 12px;font-size:12.5px;font-weight:750;color:#8FA8B8}
+.ld-su-h i{font-style:normal}
+.ld-su-h s{text-decoration:none;opacity:.5;margin:0 5px}
+/* LE RENDU EST CARRE, ET LA PHOTO EST EN 4/3 : on la recadre par les cotes,
+   la table reste entiere. Laissee en 4/3, elle occupait 268 points sur 844 et
+   laissait un trou noir de la moitie de l'ecran sous la note — un telephone
+   dont la moitie basse est vide se lit comme un ecran casse, pas comme un
+   ecran calme. */
+.ld-su-rendu{position:relative;margin:0;aspect-ratio:1;overflow:hidden;
+  border-radius:18px}
+.ld-su-rendu img{display:block;width:100%;height:100%;object-fit:cover}
+.ld-su-rendu figcaption{position:absolute;left:10px;top:10px;
+  font-size:10px;font-weight:850;letter-spacing:.1em;text-transform:uppercase;
+  color:#fff;background:rgba(91,63,217,.88);border-radius:999px;
+  padding:5px 11px}
+.ld-su-piece{margin:16px 0 0;text-align:center;font-size:19px;font-weight:850;
+  color:#fff}
+.ld-su-piece em{font-style:normal;color:#FFC94A;margin-left:7px}
+.ld-su-q{margin:20px 0 10px;text-align:center;font-size:14px;font-weight:800}
+/* LES CINQ FANTOMES DE LA NOTE. Eteints ils sont gris et a demi
+   transparents ; allumes ils reprennent leurs couleurs et grandissent. Ce
+   sont exactement les deux etats de l'application. */
+.ld-su-notes{display:flex;justify-content:center;gap:5px}
+.ld-su-notes span{display:grid;place-items:center;width:44px;height:44px}
+.ld-f.ld-su-n{width:34px}
+.ld-su-n{opacity:.34;transition:opacity .22s ease,transform .22s ease}
+.ld-su-n .ld-f-corps{fill:#4A5A68;filter:none}
+.ld-su-n .ld-f-bras{fill:#4A5A68;filter:none}
+.ld-su-n .ld-f-joue{opacity:0}
+.ld-su-notes span.on .ld-su-n,.ld-su-mini span.on .ld-su-n{opacity:1;
+  transform:scale(1.12)}
+.ld-su-notes span.on .ld-su-n .ld-f-corps,
+.ld-su-mini span.on .ld-su-n .ld-f-corps{fill:url(#ldfCorps)}
+.ld-su-notes span.on .ld-su-n .ld-f-bras,
+.ld-su-mini span.on .ld-su-n .ld-f-bras{fill:#CFE9DC}
+.ld-su-notes span.on .ld-su-n .ld-f-joue,
+.ld-su-mini span.on .ld-su-n .ld-f-joue{opacity:.55}
+/* DIX FANTOMES QUI CLIGNENT ET BALANCENT LES BRAS, A TRENTE POINTS, NE SE
+   VOIENT PAS ET COUTENT DIX FOIS. On les fige : a cette taille, seule la
+   silhouette se lit. */
+.ld-f.ld-su-n .ld-f-bras.g,.ld-f.ld-su-n .ld-f-bras.d,
+.ld-f.ld-su-n .ld-f-oeil,.ld-f.ld-su-n .ld-f-ombre{animation:none}
+.ld-f.ld-su-n .ld-f-ombre{display:none}
+.ld-su-mot{display:block;margin-top:6px;text-align:center;font-style:normal;
+  font-size:12.5px;font-weight:800;color:#9FB4C4;min-height:1.3em}
+/* LES DEUX GESTES ORDINAIRES DE L'ECRAN DE RENDU. Ils sont la parce qu'ils y
+   sont vraiment : « Demander a mes amis » arrive en TROISIEME dans
+   l'application, pas en seul. Ils sont eteints — ce n'est pas eux qu'on
+   raconte — mais les retirer aurait montre un ecran qui n'existe pas. */
+.ld-su-deux{display:flex;gap:10px;margin-top:auto}
+.ld-su-deux span{flex:1 1 0;display:grid;place-items:center;padding:14px 8px;
+  border-radius:999px;font-size:15px;font-weight:850;color:#D8E4EE;
+  border:1px solid rgba(255,255,255,.18)}
+.ld-su-deux .ld-su-res2{color:#1A1040;border-color:transparent;
+  background:linear-gradient(120deg,#9B7BFF,#C79BFF)}
+/* « DEMANDER A MES AMIS » — le bouton de l'application, avec ses mots. Il
+   n'arrive qu'apres la note : c'est la question qu'on pose une fois qu'on
+   s'est vu avec, pas avant. */
+.ld-su-demande{position:relative;display:flex;align-items:center;gap:11px;
+  margin-top:10px;padding:13px 15px;border-radius:16px;color:#E5E0FF;
+  background:rgba(139,125,246,.14);border:1px solid rgba(139,125,246,.4);
+  opacity:0;transform:translateY(10px);
+  transition:opacity .34s ease,transform .34s ease,background .2s ease}
+.ld-su-demande.la{opacity:1;transform:none}
+.ld-su-demande i{font-style:normal;font-size:19px;line-height:1}
+.ld-su-demande b{display:block;font-size:15px;font-weight:850}
+.ld-su-demande em{display:block;margin-top:2px;font-style:normal;font-size:12px;
+  color:#B6AEE6}
+.ld-su-demande.tape{background:rgba(139,125,246,.3);transform:scale(.985)}
+.ld-su-appui{position:absolute;left:38px;top:50%;width:54px;height:54px;
+  margin:-27px 0 0 -27px;border-radius:50%;opacity:0;transform:scale(.2);
+  background:rgba(201,188,255,.5)}
+.ld-su-demande.tape .ld-su-appui{animation:ldAppui .56s ease-out both}
+
+/* ─── LE SALON ─── */
+.ld-su-sh{display:flex;align-items:center;gap:10px;margin:0 0 12px;
+  padding-bottom:11px;border-bottom:1px solid rgba(255,255,255,.1)}
+.ld-su-sf{width:32px}
+.ld-su-sh b{display:block;font-size:15px;font-weight:850;color:#fff}
+.ld-su-sh em{display:block;margin-top:1px;font-style:normal;font-size:12px;
+  color:#8FA8B8}
+/* LA PIECE POSEE SUR LA TABLE DU SALON, ET C'EST ELLE QUI CHANGE quand une
+   amie en propose une autre. Le changement EST l'argument : un salon ou
+   tout le monde approuve n'est qu'un compteur de « j'aime » de plus. */
+.ld-su-prop{display:flex;gap:11px;padding:10px;border-radius:16px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  animation:ldProp .42s cubic-bezier(.16,1,.3,1) both}
+.ld-su-prop.neuve{background:rgba(61,226,166,.1);
+  border-color:rgba(61,226,166,.5)}
+.ld-su-prop img{flex:none;width:74px;height:74px;border-radius:12px;
+  object-fit:cover;display:block}
+.ld-su-prop b{display:block;font-size:15px;font-weight:850;color:#fff}
+.ld-su-prop > div > span{display:block;margin-top:2px;font-size:12.5px;
+  color:#9FB4C4}
+.ld-su-prop s{text-decoration:none;opacity:.5;margin:0 4px}
+.ld-su-par{display:block;margin-bottom:3px;font-style:normal;font-size:10px;
+  font-weight:850;letter-spacing:.09em;text-transform:uppercase;color:#3DE2A6}
+.ld-su-mini{display:flex;gap:2px;margin:6px 0 0}
+.ld-f.ld-su-mini-n,.ld-su-mini .ld-f.ld-su-n{width:19px}
+@keyframes ldProp{from{opacity:0;transform:translateY(-8px) scale(.97)}
+  to{opacity:1;transform:none}}
+.ld-su-fil{flex:1;list-style:none;margin:12px 0 0;padding:0;display:flex;
+  flex-direction:column;gap:11px}
+.ld-su-fil li{display:flex;gap:9px;
+  animation:ldDit .34s cubic-bezier(.16,1,.3,1) both}
+.ld-su-fil i{flex:none;display:grid;place-items:center;width:30px;height:30px;
+  border-radius:50%;font-style:normal;font-size:13px;font-weight:850;
+  color:#0B1310;background:#8FD9BE}
+.ld-su-fil b{display:block;font-size:12px;font-weight:800;color:#9FB4C4}
+.ld-su-fil b s{text-decoration:none;margin-left:7px;font-weight:600;opacity:.7}
+.ld-su-fil p{margin:3px 0 0;padding:9px 12px;border-radius:14px;
+  border-top-left-radius:4px;font-size:14px;line-height:1.35;color:#E8EFF6;
+  background:rgba(255,255,255,.07)}
+@keyframes ldDit{from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:none}}
+/* ─── LES OPTIONS DU SALON ───
+   « Et surtout avec les options du salon, qui est la possibilite de choisir
+   autre chose et de reserver. » Ce sont les deux boutons de l'application,
+   avec ses mots. Elles n'arrivent qu'apres les messages, parce que c'est la
+   qu'elles servent : proposer autre chose a personne ne veut rien dire, et
+   c'est deja la regle dans l'application. */
+.ld-su-opts{display:flex;flex-direction:column;gap:9px;margin-top:12px;
+  opacity:0;transform:translateY(12px);
+  transition:opacity .4s ease,transform .4s ease}
+.ld-su-opts.la{opacity:1;transform:none}
+.ld-su-opts button{display:flex;align-items:center;justify-content:center;
+  gap:9px;width:100%;font-family:inherit;font-size:14.5px;font-weight:850;
+  padding:13px 14px;border-radius:15px;cursor:default;color:#E8EFF6;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16)}
+.ld-su-opts button em{font-style:normal;font-size:11.5px;font-weight:700;
+  color:#8FA8B8}
+.ld-su-opts button.ld-su-res{color:#04231A;border-color:transparent;
+  background:linear-gradient(120deg,#3DE2A6,#17B685);opacity:.4;
+  transition:opacity .4s ease,box-shadow .4s ease}
+.ld-su-opts button.ld-su-res.la{opacity:1;
+  box-shadow:0 14px 30px -12px rgba(61,226,166,.85)}
+.ld-su-opts button.ld-su-res s{text-decoration:none}
+/* LE BOUTON DE LA SECTION EST SOUS LES DEUX COLONNES ET CENTRE : pose dans
+   la colonne du texte, il tombait a cote du chemin, et deux appels a
+   l'action cote a cote sur la meme ligne se neutralisent. */
+.ld-suite-b{display:flex;justify-content:center;margin:clamp(28px,4vw,46px) 0 0}
 
 /* ── 4 · LA BANDE SOMBRE ────────────────────────────────────────────────
    SON FOND A CHANGE, ET C'ETAIT UNE FAUTE DE REGLE. Il portait
@@ -479,18 +736,91 @@ function StylesLeDirect() {
 .ld-bande-f{display:none}
 .ld-main.d{text-align:right;transform:rotate(-5deg);color:#fff}
 
-/* ── LE FANTOME, DESSINE ────────────────────────────────────────────────
-   Il flotte lentement — sept secondes par tour — parce que c'est la seule
-   chose qui bouge en continu sur cette page, et qu'au-dela on la sent. */
-.ld-f3{display:block;width:clamp(76px,8vw,112px);
-  filter:drop-shadow(0 18px 34px rgba(124,92,255,.55));
+/* ── LE FANTOME ─────────────────────────────────────────────────────────
+   « Le fantome doit etre plus present et au coeur des actions, donc
+   vraiment utilise-le pour raconter l'histoire narrative et le chemin de A
+   a Z. Et comme sur l'app, meme probleme, il est bizarrement coupe a
+   droite. »
+
+   CETTE PAGE DESSINAIT SON PROPRE FANTOME, et c'est la cause des deux
+   reproches a la fois : un corps blanc, deux ellipses sombres, un arc pour
+   la bouche. Soixante lignes de moins que celui de l'application, et
+   surtout : pas de bras, pas de joues, pas d'ombre portee, pas de relief.
+   Il ne pouvait donc rien faire d'autre que decorer une marge — on ne met
+   pas au coeur de l'action quelqu'un qui n'a pas de bras.
+
+   C'EST DESORMAIS CELUI DE L'APPLICATION, trace pour trace : voir
+   fantome.tsx. Les encres sont les siennes AUSSI, joues roses comprises.
+   Une autre palette ici aurait fait deux fantomes de deux familles, et
+   c'est exactement ce qu'on cherche a eviter depuis le debut.
+
+   ET IL N'EST PLUS ROGNE : ses bras depassaient la zone de dessin de six
+   dixiemes de point de chaque cote, et un SVG rogne son propre cadre. Le
+   cadre s'ouvre d'un point et demi dans fantome.tsx — meme correction,
+   meme valeur, meme raison que dans l'application. */
+/* LES ENCRES SONT POSEES UNE FOIS, DANS UN SVG DE TAILLE NULLE MAIS RENDU.
+   Ni display:none ni visibility:hidden : un element retire de l'arbre de
+   rendu ne fournit plus ses serveurs de peinture, et c'est precisement le
+   defaut qu'on vient de corriger — tous les fantomes de la page etaient
+   sans corps et sans yeux sur telephone. */
+.ld-f-encres{position:absolute;width:0;height:0;overflow:hidden}
+.ld-f{display:block;width:64px;height:auto;flex:none;overflow:visible}
+.ld-f .ld-f-corps{fill:url(#ldfCorps);
+  filter:drop-shadow(0 1.5px 1.6px rgba(4,40,26,.24))}
+.ld-f .ld-f-creux{fill:url(#ldfCreux)}
+.ld-f .ld-f-lueur{fill:url(#ldfLueur)}
+.ld-f .ld-f-fil{fill:none;stroke:url(#ldfFil);stroke-width:1.3}
+.ld-f .ld-f-ombre{fill:rgba(4,40,26,.22);transform-box:fill-box;
+  transform-origin:50% 50%;animation:ldOmbre 4.6s ease-in-out infinite}
+/* LES BRAS PENDENT, ILS NE SONT PAS EN CROIX. Un moignon horizontal fait
+   une aile ; incline vers le bas, il fait un bras au repos — et c'est
+   toute la difference entre un pictogramme et une peluche. */
+.ld-f .ld-f-bras{fill:#CFE9DC;transform-box:fill-box;
+  filter:drop-shadow(0 1px 1px rgba(4,40,26,.18))}
+.ld-f .ld-f-bras.g{transform-origin:88% 50%;
+  animation:ldBrasG 4.6s ease-in-out infinite}
+.ld-f .ld-f-bras.d{transform-origin:12% 50%;
+  animation:ldBrasD 4.6s ease-in-out infinite}
+.ld-f .ld-f-joue{fill:#FF9DB4;opacity:.55}
+.ld-f .ld-f-oeil{fill:url(#ldfOeil);transform-box:fill-box;
+  transform-origin:50% 50%;animation:ldCligne 6.2s infinite}
+.ld-f .ld-f-eclat{fill:#fff;opacity:.92}
+.ld-f .ld-f-eclat2{fill:#fff;opacity:.5}
+.ld-f .ld-f-bouche{fill:none;stroke:#07211A;stroke-width:2.1;
+  stroke-linecap:round}
+@keyframes ldOmbre{0%,100%{transform:scaleX(1);opacity:1}
+  33%{transform:scaleX(.82);opacity:.6}
+  66%{transform:scaleX(.92);opacity:.8}}
+@keyframes ldBrasG{0%,100%{transform:rotate(17deg)}
+  33%{transform:rotate(4deg)}66%{transform:rotate(24deg)}}
+@keyframes ldBrasD{0%,100%{transform:rotate(-17deg)}
+  33%{transform:rotate(-4deg)}66%{transform:rotate(-24deg)}}
+@keyframes ldCligne{0%,95.5%,100%{transform:scaleY(1)}
+  97%{transform:scaleY(.08)}98.5%{transform:scaleY(1)}}
+
+/* LES CINQ ENDROITS OU IL PARAIT, ET IL EST LE MEME PARTOUT. Ils ne
+   different que par la taille et par la couleur de la lueur qui l'entoure
+   — menthe sur les fonds sombres, violette sur les clairs. Il flotte
+   lentement, sept secondes par tour : c'est a peu pres la seule chose qui
+   bouge en continu sur cette page, et au-dela on la sent. */
+.ld-f-hero{width:clamp(56px,5vw,72px);
+  filter:drop-shadow(0 14px 26px rgba(61,226,166,.42));
   animation:ldFlotteF 7s ease-in-out infinite}
-.ld-f3 svg{width:100%;height:auto;display:block}
-.ld-f3.petit{width:clamp(58px,6vw,84px)}
+.ld-f-marge{width:clamp(76px,8vw,108px);
+  filter:drop-shadow(0 18px 34px rgba(124,92,255,.42));
+  animation:ldFlotteF 7s ease-in-out infinite}
+.ld-f-bande{width:clamp(58px,6vw,84px);
+  filter:drop-shadow(0 18px 34px rgba(61,226,166,.36));
+  animation:ldFlotteF 7s ease-in-out infinite}
+.ld-f-pied{width:clamp(50px,5vw,66px);
+  filter:drop-shadow(0 14px 26px rgba(124,92,255,.34));
+  animation:ldFlotteF 7s ease-in-out infinite}
 @keyframes ldFlotteF{
   0%,100%{transform:translateY(0) rotate(-2deg)}
   50%{transform:translateY(-11px) rotate(2deg)}
 }
+.ld-pied-f{display:flex;flex-direction:column;align-items:center;gap:6px;
+  margin-top:14px}
 
 /* ── LE PIED ────────────────────────────────────────────────────────────
    Clair, centre, et il porte la derniere promesse : trois verbes, un
@@ -545,7 +875,7 @@ function StylesLeDirect() {
 @media (min-width:900px){
   .ld-hero{padding-top:clamp(56px,9vh,110px)}
   .ld-hero-in{grid-template-columns:1.05fr .95fr}
-  .ld-main.a{display:block}
+  .ld-hero-f{display:flex;align-items:center;gap:13px;margin-top:8px}
   .ld-deux{grid-template-columns:1.05fr .95fr}
   .ld-deux.inverse .ld-deux-d{order:1}
   .ld-deux.inverse .ld-deux-g{order:2}
@@ -572,10 +902,18 @@ function StylesLeDirect() {
   .ld-es-v{width:58px;height:44px}
 }
 
+/* ── QUAND ON A DEMANDE QUE RIEN NE BOUGE ───────────────────────────────
+   TOUT S'ARRETE, ET RIEN NE DISPARAIT. L'ouverture se fige sur la feuille
+   d'essai et la section 3 sur sa derniere image — le choix est fait dans
+   ouverture.tsx et suite.tsx, et il est le meme des deux cotes : on
+   garde l'etat qui MONTRE, pas celui qui attend. */
 @media (prefers-reduced-motion:reduce){
   .ld [data-r]{opacity:1;transform:none;transition:none}
-  .ld-f3,.ld-es-vue{animation:none}
-  .ld-cta,.ld-creux{transition:none}
+  .ld-es-vue,.ld-su-prop,.ld-su-fil li{animation:none}
+  .ld-f,.ld-f .ld-f-ombre,.ld-f .ld-f-bras,.ld-f .ld-f-oeil{animation:none}
+  .ld-ouv-anneau{animation:none;opacity:.9}
+  .ld-ouv-feuille,.ld-ch-f,.ld-su-e,.ld-su-demande,.ld-su-opts,
+  .ld-su-opts button.ld-su-res,.ld-cta,.ld-creux{transition:none}
 }
         `,
       }}
