@@ -2745,6 +2745,22 @@ console.log("\n══ la page du commerce ══");
   } else {
     await fantome.click();
     await pT.waitForTimeout(1200);
+    // ═══ ON FAIT DESCENDRE LE MUR AVANT DE MESURER SES PHOTOS ═══════════════
+    //
+    // DEFAUT DE GARDE, PAS DE PRODUIT : les vignettes portent `loading="lazy"`,
+    // donc les dernieres de la grille n'ont pas commence a charger tant qu'on
+    // ne les a pas approchees — et `naturalWidth` vaut alors zero, exactement
+    // comme pour un 404. La garde accusait deux photos parfaitement servies
+    // (verifie : HTTP 200, JPEG valide). Une garde qui ne distingue pas « pas
+    // encore chargee » de « introuvable » ne mesure rien.
+    await pT.evaluate(async () => {
+      const boite = document.querySelector(".mu-feuille") ?? document.scrollingElement;
+      for (let y = 0; y < 6; y++) {
+        boite.scrollTop = boite.scrollHeight;
+        await new Promise((r) => setTimeout(r, 220));
+      }
+    });
+    await pT.waitForTimeout(1400);
     const mur = await pT.evaluate(() => ({
       surLeMur: !!document.querySelector(".mu-haut.essai"),
       surLaPhoto: !!document.querySelector(".mu-ph-tete"),
@@ -2754,7 +2770,9 @@ console.log("\n══ la page du commerce ══");
       // place et sa couleur de fond, donc seule `naturalWidth` la trahit.
       images: [...document.querySelectorAll(".mu-rang.grille .mu-c-p img")].map((i) => ({
         src: i.getAttribute("src"),
-        chargee: i.naturalWidth > 0,
+        // `complete` SEUL NE SUFFIT PAS : il est vrai aussi apres un echec.
+        // C'est la largeur naturelle qui separe une image servie d'un 404.
+        chargee: i.complete && i.naturalWidth > 0,
       })),
       geste: document.querySelector(".mu-bas .mu-cta b")?.textContent?.trim() ?? null,
     }));
@@ -3188,14 +3206,66 @@ console.log("\n══ la page du commerce ══");
   // l'histoire narrative et le chemin de A à Z. »
   const chemin = await pD.$$eval(".ld-ch-l li span", (l) => l.map((e) => e.textContent.trim()));
   dire(chemin.length === 5, `le chemin a ses cinq étapes (${chemin.join(" › ")})`);
+  // ═══ ET CE SONT LES MOTS DE L'APPLICATION, PAS D'AUTRES ═══════════════════
+  //
+  // « Le parcours ClikMe doit devenir reconnaissable : Je découvre → J'essaie
+  // sur moi → Je donne mon avis → Mon essai rejoint éventuellement le mur →
+  // J'agis. »
+  //
+  // LA PAGE EN DISAIT D'AUTRES. Elle annonçait « Je vois · J'essaie · Je note ·
+  // J'en parle · On réserve » pendant que la frise de l'essai, dans
+  // l'application, disait « Je découvre · J'essaie · Je donne mon avis ». Deux
+  // vocabulaires pour un seul rituel, c'est un rituel qu'on ne reconnaît pas —
+  // et c'est exactement ce que ce chemin existe pour installer.
   dire(
-    /vois/i.test(chemin[0] ?? "") &&
+    /découvre/i.test(chemin[0] ?? "") &&
       /essaie/i.test(chemin[1] ?? "") &&
-      /note/i.test(chemin[2] ?? "") &&
-      /parle/i.test(chemin[3] ?? "") &&
-      /r[ée]serve/i.test(chemin[4] ?? ""),
-    "et elles sont dans son ordre : je vois, j'essaie, je note, j'en parle, on réserve",
+      /avis/i.test(chemin[2] ?? "") &&
+      /mur/i.test(chemin[3] ?? "") &&
+      /agis/i.test(chemin[4] ?? ""),
+    "et ce sont les mots du rituel : je découvre, j'essaie, je donne mon avis, ça rejoint le mur, j'agis",
   );
+
+  // ═══ LA PAGE MONTRE LE MUR, ET C'EST CE QU'ELLE NE DISAIT PAS ═════════════
+  //
+  // « Maintenant qu'on a pas mal d'exemples et que le concept a évolué, fais
+  // les modifs nécessaires et les écrans différents qu'on a poussés. »
+  //
+  // LA PAGE S'ARRÊTAIT À L'ESSAI, ET LE PRODUIT NE S'Y ARRÊTE PLUS. Ce qu'il a
+  // de plus rare est ailleurs : douze personnes portent le même dessin, et on
+  // peut les voir avant de décider. Une IA qui pose un tatouage sur une photo,
+  // tout le monde en aura une l'an prochain ; douze personnes de Dax qui
+  // portent celui-là, il faut les avoir tatouées.
+  {
+    const murLa = await pD.$("#mur");
+    if (murLa) await murLa.scrollIntoViewIfNeeded();
+    await pD.waitForTimeout(1800);
+    const m = await pD.evaluate(() => ({
+      compte: document.querySelector(".ld-mur-t b")?.textContent?.trim() ?? null,
+      vignettes: document.querySelectorAll(".ld-mur-gr li").length,
+      chargees: [...document.querySelectorAll(".ld-mur-gr img")].filter(
+        (i) => i.complete && i.naturalWidth > 0,
+      ).length,
+      // CHAQUE VIGNETTE DIT QUI ET OÙ : c'est l'endroit du corps qui fait la
+      // valeur de ce mur, pas le nombre de photos.
+      ou: [...document.querySelectorAll(".ld-mur-gr span em")].map((e) => e.textContent.trim()),
+      regle: document.querySelector(".ld-mur-rt b")?.textContent?.trim() ?? null,
+    }));
+    dire(
+      /^12 personnes/.test(m.compte ?? ""),
+      `la page montre le mur et compte ses gens (« ${m.compte ?? "absent"} »)`,
+    );
+    dire(m.vignettes >= 6, `avec de vraies photos (${m.vignettes})`);
+    dire(
+      m.chargees === m.vignettes,
+      `qui existent toutes (${m.chargees} sur ${m.vignettes})`,
+    );
+    dire(
+      new Set(m.ou).size === m.ou.length && m.ou.length >= 6,
+      `et chacune dit où c'est posé (${m.ou.join(" · ")})`,
+    );
+    dire(!!m.regle, `la règle du fantôme se montre (« ${m.regle ?? "absente"} »)`);
+  }
   dire(
     !!(await pD.$(".ld-ch .ld-f")),
     "le fantôme parcourt ce chemin lui-même, au lieu de décorer la marge",

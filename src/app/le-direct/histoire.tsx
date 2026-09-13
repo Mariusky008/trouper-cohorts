@@ -43,6 +43,7 @@ import { useEffect, useRef, useState } from "react";
 import { Essayer } from "./essayer";
 import { EncresDuFantome, Fantome } from "./fantome";
 import { Ouverture } from "./ouverture";
+import { Mur } from "./mur";
 import { Suite } from "./suite";
 
 /**
@@ -287,9 +288,23 @@ export function Histoire() {
               Visualisez le résultat
               <span>sur vous.</span>
             </h2>
+            {/* ═══ LE FANTÔME N'EST PAS UNE CABINE D'ESSAYAGE ═══════════════
+
+                « Je ne forcerais surtout pas "Essayer sur moi" partout. Le
+                Fantôme devient le moyen ClikMe de voir quelque chose dans MA
+                PROPRE RÉALITÉ avant de me déplacer. »
+
+                LA PAGE NE DISAIT QUE LA MOITIÉ. « Sur vous » couvre la coupe,
+                les ongles, le tatouage et la tenue ; il ne couvre ni la bougie
+                sur votre table, ni le bouquet dans votre entrée — et c'est
+                pourtant le même geste, avec le même fantôme. La section le
+                démontre déjà : l'onglet ouvert en arrivant est la déco. Elle
+                le dit maintenant. */}
             <p className="ld-p" data-r style={{ "--d": "140ms" } as React.CSSProperties}>
-              Une coupe, une tenue, des ongles, un tatouage… Découvrez à quoi ça
-              ressemble sur vous, grâce à l’IA.
+              Une coupe, une tenue, des ongles, un tatouage&nbsp;: voyez-les{" "}
+              <b className="ld-fort">sur vous</b>. Une bougie, un bouquet, un
+              meuble&nbsp;: voyez-les <b className="ld-fort">chez vous</b>. Le
+              même Fantôme, grâce à l’IA.
             </p>
             <Link
               href={ESSAYER}
@@ -313,7 +328,22 @@ export function Histoire() {
         </div>
       </section>
 
-      {/* ═══ 3 · CE QUI SE PASSE APRÈS L'ESSAI ════════════════════════════
+      {/* ═══ 3 · LE MUR — CE QUE LA PAGE NE DISAIT PAS ENCORE ═════════════
+
+          « Maintenant qu'on a pas mal d'exemples et que le concept a évolué,
+          fais les modifs nécessaires et les écrans différents qu'on a poussés. »
+
+          LA PAGE S'ARRÊTAIT À L'ESSAI, ET LE PRODUIT NE S'Y ARRÊTE PLUS. Ce
+          qu'il a de plus rare est ici : douze personnes portent le même
+          tatouage, et on peut les voir avant de décider. Une IA qui pose un
+          dessin sur une photo, tout le monde en aura une l'an prochain ; douze
+          personnes de Dax qui portent celui-là, personne ne les a — il faut les
+          avoir tatouées. Son raisonnement complet est dans `mur.tsx`. */}
+      <section className="ld-clair" id="mur">
+        <Mur />
+      </section>
+
+      {/* ═══ 4 · CE QUI SE PASSE APRÈS L'ESSAI ════════════════════════════
           LA SECTION LA PLUS IMPORTANTE DE LA PAGE, et c'est lui qui l'a dit :
           « cette étape est cruciale pour que l'histoire narrative ait un sens ».
           Elle est jouée et non racontée — son raisonnement complet est dans
@@ -328,7 +358,7 @@ export function Histoire() {
         </p>
       </section>
 
-      {/* ═══ 4 · PARTOUT AVEC VOUS ════════════════════════════════════════ */}
+      {/* ═══ 5 · PARTOUT AVEC VOUS ════════════════════════════════════════ */}
       <section className="ld-bande">
         <div className="ld-bande-fond" aria-hidden="true" />
         <div className="ld-bande-in">
@@ -339,6 +369,19 @@ export function Histoire() {
             Une ville plus vivante,
             <span>plus proche.</span>
           </h2>
+          {/* ═══ ET CHEZ UN BAR, LE FANTÔME NE FAIT PAS LA MÊME CHOSE ═══════
+
+              « Ensuite on passera seulement, une fois que ça sera parfait, à
+              bar, restaurant et événements. » C'est fait, et la page ne le
+              disait nulle part : elle listait « Bars » et « Restaurants » parmi
+              sept familles sans jamais dire ce qu'on y fait. Or on n'y essaie
+              rien — on vient dire qu'on est là, et lire qui y est. C'est le
+              deuxième usage du fantôme, et il est invisible tant qu'on ne
+              l'écrit pas. */}
+          <p className="ld-fam-p" data-r style={{ "--d": "120ms" } as React.CSSProperties}>
+            Chez un bar ou un restaurant, on n’essaie rien&nbsp;: on laisse son
+            Fantôme pour dire qu’on est là, et on lit ceux des autres.
+          </p>
           <ul className="ld-fam" aria-label="Ce qu’on y trouve">
             {FAMILLES.map(([i, t], k) => (
               <li key={t} data-r style={{ "--d": `${k * 55}ms` } as React.CSSProperties}>

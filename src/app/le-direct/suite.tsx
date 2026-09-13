@@ -55,7 +55,29 @@ import { Fantome } from "./fantome";
  * elles, « je note » ouvrirait l'histoire, et noter quelque chose qu'on n'a pas
  * essayé ne veut rien dire.
  */
-const CHEMIN = ["Je vois", "J’essaie", "Je note", "J’en parle", "On réserve"];
+/**
+ * ═══ CE SONT LES MOTS DE L'APPLICATION, ET C'EST OBLIGATOIRE ══════════════
+ *
+ * « Le parcours ClikMe doit devenir reconnaissable : Je découvre → J'essaie sur
+ * moi → Je donne mon avis → Mon essai rejoint éventuellement le mur → J'agis. »
+ *
+ * LA PAGE EN DISAIT D'AUTRES. Elle annonçait « Je vois · J'essaie · Je note ·
+ * J'en parle · On réserve » pendant que la frise de l'essai, dans
+ * l'application, disait « Je découvre · J'essaie · Je donne mon avis ». Deux
+ * vocabulaires pour un seul rituel, c'est un rituel qu'on ne reconnaît pas —
+ * et c'est exactement ce que ce chemin existe pour installer.
+ *
+ * LE MUR ENTRE DANS LE CHEMIN, à la place qu'il occupe vraiment : après l'avis,
+ * avant l'action. C'est aussi ce que la page montre maintenant une section plus
+ * haut, avec ses douze photos.
+ */
+const CHEMIN = [
+  "Je découvre",
+  "J’essaie",
+  "Je donne mon avis",
+  "Ça rejoint le mur",
+  "J’agis",
+];
 
 /** Les deux premières sont acquises : voir ci-dessus. */
 const ACQUIS = 2;

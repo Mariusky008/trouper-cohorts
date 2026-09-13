@@ -904,6 +904,91 @@ function StylesLeDirect() {
 .ld-essai-x i{font-style:normal;font-size:12px;line-height:1}
 .ld-essai-x:active{transform:translateX(-50%) scale(.97)}
 
+/* CE QUE LE FANTOME FAIT CHEZ UN BAR, ecrit parce qu'il etait invisible : la
+   page listait « Bars » et « Restaurants » sans jamais dire qu'on n'y essaie
+   rien — on y laisse son fantome. */
+.ld-fam-p{margin:14px auto 0;max-width:56ch;font-size:clamp(14px,1.2vw,16px);
+  line-height:1.6;color:rgba(236,240,246,.82)}
+
+/* ══ 3 · LE MUR — CE QUE LA PAGE NE DISAIT PAS ENCORE ═══════════════════
+   « Maintenant qu'on a pas mal d'exemples et que le concept a evolue, fais
+   les modifs necessaires. »
+
+   LA PAGE S'ARRETAIT A L'ESSAI, ET LE PRODUIT NE S'Y ARRETE PLUS. Ce qu'il a
+   de plus rare est ici : douze personnes portent le meme tatouage, et on peut
+   les voir avant de decider. Raisonnement complet dans mur.tsx.
+
+   DEUX COLONNES A PARTIR DE NEUF CENTS POINTS, une seule en dessous — et sur
+   telephone c'est LA GRILLE qui passe en premier, parce que c'est elle qui
+   fait s'arreter : six photos de peau valent mieux qu'un titre. */
+.ld-mur{position:relative;max-width:1180px;margin:0 auto;display:grid;
+  gap:clamp(24px,3.6vw,52px);align-items:center;grid-template-columns:1fr}
+.ld-mur-g{display:flex;flex-direction:column;align-items:flex-start;gap:15px;
+  order:2}
+.ld-mur-d{order:1}
+
+/* LA REGLE DU FANTOME, EN DEUX TEMPS QUI S'ALTERNENT. Elle ne se raconte pas :
+   meme geste, deux situations, et la consequence change. */
+.ld-mur-r{display:flex;align-items:center;gap:14px;width:100%;
+  padding:14px 16px;border-radius:20px;
+  background:linear-gradient(103deg,rgba(139,125,246,.1),rgba(197,81,232,.08));
+  border:1px solid rgba(139,125,246,.28)}
+.ld-mur-rf{flex:none;display:grid;place-items:center;width:52px;height:52px;
+  border-radius:50%;background:linear-gradient(150deg,#2A2150,#150F2C);
+  border:1px solid rgba(139,125,246,.5)}
+.ld-f-mur{width:30px;height:33px}
+.ld-f-mur .ld-f-corps{fill:#F3F0FF}
+.ld-f-mur .ld-f-oeil{fill:#2A1E4D}
+.ld-f-mur .ld-f-bouche{fill:none;stroke:#2A1E4D;stroke-width:2;
+  stroke-linecap:round}
+.ld-mur-rt{min-width:0;flex:1}
+/* LE TEXTE CHANGE TOUTES LES TROIS SECONDES : sans transition, la bascule se
+   lit comme un defaut d'affichage. */
+.ld-mur-rt b{display:block;font-size:14.5px;font-weight:850;color:var(--encre);
+  animation:ldMurEntre .45s ease both}
+.ld-mur-rt em{display:block;margin-top:3px;font-style:normal;font-size:13px;
+  line-height:1.45;color:var(--encre2);animation:ldMurEntre .45s 40ms ease both}
+.ld-mur-rt s{display:inline-flex;align-items:center;gap:6px;margin-top:9px;
+  text-decoration:none;font-size:12.5px;font-weight:850;color:#6E3FD6;
+  animation:ldMurEntre .45s 80ms ease both}
+.ld-mur-rt s i{font-style:normal}
+@keyframes ldMurEntre{from{opacity:0;transform:translateY(5px)}
+  to{opacity:1;transform:none}}
+
+/* LE COMPTE DIT LA VERITE : douze photos dans le depot, douze ici. Fabriquer
+   « 324 essayages » sur une page d'accueil est exactement ce qu'on a refuse de
+   faire dans l'application. */
+.ld-mur-t{margin:0 0 13px}
+.ld-mur-t b{display:block;font-size:clamp(17px,1.7vw,20px);font-weight:850;
+  letter-spacing:-.02em;color:var(--encre)}
+.ld-mur-t em{display:block;margin-top:4px;font-style:normal;font-size:12.5px;
+  font-weight:650;color:var(--encre2)}
+.ld-mur-gr{list-style:none;margin:0;padding:0;display:grid;gap:9px;
+  grid-template-columns:repeat(3,1fr)}
+.ld-mur-gr li{position:relative;border-radius:16px;overflow:hidden;
+  background:#101825;aspect-ratio:3/3.4}
+.ld-mur-gr img{width:100%;height:100%;object-fit:cover;display:block}
+/* LE PRENOM ET L'ENDROIT SE LISENT SUR LA PHOTO : un voile en bas, parce que
+   les peaux claires avalent du texte blanc pose a nu. */
+/* LE VOILE DOIT TENIR SUR UNE PEAU CLAIRE. MESURE : a .86 d'opacite finale et
+   vingt points de degrade, « Lou · Poignet » se lisait a peine sur un poignet
+   pale, et « Brice · Mollet » se perdait dans un mur de briques clair. Un nom
+   qu'on ne lit pas ne sert a rien : le voile part de plus haut et finit plus
+   dense. */
+.ld-mur-gr span{position:absolute;left:0;right:0;bottom:0;padding:34px 9px 8px;
+  background:linear-gradient(180deg,rgba(6,10,16,0),rgba(6,10,16,.62) 42%,
+    rgba(6,10,16,.94))}
+.ld-mur-gr span b{display:block;font-size:12px;font-weight:850;color:#fff}
+.ld-mur-gr span em{display:block;font-style:normal;font-size:10.5px;
+  font-weight:650;color:rgba(255,255,255,.76)}
+.ld-mur-p{display:flex;align-items:center;gap:9px;margin:12px 0 0;
+  font-size:12.5px;font-weight:700;color:var(--encre2)}
+.ld-f-mur2{width:22px;height:24px;flex:none}
+.ld-f-mur2 .ld-f-corps{fill:#8B7DF6}
+.ld-f-mur2 .ld-f-oeil{fill:#fff}
+.ld-f-mur2 .ld-f-bouche{fill:none;stroke:#fff;stroke-width:2.4;
+  stroke-linecap:round}
+
 /* ── LES ECRANS LARGES ──────────────────────────────────────────────────
    TOUT CE QUI SUIT N'EXISTE QU'AU-DELA DE 900 POINTS : les deux colonnes,
    les annotations manuscrites et les fantomes. Sur un telephone il n'y a de
@@ -915,6 +1000,12 @@ function StylesLeDirect() {
   .ld-hero-in{grid-template-columns:1.05fr .95fr}
   .ld-hero-f{display:flex;align-items:center;gap:13px;margin-top:8px}
   .ld-deux{grid-template-columns:1.05fr .95fr}
+  /* SUR UN ECRAN LARGE, LE TEXTE REPREND SA PLACE A GAUCHE. Sur telephone
+     c'est la grille qui passe devant : six photos de peau font s'arreter la ou
+     un titre ne fait que se lire. */
+  .ld-mur{grid-template-columns:.95fr 1.05fr}
+  .ld-mur-g{order:1}
+  .ld-mur-d{order:2}
   .ld-deux.inverse .ld-deux-d{order:1}
   .ld-deux.inverse .ld-deux-g{order:2}
   .ld-main.c{display:block}
