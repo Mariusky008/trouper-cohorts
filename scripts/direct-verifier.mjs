@@ -1361,7 +1361,7 @@ console.log("\n══ l'essai, et rien d'autre ══");
     // de la tête, et c'est ce geste qu'on mesure aussi — sans lui, on
     // regarderait sept personnes porter la pièce sans pouvoir la porter.
     if (!(await p6.$(".mu-ph-tete h2"))) {
-      const essayer = await p6.$(".mu-haut.essai .mu-cta.plein");
+      const essayer = await p6.$(".mu-bas .mu-cta");
       if (essayer) {
         await essayer.click();
         await p6.waitForTimeout(400);
@@ -1821,9 +1821,9 @@ console.log("\n══ l'annonce et son mur disent la même chose ══");
       // cette pose sur vous »). C'est la seconde qui trahit un mur mal aiguillé.
       // ET ON FRANCHIT LE MUR QUAND IL Y EN A UN. Un mur d'essai déjà rempli
       // s'ouvre sur ses clientes — c'est la règle du fantôme — et l'écran de la
-      // photo est derrière le geste de sa tête. Sans ce pas, la garde lisait
+      // photo est derrière le geste flottant de son bas. Sans ce pas, la garde lisait
       // « aucun essai » sur sept métiers qui en ont un.
-      const essayer = await p7.$(".mu-haut.essai .mu-cta.plein");
+      const essayer = await p7.$(".mu-bas .mu-cta");
       if (essayer) {
         await essayer.click();
         await p7.waitForTimeout(500);
@@ -2319,7 +2319,7 @@ console.log("\n══ la page du commerce ══");
    */
   const versLaPhoto = async (page) => {
     if (await page.$("#mur .mu-ph-tete")) return;
-    const essayer = await page.$("#mur .mu-haut.essai .mu-cta.plein");
+    const essayer = await page.$("#mur .mu-bas .mu-cta");
     if (essayer) {
       await essayer.click();
       await page.waitForTimeout(500);
