@@ -1348,8 +1348,28 @@ console.log("\n══ l'essai, et rien d'autre ══");
   for (const nom of murs) {
     await p6.click(`.mu-maq button:text-is("${nom}")`);
     await p6.waitForTimeout(260);
-    const tete = await p6.$eval(".mu-e-tete h2", (e) => e.textContent.trim()).catch(() => null);
+    // LE TITRE DE L'ÉCRAN DE LA PHOTO A CHANGÉ DE PLACE, ET C'ÉTAIT VOULU :
+    // « Cette bougie, chez vous » puis « Photographiez l'endroit où elle ira »
+    // faisaient deux titres empilés, dont aucun ne se lisait. Il ne reste que le
+    // second, qui dit ce qu'il faut faire. La garde suit.
+    const tete = await p6
+      .$eval(".mu-ph-tete h2", (e) => e.textContent.trim())
+      .catch(() => null);
     if (!tete) continue; // un mur d'annonce : il ouvre sur le mur, c'est voulu
+    // ═══ C'EST LA PHRASE QUI DOIT ÊTRE UNIQUE, PAS LE TITRE ═══
+    //
+    // LE TITRE DIT CE QU'ON PHOTOGRAPHIE, et trois métiers demandent VRAIMENT la
+    // même photo : « Prenez une photo de vous » chez un coiffeur, une boutique
+    // et un lunetier. Exiger qu'ils diffèrent aurait produit trois variantes
+    // écrites pour la garde et non pour le client — la pire chose qu'une garde
+    // puisse faire.
+    //
+    // LA PHRASE, ELLE, NOMME LA CHOSE : « cette coupe », « ce look », « cette
+    // monture ». Deux métiers qui nomment la même chose sont deux métiers dont
+    // l'un a été copié sur l'autre, et c'est exactement ce qu'on mesure ici.
+    const phrase = await p6
+      .$eval(".mu-ph-tete p", (e) => e.textContent.trim())
+      .catch(() => "");
     const geste = await p6.$eval(".mu-cta.plein b", (e) => e.textContent.trim()).catch(() => "");
     const liens = await p6.$$eval(".mu-e-mur", (b) => b.map((x) => x.textContent.trim()));
     // LA FRISE EST REVENUE, ET CE N'EST PLUS LA MÊME. L'ancienne — `.mu-pas`,
@@ -1366,13 +1386,13 @@ console.log("\n══ l'essai, et rien d'autre ══");
     dire(frise.length === 3, `${nom} : la frise dit les trois temps (${frise.length})`);
     dire(!(await p6.$(".mu-rang")), `${nom} : le mur n'est pas là à l'ouverture`);
     dire(liens.length === 1, `${nom} : un seul lien vers le mur (${liens.length})`);
-    vus.push({ nom, tete, geste, mur: liens[0] ?? "" });
+    vus.push({ nom, phrase, geste, mur: liens[0] ?? "" });
   }
   dire(vus.length >= 5, `au moins cinq métiers ouvrent sur l'essai (${vus.length})`);
   // AUCUNE DES TROIS PHRASES NE SE PARTAGE. C'est la seule mesure qui attrape un
   // texte générique : un mot juste chez deux métiers est un mot creux chez les
   // deux.
-  for (const champ of ["tete", "geste", "mur"]) {
+  for (const champ of ["phrase", "geste", "mur"]) {
     const pris = vus.map((v) => v[champ]);
     const doubles = pris.filter((t, i) => pris.indexOf(t) !== i);
     dire(doubles.length === 0, `le texte « ${champ} » diffère d'un métier à l'autre${doubles.length ? ` — repris : ${doubles[0]}` : ""}`);
@@ -1421,6 +1441,7 @@ console.log("\n══ l'annonce pousse vers l'essai ══");
         e.textContent.replace(/\s+/g, " ").trim(),
       ),
       duo: !!document.querySelector(".ap-duo"),
+      module: !!document.querySelector(".ap-murmod"),
     }));
   };
 
@@ -1446,6 +1467,41 @@ console.log("\n══ l'annonce pousse vers l'essai ══");
   );
   dire(!coif.duo, "la rangée d'avant a disparu, elle ne double pas le rail");
 
+  // ═══ LA DEUXIÈME PORTE DU MUR ═══════════════════════════════════════════
+  //
+  // « Sur l'annonce, le petit module sous la fiche commerce s'adapte : 👻 38
+  // essayages de ce pantalon — Voir ce qu'ils en pensent. »
+  //
+  // ON ENTRAIT DANS LE MUR PAR LE FANTÔME DE LA BARRE DU BAS, un bouton que
+  // rien ne présentait. Le module le dit en toutes lettres, à l'endroit où l'on
+  // hésite : juste avant d'essayer soi-même.
+  //
+  // LE COMPTE EST CELUI DU MUR, PAS UN NOMBRE ÉCRIT DANS L'ÉCRAN. C'est la
+  // seule façon de ne pas fabriquer de preuve sociale, et c'est la règle de
+  // tout ce dépôt — la même qui a fait retirer les « 128 » et « 24 » du rail.
+  const module = await pE.evaluate(() => {
+    const e = document.querySelector(".ap-murmod");
+    if (!e) return null;
+    return {
+      mot: e.querySelector("b")?.textContent.replace(/\s+/g, " ").trim() ?? "",
+      lien: e.querySelector("em")?.textContent.replace(/\s+/g, " ").trim() ?? "",
+      fantomes: e.querySelectorAll(".ap-murmod-s").length,
+    };
+  });
+  dire(!!module, "l'annonce dit combien de gens ont déjà essayé, et où le voir");
+  dire(
+    !!module && /^\d+ (essayage|projection)s? de /.test(module.mot),
+    `et elle compte dans les mots du métier (« ${module?.mot ?? "absent"} »)`,
+  );
+  dire(
+    !!module && /voir/i.test(module.lien),
+    `le lien dit où ça mène (« ${module?.lien ?? "absent"} »)`,
+  );
+  dire(
+    !!module && module.fantomes > 0 && module.fantomes <= 4,
+    `et ce sont des fantômes, pas des visages inventés (${module?.fantomes ?? 0})`,
+  );
+
   // ON N'ESSAIE PAS UNE TABLE. Un restaurant, un bar, une boulangerie n'ont pas
   // de mur d'essai : leur écran ne doit pas avoir bougé d'un point.
   for (const [carte, quoi] of [["centre", "un restaurant"], ["boulange", "une boulangerie"]]) {
@@ -1453,6 +1509,7 @@ console.log("\n══ l'annonce pousse vers l'essai ══");
     dire(!c.essai, `${quoi} garde son écran : pas de bouton d'essai`);
     dire(c.rail.length === 0, `${quoi} : pas de rail non plus (${c.rail.length})`);
     dire(c.duo, `${quoi} : les deux gestes du bas sont restés à leur place`);
+    dire(!c.module, `${quoi} : et pas de module de mur non plus`);
   }
   await cE.close();
 }
@@ -1525,47 +1582,171 @@ console.log("\n══ l'essai se joue en trois temps ══");
     !(await p3.$(".mu-note-f")),
     "on ne note pas encore : le deuxième temps ne sert qu'à regarder",
   );
-  await p3.getByRole("button", { name: /J.adopte ce style/i }).click();
+  await p3.getByRole("button", { name: /Je donne mon avis/i }).click();
   await p3.waitForTimeout(500);
-  dire(/avis/i.test(await ou()), "« J'adopte ce style » ouvre le troisième temps");
+  dire(/avis/i.test(await ou()), "« Je donne mon avis » ouvre le troisième temps");
 
   const avis = await p3.evaluate(() => ({
     question: document.querySelector(".mu-avis-q")?.textContent.replace(/\s+/g, " ").trim() ?? "",
     fantomes: document.querySelectorAll(".mu-note-f.grand button").length,
-    aime: document.querySelectorAll(".mu-aime button").length,
+    mot: !!document.querySelector(".mu-mot textarea"),
   }));
   dire(/ça vous plaît/i.test(avis.question), `l'écran pose sa question (« ${avis.question} »)`);
   dire(avis.fantomes === 5, `on note de un à cinq fantômes (${avis.fantomes})`);
-  // ON NE DEMANDE PAS CE QUI PLAÎT À QUELQU'UN QUI N'A PAS DIT SI ÇA LUI
-  // PLAISAIT. La question est posée à l'envers, et cinq étiquettes de plus sur un
-  // écran qui en demande déjà une le rendraient illisible.
-  dire(avis.aime === 0, "et on ne demande pas encore ce qui plaît le plus");
+  // ON NE DEMANDE PAS UN COMMENTAIRE À QUELQU'UN QUI N'A PAS ENCORE DIT SI ÇA LUI
+  // PLAISAIT : la question est posée à l'envers.
+  dire(!avis.mot, "et on ne demande pas encore d'écrire quoi que ce soit");
 
   await p3.locator(".mu-note-f.grand button").nth(3).click();
   await p3.waitForTimeout(400);
   const apres = await p3.evaluate(() => ({
     compte: document.querySelector(".mu-avis-n")?.textContent.trim() ?? "",
-    mot: document.querySelector(".mu-avis-m")?.textContent.trim() ?? "",
-    aime: [...document.querySelectorAll(".mu-aime button")].map((e) => e.textContent.trim()),
-    gestes: [...document.querySelectorAll(".mu-avis-g button")].map((e) =>
-      e.textContent.replace(/\s+/g, " ").trim(),
-    ),
+    dit: document.querySelector(".mu-avis-m")?.textContent.trim() ?? "",
+    etiquette: document.querySelector(".mu-mot label")?.textContent.replace(/\s+/g, " ").trim() ?? "",
+    plafond: document.querySelector(".mu-mot textarea")?.getAttribute("maxlength") ?? "",
+    part: document.querySelector(".mu-part")?.textContent.replace(/\s+/g, " ").trim() ?? "",
+    coche: document.querySelector(".mu-part")?.getAttribute("aria-pressed") ?? "",
   }));
   dire(/4 fantômes sur 5/.test(apres.compte), `le compte se lit (« ${apres.compte} »)`);
   // TROIS SUR CINQ NE VEUT RIEN DIRE tant que personne n'a écrit ce que trois
   // signifie — et « bien » n'est pas « ça, c'est moi ».
-  dire(apres.mot.length > 0, `et le mot dit ce que quatre veut dire (« ${apres.mot} »)`);
-  dire(apres.aime.length === 5, `ce qui plaît s'ouvre alors (${apres.aime.join(" · ")})`);
+  dire(apres.dit.length > 0, `et le mot dit ce que quatre veut dire (« ${apres.dit} »)`);
+  // ═══ LE PETIT MOT, ET C'EST LUI QU'ON LIRA SUR LE MUR ═══
+  // Quatre fantômes disent qu'elle a aimé ; « je ne pensais pas qu'il m'irait
+  // aussi bien » dit ce qui a décidé, et c'est ça que le suivant vient lire.
   dire(
-    apres.gestes.some((t) => /en parler avec mes amis/i.test(t)),
-    "le salon est le geste plein du troisième temps",
+    /optionnel/i.test(apres.etiquette) && apres.plafond === "200",
+    `on peut écrire un mot, facultatif et plafonné (« ${apres.etiquette} », ${apres.plafond})`,
   );
+  // ═══ ET RIEN NE PART SANS LA CASE ═══
+  // L'écran de la photo promet que rien n'est partagé sans accord : la case est
+  // le seul endroit où cette promesse se tient, et elle doit rester VISIBLE.
   dire(
-    apres.gestes.some((t) => /favori/i.test(t)) &&
-      apres.gestes.some((t) => /réserve|rendez-vous|côté/i.test(t)),
-    `et les deux autres suivent (${apres.gestes.slice(1, 3).join(" / ")})`,
+    /au mur du commerçant/i.test(apres.part),
+    `la case dit où va l'essai (« ${apres.part.slice(0, 70)} »)`,
+  );
+  dire(apres.coche === "true", "elle est cochée d'avance, et elle se décoche d'un appui");
+
+  // ═══ LE QUATRIÈME ÉCRAN : CE QU'ON PEUT FAIRE MAINTENANT ═══
+  await p3.getByRole("button", { name: /^Continuer/ }).click();
+  await p3.waitForTimeout(600);
+  const agir = await p3.evaluate(() => ({
+    merci: document.querySelector(".mu-fete-t")?.textContent.replace(/\s+/g, " ").trim() ?? "",
+    dit: document.querySelector(".mu-fete-p")?.textContent.replace(/\s+/g, " ").trim() ?? "",
+    gestes: [...document.querySelectorAll(".mu-agir-b")].map((e) =>
+      e.querySelector("b")?.textContent.trim() ?? "",
+    ),
+    plein: document.querySelector(".mu-agir-b.plein b")?.textContent.trim() ?? "",
+    preuve: !!document.querySelector(".mu-rendu-preuve"),
+    // LA CONFIRMATION N'ARRIVE QU'APRÈS LE GESTE : on vient d'arriver, on n'a
+    // rien demandé à personne, donc l'écran ne doit rien confirmer.
+    envoi: !!document.querySelector(".mu-envoi"),
+  }));
+  dire(/merci/i.test(agir.merci), `l'écran remercie (« ${agir.merci} »)`);
+  dire(
+    /rejoint le mur/i.test(agir.dit),
+    `et il dit où l'essai est parti (« ${agir.dit.slice(0, 60)} »)`,
+  );
+  dire(agir.preuve, "il montre ce qui vient d'être posé, au lieu de le dire");
+  dire(!agir.envoi, "et il ne confirme aucun message qu'on n'a pas demandé");
+  dire(agir.gestes.length === 3, `trois suites, et pas une de plus (${agir.gestes.length})`);
+  // LE SALON PASSE DEVANT, ET C'EST UN RENVERSEMENT. « Je réserve » était le
+  // geste plein depuis le début : celui qui demande finit par réserver, tandis
+  // que celui à qui l'on demande de réserver tout de suite referme.
+  dire(/salon/i.test(agir.plein), `le salon est le geste plein (« ${agir.plein} »)`);
+  dire(
+    agir.gestes.some((t) => /favori/i.test(t)),
+    `et le favori ferme la marche (${agir.gestes.join(" / ")})`,
   );
   await c3.close();
+}
+
+// ═══ CHAQUE MÉTIER A SES MOTS, ET LE RITUEL NE CHANGE JAMAIS ══════════════
+//
+// « Ne surtout pas inventer quatre parcours différents. Le parcours ClikMe doit
+// devenir reconnaissable : je découvre, j'essaie sur moi, je donne mon avis, mon
+// essai rejoint éventuellement le mur, j'agis. En revanche, l'étape "j'essaie"
+// et surtout l'action finale doivent changer selon le métier. »
+//
+// C'EST LA RÈGLE LA PLUS DIFFICILE À TENIR DANS LE TEMPS. Un parcours identique
+// partout dérive vers des mots génériques — « essayer ce produit », « réserver »
+// — et un vocabulaire par métier dérive vers quatre parcours. Cette garde mesure
+// les deux à la fois : la MÉCANIQUE est la même sur les huit murs, les MOTS ne
+// se répètent jamais d'un métier à l'autre.
+//
+// ELLE LIT LES DONNÉES, PAS L'ÉCRAN. Ces huit métiers demandent huit photos
+// différentes — une main, un poignet, une table, un visage, un buste, un
+// avant-bras — et aucun navigateur ne peut les prendre ici. Ce qui se mesure est
+// donc ce qui se décide : les mots du métier, dans `fantomes.ts`.
+console.log("\n══ chaque métier a ses mots, le rituel n'en a qu'un ══");
+{
+  const src = readFileSync("src/lib/direct/fantomes.ts", "utf8");
+  /**
+   * CE QUI DOIT ÊTRE UNIQUE, ET CE QUI A LE DROIT DE SE RÉPÉTER.
+   *
+   * PREMIER JET, ET IL ÉTAIT FAUX : il exigeait que `surMoi` diffère aux huit
+   * murs. Or quatre métiers disent vraiment « Essayer sur moi » — un bijou, une
+   * coupe, un vêtement, une monture se portent tous sur le corps — et trois
+   * disent vraiment « Prenez une photo de vous ». Les forcer à différer aurait
+   * produit des variantes écrites pour la garde, pas pour le client, et c'est
+   * la pire chose qu'une garde puisse faire.
+   *
+   * CE QUI NE PEUT PAS SE RÉPÉTER, C'EST CE QUI NOMME LA CHOSE : « cette
+   * coupe », « ce bouquet », et la promesse qui la contient. Deux métiers qui
+   * nomment la même chose sont deux métiers dont l'un a été copié sur l'autre.
+   */
+  const champs = ["promesse", "ceci"];
+  const communs = ["surMoi", "voirLeMur", "photoTitre", "photoSous"];
+  const pris = {};
+  for (const c of [...champs, ...communs]) {
+    // INDIFFÉRENT À L'INDENTATION : ces champs ont été écrits par un script, et
+    // le prochain les réindentera. Une garde qui compte les espaces mesure la
+    // mise en forme, pas le produit.
+    pris[c] = [...src.matchAll(new RegExp(`^\\s*${c}: "([^"]+)"`, "gm"))].map((m) => m[1]);
+  }
+  dire(
+    [...champs, ...communs].every((c) => pris[c].length === 8),
+    `les huit métiers ont tous leurs mots (${[...champs, ...communs].map((c) => `${c}×${pris[c].length}`).join(" ")})`,
+  );
+  for (const c of champs) {
+    const doubles = pris[c].filter((t, i) => pris[c].indexOf(t) !== i);
+    dire(
+      doubles.length === 0,
+      `« ${c} » ne se répète jamais d'un métier à l'autre${doubles.length ? ` — repris : ${doubles[0]}` : ""}`,
+    );
+  }
+  // ON N'ESSAIE PAS UN BOUQUET, ON LE PROJETTE. C'est la distinction la plus
+  // importante de ce fichier : ce qui se porte SUR LE CORPS s'essaie, ce qui se
+  // pose DANS UN LIEU se projette. Les deux doivent exister, sinon le mot est
+  // devenu générique sans que personne s'en aperçoive.
+  const verbes = [...src.matchAll(/^\s*essayage: "(\w+)",/gm)].map((m) => m[1]);
+  dire(verbes.length === 8, `chaque métier dit s'il essaie ou s'il projette (${verbes.length})`);
+  dire(
+    verbes.includes("essayage") && verbes.includes("projection"),
+    `et les deux verbes existent (${verbes.filter((v) => v === "essayage").length} essaient, ${verbes.filter((v) => v === "projection").length} projettent)`,
+  );
+  // L'ACTION FINALE CHANGE AVEC LE MÉTIER, et c'est la seule chose du rituel qui
+  // change. « Réserver » tout court se lit « une table », et personne ne réserve
+  // une coupe de cheveux.
+  const actions = [...src.matchAll(/agir: \{ picto: "\w+", titre: "([^"]+)"/g)].map((m) => m[1]);
+  // ET AUCUN MOT COMMUN N'EST TOMBÉ EN CHEMIN : ils ont le droit de se répéter,
+  // pas de disparaître. Un métier sans `surMoi` n'a plus de bouton.
+  dire(
+    communs.every((c) => pris[c].every((t) => t.trim().length > 2)),
+    "et les mots partagés sont écrits partout, même quand ils se ressemblent",
+  );
+  dire(actions.length === 8, `chaque métier a son action finale (${actions.length})`);
+  dire(
+    new Set(actions).size >= 6,
+    `et elles ne se ressemblent pas (${[...new Set(actions)].join(" · ")})`,
+  );
+  // QUATRE CONSEILS DE CADRAGE PAR MÉTIER, et pas trois : ce sont eux qui
+  // décident de la qualité du rendu, et c'est la dernière chose qu'on puisse
+  // encore corriger.
+  // ON NE COMPTE PAS LA DÉCLARATION DE TYPE. `conseils: [Conseil, Conseil…]`
+  // ressemble à un huitième métier et n'en est pas un : neuf au lieu de huit.
+  const conseils = [...src.matchAll(/conseils: \[\n/g)].length;
+  dire(conseils === 8, `chaque métier donne ses conseils de cadrage (${conseils})`);
 }
 
 // ═══ LE MUR QUI S'OUVRE EST CELUI DU COMMERCE QU'ON REGARDE ══════════════
@@ -1589,13 +1770,13 @@ console.log("\n══ l'annonce et son mur disent la même chose ══");
 {
   const ATTENDU = [
     ["Une fleuriste du marché", /bouquet/i],
-    ["Une prothésiste ongulaire", /ongle/i],
+    ["Une prothésiste ongulaire", /ongle|main|pose/i],
     ["Une cirière", /bougie/i],
-    ["Une créatrice de bijoux", /bijou/i],
+    ["Une créatrice de bijoux", /bijou|poignet/i],
     ["Un salon du centre", /coupe/i],
     ["Un salon qui vient d’ouvrir", /coupe/i],
-    ["Une boutique de la rue piétonne", /pièce|vous/i],
-    ["Une friperie du vieux centre", /pièce|vous/i],
+    ["Une boutique de la rue piétonne", /look|vous/i],
+    ["Une friperie du vieux centre", /look|vous/i],
     // ON N'ESSAIE PAS UNE SÉANCE D'HYPNOSE. « artisan » est un sac qui
     // contenait une cirière, une bijoutière ET un hypnothérapeute : celui-ci
     // recevait « Photographier ma table ». Il doit n'avoir aucun essai.
@@ -1616,8 +1797,15 @@ console.log("\n══ l'annonce et son mur disent la même chose ══");
     if (cible && !vus.has(nom)) {
       await p7.click(".ap-monfantome");
       await p7.waitForTimeout(900);
+      // MÊME CORRECTION QUE PLUS HAUT : le titre de l'écran de la photo a
+      // remplacé celui du métier, parce que deux titres empilés ne se lisaient
+      // ni l'un ni l'autre. C'est lui qui doit maintenant parler du bon métier.
+      // ON LIT LE BLOC ENTIER — titre ET phrase — parce que c'est la PHRASE qui
+      // nomme la chose : le titre dit ce qu'il faut photographier (« Prenez
+      // votre main en photo »), la phrase dit ce qu'on va y poser (« Essayez
+      // cette pose sur vous »). C'est la seconde qui trahit un mur mal aiguillé.
       const titre = await p7
-        .locator(".mu-e-tete h2")
+        .locator(".mu-ph-tete")
         .textContent()
         .catch(() => null);
       vus.set(nom, titre ? titre.trim() : null);

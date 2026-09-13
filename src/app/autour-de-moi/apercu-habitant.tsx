@@ -5016,9 +5016,15 @@ export function ApercuHabitant() {
             une page de salon ou de profil se lit du haut vers le bas, et son
             dernier paragraphe ne doit pas finir sous les onglets. */}
         <div
+          /* `essai` DIT QUE LE BORD DROIT EST OCCUPÉ, et rien d'autre. Sur une
+             annonce qui s'essaie, ce bord porte le rail des trois anciens
+             gestes ; l'anneau des tarifs et les flèches du paquet y étaient
+             déjà, et trois objets sur deux cents points de haut se touchent —
+             mesuré. La classe permet aux deux autres de s'écarter, plutôt que
+             de retirer une fonction pour en poser une. */
           className={`ap-app${onglet === "direct" ? " direct" : ""}${
             salonPage || favorisPage ? " sur-page" : ""
-          }`}
+          }${onPeutEssayer ? " essai" : ""}`}
         >
           {/* ─── LE SALON, EN PAGE PLEINE ───
               Il vivait dans une feuille qui remonte par-dessus le paquet. Une
@@ -7660,6 +7666,58 @@ export function ApercuHabitant() {
                 <i aria-hidden="true">✨</i>
                 {essaiDuSommet.mots.promesse}
               </p>
+            )}
+
+            {/* ═══ CE QUE LES AUTRES ONT DÉJÀ ESSAYÉ, SOUS L'ANNONCE ════════════
+
+                « Sur l'annonce, le petit module sous la fiche commerce s'adapte :
+                "👻 38 essayages de ce pantalon — Voir ce qu'ils en pensent",
+                "👻 26 essayages de cette coupe — Voir le résultat sur d'autres",
+                "👻 21 projections de ce bouquet — Voir chez les autres". »
+
+                C'EST LA DEUXIÈME PORTE, ET ELLE N'EXISTAIT PAS. On entrait dans
+                le mur par le fantôme de la barre du bas — un bouton que rien ne
+                présentait, et dont personne ne pouvait deviner qu'il menait à ce
+                que d'AUTRES ont essayé ici. Le module le dit en toutes lettres,
+                à l'endroit où l'on hésite : juste avant d'essayer soi-même.
+
+                LE COMPTE EST CELUI DU MUR, PAS UN NOMBRE ÉCRIT ICI. Il vaut le
+                nombre de fantômes réellement posés sur ce mur — c'est la seule
+                façon de ne pas fabriquer de preuve sociale, et c'est la règle de
+                tout ce dépôt. Si le mur est vide, le module ne s'affiche pas :
+                « 0 essayage » est une phrase qui coûte plus qu'elle ne rapporte.
+
+                ET LE MOT CHANGE AVEC LE MÉTIER. « Essayage » pour ce qui se
+                porte, « projection » pour ce qui se pose dans un lieu : on ne
+                fait pas d'essayage de bouquet. Voir `mots.essayage`. */}
+            {onPeutEssayer && murDuSommet!.clients.length > 0 && (
+              <button
+                type="button"
+                className="ap-murmod"
+                onClick={() => {
+                  noter("onglet", 0, "mur-module");
+                  setDejaOuvert(true);
+                  setMurOuvert(true);
+                }}
+              >
+                <span className="ap-murmod-f" aria-hidden="true">
+                  {murDuSommet!.clients.slice(0, 4).map((f) => (
+                    <Fantome key={f.id} classe="ap-murmod-s" />
+                  ))}
+                </span>
+                <span className="ap-murmod-t">
+                  <b>
+                    {murDuSommet!.clients.length}{" "}
+                    {essaiDuSommet.mots.essayage}
+                    {murDuSommet!.clients.length > 1 ? "s" : ""} de{" "}
+                    {essaiDuSommet.mots.ceci}
+                  </b>
+                  <em>
+                    {essaiDuSommet.mots.voirLeMur}
+                    <s aria-hidden="true"> →</s>
+                  </em>
+                </span>
+              </button>
             )}
 
             {/* ═══ LA SECONDE RANGÉE : DEUX GESTES CÔTE À CÔTE ═══
@@ -15566,6 +15624,41 @@ export function ApercuHabitant() {
         .ap-essayer-p i{font-style:normal;font-size:12px;line-height:1.35;
           flex:none;}
 
+        /* ═══ LE MODULE DU MUR, SOUS L'ANNONCE ══════════════════════════════
+
+           « 👻 38 essayages de ce pantalon — Voir ce qu'ils en pensent. »
+
+           C'EST LA DEUXIEME PORTE DU MUR, ET ELLE N'EXISTAIT PAS. On y entrait
+           par le fantome de la barre du bas, un bouton que rien ne presentait.
+           Ici la phrase dit ou ca mene, a l'endroit exact ou l'on hesite : juste
+           avant d'essayer soi-meme.
+
+           LES QUATRE PETITS FANTOMES NE SONT PAS DES AVATARS. La maquette met
+           quatre visages empiles ; on n'a pas quatre visages a montrer, et en
+           inventer serait fabriquer la preuve sociale que ce module est
+           justement la pour ne pas fabriquer. Quatre fantomes disent la meme
+           chose — ils sont plusieurs — et ils ne mentent sur personne. */
+        .ap-murmod{display:flex;align-items:center;gap:11px;width:100%;
+          margin-top:9px;padding:9px 13px 9px 11px;font:inherit;cursor:pointer;
+          text-align:left;border-radius:16px;
+          background:rgba(139,125,246,.12);
+          border:1px solid rgba(139,125,246,.36);
+          transition:transform .12s ease,background .16s ease;}
+        .ap-murmod:active{transform:scale(.99);background:rgba(139,125,246,.2);}
+        .ap-murmod:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
+        .ap-murmod-f{flex:none;display:flex;}
+        /* ILS SE CHEVAUCHENT, comme une pile de visages : c'est ce qui les fait
+           lire comme UN GROUPE et non comme quatre pictogrammes en rang. */
+        .ap-murmod-s{width:24px;height:26px;overflow:visible;margin-left:-9px;
+          filter:drop-shadow(0 2px 4px rgba(4,12,9,.6));}
+        .ap-murmod-s:first-child{margin-left:0;}
+        .ap-murmod-t{min-width:0;flex:1;}
+        .ap-murmod-t b{display:block;font-size:13.5px;font-weight:850;
+          color:#EFEAFF;line-height:1.25;}
+        .ap-murmod-t em{display:block;margin-top:1px;font-style:normal;
+          font-size:11.5px;font-weight:700;color:#B6AEE6;}
+        .ap-murmod-t s{text-decoration:none;}
+
         /* ═══ LE RAIL DES TROIS ANCIENS GESTES ══════════════════════════════
 
            « Les 3 boutons qu'on avait deviennent secondaires sur le cote
@@ -15581,6 +15674,21 @@ export function ApercuHabitant() {
            decorations — il faut appuyer pour savoir, et personne n'appuie pour
            savoir. Le mot fait dix points, ce qui suffit a le lire sans qu'il
            dispute quoi que ce soit au geste principal. */
+        /* ═══ LE BORD DROIT SE PARTAGE A TROIS, ET C'ETAIT MESURE ══════════
+
+           SUR UNE ANNONCE QUI S'ESSAIE, le bord droit porte l'anneau des tarifs
+           (245 a 345), les fleches du paquet (371 a 405) et le rail (209 points
+           de haut). Il reste 158 points sous la fleche, et le rail en demande
+           209 : mesure faite, « En parler » passait sous la fleche « suivante »,
+           c'est-a-dire sous le geste le plus repete de l'ecran.
+
+           LES DEUX AUTRES S'ECARTENT PLUTOT QUE DE DISPARAITRE. L'anneau monte
+           de quinze pour cent — il reste sur la photo, sous la barre du haut, et
+           rien ne s'y trouvait — et les fleches montent d'autant. On ne retire
+           aucune fonction pour en poser une nouvelle : c'est la regle qui a
+           sauve « Reserver » quand l'essai a pris le geste plein. */
+        .ap-app.essai .cd-anneau{top:13%;}
+        .ap-app.essai .ap-nav{top:30%;}
         .ap-rail{position:absolute;right:2px;bottom:calc(100% + 10px);
           display:flex;flex-direction:column;align-items:center;gap:9px;
           pointer-events:auto;}

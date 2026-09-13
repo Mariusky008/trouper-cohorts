@@ -249,6 +249,41 @@ export type Fantome = {
  * la pièce doit prendre la lumière de la peau — donc elles s'essaient. Ce qui
  * n'a pas de découpe, lui, se marque toujours.
  */
+/**
+ * ═══ UN CONSEIL DE CADRAGE, OU L'ACTION FINALE ═══════════════════════════════
+ *
+ * MÊME FORME POUR LES DEUX, et ce n'est pas une économie de type : ce sont deux
+ * fois la même chose à l'écran — un pictogramme, un mot en gras, une précision
+ * en petit. « De face / Regardez l'objectif » et « Prendre rendez-vous / Au
+ * salon, pour cette coupe » se dessinent avec la même règle, donc ils se
+ * décrivent avec la même forme.
+ *
+ * `picto` EST UNE CLÉ, PAS UN EMOJI. Les emojis arrivent avec leurs couleurs et
+ * changent de dessin d'un téléphone à l'autre — le calendrier d'Apple apporte sa
+ * date du 17 juillet, ce qui se lit comme une information alors que ce n'en est
+ * pas une. Les tracés vivent dans `mur-contenu.tsx`, même grille de 24 et même
+ * épaisseur que le reste du produit.
+ */
+export type Conseil = {
+  picto:
+    | "visage"
+    | "corps"
+    | "lumiere"
+    | "vetement"
+    | "main"
+    | "cadre"
+    | "lieu"
+    | "peau"
+    | "net"
+    | "lunettes"
+    | "photo"
+    | "agenda"
+    | "sac"
+    | "boutique";
+  titre: string;
+  detail: string;
+};
+
 export type Piece = {
   id: string;
   nom: string;
@@ -461,14 +496,77 @@ export type Mur = {
        */
       promesse: string;
       /**
-       * LES QUATRE CHOSES QU'ON PEUT AIMER DANS UN RENDU, PLUS « Autre ».
+       * ═══ « ESSAYAGE » OU « PROJECTION » ═════════════════════════════════════
        *
-       * « Qu'est-ce qui vous plaît le plus ? » — et la réponse n'est pas la même
-       * d'un métier à l'autre : on aime le VOLUME d'une coupe, la TENUE d'un
-       * vernis, le TRAIT d'un tatouage. Quatre étiquettes tiennent sur deux
-       * lignes à 390 points ; au-delà on choisit moins bien, pas mieux.
+       * « Je ne forcerais surtout pas "Essayer sur moi" partout. Pour le
+       * fleuriste, le fantôme pourrait devenir "Voir chez moi" : l'utilisateur
+       * photographie sa table, son salon, une entrée, et ClikMe y projette le
+       * bouquet. Ça rend le concept beaucoup plus puissant, parce que le fantôme
+       * n'est pas synonyme de cabine d'essayage. Il devient le moyen de voir
+       * quelque chose dans ma propre réalité avant de me déplacer. »
+       *
+       * C'EST LA DISTINCTION LA PLUS IMPORTANTE DE CE FICHIER, et elle tient en
+       * un mot : ce qui se porte SUR LE CORPS s'essaie, ce qui se pose DANS UN
+       * LIEU se projette. Le rituel ne change pas — on découvre, on essaie, on
+       * note, ça rejoint le mur, on agit — mais le verbe change, et avec lui la
+       * photo qu'on demande, le compte sous l'annonce et le mur qu'on montre.
+       *
+       * LE MOT EST AU SINGULIER : les comptes l'accordent eux-mêmes. Le mettre
+       * au pluriel ici obligerait à le dé-pluraliser ailleurs, et c'est le genre
+       * de détour où l'on finit par écrire « 1 essayages ».
        */
-      aime: [string, string, string, string];
+      essayage: "essayage" | "projection";
+      /**
+       * LA CHOSE, DANS LES MOTS DU MÉTIER — « ce look », « cette coupe ».
+       *
+       * ELLE SERT LÀ OÙ L'ÉCRAN PARLE DE CE QU'ON VIENT DE VOIR : « Un petit mot
+       * sur ce look ? », « Voir ce look en boutique ». « Ce produit » ne se dit
+       * dans aucune boutique, et « cet essai » parle du logiciel plutôt que de
+       * la chose.
+       */
+      ceci: string;
+      /**
+       * LE LIEN VERS LE MUR, SOUS L'ANNONCE ET EN TÊTE DU MUR.
+       *
+       * « Voir ce qu'ils en pensent » chez un vêtement, « Voir sur d'autres
+       * mains » chez une onglerie, « Voir chez les autres » chez une fleuriste.
+       * Trois façons de dire la même chose, et aucune ne marche chez les deux
+       * autres : on ne va pas voir des MAINS chez une fleuriste.
+       */
+      voirLeMur: string;
+      /**
+       * ═══ L'ÉCRAN DE LA PHOTO ════════════════════════════════════════════════
+       *
+       * Son titre, sa phrase, et les quatre conseils de cadrage. Ce sont eux qui
+       * décident de la qualité du rendu : un cadrage moyen donne un rendu moyen,
+       * et c'est la seule chose qu'on puisse encore corriger à ce moment-là.
+       *
+       * QUATRE, ET PAS TROIS NI SIX. Trois laissent passer le défaut le plus
+       * fréquent du métier ; six ne se lisent plus — on regarde la photo
+       * d'exemple à côté, ce qui est d'ailleurs très bien, mais alors autant
+       * n'en écrire aucun.
+       */
+      photoTitre: string;
+      photoSous: string;
+      conseils: [Conseil, Conseil, Conseil, Conseil];
+      /**
+       * ═══ L'ACTION COMMERCIALE, ET ELLE CHANGE AVEC LE MÉTIER ════════════════
+       *
+       * « En revanche, l'étape "J'essaie" et surtout l'action finale doivent
+       * changer selon le métier. »
+       *
+       * C'EST LE SEUL ENDROIT DU PARCOURS OÙ L'ON DEMANDE QUELQUE CHOSE. On
+       * prend rendez-vous chez un coiffeur, une onglerie, un tatoueur ; on se
+       * fait mettre de côté un vêtement ou un bijou ; on réserve un bouquet ou
+       * une pièce d'atelier. « Réserver » tout court se lit « une table », et
+       * personne ne réserve une coupe de cheveux.
+       *
+       * IL EST DISTINCT DE `reserver`, qui est le mot du message envoyé au
+       * commerçant sur WhatsApp — « Je réserve mon créneau » se dit à la
+       * première personne parce que c'est CE QU'ON ÉCRIT ; celui-ci est un
+       * bouton, donc il s'écrit à l'infinitif.
+       */
+      agir: Conseil;
     };
     pieces: Piece[];
   };
@@ -738,7 +836,18 @@ export const MURS: Mur[] = [
         mur: "Voir les poses portées par les clientes",
         surMoi: "Essayer sur mes ongles",
         promesse: "Découvrez à quoi cette pose ressemble sur votre main, en quelques secondes",
-        aime: ["La couleur", "La forme", "Le motif", "La longueur"],
+                essayage: "essayage",
+        voirLeMur: "Voir sur d’autres mains",
+        ceci: "cette pose",
+        photoTitre: "Prenez votre main en photo",
+        photoSous: "Essayez cette pose sur vous en quelques secondes, grâce à l’IA.",
+        conseils: [
+          { picto: "main", titre: "La main à plat", detail: "Doigts légèrement écartés" },
+          { picto: "lumiere", titre: "Bonne luminosité", detail: "Pas trop sombre" },
+          { picto: "cadre", titre: "Toute la main", detail: "Dans le cadre, sans couper" },
+          { picto: "net", titre: "Ongles nets", detail: "Sans vernis, si possible" },
+        ],
+        agir: { picto: "agenda", titre: "Prendre rendez-vous", detail: "Chez elle, pour cette pose" },
       },
       pieces: [
         /**
@@ -938,7 +1047,18 @@ export const MURS: Mur[] = [
         mur: "Voir les bijoux portés par les clientes",
         surMoi: "Essayer sur moi",
         promesse: "Découvrez à quoi cette pièce ressemble à votre poignet, en quelques secondes",
-        aime: ["La pierre", "La chaîne", "La taille", "La couleur"],
+                essayage: "essayage",
+        voirLeMur: "Voir portées par d’autres",
+        ceci: "cette pièce",
+        photoTitre: "Prenez votre poignet en photo",
+        photoSous: "Essayez cette pièce sur vous en quelques secondes, grâce à l’IA.",
+        conseils: [
+          { picto: "main", titre: "Le poignet à plat", detail: "Paume vers le bas" },
+          { picto: "lumiere", titre: "Bonne luminosité", detail: "Pas trop sombre" },
+          { picto: "vetement", titre: "Manche relevée", detail: "Le poignet dégagé" },
+          { picto: "cadre", titre: "Le poignet au centre", detail: "Sur le repère du viseur" },
+        ],
+        agir: { picto: "sac", titre: "Me la faire mettre de côté", detail: "À l’atelier, jusqu’à demain" },
       },
       pieces: [
         {
@@ -1093,7 +1213,18 @@ export const MURS: Mur[] = [
         mur: "Voir ces bougies chez d’autres",
         surMoi: "La voir chez moi",
         promesse: "Découvrez à quoi cette bougie ressemble sur votre table, en quelques secondes",
-        aime: ["La taille", "La couleur", "Le parfum", "Le style"],
+                essayage: "projection",
+        voirLeMur: "Voir chez les autres",
+        ceci: "cette bougie",
+        photoTitre: "Photographiez l’endroit où elle ira",
+        photoSous: "Voyez cette bougie chez vous en quelques secondes, grâce à l’IA.",
+        conseils: [
+          { picto: "lieu", titre: "La table entière", detail: "De trois quarts" },
+          { picto: "cadre", titre: "Reculez d’un pas", detail: "C’est ce qui donne l’échelle" },
+          { picto: "lumiere", titre: "Bonne luminosité", detail: "Pas trop sombre" },
+          { picto: "net", titre: "Dégagez le plateau", detail: "Ce qui y est restera" },
+        ],
+        agir: { picto: "sac", titre: "La réserver", detail: "À l’atelier, elle vous attend" },
       },
       pieces: [
         {
@@ -1230,7 +1361,18 @@ export const MURS: Mur[] = [
         mur: "Voir les coupes faites dans ce salon",
         surMoi: "Essayer sur moi",
         promesse: "Découvrez à quoi cette coupe vous va, en quelques secondes",
-        aime: ["Le style", "La couleur", "Le volume", "La longueur"],
+                essayage: "essayage",
+        voirLeMur: "Voir le résultat sur d’autres",
+        ceci: "cette coupe",
+        photoTitre: "Prenez une photo de vous",
+        photoSous: "Essayez cette coupe sur vous en quelques secondes, grâce à l’IA.",
+        conseils: [
+          { picto: "visage", titre: "De face", detail: "Regardez l’objectif" },
+          { picto: "lumiere", titre: "Bonne luminosité", detail: "Pas trop sombre" },
+          { picto: "visage", titre: "Cheveux dégagés", detail: "Sans casquette ni chapeau" },
+          { picto: "cadre", titre: "Le visage dans le cadre", detail: "Des épaules au sommet du crâne" },
+        ],
+        agir: { picto: "agenda", titre: "Prendre rendez-vous", detail: "Au salon, pour cette coupe" },
       },
       pieces: [
         {
@@ -1378,7 +1520,18 @@ export const MURS: Mur[] = [
         mur: "Voir ces pièces portées par d’autres",
         surMoi: "Essayer sur moi",
         promesse: "Découvrez à quoi cette pièce vous va, en quelques secondes",
-        aime: ["La coupe", "La couleur", "La matière", "La taille"],
+                essayage: "essayage",
+        voirLeMur: "Voir ce qu’ils en pensent",
+        ceci: "ce look",
+        photoTitre: "Prenez une photo de vous",
+        photoSous: "Essayez ce look sur vous en quelques secondes, grâce à l’IA.",
+        conseils: [
+          { picto: "visage", titre: "De face", detail: "Regardez l’objectif" },
+          { picto: "corps", titre: "En pied", detail: "si possible" },
+          { picto: "lumiere", titre: "Bonne luminosité", detail: "Pas trop sombre" },
+          { picto: "vetement", titre: "Des vêtements près du corps", detail: "pour un meilleur rendu" },
+        ],
+        agir: { picto: "sac", titre: "Me le faire mettre de côté", detail: "En boutique, jusqu’à demain soir" },
       },
       pieces: [
         {
@@ -1530,7 +1683,18 @@ export const MURS: Mur[] = [
         mur: "Voir ces bouquets chez d’autres",
         surMoi: "Le voir chez moi",
         promesse: "Découvrez à quoi ce bouquet ressemble sur votre table, en quelques secondes",
-        aime: ["Les fleurs", "Les couleurs", "La taille", "Le style"],
+                essayage: "projection",
+        voirLeMur: "Voir chez les autres",
+        ceci: "ce bouquet",
+        photoTitre: "Photographiez l’endroit où il ira",
+        photoSous: "Voyez ce bouquet chez vous en quelques secondes, grâce à l’IA.",
+        conseils: [
+          { picto: "lieu", titre: "La table entière", detail: "De trois quarts" },
+          { picto: "cadre", titre: "Reculez d’un pas", detail: "C’est ce qui donne l’échelle" },
+          { picto: "lumiere", titre: "Bonne luminosité", detail: "Pas trop sombre" },
+          { picto: "net", titre: "Dégagez la surface", detail: "Ce qui y est restera" },
+        ],
+        agir: { picto: "sac", titre: "Réserver ce bouquet", detail: "Il sera préparé pour vous" },
       },
       pieces: [
         {
@@ -1655,7 +1819,18 @@ export const MURS: Mur[] = [
         mur: "Voir les flashs déjà posés",
         surMoi: "Essayer sur ma peau",
         promesse: "Découvrez à quoi ce flash ressemble sur votre peau, en quelques secondes",
-        aime: ["Le trait", "La taille", "L’emplacement", "Le style"],
+                essayage: "projection",
+        voirLeMur: "Voir sur différentes peaux",
+        ceci: "ce flash",
+        photoTitre: "Photographiez la zone à tatouer",
+        photoSous: "Voyez ce flash sur votre peau en quelques secondes, grâce à l’IA.",
+        conseils: [
+          { picto: "peau", titre: "La zone entière", detail: "Avant-bras, épaule, mollet…" },
+          { picto: "lumiere", titre: "Bonne luminosité", detail: "Pas trop sombre" },
+          { picto: "cadre", titre: "À trente centimètres", detail: "C’est ce qui donne l’échelle" },
+          { picto: "net", titre: "Peau dégagée", detail: "Sans manche ni bracelet" },
+        ],
+        agir: { picto: "agenda", titre: "Parler de mon projet", detail: "Au studio, avant de prendre date" },
       },
       pieces: [
         /**
@@ -1781,7 +1956,18 @@ export const MURS: Mur[] = [
         mur: "Voir les montures portées par les clients",
         surMoi: "Essayer sur moi",
         promesse: "Découvrez à quoi cette monture vous va, en quelques secondes",
-        aime: ["La forme", "La couleur", "La taille", "Le style"],
+                essayage: "essayage",
+        voirLeMur: "Voir portées par d’autres",
+        ceci: "cette monture",
+        photoTitre: "Prenez une photo de vous",
+        photoSous: "Essayez cette monture sur vous en quelques secondes, grâce à l’IA.",
+        conseils: [
+          { picto: "visage", titre: "De face", detail: "Regardez l’objectif" },
+          { picto: "lumiere", titre: "Bonne luminosité", detail: "Pas trop sombre" },
+          { picto: "lunettes", titre: "Sans lunettes", detail: "Celles-ci les remplacent" },
+          { picto: "cadre", titre: "Le visage dans le cadre", detail: "Front et oreilles compris" },
+        ],
+        agir: { picto: "boutique", titre: "Les essayer en boutique", detail: "Elles sont mises de côté" },
       },
       pieces: [
         { id: "l-ecaille", nom: "Carrée écaille, verres dégradés", prix: "159 €",

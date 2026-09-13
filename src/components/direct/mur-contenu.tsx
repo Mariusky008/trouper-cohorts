@@ -122,6 +122,49 @@ function Signe({ classe }: { classe?: string }) {
   );
 }
 
+/**
+ * ═══ LES PICTOGRAMMES DU RITUEL ══════════════════════════════════════════════
+ *
+ * ILS SONT TRACÉS, PAS ÉCRITS. Un emoji arrive avec ses couleurs et change de
+ * dessin d'un téléphone à l'autre — le calendrier d'Apple apporte sa date du
+ * 17 juillet, ce qui se lit comme une information alors que ce n'en est pas
+ * une, et le tee-shirt d'Android n'a rien à voir avec celui d'iOS. Sur un écran
+ * qui donne QUATRE conseils de cadrage, quatre dessins imprévisibles auraient
+ * plus distrait qu'aidé.
+ *
+ * MÊME GRILLE DE 24 ET MÊME ÉPAISSEUR QUE TOUT LE PRODUIT : ceux de la barre du
+ * bas, ceux du rail de l'annonce, celui de « Proposer à mes amis ». C'est ce qui
+ * fait qu'on ne les remarque pas, et c'est exactement ce qu'on leur demande.
+ *
+ * LA CLÉ VIENT DES DONNÉES, pas d'un test sur le métier : voir `Conseil` dans
+ * `lib/direct/fantomes.ts`. Ajouter un métier, c'est écrire ses quatre conseils,
+ * pas ouvrir ce composant.
+ */
+const TRACES: Record<string, string> = {
+  visage: "M12 3.6a8.4 8.4 0 1 0 0 16.8 8.4 8.4 0 0 0 0-16.8ZM8.8 10.6h.01M15.2 10.6h.01M8.8 15c.9 1.1 1.9 1.6 3.2 1.6s2.3-.5 3.2-1.6",
+  corps: "M12 2.6a2.2 2.2 0 1 0 0 4.4 2.2 2.2 0 0 0 0-4.4ZM12 7.8v6.4M12 14.2 9 21.4M12 14.2l3 7.2M7.6 10.4h8.8",
+  lumiere: "M12 7.4a4.6 4.6 0 1 0 0 9.2 4.6 4.6 0 0 0 0-9.2ZM12 1.8v2.4M12 19.8v2.4M4.8 4.8l1.7 1.7M17.5 17.5l1.7 1.7M1.8 12h2.4M19.8 12h2.4M4.8 19.2l1.7-1.7M17.5 6.5l1.7-1.7",
+  vetement: "M8.6 3 5 5.2 3 9l3 1.6V21h12V10.6L21 9l-2-3.8L15.4 3M8.6 3a3.4 3.4 0 0 0 6.8 0",
+  main: "M8.6 12V5.6a1.4 1.4 0 0 1 2.8 0M11.4 11V4.4a1.4 1.4 0 0 1 2.8 0V11M14.2 11.4V6.2a1.4 1.4 0 0 1 2.8 0v7.4c0 4-2.6 7-6.2 7-2.4 0-4-1.1-5.2-3L3 13.6a1.5 1.5 0 0 1 2.4-1.8l1.4 1.8",
+  cadre: "M3.4 8.6V5.4a2 2 0 0 1 2-2h3.2M15.4 3.4h3.2a2 2 0 0 1 2 2v3.2M20.6 15.4v3.2a2 2 0 0 1-2 2h-3.2M8.6 20.6H5.4a2 2 0 0 1-2-2v-3.2",
+  lieu: "M2.6 10.4h18.8M4.6 10.4V6.6a2 2 0 0 1 2-2h10.8a2 2 0 0 1 2 2v3.8M5.4 10.4V20M18.6 10.4V20M2.6 14.4h18.8",
+  peau: "M6.6 2.8c-1.6 3.4-1.4 6.6.6 9.6 2 3 2.4 6.2 1.2 9.4M17.4 2.8c1.6 3.4 1.4 6.6-.6 9.6-2 3-2.4 6.2-1.2 9.4M12 6.2v11.6",
+  agenda: "M3.2 5h17.6a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3.2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1ZM2.2 10h19.6M7.6 2.8v4.4M16.4 2.8v4.4",
+  sac: "M4.4 7.6h15.2l1.2 12.4a1 1 0 0 1-1 1.2H4.2a1 1 0 0 1-1-1.2ZM8.4 10.4V6.2a3.6 3.6 0 0 1 7.2 0v4.2",
+  boutique: "M3.4 9.4h17.2V20a1 1 0 0 1-1 1H4.4a1 1 0 0 1-1-1ZM2.6 9.4 4.4 3.6h15.2l1.8 5.8M9.4 21v-6.2h5.2V21",
+  net: "M9.2 2.8 10.6 7l4.2 1.4-4.2 1.4-1.4 4.2-1.4-4.2L3.6 8.4 7.8 7ZM17.4 12.2l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9ZM4.8 17.2l.6 1.7 1.7.6-1.7.6-.6 1.7-.6-1.7-1.7-.6 1.7-.6Z",
+  lunettes: "M7 9.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2ZM17 9.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2ZM10.6 13h2.8M3.4 12.4 2.2 8.2M20.6 12.4l1.2-4.2",
+  photo: "M4 7.6h3.2l1.6-2.6h6.4l1.6 2.6H20a1.4 1.4 0 0 1 1.4 1.4v9.2a1.4 1.4 0 0 1-1.4 1.4H4a1.4 1.4 0 0 1-1.4-1.4V9A1.4 1.4 0 0 1 4 7.6ZM12 10.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2Z",
+};
+
+function Trace({ cle }: { cle: string }) {
+  return (
+    <svg className="mu-tr" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d={TRACES[cle] ?? TRACES.cadre} />
+    </svg>
+  );
+}
+
 /** La pastille d'humeur : ce que la personne vient chercher ici. */
 function Humeur({ cle }: { cle?: string }) {
   const h = humeurDe(cle);
@@ -1342,6 +1385,22 @@ const MOTS_NOTE: Record<number, string> = {
   5: "Ça, c’est moi 🔥",
 };
 
+/**
+ * CE QU'ON PROPOSE D'ÉCRIRE, ET ÇA DÉPEND DE CE QU'ON A MIS.
+ *
+ * UN CHAMP VIDE AVEC « Votre avis… » NE FAIT ÉCRIRE PERSONNE. Une phrase déjà
+ * formée dans le ton de sa note donne le LA : on la remplace par la sienne, ou
+ * on la laisse et on continue. C'est un exemple, pas un texte pré-rempli — il
+ * disparaît au premier caractère et ne part jamais sur le mur tout seul.
+ */
+const MOTS_EXEMPLE: Record<number, string> = {
+  1: "Pas du tout pour moi, mais au moins je sais.",
+  2: "Bof sur moi. J’essaierai autre chose.",
+  3: "Pourquoi pas. J’hésite encore.",
+  4: "Ça me va bien, je ne pensais pas.",
+  5: "J’adore ! C’est exactement ce que je cherchais.",
+};
+
 const ETAPES = [
   "Ton fantôme regarde ta photo…",
   "Il emporte la pièce avec lui…",
@@ -1405,7 +1464,7 @@ function Essai({
    * découvre ».
    */
   const [etape, setEtape] = useState<
-    "cadrer" | "choisir" | "calcul" | "rendu" | "avis"
+    "cadrer" | "choisir" | "calcul" | "rendu" | "avis" | "agir"
   >("cadrer");
   const [piece, setPiece] = useState<Piece | null>(null);
   const [pct, setPct] = useState(0);
@@ -1437,17 +1496,36 @@ function Essai({
   /** Le fantôme survolé pendant qu'on choisit : il éclaire ceux d'avant. */
   const [noteVue, setNoteVue] = useState(0);
   /**
-   * CE QUI PLAÎT LE PLUS, ET UNE SEULE RÉPONSE.
+   * ═══ LE PETIT MOT, ET C'EST LUI QU'ON LIRA ═════════════════════════════════
    *
-   * UNE NOTE SEULE NE DIT PAS POURQUOI. Quatre fantômes sur une coupe apprennent
-   * au commerçant que ça a plu ; ils ne lui disent pas si c'est la longueur ou
-   * la couleur — c'est-à-dire la seule chose qu'il puisse changer demain.
+   * UNE NOTE SEULE NE DIT PAS POURQUOI. Sur le mur, ce n'est pas la note qu'on
+   * lit en premier : c'est « Je ne pensais pas qu'il m'irait aussi bien » sous
+   * la photo de Nathalie. Quatre fantômes disent qu'elle a aimé ; sa phrase dit
+   * ce qui a décidé, et c'est elle qui décide le suivant.
    *
-   * UNE SEULE, ET PAS PLUSIEURS : « ce qui vous plaît LE PLUS » est une question
-   * de classement, pas d'inventaire. Cocher les quatre ne dit rien de plus que
-   * la note, et coûte trois appuis.
+   * FACULTATIF, ET PLAFONNÉ À DEUX CENTS. Sans plafond on reçoit des pavés que
+   * personne ne lit sous une vignette ; sans compteur, on écrit et on se fait
+   * couper.
    */
-  const [aime, setAime] = useState<string | null>(null);
+  const [commentaire, setCommentaire] = useState("");
+  /**
+   * ═══ MON ESSAI REJOINT-IL LE MUR DU COMMERÇANT ? ═══════════════════════════
+   *
+   * « J'accepte éventuellement de partager ma projection : elle rejoint les
+   * autres projections. »
+   *
+   * C'EST LA SEULE CASE À COCHER DE TOUT LE PRODUIT, et elle vaut la peine : le
+   * mur n'existe que par elle. Sans case, on publiait la photo de quelqu'un sur
+   * le mur d'un commerce parce qu'il avait noté — c'est-à-dire exactement le
+   * contraire de ce que l'écran de la photo venait de promettre.
+   *
+   * COCHÉE D'AVANCE, ET C'EST UN CHOIX ASSUMÉ. Décochée par défaut, le mur reste
+   * vide, donc personne ne voit ce que ça donne sur de vraies têtes, donc
+   * personne n'essaie. Elle reste VISIBLE et se décoche d'un appui, au-dessus du
+   * bouton et pas dans un réglage : c'est la différence entre un défaut assumé
+   * et un défaut caché.
+   */
+  const [partage, setPartage] = useState(true);
   /**
    * LA RÉVÉLATION A-T-ELLE DÉJÀ EU LIEU ?
    *
@@ -1806,6 +1884,11 @@ function Essai({
 
   const poser = (verdict: "pris" | "passe" | "essaye") => {
     setDecide(verdict);
+    // ON NE POSE QU'UNE FOIS. « Continuer » pose, et les gestes de l'écran
+    // d'après — le salon, le rendez-vous, le favori — ne doivent pas reposer un
+    // second fantôme sous le même prénom : le mur en afficherait trois pour un
+    // seul essai. Voir `pose`, qui garde celui qu'on vient de laisser.
+    if (pose) return;
     // ON PRÉVIENT LE COMMERÇANT AVANT DE POSER LE FANTÔME : le partage doit
     // partir du geste de la personne, sans écran intercalé. Un `window.open`
     // déclenché après un rendu d'écran se fait bloquer par Safari.
@@ -1840,10 +1923,6 @@ function Essai({
         quoi: piece?.nom ?? "",
         verdict: verdict === "essaye" ? null : verdict,
         ...(note ? { note } : {}),
-        // CE QUI A PLU PART AVEC L'ESSAI, et c'est ce que le commerçant peut
-        // vraiment utiliser : quatre fantômes lui disent que ça a plu, « la
-        // longueur » lui dit quoi proposer demain.
-        ...(aime ? { aime } : {}),
       },
       /**
        * CE QU'ON ÉCRIT SOUS SON PROPRE FANTÔME DÉPEND DE CE QU'ON A NOTÉ.
@@ -1855,8 +1934,14 @@ function Essai({
        * mot. Avec la note, la phrase dit ce qu'on a pensé DE SOI dans cette
        * pièce-là — et c'est ça que le suivant vient lire.
        */
-      mot:
-        verdict === "pris"
+      // ═══ SES MOTS PASSENT DEVANT LES NÔTRES ═══
+      //
+      // La phrase écrite ici est un REPLI, pas un texte. Dès que quelqu'un a
+      // écrit quelque chose, c'est le sien qui part sur le mur : « Je ne pensais
+      // pas qu'il m'irait aussi bien » vaut tous les gabarits qu'on pourrait
+      // composer, et c'est précisément ce que les autres viennent lire.
+      mot: commentaire.trim() ||
+        (verdict === "pris"
           ? note >= 4
             ? "Essayé à l’instant, et c’est exactement ça. Je passe la prendre."
             : "Essayé à l’instant, je passe la prendre."
@@ -1870,11 +1955,24 @@ function Essai({
               : "Essayé à l’instant. J’en parle autour de moi avant de décider."
             : note && note <= 2
               ? "Essayé à l’instant. Pas pour moi du tout — au moins je sais."
-              : "Essayé à l’instant. Pas pour moi, mais ça m’a évité de me tromper.",
+              : "Essayé à l’instant. Pas pour moi, mais ça m’a évité de me tromper."),
       heure: new Date().toTimeString().slice(0, 5),
       interesses: 0,
       jusqua: "encore 2 jours",
     };
+    /**
+     * ET RIEN NE PART SI ON N'A PAS LAISSÉ LA CASE COCHÉE.
+     *
+     * C'EST LE SEUL ENDROIT OÙ LA CASE AGIT, et il faut qu'il n'y en ait qu'un :
+     * l'écran de la photo promet que rien n'est partagé sans accord, et une
+     * promesse tenue à deux endroits finit par n'être tenue qu'à un.
+     *
+     * ON NE GARDE MÊME PAS L'APERÇU. `pose` sert à MONTRER ce qui vient d'être
+     * posé sur le mur — « voilà ce qui vient d'être posé, ici, pour deux
+     * jours ». Le montrer alors que rien n'a été posé serait le mensonge exact
+     * qu'on vient de corriger, en plus poli.
+     */
+    if (!partage) return;
     setPose(f);
     onPose(f);
   };
@@ -1958,7 +2056,11 @@ function Essai({
       {etape !== "calcul" && (
         <ol className="mu-frise" aria-label="Où vous en êtes">
           {(["Je découvre", "J’essaie", "Je donne mon avis"] as const).map((mot, k) => {
-            const ou = etape === "avis" ? 2 : etape === "rendu" ? 1 : 0;
+            // L'ACTION COMMERCIALE RESTE DANS LE TROISIEME TEMPS, ET CE N'EST
+            // pas un raccourci : « Merci pour votre avis » est ce qui SUIT
+            // l'avis, pas une quatrieme etape. Une frise a quatre temps aurait
+            // annonce un parcours plus long qu'il ne l'est.
+            const ou = etape === "avis" || etape === "agir" ? 2 : etape === "rendu" ? 1 : 0;
             return (
               <li
                 key={mot}
@@ -2001,21 +2103,74 @@ function Essai({
           de plus : cet écran POSE SA PROPRE QUESTION — « Alors, ça vous plaît ? »
           — et deux titres l'un au-dessus de l'autre font qu'on ne lit ni l'un ni
           l'autre. */}
-      {etape !== "calcul" && etape !== "rendu" && etape !== "avis" && (
+      {/* ═══ UN SEUL TITRE PAR ÉCRAN ═════════════════════════════════════════
+
+          LE RENDU N'EN AVAIT DÉJÀ PLUS, L'AVIS POSE LA SIENNE — « Alors, ça vous
+          plaît ? » — et l'écran de la photo a maintenant la sienne aussi, qui
+          dit exactement quoi photographier. Mesuré : on lisait « Cette bougie,
+          chez vous » PUIS « Photographiez l'endroit où elle ira », l'un sous
+          l'autre, avec leurs deux phrases. Deux titres empilés ne se lisent ni
+          l'un ni l'autre, et le premier repoussait les conseils de cent points.
+
+          IL NE RESTE DONC QUE `choisir`, qui n'a pas de titre à lui : c'est une
+          grille, et « Choisissez la bougie » est ce qu'il faut y lire. */}
+      {etape === "choisir" && (
         <div className="mu-e-tete">
-          <h2>{etape === "choisir" ? mots.choisir : mots.titre}</h2>
-          {etape === "cadrer" && <p>{mots.phrase}</p>}
+          <h2>{mots.choisir}</h2>
         </div>
       )}
 
       {etape === "cadrer" && (
         <div className="mu-cadrer">
-          {/* LE VISEUR EST POSE SUR LA PHOTO, PAS SUR DU VIDE. Un cadre vide
-              demande d'imaginer ce qu'on photographie ; la photo dessous le
-              montre, et c'est elle qui reviendra au rendu — meme bras, meme
-              lumiere, meme fond. */}
-          <Viseur photo={laPhoto} gabarit={mur.essai?.gabarit} />
-          <p>{mur.essai?.consigne}</p>
+          {/* ═══ L'ÉCRAN DE LA PHOTO, D'APRÈS LA MAQUETTE ═════════════════════
+
+              IL NE DISAIT QU'UNE PHRASE, et c'était une phrase de trop et trois
+              de moins. « Reculez d'un pas et cadrez la table entière » est un
+              conseil ; il en faut quatre, parce que ce sont EUX qui décident de
+              la qualité du rendu. Un cadrage moyen donne un rendu moyen, et
+              c'est la dernière chose qu'on puisse encore corriger — après, il
+              n'y a plus que « reprendre la photo ».
+
+              ET CE NE SONT PAS LES MÊMES D'UN MÉTIER À L'AUTRE. « En pied si
+              possible » n'a aucun sens devant une table de salon, « reculez d'un
+              pas » n'en a aucun devant un visage. Ils sont donc écrits à côté
+              des autres mots du métier, dans `fantomes.ts`, où une phrase fausse
+              se voit en lisant la ligne du dessus.
+
+              LES CONSEILS ET LA PHOTO PARTAGENT UNE LIGNE. La maquette les met
+              côte à côte, et elle a raison : on lit un conseil, on regarde
+              l'exemple, on revient. Empilés, il faut faire défiler entre les
+              deux — c'est-à-dire les comparer de mémoire. */}
+          <div className="mu-ph-tete">
+            <h2>{mur.essai.mots.photoTitre}</h2>
+            <p>{mur.essai.mots.photoSous}</p>
+          </div>
+          <div className="mu-ph">
+            <ul className="mu-ph-l">
+              {mur.essai.mots.conseils.map((c) => (
+                <li key={c.titre}>
+                  <i aria-hidden="true">
+                    <Trace cle={c.picto} />
+                  </i>
+                  <span>
+                    <b>{c.titre}</b>
+                    <em>{c.detail}</em>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {/* LE VISEUR EST POSE SUR LA PHOTO, PAS SUR DU VIDE. Un cadre vide
+                demande d'imaginer ce qu'on photographie ; la photo dessous le
+                montre, et c'est elle qui reviendra au rendu — meme bras, meme
+                lumiere, meme fond. */}
+            <div className="mu-ph-v">
+              <Viseur photo={laPhoto} gabarit={mur.essai?.gabarit} />
+              {/* ON DIT QUE CE N'EST PAS LA SIENNE, ET ON LE DIT SUR L'IMAGE.
+                  Tant qu'aucune photo n'a été prise, celle du viseur vient du
+                  dépôt : sans ce mot, on croit reconnaître un aperçu de soi. */}
+              {!photo && <span className="mu-ph-x">Exemple de photo</span>}
+            </div>
+          </div>
           {/* LE BOUTON OUVRE VRAIMENT L'APPAREIL PHOTO.
               Il ne le faisait pas : il faisait avancer l'écran, et l'essai se
               calculait sur une photo du dépôt. « J'arrive sur photographier ma
@@ -2045,12 +2200,14 @@ function Essai({
                   chez une onglerie, « Me prendre en photo » chez un coiffeur :
                   ce n'est pas du style, c'est ce qu'il faut faire, et ce n'est
                   pas le même geste. */}
-              <button type="button" className="mu-cta plein" onClick={() => fichier.current?.click()}>
-                <i aria-hidden="true">📷</i>
+              <button type="button" className="mu-cta plein essai" onClick={() => fichier.current?.click()}>
+                <i aria-hidden="true">
+                  <Trace cle="photo" />
+                </i>
                 <span>
                   <b>{mots.geste}</b>
-                  <em>Gratuit, sans rendez-vous — rien n’est publié sans vous</em>
                 </span>
+                <s aria-hidden="true">→</s>
               </button>
               {/* LA PHOTO D'EXEMPLE RESTE ACCESSIBLE, ET ELLE EST NOMMEE COMME
                   TELLE. Une maquette qu'on fait essayer doit pouvoir se montrer
@@ -2070,6 +2227,24 @@ function Essai({
               </button>
             </>
           )}
+          {/* ═══ CE QU'ON PROMET AVANT DE DEMANDER UNE PHOTO ══════════════════
+
+              « 🔒 Vos photos sont privées et ne sont pas partagées sans votre
+              accord. »
+
+              C'EST LA PHRASE LA PLUS IMPORTANTE DE L'ÉCRAN, et elle était en
+              petit sous le bouton, mêlée à « gratuit, sans rendez-vous ». On
+              demande à quelqu'un de se photographier : c'est le seul moment du
+              produit où l'on peut le perdre pour de bon, et la seule chose qu'il
+              veut savoir est ce qu'on va faire de l'image.
+
+              ELLE EST VRAIE DEUX FOIS, et c'est pour ça qu'on peut l'écrire :
+              rien ne part sur le mur avant la case du troisième temps, et le
+              rendu qui passe par un modèle d'image n'est pas conservé. */}
+          <p className="mu-prive">
+            <i aria-hidden="true">🔒</i>
+            Vos photos sont privées et ne sont pas partagées sans votre accord.
+          </p>
         </div>
       )}
 
@@ -2237,9 +2412,11 @@ function Essai({
           économie de lignes : on doit VOIR ce qu'on note. Une page d'avis qui
           n'affiche plus le rendu demande de se souvenir de ce qu'on jugeait, et
           c'est précisément à ce moment-là que la note devient approximative. */}
-      {(etape === "rendu" || etape === "avis") && piece && (
+      {(etape === "rendu" || etape === "avis" || etape === "agir") && piece && (
         <div
-          className={`mu-rendu${revele ? " revele" : ""}${etape === "avis" ? " avis" : ""}`}
+          className={`mu-rendu${revele ? " revele" : ""}${
+            etape === "avis" || etape === "agir" ? " avis" : ""
+          }`}
         >
           {/* ═══ LA GLISSIÈRE AVANT / APRÈS ══════════════════════════════════
 
@@ -2480,8 +2657,8 @@ function Essai({
               >
                 <Signe classe="mu-cta-f" />
                 <span>
-                  <b>J’adopte ce style</b>
-                  <em>Donnez votre avis, et il part sur le mur</em>
+                  <b>Je donne mon avis</b>
+                  <em>Ça prend 2 secondes</em>
                 </span>
                 <s aria-hidden="true">→</s>
               </button>
@@ -2508,17 +2685,109 @@ function Essai({
                 </button>
               )}
             </>
-          ) : decide ? (
-            /* ═══ CE QU'ON VOIT UNE FOIS QU'ON A DÉCIDÉ ═══════════════════════
+          ) : etape === "agir" ? (
+            /* ═══ CE QU'ON PEUT FAIRE MAINTENANT ═════════════════════════════
 
-               « Le résultat ira dans le mur du commerçant automatiquement. »
+               « Merci pour votre avis ! Ce look vous plaît ? Voici ce que vous
+               pouvez faire maintenant. » Puis : ouvrir un salon, l'action
+               commerciale du métier, mettre en favori.
 
-               IL Y VA, ET ON RESTE ICI. Avant, décider renvoyait au mur : on
-               perdait son rendu de vue pour tomber sur les vignettes des autres,
-               c'est-à-dire la distraction qu'on venait d'enlever de l'entrée.
-               L'écran dit donc ce qui a été fait, en une ligne, et laisse les
-               deux seules suites qui aient du sens — réessayer, ou aller voir. */
+               CET ÉCRAN N'EXISTAIT PAS, ET SON ABSENCE COÛTAIT LES TROIS GESTES
+               À LA FOIS. Ils étaient sous la note, dans le même écran : on
+               demandait de juger et de décider en même temps, donc on faisait
+               l'un des deux à moitié. Séparés, l'avis se donne vraiment, et les
+               trois suites arrivent au moment où l'on vient justement de se dire
+               « et maintenant ? ».
+
+               LE SALON PASSE DEVANT, ET C'EST UN RENVERSEMENT. « Je réserve »
+               était le geste plein depuis le début. On ne choisit pas une coupe,
+               une monture ou un tatouage tout seul : celui qui demande finit par
+               réserver, tandis que celui à qui l'on demande de réserver tout de
+               suite referme.
+
+               L'ACTION DU MILIEU CHANGE AVEC LE MÉTIER, et c'est la seule chose
+               de ce rituel qui change. Prendre rendez-vous chez un coiffeur, se
+               faire mettre de côté un vêtement, réserver un bouquet : voir
+               `mots.agir` dans `fantomes.ts`. */
             <div className="mu-rendu-ok">
+              {/* LE FANTÔME FÊTE, ET C'EST LE SEUL ENDROIT DU PRODUIT OÙ IL LE
+                  FAIT. On vient de lui donner quelque chose que personne d'autre
+                  n'a — un avis sur soi — et un écran qui enchaîne sur trois
+                  boutons sans un merci traite ça comme une formalité. */}
+              <span className="mu-fete" aria-hidden="true">
+                <Signe classe="mu-fete-s" />
+              </span>
+              <h3 className="mu-fete-t">Merci pour votre avis&nbsp;!</h3>
+              <p className="mu-fete-p">
+                {partage
+                  ? `Votre ${mots.essayage} rejoint le mur ${chezQui(mur.lieu)}.`
+                  : "Rien n’a été publié : votre essai reste pour vous."}
+                <br />
+                Voici ce que vous pouvez faire maintenant.
+              </p>
+
+              <div className="mu-agir">
+                {/* OUVRIR UN SALON — le geste plein. Il ouvre CELUI de l'annonce,
+                    avec ses propositions, son vote et sa réservation : on n'en
+                    fabrique pas un second pour l'essai. */}
+                {onSalon && rendu && !rendu.souci && (
+                  <button
+                    type="button"
+                    className="mu-agir-b plein"
+                    onClick={() =>
+                      onSalon({ quoi: piece.nom, prix: piece.prix, image: rendu.image, note })
+                    }
+                  >
+                    <i aria-hidden="true">
+                      <svg className="mu-tr" viewBox="0 0 24 24">
+                        <path d="M9 8.4a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4ZM2.8 20.2c0-3.4 2.8-5.6 6.2-5.6s6.2 2.2 6.2 5.6M16.2 5.6a3.2 3.2 0 0 1 0 6M17.6 15.1c2.3.6 3.8 2.5 3.8 5.1" />
+                      </svg>
+                    </i>
+                    <span>
+                      <b>Ouvrir un salon</b>
+                      <em>pour en discuter avec mes amis</em>
+                    </span>
+                    <s aria-hidden="true">→</s>
+                  </button>
+                )}
+                {/* L'ACTION DU MÉTIER. Elle ouvre la conversation avec le
+                    commerçant — voir `prevenir` — et c'est le seul endroit du
+                    parcours où l'on demande quelque chose. */}
+                <button
+                  type="button"
+                  className="mu-agir-b"
+                  disabled={restants < 1}
+                  onClick={() => void prevenir(piece)}
+                >
+                  <i aria-hidden="true">
+                    <Trace cle={mots.agir.picto} />
+                  </i>
+                  <span>
+                    <b>{mots.agir.titre}</b>
+                    <em>{mots.agir.detail}</em>
+                  </span>
+                  <s aria-hidden="true">→</s>
+                </button>
+                {onFavori && (
+                  <button
+                    type="button"
+                    className={`mu-agir-b${favori ? " on" : ""}`}
+                    onClick={onFavori}
+                  >
+                    <i aria-hidden="true">
+                      <svg className="mu-tr" viewBox="0 0 24 24">
+                        <path d="M12 20.6S3.6 15.4 3.6 9.8a4.9 4.9 0 0 1 8.4-3.4 4.9 4.9 0 0 1 8.4 3.4c0 5.6-8.4 10.8-8.4 10.8Z" />
+                      </svg>
+                    </i>
+                    <span>
+                      <b>{favori ? "Dans vos favoris" : "Mettre en favori"}</b>
+                      <em>Pour le retrouver plus tard</em>
+                    </span>
+                    <s aria-hidden="true">→</s>
+                  </button>
+                )}
+              </div>
+
               {/* MÊME LA CONFIRMATION NOMME LE LIEU. « Le commerçant vous
                   attend » était la dernière phrase générique du parcours, et
                   c'est celle qu'on relit en arrivant sur place. */}
@@ -2530,22 +2799,46 @@ function Essai({
                   et le salon ne saurait rien — le défaut qu'on corrige, en pire,
                   parce que cette fois elle y croit. Même règle que les
                   croissants : voir `lib/direct/prevenir.ts`. */}
-              <b>
-                {decide === "passe"
-                  ? "C’est noté — au moins, vous savez."
-                  : envoi?.par === "partage" || envoi?.par === "whatsapp"
-                    ? `Envoyez le message, et ${chezQui(mur.lieu)} vous répondra.`
-                    : envoi?.par === "abandon"
+              {/* ═══ LA CONFIRMATION N'ARRIVE QU'APRÈS LE GESTE ══════════════
+
+                  ELLE S'AFFICHAIT TOUT DE SUITE, et c'était devenu un mensonge :
+                  depuis que l'écran d'action existe, on arrive ici sans avoir
+                  rien demandé à personne, et l'écran annonçait quand même « On
+                  prépare votre message… » sous trois boutons qu'on n'avait pas
+                  touchés. Elle attend donc `envoi` — c'est-à-dire la preuve
+                  qu'une conversation s'est vraiment ouverte.
+
+                  ET ON NE DIT JAMAIS « C'EST RÉSERVÉ ». Ni la feuille de partage
+                  ni WhatsApp n'ENVOIENT : ils ouvrent, et c'est encore à la
+                  personne d'appuyer sur « envoyer ». Dire « on vous attend »
+                  avant ça lui ferait croire que c'est fait, et le commerçant ne
+                  saurait rien. */}
+              {envoi && (
+                <p className="mu-envoi">
+                  <b>
+                    {envoi.par === "abandon"
                       ? "Vous avez refermé le partage."
-                      : "On prépare votre message…"}
-              </b>
-              <em>
-                {decide === "pris" && envoi?.par === "whatsapp"
-                  ? `WhatsApp s’est ouvert sur la conversation avec ${chezQui(mur.lieu)}, le message écrit. Une adresse WhatsApp ne peut pas transporter d’image — le bouton ci-dessous envoie le rendu à part.`
-                  : decide === "pris" && envoi?.par === "abandon"
-                    ? "Rien n’a été envoyé, mais votre essai est bien posé :"
-                    : "Voilà ce qui vient d’être posé sur le mur, ici, pour deux jours :"}
-              </em>
+                      : `Envoyez le message, et ${chezQui(mur.lieu)} vous répondra.`}
+                  </b>
+                  {envoi.par === "whatsapp" && (
+                    <em>
+                      WhatsApp s’est ouvert sur la conversation avec{" "}
+                      {chezQui(mur.lieu)}, le message écrit. Une adresse WhatsApp ne
+                      peut pas transporter d’image — le bouton ci-dessous envoie le
+                      rendu à part.
+                    </em>
+                  )}
+                </p>
+              )}
+              {/* CE QUI EST PARTI SUR LE MUR, MONTRÉ PLUTÔT QUE DIT. Il n'y a
+                  rien à montrer quand la case a été décochée : `pose` est alors
+                  vide, et cette phrase ne s'écrit pas. */}
+              {pose && (
+                <p className="mu-pose-t">
+                  Voilà ce qui vient d’être posé sur le mur, ici, pour deux
+                  jours&nbsp;:
+                </p>
+              )}
               {/* ═══ LA PREUVE, PAS L'ANNONCE ═══
 
                   « Je n'ai pas l'impression que c'est sauvegardé sur le mur du
@@ -2681,121 +2974,108 @@ function Essai({
               </p>
               {note > 0 && <p className="mu-avis-m">{MOTS_NOTE[note]}</p>}
 
-              {/* ═══ CE QUI PLAÎT, ET C'EST LA QUESTION QUI MANQUAIT ══════════
+              {/* ═══ UN PETIT MOT, ET IL EST FACULTATIF ══════════════════════
 
-                  UNE NOTE SEULE NE DIT PAS POURQUOI. Quatre fantômes sur une
-                  coupe apprennent au commerçant que ça a plu ; ils ne lui
-                  apprennent pas si c'est la longueur ou la couleur, c'est-à-dire
-                  la seule chose qu'il puisse changer demain.
+                  « Commentaire facultatif. »
 
-                  LES QUATRE ÉTIQUETTES VIENNENT DU MÉTIER, comme tous les mots
-                  de cet écran : on aime le VOLUME d'une coupe, la TENUE d'un
-                  vernis, le TRAIT d'un tatouage. Voir `mots.aime`.
+                  C'EST CE QUI FAIT LA DIFFÉRENCE ENTRE UNE NOTE ET UN MUR. Sur
+                  la maquette du mur, ce n'est pas la note qu'on lit en premier :
+                  c'est « Je ne pensais pas qu'il m'irait aussi bien » sous la
+                  photo de Nathalie. Quatre fantômes disent qu'elle a aimé ; sa
+                  phrase dit POURQUOI, et c'est elle qui décide le suivant.
 
-                  ELLES NE S'OUVRENT QU'UNE FOIS NOTÉ. Demander ce qui plaît à
+                  DEUX CENTS CARACTÈRES, ET LE COMPTE SE VOIT. Sans plafond on
+                  reçoit des pavés que personne ne lit sous une vignette ; sans
+                  compteur, on écrit et on se fait couper.
+
+                  IL N'APPARAÎT QU'UNE FOIS NOTÉ. Demander un commentaire à
                   quelqu'un qui n'a pas encore dit si ça lui plaisait est une
-                  question posée à l'envers — et cinq étiquettes de plus sur un
-                  écran qui en demande déjà une le rendraient illisible. */}
+                  question posée à l'envers. */}
               {note > 0 && (
-                <div className="mu-aime">
-                  <p>Qu’est-ce qui vous plaît le plus&nbsp;?</p>
-                  <div role="group" aria-label="Ce qui vous plaît le plus">
-                    {[...mots.aime, "Autre"].map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        aria-pressed={aime === t}
-                        className={aime === t ? "on" : undefined}
-                        onClick={() => setAime((v) => (v === t ? null : t))}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
+                <div className="mu-mot">
+                  <label htmlFor="mu-mot-c">
+                    Un petit mot sur {mots.ceci}&nbsp;?<em> (optionnel)</em>
+                  </label>
+                  <textarea
+                    id="mu-mot-c"
+                    rows={2}
+                    maxLength={200}
+                    value={commentaire}
+                    placeholder={MOTS_EXEMPLE[note]}
+                    onChange={(e) => setCommentaire(e.target.value)}
+                  />
+                  <s>{commentaire.length}/200</s>
                 </div>
               )}
 
-              {/* ═══ LES TROIS SUITES, DANS L'ORDRE DE SA PHRASE ══════════════
+              {/* ═══ « PARTAGER MON ESSAI POUR AIDER LES AUTRES ? » ═══════════
 
-                  « Ça va sur le mur du commerçant, et ils en parlent avec leurs
-                  amis. » LE SALON PASSE DONC DEVANT, et c'est un renversement :
-                  « Je réserve » était le geste plein de cet écran depuis le
-                  début. On ne choisit pas une coupe, une monture ou un tatouage
-                  tout seul — c'est le genre de décision où l'on demande — et
-                  celui qui demande finit par réserver, tandis que celui à qui
-                  l'on demande de réserver tout de suite referme.
+                  C'EST LA SEULE CASE À COCHER DE TOUT LE PRODUIT, et elle vaut
+                  la peine : le mur du commerçant n'existe que par elle. Sans
+                  case, on publiait la photo de quelqu'un sur le mur d'un
+                  commerce parce qu'il avait noté — ce qui est exactement ce que
+                  l'écran de la photo venait de promettre qu'on ne ferait pas.
 
-                  LES TROIS POSENT LE FANTÔME SUR LE MUR, y compris le salon :
-                  c'est le troisième verdict, `essaye`, qui n'existait pas. Sans
-                  lui, demander leur avis à ses amis EFFAÇAIT l'essai du mur du
-                  commerçant — exactement ce que cette refonte doit garantir. */}
+                  ELLE EST COCHÉE D'AVANCE, ET C'EST UN CHOIX ASSUMÉ. Décochée,
+                  le mur reste vide, donc personne ne voit ce que ça donne sur de
+                  vraies têtes, donc personne n'essaie. Cochée, elle reste
+                  VISIBLE et se décoche d'un appui, au-dessus du bouton et pas
+                  dans un réglage — ce qui est la différence entre un défaut
+                  assumé et un défaut caché.
+
+                  ET ELLE DIT À QUOI ÇA SERT, pas ce que ça fait : « pour aider
+                  les autres à voir comment ça rend en vrai ». */}
+              {note > 0 && (
+                <button
+                  type="button"
+                  className={`mu-part${partage ? " on" : ""}`}
+                  aria-pressed={partage}
+                  onClick={() => setPartage((v) => !v)}
+                >
+                  <i aria-hidden="true">{partage ? "✓" : ""}</i>
+                  <span>
+                    {/* L'ARTICLE S'ACCORDE, ET C'EST LA SEULE REGLE DE GRAMMAIRE
+                        DE CE FICHIER. « essayage » est masculin, « projection »
+                        est feminin : mesure faite, l'ecran de la ciriere disait
+                        « Ajouter mon projection ». Deux cas connus, deux
+                        articles — pas une chaine de plus par metier. */}
+                    <b>
+                      Ajouter {mots.essayage === "projection" ? "ma" : "mon"}{" "}
+                      {mots.essayage} au mur du commerçant
+                    </b>
+                    <em>Pour aider les autres à voir ce que ça donne en vrai</em>
+                  </span>
+                </button>
+              )}
+
+              {/* ═══ UN SEUL GESTE POUR SORTIR DE L'AVIS ══════════════════════
+
+                  « Puis action commerciale + ouvrir un salon. »
+
+                  LES TROIS ACTIONS ÉTAIENT ICI, SOUS LA NOTE, et c'était une
+                  faute de rythme : on demandait de juger et de décider dans le
+                  même écran, donc on faisait l'un des deux à moitié. « Continuer »
+                  ferme l'avis — la note part, le commentaire part, le mur reçoit
+                  si on l'a laissé cocher — et l'écran d'après ne fait plus que
+                  proposer la suite.
+
+                  IL NE BLOQUE PAS SUR LA NOTE : on peut continuer sans avoir
+                  touché un fantôme. Ce qui est facultatif se donne volontiers ;
+                  ce qui est obligatoire se donne au hasard. */}
               <div className="mu-avis-g">
-                {onSalon && rendu && !rendu.souci && (
-                  <button
-                    type="button"
-                    className="mu-cta plein essai"
-                    onClick={() => {
-                      poser("essaye");
-                      onSalon({
-                        quoi: piece.nom,
-                        prix: piece.prix,
-                        image: rendu.image,
-                        note,
-                      });
-                    }}
-                  >
-                    <i aria-hidden="true">💬</i>
-                    <span>
-                      <b>En parler avec mes amis</b>
-                      <em>Le rendu part dans votre salon privé</em>
-                    </span>
-                    <s aria-hidden="true">→</s>
-                  </button>
-                )}
-                <div className="mu-avis-duo">
-                  {/* LE GESTE D'ACHAT N'EST PAS LE MÊME MÉTIER À MÉTIER. On
-                      réserve une séance chez une prothésiste, un créneau chez un
-                      coiffeur, et on met une pièce de côté dans une boutique. */}
-                  {/* PAS D'EMOJI DE CALENDRIER, UN TRACÉ. Celui d'Apple arrive
-                      avec sa date du 17 juillet en couleurs : on lit une
-                      information là où il n'y en a pas, et le dessin change
-                      d'un téléphone à l'autre. Même règle, même grille de 24 et
-                      même épaisseur que le rail de l'annonce. */}
-                  <button
-                    type="button"
-                    disabled={restants < 1}
-                    onClick={() => poser("pris")}
-                  >
-                    <i aria-hidden="true">
-                      <svg className="mu-avis-i" viewBox="0 0 24 24">
-                        <rect x="3.2" y="5" width="17.6" height="16" rx="3" />
-                        <path d="M3.2 10h17.6M8 2.8v4.4M16 2.8v4.4" />
-                      </svg>
-                    </i>
-                    {mots.reserver}
-                  </button>
-                  {/* METTRE EN FAVORI EST LE GESTE DE LA CARTE, PAS UN NOUVEAU.
-                      Il est branché sur le même `garderLeSommet` que le rail de
-                      l'annonce : un second système de favoris pour l'essai
-                      aurait donné deux poches, et celle qu'on ne regarde pas se
-                      serait vidée toute seule.
-                      IL N'APPARAÎT QUE LÀ OÙ IL Y A UNE CARTE. Sur le mur seul
-                      et sur la page du commerce, `onFavori` est absent : le
-                      bouton ne se dessine pas, plutôt que de ne rien faire. */}
-                  {onFavori && (
-                    <button
-                      type="button"
-                      className={favori ? "on" : undefined}
-                      onClick={() => {
-                        if (!decide) poser("essaye");
-                        onFavori();
-                      }}
-                    >
-                      <i aria-hidden="true">{favori ? "❤️" : "♡"}</i>
-                      {favori ? "Dans vos favoris" : "Mettre en favori"}
-                    </button>
-                  )}
-                </div>
+                <button
+                  type="button"
+                  className="mu-cta plein essai"
+                  onClick={() => {
+                    poser("essaye");
+                    setEtape("agir");
+                  }}
+                >
+                  <span>
+                    <b>Continuer</b>
+                  </span>
+                  <s aria-hidden="true">→</s>
+                </button>
                 {/* ON PEUT ENCORE CHANGER D'AVIS SUR LE STYLE. C'est le geste le
                     plus fréquent du produit, et le cacher derrière une décision
                     obligerait à ressortir pour recommencer. */}
@@ -2814,7 +3094,10 @@ function Essai({
               {rate
                 ? "Merci : c’est ce qui nous dit sur quels métiers l’essai tient debout."
                 : etape === "avis"
-                  ? "Quoi que vous décidiez, votre essai reste sur le mur : c’est ce qui dit au commerçant ce qui plaît, et aux autres ce qu’ils peuvent essayer."
+                  ? // ELLE DISAIT « votre essai reste sur le mur, quoi que vous
+                    // decidiez », ce qui est FAUX depuis qu'une case decide. Et
+                    // la case le dit deja, trois centimetres plus haut.
+                    ""
                   : "Rien n’est publié tant que vous n’avez pas donné votre avis."}
             </p>
           )}
@@ -3087,7 +3370,13 @@ function Styles() {
            « 4/5 » se lit comme une note de service ; quatre fantomes allumes
            sur cinq se lisent d'un coup d'oeil et disent de quel produit on
            parle. */
-        .mu-c-note{display:inline-flex;gap:1.5px;}
+        /* ELLE TENAIT SUR UNE COLONNE, ET C'EST UN DEFAUT DE MESURE ANCIEN.
+           Ecrite display:inline-flex toute seule, elle est un ELEMENT FLEXIBLE
+           de .mu-c-e, qui passe a la ligne — donc elle se faisait ecraser a
+           dix points de large et ses cinq fantomes s'empilaient l'un sur
+           l'autre. flex:none lui rend sa largeur : c'est la seule chose de
+           cette ligne qui ne doit jamais retrecir. */
+        .mu-c-e .mu-c-note{display:flex;flex:none;align-items:center;gap:1.5px;}
         .mu-c-ns{width:10px;height:11px;opacity:.26;}
         .mu-c-ns .mu-f-corps{fill:#5A6B7C;}
         .mu-c-ns .mu-f-oeil,.mu-c-ns .mu-f-bouche{display:none;}
@@ -3758,6 +4047,191 @@ function Styles() {
            au voisinage. Posé sans regle sur le bouton violet, il sortait donc en
            NOIR — un aplat sombre au milieu d'un degrade clair, mesure a
            l'ecran. Le corps devient blanc, le visage prend l'encre du bouton. */
+        /* ═══ L'ECRAN DE LA PHOTO ═══════════════════════════════════════════
+
+           IL NE DISAIT QU'UNE PHRASE, et c'etait une de trop et trois de moins.
+           « Reculez d'un pas et cadrez la table entiere » est un conseil ; il en
+           faut quatre, parce que ce sont EUX qui decident de la qualite du
+           rendu. Un cadrage moyen donne un rendu moyen, et c'est la derniere
+           chose qu'on puisse encore corriger.
+
+           LES CONSEILS ET L'EXEMPLE PARTAGENT UNE LIGNE. Empiles, il faut faire
+           defiler entre les deux, c'est-a-dire les comparer de memoire. */
+        .mu-ph-tete{margin-bottom:14px;}
+        .mu-ph-tete h2{margin:0;font-size:23px;font-weight:850;
+          letter-spacing:-.03em;line-height:1.1;color:#fff;}
+        .mu-ph-tete p{margin:6px 0 0;font-size:13.5px;line-height:1.45;
+          color:var(--mu-pale);}
+        .mu-ph{display:grid;grid-template-columns:1fr 1fr;gap:12px;
+          align-items:start;}
+        .mu-ph-l{list-style:none;margin:0;padding:0;display:flex;
+          flex-direction:column;gap:9px;}
+        .mu-ph-l li{display:flex;align-items:center;gap:9px;min-width:0;}
+        .mu-ph-l li i{flex:none;display:grid;place-items:center;
+          width:38px;height:38px;border-radius:12px;font-style:normal;
+          background:rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.12);color:#D8E4EE;}
+        .mu-ph-l li span{min-width:0;}
+        .mu-ph-l li b{display:block;font-size:12.5px;font-weight:800;
+          color:#E8EFF6;line-height:1.2;}
+        .mu-ph-l li em{display:block;margin-top:1px;font-style:normal;
+          font-size:11px;font-weight:650;color:var(--mu-pale);line-height:1.2;}
+        .mu-tr{width:20px;height:20px;display:block;fill:none;
+          stroke:currentColor;stroke-width:1.7;stroke-linecap:round;
+          stroke-linejoin:round;}
+        .mu-ph-v{position:relative;}
+        .mu-ph-v .mu-viseur{margin:0;}
+        /* ON DIT QUE CE N'EST PAS LA SIENNE, ET ON LE DIT SUR L'IMAGE. Tant
+           qu'aucune photo n'a ete prise, celle du viseur vient du depot : sans
+           ce mot, on croit reconnaitre un apercu de soi. */
+        .mu-ph-x{position:absolute;left:50%;bottom:9px;transform:translateX(-50%);
+          font-size:10.5px;font-weight:800;letter-spacing:.02em;color:#fff;
+          background:rgba(6,14,11,.78);border-radius:999px;padding:5px 11px;
+          white-space:nowrap;
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+        .mu-cta.plein.essai i .mu-tr{width:24px;height:24px;}
+        /* ═══ CE QU'ON PROMET AVANT DE DEMANDER UNE PHOTO ═══
+           C'est la phrase la plus importante de l'ecran, et elle etait en petit
+           sous le bouton, melee a « gratuit, sans rendez-vous ». On demande a
+           quelqu'un de se photographier : c'est le seul moment du produit ou
+           l'on peut le perdre pour de bon, et la seule chose qu'il veut savoir
+           est ce qu'on va faire de l'image. */
+        .mu-prive{display:flex;align-items:flex-start;justify-content:center;
+          gap:7px;margin:14px 0 0;font-size:11.5px;line-height:1.45;
+          color:var(--mu-pale);text-align:center;}
+        .mu-prive i{font-style:normal;font-size:11.5px;flex:none;}
+        @media (max-width:359px){
+          .mu-ph{grid-template-columns:1fr;}
+          .mu-ph-v{max-width:220px;margin:0 auto;}
+        }
+
+        /* ═══ LE PETIT MOT, ET C'EST LUI QU'ON LIRA ═════════════════════════
+
+           Sur le mur, ce n'est pas la note qu'on lit en premier : c'est « Je ne
+           pensais pas qu'il m'irait aussi bien » sous la photo. Quatre fantomes
+           disent qu'elle a aime ; sa phrase dit ce qui a decide. */
+        .mu-mot{position:relative;margin-top:16px;text-align:left;
+          padding:13px 14px 26px;border-radius:16px;
+          background:rgba(255,255,255,.05);
+          border:1px solid rgba(255,255,255,.12);
+          animation:muApres .38s ease both;}
+        .mu-mot label{display:block;font-size:13.5px;font-weight:800;
+          color:#E8EFF6;}
+        .mu-mot label em{font-style:normal;font-weight:650;
+          color:var(--mu-pale);}
+        .mu-mot textarea{display:block;width:100%;margin-top:9px;resize:none;
+          font:inherit;font-size:14px;line-height:1.4;color:#E8EFF6;
+          background:rgba(0,0,0,.28);border-radius:12px;padding:10px 12px;
+          border:1px solid rgba(255,255,255,.14);}
+        .mu-mot textarea::placeholder{color:#6F8697;}
+        .mu-mot textarea:focus-visible{outline:2px solid #C9BCFF;
+          outline-offset:1px;}
+        .mu-mot s{position:absolute;right:14px;bottom:9px;text-decoration:none;
+          font-size:11px;font-weight:700;color:var(--mu-pale);}
+
+        /* ═══ LA SEULE CASE A COCHER DU PRODUIT ═════════════════════════════
+           Le mur n'existe que par elle. Cochee d'avance — sinon le mur reste
+           vide, donc personne ne voit ce que ca donne sur de vraies tetes, donc
+           personne n'essaie — mais VISIBLE, et elle se decoche d'un appui. */
+        .mu-part{display:flex;align-items:center;gap:11px;width:100%;
+          margin-top:11px;padding:12px 14px;font:inherit;cursor:pointer;
+          text-align:left;border-radius:16px;
+          background:rgba(255,255,255,.04);
+          border:1px solid rgba(255,255,255,.12);
+          transition:background .16s ease,border-color .16s ease;}
+        .mu-part i{flex:none;display:grid;place-items:center;width:26px;
+          height:26px;border-radius:50%;font-style:normal;font-size:14px;
+          font-weight:850;color:#1A1040;background:transparent;
+          border:1.5px solid rgba(255,255,255,.3);
+          transition:background .16s ease,border-color .16s ease;}
+        .mu-part b{display:block;font-size:13px;font-weight:800;color:#E8EFF6;
+          line-height:1.25;}
+        .mu-part em{display:block;margin-top:2px;font-style:normal;
+          font-size:11.5px;color:var(--mu-pale);line-height:1.25;}
+        .mu-part.on{background:rgba(139,125,246,.14);
+          border-color:rgba(139,125,246,.45);}
+        .mu-part.on i{background:#C9BCFF;border-color:#C9BCFF;}
+        .mu-part:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
+
+        /* ═══ CE QU'ON PEUT FAIRE MAINTENANT ════════════════════════════════
+
+           « Merci pour votre avis ! Ce look vous plait ? Voici ce que vous
+           pouvez faire maintenant. »
+
+           LE FANTOME FETE, ET C'EST LE SEUL ENDROIT DU PRODUIT OU IL LE FAIT. On
+           vient de lui donner quelque chose que personne d'autre n'a — un avis
+           sur soi — et enchainer sur trois boutons sans un merci traite ca comme
+           une formalite. */
+        .mu-fete{display:grid;place-items:center;width:76px;height:76px;
+          margin:2px auto 0;border-radius:50%;
+          background:radial-gradient(circle,rgba(139,125,246,.42),
+            rgba(139,125,246,0) 68%);
+          animation:muFete .6s cubic-bezier(.34,1.56,.64,1) both;}
+        .mu-fete-s{width:48px;height:53px;}
+        .mu-fete-s .mu-f-corps{fill:#fff;}
+        .mu-fete-s .mu-f-oeil{fill:#3B1E6E;}
+        .mu-fete-s .mu-f-bouche{fill:none;stroke:#3B1E6E;stroke-width:1.9;
+          stroke-linecap:round;}
+        @keyframes muFete{
+          0%{opacity:0;transform:scale(.4);}
+          100%{opacity:1;transform:none;}
+        }
+        .mu-fete-t{margin:8px 0 0;font-size:23px;font-weight:850;
+          letter-spacing:-.03em;color:#fff;}
+        .mu-fete-p{margin:6px 0 0;font-size:13.5px;line-height:1.5;
+          color:var(--mu-pale);}
+        /* LE BLOC N'EST PLUS UNE CONFIRMATION VERTE, C'EST UN ECRAN. Il portait
+           le fond et la bordure menthe de « c'est fait » ; on y arrive
+           maintenant SANS avoir rien demande a personne, et une confirmation
+           verte sous trois boutons qu'on n'a pas touches annonce une chose qui
+           n'a pas eu lieu. */
+        .mu-rendu-ok:has(.mu-agir){background:transparent;border:0;padding:0;}
+        .mu-envoi{margin:16px 0 0;padding:13px 14px;border-radius:16px;
+          text-align:left;background:rgba(61,226,166,.1);
+          border:1px solid rgba(61,226,166,.34);}
+        .mu-envoi b{display:block;font-size:14px;font-weight:850;color:#9FF3D2;}
+        .mu-envoi em{display:block;margin-top:5px;font-style:normal;
+          font-size:12px;line-height:1.45;color:var(--mu-pale);}
+        .mu-pose-t{margin:16px 0 0;font-size:12.5px;color:var(--mu-pale);}
+        .mu-agir{display:flex;flex-direction:column;gap:10px;margin-top:18px;}
+        .mu-agir-b{display:flex;align-items:center;gap:12px;width:100%;
+          font:inherit;cursor:pointer;text-align:left;border-radius:17px;
+          padding:14px 15px;color:#E8EFF6;background:transparent;
+          border:1px solid rgba(255,255,255,.18);
+          transition:transform .12s ease,border-color .16s ease;}
+        .mu-agir-b i{flex:none;display:flex;font-style:normal;}
+        .mu-agir-b .mu-tr{width:24px;height:24px;stroke-width:1.8;}
+        .mu-agir-b span{flex:1;min-width:0;}
+        /* ILS PRENAIENT LA MENTHE DE LA CONFIRMATION, et le coupable est
+           .mu-rendu-ok b, declare plus bas dans cette meme feuille : meme
+           poids, donc c'est lui qui gagnait. « Ouvrir un salon » s'affichait en
+           vert sur un bouton violet. Une couleur heritee d'un bloc qui dit
+           « c'est fait » n'a rien a faire sur un bouton qui propose. */
+        .mu-rendu-ok .mu-agir-b b{display:block;font-size:15px;font-weight:850;
+          line-height:1.2;color:inherit;}
+        .mu-rendu-ok .mu-agir-b em{color:var(--mu-pale);}
+        .mu-rendu-ok .mu-agir-b.plein em{color:rgba(255,255,255,.82);}
+        .mu-agir-b em{display:block;margin-top:2px;font-style:normal;
+          font-size:12px;color:var(--mu-pale);line-height:1.25;}
+        .mu-agir-b s{text-decoration:none;font-size:17px;line-height:1;
+          flex:none;opacity:.6;}
+        .mu-agir-b:active{transform:scale(.99);}
+        .mu-agir-b:disabled{opacity:.38;cursor:default;}
+        .mu-agir-b:disabled:active{transform:none;}
+        .mu-agir-b.on{color:#FF8A9B;border-color:rgba(255,138,155,.5);
+          background:rgba(255,138,155,.1);}
+        .mu-agir-b.on .mu-tr{fill:currentColor;}
+        /* LE SALON PASSE DEVANT, ET C'EST UN RENVERSEMENT. « Je reserve » etait
+           le geste plein depuis le debut. On ne choisit pas une coupe, une
+           monture ou un tatouage tout seul : celui qui demande finit par
+           reserver, tandis que celui a qui l'on demande de reserver tout de
+           suite referme. */
+        .mu-agir-b.plein{border-color:transparent;color:#fff;
+          background:linear-gradient(112deg,#6D5BFF,#A855F7 58%,#D946B8);
+          box-shadow:0 16px 34px -14px rgba(139,92,246,.8);}
+        .mu-agir-b.plein em{color:rgba(255,255,255,.82);}
+        .mu-agir-b.plein s{opacity:1;}
+
         .mu-cta-f{width:30px;height:33px;flex:none;overflow:visible;}
         .mu-cta-f .mu-f-corps{fill:#fff;}
         .mu-cta-f .mu-f-oeil{fill:#3B1E6E;}
