@@ -2806,8 +2806,14 @@ console.log("\n══ la page du commerce ══");
       // première icône ajoutée.
       return c.querySelector(".cd-quand")?.textContent?.replace(/\s+/g, " ").trim() ?? null;
     });
+    // ON TESTE LE MOT, PAS CE QUI LE PRÉCÈDE. La pastille porte maintenant son
+    // pictogramme — 🌙 pour demain, ⚡ pour maintenant — donc son texte commence
+    // par la lune et `^demain` n'accrochait plus. L'écran disait exactement la
+    // bonne chose (« 🌙 Demain · jusqu'à 19 h ») et la garde le refusait : deux
+    // fois de suite le même défaut, sur la même pastille, parce qu'elle décrit
+    // une FORME au lieu de chercher un MOT.
     dire(
-      /^demain/i.test(dit ?? ""),
+      /\bdemain\b/i.test(dit ?? ""),
       `et une fleuriste fermée le soir dit que c'est pour demain (« ${dit ?? "rien"} »)`,
     );
     await tard.close();
