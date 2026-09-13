@@ -2629,6 +2629,90 @@ console.log("\n══ la page du commerce ══");
   await large.close();
 }
 
+// ═══ LE DIRECT NE SE VIDE PAS LE SOIR ═════════════════════════════════════
+//
+// CE QUE ÇA PROTÈGE : « Les exemples dans la démo ont tous disparu. » Et la
+// capture le disait : Mode 0, Coiffeurs 0, Fleuristes 0, Ongleries 0, Créateurs
+// 0, Lunetiers 0 — pendant que le compteur « Tout » affichait 24.
+//
+// LE DÉFAUT ÉTAIT UNE RÈGLE INCOMPLÈTE, PAS UNE PANNE. Le paquet ne gardait que
+// ce qui n'est pas encore fini, et à vingt heures plus rien ne l'est. Il
+// existait bien un repli — hors des heures d'ouverture, l'application fait
+// comme s'il était midi — mais il ne couvre que 23 h → 8 h. Entre dix-neuf
+// heures et vingt-trois, c'est-à-dire À L'HEURE EXACTE OÙ L'ON REGARDE SON
+// TÉLÉPHONE, l'écran se vidait.
+//
+// CE QUI LE CORRIGE : quand la journée est finie, elle recommence. Le commerce
+// montre le programme qu'il a déjà donné, marqué « Demain » — rien n'est
+// inventé, et rien ne passe pour frais.
+{
+  console.log("\n══ le direct ne se vide pas le soir ══");
+  for (const [heure, quand] of [
+    [12.5, "à midi"],
+    [20, "à 20 h"],
+    [21.5, "à 21 h 30"],
+  ]) {
+    const soir = await nav.newContext({
+      viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+      isMobile: true, hasTouch: true, locale: "fr-FR",
+    });
+    await soir.clock.setFixedTime(
+      new Date(2026, 8, 2, Math.floor(heure), Math.round((heure % 1) * 60), 0),
+    );
+    await soir.addInitScript(() =>
+      localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
+    );
+    const pS = await soir.newPage();
+    await pS.goto(`${BASE}/autour-de-moi`, { waitUntil: "networkidle" });
+    await pS.waitForTimeout(2400);
+    const ouvrir = await pS.$("button:has-text('TOUT')");
+    if (ouvrir) {
+      await ouvrir.click();
+      await pS.waitForTimeout(700);
+    }
+    const n = await pS.evaluate(() =>
+      [...document.querySelectorAll("li")]
+        .map((e) => e.textContent.replace(/\s+/g, " ").trim())
+        .filter((t) =>
+          /^(🍽️|👗|🍸|💇|💐|💅|🕯️|👓)/.test(t),
+        )
+        .map((t) => Number(t.match(/(\d+)$/)?.[1] ?? 0)),
+    );
+    const vides = n.filter((x) => x === 0).length;
+    dire(
+      n.length >= 8 && vides === 0,
+      `${quand}, aucun métier n'est vide (${n.join(" · ")})`,
+    );
+    await soir.close();
+  }
+  // ET CE QUI EST FERMÉ LE DIT, au lieu de se faire passer pour ouvert.
+  {
+    const tard = await nav.newContext({
+      viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+      isMobile: true, hasTouch: true, locale: "fr-FR",
+    });
+    await tard.clock.setFixedTime(new Date(2026, 8, 2, 21, 30, 0));
+    await tard.addInitScript(() =>
+      localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
+    );
+    const pR = await tard.newPage();
+    await pR.goto(`${BASE}/autour-de-moi?carte=fleur-marche`, { waitUntil: "networkidle" });
+    await pR.waitForTimeout(2200);
+    const dit = await pR.evaluate(() => {
+      const c = document.querySelector(".cd-carte:not(.dessous)");
+      if (!c) return null;
+      return [...c.querySelectorAll("*")]
+        .map((e) => (e.childElementCount === 0 ? e.textContent.trim() : ""))
+        .find((t) => /^(maintenant|demain)\b/i.test(t)) ?? null;
+    });
+    dire(
+      /^demain/i.test(dit ?? ""),
+      `et une fleuriste fermée le soir dit que c'est pour demain (« ${dit ?? "rien"} »)`,
+    );
+    await tard.close();
+  }
+}
+
 // ═══ LE MUR D'UN LIEU, D'APRÈS LA MAQUETTE ════════════════════════════════
 //
 // CE QUE ÇA PROTÈGE : « Restaurant, bars et événements : respecter le design là
@@ -2753,14 +2837,16 @@ console.log("\n══ la page du commerce ══");
     // comme pour un 404. La garde accusait deux photos parfaitement servies
     // (verifie : HTTP 200, JPEG valide). Une garde qui ne distingue pas « pas
     // encore chargee » de « introuvable » ne mesure rien.
-    await pT.evaluate(async () => {
-      const boite = document.querySelector(".mu-feuille") ?? document.scrollingElement;
-      for (let y = 0; y < 6; y++) {
-        boite.scrollTop = boite.scrollHeight;
-        await new Promise((r) => setTimeout(r, 220));
-      }
-    });
-    await pT.waitForTimeout(1400);
+    // ON APPROCHE CHAQUE VIGNETTE, UNE PAR UNE. Faire defiler le conteneur ne
+    // suffisait pas : la feuille du mur n'est pas toujours l'element qui
+    // defile, et deux photos sur douze restaient hors de portee du chargement
+    // differe. `scrollIntoViewIfNeeded` ne suppose rien de la mise en page.
+    const vignettes = await pT.$$(".mu-rang.grille .mu-c-p img");
+    for (const v of vignettes) {
+      await v.scrollIntoViewIfNeeded().catch(() => null);
+      await pT.waitForTimeout(90);
+    }
+    await pT.waitForTimeout(1500);
     const mur = await pT.evaluate(() => ({
       surLeMur: !!document.querySelector(".mu-haut.essai"),
       surLaPhoto: !!document.querySelector(".mu-ph-tete"),

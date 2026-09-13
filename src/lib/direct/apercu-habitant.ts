@@ -611,6 +611,29 @@ export type MomentJour = {
    */
   publie?: number;
   /**
+   * ═══ CE MOMENT EST CELUI DE DEMAIN ════════════════════════════════════════
+   *
+   * « Les exemples dans la démo ont tous disparu. »
+   *
+   * MESURÉ : à 20 h, Mode 0, Coiffeurs 0, Fleuristes 0, Ongleries 0, Créateurs
+   * 0, Lunetiers 0 — et le compteur « Tout » affichait quand même 24. Le
+   * paquet ne gardait que ce qui n'est pas encore fini (`heure < m.a`), et à
+   * huit heures du soir plus rien ne l'est. L'application se vidait chaque soir,
+   * exactement à l'heure où l'on regarde son téléphone.
+   *
+   * LA RÈGLE N'ÉTAIT PAS FAUSSE, ELLE ÉTAIT INCOMPLÈTE. « Le direct » d'une
+   * ville à 21 h, ce n'est pas un écran vide : c'est ce qui rouvre demain
+   * matin. Un habitant qui regarde le soir prépare sa journée du lendemain —
+   * c'est même le moment où il le fait.
+   *
+   * QUAND LA JOURNÉE EST FINIE, ELLE RECOMMENCE, et chaque moment porte ce
+   * drapeau. Il ne se joue pas maintenant (voir `seJoueMaintenant`, borné par
+   * `de` et `a`), il n'est jamais frais (voir `fraicheur`, qui exige qu'il se
+   * joue), et l'écran écrit « Demain » là où il écrivait l'heure. Rien n'est
+   * inventé : c'est le programme que le commerçant a déjà donné.
+   */
+  demain?: boolean;
+  /**
    * LA PHOTO DE CE MOMENT-LÀ — et elle passe devant celle du commerce.
    *
    * LE DÉFAUT QUI L'A FAIT NAÎTRE : « on ne me demande pas de prendre la photo,
@@ -3207,7 +3230,28 @@ const CARTES: CarteAutour[] = [
 
 /** Les moments encore d'actualité — en cours, ou à venir dans la journée. */
 export function momentsRestants(c: CarteAutour, heure: number): MomentJour[] {
-  return c.moments.filter((m) => heure < m.a);
+  const aujourdhui = c.moments.filter((m) => heure < m.a);
+  if (aujourdhui.length) return aujourdhui;
+  /**
+   * ═══ QUAND LA JOURNÉE EST FINIE, ELLE RECOMMENCE ══════════════════════════
+   *
+   * « Les exemples dans la démo ont tous disparu. » Mesuré à 20 h : Mode 0,
+   * Coiffeurs 0, Fleuristes 0, Ongleries 0, Créateurs 0, Lunetiers 0. À cette
+   * heure-là, plus aucun moment ne répond à `heure < m.a`, donc le paquet se
+   * vidait — précisément à l'heure où l'on regarde son téléphone.
+   *
+   * CE N'EST PAS UNE RUSE DE DÉMONSTRATION. « Le direct » d'une ville le soir,
+   * ce n'est pas un écran vide : c'est ce qui rouvre demain. On rend donc le
+   * programme du commerçant tel qu'il l'a donné, marqué `demain` — l'écran
+   * écrit « Demain » au lieu d'une heure, rien ne passe pour frais, et rien
+   * n'est inventé.
+   *
+   * `publie` TOMBE, ET C'EST OBLIGATOIRE : une annonce faite ce matin ne peut
+   * pas être « publiée il y a douze minutes » demain. `fraicheur` l'écarterait
+   * déjà puisqu'elle exige que le moment se joue, mais une donnée fausse qui
+   * n'est lue nulle part aujourd'hui finit toujours par être lue demain.
+   */
+  return c.moments.map(({ publie: _publie, ...m }) => ({ ...m, demain: true }));
 }
 
 /**
@@ -3240,7 +3284,11 @@ export function avecFlashDemo(c: CarteAutour, heure: number): CarteAutour {
   // ailleurs, et il y en avait deja un que j'avais manque (le paquet « tout »
   // ne passe pas par `autourDeMoi`). Dans la fonction, la regle voyage avec
   // elle et ne peut plus etre oubliee.
-  if (momentsRestants(c, heure).length === 0) return c;
+  // ET IL NE S'ALLUME PAS SUR LE PROGRAMME DE DEMAIN. `momentsRestants` fait
+  // maintenant recommencer la journée quand elle est finie — le test doit donc
+  // porter sur CE QUI RESTE AUJOURD'HUI, sans quoi un compte à rebours de
+  // trente minutes tournerait à trois heures du matin sur un commerce fermé.
+  if (!c.moments.some((m) => heure < m.a)) return c;
   // ═══ DEUX FENETRES PAR HEURE, BOUT A BOUT ═══
   //
   // PREMIERE VERSION : une seule fenetre, de l'heure pile a la demie. Elle
@@ -3836,12 +3884,20 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
     // MÊME RÈGLE QUE PLUS HAUT — voir `borneHoraire`. Le préfixe « Maintenant »
     // ne survit que devant une vraie borne : « Maintenant · ce matin » disait
     // deux fois la même chose et occupait un rectangle sur chaque annonce.
-    reste:
-      m && borneHoraire(m.quand)
-        ? seJoueMaintenant(m, heure)
-          ? `Maintenant · ${m.quand}`
-          : m.quand
-        : "",
+    // ET « DEMAIN » PASSE DEVANT LA BORNE quand la journée a recommencé : sans
+    // lui, une annonce du lendemain se lirait « ce midi » un soir à 21 h, ce
+    // qui est faux de douze heures.
+    reste: !m
+      ? ""
+      : m.demain
+        ? borneHoraire(m.quand)
+          ? `Demain · ${m.quand}`
+          : "Demain"
+        : borneHoraire(m.quand)
+          ? seJoueMaintenant(m, heure)
+            ? `Maintenant · ${m.quand}`
+            : m.quand
+          : "",
     icone: m?.icone ?? "📍",
     quoi: m?.titre ?? "",
     lignes: m?.lignes,
