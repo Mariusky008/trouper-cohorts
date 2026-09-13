@@ -47,6 +47,16 @@ export type Sortie =
   | { par: "whatsapp" }
   /** Le partage a été ouvert puis refermé sans rien choisir. */
   | { par: "abandon" }
+  /**
+   * LE COMMERCE EST INVENTÉ, DONC SON NUMÉRO AUSSI.
+   *
+   * « Ça ouvre bien WhatsApp mais propose mon propre carnet d'adresses. » Pas un
+   * défaut de code : `numeroDeFiction` produit une adresse valide dans sa forme
+   * et absente de l'annuaire de WhatsApp, qui s'ouvre alors sur la liste des
+   * conversations. On ne l'ouvre donc plus, et on montre le message qui
+   * partirait — voir `prevenir` dans `mur-contenu.tsx`.
+   */
+  | { par: "fiction"; telephone: string }
   | { par: "impossible"; pourquoi: string };
 
 /** Une image en `data:` devient un fichier, seule forme que le partage accepte. */
@@ -68,7 +78,16 @@ export async function partagerLEssai(o: {
   image: string;
   nom: string;
   texteAvecPhoto: string;
-  whatsapp: string;
+  /**
+   * LE CHEMIN DE SECOURS, QUAND LA FEUILLE DE PARTAGE N'EXISTE PAS.
+   *
+   * IL EST FACULTATIF, ET SEULEMENT POUR « quiconque ». Montrer son essai à ses
+   * amis n'a pas de destinataire connu d'avance : le carnet d'adresses est
+   * alors le BON écran — c'est là que sont les amis — et c'est le seul endroit
+   * du produit où l'ouvrir est juste. Écrire au commerçant, lui, exige son
+   * numéro, et `viser: "commercant"` ne part jamais sans.
+   */
+  whatsapp?: string;
   /**
    * QUI DOIT RECEVOIR, ET C'EST CE QUI DÉCIDE DE L'ORDRE DES DEUX CHEMINS.
    *
@@ -103,6 +122,10 @@ export async function partagerLEssai(o: {
    * Voir `viser` ci-dessus : sans le numéro, il n'y a pas de message.
    */
   if (o.viser === "commercant") {
+    // SANS NUMÉRO, ON N'OUVRE RIEN. Le carnet d'adresses ne contient pas le
+    // commerçant : l'ouvrir serait un cul-de-sac, et l'appelant a de quoi
+    // dire pourquoi — voir `telFiction` sur le mur.
+    if (!o.whatsapp) return { par: "impossible", pourquoi: "aucun numéro" };
     try {
       window.open(o.whatsapp, "_blank", "noopener,noreferrer");
       return { par: "whatsapp" };
@@ -143,7 +166,13 @@ export async function partagerLEssai(o: {
   }
 
   try {
-    window.open(o.whatsapp, "_blank", "noopener,noreferrer");
+    // ICI, ET ICI SEULEMENT, UNE ADRESSE SANS NUMÉRO EST LA BONNE : on montre
+    // son essai à quelqu'un qu'on connaît, donc WhatsApp doit demander lequel.
+    window.open(
+      o.whatsapp ?? `https://wa.me/?text=${encodeURIComponent(o.texteAvecPhoto)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
     return { par: "whatsapp" };
   } catch (e) {
     return { par: "impossible", pourquoi: e instanceof Error ? e.message : String(e) };

@@ -430,7 +430,26 @@ export function Histoire() {
           d'avance coûterait à tout le monde le prix de ceux qui l'essaient. */}
       {essai && (
         <div className="ld-essai" role="dialog" aria-modal="true" aria-label="ClikMe">
-          <iframe src={essai} title="ClikMe — essayer sur soi" />
+          {/* ═══ L'APPAREIL PHOTO DOIT ÊTRE AUTORISÉ EXPLICITEMENT ═══════════
+
+              « Avec un téléphone, la prise de photo ne fonctionne pas. Je peux
+              juste télécharger une photo de ma photothèque. »
+
+              C'EST L'IFRAME QUI LE COUPAIT. Un document embarqué n'hérite PAS
+              des permissions de la page qui l'embarque : sans `allow`, l'appareil
+              photo est refusé, et Safari ne le dit pas — il retire simplement
+              « Prendre une photo » du menu du champ de fichier. On voit donc une
+              seule entrée, la photothèque, et rien n'indique pourquoi.
+
+              LE DÉFAUT NE SE VOYAIT PAS EN LOCAL : hors iframe, l'application a
+              les permissions de la page, et le menu est complet. Il ne se voit
+              que sur un téléphone, depuis la page d'accueil — c'est-à-dire
+              exactement le chemin qu'on fait prendre à tout le monde. */}
+          <iframe
+            src={essai}
+            title="ClikMe — essayer sur soi"
+            allow="camera; clipboard-write"
+          />
           <button type="button" className="ld-essai-x" onClick={() => setEssai(null)}>
             <i aria-hidden="true">✕</i>
             Fermer

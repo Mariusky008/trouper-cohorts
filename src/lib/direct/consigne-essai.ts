@@ -72,6 +72,30 @@ export function consigne(
   partie: string,
   garder: string[] = [],
   change?: string,
+  /**
+   * ═══ CE QUE LA PIÈCE EST, EN TOUTES LETTRES ══════════════════════════════
+   *
+   * « La coiffure sélectionnée — un carré plongeant — n'a pas été créée sur la
+   * photo originale. »
+   *
+   * QUATRIÈME ÉCRITURE, ET LE DÉFAUT N'EST PLUS LE MÊME. Les trois premières
+   * cherchaient à PROTÉGER le visage, et elles y arrivaient de mieux en mieux.
+   * Celle-ci corrige l'autre moitié : le travail demandé n'était jamais fait.
+   *
+   * LA CONSIGNE DISAIT « reproduis fidèlement ce que l'image 2 montre des
+   * cheveux ». C'est-à-dire : DÉDUIS une coupe d'une photographie de quelqu'un
+   * d'autre, puis pose-la sur une autre tête. Deux opérations difficiles au lieu
+   * d'une — et quand la déduction rate, le modèle ne pose rien : il se rabat sur
+   * ce qu'il sait faire, c'est-à-dire refabriquer un portrait. Les deux moitiés
+   * du défaut rapporté sont la même faute.
+   *
+   * UNE PHRASE CHANGE LE PROBLÈME DE NATURE. « Un carré long qui s'arrête sous
+   * la mâchoire, coupé net, raie au milieu, sans dégradé » est une CIBLE, pas
+   * une devinette. Le modèle n'a plus à interpréter une image, il a à exécuter
+   * une description ; la référence ne sert plus qu'à confirmer la couleur, la
+   * matière et la finition. Voir `decrire` dans `fantomes.ts`.
+   */
+  decrire?: string,
 ): string {
   /**
    * CE QU'ON MODIFIE, ET LE REPLI EST VOLONTAIREMENT ÉTROIT.
@@ -120,9 +144,35 @@ export function consigne(
     // accordait le texte sur UN objet ; `change` dit tantôt « les cheveux »,
     // tantôt « la monture », tantôt « les ongles ». Un accord qui se trompe une
     // fois sur deux fait douter le modèle de ce dont on parle.
-    `Reproduis fidèlement ce que l'image 2 montre de ${court} : la forme, la`,
-    "longueur, la couleur, la matière, le motif, la finition et la brillance.",
+    // ═══ LA CIBLE EST ÉCRITE, ELLE N'EST PLUS À DEVINER ═══
+    //
+    // C'EST LA LIGNE QUI MANQUAIT, et son absence a produit la moitié du défaut :
+    // « la coiffure sélectionnée n'a pas été créée sur la photo originale ». On
+    // demandait de déduire une coupe d'une photo, puis de la poser. Quand la
+    // déduction rate, le modèle se rabat sur ce qu'il sait faire — refabriquer
+    // un portrait — et c'est exactement ce qu'on a vu.
+    ...(decrire
+      ? [
+          `RÉSULTAT ATTENDU, EN TOUTES LETTRES : ${decrire}.`,
+          "Cette description est la CIBLE. Exécute-la sur la personne de l'image 1.",
+          `L'image 2 ne sert qu'à confirmer la couleur, la matière et la finition de ${court}.`,
+        ]
+      : [
+          `Reproduis fidèlement ce que l'image 2 montre de ${court} : la forme, la`,
+          "longueur, la couleur, la matière, le motif, la finition et la brillance.",
+        ]),
     "Absolument rien d'autre de l'image 1 ne bouge.",
+    "",
+    // ═══ ET LE TRAVAIL DOIT ÊTRE VISIBLE ═══
+    //
+    // L'AUTRE MOITIÉ DU DÉFAUT : le rendu ressemblait à la photo de départ, à
+    // quelques pixels près. Toute la consigne insistait sur ce qui NE DOIT PAS
+    // bouger — et un modèle prudent obéit en ne faisant rien. Il faut donc dire
+    // aussi que l'inaction est un échec.
+    `Le changement doit être NET et VISIBLE sur ${court} : si l'on met le`,
+    "résultat à côté de l'image 1, la différence doit sauter aux yeux.",
+    "Un résultat identique à l'image 1 est un échec au même titre qu'un",
+    "résultat qui change le visage.",
     "",
     "═══ CE QUI RESTE STRICTEMENT IDENTIQUE À L'IMAGE 1 ═══",
     "",

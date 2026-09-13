@@ -932,7 +932,7 @@ export function Boutique() {
                  garbure » engage le commerçant sur une chose qui n'existe
                  peut-être plus et le met en faute de ne pas l'avoir. */
               const ecrire = commentPrevenir({
-                telephone: c.telephone ?? numeroDeFiction(c.id),
+                telephone: c.telephone || numeroDeFiction(c.id),
                 quoi: h.titre.toLowerCase(),
                 demande: true,
               });

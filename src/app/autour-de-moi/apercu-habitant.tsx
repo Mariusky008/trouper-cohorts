@@ -1349,6 +1349,18 @@ export function ApercuHabitant() {
   /** Le mur du commerce qu'on regarde, quand il est ouvert. Voir `MurContenu`. */
   const [murOuvert, setMurOuvert] = useState(false);
   /**
+   * PAR OÙ LA FEUILLE S'OUVRE, QUAND LE BOUTON LE SAIT.
+   *
+   * « Le fantôme amène sur l'essayage quand personne n'a encore essayé, mais
+   * quand une ou plusieurs personnes ont essayé, alors il amène sur le mur. »
+   * Le fantôme de la barre laisse donc `MurContenu` décider — il ne dit rien de
+   * ce qu'on veut. Les deux BOUTONS, eux, le disent : « Essayer sur moi » va à
+   * l'essai même si le mur est plein, « 2 essayages de cette coupe » va au mur
+   * même s'il est vide. Un bouton qui ouvre autre chose que ce qu'il annonce
+   * est la promesse la plus concrète qu'un écran puisse rompre.
+   */
+  const [murSur, setMurSur] = useState<"mur" | "depot" | undefined>(undefined);
+  /**
    * LE MUR OUVERT DEPUIS UN SOUVENIR, ET PAS DEPUIS LE PAQUET.
    *
    * « Comment accéder au mur du commerçant si on n'a plus accès à son profil ? »
@@ -2799,6 +2811,7 @@ export function ApercuHabitant() {
    */
   useEffect(() => {
     if (!essaiDemande || !dessus) return;
+    setMurSur("depot");
     setMurOuvert(true);
     setEssaiDemande(false);
   }, [essaiDemande, dessus]);
@@ -3856,7 +3869,7 @@ export function ApercuHabitant() {
     setTourEtat("prevenir");
     setPrevenir({
       nom: tourCarte.nom,
-      telephone: tourCarte.telephone ?? numeroDeFiction(tourCarte.id),
+      telephone: tourCarte.telephone || numeroDeFiction(tourCarte.id),
       quoi: tour.quoi,
       quand: "Je passe avant la fermeture",
       alors: () => {
@@ -4679,9 +4692,31 @@ export function ApercuHabitant() {
    * renseignement à lui demander en le démarchant — avant sa photo, avant son
    * catalogue, avant tout le reste.
    */
-  function surWhatsApp(texte: string, telephone?: string) {
+  /**
+   * ═══ ET IL RESTAIT TROIS PORTES OÙ LE CARNET D'ADRESSES S'OUVRAIT ENCORE ═══
+   *
+   * « Ça ouvre bien WhatsApp mais propose mon propre carnet d'adresses (pas le
+   * tel du coiffeur par défaut). Bug ? »
+   *
+   * OUI, ET IL ÉTAIT ICI. Le numéro avait bien été ajouté — mais en paramètre
+   * FACULTATIF, et un seul des quatre appels le passait. Les trois autres —
+   * la réservation d'un créneau, « je viens » sur une invitation, la réponse à
+   * une annonce d'embauche — appelaient `surWhatsApp(texte)` tout court, donc
+   * `wa.me/?text=…`, donc le carnet d'adresses. Un paramètre facultatif dont
+   * l'oubli casse la fonction n'est pas un paramètre facultatif : c'est un
+   * piège, et il s'est refermé trois fois.
+   *
+   * LE DESTINATAIRE DEVIENT DONC OBLIGATOIRE, ET C'EST LE COMMERCE LUI-MÊME
+   * qu'on passe, pas son numéro. Un commerce sait toujours se faire joindre —
+   * son numéro déclaré, ou à défaut celui de fiction tiré de son identifiant —
+   * alors qu'un `string | undefined` ne sait rien faire quand il est vide.
+   * Le compilateur refuse maintenant l'appel qui oublie le destinataire.
+   */
+  function surWhatsApp(texte: string, chez: { id: string; telephone?: string }) {
     noter("reserve", 0, "whatsapp");
-    const num = telephone ? telephone.replace(/\D/g, "").replace(/^0/, "33") : "";
+    const num = (chez.telephone || numeroDeFiction(chez.id))
+      .replace(/\D/g, "")
+      .replace(/^0/, "33");
     const url = `https://wa.me/${num}?text=${encodeURIComponent(texte)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   }
@@ -4764,7 +4799,7 @@ export function ApercuHabitant() {
     if (!salon) return;
     const { texte } = demandeDuSalon(salon, pourUnSeul);
     const chez = toutes.find((c) => c.nom === (tete?.ou ?? salon.ou));
-    surWhatsApp(texte, chez?.telephone ?? (chez ? numeroDeFiction(chez.id) : undefined));
+    if (chez) surWhatsApp(texte, chez);
     setAConfirmer({ pourUnSeul, ouvert: true });
   }
 
@@ -7590,6 +7625,7 @@ export function ApercuHabitant() {
                 onClick={() => {
                   noter("onglet", 0, "essai-carte");
                   setDejaOuvert(true);
+                  setMurSur("depot");
                   setMurOuvert(true);
                 }}
                 disabled={!sommet}
@@ -7697,6 +7733,7 @@ export function ApercuHabitant() {
                 onClick={() => {
                   noter("onglet", 0, "mur-module");
                   setDejaOuvert(true);
+                  setMurSur("mur");
                   setMurOuvert(true);
                 }}
               >
@@ -9853,6 +9890,7 @@ export function ApercuHabitant() {
                          toute seule. */
                       onFavori={garderLeSommet}
                       favori={gardeSommet}
+                      ouvrirSur={murSur}
                       /* LE MUR EST DÉJÀ CALCULÉ PLUS HAUT : c'est lui qui décide
                          du bouton principal de l'annonce. Deux appels séparés
                          auraient fini par ne plus répondre la même chose. */
@@ -10049,6 +10087,9 @@ export function ApercuHabitant() {
                 sonDuBond(false);
                 window.setTimeout(() => setClin(""), BOND_MS);
                 noter("onglet", 0, "mur");
+                // IL NE DIT RIEN DE CE QU'ON VEUT : c'est `entree` qui tranche,
+                // selon qu'il y a du monde sur le mur ou pas.
+                setMurSur(undefined);
                 setMurOuvert(true);
               }}
             >
@@ -11305,6 +11346,7 @@ export function ApercuHabitant() {
                             onClick={() => {
                               surWhatsApp(
                                 `Bonjour, j'ai vu sur Clikme que vous cherchiez ${ouvertReponse.recrute?.poste.toLowerCase()}. Je peux passer ${ouvertReponse.recrute?.passez}. À tout à l'heure !`,
+                                ouvertReponse,
                               );
                               setReserves((r) => {
                                 const cle = `emb|${ouvertReponse.id}`;
@@ -11374,6 +11416,7 @@ export function ApercuHabitant() {
                             onClick={() => {
                               surWhatsApp(
                                 `Bonjour, je viens de recevoir votre invitation sur Clikme (${ouvertReponse.reponse?.cadeau.toLowerCase()}). J'arrive !`,
+                                ouvertReponse,
                               );
                               setReserves((r) => {
                                 const cle = `vais|${ouvertReponse.id}`;
@@ -11437,6 +11480,7 @@ export function ApercuHabitant() {
                                 aReserver.find((m) => m.titre === creneau)?.action === "Réserver"
                                   ? `Bonjour, j'ai vu « ${creneau} » sur Clikme. Est-ce qu'il reste de la place ? Merci !`
                                   : `Bonjour, j'ai vu « ${creneau} » sur Clikme. Est-ce que vous pouvez m'en garder ? Merci !`,
+                                dessus,
                               );
                               setReserves((r) => {
                                 const cle = `${dessus.id}|${creneau}`;

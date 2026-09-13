@@ -94,6 +94,8 @@ export async function essayerSurMoi(opts: {
    * autre visage : on photographie une TÊTE pour changer des CHEVEUX.
    */
   change?: string;
+  /** Ce que la pièce EST, en toutes lettres. Voir `decrire` dans `fantomes.ts`. */
+  decrire?: string;
   signal?: AbortSignal;
 }): Promise<Rendu | Souci> {
   let photo: string;
@@ -115,6 +117,7 @@ export async function essayerSurMoi(opts: {
         partie: opts.partie,
         garder: opts.garder ?? [],
         change: opts.change ?? "",
+        decrire: opts.decrire ?? "",
       }),
       signal: opts.signal,
     });

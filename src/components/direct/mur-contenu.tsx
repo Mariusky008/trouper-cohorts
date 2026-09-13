@@ -95,6 +95,21 @@ function chezQui(lieu: string): string {
   return `chez ${lieu}`;
 }
 
+/**
+ * LE MÊME LIEU, MAIS EN SUJET DE LA PHRASE.
+ *
+ * `chezQui` sert les compléments — « on en parle chez une cirière » — et c'est
+ * exactement ce qu'il ne faut pas quand le lieu est le SUJET : « chez une
+ * cirière est un commerce inventé » est une faute qu'on lisait à l'écran.
+ * Ici on ne fait que décapitaliser l'article, pour que le nom s'insère au
+ * milieu d'une phrase sans y planter une majuscule.
+ */
+function leLieu(lieu: string): string {
+  return /^(Un|Une|Le|La|Les|L’|L')\s?/.test(lieu)
+    ? `${lieu.charAt(0).toLowerCase()}${lieu.slice(1)}`
+    : lieu;
+}
+
 /** Le dessin du fantôme. Une seule forme, trois tailles, jamais deux dessins. */
 /**
  * LE MOMENT CHOISI, RECOLLÉ DANS UNE PHRASE.
@@ -155,6 +170,12 @@ const TRACES: Record<string, string> = {
   net: "M9.2 2.8 10.6 7l4.2 1.4-4.2 1.4-1.4 4.2-1.4-4.2L3.6 8.4 7.8 7ZM17.4 12.2l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9ZM4.8 17.2l.6 1.7 1.7.6-1.7.6-.6 1.7-.6-1.7-1.7-.6 1.7-.6Z",
   lunettes: "M7 9.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2ZM17 9.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2ZM10.6 13h2.8M3.4 12.4 2.2 8.2M20.6 12.4l1.2-4.2",
   photo: "M4 7.6h3.2l1.6-2.6h6.4l1.6 2.6H20a1.4 1.4 0 0 1 1.4 1.4v9.2a1.4 1.4 0 0 1-1.4 1.4H4a1.4 1.4 0 0 1-1.4-1.4V9A1.4 1.4 0 0 1 4 7.6ZM12 10.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2Z",
+  /* LES TROIS PROMESSES DE L'ESSAYAGE, dans la colonne de gauche de la
+     maquette : le calcul, le choix, la comparaison. */
+  styles: "M12 2.6 2.6 7.4 12 12.2l9.4-4.8ZM2.6 12 12 16.8 21.4 12M2.6 16.6 12 21.4l9.4-4.8",
+  comparer: "M4 4.4h16a1 1 0 0 1 1 1v13.2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5.4a1 1 0 0 1 1-1ZM12 3.2v17.6M6.6 9.6h2.8M6.6 13.4h2.8",
+  coeur: "M12 20.4 4.4 13a4.7 4.7 0 0 1 0-6.7 4.7 4.7 0 0 1 6.7 0l.9.9.9-.9a4.7 4.7 0 0 1 6.7 0 4.7 4.7 0 0 1 0 6.7Z",
+  partage: "M12 3.2v12M12 3.2 8.2 7M12 3.2 15.8 7M4.6 12.8v6.4a1.4 1.4 0 0 0 1.4 1.4h12a1.4 1.4 0 0 0 1.4-1.4v-6.4",
 };
 
 function Trace({ cle }: { cle: string }) {
@@ -407,13 +428,31 @@ function Carte({
  * montrer d'abord, c'est faire lire vingt vignettes avant la seule phrase qui
  * compte.
  */
-const entree = (mur: TypeMur): "mur" | "depot" => (mur.depot === "essai" ? "depot" : "mur");
+/**
+ * ═══ LE FANTÔME MÈNE À L'ESSAI, OU AU MUR ═══════════════════════════════════
+ *
+ * « N'oublie pas que le fantôme amène sur l'essayage quand personne n'a encore
+ * essayé, mais quand une ou plusieurs personnes ont essayé, alors le fantôme
+ * amène sur le mur des clients qui ont essayé. »
+ *
+ * IL MENAIT TOUJOURS À L'ESSAI, et sur un mur vide c'était le bon choix : un
+ * mur qui n'a rien à montrer n'est pas une destination, c'est une déception.
+ * Mais dès qu'il y a des gens dessus, l'ordre s'inverse — voir dix personnes
+ * portant la chose donne bien plus envie de l'essayer que l'écran de prise de
+ * vue, qui demande un effort avant d'avoir rien montré.
+ *
+ * ET C'EST LA SEULE RÈGLE : on ne choisit pas selon le métier, on regarde s'il
+ * y a quelqu'un. Un mur se remplit tout seul, donc la porte change toute seule.
+ */
+const entree = (mur: TypeMur): "mur" | "depot" =>
+  mur.depot === "essai" && mur.clients.length === 0 ? "depot" : "mur";
 
 export function MurContenu({
   mur,
   onSalon,
   onFavori,
   favori,
+  ouvrirSur,
 }: {
   mur: TypeMur;
   /** Voir `VersLeSalon` : absent là où il n'y a pas de salon. */
@@ -432,9 +471,20 @@ export function MurContenu({
   onFavori?: () => void;
   /** L'annonce est-elle déjà gardée ? Le bouton le dit plutôt que de le taire. */
   favori?: boolean;
+  /**
+   * PAR OÙ ON ENTRE, QUAND L'APPELANT LE SAIT MIEUX QUE NOUS.
+   *
+   * `entree` choisit bien pour le fantôme de la barre, qui ne dit rien de ce
+   * qu'on veut. Deux boutons, eux, le disent : « Essayer sur moi » promet
+   * l'essai et doit y aller même si le mur est plein, et « 38 essayages de ce
+   * pantalon » promet le mur et doit y aller même s'il est vide. Un bouton qui
+   * ouvre autre chose que ce qu'il annonce est la promesse la plus concrète
+   * qu'un écran puisse rompre.
+   */
+  ouvrirSur?: "mur" | "depot";
 }) {
-  /** Où l'on en est : le mur, ou le dépôt. Voir `entree`. */
-  const [ecran, setEcran] = useState<"mur" | "depot">(() => entree(mur));
+  /** Où l'on en est : le mur, ou le dépôt. Voir `entree` et `ouvrirSur`. */
+  const [ecran, setEcran] = useState<"mur" | "depot">(() => ouvrirSur ?? entree(mur));
   const [dits, setDits] = useState<Record<string, string>>({});
   /** Le fantôme sur lequel on vient d'appuyer, et à qui on dit quand on passe. */
   const [passage, setPassage] = useState<Fantome | null>(null);
@@ -453,7 +503,20 @@ export function MurContenu({
   const [tout, setTout] = useState(false);
 
   useEffect(() => {
-    setEcran(mur.depot === "essai" ? "depot" : "mur");
+    /**
+     * LA MÊME RÈGLE QU'À L'ARRIVÉE, ET C'EST UNE CORRECTION.
+     *
+     * CET EFFET RÉÉCRIVAIT LA DÉCISION une milliseconde après l'avoir prise : il
+     * portait sa propre copie de l'ancienne règle — « un mur d'essai ouvre
+     * toujours sur le dépôt » — et il s'exécute AU MONTAGE, donc il écrasait et
+     * `ouvrirSur` et `entree`. Le fantôme continuait d'ouvrir la prise de vue
+     * sur un mur plein, et le module « 7 essayages » aussi.
+     *
+     * C'EST LA FAUTE CLASSIQUE DE LA RÈGLE ÉCRITE DEUX FOIS : l'une des deux
+     * copies ne bouge pas quand l'autre change, et c'est toujours celle qu'on ne
+     * regarde pas. Il n'y en a plus qu'une.
+     */
+    setEcran(ouvrirSur ?? entree(mur));
     setPassage(null);
     setDits({});
     setTout(false);
@@ -472,7 +535,10 @@ export function MurContenu({
       })),
     );
     setDehors(mesFantomes().length);
-  }, [mur.cle, mur.photoLieu, mur.depot]);
+    // `ouvrirSur` ET LE NOMBRE DE CLIENTS ENTRENT DANS LES DÉPENDANCES : ce sont
+    // eux qui décident maintenant de la porte, et un effet qui lit une valeur
+    // sans la déclarer se fige sur celle du premier rendu.
+  }, [mur.cle, mur.photoLieu, mur.depot, mur.clients.length, ouvrirSur]);
 
   /**
    * CE QUE FAIT LE POUCE, ET ÇA DÉPEND DU MÉTIER.
@@ -748,22 +814,44 @@ function EcranMur({
            le bouton du bas de l'essai — voir `entree` et `mots.mur`. Sa tête n'a
            donc plus à vendre l'essai : elle dit ce qu'on regarde, et elle rend le
            chemin du retour évident. */
+        /* ═══ LA TÊTE DU MUR, D'APRÈS LA MAQUETTE ═══════════════════════════
+
+           « 38 essayages de ce pantalon — Découvrez comment la communauté porte
+           ce look. Des vraies clientes, de vrais avis. »
+
+           ELLE DISAIT « Ce que les clients ont essayé ici », ce qui est vrai et
+           ne dit rien : pas combien, pas de quoi, pas pourquoi on regarde. Le
+           COMPTE est ce qui fait entrer — c'est lui qui dit qu'il y a quelque
+           chose à voir — et il n'était nulle part.
+
+           LE NOMBRE EST CELUI DU MUR, JAMAIS UN NOMBRE ÉCRIT ICI. Même règle
+           que le module sous l'annonce : fabriquer « 38 » quand il y en a sept
+           serait inventer la preuve sociale que ce mur existe justement pour
+           montrer. */
         <div className="mu-haut essai">
-          <Signe classe="mu-haut-s" />
-          <h2>
-            Ce que les clients ont <i>essayé ici</i>
+          <h2 className="mu-haut-n">
+            <b>
+              {clients.length} {mur.essai?.mots.essayage ?? "essayage"}
+              {clients.length > 1 ? "s" : ""}
+            </b>{" "}
+            {mur.essai?.mots.ceci ? `de ${mur.essai.mots.ceci}` : "ici"}
           </h2>
-          <p>
-            Chaque image est un essai fait sur la photo de quelqu’un, pas une photo de
-            catalogue.
-          </p>
-          <button type="button" className="mu-cta plein" onClick={onDeposer}>
-            <i aria-hidden="true">📷</i>
-            <span>
-              <b>{mur.essai?.mots.geste ?? "Essayer sur moi"}</b>
-              <em>{mur.essai?.mots.titre ?? "Gratuit, sans rendez-vous"}</em>
+          <p>Découvrez comment la communauté porte ça, en vrai.</p>
+          {/* LA PASTILLE DE LA MAQUETTE, ET ELLE PORTE DES FANTÔMES PLUTÔT QUE
+              DES VISAGES. On n'a pas de visages à empiler, et en inventer serait
+              fabriquer exactement ce que cette ligne certifie. */}
+          <p className="mu-haut-vrai">
+            <span aria-hidden="true">
+              {clients.slice(0, 4).map((f) => (
+                <Signe key={f.id} classe="mu-haut-vs" />
+              ))}
             </span>
-          </button>
+            <em>
+              De vraies clientes,
+              <br />
+              de vrais avis
+            </em>
+          </p>
         </div>
       ) : (
         /* ═══ LA TÊTE TENAIT CINQ BLOCS EMPILÉS ═══════════════════════════════
@@ -819,17 +907,56 @@ function EcranMur({
           « Chef », « Propriétaire », et cette pastille-là n'est pas du
           vocabulaire : c'est la garantie qu'un fantôme du patron ne passe jamais
           pour celui d'un client. */}
-      <div className={`mu-rang maison${tout ? " tout" : ""}`}>
-        {mur.maison.map((f) => (
-          <Carte key={f.id} f={f} grande quand={dits[f.id]} onDit={onDit} depot={mur.depot} />
-        ))}
-      </div>
+      {/* ═══ LA MAISON PASSE APRÈS LES CLIENTS SUR UN MUR D'ESSAI ═══════════
 
-      <div className={`mu-rang${tout ? " tout" : ""}`}>
+          ELLE PASSAIT DEVANT, ET C'ÉTAIT JUSTE : « un mur ne démarre jamais
+          vide, personne ne veut parler le premier dans une pièce silencieuse ».
+          Sur un mur d'essai, cette raison est tombée — il démarre avec sept
+          clientes en grille, et ce sont ELLES qu'on vient voir. Deux cartes du
+          commerçant en pleine largeur les repoussaient de trois cents points
+          sous le pli, c'est-à-dire hors de l'écran.
+
+          ELLE NE DISPARAÎT PAS POUR AUTANT : « les retouches sont offertes
+          jusqu'à samedi » est exactement ce qu'on veut lire après avoir vu que
+          ça tombe bien sur sept personnes. */}
+      {mur.depot !== "essai" && (
+        <div className={`mu-rang maison${tout ? " tout" : ""}`}>
+          {mur.maison.map((f) => (
+            <Carte key={f.id} f={f} grande quand={dits[f.id]} onDit={onDit} depot={mur.depot} />
+          ))}
+        </div>
+      )}
+
+      {/* ═══ LES ESSAIS EN GRILLE, ET LE RESTE EN LISTE ══════════════════════
+
+          LA MAQUETTE MET TROIS COLONNES, et c'est le bon format pour ce mur-là :
+          on vient y chercher UNE IMPRESSION D'ENSEMBLE — « ça donne quoi sur des
+          gens ? » — avant de lire qui que ce soit. Une liste d'une carte par
+          ligne oblige à faire défiler neuf fois pour se faire cette idée, et
+          personne ne défile neuf fois pour une impression.
+
+          DEUX COLONNES ET NON TROIS À 390 POINTS. Trois donnent 108 points par
+          vignette : à cette taille on ne voit plus ce qu'on essaie, ce qui est
+          le seul travail de cette grille. Trois reviennent dès 560 points.
+
+          ET SEULEMENT SUR LES MURS D'ESSAI. Sur le mur d'un bar ou d'un
+          restaurant, ce qui compte est ce que les gens ONT ÉCRIT — « qui vient
+          ce soir ? » — et ça ne se lit pas dans une vignette carrée. */}
+      <div
+        className={`mu-rang${mur.depot === "essai" ? " grille" : ""}${tout ? " tout" : ""}`}
+      >
         {clients.map((f) => (
           <Carte key={f.id} f={f} quand={dits[f.id]} onDit={onDit} depot={mur.depot} />
         ))}
       </div>
+
+      {mur.depot === "essai" && (
+        <div className="mu-rang maison apres">
+          {mur.maison.map((f) => (
+            <Carte key={f.id} f={f} grande quand={dits[f.id]} onDit={onDit} depot={mur.depot} />
+          ))}
+        </div>
+      )}
 
       {/* LE PIED COMPTE, ET C'EST LUI QUI DÉPLIE. « Voir tout » était un mot posé
           dans un titre de section ; les titres ont disparu, et le compte est un
@@ -866,6 +993,41 @@ function EcranMur({
           </div>
           <button type="button" className="mu-ctx-b">
             {mur.contexte.geste} →
+          </button>
+        </div>
+      )}
+
+      {/* ═══ ET DEPUIS CE MUR, ON DOIT POUVOIR ESSAYER ══════════════════════
+
+          « Le fantôme amène sur l'essayage quand personne n'a encore essayé,
+          mais quand une ou plusieurs personnes ont essayé, alors le fantôme
+          amène sur le mur des clients. »
+
+          LA RÈGLE EST BONNE ET ELLE A OUVERT UN TROU. Depuis qu'un mur rempli
+          s'ouvre sur lui-même, il n'y avait PLUS AUCUN CHEMIN vers l'essai : on
+          regardait sept clientes porter la pièce, et la seule chose qu'on ne
+          pouvait pas faire était de la porter aussi. Le geste que ce mur donne
+          envie de faire était le seul absent de l'écran.
+
+          LA MAQUETTE LE MET EN BAS, FLOTTANT, ET C'EST LE BON ENDROIT. Posé
+          sous la tête, il repoussait la grille de cent points : on payait le
+          geste AVANT d'avoir vu ce qui donne envie de le faire. Collé au bas de
+          l'écran, il ne coûte rien à la lecture et reste sous le pouce à la
+          neuvième vignette — c'est-à-dire au moment exact où l'envie arrive.
+
+          IL PORTE LES MOTS DU MÉTIER — « Essayer sur moi » chez un coiffeur,
+          « Voir chez moi » chez une fleuriste — et c'est le même bouton que sur
+          l'annonce : le rituel ne change pas de forme selon la porte par
+          laquelle on entre. */}
+      {mur.depot === "essai" && (
+        <div className="mu-bas">
+          <button type="button" className="mu-cta plein essai" onClick={onDeposer}>
+            <Signe classe="mu-cta-f" />
+            <span>
+              <b>{mur.essai?.mots.surMoi ?? "Essayer sur moi"}</b>
+              <em>{mur.essai?.mots.geste}</em>
+            </span>
+            <s aria-hidden="true">→</s>
           </button>
         </div>
       )}
@@ -1588,6 +1750,8 @@ function Essai({
    */
   const [photo, setPhoto] = useState<string | null>(null);
   const fichier = useRef<HTMLInputElement>(null);
+  /** Le champ qui ouvre l'appareil photo. Voir les deux champs, plus bas. */
+  const appareil = useRef<HTMLInputElement>(null);
   const laPhoto = photo ?? mur.essai?.avant;
   /**
    * L'AVANT-APRÈS, SUR APPUI.
@@ -1746,6 +1910,11 @@ function Essai({
         // « reproduis la référence sur votre tête » — et le modèle refaisait
         // le visage, ce qui est exactement ce qui a été rapporté.
         change: mur.essai?.change,
+        // ET CE QUE CETTE PIÈCE-LÀ EST, EN TOUTES LETTRES. Sans elle, on
+        // demandait au modèle de deviner la coupe sur la photo d'une autre
+        // personne avant de la poser — et « la coupe sélectionnée n'a pas été
+        // créée ». Voir `decrire` dans `fantomes.ts`.
+        decrire: piece.decrire,
       })
         .then((r) =>
           estUnRendu(r)
@@ -1829,7 +1998,37 @@ function Essai({
    * qui reste vrai.
    */
   const prevenir = async (p: Piece) => {
-    const tel = mur.telephone ?? numeroDeFiction(mur.cle);
+    /**
+     * ═══ ON N'OUVRE PAS WHATSAPP SUR UN NUMÉRO QUI N'EXISTE PAS ══════════════
+     *
+     * « Ça ouvre bien WhatsApp mais propose mon propre carnet d'adresses, pas le
+     * téléphone du coiffeur par défaut. Bug ? »
+     *
+     * PAS UN BUG DE CODE : UN NUMÉRO DE FICTION. Le lien est bien construit avec
+     * le numéro du commerce — mais ce commerce est inventé, donc son numéro
+     * l'est aussi. `numeroDeFiction` existe précisément pour ça : tirer un
+     * numéro au hasard en toucherait un vrai, chez quelqu'un. WhatsApp reçoit
+     * donc une adresse valide dans sa forme mais absente de son annuaire, et il
+     * fait ce qu'il fait toujours dans ce cas — il s'ouvre sur la liste des
+     * conversations.
+     *
+     * CE QU'ON PEUT CORRIGER, C'EST DE NE PLUS L'OUVRIR. Montrer le message qui
+     * PARTIRAIT, avec le numéro de fiction affiché, dit la vérité et laisse le
+     * parcours lisible. Le jour où un commerçant déclare son numéro, le chemin
+     * d'à côté s'ouvre tout seul : voir `mur.telFiction`.
+     *
+     * ET LE TEST PORTAIT SUR LA MAUVAISE CHOSE. Il lisait `!mur.telephone`,
+     * or `murDeLaCarte` remplit TOUJOURS ce champ — avec le vrai numéro, ou
+     * avec celui de fiction. La condition ne pouvait donc jamais être vraie,
+     * et ce garde-fou n'a jamais rien gardé : WhatsApp s'ouvrait sur le carnet
+     * d'adresses exactement comme avant. C'est `telFiction` qui distingue les
+     * deux cas, et c'est lui qu'on lit.
+     */
+    const tel = mur.telephone || numeroDeFiction(mur.cle);
+    if (mur.telFiction ?? !mur.telephone) {
+      setEnvoi({ par: "fiction", telephone: tel });
+      return;
+    }
     const sienne = !!photo && !!rendu && !rendu.souci;
     const geste = (mur.essai?.mots.reserver ?? "Je réserve").replace(/^Je\s+/i, "Je ");
     const msg = prevenirPourEssai({
@@ -1868,7 +2067,13 @@ function Essai({
    */
   const envoyerLaPhoto = async (p: Piece) => {
     if (!rendu || rendu.souci) return;
-    const tel = mur.telephone ?? numeroDeFiction(mur.cle);
+    const tel = mur.telephone || numeroDeFiction(mur.cle);
+    // MÊME RÈGLE QUE `prevenir` : sur un numéro de fiction, on ne propose pas
+    // un chemin dont on sait qu'il finira dans le carnet d'adresses.
+    if (mur.telFiction ?? !mur.telephone) {
+      setEnvoi({ par: "fiction", telephone: tel });
+      return;
+    }
     const geste = (mur.essai?.mots.reserver ?? "Je réserve").replace(/^Je\s+/i, "Je ");
     const msg = prevenirPourEssai({ telephone: tel, quoi: p.nom, geste, avecPhoto: true });
     setEnvoi(
@@ -1880,6 +2085,52 @@ function Essai({
         viser: "quiconque",
       }),
     );
+  };
+
+  /**
+   * PARTAGER CE QU'ON VIENT D'ESSAYER — le geste de droite dans la maquette.
+   *
+   * IL NE S'ADRESSE À PERSONNE EN PARTICULIER, et c'est ce qui le distingue du
+   * bouton du troisième temps : celui-là écrit AU COMMERÇANT pour réserver,
+   * celui-ci montre le rendu à qui l'on veut. D'où `viser: "quiconque"`, et
+   * d'où l'absence de numéro — il n'y a pas de destinataire à connaître.
+   *
+   * IL N'EXISTE QUE SUR UN VRAI RENDU. Partager « son » essai alors que l'image
+   * est la photo d'exemple du commerçant serait montrer la main de quelqu'un
+   * d'autre en disant qu'elle est la sienne.
+   */
+  const partagerLeLook = async (p: Piece) => {
+    if (!rendu || rendu.souci || !photo) return;
+    setEnvoi(
+      await partagerLEssai({
+        image: rendu.image,
+        nom: `essai-${p.id}`,
+        texteAvecPhoto: `Regarde — je viens d’essayer « ${p.nom} » sur ClikMe.`,
+        viser: "quiconque",
+      }),
+    );
+  };
+
+  /**
+   * CHANGER DE STYLE SANS QUITTER SON VISAGE.
+   *
+   * LE MÊME GESTE SE FAIT DEPUIS DEUX ENDROITS — la bande des styles sous la
+   * photo, et le nuancier de la carte flottante — et il doit remettre à zéro
+   * exactement les mêmes choses. Écrit deux fois, il aurait fini par oublier la
+   * note d'un côté : une note laissée sur la coupe précédente qui suivrait la
+   * suivante serait un avis qu'on n'a pas donné, et il partirait sur le mur du
+   * commerçant.
+   */
+  const changerDeStyle = (p: Piece) => {
+    setPiece(p);
+    setAvant(false);
+    setRendu(null);
+    setRate(false);
+    setNote(0);
+    setNoteVue(0);
+    setRevele(false);
+    setX(58);
+    setEtape("calcul");
   };
 
   const poser = (verdict: "pris" | "passe" | "essaye") => {
@@ -2000,6 +2251,50 @@ function Essai({
           l'on propose maintenant de reprendre la photo, il n'existait plus.
           Un bouton qui pointe vers un champ démonté ne fait rien — et un bouton
           qui ne fait rien, on a déjà payé pour savoir que ça ne se voit pas. */}
+      {/* ═══ DEUX CHAMPS, PARCE QUE LE MENU D'IOS NE SUFFIT PAS ═══════════════
+
+          « Avec un téléphone, la prise de photo ne fonctionne pas. Je peux juste
+          télécharger une photo de ma photothèque. »
+
+          UN SEUL CHAMP `accept="image/*"` LAISSE LE TÉLÉPHONE DÉCIDER, et il
+          décide mal : dans un cadre embarqué, Safari retire silencieusement
+          « Prendre une photo » du menu — on ne voit qu'une entrée, et rien ne
+          dit pourquoi. L'autorisation de l'iframe est corrigée par ailleurs,
+          mais ça ne suffit pas : un menu à trois entrées dont la bonne dépend du
+          contexte n'est pas une interface, c'est une loterie.
+
+          DEUX BOUTONS, DEUX CHAMPS, DEUX INTENTIONS. `capture` sur le premier
+          demande l'appareil photo directement — plus de menu du tout. Le second
+          reste sans `capture` et ouvre la photothèque. Chacun dit ce qu'il fait
+          avant qu'on appuie.
+
+          ET LA CAMÉRA CHOISIE VIENT DU MÉTIER. On se photographie de face chez
+          un coiffeur ou un lunetier — caméra avant ; on photographie sa main,
+          son avant-bras ou sa table — caméra arrière. Le gabarit le sait déjà :
+          « cadre » veut dire un visage ou un buste, tout le reste est à bout de
+          bras. Une caméra qui s'ouvre du mauvais côté fait retourner le
+          téléphone à chaque essai. */}
+      <input
+        ref={appareil}
+        type="file"
+        accept="image/*"
+        capture={mur.essai?.gabarit?.forme === "cadre" ? "user" : "environment"}
+        className="mu-fichier"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (!f) return;
+          const lecteur = new FileReader();
+          lecteur.onload = () => {
+            setPhoto(String(lecteur.result));
+            setRendu(null);
+            setPiece(null);
+            setRate(false);
+            setEtape("cadrer");
+          };
+          lecteur.readAsDataURL(f);
+          e.target.value = "";
+        }}
+      />
       <input
         ref={fichier}
         type="file"
@@ -2190,7 +2485,7 @@ function Essai({
                   <em>Vérifiez que le repère tombe bien sur {mur.essai.partie}</em>
                 </span>
               </button>
-              <button type="button" className="mu-exemple" onClick={() => fichier.current?.click()}>
+              <button type="button" className="mu-exemple" onClick={() => appareil.current?.click()}>
                 Reprendre la photo
               </button>
             </>
@@ -2200,7 +2495,11 @@ function Essai({
                   chez une onglerie, « Me prendre en photo » chez un coiffeur :
                   ce n'est pas du style, c'est ce qu'il faut faire, et ce n'est
                   pas le même geste. */}
-              <button type="button" className="mu-cta plein essai" onClick={() => fichier.current?.click()}>
+              <button
+                type="button"
+                className="mu-cta plein essai"
+                onClick={() => appareil.current?.click()}
+              >
                 <i aria-hidden="true">
                   <Trace cle="photo" />
                 </i>
@@ -2208,6 +2507,16 @@ function Essai({
                   <b>{mots.geste}</b>
                 </span>
                 <s aria-hidden="true">→</s>
+              </button>
+              {/* LA PHOTOTHÈQUE EST LE SECOND GESTE, ET ELLE EST NOMMÉE. Une
+                  main à plat se photographie souvent mieux à deux mains, donc
+                  avant : il faut pouvoir choisir une photo déjà prise. */}
+              <button
+                type="button"
+                className="mu-exemple"
+                onClick={() => fichier.current?.click()}
+              >
+                Choisir une photo de ma photothèque
               </button>
               {/* LA PHOTO D'EXEMPLE RESTE ACCESSIBLE, ET ELLE EST NOMMEE COMME
                   TELLE. Une maquette qu'on fait essayer doit pouvoir se montrer
@@ -2416,6 +2725,8 @@ function Essai({
         <div
           className={`mu-rendu${revele ? " revele" : ""}${
             etape === "avis" || etape === "agir" ? " avis" : ""
+          }${
+            !rendu?.souci && !rate ? ` plein${etape === "rendu" ? "" : " court"}` : ""
           }`}
         >
           {/* ═══ LA GLISSIÈRE AVANT / APRÈS ══════════════════════════════════
@@ -2503,6 +2814,148 @@ function Essai({
             <span className={`mu-mi-e b${x > 88 ? " off" : ""}`}>Après</span>
           </div>
           )}
+          {/* ═══ LA MAQUETTE DE L'ESSAYAGE, SUIVIE AU TRAIT ═══════════════════
+
+              « Le dernier écran, comme d'autres écrans avant, ne correspond pas
+              aux écrans que je t'ai donnés niveau UX et UI : il faut respecter
+              le design scrupuleusement. »
+
+              CE QUI MANQUAIT, ET C'ÉTAIT LA MOITIÉ DE L'ÉCRAN. La maquette pose
+              la photo EN PLEIN — bord à bord, sans cadre — et écrit par-dessus.
+              À gauche, le titre « Votre essayage » et ce que la machine promet ;
+              à droite, une carte flottante qui porte la pièce, son prix et les
+              deux gestes de garde. On avait une photo dans une boîte arrondie,
+              au milieu d'une colonne, avec le nom de la pièce en dessous : le
+              même contenu, rangé comme un formulaire.
+
+              CE N'EST PAS QU'UNE QUESTION DE GOÛT. Une photo en plein écran est
+              ce qui fait qu'on se regarde ; une photo dans une boîte est ce
+              qu'on parcourt. Tout l'écran existe pour le premier geste.
+
+              LES TROIS LIGNES DE GAUCHE DISENT CE QUE L'ÉCRAN SAIT FAIRE, et
+              chacune est vraie ici : le rendu est calculé, la bande des styles
+              est juste en dessous, et la glissière compare au doigt. On n'y met
+              pas « changez de taille » tant qu'aucune pièce ne porte de taille —
+              une commande qui ne commande rien est le contraire d'une maquette
+              respectée. */}
+          {!rendu?.souci && !rate && (
+            <>
+              {etape === "rendu" && (
+              <div className="mu-pl-g">
+                <h2 className="mu-pl-t">
+                  Votre
+                  <b>{mots.essayage}</b>
+                </h2>
+                <p className="mu-pl-p">{mots.promesse}</p>
+                <ul className="mu-pl-l">
+                  <li>
+                    <Trace cle="net" />
+                    <span>
+                      {mots.essayage === "projection" ? "Projection" : "Essayage"} réaliste
+                      par IA
+                    </span>
+                  </li>
+                  <li>
+                    <Trace cle="styles" />
+                    <span>Plusieurs styles</span>
+                  </li>
+                  <li>
+                    <Trace cle="comparer" />
+                    <span>Avant / après au doigt</span>
+                  </li>
+                </ul>
+              </div>
+              )}
+              {/* LA CARTE FLOTTANTE DE DROITE. Elle porte ce qu'on est en train
+                  d'essayer — la photo du commerçant, le nom, le prix — et les
+                  deux gestes qui ne décident rien : garder, montrer. Les gestes
+                  qui décident sont au troisième temps, et nulle part ailleurs. */}
+              <aside className="mu-pl-d">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="mu-pl-ph" src={piece.photo} alt="" />
+                <b className="mu-pl-n">{piece.nom}</b>
+                <em className="mu-pl-x">{piece.prix}</em>
+                {/* LES COULEURS NE S'AFFICHENT QUE LÀ OÙ ELLES EXISTENT — un
+                    vernis en porte une, une bougie n'en porte pas — et elles
+                    CHANGENT vraiment la pièce essayée, sinon ce serait un
+                    nuancier de décoration. */}
+                {etape === "rendu" &&
+                  mur.essai.pieces.filter((p) => p.vernis && !p.bientot).length > 1 && (
+                  <>
+                    <span className="mu-pl-s">Couleurs</span>
+                    <div className="mu-pl-c">
+                      {mur.essai.pieces
+                        .filter((p) => p.vernis && !p.bientot)
+                        .map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            className={p.id === piece.id ? "on" : undefined}
+                            style={{ background: p.vernis!.couleur }}
+                            aria-label={p.nom}
+                            aria-pressed={p.id === piece.id}
+                            onClick={() => {
+                              if (p.id === piece.id) return;
+                              changerDeStyle(p);
+                            }}
+                          />
+                        ))}
+                    </div>
+                  </>
+                )}
+                {/* ═══ AUX DEUXIÈME ET TROISIÈME TEMPS, LA CARTE DIT OÙ C'EST ═══
+
+                    LA MAQUETTE Y MET TROIS LIGNES — « Look complet », « En
+                    stock », « À 350 m · Dax centre ». Deux d'entre elles
+                    n'existent nulle part dans les données : aucune pièce ne
+                    porte de stock, aucune ne dit si elle complète un ensemble.
+                    Les écrire quand même aurait mis de fausses garanties sous
+                    le nom d'un commerçant — la seule chose que cet écran ne
+                    puisse pas se permettre.
+
+                    ON GARDE DONC LES DEUX QUI SONT VRAIES : d'où c'est, et ce
+                    que les gens en disent. Le jour où un commerçant déclare ses
+                    stocks, la troisième ligne s'écrit ici. */}
+                {etape !== "rendu" && (
+                  <ul className="mu-pl-i">
+                    <li>
+                      <Trace cle="lieu" />
+                      <span>
+                        À {mur.distance}
+                        <i>{mur.ville}</i>
+                      </span>
+                    </li>
+                    <li>
+                      <Trace cle="net" />
+                      <span>
+                        {mur.note} sur 5
+                        <i>{mur.avis} avis</i>
+                      </span>
+                    </li>
+                  </ul>
+                )}
+                <div className="mu-pl-r">
+                  {onFavori && (
+                    <button
+                      type="button"
+                      className={favori ? "on" : undefined}
+                      onClick={onFavori}
+                      aria-pressed={favori}
+                    >
+                      <Trace cle="coeur" />
+                      <span>{favori ? "Gardé dans vos favoris" : "Ajouter aux favoris"}</span>
+                    </button>
+                  )}
+                  {!!photo && !!rendu && !rendu.souci && (
+                    <button type="button" onClick={() => void partagerLeLook(piece)}>
+                      <Trace cle="partage" />
+                      <span>Partager {mots.ceci}</span>
+                    </button>
+                  )}
+                </div>
+              </aside>
+            </>
+          )}
           {/* AGRANDIR EST UN BOUTON À PART, POSÉ SOUS L'IMAGE. Il ne peut pas
               être un appui sur l'image : celle-ci est devenue une glissière, et
               un appui dessus la déplace. */}
@@ -2580,18 +3033,8 @@ function Essai({
                     onClick={() => {
                       if (p.id === piece.id) return;
                       // CHAQUE STYLE REPART À ZÉRO, exactement comme depuis la
-                      // grille. Une note laissée sur la coupe précédente qui
-                      // suivrait la suivante serait un avis qu'on n'a pas donné,
-                      // et il partirait sur le mur du commerçant.
-                      setPiece(p);
-                      setAvant(false);
-                      setRendu(null);
-                      setRate(false);
-                      setNote(0);
-                      setNoteVue(0);
-                      setRevele(false);
-                      setX(58);
-                      setEtape("calcul");
+                      // grille : voir `changerDeStyle`.
+                      changerDeStyle(p);
                     }}
                   >
                     {p.vernis ? (
@@ -2607,6 +3050,22 @@ function Essai({
                     <span>{p.nom}</span>
                   </button>
                 ))}
+              {/* LA TUILE « + N STYLES » DE LA MAQUETTE. Elle ne montre rien,
+                  elle COMPTE — et c'est sa fonction : dire qu'il reste du
+                  catalogue derrière la bande, et ramener à la grille où on le
+                  voit en entier. Elle n'apparaît que s'il reste vraiment
+                  quelque chose : une tuile qui annonce « + 0 » ferait mentir la
+                  bande qu'elle termine. */}
+              {mur.essai.pieces.length > mur.essai.pieces.filter((p) => !p.bientot).length && (
+                <button type="button" className="mu-styles-p" onClick={() => setEtape("choisir")}>
+                  <b>
+                    +
+                    {mur.essai.pieces.length -
+                      mur.essai.pieces.filter((p) => !p.bientot).length}
+                  </b>
+                  <span>styles</span>
+                </button>
+              )}
             </div>
           )}
           {/* QUAND LE RENDU A RATÉ, ON NE DEMANDE PAS DE DÉCIDER.
@@ -2618,7 +3077,7 @@ function Essai({
               pièce qu'on n'a pas vue : le seul geste utile est de reprendre. */}
           {rendu?.souci ? (
             <>
-              <button type="button" className="mu-cta plein" onClick={() => fichier.current?.click()}>
+              <button type="button" className="mu-cta plein" onClick={() => appareil.current?.click()}>
                 <i aria-hidden="true">📷</i>
                 <span>
                   <b>Reprendre la photo</b>
@@ -2680,10 +3139,18 @@ function Essai({
                   cadrage moyen donne un rendu moyen, et il faut pouvoir y
                   revenir sans quitter la feuille. */}
               {photo && (
-                <button type="button" className="mu-exemple" onClick={() => fichier.current?.click()}>
+                <button type="button" className="mu-exemple" onClick={() => appareil.current?.click()}>
                   Reprendre la photo
                 </button>
               )}
+              {/* LA MÊME PROMESSE QU'À L'ÉCRAN DE LA PHOTO, AU MÊME ENDROIT DE
+                  LA MAQUETTE — tout en bas, sous le geste. C'est ici qu'elle
+                  compte le plus : on vient de voir son propre visage à l'écran,
+                  et c'est le moment exact où l'on se demande où il va. */}
+              <p className="mu-prive">
+                <i aria-hidden="true">🔒</i>
+                Vos photos sont privées et ne sont pas partagées sans votre accord.
+              </p>
             </>
           ) : etape === "agir" ? (
             /* ═══ CE QU'ON PEUT FAIRE MAINTENANT ═════════════════════════════
@@ -2814,16 +3281,39 @@ function Essai({
                   avant ça lui ferait croire que c'est fait, et le commerçant ne
                   saurait rien. */}
               {envoi && (
-                <p className="mu-envoi">
+                <p className={`mu-envoi${envoi.par === "fiction" ? " fiction" : ""}`}>
                   <b>
-                    {envoi.par === "abandon"
-                      ? "Vous avez refermé le partage."
-                      : `Envoyez le message, et ${chezQui(mur.lieu)} vous répondra.`}
+                    {envoi.par === "fiction"
+                      ? `${mur.lieu} est un commerce inventé.`
+                      : envoi.par === "abandon"
+                        ? "Vous avez refermé le partage."
+                        : `Envoyez le message, et ${leLieu(mur.lieu)} vous répondra.`}
                   </b>
+                  {/* ═══ ON MONTRE LE MESSAGE PLUTÔT QUE D'OUVRIR WHATSAPP ═══
+                      Le numéro est une fiction — un numéro tiré au hasard en
+                      toucherait un vrai, chez quelqu'un — donc WhatsApp ne
+                      trouve personne et s'ouvre sur la liste des conversations.
+                      Voilà ce qui partirait chez un vrai commerçant. */}
+                  {envoi.par === "fiction" && piece && (
+                    <>
+                      <em>
+                        Son numéro&nbsp;
+                        <s>{envoi.telephone}</s> appartient à la plage réservée à
+                        la fiction&nbsp;: WhatsApp n’y trouve personne et
+                        s’ouvrirait sur votre carnet d’adresses. Voilà le message
+                        qui partirait chez un vrai commerçant&nbsp;:
+                      </em>
+                      <q>
+                        Bonjour, {(mots.reserver ?? "je réserve").toLowerCase()}{" "}
+                        pour «&nbsp;{piece.nom}&nbsp;» que je viens d’essayer sur
+                        ClikMe.
+                      </q>
+                    </>
+                  )}
                   {envoi.par === "whatsapp" && (
                     <em>
                       WhatsApp s’est ouvert sur la conversation avec{" "}
-                      {chezQui(mur.lieu)}, le message écrit. Une adresse WhatsApp ne
+                      {leLieu(mur.lieu)}, le message écrit. Une adresse WhatsApp ne
                       peut pas transporter d’image — le bouton ci-dessous envoie le
                       rendu à part.
                     </em>
@@ -2867,7 +3357,7 @@ function Essai({
                   <i aria-hidden="true">💬</i>
                   <span>
                     <b>{envoi ? "Rouvrir la conversation" : mur.essai?.mots.reserver}</b>
-                    <em>Sur WhatsApp, chez {chezQui(mur.lieu)}</em>
+                    <em>Sur WhatsApp, {chezQui(mur.lieu)}</em>
                   </span>
                 </button>
               )}
@@ -3590,6 +4080,74 @@ function Styles() {
            par le produit sur soi. */
         .mu-haut.essai .mu-cta{margin-top:14px;text-align:left;}
         .mu-haut.essai .mu-cta>i{font-size:20px;}
+
+        /* ═══ LE COMPTE EST CE QUI FAIT ENTRER ══════════════════════════════
+           La tete disait « Ce que les clients ont essaye ici » : vrai, et ca ne
+           dit rien — ni combien, ni de quoi, ni pourquoi on regarde. Le nombre
+           est celui du mur, jamais un nombre ecrit ici. */
+        .mu-haut-n{margin:0;font-size:24px;font-weight:850;letter-spacing:-.03em;
+          line-height:1.12;color:var(--mu-pale);}
+        .mu-haut-n b{color:#fff;font-weight:850;}
+        .mu-haut.essai p{margin:6px 0 0;font-size:13px;color:var(--mu-pale);}
+        /* LA PASTILLE PORTE DES FANTOMES PLUTOT QUE DES VISAGES : on n'a pas de
+           visages a empiler, et en inventer serait fabriquer exactement ce que
+           cette ligne certifie. Ils se chevauchent, comme une pile. */
+        .mu-haut-vrai{display:inline-flex;align-items:center;gap:10px;
+          margin:12px 0 0;padding:7px 13px 7px 9px;border-radius:999px;
+          background:rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.12);}
+        .mu-haut-vrai>span{display:flex;flex:none;}
+        .mu-haut-vs{width:24px;height:26px;margin-left:-8px;}
+        .mu-haut-vs:first-child{margin-left:0;}
+        .mu-haut-vs .mu-f-corps{fill:#C9BCFF;}
+        .mu-haut-vs .mu-f-oeil{fill:#1A1040;}
+        .mu-haut-vs .mu-f-bouche{fill:none;stroke:#1A1040;stroke-width:2;
+          stroke-linecap:round;}
+        .mu-haut-vrai em{font-style:normal;font-size:11px;font-weight:750;
+          line-height:1.25;color:#E8EFF6;text-align:left;}
+        /* LE GESTE D'ESSAI, COLLE AU BAS DU MUR. Meme bouton, memes mots que
+           sur l'annonce : le rituel ne change pas de forme selon la porte par
+           laquelle on entre. Il flotte parce qu'il doit rester sous le pouce a
+           la neuvieme vignette — c'est la que l'envie arrive, pas en tete. */
+        .mu-bas{position:sticky;bottom:10px;z-index:8;margin-top:18px;
+          padding-top:26px;
+          background:linear-gradient(180deg,rgba(5,9,12,0),rgba(5,9,12,.94) 56%);}
+
+        /* ═══ LES ESSAIS EN GRILLE ══════════════════════════════════════════
+           On vient y chercher une IMPRESSION D'ENSEMBLE — « ca donne quoi sur
+           des gens ? » — avant de lire qui que ce soit. Une liste d'une carte
+           par ligne oblige a defiler neuf fois pour se faire cette idee, et
+           personne ne defile neuf fois pour une impression.
+           DEUX COLONNES A 390 POINTS, TROIS AU-DELA DE 560. Trois colonnes sur
+           un petit telephone donnent 108 points par vignette : a cette taille on
+           ne voit plus ce qu'on essaie, ce qui est le seul travail de la
+           grille. */
+        .mu-rang.grille{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+        @media (min-width:560px){
+          .mu-rang.grille{grid-template-columns:1fr 1fr 1fr;}
+        }
+        .mu-rang.grille .mu-c{flex-direction:column;}
+        /* LA VIGNETTE PREND TOUTE LA LARGEUR ET RESTE CARREE : c'est elle qu'on
+           vient voir, et un format qui change d'une carte a l'autre casse la
+           lecture en damier. */
+        .mu-rang.grille .mu-c-p{width:100%;aspect-ratio:3/4;flex:none;}
+        .mu-rang.grille .mu-c-t{padding:9px 10px 10px;}
+        .mu-rang.grille .mu-c-n{flex-wrap:wrap;}
+        .mu-rang.grille .mu-c-n b{font-size:12.5px;}
+        .mu-rang.grille .mu-c-n s{font-size:10.5px;}
+        .mu-rang.grille .mu-c-t p{font-size:12px;line-height:1.35;}
+        .mu-rang.grille .mu-c-e{font-size:10px;gap:5px;}
+        /* LE GESTE « CA M'INTERESSE » N'A PAS SA PLACE DANS UNE VIGNETTE. Sur un
+           mur d'essai, on ne vient pas croiser la personne : on vient voir ce
+           que ca donne sur elle. Le bouton prend un tiers de la carte pour un
+           geste qui ne veut rien dire ici. */
+        .mu-rang.grille .mu-c-f{display:none;}
+        /* L'HUMEUR NON PLUS. « Je decouvre », « J'hesite » sont utiles sur le mur
+           d'un bar, ou l'on cherche qui rencontrer ; sur une vignette d'essai
+           elles disputent la place a la seule chose qu'on vient lire — la phrase
+           de la personne et sa note. */
+        .mu-rang.grille .mu-hum{display:none;}
+        .mu-rang.maison.apres{margin-top:14px;}
         .mu-haut-q{display:block;margin-top:11px;font-size:11.5px;line-height:1.5;
           color:var(--mu-pale);}
 
@@ -3881,7 +4439,12 @@ function Styles() {
           background:rgba(255,255,255,.07);color:#8FA8B8;
           border:1px solid rgba(255,255,255,.14);
           transition:background .28s ease,color .28s ease,transform .28s ease;}
-        .mu-frise li span{min-width:0;overflow:hidden;text-overflow:ellipsis;}
+        /* UNE ETAPE TIENT SUR UNE LIGNE. MESURE : « 3. Je donne mon avis » se
+           cassait en deux au troisieme temps, ce qui poussait toute la frise a
+           deux lignes et faisait sauter la photo de dix-huit points a chaque
+           changement d'ecran. */
+        .mu-frise li span{min-width:0;overflow:hidden;text-overflow:ellipsis;
+          white-space:nowrap;}
         .mu-frise li.fait i{background:#8B7DF6;border-color:#8B7DF6;color:#fff;}
         .mu-frise li.fait{color:#B6AEE6;}
         .mu-frise li.ici i{background:#8B7DF6;border-color:#8B7DF6;color:#fff;
@@ -3975,6 +4538,65 @@ function Styles() {
           box-shadow:0 0 0 3px rgba(139,125,246,.28);}
         .mu-styles button:focus-visible{outline:2px solid #C9BCFF;
           outline-offset:2px;border-radius:14px;}
+        /* LA TUILE QUI COMPTE CE QUI RESTE, au bout de la bande. Elle a la
+           taille d'une vignette et pas son contenu : c'est un nombre. */
+        .mu-styles-p{width:auto!important;min-width:66px;height:66px;
+          align-self:flex-start;
+          justify-content:center;border-radius:14px!important;
+          padding:0 12px!important;gap:1px!important;
+          background:rgba(255,255,255,.06)!important;
+          border:1px solid rgba(255,255,255,.16)!important;}
+        .mu-styles-p b{font-size:17px;font-weight:850;color:#E8EFF6;}
+        .mu-styles-p span{font-size:10.5px;color:var(--mu-pale);}
+
+        /* LA BANDE, SOUS UNE PHOTO EN PLEIN ECRAN. Elle passe en vignettes
+           larges et SANS LEGENDE, comme la maquette : sous une photo qui occupe
+           tout, on reconnait un style a son image, et deux lignes de texte sous
+           chaque vignette rendraient la bande plus haute que ce qu'elle
+           montre. */
+        .mu-rendu.plein .mu-styles{gap:9px;margin-top:14px;}
+        .mu-rendu.plein .mu-styles button{width:88px;}
+        .mu-rendu.plein .mu-styles button img,
+        .mu-rendu.plein .mu-styles button .mu-teinte{width:88px;height:76px;
+          border-radius:15px;}
+        .mu-rendu.plein .mu-styles button span{display:none;}
+        .mu-rendu.plein .mu-styles-p{width:auto!important;min-width:88px;
+          height:76px;}
+        .mu-rendu.plein .mu-styles-p span{display:block;}
+
+        /* ═══ LES TROISIEME ET QUATRIEME TEMPS GARDENT LA PHOTO EN PLEIN ══════
+
+           LA MAQUETTE NE LA REMET JAMAIS DANS UNE BOITE : l'avis et l'action se
+           donnent tous les deux DEVANT le rendu, parce que c'est lui qu'on note
+           et lui qu'on va chercher. Elle raccourcit seulement, pour laisser la
+           place a la question et aux gestes. */
+        .mu-rendu.plein.court .mu-mi{height:min(44vh,380px);}
+        /* LA CARTE MAIGRIT AVEC LA PHOTO. MESURE : a trois cent quatre-vingts
+           points de haut, elle descendait huit points sous la pastille
+           « Apres » et la cachait — l'etiquette qui nomme la moitie qu'on
+           regarde. La vignette de la piece passe en carre, la carte perd
+           quarante points, et la pastille redevient lisible. */
+        .mu-rendu.plein.court .mu-pl-ph{aspect-ratio:1;}
+        /* ET SUR UN ECRAN COURT, LA QUESTION DOIT RESTER VISIBLE AVEC LES CINQ
+           FANTOMES : sous quarante-quatre pour cent, la photo les repousserait
+           sous le pli, et une question qu'on ne voit pas ne recoit pas de
+           reponse. */
+        @media (max-height:700px){
+          .mu-rendu.plein .mu-mi{height:56vh;}
+          .mu-rendu.plein.court .mu-mi{height:38vh;}
+        }
+
+        /* LES LIGNES D'INFORMATION DE LA CARTE, aux temps ou les couleurs et le
+           partage ont laisse la place : ou c'est, et ce qu'on en dit. */
+        .mu-pl-i{list-style:none;margin:10px 0 0;padding:0;display:flex;
+          flex-direction:column;gap:8px;}
+        .mu-pl-i li{display:flex;align-items:center;gap:8px;}
+        .mu-pl-i .mu-tr{flex:none;width:17px;height:17px;stroke:#9FB3C8;
+          stroke-width:1.6;}
+        .mu-pl-i span{min-width:0;font-size:11.5px;font-weight:750;
+          line-height:1.2;color:#E8EFF6;}
+        .mu-pl-i i{display:block;font-style:normal;font-size:10.5px;
+          font-weight:600;color:var(--mu-pale);}
 
         /* ═══ LE TROISIEME TEMPS : JE DONNE MON AVIS ═════════════════════════
 
@@ -4190,8 +4812,20 @@ function Styles() {
           text-align:left;background:rgba(61,226,166,.1);
           border:1px solid rgba(61,226,166,.34);}
         .mu-envoi b{display:block;font-size:14px;font-weight:850;color:#9FF3D2;}
+        /* LE COMMERCE EST INVENTE : ce n'est pas une confirmation, c'est un aveu.
+           La menthe de « c'est fait » serait un mensonge de plus. */
+        .mu-envoi.fiction{background:rgba(240,180,41,.1);
+          border-color:rgba(240,180,41,.34);}
+        .mu-envoi.fiction b{color:#F7C948;}
+        .mu-envoi q{display:block;margin-top:7px;padding:10px 12px;
+          border-radius:12px;font-size:13px;line-height:1.45;color:#E8EFF6;
+          background:rgba(0,0,0,.28);quotes:none;}
         .mu-envoi em{display:block;margin-top:5px;font-style:normal;
           font-size:12px;line-height:1.45;color:var(--mu-pale);}
+        /* LE NUMERO SE LIT COMME UN NUMERO, et il est barre parce qu'il ne
+           mene nulle part : c'est exactement ce que la phrase explique. */
+        .mu-envoi em s{font-variant-numeric:tabular-nums;font-weight:750;
+          color:#F7C948;text-decoration-color:rgba(247,201,72,.5);}
         .mu-pose-t{margin:16px 0 0;font-size:12.5px;color:var(--mu-pale);}
         .mu-agir{display:flex;flex-direction:column;gap:10px;margin-top:18px;}
         .mu-agir-b{display:flex;align-items:center;gap:12px;width:100%;
@@ -4379,6 +5013,118 @@ function Styles() {
           padding:6px 11px;-webkit-backdrop-filter:blur(6px);
           backdrop-filter:blur(6px);}
         .mu-rendu-z i{font-style:normal;font-size:12px;}
+
+        /* ═══ L'ESSAYAGE EN PLEIN ECRAN, COMME LA MAQUETTE ════════════════════
+
+           « Le dernier ecran, comme d'autres ecrans avant, ne correspond pas aux
+           ecrans que je t'ai donnes niveau UX et UI : il faut respecter le
+           design scrupuleusement. »
+
+           LA PHOTO SORT DE SA BOITE. Elle etait un carre arrondi au milieu d'une
+           colonne, avec le nom de la piece dessous ; la maquette la pose BORD A
+           BORD et ecrit par-dessus. Ce n'est pas qu'une question de gout : une
+           photo en plein ecran est ce qui fait qu'on se regarde, une photo dans
+           une boite est ce qu'on parcourt, et tout cet ecran existe pour le
+           premier geste.
+
+           LE DEBORDEMENT SE FAIT EN MARGES NEGATIVES, PAS EN POSITION FIXE. La
+           feuille defile ; un calque fixe se serait decroche de la photo des le
+           premier geste de defilement. Les seize points repris de chaque cote
+           sont ceux de la feuille — voir .mu.
+
+           ET SEULEMENT AU DEUXIEME TEMPS. Aux troisieme et quatrieme — l'avis,
+           puis l'action — la meme photo redevient une vignette : on ne regarde
+           plus, on repond. */
+        .mu-rendu.plein{margin-left:-16px;margin-right:-16px;
+          border-radius:0;}
+        /* LA PHOTO S'ARRETE AVANT LE BAS DE L'ECRAN, ET C'EST VOULU. A
+           soixante-quatorze pour cent de hauteur elle touchait le bord : rien
+           ne disait qu'il y avait la bande des styles et le geste en dessous, et
+           un ecran qui a l'air fini ne se fait pas defiler. */
+        .mu-rendu.plein .mu-mi{border-radius:0;aspect-ratio:auto;
+          height:min(62vh,540px);}
+        /* AGRANDIR N'A PLUS DE RAISON D'ETRE : la photo EST en grand. Le bouton
+           ne reste que la ou elle redevient une vignette — l'avis et l'action. */
+        .mu-rendu.plein .mu-rendu-z{display:none;}
+        .mu-rendu.plein .mu-mi-e.a{left:12px;bottom:12px;}
+        .mu-rendu.plein .mu-mi-e.b{right:12px;bottom:12px;}
+        /* LE NOM ET LE PRIX SONT MONTES DANS LA CARTE FLOTTANTE. Les laisser
+           AUSSI sous la photo, c'est les ecrire deux fois a trente points
+           d'intervalle. */
+        .mu-rendu.plein .mu-rendu-t{display:none;}
+        /* TOUT LE RESTE REPREND SES SEIZE POINTS — ET ON LE DIT EN NEGATIF,
+           PAS EN LISTE. Une liste de classes a marger aurait oublie la
+           suivante : l'ecran de l'avis en ajoute huit — la question, les cinq
+           fantomes, le petit mot, la case, le geste — et chacune se serait
+           collee au bord le jour ou on l'a ecrite. La regle est donc « tout,
+           sauf la photo et les deux calques qui flottent dessus ». */
+        .mu-rendu.plein > *:not(.mu-mi):not(.mu-pl-g):not(.mu-pl-d){
+          margin-left:16px;margin-right:16px;max-width:calc(100% - 32px);
+          box-sizing:border-box;}
+
+        /* LA COLONNE DE GAUCHE : le titre, la promesse, les trois lignes.
+           Elle flotte sur la photo, donc elle porte son propre voile — sur une
+           photo claire, du blanc sur du blanc ne se lit pas. */
+        .mu-pl-g{position:absolute;left:14px;top:16px;z-index:6;max-width:54%;
+          pointer-events:none;
+          text-align:left;text-shadow:0 2px 14px rgba(0,0,0,.65);}
+        .mu-pl-t{margin:0;font-size:31px;line-height:1.02;font-weight:900;
+          letter-spacing:-.035em;color:#fff;}
+        .mu-pl-t b{display:block;font-weight:900;
+          background:linear-gradient(97deg,#C9A7FF,#E56BE0 78%);
+          -webkit-background-clip:text;background-clip:text;color:transparent;}
+        .mu-pl-p{margin:10px 0 0;font-size:13px;line-height:1.4;font-weight:600;
+          color:#EDF2F7;}
+        .mu-pl-l{list-style:none;margin:16px 0 0;padding:0;display:flex;
+          flex-direction:column;gap:11px;}
+        .mu-pl-l li{display:flex;align-items:center;gap:10px;font-size:12px;
+          line-height:1.25;font-weight:700;color:#F2F6FA;}
+        .mu-pl-l .mu-tr{flex:none;width:22px;height:22px;stroke:#fff;
+          stroke-width:1.5;}
+
+        /* LA CARTE FLOTTANTE DE DROITE : ce qu'on essaie, et les deux gestes
+           qui ne decident rien. Elle est opaque et non translucide — pose sur
+           une photo, un fond translucide laisse passer un motif qui rend son
+           texte illisible une fois sur trois. */
+        .mu-pl-d{position:absolute;right:10px;top:14px;z-index:7;width:122px;
+          border-radius:20px;padding:9px;text-align:left;
+          background:rgba(10,14,18,.92);border:1px solid rgba(255,255,255,.13);
+          box-shadow:0 14px 38px rgba(0,0,0,.5);
+          -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
+        .mu-pl-ph{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;
+          border-radius:14px;background:#0A1210;}
+        .mu-pl-n{display:block;margin-top:8px;font-size:13px;font-weight:800;
+          line-height:1.25;color:#fff;}
+        .mu-pl-x{display:block;margin-top:2px;font-style:normal;font-size:15px;
+          font-weight:850;color:#D8A0FF;}
+        .mu-pl-s{display:block;margin-top:9px;font-size:11px;font-weight:750;
+          color:var(--mu-pale);}
+        .mu-pl-c{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px;}
+        .mu-pl-c button{width:24px;height:24px;border-radius:50%;padding:0;
+          cursor:pointer;border:2px solid transparent;
+          box-shadow:0 0 0 1px rgba(255,255,255,.22) inset;}
+        .mu-pl-c button.on{border-color:#C9A7FF;
+          box-shadow:0 0 0 1px rgba(0,0,0,.4) inset;}
+        .mu-pl-r{margin-top:10px;padding-top:9px;
+          border-top:1px solid rgba(255,255,255,.12);
+          display:flex;flex-direction:column;gap:9px;}
+        .mu-pl-r button{display:flex;align-items:center;gap:9px;width:100%;
+          font:inherit;font-size:11.5px;font-weight:700;line-height:1.25;
+          text-align:left;color:#E8EFF6;background:transparent;border:0;padding:0;
+          cursor:pointer;}
+        .mu-pl-r .mu-tr{flex:none;width:19px;height:19px;stroke:#E8EFF6;
+          stroke-width:1.6;}
+        .mu-pl-r button.on{color:#F7C948;}
+        .mu-pl-r button.on .mu-tr{stroke:#F7C948;fill:#F7C948;}
+        /* SUR UN ECRAN ETROIT, LA CARTE ET LE TITRE SE DISPUTENT LA LARGEUR.
+           MESURE A 360 POINTS : cent cinquante pour la carte plus cinquante-sept
+           pour cent pour le titre depassent la photo de dix-huit points, et le
+           titre passait SOUS la carte. La carte maigrit, le titre aussi. */
+        @media (max-width:379px){
+          .mu-pl-d{width:110px;right:8px;}
+          .mu-pl-g{max-width:52%;}
+          .mu-pl-t{font-size:27px;}
+        }
 
         /* CE QUI RESTE APRES LA DECISION. Menthe : c'est la couleur du commerce,
            et ce qui vient de se passer appartient au commerce. */

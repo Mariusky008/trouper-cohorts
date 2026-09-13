@@ -803,21 +803,59 @@ function StylesLeDirect() {
    — menthe sur les fonds sombres, violette sur les clairs. Il flotte
    lentement, sept secondes par tour : c'est a peu pres la seule chose qui
    bouge en continu sur cette page, et au-dela on la sent. */
+/* ═══ ILS NE FLOTTENT PLUS TOUS EN MEME TEMPS ═══════════════════════════
+
+   « Tu peux faire varier un peu ses mouvements, animations, couleur ou
+   position pour que ce ne soit pas toujours la meme chose. »
+
+   IL AVAIT RAISON, ET LA CAUSE EST MESURABLE : les quatre partageaient la
+   MEME duree — sept secondes — et le meme point de depart. Quatre
+   personnages qui montent et descendent a l'unisson ne se lisent pas comme
+   quatre personnages : ils se lisent comme un motif qui se repete, et c'est
+   exactement l'impression qu'il decrit.
+
+   TROIS CHOSES LES SEPARENT MAINTENANT, et aucune ne coute une ligne de
+   JavaScript. Des DUREES premieres entre elles — 6,3 / 7,1 / 8,3 / 9,1 — qui
+   ne se resynchronisent jamais ; un RETARD NEGATIF, qui les fait demarrer
+   chacun a un endroit different de son cycle plutot qu'a zero ; et trois
+   AMPLITUDES, parce qu'un gros fantome qui bouge autant qu'un petit a l'air
+   plus lourd, pas plus grand.
+
+   ET LE CLIGNEMENT EST DECALE AUSSI. Quatre paires d'yeux qui se ferment a
+   la meme demi-seconde font un effet de robot ; decales, ils font quatre
+   personnages qui ne se regardent pas. */
 .ld-f-hero{width:clamp(56px,5vw,72px);
   filter:drop-shadow(0 14px 26px rgba(61,226,166,.42));
-  animation:ldFlotteF 7s ease-in-out infinite}
+  animation:ldFlotteF 7.1s ease-in-out -1.3s infinite}
 .ld-f-marge{width:clamp(76px,8vw,108px);
   filter:drop-shadow(0 18px 34px rgba(124,92,255,.42));
-  animation:ldFlotteF 7s ease-in-out infinite}
+  animation:ldFlotteG 9.1s ease-in-out -4.2s infinite}
 .ld-f-bande{width:clamp(58px,6vw,84px);
   filter:drop-shadow(0 18px 34px rgba(61,226,166,.36));
-  animation:ldFlotteF 7s ease-in-out infinite}
+  animation:ldFlotteF 6.3s ease-in-out -2.6s infinite}
 .ld-f-pied{width:clamp(50px,5vw,66px);
   filter:drop-shadow(0 14px 26px rgba(124,92,255,.34));
-  animation:ldFlotteF 7s ease-in-out infinite}
+  animation:ldFlotteP 8.3s ease-in-out -.7s infinite}
+.ld-f-hero .ld-f-oeil{animation-delay:-2.1s}
+.ld-f-marge .ld-f-oeil{animation-delay:-4.4s}
+.ld-f-bande .ld-f-oeil{animation-delay:-.9s}
+.ld-f-pied .ld-f-oeil{animation-delay:-3.3s}
 @keyframes ldFlotteF{
   0%,100%{transform:translateY(0) rotate(-2deg)}
   50%{transform:translateY(-11px) rotate(2deg)}
+}
+/* LE GRAND SE BALANCE PLUS QU'IL NE MONTE : a cent points, onze points de
+   montee se voient comme un sursaut. */
+@keyframes ldFlotteG{
+  0%,100%{transform:translateY(0) rotate(-4deg)}
+  50%{transform:translateY(-8px) rotate(3deg)}
+}
+/* ET LE PETIT DU PIED PENCHE LA TETE, sans presque monter : c'est le dernier
+   de la page, il salue plus qu'il ne flotte. */
+@keyframes ldFlotteP{
+  0%,100%{transform:translateY(0) rotate(3deg)}
+  35%{transform:translateY(-6px) rotate(-5deg)}
+  70%{transform:translateY(-2px) rotate(4deg)}
 }
 .ld-pied-f{display:flex;flex-direction:column;align-items:center;gap:6px;
   margin-top:14px}

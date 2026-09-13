@@ -1352,6 +1352,21 @@ console.log("\n══ l'essai, et rien d'autre ══");
     // « Cette bougie, chez vous » puis « Photographiez l'endroit où elle ira »
     // faisaient deux titres empilés, dont aucun ne se lisait. Il ne reste que le
     // second, qui dit ce qu'il faut faire. La garde suit.
+    // ═══ UN MUR REMPLI S'OUVRE SUR LUI-MÊME, ET IL FAUT EN SORTIR ═══════
+    //
+    // « Le fantôme amène sur l'essayage quand personne n'a encore essayé, mais
+    // quand une ou plusieurs personnes ont essayé, alors il amène sur le mur
+    // des clients. » Depuis cette règle, tous les murs d'essai de cette page
+    // s'ouvrent sur leurs clientes : l'écran de la photo est derrière le geste
+    // de la tête, et c'est ce geste qu'on mesure aussi — sans lui, on
+    // regarderait sept personnes porter la pièce sans pouvoir la porter.
+    if (!(await p6.$(".mu-ph-tete h2"))) {
+      const essayer = await p6.$(".mu-haut.essai .mu-cta.plein");
+      if (essayer) {
+        await essayer.click();
+        await p6.waitForTimeout(400);
+      }
+    }
     const tete = await p6
       .$eval(".mu-ph-tete h2", (e) => e.textContent.trim())
       .catch(() => null);
@@ -1804,6 +1819,15 @@ console.log("\n══ l'annonce et son mur disent la même chose ══");
       // nomme la chose : le titre dit ce qu'il faut photographier (« Prenez
       // votre main en photo »), la phrase dit ce qu'on va y poser (« Essayez
       // cette pose sur vous »). C'est la seconde qui trahit un mur mal aiguillé.
+      // ET ON FRANCHIT LE MUR QUAND IL Y EN A UN. Un mur d'essai déjà rempli
+      // s'ouvre sur ses clientes — c'est la règle du fantôme — et l'écran de la
+      // photo est derrière le geste de sa tête. Sans ce pas, la garde lisait
+      // « aucun essai » sur sept métiers qui en ont un.
+      const essayer = await p7.$(".mu-haut.essai .mu-cta.plein");
+      if (essayer) {
+        await essayer.click();
+        await p7.waitForTimeout(500);
+      }
       const titre = await p7
         .locator(".mu-ph-tete")
         .textContent()
@@ -2010,7 +2034,7 @@ console.log("\n══ ce qu'on dépose se voit et s'écrit ══");
     await pA.waitForTimeout(1000);
     // ON PASSE PAR LA PHOTO D'EXEMPLE : la garde ne dispose pas d'appareil, et
     // ce chemin dépose exactement le même fantôme.
-    const ex = await pA.$(".mu-exemple");
+    const ex = await pA.$('button.mu-exemple:has-text("photo d\u2019exemple")');
     if (ex) await ex.click();
     await pA.waitForTimeout(500);
     /**
@@ -2284,10 +2308,29 @@ console.log("\n══ la page du commerce ══");
 
   // L'ESSAI EST LA, EN DIRECT, CHEZ LES MÉTIERS QUI EN ONT UN. C'est le point
   // de toute la section : on essaie depuis la page du commerçant.
+  /**
+   * ALLER JUSQU'A L'ECRAN DE LA PHOTO, QUEL QUE SOIT LE MUR.
+   *
+   * « Le fantome amene sur l'essayage quand personne n'a encore essaye, mais
+   * quand une ou plusieurs personnes ont essaye, alors il amene sur le mur des
+   * clients. » Un mur rempli s'ouvre donc sur ses clientes, et l'essai est
+   * derriere le geste de sa tete. Trois gardes le franchissaient a l'aveugle et
+   * lisaient une grille vide.
+   */
+  const versLaPhoto = async (page) => {
+    if (await page.$("#mur .mu-ph-tete")) return;
+    const essayer = await page.$("#mur .mu-haut.essai .mu-cta.plein");
+    if (essayer) {
+      await essayer.click();
+      await page.waitForTimeout(500);
+    }
+  };
+
   const onglerie = await pB.$(".bq-maq-c button:text-matches('prothésiste', 'i')");
   if (onglerie) {
     await onglerie.click();
     await pB.waitForTimeout(1000);
+    await versLaPhoto(pB);
     const e = await pB.evaluate(() => ({
       // ON LIT LE TITRE DU CHAPITRE, PAS CELUI DU COMPOSANT. Celui du
       // composant existe encore dans le document mais il est masque : une
@@ -2352,7 +2395,8 @@ console.log("\n══ la page du commerce ══");
     await pB.waitForTimeout(1100);
     // LA GRILLE NE S'OUVRE QU'AU MOMENT DE CHOISIR : avant, on est sur la
     // photo. « Voir avec la photo d'exemple » est le chemin sans appareil.
-    const exemple = await pB.$("#mur .mu-exemple");
+    await versLaPhoto(pB);
+    const exemple = await pB.$('#mur button.mu-exemple:has-text("photo d\u2019exemple")');
     if (exemple) { await exemple.click(); await pB.waitForTimeout(600); }
     const pieces = await pB.$$eval("#mur .mu-pieces button", (l) =>
       l.map((e) => {
@@ -2387,7 +2431,8 @@ console.log("\n══ la page du commerce ══");
     if (onglet) {
       await onglet.click();
       await pB.waitForTimeout(1100);
-      const ex = await pB.$("#mur .mu-exemple");
+      await versLaPhoto(pB);
+      const ex = await pB.$('#mur button.mu-exemple:has-text("photo d\u2019exemple")');
       if (ex) { await ex.click(); await pB.waitForTimeout(600); }
       const aVenir = await pB.$$eval("#mur .mu-pieces button.bientot", (l) => l.length);
       const total = await pB.$$eval("#mur .mu-pieces button", (l) => l.length);
@@ -2414,7 +2459,8 @@ console.log("\n══ la page du commerce ══");
     if (onglet) {
       await onglet.click();
       await pB.waitForTimeout(1100);
-      const ex = await pB.$("#mur .mu-exemple");
+      await versLaPhoto(pB);
+      const ex = await pB.$('#mur button.mu-exemple:has-text("photo d\u2019exemple")');
       if (ex) { await ex.click(); await pB.waitForTimeout(600); }
       const pc = await pB.$("#mur .mu-pieces button:not(.bientot)");
       if (pc) {
@@ -2557,6 +2603,106 @@ console.log("\n══ la page du commerce ══");
   dire(!surTel.deborde, "sans débordement horizontal");
   await petit.close();
   await large.close();
+}
+
+// ═══ ON N'OUVRE JAMAIS WHATSAPP SUR UN NUMÉRO DE FICTION ═══════════════════
+//
+// CE QUE ÇA PROTÈGE : « La prise de RDV en ligne via WhatsApp : ça ouvre bien
+// WhatsApp mais propose mon propre carnet d'adresses (pas le tél du coiffeur
+// par défaut). Bug ? »
+//
+// LE DÉFAUT, ET IL ÉTAIT DOUBLE. `wa.me` sans numéro ouvre le carnet
+// d'adresses — trois appels sur quatre partaient ainsi, parce que le
+// destinataire était un paramètre FACULTATIF qu'on pouvait oublier. Et même
+// avec numéro, celui des commerces de la maquette est un numéro de fiction :
+// WhatsApp ne l'a pas dans son annuaire et s'ouvre là encore sur la liste des
+// conversations. Un garde-fou existait bien, mais il testait `!mur.telephone`,
+// un champ que `murDeLaCarte` remplit TOUJOURS — il ne s'est donc jamais
+// déclenché.
+//
+// CE QUE CETTE GARDE MESURE : qu'au bout du rituel, le geste commercial
+// n'ouvre AUCUNE fenêtre, et qu'il dit la vérité à la place — le commerce est
+// inventé, voici son numéro, voici le message qui partirait.
+{
+  console.log("\n══ on n'ouvre pas WhatsApp sur un numéro qui n'existe pas ══");
+  const tel = await nav.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  await tel.clock.setFixedTime(new Date(2026, 2, 12, 11, 20, 0));
+  // ON PIÈGE `window.open` AVANT LE PREMIER SCRIPT DE LA PAGE. C'est la seule
+  // façon de savoir qu'aucune fenêtre n'est partie : une fenêtre qui s'ouvre
+  // puis se referme ne laisse aucune trace dans le document.
+  await tel.addInitScript(() => {
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    window.__ouverts = [];
+    window.open = (u) => {
+      window.__ouverts.push(String(u));
+      return null;
+    };
+  });
+  const pF = await tel.newPage();
+  await pF.goto(`${BASE}/autour-de-moi?carte=cirier&essai=1`, { waitUntil: "networkidle" });
+  await pF.waitForTimeout(1600);
+  // LA CIRIÈRE EST LE SEUL MUR DONT LE RENDU SE CALCULE ICI, sans clé d'image :
+  // sa pièce porte un découpage, donc l'essai va jusqu'au bout hors ligne.
+  const exemple = await pF.$('button:has-text("photo d’exemple")');
+  if (!exemple) {
+    dire(false, "l'essai s'ouvre sur la photo d'exemple");
+  } else {
+    await exemple.click();
+    await pF.waitForTimeout(1100);
+    const piece = await pF.$(".mu-pieces button:not(.bientot)");
+    if (piece) {
+      await piece.click();
+      await pF.waitForSelector(".mu-rendu", { timeout: 60000 }).catch(() => null);
+      await pF.waitForTimeout(2200);
+      const avis = await pF.$(".mu-cta");
+      if (avis) {
+        await avis.click();
+        await pF.waitForTimeout(800);
+        const cinq = (await pF.$$(".mu-avis-f button, .mu-note-f button"))[4];
+        if (cinq) { await cinq.click(); await pF.waitForTimeout(350); }
+        const suite = await pF.$('button:has-text("Continuer")');
+        if (suite) { await suite.click(); await pF.waitForTimeout(1300); }
+      }
+    }
+    const gestes = await pF.$$eval(".mu-agir-b", (bs) =>
+      bs.map((b) => b.textContent.trim().replace(/\s+/g, " ")),
+    );
+    dire(gestes.length === 3, `le rituel finit sur ses trois gestes (${gestes.length})`);
+    // LE DEUXIÈME EST L'ACTION DU MÉTIER — « La réserver » chez la cirière —
+    // et c'est celui qui écrivait au commerçant.
+    const agir = (await pF.$$(".mu-agir-b"))[1];
+    if (agir) {
+      await agir.click();
+      await pF.waitForTimeout(1200);
+      const suite = await pF.evaluate(() => ({
+        ouverts: window.__ouverts ?? [],
+        fiction: !!document.querySelector(".mu-envoi.fiction"),
+        dit: document.querySelector(".mu-envoi")?.textContent?.replace(/\s+/g, " ") ?? "",
+        numero: document.querySelector(".mu-envoi em s")?.textContent?.trim() ?? null,
+      }));
+      dire(
+        suite.ouverts.length === 0,
+        `aucune fenêtre ne s'ouvre sur le carnet d'adresses${
+          suite.ouverts.length ? ` (${suite.ouverts[0].slice(0, 60)})` : ""
+        }`,
+      );
+      dire(suite.fiction, "l'écran dit à la place que le commerce est inventé");
+      dire(
+        /^06 39 98 /.test(suite.numero ?? ""),
+        `et montre son numéro, de la plage réservée à la fiction (${suite.numero ?? "aucun"})`,
+      );
+      dire(
+        /message qui partirait/i.test(suite.dit),
+        "avec le message qui partirait chez un vrai commerçant",
+      );
+    } else {
+      dire(false, "l'action du métier est atteignable au bout du rituel");
+    }
+  }
+  await tel.close();
 }
 
 // ═══ LA PAGE D'ACCUEIL DIT CE QUE LE PRODUIT A DE NOUVEAU ══════════════════

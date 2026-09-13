@@ -80,6 +80,7 @@ async function parGemini(
   partie: string,
   garder: string[],
   change: string,
+  decrire: string,
 ): Promise<{ image: string } | { erreur: string }> {
   const modele = s(process.env.GEMINI_IMAGE_MODEL) || "gemini-2.5-flash-image";
   /**
@@ -99,13 +100,35 @@ async function parGemini(
       method: "POST",
       headers: { "content-type": "application/json", "x-goog-api-key": cle },
       body: JSON.stringify({
+        /**
+         * ═══ CHAQUE IMAGE EST ANNONCÉE JUSTE AVANT D'ÊTRE DONNÉE ═══════════
+         *
+         * ELLES ÉTAIENT COLLÉES L'UNE APRÈS L'AUTRE À LA FIN, derrière un
+         * texte de quarante lignes qui parlait de « l'image 1 » et de
+         * « l'image 2 ». Rien, dans la requête, ne disait LAQUELLE était
+         * laquelle : le modèle recevait deux photographies de deux femmes
+         * différentes et devait deviner, à partir du texte, celle qu'il
+         * fallait garder. Il s'est trompé — c'est très exactement le défaut
+         * rapporté : « ce n'est plus le même visage ».
+         *
+         * UNE ÉTIQUETTE AVANT CHAQUE IMAGE LÈVE L'AMBIGUÏTÉ, et c'est la forme
+         * que ces modèles lisent le mieux : texte, image, texte, image, puis
+         * la consigne complète. Ça ne coûte rien et ça enlève la seule chose
+         * que le modèle avait à deviner.
+         */
         contents: [
           {
             role: "user",
             parts: [
-              { text: consigne(partie, garder, change) },
+              {
+                text: `IMAGE 1 — LA PERSONNE À MODIFIER. C'est cette personne-là, et elle doit rester exactement la même. Elle montre ${partie}.`,
+              },
               { inlineData: { mimeType: photo.type, data: photo.donnees } },
+              {
+                text: "IMAGE 2 — LA RÉFÉRENCE, qui montre quelqu'un d'autre. Rien de cette personne-là ne doit passer dans le résultat.",
+              },
               { inlineData: { mimeType: reference.type, data: reference.donnees } },
+              { text: consigne(partie, garder, change, decrire) },
             ],
           },
         ],
@@ -134,6 +157,7 @@ async function parOpenAI(
   partie: string,
   garder: string[],
   change: string,
+  decrire: string,
 ): Promise<{ image: string } | { erreur: string }> {
   const modele = s(process.env.OPENAI_IMAGE_MODEL) || "gpt-image-1";
   // L'API d'édition d'OpenAI prend les images en multipart, et elle accepte
@@ -141,7 +165,7 @@ async function parOpenAI(
   // référence. C'est exactement la forme dont on a besoin.
   const forme = new FormData();
   forme.append("model", modele);
-  forme.append("prompt", consigne(partie, garder, change));
+  forme.append("prompt", consigne(partie, garder, change, decrire));
   forme.append("n", "1");
   /**
    * TROIS RÉGLAGES QUI DÉCIDENT SI LE RENDU ARRIVE, OU PAS DU TOUT.
@@ -194,6 +218,7 @@ export async function POST(req: Request) {
     partie?: string;
     garder?: string[];
     change?: string;
+    decrire?: string;
   };
   try {
     corps = (await req.json()) as typeof corps;
@@ -227,6 +252,15 @@ export async function POST(req: Request) {
    * modèle à refaire le visage, et il le fait.
    */
   const change = s(corps.change).slice(0, 160);
+  /**
+   * CE QUE LA PIÈCE EST, EN TOUTES LETTRES.
+   *
+   * Sans elle, la consigne demandait de DÉDUIRE la coupe d'une photo de
+   * quelqu'un d'autre avant de la poser : deux opérations difficiles au lieu
+   * d'une, et le modèle se rabattait sur la seule qu'il maîtrise — refabriquer
+   * un portrait. Voir `decrire` dans `fantomes.ts` et `consigne-essai.ts`.
+   */
+  const decrire = s(corps.decrire).slice(0, 300);
   if (!photo) return NextResponse.json({ erreur: "Photo manquante ou illisible." }, { status: 400 });
   if (!reference) {
     return NextResponse.json({ erreur: "Photo de référence manquante." }, { status: 400 });
@@ -280,10 +314,27 @@ export async function POST(req: Request) {
    */
   const dabord = s(process.env.ESSAI_FOURNISSEUR).toLowerCase();
   const chemins = [
-    gemini ? () => parGemini(gemini, photo, reference, partie, garder, change) : null,
-    openai ? () => parOpenAI(openai, photo, reference, partie, garder, change) : null,
+    gemini ? () => parGemini(gemini, photo, reference, partie, garder, change, decrire) : null,
+    openai ? () => parOpenAI(openai, photo, reference, partie, garder, change, decrire) : null,
   ];
-  for (const tenter of dabord === "openai" ? [...chemins].reverse() : chemins) {
+  /**
+   * ═══ ET C'EST OPENAI QUI PASSE EN PREMIER, MAINTENANT ═════════════════════
+   *
+   * ON NE POUVAIT PAS TRANCHER TANT QU'AUCUN RENDU RÉEL N'AVAIT ÉTÉ VU. Il l'a
+   * été : « ce n'est plus le même visage, et la coupe sélectionnée n'a pas été
+   * créée ». C'est la mesure qui manquait, et elle départage les deux.
+   *
+   * `input_fidelity: high` N'EXISTE QUE CHEZ OPENAI, et c'est le réglage dont
+   * dépend précisément ce qui a raté : il coûte du temps et garde le visage, la
+   * peau et la pose. Gemini n'a aucun équivalent — on lui demande la fidélité
+   * par des phrases, ce qui marche jusqu'au jour où ça ne marche pas.
+   *
+   * GEMINI RESTE EN REPLI, et le renversement se refait en une variable :
+   * `ESSAI_FOURNISSEUR=gemini`. Ce qui compte ici est que le DÉFAUT choisisse
+   * la fidélité, parce que c'est elle qui décide si cet essai sert à quelque
+   * chose.
+   */
+  for (const tenter of dabord === "gemini" ? chemins : [...chemins].reverse()) {
     if (!tenter) continue;
     try {
       const r = await tenter();

@@ -285,6 +285,30 @@ export type Conseil = {
 };
 
 export type Piece = {
+  /**
+   * ═══ CE QUE LA PIÈCE EST, EN TOUTES LETTRES ════════════════════════════════
+   *
+   * « Il a changé la tête, et en plus la coiffure sélectionnée — un carré
+   * plongeant — n'a pas été créée sur la photo originale. »
+   *
+   * DEUX DÉFAUTS D'UN COUP, ET LE SECOND EXPLIQUE EN PARTIE LE PREMIER. La
+   * consigne disait « reproduis fidèlement ce que l'image 2 montre des
+   * cheveux » — c'est-à-dire : DÉDUIS la coupe d'une photo, puis pose-la. Deux
+   * opérations difficiles au lieu d'une, et quand la déduction rate, le modèle
+   * ne pose rien : il se rabat sur ce qu'il sait faire, qui est de refabriquer
+   * un portrait. C'est précisément ce qu'on a vu.
+   *
+   * UNE PHRASE CHANGE LE PROBLÈME DE NATURE. « Un carré long qui s'arrête à la
+   * mâchoire, coupé net, sans dégradé » est une CIBLE, pas une devinette : le
+   * modèle n'a plus à interpréter une photo, il a à exécuter une description,
+   * et la référence ne sert plus qu'à confirmer la couleur et la matière.
+   *
+   * ELLE EST ÉCRITE PAR LE COMMERÇANT, PAS DEVINÉE. Le nom commercial
+   * (« Carré long, de face ») est fait pour une vitrine ; il ne dit ni la
+   * longueur, ni la ligne, ni ce qui se passe sur la nuque. Cette phrase-là est
+   * faite pour être exécutée.
+   */
+  decrire?: string;
   id: string;
   nom: string;
   prix: string;
@@ -583,6 +607,28 @@ export type Mur = {
    */
   telephone?: string;
   /**
+   * ═══ VRAI NUMÉRO OU NUMÉRO DE FICTION : LE MUR DOIT SAVOIR LEQUEL ═════════
+   *
+   * « Ça ouvre bien WhatsApp mais propose mon propre carnet d'adresses (pas le
+   * tel du coiffeur par défaut). Bug ? »
+   *
+   * CE N'EN ÉTAIT PAS UN, ET C'EST PIRE : `telephone` est TOUJOURS rempli —
+   * le numéro déclaré par le commerçant, ou à défaut un numéro de la plage de
+   * fiction de l'ARCEP. WhatsApp reçoit donc une adresse valide dans sa forme
+   * mais absente de son annuaire, et fait alors ce qu'il fait toujours dans ce
+   * cas : il s'ouvre sur la liste des conversations, c'est-à-dire sur le
+   * carnet d'adresses. L'écran, lui, n'avait aucun moyen de distinguer les
+   * deux cas — `telephone` est renseigné des deux côtés — donc il ouvrait
+   * WhatsApp dans les deux, et se trompait dans un sur deux.
+   *
+   * CE DRAPEAU EST CE MOYEN. Vrai : le numéro est inventé, on n'ouvre pas
+   * WhatsApp, on MONTRE le message qui partirait et le numéro tel quel — ce
+   * qui est la vérité, et reste lisible. Faux : le commerçant a déclaré son
+   * numéro, la conversation s'ouvre sur lui. Le jour où il le déclare, le
+   * chemin bascule tout seul, sans rien changer à l'écran.
+   */
+  telFiction?: boolean;
+  /**
    * CE QUE LE LIEU MET SOUS LE MUR — le plat du jour, la pièce du jour.
    * C'est le seul endroit de la feuille où le commerce parle de ce qu'il vend.
    */
@@ -865,14 +911,14 @@ export const MURS: Mur[] = [
          */
         {
           id: "p-coeurs",
-          nom: "Motif cœurs, pose amande",
+          nom: "Motif cœurs, pose amande", decrire: "des ongles en forme d'amande, de longueur moyenne, blancs opaques, avec de petits cœurs rouges peints dessus",
           prix: "45 €",
           photo: "/direct/pose-ongles.jpg",
           reference: "/direct/pose-ongles.jpg",
         },
         {
           id: "p-paillettes",
-          nom: "Dégradé pailleté",
+          nom: "Dégradé pailleté", decrire: "des ongles en forme d'amande avec un dégradé du clair vers le foncé et des paillettes fines concentrées vers l'extrémité",
           prix: "52 €",
           photo: "/direct/avis-ongles.jpg",
           reference: "/direct/avis-ongles.jpg",
@@ -889,14 +935,14 @@ export const MURS: Mur[] = [
          */
         {
           id: "p-pastel",
-          nom: "Pastel amande, motif feuille",
+          nom: "Pastel amande, motif feuille", decrire: "des ongles en forme d'amande, vernis pastel mat, avec un motif de feuille blanche peint sur un ou deux doigts",
           prix: "48 €",
           photo: "/direct/ongles2.jpeg",
           reference: "/direct/ongles2.jpeg",
         },
         {
           id: "p-longue",
-          nom: "Pose longue, décors noirs",
+          nom: "Pose longue, décors noirs", decrire: "des ongles longs en forme d'amande, base translucide, avec des décors graphiques noirs peints à main levée",
           prix: "65 €",
           photo: "/direct/ongles1.jpeg",
           reference: "/direct/ongles1.jpeg",
@@ -1063,14 +1109,14 @@ export const MURS: Mur[] = [
       pieces: [
         {
           id: "j-chaine",
-          nom: "Chaîne fine, pierre noire",
+          nom: "Chaîne fine, pierre noire", decrire: "un bracelet à chaîne très fine, métal doré, portant une petite pierre noire facettée",
           prix: "89 €",
           photo: "/direct/poignet-bracelet.jpg",
           reference: "/direct/poignet-bracelet.jpg",
         },
         {
           id: "j-riviere",
-          nom: "Bracelet rivière",
+          nom: "Bracelet rivière", decrire: "un bracelet souple serti d'une ligne continue de petites pierres claires",
           prix: "240 €",
           photo: "/direct/bracelet-seul.png",
           reference: "/direct/bracelet-seul.png",
@@ -1093,7 +1139,7 @@ export const MURS: Mur[] = [
          */
         {
           id: "j-collier",
-          nom: "Collier pierre bleue",
+          nom: "Collier pierre bleue", decrire: "un collier à chaîne fine avec un pendentif en pierre bleue",
           prix: "120 €",
           photo: "/direct/collier-seul.png",
           bientot: true,
@@ -1229,14 +1275,14 @@ export const MURS: Mur[] = [
       pieces: [
         {
           id: "c-trio",
-          nom: "Trio bougies & houx",
+          nom: "Trio bougies & houx", decrire: "trois bougies rouges de hauteurs différentes posées sur un lit de houx vert, dans une coupe basse",
           prix: "34 €",
           photo: "/direct/bougie-seule.png",
           decoupe: "/direct/decoupe-bougies.png",
         },
         {
           id: "c-fleurs",
-          nom: "Bougie fleurs séchées",
+          nom: "Bougie fleurs séchées", decrire: "une bougie en pot de grès avec des fleurs séchées coulées dans la cire",
           prix: "22 €",
           photo: "/direct/atelier-bougies.jpeg",
           bientot: true,
@@ -1377,7 +1423,7 @@ export const MURS: Mur[] = [
       pieces: [
         {
           id: "c-motif",
-          nom: "Motif rasé, nuque",
+          nom: "Motif rasé, nuque", decrire: "un motif géométrique rasé à la tondeuse dans les cheveux très courts de la nuque et du côté du crâne",
           prix: "28 €",
           photo: "/direct/avis-coupe.jpg",
           reference: "/direct/avis-coupe.jpg",
@@ -1402,9 +1448,9 @@ export const MURS: Mur[] = [
          * qui débloquait le métier n'était pas un calcul : c'était deux images
          * prises du bon angle.
          */
-        { id: "c-homme", nom: "Boucles courtes, de face", prix: "26 €",
+        { id: "c-homme", nom: "Boucles courtes, de face", decrire: "une coupe courte masculine, cheveux bouclés d'environ cinq centimètres sur le dessus, nuque et côtés plus courts, pas de raie marquée", prix: "26 €",
           photo: "/direct/coiffure-homme-face.jpg", reference: "/direct/coiffure-homme-face.jpg" },
-        { id: "c-femme", nom: "Carré long, de face", prix: "38 €",
+        { id: "c-femme", nom: "Carré long, de face", decrire: "un carré long qui s'arrête juste sous la mâchoire, coupé net à la même longueur tout autour, raie au milieu, sans dégradé ni frange", prix: "38 €",
           photo: "/direct/coiffure-femme-face.jpg", reference: "/direct/coiffure-femme-face.jpg" },
         /**
          * LES DEUX DERNIÈRES « BIENTÔT » SONT TOMBÉES.
@@ -1419,9 +1465,9 @@ export const MURS: Mur[] = [
          * condition : on se photographie de face, donc la référence doit être
          * prise du même angle, sinon le modèle doit deviner un profil.
          */
-        { id: "c-boucles", nom: "Boucles longues, frange", prix: "68 €",
+        { id: "c-boucles", nom: "Boucles longues, frange", decrire: "des cheveux longs très bouclés, volumineux, tombant sous les épaules, avec une frange bouclée qui couvre le front", prix: "68 €",
           photo: "/direct/coiffure1.jpg", reference: "/direct/coiffure1.jpg" },
-        { id: "c-cuivre", nom: "Carré cuivré, dégradé", prix: "95 €",
+        { id: "c-cuivre", nom: "Carré cuivré, dégradé", decrire: "un carré dégradé au niveau du menton, très volumineux et ondulé, couleur cuivre roux, avec une frange épaisse", prix: "95 €",
           photo: "/direct/coiffure2.jpg", reference: "/direct/coiffure2.jpg" },
       ],
     },
@@ -1536,14 +1582,14 @@ export const MURS: Mur[] = [
       pieces: [
         {
           id: "m-combinaison",
-          nom: "Combinaison beige, ceinturée",
+          nom: "Combinaison beige, ceinturée", decrire: "une combinaison longue beige à manches longues, ceinturée à la taille",
           prix: "129 €",
           photo: "/direct/mode-combinaison.jpg",
           reference: "/direct/mode-combinaison.jpg",
         },
         {
           id: "m-chemise",
-          nom: "Chemise en jean",
+          nom: "Chemise en jean", decrire: "une chemise en jean bleu clair, coupe droite, manches longues, boutonnée",
           prix: "69 €",
           photo: "/direct/mode-chemise-jean.jpg",
           reference: "/direct/mode-chemise-jean.jpg",
@@ -1562,15 +1608,15 @@ export const MURS: Mur[] = [
          * précisément ce que le tableau des branches est là pour faire, et
          * c'est pourquoi on élargit le modèle plutôt que d'écrire deux listes.
          */
-        { id: "m-boho", nom: "Blouse imprimée et jean flare", prix: "115 €",
+        { id: "m-boho", nom: "Blouse imprimée et jean flare", decrire: "une blouse imprimée à manches longues portée avec un jean évasé taille haute", prix: "115 €",
           photo: "/direct/vetement1.jpeg", reference: "/direct/vetement1.jpeg" },
-        { id: "m-brode", nom: "Ensemble brodé écru", prix: "149 €",
+        { id: "m-brode", nom: "Ensemble brodé écru", decrire: "un ensemble écru en coton brodé, haut et bas assortis", prix: "149 €",
           photo: "/direct/vetement3.jpeg", reference: "/direct/vetement3.jpeg" },
-        { id: "m-carreaux", nom: "Marinière rose et pantalon vichy", prix: "98 €",
+        { id: "m-carreaux", nom: "Marinière rose et pantalon vichy", decrire: "une marinière à rayures roses et blanches portée avec un pantalon à carreaux vichy", prix: "98 €",
           photo: "/direct/vetement4.jpg", reference: "/direct/vetement4.jpg" },
-        { id: "m-molleton", nom: "Ensemble molleton rose", prix: "89 €",
+        { id: "m-molleton", nom: "Ensemble molleton rose", decrire: "un ensemble en molleton rose, sweat et pantalon assortis", prix: "89 €",
           photo: "/direct/vetement2.jpg", reference: "/direct/vetement2.jpg" },
-        { id: "m-polaire", nom: "Polaire rose, col zippé", prix: "75 €",
+        { id: "m-polaire", nom: "Polaire rose, col zippé", decrire: "une veste polaire rose à col zippé", prix: "75 €",
           photo: "/direct/vetement5.jpeg", reference: "/direct/vetement5.jpeg" },
       ],
     },
@@ -1603,7 +1649,87 @@ export const MURS: Mur[] = [
         interesses: 2,
       },
     ],
+    /**
+     * ═══ UN MUR DÉJÀ REMPLI, ET C'ÉTAIT UNE DEMANDE ════════════════════════
+     *
+     * « Il faut que j'aie un des commerçants qui a bien déjà des photos qui ont
+     * été prises par ses clients, et qui permettrait d'avoir le mur des clients
+     * un peu rempli quand on clique sur le fantôme. »
+     *
+     * C'EST CETTE BOUTIQUE-LÀ, ET POUR UNE RAISON MATÉRIELLE : c'est le seul
+     * métier du dépôt dont on ait SEPT photos de personnes différentes portant
+     * sept choses différentes. Un mur de tatouages demanderait des photos de
+     * peau qu'on n'a pas, et poser des planches de flash à la place montrerait
+     * un catalogue plutôt qu'un mur.
+     *
+     * CE QUE CES PHOTOS SONT VRAIMENT, ET IL FAUT LE SAVOIR : ce sont les
+     * photos de la boutique, réutilisées ici comme essais de clientes. Toute la
+     * maquette le dit — « les commerces, les prénoms et les heures sont
+     * inventés » — et elles partiront le jour où de vraies clientes auront
+     * essayé. Ce qui n'est PAS inventé, et c'est tout ce qui compte : le
+     * mécanisme qui les y amène.
+     *
+     * LES NOTES ET LES MOTS SONT VARIÉS EXPRÈS. Un mur où tout le monde met
+     * cinq fantômes et écrit « j'adore » est un mur publicitaire, et il ne sert
+     * à personne : c'est le « pas pour moi finalement, mais au moins je n'ai
+     * pas fait le déplacement » qui dit ce que le produit fait vraiment.
+     */
     clients: [
+      {
+        id: "mo-emilie",
+        qui: "Émilie",
+        photo: "/direct/vetement1.jpeg",
+        essai: { quoi: "Blouse imprimée et jean flare", verdict: "pris", note: 5 },
+        mot: "Je ne pensais pas que le flare m’irait. J’ai pris les deux.",
+        heure: "09:40",
+        humeur: "decouvre",
+        interesses: 12,
+        jusqua: "encore 2 jours",
+      },
+      {
+        id: "mo-manon",
+        qui: "Manon",
+        photo: "/direct/vetement2.jpg",
+        essai: { quoi: "Ensemble molleton rose", verdict: "pris", note: 4 },
+        mot: "Confortable et ça tombe bien. Je le mets tout le temps.",
+        heure: "10:05",
+        humeur: "decouvre",
+        interesses: 7,
+        jusqua: "encore 2 jours",
+      },
+      {
+        id: "mo-caroline",
+        qui: "Caroline",
+        photo: "/direct/vetement3.jpeg",
+        essai: { quoi: "Ensemble brodé écru", verdict: null, note: 4 },
+        mot: "Très contente, même avec mes formes. J’hésite sur la taille.",
+        heure: "14:20",
+        humeur: "hesite",
+        interesses: 9,
+        jusqua: "encore 2 jours",
+      },
+      {
+        id: "mo-nathalie",
+        qui: "Nathalie",
+        photo: "/direct/vetement4.jpg",
+        essai: { quoi: "Marinière rose et pantalon vichy", verdict: "passe", note: 2 },
+        mot: "Pas pour moi finalement, mais au moins je n’ai pas fait le déplacement.",
+        heure: "16:05",
+        humeur: "hesite",
+        interesses: 3,
+        jusqua: "encore 2 jours",
+      },
+      {
+        id: "mo-clara",
+        qui: "Clara",
+        photo: "/direct/vetement5.jpeg",
+        essai: { quoi: "Polaire rose, col zippé", verdict: "pris", note: 5 },
+        mot: "Exactement la couleur que je cherchais. Mise de côté jusqu’à demain.",
+        heure: "17:30",
+        humeur: "offrir",
+        interesses: 6,
+        jusqua: "encore 2 jours",
+      },
       {
         id: "mo-julie",
         qui: "Julie",
@@ -1699,14 +1825,14 @@ export const MURS: Mur[] = [
       pieces: [
         {
           id: "f-jour",
-          nom: "Bouquet du jour",
+          nom: "Bouquet du jour", decrire: "un bouquet rond de fleurs de saison dans un vase, hauteur d'environ quarante centimètres",
           prix: "15 €",
           photo: "/direct/bouquet-du-jour.jpg",
           reference: "/direct/bouquet-du-jour.jpg",
         },
         {
           id: "f-marche",
-          nom: "Bouquet du marché",
+          nom: "Bouquet du marché", decrire: "un bouquet champêtre généreux, fleurs mélangées, posé dans un vase",
           prix: "18 €",
           photo: "/direct/avis-bouquet.jpg",
           reference: "/direct/avis-bouquet.jpg",
@@ -1819,7 +1945,14 @@ export const MURS: Mur[] = [
         mur: "Voir les flashs déjà posés",
         surMoi: "Essayer sur ma peau",
         promesse: "Découvrez à quoi ce flash ressemble sur votre peau, en quelques secondes",
-                essayage: "projection",
+        // ON ESSAIE, ON NE PROJETTE PAS. « Le Fantôme n'est pas synonyme de
+        // cabine d'essayage : il devient le moyen de voir quelque chose dans
+        // MA PROPRE RÉALITÉ. » La nuance sépare la fleuriste et la cirière —
+        // on voit un bouquet CHEZ SOI — du tatoueur, qui pose le dessin SUR LA
+        // PEAU de la personne. Écrit « projection », le mur annonçait « 1
+        // projection de ce flash » sous un bouton qui dit « Essayer sur ma
+        // peau » : deux mots pour le même geste, dans le même écran.
+        essayage: "essayage",
         voirLeMur: "Voir sur différentes peaux",
         ceci: "ce flash",
         photoTitre: "Photographiez la zone à tatouer",
@@ -1845,7 +1978,7 @@ export const MURS: Mur[] = [
          * la bonne reference : c'est le dessin que le tatoueur propose, et le
          * modele a pour travail de le poser sur l'avant-bras.
          */
-        { id: "t-muerte", nom: "Santa Muerte à la rose", prix: "180 €",
+        { id: "t-muerte", nom: "Santa Muerte à la rose", decrire: "un tatouage en noir et gris représentant une Santa Muerte tenant une rose, d'environ quinze centimètres de haut", prix: "180 €",
           photo: "/direct/cartoon-santa-muerte-portrait-1.webp",
           reference: "/direct/cartoon-santa-muerte-portrait-1.webp" },
         /**
@@ -1859,9 +1992,9 @@ export const MURS: Mur[] = [
          * de poser sur l'avant-bras. Le tatoueur avait trois flashs annoncés sur
          * sa carte et un seul essayable ; il en a trois.
          */
-        { id: "t-hirondelle", nom: "Hirondelle et fleurs de cerisier", prix: "140 €",
+        { id: "t-hirondelle", nom: "Hirondelle et fleurs de cerisier", decrire: "un tatouage à l'encre bleue représentant une hirondelle entourée de fleurs de cerisier", prix: "140 €",
           photo: "/direct/tattou2.jpeg", reference: "/direct/tattou2.jpeg" },
-        { id: "t-chat", nom: "Chat tribal, trait plein", prix: "110 €",
+        { id: "t-chat", nom: "Chat tribal, trait plein", decrire: "un tatouage noir au trait plein représentant un chat de style tribal", prix: "110 €",
           photo: "/direct/tattou1.jpg", reference: "/direct/tattou1.jpg" },
       ],
     },
@@ -1970,13 +2103,13 @@ export const MURS: Mur[] = [
         agir: { picto: "boutique", titre: "Les essayer en boutique", detail: "Elles sont mises de côté" },
       },
       pieces: [
-        { id: "l-ecaille", nom: "Carrée écaille, verres dégradés", prix: "159 €",
+        { id: "l-ecaille", nom: "Carrée écaille, verres dégradés", decrire: "une monture carrée épaisse en écaille marron, avec des verres légèrement dégradés", prix: "159 €",
           photo: "/direct/lunettes1.jpg", reference: "/direct/lunettes1.jpg" },
-        { id: "l-fuchsia", nom: "Papillon fuchsia translucide", prix: "139 €",
+        { id: "l-fuchsia", nom: "Papillon fuchsia translucide", decrire: "une monture papillon en acétate fuchsia translucide", prix: "139 €",
           photo: "/direct/lunettes2.jpeg", reference: "/direct/lunettes2.jpeg" },
-        { id: "l-verte", nom: "Œil-de-chat vert bouteille", prix: "175 €",
+        { id: "l-verte", nom: "Œil-de-chat vert bouteille", decrire: "une monture œil-de-chat vert bouteille, branches fines", prix: "175 €",
           photo: "/direct/lunettes3.jpeg", reference: "/direct/lunettes3.jpeg" },
-        { id: "l-degrade", nom: "Épaisse dégradée caramel", prix: "149 €",
+        { id: "l-degrade", nom: "Épaisse dégradée caramel", decrire: "une monture épaisse en acétate dégradé caramel, forme rectangulaire arrondie", prix: "149 €",
           photo: "/direct/lunettes4.jpeg", reference: "/direct/lunettes4.jpeg" },
       ],
     },
@@ -2251,7 +2384,9 @@ export function murDeLaCarte(c: {
     // LE NUMÉRO SUIT LE COMMERCE, PAS LE MODÈLE. Un mur emprunté au modèle de
     // la branche ne doit jamais emprunter AUSSI son numéro : on écrirait à
     // quelqu'un d'autre. Voir `numeroDeFiction` pour la maquette.
-    telephone: c.telephone ?? numeroDeFiction(c.id),
+    telephone: c.telephone || numeroDeFiction(c.id),
+    // ET ON DIT QUAND CE NUMÉRO EST INVENTÉ. Voir `telFiction` dans le type.
+    telFiction: !c.telephone,
     essai,
     contexte,
   };
