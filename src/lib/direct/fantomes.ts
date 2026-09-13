@@ -197,7 +197,15 @@ export type Fantome = {
    * quelqu'un d'autre — le suivant qui a la même tête sait à quoi s'attendre,
    * et le commerçant apprend ce qui plaît AVANT d'avoir vendu.
    */
-  essai?: { quoi: string; verdict: "pris" | "passe" | null; note?: number };
+  /**
+   * `aime` — CE QUI A PLU LE PLUS, quand la personne l'a dit.
+   *
+   * UNE NOTE SEULE NE DIT PAS POURQUOI. Quatre fantômes sur une coupe apprennent
+   * au commerçant que ça a plu ; ils ne lui disent pas si c'est la longueur ou
+   * la couleur — c'est-à-dire la seule chose qu'il puisse changer demain.
+   * Facultatif, comme la note : on ne le demande qu'après elle, et jamais avant.
+   */
+  essai?: { quoi: string; verdict: "pris" | "passe" | null; note?: number; aime?: string };
   /**
    * COMBIEN ONT DIT « ÇA M'INTÉRESSE ».
    *
@@ -431,6 +439,36 @@ export type Mur = {
       autres: string;
       /** Le seul lien vers le mur, depuis l'essai. */
       mur: string;
+      /**
+       * ═══ LE GESTE PRINCIPAL DE L'ANNONCE ════════════════════════════════════
+       *
+       * « L'action principale doit être qu'il essaye sur eux ou un meuble. »
+       *
+       * IL REMPLACE « Proposer à mes amis » SUR LES MÉTIERS QUI S'ESSAIENT, et
+       * il est écrit ici parce que le verbe change avec le métier : on essaie
+       * une coupe SUR SOI, on pose une bougie CHEZ SOI. « Essayer sur moi »
+       * devant une table de salon serait le même contresens que « Choisissez la
+       * pièce » chez un coiffeur.
+       */
+      surMoi: string;
+      /**
+       * LA LIGNE SOUS LE BOUTON — ce qu'on va voir, et en combien de temps.
+       *
+       * ELLE NOMME LA CHOSE, jamais « le produit » : « cette coupe », « ce
+       * vernis », « ce tatouage ». C'est le seul endroit de l'annonce où l'on
+       * promet un résultat, donc c'est le seul endroit où « produit » se
+       * remarquerait comme un mot de logiciel.
+       */
+      promesse: string;
+      /**
+       * LES QUATRE CHOSES QU'ON PEUT AIMER DANS UN RENDU, PLUS « Autre ».
+       *
+       * « Qu'est-ce qui vous plaît le plus ? » — et la réponse n'est pas la même
+       * d'un métier à l'autre : on aime le VOLUME d'une coupe, la TENUE d'un
+       * vernis, le TRAIT d'un tatouage. Quatre étiquettes tiennent sur deux
+       * lignes à 390 points ; au-delà on choisit moins bien, pas mieux.
+       */
+      aime: [string, string, string, string];
     };
     pieces: Piece[];
   };
@@ -698,6 +736,9 @@ export const MURS: Mur[] = [
         reserver: "Je réserve ma séance",
         autres: "Voir les autres poses du jour",
         mur: "Voir les poses portées par les clientes",
+        surMoi: "Essayer sur mes ongles",
+        promesse: "Découvrez à quoi cette pose ressemble sur votre main, en quelques secondes",
+        aime: ["La couleur", "La forme", "Le motif", "La longueur"],
       },
       pieces: [
         /**
@@ -895,6 +936,9 @@ export const MURS: Mur[] = [
         reserver: "Je la réserve",
         autres: "Voir les autres pièces de l’atelier",
         mur: "Voir les bijoux portés par les clientes",
+        surMoi: "Essayer sur moi",
+        promesse: "Découvrez à quoi cette pièce ressemble à votre poignet, en quelques secondes",
+        aime: ["La pierre", "La chaîne", "La taille", "La couleur"],
       },
       pieces: [
         {
@@ -1047,6 +1091,9 @@ export const MURS: Mur[] = [
         reserver: "Je la réserve",
         autres: "Voir les autres bougies du moment",
         mur: "Voir ces bougies chez d’autres",
+        surMoi: "La voir chez moi",
+        promesse: "Découvrez à quoi cette bougie ressemble sur votre table, en quelques secondes",
+        aime: ["La taille", "La couleur", "Le parfum", "Le style"],
       },
       pieces: [
         {
@@ -1181,6 +1228,9 @@ export const MURS: Mur[] = [
         reserver: "Je réserve mon créneau",
         autres: "Voir les autres coupes du salon",
         mur: "Voir les coupes faites dans ce salon",
+        surMoi: "Essayer sur moi",
+        promesse: "Découvrez à quoi cette coupe vous va, en quelques secondes",
+        aime: ["Le style", "La couleur", "Le volume", "La longueur"],
       },
       pieces: [
         {
@@ -1326,6 +1376,9 @@ export const MURS: Mur[] = [
         reserver: "Je la mets de côté",
         autres: "Voir les autres pièces rentrées",
         mur: "Voir ces pièces portées par d’autres",
+        surMoi: "Essayer sur moi",
+        promesse: "Découvrez à quoi cette pièce vous va, en quelques secondes",
+        aime: ["La coupe", "La couleur", "La matière", "La taille"],
       },
       pieces: [
         {
@@ -1475,6 +1528,9 @@ export const MURS: Mur[] = [
         reserver: "Je le fais mettre de côté",
         autres: "Voir les autres bouquets du jour",
         mur: "Voir ces bouquets chez d’autres",
+        surMoi: "Le voir chez moi",
+        promesse: "Découvrez à quoi ce bouquet ressemble sur votre table, en quelques secondes",
+        aime: ["Les fleurs", "Les couleurs", "La taille", "Le style"],
       },
       pieces: [
         {
@@ -1597,6 +1653,9 @@ export const MURS: Mur[] = [
         reserver: "Demander un rendez-vous",
         autres: "Voir les autres flashs du mois",
         mur: "Voir les flashs déjà posés",
+        surMoi: "Essayer sur ma peau",
+        promesse: "Découvrez à quoi ce flash ressemble sur votre peau, en quelques secondes",
+        aime: ["Le trait", "La taille", "L’emplacement", "Le style"],
       },
       pieces: [
         /**
@@ -1720,6 +1779,9 @@ export const MURS: Mur[] = [
         reserver: "Les essayer en boutique",
         autres: "Voir les autres montures",
         mur: "Voir les montures portées par les clients",
+        surMoi: "Essayer sur moi",
+        promesse: "Découvrez à quoi cette monture vous va, en quelques secondes",
+        aime: ["La forme", "La couleur", "La taille", "Le style"],
       },
       pieces: [
         { id: "l-ecaille", nom: "Carrée écaille, verres dégradés", prix: "159 €",

@@ -41,6 +41,7 @@
 // partir la carte.
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -3014,6 +3015,113 @@ export function ApercuHabitant() {
     recrute: !!(dessus && estPoste(dessus)),
     evenement: !!dessusEv,
   });
+
+  /**
+   * ═══ LE MUR DE L'ANNONCE DU DESSUS, CALCULÉ UNE FOIS ═══════════════════════
+   *
+   * IL ÉTAIT CALCULÉ À L'INTÉRIEUR DE LA FEUILLE, donc il n'existait qu'une fois
+   * la feuille ouverte. Or l'écran a maintenant besoin de savoir AVANT de
+   * l'ouvrir si cette annonce s'essaie : c'est ce qui décide de son bouton
+   * principal. Le même appel, remonté ici, sert aux deux — et deux appels
+   * séparés auraient fini par ne plus répondre la même chose.
+   */
+  const murDuSommet = useMemo(
+    () =>
+      dessus
+        ? murDeLaCarte({
+            id: dessus.id,
+            nom: dessus.nom,
+            metier: dessus.metier,
+            branche: dessus.branche,
+            ville: dessus.ville,
+            distance: dessus.distance,
+            photo: dessus.photo,
+            google: dessus.google,
+            catalogue: dessus.catalogue,
+            moment: momentDuSommet,
+          })
+        : null,
+    [dessus, momentDuSommet],
+  );
+
+  /**
+   * ═══ CETTE ANNONCE S'ESSAIE-T-ELLE SUR SOI ? ═══════════════════════════════
+   *
+   * « Pour les métiers coiffeur, onglerie, artisan, tatoueur… l'action
+   * principale doit être qu'il essaye sur eux ou un meuble, et ensuite qu'il
+   * note, que ça aille sur le mur du commerçant et qu'ils en parlent avec leurs
+   * amis. Donc pour ces métiers-là on ne peut pas mettre en gros les trois
+   * boutons actuels : il faut pousser l'expérience vers l'essayage. »
+   *
+   * LA QUESTION NE SE POSE PAS AU MÉTIER, ELLE SE POSE AU MUR. Une liste de
+   * branches écrite ici serait une deuxième vérité à côté de
+   * `modeleDeLaBranche`, et les deux divergeraient au premier métier ajouté —
+   * c'est exactement comme ça que l'hypnothérapeute s'est retrouvé à qui l'on
+   * proposait d'essayer des bougies. Un mur a un essai, ou il n'en a pas.
+   *
+   * ET IL FAUT UNE PIÈCE ESSAYABLE, PAS SEULEMENT UN ESSAI. Un mur dont toutes
+   * les pièces sont marquées « bientôt » afficherait un grand bouton violet qui
+   * mène à une grille où rien ne se choisit : la promesse la plus visible de
+   * l'écran, rompue au premier appui.
+   */
+  const essaiDuSommet =
+    murDuSommet?.essai && murDuSommet.essai.pieces.some((p) => !p.bientot)
+      ? murDuSommet.essai
+      : null;
+
+  /**
+   * ON N'ESSAIE NI UN POSTE, NI UN ÉVÉNEMENT, NI UNE INVITATION.
+   *
+   * Le mur d'un salon de coiffure porte un essai, et une carte de RECRUTEMENT
+   * de ce même salon en hérite : « Essayez cette coupe sur vous » sous une offre
+   * d'emploi. Ces trois états passent devant le métier partout ailleurs dans ce
+   * fichier — voir `personnaliteDe` et le libellé du bouton de réservation — et
+   * ils passent devant ici pour la même raison.
+   */
+  const onPeutEssayer =
+    !!essaiDuSommet &&
+    !!dessus &&
+    !dessusEv &&
+    !estPoste(dessus) &&
+    !estInvitation(dessus);
+
+  /**
+   * LE GESTE D'ENGAGEMENT, ÉCRIT UNE FOIS.
+   *
+   * IL VIT MAINTENANT À DEUX ENDROITS : en bouton de contour sous l'annonce
+   * ordinaire, et en pastille du rail de droite quand l'annonce s'essaie. Il
+   * était écrit en ligne dans le premier ; le copier dans le second aurait fait
+   * deux versions de quatre cas particuliers — événement, poste, invitation,
+   * réservation — et c'est toujours celle qu'on ne regarde pas qui prend du
+   * retard.
+   */
+  const engagerLeSommet = () => {
+    // SUR UN ÉVÉNEMENT, IL N'Y A RIEN À RÉSERVER — on y va, ou on n'y va pas. Le
+    // troisième geste ouvre donc l'itinéraire, qui est la seule chose utile.
+    if (dessusEv) {
+      noter("jy-vais", 0, "evenement");
+      window.open(dessusEv.itineraire, "_blank", "noopener,noreferrer");
+      return;
+    }
+    // MEME TEST QUE LE LIBELLE. Le bouton dit « Je postule » des que la carte
+    // est une offre d'emploi ; il doit alors ouvrir la feuille de candidature,
+    // et pas celle des reservations.
+    if (dessus && estPoste(dessus)) {
+      noter("je-passe");
+      setOuvertReponse(dessus);
+      setFeuille("embauche");
+      return;
+    }
+    if (dessus && estInvitation(dessus)) {
+      noter("jy-vais");
+      setOuvertReponse(dessus);
+      setFeuille("jyvais");
+      return;
+    }
+    noter("reserve");
+    setCreneau("");
+    setFeuille("resa");
+  };
   /**
    * ⚡ LE FLASH DE L'ANNONCE QU'ON PROPOSE — pour la page d'invitation.
    *
@@ -7448,9 +7556,59 @@ export function ApercuHabitant() {
                 libellé coupé ne dit rien du tout — et c'est précisément le
                 défaut qu'on répare. Empilés, chacun a toute la largeur, et
                 l'ordre de lecture EST le parcours. */}
+            {/* ═══ CE QUE CETTE ANNONCE DEMANDE VRAIMENT DE FAIRE ═══════════════
+
+                « Pour les métiers coiffeur, onglerie, artisan, tatoueur… l'action
+                principale doit être qu'il essaye sur eux, et ensuite qu'il note,
+                que ça aille sur le mur du commerçant et qu'ils en parlent avec
+                leurs amis. Donc pour ces métiers-là on ne peut pas mettre en gros
+                les trois boutons actuels : il faut pousser l'expérience vers
+                l'essayage. »
+
+                LE DIAGNOSTIC EST JUSTE, ET IL SE MESURE. Sur une coupe à 18 €,
+                l'écran offrait trois gestes de même famille — proposer, réserver,
+                garder — et AUCUN ne montrait ce que le produit sait faire que
+                personne d'autre ne fait. L'essai existait, à un appui de là, dans
+                la barre du bas, derrière un fantôme que rien ne présentait. On
+                vendait le plus banal du produit en gros, et le plus rare en petit.
+
+                CE QUI CHANGE ICI, ET SEULEMENT POUR LES MÉTIERS QUI S'ESSAIENT :
+                l'essai prend la place du geste plein, et les trois autres passent
+                au rail de droite, en secondaires. Un bar, un restaurant, un
+                événement, un poste gardent exactement l'écran d'avant : on ne
+                s'essaie pas une table. */}
+            {onPeutEssayer ? (
+              <button
+                type="button"
+                className="ap-agir essayer ap-essayer"
+                onClick={() => {
+                  noter("onglet", 0, "essai-carte");
+                  setDejaOuvert(true);
+                  setMurOuvert(true);
+                }}
+                disabled={!sommet}
+              >
+                {/* LE FANTÔME EST SUR LE BOUTON, ET C'EST LUI QUI FAIT LE LIEN.
+                    Le même personnage tient le bouton vert de la barre du bas, et
+                    c'est par lui qu'on arrivait ici avant. Le voir sur le geste
+                    principal, puis le retrouver en bas, dit sans une ligne de
+                    texte que les deux ouvrent la même chose. */}
+                <Fantome classe="ap-agir-f" />
+                <span>{essaiDuSommet.mots.surMoi}</span>
+                <s aria-hidden="true">→</s>
+              </button>
+            ) : (
             <button
               type="button"
-              className="ap-agir parler"
+              /* ═══ `ap-parler` NOMME LE GESTE, `parler` DESSINE LE BOUTON ═══
+                 CE N'EST PAS UNE CLASSE EN TROP. Les gardes visaient
+                 `.ap-agir.parler`, c'est-à-dire la FORME — un aplat vert pleine
+                 largeur. Le jour où ce geste est passé au rail de droite sur les
+                 métiers qui s'essaient, elles ont conclu « PAS DE BOUTON » sur
+                 huit métiers : le geste était là, il avait changé d'habit. Une
+                 garde qui mesure une forme casse à chaque mise en page ; celle
+                 qui mesure un geste tient. */
+              className="ap-agir parler ap-parler"
               onClick={() => partir("droite")}
               disabled={!sommet}
             >
@@ -7489,6 +7647,21 @@ export function ApercuHabitant() {
               <span>Proposer à mes amis</span>
               <s aria-hidden="true">→</s>
             </button>
+            )}
+
+            {/* LA LIGNE SOUS LE BOUTON DIT CE QU'ON VA VOIR, ET COMBIEN DE TEMPS
+                ÇA PREND. « Essayer sur moi » est un verbe qu'on n'a jamais lu
+                ailleurs : sans cette ligne, on ne sait pas si l'on s'engage à
+                quelque chose, et dans le doute on n'appuie pas. Le mot du métier
+                la remplit — « cette coupe », « ce vernis », « ce tatouage » —
+                parce que « ce produit » ne se dit dans aucune boutique. */}
+            {onPeutEssayer && (
+              <p className="ap-essayer-p">
+                <i aria-hidden="true">✨</i>
+                {essaiDuSommet.mots.promesse}
+              </p>
+            )}
+
             {/* ═══ LA SECONDE RANGÉE : DEUX GESTES CÔTE À CÔTE ═══
 
                 CE QUE LA MAQUETTE CHANGE. « Proposer à mes amis » garde toute
@@ -7507,38 +7680,12 @@ export function ApercuHabitant() {
                 ET DEUX BOUTONS TIENNENT CÔTE À CÔTE ICI ALORS QUE « Proposer à
                 mes amis » et « Réserver mon plat » n'y tenaient pas : ces
                 deux-là font huit et quinze caractères. */}
+            {!onPeutEssayer && (
             <div className="ap-duo">
             <button
               type="button"
-              className="ap-agir engage"
-              onClick={() => {
-                // SUR UN ÉVÉNEMENT, IL N'Y A RIEN À RÉSERVER — on y va, ou on
-                // n'y va pas. Le troisième geste ouvre donc l'itinéraire, qui
-                // est la seule chose utile à ce moment-là.
-                if (dessusEv) {
-                  noter("jy-vais", 0, "evenement");
-                  window.open(dessusEv.itineraire, "_blank", "noopener,noreferrer");
-                  return;
-                }
-                // MEME TEST QUE LE LIBELLE. Le bouton dit « Je postule » des
-                // que la carte est une offre d'emploi ; il doit alors ouvrir la
-                // feuille de candidature, et pas celle des reservations.
-                if (dessus && estPoste(dessus)) {
-                  noter("je-passe");
-                  setOuvertReponse(dessus);
-                  setFeuille("embauche");
-                  return;
-                }
-                if (dessus && estInvitation(dessus)) {
-                  noter("jy-vais");
-                  setOuvertReponse(dessus);
-                  setFeuille("jyvais");
-                  return;
-                }
-                noter("reserve");
-                setCreneau("");
-                setFeuille("resa");
-              }}
+              className="ap-agir engage ap-engager"
+              onClick={engagerLeSommet}
               disabled={
                 dessusEv || (dessus && (estPoste(dessus) || estInvitation(dessus)))
                   ? false
@@ -7580,7 +7727,7 @@ export function ApercuHabitant() {
             </button>
             <button
               type="button"
-              className={`ap-agir favori${gardeSommet ? " on" : ""}`}
+              className={`ap-agir favori ap-favori${gardeSommet ? " on" : ""}`}
               disabled={!sommet}
               onClick={garderLeSommet}
             >
@@ -7588,6 +7735,78 @@ export function ApercuHabitant() {
               {gardeSommet ? "Dans vos favoris" : "Mettre en favori"}
             </button>
             </div>
+            )}
+
+            {/* ═══ LES TROIS ANCIENS GESTES, DEVENUS SECONDAIRES ════════════════
+
+                « Les 3 boutons qu'on avait deviennent secondaires sur le côté
+                droit. »
+
+                CE SONT EXACTEMENT LES MÊMES, ET ILS FONT EXACTEMENT LA MÊME
+                CHOSE : en parler, réserver, garder. Ce qui change est leur
+                POIDS — un rail de pastilles contre un bouton plein — et rien
+                d'autre. Un geste qu'on déplace en le réécrivant devient deux
+                gestes différents au premier ajustement.
+
+                ILS NE PORTENT AUCUN COMPTEUR, ET C'EST UN ÉCART À LA MAQUETTE.
+                Elle dessine « 128 » sous le cœur et « 24 » sous le partage.
+                Ces deux nombres n'existent nulle part dans le produit : les
+                afficher serait fabriquer de la preuve sociale, c'est-à-dire la
+                seule chose que cette maquette ne peut pas se permettre
+                d'inventer, puisqu'elle promet par ailleurs que l'essai, lui,
+                est vrai. Ils reviendront le jour où on les comptera.
+
+                À DROITE ET AU-DESSUS DE LA BARRE, pas au milieu de la photo :
+                les flèches « précédente » et « suivante » tiennent les deux
+                bords à mi-hauteur, et un rail posé là aurait disputé le pouce à
+                la navigation la plus fréquente de l'écran. */}
+            {onPeutEssayer && (
+              <div className="ap-rail" aria-label="Autres gestes sur cette annonce">
+                <button
+                  type="button"
+                  className="ap-rail-b ap-parler"
+                  onClick={() => partir("droite")}
+                  disabled={!sommet}
+                >
+                  <i aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="9" cy="8" r="3.2" />
+                      <path d="M2.8 20c0-3.4 2.8-5.6 6.2-5.6s6.2 2.2 6.2 5.6" />
+                      <path d="M16.2 5.4a3.2 3.2 0 0 1 0 6" />
+                      <path d="M17.6 14.9c2.3.6 3.8 2.5 3.8 5.1" />
+                    </svg>
+                  </i>
+                  <span>En parler</span>
+                </button>
+                <button
+                  type="button"
+                  className="ap-rail-b ap-engager"
+                  onClick={engagerLeSommet}
+                  disabled={!aReserver.length}
+                >
+                  <i aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <rect x="3.2" y="5" width="17.6" height="16" rx="3" />
+                      <path d="M3.2 10h17.6M8 2.8v4.4M16 2.8v4.4" />
+                    </svg>
+                  </i>
+                  <span>{flashDuSommet ? "J’en profite" : langage.reserver}</span>
+                </button>
+                <button
+                  type="button"
+                  className={`ap-rail-b ap-favori${gardeSommet ? " on" : ""}`}
+                  onClick={garderLeSommet}
+                  disabled={!sommet}
+                >
+                  <i aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M12 20.3s-7.6-4.6-7.6-9.7a4.4 4.4 0 0 1 7.6-3 4.4 4.4 0 0 1 7.6 3c0 5.1-7.6 9.7-7.6 9.7z" />
+                    </svg>
+                  </i>
+                  <span>{gardeSommet ? "Gardé" : "Favori"}</span>
+                </button>
+              </div>
+            )}
             {/* ─── LES CINQ POINTS SONT PARTIS ───
                 « Supprimer les cinq points qui ne servent a rien. »
 
@@ -9567,22 +9786,19 @@ export function ApercuHabitant() {
                     <MurContenu
                       key={dessus.id}
                       onSalon={envoyerLEssaiAuSalon}
-                      mur={murDeLaCarte({
-                        id: dessus.id,
-                        nom: dessus.nom,
-                        metier: dessus.metier,
-                        branche: dessus.branche,
-                        ville: dessus.ville,
-                        distance: dessus.distance,
-                        photo: dessus.photo,
-                        google: dessus.google,
-                        // CE QUE CE COMMERCE VEND, ET CE QU'IL ANNONCE
-                        // MAINTENANT. Sans ces deux lignes, le mur montre le
-                        // catalogue du modèle : « Trio bougies & houx » sous une
-                        // annonce de fleuriste. Voir `murDeLaCarte`.
-                        catalogue: dessus.catalogue,
-                        moment: momentDuSommet,
-                      })}
+                      /* METTRE EN FAVORI DEPUIS L'ESSAI, ET C'EST LE MÊME
+                         GESTE QUE SUR L'ANNONCE. La maquette du troisième temps
+                         le pose à côté de « Prendre rendez-vous » ; il est
+                         branché sur `garderLeSommet`, donc sur la même poche.
+                         Un second système de favoris pour l'essai aurait donné
+                         deux listes, et celle qu'on ne regarde pas se vide
+                         toute seule. */
+                      onFavori={garderLeSommet}
+                      favori={gardeSommet}
+                      /* LE MUR EST DÉJÀ CALCULÉ PLUS HAUT : c'est lui qui décide
+                         du bouton principal de l'annonce. Deux appels séparés
+                         auraient fini par ne plus répondre la même chose. */
+                      mur={murDuSommet!}
                     />
                   ) : null}
                 </div>
@@ -15309,6 +15525,106 @@ export function ApercuHabitant() {
         .ap-agir.engage{color:#0A1410;
           background:linear-gradient(140deg,#F7C948,#E09B18);
           box-shadow:0 12px 26px -16px rgba(240,180,41,.9);}
+        /* ═══ LE GESTE DES METIERS QUI S'ESSAIENT ═══════════════════════════
+
+           « L'action principale doit etre qu'il essaye sur eux ou un meuble, et
+           ensuite qu'il note, que ca aille sur le mur du commercant et qu'ils en
+           parlent avec leurs amis. Donc pour ces metiers-la on ne peut pas
+           mettre en gros les trois boutons actuels. »
+
+           IL EST VIOLET, ET PAS VERT, ET C'EST LE SEUL ECART DE COULEUR DU
+           PRODUIT. La menthe veut dire « ceci vous engage aupres du commerce »
+           partout : reserver, proposer, la bulle du fantome. L'essai n'engage
+           rien — c'est gratuit, personne n'est prevenu, rien n'est publie — et
+           lui donner la couleur de l'engagement ferait hesiter exactement la ou
+           il ne faut pas. Le violet est deja celui de l'essai dans la feuille :
+           le bouton du rendu, la pastille, le halo de l'attente. Quelqu'un qui
+           appuie ici arrive donc dans le meme monde.
+
+           IL EST PLUS HAUT QUE LE VERT QU'IL REMPLACE, de quatre points, et le
+           fantome tient dedans a trente. C'est le seul bouton de l'ecran qui
+           porte un PERSONNAGE plutot qu'un pictogramme, et c'est ce qui le relie
+           au bouton rond de la barre du bas — le meme, par lequel on arrivait
+           ici avant que personne ne le trouve. */
+        .ap-agir.essayer{padding:15px 16px;font-size:15.5px;border-radius:18px;
+          gap:10px;letter-spacing:.01em;font-weight:850;justify-content:center;
+          color:#fff;
+          background:linear-gradient(112deg,#6D5BFF,#A855F7 58%,#D946B8);
+          box-shadow:0 16px 34px -14px rgba(139,92,246,.85);}
+        .ap-agir.essayer span{flex-direction:row;}
+        .ap-agir.essayer s{text-decoration:none;font-size:17px;line-height:1;
+          margin-left:2px;}
+        .ap-agir-f{width:30px;height:33px;flex:none;overflow:visible;
+          filter:drop-shadow(0 3px 6px rgba(10,6,30,.45));}
+        /* LA LIGNE DE PROMESSE. Elle est petite, elle est violette, et elle ne
+           passe jamais sur deux lignes de plus : « Decouvrez a quoi cette coupe
+           vous va, en quelques secondes » fait deux lignes a 390 points, et
+           c'est le plafond. */
+        .ap-essayer-p{display:flex;align-items:flex-start;gap:6px;
+          margin:7px 2px 0;font-size:12px;font-weight:650;line-height:1.35;
+          color:rgba(214,203,255,.9);text-align:left;}
+        .ap-essayer-p i{font-style:normal;font-size:12px;line-height:1.35;
+          flex:none;}
+
+        /* ═══ LE RAIL DES TROIS ANCIENS GESTES ══════════════════════════════
+
+           « Les 3 boutons qu'on avait deviennent secondaires sur le cote
+           droit. »
+
+           IL EST POSE AU-DESSUS DE LA BARRE, contre le bord droit, et il flotte
+           sur la photo. Les fleches « precedente » et « suivante » tiennent les
+           deux bords A MI-HAUTEUR : un rail place la aurait dispute le pouce a
+           la navigation la plus repetee de l'ecran, et sur onze millimetres de
+           pouce ce genre de voisinage est une loterie.
+
+           CHAQUE PASTILLE PORTE SON MOT. Trois ronds muets se lisent comme trois
+           decorations — il faut appuyer pour savoir, et personne n'appuie pour
+           savoir. Le mot fait dix points, ce qui suffit a le lire sans qu'il
+           dispute quoi que ce soit au geste principal. */
+        .ap-rail{position:absolute;right:2px;bottom:calc(100% + 10px);
+          display:flex;flex-direction:column;align-items:center;gap:9px;
+          pointer-events:auto;}
+        /* LE MOT PASSE A LA LIGNE, IL NE SE COUPE PAS. Mesure a 390 points :
+           « Prendre rendez-vous » — le libelle du coiffeur, qui vient du metier
+           et non d'ici — sortait « Prendre … ». Un libelle tronque ne dit rien
+           du tout, et c'est precisement le defaut qu'on repare ailleurs dans
+           cette barre. Deux lignes de dix points tiennent sans pousser le rail :
+           la place est prise par l'ecart entre les pastilles. */
+        .ap-rail-b{display:flex;flex-direction:column;align-items:center;gap:3px;
+          font:inherit;font-size:10px;font-weight:800;letter-spacing:-.01em;
+          color:#EAF2EC;background:transparent;border:0;cursor:pointer;
+          padding:0;width:64px;text-align:center;line-height:1.12;
+          white-space:normal;overflow-wrap:anywhere;
+          text-shadow:0 1px 4px rgba(4,12,9,.85);
+          transition:transform .12s ease;}
+        .ap-rail-b i{display:grid;place-items:center;width:42px;height:42px;
+          border-radius:50%;font-style:normal;
+          background:rgba(10,20,16,.62);
+          border:1px solid rgba(255,255,255,.16);
+          -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+          box-shadow:0 8px 20px -10px rgba(0,0,0,.9);}
+        .ap-rail-b i svg{width:21px;height:21px;display:block;fill:none;
+          stroke:currentColor;stroke-width:1.9;stroke-linecap:round;
+          stroke-linejoin:round;}
+        .ap-rail-b span{max-width:100%;}
+        .ap-rail-b:active{transform:scale(.94);}
+        .ap-rail-b:disabled{opacity:.34;cursor:default;}
+        .ap-rail-b:disabled:active{transform:none;}
+        .ap-rail-b:focus-visible{outline:2px solid #3DE2A6;outline-offset:3px;
+          border-radius:12px;}
+        /* GARDE : le coeur se remplit, et il prend la seule couleur chaude du
+           rail. C'est le seul des trois qui a un ETAT — les deux autres ouvrent
+           quelque chose, celui-la bascule. */
+        .ap-rail-b.on{color:#FF8A9B;}
+        .ap-rail-b.on i{background:rgba(255,138,155,.18);
+          border-color:rgba(255,138,155,.5);}
+        .ap-rail-b.on i svg{fill:currentColor;}
+        @media (max-width:359px){
+          .ap-rail{gap:8px;}
+          .ap-rail-b i{width:38px;height:38px;}
+          .ap-rail-b i svg{width:19px;height:19px;}
+        }
+
         .ap-rond:disabled,.ap-agir:disabled{cursor:default;opacity:.32;}
         .ap-rond:disabled:active,.ap-agir:disabled:active{transform:none;}
         .ap-rond:focus-visible,.ap-agir:focus-visible{outline:2px solid #3DE2A6;

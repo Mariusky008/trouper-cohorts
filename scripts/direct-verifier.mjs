@@ -1352,7 +1352,18 @@ console.log("\n══ l'essai, et rien d'autre ══");
     if (!tete) continue; // un mur d'annonce : il ouvre sur le mur, c'est voulu
     const geste = await p6.$eval(".mu-cta.plein b", (e) => e.textContent.trim()).catch(() => "");
     const liens = await p6.$$eval(".mu-e-mur", (b) => b.map((x) => x.textContent.trim()));
-    dire(!(await p6.$(".mu-pas")), `${nom} : pas de frise 1-2-3 avant l'essai`);
+    // LA FRISE EST REVENUE, ET CE N'EST PLUS LA MÊME. L'ancienne — `.mu-pas`,
+    // « 1 · CADRER  2 · CHOISIR  3 · DÉCIDER » — prévenait qu'il allait falloir
+    // en faire trois, au-dessus d'un écran qui n'avait rien montré. Celle-ci dit
+    // « Je découvre · J'essaie · Je donne mon avis », à la première personne, et
+    // son troisième temps est ce qu'on ne devinait pas : la note, le mur, le
+    // salon. On garde donc les deux mesures — l'ancienne ne doit pas revenir, la
+    // nouvelle doit être là.
+    dire(!(await p6.$(".mu-pas")), `${nom} : pas d'ancienne frise 1-2-3`);
+    const frise = await p6.$$eval(".mu-frise li", (l) =>
+      l.map((e) => e.textContent.replace(/\s+/g, " ").trim()),
+    );
+    dire(frise.length === 3, `${nom} : la frise dit les trois temps (${frise.length})`);
     dire(!(await p6.$(".mu-rang")), `${nom} : le mur n'est pas là à l'ouverture`);
     dire(liens.length === 1, `${nom} : un seul lien vers le mur (${liens.length})`);
     vus.push({ nom, tete, geste, mur: liens[0] ?? "" });
@@ -1367,6 +1378,194 @@ console.log("\n══ l'essai, et rien d'autre ══");
     dire(doubles.length === 0, `le texte « ${champ} » diffère d'un métier à l'autre${doubles.length ? ` — repris : ${doubles[0]}` : ""}`);
   }
   await c6.close();
+}
+
+// ═══ L'ANNONCE POUSSE VERS L'ESSAI, PAS VERS TROIS BOUTONS ════════════════
+//
+// « Pour les métiers coiffeur, onglerie, artisan, tatoueur… l'action principale
+// doit être qu'il essaye sur eux ou un meuble, et ensuite qu'il note, que ça
+// aille sur le mur du commerçant et qu'ils en parlent avec leurs amis. Donc pour
+// ces métiers-là on ne peut pas mettre en gros les trois boutons actuels
+// "proposer à mes amis, réserver, et favori" : il faut pousser l'expérience vers
+// l'essayage, avec les 3 boutons qu'on avait qui deviennent secondaires sur le
+// côté droit. »
+//
+// CE QUE CETTE GARDE PROTÈGE, ET IL Y A DEUX MOITIÉS. Que l'essai soit BIEN le
+// geste plein là où il existe — sinon on revend en gros ce que fait tout le
+// monde et en petit ce que personne d'autre ne fait. Et que les métiers SANS
+// essai n'aient pas changé d'un point : on ne s'essaie pas une table, et une
+// règle écrite pour un coiffeur qui déborde sur un restaurant est le défaut
+// qu'on a déjà payé trois fois sur les murs.
+console.log("\n══ l'annonce pousse vers l'essai ══");
+{
+  const cE = await nav.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  await cE.clock.setFixedTime(new Date(2026, 8, 2, 14, 15, 0));
+  await cE.addInitScript(() =>
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
+  );
+  const pE = await cE.newPage();
+  pE.on("pageerror", (e) => erreurs.push(String(e)));
+
+  /** Ce que l'annonce propose en grand, et ce qu'elle range à droite. */
+  const lire = async (carte) => {
+    await pE.goto(`${BASE}/autour-de-moi?carte=${carte}`, { waitUntil: "networkidle" });
+    await pE.waitForTimeout(1100);
+    return pE.evaluate(() => ({
+      plein: document.querySelector(".ap-gestes .ap-agir")?.textContent.trim() ?? "",
+      essai: !!document.querySelector(".ap-agir.essayer"),
+      promesse: document.querySelector(".ap-essayer-p")?.textContent.trim() ?? "",
+      rail: [...document.querySelectorAll(".ap-rail-b")].map((e) =>
+        e.textContent.replace(/\s+/g, " ").trim(),
+      ),
+      duo: !!document.querySelector(".ap-duo"),
+    }));
+  };
+
+  const coif = await lire("coif-centre");
+  dire(coif.essai, `chez le coiffeur, le geste plein est l'essai (« ${coif.plein} »)`);
+  dire(
+    /essayer/i.test(coif.plein),
+    "et il dit « essayer », pas « proposer à mes amis »",
+  );
+  dire(
+    /coupe/i.test(coif.promesse),
+    `la promesse nomme la chose du métier (« ${coif.promesse} »)`,
+  );
+  // LES TROIS ANCIENS GESTES SONT TOUS LÀ, ET AUCUN N'A DISPARU EN CHEMIN. Une
+  // refonte qui pousse vers l'essai en perdant « réserver » aurait coûté le seul
+  // geste qui rapporte quelque chose au commerçant.
+  dire(coif.rail.length === 3, `les trois anciens gestes passent à droite (${coif.rail.length})`);
+  dire(
+    coif.rail.some((t) => /parler/i.test(t)) &&
+      coif.rail.some((t) => /rendez-vous|réserv/i.test(t)) &&
+      coif.rail.some((t) => /favori|gard/i.test(t)),
+    `et ce sont bien les trois (${coif.rail.join(" · ")})`,
+  );
+  dire(!coif.duo, "la rangée d'avant a disparu, elle ne double pas le rail");
+
+  // ON N'ESSAIE PAS UNE TABLE. Un restaurant, un bar, une boulangerie n'ont pas
+  // de mur d'essai : leur écran ne doit pas avoir bougé d'un point.
+  for (const [carte, quoi] of [["centre", "un restaurant"], ["boulange", "une boulangerie"]]) {
+    const c = await lire(carte);
+    dire(!c.essai, `${quoi} garde son écran : pas de bouton d'essai`);
+    dire(c.rail.length === 0, `${quoi} : pas de rail non plus (${c.rail.length})`);
+    dire(c.duo, `${quoi} : les deux gestes du bas sont restés à leur place`);
+  }
+  await cE.close();
+}
+
+// ═══ L'ESSAI SE JOUE EN TROIS TEMPS ═══════════════════════════════════════
+//
+// « Je te l'ai fait en maquettes pour que cet enchaînement soit scrupuleusement
+// respecté : il essaye sur lui, ensuite il note, ça va sur le mur du commerçant,
+// et ils en parlent avec leurs amis. »
+//
+// LE RENDU FAISAIT HUIT CHOSES SUR UN ÉCRAN — montrer, faire noter, proposer
+// d'acheter, de passer, d'en parler, d'en essayer un autre, de dire que c'était
+// raté, de reprendre la photo — et la note, la seule que ce produit soit seul à
+// savoir recueillir, était perdue au milieu. Cette garde mesure que les deux
+// moitiés restent séparées : REGARDER, puis DIRE CE QU'ON EN PENSE.
+//
+// ELLE SE JOUE CHEZ LA CIRIÈRE, et c'est la seule qui puisse la jouer ici : son
+// rendu se calcule dans le navigateur, sans clé et sans réseau. Tout ce qui se
+// porte sur le corps passe par un modèle d'image, dont cet environnement n'a
+// aucune clé — voir l'en-tête de `essayer/route.ts`.
+console.log("\n══ l'essai se joue en trois temps ══");
+{
+  const c3 = await nav.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  await c3.clock.setFixedTime(new Date(2026, 8, 2, 14, 15, 0));
+  await c3.addInitScript(() =>
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
+  );
+  const p3 = await c3.newPage();
+  p3.on("pageerror", (e) => erreurs.push(String(e)));
+  await p3.goto(`${BASE}/autour-de-moi?carte=cirier&essai=1`, { waitUntil: "networkidle" });
+  await p3.waitForSelector(".mu-frise", { timeout: 15000 });
+
+  const ou = () => p3.$eval(".mu-frise li.ici", (e) => e.textContent.replace(/\s+/g, " ").trim());
+  dire(/découvre/i.test(await ou()), "on arrive sur « je découvre »");
+
+  await p3.getByRole("button", { name: /photo d.exemple/i }).click();
+  await p3.locator(".mu-pieces button:not([disabled])").first().click();
+  await p3.waitForSelector(".mu-mi", { timeout: 30000 });
+  await p3.waitForTimeout(900);
+  dire(/essaie/i.test(await ou()), "le rendu est le deuxième temps, « j'essaie »");
+
+  // LA GLISSIÈRE EST LA DÉMONSTRATION. Deux photos qu'on ne peut pas comparer au
+  // même endroit ne prouvent rien : c'est le trait qui passe sur sa propre photo
+  // qui fait comprendre que la pièce a été posée sur soi.
+  const mi = await p3.evaluate(() => {
+    const b = document.querySelector(".mu-mi");
+    return {
+      trait: !!b?.querySelector(".mu-mi-t"),
+      champ: !!b?.querySelector("input.mu-mi-r"),
+      avant: getComputedStyle(b.querySelector(".mu-mi-av")).clipPath,
+      pastilles: [...b.querySelectorAll(".mu-mi-e")].map((e) => e.textContent.trim()),
+    };
+  });
+  dire(mi.trait && mi.champ, "on compare en tirant un trait, pas en maintenant");
+  dire(
+    mi.pastilles.join("/") === "Avant/Après",
+    `et les deux moitiés sont nommées (${mi.pastilles.join(" / ")})`,
+  );
+  // LE « AVANT » EST DÉCOUPÉ, PAS RÉTRÉCI : sans ça on comparerait un visage
+  // comprimé à un visage normal, c'est-à-dire deux visages différents.
+  dire(/inset/.test(mi.avant), `le calque du dessus est découpé (${mi.avant.slice(0, 40)})`);
+
+  // LE DEUXIÈME TEMPS NE DÉCIDE RIEN. Ni la note, ni « je réserve », ni « je
+  // passe » : il ne sert qu'à regarder, et c'est ce qui permet au troisième
+  // d'exister.
+  dire(
+    !(await p3.$(".mu-note-f")),
+    "on ne note pas encore : le deuxième temps ne sert qu'à regarder",
+  );
+  await p3.getByRole("button", { name: /J.adopte ce style/i }).click();
+  await p3.waitForTimeout(500);
+  dire(/avis/i.test(await ou()), "« J'adopte ce style » ouvre le troisième temps");
+
+  const avis = await p3.evaluate(() => ({
+    question: document.querySelector(".mu-avis-q")?.textContent.replace(/\s+/g, " ").trim() ?? "",
+    fantomes: document.querySelectorAll(".mu-note-f.grand button").length,
+    aime: document.querySelectorAll(".mu-aime button").length,
+  }));
+  dire(/ça vous plaît/i.test(avis.question), `l'écran pose sa question (« ${avis.question} »)`);
+  dire(avis.fantomes === 5, `on note de un à cinq fantômes (${avis.fantomes})`);
+  // ON NE DEMANDE PAS CE QUI PLAÎT À QUELQU'UN QUI N'A PAS DIT SI ÇA LUI
+  // PLAISAIT. La question est posée à l'envers, et cinq étiquettes de plus sur un
+  // écran qui en demande déjà une le rendraient illisible.
+  dire(avis.aime === 0, "et on ne demande pas encore ce qui plaît le plus");
+
+  await p3.locator(".mu-note-f.grand button").nth(3).click();
+  await p3.waitForTimeout(400);
+  const apres = await p3.evaluate(() => ({
+    compte: document.querySelector(".mu-avis-n")?.textContent.trim() ?? "",
+    mot: document.querySelector(".mu-avis-m")?.textContent.trim() ?? "",
+    aime: [...document.querySelectorAll(".mu-aime button")].map((e) => e.textContent.trim()),
+    gestes: [...document.querySelectorAll(".mu-avis-g button")].map((e) =>
+      e.textContent.replace(/\s+/g, " ").trim(),
+    ),
+  }));
+  dire(/4 fantômes sur 5/.test(apres.compte), `le compte se lit (« ${apres.compte} »)`);
+  // TROIS SUR CINQ NE VEUT RIEN DIRE tant que personne n'a écrit ce que trois
+  // signifie — et « bien » n'est pas « ça, c'est moi ».
+  dire(apres.mot.length > 0, `et le mot dit ce que quatre veut dire (« ${apres.mot} »)`);
+  dire(apres.aime.length === 5, `ce qui plaît s'ouvre alors (${apres.aime.join(" · ")})`);
+  dire(
+    apres.gestes.some((t) => /en parler avec mes amis/i.test(t)),
+    "le salon est le geste plein du troisième temps",
+  );
+  dire(
+    apres.gestes.some((t) => /favori/i.test(t)) &&
+      apres.gestes.some((t) => /réserve|rendez-vous|côté/i.test(t)),
+    `et les deux autres suivent (${apres.gestes.slice(1, 3).join(" / ")})`,
+  );
+  await c3.close();
 }
 
 // ═══ LE MUR QUI S'OUVRE EST CELUI DU COMMERCE QU'ON REGARDE ══════════════
