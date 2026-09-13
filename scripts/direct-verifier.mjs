@@ -356,7 +356,13 @@ const gardes = [];
 for (let k = 0; k < 3; k++) {
   const nom = await nomDuSommet();
   if (!nom) break;
-  await p.click(".ap-agir.favori").catch(() => {});
+  // ON VISE LE GESTE, PAS SA FORME — et c'est la troisieme fois. `.ap-agir`
+  // dessine un bouton pleine largeur ; `.ap-favori` NOMME le geste de garder,
+  // quel que soit son habit. Depuis que l'annonce d'un restaurant porte un rail
+  // de pastilles, le favori n'est plus un `.ap-agir` : la garde cliquait dans
+  // le vide et la poche restait a zero. Voir le grand commentaire au-dessus de
+  // `ap-parler` dans l'ecran.
+  await p.click(".ap-favori").catch(() => {});
   await p.waitForTimeout(420);
   gardes.push(nom);
   if (!(await avancer(p))) break;
@@ -1541,14 +1547,22 @@ console.log("\n══ l'annonce pousse vers l'essai ══");
     `et ce sont des fantômes, pas des visages inventés (${module?.fantomes ?? 0})`,
   );
 
-  // ON N'ESSAIE PAS UNE TABLE. Un restaurant, un bar, une boulangerie n'ont pas
-  // de mur d'essai : leur écran ne doit pas avoir bougé d'un point.
+  // ═══ ON N'ESSAIE PAS UNE TABLE, MAIS L'ÉCRAN A CHANGÉ QUAND MÊME ═════════
+  //
+  // CETTE GARDE DISAIT « leur écran ne doit pas avoir bougé d'un point », et
+  // c'était l'arbitrage du jour où l'essai est passé en geste plein : on ne
+  // touchait alors qu'aux métiers qui s'essaient.
+  //
+  // « Le design des restaurants, bars et événements n'a pas été modifié comme
+  // sur le screenshot que je t'avais donné. » La maquette leur donne le même
+  // rail de trois pastilles, et un geste plein qui est la réservation. Ce qui
+  // NE CHANGE PAS, et c'est ce qui reste mesuré : on ne s'essaie toujours pas
+  // une table — ni bouton d'essai, ni module de mur d'essai.
   for (const [carte, quoi] of [["centre", "un restaurant"], ["boulange", "une boulangerie"]]) {
     const c = await lire(carte);
-    dire(!c.essai, `${quoi} garde son écran : pas de bouton d'essai`);
-    dire(c.rail.length === 0, `${quoi} : pas de rail non plus (${c.rail.length})`);
-    dire(c.duo, `${quoi} : les deux gestes du bas sont restés à leur place`);
-    dire(!c.module, `${quoi} : et pas de module de mur non plus`);
+    dire(!c.essai, `${quoi} garde ce qui compte : pas de bouton d'essai`);
+    dire(c.rail.length === 3, `${quoi} : et il a son rail de trois gestes (${c.rail.length})`);
+    dire(!c.module, `${quoi} : pas de module de mur d'essai non plus`);
   }
   await cE.close();
 }
@@ -1912,9 +1926,16 @@ console.log("\n══ neuf langages, une seule structure ══");
         cle: [...c.classList].find((x) => x.startsWith("m-")) ?? null,
         accent: getComputedStyle(c).getPropertyValue("--cd-accent").trim(),
         ton: [...(h2?.classList ?? [])].find((x) => x.startsWith("t-")) ?? null,
-        unite: (c.querySelector(".cd-encore")?.textContent ?? "").replace(/\d+/g, "").trim(),
+        // « ON DIT TROIS QUOI » — et le compte a changé d'élément. Il vivait
+        // seul sous le prix (`cd-encore`) ; il est passé dans la fiche à quatre
+        // lignes que demande la maquette, première ligne. Le mot, lui, doit
+        // toujours être là : « il reste 3 » est vrai partout et ne veut rien
+        // dire nulle part.
+        unite: (c.querySelector(".cd-infos li:first-child span")?.textContent ?? "")
+          .replace(/\d+/g, "")
+          .trim(),
         // LA STRUCTURE : l'ordre dans lequel les blocs apparaissent.
-        ordre: [...c.querySelectorAll(".cd-nature,.cd-offre,.cd-prixg,.cd-encore,.cd-chez")]
+        ordre: [...c.querySelectorAll(".cd-nature,.cd-offre,.cd-prixg,.cd-infos,.cd-chez")]
           .map((e) => e.className.split(" ")[0])
           .join(">"),
       };
@@ -1967,7 +1988,10 @@ console.log("\n══ neuf langages, une seule structure ══");
    * suite des blocs présents doit être une sous-suite de l'ordre canonique.
    * Replier un bloc est permis ; en déplacer un ne l'est pas.
    */
-  const CANON = ["cd-nature", "cd-offre", "cd-prixg", "cd-encore", "cd-chez"];
+  // `cd-encore` EST DEVENU `cd-infos` : le compte ne vit plus seul sous le prix,
+  // il est la première des quatre lignes de la fiche. Même place dans l'ordre,
+  // autre nom — et l'ordre est ce que cette garde protège.
+  const CANON = ["cd-nature", "cd-offre", "cd-prixg", "cd-infos", "cd-chez"];
   const dansLOrdre = (suite) => {
     let i = 0;
     for (const bloc of suite) {
@@ -2775,9 +2799,12 @@ console.log("\n══ la page du commerce ══");
     const dit = await pR.evaluate(() => {
       const c = document.querySelector(".cd-carte:not(.dessous)");
       if (!c) return null;
-      return [...c.querySelectorAll("*")]
-        .map((e) => (e.childElementCount === 0 ? e.textContent.trim() : ""))
-        .find((t) => /^(maintenant|demain)\b/i.test(t)) ?? null;
+      // ON LIT LA PASTILLE, PAS UNE FEUILLE DE L'ARBRE. Elle porte maintenant
+      // son éclair en `<i>` — donc elle a un enfant, donc le filtre
+      // « aucun enfant » la sautait et la garde lisait « rien » sur un écran
+      // parfaitement juste. Une garde qui devine où est un texte casse à la
+      // première icône ajoutée.
+      return c.querySelector(".cd-quand")?.textContent?.replace(/\s+/g, " ").trim() ?? null;
     });
     dire(
       /^demain/i.test(dit ?? ""),
