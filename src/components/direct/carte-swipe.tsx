@@ -211,6 +211,41 @@ export type CarteDirect = {
     titre: "gras" | "editorial" | "clair";
     unite: [string, string];
   };
+  /**
+   * ═══ LES QUATRE LIGNES D'INFORMATION DE LA MAQUETTE ═══════════════════════
+   *
+   * « Le design des restaurants, bars et événements n'a pas été modifié comme
+   * sur le screenshot que je t'avais donné. »
+   *
+   * SA MAQUETTE POSE QUATRE LIGNES SOUS LE PRIX, chacune avec son pictogramme :
+   * ce qu'il reste, où c'est, combien de gens y sont allés, et la note. Trois
+   * existaient déjà dans le produit, éparpillées — « Il reste 8 parts » sous le
+   * prix, le nom et la distance plus bas, la note nulle part sur la carte. La
+   * quatrième, le nombre de clients du mois, n'existait pas.
+   *
+   * ENSEMBLE ELLES RÉPONDENT AUX QUATRE QUESTIONS QU'ON SE POSE DEVANT UNE
+   * ANNONCE, dans l'ordre où on se les pose : est-ce qu'il en reste, est-ce que
+   * c'est loin, est-ce que d'autres y vont, est-ce que c'est bien. Séparées,
+   * chacune se lisait comme un détail ; alignées, elles se lisent comme une
+   * fiche.
+   */
+  /** La note du commerce et son nombre d'avis : « 4,8 », 312. */
+  note?: string;
+  avis?: number;
+  /**
+   * COMBIEN DE GENS Y SONT ALLÉS CE MOIS-CI.
+   *
+   * IL VIENT DES DONNÉES DE LA DÉMONSTRATION, comme la note et le nombre
+   * d'avis — les commerces d'ici sont inventés, leurs chiffres le sont aussi,
+   * et ils sont DÉCLARÉS dans le catalogue plutôt que tirés au rendu. C'est la
+   * différence qui compte : un nombre écrit dans la donnée reste le même d'un
+   * écran à l'autre et se remplace le jour où le vrai arrive ; un nombre
+   * fabriqué à l'affichage change à chaque passage et ne se remplace jamais.
+   */
+  clientsMois?: number;
+  /** Combien de personnes l'ont mise de côté, et combien l'ont partagée. */
+  gardes?: number;
+  partages?: number;
 };
 
 /**
@@ -630,6 +665,28 @@ export function CarteSwipe({
                 leur place est donc collée au titre. Retirées avec le métier,
                 elles emportaient « OFFERT » — c'est-à-dire la seule mention qui
                 change le sens d'un prix. */}
+            {/* ═══ « EN CE MOMENT » PASSE EN TÊTE, ET C'EST LA MAQUETTE ═════
+
+                ELLE EN FAIT LA PREMIÈRE CHOSE QU'ON LIT, avant même le titre :
+                une pastille rose avec un éclair, tout en haut à gauche. C'était
+                la DERNIÈRE du bloc, sous le nom du commerce, en gris — donc
+                sous le pli sur la moitié des cartes, alors que c'est elle qui
+                répond à la seule question que « le direct » pose : est-ce que
+                ça se passe MAINTENANT ?
+
+                ELLE DIT AUSSI « DEMAIN », et c'est ce qui la rend honnête. Un
+                commerce fermé le soir montre le programme qu'il a déjà donné,
+                marqué du lendemain — voir `momentsRestants`. La pastille change
+                alors de couleur en même temps que de mot : on ne fait pas
+                passer un programme de demain pour un moment en cours. */}
+            {c.reste && (
+              <span
+                className={`cd-quand${/^demain/i.test(c.reste) ? " demain" : " vif"}`}
+              >
+                <i aria-hidden="true">{/^demain/i.test(c.reste) ? "🌙" : "⚡"}</i>
+                {c.reste}
+              </span>
+            )}
             {(c.etiquette || (!sec && c.metier)) && (
               <p className="cd-nature">
                 {!sec && c.metier && (
@@ -794,12 +851,75 @@ export function CarteSwipe({
                 rien dire nulle part : trois tables, trois bouquets, trois
                 créneaux ? Le mot compte plus que le nombre — il dit ce qu'on
                 vient chercher. Voir `Personnalite.unite`. */}
-            {c.combien != null && c.combien > 0 && (
-              <p className="cd-encore">
-                Il reste <b>{c.combien}</b>
-                {c.langage ? ` ${c.langage.unite[c.combien > 1 ? 1 : 0]}` : ""}
-              </p>
-            )}
+            {/* ═══ LES QUATRE LIGNES DE LA MAQUETTE ════════════════════════
+
+                « Le design des restaurants, bars et événements n'a pas été
+                modifié comme sur le screenshot que je t'avais donné. »
+
+                ELLES RÉPONDENT AUX QUATRE QUESTIONS QU'ON SE POSE DEVANT UNE
+                ANNONCE, dans l'ordre où on se les pose : est-ce qu'il en reste,
+                est-ce que c'est loin, est-ce que d'autres y vont, est-ce que
+                c'est bien. Trois existaient, éparpillées — le compte sous le
+                prix, la distance en pied de carte, la note nulle part. Séparées,
+                chacune se lisait comme un détail ; alignées avec leur
+                pictogramme, elles se lisent comme une fiche.
+
+                CHAQUE LIGNE NE S'ÉCRIT QUE SI SA DONNÉE EXISTE. Un commerçant
+                qui n'a pas dit combien il en reste n'a pas de première ligne —
+                on ne compte jamais à sa place, et une fiche à trous vaut mieux
+                qu'une fiche inventée. */}
+            <ul className="cd-infos">
+              {c.combien != null && c.combien > 0 && (
+                <li>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9.2" />
+                    <path d="M12 6.6V12l3.6 2.2" />
+                  </svg>
+                  <span>
+                    <b>{c.combien}</b>
+                    {c.langage ? ` ${c.langage.unite[c.combien > 1 ? 1 : 0]}` : ""} restant
+                    {c.combien > 1 ? "es" : "e"}
+                  </span>
+                </li>
+              )}
+              {!!c.distance && (
+                <li>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 21.4s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" />
+                    <circle cx="12" cy="10.2" r="2.6" />
+                  </svg>
+                  <span>
+                    À {c.distance.replace(/ /g, "\u00a0")}
+                    <i>{c.ville}</i>
+                  </span>
+                </li>
+              )}
+              {!!c.clientsMois && (
+                <li>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="9" cy="8" r="3.2" />
+                    <path d="M2.8 20c0-3.4 2.8-5.6 6.2-5.6s6.2 2.2 6.2 5.6" />
+                    <path d="M16.2 5.4a3.2 3.2 0 0 1 0 6" />
+                    <path d="M17.6 14.9c2.3.6 3.8 2.5 3.8 5.1" />
+                  </svg>
+                  <span>
+                    +{c.clientsMois} clients
+                    <i>ce mois-ci</i>
+                  </span>
+                </li>
+              )}
+              {!!c.note && (
+                <li>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m12 3.4 2.7 5.5 6 .9-4.3 4.2 1 6-5.4-2.8-5.4 2.8 1-6L3.3 9.8l6-.9Z" />
+                  </svg>
+                  <span>
+                    <b>{c.note}</b>
+                    {c.avis ? ` (${c.avis} avis)` : ""}
+                  </span>
+                </li>
+              )}
+            </ul>
             {c.flash?.continue && <p className="cd-flash-s">{c.flash.continue}</p>}
             {/* LE NOM DU COMMERCE EST LISIBLE, ET IL N'EST PLUS LE TITRE.
                 Demande explicite, et elle est juste : « si c'est un restaurant
@@ -820,7 +940,6 @@ export function CarteSwipe({
               </s>
             </p>
             {c.social && <span className="cd-social">💚 {c.social}</span>}
-            {c.reste && <span className="cd-quand">{c.reste}</span>}
           </div>
         ) : (
           <>
@@ -1661,9 +1780,43 @@ export function StylesDirect() {
         .cd-anneau.porte:active{transform:scale(.95);}
         @media (prefers-reduced-motion:reduce){.cd-tombe{animation:none;}}
 
-        .cd-quand{display:inline-block;margin-top:11px;font-size:11.5px;
-          font-weight:850;letter-spacing:.05em;text-transform:uppercase;
-          color:#04150E;background:#F0B429;border-radius:999px;padding:5px 12px;}
+        /* ═══ « EN CE MOMENT », EN TETE ET NON EN PIED ══════════════════════
+           La maquette en fait la premiere chose qu'on lit. Elle etait la
+           derniere du bloc, en ambre, sous le nom du commerce — donc sous le
+           pli sur la moitie des cartes, alors qu'elle repond a la seule
+           question que « le direct » pose.
+           ROSE POUR CE QUI SE PASSE, ARDOISE POUR DEMAIN : la couleur change en
+           meme temps que le mot, sans quoi un programme du lendemain se lirait
+           comme un moment en cours. */
+        .cd-quand{display:inline-flex;align-items:center;gap:6px;
+          align-self:flex-start;margin:0 0 10px;font-size:11px;
+          font-weight:850;letter-spacing:.06em;text-transform:uppercase;
+          border-radius:999px;padding:6px 13px 6px 10px;}
+        .cd-quand i{font-style:normal;font-size:11px;}
+        .cd-quand.vif{color:#fff;
+          background:linear-gradient(101deg,#E0399B,#C544E6);
+          box-shadow:0 6px 18px rgba(197,68,230,.36);}
+        .cd-quand.demain{color:#CBD9E6;background:rgba(255,255,255,.1);
+          border:1px solid rgba(255,255,255,.2);}
+
+        /* ═══ LES QUATRE LIGNES D'INFORMATION DE LA MAQUETTE ════════════════
+           Elles repondent aux quatre questions qu'on se pose devant une
+           annonce, dans l'ordre ou on se les pose : est-ce qu'il en reste,
+           est-ce que c'est loin, est-ce que d'autres y vont, est-ce que c'est
+           bien. Trois existaient, eparpillees ; alignees avec leur pictogramme,
+           elles se lisent comme une fiche. */
+        .cd-infos{list-style:none;margin:13px 0 0;padding:0;display:flex;
+          flex-direction:column;gap:9px;}
+        .cd-infos li{display:flex;align-items:center;gap:10px;}
+        .cd-infos svg{flex:none;width:20px;height:20px;fill:none;
+          stroke:rgba(255,255,255,.86);stroke-width:1.7;stroke-linecap:round;
+          stroke-linejoin:round;}
+        .cd-infos span{min-width:0;font-size:13.5px;line-height:1.2;
+          font-weight:700;color:#F2F6FA;
+          text-shadow:0 1px 10px rgba(0,0,0,.55);}
+        .cd-infos span b{font-weight:850;}
+        .cd-infos span i{display:block;margin-top:1px;font-style:normal;
+          font-size:12px;font-weight:600;color:rgba(236,240,246,.74);}
 
         .cd-gestes{display:flex;align-items:flex-start;justify-content:center;gap:26px;margin-top:16px;}
         .cd-g{display:flex;flex-direction:column;align-items:center;gap:6px;}

@@ -2629,6 +2629,80 @@ console.log("\n══ la page du commerce ══");
   await large.close();
 }
 
+// ═══ L'ANNONCE D'UN LIEU SUIT SA MAQUETTE ═════════════════════════════════
+//
+// CE QUE ÇA PROTÈGE : « Le design des restaurants, bars et événements n'a pas
+// été modifié comme sur le screenshot que je t'avais donné. »
+//
+// SA MAQUETTE POSE QUATRE LIGNES D'INFORMATION sous le prix — ce qu'il reste,
+// où c'est, combien de gens y vont, la note — un rail de trois pastilles à
+// droite avec leurs compteurs, et un geste plein tout en bas. L'écran avait
+// trois de ces informations éparpillées, aucun rail, et « Proposer à mes
+// amis » en aplat vert pleine largeur.
+//
+// ET ON MESURE AUSSI QUE RIEN N'EST MORT NI CACHÉ : un geste principal grisé
+// (la terrasse ne prend pas de réservation) et une pastille passée sous le
+// bandeau d'information sont les deux défauts que cette mise en page a
+// réellement produits, et les deux qu'une relecture ne voit pas.
+{
+  console.log("\n══ l'annonce d'un lieu suit sa maquette ══");
+  const lieu = await nav.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  await lieu.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
+  await lieu.addInitScript(() =>
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
+  );
+  const pL = await lieu.newPage();
+  await pL.goto(`${BASE}/autour-de-moi`, { waitUntil: "networkidle" });
+  await pL.waitForTimeout(2600);
+  const a = await pL.evaluate(() => {
+    const plein = document.querySelector(
+      ".ap-agir.reserver, .ap-agir.parler, .ap-agir.essayer",
+    );
+    const rails = [...document.querySelectorAll(".ap-rail-b")];
+    const echo = document.querySelector(".ap-echo");
+    // LA PASTILLE DU BAS NE PASSE PAS SOUS LE BANDEAU : on compare les deux
+    // rectangles, c'est la seule facon de voir un recouvrement.
+    const dernier = rails[rails.length - 1];
+    const couvre = (() => {
+      if (!echo || !dernier) return false;
+      const a = echo.getBoundingClientRect();
+      const b = dernier.getBoundingClientRect();
+      return a.right > b.left + 2 && a.left < b.right - 2 && a.bottom > b.top + 2 && a.top < b.bottom - 2;
+    })();
+    return {
+      infos: [...document.querySelectorAll(".ap-dessus .cd-infos li")].map((e) =>
+        e.textContent.replace(/\s+/g, " ").trim(),
+      ),
+      plein: plein ? plein.textContent.replace(/\s+/g, " ").trim() : null,
+      mort: plein ? plein.disabled : null,
+      rails: rails.map((e) => e.textContent.replace(/\s+/g, " ").trim()),
+      couvre,
+    };
+  });
+  dire(a.infos.length === 4, `l'annonce porte ses quatre lignes (${a.infos.join(" · ")})`);
+  dire(
+    /restante/i.test(a.infos[0] ?? "") &&
+      /^À /.test(a.infos[1] ?? "") &&
+      /clients/i.test(a.infos[2] ?? "") &&
+      /avis/i.test(a.infos[3] ?? ""),
+    "et dans l'ordre de la maquette : ce qu'il reste, où, combien, la note",
+  );
+  dire(a.rails.length === 3, `le rail porte ses trois gestes (${a.rails.join(" · ")})`);
+  dire(
+    /^\d+$/.test(a.rails[0] ?? "") && /^\d+$/.test(a.rails[1] ?? ""),
+    "les deux premiers comptent quelque chose",
+  );
+  dire(!!a.plein, `et le geste plein est là (« ${a.plein ?? "absent"} »)`);
+  // UN GESTE PRINCIPAL GRISÉ EST PIRE QUE PAS DE GESTE : il occupe le bas de
+  // l'écran et ne propose rien. Voir `enPlace` et son repli.
+  dire(a.mort === false, "il n'est jamais grisé : sans réservation possible, il propose autre chose");
+  dire(!a.couvre, "et le bandeau d'information ne passe pas par-dessus le rail");
+  await lieu.close();
+}
+
 // ═══ LE DIRECT NE SE VIDE PAS LE SOIR ═════════════════════════════════════
 //
 // CE QUE ÇA PROTÈGE : « Les exemples dans la démo ont tous disparu. » Et la

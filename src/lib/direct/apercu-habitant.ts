@@ -3229,6 +3229,29 @@ const CARTES: CarteAutour[] = [
 ];
 
 /** Les moments encore d'actualité — en cours, ou à venir dans la journée. */
+/**
+ * ═══ UN NOMBRE DE DÉMONSTRATION, STABLE ET DÉCLARÉ ═════════════════════════
+ *
+ * « Concernant les chiffres, mets ce que tu veux, c'est juste une démo. »
+ *
+ * LA SEULE RÈGLE QUI RESTE, ET ELLE COMPTE : le même commerce doit montrer le
+ * même nombre à chaque fois. Un compteur tiré au rendu change à chaque
+ * balayage, et on le remarque en deux secondes — il détruit la seule chose
+ * qu'on lui demande, avoir l'air d'un compteur. Celui-ci est dérivé de
+ * l'identifiant : il ne bouge ni d'un écran à l'autre, ni d'un jour à l'autre,
+ * ni entre deux téléphones.
+ *
+ * ET IL SE REMPLACE EN UNE LIGNE le jour où le vrai existe — il n'est lu qu'à
+ * un seul endroit, dans `murDeLaCarte`. Même règle que `numeroDeFiction` : la
+ * fiction est assumée, nommée, et rangée à un endroit où l'on sait qu'elle est
+ * de la fiction.
+ */
+export function nombreDeDemo(id: string, quoi: string, bas: number, haut: number): number {
+  let n = 0;
+  for (const car of `${id}|${quoi}`) n = (n * 33 + car.charCodeAt(0)) % 100000;
+  return bas + (n % (haut - bas + 1));
+}
+
 export function momentsRestants(c: CarteAutour, heure: number): MomentJour[] {
   const aujourdhui = c.moments.filter((m) => heure < m.a);
   if (aujourdhui.length) return aujourdhui;
@@ -3813,6 +3836,29 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
       ville: c.ville,
       distance: c.distance,
       itineraire: c.itineraire,
+      /**
+       * ═══ LES CHIFFRES DE LA FICHE, ET D'OÙ ILS VIENNENT ═══════════════════
+       *
+       * LA NOTE ET LES AVIS SONT DÉJÀ LÀ : ils viennent de `google`, comme sur
+       * la page du commerce. Ils étaient simplement absents de la carte, où la
+       * maquette les demande.
+       *
+       * LES TROIS AUTRES SONT DE LA FICTION DÉCLARÉE, au même titre que les
+       * commerces eux-mêmes — « c'est juste une démo ». Ils sont TIRÉS DE
+       * L'IDENTIFIANT du commerce et non au hasard : le même commerce montre
+       * toujours les mêmes nombres, d'un écran à l'autre et d'un jour à
+       * l'autre. Un compteur qui change à chaque passage se remarque en deux
+       * secondes et détruit la seule chose qu'on lui demande — avoir l'air
+       * d'un compteur.
+       *
+       * ILS SE REMPLACENT EN UNE LIGNE le jour où les vrais existent : ce sont
+       * trois champs de la carte, lus à un seul endroit.
+       */
+      note: c.google?.note,
+      avis: c.google?.avis,
+      clientsMois: nombreDeDemo(c.id, "clients", 80, 460),
+      gardes: nombreDeDemo(c.id, "gardes", 40, 320),
+      partages: nombreDeDemo(c.id, "partages", 8, 90),
       // ─── LA PASTILLE NE RÉPÈTE PLUS LE MENU, ELLE DIT JUSQU'À QUAND ───
       //
       // Elle affichait le titre du moment : « 🍲 Les deux plats du jour » —
@@ -3869,6 +3915,16 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
     langage: personnaliteDe({ branche: c.branche, metier: c.metier }),
     ville: c.ville,
     distance: c.distance,
+    // LES CHIFFRES DE LA FICHE — voir le premier retour de cette fonction.
+    // ILS SONT ÉCRITS AUX DEUX ENDROITS PARCE QUE LA FONCTION A DEUX SORTIES :
+    // celle du menu du jour et celle de tout le reste. N'en servir qu'une
+    // donnait une carte sur deux sans note ni compteurs, et c'est exactement
+    // ce qui s'est passé — mesuré sur le bar, qui prend la seconde.
+    note: c.google?.note,
+    avis: c.google?.avis,
+    clientsMois: nombreDeDemo(c.id, "clients", 80, 460),
+    gardes: nombreDeDemo(c.id, "gardes", 40, 320),
+    partages: nombreDeDemo(c.id, "partages", 8, 90),
     itineraire: c.itineraire,
     // Le badge du haut ne dit plus une échéance mais QUAND ça se passe : c'est
     // devenu l'information principale de la carte.

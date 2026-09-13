@@ -3123,6 +3123,42 @@ export function ApercuHabitant() {
     !estInvitation(dessus);
 
   /**
+   * ═══ LE LIEU OÙ L'ON RÉSERVE — RESTAURANT, BAR, ÉVÉNEMENT ════════════════
+   *
+   * « Le design des restaurants, bars et événements n'a pas été modifié comme
+   * sur le screenshot que je t'avais donné. »
+   *
+   * SA MAQUETTE MET « RÉSERVER MA TABLE » EN GESTE PLEIN, en dégradé, tout en
+   * bas — et pousse les trois autres en pastilles rondes sur le côté droit.
+   * L'écran avait l'inverse : « Proposer à mes amis » en aplat vert pleine
+   * largeur, et la réservation en second, à moitié de largeur.
+   *
+   * ET C'EST LA MÊME CORRECTION QUE POUR LES MÉTIERS D'ESSAI, un cran plus
+   * loin. On avait mis l'essai en avant chez le coiffeur parce que c'est le
+   * geste que l'annonce donne envie de faire ; chez un restaurant ce geste
+   * est de réserver une table. « Proposer à mes amis » vient APRÈS avoir
+   * décidé qu'on y va — c'est un geste de partage, pas un geste de décision.
+   *
+   * UN POSTE GARDE SON ÉCRAN. On ne réserve pas un emploi : « Je postule »
+   * n'est pas une table, et le rail de pastilles n'a rien à y ranger.
+   *
+   * ═══ ET QUAND IL N'Y A RIEN À RÉSERVER, LE GESTE PLEIN CHANGE ═════════════
+   *
+   * MESURÉ SUR LA TERRASSE : son moment dit « Plein sud · Sans réserver », donc
+   * il ne porte pas d'action, donc `aReserver` est vide — et le bouton
+   * « Réserver une table » s'affichait GRISÉ, en plein milieu, en dégradé
+   * éteint. C'était déjà le cas avant, à moitié de largeur et en second ; en
+   * geste principal, un bouton mort occupe le bas de l'écran et ne propose
+   * rien.
+   *
+   * ON RETOMBE DONC SUR CE QUI EST TOUJOURS POSSIBLE : en parler à ses amis.
+   * C'est le geste que l'écran avait avant, et il n'est jamais impossible — on
+   * peut toujours proposer une terrasse, même sans y réserver. Le rail, lui,
+   * reste : garder et partager n'ont jamais eu besoin d'une réservation.
+   */
+  const enPlace = !!dessus && !onPeutEssayer && !estPoste(dessus);
+
+  /**
    * LE GESTE D'ENGAGEMENT, ÉCRIT UNE FOIS.
    *
    * IL VIT MAINTENANT À DEUX ENDROITS : en bouton de contour sous l'annonce
@@ -7663,6 +7699,33 @@ export function ApercuHabitant() {
                 <span>{essaiDuSommet.mots.surMoi}</span>
                 <s aria-hidden="true">→</s>
               </button>
+            ) : enPlace && aReserver.length > 0 ? (
+              /* ═══ CHEZ UN LIEU, LE GESTE PLEIN EST LA RÉSERVATION ══════════
+                 La maquette met « Réserver ma table » en dégradé tout en bas,
+                 et pousse les trois autres en pastilles à droite. C'est le
+                 geste que l'annonce donne envie de faire ; « proposer à mes
+                 amis » vient APRÈS avoir décidé qu'on y va. Le verbe vient du
+                 métier — voir `Personnalite.reserver` — et les trois états qui
+                 passent devant lui restent devant : une invitation, un Flash et
+                 un événement ne sont pas des variantes de commerce. */
+              <button
+                type="button"
+                className="ap-agir reserver ap-engager"
+                onClick={engagerLeSommet}
+              >
+                <svg className="ap-agir-i" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="3.2" y="5" width="17.6" height="16" rx="3" />
+                  <path d="M3.2 10h17.6M8 2.8v4.4M16 2.8v4.4" />
+                </svg>
+                <span>
+                  {dessus && estInvitation(dessus)
+                    ? "J’y vais"
+                    : flashDuSommet
+                      ? "J’en profite"
+                      : langage.reserver}
+                </span>
+                <s aria-hidden="true">→</s>
+              </button>
             ) : (
             <button
               type="button"
@@ -7799,7 +7862,7 @@ export function ApercuHabitant() {
                 ET DEUX BOUTONS TIENNENT CÔTE À CÔTE ICI ALORS QUE « Proposer à
                 mes amis » et « Réserver mon plat » n'y tenaient pas : ces
                 deux-là font huit et quinze caractères. */}
-            {!onPeutEssayer && (
+            {!onPeutEssayer && !enPlace && (
             <div className="ap-duo">
             <button
               type="button"
@@ -7879,6 +7942,63 @@ export function ApercuHabitant() {
                 les flèches « précédente » et « suivante » tiennent les deux
                 bords à mi-hauteur, et un rail posé là aurait disputé le pouce à
                 la navigation la plus fréquente de l'écran. */}
+            {/* ═══ CHEZ UN LIEU, LE RAIL PORTE LES TROIS AUTRES GESTES ═══════
+
+                La maquette y met un cœur avec son compte, un partage avec le
+                sien, et « En parler ». Ce sont les mêmes gestes qu'avant —
+                garder, montrer, en parler — à un poids différent, maintenant
+                que la réservation a pris le geste plein.
+
+                LES DEUX COMPTEURS SONT DE LA FICTION DÉCLARÉE, et c'est assumé :
+                « mets ce que tu veux, c'est juste une démo ». Ils sont tirés de
+                l'identifiant du commerce et non au hasard — le même commerce
+                montre toujours les mêmes nombres. Un compteur qui change à
+                chaque balayage se remarque en deux secondes et détruit la seule
+                chose qu'on lui demande. Voir `nombreDeDemo`. */}
+            {enPlace && sommet && (
+              <div className="ap-rail" aria-label="Autres gestes sur cette annonce">
+                <button
+                  type="button"
+                  className={`ap-rail-b ap-favori${gardeSommet ? " on" : ""}`}
+                  onClick={garderLeSommet}
+                >
+                  <i aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M12 20.3s-7.6-4.6-7.6-9.7a4.4 4.4 0 0 1 7.6-3 4.4 4.4 0 0 1 7.6 3c0 5.1-7.6 9.7-7.6 9.7z" />
+                    </svg>
+                  </i>
+                  <span>{(dessusCarte?.gardes ?? 0) + (gardeSommet ? 1 : 0)}</span>
+                </button>
+                <button
+                  type="button"
+                  className="ap-rail-b ap-partager"
+                  onClick={() => partir("droite")}
+                >
+                  <i aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M12 3.2v12M12 3.2 8.2 7M12 3.2 15.8 7" />
+                      <path d="M4.6 12.8v6.4a1.4 1.4 0 0 0 1.4 1.4h12a1.4 1.4 0 0 0 1.4-1.4v-6.4" />
+                    </svg>
+                  </i>
+                  <span>{dessusCarte?.partages ?? 0}</span>
+                </button>
+                <button
+                  type="button"
+                  className="ap-rail-b ap-parler"
+                  onClick={() => partir("droite")}
+                >
+                  <i aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="9" cy="8" r="3.2" />
+                      <path d="M2.8 20c0-3.4 2.8-5.6 6.2-5.6s6.2 2.2 6.2 5.6" />
+                      <path d="M16.2 5.4a3.2 3.2 0 0 1 0 6" />
+                      <path d="M17.6 14.9c2.3.6 3.8 2.5 3.8 5.1" />
+                    </svg>
+                  </i>
+                  <span>En parler</span>
+                </button>
+              </div>
+            )}
             {onPeutEssayer && (
               <div className="ap-rail" aria-label="Autres gestes sur cette annonce">
                 <button
@@ -12285,6 +12405,18 @@ export function ApercuHabitant() {
           touch-action:pan-y;scrollbar-width:none;}
         .ap-scroll::-webkit-scrollbar{display:none;}
         .ap-un{height:100%;position:relative;}
+        /* L'ECHO RECULE QUAND LE RAIL EST LA — voir le commentaire au-dessus de
+           .ap-echo. Soixante-seize points laissent la pastille entiere et son
+           compteur, et l'echo garde encore vingt caracteres par ligne.
+
+           LE PARENT COMMUN EST .ap-app, ET PAS .ap-un : l'echo vit HORS du
+           paquet depuis qu'on a corrige son absence dans les salons — « depuis
+           un salon, c'est-a-dire la ou l'on vient d'agir, la confirmation ne
+           s'affichait jamais ». Ecrite sur .ap-un, la regle ne s'appliquait
+           donc nulle part, et « En parler » restait sous le bandeau. Mesure
+           avant : l'echo 640-690 sur toute la largeur, la troisieme pastille
+           640-696 sur le bord droit. */
+        .ap-app:has(.ap-rail) .ap-echo{right:76px;}
         .ap-un .cd-carte{position:absolute;inset:0;aspect-ratio:auto;max-width:none;
           border-radius:0;}
 
@@ -12920,6 +13052,13 @@ export function ApercuHabitant() {
            il tombe dedans. Un message automatique qui cache l'action principale
            est le pire des deux mondes : on ne lit ni l'un ni l'autre. La barre
            publie deja sa hauteur — on s'en sert au lieu de la deviner. */
+        /* ═══ ET IL LAISSE LE RAIL LISIBLE ══════════════════════════════════
+           MESURE : le rail occupe 505 a 696 points sur le bord droit, l'echo
+           640 a 690 sur toute la largeur — « En parler », la troisieme
+           pastille, passait dessous et devenait illisible. Le meme
+           raisonnement que pour la barre d'actions, un cran plus a droite : un
+           message automatique ne cache jamais un geste. Il ne recule que
+           lorsque le rail est la, sinon il garde sa pleine largeur. */
         .ap-echo{position:absolute;left:12px;right:12px;
           bottom:calc(var(--ap-gestes-h, 92px) + 10px);z-index:6;
           display:flex;align-items:center;gap:9px;font-size:13px;font-weight:750;
@@ -15678,6 +15817,25 @@ export function ApercuHabitant() {
           background:linear-gradient(112deg,#6D5BFF,#A855F7 58%,#D946B8);
           box-shadow:0 16px 34px -14px rgba(139,92,246,.85);}
         .ap-agir.essayer span{flex-direction:row;}
+        /* ═══ CHEZ UN LIEU, LE GESTE PLEIN EST LA RESERVATION ════════════════
+           La maquette met « Reserver ma table » en degrade tout en bas, et
+           pousse les trois autres en pastilles a droite. C'est le geste que
+           l'annonce donne envie de faire ; « proposer a mes amis » vient APRES
+           avoir decide qu'on y va.
+           MEME HABIT QUE L'ESSAI, ET C'EST VOULU : le geste principal d'une
+           annonce a la meme forme partout, quel que soit le metier. Ce qui
+           change est son VERBE, qui vient du metier. */
+        .ap-agir.reserver{padding:15px 16px;font-size:15.5px;border-radius:18px;
+          gap:10px;letter-spacing:.01em;font-weight:850;justify-content:center;
+          color:#fff;
+          background:linear-gradient(112deg,#4C6BFF,#A855F7 56%,#E0399B);
+          box-shadow:0 16px 34px -14px rgba(120,90,246,.85);}
+        .ap-agir.reserver span{flex-direction:row;}
+        .ap-agir.reserver s{text-decoration:none;font-size:17px;line-height:1;
+          margin-left:2px;}
+        .ap-agir.reserver .ap-agir-i{width:21px;height:21px;flex:none;fill:none;
+          stroke:currentColor;stroke-width:1.9;stroke-linecap:round;
+          stroke-linejoin:round;}
         .ap-agir.essayer s{text-decoration:none;font-size:17px;line-height:1;
           margin-left:2px;}
         .ap-agir-f{width:30px;height:33px;flex:none;overflow:visible;
@@ -15759,7 +15917,7 @@ export function ApercuHabitant() {
         .ap-app.essai .ap-nav{top:30%;}
         .ap-rail{position:absolute;right:2px;bottom:calc(100% + 10px);
           display:flex;flex-direction:column;align-items:center;gap:9px;
-          pointer-events:auto;}
+          pointer-events:auto;z-index:7;}
         /* LE MOT PASSE A LA LIGNE, IL NE SE COUPE PAS. Mesure a 390 points :
            « Prendre rendez-vous » — le libelle du coiffeur, qui vient du metier
            et non d'ici — sortait « Prendre … ». Un libelle tronque ne dit rien
@@ -15782,6 +15940,13 @@ export function ApercuHabitant() {
         .ap-rail-b i svg{width:21px;height:21px;display:block;fill:none;
           stroke:currentColor;stroke-width:1.9;stroke-linecap:round;
           stroke-linejoin:round;}
+        /* LE COMPTEUR SOUS LE PICTOGRAMME, comme sur la maquette : un nombre
+           seul, plus gros que le libelle d'a cote, parce que c'est lui qu'on
+           lit. Le coeur se remplit quand on l'a garde — l'etat se voit avant le
+           nombre. */
+        .ap-rail-b.ap-favori span,.ap-rail-b.ap-partager span{font-size:12px;
+          font-weight:850;letter-spacing:0;}
+        .ap-rail-b.ap-favori.on i svg{fill:currentColor;}
         .ap-rail-b span{max-width:100%;}
         .ap-rail-b:active{transform:scale(.94);}
         .ap-rail-b:disabled{opacity:.34;cursor:default;}
