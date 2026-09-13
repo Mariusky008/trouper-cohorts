@@ -212,6 +212,7 @@ function Carte({
   grande,
   quand,
   onDit,
+  onParler,
 }: {
   f: Fantome;
   grande?: boolean;
@@ -228,6 +229,22 @@ function Carte({
    * une fois sur deux.
    */
   depot?: Depot;
+  /**
+   * ═══ « EN PARLER », LE SECOND GESTE DE LA MAQUETTE ════════════════════════
+   *
+   * « Restaurant, bars et événements : respecter le design là aussi. »
+   *
+   * LA MAQUETTE MET DEUX BOUTONS SOUS CHAQUE MESSAGE, et ils ne disent pas la
+   * même chose. « Ça m'intéresse » s'adresse AU LIEU : je signale que je
+   * passerai, et on en parlera sur place. « En parler » s'adresse À MES AMIS :
+   * j'emporte le message dans mon salon privé — « il y a une dégustation à
+   * 19 h, qui vient ? ». Le premier remplit le bar, le second remplit la table.
+   *
+   * IL EST FACULTATIF, ET C'EST VOULU : sur la maquette de jugement des murs,
+   * il n'y a pas de salon derrière. Un bouton qui n'ouvrirait rien serait pire
+   * que pas de bouton.
+   */
+  onParler?: (f: Fantome) => void;
 }) {
   const v = verbeDe(f.verbe);
   const essai = depot === "essai";
@@ -255,24 +272,59 @@ function Carte({
         )}
         {/* LE FANTÔME EST L'AVATAR. C'est lui qui tient la place du portrait :
             la personne est là, sans que sa tête y soit. */}
-        <span className="mu-c-av">
-          <Signe classe="mu-c-signe" />
-        </span>
-        {f.maison ? (
-          <span className="mu-c-b staff">Staff</span>
-        ) : v ? (
-          <span className="mu-c-b verbe">{v.mot}</span>
-        ) : f.essai ? (
-          <span className="mu-c-b essai">✨ Essayé ici</span>
-        ) : null}
+        {essai && (
+          <span className="mu-c-av">
+            <Signe classe="mu-c-signe" />
+          </span>
+        )}
+        {/* ═══ LA PASTILLE QUITTE LA PHOTO SUR UN MUR DE LIEU ═══════════════
+
+            SUR LA GRILLE D'ESSAI ELLE RESTE OÙ ELLE EST : « ✨ Essayé ici »
+            posé sur la vignette dit en un coup d'œil ce qu'on regarde, et la
+            vignette est ce qu'on regarde.
+
+            SUR UN MUR DE BAR, LA MAQUETTE LA MET EN TÊTE DU MESSAGE, avant le
+            prénom — « STAFF · Marc · Chef ». Ce n'est pas le même travail :
+            ici elle ne décrit pas une image, elle dit QUI PARLE, et cette
+            information appartient à la ligne du nom. Posée sur une photo
+            devenue vignette de soixante-dix points, elle la couvrait
+            entièrement. */}
+        {essai &&
+          (f.maison ? (
+            <span className="mu-c-b staff">Staff</span>
+          ) : v ? (
+            <span className="mu-c-b verbe">{v.mot}</span>
+          ) : f.essai ? (
+            <span className="mu-c-b essai">✨ Essayé ici</span>
+          ) : null)}
       </div>
       <div className="mu-c-t">
+
         {/* L'HEURE EST MONTEE SUR LA LIGNE DU NOM, ET C'EST UNE CORRECTION DE
             MESURE : a cote du bouton, elle lui prenait quarante points sur une
             carte qui en fait cent soixante-quatorze, et « Ca m'interesse »
             s'affichait « Ca m'i... 12 ». Un geste dont on ne lit pas le nom
             n'est plus un geste. */}
         <div className="mu-c-n">
+          {/* ═══ QUI PARLE, SUR UNE SEULE LIGNE ═══════════════════════════════
+
+              La maquette écrit « [fantôme] STAFF Marc · Chef » d'un trait, et
+              c'est juste : ces trois choses répondent toutes à la même question.
+              Écrites sur deux lignes, elles font croire à deux informations et
+              volent quinze points de hauteur à chaque carte — sur huit cartes,
+              une carte entière. */}
+          {!essai && (
+            <>
+              <span className="mu-c-av2">
+                <Signe classe="mu-c-signe" />
+              </span>
+              {f.maison ? (
+                <span className="mu-c-b staff">Staff</span>
+              ) : v ? (
+                <span className="mu-c-b verbe">{v.mot}</span>
+              ) : null}
+            </>
+          )}
           <b>{f.qui}</b>
           {f.role && <u>· {f.role}</u>}
           <s>{f.heure}</s>
@@ -370,10 +422,34 @@ function Carte({
           )}
           {!mien && (f.interesses ?? 0) + (quand ? 1 : 0) > 0 && (
             <s className="mu-int-n">
+              {/* ═══ LES VISAGES EMPILÉS DE LA MAQUETTE SONT DES FANTÔMES ════
+
+                  La maquette empile trois portraits à gauche du compte. On n'a
+                  pas de visages à empiler, et en inventer serait fabriquer
+                  exactement la preuve sociale que ce compte sert à donner.
+                  Trois fantômes disent la même chose et ne mentent pas — c'est
+                  déjà la solution retenue en tête du mur d'essai. */}
+              <span className="mu-int-v" aria-hidden="true">
+                {Array.from(
+                  { length: Math.min(3, (f.interesses ?? 0) + (quand ? 1 : 0)) },
+                  (_, k) => (
+                    <Signe key={k} classe="mu-int-vs" />
+                  ),
+                )}
+              </span>
               {(f.interesses ?? 0) + (quand ? 1 : 0)} personne
               {(f.interesses ?? 0) + (quand ? 1 : 0) > 1 ? "s" : ""} intéressée
               {(f.interesses ?? 0) + (quand ? 1 : 0) > 1 ? "s" : ""}
             </s>
+          )}
+          {/* LE SECOND GESTE : voir `onParler`. Il n'existe que là où il y a un
+              salon derrière, et seulement sur un mur de lieu — sur une grille
+              d'essai, « en parler » a déjà sa place au troisième temps. */}
+          {!mien && !essai && onParler && (
+            <button type="button" className="mu-parler" onClick={() => onParler(f)}>
+              <i aria-hidden="true">💬</i>
+              En parler
+            </button>
           )}
         </div>
         {f.jusqua && (
@@ -588,6 +664,26 @@ export function MurContenu({
           dits={dits}
           onDit={interesse}
           onDeposer={() => setEcran("depot")}
+          // « EN PARLER » EMPORTE LE MESSAGE DANS LE SALON. La maquette met
+          // deux boutons sous chaque message d'un mur de lieu, et ils ne
+          // s'adressent pas aux mêmes gens : « Ça m'intéresse » parle AU LIEU
+          // — je signale que je passerai — et « En parler » parle À MES AMIS :
+          // « il y a une dégustation à 19 h, qui vient ? ». Il n'existe que là
+          // où il y a un salon derrière : sur la maquette de jugement des murs,
+          // `onSalon` est absent, donc le bouton ne se dessine pas — un geste
+          // qui n'ouvre rien serait pire que pas de geste.
+          onParler={
+            onSalon
+              ? (f) =>
+                  onSalon({
+                    quoi: f.mot,
+                    image: f.photo ?? mur.photoLieu ?? "",
+                    note: 0,
+                    depuis: "mur",
+                    qui: f.qui,
+                  })
+              : undefined
+          }
           tout={tout}
           onTout={setTout}
         />
@@ -781,6 +877,7 @@ function EcranMur({
   dits,
   onDit,
   onDeposer,
+  onParler,
   tout,
   onTout,
 }: {
@@ -792,6 +889,8 @@ function EcranMur({
   dits: Record<string, string>;
   onDit: (f: Fantome) => void;
   onDeposer: () => void;
+  /** Le second geste des cartes, sur un mur de lieu : voir `onParler`. */
+  onParler?: (f: Fantome) => void;
 }) {
   return (
     <>
@@ -869,19 +968,56 @@ function EcranMur({
            une pastille à leur droite. Trois blocs deviennent un, et la première
            carte remonte de deux cents points. */
         <div className="mu-haut">
-          <div className="mu-haut-r">
-            <Signe classe="mu-haut-s" />
-            <h2>
-              Ce que les gens ont laissé ici <i>aujourd’hui</i>
-            </h2>
-            <button type="button" className="mu-haut-p" onClick={onDeposer}>
-              <Signe classe="mu-haut-ps" />
-              Laisser mon Fantôme
+          {/* ═══ L'INVITATION DEVIENT UNE CARTE, D'APRÈS LA MAQUETTE ═════════
+
+              « Restaurant, bars et événements : respecter le design là aussi.
+              Le fantôme amène sur le mur du restaurant avec la possibilité de
+              mettre son propre fantôme. »
+
+              LE GESTE ÉTAIT UNE PASTILLE EN CONTOUR, coincée au bout d'une
+              ligne avec le fantôme et le titre. Il tenait peu de place — c'est
+              ce qu'on lui demandait à l'époque — mais il est LE geste de ce
+              mur-là : chez un bar, on ne vient pas essayer quelque chose, on
+              vient dire qu'on est là. La maquette lui donne son cadre, son
+              dégradé et deux lignes, et elle a raison : une invitation qui a
+              l'air d'un lien secondaire ne se prend pas.
+
+              LE TITRE CHANGE AUSSI, ET C'EST LE MÊME ARBITRAGE. « Ce que les
+              gens ont laissé ici » décrit le contenu ; « Faites savoir que vous
+              êtes ici » demande quelque chose. Le premier est une légende, le
+              second est une porte — et l'écran a besoin d'une porte avant
+              d'avoir une légende. */}
+          <div className="mu-inv">
+            <Signe classe="mu-inv-f" />
+            <div className="mu-inv-t">
+              <h2>
+                Faites savoir que <i>vous êtes ici</i>
+              </h2>
+              <p>
+                Laissez un message, dites ce que vous cherchez ou simplement que vous êtes là.
+              </p>
+              <p>Les personnes présentes ou qui passent ici pourront vous répondre.</p>
+            </div>
+            <button type="button" className="mu-inv-b" onClick={onDeposer}>
+              <Signe classe="mu-inv-bf" />
+              <span>
+                <b>JE SUIS ICI</b>
+                <em>Laisser mon Fantôme</em>
+              </span>
             </button>
           </div>
-          <p>
-            Des infos, des envies, des messages laissés par les personnes qui passent ici.
-          </p>
+          {/* ET LA LÉGENDE REVIENT APRÈS, À SA VRAIE PLACE : au-dessus des
+              cartes qu'elle décrit, et non à celle de la porte. */}
+          <div className="mu-qui">
+            <div className="mu-qui-t">
+              <h3>Qui est là. Ce qu’ils ont à dire.</h3>
+              <p>Les Fantômes laissés ici aujourd’hui.</p>
+            </div>
+            <span className="mu-qui-j">
+              <i aria-hidden="true">🕐</i>
+              Aujourd’hui
+            </span>
+          </div>
           {/* ═══ LA PHRASE QUI DONNE SON SENS AU POUCE ═══
               « Ça m'intéresse ressemble énormément à un like. Or ce n'est
               absolument pas ça : l'utilisateur dit qu'il s'y intéresse assez pour
@@ -893,6 +1029,18 @@ function EcranMur({
               geste, pas une deuxième annonce. Le quota, lui, a quitté la tête :
               « 3 sur 3 » ne veut rien dire avant qu'on ait compris de quoi il
               s'agit, et il est déjà sur l'écran de dépôt. */}
+          {/* ═══ LA LEGENDE DU POUCE PERD SON CADRE ═══════════════════════
+
+              « Ça m'intéresse ressemble énormément à un like. Or ce n'est
+              absolument pas ça : l'utilisateur dit qu'il s'y intéresse assez
+              pour qu'ON EN PARLE SUR PLACE quand il y sera. »
+
+              LA PHRASE RESTE, LE CADRE PART. La maquette n'a pas d'encadré à
+              cet endroit, et il n'en avait pas besoin : posé entre le titre de
+              section et la première carte, un bloc violet de deux lignes
+              repoussait les cartes sous le pli pour expliquer un geste qu'on
+              n'avait pas encore vu. En légende sous le titre, elle arrive au
+              bon moment et ne coûte rien. */}
           <strong className="mu-haut-cle">
             Quelque chose vous parle&nbsp;? Signalez-le, et vous pourrez en parler sur place quand
             vous y serez.
@@ -922,7 +1070,15 @@ function EcranMur({
       {mur.depot !== "essai" && (
         <div className={`mu-rang maison${tout ? " tout" : ""}`}>
           {mur.maison.map((f) => (
-            <Carte key={f.id} f={f} grande quand={dits[f.id]} onDit={onDit} depot={mur.depot} />
+            <Carte
+              key={f.id}
+              f={f}
+              grande
+              quand={dits[f.id]}
+              onDit={onDit}
+              onParler={onParler}
+              depot={mur.depot}
+            />
           ))}
         </div>
       )}
@@ -946,14 +1102,29 @@ function EcranMur({
         className={`mu-rang${mur.depot === "essai" ? " grille" : ""}${tout ? " tout" : ""}`}
       >
         {clients.map((f) => (
-          <Carte key={f.id} f={f} quand={dits[f.id]} onDit={onDit} depot={mur.depot} />
+          <Carte
+            key={f.id}
+            f={f}
+            quand={dits[f.id]}
+            onDit={onDit}
+            onParler={onParler}
+            depot={mur.depot}
+          />
         ))}
       </div>
 
       {mur.depot === "essai" && (
         <div className="mu-rang maison apres">
           {mur.maison.map((f) => (
-            <Carte key={f.id} f={f} grande quand={dits[f.id]} onDit={onDit} depot={mur.depot} />
+            <Carte
+              key={f.id}
+              f={f}
+              grande
+              quand={dits[f.id]}
+              onDit={onDit}
+              onParler={onParler}
+              depot={mur.depot}
+            />
           ))}
         </div>
       )}
@@ -1510,6 +1681,22 @@ export type VersLeSalon = {
   image: string;
   /** La note qu'on s'est donnée, de 0 (pas noté) à 5. */
   note: number;
+  /**
+   * ═══ D'OÙ VIENT CE QU'ON EMPORTE DANS LE SALON ═══════════════════════════
+   *
+   * DEUX GESTES DIFFÉRENTS ARRIVENT ICI, et la phrase écrite dans le salon
+   * n'est pas la même. Depuis l'essai, on montre CE QU'ON A SUR SOI : « j'ai
+   * essayé la combinaison beige, je mets 4/5, vous en pensez quoi ? ». Depuis
+   * le mur d'un bar, on rapporte CE QUE QUELQU'UN A DIT : « Serge dit qu'il y a
+   * une dégustation à 19 h — qui vient ? ».
+   *
+   * SANS CE CHAMP, LE SECOND EMPRUNTAIT LA PHRASE DU PREMIER et donnait « j'ai
+   * essayé "Dégustation de trois blancs des Landes à partir de 19 h" sur moi.
+   * Ça me va ou pas ? » — une phrase qui ne veut rien dire, envoyée à des amis.
+   */
+  depuis?: "essai" | "mur";
+  /** Qui l'a dit, quand ça vient du mur d'un lieu. */
+  qui?: string;
 };
 
 /**
@@ -3878,6 +4065,91 @@ function Styles() {
            de deux mots a cote du pouce — illisible, et mesure a l'ecran. Le
            geste prend sa ligne, sa consequence prend la suivante. */
         .mu-c-f{margin-top:auto;padding-top:10px;}
+
+        /* ═══ LA CARTE D'UN MUR DE LIEU, D'APRES LA MAQUETTE ═════════════════
+
+           « Restaurant, bars et evenements : respecter le design la aussi. »
+
+           LA PHOTO PASSE A DROITE ET DEVIENT UNE VIGNETTE. Elle occupait une
+           colonne pleine hauteur a gauche : sur un mur de bar, ce n'est pas
+           elle qu'on vient lire — c'est le message. Une photo de comptoir en
+           cent quatorze points de large prenait un tiers de la carte pour dire
+           « c'est un bar », ce que le titre de l'ecran dit deja.
+
+           ET SUR LA GRILLE D'ESSAI, RIEN NE BOUGE : la vignette y EST le
+           contenu, et elle garde toute la largeur de la carte. */
+        .mu-rang:not(.grille) .mu-c{flex-direction:row-reverse;padding:12px;
+          gap:11px;align-items:flex-start;}
+        .mu-rang:not(.grille) .mu-c-p{width:72px;min-height:0;height:72px;
+          align-self:flex-start;border-radius:14px;overflow:hidden;}
+        .mu-rang:not(.grille) .mu-c.grande .mu-c-p{width:78px;height:78px;}
+        .mu-rang:not(.grille) .mu-c-t{padding:0;min-width:0;flex:1;}
+
+        /* LE FANTOME ET LA PASTILLE SUR LA LIGNE DU PRENOM. Sur la maquette
+           elles precedent le nom — ici elles ne decrivent pas une image, elles
+           disent QUI parle, et cette information appartient au texte. */
+        .mu-c-av2{flex:none;width:30px;height:30px;border-radius:50%;
+          display:flex;align-items:center;justify-content:center;
+          background:linear-gradient(150deg,#2A2150,#150F2C);
+          border:1px solid rgba(139,125,246,.5);}
+        .mu-c-av2 .mu-c-signe{width:17px;height:19px;}
+        /* LA PASTILLE ETAIT POSEE SUR LA PHOTO, EN ABSOLU : rendue dans le
+           texte, elle serait restee accrochee au coin de la carte. */
+        .mu-rang:not(.grille) .mu-c-n .mu-c-b{position:static;flex:none;}
+        .mu-rang:not(.grille) .mu-c-n{flex-wrap:wrap;gap:7px;}
+
+        /* LES TROIS FANTOMES EMPILES ET LE COMPTE, SUR LA LIGNE DES GESTES.
+           La maquette met le compte a gauche et les boutons a droite : le
+           nombre est ce qui donne envie d'appuyer, il doit etre lu AVANT. */
+        .mu-int-v{display:inline-flex;margin-right:7px;vertical-align:-5px;}
+        .mu-int-vs{width:19px;height:21px;margin-left:-7px;}
+        .mu-int-vs:first-child{margin-left:0;}
+        .mu-int-vs .mu-f-corps{fill:#C9BCFF;}
+        .mu-int-vs .mu-f-oeil{fill:#1A1040;}
+        .mu-int-vs .mu-f-bouche{fill:none;stroke:#1A1040;stroke-width:2.4;
+          stroke-linecap:round;}
+
+        /* LE SECOND GESTE. Il est en contour et non en plein : « Ca m'interesse »
+           s'adresse au lieu et c'est le geste principal de ce mur ; « En parler »
+           emporte le message ailleurs, et deux boutons pleins cote a cote ne
+           laisseraient plus voir lequel repond a l'ecran. */
+        .mu-parler{display:inline-flex;align-items:center;gap:7px;
+          padding:9px 14px;font:inherit;font-size:12.5px;font-weight:800;
+          color:#D7E2EE;cursor:pointer;background:transparent;
+          border:1px solid rgba(255,255,255,.2);border-radius:99px;}
+        .mu-parler i{font-style:normal;font-size:12px;}
+
+        /* ═══ LE PIED DE CARTE, DANS L'ORDRE DE LA MAQUETTE ══════════════════
+
+           ELLE MET LE COMPTE A GAUCHE ET LES DEUX GESTES A DROITE, sur une
+           ligne, puis la legende dessous. C'est le bon ordre de lecture : le
+           nombre est ce qui donne envie d'appuyer, il doit se lire AVANT le
+           bouton — empile dessous, il arrivait apres la decision.
+
+           ON REORDONNE PLUTOT QUE DE REECRIRE LE DOM, parce que l'ordre du
+           document est celui du lecteur d'ecran : le geste et sa consequence
+           s'y suivent, et c'est ainsi qu'il faut les entendre. Seul l'oeil a
+           besoin de l'autre ordre. */
+        .mu-rang:not(.grille) .mu-c-f{display:flex;flex-wrap:wrap;
+          align-items:center;gap:9px;}
+        .mu-rang:not(.grille) .mu-c-f .mu-int-n{order:1;flex:1 1 100%;
+          min-width:0;margin:0;}
+        /* LES DEUX GESTES SE PARTAGENT LA LIGNE EN DEUX MOITIES EGALES.
+           MESURE : la colonne de texte fait deux cent quarante-trois points une
+           fois la vignette et les marges retirees, et les deux boutons a leur
+           taille naturelle en faisaient deux cent soixante — ils passaient donc
+           a la ligne l'un sous l'autre, ce qui n'est ni la maquette ni lisible.
+           A cinquante pour cent chacun ils tiennent, et ils restent egaux : la
+           maquette les met cote a cote parce qu'ils repondent a deux questions
+           differentes, pas parce que l'un compte plus que l'autre. */
+        .mu-rang:not(.grille) .mu-c-f .mu-int{order:2;
+          flex:1 1 calc(50% - 5px);min-width:0;width:auto;
+          justify-content:center;font-size:11px;padding:8px 10px;}
+        .mu-rang:not(.grille) .mu-c-f .mu-int span{flex:none;}
+        .mu-rang:not(.grille) .mu-c-f .mu-parler{order:3;
+          flex:1 1 calc(50% - 5px);min-width:0;
+          justify-content:center;font-size:11px;padding:8px 10px;}
+        .mu-rang:not(.grille) .mu-c-f .mu-int-d{order:4;flex:1 1 100%;margin:0;}
         .mu-c-d{display:inline-flex;align-items:center;gap:4px;margin-top:6px;
           font-size:10.5px;font-weight:700;color:var(--mu-pale);}
         .mu-c-d i{font-style:normal;}
@@ -4057,12 +4329,81 @@ function Styles() {
         .mu-haut h2 i{font-style:italic;color:var(--mu-v2);}
         .mu-haut>p{margin:10px 0 0;font-size:12.5px;line-height:1.5;
           text-align:left;color:var(--mu-pale);}
+        /* ═══ L'INVITATION, D'APRES LA MAQUETTE ════════════════════════════
+
+           « Restaurant, bars et evenements : respecter le design la aussi. Le
+           fantome amene sur le mur du restaurant avec la possibilite de mettre
+           son propre fantome. »
+
+           ELLE ETAIT UNE PASTILLE EN CONTOUR au bout d'une ligne. Elle tenait
+           peu de place — c'est ce qu'on lui demandait alors — mais elle est LE
+           geste de ce mur-la : chez un bar on ne vient pas essayer, on vient
+           dire qu'on est la. La maquette lui donne son cadre et son degrade,
+           et elle a raison : une invitation qui a l'air d'un lien secondaire
+           ne se prend pas.
+
+           LE FANTOME PASSE A GAUCHE ET LE BOUTON A DROITE, en ligne tant que
+           l'ecran le permet ; sous quatre cent vingt points le bouton descend
+           en pleine largeur plutot que de se serrer a cote du texte. */
+        .mu-inv{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+          text-align:left;margin-top:2px;padding:13px;border-radius:20px;
+          background:rgba(255,255,255,.045);
+          border:1px solid rgba(255,255,255,.12);}
+        .mu-inv-f{width:52px;height:56px;flex:none;display:block;}
+        .mu-inv-f .mu-f-corps{fill:#F3F0FF;}
+        .mu-inv-f .mu-f-oeil{fill:#2A1E4D;}
+        .mu-inv-f .mu-f-bouche{fill:none;stroke:#2A1E4D;stroke-width:1.9;
+          stroke-linecap:round;}
+        .mu-inv-t{flex:1 1 160px;min-width:0;}
+        .mu-inv-t h2{margin:0;font-size:17.5px;line-height:1.18;font-weight:850;
+          letter-spacing:-.025em;color:#fff;}
+        .mu-inv-t h2 i{font-style:normal;color:var(--mu-v2);}
+        .mu-inv-t p{margin:6px 0 0;font-size:12px;line-height:1.42;
+          color:var(--mu-pale);}
+        .mu-inv-b{flex:0 0 auto;display:inline-flex;align-items:center;gap:9px;
+          padding:11px 15px 11px 12px;font:inherit;cursor:pointer;border:0;
+          border-radius:16px;color:#fff;text-align:left;
+          background:linear-gradient(103deg,#6E5BF2,#C551E8);
+          box-shadow:0 10px 26px rgba(110,91,242,.34);}
+        .mu-inv-b b{display:block;font-size:12.5px;font-weight:900;
+          letter-spacing:.045em;}
+        .mu-inv-b em{display:block;margin-top:1px;font-style:normal;
+          font-size:11px;font-weight:650;color:rgba(255,255,255,.82);}
+        .mu-inv-bf{width:22px;height:24px;flex:none;}
+        .mu-inv-bf .mu-f-corps{fill:#fff;}
+        .mu-inv-bf .mu-f-oeil{fill:#4B2E8A;}
+        .mu-inv-bf .mu-f-bouche{fill:none;stroke:#4B2E8A;stroke-width:2.4;
+          stroke-linecap:round;}
+        @media (max-width:419px){
+          .mu-inv-b{flex:1 1 100%;justify-content:center;}
+        }
+
+        /* LA LEGENDE DES CARTES, A SA VRAIE PLACE : au-dessus d'elles, et non
+           a celle de la porte. Le repere du jour a droite dit de QUAND on parle
+           — un mur se lit par journee, et « aujourd'hui » revient six fois dans
+           cet ecran sans que rien ne le montre. */
+        .mu-qui{display:flex;align-items:flex-start;gap:10px;margin-top:18px;
+          text-align:left;}
+        .mu-qui-t{flex:1;min-width:0;}
+        .mu-qui-t h3{margin:0;font-size:18px;line-height:1.16;font-weight:850;
+          letter-spacing:-.028em;color:#fff;}
+        .mu-qui-t p{margin:4px 0 0;font-size:12.5px;line-height:1.45;
+          color:var(--mu-pale);}
+        .mu-qui-j{flex:none;display:inline-flex;align-items:center;gap:6px;
+          padding:7px 12px;border-radius:99px;font-size:12px;font-weight:750;
+          color:#D7E2EE;background:rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.14);}
+        .mu-qui-j i{font-style:normal;font-size:11px;}
+
         /* La phrase qui donne son sens au pouce : elle est encadrée parce
            qu'elle explique le geste, elle ne le décore pas. */
-        .mu-haut-cle{display:block;margin:10px 0 0;padding:9px 11px;text-align:left;
-          font-size:12px;line-height:1.45;font-weight:600;color:#D9CEFF;
-          background:rgba(139,106,255,.1);
-          border:1px solid rgba(139,106,255,.26);border-radius:13px;}
+        /* LA LEGENDE DU POUCE, SANS SON CADRE. La maquette n'en a pas, et il
+           n'etait pas necessaire : pose entre le titre de section et la
+           premiere carte, un bloc violet de deux lignes repoussait les cartes
+           sous le pli pour expliquer un geste qu'on n'avait pas encore vu. */
+        .mu-haut-cle{display:block;margin:7px 0 0;text-align:left;
+          font-size:11.5px;line-height:1.45;font-weight:600;
+          color:var(--mu-pale);}
         .mu-haut-b{display:inline-flex;align-items:center;gap:8px;margin-top:13px;
           padding:9px 15px 9px 10px;font-family:inherit;font-size:14px;
           font-weight:800;color:#fff;cursor:pointer;

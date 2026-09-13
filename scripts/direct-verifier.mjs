@@ -248,7 +248,15 @@ const ouvrir = async (url = "/autour-de-moi", heure) => {
   }
   const p = await ctx.newPage();
   p.on("pageerror", (e) => erreurs.push(String(e)));
-  p.on("console", (m) => { if (m.type() === "error") erreurs.push(m.text()); });
+  p.on("console", (m) => { if (m.type() === "error") erreurs.push(`${m.text()} [${p.url()}]`); });
+  // UNE ERREUR SANS ADRESSE NE SE CORRIGE PAS. « Failed to load resource : 500 »
+  // ne dit ni sur quelle page ni pour quelle ressource, et le message est
+  // collecte pour tout le parcours : il peut venir de n'importe laquelle des
+  // trente pages ouvertes. Une ligne rouge qu'on ne sait pas reproduire ne se
+  // corrige pas, elle s'ignore — la pire fin possible pour une garde.
+  p.on("response", (r) => {
+    if (r.status() >= 500) erreurs.push(`HTTP ${r.status()} sur ${r.url()} [depuis ${p.url()}]`);
+  });
   await p.goto(`${BASE}${url}`, { waitUntil: "networkidle" });
   await p.waitForSelector(".ap-fav2");
   await p.waitForTimeout(4600);
@@ -689,7 +697,15 @@ console.log("\n══ mon commerce ══");
   });
   const q = await c3.newPage();
   q.on("pageerror", (e) => erreurs.push(String(e)));
-  q.on("console", (m) => { if (m.type() === "error") erreurs.push(m.text()); });
+  q.on("console", (m) => { if (m.type() === "error") erreurs.push(`${m.text()} [${q.url()}]`); });
+  // UNE ERREUR SANS ADRESSE NE SE CORRIGE PAS. « Failed to load resource : 500 »
+  // ne dit ni sur quelle page ni pour quelle ressource, et le message est
+  // collecte pour tout le parcours : il peut venir de n'importe laquelle des
+  // trente pages ouvertes. Une ligne rouge qu'on ne sait pas reproduire ne se
+  // corrige pas, elle s'ignore — la pire fin possible pour une garde.
+  q.on("response", (r) => {
+    if (r.status() >= 500) erreurs.push(`HTTP ${r.status()} sur ${r.url()} [depuis ${q.url()}]`);
+  });
   await q.goto(`${BASE}/autour-de-moi/mon-commerce?chez=boulange`, {
     waitUntil: "networkidle",
   });
@@ -865,7 +881,15 @@ console.log("\n══ la vidéo dans le rond ══");
   });
   const q = await c4.newPage();
   q.on("pageerror", (e) => erreurs.push(String(e)));
-  q.on("console", (m) => { if (m.type() === "error") erreurs.push(m.text()); });
+  q.on("console", (m) => { if (m.type() === "error") erreurs.push(`${m.text()} [${q.url()}]`); });
+  // UNE ERREUR SANS ADRESSE NE SE CORRIGE PAS. « Failed to load resource : 500 »
+  // ne dit ni sur quelle page ni pour quelle ressource, et le message est
+  // collecte pour tout le parcours : il peut venir de n'importe laquelle des
+  // trente pages ouvertes. Une ligne rouge qu'on ne sait pas reproduire ne se
+  // corrige pas, elle s'ignore — la pire fin possible pour une garde.
+  q.on("response", (r) => {
+    if (r.status() >= 500) erreurs.push(`HTTP ${r.status()} sur ${r.url()} [depuis ${q.url()}]`);
+  });
   await q.goto(`${BASE}/autour-de-moi`, { waitUntil: "networkidle" });
 
   // ON TOURNE UN CLIP NEUTRE DANS LE NAVIGATEUR — un carré de couleur qui
@@ -2437,8 +2461,8 @@ console.log("\n══ la page du commerce ══");
       const aVenir = await pB.$$eval("#mur .mu-pieces button.bientot", (l) => l.length);
       const total = await pB.$$eval("#mur .mu-pieces button", (l) => l.length);
       dire(
-        total - aVenir >= 3,
-        `le tatoueur a bien trois flashs essayables, comme sa carte l'annonce (${total - aVenir})`,
+        total - aVenir >= 4,
+        `le tatoueur a bien quatre flashs essayables, comme sa carte l'annonce (${total - aVenir})`,
       );
     }
   }
@@ -2603,6 +2627,160 @@ console.log("\n══ la page du commerce ══");
   dire(!surTel.deborde, "sans débordement horizontal");
   await petit.close();
   await large.close();
+}
+
+// ═══ LE MUR D'UN LIEU, D'APRÈS LA MAQUETTE ════════════════════════════════
+//
+// CE QUE ÇA PROTÈGE : « Restaurant, bars et événements : respecter le design là
+// aussi et les changements qu'on opère en fonction du cahier des charges édicté
+// plus haut. Le fantôme amène sur le mur du restaurant avec la possibilité de
+// mettre son propre fantôme. »
+//
+// CE MUR-LÀ NE SUIT PAS LE RITUEL DE L'ESSAI, ET C'EST VOULU. Chez un bar on ne
+// vient pas essayer quelque chose sur soi : on vient dire qu'on est là, et lire
+// qui y est. La maquette lui donne donc sa propre tête — une invitation en
+// carte, avec son dégradé — et deux gestes par message au lieu d'un : « Ça
+// m'intéresse » parle AU LIEU, « En parler » parle À MES AMIS.
+//
+// CE QUE LA GARDE MESURE : que l'invitation existe et porte le geste, que le
+// titre de section est celui de la maquette, et que les deux gestes tiennent
+// CÔTE À CÔTE — ils passaient l'un sous l'autre, ce qui n'est ni la maquette ni
+// lisible, et c'est le genre de défaut qu'une relecture ne voit pas.
+{
+  console.log("\n══ chez un bar, on vient dire qu'on est là ══");
+  const bar = await nav.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  await bar.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
+  await bar.addInitScript(() =>
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
+  );
+  const pV = await bar.newPage();
+  await pV.goto(`${BASE}/autour-de-moi?carte=bistrot`, { waitUntil: "networkidle" });
+  await pV.waitForTimeout(1500);
+  const fv = await pV.$(".ap-monfantome");
+  if (!fv) {
+    dire(false, "l'annonce du bar porte son fantôme");
+  } else {
+    await fv.click();
+    await pV.waitForTimeout(1200);
+    const t = await pV.evaluate(() => {
+      const deux = [...document.querySelectorAll(".mu-rang:not(.grille) .mu-c")]
+        .map((c) => {
+          const a = c.querySelector(".mu-int");
+          const b = c.querySelector(".mu-parler");
+          if (!a || !b) return null;
+          const ra = a.getBoundingClientRect();
+          const rb = b.getBoundingClientRect();
+          // MÊME LIGNE : leurs milieux verticaux se touchent à deux points près.
+          return Math.abs(ra.y + ra.height / 2 - (rb.y + rb.height / 2)) < 3;
+        })
+        .filter((x) => x !== null);
+      return {
+        invitation: document.querySelector(".mu-inv-t h2")?.textContent?.trim() ?? null,
+        geste: document.querySelector(".mu-inv-b b")?.textContent?.trim() ?? null,
+        section: document.querySelector(".mu-qui-t h3")?.textContent?.trim() ?? null,
+        jour: document.querySelector(".mu-qui-j")?.textContent?.replace(/\s+/g, " ").trim() ?? null,
+        cartes: document.querySelectorAll(".mu-rang:not(.grille) .mu-c").length,
+        parler: document.querySelectorAll(".mu-parler").length,
+        cote: deux,
+        // ET PAS DE RITUEL D'ESSAI ICI : ni grille, ni geste d'essayage.
+        grille: document.querySelectorAll(".mu-rang.grille").length,
+      };
+    });
+    dire(
+      /vous êtes ici/i.test(t.invitation ?? ""),
+      `l'invitation demande quelque chose (« ${t.invitation ?? "absente"} »)`,
+    );
+    dire(t.geste === "JE SUIS ICI", `et son geste porte les mots de la maquette (« ${t.geste ?? "absent"} »)`);
+    dire(
+      /qui est là/i.test(t.section ?? ""),
+      `la section dit qui est là (« ${t.section ?? "absente"} »)`,
+    );
+    dire(/aujourd/i.test(t.jour ?? ""), `avec le repère du jour (« ${t.jour ?? "absent"} »)`);
+    dire(t.cartes >= 4, `le mur porte ses messages (${t.cartes})`);
+    dire(
+      t.parler === t.cartes,
+      `chaque message peut partir dans le salon (${t.parler} sur ${t.cartes})`,
+    );
+    dire(
+      t.cote.length > 0 && t.cote.every(Boolean),
+      `et les deux gestes tiennent côte à côte (${t.cote.filter(Boolean).length} sur ${t.cote.length})`,
+    );
+    dire(t.grille === 0, "un bar n'a pas de grille d'essai, et c'est voulu");
+  }
+  await bar.close();
+}
+
+// ═══ LE MUR DU FLASH DU MOIS ═══════════════════════════════════════════════
+//
+// CE QUE ÇA PROTÈGE : « J'ai mis douze photos du même dessin pour que le mur
+// du jour ait bien le même tatouage dans différentes situations. Donc quand on
+// clique sur le fantôme sur l'annonce du tatoueur, on aura non pas "essayer
+// le" mais le mur du tatouage de ceux qui l'ont fait. »
+//
+// C'EST LA RÈGLE DU FANTÔME, MESURÉE SUR LE CAS QUI COMPTE LE PLUS. Un mur
+// vide mène à l'essai, un mur rempli mène à lui-même — et le tatoueur est le
+// métier où cette règle vaut le plus cher, parce qu'un tatouage ne se refait
+// pas. La garde vérifie les trois choses ensemble : qu'on arrive bien sur le
+// mur, qu'il porte les douze, et que le geste d'essai reste atteignable en bas
+// plutôt que d'avoir disparu avec la redirection.
+{
+  console.log("\n══ le tatoueur ouvre sur ceux qui portent déjà le dessin ══");
+  const ta = await nav.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  await ta.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
+  await ta.addInitScript(() =>
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
+  );
+  const pT = await ta.newPage();
+  await pT.goto(`${BASE}/autour-de-moi?carte=tatoueur`, { waitUntil: "networkidle" });
+  await pT.waitForTimeout(1400);
+  const fantome = await pT.$(".ap-monfantome");
+  if (!fantome) {
+    dire(false, "l'annonce du tatoueur porte son fantôme");
+  } else {
+    await fantome.click();
+    await pT.waitForTimeout(1200);
+    const mur = await pT.evaluate(() => ({
+      surLeMur: !!document.querySelector(".mu-haut.essai"),
+      surLaPhoto: !!document.querySelector(".mu-ph-tete"),
+      compte: document.querySelector(".mu-haut-n")?.textContent?.replace(/\s+/g, " ").trim() ?? null,
+      vignettes: document.querySelectorAll(".mu-rang.grille .mu-c").length,
+      // CHAQUE VIGNETTE MONTRE UNE VRAIE PHOTO : une image absente garde sa
+      // place et sa couleur de fond, donc seule `naturalWidth` la trahit.
+      images: [...document.querySelectorAll(".mu-rang.grille .mu-c-p img")].map((i) => ({
+        src: i.getAttribute("src"),
+        chargee: i.naturalWidth > 0,
+      })),
+      geste: document.querySelector(".mu-bas .mu-cta b")?.textContent?.trim() ?? null,
+    }));
+    dire(mur.surLeMur && !mur.surLaPhoto, "le fantôme mène au mur, pas à l'essayage");
+    dire(
+      /^12 essayages/.test(mur.compte ?? ""),
+      `et le mur annonce les douze (« ${mur.compte ?? "rien"} »)`,
+    );
+    dire(mur.vignettes >= 12, `qui sont bien là, en grille (${mur.vignettes})`);
+    dire(
+      mur.images.length > 0 && mur.images.every((i) => i.chargee),
+      `et chaque photo existe vraiment${mur.images
+        .filter((i) => !i.chargee)
+        .map((i) => ` — ${i.src}`)
+        .join("")}`,
+    );
+    // LE MÊME DESSIN, DES ENDROITS DIFFÉRENTS : c'est tout l'intérêt de ce mur.
+    // Douze photos distinctes, pas la même répétée douze fois.
+    const distinctes = new Set(mur.images.map((i) => i.src)).size;
+    dire(distinctes >= 12, `douze photos distinctes du même dessin (${distinctes})`);
+    dire(
+      !!mur.geste && /essayer/i.test(mur.geste),
+      `et on peut toujours l'essayer, en bas (« ${mur.geste ?? "absent"} »)`,
+    );
+  }
+  await ta.close();
 }
 
 // ═══ ON N'OUVRE JAMAIS WHATSAPP SUR UN NUMÉRO DE FICTION ═══════════════════

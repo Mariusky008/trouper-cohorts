@@ -2960,11 +2960,26 @@ export function ApercuHabitant() {
    * ON FERME LA FEUILLE DU MUR, parce que le salon s'ouvre par-dessus et qu'on
    * ne revient pas à l'essai après avoir posé sa question.
    */
+  /**
+   * ═══ DEUX GESTES ARRIVENT ICI, ET ILS N'ÉCRIVENT PAS LA MÊME PHRASE ═══════
+   *
+   * DEPUIS L'ESSAI, on montre ce qu'on a sur soi : « j'ai essayé la combinaison
+   * beige, je mets 4/5, vous en pensez quoi ? ». C'est une demande d'avis sur
+   * SOI, et la note en est le cœur.
+   *
+   * DEPUIS LE MUR D'UN BAR, on rapporte ce que quelqu'un a dit : « Serge dit
+   * qu'il y a une dégustation à 19 h — qui vient ? ». C'est une invitation, et
+   * il n'y a rien à noter. Écrite avec la phrase de l'essai, elle donnait « j'ai
+   * essayé "Dégustation de trois blancs des Landes à partir de 19 h" sur moi.
+   * Ça me va ou pas ? » — une phrase qui ne veut rien dire, envoyée à des amis.
+   */
   function envoyerLEssaiAuSalon(o: {
     quoi: string;
     prix?: string;
     image: string;
     note: number;
+    depuis?: "essai" | "mur";
+    qui?: string;
   }) {
     if (!dessus) return;
     const cle = cleSalonMoment(dessus, carteDe(dessus).quoi, !!carteDe(dessus).flash);
@@ -2975,9 +2990,18 @@ export function ApercuHabitant() {
     ecrireDansSalon(cle, {
       qui: moi,
       voix: "moi",
-      texte: o.note
-        ? `J’ai essayé « ${o.quoi} »${o.prix ? ` (${o.prix})` : ""} sur moi. Je mets ${o.note}/5 — vous en pensez quoi ?`
-        : `J’ai essayé « ${o.quoi} »${o.prix ? ` (${o.prix})` : ""} sur moi. Ça me va ou pas ?`,
+      texte:
+        o.depuis === "mur"
+          ? `${o.qui ?? "Quelqu’un"} a laissé ça chez ${
+              // L'ARTICLE SE DECAPITALISE AU MILIEU D'UNE PHRASE : « chez Une
+              // terrasse au soleil » plante une majuscule en plein milieu.
+              /^(Un|Une|Le|La|Les|L’|L')\s?/.test(dessus.nom)
+                ? `${dessus.nom.charAt(0).toLowerCase()}${dessus.nom.slice(1)}`
+                : dessus.nom
+            } : « ${o.quoi} » — ça vous dit ?`
+          : o.note
+            ? `J’ai essayé « ${o.quoi} »${o.prix ? ` (${o.prix})` : ""} sur moi. Je mets ${o.note}/5 — vous en pensez quoi ?`
+            : `J’ai essayé « ${o.quoi} »${o.prix ? ` (${o.prix})` : ""} sur moi. Ça me va ou pas ?`,
       quand: heureCourte(),
       photo: o.image,
     });

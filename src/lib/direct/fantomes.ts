@@ -1996,6 +1996,28 @@ export const MURS: Mur[] = [
           photo: "/direct/tattou2.jpeg", reference: "/direct/tattou2.jpeg" },
         { id: "t-chat", nom: "Chat tribal, trait plein", decrire: "un tatouage noir au trait plein représentant un chat de style tribal", prix: "110 €",
           photo: "/direct/tattou1.jpg", reference: "/direct/tattou1.jpg" },
+        /**
+         * ═══ LE FLASH DU MOIS, ET IL EST LE SEUL À AVOIR SON MUR ═══════════
+         *
+         * « J'ai mis douze photos du même dessin pour que le mur du jour ait
+         * bien le même tatouage dans différentes situations. »
+         *
+         * C'EST LA PIÈCE LA PLUS UTILE DU PRODUIT, et pas seulement pour le
+         * tatoueur. Un tatouage ne se refait pas : c'est le seul métier de
+         * cette liste où l'on ne peut pas se tromper une fois et corriger la
+         * semaine d'après. Douze personnes qui portent LE MÊME dessin sur
+         * douze endroits différents — cuisse, avant-bras, mollet, poignet —
+         * répondent à la seule question qu'on se pose vraiment devant un flash :
+         * « ça donne quoi, une fois posé, là où je veux le mettre ? »
+         *
+         * SA RÉFÉRENCE EST UNE PHOTO SUR PEAU ET NON UNE PLANCHE, contrairement
+         * aux trois autres. C'est voulu : le dessin n'existe pas en planche
+         * détourée dans le dépôt, et lui en inventer une serait fabriquer ce
+         * que le commerçant n'a pas donné. Le modèle reçoit donc l'encre telle
+         * qu'elle tient sur un bras, ce qui est au moins aussi juste.
+         */
+        { id: "t-goku", nom: "Petit Goku, couleur", decrire: "un tatouage en couleur représentant Son Goku enfant debout, en tenue orange à ceinture bleue, cheveux noirs en pointes, d'environ douze centimètres de haut", prix: "220 €",
+          photo: "/direct/tatouB.jpg", reference: "/direct/tatouB.jpg" },
       ],
     },
 
@@ -2011,16 +2033,162 @@ export const MURS: Mur[] = [
         interesses: 11,
       },
     ],
+    /**
+     * ═══ LE MUR DU FLASH DU MOIS ══════════════════════════════════════════
+     *
+     * « Il faut que j'aie un des commerçants qui a bien déjà des photos prises
+     * par ses clients, et qui permettrait d'avoir le mur des clients un peu
+     * rempli quand on clique sur le fantôme. Par exemple tatoueur. »
+     *
+     * DOUZE PERSONNES, LE MÊME DESSIN, DOUZE ENDROITS DU CORPS. C'est ce mur-là
+     * qui vaut le plus cher de tout le produit : un tatouage ne se refait pas,
+     * et la seule question qu'on se pose devant un flash est « ça donne quoi,
+     * une fois posé, là où je veux le mettre ? ». Douze réponses — cuisse,
+     * avant-bras, mollet, poignet, tibia — valent mieux que n'importe quelle
+     * simulation, parce qu'elles sont déjà arrivées à quelqu'un.
+     *
+     * ET C'EST POUR ÇA QUE LE FANTÔME MÈNE ICI ET NON À L'ESSAI. « Le fantôme
+     * amène sur l'essayage quand personne n'a encore essayé, mais quand une ou
+     * plusieurs personnes ont essayé, alors il amène sur le mur des clients. »
+     * Voir `entree` dans `mur-contenu.tsx` : avec douze fantômes posés, cette
+     * annonce ouvre sur eux, et le geste d'essai reste en barre flottante au
+     * bas du mur.
+     *
+     * ILS SONT ORDONNÉS PAR HEURE, du matin au début d'après-midi, et leurs
+     * notes ne sont pas toutes à cinq : un mur où tout le monde met la note
+     * maximale ne se lit plus comme un mur, il se lit comme une vitrine.
+     */
     clients: [
       {
-        id: "t-lise",
-        qui: "Lise",
-        photo: "/direct/cartoon-santa-muerte-portrait-1.webp",
-        essai: { quoi: "Santa Muerte à la rose", verdict: null },
-        mot: "Je l\u2019ai essayé trois fois avant de me décider sur le placement.",
-        heure: "11:55",
+        id: "t-maelys",
+        qui: "Maëlys",
+        photo: "/direct/tatouA.jpg",
+        essai: { quoi: "Petit Goku — sur la cuisse", verdict: "pris", note: 5 },
+        mot: "Posé sur la cuisse, il se voit quand je veux et pas quand je travaille.",
+        heure: "09:05",
+        humeur: "decouvre",
+        interesses: 14,
+        jusqua: "encore 3 jours",
+      },
+      {
+        id: "t-yanis",
+        qui: "Yanis",
+        photo: "/direct/tatouB.jpg",
+        essai: { quoi: "Petit Goku — avant-bras, fond nuages", verdict: "pris", note: 5 },
+        mot: "Le fond bleu change tout. Nine me l’a proposé sur place, je ne l’aurais pas demandé.",
+        heure: "09:48",
+        humeur: "decouvre",
+        interesses: 21,
+        jusqua: "encore 3 jours",
+      },
+      {
+        id: "t-brice",
+        qui: "Brice",
+        photo: "/direct/tatouC.jpg",
+        essai: { quoi: "Petit Goku — sur le mollet", verdict: "pris", note: 5 },
+        mot: "Un an après, la couleur n’a pas bougé d’un poil.",
+        heure: "10:12",
+        humeur: "decouvre",
+        interesses: 11,
+        jusqua: "encore 2 jours",
+      },
+      {
+        id: "t-lou",
+        qui: "Lou",
+        photo: "/direct/tatouD.jpg",
+        essai: { quoi: "Petit Goku — poignet, petit format", verdict: "pris", note: 4 },
+        mot: "Petit format au poignet : ça passe sous une montre les jours où il faut.",
+        heure: "10:30",
         humeur: "hesite",
+        interesses: 17,
+        jusqua: "encore 2 jours",
+      },
+      {
+        id: "t-sacha",
+        qui: "Sacha",
+        photo: "/direct/tatouE.jpg",
+        essai: { quoi: "Petit Goku — cuisse, avec la queue", verdict: "pris", note: 5 },
+        mot: "J’ai gardé la queue, c’est ce qui le rend vivant.",
+        heure: "10:51",
+        humeur: "decouvre",
         interesses: 9,
+        jusqua: "encore 3 jours",
+      },
+      {
+        id: "t-ines",
+        qui: "Inès",
+        photo: "/direct/tatouF.jpg",
+        essai: { quoi: "Petit Goku — avant-bras, avec le bâton", verdict: "pris", note: 5 },
+        mot: "Avec le bâton, il tient mieux sur un avant-bras fin que sans.",
+        heure: "11:14",
+        humeur: "decouvre",
+        interesses: 13,
+        jusqua: "encore 2 jours",
+      },
+      {
+        id: "t-theo",
+        qui: "Théo",
+        photo: "/direct/tatouG.jpg",
+        essai: { quoi: "Petit Goku — en noir et gris", verdict: "pris", note: 4 },
+        mot: "Je l’ai voulu en noir et gris. Même dessin, pas du tout le même genre.",
+        heure: "11:33",
+        humeur: "hesite",
+        interesses: 19,
+        jusqua: "encore 3 jours",
+      },
+      {
+        id: "t-nawel",
+        qui: "Nawel",
+        photo: "/direct/tatouAH.jpg",
+        essai: { quoi: "Petit Goku — sur le tibia", verdict: "pris", note: 5 },
+        mot: "Sur le tibia, ça pique. Trois heures, et je recommencerais.",
+        heure: "11:58",
+        humeur: "decouvre",
+        interesses: 8,
+        jusqua: "encore 2 jours",
+      },
+      {
+        id: "t-eliott",
+        qui: "Eliott",
+        photo: "/direct/tatouK.jpg",
+        essai: { quoi: "Petit Goku — mollet, grand format", verdict: "pris", note: 5 },
+        mot: "En grand sur le mollet, on voit enfin les dégradés de l’orange.",
+        heure: "12:20",
+        humeur: "decouvre",
+        interesses: 16,
+        jusqua: "encore 3 jours",
+      },
+      {
+        id: "t-jade",
+        qui: "Jade",
+        photo: "/direct/tatouL.jpg",
+        essai: { quoi: "Petit Goku — avant-bras, de profil", verdict: "pris", note: 4 },
+        mot: "De profil, il suit le bras au lieu de lutter contre.",
+        heure: "12:44",
+        humeur: "offrir",
+        interesses: 10,
+        jusqua: "encore 2 jours",
+      },
+      {
+        id: "t-samir",
+        qui: "Samir",
+        photo: "/direct/tatouM.jpg",
+        essai: { quoi: "Petit Goku — cuisse, en marchant", verdict: "pris", note: 5 },
+        mot: "Celui-là marche. C’est bête mais c’est pour ça que je l’ai pris.",
+        heure: "13:05",
+        humeur: "decouvre",
+        interesses: 12,
+        jusqua: "encore 3 jours",
+      },
+      {
+        id: "t-noa",
+        qui: "Noa",
+        photo: "/direct/tatouN.jpg",
+        essai: { quoi: "Petit Goku — cuisse, cadrage serré", verdict: "pris", note: 5 },
+        mot: "Le mien est le tout premier de la série. Ils sont douze maintenant 🖤",
+        heure: "13:27",
+        humeur: "decouvre",
+        interesses: 15,
         jusqua: "encore 2 jours",
       },
     ],

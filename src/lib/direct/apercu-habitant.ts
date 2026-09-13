@@ -3118,8 +3118,12 @@ const CARTES: CarteAutour[] = [
   {
     id: "tatoueur",
     catalogue: [
+      // LE FLASH DU MOIS PASSE EN TETE DU CATALOGUE, et c'est le seul qui ait
+      // son mur : douze personnes le portent deja, sur douze endroits du
+      // corps. Voir `clients` du mur « tatouage » dans `fantomes.ts`.
+      { id: "ta-0", rayon: "Flashs", nom: "Petit Goku, couleur", detail: "Environ 3 h. Douze personnes le portent déjà.", prix: "220 €", photo: "/direct/tatouB.jpg" },
       { id: "ta-1", rayon: "Flashs", nom: "Santa Muerte à la rose", detail: "Environ 2 h.", prix: "180 €", photo: "/direct/cartoon-santa-muerte-portrait-1.webp" },
-      { id: "ta-2", rayon: "Flashs", nom: "Branche fleurie, poignet", detail: "Environ 1 h 30.", prix: "120 €" },
+      { id: "ta-2", rayon: "Flashs", nom: "Hirondelle et fleurs de cerisier", detail: "Environ 1 h 30.", prix: "140 €", photo: "/direct/tattou2.jpeg" },
       { id: "ta-3", rayon: "Sur mesure", nom: "Projet personnalisé", detail: "Rendez-vous de dessin avant la séance." },
       { id: "ta-4", rayon: "Soins", nom: "Retouche", detail: "Offerte dans les six mois." },
     ],
@@ -3135,14 +3139,14 @@ const CARTES: CarteAutour[] = [
     fiche: {
       ou: "Atelier au premier, sur rendez-vous",
       horaires: "Aujourd'hui, 11 h – 19 h",
-      mot: "Les flashs du mois sont dessinés et attendent quelqu'un. Essayez-les avant de venir.",
+      mot: "Les flashs du mois sont dessinés et attendent quelqu'un. Le Petit Goku, douze personnes le portent déjà — allez les voir.",
     },
     moments: [
       {
         de: 11, a: 19, quand: "ce mois-ci", icone: "🪡",
-        titre: "Trois flashs dessinés",
-        lignes: ["Santa Muerte, branche fleurie, vague", "Essayables sur votre avant-bras"],
-        prix: "à partir de 120 €", places: 3, action: "Demander un rendez-vous",
+        titre: "Quatre flashs dessinés",
+        lignes: ["Petit Goku, Santa Muerte, hirondelle, chat", "Douze personnes portent déjà le Goku"],
+        prix: "à partir de 110 €", places: 4, action: "Demander un rendez-vous",
         envies: ["unique", "saison"],
       },
       {
