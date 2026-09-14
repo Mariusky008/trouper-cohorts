@@ -297,6 +297,45 @@ function Carte({
           ) : f.essai ? (
             <span className="mu-c-b essai">✨ Essayé ici</span>
           ) : null)}
+        {/* ═══ QUI PORTE ÇA, ÉCRIT SUR LA PHOTO ═══════════════════════════
+
+            « En mode téléphone, ces colonnes en longueur comme si elles
+            étaient étendues, c'est très vilain. »
+
+            LE DÉFAUT ÉTAIT DANS LA HAUTEUR, PAS DANS LA LARGEUR. Chaque
+            vignette empilait la photo, puis le prénom, puis l'heure, puis la
+            phrase, puis le motif, puis le délai : trois cent soixante-quatre
+            points pour une carte de cent soixante-quatorze de large. Un mur
+            dont on ne voit qu'une rangée et demie n'est pas un mur, c'est une
+            file d'attente.
+
+            LE PRÉNOM, L'HEURE ET LA NOTE REVIENNENT SUR L'IMAGE, où il y a de
+            la place et où ils désignent ce qu'ils commentent. C'est ce que
+            fait n'importe quel mur de photos, et ce que la maquette dessine :
+            la vignette porte QUI, le texte dessous porte CE QU'ELLE EN DIT.
+
+            IL EST ÉCRIT DEUX FOIS DANS LE DOCUMENT, ET C'EST DÉLIBÉRÉ. Les
+            cartes de la maison, sur ce même mur, ne sont pas en grille : elles
+            gardent leur ligne de nom. Une seule écriture aurait obligé à la
+            déplacer par positionnement absolu depuis l'extérieur de la photo —
+            c'est-à-dire à parier sur la hauteur exacte de l'image. Le doublon
+            est caché à l'écran comme aux lecteurs d'écran, jamais les deux
+            ensemble. */}
+        {essai && (
+          <span className="mu-c-sur" aria-hidden="true">
+            <span className="mu-c-sur-q">
+              <b>{f.qui}</b>
+              <s>{f.heure}</s>
+            </span>
+            {!!f.essai?.note && (
+              <span className="mu-c-note">
+                {Array.from({ length: 5 }, (_, k) => (
+                  <Signe key={k} classe={k < f.essai!.note! ? "mu-c-ns on" : "mu-c-ns"} />
+                ))}
+              </span>
+            )}
+          </span>
+        )}
       </div>
       <div className="mu-c-t">
 
@@ -951,11 +990,12 @@ function EcranMur({
                 <Signe key={f.id} classe="mu-haut-vs" />
               ))}
             </span>
-            <em>
-              De vraies clientes,
-              <br />
-              de vrais avis
-            </em>
+            {/* ELLE TIENT SUR UNE LIGNE, ET LA MAQUETTE L'ECRIT AINSI. Coupee
+                en deux par une balise, elle donnait quarante-quatre points de
+                hauteur a une pastille de garantie — posee juste au-dessus du
+                mur, c'est-a-dire exactement la ou chaque point repousse ce
+                qu'on est venu voir. */}
+            <em>De vraies clientes, de vrais avis</em>
           </p>
         </div>
       ) : (
@@ -4459,26 +4499,100 @@ function Styles() {
            un petit telephone donnent 108 points par vignette : a cette taille on
            ne voit plus ce qu'on essaie, ce qui est le seul travail de la
            grille. */
-        .mu-rang.grille{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+        /* ─── LES CARTES NE S'ETIRENT PLUS LES UNES SUR LES AUTRES ───
+           C'EST LA PLAINTE EXACTE : « ces colonnes en longueur comme si elles
+           etaient etendues ». Une grille etire par defaut chaque element a la
+           hauteur de la rangee, donc la carte la plus bavarde imposait sa
+           hauteur a sa voisine, qui finissait avec un vide de quarante points
+           sous son dernier mot. align-items:start rend a chacune la sienne.
+           LES HAUTEURS SE RAPPROCHENT QUAND MEME, parce que la phrase est
+           bornee a deux lignes plus bas : le damier reste regulier sans qu'on
+           ait besoin de fabriquer du vide pour l'aligner. */
+        .mu-rang.grille{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+          align-items:start;}
         @media (min-width:560px){
           .mu-rang.grille{grid-template-columns:1fr 1fr 1fr;}
         }
         .mu-rang.grille .mu-c{flex-direction:column;}
-        /* LA VIGNETTE PREND TOUTE LA LARGEUR ET RESTE CARREE : c'est elle qu'on
-           vient voir, et un format qui change d'une carte a l'autre casse la
-           lecture en damier. */
-        .mu-rang.grille .mu-c-p{width:100%;aspect-ratio:3/4;flex:none;}
+        /* LA VIGNETTE PREND TOUTE LA LARGEUR. QUATRE CINQUIEMES, PLUS TROIS
+           QUARTS : le format precedent ajoutait vingt points de hauteur par
+           carte pour ne rien montrer de plus — on cadre des mains, des coupes
+           et des avant-bras, pas des portraits en pied. */
+        .mu-rang.grille .mu-c-p{width:100%;aspect-ratio:4/5;flex:none;}
         .mu-rang.grille .mu-c-t{padding:9px 10px 10px;}
-        .mu-rang.grille .mu-c-n{flex-wrap:wrap;}
-        .mu-rang.grille .mu-c-n b{font-size:12.5px;}
-        .mu-rang.grille .mu-c-n s{font-size:10.5px;}
-        .mu-rang.grille .mu-c-t p{font-size:12px;line-height:1.35;}
+        /* ─── LE BANDEAU POSE SUR LA PHOTO ───
+           Le prenom, l'heure et la note s'y lisent sur un voile degrade. Il ne
+           s'affiche QUE dans la grille : ailleurs sur ce meme mur, les cartes
+           de la maison gardent leur ligne de nom, et c'est le meme document. */
+        .mu-c-sur{display:none;}
+        .mu-rang.grille .mu-c-sur{position:absolute;left:0;right:0;bottom:0;
+          display:flex;flex-direction:column;gap:2px;padding:16px 10px 7px;
+          background:linear-gradient(180deg,rgba(6,10,16,0),rgba(6,10,16,.82) 46%,
+            rgba(6,10,16,.94));}
+        .mu-rang.grille .mu-c-sur-q{display:flex;align-items:baseline;gap:6px;
+          min-width:0;}
+        .mu-rang.grille .mu-c-sur-q b{flex:1;min-width:0;overflow:hidden;
+          text-overflow:ellipsis;white-space:nowrap;
+          font-size:13px;font-weight:850;color:#fff;
+          text-shadow:0 1px 6px rgba(0,0,0,.7);}
+        .mu-rang.grille .mu-c-sur-q s{text-decoration:none;flex:none;
+          font-size:10.5px;color:#C4D2E0;font-variant-numeric:tabular-nums;
+          text-shadow:0 1px 6px rgba(0,0,0,.8);}
+        .mu-rang.grille .mu-c-sur .mu-c-note{display:flex;gap:1.5px;}
+        /* LE FANTOME-AVATAR ET LA LIGNE DU NOM S'EN VONT AVEC LUI : l'un
+           chevauchait le bandeau, l'autre repetait mot pour mot ce qu'il dit. */
+        .mu-rang.grille .mu-c-av{display:none;}
+        .mu-rang.grille .mu-c-n{display:none;}
+        /* ─── LA PHRASE TIENT EN DEUX LIGNES ───
+           Elle en prenait cinq dans une colonne de cent soixante-quatorze
+           points — « J'hesite entre celui-ci et le nude tout simple. Vos
+           avis ? » — et c'est ce qui faisait la carte si haute. Deux lignes
+           suffisent a donner le ton ; le reste se lit en depliant. */
+        .mu-rang.grille .mu-c-t p{font-size:12px;line-height:1.35;
+          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+          overflow:hidden;}
         .mu-rang.grille .mu-c-e{font-size:10px;gap:5px;}
-        /* LE GESTE « CA M'INTERESSE » N'A PAS SA PLACE DANS UNE VIGNETTE. Sur un
-           mur d'essai, on ne vient pas croiser la personne : on vient voir ce
-           que ca donne sur elle. Le bouton prend un tiers de la carte pour un
-           geste qui ne veut rien dire ici. */
-        .mu-rang.grille .mu-c-f{display:none;}
+        /* LA NOTE EST MONTEE SUR LA PHOTO : la laisser aussi sous le motif
+           l'ecrivait deux fois a trente points d'ecart. */
+        .mu-rang.grille .mu-c-e .mu-c-note{display:none;}
+        /* ═══ LE COMPTE DES FANTOMES REVIENT ════════════════════════════════
+           « Il manque des infos comme le nombre de fantomes. »
+           IL AVAIT RAISON, ET C'EST MOI QUI L'AVAIS EMPORTE. Le compte vit dans
+           le pied de la carte, avec le bouton ; en cachant le pied entier pour
+           retirer le bouton, j'ai emporte la seule preuve que ce mur existe
+           pour donner — combien de gens ont trouve cet essai interessant. On
+           cache donc le GESTE, et plus le BLOC. */
+        .mu-rang.grille .mu-c-f{display:block;margin-top:6px;padding-top:0;}
+        .mu-rang.grille .mu-c-f .mu-int,
+        .mu-rang.grille .mu-c-f .mu-int-d{display:none;}
+        /* IL TIENT SUR UNE LIGNE, ET C'EST CE QUI L'A FAIT RENTRER. « 6
+           personnes interessees » passait a la ligne dans une colonne de cent
+           cinquante-quatre points utiles : deux lignes pour un compte, c'est
+           quinze points perdus sur chaque carte du mur.
+           ON RACCOURCIT LE DESSIN, JAMAIS LA PHRASE. Deux fantomes au lieu de
+           trois et un demi-point de moins sur le texte suffisent. Ecrire « 6 »
+           tout court aurait ete plus court encore, et aurait rendu au compte
+           l'apparence de compteur de pouces qu'on a passe deux tours a lui
+           retirer — « ca ressemble enormement a un like, or ce n'est
+           absolument pas ca ». */
+        .mu-rang.grille .mu-int-n{display:flex;align-items:center;
+          text-decoration:none;font-size:9px;font-weight:750;color:#C9BCFF;
+          white-space:nowrap;}
+        /* IL RESTE DE LA MARGE POUR DEUX CHIFFRES. A neuf points et demi, « 4
+           personnes interessees » finissait a trois points du bord : le mur du
+           tatoueur, ou l'on compte jusqu'a douze, aurait deborde de la carte le
+           jour ou quelqu'un passe de neuf a dix. */
+        .mu-rang.grille .mu-int-v{margin-right:4px;vertical-align:0;}
+        .mu-rang.grille .mu-int-vs{width:13px;height:15px;margin-left:-5px;}
+        .mu-rang.grille .mu-int-vs:first-child{margin-left:0;}
+        .mu-rang.grille .mu-int-vs:nth-child(3){display:none;}
+        /* ─── LE DELAI SORT DE LA VIGNETTE ───
+           « Encore 2 jours » dit jusqu'a quand cet essai a du sens. Sur le mur
+           d'un bar, c'est capital : on decide d'y aller ou pas. Sur une grille
+           d'essais, on regarde ce que ca donne sur des gens — la peremption
+           d'un essai vieux de deux jours ne change rien a ce qu'on y voit, et
+           elle coutait une seizieme ligne a chaque carte. */
+        .mu-rang.grille .mu-c-d{display:none;}
         /* L'HUMEUR NON PLUS. « Je decouvre », « J'hesite » sont utiles sur le mur
            d'un bar, ou l'on cherche qui rencontrer ; sur une vignette d'essai
            elles disputent la place a la seule chose qu'on vient lire — la phrase
