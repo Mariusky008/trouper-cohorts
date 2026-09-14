@@ -2944,6 +2944,76 @@ console.log("\n══ la page du commerce ══");
   await dec.close();
 }
 
+// ═══ LE PREMIER ÉCRAN RACONTE LE PARCOURS, PAS DES QUALITÉS ═══════════════
+//
+// CE QUE ÇA PROTÈGE : « Concernant le premier écran de découverte, il faut
+// entièrement le refaire pour coller au concept, qui a beaucoup évolué :
+// découvrir l'offre du jour du commerçant, l'essayer virtuellement, donner son
+// avis sur l'essayage du produit, en discuter avec nos amis, la réserver ou
+// pas. »
+//
+// CET ÉCRAN-LÀ N'EST VU QU'UNE FOIS PAR PERSONNE, et c'est exactement pourquoi
+// il a besoin d'une garde. Personne ne le revoit en travaillant — il est passé
+// depuis le premier jour sur chaque téléphone de l'équipe, et toutes les autres
+// suites de ce fichier le sautent exprès pour atteindre le paquet. Un écran
+// qu'on ne revoit jamais est un écran qui vieillit sans que personne le
+// remarque : celui-ci a décrit pendant des semaines un produit qui avait changé.
+//
+// L'ORDRE EST LE FOND. On ne donne pas son avis sur un essayage qu'on n'a pas
+// fait ; on ne réserve qu'APRÈS avoir vu. La garde vérifie donc les cinq temps
+// ET leur suite, pas leur simple présence.
+{
+  console.log("\n══ le premier écran raconte les cinq temps ══");
+  const ac = await nav.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  await ac.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
+  // ON NE POSE PAS `clikme-vu-v1` ICI : c'est le seul endroit du fichier qui
+  // veut justement le premier passage.
+  const pA = await ac.newPage();
+  pA.on("pageerror", (e) => dire(false, `le premier écran lève une erreur : ${e.message}`));
+  await pA.goto(`${BASE}/autour-de-moi`, { waitUntil: "networkidle" });
+  await pA.waitForTimeout(2600);
+  const a = await pA.evaluate(() => {
+    const e = document.querySelector(".ap-accueil");
+    if (!e) return null;
+    return {
+      titre: e.querySelector("h2")?.textContent?.replace(/\s+/g, " ").trim() ?? "",
+      compte: e.querySelector(".ap-acc-n b")?.textContent?.trim() ?? "",
+      etapes: [...e.querySelectorAll("li b")].map((b) => b.textContent.trim()),
+      geste: e.querySelector(".ap-acc-g")?.textContent?.replace(/\s+/g, " ").trim() ?? "",
+      // LE TRAIT QUI RELIE : il dit l'ordre sans l'écrire, et il s'arrête à
+      // l'avant-dernier — sinon il promet une sixième étape.
+      trait: [...e.querySelectorAll("li")].filter(
+        (l) => getComputedStyle(l, "::before").content !== "none",
+      ).length,
+      cartes: document.querySelectorAll(".cd-carte").length,
+    };
+  });
+  if (!a) {
+    dire(false, "le premier écran s'affiche au premier passage");
+  } else {
+    dire(a.etapes.length === 5, `il raconte cinq temps (${a.etapes.length})`);
+    const attendus = [/offre du jour/i, /essayez/i, /pensez|avis/i, /amis/i, /réservez/i];
+    dire(
+      attendus.every((r, i) => r.test(a.etapes[i] ?? "")),
+      `et dans son ordre à lui (${a.etapes.join(" › ")})`,
+    );
+    dire(a.trait === 4, `le trait relie les cinq et s'arrête au dernier (${a.trait})`);
+    dire(/essayez/i.test(a.titre), `le titre porte ce que personne d'autre ne fait (« ${a.titre} »)`);
+    // LE COMPTE EXISTE ET N'EST PAS ZÉRO. On ne peut pas vérifier d'ici qu'il
+    // vient bien du paquet — le paquet n'est pas encore monté derrière cet
+    // écran — et une garde qui prétendrait le faire mentirait sur ce qu'elle
+    // mesure. Ce qu'elle attrape reste utile : le jour où la source se casse,
+    // l'écran afficherait « 0 commerces autour de vous » en grand.
+    dire(Number(a.compte) > 0, `et il annonce un nombre réel de commerces (${a.compte})`);
+    // PAS DE BOUTON « J'AI COMPRIS » : le geste qu'on apprend EST la sortie.
+    dire(/glissez/i.test(a.geste), `on en sort par le geste qu'on vient d'apprendre (« ${a.geste} »)`);
+  }
+  await ac.close();
+}
+
 // ═══ SES PHOTOS, EN BANDE SOUS L'ANNONCE ══════════════════════════════════
 //
 // CE QUE ÇA PROTÈGE : « Ça peut n'être que 3 photos ou 5, donc il faudra

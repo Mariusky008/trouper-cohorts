@@ -6120,44 +6120,89 @@ export function ApercuHabitant() {
                     <i aria-hidden="true" />
                     Le direct de Dax
                   </span>
-                  {/* LE TITRE PARLE DE LA VILLE, PAS D'UN MÉTIER. « Le concept
-                      c'est le direct de la ville, ce qu'il s'y passe maintenant
-                      — donc pas que les restaurants. » */}
+                  {/* ═══ LE TITRE DIT CE QU'ON NE TROUVE NULLE PART AILLEURS ══
+
+                      « Il faut entièrement le refaire pour coller au concept,
+                      qui a beaucoup évolué : découvrir l'offre du jour du
+                      commerçant, l'essayer virtuellement, donner son avis sur
+                      l'essayage du produit, en discuter avec nos amis, la
+                      réserver ou pas. »
+
+                      « TOUTE LA VILLE, EN CE MOMENT » ÉTAIT VRAI ET NE L'EST
+                      PLUS ASSEZ. C'est la promesse d'un fil d'actualité local,
+                      et un fil d'actualité local, tout le monde peut en faire
+                      un. Ce que personne d'autre ne propose tient en cinq mots
+                      et c'est le milieu du parcours : on l'essaie avant d'y
+                      aller.
+
+                      LE COMPTE DESCEND SUR UNE LIGNE ET RESTE VRAI. Il tenait
+                      quarante points en chiffre géant pour dire ce que le
+                      titre disait déjà — combien il y a. Ce qui manquait était
+                      ce qu'on en FAIT, et c'est ce que les cinq temps
+                      racontent. Il est toujours lu dans le paquet à l'instant
+                      où l'écran s'ouvre : un chiffre inventé une seule fois
+                      fait perdre quelqu'un pour toujours. */}
                   <h2>
-                    Toute la ville,
-                    <em>en ce moment.</em>
+                    Essayez-le
+                    <em>avant d’y aller.</em>
                   </h2>
-                  {/* ET LE COMPTE EST VRAI. Il est lu dans le paquet à
-                      l'instant où l'écran s'ouvre : un chiffre inventé une
-                      seule fois fait perdre quelqu'un pour toujours. */}
                   <p className="ap-acc-n">
                     <b>{toutes.length + evenements.length}</b>
-                    <span>
-                      commerces et événements
-                      <s>autour de vous, aujourd’hui</s>
-                    </span>
+                    {/* ELLE TIENT SUR UNE LIGNE. « Aujourd'hui » passait a la
+                        ligne pour repeter ce que la pastille du haut dit deja
+                        en battant — « LE DIRECT » — et ce que le premier des
+                        cinq temps dit en toutes lettres. */}
+                    <span>commerces et événements autour de vous</span>
                   </p>
+                  {/* ═══ LE PARCOURS, ET NON UNE LISTE D'ARGUMENTS ════════════
+
+                      LES CINQ SONT DANS SON ORDRE À LUI, et l'ordre est le
+                      fond : chacun n'a de sens que parce que le précédent a eu
+                      lieu. On ne donne pas son avis sur un essayage qu'on n'a
+                      pas fait, on ne demande pas à ses amis sur rien, et
+                      surtout — c'est le dernier, et c'est le seul qui engage —
+                      on ne réserve qu'APRÈS avoir vu. Une liste de trois
+                      qualités se lit dans n'importe quel sens ; un parcours ne
+                      se lit que dans le sien, et le trait qui relie les
+                      pastilles est là pour le dire sans l'écrire.
+
+                      « OU PAS » RESTE ÉCRIT, et ce n'est pas une coquetterie.
+                      C'est la contrepartie de tout le reste : si l'essai
+                      obligeait à réserver, personne n'essaierait. */}
                   <ul>
                     <li>
-                      <i aria-hidden="true">🥖</i>
+                      <i aria-hidden="true">🏪</i>
                       <span>
-                        <b>Ce qu’ils ont maintenant</b>
-                        Le plat qui sort du four, les places qui restent, la
-                        vitrine du jour.
+                        <b>L’offre du jour</b>
+                        Ce qu’il propose maintenant.
                       </span>
                     </li>
                     <li>
-                      <i aria-hidden="true">⚡</i>
+                      <i aria-hidden="true">👻</i>
                       <span>
-                        <b>Des offres de trente minutes</b>
-                        Il reste huit parts&nbsp;? Le prix tombe, et ça se voit.
+                        <b>Essayez-la sur vous</b>
+                        Une photo, et vous vous voyez avec.
                       </span>
                     </li>
                     <li>
-                      <i aria-hidden="true">🏛️</i>
+                      <i aria-hidden="true">⭐</i>
                       <span>
-                        <b>Et ce qui se passe en ville</b>
-                        Les événements, et ce que les habitants proposent.
+                        <b>Dites ce que vous en pensez</b>
+                        Votre avis reste sur son mur.
+                      </span>
+                    </li>
+                    <li>
+                      <i aria-hidden="true">💬</i>
+                      <span>
+                        <b>Demandez à vos amis</b>
+                        «&nbsp;Ça me va&nbsp;?&nbsp;» — ils répondent.
+                      </span>
+                    </li>
+                    <li>
+                      <i aria-hidden="true">📅</i>
+                      <span>
+                        <b>Réservez. Ou pas.</b>
+                        Vous décidez après avoir vu.
                       </span>
                     </li>
                   </ul>
@@ -12504,7 +12549,14 @@ export function ApercuHabitant() {
         .ap-acc-r.r1{animation:apMur1 40s linear infinite;}
         @keyframes apMur0{from{margin-left:0;}to{margin-left:-50%;}}
         @keyframes apMur1{from{margin-left:-50%;}to{margin-left:0;}}
-        .ap-acc-r span{position:relative;flex:none;width:148px;height:118px;
+        /* ELLES SONT PLUS GRANDES DEPUIS QUE LE TEXTE EST PLUS LONG. Deux
+           rangees de cent dix-huit points, centrees dans leur boite, laissaient
+           cent trente points de noir au-dessus de la premiere photo des que les
+           cinq temps ont pousse le texte vers le haut : le mur ne montait plus
+           jusqu'en haut, et c'etait justement le defaut corrige la fois
+           precedente. Des photos plus hautes remplissent la boite au lieu d'y
+           flotter. */
+        .ap-acc-r span{position:relative;flex:none;width:188px;height:150px;
            border-radius:16px;background-size:cover;background-position:center;
            box-shadow:0 12px 30px -14px rgba(0,0,0,.9);}
         .ap-acc-r span b{position:absolute;left:8px;right:8px;bottom:7px;
@@ -12532,30 +12584,53 @@ export function ApercuHabitant() {
            font-size:clamp(30px,9vw,42px);font-weight:400;line-height:1.04;
            letter-spacing:-.02em;color:#fff;}
         .ap-accueil h2 em{display:block;font-style:normal;color:#3DE2A6;}
-        /* LE COMPTE, EN GROS. C'est le seul chiffre de l'ecran, et il est vrai. */
-        .ap-acc-n{display:flex;align-items:center;gap:11px;margin:16px 0 0;}
-        .ap-acc-n b{font-size:34px;font-weight:850;letter-spacing:-.03em;
+        /* LE COMPTE TIENT SUR UNE LIGNE, ET IL EST VRAI. Il s'ecrivait en
+           chiffre de trente-quatre points sur deux lignes : quarante points de
+           hauteur pour dire COMBIEN il y en a, alors que ce qui manquait a cet
+           ecran etait ce qu'on en FAIT. Le chiffre reste gros — c'est le seul
+           de l'ecran — et sa legende passe a cote au lieu de dessous. */
+        .ap-acc-n{display:flex;align-items:center;gap:10px;margin:13px 0 0;}
+        .ap-acc-n b{flex:none;font-size:27px;font-weight:850;letter-spacing:-.03em;
            line-height:1;color:#fff;font-variant-numeric:tabular-nums;}
-        .ap-acc-n>span{font-size:13px;font-weight:800;line-height:1.25;color:#EAF2EC;}
-        .ap-acc-n s{display:block;text-decoration:none;font-weight:600;color:#8C9C94;}
-        .ap-accueil ul{list-style:none;margin:18px 0 0;padding:0;
-           display:flex;flex-direction:column;gap:11px;}
-        /* CHAQUE LIGNE ARRIVE APRES LA PRECEDENTE. Trois dixiemes d'ecart : on
-           les LIT au lieu de les balayer d'un coup d'oeil. */
-        .ap-accueil li{display:flex;align-items:flex-start;gap:11px;
-           animation:apAccLi .5s cubic-bezier(.22,1.1,.4,1) both;}
-        .ap-accueil li:nth-child(1){animation-delay:.16s;}
-        .ap-accueil li:nth-child(2){animation-delay:.28s;}
-        .ap-accueil li:nth-child(3){animation-delay:.4s;}
-        @keyframes apAccLi{from{opacity:0;transform:translateY(9px);}to{opacity:1;transform:none;}}
-        .ap-accueil li i{flex:none;width:32px;height:32px;border-radius:11px;
-           display:flex;align-items:center;justify-content:center;font-style:normal;
-           font-size:16px;background:rgba(255,255,255,.07);
-           border:1px solid rgba(255,255,255,.11);}
-        .ap-accueil li span{flex:1;min-width:0;font-size:12px;line-height:1.38;
+        .ap-acc-n>span{font-size:11.5px;font-weight:700;line-height:1.25;
            color:#8C9C94;}
-        .ap-accueil li b{display:block;font-size:13.5px;font-weight:800;
+        .ap-accueil ul{list-style:none;margin:15px 0 0;padding:0;
+           display:flex;flex-direction:column;gap:9px;}
+        /* CHAQUE LIGNE ARRIVE APRES LA PRECEDENTE. On les LIT au lieu de les
+           balayer d'un coup d'oeil — et sur un PARCOURS, l'arrivee en cascade
+           dit l'ordre avant meme qu'on ait lu les mots. */
+        .ap-accueil li{position:relative;display:flex;align-items:flex-start;
+           gap:11px;animation:apAccLi .5s cubic-bezier(.22,1.1,.4,1) both;}
+        .ap-accueil li:nth-child(1){animation-delay:.14s;}
+        .ap-accueil li:nth-child(2){animation-delay:.24s;}
+        .ap-accueil li:nth-child(3){animation-delay:.34s;}
+        .ap-accueil li:nth-child(4){animation-delay:.44s;}
+        .ap-accueil li:nth-child(5){animation-delay:.54s;}
+        /* ─── LE TRAIT QUI RELIE LES CINQ ───
+           C'est ce qui separe un parcours d'une liste d'arguments. Sans lui,
+           cinq pastilles alignees se lisent dans n'importe quel ordre ; avec
+           lui, on voit qu'il faut avoir fait la precedente. Il s'arrete a la
+           quatrieme : un trait qui depasse sous la derniere promettrait une
+           sixieme etape qui n'existe pas. */
+        .ap-accueil li:not(:last-child)::before{content:"";position:absolute;
+           left:14px;top:31px;bottom:-9px;width:2px;border-radius:2px;
+           background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.04));}
+        @keyframes apAccLi{from{opacity:0;transform:translateY(9px);}to{opacity:1;transform:none;}}
+        .ap-accueil li i{flex:none;width:30px;height:30px;border-radius:10px;
+           display:flex;align-items:center;justify-content:center;font-style:normal;
+           font-size:15px;background:rgba(255,255,255,.07);
+           border:1px solid rgba(255,255,255,.11);}
+        .ap-accueil li span{flex:1;min-width:0;font-size:11.5px;line-height:1.32;
+           color:#8C9C94;padding-top:1px;}
+        .ap-accueil li b{display:block;font-size:13px;font-weight:800;
            letter-spacing:-.01em;color:#EAF2EC;margin-bottom:1px;}
+        /* LE DERNIER EST CELUI QUI ENGAGE, ET IL SE VOIT. « Reservez. Ou pas. »
+           est la fin du parcours et la contrepartie de tout le reste : le
+           marquer en menthe, la couleur qui veut dire « ceci vous engage »
+           partout dans le produit, fait tenir la promesse d'un coup d'oeil. */
+        .ap-accueil li:last-child i{background:rgba(61,226,166,.14);
+           border-color:rgba(61,226,166,.4);}
+        .ap-accueil li:last-child b{color:#3DE2A6;}
         /* LE GESTE EST LE BOUTON. Il respire vers ses deux bords, comme les
            etiquettes du paquet — meme mouvement, meme promesse. */
         .ap-acc-g{display:flex;align-items:center;justify-content:center;gap:10px;
