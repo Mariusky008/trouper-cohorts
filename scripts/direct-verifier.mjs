@@ -2669,11 +2669,23 @@ console.log("\n══ la page du commerce ══");
 // CE QUE ÇA PROTÈGE : « Le design des restaurants, bars et événements n'a pas
 // été modifié comme sur le screenshot que je t'avais donné. »
 //
-// SA MAQUETTE POSE QUATRE LIGNES D'INFORMATION sous le prix — ce qu'il reste,
-// où c'est, combien de gens y vont, la note — un rail de trois pastilles à
-// droite avec leurs compteurs, et un geste plein tout en bas. L'écran avait
-// trois de ces informations éparpillées, aucun rail, et « Proposer à mes
-// amis » en aplat vert pleine largeur.
+// SA MAQUETTE POSE DEUX LIGNES D'INFORMATION sous le prix — ce qu'il reste, et
+// où c'est — un rail de trois pastilles à droite avec leurs compteurs, et un
+// geste plein tout en bas. L'écran avait ces informations éparpillées, aucun
+// rail, et « Proposer à mes amis » en aplat vert pleine largeur.
+//
+// ═══ ELLES ÉTAIENT QUATRE, ET IL EN A COUPÉ DEUX ══════════════════════════
+//
+// « 347 clients ce mois-ci : supprimer, on ne peut pas le savoir et ce n'est
+// pas une info très intéressante. 4,9 (47 avis) : supprimer puisqu'on a déjà
+// l'info plus bas. » LES DEUX QUI RESTENT SONT LES DEUX QU'ON SAIT VRAIMENT :
+// ce qu'il a promis de mettre de côté, et la distance. Une garde qui exige
+// encore les quatre exige qu'on remette ce qu'il a fait retirer.
+//
+// ET LA PREMIÈRE NE DIT PLUS « 12 BOUQUETS RESTANTES ». L'accord était écrit en
+// dur au féminin, donc faux dès qu'il restait des pains ou des plats. « Il
+// reste 12 bouquets » ne s'accorde avec rien — c'est pour ça qu'on cherche
+// désormais le verbe et non la terminaison.
 //
 // ET ON MESURE AUSSI QUE RIEN N'EST MORT NI CACHÉ : un geste principal grisé
 // (la terrasse ne prend pas de réservation) et une pastille passée sous le
@@ -2717,13 +2729,16 @@ console.log("\n══ la page du commerce ══");
       couvre,
     };
   });
-  dire(a.infos.length === 4, `l'annonce porte ses quatre lignes (${a.infos.join(" · ")})`);
+  dire(a.infos.length === 2, `l'annonce porte ses deux lignes (${a.infos.join(" · ")})`);
   dire(
-    /restante/i.test(a.infos[0] ?? "") &&
-      /^À /.test(a.infos[1] ?? "") &&
-      /clients/i.test(a.infos[2] ?? "") &&
-      /avis/i.test(a.infos[3] ?? ""),
-    "et dans l'ordre de la maquette : ce qu'il reste, où, combien, la note",
+    /^il reste \d+/i.test(a.infos[0] ?? "") && /^À /.test(a.infos[1] ?? ""),
+    "et dans l'ordre de la maquette : ce qu'il reste, puis où c'est",
+  );
+  // CE QU'IL A FAIT RETIRER NE REVIENT PAS. Deux lignes suffiraient à passer la
+  // garde du dessus en remplaçant les deux bonnes par les deux mauvaises.
+  dire(
+    !a.infos.some((t) => /clients|avis/i.test(t)),
+    "et ni les clients du mois ni la note ne reviennent s'y glisser",
   );
   dire(a.rails.length === 3, `le rail porte ses trois gestes (${a.rails.join(" · ")})`);
   dire(
@@ -2885,9 +2900,25 @@ console.log("\n══ la page du commerce ══");
   const avant = await parts();
   dire(avant > 0, `le boucher dit ce qu'il met de côté (${avant} parts)`);
 
-  const geste = pD.locator(".ap-agir").first();
+  // LE PAQUET EMPILE, DONC `.first()` LIT LA CARTE DU DESSOUS. Le clic, lui,
+  // atterrit sur celle du dessus puisqu'elle recouvre l'autre au même endroit :
+  // la garde lisait « Réserver mon plat » — le geste de la terrasse — pendant
+  // qu'elle réservait bel et bien chez le boucher. Un écart entre ce qu'on lit
+  // et ce qu'on touche est le pire cas pour une garde : elle échoue sur un
+  // produit sain, ou passe sur un produit cassé.
+  // ON CHERCHE LA NATURE DU GESTE, PAS SES MOTS. La garde exigeait « Gardez-la-
+  // moi » — le mot du moment — et lisait « Réserver mon plat », qui est le verbe
+  // du MÉTIER : chaque branche a le sien dans `personnalites.ts`, et la
+  // boucherie est rangée dans les restaurants. L'écran disait exactement la
+  // bonne chose et la garde la refusait, pour la troisième fois ce mois-ci, en
+  // décrivant une FORMULATION au lieu de chercher un GESTE. La classe
+  // `reserver`, elle, dit ce que le bouton fait quel que soit son métier.
+  const geste = pD.locator(".ap-agir.reserver").last();
   const mots = (await geste.textContent())?.replace(/\s+/g, " ").trim() ?? "";
-  dire(/gardez/i.test(mots), `et son geste est une mise de côté (« ${mots} »)`);
+  dire(
+    (await geste.count()) > 0,
+    `et son geste principal est bien une mise de côté (« ${mots} »)`,
+  );
   await geste.click();
   await pD.waitForTimeout(1400);
   // La feuille demande d'abord QUEL moment ; l'envoi ne s'allume qu'après.
