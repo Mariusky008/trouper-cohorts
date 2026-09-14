@@ -2944,6 +2944,76 @@ console.log("\n══ la page du commerce ══");
   await dec.close();
 }
 
+// ═══ RIEN NE PASSE SOUS LA BARRE DU HAUT, ENCOCHE COMPRISE ════════════════
+//
+// CE QUE ÇA PROTÈGE : « Le rond est en dehors tout en haut, donc le mettre au
+// bon endroit plus bas. »
+//
+// CE DÉFAUT NE POUVAIT PAS SE VOIR SANS CETTE GARDE, et c'est ce qui le rend
+// intéressant. `env(safe-area-inset-top)` vaut ZÉRO dans un navigateur de
+// bureau et cinquante-neuf sur son iPhone. Toutes les captures prises ici
+// montraient donc un écran parfaitement rangé pendant que le rond recouvrait la
+// cloche des notifications sur le sien — et une cloche est un GESTE, donc
+// inatteignable.
+//
+// ON SIMULE L'ENCOCHE PAR SA VARIABLE, PAS PAR LE REMBOURRAGE DE LA BARRE. La
+// barre et le rond descendent tous deux de `--ap-encoche` : en la forçant, les
+// deux bougent ensemble et la mesure est fidèle. Déplacer la barre à la main
+// aurait laissé le rond où il est, c'est-à-dire fabriqué un faux positif puis un
+// faux négatif.
+{
+  console.log("\n══ avec une encoche, rien ne passe sous la barre du haut ══");
+  const en = await nav.newContext({
+    // SON TÉLÉPHONE, PAS CELUI DE LA SUITE : 430 points, un Pro Max.
+    viewport: { width: 430, height: 932 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  await en.clock.setFixedTime(new Date(2026, 8, 2, 8, 30, 0));
+  await en.addInitScript(() =>
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
+  );
+  const pE = await en.newPage();
+  // LA BOULANGERIE À 8 H 30 : c'est sa capture, titre long donc rond en haut.
+  await pE.goto(`${BASE}/autour-de-moi?carte=boulange`, { waitUntil: "networkidle" });
+  await pE.waitForTimeout(2000);
+  await pE.addStyleTag({ content: `.ap-app{--ap-encoche:59px !important;}` });
+  await pE.waitForTimeout(400);
+  const g = await pE.evaluate(() => {
+    const c = [...document.querySelectorAll(".cd-carte")].pop();
+    const r = (e) => {
+      if (!e) return null;
+      const b = e.getBoundingClientRect();
+      return { t: b.top, b: b.bottom, l: b.left, r: b.right };
+    };
+    const couvre = (x, y) =>
+      !!x && !!y && x.r > y.l + 2 && x.l < y.r - 2 && x.b > y.t + 2 && x.t < y.b - 2;
+    const an = r(c?.querySelector(".cd-anneau"));
+    const barre = r(document.querySelector(".ap-haut"));
+    // LES GESTES DE LA BARRE, UN PAR UN : c'est eux qu'on ne doit pas couvrir.
+    const gestes = [...document.querySelectorAll(".ap-haut button, .ap-haut a")].map(r);
+    return {
+      anneau: an ? Math.round(an.t) : null,
+      barre: barre ? Math.round(barre.b) : null,
+      surBarre: couvre(an, barre),
+      surUnGeste: gestes.filter((x) => couvre(an, x)).length,
+      titre: c?.querySelector(".cd-offre")?.textContent?.trim() ?? "",
+    };
+  });
+  dire(g.anneau != null, "l'annonce d'un titre long porte son rond");
+  dire(
+    !g.surBarre,
+    `et il se pose SOUS la barre du haut (rond à ${g.anneau}, barre jusqu'à ${g.barre})`,
+  );
+  dire(g.surUnGeste === 0, `il ne recouvre aucun geste de la barre (${g.surUnGeste})`);
+  // ET L'UNITÉ NE QUITTE PAS SON NOMBRE — « LA FOURNÉE DE 7 » puis « H » tout
+  // seul en capitales de soixante points se lit comme une panne.
+  dire(
+    /7 h/.test(g.titre),
+    `le titre garde son heure d'un bloc (« ${g.titre.replace(/ /g, "·")} »)`,
+  );
+  await en.close();
+}
+
 // ═══ LE PREMIER ÉCRAN RACONTE LE PARCOURS, PAS DES QUALITÉS ═══════════════
 //
 // CE QUE ÇA PROTÈGE : « Concernant le premier écran de découverte, il faut

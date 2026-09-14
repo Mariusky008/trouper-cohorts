@@ -843,7 +843,18 @@ export function CarteSwipe({
                 c.quoi.length > 22 ? " long" : c.quoi.length > 14 ? " moyen" : ""
               }`}
             >
-              {c.quoi}
+              {/* ═══ « LA FOURNÉE DE 7 H » NE LAISSE PLUS SON « H » TOUT SEUL ══
+
+                  VU SUR LA MÊME CAPTURE QUE LE ROND. Le titre s'écrivait « LA
+                  FOURNÉE DE 7 » sur la première ligne et « H » sur la seconde
+                  — une lettre isolée en capitales de soixante points, ce qui se
+                  lit comme un bug avant de se lire comme une heure.
+
+                  LA RÈGLE EXISTAIT DÉJÀ, elle n'était simplement pas appliquée
+                  ici : `insecable` colle l'unité à son nombre, et c'est elle
+                  qui a réparé « 8,40 € » coupé avant son euro. Un titre est
+                  exactement le même cas, en plus gros — donc en pire. */}
+              {insecable(c.quoi)}
             </h2>
             {/* LE DÉTAIL RESTE, MAIS IL A CESSÉ D'ÊTRE UN BLOC. Sur une
                 invitation, c'est le mot du commerçant : le supprimer ferait
@@ -1898,7 +1909,25 @@ export function StylesDirect() {
            droite, la troisieme ligne du titre passerait dessous. Les seize
            points de plus que le rond sont l'ecart qui empeche les lettres de le
            toucher. */
-        .cd-carte.hautrond .cd-anneau{top:7%;}
+        /* ═══ ET IL PASSAIT SOUS LA BARRE DU HAUT, SUR UN VRAI TELEPHONE ════
+
+           « Le rond est en dehors tout en haut, donc le mettre au bon endroit
+           plus bas. »
+
+           LE POURCENTAGE ETAIT LA FAUTE, ET IL NE POUVAIT PAS SE VOIR ICI. La
+           barre de l'application descend de l'encoche — son rembourrage vaut
+           « 8px + env(safe-area-inset-top) » — et cette valeur vaut ZERO dans un
+           navigateur de bureau. Le rond, lui, se posait a un pourcentage de la
+           CARTE, qui ne connait pas l'encoche. Mesure a 430 points avec une
+           encoche de cinquante-neuf : la barre descend a 115, le rond reste a
+           65, et il recouvre la cloche des notifications — qui est un GESTE,
+           donc inatteignable.
+
+           IL SE POSE DONC SOUS LA BARRE, PAS A UN POURCENTAGE DE LA CARTE. Le
+           calcul reprend exactement le rembourrage de la barre, et les quatorze
+           points qui restent sont l'ecart voulu entre les deux. Sans encoche il
+           ne bouge presque pas ; avec, il descend d'autant qu'elle. */
+        .cd-carte.hautrond .cd-anneau{top:calc(70px + var(--ap-encoche,0px));}
         .cd-carte.hautrond .cd-offre{padding-right:120px;}
         .cd-anneau{position:absolute;right:18px;top:29%;z-index:3;
           width:104px;height:104px;border-radius:50%;

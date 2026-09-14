@@ -11935,7 +11935,18 @@ export function ApercuHabitant() {
           font-family:'Inter',system-ui,-apple-system,sans-serif;color:#EAF2EC;
           display:flex;align-items:center;justify-content:center;}
         .ap-tel{width:100%;height:100%;}
+        /* ═══ L'ENCOCHE DEVIENT UNE VARIABLE, ET CE N'EST PAS DU CONFORT ═══
+           Deux choses doivent descendre du meme nombre : la barre du haut, et
+           tout ce qui doit rester SOUS elle — a commencer par le rond de la
+           carte, qui recouvrait la cloche des notifications sur son iPhone.
+           ECRITE DEUX FOIS, ELLE NE PEUT PAS ETRE VERIFIEE. env() vaut zero
+           dans un navigateur de bureau : une mesure qui deplace la barre a la
+           main laisse le rond ou il est, donc elle dit que tout va bien sur un
+           ecran ou rien ne va. En passant par une variable, une seule valeur
+           change et TOUT ce qui en depend suit — la simulation devient fidele,
+           et la garde peut enfin attraper le defaut. */
         .ap-app{position:relative;height:100%;display:flex;flex-direction:column;
+          --ap-encoche:env(safe-area-inset-top);
           background:radial-gradient(120% 40% at 50% 0%,#13202C 0%,#080D0B 62%),#080D0B;}
 
         /* L'ENCOCHE. Avec viewport-fit=cover, la page peint sous la barre
@@ -11956,7 +11967,7 @@ export function ApercuHabitant() {
            La barre des onglets, elle, reste dans le flux — les pages Mes salons
            et Profil ont besoin d'elle pour se poser dessus. */
         .ap-haut{position:absolute;top:0;left:0;right:0;z-index:4;
-          padding:calc(8px + env(safe-area-inset-top)) 12px 10px;
+          padding:calc(8px + var(--ap-encoche,0px)) 12px 10px;
           display:flex;flex-direction:column;gap:7px;pointer-events:none;
           /* DEUX VOILES SE CUMULAIENT ICI, ET C'EST CE QUI RENDAIT LE HAUT
              OPAQUE. Celui de la carte et celui-ci : .82 sur .74, soit presque
