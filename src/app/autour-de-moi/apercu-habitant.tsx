@@ -10443,7 +10443,20 @@ export function ApercuHabitant() {
               des compteurs : « 2 ESSAYAGES DE CETTE COUPE » s'affichait en
               badge de notification. Un objet qui fait autre chose ne se range
               pas avec ceux qui font la même. */}
-          {bulle && dessus && bulle === dessus.id && bulleDuMur && (
+          {/* ═══ ELLE NE MONTE PAS PAR-DESSUS UNE FEUILLE ══════════════════
+
+              MESURÉE SUR L'ÉCRAN DE LA PHOTO D'ESSAI : la bulle se pose à
+              soixante-douze points du bas de l'APPLICATION, sans savoir qu'une
+              feuille pleine hauteur est montée devant. Elle atterrissait donc
+              sur « Photographier mon visage » — le geste principal de l'écran —
+              et juste au-dessus de « Voir les montures portées par les
+              clients », c'est-à-dire du bouton qui fait exactement ce qu'elle
+              propose. Elle couvrait un geste pour en doubler un autre.
+
+              C'EST LA MÊME RÈGLE QUE POUR LE BANDEAU D'INFORMATION et pour le
+              rond de la carte : rien d'automatique ne recouvre jamais un geste.
+              Elle appartient à l'annonce, elle ne sort donc pas de l'annonce. */}
+          {bulle && dessus && bulle === dessus.id && bulleDuMur && !feuille && !murOuvert && (
             <button
               type="button"
               className="ap-murbul"

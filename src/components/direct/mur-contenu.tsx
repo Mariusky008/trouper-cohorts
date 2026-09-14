@@ -694,11 +694,34 @@ export function MurContenu({
           renvoyait visuellement à rien. Un bandeau, une ligne, deux niveaux :
           le nom, puis le métier et la distance. C'est la même information que la
           barre du haut de l'application, au même endroit, dans le même ordre. */}
-      <div className="mu-chez">
+      {/* ═══ ET SUR LE PARCOURS D'ESSAI, IL SE REDUIT A L'ENDROIT ═══════════
+
+          « Je pense que cette partie peut être supprimée : Une boutique de la
+          rue piétonne / Prêt-à-porter · Dax · 210 m. »
+
+          IL A RAISON LA, ET IL AVAIT RAISON DE LE DEMANDER AVANT. Sur le MUR,
+          ce bandeau répond à « chez qui suis-je ? » — la feuille monte par-
+          dessus l'annonce et cache le nom au moment précis où l'on en a besoin.
+          Sur l'ESSAI, on ne se pose plus cette question : on vient de choisir la
+          monture, on voit sa photo, et l'écran demande la sienne. Le nom du
+          commerce y prend deux lignes pour répéter ce qu'on sait déjà, juste
+          au-dessus d'un écran dont sa maquette dit qu'il doit être immersif.
+
+          IL RESTE L'ENDROIT, ET C'EST SA MAQUETTE QUI LE GARDE : « 📍 Dax ·
+          350 m » sur une ligne. La distance décide encore quelque chose — on
+          essaie avant d'y aller — alors que le nom ne décide plus rien à ce
+          moment-là. */}
+      <div className={`mu-chez${ecran === "depot" ? " court" : ""}`}>
         <i aria-hidden="true">📍</i>
         <span>
-          <b>{mur.lieu}</b>
-          <em>{[mur.metier, mur.ville, mur.distance].filter(Boolean).join(" · ")}</em>
+          {ecran === "depot" ? (
+            <b>{[mur.ville, mur.distance].filter(Boolean).join(" · ")}</b>
+          ) : (
+            <>
+              <b>{mur.lieu}</b>
+              <em>{[mur.metier, mur.ville, mur.distance].filter(Boolean).join(" · ")}</em>
+            </>
+          )}
         </span>
       </div>
       {ecran === "mur" ? (
@@ -1842,9 +1865,35 @@ function Essai({
    * parce que du point de vue de celui qui regarde c'est un seul moment — « je
    * découvre ».
    */
+  /**
+   * ═══ LE CHEMIN SANS APPAREIL PHOTO VIT DANS L'ADRESSE ═════════════════════
+   *
+   * « Supprimer cette section en bas qui ne sert à rien : Voir avec la photo
+   * d'exemple. »
+   *
+   * LE BOUTON EST PARTI DE L'ÉCRAN, ET LE CHEMIN EST RESTÉ. Ce n'était pas un
+   * geste d'utilisateur — personne ne vient essayer une monture sur le visage
+   * d'une inconnue — mais c'est le seul moyen d'ATTEINDRE le rendu sans se
+   * photographier, et deux choses en dépendent : la démonstration qu'on fait
+   * devant un commerçant, et cinq mesures de la suite de vérification, qui
+   * n'ont pas d'appareil photo.
+   *
+   * LE RETIRER TOUT À FAIT AURAIT DONC SUPPRIMÉ LE BOUTON *ET* LA POSSIBILITÉ
+   * DE VÉRIFIER L'ÉCRAN QU'IL OUVRE. `?exemple=1` fait ce que le bouton
+   * faisait, sans rien poser sur l'écran de quelqu'un qui vient essayer.
+   */
   const [etape, setEtape] = useState<
     "cadrer" | "choisir" | "calcul" | "rendu" | "avis" | "agir"
-  >("cadrer");
+  >(() => {
+    if (typeof window === "undefined") return "cadrer";
+    try {
+      return new URLSearchParams(window.location.search).get("exemple")
+        ? "choisir"
+        : "cadrer";
+    } catch {
+      return "cadrer";
+    }
+  });
   const [piece, setPiece] = useState<Piece | null>(null);
   const [pct, setPct] = useState(0);
   /**
@@ -2735,22 +2784,20 @@ function Essai({
               >
                 Choisir une photo de ma photothèque
               </button>
-              {/* LA PHOTO D'EXEMPLE RESTE ACCESSIBLE, ET ELLE EST NOMMEE COMME
-                  TELLE. Une maquette qu'on fait essayer doit pouvoir se montrer
-                  sans que celui qui la tient sorte sa propre main — mais alors
-                  il faut que l'écran DISE que ce n'est pas la sienne, ce qui
-                  manquait justement. */}
-              <button
-                type="button"
-                className="mu-exemple"
-                onClick={() => {
-                  setRendu(null);
-                  setPiece(null);
-                  setEtape("choisir");
-                }}
-              >
-                Voir avec la photo d’exemple
-              </button>
+              {/* ═══ « VOIR AVEC LA PHOTO D'EXEMPLE » EST PARTI ═══════════════
+
+                  « Supprimer cette section en bas qui ne sert à rien. »
+
+                  C'ETAIT UN GESTE DE DEMONSTRATION, PAS UN GESTE D'UTILISATEUR.
+                  Il servait à montrer la maquette sans sortir sa propre main —
+                  utile en salon, inutile pour quelqu'un qui vient essayer une
+                  monture sur lui. Il proposait surtout, sur l'écran qui demande
+                  une photo, une troisième porte à côté des deux vraies : se
+                  photographier, ou prendre une photo déjà faite.
+
+                  LE CHEMIN N'EST PAS PERDU : la photo d'exemple reste celle du
+                  viseur tant qu'on n'a rien pris, et le badge du rendu continue
+                  de dire « Photo d'exemple — ce n'est pas la vôtre ». */}
             </>
           )}
           {/* ═══ CE QU'ON PROMET AVANT DE DEMANDER UNE PHOTO ══════════════════
@@ -2767,10 +2814,23 @@ function Essai({
               ELLE EST VRAIE DEUX FOIS, et c'est pour ça qu'on peut l'écrire :
               rien ne part sur le mur avant la case du troisième temps, et le
               rendu qui passe par un modèle d'image n'est pas conservé. */}
-          <p className="mu-prive">
-            <i aria-hidden="true">🔒</i>
-            Vos photos sont privées et ne sont pas partagées sans votre accord.
-          </p>
+          {/* ═══ ET LA PHRASE SUR LA VIE PRIVEE PART AVEC, SUR SA DEMANDE ═══
+
+              « Supprimer cette section en bas qui ne sert à rien : Voir avec la
+              photo d'exemple / Vos photos sont privées et ne sont pas partagées
+              sans votre accord. »
+
+              JE LA SIGNALE PLUTOT QUE DE LA RETIRER EN SILENCE, parce que sa
+              PROPRE maquette la garde sous le bouton, et parce que c'est le seul
+              moment du produit où l'on demande à quelqu'un de se photographier.
+              Elle se remet en une ligne le jour où il le veut : elle est ici, en
+              commentaire, à l'endroit exact où elle vivait.
+
+                <p className="mu-prive">
+                  <i aria-hidden="true">🔒</i>
+                  Vos photos sont privées et ne sont pas partagées sans votre accord.
+                </p>
+          */}
         </div>
       )}
 
@@ -3057,69 +3117,67 @@ function Essai({
               respectée. */}
           {!rendu?.souci && !rate && (
             <>
-              {etape === "rendu" && (
-              <div className="mu-pl-g">
-                <h2 className="mu-pl-t">
-                  Votre
-                  <b>{mots.essayage}</b>
-                </h2>
-                <p className="mu-pl-p">{mots.promesse}</p>
-                <ul className="mu-pl-l">
-                  <li>
-                    <Trace cle="net" />
-                    <span>
-                      {mots.essayage === "projection" ? "Projection" : "Essayage"} réaliste
-                      par IA
-                    </span>
-                  </li>
-                  <li>
-                    <Trace cle="styles" />
-                    <span>Plusieurs styles</span>
-                  </li>
-                  <li>
-                    <Trace cle="comparer" />
-                    <span>Avant / après au doigt</span>
-                  </li>
-                </ul>
-              </div>
-              )}
+              {/* ═══ LE TEXTE SUR LA PHOTO EST PARTI ═══════════════════════
+
+                  « Les textes par-dessus l'image cassent totalement
+                  l'immersion. Ceci ne sert à rien donc supprimer : Votre
+                  essayage / Découvrez à quoi cette monture vous va, en quelques
+                  secondes / Essayage réaliste par IA / Plusieurs styles / Avant
+                  après au doigt. »
+
+                  IL A RAISON, ET C'EST MOI QUI AVAIS MIS CE BLOC LA — en suivant
+                  sa maquette, qui l'y dessinait. Ce que la maquette ne pouvait
+                  pas montrer, c'est ce que ça donne SUR UN VISAGE : trois lignes
+                  de promesse et un titre de trente et un points posés en travers
+                  de sa propre tête, au moment exact où il se regarde. Un argument
+                  de vente par-dessus le résultat qu'il vend.
+
+                  ET CES TROIS LIGNES DISAIENT CE QUE L'ECRAN FAISAIT DEJA. « Essayage
+                  réaliste par IA » est écrit en toutes lettres dans le badge du
+                  bas, qui dit en plus sur QUELLE photo et en combien de temps.
+                  « Plusieurs styles » est la bande de vignettes juste dessous.
+                  « Avant / après au doigt » est la glissière qu'on a sous le
+                  pouce. Trois légendes pour trois choses visibles à l'écran. */}
               {/* LA CARTE FLOTTANTE DE DROITE. Elle porte ce qu'on est en train
                   d'essayer — la photo du commerçant, le nom, le prix — et les
                   deux gestes qui ne décident rien : garder, montrer. Les gestes
                   qui décident sont au troisième temps, et nulle part ailleurs. */}
+              {/* ═══ ET LA CARTE FLOTTANTE QUITTE LE RENDU ══════════════════
+
+                  « Cette partie prend beaucoup de place sur la photo, donc
+                  supprimer cette section pour une immersion totale. »
+
+                  ELLE NE DISPARAIT QU'AU TEMPS DU RENDU, et c'est la nuance qui
+                  compte : aux deuxième et troisième temps — choisir la monture,
+                  donner son avis — il n'y a pas de visage dessous, la carte ne
+                  recouvre rien, et elle porte des choses qu'on cherche vraiment
+                  à ce moment-là : la distance, la note, les avis.
+
+                  RIEN N'EST PERDU AU RENDU, et c'est ce qui permet de la
+                  retirer. Le nom et le prix reviennent SOUS la photo, où ils
+                  existaient déjà et où une règle les cachait justement parce que
+                  la carte les portait. Les deux gestes — garder, montrer —
+                  descendent avec eux. Ils gagnent au change : en pastille de
+                  cent vingt-deux points sur une photo, « Ajouter aux favoris »
+                  s'écrivait sur trois lignes. */}
+              {etape !== "rendu" && (
               <aside className="mu-pl-d">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img className="mu-pl-ph" src={piece.photo} alt="" />
                 <b className="mu-pl-n">{piece.nom}</b>
                 <em className="mu-pl-x">{piece.prix}</em>
-                {/* LES COULEURS NE S'AFFICHENT QUE LÀ OÙ ELLES EXISTENT — un
-                    vernis en porte une, une bougie n'en porte pas — et elles
-                    CHANGENT vraiment la pièce essayée, sinon ce serait un
-                    nuancier de décoration. */}
-                {etape === "rendu" &&
-                  mur.essai.pieces.filter((p) => p.vernis && !p.bientot).length > 1 && (
-                  <>
-                    <span className="mu-pl-s">Couleurs</span>
-                    <div className="mu-pl-c">
-                      {mur.essai.pieces
-                        .filter((p) => p.vernis && !p.bientot)
-                        .map((p) => (
-                          <button
-                            key={p.id}
-                            type="button"
-                            className={p.id === piece.id ? "on" : undefined}
-                            style={{ background: p.vernis!.couleur }}
-                            aria-label={p.nom}
-                            aria-pressed={p.id === piece.id}
-                            onClick={() => {
-                              if (p.id === piece.id) return;
-                              changerDeStyle(p);
-                            }}
-                          />
-                        ))}
-                    </div>
-                  </>
-                )}
+                {/* ═══ LE NUANCIER DE LA CARTE EST PARTI AVEC ELLE ════════════
+
+                    IL NE S'AFFICHAIT QU'AU TEMPS DU RENDU, et la carte vient de
+                    quitter ce temps-là : il n'etait donc plus joignable nulle
+                    part. TypeScript l'a dit avant moi — « cette comparaison n'a
+                    aucun recouvrement » — ce qui est exactement la bonne façon
+                    d'apprendre qu'on vient de laisser du code mort derrière soi.
+
+                    ET ON NE LE DEPLACE PAS, PARCE QU'IL EXISTE DEJA EN BAS. La
+                    bande des styles, sous la photo, liste toutes les pièces et
+                    dessine un rond de couleur pour chaque vernis : c'était deux
+                    nuanciers pour un seul choix, à deux cents points d'écart. */}
                 {/* ═══ AUX DEUXIÈME ET TROISIÈME TEMPS, LA CARTE DIT OÙ C'EST ═══
 
                     LA MAQUETTE Y MET TROIS LIGNES — « Look complet », « En
@@ -3133,7 +3191,10 @@ function Essai({
                     ON GARDE DONC LES DEUX QUI SONT VRAIES : d'où c'est, et ce
                     que les gens en disent. Le jour où un commerçant déclare ses
                     stocks, la troisième ligne s'écrit ici. */}
-                {etape !== "rendu" && (
+                {/* LA GARDE `etape !== "rendu"` A DISPARU D'ICI : la carte
+                    entière ne se dessine plus qu'aux autres temps, donc elle
+                    était toujours vraie. Une condition toujours vraie ment sur
+                    ce qu'elle protège. */}
                   <ul className="mu-pl-i">
                     <li>
                       <Trace cle="lieu" />
@@ -3150,7 +3211,6 @@ function Essai({
                       </span>
                     </li>
                   </ul>
-                )}
                 <div className="mu-pl-r">
                   {onFavori && (
                     <button
@@ -3171,6 +3231,7 @@ function Essai({
                   )}
                 </div>
               </aside>
+              )}
             </>
           )}
           {/* AGRANDIR EST UN BOUTON À PART, POSÉ SOUS L'IMAGE. Il ne peut pas
@@ -3219,6 +3280,42 @@ function Essai({
             <b>{piece.nom}</b>
             <em>{piece.prix}</em>
           </div>
+          {/* ═══ GARDER ET MONTRER, SOUS LA PHOTO ═══════════════════════════
+
+              ILS VIVAIENT DANS LA CARTE FLOTTANTE, qui vient de quitter le
+              rendu pour libérer le visage. Ce sont deux gestes réels — l'un
+              range la monture dans les favoris, l'autre l'envoie à ses amis —
+              et les faire disparaître avec le décor aurait retiré une
+              fonctionnalité sous couvert de mise en page.
+
+              ILS NE REVIENNENT PAS SUR L'IMAGE POUR AUTANT. Sous la photo, dans
+              la bande où se trouvent déjà le nom, le prix et les autres styles :
+              c'est l'endroit où l'on décide, et l'image reste ce qu'on regarde.
+
+              ILS N'APPARAISSENT QU'AU RENDU : ailleurs, c'est la carte flottante
+              qui les porte, et deux exemplaires du même geste sur un écran
+              valent moins qu'un seul. */}
+          {etape === "rendu" && (onFavori || (!!photo && !!rendu && !rendu.souci)) && (
+            <div className="mu-rendu-p">
+              {onFavori && (
+                <button
+                  type="button"
+                  className={favori ? "on" : undefined}
+                  onClick={onFavori}
+                  aria-pressed={favori}
+                >
+                  <Trace cle="coeur" />
+                  <span>{favori ? "Gardé" : "Garder"}</span>
+                </button>
+              )}
+              {!!photo && !!rendu && !rendu.souci && (
+                <button type="button" onClick={() => void partagerLeLook(piece)}>
+                  <Trace cle="partage" />
+                  <span>Partager</span>
+                </button>
+              )}
+            </div>
+          )}
           {/* ═══ LES AUTRES STYLES, SOUS L'IMAGE ══════════════════════════════
 
               LA MAQUETTE LES MET LÀ, ET C'EST LE PLUS GROS GAIN DE L'ÉCRAN. On
@@ -4332,6 +4429,10 @@ function Styles() {
         .mu-chez em{font-style:normal;font-size:11.5px;font-weight:700;
           color:var(--mu-pale);overflow:hidden;text-overflow:ellipsis;
           white-space:nowrap;}
+        /* SUR LE PARCOURS D'ESSAI IL TIENT SUR UNE LIGNE, en petit : il n'est
+           plus un titre, il est un repere. Voir le composant. */
+        .mu-chez.court{padding-bottom:10px;}
+        .mu-chez.court b{font-size:12.5px;font-weight:750;color:var(--mu-pale);}
 
         .mu-haut{text-align:center;padding:2px 2px 14px;}
         /* LE FANTOME, LE TITRE ET LE GESTE SUR UNE SEULE LIGNE. Voir le
@@ -4620,7 +4721,21 @@ function Styles() {
         .mu-int-n{display:block;margin-top:3px;text-decoration:none;
           font-size:11px;font-weight:700;color:#8BD6FF;}
 
-        .mu-cadrer{text-align:center;}
+        /* ═══ L'ECRAN DE LA PHOTO S'ALIGNE A GAUCHE ════════════════════════
+
+           « Cette partie n'est pas bien designée, les textes partent dans tous
+           les sens et ne sont pas centrés très bien. »
+
+           LA CAUSE TENAIT EN UN MOT : text-align:center, pose sur tout l'ecran.
+           Un titre de deux lignes centre, quatre conseils dont les libelles font
+           de treize a vingt-cinq signes centres chacun sur sa propre largeur, et
+           aucun bord commun nulle part — c'est exactement l'impression de textes
+           qui partent dans tous les sens. Sa maquette, elle, aligne tout a
+           gauche : le titre, les quatre conseils, et leurs deux niveaux.
+
+           LES BOUTONS RESTENT CENTRES : ce sont des blocs flexibles, ils ne
+           dependaient pas de cette regle. */
+        .mu-cadrer{text-align:left;}
         /* LE VISEUR DIT CE QU'ON PHOTOGRAPHIE, ET C'EST LA MOITIE DE LA
            MECANIQUE : on ne cadre pas une personne, on cadre L'ENDROIT OU LA
            CHOSE VA. */
@@ -5131,17 +5246,27 @@ function Styles() {
            LES CONSEILS ET L'EXEMPLE PARTAGENT UNE LIGNE. Empiles, il faut faire
            defiler entre les deux, c'est-a-dire les comparer de memoire. */
         .mu-ph-tete{margin-bottom:14px;}
-        .mu-ph-tete h2{margin:0;font-size:23px;font-weight:850;
-          letter-spacing:-.03em;line-height:1.1;color:#fff;}
-        .mu-ph-tete p{margin:6px 0 0;font-size:13.5px;line-height:1.45;
+        .mu-ph-tete h2{margin:0;font-size:26px;font-weight:850;
+          letter-spacing:-.035em;line-height:1.06;color:#fff;}
+        .mu-ph-tete p{margin:7px 0 0;font-size:13.5px;line-height:1.45;
           color:var(--mu-pale);}
-        .mu-ph{display:grid;grid-template-columns:1fr 1fr;gap:12px;
+        /* ─── LES CONSEILS ONT PLUS DE PLACE QUE LE VISEUR ───
+           A deux colonnes egales, la colonne de texte gardait cent vingt-huit
+           points une fois le pictogramme et son ecart retires : « Des vetements
+           pres du corps » y tenait sur trois lignes quand ses voisins en
+           prenaient deux. Le viseur, lui, n'a rien a gagner a etre plus large —
+           c'est une photo verticale. */
+        .mu-ph{display:grid;grid-template-columns:1.18fr 1fr;gap:12px;
           align-items:start;}
         .mu-ph-l{list-style:none;margin:0;padding:0;display:flex;
-          flex-direction:column;gap:9px;}
-        .mu-ph-l li{display:flex;align-items:center;gap:9px;min-width:0;}
+          flex-direction:column;gap:11px;}
+        /* ─── LE PICTOGRAMME S'ALIGNE SUR LE TITRE, PAS SUR LE MILIEU ───
+           align-items:center faisait descendre le carre a mi-hauteur des que le
+           libelle passait a trois lignes : sur quatre conseils, un seul mal cale
+           suffit a donner l'impression que rien n'est aligne. */
+        .mu-ph-l li{display:flex;align-items:flex-start;gap:9px;min-width:0;}
         .mu-ph-l li i{flex:none;display:grid;place-items:center;
-          width:38px;height:38px;border-radius:12px;font-style:normal;
+          width:34px;height:34px;border-radius:11px;font-style:normal;
           background:rgba(255,255,255,.06);
           border:1px solid rgba(255,255,255,.12);color:#D8E4EE;}
         .mu-ph-l li span{min-width:0;}
@@ -5502,7 +5627,29 @@ function Styles() {
         /* LE NOM ET LE PRIX SONT MONTES DANS LA CARTE FLOTTANTE. Les laisser
            AUSSI sous la photo, c'est les ecrire deux fois a trente points
            d'intervalle. */
+        /* IL ETAIT CACHE PARCE QUE LA CARTE FLOTTANTE LE PORTAIT. Elle a
+           quitte le rendu ; le nom et le prix reprennent donc leur place sous
+           la photo, ou ils ne recouvrent rien. Aux autres temps la carte est
+           toujours la, et la regle tient toujours. */
         .mu-rendu.plein .mu-rendu-t{display:none;}
+        /* « plein » SANS « court » EST DEJA LE TEMPS DU RENDU — voir la classe du
+           conteneur. On ne rajoute pas un troisieme mot pour dire ce que les
+           deux premiers disent. */
+        .mu-rendu.plein:not(.court) .mu-rendu-t{display:flex;}
+        /* ─── GARDER ET MONTRER, EN DEUX PASTILLES SOUS LA PHOTO ───
+           En carte flottante de cent vingt-deux points, « Ajouter aux favoris »
+           tenait sur trois lignes. Ici les deux tiennent sur une, et les mots
+           raccourcissent avec la place : garder, partager. */
+        .mu-rendu-p{display:flex;justify-content:center;gap:9px;margin-top:11px;}
+        .mu-rendu-p button{display:inline-flex;align-items:center;gap:7px;
+          font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;
+          color:#E8EFF6;padding:9px 15px;border-radius:999px;
+          background:rgba(255,255,255,.07);
+          border:1px solid rgba(255,255,255,.14);}
+        .mu-rendu-p button .mu-tr{width:17px;height:17px;}
+        .mu-rendu-p button:active{transform:scale(.96);}
+        .mu-rendu-p button.on{color:#FFC7DA;background:rgba(255,120,170,.14);
+          border-color:rgba(255,120,170,.45);}
         /* TOUT LE RESTE REPREND SES SEIZE POINTS — ET ON LE DIT EN NEGATIF,
            PAS EN LISTE. Une liste de classes a marger aurait oublie la
            suivante : l'ecran de l'avis en ajoute huit — la question, les cinq

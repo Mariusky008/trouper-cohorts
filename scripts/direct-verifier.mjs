@@ -22,6 +22,45 @@ let echecs = 0;
 const erreurs = [];
 const dire = (ok, t) => { if (!ok) echecs++; console.log(`${ok ? "  ok  " : "ÉCHEC "} ${t}`); };
 
+/**
+ * ═══ ON ENTRE DANS L'ESSAI COMME UN UTILISATEUR : PAR UNE PHOTO ════════════
+ *
+ * « Voir avec la photo d'exemple » a été retiré de l'écran — c'était un geste
+ * de démonstration posé au milieu de deux gestes réels. Les gardes s'en
+ * servaient comme d'une porte de service.
+ *
+ * ELLES DEPOSENT MAINTENANT UN FICHIER DANS LE CHAMP DE LA PHOTOTHEQUE, qui
+ * est le second geste de l'écran et un vrai chemin d'utilisateur : « une main à
+ * plat se photographie souvent mieux à deux mains, donc avant ». On mesure donc
+ * ce que les gens font, au lieu de ce que la démonstration faisait.
+ *
+ * LE CHAMP EST CACHE, ET C'EST SANS IMPORTANCE : `setInputFiles` n'a pas besoin
+ * de le voir, exactement comme l'appareil photo du téléphone n'a pas besoin que
+ * le champ soit à l'écran pour y déposer son cliché.
+ */
+const deposerUnePhoto = async (page, dans = "") => {
+  // LE PREMIER CHAMP DU DOCUMENT EST CELUI DU DEPOT, PAS CELUI DE L'ESSAI :
+  // deux champs portent la meme classe. On prend le dernier, qui est celui de
+  // l'essai — il est rendu apres le formulaire du mur.
+  const champs = await page.$$(`${dans} input.mu-fichier`);
+  const champ = champs[champs.length - 1];
+  if (!champ) return false;
+  await champ.setInputFiles("public/direct/avis-ongles.jpg");
+  await page.waitForTimeout(900);
+  // ET ON CONFIRME LE CADRAGE, comme le ferait quelqu'un. Le depot d'une photo
+  // ramene TOUJOURS au viseur — « la photo revient AVEC le repere par-dessus :
+  // c'est le seul moment ou l'on peut voir si sa main tombe la ou le calcul
+  // l'attend ». Sauter cette confirmation rendrait le gabarit decoratif, et la
+  // garde ne mesurerait plus le chemin que suivent les gens.
+  const suite = await page.$(`${dans} .mu-cta.plein`);
+  if (suite) {
+    await suite.click();
+    await page.waitForTimeout(700);
+  }
+  return true;
+};
+
+
 // ═══ LA CONSIGNE ENVOYÉE AU MODÈLE — LA MOITIÉ DU RÉSULTAT ═════════════════
 //
 // CE QU'ELLE PROTÈGE, ET C'EST LE DÉFAUT LE PLUS GRAVE QUE L'ESSAI PUISSE
@@ -1615,13 +1654,15 @@ console.log("\n══ l'essai se joue en trois temps ══");
   );
   const p3 = await c3.newPage();
   p3.on("pageerror", (e) => erreurs.push(String(e)));
-  await p3.goto(`${BASE}/autour-de-moi?carte=cirier&essai=1`, { waitUntil: "networkidle" });
+  // `exemple=1` REMPLACE LE BOUTON « Voir avec la photo d'exemple », retiré de
+  // l'écran sur sa demande. Le chemin, lui, est resté : c'est le seul moyen
+  // d'atteindre le rendu sans appareil photo, et cette suite n'en a pas.
+  await p3.goto(`${BASE}/autour-de-moi?carte=cirier&essai=1&exemple=1`, { waitUntil: "networkidle" });
   await p3.waitForSelector(".mu-frise", { timeout: 15000 });
 
   const ou = () => p3.$eval(".mu-frise li.ici", (e) => e.textContent.replace(/\s+/g, " ").trim());
   dire(/découvre/i.test(await ou()), "on arrive sur « je découvre »");
 
-  await p3.getByRole("button", { name: /photo d.exemple/i }).click();
   await p3.locator(".mu-pieces button:not([disabled])").first().click();
   await p3.waitForSelector(".mu-mi", { timeout: 30000 });
   await p3.waitForTimeout(900);
@@ -2100,11 +2141,9 @@ console.log("\n══ ce qu'on dépose se voit et s'écrit ══");
   } else {
     await pA.click(".ap-monfantome");
     await pA.waitForTimeout(1000);
-    // ON PASSE PAR LA PHOTO D'EXEMPLE : la garde ne dispose pas d'appareil, et
-    // ce chemin dépose exactement le même fantôme.
-    const ex = await pA.$('button.mu-exemple:has-text("photo d\u2019exemple")');
-    if (ex) await ex.click();
-    await pA.waitForTimeout(500);
+    // ON DEPOSE UNE PHOTO DANS LA PHOTOTHEQUE : la garde n'a pas d'appareil, et
+    // ce chemin dépose exactement le même fantôme. Voir `deposerUnePhoto`.
+    await deposerUnePhoto(pA);
     /**
      * ON ESSAIE LES PIÈCES JUSQU'À CE QU'UNE RENDE.
      *
@@ -2462,10 +2501,10 @@ console.log("\n══ la page du commerce ══");
     await onglet.click();
     await pB.waitForTimeout(1100);
     // LA GRILLE NE S'OUVRE QU'AU MOMENT DE CHOISIR : avant, on est sur la
-    // photo. « Voir avec la photo d'exemple » est le chemin sans appareil.
+    // photo, et on y dépose un fichier comme le ferait quelqu'un qui a déjà
+    // pris le cliché. Voir `deposerUnePhoto`.
     await versLaPhoto(pB);
-    const exemple = await pB.$('#mur button.mu-exemple:has-text("photo d\u2019exemple")');
-    if (exemple) { await exemple.click(); await pB.waitForTimeout(600); }
+    await deposerUnePhoto(pB, "#mur");
     const pieces = await pB.$$eval("#mur .mu-pieces button", (l) =>
       l.map((e) => {
         const img = e.querySelector("img");
@@ -2500,8 +2539,7 @@ console.log("\n══ la page du commerce ══");
       await onglet.click();
       await pB.waitForTimeout(1100);
       await versLaPhoto(pB);
-      const ex = await pB.$('#mur button.mu-exemple:has-text("photo d\u2019exemple")');
-      if (ex) { await ex.click(); await pB.waitForTimeout(600); }
+      await deposerUnePhoto(pB, "#mur");
       const aVenir = await pB.$$eval("#mur .mu-pieces button.bientot", (l) => l.length);
       const total = await pB.$$eval("#mur .mu-pieces button", (l) => l.length);
       dire(
@@ -2528,8 +2566,7 @@ console.log("\n══ la page du commerce ══");
       await onglet.click();
       await pB.waitForTimeout(1100);
       await versLaPhoto(pB);
-      const ex = await pB.$('#mur button.mu-exemple:has-text("photo d\u2019exemple")');
-      if (ex) { await ex.click(); await pB.waitForTimeout(600); }
+      await deposerUnePhoto(pB, "#mur");
       const pc = await pB.$("#mur .mu-pieces button:not(.bientot)");
       if (pc) {
         await pc.click();
@@ -3462,16 +3499,16 @@ console.log("\n══ la page du commerce ══");
     };
   });
   const pF = await tel.newPage();
-  await pF.goto(`${BASE}/autour-de-moi?carte=cirier&essai=1`, { waitUntil: "networkidle" });
+  await pF.goto(`${BASE}/autour-de-moi?carte=cirier&essai=1&exemple=1`, { waitUntil: "networkidle" });
   await pF.waitForTimeout(1600);
   // LA CIRIÈRE EST LE SEUL MUR DONT LE RENDU SE CALCULE ICI, sans clé d'image :
   // sa pièce porte un découpage, donc l'essai va jusqu'au bout hors ligne.
-  const exemple = await pF.$('button:has-text("photo d’exemple")');
-  if (!exemple) {
-    dire(false, "l'essai s'ouvre sur la photo d'exemple");
-  } else {
-    await exemple.click();
-    await pF.waitForTimeout(1100);
+  //
+  // ON Y ENTRE PAR L'ADRESSE, plus par un bouton : « Voir avec la photo
+  // d'exemple » a été retiré de l'écran, le chemin est resté.
+  {
+    const grille = await pF.$(".mu-pieces");
+    dire(!!grille, "l'essai s'ouvre sur la grille des pièces, sans appareil photo");
     const piece = await pF.$(".mu-pieces button:not(.bientot)");
     if (piece) {
       await piece.click();
