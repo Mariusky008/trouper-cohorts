@@ -211,6 +211,45 @@ il ne photographie rien de plus, et son annonce n'est pas vide le premier jour.
 Elles sont **légendées** — « la salle », « un autre jour » — et **séparées du
 mur des clients**, qui suit : les siennes sont choisies, les leurs sont vraies.
 
+### Ce qui est arrivé le 14 septembre, et ce qui a été écarté
+
+Neuf fichiers envoyés pour trois commerces. **Six sont branchés, trois ne le
+sont pas** — et les trois refus disent mieux la règle que la règle elle-même.
+
+| Fichier | Ce qu'il montre | Où il sert |
+|---|---|---|
+| `boulange-comptoir.jpeg` | Le comptoir, viennoiseries et étiquettes à la craie. 1200 × 1200. | Boulangerie |
+| `boulange-vitrine.jpg` | L'intérieur : comptoir, rayons à pain, mur de brique. 460 × 667. | Boulangerie |
+| `salon-bacs.jpg` | Deux bacs à shampoing, l'étagère de produits, un fauteuil. 1086 × 1448. | Salon de coiffure |
+| `bar-salle.jpg` | La salle et le comptoir, avant le service. 450 × 300. | Bar à vins |
+| `bar-planche.jpg` | Une planche charcuterie-fromage. 667 × 667. | Bar à vins |
+| `bar-cave.jpg` | Le casier à bouteilles, couchées, dans le noir. 1701 × 2560. | Bar à vins |
+
+**`boulange-fournil.jpg` — écartée : un visage.** Un boulanger de face,
+reconnaissable, devant son four. C'est exactement ce qui a fait retirer
+`portant-boutique.jpg` du produit : on ne fait pas figurer quelqu'un de réel
+dans la devanture d'un commerce inventé. Elle reste dans le dépôt et ne sert
+nulle part.
+
+**`salon-vitrine.jpg` — écartée : ce n'est pas un salon.** Une devanture de
+Noël avec un piano et des sapins. Ni le métier, ni la saison — et une photo qui
+ne montre pas le commerce qu'elle légende est pire qu'une photo absente.
+
+**`salon-produits.jpg` — écartée : 291 × 173.** En vignette de cinquante-six
+points elle passerait ; le problème est qu'**une vignette devient la grande
+photo quand on appuie dessus**. Il en faut 780 de large pour un téléphone
+récent, elle en a 291. C'est le format qui décide, pas le cadrage.
+
+**Et une renommée.** Le fichier est arrivé sous le nom `Le mur de bouteilles,
+étiquettes floues ou de dos.jpg` — ma propre description prise pour un nom.
+Espaces, virgule et accent dans une URL : renommé `bar-cave.jpg`.
+
+**Un point à surveiller.** `boulange-comptoir.jpeg` porte un **logo de marque**
+(un réfrigérateur à jus, au fond). Le fond d'une boulangerie n'est pas une
+enseigne, et la photo est de loin la meilleure des trois — les étiquettes à la
+craie font tout son intérêt. Elle est branchée ; à remplacer le jour où une
+équivalente sans logo arrive.
+
 ### La règle, et pourquoi elle est plus stricte ici qu'ailleurs
 
 Ce bloc AFFIRME que ces images appartiennent au commerce nommé juste au-dessus.

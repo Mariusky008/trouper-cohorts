@@ -2026,6 +2026,16 @@ const CARTES: CarteAutour[] = [
       { id: "b-5", rayon: "Pâtisseries", nom: "Gâteau basque", detail: "Crème ou cerise.", prix: "3,50 €" },
       { id: "b-6", rayon: "Pâtisseries", nom: "Tarte aux pommes", detail: "La part.", prix: "3,20 €" },
     ],
+    // ─── SES PHOTOS, EN BANDE SOUS L'ANNONCE — voir `CarteDirect.photos` ───
+    //
+    // LE FOURNIL N'EST PAS DANS LA LISTE, ET C'EST LA REGLE QUI L'EXCLUT. La
+    // photo montre un boulanger de face, reconnaissable. `portant-boutique.jpg`
+    // a deja ete retiree du produit pour cette raison exacte : on ne fait pas
+    // figurer quelqu'un de reel dans la devanture d'un commerce invente.
+    sesPhotos: [
+      { src: "/direct/boulange-comptoir.jpeg", quoi: "Le comptoir, ce matin" },
+      { src: "/direct/boulange-vitrine.jpg", quoi: "La boutique et ses rayons" },
+    ],
     branche: "restaurant",
     photo: "/direct/sortie-du-four.jpg",
     cadrage: "100%",
@@ -2513,6 +2523,15 @@ const CARTES: CarteAutour[] = [
     // partagent leurs interieurs et deux bars leurs comptoirs — a remplacer
     // par de vraies photos de chaque commerce. Voir public/direct/LISEZ-MOI.md.
     photos: ["/direct/verre-au-comptoir.jpg", "/direct/terrasse-au-soleil.jpg"],
+    // CELUI-CI EN A QUATRE, ET C'EST VOULU QU'ILS N'EN AIENT PAS LE MEME
+    // NOMBRE : « il faudra ajuster en fonction de ce que le commercant aura
+    // mis ». Quatre ici, trois chez le boulanger, deux chez la coiffeuse — la
+    // bande compte ce qu'il y a, elle ne remplit pas des emplacements.
+    sesPhotos: [
+      { src: "/direct/bar-salle.jpg", quoi: "La salle, avant le service" },
+      { src: "/direct/bar-planche.jpg", quoi: "La planche de charcuterie" },
+      { src: "/direct/bar-cave.jpg", quoi: "La cave" },
+    ],
     branche: "bar",
     photo: "/direct/verre-au-comptoir.jpg",
     cadrage: "50%",
@@ -2670,6 +2689,12 @@ const CARTES: CarteAutour[] = [
     // partagent leurs interieurs et deux bars leurs comptoirs — a remplacer
     // par de vraies photos de chaque commerce. Voir public/direct/LISEZ-MOI.md.
     photos: ["/direct/fauteuil-coiffeur.jpg", "/direct/salon-neuf.jpg"],
+    // ELLE N'EN A QU'UNE DE PLUS, ET LA BANDE EN MONTRE DONC DEUX. Les deux
+    // autres envoyees n'entrent pas : `salon-vitrine.jpg` est une devanture de
+    // Noel avec un piano — ni un salon, ni la saison — et `salon-produits.jpg`
+    // fait deux cent quatre-vingt-onze points de large, c'est-a-dire un tiers
+    // de ce qu'il faut des qu'on appuie dessus pour la mettre plein cadre.
+    sesPhotos: [{ src: "/direct/salon-bacs.jpg", quoi: "Les bacs" }],
     branche: "coiffeur",
     photo: "/direct/fauteuil-coiffeur.jpg",
     cadrage: "50%",

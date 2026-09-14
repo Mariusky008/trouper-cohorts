@@ -3208,6 +3208,33 @@ console.log("\n══ la page du commerce ══");
     s?.vignettes.length === 0,
     `avec une seule photo, aucune miniature ne prend de place (${s?.vignettes.length ?? "?"})`,
   );
+
+  // ═══ ET LE NOMBRE VARIE VRAIMENT D'UN COMMERÇANT À L'AUTRE ══════════════
+  //
+  // « Ça peut n'être que 3 photos ou 5, donc il faudra ajuster en fonction de
+  // ce que le commerçant aura mis. »
+  //
+  // UNE BANDE QUI MONTRERAIT TOUJOURS QUATRE VIGNETTES PASSERAIT TOUTES LES
+  // MESURES DU DESSUS. Elles vérifient qu'il y en a, qu'elles changent la
+  // grande, qu'elles disparaissent à une seule photo — aucune ne vérifie que
+  // le compte SUIT le commerçant. Trois comptes différents sur trois métiers,
+  // c'est la seule preuve que rien n'est câblé en dur.
+  const comptes = {};
+  for (const [id, h] of [["boulange", 8.5], ["bar-vins", 18.5], ["coif-centre", 12.5]]) {
+    await ph.clock.setFixedTime(new Date(2026, 8, 2, Math.floor(h), (h % 1) * 60, 0));
+    await pP.goto(`${BASE}/autour-de-moi?carte=${id}`, { waitUntil: "networkidle" });
+    await pP.waitForTimeout(1800);
+    comptes[id] = (await etat())?.vignettes.length ?? 0;
+  }
+  const dits = Object.entries(comptes).map(([k, v]) => `${k} ${v}`).join(" · ");
+  dire(
+    Object.values(comptes).every((n) => n >= 2),
+    `chacun montre ce qu'il a (${dits})`,
+  );
+  dire(
+    new Set(Object.values(comptes)).size >= 2,
+    "et le compte suit le commerçant au lieu d'être câblé",
+  );
   await ph.close();
 }
 
