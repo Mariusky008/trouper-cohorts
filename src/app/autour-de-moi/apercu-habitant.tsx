@@ -1502,6 +1502,33 @@ export function ApercuHabitant() {
   /** La carte d'arrivée qu'on est en train de glisser — voir plus bas. */
   const [accueilDx, setAccueilDx] = useState(0);
   const priseAccueil = useRef<number | null>(null);
+  /**
+   * ═══ LE PREMIER ÉCRAN JOUE, IL NE SE LIT PLUS ══════════════════════════════
+   *
+   * « Le premier écran, c'est vraiment pas fun et ça ne donne pas envie de
+   * tester. Il faut que ce soit animé, très vivant, très cool, pour que les
+   * gens aient un effet wow direct. »
+   *
+   * IL AVAIT RAISON, ET LE DÉFAUT ÉTAIT DE NATURE, PAS DE DÉCORATION. L'écran
+   * ÉNUMÉRAIT cinq temps — cinq lignes de texte, un mur de photos qui dérive
+   * derrière, et c'est tout. On demandait à quelqu'un qui ne connaît pas le
+   * produit de LIRE cinq phrases pour comprendre ce qu'il fait. Personne ne lit
+   * cinq phrases sur un premier écran, et surtout : la seule chose
+   * impressionnante ici — voir un tatouage se poser sur un bras — ne se raconte
+   * pas, elle se montre.
+   *
+   * LES CINQ TEMPS SE JOUENT DONC, un par un, en boucle. Chacun dure le temps
+   * qu'il faut pour être compris et pas une seconde de plus, et l'acte de
+   * l'essai dure le plus longtemps parce que c'est celui qu'on vient voir.
+   *
+   * `boucle` CHANGE DE COMMERCE À CHAQUE TOUR. Sans lui, le premier acte
+   * montrerait la même boulangerie en boucle et l'écran dirait « une offre » au
+   * lieu de « la ville ». Avec, on voit passer quatre ou cinq vrais commerces de
+   * Dax sans qu'aucune liste ne le prétende.
+   */
+  const [acte, setActe] = useState(0);
+  /* `tour` est deja pris plus bas par le bulletin du tour de file. */
+  const [boucle, setBoucle] = useState(0);
   /** L'instant du dernier appui simple — voir la double tape sur la carte. */
   const dernierAppui = useRef(0);
   const [feuille, setFeuille] = useState<
@@ -2462,7 +2489,15 @@ export function ApercuHabitant() {
    */
   const vitrine = (() => {
     const vus = new Set<string>();
-    const pris: { photo: string; quoi: string }[] = [];
+    // ═══ ET SON PRIX, QUI EST LE SIEN ═══════════════════════════════════════
+    //
+    // LA SCÈNE POSAIT « −40 % » EN DUR sur la photo d'un vrai commerce de Dax,
+    // sous son vrai titre. Ce n'est pas une illustration à ce moment-là : c'est
+    // une remise attribuée à quelqu'un qui ne l'a pas consentie, sur le tout
+    // premier écran. On prend donc ce qu'il annonce — son étiquette d'abord,
+    // qui est plus courte et plus frappante, son prix sinon — et la pastille
+    // n'existe pas quand il n'a rien annoncé.
+    const pris: { photo: string; quoi: string; prix?: string }[] = [];
     // LE MUR MONTRE CE QUI EST OUVERT MAINTENANT, pas le catalogue de la ville :
     // c'est un échantillon du paquet qu'on va ouvrir trois secondes plus tard,
     // et il doit donc obéir à la même règle que lui.
@@ -2471,7 +2506,7 @@ export function ApercuHabitant() {
       if (vus.has(c.branche) || !c.photo) continue;
       const m = momentEnCours(c, heure);
       vus.add(c.branche);
-      pris.push({ photo: c.photo, quoi: m?.titre ?? c.metier });
+      pris.push({ photo: c.photo, quoi: m?.titre ?? c.metier, prix: m?.etiquette ?? m?.prix });
       if (pris.length === 6) break;
     }
     // S'IL MANQUE DES MÉTIERS, on complète avec ce qu'il y a : un mur troué se
@@ -2479,7 +2514,8 @@ export function ApercuHabitant() {
     for (const c of ouvertsMaintenant) {
       if (pris.length === 6) break;
       if (!c.photo || pris.some((x) => x.photo === c.photo)) continue;
-      pris.push({ photo: c.photo, quoi: momentEnCours(c, heure)?.titre ?? c.metier });
+      const mm = momentEnCours(c, heure);
+      pris.push({ photo: c.photo, quoi: mm?.titre ?? c.metier, prix: mm?.etiquette ?? mm?.prix });
     }
     return pris;
   })();
@@ -2804,6 +2840,55 @@ export function ApercuHabitant() {
   const dessus = sommet && !estEvenement(sommet) ? sommet : undefined;
   const dessusEv = sommet && estEvenement(sommet) ? sommet : undefined;
   const dessous = pile[1];
+
+  /**
+   * ═══ CE QUE CHAQUE ACTE MONTRE, ET COMBIEN DE TEMPS ═══════════════════════
+   *
+   * LES DURÉES NE SONT PAS ÉGALES, ET C'EST LE POINT. Un acte qui fait
+   * apparaître une pastille de prix est compris en deux secondes ; l'essai, lui,
+   * doit laisser voir le bras nu, le passage du Fantôme, PUIS le rendu — trois
+   * choses à la suite, donc trois secondes et demie. Des actes de durée égale
+   * donnent toujours le même résultat : les courts traînent et le long est
+   * coupé au milieu.
+   */
+  const ACTES: { cle: string; duree: number; i: string; t: string; d: string }[] = [
+    { cle: "offre", duree: 2200, i: "🏪", t: "L’offre du jour", d: "Ce qu’il propose maintenant." },
+    { cle: "essai", duree: 3600, i: "👻", t: "Essayez-la sur vous", d: "Une photo, et vous vous voyez avec." },
+    { cle: "avis", duree: 2200, i: "⭐", t: "Dites ce que vous en pensez", d: "Votre avis reste sur son mur." },
+    { cle: "amis", duree: 2600, i: "💬", t: "Demandez à vos amis", d: "« Ça me va ? » — ils répondent." },
+    { cle: "prendre", duree: 2200, i: "📅", t: "Réservez. Ou pas.", d: "Vous décidez après avoir vu." },
+  ];
+
+  /**
+   * ELLE NE TOURNE QUE TANT QUE L'ÉCRAN EST LÀ. `accueilOuvert` retombe dès
+   * qu'on a glissé : sans ça, une minuterie continuerait de battre toutes les
+   * deux secondes derrière le paquet, pour une scène que plus personne ne
+   * regarde — et elle redessinerait l'écran entier à chaque fois.
+   *
+   * ET ELLE RESPECTE « JE NE VEUX PAS D'ANIMATION ». Le réglage du système
+   * arrête la boucle sur le premier acte ; les cinq temps restent lisibles
+   * parce qu'ils sont aussi écrits, voir `.ap-acc-tous`.
+   */
+  const accueilOuvert = monte && !!sommet && !vus.includes("accueil") && !sortie && !embauches;
+  const dureeActe = ACTES[acte]?.duree ?? 2200;
+  useEffect(() => {
+    if (!accueilOuvert) return;
+    if (typeof window === "undefined") return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const t = window.setTimeout(() => {
+      setActe((a) => {
+        const suivant = (a + 1) % ACTES.length;
+        if (suivant === 0) setBoucle((x) => x + 1);
+        return suivant;
+      });
+    }, dureeActe);
+    return () => window.clearTimeout(t);
+    // ACTES.length est une constante du fichier ; `dureeActe` porte déjà l'acte.
+  }, [accueilOuvert, acte, dureeActe, ACTES.length]);
+
+  /** LE COMMERCE DE CE TOUR-CI — un vrai, choisi dans le paquet du jour. */
+  const vedette = vitrine.length ? vitrine[boucle % vitrine.length] : null;
+
   /**
    * ET ON OUVRE L'ESSAI DÈS QUE LA CARTE EXISTE. Voir `essaiDemande` plus haut :
    * une seule fois, puis la demande retombe — sinon le visiteur ne pourrait plus
@@ -6081,38 +6166,68 @@ export function ApercuHabitant() {
                   setAccueilDx(0);
                 }}
               >
-                {/* ─── CE QU'ON VOIT AVANT DE LIRE : LA VILLE ELLE-MÊME ───
-                    « C'est pas beau, pas fun, pas très interactif — et c'est le
-                    premier écran que le client va voir, donc il faut que ce soit
-                    beaucoup plus wahoo. »
+                {/* ═══ LA SCÈNE — ELLE JOUE LE PRODUIT AU LIEU DE LE DÉCRIRE ══
 
-                    UNE LISTE D'ARGUMENTS NE FERA JAMAIS ÇA. Ce qui impressionne
-                    n'est pas ce qu'on promet, c'est ce qu'on MONTRE : six vraies
-                    photos de six vrais commerces de Dax, en éventail, qui
-                    dérivent doucement. On comprend en une demi-seconde qu'il y a
-                    quelque chose derrière — avant même d'avoir lu le titre.
+                    « C'est vraiment pas fun et ça ne donne pas envie de tester.
+                    Il faut que ce soit animé, très vivant, très cool, pour que
+                    les gens aient un effet wow direct. »
 
-                    ET ELLES BOUGENT AVEC LE DOIGT. Chaque rangée suit le
-                    glissement à une vitesse différente : le geste qu'on va lui
-                    apprendre produit une réponse AVANT d'être terminé, ce qui
-                    est la seule façon d'apprendre un geste sans notice. */}
-                <div className="ap-acc-mur" aria-hidden="true">
-                  {[0, 1].map((rang) => (
-                    <div
-                      key={rang}
-                      className={`ap-acc-r r${rang}`}
-                      style={{ transform: `translate3d(${accueilDx * (rang ? -0.32 : 0.5)}px,0,0)` }}
-                    >
-                      {vitrine
-                        .slice(rang * 3, rang * 3 + 3)
-                        .concat(vitrine.slice(rang * 3, rang * 3 + 3))
-                        .map((v, i) => (
-                          <span key={`${v.photo}-${i}`} style={{ backgroundImage: `url("${v.photo}")` }}>
-                            <b>{v.quoi}</b>
-                          </span>
-                        ))}
-                    </div>
-                  ))}
+                    CE QU'IL Y AVAIT ICI : six photos de commerces qui dérivaient
+                    doucement derrière cinq lignes de texte. Les photos étaient
+                    vraies et la dérive était jolie, mais RIEN NE SE PASSAIT — et
+                    on demandait à quelqu'un qui ne connaît pas le produit de lire
+                    cinq phrases pour comprendre ce qu'il fait.
+
+                    LA SEULE CHOSE IMPRESSIONNANTE DE CE PRODUIT NE SE RACONTE
+                    PAS. Voir un tatouage se poser sur un bras nu prend deux
+                    secondes à comprendre et zéro mot. Les cinq temps se jouent
+                    donc, l'un après l'autre, en boucle — et le troisième acte,
+                    celui de l'essai, dure le plus longtemps parce que c'est
+                    celui qu'on est venu voir.
+
+                    LE RENDU EST NOMMÉ « LE RENDU », et ce n'est pas de la
+                    prudence juridique : c'est le mot du produit. Un bras nu qui
+                    devient un bras tatoué sans rien dire ferait passer une
+                    simulation pour une photo, et cette application passe son
+                    temps à séparer ce qui est vrai de ce qui est montré. */}
+                <div
+                  className={`ap-acc-sc a-${ACTES[acte]?.cle ?? "offre"}`}
+                  aria-hidden="true"
+                >
+                  {/* L'ACTE 1 ET L'ACTE 5 : un vrai commerce du paquet du jour,
+                      qui change à chaque boucle. */}
+                  <span
+                    className="ap-sc-ph"
+                    style={vedette ? { backgroundImage: `url("${vedette.photo}")` } : undefined}
+                  />
+                  <span className="ap-sc-t">{vedette?.quoi ?? "Le direct"}</span>
+                  {!!vedette?.prix && <span className="ap-sc-prix">{vedette.prix}</span>}
+
+                  {/* L'ACTE 2 : le bras nu, le passage du Fantôme, puis le
+                      rendu. Les deux photos sont dans le dépôt et la seconde
+                      porte vraiment ce dessin. */}
+                  <span className="ap-sc-av" />
+                  <span className="ap-sc-ap" />
+                  <span className="ap-sc-ray" />
+                  <span className="ap-sc-f">
+                    <Fantome classe="ap-sc-fs" />
+                  </span>
+                  <span className="ap-sc-badge">✨ Le rendu</span>
+
+                  {/* L'ACTE 3 : la note, cinq Fantômes qui s'allument. */}
+                  <span className="ap-sc-notes">
+                    {[0, 1, 2, 3, 4].map((k) => (
+                      <Fantome key={k} classe={`ap-sc-n n${k}`} />
+                    ))}
+                  </span>
+
+                  {/* L'ACTE 4 : deux bulles, la question et la réponse. */}
+                  <span className="ap-sc-b b1">Ça me va&nbsp;?</span>
+                  <span className="ap-sc-b b2">Trop bien 🔥</span>
+
+                  {/* L'ACTE 5 : le cachet. C'est le seul geste qui engage, donc
+                      le seul élément en menthe de tout l'écran. */}
+                  <span className="ap-sc-cachet">✓ Mis de côté</span>
                 </div>
 
                 <div className="ap-acc-mot">
@@ -6154,57 +6269,52 @@ export function ApercuHabitant() {
                         cinq temps dit en toutes lettres. */}
                     <span>commerces et événements autour de vous</span>
                   </p>
-                  {/* ═══ LE PARCOURS, ET NON UNE LISTE D'ARGUMENTS ════════════
+                  {/* ═══ LE PARCOURS, SOUS LA SCÈNE QUI LE JOUE ═══════════════
 
                       LES CINQ SONT DANS SON ORDRE À LUI, et l'ordre est le
                       fond : chacun n'a de sens que parce que le précédent a eu
                       lieu. On ne donne pas son avis sur un essayage qu'on n'a
                       pas fait, on ne demande pas à ses amis sur rien, et
-                      surtout — c'est le dernier, et c'est le seul qui engage —
-                      on ne réserve qu'APRÈS avoir vu. Une liste de trois
-                      qualités se lit dans n'importe quel sens ; un parcours ne
-                      se lit que dans le sien, et le trait qui relie les
-                      pastilles est là pour le dire sans l'écrire.
+                      surtout — c'est le dernier, et le seul qui engage — on ne
+                      réserve qu'APRÈS avoir vu.
+
+                      ILS ÉTAIENT CINQ PARAGRAPHES EMPILÉS, ils sont maintenant
+                      cinq pastilles et une légende. On voit d'un coup d'œil
+                      qu'il y a cinq temps et où on en est ; on LIT celui qui se
+                      joue. Cinq titres et cinq détails à la fois, c'était
+                      demander de tout lire avant de rien voir — et personne ne
+                      lit cinq phrases sur un premier écran.
 
                       « OU PAS » RESTE ÉCRIT, et ce n'est pas une coquetterie.
                       C'est la contrepartie de tout le reste : si l'essai
                       obligeait à réserver, personne n'essaierait. */}
-                  <ul>
-                    <li>
-                      <i aria-hidden="true">🏪</i>
-                      <span>
-                        <b>L’offre du jour</b>
-                        Ce qu’il propose maintenant.
-                      </span>
-                    </li>
-                    <li>
-                      <i aria-hidden="true">👻</i>
-                      <span>
-                        <b>Essayez-la sur vous</b>
-                        Une photo, et vous vous voyez avec.
-                      </span>
-                    </li>
-                    <li>
-                      <i aria-hidden="true">⭐</i>
-                      <span>
-                        <b>Dites ce que vous en pensez</b>
-                        Votre avis reste sur son mur.
-                      </span>
-                    </li>
-                    <li>
-                      <i aria-hidden="true">💬</i>
-                      <span>
-                        <b>Demandez à vos amis</b>
-                        «&nbsp;Ça me va&nbsp;?&nbsp;» — ils répondent.
-                      </span>
-                    </li>
-                    <li>
-                      <i aria-hidden="true">📅</i>
-                      <span>
-                        <b>Réservez. Ou pas.</b>
-                        Vous décidez après avoir vu.
-                      </span>
-                    </li>
+                  <div className="ap-acc-pas" aria-hidden="true">
+                    {ACTES.map((x, k) => (
+                      <i key={x.cle} className={k === acte ? "on" : k < acte ? "fait" : ""}>
+                        {x.i}
+                      </i>
+                    ))}
+                  </div>
+                  <p className="ap-acc-lg" aria-live="polite">
+                    <b>{ACTES[acte]?.t}</b>
+                    <em>{ACTES[acte]?.d}</em>
+                  </p>
+                  {/* ET SI LE TÉLÉPHONE REFUSE LES ANIMATIONS, LES CINQ SONT
+                      ÉCRITS. La scène se fige alors sur son premier acte et la
+                      légende ne tourne plus : sans cette liste, quelqu'un qui a
+                      coupé les animations n'apprendrait qu'un cinquième du
+                      produit. Elle ne s'affiche que dans ce cas — voir la
+                      requête `prefers-reduced-motion` plus bas. */}
+                  <ul className="ap-acc-tous">
+                    {ACTES.map((x) => (
+                      <li key={x.cle}>
+                        <i aria-hidden="true">{x.i}</i>
+                        <span>
+                          <b>{x.t}</b>
+                          {x.d}
+                        </span>
+                      </li>
+                    ))}
                   </ul>
                   {/* PAS DE BOUTON « J'AI COMPRIS ». Le geste EST le bouton, et
                       c'est le seul qu'il y ait à apprendre. */}
@@ -12546,39 +12656,143 @@ export function ApercuHabitant() {
            animation:apMonteAcc .45s cubic-bezier(.22,1.1,.4,1) both;}
         @keyframes apMonteAcc{from{opacity:0;transform:scale(.97);}to{opacity:1;transform:none;}}
 
-        /* LE MUR. Deux rangees inclinees, qui glissent en sens contraires : le
-           mouvement croise donne la sensation d'une ville qui bouge, la ou une
-           seule rangee aurait fait bandeau publicitaire. */
-        /* LE MUR MONTE JUSQU'EN HAUT. A 56 % en partant de zero, la rotation
-           laissait une bande noire de deux cents points au-dessus des photos :
-           le premier tiers de la premiere image de l'application etait vide. */
-        .ap-acc-mur{position:absolute;left:-16%;right:-16%;top:-7%;height:64%;
-           display:flex;flex-direction:column;gap:10px;justify-content:center;
-           transform:rotate(-7deg);pointer-events:none;}
-        .ap-acc-r{display:flex;gap:10px;width:max-content;}
-        .ap-acc-r.r0{animation:apMur0 34s linear infinite;}
-        .ap-acc-r.r1{animation:apMur1 40s linear infinite;}
-        @keyframes apMur0{from{margin-left:0;}to{margin-left:-50%;}}
-        @keyframes apMur1{from{margin-left:-50%;}to{margin-left:0;}}
-        /* ELLES SONT PLUS GRANDES DEPUIS QUE LE TEXTE EST PLUS LONG. Deux
-           rangees de cent dix-huit points, centrees dans leur boite, laissaient
-           cent trente points de noir au-dessus de la premiere photo des que les
-           cinq temps ont pousse le texte vers le haut : le mur ne montait plus
-           jusqu'en haut, et c'etait justement le defaut corrige la fois
-           precedente. Des photos plus hautes remplissent la boite au lieu d'y
-           flotter. */
-        .ap-acc-r span{position:relative;flex:none;width:188px;height:150px;
-           border-radius:16px;background-size:cover;background-position:center;
-           box-shadow:0 12px 30px -14px rgba(0,0,0,.9);}
-        .ap-acc-r span b{position:absolute;left:8px;right:8px;bottom:7px;
-           font-size:10.5px;font-weight:800;line-height:1.2;color:#fff;
-           text-shadow:0 1px 6px rgba(0,0,0,.95);
-           overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-        /* LE VOILE QUI REND LE TEXTE LISIBLE. Sans lui, un titre blanc sur six
-           photos claires ne se lit sur aucune. */
-        .ap-accueil::after{content:"";position:absolute;inset:0;pointer-events:none;
-           background:linear-gradient(180deg,rgba(5,9,8,.35) 0%,rgba(5,9,8,.72) 34%,
-             rgba(5,9,8,.96) 56%,#050908 72%);}
+        /* ═══ LA SCENE ═════════════════════════════════════════════════════
+           Elle remplace le mur de six photos qui derivait. Le mur etait joli et
+           immobile ; « il faut que ce soit anime, tres vivant, tres cool, pour
+           que les gens aient un effet wow direct ».
+           ELLE OCCUPE LE HAUT ET NE BOUGE PAS DE PLACE. Les cinq actes se
+           succedent DEDANS : une scene qui changerait de taille a chaque acte
+           ferait sauter tout le texte en dessous cinq fois par boucle. */
+        /* ELLE PREND CE QUI RESTE, ELLE NE MESURE PAS UN POURCENTAGE. A
+           quarante pour cent elle laissait cent cinquante points de noir entre
+           son bord et le premier mot — un trou au milieu de l'ecran qu'on doit
+           trouver beau. Posee comme element flexible, elle s'arrete exactement
+           ou le texte commence, quelle que soit la hauteur du telephone et la
+           longueur de la legende en cours. */
+        .ap-acc-sc{position:relative;flex:1;min-height:150px;margin:16px 16px 0;
+           border-radius:22px;overflow:hidden;pointer-events:none;
+           background:#0B1310;border:1px solid rgba(255,255,255,.08);
+           box-shadow:0 22px 50px -24px rgba(0,0,0,.95);}
+        /* TOUTES LES COUCHES SONT LA TOUT LE TEMPS, ET SEULE L'OPACITE CHANGE.
+           Les monter et les demonter a chaque acte rechargerait les photos a
+           chaque boucle — on verrait un trou noir de deux dixiemes a l'endroit
+           exact ou il faut impressionner. */
+        .ap-acc-sc>span{position:absolute;opacity:0;
+           transition:opacity .45s ease;}
+        .ap-sc-ph,.ap-sc-av,.ap-sc-ap{inset:0;background-size:cover;
+           background-position:center;}
+        .ap-sc-av{background-image:url("/direct/avant-bras.jpg");
+           background-position:center 38%;}
+        .ap-sc-ap{background-image:url("/direct/tatouB.jpg");}
+
+        /* ─── ACTE 1 : L'OFFRE DU JOUR ───
+           La photo arrive, son titre monte, et le prix TOMBE — c'est le seul
+           element qui a un mouvement propre, parce que c'est lui qui fait
+           lever quelqu'un de sa chaise. */
+        .ap-acc-sc.a-offre .ap-sc-ph{opacity:1;animation:apScZoom 2.4s ease-out both;}
+        .ap-acc-sc.a-offre .ap-sc-t{opacity:1;animation:apScMonte .5s .12s cubic-bezier(.22,1.1,.4,1) both;}
+        .ap-acc-sc.a-offre .ap-sc-prix{opacity:1;animation:apScTombe .55s .34s cubic-bezier(.3,1.5,.5,1) both;}
+        @keyframes apScZoom{from{transform:scale(1.1);}to{transform:scale(1);}}
+        @keyframes apScMonte{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+        @keyframes apScTombe{from{opacity:0;transform:translateY(-26px) scale(.8) rotate(-8deg);}
+           to{opacity:1;transform:none;}}
+        .ap-sc-t{left:12px;bottom:12px;right:96px;font-size:13px;font-weight:800;
+           line-height:1.25;color:#fff;text-align:left;
+           text-shadow:0 1px 8px rgba(0,0,0,.9);}
+        .ap-sc-prix{right:12px;bottom:12px;padding:7px 12px;border-radius:999px;
+           font-size:15px;font-weight:900;letter-spacing:-.02em;color:#1A1206;
+           background:linear-gradient(140deg,#FFD98A,#F5B83C);
+           box-shadow:0 10px 24px -10px rgba(245,184,60,.9);}
+
+        /* ─── ACTE 2 : L'ESSAI ───
+           Le bras nu, le Fantome qui le traverse avec sa barre de lumiere, puis
+           le rendu. Les trois se suivent DANS le meme acte, par retards : c'est
+           la seule facon de faire lire une transformation plutot que deux
+           photos posees l'une sur l'autre. */
+        .ap-acc-sc.a-essai .ap-sc-av{opacity:1;animation:apScSort 3.6s linear both;}
+        .ap-acc-sc.a-essai .ap-sc-ap{animation:apScEntre 3.6s linear both;}
+        .ap-acc-sc.a-essai .ap-sc-ray{opacity:1;animation:apScRaie 1.5s .5s ease-in-out both;}
+        .ap-acc-sc.a-essai .ap-sc-f{opacity:1;animation:apScTraverse 1.5s .5s ease-in-out both;}
+        .ap-acc-sc.a-essai .ap-sc-badge{opacity:1;animation:apScMonte .5s 2.1s cubic-bezier(.22,1.1,.4,1) both;}
+        /* LA BASCULE SE FAIT SOUS LA BARRE DE LUMIERE, pas avant ni apres : a
+           cinquante-cinq pour cent de l'acte, la barre est au milieu du cadre. */
+        @keyframes apScSort{0%,50%{opacity:1;}62%,100%{opacity:0;}}
+        @keyframes apScEntre{0%,50%{opacity:0;}62%,100%{opacity:1;}}
+        .ap-sc-ray{left:0;right:0;height:38%;
+           background:linear-gradient(180deg,rgba(125,230,255,0),rgba(160,240,255,.5),
+             rgba(125,230,255,0));
+           filter:blur(1px);}
+        @keyframes apScRaie{from{top:-38%;}to{top:100%;}}
+        .ap-sc-f{left:50%;top:50%;width:74px;height:80px;margin:-40px 0 0 -37px;}
+        .ap-sc-fs{width:100%;height:100%;
+           filter:drop-shadow(0 0 22px rgba(160,240,255,.75));}
+        @keyframes apScTraverse{
+          0%{opacity:0;transform:translateY(-70px) scale(.7);}
+          25%{opacity:1;}
+          75%{opacity:1;}
+          100%{opacity:0;transform:translateY(70px) scale(1.1);}
+        }
+        .ap-sc-badge{left:12px;top:12px;padding:6px 11px;border-radius:999px;
+           font-size:11px;font-weight:850;color:#0A1A26;
+           background:linear-gradient(140deg,#BFF0FF,#7DD8F5);}
+
+        /* ─── ACTE 3 : L'AVIS ───
+           Le rendu reste, et cinq Fantomes s'allument l'un apres l'autre. On ne
+           montre pas « 4/5 » : on montre quelqu'un en train de noter. */
+        .ap-acc-sc.a-avis .ap-sc-ap{opacity:1;}
+        .ap-acc-sc.a-avis .ap-sc-notes{opacity:1;}
+        /* ILS SE LISENT SUR N'IMPORTE QUELLE PHOTO. Poses nus sur le rendu du
+           tatouage — fond clair, orange, bleu — cinq fantomes blancs a vingt-six
+           points disparaissaient : on voyait cinq taches. Le voile leur rend le
+           contraste sans cacher ce qu'on note. */
+        .ap-sc-notes{left:0;right:0;bottom:0;display:flex;justify-content:center;
+           align-items:flex-end;gap:8px;padding:26px 0 16px;
+           background:linear-gradient(180deg,rgba(6,12,10,0),rgba(6,12,10,.8) 55%,
+             rgba(6,12,10,.92));}
+        .ap-sc-n{width:30px;height:32px;opacity:.22;
+           filter:drop-shadow(0 2px 6px rgba(0,0,0,.7));}
+        .ap-acc-sc.a-avis .ap-sc-n{animation:apScNote .4s cubic-bezier(.22,1.6,.4,1) both;}
+        .ap-acc-sc.a-avis .ap-sc-n.n0{animation-delay:.15s;}
+        .ap-acc-sc.a-avis .ap-sc-n.n1{animation-delay:.32s;}
+        .ap-acc-sc.a-avis .ap-sc-n.n2{animation-delay:.49s;}
+        .ap-acc-sc.a-avis .ap-sc-n.n3{animation-delay:.66s;}
+        /* LE CINQUIEME RESTE ETEINT, ET C'EST VOULU : une note pleine sur un
+           premier ecran se lit comme une note fabriquee. Quatre sur cinq se lit
+           comme quelqu'un qui a vraiment donne son avis. */
+        @keyframes apScNote{from{opacity:.22;transform:scale(.6);}
+           to{opacity:1;transform:none;}}
+
+        /* ─── ACTE 4 : LES AMIS ───
+           Deux bulles, la question puis la reponse. Le rendu s'assombrit
+           derriere : ce n'est plus lui qu'on regarde, c'est ce qu'on en dit. */
+        .ap-acc-sc.a-amis .ap-sc-ap{opacity:.4;}
+        .ap-acc-sc.a-amis .ap-sc-b{opacity:1;}
+        .ap-acc-sc.a-amis .ap-sc-b.b1{animation:apScBulle .45s .1s cubic-bezier(.22,1.4,.4,1) both;}
+        .ap-acc-sc.a-amis .ap-sc-b.b2{animation:apScBulle .45s .85s cubic-bezier(.22,1.4,.4,1) both;}
+        @keyframes apScBulle{from{opacity:0;transform:translateY(12px) scale(.86);}
+           to{opacity:1;transform:none;}}
+        .ap-sc-b{max-width:62%;padding:9px 13px;font-size:13px;font-weight:750;
+           line-height:1.25;}
+        .ap-sc-b.b1{left:14px;top:30%;color:#EAF2EC;
+           background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);
+           border-radius:16px 16px 16px 5px;}
+        .ap-sc-b.b2{right:14px;top:52%;color:#04150E;
+           background:linear-gradient(140deg,#7EE6C0,#3DE2A6);
+           border-radius:16px 16px 5px 16px;}
+
+        /* ─── ACTE 5 : ON PREND, OU PAS ───
+           Retour au commerce, et le cachet tombe dessus. Menthe, comme tous les
+           gestes qui engagent dans le produit. */
+        .ap-acc-sc.a-prendre .ap-sc-ph{opacity:1;}
+        .ap-acc-sc.a-prendre .ap-sc-cachet{opacity:1;
+           animation:apScCachet .5s .2s cubic-bezier(.3,1.6,.5,1) both;}
+        @keyframes apScCachet{from{opacity:0;transform:translate(-50%,-50%) scale(1.5) rotate(-10deg);}
+           to{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(-7deg);}}
+        .ap-sc-cachet{left:50%;top:50%;transform:translate(-50%,-50%) rotate(-7deg);
+           padding:11px 19px;border-radius:14px;font-size:17px;font-weight:900;
+           letter-spacing:-.01em;color:#04150E;white-space:nowrap;
+           background:linear-gradient(140deg,#7EE6C0,#3DE2A6);
+           box-shadow:0 16px 36px -14px rgba(61,226,166,.95);}
 
         .ap-acc-mot{position:relative;z-index:2;padding:0 22px 26px;}
         .ap-acc-t{display:inline-flex;align-items:center;gap:7px;
@@ -12605,43 +12819,41 @@ export function ApercuHabitant() {
            line-height:1;color:#fff;font-variant-numeric:tabular-nums;}
         .ap-acc-n>span{font-size:11.5px;font-weight:700;line-height:1.25;
            color:#8C9C94;}
-        .ap-accueil ul{list-style:none;margin:15px 0 0;padding:0;
-           display:flex;flex-direction:column;gap:9px;}
-        /* CHAQUE LIGNE ARRIVE APRES LA PRECEDENTE. On les LIT au lieu de les
-           balayer d'un coup d'oeil — et sur un PARCOURS, l'arrivee en cascade
-           dit l'ordre avant meme qu'on ait lu les mots. */
-        .ap-accueil li{position:relative;display:flex;align-items:flex-start;
-           gap:11px;animation:apAccLi .5s cubic-bezier(.22,1.1,.4,1) both;}
-        .ap-accueil li:nth-child(1){animation-delay:.14s;}
-        .ap-accueil li:nth-child(2){animation-delay:.24s;}
-        .ap-accueil li:nth-child(3){animation-delay:.34s;}
-        .ap-accueil li:nth-child(4){animation-delay:.44s;}
-        .ap-accueil li:nth-child(5){animation-delay:.54s;}
-        /* ─── LE TRAIT QUI RELIE LES CINQ ───
-           C'est ce qui separe un parcours d'une liste d'arguments. Sans lui,
-           cinq pastilles alignees se lisent dans n'importe quel ordre ; avec
-           lui, on voit qu'il faut avoir fait la precedente. Il s'arrete a la
-           quatrieme : un trait qui depasse sous la derniere promettrait une
-           sixieme etape qui n'existe pas. */
-        .ap-accueil li:not(:last-child)::before{content:"";position:absolute;
-           left:14px;top:31px;bottom:-9px;width:2px;border-radius:2px;
-           background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.04));}
-        @keyframes apAccLi{from{opacity:0;transform:translateY(9px);}to{opacity:1;transform:none;}}
-        .ap-accueil li i{flex:none;width:30px;height:30px;border-radius:10px;
+        /* ═══ LA FRISE DES CINQ TEMPS ══════════════════════════════════════
+           Cinq pastilles, une legende. On voit d'un coup d'oeil qu'il y a cinq
+           temps et ou on en est ; on LIT celui qui se joue.
+           CINQ TITRES ET CINQ DETAILS A LA FOIS, C'ETAIT DEMANDER DE TOUT LIRE
+           AVANT DE RIEN VOIR. Personne ne lit cinq phrases sur un premier
+           ecran, et pendant qu'on les lisait, la seule chose impressionnante du
+           produit restait immobile derriere. */
+        .ap-acc-pas{display:flex;align-items:center;gap:8px;margin:15px 0 0;}
+        .ap-acc-pas i{flex:none;width:34px;height:34px;border-radius:12px;
            display:flex;align-items:center;justify-content:center;font-style:normal;
-           font-size:15px;background:rgba(255,255,255,.07);
-           border:1px solid rgba(255,255,255,.11);}
-        .ap-accueil li span{flex:1;min-width:0;font-size:11.5px;line-height:1.32;
-           color:#8C9C94;padding-top:1px;}
-        .ap-accueil li b{display:block;font-size:13px;font-weight:800;
-           letter-spacing:-.01em;color:#EAF2EC;margin-bottom:1px;}
-        /* LE DERNIER EST CELUI QUI ENGAGE, ET IL SE VOIT. « Reservez. Ou pas. »
-           est la fin du parcours et la contrepartie de tout le reste : le
-           marquer en menthe, la couleur qui veut dire « ceci vous engage »
-           partout dans le produit, fait tenir la promesse d'un coup d'oeil. */
-        .ap-accueil li:last-child i{background:rgba(61,226,166,.14);
-           border-color:rgba(61,226,166,.4);}
-        .ap-accueil li:last-child b{color:#3DE2A6;}
+           font-size:16px;background:rgba(255,255,255,.06);
+           border:1px solid rgba(255,255,255,.1);opacity:.4;
+           transition:opacity .3s ease,transform .3s ease,border-color .3s ease,
+             background .3s ease;}
+        /* CE QUI EST FAIT RESTE VISIBLE, EN RETRAIT : un parcours dont les
+           etapes passees s'eteignent completement ne se lit plus comme un
+           parcours, mais comme cinq ecrans sans rapport. */
+        .ap-acc-pas i.fait{opacity:.75;}
+        .ap-acc-pas i.on{opacity:1;transform:scale(1.12);
+           background:rgba(61,226,166,.16);border-color:rgba(61,226,166,.5);
+           box-shadow:0 0 22px -6px rgba(61,226,166,.65);}
+        .ap-acc-lg{margin:12px 0 0;min-height:42px;font-size:12px;line-height:1.35;
+           color:#8C9C94;}
+        .ap-acc-lg b{display:block;font-size:15px;font-weight:850;
+           letter-spacing:-.01em;color:#fff;margin-bottom:2px;}
+        .ap-acc-lg em{font-style:normal;}
+        /* LA HAUTEUR EST RESERVEE PAR min-height, et c'est une mesure : les
+           legendes font une ou deux lignes selon l'acte, et sans reserve le
+           bouton du bas montait et descendait de dix-huit points cinq fois par
+           boucle — un bouton qui bouge sous le pouce est un bouton qu'on rate. */
+
+        /* CEUX QUI ONT COUPE LES ANIMATIONS LISENT LES CINQ. Cachee par defaut :
+           sinon l'ecran dirait deux fois la meme chose, une fois en frise et une
+           fois en liste. */
+        .ap-acc-tous{display:none;}
         /* LE GESTE EST LE BOUTON. Il respire vers ses deux bords, comme les
            etiquettes du paquet — meme mouvement, meme promesse. */
         .ap-acc-g{display:flex;align-items:center;justify-content:center;gap:10px;
@@ -16411,6 +16623,24 @@ export function ApercuHabitant() {
           .ap-accueil,.ap-acc-g,
           .ap-doigt,.ap-vers-bas,.ap-trois i,.ap-prog li.on::before,
           .ap-direct-h i{animation:none;}
+          /* ═══ LA SCENE SE FIGE, ET LES CINQ TEMPS S'ECRIVENT ══════════════
+             La minuterie ne demarre pas : la scene reste sur son premier acte.
+             Sans la liste, quelqu'un qui a coupe les animations n'apprendrait
+             qu'un cinquieme du produit — la frise dirait « il y a cinq temps »
+             et la legende n'en nommerait qu'un, pour toujours. */
+          .ap-acc-sc>span,.ap-acc-sc .ap-sc-n{animation:none;}
+          .ap-acc-pas,.ap-acc-lg{display:none;}
+          .ap-acc-tous{display:flex;flex-direction:column;gap:9px;
+            list-style:none;margin:15px 0 0;padding:0;}
+          .ap-acc-tous li{display:flex;align-items:flex-start;gap:11px;}
+          .ap-acc-tous i{flex:none;width:30px;height:30px;border-radius:10px;
+            display:flex;align-items:center;justify-content:center;
+            font-style:normal;font-size:15px;background:rgba(255,255,255,.07);
+            border:1px solid rgba(255,255,255,.11);}
+          .ap-acc-tous span{flex:1;min-width:0;font-size:11.5px;line-height:1.32;
+            color:#8C9C94;}
+          .ap-acc-tous b{display:block;font-size:13px;font-weight:800;
+            color:#EAF2EC;margin-bottom:1px;}
           .ap-dessus.invit .cd-carte{animation:none;}
           .ap-dessus.vole{transition-duration:.01ms;}
           .ap-feuille,.ap-fond,.ap-coeur,.ap-r-ok,.ap-echo{animation:none;}

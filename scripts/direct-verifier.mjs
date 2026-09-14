@@ -1121,7 +1121,16 @@ console.log("\n══ le moment ══");
     const hh = `${Math.floor(h)} h ${String(Math.round((h % 1) * 60)).padStart(2, "0")}`;
     // LA CASSE VIENT DU CSS, PAS DU TEXTE : `.cd-offre` est en `uppercase`,
     // donc `textContent` rend l'original. On compare sans en tenir compte.
-    const ok = r.quoi.toLowerCase() === attendu.toLowerCase() && r.datee === 0;
+    //
+    // ET L'ESPACE NON PLUS. « La fournée de 7 h » s'écrit désormais avec une
+    // espace INSÉCABLE entre le nombre et son unité — sans elle, le « h » se
+    // retrouvait seul sur la ligne suivante en capitales de soixante points.
+    // La garde comparait deux chaînes identiques à l'œil et différentes d'un
+    // octet, et affichait « attendu : La fournée de 7 h » sous « La fournée de
+    // 7 h ». Une mesure qui compare des octets là où elle veut comparer des
+    // MOTS finit toujours par refuser une correction typographique.
+    const memeTexte = (x) => x.toLowerCase().replace(/[\s\u00a0\u202f]+/g, " ").trim();
+    const ok = memeTexte(r.quoi) === memeTexte(attendu) && r.datee === 0;
     if (ok) bons++;
     console.log(`  ${hh} → ${r.quoi || "(rien)"}`);
     if (!ok) console.log(`      attendu : ${attendu}${r.datee ? " — et aucune date" : ""}`);
@@ -3051,13 +3060,28 @@ console.log("\n══ la page du commerce ══");
     return {
       titre: e.querySelector("h2")?.textContent?.replace(/\s+/g, " ").trim() ?? "",
       compte: e.querySelector(".ap-acc-n b")?.textContent?.trim() ?? "",
-      etapes: [...e.querySelectorAll("li b")].map((b) => b.textContent.trim()),
+      // LES CINQ TEMPS SONT DANS LA LISTE DU REPLI — celle qui ne s'affiche
+      // qu'avec les animations coupées. Elle est dans le document dans tous les
+      // cas, et c'est elle qui fait foi : la frise ne montre que des
+      // pictogrammes, et la légende ne nomme que l'acte en cours.
+      etapes: [...e.querySelectorAll(".ap-acc-tous b")].map((b) => b.textContent.trim()),
+      pastilles: e.querySelectorAll(".ap-acc-pas i").length,
       geste: e.querySelector(".ap-acc-g")?.textContent?.replace(/\s+/g, " ").trim() ?? "",
-      // LE TRAIT QUI RELIE : il dit l'ordre sans l'écrire, et il s'arrête à
-      // l'avant-dernier — sinon il promet une sixième étape.
-      trait: [...e.querySelectorAll("li")].filter(
-        (l) => getComputedStyle(l, "::before").content !== "none",
-      ).length,
+      // ═══ CE QUI SE JOUE, ET CE QUI NE DOIT PAS ÊTRE INVENTÉ ═══════════
+      //
+      // LA SCÈNE EST LA RÉPONSE À « ce n'est vraiment pas fun ». Elle doit
+      // donc EXISTER — une scène tombée laisserait l'écran muet sans que rien
+      // ne casse — et elle doit CHANGER D'ACTE toute seule.
+      acte: (() => {
+        const sc = e.querySelector(".ap-acc-sc");
+        return sc ? ([...sc.classList].find((k) => k.startsWith("a-")) ?? null) : null;
+      })(),
+      // ET LA PASTILLE DE PRIX NE S'ÉCRIT QUE SI LE COMMERÇANT L'A ANNONCÉ.
+      // Elle a porté « −40 % » en dur pendant un commit, posé sur la photo et
+      // sous le titre d'un vrai commerce de Dax : une remise attribuée à
+      // quelqu'un qui ne l'a pas consentie, sur le tout premier écran.
+      prix: e.querySelector(".ap-sc-prix")?.textContent?.trim() ?? null,
+      legende: e.querySelector(".ap-acc-lg b")?.textContent?.trim() ?? null,
       cartes: document.querySelectorAll(".cd-carte").length,
     };
   });
@@ -3070,7 +3094,12 @@ console.log("\n══ la page du commerce ══");
       attendus.every((r, i) => r.test(a.etapes[i] ?? "")),
       `et dans son ordre à lui (${a.etapes.join(" › ")})`,
     );
-    dire(a.trait === 4, `le trait relie les cinq et s'arrête au dernier (${a.trait})`);
+    dire(a.pastilles === 5, `la frise montre les cinq d'un coup d'œil (${a.pastilles})`);
+    dire(!!a.acte, `et la scène joue (${a.acte ?? "aucune"})`);
+    dire(
+      a.prix !== "−40 %" && a.prix !== "-40 %",
+      `la pastille de prix n'invente rien (${a.prix ?? "absente, et c'est permis"})`,
+    );
     dire(/essayez/i.test(a.titre), `le titre porte ce que personne d'autre ne fait (« ${a.titre} »)`);
     // LE COMPTE EXISTE ET N'EST PAS ZÉRO. On ne peut pas vérifier d'ici qu'il
     // vient bien du paquet — le paquet n'est pas encore monté derrière cet
@@ -3080,6 +3109,29 @@ console.log("\n══ la page du commerce ══");
     dire(Number(a.compte) > 0, `et il annonce un nombre réel de commerces (${a.compte})`);
     // PAS DE BOUTON « J'AI COMPRIS » : le geste qu'on apprend EST la sortie.
     dire(/glissez/i.test(a.geste), `on en sort par le geste qu'on vient d'apprendre (« ${a.geste} »)`);
+    // ═══ ET ELLE TOURNE VRAIMENT ══════════════════════════════════════════
+    //
+    // C'EST LA SEULE MESURE QUI RÉPOND À SA PHRASE. Tout le reste — la frise,
+    // la légende, la scène — peut être parfaitement en place sur une image
+    // figée : c'est exactement ce qu'était l'écran d'avant, « pas fun ». Une
+    // minuterie qui ne part pas, un effet qui ne se relance pas, et l'écran
+    // redevient une affiche sans que rien n'ait l'air cassé.
+    await pA.waitForTimeout(4200);
+    const apres = await pA.evaluate(() => {
+      const sc = document.querySelector(".ap-acc-sc");
+      return {
+        acte: sc ? ([...sc.classList].find((k) => k.startsWith("a-")) ?? null) : null,
+        legende: document.querySelector(".ap-acc-lg b")?.textContent?.trim() ?? null,
+      };
+    });
+    dire(
+      !!apres.acte && apres.acte !== a.acte,
+      `quatre secondes plus tard, elle a changé d'acte (${a.acte} → ${apres.acte})`,
+    );
+    dire(
+      !!apres.legende && apres.legende !== a.legende,
+      `et la légende suit ce qui se joue (« ${a.legende} » → « ${apres.legende} »)`,
+    );
   }
   await ac.close();
 }
