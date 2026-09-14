@@ -2853,7 +2853,90 @@ export function ApercuHabitant() {
       .join("") || (nom[0]?.toUpperCase() ?? "?");
 
   /** La carte à dessiner : un événement, un poste, une invitation, ou l'annonce. */
+  /**
+   * ═══ CE QU'IL RESTE DÉCOMPTE VRAIMENT ════════════════════════════════════
+   *
+   * « On ne peut pas savoir combien il en reste, donc on ne peut pas afficher
+   * ce résultat — à moins qu'il y ait un décompte quand quelqu'un appuie sur
+   * "réserver" et envoie un message WhatsApp pour le mettre de côté ? »
+   *
+   * SA QUESTION EST LA RÉPONSE. Le nombre de départ, le commerçant nous l'a
+   * donné : il a préparé douze bouquets, quarante parts, trois créneaux — c'est
+   * la seule chose qu'il sache mieux que personne, et c'est pour ça qu'on
+   * l'affiche. Ce qui manquait, c'est qu'il ne bougeait jamais : « il reste 12 »
+   * restait 12 après douze réservations, donc c'était un décor.
+   *
+   * CHAQUE MISE DE CÔTÉ EN RETIRE UNE, et le nombre redevient vrai. Il ne
+   * compte que CE QUI EST PASSÉ PAR ICI — on ne prétend pas savoir ce qui se
+   * vend au comptoir — et c'est déjà tout ce qu'il faut : celui qui voit
+   * « il reste 2 » après en avoir pris un sait que son geste a compté.
+   *
+   * CE QU'ON NE FAIT PAS : descendre en dessous de zéro, ni faire remonter le
+   * nombre. Un compteur qui remonte dit qu'on a rendu un bouquet.
+   */
+  const prisIci = (id: string) =>
+    reserves.filter((k) => k.startsWith(`${id}|`)).length;
+
+
+
+  /**
+   * ═══ PARTAGER, C'EST ENVOYER LE LIEN — PAS OUVRIR LE SALON ═══════════════
+   *
+   * « Les boutons à droite "partager" et "en parler" amènent au même endroit,
+   * alors que partager doit amener sur l'ouverture de WhatsApp avec le lien de
+   * la page. »
+   *
+   * DEUX PASTILLES QUI FONT LA MÊME CHOSE SONT UNE PASTILLE DE TROP, et celle
+   * qui porte une flèche montante promettait justement l'autre geste. Ils ne
+   * s'adressent pas aux mêmes gens ni au même moment : « En parler » ouvre un
+   * salon privé pour DÉCIDER ensemble — on y vote, on y réserve ; « Partager »
+   * envoie l'annonce à qui l'on veut, sans rien ouvrir chez soi.
+   *
+   * LE MESSAGE PORTE CE QUE LA CARTE MONTRE — le titre, le commerce, la
+   * distance — et le lien de la page. C'est ce que ClikMe sait et qu'un
+   * copier-coller d'adresse ignore.
+   *
+   * ET LE REPLI RESTE HONNÊTE : si la fenêtre ne s'ouvre pas — un navigateur
+   * qui bloque, un ordinateur sans WhatsApp — le lien va dans le presse-papiers
+   * et on le dit, plutôt que de ne rien faire. Même règle que `inviterAuSalon`.
+   */
+  async function partagerLAnnonce() {
+    if (!dessus || !dessusCarte) return;
+    const lien =
+      typeof window === "undefined" ? "" : `${window.location.origin}/autour-de-moi`;
+    const texte =
+      `${dessusCarte.quoi} — ${dessusCarte.nom}` +
+      `${dessusCarte.distance ? ` · ${dessusCarte.distance}` : ""}` +
+      `${dessusCarte.prix ? ` · ${dessusCarte.prix}` : ""}. ` +
+      `Vu sur Clikme : ${lien}`;
+    noter("partage", 0, "annonce");
+    const f = window.open(
+      `https://wa.me/?text=${encodeURIComponent(texte)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+    if (f) {
+      setEchoIcone("↗");
+      setEcho("Votre lien part sur WhatsApp. Ils n’ont rien à installer pour le voir.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(texte);
+      setEchoIcone("📋");
+      setEcho("Lien copié : collez-le où vous voulez.");
+    } catch {
+      /* Presse-papiers refusé : on ne prétend pas que ça a marché. */
+    }
+  }
+
   const carteDe = (x: ItemPaquet) => {
+    const carte = carteBrute(x);
+    if (carte.combien == null) return carte;
+    const reste = Math.max(0, carte.combien - prisIci(x.id));
+    return reste === carte.combien ? carte : { ...carte, combien: reste };
+  };
+
+  const carteBrute = (x: ItemPaquet) => {
     if (estEvenement(x)) return carteDEvenement(x, heure);
     // LA MÊME NOTION QUE LA COMPOSITION, ET C'EST LE CORRECTIF. On testait
     // `!toutes.includes(x)` — la liste NON filtrée — alors que le paquet, lui,
@@ -3157,6 +3240,77 @@ export function ApercuHabitant() {
    * reste : garder et partager n'ont jamais eu besoin d'une réservation.
    */
   const enPlace = !!dessus && !onPeutEssayer && !estPoste(dessus);
+
+  /**
+   * ═══ LA BULLE QUI DÉSIGNE LE FANTÔME, ET QUI S'EN VA ══════════════════════
+   *
+   * « Cette section prend trop de place, et c'est juste une pop-up qui doit
+   * rester 3 ou 4 secondes quand des gens ont déjà pris des photos, pour
+   * informer qu'en appuyant sur le fantôme l'utilisateur pourra voir le mur. »
+   *
+   * CE QU'ELLE REMPLACE : un bloc permanent de soixante points sous la fiche,
+   * qui disait une chose qu'on n'a besoin d'entendre QU'UNE FOIS — le fantôme
+   * de la barre mène à ce que d'autres ont essayé ici. Une fois su, il ne
+   * servait plus à rien et il prenait toujours sa place.
+   *
+   * ELLE SORT DU FANTÔME LUI-MÊME, donc elle le DÉSIGNE au lieu de le décrire.
+   * C'est la différence entre « il y a un bouton quelque part » et « c'est
+   * celui-là ».
+   *
+   * ELLE NE PARAÎT QUE S'IL Y A QUELQUE CHOSE À VOIR — des gens ont déjà
+   * essayé — et UNE SEULE FOIS PAR ANNONCE : réapparaître à chaque retour sur
+   * la même carte en ferait une réclame. Elle s'efface au bout de quatre
+   * secondes, ou dès qu'on appuie sur le fantôme, ce qui veut dire qu'elle a
+   * servi.
+   */
+  const [bulleVue, setBulleVue] = useState<string[]>([]);
+  const [bulle, setBulle] = useState<string>("");
+  const bulleDuMur =
+    onPeutEssayer && murDuSommet && murDuSommet.clients.length > 0 && essaiDuSommet
+      ? {
+          combien: murDuSommet.clients.length,
+          mot: `${murDuSommet.clients.length} ${essaiDuSommet.mots.essayage}${
+            murDuSommet.clients.length > 1 ? "s" : ""
+          } de ${essaiDuSommet.mots.ceci}`,
+          lien: essaiDuSommet.mots.voirLeMur,
+        }
+      : null;
+  /**
+   * ═══ LA MINUTERIE NE DÉPEND QUE DE CE QUI NE BOUGE PAS ════════════════════
+   *
+   * DÉFAUT MESURÉ, ET IL EST CLASSIQUE : la bulle s'ouvrait et ne se refermait
+   * jamais. `bulleDuMur` est un objet reconstruit à chaque rendu — donc une
+   * dépendance TOUJOURS différente — donc l'effet se nettoyait et repartait en
+   * boucle, et le compte à rebours de quatre secondes ne finissait jamais.
+   *
+   * ON NE DÉPEND DONC QUE DE DEUX VALEURS QUI, ELLES, SE COMPARENT : l'annonce
+   * regardée, et le fait qu'elle ait un mur rempli. Tant que ces deux-là ne
+   * changent pas, les deux minuteries vivent leur vie.
+   */
+  const idDuSommet = dessus?.id ?? "";
+  const aUnMurRempli = !!bulleDuMur;
+  useEffect(() => {
+    if (!aUnMurRempli || !idDuSommet) return;
+    if (bulleVue.includes(idDuSommet)) return;
+    // ON LA LAISSE ARRIVER APRÈS LA CARTE, PAS AVEC ELLE. Une bulle qui apparaît
+    // dans le même souffle que l'annonce est lue comme une partie de l'annonce,
+    // et c'est exactement ce qu'on vient d'enlever.
+    const ouvre = window.setTimeout(() => setBulle(idDuSommet), 900);
+    const ferme = window.setTimeout(() => {
+      setBulle("");
+      // ELLE NE REVIENT PAS SUR LA MÊME ANNONCE. Une bulle qui reparaît à chaque
+      // retour sur la même carte est une réclame, pas une explication.
+      setBulleVue((v) => (v.includes(idDuSommet) ? v : [...v, idDuSommet]));
+    }, 4900);
+    return () => {
+      window.clearTimeout(ouvre);
+      window.clearTimeout(ferme);
+    };
+    // `bulleVue` est LU mais ne doit pas relancer la minuterie : c'est elle qui
+    // l'écrit, et se remettre dans ses propres dépendances est le même piège
+    // qu'au-dessus, une boucle de plus.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aUnMurRempli, idDuSommet]);
 
   /**
    * LE GESTE D'ENGAGEMENT, ÉCRIT UNE FOIS.
@@ -6492,7 +6646,20 @@ export function ApercuHabitant() {
                                 onPointerDown={(ev) => ev.stopPropagation()}
                                 onClick={() => noter("pli-ouvert", 0, "boutique-ident")}
                               >
-                                Infos boutique<i aria-hidden="true">→</i>
+                                {/* ═══ LA FLÈCHE POINTE OÙ ÇA MÈNE ════════════
+
+                                    « Infos boutique : la flèche doit pointer
+                                    vers le bas puisque c'est plus bas. »
+
+                                    ELLE DISAIT « AILLEURS » ALORS QU'ELLE MÈNE
+                                    « PLUS BAS ». Une flèche à droite est la
+                                    convention d'un départ — on quitte l'écran,
+                                    on va sur une autre page. Ces deux-là
+                                    DESCENDENT dans la même page, et c'est même
+                                    tout leur propos : apprendre où les choses
+                                    sont rangées. Une flèche qui ment sur la
+                                    direction fait chercher au mauvais endroit. */}
+                                Infos boutique<i aria-hidden="true">↓</i>
                               </Link>
                               <button
                                 type="button"
@@ -6518,8 +6685,21 @@ export function ApercuHabitant() {
                                     reglages, cote a cote comme un choix. Et
                                     « du jour » ne dit rien de plus — tout, sur
                                     cet ecran, est d'aujourd'hui. */}
-                                {dessus?.prepare ? "Prête à publier" : "Voir le planning"}
-                                <i aria-hidden="true">→</i>
+                                {/* ═══ « VOIR TOUTES LES OFFRES », PARTOUT ═════
+
+                                    « Voir le planning devient partout : Voir
+                                    toutes les offres. »
+
+                                    IL A RAISON, ET C'EST UN MOT DE MÉTIER QUI
+                                    MANQUAIT. « Planning » est le mot du
+                                    commerçant — c'est ainsi qu'il voit sa
+                                    journée depuis son comptoir. Celui qui
+                                    regarde de l'autre côté ne cherche pas un
+                                    planning : il cherche ce qu'il y a d'autre
+                                    à prendre. « Toutes les offres » dit ce
+                                    qu'il va trouver, pas comment c'est rangé. */}
+                                {dessus?.prepare ? "Prête à publier" : "Voir toutes les offres"}
+                                <i aria-hidden="true">↓</i>
                               </button>
                             </div>
                           </div>
@@ -7813,36 +7993,22 @@ export function ApercuHabitant() {
                 ET LE MOT CHANGE AVEC LE MÉTIER. « Essayage » pour ce qui se
                 porte, « projection » pour ce qui se pose dans un lieu : on ne
                 fait pas d'essayage de bouquet. Voir `mots.essayage`. */}
-            {onPeutEssayer && murDuSommet!.clients.length > 0 && (
-              <button
-                type="button"
-                className="ap-murmod"
-                onClick={() => {
-                  noter("onglet", 0, "mur-module");
-                  setDejaOuvert(true);
-                  setMurSur("mur");
-                  setMurOuvert(true);
-                }}
-              >
-                <span className="ap-murmod-f" aria-hidden="true">
-                  {murDuSommet!.clients.slice(0, 4).map((f) => (
-                    <Fantome key={f.id} classe="ap-murmod-s" />
-                  ))}
-                </span>
-                <span className="ap-murmod-t">
-                  <b>
-                    {murDuSommet!.clients.length}{" "}
-                    {essaiDuSommet.mots.essayage}
-                    {murDuSommet!.clients.length > 1 ? "s" : ""} de{" "}
-                    {essaiDuSommet.mots.ceci}
-                  </b>
-                  <em>
-                    {essaiDuSommet.mots.voirLeMur}
-                    <s aria-hidden="true"> →</s>
-                  </em>
-                </span>
-              </button>
-            )}
+            {/* ═══ IL A DÉMÉNAGÉ : IL EST DEVENU UNE BULLE ═════════════════
+
+                « Cette section prend trop de place, et c'est juste une pop-up
+                qui doit rester 3 ou 4 secondes quand des gens ont déjà pris des
+                photos, pour informer qu'en appuyant sur le fantôme l'utilisateur
+                pourra voir le mur. »
+
+                IL A RAISON SUR LES DEUX POINTS. Un bloc permanent de soixante
+                points, posé sous la fiche, disait une chose qu'on n'a besoin
+                d'entendre QU'UNE FOIS : le fantôme de la barre mène au mur. Une
+                fois su, il ne sert plus à rien et il prend toujours sa place.
+
+                LA BULLE LE DIT AU BON ENDROIT, ET S'EN VA. Elle sort du fantôme
+                lui-même, en bas de l'écran — donc elle DÉSIGNE le bouton au lieu
+                de le décrire — et elle s'efface au bout de quatre secondes. Voir
+                `bulleDuMur` plus bas. */}
 
             {/* ═══ LA SECONDE RANGÉE : DEUX GESTES CÔTE À CÔTE ═══
 
@@ -7972,7 +8138,7 @@ export function ApercuHabitant() {
                 <button
                   type="button"
                   className="ap-rail-b ap-partager"
-                  onClick={() => partir("droite")}
+                  onClick={() => void partagerLAnnonce()}
                 >
                   <i aria-hidden="true">
                     <svg viewBox="0 0 24 24">
@@ -10111,6 +10277,44 @@ export function ApercuHabitant() {
               PIÈCE de l'application, pas une fenêtre par-dessus. Sortie du
               choix, la barre est là partout, et « Le direct » fait exactement
               ce qu'ils cherchaient. */}
+          {/* ═══ LA BULLE SORT DU FANTÔME, ET ELLE SORT DE LA BARRE ══════════
+
+              Voir `bulleDuMur`. Elle DÉSIGNE le fantôme au lieu de le décrire,
+              et elle s'en va au bout de quatre secondes.
+
+              ELLE N'EST PAS UN ONGLET, DONC ELLE N'EST PAS DANS LA BARRE.
+              Posée dedans, elle héritait de `.ap-onglets button` — colonne,
+              dix points, capitales — et son `<b>` devenait la pastille verte
+              des compteurs : « 2 ESSAYAGES DE CETTE COUPE » s'affichait en
+              badge de notification. Un objet qui fait autre chose ne se range
+              pas avec ceux qui font la même. */}
+          {bulle && dessus && bulle === dessus.id && bulleDuMur && (
+            <button
+              type="button"
+              className="ap-murbul"
+              onClick={() => {
+                noter("onglet", 0, "mur-bulle");
+                setBulle("");
+                setBulleVue((v) => (dessus ? [...v, dessus.id] : v));
+                setDejaOuvert(true);
+                setMurSur("mur");
+                setMurOuvert(true);
+              }}
+            >
+              <span className="ap-murbul-f" aria-hidden="true">
+                {Array.from({ length: Math.min(3, bulleDuMur.combien) }, (_, k) => (
+                  <Fantome key={k} classe="ap-murbul-s" />
+                ))}
+              </span>
+              <span className="ap-murbul-t">
+                <b>{bulleDuMur.mot}</b>
+                <em>
+                  {bulleDuMur.lien}
+                  <s aria-hidden="true"> →</s>
+                </em>
+              </span>
+            </button>
+          )}
           <nav className="ap-onglets" aria-label="Sections" ref={barreOnglets}>
             <button
               type="button"
@@ -10185,6 +10389,11 @@ export function ApercuHabitant() {
                 // lui rappelle, et un appel qu'on n'eteint jamais devient la
                 // chose qu'on apprend a ne plus voir.
                 setAppel(false);
+                // LA BULLE A SERVI : on appuie sur ce qu'elle designait. La
+                // laisser ouverte par-dessus le mur serait une legende pour un
+                // ecran qu'on vient de quitter.
+                setBulle("");
+                if (dessus) setBulleVue((v) => [...v, dessus.id]);
                 setDejaOuvert(true);
                 try {
                   localStorage.setItem(FANTOME_CONNU, "1");
@@ -12417,6 +12626,21 @@ export function ApercuHabitant() {
            avant : l'echo 640-690 sur toute la largeur, la troisieme pastille
            640-696 sur le bord droit. */
         .ap-app:has(.ap-rail) .ap-echo{right:76px;}
+        /* ═══ ET IL PASSE AU-DESSUS DES DEUX RACCOURCIS ══════════════════════
+           MESURE : l'echo tenait de 631 a 694 points, la rangee « Infos
+           boutique · Voir toutes les offres » de 660 a 694 — trente-quatre
+           points de recouvrement exact, et « Voir toutes les offres » etait
+           illisible. Meme regle que pour le rail et pour la barre d'actions,
+           troisieme application : un message automatique ne cache jamais un
+           geste. Les quarante-huit points sont la hauteur de la rangee plus son
+           ecart, et l'echo ne les prend que lorsqu'elle est la. */
+        .ap-app:has(.ap-ident-d) .ap-echo{
+          bottom:calc(var(--ap-gestes-h, 92px) + 100px);}
+        /* ET LA RANGEE DES RACCOURCIS S'ARRETE AVANT LE RAIL. Meme mesure, meme
+           remede : elle tenait jusqu'a 358 points, le rail commence a 324, et la
+           fleche de « Voir toutes les offres » passait sous « En parler ».
+           Soixante-douze points laissent la pastille entiere. */
+        .ap-app:has(.ap-rail) .ap-ident-d{padding-right:72px;}
         .ap-un .cd-carte{position:absolute;inset:0;aspect-ratio:auto;max-width:none;
           border-radius:0;}
 
@@ -15864,26 +16088,71 @@ export function ApercuHabitant() {
            inventer serait fabriquer la preuve sociale que ce module est
            justement la pour ne pas fabriquer. Quatre fantomes disent la meme
            chose — ils sont plusieurs — et ils ne mentent sur personne. */
-        .ap-murmod{display:flex;align-items:center;gap:11px;width:100%;
-          margin-top:9px;padding:9px 13px 9px 11px;font:inherit;cursor:pointer;
-          text-align:left;border-radius:16px;
-          background:rgba(139,125,246,.12);
-          border:1px solid rgba(139,125,246,.36);
-          transition:transform .12s ease,background .16s ease;}
-        .ap-murmod:active{transform:scale(.99);background:rgba(139,125,246,.2);}
-        .ap-murmod:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
-        .ap-murmod-f{flex:none;display:flex;}
+        /* ═══ IL A DEMENAGE : IL EST DEVENU UNE BULLE ═══════════════════════
+
+           « Cette section prend trop de place, et c'est juste une pop-up qui
+           doit rester 3 ou 4 secondes quand des gens ont deja pris des photos. »
+
+           IL AVAIT RAISON SUR LES DEUX POINTS. Un bloc permanent de soixante
+           points disait une chose qu'on n'a besoin d'entendre QU'UNE FOIS : le
+           fantome de la barre mene au mur. Une fois su, il ne servait plus et il
+           prenait toujours sa place.
+
+           ELLE SORT DU FANTOME, DONC ELLE LE DESIGNE. C'est la difference entre
+           « il y a un bouton quelque part » et « c'est celui-la ». Sa pointe est
+           un carre tourne de quarante-cinq degres, pose sous son bord : le meme
+           dessin qu'une bulle de bande dessinee, et personne n'a besoin qu'on le
+           lui explique.
+
+           ELLE EST CENTREE SUR LE FANTOME, ET ELLE PEUT DEBORDER DES DEUX COTES :
+           « 38 essayages de ce pantalon » fait deux cent quarante points, le
+           fantome en fait soixante-huit. Une bulle qui tiendrait dans la largeur
+           de son bouton devrait ecrire sur quatre lignes. */
+        /* ═══ OU ELLE TIENT EXACTEMENT, ET C'EST MESURE ═════════════════════
+           Le bas de l'ecran est plein : le geste principal tient de 655 a 718,
+           sa ligne de promesse de 733 a 765, le fantome de 778 a 840. Entre la
+           promesse et le fantome il reste treize points — pas de quoi poser une
+           bulle de cinquante-quatre.
+           ELLE SE GLISSE DONC ENTRE LE GESTE ET LE FANTOME, en couvrant la
+           seule chose qui puisse l'etre : la ligne de promesse, qui est
+           statique, secondaire, et reste quatre secondes cachee. Elle ne couvre
+           NI le geste principal NI le fantome qu'elle designe — c'aurait ete
+           l'absurdite de cacher ce qu'on montre du doigt. */
+        .ap-murbul{position:absolute;left:50%;bottom:72px;
+          transform:translateX(-50%);z-index:9;
+          display:flex;align-items:center;gap:10px;
+          width:max-content;max-width:min(300px,calc(100vw - 32px));
+          padding:9px 14px 9px 11px;font:inherit;cursor:pointer;text-align:left;
+          border-radius:16px;color:#EFEAFF;
+          background:linear-gradient(103deg,rgba(46,32,92,.97),rgba(32,20,70,.97));
+          border:1px solid rgba(139,125,246,.5);
+          box-shadow:0 14px 34px -10px rgba(0,0,0,.8);
+          -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+          animation:apMurbul .34s cubic-bezier(.2,1.4,.4,1) both;}
+        /* LA POINTE. Un carre tourne, pose sous le bord et coupe par lui : le
+           degrade du fond le traverse sans raccord visible. */
+        .ap-murbul::after{content:"";position:absolute;left:50%;bottom:-6px;
+          width:12px;height:12px;transform:translateX(-50%) rotate(45deg);
+          background:rgba(32,20,70,.97);
+          border-right:1px solid rgba(139,125,246,.5);
+          border-bottom:1px solid rgba(139,125,246,.5);}
+        @keyframes apMurbul{
+          from{opacity:0;transform:translateX(-50%) translateY(8px) scale(.94);}
+          to{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}
+        }
+        .ap-murbul-f{flex:none;display:flex;}
         /* ILS SE CHEVAUCHENT, comme une pile de visages : c'est ce qui les fait
-           lire comme UN GROUPE et non comme quatre pictogrammes en rang. */
-        .ap-murmod-s{width:24px;height:26px;overflow:visible;margin-left:-9px;
+           lire comme UN GROUPE et non comme trois pictogrammes en rang. */
+        .ap-murbul-s{width:22px;height:24px;overflow:visible;margin-left:-8px;
           filter:drop-shadow(0 2px 4px rgba(4,12,9,.6));}
-        .ap-murmod-s:first-child{margin-left:0;}
-        .ap-murmod-t{min-width:0;flex:1;}
-        .ap-murmod-t b{display:block;font-size:13.5px;font-weight:850;
+        .ap-murbul-s:first-child{margin-left:0;}
+        .ap-murbul-t{min-width:0;flex:1;}
+        .ap-murbul-t b{display:block;font-size:13px;font-weight:850;
           color:#EFEAFF;line-height:1.25;}
-        .ap-murmod-t em{display:block;margin-top:1px;font-style:normal;
+        .ap-murbul-t em{display:block;margin-top:1px;font-style:normal;
           font-size:11.5px;font-weight:700;color:#B6AEE6;}
-        .ap-murmod-t s{text-decoration:none;}
+        .ap-murbul-t s{text-decoration:none;}
+        @media (prefers-reduced-motion:reduce){.ap-murbul{animation:none;}}
 
         /* ═══ LE RAIL DES TROIS ANCIENS GESTES ══════════════════════════════
 

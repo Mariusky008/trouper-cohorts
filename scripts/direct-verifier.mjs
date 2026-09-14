@@ -1486,7 +1486,7 @@ console.log("\n══ l'annonce pousse vers l'essai ══");
         e.textContent.replace(/\s+/g, " ").trim(),
       ),
       duo: !!document.querySelector(".ap-duo"),
-      module: !!document.querySelector(".ap-murmod"),
+      module: !!document.querySelector(".ap-murbul"),
     }));
   };
 
@@ -1524,16 +1524,27 @@ console.log("\n══ l'annonce pousse vers l'essai ══");
   // LE COMPTE EST CELUI DU MUR, PAS UN NOMBRE ÉCRIT DANS L'ÉCRAN. C'est la
   // seule façon de ne pas fabriquer de preuve sociale, et c'est la règle de
   // tout ce dépôt — la même qui a fait retirer les « 128 » et « 24 » du rail.
+  // ═══ LE MODULE EST DEVENU UNE BULLE, ET ELLE S'EN VA ═══════════════════
+  //
+  // « Cette section prend trop de place, et c'est juste une pop-up qui doit
+  // rester 3 ou 4 secondes quand des gens ont déjà pris des photos. »
+  //
+  // ON L'ATTEND PLUTÔT QUE DE LA CHERCHER : elle arrive neuf dixièmes de
+  // seconde après la carte — exprès, pour ne pas être lue comme une partie de
+  // l'annonce — et elle repart à cinq. Une garde qui regarde trop tôt conclut
+  // qu'elle n'existe pas ; une qui regarde trop tard, qu'elle a disparu. Les
+  // deux sont fausses.
+  await pE.waitForSelector(".ap-murbul", { timeout: 4000 }).catch(() => null);
   const module = await pE.evaluate(() => {
-    const e = document.querySelector(".ap-murmod");
+    const e = document.querySelector(".ap-murbul");
     if (!e) return null;
     return {
       mot: e.querySelector("b")?.textContent.replace(/\s+/g, " ").trim() ?? "",
       lien: e.querySelector("em")?.textContent.replace(/\s+/g, " ").trim() ?? "",
-      fantomes: e.querySelectorAll(".ap-murmod-s").length,
+      fantomes: e.querySelectorAll(".ap-murbul-s").length,
     };
   });
-  dire(!!module, "l'annonce dit combien de gens ont déjà essayé, et où le voir");
+  dire(!!module, "une bulle dit combien de gens ont déjà essayé, et où le voir");
   dire(
     !!module && /^\d+ (essayage|projection)s? de /.test(module.mot),
     `et elle compte dans les mots du métier (« ${module?.mot ?? "absent"} »)`,
@@ -2820,6 +2831,88 @@ console.log("\n══ la page du commerce ══");
   }
 }
 
+// ═══ CE QU'IL RESTE DÉCOMPTE QUAND QUELQU'UN RÉSERVE ══════════════════════
+//
+// CE QUE ÇA PROTÈGE : « On ne peut pas savoir combien il en reste, donc on ne
+// peut pas afficher ce résultat — à moins qu'il y ait un décompte quand
+// quelqu'un appuie sur réserver et envoie un message WhatsApp pour le mettre
+// de côté ? »
+//
+// SA QUESTION ÉTAIT LA RÉPONSE, ET C'EST CE QUI REND LE NOMBRE HONNÊTE. On
+// n'invente pas un stock : le commerçant annonce ce qu'il met de côté, et
+// chaque mise de côté passée PAR L'APPLICATION en retire une. Le nombre ne
+// prétend pas connaître sa réserve — il dit ce qu'il reste de ce qu'il a
+// promis ici. C'est la seule lecture qu'on puisse défendre devant lui.
+//
+// POURQUOI UNE GARDE PLUTÔT QU'UNE RELECTURE : le décompte traverse quatre
+// endroits — le geste, la feuille qui demande quel moment, l'envoi, puis la
+// carte qui se redessine. Trois d'entre eux ont déjà changé ce mois-ci. Une
+// chaîne qui se casse au milieu laisse le nombre figé, et un nombre figé
+// ressemble exactement à un nombre qui marche.
+//
+// ON LE MESURE CHEZ LE BOUCHER, ET PAS AILLEURS : il a un stock qu'on peut
+// vraiment compter (des parts), un geste de mise de côté, et PAS de menu du
+// jour — une carte « menu du jour » ne porte pas de décompte, parce qu'une
+// formule n'est pas une réserve.
+{
+  console.log("\n══ ce qu'il reste décompte quand on réserve ══");
+  const dec = await nav.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  await dec.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
+  await dec.addInitScript(() =>
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
+  );
+  // WHATSAPP NE DOIT PAS EMPORTER L'ONGLET : on neutralise l'ouverture, sinon
+  // la carte qu'on veut relire est partie avec.
+  await dec.addInitScript(() => { window.open = () => null; });
+  const pD = await dec.newPage();
+  await pD.goto(`${BASE}/autour-de-moi?carte=boucher`, { waitUntil: "networkidle" });
+  await pD.waitForTimeout(1800);
+
+  // LA CARTE DU HAUT EST LA DERNIÈRE DU DOM — le paquet empile. On lit donc
+  // toutes les cartes et on suit celle du boucher par son titre.
+  const parts = () =>
+    pD.evaluate(() => {
+      const c = [...document.querySelectorAll(".cd-carte")].find((x) =>
+        /côte de bœuf/i.test(x.querySelector(".cd-offre")?.textContent ?? ""),
+      );
+      const t = c?.querySelector(".cd-infos")?.textContent ?? "";
+      return Number(t.match(/il reste\s*(\d+)/i)?.[1] ?? -1);
+    });
+
+  const avant = await parts();
+  dire(avant > 0, `le boucher dit ce qu'il met de côté (${avant} parts)`);
+
+  const geste = pD.locator(".ap-agir").first();
+  const mots = (await geste.textContent())?.replace(/\s+/g, " ").trim() ?? "";
+  dire(/gardez/i.test(mots), `et son geste est une mise de côté (« ${mots} »)`);
+  await geste.click();
+  await pD.waitForTimeout(1400);
+  // La feuille demande d'abord QUEL moment ; l'envoi ne s'allume qu'après.
+  await pD.locator(".ap-feuille .ap-m").first().click();
+  await pD.waitForTimeout(700);
+  const envoi = pD.locator(".ap-feuille .ap-b2.plein").first();
+  dire(await envoi.isEnabled(), "choisir le moment allume l'envoi au commerçant");
+  await envoi.click();
+  await pD.waitForTimeout(1800);
+  for (const sel of [".ap-feuille .ap-f-x", ".ap-fond"]) {
+    const b = pD.locator(sel).first();
+    if ((await b.count()) && (await b.isVisible())) {
+      await b.click({ force: true });
+      await pD.waitForTimeout(900);
+    }
+  }
+  await pD.waitForTimeout(800);
+  const apres = await parts();
+  dire(
+    avant > 0 && apres === avant - 1,
+    `et une part mise de côté en retire une (${avant} → ${apres})`,
+  );
+  await dec.close();
+}
+
 // ═══ LE MUR D'UN LIEU, D'APRÈS LA MAQUETTE ════════════════════════════════
 //
 // CE QUE ÇA PROTÈGE : « Restaurant, bars et événements : respecter le design là
@@ -2830,13 +2923,18 @@ console.log("\n══ la page du commerce ══");
 // CE MUR-LÀ NE SUIT PAS LE RITUEL DE L'ESSAI, ET C'EST VOULU. Chez un bar on ne
 // vient pas essayer quelque chose sur soi : on vient dire qu'on est là, et lire
 // qui y est. La maquette lui donne donc sa propre tête — une invitation en
-// carte, avec son dégradé — et deux gestes par message au lieu d'un : « Ça
-// m'intéresse » parle AU LIEU, « En parler » parle À MES AMIS.
+// carte, avec son dégradé — et UN SEUL geste par message : « Ça m'intéresse »,
+// qui parle au lieu.
 //
-// CE QUE LA GARDE MESURE : que l'invitation existe et porte le geste, que le
-// titre de section est celui de la maquette, et que les deux gestes tiennent
-// CÔTE À CÔTE — ils passaient l'un sous l'autre, ce qui n'est ni la maquette ni
-// lisible, et c'est le genre de défaut qu'une relecture ne voit pas.
+// LE SECOND GESTE A ÉTÉ RETIRÉ SUR SA DEMANDE, et la garde qui le mesurait
+// avec lui : « supprimer en parler ». Elle vérifiait que les deux tenaient côte
+// à côte — une exigence de mise en page pour un bouton qui n'existe plus. On ne
+// garde pas une mesure qui décrit l'écran d'avant : c'est la manière la plus
+// sûre de faire échouer une suite sur une décision produit tenue.
+//
+// CE QUE LA GARDE MESURE MAINTENANT : que l'invitation existe et porte le
+// geste, que le titre de section est celui de la maquette, que les six éléments
+// retirés le sont restés, et que le mur se déplie plutôt que de tout dérouler.
 {
   console.log("\n══ chez un bar, on vient dire qu'on est là ══");
   const bar = await nav.newContext({
@@ -2857,25 +2955,34 @@ console.log("\n══ la page du commerce ══");
     await fv.click();
     await pV.waitForTimeout(1200);
     const t = await pV.evaluate(() => {
-      const deux = [...document.querySelectorAll(".mu-rang:not(.grille) .mu-c")]
-        .map((c) => {
-          const a = c.querySelector(".mu-int");
-          const b = c.querySelector(".mu-parler");
-          if (!a || !b) return null;
-          const ra = a.getBoundingClientRect();
-          const rb = b.getBoundingClientRect();
-          // MÊME LIGNE : leurs milieux verticaux se touchent à deux points près.
-          return Math.abs(ra.y + ra.height / 2 - (rb.y + rb.height / 2)) < 3;
-        })
-        .filter((x) => x !== null);
       return {
         invitation: document.querySelector(".mu-inv-t h2")?.textContent?.trim() ?? null,
         geste: document.querySelector(".mu-inv-b b")?.textContent?.trim() ?? null,
-        section: document.querySelector(".mu-qui-t h3")?.textContent?.trim() ?? null,
-        jour: document.querySelector(".mu-qui-j")?.textContent?.replace(/\s+/g, " ").trim() ?? null,
+        // LE TITRE EST DANS `.mu-qui`, PAS DANS `.mu-qui-t`. Le second était le
+        // cadre qui portait aussi la pastille du jour ; la pastille est partie
+        // avec le paragraphe qu'il a demandé de supprimer, et le cadre avec
+        // elle. La garde décrivait donc une enveloppe disparue et lisait `null`
+        // sur un titre parfaitement affiché — encore une garde qui décrit une
+        // FORME au lieu de chercher le MOT.
+        section: document.querySelector(".mu-qui h3")?.textContent?.trim() ?? null,
+        // ═══ CE QUI A ÉTÉ RETIRÉ DOIT LE RESTER ═══════════════════════════
+        //
+        // « Supprimer en parler, et supprimer ce paragraphe : Les Fantômes
+        // laissés ici aujourd'hui. 🕐 Aujourd'hui. Quelque chose vous parle ?…
+        // Supprimer cette section aussi : 6 Fantômes laissés ici aujourd'hui /
+        // De la place, sans attendre / Découvre aussi les autres murs. »
+        //
+        // LES SIX RÉPÉTAIENT LE TITRE, LES CARTES, OU RENVOYAIENT AILLEURS
+        // depuis le seul écran où l'on est arrivé exprès. Une garde qui compte
+        // à zéro a l'air de ne rien mesurer ; celle-ci mesure qu'on n'a pas
+        // remis, au prochain ajustement, ce qu'on vient de retirer.
+        retires:
+          document.querySelectorAll(
+            ".mu-parler, .mu-qui-j, .mu-haut-cle, .mu-pied, .mu-ctx, .mu-ailleurs",
+          ).length,
         cartes: document.querySelectorAll(".mu-rang:not(.grille) .mu-c").length,
-        parler: document.querySelectorAll(".mu-parler").length,
-        cote: deux,
+        deplie: document.querySelector(".mu-tout")?.textContent?.replace(/\s+/g, " ").trim() ?? null,
+
         // ET PAS DE RITUEL D'ESSAI ICI : ni grille, ni geste d'essayage.
         grille: document.querySelectorAll(".mu-rang.grille").length,
       };
@@ -2889,15 +2996,14 @@ console.log("\n══ la page du commerce ══");
       /qui est là/i.test(t.section ?? ""),
       `la section dit qui est là (« ${t.section ?? "absente"} »)`,
     );
-    dire(/aujourd/i.test(t.jour ?? ""), `avec le repère du jour (« ${t.jour ?? "absent"} »)`);
     dire(t.cartes >= 4, `le mur porte ses messages (${t.cartes})`);
     dire(
-      t.parler === t.cartes,
-      `chaque message peut partir dans le salon (${t.parler} sur ${t.cartes})`,
+      t.retires === 0,
+      `et ce qui a été retiré l'est resté (${t.retires} élément${t.retires > 1 ? "s" : ""} revenu${t.retires > 1 ? "s" : ""})`,
     );
     dire(
-      t.cote.length > 0 && t.cote.every(Boolean),
-      `et les deux gestes tiennent côte à côte (${t.cote.filter(Boolean).length} sur ${t.cote.length})`,
+      /voir tout le mur/i.test(t.deplie ?? ""),
+      `le reste se déplie au lieu de tout dérouler (« ${t.deplie ?? "absent"} »)`,
     );
     dire(t.grille === 0, "un bar n'a pas de grille d'essai, et c'est voulu");
   }

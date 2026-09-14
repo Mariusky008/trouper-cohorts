@@ -442,15 +442,21 @@ function Carte({
               {(f.interesses ?? 0) + (quand ? 1 : 0) > 1 ? "s" : ""}
             </s>
           )}
-          {/* LE SECOND GESTE : voir `onParler`. Il n'existe que là où il y a un
-              salon derrière, et seulement sur un mur de lieu — sur une grille
-              d'essai, « en parler » a déjà sa place au troisième temps. */}
-          {!mien && !essai && onParler && (
-            <button type="button" className="mu-parler" onClick={() => onParler(f)}>
-              <i aria-hidden="true">💬</i>
-              En parler
-            </button>
-          )}
+          {/* ═══ « EN PARLER » EST PARTI DES CARTES ══════════════════════════
+
+              « Photo 5 : supprimer "en parler". »
+
+              IL L'AVAIT DEMANDÉ, PUIS IL L'A REPRIS, ET LES DEUX FOIS IL AVAIT
+              RAISON. Sa maquette le dessinait ; à l'écran, la carte disait trois
+              fois la même chose en quatre centimètres — « Ça m'intéresse », « En
+              parler », puis « On pourra en parler sur place » juste dessous. Le
+              second bouton ne proposait rien que le premier ne fasse déjà : on
+              signale qu'on passera, et c'est SUR PLACE qu'on en parle. C'est
+              même la phrase fondatrice de ce mur.
+
+              LE GESTE N'EST PAS PERDU : il vit au troisième temps de l'essai,
+              où il a un objet — son propre rendu à montrer. Ici il n'en avait
+              pas. */}
         </div>
         {f.jusqua && (
           <span className="mu-c-d">
@@ -1008,27 +1014,26 @@ function EcranMur({
           </div>
           {/* ET LA LÉGENDE REVIENT APRÈS, À SA VRAIE PLACE : au-dessus des
               cartes qu'elle décrit, et non à celle de la porte. */}
+          {/* ═══ TROIS LIGNES DE MOINS, ET C'EST LUI QUI LES A COUPÉES ═══════
+
+              « Supprimer ce paragraphe : Les Fantômes laissés ici aujourd'hui.
+              🕐 Aujourd'hui. Quelque chose vous parle ? Signalez-le, et vous
+              pourrez en parler sur place quand vous y serez. »
+
+              LES TROIS DISAIENT LA MÊME CHOSE QUE LE TITRE OU QUE LES CARTES.
+              « Les Fantômes laissés ici aujourd'hui » répète « Qui est là » au
+              mot près ; la pastille du jour répète « aujourd'hui », déjà écrit
+              deux fois au-dessus ; et la légende du pouce explique un geste
+              qu'on n'a pas encore vu, à l'endroit exact où la première carte
+              devrait commencer.
+
+              CE QUI RESTE EST LE TITRE, ET IL SUFFIT. La légende du pouce, elle,
+              n'a pas disparu du produit : chaque carte porte « On pourra en
+              parler sur place » SOUS son propre bouton, c'est-à-dire au moment
+              où la question se pose vraiment. */}
           <div className="mu-qui">
-            <div className="mu-qui-t">
-              <h3>Qui est là. Ce qu’ils ont à dire.</h3>
-              <p>Les Fantômes laissés ici aujourd’hui.</p>
-            </div>
-            <span className="mu-qui-j">
-              <i aria-hidden="true">🕐</i>
-              Aujourd’hui
-            </span>
+            <h3>Qui est là. Ce qu’ils ont à dire.</h3>
           </div>
-          {/* ═══ LA PHRASE QUI DONNE SON SENS AU POUCE ═══
-              « Ça m'intéresse ressemble énormément à un like. Or ce n'est
-              absolument pas ça : l'utilisateur dit qu'il s'y intéresse assez pour
-              qu'ON EN PARLE SUR PLACE quand il y sera. »
-              C'est la phrase la plus importante de l'écran, donc elle est
-              au-dessus de la première carte et non en légende quelque part. */}
-          {/* ELLE RESTE, ET ELLE MAIGRIT. Elle était un cadre violet de trois
-              lignes, aussi lourd que le titre au-dessus ; c'est une légende de
-              geste, pas une deuxième annonce. Le quota, lui, a quitté la tête :
-              « 3 sur 3 » ne veut rien dire avant qu'on ait compris de quoi il
-              s'agit, et il est déjà sur l'écran de dépôt. */}
           {/* ═══ LA LEGENDE DU POUCE PERD SON CADRE ═══════════════════════
 
               « Ça m'intéresse ressemble énormément à un like. Or ce n'est
@@ -1041,10 +1046,7 @@ function EcranMur({
               repoussait les cartes sous le pli pour expliquer un geste qu'on
               n'avait pas encore vu. En légende sous le titre, elle arrive au
               bon moment et ne coûte rien. */}
-          <strong className="mu-haut-cle">
-            Quelque chose vous parle&nbsp;? Signalez-le, et vous pourrez en parler sur place quand
-            vous y serez.
-          </strong>
+
         </div>
       )}
 
@@ -1129,43 +1131,36 @@ function EcranMur({
         </div>
       )}
 
-      {/* LE PIED COMPTE, ET C'EST LUI QUI DÉPLIE. « Voir tout » était un mot posé
-          dans un titre de section ; les titres ont disparu, et le compte est un
-          bien meilleur endroit pour ce geste — il dit combien il y en a, donc il
-          dit qu'il en reste à voir. */}
-      <button
-        type="button"
-        className="mu-pied"
-        aria-expanded={tout}
-        onClick={() => onTout(!tout)}
-      >
-        <span aria-hidden="true">👥</span>
-        {/* LE PIED DIT LE COMPTE ET CE QU'IL ANNONCE. Un nombre seul est un
-            bilan ; « et ce n'est sûrement pas fini » dit que le mur est vivant,
-            ce qui est la seule raison d'y revenir en fin de journée. */}
-        <span className="mu-pied-t">
-          <b>{mur.maison.length + clients.length} Fantômes laissés ici aujourd’hui</b>
-          <em>Et ce n’est sûrement pas fini…</em>
-        </span>
-        <i aria-hidden="true">{tout ? "↑" : "→"}</i>
-      </button>
+      {/* ═══ TROIS BLOCS DE PIED SUPPRIMÉS ═══════════════════════════════════
 
-      {/* LE SEUL ENDROIT DE LA FEUILLE OU LE COMMERCE PARLE DE CE QU'IL VEND.
-          Il est en bas, apres le mur : la feuille appartient aux gens qui sont
-          passes, pas a la carte. */}
-      {mur.contexte && (
-        <div className="mu-ctx">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={mur.contexte.photo} alt="" loading="lazy" />
-          <div>
-            <span>{mur.contexte.titre}</span>
-            <b>{mur.contexte.quoi}</b>
-            <em>{mur.contexte.detail}</em>
-          </div>
-          <button type="button" className="mu-ctx-b">
-            {mur.contexte.geste} →
-          </button>
-        </div>
+          « Supprimer cette section aussi : 6 Fantômes laissés ici aujourd'hui /
+          Et ce n'est sûrement pas fini… ↑ / De la place, sans attendre / Plat +
+          dessert / On vous installe · 16 € / Voir la carte → / 👥 Découvre aussi
+          les autres murs des commerces et événements autour de toi. »
+
+          LES TROIS RÉPÉTAIENT OU DÉTOURNAIENT :
+
+            · LE COMPTE DU PIED redisait ce que le mur montre — les cartes sont
+              là, on les voit, on n'a pas besoin qu'on nous dise combien.
+            · LA CARTE DU COMMERCE ramenait l'annonce DANS le mur, c'est-à-dire
+              l'écran qu'on venait justement de quitter pour voir les gens. Elle
+              est à un balayage derrière ; la reposer ici fait revenir en
+              arrière au moment où l'on avance.
+            · « DÉCOUVRE AUSSI LES AUTRES MURS » envoyait ailleurs depuis le
+              seul endroit où l'on est arrivé exprès.
+
+          CE QUI DÉPLIAIT LE MUR ÉTAIT DANS LE COMPTE, et c'est la seule chose
+          qu'il faut remplacer : voir `mu-tout` juste dessous. */}
+      {clients.length + mur.maison.length > 3 && (
+        <button
+          type="button"
+          className="mu-tout"
+          aria-expanded={tout}
+          onClick={() => onTout(!tout)}
+        >
+          {tout ? "Réduire" : "Voir tout le mur"}
+          <i aria-hidden="true">{tout ? "↑" : "↓"}</i>
+        </button>
       )}
 
       {/* ═══ ET DEPUIS CE MUR, ON DOIT POUVOIR ESSAYER ══════════════════════
@@ -1203,11 +1198,6 @@ function EcranMur({
         </div>
       )}
 
-      <p className="mu-ailleurs">
-        <i aria-hidden="true">👥</i>
-        Découvre aussi les autres murs des commerces et événements autour de toi.
-        <b aria-hidden="true">→</b>
-      </p>
     </>
   );
 }
@@ -4382,18 +4372,24 @@ function Styles() {
            a celle de la porte. Le repere du jour a droite dit de QUAND on parle
            — un mur se lit par journee, et « aujourd'hui » revient six fois dans
            cet ecran sans que rien ne le montre. */
-        .mu-qui{display:flex;align-items:flex-start;gap:10px;margin-top:18px;
-          text-align:left;}
-        .mu-qui-t{flex:1;min-width:0;}
-        .mu-qui-t h3{margin:0;font-size:18px;line-height:1.16;font-weight:850;
+        /* LE TITRE DE SECTION, ET RIEN D'AUTRE. Le sous-titre repetait « Qui
+           est la » au mot pres, la pastille repetait « aujourd'hui » deja ecrit
+           deux fois au-dessus, et la legende du pouce expliquait un geste qu'on
+           n'avait pas encore vu — a l'endroit exact ou la premiere carte devait
+           commencer. */
+        .mu-qui{margin-top:18px;text-align:left;}
+        .mu-qui h3{margin:0;font-size:18px;line-height:1.16;font-weight:850;
           letter-spacing:-.028em;color:#fff;}
-        .mu-qui-t p{margin:4px 0 0;font-size:12.5px;line-height:1.45;
-          color:var(--mu-pale);}
-        .mu-qui-j{flex:none;display:inline-flex;align-items:center;gap:6px;
-          padding:7px 12px;border-radius:99px;font-size:12px;font-weight:750;
-          color:#D7E2EE;background:rgba(255,255,255,.06);
-          border:1px solid rgba(255,255,255,.14);}
-        .mu-qui-j i{font-style:normal;font-size:11px;}
+
+        /* CE QUI DEPLIE LE MUR. Le compte du pied faisait les deux — dire
+           combien et deplier — et le compte redisait ce que les cartes
+           montrent. Il ne reste que le geste, et il ne s'affiche que s'il y a
+           vraiment quelque chose de plie. */
+        .mu-tout{display:inline-flex;align-items:center;gap:7px;margin-top:16px;
+          padding:10px 16px;font:inherit;font-size:13px;font-weight:800;
+          color:#D7E2EE;cursor:pointer;background:rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.16);border-radius:99px;}
+        .mu-tout i{font-style:normal;font-size:13px;}
 
         /* La phrase qui donne son sens au pouce : elle est encadrée parce
            qu'elle explique le geste, elle ne le décore pas. */

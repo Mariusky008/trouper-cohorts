@@ -32,8 +32,32 @@ import type { CSSProperties, ReactNode } from "react";
  * premier commerçant qui écrit « à partir seulement de » — et un prix qu'on ne
  * sait pas découper doit s'afficher entier, jamais amputé.
  */
+/**
+ * ═══ LE SIGNE EURO NE PART JAMAIS SEUL À LA LIGNE ═════════════════════════
+ *
+ * « Le prix aussi : parfois le signe euro est à la ligne quand le chiffre fait
+ * par exemple 8,40. »
+ *
+ * MESURÉ, ET LA CAUSE EST UNE ESPACE ORDINAIRE. La typographie française met
+ * une espace entre le nombre et son unité — « 8,40 € » — et une espace
+ * ordinaire est un endroit où le navigateur a le droit de couper. À quatre
+ * chiffres, « 8,40 » remplit la ligne et le « € » tombe tout seul dessous : un
+ * prix cassé en deux se lit deux fois, et le second morceau ne veut rien dire.
+ *
+ * ON REMPLACE DONC L'ESPACE PAR UNE INSÉCABLE, à la source, pour tous les prix
+ * de toutes les cartes. C'est la même correction que « 210 m » dans la ligne du
+ * commerce, qui laissait un « m » seul sur la ligne suivante — même faute, même
+ * remède, et c'est pour ça qu'elle se fait ici et non dans une feuille de
+ * style : `white-space: nowrap` sur le bloc empêcherait AUSSI le qualificatif
+ * de passer à la ligne, et « à partir de 12 € » tiendrait alors sur une ligne
+ * de cent points.
+ */
+function insecable(t: string): string {
+  return t.replace(/\s+(€|euros?|%|m|km|h|min)\b/gi, "\u00a0$1");
+}
+
 function qualifie(prix?: string): { avant: string; nombre: string } {
-  const t = (prix ?? "").trim();
+  const t = insecable((prix ?? "").trim());
   const m = /^(\D*?)\s*(\d.*)$/.exec(t);
   if (!m || !m[1]) return { avant: "", nombre: t };
   return { avant: m[1].trim(), nombre: m[2] };
@@ -398,7 +422,26 @@ export function CarteSwipe({
        d'action : la menthe veut dire « ceci vous engage » dans tout le produit.
        Voir `lib/direct/personnalites.ts`. */
     <div
+      /* ═══ LE ROND MONTE EN FACE DU TITRE ══════════════════════════════════
+
+         « Le cercle, dans le cas où le texte le permet, pourrait être en face
+         du texte tout en haut, pour gagner de l'espace plus bas et ne pas être
+         en face du prix. »
+
+         MESURE : le rond tenait de 245 à 349 points, c'est-à-dire exactement en
+         face de la fiche — « Il reste 4 parts », « À 250 m » — et juste sous le
+         prix. Il volait cent quatre points de largeur à la seule zone de
+         l'écran où l'on lit des chiffres, alors que la bande du titre, au-dessus,
+         était vide sur sa moitié droite.
+
+         « QUAND LE TEXTE LE PERMET » EST LA BONNE CONDITION, et elle se mesure :
+         un titre court s'écrit en très gros corps — soixante-dix points — et
+         remplit toute la largeur ; lui retirer cent seize points le casserait en
+         quatre lignes. Un titre moyen ou long, lui, s'écrit plus petit et laisse
+         la place. Le rond ne monte donc que là. */
       className={`cd-carte${sec ? " sec" : ""}${c.flash ? " flash" : ""}${
+        c.quoi.length > 14 ? " hautrond" : ""
+      }${
         c.langage ? ` m-${c.langage.cle}` : ""
       } ${className}`}
       style={
@@ -705,7 +748,7 @@ export function CarteSwipe({
                 par métier ferait neuf applications. Voir `Personnalite.titre`. */}
             <h2
               className={`cd-offre t-${c.langage?.titre ?? "gras"}${
-                c.quoi.length > 34 ? " long" : c.quoi.length > 18 ? " moyen" : ""
+                c.quoi.length > 22 ? " long" : c.quoi.length > 14 ? " moyen" : ""
               }`}
             >
               {c.quoi}
@@ -830,7 +873,7 @@ export function CarteSwipe({
                       au prix habituel ». */}
                   {c.prixBarre && <em>*</em>}
                 </b>
-                {c.prixBarre && <s>{c.prixBarre}</s>}
+                {c.prixBarre && <s>{insecable(c.prixBarre)}</s>}
               </p>
             )}
             {/* ─── CE QUE LE FLASH NE REMPLACE PAS ───
@@ -875,10 +918,22 @@ export function CarteSwipe({
                     <circle cx="12" cy="12" r="9.2" />
                     <path d="M12 6.6V12l3.6 2.2" />
                   </svg>
+                  {/* ═══ « IL RESTE N », ET PAS « N RESTANTES » ═══════════════
+
+                      DEUX RAISONS, ET LA PREMIÈRE EST UNE FAUTE. « 12 bouquets
+                      restantes » : le mot du métier vient des données — part,
+                      place, bouquet, créneau, pièce — et son genre avec lui.
+                      Accorder l'adjectif ici revenait à parier, et le pari
+                      était toujours au féminin. « Il reste » ne s'accorde avec
+                      rien.
+
+                      LA SECONDE EST QUE CE NOMBRE DOIT SE LIRE COMME UN
+                      DÉCOMPTE. « Il reste 12 » dit qu'il en restait treize ;
+                      « 12 restantes » décrit un stock. C'est la même
+                      information et ce n'est pas la même phrase. */}
                   <span>
-                    <b>{c.combien}</b>
-                    {c.langage ? ` ${c.langage.unite[c.combien > 1 ? 1 : 0]}` : ""} restant
-                    {c.combien > 1 ? "es" : "e"}
+                    Il reste <b>{c.combien}</b>
+                    {c.langage ? ` ${c.langage.unite[c.combien > 1 ? 1 : 0]}` : ""}
                   </span>
                 </li>
               )}
@@ -894,31 +949,25 @@ export function CarteSwipe({
                   </span>
                 </li>
               )}
-              {!!c.clientsMois && (
-                <li>
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="9" cy="8" r="3.2" />
-                    <path d="M2.8 20c0-3.4 2.8-5.6 6.2-5.6s6.2 2.2 6.2 5.6" />
-                    <path d="M16.2 5.4a3.2 3.2 0 0 1 0 6" />
-                    <path d="M17.6 14.9c2.3.6 3.8 2.5 3.8 5.1" />
-                  </svg>
-                  <span>
-                    +{c.clientsMois} clients
-                    <i>ce mois-ci</i>
-                  </span>
-                </li>
-              )}
-              {!!c.note && (
-                <li>
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="m12 3.4 2.7 5.5 6 .9-4.3 4.2 1 6-5.4-2.8-5.4 2.8 1-6L3.3 9.8l6-.9Z" />
-                  </svg>
-                  <span>
-                    <b>{c.note}</b>
-                    {c.avis ? ` (${c.avis} avis)` : ""}
-                  </span>
-                </li>
-              )}
+              {/* ═══ DEUX LIGNES SUPPRIMÉES, ET C'EST LUI QUI LES A COUPÉES ═══
+
+                  « +347 clients ce mois-ci : supprimer, on ne peut pas le
+                  savoir et ce n'est pas une info très intéressante. »
+
+                  IL A DOUBLEMENT RAISON. Le nombre était de la fiction déclarée
+                  — assumée — mais aucune de ces deux lignes ne se lit : la
+                  première ne change aucune décision (on ne choisit pas un
+                  restaurant parce que trois cents personnes y sont allées le
+                  mois dernier), et un nombre qu'on ne saura jamais compter en
+                  vrai est un nombre qu'il faudra retirer le jour du lancement.
+
+                  « 4,9 (47 avis) : supprimer puisqu'on a déjà l'info plus bas. »
+                  Elle est écrite deux fois sur le même écran, à trois cents
+                  points d'écart. Une information répétée n'est pas deux fois
+                  plus lue ; elle prend deux fois la place.
+
+                  IL RESTE LES DEUX QUI DÉCIDENT : combien il en reste, et à
+                  quelle distance c'est. */}
             </ul>
             {c.flash?.continue && <p className="cd-flash-s">{c.flash.continue}</p>}
             {/* LE NOM DU COMMERCE EST LISIBLE, ET IL N'EST PLUS LE TITRE.
@@ -959,7 +1008,7 @@ export function CarteSwipe({
             {(c.prix || c.etiquette) && (
               <div className="cd-prix">
                 {c.prix && <b>{c.prix}</b>}
-                {c.prixBarre && <s>{c.prixBarre}</s>}
+                {c.prixBarre && <s>{insecable(c.prixBarre)}</s>}
                 {c.etiquette && <em>{c.etiquette}</em>}
               </div>
             )}
@@ -1324,8 +1373,28 @@ export function StylesDirect() {
            recoit la meme reserve ; le prix et le reste sont plus bas que
            l'anneau et gardent toute la largeur. */
         .cd-offre,.cd-detail{padding-right:114px;}
-        .cd-offre.moyen{font-size:clamp(37px,11vw,52px);}
-        .cd-offre.long{font-size:clamp(30px,8.6vw,41px);line-height:.94;}
+        /* ═══ LE TITRE NE SE COUPE PAS ══════════════════════════════════════
+
+           « Le texte en haut est tronqué. » MESURE : « De la place, sans
+           attendre » — vingt-cinq signes — tombait dans le palier « moyen », a
+           quarante-trois points sur un ecran de trois cent quatre-vingt-dix, et
+           demandait QUATRE lignes pour un cadre qui en autorise trois. Il
+           s'affichait « DE LA PLACE, SANS… ».
+
+           LE TITRE EST L'OFFRE. C'est la seule ligne de la carte qui dit ce
+           qu'on vient chercher : la couper en plein milieu enleve sa moitie
+           utile. Deux corrections plutot qu'une, parce qu'aucune ne suffit
+           seule :
+
+             · LES PALIERS DESCENDENT. Vingt-deux signes suffisent a faire
+               passer au petit corps — c'est la ou la mesure place la rupture,
+               pas a trente-quatre.
+             · LE PETIT CORPS GAGNE UNE QUATRIEME LIGNE. A trente points, quatre
+               lignes tiennent dans la meme hauteur que trois a quarante-trois :
+               on ne prend la place de rien. */
+        .cd-offre.moyen{font-size:clamp(34px,10vw,48px);}
+        .cd-offre.long{font-size:clamp(28px,8vw,38px);line-height:.96;
+          -webkit-line-clamp:4;}
         /* ─── TROIS TONS DE TITRE, MEME PLACE ET MEME TAILLE ───
            « La structure UX est quasiment sacree ; le contenu et la personnalite
            visuelle peuvent evoluer selon le metier. » On ne touche donc ni a la
@@ -1640,6 +1709,17 @@ export function StylesDirect() {
 
            LES DEUX ETATS ONT LE MEME DESSIN : le chrono et la porte de la
            carte ne different que par ce qu'ils contiennent. */
+        /* ═══ LE ROND MONTE EN FACE DU TITRE ════════════════════════════════
+           Voir le commentaire au-dessus de hautrond dans le composant. MESURE :
+           a 29 % il tenait de 245 a 349 points, c'est-a-dire en face de la fiche
+           — « Il reste 4 parts », « A 250 m » — et juste sous le prix. La bande
+           du titre, au-dessus, etait vide sur sa moitie droite.
+           ET LE TITRE LUI FAIT PLACE quand il monte : sans ce rembourrage a
+           droite, la troisieme ligne du titre passerait dessous. Les seize
+           points de plus que le rond sont l'ecart qui empeche les lettres de le
+           toucher. */
+        .cd-carte.hautrond .cd-anneau{top:7%;}
+        .cd-carte.hautrond .cd-offre{padding-right:120px;}
         .cd-anneau{position:absolute;right:18px;top:29%;z-index:3;
           width:104px;height:104px;border-radius:50%;
           display:flex;flex-direction:column;align-items:center;
