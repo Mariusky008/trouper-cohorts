@@ -3856,6 +3856,10 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
        */
       note: c.google?.note,
       avis: c.google?.avis,
+      // SES PHOTOS, EN BANDE SOUS L'ANNONCE — voir `CarteDirect.photos`. La
+      // carte les reçoit telles quelles : c'est elle qui met la sienne en tête,
+      // dédoublonne, et décide qu'en dessous de deux il n'y a pas de bande.
+      photos: c.sesPhotos,
       clientsMois: nombreDeDemo(c.id, "clients", 80, 460),
       gardes: nombreDeDemo(c.id, "gardes", 40, 320),
       partages: nombreDeDemo(c.id, "partages", 8, 90),
@@ -3922,6 +3926,7 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
     // ce qui s'est passé — mesuré sur le bar, qui prend la seconde.
     note: c.google?.note,
     avis: c.google?.avis,
+    photos: c.sesPhotos,
     clientsMois: nombreDeDemo(c.id, "clients", 80, 460),
     gardes: nombreDeDemo(c.id, "gardes", 40, 320),
     partages: nombreDeDemo(c.id, "partages", 8, 90),

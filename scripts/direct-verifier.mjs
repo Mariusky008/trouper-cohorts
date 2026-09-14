@@ -2944,6 +2944,81 @@ console.log("\n══ la page du commerce ══");
   await dec.close();
 }
 
+// ═══ SES PHOTOS, EN BANDE SOUS L'ANNONCE ══════════════════════════════════
+//
+// CE QUE ÇA PROTÈGE : « Ça peut n'être que 3 photos ou 5, donc il faudra
+// ajuster en fonction de ce que le commerçant aura mis. Et quand on appuie sur
+// une photo, elle se met à la place de la grande photo plein écran qu'on a déjà
+// quand on arrive sur l'annonce. Et s'il n'y a qu'une seule photo, alors aucune
+// miniature n'apparaît et ça fait gagner de la place sur l'annonce. »
+//
+// TROIS RÈGLES, ET LA TROISIÈME EST CELLE QU'ON CASSE SANS S'EN APERCEVOIR. Le
+// nombre variable se voit ; l'échange de photo se voit ; l'ABSENCE de bande
+// chez un commerçant qui n'a qu'une photo ne se voit que si on va exprès chez
+// lui. C'est pourtant elle qui porte l'intention — « ça fait gagner de la place
+// » — et le jour où une bande d'une seule vignette réapparaît, personne ne
+// trouvera ça anormal en relisant l'écran.
+{
+  console.log("\n══ ses photos changent la grande, et disparaissent s'il n'en a qu'une ══");
+  const ph = await nav.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  await ph.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
+  await ph.addInitScript(() =>
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
+  );
+  const pP = await ph.newPage();
+
+  // LA CARTE DU DESSUS EST LA DERNIÈRE DU DOM — le paquet empile.
+  const etat = () =>
+    pP.evaluate(() => {
+      const c = [...document.querySelectorAll(".cd-carte")].pop();
+      if (!c) return null;
+      const fond = (e) =>
+        (getComputedStyle(e).backgroundImage.match(/direct\/[^"')]+/) || [null])[0];
+      return {
+        vignettes: [...c.querySelectorAll(".cd-vig")].map((v) => fond(v)),
+        vue: [...c.querySelectorAll(".cd-vig")].findIndex((v) => v.classList.contains("vue")),
+        grande: fond(c.querySelector(".cd-photo")),
+        legende: c.querySelector(".cd-bande-l")?.textContent?.trim() ?? null,
+      };
+    });
+
+  await pP.goto(`${BASE}/autour-de-moi?carte=deux-rues`, { waitUntil: "networkidle" });
+  await pP.waitForTimeout(1800);
+  const a = await etat();
+  dire((a?.vignettes.length ?? 0) >= 3, `un restaurant qui a des photos les montre (${a?.vignettes.length ?? 0})`);
+  // CHAQUE VIGNETTE EST UNE IMAGE DIFFÉRENTE : la photo du jour est souvent
+  // déjà dans ses photos de fiche, et la bande la montrait deux fois.
+  dire(
+    new Set(a?.vignettes ?? []).size === (a?.vignettes.length ?? 0),
+    "aucune n'est montrée deux fois",
+  );
+  dire(a?.vue === 0, "celle de l'annonce ouvre la bande et se voit comme telle");
+  dire(a?.grande === a?.vignettes[0], "et c'est elle qui est plein cadre");
+
+  await pP.locator(".cd-carte").last().locator(".cd-vig").nth(1).click();
+  await pP.waitForTimeout(700);
+  const b = await etat();
+  dire(
+    b?.grande === a?.vignettes[1] && b?.grande !== a?.grande,
+    `appuyer sur une vignette la met plein cadre (${b?.grande ?? "rien"})`,
+  );
+  dire(!!b?.legende, `et ce qu'on regarde est nommé (« ${b?.legende ?? "rien"} »)`);
+  dire(b?.vue === 1, "la bande dit laquelle est au mur, donc comment revenir");
+
+  // ET LE CAS QUI NE SE VOIT PAS : un commerçant qui n'a qu'une photo.
+  await pP.goto(`${BASE}/autour-de-moi?carte=boucher`, { waitUntil: "networkidle" });
+  await pP.waitForTimeout(1800);
+  const s = await etat();
+  dire(
+    s?.vignettes.length === 0,
+    `avec une seule photo, aucune miniature ne prend de place (${s?.vignettes.length ?? "?"})`,
+  );
+  await ph.close();
+}
+
 // ═══ LE MUR D'UN LIEU, D'APRÈS LA MAQUETTE ════════════════════════════════
 //
 // CE QUE ÇA PROTÈGE : « Restaurant, bars et événements : respecter le design là

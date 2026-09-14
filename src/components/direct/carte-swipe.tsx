@@ -16,9 +16,25 @@
 // pas. Le jour où la carte change de forme, elle change aux deux endroits — et
 // il devient IMPOSSIBLE de montrer en démonstration un écran qui n'existe pas.
 //
-// Composant PRÉSENTATIONNEL : il ne fait que rendre ce qu'on lui donne, aucun
-// geste, aucun état. Les gestes appartiennent à l'écran qui l'utilise.
-import type { CSSProperties, ReactNode } from "react";
+// Composant PRÉSENTATIONNEL : il ne fait que rendre ce qu'on lui donne. Les
+// gestes appartiennent à l'écran qui l'utilise.
+//
+// ═══ SAUF UN, ET IL EST DÉLIBÉRÉ : QUELLE PHOTO EST AU MUR ═════════════════
+//
+// « Quand on appuie sur une photo, elle se met à la place de la grande photo
+// plein écran qu'on a déjà quand on arrive sur l'annonce. »
+//
+// CE CHOIX-LÀ NE SORT JAMAIS DE LA CARTE. Il ne change rien au paquet, rien à
+// ce qui est réservé, rien à ce qui remonte au commerçant : c'est un regard,
+// pas une décision. Le faire remonter à l'écran porteur aurait obligé celui-ci
+// à retenir une photo par carte et à l'oublier au bon moment — pour une
+// information qui n'a de sens que tant que la carte est à l'écran.
+//
+// LA RÈGLE RESTE ENTIÈRE POUR TOUT LE RESTE : ce qui engage remonte, ce qui
+// regarde reste.
+"use client";
+
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
 /**
  * SÉPARER LE QUALIFICATIF DU MONTANT.
@@ -79,6 +95,30 @@ export type CarteDirect = {
    * cadrage : c'est le seul réglage qui rattrape une image sans la retoucher.
    */
   cadrage?: string;
+  /**
+   * ═══ SES AUTRES PHOTOS, EN BANDE SOUS L'ANNONCE ═══════════════════════════
+   *
+   * « Ça peut n'être que 3 photos ou 5, donc il faudra ajuster en fonction de
+   * ce que le commerçant aura mis. Et s'il n'y a qu'une seule photo, alors
+   * aucune miniature n'apparaît et ça fait gagner de la place sur l'annonce. »
+   *
+   * LE NOMBRE N'EST PAS UN RÉGLAGE, C'EST UNE CONSÉQUENCE. Trois, cinq, ou
+   * aucune : la bande compte ce qu'il y a. C'est la même règle que partout
+   * ailleurs dans ce produit — on n'affiche pas un emplacement vide en
+   * attendant que quelqu'un le remplisse.
+   *
+   * ET ZÉRO MINIATURE EST UN CAS À PART ENTIÈRE, pas un cas dégradé. Un
+   * commerçant qui n'a qu'une photo ne doit pas voir une bande d'une seule
+   * vignette — qui ne servirait à rien, puisqu'elle montre ce qui est déjà
+   * plein cadre au-dessus — mais une annonce PLUS COURTE. La place gagnée
+   * remonte le prix et le geste sous le pouce.
+   *
+   * LA PREMIÈRE EST TOUJOURS CELLE DE L'ANNONCE, et c'est ce qui rend le
+   * retour possible : on peut regarder la salle, puis revenir à ce qui est
+   * proposé aujourd'hui. Sans elle, on sortirait de l'offre sans pouvoir y
+   * rentrer.
+   */
+  photos?: { src: string; quoi: string }[];
   /**
    * LE FILM DE L'ANNONCE, PLEIN CADRE — et il passe devant la photo.
    *
@@ -410,6 +450,54 @@ export function CarteSwipe({
 }) {
   const c = carte;
   const sec = variante === "seconde";
+
+  /**
+   * ═══ LA BANDE, ET CE QU'ELLE CONTIENT VRAIMENT ═════════════════════════════
+   *
+   * LA PHOTO DE L'ANNONCE OUVRE LA LISTE, puis viennent les siennes. On
+   * DÉDOUBLONNE sur l'adresse du fichier, parce que le cas se produit dès le
+   * premier commerce : la photo du jour est souvent déjà dans ses photos de
+   * fiche, et la bande aurait montré deux fois la même image côte à côte.
+   *
+   * UNE SEULE ENTRÉE VEUT DIRE PAS DE BANDE. C'est sa demande, et c'est aussi
+   * la seule lecture juste : une vignette unique ne propose aucun choix, elle
+   * répète en petit ce qui est déjà plein cadre.
+   */
+  const photos = (() => {
+    const vues = new Set<string>();
+    const l: { src: string; quoi: string }[] = [];
+    if (c.photo) {
+      vues.add(c.photo);
+      l.push({ src: c.photo, quoi: c.quoi });
+    }
+    for (const p of c.photos ?? []) {
+      if (!p.src || vues.has(p.src)) continue;
+      vues.add(p.src);
+      l.push(p);
+    }
+    return l.length > 1 ? l : [];
+  })();
+
+  /**
+   * ═══ CE QUI EST AU MUR, ET POURQUOI ÇA SE REMET EN PLACE TOUT SEUL ════════
+   *
+   * LE PAQUET RÉUTILISE SES CARTES. React garde le même composant monté et lui
+   * passe la carte suivante : sans remise à zéro, on aurait balayé vers « La
+   * formule du midi » en regardant encore la salle du restaurant précédent —
+   * la photo d'un commerce sur l'annonce d'un autre, ce qui est le pire défaut
+   * possible sur cet écran.
+   *
+   * L'EFFET DÉPEND DE L'ADRESSE DE LA PHOTO, pas de l'objet `carte` : celui-ci
+   * est reconstruit à chaque rendu — le décompte des réservations en fabrique
+   * un neuf — et l'effet se serait relancé sans fin.
+   */
+  const photoAnnonce = c.photo ?? "";
+  const [regardee, setRegardee] = useState("");
+  useEffect(() => {
+    setRegardee("");
+  }, [photoAnnonce]);
+  const auMur = regardee || photoAnnonce;
+
   return (
     /* ⚡ UNE CARTE FLASH NE RESSEMBLE À AUCUNE AUTRE — c'est la demande, et
        c'était le défaut : « l'annonce ne fait pas différente d'une autre alors
@@ -464,10 +552,14 @@ export function CarteSwipe({
       <div
         className={`cd-photo${c.photo ? "" : " sans"}`}
         style={
-          c.photo
+          auMur
             ? {
-                backgroundImage: `url("${encodeURI(c.photo)}"), linear-gradient(155deg,#22463A,#0D1A15 70%)`,
-                backgroundPosition: `center ${c.cadrage || "50%"}`,
+                backgroundImage: `url("${encodeURI(auMur)}"), linear-gradient(155deg,#22463A,#0D1A15 70%)`,
+                /* LE CADRAGE NE SUIT QUE LA PHOTO DE L'ANNONCE. Il a été réglé
+                   pour ELLE — « le sujet est bas, remonte de dix pour cent » —
+                   et l'appliquer à une autre image la décadre. Les siennes
+                   prennent le milieu, qui ne trahit aucune. */
+                backgroundPosition: `center ${regardee ? "50%" : c.cadrage || "50%"}`,
               }
             : undefined
         }
@@ -989,6 +1081,56 @@ export function CarteSwipe({
               </s>
             </p>
             {c.social && <span className="cd-social">💚 {c.social}</span>}
+            {/* ═══ SES AUTRES PHOTOS, SOUS L'ANNONCE ═══════════════════════
+
+                « Quand on appuie sur une photo, elle se met à la place de la
+                grande photo plein écran qu'on a déjà quand on arrive sur
+                l'annonce. »
+
+                POURQUOI ICI ET PAS PLUS HAUT. La bande est le dernier étage de
+                la carte : au-dessus se trouve tout ce qui décide — ce qui est
+                proposé, le prix, ce qu'il reste, où c'est. Les photos de sa
+                fiche ne décident de rien, elles rassurent. Posées avant le
+                prix, elles auraient repoussé sous le pli la seule ligne pour
+                laquelle on s'est arrêté.
+
+                LE GESTE S'ARRÊTE LÀ. `stopPropagation` sur l'appui, parce que
+                la carte entière est une surface de balayage : sans lui, choisir
+                une vignette faisait glisser le paquet d'un commerce, et on
+                regardait la photo d'à côté. */}
+            {photos.length > 0 && (
+              <ul
+                className="cd-bande"
+                onPointerDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+              >
+                {photos.map((p) => (
+                  <li key={p.src}>
+                    <button
+                      type="button"
+                      className={`cd-vig${p.src === auMur ? " vue" : ""}`}
+                      aria-pressed={p.src === auMur}
+                      aria-label={p.quoi}
+                      title={p.quoi}
+                      onClick={() => setRegardee(p.src)}
+                      style={{ backgroundImage: `url("${encodeURI(p.src)}")` }}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+            {/* CE QU'ON REGARDE EST NOMMÉ, ET C'EST LA MOITIÉ DU TRAVAIL. « La
+                salle » et « Axoa de veau, un AUTRE JOUR » ne disent pas la même
+                chose : sans la légende, on ne sait pas si le plat à l'écran est
+                servi aujourd'hui — exactement la confusion qu'une carte du jour
+                existe pour éviter. Elle n'apparaît qu'une fois qu'on a choisi :
+                sur la photo de l'annonce, le titre juste au-dessus le dit
+                déjà. */}
+            {!!regardee && (
+              <p className="cd-bande-l">
+                {photos.find((p) => p.src === regardee)?.quoi}
+              </p>
+            )}
           </div>
         ) : (
           <>
@@ -1540,6 +1682,44 @@ export function StylesDirect() {
           border-left:2.5px solid var(--cd-accent);}
         .cd-chez s{text-decoration:none;font-weight:400;color:#A9BDB2;}
         .cd-carte.sec .cd-social{align-self:center;margin-top:9px;}
+
+        /* ═══ LA BANDE DE SES PHOTOS ════════════════════════════════════════
+
+           « Ca peut n'etre que 3 photos ou 5, donc il faudra ajuster en
+           fonction de ce que le commercant aura mis. Et s'il n'y a qu'une seule
+           photo, alors aucune miniature n'apparait et ca fait gagner de la
+           place sur l'annonce. »
+
+           ELLE S'ADAPTE SANS COMPTER, et c'est ce qui la rend juste pour trois
+           comme pour huit. Les vignettes ont une taille FIXE et la bande defile
+           horizontalement quand elles depassent : une grille qui partage la
+           largeur aurait donne des timbres-poste a partir de six. A cinquante-
+           six points, on reconnait une salle, un plat, une devanture — c'est
+           tout ce qu'on demande a une miniature.
+
+           LA BANDE N'EXISTE PAS DU TOUT QUAND IL N'Y A QU'UNE PHOTO : c'est
+           decide dans le composant, pas ici. Une regle de style qui la cache
+           laisserait sa marge, et la place gagnee est justement ce qu'il
+           demande. */
+        .cd-bande{display:flex;gap:7px;align-self:stretch;margin:11px 0 0;
+          padding:0 0 2px;list-style:none;overflow-x:auto;
+          scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+        .cd-bande::-webkit-scrollbar{display:none;}
+        .cd-bande li{flex:none;}
+        .cd-vig{width:56px;height:56px;padding:0;border-radius:13px;
+          background-color:#101825;background-size:cover;background-position:center;
+          border:1.5px solid rgba(255,255,255,.16);cursor:pointer;
+          box-shadow:0 6px 16px -10px rgba(0,0,0,.9);
+          transition:border-color .16s ease,transform .16s ease,opacity .16s ease;
+          opacity:.72;}
+        .cd-vig:active{transform:scale(.94);}
+        /* CELLE QU'ON REGARDE SE VOIT, ET C'EST LA SEULE FACON DE REVENIR.
+           Sans marque, on ne sait plus laquelle est au mur — donc on ne sait
+           plus laquelle ramene a l'offre du jour. */
+        .cd-vig.vue{opacity:1;border-color:var(--cd-accent,#EAF2EC);
+          box-shadow:0 0 0 2px rgba(0,0,0,.45),0 6px 18px -10px rgba(0,0,0,.9);}
+        .cd-bande-l{align-self:stretch;margin:7px 0 0;font-size:11.5px;
+          font-weight:700;line-height:1.3;color:rgba(255,255,255,.72);}
         /* « JUSQU'A QUAND » EST LA SEULE RARETE QU'ON PUISSE ECRIRE SANS
            L'INVENTER. On ne sait pas combien il reste de parts — un commercant
            photographie son ardoise le matin et ne decompte rien pendant le
