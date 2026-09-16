@@ -150,6 +150,80 @@ async function parGemini(
   return { erreur: "Gemini n'a pas rendu d'image." };
 }
 
+/**
+ * ═══ LE FORMAT DE SORTIE SUIT CELUI DE LA PHOTO DU CLIENT ══════════════════
+ *
+ * « L'IA a recréé toute la photo au lieu de modifier uniquement les vêtements :
+ * elle a changé la position des jambes et la coupe du jean. »
+ *
+ * ON DEMANDAIT UN CARRÉ POUR UNE PHOTO EN PIED. `size` était figé à
+ * 1024×1024 : une photo verticale de deux mètres de haut devait rentrer dans un
+ * carré. Le modèle ne recadre pas — il RECOMPOSE, c'est-à-dire qu'il redessine
+ * la personne dans le format demandé. Les jambes qui se déplacent et le jean
+ * qui change de coupe ne sont pas un caprice du modèle : c'est ce qu'on lui a
+ * demandé sans le savoir.
+ *
+ * ON LIT DONC LES DIMENSIONS DE SA PHOTO et on demande le format qui lui
+ * ressemble. Trois valeurs existent chez OpenAI — carré, portrait, paysage — et
+ * choisir la bonne coûte zéro milliseconde.
+ *
+ * SANS BIBLIOTHÈQUE, PARCE QU'UN EN-TÊTE SE LIT À LA MAIN. PNG écrit sa taille
+ * aux octets 16 à 24 ; JPEG la range dans le premier segment SOF. Ajouter une
+ * dépendance d'image pour deux nombres serait plus de risque que de travail.
+ */
+function dimensions(b64: string): { l: number; h: number } | null {
+  let b: Buffer;
+  try {
+    b = Buffer.from(b64, "base64");
+  } catch {
+    return null;
+  }
+  if (b.length < 24) return null;
+  // PNG : signature, puis IHDR à l'octet 16.
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) {
+    return { l: b.readUInt32BE(16), h: b.readUInt32BE(20) };
+  }
+  // JPEG : on saute de segment en segment jusqu'au SOF, qui porte la taille.
+  if (b[0] === 0xff && b[1] === 0xd8) {
+    let i = 2;
+    while (i + 9 < b.length) {
+      if (b[i] !== 0xff) {
+        i += 1;
+        continue;
+      }
+      const m = b[i + 1];
+      // SOF0..SOF3 et SOF5..SOF7, SOF9..SOF11, SOF13..SOF15 portent la taille ;
+      // les autres marqueurs à 0xC4/0xC8/0xCC sont des tables, pas des cadres.
+      if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) {
+        return { h: b.readUInt16BE(i + 5), l: b.readUInt16BE(i + 7) };
+      }
+      if (m === 0xd8 || m === 0xd9 || (m >= 0xd0 && m <= 0xd7)) {
+        i += 2;
+        continue;
+      }
+      i += 2 + b.readUInt16BE(i + 2);
+    }
+  }
+  return null;
+}
+
+/**
+ * LE FORMAT LE PLUS PROCHE, PARMI LES TROIS QU'OPENAI ACCEPTE.
+ *
+ * ON NE DEVINE PAS QUAND ON NE SAIT PAS : sans dimensions lisibles, on rend
+ * `undefined` et l'appel garde le réglage d'environnement, ou le carré. Une
+ * valeur inventée serait pire que l'ancien défaut — elle le rendrait
+ * imprévisible.
+ */
+function formatDe(b64: string): string | undefined {
+  const d = dimensions(b64);
+  if (!d || !d.l || !d.h) return undefined;
+  const r = d.l / d.h;
+  if (r > 1.2) return "1536x1024";
+  if (r < 0.83) return "1024x1536";
+  return "1024x1024";
+}
+
 async function parOpenAI(
   cle: string,
   photo: { type: string; donnees: string },
@@ -185,14 +259,46 @@ async function parOpenAI(
    *     modèle « améliore » la photo et la cliente ne se reconnaît plus — ce qui
    *     vide l'essai de son sens.
    */
-  forme.append("quality", s(process.env.OPENAI_IMAGE_QUALITY) || "low");
-  forme.append("size", s(process.env.OPENAI_IMAGE_SIZE) || "1024x1024");
+  forme.append("quality", s(process.env.OPENAI_IMAGE_QUALITY) || "medium");
+  // LE RÉGLAGE D'ENVIRONNEMENT GAGNE TOUJOURS, parce que c'est le seul moyen de
+  // rattraper un format en production sans redéployer. À défaut, on suit la
+  // photo du client ; à défaut encore, le carré d'avant.
+  const format = s(process.env.OPENAI_IMAGE_SIZE) || formatDe(photo.donnees) || "1024x1024";
+  forme.append("size", format);
   forme.append("input_fidelity", "high");
   const enFichier = (x: { type: string; donnees: string }, nom: string) =>
     new File([Buffer.from(x.donnees, "base64")], nom, { type: x.type });
   forme.append("image[]", enFichier(photo, "client.png"));
   forme.append("image[]", enFichier(reference, "reference.png"));
   const base = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
+  /**
+   * ═══ CE QU'ON A VRAIMENT ENVOYÉ, DANS LES JOURNAUX ════════════════════════
+   *
+   * « Demande-lui d'enregistrer, pour chaque essai : l'endpoint utilisé, le
+   * modèle réellement appelé, l'ordre des deux images, le prompt final, les
+   * dimensions envoyées et celles du résultat. »
+   *
+   * C'EST LE BON RÉFLEXE, ET IL VIENT DE SERVIR : trois des cinq soupçons de son
+   * analyse portaient sur des choses déjà correctes — c'est bien l'endpoint
+   * d'édition, la photo du client est bien en premier, et `input_fidelity: high`
+   * est déjà posé. Sans trace, on aurait « corrigé » trois fois ce qui marchait.
+   *
+   * LE PROMPT N'Y EST QU'EN LONGUEUR, PAS EN ENTIER : il fait deux mille signes
+   * et il est le même à chaque appel pour un métier donné. Ce qu'on veut savoir
+   * d'un journal, c'est ce qui CHANGE d'un essai à l'autre.
+   */
+  console.info(
+    "[essai] POST /v1/images/edits",
+    JSON.stringify({
+      modele,
+      images: ["client", "reference"],
+      format,
+      qualite: s(process.env.OPENAI_IMAGE_QUALITY) || "medium",
+      fidelite: "high",
+      entree: { client: dimensions(photo.donnees), reference: dimensions(reference.donnees) },
+      consigne: consigne(partie, garder, change, decrire).length,
+    }),
+  );
   const r = await fetch(`${base}/v1/images/edits`, {
     method: "POST",
     headers: { authorization: `Bearer ${cle}` },

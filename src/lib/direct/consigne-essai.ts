@@ -184,7 +184,25 @@ export function consigne(
     "  les grains de beauté, les cicatrices, la pilosité et la barbe telles qu'elles sont.",
     "- L'âge, la carnation, le teint, la corpulence et l'expression tels qu'ils sont.",
     "- La pose, l'angle de la tête, le cadrage, l'arrière-plan, la lumière et les ombres.",
-    "- Les vêtements et leur couleur.",
+    // ═══ SAUF QUAND CE SONT LES VETEMENTS QU'ON ESSAIE ═══════════════════════
+    //
+    // « Je ne comprends pas pourquoi l'IA change les proportions et la tête
+    // complètement. »
+    //
+    // LA CONSIGNE SE CONTREDISAIT, ET SUR CE MÉTIER-LÀ SEULEMENT. Elle disait
+    // en haut « modifier UNIQUEMENT le vêtement porté sur le buste », et vingt
+    // lignes plus bas, dans la liste de ce qui ne bouge pas : « Les vêtements et
+    // leur couleur. » Les deux phrases s'annulent. Un modèle d'image à qui l'on
+    // demande une chose et son contraire ne s'arrête pas pour demander : il
+    // tranche, et il tranche en refabriquant — ce qui donne exactement une pose
+    // qui change, des jambes qui bougent et une ceinture qui disparaît.
+    //
+    // ELLE ÉTAIT JUSTE POUR LES SEPT AUTRES MÉTIERS : chez le coiffeur, le
+    // tatoueur ou l'onglerie, garder les vêtements est précisément ce qu'on
+    // veut. La ligne reste donc, sauf là où elle contredit le travail demandé.
+    ...(/v[êe]tement|tenue|habit|buste|robe|pantalon/i.test(quoi)
+      ? []
+      : ["- Les vêtements et leur couleur."]),
     ...garder.map((g) => `- ${g}`),
     "",
     // ═══ LA RÈGLE QUI MANQUAIT, ET ELLE A SA PROPRE SECTION ═══

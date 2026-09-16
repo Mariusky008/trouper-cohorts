@@ -68,8 +68,32 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
  * de passer à la ligne, et « à partir de 12 € » tiendrait alors sur une ligne
  * de cent points.
  */
+/**
+ * ═══ ET LA RÈGLE NE MARCHAIT PAS POUR L'EURO ══════════════════════════════
+ *
+ * « J'ai toujours les chiffres qui ne sont pas collés au sigle €, j'ai le
+ * nombre et dessous le sigle qui lui est à la ligne. »
+ *
+ * IL AVAIT SIGNALÉ CE DÉFAUT DEUX FOIS, ET J'AVAIS RÉPONDU DEUX FOIS QU'IL
+ * ÉTAIT CORRIGÉ. Il ne l'était pas : la règle finissait par `\b`, qui demande
+ * une frontière de MOT après le signe. `€` et `%` ne sont pas des caractères de
+ * mot, et il n'y a rien derrière eux en fin de chaîne — la condition était donc
+ * toujours fausse, et « 8,40 € » ressortait inchangé. Vérifié : sur sept cas,
+ * les trois seuls qui passaient étaient `m`, `h` et `min`, c'est-à-dire les
+ * trois unités écrites avec des lettres.
+ *
+ * UNE MESURE QUI SEMBLE MARCHER PARCE QU'ELLE MARCHE AILLEURS EST PIRE QU'UNE
+ * MESURE ABSENTE : la distance se collait, donc la fonction avait l'air vivante,
+ * et j'ai cru le sujet clos pendant deux tours.
+ *
+ * LA FRONTIÈRE NE S'EXIGE PLUS QUE POUR LES UNITÉS EN LETTRES, où elle sert
+ * vraiment — sans elle, « 3 heures » deviendrait « 3 heures » avec l'espace
+ * collée après un `h` qui n'est pas l'unité.
+ */
 function insecable(t: string): string {
-  return t.replace(/\s+(€|euros?|%|m|km|h|min)\b/gi, "\u00a0$1");
+  return t
+    .replace(/\s+([€%])/g, "\u00a0$1")
+    .replace(/\s+(euros?|km|min|m|h)\b/gi, "\u00a0$1");
 }
 
 function qualifie(prix?: string): { avant: string; nombre: string } {
@@ -1656,7 +1680,15 @@ export function StylesDirect() {
           letter-spacing:.004em;line-height:.96;color:#FFC400;
           text-shadow:0 2px 10px rgba(0,0,0,.72),0 4px 30px rgba(0,0,0,.55);
           font-variant-numeric:tabular-nums;}
-        .cd-prixg b{font-weight:inherit;}
+        /* ─── ET LE PRIX NE SE COUPE PAS, MEME SI LA POLICE CHANGE ───
+           L'espace insecable empeche la coupure A L'ENDROIT DE L'ESPACE. Elle
+           ne protege pas d'un overflow-wrap herite, ni d'une police de repli
+           plus large que celle qu'on a mesuree — et c'est sur SON telephone que
+           le defaut se voyait, pas ici. white-space:nowrap ferme la question :
+           le montant et son signe sont un seul bloc, qui se reduit avec le
+           clamp plutot que de se casser en deux. */
+        .cd-prixg b{font-weight:inherit;white-space:nowrap;}
+        .cd-prixg s{white-space:nowrap;}
         /* LE QUALIFICATIF EST PETIT ET SUR SA LIGNE : il dit comment lire le
            chiffre, il n'est pas le chiffre. Pas de soulignement — la balise
            porte le sens, pas le trait. */

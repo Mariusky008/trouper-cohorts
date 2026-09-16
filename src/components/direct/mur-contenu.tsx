@@ -3280,42 +3280,25 @@ function Essai({
             <b>{piece.nom}</b>
             <em>{piece.prix}</em>
           </div>
-          {/* ═══ GARDER ET MONTRER, SOUS LA PHOTO ═══════════════════════════
+          {/* ═══ ET GARDER / PARTAGER SONT PARTIS AUSSI ═══════════════════
 
-              ILS VIVAIENT DANS LA CARTE FLOTTANTE, qui vient de quitter le
-              rendu pour libérer le visage. Ce sont deux gestes réels — l'un
-              range la monture dans les favoris, l'autre l'envoie à ses amis —
-              et les faire disparaître avec le décor aurait retiré une
-              fonctionnalité sous couvert de mise en page.
+              « Supprimer cette partie de la page résultat. »
 
-              ILS NE REVIENNENT PAS SUR L'IMAGE POUR AUTANT. Sous la photo, dans
-              la bande où se trouvent déjà le nom, le prix et les autres styles :
-              c'est l'endroit où l'on décide, et l'image reste ce qu'on regarde.
+              IL LES AVAIT DEJA FAIT RETIRER DE LA PHOTO au tour precedent — ils
+              vivaient dans la carte flottante, « ça prend beaucoup de place sur
+              la photo ». Je les avais descendus sous l'image plutot que de les
+              supprimer, pour ne pas perdre deux gestes reels. Il les designe une
+              seconde fois : ce n'etait pas leur PLACE qui le genait, c'est leur
+              presence sur cet ecran-la.
 
-              ILS N'APPARAISSENT QU'AU RENDU : ailleurs, c'est la carte flottante
-              qui les porte, et deux exemplaires du même geste sur un écran
-              valent moins qu'un seul. */}
-          {etape === "rendu" && (onFavori || (!!photo && !!rendu && !rendu.souci)) && (
-            <div className="mu-rendu-p">
-              {onFavori && (
-                <button
-                  type="button"
-                  className={favori ? "on" : undefined}
-                  onClick={onFavori}
-                  aria-pressed={favori}
-                >
-                  <Trace cle="coeur" />
-                  <span>{favori ? "Gardé" : "Garder"}</span>
-                </button>
-              )}
-              {!!photo && !!rendu && !rendu.souci && (
-                <button type="button" onClick={() => void partagerLeLook(piece)}>
-                  <Trace cle="partage" />
-                  <span>Partager</span>
-                </button>
-              )}
-            </div>
-          )}
+              ET IL A RAISON SUR LE FOND. Cet ecran repond a une seule question
+              — « est-ce que ça me va ? » — et on y repond au troisieme temps, en
+              donnant son avis. Garder et partager sont des gestes d'APRES la
+              decision ; poses avant, ils proposent de ranger quelque chose dont
+              on ne sait pas encore si on en veut.
+
+              LE GESTE DE GARDER N'EST PAS PERDU : il vit sur l'annonce, dans le
+              rail de droite, et au troisieme temps de l'essai. */}
           {/* ═══ LES AUTRES STYLES, SOUS L'IMAGE ══════════════════════════════
 
               LA MAQUETTE LES MET LÀ, ET C'EST LE PLUS GROS GAIN DE L'ÉCRAN. On
@@ -5040,9 +5023,30 @@ function Styles() {
            comprime a un visage normal, c'est-a-dire deux visages differents,
            c'est-a-dire rien. clip-path laisse le calque a la taille du cadre et
            masque seulement ce qui depasse du trait. */
-        .mu-mi{position:relative;width:100%;aspect-ratio:1;overflow:hidden;
+        /* ═══ RIEN NE SE COUPE PLUS, NI LA TETE NI LES PIEDS ════════════════
+
+           « Ton interface recadre aussi le resultat : le haut de la tete passe
+           derriere le bandeau et la photo semble affichee en object-fit:cover.
+           Meme une bonne image parait donc coupee. »
+
+           LE DIAGNOSTIC EST JUSTE, ET LE CADRE CARRE EN EST LA MOITIE. Un cadre
+           1:1 rempli en cover avec une photo en pied rogne le haut ET le bas :
+           on perdait la tete et les chaussures, c'est-a-dire les deux extremites
+           par lesquelles on juge un vetement.
+
+           contain GARANTIT QU'ON VOIT TOUT, et le cadre passe en quatre
+           cinquiemes — assez vertical pour qu'une photo en pied le remplisse
+           presque, assez large pour qu'une main a plat n'y flotte pas. Ce qui
+           reste de vide est du fond sombre, ce qui est toujours preferable a un
+           membre coupe.
+
+           LES DEUX CALQUES GARDENT LE MEME CADRE : la glissiere compare deux
+           images superposees, et il suffirait qu'une seule se mette en page
+           autrement pour qu'on compare deux cadrages au lieu de deux tenues. */
+        .mu-mi{position:relative;width:100%;aspect-ratio:4/5;overflow:hidden;
           border-radius:18px;background:#0A1210;touch-action:pan-y;}
-        .mu-mi-i{display:block;width:100%;height:100%;object-fit:cover;}
+        .mu-mi-i{display:block;width:100%;height:100%;object-fit:contain;
+          object-position:center;}
         .mu-mi-av{position:absolute;inset:0;
           clip-path:inset(0 calc(100% - var(--x,58%)) 0 0);}
         /* LE TRAIT ET SA POIGNEE NE RECOIVENT AUCUN APPUI : c'est la glissiere,
@@ -5636,20 +5640,6 @@ function Styles() {
            conteneur. On ne rajoute pas un troisieme mot pour dire ce que les
            deux premiers disent. */
         .mu-rendu.plein:not(.court) .mu-rendu-t{display:flex;}
-        /* ─── GARDER ET MONTRER, EN DEUX PASTILLES SOUS LA PHOTO ───
-           En carte flottante de cent vingt-deux points, « Ajouter aux favoris »
-           tenait sur trois lignes. Ici les deux tiennent sur une, et les mots
-           raccourcissent avec la place : garder, partager. */
-        .mu-rendu-p{display:flex;justify-content:center;gap:9px;margin-top:11px;}
-        .mu-rendu-p button{display:inline-flex;align-items:center;gap:7px;
-          font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;
-          color:#E8EFF6;padding:9px 15px;border-radius:999px;
-          background:rgba(255,255,255,.07);
-          border:1px solid rgba(255,255,255,.14);}
-        .mu-rendu-p button .mu-tr{width:17px;height:17px;}
-        .mu-rendu-p button:active{transform:scale(.96);}
-        .mu-rendu-p button.on{color:#FFC7DA;background:rgba(255,120,170,.14);
-          border-color:rgba(255,120,170,.45);}
         /* TOUT LE RESTE REPREND SES SEIZE POINTS — ET ON LE DIT EN NEGATIF,
            PAS EN LISTE. Une liste de classes a marger aurait oublie la
            suivante : l'ecran de l'avis en ajoute huit — la question, les cinq

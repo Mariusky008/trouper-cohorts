@@ -1684,7 +1684,6 @@ export function ApercuHabitant() {
    * avec la carte, et garder l'URL laisserait la photo d'un commerce sur la
    * carte d'un autre.
    */
-  const [iPhoto, setIPhoto] = useState(0);
 
   /**
    * LA VILLE — la troisième brique. Le Direct : les acteurs parlent. La Ville :
@@ -3475,19 +3474,10 @@ export function ApercuHabitant() {
   const sansVideo = (k: CarteDirect): CarteDirect =>
     k.voix?.video ? { ...k, voix: { ...k.voix, video: undefined } } : k;
 
-  /**
-   * LES PHOTOS DE LA CARTE DU DESSUS. Vide pour un événement ou une offre
-   * d'emploi : il n'y a qu'une image, et un carrousel d'une photo est un point
-   * qui ne mène nulle part.
-   */
-  const galerie =
-    dessus && !estInvitation(dessus) && !embauches && vue !== "recrute"
-      ? photosDeLAnnonce(dessus, heure)
-      : [];
-  const carrousel = galerie.length > 1;
-  /** Le rang est borné ici : la liste change avec la carte, pas l'index. */
-  const rangPhoto = carrousel ? Math.min(iPhoto, galerie.length - 1) : 0;
-
+  /* LA LISTE DES PHOTOS DE L'ANNONCE A QUITTE CET ECRAN. Elle vit desormais
+     dans la carte elle-meme, sous forme de bande de miniatures — voir
+     `CarteDirect.photos`. La garder ici revenait a tenir deux inventaires de la
+     meme chose, dont un seul savait les nommer. */
   /** La clé d'un moment dans le carnet local : le commerce et son intitulé. */
   const cleMoment = (c: CarteAutour, m: MomentJour) => `${c.id}|${m.titre}`;
   const avisDe = (c: CarteAutour, m: MomentJour): AvisPlat[] => [
@@ -3610,11 +3600,9 @@ export function ApercuHabitant() {
   useEffect(() => {
     if (vueId) noter("carte-vue", rangVu);
   }, [vueId, rangVu]);
-  // On revient à la première photo en changeant de carte : rester au rang 3
-  // sur une annonce qui n'a qu'une image montrerait un point mort.
-  useEffect(() => {
-    setIPhoto(0);
-  }, [vueId]);
+  // LA REMISE A ZERO DE LA PHOTO A SUIVI LE CARROUSEL. La carte s'en charge
+  // elle-meme depuis que la bande de miniatures vit dedans : elle oublie la
+  // photo regardee des que l'adresse de la photo de l'annonce change.
 
   function remettre() {
     minuteries.current.forEach(clearTimeout);
@@ -5685,10 +5673,61 @@ export function ApercuHabitant() {
                   rien à qui ne connaît pas Dax, « Restaurant · Chez Margot » dit
                   tout. C'est aussi ce qui distingue deux annonces voisines quand
                   on en traverse quinze. */}
+              {/* ═══ ET IL EMMENE SUR PLACE ══════════════════════════════════
+
+                  « Penses-tu que tout en haut à gauche ça soit bien de rendre
+                  cet emplacement cliquable pour se rendre sur les lieux
+                  directement ? »
+
+                  OUI, ET ÇA RÉPARE UN MANQUE PLUTÔT QUE D'AJOUTER UN GESTE.
+                  La carte porte un « ↗ Y aller » depuis toujours — mais posé à
+                  quatorze points du coin haut droit, c'est-à-dire exactement là
+                  où vivent l'anneau du métier et la pastille du Flash. Mesuré
+                  sur le bar : il n'est pas rendu du tout, faute d'itinéraire sur
+                  la carte, et là où il l'est, l'anneau le recouvre. On n'avait
+                  donc, en pratique, aucun moyen d'y aller depuis l'annonce.
+
+                  ET C'EST LA BONNE PLACE : cette pastille répond déjà à « où
+                  est-ce », avec la distance écrite dessous. Taper une adresse
+                  pour ouvrir l'itinéraire est le geste que tout le monde connaît
+                  — c'est ce que font les cartes de restaurant, les fiches et les
+                  messageries. Il n'y a rien à apprendre.
+
+                  ELLE NE PART PAS AU MOINDRE FRÔLEMENT : elle est dans la barre
+                  du haut, hors de la zone où le doigt balaie le paquet, et
+                  `stopPropagation` empêche l'appui de se propager à la carte.
+                  Sans itinéraire, elle redevient ce qu'elle était — un repère,
+                  pas une porte qui ouvre sur rien. */}
+              {dessus?.itineraire || dessusEv?.itineraire ? (
+                <a
+                  className="ap-loin ouvre"
+                  href={dessus?.itineraire ?? dessusEv?.itineraire}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  onPointerDown={(ev) => ev.stopPropagation()}
+                  onClick={() => noter("pli-ouvert", 0, "itineraire-tete")}
+                  aria-label={`Y aller — ${dessus?.nom ?? dessusEv?.qui ?? "ce commerce"}`}
+                >
+                  <i aria-hidden="true">📍</i>
+                  <span className="ap-loin-t">
+                    <b>{dessus?.nom ?? dessusEv?.qui ?? "Autour de moi"}</b>
+                    <em>
+                      {[
+                        dessus?.metier ?? (dessusEv ? "Événement" : null),
+                        dessus?.distance ?? dessusEv?.distance,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </em>
+                  </span>
+                  {/* LA FLECHE DIT QU'ON SORT, comme « Infos boutique ». */}
+                  <s aria-hidden="true">↗</s>
+                </a>
+              ) : (
               <span className="ap-loin" aria-hidden="true">
                 <i>📍</i>
                 <span className="ap-loin-t">
-                  <b>{dessus?.nom ?? dessusEv?.nom ?? "Autour de moi"}</b>
+                  <b>{dessus?.nom ?? dessusEv?.qui ?? "Autour de moi"}</b>
                   <em>
                     {[
                       dessus?.metier ?? (dessusEv ? "Événement" : null),
@@ -5706,6 +5745,7 @@ export function ApercuHabitant() {
                     vraiment : ici, maintenant, à trois cents mètres. */}
                 <em className="ap-bat" />
               </span>
+              )}
               <button
                 type="button"
                 className={`cd-puce ap-metier${embauches ? " embauche" : ""}${
@@ -6341,7 +6381,7 @@ export function ApercuHabitant() {
                   className={`ap-dessus${sortant ? ` vole ${sortant}` : ""}${
                     estInvitation(sommet) ? " invit" : ""
                   }${embauches ? " emb" : ""}${dessusEv ? " ev" : ""}${
-                    carrousel ? " carrousel" : ""
+                    ""
                   }${montrerLeTuto ? " montre" : ""}`}
                   style={{ transform: `translate3d(${dx}px,0,0) rotate(${dx * 0.04}deg)` }}
                   onPointerDown={(e) => {
@@ -6389,20 +6429,13 @@ export function ApercuHabitant() {
                       else setDx(0);
                       return;
                     }
-                    /* ─── UN APPUI CHANGE DE PHOTO, UN GLISSEMENT BALAIE ───
-                       Le carrousel ne peut pas se faire au doigt horizontal :
-                       ce geste-là est déjà celui qui fait partir la carte, et
-                       les deux se disputeraient. On lit donc l'appui, comme le
-                       font toutes les applications qui empilent des photos :
-                       moitié gauche, on recule ; moitié droite, on avance.
-                       TROIS GARDE-FOUS, chacun pour un défaut évité :
-                        · `p.axe` vide seulement — un geste qui a bougé n'est
-                          pas un appui ;
-                        · pas sous le pli — en lisant la fiche, un appui sert à
-                          lire, pas à changer d'image ;
-                        · rien sur un bouton — « Y aller », le cœur, « voir la
-                          conversation » et le pli sont dans cette zone, et un
-                          appui dessus ne doit pas AUSSI tourner la photo. */
+                    /* ─── UN GLISSEMENT BALAIE, UN DOUBLE APPUI SUIT ───
+                       L'appui simple ne fait plus rien : il tournait la photo
+                       d'un carrousel qui a laissé la place aux miniatures.
+                       LES GARDE-FOUS RESTENT, parce que le double appui les
+                       demande autant : un geste qui a bougé n'est pas un appui,
+                       et rien ne se déclenche sur un bouton — « Y aller », le
+                       cœur et le pli sont dans cette zone. */
                     if (!p || p.axe || descendu) return;
                     const cible = e.target as HTMLElement;
                     if (cible.closest("button, a, label, input")) return;
@@ -6433,15 +6466,10 @@ export function ApercuHabitant() {
                       return;
                     }
                     dernierAppui.current = t;
-                    if (!carrousel) return;
-                    const b = e.currentTarget.getBoundingClientRect();
-                    const versLaDroite = e.clientX - b.left > b.width / 2;
-                    noter("photo-ajoutee", rangPhoto + 1, "carrousel");
-                    setIPhoto((i) =>
-                      versLaDroite
-                        ? (i + 1) % galerie.length
-                        : (i - 1 + galerie.length) % galerie.length,
-                    );
+                    // ET L'APPUI NE TOURNE PLUS LA PHOTO : voir les miniatures.
+                    // Ce qui reste ici est le double-tape du coeur, qui gagne
+                    // au change — il n'a plus a partager l'appui avec un geste
+                    // qui changeait l'image sous le doigt.
                   }}
                   onPointerCancel={() => {
                     prise.current = null;
@@ -6472,29 +6500,33 @@ export function ApercuHabitant() {
                     }}
                   >
                     <div className="ap-un">
-                      {/* LES POINTS DISENT COMBIEN IL Y EN A, et lesquelles
-                          restent. Sans eux, un appui qui change l'image passe
-                          pour un bug : on ne sait pas qu'il y a une suite, ni
-                          qu'on peut revenir. */}
-                      {carrousel && (
-                        <div className="ap-points" aria-hidden="true">
-                          {galerie.map((ph, i) => (
-                            <i key={ph} className={i === rangPhoto ? "on" : ""} />
-                          ))}
-                        </div>
-                      )}
-                      {/* LA PHOTO REGARDÉE REMPLACE CELLE DE L'ANNONCE. On
-                          passe par l'objet rendu à la carte plutôt que de
-                          toucher au composant partagé : `carte-swipe.tsx` sert
-                          aussi la démonstration commerçant, et une carte qui
-                          change de comportement selon l'écran serait
-                          exactement ce que ce fichier existe pour empêcher. */}
+                      {/* ═══ LES DEUX BARRES DU HAUT SONT PARTIES ═══════════
+
+                          « En haut de l'annonce on a encore deux barres, alors
+                          qu'on a les miniatures qui permettent de passer d'une
+                          photo à l'autre : on peut supprimer les barres du
+                          haut. »
+
+                          IL Y AVAIT DEUX MECANIQUES POUR LE MEME GESTE, et la
+                          seconde est arrivee sans que la premiere s'en aille.
+                          Les barres comptaient les photos d'un carrousel qu'on
+                          faisait tourner EN TAPANT sur la moitie gauche ou
+                          droite de l'image — un geste qu'il faut deviner, sur
+                          des images qu'on ne peut pas nommer, et qui se disputait
+                          l'appui avec le double-tape du coeur.
+
+                          LA BANDE DE MINIATURES FAIT MIEUX LES TROIS CHOSES :
+                          elle dit combien il y en a, elle montre laquelle on
+                          regarde, et elle nomme ce qu'on va voir avant qu'on y
+                          aille. Deux comptes de la meme chose a cent points
+                          d'ecart, dont un muet, c'etait un de trop.
+                      {/* LA CARTE CHOISIT SEULE CE QU'ELLE MONTRE. On lui
+                          substituait la photo du carrousel par-dessus ; depuis
+                          que la bande de miniatures vit DANS la carte, cette
+                          substitution se battait avec elle — l'ecran d'ici
+                          imposait une photo, la bande en proposait une autre. */}
                       <CarteSwipe
-                        carte={
-                          carrousel
-                            ? { ...carteDe(sommet), photo: galerie[rangPhoto] }
-                            : carteDe(sommet)
-                        }
+                        carte={carteDe(sommet)}
                         /* LA FACE « UNE SECONDE » — et elle ne vaut QUE pour
                            l'annonce principale. La démonstration commerçant et
                            la page d'accueil gardent la face historique : rien
@@ -6763,22 +6795,55 @@ export function ApercuHabitant() {
                                 « | » orphelin en fin de ligne se lit comme une
                                 coquille. A l'interieur, ils passent a la ligne
                                 avec ce qu'ils annoncent. */}
+                            {/* ═══ DEUX LIGNES : LE METIER, PUIS QUI ════════
+
+                                « Un bar à vins | Bar à vins | ★ 4,7 (89 avis),
+                                ça prend toute la longueur : mettre d'abord le
+                                type de commerçant et dessous le nom de
+                                l'établissement et les avis. »
+
+                                TROIS CHOSES SUR UNE LIGNE, C'ETAIT UNE DE TROP
+                                POUR LA LARGEUR D'UN TELEPHONE. Elles passaient
+                                a la ligne n'importe ou, et les deux filets se
+                                retrouvaient en bout de ligne — d'ou le « | »
+                                orphelin qu'un commentaire plus bas essayait
+                                deja de rattraper. On ne rattrape pas une ligne
+                                trop longue, on la coupe la ou elle a un sens.
+
+                                ET LE METIER PASSE DEVANT, ce qui n'est pas
+                                qu'une question de place. Sur un paquet qu'on
+                                balaie, « bar a vins » se lit en un coup d'oeil
+                                et trie ; le nom de l'enseigne ne trie rien tant
+                                qu'on ne la connait pas. Le premier mot doit
+                                etre celui qui repond a « est-ce que ca
+                                m'interesse ».
+
+                                LES FILETS DISPARAISSENT AVEC LA LIGNE UNIQUE :
+                                deux niveaux typographiques separent mieux que
+                                deux barres verticales, et rien ne peut plus
+                                rester orphelin au bout d'une ligne. */}
+                            {/* LE `b` NE PORTE QUE LE NOM, ET C'EST UNE LEÇON
+                                DE LA VEILLE. En le prenant comme conteneur de
+                                la seconde ligne, il s'est mis à rendre « Un bar
+                                à vins★4,7(89 avis) » à quiconque lui demandait
+                                le nom du commerce — y compris la mesure des
+                                favoris, qui comparait ce texte à celui de la
+                                poche et ne le retrouvait plus. Une balise qui
+                                nomme une chose doit contenir cette chose et
+                                rien d'autre : c'est le conteneur qui porte la
+                                ligne, pas le nom. */}
                             <p className="ap-ident-l">
-                              <b>{dessus?.nom}</b>
-                              {dessusCarte?.metier && (
-                                <u>
-                                  <s aria-hidden="true">|</s>
-                                  {dessusCarte.metier}
-                                </u>
-                              )}
-                              {dessus?.google && (
-                                <em>
-                                  <s aria-hidden="true">|</s>
-                                  <i aria-hidden="true">★</i>
-                                  {dessus.google.note}
-                                  <span>({dessus.google.avis} avis)</span>
-                                </em>
-                              )}
+                              {dessusCarte?.metier && <u>{dessusCarte.metier}</u>}
+                              <span className="ap-ident-q">
+                                <b>{dessus?.nom}</b>
+                                {dessus?.google && (
+                                  <em>
+                                    <i aria-hidden="true">★</i>
+                                    {dessus.google.note}
+                                    <span>({dessus.google.avis} avis)</span>
+                                  </em>
+                                )}
+                              </span>
                             </p>
                             {/* DEUX PORTES, ET ELLES N'OUVRENT PLUS LE MEME
                                 MONDE. « Voir le planning » descend dans la
@@ -6801,20 +6866,33 @@ export function ApercuHabitant() {
                                 onPointerDown={(ev) => ev.stopPropagation()}
                                 onClick={() => noter("pli-ouvert", 0, "boutique-ident")}
                               >
-                                {/* ═══ LA FLÈCHE POINTE OÙ ÇA MÈNE ════════════
+                                {/* ═══ ET ELLE EST REPARTIE VERS LA DROITE ════
 
-                                    « Infos boutique : la flèche doit pointer
-                                    vers le bas puisque c'est plus bas. »
+                                    « Je pense qu'Infos boutique est peut-être
+                                    de trop au final, puisqu'on a déjà Voir
+                                    toutes les offres, et que ça pourrait faire
+                                    comprendre à l'utilisateur qu'il trouvera
+                                    les infos plus bas aussi. »
 
-                                    ELLE DISAIT « AILLEURS » ALORS QU'ELLE MÈNE
-                                    « PLUS BAS ». Une flèche à droite est la
-                                    convention d'un départ — on quitte l'écran,
-                                    on va sur une autre page. Ces deux-là
-                                    DESCENDENT dans la même page, et c'est même
-                                    tout leur propos : apprendre où les choses
-                                    sont rangées. Une flèche qui ment sur la
-                                    direction fait chercher au mauvais endroit. */}
-                                Infos boutique<i aria-hidden="true">↓</i>
+                                    C'EST EXACTEMENT CE QUE SA FLECHE PROMETTAIT,
+                                    ET ELLE AVAIT RAISON QUAND ON L'A MISE. A
+                                    l'epoque, « Infos boutique » descendait dans
+                                    la page ; il avait demande le bas, on lui
+                                    avait donne le bas. Depuis, la fiche a
+                                    demenage : ce lien SORT vers la page du
+                                    commerce, et sa fleche est restee en bas.
+                                    Elle promet donc une section plus bas qui
+                                    n'existe plus — c'est la confusion qu'il
+                                    ressent, et elle vient d'une fleche, pas
+                                    d'un bouton de trop.
+
+                                    ON GARDE DONC LES DEUX, ET CHACUNE DIT OU
+                                    ELLE VA : « ↓ » descend dans cette page,
+                                    « → » en sort. Les fusionner en « toutes
+                                    les offres + infos » aurait rendu un seul
+                                    lien qui fait deux choses a deux endroits —
+                                    et il n'y a pas de fleche pour ecrire ca. */}
+                                Infos boutique<i aria-hidden="true">→</i>
                               </Link>
                               <button
                                 type="button"
@@ -12145,6 +12223,14 @@ export function ApercuHabitant() {
           border-radius:999px;padding:5px 11px 5px 10px;
           -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
         .ap-loin>i{font-style:normal;font-size:11px;flex:none;}
+        /* ─── QUAND ELLE EMMENE SUR PLACE ───
+           Elle ne change pas de dessin : c'est le meme reperage, qui repond en
+           plus. La fleche suffit a dire qu'on sort — meme signe que « Infos
+           boutique », meme promesse. */
+        a.ap-loin{text-decoration:none;cursor:pointer;}
+        a.ap-loin:active{transform:scale(.97);}
+        .ap-loin>s{flex:none;text-decoration:none;font-size:11px;
+          color:rgba(234,242,236,.6);}
         .ap-loin-t{min-width:0;display:flex;flex-direction:column;
           align-items:flex-start;line-height:1.2;}
         .ap-loin-t b{max-width:100%;font-size:12px;font-weight:800;color:#EAF2EC;
@@ -12987,12 +13073,14 @@ export function ApercuHabitant() {
            lisibles — c'est deja son travail pour le titre juste au-dessus. */
         .ap-ident{width:min(100%,340px);margin-top:10px;
           display:flex;flex-direction:column;align-items:flex-start;gap:9px;}
-        /* LE NOM, LE METIER, LA NOTE — separes par des filets, dans l'ordre ou
-           on se pose les questions : chez qui, quel metier, est-ce que c'est
-           bien. Tout tient sur une ligne, qui se replie si le nom est long. */
-        .ap-ident-l{display:flex;align-items:center;flex-wrap:wrap;gap:0 7px;
-          margin:0;font-size:12.5px;line-height:1.35;color:#EAF2EC;
-          text-shadow:0 2px 12px rgba(4,8,6,.95);}
+        /* ─── DEUX LIGNES : LE METIER, PUIS QUI ET SI C'EST BIEN ───
+           Trois choses sur une ligne tenaient toute la largeur et se repliaient
+           n'importe ou. Deux niveaux typographiques les separent mieux que deux
+           filets, et le metier passe devant : sur un paquet qu'on balaie, c'est
+           lui qui trie. */
+        .ap-ident-l{display:flex;flex-direction:column;align-items:flex-start;
+          gap:2px;margin:0;font-size:12.5px;line-height:1.3;color:#EAF2EC;
+          max-width:100%;text-shadow:0 2px 12px rgba(4,8,6,.95);}
         /* ═══ LE NOM DU COMMERCE PORTE LA COULEUR DE SON METIER ═══
            « Pour bien reconnaitre un type de commercant d'un autre et ne pas
            avoir l'impression que c'est le meme type de commercant. »
@@ -13004,16 +13092,19 @@ export function ApercuHabitant() {
            LES BOUTONS N'Y TOUCHENT PAS : la menthe veut dire « ceci vous
            engage », et la repeindre par metier lui ferait perdre ce sens
            partout ailleurs. */
-        .ap-ident-l b{font-weight:850;letter-spacing:.01em;
-          text-transform:uppercase;color:var(--cd-accent,#8CF0CC);}
-        /* LE FILET RESPIRE A DROITE, PAS A GAUCHE : il est colle au mot qui le
-           precede par la gouttiere du flex, et il lui faut sa propre marge de
-           l'autre cote, sinon on lit « |BAR ». */
-        .ap-ident-l s{text-decoration:none;margin-right:6px;
-          color:rgba(234,242,236,.34);}
-        .ap-ident-l u{text-decoration:none;font-weight:700;
-          text-transform:uppercase;letter-spacing:.04em;
-          font-size:11.5px;color:rgba(234,242,236,.78);}
+        /* LE METIER PORTE LA COULEUR : c'est lui qu'on lit en premier, et c'est
+           lui qui distingue un commerce d'un autre dans le paquet. Elle etait
+           sur le nom de l'enseigne, qui ne distingue rien tant qu'on ne la
+           connait pas. */
+        .ap-ident-l u{text-decoration:none;font-weight:850;
+          text-transform:uppercase;letter-spacing:.05em;font-size:11px;
+          color:var(--cd-accent,#8CF0CC);}
+        /* LA SECONDE LIGNE PORTE LE NOM ET LA NOTE, et elle se replie si le nom
+           est long — c'est la seule des deux qui puisse l'etre. */
+        .ap-ident-q{display:flex;align-items:center;flex-wrap:wrap;gap:0 9px;
+          max-width:100%;}
+        .ap-ident-l b{min-width:0;font-weight:800;letter-spacing:.005em;
+          font-size:13.5px;color:#fff;}
         /* LA NOTE EN AMBRE, LE NOMBRE D'AVIS EN GRIS : on lit la note, on
            verifie le nombre. L'inverse serait un chiffre a interpreter. */
         .ap-ident-l em{display:inline-flex;align-items:center;gap:4px;
@@ -14930,20 +15021,10 @@ export function ApercuHabitant() {
         .ap-poser-x{width:26px;padding:0!important;font-size:13px!important;
           color:#7F988B!important;background:none!important;}
 
-        /* ─── LES POINTS DU CARROUSEL ───
-           Poses sous le bandeau flottant, au-dessus des deux pastilles, qui
-           descendent d'autant. Larges et fins : ils se lisent d'un coup d'oeil
-           et ne prennent pas la place de la photo. */
-        .ap-points{position:absolute;left:12px;right:12px;z-index:3;
-          top:calc(var(--ap-haut-h, 100px) + 6px);
-          display:flex;gap:4px;pointer-events:none;}
-        .ap-points i{flex:1;height:3px;border-radius:99px;
-          background:rgba(255,255,255,.32);
-          box-shadow:0 1px 3px rgba(0,0,0,.5);transition:background .2s ease;}
-        .ap-points i.on{background:#fff;}
-        /* Les pastilles laissent la place aux points. */
-        .ap-dessus.carrousel .cd-reste,.ap-dessus.carrousel .cd-aller{
-          top:calc(var(--ap-haut-h, 100px) + 19px);}
+        /* LES POINTS DU CARROUSEL ONT DISPARU AVEC LUI, et la regle qui
+           descendait les deux pastilles pour leur faire place avec eux : sans
+           les points, ces dix-neuf points de decalage n'auraient plus rien
+           decale d'autre que la pastille elle-meme. */
 
         /* ═══════════════ LA VILLE ═══════════════
            Ce que les habitants disent de ce qui se passe ici, maintenant.
