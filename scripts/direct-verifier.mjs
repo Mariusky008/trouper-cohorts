@@ -3439,6 +3439,34 @@ console.log("\n══ la page du commerce ══");
   } else {
     await fv.click();
     await pV.waitForTimeout(1200);
+    /**
+     * ═══ LE MUR DE PRÉSENCE EST PASSÉ DERRIÈRE L'AVANT-GOÛT ═══════════════
+     *
+     * « Pour les restaurants, il n'y a qu'un seul restaurant qui a le nouveau
+     * parcours ; les autres sont toujours avec l'ancien concept de fantôme. »
+     *
+     * LES SEPT L'ONT MAINTENANT, BARS COMPRIS — et c'est ce qui casse cette
+     * garde : le fantôme d'un bar ouvre son parcours, plus « Faites savoir que
+     * vous êtes ici ». Ce n'est pas une régression, c'est la demande.
+     *
+     * LE MUR N'A PAS DISPARU POUR AUTANT, et c'est justement ce que cette garde
+     * doit continuer de vérifier. Il reste :
+     *
+     *   · la destination de « Passer cette découverte » — un jeu obligatoire
+     *     n'est plus un jeu ;
+     *   · et l'écran de tous les commerces qui n'ont pas de parcours écrit.
+     *
+     * ELLE Y VA DONC COMME UN UTILISATEUR Y VA MAINTENANT : par le bouton. Une
+     * garde qui se serait contentée de pointer un commerce sans parcours aurait
+     * mesuré le mur sans jamais vérifier qu'ON PEUT ENCORE L'ATTEINDRE — c'est-
+     * à-dire la seule chose que ce changement pouvait casser.
+     */
+    const passer = await pV.$(".go-retour");
+    if (passer) {
+      dire(true, "le fantôme du bar ouvre son avant-goût");
+      await passer.click();
+      await pV.waitForTimeout(900);
+    }
     const t = await pV.evaluate(() => {
       return {
         invitation: document.querySelector(".mu-inv-t h2")?.textContent?.trim() ?? null,

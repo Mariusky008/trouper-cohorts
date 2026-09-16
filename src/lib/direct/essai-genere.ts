@@ -25,9 +25,27 @@
 // le `catch` qui servait la photo du catalogue — un écran qui montre autre chose
 // que ce qu'il prétend.
 
+import {
+  masqueDEssai,
+  reposerLeVisage,
+  trouverLeVisage,
+  zoneDe,
+  type Visage,
+  type ZoneVisage,
+} from "@/lib/direct/visage";
+
 export type Rendu = {
   image: string;
   ms: number;
+  /**
+   * LE VISAGE D'ORIGINE A-T-IL ÉTÉ REPOSÉ SUR LE RENDU ?
+   *
+   * Sert aux gardes et au journal, pas à l'écran. On ne l'affiche pas : dire
+   * « visage préservé » sous une image ferait douter de toutes celles qui ne le
+   * disent pas, et c'est précisément le genre de ligne qu'il vient de demander
+   * de retirer du bas du résultat.
+   */
+  visageRepose?: boolean;
 };
 
 export type Souci = {
@@ -106,6 +124,56 @@ export async function essayerSurMoi(opts: {
     return { erreur: "Photo illisible.", pourquoi: e instanceof Error ? e.message : String(e) };
   }
 
+  /**
+   * ═══ ON CHERCHE LE VISAGE AVANT D'ENVOYER QUOI QUE CE SOIT ════════════════
+   *
+   * « Ça déforme ma tête au lieu de garder l'original comme base. Ma tête doit
+   * rester entièrement la même. »
+   *
+   * DEUX VERROUS EN DÉCOULENT, et ils commencent tous les deux ici :
+   *
+   *   · LE MASQUE part avec la requête et déclare au modèle ce qu'il peut
+   *     réécrire — les cheveux et la couronne autour du crâne, rien d'autre.
+   *   · LA RECOMPOSITION attend le rendu et repose les pixels du visage
+   *     d'origine par-dessus. C'est elle qui garantit l'identité ; le masque
+   *     n'est qu'une préférence adressée à un générateur.
+   *
+   * LE VISAGE EST MESURÉ SUR LA PHOTO RÉDUITE, PAS SUR L'ORIGINALE. C'est elle
+   * qu'on envoie, donc c'est elle dont le masque doit avoir les dimensions —
+   * l'API refuse un masque d'une autre taille. Mesurer sur l'original aurait
+   * donné un masque juste, et rejeté.
+   *
+   * ON NE CHERCHE QUE LÀ OÙ IL Y A QUELQUE CHOSE À TROUVER. Voir `aUnVisage` :
+   * une onglerie photographie une main, une cirière une table. Y charger quatre
+   * mégaoctets de modèle de visage à chaque essai serait payé par l'attente,
+   * pour ne rien protéger.
+   */
+  let visage: Visage | null = null;
+  let masque = "";
+  /**
+   * LE RÉGIME DE PROTECTION, ET IL DÉPEND DE CE QU'ON PHOTOGRAPHIE.
+   *
+   * Trois métiers cadrent un visage et ne protègent pas la même chose : le
+   * coiffeur ferme le visage et ouvre la couronne, la boutique ferme la tête
+   * entière et ouvre le torse, le lunetier ouvre la bande des yeux. Écrire
+   * « protège le visage » pour les trois casserait le lunetier — la monture se
+   * pose précisément là où l'on interdit. Voir `zoneDe`.
+   */
+  const zone: ZoneVisage | null = zoneDe(opts.partie);
+  if (zone) {
+    visage = await trouverLeVisage(photo);
+    if (visage) {
+      try {
+        masque = masqueDEssai(visage, zone);
+      } catch {
+        // UN MASQUE QU'ON NE SAIT PAS DESSINER N'EMPÊCHE PAS L'ESSAI. On part
+        // sans lui, et la recomposition tient encore : elle n'a besoin que du
+        // contour, qu'on a déjà.
+        masque = "";
+      }
+    }
+  }
+
   let r: Response;
   try {
     r = await fetch("/api/direct/essayer", {
@@ -114,6 +182,7 @@ export async function essayerSurMoi(opts: {
       body: JSON.stringify({
         photo,
         reference,
+        masque,
         partie: opts.partie,
         garder: opts.garder ?? [],
         change: opts.change ?? "",
@@ -155,6 +224,30 @@ export async function essayerSurMoi(opts: {
       erreur: j.erreur ?? "L’essayage n’a pas abouti.",
       pourquoi: j.pourquoi ?? `HTTP ${r.status}`,
     };
+  }
+  /**
+   * ═══ ET LE VRAI VISAGE REVIENT PAR-DESSUS LE RENDU ════════════════════════
+   *
+   * « La partie décisive : on remet le vrai visage après le passage de l'IA.
+   * Même si OpenAI déforme légèrement le nez ou la bouche, ces pixels sont
+   * écrasés par ceux de la photo originale. »
+   *
+   * C'EST LA SEULE LIGNE DE CE FICHIER QUI GARANTIT QUELQUE CHOSE. Tout le
+   * reste — la consigne, `input_fidelity`, le masque — pèse sur un générateur
+   * sans le contraindre. Ici on ne demande rien : on écrit des pixels.
+   *
+   * UN ÉCHEC DE RECOMPOSITION REND LE RENDU BRUT PLUTÔT QUE RIEN. Le résultat
+   * est alors celui d'avant, c'est-à-dire imparfait — mais un essai imparfait
+   * vaut mieux qu'un écran vide, et `reposerLeVisage` ne jette de toute façon
+   * que si le navigateur refuse une toile.
+   */
+  if (visage && zone) {
+    try {
+      const fidele = await reposerLeVisage(photo, j.image, visage, zone);
+      return { image: fidele, ms: j.ms ?? 0, visageRepose: true };
+    } catch {
+      return { image: j.image, ms: j.ms ?? 0 };
+    }
   }
   return { image: j.image, ms: j.ms ?? 0 };
 }

@@ -96,6 +96,22 @@ export function consigne(
    * matière et la finition. Voir `decrire` dans `fantomes.ts`.
    */
   decrire?: string,
+  /**
+   * ═══ UN MASQUE ACCOMPAGNE-T-IL CETTE CONSIGNE ? ═══════════════════════════
+   *
+   * « Ce prompt accompagne le masque, il ne le remplace pas. »
+   *
+   * C'EST EXACT, ET L'INVERSE L'EST AUSSI : un masque sans phrase qui le nomme
+   * est moins bien respecté. Le modèle reçoit une image d'alpha ; lui dire en
+   * toutes lettres qu'il existe une zone éditable, et que le reste est protégé,
+   * aligne le texte et la contrainte au lieu de les laisser se contredire.
+   *
+   * LA PHRASE N'EST ÉCRITE QUE S'IL Y A VRAIMENT UN MASQUE. Annoncer une zone
+   * éditable qui n'a pas été envoyée ferait chercher au modèle une limite qui
+   * n'existe pas — et c'est exactement le genre d'instruction contradictoire qui
+   * lui fait tout recalculer. Voir `lib/direct/visage.ts`.
+   */
+  avecMasque?: boolean,
 ): string {
   /**
    * CE QU'ON MODIFIE, ET LE REPLI EST VOLONTAIREMENT ÉTROIT.
@@ -124,6 +140,16 @@ export function consigne(
     // enterrée au milieu d'une liste de tirets.
     "La personne de la première image doit rester EXACTEMENT la même personne.",
     "On ne fabrique pas un portrait : on retouche une photographie existante.",
+    // ELLE ARRIVE EN TROISIÈME, JUSTE APRÈS LES DEUX RÈGLES DE FOND, parce que
+    // c'est là que l'attention d'un modèle est encore forte et que cette
+    // phrase-ci est une CONTRAINTE, pas une préférence : elle décrit ce que le
+    // masque lui interdit déjà techniquement.
+    ...(avecMasque
+      ? [
+          "Un masque accompagne cette demande : ne modifiez QUE la zone éditable qu'il désigne.",
+          "Tout ce que le masque protège doit ressortir pixel pour pixel identique à la première image.",
+        ]
+      : []),
     "",
     "═══ LES DEUX IMAGES N'ONT PAS LE MÊME RÔLE ═══",
     "",

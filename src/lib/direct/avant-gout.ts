@@ -106,6 +106,20 @@ export type TempsGout = {
    */
   note?: string;
   photo?: string;
+  /**
+   * LE PLAT UNE FOIS LE GESTE FAIT — et c'est le vrai but.
+   *
+   * « Les images, c'est le réel fourni par le restaurant + l'IA qui le
+   * transforme. Trois plans de quinze secondes qui deviennent la bibliothèque du
+   * plat. »
+   *
+   * TANT QU'ELLE MANQUE, LE GESTE SE JOUE EN FILTRES — la caméra s'approche, le
+   * plat chauffe, une lueur naît du centre. C'est honnête et ça tient debout,
+   * mais un fondu entre DEUX PHOTOGRAPHIES du même plat, avant et après le
+   * parmesan, battra toujours n'importe quel effet. Le jour où ce champ est
+   * rempli, `gout-contenu.tsx` s'en sert sans qu'on touche à rien d'autre.
+   */
+  photoApres?: string;
   options?: OptionGout[];
   /** Le libellé du geste qui avance. « Je valide ma réponse », « C'est parti ! ». */
   geste?: string;
@@ -365,9 +379,327 @@ export const GOUT_PESTO: Gout = {
  * disparaît : elle sera remplacée par ce que le restaurateur a raconté le matin
  * même. En attendant, elle dit noir sur blanc quel plat joue à quoi.
  */
+/**
+ * ═══ PARCOURS 3 — L'AXOA : JE DÉCOUVRE LE SECRET ═══════════════════════════
+ *
+ * « Plat avec savoir-faire → je découvre le secret. »
+ *
+ * TROIS TEMPS SEULEMENT, ET C'EST VOULU. « Je ne mettrais pas obligatoirement
+ * quatre ou cinq étapes » : un plat qui tient dans un tour de main n'a pas cinq
+ * choses à raconter, et l'étirer pour ressembler aux autres redonnerait le
+ * questionnaire qu'on a passé deux écrans à éviter.
+ */
+export const GOUT_AXOA: Gout = {
+  plat: "Axoa de veau",
+  detail: "Piment doux, pommes de terre",
+  prix: "16 €",
+  accent: "#FF8A5B",
+  chef: {
+    mot: "L’axoa, ça ne se hache pas à la machine. On le coupe au couteau, sinon ça devient de la bouillie.",
+    qui: "Chef Pello",
+  },
+  tampon: "AU COUTEAU",
+  marques: [
+    { emoji: "🔪", nom: "Coupé main", detail: "Jamais haché" },
+    { emoji: "🌶️", nom: "Piment doux", detail: "D’Espelette" },
+    { emoji: "⏱️", nom: "2 h", detail: "À feu doux" },
+  ],
+  temps: [
+    {
+      quoi: "ouvrir",
+      titre: "L’axoa ",
+      suite: "de Pello",
+      phrase: "Un plat basque que tout le monde croit connaître.",
+      photo: "/direct/plat-axoa.jpg",
+      geste: "Voir ce qui le change",
+    },
+    {
+      quoi: "devine",
+      titre: "À votre avis, qu’est-ce qui ",
+      suite: "fait la différence ?",
+      phrase: "Quatre bonnes réponses. Une seule est la sienne.",
+      note: "Personne ne trouve du premier coup !",
+      photo: "/direct/plat-axoa.jpg",
+      geste: "Je valide ma réponse",
+      apres: "Et maintenant…",
+      options: [
+        { cle: "piment", nom: "Le piment d’Espelette", detail: "Le goût du pays", emoji: "🌶️" },
+        { cle: "veau", nom: "La qualité du veau", detail: "Élevé sous la mère", emoji: "🥩" },
+        { cle: "temps", nom: "Les deux heures de feu", detail: "Rien ne se presse", emoji: "⏱️" },
+        { cle: "couteau", nom: "La découpe au couteau", detail: "Un geste, pas une machine", emoji: "🔪" },
+      ],
+      verite: {
+        titre: "Le secret de Pello",
+        mot: "La découpe. Un axoa haché à la machine rend son eau et s’écrase ; coupé au couteau, chaque morceau garde sa tenue. C’est vingt minutes de travail en plus, tous les matins.",
+      },
+    },
+    {
+      quoi: "final",
+      titre: "Votre axoa vous ",
+      suite: "attend",
+      phrase: "Servi à la louche, comme à la maison.",
+      photo: "/direct/plat-axoa.jpg",
+    },
+  ],
+};
+
+/**
+ * ═══ PARCOURS 4 — LA TABLE D'HÔTES : JE COMPOSE MON MENU ═══════════════════
+ *
+ * « Plat personnalisable → je compose. » Ici ce n'est pas un plat qu'on
+ * compose, c'est un REPAS — c'est ce que vend une table d'hôtes, et c'est ce
+ * qui la distingue d'un restaurant à la carte.
+ */
+export const GOUT_TABLEE: Gout = {
+  plat: "Le menu du soir",
+  detail: "Entrée, plat, dessert, verre compris",
+  prix: "17 €",
+  accent: "#FFC24B",
+  chef: {
+    mot: "On mange tous à la même table. Vous choisissez ce qu’il y a dans votre assiette, pas avec qui vous dînez.",
+    qui: "Margot",
+  },
+  tampon: "TABLE D’HÔTES",
+  temps: [
+    {
+      quoi: "ouvrir",
+      titre: "Ce soir, à ",
+      suite: "la grande tablée",
+      phrase: "Une longue table, dix-huit couverts, un seul menu — le vôtre.",
+      photo: "/direct/tablee-du-soir.jpg",
+      geste: "Composer mon menu",
+    },
+    {
+      quoi: "compose",
+      titre: "Quelle entrée ",
+      suite: "pour commencer ?",
+      phrase: "Tout arrive du marché le matin même.",
+      photo: "/direct/plat-basquaise.jpg",
+      geste: "Suivant",
+      options: [
+        { cle: "garbure", nom: "Garbure", detail: "Chou, confit, haricots", emoji: "🍲", resume: "Garbure" },
+        { cle: "salade", nom: "Salade landaise", detail: "Gésiers, magret séché", emoji: "🥗", resume: "Salade landaise" },
+        { cle: "oeuf", nom: "Œuf mimosa", detail: "Comme à la maison", emoji: "🥚", resume: "Œuf mimosa" },
+      ],
+    },
+    {
+      quoi: "compose",
+      titre: "Et le plat ",
+      suite: "qui suit ?",
+      phrase: "Servi au plat, on se ressert.",
+      note: "Personne ne repart avec faim ici !",
+      photo: "/direct/plat-basquaise.jpg",
+      geste: "Suivant",
+      options: [
+        { cle: "basquaise", nom: "Poulet basquaise", detail: "Riz, poivrons du pays", emoji: "🍗", resume: "Poulet basquaise" },
+        { cle: "axoa", nom: "Axoa de veau", detail: "Piment doux", emoji: "🥩", resume: "Axoa de veau" },
+        { cle: "poisson", nom: "Poisson du jour", detail: "Selon l’arrivage", emoji: "🐟", resume: "Poisson du jour" },
+      ],
+    },
+    {
+      quoi: "final",
+      titre: "Votre couvert ",
+      suite: "est mis",
+      phrase: "Le dessert, c’est la surprise de Margot.",
+      photo: "/direct/tablee-du-soir.jpg",
+    },
+  ],
+};
+
+/**
+ * ═══ PARCOURS 5 — LE PARMENTIER : JE RÉVÈLE L'INTÉRIEUR ════════════════════
+ *
+ * « Dessert → je révèle l'intérieur. » La mécanique vaut pour tout plat dont
+ * l'intérêt est CACHÉ SOUS LA SURFACE — et un parmentier est exactement ça :
+ * une purée dorée au-dessus, et tout le travail en dessous.
+ *
+ * C'EST LE SEUL DES CINQ QUI N'A QU'UN GESTE ET RIEN À CHOISIR. On ne compose
+ * pas un plat à emporter : on regarde ce qu'il y a dedans, et on décide.
+ */
+export const GOUT_PARMENTIER: Gout = {
+  plat: "Parmentier de canard",
+  detail: "Part individuelle",
+  prix: "12 €",
+  accent: "#E8B04B",
+  chef: {
+    mot: "Le dessus, tout le monde sait le faire. C’est ce qu’il y a dessous qui prend la journée.",
+    qui: "Maison Lartigue",
+  },
+  tampon: "FAIT MAISON",
+  temps: [
+    {
+      quoi: "ouvrir",
+      titre: "Un parmentier ",
+      suite: "de canard",
+      phrase: "Doré au-dessus. Et en dessous ?",
+      photo: "/direct/plat-parmentier.jpg",
+      geste: "C’est parti !",
+    },
+    {
+      quoi: "geste",
+      titre: "Ouvrez-le ",
+      suite: "à la cuillère",
+      phrase: "Allez-y, plantez la cuillère au milieu.",
+      note: "C’est là que ça se passe !",
+      photo: "/direct/plat-parmentier.jpg",
+      geste: "Casser la croûte",
+      apres: "Ça se voit, non ?",
+    },
+    {
+      quoi: "final",
+      titre: "Du confit ",
+      suite: "jusqu’en bas",
+      phrase: "Effiloché à la main, deux jours avant. C’est pour ça qu’il tient à la cuillère.",
+      photo: "/direct/plat-parmentier.jpg",
+    },
+  ],
+};
+
+/**
+ * ═══ PARCOURS 6 — LE VERRE : JE DIS CE QUE J'AIME, ON ME SERT ══════════════
+ *
+ * « Bar → un morceau de la soirée de ce soir. » « Cocktail → je choisis /
+ * je mélange. »
+ *
+ * UN BAR NE VEND PAS UN PLAT, ET C'EST CE QUI A FAILLI LE LAISSER DE CÔTÉ. Son
+ * onglet disait « Qui est là » faute d'avoir quelque chose à faire essayer —
+ * honnête, et insuffisant. Ce qu'un bar à vins fait essayer, c'est LE CONSEIL :
+ * on dit ce qu'on aime avec ses propres mots, et quelqu'un derrière le comptoir
+ * sait quoi vous servir. C'est exactement ce qu'on ne peut pas faire seul
+ * devant une carte des vins, et c'est ce qui fait entrer.
+ */
+export const GOUT_VERRE: Gout = {
+  plat: "Le verre du soir",
+  detail: "Servi au comptoir",
+  prix: "5 €",
+  accent: "#C77DFF",
+  chef: {
+    mot: "Dites-moi ce que vous aimez boire d’habitude, et je vous fais goûter autre chose. C’est tout mon métier.",
+    qui: "Serge, au comptoir",
+  },
+  temps: [
+    {
+      quoi: "ouvrir",
+      titre: "Ce soir, ",
+      suite: "on vous sert quoi ?",
+      phrase: "Dites-le en deux gestes. Serge s’occupe du reste.",
+      photo: "/direct/verre-au-comptoir.jpg",
+      geste: "C’est parti !",
+    },
+    {
+      quoi: "compose",
+      titre: "Vous partez plutôt ",
+      suite: "sur quoi ?",
+      phrase: "Il n’y a pas de mauvaise réponse, il y a la vôtre.",
+      photo: "/direct/bar-cave.jpg",
+      geste: "Suivant",
+      options: [
+        { cle: "blanc", nom: "Un blanc sec", detail: "Vif, tendu", emoji: "🥂", resume: "Un blanc sec" },
+        { cle: "rouge", nom: "Un rouge léger", detail: "Souple, fruité", emoji: "🍷", resume: "Un rouge léger" },
+        { cle: "corse", nom: "Quelque chose de corsé", detail: "Qui tient en bouche", emoji: "🍇", resume: "Un rouge corsé" },
+        { cle: "sans", nom: "Sans alcool", detail: "Et c’est très bien", emoji: "🍎", resume: "Sans alcool" },
+      ],
+    },
+    {
+      quoi: "compose",
+      titre: "Et avec ça, ",
+      suite: "on grignote ?",
+      phrase: "Tout vient de moins de trente kilomètres.",
+      note: "La planche, c’est pour deux…",
+      photo: "/direct/bar-planche.jpg",
+      geste: "Suivant",
+      options: [
+        { cle: "planche", nom: "La planche mixte", detail: "Charcuterie et fromages", emoji: "🧀", resume: "Planche mixte" },
+        { cle: "olives", nom: "Olives et amandes", detail: "Juste pour picorer", emoji: "🫒", resume: "Olives et amandes" },
+        { cle: "rien", nom: "Rien, merci", detail: "Le verre suffit", emoji: "🙂", resume: "Rien" },
+      ],
+    },
+    {
+      quoi: "final",
+      titre: "Votre verre ",
+      suite: "vous attend",
+      phrase: "Dites à Serge que vous venez de la part du Fantôme.",
+      photo: "/direct/bar-salle.jpg",
+    },
+  ],
+};
+
+/**
+ * ═══ PARCOURS 7 — LA TERRASSE : JE CHOISIS MON MOMENT ══════════════════════
+ *
+ * « Bar → un morceau de la soirée de ce soir. »
+ *
+ * CELUI-CI NE FAIT PAS ESSAYER UN PRODUIT, IL FAIT ESSAYER UN MOMENT — et
+ * c'est le cas le plus éloigné du magret, donc celui qui prouve le mieux que la
+ * forme tient. Ce qu'une terrasse vend, ce n'est pas le spritz : c'est
+ * l'heure qu'il fera quand vous vous assiérez, et avec qui.
+ */
+export const GOUT_TERRASSE: Gout = {
+  plat: "De la place en terrasse",
+  detail: "Plein sud, sans réserver",
+  accent: "#FFB454",
+  chef: {
+    mot: "À partir de dix-huit heures, le soleil passe derrière les platanes. C’est le meilleur moment, et personne ne le sait.",
+    qui: "Lou, en salle",
+  },
+  temps: [
+    {
+      quoi: "ouvrir",
+      titre: "Votre place ",
+      suite: "au soleil",
+      phrase: "Il reste trois tables. Voyons laquelle est la vôtre.",
+      photo: "/direct/terrasse-au-soleil.jpg",
+      geste: "C’est parti !",
+    },
+    {
+      quoi: "compose",
+      titre: "Vous arrivez ",
+      suite: "vers quelle heure ?",
+      phrase: "La lumière n’est pas la même, et le monde non plus.",
+      photo: "/direct/terrasse-au-soleil.jpg",
+      geste: "Suivant",
+      options: [
+        { cle: "gouter", nom: "Vers 17 h", detail: "Plein soleil, terrasse calme", emoji: "☀️", resume: "17 h" },
+        { cle: "apero", nom: "Vers 19 h", detail: "L’ombre des platanes", emoji: "🌇", resume: "19 h" },
+        { cle: "soir", nom: "Après 21 h", detail: "Guirlandes allumées", emoji: "✨", resume: "Après 21 h" },
+      ],
+    },
+    {
+      quoi: "compose",
+      titre: "Et vous venez ",
+      suite: "à combien ?",
+      phrase: "On garde ce qu’il faut, sans réserver.",
+      photo: "/direct/bar-salle.jpg",
+      geste: "Suivant",
+      options: [
+        { cle: "deux", nom: "À deux", detail: "Une ronde au bord", emoji: "👥", resume: "À deux" },
+        { cle: "bande", nom: "À quatre ou cinq", detail: "La grande table du fond", emoji: "👨‍👩‍👧‍👦", resume: "À quatre ou cinq" },
+        { cle: "seul", nom: "Tout seul", detail: "Au comptoir, très bien aussi", emoji: "🙂", resume: "Seul" },
+      ],
+    },
+    {
+      quoi: "final",
+      titre: "C’est noté, ",
+      suite: "à tout à l’heure",
+      phrase: "Passez, dites bonjour à Lou. Il reste trois places.",
+      photo: "/direct/terrasse-au-soleil.jpg",
+    },
+  ],
+};
+
 export const GOUTS: Record<string, Gout> = {
   centre: GOUT_MAGRET,
   emporter: GOUT_PESTO,
+  // « Pour les restaurants, il n'y a qu'un seul restaurant qui a le nouveau
+  // parcours ; les autres sont toujours avec l'ancien concept de fantôme. »
+  // Les cinq qui manquaient, chacun avec SA mécanique — c'est le point du
+  // brief, et c'est aussi ce qui le met à l'épreuve : sept plats, six jeux
+  // différents, et deux d'entre eux ne sont pas des plats.
+  "deux-rues": GOUT_AXOA,
+  tablee: GOUT_TABLEE,
+  traiteur: GOUT_PARMENTIER,
+  "bar-vins": GOUT_VERRE,
+  "bar-terrasse": GOUT_TERRASSE,
 };
 
 /**

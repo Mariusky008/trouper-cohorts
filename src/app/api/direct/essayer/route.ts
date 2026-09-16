@@ -232,6 +232,7 @@ async function parOpenAI(
   garder: string[],
   change: string,
   decrire: string,
+  masque: { type: string; donnees: string } | null,
 ): Promise<{ image: string } | { erreur: string }> {
   const modele = s(process.env.OPENAI_IMAGE_MODEL) || "gpt-image-1";
   // L'API d'édition d'OpenAI prend les images en multipart, et elle accepte
@@ -239,7 +240,7 @@ async function parOpenAI(
   // référence. C'est exactement la forme dont on a besoin.
   const forme = new FormData();
   forme.append("model", modele);
-  forme.append("prompt", consigne(partie, garder, change, decrire));
+  forme.append("prompt", consigne(partie, garder, change, decrire, !!masque));
   forme.append("n", "1");
   /**
    * TROIS RÉGLAGES QUI DÉCIDENT SI LE RENDU ARRIVE, OU PAS DU TOUT.
@@ -270,6 +271,24 @@ async function parOpenAI(
     new File([Buffer.from(x.donnees, "base64")], nom, { type: x.type });
   forme.append("image[]", enFichier(photo, "client.png"));
   forme.append("image[]", enFichier(reference, "reference.png"));
+  /**
+   * ═══ LE MASQUE, QUAND LE NAVIGATEUR A SU LE FABRIQUER ══════════════════════
+   *
+   * « Il faut verrouiller techniquement le visage avec un masque, puis
+   * réinjecter les pixels originaux après génération. »
+   *
+   * IL DÉCLARE LA ZONE MODIFIABLE PAR SON CANAL ALPHA : transparent = le modèle
+   * peut réécrire, opaque = zone protégée. Voir `masqueDeCoiffure` dans
+   * `lib/direct/visage.ts` pour ce qu'on ouvre exactement, et pourquoi si large.
+   *
+   * IL N'EST QUE LE PREMIER DES DEUX VERROUS, ET LE PLUS FAIBLE. Un masque est
+   * une contrainte que le modèle respecte à peu près ; c'est la RECOMPOSITION,
+   * côté navigateur, qui garantit l'identité — elle repose les pixels du visage
+   * d'origine par-dessus le rendu. Si celui-ci disparaissait un jour, l'essai
+   * resterait fidèle ; si c'était l'autre, on retomberait sur des visages
+   * refaits.
+   */
+  if (masque) forme.append("mask", enFichier(masque, "masque.png"));
   const base = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
   /**
    * ═══ CE QU'ON A VRAIMENT ENVOYÉ, DANS LES JOURNAUX ════════════════════════
@@ -296,7 +315,11 @@ async function parOpenAI(
       qualite: s(process.env.OPENAI_IMAGE_QUALITY) || "medium",
       fidelite: "high",
       entree: { client: dimensions(photo.donnees), reference: dimensions(reference.donnees) },
-      consigne: consigne(partie, garder, change, decrire).length,
+      // LE MASQUE EST-IL PARTI, ET À LA BONNE TAILLE ? Un masque aux dimensions
+      // d'une autre image est refusé par l'API, et le message ne dit pas
+      // toujours lequel des trois fichiers est en cause.
+      masque: masque ? dimensions(masque.donnees) : null,
+      consigne: consigne(partie, garder, change, decrire, !!masque).length,
     }),
   );
   const r = await fetch(`${base}/v1/images/edits`, {
@@ -321,6 +344,20 @@ export async function POST(req: Request) {
   let corps: {
     photo?: string;
     reference?: string;
+    /**
+     * LA ZONE QUE LE MODÈLE A LE DROIT DE RÉÉCRIRE — voir `lib/direct/visage.ts`.
+     *
+     * ELLE EST CALCULÉE DANS LE NAVIGATEUR, et c'est le seul endroit possible :
+     * la photo y est déjà, MediaPipe y est déjà servi pour la pose d'ongles, et
+     * le masque doit être mesuré sur L'ORIGINAL. Le calculer ici obligerait à
+     * installer un modèle de visage côté serveur pour retrouver ce que le
+     * téléphone savait déjà.
+     *
+     * ELLE EST FACULTATIVE, ET SON ABSENCE EST LE CAS NORMAL. Une main, un
+     * poignet, une table : rien à protéger, pas de masque. L'essai part comme
+     * avant.
+     */
+    masque?: string;
     partie?: string;
     garder?: string[];
     change?: string;
@@ -334,6 +371,7 @@ export async function POST(req: Request) {
 
   const photo = decoder(s(corps.photo));
   const reference = decoder(s(corps.reference));
+  const masque = decoder(s(corps.masque));
   const partie = s(corps.partie) || "la zone concernée";
   /**
    * CE QUE LE MÉTIER DEMANDE DE PRÉSERVER, ET IL VIENT DE L'ÉCRAN.
@@ -421,7 +459,9 @@ export async function POST(req: Request) {
   const dabord = s(process.env.ESSAI_FOURNISSEUR).toLowerCase();
   const chemins = [
     gemini ? () => parGemini(gemini, photo, reference, partie, garder, change, decrire) : null,
-    openai ? () => parOpenAI(openai, photo, reference, partie, garder, change, decrire) : null,
+    openai
+      ? () => parOpenAI(openai, photo, reference, partie, garder, change, decrire, masque)
+      : null,
   ];
   /**
    * ═══ ET C'EST OPENAI QUI PASSE EN PREMIER, MAINTENANT ═════════════════════

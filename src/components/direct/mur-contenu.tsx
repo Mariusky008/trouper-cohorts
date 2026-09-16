@@ -3307,24 +3307,33 @@ function Essai({
             <i aria-hidden="true">⤢</i>
             Agrandir
           </button>
-          {/* CE QUE CET ÉCRAN AFFICHE VRAIMENT, ET IL FAUT QUE ÇA SE LISE. Un
-              rendu CALCULÉ dit son temps de calcul ; un rendu tout fait dit
-              qu'il est tout fait. La maquette ne doit jamais laisser croire
-              qu'elle a fabriqué ce qu'elle a seulement affiché. */}
-          {/* CE BADGE DOIT DIRE SUR QUELLE PHOTO ON A CALCULÉ, et c'est
-              exactement l'information qui manquait : sans elle, un résultat
-              impeccable sur la main d'une inconnue passe pour le sien. */}
-          <span className={rendu?.souci || !photo ? "mu-rendu-b rate" : "mu-rendu-b"}>
-            {rendu?.souci
-              ? rendu.souci
-              : !photo
-                ? "Photo d’exemple — ce n’est pas la vôtre"
-                : rendu?.envoye
-                  ? `Sur VOTRE photo, en ${rendu.ms < 1000 ? `${rendu.ms} ms` : `${(rendu.ms / 1000).toFixed(1)} s`} · votre photo a été envoyée pour le rendu, rien n’est conservé`
-                  : rendu
-                    ? `Sur VOTRE photo, calculé sur votre téléphone en ${rendu.ms} ms`
-                    : "Rendu photographié à l’avance"}
-          </span>
+          {/* ═══ IL NE PARLE PLUS QUE QUAND IL A QUELQUE CHOSE À DIRE ════════
+
+              « Sur le bas du résultat il y a encore trop de texte qui pollue
+              l'expérience : "Sur VOTRE photo, en 20.8 s · votre photo a été
+              envoyée pour le rendu, rien n'est conservé". »
+
+              IL A RAISON, ET LA LIGNE ÉTAIT DEVENUE UN AVEU DE PLOMBERIE. Elle
+              existait pour une bonne raison : « sans elle, un résultat
+              impeccable sur la main d'une inconnue passe pour le sien ». Mais
+              elle a grossi à chaque garantie qu'on a voulu donner — la photo
+              d'origine, le temps de calcul, l'envoi, la non-conservation — et
+              elle finit par dire QUATRE CHOSES sous une image qu'on regarde
+              pour la première fois.
+
+              LES DEUX CAS OÙ IL FAUT PARLER RESTENT : un ennui de rendu se dit,
+              et une photo d'exemple s'avoue — c'est là, et là seulement, que
+              se taire tromperait. Sur SA photo, l'image se suffit : c'est son
+              visage, il le reconnaît, et on ne lui apprend rien en le lui
+              chiffrant. Le temps de calcul appartenait à l'écran d'attente, qui
+              l'a déjà montré ; la promesse de confidentialité est donnée AVANT
+              la prise de vue, c'est-à-dire au moment où elle décide quelque
+              chose. */}
+          {(rendu?.souci || !photo) && (
+            <span className="mu-rendu-b rate">
+              {rendu?.souci ?? "Photo d’exemple — ce n’est pas la vôtre"}
+            </span>
+          )}
           {/* LA DIFFERENCE ENTRE LES DEUX MECANIQUES SE DIT, PARCE QU'ELLE SE
               VOIT. Pour les ongles, un modele CHERCHE la main : le cadrage est
               libre. Pour un bijou ou un objet, le gabarit est a coordonnees
@@ -3486,29 +3495,36 @@ function Essai({
               >
                 ↻ Essayer un autre style
               </button>
-              {/* IL EST À PART EXPRÈS. Il n'est pas une troisième réponse à
-                  « celui-là vous plaît ? » : il dit que la question n'a pas pu
-                  être posée. D'où sa place sous les deux autres, et son absence
-                  de couleur. */}
-              <button type="button" className="mu-rendu-x" onClick={() => setRate(true)}>
-                Le rendu n’est pas bon
-              </button>
-              {/* ET REPRENDRE LA PHOTO RESTE OFFERT MÊME QUAND ÇA A MARCHÉ : un
-                  cadrage moyen donne un rendu moyen, et il faut pouvoir y
-                  revenir sans quitter la feuille. */}
+              {/* ═══ TROIS LIGNES DEVIENNENT UNE ════════════════════════════
+
+                  « Le rendu n'est pas bon / Reprendre la photo / 🔒 Vos photos
+                  sont privées et ne sont pas partagées sans votre accord. »
+
+                  SOUS SON PROPRE VISAGE, CES TROIS LIGNES SE CONTREDISENT.
+                  Chacune se défendait seule : dire que le rendu a pu rater,
+                  offrir de recadrer, rappeler la promesse. Empilées, elles
+                  forment un paragraphe d'avertissements sous une image qu'on
+                  vient de découvrir — et un écran qui s'excuse trois fois
+                  apprend à se méfier de ce qu'il montre.
+
+                  LA PROMESSE DE CONFIDENTIALITÉ EST DONNÉE AVANT LA PRISE DE
+                  VUE, à l'écran de cadrage, c'est-à-dire là où elle DÉCIDE
+                  quelque chose : on accepte de se photographier, ou pas. La
+                  répéter ici ne protège plus personne, elle inquiète.
+
+                  ET LES DEUX GESTES N'EN FONT PLUS QU'UN. « Le rendu n'est pas
+                  bon » et « Reprendre la photo » répondent à la même situation
+                  — ça n'a pas marché — et la réponse utile est la seconde : on
+                  ne veut pas déclarer un échec, on veut réessayer. Le signalement
+                  reste, discrètement, sous le geste. */}
               {photo && (
                 <button type="button" className="mu-exemple" onClick={() => appareil.current?.click()}>
-                  Reprendre la photo
+                  ↺ Reprendre la photo
                 </button>
               )}
-              {/* LA MÊME PROMESSE QU'À L'ÉCRAN DE LA PHOTO, AU MÊME ENDROIT DE
-                  LA MAQUETTE — tout en bas, sous le geste. C'est ici qu'elle
-                  compte le plus : on vient de voir son propre visage à l'écran,
-                  et c'est le moment exact où l'on se demande où il va. */}
-              <p className="mu-prive">
-                <i aria-hidden="true">🔒</i>
-                Vos photos sont privées et ne sont pas partagées sans votre accord.
-              </p>
+              <button type="button" className="mu-rendu-x" onClick={() => setRate(true)}>
+                Signaler ce rendu
+              </button>
             </>
           ) : etape === "agir" ? (
             /* ═══ CE QU'ON PEUT FAIRE MAINTENANT ═════════════════════════════

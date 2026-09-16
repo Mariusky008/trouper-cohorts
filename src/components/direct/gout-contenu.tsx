@@ -191,12 +191,73 @@ export function EcranGout({
             n'importe quel plat, et elle ne peut plus rien pousser puisqu'elle
             ne prend aucune place dans le flux. */}
         {t.note && <span className="go-main">{t.note}</span>}
+        {/* ═══ LE GESTE QUI FINIT LE PLAT ══════════════════════════════════
+
+            « Le dernier écran qui dit "la touche finale, faire tomber le
+            parmesan" : c'est très mauvais comme animation, ça ne donne pas du
+            tout envie. »
+
+            IL A RAISON, ET LE DÉFAUT ÉTAIT DE CONCEPTION. Huit rectangles
+            beiges tombaient en ligne droite DEVANT la photo et sortaient par le
+            bas : du confetti passé devant une assiette. Rien n'arrivait AU
+            PLAT — au bout d'une seconde et demie, l'image était exactement
+            celle d'avant. On demandait « regardez ce qui se passe » et il ne se
+            passait rien.
+
+            CE QU'UN GESTE DOIT FAIRE ICI : « Maintenant regardez ça… » → « Oh,
+            ça donne faim. » Donc le plat doit CHANGER, et changer en mieux.
+
+            QUATRE CHOSES ARRIVENT ENSEMBLE, et aucune n'est du confetti :
+
+              · LA CAMÉRA S'APPROCHE — un lent zoom de trois pour cent. C'est le
+                geste du cuisinier qui pousse l'assiette vers vous.
+              · LE PLAT SORT DU FOUR — saturation, chaleur et contraste montent
+                d'un cran. C'est ce qui sépare une photo d'un plat qui fume.
+              · UNE LUEUR DORÉE NAÎT DU CENTRE et se répand, comme un gratin qui
+                prend.
+              · LA NEIGE DE PARMESAN TOMBE ET DISPARAÎT DANS LE PLAT. Vingt
+                éclats fins, de tailles et de vitesses différentes, qui FONDENT
+                à l'arrivée au lieu de sortir du cadre. Un flocon qui s'efface
+                sur l'assiette a atterri ; un flocon qui sort par le bas est
+                passé à côté.
+              · PUIS LA VAPEUR MONTE, deux volutes lentes. Elle arrive APRÈS,
+                quand tout le reste est retombé : c'est elle qui dit que le plat
+                est chaud, maintenant, et c'est la dernière image qu'on garde
+                avant d'appuyer sur RÉSERVER.
+
+            LE VRAI GESTE RESTERA CELUI DU RESTAURATEUR. Le jour où il filme ses
+            trois plans de quinze secondes, `photoApres` porte le plat fini et la
+            transformation devient un fondu entre deux images RÉELLES — ce qui
+            battra toujours n'importe quel filtre. En attendant, ceci tient
+            debout tout seul. */}
         {t.quoi === "geste" && (
-          <span className="go-pluie" aria-hidden="true">
-            {[0, 1, 2, 3, 4, 5, 6, 7].map((k) => (
-              <i key={k} style={{ "--k": k } as React.CSSProperties} />
-            ))}
-          </span>
+          <>
+            {t.photoApres && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="go-apres" src={t.photoApres} alt="" />
+            )}
+            <span className="go-braise" aria-hidden="true" />
+            <span className="go-neige" aria-hidden="true">
+              {NEIGE.map((n, k) => (
+                <i
+                  key={k}
+                  style={
+                    {
+                      "--x": `${n.x}%`,
+                      "--d": `${n.d}s`,
+                      "--t": `${n.t}s`,
+                      "--s": n.s,
+                      "--r": `${n.r}deg`,
+                      "--f": `${n.f}px`,
+                    } as React.CSSProperties
+                  }
+                />
+              ))}
+            </span>
+            <span className="go-vapeur" aria-hidden="true">
+              <i /><i /><i />
+            </span>
+          </>
         )}
       </div>
 
@@ -396,6 +457,44 @@ function enMots(options: OptionGout[]): boolean {
  * condition pour qu'il tienne dans une feuille montée par-dessus l'application,
  * là où les identifiants SVG de la page d'accueil n'existent pas.
  */
+/**
+ * LA NEIGE DE PARMESAN — vingt éclats, aucun identique.
+ *
+ * ELLE EST ÉCRITE, PAS TIRÉE AU HASARD, et c'est délibéré. Un `Math.random()`
+ * donnerait une chute différente à chaque rendu de React — donc une chute qui
+ * SAUTE quand on touche autre chose sur l'écran — et surtout une chute
+ * différente entre le serveur et le navigateur, ce qui casse l'hydratation.
+ * Vingt valeurs choisies à la main se lisent comme du hasard et se comportent
+ * comme une animation.
+ *
+ * `x` L'ABSCISSE · `d` LE RETARD · `t` LA DURÉE · `s` L'ÉCHELLE · `r` LA
+ * ROTATION FINALE · `f` LA DÉRIVE LATÉRALE. Les six varient ensemble : des
+ * flocons qui tombent à la même vitesse ne sont plus des flocons, ce sont des
+ * barreaux.
+ */
+const NEIGE = [
+  { x: 6, d: 0.02, t: 1.25, s: 0.7, r: 140, f: 14 },
+  { x: 13, d: 0.28, t: 1.55, s: 1.1, r: -90, f: -18 },
+  { x: 19, d: 0.11, t: 1.05, s: 0.55, r: 200, f: 9 },
+  { x: 26, d: 0.44, t: 1.42, s: 0.9, r: -160, f: 20 },
+  { x: 32, d: 0.06, t: 1.68, s: 1.25, r: 110, f: -12 },
+  { x: 38, d: 0.33, t: 1.18, s: 0.65, r: 240, f: 16 },
+  { x: 44, d: 0.51, t: 1.5, s: 1.0, r: -70, f: -22 },
+  { x: 49, d: 0.17, t: 1.35, s: 0.8, r: 180, f: 11 },
+  { x: 55, d: 0.39, t: 1.6, s: 1.15, r: -130, f: -9 },
+  { x: 61, d: 0.09, t: 1.12, s: 0.6, r: 90, f: 18 },
+  { x: 67, d: 0.47, t: 1.45, s: 0.95, r: -200, f: -15 },
+  { x: 73, d: 0.22, t: 1.72, s: 1.3, r: 150, f: 13 },
+  { x: 79, d: 0.36, t: 1.28, s: 0.75, r: -110, f: -20 },
+  { x: 85, d: 0.13, t: 1.55, s: 1.05, r: 220, f: 10 },
+  { x: 91, d: 0.42, t: 1.15, s: 0.6, r: -80, f: 17 },
+  { x: 10, d: 0.58, t: 1.38, s: 0.85, r: 170, f: -13 },
+  { x: 41, d: 0.62, t: 1.48, s: 0.7, r: -190, f: 21 },
+  { x: 58, d: 0.55, t: 1.22, s: 1.2, r: 120, f: -16 },
+  { x: 70, d: 0.66, t: 1.62, s: 0.5, r: -140, f: 8 },
+  { x: 88, d: 0.6, t: 1.32, s: 0.9, r: 210, f: -19 },
+];
+
 function PetitFantome() {
   return (
     <svg className="go-f" viewBox="0 0 40 44" aria-hidden="true" focusable="false">
@@ -517,18 +616,103 @@ function Styles() {
            C'est le seul temps qui demande un appui pour VOIR quelque chose. Huit
            copeaux tombent en quinconce : sans le decalage, ils forment une ligne
            qui descend, et une ligne ne ressemble a rien qu'on connaisse. */
-        .go-pluie{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
-        .go-pluie i{position:absolute;top:-14%;width:13px;height:9px;
-          border-radius:3px;background:#F5E6B8;opacity:0;
-          left:calc(8% + var(--k) * 11%);
-          box-shadow:0 2px 6px rgba(0,0,0,.4);}
-        .go-photo.tombe .go-pluie i{
-          animation:goTombe 1.5s cubic-bezier(.35,.05,.6,1) both;
-          animation-delay:calc(var(--k) * .12s);}
-        @keyframes goTombe{
-          0%{opacity:0;transform:translateY(0) rotate(0deg);}
-          12%{opacity:1;}
-          100%{opacity:.92;transform:translateY(340px) rotate(220deg);}
+        /* ═══ LE GESTE QUI FINIT LE PLAT ══════════════════════════════════
+           Voir le grand commentaire dans le composant : l'ancienne version
+           faisait tomber huit rectangles DEVANT la photo, et au bout d'une
+           seconde et demie l'image etait exactement celle d'avant. Ici, c'est
+           le PLAT qui change. */
+
+        /* ─── 1 · LA CAMERA S'APPROCHE, ET LE PLAT SORT DU FOUR ───
+           Le zoom est le geste du cuisinier qui pousse l'assiette vers vous ;
+           la chaleur et la saturation sont ce qui separe une photographie d'un
+           plat qui fume. Trois pour cent et un cran de couleur : assez pour
+           qu'on le sente, trop peu pour qu'on voie un filtre. */
+        .go-photo img{transition:transform 1.9s cubic-bezier(.22,.7,.3,1),
+          filter 1.7s ease-out;}
+        .go-photo.tombe img{transform:scale(1.035);
+          filter:saturate(1.22) contrast(1.06) brightness(1.05)
+            sepia(.1) hue-rotate(-4deg);}
+
+        /* ─── 2 · LA PHOTO DU PLAT FINI, QUAND ELLE EXISTE ───
+           Voir photoApres : le jour ou le restaurateur filme ses deux etats,
+           la transformation devient un fondu entre deux images REELLES, et ce
+           qui suit n'est plus qu'un accompagnement. */
+        .go-apres{position:absolute;inset:0;width:100%;height:100%;
+          object-fit:cover;opacity:0;transition:opacity 1.5s ease-out;}
+        .go-photo.tombe .go-apres{opacity:1;}
+
+        /* ─── 3 · LA LUEUR DOREE QUI NAIT DU CENTRE ───
+           Un gratin qui prend. Elle part du milieu du plat, s'ouvre, puis
+           retombe : ce n'est pas un voile pose sur l'image, c'est un evenement
+           qui a lieu dedans. */
+        .go-braise{position:absolute;inset:0;pointer-events:none;opacity:0;
+          background:radial-gradient(circle at 50% 56%,
+            rgba(255,214,130,.55) 0%, rgba(255,176,74,.28) 26%,
+            rgba(255,150,40,0) 62%);
+          mix-blend-mode:screen;}
+        .go-photo.tombe .go-braise{animation:goBraise 1.9s ease-out both;}
+        @keyframes goBraise{
+          0%{opacity:0;transform:scale(.35);}
+          38%{opacity:1;transform:scale(1.02);}
+          100%{opacity:.22;transform:scale(1.18);}
+        }
+
+        /* ─── 4 · LA NEIGE DE PARMESAN, QUI FOND DANS LE PLAT ───
+           Vingt eclats, six variables chacun — voir la table NEIGE. LE POINT
+           QUI COMPTE EST LA FIN : ils s'effacent AU PLAT, ils ne sortent pas
+           par le bas. Un flocon qui quitte le cadre est passe a cote ; un
+           flocon qui disparait sur l'assiette a atterri. */
+        .go-neige{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+        .go-neige i{position:absolute;left:var(--x);top:-8%;
+          width:7px;height:5px;border-radius:2px;
+          transform:scale(var(--s));opacity:0;
+          background:linear-gradient(140deg,#FFF6DC,#EBD79B);
+          box-shadow:0 1px 4px rgba(0,0,0,.35);}
+        .go-photo.tombe .go-neige i{
+          animation:goNeige var(--t) cubic-bezier(.3,.1,.55,1) both;
+          animation-delay:var(--d);}
+        @keyframes goNeige{
+          0%{opacity:0;transform:translate(0,0) scale(var(--s)) rotate(0deg);}
+          10%{opacity:.95;}
+          /* IL RALENTIT ET PALIT SUR LE DERNIER TIERS : c'est la fonte. Une
+             chute a vitesse constante suivie d'une disparition nette
+             ressemblerait a un bug d'affichage. */
+          72%{opacity:.9;}
+          100%{opacity:0;
+            transform:translate(var(--f),78%) scale(calc(var(--s) * .55))
+              rotate(var(--r));}
+        }
+
+        /* ─── 5 · ET LA VAPEUR MONTE, EN DERNIER ───
+           Elle arrive quand tout le reste est retombe : c'est elle qui dit que
+           le plat est chaud MAINTENANT, et c'est la derniere image qu'on garde
+           avant d'appuyer sur RESERVER. */
+        .go-vapeur{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+        .go-vapeur i{position:absolute;bottom:34%;width:46px;height:46px;
+          border-radius:50%;opacity:0;filter:blur(13px);
+          background:radial-gradient(circle,rgba(255,255,255,.5),rgba(255,255,255,0) 70%);}
+        .go-vapeur i:nth-child(1){left:32%;}
+        .go-vapeur i:nth-child(2){left:48%;}
+        .go-vapeur i:nth-child(3){left:63%;}
+        .go-photo.tombe .go-vapeur i{animation:goVapeur 3.4s ease-out both;}
+        .go-photo.tombe .go-vapeur i:nth-child(1){animation-delay:1.25s;}
+        .go-photo.tombe .go-vapeur i:nth-child(2){animation-delay:1.6s;}
+        .go-photo.tombe .go-vapeur i:nth-child(3){animation-delay:1.45s;}
+        @keyframes goVapeur{
+          0%{opacity:0;transform:translateY(0) scale(.5);}
+          22%{opacity:.6;}
+          100%{opacity:0;transform:translateY(-135px) scale(1.9);}
+        }
+
+        /* ET QUI NE VEUT PAS DE MOUVEMENT VOIT QUAND MEME LE PLAT CHANGER.
+           On garde l'etat d'arrivee — plat plus chaud, lueur posee — et on
+           retire la chute et la vapeur. Le geste tient sa promesse sans rien
+           faire bouger, ce qui est le seul repli honnete : couper l'animation
+           en laissant l'image d'avant reviendrait a ne rien montrer. */
+        @media (prefers-reduced-motion:reduce){
+          .go-photo img,.go-apres{transition:none;}
+          .go-photo.tombe .go-braise{animation:none;opacity:.3;}
+          .go-photo.tombe .go-neige,.go-photo.tombe .go-vapeur{display:none;}
         }
 
         /* ═══ LE MOT DU CHEF ════════════════════════════════════════════════
