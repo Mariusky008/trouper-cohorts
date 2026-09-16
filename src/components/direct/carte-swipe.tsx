@@ -976,7 +976,23 @@ export function CarteSwipe({
                 blanc, comme sur n'importe quelle autre carte, et c'est
                 l'avantage juste au-dessus qui porte la couleur. */}
             {(c.prix || c.prixBarre) && (
-              <p className={`cd-prixg${c.flash && c.prixBarre ? " flash" : ""}`}>
+              /* ═══ UN SALAIRE N'EST PAS UN PRIX, ET IL NE S'ECRIT PAS PAREIL ══
+
+                  « 480 € net par mois » occupait TROIS LIGNES de soixante-dix
+                  points et mangeait la moitie de la carte. Le corps d'affiche a
+                  ete choisi pour « 8,40 € » — un nombre qu'on lit d'un coup, de
+                  loin, et qui fait lever de sa chaise. Une offre d'emploi ecrit
+                  une PHRASE : le montant, ce qu'il est net ou brut, et par quoi
+                  il se divise. Les trois comptent, et aucune ne se crie.
+
+                  DEUX PALIERS, MESURES SUR LE NOMBRE DE SIGNES, exactement comme
+                  le titre juste au-dessus — c'est la meme regle et il n'y a
+                  aucune raison qu'elle change de forme d'un element a l'autre. */
+              <p
+                className={`cd-prixg${c.flash && c.prixBarre ? " flash" : ""}${
+                  (c.prix ?? "").length > 18 ? " long" : (c.prix ?? "").length > 11 ? " moyen" : ""
+                }`}
+              >
                 <b>
                   {/* ═══ « À PARTIR DE » N'EST PAS UN PRIX ═══
 
@@ -1687,8 +1703,28 @@ export function StylesDirect() {
            le defaut se voyait, pas ici. white-space:nowrap ferme la question :
            le montant et son signe sont un seul bloc, qui se reduit avec le
            clamp plutot que de se casser en deux. */
-        .cd-prixg b{font-weight:inherit;white-space:nowrap;}
-        .cd-prixg s{white-space:nowrap;}
+        /* ─── ET IL PEUT COUPER ENTRE DEUX MOTS, MAIS JAMAIS AVANT SON SIGNE ───
+           J'avais mis white-space:nowrap ici faute de reproduire la coupure sur
+           son telephone. C'etait de trop, et ca s'est vu tout de suite sur une
+           offre d'emploi : « 480 € net par mois » ne peut pas tenir sur une
+           ligne en soixante-dix points, et interdire toute coupure le faisait
+           sortir de l'ecran par la droite.
+           LA VRAIE CORRECTION EST AILLEURS, et elle est prouvee : l'espace
+           insecable n'etait JAMAIS posee avant le « € », parce que la regle
+           finissait par une frontiere de mot que « € » ne peut pas former. Elle
+           l'est maintenant. Le prix coupe donc entre « net » et « par », comme
+           n'importe quelle phrase, et jamais entre le nombre et son signe.
+           LES DEUX PROPRIETES SONT ECRITES EN TOUTES LETTRES parce qu'un
+           overflow-wrap herite d'ailleurs casserait a l'interieur des mots —
+           y compris au travers d'une espace insecable. */
+        /* LES DEUX PALIERS DU PRIX. « 1 800 € net + le partage du pot » fait
+           trente et un signes : a soixante-dix points il prenait trois lignes.
+           A trente-deux, il en prend deux et laisse la photo respirer. */
+        .cd-prixg.moyen{font-size:clamp(34px,10vw,48px);line-height:1;}
+        .cd-prixg.long{font-size:clamp(26px,7.4vw,34px);line-height:1.04;
+          letter-spacing:-.01em;}
+        .cd-prixg b{font-weight:inherit;overflow-wrap:normal;word-break:normal;}
+        .cd-prixg s{overflow-wrap:normal;word-break:normal;}
         /* LE QUALIFICATIF EST PETIT ET SUR SA LIGNE : il dit comment lire le
            chiffre, il n'est pas le chiffre. Pas de soulignement — la balise
            porte le sens, pas le trait. */

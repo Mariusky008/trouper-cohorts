@@ -2990,6 +2990,102 @@ console.log("\n══ la page du commerce ══");
   await dec.close();
 }
 
+// ═══ UN ÉVÉNEMENT ET UN POSTE ONT LE MÊME ÉCRAN QU'UN BAR ════════════════
+//
+// CE QUE ÇA PROTÈGE : « Les annonces événements n'ont pas encore été modifiées,
+// ni ils recrutent, avec le nouveau style comme bar et restaurants. »
+//
+// ILS EN ÉTAIENT EXCLUS PAR UNE LIGNE QUI LES NOMMAIT, et c'est pour ça que
+// personne ne l'a vu : le commentaire d'à côté disait « un bar, un restaurant,
+// un événement, un poste gardent exactement l'écran d'avant », ce qui était vrai
+// le jour où on l'a écrit. Les bars ont basculé deux tours plus tard ;
+// l'exclusion des deux autres est restée.
+//
+// UNE GARDE QUI COMPARE LES TROIS NATURES ATTRAPE CE GENRE D'OUBLI, et c'est le
+// seul moyen : chacune prise seule a l'air cohérente. C'est l'ÉCART entre elles
+// qui est le défaut.
+{
+  console.log("\n══ un événement et un poste suivent la maquette des lieux ══");
+  const na = await nav.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  await na.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
+  await na.addInitScript(() =>
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
+  );
+  const pN = await na.newPage();
+
+  const forme = () =>
+    pN.evaluate(() => ({
+      // LE GESTE PLEIN, LE RAIL ET LES DEUX LIGNES : les trois marques du
+      // nouvel écran. `.ap-duo` est la marque de l'ancien.
+      plein: document.querySelector(".ap-agir")?.textContent?.replace(/\s+/g, " ").trim() ?? null,
+      rail: document.querySelectorAll(".ap-rail-b").length,
+      duo: document.querySelectorAll(".ap-duo").length,
+      quoi: document.querySelector(".ap-ident-l u")?.textContent?.trim() ?? null,
+      qui: document.querySelector(".ap-ident-l b")?.textContent?.trim() ?? null,
+      porte: document.querySelector(".ap-ident-d button")?.textContent?.replace(/\s+/g, " ").trim() ?? null,
+      // UN COMPTEUR A ZERO NE S'ECRIT PAS : sous un coeur, il dit « personne ».
+      zeros: [...document.querySelectorAll(".ap-rail-b span")].filter(
+        (e) => e.textContent.trim() === "0",
+      ).length,
+    }));
+
+  await pN.goto(`${BASE}/autour-de-moi?carte=marche-nuit`, { waitUntil: "networkidle" });
+  await pN.waitForTimeout(2200);
+  const ev = await forme();
+  dire(ev.duo === 0, `un événement n'a plus les deux gestes d'avant (${ev.duo})`);
+  dire(ev.rail === 3, `il a le rail des trois gestes (${ev.rail})`);
+  dire(!!ev.plein, `et un geste plein qui dit quoi faire (« ${ev.plein ?? "absent"} »)`);
+  dire(
+    !!ev.quoi && !!ev.qui && ev.quoi.toLowerCase() !== ev.qui.toLowerCase(),
+    `son identité tient sur deux lignes qui ne se répètent pas (« ${ev.quoi} » / « ${ev.qui} »)`,
+  );
+  // SA PORTE N'EST PAS CELLE D'UN COMMERCE : il n'a ni fiche ni autres offres.
+  dire(
+    /savoir/i.test(ev.porte ?? ""),
+    `et sa porte ouvre ce qu'il faut savoir (« ${ev.porte ?? "absente"} »)`,
+  );
+  dire(ev.zeros === 0, `aucun compteur à zéro sous le rail (${ev.zeros})`);
+
+  // ET « ILS RECRUTENT », PAR LE FILTRE — il n'a pas d'adresse à lui.
+  await pN.goto(`${BASE}/autour-de-moi`, { waitUntil: "networkidle" });
+  await pN.waitForTimeout(2000);
+  await pN.locator(".ap-metier").first().click();
+  await pN.waitForTimeout(700);
+  const bouton = pN.locator(".ap-feuille button").filter({ hasText: /recrut/i }).first();
+  if (!(await bouton.count())) {
+    dire(false, "on peut choisir « ils recrutent » dans le filtre");
+  } else {
+    await bouton.click();
+    await pN.waitForTimeout(2400);
+    const po = await forme();
+    dire(po.duo === 0, `un poste n'a plus les deux gestes d'avant (${po.duo})`);
+    dire(po.rail === 3, `il a le rail des trois gestes (${po.rail})`);
+    dire(
+      /postule/i.test(po.plein ?? ""),
+      `et son geste plein est celui du métier (« ${po.plein ?? "absent"} »)`,
+    );
+    dire(
+      /offre/i.test(po.porte ?? ""),
+      `sa porte ouvre l'offre (« ${po.porte ?? "absente"} »)`,
+    );
+    // ET LE SALAIRE NE MANGE PAS LA CARTE : c'est une phrase, pas un prix.
+    const prix = await pN.evaluate(() => {
+      const e = document.querySelector(".cd-prixg");
+      if (!e) return null;
+      const b = e.getBoundingClientRect();
+      return { t: e.textContent.replace(/\s+/g, " ").trim(), h: Math.round(b.height), deborde: b.right > 390 };
+    });
+    dire(
+      !!prix && !prix.deborde && prix.h < 140,
+      `le salaire tient sans déborder (« ${prix?.t ?? "absent"} », ${prix?.h ?? "?"} points)`,
+    );
+  }
+  await na.close();
+}
+
 // ═══ RIEN NE PASSE SOUS LA BARRE DU HAUT, ENCOCHE COMPRISE ════════════════
 //
 // CE QUE ÇA PROTÈGE : « Le rond est en dehors tout en haut, donc le mettre au

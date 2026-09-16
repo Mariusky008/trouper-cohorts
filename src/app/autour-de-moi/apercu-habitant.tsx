@@ -3323,7 +3323,29 @@ export function ApercuHabitant() {
    * peut toujours proposer une terrasse, même sans y réserver. Le rail, lui,
    * reste : garder et partager n'ont jamais eu besoin d'une réservation.
    */
-  const enPlace = !!dessus && !onPeutEssayer && !estPoste(dessus);
+  /**
+   * ═══ ET UN EVENEMENT, ET UN POSTE ═════════════════════════════════════════
+   *
+   * « Les annonces événements n'ont pas encore été modifiées, ni ils recrutent,
+   * avec le nouveau style comme bar et restaurants. »
+   *
+   * ILS EN ÉTAIENT EXCLUS PAR CETTE LIGNE, ET LE COMMENTAIRE D'À CÔTÉ LE DISAIT
+   * NOIR SUR BLANC : « un bar, un restaurant, un événement, un poste gardent
+   * exactement l'écran d'avant ». C'était l'arbitrage du jour où seul l'essai
+   * passait en geste plein — et il était juste ce jour-là. Deux tours plus tard,
+   * les bars et les restaurants ont basculé ; l'exclusion des deux autres est
+   * restée, en silence, faute d'avoir relu la ligne qui les nommait.
+   *
+   * UN ÉVÉNEMENT N'A PAS DE `dessus`, ET C'EST TOUT CE QUI LE RETENAIT. La
+   * condition demandait un commerce ; un événement est un `dessusEv`. Le poste,
+   * lui, était exclu par son propre nom.
+   *
+   * ET ILS MÉRITENT LE MÊME ÉCRAN POUR LA MÊME RAISON : on ne s'essaie pas un
+   * marché de producteurs ni un poste de serveur, donc le geste plein revient à
+   * ce que l'annonce donne envie de faire — y aller, postuler — et les trois
+   * autres passent au rail. C'est exactement l'arbitrage des lieux.
+   */
+  const enPlace = (!!dessus || !!dessusEv) && !onPeutEssayer;
 
   /**
    * ═══ LA BULLE QUI DÉSIGNE LE FANTÔME, ET QUI S'EN VA ══════════════════════
@@ -6748,7 +6770,20 @@ export function ApercuHabitant() {
                             donnée nécessite une explication, elle ne doit
                             probablement pas être affichée là. » Le collectif
                             garde sa place sous le pli, où il est nommé. */}
-                        {sommet && restants.length > 0 && (
+                        {/* ═══ ET ILS ONT UNE IDENTITÉ, EUX AUSSI ═══════════
+
+                            `restants.length > 0` DEMANDAIT UN PROGRAMME DE LA
+                            JOURNÉE, et c'est ce qu'un commerce a. Un événement
+                            n'en a pas — il a une date — et un poste non plus.
+                            Le bloc entier sautait donc pour eux : ni le métier,
+                            ni le nom, ni la note, ni la porte qui descend. On
+                            lisait « Sous les halles » sans savoir qui
+                            l'organise, alors que la réponse tenait dans les
+                            données. */}
+                        {sommet &&
+                          (restants.length > 0 ||
+                            !!dessusEv ||
+                            (!!dessus && estPoste(dessus))) && (
                           <div className="ap-ident">
                             {/* ═══ LE RECTANGLE CENTRAL A MAIGRI ═══
 
@@ -6832,11 +6867,42 @@ export function ApercuHabitant() {
                                 nomme une chose doit contenir cette chose et
                                 rien d'autre : c'est le conteneur qui porte la
                                 ligne, pas le nom. */}
+                            {/* ═══ LES DEUX LIGNES, POUR LES TROIS NATURES ═══
+
+                                LA PREMIÈRE DIT CE QUE C'EST, LA SECONDE QUI
+                                C'EST. Chez un commerce : le métier, puis
+                                l'enseigne et sa note. Chez un événement :
+                                l'organisateur — mairie, musée, association — et
+                                son nom, ce qui répond exactement à la question
+                                qu'on se pose devant « Sous les halles ». Chez un
+                                poste : le métier du commerce qui recrute, et son
+                                enseigne.
+
+                                UN ÉVÉNEMENT N'A PAS DE NOTE, ET N'EN AURA PAS.
+                                On ne note pas un marché de producteurs sur
+                                Google, et en afficher une serait inventer ce que
+                                tout cet écran refuse d'inventer. */}
                             <p className="ap-ident-l">
-                              {dessusCarte?.metier && <u>{dessusCarte.metier}</u>}
+                              {dessusEv ? (
+                                /* ET ON NE L'ÉCRIT PAS DEUX FOIS. Chez l'office
+                                   de tourisme, le type d'organisateur et son nom
+                                   sont le MÊME mot : la pastille affichait
+                                   « Office de tourisme » puis « Office de
+                                   tourisme ». Quand les deux se confondent, la
+                                   première ligne dit la nature — c'est ce que
+                                   fait le métier sur un commerce. */
+                                <u>
+                                  {ORGANISATEURS[dessusEv.typeQui].label.toLowerCase() ===
+                                  dessusEv.qui.toLowerCase()
+                                    ? "Événement"
+                                    : ORGANISATEURS[dessusEv.typeQui].label}
+                                </u>
+                              ) : (
+                                dessusCarte?.metier && <u>{dessusCarte.metier}</u>
+                              )}
                               <span className="ap-ident-q">
-                                <b>{dessus?.nom}</b>
-                                {dessus?.google && (
+                                <b>{dessusEv ? dessusEv.qui : dessus?.nom}</b>
+                                {!dessusEv && dessus?.google && (
                                   <em>
                                     <i aria-hidden="true">★</i>
                                     {dessus.google.note}
@@ -6859,7 +6925,20 @@ export function ApercuHabitant() {
                                 lire la fiche d'un commerce : tant qu'il y en
                                 avait deux, elles se recouvraient a l'identique
                                 et la page n'avait aucune raison d'exister. */}
+                            {/* ═══ ET LES PORTES SUIVENT LA NATURE ══════════
+
+                                UN ÉVÉNEMENT N'A NI FICHE DE COMMERCE NI AUTRES
+                                OFFRES : il a ce qu'il faut savoir avant d'y
+                                aller — l'accès, le stationnement, le paiement.
+                                Lui servir « Infos boutique » et « Voir toutes
+                                les offres » serait deux portes qui n'ouvrent
+                                rien, ce qui est pire que pas de porte.
+
+                                UN POSTE, LUI, APPARTIENT À UN COMMERCE : sa
+                                fiche existe, donc la première porte reste. La
+                                seconde devient l'offre elle-même. */}
                             <div className="ap-ident-d">
+                              {!dessusEv && (
                               <Link
                                 href="/autour-de-moi/boutique"
                                 prefetch={false}
@@ -6894,10 +6973,19 @@ export function ApercuHabitant() {
                                     et il n'y a pas de fleche pour ecrire ca. */}
                                 Infos boutique<i aria-hidden="true">→</i>
                               </Link>
+                              )}
                               <button
                                 type="button"
                                 onPointerDown={(ev) => ev.stopPropagation()}
                                 onClick={() => {
+                                  // UN EVENEMENT ET UN POSTE DESCENDENT AU BAS
+                                  // DE LA CARTE : c'est la que vit ce qu'il faut
+                                  // savoir. Un commerce descend a sa journee.
+                                  if (dessusEv || (dessus && estPoste(dessus))) {
+                                    noter("pli-ouvert", 0, "detail");
+                                    versLeBas();
+                                    return;
+                                  }
                                   if (!dessus) return;
                                   noter("pli-ouvert", 0, "planning");
                                   // ─── ELLE DESCEND, ELLE N'OUVRE PLUS ───
@@ -6931,7 +7019,13 @@ export function ApercuHabitant() {
                                     planning : il cherche ce qu'il y a d'autre
                                     à prendre. « Toutes les offres » dit ce
                                     qu'il va trouver, pas comment c'est rangé. */}
-                                {dessus?.prepare ? "Prête à publier" : "Voir toutes les offres"}
+                                {dessusEv
+                                  ? "Ce qu’il faut savoir"
+                                  : dessus && estPoste(dessus)
+                                    ? "Voir l’offre"
+                                    : dessus?.prepare
+                                      ? "Prête à publier"
+                                      : "Voir toutes les offres"}
                                 <i aria-hidden="true">↓</i>
                               </button>
                             </div>
@@ -6940,15 +7034,29 @@ export function ApercuHabitant() {
                         {/* SANS AUCUN MOMENT À VENIR — un événement, une
                             invitation — il n'y a pas de journée à lire : le
                             raccourci reste seul, et il dit ce qu'il ouvre. */}
-                        {sommet && restants.length === 0 && (
+                        {/* LE RACCUURCI SOLITAIRE A LAISSÉ LA PLACE AUX DEUX
+                            PORTES. Il existait parce qu'un événement n'avait pas
+                            de bloc d'identité : il disait « Ce qu'il faut
+                            savoir » tout seul, avec une flèche vers la droite
+                            sur un contenu qui est plus bas. Maintenant que
+                            l'événement a ses deux lignes et sa porte, le garder
+                            ferait deux boutons pour la même chose, dont un qui
+                            ment sur la direction.
+                            IL RESTE POUR LES CARTES SANS IDENTITÉ — une
+                            invitation, une carte préparée — qui n'ont ni
+                            journée, ni organisateur, ni commerce derrière. */}
+                        {sommet &&
+                          restants.length === 0 &&
+                          !dessusEv &&
+                          !(dessus && estPoste(dessus)) && (
                           <button
                             type="button"
                             className="ap-vers-bas"
                             onPointerDown={(ev) => ev.stopPropagation()}
                             onClick={versLeBas}
                           >
-                            {dessusEv ? "Ce qu’il faut savoir" : "Voir le détail"}
-                            <i aria-hidden="true">→</i>
+                            Voir le détail
+                            <i aria-hidden="true">↓</i>
                           </button>
                         )}
                         {/* ─── SUIVRE, SUR LA FACE ───
@@ -8112,7 +8220,12 @@ export function ApercuHabitant() {
                 <span>{essaiDuSommet.mots.surMoi}</span>
                 <s aria-hidden="true">→</s>
               </button>
-            ) : enPlace && aReserver.length > 0 ? (
+            ) : enPlace &&
+              // UN EVENEMENT ET UN POSTE N'ONT PAS DE CRENEAU A RESERVER, et
+              // c'est la seconde porte qui les tenait dehors : `aReserver` liste
+              // les moments d'un commerce. On y va, ou on postule — le geste
+              // existe, il ne passe simplement pas par un creneau.
+              (aReserver.length > 0 || !!dessusEv || (!!dessus && estPoste(dessus))) ? (
               /* ═══ CHEZ UN LIEU, LE GESTE PLEIN EST LA RÉSERVATION ══════════
                  La maquette met « Réserver ma table » en dégradé tout en bas,
                  et pousse les trois autres en pastilles à droite. C'est le
@@ -8366,7 +8479,17 @@ export function ApercuHabitant() {
                       <path d="M12 20.3s-7.6-4.6-7.6-9.7a4.4 4.4 0 0 1 7.6-3 4.4 4.4 0 0 1 7.6 3c0 5.1-7.6 9.7-7.6 9.7z" />
                     </svg>
                   </i>
-                  <span>{(dessusCarte?.gardes ?? 0) + (gardeSommet ? 1 : 0)}</span>
+                  {/* ═══ UN COMPTEUR A ZERO NE COMPTE RIEN, IL DECOURAGE ════
+                      VU SUR L'EVENEMENT, dès qu'il a pris le rail : « ♡ 0 » et
+                      « ⇧ 0 » posés l'un sous l'autre. Les compteurs sont de la
+                      fiction tirée de l'identifiant d'un COMMERCE ; un événement
+                      n'en a pas, donc ils tombaient à zéro — et un zéro sous un
+                      cœur ne dit pas « on ne sait pas », il dit « personne ».
+                      C'est exactement l'inverse de ce qu'un compteur est là pour
+                      faire, et c'est pire que son absence. */}
+                  {(dessusCarte?.gardes ?? 0) + (gardeSommet ? 1 : 0) > 0 && (
+                    <span>{(dessusCarte?.gardes ?? 0) + (gardeSommet ? 1 : 0)}</span>
+                  )}
                 </button>
                 <button
                   type="button"
@@ -8379,7 +8502,7 @@ export function ApercuHabitant() {
                       <path d="M4.6 12.8v6.4a1.4 1.4 0 0 0 1.4 1.4h12a1.4 1.4 0 0 0 1.4-1.4v-6.4" />
                     </svg>
                   </i>
-                  <span>{dessusCarte?.partages ?? 0}</span>
+                  {!!dessusCarte?.partages && <span>{dessusCarte.partages}</span>}
                 </button>
                 <button
                   type="button"
@@ -12216,13 +12339,27 @@ export function ApercuHabitant() {
            ELLE PLIE MAINTENANT LA PREMIERE, parce qu'elle est la seule des trois
            dont le contenu supporte d'etre raccourci : le nom s'abrege, le filtre
            et les deux ronds gardent leur taille. */
-        .ap-loin{flex:0 1 auto;min-width:0;max-width:50%;
+        /* ─── ELLE NE SE FAIT PLUS ECRASER PAR LE FILTRE ───
+           VU SUR « ILS RECRUTENT » : la pastille du filtre porte parfois deux
+           mots en capitales, et elle prenait la largeur qu'elle voulait. Le nom
+           du commerce tombait a « Un… / Prê… » — trois lettres et deux points de
+           suspension, c'est-a-dire rien. Un plancher lui garantit de quoi lire
+           un nom, et c'est au filtre de se serrer : lui, on sait deja ce qu'il
+           dit, on vient de le choisir. */
+        .ap-loin{flex:1 1 auto;min-width:0;max-width:none;
           display:inline-flex;align-items:center;
           gap:6px;color:rgba(234,242,236,.82);
           background:rgba(9,12,10,.5);border:1px solid rgba(234,242,236,.14);
           border-radius:999px;padding:5px 11px 5px 10px;
           -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
         .ap-loin>i{font-style:normal;font-size:11px;flex:none;}
+        /* ─── ET C'EST AU FILTRE DE SE SERRER, PAS AU NOM ───
+           « ILS RECRUTENT » prend deux mots en capitales et se servait le
+           premier : le nom du commerce tombait a « Une boutiq… / Prêt-à… ».
+           On vient de choisir le filtre — on sait ce qu'il dit — alors que le
+           nom est la seule chose que cette barre existe pour apprendre. */
+        .ap-metier{min-width:0;flex:0 1 auto;overflow:hidden;
+          text-overflow:ellipsis;white-space:nowrap;}
         /* ─── QUAND ELLE EMMENE SUR PLACE ───
            Elle ne change pas de dessin : c'est le meme reperage, qui repond en
            plus. La fleche suffit a dire qu'on sort — meme signe que « Infos
