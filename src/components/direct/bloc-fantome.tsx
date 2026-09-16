@@ -63,7 +63,46 @@ const CHOSES: { quand: RegExp; quel: string; chose: string; verbe: string }[] = 
   { quand: /boulanger|p[âa]tiss/i, quel: "Quelle", chose: "gourmandise", verbe: "vous fait envie" },
 ];
 
-function laQuestion(metier: string): { debut: string; fin: string } {
+function laQuestion(
+  metier: string,
+  quoi: "essai" | "gout" | "mur",
+  plat?: string,
+): { debut: string; fin: string } {
+  /**
+   * CHEZ UN RESTAURANT OU UN BAR, LA QUESTION PORTE LE PLAT, PAS LE MÉTIER.
+   *
+   * « On va jouer autour du mot essayer, et faire essayer le plat du jour avant
+   * même d'y aller. » Demander « quel plat vous fait envie » à quelqu'un qui a
+   * UN plat du jour devant lui n'a pas de sens : ce qui se décide, c'est s'il y
+   * va. La question nomme donc le plat et propose de le goûter d'abord.
+   */
+  if (quoi === "gout") {
+    /**
+     * LE PLAT NE VA PAS DANS LA QUESTION, ET C'EST UNE AFFAIRE D'ARTICLE.
+     *
+     * Premier jet : « Et si vous goûtiez garbure landaise, magret grillé avant
+     * d'y aller ? » Il manque « la ». Et on ne peut pas le poser ici : « le
+     * verre du soir », « la garbure », « les lasagnes » — le genre et le nombre
+     * se lisent sur le nom, pas sur une règle, et un article faux en
+     * vingt-trois points est la première chose qu'on lit.
+     *
+     * LE NOM DU PLAT DESCEND DONC DANS LA PHRASE, où il est annoncé par deux
+     * points et n'a besoin d'aucun accord. La question reste courte, et elle
+     * dit ce qu'elle a à dire : on goûte AVANT d'y aller.
+     */
+    return { debut: "Et si vous goûtiez", fin: "avant d’y aller ?" };
+  }
+  /**
+   * ET SANS ESSAI NI PARCOURS, ON NE FAIT PAS SEMBLANT.
+   *
+   * Le bloc ouvre le mur de présence : la seule question honnête est celle à
+   * laquelle ce mur répond. Écrire « quelle pièce vous fait envie » au-dessus
+   * d'un mur de messages promettrait un essayage qui n'existe pas encore chez
+   * ce commerçant.
+   */
+  if (quoi === "mur") {
+    return { debut: "Qui est là", fin: "en ce moment ?" };
+  }
   const c = CHOSES.find((x) => x.quand.test(metier));
   // LE REPLI NE PRÉTEND RIEN SAVOIR DU MÉTIER, et c'est la règle de tout ce
   // dossier : mieux vaut une question générale et juste qu'une question précise
@@ -72,14 +111,44 @@ function laQuestion(metier: string): { debut: string; fin: string } {
   return { debut: `${c.quel} ${c.chose} ${c.verbe}`, fin: "aujourd’hui ?" };
 }
 
+/**
+ * ═══ CE QUE LE BLOC OUVRE, ET IL Y A TROIS CAS ════════════════════════════
+ *
+ * « Il y a certains métiers qui n'ont pas leur fantôme, comme le boucher ou les
+ * restaurants, magasin de vêtements, bars… pourtant je t'ai bien mis les
+ * fantômes. »
+ *
+ * LES MASCOTTES ÉTAIENT LÀ, LE BLOC NE L'ÉTAIT PAS. Il ne se dessinait que pour
+ * les métiers qui ont un essayage sur photo ; un restaurant, un bar, un boucher
+ * tombaient sur l'autre branche — le parcours du plat ou le mur de présence — et
+ * ne voyaient jamais ni fantôme, ni question, ni bouton. C'était un verrou que
+ * j'avais posé, pas un fichier qui manquait.
+ *
+ * LE BLOC EST DONC LA PORTE DE TOUS LES MÉTIERS, et ce qu'il annonce suit ce
+ * qu'il y a derrière :
+ *
+ *   · `essai` — on se photographie, la pièce s'installe. Appareil photo, et le
+ *     verbe du métier : « Photographier ma main ».
+ *   · `gout` — on joue avec le plat du jour avant d'y aller. Pas d'appareil
+ *     photo : on ne photographie rien, on entre dans un parcours.
+ *   · `mur` — il n'y a ni l'un ni l'autre. On ne promet donc pas d'essayer : on
+ *     propose de laisser son Fantôme, ce qui est exactement ce que le bloc
+ *     ouvre. Un bouton qui annonce autre chose que ce qu'il fait est la
+ *     promesse la plus concrète qu'un écran puisse rompre.
+ */
+export type QuoiEssayer = "essai" | "gout" | "mur";
+
 export function BlocFantome({
   mur,
+  quoi,
   onPhoto,
   onImporter,
   onStyle,
   styleChoisi,
 }: {
   mur: Mur;
+  /** Ce qu'il y a derrière le grand bouton. Voir `QuoiEssayer`. */
+  quoi: QuoiEssayer;
   /** Ouvre l'appareil photo. C'est le geste principal de toute la page. */
   onPhoto: () => void;
   /** Ouvre la photothèque. Deuxième chemin vers le même écran. */
@@ -88,7 +157,10 @@ export function BlocFantome({
   onStyle: (id: string) => void;
   styleChoisi?: string;
 }) {
-  const q = useMemo(() => laQuestion(mur.metier), [mur.metier]);
+  const q = useMemo(
+    () => laQuestion(mur.metier, quoi, mur.gout?.plat?.toLowerCase()),
+    [mur.metier, quoi, mur.gout],
+  );
   const outil = useMemo(() => outilDuMetier(mur.metier), [mur.metier]);
   const pieces = mur.essai?.pieces ?? [];
   const bande = useRef<HTMLUListElement>(null);
@@ -128,7 +200,13 @@ export function BlocFantome({
             <h2 className="bf-q">
               {q.debut} <b>{q.fin}</b>
             </h2>
-            <p className="bf-p">{mur.essai?.mots.phrase ?? "Essayez sur vous, en quelques secondes."}</p>
+            <p className="bf-p">
+              {quoi === "gout"
+                ? `${mur.gout?.plat ?? "Le plat du jour"} : ne le regardez pas, jouez avec.`
+                : quoi === "mur"
+                  ? "Laissez un mot, dites ce que vous cherchez, ou simplement que vous êtes là."
+                  : (mur.essai?.mots.phrase ?? "Essayez sur vous, en quelques secondes.")}
+            </p>
           </div>
         </div>
 
@@ -138,26 +216,53 @@ export function BlocFantome({
             maquettes, et le rond de droite n'est pas un ornement : il dit qu'on
             part ailleurs, là où l'icône de gauche dit avec quoi. */}
         <button type="button" className="bf-cta" onClick={onPhoto}>
-          <svg className="bf-cta-i" viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M4 8.5h3.2l1.4-2.2h6.8l1.4 2.2H20a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 20 19.5H4A1.5 1.5 0 0 1 2.5 18v-8A1.5 1.5 0 0 1 4 8.5z"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinejoin="round"
-            />
-            <circle cx="12" cy="14" r="3.4" fill="none" stroke="currentColor" strokeWidth="1.8" />
-          </svg>
-          <span>{mur.essai?.mots.geste ?? "Je me prends en photo"}</span>
+          {/* L'ICÔNE DIT AVEC QUOI ON LE FAIT, DONC ELLE CHANGE AVEC LE CAS. Un
+              appareil photo devant « Goûter le plat du jour » ferait chercher
+              son téléphone à quelqu'un qui n'a rien à photographier. */}
+          {quoi === "essai" ? (
+            <svg className="bf-cta-i" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M4 8.5h3.2l1.4-2.2h6.8l1.4 2.2H20a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 20 19.5H4A1.5 1.5 0 0 1 2.5 18v-8A1.5 1.5 0 0 1 4 8.5z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinejoin="round"
+              />
+              <circle cx="12" cy="14" r="3.4" fill="none" stroke="currentColor" strokeWidth="1.8" />
+            </svg>
+          ) : (
+            <svg className="bf-cta-i" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 3.2l2.1 5.1 5.5.4-4.2 3.6 1.3 5.4L12 15l-4.7 2.7 1.3-5.4-4.2-3.6 5.5-.4z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+          <span>
+            {quoi === "gout"
+              ? "Goûter avant d’y aller"
+              : quoi === "mur"
+                ? "Laisser mon Fantôme"
+                : (mur.essai?.mots.geste ?? "Je me prends en photo")}
+          </span>
           <s aria-hidden="true">→</s>
         </button>
 
-        <div className="bf-ou" aria-hidden="true">
-          <i />
-          <span>ou</span>
-          <i />
-        </div>
+        {/* LE SECOND CHEMIN N'EXISTE QUE S'IL MÈNE AU MÊME ENDROIT. On importe
+            une photo pour ESSAYER ; on n'importe rien pour jouer avec un plat
+            ni pour laisser un mot sur un mur. */}
+        {quoi === "essai" && (
+          <div className="bf-ou" aria-hidden="true">
+            <i />
+            <span>ou</span>
+            <i />
+          </div>
+        )}
 
+        {quoi === "essai" && (
         <button type="button" className="bf-import" onClick={onImporter}>
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect x="3" y="5" width="18" height="14" rx="2.4" fill="none" stroke="currentColor" strokeWidth="1.8" />
@@ -166,6 +271,7 @@ export function BlocFantome({
           </svg>
           Importer une photo
         </button>
+        )}
 
         {/* LES DEUX POLAROÏDS DE LA MARGE. Voir `polas` : absents s'il n'y a pas
             de photo, parce qu'un cadre vide avec une légende manuscrite parle

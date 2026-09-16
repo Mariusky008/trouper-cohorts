@@ -886,23 +886,17 @@ export function Boutique() {
             vitrine mais le mur de présence ou l'avant-goût, qui ne se
             présentent pas tout seuls. Voir plus bas : c'est la même règle que
             le premier onglet, qui dit ce que le cœur ouvre. */}
-        {!onEssaie && (
-          <Chapitre
-            n={1}
-            sur={CHAPITRES}
-            ton="essai"
-            titre={
-              murDuLieu.gout
-                ? `${murDuLieu.gout.plat}, avant d’y aller`
-                : "Ce que les gens laissent ici"
-            }
-            dit={
-              murDuLieu.gout
-                ? "Ne regardez pas le plat : jouez avec."
-                : "Des messages laissés par les personnes qui passent. Vous pourrez leur en parler sur place."
-            }
-          />
-        )}
+        {/* ═══ PLUS DE TITRE DE SECTION AU-DESSUS DU PANNEAU, POUR PERSONNE ══
+
+            Aucune des trois maquettes n'en met : on passe des onglets AU BLOC.
+
+            IL SURVIVAIT POUR LES COMMERCES SANS ESSAI, au motif que le mur de
+            présence et l'avant-goût « ne se présentent pas tout seuls ». Ce
+            n'est plus vrai depuis que la vitrine s'affiche pour tout le monde :
+            elle porte sa question en vingt-trois points — « Qui est là en ce
+            moment ? », « Et si vous goûtiez la garbure landaise avant d'y
+            aller ? » — et un titre au-dessus ferait deux titres pour un écran,
+            dont le premier serait plus petit que le second. */}
         <div className="mu bq-mu">
           {/* ═══ ON OUVRE SUR LA PRISE DE VUE, PAS SUR LE MUR ════════════════
 
@@ -944,9 +938,26 @@ export function Boutique() {
               LE PASSAGE DE L'UN À L'AUTRE EST UN SEUL ÉTAT. Pas de feuille qui
               monte, pas de navigation : le bloc s'efface, l'atelier prend sa
               place au même endroit de la page, et la croix y ramène. */}
-          {onEssaie && !essaiOuvert ? (
+          {/* ═══ LA VITRINE EST LA PORTE DE TOUS LES MÉTIERS ═════════════════
+
+              « Il y a certains métiers qui n'ont pas leur fantôme, comme le
+              boucher ou les restaurants, magasin de vêtements, bars… pourtant
+              je t'ai bien mis les fantômes. »
+
+              LES MASCOTTES ÉTAIENT LÀ, LE BLOC NE L'ÉTAIT PAS. Cette ligne
+              disait `onEssaie && …` : seuls les métiers qui essaient sur photo
+              voyaient la vitrine. Un restaurant, un bar, un boucher tombaient
+              directement sur le parcours du plat ou sur le mur de présence — et
+              n'avaient donc ni fantôme, ni question, ni bouton. C'était un
+              verrou que j'avais posé, pas un fichier qui manquait.
+
+              TOUS L'ONT MAINTENANT, ET CE QU'IL ANNONCE RESTE VRAI. Voir
+              `QuoiEssayer` : la question et le geste suivent ce qu'il y a
+              derrière — un essayage, un avant-goût, ou le mur. */}
+          {!essaiOuvert ? (
             <BlocFantome
               mur={murDuLieu}
+              quoi={onEssaie ? "essai" : murDuLieu.gout ? "gout" : "mur"}
               onPhoto={() => setEssaiOuvert(true)}
               onImporter={() => setEssaiOuvert(true)}
               onStyle={(id) => {

@@ -4473,16 +4473,21 @@ console.log("\n══ la page du commerce ══");
         metier: document.querySelector(".bq-metier")?.textContent?.trim() ?? "",
         // ═══ LE CŒUR OUVRE-T-IL UN ESSAI ? ══════════════════════════════
         //
-        // QUATRE FORMES MAINTENANT, ET LA NOUVELLE EST LA PREMIÈRE QU'ON VOIT.
-        // La page ne montre plus l'écran d'essai en arrivant : elle montre la
-        // VITRINE des maquettes — le panneau rose, le fantôme avec son outil,
-        // la question, le bouton. L'écran de cadrage est derrière.
+        // LA VITRINE EST SUR TOUTES LES PAGES MAINTENANT — « il y a certains
+        // métiers qui n'ont pas leur fantôme » — donc son grand bouton n'est
+        // plus le signe d'un essayage : il est le signe d'une page. La garde
+        // qui le cherchait concluait « essai » partout, y compris chez un
+        // boucher qui ouvre un mur de présence.
         //
-        // La garde cherchait donc les trois formes de l'atelier sur un écran
-        // qui affiche la vitrine, et concluait « mur de présence » chez une
-        // onglerie qui essaie parfaitement.
-        coeurEssai:
-          !!document.querySelector(".bf-cta, .mu-cadrer, .mu-pl, .go-ecran"),
+        // C'EST LE LIBELLÉ DU BOUTON QUI DIT CE QU'IL Y A DERRIÈRE, et c'est
+        // aussi ce que l'onglet doit répéter. La garde compare donc les deux :
+        // un bouton qui propose de laisser son Fantôme va avec un onglet
+        // « Qui est là », tout le reste va avec « À essayer ». Deux libellés
+        // qui divergent, c'est l'onglet qui ment — le seul défaut que cette
+        // ligne doit rendre impossible.
+        coeurEssai: !/laisser mon fant/i.test(
+          document.querySelector(".bf-cta span")?.textContent ?? "",
+        ),
         conv: !!conv,
         convVerbe: conv?.querySelector("b")?.textContent?.replace(/\s+/g, " ").trim() ?? "",
       };
