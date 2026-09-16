@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { SITE_URL } from "@/lib/site-url";
 import { MARQUE } from "@/lib/marque";
-import { Geist, Geist_Mono, Anton } from "next/font/google";
+import { Geist, Geist_Mono, Anton, Playfair_Display, Caveat } from "next/font/google";
 import { Toaster } from "sonner";
 import { RecoveryRedirectGuard } from "@/components/auth/recovery-redirect-guard";
 import "./globals.css";
@@ -36,6 +36,43 @@ const anton = Anton({
   variable: "--font-affiche",
   subsets: ["latin"],
   weight: "400",
+  display: "swap",
+});
+
+/**
+ * ═══ LES DEUX FONTES DE LA PAGE COMMERÇANT ════════════════════════════════
+ *
+ * « Le design n'a rien à voir avec le design que je t'ai donné. Il faut que ce
+ * soit absolument identique : au design, à la fonte, à l'organisation. »
+ *
+ * SES TROIS MAQUETTES PORTENT DEUX LETTRES QUE LE SITE N'AVAIT PAS :
+ *
+ *   · UN SÉRIF D'AFFICHE pour le nom du commerce — « Nails by Sarah », « Une
+ *     Boucherie du Centre », « L'Atelier des Elles ». Très contrasté, délié
+ *     fin, empattements nets. C'est lui qui donne le côté enseigne plutôt
+ *     qu'application, et c'est la première chose qu'on voit de la page.
+ *   · UNE MANUSCRITE pour ce qui est écrit À LA MAIN dans la marge — « Des
+ *     ongles qui vous ressemblent ♡ », « Et si vous l'essayiez ? », « Osez,
+ *     testez, trouvez votre style ». Elles ne portent aucune information : ce
+ *     sont des voix, et une voix ne s'écrit pas dans la fonte de l'interface.
+ *
+ * ANTON RESTE POUR LE DIRECT, et c'est une autre page : l'affiche de marché
+ * n'a rien à faire sur la vitrine d'un salon.
+ *
+ * SERVIES PAR LE SITE, PAS PAR GOOGLE — même raison qu'Anton, cinq lignes plus
+ * haut : `next/font` les télécharge au build et les héberge avec nous.
+ */
+const playfair = Playfair_Display({
+  variable: "--font-enseigne",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
+
+const caveat = Caveat({
+  variable: "--font-main-levee",
+  subsets: ["latin"],
+  weight: ["400", "600"],
   display: "swap",
 });
 
@@ -95,7 +132,7 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning className="scroll-smooth">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} ${playfair.variable} ${caveat.variable} antialiased`}
         suppressHydrationWarning
       >
         <RecoveryRedirectGuard />

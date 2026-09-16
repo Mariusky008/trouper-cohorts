@@ -77,6 +77,7 @@ import { ceQuiRevient, phraseHabitude } from "@/lib/direct/historique";
 import { momentEnCours } from "@/lib/direct/apercu-habitant";
 import { murDeLaCarte } from "@/lib/direct/fantomes";
 import { MurContenu } from "@/components/direct/mur-contenu";
+import { BlocFantome } from "@/components/direct/bloc-fantome";
 import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
 import { personnaliteDe } from "@/lib/direct/personnalites";
 import { AnneauMetier, PictoMetier } from "@/components/direct/picto-metier";
@@ -215,12 +216,28 @@ function Chapitre({
   /** « essai » pour le mur, qui est le seul chapitre violet. */
   ton?: string;
 }) {
+  /**
+   * ═══ LE « 3 / 8 » EST PARTI, ET C'EST LA MAQUETTE QUI LE DIT ══════════════
+   *
+   * « Il faut que ce soit absolument identique au design. »
+   *
+   * SES TROIS MAQUETTES N'ONT AUCUN NUMÉRO DE SECTION. Elles enchaînent
+   * « Nos prestations phares », « Aujourd'hui à la boucherie », « Nos coups de
+   * cœur du moment » — des titres de rayon, pas des chapitres d'un livre.
+   *
+   * IL A EXISTÉ POUR UNE VRAIE RAISON : « des titres pour qu'on sache où on
+   * est », sur une page de six mille points sans repère. Cette raison est
+   * traitée depuis que la barre d'onglets existe — elle dit où l'on est ET
+   * permet d'aller ailleurs. Le numéro faisait doublon avec elle, et il donnait
+   * à une vitrine l'air d'un formulaire en huit étapes.
+   *
+   * `n` ET `sur` RESTENT DANS LA SIGNATURE. Ils ne s'affichent plus, mais ils
+   * ordonnent encore les sections dans le code et une garde les lit pour
+   * vérifier que l'ordre ne bouge pas. Les retirer demanderait de toucher huit
+   * appels pour ne rien gagner à l'écran.
+   */
   return (
-    <header className={`bq-ch${ton ? ` ${ton}` : ""}`}>
-      <span className="bq-ch-n" aria-hidden="true">
-        <b>{n}</b>
-        <i>/{sur}</i>
-      </span>
+    <header className={`bq-ch${ton ? ` ${ton}` : ""}`} data-rang={n} data-sur={sur}>
       <h2>{titre}</h2>
       <p>{dit}</p>
     </header>
@@ -295,6 +312,15 @@ export function Boutique() {
   const [id, setId] = useState("emporter");
   /** Le rond de la voix, agrandi et sonore. Il se referme en changeant de commerce. */
   const [voixOuverte, setVoixOuverte] = useState(false);
+  /**
+   * A-T-ON POUSSÉ LA PORTE DE L'ATELIER ?
+   *
+   * Faux : on voit la vitrine — le bloc Fantôme des maquettes. Vrai : on voit
+   * l'écran d'essai, qui n'a pas changé. Voir le commentaire au montage.
+   */
+  const [essaiOuvert, setEssaiOuvert] = useState(false);
+  /** Le style touché dans la bande, pour le passer à l'essai. */
+  const [styleChoisi, setStyleChoisi] = useState<string | undefined>(undefined);
   const c = useMemo(() => cartes.find((x) => x.id === id) ?? cartes[0], [cartes, id]);
 
   /**
@@ -595,6 +621,11 @@ export function Boutique() {
               onClick={() => {
                 setId(x.id);
                 setVoixOuverte(false);
+                // ON REVIENT À LA VITRINE EN CHANGEANT DE COMMERCE. Rester dans
+                // l'atelier ferait arriver chez le boucher sur un écran de
+                // cadrage, sans avoir vu ce qu'il y a à essayer.
+                setEssaiOuvert(false);
+                setStyleChoisi(undefined);
                 window.scrollTo({ top: 0 });
               }}
             >
@@ -616,13 +647,42 @@ export function Boutique() {
             absolu sur la page, il se calait sur le haut du DOCUMENT et venait
             recouvrir le selecteur de maquette. Une barre qui flotte doit avoir
             pour repere la chose sur laquelle elle flotte. */}
+        {/* ═══ LA BARRE DU HAUT, TELLE QU'ELLE EST DESSINEE ════════════════
+
+            Ses trois maquettes portent la meme : un rond de retour a gauche, le
+            mot ClikMe a cote, puis trois ronds a droite — garder, partager, le
+            reste. Des pastilles rondes translucides sur la photo, pas des
+            boutons a libelle.
+
+            LE NOM DU PRODUIT EST DANS LA BARRE, ET IL N'Y ETAIT PAS. On entrait
+            sur la page d'un commercant sans savoir chez qui on etait — ClikMe,
+            un annuaire, le site du salon ? C'est la seule chose de cette barre
+            qui ne soit pas un geste, et c'est celle qui manquait. */}
         <header className="bq-tete">
-          <Link className="bq-retour" href="/autour-de-moi" prefetch={false}>
-            <i aria-hidden="true">←</i> Le direct
-          </Link>
-          <button type="button" className="bq-suivre">
-            <i aria-hidden="true">♥</i> Suivre
-          </button>
+          <div className="bq-tete-g">
+            <Link className="bq-rond" href="/autour-de-moi" prefetch={false} aria-label="Revenir au direct">
+              <i aria-hidden="true">←</i>
+            </Link>
+            <span className="bq-marque" aria-hidden="true">
+              Clik<b>Me</b>
+            </span>
+          </div>
+          <div className="bq-tete-d">
+            <button type="button" className="bq-rond" aria-label="Garder ce commerce">
+              <i aria-hidden="true">♡</i>
+            </button>
+            <button type="button" className="bq-rond" aria-label="Partager">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="18" cy="5.5" r="2.6" />
+                <circle cx="6" cy="12" r="2.6" />
+                <circle cx="18" cy="18.5" r="2.6" />
+                <path d="M8.3 10.8l7.4-4M8.3 13.2l7.4 4" />
+              </svg>
+            </button>
+            <button type="button" className="bq-rond" aria-label="Plus d’options">
+              <i aria-hidden="true">···</i>
+            </button>
+          </div>
         </header>
 
         {photoTete ? (
@@ -633,14 +693,22 @@ export function Boutique() {
         )}
         <div className="bq-hero-voile" aria-hidden="true" />
 
-        {/* L'ANNEAU, IDENTIQUE A CELUI DE LA CARTE. Voir le grand commentaire
-            en tete de fichier : c'est lui, et lui seul, qui fait qu'on
-            reconnait le commerce d'un ecran a l'autre. */}
-        <div className="bq-anneau">
-          <AnneauMetier />
-          <span className="bq-an-t">{rond.carte}</span>
-          <PictoMetier icone={rond.icone} />
-        </div>
+        {/* ═══ L'ANNEAU DU MÉTIER N'EST PLUS SUR CETTE PAGE ════════════════
+
+            IL AVAIT UNE BONNE RAISON D'Y ÊTRE : « c'est lui, et lui seul, qui
+            fait qu'on reconnaît le commerce d'un écran à l'autre. » Il est le
+            lien visuel entre la carte du fil et la page.
+
+            AUCUNE DES TROIS MAQUETTES NE LE PORTE, et en le remettant à
+            l'échelle de la nouvelle tête de page on voit pourquoi : il tombe
+            dans le coin bas-droit, là où sont maintenant les étiquettes du
+            commerce, et il les recouvre. Un anneau de cent points sur une tête
+            de page qui porte un nom en enseigne, une devise, trois faits et
+            quatre étiquettes n'est plus un repère, c'est un obstacle.
+
+            CE QU'IL DISAIT EST DIT AILLEURS, ET MIEUX : le premier onglet porte
+            le pictogramme du métier, et le fantôme du bloc tient son outil.
+            Voir `FantomeMetier`. */}
 
         {/* ═══ « OÙ SUIS-JE ? », ET ON RÉPOND EN QUATRE LIGNES ═══════════════
 
@@ -661,7 +729,28 @@ export function Boutique() {
             n'était lisible qu'à six mille points plus bas, dans les infos. */}
         <div className="bq-hero-c">
           <h1>{c.nom}</h1>
-          <p className="bq-metier">{c.metier}</p>
+          <p className="bq-metier">
+            {c.metier} · {c.ville}
+          </p>
+          {/* ═══ LA LIGNE MANUSCRITE SOUS LE NOM ══════════════════════════════
+
+              « Des ongles qui vous ressemblent ♡ » · « Des looks qui vous
+              ressemblent ♡ » · « Des produits de qualite, pres de chez vous ♡ »
+
+              LES TROIS MAQUETTES EN PORTENT UNE, et c'est la seule phrase de la
+              page ecrite par le commercant pour dire ce qu'il PROMET, par
+              opposition a ce qu'il vend. Elle est deja dans les donnees —
+              `voix.signature` — et elle ne se voyait qu'a quatre mille points
+              plus bas, dans la section « qui vous recevra ».
+
+              ELLE N'INVENTE RIEN QUAND ELLE MANQUE. Un commerce sans signature
+              n'en affiche pas : ecrire une devise a la place de quelqu'un est
+              exactement ce qu'un produit local ne doit jamais faire. */}
+          {c.voix?.signature && (
+            <p className="bq-devise">
+              {c.voix.signature} <i aria-hidden="true">♡</i>
+            </p>
+          )}
           <ul className="bq-faits">
             <li>
               <i aria-hidden="true">📍</i>
@@ -781,53 +870,35 @@ export function Boutique() {
             onglerie ne disent pas la même chose. Les mots du métier remontent
             donc dans le chapitre ; rien n'est écrit deux fois, et rien n'est
             perdu. Voir `Mur.essai.mots` dans `lib/direct/fantomes.ts`. */}
-        <Chapitre
-          n={1}
-          sur={CHAPITRES}
-          ton={onEssaie || murDuLieu.gout ? "essai" : undefined}
-          /* ═══ TROIS CAS, ET IL Y EN AVAIT DEUX ═══════════════════════════
+        {/* ═══ PAS DE TITRE DE SECTION AU-DESSUS DU PANNEAU ════════════════
 
-             Chez Bergine, le titre annonçait « Ce que les gens laissent ici ·
-             Des messages laissés par les personnes qui passent » et l'écran
-             dessous jouait l'Avant-goût du magret. Le chapitre décrivait le mur
-             de présence, que ce commerce n'ouvre plus.
+            Aucune des trois maquettes n'en met : on passe des onglets AU BLOC,
+            directement. Et c'est juste — le panneau porte déjà sa question en
+            vingt-cinq points (« Quel style d'ongles vous fait envie
+            aujourd'hui ? »). Un titre au-dessus ferait deux titres pour un seul
+            écran, dont le premier serait plus petit que le second.
 
-             LE DÉFAUT VIENT D'UN CHOIX BINAIRE DEVENU TERNAIRE. Il y a
-             désormais trois cœurs possibles : l'essai sur photo, le parcours du
-             plat, et le mur de présence pour ceux qui n'ont ni l'un ni l'autre.
-             Un `onEssaie ? … : …` ne peut en nommer que deux, et le troisième
-             hérite silencieusement du libellé du second — c'est toujours comme
-             ça qu'un titre finit par mentir. */
-          titre={
-            onEssaie
-              ? (murDuLieu.essai?.mots.titre ?? "Essayez sur vous")
-              : murDuLieu.gout
+            IL RESTE POUR LES COMMERCES SANS ESSAI. Là, le bloc n'est pas la
+            vitrine mais le mur de présence ou l'avant-goût, qui ne se
+            présentent pas tout seuls. Voir plus bas : c'est la même règle que
+            le premier onglet, qui dit ce que le cœur ouvre. */}
+        {!onEssaie && (
+          <Chapitre
+            n={1}
+            sur={CHAPITRES}
+            ton="essai"
+            titre={
+              murDuLieu.gout
                 ? `${murDuLieu.gout.plat}, avant d’y aller`
                 : "Ce que les gens laissent ici"
-          }
-          /* ═══ IL NE REDIT PAS CE QUE LE COMPOSANT DIT DEUX LIGNES PLUS BAS ══
-
-             La phrase du métier est « Prenez votre main en photo : la pose du
-             salon s'y installe en quelques secondes ». L'écran de prise de vue
-             qui la suit immédiatement s'intitule « Prenez votre main en photo »
-             et se sous-titre « Essayez cette pose sur vous en quelques
-             secondes ». On lisait donc deux titres et deux phrases pour une
-             seule idée, sur les trois cents premiers points de la section la
-             plus importante de la page.
-
-             ON GARDE LE TITRE DU MÉTIER — c'est lui qui fait qu'un coiffeur et
-             une onglerie ne se ressemblent pas — ET LA SEULE PHRASE QUE LE
-             COMPOSANT NE DIT PAS : que rien ne part sans accord. Voir
-             `Mur.essai.mots` : la phrase y reste, elle sert dans le fil, où ce
-             chapitre n'existe pas. */
-          dit={
-            onEssaie
-              ? "Rien n’est publié tant que vous n’avez pas décidé."
-              : murDuLieu.gout
+            }
+            dit={
+              murDuLieu.gout
                 ? "Ne regardez pas le plat : jouez avec."
                 : "Des messages laissés par les personnes qui passent. Vous pourrez leur en parler sur place."
-          }
-        />
+            }
+          />
+        )}
         <div className="mu bq-mu">
           {/* ═══ ON OUVRE SUR LA PRISE DE VUE, PAS SUR LE MUR ════════════════
 
@@ -848,11 +919,45 @@ export function Boutique() {
               concrète qu'un écran puisse rompre ». Le mur n'est pas perdu : la
               croix du parcours d'essai y mène, et les photos des clientes ont
               leur propre section plus bas. */}
-          <MurContenu
-            key={c.id}
-            mur={murDuLieu}
-            ouvrirSur={onEssaie ? "depot" : undefined}
-          />
+          {/* ═══ LA VITRINE D'ABORD, L'ATELIER ENSUITE ═════════════════════
+
+              « Le design n'a rien à voir avec le design que je t'ai donné. »
+
+              LA PAGE MONTAIT `MurContenu` TEL QUEL : on obtenait l'écran du
+              FIL, posé dans un cadre sombre, au milieu d'une page de commerce.
+              Ses trois maquettes ne montrent pas cet écran-là. Elles montrent
+              une VITRINE — un panneau rose, le fantôme avec l'outil du métier,
+              une question en grand, un bouton, une bande de styles.
+
+              LES DEUX EXISTENT, ET DANS CET ORDRE. `BlocFantome` est ce qu'on
+              voit en arrivant : il donne envie et il ouvre la porte.
+              `MurContenu` est ce qu'il y a derrière la porte, et il n'a pas
+              changé — c'est lui qui sait cadrer, appeler le modèle, protéger
+              le visage, noter le rendu et l'envoyer au salon. En réécrire une
+              version « pour la page » aurait garanti qu'un jour les deux
+              divergent.
+
+              LE PASSAGE DE L'UN À L'AUTRE EST UN SEUL ÉTAT. Pas de feuille qui
+              monte, pas de navigation : le bloc s'efface, l'atelier prend sa
+              place au même endroit de la page, et la croix y ramène. */}
+          {onEssaie && !essaiOuvert ? (
+            <BlocFantome
+              mur={murDuLieu}
+              onPhoto={() => setEssaiOuvert(true)}
+              onImporter={() => setEssaiOuvert(true)}
+              onStyle={(id) => {
+                setStyleChoisi(id);
+                setEssaiOuvert(true);
+              }}
+              styleChoisi={styleChoisi}
+            />
+          ) : (
+            <MurContenu
+              key={c.id}
+              mur={murDuLieu}
+              ouvrirSur={onEssaie ? "depot" : undefined}
+            />
+          )}
         </div>
       </section>
 
@@ -1024,33 +1129,68 @@ export function Boutique() {
           ne réserve pas un plat dans un bar, on ne prend pas rendez-vous chez
           une fleuriste, et « Réserver » tout court ne dit pas ce qui va se
           passer. */}
-      <section className="bq-conv" aria-label="Aller plus loin">
-        <p className="bq-conv-t">
-          Envie d’y aller&nbsp;?
-          <b>{c.nom}</b>
-        </p>
-        <div className="bq-conv-b">
-          {/* LE GESTE PLEIN REMONTE EN HAUT DE LA PAGE, SUR L'ESSAI, plutôt que
-              d'ouvrir un formulaire de réservation qui n'existe pas dans cette
-              maquette. C'est aussi le chemin qu'on veut : essayer d'abord,
-              décider ensuite — et il tient la promesse que le bouton affiche,
-              puisque le parcours d'essai finit précisément sur ce verbe-là. */}
-          <button type="button" className="bq-conv-p" onClick={() => allerA("essayer")}>
-            {langage.reserver}
-            <i aria-hidden="true">→</i>
-          </button>
-          <a className="bq-conv-s" href={c.itineraire} target="_blank" rel="noreferrer">
-            <i aria-hidden="true">📍</i>Y aller
-          </a>
+      {/* ═══ LA RANGÉE DE RÉASSURANCE, TELLE QU'ELLE EST DESSINÉE ══════════
+
+          Ses trois maquettes finissent toutes par la même rangée de cartes
+          roses : « Prenez rendez-vous · en ligne en quelques clics », « Nos
+          clientes nous adorent · ★ 4,9 (112 avis) », « 12 rue Saint-Pierre ·
+          Dax ». Chez le boucher elles sont quatre, avec « Appeler ».
+
+          ELLE REMPLACE LA BANDE VERTE, et ce n'est pas qu'une question de
+          couleur. La bande faisait un grand bouton plein pleine largeur —
+          c'est le dessin du DIRECT, où l'on décide en trois secondes devant une
+          offre qui expire. Ici on est au bas d'une vitrine qu'on vient de
+          parcourir : on ne pousse pas, on RANGE les quatre chemins possibles
+          côte à côte et on laisse choisir.
+
+          LE VERBE DU MÉTIER RESTE SUR LA PREMIÈRE — « Réserver une table »,
+          « Mettre de côté », « Prendre rendez-vous ». Voir `Personnalite`. */}
+      <section className="bq-fin" aria-label="Aller plus loin">
+        <ul className="bq-fin-l">
+          <li>
+            <button type="button" onClick={() => allerA("essayer")}>
+              <i aria-hidden="true">📅</i>
+              <b>{langage.reserver}</b>
+              <em>En quelques secondes</em>
+              <s aria-hidden="true">→</s>
+            </button>
+          </li>
+          {c.google && (
+            <li>
+              <button type="button" onClick={() => allerA("avis")}>
+                <i aria-hidden="true">👥</i>
+                <b>On en parle bien</b>
+                <em>
+                  ★ {c.google.note} ({c.google.avis} avis)
+                </em>
+                <s aria-hidden="true">→</s>
+              </button>
+            </li>
+          )}
+          <li>
+            <a href={c.itineraire} target="_blank" rel="noreferrer">
+              <i aria-hidden="true">📍</i>
+              <b>Nous trouver</b>
+              <em>
+                {c.fiche.ou || c.ville} · {c.distance}
+              </em>
+              <s aria-hidden="true">→</s>
+            </a>
+          </li>
           {/* APPELER N'APPARAIT QUE S'IL A DÉCLARÉ UN NUMÉRO. Le numéro de
               fiction sert à écrire une démonstration, pas à faire composer un
               vrai téléphone à quelqu'un qui appuierait pour de bon. */}
           {c.telephone && (
-            <a className="bq-conv-s" href={`tel:${c.telephone.replace(/\s+/g, "")}`}>
-              <i aria-hidden="true">📞</i>Appeler
-            </a>
+            <li>
+              <a href={`tel:${c.telephone.replace(/\s+/g, "")}`}>
+                <i aria-hidden="true">📞</i>
+                <b>Appeler</b>
+                <em>{c.telephone}</em>
+                <s aria-hidden="true">→</s>
+              </a>
+            </li>
           )}
-        </div>
+        </ul>
       </section>
 
       {/* ─── QUI C'EST ───
@@ -1383,6 +1523,27 @@ export function Boutique() {
         <i aria-hidden="true">→</i>
       </Link>
 
+      {/* ═══ LA DERNIÈRE PHRASE EST DE SA MAIN ═══════════════════════════════
+
+          « Plus qu'une manucure, un moment pour vous ♡ » · « De belles viandes,
+          de bons moments ♡ » · « Des femmes, des styles, une même confiance ♡ »
+
+          LES TROIS MAQUETTES FINISSENT DESSUS, entre deux filets. Ce n'est pas
+          une mention : c'est ce que le commerçant a envie qu'on retienne, et
+          c'est la seule chose de toute la page qu'aucune fiche d'annuaire ne
+          contiendra jamais.
+
+          ELLE NE S'INVENTE PAS. Sans signature déclarée, le pied se réduit à
+          l'aveu de maquette — écrire une devise à la place de quelqu'un est
+          exactement ce qu'un produit local ne doit pas faire. */}
+      {c.voix?.signature && (
+        <p className="bq-sign">
+          <i aria-hidden="true" />
+          <span>{c.voix.signature} ♡</span>
+          <i aria-hidden="true" />
+        </p>
+      )}
+
       <footer className="bq-pied">
         Maquette&nbsp;: ce commerce est inventé, ses photos sont des illustrations. Rien n’est
         publié, rien n’est réservable.
@@ -1406,12 +1567,27 @@ function Styles() {
            pas imiter le fil, et il faut donc DEFAIRE le verrou pose par la
            feuille du deck si les deux se croisent un jour. */
         html:has(.bq),body:has(.bq){height:auto;overflow:visible;margin:0;
-          background:#05090C;overscroll-behavior-y:none;}
+          background:#FFFFFF;overscroll-behavior-y:none;}
 
-        .bq{--bq-fond:#05090C;--bq-encre:#EAF2EC;--bq-pale:#93A69B;
-          --bq-menthe:#3DE2A6;--bq-ambre:#FFC400;--bq-ligne:rgba(255,255,255,.09);
-          --bq-carte:rgba(255,255,255,.045);
-          background:radial-gradient(120% 34% at 50% 0%,#13202C 0%,#05090C 62%),#05090C;
+        /* ═══ LA PAGE COMMERCANT EST CLAIRE, ET C'EST LA MAQUETTE QUI LE DIT ══
+           « Le design n'a rien a voir avec le design que je t'ai donne. Il faut
+           que ce soit absolument identique. »
+
+           ELLE ETAIT SOMBRE PARCE QUE LE FIL L'EST, et c'etait le raisonnement
+           faux. Le fil est sombre parce qu'on le regarde comme une vitrine la
+           nuit : des cartes lumineuses sur du noir. Une page de commercant est
+           une BOUTIQUE — on y entre, il y fait clair, et ses trois maquettes
+           sont toutes les trois sur fond blanc.
+
+           LES NOMS DES VARIABLES NE CHANGENT PAS. L'encre reste l'encre, le
+           pale reste le texte secondaire : seules leurs valeurs
+           s'inversent. Renommer aurait demande de reecrire six cents lignes de
+           feuille pour le meme resultat, et d'en oublier trois. */
+        .bq{--bq-fond:#FFFFFF;--bq-encre:#151B33;--bq-pale:#6E7690;
+          --bq-menthe:#E8267F;--bq-ambre:#E08600;--bq-ligne:rgba(20,16,40,.09);
+          --bq-carte:#FBF8FC;
+          --bq-rose:#FFF3F8;--bq-doux:#F7F3FF;
+          background:#FFFFFF;
           color:var(--bq-encre);font-family:'Inter',system-ui,-apple-system,sans-serif;
           max-width:560px;margin:0 auto;min-height:100vh;
           padding-bottom:calc(28px + env(safe-area-inset-bottom));
@@ -1431,7 +1607,7 @@ function Styles() {
         .bq-maq-c button{flex:none;font-family:inherit;font-size:11.5px;font-weight:700;
           border:1px solid var(--bq-ligne);background:transparent;color:#9FB3A7;
           border-radius:20px;padding:6px 11px;white-space:nowrap;cursor:pointer;}
-        .bq-maq-c button.on{background:var(--bq-menthe);color:#04150E;border-color:transparent;}
+        .bq-maq-c button.on{background:var(--bq-menthe);color:#FFFFFF;border-color:transparent;}
 
         /* ─── LE BANDEAU ───
            Il se pose SUR la photo, jamais au-dessus d'elle : une barre pleine
@@ -1442,126 +1618,149 @@ function Styles() {
           display:flex;align-items:center;justify-content:space-between;
           padding:12px 12px 22px;
           background:linear-gradient(180deg,rgba(4,8,6,.72) 0%,rgba(4,8,6,0) 100%);}
-        .bq-retour{display:inline-flex;align-items:center;gap:6px;text-decoration:none;
-          font-size:12.5px;font-weight:800;color:var(--bq-menthe);
-          background:rgba(4,10,8,.55);border-radius:20px;padding:7px 13px 7px 10px;
-          backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
-        .bq-retour i{font-style:normal;font-size:13px;}
-        .bq-suivre{font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;
-          color:#EAF2EC;background:rgba(4,10,8,.55);border:1px solid rgba(255,255,255,.16);
-          border-radius:20px;padding:7px 13px;display:inline-flex;align-items:center;gap:6px;
-          backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
-        .bq-suivre i{font-style:normal;color:#FF7A8A;}
-        .bq-suivre:active{transform:scale(.96);}
+        /* ═══ LA BARRE DU HAUT : DES PASTILLES RONDES SUR LA PHOTO ═════════
+           Voir le composant. Elles sont translucides et floutees : posees en
+           aplat, elles decoupent des trous dans l'image ; transparentes, elles
+           disparaissent sur un fond clair. */
+        .bq-tete-g,.bq-tete-d{display:flex;align-items:center;gap:8px;}
+        .bq-rond{width:38px;height:38px;flex:none;border-radius:50%;
+          display:inline-flex;align-items:center;justify-content:center;
+          text-decoration:none;cursor:pointer;font-family:inherit;
+          color:#FFFFFF;background:rgba(18,14,32,.34);
+          border:1px solid rgba(255,255,255,.26);
+          backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+        .bq-rond i{font-style:normal;font-size:16px;line-height:1;}
+        .bq-rond svg{width:17px;height:17px;fill:none;stroke:currentColor;
+          stroke-width:1.9;stroke-linecap:round;}
+        .bq-rond:active{transform:scale(.94);}
+        /* LE NOM DU PRODUIT, DANS LA LETTRE DU PRODUIT. Le « Me » porte la
+           couleur : c'est le logo, et il est le meme partout. */
+        .bq-marque{font-size:20px;font-weight:800;letter-spacing:-.02em;
+          color:#FFFFFF;text-shadow:0 2px 12px rgba(0,0,0,.5);}
+        .bq-marque b{font-weight:800;color:#FF2D8E;}
 
         /* ─── LA TETE DE PAGE ───
-           270 points : assez pour que la photo raconte l'endroit, pas assez
-           pour qu'on doive defiler avant de savoir ou on est. Le nom et le
-           metier sont DANS l'image, comme sur la carte du fil. */
-        /* 330 ET NON PLUS 270 : la tete de page porte maintenant quatre faits
-           et une bande d'etiquettes, qui montaient tous vers le haut depuis le
-           bas de l'image — le nom du commerce touchait le bord superieur de la
-           photo et le premier tiers du visage etait couvert de texte. */
-        .bq-hero{position:relative;height:330px;overflow:hidden;}
+           Elle est plus haute que sur l'ancienne version parce qu'elle porte
+           maintenant tout ce que la maquette y met : le nom en enseigne, la
+           devise, trois faits, les etiquettes. Le panneau blanc du dessous
+           remonte dessus de vingt points, ce qui la fait paraitre plus courte
+           qu'elle ne l'est — c'est le dessin des trois maquettes. */
+        .bq-hero{position:relative;height:376px;overflow:hidden;}
         .bq-hero img{width:100%;height:100%;object-fit:cover;display:block;}
         .bq-hero-vide{width:100%;height:100%;
-          background:linear-gradient(160deg,#16242E,#0A1310);}
+          background:linear-gradient(160deg,#E9DCEF,#F6EEF6);}
         .bq-hero-voile{position:absolute;inset:0;
-          background:linear-gradient(180deg,rgba(4,8,6,.15) 0%,rgba(4,8,6,0) 34%,
-            rgba(4,8,6,.62) 74%,rgba(5,9,12,.97) 100%);}
-        .bq-hero-c{position:absolute;left:16px;right:16px;bottom:12px;z-index:2;}
-        .bq-hero-c h1{margin:0;font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
-          font-size:33px;font-weight:400;line-height:1.02;letter-spacing:.005em;
-          text-shadow:0 2px 18px rgba(0,0,0,.7);}
-        .bq-sous{margin:7px 0 0;display:flex;align-items:center;gap:7px;flex-wrap:wrap;
-          font-size:12.5px;font-weight:600;color:#C6D6CC;}
-        .bq-sous s{text-decoration:none;color:#5F7268;}
-        .bq-sous em{font-style:normal;display:inline-flex;align-items:center;gap:3px;
-          font-weight:800;color:#FFDE8A;}
-        .bq-sous em i{font-style:normal;font-size:11px;}
-        .bq-sous em u{text-decoration:none;font-weight:600;color:#9FB3A7;margin-left:2px;}
+          background:linear-gradient(180deg,rgba(14,8,24,.42) 0%,rgba(14,8,24,.08) 26%,
+            rgba(14,8,24,.42) 62%,rgba(14,8,24,.78) 100%);}
+        .bq-hero-c{position:absolute;left:16px;right:16px;bottom:34px;z-index:2;}
 
-        /* ═══ LE METIER, LES TROIS FAITS, ET LES ETIQUETTES ══════════════════
-           « nom + metier + distance + note + ouvert/ferme + trois ou quatre
-           caracteristiques ». Un fait par ligne, son repere a gauche : la mise
-           en page de ses trois maquettes, et la seule qui tienne sur un nom
-           long — l'ancienne ligne unique passait sous l'anneau et se coupait. */
-        .bq-metier{margin:3px 0 0;font-size:12.5px;font-weight:700;color:#A8BDB0;
+        /* ═══ LE NOM EN ENSEIGNE ═══════════════════════════════════════════
+           Un serif tres contraste, en casse normale. C'est la premiere chose
+           qu'on voit de la page, et c'est elle qui fait la difference entre
+           une fiche d'annuaire et une devanture. Voir la fonte d'enseigne dans
+           layout.tsx pour pourquoi cette lettre-la. */
+        .bq-hero-c h1{margin:0;font-family:var(--font-enseigne),Georgia,serif;
+          font-size:clamp(30px,8.4vw,38px);font-weight:500;line-height:1.04;
+          letter-spacing:-.01em;color:#FFFFFF;
+          text-shadow:0 2px 20px rgba(0,0,0,.6);}
+        .bq-metier{margin:5px 0 0;font-size:13px;font-weight:600;color:#E4DCEC;
           text-shadow:0 1px 10px rgba(0,0,0,.8);}
-        .bq-faits{list-style:none;margin:7px 0 0;padding:0;
-          display:flex;flex-direction:column;gap:3px;}
-        .bq-faits li{display:flex;align-items:center;gap:6px;
-          font-size:12.5px;font-weight:650;color:#D6E4DB;
-          text-shadow:0 1px 10px rgba(0,0,0,.85);}
-        .bq-faits i{font-style:normal;font-size:11.5px;width:14px;text-align:center;}
-        .bq-faits b{font-weight:850;color:#FFDE8A;}
-        .bq-faits u{text-decoration:none;font-weight:600;color:#9FB3A7;}
+        /* LA DEVISE, DE LA MAIN DU COMMERCANT. Voir le composant : elle ne
+           s'invente pas quand elle manque. */
+        .bq-devise{margin:6px 0 0;
+          font-family:var(--font-main-levee),'Segoe Script',cursive;
+          font-size:19px;line-height:1.15;color:#FFFFFF;
+          text-shadow:0 2px 14px rgba(0,0,0,.7);}
+        .bq-devise i{font-style:normal;color:#FF8FC4;}
 
-        /* ELLES DEFILENT PLUTOT QUE DE PASSER A LA LIGNE. Quatre etiquettes
-           repliees sur deux rangs poussent le nom hors de la photo : la tete
-           de page grandirait selon le nombre de mots-cles d'un commercant,
-           c'est-a-dire selon la chose la moins importante de l'ecran. */
-        .bq-tags{list-style:none;margin:9px 0 0;padding:0 0 2px;display:flex;gap:6px;
+        /* ─── LES TROIS FAITS, UN PAR LIGNE, AVEC LEUR REPERE EN COULEUR ─── */
+        .bq-faits{list-style:none;margin:10px 0 0;padding:0;
+          display:flex;flex-direction:column;gap:4px;}
+        .bq-faits li{display:flex;align-items:center;gap:8px;
+          font-size:13px;font-weight:650;color:#FFFFFF;
+          text-shadow:0 1px 10px rgba(0,0,0,.85);}
+        .bq-faits i{font-style:normal;font-size:13px;width:16px;text-align:center;}
+        .bq-faits b{font-weight:800;}
+        .bq-faits u{text-decoration:none;font-weight:600;opacity:.82;}
+
+        .bq-tags{list-style:none;margin:11px 0 0;padding:0 0 2px;display:flex;gap:7px;
           overflow-x:auto;scrollbar-width:none;}
         .bq-tags::-webkit-scrollbar{display:none;}
-        .bq-tags li{flex:none;font-size:11.5px;font-weight:700;color:#DCE9E1;
-          padding:5px 11px;border-radius:99px;white-space:nowrap;
-          background:rgba(6,14,11,.6);border:1px solid rgba(255,255,255,.17);
+        .bq-tags li{flex:none;font-size:12px;font-weight:650;color:#FFFFFF;
+          padding:7px 13px;border-radius:99px;white-space:nowrap;
+          background:rgba(18,14,32,.42);border:1px solid rgba(255,255,255,.28);
           backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
 
-        /* ═══ LA NAVIGATION, IDENTIQUE CHEZ TOUS ════════════════════════════
-           Voir la liste des onglets dans le composant. Elle colle sous le haut :
-           un menu qu'on ne retrouve qu'en remontant six mille points n'est pas
-           un menu. Le filet du bas tient toute la largeur pour que la bande se
-           lise comme une barre et non comme une rangee de boutons flottants. */
+        /* ═══ LE PANNEAU BLANC QUI CHEVAUCHE LA PHOTO ══════════════════════
+
+           C'est le geste central des trois maquettes, et celui qui fait toute la
+           difference de profondeur : la barre d'onglets n'est pas POSEE sous la
+           photo, elle MONTE DESSUS, avec deux grands coins arrondis en haut.
+           L'image continue derriere, et la page a l'air d'une carte glissee
+           par-dessus une vitrine.
+
+           ELLE RESTE COLLANTE EN DEFILANT. Le chevauchement est le dessin de
+           l'arrivee ; une fois qu'on descend, c'est une barre de navigation
+           ordinaire et elle doit rester a portee de pouce. */
         .bq-nav{position:sticky;top:0;z-index:30;
-          background:rgba(6,11,9,.93);
-          backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-          border-bottom:1px solid rgba(255,255,255,.09);}
-        .bq-nav ul{list-style:none;margin:0;padding:0 10px;display:flex;gap:2px;
+          margin-top:-26px;border-radius:26px 26px 0 0;
+          background:#FFFFFF;
+          box-shadow:0 -10px 30px -18px rgba(30,16,50,.5);}
+        .bq-nav ul{list-style:none;margin:0;padding:0 8px;display:flex;gap:0;
           overflow-x:auto;scrollbar-width:none;}
         .bq-nav ul::-webkit-scrollbar{display:none;}
         .bq-nav li{flex:none;}
-        .bq-nav button{display:inline-flex;align-items:center;gap:6px;cursor:pointer;
-          font-family:inherit;font-size:13px;font-weight:750;white-space:nowrap;
-          color:#8EA398;background:none;border:none;
-          padding:13px 11px 11px;border-bottom:2.5px solid transparent;
+        .bq-nav button{display:inline-flex;flex-direction:column;align-items:center;
+          gap:5px;cursor:pointer;
+          font-family:inherit;font-size:12.5px;font-weight:700;white-space:nowrap;
+          color:#8A90A6;background:none;border:none;
+          padding:14px 12px 11px;border-bottom:2.5px solid transparent;
           transition:color .16s ease,border-color .16s ease;}
-        .bq-nav button i{font-style:normal;font-size:13px;}
-        /* CELUI QU'ON LIT EST SOULIGNE ET PASSE EN BLANC. Sans marque nette on
-           ne sait plus ou l'on est dans la page, ce qui est le seul travail de
-           cette barre. Voir la section vue, calculee par le meme observateur que
-           le bandeau de chapitre : deux mesures separees auraient fini par
-           designer deux sections differentes, cote a cote a l'ecran. */
-        .bq-nav button.on{color:#FFFFFF;border-bottom-color:var(--bq-menthe);}
+        .bq-nav button i{font-style:normal;font-size:16px;line-height:1;
+          filter:grayscale(1);opacity:.6;transition:filter .16s ease,opacity .16s ease;}
+        /* CELUI QU'ON LIT PASSE EN MAGENTA, PICTOGRAMME COMPRIS. Les autres
+           sont en gris et leur pictogramme est desature : c'est ce qui fait
+           qu'on voit l'onglet actif du coin de l'oeil, sans le chercher. */
+        .bq-nav button.on{color:var(--bq-menthe);border-bottom-color:var(--bq-menthe);}
+        .bq-nav button.on i{filter:none;opacity:1;}
 
-        /* ═══ LA BANDE DE CONVERSION ════════════════════════════════════════
-           Entre l'offre et la reassurance. Voir le commentaire du composant :
-           elle n'est PAS en pied de page, parce que celui qui est decide n'a
-           plus besoin des arguments qui restent en dessous. */
-        .bq-conv{margin:6px 16px 30px;padding:18px 16px 16px;border-radius:22px;
-          background:linear-gradient(155deg,rgba(60,224,160,.11),rgba(10,18,15,.5));
-          border:1px solid rgba(60,224,160,.22);}
-        .bq-conv-t{margin:0 0 13px;font-size:15px;font-weight:700;color:#C6D6CC;
-          display:flex;flex-direction:column;gap:2px;}
-        .bq-conv-t b{font-size:19px;font-weight:850;color:#FFFFFF;letter-spacing:-.01em;}
-        .bq-conv-b{display:flex;flex-wrap:wrap;gap:9px;}
-        /* LE GESTE PLEIN PREND TOUTE LA LARGEUR, LES DEUX AUTRES SE PARTAGENT
-           LA LIGNE DU DESSOUS. Trois boutons de meme poids ne designent aucun
-           geste ; c'est la mise en page de l'annonce, et pour la meme raison. */
-        .bq-conv-p{flex:1 0 100%;display:inline-flex;align-items:center;
-          justify-content:center;gap:9px;cursor:pointer;font-family:inherit;
-          font-size:15.5px;font-weight:850;color:#05130D;border:none;
-          padding:15px 18px;border-radius:16px;
-          background:linear-gradient(100deg,#3CE0A0,#57E9B4);
-          box-shadow:0 14px 30px -16px rgba(60,224,160,.95);}
-        .bq-conv-p:active{transform:scale(.985);}
-        .bq-conv-p i{font-style:normal;font-size:16px;}
-        .bq-conv-s{flex:1;display:inline-flex;align-items:center;justify-content:center;
-          gap:7px;text-decoration:none;font-size:13.5px;font-weight:750;color:#DCE9E1;
-          padding:12px 14px;border-radius:14px;white-space:nowrap;
-          background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.14);}
-        .bq-conv-s i{font-style:normal;font-size:13px;}
+        /* ═══ LA RANGEE DE REASSURANCE ═════════════════════════════════════
+           Voir le composant : elle remplace la bande verte pleine largeur, qui
+           etait le dessin du DIRECT pose au bas d'une vitrine. */
+        .bq-fin{margin:4px 14px 26px;}
+        .bq-fin-l{list-style:none;margin:0;padding:0;
+          display:grid;grid-template-columns:repeat(2,1fr);gap:9px;}
+        .bq-fin-l li{display:flex;}
+        .bq-fin-l button,.bq-fin-l a{position:relative;flex:1;min-width:0;
+          display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+          text-decoration:none;text-align:left;cursor:pointer;font-family:inherit;
+          padding:14px 40px 14px 14px;border-radius:18px;
+          background:var(--bq-rose);border:1px solid rgba(232,38,127,.1);}
+        .bq-fin-l button:active,.bq-fin-l a:active{transform:scale(.98);}
+        .bq-fin-l i{font-style:normal;font-size:17px;line-height:1;margin-bottom:4px;}
+        .bq-fin-l b{font-size:13.5px;font-weight:800;line-height:1.2;
+          color:var(--bq-encre);}
+        .bq-fin-l em{font-style:normal;font-size:11.5px;line-height:1.3;
+          color:var(--bq-pale);}
+        /* LA FLECHE EST DANS UN ROND MAGENTA, en bas a droite de chaque carte —
+           c'est le dessin des trois maquettes, et c'est ce qui dit que la carte
+           entiere est un geste et pas un encart d'information. */
+        .bq-fin-l s{position:absolute;right:11px;bottom:12px;text-decoration:none;
+          width:26px;height:26px;border-radius:50%;
+          display:inline-flex;align-items:center;justify-content:center;
+          font-size:13px;color:#FFFFFF;background:var(--bq-menthe);}
+
+        /* ═══ LA SIGNATURE DU PIED ═════════════════════════════════════════
+           « Plus qu'une manucure, un moment pour vous ♡ » · « De belles
+           viandes, de bons moments ♡ » · « Des femmes, des styles, une meme
+           confiance ♡ ». Les trois maquettes finissent dessus, entre deux
+           filets. Ce n'est pas une mention legale : c'est la derniere chose que
+           le commercant dit, et elle est de sa main. */
+        .bq-sign{display:flex;align-items:center;gap:14px;
+          margin:8px 20px 18px;}
+        .bq-sign i{flex:1;height:1px;background:rgba(20,16,40,.1);}
+        .bq-sign span{font-family:var(--font-main-levee),'Segoe Script',cursive;
+          font-size:19px;line-height:1.2;color:#9A7FB0;text-align:center;}
 
         /* ─── L'ANNEAU DU METIER ───
            MEME OBJET QUE SUR LA CARTE, meme diametre, meme dessin. C'est le
@@ -1637,26 +1836,19 @@ function Styles() {
            SON RANG EST LA CHOSE NOUVELLE : « 3 / 8 » dit d'un coup d'oeil ou
            l'on est et combien il reste. Sans lui, un lecteur qui ne sait pas
            s'il est au debut ou a la fin s'arrete. */
-        .bq-ch{margin:0 0 22px;}
-        .bq-ch-n{display:inline-flex;align-items:baseline;gap:2px;margin-bottom:12px;
-          padding:4px 11px 4px 10px;border-radius:99px;
-          background:rgba(61,226,166,.12);border:1px solid rgba(61,226,166,.3);}
-        .bq-ch-n b{font-size:12.5px;font-weight:900;color:var(--bq-menthe);
-          font-variant-numeric:tabular-nums;}
-        .bq-ch-n i{font-style:normal;font-size:10.5px;font-weight:800;
-          color:rgba(61,226,166,.55);}
-        .bq-ch h2{margin:0;font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
-          font-size:clamp(29px,8.2vw,36px);font-weight:400;line-height:1.02;
-          letter-spacing:.004em;color:#fff;}
+        /* ═══ LE TITRE DE SECTION, COMME UN TITRE DE RAYON ═════════════════
+           Ses maquettes ecrivent « Nos prestations phares », « Aujourd'hui a la
+           boucherie » — en gras, en casse normale, de la taille d'un titre de
+           rayon. Pas en lettres d'affiche : l'affiche est la lettre du DIRECT,
+           ou l'on crie une offre du jour ; une vitrine ne crie pas. */
+        .bq-ch{margin:0 0 18px;}
+        .bq-ch h2{margin:0;font-size:clamp(21px,5.6vw,25px);font-weight:820;
+          line-height:1.14;letter-spacing:-.022em;color:var(--bq-encre);}
         /* LA LIGNE QUI DIT A QUOI CE CHAPITRE REPOND. C'est elle qui fait
            l'histoire : chaque section repond a la question que la precedente a
            laissee ouverte, et elle l'ecrit au lieu de compter dessus. */
-        .bq-ch p{margin:10px 0 0;max-width:34em;font-size:13.5px;line-height:1.55;
+        .bq-ch p{margin:7px 0 0;max-width:34em;font-size:13px;line-height:1.5;
           color:var(--bq-pale);}
-        .bq-ch.essai .bq-ch-n{background:rgba(139,125,246,.14);
-          border-color:rgba(139,125,246,.34);}
-        .bq-ch.essai .bq-ch-n b{color:#C9BCFF;}
-        .bq-ch.essai .bq-ch-n i{color:rgba(201,188,255,.55);}
         .bq-int{margin:9px 0 0;font-size:12.5px;line-height:1.5;color:var(--bq-pale);}
         .bq-vide{margin:12px 0 0;font-size:13px;line-height:1.55;color:var(--bq-pale);
           background:var(--bq-carte);border-radius:16px;padding:14px 15px;}
@@ -1671,42 +1863,49 @@ function Styles() {
         /* CE QUI SE JOUE MAINTENANT EST LE SEUL BLOC COLORE DE LA PAGE. Si tout
            est mis en avant, plus rien ne l'est — c'est la regle de la fraicheur
            dans le fil, appliquee ici a la journee. */
-        .bq-m.en-cours{border-color:rgba(61,226,166,.42);
-          background:linear-gradient(160deg,rgba(61,226,166,.13),rgba(61,226,166,.03));
-          box-shadow:0 12px 32px -20px rgba(61,226,166,.9);}
+        /* EN CLAIR, LE MENTHE DEVIENT UN LISERE ROSE ET UN FOND PRESQUE BLANC.
+           Le vert du theme sombre etait la couleur du DIRECT — « ceci vous
+           engage » sur du noir. Sur du blanc il fait etiquette de pharmacie, et
+           surtout il ne s'accorde avec rien d'autre de la maquette, qui est
+           entierement rose et magenta. */
+        .bq-m.en-cours{border-color:rgba(232,38,127,.24);
+          background:linear-gradient(160deg,#FFF4F8,#FFFBFD);
+          box-shadow:0 12px 30px -24px rgba(232,38,127,.7);}
         .bq-m.passe{opacity:.44;}
         .bq-m-p{flex:none;width:74px;height:74px;border-radius:14px;overflow:hidden;
-          background:#0E1712;}
+          background:#F1ECF5;}
         .bq-m-p img{width:100%;height:100%;object-fit:cover;display:block;}
         .bq-m-c{flex:1;min-width:0;}
         .bq-m-h{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:3px;}
         .bq-m-h b{font-size:11px;font-weight:800;letter-spacing:.05em;
           text-transform:uppercase;color:var(--bq-pale);}
         .bq-pt{font-size:9.5px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;
-          color:#04150E;background:var(--bq-menthe);border-radius:20px;padding:3px 8px;}
+          color:#FFFFFF;background:var(--bq-menthe);border-radius:20px;padding:3px 8px;}
         .bq-eti{font-size:9.5px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;
-          color:#2A1A00;background:var(--bq-ambre);border-radius:20px;padding:3px 8px;}
+          color:#FFFFFF;background:var(--bq-ambre);border-radius:20px;padding:3px 8px;}
         .bq-off{font-size:9.5px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;
-          color:#EAF2EC;background:rgba(255,255,255,.13);border-radius:20px;padding:3px 8px;}
+          color:var(--bq-encre);background:rgba(20,16,40,.13);border-radius:20px;padding:3px 8px;}
         .bq-m-t{display:flex;align-items:center;gap:7px;font-size:15.5px;font-weight:700;
           line-height:1.25;}
         .bq-m-t i{font-style:normal;font-size:15px;}
         .bq-m-l{list-style:none;margin:5px 0 0;padding:0;font-size:12.5px;line-height:1.45;
           color:var(--bq-pale);}
-        .bq-m-cs{margin:6px 0 0;font-size:13px;line-height:1.45;color:#D8FFEE;font-style:italic;}
+        .bq-m-cs{margin:6px 0 0;font-size:13px;line-height:1.45;color:#4A5168;font-style:italic;}
         .bq-m-cs s{text-decoration:none;font-style:normal;color:var(--bq-pale);font-size:11.5px;}
         .bq-m-b{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:9px;}
-        .bq-prix{font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
-          font-size:19px;font-weight:400;color:var(--bq-ambre);
-          font-variant-numeric:tabular-nums;}
+        /* LE PRIX QUITTE LA LETTRE D'AFFICHE. Anton est la fonte du DIRECT, ou
+           l'on crie « 9 € » sur une ardoise ; sur une vitrine il donne un air
+           de promotion a un tarif de salon. */
+        .bq-prix{font-size:18px;font-weight:850;color:var(--bq-encre);
+          letter-spacing:-.01em;font-variant-numeric:tabular-nums;}
         .bq-prix.long{font-family:inherit;font-size:13px;font-weight:800;
           letter-spacing:.01em;}
         .bq-pl{font-size:11px;font-weight:700;color:var(--bq-pale);}
         .bq-fini{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
-          color:#5F7268;}
+          color:var(--bq-pale);}
         .bq-act{margin-left:auto;font-family:inherit;font-size:12.5px;font-weight:800;
-          cursor:pointer;border:none;border-radius:20px;padding:8px 14px;
-          background:var(--bq-menthe);color:#04150E;}
+          cursor:pointer;border:none;border-radius:20px;padding:9px 16px;
+          background:var(--bq-menthe);color:#FFFFFF;}
         .bq-act:active{transform:scale(.96);}
 
         /* ─── CE QUI REVIENT ───
@@ -1739,7 +1938,7 @@ function Styles() {
         .bq-art li:last-child{border-bottom:none;}
         .bq-art img,.bq-art .bq-art-v{flex:none;width:46px;height:46px;border-radius:11px;
           object-fit:cover;display:block;}
-        .bq-art .bq-art-v{background:rgba(255,255,255,.05);}
+        .bq-art .bq-art-v{background:#FBF8FC;}
         .bq-art li>div{flex:1;min-width:0;}
         .bq-art b{display:block;font-size:14px;font-weight:650;line-height:1.25;}
         .bq-art span{display:block;font-size:12px;color:var(--bq-pale);margin-top:1px;}
@@ -1753,8 +1952,8 @@ function Styles() {
            rien reveiller de ce qui bloquait les commercants. */
         .bq-voix{display:flex;gap:14px;align-items:flex-start;margin-top:14px;}
         .bq-voix-r{flex:none;width:88px;height:88px;border-radius:50%;overflow:hidden;
-          background:linear-gradient(150deg,#1D3A2E,#0C1A14);
-          border:1px solid rgba(61,226,166,.26);
+          background:linear-gradient(150deg,#FFE8F1,#F3ECFA);
+          border:1px solid rgba(232,38,127,.2);
           display:flex;align-items:center;justify-content:center;
           transition:width .26s ease,height .26s ease,border-radius .26s ease;}
         .bq-voix-r video{width:100%;height:100%;object-fit:cover;display:block;}
@@ -1841,7 +2040,7 @@ function Styles() {
         .bq-y-p,.bq-y-s{flex:1;font-family:inherit;font-size:13.5px;font-weight:800;
           text-align:center;text-decoration:none;border-radius:22px;padding:13px 12px;
           cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;}
-        .bq-y-p{background:var(--bq-menthe);color:#04150E;border:none;}
+        .bq-y-p{background:var(--bq-menthe);color:#FFFFFF;border:none;}
         .bq-y-p i{font-style:normal;}
         .bq-y-s{background:transparent;color:var(--bq-encre);
           border:1px solid rgba(255,255,255,.2);}
@@ -1865,9 +2064,9 @@ function Styles() {
            bas de page : c'est le geste qu'on veut, et il ne doit pas se
            chercher. */
         .bq-porte{display:flex;align-items:center;gap:12px;text-decoration:none;
-          margin:22px 16px 0;padding:17px 18px;border-radius:22px;color:#04150E;
-          background:linear-gradient(120deg,#5CF0BC,#17B98A);
-          box-shadow:0 18px 40px -24px rgba(61,226,166,.95);}
+          margin:22px 16px 0;padding:17px 18px;border-radius:22px;color:#FFFFFF;
+          background:linear-gradient(120deg,#FF5BA8,#E8267F);
+          box-shadow:0 18px 40px -26px rgba(232,38,127,.9);}
         .bq-porte-t{flex:1;min-width:0;}
         .bq-porte-k{display:block;font-size:10px;font-weight:900;letter-spacing:.14em;
           text-transform:uppercase;opacity:.72;margin-bottom:2px;}
@@ -1875,7 +2074,7 @@ function Styles() {
         .bq-porte i{flex:none;font-style:normal;font-size:19px;font-weight:700;}
         .bq-porte:active{transform:scale(.985);}
 
-        .bq-pied{margin:20px 16px 0;font-size:10.5px;line-height:1.5;color:#5F7268;
+        .bq-pied{margin:20px 16px 0;font-size:10.5px;line-height:1.5;color:var(--bq-pale);
           text-align:center;}
 
         /* ═══ LE MUR MONTE SUR LA PAGE ═══

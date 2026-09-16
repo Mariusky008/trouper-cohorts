@@ -38,7 +38,35 @@ const dire = (ok, t) => { if (!ok) echecs++; console.log(`${ok ? "  ok  " : "ÉC
  * de le voir, exactement comme l'appareil photo du téléphone n'a pas besoin que
  * le champ soit à l'écran pour y déposer son cliché.
  */
+/**
+ * ═══ ENTRER DANS L'ATELIER DEPUIS LA VITRINE ══════════════════════════════
+ *
+ * « Le design n'a rien a voir avec le design que je t'ai donne. »
+ *
+ * LA PAGE COMMERCANT NE MONTRE PLUS L'ECRAN D'ESSAI EN ARRIVANT. Elle montre
+ * la VITRINE de ses maquettes : un panneau rose, le fantome avec l'outil du
+ * metier, une question en grand, et un bouton. L'ecran d'essai est derriere ce
+ * bouton — inchange, avec son cadrage, sa grille et son rituel.
+ *
+ * LES GARDES DE L'ESSAI ARRIVAIENT DONC SUR LA VITRINE et concluaient
+ * « absent » sur des ecrans qui marchent. Elles poussent maintenant la porte
+ * comme quelqu'un la pousse : en appuyant sur le grand bouton.
+ *
+ * ELLE NE FAIT RIEN S'IL N'Y A PAS DE VITRINE. Sur le fil, dans la feuille du
+ * mur, ou chez un commerce sans essai, le bouton n'existe pas et la fonction
+ * rend `false` sans rien casser — c'est ce qui permet de l'appeler partout.
+ */
+const entrerDansLAtelier = async (page, dans = "") => {
+  const porte = await page.$(`${dans} .bf-cta`);
+  if (!porte) return false;
+  await porte.click();
+  await page.waitForTimeout(800);
+  return true;
+};
+
 const deposerUnePhoto = async (page, dans = "") => {
+  // ON PASSE LA VITRINE S'IL Y EN A UNE — voir `entrerDansLAtelier`.
+  await entrerDansLAtelier(page, dans);
   // LE PREMIER CHAMP DU DOCUMENT EST CELUI DU DEPOT, PAS CELUI DE L'ESSAI :
   // deux champs portent la meme classe. On prend le dernier, qui est celui de
   // l'essai — il est rendu apres le formulaire du mur.
@@ -2375,7 +2403,13 @@ console.log("\n══ la page du commerce ══");
         const ch = sec.querySelector(".bq-ch");
         if (!ch) return null;
         return {
-          n: Number(ch.querySelector(".bq-ch-n b")?.textContent ?? 0),
+          // LE RANG NE S'AFFICHE PLUS, IL S'ANNOTE. Le « 3 / 8 » en pastille
+          // a ete retire : aucune des trois maquettes ne numerote ses sections,
+          // et le numero faisait doublon avec la barre d'onglets, qui dit deja
+          // ou l'on est. L'ordre, lui, doit toujours tenir — une section qui
+          // recule au milieu d'une page detruit exactement ce qu'elle donne —
+          // donc le rang reste, en attribut de donnee.
+          n: Number(ch.getAttribute("data-rang") ?? 0),
           titre: ch.querySelector("h2")?.textContent?.trim() ?? "",
           dit: ch.querySelector("p")?.textContent?.trim() ?? "",
         };
@@ -2452,6 +2486,10 @@ console.log("\n══ la page du commerce ══");
    * lisaient une grille vide.
    */
   const versLaPhoto = async (page) => {
+    // ON PASSE LA VITRINE D'ABORD — voir `entrerDansLAtelier`. La page montre
+    // maintenant le panneau des maquettes en arrivant ; l'ecran d'essai est
+    // derriere son grand bouton.
+    await entrerDansLAtelier(page, "#essayer");
     if (await page.$("#essayer .mu-ph-tete")) return;
     const essayer = await page.$("#essayer .mu-bas .mu-cta");
     if (essayer) {
@@ -2464,12 +2502,47 @@ console.log("\n══ la page du commerce ══");
   if (onglerie) {
     await onglerie.click();
     await pB.waitForTimeout(1000);
+    /**
+     * ═══ ON LIT LA VITRINE AVANT D'ENTRER ════════════════════════════════
+     *
+     * LES MOTS DU MÉTIER SE SONT DÉPLACÉS D'UN ÉCRAN. Ils étaient dans le
+     * titre de chapitre — « Vos ongles, avant de venir » — au-dessus du mur.
+     * Ils sont maintenant dans la QUESTION DE LA VITRINE : « Quel style
+     * d'ongles vous fait envie aujourd'hui ? ». L'écran de cadrage, lui,
+     * parle de la main qu'on photographie, pas des ongles qu'on essaie.
+     *
+     * LA GARDE MESURE DONC LE PARCOURS, PAS UN ÉCRAN. Ce qui doit tenir, c'est
+     * qu'une onglerie parle d'ongles quelque part entre l'arrivée et la prise
+     * de vue — pas qu'un sélecteur précis contienne un mot précis. C'est la
+     * même correction que trois autres gardes de ce fichier : on cherche le
+     * MOT, on ne décrit pas l'emplacement.
+     */
+    const vitrine = await pB
+      .$eval("#essayer .bf-q", (x) => x.textContent.replace(/\s+/g, " ").trim())
+      .catch(() => "");
     await versLaPhoto(pB);
     const e = await pB.evaluate(() => ({
       // ON LIT LE TITRE DU CHAPITRE, PAS CELUI DU COMPOSANT. Celui du
       // composant existe encore dans le document mais il est masque : une
       // garde qui lit un texte invisible mesure le code, pas l'ecran.
-      titre: document.querySelector("#essayer .bq-ch h2")?.textContent?.trim() ?? null,
+      // ═══ LES MOTS DU METIER ONT CHANGE DE PLACE ══════════════════════
+      //
+      // Ils etaient dans le titre de chapitre, au-dessus du mur. Aucune des
+      // trois maquettes n'a de titre de section au-dessus du panneau : la
+      // question du panneau EST le titre, et elle est deja dans les mots du
+      // metier (« Prenez votre main en photo »).
+      //
+      // LA GARDE CHERCHE DONC LE MOT, PAS L'EMPLACEMENT — c'est la regle de
+      // ce fichier. Elle regarde d'abord le titre de l'ecran d'essai, ou l'on
+      // vient d'entrer, puis retombe sur la question de la vitrine.
+      // ET ON CHERCHE LE TITRE PAR SON RANG, PAS PAR SA CLASSE. Le titre de
+      // l'ecran de cadrage n'en porte aucune — il est le seul h2 ou h3 du
+      // bloc. Une garde qui vise une classe absente lit `null` sur un texte
+      // parfaitement affiche, et c'est la troisieme fois dans ce fichier.
+      titre:
+        document.querySelector("#essayer .mu h2, #essayer .mu h3")?.textContent?.trim() ??
+        document.querySelector("#essayer .bf-q")?.textContent?.replace(/\s+/g, " ").trim() ??
+        null,
       geste: document.querySelector("#essayer .mu-cta.plein b")?.textContent?.trim() ?? null,
       /**
        * LE CREUX SE MESURE SOUS LE DERNIER CONTENU, PAS SOUS LE CADRE.
@@ -2495,8 +2568,8 @@ console.log("\n══ la page du commerce ══");
       })(),
     }));
     dire(
-      !!e.titre && /ongle/i.test(e.titre),
-      `l'essai s'ouvre sur sa page, dans les mots du metier (« ${e.titre ?? "absent"} »)`,
+      /ongle/i.test(`${vitrine} ${e.titre ?? ""}`),
+      `l'essai parle d'ongles chez une onglerie (« ${vitrine || e.titre || "absent"} »)`,
     );
     dire(
       !!e.geste && /photograph|prendre/i.test(e.geste),
@@ -4348,7 +4421,12 @@ console.log("\n══ la page du commerce ══");
       const nav = document.querySelector(".bq-nav");
       const bs = [...document.querySelectorAll(".bq-nav button")];
       const sections = [...document.querySelectorAll(".bq-s")].map((x) => x.id);
-      const conv = document.querySelector(".bq-conv");
+      // LA BANDE DE CONVERSION EST DEVENUE LA RANGEE DE REASSURANCE. Elle
+      // faisait un grand bouton vert pleine largeur — le dessin du DIRECT posé
+      // au bas d'une vitrine ; ses trois maquettes finissent toutes par des
+      // cartes roses côte à côte. Le BESOIN que la garde mesure n'a pas
+      // changé : la page doit demander quelque chose avant la réassurance.
+      const conv = document.querySelector(".bq-fin");
       return {
         barre: !!nav,
         onglets: bs.map((b) => b.textContent.replace(/\s+/g, " ").trim()),
@@ -4360,12 +4438,20 @@ console.log("\n══ la page du commerce ══");
         sections,
         faits: document.querySelectorAll(".bq-faits li").length,
         metier: document.querySelector(".bq-metier")?.textContent?.trim() ?? "",
-        // LE CŒUR OUVRE-T-IL UN ESSAI ? La prise de vue, la grille des pièces
-        // ou un parcours d'avant-goût : trois formes, une seule question.
+        // ═══ LE CŒUR OUVRE-T-IL UN ESSAI ? ══════════════════════════════
+        //
+        // QUATRE FORMES MAINTENANT, ET LA NOUVELLE EST LA PREMIÈRE QU'ON VOIT.
+        // La page ne montre plus l'écran d'essai en arrivant : elle montre la
+        // VITRINE des maquettes — le panneau rose, le fantôme avec son outil,
+        // la question, le bouton. L'écran de cadrage est derrière.
+        //
+        // La garde cherchait donc les trois formes de l'atelier sur un écran
+        // qui affiche la vitrine, et concluait « mur de présence » chez une
+        // onglerie qui essaie parfaitement.
         coeurEssai:
-          !!document.querySelector(".mu-cadrer, .mu-pl, .go-ecran"),
+          !!document.querySelector(".bf-cta, .mu-cadrer, .mu-pl, .go-ecran"),
         conv: !!conv,
-        convVerbe: conv?.querySelector(".bq-conv-p")?.textContent?.replace(/\s+/g, " ").trim() ?? "",
+        convVerbe: conv?.querySelector("b")?.textContent?.replace(/\s+/g, " ").trim() ?? "",
       };
     });
 
