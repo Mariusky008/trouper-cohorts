@@ -10556,6 +10556,12 @@ export function ApercuHabitant() {
                          toute seule. */
                       onFavori={garderLeSommet}
                       favori={gardeSommet}
+                      /* RÉSERVER À LA FIN DE L'AVANT-GOÛT, C'EST RÉSERVER TOUT
+                         COURT. Le parcours se termine sur le geste de l'annonce
+                         — le même `engagerLeSommet`, donc le même créneau et le
+                         même décompte de ce qu'il reste. Un second chemin de
+                         réservation aurait donné une table qui ne compte pas. */
+                      onReserver={engagerLeSommet}
                       ouvrirSur={murSur}
                       /* LE MUR EST DÉJÀ CALCULÉ PLUS HAUT : c'est lui qui décide
                          du bouton principal de l'annonce. Deux appels séparés

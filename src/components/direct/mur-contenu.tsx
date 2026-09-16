@@ -76,6 +76,7 @@ import { laMainEstPrete, poserVernis } from "@/lib/direct/ongles";
 import { essayerSurMoi, estUnRendu } from "@/lib/direct/essai-genere";
 import { prevenirPourEssai, numeroDeFiction } from "@/lib/direct/prevenir";
 import { partagerLEssai, type Sortie } from "@/lib/direct/partager-essai";
+import { EcranGout } from "@/components/direct/gout-contenu";
 
 /**
  * « CHEZ QUI », ÉCRIT COMME ON LE DIRAIT.
@@ -574,6 +575,7 @@ export function MurContenu({
   onFavori,
   favori,
   ouvrirSur,
+  onReserver,
 }: {
   mur: TypeMur;
   /** Voir `VersLeSalon` : absent là où il n'y a pas de salon. */
@@ -603,6 +605,19 @@ export function MurContenu({
    * qu'un écran puisse rompre.
    */
   ouvrirSur?: "mur" | "depot";
+  /**
+   * CE QUE FAIT LA FIN DE L'AVANT-GOÛT.
+   *
+   * Le parcours se termine sur RÉSERVER, et ce bouton doit faire exactement ce
+   * que fait « Réserver ma table » sur l'annonce — le même geste, le même
+   * créneau, la même déduction de ce qu'il reste. Le brancher ailleurs aurait
+   * fabriqué une seconde réservation qui ne décompte rien.
+   *
+   * ABSENT, LE PARCOURS S'ARRÊTE SUR L'ÉMOTION et ne dessine pas le bouton :
+   * sur la maquette de jugement des murs il n'y a pas d'annonce derrière, donc
+   * rien à réserver. Même règle que `onSalon` et `onFavori`.
+   */
+  onReserver?: () => void;
 }) {
   /** Où l'on en est : le mur, ou le dépôt. Voir `entree` et `ouvrirSur`. */
   const [ecran, setEcran] = useState<"mur" | "depot">(() => ouvrirSur ?? entree(mur));
@@ -622,6 +637,15 @@ export function MurContenu({
   const [dehors, setDehors] = useState(0);
   /** Le mur déplié : les rangées deviennent une grille, rien ne dépasse du bord. */
   const [tout, setTout] = useState(false);
+  /**
+   * « PASSER CETTE DÉCOUVERTE », ET ÇA NE FERME PAS LA FEUILLE.
+   *
+   * Quelqu'un qui veut juste l'adresse et l'heure ne doit pas avoir à jouer pour
+   * les obtenir — un jeu obligatoire n'est plus un jeu. Mais le renvoyer à
+   * l'annonce lui reprendrait tout : le mur de présence existe toujours, il
+   * n'est plus que la porte de derrière. Passer l'avant-goût mène donc au mur.
+   */
+  const [goutPasse, setGoutPasse] = useState(false);
 
   useEffect(() => {
     /**
@@ -641,6 +665,7 @@ export function MurContenu({
     setPassage(null);
     setDits({});
     setTout(false);
+    setGoutPasse(false);
     // ON RELIT LA MÉMOIRE À CHAQUE MUR : ce qu'on a laissé ICI revient en tête,
     // et le quota se compte sur TOUS les lieux, pas sur celui-ci.
     setPoses(
@@ -683,6 +708,26 @@ export function MurContenu({
   const clients = [...poses, ...mur.clients];
   const restants = Math.max(0, QUOTA_DU_JOUR - dehors);
 
+  /**
+   * L'AVANT-GOÛT PASSE DEVANT LE MUR DE PRÉSENCE.
+   *
+   * « Quand on clique sur le fantôme pour les restaurants, on va être différent
+   * de ce qu'on avait imaginé, parce que "Faites savoir que vous êtes ici" ne
+   * remporte pas le succès escompté. »
+   *
+   * IL NE REMPLACE PAS LE MUR, IL LE PRÉCÈDE — et c'est une distinction qui
+   * compte. Le mur reste la destination de « Passer cette découverte », et il
+   * reste l'écran des commerces qui n'ont pas de plat raconté. Ce qui change,
+   * c'est ce qu'on trouve EN PREMIER derrière le fantôme d'un restaurant : pas
+   * une question qui suppose qu'on ait déjà décidé d'y aller, mais un plat avec
+   * lequel on joue.
+   *
+   * ET ÇA NE TOUCHE PAS LE DÉPÔT. Sur un mur d'essai — l'onglerie, l'opticien —
+   * `entree` envoie sur la prise de vue et rien ici ne s'interpose : ces
+   * métiers-là ont déjà leur « essayer », c'est le vrai.
+   */
+  const gout = !goutPasse && ecran === "mur" ? mur.gout : undefined;
+
   return (
     <>
       <Styles />
@@ -711,6 +756,12 @@ export function MurContenu({
           350 m » sur une ligne. La distance décide encore quelque chose — on
           essaie avant d'y aller — alors que le nom ne décide plus rien à ce
           moment-là. */}
+      {/* ET L'AVANT-GOÛT NE LE PORTE PAS DU TOUT. Même raison que l'essai, en
+          plus net encore : son parcours écrit déjà « le lieu · la ville · la
+          distance » en pied d'écran, et le plat doit occuper le haut. Deux
+          bandeaux d'adresse sur un écran de sept lignes, c'est un écran qui
+          parle de lui-même. */}
+      {!gout && (
       <div className={`mu-chez${ecran === "depot" ? " court" : ""}`}>
         <i aria-hidden="true">📍</i>
         <span>
@@ -724,7 +775,17 @@ export function MurContenu({
           )}
         </span>
       </div>
-      {ecran === "mur" ? (
+      )}
+      {gout ? (
+        <EcranGout
+          gout={gout}
+          lieu={mur.lieu}
+          ville={mur.ville}
+          distance={mur.distance}
+          onReserver={onReserver}
+          onFermer={() => setGoutPasse(true)}
+        />
+      ) : ecran === "mur" ? (
         <EcranMur
           mur={mur}
           clients={clients}

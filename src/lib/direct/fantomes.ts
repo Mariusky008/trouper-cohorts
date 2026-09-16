@@ -78,6 +78,7 @@ import type { Gabarit } from "./essai";
 
 /** Ce que le lieu propose de déposer. Décide de l'écran, et de lui seul. */
 import { numeroDeFiction } from "@/lib/direct/prevenir";
+import { goutDuCommerce, type Gout } from "@/lib/direct/avant-gout";
 
 export type Depot = "annonce" | "essai";
 
@@ -380,6 +381,24 @@ export type Mur = {
    */
   photoLieu?: string;
   depot: Depot;
+  /**
+   * LE PARCOURS DE L'AVANT-GOÛT, QUAND CE COMMERCE EN A UN.
+   *
+   * « On va jouer autour du mot essayer, et on va faire essayer le plat du jour
+   * avant même d'y aller. »
+   *
+   * IL EST PORTÉ PAR LE MUR ET NON PAR LE MODÈLE, et c'est la seule place juste.
+   * Un modèle porte une MÉCANIQUE — ce qu'on photographie, ce qu'on dépose ;
+   * tous les restaurants du paquet partagent le même (« margot »). Un parcours,
+   * lui, porte UN PLAT : le poser sur le modèle aurait servi le magret de
+   * Bergine au restaurant qui fait des lasagnes. Il est donc rempli dans
+   * `murDeLaCarte`, à partir de l'identifiant du COMMERCE.
+   *
+   * ABSENT, LE FANTÔME GARDE LE MUR DE PRÉSENCE. C'est le cas normal : deux
+   * plats ont été racontés, les autres n'ont rien à faire jouer. Voir
+   * `lib/direct/avant-gout.ts`.
+   */
+  gout?: Gout;
   /** Les humeurs proposées ici. Vide = on ne demande pas d'humeur. */
   humeurs: string[];
   /** Les verbes proposés ici. */
@@ -2557,6 +2576,8 @@ export function murDeLaCarte(c: {
     telFiction: !c.telephone,
     essai,
     contexte,
+    // LE PARCOURS SUIT LE COMMERCE, PAS LE MODÈLE — voir `gout` dans le type.
+    gout: goutDuCommerce(c.id),
   };
 }
 

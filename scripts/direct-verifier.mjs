@@ -4090,6 +4090,153 @@ console.log("\n══ la page du commerce ══");
   await grand.close();
 }
 
+// ═══ L'AVANT-GOÛT : LE FANTÔME D'UN RESTAURANT FAIT JOUER AVEC LE PLAT ═════
+//
+// « Quand on clique sur le fantôme pour les restaurants, "Faites savoir que
+// vous êtes ici" ne remporte pas le succès escompté, donc on va modifier cette
+// section. On va faire essayer le plat du jour avant même d'y aller. »
+//
+// ═══ CE QUE CETTE SECTION MESURE, ET CE QU'ELLE SE GARDE DE MESURER ════════
+//
+// ELLE NE MESURE NI UNE FORMULATION NI UN NOMBRE D'ÉCRANS. « Le parcours n'a
+// pas besoin d'être identique pour tous les plats » : un garde qui exige cinq
+// temps, ou la phrase « Quelle cuisson », casserait le jour où l'IA écrit un
+// parcours pour une pizza. Ce qui doit tenir, ce sont les RÈGLES du jeu :
+//
+//   · on arrive sur le parcours, pas sur le mur de présence ;
+//   · chaque temps se joue — il y a quelque chose à faire, pas à lire ;
+//   · on finit sur RÉSERVER ;
+//   · on peut sortir sans jouer, et on retombe sur le mur ;
+//   · et surtout, les deux choses qu'il a expressément refusées n'apparaissent
+//     jamais : le compteur « 2 / 4 » et le mot « étape ».
+//
+// CES DEUX DERNIÈRES CONTREDISENT SES PROPRES MAQUETTES, et c'est pour ça
+// qu'elles sont gardées : ce sont celles qu'on remettra sans y penser, un jour
+// où l'on ouvrira l'image plutôt que le texte.
+{
+  for (const [carte, lieu] of [["centre", "Chez Bergine"], ["emporter", "Le Bocal de Margot"]]) {
+    const { ctx: cG, p: pG } = await ouvrir(`/autour-de-moi?carte=${carte}`, 12.5);
+    const f = await pG.$(".ap-monfantome");
+    dire(!!f, `${lieu} : le fantôme est là`);
+    if (f) {
+      await f.click();
+      await pG.waitForTimeout(1100);
+
+      const lu = async () =>
+        pG.evaluate(() => {
+          const e = document.querySelector(".go-ecran");
+          if (!e) return null;
+          const q = (s) => e.querySelector(s);
+          return {
+            // `innerText` ET PAS `textContent` : la feuille de style vit dans
+            // cet élément, et elle contient « aspect-ratio:4/5 ». Sur le texte
+            // brut, la garde du compteur se déclenchait sur du CSS.
+            mots: e.innerText,
+            titre: q(".go-t")?.textContent.replace(/\s+/g, " ").trim() ?? "",
+            cta: q(".go-cta")?.textContent.replace(/\s+/g, " ").trim() ?? "",
+            ctaOff: q(".go-cta")?.disabled ?? true,
+            choix: e.querySelectorAll(".go-choix button").length,
+            emos: e.querySelectorAll(".go-emo-l button").length,
+            segments: e.querySelectorAll(".go-fil i").length,
+            allumes: e.querySelectorAll(".go-fil i.on").length,
+          };
+        });
+
+      const debut = await lu();
+      dire(!!debut, `${lieu} : le fantôme ouvre l'avant-goût, pas le mur de présence`);
+      dire(
+        !(await pG.$(".mu-chez")),
+        "et le bandeau d'adresse du mur ne double pas le pied du parcours",
+      );
+
+      // ON JOUE LE PARCOURS EN ENTIER. Douze tours suffisent largement pour
+      // cinq temps dont deux se jouent en deux appuis ; la boucle s'arrête
+      // d'elle-même sur RÉSERVER.
+      let fini = false;
+      let vus = 0;
+      let deroule = "";
+      for (let i = 0; i < 12 && !fini; i++) {
+        const e = await lu();
+        if (!e) break;
+        vus++;
+        deroule += `${e.titre.slice(0, 26)} · `;
+        dire(
+          !/\b\d\s*\/\s*\d\b/.test(e.mots),
+          `« ${e.titre.slice(0, 28)} » n'affiche pas de compteur`,
+        );
+        dire(!/étape/i.test(e.mots), "et n'écrit pas le mot « étape »");
+        dire(e.segments >= 3 && e.allumes >= 1, "la progression se voit sans se compter");
+        if (/^Réserver/.test(e.cta)) { fini = true; break; }
+        // CHAQUE TEMPS DEMANDE QUELQUE CHOSE. Un écran sans choix, sans émotion
+        // et dont le bouton est déjà ouvert est un écran qu'on REGARDE — c'est
+        // exactement ce que ce parcours remplace.
+        const opt = await pG.$(".go-choix button");
+        if (opt) { await opt.click(); await pG.waitForTimeout(280); }
+        const avant = e.cta;
+        const cta = await pG.$(".go-cta");
+        if (!cta) break;
+        await cta.click();
+        await pG.waitForTimeout(650);
+        const apres = await lu();
+        // UN BOUTON QUI NE BOUGE PAS APRÈS UN APPUI DIT QU'IL NE S'EST RIEN
+        // PASSÉ. Sur un temps qui se joue en deux fois — la devinette, le geste
+        // — l'écran reste le même : c'est le LIBELLÉ qui doit avoir changé,
+        // sinon on rappuie et on saute le temps suivant sans l'avoir vu.
+        if (apres && apres.titre === e.titre && apres.cta === avant && !e.ctaOff) {
+          dire(false, `« ${e.titre.slice(0, 28)} » : le bouton ne bouge pas après l'appui`);
+        }
+      }
+      dire(fini, `${lieu} : le parcours se joue jusqu'au bout et finit sur RÉSERVER`);
+      dire(vus >= 4, `et il se joue en plusieurs temps (${vus}) — ${deroule.slice(0, 80)}`);
+
+      const fin = await lu();
+      dire(!!fin && fin.emos >= 5, "le dernier temps demande ce que ça fait, en cinq mots");
+      dire(
+        !!fin && /Réserver/.test(fin.cta) && !fin.ctaOff,
+        `et le geste final réserve (« ${fin?.cta ?? "—"} »)`,
+      );
+    }
+    await cG.close();
+  }
+
+  // ═══ ET ON PEUT REFUSER DE JOUER ═════════════════════════════════════════
+  //
+  // « Passer cette découverte » est sur sa maquette d'ouverture, et il a raison
+  // de l'y mettre : quelqu'un qui veut l'adresse et l'heure ne doit pas avoir à
+  // jouer pour les obtenir. Un jeu obligatoire n'est plus un jeu — et ce qu'il
+  // trouve derrière n'est pas une porte fermée, c'est le mur de présence, qui
+  // n'a pas disparu, il est simplement passé derrière.
+  const { ctx: cP, p: pP } = await ouvrir("/autour-de-moi?carte=centre", 12.5);
+  const fp = await pP.$(".ap-monfantome");
+  if (fp) {
+    await fp.click();
+    await pP.waitForTimeout(1000);
+    const passer = await pP.$(".go-retour");
+    dire(!!passer, "on peut passer la découverte dès le premier écran");
+    if (passer) {
+      await passer.click();
+      await pP.waitForTimeout(800);
+      dire(!(await pP.$(".go-ecran")), "et le parcours s'efface");
+      dire(!!(await pP.$(".mu-chez")), "on retombe sur le mur de présence, pas dans le vide");
+    }
+  }
+  await cP.close();
+
+  // ═══ ET LES MÉTIERS QUI ESSAIENT POUR DE VRAI NE SONT PAS TOUCHÉS ════════
+  //
+  // L'avant-goût est un essayage POUR CEUX QUI N'EN ONT PAS. Une onglerie, elle,
+  // essaie sur la photo du client : s'interposer là remplacerait le vrai par le
+  // jeu, ce qui est exactement l'inverse de ce qu'on construit.
+  const { ctx: cO, p: pO } = await ouvrir("/autour-de-moi?carte=ongle-institut", 12.5);
+  const fo = await pO.$(".ap-monfantome");
+  if (fo) {
+    await fo.click();
+    await pO.waitForTimeout(900);
+    dire(!(await pO.$(".go-ecran")), "l'onglerie garde son essai réel, sans avant-goût devant");
+  }
+  await cO.close();
+}
+
 dire(erreurs.length === 0, `aucune erreur${erreurs.length ? " : " + erreurs[0] : ""}`);
 await nav.close();
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT PASSE");
