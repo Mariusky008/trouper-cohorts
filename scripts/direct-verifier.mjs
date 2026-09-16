@@ -2335,7 +2335,12 @@ console.log("\n══ la page du commerce ══");
     return {
       colonnes: col.length,
       largeurUtile: col.reduce((n, x) => n + parseFloat(x), 0),
-      mur: !!document.querySelector("#mur .mu"),
+      // LA SECTION S'APPELLE MAINTENANT `essayer`, PARCE QU'ELLE EST PASSÉE
+      // EN TÊTE ET QUE C'EST L'ONGLET QUI LA DÉSIGNE. Le garde visait `#mur`,
+      // c'est-à-dire l'identifiant d'hier : il cherchait le bon objet à la
+      // mauvaise adresse et concluait « pas de mur », alors que le mur était
+      // là, deux mille points plus haut qu'avant.
+      mur: !!document.querySelector("#essayer .mu"),
       deborde: document.documentElement.scrollWidth > window.innerWidth + 1,
     };
   });
@@ -2392,14 +2397,36 @@ console.log("\n══ la page du commerce ══");
   const titres = histoire.map((x) => x.titre);
   dire(new Set(titres).size === titres.length, "et aucun ne répète le titre d'un autre");
 
-  // ET LE REPÈRE SUIT LE DÉFILEMENT — un titre ne dit où l'on est qu'au moment
-  // où on le croise ; trois écrans plus bas, on ne sait déjà plus.
-  const auSommet = await pB.$eval(".bq-ou", (e) => e.classList.contains("vu")).catch(() => null);
-  dire(auSommet === false, "au sommet, le repère de chapitre se tait");
+  // ═══ ET LE REPÈRE SUIT LE DÉFILEMENT ══════════════════════════════════════
+  //
+  // Un titre ne dit où l'on est qu'au moment où on le croise ; trois écrans
+  // plus bas, on ne sait déjà plus.
+  //
+  // CE GARDE VISAIT LE BANDEAU « 3 / 8 · La carte », QUI N'EXISTE PLUS. Les
+  // onglets font le même travail et davantage — ils disent où l'on est ET
+  // permettent d'aller ailleurs — et les deux collants empilés prenaient
+  // soixante-dix points en haut de chaque écran pour annoncer deux fois la
+  // même section.
+  //
+  // IL MESURE DONC LE MÊME BESOIN SUR L'OBJET QUI LE PORTE MAINTENANT. C'est
+  // la règle de ce fichier : une garde vise un BESOIN — « savoir où l'on est
+  // en descendant » — et suit l'objet qui y répond, au lieu de mourir avec le
+  // dessin qu'elle avait sous les yeux le jour où elle a été écrite.
   await pB.evaluate(() => scrollTo(0, Math.round(document.documentElement.scrollHeight * 0.55)));
-  await pB.waitForTimeout(600);
-  const enRoute = await pB.$eval(".bq-ou", (e) => e.innerText.replace(/\s+/g, " ").trim());
-  dire(/\d\s*\/\s*\d/.test(enRoute), `et il dit où l'on est en descendant (« ${enRoute} »)`);
+  await pB.waitForTimeout(700);
+  const enRoute = await pB.evaluate(() => {
+    const on = document.querySelector(".bq-nav button.on");
+    const barre = document.querySelector(".bq-nav");
+    return {
+      mot: on?.textContent?.replace(/\s+/g, " ").trim() ?? "",
+      // LA BARRE EST ENCORE À L'ÉCRAN APRÈS AVOIR DESCENDU LA MOITIÉ DE LA
+      // PAGE : c'est tout ce que « collant » veut dire, et c'est ce qui rend
+      // le repère utile là où le titre de section a disparu depuis longtemps.
+      collee: Math.abs(barre?.getBoundingClientRect().top ?? 999) < 2,
+    };
+  });
+  dire(!!enRoute.mot, `on sait où l'on est en descendant (« ${enRoute.mot} »)`);
+  dire(enRoute.collee, "et la barre est toujours là pour le dire");
   await pB.evaluate(() => scrollTo(0, 0));
   await pB.waitForTimeout(400);
 
@@ -2425,8 +2452,8 @@ console.log("\n══ la page du commerce ══");
    * lisaient une grille vide.
    */
   const versLaPhoto = async (page) => {
-    if (await page.$("#mur .mu-ph-tete")) return;
-    const essayer = await page.$("#mur .mu-bas .mu-cta");
+    if (await page.$("#essayer .mu-ph-tete")) return;
+    const essayer = await page.$("#essayer .mu-bas .mu-cta");
     if (essayer) {
       await essayer.click();
       await page.waitForTimeout(500);
@@ -2442,8 +2469,8 @@ console.log("\n══ la page du commerce ══");
       // ON LIT LE TITRE DU CHAPITRE, PAS CELUI DU COMPOSANT. Celui du
       // composant existe encore dans le document mais il est masque : une
       // garde qui lit un texte invisible mesure le code, pas l'ecran.
-      titre: document.querySelector("#mur .bq-ch h2")?.textContent?.trim() ?? null,
-      geste: document.querySelector("#mur .mu-cta.plein b")?.textContent?.trim() ?? null,
+      titre: document.querySelector("#essayer .bq-ch h2")?.textContent?.trim() ?? null,
+      geste: document.querySelector("#essayer .mu-cta.plein b")?.textContent?.trim() ?? null,
       /**
        * LE CREUX SE MESURE SOUS LE DERNIER CONTENU, PAS SOUS LE CADRE.
        *
@@ -2458,7 +2485,7 @@ console.log("\n══ la page du commerce ══");
        * le cadre ne voit jamais ce qu'il y a dedans.
        */
       creux: (() => {
-        const m = document.querySelector("#mur");
+        const m = document.querySelector("#essayer");
         const d = m?.querySelector(".bq-mu");
         if (!m || !d) return 0;
         const enfants = [...d.children].filter((e) => e.getBoundingClientRect().height > 1);
@@ -2504,8 +2531,8 @@ console.log("\n══ la page du commerce ══");
     // photo, et on y dépose un fichier comme le ferait quelqu'un qui a déjà
     // pris le cliché. Voir `deposerUnePhoto`.
     await versLaPhoto(pB);
-    await deposerUnePhoto(pB, "#mur");
-    const pieces = await pB.$$eval("#mur .mu-pieces button", (l) =>
+    await deposerUnePhoto(pB, "#essayer");
+    const pieces = await pB.$$eval("#essayer .mu-pieces button", (l) =>
       l.map((e) => {
         const img = e.querySelector("img");
         return {
@@ -2539,9 +2566,9 @@ console.log("\n══ la page du commerce ══");
       await onglet.click();
       await pB.waitForTimeout(1100);
       await versLaPhoto(pB);
-      await deposerUnePhoto(pB, "#mur");
-      const aVenir = await pB.$$eval("#mur .mu-pieces button.bientot", (l) => l.length);
-      const total = await pB.$$eval("#mur .mu-pieces button", (l) => l.length);
+      await deposerUnePhoto(pB, "#essayer");
+      const aVenir = await pB.$$eval("#essayer .mu-pieces button.bientot", (l) => l.length);
+      const total = await pB.$$eval("#essayer .mu-pieces button", (l) => l.length);
       dire(
         total - aVenir >= 4,
         `le tatoueur a bien quatre flashs essayables, comme sa carte l'annonce (${total - aVenir})`,
@@ -2566,11 +2593,11 @@ console.log("\n══ la page du commerce ══");
       await onglet.click();
       await pB.waitForTimeout(1100);
       await versLaPhoto(pB);
-      await deposerUnePhoto(pB, "#mur");
-      const pc = await pB.$("#mur .mu-pieces button:not(.bientot)");
+      await deposerUnePhoto(pB, "#essayer");
+      const pc = await pB.$("#essayer .mu-pieces button:not(.bientot)");
       if (pc) {
         await pc.click();
-        await pB.waitForSelector("#mur .mu-cal-scene", { timeout: 8000 }).catch(() => null);
+        await pB.waitForSelector("#essayer .mu-cal-scene", { timeout: 8000 }).catch(() => null);
         // LE FANTÔME EST AU CENTRE DE SA SCÈNE, comme l'anneau autour de lui.
         // DÉFAUT MESURÉ : il était à 65 % de large et 61 % de haut parce que
         // `muFlotte` existait déjà ailleurs et que la seconde déclaration avait
@@ -2598,7 +2625,7 @@ console.log("\n══ la page du commerce ══");
           dire(place.poudre >= 8, `avec sa poussière (${place.poudre} points)`);
         }
 
-        await pB.waitForSelector("#mur .mu-rendu", { timeout: 40000 }).catch(() => null);
+        await pB.waitForSelector("#essayer .mu-rendu", { timeout: 40000 }).catch(() => null);
         await pB.waitForTimeout(1500);
         /**
          * SANS CLÉ D'IMAGE, LA MOITIÉ DE CET ÉCRAN N'EXISTE PAS — ET ON LE DIT.
@@ -2613,10 +2640,10 @@ console.log("\n══ la page du commerce ══");
          * faire confiance. Elle imprime donc pourquoi, et la commande à taper
          * pour la faire tourner vraiment.
          */
-        const noteLa = await pB.$("#mur .mu-note");
+        const noteLa = await pB.$("#essayer .mu-note");
         if (!noteLa) {
           const pourquoi = await pB
-            .$eval("#mur .mu-rendu-b", (e) => e.textContent.trim())
+            .$eval("#essayer .mu-rendu-b", (e) => e.textContent.trim())
             .catch(() => "raison inconnue");
           console.log(
             `  ····  l'écran du rendu n'est pas mesuré ici — « ${pourquoi.slice(0, 70)} ».\n` +
@@ -2668,18 +2695,18 @@ console.log("\n══ la page du commerce ══");
         // LA NOTE PART SUR LE MUR, ET C'EST TOUTE SA RAISON D'ÊTRE. Noter pour
         // soi seul n'aurait servi à rien : ce qui la rend utile, c'est que le
         // suivant la lise à côté de la tête de celui qui l'a donnée.
-        const cinq = (await pB.$$("#mur .mu-note-f button"))[4];
+        const cinq = (await pB.$$("#essayer .mu-note-f button"))[4];
         if (cinq) {
           await cinq.click();
           await pB.waitForTimeout(250);
-          const mot = await pB.$eval("#mur .mu-note-m", (e) => e.textContent.trim());
+          const mot = await pB.$eval("#essayer .mu-note-m", (e) => e.textContent.trim());
           dire(mot.length > 4 && mot !== "Facultatif", `et la note se dit en toutes lettres (« ${mot} »)`);
-          const passe = await pB.$("#mur .mu-rendu-g .non");
+          const passe = await pB.$("#essayer .mu-rendu-g .non");
           if (passe) {
             await passe.click();
             await pB.waitForTimeout(900);
             const surLeMur = await pB.evaluate(
-              () => document.querySelectorAll("#mur .mu-rendu-preuve .mu-c-note .mu-c-ns.on").length,
+              () => document.querySelectorAll("#essayer .mu-rendu-preuve .mu-c-note .mu-c-ns.on").length,
             );
             dire(surLeMur === 5, `et elle se voit sur le fantôme posé (${surLeMur} fantômes allumés)`);
           }
@@ -2700,7 +2727,7 @@ console.log("\n══ la page du commerce ══");
   await pC.waitForTimeout(900);
   const surTel = await pC.evaluate(() => ({
     grille: getComputedStyle(document.querySelector(".bq")).display,
-    mur: !!document.querySelector("#mur .mu"),
+    mur: !!document.querySelector("#essayer .mu"),
     deborde: document.documentElement.scrollWidth > window.innerWidth + 1,
   }));
   dire(surTel.grille !== "grid", "sur téléphone, la page reste une seule colonne");
@@ -4235,6 +4262,166 @@ console.log("\n══ la page du commerce ══");
     dire(!(await pO.$(".go-ecran")), "l'onglerie garde son essai réel, sans avant-goût devant");
   }
   await cO.close();
+}
+
+// ═══ LA PAGE COMMERÇANT : UN SEUL GABARIT, UN CŒUR QUI CHANGE ══════════════
+//
+// « 80 % de structure identique, 20 % d'expérience métier. C'est justement ce
+// qui va faire que quelqu'un qui a compris ClikMe chez un coiffeur saura
+// immédiatement l'utiliser chez un bar, un tatoueur ou un fleuriste. »
+//
+// ═══ CE QUE CETTE SECTION MESURE ══════════════════════════════════════════
+//
+// ELLE NE MESURE AUCUN LIBELLÉ DE SECTION, ET C'EST LE POINT. Les mots sont
+// justement les 20 % qui changent — « Le salon », « Le bar », « L'atelier »,
+// « Ce soir ». Un garde qui exige « Le salon » casserait chez le bar, c'est-à-
+// dire exactement là où le produit fait ce qu'on lui demande. Ce qui doit tenir
+// est la STRUCTURE :
+//
+//   · les onglets existent, et « À essayer » est toujours le premier ;
+//   · « À essayer » est la première section de la page, avant le présent ;
+//   · un onglet mène à sa section, et pas sous la barre ;
+//   · deux onglets voisins ne portent jamais le même mot ;
+//   · la tête de page répond à « où suis-je ? » en quatre faits ;
+//   · et la page demande quelque chose, avec le verbe du métier.
+{
+  const cB = await nav.newContext({
+    viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
+    isMobile: true, hasTouch: true, locale: "fr-FR",
+  });
+  await cB.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
+  const pB = await cB.newPage();
+  pB.on("pageerror", (e) => erreurs.push(String(e)));
+  await pB.goto(`${BASE}/autour-de-moi/boutique`, { waitUntil: "networkidle" });
+  await pB.waitForTimeout(1100);
+
+  // SIX COMMERCES QUI N'ONT RIEN EN COMMUN, et c'est le seul échantillon qui
+  // prouve quelque chose : un restaurant qui a tout, une friperie sans avis, un
+  // hypnothérapeute sans catalogue photographié, un bar dont la journée est le
+  // soir, un tatoueur dont le catalogue et le lieu portent le même mot, et une
+  // onglerie qui essaie pour de vrai. « On ne juge pas un gabarit sur son
+  // meilleur cas. »
+  const echantillon = [
+    "Chez Bergine", "Une terrasse au soleil", "Une prothésiste ongulaire",
+    "Une friperie du vieux centre", "Un tatoueur du centre", "Un hypnothérapeute",
+  ];
+
+  for (const nom of echantillon) {
+    const passe = await pB.evaluate((n) => {
+      const b = [...document.querySelectorAll(".bq-maq-c button")].find((x) => x.textContent.trim() === n);
+      if (!b) return false;
+      b.click();
+      return true;
+    }, nom);
+    if (!passe) { dire(false, `${nom} : commerce introuvable dans la maquette`); continue; }
+    await pB.waitForTimeout(1200);
+
+    const vu = await pB.evaluate(() => {
+      const nav = document.querySelector(".bq-nav");
+      const bs = [...document.querySelectorAll(".bq-nav button")];
+      const sections = [...document.querySelectorAll(".bq-s")].map((x) => x.id);
+      const conv = document.querySelector(".bq-conv");
+      return {
+        barre: !!nav,
+        onglets: bs.map((b) => b.textContent.replace(/\s+/g, " ").trim()),
+        // L'ONGLET SANS SON PICTOGRAMME : c'est le MOT qu'on compare, et deux
+        // pictogrammes différents devant deux fois « Atelier » ne font pas deux
+        // onglets différents.
+        mots: bs.map((b) => (b.lastChild?.textContent ?? "").trim()),
+        cibles: bs.map((b) => b.getAttribute("aria-current")),
+        sections,
+        faits: document.querySelectorAll(".bq-faits li").length,
+        metier: document.querySelector(".bq-metier")?.textContent?.trim() ?? "",
+        // LE CŒUR OUVRE-T-IL UN ESSAI ? La prise de vue, la grille des pièces
+        // ou un parcours d'avant-goût : trois formes, une seule question.
+        coeurEssai:
+          !!document.querySelector(".mu-cadrer, .mu-pl, .go-ecran"),
+        conv: !!conv,
+        convVerbe: conv?.querySelector(".bq-conv-p")?.textContent?.replace(/\s+/g, " ").trim() ?? "",
+      };
+    });
+
+    dire(vu.barre, `${nom} : la barre d'onglets est là`);
+    // LE PREMIER ONGLET NOMME LE CŒUR, IL NE RÉCITE PAS UN LIBELLÉ. Premier
+    // jet : la garde exigeait « À essayer » partout — et elle aurait donc
+    // défendu le défaut qu'on venait de corriger, puisque le bar affichait ce
+    // mot au-dessus d'un mur de présence. Ce qui doit tenir, c'est qu'il
+    // annonce ce que le bloc OUVRE : un essai là où l'on essaie, la présence
+    // là où l'on ne fait que se signaler.
+    dire(
+      vu.coeurEssai ? vu.mots[0] === "À essayer" : vu.mots[0] === "Qui est là",
+      `le premier onglet dit ce que le cœur ouvre (« ${vu.mots[0] ?? "—"} » pour ${
+        vu.coeurEssai ? "un essai" : "un mur de présence"
+      })`,
+    );
+    dire(
+      vu.sections[0] === "essayer",
+      `et « À essayer » est la première section, avant le présent (${vu.sections.slice(0, 2).join(" › ")})`,
+    );
+    dire(
+      vu.sections.indexOf("essayer") < vu.sections.indexOf("aujourdhui"),
+      "le cœur passe devant ce qui se passe maintenant",
+    );
+    // DEUX ONGLETS VOISINS NE DISENT PAS LA MÊME CHOSE. Le tatoueur portait
+    // « 🏷️ Atelier » et « 🏠 L'atelier » côte à côte : deux onglets identiques
+    // ne disent plus lequel ouvre quoi.
+    const nus = vu.mots.map((m) => m.toLowerCase().replace(/^(les|la|le|l’|l')\s*/, ""));
+    dire(
+      new Set(nus).size === nus.length,
+      `et aucun onglet n'en répète un autre (${vu.mots.join(" · ")})`,
+    );
+    dire(vu.faits >= 2, `la tête de page répond en ${vu.faits} faits`);
+    dire(!!vu.metier, `et elle nomme le métier (« ${vu.metier} »)`);
+    dire(vu.conv, "la page demande quelque chose avant la réassurance");
+    dire(
+      vu.convVerbe.length > 2 && !/^Réserver →?$/.test(vu.convVerbe),
+      `et le verbe est celui du métier (« ${vu.convVerbe} »)`,
+    );
+
+    // UN ONGLET MÈNE À SA SECTION, ET PAS SOUS LA BARRE. `scrollIntoView` pose
+    // le haut de la section au haut de la FENÊTRE, c'est-à-dire derrière les
+    // onglets, qui sont collants : on arrive sur un titre qu'on ne voit pas.
+    const cible = vu.mots.length > 2 ? 2 : 1;
+    await pB.evaluate((k) => document.querySelectorAll(".bq-nav button")[k].click(), cible);
+    await pB.waitForTimeout(900);
+    const arrivee = await pB.evaluate((k) => {
+      const b = document.querySelectorAll(".bq-nav button")[k];
+      const barre = document.querySelector(".bq-nav");
+      // ON RETROUVE LA SECTION PAR LE RANG DE L'ONGLET, et c'est exactement ce
+      // que la garde doit vérifier : les onglets et les sections sont dans le
+      // MÊME ORDRE, toujours, quel que soit le commerce. Le jour où ce n'est
+      // plus vrai, cette ligne désigne la mauvaise section et la mesure de
+      // position échoue — ce qui est la bonne réaction.
+      const ids = ["essayer", "aujourdhui", "carte", "qui", "avis", "infos"];
+      const presents = [...document.querySelectorAll(".bq-s")].map((x) => x.id);
+      const id = ids.filter((x) => presents.includes(x))[k];
+      const s = id ? document.getElementById(id) : null;
+      return {
+        allume: b.getAttribute("aria-current") === "true",
+        id,
+        // Le haut de la section, mesuré depuis le BAS de la barre collante.
+        sousLaBarre: s
+          ? s.getBoundingClientRect().top - barre.getBoundingClientRect().bottom
+          : null,
+      };
+    }, cible);
+    dire(arrivee.allume, `l'onglet touché s'allume (${vu.mots[cible]})`);
+    dire(
+      arrivee.sousLaBarre === null || arrivee.sousLaBarre > -4,
+      `et sa section arrive SOUS la barre, pas derrière (${
+        arrivee.sousLaBarre === null ? "—" : Math.round(arrivee.sousLaBarre) + " pt"
+      })`,
+    );
+    await pB.evaluate(() => window.scrollTo({ top: 0 }));
+    await pB.waitForTimeout(350);
+  }
+
+  // ═══ ET RIEN NE DÉBORDE, SUR AUCUN DES SIX ═══════════════════════════════
+  const deborde = await pB.evaluate(
+    () => document.documentElement.scrollWidth > window.innerWidth + 1,
+  );
+  dire(!deborde, "rien ne déborde de la largeur sur téléphone");
+  await cB.close();
 }
 
 dire(erreurs.length === 0, `aucune erreur${erreurs.length ? " : " + erreurs[0] : ""}`);

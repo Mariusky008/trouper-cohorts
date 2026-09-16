@@ -78,6 +78,7 @@ import { momentEnCours } from "@/lib/direct/apercu-habitant";
 import { murDeLaCarte } from "@/lib/direct/fantomes";
 import { MurContenu } from "@/components/direct/mur-contenu";
 import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
+import { personnaliteDe } from "@/lib/direct/personnalites";
 import { AnneauMetier, PictoMetier } from "@/components/direct/picto-metier";
 
 /** Une seule décimale, virgule française : « 4,7 ». */
@@ -237,6 +238,58 @@ function Chapitre({
  */
 const CHAPITRES = 8;
 
+/**
+ * ═══ CE QU'ON APPELLE « LE COMMERCE », CHEZ CHACUN ═════════════════════════
+ *
+ * « La navigation est identique : À essayer · Aujourd'hui · Produits /
+ * Prestations · Le commerce · Avis · Infos. »
+ *
+ * L'ONGLET EST TOUJOURS À LA MÊME PLACE, LE MOT EST CELUI DU MÉTIER. C'est
+ * exactement l'équilibre qu'il décrit — « 80 % de structure identique, 20 %
+ * d'expérience métier ». Un coiffeur dit « Le salon », une boutique dit « Le
+ * magasin », un tatoueur dit « L'atelier » : ce sont leurs mots, et les
+ * entendre confirme qu'on est bien chez eux. Ce qui ne bouge pas, c'est le
+ * QUATRIÈME onglet en partant de la gauche.
+ *
+ * « LE COMMERCE » EST LE REPLI, ET IL NE PRÉTEND RIEN. Un métier absent de
+ * cette table prend le mot générique plutôt que d'emprunter celui d'un autre —
+ * c'est la règle de tout ce dossier depuis que le mur des bougies s'est
+ * retrouvé chez un hypnothérapeute.
+ */
+const CHEZ_EUX: [RegExp, string][] = [
+  // « ONGULAIRE » NE CONTIENT PAS « ONGL ». Premier jet : `/ongl/` — et la
+  // prothésiste ongulaire tombait sur le repli « Le commerce », alors qu'elle
+  // est le métier le plus salon du paquet. Le mot s'écrit o-n-g-u-l-a-i-r-e ;
+  // une racine devinée plutôt que lue sur la donnée rate exactement le cas
+  // qu'elle visait.
+  [/coiffeur|coiffure|barbier|ongulaire|onglerie|proth[ée]siste|esth[ée]t|beaut|institut/i, "Le salon"],
+  [/tatou|bijou|bracelet|collier|cirier|ciri[èe]re|artisan|atelier|potier|couturi/i, "L’atelier"],
+  // LE HYPNOTHÉRAPEUTE PASSE AVANT LE TRAITEUR, ET C'EST L'ORDRE QUI LE FAIT :
+  // « thérapeute » et « traiteur » ne se croisent pas, mais la première liste
+  // qui matche gagne, donc les métiers les plus spécifiques passent devant.
+  [/hypno|psycho|sophro|th[ée]rapeute|ost[ée]o/i, "Le cabinet"],
+  [/restaurant|bistrot|brasserie|traiteur|pizz/i, "Le restaurant"],
+  [/bar|caviste|vins/i, "Le bar"],
+  [/boulanger|p[âa]tiss|choco|primeur|fromag|boucher|[ée]picer/i, "La boutique"],
+  [/mode|pr[êe]t-[àa]-porter|friperie|fripe|opticien|lunet|fleurist/i, "Le magasin"],
+];
+
+/**
+ * L'ONGLET PORTE LE MOT, PAS L'ARTICLE — ET IL GARDE SA MAJUSCULE.
+ *
+ * Premier jet : un `replace` de l'article, et l'onglet affichait « prestations »
+ * en bas de casse au milieu de cinq onglets capitalisés. Retirer « Les » à
+ * « Les prestations » ne laisse pas un mot écrit, ça laisse un mot décapité.
+ */
+function sansArticle(titre: string): string {
+  const nu = titre.replace(/^(les|la|le|l’|l')\s*/i, "");
+  return nu.charAt(0).toUpperCase() + nu.slice(1);
+}
+
+function chezEux(metier: string): string {
+  return CHEZ_EUX.find(([r]) => r.test(metier))?.[1] ?? "Le commerce";
+}
+
 export function Boutique() {
   const cartes = useMemo(() => toutesLesCartes(), []);
   const [id, setId] = useState("emporter");
@@ -278,6 +331,7 @@ export function Boutique() {
    * retombe sur son mot passe-partout, l'anneau en sait davantage : c'est le
    * seul cas où on lui préfère celui du métier.
    */
+  const langage = personnaliteDe({ branche: c.branche, metier: c.metier });
   const catal = motCatalogue(c.metier);
   const mots = catal.titre === "Le catalogue" ? { ...catal, titre: rond.carte } : catal;
   /**
@@ -390,24 +444,22 @@ export function Boutique() {
    * réveille le navigateur que lorsqu'une section franchit la ligne. Sur un
    * téléphone, la différence se sent au doigt.
    */
-  const [chapitre, setChapitre] = useState<{ n: number; titre: string } | null>(null);
+  /** Quelle section occupe le haut de l'écran — c'est l'onglet allumé. */
+  const [sectionVue, setSectionVue] = useState("essayer");
   useEffect(() => {
     const sections = Array.from(document.querySelectorAll<HTMLElement>(".bq-s"));
     if (!sections.length) return;
     const obs = new IntersectionObserver(
       (entrees) => {
         // CELLE QUI OCCUPE LE HAUT DE L'ECRAN GAGNE. Deux sections sont
-        // visibles en même temps la moitié du temps ; sans ce tri, le bandeau
-        // clignote entre les deux à chaque pixel.
+        // visibles en même temps la moitié du temps ; sans ce tri, l'onglet
+        // allumé clignote entre les deux à chaque pixel.
         const vues = entrees
           .filter((e) => e.isIntersecting)
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
         const cible = vues[0]?.target as HTMLElement | undefined;
         if (!cible) return;
-        const ch = cible.querySelector(".bq-ch");
-        const n = Number(ch?.querySelector(".bq-ch-n b")?.textContent ?? 0);
-        const titre = ch?.querySelector("h2")?.textContent ?? "";
-        if (n && titre) setChapitre({ n, titre });
+        if (cible.id) setSectionVue(cible.id);
       },
       // LA LIGNE EST AU QUART HAUT DE L'ECRAN : c'est là que l'oeil lit, pas
       // au bord. Une marge négative en bas empêche qu'une section à peine
@@ -426,6 +478,100 @@ export function Boutique() {
     (mur.length > 0 || avis.length > 0 ? 1 : 0) +
     1 + // « Où, et quand » est toujours là
     (c.pouces && c.pouces.length > 0 ? 1 : 0);
+
+  /**
+   * ═══ LA NAVIGATION, IDENTIQUE PARTOUT ═════════════════════════════════════
+   *
+   * « Je pense que c'est très important de conserver cette construction
+   * commune. C'est justement ce qui va faire que quelqu'un qui a compris ClikMe
+   * chez un coiffeur saura immédiatement l'utiliser chez un bar, un tatoueur ou
+   * un fleuriste. »
+   *
+   * L'ORDRE EST FIXE, LES MOTS SONT CEUX DU MÉTIER. « À essayer » est toujours
+   * le premier onglet — c'est la seule chose qu'on ne peut pas faire ailleurs,
+   * et la mettre en tête est tout le pari de cette page. Les suivants gardent
+   * leur RANG quel que soit le commerce ; seuls leurs mots changent.
+   *
+   * UN ONGLET QUI N'A RIEN À MONTRER NE SE DESSINE PAS. Un hypnothérapeute n'a
+   * ni catalogue ni avis : lui peindre deux onglets morts apprendrait qu'on
+   * peut appuyer sur un onglet sans que rien ne se passe, ce qui abîme les
+   * quatre autres. C'est la même règle que les compteurs à zéro sous le rail.
+   */
+  /**
+   * DEUX ONGLETS VOISINS NE PORTENT PAS LE MÊME MOT.
+   *
+   * Chez le tatoueur, `motCatalogue` dit « L'atelier » et `chezEux` dit
+   * « L'atelier » : la barre affichait « 🏷️ Atelier · 🏠 L'atelier », côte à
+   * côte, et deux onglets identiques ne disent plus lequel ouvre quoi.
+   *
+   * C'EST L'ONGLET DU LIEU QUI CÈDE, et c'est le bon des deux : le mot du
+   * catalogue est la chose que ce commerçant VEND — il porte de l'information.
+   * « Le commerce » ne prétend rien, ce qui est exactement ce qu'on veut d'un
+   * repli. Voir la même règle partout dans ce dossier.
+   */
+  const motCarte = rayons.length > 0 ? sansArticle(mots.titre) : "";
+  const motLieu0 = chezEux(c.metier);
+  const motLieu =
+    motCarte && sansArticle(motLieu0).toLowerCase() === motCarte.toLowerCase()
+      ? "Le commerce"
+      : motLieu0;
+
+  /**
+   * ═══ LE PREMIER ONGLET DIT CE QUE LE BLOC OUVRE VRAIMENT ══════════════════
+   *
+   * « Un bouton qui ouvre autre chose que ce qu'il annonce est la promesse la
+   * plus concrète qu'un écran puisse rompre. »
+   *
+   * IL DISAIT « À ESSAYER » PARTOUT, Y COMPRIS LÀ OÙ IL N'Y A RIEN À ESSAYER.
+   * Chez le bar, l'onglet promettait un essayage et le bloc affichait « Faites
+   * savoir que vous êtes ici » : un mur de présence, c'est-à-dire précisément
+   * ce que ce mot ne désigne pas. Sa table des métiers prévoit bien quelque
+   * chose pour un bar — « un morceau de la soirée de ce soir » — mais ce
+   * parcours n'existe pas encore, et un libellé n'est pas une fonctionnalité.
+   *
+   * L'ORDRE NE BOUGE PAS, LE MOT SUIT LE CONTENU — et c'est exactement le
+   * partage qu'il décrit : la structure est commune, le cœur est ce qui change
+   * selon le métier. Le jour où le bar a son parcours, il reprend « À essayer »
+   * tout seul, sans qu'on touche à cette liste.
+   */
+  const motCoeur = onEssaie || murDuLieu.gout ? "À essayer" : "Qui est là";
+
+  const onglets = [
+    { id: "essayer", mot: motCoeur, picto: "✨" },
+    // « CE SOIR » CHEZ UN BAR, ET CE N'EST PAS UN SYNONYME. La journée d'un bar
+    // commence quand celle des autres finit ; lui écrire « Aujourd'hui » à 19 h
+    // parlerait d'un après-midi que personne n'est venu chercher.
+    { id: "aujourdhui", mot: c.branche === "bar" ? "Ce soir" : "Aujourd’hui", picto: "⚡" },
+    // L'ONGLET PORTE LE MOT, PAS L'ARTICLE. « Les prestations » et « L'ardoise »
+    // sont des titres de SECTION — ils se lisent en grand, seuls sur leur
+    // ligne. Dans une barre de six onglets, l'article coûte trois caractères
+    // par onglet et c'est lui qui pousse « Infos » hors de l'écran. Sa
+    // maquette écrit « Prestations », pas « Les prestations ».
+    ...(rayons.length > 0
+      ? [{ id: "carte", mot: motCarte, picto: "🏷️" }]
+      : []),
+    { id: "qui", mot: motLieu, picto: "🏠" },
+    ...(mur.length > 0 || avis.length > 0 ? [{ id: "avis", mot: "Avis", picto: "💬" }] : []),
+    { id: "infos", mot: "Infos", picto: "ℹ️" },
+  ];
+
+  /**
+   * ALLER À UNE SECTION SANS LA COLLER SOUS LA BARRE.
+   *
+   * `scrollIntoView` pose le haut de la section au haut de la FENÊTRE, c'est-à-
+   * dire DERRIÈRE les onglets, qui sont collants : on arrive sur un titre qu'on
+   * ne voit pas. On retire donc la hauteur de la barre, mesurée sur la barre
+   * elle-même plutôt que devinée — elle change de hauteur avec la taille de
+   * police du téléphone.
+   */
+  const allerA = (id: string) => {
+    const cible = document.getElementById(id);
+    if (!cible) return;
+    const barre = document.querySelector<HTMLElement>(".bq-nav");
+    const haut = cible.getBoundingClientRect().top + window.scrollY - (barre?.offsetHeight ?? 0) - 6;
+    window.scrollTo({ top: haut, behavior: "smooth" });
+    setSectionVue(id);
+  };
 
   return (
     <div className="bq" style={{ "--bq-rangs": rangsAGauche } as React.CSSProperties}>
@@ -496,25 +642,82 @@ export function Boutique() {
           <PictoMetier icone={rond.icone} />
         </div>
 
+        {/* ═══ « OÙ SUIS-JE ? », ET ON RÉPOND EN QUATRE LIGNES ═══════════════
+
+            « Grande photo immersive + nom + métier + distance + note +
+            ouvert/fermé + trois ou quatre caractéristiques. Le commerce doit
+            rester très présent. »
+
+            LES TROIS FAITS ÉTAIENT SUR UNE SEULE LIGNE, ET ELLE DÉBORDAIT.
+            « Une prothésiste ongulaire · 340 m · ★ 4,8 (51 avis) » passait sous
+            l'anneau et se coupait à droite : le nom du commerce, c'est-à-dire la
+            réponse à la question de cette section, était la première chose
+            illisible. Chaque fait prend sa ligne, avec son repère à gauche —
+            c'est la mise en page de ses trois maquettes, et elle tient sur tous
+            les noms parce qu'elle ne dépend plus de leur longueur.
+
+            L'HORAIRE ENTRE ICI, ET IL MANQUAIT. « Ouvert jusqu'à 19 h » décide
+            quelque chose — on y va maintenant, ou on n'y va pas — alors qu'il
+            n'était lisible qu'à six mille points plus bas, dans les infos. */}
         <div className="bq-hero-c">
           <h1>{c.nom}</h1>
-          <p className="bq-sous">
-            <span>{c.metier}</span>
-            <s aria-hidden="true">·</s>
-            <span>{c.distance}</span>
+          <p className="bq-metier">{c.metier}</p>
+          <ul className="bq-faits">
+            <li>
+              <i aria-hidden="true">📍</i>
+              {c.ville} · {c.distance}
+            </li>
             {c.google && (
-              <>
-                <s aria-hidden="true">·</s>
-                <em>
-                  <i aria-hidden="true">★</i>
-                  {c.google.note}
-                  <u>({c.google.avis} avis)</u>
-                </em>
-              </>
+              <li>
+                <i aria-hidden="true">★</i>
+                <b>{c.google.note}</b>
+                <u>({c.google.avis} avis)</u>
+              </li>
             )}
-          </p>
+            {c.fiche.horaires && (
+              <li>
+                <i aria-hidden="true">🕐</i>
+                {c.fiche.horaires}
+              </li>
+            )}
+          </ul>
+          {/* LES TROIS OU QUATRE CARACTÉRISTIQUES, ET ELLES EXISTAIENT DÉJÀ.
+              `Mur.etiquettes` les porte depuis le premier jour — « Cuisine
+              française », « Terrasse » — et elles ne se voyaient nulle part sur
+              cette page. On en montre quatre au plus : au-delà, ce n'est plus
+              un portrait, c'est une liste de mots-clés. */}
+          {murDuLieu.etiquettes.length > 0 && (
+            <ul className="bq-tags">
+              {murDuLieu.etiquettes.slice(0, 4).map((e) => (
+                <li key={e}>{e}</li>
+              ))}
+            </ul>
+          )}
         </div>
       </section>
+
+      {/* ═══ LA NAVIGATION, ET ELLE EST LA MÊME CHEZ TOUT LE MONDE ═══════════
+          Voir `onglets` plus haut : l'ordre ne bouge pas d'un commerce à
+          l'autre, les mots sont ceux du métier. Elle colle sous le haut de
+          l'écran, parce qu'un menu qu'on ne retrouve qu'en remontant de six
+          mille points n'est pas un menu. */}
+      <nav className="bq-nav" aria-label="Sections de la page">
+        <ul>
+          {onglets.map((o) => (
+            <li key={o.id}>
+              <button
+                type="button"
+                className={sectionVue === o.id ? "on" : undefined}
+                aria-current={sectionVue === o.id ? "true" : undefined}
+                onClick={() => allerA(o.id)}
+              >
+                <i aria-hidden="true">{o.picto}</i>
+                {o.mot}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </nav>
 
       {/* ─── AUJOURD'HUI, ET C'EST LA PREMIERE CHOSE ───
           Voir le point 1 en tete de fichier. Ce bloc peut etre VIDE, et le cas
@@ -522,25 +725,141 @@ export function Boutique() {
           ce matin doit le voir ecrit sur sa propre page. C'est ce qui rend le
           geste du matin non negociable, et c'est exactement le role du drapeau
           `silencieux` dans le fil. */}
-      {/* LE REPERE DU CHAPITRE COURANT — voir `chapitre` plus haut. Il est
-          au-dessus des sections dans le document pour qu'un lecteur d'ecran le
-          rencontre avant elles, et `aria-hidden` parce qu'il REPETE un titre
-          qui existe deja : l'annoncer deux fois ferait perdre le fil a qui
-          n'utilise pas les yeux, ce que ce bandeau cherche precisement a
-          eviter pour les autres. */}
-      <div className={`bq-ou${chapitre ? " vu" : ""}`} aria-hidden="true">
-        {chapitre && (
-          <>
-            <b>{chapitre.n}</b>
-            <i>/{CHAPITRES}</i>
-            <span>{chapitre.titre}</span>
-          </>
-        )}
-      </div>
+      {/* ═══ LE BANDEAU DE CHAPITRE EST PARTI, ET LES ONGLETS L'ONT REMPLACÉ ═
+
+          Il a existé pour une bonne raison — « des titres pour qu'on sache où
+          on est », et un titre ne dit où l'on est qu'au moment où on le croise.
+          Il collait donc sous le haut de l'écran et rappelait « 3 / 8 · La
+          carte ».
+
+          LA BARRE D'ONGLETS FAIT LE MÊME TRAVAIL, EN MIEUX : elle dit où l'on
+          est ET permet d'aller ailleurs, là où le bandeau ne faisait que dire.
+          Les deux collants empilés prenaient soixante-dix points en haut de
+          chaque écran, l'un au-dessus de l'autre, pour annoncer deux fois la
+          même section — et sur le cœur de la page, c'est soixante-dix points
+          pris au plat.
+
+          LE CALCUL DU CHAPITRE RESTE : c'est le même observateur qui allume
+          l'onglet courant. Voir la section vue dans le composant. */}
+
+      {/* ═══ LE CŒUR : « QU'EST-CE QUE JE PEUX ESSAYER ICI ? » ═══════════════
+
+          « Une vraie page commerciale AVEC un énorme cœur "À essayer". Parce
+          que si on pousse trop l'essayage, on ne sait plus où on est ; et si on
+          pousse trop la fiche commerciale, ClikMe redevient un Google ou un
+          Instagram amélioré. »
+
+          IL EST PASSÉ EN PREMIÈRE POSITION, ET C'EST LE CHANGEMENT DE FOND.
+          Il était deuxième, derrière « En ce moment », et le raisonnement d'alors
+          se tenait : le présent garde le haut de page. Mais on arrivait sur une
+          liste de créneaux — c'est-à-dire sur ce que n'importe quel site de
+          réservation sait faire — et la seule chose qu'aucun ne sait faire
+          attendait un défilement. La page répond maintenant dans l'ordre de ses
+          deux questions : « où suis-je ? » par la photo et le nom, puis
+          « qu'est-ce que je peux essayer ici ? », immédiatement.
+
+          ET LE PRÉSENT N'A RIEN PERDU : il est juste en dessous, au deuxième
+          rang, toujours au-dessus du catalogue et de l'histoire.
+
+          C'EST CE BLOC, ET LUI SEUL, QUI CHANGE SELON LE MÉTIER. Tout le reste
+          de cette page est le même gabarit pour les quatorze commerces — c'est
+          le « 80 % identique / 20 % métier » du brief. Ici, un coiffeur pose sa
+          coupe sur un visage, une onglerie sa pose sur une main, un restaurant
+          fait jouer avec le plat du jour : `MurContenu` sait déjà lequel, et
+          c'est pour ça qu'on monte LE MÊME COMPOSANT que dans le fil plutôt
+          qu'une seconde version « pour la page ». Voir `murDuLieu` plus haut. */}
+      <section className={`bq-s bq-mur${onEssaie ? " essai" : ""}`} id="essayer">
+        {/* UN SEUL TITRE, ET C'EST CELUI DU COMPOSANT. Premier jet : j'avais
+            ecrit le mien au-dessus, et la page affichait « Ce que les gens ont
+            laisse ici » suivi de « Ce que les gens ont laisse ici aujourd'hui ».
+            Le mur sait deja se presenter, dans les mots de son metier — il ne
+            reste que l'etiquette de section, qui dit ou l'on est dans la page. */}
+        {/* LE CHAPITRE PORTE LE TITRE DU MÉTIER, IL NE LE REMPLACE PAS.
+            Premier jet : j'avais écrit « Essayez sur vous » ici et masqué la
+            tête du composant — ce qui effaçait « Vos ongles, avant de venir »,
+            c'est-à-dire précisément le travail fait pour qu'un coiffeur et une
+            onglerie ne disent pas la même chose. Les mots du métier remontent
+            donc dans le chapitre ; rien n'est écrit deux fois, et rien n'est
+            perdu. Voir `Mur.essai.mots` dans `lib/direct/fantomes.ts`. */}
+        <Chapitre
+          n={1}
+          sur={CHAPITRES}
+          ton={onEssaie || murDuLieu.gout ? "essai" : undefined}
+          /* ═══ TROIS CAS, ET IL Y EN AVAIT DEUX ═══════════════════════════
+
+             Chez Bergine, le titre annonçait « Ce que les gens laissent ici ·
+             Des messages laissés par les personnes qui passent » et l'écran
+             dessous jouait l'Avant-goût du magret. Le chapitre décrivait le mur
+             de présence, que ce commerce n'ouvre plus.
+
+             LE DÉFAUT VIENT D'UN CHOIX BINAIRE DEVENU TERNAIRE. Il y a
+             désormais trois cœurs possibles : l'essai sur photo, le parcours du
+             plat, et le mur de présence pour ceux qui n'ont ni l'un ni l'autre.
+             Un `onEssaie ? … : …` ne peut en nommer que deux, et le troisième
+             hérite silencieusement du libellé du second — c'est toujours comme
+             ça qu'un titre finit par mentir. */
+          titre={
+            onEssaie
+              ? (murDuLieu.essai?.mots.titre ?? "Essayez sur vous")
+              : murDuLieu.gout
+                ? `${murDuLieu.gout.plat}, avant d’y aller`
+                : "Ce que les gens laissent ici"
+          }
+          /* ═══ IL NE REDIT PAS CE QUE LE COMPOSANT DIT DEUX LIGNES PLUS BAS ══
+
+             La phrase du métier est « Prenez votre main en photo : la pose du
+             salon s'y installe en quelques secondes ». L'écran de prise de vue
+             qui la suit immédiatement s'intitule « Prenez votre main en photo »
+             et se sous-titre « Essayez cette pose sur vous en quelques
+             secondes ». On lisait donc deux titres et deux phrases pour une
+             seule idée, sur les trois cents premiers points de la section la
+             plus importante de la page.
+
+             ON GARDE LE TITRE DU MÉTIER — c'est lui qui fait qu'un coiffeur et
+             une onglerie ne se ressemblent pas — ET LA SEULE PHRASE QUE LE
+             COMPOSANT NE DIT PAS : que rien ne part sans accord. Voir
+             `Mur.essai.mots` : la phrase y reste, elle sert dans le fil, où ce
+             chapitre n'existe pas. */
+          dit={
+            onEssaie
+              ? "Rien n’est publié tant que vous n’avez pas décidé."
+              : murDuLieu.gout
+                ? "Ne regardez pas le plat : jouez avec."
+                : "Des messages laissés par les personnes qui passent. Vous pourrez leur en parler sur place."
+          }
+        />
+        <div className="mu bq-mu">
+          {/* ═══ ON OUVRE SUR LA PRISE DE VUE, PAS SUR LE MUR ════════════════
+
+              Ses trois maquettes disent la même chose, et elles la disent
+              trois fois : le grand bouton « Je me prends en photo » est le
+              premier objet du bloc, chez le coiffeur, chez la boutique et chez
+              l'onglerie. Le mur des essayages vient APRÈS.
+
+              OR `entree` ENVOIE SUR LE MUR DÈS QU'IL Y A DU MONDE DESSUS, et
+              c'est la bonne règle DANS LE FIL : là-bas on arrive par le
+              fantôme de la barre, qui ne dit rien de ce qu'on veut, et voir dix
+              personnes portant la chose donne plus envie que l'écran de prise
+              de vue. ICI, ON EST VENU CHEZ CE COMMERÇANT et l'onglet qu'on
+              regarde s'appelle « À essayer » : il a annoncé ce qu'il ouvre.
+
+              C'EST EXACTEMENT CE POUR QUOI `ouvrirSur` EXISTE — « un bouton
+              qui ouvre autre chose que ce qu'il annonce est la promesse la plus
+              concrète qu'un écran puisse rompre ». Le mur n'est pas perdu : la
+              croix du parcours d'essai y mène, et les photos des clientes ont
+              leur propre section plus bas. */}
+          <MurContenu
+            key={c.id}
+            mur={murDuLieu}
+            ouvrirSur={onEssaie ? "depot" : undefined}
+          />
+        </div>
+      </section>
+
 
       <section className="bq-s" id="aujourdhui">
         <Chapitre
-          n={1}
+          n={2}
           sur={CHAPITRES}
           titre={
             enCours.length
@@ -630,50 +949,6 @@ export function Boutique() {
         </ol>
       </section>
 
-      {/* ═══ LE MUR, ET L'ESSAI EN DIRECT ═══════════════════════════════════
-
-          IL EST EN DEUXIEME POSITION, ET C'EST L'ORDRE QUI COMPTE. Le present
-          garde le haut de page — c'est la regle de cette page depuis le premier
-          jour. Mais juste apres vient la seule chose qu'un site vitrine ne
-          saura jamais faire : essayer le produit sur soi, et voir ce que les
-          autres ont essaye ici aujourd'hui. Le catalogue, l'histoire et les
-          horaires attendent en dessous ; ils attendent deja.
-
-          C'EST LE MEME COMPOSANT QUE DANS LE FIL, monte tel quel. Voir
-          `murDuLieu` plus haut pour pourquoi on n'en ecrit pas un second. */}
-      <section className={`bq-s bq-mur${onEssaie ? " essai" : ""}`} id="mur">
-        {/* UN SEUL TITRE, ET C'EST CELUI DU COMPOSANT. Premier jet : j'avais
-            ecrit le mien au-dessus, et la page affichait « Ce que les gens ont
-            laisse ici » suivi de « Ce que les gens ont laisse ici aujourd'hui ».
-            Le mur sait deja se presenter, dans les mots de son metier — il ne
-            reste que l'etiquette de section, qui dit ou l'on est dans la page. */}
-        {/* LE CHAPITRE PORTE LE TITRE DU MÉTIER, IL NE LE REMPLACE PAS.
-            Premier jet : j'avais écrit « Essayez sur vous » ici et masqué la
-            tête du composant — ce qui effaçait « Vos ongles, avant de venir »,
-            c'est-à-dire précisément le travail fait pour qu'un coiffeur et une
-            onglerie ne disent pas la même chose. Les mots du métier remontent
-            donc dans le chapitre ; rien n'est écrit deux fois, et rien n'est
-            perdu. Voir `Mur.essai.mots` dans `lib/direct/fantomes.ts`. */}
-        <Chapitre
-          n={2}
-          sur={CHAPITRES}
-          ton={onEssaie ? "essai" : undefined}
-          titre={
-            onEssaie
-              ? (murDuLieu.essai?.mots.titre ?? "Essayez sur vous")
-              : "Ce que les gens laissent ici"
-          }
-          dit={
-            onEssaie
-              ? `${murDuLieu.essai?.mots.phrase ?? ""} Rien n’est publié tant que vous n’avez pas décidé.`
-              : "Des messages laissés par les personnes qui passent. Vous pourrez leur en parler sur place."
-          }
-        />
-        <div className="mu bq-mu">
-          <MurContenu key={c.id} mur={murDuLieu} />
-        </div>
-      </section>
-
       {/* ─── SA CARTE ───
           LE SEUL ENDROIT DU PRODUIT OU LE CATALOGUE A LE DROIT D'ETRE UNE
           SECTION. Partout ailleurs il est « un bouton discret sous l'annonce,
@@ -727,6 +1002,56 @@ export function Boutique() {
           ))}
         </section>
       )}
+
+      {/* ═══ LE GESTE, ET SON VERBE EST CELUI DU MÉTIER ════════════════════
+
+          « La conversion : le CTA dépend du métier — Réserver · Mettre de côté ·
+          Voir en boutique · Commander · Appeler · Y aller. »
+
+          IL N'Y EN AVAIT PAS. La page montrait l'essai, le présent, le
+          catalogue, l'histoire, les avis et les horaires — et ne demandait
+          jamais rien. On pouvait la lire en entier sans rencontrer un seul
+          geste qui engage, ce qui est la définition d'une vitrine.
+
+          ELLE EST ICI, ENTRE L'OFFRE ET LA RÉASSURANCE, et pas en bas de page.
+          On vient de lire ce qu'il vend ; la preuve sociale et les horaires
+          servent à ceux qui hésitent ENCORE, pas à ceux qui sont déjà décidés.
+          Les faire défiler jusqu'au pied pour trouver le bouton, c'est leur
+          faire relire des arguments dont ils n'ont plus besoin.
+
+          LE VERBE VIENT DE `Personnalite.reserver` — le même fichier que le
+          bouton de l'annonce, donc le même mot au même endroit du parcours. On
+          ne réserve pas un plat dans un bar, on ne prend pas rendez-vous chez
+          une fleuriste, et « Réserver » tout court ne dit pas ce qui va se
+          passer. */}
+      <section className="bq-conv" aria-label="Aller plus loin">
+        <p className="bq-conv-t">
+          Envie d’y aller&nbsp;?
+          <b>{c.nom}</b>
+        </p>
+        <div className="bq-conv-b">
+          {/* LE GESTE PLEIN REMONTE EN HAUT DE LA PAGE, SUR L'ESSAI, plutôt que
+              d'ouvrir un formulaire de réservation qui n'existe pas dans cette
+              maquette. C'est aussi le chemin qu'on veut : essayer d'abord,
+              décider ensuite — et il tient la promesse que le bouton affiche,
+              puisque le parcours d'essai finit précisément sur ce verbe-là. */}
+          <button type="button" className="bq-conv-p" onClick={() => allerA("essayer")}>
+            {langage.reserver}
+            <i aria-hidden="true">→</i>
+          </button>
+          <a className="bq-conv-s" href={c.itineraire} target="_blank" rel="noreferrer">
+            <i aria-hidden="true">📍</i>Y aller
+          </a>
+          {/* APPELER N'APPARAIT QUE S'IL A DÉCLARÉ UN NUMÉRO. Le numéro de
+              fiction sert à écrire une démonstration, pas à faire composer un
+              vrai téléphone à quelqu'un qui appuierait pour de bon. */}
+          {c.telephone && (
+            <a className="bq-conv-s" href={`tel:${c.telephone.replace(/\s+/g, "")}`}>
+              <i aria-hidden="true">📞</i>Appeler
+            </a>
+          )}
+        </div>
+      </section>
 
       {/* ─── QUI C'EST ───
           LA SIGNATURE EST LA REPONSE PERMANENTE a « pourquoi chez lui plutot
@@ -1133,7 +1458,11 @@ function Styles() {
            270 points : assez pour que la photo raconte l'endroit, pas assez
            pour qu'on doive defiler avant de savoir ou on est. Le nom et le
            metier sont DANS l'image, comme sur la carte du fil. */
-        .bq-hero{position:relative;height:270px;overflow:hidden;}
+        /* 330 ET NON PLUS 270 : la tete de page porte maintenant quatre faits
+           et une bande d'etiquettes, qui montaient tous vers le haut depuis le
+           bas de l'image — le nom du commerce touchait le bord superieur de la
+           photo et le premier tiers du visage etait couvert de texte. */
+        .bq-hero{position:relative;height:330px;overflow:hidden;}
         .bq-hero img{width:100%;height:100%;object-fit:cover;display:block;}
         .bq-hero-vide{width:100%;height:100%;
           background:linear-gradient(160deg,#16242E,#0A1310);}
@@ -1151,6 +1480,88 @@ function Styles() {
           font-weight:800;color:#FFDE8A;}
         .bq-sous em i{font-style:normal;font-size:11px;}
         .bq-sous em u{text-decoration:none;font-weight:600;color:#9FB3A7;margin-left:2px;}
+
+        /* ═══ LE METIER, LES TROIS FAITS, ET LES ETIQUETTES ══════════════════
+           « nom + metier + distance + note + ouvert/ferme + trois ou quatre
+           caracteristiques ». Un fait par ligne, son repere a gauche : la mise
+           en page de ses trois maquettes, et la seule qui tienne sur un nom
+           long — l'ancienne ligne unique passait sous l'anneau et se coupait. */
+        .bq-metier{margin:3px 0 0;font-size:12.5px;font-weight:700;color:#A8BDB0;
+          text-shadow:0 1px 10px rgba(0,0,0,.8);}
+        .bq-faits{list-style:none;margin:7px 0 0;padding:0;
+          display:flex;flex-direction:column;gap:3px;}
+        .bq-faits li{display:flex;align-items:center;gap:6px;
+          font-size:12.5px;font-weight:650;color:#D6E4DB;
+          text-shadow:0 1px 10px rgba(0,0,0,.85);}
+        .bq-faits i{font-style:normal;font-size:11.5px;width:14px;text-align:center;}
+        .bq-faits b{font-weight:850;color:#FFDE8A;}
+        .bq-faits u{text-decoration:none;font-weight:600;color:#9FB3A7;}
+
+        /* ELLES DEFILENT PLUTOT QUE DE PASSER A LA LIGNE. Quatre etiquettes
+           repliees sur deux rangs poussent le nom hors de la photo : la tete
+           de page grandirait selon le nombre de mots-cles d'un commercant,
+           c'est-a-dire selon la chose la moins importante de l'ecran. */
+        .bq-tags{list-style:none;margin:9px 0 0;padding:0 0 2px;display:flex;gap:6px;
+          overflow-x:auto;scrollbar-width:none;}
+        .bq-tags::-webkit-scrollbar{display:none;}
+        .bq-tags li{flex:none;font-size:11.5px;font-weight:700;color:#DCE9E1;
+          padding:5px 11px;border-radius:99px;white-space:nowrap;
+          background:rgba(6,14,11,.6);border:1px solid rgba(255,255,255,.17);
+          backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+
+        /* ═══ LA NAVIGATION, IDENTIQUE CHEZ TOUS ════════════════════════════
+           Voir la liste des onglets dans le composant. Elle colle sous le haut :
+           un menu qu'on ne retrouve qu'en remontant six mille points n'est pas
+           un menu. Le filet du bas tient toute la largeur pour que la bande se
+           lise comme une barre et non comme une rangee de boutons flottants. */
+        .bq-nav{position:sticky;top:0;z-index:30;
+          background:rgba(6,11,9,.93);
+          backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+          border-bottom:1px solid rgba(255,255,255,.09);}
+        .bq-nav ul{list-style:none;margin:0;padding:0 10px;display:flex;gap:2px;
+          overflow-x:auto;scrollbar-width:none;}
+        .bq-nav ul::-webkit-scrollbar{display:none;}
+        .bq-nav li{flex:none;}
+        .bq-nav button{display:inline-flex;align-items:center;gap:6px;cursor:pointer;
+          font-family:inherit;font-size:13px;font-weight:750;white-space:nowrap;
+          color:#8EA398;background:none;border:none;
+          padding:13px 11px 11px;border-bottom:2.5px solid transparent;
+          transition:color .16s ease,border-color .16s ease;}
+        .bq-nav button i{font-style:normal;font-size:13px;}
+        /* CELUI QU'ON LIT EST SOULIGNE ET PASSE EN BLANC. Sans marque nette on
+           ne sait plus ou l'on est dans la page, ce qui est le seul travail de
+           cette barre. Voir la section vue, calculee par le meme observateur que
+           le bandeau de chapitre : deux mesures separees auraient fini par
+           designer deux sections differentes, cote a cote a l'ecran. */
+        .bq-nav button.on{color:#FFFFFF;border-bottom-color:var(--bq-menthe);}
+
+        /* ═══ LA BANDE DE CONVERSION ════════════════════════════════════════
+           Entre l'offre et la reassurance. Voir le commentaire du composant :
+           elle n'est PAS en pied de page, parce que celui qui est decide n'a
+           plus besoin des arguments qui restent en dessous. */
+        .bq-conv{margin:6px 16px 30px;padding:18px 16px 16px;border-radius:22px;
+          background:linear-gradient(155deg,rgba(60,224,160,.11),rgba(10,18,15,.5));
+          border:1px solid rgba(60,224,160,.22);}
+        .bq-conv-t{margin:0 0 13px;font-size:15px;font-weight:700;color:#C6D6CC;
+          display:flex;flex-direction:column;gap:2px;}
+        .bq-conv-t b{font-size:19px;font-weight:850;color:#FFFFFF;letter-spacing:-.01em;}
+        .bq-conv-b{display:flex;flex-wrap:wrap;gap:9px;}
+        /* LE GESTE PLEIN PREND TOUTE LA LARGEUR, LES DEUX AUTRES SE PARTAGENT
+           LA LIGNE DU DESSOUS. Trois boutons de meme poids ne designent aucun
+           geste ; c'est la mise en page de l'annonce, et pour la meme raison. */
+        .bq-conv-p{flex:1 0 100%;display:inline-flex;align-items:center;
+          justify-content:center;gap:9px;cursor:pointer;font-family:inherit;
+          font-size:15.5px;font-weight:850;color:#05130D;border:none;
+          padding:15px 18px;border-radius:16px;
+          background:linear-gradient(100deg,#3CE0A0,#57E9B4);
+          box-shadow:0 14px 30px -16px rgba(60,224,160,.95);}
+        .bq-conv-p:active{transform:scale(.985);}
+        .bq-conv-p i{font-style:normal;font-size:16px;}
+        .bq-conv-s{flex:1;display:inline-flex;align-items:center;justify-content:center;
+          gap:7px;text-decoration:none;font-size:13.5px;font-weight:750;color:#DCE9E1;
+          padding:12px 14px;border-radius:14px;white-space:nowrap;
+          background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.14);}
+        .bq-conv-s i{font-style:normal;font-size:13px;}
 
         /* ─── L'ANNEAU DU METIER ───
            MEME OBJET QUE SUR LA CARTE, meme diametre, meme dessin. C'est le
