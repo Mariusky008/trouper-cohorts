@@ -496,14 +496,18 @@ export function Boutique() {
     return () => obs.disconnect();
   }, [c.id]);
 
-  const rangsAGauche =
-    1 + // « Aujourd'hui » est toujours là
-    (habitudes.length > 0 ? 1 : 0) +
-    (rayons.length > 0 ? 1 : 0) +
-    (c.voix || c.fiche.mot ? 1 : 0) +
-    (mur.length > 0 || avis.length > 0 ? 1 : 0) +
-    1 + // « Où, et quand » est toujours là
-    (c.pouces && c.pouces.length > 0 ? 1 : 0);
+  /**
+   * ═══ LE COMPTE DES RANGÉES EST PARTI AVEC LA GRILLE ═══════════════════════
+   *
+   * Il servait à une seule chose : dire à la colonne de droite combien de
+   * rangées de gauche elle devait couvrir, faute de quoi la rangée partagée
+   * prenait la hauteur du mur et laissait cinq cents points de vide. Un calcul
+   * juste, pour une mise en page qui n'existe plus — voir la feuille de style.
+   *
+   * ON NE GARDE PAS UN CALCUL « AU CAS OÙ ». Une variable qui n'alimente plus
+   * rien continue d'être maintenue par celui qui la lit, et c'est du temps pris
+   * à comprendre une mise en page morte.
+   */
 
   /**
    * ═══ LA NAVIGATION, IDENTIQUE PARTOUT ═════════════════════════════════════
@@ -600,7 +604,7 @@ export function Boutique() {
   };
 
   return (
-    <div className="bq" style={{ "--bq-rangs": rangsAGauche } as React.CSSProperties}>
+    <div className="bq">
       <Styles />
 
       {/* ─── LE SÉLECTEUR DE MAQUETTE ───
@@ -2127,66 +2131,28 @@ function Styles() {
           .bq-hero-c h1{font-size:38px;}
         }
 
-        /* ═══ SUR UN ORDINATEUR, CE N'EST PLUS UN TELEPHONE ETIRE ═══════════
-           « Cette page est plus une page pour telephone que ordinateur ou
-           tablette. »
-           MESURE : a 1440 points de large, la page etait une colonne de 560
-           posee au milieu de deux gouttieres noires de 440 chacune. Soixante
-           pour cent de l'ecran ne servaient a rien, et il fallait faire defiler
-           quatre mille points pour atteindre les horaires.
-           DEUX COLONNES, ET LE CHOIX DE CE QUI VA A DROITE EST LE SUJET. A
-           gauche, ce qu'on LIT dans l'ordre : ce qui se passe, ce qui revient,
-           la carte, qui c'est, les avis. A droite, ce sur quoi on AGIT, et qui
-           doit rester sous les yeux pendant qu'on lit le reste : l'essai ou le
-           mur, puis le chemin et les horaires. La colonne de droite est donc
-           collante — c'est la seule chose que le telephone ne peut pas offrir,
-           et la seule raison d'avoir deux colonnes.
-           L'ORDRE DE LECTURE NE CHANGE PAS. Les blocs restent dans le meme
-           ordre dans le document : un lecteur d'ecran et un telephone lisent la
-           meme page. Seule la mise en colonnes bouge. */
+        /* ═══ LA GRILLE A DEUX COLONNES EST PARTIE, ET ELLE LAISSAIT UN TROU ══
+           « Je ne sais pas pourquoi il y a ce vide au milieu de la page toute
+           blanche. »
+           LE VIDE ETAIT MECANIQUE, ET IL VENAIT D'UN SELECTEUR MORT. La grille
+           envoyait la section du mur dans la colonne de droite ; elle a change
+           de nom en passant en tete, donc plus rien ne
+           correspondait. Les sections nommees une a une restaient a gauche,
+           l'essai se placait tout seul a droite, et la premiere rangee de
+           gauche n'avait plus personne : six cents points de blanc.
+           MAIS ON NE REPARE PAS LE SELECTEUR, ON RETIRE LA GRILLE. Elle avait
+           ete ecrite pour l'ancienne page sombre, et elle repondait a une vraie
+           remarque — « soixante pour cent de l'ecran ne servaient a rien sur un
+           ordinateur ». Ses trois maquettes, elles, sont des ECRANS DE
+           TELEPHONE, en une colonne, du premier pixel au dernier. Une page qui
+           se reorganise en deux colonnes sur grand ecran n'est plus la meme
+           page, et c'est exactement ce qu'il vient de constater.
+           CE QUI RESTE SUR GRAND ECRAN : la meme colonne, centree, un peu plus
+           large. On ne remplit pas l'ecran pour le remplir. */
         @media (min-width:1040px){
-          .bq{max-width:1160px;display:grid;
-            grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);
-            column-gap:30px;align-items:start;
-            padding-bottom:calc(40px + env(safe-area-inset-bottom));}
-          .bq-maq,.bq-hero,.bq-porte,.bq-pied{grid-column:1 / -1;}
-          .bq-hero{height:380px;}
-          .bq-hero-c h1{font-size:46px;}
-          /* A GAUCHE, TOUT CE QU'ON LIT — y compris les horaires et le chemin :
-             ce sont des informations, pas un panneau d'action. */
-          #aujourdhui,#revient,#carte,#qui,#avis,#infos,#habitues{grid-column:1;}
-          /* A DROITE, LE MUR SEUL, ET IL COUVRE TOUTE LA COLONNE.
-             Voir rangsAGauche dans le composant : sans ce recouvrement, la
-             rangee qu'il partage prend SA hauteur et laisse cinq cents points
-             de vide sous « En ce moment ». Mesure a 1440 points. */
-          #mur{grid-column:2;grid-row:3 / span var(--bq-rangs, 6);
-            /* IL COUVRE LES RANGEES, IL NE LES REMPLIT PAS. Sans align-self,
-               la section s'etire sur toute la hauteur de la
-               colonne de gauche : chez une onglerie, dont l'essai tient en cinq
-               cents points, le cadre continuait sur trois cents points de vide.
-               Couvrir sert a ne pas deformer les rangees ; occuper n'a jamais
-               ete le but. */
-            align-self:start;}
-          /* LES BANDES PLEINE LARGEUR N'ONT PLUS DE SENS EN COLONNES : elles
-             coupaient l'ecran en travers des deux colonnes a la fois. Chaque
-             section devient une carte, et garde sa nuance. */
-          .bq-s{padding:24px 22px 22px;border-radius:20px;
-            border:1px solid var(--bq-ligne);margin-bottom:22px;}
-          .bq-s.alt{border-top:1px solid var(--bq-ligne);
-            border-bottom:1px solid var(--bq-ligne);}
-          /* LE MUR RESTE SOUS LES YEUX PENDANT QU'ON LIT LA CARTE. La marge du
-             haut evite qu'il se colle au bandeau du navigateur. */
-          #mur{position:sticky;top:16px;}
-          .bq-mur.essai{border-color:rgba(139,125,246,.3);}
-          /* LA GRILLE DU CATALOGUE ET LES AVIS RESPIRENT : la colonne de gauche
-             fait sept cents points, pas trois cent cinquante. */
-          .bq-av-l{columns:2;column-gap:16px;}
-          .bq-av-l>*{break-inside:avoid;}
-        }
-        /* AU-DELA, ON N'ELARGIT PLUS : une ligne de texte de mille points ne se
-           lit pas, elle se parcourt. On centre et on s'arrete. */
-        @media (min-width:1400px){
-          .bq{max-width:1260px;}
+          .bq{max-width:600px;}
+          .bq-hero{height:400px;}
+          .bq-hero-c h1{font-size:44px;}
         }
 
         /* Une personne qui a demande moins d'animation n'a pas demande moins

@@ -227,7 +227,14 @@ function formatDe(b64: string): string | undefined {
 async function parOpenAI(
   cle: string,
   photo: { type: string; donnees: string },
-  reference: { type: string; donnees: string },
+  /**
+   * LA PHOTO DE RÉFÉRENCE, ET ELLE PEUT MANQUER.
+   *
+   * `null` au second essai, quand le filtre a refusé la paire — voir plus bas.
+   * La consigne décrit déjà la pièce en toutes lettres ; la référence confirme
+   * la couleur et la matière, elle ne porte pas le travail demandé.
+   */
+  reference: { type: string; donnees: string } | null,
   partie: string,
   garder: string[],
   change: string,
@@ -240,7 +247,7 @@ async function parOpenAI(
   // référence. C'est exactement la forme dont on a besoin.
   const forme = new FormData();
   forme.append("model", modele);
-  forme.append("prompt", consigne(partie, garder, change, decrire, !!masque));
+  forme.append("prompt", consigne(partie, garder, change, decrire, !!masque, !!reference));
   forme.append("n", "1");
   /**
    * TROIS RÉGLAGES QUI DÉCIDENT SI LE RENDU ARRIVE, OU PAS DU TOUT.
@@ -270,7 +277,7 @@ async function parOpenAI(
   const enFichier = (x: { type: string; donnees: string }, nom: string) =>
     new File([Buffer.from(x.donnees, "base64")], nom, { type: x.type });
   forme.append("image[]", enFichier(photo, "client.png"));
-  forme.append("image[]", enFichier(reference, "reference.png"));
+  if (reference) forme.append("image[]", enFichier(reference, "reference.png"));
   /**
    * ═══ LE MASQUE, QUAND LE NAVIGATEUR A SU LE FABRIQUER ══════════════════════
    *
@@ -310,16 +317,19 @@ async function parOpenAI(
     "[essai] POST /v1/images/edits",
     JSON.stringify({
       modele,
-      images: ["client", "reference"],
+      images: reference ? ["client", "reference"] : ["client"],
       format,
       qualite: s(process.env.OPENAI_IMAGE_QUALITY) || "medium",
       fidelite: "high",
-      entree: { client: dimensions(photo.donnees), reference: dimensions(reference.donnees) },
+      entree: {
+        client: dimensions(photo.donnees),
+        reference: reference ? dimensions(reference.donnees) : null,
+      },
       // LE MASQUE EST-IL PARTI, ET À LA BONNE TAILLE ? Un masque aux dimensions
       // d'une autre image est refusé par l'API, et le message ne dit pas
       // toujours lequel des trois fichiers est en cause.
       masque: masque ? dimensions(masque.donnees) : null,
-      consigne: consigne(partie, garder, change, decrire, !!masque).length,
+      consigne: consigne(partie, garder, change, decrire, !!masque, !!reference).length,
     }),
   );
   const r = await fetch(`${base}/v1/images/edits`, {
@@ -332,6 +342,41 @@ async function parOpenAI(
   });
   if (!r.ok) {
     const txt = await r.text().catch(() => "");
+    /**
+     * ═══ LE SYSTÈME DE SÉCURITÉ REFUSE, ET ON SAIT POURQUOI ═══════════════
+     *
+     * « J'ai voulu tester une coupe de coiffure et j'ai obtenu : Your request
+     * was rejected by the safety system. »
+     *
+     * LA CAUSE EST DANS CE QU'ON ENVOIE, PAS DANS LES MOTS. On joint DEUX
+     * photographies de personnes réelles — celle du client, et la référence du
+     * salon, qui est le portrait d'un modèle — et on demande de reporter
+     * l'apparence de la seconde sur la première. Lu de l'extérieur, c'est un
+     * transfert d'identité entre deux visages, et c'est précisément ce que le
+     * filtre est fait pour arrêter. Le prompt n'y changera rien : ce n'est pas
+     * le texte qui déclenche, c'est la paire d'images.
+     *
+     * ON REJOUE SANS LA RÉFÉRENCE, ET ON NE PERD PRESQUE RIEN. La coupe est
+     * déjà décrite en toutes lettres dans la consigne — « un carré long qui
+     * s'arrête sous la mâchoire, coupé net, raie au milieu » — parce que
+     * demander de DÉDUIRE une coupe d'une photo était déjà la moitié du défaut
+     * précédent. La référence ne servait plus qu'à confirmer la couleur et la
+     * matière.
+     *
+     * ET ON NE REJOUE QU'UNE FOIS. Un second refus est un vrai refus : insister
+     * ferait payer deux appels pour la même réponse, et ferait attendre le
+     * client deux fois plus longtemps pour le même écran d'erreur.
+     */
+    const bloque = r.status === 400 && /safety|rejected|moderation/i.test(txt);
+    if (bloque && reference) {
+      console.info("[essai] refus du filtre, on rejoue sans la photo de référence");
+      return parOpenAI(cle, photo, null, partie, garder, change, decrire, masque);
+    }
+    if (bloque) {
+      return {
+        erreur: "L’essayage a été refusé par le filtre du modèle d’image.",
+      };
+    }
     return { erreur: `OpenAI a répondu ${r.status}${txt ? ` : ${txt.slice(0, 200)}` : ""}` };
   }
   const j = (await r.json()) as { data?: { b64_json?: string }[] };

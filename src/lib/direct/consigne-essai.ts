@@ -112,6 +112,21 @@ export function consigne(
    * lui fait tout recalculer. Voir `lib/direct/visage.ts`.
    */
   avecMasque?: boolean,
+  /**
+   * ═══ Y A-T-IL UNE DEUXIÈME IMAGE ? ════════════════════════════════════════
+   *
+   * « Your request was rejected by the safety system. »
+   *
+   * DEUX PHOTOGRAPHIES DE PERSONNES RÉELLES, ET UNE DEMANDE DE REPORTER L'UNE
+   * SUR L'AUTRE : c'est ce que le filtre arrête, et il a raison de le faire en
+   * général. La route rejoue donc SANS la référence — voir `parOpenAI`.
+   *
+   * ALORS LA CONSIGNE NE DOIT PLUS LA NOMMER. Un texte qui décrit « IMAGE 2 »
+   * quand une seule image est jointe envoie le modèle chercher une consigne
+   * qu'il n'a pas : il la devine, et deviner est exactement ce qui le fait
+   * refabriquer un portrait.
+   */
+  avecReference = true,
 ): string {
   /**
    * CE QU'ON MODIFIE, ET LE REPLI EST VOLONTAIREMENT ÉTROIT.
@@ -120,7 +135,9 @@ export function consigne(
    * corriger. On dit « la zone montrée par la deuxième image », qui laisse le
    * modèle déduire au lieu de lui donner un organe entier à refaire.
    */
-  const quoi = change?.trim() || "uniquement ce que montre la deuxième image";
+  const quoi =
+    change?.trim() ||
+    (avecReference ? "uniquement ce que montre la deuxième image" : "uniquement ce qui est décrit ci-dessous");
   /**
    * LA FORME COURTE, POUR LA SECONDE MENTION.
    *
@@ -157,12 +174,23 @@ export function consigne(
     "C'est elle qu'on modifie, et c'est la SEULE personne qui doit apparaître",
     "dans le résultat.",
     "",
-    "IMAGE 2 — LA RÉFÉRENCE. Elle montre le travail d'un professionnel, souvent",
-    "SUR QUELQU'UN D'AUTRE. Elle ne sert qu'à montrer une chose, et une seule.",
-    "RIEN de la personne de l'image 2 ne doit passer sur l'image 1 : ni son",
-    "visage, ni sa morphologie, ni son âge, ni sa carnation, ni ses yeux, ni sa",
-    "pilosité, ni ses vêtements, ni ses accessoires, ni son décor.",
-    "",
+    ...(avecReference
+      ? [
+          "IMAGE 2 — LA RÉFÉRENCE. Elle montre le travail d'un professionnel, souvent",
+          "SUR QUELQU'UN D'AUTRE. Elle ne sert qu'à montrer une chose, et une seule.",
+          "RIEN de la personne de l'image 2 ne doit passer sur l'image 1 : ni son",
+          "visage, ni sa morphologie, ni son âge, ni sa carnation, ni ses yeux, ni sa",
+          "pilosité, ni ses vêtements, ni ses accessoires, ni son décor.",
+          "",
+        ]
+      : [
+          // SANS RÉFÉRENCE, ON LE DIT, ET ON DIT POURQUOI. Le modèle n'a plus
+          // qu'une image et une description écrite : lui laisser croire qu'il
+          // manque une pièce le pousse à l'inventer.
+          "IL N'Y A PAS D'AUTRE IMAGE. Le travail à faire est décrit en toutes",
+          "lettres plus bas ; il n'y a rien à déduire d'une seconde photo.",
+          "",
+        ]),
     "═══ LA SEULE CHOSE À FAIRE ═══",
     "",
     `Sur l'image 1, modifier ${quoi}.`,
@@ -181,12 +209,22 @@ export function consigne(
       ? [
           `RÉSULTAT ATTENDU, EN TOUTES LETTRES : ${decrire}.`,
           "Cette description est la CIBLE. Exécute-la sur la personne de l'image 1.",
-          `L'image 2 ne sert qu'à confirmer la couleur, la matière et la finition de ${court}.`,
+          ...(avecReference
+            ? [`L'image 2 ne sert qu'à confirmer la couleur, la matière et la finition de ${court}.`]
+            : []),
         ]
-      : [
-          `Reproduis fidèlement ce que l'image 2 montre de ${court} : la forme, la`,
-          "longueur, la couleur, la matière, le motif, la finition et la brillance.",
-        ]),
+      : avecReference
+        ? [
+            `Reproduis fidèlement ce que l'image 2 montre de ${court} : la forme, la`,
+            "longueur, la couleur, la matière, le motif, la finition et la brillance.",
+          ]
+        : [
+            // NI DESCRIPTION NI RÉFÉRENCE : c'est le cas le plus pauvre, et il
+            // ne doit pas se taire. Dire « change ceci » sans dire en quoi
+            // laisse le modèle libre, et libre il refait un portrait.
+            `Applique un ${court} plausible et soigné, de la même famille que ce que`,
+            "porte déjà la personne, sans changer quoi que ce soit d'autre.",
+          ]),
     "Absolument rien d'autre de l'image 1 ne bouge.",
     "",
     // ═══ ET LE TRAVAIL DOIT ÊTRE VISIBLE ═══

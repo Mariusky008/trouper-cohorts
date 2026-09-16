@@ -28,60 +28,108 @@
 // à une table — pas en commandant une illustration.
 
 /**
- * L'OUTIL, PAR MÉTIER.
+ * ═══ LES MASCOTTES, ET ELLES SONT DE LUI ═══════════════════════════════════
  *
- * `emoji` EST LE DESSIN, ET C'EST UN CHOIX ASSUMÉ. Un pictogramme vectoriel par
- * outil serait plus beau et prendrait deux cents lignes ; l'emoji est rendu par
- * le système, il est en couleur, il est reconnaissable à vingt points, et il
- * tombe juste pour les onze métiers du paquet. Le jour où l'on fait dessiner
- * les outils, seule cette table change.
+ * « Je t'ai mis le fantôme en PNG pour chaque type de commerçant. »
  *
- * `teinte` EST LE HALO DERRIÈRE LE FANTÔME. Ses maquettes le font rose partout
- * sauf chez le coiffeur, où il vire au violet : la couleur suit l'univers du
- * commerce, pas l'application.
+ * NEUF DESSINS SONT ARRIVÉS, et ils remplacent le fantôme vectoriel que ce
+ * fichier dessinait en attendant. Le mien tenait debout — même personnage, même
+ * clin d'œil, un pictogramme d'outil posé à côté — mais il ne faisait pas ce
+ * que les siens font : le boucher porte une TOQUE et présente une entrecôte sur
+ * sa planche, l'onglerie tient son pinceau, le fleuriste son bouquet. Ce ne sont
+ * pas des variantes d'un même fichier, ce sont neuf personnages.
+ *
+ * ILS SONT SERVIS EN WEBP, ET C'ÉTAIT NÉCESSAIRE. Les PNG font entre 1,2 et
+ * 1,9 mégaoctet chacun, en 1312 points de large. Sur un téléphone, le premier
+ * objet de la page aurait coûté deux mégaoctets — plus que tout le reste de
+ * l'application réunie. Rognés au sujet, ramenés à 440 points et passés en
+ * WebP, ils pèsent une cinquantaine de kilooctets et restent nets jusqu'au
+ * double de leur taille d'affichage. Voir `scripts/fantomes-mascottes.mjs`,
+ * qui refait la conversion à l'identique le jour où il en envoie d'autres.
+ *
+ * `teinte` RESTE, ET ELLE NE SERT PLUS AU DESSIN. Elle colore le halo derrière
+ * la mascotte, la question, la pastille et le liséré du style choisi — tout ce
+ * qui doit s'accorder au personnage sans être le personnage.
  */
-const OUTILS: { quand: RegExp; emoji: string; teinte: string; nom: string }[] = [
-  { quand: /ongulaire|onglerie|proth[ée]siste/i, emoji: "💅", teinte: "#FF4FA3", nom: "un vernis" },
-  { quand: /coiffeur|coiffure|barbier/i, emoji: "💈", teinte: "#A855F7", nom: "une brosse" },
-  { quand: /boucher|charcut/i, emoji: "🥩", teinte: "#FF4D6D", nom: "une pièce de viande" },
+const OUTILS: { quand: RegExp; fichier?: string; emoji: string; teinte: string; nom: string }[] = [
+  { quand: /ongulaire|onglerie|proth[ée]siste/i, fichier: "ongleries", emoji: "💅", teinte: "#FF4FA3", nom: "un vernis" },
+  { quand: /coiffeur|coiffure|barbier/i, fichier: "coiffeurs", emoji: "💈", teinte: "#A855F7", nom: "une brosse" },
+  { quand: /boucher|charcut/i, fichier: "boucher", emoji: "🥩", teinte: "#FF4D6D", nom: "une pièce de viande" },
+  { quand: /fleurist/i, fichier: "fleuristes", emoji: "💐", teinte: "#FF7EB6", nom: "un bouquet" },
+  { quand: /lunet|opticien/i, fichier: "lunettiers", emoji: "👓", teinte: "#5B8DEF", nom: "une monture" },
+  { quand: /bar|caviste|vins/i, fichier: "bar", emoji: "🍷", teinte: "#C77DFF", nom: "un verre" },
+  { quand: /restaurant|bistrot|brasserie|traiteur|pizz/i, fichier: "restaurant", emoji: "🍽️", teinte: "#FF8A5B", nom: "une assiette" },
+  // « CRÉATEURS » COUVRE TOUT CE QUI SE FABRIQUE À LA MAIN — bijoux, cire,
+  // tatouage. Ce n'est pas un repli faute de mieux : c'est le même geste, et le
+  // dessin montre une créatrice avec son ouvrage.
+  { quand: /bijou|bracelet|collier|joaill|cirier|ciri[èe]re|bougie|tatou|artisan|atelier/i, fichier: "createurs", emoji: "💍", teinte: "#E8B04B", nom: "une pièce" },
+  { quand: /[ée]v[ée]nement|concert|march[ée]|expo|kiosque/i, fichier: "evenements", emoji: "🎪", teinte: "#7C93FF", nom: "un événement" },
+  /**
+   * ═══ CEUX QUI N'ONT PAS ENCORE LEUR MASCOTTE ═══════════════════════════
+   *
+   * Sans `fichier`, on retombe sur le fantôme dessiné plus bas, avec son
+   * pictogramme. Il tient debout, il n'est simplement pas de sa main.
+   *
+   * IL EN MANQUE TROIS, ET LA PREMIÈRE EST L'UNE DE SES TROIS MAQUETTES :
+   * la BOUTIQUE DE VÊTEMENTS. Viennent ensuite la BOULANGERIE et
+   * l'HYPNOTHÉRAPEUTE. Le jour où les fichiers arrivent, il n'y a qu'un nom à
+   * écrire ici — le reste du produit ne bouge pas.
+   */
+  { quand: /mode|pr[êe]t-[àa]-porter|friperie|fripe|v[êe]tement/i, emoji: "👗", teinte: "#FF4FA3", nom: "un cintre" },
   { quand: /boulanger|p[âa]tiss/i, emoji: "🥖", teinte: "#F0A44A", nom: "une baguette" },
-  { quand: /mode|pr[êe]t-[àa]-porter|friperie|fripe/i, emoji: "👗", teinte: "#FF4FA3", nom: "un cintre" },
-  { quand: /lunet|opticien/i, emoji: "👓", teinte: "#5B8DEF", nom: "une monture" },
-  { quand: /fleurist/i, emoji: "💐", teinte: "#FF7EB6", nom: "un bouquet" },
-  { quand: /tatou/i, emoji: "🖊️", teinte: "#8B5CF6", nom: "un dermographe" },
-  { quand: /bijou|bracelet|collier/i, emoji: "💍", teinte: "#E8B04B", nom: "une bague" },
-  { quand: /cirier|ciri[èe]re|bougie/i, emoji: "🕯️", teinte: "#F0A44A", nom: "une bougie" },
-  { quand: /restaurant|bistrot|brasserie|traiteur|pizz/i, emoji: "🍽️", teinte: "#FF8A5B", nom: "une assiette" },
-  { quand: /bar|caviste|vins/i, emoji: "🍷", teinte: "#C77DFF", nom: "un verre" },
   { quand: /hypno|th[ée]rapeute|sophro/i, emoji: "🌙", teinte: "#7C93FF", nom: "un croissant de lune" },
 ];
 
 const DEFAUT = { emoji: "✨", teinte: "#FF4FA3", nom: "une étincelle" };
 
-export function outilDuMetier(metier: string): { emoji: string; teinte: string; nom: string } {
+export function outilDuMetier(metier: string): {
+  fichier?: string;
+  emoji: string;
+  teinte: string;
+  nom: string;
+} {
   return OUTILS.find((o) => o.quand.test(metier)) ?? DEFAUT;
 }
 
 /**
- * LE FANTÔME, SON HALO ET SON OUTIL.
+ * LA MASCOTTE DU MÉTIER, OU LE FANTÔME DESSINÉ QUAND ELLE MANQUE.
  *
- * IL FAIT UN CLIN D'ŒIL, ET C'EST DANS LA MAQUETTE. L'œil gauche est un trait
- * plutôt qu'un ovale — un détail d'un pixel qui change tout le personnage : un
- * fantôme qui regarde est un logo, un fantôme qui cligne est quelqu'un.
- *
- * IL N'A PAS DE `defs`, DONC PAS D'IDENTIFIANT GLOBAL. C'est la leçon du
- * fantôme de la page d'accueil, qui dépend d'un bloc d'encres posé une fois
- * pour SA page : monté ailleurs, il devient un trou noir. Celui-ci ne dépend
- * que de `currentColor` et de deux couleurs en dur.
+ * LE HALO EST DERRIÈRE DANS LES DEUX CAS. Les mascottes sont déjà lumineuses ;
+ * le halo ne les éclaire pas, il les POSE — sans lui, un PNG détouré flotte sur
+ * le panneau rose comme un autocollant.
  */
 export function FantomeMetier({ metier, classe }: { metier: string; classe?: string }) {
   const o = outilDuMetier(metier);
   return (
     <span
-      className={`fm${classe ? ` ${classe}` : ""}`}
+      className={`fm${classe ? ` ${classe}` : ""}${o.fichier ? " vrai" : ""}`}
       style={{ "--fm-teinte": o.teinte } as React.CSSProperties}
     >
       <span className="fm-halo" aria-hidden="true" />
+      {o.fichier ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className="fm-img" src={`/direct/fantomes/${o.fichier}.webp`} alt="" />
+      ) : (
+        <FantomeDessine emoji={o.emoji} />
+      )}
+    </span>
+  );
+}
+
+/**
+ * LE FANTÔME DESSINÉ — le repli, et il reste utile.
+ *
+ * Il couvre les trois métiers sans mascotte, et il couvrira tout métier nouveau
+ * le jour où il en entre un. Un écran qui attend un fichier pour s'afficher est
+ * un écran qui ne s'affiche pas.
+ *
+ * IL NE DÉPEND DE RIEN : ni `defs`, ni dégradé nommé, ni feuille extérieure.
+ * C'est la leçon du fantôme de la page d'accueil, qui dépend d'un bloc d'encres
+ * posé une fois pour SA page : monté ailleurs, il devient un trou noir.
+ */
+function FantomeDessine({ emoji }: { emoji: string }) {
+  return (
+    <>
       <svg className="fm-corps" viewBox="0 0 120 132" aria-hidden="true" focusable="false">
         {/* LE CORPS, EN DEUX COUCHES : un aplat très clair pour le volume, puis
             le blanc par-dessus, légèrement rentré. C'est ce qui donne l'air
@@ -119,11 +167,11 @@ export function FantomeMetier({ metier, classe }: { metier: string; classe?: str
         />
       </svg>
       {/* L'OUTIL, TENU DEVANT LUI. Il est posé en absolu plutôt que dans le SVG
-          pour qu'il garde sa couleur de système : un emoji dans un `<text>` SVG
-          se rend en noir sur plusieurs navigateurs. */}
+          pour qu'il garde sa couleur de système : un emoji dans un `text` SVG se
+          rend en noir sur plusieurs navigateurs. */}
       <span className="fm-outil" aria-hidden="true">
-        {o.emoji}
+        {emoji}
       </span>
-    </span>
+    </>
   );
 }

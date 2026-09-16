@@ -2362,7 +2362,23 @@ console.log("\n══ la page du commerce ══");
     const col = bq ? getComputedStyle(bq).gridTemplateColumns.split(" ").filter(Boolean) : [];
     return {
       colonnes: col.length,
-      largeurUtile: col.reduce((n, x) => n + parseFloat(x), 0),
+      /**
+       * LE TROU SE MESURE ENTRE DEUX SECTIONS QUI SE SUIVENT.
+       *
+       * Deux sections l'une sous l'autre ne doivent pas être séparées de plus
+       * de trois cents points : au-delà, c'est qu'une mise en page les a mises
+       * côte à côte et qu'il ne reste rien dans la colonne d'à côté. C'est
+       * exactement ce qu'il a vu, et ça se compte.
+       */
+      trou: (() => {
+        const ss = [...document.querySelectorAll(".bq-s")];
+        for (let i = 1; i < ss.length; i++) {
+          const haut = ss[i].getBoundingClientRect().top;
+          const bas = ss[i - 1].getBoundingClientRect().bottom;
+          if (haut - bas > 300) return `${Math.round(haut - bas)} points avant #${ss[i].id}`;
+        }
+        return "";
+      })(),
       // LA SECTION S'APPELLE MAINTENANT `essayer`, PARCE QU'ELLE EST PASSÉE
       // EN TÊTE ET QUE C'EST L'ONGLET QUI LA DÉSIGNE. Le garde visait `#mur`,
       // c'est-à-dire l'identifiant d'hier : il cherchait le bon objet à la
@@ -2372,10 +2388,27 @@ console.log("\n══ la page du commerce ══");
       deborde: document.documentElement.scrollWidth > window.innerWidth + 1,
     };
   });
-  dire(surOrdi.colonnes === 2, `sur un ordinateur, la page tient en deux colonnes (${surOrdi.colonnes})`);
+  /**
+   * ═══ UNE SEULE COLONNE, ET C'EST LA MAQUETTE QUI TRANCHE ══════════════════
+   *
+   * « Je ne sais pas pourquoi il y a ce vide au milieu de la page toute
+   * blanche. » — « Il faut que ce soit absolument identique. »
+   *
+   * CETTE GARDE EXIGEAIT DEUX COLONNES SUR ORDINATEUR, et elle répondait à une
+   * vraie remarque : « soixante pour cent de l'écran ne servaient à rien ».
+   * Mais la grille a été écrite pour l'ancienne page sombre, elle envoyait la
+   * section du mur à droite par un sélecteur devenu mort, et elle laissait six
+   * cents points de blanc sur la gauche.
+   *
+   * SES TROIS MAQUETTES SONT DES ÉCRANS DE TÉLÉPHONE, du premier pixel au
+   * dernier. La garde mesure donc ce qu'il a demandé : UNE colonne, centrée,
+   * sur toutes les largeurs — et surtout, plus de trou. C'est le défaut qu'il a
+   * vu, et c'est lui qui doit rester impossible.
+   */
+  dire(surOrdi.colonnes <= 1, `sur un ordinateur, la page reste en une colonne (${surOrdi.colonnes})`);
   dire(
-    surOrdi.largeurUtile > 900,
-    `et elle occupe l'écran au lieu d'une colonne de téléphone (${Math.round(surOrdi.largeurUtile)} points)`,
+    !surOrdi.trou,
+    `et aucune section ne laisse un trou à côté d'elle${surOrdi.trou ? ` (${surOrdi.trou})` : ""}`,
   );
   dire(surOrdi.mur, "le mur du commerce est sur sa page");
 

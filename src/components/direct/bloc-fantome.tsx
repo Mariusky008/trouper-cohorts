@@ -267,6 +267,7 @@ function Styles() {
            polaroids. Les polaroids ne genent que le haut du panneau, donc seul
            le haut leur cede quelque chose. */
         .bf-panneau.avec-polas .bf-mots{padding-right:80px;}
+        .bf-haut{align-items:center;}
         .bf-mots{flex:1;min-width:0;padding-top:4px;}
 
         /* ─── LA QUESTION ───
@@ -275,8 +276,9 @@ function Styles() {
            part en gras colore parce que c'est le mot qui rend la question
            urgente. Sans lui, on demande « quel style vous plait », ce qui ne se
            decide pas aujourd'hui. */
-        .bf-q{margin:0;font-size:clamp(20px,5.8vw,25px);font-weight:820;
-          line-height:1.14;letter-spacing:-.022em;color:#151B33;text-wrap:balance;}
+        .bf-q{margin:0;font-size:clamp(18px,5.1vw,23px);font-weight:820;
+          line-height:1.16;letter-spacing:-.024em;color:#151B33;
+          text-wrap:balance;hyphens:auto;}
         .bf-q b{font-weight:820;color:var(--bf-teinte);}
         .bf-p{margin:8px 0 0;font-size:12.5px;line-height:1.45;color:#6E7690;}
 
@@ -375,6 +377,20 @@ function Styles() {
 
         /* ═══ LE FANTOME ═══════════════════════════════════════════════════ */
         .fm{position:relative;flex:none;display:block;width:88px;height:97px;}
+        /* ═══ LA MASCOTTE PREND PLUS DE PLACE QUE LE FANTOME DESSINE ════════
+           Ses neuf dessins portent un decor — une toque, une planche, un
+           bouquet, un pinceau — la ou le fantome vectoriel n'est qu'un corps.
+           A quatre-vingt-huit points, l'entrecote du boucher devient une tache
+           rouge de douze points : on ne voit plus ce qu'il tient, donc on perd
+           exactement ce qui fait l'interet de ces dessins.
+           CENT VINGT-HUIT POINTS, ET LA QUESTION GARDE SA PLACE : le panneau
+           offre trois cent trente, la mascotte en prend cent vingt-huit, il
+           reste cent quatre-vingt-quatorze pour le titre — de quoi le poser en
+           trois ou quatre lignes, comme la maquette. */
+        .fm.vrai{width:112px;height:auto;align-self:center;margin-left:-6px;}
+        .fm-img{display:block;width:100%;height:auto;
+          filter:drop-shadow(0 10px 22px rgba(90,40,130,.24));
+          animation:fmFlotte 4.2s ease-in-out infinite;}
         .bf-f{margin-top:-6px;}
         /* LE HALO EST DERRIERE LE CORPS, ET IL RESPIRE. C'est ce qui fait la
            difference entre un pictogramme et un personnage lumineux — les
