@@ -77,6 +77,7 @@ import { essayerSurMoi, estUnRendu } from "@/lib/direct/essai-genere";
 import { prevenirPourEssai, numeroDeFiction } from "@/lib/direct/prevenir";
 import { partagerLEssai, type Sortie } from "@/lib/direct/partager-essai";
 import { EcranGout } from "@/components/direct/gout-contenu";
+import { EcranSoiree } from "@/components/direct/soiree-contenu";
 
 /**
  * « CHEZ QUI », ÉCRIT COMME ON LE DIRAIT.
@@ -646,6 +647,15 @@ export function MurContenu({
    * n'est plus que la porte de derrière. Passer l'avant-goût mène donc au mur.
    */
   const [goutPasse, setGoutPasse] = useState(false);
+  /**
+   * ET « PASSER » VAUT AUSSI POUR LA SOIRÉE, avec la même porte de derrière.
+   *
+   * DEUX ÉTATS ET NON UN SEUL, parce qu'un lieu peut changer de mécanique d'un
+   * jour à l'autre — un bar qui n'a pas de soirée ce soir garde son mur. Un
+   * drapeau commun ferait retomber sur le mur quelqu'un qui a seulement passé
+   * l'autre écran, six heures plus tôt.
+   */
+  const [soireePassee, setSoireePassee] = useState(false);
 
   useEffect(() => {
     /**
@@ -727,6 +737,23 @@ export function MurContenu({
    * métiers-là ont déjà leur « essayer », c'est le vrai.
    */
   const gout = !goutPasse && ecran === "mur" ? mur.gout : undefined;
+  /**
+   * ═══ LA SOIRÉE PASSE DEVANT TOUT LE RESTE ═══════════════════════════════
+   *
+   * « PAGE COMMERÇANT → 👻 ESSAYER → 👻 LAISSER MON FANTÔME → LIVE DE LA
+   * SOIRÉE. »
+   *
+   * ELLE NE REMPLACE PAS LE MUR, ELLE LE PRÉCÈDE — exactement comme
+   * l'Avant-goût, et pour la même raison : « qui est là ? » suppose qu'on ait
+   * déjà décidé d'y aller, alors qu'à dix-huit heures la question est plus tôt.
+   * « Passer » mène au mur, qui reste la porte de derrière.
+   *
+   * ET ELLE PASSE AUSSI DEVANT L'AVANT-GOÛT. Les deux ne cohabitent jamais chez
+   * un même lieu — voir `lib/direct/soiree.ts` — mais l'ordre est écrit ici
+   * quand même : le jour où quelqu'un remplit les deux par erreur, l'écran doit
+   * en choisir un plutôt que d'en dessiner deux.
+   */
+  const soiree = !soireePassee && ecran === "mur" ? mur.soiree : undefined;
 
   return (
     <>
@@ -761,7 +788,10 @@ export function MurContenu({
           distance » en pied d'écran, et le plat doit occuper le haut. Deux
           bandeaux d'adresse sur un écran de sept lignes, c'est un écran qui
           parle de lui-même. */}
-      {!gout && (
+      {/* ET LA SOIRÉE NE LE PORTE PAS NON PLUS. Même raison que l'Avant-goût :
+          son pied d'écran écrit déjà le lieu et l'heure, et le premier écran
+          est fait pour être immersif. */}
+      {!gout && !soiree && (
       <div className={`mu-chez${ecran === "depot" ? " court" : ""}`}>
         <i aria-hidden="true">📍</i>
         <span>
@@ -776,7 +806,17 @@ export function MurContenu({
         </span>
       </div>
       )}
-      {gout ? (
+      {soiree ? (
+        <EcranSoiree
+          soiree={soiree}
+          distance={mur.distance}
+          onFermer={() => setSoireePassee(true)}
+          /* « J'Y VAIS » EST LE MÊME GESTE QUE « RÉSERVER » SUR L'ANNONCE.
+             Le quatrième temps de son cahier des charges ne fabrique pas un
+             second chemin : il emmène là où l'annonce emmenait déjà. */
+          onYAller={onReserver}
+        />
+      ) : gout ? (
         <EcranGout
           gout={gout}
           lieu={mur.lieu}

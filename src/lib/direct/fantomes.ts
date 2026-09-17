@@ -79,6 +79,7 @@ import type { Gabarit } from "./essai";
 /** Ce que le lieu propose de déposer. Décide de l'écran, et de lui seul. */
 import { numeroDeFiction } from "@/lib/direct/prevenir";
 import { goutDuCommerce, type Gout } from "@/lib/direct/avant-gout";
+import { soireeDuLieu, type Soiree } from "@/lib/direct/soiree";
 
 export type Depot = "annonce" | "essai";
 
@@ -399,6 +400,25 @@ export type Mur = {
    * `lib/direct/avant-gout.ts`.
    */
   gout?: Gout;
+  /**
+   * LA SOIRÉE, QUAND CE LIEU EN A UNE.
+   *
+   * « Le Fantôme sert à essayer l'expérience avant d'y aller, puis à se projeter
+   * dans cette soirée, et enfin à participer à la conversation collective. »
+   *
+   * ELLE PASSE DEVANT L'AVANT-GOÛT ET DEVANT LE MUR, et c'est le seul ordre
+   * juste : un bar qui a une soirée ce soir n'a rien de plus important à
+   * montrer, et le mur de présence répond à une question qu'on ne se pose pas
+   * encore. Les trois ne sont jamais présents ensemble — voir
+   * `lib/direct/soiree.ts`, qui explique pourquoi les deux mécaniques de bar ne
+   * cohabitent pas.
+   *
+   * ELLE EST PORTÉE PAR LE MUR ET NON PAR LE MODÈLE, exactement comme `gout` et
+   * pour la même raison : un modèle porte une MÉCANIQUE, une soirée porte UN
+   * SOIR. Posée sur le modèle, elle aurait donné le concert du kiosque à tous
+   * les bars de la ville.
+   */
+  soiree?: Soiree;
   /** Les humeurs proposées ici. Vide = on ne demande pas d'humeur. */
   humeurs: string[];
   /** Les verbes proposés ici. */
@@ -2578,6 +2598,9 @@ export function murDeLaCarte(c: {
     contexte,
     // LE PARCOURS SUIT LE COMMERCE, PAS LE MODÈLE — voir `gout` dans le type.
     gout: goutDuCommerce(c.id),
+    // ET LA SOIRÉE AUSSI, pour la même raison : elle porte UN SOIR, pas une
+    // mécanique. Voir `soiree` dans le type.
+    soiree: soireeDuLieu(c.id),
   };
 }
 

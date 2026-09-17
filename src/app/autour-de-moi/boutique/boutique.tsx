@@ -564,7 +564,8 @@ export function Boutique() {
    * selon le métier. Le jour où le bar a son parcours, il reprend « À essayer »
    * tout seul, sans qu'on touche à cette liste.
    */
-  const motCoeur = onEssaie || murDuLieu.gout ? "À essayer" : "Qui est là";
+  const motCoeur =
+    onEssaie || murDuLieu.gout || murDuLieu.soiree ? "À essayer" : "Qui est là";
 
   const onglets = [
     { id: "essayer", mot: motCoeur, picto: "✨" },
@@ -964,7 +965,21 @@ export function Boutique() {
           {!essaiOuvert ? (
             <BlocFantome
               mur={murDuLieu}
-              quoi={onEssaie ? "essai" : murDuLieu.gout ? "gout" : "mur"}
+              /* L'ORDRE EST CELUI DE LA VÉRITÉ, PAS CELUI DES ARRIVÉES. La
+                 soirée passe devant l'Avant-goût, qui passe devant le mur —
+                 c'est le même ordre que dans `MurContenu`, et il doit l'être :
+                 la vitrine annonce ce que la porte ouvre. Deux ordres
+                 différents donneraient un bouton qui promet un parcours et
+                 ouvre un mur. */
+              quoi={
+                onEssaie
+                  ? "essai"
+                  : murDuLieu.soiree
+                    ? "soiree"
+                    : murDuLieu.gout
+                      ? "gout"
+                      : "mur"
+              }
               onPhoto={() => setEssaiOuvert(true)}
               onImporter={() => setEssaiOuvert(true)}
               onStyle={(id) => {

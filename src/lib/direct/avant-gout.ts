@@ -556,136 +556,26 @@ export const GOUT_PARMENTIER: Gout = {
 };
 
 /**
- * ═══ PARCOURS 6 — LE VERRE : JE DIS CE QUE J'AIME, ON ME SERT ══════════════
+ * ═══ LES DEUX PARCOURS DE BAR SONT PARTIS, ET ON SAIT OÙ ══════════════════
  *
- * « Bar → un morceau de la soirée de ce soir. » « Cocktail → je choisis /
- * je mélange. »
+ * « Le Fantôme sert à essayer l'expérience avant d'y aller, puis à se projeter
+ * dans cette soirée, et enfin à participer à la conversation collective. C'est
+ * cette mécanique qu'il faut conserver pour TOUS les bars et événements. »
  *
- * UN BAR NE VEND PAS UN PLAT, ET C'EST CE QUI A FAILLI LE LAISSER DE CÔTÉ. Son
- * onglet disait « Qui est là » faute d'avoir quelque chose à faire essayer —
- * honnête, et insuffisant. Ce qu'un bar à vins fait essayer, c'est LE CONSEIL :
- * on dit ce qu'on aime avec ses propres mots, et quelqu'un derrière le comptoir
- * sait quoi vous servir. C'est exactement ce qu'on ne peut pas faire seul
- * devant une carte des vins, et c'est ce qui fait entrer.
+ * LE VERRE ET LA TERRASSE AVAIENT LEUR AVANT-GOÛT ICI, et il était juste tant
+ * qu'un bar n'avait rien d'autre. Il lui manquait pourtant la moitié du sujet :
+ * un plat se goûte et se réserve, une SOIRÉE se vit — elle n'a pas encore eu
+ * lieu, elle aura lieu ce soir, et ce qu'on veut savoir est ce qui s'y prépare.
+ *
+ * LEUR SUBSTANCE N'EST PAS PERDUE, ELLE A CHANGÉ DE FICHIER. Le verre du soir
+ * est devenu le premier essai du bar à vins, l'heure des platanes le geste de la
+ * terrasse, et les deux voix du comptoir — Serge et Lou — parlent maintenant
+ * dans le Live, qui est leur place. Voir `lib/direct/soiree.ts`.
+ *
+ * ET LES DEUX MÉCANIQUES NE COHABITENT PAS. Un lieu qui aurait les deux ferait
+ * ouvrir au fantôme tantôt l'une tantôt l'autre selon l'ordre d'un `if` — c'est
+ * la faute qui a donné trois tables de routage divergentes dans ce dossier.
  */
-export const GOUT_VERRE: Gout = {
-  plat: "Le verre du soir",
-  detail: "Servi au comptoir",
-  prix: "5 €",
-  accent: "#C77DFF",
-  chef: {
-    mot: "Dites-moi ce que vous aimez boire d’habitude, et je vous fais goûter autre chose. C’est tout mon métier.",
-    qui: "Serge, au comptoir",
-  },
-  temps: [
-    {
-      quoi: "ouvrir",
-      titre: "Ce soir, ",
-      suite: "on vous sert quoi ?",
-      phrase: "Dites-le en deux gestes. Serge s’occupe du reste.",
-      photo: "/direct/verre-au-comptoir.jpg",
-      geste: "C’est parti !",
-    },
-    {
-      quoi: "compose",
-      titre: "Vous partez plutôt ",
-      suite: "sur quoi ?",
-      phrase: "Il n’y a pas de mauvaise réponse, il y a la vôtre.",
-      photo: "/direct/bar-cave.jpg",
-      geste: "Suivant",
-      options: [
-        { cle: "blanc", nom: "Un blanc sec", detail: "Vif, tendu", emoji: "🥂", resume: "Un blanc sec" },
-        { cle: "rouge", nom: "Un rouge léger", detail: "Souple, fruité", emoji: "🍷", resume: "Un rouge léger" },
-        { cle: "corse", nom: "Quelque chose de corsé", detail: "Qui tient en bouche", emoji: "🍇", resume: "Un rouge corsé" },
-        { cle: "sans", nom: "Sans alcool", detail: "Et c’est très bien", emoji: "🍎", resume: "Sans alcool" },
-      ],
-    },
-    {
-      quoi: "compose",
-      titre: "Et avec ça, ",
-      suite: "on grignote ?",
-      phrase: "Tout vient de moins de trente kilomètres.",
-      note: "La planche, c’est pour deux…",
-      photo: "/direct/bar-planche.jpg",
-      geste: "Suivant",
-      options: [
-        { cle: "planche", nom: "La planche mixte", detail: "Charcuterie et fromages", emoji: "🧀", resume: "Planche mixte" },
-        { cle: "olives", nom: "Olives et amandes", detail: "Juste pour picorer", emoji: "🫒", resume: "Olives et amandes" },
-        { cle: "rien", nom: "Rien, merci", detail: "Le verre suffit", emoji: "🙂", resume: "Rien" },
-      ],
-    },
-    {
-      quoi: "final",
-      titre: "Votre verre ",
-      suite: "vous attend",
-      phrase: "Dites à Serge que vous venez de la part du Fantôme.",
-      photo: "/direct/bar-salle.jpg",
-    },
-  ],
-};
-
-/**
- * ═══ PARCOURS 7 — LA TERRASSE : JE CHOISIS MON MOMENT ══════════════════════
- *
- * « Bar → un morceau de la soirée de ce soir. »
- *
- * CELUI-CI NE FAIT PAS ESSAYER UN PRODUIT, IL FAIT ESSAYER UN MOMENT — et
- * c'est le cas le plus éloigné du magret, donc celui qui prouve le mieux que la
- * forme tient. Ce qu'une terrasse vend, ce n'est pas le spritz : c'est
- * l'heure qu'il fera quand vous vous assiérez, et avec qui.
- */
-export const GOUT_TERRASSE: Gout = {
-  plat: "De la place en terrasse",
-  detail: "Plein sud, sans réserver",
-  accent: "#FFB454",
-  chef: {
-    mot: "À partir de dix-huit heures, le soleil passe derrière les platanes. C’est le meilleur moment, et personne ne le sait.",
-    qui: "Lou, en salle",
-  },
-  temps: [
-    {
-      quoi: "ouvrir",
-      titre: "Votre place ",
-      suite: "au soleil",
-      phrase: "Il reste trois tables. Voyons laquelle est la vôtre.",
-      photo: "/direct/terrasse-au-soleil.jpg",
-      geste: "C’est parti !",
-    },
-    {
-      quoi: "compose",
-      titre: "Vous arrivez ",
-      suite: "vers quelle heure ?",
-      phrase: "La lumière n’est pas la même, et le monde non plus.",
-      photo: "/direct/terrasse-au-soleil.jpg",
-      geste: "Suivant",
-      options: [
-        { cle: "gouter", nom: "Vers 17 h", detail: "Plein soleil, terrasse calme", emoji: "☀️", resume: "17 h" },
-        { cle: "apero", nom: "Vers 19 h", detail: "L’ombre des platanes", emoji: "🌇", resume: "19 h" },
-        { cle: "soir", nom: "Après 21 h", detail: "Guirlandes allumées", emoji: "✨", resume: "Après 21 h" },
-      ],
-    },
-    {
-      quoi: "compose",
-      titre: "Et vous venez ",
-      suite: "à combien ?",
-      phrase: "On garde ce qu’il faut, sans réserver.",
-      photo: "/direct/bar-salle.jpg",
-      geste: "Suivant",
-      options: [
-        { cle: "deux", nom: "À deux", detail: "Une ronde au bord", emoji: "👥", resume: "À deux" },
-        { cle: "bande", nom: "À quatre ou cinq", detail: "La grande table du fond", emoji: "👨‍👩‍👧‍👦", resume: "À quatre ou cinq" },
-        { cle: "seul", nom: "Tout seul", detail: "Au comptoir, très bien aussi", emoji: "🙂", resume: "Seul" },
-      ],
-    },
-    {
-      quoi: "final",
-      titre: "C’est noté, ",
-      suite: "à tout à l’heure",
-      phrase: "Passez, dites bonjour à Lou. Il reste trois places.",
-      photo: "/direct/terrasse-au-soleil.jpg",
-    },
-  ],
-};
 
 /**
  * ═══ PARCOURS 8 — LA CÔTE DE BŒUF : LES SECRETS DU BILLOT ══════════════════
@@ -811,8 +701,6 @@ export const GOUTS: Record<string, Gout> = {
   "deux-rues": GOUT_AXOA,
   tablee: GOUT_TABLEE,
   traiteur: GOUT_PARMENTIER,
-  "bar-vins": GOUT_VERRE,
-  "bar-terrasse": GOUT_TERRASSE,
   // ET LE HUITIÈME N'EST PAS UN RESTAURANT. « La boucherie est comme un
   // restaurant, donc on voit en plusieurs étapes les secrets du boucher sur sa
   // préparation. » C'est la preuve que cette table ne parle pas de restauration

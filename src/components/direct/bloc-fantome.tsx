@@ -75,7 +75,7 @@ const SERT = /restaurant|bistrot|brasserie|traiteur|pizz|bar|caviste|vins|table/
 
 function laQuestion(
   metier: string,
-  quoi: "essai" | "gout" | "mur",
+  quoi: QuoiEssayer,
   plat?: string,
 ): { debut: string; fin: string } {
   /**
@@ -121,7 +121,18 @@ function laQuestion(
     return { debut: "Et si vous goûtiez", fin: "avant d’y aller ?" };
   }
   /**
-   * ET SANS ESSAI NI PARCOURS, ON NE FAIT PAS SEMBLANT.
+   * ET CHEZ UN BAR OU UN ÉVÉNEMENT, CE QU'ON ESSAIE N'A PAS ENCORE EU LIEU.
+   *
+   * « Essayez un bout de cette soirée. » C'est le titre de sa maquette, et il
+   * est juste au mot près : on ne goûte pas un plat, on ne découvre pas un
+   * savoir-faire — on prend un morceau de quelque chose qui se passera dans
+   * quelques heures. La question de la vitrine le dit donc au futur.
+   */
+  if (quoi === "soiree") {
+    return { debut: "Et si vous essayiez", fin: "un bout de cette soirée ?" };
+  }
+  /**
+   * ET SANS ESSAI NI PARCOURS NI SOIRÉE, ON NE FAIT PAS SEMBLANT.
    *
    * Le bloc ouvre le mur de présence : la seule question honnête est celle à
    * laquelle ce mur répond. Écrire « quelle pièce vous fait envie » au-dessus
@@ -140,7 +151,7 @@ function laQuestion(
 }
 
 /**
- * ═══ CE QUE LE BLOC OUVRE, ET IL Y A TROIS CAS ════════════════════════════
+ * ═══ CE QUE LE BLOC OUVRE, ET IL Y A QUATRE CAS ══════════════════════════
  *
  * « Il y a certains métiers qui n'ont pas leur fantôme, comme le boucher ou les
  * restaurants, magasin de vêtements, bars… pourtant je t'ai bien mis les
@@ -159,12 +170,15 @@ function laQuestion(
  *     verbe du métier : « Photographier ma main ».
  *   · `gout` — on joue avec le plat du jour avant d'y aller. Pas d'appareil
  *     photo : on ne photographie rien, on entre dans un parcours.
- *   · `mur` — il n'y a ni l'un ni l'autre. On ne promet donc pas d'essayer : on
+ *   · `soiree` — on essaie un bout de ce qui se passera ce soir, puis on dit
+ *     ce qu'on cherche, puis on entre dans le Live. C'est le seul des quatre
+ *     dont l'objet n'existe pas encore au moment où on l'essaie.
+ *   · `mur` — il n'y a aucun des trois. On ne promet donc pas d'essayer : on
  *     propose de laisser son Fantôme, ce qui est exactement ce que le bloc
  *     ouvre. Un bouton qui annonce autre chose que ce qu'il fait est la
  *     promesse la plus concrète qu'un écran puisse rompre.
  */
-export type QuoiEssayer = "essai" | "gout" | "mur";
+export type QuoiEssayer = "essai" | "gout" | "soiree" | "mur";
 
 export function BlocFantome({
   mur,
@@ -250,8 +264,10 @@ export function BlocFantome({
                   // n'existe aucune règle pour le deviner sur une chaîne. On
                   // écrit donc une phrase qui n'a pas besoin de le savoir.
                   `${mur.gout?.plat ?? "Le plat du jour"}. Ne restez pas devant : jouez avec.`
-                : quoi === "mur"
-                  ? "Laissez un mot, dites ce que vous cherchez, ou simplement que vous êtes là."
+                : quoi === "soiree"
+                  ? `${mur.soiree?.quand ?? "Ce soir"} : écoutez, regardez, dites ce que vous cherchez, et voyez ce qui se prépare.`
+                  : quoi === "mur"
+                    ? "Laissez un mot, dites ce que vous cherchez, ou simplement que vous êtes là."
                   : (mur.essai?.mots.phrase ?? "Essayez sur vous, en quelques secondes.")}
             </p>
           </div>
@@ -310,9 +326,11 @@ export function BlocFantome({
               ? SERT.test(mur.metier)
                 ? "Goûter avant d’y aller"
                 : "Découvrir ses secrets"
-              : quoi === "mur"
-                ? "Laisser mon Fantôme"
-                : (mur.essai?.mots.geste ?? "Je me prends en photo")}
+              : quoi === "soiree"
+                ? "Essayer cette soirée"
+                : quoi === "mur"
+                  ? "Laisser mon Fantôme"
+                  : (mur.essai?.mots.geste ?? "Je me prends en photo")}
           </span>
           <s aria-hidden="true">→</s>
         </button>

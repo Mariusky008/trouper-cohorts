@@ -156,6 +156,8 @@ import { PictoMetier } from "@/components/direct/picto-metier";
 // commentaire du bouton dans la barre.
 import { MurContenu } from "@/components/direct/mur-contenu";
 import { murDeLaCarte, murDuSouvenir, QUOTA_DU_JOUR } from "@/lib/direct/fantomes";
+import { soireeDuLieu } from "@/lib/direct/soiree";
+import { EcranSoiree } from "@/components/direct/soiree-contenu";
 import { mesFantomes, rappelerFantome, SIGNAL as SIGNAL_FANTOMES, tempsRestant, type FantomePose } from "@/lib/direct/mes-fantomes";
 import {
   ENVIES,
@@ -3290,6 +3292,64 @@ export function ApercuHabitant() {
     !estInvitation(dessus);
 
   /**
+   * ═══ ET CETTE ANNONCE A-T-ELLE UNE SOIRÉE ? ══════════════════════════════
+   *
+   * « Photo 1 : on est encore sur l'ancien design pour les bars. Et tant qu'on
+   * y est, autant créer le concept du fantôme pour les bars, qu'on n'a pas
+   * encore fait, tout comme la section "événements". »
+   *
+   * CE QUI FAISAIT « ANCIEN » N'ÉTAIT PAS LE DESSIN, C'ÉTAIT LE GESTE. La
+   * terrasse n'a rien à réserver — « Plein sud · Sans réserver » — donc son
+   * grand bouton retombait sur « Proposer à mes amis », qui est le geste le
+   * plus faible de l'écran : il vient APRÈS avoir décidé qu'on y va, et il ne
+   * donne aucune raison d'y aller. L'annonce d'un bar ne proposait donc rien à
+   * faire de ce bar.
+   *
+   * ELLE EN A UNE MAINTENANT, ET C'EST EXACTEMENT LE MÊME RAISONNEMENT QUE
+   * L'ESSAI. Chez un coiffeur, le geste que l'annonce donne envie de faire est
+   * d'essayer la coupe ; chez un bar, c'est d'essayer la soirée. Dans les deux
+   * cas le geste plein devient celui du Fantôme, et les trois autres passent au
+   * rail de droite — c'est la même mise en page, appliquée à la même idée.
+   *
+   * UN ÉVÉNEMENT EN A UNE AUSSI, et c'est le point de son cahier des charges :
+   * « penser l'ensemble autour d'un objet Event/Experience, même lorsqu'il
+   * s'agit d'une soirée organisée par un bar ». Le concert au kiosque et le bar
+   * à vins passent donc par la même ligne.
+   */
+  const soireeDuSommet = soireeDuLieu(sommet?.id);
+  const onPeutSoirer =
+    !!soireeDuSommet &&
+    !onPeutEssayer &&
+    !!sommet &&
+    !(dessus && (estPoste(dessus) || estInvitation(dessus))) &&
+    /**
+     * ⚡ ET UN FLASH GARDE SON GESTE, PARCE QU'IL A DIX-NEUF MINUTES.
+     *
+     * MESURÉ SUR LA PLANCHE DU BAR À VINS : la carte porte « ça vient de
+     * tomber », un compte à rebours et moins quarante pour cent, et la soirée
+     * lui prenait le grand bouton. Les deux sont vrais — la planche est à
+     * saisir MAINTENANT, la soirée est pour ce soir — mais un seul des deux
+     * expire pendant qu'on lit l'écran.
+     *
+     * LE TEST EST ÉCRIT ICI ET NON REPRIS DE `flashDuSommet` : cette
+     * constante-là est déclarée six cents lignes plus bas, et la lire avant sa
+     * déclaration jette une page blanche. La remonter aurait déplacé vingt
+     * autres calculs qui en dépendent.
+     */
+    !(dessus && dessus.moments.some((m) => m.flash && flashEnCours(m.flash, heure)));
+  /**
+   * LE CŒUR DE L'ANNONCE — l'essai, ou la soirée.
+   *
+   * IL EXISTE POUR QUE LA MISE EN PAGE N'AIT QU'UNE SEULE QUESTION À POSER.
+   * Quatre endroits décident de la même chose : le geste plein, le rail de
+   * droite, le duo du bas et l'écartement de la barre. Écrire `onPeutEssayer ||
+   * onPeutSoirer` aux quatre aurait garanti qu'un jour l'un des quatre soit
+   * oublié — c'est la faute qui a donné trois tables de routage divergentes
+   * dans ce dossier.
+   */
+  const coeurDuSommet = onPeutEssayer || onPeutSoirer;
+
+  /**
    * ═══ LE LIEU OÙ L'ON RÉSERVE — RESTAURANT, BAR, ÉVÉNEMENT ════════════════
    *
    * « Le design des restaurants, bars et événements n'a pas été modifié comme
@@ -3345,7 +3405,7 @@ export function ApercuHabitant() {
    * ce que l'annonce donne envie de faire — y aller, postuler — et les trois
    * autres passent au rail. C'est exactement l'arbitrage des lieux.
    */
-  const enPlace = (!!dessus || !!dessusEv) && !onPeutEssayer;
+  const enPlace = (!!dessus || !!dessusEv) && !coeurDuSommet;
 
   /**
    * ═══ LA BULLE QUI DÉSIGNE LE FANTÔME, ET QUI S'EN VA ══════════════════════
@@ -5368,7 +5428,7 @@ export function ApercuHabitant() {
              de retirer une fonction pour en poser une. */
           className={`ap-app${onglet === "direct" ? " direct" : ""}${
             salonPage || favorisPage ? " sur-page" : ""
-          }${onPeutEssayer ? " essai" : ""}`}
+          }${coeurDuSommet ? " essai" : ""}`}
         >
           {/* ─── LE SALON, EN PAGE PLEINE ───
               Il vivait dans une feuille qui remonte par-dessus le paquet. Une
@@ -8220,6 +8280,37 @@ export function ApercuHabitant() {
                 <span>{essaiDuSommet.mots.surMoi}</span>
                 <s aria-hidden="true">→</s>
               </button>
+            ) : onPeutSoirer ? (
+              /* ═══ CHEZ UN BAR OU UN ÉVÉNEMENT, C'EST LA SOIRÉE ═════════════
+
+                 « Essayez un bout de cette soirée. »
+
+                 MÊME BOUTON, MÊME FANTÔME, MÊME PLACE QUE L'ESSAI, et c'est
+                 voulu : le geste plein de l'annonce est toujours celui que le
+                 Fantôme ouvre. Ce qui change est ce qu'il y a derrière — une
+                 coupe qu'on essaie sur soi, ou une soirée qu'on essaie avant
+                 d'y aller — et ça, le libellé le dit.
+
+                 IL REMPLACE « PROPOSER À MES AMIS », QUI N'AVAIT RIEN À
+                 PROPOSER. Voir `onPeutSoirer` : ce geste-là vient après avoir
+                 décidé qu'on y va, et il occupait le bas de l'écran d'un bar
+                 qui n'avait encore donné aucune raison d'y aller. Il n'est pas
+                 perdu, il passe au rail de droite. */
+              <button
+                type="button"
+                className="ap-agir essayer ap-essayer ap-soirer"
+                onClick={() => {
+                  noter("onglet", 0, "soiree-carte");
+                  setDejaOuvert(true);
+                  setMurSur(undefined);
+                  setMurOuvert(true);
+                }}
+                disabled={!sommet}
+              >
+                <Fantome classe="ap-agir-f" />
+                <span>Essayer cette soirée</span>
+                <s aria-hidden="true">→</s>
+              </button>
             ) : enPlace &&
               // UN EVENEMENT ET UN POSTE N'ONT PAS DE CRENEAU A RESERVER, et
               // c'est la seconde porte qui les tenait dehors : `aReserver` liste
@@ -8316,6 +8407,17 @@ export function ApercuHabitant() {
                 {essaiDuSommet.mots.promesse}
               </p>
             )}
+            {/* ET LA SOIRÉE DIT CE QU'ELLE PROMET, AVEC LES MÊMES MOTS QUE
+                L'ESSAI : ce qu'on va voir, et combien de temps ça prend. Sans
+                cette ligne, « Essayer cette soirée » est un verbe qu'on n'a lu
+                nulle part, et dans le doute on n'appuie pas. */}
+            {onPeutSoirer && soireeDuSommet && (
+              <p className="ap-essayer-p">
+                <i aria-hidden="true">✨</i>
+                {soireeDuSommet.essais[0].chapeau.toLowerCase()}, en quelques secondes — puis le
+                Live de la soirée.
+              </p>
+            )}
 
             {/* ═══ CE QUE LES AUTRES ONT DÉJÀ ESSAYÉ, SOUS L'ANNONCE ════════════
 
@@ -8374,7 +8476,7 @@ export function ApercuHabitant() {
                 ET DEUX BOUTONS TIENNENT CÔTE À CÔTE ICI ALORS QUE « Proposer à
                 mes amis » et « Réserver mon plat » n'y tenaient pas : ces
                 deux-là font huit et quinze caractères. */}
-            {!onPeutEssayer && !enPlace && (
+            {!coeurDuSommet && !enPlace && (
             <div className="ap-duo">
             <button
               type="button"
@@ -8521,7 +8623,7 @@ export function ApercuHabitant() {
                 </button>
               </div>
             )}
-            {onPeutEssayer && (
+            {coeurDuSommet && (
               <div className="ap-rail" aria-label="Autres gestes sur cette annonce">
                 <button
                   type="button"
@@ -10512,7 +10614,20 @@ export function ApercuHabitant() {
               Un module qui invente sa propre façon de se fermer se paie au
               premier essai : on cherche la croix là où elle est partout
               ailleurs. */}
-          {(murOuvert || murRevisite) && (dessus || murRevisite) && (
+          {/* ═══ UN ÉVÉNEMENT OUVRE LA FEUILLE, LUI AUSSI ═══════════════════
+
+              LA PORTE ÉTAIT FERMÉE À CLÉ ICI. La feuille du fantôme ne se
+              montait que s'il y avait un COMMERCE dessus — `dessus` est nul sur
+              un événement — de sorte qu'un concert au kiosque ou un marché de
+              nuit pouvaient porter le geste « Essayer cette soirée » et
+              n'ouvrir rigoureusement rien. Le bouton existait, la feuille ne
+              venait pas, et rien dans la console ne le disait.
+
+              C'EST LA MOITIÉ « ÉVÉNEMENTS » DE SA DEMANDE, et elle tenait à
+              cette condition. Une soirée suffit maintenant à ouvrir la porte :
+              voir le contenu de la feuille, qui monte `EcranSoiree` quand il
+              n'y a pas de mur. */}
+          {(murOuvert || murRevisite) && (dessus || murRevisite || soireeDuSommet) && (
             <>
               <button
                 type="button"
@@ -10567,6 +10682,22 @@ export function ApercuHabitant() {
                          du bouton principal de l'annonce. Deux appels séparés
                          auraient fini par ne plus répondre la même chose. */
                       mur={murDuSommet!}
+                    />
+                  ) : soireeDuSommet ? (
+                    /* ═══ UN ÉVÉNEMENT N'A PAS DE MUR, IL A UNE SOIRÉE ═══════
+
+                       `murDuSommet` est construit à partir d'un COMMERCE : un
+                       concert au kiosque, une nocturne au musée, un
+                       vide-grenier n'en ont pas, et le fantôme de leur annonce
+                       n'ouvrait donc rigoureusement rien — la feuille montait
+                       sur du vide. C'est la moitié « événements » de sa
+                       demande, et elle se règle ici : `EcranSoiree` n'a besoin
+                       que d'une soirée. */
+                    <EcranSoiree
+                      key={soireeDuSommet.id}
+                      soiree={soireeDuSommet}
+                      distance={dessusEv?.distance}
+                      onYAller={engagerLeSommet}
                     />
                   ) : null}
                 </div>
