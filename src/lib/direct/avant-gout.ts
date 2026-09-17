@@ -687,6 +687,119 @@ export const GOUT_TERRASSE: Gout = {
   ],
 };
 
+/**
+ * ═══ PARCOURS 8 — LA CÔTE DE BŒUF : LES SECRETS DU BILLOT ══════════════════
+ *
+ * « La boucherie est comme un restaurant, donc on voit en plusieurs étapes les
+ * secrets du boucher sur sa préparation. Pour le moment c'est l'ancienne
+ * version. »
+ *
+ * C'ÉTAIT LE MUR DE PRÉSENCE, ET C'EST EXACTEMENT LE DÉFAUT QU'IL AVAIT DÉJÀ
+ * DÉCRIT POUR LES RESTAURANTS. « Qui est là en ce moment ? » devant l'étal d'un
+ * boucher ne demande rien à personne : on ne va pas chez le boucher pour voir
+ * qui y est, on y va pour ce qu'il a. Sa page ouvrait donc sur la question la
+ * moins utile de tout le produit.
+ *
+ * ET LA MÉCANIQUE ÉTAIT DÉJÀ ÉCRITE : « plat avec savoir-faire → je découvre le
+ * secret ». Un boucher est du côté du savoir-faire de bout en bout — il achète
+ * la bête entière, il la mûrit, il la désosse, il la coupe. C'est celui de tous
+ * les métiers de la ville qui a le plus de choses à montrer et le moins
+ * d'occasions de les dire.
+ *
+ * TROIS SECRETS, TROIS MANIÈRES DE LES APPRENDRE, et c'est ce qui fait que ce
+ * n'est pas un questionnaire : le premier se LIT (son mot, ses trois marques),
+ * le deuxième se DEVINE, le troisième se FAIT — on jette soi-même la fleur de
+ * sel sur la pièce. Aucun des trois n'est raconté de la même façon.
+ *
+ * SON MOT EST CELUI DU PAQUET, PAS UN MOT ÉCRIT POUR L'OCCASION. « Je désosse
+ * et je découpe moi-même » est sa signature, « elle en a pour quarante jours »
+ * son bulletin du matin : le parcours reprend ce qu'il dit déjà, il ne lui
+ * invente pas une voix de brochure.
+ */
+export const GOUT_BILLOT: Gout = {
+  plat: "La côte de bœuf maturée",
+  detail: "Bazadaise, 40 jours · Coupée à l’épaisseur que vous voulez",
+  prix: "34 €/kg",
+  // LE ROUGE PROFOND DU MÉTIER, et c'est le seul parcours qui le porte. Voir
+  // `accent` : un parcours doit ressembler à SON produit, pas à l'application.
+  accent: "#FF4D6D",
+  chef: {
+    mot: "J’achète la bête entière à l’éleveur. Ensuite elle passe quarante jours au froid sec, et elle perd presque un tiers de son poids. C’est ce tiers-là qu’on paie, et c’est lui qui donne le goût.",
+    qui: "Serge, boucher",
+  },
+  tampon: "40 JOURS",
+  marques: [
+    { emoji: "🐄", nom: "Bazadaise", detail: "Achetée entière" },
+    { emoji: "❄️", nom: "40 jours", detail: "Au froid sec" },
+    { emoji: "🔪", nom: "Au billot", detail: "Devant vous" },
+  ],
+  temps: [
+    {
+      quoi: "ouvrir",
+      titre: "Le premier secret ",
+      suite: "est dans le froid",
+      phrase: "Ce que vous achetez a passé six semaines à ne rien faire.",
+      photo: "/direct/etal-boucher.jpg",
+      geste: "Voir le deuxième",
+    },
+    {
+      quoi: "devine",
+      titre: "À votre avis, pourquoi ",
+      suite: "il la coupe si tard ?",
+      phrase: "Quatre bonnes raisons. Une seule est la sienne.",
+      note: "Personne ne trouve du premier coup !",
+      photo: "/direct/etal-boucher.jpg",
+      geste: "Je valide ma réponse",
+      apres: "Et maintenant…",
+      options: [
+        { cle: "frais", nom: "Pour la garder fraîche", detail: "Coupée, elle s’abîme", emoji: "❄️" },
+        { cle: "epaisseur", nom: "Pour suivre la demande", detail: "Chacun la veut autrement", emoji: "📏" },
+        { cle: "os", nom: "Pour garder l’os", detail: "C’est lui qui tient le goût", emoji: "🦴" },
+        { cle: "croute", nom: "Pour la croûte", detail: "Ce qui sèche protège le reste", emoji: "🥩" },
+      ],
+      verite: {
+        titre: "Le deuxième secret de Serge",
+        mot: "La croûte. Pendant les quarante jours, l’extérieur sèche et durcit : c’est elle qui protège la chair. Il la retire au dernier moment, juste avant de couper votre pièce — une côte parée trois jours à l’avance a déjà perdu ce qu’elle avait gagné.",
+      },
+    },
+    {
+      quoi: "compose",
+      titre: "On vous la coupe ",
+      suite: "de quelle épaisseur ?",
+      phrase: "Il coupe au millimètre, pas au préemballé.",
+      note: "Deux doigts, c’est la cuisson la plus facile.",
+      photo: "/direct/etal-boucher.jpg",
+      geste: "Suivant",
+      options: [
+        { cle: "deux", nom: "Deux doigts", detail: "≈ 400 g, pour une personne", emoji: "🥩", resume: "Deux doigts, ≈ 400 g" },
+        { cle: "trois", nom: "Trois doigts", detail: "≈ 700 g, à partager", emoji: "🥩", resume: "Trois doigts, ≈ 700 g" },
+        { cle: "epaisse", nom: "La grosse", detail: "≈ 1,2 kg, pour la tablée", emoji: "🥩", resume: "La grosse, ≈ 1,2 kg" },
+      ],
+    },
+    {
+      quoi: "geste",
+      titre: "Le dernier secret, ",
+      suite: "il vous le laisse",
+      phrase: "Le gros sel se jette sur la pièce au dernier moment, jamais la veille.",
+      note: "Salez juste avant le feu !",
+      photo: "/direct/etal-boucher.jpg",
+      geste: "Faire tomber la fleur de sel",
+      apres: "Et maintenant…",
+    },
+    {
+      quoi: "final",
+      titre: "Votre côte est ",
+      suite: "mise de côté",
+      phrase: "Serge la pare et la coupe à votre arrivée, pas avant.",
+      photo: "/direct/etal-boucher.jpg",
+      // LE GESTE FINAL EST LE SIEN, PAS CELUI D'UN RESTAURANT. « Réserver » se
+      // dit d'une table ; une pièce de viande, on la fait garder — et
+      // « Gardez-la-moi » est le mot que sa propre annonce emploie déjà.
+      geste: "Gardez-la-moi",
+    },
+  ],
+};
+
 export const GOUTS: Record<string, Gout> = {
   centre: GOUT_MAGRET,
   emporter: GOUT_PESTO,
@@ -700,6 +813,12 @@ export const GOUTS: Record<string, Gout> = {
   traiteur: GOUT_PARMENTIER,
   "bar-vins": GOUT_VERRE,
   "bar-terrasse": GOUT_TERRASSE,
+  // ET LE HUITIÈME N'EST PAS UN RESTAURANT. « La boucherie est comme un
+  // restaurant, donc on voit en plusieurs étapes les secrets du boucher sur sa
+  // préparation. » C'est la preuve que cette table ne parle pas de restauration
+  // mais de SAVOIR-FAIRE : partout où quelqu'un fabrique quelque chose, il y a
+  // un avant-goût à jouer.
+  boucher: GOUT_BILLOT,
 };
 
 /**

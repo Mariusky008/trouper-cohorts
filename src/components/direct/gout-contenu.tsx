@@ -28,7 +28,7 @@
 // LA SENSATION VISÉE EST LA SIENNE : « Tiens, touche ça… » → « Ah ! » →
 // « Maintenant regarde ça… » → « Oh, ça donne faim » → RÉSERVER.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Gout, OptionGout } from "@/lib/direct/avant-gout";
 import { EMOTIONS } from "@/lib/direct/avant-gout";
 
@@ -66,6 +66,58 @@ export function EcranGout({
   /** Le geste déclenché, sur un temps qui en demande un. */
   const [declenche, setDeclenche] = useState(false);
   const [emotion, setEmotion] = useState("");
+
+  /**
+   * ═══ CHANGER DE TEMPS RAMÈNE EN HAUT DU PARCOURS ═══════════════════════
+   *
+   * DANS LA PAGE COMMERÇANT, LE PARCOURS EST UNE SECTION, PAS UN ÉCRAN. On y
+   * arrive en ayant déjà descendu six cents points ; l'appui sur « Suivant »
+   * change le contenu mais NE BOUGE PAS LA PAGE. On se retrouve au milieu du
+   * nouveau temps, titre au-dessus du champ de vision, et la seule chose qu'on
+   * voit changer est une photo — donc on croit que rien ne s'est passé.
+   *
+   * LE PREMIER RENDU NE SCROLLE PAS. Une page qui saute toute seule à
+   * l'ouverture est plus désagréable encore que celle qui ne bouge pas.
+   */
+  const cadre = useRef<HTMLDivElement>(null);
+  const premier = useRef(true);
+  useEffect(() => {
+    if (premier.current) {
+      premier.current = false;
+      return;
+    }
+    const el = cadre.current;
+    if (!el) return;
+    /**
+     * ON MESURE CE QUI EST COLLÉ EN HAUT, ON NE LE NOMME PAS.
+     *
+     * `scrollIntoView` POSE LE HAUT DU PARCOURS AU HAUT DE LA FENÊTRE — donc
+     * SOUS la barre d'onglets de la page commerçant, qui est collante. Mesuré :
+     * le titre arrivait à trente-deux points quand la barre en descend à
+     * soixante-sept. On changeait d'écran et le titre du nouveau était caché.
+     *
+     * UNE RÉSERVE ÉCRITE EN DUR NE TIENDRAIT PAS. Cet écran sert aussi dans la
+     * feuille du fil, où rien ne colle : soixante-douze points y seraient
+     * soixante-douze points de vide. Et une hauteur de barre recopiée ici
+     * deviendrait fausse le jour où la barre change — c'est la faute que ce
+     * dossier a déjà payée plusieurs fois.
+     *
+     * ON DEMANDE DONC AU NAVIGATEUR CE QU'IL Y A au point le plus haut de
+     * l'écran, et on remonte jusqu'au premier ancêtre qui colle. S'il n'y en a
+     * pas, la réserve tombe à huit points.
+     */
+    let marge = 8;
+    const dessus = document.elementFromPoint(Math.round(window.innerWidth / 2), 4);
+    for (let n = dessus as HTMLElement | null; n && n !== document.body; n = n.parentElement) {
+      const q = getComputedStyle(n).position;
+      if (q === "sticky" || q === "fixed") {
+        marge = n.getBoundingClientRect().bottom + 8;
+        break;
+      }
+    }
+    const y = el.getBoundingClientRect().top + window.scrollY - marge;
+    window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+  }, [rang]);
 
   const t = gout.temps[rang];
 
@@ -141,7 +193,11 @@ export function EcranGout({
       : t.geste;
 
   return (
-    <div className="go-ecran" style={{ "--go-accent": gout.accent } as React.CSSProperties}>
+    <div
+      ref={cadre}
+      className="go-ecran"
+      style={{ "--go-accent": gout.accent } as React.CSSProperties}
+    >
       {/* ═══ LA PROGRESSION, SANS SON CHIFFRE ═══════════════════════════════
 
           Un segment par temps, celui qu'on joue allumé et ceux qu'on a passés
@@ -363,8 +419,12 @@ export function EcranGout({
       {t.quoi === "final" ? (
         onReserver && (
           <button type="button" className="go-cta" onClick={onReserver}>
+            {/* LE MOT DU DERNIER GESTE APPARTIENT AU COMMERCE. « Réserver » se
+                dit d'une table ; chez le boucher, une pièce se fait GARDER, et
+                son annonce écrit déjà « Gardez-la-moi ». Le parcours porte donc
+                son libellé quand il en a un. */}
             <span>
-              Réserver{gout.prix ? ` · ${gout.prix.replace(/\s+(€)/g, " $1")}` : ""}
+              {t.geste ?? "Réserver"}{gout.prix ? ` · ${gout.prix.replace(/\s+(€)/g, " $1")}` : ""}
             </span>
             <s aria-hidden="true">→</s>
           </button>
@@ -586,7 +646,12 @@ function Styles() {
            Quatre cinquiemes de la photo, et deux lignes equilibrees. */
         .go-main{position:absolute;left:18%;right:14px;bottom:12px;z-index:2;
           text-wrap:balance;
-          font-family:'Snell Roundhand','Segoe Script','Bradley Hand',cursive;
+          /* LA MEME MAIN QUE PARTOUT AILLEURS. Les trois polices citees ici
+             n'existent que sur macOS et Windows : sur un telephone et sur le
+             serveur, la note manuscrite retombait sur le cursive du systeme,
+             c'est-a-dire un serif penche. La variable porte Caveat, chargee
+             une fois pour toute l'application. */
+          font-family:var(--font-main-levee),'Segoe Script','Bradley Hand',cursive;
           font-size:17px;line-height:1.25;text-align:right;color:#fff;
           text-shadow:0 2px 12px rgba(0,0,0,.95);transform:rotate(-2.5deg);
           pointer-events:none;}
@@ -725,7 +790,12 @@ function Styles() {
           font-size:30px;line-height:1;color:var(--go-accent,#E56BE0);opacity:.8;}
         .go-chef p{margin:0;font-size:13.5px;line-height:1.45;color:#E8EFF6;}
         .go-chef cite{display:block;margin-top:7px;font-style:normal;
-          font-family:'Snell Roundhand','Segoe Script','Bradley Hand',cursive;
+          /* LA MEME MAIN QUE PARTOUT AILLEURS. Les trois polices citees ici
+             n'existent que sur macOS et Windows : sur un telephone et sur le
+             serveur, la note manuscrite retombait sur le cursive du systeme,
+             c'est-a-dire un serif penche. La variable porte Caveat, chargee
+             une fois pour toute l'application. */
+          font-family:var(--font-main-levee),'Segoe Script','Bradley Hand',cursive;
           font-size:17px;text-align:right;color:#fff;}
 
         /* CE QUE LE PLAT EST, EN TROIS PASTILLES. Elles ne se lisent pas une par

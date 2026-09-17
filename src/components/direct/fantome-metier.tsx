@@ -70,13 +70,18 @@ const OUTILS: { quand: RegExp; fichier?: string; emoji: string; teinte: string; 
    * Sans `fichier`, on retombe sur le fantôme dessiné plus bas, avec son
    * pictogramme. Il tient debout, il n'est simplement pas de sa main.
    *
-   * IL EN MANQUE TROIS, ET LA PREMIÈRE EST L'UNE DE SES TROIS MAQUETTES :
-   * la BOUTIQUE DE VÊTEMENTS. Viennent ensuite la BOULANGERIE et
-   * l'HYPNOTHÉRAPEUTE. Le jour où les fichiers arrivent, il n'y a qu'un nom à
-   * écrire ici — le reste du produit ne bouge pas.
+   * IL N'EN MANQUE PLUS QU'UN : l'HYPNOTHÉRAPEUTE. La BOUTIQUE DE VÊTEMENTS et
+   * la BOULANGERIE sont arrivées depuis — « ce n'est pas le bon fantôme, je
+   * t'ai mis le bon en photo 5 ; idem pour le fantôme boulangerie ».
+   *
+   * CES DEUX-LÀ SONT RECADRÉS À LA CONVERSION, ET C'ÉTAIT INDISPENSABLE. Ils
+   * sont dessinés comme des VITRINES entières — une boulangerie, une boutique —
+   * là où les neuf autres sont des personnages : servis tels quels à la même
+   * largeur, leur fantôme paraissait deux fois plus petit à taille de fichier
+   * égale. Voir `scripts/fantomes-mascottes.mjs`.
    */
-  { quand: /mode|pr[êe]t-[àa]-porter|friperie|fripe|v[êe]tement/i, emoji: "👗", teinte: "#FF4FA3", nom: "un cintre" },
-  { quand: /boulanger|p[âa]tiss/i, emoji: "🥖", teinte: "#F0A44A", nom: "une baguette" },
+  { quand: /mode|pr[êe]t-[àa]-porter|friperie|fripe|v[êe]tement/i, fichier: "mode", emoji: "👗", teinte: "#FF4FA3", nom: "un cintre" },
+  { quand: /boulanger|p[âa]tiss/i, fichier: "boulangerie", emoji: "🥖", teinte: "#F0A44A", nom: "une baguette" },
   { quand: /hypno|th[ée]rapeute|sophro/i, emoji: "🌙", teinte: "#7C93FF", nom: "un croissant de lune" },
 ];
 
@@ -119,9 +124,9 @@ export function FantomeMetier({ metier, classe }: { metier: string; classe?: str
 /**
  * LE FANTÔME DESSINÉ — le repli, et il reste utile.
  *
- * Il couvre les trois métiers sans mascotte, et il couvrira tout métier nouveau
- * le jour où il en entre un. Un écran qui attend un fichier pour s'afficher est
- * un écran qui ne s'affiche pas.
+ * Il ne couvre plus qu'un métier — l'hypnothérapeute — mais il couvrira tout
+ * métier nouveau le jour où il en entre un. Un écran qui attend un fichier pour
+ * s'afficher est un écran qui ne s'affiche pas.
  *
  * IL NE DÉPEND DE RIEN : ni `defs`, ni dégradé nommé, ni feuille extérieure.
  * C'est la leçon du fantôme de la page d'accueil, qui dépend d'un bloc d'encres

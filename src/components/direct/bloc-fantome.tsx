@@ -63,6 +63,16 @@ const CHOSES: { quand: RegExp; quel: string; chose: string; verbe: string }[] = 
   { quand: /boulanger|p[âa]tiss/i, quel: "Quelle", chose: "gourmandise", verbe: "vous fait envie" },
 ];
 
+/**
+ * CEUX CHEZ QUI ON MANGE SUR PLACE, ET LES AUTRES.
+ *
+ * L'AVANT-GOÛT N'EST PLUS RÉSERVÉ À LA RESTAURATION — la boucherie en a un — et
+ * dès qu'il sort de la table, deux mots cessent d'être vrais : on ne « goûte »
+ * pas une pièce crue, et on ne « réserve » pas un morceau de viande. La règle
+ * sépare donc ce qui se sert de ce qui se fabrique, et rien d'autre.
+ */
+const SERT = /restaurant|bistrot|brasserie|traiteur|pizz|bar|caviste|vins|table/i;
+
 function laQuestion(
   metier: string,
   quoi: "essai" | "gout" | "mur",
@@ -90,6 +100,24 @@ function laQuestion(
      * points et n'a besoin d'aucun accord. La question reste courte, et elle
      * dit ce qu'elle a à dire : on goûte AVANT d'y aller.
      */
+    /**
+     * ET ON NE GOÛTE PAS CHEZ UN BOUCHER.
+     *
+     * « La boucherie est comme un restaurant, donc on voit en plusieurs étapes
+     * les secrets du boucher sur sa préparation. »
+     *
+     * LE PARCOURS EST LE MÊME, LE MOT NE PEUT PAS L'ÊTRE. Chez un restaurant on
+     * goûte le plat du jour avant d'y aller ; chez un boucher on ne goûte rien —
+     * on repart avec une pièce crue qu'on cuira soi-même. « Et si vous goûtiez
+     * la côte de bœuf maturée avant d'y aller ? » promet quelque chose qui
+     * n'arrivera pas, et c'est la première phrase de la page.
+     *
+     * CE QUI SE JOUE CHEZ LUI, CE SONT SES SECRETS — c'est le mot de sa demande,
+     * et c'est ce que son parcours contient : le froid, la croûte, le sel.
+     */
+    if (!SERT.test(metier)) {
+      return { debut: "Et si vous découvriez", fin: "ses secrets ?" };
+    }
     return { debut: "Et si vous goûtiez", fin: "avant d’y aller ?" };
   }
   /**
@@ -184,7 +212,12 @@ export function BlocFantome({
           Un dégradé très pâle, coins très arrondis. C'est lui qui distingue le
           cœur du reste de la page : tout ce qui est dedans est « à essayer »,
           tout ce qui est dehors est la vitrine. */}
-      <div className={`bf-panneau${polas.length > 0 ? " avec-polas" : ""}`}>
+      {/* LA CLASSE « avec-polas » A DISPARU AVEC CE QU'ELLE SERVAIT. Elle
+          réservait une bande à droite de la question pour que les polaroïds,
+          posés en absolu, ne la recouvrent pas. Ils sont maintenant dans le
+          rang : c'est la mise en page qui répartit la largeur, et une classe
+          qui ne pilote plus rien finit par piloter autre chose. */}
+      <div className="bf-panneau">
         {/* L'ANNOTATION DU COIN, AU-DESSUS DU FANTÔME. « Et si vous l'essayiez ? »
             C'est la question que le fantôme pose, écrite de sa main. */}
         <span className="bf-main" aria-hidden="true">
@@ -193,6 +226,15 @@ export function BlocFantome({
           l’essayiez&nbsp;? ♡
         </span>
 
+        {/* ═══ LE HAUT DU PANNEAU : LE FANTÔME, LA QUESTION, LES POLAROÏDS ═══
+
+            LES TROIS SONT DANS LE MÊME RANG, ET C'EST CE QUI A CHANGÉ. Les
+            polaroïds étaient posés en absolu contre le bord droit ; ils en
+            sortaient. Dans le rang, ils ne peuvent plus déborder de rien —
+            c'est la mise en page qui leur donne leur place, pas un décalage
+            écrit à la main. Voir la feuille : sur téléphone, la question passe
+            SOUS le fantôme et les polaroïds, ce qui lui rend toute la largeur
+            et permet au fantôme d'être enfin grand. */}
         <div className="bf-haut">
           <FantomeMetier metier={mur.metier} classe="bf-f" />
 
@@ -202,12 +244,34 @@ export function BlocFantome({
             </h2>
             <p className="bf-p">
               {quoi === "gout"
-                ? `${mur.gout?.plat ?? "Le plat du jour"} : ne le regardez pas, jouez avec.`
+                ? // LA PHRASE NE PORTE AUCUN GENRE, ET C'EST EXPRÈS. Elle
+                  // nommait le plat puis disait « ne LE regardez pas » : juste
+                  // pour « le magret », faux pour « la côte de bœuf », et il
+                  // n'existe aucune règle pour le deviner sur une chaîne. On
+                  // écrit donc une phrase qui n'a pas besoin de le savoir.
+                  `${mur.gout?.plat ?? "Le plat du jour"}. Ne restez pas devant : jouez avec.`
                 : quoi === "mur"
                   ? "Laissez un mot, dites ce que vous cherchez, ou simplement que vous êtes là."
                   : (mur.essai?.mots.phrase ?? "Essayez sur vous, en quelques secondes.")}
             </p>
           </div>
+
+          {/* LES DEUX POLAROÏDS DE LA MARGE. Voir `polas` : absents s'il n'y a
+              pas de photo, parce qu'un cadre vide avec une légende manuscrite
+              parle de rien. */}
+          {polas.length > 0 && (
+            <div className="bf-polas" aria-hidden="true">
+              {polas.map((p, i) => (
+                <figure key={p.id} className={i === 0 ? "bf-pola un" : "bf-pola deux"}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.photo} alt="" />
+                  <figcaption>
+                    {i === 0 ? "Osez, testez, trouvez votre style ♡" : "Ça vous irait bien ♡"}
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ═══ LE GRAND GESTE ════════════════════════════════════════════════
@@ -243,7 +307,9 @@ export function BlocFantome({
           )}
           <span>
             {quoi === "gout"
-              ? "Goûter avant d’y aller"
+              ? SERT.test(mur.metier)
+                ? "Goûter avant d’y aller"
+                : "Découvrir ses secrets"
               : quoi === "mur"
                 ? "Laisser mon Fantôme"
                 : (mur.essai?.mots.geste ?? "Je me prends en photo")}
@@ -273,22 +339,6 @@ export function BlocFantome({
         </button>
         )}
 
-        {/* LES DEUX POLAROÏDS DE LA MARGE. Voir `polas` : absents s'il n'y a pas
-            de photo, parce qu'un cadre vide avec une légende manuscrite parle
-            de rien. */}
-        {polas.length > 0 && (
-          <div className="bf-polas" aria-hidden="true">
-            {polas.map((p, i) => (
-              <figure key={p.id} className={i === 0 ? "bf-pola un" : "bf-pola deux"}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.photo} alt="" />
-                <figcaption>
-                  {i === 0 ? "Osez, testez, trouvez votre style ♡" : "Ça vous irait bien ♡"}
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* ═══ LA BANDE DE STYLES ═══════════════════════════════════════════════
@@ -338,8 +388,15 @@ function Styles() {
            du metier n'y entre qu'a huit pour cent : au-dela, le rose de
            l'onglerie et le violet du coiffeur donnent deux applications
            differentes au lieu d'un meme produit chez deux commercants. */
+        /* LE PANNEAU PREND PRESQUE TOUTE LA LARGEUR, comme sur les trois
+           maquettes : mesure faite sur le fichier de la boutique de mode, ou
+           le panneau occupe quatre-vingt-dix-sept pour cent du cadre.
+           IL NE POSE PLUS SA PROPRE MARGE : elle s'ajoutait a celle de la
+           section qui l'accueille, et le panneau se retrouvait a
+           vingt-huit points du bord pour onze sur la maquette. C'est la page
+           qui decide de sa gouttiere, ici comme pour tout le reste. */
         .bf-panneau{position:relative;overflow:hidden;
-          margin:0 14px;padding:18px 16px 20px;border-radius:26px;
+          margin:0;padding:16px 14px 18px;border-radius:26px;
           background:
             radial-gradient(120% 90% at 12% 8%,
               color-mix(in srgb, var(--bf-teinte) 14%, transparent) 0%,
@@ -358,23 +415,20 @@ function Styles() {
           font-size:17px;line-height:1.12;color:#8A6B9E;
           transform:rotate(-7deg);pointer-events:none;}
 
-        /* ═══ LA QUESTION NE PASSE PAS SOUS LES POLAROIDS ══════════════════
-           Ils sont en absolu contre le bord droit ; sans reserve, le titre
-           courait DESSOUS et on lisait « Quel style d'ongles v… fait envie ».
-           Le panneau reserve donc leur largeur quand il y en a — c'est ce que
-           fait la maquette, ou le titre casse plus tot pour leur laisser la
-           place. Sans polaroid, la question reprend toute la largeur. */
-        .bf-haut{display:flex;align-items:flex-start;gap:10px;
-          padding-top:34px;}
-        /* SEULE LA QUESTION CEDE LA PLACE, ET C'EST TOUT LE REGLAGE. Premier
-           jet : la reserve portait aussi sur le bouton, le « ou » et l'import —
-           les trois se retrouvaient a deux tiers de largeur avec un vide a
-           droite, alors que la maquette les fait tous PLEINE LARGEUR sous les
-           polaroids. Les polaroids ne genent que le haut du panneau, donc seul
-           le haut leur cede quelque chose. */
-        .bf-panneau.avec-polas .bf-mots{padding-right:80px;}
-        .bf-haut{align-items:center;}
-        .bf-mots{flex:1;min-width:0;padding-top:4px;}
+        /* ═══ LE HAUT DU PANNEAU ═══════════════════════════════════════════
+           TROIS ELEMENTS DANS UN RANG : le fantome, la question, les deux
+           polaroids. Sur telephone la question passe en dessous — voir plus
+           bas, c'est la seule maniere de donner au fantome la taille qu'il a
+           sur la maquette sans etrangler le titre. */
+        .bf-haut{display:flex;flex-wrap:wrap;align-items:center;
+          gap:10px;padding-top:30px;}
+        /* LA QUESTION PASSE D'EMBLEE SOUS LE RANG, ET C'EST L'ETAT PAR DEFAUT
+           — pas un repli. La regle large la remonte au-dessus de cinq cent
+           soixante points ; voir plus bas, avec la mesure qui l'explique.
+           TOUT EST DIT ICI EN UN SEUL BLOC parce qu'un meme nom declare a deux
+           endroits eloignes herite de lui-meme dans l'ordre d'ecriture : le
+           defaut a deja ete paye trois fois dans ce dossier. */
+        .bf-mots{flex:1 1 100%;min-width:0;order:3;}
 
         /* ─── LA QUESTION ───
            Deux lignes, la fin en couleur. C'est le dessin exact des trois
@@ -382,7 +436,13 @@ function Styles() {
            part en gras colore parce que c'est le mot qui rend la question
            urgente. Sans lui, on demande « quel style vous plait », ce qui ne se
            decide pas aujourd'hui. */
-        .bf-q{margin:0;font-size:clamp(18px,5.1vw,23px);font-weight:820;
+        /* LA QUESTION REPREND LA TAILLE DE LA MAQUETTE. Mesuree sur son
+           fichier : vingt-huit points sur un cadre de sept cent soixante-huit,
+           soit trois virgule six pour cent de la largeur. Elle etait plafonnee
+           a vingt-trois parce qu'elle partageait son rang avec le fantome et
+           les polaroids ; maintenant qu'elle a toute la largeur, elle peut
+           avoir sa taille. */
+        .bf-q{margin:0;font-size:clamp(20px,6vw,28px);font-weight:820;
           line-height:1.16;letter-spacing:-.024em;color:#151B33;
           text-wrap:balance;hyphens:auto;}
         .bf-q b{font-weight:820;color:var(--bf-teinte);}
@@ -421,45 +481,77 @@ function Styles() {
         .bf-import:active{transform:scale(.985);}
         .bf-import svg{width:19px;height:19px;flex:none;color:#6E7690;}
 
-        /* ═══ LES POLAROIDS DE LA MARGE ════════════════════════════════════
+        /* ═══ LES POLAROIDS ════════════════════════════════════════════════
            Ils sont DECORATIFS et le disent : aria-hidden sur le bloc entier.
-           Sur telephone ils sont petits et debordent volontairement du bord
-           droit — c'est ce que fait la maquette, et c'est ce qui donne
-           l'impression d'un carnet plutot que d'un formulaire. */
-        .bf-polas{position:absolute;right:-12px;top:52px;z-index:1;
-          display:flex;flex-direction:column;gap:14px;pointer-events:none;}
-        .bf-pola{margin:0;width:76px;padding:5px 5px 0;background:#FFFFFF;
-          border-radius:5px;box-shadow:0 8px 20px -10px rgba(40,20,70,.45);}
-        .bf-pola.un{transform:rotate(4deg);}
-        .bf-pola.deux{transform:rotate(-5deg);}
-        .bf-pola img{display:block;width:100%;height:64px;object-fit:cover;
-          border-radius:3px;}
-        .bf-pola figcaption{padding:4px 2px 6px;
-          font-family:var(--font-main-levee),'Segoe Script',cursive;
-          font-size:11px;line-height:1.15;color:#6E6280;text-align:center;}
-        /* SOUS TROIS CENT CINQUANTE POINTS, ON LES RETIRE TOUT A FAIT. La
-           reserve de quatre-vingt-seize points ne laisserait plus assez de
-           largeur a la question, et un ornement qui empeche de lire n'est plus
-           un ornement. La reserve tombe avec eux. */
-        /* ═══ LES POLAROIDS NE TIENNENT PAS SUR UN TELEPHONE ETROIT ═════════
-           MESURE, ET ELLE TRANCHE : sur trois cent quatre-vingt-dix points, le
-           panneau offre trois cent trente de large. Le fantome en prend
-           quatre-vingt-huit, l'espace dix, la reserve des polaroids
-           quatre-vingts — il reste CENT CINQUANTE-DEUX points pour la question,
-           qui passe alors en six lignes. Sa maquette la met en trois.
 
-           SA MAQUETTE EST DESSINEE PLUS LARGE QUE CA. Son cadre fait quatre cent
-           soixante points environ ; a cette largeur la composition tient, et les
-           polaroids reviennent d'eux-memes. En dessous, la question reprend
-           toute la place a droite du fantome : entre un ornement et le seul
-           texte que la page pose, on garde le texte. */
-        @media (max-width:429px){
-          .bf-polas{display:none;}
-          .bf-panneau.avec-polas .bf-mots{padding-right:0;}
+           « Les polaroides que tu as crees sortent du cadre et ne se voient pas
+           assez, et c'est la meme chose sur tous types de commerces. »
+
+           ILS ETAIENT EN ABSOLU A right:-12px, DONC DEHORS PAR CONSTRUCTION, et
+           coupes net par l'overflow:hidden du panneau : on voyait deux
+           moities de cadre, sans legende. Ils sont maintenant DANS LE RANG —
+           c'est la mise en page qui leur donne leur place, et un element du flux
+           ne peut pas sortir du cadre.
+
+           ET ILS ONT GRANDI DE MOITIE. A soixante-seize points, l'image faisait
+           soixante-quatre de haut et la legende manuscrite onze : on ne
+           distinguait ni la photo ni le mot. */
+        .bf-polas{flex:none;display:flex;flex-direction:column;
+          pointer-events:none;order:2;
+          width:calc(44% - 10px);max-width:150px;}
+        .bf-pola{margin:0;width:100%;padding:6px 6px 0;background:#FFFFFF;
+          border-radius:6px;box-shadow:0 10px 24px -12px rgba(40,20,70,.5);}
+        .bf-pola.un{transform:rotate(3.5deg);z-index:2;}
+        /* LE SECOND EST GLISSE SOUS LE PREMIER ET DECALE : deux cadres poses a
+           plat l'un sous l'autre font une liste ; l'un sur l'autre font une
+           pile qu'on vient de sortir d'une poche.
+           SON RANG EST POSITIF, ET C'EST TOUT LE PIEGE. Ecrit z-index:-1, il
+           passait derriere le FOND DU PANNEAU — pas derriere son voisin — et
+           le second polaroid disparaissait purement et simplement. Deux rangs
+           positifs disent la meme chose sans sortir de la pile. */
+        .bf-pola.deux{transform:rotate(-5deg);margin-top:-22px;
+          margin-left:6px;z-index:1;}
+        .bf-pola img{display:block;width:100%;aspect-ratio:1/.72;
+          object-fit:cover;border-radius:4px;}
+        .bf-pola figcaption{padding:5px 3px 7px;
+          font-family:var(--font-main-levee),'Segoe Script',cursive;
+          font-size:11.5px;line-height:1.16;color:#6E6280;text-align:center;}
+
+        /* ═══ SUR TELEPHONE, LA QUESTION PASSE SOUS LE FANTOME ══════════════
+
+           « Le visuel du fantome est trop petit par rapport au mock up. C'est
+           l'acteur principal de la page, donc il faut qu'il soit visible. »
+
+           LA MESURE DONNE RAISON, ET ELLE DIT AUSSI POURQUOI. Sur sa maquette,
+           le fantome occupe VINGT-NEUF POUR CENT de la largeur de l'ecran — et
+           c'est un fantome seul. Ses mascottes sont des scenes : le personnage
+           n'y tient que les trois cinquiemes du fichier. Pour que le FANTOME
+           fasse vingt-neuf pour cent, l'image doit en faire pres de CINQUANTE.
+
+           A CETTE TAILLE, RIEN NE TIENT PLUS A COTE. Trois cent soixante-dix
+           points de panneau, moins le fantome et les polaroids, laissent
+           soixante-quinze points pour le titre : une lettre par ligne. La
+           question descend donc d'un rang et reprend TOUTE la largeur, ou elle
+           se pose en deux lignes — exactement la coupure de la maquette.
+
+           LE RANG DU HAUT DEVIENT ALORS CE QUE LA MAQUETTE MONTRE EN GRAND : le
+           fantome a gauche, les deux polaroids a droite, et rien entre les deux
+           qui les retienne. */
+        .fm.vrai{width:56%;}
+
+        /* ═══ ET AU-DESSUS DE CINQ CENT SOIXANTE POINTS, LA MAQUETTE REVIENT ═
+           Son dessin est fait pour un cadre large : a cette largeur le fantome,
+           la question et les polaroids tiennent sur un seul rang, comme chez
+           lui. On ne garde la pile que la ou elle est necessaire. */
+        @media (min-width:560px){
+          .bf-haut{flex-wrap:nowrap;padding-top:34px;}
+          .fm.vrai{width:38%;max-width:250px;}
+          .bf-mots{flex:1 1 auto;order:0;}
+          .bf-polas{order:0;width:118px;max-width:118px;}
         }
 
         /* ═══ LA BANDE DE STYLES ═══════════════════════════════════════════ */
-        .bf-styles{list-style:none;margin:14px 0 0;padding:0 14px 4px;
+        .bf-styles{list-style:none;margin:14px 0 0;padding:0 0 4px;
           display:flex;gap:9px;overflow-x:auto;scroll-snap-type:x proximity;
           scrollbar-width:none;-webkit-overflow-scrolling:touch;}
         .bf-styles::-webkit-scrollbar{display:none;}
@@ -481,22 +573,22 @@ function Styles() {
           overflow:hidden;}
         .bf-styles button.on span{color:#151B33;font-weight:800;}
 
-        /* ═══ LE FANTOME ═══════════════════════════════════════════════════ */
-        .fm{position:relative;flex:none;display:block;width:88px;height:97px;}
-        /* ═══ LA MASCOTTE PREND PLUS DE PLACE QUE LE FANTOME DESSINE ════════
-           Ses neuf dessins portent un decor — une toque, une planche, un
-           bouquet, un pinceau — la ou le fantome vectoriel n'est qu'un corps.
-           A quatre-vingt-huit points, l'entrecote du boucher devient une tache
-           rouge de douze points : on ne voit plus ce qu'il tient, donc on perd
-           exactement ce qui fait l'interet de ces dessins.
-           CENT VINGT-HUIT POINTS, ET LA QUESTION GARDE SA PLACE : le panneau
-           offre trois cent trente, la mascotte en prend cent vingt-huit, il
-           reste cent quatre-vingt-quatorze pour le titre — de quoi le poser en
-           trois ou quatre lignes, comme la maquette. */
-        .fm.vrai{width:112px;height:auto;align-self:center;margin-left:-6px;}
+        /* ═══ LE FANTOME ═══════════════════════════════════════════════════
+           LE DESSINE GARDE UNE TAILLE FIXE : il remplit sa boite entierement,
+           donc cent vingt points de large font cent vingt points de fantome.
+           Une mascotte de la meme largeur n'en donne que les trois cinquiemes
+           — voir le grand commentaire des polaroids, c'est toute la difference
+           entre les deux et c'est pour ca qu'elles n'ont pas la meme regle. */
+        .fm{position:relative;flex:none;display:block;width:120px;height:132px;}
+        .fm.vrai{height:auto;align-self:center;margin-left:-8px;}
         .fm-img{display:block;width:100%;height:auto;
           filter:drop-shadow(0 10px 22px rgba(90,40,130,.24));
           animation:fmFlotte 4.2s ease-in-out infinite;}
+        /* LES BORDS DES DEUX SCENES SONT DEJA ETEINTS DANS LEUR FICHIER —
+           voir scripts/fantomes-mascottes.mjs. Rien a faire ici, et c'est le
+           but : un mask-image CSS se compose differemment entre Safari et
+           Chromium, et la sanction d'une erreur serait une mascotte INVISIBLE
+           sur l'iPhone ou le produit se teste. */
         .bf-f{margin-top:-6px;}
         /* LE HALO EST DERRIERE LE CORPS, ET IL RESPIRE. C'est ce qui fait la
            difference entre un pictogramme et un personnage lumineux — les

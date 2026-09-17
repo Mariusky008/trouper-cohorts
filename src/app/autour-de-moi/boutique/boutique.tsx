@@ -897,7 +897,14 @@ export function Boutique() {
             moment ? », « Et si vous goûtiez la garbure landaise avant d'y
             aller ? » — et un titre au-dessus ferait deux titres pour un écran,
             dont le premier serait plus petit que le second. */}
-        <div className="mu bq-mu">
+        {/* LA CLASSE DIT LEQUEL DES DEUX EST MONTÉ, ET ELLE EST NÉCESSAIRE.
+            Les deux vivent dans le même `.mu` — donc sous la même encre claire
+            — mais ils ne veulent pas le même fond : la vitrine est un panneau
+            ROSE sur la page claire, l'atelier est une NUIT. Peindre le fond
+            sombre sur les deux poserait le panneau rose au milieu d'un
+            rectangle noir. Voir la feuille, section « l'atelier garde sa
+            nuit ». */}
+        <div className={`mu bq-mu${essaiOuvert ? " atelier" : " vitrine"}`}>
           {/* ═══ ON OUVRE SUR LA PRISE DE VUE, PAS SUR LE MUR ════════════════
 
               Ses trois maquettes disent la même chose, et elles la disent
@@ -971,6 +978,23 @@ export function Boutique() {
               key={c.id}
               mur={murDuLieu}
               ouvrirSur={onEssaie ? "depot" : undefined}
+              /**
+               * LE DERNIER GESTE DE L'AVANT-GOÛT MÈNE À L'OFFRE DU JOUR.
+               *
+               * SANS LUI, LE PARCOURS FINISSAIT SUR RIEN. `EcranGout` ne
+               * dessine son bouton final que si on lui donne quelque chose à
+               * faire ; la page ne lui donnait rien, donc on jouait cinq écrans
+               * pour arriver devant un récapitulatif sans issue. C'est le
+               * défaut le plus cher qu'un parcours puisse avoir : il n'échoue
+               * pas, il s'arrête.
+               *
+               * ET IL MÈNE OÙ LE MOT PROMET. « Gardez-la-moi » chez le boucher,
+               * « Réserver » chez le restaurant : les deux sont écrits sur
+               * l'offre du jour, quelques sections plus bas, avec ce qu'il
+               * reste et l'heure de service. On y emmène plutôt que d'ouvrir un
+               * second chemin qui dirait la même chose autrement.
+               */
+              onReserver={() => allerA("aujourdhui")}
             />
           )}
         </div>
@@ -1836,7 +1860,7 @@ function Styles() {
         .bq-ou{position:sticky;top:0;z-index:12;display:flex;align-items:center;
           gap:7px;height:0;overflow:hidden;padding:0 16px;
           opacity:0;transition:opacity .18s ease,height .18s ease;
-          background:linear-gradient(180deg,rgba(5,9,12,.94),rgba(5,9,12,.82));
+          background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(255,255,255,.88));
           -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
           border-bottom:1px solid transparent;}
         .bq-ou.vu{height:38px;opacity:1;border-bottom-color:var(--bq-ligne);}
@@ -1845,7 +1869,8 @@ function Styles() {
         .bq-ou i{font-style:normal;font-size:10.5px;font-weight:800;
           color:rgba(61,226,166,.5);margin-left:-4px;}
         .bq-ou span{min-width:0;overflow:hidden;text-overflow:ellipsis;
-          white-space:nowrap;font-size:12.5px;font-weight:800;color:#D6E2DA;}
+          white-space:nowrap;font-size:12.5px;font-weight:800;
+          color:var(--bq-encre);}
 
         /* ═══ LE CHAPITRE ═══ voir le composant Chapitre.
            SON RANG EST LA CHOSE NOUVELLE : « 3 / 8 » dit d'un coup d'oeil ou
@@ -1996,7 +2021,8 @@ function Styles() {
         .bq-voix-c{flex:1;min-width:0;}
         .bq-voix-n{font-size:15px;font-weight:800;}
         .bq-voix-n s{text-decoration:none;font-weight:600;color:var(--bq-pale);}
-        .bq-sig{margin:6px 0 0;font-size:15px;line-height:1.4;color:#D8FFEE;font-style:italic;}
+        .bq-sig{margin:6px 0 0;font-size:15px;line-height:1.4;
+          color:var(--bq-encre);font-style:italic;}
         .bq-mot{margin:8px 0 0;font-size:12.5px;line-height:1.55;color:var(--bq-pale);}
 
         .bq-gal{display:flex;gap:9px;overflow-x:auto;margin-top:16px;
@@ -2032,7 +2058,7 @@ function Styles() {
         .bq-vu img{width:154px;height:120px;object-fit:cover;border-radius:14px;display:block;}
         .bq-vu figcaption{margin-top:6px;display:flex;align-items:baseline;gap:6px;
           flex-wrap:wrap;font-size:11px;}
-        .bq-vu figcaption b{font-weight:800;color:#DCE8E1;}
+        .bq-vu figcaption b{font-weight:800;color:var(--bq-encre);}
         .bq-vu figcaption em{font-style:normal;color:var(--bq-pale);}
         /* Celles du jour portent la menthe : c'est la seule chose qui distingue
            une preuve d'aujourd'hui d'une preuve de mars. */
@@ -2117,7 +2143,39 @@ function Styles() {
            cent quatre-vingt-dix de contenu. Mesure a 1440x900 : exactement la
            hauteur de l'ecran, ce qui est la signature de ce defaut.
            .mu.bq-mu passe devant sans rien changer chez l'autre appelant. */
-        .mu.bq-mu{background:transparent;max-width:none;min-height:0;margin:12px 0 0;}
+        /* ═══ L'ATELIER GARDE SA NUIT, ET C'ETAIT LE DEFAUT LE PLUS GRAVE ═══
+
+           « Les textes sont invisibles ou tres tonalite sur tonalite sur toutes
+           les pages. »
+
+           IL AVAIT RAISON, ET LA CAUSE TIENT EN UN MOT : transparent. Tout ce
+           qui vit dans .mu — le mur des essayages, le parcours d'essai,
+           l'Avant-gout — est ecrit pour un fond de nuit : .mu pose
+           color:#EAF0F6 sur background:#070B12. En neutralisant le fond pour
+           que le composant tienne dans une section de page, on a garde l'encre
+           BLANCHE et retire le NOIR : blanc sur blanc, sur toutes les pages,
+           chez tous les metiers.
+
+           ET SES MAQUETTES DE L'AVANT-GOUT SONT SOMBRES. Les cinq ecrans du
+           magret sont dessines sur une nuit bleue, photo pleine largeur, titre
+           blanc, accent magenta. Le bon geste n'est donc pas d'eclaircir le
+           parcours — ce serait le decoiffer — c'est de LUI RENDRE SON FOND.
+
+           LE PANNEAU NOIR EST AUSSI CE QUE LA PAGE RACONTE. Dehors la vitrine
+           claire, le panneau rose, la question ; dedans l'atelier, ou l'on
+           joue. Le passage de l'un a l'autre se voit d'un coup d'oeil. */
+        .mu.bq-mu{max-width:none;min-height:0;margin:12px 0 0;
+          background:transparent;}
+        .mu.bq-mu.atelier{margin:14px 0 0;padding:16px 12px 20px;
+          border-radius:24px;overflow:hidden;
+          background:linear-gradient(178deg,#101829 0%,#070B12 58%);
+          box-shadow:0 22px 50px -34px rgba(10,14,30,.75);}
+        /* LA SECTION DU COEUR RESSERRE SA GOUTTIERE. Le panneau rose posait sa
+           propre marge de dix points PAR-DESSUS les dix-huit de la section : il
+           se retrouvait a vingt-huit points du bord quand la maquette l'y met a
+           onze. Le panneau ne pose plus rien, la section decide, et le bloc
+           prend enfin la largeur qu'il a chez lui. */
+        .bq-s.bq-mur{padding-left:12px;padding-right:12px;}
         /* LE COMPOSANT SE PRESENTE DEJA — ICI, C'EST LE CHAPITRE QUI LE FAIT.
            La page affichait « Ce que les gens laissent ici » puis « Ce que les
            gens ont laisse ici aujourd'hui » a dix points d'ecart. Le nom du
@@ -2134,7 +2192,7 @@ function Styles() {
         .bq-mur.essai{background:linear-gradient(180deg,rgba(139,125,246,.1),
           rgba(139,125,246,.03) 60%,transparent);
           border-top:1px solid rgba(139,125,246,.24);}
-        .bq-mur.essai .bq-k{color:#C9BCFF;}
+        .bq-mur.essai .bq-k{color:#6D5BF6;}
 
         @media (min-width:600px){
           .bq{border-left:1px solid var(--bq-ligne);border-right:1px solid var(--bq-ligne);}
