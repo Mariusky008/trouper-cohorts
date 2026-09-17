@@ -3913,6 +3913,21 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
       conseil: m?.conseil,
       voix: c.voix,
       prix: c.menu.prix,
+      /**
+       * ═══ COMBIEN IL EN RESTE, ICI AUSSI ══════════════════════════════════
+       *
+       * CETTE LIGNE MANQUAIT, ET PERSONNE NE POUVAIT LE VOIR EN LISANT LE
+       * CODE. Un restaurant qui a un menu du jour passe par CE retour-ci ;
+       * l'autre, plus bas, porte `combien: m?.places` depuis toujours. La fiche
+       * de la maquette demande deux lignes — ce qu'il reste, puis où c'est — et
+       * le même restaurant les avait toutes les deux le matin, une seule à
+       * midi. Le défaut n'était visible qu'à l'heure où il sert.
+       *
+       * C'EST LA MÊME DONNÉE ET LA MÊME RÈGLE QUE PLUS BAS : le nombre vient
+       * du moment, donc du commerçant, et il n'est écrit que s'il l'a donné.
+       * On ne compte jamais à sa place.
+       */
+      combien: m?.places,
       etiquette: "MENU DU JOUR",
       frais: m ? fraicheurEcrite(m, heure) : undefined,
     };

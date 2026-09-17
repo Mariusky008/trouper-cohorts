@@ -2137,9 +2137,6 @@ console.log("\n══ ce qu'on dépose se voit et s'écrit ══");
   await cA.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
   const pA = await cA.newPage();
   pA.on("pageerror", (e) => erreurs.push(String(e)));
-  await pA.goto(`${BASE}/autour-de-moi`, { waitUntil: "networkidle" });
-  await pA.waitForSelector(".ap-fav2");
-  await pA.waitForTimeout(4600);
   /**
    * ON VISE LA CIRIÈRE, ET C'EST UN CHOIX DE MESURE.
    *
@@ -2152,21 +2149,41 @@ console.log("\n══ ce qu'on dépose se voit et s'écrit ══");
    * LA BIJOUTIÈRE ET LA CIRIÈRE, ELLES, RENDENT SANS SORTIR DU NAVIGATEUR —
    * une paire photographiée à l'avance pour l'une, un PNG détouré posé sur un
    * gabarit mesuré pour l'autre. Le dépôt qui suit est le même pour tous les
-   * métiers : c'est lui qu'on vérifie, pas le moteur. On accepte les deux,
-   * parce que le paquet ne montre pas les mêmes commerces à toute heure.
+   * métiers : c'est lui qu'on vérifie, pas le moteur.
+   *
+   * ═══ ON LA NOMME, ON NE LA CHERCHE PLUS ═══════════════════════════════
+   *
+   * Premier jet : la garde avançait dans le paquet jusqu'à croiser un nom qui
+   * ressemblait à « cirière ». L'ordre du paquet n'est pas stable d'un
+   * chargement à l'autre — deux parcours consécutifs, à la même heure figée,
+   * la placent à deux rangs différents, et parfois nulle part dans les
+   * vingt-deux premières cartes. La garde tombait donc de trois façons : elle
+   * ne la trouvait pas et se déclarait satisfaite en passant ; elle tombait
+   * sur un ÉVÉNEMENT — qui n'a pas de comptoir, donc pas de fantôme à ouvrir —
+   * et attendait trente secondes qu'un bouton désactivé devienne cliquable ;
+   * ou elle marchait, une fois sur deux.
+   *
+   * `?carte=cirier` la met au sommet, comme le fait déjà le reste de ce
+   * fichier. Une garde qui dépend de l'ordre du paquet ne mesure pas ce
+   * qu'elle croit : elle mesure le paquet.
    */
-  let trouve = false;
-  for (let i = 0; i < 22; i++) {
-    const n = await pA.$eval(".ap-loin-t b", (e) => e.textContent.trim()).catch(() => "");
-    if (/bijou|cirière|ciriere/i.test(n)) { trouve = true; break; }
-    const b = await pA.$(".ap-suiv");
-    if (!b || !(await b.isEnabled())) break;
-    await b.click();
-    await pA.waitForTimeout(400);
-  }
-  if (!trouve) {
-    console.log("   (ni bijoutière ni cirière croisées à cette heure-ci)");
-  } else {
+  await pA.goto(`${BASE}/autour-de-moi?carte=cirier`, { waitUntil: "networkidle" });
+  await pA.waitForSelector(".ap-fav2");
+  await pA.waitForTimeout(4600);
+  const sommet = await pA.evaluate(() => ({
+    nom: (document.querySelector(".ap-loin-t b") || {}).textContent?.trim() ?? "",
+    // LE FANTÔME EST-IL VIVANT ? Les deux se lisent dans la MÊME évaluation :
+    // séparés, le nom peut venir d'une carte et l'état du bouton d'une autre.
+    pret: !(document.querySelector(".ap-monfantome") || {}).disabled,
+  }));
+  const trouve = /bijou|cirière|ciriere/i.test(sommet.nom) && sommet.pret;
+  dire(
+    trouve,
+    `la cirière est au sommet et son fantôme est ouvrable (« ${sommet.nom} », ${
+      sommet.pret ? "actif" : "éteint"
+    })`,
+  );
+  if (trouve) {
     await pA.click(".ap-monfantome");
     await pA.waitForTimeout(1000);
     // ON DEPOSE UNE PHOTO DANS LA PHOTOTHEQUE : la garde n'a pas d'appareil, et

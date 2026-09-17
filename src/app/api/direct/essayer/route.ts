@@ -257,9 +257,9 @@ async function parOpenAI(
    * que le temps alloué à la fonction. En qualité maximale, une édition d'image
    * dépasse couramment la minute.
    *
-   *   · `quality: low` divise l'attente par deux à trois. Pour un essai qu'on
-   *     regarde sur un téléphone avant de décider, c'est le bon compromis — et
-   *     c'est réglable sans redéployer par `OPENAI_IMAGE_QUALITY`.
+   *   · `quality` décide de la finesse ET de l'attente. On est en HAUTE depuis
+   *     qu'il l'a demandé pour sa démonstration — voir plus bas, avec ce que
+   *     ça coûte. `OPENAI_IMAGE_QUALITY` redescend sans redéployer.
    *   · `size` fixe la sortie au carré le plus petit utile. Sans lui, le modèle
    *     choisit, et il choisit grand.
    *   · `input_fidelity: high` est l'inverse : il COÛTE du temps, mais c'est lui
@@ -267,7 +267,23 @@ async function parOpenAI(
    *     modèle « améliore » la photo et la cliente ne se reconnaît plus — ce qui
    *     vide l'essai de son sens.
    */
-  forme.append("quality", s(process.env.OPENAI_IMAGE_QUALITY) || "medium");
+  /**
+   * ═══ LA QUALITÉ PASSE EN HAUTE, ET C'EST SA DÉCISION ══════════════════════
+   *
+   * « Passe en high pour le moment pour que ma démo fonctionne parfaitement. »
+   *
+   * LE COMPROMIS EST RENVERSÉ, ET IL FAUT SAVOIR CE QU'ON ÉCHANGE. « medium »
+   * était un choix contre les HTTP 504 qu'il avait eus sur son téléphone : la
+   * passerelle coupe quand la génération dépasse le temps alloué. En haute, une
+   * édition d'image dépasse couramment la minute — donc le 504 redevient
+   * possible, et c'est le prix qu'il a choisi de payer pour que la démonstration
+   * soit belle.
+   *
+   * LA VARIABLE D'ENVIRONNEMENT GAGNE TOUJOURS : c'est le seul moyen de
+   * redescendre en production sans redéployer, le jour où une coupure vaudrait
+   * pire qu'un rendu un peu moins fin.
+   */
+  forme.append("quality", s(process.env.OPENAI_IMAGE_QUALITY) || "high");
   // LE RÉGLAGE D'ENVIRONNEMENT GAGNE TOUJOURS, parce que c'est le seul moyen de
   // rattraper un format en production sans redéployer. À défaut, on suit la
   // photo du client ; à défaut encore, le carré d'avant.
@@ -319,7 +335,10 @@ async function parOpenAI(
       modele,
       images: reference ? ["client", "reference"] : ["client"],
       format,
-      qualite: s(process.env.OPENAI_IMAGE_QUALITY) || "medium",
+      // LA TRACE DIT LA VRAIE VALEUR, PAS L'ANCIENNE. Un journal qui affiche
+      // « medium » pendant qu'on envoie « high » fait chercher la panne du
+      // mauvais côté pendant une heure.
+      qualite: s(process.env.OPENAI_IMAGE_QUALITY) || "high",
       fidelite: "high",
       entree: {
         client: dimensions(photo.donnees),

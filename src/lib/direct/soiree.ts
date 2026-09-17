@@ -60,8 +60,19 @@
  *                  l'Avant-goût, réduite à un seul temps.
  *   · `question` — on répond, on apprend. Un musée, un vide-grenier : ce qu'on
  *                  essaie est une CURIOSITÉ, et c'est aussi valable qu'un son.
+ *   · `recette`  — le barman monte le cocktail DEVANT VOUS, geste par geste.
+ *
+ * LA RECETTE EST ARRIVÉE APRÈS COUP, ET C'EST LUI QUI L'A DEMANDÉE. « Il n'y a
+ * pas assez de plus-value quand on clique sur le fantôme pour avoir un effet
+ * wow, j'ai trop envie d'y aller… on met l'accent sur un cocktail du soir que le
+ * barman nous présente pas à pas pour nous donner envie. »
+ *
+ * IL A RAISON, ET LA DIFFÉRENCE EST DE NATURE. Écouter dix secondes, c'est
+ * RECEVOIR quelque chose ; voir un verre se monter couche après couche, c'est
+ * assister à un geste. Le premier informe, le second donne envie — et c'est la
+ * seule chose que cet écran a à faire.
  */
-export type FormeEssai = "son" | "film" | "image" | "geste" | "question";
+export type FormeEssai = "son" | "film" | "image" | "geste" | "question" | "recette";
 
 /**
  * UNE RÉACTION, À LA FIN DE L'ESSAI.
@@ -71,7 +82,21 @@ export type FormeEssai = "son" | "film" | "image" | "geste" | "question";
  * commerçant a besoin que ce chiffre veuille dire quelque chose : c'est lui qui
  * lui dira si son affiche donne envie.
  */
-export type ReactionEssai = { cle: string; emoji: string; mot: string };
+export type ReactionEssai = {
+  cle: string;
+  emoji: string;
+  mot: string;
+  /**
+   * LE DESSIN DE SA MAQUETTE, ET IL N'EST PAS UN ÉMOJI.
+   *
+   * Ses trois réactions sont deux VISAGES TRACÉS au trait dans un cercle, et une
+   * flamme. Un émoji arrive avec ses couleurs et change de dessin d'un téléphone
+   * à l'autre ; le tracé prend la couleur du texte et reste le même partout.
+   * L'émoji reste pour la flamme, qui est la seule des trois à devoir être
+   * chaude.
+   */
+  icone?: "neutre" | "sourire" | "feu";
+};
 
 /**
  * L'ESSAI D'UNE SOIRÉE — `trial_experience`.
@@ -101,6 +126,21 @@ export type EssaiSoiree = {
   /** Pour `geste` : ce que dit le bouton, et ce qui se révèle après. */
   geste?: string;
   apres?: string;
+  /**
+   * POUR `recette` : le verre qui se monte, couche après couche.
+   *
+   * CHAQUE ÉTAPE EST UN GESTE ET UNE COULEUR. Le geste est ce que le barman dit
+   * en le faisant — « je givre le verre », « deux traits d'amer » — la couleur
+   * est ce qui apparaît dans le verre. On ne montre pas une liste
+   * d'ingrédients : on montre quelqu'un en train de faire quelque chose.
+   *
+   * `part` EST LA HAUTEUR DE LA COUCHE, en parts du verre. Elles n'ont pas
+   * besoin de faire un compte rond : un verre qu'on remplit aux trois quarts
+   * ressemble plus à un verre qu'un verre rempli à ras bord.
+   */
+  etapes?: { emoji: string; mot: string; dit: string; teinte: string; part: number }[];
+  /** Ce qui se pose sur le bord à la fin : la rondelle, la feuille, la paille. */
+  garniture?: string;
   /** « Ça vous met dans l'ambiance ? » */
   question: string;
   reactions: ReactionEssai[];
@@ -304,9 +344,9 @@ export function ouEnEstLaSoiree(
 
 /** Les trois réactions, identiques partout. Voir `ReactionEssai`. */
 const AMBIANCE: ReactionEssai[] = [
-  { cle: "non", emoji: "😐", mot: "Pas trop" },
-  { cle: "oui", emoji: "🙂", mot: "Sympa" },
-  { cle: "feu", emoji: "🔥", mot: "Ça va être bien !" },
+  { cle: "non", emoji: "😐", mot: "Pas trop", icone: "neutre" },
+  { cle: "oui", emoji: "🙂", mot: "Sympa", icone: "sourire" },
+  { cle: "feu", emoji: "🔥", mot: "Ça va être bien !", icone: "feu" },
 ];
 
 /**
@@ -430,6 +470,37 @@ const SOIREE_TERRASSE: Soiree = {
   photo: "/direct/terrasse-au-soleil.jpg",
   accent: "#FFB24B",
   essais: [
+    /**
+     * ═══ LE COCKTAIL DU SOIR, MONTÉ DEVANT VOUS ═══════════════════════════
+     *
+     * « On met l'accent sur un cocktail du soir que le barman nous présente pas
+     * à pas pour nous donner envie. »
+     *
+     * CINQ GESTES, ET AUCUN N'EST UNE LIGNE D'INGRÉDIENT. « Je givre le verre
+     * au sucre de canne » n'est pas la même phrase que « sucre de canne » : la
+     * première montre quelqu'un, la seconde remplit un tableau. C'est toute la
+     * différence entre une recette et une envie.
+     *
+     * LE VERRE SE REMPLIT VRAIMENT, couche par couche, dans la couleur de
+     * chaque geste. On ne raconte pas le cocktail, on le regarde se faire.
+     */
+    {
+      id: "cocktail",
+      forme: "recette",
+      chapeau: "LE COCKTAIL DE CE SOIR",
+      etiquette: { haut: "SIGNATURE", bas: "Le Landais" },
+      titre: "Lou le monte devant vous, geste par geste.",
+      garniture: "🍋",
+      etapes: [
+        { emoji: "🧊", mot: "La glace", dit: "Trois gros glaçons, jamais de pilée : ça fondrait trop vite.", teinte: "#CFE8FF", part: 0.26 },
+        { emoji: "🥃", mot: "L’armagnac", dit: "Quatre centilitres d’un petit producteur de Gabarret.", teinte: "#C97A2E", part: 0.3 },
+        { emoji: "🍯", mot: "Le sirop de pin", dit: "Un trait. C’est lui qui fait dire « tiens, c’est quoi ? ».", teinte: "#E8B04B", part: 0.14 },
+        { emoji: "🍋", mot: "Le citron", dit: "Pressé au moment, sinon ça tourne amer en dix minutes.", teinte: "#F2E06A", part: 0.16 },
+        { emoji: "🫧", mot: "L’eau de Dax", dit: "On allonge doucement, et on ne remue pas. Le reste se fait tout seul.", teinte: "#9FD8F2", part: 0.14 },
+      ],
+      question: "Ça vous met dans l’ambiance ?",
+      reactions: AMBIANCE,
+    },
     {
       id: "lumiere",
       forme: "geste",

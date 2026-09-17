@@ -103,7 +103,23 @@ async function jouerLEssai(vraiment = true) {
   const l = await p.$(".so-lire");
   if (l) {
     await l.click();
-    await p.waitForTimeout(900);
+    // ON ATTEND D'AVOIR VRAIMENT ENTENDU. Deux secondes et demie : c'est la
+    // barre que le lecteur lui-même se donne, plus une marge de démarrage.
+    // Attendre moins traverserait l'essai sans l'avoir joué, et la garde
+    // vérifierait alors le contraire de ce qu'elle annonce.
+    await p.waitForTimeout(3200);
+  }
+  // LE COCKTAIL SE VERSE COUCHE PAR COUCHE, et une garde qui n'appuierait
+  // qu'une fois s'arrêterait sur les glaçons. On appuie tant que le verre n'est
+  // pas monté — c'est le GESTE qu'on décrit, pas un nombre d'étapes : le jour
+  // où Lou ajoutera un ingrédient, cette boucle n'aura pas à changer.
+  for (let i = 0; i < 12; i++) {
+    if (!(await p.$(".so-recette"))) break;
+    if (await p.$(".so-recette.pleine")) break;
+    const v = await p.$(".so-recette .so-pave:not([disabled])");
+    if (!v) break;
+    await v.click();
+    await p.waitForTimeout(250);
   }
 }
 
@@ -232,15 +248,43 @@ for (const f of ["Infos", "Questions", "Sondages"]) {
 }
 await p.locator(".so-filtres button", { hasText: "Tout" }).first().click();
 await p.waitForTimeout(300);
-const avant = await p.evaluate(() => !!document.querySelector(".so-sondage em"));
+/**
+ * AVANT DE VOTER, ON NE SAIT RIEN — NI LE CHIFFRE, NI LA BARRE.
+ *
+ * LA GARDE MESURE LA JAUGE, ET NON LE POURCENTAGE. Le pourcentage était déjà
+ * caché ; la barre, elle, était dessinée à sa vraie largeur dès l'ouverture, et
+ * elle disait le résultat en plus gros que le chiffre. Une garde qui n'aurait
+ * regardé que le texte aurait déclaré l'écran conforme pendant que l'œil, lui,
+ * lisait la réponse — c'est exactement le vote de conformité qu'on voulait
+ * empêcher.
+ */
+const avant = await p.evaluate(() => ({
+  chiffres: !!document.querySelector(".so-sondage em"),
+  jauges: [...document.querySelectorAll(".so-sondage .so-jauge")].map(
+    (j) => j.getBoundingClientRect().width,
+  ),
+}));
 await p.click(".so-sondage button");
-await p.waitForTimeout(400);
+await p.waitForTimeout(600);
 const apres = await p.evaluate(() => ({
   chiffres: !!document.querySelector(".so-sondage em"),
   total: (document.querySelector(".so-total") || {}).textContent ?? "",
+  jauges: [...document.querySelectorAll(".so-sondage .so-jauge")].map(
+    (j) => j.getBoundingClientRect().width,
+  ),
 }));
-dire(!avant && apres.chiffres, `un sondage se vote sans écrire un mot, et rend son résultat`);
+dire(!avant.chiffres && apres.chiffres, `un sondage se vote sans écrire un mot, et rend son résultat`);
 dire(/réponses/.test(apres.total), `qui dit combien de gens ont répondu (« ${apres.total} »)`);
+dire(
+  avant.jauges.length > 0 && avant.jauges.every((w) => w < 1),
+  `et AUCUNE barre ne trahit le résultat avant le vote (${avant.jauges
+    .map((w) => Math.round(w))
+    .join(" · ")} px)`,
+);
+dire(
+  apres.jauges.some((w) => w > 8),
+  `la barre n'arrive qu'après (${apres.jauges.map((w) => Math.round(w)).join(" · ")} px)`,
+);
 
 console.log("\n══ le Fantôme ClikMe ne parle que de ce qu'on a vraiment essayé ══");
 await entrer("bar à vins");
@@ -260,6 +304,102 @@ dire(
   /vous avez/i.test(avec.mot),
   `et il parle à la deuxième personne (« ${avec.mot.slice(0, 56)}… »)`,
 );
+
+/* ═══ CE QU'ON DÉCOUVRE DOIT DONNER ENVIE ═══════════════════════════════════
+
+   « Rien ne fait envie, il n'y a pas assez de plus-value quand on clique sur le
+   Fantôme pour avoir un effet wow j'ai trop envie d'y aller […] on sait ce
+   qu'on va écouter par exemple, on met l'accent sur un cocktail du soir que le
+   barman nous présente PAS À PAS pour nous donner envie. »
+
+   LA GARDE MESURE LE « PAS À PAS », ET NON LA PRÉSENCE D'UN COCKTAIL. Un écran
+   qui afficherait la recette entière d'un bloc passerait n'importe quel test de
+   contenu : les cinq ingrédients seraient là, le mot « cocktail » aussi. Ce
+   qu'il demande est que le verre MONTE — donc on compte les couches avant et
+   après un versement, et l'on vérifie qu'il en manquait.
+*/
+console.log("\n══ un bar fait découvrir son cocktail, geste par geste ══");
+await entrer("terrasse au soleil");
+const recette = await p.evaluate(() => ({
+  chapeau: (document.querySelector(".so-chapeau") || {}).textContent?.trim() ?? "",
+  etapes: [...document.querySelectorAll(".so-etapes li span")].map((s) => s.textContent.trim()),
+  couches: document.querySelectorAll(".so-liq i").length,
+  dit: (document.querySelector(".so-dit") || {}).textContent?.trim() ?? "",
+}));
+dire(/cocktail/i.test(recette.chapeau), `le bar annonce un cocktail (« ${recette.chapeau} »)`);
+dire(
+  recette.etapes.length >= 4,
+  `et il le monte en plusieurs temps (${recette.etapes.join(" · ")})`,
+);
+dire(recette.couches === 0, `le verre est vide tant qu'on n'a rien versé (${recette.couches})`);
+dire(recette.dit.length > 20, `et quelqu'un parle par-dessus (« ${recette.dit.slice(0, 50)}… »)`);
+
+await p.click(".so-recette .so-pave");
+await p.waitForTimeout(400);
+const unePart = await p.evaluate(() => ({
+  couches: document.querySelectorAll(".so-liq i").length,
+  pleine: !!document.querySelector(".so-recette.pleine"),
+  question: !!document.querySelector(".so-reac"),
+}));
+dire(unePart.couches === 1, `un appui verse UNE couche, pas la recette (${unePart.couches})`);
+dire(
+  !unePart.pleine && !unePart.question,
+  `et l'on ne demande pas encore l'avis : le verre n'est pas monté`,
+);
+
+await jouerLEssai();
+const montee = await p.evaluate(() => ({
+  couches: document.querySelectorAll(".so-liq i").length,
+  pleine: !!document.querySelector(".so-recette.pleine"),
+  question: (document.querySelector(".so-reac > p") || {}).textContent?.trim() ?? "",
+  visages: document.querySelectorAll(".so-reac-l .so-reac-v, .so-reac-l .so-reac-i").length,
+}));
+dire(
+  montee.couches === recette.etapes.length && montee.pleine,
+  `versé jusqu'au bout, le verre porte toutes ses couches (${montee.couches}/${recette.etapes.length})`,
+);
+dire(
+  /ambiance|envie|plaît/i.test(montee.question),
+  `alors seulement on demande ce qu'on en pense (« ${montee.question} »)`,
+);
+dire(montee.visages === 3, `et les trois réactions sont dessinées (${montee.visages})`);
+
+/* ═══ ET UN ÉVÉNEMENT FAIT DÉCOUVRIR SA MUSIQUE ═════════════════════════════
+
+   « Fais un bar avec la découverte "cocktail" et un événement sur l'app aussi
+   avec la découverte "musique" du lieu, et tu mets une musique libre de
+   droit. »
+
+   LA GARDE NE CHERCHE PAS « SON » DANS LE CODE : elle appuie sur le lecteur et
+   regarde si le fichier avance vraiment. Un lecteur qui ne joue rien a la même
+   apparence qu'un lecteur qui joue.
+*/
+console.log("\n══ un événement fait découvrir la musique du lieu ══");
+await p.goto(`${BASE}/autour-de-moi?carte=kiosque`, { waitUntil: "networkidle" });
+await p.waitForTimeout(900);
+const geste = await p.$(".ap-soirer");
+if (geste) {
+  await geste.click();
+  await p.waitForTimeout(900);
+}
+const musique = await p.evaluate(() => ({
+  chapeau: (document.querySelector(".so-chapeau") || {}).textContent?.trim() ?? "",
+  etiquette: (document.querySelector(".so-etiq") || {}).innerText?.replace(/\s+/g, " ").trim() ?? "",
+  lecteur: !!document.querySelector(".so-lire"),
+  source: (document.querySelector(".so-son audio") || {}).getAttribute?.("src") ?? "",
+}));
+dire(/son|musique/i.test(musique.chapeau), `l'événement annonce son son (« ${musique.chapeau} »)`);
+dire(musique.lecteur, `et il y a de quoi l'écouter`);
+dire(!!musique.source, `sur un vrai fichier (${musique.source})`);
+if (musique.lecteur) {
+  await p.click(".so-lire");
+  await p.waitForTimeout(1400);
+  const avance = await p.evaluate(() => {
+    const a = document.querySelector(".so-son audio");
+    return { t: a ? a.currentTime : -1, joue: a ? !a.paused : false };
+  });
+  dire(avance.t > 0.2, `qui avance quand on appuie (${avance.t.toFixed(1)} s)`);
+}
 
 console.log("\n══ l'extrait est servi, et il ne se charge qu'à la demande ══");
 const son = await p.request.get(`${BASE}/direct/soiree/son-de-ce-soir.wav`);
