@@ -32,6 +32,10 @@
 // c'est-à-dire exactement ce qu'on essaie de sortir du produit.
 
 import pw from "/opt/node22/lib/node_modules/playwright/index.js";
+import { readFileSync, writeFileSync, mkdtempSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { createRequire } from "node:module";
 
 const PORT = process.argv[2] ?? "3821";
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -224,5 +228,199 @@ for (const f of ["face_landmarker.task", "vision_wasm_internal.wasm"]) {
 }
 
 await nav.close();
+
+/**
+ * ═══ L'ALIGNEMENT, TESTÉ SUR LE VRAI CODE ET NON SUR UNE COPIE ════════════
+ *
+ * « On a encore des problèmes dans la génération des images : la femme a un
+ * visage qui se double un peu sur sa droite. »
+ *
+ * CE DÉFAUT-LÀ N'ÉTAIT PAS DANS LA GÉNÉRATION, IL ÉTAIT DANS LE RECOLLAGE. La
+ * recomposition posait le visage d'origine à sa place SUPPOSÉE au lieu de sa
+ * place MESURÉE ; quelques points d'écart suffisent à faire voir deux bords de
+ * visage. `alignementSurLeRendu` calcule la similitude qui amène les repères de
+ * la photo sur ceux du rendu, et c'est elle qu'on vérifie ici.
+ *
+ * ON L'IMPORTE POUR DE VRAI, ET C'EST NOUVEAU DANS CE FICHIER. La partie
+ * graphique, plus haut, recopie l'algorithme faute de pouvoir charger un module
+ * empaqueté depuis une page — et cette limite est écrite là où elle se trouve.
+ * Celle-ci est de l'arithmétique pure : elle ne touche ni au DOM ni à MediaPipe,
+ * donc elle se transpile et s'exécute telle quelle. Une garde qui teste une
+ * COPIE ne voit pas le jour où l'original change.
+ */
+console.log("\n══ la photo est alignée sur le visage du rendu, pas posée au jugé ══");
+{
+  const exige = createRequire(import.meta.url);
+  const ts = exige("typescript");
+  const source = readFileSync("src/lib/direct/visage.ts", "utf8");
+  const js = ts.transpileModule(source, {
+    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  const dossier = mkdtempSync(join(tmpdir(), "visage-"));
+  const fichier = join(dossier, "visage.mjs");
+  writeFileSync(fichier, js);
+  const { alignementSurLeRendu } = await import(fichier);
+
+  /** Un visage de laboratoire : onze repères, une boîte, une taille. */
+  const faux = (pts) => ({
+    contour: pts,
+    interieur: pts,
+    reperes: pts,
+    boite: { x: 0, y: 0, l: 100, h: 100 },
+    taille: { l: 600, h: 800 },
+  });
+  const base = [
+    [200, 300], [240, 300], [360, 300], [400, 300], [300, 320],
+    [300, 360], [300, 380], [260, 440], [340, 440], [300, 500], [300, 480],
+  ].map(([x, y]) => ({ x, y }));
+
+  /** La même figure, déplacée, agrandie et tournée d'un petit angle. */
+  const bouger = (k, deg, dx, dy) => {
+    const r = (deg * Math.PI) / 180;
+    const c = k * Math.cos(r);
+    const s2 = k * Math.sin(r);
+    return base.map((p) => ({ x: c * p.x - s2 * p.y + dx, y: s2 * p.x + c * p.y + dy }));
+  };
+
+  // 1 · UN DÉCALAGE PUR — le cas le plus fréquent, et celui qui dédouble.
+  {
+    const a2 = alignementSurLeRendu(faux(base), faux(bouger(1, 0, 57, -23)));
+    const ok = a2 && Math.abs(a2.e - 57) < 0.5 && Math.abs(a2.f + 23) < 0.5;
+    dire(!!ok, `un décalage de 57 points est retrouvé au point près (${a2 ? `${a2.e.toFixed(1)} · ${a2.f.toFixed(1)}` : "aucun"})`);
+  }
+  // 2 · UN RECADRAGE — le modèle rend souvent la tête un peu plus grande.
+  {
+    const a2 = alignementSurLeRendu(faux(base), faux(bouger(1.18, 6, 40, 15)));
+    const k = a2 ? Math.hypot(a2.a, a2.b) : 0;
+    const deg = a2 ? (Math.atan2(a2.b, a2.a) * 180) / Math.PI : 0;
+    dire(
+      !!a2 && Math.abs(k - 1.18) < 0.01 && Math.abs(deg - 6) < 0.2,
+      `une mise à l'échelle de 1,18 et six degrés sont retrouvés (${k.toFixed(3)} · ${deg.toFixed(1)}°)`,
+    );
+  }
+  // 3 · ET ON REFUSE L'ABERRANT PLUTÔT QUE DE RECOLLER DE TRAVERS.
+  {
+    dire(
+      alignementSurLeRendu(faux(base), faux(bouger(3.4, 0, 0, 0))) === null,
+      "une échelle de 3,4 est refusée : ce n'est plus un recadrage",
+    );
+    dire(
+      alignementSurLeRendu(faux(base), faux(bouger(1, 35, 0, 0))) === null,
+      "une rotation de 35 degrés est refusée : ce n'est plus la même pose",
+    );
+  }
+  // 4 · LA PHOTO SEULE NE SUFFIT PAS : sans visage trouvé sur le rendu, on ne
+  //     bouge rien plutôt que de deviner.
+  {
+    dire(
+      alignementSurLeRendu(faux(base), faux(base.slice(0, 4))) === null,
+      "et sans repères comparables, aucun alignement n'est rendu",
+    );
+  }
+}
+
+/**
+ * ═══ ET LE MASQUE LAISSE-T-IL LA PLACE D'UNE COUPE LONGUE ? ═══════════════
+ *
+ * « Ce n'est pas tout à fait la même coupe, et ça rend terriblement mal. »
+ *
+ * LE MASQUE OUVRAIT UNE ELLIPSE D'UN RAYON D'UNE FOIS ET QUART LA LARGEUR DU
+ * VISAGE — une couronne qui s'arrête au niveau des oreilles. On demandait donc
+ * « des boucles longues » en interdisant la surface où des boucles longues
+ * tombent : les épaules, la poitrine, les côtés. Le modèle faisait ce qu'il
+ * pouvait dans la couronne, c'est-à-dire une autre coupe.
+ *
+ * ON MESURE DEUX CHOSES, ET LES DEUX SONT DES SURFACES :
+ *
+ *   · CE QUI EST OUVERT DESCEND BIEN SOUS LE MENTON — sans quoi aucune coupe
+ *     longue n'est possible ;
+ *   · ET LE CŒUR DU VISAGE RESTE FERMÉ, pendant que le HAUT DU FRONT est
+ *     ouvert. C'est ce couple qui permet une frange tout en gardant les traits.
+ *
+ * LE MODULE EST CHARGÉ POUR DE VRAI, DANS LA PAGE. `masqueDEssai` a besoin
+ * d'une toile, donc d'un navigateur, mais de rien d'autre : ni MediaPipe, ni
+ * réseau. Transpilé et injecté, c'est le code qui part en production qu'on
+ * interroge — pas une copie qui vieillira sans prévenir.
+ */
+console.log("\n══ le masque laisse la place d'une coupe longue ══");
+{
+  const exige2 = createRequire(import.meta.url);
+  const ts2 = exige2("typescript");
+  const js2 = ts2.transpileModule(readFileSync("src/lib/direct/visage.ts", "utf8"), {
+    compilerOptions: { module: ts2.ModuleKind.ESNext, target: ts2.ScriptTarget.ES2022 },
+  }).outputText;
+
+  const nav2 = await pw.chromium.launch({
+    executablePath: "/opt/pw-browsers/chromium",
+    args: ["--use-gl=swiftshader", "--enable-unsafe-swiftshader"],
+  });
+  const p2 = await (await nav2.newContext({ viewport: { width: 390, height: 844 } })).newPage();
+  await p2.goto(`${BASE}/autour-de-moi`, { waitUntil: "domcontentloaded" });
+  await p2.addScriptTag({ content: `${js2}\nwindow.__visage = { masqueDEssai };`, type: "module" });
+  await p2.waitForFunction(() => !!window.__visage, null, { timeout: 8000 });
+
+  const m = await p2.evaluate(() => {
+    // UN VISAGE DE LABORATOIRE : une boîte de 200 × 260 au milieu d'une image
+    // de 800 × 1000, comme un portrait en buste.
+    const boite = { x: 300, y: 180, l: 200, h: 260 };
+    const cx = boite.x + boite.l / 2;
+    const cy = boite.y + boite.h / 2;
+    // UN OVALE RÉGULIER À LA PLACE DU MAILLAGE : ce qu'on mesure est la
+    // géométrie du masque, pas la finesse de la détection.
+    const contour = Array.from({ length: 36 }, (_, i) => {
+      const t = (i / 36) * Math.PI * 2;
+      return { x: cx + Math.cos(t) * (boite.l / 2), y: cy + Math.sin(t) * (boite.h / 2) };
+    });
+    const plafond = boite.y + boite.h * 0.3;
+    const interieur = contour.map((q) => ({
+      x: cx + (q.x - cx) * 0.9,
+      y: Math.max(cy + (q.y - cy) * 0.9, plafond),
+    }));
+    const v = {
+      contour,
+      interieur,
+      reperes: contour.slice(0, 11),
+      boite,
+      taille: { l: 800, h: 1000 },
+    };
+    const url = window.__visage.masqueDEssai(v, "coiffure");
+    return new Promise((ok) => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement("canvas");
+        c.width = 800;
+        c.height = 1000;
+        const g = c.getContext("2d");
+        g.drawImage(img, 0, 0);
+        // TRANSPARENT = MODIFIABLE. On lit donc l'alpha, et rien d'autre.
+        const alpha = (x, y) => g.getImageData(Math.round(x), Math.round(y), 1, 1).data[3];
+        ok({
+          // Sous le menton, là où tombe une chevelure longue.
+          sousLeMenton: alpha(cx, boite.y + boite.h * 1.6),
+          // Sur le côté, à hauteur d'épaule.
+          surLEpaule: alpha(boite.x - boite.l * 0.6, boite.y + boite.h * 1.5),
+          // Au-dessus du crâne.
+          auDessus: alpha(cx, Math.max(2, boite.y - boite.h * 0.5)),
+          // Le haut du front : ouvert, pour qu'une frange soit possible.
+          leFront: alpha(cx, boite.y + boite.h * 0.14),
+          // Le cœur du visage : fermé.
+          leCoeur: alpha(cx, cy + boite.h * 0.12),
+          // Très bas, sous le buste : refermé, on ne repeint pas la photo.
+          toutEnBas: alpha(cx, 990),
+        });
+      };
+      img.src = url;
+    });
+  });
+  await nav2.close();
+
+  dire(m.sousLeMenton < 40, `sous le menton, le modèle peut dessiner (alpha ${m.sousLeMenton})`);
+  dire(m.surLEpaule < 40, `et sur les épaules aussi (alpha ${m.surLEpaule})`);
+  dire(m.auDessus < 40, `le volume au-dessus du crâne est ouvert (alpha ${m.auDessus})`);
+  dire(m.leFront < 40, `le front est ouvert : une frange est possible (alpha ${m.leFront})`);
+  dire(m.leCoeur > 200, `mais le cœur du visage reste fermé (alpha ${m.leCoeur})`);
+  dire(m.toutEnBas > 200, `et le bas de la photo n'est pas repeint (alpha ${m.toutEnBas})`);
+}
+
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT PASSE");
 process.exit(echecs ? 1 : 0);

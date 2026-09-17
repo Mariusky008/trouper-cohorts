@@ -243,7 +243,27 @@ export async function essayerSurMoi(opts: {
    */
   if (visage && zone) {
     try {
-      const fidele = await reposerLeVisage(photo, j.image, visage, zone);
+      /**
+       * ═══ ON CHERCHE AUSSI LE VISAGE SUR LE RENDU ══════════════════════════
+       *
+       * « La femme a un visage qui se double un peu sur sa droite. »
+       *
+       * C'ÉTAIT LA MOITIÉ MANQUANTE DE LA RECOMPOSITION. On savait où était le
+       * visage sur la PHOTO ; on supposait qu'il était au même endroit sur le
+       * RENDU. Le modèle recadre, décale de quelques points, agrandit un peu —
+       * et quelques points suffisent pour qu'on voie DEUX bords de visage, le
+       * vrai et le recollé.
+       *
+       * UNE SECONDE DÉTECTION COÛTE UNE DEMI-SECONDE, et elle arrive après une
+       * attente de plusieurs secondes qu'on a passé un écran entier à rendre
+       * agréable. C'est le meilleur rapport de tout ce fichier.
+       *
+       * ET SON ÉCHEC NE CASSE RIEN : `reposerLeVisage` sait travailler sans —
+       * elle retombe sur l'ancien calcul, qui vaut mieux que rien quand le
+       * modèle n'a pas bougé la tête.
+       */
+      const vRendu = await trouverLeVisage(j.image);
+      const fidele = await reposerLeVisage(photo, j.image, visage, zone, vRendu);
       return { image: fidele, ms: j.ms ?? 0, visageRepose: true };
     } catch {
       return { image: j.image, ms: j.ms ?? 0 };

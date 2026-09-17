@@ -2881,7 +2881,27 @@ console.log("\n══ la page du commerce ══");
     localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
   );
   const pL = await lieu.newPage();
-  await pL.goto(`${BASE}/autour-de-moi`, { waitUntil: "networkidle" });
+  /**
+   * ═══ ON NOMME LE LIEU, ON NE PREND PLUS CE QUI TOMBE ══════════════════════
+   *
+   * CETTE GARDE MESURE L'ANNONCE D'UN LIEU « EN PLACE » : un commerce chez qui
+   * le grand bouton est la réservation et le rail porte les deux compteurs.
+   * Elle prenait simplement la carte du dessus à midi et demi — ce qui a
+   * marché tant que c'en était une.
+   *
+   * DEPUIS QUE LES BARS ET LES ÉVÉNEMENTS ONT LEUR SOIRÉE, la carte du dessus à
+   * cette heure-là est un BAR : son geste plein est celui du Fantôme et son
+   * rail est celui de l'essai, exactement comme chez un coiffeur. La garde
+   * lisait donc « En parler · Réserver une table · Favori » là où elle
+   * attendait « ♡ 272 · ⇧ 17 · En parler », et concluait à une régression sur
+   * une mise en page parfaitement correcte — celle d'un autre métier.
+   *
+   * ELLE NOMME DONC SON LIEU. Chez Bergine est un restaurant : il réserve, il
+   * n'essaie rien sur personne, il n'a pas de soirée. C'est le cas que cette
+   * garde décrit depuis le premier jour, et le nommer la rend indifférente à
+   * l'ordre du paquet.
+   */
+  await pL.goto(`${BASE}/autour-de-moi?carte=centre`, { waitUntil: "networkidle" });
   await pL.waitForTimeout(2600);
   const a = await pL.evaluate(() => {
     const plein = document.querySelector(
@@ -3567,11 +3587,32 @@ console.log("\n══ la page du commerce ══");
      * mesuré le mur sans jamais vérifier qu'ON PEUT ENCORE L'ATTEINDRE — c'est-
      * à-dire la seule chose que ce changement pouvait casser.
      */
-    const passer = await pV.$(".go-retour");
+    /**
+     * ═══ ON CHERCHE LE MOT, PAS LA CLASSE ══════════════════════════════════
+     *
+     * Premier jet : `.go-retour`, la classe du bouton « Passer cette
+     * découverte » de l'Avant-goût. Chez un bar, le fantôme n'ouvre plus
+     * l'Avant-goût mais la SOIRÉE — dont le bouton s'appelle `.so-retour`. La
+     * garde ne trouvait plus sa porte, restait sur le premier écran, et
+     * déclarait six défauts sur un mur qu'elle n'avait pas atteint.
+     *
+     * C'EST LA MÊME LEÇON QUE CE DOSSIER PAIE RÉGULIÈREMENT : une garde qui
+     * vise une FORME casse au premier changement de dessin ; celle qui vise le
+     * GESTE tient. On cherche donc le bouton qui dit « passer », quel que soit
+     * le parcours qui l'affiche — et le jour où un troisième parcours arrive,
+     * il suffira qu'il propose de passer.
+     */
+    const passer = await pV
+      .locator("button", { hasText: /^\s*passer/i })
+      .first()
+      .elementHandle({ timeout: 2000 })
+      .catch(() => null);
     if (passer) {
-      dire(true, "le fantôme du bar ouvre son avant-goût");
+      dire(true, "le fantôme du bar ouvre son parcours, et on peut le passer");
       await passer.click();
       await pV.waitForTimeout(900);
+    } else {
+      dire(false, "le fantôme du bar ouvre un parcours qu'on peut passer");
     }
     const t = await pV.evaluate(() => {
       return {
