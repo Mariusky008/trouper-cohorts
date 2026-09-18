@@ -785,6 +785,15 @@ async function demanderAvertissement(): Promise<NotificationPermission> {
  * n'est plus qu'une tache ; a quatre-vingts sur la page d'invitation, il porte
  * exactement ce qu'on veut dire a cet instant — vas-y, envoie.
  */
+/**
+ * LE CHEMIN DE SON FANTÔME.
+ *
+ * ÉCRIT UNE FOIS, ET AU NIVEAU DU MODULE : il sert à deux endroits — le test
+ * de présence et la balise qui l'affiche — et deux chaînes recopiées finissent
+ * toujours par diverger d'une lettre.
+ */
+const FANTOME_PNG = "/clikme-fantome.png";
+
 function Fantome({ classe = "ap-fantome", clin = false }: { classe?: string; clin?: boolean }) {
   return (
     <svg
@@ -3065,6 +3074,27 @@ export function ApercuHabitant() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accueilOuvert]);
+  /**
+   * SON FANTÔME, S'IL EST DÉPOSÉ.
+   *
+   * MÊME MÉCANIQUE QUE LES PHOTOS, ET POUR LA MÊME RAISON : on ne devine pas,
+   * on demande au navigateur. Le fichier absent ne laisse aucune trace à
+   * l'écran ; le fichier présent remplace le dessin sans qu'on touche au code.
+   */
+  const [fantomePng, setFantomePng] = useState(false);
+  useEffect(() => {
+    if (!accueilOuvert) return;
+    let vivant = true;
+    const i = new window.Image();
+    i.onload = () => {
+      if (vivant) setFantomePng(true);
+    };
+    i.src = FANTOME_PNG;
+    return () => {
+      vivant = false;
+    };
+  }, [accueilOuvert]);
+
   /** La photo de sa maquette si elle est là, celle du dépôt sinon. */
   const photoDe = (voulue: string, repli: string) => (presentes.has(voulue) ? voulue : repli);
   const dureeActe = ACTES[acte]?.duree ?? 2200;
@@ -6564,7 +6594,22 @@ export function ApercuHabitant() {
                       les deux cartes et à cheval sur leur bas, exactement comme
                       sur la maquette. La classe du clin d'œil est posée par le
                       cadre, donc elle se rejoue à chaque exemple. */}
-                  <span className="ap-ac-f">
+                  {/* ═══ SON FANTÔME, ET TEL QUEL ════════════════════════════
+
+                      « Je t'ai donné le fantôme en PNG plus haut, et ce n'est
+                      toujours pas le bon fantôme. Si tu n'arrives pas à lui
+                      faire faire un clin d'œil alors garde-le tel quel. »
+
+                      C'EST EXACTEMENT CE QU'ON FAIT : son image, entière, sans
+                      rien lui demander. Elle porte déjà le clin d'œil, la
+                      casquette et les bras levés — tout ce que je passais mon
+                      temps à re-dessiner au trait, en moins bien.
+
+                      ET LE DESSIN RESTE EN REPLI. Tant que le fichier n'est pas
+                      déposé, l'écran affiche le fantôme vectoriel plutôt qu'un
+                      carré vide ; le jour où il arrive, il prend sa place sans
+                      qu'une ligne change ici. */}
+                  <span className={`ap-ac-f${fantomePng ? " png" : ""}`}>
                     {/* LA POSE DU CLIN D'OEIL EXISTAIT DEJA, ET C'EST LA SIENNE.
                         `clin` est la variante dessinee pour ses maquettes
                         precedentes : oeil plus gros avec son reflet du bon
@@ -6574,7 +6619,13 @@ export function ApercuHabitant() {
                         prend la pose qui est deja juste, et on lui ajoute un
                         battement a chaque changement d'exemple — voir
                         `apAcClin`. */}
-                    <Fantome classe="ap-ac-fs" clin />
+                    {fantomePng ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img className="ap-ac-fp" src={FANTOME_PNG} alt="" />
+                    ) : (
+                      <Fantome classe="ap-ac-fs" clin />
+                    )}
+                    {!fantomePng && (
                     <svg className="ap-ac-casq" viewBox="0 0 64 30" focusable="false">
                       {/* ─── LA VISIÈRE, PLATE, D'UN SEUL CÔTÉ ───
                           Elle sortait des DEUX côtés au premier jet, et une
@@ -6602,6 +6653,7 @@ export function ApercuHabitant() {
                         Clik<tspan className="ap-ac-casq-r">Me</tspan>
                       </text>
                     </svg>
+                    )}
                   </span>
                 </div>
 
@@ -13419,6 +13471,15 @@ export function ApercuHabitant() {
            LES PROPORTIONS SONT LES SIENNES : la scene prend ce qui reste et
            domine l'ecran, la promesse tient en deux lignes, le bouton est le
            seul aplat plein. */
+        /* ═══ TOUT CET ÉCRAN EST DANS LA POLICE DE LA MARQUE ═══════════════
+           « Les fonts sont aussi différentes du mock-up. » Voir la variable de
+           police déclarée dans le gabarit : un géométrique aux formes rondes,
+           là où le reste de l'application écrit en grotesque neutre.
+           ET SEULEMENT CET ÉCRAN. Le reste de l'application garde Inter, qui
+           est le bon caractère pour lire une fiche de commerce, des horaires et
+           un fil de conversation. Une police d'affiche sur une liste de prix se
+           lit moins bien — c'est un mot-marque, pas une charte. */
+        .ap-accueil{font-family:var(--font-clikme),'Inter',system-ui,sans-serif;}
         .ap-ac-marque{flex:none;padding:14px 20px 0;text-align:center;}
         .ap-ac-marque b{display:block;font-size:40px;font-weight:900;
           letter-spacing:-.02em;line-height:1;color:#fff;}
@@ -13511,6 +13572,15 @@ export function ApercuHabitant() {
         }
         .ap-ac-fs{width:100%;height:100%;
           filter:drop-shadow(0 10px 26px rgba(240,56,156,.5));}
+        /* SON IMAGE, QUAND ELLE EST LA. Elle porte deja sa casquette, son clin
+           d'oeil et ses bras : on ne lui ajoute qu'une ombre pour la decoller
+           des deux photos. Il est CONTENU et non recadre : un fantome rogne
+           n'est plus un fantome. */
+        .ap-ac-fp{width:100%;height:100%;object-fit:contain;display:block;
+          filter:drop-shadow(0 10px 26px rgba(240,56,156,.5));}
+        /* AVEC SON IMAGE, LE CADRE S'ELARGIT : elle porte ses bras ecartes
+           et ses traits de vitesse, qui debordent du gabarit du dessin. */
+        .ap-ac-f.png{width:176px;height:176px;margin-left:-88px;bottom:-14px;}
         /* ═══ ET IL EST BLANC A HALO LILAS, PAS VERT MENTHE ════════════════
            SES QUATRE MAQUETTES MONTRENT LE MEME PERSONNAGE : un corps blanc
            qui vire au lilas dans les plis, un halo rose autour, des joues
@@ -13673,6 +13743,7 @@ export function ApercuHabitant() {
           .ap-ac-marque b{font-size:33px;}
           .ap-ac-scene{margin-top:10px;min-height:150px;}
           .ap-ac-f{width:128px;height:142px;margin-left:-64px;}
+          .ap-ac-f.png{width:150px;height:150px;margin-left:-75px;}
           .ap-ac-casq{width:103px;height:48px;margin-left:-51px;top:7px;}
           .ap-ac-promesse{margin-top:14px;}
           .ap-ac-promesse b{font-size:23px;}

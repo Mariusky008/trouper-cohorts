@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { SITE_URL } from "@/lib/site-url";
 import { MARQUE } from "@/lib/marque";
-import { Geist, Geist_Mono, Anton, Playfair_Display, Caveat } from "next/font/google";
+import { Geist, Geist_Mono, Anton, Playfair_Display, Caveat, Poppins } from "next/font/google";
 import { Toaster } from "sonner";
 import { RecoveryRedirectGuard } from "@/components/auth/recovery-redirect-guard";
 import "./globals.css";
@@ -69,6 +69,39 @@ const playfair = Playfair_Display({
   display: "swap",
 });
 
+/**
+ * ═══ LA POLICE DE CLIKME, ET C'EST CELLE DE SES MAQUETTES ═════════════════
+ *
+ * « Les fonts sont aussi différentes du mock-up. »
+ *
+ * IL A RAISON, ET L'ÉCART SE VOIT AU PREMIER COUP D'ŒIL. L'application écrit
+ * en Inter — une grotesque neutre, excellente pour lire une fiche de commerce,
+ * et qui n'a rien à voir avec ce que montrent ses quatre images : un caractère
+ * GÉOMÉTRIQUE, aux formes rondes et aux graisses très lourdes. Le « O » d'Inter
+ * est un ovale ; celui de ses maquettes est un cercle. Sur un mot-marque de
+ * quarante points, c'est la différence entre deux marques.
+ *
+ * POPPINS EST LE PLUS PROCHE DE CE QU'ELLES MONTRENT, et ce n'est pas un choix
+ * par défaut : c'est le seul géométrique largement disponible dont les
+ * terminaisons rondes s'accordent au dessin du Fantôme. Un caractère anguleux
+ * sous un personnage tout en courbes se voit, même sans savoir pourquoi.
+ *
+ * TROIS GRAISSES, ET PAS UNE DE PLUS. 600 pour la ligne espacée du haut, 800
+ * pour la promesse, 900 pour le mot-marque et le bouton. Chaque graisse
+ * supplémentaire est un fichier que le téléphone télécharge avant d'afficher
+ * le premier écran.
+ *
+ * SERVIE PAR LE SITE, PAS PAR GOOGLE — même raison que les quatre autres :
+ * `next/font` la télécharge au build et l'héberge avec nous, donc aucune
+ * requête vers un tiers quand quelqu'un ouvre l'application.
+ */
+const poppins = Poppins({
+  variable: "--font-clikme",
+  subsets: ["latin"],
+  weight: ["600", "800", "900"],
+  display: "swap",
+});
+
 const caveat = Caveat({
   variable: "--font-main-levee",
   subsets: ["latin"],
@@ -132,7 +165,7 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning className="scroll-smooth">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} ${playfair.variable} ${caveat.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} ${playfair.variable} ${caveat.variable} ${poppins.variable} antialiased`}
         suppressHydrationWarning
       >
         <RecoveryRedirectGuard />
