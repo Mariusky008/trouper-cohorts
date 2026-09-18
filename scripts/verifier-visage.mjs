@@ -589,6 +589,26 @@ console.log("\n══ le masque laisse la place d'une coupe longue ══");
     };
     const avecAli = await jouer(v);
     const sansAli = await jouer(null);
+    /**
+     * ═══ ET LE RENDU QUI NE COUVRE PAS TOUTE LA ZONE ═════════════════════
+     *
+     * « Le visage est OK mais il y a une photo dans la photo encore. »
+     *
+     * ON FABRIQUE LE CAS EXACT : un visage de rendu DEUX FOIS PLUS GRAND que
+     * celui de la photo, ce que fait un modèle qui resserre le cadrage. La
+     * similitude inverse rétrécit alors le rendu de moitié, son rectangle ne
+     * couvre plus la zone de travail, et son bord tomberait au milieu de la
+     * chevelure — une arête droite, c'est-à-dire une image dans l'image.
+     *
+     * L'ÉCHELLE DE DEUX PASSE LES TROIS AUTRES CONTRÔLES : elle est sous le
+     * plafond de 2,2, l'angle est nul, et le résidu est parfait puisque c'est
+     * une vraie similitude. Seule la couverture l'arrête.
+     */
+    const grand = {
+      ...v,
+      reperes: v.reperes.map((q) => ({ x: q.x * 2 - L / 2, y: q.y * 2 - H / 2 })),
+    };
+    const troisGrand = await jouer(grand);
     const img = avecAli.img;
     const gs2 = avecAli.g;
 
@@ -621,6 +641,16 @@ console.log("\n══ le masque laisse la place d'une coupe longue ══");
        * était recollé, la clarté tomberait à zéro. Qu'elle reste celle du
        * dégradé prouve qu'on a rendu sa photographie plutôt que de deviner.
        */
+      /**
+       * ET QUAND LE RENDU NE COUVRE PAS LA ZONE, ON REND AUSSI SA PHOTO.
+       * Même mesure que sans alignement : le rendu est tout noir, donc un
+       * collage se verrait tout de suite.
+       */
+      craneTropGrand: (() => {
+        const a2 = Array.from(gp2.getImageData(cx - 40, 100, 1, 1).data).slice(0, 3);
+        const b2 = Array.from(troisGrand.g.getImageData(cx - 40, 100, 1, 1).data).slice(0, 3);
+        return Math.max(...a2.map((n, i) => Math.abs(n - b2[i])));
+      })(),
       craneSansAli: (() => {
         const a2 = Array.from(gp2.getImageData(cx - 40, 100, 1, 1).data).slice(0, 3);
         const b2 = Array.from(sansAli.g.getImageData(cx - 40, 100, 1, 1).data).slice(0, 3);
@@ -647,6 +677,10 @@ console.log("\n══ le masque laisse la place d'une coupe longue ══");
   dire(
     r.craneSansAli < 12,
     `et sans alignement sûr, on rend sa photo au lieu de deviner (écart ${r.craneSansAli})`,
+  );
+  dire(
+    r.craneTropGrand < 12,
+    `et si le rendu ne couvre pas la zone, on ne colle pas d'arête (écart ${r.craneTropGrand})`,
   );
 
   dire(m.sousLeMenton < 40, `sous le menton, le modèle peut dessiner (alpha ${m.sousLeMenton})`);

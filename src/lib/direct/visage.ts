@@ -149,7 +149,22 @@ export async function chargerLeVisage(): Promise<Detecteur> {
     const d = await FaceLandmarker.createFromOptions(fichiers, {
       baseOptions: { modelAssetPath: "/mediapipe/face_landmarker.task", delegate: "CPU" },
       runningMode: "IMAGE",
-      numFaces: 1,
+      /**
+       * ═══ TROIS VISAGES, ET C'EST UNE CORRECTION ═══════════════════════════
+       *
+       * IL ÉTAIT À UN, ET CELA RENDAIT MUET LE CHOIX ENTRE PLUSIEURS. On a
+       * écrit, au tour précédent, de quoi retenir sur le rendu le visage qui
+       * ressemble le plus à celui de la photo — parce que le modèle reçoit deux
+       * portraits et lui arrive de rendre les deux. Ce code ne pouvait pas
+       * servir : le détecteur était réglé pour n'en rapporter QU'UN, donc il
+       * n'y avait jamais de second candidat à départager.
+       *
+       * TROIS SUFFISENT ET NE COÛTENT RIEN. Le modèle n'en cherche pas plus
+       * qu'il n'en trouve ; sur la photo d'un client il en rapporte un, et le
+       * temps de détection ne bouge pas. Sur un rendu qui en contient deux, on
+       * a enfin de quoi prendre le bon.
+       */
+      numFaces: 3,
     });
     detecteur = d as unknown as Detecteur;
     enCours = null;
@@ -336,7 +351,18 @@ function tracerLaZoneDeTravail(
   g: CanvasRenderingContext2D,
   v: Visage,
   zone: ZoneVisage,
-): void {
+  /**
+   * ═══ ELLE REND AUSSI SON RECTANGLE ENGLOBANT ══════════════════════════════
+   *
+   * « Le visage est OK mais il y a une photo dans la photo encore. »
+   *
+   * POUR SAVOIR SI LE RENDU A DE QUOI COUVRIR LA ZONE, il faut connaître
+   * l'étendue de la zone. Le canevas ne sait pas mesurer un chemin qu'on vient
+   * de lui tracer — il n'a pas d'API pour ça — donc c'est la fonction qui trace
+   * qui doit le dire : elle a les nombres sous la main, et les recopier
+   * ailleurs serait la garantie qu'ils divergent un jour.
+   */
+): { x: number; y: number; l: number; h: number } {
   const { l, h } = v.taille;
   const cx = v.boite.x + v.boite.l / 2;
   g.beginPath();
@@ -350,8 +376,11 @@ function tracerLaZoneDeTravail(
      */
     const menton = v.boite.y + v.boite.h;
     const demi = v.boite.l * 2.4;
-    g.rect(Math.max(0, cx - demi), menton, Math.min(l, demi * 2), h - menton);
-  } else if (zone === "lunettes") {
+    const x0 = Math.max(0, cx - demi);
+    g.rect(x0, menton, Math.min(l, demi * 2), h - menton);
+    return { x: x0, y: menton, l: Math.min(l, demi * 2), h: h - menton };
+  }
+  if (zone === "lunettes") {
     /**
      * LES LUNETTES : UNE BANDE SUR LES YEUX ET LE NEZ.
      *
@@ -362,27 +391,20 @@ function tracerLaZoneDeTravail(
      * que le modèle se permettait d'élargir le nez et de changer l'expression,
      * et ça n'a rien à voir avec une paire de lunettes.
      */
-    g.ellipse(
-      cx,
-      v.boite.y + v.boite.h * 0.42,
-      v.boite.l * 0.72,
-      v.boite.h * 0.24,
-      0,
-      0,
-      Math.PI * 2,
-    );
-  } else {
+    const ry = v.boite.y + v.boite.h * 0.42;
+    const rx = v.boite.l * 0.72;
+    const rh = v.boite.h * 0.24;
+    g.ellipse(cx, ry, rx, rh, 0, 0, Math.PI * 2);
+    return { x: cx - rx, y: ry - rh, l: rx * 2, h: rh * 2 };
+  }
+  {
     // LA COIFFURE : le crâne, le volume au-dessus, et la place où tombent les
     // cheveux longs. Voir l'en-tête de cette fonction pour les proportions.
-    g.ellipse(
-      cx,
-      v.boite.y + v.boite.h * 0.55,
-      v.boite.l * 1.45,
-      v.boite.h * 1.95,
-      0,
-      0,
-      Math.PI * 2,
-    );
+    const ry = v.boite.y + v.boite.h * 0.55;
+    const rx = v.boite.l * 1.45;
+    const rh = v.boite.h * 1.95;
+    g.ellipse(cx, ry, rx, rh, 0, 0, Math.PI * 2);
+    return { x: cx - rx, y: ry - rh, l: rx * 2, h: rh * 2 };
   }
 }
 
@@ -735,6 +757,76 @@ export async function reposerLeVisage(
   if (!ali && (zone === "coiffure" || zone === "lunettes")) {
     return photo;
   }
+
+  /**
+   * ═══ ET LE RENDU A-T-IL DE QUOI COUVRIR TOUTE LA ZONE ? ═══════════════════
+   *
+   * « Le visage est OK mais il y a une photo dans la photo encore. »
+   *
+   * C'EST UN BORD, ET IL SORT D'ICI. On ramène le rendu dans le repère de la
+   * photo par la similitude inverse. Quand le modèle a RESSERRÉ le cadrage —
+   * il rend souvent la tête plus grande que sur la photo — l'inverse le
+   * RÉTRÉCIT, et le rectangle du rendu n'occupe plus qu'une partie du cadre.
+   * Si son bord tombe à l'intérieur de la zone de travail, on colle sur la
+   * chevelure un morceau de rendu terminé par une ARÊTE DROITE, avec la
+   * photographie de l'autre côté. Un bord droit au milieu d'une chevelure ne
+   * se lit pas comme une chevelure : il se lit comme une image posée dans
+   * l'image, et c'est exactement le mot qu'il emploie.
+   *
+   * ON VÉRIFIE DONC LA COUVERTURE, ET C'EST BON MARCHÉ. Les quatre coins de la
+   * zone de travail sont envoyés VERS le rendu par la similitude directe ; ils
+   * doivent tous tomber dans ses dimensions. Quatre multiplications et huit
+   * comparaisons — moins cher que de dessiner quoi que ce soit.
+   *
+   * ET S'IL MANQUE, ON REND SA PHOTO. Même raison que l'alignement absent :
+   * entre un essai qui échoue franchement et une image avec un rectangle
+   * dedans, il n'y a pas à hésiter. On pourrait aussi rogner la zone à ce que
+   * le rendu couvre — mais la zone rognée aurait elle-même un bord droit, donc
+   * on aurait déplacé l'arête au lieu de la retirer.
+   *
+   * LE BUSTE EN EST DISPENSÉ, comme du reste. Sa zone descend jusqu'au bas du
+   * cadre, donc elle touche forcément le bord du rendu ; et un vêtement dont le
+   * bas s'arrête à la photographie ne dessine aucune arête visible — c'est la
+   * limite naturelle de l'image.
+   */
+  if (ali && zone !== "buste") {
+    const cb = document.createElement("canvas").getContext("2d");
+    if (!cb) return photo;
+    const zt = tracerLaZoneDeTravail(cb, v, zone);
+    /**
+     * ON BORNE LA ZONE AU CADRE DE LA PHOTO, ET C'EST NÉCESSAIRE.
+     *
+     * DÉFAUT ATTRAPÉ PAR LA GARDE, sur un alignement pourtant parfait. L'ellipse
+     * de la coiffure est BEAUCOUP plus haute que le visage — c'est voulu, elle
+     * doit laisser la place au volume au-dessus du crâne et aux cheveux longs —
+     * et son rectangle englobant sort donc couramment par le haut de l'image,
+     * de deux cents points sur un portrait serré. Demander au rendu de couvrir
+     * ce qui est hors cadre, c'est refuser tous les essais.
+     *
+     * ON NE COLLE JAMAIS HORS DE LA PHOTO, de toute façon : le canevas de
+     * sortie a exactement ses dimensions. Ce qui doit être couvert est donc
+     * l'intersection de la zone et du cadre, et rien de plus.
+     */
+    const zx0 = Math.max(0, zt.x);
+    const zy0 = Math.max(0, zt.y);
+    const zx1 = Math.min(L, zt.x + zt.l);
+    const zy1 = Math.min(H, zt.y + zt.h);
+    const coins: [number, number][] = [
+      [zx0, zy0],
+      [zx1, zy0],
+      [zx0, zy1],
+      [zx1, zy1],
+    ];
+    // UNE MARGE D'UN POINT : un coin pile sur le bord donnerait une arête d'un
+    // pixel, invisible, et refuser l'essai pour ça serait de la sévérité pure.
+    const dedans = coins.every(([x, y]) => {
+      const rx = ali.a * x - ali.b * y + ali.e;
+      const ry = ali.b * x + ali.a * y + ali.f;
+      return rx >= -1 && ry >= -1 && rx <= RL + 1 && ry <= RH + 1;
+    });
+    if (!dedans) return photo;
+  }
+
   const transporte = document.createElement("canvas");
   transporte.width = L;
   transporte.height = H;

@@ -2909,78 +2909,82 @@ export function ApercuHabitant() {
     /** La famille allumée dans la rangée du bas. Voir FAMILLES. */
     famille: string;
     /**
-     * ═══ LES PHOTOS DE SES MAQUETTES, ET CE QU'ON MET EN ATTENDANT ═══════
+     * ═══ LES PHOTOS DE SES MAQUETTES, ET ELLES SONT LÀ ═══════════════════
      *
-     * « Ce n'est pas du tout les images qui sont sur le mock-up que je t'ai
-     * fourni. Je veux exactement les mêmes images pour chaque exemple. »
+     * « Tu as le fichier zip avec toutes les photos. »
      *
-     * IL A RAISON, ET JE NE PEUX PAS LES FABRIQUER. Ses quatre maquettes sont
-     * arrivées dans la conversation, pas dans le dépôt : je les ai VUES, je ne
-     * peux pas les écrire sur le disque. Les photos qu'elles contiennent — la
-     * blonde qui devient brune au salon, la femme en débardeur qui ressort en
-     * blazer rose, la pièce à vivre meublée — n'existent nulle part ici.
+     * CE SONT SES IMAGES, PAS DES APPROXIMATIONS. Les deux premiers essais
+     * allaient chercher dans le dépôt des photos qui n'avaient pas été prises
+     * ensemble — et son reproche portait exactement là : « ce n'est jamais la
+     * même personne ». Une femme différente à droite n'est pas une preuve,
+     * c'est une illustration, et une illustration ne fait comprendre à
+     * personne ce que fait ce produit.
      *
-     * LES DEUX CHEMINS SONT DONC DÉJÀ ÉCRITS, ET LE REPLI TIENT L'ÉCRAN. Le
-     * jour où les huit fichiers sont déposés dans `public/direct/accueil/`,
-     * ils prennent la place sans qu'une ligne de code change. D'ici là, on
-     * affiche ce qui existe dans le dépôt — voir `repli` — et l'écran ne
-     * montre jamais un carré vide.
+     * ELLES SONT RÉDUITES ET EN JPEG. Le zip pesait dix-huit mégaoctets sur
+     * l'écran que TOUT LE MONDE voit, au premier lancement, souvent en
+     * quatre G. Réduites à sept cent soixante points — trois fois la largeur
+     * d'affichage réelle, donc rien de visible n'est perdu — et encodées en
+     * JPEG, les neuf font un mégaoctet deux.
      */
-    avant: string;
-    apres: string;
-    /** Ce qu'on affiche tant que sa photo n'est pas déposée. */
-    repliAvant: string;
-    repliApres: string;
-    /** Les deux pastilles, quand sa maquette dit mieux que « Avant ». */
-    motAvant?: string;
-    motApres?: string;
+    photos: string[];
+    /** Les pastilles posées sur chaque photo. Une par photo, ou aucune. */
+    mots?: string[];
+    /**
+     * COMBIEN DE TEMPS ON RESTE DESSUS.
+     *
+     * « Pour le restaurant j'ai mis finalement trois photos pour vraiment
+     * raconter l'histoire, donc peut-être rallonger d'une seconde le temps de
+     * cet exemple pour qu'on ait le temps de bien voir et comprendre. »
+     *
+     * IL A RAISON, ET C'EST ARITHMÉTIQUE : trois images dans le temps de deux
+     * laissent une seconde par image, ce qui est moins que le temps de lire
+     * le titre qu'elles portent.
+     */
+    duree: number;
   }[] = [
     {
       cle: "coiffure",
       famille: "beaute",
-      // LE COUPLE SE CHOISIT SUR CE QU'IL RACONTE EN DEUX SECONDES, PAS SUR
-      // SON NOM DE FICHIER. `avis-coupe` était une nuque rasée vue de dos :
-      // impeccable sur un mur d'avis, illisible comme « après » d'un portrait
-      // de face. Deux portraits cadrés pareil, deux coiffures différentes :
-      // on comprend sans lire.
-      avant: "/direct/accueil/coiffure-avant.jpg",
-      apres: "/direct/accueil/coiffure-apres.jpg",
-      repliAvant: "/direct/coiffure-femme-face.jpg",
-      repliApres: "/direct/coiffure2.jpg",
+      photos: ["/direct/accueil/coiffure-avant.jpg", "/direct/accueil/coiffure-apres.jpg"],
+      mots: ["Avant", "Après"],
+      duree: 3000,
     },
     {
       cle: "mode",
       famille: "mode",
-      // ELLE TIENT LA PIÈCE SUR SON CINTRE, PUIS ELLE LA PORTE. Le premier
-      // jet mettait le vêtement seul en gros plan à gauche : un tissu bleu
-      // plein cadre ne dit pas « avant », il ne dit rien du tout.
-      avant: "/direct/accueil/mode-avant.jpg",
-      apres: "/direct/accueil/mode-apres.jpg",
-      repliAvant: "/direct/avis-cabine.jpg",
-      repliApres: "/direct/vetement2.jpg",
+      photos: ["/direct/accueil/mode-avant.jpg", "/direct/accueil/mode-apres.jpg"],
+      mots: ["Avant", "Après"],
+      duree: 3000,
     },
     {
+      /**
+       * ═══ LE RESTAURANT EN RACONTE TROIS ═══════════════════════════════
+       *
+       * SES TROIS IMAGES PORTENT DÉJÀ LEUR TEXTE : « Le chef prépare son
+       * magret… », « Le détail que vous ne verrez pas sur le menu », et la
+       * dernière. On ne leur pose donc AUCUNE pastille par-dessus — deux
+       * titres superposés sur la même image, c'est deux titres qu'on ne lit
+       * ni l'un ni l'autre.
+       *
+       * QUATRE SECONDES, ET C'EST SA DEMANDE. Trois images à trois secondes
+       * feraient une image par seconde ; à quatre, chacune a le temps d'être
+       * lue avant que la suivante arrive.
+       */
       cle: "restaurant",
       famille: "restaurants",
-      avant: "/direct/accueil/restaurant-avant.jpg",
-      apres: "/direct/accueil/restaurant-apres.jpg",
-      repliAvant: "/direct/plat-du-jour-brute.jpg",
-      repliApres: "/direct/plat-du-jour.jpg",
-      // SA MAQUETTE DU RESTAURANT NE DIT PAS « AVANT / APRÈS » mais « ESSAYEZ
-      // LE PLAT / VOTRE ASSIETTE » : chez un restaurant on ne transforme pas
-      // une photo de soi, on compose son assiette. Les mots suivent.
-      motAvant: "Essayez le plat",
-      motApres: "Votre assiette",
+      photos: [
+        "/direct/accueil/restaurant-1.jpg",
+        "/direct/accueil/restaurant-2.jpg",
+        "/direct/accueil/restaurant-3.jpg",
+      ],
+      duree: 4000,
     },
     {
       cle: "fleuriste",
       famille: "commerces",
-      avant: "/direct/accueil/fleuriste-avant.jpg",
-      apres: "/direct/accueil/fleuriste-apres.jpg",
-      repliAvant: "/direct/table-salon.jpeg",
-      repliApres: "/direct/avis-bouquet.jpg",
-      motAvant: "Chez vous",
-      motApres: "Avec le bouquet",
+      photos: ["/direct/accueil/fleuriste-avant.jpg", "/direct/accueil/fleuriste-apres.jpg"],
+      mots: ["Chez vous", "Avec le bouquet"],
+      duree: 3000,
     },
   ];
 
@@ -3006,14 +3010,10 @@ export function ApercuHabitant() {
   ];
 
   /**
-   * LES QUATRE DURENT LE MÊME TEMPS : TROIS SECONDES.
-   *
-   * « Les transitions sont trop rapides donc une seconde de plus devrait être
-   * correcte. » Deux secondes, c'était le temps de VOIR les deux photos ;
-   * trois, c'est le temps de les COMPARER — et comparer est tout ce qu'on
-   * demande à cet écran.
+   * CHACUN PORTE SA DURÉE — voir `duree` dans la table. Elle n'est plus la
+   * même pour tous depuis que le restaurant en raconte trois.
    */
-  const ACTES = EXEMPLES.map((x) => ({ ...x, duree: 3000 }));
+  const ACTES = EXEMPLES;
   /**
    * L'EXEMPLE EN COURS, ET IL NE PEUT PAS MANQUER.
    *
@@ -3037,66 +3037,26 @@ export function ApercuHabitant() {
   const accueilOuvert = monte && !!sommet && !vus.includes("accueil") && !sortie && !embauches;
 
   /**
-   * ═══ QUELLES PHOTOS SONT RÉELLEMENT LÀ ? ══════════════════════════════════
+   * ═══ LES NEUF PHOTOS SONT CHARGÉES D'AVANCE ══════════════════════════════
    *
-   * ON NE DEVINE PAS, ON DEMANDE AU NAVIGATEUR. Chaque photo de maquette est
-   * chargée une fois au montage ; celle qui arrive entre dans cet ensemble,
-   * celle qui manque n'y entre pas et son repli sert. Un fichier déposé plus
-   * tard est donc pris au prochain lancement, sans toucher au code.
+   * DEFAUT MESURE SUR CAPTURE : au passage à un exemple jamais affiché, la
+   * scène restait VIDE — des rectangles noirs — le temps que ses photos
+   * arrivent. Le cadre se remonte à chaque exemple, donc le navigateur ne
+   * commence à les chercher qu'à cet instant-là. Sur un téléphone en quatre G,
+   * ce n'est pas un instant : c'est la moitié de l'exemple.
    *
-   * ELLES PARTENT TOUTES EN MÊME TEMPS, ET C'EST AUSSI LE PRÉCHARGEMENT. Les
-   * huit sont demandées à l'ouverture de l'écran, donc elles sont dans le cache
-   * du navigateur avant que leur exemple arrive — c'est le défaut de la scène
-   * vide, corrigé au même endroit.
+   * LE MÉCANISME DE REPLI A DISPARU AVEC ELLES. Il servait tant que ses images
+   * n'étaient pas déposées ; elles le sont, et garder un repli vers des photos
+   * du dépôt reviendrait à laisser une porte ouverte sur exactement le défaut
+   * qu'il a signalé — « ce n'est jamais la même personne ».
    */
-  const [presentes, setPresentes] = useState<Set<string>>(new Set());
   useEffect(() => {
     if (!accueilOuvert) return;
-    let vivant = true;
-    const trouvees = new Set<string>();
-    const tout = EXEMPLES.flatMap((x) => [x.avant, x.apres, x.repliAvant, x.repliApres]);
-    let restant = tout.length;
-    const fini = () => {
-      restant -= 1;
-      if (restant === 0 && vivant) setPresentes(trouvees);
-    };
-    for (const src of tout) {
-      const i = new window.Image();
-      i.onload = () => {
-        trouvees.add(src);
-        fini();
-      };
-      i.onerror = fini;
-      i.src = src;
+    for (const src of EXEMPLES.flatMap((x) => x.photos)) {
+      new window.Image().src = src;
     }
-    return () => {
-      vivant = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accueilOuvert]);
-  /**
-   * SON FANTÔME, S'IL EST DÉPOSÉ.
-   *
-   * MÊME MÉCANIQUE QUE LES PHOTOS, ET POUR LA MÊME RAISON : on ne devine pas,
-   * on demande au navigateur. Le fichier absent ne laisse aucune trace à
-   * l'écran ; le fichier présent remplace le dessin sans qu'on touche au code.
-   */
-  const [fantomePng, setFantomePng] = useState(false);
-  useEffect(() => {
-    if (!accueilOuvert) return;
-    let vivant = true;
-    const i = new window.Image();
-    i.onload = () => {
-      if (vivant) setFantomePng(true);
-    };
-    i.src = FANTOME_PNG;
-    return () => {
-      vivant = false;
-    };
   }, [accueilOuvert]);
 
-  /** La photo de sa maquette si elle est là, celle du dépôt sinon. */
-  const photoDe = (voulue: string, repli: string) => (presentes.has(voulue) ? voulue : repli);
   const dureeActe = ACTES[acte]?.duree ?? 2200;
   useEffect(() => {
     if (!accueilOuvert) return;
@@ -3112,6 +3072,54 @@ export function ApercuHabitant() {
     return () => window.clearTimeout(t);
     // ACTES.length est une constante du fichier ; `dureeActe` porte déjà l'acte.
   }, [accueilOuvert, acte, dureeActe, ACTES.length]);
+
+  /**
+   * ═══ DEUX PHOTOS SE COMPARENT, TROIS SE SUIVENT ═══════════════════════════
+   *
+   * « Pour le restaurant j'ai mis finalement trois photos pour vraiment
+   * raconter l'histoire et donner envie. »
+   *
+   * DÉFAUT MESURÉ SUR CAPTURE, ET IL ÉTAIT GRAVE. Posées côte à côte comme les
+   * deux d'un avant/après, ses trois images tombaient à cent dix points de
+   * large sur une hauteur de quatre cent trente-cinq : le cadrage « couvrant »
+   * rognait alors les deux tiers de chaque photo, et comme SES TROIS IMAGES
+   * PORTENT LEUR TITRE EN DUR — « Le chef prépare son magret… » — on lisait
+   * « ef prépare agret… ». La seule chose qui raconte l'histoire était coupée.
+   *
+   * LA RÈGLE EST DONC CELLE DU NOMBRE, ET ELLE A UN SENS. DEUX photos sont une
+   * COMPARAISON : il faut les voir ENSEMBLE, sinon il n'y a rien à comparer.
+   * TROIS photos sont un RÉCIT : il faut les voir L'UNE APRÈS L'AUTRE, chacune
+   * en entier, sinon il n'y a pas de récit. Ce n'est pas une contrainte de
+   * mise en page, c'est ce que les deux formes veulent dire.
+   *
+   * ET SA SECONDE DEMANDE TOMBE JUSTE AU MÊME ENDROIT : « rallonger d'une
+   * seconde pour qu'on ait le temps de bien voir ». Quatre secondes divisées
+   * par trois font un tiers de plus par image qu'à trois secondes — et chacune
+   * occupe maintenant toute la scène.
+   */
+  const raconte = exemple.photos.length > 2;
+  /**
+   * LE RANG DE LA PHOTO MONTRÉE, quand l'exemple en raconte plusieurs.
+   *
+   * IL S'APPELLE `plan` ET NON `vue` : ce composant a DÉJÀ un `vue`, qui est le
+   * filtre de la barre du haut. Deux noms identiques dans la même portée, c'est
+   * la faute que le compilateur rattrape aujourd'hui et qu'un relecteur ne
+   * rattrape jamais. Et `plan` est le mot juste : c'est un plan de séquence.
+   */
+  const [plan, setPlan] = useState(0);
+  useEffect(() => {
+    setPlan(0);
+  }, [acte]);
+  useEffect(() => {
+    if (!accueilOuvert || !raconte) return;
+    if (typeof window === "undefined") return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const t = window.setInterval(
+      () => setPlan((v) => (v + 1) % exemple.photos.length),
+      dureeActe / exemple.photos.length,
+    );
+    return () => window.clearInterval(t);
+  }, [accueilOuvert, raconte, acte, dureeActe, exemple.photos.length]);
 
   /** LE COMMERCE DE CE TOUR-CI — un vrai, choisi dans le paquet du jour. */
   const vedette = vitrine.length ? vitrine[boucle % vitrine.length] : null;
@@ -6553,41 +6561,109 @@ export function ApercuHabitant() {
                   </span>
                 </div>
 
-                {/* ─── LA SCÈNE : DEUX CARTES INCLINÉES, LE FANTÔME AU MILIEU ───
+                {/* ═══ LA SCÈNE : DEUX OU TROIS CARTES, LE FANTÔME DEVANT ════
+
+                    ELLE PREND MAINTENANT UN NOMBRE QUELCONQUE DE PHOTOS, et
+                    c'est ce que le restaurant demandait : « j'ai mis finalement
+                    trois photos pour vraiment raconter l'histoire ». Deux
+                    cartes codées en dur auraient obligé à un second composant
+                    pour un seul cas — et deux composants qui font presque la
+                    même chose divergent toujours.
+
                     LA CLÉ EST SUR LE CADRE, ET C'EST CE QUI REJOUE L'ENTRÉE DES
-                    DEUX CARTES à chaque changement d'exemple. Sans elle, React
+                    CARTES à chaque changement d'exemple. Sans elle, React
                     réutiliserait les mêmes nœuds et se contenterait d'échanger
-                    les images : on verrait deux photos clignoter, pas deux
-                    cartes arriver. */}
-                <div className="ap-ac-scene" key={exemple.cle} aria-hidden="true">
-                  <span
-                    className="ap-ac-carte ap-ac-av"
-                    style={{ backgroundImage: `url("${photoDe(exemple.avant, exemple.repliAvant)}")` }}
-                  >
-                    <i>{exemple.motAvant ?? "Avant"}</i>
-                  </span>
-                  {/* LA FLÈCHE NÉON ET LES DEUX ÉTINCELLES, entre les cartes :
-                      c'est elle qui dit que la seconde vient de la première. */}
+                    les images : on verrait des photos clignoter, pas des cartes
+                    arriver. */}
+                <div
+                  className={`ap-ac-scene n${exemple.photos.length}`}
+                  key={exemple.cle}
+                  aria-hidden="true"
+                >
+                  {exemple.photos.map((src, k) => (
+                    <span
+                      key={src}
+                      /* L'INCLINAISON SE CALCULE, ELLE N'EST PLUS ÉCRITE. Avec
+                         deux cartes elle vaut ∓3,2° comme avant ; avec trois,
+                         la première penche à gauche, celle du milieu reste
+                         droite, la dernière penche à droite. C'est ce qui fait
+                         un éventail plutôt qu'un tableau. */
+                      className={`ap-ac-carte${k === exemple.photos.length - 1 ? " fin" : ""}${
+                        raconte && k === plan ? " ici" : ""
+                      }`}
+                      style={
+                        {
+                          backgroundImage: `url("${src}")`,
+                          "--t": `${(k - (exemple.photos.length - 1) / 2) * 3.2}deg`,
+                          "--d": `${k * 0.1}s`,
+                          "--x": `${(k - (exemple.photos.length - 1) / 2) * 26}px`,
+                        } as React.CSSProperties
+                      }
+                    >
+                      {/* LA PASTILLE N'APPARAÎT QUE SI L'EXEMPLE EN A UNE. Les
+                          trois photos du restaurant portent déjà leur titre —
+                          « Le chef prépare son magret… » — et deux titres
+                          superposés sur la même image, c'est deux titres qu'on
+                          ne lit ni l'un ni l'autre. */}
+                      {exemple.mots?.[k] && <i>{exemple.mots[k]}</i>}
+                    </span>
+                  ))}
+
+                  {/* ═══ LA FLÈCHE ET LES ÉTOILES ═══════════════════════════
+
+                      « N'oublie pas la flèche et les étoiles qui donnent du
+                      relief et de la couleur fluo à l'atmosphère, parce que ce
+                      que tu as fait n'est pas bon et ne ressemble pas du tout à
+                      des étoiles et une flèche. »
+
+                      CE QUI CLOCHAIT : ma flèche était un trait de quatre
+                      points avec deux petites barbes au bout — un tracé
+                      d'interface, pas un néon. Et mes « étoiles » étaient le
+                      caractère ✦ d'une police, donc un glyphe gris qui change
+                      de dessin d'un téléphone à l'autre.
+
+                      CE QU'ELLES SONT MAINTENANT. La flèche est une forme
+                      PLEINE, épaisse, à la pointe large, avec un halo rose qui
+                      déborde — c'est le halo qui fait le néon, pas le trait.
+                      Les étoiles sont des étincelles à quatre branches
+                      DESSINÉES : des pointes effilées qui se rejoignent au
+                      centre, comme un éclat de lumière. Une étoile à cinq
+                      branches est un symbole ; une à quatre branches est une
+                      brillance, et c'est de la brillance qu'on veut ici.
+
+                      ELLES SONT ENTRE LES CARTES, sur la couture, et non dans
+                      le flux : dans le flux elles écarteraient les cartes de
+                      leur largeur, et la maquette les montre presque
+                      jointives. */}
                   <span className="ap-ac-fleche">
-                    <svg viewBox="0 0 64 34" focusable="false">
+                    <svg viewBox="0 0 72 40" focusable="false">
+                      <defs>
+                        <linearGradient id="apAcFl" x1="0" y1="1" x2="1" y2="0">
+                          <stop offset="0" stopColor="#FF2E93" />
+                          <stop offset="1" stopColor="#FF7AC8" />
+                        </linearGradient>
+                      </defs>
+                      {/* LE CORPS : une bande qui s'épaissit en montant. */}
                       <path
-                        d="M6 24C14 8 34 2 54 10M54 10l-9.5-.6M54 10l-4.4 8.6"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                        d="M4 33c6-12 16-20 29-23l1.6 7.2C23.5 19.9 15 26.4 9.6 36L4 33Z"
+                        fill="url(#apAcFl)"
                       />
+                      {/* LA POINTE, large et franche. */}
+                      <path d="M30 2.6 48 12.4 28.6 19.2 33 11 30 2.6Z" fill="url(#apAcFl)" />
                     </svg>
                   </span>
-                  <span className="ap-ac-et e1">✦</span>
-                  <span className="ap-ac-et e2">✦</span>
-                  <span
-                    className="ap-ac-carte ap-ac-ap"
-                    style={{ backgroundImage: `url("${photoDe(exemple.apres, exemple.repliApres)}")` }}
-                  >
-                    <i>{exemple.motApres ?? "Après"}</i>
-                  </span>
+                  {[1, 2, 3].map((k) => (
+                    <span key={k} className={`ap-ac-et e${k}`}>
+                      <svg viewBox="0 0 24 24" focusable="false">
+                        {/* QUATRE BRANCHES EFFILÉES : chaque pointe part du
+                            centre et s'affine, avec un creux entre elles. */}
+                        <path
+                          d="M12 0c.7 6.6 4.7 10.6 11.3 12-6.6 1.4-10.6 5.4-11.3 12-.7-6.6-4.7-10.6-11.3-12C7.3 10.6 11.3 6.6 12 0Z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                    </span>
+                  ))}
                   {/* ─── LE FANTÔME, ET IL CLIGNE DE L'ŒIL ───
                       « Le fantôme peut faire un clin d'œil à chaque fois qu'il
                       change d'exemple. » Il porte sa casquette, il est devant
@@ -6609,51 +6685,9 @@ export function ApercuHabitant() {
                       déposé, l'écran affiche le fantôme vectoriel plutôt qu'un
                       carré vide ; le jour où il arrive, il prend sa place sans
                       qu'une ligne change ici. */}
-                  <span className={`ap-ac-f${fantomePng ? " png" : ""}`}>
-                    {/* LA POSE DU CLIN D'OEIL EXISTAIT DEJA, ET C'EST LA SIENNE.
-                        `clin` est la variante dessinee pour ses maquettes
-                        precedentes : oeil plus gros avec son reflet du bon
-                        cote, arc de paupiere fermee, bouche ouverte. Ses quatre
-                        nouvelles images montrent EXACTEMENT ce personnage-la, et
-                        il cligne sur les quatre. On ne redessine donc rien : on
-                        prend la pose qui est deja juste, et on lui ajoute un
-                        battement a chaque changement d'exemple — voir
-                        `apAcClin`. */}
-                    {fantomePng ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img className="ap-ac-fp" src={FANTOME_PNG} alt="" />
-                    ) : (
-                      <Fantome classe="ap-ac-fs" clin />
-                    )}
-                    {!fantomePng && (
-                    <svg className="ap-ac-casq" viewBox="0 0 64 30" focusable="false">
-                      {/* ─── LA VISIÈRE, PLATE, D'UN SEUL CÔTÉ ───
-                          Elle sortait des DEUX côtés au premier jet, et une
-                          calotte flanquée de deux ailes n'est pas une
-                          casquette : c'est un chapeau melon. Une visière est
-                          plate, large, et part vers l'avant — donc d'un seul
-                          côté quand la tête est de trois quarts. */}
-                      <path
-                        d="M19 20.8C9.6 20.2 2.5 22 2.5 24.3c0 2.4 7.4 3.7 17.6 2.8l1.4-6.3Z"
-                        fill="#0E0A16"
-                      />
-                      {/* LA CALOTTE, et son arête un peu aplatie sur le dessus :
-                          une demi-sphère parfaite fait un casque. */}
-                      <path
-                        d="M18.6 24.2C16.4 10.6 23.4 3 34.2 3c10.6 0 17.2 7.2 15.4 21.2-9.6 1.6-21.4 1.6-31 0Z"
-                        fill="#1B1426"
-                      />
-                      {/* LE BANDEAU DU BAS, un ton plus clair : c'est lui qui
-                          donne l'épaisseur du tissu. */}
-                      <path
-                        d="M18.8 22.4c9.6-1.5 21-1.5 30.6 0l-.2 1.8c-9.6 1.6-21.4 1.6-31 0l.6-1.8Z"
-                        fill="#2B2039"
-                      />
-                      <text x="34" y="16.4" textAnchor="middle" className="ap-ac-casq-m">
-                        Clik<tspan className="ap-ac-casq-r">Me</tspan>
-                      </text>
-                    </svg>
-                    )}
+                  <span className="ap-ac-f">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img className="ap-ac-fp" src={FANTOME_PNG} alt="" />
                   </span>
                 </div>
 
@@ -13490,156 +13524,143 @@ export function ApercuHabitant() {
         .ap-ac-marque span i{font-style:normal;color:#F0389C;letter-spacing:0;}
 
         /* ─── LA SCENE ───
-           DEUX CARTES INCLINEES EN SENS INVERSE, qui se touchent presque au
-           centre. L'inclinaison est ce qui empeche l'ensemble de ressembler a
-           un comparatif de catalogue : deux rectangles droits cote a cote sont
-           un tableau, deux cartes penchees sont des photographies posees. */
+           DES CARTES INCLINEES EN EVENTAIL, qui se touchent presque. Leur
+           nombre n'est plus fixe : deux pour un avant/apres, trois pour
+           l'histoire du restaurant. L'inclinaison de chacune est calculee dans
+           le composant et arrive par une variable, ce qui evite une regle CSS
+           par disposition possible. */
         .ap-ac-scene{position:relative;flex:1;min-height:180px;
           margin:16px 14px 0;display:flex;align-items:stretch;
-          justify-content:center;gap:10px;}
+          justify-content:center;gap:9px;}
+        /* ═══ LE RECIT : UNE PHOTO A LA FOIS, PLEIN CADRE ═══════════════════
+           DEFAUT MESURE SUR CAPTURE. Cote a cote, ses trois images tombaient a
+           cent dix points de large sur quatre cent trente-cinq de haut : le
+           cadrage couvrant en rognait les deux tiers, et comme elles portent
+           leur titre en dur, on lisait « ef prepare agret… ». La seule chose
+           qui raconte l'histoire etait coupee.
+           ELLES SE SUPERPOSENT DONC, et l'active se montre. C'est la meme
+           regle que dans le composant : deux photos se comparent — il faut les
+           voir ensemble — trois se suivent, et chacune doit etre entiere. */
+        .ap-ac-scene.n3{display:block;margin-left:10px;margin-right:10px;}
+        .ap-ac-scene.n3 .ap-ac-carte{position:absolute;inset:0;
+          transform:none;opacity:0;animation:none;
+          transition:opacity .5s ease;
+          /* CALEES PAR LE HAUT, ET C'EST MESURE. Ses images font 1024×1536 ;
+             le cadre est plus etroit qu'elles ne sont hautes, donc le cadrage
+             couvrant deborde en hauteur et rogne en haut ET en bas. Centre, il
+             coupait « LE DETAIL » — la premiere ligne du titre. Cale en haut,
+             il ne perd que le bas de l'assiette, qui ne porte aucun mot. */
+          background-position:center top;}
+        .ap-ac-scene.n3 .ap-ac-carte.ici{opacity:1;}
+        /* LE LISERE ROSE SUIT LA PHOTO MONTREE, pas la derniere de la liste :
+           au milieu d'un recit, souligner la fin n'a aucun sens. */
+        .ap-ac-scene.n3 .ap-ac-carte.fin{border-color:rgba(255,255,255,.14);
+          box-shadow:0 18px 44px -20px rgba(0,0,0,.9);}
+        .ap-ac-scene.n3 .ap-ac-carte.ici{border-color:rgba(240,56,156,.55);
+          box-shadow:0 18px 44px -20px rgba(0,0,0,.9),
+            0 0 22px -4px rgba(240,56,156,.55);}
         .ap-ac-carte{position:relative;flex:1 1 0;min-width:0;
           border-radius:20px;background-size:cover;background-position:center;
-          box-shadow:0 18px 44px -20px rgba(0,0,0,.9);}
-        /* ELLES ENTRENT EN GLISSANT DE L'EXTERIEUR, ET LA SECONDE EN RETARD :
-           c'est ce decalage qui dit que l'apres vient de l'avant. */
-        /* LES DEUX MODIFICATEURS PORTENT LE PREFIXE COMPLET, ET C'EST UNE
-           PANNE MESUREE. Ecrits en deux lettres, le second heritait de la
-           regle du CADRE DU TELEPHONE de cette meme feuille, en position
-           fixe et haute de tout l'ecran. La carte de droite se depliait donc
-           sur les huit cent quarante points de la page et recouvrait la
-           promesse, les pictogrammes et le bouton. Un nom de classe de deux
-           lettres dans une feuille de dix-sept mille lignes finit toujours par
-           rencontrer son homonyme. */
-        .ap-ac-carte.ap-ac-av{transform:rotate(-3.2deg);border:1.5px solid rgba(255,255,255,.14);
-          animation:apAcCarteG .62s cubic-bezier(.2,1.05,.35,1) both;}
-        .ap-ac-carte.ap-ac-ap{transform:rotate(3.2deg);border:1.5px solid rgba(240,56,156,.55);
-          box-shadow:0 18px 44px -20px rgba(0,0,0,.9),0 0 22px -4px rgba(240,56,156,.55);
-          animation:apAcCarteD .62s .1s cubic-bezier(.2,1.05,.35,1) both;}
-        @keyframes apAcCarteG{
-          from{opacity:0;transform:translateX(-26px) rotate(-9deg) scale(.94);}
-          to{opacity:1;transform:rotate(-3.2deg);}
+          transform:rotate(var(--t));
+          border:1.5px solid rgba(255,255,255,.14);
+          box-shadow:0 18px 44px -20px rgba(0,0,0,.9);
+          animation:apAcCarte .62s cubic-bezier(.2,1.05,.35,1) both;
+          animation-delay:var(--d);}
+        /* LA DERNIERE PORTE LE LISERE ROSE : c'est elle, le resultat. */
+        .ap-ac-carte.fin{border-color:rgba(240,56,156,.55);
+          box-shadow:0 18px 44px -20px rgba(0,0,0,.9),
+            0 0 22px -4px rgba(240,56,156,.55);}
+        /* ELLES ENTRENT EN GLISSANT DEPUIS LEUR PROPRE COTE, et en retard les
+           unes sur les autres : c'est ce decalage qui dit que la derniere vient
+           des precedentes. */
+        @keyframes apAcCarte{
+          from{opacity:0;transform:translateX(var(--x)) rotate(calc(var(--t) * 2.6)) scale(.94);}
+          to{opacity:1;transform:rotate(var(--t));}
         }
-        @keyframes apAcCarteD{
-          from{opacity:0;transform:translateX(26px) rotate(9deg) scale(.94);}
-          to{opacity:1;transform:rotate(3.2deg);}
-        }
-        /* LES DEUX PASTILLES : grise a gauche, rose a droite, chacune dans le
-           coin haut exterieur de sa carte — comme sur la maquette. */
-        .ap-ac-carte i{position:absolute;top:10px;padding:6px 13px;
+        /* LES PASTILLES : grise sur les premieres, rose sur la derniere. */
+        .ap-ac-carte i{position:absolute;top:10px;left:10px;padding:6px 13px;
           border-radius:999px;font-style:normal;font-size:12px;font-weight:800;
           white-space:nowrap;max-width:calc(100% - 20px);overflow:hidden;
-          text-overflow:ellipsis;}
-        .ap-ac-carte.ap-ac-av i{left:10px;color:#F2F5F8;background:rgba(58,62,72,.9);
+          text-overflow:ellipsis;color:#F2F5F8;background:rgba(58,62,72,.9);
           -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
-        .ap-ac-carte.ap-ac-ap i{right:10px;color:#fff;background:#F0389C;
+        .ap-ac-carte.fin i{left:auto;right:10px;color:#fff;background:#F0389C;
           box-shadow:0 4px 16px -4px rgba(240,56,156,.9);}
 
-        /* LA FLECHE NEON, ENTRE LES DEUX. Elle est POSEE SUR LA COUTURE et non
-           dans le flux : dans le flux elle ecarterait les cartes de sa largeur,
-           et la maquette les montre presque jointives. */
-        .ap-ac-fleche{position:absolute;left:50%;top:32%;width:64px;height:34px;
-          margin-left:-32px;z-index:3;color:#FF52AE;pointer-events:none;
-          filter:drop-shadow(0 0 8px rgba(240,56,156,.9));
+        /* ═══ LA FLECHE NEON ════════════════════════════════════════════════
+           ELLE EST PLEINE, PAS TRACEE. Un trait de quatre points avec deux
+           barbes au bout est une fleche d'interface ; ce qu'il montre est un
+           NEON — une forme epaisse, une pointe large, et surtout un halo qui
+           deborde. C'est le halo qui fait le neon, pas le trait, d'ou les trois
+           ombres portees de rayons croissants.
+           POSEE SUR LA COUTURE et non dans le flux : dans le flux elle
+           ecarterait les cartes de sa largeur. */
+        .ap-ac-fleche{position:absolute;left:50%;top:26%;width:104px;height:58px;
+          margin-left:-52px;z-index:5;pointer-events:none;
+          filter:drop-shadow(0 0 4px rgba(255,46,147,.95))
+            drop-shadow(0 0 12px rgba(255,46,147,.7))
+            drop-shadow(0 0 26px rgba(255,46,147,.45));
           animation:apAcFleche .7s .24s cubic-bezier(.2,1.1,.35,1) both;}
-        .ap-ac-fleche svg{width:100%;height:100%;display:block;}
+        .ap-ac-fleche svg{width:100%;height:100%;display:block;overflow:visible;}
         @keyframes apAcFleche{
           0%{opacity:0;transform:translateX(-14px) scale(.8);}
           60%{opacity:1;transform:translateX(3px) scale(1.04);}
           100%{opacity:1;transform:none;}
         }
-        .ap-ac-et{position:absolute;z-index:3;font-size:15px;color:#FF8FCB;
-          pointer-events:none;
-          filter:drop-shadow(0 0 6px rgba(255,120,200,.9));
-          animation:apAcEt 1.9s ease-in-out infinite;}
-        .ap-ac-et.e1{left:calc(50% - 4px);top:20%;}
-        .ap-ac-et.e2{left:calc(50% - 10px);top:48%;font-size:11px;
-          animation-delay:.55s;}
-        @keyframes apAcEt{
-          0%,100%{opacity:.25;transform:scale(.7) rotate(0deg);}
-          50%{opacity:1;transform:scale(1.15) rotate(18deg);}
-        }
+        /* A TROIS CARTES, LA FLECHE S'EFFACE. Elle dit « la seconde vient de la
+           premiere » ; devant trois images qui racontent une suite, elle
+           designerait une seule des deux coutures et mentirait sur l'autre. */
+        .ap-ac-scene.n3 .ap-ac-fleche{display:none;}
 
-        /* ─── LE FANTOME, DEVANT LES DEUX CARTES ───
-           A CHEVAL SUR LEUR BAS, comme sur la maquette : il chevauche les deux
-           images, donc il appartient aux deux, donc c'est LUI qui fait le
-           passage. Pose a cote, il ne serait qu'une mascotte. */
-        .ap-ac-f{position:absolute;left:50%;bottom:-8px;width:152px;height:168px;
-          margin-left:-76px;z-index:4;pointer-events:none;
+        /* ═══ LES ETINCELLES ════════════════════════════════════════════════
+           QUATRE BRANCHES, DESSINEES, PAS UN CARACTERE. Le glyphe d'une police
+           est gris, change de trace d'un telephone a l'autre, et ne prend pas
+           de halo. Celles-ci sont un trace a nous : des pointes effilees qui se
+           rejoignent au centre, en rose fluo, avec leur propre lueur.
+           TROIS, DE TAILLES ET DE RYTHMES DIFFERENTS. Deux etincelles
+           identiques qui clignotent ensemble font un temoin lumineux ; trois
+           qui respirent a contretemps font une atmosphere. */
+        .ap-ac-et{position:absolute;z-index:5;pointer-events:none;
+          color:#FF4FA6;
+          filter:drop-shadow(0 0 5px rgba(255,79,166,1))
+            drop-shadow(0 0 14px rgba(255,79,166,.8))
+            drop-shadow(0 0 30px rgba(255,79,166,.5));
+          animation:apAcEt 2.1s ease-in-out infinite;}
+        .ap-ac-et svg{width:100%;height:100%;display:block;}
+        .ap-ac-et.e1{left:calc(50% - 11px);top:11%;width:24px;height:24px;}
+        .ap-ac-et.e2{left:calc(50% + 6px);top:46%;width:16px;height:16px;
+          animation-delay:.6s;}
+        .ap-ac-et.e3{left:calc(50% - 16px);top:57%;width:12px;height:12px;
+          animation-delay:1.2s;color:#FFB3DE;}
+        @keyframes apAcEt{
+          0%,100%{opacity:.2;transform:scale(.6) rotate(0deg);}
+          50%{opacity:1;transform:scale(1.2) rotate(28deg);}
+        }
+        /* A TROIS CARTES, ELLES SE REPARTISSENT SUR LES DEUX COUTURES plutot
+           que de s'entasser au milieu d'une image. */
+        /* DANS UN RECIT, ELLES VONT AUX COINS : au centre elles se poseraient
+           sur le titre de la photo, qui est justement ce qu'on veut lire. */
+        .ap-ac-scene.n3 .ap-ac-et.e1{left:auto;right:6%;top:8%;}
+        .ap-ac-scene.n3 .ap-ac-et.e2{left:auto;right:12%;top:26%;}
+        .ap-ac-scene.n3 .ap-ac-et.e3{left:8%;top:72%;}
+
+        /* ─── SON FANTOME, DEVANT LES CARTES ───
+           A CHEVAL SUR LEUR BAS, comme sur ses maquettes : il chevauche les
+           images, donc il appartient a toutes, donc c'est LUI qui fait le
+           passage. Pose a cote, il ne serait qu'une mascotte.
+           C'EST SON IMAGE, ENTIERE. Elle porte deja la casquette, le clin
+           d'oeil, les bras leves et les traits de vitesse — tout ce que je
+           passais mon temps a redessiner au trait, en moins bien. On ne lui
+           ajoute qu'une ombre, pour la decoller des photos.
+           CONTENUE ET NON RECADREE : un fantome rogne n'est plus un fantome. */
+        .ap-ac-f{position:absolute;left:50%;bottom:-18px;width:196px;height:180px;
+          margin-left:-98px;z-index:4;pointer-events:none;
           animation:apAcFEntre .55s .16s cubic-bezier(.2,1.2,.35,1) both;}
         @keyframes apAcFEntre{
           from{opacity:0;transform:translateY(16px) scale(.86);}
           to{opacity:1;transform:none;}
         }
-        .ap-ac-fs{width:100%;height:100%;
-          filter:drop-shadow(0 10px 26px rgba(240,56,156,.5));}
-        /* SON IMAGE, QUAND ELLE EST LA. Elle porte deja sa casquette, son clin
-           d'oeil et ses bras : on ne lui ajoute qu'une ombre pour la decoller
-           des deux photos. Il est CONTENU et non recadre : un fantome rogne
-           n'est plus un fantome. */
         .ap-ac-fp{width:100%;height:100%;object-fit:contain;display:block;
-          filter:drop-shadow(0 10px 26px rgba(240,56,156,.5));}
-        /* AVEC SON IMAGE, LE CADRE S'ELARGIT : elle porte ses bras ecartes
-           et ses traits de vitesse, qui debordent du gabarit du dessin. */
-        .ap-ac-f.png{width:176px;height:176px;margin-left:-88px;bottom:-14px;}
-        /* ═══ ET IL EST BLANC A HALO LILAS, PAS VERT MENTHE ════════════════
-           SES QUATRE MAQUETTES MONTRENT LE MEME PERSONNAGE : un corps blanc
-           qui vire au lilas dans les plis, un halo rose autour, des joues
-           roses, des yeux presque noirs. Le fantome du dossier est en menthe
-           — c'est la couleur du Direct, et elle est juste partout ailleurs.
-           Sur CET ecran-ci, ou tout le reste est rose et blanc, elle etait la
-           seule note froide et elle cassait l'ensemble.
-           ON N'A PAS TOUCHE AU FANTOME COMMUN pour autant : les encres sont
-           surchargees ici et nulle part ailleurs. Le meme composant sert a
-           quinze endroits de ce dossier, et les repeindre tous pour un ecran
-           aurait ete la faute classique — corriger la piece en deplacant le
-           mur.
-           LE SELECTEUR PORTE DEUX CLASSES SUR LE MEME NOEUD, ET C'EST
-           NECESSAIRE. Ecrit avec une seule, il faisait jeu egal en specificite
-           avec la regle menthe d'origine, et c'est l'ORDRE DES FEUILLES qui
-           tranchait — donc le menthe gagnait et rien ne changeait a l'ecran.
-           Un cran de specificite de plus rend le resultat independant de
-           l'ordre dans lequel les feuilles sont posees. */
-        .ap-ac-f .ap-ac-fs .ap-f-corps{fill:#FBF8FF;}
-        .ap-ac-f .ap-ac-fs .ap-f-creux{fill:#DCCFF7;opacity:.5;}
-        .ap-ac-f .ap-ac-fs .ap-f-bras{fill:#F1EAFF;}
-        .ap-ac-f .ap-ac-fs .ap-f-joue{fill:#FF7EC0;opacity:.6;}
-        .ap-ac-f .ap-ac-fs .ap-f-oeil{fill:#1A0F2B;}
-        .ap-ac-f .ap-ac-fs .ap-f-clin{stroke:#1A0F2B;}
-        .ap-ac-f .ap-ac-fs .ap-f-rire{fill:#1A0F2B;}
-        .ap-ac-f .ap-ac-fs .ap-f-ombre{fill:rgba(60,10,60,.2);}
-        .ap-ac-f .ap-ac-fs .ap-f-langue{fill:#FF4FA6;}
-        /* LE POUCE ET LES TRAITS DE VITESSE VIENNENT AVEC LA POSE, et ils
-           etaient en menthe : une main verte et cinq traits verts au milieu
-           d'un ecran rose et blanc. On les repeint, on ne les enleve pas — le
-           geste et l'elan sont justes, c'est leur couleur qui ne l'etait pas. */
-        .ap-ac-f .ap-ac-fs .ap-f-pouce path{fill:#F6F1FF;stroke:#B79BE0;}
-        .ap-ac-f .ap-ac-fs .ap-f-pouce path.pli{fill:none;stroke:#C9B4EC;}
-        .ap-ac-f .ap-ac-fs .ap-f-vites path{stroke:#FF3E9E;}
-        /* LE CLIN D'OEIL, A CHAQUE CHANGEMENT D'EXEMPLE. L'oeil droit se ferme
-           en un dixieme de seconde, reste ferme un dixieme, et se rouvre : c'est
-           la duree d'un vrai clignement, et c'est ce qui le distingue d'un oeil
-           qui disparait. Ses deux points de lumiere partent avec lui, sinon ils
-           flottent sur une paupiere fermee. */
-        /* IL RECLIGNE A CHAQUE EXEMPLE, ET C'EST L'OEIL OUVERT QUI LE FAIT.
-           Le gauche est deja ferme par la pose ; refermer le droit une demi-
-           seconde, c'est le second clin d'oeil — celui qu'on remarque. */
-        .ap-ac-f .ap-ac-fs .ap-f-oeil.d,.ap-ac-f .ap-ac-fs .ap-f-eclat.d,
-        .ap-ac-f .ap-ac-fs .ap-f-eclat2.d{
-          transform-box:fill-box;transform-origin:center;
-          animation:apAcClin .44s .74s ease-in-out both;}
-        @keyframes apAcClin{
-          0%,100%{transform:scaleY(1);opacity:1;}
-          40%,60%{transform:scaleY(.06);opacity:.45;}
-        }
-        /* LA CASQUETTE. Elle est posee en absolu sur la tete et non dessinee
-           dans le fantome : le meme fantome sert dans quinze autres endroits de
-           ce dossier, et aucun ne porte de casquette. */
-        .ap-ac-casq{position:absolute;left:50%;top:9px;width:122px;height:57px;
-          margin-left:-61px;transform:rotate(-6deg);
-          filter:drop-shadow(0 3px 7px rgba(0,0,0,.5));}
-        .ap-ac-casq-m{fill:#fff;font-size:9.4px;font-weight:900;
-          font-family:inherit;letter-spacing:-.01em;}
-        .ap-ac-casq-r{fill:#FF3E9E;}
+          filter:drop-shadow(0 12px 28px rgba(240,56,156,.55));}
 
         /* ─── LA PROMESSE ───
            DEUX LIGNES, ET LA SECONDE EST LE MOT DU PRODUIT. Elle est en rose,
@@ -13727,8 +13748,6 @@ export function ApercuHabitant() {
         @media (prefers-reduced-motion:reduce){
           .ap-ac-carte.ap-ac-av,.ap-ac-carte.ap-ac-ap,.ap-ac-fleche,.ap-ac-f,
           .ap-ac-et,.ap-ac-go,.ap-ac-fam li.on .ap-ac-pic,
-          .ap-ac-f .ap-ac-fs .ap-f-oeil.d,.ap-ac-f .ap-ac-fs .ap-f-eclat.d,
-          .ap-ac-f .ap-ac-fs .ap-f-eclat2.d{animation:none;}
           .ap-ac-onde{display:none;}
         }
 
@@ -13742,9 +13761,7 @@ export function ApercuHabitant() {
           .ap-ac-marque{padding-top:8px;}
           .ap-ac-marque b{font-size:33px;}
           .ap-ac-scene{margin-top:10px;min-height:150px;}
-          .ap-ac-f{width:128px;height:142px;margin-left:-64px;}
-          .ap-ac-f.png{width:150px;height:150px;margin-left:-75px;}
-          .ap-ac-casq{width:103px;height:48px;margin-left:-51px;top:7px;}
+          .ap-ac-f{width:152px;height:140px;margin-left:-76px;}
           .ap-ac-promesse{margin-top:14px;}
           .ap-ac-promesse b{font-size:23px;}
           .ap-ac-promesse em{font-size:28px;}
