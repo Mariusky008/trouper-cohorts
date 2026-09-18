@@ -3474,7 +3474,31 @@ console.log("\n══ la page du commerce ══");
       avant: carte(0),
       apres: carte(1),
       fleche: !!e.querySelector(".ap-ac-fleche"),
-      fantome: !!e.querySelector(".ap-ac-f svg"),
+      /**
+       * LE FANTÔME EST-IL LÀ, ET CHEVAUCHE-T-IL LES CARTES ?
+       *
+       * ELLE CHERCHAIT UN SVG, ET C'EST CE QU'IL A FALLU CORRIGER. Le fantôme
+       * était dessiné au trait ; c'est maintenant l'image qu'il a fournie, donc
+       * une balise `img`. Une garde qui nomme la TECHNIQUE d'un élément casse
+       * le jour où l'on en change, sans que rien ne soit cassé.
+       *
+       * CE QUI COMPTE N'EST NI SVG NI IMG : c'est qu'il EXISTE, qu'il ait une
+       * taille, et qu'il soit À CHEVAL sur les photos — posé à côté, il ne
+       * serait qu'une mascotte ; à cheval, c'est lui qui fait le passage. On
+       * mesure donc le recouvrement, qui restera vrai quelle que soit la
+       * technique de demain.
+       */
+      fantome: (() => {
+        const f = e.querySelector(".ap-ac-f");
+        const c = e.querySelector(".ap-ac-carte");
+        if (!f || !c) return null;
+        const a = f.getBoundingClientRect();
+        const b = c.getBoundingClientRect();
+        if (a.width < 40 || a.height < 40) return null;
+        const large = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+        const haut = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+        return large > 20 && haut > 20 ? Math.round(large) : null;
+      })(),
       allumes: [...e.querySelectorAll(".ap-ac-fam li")].filter((n) =>
         n.classList.contains("on")).map((n) => n.querySelector("b")?.textContent?.trim()),
       familles: e.querySelectorAll(".ap-ac-fam li").length,
@@ -3501,7 +3525,10 @@ console.log("\n══ la page du commerce ══");
       `et il la prouve par deux photos (${a.avant?.photo} → ${a.apres?.photo})`,
     );
     dire(!!a.fleche, "une flèche dit que la seconde vient de la première");
-    dire(!!a.fantome, "et le Fantôme est entre les deux");
+    dire(
+      !!a.fantome,
+      `et le Fantôme est à cheval sur les photos (${a.fantome ?? "absent"} pt de recouvrement)`,
+    );
     dire(
       !!a.avant?.mot && !!a.apres?.mot && a.avant.mot !== a.apres.mot,
       `les deux cartes sont nommées (« ${a.avant?.mot} » → « ${a.apres?.mot} »)`,
