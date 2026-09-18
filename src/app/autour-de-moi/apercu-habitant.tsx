@@ -2852,13 +2852,119 @@ export function ApercuHabitant() {
    * donnent toujours le même résultat : les courts traînent et le long est
    * coupé au milieu.
    */
-  const ACTES: { cle: string; duree: number; i: string; t: string; d: string }[] = [
-    { cle: "offre", duree: 2200, i: "🏪", t: "L’offre du jour", d: "Ce qu’il propose maintenant." },
-    { cle: "essai", duree: 3600, i: "👻", t: "Essayez-la sur vous", d: "Une photo, et vous vous voyez avec." },
-    { cle: "avis", duree: 2200, i: "⭐", t: "Dites ce que vous en pensez", d: "Votre avis reste sur son mur." },
-    { cle: "amis", duree: 2600, i: "💬", t: "Demandez à vos amis", d: "« Ça me va ? » — ils répondent." },
-    { cle: "prendre", duree: 2200, i: "📅", t: "Réservez. Ou pas.", d: "Vous décidez après avoir vu." },
+  /**
+   * ═══ QUATRE EXEMPLES, DEUX SECONDES CHACUN ════════════════════════════════
+   *
+   * « Je t'ai fait le mock-up à respecter scrupuleusement au pixel près qui
+   * montre le concept. Donc première image c'est l'exemple coiffeur, et toutes
+   * les deux secondes le pictogramme en bas change et explose pour montrer
+   * l'exemple suivant (vêtement), puis restaurant, et enfin fleuriste. Et le
+   * fantôme peut faire un clin d'œil à chaque fois qu'il change d'exemple. »
+   *
+   * CE QU'IL Y AVAIT ICI, ET POURQUOI ÇA NE POUVAIT PAS MARCHER. Cinq temps qui
+   * DÉCRIVAIENT le produit — l'offre du jour, l'essai, l'avis, les amis, la
+   * réservation — avec un compteur, cinq pastilles, une légende qui changeait et
+   * un « glissez pour entrer ». Son diagnostic était exact : « ton écran
+   * explique plusieurs fonctions avant d'avoir fait comprendre ClikMe ». On
+   * demandait d'INTERPRÉTER le produit à quelqu'un qui ne le connaît pas.
+   *
+   * ON NE DIT PLUS QU'UNE SEULE CHOSE, ET ON LA PROUVE. « Avant d'y aller,
+   * essayez. » Quatre preuves qui passent toutes seules, deux secondes chacune :
+   * une photo avant, une photo après, et le Fantôme entre les deux. Personne
+   * n'a rien à lire pour comprendre.
+   *
+   * L'ORDRE EST LE SIEN, ET IL COMMENCE PAR LE COIFFEUR. C'est l'exemple le
+   * plus lisible en un coup d'œil — une chevelure qui change se voit de loin,
+   * un bouquet posé sur une table demande deux secondes d'attention.
+   *
+   * ET CHAQUE EXEMPLE ALLUME SON PICTOGRAMME. La rangée du bas n'explique plus
+   * cinq fonctions : elle dit les familles de commerces, et celle dont on voit
+   * la preuve s'allume. « Sorties » est la seule sans démonstration — il en a
+   * nommé quatre.
+   */
+  const EXEMPLES: {
+    cle: string;
+    /** La famille allumée dans la rangée du bas. Voir FAMILLES. */
+    famille: string;
+    avant: string;
+    apres: string;
+    /** Les deux pastilles, quand sa maquette dit mieux que « Avant ». */
+    motAvant?: string;
+    motApres?: string;
+  }[] = [
+    {
+      cle: "coiffure",
+      famille: "beaute",
+      // LE COUPLE SE CHOISIT SUR CE QU'IL RACONTE EN DEUX SECONDES, PAS SUR
+      // SON NOM DE FICHIER. `avis-coupe` était une nuque rasée vue de dos :
+      // impeccable sur un mur d'avis, illisible comme « après » d'un portrait
+      // de face. Deux portraits cadrés pareil, deux coiffures différentes :
+      // on comprend sans lire.
+      avant: "/direct/coiffure-femme-face.jpg",
+      apres: "/direct/coiffure2.jpg",
+    },
+    {
+      cle: "mode",
+      famille: "mode",
+      // ELLE TIENT LA PIÈCE SUR SON CINTRE, PUIS ELLE LA PORTE. Le premier
+      // jet mettait le vêtement seul en gros plan à gauche : un tissu bleu
+      // plein cadre ne dit pas « avant », il ne dit rien du tout.
+      avant: "/direct/avis-cabine.jpg",
+      apres: "/direct/vetement2.jpg",
+    },
+    {
+      cle: "restaurant",
+      famille: "restaurants",
+      avant: "/direct/plat-du-jour-brute.jpg",
+      apres: "/direct/plat-du-jour.jpg",
+      // SA MAQUETTE DU RESTAURANT NE DIT PAS « AVANT / APRÈS » mais « ESSAYEZ
+      // LE PLAT / VOTRE ASSIETTE » : chez un restaurant on ne transforme pas
+      // une photo de soi, on compose son assiette. Les mots suivent.
+      motAvant: "Essayez le plat",
+      motApres: "Votre assiette",
+    },
+    {
+      cle: "fleuriste",
+      famille: "commerces",
+      avant: "/direct/table-salon.jpeg",
+      apres: "/direct/avis-bouquet.jpg",
+      motAvant: "Chez vous",
+      motApres: "Avec le bouquet",
+    },
   ];
+
+  /**
+   * LES CINQ FAMILLES DE LA RANGÉE DU BAS, DANS L'ORDRE DE SA MAQUETTE.
+   *
+   * LES PICTOGRAMMES SONT TRACÉS, PAS ÉMOJIS. Ses maquettes montrent cinq
+   * dessins au trait dans un carré arrondi, tous du même poids ; un émoji
+   * arrive avec ses couleurs, change de dessin d'un téléphone à l'autre, et
+   * casserait l'alignement optique de la rangée.
+   */
+  const FAMILLES: { cle: string; mot: string; d: string }[] = [
+    { cle: "mode", mot: "Mode",
+      d: "M12 4.6a2 2 0 1 0 2 2c0 .9-.7 1.4-1.4 1.8-.4.2-.6.5-.6.9v1.1M12 10.4 4 16.2c-.8.6-.4 1.9.6 1.9h14.8c1 0 1.4-1.3.6-1.9L12 10.4Z" },
+    { cle: "restaurants", mot: "Restaurants",
+      d: "M7 3v7M5 3v4a2 2 0 0 0 4 0V3M7 10v11M17.5 3c-1.4 0-2.5 2-2.5 4.5S16 12 17.5 12 20 10 20 7.5 18.9 3 17.5 3Zm0 9v9" },
+    { cle: "beaute", mot: "Beauté",
+      d: "M12 4c2 2 3 4.2 3 6.4 0 2.1-1.2 3.9-3 5.2-1.8-1.3-3-3.1-3-5.2C9 8.2 10 6 12 4ZM8.6 9.2C6.4 9 4.4 9.8 3 11.4c1 2.4 3 4 5.4 4.5M15.4 9.2c2.2-.2 4.2.6 5.6 2.2-1 2.4-3 4-5.4 4.5M12 15.6c-2.6 1.6-5.6 1.8-8.6.6.8 2.4 3.4 4.2 8.6 4.2s7.8-1.8 8.6-4.2c-3 1.2-6 1-8.6-.6Z" },
+    { cle: "sorties", mot: "Sorties",
+      d: "M4.5 6.5h15a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-11a1 1 0 0 1 1-1ZM8 3.5v4M16 3.5v4M3.5 10.5h17M7.5 14h3M13.5 14h3M7.5 16.6h3" },
+    { cle: "commerces", mot: "Commerces",
+      d: "M6.2 8h11.6a1 1 0 0 1 1 1.1l-.9 9.8a1 1 0 0 1-1 .9H7.1a1 1 0 0 1-1-.9l-.9-9.8A1 1 0 0 1 6.2 8ZM9 10.4V7a3 3 0 0 1 6 0v3.4" },
+  ];
+
+  /** LES QUATRE DURENT LE MÊME TEMPS : deux secondes, comme il l'a demandé. */
+  const ACTES = EXEMPLES.map((x) => ({ ...x, duree: 2000 }));
+  /**
+   * L'EXEMPLE EN COURS, ET IL NE PEUT PAS MANQUER.
+   *
+   * Le reste modulo la longueur garantit un exemple valide même si `acte` reste
+   * sur un rang d'une liste plus longue — c'était le cas au premier jet, où la
+   * liste des cinq temps venait d'être remplacée par quatre exemples et où
+   * l'écran se vidait un cinquième du temps.
+   */
+  const exemple = EXEMPLES[acte % EXEMPLES.length];
 
   /**
    * ELLE NE TOURNE QUE TANT QUE L'ÉCRAN EST LÀ. `accueilOuvert` retombe dès
@@ -6288,164 +6394,220 @@ export function ApercuHabitant() {
                   setAccueilDx(0);
                 }}
               >
-                {/* ═══ LA SCÈNE — ELLE JOUE LE PRODUIT AU LIEU DE LE DÉCRIRE ══
+                {/* ═══ SA MAQUETTE, AU TRAIT ═══════════════════════════════════
 
-                    « C'est vraiment pas fun et ça ne donne pas envie de tester.
-                    Il faut que ce soit animé, très vivant, très cool, pour que
-                    les gens aient un effet wow direct. »
+                    « Le problème principal, c'est que ton écran explique
+                    plusieurs fonctions avant d'avoir fait comprendre ClikMe. En
+                    2 secondes, je vois "Essayez-le avant d'y aller", 24
+                    commerces, cinq petits pictos, une photo qui change… Je dois
+                    interpréter le produit. »
 
-                    CE QU'IL Y AVAIT ICI : six photos de commerces qui dérivaient
-                    doucement derrière cinq lignes de texte. Les photos étaient
-                    vraies et la dérive était jolie, mais RIEN NE SE PASSAIT — et
-                    on demandait à quelqu'un qui ne connaît pas le produit de lire
-                    cinq phrases pour comprendre ce qu'il fait.
+                    SON DIAGNOSTIC EST EXACT, ET LA CORRECTION EST DE TOUT
+                    ENLEVER. Plus de compteur, plus d'explications qui changent
+                    sous les icônes, plus de cinq temps à lire, plus de
+                    « glissez pour entrer » — une friction ajoutée sur un écran
+                    dont le seul travail est d'en enlever.
 
-                    LA SEULE CHOSE IMPRESSIONNANTE DE CE PRODUIT NE SE RACONTE
-                    PAS. Voir un tatouage se poser sur un bras nu prend deux
-                    secondes à comprendre et zéro mot. Les cinq temps se jouent
-                    donc, l'un après l'autre, en boucle — et le troisième acte,
-                    celui de l'essai, dure le plus longtemps parce que c'est
-                    celui qu'on est venu voir.
+                    CE QUI RESTE EST UNE PREUVE, ET ELLE PASSE TOUTE SEULE :
+                    deux photos côte à côte, avant et après, le Fantôme entre
+                    les deux, et une phrase. Quatre exemples s'enchaînent, deux
+                    secondes chacun — voir `EXEMPLES`. Personne n'a rien à lire
+                    pour comprendre ce que fait ce produit.
 
-                    LE RENDU EST NOMMÉ « LE RENDU », et ce n'est pas de la
-                    prudence juridique : c'est le mot du produit. Un bras nu qui
-                    devient un bras tatoué sans rien dire ferait passer une
-                    simulation pour une photo, et cette application passe son
-                    temps à séparer ce qui est vrai de ce qui est montré. */}
-                <div
-                  className={`ap-acc-sc a-${ACTES[acte]?.cle ?? "offre"}`}
-                  aria-hidden="true"
-                >
-                  {/* L'ACTE 1 ET L'ACTE 5 : un vrai commerce du paquet du jour,
-                      qui change à chaque boucle. */}
+                    LA MISE EN PAGE SUIT SA MAQUETTE AU TRAIT : le mot-marque en
+                    haut, la scène au milieu, la promesse en deux lignes dont la
+                    seconde est soulignée, la rangée des cinq familles, et UN
+                    bouton. Rien d'autre. */}
+                <div className="ap-ac-marque">
+                  <b>
+                    Clik<em>Me</em>
+                  </b>
+                  <span>
+                    Votre ville à essayer <i aria-hidden="true">♡</i>
+                  </span>
+                </div>
+
+                {/* ─── LA SCÈNE : DEUX CARTES INCLINÉES, LE FANTÔME AU MILIEU ───
+                    LA CLÉ EST SUR LE CADRE, ET C'EST CE QUI REJOUE L'ENTRÉE DES
+                    DEUX CARTES à chaque changement d'exemple. Sans elle, React
+                    réutiliserait les mêmes nœuds et se contenterait d'échanger
+                    les images : on verrait deux photos clignoter, pas deux
+                    cartes arriver. */}
+                {/* ═══ LES HUIT PHOTOS SONT CHARGEES D'AVANCE ══════════════
+
+                    DEFAUT MESURE SUR CAPTURE : au passage a un exemple jamais
+                    affiche, la scene restait VIDE — deux rectangles noirs — le
+                    temps que ses deux photos arrivent. Le cadre se remonte a
+                    chaque exemple (voir la cle), donc le navigateur ne commence
+                    a les chercher qu'a cet instant-la. Sur un telephone en
+                    quatre G, ce n'est pas un instant : c'est la moitie des deux
+                    secondes de l'exemple.
+
+                    HUIT BALISES CACHEES SUFFISENT, et c'est la solution la plus
+                    betement fiable : le navigateur les telecharge au montage de
+                    l'ecran, elles entrent dans son cache, et les cartes les
+                    trouvent deja la. Pas de composant, pas d'etat, rien a
+                    synchroniser. */}
+                <span className="ap-ac-precharge" aria-hidden="true">
+                  {EXEMPLES.flatMap((x) => [x.avant, x.apres]).map((src) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={src} src={src} alt="" />
+                  ))}
+                </span>
+
+                <div className="ap-ac-scene" key={exemple.cle} aria-hidden="true">
                   <span
-                    className="ap-sc-ph"
-                    style={vedette ? { backgroundImage: `url("${vedette.photo}")` } : undefined}
-                  />
-                  <span className="ap-sc-t">{vedette?.quoi ?? "Le direct"}</span>
-                  {!!vedette?.prix && <span className="ap-sc-prix">{vedette.prix}</span>}
-
-                  {/* L'ACTE 2 : le bras nu, le passage du Fantôme, puis le
-                      rendu. Les deux photos sont dans le dépôt et la seconde
-                      porte vraiment ce dessin. */}
-                  <span className="ap-sc-av" />
-                  <span className="ap-sc-ap" />
-                  <span className="ap-sc-ray" />
-                  <span className="ap-sc-f">
-                    <Fantome classe="ap-sc-fs" />
+                    className="ap-ac-carte ap-ac-av"
+                    style={{ backgroundImage: `url("${exemple.avant}")` }}
+                  >
+                    <i>{exemple.motAvant ?? "Avant"}</i>
                   </span>
-                  <span className="ap-sc-badge">✨ Le rendu</span>
-
-                  {/* L'ACTE 3 : la note, cinq Fantômes qui s'allument. */}
-                  <span className="ap-sc-notes">
-                    {[0, 1, 2, 3, 4].map((k) => (
-                      <Fantome key={k} classe={`ap-sc-n n${k}`} />
-                    ))}
+                  {/* LA FLÈCHE NÉON ET LES DEUX ÉTINCELLES, entre les cartes :
+                      c'est elle qui dit que la seconde vient de la première. */}
+                  <span className="ap-ac-fleche">
+                    <svg viewBox="0 0 64 34" focusable="false">
+                      <path
+                        d="M6 24C14 8 34 2 54 10M54 10l-9.5-.6M54 10l-4.4 8.6"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
                   </span>
-
-                  {/* L'ACTE 4 : deux bulles, la question et la réponse. */}
-                  <span className="ap-sc-b b1">Ça me va&nbsp;?</span>
-                  <span className="ap-sc-b b2">Trop bien 🔥</span>
-
-                  {/* L'ACTE 5 : le cachet. C'est le seul geste qui engage, donc
-                      le seul élément en menthe de tout l'écran. */}
-                  <span className="ap-sc-cachet">✓ Mis de côté</span>
+                  <span className="ap-ac-et e1">✦</span>
+                  <span className="ap-ac-et e2">✦</span>
+                  <span
+                    className="ap-ac-carte ap-ac-ap"
+                    style={{ backgroundImage: `url("${exemple.apres}")` }}
+                  >
+                    <i>{exemple.motApres ?? "Après"}</i>
+                  </span>
+                  {/* ─── LE FANTÔME, ET IL CLIGNE DE L'ŒIL ───
+                      « Le fantôme peut faire un clin d'œil à chaque fois qu'il
+                      change d'exemple. » Il porte sa casquette, il est devant
+                      les deux cartes et à cheval sur leur bas, exactement comme
+                      sur la maquette. La classe du clin d'œil est posée par le
+                      cadre, donc elle se rejoue à chaque exemple. */}
+                  <span className="ap-ac-f">
+                    {/* LA POSE DU CLIN D'OEIL EXISTAIT DEJA, ET C'EST LA SIENNE.
+                        `clin` est la variante dessinee pour ses maquettes
+                        precedentes : oeil plus gros avec son reflet du bon
+                        cote, arc de paupiere fermee, bouche ouverte. Ses quatre
+                        nouvelles images montrent EXACTEMENT ce personnage-la, et
+                        il cligne sur les quatre. On ne redessine donc rien : on
+                        prend la pose qui est deja juste, et on lui ajoute un
+                        battement a chaque changement d'exemple — voir
+                        `apAcClin`. */}
+                    <Fantome classe="ap-ac-fs" clin />
+                    <svg className="ap-ac-casq" viewBox="0 0 64 30" focusable="false">
+                      {/* ─── LA VISIÈRE, PLATE, D'UN SEUL CÔTÉ ───
+                          Elle sortait des DEUX côtés au premier jet, et une
+                          calotte flanquée de deux ailes n'est pas une
+                          casquette : c'est un chapeau melon. Une visière est
+                          plate, large, et part vers l'avant — donc d'un seul
+                          côté quand la tête est de trois quarts. */}
+                      <path
+                        d="M19 20.8C9.6 20.2 2.5 22 2.5 24.3c0 2.4 7.4 3.7 17.6 2.8l1.4-6.3Z"
+                        fill="#0E0A16"
+                      />
+                      {/* LA CALOTTE, et son arête un peu aplatie sur le dessus :
+                          une demi-sphère parfaite fait un casque. */}
+                      <path
+                        d="M18.6 24.2C16.4 10.6 23.4 3 34.2 3c10.6 0 17.2 7.2 15.4 21.2-9.6 1.6-21.4 1.6-31 0Z"
+                        fill="#1B1426"
+                      />
+                      {/* LE BANDEAU DU BAS, un ton plus clair : c'est lui qui
+                          donne l'épaisseur du tissu. */}
+                      <path
+                        d="M18.8 22.4c9.6-1.5 21-1.5 30.6 0l-.2 1.8c-9.6 1.6-21.4 1.6-31 0l.6-1.8Z"
+                        fill="#2B2039"
+                      />
+                      <text x="34" y="16.4" textAnchor="middle" className="ap-ac-casq-m">
+                        Clik<tspan className="ap-ac-casq-r">Me</tspan>
+                      </text>
+                    </svg>
+                  </span>
                 </div>
 
-                <div className="ap-acc-mot">
-                  <span className="ap-acc-t">
-                    <i aria-hidden="true" />
-                    Le direct de Dax
-                  </span>
-                  {/* ═══ LE TITRE DIT CE QU'ON NE TROUVE NULLE PART AILLEURS ══
+                {/* ─── LA PROMESSE, EN DEUX LIGNES ───
+                    LA SECONDE EST SOULIGNÉE À LA MAIN, et le trait est un tracé
+                    et non une bordure : sa maquette montre un coup de feutre qui
+                    dépasse et qui n'est pas d'épaisseur constante. Une bordure
+                    sous un mot est une interface ; un trait qui dépasse est
+                    quelqu'un qui a insisté. */}
+                <p className="ap-ac-promesse">
+                  <b>Avant d’y aller…</b>
+                  <em>
+                    Essayez.
+                    <svg className="ap-ac-trait" viewBox="0 0 200 12" focusable="false">
+                      <path
+                        d="M4 8.4c34-3.4 96-5 192-3.6"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="6"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </em>
+                </p>
 
-                      « Il faut entièrement le refaire pour coller au concept,
-                      qui a beaucoup évolué : découvrir l'offre du jour du
-                      commerçant, l'essayer virtuellement, donner son avis sur
-                      l'essayage du produit, en discuter avec nos amis, la
-                      réserver ou pas. »
-
-                      « TOUTE LA VILLE, EN CE MOMENT » ÉTAIT VRAI ET NE L'EST
-                      PLUS ASSEZ. C'est la promesse d'un fil d'actualité local,
-                      et un fil d'actualité local, tout le monde peut en faire
-                      un. Ce que personne d'autre ne propose tient en cinq mots
-                      et c'est le milieu du parcours : on l'essaie avant d'y
-                      aller.
-
-                      LE COMPTE DESCEND SUR UNE LIGNE ET RESTE VRAI. Il tenait
-                      quarante points en chiffre géant pour dire ce que le
-                      titre disait déjà — combien il y a. Ce qui manquait était
-                      ce qu'on en FAIT, et c'est ce que les cinq temps
-                      racontent. Il est toujours lu dans le paquet à l'instant
-                      où l'écran s'ouvre : un chiffre inventé une seule fois
-                      fait perdre quelqu'un pour toujours. */}
-                  <h2>
-                    Essayez-le
-                    <em>avant d’y aller.</em>
-                  </h2>
-                  <p className="ap-acc-n">
-                    <b>{toutes.length + evenements.length}</b>
-                    {/* ELLE TIENT SUR UNE LIGNE. « Aujourd'hui » passait a la
-                        ligne pour repeter ce que la pastille du haut dit deja
-                        en battant — « LE DIRECT » — et ce que le premier des
-                        cinq temps dit en toutes lettres. */}
-                    <span>commerces et événements autour de vous</span>
-                  </p>
-                  {/* ═══ LE PARCOURS, SOUS LA SCÈNE QUI LE JOUE ═══════════════
-
-                      LES CINQ SONT DANS SON ORDRE À LUI, et l'ordre est le
-                      fond : chacun n'a de sens que parce que le précédent a eu
-                      lieu. On ne donne pas son avis sur un essayage qu'on n'a
-                      pas fait, on ne demande pas à ses amis sur rien, et
-                      surtout — c'est le dernier, et le seul qui engage — on ne
-                      réserve qu'APRÈS avoir vu.
-
-                      ILS ÉTAIENT CINQ PARAGRAPHES EMPILÉS, ils sont maintenant
-                      cinq pastilles et une légende. On voit d'un coup d'œil
-                      qu'il y a cinq temps et où on en est ; on LIT celui qui se
-                      joue. Cinq titres et cinq détails à la fois, c'était
-                      demander de tout lire avant de rien voir — et personne ne
-                      lit cinq phrases sur un premier écran.
-
-                      « OU PAS » RESTE ÉCRIT, et ce n'est pas une coquetterie.
-                      C'est la contrepartie de tout le reste : si l'essai
-                      obligeait à réserver, personne n'essaierait. */}
-                  <div className="ap-acc-pas" aria-hidden="true">
-                    {ACTES.map((x, k) => (
-                      <i key={x.cle} className={k === acte ? "on" : k < acte ? "fait" : ""}>
-                        {x.i}
-                      </i>
-                    ))}
-                  </div>
-                  <p className="ap-acc-lg" aria-live="polite">
-                    <b>{ACTES[acte]?.t}</b>
-                    <em>{ACTES[acte]?.d}</em>
-                  </p>
-                  {/* ET SI LE TÉLÉPHONE REFUSE LES ANIMATIONS, LES CINQ SONT
-                      ÉCRITS. La scène se fige alors sur son premier acte et la
-                      légende ne tourne plus : sans cette liste, quelqu'un qui a
-                      coupé les animations n'apprendrait qu'un cinquième du
-                      produit. Elle ne s'affiche que dans ce cas — voir la
-                      requête `prefers-reduced-motion` plus bas. */}
-                  <ul className="ap-acc-tous">
-                    {ACTES.map((x) => (
-                      <li key={x.cle}>
-                        <i aria-hidden="true">{x.i}</i>
-                        <span>
-                          <b>{x.t}</b>
-                          {x.d}
+                {/* ─── LES CINQ FAMILLES ───
+                    « Toutes les deux secondes le pictogramme en bas change et
+                    explose pour montrer l'exemple suivant. »
+                    L'EXPLOSION EST SUR CELUI QUI S'ALLUME, et elle a deux
+                    couches : le pictogramme sursaute, et un anneau part de lui
+                    et se dilate en s'effaçant. Un simple changement de couleur
+                    ne se remarque pas dans une rangée de cinq. */}
+                <ul className="ap-ac-fam">
+                  {FAMILLES.map((f) => {
+                    const on = f.cle === exemple.famille;
+                    return (
+                      <li key={f.cle} className={on ? "on" : ""}>
+                        <span className="ap-ac-pic">
+                          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path
+                              d={f.d}
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.7"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                          {on && <i className="ap-ac-onde" aria-hidden="true" />}
                         </span>
+                        <b>{f.mot}</b>
                       </li>
-                    ))}
-                  </ul>
-                  {/* PAS DE BOUTON « J'AI COMPRIS ». Le geste EST le bouton, et
-                      c'est le seul qu'il y ait à apprendre. */}
-                  <span className="ap-acc-g">
-                    <i aria-hidden="true">←</i>
-                    Glissez pour entrer
-                    <i aria-hidden="true">→</i>
-                  </span>
-                </div>
+                    );
+                  })}
+                </ul>
+
+                {/* ─── UN SEUL BOUTON, ET ON TOUCHE ───
+                    « Je ne ferais plus swiper horizontalement pour entrer.
+                    "Glissez pour entrer" ajoute une mécanique alors qu'on
+                    cherche précisément à enlever de la friction. »
+                    IL A RAISON, ET LE GESTE RESTE POSSIBLE. Glisser fonctionne
+                    toujours — le cadre l'écoute — mais plus personne n'est
+                    obligé de le deviner pour entrer. */}
+                <button
+                  type="button"
+                  className="ap-ac-go"
+                  onPointerDown={(ev) => ev.stopPropagation()}
+                  onClick={() => marquerVu("accueil")}
+                >
+                  <Fantome classe="ap-ac-go-f" />
+                  {/* LA VILLE VIENT DU COMMERCE DU SOMMET, ET LE SOMMET PEUT
+                      ÊTRE UN ÉVÉNEMENT — qui n'a pas de ville à lui. D'où
+                      `dessus` et non `sommet` : on lit celle du commerce
+                      quand il y en a un, et Dax sinon. */}
+                  Essayer {dessus?.ville ?? "Dax"}
+                  <s aria-hidden="true">→</s>
+                </button>
+                <p className="ap-ac-pied">
+                  Des commerces vraiment vivants <i aria-hidden="true">♡</i>
+                </p>
               </div>
             )}
 
@@ -10895,8 +11057,21 @@ export function ApercuHabitant() {
 
               C'EST LA MÊME RÈGLE QUE POUR LE BANDEAU D'INFORMATION et pour le
               rond de la carte : rien d'automatique ne recouvre jamais un geste.
-              Elle appartient à l'annonce, elle ne sort donc pas de l'annonce. */}
-          {bulle && dessus && bulle === dessus.id && bulleDuMur && !feuille && !murOuvert && (
+              Elle appartient à l'annonce, elle ne sort donc pas de l'annonce.
+
+              ET L'ÉCRAN D'OUVERTURE EST LE TROISIÈME CAS, trouvé en regardant
+              la capture : la bulle se posait exactement sur « ESSAYER DAX »,
+              c'est-à-dire sur le seul bouton d'un écran qui n'en a qu'un. La
+              liste des exceptions disait « pas par-dessus une feuille, pas
+              par-dessus le mur » et oubliait le premier écran — qui est
+              pourtant le seul que TOUT LE MONDE voit. */}
+          {bulle &&
+            dessus &&
+            bulle === dessus.id &&
+            bulleDuMur &&
+            !feuille &&
+            !murOuvert &&
+            !accueilOuvert && (
             <button
               type="button"
               className="ap-murbul"
@@ -13131,217 +13306,275 @@ export function ApercuHabitant() {
            animation:apMonteAcc .45s cubic-bezier(.22,1.1,.4,1) both;}
         @keyframes apMonteAcc{from{opacity:0;transform:scale(.97);}to{opacity:1;transform:none;}}
 
-        /* ═══ LA SCENE ═════════════════════════════════════════════════════
-           Elle remplace le mur de six photos qui derivait. Le mur etait joli et
-           immobile ; « il faut que ce soit anime, tres vivant, tres cool, pour
-           que les gens aient un effet wow direct ».
-           ELLE OCCUPE LE HAUT ET NE BOUGE PAS DE PLACE. Les cinq actes se
-           succedent DEDANS : une scene qui changerait de taille a chaque acte
-           ferait sauter tout le texte en dessous cinq fois par boucle. */
-        /* ELLE PREND CE QUI RESTE, ELLE NE MESURE PAS UN POURCENTAGE. A
-           quarante pour cent elle laissait cent cinquante points de noir entre
-           son bord et le premier mot — un trou au milieu de l'ecran qu'on doit
-           trouver beau. Posee comme element flexible, elle s'arrete exactement
-           ou le texte commence, quelle que soit la hauteur du telephone et la
-           longueur de la legende en cours. */
-        .ap-acc-sc{position:relative;flex:1;min-height:150px;margin:16px 16px 0;
-           border-radius:22px;overflow:hidden;pointer-events:none;
-           background:#0B1310;border:1px solid rgba(255,255,255,.08);
-           box-shadow:0 22px 50px -24px rgba(0,0,0,.95);}
-        /* TOUTES LES COUCHES SONT LA TOUT LE TEMPS, ET SEULE L'OPACITE CHANGE.
-           Les monter et les demonter a chaque acte rechargerait les photos a
-           chaque boucle — on verrait un trou noir de deux dixiemes a l'endroit
-           exact ou il faut impressionner. */
-        .ap-acc-sc>span{position:absolute;opacity:0;
-           transition:opacity .45s ease;}
-        .ap-sc-ph,.ap-sc-av,.ap-sc-ap{inset:0;background-size:cover;
-           background-position:center;}
-        .ap-sc-av{background-image:url("/direct/avant-bras.jpg");
-           background-position:center 38%;}
-        .ap-sc-ap{background-image:url("/direct/tatouB.jpg");}
+        /* ═══ L'ECRAN D'OUVERTURE, AU TRAIT DE SA MAQUETTE ═════════════════
+           SEPT BLOCS, DU HAUT VERS LE BAS, ET RIEN D'AUTRE : le mot-marque, la
+           scene avant/apres, la promesse en deux lignes, la rangee des cinq
+           familles, le bouton, le pied. Voir EXEMPLES pour ce qui tourne.
+           LES PROPORTIONS SONT LES SIENNES : la scene prend ce qui reste et
+           domine l'ecran, la promesse tient en deux lignes, le bouton est le
+           seul aplat plein. */
+        /* HORS DU FLUX ET SANS TAILLE : elles ne doivent rien peser dans la
+           mise en page, seulement declencher le telechargement. */
+        .ap-ac-precharge{position:absolute;width:0;height:0;overflow:hidden;
+          opacity:0;pointer-events:none;}
+        .ap-ac-marque{flex:none;padding:14px 20px 0;text-align:center;}
+        .ap-ac-marque b{display:block;font-size:40px;font-weight:900;
+          letter-spacing:-.02em;line-height:1;color:#fff;}
+        .ap-ac-marque b em{font-style:normal;color:#F0389C;}
+        .ap-ac-marque span{display:inline-flex;align-items:center;gap:7px;
+          margin-top:7px;font-size:11px;font-weight:750;letter-spacing:.24em;
+          text-transform:uppercase;color:#D8DEE6;}
+        .ap-ac-marque span i{font-style:normal;color:#F0389C;letter-spacing:0;}
 
-        /* ─── ACTE 1 : L'OFFRE DU JOUR ───
-           La photo arrive, son titre monte, et le prix TOMBE — c'est le seul
-           element qui a un mouvement propre, parce que c'est lui qui fait
-           lever quelqu'un de sa chaise. */
-        .ap-acc-sc.a-offre .ap-sc-ph{opacity:1;animation:apScZoom 2.4s ease-out both;}
-        .ap-acc-sc.a-offre .ap-sc-t{opacity:1;animation:apScMonte .5s .12s cubic-bezier(.22,1.1,.4,1) both;}
-        .ap-acc-sc.a-offre .ap-sc-prix{opacity:1;animation:apScTombe .55s .34s cubic-bezier(.3,1.5,.5,1) both;}
-        @keyframes apScZoom{from{transform:scale(1.1);}to{transform:scale(1);}}
-        @keyframes apScMonte{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
-        @keyframes apScTombe{from{opacity:0;transform:translateY(-26px) scale(.8) rotate(-8deg);}
-           to{opacity:1;transform:none;}}
-        .ap-sc-t{left:12px;bottom:12px;right:96px;font-size:13px;font-weight:800;
-           line-height:1.25;color:#fff;text-align:left;
-           text-shadow:0 1px 8px rgba(0,0,0,.9);}
-        .ap-sc-prix{right:12px;bottom:12px;padding:7px 12px;border-radius:999px;
-           font-size:15px;font-weight:900;letter-spacing:-.02em;color:#1A1206;
-           background:linear-gradient(140deg,#FFD98A,#F5B83C);
-           box-shadow:0 10px 24px -10px rgba(245,184,60,.9);}
-
-        /* ─── ACTE 2 : L'ESSAI ───
-           Le bras nu, le Fantome qui le traverse avec sa barre de lumiere, puis
-           le rendu. Les trois se suivent DANS le meme acte, par retards : c'est
-           la seule facon de faire lire une transformation plutot que deux
-           photos posees l'une sur l'autre. */
-        .ap-acc-sc.a-essai .ap-sc-av{opacity:1;animation:apScSort 3.6s linear both;}
-        .ap-acc-sc.a-essai .ap-sc-ap{animation:apScEntre 3.6s linear both;}
-        .ap-acc-sc.a-essai .ap-sc-ray{opacity:1;animation:apScRaie 1.5s .5s ease-in-out both;}
-        .ap-acc-sc.a-essai .ap-sc-f{opacity:1;animation:apScTraverse 1.5s .5s ease-in-out both;}
-        .ap-acc-sc.a-essai .ap-sc-badge{opacity:1;animation:apScMonte .5s 2.1s cubic-bezier(.22,1.1,.4,1) both;}
-        /* LA BASCULE SE FAIT SOUS LA BARRE DE LUMIERE, pas avant ni apres : a
-           cinquante-cinq pour cent de l'acte, la barre est au milieu du cadre. */
-        @keyframes apScSort{0%,50%{opacity:1;}62%,100%{opacity:0;}}
-        @keyframes apScEntre{0%,50%{opacity:0;}62%,100%{opacity:1;}}
-        .ap-sc-ray{left:0;right:0;height:38%;
-           background:linear-gradient(180deg,rgba(125,230,255,0),rgba(160,240,255,.5),
-             rgba(125,230,255,0));
-           filter:blur(1px);}
-        @keyframes apScRaie{from{top:-38%;}to{top:100%;}}
-        .ap-sc-f{left:50%;top:50%;width:74px;height:80px;margin:-40px 0 0 -37px;}
-        .ap-sc-fs{width:100%;height:100%;
-           filter:drop-shadow(0 0 22px rgba(160,240,255,.75));}
-        @keyframes apScTraverse{
-          0%{opacity:0;transform:translateY(-70px) scale(.7);}
-          25%{opacity:1;}
-          75%{opacity:1;}
-          100%{opacity:0;transform:translateY(70px) scale(1.1);}
+        /* ─── LA SCENE ───
+           DEUX CARTES INCLINEES EN SENS INVERSE, qui se touchent presque au
+           centre. L'inclinaison est ce qui empeche l'ensemble de ressembler a
+           un comparatif de catalogue : deux rectangles droits cote a cote sont
+           un tableau, deux cartes penchees sont des photographies posees. */
+        .ap-ac-scene{position:relative;flex:1;min-height:180px;
+          margin:16px 14px 0;display:flex;align-items:stretch;
+          justify-content:center;gap:10px;}
+        .ap-ac-carte{position:relative;flex:1 1 0;min-width:0;
+          border-radius:20px;background-size:cover;background-position:center;
+          box-shadow:0 18px 44px -20px rgba(0,0,0,.9);}
+        /* ELLES ENTRENT EN GLISSANT DE L'EXTERIEUR, ET LA SECONDE EN RETARD :
+           c'est ce decalage qui dit que l'apres vient de l'avant. */
+        /* LES DEUX MODIFICATEURS PORTENT LE PREFIXE COMPLET, ET C'EST UNE
+           PANNE MESUREE. Ecrits en deux lettres, le second heritait de la
+           regle du CADRE DU TELEPHONE de cette meme feuille, en position
+           fixe et haute de tout l'ecran. La carte de droite se depliait donc
+           sur les huit cent quarante points de la page et recouvrait la
+           promesse, les pictogrammes et le bouton. Un nom de classe de deux
+           lettres dans une feuille de dix-sept mille lignes finit toujours par
+           rencontrer son homonyme. */
+        .ap-ac-carte.ap-ac-av{transform:rotate(-3.2deg);border:1.5px solid rgba(255,255,255,.14);
+          animation:apAcCarteG .62s cubic-bezier(.2,1.05,.35,1) both;}
+        .ap-ac-carte.ap-ac-ap{transform:rotate(3.2deg);border:1.5px solid rgba(240,56,156,.55);
+          box-shadow:0 18px 44px -20px rgba(0,0,0,.9),0 0 22px -4px rgba(240,56,156,.55);
+          animation:apAcCarteD .62s .1s cubic-bezier(.2,1.05,.35,1) both;}
+        @keyframes apAcCarteG{
+          from{opacity:0;transform:translateX(-26px) rotate(-9deg) scale(.94);}
+          to{opacity:1;transform:rotate(-3.2deg);}
         }
-        .ap-sc-badge{left:12px;top:12px;padding:6px 11px;border-radius:999px;
-           font-size:11px;font-weight:850;color:#0A1A26;
-           background:linear-gradient(140deg,#BFF0FF,#7DD8F5);}
-
-        /* ─── ACTE 3 : L'AVIS ───
-           Le rendu reste, et cinq Fantomes s'allument l'un apres l'autre. On ne
-           montre pas « 4/5 » : on montre quelqu'un en train de noter. */
-        .ap-acc-sc.a-avis .ap-sc-ap{opacity:1;}
-        .ap-acc-sc.a-avis .ap-sc-notes{opacity:1;}
-        /* ILS SE LISENT SUR N'IMPORTE QUELLE PHOTO. Poses nus sur le rendu du
-           tatouage — fond clair, orange, bleu — cinq fantomes blancs a vingt-six
-           points disparaissaient : on voyait cinq taches. Le voile leur rend le
-           contraste sans cacher ce qu'on note. */
-        .ap-sc-notes{left:0;right:0;bottom:0;display:flex;justify-content:center;
-           align-items:flex-end;gap:8px;padding:26px 0 16px;
-           background:linear-gradient(180deg,rgba(6,12,10,0),rgba(6,12,10,.8) 55%,
-             rgba(6,12,10,.92));}
-        .ap-sc-n{width:30px;height:32px;opacity:.22;
-           filter:drop-shadow(0 2px 6px rgba(0,0,0,.7));}
-        .ap-acc-sc.a-avis .ap-sc-n{animation:apScNote .4s cubic-bezier(.22,1.6,.4,1) both;}
-        .ap-acc-sc.a-avis .ap-sc-n.n0{animation-delay:.15s;}
-        .ap-acc-sc.a-avis .ap-sc-n.n1{animation-delay:.32s;}
-        .ap-acc-sc.a-avis .ap-sc-n.n2{animation-delay:.49s;}
-        .ap-acc-sc.a-avis .ap-sc-n.n3{animation-delay:.66s;}
-        /* LE CINQUIEME RESTE ETEINT, ET C'EST VOULU : une note pleine sur un
-           premier ecran se lit comme une note fabriquee. Quatre sur cinq se lit
-           comme quelqu'un qui a vraiment donne son avis. */
-        @keyframes apScNote{from{opacity:.22;transform:scale(.6);}
-           to{opacity:1;transform:none;}}
-
-        /* ─── ACTE 4 : LES AMIS ───
-           Deux bulles, la question puis la reponse. Le rendu s'assombrit
-           derriere : ce n'est plus lui qu'on regarde, c'est ce qu'on en dit. */
-        .ap-acc-sc.a-amis .ap-sc-ap{opacity:.4;}
-        .ap-acc-sc.a-amis .ap-sc-b{opacity:1;}
-        .ap-acc-sc.a-amis .ap-sc-b.b1{animation:apScBulle .45s .1s cubic-bezier(.22,1.4,.4,1) both;}
-        .ap-acc-sc.a-amis .ap-sc-b.b2{animation:apScBulle .45s .85s cubic-bezier(.22,1.4,.4,1) both;}
-        @keyframes apScBulle{from{opacity:0;transform:translateY(12px) scale(.86);}
-           to{opacity:1;transform:none;}}
-        .ap-sc-b{max-width:62%;padding:9px 13px;font-size:13px;font-weight:750;
-           line-height:1.25;}
-        .ap-sc-b.b1{left:14px;top:30%;color:#EAF2EC;
-           background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);
-           border-radius:16px 16px 16px 5px;}
-        .ap-sc-b.b2{right:14px;top:52%;color:#04150E;
-           background:linear-gradient(140deg,#7EE6C0,#3DE2A6);
-           border-radius:16px 16px 5px 16px;}
-
-        /* ─── ACTE 5 : ON PREND, OU PAS ───
-           Retour au commerce, et le cachet tombe dessus. Menthe, comme tous les
-           gestes qui engagent dans le produit. */
-        .ap-acc-sc.a-prendre .ap-sc-ph{opacity:1;}
-        .ap-acc-sc.a-prendre .ap-sc-cachet{opacity:1;
-           animation:apScCachet .5s .2s cubic-bezier(.3,1.6,.5,1) both;}
-        @keyframes apScCachet{from{opacity:0;transform:translate(-50%,-50%) scale(1.5) rotate(-10deg);}
-           to{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(-7deg);}}
-        .ap-sc-cachet{left:50%;top:50%;transform:translate(-50%,-50%) rotate(-7deg);
-           padding:11px 19px;border-radius:14px;font-size:17px;font-weight:900;
-           letter-spacing:-.01em;color:#04150E;white-space:nowrap;
-           background:linear-gradient(140deg,#7EE6C0,#3DE2A6);
-           box-shadow:0 16px 36px -14px rgba(61,226,166,.95);}
-
-        .ap-acc-mot{position:relative;z-index:2;padding:0 22px 26px;}
-        .ap-acc-t{display:inline-flex;align-items:center;gap:7px;
-           font-size:10.5px;font-weight:850;letter-spacing:.22em;
-           text-transform:uppercase;color:#3DE2A6;}
-        /* LE POINT QUI BAT — c'est le mot « direct », et il ne s'ecrit pas. */
-        .ap-acc-t i{width:7px;height:7px;border-radius:50%;background:#3DE2A6;
-           box-shadow:0 0 0 0 rgba(61,226,166,.7);animation:apAccBat 2s ease-out infinite;}
-        @keyframes apAccBat{
-          0%{box-shadow:0 0 0 0 rgba(61,226,166,.7);}
-          70%,100%{box-shadow:0 0 0 9px rgba(61,226,166,0);}
+        @keyframes apAcCarteD{
+          from{opacity:0;transform:translateX(26px) rotate(9deg) scale(.94);}
+          to{opacity:1;transform:rotate(3.2deg);}
         }
-        .ap-accueil h2{margin:10px 0 0;font-family:Georgia,'Times New Roman',serif;
-           font-size:clamp(30px,9vw,42px);font-weight:400;line-height:1.04;
-           letter-spacing:-.02em;color:#fff;}
-        .ap-accueil h2 em{display:block;font-style:normal;color:#3DE2A6;}
-        /* LE COMPTE TIENT SUR UNE LIGNE, ET IL EST VRAI. Il s'ecrivait en
-           chiffre de trente-quatre points sur deux lignes : quarante points de
-           hauteur pour dire COMBIEN il y en a, alors que ce qui manquait a cet
-           ecran etait ce qu'on en FAIT. Le chiffre reste gros — c'est le seul
-           de l'ecran — et sa legende passe a cote au lieu de dessous. */
-        .ap-acc-n{display:flex;align-items:center;gap:10px;margin:13px 0 0;}
-        .ap-acc-n b{flex:none;font-size:27px;font-weight:850;letter-spacing:-.03em;
-           line-height:1;color:#fff;font-variant-numeric:tabular-nums;}
-        .ap-acc-n>span{font-size:11.5px;font-weight:700;line-height:1.25;
-           color:#8C9C94;}
-        /* ═══ LA FRISE DES CINQ TEMPS ══════════════════════════════════════
-           Cinq pastilles, une legende. On voit d'un coup d'oeil qu'il y a cinq
-           temps et ou on en est ; on LIT celui qui se joue.
-           CINQ TITRES ET CINQ DETAILS A LA FOIS, C'ETAIT DEMANDER DE TOUT LIRE
-           AVANT DE RIEN VOIR. Personne ne lit cinq phrases sur un premier
-           ecran, et pendant qu'on les lisait, la seule chose impressionnante du
-           produit restait immobile derriere. */
-        .ap-acc-pas{display:flex;align-items:center;gap:8px;margin:15px 0 0;}
-        .ap-acc-pas i{flex:none;width:34px;height:34px;border-radius:12px;
-           display:flex;align-items:center;justify-content:center;font-style:normal;
-           font-size:16px;background:rgba(255,255,255,.06);
-           border:1px solid rgba(255,255,255,.1);opacity:.4;
-           transition:opacity .3s ease,transform .3s ease,border-color .3s ease,
-             background .3s ease;}
-        /* CE QUI EST FAIT RESTE VISIBLE, EN RETRAIT : un parcours dont les
-           etapes passees s'eteignent completement ne se lit plus comme un
-           parcours, mais comme cinq ecrans sans rapport. */
-        .ap-acc-pas i.fait{opacity:.75;}
-        .ap-acc-pas i.on{opacity:1;transform:scale(1.12);
-           background:rgba(61,226,166,.16);border-color:rgba(61,226,166,.5);
-           box-shadow:0 0 22px -6px rgba(61,226,166,.65);}
-        .ap-acc-lg{margin:12px 0 0;min-height:42px;font-size:12px;line-height:1.35;
-           color:#8C9C94;}
-        .ap-acc-lg b{display:block;font-size:15px;font-weight:850;
-           letter-spacing:-.01em;color:#fff;margin-bottom:2px;}
-        .ap-acc-lg em{font-style:normal;}
-        /* LA HAUTEUR EST RESERVEE PAR min-height, et c'est une mesure : les
-           legendes font une ou deux lignes selon l'acte, et sans reserve le
-           bouton du bas montait et descendait de dix-huit points cinq fois par
-           boucle — un bouton qui bouge sous le pouce est un bouton qu'on rate. */
+        /* LES DEUX PASTILLES : grise a gauche, rose a droite, chacune dans le
+           coin haut exterieur de sa carte — comme sur la maquette. */
+        .ap-ac-carte i{position:absolute;top:10px;padding:6px 13px;
+          border-radius:999px;font-style:normal;font-size:12px;font-weight:800;
+          white-space:nowrap;max-width:calc(100% - 20px);overflow:hidden;
+          text-overflow:ellipsis;}
+        .ap-ac-carte.ap-ac-av i{left:10px;color:#F2F5F8;background:rgba(58,62,72,.9);
+          -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+        .ap-ac-carte.ap-ac-ap i{right:10px;color:#fff;background:#F0389C;
+          box-shadow:0 4px 16px -4px rgba(240,56,156,.9);}
 
-        /* CEUX QUI ONT COUPE LES ANIMATIONS LISENT LES CINQ. Cachee par defaut :
-           sinon l'ecran dirait deux fois la meme chose, une fois en frise et une
-           fois en liste. */
-        .ap-acc-tous{display:none;}
-        /* LE GESTE EST LE BOUTON. Il respire vers ses deux bords, comme les
-           etiquettes du paquet — meme mouvement, meme promesse. */
-        .ap-acc-g{display:flex;align-items:center;justify-content:center;gap:10px;
-           margin-top:20px;padding:13px;border-radius:999px;
-           font-size:14px;font-weight:850;color:#04150E;
-           background:linear-gradient(140deg,#7EE6C0,#3DE2A6);
-           box-shadow:0 14px 34px -16px rgba(61,226,166,.9);
-           animation:apAccG 2.4s ease-in-out infinite;}
-        .ap-acc-g i{font-style:normal;font-size:15px;line-height:1;opacity:.7;}
-        @keyframes apAccG{
-          0%,100%{transform:translateX(0);}
-          30%{transform:translateX(-6px);}
-          65%{transform:translateX(6px);}
+        /* LA FLECHE NEON, ENTRE LES DEUX. Elle est POSEE SUR LA COUTURE et non
+           dans le flux : dans le flux elle ecarterait les cartes de sa largeur,
+           et la maquette les montre presque jointives. */
+        .ap-ac-fleche{position:absolute;left:50%;top:32%;width:64px;height:34px;
+          margin-left:-32px;z-index:3;color:#FF52AE;pointer-events:none;
+          filter:drop-shadow(0 0 8px rgba(240,56,156,.9));
+          animation:apAcFleche .7s .24s cubic-bezier(.2,1.1,.35,1) both;}
+        .ap-ac-fleche svg{width:100%;height:100%;display:block;}
+        @keyframes apAcFleche{
+          0%{opacity:0;transform:translateX(-14px) scale(.8);}
+          60%{opacity:1;transform:translateX(3px) scale(1.04);}
+          100%{opacity:1;transform:none;}
+        }
+        .ap-ac-et{position:absolute;z-index:3;font-size:15px;color:#FF8FCB;
+          pointer-events:none;
+          filter:drop-shadow(0 0 6px rgba(255,120,200,.9));
+          animation:apAcEt 1.9s ease-in-out infinite;}
+        .ap-ac-et.e1{left:calc(50% - 4px);top:20%;}
+        .ap-ac-et.e2{left:calc(50% - 10px);top:48%;font-size:11px;
+          animation-delay:.55s;}
+        @keyframes apAcEt{
+          0%,100%{opacity:.25;transform:scale(.7) rotate(0deg);}
+          50%{opacity:1;transform:scale(1.15) rotate(18deg);}
+        }
+
+        /* ─── LE FANTOME, DEVANT LES DEUX CARTES ───
+           A CHEVAL SUR LEUR BAS, comme sur la maquette : il chevauche les deux
+           images, donc il appartient aux deux, donc c'est LUI qui fait le
+           passage. Pose a cote, il ne serait qu'une mascotte. */
+        .ap-ac-f{position:absolute;left:50%;bottom:-8px;width:152px;height:168px;
+          margin-left:-76px;z-index:4;pointer-events:none;
+          animation:apAcFEntre .55s .16s cubic-bezier(.2,1.2,.35,1) both;}
+        @keyframes apAcFEntre{
+          from{opacity:0;transform:translateY(16px) scale(.86);}
+          to{opacity:1;transform:none;}
+        }
+        .ap-ac-fs{width:100%;height:100%;
+          filter:drop-shadow(0 10px 26px rgba(240,56,156,.5));}
+        /* ═══ ET IL EST BLANC A HALO LILAS, PAS VERT MENTHE ════════════════
+           SES QUATRE MAQUETTES MONTRENT LE MEME PERSONNAGE : un corps blanc
+           qui vire au lilas dans les plis, un halo rose autour, des joues
+           roses, des yeux presque noirs. Le fantome du dossier est en menthe
+           — c'est la couleur du Direct, et elle est juste partout ailleurs.
+           Sur CET ecran-ci, ou tout le reste est rose et blanc, elle etait la
+           seule note froide et elle cassait l'ensemble.
+           ON N'A PAS TOUCHE AU FANTOME COMMUN pour autant : les encres sont
+           surchargees ici et nulle part ailleurs. Le meme composant sert a
+           quinze endroits de ce dossier, et les repeindre tous pour un ecran
+           aurait ete la faute classique — corriger la piece en deplacant le
+           mur.
+           LE SELECTEUR PORTE DEUX CLASSES SUR LE MEME NOEUD, ET C'EST
+           NECESSAIRE. Ecrit avec une seule, il faisait jeu egal en specificite
+           avec la regle menthe d'origine, et c'est l'ORDRE DES FEUILLES qui
+           tranchait — donc le menthe gagnait et rien ne changeait a l'ecran.
+           Un cran de specificite de plus rend le resultat independant de
+           l'ordre dans lequel les feuilles sont posees. */
+        .ap-ac-f .ap-ac-fs .ap-f-corps{fill:#FBF8FF;}
+        .ap-ac-f .ap-ac-fs .ap-f-creux{fill:#DCCFF7;opacity:.5;}
+        .ap-ac-f .ap-ac-fs .ap-f-bras{fill:#F1EAFF;}
+        .ap-ac-f .ap-ac-fs .ap-f-joue{fill:#FF7EC0;opacity:.6;}
+        .ap-ac-f .ap-ac-fs .ap-f-oeil{fill:#1A0F2B;}
+        .ap-ac-f .ap-ac-fs .ap-f-clin{stroke:#1A0F2B;}
+        .ap-ac-f .ap-ac-fs .ap-f-rire{fill:#1A0F2B;}
+        .ap-ac-f .ap-ac-fs .ap-f-ombre{fill:rgba(60,10,60,.2);}
+        .ap-ac-f .ap-ac-fs .ap-f-langue{fill:#FF4FA6;}
+        /* LE POUCE ET LES TRAITS DE VITESSE VIENNENT AVEC LA POSE, et ils
+           etaient en menthe : une main verte et cinq traits verts au milieu
+           d'un ecran rose et blanc. On les repeint, on ne les enleve pas — le
+           geste et l'elan sont justes, c'est leur couleur qui ne l'etait pas. */
+        .ap-ac-f .ap-ac-fs .ap-f-pouce path{fill:#F6F1FF;stroke:#B79BE0;}
+        .ap-ac-f .ap-ac-fs .ap-f-pouce path.pli{fill:none;stroke:#C9B4EC;}
+        .ap-ac-f .ap-ac-fs .ap-f-vites path{stroke:#FF3E9E;}
+        /* LE CLIN D'OEIL, A CHAQUE CHANGEMENT D'EXEMPLE. L'oeil droit se ferme
+           en un dixieme de seconde, reste ferme un dixieme, et se rouvre : c'est
+           la duree d'un vrai clignement, et c'est ce qui le distingue d'un oeil
+           qui disparait. Ses deux points de lumiere partent avec lui, sinon ils
+           flottent sur une paupiere fermee. */
+        /* IL RECLIGNE A CHAQUE EXEMPLE, ET C'EST L'OEIL OUVERT QUI LE FAIT.
+           Le gauche est deja ferme par la pose ; refermer le droit une demi-
+           seconde, c'est le second clin d'oeil — celui qu'on remarque. */
+        .ap-ac-f .ap-ac-fs .ap-f-oeil.d,.ap-ac-f .ap-ac-fs .ap-f-eclat.d,
+        .ap-ac-f .ap-ac-fs .ap-f-eclat2.d{
+          transform-box:fill-box;transform-origin:center;
+          animation:apAcClin .44s .74s ease-in-out both;}
+        @keyframes apAcClin{
+          0%,100%{transform:scaleY(1);opacity:1;}
+          40%,60%{transform:scaleY(.06);opacity:.45;}
+        }
+        /* LA CASQUETTE. Elle est posee en absolu sur la tete et non dessinee
+           dans le fantome : le meme fantome sert dans quinze autres endroits de
+           ce dossier, et aucun ne porte de casquette. */
+        .ap-ac-casq{position:absolute;left:50%;top:9px;width:122px;height:57px;
+          margin-left:-61px;transform:rotate(-6deg);
+          filter:drop-shadow(0 3px 7px rgba(0,0,0,.5));}
+        .ap-ac-casq-m{fill:#fff;font-size:9.4px;font-weight:900;
+          font-family:inherit;letter-spacing:-.01em;}
+        .ap-ac-casq-r{fill:#FF3E9E;}
+
+        /* ─── LA PROMESSE ───
+           DEUX LIGNES, ET LA SECONDE EST LE MOT DU PRODUIT. Elle est en rose,
+           plus grosse, et soulignee d'un trait qui depasse. */
+        .ap-ac-promesse{flex:none;margin:20px 0 0;padding:0 20px;
+          text-align:center;}
+        .ap-ac-promesse b{display:block;font-size:27px;font-weight:900;
+          line-height:1.05;letter-spacing:-.01em;color:#fff;
+          text-transform:uppercase;}
+        .ap-ac-promesse em{position:relative;display:inline-block;
+          margin-top:2px;font-style:normal;font-size:33px;font-weight:900;
+          line-height:1.05;letter-spacing:-.015em;color:#F0389C;
+          text-transform:uppercase;}
+        .ap-ac-trait{position:absolute;left:-4px;right:-4px;bottom:-9px;
+          width:calc(100% + 8px);height:12px;color:#F0389C;overflow:visible;}
+
+        /* ─── LES CINQ FAMILLES ───
+           CELLE QUI S'ALLUME EXPLOSE, et l'explosion a deux couches : le carre
+           sursaute a 1,18 avant de revenir, et un anneau part de lui et se
+           dilate en s'effacant. Un simple changement de couleur ne se remarque
+           pas dans une rangee de cinq pictogrammes de meme poids. */
+        .ap-ac-fam{flex:none;list-style:none;display:flex;justify-content:center;
+          gap:6px;margin:26px 0 0;padding:0 10px;}
+        .ap-ac-fam li{flex:1 1 0;min-width:0;display:flex;flex-direction:column;
+          align-items:center;gap:6px;}
+        .ap-ac-pic{position:relative;width:46px;height:46px;border-radius:15px;
+          display:flex;align-items:center;justify-content:center;
+          color:#8D97A6;border:1.5px solid rgba(255,255,255,.13);
+          background:rgba(255,255,255,.03);
+          transition:color .3s ease,border-color .3s ease,background .3s ease;}
+        .ap-ac-pic svg{width:24px;height:24px;display:block;}
+        .ap-ac-fam li b{font-size:10px;font-weight:750;color:#8D97A6;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+          max-width:100%;transition:color .3s ease;}
+        .ap-ac-fam li.on .ap-ac-pic{color:#FF52AE;border-color:#F0389C;
+          background:rgba(240,56,156,.12);
+          box-shadow:0 0 18px -2px rgba(240,56,156,.75);
+          animation:apAcPop .5s cubic-bezier(.2,1.3,.35,1) both;}
+        .ap-ac-fam li.on b{color:#fff;}
+        @keyframes apAcPop{
+          0%{transform:scale(.86);}
+          46%{transform:scale(1.18);}
+          100%{transform:scale(1);}
+        }
+        .ap-ac-onde{position:absolute;inset:-2px;border-radius:17px;
+          border:2px solid #FF52AE;pointer-events:none;
+          animation:apAcOnde .72s cubic-bezier(.2,.8,.3,1) both;}
+        @keyframes apAcOnde{
+          0%{opacity:.95;transform:scale(.85);}
+          100%{opacity:0;transform:scale(2.1);}
+        }
+
+        /* ─── LE BOUTON, SEUL APLAT PLEIN DE L'ECRAN ───
+           IL EST LE SEUL ROSE PLEIN, donc il n'y a aucune ambiguite sur ce
+           qu'il faut toucher. Sa respiration est tres lente : un bouton qui
+           pulse vite a l'air de reclamer. */
+        .ap-ac-go{flex:none;display:flex;align-items:center;justify-content:center;
+          gap:12px;margin:22px 18px 0;padding:17px 22px;font:inherit;
+          font-size:18px;font-weight:900;letter-spacing:.01em;color:#fff;
+          text-transform:uppercase;cursor:pointer;border:0;border-radius:999px;
+          background:linear-gradient(100deg,#FF3E9E,#E31B86);
+          box-shadow:0 14px 34px -12px rgba(240,56,156,.95);
+          animation:apAcSouffle 3.4s ease-in-out infinite;}
+        .ap-ac-go:active{transform:scale(.985);}
+        @keyframes apAcSouffle{
+          0%,100%{box-shadow:0 14px 34px -12px rgba(240,56,156,.95);}
+          50%{box-shadow:0 14px 44px -10px rgba(240,56,156,1);}
+        }
+        .ap-ac-go-f{width:30px;height:32px;flex:none;}
+        .ap-ac-go s{text-decoration:none;font-size:19px;}
+        .ap-ac-pied{flex:none;margin:12px 0 18px;text-align:center;
+          font-size:12px;font-weight:600;color:#6F7885;}
+        .ap-ac-pied i{font-style:normal;margin-left:5px;}
+
+        /* ═══ ET SI LE TELEPHONE REFUSE LES ANIMATIONS ═════════════════════
+           LA PREUVE TIENT QUAND MEME : les deux cartes sont la, la fleche est
+           la, le fantome est la. C'est la boucle qui s'arrete — elle est
+           coupee plus haut, dans la minuterie — donc on voit UN exemple au
+           lieu de quatre. Un exemple suffit a comprendre ; c'est quatre
+           exemples qui font le plaisir. */
+        @media (prefers-reduced-motion:reduce){
+          .ap-ac-carte.ap-ac-av,.ap-ac-carte.ap-ac-ap,.ap-ac-fleche,.ap-ac-f,
+          .ap-ac-et,.ap-ac-go,.ap-ac-fam li.on .ap-ac-pic,
+          .ap-ac-f .ap-ac-fs .ap-f-oeil.d,.ap-ac-f .ap-ac-fs .ap-f-eclat.d,
+          .ap-ac-f .ap-ac-fs .ap-f-eclat2.d{animation:none;}
+          .ap-ac-onde{display:none;}
+        }
+
+        /* ═══ LES PETITS ECRANS ════════════════════════════════════════════
+           MESURE : sur un telephone de 667 points de haut, les sept blocs
+           additionnes debordaient de quarante points — donc le bouton passait
+           sous le pli, c'est-a-dire le seul element qui doit etre visible.
+           On resserre le mot-marque, la promesse et les gouttieres ; la scene
+           garde sa place parce que c'est elle qui porte la demonstration. */
+        @media (max-height:700px){
+          .ap-ac-marque{padding-top:8px;}
+          .ap-ac-marque b{font-size:33px;}
+          .ap-ac-scene{margin-top:10px;min-height:150px;}
+          .ap-ac-f{width:128px;height:142px;margin-left:-64px;}
+          .ap-ac-casq{width:103px;height:48px;margin-left:-51px;top:7px;}
+          .ap-ac-promesse{margin-top:14px;}
+          .ap-ac-promesse b{font-size:23px;}
+          .ap-ac-promesse em{font-size:28px;}
+          .ap-ac-fam{margin-top:16px;}
+          .ap-ac-pic{width:42px;height:42px;border-radius:14px;}
+          .ap-ac-go{margin-top:14px;padding:15px 20px;font-size:17px;}
+          .ap-ac-pied{margin:9px 0 12px;}
         }
         .ap-pile{position:relative;flex:1;min-height:0;}
         /* LE RAPPORT D'ASPECT SE RETIRE ICI, PAS SEULEMENT SUR LA CARTE DU
