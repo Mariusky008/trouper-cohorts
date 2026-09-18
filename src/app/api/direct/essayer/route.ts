@@ -45,8 +45,23 @@ import { NextResponse } from "next/server";
 import { consigne } from "@/lib/direct/consigne-essai";
 
 export const dynamic = "force-dynamic";
-/** Un rendu prend quelques secondes ; la valeur par défaut de la plateforme ne suffit pas. */
-export const maxDuration = 60;
+/**
+ * ═══ LA FONCTION A LE DROIT DE VIVRE CINQ MINUTES ══════════════════════════
+ *
+ * « L'essayage n'a pas abouti. (le rendu a dépassé le temps imparti) »
+ *
+ * ELLE EN AVAIT SOIXANTE SECONDES, ET LE RENDU EN DEMANDE PLUS. Le commentaire
+ * d'à côté l'avait écrit noir sur blanc le jour où la qualité est passée en
+ * haute : « en haute, une édition d'image dépasse couramment la minute — donc
+ * le 504 redevient possible, et c'est le prix qu'il a choisi de payer ». Le
+ * prix a été payé. Sauf qu'il n'y avait aucune raison de le payer : les routes
+ * de diagnostic de ce même projet tiennent trois cents secondes depuis
+ * toujours, et la plateforme les sert. On demandait soixante secondes par
+ * habitude, pas par contrainte.
+ */
+export const maxDuration = 300;
+
+const s = (v: string | undefined) => (v ?? "").trim();
 
 /** Au-delà, c'est une photo qu'on n'a pas redimensionnée avant d'envoyer. */
 const POIDS_MAX = 6_000_000;
@@ -58,10 +73,34 @@ const POIDS_MAX = 6_000_000;
  * c'est un 504 dont le corps est une page HTML — donc illisible côté navigateur,
  * et c'est exactement ce qui s'est affiché : « Réponse illisible du serveur ».
  * En abandonnant quelques secondes avant, on garde la main et on explique.
+ *
+ * LA MARGE EST GÉNÉREUSE PARCE QU'ON A QUELQUE CHOSE À FAIRE AVEC : rendre une
+ * réponse JSON, oui, mais surtout REJOUER PLUS LÉGER — voir `BUDGET` et la
+ * boucle en bas de fichier. Quinze secondes gardées, c'est le temps d'écrire
+ * l'échec proprement ; ce qui sauve l'essai, c'est le budget qu'on laisse à la
+ * seconde tentative.
  */
-const DELAI_MAX = 52_000;
+const BUDGET = Math.max(
+  20_000,
+  Number(s(process.env.ESSAI_DELAI_MS)) || (maxDuration - 15) * 1000,
+);
 
-const s = (v: string | undefined) => (v ?? "").trim();
+/**
+ * CE QU'IL RESTE À DÉPENSER, ET C'EST UN BUDGET PARTAGÉ.
+ *
+ * CHAQUE TENTATIVE AVAIT SON PROPRE CHRONOMÈTRE DE CINQUANTE-DEUX SECONDES, ce
+ * qui rendait le repli décoratif : quand la première tentative épuisait les
+ * cinquante-deux, la fonction mourait à soixante, et la seconde n'a jamais eu
+ * la moindre chance de s'exécuter. Deux fournisseurs configurés, un seul
+ * joignable en pratique.
+ *
+ * MESURÉ DEPUIS L'ENTRÉE DANS LA ROUTE, le budget devient honnête : ce qu'une
+ * tentative n'a pas consommé reste disponible pour la suivante, et ce qu'elle a
+ * gaspillé lui est décompté. Un plancher de huit secondes évite de lancer un
+ * appel réseau qu'on sait déjà perdu.
+ */
+const reste = (debut: number) => BUDGET - (Date.now() - debut);
+const AUCUNE_CHANCE = 8_000;
 
 /** `data:image/jpeg;base64,…` → les deux morceaux dont les API ont besoin. */
 function decoder(src: string): { type: string; donnees: string } | null {
@@ -81,6 +120,8 @@ async function parGemini(
   garder: string[],
   change: string,
   decrire: string,
+  /** L'INSTANT OÙ LA ROUTE A ÉTÉ APPELÉE. Le temps restant s'en déduit — voir `reste`. */
+  debut: number,
 ): Promise<{ image: string } | { erreur: string }> {
   const modele = s(process.env.GEMINI_IMAGE_MODEL) || "gemini-2.5-flash-image";
   /**
@@ -133,7 +174,7 @@ async function parGemini(
           },
         ],
       }),
-      signal: AbortSignal.timeout(DELAI_MAX),
+      signal: AbortSignal.timeout(reste(debut)),
     },
   );
   if (!r.ok) {
@@ -240,6 +281,16 @@ async function parOpenAI(
   change: string,
   decrire: string,
   masque: { type: string; donnees: string } | null,
+  /** L'INSTANT OÙ LA ROUTE A ÉTÉ APPELÉE. Le temps restant s'en déduit — voir `reste`. */
+  debut: number,
+  /**
+   * LA FINESSE DEMANDÉE, ET C'EST ELLE QUI DÉCIDE DE L'ATTENTE.
+   *
+   * Passée en paramètre, et non plus lue de l'environnement à l'intérieur, pour
+   * une seule raison : POUVOIR REJOUER PLUS LÉGER quand le budget a été épuisé
+   * en haute. Voir la boucle en bas de fichier.
+   */
+  qualite: string,
 ): Promise<{ image: string } | { erreur: string }> {
   const modele = s(process.env.OPENAI_IMAGE_MODEL) || "gpt-image-1";
   // L'API d'édition d'OpenAI prend les images en multipart, et elle accepte
@@ -283,7 +334,7 @@ async function parOpenAI(
    * redescendre en production sans redéployer, le jour où une coupure vaudrait
    * pire qu'un rendu un peu moins fin.
    */
-  forme.append("quality", s(process.env.OPENAI_IMAGE_QUALITY) || "high");
+  forme.append("quality", qualite);
   // LE RÉGLAGE D'ENVIRONNEMENT GAGNE TOUJOURS, parce que c'est le seul moyen de
   // rattraper un format en production sans redéployer. À défaut, on suit la
   // photo du client ; à défaut encore, le carré d'avant.
@@ -338,7 +389,11 @@ async function parOpenAI(
       // LA TRACE DIT LA VRAIE VALEUR, PAS L'ANCIENNE. Un journal qui affiche
       // « medium » pendant qu'on envoie « high » fait chercher la panne du
       // mauvais côté pendant une heure.
-      qualite: s(process.env.OPENAI_IMAGE_QUALITY) || "high",
+      qualite,
+      // CE QU'IL RESTAIT AU MOMENT DE PARTIR. Sur un essai qui n'aboutit pas,
+      // c'est le premier chiffre à regarder : il dit si l'appel a été lancé
+      // avec de quoi réussir, ou déjà condamné par la tentative d'avant.
+      restant: reste(debut),
       fidelite: "high",
       entree: {
         client: dimensions(photo.donnees),
@@ -357,7 +412,7 @@ async function parOpenAI(
     body: forme,
     // ON ABANDONNE AVANT LA PASSERELLE, pour rendre une raison plutôt qu'un 504
     // muet dont la page d'erreur n'est même pas du JSON.
-    signal: AbortSignal.timeout(DELAI_MAX),
+    signal: AbortSignal.timeout(reste(debut)),
   });
   if (!r.ok) {
     const txt = await r.text().catch(() => "");
@@ -389,7 +444,10 @@ async function parOpenAI(
     const bloque = r.status === 400 && /safety|rejected|moderation/i.test(txt);
     if (bloque && reference) {
       console.info("[essai] refus du filtre, on rejoue sans la photo de référence");
-      return parOpenAI(cle, photo, null, partie, garder, change, decrire, masque);
+      // LE BUDGET NE SE REMET PAS À ZÉRO : ce qu'a coûté le refus est décompté
+      // du temps qu'on donne au second appel, sans quoi les deux tentatives
+      // additionnées dépasseraient ce que la fonction a le droit de vivre.
+      return parOpenAI(cle, photo, null, partie, garder, change, decrire, masque, debut, qualite);
     }
     if (bloque) {
       return {
@@ -405,6 +463,15 @@ async function parOpenAI(
 }
 
 export async function POST(req: Request) {
+  /**
+   * LE CHRONOMÈTRE PART AVEC LA ROUTE, PAS AVEC LE PREMIER APPEL.
+   *
+   * Entre les deux il y a la lecture du corps et le décodage de trois images
+   * base64 — jusqu'à six mégaoctets. C'est court, mais c'est du temps que la
+   * plateforme compte et que le budget doit connaître : le démarrer plus tard
+   * ferait croire qu'il reste de la marge alors qu'elle est déjà dépensée.
+   */
+  const debut = Date.now();
   let corps: {
     photo?: string;
     reference?: string;
@@ -502,7 +569,6 @@ export async function POST(req: Request) {
     );
   }
 
-  const debut = Date.now();
   const essais: string[] = [];
   /**
    * L'ORDRE DES DEUX FOURNISSEURS SE CHANGE SANS REDÉPLOYER, ET C'EST UTILE.
@@ -521,10 +587,54 @@ export async function POST(req: Request) {
    * mesure se faire là où elle est possible — sur un vrai visage.
    */
   const dabord = s(process.env.ESSAI_FOURNISSEUR).toLowerCase();
-  const chemins = [
-    gemini ? () => parGemini(gemini, photo, reference, partie, garder, change, decrire) : null,
+  /** La finesse demandée au premier passage. Voir `PLUS_LEGER` juste dessous. */
+  const QUALITE = s(process.env.OPENAI_IMAGE_QUALITY) || "high";
+  /**
+   * ═══ QUAND LE TEMPS MANQUE, ON REJOUE MOINS FIN PLUTÔT QUE D'ÉCHOUER ══════
+   *
+   * C'EST LA VRAIE RÉPONSE À « L'ESSAYAGE N'A PAS ABOUTI ». Allonger le temps
+   * imparti évite la coupure la plupart du temps, mais pas toujours : un jour
+   * de charge chez le fournisseur, cinq minutes ne suffiront pas non plus. Il
+   * faut donc que le dépassement cesse d'être un cul-de-sac.
+   *
+   * UN RENDU UN PEU MOINS FIN VAUT INFINIMENT MIEUX QUE PAS DE RENDU. En
+   * qualité moyenne, l'édition revient sous la trentaine de secondes ; la
+   * cliente voit sa coupe. En haute et coupée, elle voit un message d'erreur et
+   * ferme l'application. Le compromis ne se discute même pas.
+   *
+   * ET LA FIDÉLITÉ AU VISAGE N'EST PAS CE QU'ON SACRIFIE : `input_fidelity`
+   * reste en haute sur tous les crans — c'est `quality` qui descend, donc la
+   * finesse du grain, pas la ressemblance. Ce qui fait l'intérêt de l'essai est
+   * précisément ce qu'on garde.
+   */
+  const PLUS_LEGER: Record<string, string> = { high: "medium", medium: "low" };
+
+  type Chemin = { nom: string; aller: () => Promise<{ image: string } | { erreur: string }> };
+  const chemins: (Chemin | null)[] = [
+    gemini
+      ? {
+          nom: "gemini",
+          aller: () =>
+            parGemini(gemini, photo, reference, partie, garder, change, decrire, debut),
+        }
+      : null,
     openai
-      ? () => parOpenAI(openai, photo, reference, partie, garder, change, decrire, masque)
+      ? {
+          nom: `openai·${QUALITE}`,
+          aller: () =>
+            parOpenAI(
+              openai,
+              photo,
+              reference,
+              partie,
+              garder,
+              change,
+              decrire,
+              masque,
+              debut,
+              QUALITE,
+            ),
+        }
       : null,
   ];
   /**
@@ -544,22 +654,51 @@ export async function POST(req: Request) {
    * la fidélité, parce que c'est elle qui décide si cet essai sert à quelque
    * chose.
    */
-  for (const tenter of dabord === "gemini" ? chemins : [...chemins].reverse()) {
-    if (!tenter) continue;
+  const ordre = (dabord === "gemini" ? chemins : [...chemins].reverse()).filter(
+    (c): c is Chemin => !!c,
+  );
+  /**
+   * LE CRAN ALLÉGÉ EST LE DERNIER RECOURS, ET IL N'EST TENTÉ QUE S'IL RESTE DU
+   * TEMPS POUR LUI. Le poser en fin de liste plutôt qu'à la place du premier
+   * garde la haute qualité comme défaut : on n'allège que ceux qui, sans ça,
+   * n'auraient rien du tout.
+   */
+  const leger = openai ? PLUS_LEGER[QUALITE] : undefined;
+  if (openai && leger) {
+    ordre.push({
+      nom: `openai·${leger}`,
+      aller: () =>
+        parOpenAI(openai, photo, reference, partie, garder, change, decrire, masque, debut, leger),
+    });
+  }
+
+  for (const chemin of ordre) {
+    /**
+     * ON NE LANCE PAS UN APPEL QU'ON SAIT DÉJÀ PERDU. Huit secondes ne suffisent
+     * à aucune édition d'image : partir quand même ferait payer un aller-retour
+     * réseau pour obtenir le même échec quelques secondes plus tard, et ferait
+     * attendre le client pour rien.
+     */
+    if (reste(debut) < AUCUNE_CHANCE) {
+      essais.push(`${chemin.nom} : pas tenté, le temps imparti était déjà épuisé`);
+      continue;
+    }
     try {
-      const r = await tenter();
+      const r = await chemin.aller();
       if ("image" in r) {
         return NextResponse.json({ image: r.image, ms: Date.now() - debut });
       }
-      essais.push(r.erreur);
+      essais.push(`${chemin.nom} : ${r.erreur}`);
     } catch (e) {
       const nom = e instanceof Error ? e.name : "";
       essais.push(
-        nom === "TimeoutError" || nom === "AbortError"
-          ? "le rendu a dépassé le temps imparti"
-          : e instanceof Error
-            ? e.message
-            : String(e),
+        `${chemin.nom} : ${
+          nom === "TimeoutError" || nom === "AbortError"
+            ? "le rendu a dépassé le temps imparti"
+            : e instanceof Error
+              ? e.message
+              : String(e)
+        }`,
       );
     }
   }

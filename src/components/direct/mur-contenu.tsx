@@ -2242,12 +2242,39 @@ function Essai({
     let vivant = true;
     const debut = Date.now();
     setPct(0);
-    // LA JAUGE AVANCE MOINS VITE QU'AVANT, ET C'EST UNE MESURE : un rendu
-    // distant prend quelques secondes, pas deux cents millisecondes. Une jauge
-    // qui atteint la fin en une demi-seconde puis ne bouge plus fait croire à
-    // une panne.
+    /**
+     * ═══ LA JAUGE SUIT LE TEMPS, ET ELLE NE SE FIGE JAMAIS ════════════════════
+     *
+     * ELLE MONTAIT PAR PAS FIXES ET SE BLOQUAIT À QUATRE-VINGT-QUATORZE EN SIX
+     * SECONDES. Or une édition d'image en haute qualité demande une minute, et
+     * parfois deux. Le client voyait donc six secondes de mouvement, puis cent
+     * dix secondes d'écran immobile à « 94 % » — c'est exactement l'écran qu'on
+     * regarde en se demandant si l'application est morte, et c'est la vraie
+     * raison pour laquelle l'attente paraissait si longue. Le numéro du fantôme
+     * jouait ses trois actes en six secondes, puis tournait en boucle sur le
+     * dernier pendant deux minutes.
+     *
+     * ELLE SE CALCULE MAINTENANT À PARTIR DU TEMPS ÉCOULÉ, EN S'APPROCHANT SANS
+     * JAMAIS ATTEINDRE. `1 − e^(−t/τ)` monte vite au début — où l'on veut voir
+     * que ça démarre — puis ralentit indéfiniment. Il n'y a plus d'instant où
+     * elle s'arrête : à deux minutes elle avance encore, lentement, et c'est ce
+     * mouvement résiduel qui dit « ça travaille » plutôt que « c'est planté ».
+     *
+     * τ VAUT VINGT-DEUX SECONDES parce que c'est l'ordre de grandeur d'un rendu
+     * réussi : on passe la moitié de la jauge à peu près quand la moitié du
+     * travail est faite. Ce n'est pas une mesure — le serveur ne dit pas où il
+     * en est — mais c'est une honnêteté d'échelle, et elle suffit à ce que les
+     * trois actes du fantôme se répartissent sur toute l'attente au lieu de se
+     * bousculer dans les six premières secondes.
+     *
+     * LE PLAFOND RESTE À QUATRE-VINGT-QUATORZE. Les six derniers points
+     * appartiennent à l'arrivée du rendu : une jauge qui atteint cent avant que
+     * l'image soit là ment, et c'est le genre de mensonge qu'on remarque.
+     */
+    const TAU = 22_000;
     minuteur.current = window.setInterval(() => {
-      setPct((p) => Math.min(94, p + (p < 60 ? 3 : 1)));
+      const t = Date.now() - debut;
+      setPct(Math.min(94, Math.round(94 * (1 - Math.exp(-t / TAU)))));
     }, 120);
 
     const finir = (r: { image: string; ms: number; souci?: string; envoye?: boolean } | null) => {
@@ -5060,7 +5087,7 @@ function Styles() {
            regarde maintenant quarante secondes au lieu de dix. */
         .mu-cal-scene{position:relative;width:min(300px,84vw);aspect-ratio:1/1;
           margin:4px auto 0;border-radius:50%;overflow:hidden;
-          background:radial-gradient(circle at 50% 42%,#2A1E4D,#0A1210 72%);
+          background:radial-gradient(circle at 50% 42%,#3A1340,#120A1E 74%);
           box-shadow:0 28px 60px -34px rgba(0,0,0,.95),
             inset 0 0 0 1px rgba(255,255,255,.07);}
         /* SA PHOTO EST L'OBJET DE L'ATTENTE. Floutee et sombre, elle se devine
@@ -5074,10 +5101,10 @@ function Styles() {
            acte : c'est la meme photo qui devient lisible, donc l'attente a une
            direction — on ne tourne pas en rond, on approche. */
         .mu-cal-fond{position:absolute;inset:0;width:100%;height:100%;
-          object-fit:cover;filter:blur(9px) saturate(.8);transform:scale(1.15);
-          opacity:.6;transition:filter 1.2s ease,opacity 1.2s ease;}
-        .mu-cal-scene.a2 .mu-cal-fond{filter:blur(5px) saturate(.95);opacity:.74;}
-        .mu-cal-scene.a3 .mu-cal-fond{filter:blur(1.5px) saturate(1.05);opacity:.9;}
+          object-fit:cover;filter:blur(7px) saturate(.9);transform:scale(1.15);
+          opacity:.72;transition:filter 1.2s ease,opacity 1.2s ease;}
+        .mu-cal-scene.a2 .mu-cal-fond{filter:blur(4px) saturate(1);opacity:.85;}
+        .mu-cal-scene.a3 .mu-cal-fond{filter:blur(1px) saturate(1.08);opacity:1;}
         .mu-cal-voile{position:absolute;inset:0;
           transition:opacity 1.2s ease;
           background:radial-gradient(circle at 50% 45%,rgba(10,18,16,.12),rgba(6,12,10,.8) 78%);}
@@ -5090,9 +5117,9 @@ function Styles() {
            cycle ne montre jamais de saut. */
         .mu-cal-scan{position:absolute;left:-10%;right:-10%;height:34%;top:-34%;
           pointer-events:none;opacity:0;
-          background:linear-gradient(180deg,rgba(168,222,255,0),
-            rgba(168,222,255,.1) 62%,rgba(214,242,255,.85) 92%,rgba(255,255,255,.95));
-          box-shadow:0 8px 26px 2px rgba(120,200,255,.5);
+          background:linear-gradient(180deg,rgba(255,138,214,0),
+            rgba(255,138,214,.12) 62%,rgba(255,196,236,.85) 92%,rgba(255,255,255,.95));
+          box-shadow:0 8px 26px 2px rgba(240,56,156,.55);
           animation:muScan 2.6s linear infinite;}
         @keyframes muScan{
           0%{transform:translateY(0);opacity:0;}
@@ -5102,8 +5129,16 @@ function Styles() {
         }
         /* IL NE JOUE QU'AU PREMIER ACTE. Un faisceau qui balaie encore pendant
            qu'on ajuste la lumiere dirait qu'on recommence a mesurer. */
+        /* IL S'ETEINT, IL NE S'ETEINT PAS D'UN COUP. Couper l'animation net
+           arretait le faisceau EN PLEIN BALAYAGE : il disparaissait au milieu de
+           l'ecran, ce qui se lit comme un defaut d'affichage et non comme une
+           fin. On le laisse tourner et on le fait fondre — il finit sa course
+           pendant qu'il s'efface. C'est la meme correction sur les trois
+           couches de l'acte 1, et c'est la raison principale pour laquelle
+           cette attente passait mal : trois ruptures seches a chaque acte. */
+        .mu-cal-scan{transition:opacity .8s ease;}
         .mu-cal-scene.a2 .mu-cal-scan,
-        .mu-cal-scene.a3 .mu-cal-scan{animation:none;opacity:0;}
+        .mu-cal-scene.a3 .mu-cal-scan{opacity:0;}
 
         /* ─── LE MAILLAGE ───
            Les traits se dessinent d'un bout a l'autre, les points s'allument
@@ -5111,9 +5146,9 @@ function Styles() {
            semble les allumer, et c'est tout l'effet. */
         .mu-cal-maille{position:absolute;inset:0;width:100%;height:100%;
           overflow:visible;transition:opacity .9s ease;}
-        .mu-cal-maille path{fill:none;stroke:rgba(190,232,255,.9);stroke-width:1.1;
+        .mu-cal-maille path{fill:none;stroke:rgba(255,186,232,.9);stroke-width:1.1;
           stroke-linecap:round;stroke-linejoin:round;
-          filter:drop-shadow(0 0 2px rgba(150,215,255,.9));
+          filter:drop-shadow(0 0 2px rgba(255,120,200,.9));
           stroke-dasharray:100;stroke-dashoffset:100;
           animation:muMaille 2.6s ease-out infinite;}
         .mu-cal-t2{animation-delay:.3s;}
@@ -5125,8 +5160,8 @@ function Styles() {
           84%{opacity:.5;}
           100%{stroke-dashoffset:0;opacity:0;}
         }
-        .mu-cal-pt{fill:#EAF7FF;opacity:0;
-          filter:drop-shadow(0 0 3px rgba(150,215,255,1));
+        .mu-cal-pt{fill:#FFEAF7;opacity:0;
+          filter:drop-shadow(0 0 3px rgba(255,120,200,1));
           animation:muPoint 2.6s ease-out infinite;
           animation-delay:calc(var(--k) * .07s);}
         @keyframes muPoint{
@@ -5146,7 +5181,7 @@ function Styles() {
            n'est plus un devoilement. */
         .mu-cal-rideau{position:absolute;inset:0;pointer-events:none;opacity:0;
           background:linear-gradient(180deg,rgba(255,255,255,0) 40%,
-            rgba(214,242,255,.5) 72%,rgba(255,255,255,.9));}
+            rgba(255,196,236,.55) 72%,rgba(255,255,255,.9));}
         .mu-cal-scene.a3 .mu-cal-rideau{animation:muRideau 1.4s ease-out both;}
         @keyframes muRideau{
           0%{opacity:.95;transform:translateY(0);}
@@ -5160,15 +5195,15 @@ function Styles() {
         .mu-cal-jauge{position:absolute;inset:0;width:100%;height:100%;
           transform:rotate(-90deg);}
         .mu-cal-rail{fill:none;stroke:rgba(255,255,255,.12);stroke-width:2.6;}
-        .mu-cal-fil{fill:none;stroke:#C9A6FF;stroke-width:2.6;
+        .mu-cal-fil{fill:none;stroke:#F0389C;stroke-width:2.6;
           stroke-linecap:round;stroke-dasharray:100;
           transition:stroke-dashoffset .3s linear;
-          filter:drop-shadow(0 0 5px rgba(201,166,255,.9));}
+          filter:drop-shadow(0 0 6px rgba(240,56,156,.95));}
         /* L'ANNEAU RESPIRE. Trois secondes par cycle : plus vite, il presse ;
            plus lentement, on ne le voit pas bouger. */
         .mu-cal-anneau{position:absolute;left:50%;top:45%;
           width:150px;height:150px;margin:-75px 0 0 -75px;border-radius:50%;
-          border:1px solid rgba(201,188,255,.32);
+          border:1px solid rgba(255,150,214,.34);
           animation:muRespire 3s ease-in-out infinite;}
         @keyframes muRespire{
           0%,100%{transform:scale(.88);opacity:.28;}

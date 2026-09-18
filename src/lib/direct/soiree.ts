@@ -289,9 +289,104 @@ export type MotRapide = { emoji: string; mot: string };
  * trois écrans qui ne se connaissent pas — et le message du Fantôme ClikMe,
  * celui qui raccroche l'essai au Live, serait devenu impossible à écrire.
  */
+/**
+ * ═══ UNE SOIRÉE, OU UN RENDEZ-VOUS DE LA VILLE ════════════════════════════
+ *
+ * « Il faut différencier les événements. Si c'est le marché sous les halles on
+ * ne peut pas parler de "tester cette soirée", mais plutôt comme un restaurant
+ * qui met en avant un produit au travers d'un parcours. Il va falloir dissocier
+ * les événements en deux : les soirées festives et les événements locaux non
+ * festifs. »
+ *
+ * IL A RAISON, ET LE DÉFAUT VENAIT D'UNE ABSTRACTION FAITE TROP TÔT. Un bar qui
+ * fait une soirée et une mairie qui tient un marché partagent une mécanique —
+ * on essaie un bout, on laisse un Fantôme, on suit le Live — et j'en ai conclu
+ * qu'ils partageaient aussi le VOCABULAIRE. C'est faux. La mécanique est la
+ * même, les mots ne le sont pas : « Essayer cette soirée » sous un marché de
+ * producteurs à 18 h sonne comme une invitation à faire la fête devant des
+ * cageots de légumes, et personne n'appuie sur un bouton qui se trompe sur ce
+ * qu'il y a derrière.
+ *
+ * DEUX NATURES, ET RIEN D'AUTRE NE CHANGE. Aucune seconde table, aucun second
+ * composant : les mêmes trois temps, les mêmes écrans, le même Fantôme. Ce qui
+ * bifurque tient dans `MOTS_NATURE` — sept mots par nature — et c'est
+ * exactement la taille du vrai désaccord. Deux tables séparées auraient
+ * divergé ; sept mots ne divergent pas.
+ */
+export type NatureSoiree = "festive" | "locale";
+
+/**
+ * LES SEPT MOTS QUI CHANGENT, ET AUCUN N'EST DÉCORATIF.
+ *
+ * `geste` EST LE PLUS IMPORTANT : c'est le grand bouton de l'annonce, et c'est
+ * lui qu'il a cité. Les six autres suivent parce qu'un bouton qui dit « Voir ce
+ * marché » suivi d'un écran qui dit « la soirée est finie » se contredit à voix
+ * haute, et c'est pire que l'erreur d'origine.
+ *
+ * LE PARCOURS EST LE MOT DE L'ÉVÉNEMENT LOCAL, et c'est le sien : « comme un
+ * restaurant qui met en avant un produit au travers d'un parcours ». On ne
+ * « sort » pas au marché — on y passe, on goûte, on rapporte. Le mot dit un
+ * chemin qu'on fait, pas une nuit qu'on choisit.
+ */
+export type MotsNature = {
+  /** Le grand bouton de l'annonce. */
+  geste: string;
+  /** Ce qu'on essaie, au génitif : « un bout de … ». */
+  ce: string;
+  /** Le titre du troisième temps. */
+  live: string;
+  /** Ce qu'on rejoint en laissant son Fantôme. */
+  dedans: string;
+  /** Quand tout est terminé. */
+  fini: string;
+  /** La question du second temps. */
+  cherche: string;
+  /** Le moment, dit comme il se vit. */
+  moment: string;
+};
+
+export const MOTS_NATURE: Record<NatureSoiree, MotsNature> = {
+  festive: {
+    geste: "Essayer cette soirée",
+    ce: "cette soirée",
+    live: "de ce soir",
+    dedans: "dans la soirée",
+    fini: "🌙 La soirée est finie",
+    cherche: "vous cherchez ce soir ?",
+    moment: "ce soir",
+  },
+  locale: {
+    /**
+     * « VOIR » ET NON « ESSAYER », PARCE QU'ON N'ESSAIE PAS UN MARCHÉ. On
+     * essaie une coupe sur sa tête et une ambiance sur son humeur ; un marché
+     * de producteurs, on va le VOIR, et ce qu'on veut savoir avant d'y aller
+     * c'est ce qu'on y trouvera. Le verbe change la promesse, donc il change
+     * qui appuie.
+     */
+    geste: "Voir ce qui s’y passe",
+    ce: "ce rendez-vous",
+    live: "en direct",
+    dedans: "parmi ceux qui y vont",
+    fini: "🧺 C’est terminé pour aujourd’hui",
+    cherche: "vous venez y chercher ?",
+    moment: "aujourd’hui",
+  },
+};
+
+/** À défaut de nature déclarée, c'est une soirée : c'est le cas d'origine. */
+export function motsDe(s: Soiree | undefined): MotsNature {
+  return MOTS_NATURE[s?.nature ?? "festive"];
+}
+
 export type Soiree = {
   /** `event_id` : ce qui relie toutes les données de la même soirée. */
   id: string;
+  /**
+   * FESTIVE OU LOCALE — voir `NatureSoiree`. Facultative, et son absence vaut
+   * « festive » : c'est ce qu'étaient toutes les entrées avant qu'il fasse
+   * remarquer que le marché n'en était pas une.
+   */
+  nature?: NatureSoiree;
   /** Le lieu, tel qu'il s'annonce. */
   lieu: string;
   /** « Ce soir », « Jeudi soir ». */
@@ -359,6 +454,8 @@ const AMBIANCE: ReactionEssai[] = [
  * chose.
  */
 const SOIREE_BAR_VINS: Soiree = {
+  /** Un bar qui fait sa soirée : c'est le cas d'origine, et le mot juste. */
+  nature: "festive",
   id: "bar-vins-ce-soir",
   lieu: "Un bar à vins",
   quand: "Ce soir",
@@ -460,6 +557,8 @@ const SOIREE_BAR_VINS: Soiree = {
  * soir sur la photo — c'est tout, et c'est exactement ce qu'on venait voir.
  */
 const SOIREE_TERRASSE: Soiree = {
+  /** Une terrasse un soir d'été — on y va pour l'ambiance, pas pour acheter. */
+  nature: "festive",
   id: "bar-terrasse-ce-soir",
   lieu: "Une terrasse au soleil",
   quand: "Ce soir",
@@ -577,6 +676,8 @@ const SOIREE_TERRASSE: Soiree = {
  * mairie qui organise un concert font la même chose.
  */
 const SOIREE_KIOSQUE: Soiree = {
+  /** Un concert est une sortie : on choisit d'y passer sa soirée. */
+  nature: "festive",
   id: "kiosque-ce-soir",
   lieu: "Concert au kiosque",
   quand: "Ce soir, 19 h",
@@ -657,6 +758,10 @@ const SOIREE_KIOSQUE: Soiree = {
  * surprend et suffit à donner envie d'y aller.
  */
 const SOIREE_MARCHE: Soiree = {
+  /** SON EXEMPLE, MOT POUR MOT. Vingt producteurs sous les halles à 18 h : on
+   * y passe, on goûte, on dîne sur place. « Essayer cette soirée » ne décrivait
+   * rien de ce qui s'y fait. */
+  nature: "locale",
   id: "marche-nuit-ce-soir",
   lieu: "Marché de producteurs, le soir",
   quand: "Jeudi, 18 h",
@@ -726,6 +831,9 @@ const SOIREE_MARCHE: Soiree = {
  * qu'on fait dans la salle.
  */
 const SOIREE_EXPO: Soiree = {
+  /** Une nocturne de musée se visite. Le mot « soirée » promettait une fête
+   * là où il y a un parcours, des salles et une heure de fermeture. */
+  nature: "locale",
   id: "expo-vendredi",
   lieu: "Nocturne au musée",
   quand: "Vendredi, 18 h",
@@ -789,6 +897,9 @@ const SOIREE_EXPO: Soiree = {
  * avant de traverser la ville.
  */
 const SOIREE_VIDE_GRENIER: Soiree = {
+  /** Un vide-grenier commence à huit heures du matin : appeler ça une soirée
+   * était faux au sens propre, avant même d'être faux au sens du ton. */
+  nature: "locale",
   id: "vide-grenier-dimanche",
   lieu: "Vide-grenier",
   quand: "Dimanche, 8 h",

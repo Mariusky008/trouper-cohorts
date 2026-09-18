@@ -271,15 +271,16 @@ export function EcranGout({
                 d'un cran. C'est ce qui sépare une photo d'un plat qui fume.
               · UNE LUEUR DORÉE NAÎT DU CENTRE et se répand, comme un gratin qui
                 prend.
-              · LA NEIGE DE PARMESAN TOMBE ET DISPARAÎT DANS LE PLAT. Vingt
-                éclats fins, de tailles et de vitesses différentes, qui FONDENT
-                à l'arrivée au lieu de sortir du cadre. Un flocon qui s'efface
-                sur l'assiette a atterri ; un flocon qui sort par le bas est
-                passé à côté.
-              · PUIS LA VAPEUR MONTE, deux volutes lentes. Elle arrive APRÈS,
-                quand tout le reste est retombé : c'est elle qui dit que le plat
-                est chaud, maintenant, et c'est la dernière image qu'on garde
-                avant d'appuyer sur RÉSERVER.
+              · UNE MAIN PINCE, S'ARRÊTE, FROTTE ET LÂCHE. C'est ce qui
+                manquait à la version d'avant : les grains venaient de nulle
+                part, donc personne ne faisait rien.
+              · LES GRAINS TOMBENT D'UN SEUL POINT, EN ACCÉLÉRANT, et
+                s'effacent AU PLAT. Vingt-six, fins, rapides — trois dixièmes
+                de seconde, pas une seconde et demie.
+              · PUIS LA VAPEUR MONTE, une seule volute lente. Elle arrive
+                APRÈS, quand tout le reste est retombé : c'est elle qui dit que
+                le plat est chaud, maintenant, et c'est la dernière image qu'on
+                garde avant d'appuyer sur RÉSERVER.
 
             LE VRAI GESTE RESTERA CELUI DU RESTAURATEUR. Le jour où il filme ses
             trois plans de quinze secondes, `photoApres` porte le plat fini et la
@@ -293,13 +294,32 @@ export function EcranGout({
               <img className="go-apres" src={t.photoApres} alt="" />
             )}
             <span className="go-braise" aria-hidden="true" />
-            <span className="go-neige" aria-hidden="true">
-              {NEIGE.map((n, k) => (
+            {/* ─── LA MAIN QUI PINCE, ET C'EST ELLE QUI MANQUAIT ───
+                Deux doigts vus de profil, tracés au trait. Elle descend, elle
+                s'arrête, elle frotte, elle lâche, elle remonte. Sans elle, les
+                grains apparaissaient de nulle part ; avec elle, quelqu'un fait
+                quelque chose — et c'est la seule chose qui donne envie. */}
+            <span className="go-pince" aria-hidden="true">
+              <svg viewBox="0 0 44 40" focusable="false">
+                {/* Le pouce et l'index qui se rejoignent en bas au centre :
+                    le point de lâcher est à 22,34 — exactement d'où partent
+                    les grains. */}
+                <path
+                  d="M6 4 C10 14 16 24 21 33 M38 6 C34 15 28 25 23 33"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3.2"
+                  strokeLinecap="round"
+                />
+                <circle cx="22" cy="34.5" r="2.6" fill="currentColor" />
+              </svg>
+            </span>
+            <span className="go-grains" aria-hidden="true">
+              {GRAINS.map((n, k) => (
                 <i
                   key={k}
                   style={
                     {
-                      "--x": `${n.x}%`,
                       "--d": `${n.d}s`,
                       "--t": `${n.t}s`,
                       "--s": n.s,
@@ -310,8 +330,11 @@ export function EcranGout({
                 />
               ))}
             </span>
+            {/* UNE SEULE VOLUTE, ET ELLE VIENT EN DERNIER. Trois montaient
+                ensemble et se lisaient comme un brouillard ; une seule, lente,
+                dit qu'il reste de la chaleur. */}
             <span className="go-vapeur" aria-hidden="true">
-              <i /><i /><i />
+              <i />
             </span>
           </>
         )}
@@ -518,41 +541,75 @@ function enMots(options: OptionGout[]): boolean {
  * là où les identifiants SVG de la page d'accueil n'existent pas.
  */
 /**
- * LA NEIGE DE PARMESAN — vingt éclats, aucun identique.
+ * LA PINCÉE — vingt-six grains, aucun identique.
  *
  * ELLE EST ÉCRITE, PAS TIRÉE AU HASARD, et c'est délibéré. Un `Math.random()`
  * donnerait une chute différente à chaque rendu de React — donc une chute qui
  * SAUTE quand on touche autre chose sur l'écran — et surtout une chute
  * différente entre le serveur et le navigateur, ce qui casse l'hydratation.
- * Vingt valeurs choisies à la main se lisent comme du hasard et se comportent
- * comme une animation.
+ * Vingt-six valeurs choisies à la main se lisent comme du hasard et se
+ * comportent comme une animation.
  *
- * `x` L'ABSCISSE · `d` LE RETARD · `t` LA DURÉE · `s` L'ÉCHELLE · `r` LA
- * ROTATION FINALE · `f` LA DÉRIVE LATÉRALE. Les six varient ensemble : des
- * flocons qui tombent à la même vitesse ne sont plus des flocons, ce sont des
- * barreaux.
+ * ═══ ET ELLES PARTENT TOUTES DU MÊME POINT, MAINTENANT ════════════════════
+ *
+ * « L'animation "faire tomber le sel" est très mauvaise aussi. De manière
+ * générale les animations de fin de parcours sont toutes extrêmement
+ * mauvaises. »
+ *
+ * IL AVAIT DÉJÀ DIT CELLE-CI UNE FOIS, ET MA CORRECTION N'EN ÉTAIT PAS UNE :
+ * j'avais empilé des calques — lueur, chaleur, zoom, vapeur — sur une chute qui
+ * restait fausse. On ne répare pas un mouvement en ajoutant des effets autour.
+ *
+ * CE QUI CLOCHAIT TIENT EN TROIS MOTS : pas de source, pas de gravité, pas
+ * d'impact.
+ *
+ *   · PAS DE SOURCE. Les éclats naissaient répartis sur toute la largeur du
+ *     cadre — `x` allait de 6 à 91 pour cent. Du sel ne tombe pas d'un plafond :
+ *     il tombe d'une MAIN, c'est-à-dire d'un point, et il s'ouvre en cône en
+ *     descendant. C'est la première chose que l'œil vérifie sans le savoir, et
+ *     c'est pour ça que ça ressemblait à de la neige, donc à un décor.
+ *   · PAS DE GRAVITÉ. Ils mettaient une seconde et demie à traverser, à vitesse
+ *     presque constante. Un grain de sel traverse une assiette en trois dixièmes
+ *     de seconde, EN ACCÉLÉRANT. Le mouvement lent transformait le geste du
+ *     cuisinier en chute de confettis.
+ *   · PAS D'IMPACT. Le plat changeait DÈS L'APPUI, en même temps que la chute :
+ *     donc le changement n'était causé par rien. Il se produit maintenant à
+ *     l'ARRIVÉE des grains, et c'est là toute la différence entre « il se passe
+ *     des choses » et « ce que j'ai fait a fait quelque chose ».
+ *
+ * `f` LA DÉRIVE LATÉRALE, en points depuis le point de lâcher — c'est elle qui
+ * fait le cône. `d` LE RETARD, minuscule : tout part en un huitième de seconde,
+ * parce qu'une pincée se lâche d'un coup. `t` LA DURÉE, trois dixièmes. `s`
+ * L'ÉCHELLE et `r` LA ROTATION, pour qu'aucun grain ne soit le jumeau d'un
+ * autre.
  */
-const NEIGE = [
-  { x: 6, d: 0.02, t: 1.25, s: 0.7, r: 140, f: 14 },
-  { x: 13, d: 0.28, t: 1.55, s: 1.1, r: -90, f: -18 },
-  { x: 19, d: 0.11, t: 1.05, s: 0.55, r: 200, f: 9 },
-  { x: 26, d: 0.44, t: 1.42, s: 0.9, r: -160, f: 20 },
-  { x: 32, d: 0.06, t: 1.68, s: 1.25, r: 110, f: -12 },
-  { x: 38, d: 0.33, t: 1.18, s: 0.65, r: 240, f: 16 },
-  { x: 44, d: 0.51, t: 1.5, s: 1.0, r: -70, f: -22 },
-  { x: 49, d: 0.17, t: 1.35, s: 0.8, r: 180, f: 11 },
-  { x: 55, d: 0.39, t: 1.6, s: 1.15, r: -130, f: -9 },
-  { x: 61, d: 0.09, t: 1.12, s: 0.6, r: 90, f: 18 },
-  { x: 67, d: 0.47, t: 1.45, s: 0.95, r: -200, f: -15 },
-  { x: 73, d: 0.22, t: 1.72, s: 1.3, r: 150, f: 13 },
-  { x: 79, d: 0.36, t: 1.28, s: 0.75, r: -110, f: -20 },
-  { x: 85, d: 0.13, t: 1.55, s: 1.05, r: 220, f: 10 },
-  { x: 91, d: 0.42, t: 1.15, s: 0.6, r: -80, f: 17 },
-  { x: 10, d: 0.58, t: 1.38, s: 0.85, r: 170, f: -13 },
-  { x: 41, d: 0.62, t: 1.48, s: 0.7, r: -190, f: 21 },
-  { x: 58, d: 0.55, t: 1.22, s: 1.2, r: 120, f: -16 },
-  { x: 70, d: 0.66, t: 1.62, s: 0.5, r: -140, f: 8 },
-  { x: 88, d: 0.6, t: 1.32, s: 0.9, r: 210, f: -19 },
+const GRAINS = [
+  { f: -34, d: 0.0, t: 0.34, s: 0.9, r: 120 },
+  { f: 29, d: 0.01, t: 0.31, s: 0.75, r: -90 },
+  { f: -12, d: 0.02, t: 0.38, s: 1.1, r: 160 },
+  { f: 7, d: 0.0, t: 0.29, s: 0.6, r: -140 },
+  { f: 41, d: 0.03, t: 0.36, s: 0.85, r: 200 },
+  { f: -47, d: 0.04, t: 0.33, s: 0.7, r: -60 },
+  { f: 18, d: 0.02, t: 0.42, s: 1.0, r: 110 },
+  { f: -25, d: 0.05, t: 0.3, s: 0.55, r: -180 },
+  { f: 53, d: 0.06, t: 0.39, s: 0.95, r: 140 },
+  { f: -6, d: 0.03, t: 0.27, s: 0.65, r: -100 },
+  { f: 35, d: 0.07, t: 0.35, s: 0.8, r: 170 },
+  { f: -58, d: 0.05, t: 0.41, s: 1.05, r: -130 },
+  { f: 12, d: 0.08, t: 0.28, s: 0.5, r: 90 },
+  { f: -39, d: 0.06, t: 0.37, s: 0.9, r: -210 },
+  { f: 63, d: 0.09, t: 0.33, s: 0.7, r: 150 },
+  { f: -17, d: 0.07, t: 0.44, s: 1.15, r: -80 },
+  { f: 26, d: 0.1, t: 0.3, s: 0.6, r: 190 },
+  { f: -68, d: 0.08, t: 0.38, s: 0.85, r: -160 },
+  { f: 2, d: 0.11, t: 0.26, s: 0.45, r: 100 },
+  { f: 46, d: 0.09, t: 0.4, s: 1.0, r: -120 },
+  { f: -30, d: 0.12, t: 0.32, s: 0.75, r: 210 },
+  { f: 57, d: 0.1, t: 0.43, s: 0.9, r: -70 },
+  { f: -50, d: 0.13, t: 0.29, s: 0.55, r: 130 },
+  { f: 21, d: 0.11, t: 0.36, s: 0.8, r: -190 },
+  { f: -9, d: 0.14, t: 0.34, s: 0.65, r: 80 },
+  { f: 38, d: 0.12, t: 0.31, s: 0.7, r: -150 },
 ];
 
 function PetitFantome() {
@@ -687,97 +744,156 @@ function Styles() {
            seconde et demie l'image etait exactement celle d'avant. Ici, c'est
            le PLAT qui change. */
 
-        /* ─── 1 · LA CAMERA S'APPROCHE, ET LE PLAT SORT DU FOUR ───
-           Le zoom est le geste du cuisinier qui pousse l'assiette vers vous ;
-           la chaleur et la saturation sont ce qui separe une photographie d'un
-           plat qui fume. Trois pour cent et un cran de couleur : assez pour
-           qu'on le sente, trop peu pour qu'on voie un filtre. */
-        .go-photo img{transition:transform 1.9s cubic-bezier(.22,.7,.3,1),
-          filter 1.7s ease-out;}
-        .go-photo.tombe img{transform:scale(1.035);
-          filter:saturate(1.22) contrast(1.06) brightness(1.05)
-            sepia(.1) hue-rotate(-4deg);}
+        /* ═══ QUATRE TEMPS, ET ILS NE SE CHEVAUCHENT PAS ══════════════════
+           C'est toute la correction. L'ancienne version lancait cinq effets a
+           l'instant zero et les laissait se recouvrir pendant cinq secondes :
+           l'oeil ne voyait ni debut, ni cause, ni fin. Un geste se lit en
+           quatre battements, et chacun doit avoir fini avant que le suivant
+           commence.
 
-        /* ─── 2 · LA PHOTO DU PLAT FINI, QUAND ELLE EXISTE ───
+             0 → 200 ms   ANTICIPATION  la main descend et s'arrete
+             200 → 320    LE LACHER     elle frotte, les grains partent
+             320 → 640    LA CHUTE      ils accelerent et disparaissent au plat
+             560 → 1500   LA REACTION   le plat repond, puis la vapeur monte
+
+           LE TOUT FAIT UNE SECONDE ET DEMIE. L'ancienne en faisait cinq. Un
+           geste de cuisine dure le temps d'un geste de cuisine : au-dela, ce
+           n'est plus un geste, c'est une attente. */
+
+        /* ─── 1 · L'ANTICIPATION : LE PLAT RETIENT SON SOUFFLE ───
+           Il s'assombrit d'un rien et se retracte de deux millimes pendant que
+           la main descend. Personne ne le remarque, et tout le monde le sent :
+           c'est la respiration d'avant le geste, et c'est elle qui fait que le
+           temps d'apres a du poids. */
+        .go-photo img{transition:transform .2s ease-out,filter .2s ease-out;}
+        .go-photo.tombe img{animation:goPlat 1.5s cubic-bezier(.3,.9,.3,1) both;}
+        @keyframes goPlat{
+          0%{transform:scale(1);filter:none;}
+          /* Le creux : il rentre avant de sortir. */
+          13%{transform:scale(.998);filter:brightness(.97);}
+          /* L'IMPACT, A L'ARRIVEE DES GRAINS ET PAS AVANT. Le plat sursaute
+             d'un pour cent et demi — c'est peu, c'est net, et c'est ce qui dit
+             que quelque chose vient de le toucher. */
+          42%{transform:scale(1.022);
+            filter:saturate(1.26) contrast(1.07) brightness(1.08) hue-rotate(-4deg);}
+          /* Le suivi : il redescend sans revenir tout a fait. Une chose qui
+             revient exactement a sa place n'a pas ete touchee. */
+          100%{transform:scale(1.012);
+            filter:saturate(1.2) contrast(1.05) brightness(1.04) hue-rotate(-3deg);}
+        }
+
+        /* ─── 2 · LA PHOTO DU PLAT FINI, AU BATTEMENT DE L'IMPACT ───
            Voir photoApres : le jour ou le restaurateur filme ses deux etats,
-           la transformation devient un fondu entre deux images REELLES, et ce
-           qui suit n'est plus qu'un accompagnement. */
+           la transformation devient un fondu entre deux images REELLES.
+           ELLE NE COMMENCE PLUS A ZERO. Elle demarrait avec la chute, donc le
+           plat avait fini de changer avant que le premier grain l'atteigne :
+           la cause arrivait apres l'effet. */
         .go-apres{position:absolute;inset:0;width:100%;height:100%;
-          object-fit:cover;opacity:0;transition:opacity 1.5s ease-out;}
+          object-fit:cover;opacity:0;
+          transition:opacity .62s ease-out .5s;}
         .go-photo.tombe .go-apres{opacity:1;}
 
-        /* ─── 3 · LA LUEUR DOREE QUI NAIT DU CENTRE ───
-           Un gratin qui prend. Elle part du milieu du plat, s'ouvre, puis
-           retombe : ce n'est pas un voile pose sur l'image, c'est un evenement
-           qui a lieu dedans. */
+        /* ─── 3 · LA MAIN QUI PINCE ───
+           ELLE DESCEND, S'ARRETE, FROTTE, LACHE, REMONTE. Le frottement est
+           deux rotations de six degres a un vingtieme de seconde d'intervalle :
+           c'est court, c'est sec, et c'est exactement le mouvement qu'on fait
+           avec le pouce et l'index. */
+        .go-pince{position:absolute;left:50%;top:6%;width:44px;height:40px;
+          margin-left:-22px;pointer-events:none;opacity:0;
+          color:rgba(255,248,232,.92);
+          filter:drop-shadow(0 3px 7px rgba(0,0,0,.45));}
+        .go-pince svg{width:100%;height:100%;display:block;}
+        .go-photo.tombe .go-pince{animation:goPince 1.05s cubic-bezier(.3,.85,.35,1) both;}
+        @keyframes goPince{
+          0%{opacity:0;transform:translateY(-38px) rotate(-4deg);}
+          /* Elle arrive et DEPASSE d'un cheveu avant de se poser : sans ce
+             depassement, elle se pose comme un calque, pas comme une main. */
+          16%{opacity:1;transform:translateY(3px) rotate(0deg);}
+          20%{transform:translateY(0) rotate(0deg);}
+          /* Le frottement. */
+          25%{transform:translateY(0) rotate(7deg);}
+          30%{transform:translateY(0) rotate(-6deg);}
+          35%{transform:translateY(0) rotate(3deg);}
+          42%{opacity:1;transform:translateY(-2px) rotate(0deg);}
+          /* Elle remonte et sort, pendant que les grains tombent : elle a fini
+             son travail, elle ne doit pas rester a regarder. */
+          100%{opacity:0;transform:translateY(-46px) rotate(5deg);}
+        }
+
+        /* ─── 4 · LES GRAINS, D'UN SEUL POINT, EN ACCELERANT ───
+           Ils partent tous de la pince — meme abscisse, meme ordonnee — et
+           s'ouvrent en cone par leur derive laterale. La courbe est une
+           GRAVITE : lente au depart, rapide a l'arrivee. C'est l'inverse de
+           l'ancienne, qui partait vite et finissait lentement, ce qui est le
+           mouvement d'une plume et non d'un grain de sel.
+           ILS S'EFFACENT AU PLAT, a soixante-six pour cent de la hauteur : un
+           grain qui sort par le bas du cadre est passe a cote de l'assiette. */
+        .go-grains{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+        .go-grains i{position:absolute;left:50%;top:16%;
+          width:3px;height:3px;border-radius:50%;
+          margin:-1.5px 0 0 -1.5px;opacity:0;
+          background:#FFF8E4;
+          box-shadow:0 0 3px rgba(255,236,180,.7);}
+        .go-photo.tombe .go-grains i{
+          animation:goGrain var(--t) cubic-bezier(.5,0,.85,.5) both;
+          animation-delay:calc(.26s + var(--d));}
+        @keyframes goGrain{
+          0%{opacity:0;transform:translate(0,0) scale(calc(var(--s) * .5)) rotate(0deg);}
+          12%{opacity:1;}
+          80%{opacity:1;}
+          100%{opacity:0;
+            transform:translate(var(--f),50vh) scale(var(--s)) rotate(var(--r));}
+        }
+
+        /* ─── 5 · LA LUEUR, AU MOMENT OU ILS ARRIVENT ───
+           Elle naissait a l'appui ; elle nait maintenant a l'impact, et elle
+           est deux fois plus rapide. Une lueur qui met deux secondes a s'ouvrir
+           est un eclairage ; une lueur qui s'ouvre en un quart de seconde est
+           un evenement. */
         .go-braise{position:absolute;inset:0;pointer-events:none;opacity:0;
           background:radial-gradient(circle at 50% 56%,
-            rgba(255,214,130,.55) 0%, rgba(255,176,74,.28) 26%,
+            rgba(255,214,130,.5) 0%, rgba(255,176,74,.24) 26%,
             rgba(255,150,40,0) 62%);
           mix-blend-mode:screen;}
-        .go-photo.tombe .go-braise{animation:goBraise 1.9s ease-out both;}
+        .go-photo.tombe .go-braise{animation:goBraise .9s cubic-bezier(.2,.9,.3,1) both;
+          animation-delay:.5s;}
         @keyframes goBraise{
-          0%{opacity:0;transform:scale(.35);}
-          38%{opacity:1;transform:scale(1.02);}
-          100%{opacity:.22;transform:scale(1.18);}
+          0%{opacity:0;transform:scale(.5);}
+          30%{opacity:1;transform:scale(1.04);}
+          100%{opacity:.2;transform:scale(1.14);}
         }
 
-        /* ─── 4 · LA NEIGE DE PARMESAN, QUI FOND DANS LE PLAT ───
-           Vingt eclats, six variables chacun — voir la table NEIGE. LE POINT
-           QUI COMPTE EST LA FIN : ils s'effacent AU PLAT, ils ne sortent pas
-           par le bas. Un flocon qui quitte le cadre est passe a cote ; un
-           flocon qui disparait sur l'assiette a atterri. */
-        .go-neige{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
-        .go-neige i{position:absolute;left:var(--x);top:-8%;
-          width:7px;height:5px;border-radius:2px;
-          transform:scale(var(--s));opacity:0;
-          background:linear-gradient(140deg,#FFF6DC,#EBD79B);
-          box-shadow:0 1px 4px rgba(0,0,0,.35);}
-        .go-photo.tombe .go-neige i{
-          animation:goNeige var(--t) cubic-bezier(.3,.1,.55,1) both;
-          animation-delay:var(--d);}
-        @keyframes goNeige{
-          0%{opacity:0;transform:translate(0,0) scale(var(--s)) rotate(0deg);}
-          10%{opacity:.95;}
-          /* IL RALENTIT ET PALIT SUR LE DERNIER TIERS : c'est la fonte. Une
-             chute a vitesse constante suivie d'une disparition nette
-             ressemblerait a un bug d'affichage. */
-          72%{opacity:.9;}
-          100%{opacity:0;
-            transform:translate(var(--f),78%) scale(calc(var(--s) * .55))
-              rotate(var(--r));}
-        }
-
-        /* ─── 5 · ET LA VAPEUR MONTE, EN DERNIER ───
-           Elle arrive quand tout le reste est retombe : c'est elle qui dit que
-           le plat est chaud MAINTENANT, et c'est la derniere image qu'on garde
-           avant d'appuyer sur RESERVER. */
+        /* ─── 6 · ET LA VAPEUR MONTE, EN DERNIER ───
+           UNE SEULE, et elle part du centre. Trois volutes montaient en meme
+           temps et formaient un brouillard ; une seule, lente, dit qu'il reste
+           de la chaleur. C'est la derniere image qu'on garde avant d'appuyer
+           sur RESERVER, et elle doit etre calme. */
         .go-vapeur{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
-        .go-vapeur i{position:absolute;bottom:34%;width:46px;height:46px;
-          border-radius:50%;opacity:0;filter:blur(13px);
+        .go-vapeur i{position:absolute;bottom:38%;left:46%;width:44px;height:44px;
+          border-radius:50%;opacity:0;filter:blur(12px);
           background:radial-gradient(circle,rgba(255,255,255,.5),rgba(255,255,255,0) 70%);}
-        .go-vapeur i:nth-child(1){left:32%;}
-        .go-vapeur i:nth-child(2){left:48%;}
-        .go-vapeur i:nth-child(3){left:63%;}
-        .go-photo.tombe .go-vapeur i{animation:goVapeur 3.4s ease-out both;}
-        .go-photo.tombe .go-vapeur i:nth-child(1){animation-delay:1.25s;}
-        .go-photo.tombe .go-vapeur i:nth-child(2){animation-delay:1.6s;}
-        .go-photo.tombe .go-vapeur i:nth-child(3){animation-delay:1.45s;}
+        .go-photo.tombe .go-vapeur i{animation:goVapeur 2.6s ease-out both;
+          animation-delay:.9s;}
         @keyframes goVapeur{
           0%{opacity:0;transform:translateY(0) scale(.5);}
-          22%{opacity:.6;}
-          100%{opacity:0;transform:translateY(-135px) scale(1.9);}
+          24%{opacity:.55;}
+          100%{opacity:0;transform:translateY(-120px) scale(1.8);}
         }
 
         /* ET QUI NE VEUT PAS DE MOUVEMENT VOIT QUAND MEME LE PLAT CHANGER.
            On garde l'etat d'arrivee — plat plus chaud, lueur posee — et on
-           retire la chute et la vapeur. Le geste tient sa promesse sans rien
-           faire bouger, ce qui est le seul repli honnete : couper l'animation
-           en laissant l'image d'avant reviendrait a ne rien montrer. */
+           retire la main, la chute et la vapeur. Le geste tient sa promesse
+           sans rien faire bouger, ce qui est le seul repli honnete : couper
+           l'animation en laissant l'image d'avant reviendrait a ne rien
+           montrer. */
         @media (prefers-reduced-motion:reduce){
           .go-photo img,.go-apres{transition:none;}
+          .go-photo.tombe img{animation:none;
+            filter:saturate(1.2) contrast(1.05) brightness(1.04);}
           .go-photo.tombe .go-braise{animation:none;opacity:.3;}
-          .go-photo.tombe .go-neige,.go-photo.tombe .go-vapeur{display:none;}
+          .go-photo.tombe .go-pince,
+          .go-photo.tombe .go-grains,
+          .go-photo.tombe .go-vapeur{display:none;}
         }
 
         /* ═══ LE MOT DU CHEF ════════════════════════════════════════════════

@@ -156,7 +156,7 @@ import { PictoMetier } from "@/components/direct/picto-metier";
 // commentaire du bouton dans la barre.
 import { MurContenu } from "@/components/direct/mur-contenu";
 import { murDeLaCarte, murDuSouvenir, QUOTA_DU_JOUR } from "@/lib/direct/fantomes";
-import { soireeDuLieu } from "@/lib/direct/soiree";
+import { motsDe, soireeDuLieu } from "@/lib/direct/soiree";
 import { EcranSoiree } from "@/components/direct/soiree-contenu";
 import { mesFantomes, rappelerFantome, SIGNAL as SIGNAL_FANTOMES, tempsRestant, type FantomePose } from "@/lib/direct/mes-fantomes";
 import {
@@ -6997,43 +6997,29 @@ export function ApercuHabitant() {
                                 UN POSTE, LUI, APPARTIENT À UN COMMERCE : sa
                                 fiche existe, donc la première porte reste. La
                                 seconde devient l'offre elle-même. */}
+                            {/* ═══ UNE SEULE PORTE, ET ELLE DESCEND ═══════════
+
+                                « Je voulais juste que ce bouton disparaisse au
+                                profit d'un bouton général : "Voir toutes les
+                                offres + infos". »
+
+                                IL L'AVAIT DEMANDÉ UNE PREMIÈRE FOIS ET J'AVAIS
+                                PLAIDÉ POUR EN GARDER DEUX. L'argument était
+                                qu'un seul lien ne peut pas écrire deux
+                                destinations avec une seule flèche. Il était
+                                juste — et sans objet, parce que les deux
+                                destinations n'avaient aucune raison d'être
+                                deux. Le vrai défaut n'était pas la flèche :
+                                c'était que la fiche du commerce avait quitté la
+                                carte. Elle y est revenue — voir le bloc « Le
+                                commerce » plus bas — donc la seconde porte n'a
+                                plus rien de particulier à ouvrir.
+
+                                UNE PORTE, UNE FLÈCHE, UNE DIRECTION : tout est
+                                en dessous, dans cette carte, sans en sortir.
+                                C'est ce qui manquait pour que sa demande soit
+                                simplement juste. */}
                             <div className="ap-ident-d">
-                              {!dessusEv && (
-                              <Link
-                                href="/autour-de-moi/boutique"
-                                prefetch={false}
-                                onPointerDown={(ev) => ev.stopPropagation()}
-                                onClick={() => noter("pli-ouvert", 0, "boutique-ident")}
-                              >
-                                {/* ═══ ET ELLE EST REPARTIE VERS LA DROITE ════
-
-                                    « Je pense qu'Infos boutique est peut-être
-                                    de trop au final, puisqu'on a déjà Voir
-                                    toutes les offres, et que ça pourrait faire
-                                    comprendre à l'utilisateur qu'il trouvera
-                                    les infos plus bas aussi. »
-
-                                    C'EST EXACTEMENT CE QUE SA FLECHE PROMETTAIT,
-                                    ET ELLE AVAIT RAISON QUAND ON L'A MISE. A
-                                    l'epoque, « Infos boutique » descendait dans
-                                    la page ; il avait demande le bas, on lui
-                                    avait donne le bas. Depuis, la fiche a
-                                    demenage : ce lien SORT vers la page du
-                                    commerce, et sa fleche est restee en bas.
-                                    Elle promet donc une section plus bas qui
-                                    n'existe plus — c'est la confusion qu'il
-                                    ressent, et elle vient d'une fleche, pas
-                                    d'un bouton de trop.
-
-                                    ON GARDE DONC LES DEUX, ET CHACUNE DIT OU
-                                    ELLE VA : « ↓ » descend dans cette page,
-                                    « → » en sort. Les fusionner en « toutes
-                                    les offres + infos » aurait rendu un seul
-                                    lien qui fait deux choses a deux endroits —
-                                    et il n'y a pas de fleche pour ecrire ca. */}
-                                Infos boutique<i aria-hidden="true">→</i>
-                              </Link>
-                              )}
                               <button
                                 type="button"
                                 onPointerDown={(ev) => ev.stopPropagation()}
@@ -7079,13 +7065,17 @@ export function ApercuHabitant() {
                                     planning : il cherche ce qu'il y a d'autre
                                     à prendre. « Toutes les offres » dit ce
                                     qu'il va trouver, pas comment c'est rangé. */}
+                                {/* ET LE MOT DIT MAINTENANT LES DEUX CHOSES.
+                                    « + infos » n'est pas un ornement : c'est ce
+                                    qui promet que la fiche est en dessous, donc
+                                    ce qui rend la porte d'à côté inutile. */}
                                 {dessusEv
                                   ? "Ce qu’il faut savoir"
                                   : dessus && estPoste(dessus)
                                     ? "Voir l’offre"
                                     : dessus?.prepare
                                       ? "Prête à publier"
-                                      : "Voir toutes les offres"}
+                                      : "Voir toutes les offres + infos"}
                                 <i aria-hidden="true">↓</i>
                               </button>
                             </div>
@@ -7879,6 +7869,99 @@ export function ApercuHabitant() {
                         </button>
                       </div>
 
+                      {/* ═══ LE COMMERCE, ET IL EST REVENU DANS L'APPLICATION ═══
+
+                          « Sur l'app de démo je n'ai plus les infos du
+                          commerce. Quand je clique sur "info boutique" ça
+                          m'amène sur la page d'accueil du commerçant, alors que
+                          je voulais juste que ce bouton disparaisse au profit
+                          d'un bouton général "Voir toutes les offres + infos".
+                          Donc remets ce qu'il y avait avant sur l'app démo
+                          concernant les infos du commerçant. »
+
+                          J'AI DÉPLACÉ LA FICHE AU LIEU DE RETIRER UN BOUTON, ET
+                          C'EST TOUTE L'ERREUR. Il demandait une fusion de deux
+                          portes ; j'ai répondu en sortant la pièce de la maison.
+                          La fiche a quitté la carte pour la page du commerçant,
+                          et « Infos boutique » s'est mis à faire sortir de
+                          l'application — ce qu'aucun des deux boutons n'avait
+                          jamais promis.
+
+                          ELLE EST DONC ICI, ET C'EST SA PLACE. Où c'est, quand
+                          c'est ouvert, le mot du commerçant, le téléphone : ce
+                          sont les quatre choses qu'on veut savoir APRÈS avoir
+                          décidé d'y aller et AVANT de fermer l'écran. Les lire
+                          ne doit pas coûter un changement de page.
+
+                          LA PAGE DU COMMERÇANT NE DISPARAÎT PAS POUR AUTANT :
+                          elle porte les huit chapitres, les photos, l'histoire.
+                          C'est la version longue, et « Voir toutes les offres +
+                          infos » y mène. Ce bloc-ci est la version courte, celle
+                          qui suffit neuf fois sur dix. */}
+                      <div className="ap-bloc ap-fiche">
+                        <h3>Le commerce</h3>
+                        {dessus.fiche.mot && (
+                          <p className="ap-mot">{`« ${dessus.fiche.mot} »`}</p>
+                        )}
+                        <div className="ap-l">
+                          <i aria-hidden="true">📍</i>
+                          <span>
+                            {dessus.fiche.ou}
+                            {/* LA DISTANCE EST COLLÉE À L'ADRESSE parce que
+                                c'est ensemble qu'elles répondent : une rue
+                                qu'on ne connaît pas ne dit rien, « à 300 m »
+                                si. */}
+                            <b>{dessus.distance}</b>
+                          </span>
+                        </div>
+                        <div className="ap-l">
+                          <i aria-hidden="true">🕑</i>
+                          <span>{dessus.fiche.horaires}</span>
+                        </div>
+                        {dessus.google && (
+                          <div className="ap-l">
+                            <i aria-hidden="true">★</i>
+                            <span>
+                              {dessus.google.note}
+                              <b>{dessus.google.avis} avis</b>
+                            </span>
+                          </div>
+                        )}
+                        {/* ─── LES TROIS GESTES, ET AUCUN N'EST DÉCORATIF ───
+                            Y aller, appeler, voir le reste. Le téléphone et le
+                            site n'apparaissent que si le commerçant les a
+                            donnés : une ligne « Téléphone : — » est pire que
+                            pas de ligne, parce qu'elle fait douter du reste. */}
+                        <div className="ap-fiche-d">
+                          <a
+                            href={dessus.itineraire}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            onPointerDown={(ev) => ev.stopPropagation()}
+                            onClick={() => noter("pli-ouvert", 0, "fiche-itineraire")}
+                          >
+                            🧭 Y aller
+                          </a>
+                          {dessus.telephone && (
+                            <a
+                              href={`tel:${dessus.telephone.replace(/[^+0-9]/g, "")}`}
+                              onPointerDown={(ev) => ev.stopPropagation()}
+                              onClick={() => noter("pli-ouvert", 0, "fiche-appel")}
+                            >
+                              📞 Appeler
+                            </a>
+                          )}
+                          <Link
+                            href="/autour-de-moi/boutique"
+                            prefetch={false}
+                            onPointerDown={(ev) => ev.stopPropagation()}
+                            onClick={() => noter("pli-ouvert", 0, "fiche-page")}
+                          >
+                            👉 Sa page
+                          </Link>
+                        </div>
+                      </div>
+
                       {/* ── LE FAIRE CONNAÎTRE ──
                           « Le soutenir » ne se comprenait pas : on ne voyait ni
                           à quoi sert le geste, ni ce qu'il produit. Un compteur
@@ -8308,7 +8391,26 @@ export function ApercuHabitant() {
                 disabled={!sommet}
               >
                 <Fantome classe="ap-agir-f" />
-                <span>Essayer cette soirée</span>
+                {/* ═══ ET LE VERBE SUIT LA NATURE DE L'ÉVÉNEMENT ════════════
+
+                    « Si c'est le marché sous les halles on ne peut pas parler
+                    de "tester cette soirée", mais plutôt comme un restaurant
+                    qui met en avant un produit au travers d'un parcours. »
+
+                    LE MOT ÉTAIT ÉCRIT EN DUR ICI, et c'est ça qui le rendait
+                    faux pour la moitié des cas : un bouton unique sous six
+                    événements qui n'ont rien en commun. « Essayer cette
+                    soirée » convient à un DJ set et ment sur un marché de
+                    producteurs à 18 h, sur une nocturne de musée et sur un
+                    vide-grenier du dimanche matin.
+
+                    IL SE LIT MAINTENANT DANS LA SOIRÉE — voir `MOTS_NATURE`
+                    dans `lib/direct/soiree.ts`. Chaque événement déclare s'il
+                    est festif ou local, et les sept mots qui en dépendent
+                    suivent ensemble : le bouton, le titre du Live, la question
+                    du Fantôme, la phrase de fin. Les changer un par un aurait
+                    donné un bouton juste au-dessus d'un écran qui se contredit. */}
+                <span>{motsDe(soireeDuSommet).geste}</span>
                 <s aria-hidden="true">→</s>
               </button>
             ) : enPlace &&
@@ -8415,7 +8517,7 @@ export function ApercuHabitant() {
               <p className="ap-essayer-p">
                 <i aria-hidden="true">✨</i>
                 {soireeDuSommet.essais[0].chapeau.toLowerCase()}, en quelques secondes — puis le
-                Live de la soirée.
+                Live {motsDe(soireeDuSommet).live}.
               </p>
             )}
 
@@ -16299,6 +16401,26 @@ export function ApercuHabitant() {
         .ap-l{display:flex;align-items:flex-start;gap:9px;font-size:13.5px;line-height:1.45;
           color:#B9C6CE;padding:8px 0;border-top:1px solid rgba(255,255,255,.08);}
         .ap-l i{font-style:normal;font-size:14px;flex:none;}
+        /* ── LE COMMERCE, REVENU DANS LA CARTE ──────────────────────────────
+           SA PREMIÈRE LIGNE N'A PAS DE FILET. La règle des lignes en pose un en
+           haut pour les séparer entre elles ; sous un titre de bloc, il dessine
+           un second trait à trois points du premier et l'œil ne voit que ça.
+           LE SECOND MEMBRE EST GRIS ET COLLÉ AU PREMIER. « à 300 m » après une
+           rue, « 128 avis » après une note : c'est la précision de ce qui
+           précède, pas une information de même rang. */
+        .ap-fiche .ap-l:first-of-type{border-top:0;padding-top:0;}
+        .ap-fiche .ap-l span{min-width:0;}
+        .ap-fiche .ap-l b{font-weight:600;color:#8FA3AC;margin-left:8px;}
+        /* TROIS GESTES DE MÊME POIDS, SUR UNE SEULE LIGNE TANT QU'ILS TIENNENT.
+           Ils partagent la largeur au lieu de s'empiler : empilés, ils se
+           lisent comme une liste de réglages ; côte à côte, comme un choix. */
+        .ap-fiche-d{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+        .ap-fiche-d a{flex:1 1 auto;min-width:104px;display:inline-flex;
+          align-items:center;justify-content:center;gap:6px;
+          font-size:13.5px;font-weight:850;color:#EAF2EC;text-decoration:none;
+          background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);
+          border-radius:12px;padding:11px 12px;transition:transform .12s ease;}
+        .ap-fiche-d a:active{transform:scale(.97);}
         .ap-yaller{display:inline-flex;align-items:center;gap:7px;margin-top:12px;
           font-size:14px;font-weight:850;color:#EAF2EC;text-decoration:none;
           background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);

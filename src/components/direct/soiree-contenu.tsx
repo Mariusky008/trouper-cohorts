@@ -64,6 +64,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FILTRES_LIVE,
   INTENTIONS,
+  motsDe,
   ouEnEstLaSoiree,
   passeLeFiltre,
   type EssaiSoiree,
@@ -901,7 +902,33 @@ function Regard({
   );
 }
 
-/** On touche, et quelque chose arrive au visuel. */
+/**
+ * ═══ ON TOUCHE, ET LE SOIR TOMBE VRAIMENT ═════════════════════════════════
+ *
+ * « L'animation "faire tomber le soir" est vraiment très mauvaise. »
+ *
+ * ELLE N'ÉTAIT PAS UNE ANIMATION, C'ÉTAIT UN FILTRE. Un dégradé orange dont
+ * l'opacité passait de zéro à un en une seconde et demie, par-dessus la photo.
+ * Le bouton promet que le soir TOMBE ; rien ne tombait, rien ne bougeait, rien
+ * ne s'allumait. On appuyait, l'image virait au sépia, et c'était tout.
+ *
+ * CE QU'IL SE PASSE QUAND LE SOIR TOMBE VRAIMENT, ET C'EST CE QU'ON JOUE :
+ *
+ *   · LE SOLEIL DESCEND. C'est le seul mouvement qui compte, et il n'y en avait
+ *     aucun. La lumière part en haut à droite, large et blanche, et elle
+ *     glisse vers le bas en rétrécissant et en rougissant. Tout le reste
+ *     découle de ça.
+ *   · L'OMBRE MONTE. Le bas du cadre s'assombrit en premier et gagne vers le
+ *     haut — c'est ce que fait une terrasse quand les platanes s'allongent.
+ *   · LA COULEUR PASSE PAR QUATRE ÉTATS, et pas d'un à l'autre. Or, ambre,
+ *     rose, puis bleu de nuit : un coucher de soleil n'est pas un fondu, c'est
+ *     une suite. Un fondu droit entre deux teintes donne du sépia, ce qui est
+ *     exactement ce qu'on avait.
+ *   · ET LES LAMPES S'ALLUMENT, UNE PAR UNE, À LA FIN. C'est le paiement du
+ *     geste : le moment où l'image cesse d'être une photo de jour assombrie
+ *     pour devenir une terrasse le soir. Cinq points chauds qui s'allument en
+ *     quinconce, parce que personne n'allume cinq guirlandes d'un coup.
+ */
 function Geste({ essai, vu, onFini }: { essai: EssaiSoiree; vu: boolean; onFini: () => void }) {
   return (
     <div className={`so-geste${vu ? " fait" : ""}`}>
@@ -909,7 +936,16 @@ function Geste({ essai, vu, onFini }: { essai: EssaiSoiree; vu: boolean; onFini:
         // eslint-disable-next-line @next/next/no-img-element
         <img src={essai.media} alt="" />
       )}
+      {/* LE SOLEIL — il descend et il rougit. */}
+      <span className="so-soleil" aria-hidden="true" />
+      {/* L'OMBRE — elle monte du bas. */}
+      <span className="so-ombre" aria-hidden="true" />
+      {/* LE CIEL — quatre états, dans l'ordre. */}
       <span className="so-soir" aria-hidden="true" />
+      {/* LES LAMPES — le paiement du geste. */}
+      <span className="so-lampes" aria-hidden="true">
+        <i /><i /><i /><i /><i />
+      </span>
       {!vu && (
         <button type="button" className="so-devoile" onClick={onFini}>
           <s aria-hidden="true">✨</s>
@@ -1011,7 +1047,7 @@ function TempsIntention({
       <Tete
         chapeau="VOTRE FANTÔME"
         titre="Et vous, qu’est-ce que "
-        fin="vous cherchez ce soir ?"
+        fin={motsDe(soiree).cherche}
         phrase="Personne ne verra votre nom. Vous pouvez même rester invisible : votre intention comptera quand même."
         photo={soiree.photo}
         note={soiree.note}
@@ -1046,7 +1082,7 @@ function TempsIntention({
           onClick={() => onVisible(true)}
         >
           <b>👻 Fantôme visible</b>
-          <em>Votre Fantôme apparaît dans la soirée</em>
+          <em>Votre Fantôme apparaît {motsDe(soiree).dedans}</em>
         </button>
         <button
           type="button"
@@ -1155,7 +1191,7 @@ function TempsLive({
 
   return (
     <>
-      <Tete direct titre="Le Live " fin="de ce soir" photo={soiree.photo} note={soiree.note} />
+      <Tete direct titre="Le Live " fin={motsDe(soiree).live} photo={soiree.photo} note={soiree.note} />
 
       {/* ═══ COMBIEN ILS SONT, ET « VOIR LES FANTÔMES » SUR LA MÊME LIGNE ═══
           C'est la maquette au trait près, et l'ordre y dit quelque chose : on
@@ -1193,7 +1229,7 @@ function TempsLive({
       {depose && (
         <p className="so-pose">
           {jeSuisVisible
-            ? `👻 Votre Fantôme est dans la soirée avec ${visibles} autres. Vous pouvez le retirer quand vous voulez.`
+            ? `👻 Votre Fantôme est ${motsDe(soiree).dedans} avec ${visibles} autres. Vous pouvez le retirer quand vous voulez.`
             : "🫥 Vous êtes entré sans être vu. Votre intention compte, votre Fantôme ne s’affiche pas."}
         </p>
       )}
@@ -1304,7 +1340,7 @@ function Programme({
           ? `${maintenant.emoji} ${maintenant.quoi}, maintenant`
           : suivant
             ? `${suivant.emoji} ${suivant.quoi}, à ${suivant.heure}`
-            : "🌙 La soirée est finie"}
+            : motsDe(soiree).fini}
       </b>
       <ol>
         {soiree.programme.map((t) => {
@@ -1537,8 +1573,8 @@ function TempsFantomes({
         fin={montres.length > 1 ? "Fantômes" : "Fantôme"}
         sous={
           commeMoi
-            ? `cherche${montres.length > 1 ? "nt" : ""} la même chose que vous ce soir.`
-            : `${montres.length > 1 ? "sont" : "est"} dans cette soirée en ce moment.`
+            ? `cherche${montres.length > 1 ? "nt" : ""} la même chose que vous ${motsDe(soiree).moment}.`
+            : `${montres.length > 1 ? "sont" : "est"} ${motsDe(soiree).dedans} en ce moment.`
         }
         phrase={`${visibles.length} ont choisi d’être visibles. On ne voit d’eux qu’une couleur, un numéro et ce qu’ils cherchent.`}
         photo={soiree.photo}
@@ -1918,17 +1954,128 @@ function Styles() {
           -webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);
           box-shadow:0 0 0 1px rgba(255,255,255,.2);}
         .so-devoile s{text-decoration:none;font-size:16px;}
-        /* LE SOIR QUI TOMBE, sur un temps de geste : la lumiere chaude d'une fin
-           de journee, posee sur la photo. Elle ne bouge pas la photo, elle la
-           CHANGE — c'est la difference entre un effet et un evenement. */
+        /* ═══ LE SOIR QUI TOMBE — QUATRE COUCHES, UN SEUL MOUVEMENT ════════
+           Voir le grand commentaire sur le composant Geste : l'ancienne
+           version montait l'opacite d'un degrade orange, ce qui donnait un
+           filtre sepia et non un coucher de soleil. Deux secondes six, et
+           chaque couche a son role. */
+
+        /* ─── 1 · LE SOLEIL DESCEND ───
+           C'est le seul vrai mouvement de la scene. Il part en haut a droite,
+           large et blanc, il glisse vers le bas en retrecissant et en
+           rougissant. La courbe est lente au debut et lente a la fin : un
+           soleil ne s'arrete pas net a l'horizon, il s'y pose. */
+        .so-soleil{position:absolute;inset:0;pointer-events:none;opacity:0;
+          mix-blend-mode:screen;
+          background:radial-gradient(circle at 78% 18%,
+            rgba(255,248,224,.85) 0%, rgba(255,214,140,.5) 18%,
+            rgba(255,170,80,0) 46%);}
+        .so-geste.fait .so-soleil{animation:soSoleil 2.6s cubic-bezier(.4,0,.5,1) both;}
+        @keyframes soSoleil{
+          0%{opacity:.9;
+            background:radial-gradient(circle at 78% 18%,
+              rgba(255,248,224,.85) 0%, rgba(255,214,140,.5) 18%,
+              rgba(255,170,80,0) 46%);}
+          42%{opacity:1;
+            background:radial-gradient(circle at 70% 48%,
+              rgba(255,226,150,.9) 0%, rgba(255,166,80,.52) 15%,
+              rgba(255,120,50,0) 40%);}
+          76%{opacity:.85;
+            background:radial-gradient(circle at 63% 72%,
+              rgba(255,168,96,.8) 0%, rgba(255,104,84,.4) 12%,
+              rgba(220,70,90,0) 33%);}
+          100%{opacity:.35;
+            background:radial-gradient(circle at 58% 88%,
+              rgba(255,128,86,.5) 0%, rgba(214,72,96,.22) 10%,
+              rgba(150,50,110,0) 28%);}
+        }
+
+        /* ─── 2 · L'OMBRE MONTE ───
+           Elle part du bas et gagne vers le haut, parce que c'est par le bas
+           qu'une terrasse perd le soleil. Elle arrive un peu apres le debut :
+           la lumiere baisse avant que l'ombre se voie. */
+        .so-ombre{position:absolute;inset:0;pointer-events:none;opacity:0;
+          background:linear-gradient(to top,
+            rgba(18,12,38,.82) 0%, rgba(24,16,48,.5) 24%,
+            rgba(30,20,60,.18) 52%, rgba(30,20,60,0) 78%);}
+        .so-geste.fait .so-ombre{animation:soOmbre 2.6s ease-in both;}
+        @keyframes soOmbre{
+          0%{opacity:0;transform:translateY(38%);}
+          40%{opacity:.5;transform:translateY(14%);}
+          100%{opacity:1;transform:translateY(0);}
+        }
+
+        /* ─── 3 · LE CIEL PASSE PAR QUATRE ETATS ───
+           Or, ambre, rose, bleu de nuit. Les paliers sont ce qui distingue un
+           coucher de soleil d'un virage sepia : entre deux teintes, un fondu
+           droit traverse le gris. */
         .so-soir{position:absolute;inset:0;pointer-events:none;opacity:0;
-          transition:opacity 1.4s ease-out;
-          background:linear-gradient(200deg,rgba(255,176,74,.42),
-            rgba(255,94,120,.26) 46%,rgba(60,30,90,.5));
-          mix-blend-mode:screen;}
-        .so-geste.fait .so-soir{opacity:1;}
-        .so-geste.fait img{filter:saturate(1.15) brightness(.95) sepia(.16);
-          transform:scale(1.03);}
+          mix-blend-mode:screen;
+          background:linear-gradient(200deg,rgba(255,206,120,.34),
+            rgba(255,150,90,.18) 50%,rgba(70,40,110,.3));}
+        .so-geste.fait .so-soir{animation:soCiel 2.6s ease-out both;}
+        @keyframes soCiel{
+          0%{opacity:0;}
+          26%{opacity:.75;
+            background:linear-gradient(200deg,rgba(255,216,140,.4),
+              rgba(255,178,104,.2) 50%,rgba(120,80,140,.2));}
+          58%{opacity:.9;
+            background:linear-gradient(200deg,rgba(255,158,110,.42),
+              rgba(255,110,120,.26) 48%,rgba(92,54,132,.34));}
+          100%{opacity:1;
+            background:linear-gradient(200deg,rgba(224,110,132,.34),
+              rgba(150,74,150,.28) 44%,rgba(46,32,96,.52));}
+        }
+
+        /* ─── 4 · ET LES LAMPES S'ALLUMENT, UNE PAR UNE ───
+           LE PAIEMENT DU GESTE. C'est le moment ou l'image cesse d'etre une
+           photo de jour assombrie pour devenir une terrasse le soir. Elles
+           arrivent en quinconce sur le dernier tiers : personne n'allume cinq
+           guirlandes d'un coup, et c'est le decalage qui les rend vraies. */
+        .so-lampes{position:absolute;inset:0;pointer-events:none;}
+        .so-lampes i{position:absolute;width:15px;height:15px;border-radius:50%;
+          opacity:0;filter:blur(3px);mix-blend-mode:screen;
+          background:radial-gradient(circle,rgba(255,232,168,.95),
+            rgba(255,186,96,.45) 42%,rgba(255,160,60,0) 72%);}
+        .so-lampes i:nth-child(1){left:13%;top:26%;}
+        .so-lampes i:nth-child(2){left:31%;top:19%;}
+        .so-lampes i:nth-child(3){left:52%;top:24%;}
+        .so-lampes i:nth-child(4){left:71%;top:17%;}
+        .so-lampes i:nth-child(5){left:87%;top:29%;}
+        .so-geste.fait .so-lampes i{animation:soLampe .7s cubic-bezier(.2,.9,.3,1) both;}
+        .so-geste.fait .so-lampes i:nth-child(1){animation-delay:1.72s;}
+        .so-geste.fait .so-lampes i:nth-child(2){animation-delay:2.04s;}
+        .so-geste.fait .so-lampes i:nth-child(3){animation-delay:1.88s;}
+        .so-geste.fait .so-lampes i:nth-child(4){animation-delay:2.22s;}
+        .so-geste.fait .so-lampes i:nth-child(5){animation-delay:1.96s;}
+        @keyframes soLampe{
+          /* Le sursaut d'allumage : une ampoule depasse sa luminosite d'un
+             cheveu avant de se stabiliser. Sans lui, elle apparait ; avec lui,
+             elle s'allume. */
+          0%{opacity:0;transform:scale(.3);}
+          45%{opacity:1;transform:scale(1.35);}
+          100%{opacity:.9;transform:scale(1);}
+        }
+
+        /* ET LA PHOTO ELLE-MEME SUIT : elle perd sa lumiere de midi et gagne
+           la chaleur basse du soir, en meme temps que le soleil descend. */
+        .so-geste.fait img{animation:soPhoto 2.6s ease-out both;}
+        @keyframes soPhoto{
+          0%{filter:none;transform:scale(1);}
+          100%{filter:saturate(1.1) brightness(.82) contrast(1.06) hue-rotate(-6deg);
+            transform:scale(1.03);}
+        }
+
+        /* QUI NE VEUT PAS DE MOUVEMENT VOIT QUAND MEME LE SOIR. On garde
+           l'etat d'arrivee — ciel de nuit, ombre posee, lampes allumees — et
+           on retire la descente. */
+        @media (prefers-reduced-motion:reduce){
+          .so-geste.fait .so-soleil,.so-geste.fait .so-ombre,
+          .so-geste.fait .so-soir,.so-geste.fait img{animation:none;}
+          .so-geste.fait .so-ombre,.so-geste.fait .so-soir{opacity:1;}
+          .so-geste.fait img{filter:saturate(1.1) brightness(.82) contrast(1.06);}
+          .so-geste.fait .so-lampes i{animation:none;opacity:.9;}
+        }
 
         /* ─── LA DEVINETTE ─── */
         .so-devine{margin-top:14px;}
