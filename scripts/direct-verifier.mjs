@@ -3430,7 +3430,7 @@ console.log("\n══ la page du commerce ══");
 // fait ; on ne réserve qu'APRÈS avoir vu. La garde vérifie donc les cinq temps
 // ET leur suite, pas leur simple présence.
 {
-  console.log("\n══ le premier écran raconte les cinq temps ══");
+  console.log("\n══ le premier écran prouve ce qu'il promet ══");
   const ac = await nav.newContext({
     viewport: { width: 390, height: 844 }, deviceScaleFactor: 2,
     isMobile: true, hasTouch: true, locale: "fr-FR",
