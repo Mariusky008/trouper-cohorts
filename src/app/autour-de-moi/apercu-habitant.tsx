@@ -2895,9 +2895,20 @@ export function ApercuHabitant() {
    * une photo avant, une photo après, et le Fantôme entre les deux. Personne
    * n'a rien à lire pour comprendre.
    *
-   * L'ORDRE EST LE SIEN, ET IL COMMENCE PAR LE COIFFEUR. C'est l'exemple le
-   * plus lisible en un coup d'œil — une chevelure qui change se voit de loin,
-   * un bouquet posé sur une table demande deux secondes d'attention.
+   * L'ORDRE VA DU PLUS ÉVIDENT AU PLUS DEMANDANT, et c'est lui qui l'a corrigé :
+   * « le restaurant devrait arriver en dernier exemple parce que c'est le plus
+   * compliqué à comprendre ». Il a raison, et la raison est de fond : les trois
+   * premiers montrent UNE transformation qui se lit d'un coup d'œil — une
+   * chevelure, une tenue, une pièce meublée. Le restaurant, lui, raconte une
+   * SUITE en trois images : on ne peut la suivre qu'après avoir compris ce que
+   * fait l'application, et pas avant.
+   *
+   * QUATRE SECONDES ET DEMIE PAR EXEMPLE, SEPT ET DEMIE POUR LE RESTAURANT.
+   * « C'est encore trop rapide entre chaque exemple, et l'exemple restaurant
+   * c'est trop rapide aussi. » Trois secondes suffisaient à VOIR deux photos ;
+   * il en faut une de plus pour les COMPARER, et comparer est tout ce qu'on
+   * demande à cet écran. Le restaurant en a trois à lire, chacune avec son
+   * titre : deux secondes et demie par image au lieu d'une et un tiers.
    *
    * ET CHAQUE EXEMPLE ALLUME SON PICTOGRAMME. La rangée du bas n'explique plus
    * cinq fonctions : elle dit les familles de commerces, et celle dont on voit
@@ -2947,14 +2958,21 @@ export function ApercuHabitant() {
       famille: "beaute",
       photos: ["/direct/accueil/coiffure-avant.jpg", "/direct/accueil/coiffure-apres.jpg"],
       mots: ["Avant", "Après"],
-      duree: 3000,
+      duree: 4500,
     },
     {
       cle: "mode",
       famille: "mode",
       photos: ["/direct/accueil/mode-avant.jpg", "/direct/accueil/mode-apres.jpg"],
       mots: ["Avant", "Après"],
-      duree: 3000,
+      duree: 4500,
+    },
+    {
+      cle: "fleuriste",
+      famille: "commerces",
+      photos: ["/direct/accueil/fleuriste-avant.jpg", "/direct/accueil/fleuriste-apres.jpg"],
+      mots: ["Chez vous", "Avec le bouquet"],
+      duree: 4500,
     },
     {
       /**
@@ -2966,9 +2984,9 @@ export function ApercuHabitant() {
        * titres superposés sur la même image, c'est deux titres qu'on ne lit
        * ni l'un ni l'autre.
        *
-       * QUATRE SECONDES, ET C'EST SA DEMANDE. Trois images à trois secondes
-       * feraient une image par seconde ; à quatre, chacune a le temps d'être
-       * lue avant que la suivante arrive.
+       * ET IL VIENT EN DERNIER, PARCE QU'IL EST LE PLUS DEMANDANT. Voir
+       * l'en-tête de la table : une suite ne se suit qu'une fois qu'on a
+       * compris ce que fait l'application.
        */
       cle: "restaurant",
       famille: "restaurants",
@@ -2977,14 +2995,7 @@ export function ApercuHabitant() {
         "/direct/accueil/restaurant-2.jpg",
         "/direct/accueil/restaurant-3.jpg",
       ],
-      duree: 4000,
-    },
-    {
-      cle: "fleuriste",
-      famille: "commerces",
-      photos: ["/direct/accueil/fleuriste-avant.jpg", "/direct/accueil/fleuriste-apres.jpg"],
-      mots: ["Chez vous", "Avec le bouquet"],
-      duree: 3000,
+      duree: 7500,
     },
   ];
 
@@ -3092,10 +3103,10 @@ export function ApercuHabitant() {
    * en entier, sinon il n'y a pas de récit. Ce n'est pas une contrainte de
    * mise en page, c'est ce que les deux formes veulent dire.
    *
-   * ET SA SECONDE DEMANDE TOMBE JUSTE AU MÊME ENDROIT : « rallonger d'une
-   * seconde pour qu'on ait le temps de bien voir ». Quatre secondes divisées
-   * par trois font un tiers de plus par image qu'à trois secondes — et chacune
-   * occupe maintenant toute la scène.
+   * ET LE TEMPS SUIT : sept secondes et demie divisées par trois font deux
+   * secondes et demie par image, contre une et un tiers au premier jet. C'est
+   * le temps de lire « Le détail que vous ne verrez pas sur le menu » sans se
+   * presser, et chacune occupe toute la scène.
    */
   const raconte = exemple.photos.length > 2;
   /**

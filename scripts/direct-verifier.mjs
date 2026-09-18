@@ -3532,7 +3532,16 @@ console.log("\n══ la page du commerce ══");
      * s'anime devant une scène morte.
      */
     const avant = { fam: a.allumes[0], photo: a.avant?.photo };
-    await pA.waitForTimeout(3500);
+    /**
+     * CINQ SECONDES, PARCE QU'UN EXEMPLE EN DURE QUATRE ET DEMIE.
+     *
+     * « C'est encore trop rapide entre chaque exemple. » La durée est montée de
+     * trois à quatre secondes et demie ; une garde restée à trois secondes et
+     * demie mesurerait alors le MÊME exemple et conclurait que l'écran ne tourne
+     * plus. C'est la faute d'un temps d'attente recopié d'un côté et changé de
+     * l'autre, et elle ne se voit qu'en lisant les deux fichiers ensemble.
+     */
+    await pA.waitForTimeout(5000);
     const apres = await pA.evaluate(() => {
       const n = document.querySelector(".ap-ac-carte");
       const m = n ? getComputedStyle(n).backgroundImage.match(/\/([^/"')]+\.(?:jpe?g|png|webp))/i) : null;
@@ -3543,7 +3552,7 @@ console.log("\n══ la page du commerce ══");
     });
     dire(
       !!apres.fam && apres.fam !== avant.fam,
-      `trois secondes et demie plus tard, la famille a changé (${avant.fam} → ${apres.fam})`,
+      `cinq secondes plus tard, la famille a changé (${avant.fam} → ${apres.fam})`,
     );
     dire(
       !!apres.photo && apres.photo !== avant.photo,

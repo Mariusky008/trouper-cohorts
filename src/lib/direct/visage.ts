@@ -755,76 +755,26 @@ export async function reposerLeVisage(
    * et c'est heureux : c'est le métier qui s'en sert le plus.
    */
   if (!ali && (zone === "coiffure" || zone === "lunettes")) {
-    return photo;
-  }
-
-  /**
-   * ═══ ET LE RENDU A-T-IL DE QUOI COUVRIR TOUTE LA ZONE ? ═══════════════════
-   *
-   * « Le visage est OK mais il y a une photo dans la photo encore. »
-   *
-   * C'EST UN BORD, ET IL SORT D'ICI. On ramène le rendu dans le repère de la
-   * photo par la similitude inverse. Quand le modèle a RESSERRÉ le cadrage —
-   * il rend souvent la tête plus grande que sur la photo — l'inverse le
-   * RÉTRÉCIT, et le rectangle du rendu n'occupe plus qu'une partie du cadre.
-   * Si son bord tombe à l'intérieur de la zone de travail, on colle sur la
-   * chevelure un morceau de rendu terminé par une ARÊTE DROITE, avec la
-   * photographie de l'autre côté. Un bord droit au milieu d'une chevelure ne
-   * se lit pas comme une chevelure : il se lit comme une image posée dans
-   * l'image, et c'est exactement le mot qu'il emploie.
-   *
-   * ON VÉRIFIE DONC LA COUVERTURE, ET C'EST BON MARCHÉ. Les quatre coins de la
-   * zone de travail sont envoyés VERS le rendu par la similitude directe ; ils
-   * doivent tous tomber dans ses dimensions. Quatre multiplications et huit
-   * comparaisons — moins cher que de dessiner quoi que ce soit.
-   *
-   * ET S'IL MANQUE, ON REND SA PHOTO. Même raison que l'alignement absent :
-   * entre un essai qui échoue franchement et une image avec un rectangle
-   * dedans, il n'y a pas à hésiter. On pourrait aussi rogner la zone à ce que
-   * le rendu couvre — mais la zone rognée aurait elle-même un bord droit, donc
-   * on aurait déplacé l'arête au lieu de la retirer.
-   *
-   * LE BUSTE EN EST DISPENSÉ, comme du reste. Sa zone descend jusqu'au bas du
-   * cadre, donc elle touche forcément le bord du rendu ; et un vêtement dont le
-   * bas s'arrête à la photographie ne dessine aucune arête visible — c'est la
-   * limite naturelle de l'image.
-   */
-  if (ali && zone !== "buste") {
-    const cb = document.createElement("canvas").getContext("2d");
-    if (!cb) return photo;
-    const zt = tracerLaZoneDeTravail(cb, v, zone);
     /**
-     * ON BORNE LA ZONE AU CADRE DE LA PHOTO, ET C'EST NÉCESSAIRE.
+     * ═══ ON REND LE RENDU BRUT, PAS SA PHOTO ══════════════════════════════
      *
-     * DÉFAUT ATTRAPÉ PAR LA GARDE, sur un alignement pourtant parfait. L'ellipse
-     * de la coiffure est BEAUCOUP plus haute que le visage — c'est voulu, elle
-     * doit laisser la place au volume au-dessus du crâne et aux cheveux longs —
-     * et son rectangle englobant sort donc couramment par le haut de l'image,
-     * de deux cents points sur un portrait serré. Demander au rendu de couvrir
-     * ce qui est hors cadre, c'est refuser tous les essais.
+     * « Je mets une photo de moi et le résultat obtenu est la même photo de moi
+     * sans la coiffure que j'ai choisie. »
      *
-     * ON NE COLLE JAMAIS HORS DE LA PHOTO, de toute façon : le canevas de
-     * sortie a exactement ses dimensions. Ce qui doit être couvert est donc
-     * l'intersection de la zone et du cadre, et rien de plus.
+     * C'ÉTAIT MA FAUTE, ET ELLE ÉTAIT GROSSIÈRE. Au tour précédent, j'ai fait
+     * renvoyer LA PHOTO D'ORIGINE quand la recomposition n'était pas sûre. Le
+     * raisonnement — « mieux vaut un échec franc qu'une image à deux visages »
+     * — était juste ; la conclusion ne l'était pas. Rendre la photo d'entrée
+     * n'est pas un échec franc : c'est un échec MUET, qui ressemble à un
+     * produit qui ne fait rien.
+     *
+     * LE RENDU BRUT PORTE LA COUPE. C'est précisément ce qu'on est venu
+     * chercher. Son visage y est moins fidèle — c'est tout le sujet de ce
+     * fichier — mais entre « ma coupe, sur un visage un peu retouché » et « ma
+     * photo, inchangée », il n'y a pas de comparaison possible : la seconde ne
+     * répond à rien.
      */
-    const zx0 = Math.max(0, zt.x);
-    const zy0 = Math.max(0, zt.y);
-    const zx1 = Math.min(L, zt.x + zt.l);
-    const zy1 = Math.min(H, zt.y + zt.h);
-    const coins: [number, number][] = [
-      [zx0, zy0],
-      [zx1, zy0],
-      [zx0, zy1],
-      [zx1, zy1],
-    ];
-    // UNE MARGE D'UN POINT : un coin pile sur le bord donnerait une arête d'un
-    // pixel, invisible, et refuser l'essai pour ça serait de la sévérité pure.
-    const dedans = coins.every(([x, y]) => {
-      const rx = ali.a * x - ali.b * y + ali.e;
-      const ry = ali.b * x + ali.a * y + ali.f;
-      return rx >= -1 && ry >= -1 && rx <= RL + 1 && ry <= RH + 1;
-    });
-    if (!dedans) return photo;
+    return rendu;
   }
 
   const transporte = document.createElement("canvas");
@@ -894,6 +844,68 @@ export async function reposerLeVisage(
     v.interieur.forEach((p, i) => {
       if (i === 0) gp.moveTo(p.x, p.y);
       else gp.lineTo(p.x, p.y);
+    });
+    gp.closePath();
+    gp.fill();
+    gp.restore();
+    gp.filter = "none";
+  }
+
+  /**
+   * ═══ ET LE POCHOIR S'ARRÊTE AU BORD DU RENDU, EN FONDU ═══════════════════
+   *
+   * « Le visage est OK mais il y a une photo dans la photo encore. »
+   *
+   * D'OÙ VENAIT CE BORD. Quand le modèle resserre le cadrage, la similitude
+   * inverse RÉTRÉCIT le rendu : son rectangle n'occupe plus qu'une partie de la
+   * toile, et là où il s'arrête, le pochoir continuait. On collait donc un
+   * morceau de rendu terminé par une ARÊTE DROITE, la photographie reprenant de
+   * l'autre côté. Un bord droit au milieu d'une chevelure ne se lit pas comme
+   * une chevelure : il se lit comme une image posée dans l'image.
+   *
+   * MA PREMIÈRE CORRECTION ÉTAIT PIRE QUE LE DÉFAUT. Je refusais l'essai quand
+   * le rendu ne couvrait pas toute la zone — sauf que la zone de la coiffure
+   * fait quatre fois la hauteur du visage et, bornée au cadre, couvre
+   * pratiquement toute la photo. Exiger que le rendu la couvre entière revenait
+   * à exiger qu'il n'ait ni recadré ni zoomé. Il zoome presque toujours. Donc
+   * on refusait presque toujours, et il récupérait sa photo inchangée.
+   *
+   * ON NE REFUSE PLUS, ON FOND. Le pochoir est intersecté avec l'EMPREINTE du
+   * rendu — son rectangle ramené dans le repère de la photo — elle-même floutée
+   * du même rayon que le reste. Il ne peut alors plus exister d'arête nulle
+   * part : là où le rendu s'arrête, la pièce collée s'efface progressivement et
+   * la photographie reprend sans qu'on voie la couture. C'est la même idée que
+   * le fondu du contour, appliquée à l'autre limite.
+   *
+   * L'EMPREINTE EST UN QUADRILATÈRE, PAS UN RECTANGLE. Une similitude tourne :
+   * le rectangle du rendu revient penché dans le repère de la photo. On trace
+   * donc ses quatre coins transformés, ce qui est exact — un rectangle englobant
+   * serait faux dès que le modèle incline d'un degré.
+   */
+  if (ali) {
+    const d = ali.a * ali.a + ali.b * ali.b;
+    const ia = ali.a / d;
+    const ib = -ali.b / d;
+    const ie = -(ia * ali.e - ib * ali.f);
+    const if_ = -(ib * ali.e + ia * ali.f);
+    const versPhoto = (x: number, y: number): [number, number] => [
+      ia * x - ib * y + ie,
+      ib * x + ia * y + if_,
+    ];
+    const empreinte: [number, number][] = [
+      versPhoto(0, 0),
+      versPhoto(RL, 0),
+      versPhoto(RL, RH),
+      versPhoto(0, RH),
+    ];
+    gp.save();
+    gp.globalCompositeOperation = "destination-in";
+    gp.filter = `blur(${flou}px)`;
+    gp.fillStyle = "#fff";
+    gp.beginPath();
+    empreinte.forEach(([x, y], i) => {
+      if (i === 0) gp.moveTo(x, y);
+      else gp.lineTo(x, y);
     });
     gp.closePath();
     gp.fill();

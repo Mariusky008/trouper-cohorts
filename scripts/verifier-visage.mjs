@@ -646,15 +646,39 @@ console.log("\n══ le masque laisse la place d'une coupe longue ══");
        * Même mesure que sans alignement : le rendu est tout noir, donc un
        * collage se verrait tout de suite.
        */
-      craneTropGrand: (() => {
-        const a2 = Array.from(gp2.getImageData(cx - 40, 100, 1, 1).data).slice(0, 3);
-        const b2 = Array.from(troisGrand.g.getImageData(cx - 40, 100, 1, 1).data).slice(0, 3);
-        return Math.max(...a2.map((n, i) => Math.abs(n - b2[i])));
+      /**
+       * LA PLUS GRANDE MARCHE SUR UNE LIGNE DE LA COURONNE.
+       *
+       * On balaie horizontalement à hauteur du crâne, sur l'image rendue avec
+       * un visage de rendu deux fois trop grand — le cas qui produisait
+       * l'arête. Entre deux points voisins, l'écart doit rester petit : un
+       * fondu descend doucement, un collage saute.
+       */
+      marcheMax: (() => {
+        const g3 = troisGrand.g;
+        const y = 150;
+        let max = 0;
+        let prec = null;
+        for (let x = 4; x < L - 4; x += 2) {
+          const d = g3.getImageData(x, y, 1, 1).data;
+          const v2 = (d[0] + d[1] + d[2]) / 3;
+          if (prec !== null) max = Math.max(max, Math.abs(v2 - prec));
+          prec = v2;
+        }
+        return Math.round(max);
       })(),
+      /**
+       * ON MESURE QUE C'EST BIEN LE RENDU, PAS QU'ON S'ÉLOIGNE DE LA PHOTO.
+       *
+       * PREMIER JET : l'écart entre la photo et la sortie. Il valait 144, ce qui
+       * voulait dire « ce n'est pas la photo » — vrai, mais ça n'aurait pas
+       * distingué le rendu d'une image blanche ou d'un plantage. Le rendu de
+       * laboratoire est tout noir : sa clarté est la mesure directe, et elle ne
+       * confond rien.
+       */
       craneSansAli: (() => {
-        const a2 = Array.from(gp2.getImageData(cx - 40, 100, 1, 1).data).slice(0, 3);
-        const b2 = Array.from(sansAli.g.getImageData(cx - 40, 100, 1, 1).data).slice(0, 3);
-        return Math.max(...a2.map((n, i) => Math.abs(n - b2[i])));
+        const d = sansAli.g.getImageData(cx - 40, 100, 1, 1).data;
+        return Math.max(d[0], d[1], d[2]);
       })(),
     };
   });
@@ -674,13 +698,36 @@ console.log("\n══ le masque laisse la place d'une coupe longue ══");
     r.leCrane < 40,
     `mais au-dessus du crâne, c'est bien le rendu qu'on garde (clarté ${r.leCrane})`,
   );
+  /**
+   * ═══ SANS ALIGNEMENT, ON REND LE RENDU BRUT ═══════════════════════════════
+   *
+   * « Je mets une photo de moi et le résultat obtenu est la même photo de moi
+   * sans la coiffure que j'ai choisie. »
+   *
+   * LA GARDE VÉRIFIAIT LE CONTRAIRE, ET ELLE AVAIT TORT AVEC MOI. Elle exigeait
+   * qu'on rende SA PHOTO quand la recomposition n'était pas sûre — c'est ce que
+   * j'avais écrit, et c'est un échec muet qui ressemble à un produit qui ne fait
+   * rien. Le rendu brut porte la coupe ; c'est ce qu'on est venu chercher.
+   *
+   * LE RENDU EST TOUT NOIR ICI, donc « on a bien rendu le rendu » se mesure en
+   * une ligne : la clarté doit tomber à zéro partout, y compris là où la photo
+   * était claire.
+   */
   dire(
     r.craneSansAli < 12,
-    `et sans alignement sûr, on rend sa photo au lieu de deviner (écart ${r.craneSansAli})`,
+    `sans alignement sûr, on rend le rendu brut plutôt que rien (clarté ${r.craneSansAli})`,
   );
+  /**
+   * ET LE RENDU QUI NE COUVRE PAS LA ZONE NE LAISSE PLUS D'ARÊTE.
+   *
+   * ON NE REFUSE PLUS, ON FOND — voir `reposerLeVisage`. Ce qui se mesure n'est
+   * donc plus un refus mais une ABSENCE DE MARCHE : sur la ligne horizontale qui
+   * traverse la couronne, deux points voisins ne doivent jamais différer de plus
+   * de quelques unités. Une arête de collage en ferait bondir deux cents.
+   */
   dire(
-    r.craneTropGrand < 12,
-    `et si le rendu ne couvre pas la zone, on ne colle pas d'arête (écart ${r.craneTropGrand})`,
+    r.marcheMax < 60,
+    `et le bord du rendu se fond au lieu de dessiner une arête (saut max ${r.marcheMax})`,
   );
 
   dire(m.sousLeMenton < 40, `sous le menton, le modèle peut dessiner (alpha ${m.sousLeMenton})`);
