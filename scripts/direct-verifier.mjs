@@ -306,7 +306,7 @@ const ouvrir = async (url = "/autour-de-moi", heure) => {
   // autre chose : on note qu'elle a déjà été vue, comme après un premier
   // passage. Sa propre garde vit dans la suite « accueil ».
   await ctx.addInitScript(() => {
-    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); } catch {}
+    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); localStorage.setItem("clikme-demo-v1", "0"); } catch {}
   });
   if (heure != null) {
     await ctx.clock.setFixedTime(
@@ -766,7 +766,7 @@ console.log("\n══ mon commerce ══");
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
   await c3.addInitScript(() => {
-    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); } catch {}
+    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); localStorage.setItem("clikme-demo-v1", "0"); } catch {}
   });
   const q = await c3.newPage();
   q.on("pageerror", (e) => erreurs.push(String(e)));
@@ -950,7 +950,7 @@ console.log("\n══ la vidéo dans le rond ══");
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
   await c4.addInitScript(() => {
-    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); } catch {}
+    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); localStorage.setItem("clikme-demo-v1", "0"); } catch {}
   });
   const q = await c4.newPage();
   q.on("pageerror", (e) => erreurs.push(String(e)));
@@ -1097,7 +1097,7 @@ console.log("\n══ la vidéo dans le rond ══");
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
   await c5.addInitScript(() => {
-    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); } catch {}
+    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); localStorage.setItem("clikme-demo-v1", "0"); } catch {}
   });
   const q = await c5.newPage();
   await q.goto(`${BASE}/autour-de-moi?chez=emporter`, { waitUntil: "networkidle" });
@@ -1544,9 +1544,10 @@ console.log("\n══ l'annonce pousse vers l'essai ══");
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
   await cE.clock.setFixedTime(new Date(2026, 8, 2, 14, 15, 0));
-  await cE.addInitScript(() =>
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
-  );
+  await cE.addInitScript(() => {
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-demo-v1", "0");
+  });
   const pE = await cE.newPage();
   pE.on("pageerror", (e) => erreurs.push(String(e)));
 
@@ -1677,9 +1678,10 @@ console.log("\n══ l'essai se joue en trois temps ══");
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
   await c3.clock.setFixedTime(new Date(2026, 8, 2, 14, 15, 0));
-  await c3.addInitScript(() =>
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
-  );
+  await c3.addInitScript(() => {
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-demo-v1", "0");
+  });
   const p3 = await c3.newPage();
   p3.on("pageerror", (e) => erreurs.push(String(e)));
   // `exemple=1` REMPLACE LE BOUTON « Voir avec la photo d'exemple », retiré de
@@ -2132,7 +2134,7 @@ console.log("\n══ ce qu'on dépose se voit et s'écrit ══");
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
   await cA.addInitScript(() => {
-    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); } catch {}
+    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); localStorage.setItem("clikme-demo-v1", "0"); } catch {}
   });
   await cA.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
   const pA = await cA.newPage();
@@ -2721,11 +2723,24 @@ console.log("\n══ la page du commerce ══");
       if (pc) {
         await pc.click();
         await pB.waitForSelector("#essayer .mu-cal-scene", { timeout: 8000 }).catch(() => null);
-        // LE FANTÔME EST AU CENTRE DE SA SCÈNE, comme l'anneau autour de lui.
-        // DÉFAUT MESURÉ : il était à 65 % de large et 61 % de haut parce que
-        // `muFlotte` existait déjà ailleurs et que la seconde déclaration avait
-        // effacé son centrage. L'animation avait la bonne durée et le bon
-        // rythme — seule la trajectoire était celle de quelqu'un d'autre.
+        /**
+         * LE FANTÔME TIENT DANS SA SCÈNE, ET IL N'Y EST PLUS AU CENTRE.
+         *
+         * PREMIER JET : on vérifiait qu'il était centré à quatre points près.
+         * C'était vrai du jour où il ne bougeait pas, et c'est devenu faux le
+         * jour où l'attente est passée en trois actes — il attend sur le côté
+         * pendant la mesure, il TOURNE autour de la tête pendant l'essai, il
+         * monte au-dessus pendant l'ajustement. La garde décrivait donc une
+         * mise en page, pas une règle, et elle est tombée au premier changement
+         * de mise en page. C'est le piège récurrent de ce fichier.
+         *
+         * CE QUI RESTE VRAI QUOI QU'IL ARRIVE : il est ENTIER DANS LE CADRE —
+         * une chorégraphie qui le fait sortir du disque le coupe en deux — et
+         * il occupe une part de scène qui se voit sans l'écraser. Le défaut
+         * d'origine — un centrage perdu parce qu'une animation homonyme avait
+         * écrasé son transform — est désormais attrapé à la source par la garde
+         * des styles, qui refuse deux animations du même nom.
+         */
         const place = await pB.evaluate(() => {
           const s = document.querySelector(".mu-cal-scene");
           const f = document.querySelector(".mu-cal-f");
@@ -2733,19 +2748,34 @@ console.log("\n══ la page du commerce ══");
           const a = s.getBoundingClientRect();
           const b = f.getBoundingClientRect();
           return {
-            x: Math.round(((b.x + b.width / 2) - a.x) / a.width * 100),
-            y: Math.round(((b.y + b.height / 2) - a.y) / a.height * 100),
+            part: Math.round((b.width / a.width) * 100),
+            debord: Math.round(
+              Math.max(a.x - b.x, b.x + b.width - (a.x + a.width),
+                a.y - b.y, b.y + b.height - (a.y + a.height)),
+            ),
             photo: !!s.querySelector(".mu-cal-fond"),
             poudre: s.querySelectorAll(".mu-cal-poudre i").length,
+            maille: s.querySelectorAll(".mu-cal-maille circle").length,
+            jauge: !!s.querySelector(".mu-cal-fil"),
           };
         });
         if (place) {
           dire(
-            Math.abs(place.x - 50) <= 4,
-            `pendant l'attente, le fantôme est au centre (${place.x} % de large)`,
+            place.debord <= 2,
+            `pendant l'attente, le fantôme tient entier dans la scène (débord ${place.debord} pt)`,
           );
-          dire(place.photo, "et c'est SA photo qu'on devine derrière lui");
+          dire(
+            place.part >= 15 && place.part <= 42,
+            `et il y occupe la place d'un acteur (${place.part} % de large)`,
+          );
+          dire(place.photo, "c'est SA photo qu'on devine derrière lui");
           dire(place.poudre >= 8, `avec sa poussière (${place.poudre} points)`);
+          // LE NUMÉRO EST BIEN MONTÉ : le visage se dessine, l'anneau compte.
+          dire(
+            place.maille >= 10,
+            `le visage se dessine sous le faisceau (${place.maille} points)`,
+          );
+          dire(place.jauge, "et l'anneau fait le tour de l'attente");
         }
 
         await pB.waitForSelector("#essayer .mu-rendu", { timeout: 40000 }).catch(() => null);
@@ -2894,9 +2924,10 @@ console.log("\n══ la page du commerce ══");
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
   await lieu.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
-  await lieu.addInitScript(() =>
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
-  );
+  await lieu.addInitScript(() => {
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-demo-v1", "0");
+  });
   const pL = await lieu.newPage();
   /**
    * ═══ ON NOMME LE LIEU, ON NE PREND PLUS CE QUI TOMBE ══════════════════════
@@ -2999,9 +3030,10 @@ console.log("\n══ la page du commerce ══");
     await soir.clock.setFixedTime(
       new Date(2026, 8, 2, Math.floor(heure), Math.round((heure % 1) * 60), 0),
     );
-    await soir.addInitScript(() =>
-      localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
-    );
+    await soir.addInitScript(() => {
+      localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+      localStorage.setItem("clikme-demo-v1", "0");
+    });
     const pS = await soir.newPage();
     await pS.goto(`${BASE}/autour-de-moi`, { waitUntil: "networkidle" });
     await pS.waitForTimeout(2400);
@@ -3032,9 +3064,10 @@ console.log("\n══ la page du commerce ══");
       isMobile: true, hasTouch: true, locale: "fr-FR",
     });
     await tard.clock.setFixedTime(new Date(2026, 8, 2, 21, 30, 0));
-    await tard.addInitScript(() =>
-      localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
-    );
+    await tard.addInitScript(() => {
+      localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+      localStorage.setItem("clikme-demo-v1", "0");
+    });
     const pR = await tard.newPage();
     await pR.goto(`${BASE}/autour-de-moi?carte=fleur-marche`, { waitUntil: "networkidle" });
     await pR.waitForTimeout(2200);
@@ -3092,9 +3125,10 @@ console.log("\n══ la page du commerce ══");
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
   await dec.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
-  await dec.addInitScript(() =>
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
-  );
+  await dec.addInitScript(() => {
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-demo-v1", "0");
+  });
   // WHATSAPP NE DOIT PAS EMPORTER L'ONGLET : on neutralise l'ouverture, sinon
   // la carte qu'on veut relire est partie avec.
   await dec.addInitScript(() => { window.open = () => null; });
@@ -3181,9 +3215,10 @@ console.log("\n══ la page du commerce ══");
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
   await na.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
-  await na.addInitScript(() =>
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
-  );
+  await na.addInitScript(() => {
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-demo-v1", "0");
+  });
   const pN = await na.newPage();
 
   const forme = () =>
@@ -3281,9 +3316,10 @@ console.log("\n══ la page du commerce ══");
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
   await en.clock.setFixedTime(new Date(2026, 8, 2, 8, 30, 0));
-  await en.addInitScript(() =>
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
-  );
+  await en.addInitScript(() => {
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-demo-v1", "0");
+  });
   const pE = await en.newPage();
   // LA BOULANGERIE À 8 H 30 : c'est sa capture, titre long donc rond en haut.
   await pE.goto(`${BASE}/autour-de-moi?carte=boulange`, { waitUntil: "networkidle" });
@@ -3460,9 +3496,10 @@ console.log("\n══ la page du commerce ══");
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
   await ph.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
-  await ph.addInitScript(() =>
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
-  );
+  await ph.addInitScript(() => {
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-demo-v1", "0");
+  });
   const pP = await ph.newPage();
 
   // LA CARTE DU DESSUS EST LA DERNIÈRE DU DOM — le paquet empile.
@@ -3570,9 +3607,10 @@ console.log("\n══ la page du commerce ══");
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
   await bar.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
-  await bar.addInitScript(() =>
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
-  );
+  await bar.addInitScript(() => {
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-demo-v1", "0");
+  });
   const pV = await bar.newPage();
   await pV.goto(`${BASE}/autour-de-moi?carte=bistrot`, { waitUntil: "networkidle" });
   await pV.waitForTimeout(1500);
@@ -3707,9 +3745,10 @@ console.log("\n══ la page du commerce ══");
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
   await ta.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
-  await ta.addInitScript(() =>
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])),
-  );
+  await ta.addInitScript(() => {
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-demo-v1", "0");
+  });
   const pT = await ta.newPage();
   await pT.goto(`${BASE}/autour-de-moi?carte=tatoueur`, { waitUntil: "networkidle" });
   await pT.waitForTimeout(1400);
@@ -3807,6 +3846,7 @@ console.log("\n══ la page du commerce ══");
   // puis se referme ne laisse aucune trace dans le document.
   await tel.addInitScript(() => {
     localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-demo-v1", "0");
     window.__ouverts = [];
     window.open = (u) => {
       window.__ouverts.push(String(u));

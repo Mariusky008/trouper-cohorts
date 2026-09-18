@@ -1912,6 +1912,24 @@ const ETAPES = [
   "Tu vas te voir autrement…",
 ];
 
+/**
+ * LES POINTS DU MAILLAGE DE L'ATTENTE, en centièmes de la scène.
+ *
+ * SOURCILS, YEUX, TEMPES, NEZ, BOUCHE, MÂCHOIRE — la constellation d'un visage
+ * cadré au centre, c'est-à-dire ce qu'on vient de demander à la personne de
+ * faire. Ils ne viennent PAS de MediaPipe : la détection tourne au même moment
+ * et on ne va pas l'attendre pour animer une attente. Ce qu'ils montrent est
+ * juste — une mesure est bien en train de se faire — sans prétendre être le
+ * résultat de celle-là.
+ */
+const MAILLE: [number, number][] = [
+  // L'ovale, dans le sens du tracé : les points s'allument en tournant.
+  [50, 24], [63, 29], [71, 42], [72, 56], [66, 71], [55, 79],
+  [45, 79], [34, 71], [28, 56], [29, 42], [37, 29],
+  // Puis les traits : yeux, nez, bouche.
+  [43, 45], [57, 45], [50, 55], [50, 69],
+];
+
 function Essai({
   mur,
   restants,
@@ -2075,6 +2093,15 @@ function Essai({
    * pendant douze secondes cesse d'être lue au bout de trois.
    */
   const etapeDite = Math.min(ETAPES.length - 1, Math.floor(pct / (100 / ETAPES.length)));
+  /**
+   * L'ACTE EN COURS — voir la scène d'attente.
+   *
+   * IL SUIT L'AVANCEMENT RÉEL, et c'est la condition pour que la mise en scène
+   * ne mente pas : le rideau ne se retire pas pendant qu'on attend encore la
+   * réponse du modèle. Les seuils sont larges — un tiers, deux tiers — parce
+   * qu'un acte qui dure trois secondes n'est pas un acte.
+   */
+  const acte = pct < 34 ? "a1" : pct < 72 ? "a2" : "a3";
   /**
    * LE RENDU CALCULÉ, ET IL A REMPLACÉ LE RENDU TOUT FAIT.
    *
@@ -3022,14 +3049,100 @@ function Essai({
           retirer entièrement aurait remplacé l'ennui par l'inquiétude. */}
       {etape === "calcul" && (
         <div className="mu-calcul" aria-live="polite">
-          <div className="mu-cal-scene" aria-hidden="true">
-            {/* SA PHOTO EST DERRIÈRE, FLOUTÉE, ET ELLE SE DÉCOUVRE. C'est elle
-                l'objet de l'attente — pas un logo, pas un cercle qui tourne. */}
+          {/* ═══ L'ATTENTE EST DEVENUE UN NUMÉRO EN TROIS ACTES ══════════════
+
+              « Le temps que la coiffure ou la pose du vêtement apparaisse,
+              c'est un peu long, donc il va falloir améliorer l'animation du
+              fantôme pour que ça fasse passer le temps. Il va falloir que tu
+              fasses quelque chose de spectaculaire et d'original. »
+
+              IL A RAISON, ET LA CAUSE EST DE NOTRE FAIT : depuis qu'on rend en
+              qualité haute pour ses démonstrations, l'attente a doublé. Une
+              animation qui tenait dix secondes doit en tenir quarante — et une
+              boucle de trois secondes qu'on regarde treize fois devient une
+              salle d'attente.
+
+              TROIS ACTES, PARCE QU'UNE BOUCLE UNIQUE LASSE ET QU'UNE SÉQUENCE
+              RACONTE. Ils suivent l'avancement réel, donc ils ne mentent pas :
+
+                · IL VOUS REGARDE — un faisceau balaie votre photo de haut en
+                  bas, et les points du visage s'allument sur son passage. On
+                  voit une mesure se faire, et c'est vrai : c'est exactement ce
+                  que MediaPipe fait à cet instant.
+                · IL ESSAIE — le fantôme tourne autour de votre tête en portant
+                  la pièce, passe derrière, ressort, et sème des étincelles.
+                · IL AJUSTE — le voile se retire par le bas comme un rideau, la
+                  photo revient nette, et l'anneau se referme sur cent pour
+                  cent.
+
+              ET L'ANNEAU EST LA VRAIE JAUGE. Un cercle qui se referme autour de
+              son propre visage dit « ça avance » sans qu'on ait à lire un
+              nombre, et il occupe l'œil pendant que le reste joue. */}
+          <div className={`mu-cal-scene ${acte}`} aria-hidden="true">
+            {/* SA PHOTO EST DERRIÈRE ET ELLE SE DÉCOUVRE. C'est elle l'objet de
+                l'attente — pas un logo, pas un cercle qui tourne. */}
             {laPhoto && (
               // eslint-disable-next-line @next/next/no-img-element
               <img className="mu-cal-fond" src={laPhoto} alt="" />
             )}
             <span className="mu-cal-voile" />
+
+            {/* ─── ACTE 1 · LE FAISCEAU ET LE MAILLAGE ─── */}
+            <span className="mu-cal-scan" />
+            <svg className="mu-cal-maille" viewBox="0 0 100 100" focusable="false">
+              {/* LES TRAITS SE DESSINENT AU PASSAGE DU FAISCEAU. C'est le même
+                  cycle de deux secondes six : sans cette synchronisation, on
+                  verrait deux animations au lieu d'un geste. */}
+              {/* UN VISAGE, ET PAS UNE CONSTELLATION. Premier jet : trois
+                  lignes brisées posées les unes sur les autres. Ça brillait, ça
+                  se dessinait joliment, et ça ne ressemblait à rien — donc ça ne
+                  disait pas « on mesure VOTRE visage », qui est tout l'effet.
+                  L'ovale d'abord, les traits ensuite : on reconnaît avant de
+                  comprendre.
+                  `pathLength` à 100 rend le tiret indépendant de la longueur du
+                  tracé : les trois se dessinent à la même vitesse, quel que
+                  soit leur périmètre. */}
+              <path
+                className="mu-cal-t1"
+                pathLength={100}
+                d="M50 24 C64 24 72 37 72 52 C72 68 62 80 50 80 C38 80 28 68 28 52 C28 37 36 24 50 24 Z"
+              />
+              <path
+                className="mu-cal-t2"
+                pathLength={100}
+                d="M38 46 q5 -5 10 0 M52 46 q5 -5 10 0"
+              />
+              <path
+                className="mu-cal-t3"
+                pathLength={100}
+                d="M50 50 L50 60 M43 68 q7 5 14 0"
+              />
+              {MAILLE.map(([x, y], k) => (
+                <circle
+                  key={k}
+                  cx={x}
+                  cy={y}
+                  r="1.5"
+                  className="mu-cal-pt"
+                  style={{ "--k": k } as React.CSSProperties}
+                />
+              ))}
+            </svg>
+
+            {/* ─── ACTE 2 · LE FANTÔME TOURNE AUTOUR DE VOUS ───
+                Il porte la pièce : c'est ce qui relie l'animation à CET
+                essai-là plutôt qu'à un chargement qui pourrait être n'importe
+                lequel. L'orbite passe derrière la tête — voir `mu-cal-orbite`,
+                où l'échelle et l'opacité font la profondeur. */}
+            <span className="mu-cal-orbite">
+              <span className="mu-cal-f">
+                <Signe classe="mu-cal-s" />
+                {piece?.photo && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="mu-cal-piece" src={piece.photo} alt="" />
+                )}
+              </span>
+            </span>
             {/* LA POUSSIÈRE. Douze points, chacun sur sa propre orbite et son
                 propre retard : sans le décalage ils battent ensemble et l'œil
                 voit une pulsation au lieu d'un scintillement. */}
@@ -3038,17 +3151,25 @@ function Essai({
                 <i key={k} style={{ "--k": k } as React.CSSProperties} />
               ))}
             </span>
-            {/* ET IL PORTE CE QU'ON A CHOISI. Le fantôme tient la vignette de la
-                pièce : c'est ce qui relie l'animation à CET essai-là plutôt
-                qu'à un chargement générique qui pourrait être n'importe lequel. */}
-            <span className="mu-cal-f">
-              <Signe classe="mu-cal-s" />
-              {piece?.photo && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img className="mu-cal-piece" src={piece.photo} alt="" />
-              )}
-            </span>
-            <span className="mu-cal-anneau" />
+
+            {/* ─── ACTE 3 · LE RIDEAU SE RETIRE ─── */}
+            <span className="mu-cal-rideau" />
+
+            {/* L'ANNEAU DE PROGRESSION, et il porte le vrai pourcentage.
+                `pathLength` à 100 évite de calculer la circonférence : le tracé
+                se compte alors en centièmes, donc l'avancement s'y écrit tel
+                quel. */}
+            <svg className="mu-cal-jauge" viewBox="0 0 100 100" focusable="false">
+              <circle className="mu-cal-rail" cx="50" cy="50" r="46.5" pathLength={100} />
+              <circle
+                className="mu-cal-fil"
+                cx="50"
+                cy="50"
+                r="46.5"
+                pathLength={100}
+                style={{ strokeDashoffset: 100 - Math.min(100, pct) }}
+              />
+            </svg>
           </div>
           {/* CE QU'ON DIT PENDANT L'ATTENTE DÉPEND DE CE QU'ON FAIT VRAIMENT. La
               première pose d'ongles télécharge dix-neuf mégaoctets ; annoncer
@@ -4933,8 +5054,12 @@ function Styles() {
            derriere ; le fantome qui traverse en portant la piece choisie ; et
            une poussiere qui le suit. On ne regarde plus une barre — on regarde
            quelqu'un travailler sur SA photo. */
-        .mu-cal-scene{position:relative;width:min(250px,72vw);aspect-ratio:1/1;
-          margin:4px auto 0;border-radius:26px;overflow:hidden;
+        /* LA SCENE EST RONDE, ET PLUS GRANDE QU'AVANT. Ronde parce que l'anneau
+           de progression en fait le tour : un cadre carre avec un cercle dedans
+           aurait deux geometries qui se disputent. Plus grande parce qu'on la
+           regarde maintenant quarante secondes au lieu de dix. */
+        .mu-cal-scene{position:relative;width:min(300px,84vw);aspect-ratio:1/1;
+          margin:4px auto 0;border-radius:50%;overflow:hidden;
           background:radial-gradient(circle at 50% 42%,#2A1E4D,#0A1210 72%);
           box-shadow:0 28px 60px -34px rgba(0,0,0,.95),
             inset 0 0 0 1px rgba(255,255,255,.07);}
@@ -4945,11 +5070,100 @@ function Styles() {
            treize points, une opacite de 0,42 et un voile opaque a 88 %, on ne
            voyait plus rien du tout — donc la scene ne disait plus que c'est SUR
            SA PHOTO qu'on travaille, ce qui etait tout son propos. */
+        /* ET ELLE SE FAIT DE PLUS EN PLUS NETTE. Le flou se retire acte apres
+           acte : c'est la meme photo qui devient lisible, donc l'attente a une
+           direction — on ne tourne pas en rond, on approche. */
         .mu-cal-fond{position:absolute;inset:0;width:100%;height:100%;
           object-fit:cover;filter:blur(9px) saturate(.8);transform:scale(1.15);
-          opacity:.6;}
+          opacity:.6;transition:filter 1.2s ease,opacity 1.2s ease;}
+        .mu-cal-scene.a2 .mu-cal-fond{filter:blur(5px) saturate(.95);opacity:.74;}
+        .mu-cal-scene.a3 .mu-cal-fond{filter:blur(1.5px) saturate(1.05);opacity:.9;}
         .mu-cal-voile{position:absolute;inset:0;
+          transition:opacity 1.2s ease;
           background:radial-gradient(circle at 50% 45%,rgba(10,18,16,.12),rgba(6,12,10,.8) 78%);}
+        .mu-cal-scene.a3 .mu-cal-voile{opacity:.5;}
+
+        /* ═══ ACTE 1 · LE FAISCEAU ════════════════════════════════════════
+           UNE BARRE QUI DESCEND, AVEC SA TRAINEE. Le coeur est presque blanc et
+           la trainee s'eteint vers le haut : c'est ce qui donne le sens de la
+           marche. Elle sort du cadre en bas et rentre par le haut, donc le
+           cycle ne montre jamais de saut. */
+        .mu-cal-scan{position:absolute;left:-10%;right:-10%;height:34%;top:-34%;
+          pointer-events:none;opacity:0;
+          background:linear-gradient(180deg,rgba(168,222,255,0),
+            rgba(168,222,255,.1) 62%,rgba(214,242,255,.85) 92%,rgba(255,255,255,.95));
+          box-shadow:0 8px 26px 2px rgba(120,200,255,.5);
+          animation:muScan 2.6s linear infinite;}
+        @keyframes muScan{
+          0%{transform:translateY(0);opacity:0;}
+          12%{opacity:1;}
+          88%{opacity:1;}
+          100%{transform:translateY(400%);opacity:0;}
+        }
+        /* IL NE JOUE QU'AU PREMIER ACTE. Un faisceau qui balaie encore pendant
+           qu'on ajuste la lumiere dirait qu'on recommence a mesurer. */
+        .mu-cal-scene.a2 .mu-cal-scan,
+        .mu-cal-scene.a3 .mu-cal-scan{animation:none;opacity:0;}
+
+        /* ─── LE MAILLAGE ───
+           Les traits se dessinent d'un bout a l'autre, les points s'allument
+           l'un apres l'autre. Le meme cycle que le faisceau : c'est LUI qui
+           semble les allumer, et c'est tout l'effet. */
+        .mu-cal-maille{position:absolute;inset:0;width:100%;height:100%;
+          overflow:visible;transition:opacity .9s ease;}
+        .mu-cal-maille path{fill:none;stroke:rgba(190,232,255,.9);stroke-width:1.1;
+          stroke-linecap:round;stroke-linejoin:round;
+          filter:drop-shadow(0 0 2px rgba(150,215,255,.9));
+          stroke-dasharray:100;stroke-dashoffset:100;
+          animation:muMaille 2.6s ease-out infinite;}
+        .mu-cal-t2{animation-delay:.3s;}
+        .mu-cal-t3{animation-delay:.52s;}
+        @keyframes muMaille{
+          0%{stroke-dashoffset:100;opacity:0;}
+          16%{opacity:1;}
+          52%{stroke-dashoffset:0;opacity:1;}
+          84%{opacity:.5;}
+          100%{stroke-dashoffset:0;opacity:0;}
+        }
+        .mu-cal-pt{fill:#EAF7FF;opacity:0;
+          filter:drop-shadow(0 0 3px rgba(150,215,255,1));
+          animation:muPoint 2.6s ease-out infinite;
+          animation-delay:calc(var(--k) * .07s);}
+        @keyframes muPoint{
+          0%,6%{opacity:0;transform:scale(.4);}
+          22%{opacity:1;transform:scale(1.5);}
+          46%{opacity:.9;transform:scale(1);}
+          100%{opacity:0;transform:scale(.6);}
+        }
+        /* AU DEUXIEME ACTE IL S'ESTOMPE SANS DISPARAITRE : la mesure est prise,
+           elle reste comme un calque de travail pendant qu'il essaie. */
+        .mu-cal-scene.a2 .mu-cal-maille{opacity:.3;}
+        .mu-cal-scene.a3 .mu-cal-maille{opacity:0;}
+
+        /* ═══ ACTE 3 · LE RIDEAU ══════════════════════════════════════════
+           Il se retire par le bas, comme une main qui decouvre. Il ne joue
+           qu'une fois par acte et ne boucle pas : un rideau qui se rouvre
+           n'est plus un devoilement. */
+        .mu-cal-rideau{position:absolute;inset:0;pointer-events:none;opacity:0;
+          background:linear-gradient(180deg,rgba(255,255,255,0) 40%,
+            rgba(214,242,255,.5) 72%,rgba(255,255,255,.9));}
+        .mu-cal-scene.a3 .mu-cal-rideau{animation:muRideau 1.4s ease-out both;}
+        @keyframes muRideau{
+          0%{opacity:.95;transform:translateY(0);}
+          100%{opacity:0;transform:translateY(100%);}
+        }
+
+        /* ═══ L'ANNEAU DE PROGRESSION ═════════════════════════════════════
+           Il fait le tour de son visage. L attribut pathLength a 100 fait que le trace se
+           compte en centiemes : l'avancement s'y ecrit tel quel, sans calculer
+           de circonference — donc sans se tromper le jour ou le rayon change. */
+        .mu-cal-jauge{position:absolute;inset:0;width:100%;height:100%;
+          transform:rotate(-90deg);}
+        .mu-cal-rail{fill:none;stroke:rgba(255,255,255,.12);stroke-width:2.6;}
+        .mu-cal-fil{fill:none;stroke:#C9A6FF;stroke-width:2.6;
+          stroke-linecap:round;stroke-dasharray:100;
+          transition:stroke-dashoffset .3s linear;
+          filter:drop-shadow(0 0 5px rgba(201,166,255,.9));}
         /* L'ANNEAU RESPIRE. Trois secondes par cycle : plus vite, il presse ;
            plus lentement, on ne le voit pas bouger. */
         .mu-cal-anneau{position:absolute;left:50%;top:45%;
@@ -4970,7 +5184,36 @@ function Styles() {
            soixante-cinq pour cent de large au lieu de cinquante. C'est la meme
            faute que deux classes homonymes, et la garde des styles la compte
            desormais pour les animations aussi. */
-        .mu-cal-f{position:absolute;left:50%;top:45%;
+        /* ─── L'ORBITE ───
+           DEUX ANIMATIONS EMBOITEES, ET IL LE FAUT. Le porteur tourne autour du
+           centre ; le fantome, dedans, garde son flottement et son balancement.
+           Ecrites sur le meme element, les deux se battraient pour la propriete transform
+           et la derniere declaree effacerait l'autre — meme faute que les deux
+           classes homonymes plus haut.
+           ET IL PASSE DERRIERE LA TETE. L'echelle et l'opacite font la
+           profondeur a mi-parcours : c'est ce qui donne le tour complet plutot
+           qu'un va-et-vient a plat. */
+        .mu-cal-orbite{position:absolute;left:50%;top:45%;width:0;height:0;
+          animation:muOrbite 5.2s cubic-bezier(.45,0,.55,1) infinite;}
+        @keyframes muOrbite{
+          0%{transform:translate(-68px,14px) scale(1);opacity:1;}
+          25%{transform:translate(0,-64px) scale(.72);opacity:.5;}
+          50%{transform:translate(68px,14px) scale(1);opacity:1;}
+          75%{transform:translate(0,52px) scale(1.12);opacity:1;}
+          100%{transform:translate(-68px,14px) scale(1);opacity:1;}
+        }
+        /* IL NE TOURNE QU'AU DEUXIEME ACTE. Pendant la mesure il attend sur le
+           cote, pendant l'ajustement il se pose au centre : trois positions,
+           trois moments, et l'oeil suit une histoire. */
+        .mu-cal-scene.a1 .mu-cal-orbite{animation:none;
+          transform:translate(-68px,14px);}
+        /* AU TROISIEME ACTE IL MONTE AU-DESSUS DE LA TETE, ET NE SE POSE PAS
+           DESSUS. Pose au centre, il couvrait les yeux au moment precis ou la
+           photo redevient nette — c'est-a-dire qu'il cachait ce qu'on venait
+           d'attendre quarante secondes. */
+        .mu-cal-scene.a3 .mu-cal-orbite{animation:none;transform:translate(0,-92px);
+          transition:transform .9s cubic-bezier(.3,1.4,.5,1);}
+        .mu-cal-f{position:absolute;left:0;top:0;
           display:block;width:74px;height:80px;
           animation:muCalFlotte 3.4s ease-in-out infinite;}
         .mu-cal-s{width:74px;height:80px;filter:drop-shadow(0 10px 22px rgba(0,0,0,.6));}
@@ -5005,8 +5248,8 @@ function Styles() {
            douze depassaient dix pour cent d'opacite a un instant donne. Six
            points et un halo de la meme couleur suffisent a la rendre lisible
            sans qu'elle devienne un feu d'artifice. */
-        .mu-cal-poudre i{position:absolute;left:50%;top:45%;width:6px;height:6px;
-          margin:-3px 0 0 -3px;border-radius:50%;background:#E4DBFF;opacity:0;
+        .mu-cal-poudre i{position:absolute;left:50%;top:45%;width:5px;height:5px;
+          margin:-2.5px 0 0 -2.5px;border-radius:50%;background:#E4DBFF;opacity:0;
           box-shadow:0 0 10px 2px rgba(228,219,255,.7);
           animation:muPoudre 2.8s ease-out infinite;
           animation-delay:calc(var(--k) * .23s);
@@ -5022,10 +5265,21 @@ function Styles() {
           justify-content:center;animation:muDit .5s ease both;}
         @keyframes muDit{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 
+        /* LA POUSSIERE SUIT LE FANTOME AU LIEU DE PARTIR DU CENTRE. Elle est
+           posee dans l'orbite, donc elle nait la ou il est : des etincelles
+           qu'il seme, et non un feu d'artifice qui part d'ailleurs. */
+        .mu-cal-scene.a1 .mu-cal-poudre,
+        .mu-cal-scene.a3 .mu-cal-poudre{opacity:.22;}
+
         @media (prefers-reduced-motion:reduce){
-          .mu-cal-f,.mu-cal-piece,.mu-cal-anneau,.mu-cal-poudre i,.mu-cal-dit{
-            animation:none;}
-          .mu-cal-poudre{display:none;}
+          .mu-cal-f,.mu-cal-piece,.mu-cal-anneau,.mu-cal-poudre i,.mu-cal-dit,
+          .mu-cal-scan,.mu-cal-maille path,.mu-cal-pt,.mu-cal-orbite,
+          .mu-cal-rideau{animation:none;}
+          .mu-cal-poudre,.mu-cal-scan{display:none;}
+          /* LE MAILLAGE RESTE, POSE. Il dit ce qui se passe sans bouger, et
+             c'est exactement ce que ce reglage demande. */
+          .mu-cal-maille path{stroke-dashoffset:0;}
+          .mu-cal-pt{opacity:.9;}
         }
 
         .mu-calcul{text-align:center;padding:18px 0 6px;}

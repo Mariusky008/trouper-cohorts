@@ -1936,17 +1936,33 @@ function Styles() {
           text-transform:uppercase;color:var(--bq-pale);}
         .bq-pt{font-size:9.5px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;
           color:#FFFFFF;background:var(--bq-menthe);border-radius:20px;padding:3px 8px;}
+        /* LE BLANC SUR L'AMBRE NE PASSAIT PAS. Mesure faite : deux virgule huit
+           pour un, sur du neuf points et demi en capitales — c'est-a-dire la
+           taille de texte qui en demande le PLUS. L'encre sombre sur le meme
+           ambre monte a pres de six, garde la couleur de la promotion, et se
+           lit. Cette pastille ne s'affiche qu'a certaines heures, ce qui
+           explique qu'elle ait echappe aux mesures precedentes. */
         .bq-eti{font-size:9.5px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;
-          color:#FFFFFF;background:var(--bq-ambre);border-radius:20px;padding:3px 8px;}
+          color:#2A1B02;background:var(--bq-ambre);border-radius:20px;padding:3px 8px;}
         .bq-off{font-size:9.5px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;
           color:var(--bq-encre);background:rgba(20,16,40,.13);border-radius:20px;padding:3px 8px;}
         .bq-m-t{display:flex;align-items:center;gap:7px;font-size:15.5px;font-weight:700;
           line-height:1.25;}
         .bq-m-t i{font-style:normal;font-size:15px;}
+        /* ═══ SUR LA CARTE D'UN MOMENT, LE GRIS COURANT NE SUFFIT PAS ═══════
+           La carte est teintee ; le pale de la page est calcule pour du blanc.
+           A douze points et demi, l'ecart tombe sous le seuil — mesure sur le
+           bar, la boulangerie, la boucherie, le traiteur et la fleuriste. La
+           citation juste en dessous avait deja tranche pour une encre plus
+           sombre : les deux textes de la meme carte prennent donc la meme. */
         .bq-m-l{list-style:none;margin:5px 0 0;padding:0;font-size:12.5px;line-height:1.45;
-          color:var(--bq-pale);}
+          color:#4A5168;}
         .bq-m-cs{margin:6px 0 0;font-size:13px;line-height:1.45;color:#4A5168;font-style:italic;}
-        .bq-m-cs s{text-decoration:none;font-style:normal;color:var(--bq-pale);font-size:11.5px;}
+        /* LA SIGNATURE DU CONSEIL EST PLUS SOMBRE QUE LE GRIS COURANT. A onze
+           points et demi sur la carte teintee d'un moment, le pale du reste de
+           la page tombe sous le seuil — et c'est le nom du commercant qui
+           signe sa phrase, donc le dernier texte qu'on veut voir palir. */
+        .bq-m-cs s{text-decoration:none;font-style:normal;color:#4A5168;font-size:11.5px;}
         .bq-m-b{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:9px;}
         /* LE PRIX QUITTE LA LETTRE D'AFFICHE. Anton est la fonte du DIRECT, ou
            l'on crie « 9 € » sur une ardoise ; sur une vitrine il donne un air

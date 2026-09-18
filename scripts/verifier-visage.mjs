@@ -356,7 +356,10 @@ console.log("\n══ le masque laisse la place d'une coupe longue ══");
   });
   const p2 = await (await nav2.newContext({ viewport: { width: 390, height: 844 } })).newPage();
   await p2.goto(`${BASE}/autour-de-moi`, { waitUntil: "domcontentloaded" });
-  await p2.addScriptTag({ content: `${js2}\nwindow.__visage = { masqueDEssai };`, type: "module" });
+  await p2.addScriptTag({
+    content: `${js2}\nwindow.__visage = { masqueDEssai, reposerLeVisage };`,
+    type: "module",
+  });
   await p2.waitForFunction(() => !!window.__visage, null, { timeout: 8000 });
 
   const m = await p2.evaluate(() => {
@@ -412,7 +415,133 @@ console.log("\n══ le masque laisse la place d'une coupe longue ══");
       img.src = url;
     });
   });
+
+  /**
+   * ═══ ET LA PHOTO D'ARRIVÉE EST LA PHOTO DE DÉPART ══════════════════════
+   *
+   * « Le résultat est mieux, mais ce n'est quand même pas la même photo qu'au
+   * départ. Je veux que la photo de départ et d'arrivée soit la même, sauf la
+   * coiffure qui aura été ajoutée. »
+   *
+   * ON REJOUE EXACTEMENT SA PANNE. Le rendu de laboratoire est une image
+   * ENTIÈREMENT NOIRE — c'est ce que le modèle lui a renvoyé, un sujet isolé
+   * sur fond de studio. Si la recomposition prend le rendu pour fond, le
+   * feuillage, le haut bleu et le collier disparaissent ; s'il prend la photo,
+   * il ne reste du noir que la chevelure.
+   *
+   * LA GARDE COMPARE DES PIXELS, PAS UNE APPARENCE. Aux quatre coins et sur le
+   * buste, l'image de sortie doit être identique à la photographie, à la
+   * compression JPEG près. C'est la formulation littérale de sa règle, et c'est
+   * une propriété qu'on peut mesurer — pas une préférence qu'on espère.
+   */
+  const r = await p2.evaluate(async () => {
+    const L = 800;
+    const H = 1000;
+    const boite = { x: 300, y: 180, l: 200, h: 260 };
+    const cx = boite.x + boite.l / 2;
+    const cy = boite.y + boite.h / 2;
+    const contour = Array.from({ length: 36 }, (_, i) => {
+      const t = (i / 36) * Math.PI * 2;
+      return { x: cx + Math.cos(t) * (boite.l / 2), y: cy + Math.sin(t) * (boite.h / 2) };
+    });
+    const plafond = boite.y + boite.h * 0.3;
+    const interieur = contour.map((q) => ({
+      x: cx + (q.x - cx) * 0.9,
+      y: Math.max(cy + (q.y - cy) * 0.9, plafond),
+    }));
+    const v = { contour, interieur, reperes: contour.slice(0, 11), boite, taille: { l: L, h: H } };
+
+    /**
+     * LA PHOTO DE LABORATOIRE : un dégradé en diagonale.
+     *
+     * CHAQUE POINT Y A SA PROPRE COULEUR, ce qui est la condition pour mesurer
+     * qu'il l'a GARDÉE — une teinte unie ne prouverait rien.
+     *
+     * ET IL EST LISSE, ce qui est une correction. Premier jet : quatre aplats
+     * francs. Deux mesures tombaient alors pile sur la couture entre deux
+     * aplats, là où la compression JPEG de la sortie bave sur une quinzaine
+     * d'unités — la garde signalait un décor repeint là où il n'y avait qu'un
+     * bord dur et un encodeur qui fait son travail. Elle mesurait son propre
+     * point de mesure.
+     */
+    const cp = document.createElement("canvas");
+    cp.width = L;
+    cp.height = H;
+    const gp2 = cp.getContext("2d");
+    const deg = gp2.createLinearGradient(0, 0, L, H);
+    deg.addColorStop(0, "#1E9E4A");
+    deg.addColorStop(0.34, "#C2452F");
+    deg.addColorStop(0.67, "#2B5FD9");
+    deg.addColorStop(1, "#D9A521");
+    gp2.fillStyle = deg;
+    gp2.fillRect(0, 0, L, H);
+
+    // LE RENDU DE LABORATOIRE : tout noir, exactement sa capture.
+    const cr = document.createElement("canvas");
+    cr.width = L;
+    cr.height = H;
+    const gr = cr.getContext("2d");
+    gr.fillStyle = "#000";
+    gr.fillRect(0, 0, L, H);
+
+    const sortie = await window.__visage.reposerLeVisage(
+      cp.toDataURL("image/png"),
+      cr.toDataURL("image/png"),
+      v,
+      "coiffure",
+      null,
+    );
+    const img = await new Promise((ok) => {
+      const e = new Image();
+      e.onload = () => ok(e);
+      e.src = sortie;
+    });
+    const cs = document.createElement("canvas");
+    cs.width = L;
+    cs.height = H;
+    const gs2 = cs.getContext("2d");
+    gs2.drawImage(img, 0, 0);
+
+    const lire = (g, x, y) => Array.from(g.getImageData(x, y, 1, 1).data).slice(0, 3);
+    // L'ÉCART MAXIMAL PAR CANAL. Le JPEG bouge de quelques unités ; un fond
+    // remplacé bouge de deux cents.
+    const ecart = (x, y) => {
+      const a2 = lire(gp2, x, y);
+      const b2 = lire(gs2, x, y);
+      return Math.max(...a2.map((n, i) => Math.abs(n - b2[i])));
+    };
+    const noirceur = (x, y) => Math.max(...lire(gs2, x, y));
+
+    return {
+      taille: { l: img.naturalWidth, h: img.naturalHeight },
+      coinHautGauche: ecart(6, 6),
+      coinHautDroit: ecart(L - 7, 6),
+      coinBasGauche: ecart(6, H - 7),
+      coinBasDroit: ecart(L - 7, H - 7),
+      // Le buste, sous la zone de travail : c'est son haut bleu et son collier.
+      leBuste: ecart(cx - 60, H - 90),
+      // Le cœur du visage : la photographie a le dernier mot.
+      leVisage: ecart(cx - 40, cy + boite.h * 0.12),
+      // Au-dessus du crâne, DANS la zone de travail : là, le rendu gagne.
+      leCrane: noirceur(cx - 40, 100),
+    };
+  });
   await nav2.close();
+
+  dire(
+    r.taille.l === 800 && r.taille.h === 1000,
+    `l'image rendue garde le cadre de la photo (${r.taille.l}×${r.taille.h})`,
+  );
+  dire(
+    Math.max(r.coinHautGauche, r.coinHautDroit, r.coinBasGauche, r.coinBasDroit) < 12,
+    `les quatre coins sont ceux de la photo (écart ${r.coinHautGauche} · ${r.coinHautDroit} · ${r.coinBasGauche} · ${r.coinBasDroit})`,
+  );
+  dire(r.leBuste < 12, `le buste et le décor ne sont pas repeints (écart ${r.leBuste})`);
+  dire(r.leVisage < 12, `et le visage reste celui de la photographie (écart ${r.leVisage})`);
+  dire(
+    r.leCrane < 40,
+    `mais au-dessus du crâne, c'est bien le rendu qu'on garde (clarté ${r.leCrane})`,
+  );
 
   dire(m.sousLeMenton < 40, `sous le menton, le modèle peut dessiner (alpha ${m.sousLeMenton})`);
   dire(m.surLEpaule < 40, `et sur les épaules aussi (alpha ${m.surLEpaule})`);

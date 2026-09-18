@@ -16,6 +16,56 @@
 // stricte information nécessaire pour ne pas la redonner.
 
 const CLE = "clikme-vu-v1";
+
+/**
+ * ═══ LE MODE DÉMONSTRATION ═════════════════════════════════════════════════
+ *
+ * « Quand j'ouvre l'app, j'aimerais voir l'écran de démarrage que tu as fait à
+ * chaque fois que j'ouvre l'app pour le moment ; on rectifiera plus tard en
+ * l'enlevant une fois que j'aurai terminé les démos. »
+ *
+ * IL EST ÉCRIT POUR ÊTRE RETIRÉ, ET DE DEUX FAÇONS. Vider `TOUJOURS_REVOIR`
+ * l'enlève pour tout le monde, définitivement, en une ligne et sans toucher à
+ * la page. Poser `clikme-demo-v1 = "0"` dans le stockage l'enlève sur UN
+ * téléphone, tout de suite, sans redéployer — c'est ce qui permet de montrer
+ * l'application « comme un habitant la verra » au milieu d'une démonstration.
+ *
+ * LA RÈGLE EST POSÉE ICI ET NON AU POINT D'APPEL. Une condition en dur dans la
+ * page aurait demandé de retrouver laquelle, dans quel composant, le jour où il
+ * faudra la défaire.
+ */
+export const TOUJOURS_REVOIR = new Set<string>(["accueil"]);
+const CLE_DEMO = "clikme-demo-v1";
+
+function enDemo(): boolean {
+  if (!TOUJOURS_REVOIR.size) return false;
+  try {
+    return window.localStorage.getItem(CLE_DEMO) !== "0";
+  } catch {
+    // STOCKAGE REFUSÉ : on garde le mode démonstration. Entre revoir un écran
+    // qu'on connaît et ne jamais voir celui qui explique le geste central du
+    // produit, le premier défaut est le moins cher.
+    return true;
+  }
+}
+
+/**
+ * ═══ CE QU'ON A FERMÉ PENDANT CETTE SESSION, ET RIEN DE PLUS ══════════════
+ *
+ * SANS CETTE MÉMOIRE-LÀ, L'ÉCRAN DEVIENDRAIT IMPOSSIBLE À FERMER. Premier
+ * jet : `marquerVu` ne faisait rien du tout pour les explications qui
+ * reviennent. La page lit `!vus.includes("accueil")` pour décider de les
+ * afficher — donc le balayage qui referme l'écran ne changeait plus rien, et
+ * l'écran restait posé par-dessus l'application pour toujours. En voulant le
+ * montrer à chaque ouverture, on l'aurait rendu définitif.
+ *
+ * ELLE VIT EN MÉMOIRE ET NON DANS LE TÉLÉPHONE, et c'est toute la différence :
+ * fermer vaut pour cette visite, rouvrir l'application le remontre. Rien n'est
+ * écrit, donc le jour où l'on retire le mode démonstration, son téléphone n'en
+ * garde aucune trace qui ferait disparaître l'écran pour de bon.
+ */
+const fermesCetteSession = new Set<string>();
+
 const abonnes = new Set<() => void>();
 /**
  * LA MÊME RÉFÉRENCE TANT QUE RIEN NE CHANGE.
@@ -30,12 +80,21 @@ let cache: string[] | null = null;
 export function chargerVus(): string[] {
   if (cache) return cache;
   if (typeof window === "undefined") return RIEN_VU;
+  let lu: string[] = [];
   try {
     const brut = window.localStorage.getItem(CLE);
-    cache = brut ? (JSON.parse(brut) as string[]) : [];
+    lu = brut ? (JSON.parse(brut) as string[]) : [];
   } catch {
-    cache = [];
+    lu = [];
   }
+  if (enDemo()) {
+    // CE QUI REVIENT À CHAQUE OUVERTURE N'EST « DÉJÀ VU » QUE SI ON VIENT DE LE
+    // FERMER. Le filtre est posé à la lecture pour que les points d'appel de la
+    // page continuent de s'écrire `!vus.includes(...)`, sans rien savoir d'ici.
+    lu = lu.filter((x) => !TOUJOURS_REVOIR.has(x));
+    for (const x of fermesCetteSession) if (!lu.includes(x)) lu.push(x);
+  }
+  cache = lu;
   return cache;
 }
 
@@ -60,10 +119,17 @@ export function jamaisVu(quoi: string): boolean {
   return !chargerVus().includes(quoi);
 }
 
-/** On l'a montrée : elle ne reviendra pas. */
+/** On l'a montrée : elle ne reviendra pas — sauf en mode démonstration. */
 export function marquerVu(quoi: string) {
   const v = chargerVus();
   if (v.includes(quoi)) return;
+  if (enDemo() && TOUJOURS_REVOIR.has(quoi)) {
+    // FERMÉE POUR CETTE VISITE, ET RIEN N'EST ÉCRIT. Voir `fermesCetteSession`.
+    fermesCetteSession.add(quoi);
+    cache = [...v, quoi];
+    abonnes.forEach((f) => f());
+    return;
+  }
   cache = [...v, quoi];
   try {
     window.localStorage.setItem(CLE, JSON.stringify(cache));

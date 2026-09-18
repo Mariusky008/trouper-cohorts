@@ -50,6 +50,10 @@ const ctx = await nav.newContext({ viewport: { width: 390, height: 844 }, locale
 await ctx.addInitScript(() => {
   try {
     localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    // ET ON SORT DU MODE DÉMONSTRATION. Depuis qu'il demande à revoir l'écran
+    // d'ouverture à chaque fois, la clé ci-dessus ne suffit plus à le faire
+    // passer — voir `TOUJOURS_REVOIR` dans premiere-fois.ts.
+    localStorage.setItem("clikme-demo-v1", "0");
   } catch {}
 });
 const p = await ctx.newPage();

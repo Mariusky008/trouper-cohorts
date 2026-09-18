@@ -256,6 +256,89 @@ export async function trouverLeVisage(src: string): Promise<Visage | null> {
  * le sujet : un modèle à qui on ouvre le fond s'en sert pour « améliorer » la
  * photo, et la cliente retrouve son salon repeint.
  */
+/**
+ * ═══ LA ZONE DE TRAVAIL — la seule surface que le métier a le droit de changer
+ *
+ * « Je veux que la photo de départ et d'arrivée soit la même, sauf la coiffure
+ * qui aura été ajoutée, ou le vêtement, ou autres. »
+ *
+ * ELLE EST TRACÉE ICI, UNE FOIS, ET LES DEUX VERROUS S'EN SERVENT. Le masque
+ * dit au modèle « tu peux travailler là » ; la recomposition dit « je ne garde
+ * de ton travail que ça ». Tant que les deux lisaient deux tracés différents,
+ * ils pouvaient se contredire en silence — et c'est exactement ce qui est
+ * arrivé.
+ *
+ * ═══ POURQUOI UNE ELLIPSE ET PLUS TOUTE LA LARGEUR ════════════════════════
+ *
+ * LE MASQUE OUVRAIT TOUTE LA BANDE HAUTE DE L'IMAGE, sur la largeur entière.
+ * Sur un portrait serré, cela revient à effacer la photo et à demander au
+ * modèle de la refaire : il ne lui restait presque aucun pixel verrouillé pour
+ * savoir à quoi ressemblait le décor. Il a donc inventé — et ce qu'un modèle
+ * invente quand il n'a rien à continuer, c'est un fond noir de studio. D'où sa
+ * capture : un visage qui flotte dans le noir, sans le feuillage, sans son
+ * haut, sans la photo.
+ *
+ * L'ELLIPSE LAISSE UNE MARGE VERROUILLÉE TOUT AUTOUR. Le modèle n'a plus le
+ * décor à inventer : il n'a qu'à le prolonger sur quelques dizaines de points,
+ * ce que ces modèles font très bien. Et elle reste large — une fois et demie la
+ * largeur du visage de chaque côté, deux hauteurs de visage vers le bas — donc
+ * une chevelure longue a toujours la place de tomber sur les épaules, qui était
+ * le défaut d'avant.
+ */
+function tracerLaZoneDeTravail(
+  g: CanvasRenderingContext2D,
+  v: Visage,
+  zone: ZoneVisage,
+): void {
+  const { l, h } = v.taille;
+  const cx = v.boite.x + v.boite.l / 2;
+  g.beginPath();
+  if (zone === "buste") {
+    /**
+     * LE BUSTE : SOUS LE MENTON, ET PAS AU-DELÀ DES ÉPAULES.
+     *
+     * Le vêtement est sur le torse ; la tête entière — cheveux compris — n'a
+     * aucune raison de bouger. La largeur est bornée pour la même raison que
+     * l'ellipse : le mur derrière la personne n'est pas un vêtement.
+     */
+    const menton = v.boite.y + v.boite.h;
+    const demi = v.boite.l * 2.4;
+    g.rect(Math.max(0, cx - demi), menton, Math.min(l, demi * 2), h - menton);
+  } else if (zone === "lunettes") {
+    /**
+     * LES LUNETTES : UNE BANDE SUR LES YEUX ET LE NEZ.
+     *
+     * La monture doit pouvoir se poser — elle occupe précisément la zone qu'on
+     * protège chez le coiffeur. On ouvre donc du haut du front au bas du nez,
+     * en débordant sur les tempes pour les branches. Le reste du visage —
+     * bouche, menton, mâchoire, joues basses — n'est jamais touché : c'est là
+     * que le modèle se permettait d'élargir le nez et de changer l'expression,
+     * et ça n'a rien à voir avec une paire de lunettes.
+     */
+    g.ellipse(
+      cx,
+      v.boite.y + v.boite.h * 0.42,
+      v.boite.l * 0.72,
+      v.boite.h * 0.24,
+      0,
+      0,
+      Math.PI * 2,
+    );
+  } else {
+    // LA COIFFURE : le crâne, le volume au-dessus, et la place où tombent les
+    // cheveux longs. Voir l'en-tête de cette fonction pour les proportions.
+    g.ellipse(
+      cx,
+      v.boite.y + v.boite.h * 0.55,
+      v.boite.l * 1.45,
+      v.boite.h * 1.95,
+      0,
+      0,
+      Math.PI * 2,
+    );
+  }
+}
+
 export function masqueDEssai(v: Visage, zone: ZoneVisage): string {
   const { l, h } = v.taille;
   const c = document.createElement("canvas");
@@ -277,66 +360,27 @@ export function masqueDEssai(v: Visage, zone: ZoneVisage): string {
    *     photo de près et une photo en pied n'ont pas la même échelle ; s'y
    *     fier donnerait un masque juste sur l'une et absurde sur l'autre.
    */
-  const cx = v.boite.x + v.boite.l / 2;
+  /**
+   * ═══ ON OUVRE LA ZONE DE TRAVAIL, ET RIEN D'AUTRE ═══════════════════════
+   *
+   * « Ce n'est pas tout à fait la même coupe. J'ai demandé à ChatGPT de me
+   * faire la même chose et le résultat est parfait — vu qu'on prend l'API
+   * d'OpenAI on devrait avoir le même résultat, alors pourquoi ça marche si
+   * mal ? »
+   *
+   * DEUX ERREURS SUCCESSIVES, ET IL A VU LES DEUX. La première était un masque
+   * AVARE : une couronne qui s'arrêtait aux oreilles, donc « fais des boucles
+   * longues » avec interdiction de dessiner là où les boucles tombent. La
+   * seconde, en la corrigeant, était un masque PRODIGUE : toute la largeur de
+   * l'image, ce qui revenait à effacer le décor et à demander au modèle de le
+   * réinventer — il l'a remplacé par du noir.
+   *
+   * LA ZONE DE TRAVAIL EST LE JUSTE MILIEU, et elle est tracée au même endroit
+   * que celui qui sert à la recomposition. Voir `tracerLaZoneDeTravail`.
+   */
   g.save();
   g.globalCompositeOperation = "destination-out";
-  g.beginPath();
-  if (zone === "buste") {
-    /**
-     * LE BUSTE : ON OUVRE TOUT CE QUI EST SOUS LE MENTON.
-     *
-     * Le vêtement est sur le torse ; la tête entière — cheveux compris — n'a
-     * aucune raison de bouger. C'est le régime le plus strict des trois, et
-     * c'est aussi le seul où l'on peut se permettre de tout fermer en haut :
-     * un essayage de robe qui recoifferait au passage serait un défaut, pas
-     * un bonus.
-     */
-    const menton = v.boite.y + v.boite.h;
-    g.rect(0, menton, l, h - menton);
-  } else if (zone === "lunettes") {
-    /**
-     * LES LUNETTES : UNE BANDE SUR LES YEUX ET LE NEZ.
-     *
-     * La monture doit pouvoir se poser — elle occupe précisément la zone qu'on
-     * protège chez le coiffeur. On ouvre donc du haut du front au bas du nez,
-     * en débordant sur les tempes pour les branches.
-     *
-     * ET LE RESTE DU VISAGE RESTE FERMÉ : bouche, menton, mâchoire, joues
-     * basses. C'est là que le modèle se permettait d'élargir le nez et de
-     * changer l'expression, et ça n'a rien à voir avec une paire de lunettes.
-     */
-    g.ellipse(cx, v.boite.y + v.boite.h * 0.42, v.boite.l * 0.72, v.boite.h * 0.24, 0, 0, Math.PI * 2);
-  } else {
-    /**
-     * ═══ LA COIFFURE : ON OUVRE TOUT LE HAUT, ET C'EST UNE CORRECTION ══════
-     *
-     * « Ce n'est pas tout à fait la même coupe. J'ai demandé à ChatGPT de me
-     * faire la même chose et le résultat est parfait — vu qu'on prend l'API
-     * d'OpenAI on devrait avoir le même résultat, alors pourquoi ça marche si
-     * mal ? »
-     *
-     * PARCE QU'ON NE LUI DEMANDAIT PAS LA MÊME CHOSE. ChatGPT envoie l'image
-     * SANS MASQUE : le modèle dessine où il veut. Nous lui ouvrions une ellipse
-     * d'un rayon d'une fois et quart la largeur du visage — une couronne qui
-     * s'arrête au niveau des oreilles. On lui demandait donc « fais des boucles
-     * longues » et on lui interdisait la surface où ces boucles tombent : les
-     * épaules, la poitrine, les côtés. Il faisait ce qu'il pouvait DANS la
-     * couronne, c'est-à-dire une autre coupe.
-     *
-     * ON OUVRE MAINTENANT TOUT CE QUI EST AU-DESSUS ET AUTOUR : la largeur
-     * entière de l'image, du haut jusqu'en bas du buste. Une chevelure longue a
-     * la place d'exister.
-     *
-     * ET CE N'EST PLUS RISQUÉ, PARCE QUE LE SECOND VERROU A CHANGÉ. Le masque
-     * était notre seule protection du visage, donc il devait être avare ;
-     * depuis que la recomposition est ALIGNÉE sur le rendu, c'est elle qui
-     * garantit les traits, et le masque peut redevenir ce qu'il aurait toujours
-     * dû être : de la place pour travailler. L'ovale du visage est refermé
-     * juste après — étape 3.
-     */
-    const bas = Math.min(h, v.boite.y + v.boite.h * 2.6);
-    g.rect(0, 0, l, bas);
-  }
+  tracerLaZoneDeTravail(g, v, zone);
   g.fill();
   g.restore();
 
@@ -448,26 +492,44 @@ export function alignementSurLeRendu(photo: Visage, rendu: Visage): Alignement |
 }
 
 /**
- * ═══ VERROU 2 · LE VISAGE ORIGINAL REVIENT PAR-DESSUS ═════════════════════
+ * ═══ VERROU 2 · LA PHOTO EST LE FOND, LE RENDU N'EST QU'UNE PIÈCE ═════════
  *
- * « La partie décisive est l'étape 5 : on remet le vrai visage après le passage
- * de l'IA. Ainsi, même si OpenAI déforme légèrement le nez ou la bouche, ces
- * pixels sont écrasés par ceux de la photo originale. »
+ * « Le résultat est mieux, mais ce n'est quand même pas la même photo qu'au
+ * départ. Je veux que la photo de départ et d'arrivée soit la même, sauf la
+ * coiffure qui aura été ajoutée, ou le vêtement, ou autres. »
  *
- * C'EST EXACT, ET C'EST LA SEULE GARANTIE DU FICHIER. Tout le reste est une
- * préférence adressée à un modèle ; ceci est une opération sur des pixels.
+ * ═══ CE QUI ÉTAIT FAIT, ET POURQUOI ÇA NE POUVAIT PAS TENIR ═══════════════
  *
- * ═══ LES DEUX PIÈGES DE CETTE ÉTAPE ═══════════════════════════════════════
+ * LE RENDU ÉTAIT LE FOND, ET ON Y RECOLLAIT LE VISAGE. Tout ce qui n'était pas
+ * l'ovale du visage — le décor, le buste, les vêtements, le cadrage — venait
+ * donc du modèle. Tant qu'il se contentait de recoiffer, ça passait ; le jour
+ * où il a décidé d'isoler le sujet sur fond noir, il a emporté le feuillage,
+ * le haut bleu et le collier avec lui. On avait construit une architecture où
+ * le modèle POUVAIT tout perdre, et on a été surpris qu'il le fasse.
  *
- * LE PREMIER EST L'ÉCHELLE. Le rendu ne fait pas la taille de la photo : OpenAI
- * rend du 1024×1024, du 1024×1536 ou du 1536×1024, et la photo du client fait ce
- * qu'elle fait. Recoller le visage à ses coordonnées d'origine sur une image
- * d'une autre taille le poserait à côté de la tête. On travaille donc dans le
- * repère du RENDU, en remettant la photo à son échelle.
+ * ═══ CE QUI EST FAIT MAINTENANT ══════════════════════════════════════════
  *
- * LE SECOND EST LA DÉCOUPE VISIBLE. Un collage net dessine un ovale de peau sur
- * une chevelure : on voit le contour, et l'œil ne voit plus que ça. D'où le
- * fondu de huit à quinze points autour de la ligne des cheveux et des tempes.
+ * LA PHOTO EST LE FOND, ENTIÈRE, À SA TAILLE, DANS SON CADRAGE. Le rendu est
+ * ramené dans SON repère à elle, puis découpé à la zone de travail — voir
+ * `tracerLaZoneDeTravail`. En dehors de cette zone, l'image de sortie EST la
+ * photographie, pixel pour pixel : ce n'est plus une préférence adressée à un
+ * modèle, c'est une propriété de l'opération.
+ *
+ * ET LE CADRE DE SORTIE EST CELUI DE LA PHOTO. Le modèle rend du carré ou du
+ * 2:3 selon son humeur ; garder son cadre rendait une image d'un autre format
+ * que celle qu'on lui avait donnée — « ce n'est pas la même photo » commence
+ * là, avant même de regarder les pixels.
+ *
+ * ═══ LES DEUX PIÈGES QUI RESTENT ═════════════════════════════════════════
+ *
+ * LE PREMIER EST L'ALIGNEMENT. Le modèle recadre, décale, agrandit un peu. On
+ * ramène donc le rendu par la similitude INVERSE de celle qui amène les repères
+ * de la photo sur les siens — voir `alignementSurLeRendu`. Sans elle, la
+ * chevelure générée se poserait à côté du crâne.
+ *
+ * LE SECOND EST LA DÉCOUPE VISIBLE. Un collage net dessine un contour sur la
+ * peau : on le voit, et l'œil ne voit plus que ça. D'où le fondu de huit à
+ * dix-huit points, proportionné à la taille du visage.
  */
 export async function reposerLeVisage(
   photo: string,
@@ -477,68 +539,66 @@ export async function reposerLeVisage(
   /**
    * LE VISAGE TROUVÉ SUR LE RENDU, quand on a su le trouver.
    *
-   * Il sert à deux choses, et les deux règlent un défaut qu'il a vu : il donne
-   * l'ALIGNEMENT — voir `alignementSurLeRendu` — et il donne le contour à
-   * découper, mesuré là où le visage est VRAIMENT sur l'image finale.
+   * Il donne l'ALIGNEMENT — voir `alignementSurLeRendu` — et c'est désormais sa
+   * seule utilité : le contour à protéger se lit sur la PHOTO, puisque c'est
+   * dans son repère qu'on travaille.
    */
   vRendu?: Visage | null,
 ): Promise<string> {
   const [a, b] = await Promise.all([charger(photo), charger(rendu)]);
-  const L = b.naturalWidth;
-  const H = b.naturalHeight;
+  // LE CADRE DE SORTIE EST CELUI DE LA PHOTO. Voir l'en-tête.
+  const L = a.naturalWidth;
+  const H = a.naturalHeight;
+  const RL = b.naturalWidth;
+  const RH = b.naturalHeight;
+
+  // 1 · LA PHOTO, ENTIÈRE. C'est le fond, et c'est ce qui a changé.
+  const fin = document.createElement("canvas");
+  fin.width = L;
+  fin.height = H;
+  const gf = fin.getContext("2d");
+  if (!gf) return rendu;
+  gf.drawImage(a, 0, 0);
 
   /**
-   * LA PHOTO REMISE À L'ÉCHELLE DU RENDU, EN GARDANT SES PROPORTIONS.
+   * 2 · LE RENDU, RAMENÉ DANS LE REPÈRE DE LA PHOTO.
    *
-   * C'est ce que le modèle a fait de son côté quand il a recadré, et il faut
-   * faire le même geste : couvrir le cadre, centré. Étirer la photo aux
-   * dimensions du rendu déformerait le visage qu'on est en train de sauver —
-   * la faute serait alors la nôtre.
-   */
-  const k = Math.max(L / a.naturalWidth, H / a.naturalHeight);
-  const pl = a.naturalWidth * k;
-  const ph = a.naturalHeight * k;
-  const px = (L - pl) / 2;
-  const py = (H - ph) / 2;
-
-  /**
-   * ═══ ON ALIGNE SI ON PEUT, ON COUVRE SI ON NE PEUT PAS ═══════════════════
+   * `alignementSurLeRendu` donne la similitude qui va de la photo vers le
+   * rendu ; c'est l'inverse qu'il faut ici. Une similitude est une
+   * multiplication complexe suivie d'une translation — z·p + t — donc son
+   * inverse est (q − t)/z, et il s'écrit en trois lignes.
    *
-   * L'ALIGNEMENT MESURÉ EST LE BON CHEMIN — voir `alignementSurLeRendu`, et le
-   * visage dédoublé qu'il a photographié. Le simple « couvrir le cadre » est le
-   * repli : il suppose que le modèle n'a pas bougé la tête, ce qui est vrai
-   * assez souvent pour valoir mieux que rien, et faux assez souvent pour avoir
-   * fabriqué le défaut.
+   * SANS ALIGNEMENT, ON COUVRE LE CADRE, CENTRÉ. C'est le repli : il suppose
+   * que le modèle n'a pas bougé la tête, ce qui est vrai assez souvent pour
+   * valoir mieux que rien.
    */
   const ali = vRendu ? alignementSurLeRendu(v, vRendu) : null;
-  /** Un point de la photo, dans le repère du rendu. */
-  const versRendu = (p: { x: number; y: number }) =>
-    ali
-      ? { x: ali.a * p.x - ali.b * p.y + ali.e, y: ali.b * p.x + ali.a * p.y + ali.f }
-      : { x: px + (p.x / a.naturalWidth) * pl, y: py + (p.y / a.naturalHeight) * ph };
-
-  // 1 · LA PHOTO D'ORIGINE, POSÉE SUR LE VISAGE DU RENDU.
-  const source = document.createElement("canvas");
-  source.width = L;
-  source.height = H;
-  const gs = source.getContext("2d");
-  if (!gs) return rendu;
+  const transporte = document.createElement("canvas");
+  transporte.width = L;
+  transporte.height = H;
+  const gt = transporte.getContext("2d");
+  if (!gt) return rendu;
   if (ali) {
-    gs.save();
-    gs.setTransform(ali.a, ali.b, -ali.b, ali.a, ali.e, ali.f);
-    gs.drawImage(a, 0, 0);
-    gs.restore();
+    const d = ali.a * ali.a + ali.b * ali.b;
+    const ia = ali.a / d;
+    const ib = -ali.b / d;
+    gt.setTransform(ia, ib, -ib, ia, -(ia * ali.e - ib * ali.f), -(ib * ali.e + ia * ali.f));
+    gt.drawImage(b, 0, 0);
+    gt.setTransform(1, 0, 0, 1, 0, 0);
   } else {
-    gs.drawImage(a, px, py, pl, ph);
+    const k = Math.max(RL / L, RH / H);
+    const tl = RL / k;
+    const th = RH / k;
+    gt.drawImage(b, (L - tl) / 2, (H - th) / 2, tl, th);
   }
 
   /**
-   * 2 · LE POCHOIR DU VISAGE, AVEC SON FONDU.
+   * 3 · LE POCHOIR : LA ZONE DE TRAVAIL, MOINS LE VISAGE, AVEC SON FONDU.
    *
-   * On dessine l'ovale du visage en blanc sur un calque vide, puis on le FLOUTE.
-   * Le flou EST le fondu : au centre l'alpha vaut 1 — le visage d'origine gagne
-   * entièrement — et il retombe à 0 sur une douzaine de points autour du
-   * contour, ce qui fait la transition vers la chevelure générée.
+   * On dessine la zone en blanc sur un calque vide, puis on la FLOUTE. Le flou
+   * EST le fondu : au centre l'alpha vaut 1 — le rendu gagne entièrement — et
+   * il retombe à 0 sur une douzaine de points au bord, ce qui fait la
+   * transition vers la photographie.
    *
    * LE RAYON SUIT LA TAILLE DU VISAGE. Douze points fixes sont un fondu correct
    * sur un portrait serré et une bavure sur une photo en pied.
@@ -548,97 +608,55 @@ export async function reposerLeVisage(
   pochoir.height = H;
   const gp = pochoir.getContext("2d");
   if (!gp) return rendu;
-  const boite = {
-    a: versRendu({ x: v.boite.x, y: v.boite.y }),
-    b: versRendu({ x: v.boite.x + v.boite.l, y: v.boite.y + v.boite.h }),
-  };
-  const flou = Math.max(8, Math.min(18, (boite.b.x - boite.a.x) * 0.05));
+  const flou = Math.max(8, Math.min(18, v.boite.l * 0.05));
   gp.filter = `blur(${flou}px)`;
   gp.fillStyle = "#fff";
-  gp.beginPath();
-  if (zone === "buste") {
-    /**
-     * ON REPOSE LA TÊTE ENTIÈRE, CHEVEUX COMPRIS.
-     *
-     * L'ovale du visage seul laisserait la chevelure générée autour d'un visage
-     * d'origine : sur un essayage de vêtement, le modèle n'avait aucune raison
-     * d'y toucher, et s'il l'a fait c'est une erreur qu'on écrase. L'ellipse
-     * déborde donc largement au-dessus du front.
-     */
-    const cx2 = (boite.a.x + boite.b.x) / 2;
-    const bl = boite.b.x - boite.a.x;
-    const bh = boite.b.y - boite.a.y;
-    gp.ellipse(cx2, boite.a.y + bh * 0.42, bl * 0.95, bh * 0.92, 0, 0, Math.PI * 2);
-  } else {
-    /**
-     * ═══ CHEZ LE COIFFEUR, ON NE RECOLLE QUE L'INTÉRIEUR DU VISAGE ══════════
-     *
-     * « La coupe est mal ajustée à son crâne. »
-     *
-     * L'OVALE DE MEDIAPIPE PASSE À LA RACINE DES CHEVEUX ET SUR LES TEMPES : le
-     * recoller reposait l'ANCIENNE ligne capillaire par-dessus la nouvelle
-     * coupe, qui se retrouvait découpée par un contour qui n'était plus le sien.
-     * Le contour intérieur s'arrête à ras des sourcils et rentre de dix pour
-     * cent — voir `Visage.interieur`.
-     *
-     * ET ON LE PREND SUR LE RENDU QUAND ON L'A. Mesuré là où le visage est
-     * vraiment sur l'image finale, il n'a plus besoin d'être transporté : c'est
-     * un calcul de moins, donc une erreur de moins.
-     */
-    const trace =
-      zone === "coiffure"
-        ? (vRendu?.interieur ?? v.interieur).map((p) => (vRendu ? p : versRendu(p)))
-        : v.contour.map(versRendu);
-    trace.forEach((q, i) => {
-      if (i === 0) gp.moveTo(q.x, q.y);
-      else gp.lineTo(q.x, q.y);
-    });
-    gp.closePath();
-  }
+  tracerLaZoneDeTravail(gp, v, zone);
   gp.fill();
   gp.filter = "none";
 
   /**
-   * ET CHEZ LE LUNETIER, ON REDÉCOUPE LA BANDE DES YEUX.
+   * ET CHEZ LE COIFFEUR, ON REFERME LE VISAGE.
    *
-   * Reposer l'ovale entier effacerait la monture qu'on vient de poser — on
-   * rendrait au client sa photo, exactement. On retire donc du pochoir la même
-   * bande que le masque avait ouverte : le nez, la bouche, le menton et la
-   * mâchoire reviennent de la photographie, les lunettes restent du rendu.
+   * C'est le contour INTÉRIEUR, pas l'ovale : celui de MediaPipe passe à la
+   * racine des cheveux, et le refermer reposerait l'ANCIENNE ligne capillaire
+   * par-dessus la nouvelle coupe — « la coupe est mal ajustée à son crâne ».
+   * Le contour intérieur s'arrête à ras des sourcils et rentre de dix pour
+   * cent : ce qui fait l'identité d'un visage vient de la photographie, le
+   * front et les tempes viennent du rendu, donc une frange est possible.
+   *
+   * IL SE LIT SUR LA PHOTO, SANS TRANSPORT. C'est le bénéfice de travailler
+   * dans son repère : un calcul de moins, donc une erreur de moins.
+   *
+   * SUR LE BUSTE ET LES LUNETTES, IL N'Y A RIEN À REFERMER. La zone de travail
+   * du buste est sous le menton ; celle du lunetier EST la bande des yeux, et
+   * la refermer rendrait au client sa photo, exactement — sans les lunettes.
    */
-  if (zone === "lunettes") {
-    const cx2 = (boite.a.x + boite.b.x) / 2;
-    const bl = boite.b.x - boite.a.x;
-    const bh = boite.b.y - boite.a.y;
+  if (zone === "coiffure") {
     gp.save();
     gp.globalCompositeOperation = "destination-out";
     gp.filter = `blur(${flou}px)`;
     gp.beginPath();
-    gp.ellipse(cx2, boite.a.y + bh * 0.42, bl * 0.78, bh * 0.28, 0, 0, Math.PI * 2);
+    v.interieur.forEach((p, i) => {
+      if (i === 0) gp.moveTo(p.x, p.y);
+      else gp.lineTo(p.x, p.y);
+    });
+    gp.closePath();
     gp.fill();
     gp.restore();
     gp.filter = "none";
   }
 
   /**
-   * 3 · ON DÉCOUPE LA PHOTO AVEC CE POCHOIR.
+   * 4 · ON DÉCOUPE LE RENDU AVEC CE POCHOIR, PUIS ON LE POSE SUR LA PHOTO.
    *
-   * `destination-in` garde de la photo ce que le pochoir couvre, avec SON alpha :
-   * c'est ce qui transporte le fondu depuis le pochoir jusqu'au visage découpé.
+   * `destination-in` garde du rendu ce que le pochoir couvre, avec SON alpha :
+   * c'est ce qui transporte le fondu depuis le pochoir jusqu'à la pièce collée.
    */
-  gs.globalCompositeOperation = "destination-in";
-  gs.drawImage(pochoir, 0, 0);
-  gs.globalCompositeOperation = "source-over";
-
-  // 4 · LE RENDU, PUIS LE VISAGE D'ORIGINE PAR-DESSUS. Dans cet ordre : c'est
-  //     la photographie qui a le dernier mot, et c'est tout le propos.
-  const fin = document.createElement("canvas");
-  fin.width = L;
-  fin.height = H;
-  const gf = fin.getContext("2d");
-  if (!gf) return rendu;
-  gf.drawImage(b, 0, 0);
-  gf.drawImage(source, 0, 0);
+  gt.globalCompositeOperation = "destination-in";
+  gt.drawImage(pochoir, 0, 0);
+  gt.globalCompositeOperation = "source-over";
+  gf.drawImage(transporte, 0, 0);
 
   // JPEG ET NON PNG : le rendu part dans le salon, dans un partage, et parfois
   // dans la mémoire du téléphone. Un PNG de 1536 points pèse quatre fois plus
