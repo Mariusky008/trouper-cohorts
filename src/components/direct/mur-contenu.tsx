@@ -76,6 +76,7 @@ import { laMainEstPrete, poserVernis } from "@/lib/direct/ongles";
 import { essayerSurMoi, estUnRendu } from "@/lib/direct/essai-genere";
 import { prevenirPourEssai, numeroDeFiction } from "@/lib/direct/prevenir";
 import { partagerLEssai, type Sortie } from "@/lib/direct/partager-essai";
+import { jouer } from "@/lib/direct/sons";
 import { EcranGout } from "@/components/direct/gout-contenu";
 import { EcranSoiree } from "@/components/direct/soiree-contenu";
 
@@ -875,6 +876,10 @@ export function MurContenu({
              * vient du dépôt lui-même, pas d'une constante unique.
              */
             const heures = f.essai ? 48 : HEURES_PAR_DEFAUT;
+            /* IL FLOTTE, DONC SON SON FLOTTE : une note tenue avec un souffle
+               d'attaque, et non une percussion. C'est la seule voix du jeu qui
+               ne frappe pas — voir `sons.ts`. */
+            jouer("fantome");
             const reste = poserFantome(
               {
                 id: f.id,
@@ -2284,6 +2289,14 @@ function Essai({
         setPct(100);
         setRendu(r);
         setEtape("rendu");
+        /* ═══ ET C'EST ICI QUE LE SON DE LA RÉVÉLATION TOMBE ═══════════════
+           SUR L'IMAGE, PAS SUR LA RÉPONSE DU SERVEUR. Entre les deux il y a
+           le plancher d'attente et la recomposition du visage ; jouer à
+           l'arrivée de la réponse ferait sonner l'écran avant qu'il montre
+           quoi que ce soit, et un son qui précède ce qu'il annonce s'entend
+           comme un défaut.
+           ET L'ÉCHEC A LE SIEN, qui n'est pas un buzzer — voir `sons.ts`. */
+        jouer(r?.image ? "revele" : "souci");
         /**
          * LA CLASSE EST POSÉE EN MÊME TEMPS QUE L'ÉCRAN, ET C'EST LA SEULE
          * FAÇON QUI MARCHE.
@@ -2552,6 +2565,9 @@ function Essai({
     setRevele(false);
     setX(58);
     setEtape("calcul");
+    // L'ESSAI PART : un glissement qui monte, et qui ne se referme pas.
+    // C'est la révélation, une minute plus tard, qui finira la phrase.
+    jouer("essai");
   };
 
   const poser = (verdict: "pris" | "passe" | "essaye") => {
@@ -3009,6 +3025,9 @@ function Essai({
                 setNoteVue(0);
                 setRevele(false);
                 setEtape("calcul");
+                // L'ESSAI PART : un glissement qui monte, et qui ne se referme pas.
+                // C'est la révélation, une minute plus tard, qui finira la phrase.
+                jouer("essai");
               }}
             >
               {/* UNE VIGNETTE DE VERNIS MONTRE LE VERNIS, PAS UNE PHOTO VOISINE.
@@ -4010,7 +4029,14 @@ function Essai({
                     // ON PEUT SE DÉDIRE EN REVENANT SUR SON PROPRE FANTÔME.
                     // Sans ça, une note posée par erreur ne se retire plus, et
                     // la seule issue est de refaire tout l'essai.
-                    onClick={() => setNote((v) => (v === n ? 0 : n))}
+                    onClick={() => {
+                      // LE MÊME SON POUR LES CINQ — voir `sons.ts` : une note
+                      // qui monterait avec le nombre de fantômes féliciterait
+                      // celui qui met cinq et sanctionnerait celui qui met
+                      // deux, ce que cet écran promet de ne pas faire.
+                      jouer("note");
+                      setNote((v) => (v === n ? 0 : n));
+                    }}
                   >
                     <Signe classe="mu-note-s" />
                   </button>

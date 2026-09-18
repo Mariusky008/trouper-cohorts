@@ -157,6 +157,7 @@ import { PictoMetier } from "@/components/direct/picto-metier";
 import { MurContenu } from "@/components/direct/mur-contenu";
 import { murDeLaCarte, murDuSouvenir, QUOTA_DU_JOUR } from "@/lib/direct/fantomes";
 import { motsDe, soireeDuLieu } from "@/lib/direct/soiree";
+import { basculerLeSon, jouer, sonCoupe } from "@/lib/direct/sons";
 import { EcranSoiree } from "@/components/direct/soiree-contenu";
 import { mesFantomes, rappelerFantome, SIGNAL as SIGNAL_FANTOMES, tempsRestant, type FantomePose } from "@/lib/direct/mes-fantomes";
 import {
@@ -1531,6 +1532,18 @@ export function ApercuHabitant() {
   const [acte, setActe] = useState(0);
   /* `tour` est deja pris plus bas par le bulletin du tour de file. */
   const [boucle, setBoucle] = useState(0);
+  /**
+   * LE SON EST-IL COUPÉ ? — voir `lib/direct/sons.ts`.
+   *
+   * IL DÉMARRE À FAUX ET SE CORRIGE APRÈS LE MONTAGE. Lire `localStorage`
+   * pendant le rendu donnerait une valeur différente entre le serveur et le
+   * navigateur, et c'est la faute qui casse l'hydratation — déjà payée dans ce
+   * dossier pour la liste des écrans déjà vus.
+   */
+  const [muet, setMuet] = useState(false);
+  useEffect(() => {
+    setMuet(sonCoupe());
+  }, []);
   /** L'instant du dernier appui simple — voir la double tape sur la carte. */
   const dernierAppui = useRef(0);
   const [feuille, setFeuille] = useState<
@@ -3831,6 +3844,12 @@ export function ApercuHabitant() {
     // après deux cartes » et « combien vont au bout » ne demandent pas les
     // mêmes travaux, et c'est ce chiffre-là qui les sépare.
     noter("balayage", passees.length + 1, sens === "droite" ? "parler" : "passe");
+    /* LE SENS DE L'INTERVALLE EST LE SENS DU GESTE — voir `sons.ts`. Ce qui
+       monte accepte, ce qui descend écarte : on n'apprend pas cette
+       convention, on l'a déjà. C'est le seul son du produit qui soit joué
+       plusieurs fois par seconde, d'où la gamme pentatonique — deux de ses
+       notes, dans n'importe quel ordre, ne peuvent pas sonner faux. */
+    jouer(sens === "droite" ? "garder" : "passer");
     // LE BALAYAGE DROIT OUVRE LE SALON.
     //
     // Il gardait la carte dans les favoris. L'objection qui retenait ce
@@ -6595,7 +6614,16 @@ export function ApercuHabitant() {
                   type="button"
                   className="ap-ac-go"
                   onPointerDown={(ev) => ev.stopPropagation()}
-                  onClick={() => marquerVu("accueil")}
+                  onClick={() => {
+                    /* ═══ LA SIGNATURE, ET ELLE NE SE JOUE QU'ICI ══════════
+                       C'EST AUSSI LE PREMIER GESTE DE LA SESSION, donc le
+                       premier moment où un navigateur accepte de créer un
+                       contexte audio. Ce n'est pas un hasard qu'on ait mis le
+                       son entier là : c'est le seul endroit où l'on est sûr
+                       qu'il sera entendu. */
+                    jouer("ouvrir");
+                    marquerVu("accueil");
+                  }}
                 >
                   <Fantome classe="ap-ac-go-f" />
                   {/* LA VILLE VIENT DU COMMERCE DU SOMMET, ET LE SOMMET PEUT
@@ -6605,8 +6633,31 @@ export function ApercuHabitant() {
                   Essayer {dessus?.ville ?? "Dax"}
                   <s aria-hidden="true">→</s>
                 </button>
+                {/* ─── COUPER LE SON ───
+                    IL EST PETIT ET IL EST LÀ, et les deux comptent. Là, parce
+                    que c'est le premier écran : celui qui ne veut pas de son
+                    doit pouvoir le dire AVANT d'en entendre un, pas le chercher
+                    dans un réglage après avoir été surpris dans un bus. Petit,
+                    parce que ce n'est pas une décision qu'on vient prendre —
+                    c'est une sortie de secours. */}
                 <p className="ap-ac-pied">
                   Des commerces vraiment vivants <i aria-hidden="true">♡</i>
+                  <button
+                    type="button"
+                    className="ap-ac-son"
+                    aria-pressed={muet}
+                    aria-label={muet ? "Remettre le son" : "Couper le son"}
+                    onPointerDown={(ev) => ev.stopPropagation()}
+                    onClick={() => {
+                      const v = basculerLeSon();
+                      setMuet(v);
+                      // ON FAIT ENTENDRE CE QU'ON VIENT DE RALLUMER. Un bouton
+                      // de son qui ne produit aucun son laisse dans le doute.
+                      if (!v) jouer("toc");
+                    }}
+                  >
+                    {muet ? "🔇" : "🔊"}
+                  </button>
                 </p>
               </div>
             )}
@@ -13541,6 +13592,10 @@ export function ApercuHabitant() {
         .ap-ac-pied{flex:none;margin:12px 0 18px;text-align:center;
           font-size:12px;font-weight:600;color:#6F7885;}
         .ap-ac-pied i{font-style:normal;margin-left:5px;}
+        .ap-ac-son{margin-left:10px;padding:3px 7px;font:inherit;font-size:13px;
+          line-height:1;cursor:pointer;border-radius:999px;
+          color:#8D97A6;background:rgba(255,255,255,.05);
+          border:1px solid rgba(255,255,255,.12);}
 
         /* ═══ ET SI LE TELEPHONE REFUSE LES ANIMATIONS ═════════════════════
            LA PREUVE TIENT QUAND MEME : les deux cartes sont la, la fleche est
