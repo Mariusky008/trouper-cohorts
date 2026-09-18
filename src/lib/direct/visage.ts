@@ -183,15 +183,62 @@ function charger(src: string): Promise<HTMLImageElement> {
  * interdirait au modèle de travailler là où il devait, ce qui est pire que de
  * ne rien interdire.
  */
-export async function trouverLeVisage(src: string): Promise<Visage | null> {
+export async function trouverLeVisage(
+  src: string,
+  /**
+   * LE VISAGE QU'ON CHERCHE, quand on en cherche un en particulier.
+   *
+   * Passé au moment de lire le RENDU : c'est celui de la photo du client. Voir
+   * le choix entre plusieurs visages, plus bas.
+   */
+  proche?: Visage | null,
+): Promise<Visage | null> {
   try {
     const d = await chargerLeVisage();
     const img = await charger(src);
     const r = d.detect(img);
-    const pts = r.faceLandmarks?.[0];
-    if (!pts || pts.length < 400) return null;
     const l = img.naturalWidth;
     const h = img.naturalHeight;
+    /**
+     * ═══ LEQUEL, QUAND IL Y EN A PLUSIEURS ? ══════════════════════════════
+     *
+     * « La coiffure ce n'est pas du tout comme la photo originale et il y a
+     * son visage en double. »
+     *
+     * ON PRENAIT TOUJOURS LE PREMIER, ET C'EST LA MOITIÉ DU DÉFAUT. Le modèle
+     * reçoit DEUX portraits — celui du client et la référence du salon — et il
+     * lui arrive de rendre les deux : la cliente recoiffée, et le modèle de la
+     * référence quelque part dans le cadre. MediaPipe les trouve tous les
+     * deux, dans un ordre qui ne nous appartient pas, et `faceLandmarks[0]`
+     * pouvait donc être LE VISAGE DE QUELQU'UN D'AUTRE.
+     *
+     * TOUT LE RESTE EN DÉCOULE MÉCANIQUEMENT. On calcule alors l'alignement
+     * entre le visage de la photo et celui d'une inconnue ; la similitude qui
+     * en sort est absurde ; la couronne de cheveux se pose à côté du crâne, et
+     * l'on voit deux visages — le vrai, et un morceau de l'autre transporté
+     * par-dessus. C'est exactement l'image qu'il a envoyée.
+     *
+     * ON CHOISIT DONC CELUI QUI RESSEMBLE LE PLUS À CELUI QU'ON CHERCHE, et
+     * « ressembler » a ici un sens précis : c'est celui dont les repères
+     * s'alignent sur les siens avec le plus petit résidu — voir
+     * `alignementSurLeRendu`. Sans candidat de comparaison — le cas de la
+     * photo du client, où l'on ne cherche rien de particulier — on garde le
+     * premier, qui est aussi le plus grand chez MediaPipe.
+     */
+    const tous = (r.faceLandmarks ?? []).filter((p) => p && p.length >= 400);
+    if (!tous.length) return null;
+    let pts = tous[0];
+    if (proche && tous.length > 1) {
+      let mieux = Infinity;
+      for (const c of tous) {
+        const reperes = REPERES.map((i) => ({ x: c[i].x * l, y: c[i].y * h }));
+        const e = residuDeLAlignement(proche.reperes, reperes);
+        if (e !== null && e < mieux) {
+          mieux = e;
+          pts = c;
+        }
+      }
+    }
     // MEDIAPIPE REND DES COORDONNÉES NORMALISÉES. On les ramène en pixels une
     // fois pour toutes : tout le reste de ce fichier travaille en pixels, et
     // mélanger les deux repères est la faute qu'on ne voit qu'au résultat.
@@ -483,12 +530,99 @@ export function alignementSurLeRendu(photo: Visage, rendu: Visage): Alignement |
   // LA FOURCHETTE EST LARGE, PARCE QU'UN RECADRAGE EST NORMAL. Au-delà, ce n'est
   // plus un recadrage : c'est un autre visage, ou une autre pose.
   if (!Number.isFinite(echelle) || echelle < 0.5 || echelle > 2.2 || angle > 18) return null;
-  return {
+  const t = {
     a: c,
     b: sn,
     e: mb.x - (c * ma.x - sn * ma.y),
     f: mb.y - (sn * ma.x + c * ma.y),
   };
+  /**
+   * ═══ ET ON VÉRIFIE QUE LA SIMILITUDE COLLE VRAIMENT ═══════════════════════
+   *
+   * L'ÉCHELLE ET L'ANGLE NE PROUVENT RIEN, ET C'ÉTAIT L'AUTRE MOITIÉ DU
+   * VISAGE DOUBLÉ. Une similitude se calcule TOUJOURS : donnez-lui onze points
+   * d'un visage et onze points de n'importe quoi d'autre, elle rend une
+   * matrice. Rien ne garantit que cette matrice décrive quoi que ce soit —
+   * elle peut très bien avoir une échelle de 1,1 et un angle de 3 degrés tout
+   * en étant complètement fausse, parce qu'elle est le MOINS MAUVAIS
+   * compromis entre onze paires qui n'ont aucun rapport entre elles.
+   *
+   * LE RÉSIDU EST LA SEULE MESURE QUI LE DIT. On applique la transformation
+   * aux repères de la photo, on regarde à quelle distance ils tombent de ceux
+   * du rendu, et on rapporte cette distance à la LARGEUR DU VISAGE — sans quoi
+   * le seuil serait juste sur un portrait serré et absurde sur une photo en
+   * pied.
+   *
+   * QUATRE POUR CENT, ET C'EST MESURÉ SUR CE QUE FAIT LE MODÈLE. Un vrai
+   * recadrage laisse un résidu d'un à deux pour cent — les repères sont sur le
+   * même visage, seule la caméra a bougé. Au-delà de quatre, ce ne sont plus
+   * deux vues du même visage : c'est deux visages, ou le même dans une pose
+   * différente, et dans les deux cas recoller par-dessus donne l'image qu'il a
+   * envoyée.
+   */
+  // LA LARGEUR DU VISAGE, PAS L'ÉCART DES YEUX. Les deux sont à portée de main
+  // et le second est tentant — il est dans `reperes` — mais il vaut moins de la
+  // moitié du premier, donc le même pourcentage y serait deux fois plus sévère
+  // et refuserait des recadrages parfaitement ordinaires.
+  const largeur = photo.boite.l || 1;
+  let somme = 0;
+  for (let i = 0; i < n; i++) {
+    const x = t.a * A[i].x - t.b * A[i].y + t.e;
+    const y = t.b * A[i].x + t.a * A[i].y + t.f;
+    somme += Math.hypot(x - B[i].x, y - B[i].y);
+  }
+  if (somme / n > largeur * 0.04) return null;
+  return t;
+}
+
+/**
+ * LE RÉSIDU SEUL, POUR DÉPARTAGER DEUX VISAGES.
+ *
+ * ELLE REND LA DISTANCE MOYENNE APRÈS ALIGNEMENT, en pixels, sans porter de
+ * jugement : c'est l'appelant qui compare. `null` quand l'alignement lui-même
+ * n'a pas de sens.
+ *
+ * ELLE NE PASSE PAS PAR `alignementSurLeRendu` EXPRÈS. Celle-là REFUSE au-delà
+ * d'un seuil ; ici on veut justement la valeur, y compris mauvaise, pour
+ * pouvoir dire lequel de deux mauvais candidats est le moins mauvais.
+ */
+function residuDeLAlignement(
+  A: { x: number; y: number }[],
+  B: { x: number; y: number }[],
+): number | null {
+  if (!A?.length || A.length !== B?.length) return null;
+  const n = A.length;
+  const moy = (l: { x: number; y: number }[]) => ({
+    x: l.reduce((s, p) => s + p.x, 0) / n,
+    y: l.reduce((s, p) => s + p.y, 0) / n,
+  });
+  const ma = moy(A);
+  const mb = moy(B);
+  let n1 = 0;
+  let n2 = 0;
+  let den = 0;
+  for (let i = 0; i < n; i++) {
+    const ax = A[i].x - ma.x;
+    const ay = A[i].y - ma.y;
+    const bx = B[i].x - mb.x;
+    const by = B[i].y - mb.y;
+    n1 += ax * bx + ay * by;
+    n2 += ax * by - ay * bx;
+    den += ax * ax + ay * ay;
+  }
+  if (den < 1) return null;
+  const c = n1 / den;
+  const s = n2 / den;
+  const e = mb.x - (c * ma.x - s * ma.y);
+  const f = mb.y - (s * ma.x + c * ma.y);
+  let somme = 0;
+  for (let i = 0; i < n; i++) {
+    somme += Math.hypot(
+      c * A[i].x - s * A[i].y + e - B[i].x,
+      s * A[i].x + c * A[i].y + f - B[i].y,
+    );
+  }
+  return somme / n;
 }
 
 /**
@@ -573,6 +707,34 @@ export async function reposerLeVisage(
    * valoir mieux que rien.
    */
   const ali = vRendu ? alignementSurLeRendu(v, vRendu) : null;
+  /**
+   * ═══ SANS ALIGNEMENT SÛR, ON NE RECOLLE RIEN AUTOUR D'UN VISAGE ═══════════
+   *
+   * « Il y a son visage en double. »
+   *
+   * LE REPLI CENTRÉ ÉTAIT LA CAUSE DIRECTE DE CETTE IMAGE-LÀ. Quand
+   * l'alignement manque, on couvrait le cadre et on recadrait au centre — en
+   * SUPPOSANT que le modèle n'avait pas bougé la tête. Cette supposition est
+   * fausse la moitié du temps, et quand elle est fausse on découpe une couronne
+   * de cheveux aux coordonnées de la photo dans un rendu qui n'a pas le même
+   * cadrage. Ce qu'on colle alors sur le front de la cliente n'est pas sa
+   * chevelure : c'est un morceau du visage du rendu, sourcil compris. D'où le
+   * second visage.
+   *
+   * ON RENVOIE DONC SA PHOTO, INTACTE, ET L'APPELANT LE SAIT. Un essai qui
+   * échoue franchement se recommence ; une image à deux visages se montre à
+   * des amis et décide de ce qu'on pense du produit. Entre les deux il n'y a
+   * pas à hésiter — c'est la même règle que « parfait ou rien » qu'il a posée
+   * le premier jour.
+   *
+   * CELA NE CONCERNE QUE LES ZONES QUI TOUCHENT LE VISAGE. Un buste — un
+   * vêtement sous le menton — ne peut pas produire de visage en double : il n'y
+   * a pas de visage dans la zone de travail. Le repli centré y reste donc bon,
+   * et c'est heureux : c'est le métier qui s'en sert le plus.
+   */
+  if (!ali && (zone === "coiffure" || zone === "lunettes")) {
+    return photo;
+  }
   const transporte = document.createElement("canvas");
   transporte.width = L;
   transporte.height = H;

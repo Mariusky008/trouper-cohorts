@@ -2899,8 +2899,29 @@ export function ApercuHabitant() {
     cle: string;
     /** La famille allumée dans la rangée du bas. Voir FAMILLES. */
     famille: string;
+    /**
+     * ═══ LES PHOTOS DE SES MAQUETTES, ET CE QU'ON MET EN ATTENDANT ═══════
+     *
+     * « Ce n'est pas du tout les images qui sont sur le mock-up que je t'ai
+     * fourni. Je veux exactement les mêmes images pour chaque exemple. »
+     *
+     * IL A RAISON, ET JE NE PEUX PAS LES FABRIQUER. Ses quatre maquettes sont
+     * arrivées dans la conversation, pas dans le dépôt : je les ai VUES, je ne
+     * peux pas les écrire sur le disque. Les photos qu'elles contiennent — la
+     * blonde qui devient brune au salon, la femme en débardeur qui ressort en
+     * blazer rose, la pièce à vivre meublée — n'existent nulle part ici.
+     *
+     * LES DEUX CHEMINS SONT DONC DÉJÀ ÉCRITS, ET LE REPLI TIENT L'ÉCRAN. Le
+     * jour où les huit fichiers sont déposés dans `public/direct/accueil/`,
+     * ils prennent la place sans qu'une ligne de code change. D'ici là, on
+     * affiche ce qui existe dans le dépôt — voir `repli` — et l'écran ne
+     * montre jamais un carré vide.
+     */
     avant: string;
     apres: string;
+    /** Ce qu'on affiche tant que sa photo n'est pas déposée. */
+    repliAvant: string;
+    repliApres: string;
     /** Les deux pastilles, quand sa maquette dit mieux que « Avant ». */
     motAvant?: string;
     motApres?: string;
@@ -2913,8 +2934,10 @@ export function ApercuHabitant() {
       // impeccable sur un mur d'avis, illisible comme « après » d'un portrait
       // de face. Deux portraits cadrés pareil, deux coiffures différentes :
       // on comprend sans lire.
-      avant: "/direct/coiffure-femme-face.jpg",
-      apres: "/direct/coiffure2.jpg",
+      avant: "/direct/accueil/coiffure-avant.jpg",
+      apres: "/direct/accueil/coiffure-apres.jpg",
+      repliAvant: "/direct/coiffure-femme-face.jpg",
+      repliApres: "/direct/coiffure2.jpg",
     },
     {
       cle: "mode",
@@ -2922,14 +2945,18 @@ export function ApercuHabitant() {
       // ELLE TIENT LA PIÈCE SUR SON CINTRE, PUIS ELLE LA PORTE. Le premier
       // jet mettait le vêtement seul en gros plan à gauche : un tissu bleu
       // plein cadre ne dit pas « avant », il ne dit rien du tout.
-      avant: "/direct/avis-cabine.jpg",
-      apres: "/direct/vetement2.jpg",
+      avant: "/direct/accueil/mode-avant.jpg",
+      apres: "/direct/accueil/mode-apres.jpg",
+      repliAvant: "/direct/avis-cabine.jpg",
+      repliApres: "/direct/vetement2.jpg",
     },
     {
       cle: "restaurant",
       famille: "restaurants",
-      avant: "/direct/plat-du-jour-brute.jpg",
-      apres: "/direct/plat-du-jour.jpg",
+      avant: "/direct/accueil/restaurant-avant.jpg",
+      apres: "/direct/accueil/restaurant-apres.jpg",
+      repliAvant: "/direct/plat-du-jour-brute.jpg",
+      repliApres: "/direct/plat-du-jour.jpg",
       // SA MAQUETTE DU RESTAURANT NE DIT PAS « AVANT / APRÈS » mais « ESSAYEZ
       // LE PLAT / VOTRE ASSIETTE » : chez un restaurant on ne transforme pas
       // une photo de soi, on compose son assiette. Les mots suivent.
@@ -2939,8 +2966,10 @@ export function ApercuHabitant() {
     {
       cle: "fleuriste",
       famille: "commerces",
-      avant: "/direct/table-salon.jpeg",
-      apres: "/direct/avis-bouquet.jpg",
+      avant: "/direct/accueil/fleuriste-avant.jpg",
+      apres: "/direct/accueil/fleuriste-apres.jpg",
+      repliAvant: "/direct/table-salon.jpeg",
+      repliApres: "/direct/avis-bouquet.jpg",
       motAvant: "Chez vous",
       motApres: "Avec le bouquet",
     },
@@ -2967,8 +2996,15 @@ export function ApercuHabitant() {
       d: "M6.2 8h11.6a1 1 0 0 1 1 1.1l-.9 9.8a1 1 0 0 1-1 .9H7.1a1 1 0 0 1-1-.9l-.9-9.8A1 1 0 0 1 6.2 8ZM9 10.4V7a3 3 0 0 1 6 0v3.4" },
   ];
 
-  /** LES QUATRE DURENT LE MÊME TEMPS : deux secondes, comme il l'a demandé. */
-  const ACTES = EXEMPLES.map((x) => ({ ...x, duree: 2000 }));
+  /**
+   * LES QUATRE DURENT LE MÊME TEMPS : TROIS SECONDES.
+   *
+   * « Les transitions sont trop rapides donc une seconde de plus devrait être
+   * correcte. » Deux secondes, c'était le temps de VOIR les deux photos ;
+   * trois, c'est le temps de les COMPARER — et comparer est tout ce qu'on
+   * demande à cet écran.
+   */
+  const ACTES = EXEMPLES.map((x) => ({ ...x, duree: 3000 }));
   /**
    * L'EXEMPLE EN COURS, ET IL NE PEUT PAS MANQUER.
    *
@@ -2990,6 +3026,47 @@ export function ApercuHabitant() {
    * parce qu'ils sont aussi écrits, voir `.ap-acc-tous`.
    */
   const accueilOuvert = monte && !!sommet && !vus.includes("accueil") && !sortie && !embauches;
+
+  /**
+   * ═══ QUELLES PHOTOS SONT RÉELLEMENT LÀ ? ══════════════════════════════════
+   *
+   * ON NE DEVINE PAS, ON DEMANDE AU NAVIGATEUR. Chaque photo de maquette est
+   * chargée une fois au montage ; celle qui arrive entre dans cet ensemble,
+   * celle qui manque n'y entre pas et son repli sert. Un fichier déposé plus
+   * tard est donc pris au prochain lancement, sans toucher au code.
+   *
+   * ELLES PARTENT TOUTES EN MÊME TEMPS, ET C'EST AUSSI LE PRÉCHARGEMENT. Les
+   * huit sont demandées à l'ouverture de l'écran, donc elles sont dans le cache
+   * du navigateur avant que leur exemple arrive — c'est le défaut de la scène
+   * vide, corrigé au même endroit.
+   */
+  const [presentes, setPresentes] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (!accueilOuvert) return;
+    let vivant = true;
+    const trouvees = new Set<string>();
+    const tout = EXEMPLES.flatMap((x) => [x.avant, x.apres, x.repliAvant, x.repliApres]);
+    let restant = tout.length;
+    const fini = () => {
+      restant -= 1;
+      if (restant === 0 && vivant) setPresentes(trouvees);
+    };
+    for (const src of tout) {
+      const i = new window.Image();
+      i.onload = () => {
+        trouvees.add(src);
+        fini();
+      };
+      i.onerror = fini;
+      i.src = src;
+    }
+    return () => {
+      vivant = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accueilOuvert]);
+  /** La photo de sa maquette si elle est là, celle du dépôt sinon. */
+  const photoDe = (voulue: string, repli: string) => (presentes.has(voulue) ? voulue : repli);
   const dureeActe = ACTES[acte]?.duree ?? 2200;
   useEffect(() => {
     if (!accueilOuvert) return;
@@ -6452,32 +6529,10 @@ export function ApercuHabitant() {
                     réutiliserait les mêmes nœuds et se contenterait d'échanger
                     les images : on verrait deux photos clignoter, pas deux
                     cartes arriver. */}
-                {/* ═══ LES HUIT PHOTOS SONT CHARGEES D'AVANCE ══════════════
-
-                    DEFAUT MESURE SUR CAPTURE : au passage a un exemple jamais
-                    affiche, la scene restait VIDE — deux rectangles noirs — le
-                    temps que ses deux photos arrivent. Le cadre se remonte a
-                    chaque exemple (voir la cle), donc le navigateur ne commence
-                    a les chercher qu'a cet instant-la. Sur un telephone en
-                    quatre G, ce n'est pas un instant : c'est la moitie des deux
-                    secondes de l'exemple.
-
-                    HUIT BALISES CACHEES SUFFISENT, et c'est la solution la plus
-                    betement fiable : le navigateur les telecharge au montage de
-                    l'ecran, elles entrent dans son cache, et les cartes les
-                    trouvent deja la. Pas de composant, pas d'etat, rien a
-                    synchroniser. */}
-                <span className="ap-ac-precharge" aria-hidden="true">
-                  {EXEMPLES.flatMap((x) => [x.avant, x.apres]).map((src) => (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img key={src} src={src} alt="" />
-                  ))}
-                </span>
-
                 <div className="ap-ac-scene" key={exemple.cle} aria-hidden="true">
                   <span
                     className="ap-ac-carte ap-ac-av"
-                    style={{ backgroundImage: `url("${exemple.avant}")` }}
+                    style={{ backgroundImage: `url("${photoDe(exemple.avant, exemple.repliAvant)}")` }}
                   >
                     <i>{exemple.motAvant ?? "Avant"}</i>
                   </span>
@@ -6499,7 +6554,7 @@ export function ApercuHabitant() {
                   <span className="ap-ac-et e2">✦</span>
                   <span
                     className="ap-ac-carte ap-ac-ap"
-                    style={{ backgroundImage: `url("${exemple.apres}")` }}
+                    style={{ backgroundImage: `url("${photoDe(exemple.apres, exemple.repliApres)}")` }}
                   >
                     <i>{exemple.motApres ?? "Après"}</i>
                   </span>
@@ -13364,10 +13419,6 @@ export function ApercuHabitant() {
            LES PROPORTIONS SONT LES SIENNES : la scene prend ce qui reste et
            domine l'ecran, la promesse tient en deux lignes, le bouton est le
            seul aplat plein. */
-        /* HORS DU FLUX ET SANS TAILLE : elles ne doivent rien peser dans la
-           mise en page, seulement declencher le telechargement. */
-        .ap-ac-precharge{position:absolute;width:0;height:0;overflow:hidden;
-          opacity:0;pointer-events:none;}
         .ap-ac-marque{flex:none;padding:14px 20px 0;text-align:center;}
         .ap-ac-marque b{display:block;font-size:40px;font-weight:900;
           letter-spacing:-.02em;line-height:1;color:#fff;}

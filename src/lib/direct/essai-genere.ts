@@ -262,7 +262,11 @@ export async function essayerSurMoi(opts: {
        * elle retombe sur l'ancien calcul, qui vaut mieux que rien quand le
        * modèle n'a pas bougé la tête.
        */
-      const vRendu = await trouverLeVisage(j.image);
+      /* ON LUI DIT QUEL VISAGE CHERCHER — voir `trouverLeVisage`. Le modèle
+         reçoit deux portraits et il lui arrive de rendre les deux ; sans ce
+         repère, on alignait parfois sur le visage du modèle de la référence,
+         et la couronne de cheveux se posait à côté du crâne de la cliente. */
+      const vRendu = await trouverLeVisage(j.image, visage);
       const fidele = await reposerLeVisage(photo, j.image, visage, zone, vRendu);
       return { image: fidele, ms: j.ms ?? 0, visageRepose: true };
     } catch {

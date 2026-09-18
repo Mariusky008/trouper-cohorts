@@ -690,6 +690,127 @@ export const GOUT_BILLOT: Gout = {
   ],
 };
 
+/**
+ * ═══ LE NEUVIÈME PARCOURS — LA BOULANGERIE, ET SON LEVAIN ════════════════
+ *
+ * « Le Pétrin d'Amanieu : c'est encore un ancien design alors que ça devrait
+ * être comme un restaurant, la boulangerie. C'est-à-dire une expérience sur
+ * trois ou quatre écrans avec la confection du pain au levain par exemple. »
+ *
+ * IL A RAISON, ET C'EST LA MÊME CORRECTION QUE POUR LA BOUCHERIE. Cette table
+ * ne parle pas de restauration, elle parle de SAVOIR-FAIRE : partout où
+ * quelqu'un fabrique quelque chose, il y a un avant-goût à jouer. Un boulanger
+ * qui lève son pain trois nuits de suite a plus à raconter que la moitié des
+ * restaurants du paquet — et tant qu'il n'avait pas de parcours, son fantôme
+ * retombait sur « Faites savoir que vous êtes ici », c'est-à-dire sur un écran
+ * qui ne dit rien de lui.
+ *
+ * ═══ CE QUI SE JOUE, ET POURQUOI CES QUATRE-LÀ ═══════════════════════════
+ *
+ * LE TEMPS EST SON SUJET, DONC C'EST LUI QU'ON FAIT SENTIR. Un pain au levain
+ * n'est pas une recette, c'est une ATTENTE : vingt heures pendant lesquelles il
+ * ne se passe rien de visible, et c'est exactement ce qui le distingue d'une
+ * baguette industrielle poussée à la levure en deux heures. Les quatre temps
+ * sont donc quatre échelles de temps.
+ *
+ *   1 · ON OUVRE SUR LA CHOSE VIVANTE. Son levain a douze ans, il le nourrit
+ *       tous les jours, et il en donne un bout à qui en demande. Rien à jouer :
+ *       il y a une phrase à lire, et elle suffit.
+ *   2 · ON DEVINE LE TEMPS DE POUSSE. C'est la seule question qui sépare
+ *       vraiment les deux pains, et personne ne connaît la réponse.
+ *   3 · ON COMPOSE SA CUISSON. C'est le seul choix que le client a vraiment —
+ *       « bien cuit » ou « blanc » est une vraie question de comptoir, et elle
+ *       finit dans le récapitulatif.
+ *   4 · ET ON FAIT LE GESTE : la lame, la grigne. C'est le dernier geste du
+ *       boulanger avant le four, il dure une seconde, et c'est lui qui décide
+ *       de la forme du pain.
+ *
+ * SON MOT EST CELUI DE SA FICHE, PAS UN MOT DE BROCHURE : « Pains au levain,
+ * tout est fait sur place » est déjà sa signature dans le paquet.
+ */
+export const GOUT_LEVAIN: Gout = {
+  plat: "La tourte de seigle au levain",
+  detail: "Levain naturel · 20 heures de pousse · Cuite au four à sole",
+  prix: "4,20 €",
+  // LE BRUN DORÉ DE LA CROÛTE. Voir `accent` : un parcours ressemble à SON
+  // produit, pas à l'application.
+  accent: "#E8A33D",
+  chef: {
+    mot: "Mon levain a douze ans. Je le nourris tous les matins, avant d’allumer le four — si je l’oublie deux jours, je le perds. C’est la seule chose de la boutique que je ne peux pas racheter.",
+    qui: "Amanieu, boulanger",
+  },
+  tampon: "20 HEURES",
+  marques: [
+    { emoji: "🫙", nom: "Levain de 12 ans", detail: "Nourri chaque matin" },
+    { emoji: "🕐", nom: "20 heures", detail: "De pousse lente" },
+    { emoji: "🔥", nom: "Four à sole", detail: "Cuit sur la pierre" },
+  ],
+  temps: [
+    {
+      quoi: "ouvrir",
+      titre: "Ce pain est ",
+      suite: "vivant",
+      phrase: "Il n’y a pas de levure dedans. Ce qui le fait monter est né il y a douze ans et mange tous les jours.",
+      photo: "/direct/boulange-fournil.jpg",
+      geste: "C’est parti !",
+    },
+    {
+      quoi: "devine",
+      titre: "Combien de temps ",
+      suite: "il pousse ?",
+      phrase: "Entre le moment où la pâte est faite et le moment où elle entre au four.",
+      note: "Une baguette industrielle : 2 h.",
+      photo: "/direct/boulange-fournil.jpg",
+      geste: "Je valide ma réponse",
+      apres: "Continuer",
+      options: [
+        { cle: "deux", nom: "Deux heures", detail: "Comme partout", emoji: "⏱️" },
+        { cle: "six", nom: "Six heures", detail: "Une demi-journée", emoji: "🕕" },
+        { cle: "vingt", nom: "Vingt heures", detail: "Une nuit entière", emoji: "🌙" },
+        { cle: "deuxjours", nom: "Deux jours", detail: "Le week-end", emoji: "📅" },
+      ],
+      verite: {
+        titre: "Vingt heures, et c’est tout le goût",
+        mot: "La pâte est faite à quatorze heures, elle passe la nuit au frais, et elle entre au four à six heures et demie le lendemain. C’est cette lenteur-là qui rend le pain digeste et qui lui donne son acidité — pas un ingrédient, du temps.",
+      },
+    },
+    {
+      quoi: "compose",
+      titre: "Vous la voulez ",
+      suite: "comment ?",
+      phrase: "La même pâte, trois cuissons. Amanieu vous garde celle que vous choisissez.",
+      note: "Bien cuite, elle se garde plus longtemps.",
+      photo: "/direct/sortie-du-four.jpg",
+      geste: "Suivant",
+      options: [
+        { cle: "blonde", nom: "Blonde", detail: "Croûte fine, mie très tendre", emoji: "🥖", resume: "Blonde" },
+        { cle: "doree", nom: "Dorée", detail: "L’équilibre, c’est la sienne", emoji: "🍞", resume: "Dorée" },
+        { cle: "brune", nom: "Bien cuite", detail: "Croûte épaisse, goût de noisette", emoji: "🥐", resume: "Bien cuite" },
+      ],
+    },
+    {
+      quoi: "geste",
+      titre: "Le dernier geste, ",
+      suite: "c’est la lame",
+      phrase: "Un coup de lame avant le four : c’est par là que le pain s’ouvrira, et nulle part ailleurs.",
+      note: "La grigne, on l’appelle.",
+      photo: "/direct/sortie-du-four.jpg",
+      geste: "Signer le pain",
+      apres: "Et maintenant…",
+    },
+    {
+      quoi: "final",
+      titre: "Votre tourte est ",
+      suite: "mise de côté",
+      phrase: "Elle sort du four à six heures et demie. Amanieu la garde jusqu’à midi.",
+      photo: "/direct/boulange-comptoir.jpeg",
+      // LE GESTE FINAL EST LE SIEN. On ne réserve pas un pain, on le fait
+      // garder — et c'est le mot que son annonce emploie déjà.
+      geste: "Gardez-la-moi",
+    },
+  ],
+};
+
 export const GOUTS: Record<string, Gout> = {
   centre: GOUT_MAGRET,
   emporter: GOUT_PESTO,
@@ -707,6 +828,11 @@ export const GOUTS: Record<string, Gout> = {
   // mais de SAVOIR-FAIRE : partout où quelqu'un fabrique quelque chose, il y a
   // un avant-goût à jouer.
   boucher: GOUT_BILLOT,
+  // ET LE NEUVIÈME NON PLUS N'EST PAS UN RESTAURANT. Voir `GOUT_LEVAIN` : le
+  // boulanger avait encore « Faites savoir que vous êtes ici », c'est-à-dire un
+  // écran qui ne disait rien de lui, alors qu'il a vingt heures d'attente et un
+  // levain de douze ans à raconter.
+  boulange: GOUT_LEVAIN,
 };
 
 /**

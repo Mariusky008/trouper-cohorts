@@ -922,12 +922,61 @@ const pli = await p.evaluate(() => ({
 console.log(`  ${pli.blocs.join(" · ")}`);
 dire(pli.blocs.includes("La journée"), "la journée reste : c'est ce qui décide maintenant");
 dire(pli.blocs.includes("En parler"), "les gestes restent");
-dire(!pli.blocs.includes("Le commerce"), "la fiche du commerce n'y est plus");
-dire(!pli.blocs.includes("Vu chez eux"), "le mur des clients non plus");
+/**
+ * ═══ ET LA FICHE DU COMMERCE EST REVENUE DANS LE PLI ══════════════════════
+ *
+ * « Sur l'app de démo je n'ai plus les infos du commerce. Je voulais juste que
+ * ce bouton disparaisse au profit d'un bouton général "Voir toutes les offres
+ * + infos". Remets ce qu'il y avait avant. »
+ *
+ * CETTE GARDE DISAIT L'INVERSE, ET ELLE AVAIT RAISON LE JOUR OÙ ON L'A ÉCRITE.
+ * À l'époque la fiche existait à DEUX endroits identiques, et la sortir du pli
+ * était le déménagement qu'on venait de faire. Sauf qu'il ne demandait pas un
+ * déménagement : il demandait la fusion de deux boutons. On a répondu en
+ * sortant la pièce de la maison.
+ *
+ * CE QUI SE VÉRIFIE MAINTENANT EST CE QU'IL A DEMANDÉ : la fiche est dans le
+ * pli, elle porte de quoi décider sans changer de page, et il n'y a plus
+ * qu'UNE porte vers la page du commerce.
+ */
+dire(pli.blocs.includes("Le commerce"), "la fiche du commerce est dans le pli");
+dire(!pli.blocs.includes("Vu chez eux"), "le mur des clients n'y est pas");
 dire(!pli.blocs.includes("Ce qui revient"), "ni ce qui revient");
 dire(pli.href === "/autour-de-moi/boutique", `et le pli a une sortie (${pli.sortie})`);
-dire(pli.porte === "/autour-de-moi/boutique",
-  "« Infos boutique » mène au même endroit, plus au bloc d'en dessous");
+dire(
+  pli.porte === "",
+  "et il n'y a plus de seconde porte à côté du geste qui descend",
+);
+/**
+ * LA FICHE DIT LES QUATRE CHOSES QU'ON VIENT Y CHERCHER, et on les nomme
+ * plutôt que de compter des lignes : un compte tombe juste le jour où on
+ * l'écrit et faux au premier ajout.
+ */
+const fiche = await p.evaluate(() => {
+  const b = [...document.querySelectorAll(".ap-bloc")].find(
+    (n) => n.querySelector("h3")?.textContent.trim() === "Le commerce",
+  );
+  if (!b) return null;
+  return {
+    texte: b.textContent ?? "",
+    gestes: [...b.querySelectorAll(".ap-fiche-d a")].map((a) => a.textContent.trim()),
+  };
+});
+dire(!!fiche && /m$|\bm\b/.test(fiche.texte.replace(/\s+/g, " ")), "elle dit où c'est, et à quelle distance");
+dire(!!fiche && /h\b/.test(fiche.texte), "elle dit quand c'est ouvert");
+dire(!!fiche && fiche.gestes.length >= 2, `et elle porte ses gestes (${fiche?.gestes.join(" · ")})`);
+/**
+ * ET LE GESTE QUI DESCEND PROMET LES DEUX CHOSES. C'est le mot exact qu'il a
+ * écrit ; sans « + infos », rien ne dit que la fiche est en dessous, et la
+ * seconde porte redeviendrait nécessaire.
+ */
+const versLeBas = await p.evaluate(
+  () => document.querySelector(".ap-ident-d button")?.textContent?.trim() ?? "",
+);
+dire(
+  /offres/i.test(versLeBas) && /infos/i.test(versLeBas),
+  `et la porte unique promet les deux (« ${versLeBas} »)`,
+);
 await ctx.close();
 
 // ═══ 8 · LA VIDÉO DANS LE ROND ═══
@@ -3393,83 +3442,112 @@ console.log("\n══ la page du commerce ══");
   pA.on("pageerror", (e) => dire(false, `le premier écran lève une erreur : ${e.message}`));
   await pA.goto(`${BASE}/autour-de-moi`, { waitUntil: "networkidle" });
   await pA.waitForTimeout(2600);
+  /**
+   * ═══ CE QU'ON MESURE MAINTENANT, ET POURQUOI CE N'EST PLUS PAREIL ════════
+   *
+   * « Ton écran explique plusieurs fonctions avant d'avoir fait comprendre
+   * ClikMe. Je dois interpréter le produit. »
+   *
+   * CETTE GARDE COMPTAIT CINQ TEMPS, CINQ PASTILLES, ET EXIGEAIT « GLISSEZ ».
+   * Elle décrivait donc EXACTEMENT ce qu'il a demandé de supprimer. C'est la
+   * faute qui revient dans ce dossier : une garde qui sélectionne une MISE EN
+   * PAGE meurt à la première refonte, et le jour où elle meurt on ne sait plus
+   * si l'écran est cassé ou simplement changé.
+   *
+   * ON VÉRIFIE DONC LA PROMESSE, PAS LE GABARIT. Quel que soit le dessin de
+   * demain, ce premier écran doit : dire une seule chose, la PROUVER par un
+   * avant et un après, tourner tout seul, et offrir UNE sortie qui se touche.
+   * Ces quatre-là survivront à la prochaine maquette.
+   */
   const a = await pA.evaluate(() => {
     const e = document.querySelector(".ap-accueil");
     if (!e) return null;
+    const carte = (k) => {
+      const n = e.querySelectorAll(".ap-ac-carte")[k];
+      if (!n) return null;
+      const m = getComputedStyle(n).backgroundImage.match(/\/([^/"')]+\.(?:jpe?g|png|webp))/i);
+      return { photo: m ? m[1] : null, mot: n.querySelector("i")?.textContent?.trim() ?? "" };
+    };
     return {
-      titre: e.querySelector("h2")?.textContent?.replace(/\s+/g, " ").trim() ?? "",
-      compte: e.querySelector(".ap-acc-n b")?.textContent?.trim() ?? "",
-      // LES CINQ TEMPS SONT DANS LA LISTE DU REPLI — celle qui ne s'affiche
-      // qu'avec les animations coupées. Elle est dans le document dans tous les
-      // cas, et c'est elle qui fait foi : la frise ne montre que des
-      // pictogrammes, et la légende ne nomme que l'acte en cours.
-      etapes: [...e.querySelectorAll(".ap-acc-tous b")].map((b) => b.textContent.trim()),
-      pastilles: e.querySelectorAll(".ap-acc-pas i").length,
-      geste: e.querySelector(".ap-acc-g")?.textContent?.replace(/\s+/g, " ").trim() ?? "",
-      // ═══ CE QUI SE JOUE, ET CE QUI NE DOIT PAS ÊTRE INVENTÉ ═══════════
-      //
-      // LA SCÈNE EST LA RÉPONSE À « ce n'est vraiment pas fun ». Elle doit
-      // donc EXISTER — une scène tombée laisserait l'écran muet sans que rien
-      // ne casse — et elle doit CHANGER D'ACTE toute seule.
-      acte: (() => {
-        const sc = e.querySelector(".ap-acc-sc");
-        return sc ? ([...sc.classList].find((k) => k.startsWith("a-")) ?? null) : null;
-      })(),
-      // ET LA PASTILLE DE PRIX NE S'ÉCRIT QUE SI LE COMMERÇANT L'A ANNONCÉ.
-      // Elle a porté « −40 % » en dur pendant un commit, posé sur la photo et
-      // sous le titre d'un vrai commerce de Dax : une remise attribuée à
-      // quelqu'un qui ne l'a pas consentie, sur le tout premier écran.
-      prix: e.querySelector(".ap-sc-prix")?.textContent?.trim() ?? null,
-      legende: e.querySelector(".ap-acc-lg b")?.textContent?.trim() ?? null,
-      cartes: document.querySelectorAll(".cd-carte").length,
+      promesse: e.querySelector(".ap-ac-promesse")?.textContent?.replace(/\s+/g, " ").trim() ?? "",
+      marque: e.querySelector(".ap-ac-marque b")?.textContent?.trim() ?? "",
+      avant: carte(0),
+      apres: carte(1),
+      fleche: !!e.querySelector(".ap-ac-fleche"),
+      fantome: !!e.querySelector(".ap-ac-f svg"),
+      allumes: [...e.querySelectorAll(".ap-ac-fam li")].filter((n) =>
+        n.classList.contains("on")).map((n) => n.querySelector("b")?.textContent?.trim()),
+      familles: e.querySelectorAll(".ap-ac-fam li").length,
+      bouton: e.querySelector(".ap-ac-go")?.textContent?.replace(/\s+/g, " ").trim() ?? "",
+      // CE QUI NE DOIT PLUS Y ÊTRE, et qu'on nomme pour que le retour en
+      // arrière se voie : un compteur, une liste de fonctions, un « glissez ».
+      compteur: !!e.querySelector(".ap-acc-n"),
+      liste: e.querySelectorAll(".ap-acc-tous li").length,
+      glisser: /glissez/i.test(e.textContent ?? ""),
     };
   });
   if (!a) {
     dire(false, "le premier écran s'affiche au premier passage");
   } else {
-    dire(a.etapes.length === 5, `il raconte cinq temps (${a.etapes.length})`);
-    const attendus = [/offre du jour/i, /essayez/i, /pensez|avis/i, /amis/i, /réservez/i];
+    dire(/clikme/i.test(a.marque), `il porte le nom (« ${a.marque} »)`);
+    // UNE SEULE PHRASE, ET C'EST LA SIENNE.
     dire(
-      attendus.every((r, i) => r.test(a.etapes[i] ?? "")),
-      `et dans son ordre à lui (${a.etapes.join(" › ")})`,
+      /avant d.y aller/i.test(a.promesse) && /essayez/i.test(a.promesse),
+      `il ne dit qu'une chose (« ${a.promesse} »)`,
     );
-    dire(a.pastilles === 5, `la frise montre les cinq d'un coup d'œil (${a.pastilles})`);
-    dire(!!a.acte, `et la scène joue (${a.acte ?? "aucune"})`);
+    // ET IL LA PROUVE : deux photos DIFFÉRENTES, une flèche entre elles.
     dire(
-      a.prix !== "−40 %" && a.prix !== "-40 %",
-      `la pastille de prix n'invente rien (${a.prix ?? "absente, et c'est permis"})`,
+      !!a.avant?.photo && !!a.apres?.photo && a.avant.photo !== a.apres.photo,
+      `et il la prouve par deux photos (${a.avant?.photo} → ${a.apres?.photo})`,
     );
-    dire(/essayez/i.test(a.titre), `le titre porte ce que personne d'autre ne fait (« ${a.titre} »)`);
-    // LE COMPTE EXISTE ET N'EST PAS ZÉRO. On ne peut pas vérifier d'ici qu'il
-    // vient bien du paquet — le paquet n'est pas encore monté derrière cet
-    // écran — et une garde qui prétendrait le faire mentirait sur ce qu'elle
-    // mesure. Ce qu'elle attrape reste utile : le jour où la source se casse,
-    // l'écran afficherait « 0 commerces autour de vous » en grand.
-    dire(Number(a.compte) > 0, `et il annonce un nombre réel de commerces (${a.compte})`);
-    // PAS DE BOUTON « J'AI COMPRIS » : le geste qu'on apprend EST la sortie.
-    dire(/glissez/i.test(a.geste), `on en sort par le geste qu'on vient d'apprendre (« ${a.geste} »)`);
-    // ═══ ET ELLE TOURNE VRAIMENT ══════════════════════════════════════════
-    //
-    // C'EST LA SEULE MESURE QUI RÉPOND À SA PHRASE. Tout le reste — la frise,
-    // la légende, la scène — peut être parfaitement en place sur une image
-    // figée : c'est exactement ce qu'était l'écran d'avant, « pas fun ». Une
-    // minuterie qui ne part pas, un effet qui ne se relance pas, et l'écran
-    // redevient une affiche sans que rien n'ait l'air cassé.
-    await pA.waitForTimeout(4200);
+    dire(!!a.fleche, "une flèche dit que la seconde vient de la première");
+    dire(!!a.fantome, "et le Fantôme est entre les deux");
+    dire(
+      !!a.avant?.mot && !!a.apres?.mot && a.avant.mot !== a.apres.mot,
+      `les deux cartes sont nommées (« ${a.avant?.mot} » → « ${a.apres?.mot} »)`,
+    );
+    // UNE SEULE FAMILLE ALLUMÉE À LA FOIS : deux allumées voudraient dire que
+    // la transition laisse un état intermédiaire visible.
+    dire(
+      a.familles >= 4 && a.allumes.length === 1,
+      `une seule famille est allumée sur ${a.familles} (${a.allumes.join(" · ") || "aucune"})`,
+    );
+    // UNE SORTIE QU'ON TOUCHE, ET PLUS UN GESTE À DEVINER.
+    dire(/essayer/i.test(a.bouton), `on en sort par un bouton (« ${a.bouton} »)`);
+    dire(!a.glisser, "et plus par un glissement qu'il faut deviner");
+    // ET CE QU'IL A DEMANDÉ D'ENLEVER EST PARTI.
+    dire(!a.compteur, "le compteur de commerces est parti");
+    dire(a.liste === 0, `la liste des fonctions aussi (${a.liste})`);
+    /**
+     * ═══ ET ELLE TOURNE VRAIMENT, AU BON RYTHME ══════════════════════════
+     *
+     * C'EST LA SEULE MESURE QUI RÉPOND À SA PHRASE. Tout le reste peut être
+     * parfaitement en place sur une image figée — c'est exactement ce qu'était
+     * l'écran d'avant.
+     *
+     * TROIS SECONDES ET DEMIE : un exemple dure trois secondes depuis qu'il a
+     * demandé « une seconde de plus ». On attend donc un peu plus qu'un
+     * exemple, et on exige que la famille allumée ET les deux photos aient
+     * changé. Mesurer la seule famille laisserait passer une rangée qui
+     * s'anime devant une scène morte.
+     */
+    const avant = { fam: a.allumes[0], photo: a.avant?.photo };
+    await pA.waitForTimeout(3500);
     const apres = await pA.evaluate(() => {
-      const sc = document.querySelector(".ap-acc-sc");
+      const n = document.querySelector(".ap-ac-carte");
+      const m = n ? getComputedStyle(n).backgroundImage.match(/\/([^/"')]+\.(?:jpe?g|png|webp))/i) : null;
       return {
-        acte: sc ? ([...sc.classList].find((k) => k.startsWith("a-")) ?? null) : null,
-        legende: document.querySelector(".ap-acc-lg b")?.textContent?.trim() ?? null,
+        fam: document.querySelector(".ap-ac-fam li.on b")?.textContent?.trim() ?? null,
+        photo: m ? m[1] : null,
       };
     });
     dire(
-      !!apres.acte && apres.acte !== a.acte,
-      `quatre secondes plus tard, elle a changé d'acte (${a.acte} → ${apres.acte})`,
+      !!apres.fam && apres.fam !== avant.fam,
+      `trois secondes et demie plus tard, la famille a changé (${avant.fam} → ${apres.fam})`,
     );
     dire(
-      !!apres.legende && apres.legende !== a.legende,
-      `et la légende suit ce qui se joue (« ${a.legende} » → « ${apres.legende} »)`,
+      !!apres.photo && apres.photo !== avant.photo,
+      `et la scène avec elle (${avant.photo} → ${apres.photo})`,
     );
   }
   await ac.close();

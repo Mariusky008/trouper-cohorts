@@ -317,6 +317,77 @@ console.log("\n══ la photo est alignée sur le visage du rendu, pas posée a
       "et sans repères comparables, aucun alignement n'est rendu",
     );
   }
+  /**
+   * ═══ 5 · LE VISAGE DE QUELQU'UN D'AUTRE EST REFUSÉ ═══════════════════════
+   *
+   * « La coiffure ce n'est pas du tout comme la photo originale et il y a son
+   * visage en double. »
+   *
+   * C'EST LE CAS QUE L'ÉCHELLE ET L'ANGLE NE VOYAIENT PAS. On fabrique ici un
+   * second visage PLAUSIBLE — même taille, même orientation, même position
+   * générale — mais dont les traits sont ailleurs : un nez plus bas, des yeux
+   * plus écartés, une bouche décalée. C'est ce que rend le modèle quand il
+   * dessine la cliente ET le modèle de la référence dans la même image.
+   *
+   * LA SIMILITUDE SE CALCULE QUAND MÊME, et c'est tout le piège : elle sort
+   * avec une échelle proche de un et un angle de quelques degrés, donc elle
+   * passait les deux contrôles d'avant. C'est son RÉSIDU qui la trahit.
+   */
+  {
+    const autre = base.map((p, i) => ({
+      // ON NE BOUGE QUE LES TRAITS, PAS L'ENSEMBLE. Décaler tout le monde
+      // ferait une translation, que l'alignement doit justement absorber.
+      x: p.x + (i % 3 === 0 ? 26 : i % 3 === 1 ? -21 : 9),
+      y: p.y + (i % 2 === 0 ? -18 : 24),
+    }));
+    const a2 = alignementSurLeRendu(faux(base), faux(autre));
+    dire(
+      a2 === null,
+      "un second visage, plausible en taille et en angle, est refusé sur son résidu",
+    );
+    // ET ON MONTRE QUE L'ANCIEN CONTRÔLE L'AURAIT LAISSÉ PASSER : sans quoi
+    // cette garde ne prouverait pas qu'elle sert à quelque chose.
+    const n = base.length;
+    const moy = (l) => ({
+      x: l.reduce((s2, p) => s2 + p.x, 0) / n,
+      y: l.reduce((s2, p) => s2 + p.y, 0) / n,
+    });
+    const ma = moy(base);
+    const mb = moy(autre);
+    let n1 = 0;
+    let n2 = 0;
+    let den = 0;
+    for (let i = 0; i < n; i++) {
+      const ax = base[i].x - ma.x;
+      const ay = base[i].y - ma.y;
+      const bx = autre[i].x - mb.x;
+      const by = autre[i].y - mb.y;
+      n1 += ax * bx + ay * by;
+      n2 += ax * by - ay * bx;
+      den += ax * ax + ay * ay;
+    }
+    const k = Math.hypot(n1 / den, n2 / den);
+    const deg = Math.abs((Math.atan2(n2 / den, n1 / den) * 180) / Math.PI);
+    dire(
+      k > 0.5 && k < 2.2 && deg < 18,
+      `et les deux anciens contrôles l'auraient accepté (échelle ${k.toFixed(2)}, angle ${deg.toFixed(1)}°)`,
+    );
+  }
+  // 6 · ET UN VRAI RECADRAGE N'EST PAS REFUSÉ POUR AUTANT. Une garde qui
+  //     refuse tout est aussi inutile qu'une garde qui accepte tout : on
+  //     vérifie donc le contraire de ce qui précède sur le même seuil.
+  {
+    const leger = bouger(1.06, 3, 12, -7).map((p, i) => ({
+      // UN BRUIT D'UN POINT ET DEMI : c'est ce que rend une détection sur deux
+      // images d'une même personne, et ça ne doit jamais faire échouer un essai.
+      x: p.x + (i % 2 ? 1.4 : -1.2),
+      y: p.y + (i % 3 ? -1.1 : 1.5),
+    }));
+    dire(
+      alignementSurLeRendu(faux(base), faux(leger)) !== null,
+      "un vrai recadrage, avec son bruit de détection, reste accepté",
+    );
+  }
 }
 
 /**
@@ -484,23 +555,42 @@ console.log("\n══ le masque laisse la place d'une coupe longue ══");
     gr.fillStyle = "#000";
     gr.fillRect(0, 0, L, H);
 
-    const sortie = await window.__visage.reposerLeVisage(
-      cp.toDataURL("image/png"),
-      cr.toDataURL("image/png"),
-      v,
-      "coiffure",
-      null,
-    );
-    const img = await new Promise((ok) => {
-      const e = new Image();
-      e.onload = () => ok(e);
-      e.src = sortie;
-    });
-    const cs = document.createElement("canvas");
-    cs.width = L;
-    cs.height = H;
-    const gs2 = cs.getContext("2d");
-    gs2.drawImage(img, 0, 0);
+    /**
+     * ═══ ON JOUE LES DEUX BRANCHES, ET C'EST TOUT LE SUJET ════════════════
+     *
+     * AVEC UN ALIGNEMENT SÛR, on recolle : la couronne doit venir du rendu.
+     * SANS ALIGNEMENT, on ne recolle plus rien — voir la règle dans
+     * `reposerLeVisage`. C'est la correction du visage doublé, et une garde qui
+     * ne mesurerait que la première branche laisserait revenir la seconde.
+     *
+     * L'ALIGNEMENT SÛR EST ICI L'IDENTITÉ : le même visage aux mêmes
+     * coordonnées sur les deux images. C'est le cas d'un modèle qui n'a pas
+     * bougé le cadrage, et c'est suffisant pour prouver que le collage a lieu.
+     */
+    const jouer = async (vRendu) => {
+      const sortie = await window.__visage.reposerLeVisage(
+        cp.toDataURL("image/png"),
+        cr.toDataURL("image/png"),
+        v,
+        "coiffure",
+        vRendu,
+      );
+      const img = await new Promise((ok) => {
+        const e = new Image();
+        e.onload = () => ok(e);
+        e.src = sortie;
+      });
+      const cs = document.createElement("canvas");
+      cs.width = L;
+      cs.height = H;
+      const g = cs.getContext("2d");
+      g.drawImage(img, 0, 0);
+      return { img, g };
+    };
+    const avecAli = await jouer(v);
+    const sansAli = await jouer(null);
+    const img = avecAli.img;
+    const gs2 = avecAli.g;
 
     const lire = (g, x, y) => Array.from(g.getImageData(x, y, 1, 1).data).slice(0, 3);
     // L'ÉCART MAXIMAL PAR CANAL. Le JPEG bouge de quelques unités ; un fond
@@ -524,6 +614,18 @@ console.log("\n══ le masque laisse la place d'une coupe longue ══");
       leVisage: ecart(cx - 40, cy + boite.h * 0.12),
       // Au-dessus du crâne, DANS la zone de travail : là, le rendu gagne.
       leCrane: noirceur(cx - 40, 100),
+      /**
+       * ET SANS ALIGNEMENT, LE CRÂNE RESTE LA PHOTO.
+       *
+       * C'est la mesure de la règle nouvelle. Le rendu est tout noir : s'il
+       * était recollé, la clarté tomberait à zéro. Qu'elle reste celle du
+       * dégradé prouve qu'on a rendu sa photographie plutôt que de deviner.
+       */
+      craneSansAli: (() => {
+        const a2 = Array.from(gp2.getImageData(cx - 40, 100, 1, 1).data).slice(0, 3);
+        const b2 = Array.from(sansAli.g.getImageData(cx - 40, 100, 1, 1).data).slice(0, 3);
+        return Math.max(...a2.map((n, i) => Math.abs(n - b2[i])));
+      })(),
     };
   });
   await nav2.close();
@@ -541,6 +643,10 @@ console.log("\n══ le masque laisse la place d'une coupe longue ══");
   dire(
     r.leCrane < 40,
     `mais au-dessus du crâne, c'est bien le rendu qu'on garde (clarté ${r.leCrane})`,
+  );
+  dire(
+    r.craneSansAli < 12,
+    `et sans alignement sûr, on rend sa photo au lieu de deviner (écart ${r.craneSansAli})`,
   );
 
   dire(m.sousLeMenton < 40, `sous le menton, le modèle peut dessiner (alpha ${m.sousLeMenton})`);
