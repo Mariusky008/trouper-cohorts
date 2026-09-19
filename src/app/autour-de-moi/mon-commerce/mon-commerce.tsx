@@ -52,6 +52,16 @@ import {
   type AnnoncePassee,
 } from "@/lib/direct/historique";
 import { noter } from "@/lib/direct/parcours";
+import { murDeLaCarte, type Piece } from "@/lib/direct/fantomes";
+import {
+  RAISONS,
+  abonnerMisesEnAvant,
+  chargerMisesEnAvant,
+  mettreEnAvant,
+  misesEnAvantVides,
+  retirerLaMiseEnAvant,
+  suggestionDuJour,
+} from "@/lib/direct/mise-en-avant";
 
 export function MonCommerce() {
   const [id, setId] = useState("boulange");
@@ -65,6 +75,21 @@ export function MonCommerce() {
   }, []);
 
   const remises = useSyncExternalStore(abonnerRemises, chargerRemises, remisesVides);
+  const misesEnAvant = useSyncExternalStore(
+    abonnerMisesEnAvant,
+    chargerMisesEnAvant,
+    misesEnAvantVides,
+  );
+  /**
+   * LA RAISON EN COURS DE CHOIX, ET ELLE NE VIT QUE LE TEMPS DU GESTE.
+   *
+   * Elle n'est pas dans le stockage : tant qu'on n'a pas appuyé sur « On la
+   * montre aujourd'hui », rien n'est publié. Une raison mémorisée d'un matin
+   * sur l'autre ferait ressortir « IL N'EN RESTE QUE 3 » sur une pièce dont il
+   * vient d'en rentrer douze.
+   */
+  const [raison, setRaison] = useState(RAISONS[0].cle);
+  const [prixAvant, setPrixAvant] = useState("");
   const c: CarteAutour | undefined = toutesLesCartes().find((x) => x.id === id);
   if (!c) return <p className="mc-vide">Commerce introuvable.</p>;
 
@@ -80,6 +105,39 @@ export function MonCommerce() {
   // ON N'INVENTE PAS UN RÉCAPITULATIF QUAND IL N'Y A RIEN. Voir les règles de
   // dégradation du produit : pas de zéro affiché, pas de faux plein.
   const bilan = hier[0];
+
+  /**
+   * ═══ SA COLLECTION, TELLE QUE SES CLIENTS LA VOIENT ═══════════════════════
+   *
+   * ON LA LIT PAR `murDeLaCarte`, et c'est la seule façon juste : c'est
+   * exactement ce que le client reçoit, avec son catalogue en tête et la
+   * vitrine déjà marquée. La recalculer ici aurait donné, tôt ou tard, un
+   * commerçant qui voit une collection et un client qui en voit une autre.
+   */
+  const mur = murDeLaCarte({
+    id: c.id,
+    nom: c.nom,
+    metier: c.metier,
+    branche: c.branche,
+    ville: c.ville,
+    distance: c.distance,
+    photo: c.photo,
+    google: c.google,
+    telephone: c.telephone,
+    catalogue: c.catalogue,
+    /* PAS DE `moment` ICI : il ne sert qu'au bloc de contexte sous le mur du
+       client, et le lire demanderait l'heure. La collection, elle, ne dépend
+       pas de l'heure qu'il est. */
+  });
+  const collection: Piece[] = mur.essai?.pieces ?? [];
+  const essayables = collection.filter((p) => !p.bientot && p.photo);
+  const choisie = misesEnAvant.find((m) => m.carte === c.id);
+  const piecePoussee = choisie
+    ? collection.find((p) => p.id === choisie.piece)
+    : undefined;
+  /* ON NE PROPOSE PAS CE QUI EST DÉJÀ EN AVANT — voir `suggestionDuJour`. */
+  const suggestion = suggestionDuJour(collection, choisie?.piece);
+  const laRaison = RAISONS.find((r) => r.cle === raison) ?? RAISONS[0];
 
   return (
     <div className="mc">
@@ -115,6 +173,200 @@ export function MonCommerce() {
           <p className="mc-b-mot">
             C&apos;est ce que vous ne pouvez pas compter derrière votre caisse.
           </p>
+        </section>
+      )}
+
+      {/* ═══ QU'EST-CE QU'ON MET EN AVANT AUJOURD'HUI ? ═════════════════════
+
+          « Côté commerçant, ça reste extrêmement simple. À l'inscription :
+          ajoutez votre collection une fois. Puis chaque matin : qu'est-ce qu'on
+          met en avant aujourd'hui ? »
+
+          IL PASSE DEVANT « REMETTRE », ET C'EST LE MÊME RAISONNEMENT QUI LES
+          CLASSE TOUS LES DEUX. Le bilan d'hier vient en premier parce que c'est
+          la récompense ; ensuite vient LE geste du jour. Chez un boulanger,
+          c'est remettre la fournée ; dans une boutique de vêtements, c'est
+          désigner la pièce — et il n'y a pas de fournée à remettre.
+
+          CLIKME PROPOSE, IL NE DÉCIDE PAS. « Cette veste n'a pas encore été
+          mise en avant. On la montre aujourd'hui ? » : devant vingt-cinq
+          pièces, « laquelle ? » est un travail ; devant UNE pièce nommée, c'est
+          un oui ou un non, et les deux prennent une seconde. La suggestion
+          tourne avec les jours plutôt que de préférer toujours la même — voir
+          `suggestionDuJour`.
+
+          LA RAISON EST OBLIGATOIRE, LA REMISE NE L'EST PAS. C'est tout le
+          point : « Le produit du jour n'est pas forcément la promotion du jour.
+          Sinon, les utilisateurs vont très vite comprendre ClikMe comme une
+          application de promotions, et les commerçants vont hésiter à publier
+          parce qu'ils auront l'impression qu'ils doivent sacrifier leur
+          marge. » Le champ du prix barré n'apparaît donc QUE si l'on choisit
+          explicitement la pastille de remise. */}
+      {essayables.length > 0 && (
+        <section className="mc-avant">
+          <p className="mc-t">Qu’est-ce qu’on met en avant aujourd’hui&nbsp;?</p>
+
+          {piecePoussee ? (
+            /* CE QUI EST EN LIGNE SE VOIT EN PREMIER, ET SE DÉFAIT D'UN APPUI.
+               Un commerçant qui ne sait plus s'il a publié republie — et se
+               retrouve avec deux pièces du jour, c'est-à-dire aucune. */
+            <div className="mc-avant-on">
+              {piecePoussee.photo && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={piecePoussee.photo} alt="" />
+              )}
+              <div className="mc-avant-l">
+                <b className="mc-avant-e">
+                  {RAISONS.find((r) => r.cle === choisie?.raison)?.etiquette ?? ""}
+                </b>
+                <b>{piecePoussee.nom}</b>
+                <em>
+                  {choisie?.prixAvant ? `${choisie.prixAvant} → ` : ""}
+                  {piecePoussee.prix}
+                </em>
+                <s>En ligne jusqu’à ce soir</s>
+              </div>
+              <button
+                type="button"
+                className="mc-b on"
+                onClick={() => {
+                  noter("mise-en-avant", 0, "retire");
+                  retirerLaMiseEnAvant(c.id);
+                }}
+              >
+                Retirer
+              </button>
+            </div>
+          ) : suggestion ? (
+            <>
+              <div className="mc-avant-sug">
+                {suggestion.photo && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={suggestion.photo} alt="" />
+                )}
+                <div className="mc-avant-l">
+                  <b>{suggestion.nom}</b>
+                  {/* LA PHRASE DIT POURQUOI CELLE-LÀ, ET ELLE EST VRAIE : cette
+                      pièce n'a pas encore été mise en avant. Une suggestion qui
+                      ne dit pas sur quoi elle se fonde se refuse par réflexe. */}
+                  {/* LA PHRASE NE PORTE AUCUN GENRE, ET C'EST EXPRÈS. « Elle
+                      n'a pas encore été mise en avant » est juste pour une
+                      robe, faux pour un pull, et il n'existe aucune règle pour
+                      le deviner sur un nom de pièce — même leçon que la phrase
+                      du plat du jour dans `bloc-fantome.tsx`. On écrit donc une
+                      phrase qui n'a pas besoin de le savoir. */}
+                  <em>
+                    Cette pièce n’a pas encore été mise en avant, et elle est dans
+                    votre collection. On la montre aujourd’hui&nbsp;?
+                  </em>
+                  <s>{suggestion.prix}</s>
+                </div>
+              </div>
+
+              <p className="mc-n">Pourquoi celle-là&nbsp;? Choisissez une raison.</p>
+              <div className="mc-raisons">
+                {RAISONS.map((r) => (
+                  <button
+                    key={r.cle}
+                    type="button"
+                    className={r.cle === raison ? "on" : undefined}
+                    aria-pressed={r.cle === raison}
+                    onClick={() => setRaison(r.cle)}
+                  >
+                    <b>{r.etiquette}</b>
+                    <em>{r.aide}</em>
+                  </button>
+                ))}
+              </div>
+
+              {/* LE PRIX BARRÉ N'EXISTE QUE SOUS LA PASTILLE DE REMISE. Ailleurs,
+                  le champ ne s'affiche même pas : ce qui n'est pas demandé ne se
+                  remplit pas par habitude. */}
+              {laRaison.remise && (
+                <label className="mc-prix">
+                  <span>Prix habituel, barré aujourd’hui</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={prixAvant}
+                    placeholder={suggestion.prix}
+                    onChange={(e) => setPrixAvant(e.target.value)}
+                  />
+                </label>
+              )}
+
+              {/* LA REMISE EXIGE SON PRIX, ET C'EST LA SEULE CONTRAINTE DE
+                  CET ÉCRAN. Sans elle, « AUJOURD'HUI SEULEMENT » s'affichait
+                  chez le client au-dessus d'un prix inchangé : une promotion
+                  annoncée qui n'en est pas une, c'est-à-dire précisément le
+                  mensonge que toute cette mécanique existe pour éviter. Les
+                  cinq autres raisons ne demandent rien — elles ne coûtent rien
+                  à celui qui les donne, et c'est tout leur intérêt. */}
+              <button
+                type="button"
+                className="mc-avant-go"
+                disabled={laRaison.remise && !prixAvant.trim()}
+                onClick={() => {
+                  noter("mise-en-avant", 0, raison);
+                  mettreEnAvant({
+                    carte: c.id,
+                    piece: suggestion.id,
+                    raison,
+                    prixAvant: laRaison.remise && prixAvant.trim() ? prixAvant.trim() : undefined,
+                  });
+                  setPrixAvant("");
+                }}
+              >
+                {laRaison.remise && !prixAvant.trim()
+                  ? "Indiquez le prix habituel"
+                  : "On la montre aujourd’hui"}
+                <s aria-hidden="true">→</s>
+              </button>
+            </>
+          ) : null}
+
+          {/* ═══ SA COLLECTION, AJOUTÉE UNE FOIS ══════════════════════════════
+
+              « Le commerçant peut importer toute sa collection active,
+              idéalement sans devoir la saisir manuellement : photos + prix +
+              tailles/disponibilité, puis ClikMe comprend automatiquement
+              catégories, couleurs, styles. Cette collection sert surtout de
+              réservoir invisible à l'IA. »
+
+              ELLE EST EN BAS, ET C'EST SA PLACE. Elle se touche aux arrivages,
+              pas tous les matins ; la mettre en tête aurait fait de cet écran
+              un gestionnaire de catalogue, c'est-à-dire la chose qu'un
+              commerçant n'ouvre jamais deux fois.
+
+              LE CHIFFRE QUI COMPTE EST CELUI DE L'ESSAYABLE, pas celui du
+              stock. « Vingt à cinquante pièces actives suffisent déjà pour une
+              petite boutique » : c'est ce nombre-là qui décide si
+              « Surprends-moi » a de quoi surprendre, donc c'est celui qu'on
+              affiche. */}
+          <div className="mc-coll">
+            <p className="mc-t">Votre collection</p>
+            <p className="mc-coll-c">
+              <b>{essayables.length}</b> pièce{essayables.length > 1 ? "s" : ""} essayable
+              {essayables.length > 1 ? "s" : ""}
+              {collection.length > essayables.length && (
+                <i>
+                  {" "}
+                  · {collection.length - essayables.length} en attente de photo
+                </i>
+              )}
+            </p>
+            <p className="mc-n">
+              Ajoutée une fois. Vos clients n’en voient que{" "}
+              {collection.filter((p) => p.vitrine).length || 6} à la fois —
+              le reste sert à ClikMe pour « Surprends-moi ».
+              {essayables.length < 20 && (
+                <>
+                  {" "}
+                  <b>À partir de vingt pièces, les propositions deviennent vraiment variées.</b>
+                </>
+              )}
+            </p>
+          </div>
         </section>
       )}
 

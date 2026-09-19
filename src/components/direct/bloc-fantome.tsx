@@ -31,9 +31,15 @@
 // verbe du bouton, ce que montrent les vignettes. Tout vient de
 // `Mur.essai.mots` et du catalogue — donc du métier, pas d'un réglage écrit ici.
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { FantomeMetier, outilDuMetier } from "@/components/direct/fantome-metier";
 import type { Mur } from "@/lib/direct/fantomes";
+import {
+  abonnerMisesEnAvant,
+  chargerMisesEnAvant,
+  misesEnAvantVides,
+  raisonDe,
+} from "@/lib/direct/mise-en-avant";
 
 /**
  * LA CHOSE QU'ON ESSAIE, DANS LA QUESTION.
@@ -212,7 +218,15 @@ export function BlocFantome({
     [mur.metier, quoi, mur.gout],
   );
   const outil = useMemo(() => outilDuMetier(mur.metier), [mur.metier]);
-  const pieces = mur.essai?.pieces ?? [];
+  /**
+   * LA LISTE VIDE DU REPLI FABRIQUAIT UN TABLEAU NEUF A CHAQUE RENDU, et les
+   * trois `useMemo` qui en dependent se recalculaient donc toujours — ESLint le
+   * disait depuis le debut sur les deux premiers, et le troisieme vient de s'y
+   * ajouter. Un `useMemo` dont les dependances changent a chaque rendu n'est pas
+   * une optimisation inutile : c'est une optimisation qui MENT sur ce qu'elle
+   * fait, et on finit par compter dessus.
+   */
+  const pieces = useMemo(() => mur.essai?.pieces ?? [], [mur.essai?.pieces]);
   const bande = useRef<HTMLUListElement>(null);
 
   /**
@@ -241,12 +255,43 @@ export function BlocFantome({
    * à publier, parce qu'ils croiraient devoir sacrifier leur marge à chaque
    * fois. Voir `duJour` dans `lib/direct/fantomes.ts`.
    */
+  /**
+   * CE QUE LE COMMERÇANT A CHOISI CE MATIN PASSE DEVANT TOUT LE RESTE.
+   *
+   * ELLE EST LUE ICI, PAS PASSÉE EN PROPRIÉTÉ, et c'est ce qui la fait marcher
+   * aux deux endroits d'un coup : la page du commerce et la feuille du fil
+   * montent le même bloc. Passée en propriété, il aurait fallu la brancher deux
+   * fois — et la deuxième aurait été oubliée.
+   *
+   * `mur.cle` EST L'IDENTIFIANT DU COMMERCE, pas celui du modèle. Voir
+   * `murDeLaCarte`, qui l'y pose exactement pour ce genre de raccordement.
+   */
+  const misesEnAvant = useSyncExternalStore(
+    abonnerMisesEnAvant,
+    chargerMisesEnAvant,
+    misesEnAvantVides,
+  );
+
   const duJour = useMemo(() => {
+    const sienne = misesEnAvant.find((m) => m.carte === mur.cle);
+    if (sienne) {
+      const p = pieces.find((x) => x.id === sienne.piece && x.photo && !x.bientot);
+      if (p) {
+        return {
+          piece: p,
+          etiquette: raisonDe(sienne.raison).etiquette,
+          /* SA PHRASE S'IL EN A ÉCRIT UNE, SINON L'AIDE DE LA RAISON. On
+             n'invente pas de texte commercial sous son nom. */
+          raison: sienne.mot ?? raisonDe(sienne.raison).aide,
+          prixAvant: sienne.prixAvant,
+        };
+      }
+    }
     const d = mur.essai?.duJour;
     if (!d) return null;
     const p = pieces.find((x) => x.id === d.piece && x.photo && !x.bientot);
     return p ? { ...d, piece: p } : null;
-  }, [mur.essai?.duJour, pieces]);
+  }, [misesEnAvant, mur.cle, mur.essai?.duJour, pieces]);
 
   /**
    * CE QU'ON MONTRE SOUS « VOUS POURRIEZ AUSSI AIMER ».
@@ -505,6 +550,11 @@ export function BlocFantome({
                   <span className="bf-avenir" aria-hidden="true" />
                 )}
                 <span>{p.nom}</span>
+                {/* ON DIT CE QU'ON N'A PAS, ICI AUSSI. La grille de l'atelier
+                    le disait déjà ; la bande de la vitrine, non — on y voyait
+                    six rectangles hachurés sans savoir si c'était un défaut
+                    d'affichage ou un rayon qui n'a pas encore ouvert. */}
+                {p.bientot && <s>Bientôt</s>}
               </button>
             </li>
           ))}
@@ -797,6 +847,8 @@ function Styles() {
           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
           overflow:hidden;}
         .bf-styles button.on span{color:#151B33;font-weight:800;}
+        .bf-styles s{text-decoration:none;font-size:9.5px;font-weight:900;
+          letter-spacing:.07em;text-transform:uppercase;color:#8A6FD4;}
 
         /* ═══ LE FANTOME ═══════════════════════════════════════════════════
            LE DESSINE GARDE UNE TAILLE FIXE : il remplit sa boite entierement,

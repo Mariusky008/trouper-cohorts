@@ -3569,6 +3569,14 @@ function Essai({
             <p>On a une idée pour vous&nbsp;!</p>
           </div>
 
+          {/* LA GOUTTIÈRE EST UN CALQUE À PART, ET ELLE FAIT TOUTE LA LARGEUR.
+              Les mots manuscrits étaient posés au bord de la SCÈNE, qui n'en
+              occupe que trois quarts : « On regarde votre style… » partait donc
+              quarante points au-delà du bord de la carte, où `overflow:hidden`
+              le coupait en deux. Ce calque-ci fait la largeur de la carte et la
+              hauteur de la scène : les mots s'accrochent à ses bords, qui sont
+              les bons. */}
+          <div className="mu-rech-g">
           <div className={`mu-rech-s t${cherche}`} aria-hidden="true">
             {/* LES DEUX ANNEAUX. Ils tournent à des vitesses différentes et dans
                 des sens opposés : deux cercles concentriques à la même vitesse
@@ -3610,14 +3618,15 @@ function Essai({
             {/* LES TROIS MOTS MANUSCRITS. Ils ne se lisent pas tous en même
                 temps — chacun a son quart de seconde — sinon l'écran devient
                 bavard au moment exact où il ne doit qu'être joli. */}
-            <i className="mu-rech-m m1">Peut-être ça&nbsp;?</i>
-            <i className="mu-rech-m m2">On regarde votre style…</i>
-            <i className="mu-rech-m m3">Juste pour vous…</i>
             <span className="mu-rech-etoiles">
               {Array.from({ length: 10 }, (_, k) => (
                 <i key={k} style={{ "--k": k } as React.CSSProperties} />
               ))}
             </span>
+          </div>
+          <i className="mu-rech-m m1" aria-hidden="true">Peut-être ça&nbsp;?</i>
+          <i className="mu-rech-m m2" aria-hidden="true">On regarde votre style…</i>
+          <i className="mu-rech-m m3" aria-hidden="true">Juste pour vous…</i>
           </div>
 
           <ol className="mu-rech-frise">
@@ -3767,6 +3776,12 @@ function Essai({
             {/* LES TROIS VIGNETTES DE DROITE : la pièce, et deux états du
                 corps. La maquette les empile en escalier ; elles montent l'une
                 après l'autre. */}
+            {/* DEUX VIGNETTES, ET LA MAQUETTE EN DESSINE TROIS. Elle en dessine
+                trois parce qu'un croquis peut en dessiner trois ; ici il n'y a
+                que DEUX choses vraies à montrer — la pièce, et la photo qu'on
+                lui donne. La troisième répétait la deuxième à l'identique, et
+                une vignette qui répète la précédente ne raconte pas un travail,
+                elle remplit une place. */}
             <span className="mu-prep-v">
               {piece?.photo && (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -3775,10 +3790,6 @@ function Essai({
               {laPhoto && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={laPhoto} alt="" style={{ "--k": 1 } as React.CSSProperties} />
-              )}
-              {laPhoto && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={laPhoto} alt="" style={{ "--k": 2 } as React.CSSProperties} />
               )}
             </span>
 
@@ -6025,8 +6036,9 @@ function Styles() {
         .mu-rech-t p{margin:9px 0 0;font-size:14.5px;font-weight:700;
           color:#9FC0F5;}
 
+        .mu-rech-g{position:relative;margin:16px 0 6px;}
         .mu-rech-s{position:relative;width:min(300px,82vw);aspect-ratio:1/1;
-          margin:16px auto 6px;}
+          margin:0 auto;}
         /* LES DEUX ANNEAUX. Ils sont ouverts — un arc, pas un cercle — sinon
            leur rotation est invisible : un cercle plein qui tourne ne bouge
            pas a l'oeil. */
@@ -6094,18 +6106,10 @@ function Styles() {
           font-weight:600;line-height:1.3;color:#F49BE8;max-width:92px;
           text-shadow:0 2px 12px rgba(0,0,0,.95),0 0 22px rgba(0,0,0,.8);
           opacity:0;animation:muMot 6.6s ease-in-out infinite;}
-        .mu-rech-m.m1{left:-42px;top:24%;text-align:left;animation-delay:.2s;}
-        .mu-rech-m.m2{right:-42px;top:10%;text-align:right;color:#CDB4FF;
+        .mu-rech-m.m1{left:0;top:22%;text-align:left;animation-delay:.2s;}
+        .mu-rech-m.m2{right:0;top:8%;text-align:right;color:#CDB4FF;
           animation-delay:2.4s;}
-        .mu-rech-m.m3{left:-42px;bottom:14%;text-align:left;animation-delay:4.6s;}
-        /* SUR UN TELEPHONE ETROIT IL N'Y A PLUS DE GOUTTIERE : la scene occupe
-           82 % de la largeur et les quarante points de marge n'existent plus.
-           Les mots reviennent alors dans le cadre, plus petits. */
-        @media (max-width:400px){
-          .mu-rech-m{max-width:80px;font-size:12px;}
-          .mu-rech-m.m1,.mu-rech-m.m3{left:-14px;}
-          .mu-rech-m.m2{right:-14px;}
-        }
+        .mu-rech-m.m3{left:0;bottom:12%;text-align:left;animation-delay:4.6s;}
         @keyframes muMot{0%{opacity:0;transform:translateY(6px);}
           8%,26%{opacity:1;transform:translateY(0);}
           36%,100%{opacity:0;transform:translateY(-6px);}}
@@ -6216,7 +6220,7 @@ function Styles() {
           animation:muPrepPiece 1.1s cubic-bezier(.22,1,.36,1) both;}
         @keyframes muPrepPiece{from{transform:translateX(38%);opacity:0;}
           to{transform:translateX(0);opacity:.92;}}
-        .mu-prep-sil{position:absolute;inset:-5% 0;width:100%;height:110%;
+        .mu-prep-sil{position:absolute;inset:-2% 0;width:100%;height:104%;
           fill:none;stroke-linecap:round;stroke-linejoin:round;
           /* LE TRACE NE COUVRE QUE LA MOITIE GAUCHE quand il y a une piece a
              droite : superpose a la photo, il la barrait de traits roses. */

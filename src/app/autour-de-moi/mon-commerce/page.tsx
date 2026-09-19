@@ -81,6 +81,87 @@ function Styles() {
   border:1px solid rgba(61,226,166,.4)}
 .mc-b:active{transform:scale(.97)}
 .mc-ok{margin:12px 0 0;font-size:13px;color:var(--menthe)}
+
+/* ═══ QU'EST-CE QU'ON MET EN AVANT AUJOURD'HUI ? ═══════════════════════════
+
+   LE SEUL GESTE QUOTIDIEN D'UNE BOUTIQUE DE VETEMENTS. Il n'a pas de fournee a
+   remettre, il a une piece a designer — et ce bloc doit se traverser d'un
+   pouce, debout derriere un comptoir, en moins de dix secondes.
+
+   LA SUGGESTION RESSEMBLE A UNE CARTE, PAS A UN FORMULAIRE. Une photo, un nom,
+   une phrase qui dit pourquoi celle-la : c'est ce qui transforme « laquelle
+   aujourd'hui ? » en un oui ou un non. */
+.mc-avant-sug,.mc-avant-on{display:flex;align-items:center;gap:13px;
+  margin-top:12px;padding:12px;border-radius:16px;background:var(--nuit2);
+  border:1px solid var(--trait)}
+.mc-avant-sug img,.mc-avant-on img{flex:none;width:76px;height:96px;
+  object-fit:cover;object-position:center 22%;border-radius:11px;display:block}
+.mc-avant-l{flex:1;min-width:0}
+.mc-avant-l b{display:block;font-size:16px;font-weight:850;
+  letter-spacing:-.015em;line-height:1.15}
+.mc-avant-l em{display:block;margin-top:5px;font-style:normal;font-size:12.5px;
+  line-height:1.45;color:var(--craie2)}
+.mc-avant-l s{display:block;margin-top:6px;text-decoration:none;font-size:12px;
+  font-weight:800;color:var(--craie3)}
+/* L'ETIQUETTE DU JOUR EN PETIT, AU-DESSUS DU NOM. C'est le meme mot que le
+   client verra en grand sur la page de la boutique : le commercant doit
+   reconnaitre ce qu'il a publie sans avoir a ouvrir l'autre ecran. */
+.mc-avant-e{display:inline-block;margin-bottom:5px;font-size:9.5px;
+  font-weight:900;letter-spacing:.1em;border-radius:999px;padding:4px 9px;
+  background:rgba(240,38,155,.16);color:#FF7ECB;
+  border:1px solid rgba(240,38,155,.4)}
+.mc-avant-on{border-color:rgba(61,226,166,.34);
+  background:linear-gradient(120deg,rgba(61,226,166,.08),var(--nuit2))}
+.mc-avant-on .mc-avant-l s{color:var(--menthe)}
+
+/* LES SIX RAISONS. Une liste fermee, et c'est volontaire : un champ libre
+   aurait donne « SUPER PROMO !!! » en trois jours, c'est-a-dire la seule chose
+   que ce produit ne doit pas devenir. */
+.mc-raisons{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.mc-raisons button{flex:1 1 150px;min-width:0;text-align:left;font:inherit;
+  cursor:pointer;border-radius:13px;padding:10px 12px;color:var(--craie);
+  background:transparent;border:1px solid var(--trait);
+  transition:border-color .16s ease,background .16s ease}
+.mc-raisons button b{display:block;font-size:10.5px;font-weight:900;
+  letter-spacing:.07em}
+.mc-raisons button em{display:block;margin-top:3px;font-style:normal;
+  font-size:11.5px;color:var(--craie3)}
+.mc-raisons button.on{border-color:var(--menthe);
+  background:rgba(61,226,166,.1)}
+.mc-raisons button.on b{color:var(--menthe)}
+
+/* LE PRIX BARRE N'APPARAIT QUE SOUS LA PASTILLE DE REMISE. Ce qui n'est pas
+   demande ne se remplit pas par habitude — et c'est exactement ce qui empeche
+   ClikMe de devenir une application de promotions. */
+.mc-prix{display:block;margin-top:11px}
+.mc-prix span{display:block;font-size:12px;font-weight:700;
+  color:var(--craie2);margin-bottom:6px}
+.mc-prix input{width:100%;font:inherit;font-size:15px;color:var(--craie);
+  background:var(--nuit2);border:1px solid var(--trait);border-radius:12px;
+  padding:12px 13px}
+.mc-prix input:focus{outline:2px solid var(--menthe);outline-offset:1px}
+
+.mc-avant-go{display:flex;align-items:center;justify-content:center;gap:9px;
+  width:100%;margin-top:13px;font:inherit;font-size:16px;font-weight:850;
+  cursor:pointer;color:#04150E;background:var(--menthe);border:0;
+  border-radius:999px;padding:16px 18px}
+.mc-avant-go s{text-decoration:none;font-size:17px;line-height:1}
+.mc-avant-go:active{transform:scale(.985)}
+/* IL SE DESACTIVE PLUTOT QUE DE DISPARAITRE, et il DIT ce qui manque. Un bouton
+   qui s'efface laisse chercher pourquoi ; un bouton gris qui lit « Indiquez le
+   prix habituel » repond avant qu'on ait pose la question. */
+.mc-avant-go:disabled{cursor:default;opacity:.42;
+  background:rgba(61,226,166,.25);color:#04150E}
+
+/* SA COLLECTION. Elle se touche aux arrivages, pas tous les matins : elle est
+   donc en bas du bloc, et elle ne dit qu'un chiffre — celui de l'essayable,
+   qui decide si « Surprends-moi » a de quoi surprendre. */
+.mc-coll{margin-top:20px;padding-top:16px;border-top:1px solid var(--trait)}
+.mc-coll-c{margin:8px 0 0;font-size:15px;font-weight:700;color:var(--craie)}
+.mc-coll-c b{font-size:22px;font-weight:900;color:var(--menthe);
+  margin-right:4px}
+.mc-coll-c i{font-style:normal;font-size:13px;color:var(--craie3)}
+.mc-coll .mc-n b{color:var(--or);font-weight:800}
 .mc-ok a{color:inherit}
 
 /* ─── CE QUI REVIENT ───

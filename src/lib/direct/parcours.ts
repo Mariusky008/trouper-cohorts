@@ -50,6 +50,22 @@ export type Evenement =
   | "notif-proposee"
   | "notif-acceptee"
   | "notif-refusee"
+  /**
+   * LES DEUX GESTES DU MATIN, CÔTÉ COMMERÇANT.
+   *
+   * ILS ÉTAIENT DÉJÀ ENVOYÉS, ET LE TYPE NE LES CONNAISSAIT PAS. `mon-commerce`
+   * appelle `noter("republication", …)` depuis qu'il existe : TypeScript le
+   * refusait en silence — quatre erreurs qui vivaient dans le bruit — et rien
+   * ne remontait. Une mesure qu'on croit prendre et qu'on ne prend pas est pire
+   * que pas de mesure : on décide dessus.
+   *
+   * `mise-en-avant` EST LE SECOND, et c'est LE geste d'une boutique de
+   * vêtements : elle n'a pas de fournée à remettre, elle a une pièce à
+   * désigner. Les compter séparément est la seule façon de savoir lequel des
+   * deux accroche, métier par métier.
+   */
+  | "republication"
+  | "mise-en-avant"
   | "fin";
 
 type Ligne = { evenement: Evenement; valeur?: number; contexte?: string };

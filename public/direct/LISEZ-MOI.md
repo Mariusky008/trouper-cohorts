@@ -490,9 +490,72 @@ des noms génériques — le code s'est aligné sur eux plutôt que de les renom
 | `vetement4.jpg` | Marinière rose et pantalon vichy, en pied. | « Marinière rose et pantalon vichy ». |
 | `vetement5.jpeg` | Polaire rose à col zippé, plan serré. | « Polaire rose, col zippé ». **Remplace « Robe à carreaux »** (`mode-robe.jpg`, qui n'est donc plus demandé), laquelle proposait d'essayer une robe en montrant une devanture. |
 
-**Les cinq tenues servent deux commerces** : la boutique du centre et la
+#### L'arrivage d'automne — dix-huit tenues de plus
+
+**Pourquoi dix-huit d'un coup.** « Surprends-moi » pioche dans la collection
+active ; à sept pièces, il retombait sur ce qu'on venait de voir dans la grille
+une fois sur deux. Vingt à cinquante pièces actives, c'est le seuil à partir
+duquel une proposition surprend vraiment — et c'est aussi ce qu'une petite
+boutique a réellement en rayon.
+
+**Toutes réduites à 1400 points de grand côté.** `mode-pull-mohair-marine.jpeg`
+arrivait en 3000 × 4500 pour 2,3 Mo : elle sert dans une vignette de 118 points
+et dans un rendu de 390, et deux mégaoctets en 4G se paient debout dans la rue.
+Même traitement que `vetement3.jpeg` et `atelier-tatouage.jpeg` avant elles.
+
+| Fichier | Ce qu'il montre | La pièce |
+|---|---|---|
+| `mode-pull-mohair-vert.jpeg` | Pull mohair vert d'eau, col rond, en buste. | « Pull mohair vert d'eau » · **en vitrine** |
+| `mode-pull-mohair-marine.jpeg` | Pull mohair bleu marine sur chemise blanche. | « Pull mohair bleu marine » |
+| `mode-pull-chevron-canard.jpeg` | Pull bleu canard, chevron rose et or. | « Pull chevron bleu canard » · **en vitrine** |
+| `mode-pull-chevron-noir.jpeg` | Pull noir, chevron bleu roi et or. | « Pull chevron noir et or » |
+| `mode-pull-ecru-rose.webp` | Pull écru, large bande rose et galon doré. | « Pull écru, bande rose » |
+| `mode-gilet-orchidee.jpg` | Gilet fin rose orchidée, col V, fond studio. | « Gilet fin rose orchidée » |
+| `mode-ensemble-maille-beige.jpg` | Ensemble maille beige : col roulé, jupe, gilet long. | « Ensemble maille beige » · **en vitrine** |
+| `mode-robe-lavalliere.jpeg` | Robe midi imprimée rouge et rose, col lavallière. | « Robe midi, col lavallière » · **en vitrine** |
+| `mode-robe-pois-dores.jpg` | Robe prune à grands pois dorés, ceinturée. | « Robe à pois dorés » |
+| `mode-robe-volants-corail.jpg` | Robe à bretelles, volants étagés imprimés corail. | « Robe à volants corail » |
+| `mode-robe-fleurs-noire.jpg` | Robe noire à grandes fleurs multicolores. | « Robe noire à fleurs » |
+| `mode-doudoune-kaki.jpg` | Doudoune kaki brillante, capuche fourrée bordeaux. | « Doudoune kaki, capuche » · **en vitrine, et pièce du jour** |
+| `mode-manteau-leopard.jpg` | Manteau mi-long en fausse fourrure léopard. | « Manteau léopard » · **en vitrine** |
+| `mode-veste-dentelle.jpg` | Veste longue en dentelle fleurie noir et blanc. | « Veste longue en dentelle » |
+| `mode-chemise-volants-rose.jpeg` | Chemise rose pâle, jabot de volants. | « Chemise rose à volants » |
+| `mode-top-crochet-noir.jpg` | Top noir sans manches en crochet ajouré. | « Top en crochet noir » |
+| `mode-jean-papillons.jpg` | Jean large clair imprimé de papillons noirs. | « Jean large à papillons » |
+| `mode-pantalon-zebre.jpg` | Pantalon fluide zébré, gilet blanc sans manches. | « Pantalon fluide imprimé » |
+
+**Six en vitrine, dix-neuf en réserve.** Le client ne voit que celles marquées
+« en vitrine » ; les autres n'existent que pour « Surprends-moi ». C'est le
+champ `vitrine` de `Piece` dans `lib/direct/fantomes.ts`, et c'est délibéré :
+ClikMe doit réduire le choix, pas recréer un catalogue local.
+
+**Les vingt-cinq tenues servent deux commerces** : la boutique du centre et la
 friperie du vieux centre partagent la branche « mode », donc ce mur-là. C'est
 exactement ce que le tableau des branches est là pour faire.
+
+#### Ce qui manque : le rayon homme
+
+**`Un prêt-à-porter homme` existe dans la ville et ses pièces ne s'essaient pas
+encore.** Le dépôt n'a aucune photo de vêtement d'homme, et il y avait deux
+mauvaises réponses : lui prêter les robes de la boutique d'à côté — c'est-à-dire
+poser une robe sur un homme et appeler ça une démonstration — ou pointer des
+fichiers absents, ce qui fabrique des 404. Ses six pièces sont donc marquées
+« bientôt essayables » : le rayon s'affiche, il se lit, il ne se choisit pas, et
+« Surprends-moi » ne pioche pas dedans.
+
+**Ce qu'il faut pour l'ouvrir.** Six photos en pied ou en buste, de face, fond
+neutre, sans visage reconnaissable. Déposer l'image et retirer `bientot` dans
+`lib/direct/fantomes.ts` suffit — les noms de fichiers sont déjà écrits en
+commentaire à côté de chaque pièce.
+
+| Fichier attendu | La pièce | Le prix annoncé |
+|---|---|---|
+| `homme-chemise-jean.jpg` | Chemise en jean bleu clair, coupe droite, boutonnée. | 69 € |
+| `homme-veste-kaki.jpg` | Veste légère kaki, deux poches poitrine à rabat, portée ouverte. | 89 € |
+| `homme-polo-marine.jpg` | Polo bleu marine, col et bords de manches rayés blanc. | 45 € |
+| `homme-pantalon-beige.jpg` | Pantalon chino beige, coupe droite. | 59 € |
+| `homme-pull-col-rond.jpg` | Pull laine gris chiné, col rond, coupe droite. | 75 € |
+| `homme-surchemise-carreaux.jpg` | Surchemise à carreaux rouges et noirs sur tee-shirt blanc. | 79 € |
 
 **Ce qui manque encore, et ce sont les deux derniers :** `cou-nu.jpg` pour le
 collier, et une découpe de la bougie aux fleurs séchées. Leurs pièces restent
@@ -522,8 +585,12 @@ vingt ans.
 **recadrées sur les cheveux** — le haut du crâne, la frange, les tempes, les
 côtés — coupées au niveau des yeux. On garde la forme de la coupe autour du
 visage, qui est ce qu'on essaie, et on retire le visage, qui est ce qui fuit.
-La même règle vaut pour les tenues (`vetement1`…`vetement5`) : un vêtement à
-plat ou sur mannequin sans tête fuit moins qu'une photo de mode en pied.
+La même règle vaut pour les tenues (`vetement1`…`vetement5`, et les dix-huit de
+l'arrivage d'automne) : un vêtement à plat ou sur mannequin sans tête fuit moins
+qu'une photo de mode en pied. **Dix-sept des dix-huit nouvelles montrent un
+visage reconnaissable** — ce sont des photos de catalogue fournies telles
+quelles. C'est la même réserve que pour `coiffure1` et `coiffure2`, et elle est
+à lever avant tout argumentaire imprimé.
 
 **Le levier disponible en attendant :** `ESSAI_FOURNISSEUR=openai` renverse
 l'ordre des deux fournisseurs. `gpt-image-1` accepte `input_fidelity: high`, un
