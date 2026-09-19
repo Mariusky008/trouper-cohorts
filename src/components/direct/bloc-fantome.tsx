@@ -186,6 +186,7 @@ export function BlocFantome({
   onPhoto,
   onImporter,
   onStyle,
+  onSurprise,
   styleChoisi,
 }: {
   mur: Mur;
@@ -197,6 +198,13 @@ export function BlocFantome({
   onImporter: () => void;
   /** Choisir un style dans la bande. */
   onStyle: (id: string) => void;
+  /**
+   * LAISSER CLIKME CHERCHER. Il ouvre le même atelier que le grand bouton,
+   * mais avec l'intention : la prise de vue faite, on part sur la recherche au
+   * lieu de la grille. Absent, la carte ne se dessine pas — c'est une porte, et
+   * une porte qui ne mène nulle part est pire qu'un mur.
+   */
+  onSurprise?: () => void;
   styleChoisi?: string;
 }) {
   const q = useMemo(
@@ -219,6 +227,45 @@ export function BlocFantome({
    * vide avec une légende manuscrite serait un cadre qui parle de rien.
    */
   const polas = pieces.filter((p) => p.photo).slice(0, 2);
+
+  /**
+   * ═══ LA PIÈCE DU JOUR, ET ELLE N'EST PAS FORCÉMENT SOLDÉE ═════════════════
+   *
+   * « Le produit du jour n'est pas forcément la promotion du jour. Il peut être
+   * mis en avant parce qu'il vient d'arriver, parce qu'il n'en reste que 4,
+   * parce qu'il est parfait pour la météo, parce que le commerçant l'adore. »
+   *
+   * L'ÉTIQUETTE PORTE LA RAISON, PAS UN POURCENTAGE, et c'est tout l'enjeu :
+   * si chaque produit du jour était soldé, on apprendrait en trois visites que
+   * ClikMe est une application de promotions — et les commerçants hésiteraient
+   * à publier, parce qu'ils croiraient devoir sacrifier leur marge à chaque
+   * fois. Voir `duJour` dans `lib/direct/fantomes.ts`.
+   */
+  const duJour = useMemo(() => {
+    const d = mur.essai?.duJour;
+    if (!d) return null;
+    const p = pieces.find((x) => x.id === d.piece && x.photo && !x.bientot);
+    return p ? { ...d, piece: p } : null;
+  }, [mur.essai?.duJour, pieces]);
+
+  /**
+   * CE QU'ON MONTRE SOUS « VOUS POURRIEZ AUSSI AIMER ».
+   *
+   * « Je montrerais seulement 4 à 8 pièces maximum. ClikMe doit réduire le
+   * choix, pas recréer un Zalando local. »
+   *
+   * LA BANDE MONTRAIT TOUT LE CATALOGUE. Juste tant qu'un catalogue faisait six
+   * pièces ; à vingt-cinq, elle redevenait le rayon qu'on est précisément venu
+   * éviter. Elle suit maintenant la vitrine, et la pièce du jour en sort —
+   * elle est déjà en grand juste au-dessus, et la voir deux fois à trois cents
+   * points d'écart donne l'impression d'un catalogue qui se répète.
+   */
+  const aussi = useMemo(() => {
+    const choisies = pieces.filter((p) => p.vitrine);
+    return (choisies.length > 0 ? choisies : pieces).filter(
+      (p) => p.id !== duJour?.piece.id,
+    );
+  }, [pieces, duJour]);
 
   return (
     <section className="bf" style={{ "--bf-teinte": outil.teinte } as React.CSSProperties}>
@@ -359,20 +406,88 @@ export function BlocFantome({
 
       </div>
 
-      {/* ═══ LA BANDE DE STYLES ═══════════════════════════════════════════════
+      {/* ═══ À ESSAYER AUJOURD'HUI ════════════════════════════════════════════
 
-          Sept vignettes carrées, le nom dessous, la première entourée. Elle
-          défile au pouce plutôt que de passer à la ligne : repliée, elle
-          fabriquerait une grille de trois rangées qui pousse tout le reste de
-          la page hors de l'écran, et qui change de hauteur selon le nombre de
-          pièces du commerçant.
+          « En haut : À ESSAYER AUJOURD'HUI, une pièce énorme, immersive. »
+
+          UNE SEULE PIÈCE, ET EN GRAND. C'est la première des trois raisons de
+          revenir : « qu'est-ce que la boutique met en avant aujourd'hui ? » On
+          ne peut y répondre qu'avec UNE pièce — deux, et ce n'est plus une mise
+          en avant, c'est une sélection ; six, et c'est un rayon.
+
+          L'ÉTIQUETTE DIT POURQUOI CELLE-LÀ, ET ELLE N'ANNONCE PAS UNE REMISE.
+          « NOUVEAU AUJOURD'HUI », « IL N'EN RESTE QUE 3 », « PARFAIT POUR LA
+          MÉTÉO » : ce sont des raisons de montrer, et elles ne coûtent rien au
+          commerçant. Le prix barré n'apparaît QUE s'il y en a vraiment un —
+          c'est ce qui lui rend son effet les jours où il sort. */}
+      {duJour && (
+        <div className="bf-jour">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="bf-jour-ph" src={duJour.piece.photo} alt="" />
+          <div className="bf-jour-t">
+            <b className="bf-jour-e">{duJour.etiquette}</b>
+            <h3>{duJour.piece.nom}</h3>
+            <p>{duJour.raison}</p>
+            <span className="bf-jour-x">
+              {duJour.prixAvant && <s>{duJour.prixAvant}</s>}
+              <em>{duJour.piece.prix}</em>
+            </span>
+          </div>
+          <button type="button" className="bf-jour-b" onClick={() => onStyle(duJour.piece.id)}>
+            {mur.essai?.mots.surMoi ?? "Essayer sur moi"}
+            <s aria-hidden="true">→</s>
+          </button>
+        </div>
+      )}
+
+      {/* ═══ ✨ SURPRENDS-MOI ══════════════════════════════════════════════════
+
+          « Laissez ClikMe chercher dans la boutique quelque chose pour vous. »
+
+          C'EST LA TROISIÈME RAISON DE REVENIR, et c'est celle qui n'existe
+          nulle part ailleurs. Les deux autres supposent qu'on sache : ce que la
+          boutique met en avant aujourd'hui, ou ce qu'on veut essayer. Celle-ci
+          est pour le cas le plus fréquent — on ne sait pas — et c'est justement
+          celui que tous les catalogues du monde traitent en montrant tout.
+
+          ELLE VA CHERCHER DANS LA COLLECTION ENTIÈRE, pas dans les cinq
+          vignettes du dessous. Sinon elle ne surprendrait rien : elle
+          désignerait au hasard une pièce déjà visible à l'écran. */}
+      {onSurprise && mur.essai?.mots.surprends && pieces.some((p) => !p.bientot) && (
+        <button type="button" className="bf-surp" onClick={onSurprise}>
+          <span className="bf-surp-t">
+            <b>
+              <i aria-hidden="true">✨</i> SURPRENDS-MOI
+            </b>
+            <em>
+              Laissez ClikMe chercher dans {mur.essai.mots.surprends.ou} quelque chose pour vous.
+            </em>
+          </span>
+          <s aria-hidden="true">→</s>
+        </button>
+      )}
+
+      {/* ═══ VOUS POURRIEZ AUSSI AIMER ════════════════════════════════════════
+
+          Quatre ou cinq vignettes, le nom dessous, et rien de plus. Elle défile
+          au pouce plutôt que de passer à la ligne : repliée, elle fabriquerait
+          une grille de plusieurs rangées qui pousse le reste de la page hors de
+          l'écran, et qui change de hauteur selon le nombre de pièces.
+
+          LE TITRE EST CE QUI A CHANGÉ, ET IL CHANGE LA NATURE DE LA BANDE. Sans
+          lui, c'était un rayon : tout ce que le commerçant a, à parcourir. Avec
+          lui, c'est une proposition — et une proposition n'a pas besoin d'être
+          exhaustive pour être bonne. Voir `aussi`, qui la réduit à la vitrine.
 
           ELLE NE SE DESSINE QUE S'IL Y A DES PIÈCES. Un commerce dont le
           catalogue n'est pas encore photographié garde le bloc et perd la
           bande — c'est la même règle que les miniatures sous l'annonce. */}
-      {pieces.length > 0 && (
+      {aussi.length > 0 && quoi === "essai" && (
+        <h3 className="bf-aussi">Vous pourriez aussi aimer</h3>
+      )}
+      {aussi.length > 0 && (
         <ul className="bf-styles" ref={bande}>
-          {pieces.map((p) => (
+          {aussi.map((p) => (
             <li key={p.id}>
               <button
                 type="button"
@@ -380,8 +495,15 @@ export function BlocFantome({
                 aria-pressed={styleChoisi === p.id}
                 onClick={() => onStyle(p.id)}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.photo} alt="" />
+                {p.photo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={p.photo} alt="" />
+                ) : (
+                  /* UNE PIÈCE QUI ATTEND SA PHOTO N'EN EMPRUNTE PAS UNE, et
+                     `src=""` ne laisse pas un cadre vide : le navigateur
+                     redemande la page courante comme si c'était une image. */
+                  <span className="bf-avenir" aria-hidden="true" />
+                )}
                 <span>{p.nom}</span>
               </button>
             </li>
@@ -567,6 +689,91 @@ function Styles() {
           .bf-mots{flex:1 1 auto;order:0;}
           .bf-polas{order:0;width:118px;max-width:118px;}
         }
+
+        /* ═══ A ESSAYER AUJOURD'HUI ════════════════════════════════════════
+
+           « Une piece enorme, immersive. »
+
+           C'EST UNE PHOTO, PAS UNE FICHE. Le texte est POSE DESSUS, en bas, sur
+           un degrade sombre qui ne monte qu'au tiers : une carte a deux colonnes
+           — image a gauche, texte a droite — aurait donne un resultat de
+           recherche, c'est-a-dire exactement ce que cette page existe pour ne
+           pas etre.
+
+           L'ETIQUETTE EST LA SEULE COULEUR VIVE, et elle porte la RAISON du
+           jour. Elle est rose quand il n'y a pas de remise, ambre quand il y en
+           a une : la remise doit se voir immediatement DIFFERENTE, sinon elle
+           se fond dans le decor et cesse d'etre un evenement. */
+        .bf-jour{position:relative;margin-top:16px;border-radius:24px;
+          overflow:hidden;min-height:340px;display:flex;
+          flex-direction:column;justify-content:flex-end;
+          background:#151B33;
+          box-shadow:0 22px 48px -24px rgba(20,12,45,.55);}
+        .bf-jour-ph{position:absolute;inset:0;width:100%;height:100%;
+          object-fit:cover;object-position:center 26%;}
+        .bf-jour::after{content:"";position:absolute;inset:0;
+          background:linear-gradient(0deg,rgba(8,5,20,.94) 4%,
+            rgba(8,5,20,.66) 34%,transparent 62%);}
+        .bf-jour-t,.bf-jour-b{position:relative;z-index:1;}
+        .bf-jour-t{padding:0 18px;color:#fff;}
+        .bf-jour-e{display:inline-block;font-size:11px;font-weight:900;
+          letter-spacing:.09em;border-radius:999px;padding:6px 13px;
+          background:linear-gradient(100deg,#E4189C,#FF3FB0);color:#fff;
+          box-shadow:0 8px 20px -8px rgba(228,24,156,.9);}
+        .bf-jour-t h3{margin:11px 0 0;font-size:26px;line-height:1.1;
+          font-weight:850;letter-spacing:-.03em;color:#fff;}
+        .bf-jour-t p{margin:7px 0 0;font-size:14px;line-height:1.42;
+          color:rgba(255,255,255,.84);}
+        .bf-jour-x{display:flex;align-items:baseline;gap:10px;margin-top:11px;}
+        /* LE PRIX BARRE N'EXISTE QUE S'IL Y A VRAIMENT UNE REMISE. Barrer un
+           prix qui n'a pas bouge est le mensonge le plus courant du commerce en
+           ligne, et le plus vite repere. */
+        .bf-jour-x s{font-size:15px;font-weight:650;color:rgba(255,255,255,.5);}
+        .bf-jour-x em{font-style:normal;font-size:24px;font-weight:900;
+          letter-spacing:-.02em;color:#FFD866;}
+        .bf-jour-b{display:flex;align-items:center;justify-content:center;
+          gap:10px;margin:15px 18px 18px;font:inherit;font-size:16px;
+          font-weight:850;cursor:pointer;border:0;border-radius:999px;
+          padding:16px 20px;color:#151B33;background:#fff;
+          box-shadow:0 14px 30px -14px rgba(0,0,0,.7);
+          transition:transform .12s ease;}
+        .bf-jour-b s{text-decoration:none;font-size:18px;line-height:1;}
+        .bf-jour-b:active{transform:scale(.985);}
+        .bf-jour-b:focus-visible{outline:2px solid #fff;outline-offset:3px;}
+
+        /* ═══ ✨ SURPRENDS-MOI ══════════════════════════════════════════════
+
+           IL GARDE SA COULEUR D'UN BOUT A L'AUTRE DU PRODUIT. Le meme degrade
+           violet-rose ici, sur la page claire du commercant, et sur l'ecran
+           sombre du choix : c'est ce qui fait qu'on reconnait le bouton avant
+           de l'avoir lu, chez un coiffeur comme chez un fleuriste le jour ou il
+           y sera. */
+        .bf-surp{display:flex;align-items:center;gap:12px;width:100%;
+          margin-top:14px;padding:16px 16px;border:0;border-radius:22px;
+          font-family:inherit;text-align:left;cursor:pointer;color:#fff;
+          background:linear-gradient(104deg,#8B2BE0 0%,#B227D6 44%,#F0269B 100%);
+          box-shadow:0 18px 38px -18px rgba(200,40,170,.8);
+          transition:transform .12s ease;}
+        .bf-surp:active{transform:scale(.985);}
+        .bf-surp:focus-visible{outline:2px solid #151B33;outline-offset:3px;}
+        .bf-surp-t{flex:1 1 auto;min-width:0;}
+        .bf-surp-t b{display:flex;align-items:center;gap:7px;font-size:17px;
+          font-weight:900;line-height:1.1;}
+        .bf-surp-t b i{font-style:normal;font-size:15px;}
+        .bf-surp-t em{display:block;font-style:normal;margin-top:5px;
+          font-size:13.5px;line-height:1.36;font-weight:600;
+          color:rgba(255,255,255,.92);}
+        .bf-surp s{flex:none;text-decoration:none;width:38px;height:38px;
+          border-radius:50%;display:grid;place-items:center;background:#fff;
+          color:#E0219A;font-size:18px;font-weight:800;line-height:1;}
+
+        .bf-aussi{margin:22px 0 0;font-size:17px;font-weight:850;
+          letter-spacing:-.02em;color:#151B33;}
+        /* UNE PIECE SANS PHOTO GARDE SA PLACE DANS LE RANG. Le rectangle raye
+           dit « elle arrive » ; un trou dans la bande dirait « il y a un bug ». */
+        .bf-avenir{display:block;width:84px;height:84px;border-radius:15px;
+          background:repeating-linear-gradient(135deg,#EDE7FA 0 8px,#F7F3FF 8px 16px);
+          border:2.5px solid transparent;}
 
         /* ═══ LA BANDE DE STYLES ═══════════════════════════════════════════ */
         .bf-styles{list-style:none;margin:14px 0 0;padding:0 0 4px;

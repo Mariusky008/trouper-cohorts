@@ -321,6 +321,8 @@ export function Boutique() {
   const [essaiOuvert, setEssaiOuvert] = useState(false);
   /** Le style touché dans la bande, pour le passer à l'essai. */
   const [styleChoisi, setStyleChoisi] = useState<string | undefined>(undefined);
+  /** On est entré par « Surprends-moi ». Voir `surprendre` dans `MurContenu`. */
+  const [surprendre, setSurprendre] = useState(false);
   const c = useMemo(() => cartes.find((x) => x.id === id) ?? cartes[0], [cartes, id]);
 
   /**
@@ -631,6 +633,10 @@ export function Boutique() {
                 // cadrage, sans avoir vu ce qu'il y a à essayer.
                 setEssaiOuvert(false);
                 setStyleChoisi(undefined);
+                // ET L'INTENTION DE SURPRISE PART AVEC. Gardée, elle aurait
+                // envoyé le commerce SUIVANT sur la recherche dès la photo
+                // prise, alors qu'on n'a rien demandé chez lui.
+                setSurprendre(false);
                 window.scrollTo({ top: 0 });
               }}
             >
@@ -982,6 +988,15 @@ export function Boutique() {
               }
               onPhoto={() => setEssaiOuvert(true)}
               onImporter={() => setEssaiOuvert(true)}
+              /* « SURPRENDS-MOI » OUVRE LE MÊME ATELIER, AVEC UNE INTENTION.
+                 Il faut une photo avant de pouvoir poser quoi que ce soit ; on
+                 part donc sur la prise de vue comme le grand bouton, et c'est à
+                 sa validation que le parcours bifurque vers la recherche plutôt
+                 que vers la grille. Voir `surprendre` dans `MurContenu`. */
+              onSurprise={() => {
+                setSurprendre(true);
+                setEssaiOuvert(true);
+              }}
               onStyle={(id) => {
                 setStyleChoisi(id);
                 setEssaiOuvert(true);
@@ -993,6 +1008,12 @@ export function Boutique() {
               key={c.id}
               mur={murDuLieu}
               ouvrirSur={onEssaie ? "depot" : undefined}
+              surprendre={surprendre}
+              /* CE QU'ON A DÉSIGNÉ DANS LA VITRINE ARRIVE JUSQU'À L'ATELIER.
+                 La page gardait ce choix pour elle : on appuyait sur une pièce
+                 et l'atelier s'ouvrait sur la grille, c'est-à-dire devant le
+                 choix qu'on venait de faire. */
+              piecePrechoisie={styleChoisi}
               /**
                * LE DERNIER GESTE DE L'AVANT-GOÛT MÈNE À L'OFFRE DU JOUR.
                *

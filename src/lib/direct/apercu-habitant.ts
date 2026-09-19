@@ -2474,7 +2474,14 @@ const CARTES: CarteAutour[] = [
   {
     id: "mode-friperie",
     catalogue: [
-      { id: "fr-1", rayon: "Arrivages", nom: "Vestes des années 70", detail: "Pièces uniques.", prix: "à partir de 35 €", photo: "/direct/friperie-rayon.jpg" },
+      /* SA PHOTO ÉTAIT CELLE DU RAYON, ET ELLE SE RETROUVAIT EN TÊTE DE LA
+         VITRINE. Les pièces du catalogue du commerçant passent devant celles du
+         modèle — c'est la bonne règle — mais celle-ci montrait des PORTANTS :
+         on proposait d'essayer sur soi une allée de friperie. C'est exactement
+         la faute que le mur de la mode décrit pour la « robe à carreaux », et
+         elle avait survécu ici. La photo part, le nom reste ; le jour où une
+         veste des années 70 sera photographiée seule, elle revient. */
+      { id: "fr-1", rayon: "Arrivages", nom: "Vestes des années 70", detail: "Pièces uniques.", prix: "à partir de 35 €" },
       { id: "fr-2", rayon: "Arrivages", nom: "Chemises rayées", prix: "18 €" },
       { id: "fr-3", rayon: "Toujours en rayon", nom: "Jeans vintage", detail: "Du 36 au 46.", prix: "29 €" },
       { id: "fr-4", rayon: "Toujours en rayon", nom: "Pulls en laine", prix: "22 €" },
@@ -2501,6 +2508,74 @@ const CARTES: CarteAutour[] = [
         titre: "40 pièces sorties ce matin",
         lignes: ["Manteaux et vestes d'hiver", "Une seule de chaque"],
         prix: "à partir de 12 €", places: 40, envies: ["arrivage", "maintenant"],
+      },
+    ],
+  },
+  /**
+   * ═══ LE RAYON HOMME, ET IL EST LÀ POUR UNE RAISON D'ÉCRAN ═════════════════
+   *
+   * L'écran d'attente a deux silhouettes — femme et homme — et la seconde
+   * n'était ouverte par aucun chemin : les deux commerces de mode de la ville
+   * sont des boutiques de femme. On ne vérifie pas un écran qu'on ne peut pas
+   * atteindre, et un écran qu'on ne vérifie pas finit par se casser en
+   * silence.
+   *
+   * SES ESSAYAGES N'OUVRENT PAS ENCORE, et c'est écrit sur ses pièces plutôt
+   * que caché : voir le mur « mode-homme » dans `lib/direct/fantomes.ts`, qui
+   * dit aussi exactement quelles photos il attend. Le reste du commerce — sa
+   * carte, ses moments, sa fiche — est complet, parce que c'est ce qui décide
+   * s'il a sa place dans la ville, et il l'a.
+   */
+  {
+    id: "mode-homme",
+    catalogue: [
+      { id: "h-1", rayon: "Nouveautés", nom: "Veste kaki", detail: "Du S au XXL.", prix: "89 €" },
+      { id: "h-2", rayon: "Nouveautés", nom: "Surchemise à carreaux", detail: "Deux coloris.", prix: "79 €" },
+      { id: "h-3", rayon: "Toujours en rayon", nom: "Chemise en jean", prix: "69 €" },
+      { id: "h-4", rayon: "Toujours en rayon", nom: "Pantalon chino", detail: "Cinq couleurs.", prix: "59 €" },
+      { id: "h-5", rayon: "Toujours en rayon", nom: "Polo piqué", prix: "45 €" },
+      { id: "h-6", rayon: "Le service", nom: "Retouches", detail: "Ourlets offerts, sous 48 h." },
+    ],
+    branche: "mode",
+    photo: "/direct/friperie-rayon.jpg",
+    cadrage: "50%",
+    nom: "Un prêt-à-porter homme",
+    google: { note: "4,5", avis: 19 },
+    // LE MOT « HOMME » DANS LE MÉTIER N'EST PAS DÉCORATIF : c'est lui qui
+    // envoie ce commerce sur son propre mur plutôt que sur celui des robes.
+    // Voir `modeleDeLaBranche` dans `lib/direct/fantomes.ts`.
+    metier: "Prêt-à-porter homme",
+    ville: VILLE,
+    itineraire: YALLER,
+    metres: 470,
+    distance: "470 m",
+    site: "",
+    fiche: {
+      ou: "Vieille ville, place de la halle",
+      horaires: "Aujourd'hui, 10 h – 19 h",
+      mot: "Des basiques qui tiennent, et des retouches faites sur place.",
+    },
+    reponse: {
+      cadeau: "Les retouches offertes sur votre achat",
+      texte: "Dites-moi votre taille, je vous sors ce qu'il y a avant que vous arriviez.",
+      tenu: "19 h",
+      apres: 4,
+    },
+    moments: [
+      {
+        de: 10, a: 13, quand: "ce matin", icone: "🧥",
+        titre: "Les vestes d'automne sont rentrées",
+        lignes: ["Kaki, marine et camel", "Du S au XXL"],
+        prix: "89 €", places: 24, envies: ["arrivage", "maintenant"],
+        avis: [
+          { note: 5, texte: "On m'a fait l'ourlet pendant que j'attendais.", qui: "Rémi", quand: "en juin" },
+        ],
+      },
+      {
+        de: 14, a: 19, quand: "cet après-midi", icone: "📏",
+        titre: "Retouches offertes",
+        lignes: ["Ourlets et manches", "Rendus sous 48 h"],
+        places: 12, envies: [],
       },
     ],
   },

@@ -346,6 +346,24 @@ export type Piece = {
    */
   vernis?: { couleur: string; longueur?: number };
   bientot?: boolean;
+  /**
+   * ═══ EN VITRINE, OU DANS LA RÉSERVE ═══════════════════════════════════════
+   *
+   * « Le client ne voit surtout pas toute la collection au départ. Sur la page
+   * du commerce, je montrerais seulement 4 à 8 pièces maximum. ClikMe doit
+   * réduire le choix, pas recréer un Zalando local. »
+   *
+   * UNE COLLECTION A DEUX PROFONDEURS, ET UNE SEULE SE VOIT. La vitrine est ce
+   * qu'on propose — quatre à six pièces, choisies ; la réserve est tout le
+   * reste, et elle n'existe que pour « Surprends-moi », qui pioche dedans.
+   * C'est exactement ce qui rend le bouton intéressant : il sort des pièces que
+   * personne n'aurait vues, y compris des pièces qu'on n'aurait pas choisies.
+   *
+   * ABSENT VAUT « EN RÉSERVE ». Un commerçant qui importe deux cents pièces ne
+   * doit pas en mettre deux cents en vitrine par inadvertance ; le défaut le
+   * plus sûr est celui qui ne montre rien de trop.
+   */
+  vitrine?: boolean;
 };
 
 export type Mur = {
@@ -630,6 +648,78 @@ export type Mur = {
        * bouton, donc il s'écrit à l'infinitif.
        */
       agir: Conseil;
+      /**
+       * ═══ « SURPRENDS-MOI », ET C'EST LE MÉTIER QUI DIT QUOI ═══════════════
+       *
+       * « Lorsqu'un client potentiel manque d'imagination, alors il peut juste
+       * laisser faire l'IA et choisir à sa place. »
+       *
+       * LE BOUTON EST GÉNÉRIQUE, SES MOTS NE LE SONT PAS. « Laissez ClikMe
+       * choisir un look pour vous » n'a aucun sens chez une onglerie, où l'on
+       * cherche une pose, ni chez une fleuriste, où l'on cherche un bouquet.
+       * Trois mots suffisent à faire la différence, et ils sont écrits ici avec
+       * les autres mots du métier plutôt que dans un `if` du composant.
+       *
+       * IL EST FACULTATIF, ET C'EST VOULU. Le bouton ira sur tous les métiers,
+       * mais pas le même jour : un métier sans ces trois mots n'affiche pas un
+       * bouton à moitié traduit, il n'affiche pas de bouton. Ajouter le métier
+       * suivant, c'est écrire trois phrases — pas ouvrir `mur-contenu.tsx`.
+       */
+      surprends?: {
+        /** Ce que ClikMe va chercher : « un look », « une pose ». */
+        quoi: string;
+        /** Où il cherche : « la collection du magasin », « le nuancier ». */
+        ou: string;
+        /** L'aveu sur lequel on appuie : « Je ne sais pas quoi prendre ». */
+        aveu: string;
+      };
+    };
+    /**
+     * ═══ QUI S'HABILLE ICI ════════════════════════════════════════════════════
+     *
+     * L'ÉCRAN D'ATTENTE DESSINE UNE SILHOUETTE, ET UNE SILHOUETTE A UN CORPS.
+     * Les maquettes en donnent deux — « préparation-femme » et
+     * « préparation-homme » — qui ne diffèrent que par là : même cercle, même
+     * fantôme, même frise, un autre buste au milieu.
+     *
+     * CE N'EST PAS UNE QUESTION POSÉE AU CLIENT, C'EST UNE PROPRIÉTÉ DU
+     * MAGASIN. On ne demande à personne son genre pour lui poser un vêtement ;
+     * on sait seulement qu'une boutique de prêt-à-porter féminin n'a que des
+     * pièces de femme à montrer pendant qu'elle travaille. La silhouette dit
+     * donc ce que le magasin vend, jamais ce que la personne est.
+     *
+     * ABSENT VAUT « mixte », et c'est le cas de tous les autres métiers : chez
+     * eux, l'attente ne dessine pas de corps du tout.
+     */
+    genre?: "femme" | "homme" | "mixte";
+    /**
+     * ═══ LA PIÈCE DU JOUR, ET ELLE N'EST PAS FORCÉMENT SOLDÉE ════════════════
+     *
+     * « Le produit du jour n'est pas forcément la promotion du jour. Sinon, si
+     * chaque produit du jour doit être soldé, les utilisateurs vont très vite
+     * comprendre ClikMe comme une application de promotions. Et les commerçants
+     * vont hésiter à publier parce qu'ils auront l'impression qu'ils doivent
+     * sacrifier leur marge. »
+     *
+     * LA RAISON EST DONC UN CHAMP, PAS UN POURCENTAGE. « NOUVEAU AUJOURD'HUI »,
+     * « IL N'EN RESTE QUE 3 », « PARFAIT POUR LA MÉTÉO », « LE COUP DE CŒUR DE
+     * LA MAISON » : ce sont des raisons de montrer, et elles ne coûtent rien à
+     * celui qui les donne. La remise devient l'une d'elles — « AUJOURD'HUI
+     * SEULEMENT · 89 € → 69 € » — et redevient spéciale parce qu'elle n'est
+     * plus permanente.
+     *
+     * `prixAvant` EST LE SEUL SIGNE D'UNE REMISE. Rempli, l'écran barre l'ancien
+     * prix ; vide, il n'y a pas de remise, et l'écran n'en invente pas.
+     */
+    duJour?: {
+      /** L'identifiant de la pièce mise en avant. Elle vit dans `pieces`. */
+      piece: string;
+      /** La pastille, en capitales : « NOUVEAU AUJOURD'HUI ». */
+      etiquette: string;
+      /** Une phrase du commerçant : pourquoi celle-là, aujourd'hui. */
+      raison: string;
+      /** L'ancien prix, et seulement quand il y a vraiment une remise. */
+      prixAvant?: string;
     };
     pieces: Piece[];
   };
@@ -1617,7 +1707,45 @@ export const MURS: Mur[] = [
           { picto: "vetement", titre: "Des vêtements près du corps", detail: "pour un meilleur rendu" },
         ],
         agir: { picto: "sac", titre: "Me le faire mettre de côté", detail: "En boutique, jusqu’à demain soir" },
+        surprends: {
+          quoi: "un look",
+          ou: "la collection du magasin",
+          aveu: "Je ne sais pas quoi prendre",
+        },
       },
+      genre: "femme",
+      /**
+       * LA DOUDOUNE EST LA PIÈCE DU JOUR, ET ELLE N'EST PAS SOLDÉE.
+       *
+       * C'est le cas qu'on veut démontrer : elle est mise en avant parce qu'elle
+       * vient d'arriver, pas parce qu'on en a rabattu le prix. Un « produit du
+       * jour » toujours remisé apprendrait en trois jours que ClikMe est une
+       * application de promotions — et c'est le seul apprentissage dont ce
+       * produit ne se remettrait pas.
+       */
+      duJour: {
+        piece: "m-doudoune",
+        etiquette: "NOUVEAU AUJOURD’HUI",
+        raison: "Déballée ce matin. Quatre tailles, et une seule en 38.",
+      },
+      /**
+       * ═══ VINGT-CINQ PIÈCES DERRIÈRE, SIX DEVANT ═══════════════════════════
+       *
+       * « Pour que "Surprends-moi" fonctionne bien, il faut suffisamment de
+       * choix ; 20 à 50 pièces actives suffisent déjà pour une petite boutique,
+       * même si elle peut en avoir 200. »
+       *
+       * LA LISTE EST DONC LA COLLECTION ACTIVE, PAS LA GRILLE. Seules celles
+       * qui portent `vitrine` s'affichent au client ; les dix-neuf autres
+       * n'existent que pour « Surprends-moi ». C'est la seule façon de tenir les
+       * deux promesses à la fois : beaucoup de choix derrière la scène, très peu
+       * de choix devant le client.
+       *
+       * ELLES SERVENT DEUX COMMERCES. La boutique du centre et la friperie du
+       * vieux centre partagent la branche « mode », donc ce mur-ci : c'est
+       * précisément ce que le tableau des branches est là pour faire, et c'est
+       * pourquoi on élargit le modèle plutôt que d'écrire deux listes.
+       */
       pieces: [
         {
           id: "m-combinaison",
@@ -1657,6 +1785,75 @@ export const MURS: Mur[] = [
           photo: "/direct/vetement2.jpg", reference: "/direct/vetement2.jpg" },
         { id: "m-polaire", nom: "Polaire rose, col zippé", decrire: "une veste polaire rose à col zippé", prix: "75 €",
           photo: "/direct/vetement5.jpeg", reference: "/direct/vetement5.jpeg" },
+
+        /* ═══ L'ARRIVAGE D'AUTOMNE ══════════════════════════════════════════
+           Dix-huit pièces de plus, et c'est un changement de nature : à sept,
+           « Surprends-moi » retombait sur ce qu'on venait de voir dans la
+           grille une fois sur deux. `decrire` n'est pas décoratif — c'est la
+           CIBLE que le modèle d'image exécute, et une description vague fait
+           un rendu vague. Voir `decrire` dans `Piece`. */
+
+        // ── Les mailles ──────────────────────────────────────────────────────
+        { id: "m-mohair-vert", nom: "Pull mohair vert d’eau", vitrine: true, prix: "95 €",
+          decrire: "un pull en mohair vert d’eau, col rond, manches longues, coupe ample et duveteuse",
+          photo: "/direct/mode-pull-mohair-vert.jpeg", reference: "/direct/mode-pull-mohair-vert.jpeg" },
+        { id: "m-mohair-marine", nom: "Pull mohair bleu marine", prix: "95 €",
+          decrire: "un pull en mohair bleu marine, col rond, manches longues, coupe ample et duveteuse",
+          photo: "/direct/mode-pull-mohair-marine.jpeg", reference: "/direct/mode-pull-mohair-marine.jpeg" },
+        { id: "m-chevron-canard", nom: "Pull chevron bleu canard", vitrine: true, prix: "110 €",
+          decrire: "un pull en mohair bleu canard avec un large chevron rose, blanc et or lamé sur la poitrine",
+          photo: "/direct/mode-pull-chevron-canard.jpeg", reference: "/direct/mode-pull-chevron-canard.jpeg" },
+        { id: "m-chevron-noir", nom: "Pull chevron noir et or", prix: "110 €",
+          decrire: "un pull en mohair noir avec un large chevron bleu roi, blanc et or lamé sur la poitrine",
+          photo: "/direct/mode-pull-chevron-noir.jpeg", reference: "/direct/mode-pull-chevron-noir.jpeg" },
+        { id: "m-ecru-rose", nom: "Pull écru, bande rose", prix: "98 €",
+          decrire: "un pull écru en maille duveteuse avec une large bande rose bordée d’un galon doré sur le devant",
+          photo: "/direct/mode-pull-ecru-rose.webp", reference: "/direct/mode-pull-ecru-rose.webp" },
+        { id: "m-gilet-orchidee", nom: "Gilet fin rose orchidée", prix: "69 €",
+          decrire: "un gilet en maille fine rose orchidée, col V, boutons dorés, manches trois-quarts",
+          photo: "/direct/mode-gilet-orchidee.jpg", reference: "/direct/mode-gilet-orchidee.jpg" },
+        { id: "m-maille-beige", nom: "Ensemble maille beige", vitrine: true, prix: "165 €",
+          decrire: "un ensemble en maille beige : col roulé, jupe midi et long gilet boutonné assortis",
+          photo: "/direct/mode-ensemble-maille-beige.jpg", reference: "/direct/mode-ensemble-maille-beige.jpg" },
+
+        // ── Les robes ────────────────────────────────────────────────────────
+        { id: "m-robe-lavalliere", nom: "Robe midi, col lavallière", vitrine: true, prix: "125 €",
+          decrire: "une robe midi imprimée rouge et rose à motif géométrique, manches longues bouffantes, col lavallière noué",
+          photo: "/direct/mode-robe-lavalliere.jpeg", reference: "/direct/mode-robe-lavalliere.jpeg" },
+        { id: "m-robe-pois", nom: "Robe à pois dorés", prix: "139 €",
+          decrire: "une robe longue prune à grands pois dorés, col montant froncé, manches bouffantes, ceinture nouée à la taille",
+          photo: "/direct/mode-robe-pois-dores.jpg", reference: "/direct/mode-robe-pois-dores.jpg" },
+        { id: "m-robe-corail", nom: "Robe à volants corail", prix: "119 €",
+          decrire: "une robe à bretelles en mousseline imprimée corail et rose, jupe à volants étagés",
+          photo: "/direct/mode-robe-volants-corail.jpg", reference: "/direct/mode-robe-volants-corail.jpg" },
+        { id: "m-robe-fleurs", nom: "Robe noire à fleurs", prix: "119 €",
+          decrire: "une robe noire sans manches imprimée de grandes fleurs multicolores, jupe à volant asymétrique",
+          photo: "/direct/mode-robe-fleurs-noire.jpg", reference: "/direct/mode-robe-fleurs-noire.jpg" },
+
+        // ── Les manteaux et les vestes ───────────────────────────────────────
+        { id: "m-doudoune", nom: "Doudoune kaki, capuche", vitrine: true, prix: "189 €",
+          decrire: "une doudoune courte kaki brillante à capuche bordée de fourrure bordeaux, fermeture zippée",
+          photo: "/direct/mode-doudoune-kaki.jpg", reference: "/direct/mode-doudoune-kaki.jpg" },
+        { id: "m-leopard", nom: "Manteau léopard", vitrine: true, prix: "175 €",
+          decrire: "un manteau mi-long en fausse fourrure imprimée léopard, grand col cranté, porté ouvert",
+          photo: "/direct/mode-manteau-leopard.jpg", reference: "/direct/mode-manteau-leopard.jpg" },
+        { id: "m-veste-dentelle", nom: "Veste longue en dentelle", prix: "159 €",
+          decrire: "une veste longue ouverte en dentelle fleurie noire et blanche, bordée de noir, manches trois-quarts",
+          photo: "/direct/mode-veste-dentelle.jpg", reference: "/direct/mode-veste-dentelle.jpg" },
+
+        // ── Les hauts et les bas ─────────────────────────────────────────────
+        { id: "m-chemise-volants", nom: "Chemise rose à volants", prix: "59 €",
+          decrire: "une chemise rose pâle boutonnée, col montant, jabot de volants sur le devant, manches longues",
+          photo: "/direct/mode-chemise-volants-rose.jpeg", reference: "/direct/mode-chemise-volants-rose.jpeg" },
+        { id: "m-top-crochet", nom: "Top en crochet noir", prix: "55 €",
+          decrire: "un top noir sans manches en crochet ajouré, bord festonné à la taille",
+          photo: "/direct/mode-top-crochet-noir.jpg", reference: "/direct/mode-top-crochet-noir.jpg" },
+        { id: "m-jean-papillons", nom: "Jean large à papillons", prix: "79 €",
+          decrire: "un jean large taille haute en denim clair, imprimé de papillons noirs, déchirures aux genoux",
+          photo: "/direct/mode-jean-papillons.jpg", reference: "/direct/mode-jean-papillons.jpg" },
+        { id: "m-pantalon-zebre", nom: "Pantalon fluide imprimé", prix: "129 €",
+          decrire: "un pantalon large et fluide à imprimé zébré brun et blanc, porté avec un gilet blanc sans manches",
+          photo: "/direct/mode-pantalon-zebre.jpg", reference: "/direct/mode-pantalon-zebre.jpg" },
       ],
     },
     contexte: {
@@ -1792,6 +1989,131 @@ export const MURS: Mur[] = [
         jusqua: "encore 2 jours",
       },
     ],
+  },
+  /**
+   * ═══ LE PRÊT-À-PORTER HOMME, ET IL N'A PAS ENCORE SES PHOTOS ══════════════
+   *
+   * IL EXISTE PARCE QUE LA SILHOUETTE EXISTE. L'écran d'attente a deux
+   * versions — « préparation-femme » et « préparation-homme » — et la seconde
+   * n'était atteignable par aucun chemin : les deux commerces de mode de la
+   * démonstration sont des boutiques de femme. Un écran qu'aucun parcours
+   * n'ouvre est un écran qu'on ne peut pas vérifier, donc un écran qui se
+   * cassera sans que personne le voie.
+   *
+   * SES PIÈCES SONT « BIENTÔT ESSAYABLES », ET C'EST LA VÉRITÉ. Le dépôt n'a
+   * aucune photo de vêtement d'homme, et il y avait deux mauvaises réponses :
+   * lui prêter les robes de la boutique d'à côté — c'est-à-dire poser une robe
+   * sur un homme et appeler ça une démonstration — ou pointer des fichiers
+   * absents, ce qui fabrique des 404. La troisième est celle qu'on prend
+   * partout ailleurs dans ce fichier : ON DIT CE QU'ON N'A PAS. Le rayon
+   * s'affiche, il se lit, il ne se choisit pas, et « Surprends-moi » ne pioche
+   * pas dedans.
+   *
+   * CE QU'IL FAUT POUR L'OUVRIR : six photos de vêtements d'homme, en pied ou
+   * en buste, de face, sur fond neutre, sans visage reconnaissable — chemise en
+   * jean, veste kaki, polo marine, pantalon beige, pull col rond, surchemise à
+   * carreaux. Les noms de fichiers sont écrits ci-dessous : il n'y aura rien de
+   * plus à faire que les déposer et retirer `bientot`.
+   */
+  {
+    cle: "mode-homme",
+    lieu: "Un prêt-à-porter homme",
+    metier: "Prêt-à-porter homme",
+    ville: "Dax",
+    distance: "470 m",
+    note: "4,5",
+    avis: 19,
+    etiquettes: ["Marques françaises", "Retouches offertes"],
+    photoLieu: "/direct/friperie-rayon.jpg",
+    depot: "essai",
+    humeurs: ["hesite", "decouvre", "offrir"],
+    verbes: [],
+    essai: {
+      partie: "vous, en buste",
+      change: "uniquement le vêtement porté sur le buste",
+      garder: [
+        "La tête entière : le visage, la coupe de cheveux et la barbe telles qu'elles sont sur l'image 1.",
+        "Si la personne porte des lunettes, des bijoux ou une montre, ils restent identiques ; si elle n'en porte pas, n'en ajoute aucun.",
+        "La carrure, la corpulence et la posture des épaules et des bras.",
+      ],
+      consigne: "Debout face à une fenêtre, bras le long du corps, buste entier dans le cadre.",
+      avant: "/direct/poignet-nu.jpg",
+      gabarit: { forme: "cadre" },
+      genre: "homme",
+      mots: {
+        titre: "Cette pièce, sur vous",
+        phrase: "Prenez-vous en photo en buste : le vêtement de la boutique s’y met.",
+        geste: "Me photographier en buste",
+        choisir: "Choisissez la pièce",
+        reserver: "Je la mets de côté",
+        autres: "Voir les autres pièces rentrées",
+        mur: "Voir ces pièces portées par d’autres",
+        surMoi: "Essayer sur moi",
+        promesse: "Découvrez à quoi cette pièce vous va, en quelques secondes",
+        essayage: "essayage",
+        voirLeMur: "Voir ce qu’ils en pensent",
+        ceci: "ce look",
+        photoTitre: "Prenez une photo de vous",
+        photoSous: "Essayez ce look sur vous en quelques secondes, grâce à l’IA.",
+        conseils: [
+          { picto: "visage", titre: "De face", detail: "Regardez l’objectif" },
+          { picto: "corps", titre: "En pied", detail: "si possible" },
+          { picto: "lumiere", titre: "Bonne luminosité", detail: "Pas trop sombre" },
+          { picto: "vetement", titre: "Des vêtements près du corps", detail: "pour un meilleur rendu" },
+        ],
+        agir: { picto: "sac", titre: "Me le faire mettre de côté", detail: "En boutique, jusqu’à demain soir" },
+        /* PAS DE `surprends` TANT QU'IL N'Y A RIEN OÙ PIOCHER. Le bouton
+           promet de chercher dans la collection ; sur une collection dont
+           aucune pièce n'est essayable, il ne peut que décevoir. Il
+           s'affichera tout seul le jour où les six photos arriveront. */
+      },
+      /* LES SIX PIÈCES DE LA MAQUETTE, AUX PRIX DE LA MAQUETTE. Elles portent
+         déjà le nom de fichier qu'elles attendent : déposer l'image et retirer
+         `bientot` suffit à ouvrir le rayon. */
+      pieces: [
+        { id: "h-chemise-jean", nom: "Chemise en jean", prix: "69 €", bientot: true, vitrine: true,
+          decrire: "une chemise en jean bleu clair pour homme, coupe droite, manches longues, boutonnée",
+          photo: "" /* /direct/homme-chemise-jean.jpg */ },
+        { id: "h-veste-kaki", nom: "Veste kaki", prix: "89 €", bientot: true, vitrine: true,
+          decrire: "une veste légère kaki pour homme, coupe droite, deux poches poitrine à rabat, portée ouverte",
+          photo: "" /* /direct/homme-veste-kaki.jpg */ },
+        { id: "h-polo-marine", nom: "Polo marine", prix: "45 €", bientot: true, vitrine: true,
+          decrire: "un polo bleu marine pour homme, manches courtes, col et bords de manches rayés blanc",
+          photo: "" /* /direct/homme-polo-marine.jpg */ },
+        { id: "h-pantalon-beige", nom: "Pantalon beige", prix: "59 €", bientot: true, vitrine: true,
+          decrire: "un pantalon chino beige pour homme, coupe droite, taille standard",
+          photo: "" /* /direct/homme-pantalon-beige.jpg */ },
+        { id: "h-pull-col-rond", nom: "Pull col rond gris chiné", prix: "75 €", bientot: true, vitrine: true,
+          decrire: "un pull en laine gris chiné pour homme, col rond, manches longues, coupe droite",
+          photo: "" /* /direct/homme-pull-col-rond.jpg */ },
+        { id: "h-surchemise", nom: "Surchemise à carreaux", prix: "79 €", bientot: true, vitrine: true,
+          decrire: "une surchemise épaisse à carreaux rouges et noirs pour homme, portée ouverte sur un tee-shirt blanc",
+          photo: "" /* /direct/homme-surchemise-carreaux.jpg */ },
+      ],
+    },
+    contexte: {
+      titre: "La pièce du moment",
+      quoi: "Veste kaki",
+      detail: "Tailles S à XXL",
+      photo: "/direct/friperie-rayon.jpg",
+      geste: "Voir la boutique",
+    },
+    maison: [
+      {
+        id: "mh-vitrine",
+        qui: "La boutique",
+        role: "Vitrine",
+        maison: true,
+        photo: "/direct/friperie-rayon.jpg",
+        mot: "Le rayon homme vient d’ouvrir. Les essayages arrivent cette semaine.",
+        heure: "10:00",
+        interesses: 3,
+      },
+    ],
+    /* PERSONNE N'A ENCORE ESSAYÉ, ET LE MUR LE DIT. Le remplir d'essais
+       inventés pour qu'il ne soit pas vide serait exactement le mensonge que le
+       mur est censé rendre impossible. */
+    clients: [],
   },
   /**
    * LA FLEURISTE, ET ELLE PARLAIT AVEC LA VOIX DE LA CIRIÈRE.
@@ -2433,7 +2755,16 @@ export function modeleDeLaBranche(
   if (branche === "bar") return "bar";
   if (branche === "ongles") return "ongles";
   if (branche === "coiffeur") return "coiffeur";
-  if (branche === "mode") return "mode";
+  /**
+   * LE PRÊT-À-PORTER HOMME A SON PROPRE MUR, ET C'EST LA MÊME LEÇON QUE LE
+   * LUNETIER JUSTE EN DESSOUS : rangé sous « mode » tout court, il héritait du
+   * catalogue de la boutique de femme — on lui aurait proposé d'essayer une
+   * robe à pois. La branche dit la MÉCANIQUE (se photographier en buste), le
+   * métier dit le RAYON.
+   */
+  if (branche === "mode") {
+    return /\bhomme/i.test(metier ?? "") ? "mode-homme" : "mode";
+  }
   if (branche === "fleuriste") return "fleurs";
   // LE LUNETIER A SA PROPRE BRANCHE. Range sous « mode », il aurait herite du
   // mur des vetements — « photographiez-vous en buste » — pour une monture.
@@ -2479,6 +2810,18 @@ type EntreeCatalogue = { id: string; nom: string; detail?: string; prix?: string
  * sa photo ; voir la fleuriste dans `lib/direct/apercu-habitant.ts`.
  */
 type MomentCourant = { titre: string; lignes?: string[]; prix?: string; photo?: string };
+
+/**
+ * COMBIEN DE PIÈCES LE CLIENT VOIT D'UN COUP.
+ *
+ * « Sur la page du commerce, je montrerais seulement 4 à 8 pièces maximum. »
+ *
+ * SIX, ET C'EST LE HAUT DE SA FOURCHETTE MOINS DEUX. Quatre tiennent sur une
+ * ligne et demie de téléphone et se choisissent d'un coup d'œil ; huit
+ * redonnent envie de faire défiler, c'est-à-dire de parcourir — et parcourir
+ * est exactement ce que « Surprends-moi » existe pour éviter.
+ */
+const PLACES_EN_VITRINE = 6;
 
 export function murDeLaCarte(c: {
   id: string;
@@ -2556,9 +2899,41 @@ export function murDeLaCarte(c: {
   const complement = (modele.essai?.pieces ?? []).filter(
     (p) => !siennes.some((s) => s.photo === p.photo || pareil(s.nom) === pareil(p.nom)),
   );
+  /**
+   * ═══ LA COLLECTION ENTIÈRE RESTE, SEULE LA VITRINE SE VOIT ════════════════
+   *
+   * ICI, AVANT, IL Y AVAIT `.slice(0, 6)`. C'était juste tant que la grille
+   * était tout ce qui existait : six pièces à l'écran, six pièces en mémoire.
+   *
+   * DEPUIS « SURPRENDS-MOI », COUPER LA LISTE COUPE LA RÉSERVE. Le bouton
+   * pioche dans la collection active ; sur une liste tronquée à six, il ne
+   * pourrait sortir que des pièces déjà affichées juste en dessous — c'est-à-
+   * dire exactement le contraire d'une surprise. On garde donc tout, et c'est
+   * `vitrine` qui décide de ce qui s'affiche. Voir `Piece`.
+   *
+   * ET CE SONT LES SIENNES QUI PASSENT DEVANT. Une pièce que le commerçant a
+   * lui-même photographiée vaut toujours mieux qu'une du modèle : elle est
+   * vraiment chez lui, aujourd'hui. Le drapeau du modèle ne sert qu'à remplir
+   * les places qui restent.
+   */
+  const toutes = [...siennes, ...complement];
+  const enVitrine = new Set(
+    [
+      ...new Set([
+        ...siennes.filter((x) => !x.bientot).map((x) => x.id),
+        ...toutes.filter((x) => x.vitrine && !x.bientot).map((x) => x.id),
+        ...toutes.filter((x) => !x.bientot).map((x) => x.id),
+        // UN RAYON QUI N'A QUE DES PIÈCES « BIENTÔT » DOIT QUAND MÊME LES
+        // MONTRER. Sans cette ligne, le prêt-à-porter homme affichait une
+        // vitrine vide — ce qui ne dit pas « ça arrive », ça dit « il n'y a
+        // rien ici ».
+        ...toutes.map((x) => x.id),
+      ]),
+    ].slice(0, PLACES_EN_VITRINE),
+  );
   const essai =
     modele.essai && siennes.length > 0
-      ? { ...modele.essai, pieces: [...siennes, ...complement].slice(0, 6) }
+      ? { ...modele.essai, pieces: toutes.map((x) => ({ ...x, vitrine: enVitrine.has(x.id) })) }
       : modele.essai;
 
   // LE BLOC SOUS LE MUR DIT CE QUE LA CARTE DIT, MOT POUR MOT. C'est le seul
