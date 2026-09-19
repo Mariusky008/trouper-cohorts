@@ -1991,40 +1991,48 @@ export const MURS: Mur[] = [
     ],
   },
   /**
-   * ═══ LE PRÊT-À-PORTER HOMME, ET IL N'A PAS ENCORE SES PHOTOS ══════════════
+   * ═══ LE PRÊT-À-PORTER HOMME ═══════════════════════════════════════════════
    *
    * IL EXISTE PARCE QUE LA SILHOUETTE EXISTE. L'écran d'attente a deux
    * versions — « préparation-femme » et « préparation-homme » — et la seconde
-   * n'était atteignable par aucun chemin : les deux commerces de mode de la
-   * démonstration sont des boutiques de femme. Un écran qu'aucun parcours
-   * n'ouvre est un écran qu'on ne peut pas vérifier, donc un écran qui se
-   * cassera sans que personne le voie.
+   * n'était atteignable par aucun chemin : les deux autres commerces de mode
+   * sont des boutiques de femme. Un écran qu'aucun parcours n'ouvre est un
+   * écran qu'on ne peut pas vérifier, donc un écran qui se cassera un jour sans
+   * que personne le voie.
    *
-   * SES PIÈCES SONT « BIENTÔT ESSAYABLES », ET C'EST LA VÉRITÉ. Le dépôt n'a
-   * aucune photo de vêtement d'homme, et il y avait deux mauvaises réponses :
-   * lui prêter les robes de la boutique d'à côté — c'est-à-dire poser une robe
-   * sur un homme et appeler ça une démonstration — ou pointer des fichiers
-   * absents, ce qui fabrique des 404. La troisième est celle qu'on prend
-   * partout ailleurs dans ce fichier : ON DIT CE QU'ON N'A PAS. Le rayon
-   * s'affiche, il se lit, il ne se choisit pas, et « Surprends-moi » ne pioche
-   * pas dedans.
+   * IL A OUVERT. Ses dix pièces étaient marquées « bientôt essayables » tant
+   * que le dépôt n'avait aucune photo de vêtement d'homme — la seule réponse
+   * honnête, parce que les deux autres étaient de lui prêter les robes d'à côté
+   * ou de pointer des fichiers absents. Les dix photos sont arrivées ; le rayon
+   * s'essaie.
    *
-   * CE QU'IL FAUT POUR L'OUVRIR : six photos de vêtements d'homme, en pied ou
-   * en buste, de face, sur fond neutre, sans visage reconnaissable — chemise en
-   * jean, veste kaki, polo marine, pantalon beige, pull col rond, surchemise à
-   * carreaux. Les noms de fichiers sont écrits ci-dessous : il n'y aura rien de
-   * plus à faire que les déposer et retirer `bientot`.
+   * DIX PIÈCES, ET C'EST MOINS QUE LES VINGT-CINQ DE LA BOUTIQUE DE FEMME.
+   * « Surprends-moi » y marche — six en vitrine, quatre en réserve, donc il
+   * sort vraiment quelque chose qu'on n'a pas vu — mais il tourne plus vite.
+   * L'écran du commerçant le dit en toutes lettres : « à partir de vingt
+   * pièces, les propositions deviennent vraiment variées. »
+   *
+   * UNE RÉSERVE SUR UNE PHOTO, ET ELLE EST ÉCRITE DANS `LISEZ-MOI.md` :
+   * `homme-veste-ciree-kaki.jpg` porte une marque lisible sur le tee-shirt et
+   * sur la poche. Même statut que le filigrane de `ongles1` et le monogramme de
+   * `coiffure1` — à refaire avant un argumentaire imprimé.
    */
   {
     cle: "mode-homme",
     lieu: "Un prêt-à-porter homme",
     metier: "Prêt-à-porter homme",
     ville: "Dax",
-    distance: "470 m",
+    distance: "320 m",
     note: "4,5",
     avis: 19,
     etiquettes: ["Marques françaises", "Retouches offertes"],
-    photoLieu: "/direct/friperie-rayon.jpg",
+    /* SA PHOTO EST CE QU'IL MONTRE AUJOURD'HUI, faute d'avoir une devanture.
+       Elle partageait `friperie-rayon.jpg` avec la friperie : deux commerces
+       de vêtements de la même ville, à cinquante mètres l'un de l'autre, avec
+       la même image — on croit à un défaut d'affichage avant de croire à deux
+       magasins. C'est la même logique que la carte de la fleuriste, qui montre
+       son bouquet plutôt que son étal. Voir `LISEZ-MOI.md`. */
+    photoLieu: "/direct/homme-veste-ciree-kaki.jpg",
     depot: "essai",
     humeurs: ["hesite", "decouvre", "offrir"],
     verbes: [],
@@ -2062,40 +2070,81 @@ export const MURS: Mur[] = [
           { picto: "vetement", titre: "Des vêtements près du corps", detail: "pour un meilleur rendu" },
         ],
         agir: { picto: "sac", titre: "Me le faire mettre de côté", detail: "En boutique, jusqu’à demain soir" },
-        /* PAS DE `surprends` TANT QU'IL N'Y A RIEN OÙ PIOCHER. Le bouton
-           promet de chercher dans la collection ; sur une collection dont
-           aucune pièce n'est essayable, il ne peut que décevoir. Il
-           s'affichera tout seul le jour où les six photos arriveront. */
+        surprends: {
+          quoi: "un look",
+          ou: "la collection du magasin",
+          aveu: "Je ne sais pas quoi prendre",
+        },
       },
-      /* LES SIX PIÈCES DE LA MAQUETTE, AUX PRIX DE LA MAQUETTE. Elles portent
-         déjà le nom de fichier qu'elles attendent : déposer l'image et retirer
-         `bientot` suffit à ouvrir le rayon. */
+      /**
+       * LA VESTE CIRÉE EST LA PIÈCE DU JOUR, ET ELLE N'EST PAS SOLDÉE.
+       *
+       * Même démonstration que la doudoune de la boutique de femme, et c'est
+       * voulu qu'elle se répète : ce qui doit s'apprendre, c'est qu'une pièce
+       * du jour est une pièce qu'on MONTRE, pas une pièce qu'on brade.
+       */
+      duJour: {
+        piece: "h-veste-ciree",
+        etiquette: "IL N’EN RESTE QUE 3",
+        raison: "Trois exemplaires, en M, L et XL. Il n’y en aura pas d’autres.",
+      },
+      /**
+       * ═══ DIX PIÈCES, SIX EN VITRINE ═══════════════════════════════════════
+       *
+       * ELLES SONT NOMMÉES POUR CE QUE LA PHOTO MONTRE, pas pour la maquette.
+       * Celle-ci dessinait « Chemise en jean · Veste kaki · Polo marine ·
+       * Pantalon beige » : les quatre sont là, mais deux d'entre elles arrivent
+       * dans une tenue complète — le polo marine vient AVEC son chino beige, la
+       * chemise en denim AVEC son pantalon crème. Les séparer aurait demandé de
+       * promettre un pantalon qu'aucune photo ne montre seul, et l'essai serait
+       * revenu avec la tenue entière de toute façon. On nomme donc ce qu'on
+       * pose, ce qui est la seule règle qui tienne devant un modèle d'image.
+       *
+       * `decrire` EST LA CIBLE QUE LE MODÈLE EXÉCUTE, pas une étiquette de
+       * vitrine — voir `decrire` dans `Piece`. Chacune dit la coupe, la
+       * matière, la couleur et ce qui se passe au col.
+       */
       pieces: [
-        { id: "h-chemise-jean", nom: "Chemise en jean", prix: "69 €", bientot: true, vitrine: true,
-          decrire: "une chemise en jean bleu clair pour homme, coupe droite, manches longues, boutonnée",
-          photo: "" /* /direct/homme-chemise-jean.jpg */ },
-        { id: "h-veste-kaki", nom: "Veste kaki", prix: "89 €", bientot: true, vitrine: true,
-          decrire: "une veste légère kaki pour homme, coupe droite, deux poches poitrine à rabat, portée ouverte",
-          photo: "" /* /direct/homme-veste-kaki.jpg */ },
-        { id: "h-polo-marine", nom: "Polo marine", prix: "45 €", bientot: true, vitrine: true,
-          decrire: "un polo bleu marine pour homme, manches courtes, col et bords de manches rayés blanc",
-          photo: "" /* /direct/homme-polo-marine.jpg */ },
-        { id: "h-pantalon-beige", nom: "Pantalon beige", prix: "59 €", bientot: true, vitrine: true,
-          decrire: "un pantalon chino beige pour homme, coupe droite, taille standard",
-          photo: "" /* /direct/homme-pantalon-beige.jpg */ },
-        { id: "h-pull-col-rond", nom: "Pull col rond gris chiné", prix: "75 €", bientot: true, vitrine: true,
-          decrire: "un pull en laine gris chiné pour homme, col rond, manches longues, coupe droite",
-          photo: "" /* /direct/homme-pull-col-rond.jpg */ },
-        { id: "h-surchemise", nom: "Surchemise à carreaux", prix: "79 €", bientot: true, vitrine: true,
-          decrire: "une surchemise épaisse à carreaux rouges et noirs pour homme, portée ouverte sur un tee-shirt blanc",
-          photo: "" /* /direct/homme-surchemise-carreaux.jpg */ },
+        // ── En vitrine ───────────────────────────────────────────────────────
+        { id: "h-veste-ciree", nom: "Veste cirée kaki", prix: "89 €", vitrine: true,
+          decrire: "une veste cirée kaki pour homme, col en velours côtelé bordeaux, fermeture zippée et boutons-pression, deux poches à rabat",
+          photo: "/direct/homme-veste-ciree-kaki.jpg", reference: "/direct/homme-veste-ciree-kaki.jpg" },
+        { id: "h-chemise-denim", nom: "Chemise en denim", prix: "69 €", vitrine: true,
+          decrire: "une chemise en denim bleu moyen pour homme, deux poches poitrine à rabat, boutons nacrés, portée avec un pantalon large crème",
+          photo: "/direct/homme-chemise-denim.jpg", reference: "/direct/homme-chemise-denim.jpg" },
+        { id: "h-polo-chino", nom: "Polo marine et chino beige", prix: "45 €", vitrine: true,
+          decrire: "un polo bleu marine à manches longues pour homme, col à deux boutons, porté avec un chino beige et une ceinture de cuir brun",
+          photo: "/direct/homme-polo-marine-chino.jpg", reference: "/direct/homme-polo-marine-chino.jpg" },
+        { id: "h-chemise-lin", nom: "Chemise en lin bleu ciel", prix: "59 €", vitrine: true,
+          decrire: "une chemise en lin bleu ciel pour homme, col classique, coupe droite, manches longues",
+          photo: "/direct/homme-chemise-lin-bleu.jpg", reference: "/direct/homme-chemise-lin-bleu.jpg" },
+        { id: "h-pull-col-roule", nom: "Pull col roulé écru", prix: "75 €", vitrine: true,
+          decrire: "un pull col roulé écru en maille côtelée épaisse pour homme, coupe droite, manches longues",
+          photo: "/direct/homme-pull-col-roule.jpeg", reference: "/direct/homme-pull-col-roule.jpeg" },
+        { id: "h-mariniere", nom: "Marinière et jean large", prix: "79 €", vitrine: true,
+          decrire: "une marinière blanche à fines rayures bleu roi pour homme, encolure bateau, portée avec un jean large en denim brut",
+          photo: "/direct/homme-mariniere-jean.jpeg", reference: "/direct/homme-mariniere-jean.jpeg" },
+
+        // ── En réserve : ce dans quoi « Surprends-moi » pioche ────────────────
+        { id: "h-veste-jean", nom: "Veste en jean brut", prix: "99 €",
+          decrire: "une veste en jean brut bleu foncé pour homme, coupe trucker, surpiqûres écrues, deux poches poitrine à rabat, portée ouverte sur un tee-shirt blanc",
+          photo: "/direct/homme-veste-jean.jpg", reference: "/direct/homme-veste-jean.jpg" },
+        { id: "h-blouson-aviateur", nom: "Blouson aviateur, col mouton", prix: "249 €",
+          decrire: "un blouson aviateur en cuir brun foncé pour homme, large col en peau lainée écrue, fermeture zippée, bords-côtes aux poignets et à la taille",
+          photo: "/direct/homme-blouson-aviateur.jpg", reference: "/direct/homme-blouson-aviateur.jpg" },
+        { id: "h-carreaux-brique", nom: "Chemise à carreaux et chino brique", prix: "95 €",
+          decrire: "une chemise à carreaux bleus, blancs et rouges pour homme, portée avec un chino rouge brique et une ceinture noire",
+          photo: "/direct/homme-carreaux-chino-brique.jpg", reference: "/direct/homme-carreaux-chino-brique.jpg" },
+        { id: "h-costume-lin", nom: "Costume vert en lin", prix: "349 €",
+          decrire: "un costume en lin vert forêt pour homme, veste deux boutons à revers crantés, porté avec une chemise bleu clair et une cravate beige",
+          photo: "/direct/homme-costume-vert-lin.jpeg", reference: "/direct/homme-costume-vert-lin.jpeg" },
       ],
     },
     contexte: {
       titre: "La pièce du moment",
-      quoi: "Veste kaki",
-      detail: "Tailles S à XXL",
-      photo: "/direct/friperie-rayon.jpg",
+      quoi: "Veste cirée kaki",
+      detail: "Il n’en reste que trois",
+      photo: "/direct/homme-veste-ciree-kaki.jpg",
       geste: "Voir la boutique",
     },
     maison: [
@@ -2104,8 +2153,8 @@ export const MURS: Mur[] = [
         qui: "La boutique",
         role: "Vitrine",
         maison: true,
-        photo: "/direct/friperie-rayon.jpg",
-        mot: "Le rayon homme vient d’ouvrir. Les essayages arrivent cette semaine.",
+        photo: "/direct/homme-veste-ciree-kaki.jpg",
+        mot: "Les vestes cirées sont rentrées. Il en reste trois, essayez-les 🧥",
         heure: "10:00",
         interesses: 3,
       },

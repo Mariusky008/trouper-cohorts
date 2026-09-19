@@ -533,36 +533,52 @@ ClikMe doit réduire le choix, pas recréer un catalogue local.
 friperie du vieux centre partagent la branche « mode », donc ce mur-là. C'est
 exactement ce que le tableau des branches est là pour faire.
 
-#### Ce qui manque : le rayon homme
+#### Le rayon homme — dix pièces
 
-**`Un prêt-à-porter homme` existe dans la ville et ses pièces ne s'essaient pas
-encore.** Le dépôt n'a aucune photo de vêtement d'homme, et il y avait deux
-mauvaises réponses : lui prêter les robes de la boutique d'à côté — c'est-à-dire
-poser une robe sur un homme et appeler ça une démonstration — ou pointer des
-fichiers absents, ce qui fabrique des 404. Ses six pièces sont donc marquées
-« bientôt essayables » : le rayon s'affiche, il se lit, il ne se choisit pas, et
-« Surprends-moi » ne pioche pas dedans.
+**Il a ouvert.** Ses pièces sont restées « bientôt essayables » tant que le
+dépôt n'avait aucune photo de vêtement d'homme : la seule réponse honnête, parce
+que les deux autres étaient de lui prêter les robes de la boutique d'à côté ou
+de pointer des fichiers absents. Les dix photos sont arrivées.
 
-**Ce qu'il faut pour l'ouvrir.** Six photos en pied ou en buste, de face, fond
-neutre, sans visage reconnaissable. Déposer l'image et retirer `bientot` dans
-`lib/direct/fantomes.ts` suffit — les noms de fichiers sont déjà écrits en
-commentaire à côté de chaque pièce.
+**Dix, contre vingt-cinq chez la boutique de femme.** « Surprends-moi » y marche
+— six en vitrine, quatre en réserve, donc il sort vraiment quelque chose qu'on
+n'a pas vu — mais il fait le tour plus vite. L'écran du commerçant le dit :
+« à partir de vingt pièces, les propositions deviennent vraiment variées. »
 
-| Fichier attendu | La pièce | Le prix annoncé |
+| Fichier | Ce qu'il montre | La pièce |
 |---|---|---|
-| `homme-chemise-jean.jpg` | Chemise en jean bleu clair, coupe droite, boutonnée. | 69 € |
-| `homme-veste-kaki.jpg` | Veste légère kaki, deux poches poitrine à rabat, portée ouverte. | 89 € |
-| `homme-polo-marine.jpg` | Polo bleu marine, col et bords de manches rayés blanc. | 45 € |
-| `homme-pantalon-beige.jpg` | Pantalon chino beige, coupe droite. | 59 € |
-| `homme-pull-col-rond.jpg` | Pull laine gris chiné, col rond, coupe droite. | 75 € |
-| `homme-surchemise-carreaux.jpg` | Surchemise à carreaux rouges et noirs sur tee-shirt blanc. | 79 € |
+| `homme-veste-ciree-kaki.jpg` | Veste cirée kaki, col velours côtelé bordeaux. | « Veste cirée kaki » · **en vitrine, et pièce du jour** |
+| `homme-chemise-denim.jpg` | Chemise en denim et pantalon large crème, en pied. | « Chemise en denim » · **en vitrine** |
+| `homme-polo-marine-chino.jpg` | Polo marine à manches longues et chino beige. | « Polo marine et chino beige » · **en vitrine** |
+| `homme-chemise-lin-bleu.jpg` | Chemise en lin bleu ciel, fond studio. | « Chemise en lin bleu ciel » · **en vitrine** |
+| `homme-pull-col-roule.jpeg` | Pull col roulé écru, maille côtelée. | « Pull col roulé écru » · **en vitrine** |
+| `homme-mariniere-jean.jpeg` | Marinière rayée bleu roi et jean large brut, en pied. | « Marinière et jean large » · **en vitrine** |
+| `homme-veste-jean.jpg` | Veste en jean brut, coupe trucker, portée ouverte. | « Veste en jean brut » |
+| `homme-blouson-aviateur.jpg` | Blouson aviateur cuir brun, col en peau lainée. | « Blouson aviateur, col mouton » |
+| `homme-carreaux-chino-brique.jpg` | Chemise à carreaux et chino rouge brique, en pied. | « Chemise à carreaux et chino brique » |
+| `homme-costume-vert-lin.jpeg` | Costume en lin vert forêt, chemise bleue et cravate. | « Costume vert en lin » |
 
-**Ce qui manque encore, et ce sont les deux derniers :** `cou-nu.jpg` pour le
-collier, et une découpe de la bougie aux fleurs séchées. Leurs pièces restent
-« bientôt essayables » et ne se choisissent pas — on ne sert jamais une image de
-catalogue à la place d'un essai qui n'a pas eu lieu. Le jour où la photo arrive,
-il suffit d'ajouter `reference` à la pièce et de retirer `bientot` dans
-`lib/direct/fantomes.ts`.
+**Deux pièces portent une tenue complète, et elles sont nommées comme telles.**
+La maquette dessinait « Polo marine » et « Pantalon beige » séparément ; la photo
+les montre ensemble, et les séparer aurait demandé de promettre un pantalon
+qu'aucune image ne montre seul — l'essai serait de toute façon revenu avec la
+tenue entière. On nomme ce qu'on pose : c'est la seule règle qui tienne devant
+un modèle d'image.
+
+**Sa photo de commerce est celle de sa veste, faute de devanture.** Elle
+partageait `friperie-rayon.jpg` avec la friperie : deux magasins de vêtements de
+la même ville, à cinquante mètres l'un de l'autre, avec la même image — on croit
+à un défaut d'affichage avant de croire à deux commerces. C'est la même logique
+que la carte de la fleuriste, qui montre son bouquet plutôt que son étal. **À
+remplacer par une vraie devanture quand il y en aura une.**
+
+> ⚠️ **`homme-veste-ciree-kaki.jpg` porte une marque lisible** sur le tee-shirt
+> porté dessous et sur la poche basse. Même statut que le filigrane de studio de
+> `ongles1` et le monogramme de `coiffure1` : **c'est la première chose à refaire
+> avant un argumentaire imprimé**, au même titre que les deux exceptions datées
+> plus haut. C'est aussi la faute exacte qui a fait retirer `portant-boutique.jpg`
+> du produit.
+
 
 ### ⚠️ La référence est une AUTRE personne — le risque qui reste
 
@@ -585,12 +601,15 @@ vingt ans.
 **recadrées sur les cheveux** — le haut du crâne, la frange, les tempes, les
 côtés — coupées au niveau des yeux. On garde la forme de la coupe autour du
 visage, qui est ce qu'on essaie, et on retire le visage, qui est ce qui fuit.
-La même règle vaut pour les tenues (`vetement1`…`vetement5`, et les dix-huit de
-l'arrivage d'automne) : un vêtement à plat ou sur mannequin sans tête fuit moins
-qu'une photo de mode en pied. **Dix-sept des dix-huit nouvelles montrent un
-visage reconnaissable** — ce sont des photos de catalogue fournies telles
-quelles. C'est la même réserve que pour `coiffure1` et `coiffure2`, et elle est
-à lever avant tout argumentaire imprimé.
+La même règle vaut pour les tenues (`vetement1`…`vetement5`, les dix-huit de
+l'arrivage d'automne et les dix du rayon homme) : un vêtement à plat ou sur
+mannequin sans tête fuit moins qu'une photo de mode en pied. **Vingt-sept des
+vingt-huit nouvelles montrent un visage reconnaissable** — ce sont des photos de
+catalogue fournies telles quelles. C'est la même réserve que pour `coiffure1` et
+`coiffure2`, et elle est à lever avant tout argumentaire imprimé. **C'est aussi,
+et c'est plus embêtant, ce qui tire le rendu vers le mannequin** quand le client
+ne lui ressemble pas : un recadrage sur le vêtement, coupé au niveau des
+épaules, réglerait les deux problèmes d'un coup.
 
 **Le levier disponible en attendant :** `ESSAI_FOURNISSEUR=openai` renverse
 l'ordre des deux fournisseurs. `gpt-image-1` accepte `input_fidelity: high`, un

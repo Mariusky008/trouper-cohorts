@@ -2528,17 +2528,25 @@ const CARTES: CarteAutour[] = [
    */
   {
     id: "mode-homme",
+    /* SA CARTE DIT LES MÊMES PIÈCES QUE SON MUR, et c'est la règle : « au lieu
+       d'avoir le texte coordonné avec l'annonce, j'ai Cette bougie chez vous. »
+       Aucune n'y porte de photo — elles viennent toutes du modèle, qui les a et
+       qui les a décrites pour le rendu. Voir `siennes` dans `murDeLaCarte`. */
     catalogue: [
-      { id: "h-1", rayon: "Nouveautés", nom: "Veste kaki", detail: "Du S au XXL.", prix: "89 €" },
-      { id: "h-2", rayon: "Nouveautés", nom: "Surchemise à carreaux", detail: "Deux coloris.", prix: "79 €" },
-      { id: "h-3", rayon: "Toujours en rayon", nom: "Chemise en jean", prix: "69 €" },
-      { id: "h-4", rayon: "Toujours en rayon", nom: "Pantalon chino", detail: "Cinq couleurs.", prix: "59 €" },
-      { id: "h-5", rayon: "Toujours en rayon", nom: "Polo piqué", prix: "45 €" },
-      { id: "h-6", rayon: "Le service", nom: "Retouches", detail: "Ourlets offerts, sous 48 h." },
+      { id: "h-1", rayon: "Nouveautés", nom: "Veste cirée kaki", detail: "Col velours. Il n'en reste que trois.", prix: "89 €" },
+      { id: "h-2", rayon: "Nouveautés", nom: "Pull col roulé écru", detail: "Maille côtelée.", prix: "75 €" },
+      { id: "h-3", rayon: "Toujours en rayon", nom: "Chemise en denim", prix: "69 €" },
+      { id: "h-4", rayon: "Toujours en rayon", nom: "Chino", detail: "Cinq couleurs, du 38 au 50.", prix: "59 €" },
+      { id: "h-5", rayon: "Toujours en rayon", nom: "Polo marine", prix: "45 €" },
+      { id: "h-6", rayon: "Les pièces fortes", nom: "Costume en lin", detail: "Vert forêt, sur mesure légère.", prix: "349 €" },
+      { id: "h-7", rayon: "Le service", nom: "Retouches", detail: "Ourlets offerts, sous 48 h." },
     ],
     branche: "mode",
-    photo: "/direct/friperie-rayon.jpg",
-    cadrage: "50%",
+    /* CE QU'IL MONTRE AUJOURD'HUI, faute de devanture — voir le mur
+       « mode-homme » dans `lib/direct/fantomes.ts`, qui explique pourquoi elle
+       ne peut pas rester celle de la friperie. */
+    photo: "/direct/homme-veste-ciree-kaki.jpg",
+    cadrage: "30%",
     nom: "Un prêt-à-porter homme",
     google: { note: "4,5", avis: 19 },
     // LE MOT « HOMME » DANS LE MÉTIER N'EST PAS DÉCORATIF : c'est lui qui
@@ -2547,8 +2555,11 @@ const CARTES: CarteAutour[] = [
     metier: "Prêt-à-porter homme",
     ville: VILLE,
     itineraire: YALLER,
-    metres: 470,
-    distance: "470 m",
+    /* TROIS CENT VINGT MÈTRES, ET PAS QUATRE CENT SOIXANTE-DIX : la friperie
+       est déjà à 470 m. Deux commerces à la même distance au mètre près se
+       lisent comme une donnée recopiée, pas comme deux adresses. */
+    metres: 320,
+    distance: "320 m",
     site: "",
     fiche: {
       ou: "Vieille ville, place de la halle",
@@ -2564,9 +2575,9 @@ const CARTES: CarteAutour[] = [
     moments: [
       {
         de: 10, a: 13, quand: "ce matin", icone: "🧥",
-        titre: "Les vestes d'automne sont rentrées",
-        lignes: ["Kaki, marine et camel", "Du S au XXL"],
-        prix: "89 €", places: 24, envies: ["arrivage", "maintenant"],
+        titre: "Les vestes cirées sont rentrées",
+        lignes: ["Kaki, col velours côtelé", "Il n'en reste que trois"],
+        prix: "89 €", places: 3, envies: ["arrivage", "maintenant"],
         avis: [
           { note: 5, texte: "On m'a fait l'ourlet pendant que j'attendais.", qui: "Rémi", quand: "en juin" },
         ],
