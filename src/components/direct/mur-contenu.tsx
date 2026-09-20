@@ -1331,7 +1331,6 @@ export function MurContenu({
           }}
           onEssai={setEssaiVu}
           catalogue={catalogue}
-          onReserver={onReserver}
         />
         </div>
       )}
@@ -1679,33 +1678,9 @@ function EcranMur({
             </button>
           </div>
 
-          {/* ═══ « SUR MOI », AVANT « SUR LES AUTRES » ══════════════════════
-
-              C'est l'autre moitié de sa demande : « un endroit où tout est créé
-              pour lui faire comprendre cet article : sur lui ET sur les
-              autres ». Son propre rendu ouvre donc le mur, en grand et nommé —
-              et c'est aussi le chemin du retour, puisqu'il est cliquable. */}
-          {essaiVu && onRevoir && (
-            <button type="button" className="mu-moi" onClick={onRevoir}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={essaiVu.image} alt="" />
-              <span className="mu-moi-t">
-                <b>Sur vous</b>
-                <em>{essaiVu.piece.nom}</em>
-                {essaiVu.note > 0 && (
-                  <span className="mu-moi-n" aria-hidden="true">
-                    {Array.from({ length: 5 }, (_, k) => (
-                      <Signe key={k} classe={k < essaiVu.note ? "mu-c-ns on" : "mu-c-ns"} />
-                    ))}
-                  </span>
-                )}
-              </span>
-              <s aria-hidden="true">Revoir →</s>
-            </button>
-          )}
-          {/* LA PASTILLE DE LA MAQUETTE, ET ELLE PORTE DES FANTÔMES PLUTÔT QUE
-              DES VISAGES. On n'a pas de visages à empiler, et en inventer serait
-              fabriquer exactement ce que cette ligne certifie. */}
+          {/* « SUR VOUS » A QUITTÉ CETTE PLACE, et c'est la correction qui
+              tient toute la page : il est devenu la PREMIÈRE TUILE du mur.
+              Voir la grille plus bas. */}
         </div>
       ) : (
         /* ═══ LA TÊTE TENAIT CINQ BLOCS EMPILÉS ═══════════════════════════════
@@ -1874,9 +1849,60 @@ function EcranMur({
         </p>
       )}
 
+      {/* ═══ UNE SEULE GALERIE, ET VOTRE ESSAI EN OUVRE LE BAL ══════════════
+
+          « Le design de cette page est horrible, et visuellement on ne sait pas
+          où regarder. Il faut refaire cette page pour donner davantage de
+          structure et de lisibilité visuelle. »
+
+          LA CAUSE ÉTAIT UN EMPILEMENT DE BLOCS DE MÊME POIDS. Le bandeau de la
+          pièce, le titre, les deux pastilles, une large carte « Sur vous » en
+          travers de l'écran, PUIS la grille, puis le panneau du commerçant :
+          six choses qui se présentent toutes comme la principale. L'œil n'a
+          nulle part où se poser parce qu'on ne lui a jamais dit où est le mur.
+
+          « SUR VOUS » DESCEND DANS LA GRILLE, EN PREMIÈRE TUILE. Il garde tout
+          ce qu'il avait — il nomme la pièce, il montre la note, il ramène à
+          l'essai — et il cesse d'être une barre horizontale qui coupe la page
+          en deux. Il y gagne même : posé à côté des autres, au même format, il
+          fait ce que ce mur promet — VOUS, PUIS LES AUTRES, dans la même
+          rangée, ce qui est la seule façon de comparer.
+
+          ET IL RÉPARE LA TUILE ORPHELINE. Une seule cliente dans une grille à
+          deux colonnes laissait une demi-page vide à droite : c'est ce qu'on
+          voyait sur la capture. Avec votre essai devant, deux tuiles
+          remplissent la rangée. Quand il n'y a personne d'autre, il prend la
+          largeur entière plutôt que de rester seul dans sa colonne. */}
       <div
         className={`mu-rang${mur.depot === "essai" ? " grille" : ""}${tout ? " tout" : ""}`}
       >
+        {mur.depot === "essai" && essaiVu && onRevoir && (
+          <button
+            type="button"
+            className={`mu-moi${vus.length === 0 ? " seul" : ""}`}
+            onClick={onRevoir}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={essaiVu.image} alt="" />
+            <b className="mu-moi-e">
+              <Signe classe="mu-moi-ef" /> Vous
+            </b>
+            <span className="mu-moi-t">
+              <b>
+                Sur vous
+                {essaiVu.note > 0 && (
+                  <span className="mu-moi-n" aria-hidden="true">
+                    {Array.from({ length: 5 }, (_, k) => (
+                      <Signe key={k} classe={k < essaiVu.note ? "mu-c-ns on" : "mu-c-ns"} />
+                    ))}
+                  </span>
+                )}
+              </b>
+              <em>{essaiVu.piece.nom}</em>
+            </span>
+            <s aria-hidden="true">Revoir →</s>
+          </button>
+        )}
         {vus.map((f) => (
           <Carte
             key={f.id}
@@ -2073,7 +2099,6 @@ function EcranDepot({
   piecePrechoisie,
   onEssai,
   catalogue,
-  onReserver,
 }: {
   mur: TypeMur;
   clients: Fantome[];
@@ -2093,8 +2118,6 @@ function EcranDepot({
   /** Voir `Essai` : le favori de la CARTE, pas un second système. */
   onFavori?: () => void;
   favori?: boolean;
-  /** Voir `Essai` : le créneau de l'ANNONCE, pas une seconde réservation. */
-  onReserver?: () => void;
 }) {
   /**
    * ═══ L'ESSAI EST SEUL À L'ÉCRAN ═══════════════════════════════════════════
@@ -2126,7 +2149,6 @@ function EcranDepot({
         piecePrechoisie={piecePrechoisie}
         onEssai={onEssai}
         catalogue={catalogue}
-        onReserver={onReserver}
       />
     );
   }
@@ -2669,7 +2691,6 @@ function Essai({
   piecePrechoisie,
   onEssai,
   catalogue,
-  onReserver,
 }: {
   mur: TypeMur;
   restants: number;
@@ -2700,24 +2721,6 @@ function Essai({
   onFavori?: () => void;
   /** L'annonce est-elle déjà gardée ? Le bouton le dit plutôt que de le taire. */
   favori?: boolean;
-  /**
-   * RÉSERVER L'ARTICLE, ET C'EST LE CRÉNEAU DE L'ANNONCE.
-   *
-   * La maquette pose deux gestes côte à côte au bas du résultat — « Réserver
-   * cet article » et « Le mettre de côté » — et on peut les lire comme un
-   * doublon. Ils ne le sont pas, et la différence est celle du commerce réel :
-   * METTRE DE CÔTÉ demande au commerçant de garder la pièce (c'est
-   * `mots.reserver`, qui part en conversation et décompte ce qu'il reste) ;
-   * RÉSERVER prend un créneau pour venir l'essayer sur place, c'est-à-dire
-   * exactement ce que fait « Réserver » sur l'annonce. Le brancher ailleurs
-   * aurait fabriqué une seconde réservation qui ne décompte rien — même raison
-   * que `onReserver` sur `MurContenu`.
-   *
-   * ABSENT, LE BOUTON N'EST PAS DESSINÉ : sur le mur seul il n'y a pas
-   * d'annonce derrière, donc pas de créneau, et un geste qui n'ouvre rien est
-   * pire que pas de geste. Même règle que `onSalon` et `onFavori`.
-   */
-  onReserver?: () => void;
 }) {
   /**
    * ═══ LE PARCOURS A TROIS TEMPS, ET LE TROISIÈME EST NOUVEAU ════════════════
@@ -6661,29 +6664,61 @@ function Styles() {
         .mu-cat:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
         .mu-cadre button:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
 
-        /* ═══ « SUR VOUS », AVANT « SUR LES AUTRES » ═══════════════════════
+        /* ═══ « SUR VOUS » EST UNE TUILE, PLUS UNE BARRE ═══════════════════
 
-           L'autre moitie de sa demande : « un endroit ou tout est cree pour lui
-           faire comprendre cet article : sur lui ET sur les autres ». Son propre
-           rendu ouvre donc le mur, nomme, et il est le chemin du retour. */
-        .mu-moi{display:flex;align-items:center;gap:12px;width:100%;
-          margin-top:14px;padding:10px;text-align:left;font-family:inherit;
-          cursor:pointer;border-radius:18px;color:var(--mu-encre);
-          background:linear-gradient(104deg,rgba(139,125,246,.18),
-            rgba(240,38,155,.12));border:1px solid rgba(199,125,240,.4);
-          transition:transform .12s ease;}
-        .mu-moi:active{transform:scale(.99);}
+           IL PREND LE FORMAT DES AUTRES, et c'est tout l'interet : meme photo
+           en quatre cinquiemes, meme bandeau pose dessus, meme coin arrondi.
+           Posee en travers de la page, la barre coupait le mur en deux et se
+           presentait comme un sixieme bloc de meme poids ; rangee dans la
+           grille, elle fait ce que ce mur promet — vous, puis les autres, dans
+           la meme rangee.
+
+           IL RESTE RECONNAISSABLE SANS CRIER : un lisere violet, une pastille
+           « Vous » en haut a gauche la ou les autres portent « Essaye ici », et
+           « Revoir » en clair dans le bandeau. C'est la seule tuile qui emmene
+           ailleurs, donc c'est la seule qui annonce ou. */
+        .mu-moi{position:relative;display:flex;flex-direction:column;
+          width:100%;padding:0;overflow:hidden;text-align:left;
+          font-family:inherit;cursor:pointer;border-radius:18px;
+          color:var(--mu-encre);background:rgba(22,18,44,.72);
+          border:1.5px solid rgba(201,188,255,.55);
+          box-shadow:0 10px 30px -18px rgba(139,125,246,.9);
+          transition:transform .12s ease,border-color .16s ease;}
+        .mu-moi:active{transform:scale(.985);}
         .mu-moi:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
-        .mu-moi img{flex:none;width:52px;height:64px;object-fit:cover;
-          object-position:center 18%;border-radius:11px;display:block;}
-        .mu-moi-t{flex:1 1 auto;min-width:0;}
-        .mu-moi-t b{display:block;font-size:14.5px;font-weight:850;color:#fff;}
+        .mu-moi img{display:block;width:100%;height:auto;aspect-ratio:4/5;
+          object-fit:cover;object-position:center 14%;}
+        /* LA PASTILLE, A LA PLACE OU LES AUTRES PORTENT « ESSAYE ICI ». */
+        .mu-moi-e{position:absolute;top:9px;left:9px;display:inline-flex;
+          align-items:center;gap:5px;font-size:10px;font-weight:900;
+          letter-spacing:.08em;text-transform:uppercase;color:#1A1030;
+          border-radius:999px;padding:4px 9px 4px 6px;background:#C9BCFF;}
+        .mu-moi-ef{width:13px;height:13px;}
+        .mu-moi-ef .mu-f-corps{fill:#1A1030;}
+        /* LE BANDEAU DU BAS, COMME CELUI DES AUTRES TUILES : un degrade, le
+           nom, la note. C'est ce qui fait que les deux se comparent au lieu de
+           se suivre. */
+        .mu-moi-t{position:absolute;left:0;right:0;bottom:30px;
+          padding:18px 10px 7px;
+          background:linear-gradient(180deg,rgba(10,7,22,0),rgba(10,7,22,.86) 46%,
+            rgba(10,7,22,.96));}
+        .mu-moi-t>b{display:flex;align-items:center;gap:7px;font-size:14px;
+          font-weight:850;color:#fff;}
         .mu-moi-t em{display:block;margin-top:2px;font-style:normal;
-          font-size:12px;color:#C9BCFF;overflow:hidden;text-overflow:ellipsis;
-          white-space:nowrap;}
-        .mu-moi-n{display:flex;gap:2px;margin-top:5px;}
-        .mu-moi s{flex:none;text-decoration:none;font-size:12.5px;
-          font-weight:800;color:#fff;}
+          font-size:11.5px;font-weight:700;color:#C9BCFF;overflow:hidden;
+          text-overflow:ellipsis;white-space:nowrap;}
+        .mu-moi-n{display:flex;gap:2px;}
+        /* LE RETOUR EST ECRIT EN TOUTES LETTRES, sur son propre bandeau : une
+           tuile qui emmene ailleurs sans le dire se fait toucher par erreur. */
+        .mu-moi s{display:flex;align-items:center;justify-content:center;
+          gap:5px;height:30px;text-decoration:none;font-size:12px;
+          font-weight:850;color:#1A1030;background:#C9BCFF;}
+        .mu-moi:hover s{background:#DCD3FF;}
+        /* SEUL SUR LE MUR, IL PREND LA RANGEE ENTIERE : une tuile orpheline
+           dans une grille a deux colonnes laisse une demi-page vide, ce qui est
+           exactement le defaut qu'on vient de corriger ailleurs. */
+        .mu-moi.seul{grid-column:1/-1;}
+        .mu-moi.seul img{aspect-ratio:16/11;object-position:center 12%;}
 
         /* ═══ LE MOT DE LA BOUTIQUE ════════════════════════════════════════
 
@@ -6774,10 +6809,39 @@ function Styles() {
            bornee a deux lignes plus bas : le damier reste regulier sans qu'on
            ait besoin de fabriquer du vide pour l'aligner. */
         .mu-rang.grille{display:grid;grid-template-columns:1fr 1fr;gap:10px;
-          align-items:start;}
+          align-items:start;margin-top:16px;}
         @media (min-width:560px){
           .mu-rang.grille{grid-template-columns:1fr 1fr 1fr;}
         }
+        /* ═══ LES TUILES ARRIVENT L'UNE APRES L'AUTRE ══════════════════════
+
+           « Peut-etre meme mettre un peu d'animation pour lui donner de la
+           modernite. »
+
+           ELLE N'EST PAS DECORATIVE : c'est elle qui apprend a lire la page. Un
+           damier qui apparait d'un bloc se regarde comme un fond ; le meme
+           damier qui se remplit tuile par tuile designe son ordre — vous
+           d'abord, puis les autres — et l'oeil suit ce mouvement au lieu de
+           chercher ou se poser.
+
+           HUIT RETARDS SUFFISENT. Au-dela, l'attente se verrait plus que
+           l'arrivee, et les tuiles suivantes sont de toute facon sous le pli :
+           elles heritent du dernier retard et arrivent ensemble, ce qui est
+           exactement ce qu'on veut d'une neuvieme vignette. */
+        .mu-rang.grille>*{animation:muTuile .42s cubic-bezier(.16,1,.3,1) both;}
+        .mu-rang.grille>*:nth-child(1){animation-delay:0ms;}
+        .mu-rang.grille>*:nth-child(2){animation-delay:55ms;}
+        .mu-rang.grille>*:nth-child(3){animation-delay:110ms;}
+        .mu-rang.grille>*:nth-child(4){animation-delay:165ms;}
+        .mu-rang.grille>*:nth-child(5){animation-delay:220ms;}
+        .mu-rang.grille>*:nth-child(6){animation-delay:275ms;}
+        .mu-rang.grille>*:nth-child(7){animation-delay:330ms;}
+        .mu-rang.grille>*:nth-child(n+8){animation-delay:385ms;}
+        @keyframes muTuile{
+          from{opacity:0;transform:translateY(14px) scale(.97);}
+          to{opacity:1;transform:none;}}
+        @media (prefers-reduced-motion:reduce){
+          .mu-rang.grille>*{animation:none;}}
         .mu-rang.grille .mu-c{flex-direction:column;}
         /* LA VIGNETTE PREND TOUTE LA LARGEUR. QUATRE CINQUIEMES, PLUS TROIS
            QUARTS : le format precedent ajoutait vingt points de hauteur par
