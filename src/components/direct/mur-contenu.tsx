@@ -1331,7 +1331,6 @@ export function MurContenu({
           }}
           onEssai={setEssaiVu}
           catalogue={catalogue}
-          onReserver={onReserver}
         />
         </div>
       )}
@@ -2100,7 +2099,6 @@ function EcranDepot({
   piecePrechoisie,
   onEssai,
   catalogue,
-  onReserver,
 }: {
   mur: TypeMur;
   clients: Fantome[];
@@ -2120,8 +2118,6 @@ function EcranDepot({
   /** Voir `Essai` : le favori de la CARTE, pas un second système. */
   onFavori?: () => void;
   favori?: boolean;
-  /** Voir `Essai` : le créneau de l'ANNONCE, pas une seconde réservation. */
-  onReserver?: () => void;
 }) {
   /**
    * ═══ L'ESSAI EST SEUL À L'ÉCRAN ═══════════════════════════════════════════
@@ -2153,7 +2149,6 @@ function EcranDepot({
         piecePrechoisie={piecePrechoisie}
         onEssai={onEssai}
         catalogue={catalogue}
-        onReserver={onReserver}
       />
     );
   }
@@ -2696,7 +2691,6 @@ function Essai({
   piecePrechoisie,
   onEssai,
   catalogue,
-  onReserver,
 }: {
   mur: TypeMur;
   restants: number;
@@ -2727,21 +2721,6 @@ function Essai({
   onFavori?: () => void;
   /** L'annonce est-elle déjà gardée ? Le bouton le dit plutôt que de le taire. */
   favori?: boolean;
-  /**
-   * RÉSERVER L'ARTICLE, ET C'EST LE CRÉNEAU DE L'ANNONCE.
-   *
-   * LA MAQUETTE MET TROIS GESTES AU BAS DU RÉSULTAT, et ils n'ouvrent pas la
-   * même porte : RÉSERVER emmène là où l'annonce emmenait déjà — l'offre du
-   * jour, le créneau, le décompte de ce qu'il reste ; METTRE DE CÔTÉ garde la
-   * pièce dans sa propre poche ; EN PARLER l'emporte chez ses amis. Brancher
-   * le premier ailleurs aurait fabriqué une seconde réservation qui ne
-   * décompte rien.
-   *
-   * ABSENT, LE BOUTON N'EST PAS DESSINÉ : sur le mur seul il n'y a pas
-   * d'annonce derrière, donc pas de créneau, et un geste qui n'ouvre rien est
-   * pire que pas de geste. Même règle que `onSalon` et `onFavori`.
-   */
-  onReserver?: () => void;
 }) {
   /**
    * ═══ LE PARCOURS A TROIS TEMPS, ET LE TROISIÈME EST NOUVEAU ════════════════
@@ -2898,6 +2877,8 @@ function Essai({
    * de la laisser figée sur la fin de la première.
    */
   const [misDeCote, setMisDeCote] = useState(false);
+  /** La pièce est-elle dans la poche du cœur ? Voir « Réserver cet article ». */
+  const [garde, setGarde] = useState(false);
   const [coeur, setCoeur] = useState(0);
   /** Le cadre du résultat : c'est lui qui donne le repère au vol du cœur. */
   const cadreRes = useRef<HTMLDivElement>(null);
@@ -3699,6 +3680,7 @@ function Essai({
     setPourquoi(false);
     setConseil(false);
     setMisDeCote(false);
+    setGarde(false);
     setBulle(0);
     setRevele(false);
     setAvant(false);
@@ -3733,6 +3715,7 @@ function Essai({
     setPourquoi(false);
     setConseil(false);
     setMisDeCote(false);
+    setGarde(false);
     setBulle(0);
     setRevele(false);
     setX(58);
@@ -4340,7 +4323,23 @@ function Essai({
           pictogrammes : la photo est analysée (c'est fait), on cherche le bon
           look (c'est en cours), presque prêt. Un nombre aurait demandé d'être
           vrai ; ces trois mots-là le sont. */}
-      {etape === "recherche" && (
+      {/* ═══ UN SEUL ÉCRAN D'ATTENTE QUAND C'EST CLIKME QUI CHERCHE ════════
+
+          « Quand je clique sur "Surprends-moi", j'ai DEUX écrans de
+          préparation au lieu d'un seul. »
+
+          IL AVAIT RAISON, ET C'ÉTAIT UN DÉFAUT DE RACCORD. Les deux écrans
+          existent pour deux travaux différents : « ClikMe cherche » pendant
+          qu'il pioche dans la collection, « Ton fantôme prépare » pendant que
+          le rendu se calcule. Enchaînés, ils racontent deux fois la même chose
+          à la personne qui attend — et le second efface le premier au moment
+          précis où l'on commençait à le lire.
+
+          LA RECHERCHE TIENT DONC TOUTE L'ATTENTE. Elle reste à l'écran pendant
+          le calcul, sa frise arrêtée sur « Presque prêt ! », qui est exactement
+          ce qui se passe. Le parcours choisi, lui, ne passe jamais par la
+          recherche — il n'y a rien à chercher — et garde sa préparation. */}
+      {(etape === "recherche" || (etape === "calcul" && surprise)) && (
         <div className="mu-rech" aria-live="polite">
           {/* LE FOND EST LA BOUTIQUE, FLOUTÉE. On cherche DANS un magasin, et
               le magasin doit être derrière — sinon la scène pourrait se passer
@@ -4520,31 +4519,8 @@ function Essai({
           VRAIMENT : la photo a été prise, la pièce a été choisie. La troisième
           ne se coche jamais — elle demande « Prêt ? », et la réponse est
           l'écran suivant. */}
-      {etape === "calcul" && prepare && (
+      {etape === "calcul" && prepare && !surprise && (
         <div className={`mu-prep ${acte}`} aria-live="polite">
-          {/* ═══ OÙ L'ON EST, ET COMMENT ON SORT ═════════════════════════════
-
-              LA MAQUETTE OUVRE SUR « 📍 Dax · 470 m » ET UNE CROIX, et ce n'est
-              pas de la décoration : c'est le seul écran du parcours qui dure —
-              dix secondes pendant lesquelles on ne peut rien faire. Y lire le
-              nom de sa ville rappelle que la pièce est À CÔTÉ, et la croix dit
-              qu'on n'est pas enfermé dedans.
-
-              ELLE RAMÈNE AU CHOIX, PAS À L'ACCUEIL : on referme une attente,
-              on n'abandonne pas le magasin. */}
-          <div className="mu-prep-ou">
-            <b>
-              <i aria-hidden="true">📍</i> {mur.ville}
-              {mur.distance ? ` · ${mur.distance}` : ""}
-            </b>
-            <button
-              type="button"
-              aria-label="Arrêter la préparation"
-              onClick={() => setEtape("choisir")}
-            >
-              ✕
-            </button>
-          </div>
           <div className="mu-prep-tete">
             <h2>
               Ton fantôme <b>prépare</b>
@@ -5043,71 +5019,6 @@ function Essai({
                 bas, n'aurait plus de sens. */}
           </div>
 
-          {/* ═══ POURQUOI CLIKME A CHOISI CELLE-LÀ ═══════════════════════════
-
-              « Après le reveal, ClikMe peut expliquer pourquoi il a choisi
-              cette pièce. Cette explication doit rester très courte sur l'écran
-              principal ; le détail peut être caché derrière "Pourquoi ?". »
-
-              ELLE N'EXISTE QUE DANS CE PARCOURS-LÀ, et c'est la règle qui tient
-              tout l'écran : quand c'est le client qui a choisi, ClikMe se tait.
-              Une machine qui commente un choix qu'on n'a pas demandé devient un
-              juge du goût ; une machine qui explique SON PROPRE choix rend des
-              comptes.
-
-              ET ELLE NE PARLE PAS DU VISAGE DE LA PERSONNE. « Le kaki
-              fonctionne avec les tons de votre visage » suppose une analyse
-              qu'aucun calcul de cette maquette ne fait. Elle parle de ce qui
-              est vrai : la pièce, sa coupe, et d'où elle a été sortie. */}
-          {surprise && (
-            <div className={`mu-choix${pourquoi ? " ouvert" : ""}`}>
-              <b>
-                <i aria-hidden="true">✨</i> Choix ClikMe
-              </b>
-              {/* PAS D'ARTICLE DEVANT LE NOM DE LA PIÈCE. « J'ai sorti robe à
-                  volants corail de la collection » est ce que donnait la phrase
-                  précédente : le français demande « la » ou « le », et la
-                  collection ne dit nulle part le genre de chaque pièce. On
-                  écrit donc le nom EN TÊTE, où il n'en a pas besoin — plutôt que
-                  de deviner un genre une fois sur deux. */}
-              <p>
-                <b>{piece.nom}</b> — {surLeCorps}.
-              </p>
-              {pourquoi ? (
-                <div className="mu-choix-d">
-                  <dl>
-                    <dt>La pièce</dt>
-                    <dd>{piece.decrire ?? piece.nom}</dd>
-                    {/* IL DÉVELOPPE, IL NE RÉPÈTE PAS. La bulle courte porte déjà
-                        `surLeCorps` : le redire ici mot pour mot, trois lignes
-                        plus bas, se lisait comme un défaut. `avisNeutre` dit la
-                        même chose en entier, et sans jamais noter la pièce. */}
-                    <dt>La coupe</dt>
-                    <dd>{avisNeutre(piece).dit}</dd>
-                    <dt>Comment je choisis</dt>
-                    {/* ON DIT OÙ EN EST LA MACHINE, PLUTÔT QUE DE LUI PRÊTER UN
-                        GOÛT QU'ELLE N'A PAS ENCORE. C'est exactement ce que le
-                        produit promet : « j'apprends ce que vous aimez », et
-                        non « je sais mieux que vous ce qui vous va ». */}
-                    <dd>
-                      Aujourd’hui, je pioche dans la collection en écartant ce que
-                      vous venez de voir. Bientôt, je tiendrai compte de ce que
-                      vous notez, de ce que vous faites mettre de côté et des
-                      surprises que vous gardez.
-                    </dd>
-                  </dl>
-                  <button type="button" onClick={() => setPourquoi(false)}>
-                    Fermer
-                  </button>
-                </div>
-              ) : (
-                <button type="button" className="mu-choix-b" onClick={() => setPourquoi(true)}>
-                  <span>Pourquoi&nbsp;?</span> <s aria-hidden="true">›</s>
-                </button>
-              )}
-            </div>
-          )}
-
           {/* L'ESPACE QUI POUSSE LE BAS EN BAS. C'est lui qui laisse la photo
               respirer quelle que soit la hauteur de l'écran, sans donner une
               hauteur fixe à l'image — laquelle recadrerait les grands
@@ -5115,6 +5026,70 @@ function Essai({
           <div className="mu-res-vide" aria-hidden="true" />
 
           <div className="mu-res-bas">
+          {/* ═══ POURQUOI CLIKME A CHOISI CELLE-LÀ ═══════════════════════════
+
+                « Après le reveal, ClikMe peut expliquer pourquoi il a choisi
+                cette pièce. Cette explication doit rester très courte sur l'écran
+                principal ; le détail peut être caché derrière "Pourquoi ?". »
+
+                ELLE N'EXISTE QUE DANS CE PARCOURS-LÀ, et c'est la règle qui tient
+                tout l'écran : quand c'est le client qui a choisi, ClikMe se tait.
+                Une machine qui commente un choix qu'on n'a pas demandé devient un
+                juge du goût ; une machine qui explique SON PROPRE choix rend des
+                comptes.
+
+                ET ELLE NE PARLE PAS DU VISAGE DE LA PERSONNE. « Le kaki
+                fonctionne avec les tons de votre visage » suppose une analyse
+                qu'aucun calcul de cette maquette ne fait. Elle parle de ce qui
+                est vrai : la pièce, sa coupe, et d'où elle a été sortie. */}
+            {surprise && (
+              <div className={`mu-choix${pourquoi ? " ouvert" : ""}`}>
+                <b>
+                  <i aria-hidden="true">✨</i> Choix ClikMe
+                </b>
+                {/* PAS D'ARTICLE DEVANT LE NOM DE LA PIÈCE. « J'ai sorti robe à
+                    volants corail de la collection » est ce que donnait la phrase
+                    précédente : le français demande « la » ou « le », et la
+                    collection ne dit nulle part le genre de chaque pièce. On
+                    écrit donc le nom EN TÊTE, où il n'en a pas besoin — plutôt que
+                    de deviner un genre une fois sur deux. */}
+                <p>
+                  <b>{piece.nom}</b> — {surLeCorps}.
+                </p>
+                {pourquoi ? (
+                  <div className="mu-choix-d">
+                    <dl>
+                      <dt>La pièce</dt>
+                      <dd>{piece.decrire ?? piece.nom}</dd>
+                      {/* IL DÉVELOPPE, IL NE RÉPÈTE PAS. La bulle courte porte déjà
+                          `surLeCorps` : le redire ici mot pour mot, trois lignes
+                          plus bas, se lisait comme un défaut. `avisNeutre` dit la
+                          même chose en entier, et sans jamais noter la pièce. */}
+                      <dt>La coupe</dt>
+                      <dd>{avisNeutre(piece).dit}</dd>
+                      <dt>Comment je choisis</dt>
+                      {/* ON DIT OÙ EN EST LA MACHINE, PLUTÔT QUE DE LUI PRÊTER UN
+                          GOÛT QU'ELLE N'A PAS ENCORE. C'est exactement ce que le
+                          produit promet : « j'apprends ce que vous aimez », et
+                          non « je sais mieux que vous ce qui vous va ». */}
+                      <dd>
+                        Aujourd’hui, je pioche dans la collection en écartant ce que
+                        vous venez de voir. Bientôt, je tiendrai compte de ce que
+                        vous notez, de ce que vous faites mettre de côté et des
+                        surprises que vous gardez.
+                      </dd>
+                    </dl>
+                    <button type="button" onClick={() => setPourquoi(false)}>
+                      Fermer
+                    </button>
+                  </div>
+                ) : (
+                  <button type="button" className="mu-choix-b" onClick={() => setPourquoi(true)}>
+                    <span>Pourquoi&nbsp;?</span> <s aria-hidden="true">›</s>
+                  </button>
+                )}
+              </div>
+            )}
             <div
               className="mu-note-f res"
               role="radiogroup"
@@ -5277,12 +5252,39 @@ function Essai({
                 CHACUN DISPARAÎT S'IL N'OUVRE RIEN : pas d'annonce derrière,
                 pas de créneau ; pas de rendu, rien à montrer. */}
             <div className="mu-res-g">
-              {onReserver && (
-                <button type="button" className="mu-res-c" onClick={onReserver}>
-                  <i aria-hidden="true">✨</i>
-                  <span>Réserver cet article</span>
-                </button>
-              )}
+              {/* ═══ RÉSERVER MET LE CŒUR, IL N'EMMÈNE PLUS AILLEURS ═════════
+
+                  « "Réserver cet article" devrait juste mettre l'article en
+                  favori — le cœur qui est en haut à droite, partout dans
+                  l'app. »
+
+                  IL EMMENAIT SUR L'OFFRE DU JOUR, et c'était trop : on venait
+                  de se voir habillé, et un bouton nous sortait de l'écran pour
+                  une section qui parle d'autre chose. Le geste juste est celui
+                  qui ne coûte rien et qu'on retrouve : la pièce rejoint la
+                  poche du cœur, le cœur s'envole vers le coin où il vit, et la
+                  photo ne bouge pas.
+
+                  ET IL NE FAIT PLUS DOUBLON AVEC SON VOISIN. Les deux gestes
+                  se ressemblaient ; ils se distinguent maintenant comme dans un
+                  vrai commerce : RÉSERVER garde la pièce POUR SOI, dans sa
+                  liste ; METTRE DE CÔTÉ demande au commerçant de la garder,
+                  lui, et décompte ce qu'il reste. */}
+              <button
+                type="button"
+                className={`mu-res-c${garde ? " fait" : ""}`}
+                aria-pressed={garde}
+                onClick={(e) => {
+                  onFavori?.();
+                  setGarde(true);
+                  lancerLeCoeur(e.currentTarget);
+                }}
+              >
+                <i aria-hidden="true">
+                  <Trace cle={garde ? "coeur" : "etoile"} />
+                </i>
+                <span>{garde ? "Dans vos favoris" : "Réserver cet article"}</span>
+              </button>
               {/* ═══ METTRE DE CÔTÉ NE CHANGE PAS D'ÉCRAN ════════════════════
 
                   On venait de se voir habillé, on faisait le geste le plus
@@ -5306,7 +5308,6 @@ function Essai({
                   }
                   if (misDeCote) return;
                   poser("pris");
-                  onFavori?.();
                   setMisDeCote(true);
                   lancerLeCoeur(e.currentTarget);
                 }}
@@ -7416,20 +7417,6 @@ function Styles() {
         .mu-prep-tete p{margin:10px 0 0;font-size:14.5px;font-weight:600;
           color:#CDC5FF;}
 
-        /* ═══ OU L'ON EST, ET COMMENT ON SORT ═══════════════════════════════ */
-        .mu-prep-ou{display:flex;align-items:center;justify-content:space-between;
-          gap:12px;margin:0 0 16px;}
-        .mu-prep-ou b{display:flex;align-items:center;gap:7px;font-size:14px;
-          font-weight:700;color:#E7EDF6;}
-        .mu-prep-ou b i{font-style:normal;font-size:14px;}
-        .mu-prep-ou button{flex:none;width:38px;height:38px;border-radius:50%;
-          display:grid;place-items:center;font:inherit;font-size:15px;
-          font-weight:700;cursor:pointer;color:#D6DFEC;
-          background:rgba(255,255,255,.07);
-          border:1px solid rgba(255,255,255,.14);}
-        .mu-prep-ou button:focus-visible{outline:2px solid #C9BCFF;
-          outline-offset:2px;}
-
         .mu-prep-s{position:relative;width:min(320px,88vw);aspect-ratio:1/1;
           margin:14px auto 4px;}
         .mu-prep-halo{position:absolute;inset:8%;border-radius:50%;
@@ -8353,7 +8340,7 @@ function Styles() {
            la pose sur le cadre entier : tout ce qui est dedans ecrit font:inherit
            ou font-family:inherit, donc les gestes du bas suivent. */
         .mu-res{position:relative;display:flex;flex-direction:column;
-          min-height:min(760px,86vh);margin-top:6px;border-radius:24px;
+          min-height:min(760px,86vh);margin-top:0;border-radius:24px;
           overflow:hidden;background:#05070E;isolation:isolate;
           font-family:var(--font-clikme),'Inter',system-ui,sans-serif;}
         /* ELLE DESCEND D'UN DIXIEME, ET C'EST LA SEULE FACON DE DEGAGER LE
@@ -8699,21 +8686,23 @@ function Styles() {
            repond a une question du client — donc ils partagent la mise en page
            et se distinguent par la couleur du liseré : violet quand ClikMe
            parle de lui, neutre quand il repond. */
-        /* ═══ « CHOIX CLIKME » EST UNE BULLE, A GAUCHE, ET DISCRETE ════════
+        /* ═══ « CHOIX CLIKME » NE CACHE PLUS LA TENUE ══════════════════════
 
-           « Le message de l'IA est en plein milieu au lieu d'etre, comme sur la
-           maquette, plus discretement sur le cote gauche de la photo, avec un
-           titre en rose fuchsia et un texte blanc dans un rectangle gris
-           sombre, et "Pourquoi" dans un rectangle a la bordure rose violette. »
+           « Surprends-moi amene sur ce resultat et on ne voit rien, parce que
+           le message de l'IA est par-dessus la tenue d'essayage : il faut que
+           ca soit plus discret et que ca ne cache pas la tenue. »
 
-           EN PLEINE LARGEUR, ELLE BARRAIT LA PERSONNE. Ce panneau parle de la
-           piece qu'on regarde : posee en travers de l'image, il la cache au
-           moment meme ou il en parle. Rangee a gauche, sur un peu plus de la
-           moitie de la largeur, elle laisse le vetement visible et se lit comme
-           une remarque a cote plutot que comme un ecran par-dessus.
+           LE HAUT DE LA PHOTO EST LE PIRE ENDROIT, et c'est la que je l'avais
+           mise. La maquette peut se le permettre parce que son mannequin est
+           decale a droite ; nos photos de catalogue cadrent la personne au
+           centre, si bien qu'une bulle a gauche tombe pile sur le vetement —
+           c'est-a-dire sur la seule chose qu'on est venu voir.
 
-           SA POINTE REGARDE LA PHOTO. Une bulle sans pointe est un encadre ;
-           avec, elle designe ce dont elle parle. */
+           ELLE DESCEND DONC SUR LE VOILE DU BAS, juste au-dessus des fantomes,
+           la ou l'image est deja assombrie pour porter du texte. Elle n'a plus
+           rien a cacher : le bas de la photo appartient deja aux gestes. Et
+           elle y gagne en logique — on lit pourquoi ClikMe a choisi la piece
+           juste avant de dire ce qu'on en pense. */
         /* L'AVIS DEMANDE PREND LA LARGEUR, LE CHOIX NON. Ils partagent la
            forme et pas la place, parce qu'ils n'ont pas le meme role : « Choix
            ClikMe » se glisse A COTE de la piece dont il parle, pendant qu'on la
@@ -8727,44 +8716,48 @@ function Styles() {
           -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
           box-shadow:0 18px 40px -18px rgba(0,0,0,.9);
           animation:muChoix .4s cubic-bezier(.16,1,.3,1) both;}
-        .mu-choix{width:min(58%,222px);margin:12px 0 0 14px;}
+        .mu-choix{width:100%;margin:0 0 14px;padding:11px 13px;
+          background:rgba(12,10,20,.82);}
         .mu-conseil{margin:14px 0 0;animation-name:muApres;}
         @keyframes muChoix{
-          from{opacity:0;transform:translateX(-14px) scale(.96);}
+          from{opacity:0;transform:translateY(10px) scale(.98);}
           to{opacity:1;transform:none;}}
         @media (prefers-reduced-motion:reduce){
           .mu-choix,.mu-conseil{animation:none;}}
-        .mu-choix::after{content:"";position:absolute;
-          top:34px;right:-6px;width:13px;height:13px;transform:rotate(45deg);
-          border-radius:3px;background:rgba(18,18,24,.9);
-          border-right:1px solid rgba(255,255,255,.12);
-          border-top:1px solid rgba(255,255,255,.12);}
-        .mu-choix.ouvert{width:min(84%,330px);}
+        /* PLUS DE POINTE : rangee sous la photo, elle ne designe plus un
+           point de l'image, elle introduit ce qui suit. */
+        .mu-choix.ouvert{width:100%;}
         /* LE TITRE EST EN ROSE FUCHSIA, EN CASSE NORMALE. Ecrit en capitales
            espacees, il se lisait comme une etiquette de section ; la maquette
            en fait une signature. */
         .mu-choix>b,.mu-conseil>b{display:flex;align-items:center;gap:6px;
-          font-size:14px;font-weight:850;letter-spacing:-.01em;color:#FB18AE;}
+          font-size:13px;font-weight:850;letter-spacing:-.01em;color:#FB18AE;}
         .mu-conseil>b{color:#C9BCFF;}
         .mu-choix>b i{font-style:normal;font-size:13px;}
         .mu-conseil-s{flex:none;width:16px;height:16px;}
         .mu-conseil-s .mu-f-corps{fill:#C9BCFF;}
         .mu-conseil-s .mu-f-oeil{fill:#0A1018;}
-        .mu-choix>p,.mu-conseil>p{margin:7px 0 0;font-size:13px;
-          line-height:1.42;color:#F2F5FA;font-weight:600;}
+        .mu-choix>p,.mu-conseil>p{margin:6px 0 0;font-size:12.6px;
+          line-height:1.38;color:#F2F5FA;font-weight:600;}
         .mu-choix>p b{color:#fff;font-weight:850;}
         .mu-conseil-s2{color:#AFBDCE!important;font-size:12px!important;}
 
         /* « POURQUOI ? » EST UN RECTANGLE A BORDURE ROSE VIOLETTE, comme la
            maquette : il ne decide rien, il deplie, mais il doit se voir comme
            une chose qu'on peut toucher. */
-        .mu-choix-b{display:flex;align-items:center;justify-content:space-between;
-          gap:10px;width:100%;margin-top:11px;font:inherit;font-size:13px;
+        .mu-choix-b{display:inline-flex;align-items:center;
+          justify-content:space-between;
+          gap:10px;margin-top:9px;font:inherit;font-size:12.5px;
           font-weight:800;cursor:pointer;color:#fff;background:transparent;
           border:1.5px solid #C84BD6;border-radius:999px;padding:8px 14px;
           transition:background .16s ease;}
-        .mu-choix-b s{text-decoration:none;font-size:15px;line-height:1;
-          color:#FB18AE;}
+        /* LE CHEVRON EST DESSINE, PAS ECRIT. Le caractere « › » de Poppins
+           sort a la taille d'un point sur un fond sombre : on lisait
+           « Pourquoi ? » suivi d'une poussiere. */
+        .mu-choix-b s{display:block;width:7px;height:7px;flex:none;
+          text-indent:-99em;overflow:hidden;
+          border-top:2px solid #FB18AE;border-right:2px solid #FB18AE;
+          transform:rotate(45deg);}
         .mu-choix-b:hover{background:rgba(200,75,214,.16);}
         .mu-choix-b:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
         .mu-choix-d{animation:muApres .3s ease both;}
@@ -8824,6 +8817,11 @@ function Styles() {
         /* UNE FOIS MIS DE COTE, LE BOUTON SE CALME. Il garde sa place et son
            mot — « C'est mis de cote » — mais il cesse d'appeler : le geste est
            fait, et un aplat rose qui insiste apres coup se refait toucher. */
+        /* UNE FOIS LE GESTE FAIT, LE BOUTON SE CALME. Il garde sa place et
+           son mot, mais il cesse d'appeler : un bouton qui insiste apres coup
+           se refait toucher. */
+        .mu-res-c.fait{background:rgba(240,38,155,.14);
+          border-color:rgba(240,38,155,.5);color:#FFD9EE;}
         .mu-res-c.plein.fait{background:rgba(240,38,155,.16);
           border:1px solid rgba(240,38,155,.55);color:#FFD9EE;
           box-shadow:none;cursor:default;}

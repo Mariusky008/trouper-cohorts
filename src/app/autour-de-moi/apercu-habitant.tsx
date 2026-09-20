@@ -1354,6 +1354,27 @@ export function ApercuHabitant() {
     () => new URLSearchParams(window.location.search).get("carte") || "",
     () => "",
   );
+  /**
+   * ═══ ON PEUT ARRIVER ICI DIRECTEMENT DANS UN SALON ═════════════════════════
+   *
+   * « "En parler avec mes amis" devrait conduire sur un salon de discussion sur
+   * l'app. »
+   *
+   * LA PAGE DU COMMERCE N'A PAS LA MÉCANIQUE DU FIL — pas de paquet de cartes,
+   * donc pas de « carte du dessus » à laquelle accrocher une conversation. Elle
+   * écrit donc le salon dans le magasin partagé, puis nous envoie ici avec sa
+   * clé en adresse. C'est la seule porte d'un salon qui ne vienne pas d'une
+   * carte, et elle ne fabrique rien : le salon existe déjà quand on arrive.
+   *
+   * ELLE SE LIT COMME `carte`, au même endroit et de la même façon — un
+   * paramètre d'adresse est une source extérieure à React, et c'est exactement
+   * ce que ce magasin externe sait lire sans déclencher de rendu en cascade.
+   */
+  const salonUrl = useSyncExternalStore(
+    () => () => {},
+    () => new URLSearchParams(window.location.search).get("salon") || "",
+    () => "",
+  );
 
   const [branche, setBranche] = useState<CleMetier>("restaurant");
   const [envies, setEnvies] = useState<string[]>([]);
@@ -1611,6 +1632,13 @@ export function ApercuHabitant() {
    */
   const [ouvert, setOuvert] = useState(false);
   useEffect(() => {
+    // UNE CLÉ DE SALON OUVRE LE SALON. Sans ça, on atterrissait sur la page
+    // d'accueil avec une conversation prête derrière, que personne ne voyait.
+    if (!ouvert && salonUrl) {
+      setOuvert(true);
+      setSalonOuvert(salonUrl);
+      setSalonPage(true);
+    }
     if (ouvert || !carteUrl) return;
     setOuvert(true);
     // On lit la journée directement : elle est rangée dans le téléphone, et on
@@ -1620,7 +1648,7 @@ export function ApercuHabitant() {
       setBranche(b as CleMetier);
       setVue("metiers");
     }
-  }, [carteUrl, ouvert]);
+  }, [carteUrl, salonUrl, ouvert]);
   /**
    * UNE CARTE SORTIE DE SON RANG, LE TEMPS QU'ON LA REGARDE.
    *
@@ -6514,7 +6542,12 @@ export function ApercuHabitant() {
                 peut lire ce que ce téléphone a déjà vu. Pour un premier
                 passage, l'écran arrive une image plus tard, ce qui ne se voit
                 pas ; pour tous les autres, il n'arrive plus du tout. */}
-            {monte && sommet && !vus.includes("accueil") && !sortie && !embauches && (
+            {/* ON NE PASSE PAS PAR LA PAGE DE BIENVENUE QUAND ON ARRIVE DANS
+                UNE CONVERSATION. « En parler avec mes amis », depuis la page
+                d'un commerce, emmène ici avec la clé du salon en adresse : y
+                intercaler « Avant d'y aller… essayez » ferait perdre le fil au
+                moment précis où l'on venait le partager. */}
+            {monte && sommet && !vus.includes("accueil") && !sortie && !embauches && !salonUrl && (
               <div
                 className={`ap-accueil${accueilDx ? " part" : ""}`}
                 style={{ transform: `translate3d(${accueilDx}px,0,0) rotate(${accueilDx * 0.04}deg)` }}

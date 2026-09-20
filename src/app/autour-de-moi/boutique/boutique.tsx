@@ -80,6 +80,12 @@ import { MurContenu } from "@/components/direct/mur-contenu";
 import { BlocFantome } from "@/components/direct/bloc-fantome";
 import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
 import { personnaliteDe } from "@/lib/direct/personnalites";
+import {
+  ecrireDansSalon,
+  heureCourte,
+  monPrenom,
+  ouvrirSalon,
+} from "@/lib/direct/salons";
 import { AnneauMetier, PictoMetier } from "@/components/direct/picto-metier";
 
 /** Une seule décimale, virgule française : « 4,7 ». */
@@ -1031,6 +1037,49 @@ export function Boutique() {
                * second chemin qui dirait la même chose autrement.
                */
               onReserver={() => allerA("aujourdhui")}
+              /**
+               * ═══ « EN PARLER AVEC MES AMIS » OUVRE UN VRAI SALON ═══════════
+               *
+               * « Ça devrait conduire sur un salon de discussion sur l'app. »
+               *
+               * IL RETOMBAIT SUR LA FEUILLE DE PARTAGE DU TÉLÉPHONE, parce que
+               * cette page n'a pas la mécanique du fil — elle n'a pas de paquet
+               * de cartes, donc pas de « carte du dessus » à laquelle accrocher
+               * une conversation. Envoyer le rendu par SMS n'est pas la même
+               * chose que l'ouvrir dans ClikMe : l'un sort de l'app, l'autre y
+               * fait entrer ses amis.
+               *
+               * ON ÉCRIT DONC LE SALON ICI, ET ON Y EMMÈNE. `ouvrirSalon` le
+               * crée s'il n'existe pas — la clé est le commerce plus la pièce,
+               * donc deux personnes qui essaient la même veste se retrouvent au
+               * même endroit — `ecrireDansSalon` y pose le rendu et la note, et
+               * `/autour-de-moi?salon=` l'ouvre sur sa page. C'est le MÊME
+               * salon que celui de l'annonce, jamais un second.
+               */
+              onSalon={(o) => {
+                const cle = `essai-${c.id}-${o.quoi}`;
+                ouvrirSalon({
+                  cle,
+                  sujet: o.quoi,
+                  ou: c.nom,
+                  parQui: monPrenom() || "Vous",
+                  quand: "Aujourd’hui",
+                  annonce: o.quoi,
+                  prix: o.prix,
+                  distance: c.distance,
+                  photo: o.image,
+                });
+                ecrireDansSalon(cle, {
+                  qui: monPrenom() || "Vous",
+                  voix: "moi",
+                  texte: o.note
+                    ? `J’ai essayé « ${o.quoi} »${o.prix ? ` (${o.prix})` : ""} sur moi. Je mets ${o.note}/5 — vous en pensez quoi ?`
+                    : `J’ai essayé « ${o.quoi} »${o.prix ? ` (${o.prix})` : ""} sur moi. Ça me va ou pas ?`,
+                  quand: heureCourte(),
+                  photo: o.image,
+                });
+                window.location.href = `/autour-de-moi?salon=${encodeURIComponent(cle)}`;
+              }}
             />
           )}
         </div>
