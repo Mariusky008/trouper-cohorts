@@ -3572,11 +3572,23 @@ function Essai({
   const prepare: "femme" | "homme" | null =
     mur.essai?.genre === "femme" || mur.essai?.genre === "homme" ? mur.essai.genre : null;
 
+  /**
+   * LES QUATRE PIÈCES QUI ENTOURENT LE FANTÔME.
+   *
+   * QUATRE, ET PLUS SIX. La maquette en pose QUATRE aux quatre coins, assez
+   * grandes pour qu'on reconnaisse un jean d'une veste ; six sur un cercle
+   * régulier donnaient un cadran d'horloge de vignettes trop petites, et l'œil
+   * y voyait un mécanisme là où il devait voir quelqu'un fouiller.
+   *
+   * ON PIOCHE LOIN DANS LA LISTE plutôt que de prendre les quatre premières :
+   * les premières d'une collection se ressemblent souvent — même rayon, même
+   * saison — et quatre vestes autour du fantôme ne racontent pas une fouille.
+   */
   const enOrbite = useMemo(() => {
     const toutes = (mur.essai?.pieces ?? []).filter((p) => p.photo);
-    if (toutes.length <= 6) return toutes;
-    const pas = Math.max(1, Math.floor(toutes.length / 6));
-    return Array.from({ length: 6 }, (_, k) => toutes[(k * pas) % toutes.length]);
+    if (toutes.length <= 4) return toutes;
+    const pas = Math.max(1, Math.floor(toutes.length / 4));
+    return Array.from({ length: 4 }, (_, k) => toutes[(k * pas) % toutes.length]);
   }, [mur.essai?.pieces]);
 
   const piocher = (sauf?: Piece | null): Piece | null => {
@@ -4366,9 +4378,20 @@ function Essai({
             {/* LES DEUX ANNEAUX. Ils tournent à des vitesses différentes et dans
                 des sens opposés : deux cercles concentriques à la même vitesse
                 se lisent comme un seul objet, et l'effet de profondeur tombe. */}
-            <span className="mu-rech-a1" />
-            <span className="mu-rech-a2" />
+            {/* ═══ LES RUBANS DE LUMIÈRE, ET ILS REMPLACENT L'ANNEAU ═══════
+
+                LA MAQUETTE N'A PAS DE CERCLE AUTOUR DE LA SCÈNE. Elle a DEUX
+                RUBANS qui s'enroulent autour du fantôme — l'un passe derrière
+                lui, l'autre devant — et c'est cette traversée qui donne la
+                profondeur. Un anneau qui englobe tout met la scène dans une
+                boîte ; un ruban qui passe derrière quelqu'un le met DANS la
+                scène.
+
+                D'OÙ DEUX CALQUES ET NON UN. Le même dessin ne peut pas être
+                à la fois devant et derrière : l'un porte le haut de l'ellipse
+                et vit sous le fantôme, l'autre porte le bas et vit dessus. */}
             <span className="mu-rech-halo" />
+            <span className="mu-rech-r" />
 
             {/* LES PIÈCES EN ORBITE. Six emplacements fixes sur l'ellipse, une
                 pièce par emplacement, chacune avec son propre retard : sans le
@@ -4376,7 +4399,7 @@ function Essai({
                 clignotement au lieu d'une fouille. */}
             <span className="mu-rech-orb">
               {enOrbite.map((o, k) => (
-                <span key={o.id} className="mu-rech-v" style={{ "--k": k } as React.CSSProperties}>
+                <span key={o.id} className={`mu-rech-v v${k}`} style={{ "--k": k } as React.CSSProperties}>
                   {o.photo ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={o.photo} alt="" />
@@ -4399,6 +4422,9 @@ function Essai({
                 <path d="M29 29 L42 42" />
               </svg>
             </span>
+            {/* LE SECOND RUBAN : celui qui passe DEVANT. Voir la note du
+                premier — c'est la même ellipse, vue de l'autre côté. */}
+            <span className="mu-rech-r b" />
 
             {/* LES TROIS MOTS MANUSCRITS. Ils ne se lisent pas tous en même
                 temps — chacun a son quart de seconde — sinon l'écran devient
@@ -7300,79 +7326,111 @@ function Styles() {
           color:#9FC0F5;}
 
         .mu-rech-g{position:relative;margin:16px 0 6px;}
-        .mu-rech-s{position:relative;width:min(300px,82vw);aspect-ratio:1/1;
+        .mu-rech-s{position:relative;width:min(330px,88vw);aspect-ratio:1/1;
           margin:0 auto;}
-        /* ═══ L'ANNEAU EST UN TUBE, ET LE SECOND UN ARC QUI TOURNE ═════════
+        /* ═══ LES RUBANS DE LUMIERE, ET ILS REMPLACENT L'ANNEAU ════════════
 
-           « Je ne suis pas fan du tout de cette animation ; je prefererais des
-           photos illustrees comme sur la maquette, qui tourne avec des effets
-           speciaux, des coeurs, des etoiles lumineuses. »
+           « Ce n'est pas pareil que sur la maquette, c'est beaucoup moins
+           beau. »
 
-           LA SCENE AVAIT LA BONNE CHOREGRAPHIE ET PAS LA BONNE LUMIERE. Deux
-           arcs de deux points, une lueur discrete : de loin, un chargeur. La
-           maquette montre une ENSEIGNE — un tube epais en degrade, dont le halo
-           deborde largement — et c'est cette matiere-la qui fait la difference
-           entre « ca charge » et « il se passe quelque chose ».
+           LA MAQUETTE N'A PAS DE CERCLE AUTOUR DE LA SCENE, et c'est la
+           difference qui se voyait le plus. Elle a DEUX RUBANS qui s'enroulent
+           autour du fantome — l'un passe derriere lui, l'autre devant — et
+           c'est cette traversee qui donne la profondeur. Un anneau qui englobe
+           tout met la scene dans une boite ; un ruban qui passe derriere
+           quelqu'un le met DANS la scene.
 
-           LE PREMIER EST DONC PLEIN ET EPAIS, comme celui de la preparation, et
-           le second reste un ARC ouvert : un cercle plein qui tourne ne bouge
-           pas a l'oeil, il faut une coupure pour voir le mouvement. */
-        .mu-rech-a1{position:absolute;inset:12%;border-radius:50%;
-          border:5px solid transparent;
-          background:linear-gradient(#0A0616,#0A0616) padding-box,
-            linear-gradient(145deg,#FF3FD0,#C33BF0 42%,#8B4BF6 72%,#FF2BB4)
-              border-box;
-          box-shadow:0 0 38px -4px rgba(240,38,155,.85),
-            0 0 84px -18px rgba(160,60,240,.7),
-            inset 0 0 30px -8px rgba(240,38,155,.5);
-          animation:muPulse 3.2s ease-in-out infinite;}
-        .mu-rech-a2{position:absolute;inset:2%;border-radius:50%;
-          border:2px solid transparent;
-          border-top-color:#8B7DF6;border-right-color:rgba(139,125,246,.3);
-          filter:drop-shadow(0 0 12px rgba(139,125,246,.8));
-          animation:muTourne 14s linear infinite reverse;}
-        @keyframes muTourne{to{transform:rotate(360deg);}}
-        .mu-rech-halo{position:absolute;inset:10%;border-radius:50%;
-          background:radial-gradient(circle,rgba(199,125,240,.34),transparent 68%);
+           CHAQUE RUBAN EST UNE ELLIPSE APLATIE dont on ne dessine qu'un bord :
+           le premier son arc superieur, sous le fantome ; le second son arc
+           inferieur, par-dessus. Ils sont inclines du meme angle, donc l'oeil
+           les recolle en un seul ruban qui tourne autour de quelqu'un. */
+        .mu-rech-r{position:absolute;z-index:0;top:50%;left:50%;
+          width:88%;height:38%;margin:0;
+          transform:translate(-50%,-50%) rotate(-15deg);
+          border-radius:50%;border:5px solid transparent;
+          border-top-color:#E24BD6;border-left-color:rgba(226,75,214,.55);
+          filter:drop-shadow(0 0 16px rgba(226,75,214,.95))
+            drop-shadow(0 0 34px rgba(160,60,240,.6));
+          animation:muRuban 5.2s ease-in-out infinite;}
+        .mu-rech-r.b{z-index:3;
+          border-top-color:transparent;border-left-color:transparent;
+          border-bottom-color:#B44BF6;border-right-color:rgba(180,75,246,.55);
+          animation-delay:.4s;}
+        @keyframes muRuban{0%,100%{transform:translate(-50%,-50%)
+            rotate(-15deg) scale(1);opacity:.92;}
+          50%{transform:translate(-50%,-50%) rotate(-11deg) scale(1.045);
+            opacity:1;}}
+        .mu-rech-halo{position:absolute;inset:16%;border-radius:50%;
+          background:radial-gradient(circle,rgba(199,125,240,.4),transparent 66%);
           animation:muPulse 3.2s ease-in-out infinite;}
         @keyframes muPulse{0%,100%{transform:scale(1);opacity:.75;}
           50%{transform:scale(1.09);opacity:1;}}
+        @keyframes muTourne{to{transform:rotate(360deg);}}
 
-        /* LES SIX PIECES EN ORBITE. Chacune est posee sur un rayon different
-           (60 degres d'ecart) et tourne avec le conteneur ; une contre-rotation
-           de meme duree les garde DROITES, sinon les vignettes basculent la
-           tete en bas a mi-parcours. */
-        .mu-rech-orb{position:absolute;inset:0;animation:muTourne 16s linear infinite;}
-        .mu-rech-v{position:absolute;top:50%;left:50%;width:66px;height:66px;
-          margin:-33px 0 0 -33px;border-radius:15px;overflow:hidden;
-          background:rgba(20,10,40,.72);
-          border:2px solid rgba(226,110,244,.85);
-          box-shadow:0 0 22px -2px rgba(226,110,244,.95),
-            0 0 44px -12px rgba(139,125,246,.8);
+        /* ═══ LES QUATRE PIECES, AUX QUATRE COINS ══════════════════════════
+
+           ELLES NE TOURNENT PLUS EN ROND. Six vignettes sur un cercle regulier
+           donnaient un cadran d'horloge : l'oeil y lisait un mecanisme, pas
+           quelqu'un qui fouille. La maquette les pose aux quatre coins,
+           legerement inclinees, a des hauteurs differentes — c'est un etalage
+           qui flotte, et c'est tout autre chose.
+
+           ELLES FLOTTENT CHACUNE A SON RYTHME. Un meme mouvement pour les
+           quatre redonnerait un bloc ; des retards differents donnent quatre
+           objets qui existent separement. */
+        .mu-rech-orb{position:absolute;inset:0;z-index:2;}
+        .mu-rech-v{position:absolute;width:31%;aspect-ratio:1/1;
+          border-radius:16px;overflow:hidden;background:rgba(20,10,40,.72);
+          border:2px solid rgba(226,110,244,.9);
+          box-shadow:0 0 24px -2px rgba(226,110,244,.95),
+            0 0 50px -14px rgba(139,125,246,.85);
           display:grid;place-items:center;
-          transform:rotate(calc(var(--k) * 60deg)) translate(0,-116px)
-            rotate(calc(var(--k) * -60deg));
-          animation:muOrbDroit 16s linear infinite,muOrbEntre .5s ease both;
-          animation-delay:0s,calc(var(--k) * .09s);}
+          opacity:0;animation:muRechV .55s ease both,
+            muRechFlotte 4.4s ease-in-out infinite;
+          animation-delay:calc(var(--k) * .11s),calc(.6s + var(--k) * .5s);}
+        /* LES QUATRE COINS, ET AUCUN NE SE MARCHE DESSUS : le fantome occupe
+           la moitie centrale, les mots manuscrits les bords gauches. */
+        .mu-rech-v.v0{top:0;left:-2%;transform:rotate(-7deg);}
+        .mu-rech-v.v1{top:13%;right:-3%;transform:rotate(6deg);}
+        .mu-rech-v.v2{bottom:26%;left:-5%;transform:rotate(5deg);}
+        .mu-rech-v.v3{bottom:-2%;right:4%;transform:rotate(-6deg);}
         .mu-rech-v img{width:100%;height:100%;object-fit:cover;display:block;}
-        .mu-rech-v .mu-tr{width:26px;height:26px;opacity:.6;}
-        @keyframes muOrbDroit{
-          from{transform:rotate(calc(var(--k) * 60deg)) translate(0,-116px)
-            rotate(calc(var(--k) * -60deg));}
-          to{transform:rotate(calc(var(--k) * 60deg)) translate(0,-116px)
-            rotate(calc(var(--k) * -60deg - 360deg));}}
+        .mu-rech-v .mu-tr{width:30px;height:30px;opacity:.6;}
+        @keyframes muRechV{from{opacity:0;transform:scale(.7);}
+          to{opacity:1;}}
+        @keyframes muRechFlotte{0%,100%{translate:0 0;}
+          50%{translate:0 -9px;}}
         @keyframes muOrbEntre{from{opacity:0;}to{opacity:1;}}
 
-        .mu-rech-f{position:absolute;top:50%;left:50%;width:160px;height:160px;
-          margin:-80px 0 0 -80px;display:grid;place-items:center;
-          animation:muSurpFlotte 3.6s ease-in-out infinite;}
-        .mu-rech-f img{width:128px;height:128px;object-fit:contain;display:block;
-          filter:drop-shadow(0 0 22px rgba(199,125,240,.75));}
+        /* IL DOMINE LA SCENE, ET C'EST LE SECOND ECART AVEC LA MAQUETTE.
+           A cent vingt-huit points au milieu d'un cercle de vignettes, il
+           n'etait qu'un element parmi d'autres ; la maquette lui donne pres de
+           la moitie de la largeur et met tout le reste autour. On regarde
+           QUELQU'UN chercher — c'est la seule chose que cet ecran doit dire
+           pendant quatre secondes. */
+        /* IL EST CENTRE, ET SON FLOTTEMENT NE LE DECENTRE PLUS. Le centrage
+           passait par la transformation, que l'animation de flottement ECRASE :
+           le fantome partait se poser en bas a droite des la premiere image. Le
+           centrage vit donc dans les marges negatives, et le mouvement dans la
+           propriete de translation, qui est independante. */
+        .mu-rech-f{position:absolute;z-index:2;top:50%;left:50%;
+          width:50%;aspect-ratio:1/1;margin:-25% 0 0 -25%;
+          display:grid;place-items:center;
+          animation:muRechFlotteF 3.6s ease-in-out infinite;}
+        @keyframes muRechFlotteF{0%,100%{translate:0 0;rotate:-3deg;}
+          50%{translate:0 -8px;rotate:3deg;}}
+        .mu-rech-f img{width:100%;height:100%;object-fit:contain;display:block;
+          filter:drop-shadow(0 0 30px rgba(199,125,240,.85))
+            drop-shadow(0 0 60px rgba(139,125,246,.5));}
         /* LA LOUPE BALAIE. Elle ne tourne pas avec le fantome : elle va et
            vient, ce qui est le geste de quelqu'un qui cherche plutot que celui
            d'un objet qui pivote. */
-        .mu-rech-loupe{position:absolute;right:2px;bottom:26px;width:60px;
-          height:60px;fill:none;stroke:#D96BF5;stroke-width:3.2;
+        /* LA LOUPE EST A COTE DU FANTOME, PAS DESSUS. Calee dans son cadre,
+           elle lui barrait le bras : elle deborde donc a droite, la ou la
+           maquette la pose — le fantome tient la loupe devant lui, il ne la
+           porte pas sur le ventre. */
+        .mu-rech-loupe{position:absolute;right:-34%;bottom:16%;width:56%;
+          height:56%;fill:none;stroke:#D96BF5;stroke-width:3.4;
           stroke-linecap:round;
           filter:drop-shadow(0 0 9px rgba(217,107,245,.95));
           animation:muLoupe 2.8s ease-in-out infinite;}
@@ -7380,20 +7438,35 @@ function Styles() {
           35%{transform:translate(-14px,-10px) rotate(-16deg);}
           70%{transform:translate(6px,6px) rotate(9deg);}}
 
-        /* LES TROIS MOTS MANUSCRITS. Ils ne se lisent pas ensemble : chacun
-           parait pendant un tiers du cycle, sinon l'ecran devient bavard au
-           moment exact ou il ne doit qu'etre joli. */
-        .mu-rech-m{position:absolute;z-index:2;font-style:italic;font-size:13px;
-          font-weight:600;line-height:1.3;color:#F49BE8;max-width:92px;
-          text-shadow:0 2px 12px rgba(0,0,0,.95),0 0 22px rgba(0,0,0,.8);
-          opacity:0;animation:muMot 6.6s ease-in-out infinite;}
-        .mu-rech-m.m1{left:0;top:22%;text-align:left;animation-delay:.2s;}
-        .mu-rech-m.m2{right:0;top:8%;text-align:right;color:#CDB4FF;
-          animation-delay:2.4s;}
-        .mu-rech-m.m3{left:0;bottom:12%;text-align:left;animation-delay:4.6s;}
-        @keyframes muMot{0%{opacity:0;transform:translateY(6px);}
-          8%,26%{opacity:1;transform:translateY(0);}
-          36%,100%{opacity:0;transform:translateY(-6px);}}
+        /* ═══ LES TROIS MOTS MANUSCRITS SE LISENT ENSEMBLE ═════════════════
+
+           JE LES FAISAIS PASSER CHACUN SON TOUR, pour ne pas encombrer. La
+           maquette les montre TOUS LES TROIS en meme temps, et elle a raison :
+           ce ne sont pas trois messages, c'est UNE ambiance — trois
+           chuchotements autour de quelqu'un qui cherche. Alternes, on lit trois
+           phrases ; ensemble, on ne lit rien et on sent une presence, ce qui
+           est exactement ce qu'on veut d'un ecran d'attente.
+
+           ILS ARRIVENT DONC L'UN APRES L'AUTRE PUIS RESTENT : l'apparition
+           echelonnee garde la vie, la permanence rend l'image. */
+        .mu-rech-m{position:absolute;z-index:4;font-style:italic;
+          font-size:13.5px;font-weight:600;line-height:1.32;color:#F79BE8;
+          max-width:96px;
+          text-shadow:0 2px 12px rgba(0,0,0,.95),0 0 22px rgba(0,0,0,.85);
+          opacity:0;animation:muMot .7s ease both;}
+        .mu-rech-m.m1{left:0;top:15%;text-align:left;animation-delay:.5s;}
+        .mu-rech-m.m2{right:0;top:7%;text-align:right;color:#DDC4FF;
+          animation-delay:1.1s;}
+        .mu-rech-m.m3{left:0;bottom:6%;text-align:left;animation-delay:1.7s;}
+        /* LA FLECHE COURBE SOUS CHAQUE MOT, comme sur la maquette : elle
+           rattache le chuchotement a la piece qu'il designe. */
+        .mu-rech-m::after{content:"";display:block;width:26px;height:14px;
+          margin-top:3px;border-bottom:1.6px solid currentColor;
+          border-right:1.6px solid currentColor;border-bottom-right-radius:14px;
+          opacity:.8;}
+        .mu-rech-m.m2::after{margin-left:auto;transform:scaleX(-1);}
+        @keyframes muMot{from{opacity:0;transform:translateY(8px);}
+          to{opacity:1;transform:none;}}
 
         .mu-rech-etoiles{position:absolute;inset:0;pointer-events:none;}
         .mu-rech-etoiles i{position:absolute;top:50%;left:50%;width:5px;height:5px;
@@ -8415,7 +8488,7 @@ function Styles() {
            la pose sur le cadre entier : tout ce qui est dedans ecrit font:inherit
            ou font-family:inherit, donc les gestes du bas suivent. */
         .mu-res{position:relative;display:flex;flex-direction:column;
-          min-height:min(760px,86vh);margin-top:0;border-radius:24px;
+          min-height:min(880px,94vh);margin-top:0;border-radius:24px;
           overflow:hidden;background:#05070E;isolation:isolate;
           font-family:var(--font-clikme),'Inter',system-ui,sans-serif;}
         /* ELLE DESCEND D'UN DIXIEME, ET C'EST LA SEULE FACON DE DEGAGER LE
@@ -8524,8 +8597,8 @@ function Styles() {
         /* IL POUSSE LES GESTES EN BAS, MAIS IL CEDE QUAND UN PANNEAU S'OUVRE.
            A cent cinquante points incompressibles, l'avis demande repoussait
            les fantomes par-dessus le visage plutot que de manger le vide. */
-        .mu-res-vide{flex:1 1 auto;min-height:96px;}
-        .mu-res-bas{padding:0 16px 18px;}
+        .mu-res-vide{flex:1 1 auto;min-height:60px;}
+        .mu-res-bas{padding:0 16px 14px;}
 
         /* ═══ LES CINQ FANTOMES, A CHEVAL SUR LA PHOTO ═════════════════════
 
@@ -8540,9 +8613,13 @@ function Styles() {
            fantomes n'etaient plus a egale distance. */
         .mu-note-f.res{display:grid;grid-template-columns:repeat(5,1fr);
           gap:4px;align-items:start;}
-        .mu-note-f.res button{width:100%;height:auto;gap:8px;
-          grid-auto-flow:row;padding:4px 0 0;}
-        .mu-note-f.res .mu-note-s{width:100%;max-width:68px;height:auto;
+        .mu-note-f.res button{width:100%;height:auto;gap:6px;
+          grid-auto-flow:row;padding:2px 0 0;}
+        /* PLUS PETITS, ET C'EST DU VETEMENT QU'ON GAGNE. « Les fantomes
+           pourraient etre un peu plus petits pour gagner de la place en bas. »
+           A soixante-huit points ils occupaient, avec leur libelle, cent
+           trente points de photo — c'est-a-dire le bas de la tenue. */
+        .mu-note-f.res .mu-note-s{width:100%;max-width:54px;height:auto;
           aspect-ratio:64/70;}
         /* ═══ LE TUBE NEON, ET C'EST CE QUI MANQUAIT LE PLUS ════════════════
 
@@ -8565,8 +8642,8 @@ function Styles() {
         .mu-note-f.res .mu-f-bouche2{fill:none;stroke:#4A1060;stroke-width:3.8;
           stroke-linecap:round;}
         .mu-note-f.res .mu-f-oeil{fill:#4A1060;}
-        .mu-note-f.res button em{font-style:normal;font-size:12.5px;
-          line-height:1.18;font-weight:700;color:#D6DFEC;
+        .mu-note-f.res button em{font-style:normal;font-size:11.5px;
+          line-height:1.16;font-weight:700;color:#D6DFEC;
           text-shadow:0 1px 8px rgba(0,0,0,.85);transition:color .16s ease;}
         .mu-note-f.res button.on em{color:#fff;font-weight:800;}
         /* ETEINT, LE FANTOME PERD SON TUBE ET SA LUEUR : c'est la seule chose
