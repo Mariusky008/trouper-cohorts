@@ -2146,8 +2146,23 @@ function Styles() {
            ambre monte a pres de six, garde la couleur de la promotion, et se
            lit. Cette pastille ne s'affiche qu'a certaines heures, ce qui
            explique qu'elle ait echappe aux mesures precedentes. */
-        .bq-eti{font-size:9.5px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;
-          color:#2A1B02;background:var(--bq-ambre);border-radius:20px;padding:3px 8px;}
+        /* ═══ LA REMISE EST ECRITE PLUS GRAND, ET C'EST UNE QUESTION DE MASSE
+
+           LA GARDE DU CONTRASTE LA REFUSAIT DE JUSTESSE — quarante-quatre pour
+           quarante-cinq demandes. Le texte est brun sur ambre, ce qui donne un
+           rapport WCAG tout a fait correct ; ce que la garde mesure est autre
+           chose, et de plus honnete pour une pastille : la masse d'encre
+           reellement posee. A neuf points et demi en capitales espacees sur une
+           pastille de cinquante-quatre points, il y a si peu de pixels sombres
+           que le cinquieme centile n'atteint jamais l'encre — autrement dit, de
+           loin, on voit une tache orange et pas un chiffre.
+
+           ONZE POINTS, ET LA PASTILLE RESPIRE UN PEU PLUS. C'est la correction
+           juste : on ne touche pas aux couleurs, qui etaient bonnes, on donne
+           au chiffre la place d'etre lu. Il porte le seul nombre de la carte
+           qui fasse changer d'avis. */
+        .bq-eti{font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;
+          color:#2A1B02;background:var(--bq-ambre);border-radius:20px;padding:3px 9px;}
         .bq-off{font-size:9.5px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;
           color:var(--bq-encre);background:rgba(20,16,40,.13);border-radius:20px;padding:3px 8px;}
         .bq-m-t{display:flex;align-items:center;gap:7px;font-size:15.5px;font-weight:700;
