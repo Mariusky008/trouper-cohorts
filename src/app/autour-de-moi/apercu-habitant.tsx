@@ -104,6 +104,7 @@ import {
   basculerPieceGardee,
   chargerPiecesGardees,
   piecesGardeesVides,
+  type PieceGardee,
 } from "@/lib/direct/pieces-gardees";
 import {
   abonnerLecture,
@@ -1451,6 +1452,8 @@ export function ApercuHabitant() {
     chargerPiecesGardees,
     piecesGardeesVides,
   );
+  /** La pièce gardée qu'on regarde en grand. Vide : aucune. */
+  const [pieceVue, setPieceVue] = useState<PieceGardee | null>(null);
   const [reserves, setReserves] = useState<string[]>([]);
   const [dx, setDx] = useState(0);
   const [sortant, setSortant] = useState<"" | "gauche" | "droite">("");
@@ -5096,6 +5099,47 @@ export function ApercuHabitant() {
    * salons ont leur propre onglet, et la même liste à deux endroits est un
    * défaut — on ne sait jamais lequel des deux dit vrai.
    */
+  /**
+   * ═══ LA PIÈCE GARDÉE, EN GRAND ═══════════════════════════════════════════
+   *
+   * « Quand je clique dessus, ça m'amène sur l'annonce du commerçant, pas sur
+   * l'article que j'ai essayé avec ma photo perso. »
+   *
+   * C'EST LE RENDU QU'ON A GARDÉ, et c'est lui qu'on revient chercher : on ne
+   * met pas une pièce de côté pour relire les horaires d'un magasin, on la met
+   * de côté pour se revoir avec. Elle prend donc l'écran, avec sous elle le
+   * nom, le prix et le lieu — et une seule sortie, parce qu'une visionneuse qui
+   * propose trois chemins n'est plus une visionneuse.
+   *
+   * ELLE EST ÉCRITE UNE FOIS ET POSÉE DEUX FOIS, parce qu'on arrive dans cette
+   * poche par deux portes — le cœur du bandeau et l'onglet Profil — et qu'une
+   * visionneuse rendue dans une seule des deux pages ne s'ouvre que là.
+   */
+  const laPieceVue = pieceVue ? (
+    <div
+      className="ap-moi-vue"
+      role="dialog"
+      aria-label={`${pieceVue.nom}, essayé sur vous`}
+      onClick={() => setPieceVue(null)}
+    >
+      {pieceVue.image && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={pieceVue.image} alt={`${pieceVue.nom}, sur vous`} />
+      )}
+      <div className="ap-moi-vue-t">
+        <b>{pieceVue.nom}</b>
+        <em>
+          {pieceVue.lieu}
+          {pieceVue.prix ? ` · ${pieceVue.prix}` : ""}
+        </em>
+        {pieceVue.note > 0 && <span aria-hidden="true">{"👻".repeat(pieceVue.note)}</span>}
+      </div>
+      <button type="button" aria-label="Fermer">
+        ✕
+      </button>
+    </div>
+  ) : null;
+
   const monEspace = (
     <div className="ap-f-liste">
       {/* ─── LES SUIVIS NE SONT PLUS LISTÉS ICI, ILS SONT DERRIÈRE LE CŒUR ───
@@ -5131,6 +5175,8 @@ export function ApercuHabitant() {
         </div>
       )}
 
+      {laPieceVue}
+
       {/* ═══ LES PIÈCES D'ABORD, LES COMMERCES ENSUITE ═══════════════════════
 
           ON VIENT CHERCHER UNE CHOSE, PAS UN LIEU. Le cœur se remplit surtout
@@ -5149,7 +5195,22 @@ export function ApercuHabitant() {
           <ul className="ap-moi-pieces">
             {piecesGardees.map((x) => (
               <li key={`${x.carte}-${x.piece}`}>
-                <span className="ap-moi-p">
+                {/* ═══ ELLE ROUVRE L'ESSAYAGE, PAS L'ANNONCE ════════════════
+
+                    « Quand je clique dessus, ça m'amène sur l'annonce du
+                    commerçant, pas sur l'article que j'ai essayé avec ma photo
+                    perso. »
+
+                    C'EST POURTANT LE RENDU QU'ON A GARDÉ, et c'est lui qu'on
+                    revient chercher : on ne met pas une pièce de côté pour
+                    relire les horaires d'un magasin, on la met de côté pour se
+                    revoir avec. La ligne rouvre donc la photo — soi, habillé —
+                    en grand, avec le nom, le prix et le lieu sous elle. */}
+                <button
+                  type="button"
+                  className="ap-moi-p"
+                  onClick={() => setPieceVue(x)}
+                >
                   {x.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={x.image} alt="" />
@@ -5161,25 +5222,25 @@ export function ApercuHabitant() {
                     {x.lieu}
                     {x.prix ? ` · ${x.prix}` : ""}
                   </span>
-                  <button
-                    type="button"
-                    className="ap-moi-px"
-                    aria-label={`Retirer ${x.nom} de vos mises de côté`}
-                    onClick={() =>
-                      basculerPieceGardee({
-                        carte: x.carte,
-                        lieu: x.lieu,
-                        piece: x.piece,
-                        nom: x.nom,
-                        prix: x.prix,
-                        image: x.image,
-                        note: x.note,
-                      })
-                    }
-                  >
-                    ✕
-                  </button>
-                </span>
+                </button>
+                <button
+                  type="button"
+                  className="ap-moi-px"
+                  aria-label={`Retirer ${x.nom} de vos mises de côté`}
+                  onClick={() =>
+                    basculerPieceGardee({
+                      carte: x.carte,
+                      lieu: x.lieu,
+                      piece: x.piece,
+                      nom: x.nom,
+                      prix: x.prix,
+                      image: x.image,
+                      note: x.note,
+                    })
+                  }
+                >
+                  ✕
+                </button>
               </li>
             ))}
           </ul>
@@ -5835,12 +5896,17 @@ export function ApercuHabitant() {
                   </b>
                   <em>
                     {favorisPage === "favoris"
-                      ? `${mesGardes.length} annonce${mesGardes.length > 1 ? "s" : ""} gardée${mesGardes.length > 1 ? "s" : ""}`
+                      ? `${gardesTotal} chose${gardesTotal > 1 ? "s" : ""} gardée${gardesTotal > 1 ? "s" : ""}`
                       : `${mesSuivis.length} suivi${mesSuivis.length > 1 ? "s" : ""} · ${combienDeNouvelles} ${combienDeNouvelles > 1 ? "ont publié" : "a publié"} aujourd’hui`}
                   </em>
                 </span>
               </div>
               <div className="ap-sal-corps">
+                {/* LA VISIONNEUSE EST POSÉE ICI AUSSI : on entre dans cette
+                    poche par deux portes — le cœur du bandeau et l'onglet
+                    Profil — et rendue dans une seule des deux, elle ne s'ouvre
+                    que là. Voir `laPieceVue`. */}
+                {laPieceVue}
                 {/* ═══ CE QU'ON A GARDÉ PASSE DEVANT ═══
 
                     L'ORDRE SUIVAIT L'ANCIEN SENS DU CŒUR. Tant qu'il servait
@@ -5854,8 +5920,61 @@ export function ApercuHabitant() {
                     LES NOUVELLES NE PARTENT PAS POUR AUTANT — elles descendent
                     sous les favoris, avec leur propre titre. Deux listes, deux
                     raisons d'être là, et l'une n'efface pas l'autre. */}
+                {/* ═══ LES PIÈCES MISES DE CÔTÉ OUVRENT CETTE PAGE ═══════════
+
+                    « J'ai bien le commerçant à qui j'ai mis de côté l'article,
+                    mais quand je clique dessus ça m'amène sur son annonce, pas
+                    sur l'article que j'ai essayé avec ma photo perso. »
+
+                    C'EST ICI QUE LE CŒUR MÈNE, et cette page ne connaissait que
+                    les ANNONCES gardées. La pièce qu'on vient d'essayer n'y
+                    avait pas de ligne : le cœur comptait « 1 » et la page
+                    disait « rien de gardé ». Elle passe donc en tête, avec le
+                    RENDU en vignette — c'est soi qu'on revient voir — et un
+                    appui la rouvre en grand.
+
+                    ELLES PASSENT DEVANT LES COMMERCES : on vient chercher une
+                    chose, pas un lieu. */}
+                {favorisPage === "favoris" && piecesGardees.length > 0 && (
+                  <div className="ap-liste">
+                    {piecesGardees.map((x) => (
+                      <button
+                        key={`${x.carte}-${x.piece}`}
+                        type="button"
+                        className="ap-ligne"
+                        onClick={() => setPieceVue(x)}
+                      >
+                        {x.image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={x.image} alt="" loading="lazy" />
+                        ) : (
+                          <i aria-hidden="true">🤍</i>
+                        )}
+                        <span>
+                          <b>{x.nom}</b>
+                          <u>Essayé sur vous</u>
+                          <em>
+                            {x.lieu}
+                            {x.prix ? ` · ${x.prix}` : ""}
+                          </em>
+                        </span>
+                        <s
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Retirer ${x.nom}`}
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            basculerPieceGardee({ ...x });
+                          }}
+                        >
+                          ✕
+                        </s>
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {favorisPage === "favoris" &&
-                  (mesGardes.length === 0 ? (
+                  (gardesTotal === 0 ? (
                     <div className="ap-moi-vide">
                       <span aria-hidden="true">💚</span>
                       <b>Rien de gardé pour l&apos;instant.</b>
@@ -5868,7 +5987,7 @@ export function ApercuHabitant() {
                         deux ou trois de côté, et choisissez ensuite.
                       </i>
                     </div>
-                  ) : (
+                  ) : mesGardes.length === 0 ? null : (
                   <div className="ap-liste">
                     {mesGardes.map((c) => (
                       <button
@@ -16925,6 +17044,38 @@ export function ApercuHabitant() {
         .ap-moi-p b{display:block;font-size:14px;font-weight:850;color:#fff;
           letter-spacing:-.01em;margin-bottom:2px;overflow:hidden;
           text-overflow:ellipsis;white-space:nowrap;}
+        /* LA LIGNE EST UN BOUTON : elle rouvre l'essayage. Elle garde
+           l'apparence d'une ligne de liste — ce qu'on veut y lire, c'est la
+           piece, pas le fait qu'on puisse appuyer. */
+        .ap-moi-p{font:inherit;cursor:pointer;}
+        .ap-moi-p:active{transform:scale(.99);}
+        .ap-moi-p:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
+        .ap-moi-pieces li{display:flex;align-items:center;gap:8px;}
+        .ap-moi-pieces .ap-moi-p{flex:1;min-width:0;margin-bottom:7px;}
+
+        /* ═══ LA VISIONNEUSE : SOI, HABILLE, EN GRAND ══════════════════════ */
+        .ap-moi-vue{position:fixed;inset:0;z-index:140;display:flex;
+          flex-direction:column;align-items:center;justify-content:center;
+          gap:14px;padding:24px;background:rgba(4,6,12,.96);
+          -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+          animation:apMoiVue .26s ease both;}
+        @keyframes apMoiVue{from{opacity:0;}to{opacity:1;}}
+        .ap-moi-vue img{max-width:100%;max-height:68vh;object-fit:contain;
+          border-radius:20px;display:block;
+          box-shadow:0 30px 70px -24px rgba(0,0,0,.95);}
+        .ap-moi-vue-t{text-align:center;}
+        .ap-moi-vue-t b{display:block;font-size:19px;font-weight:850;
+          color:#fff;letter-spacing:-.01em;}
+        .ap-moi-vue-t em{display:block;margin-top:4px;font-style:normal;
+          font-size:13.5px;color:#9FB0C4;}
+        .ap-moi-vue-t span{display:block;margin-top:8px;font-size:15px;
+          letter-spacing:2px;}
+        .ap-moi-vue>button{position:absolute;top:18px;right:18px;width:42px;
+          height:42px;border-radius:50%;display:grid;place-items:center;
+          font:inherit;font-size:16px;font-weight:700;cursor:pointer;
+          color:#D6DFEC;background:rgba(255,255,255,.08);
+          border:1px solid rgba(255,255,255,.16);}
+
         .ap-moi-px{flex:none;width:30px;height:30px;border-radius:50%;
           display:grid;place-items:center;font:inherit;font-size:12px;
           font-weight:800;cursor:pointer;color:#8DA0A8;background:none;

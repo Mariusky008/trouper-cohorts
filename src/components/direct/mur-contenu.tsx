@@ -3691,6 +3691,7 @@ function Essai({
     setPourquoi(false);
     setConseil(false);
     setMisDeCote(false);
+    setEnvoi(null);
     setBulle(0);
     setRevele(false);
     setAvant(false);
@@ -3725,6 +3726,7 @@ function Essai({
     setPourquoi(false);
     setConseil(false);
     setMisDeCote(false);
+    setEnvoi(null);
     setBulle(0);
     setRevele(false);
     setX(58);
@@ -4417,9 +4419,36 @@ function Essai({
             <span className="mu-rech-f">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={FANTOME} alt="" />
-              <svg className="mu-rech-loupe" viewBox="0 0 48 48" focusable="false">
-                <circle cx="19" cy="19" r="13.5" />
-                <path d="M29 29 L42 42" />
+              {/* ═══ LA LOUPE EST UN TUBE, PAS UN TRAIT ════════════════════
+
+                  « La loupe est complètement nulle par rapport à la belle
+                  loupe de la maquette. »
+
+                  TROIS POINTS DE TRAIT NE FONT PAS UNE ENSEIGNE. Sur la
+                  maquette c'est un ANNEAU ÉPAIS, d'un violet dense, avec un
+                  verre sombre au milieu et un manche aussi gros que l'anneau —
+                  le même objet que les rubans, de la même matière. Dessiné en
+                  filaire, le mien était un pictogramme d'interface posé sur une
+                  scène lumineuse.
+
+                  D'OÙ DEUX COUCHES : le verre d'abord, qui assombrit ce qui est
+                  derrière, puis la monture par-dessus. Un anneau seul se lit
+                  comme un cercle vide ; c'est le verre qui en fait une loupe. */}
+              <svg className="mu-rech-loupe" viewBox="0 0 64 64" focusable="false">
+                <defs>
+                  <linearGradient id="muLoupeT" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stopColor="#F45BE0" />
+                    <stop offset="52%" stopColor="#C33BF0" />
+                    <stop offset="100%" stopColor="#8B4BF6" />
+                  </linearGradient>
+                  <radialGradient id="muLoupeV" cx="38%" cy="32%" r="72%">
+                    <stop offset="0" stopColor="rgba(200,140,255,.34)" />
+                    <stop offset="100%" stopColor="rgba(16,8,32,.74)" />
+                  </radialGradient>
+                </defs>
+                <circle className="mu-rech-verre" cx="24" cy="24" r="17" />
+                <path className="mu-rech-manche" d="M36.5 36.5 L54 54" />
+                <circle className="mu-rech-monture" cx="24" cy="24" r="17" />
               </svg>
             </span>
             {/* LE SECOND RUBAN : celui qui passe DEVANT. Voir la note du
@@ -5084,6 +5113,52 @@ function Essai({
                 <s aria-hidden="true" />
               </button>
             )}
+            {/* ═══ CE QUE « RÉSERVER » A FAIT, ET IL FAUT BIEN LE MONTRER ═══
+
+                « "Réserver cet article" ne marche pas et n'ouvre pas WhatsApp
+                comme convenu. »
+
+                IL MARCHAIT, ET IL NE SE VOYAIT PAS. Sur un numéro de fiction —
+                et tous les commerces de la maquette en ont un — on n'ouvre
+                jamais WhatsApp : composer un numéro tiré au hasard ferait
+                sonner un vrai téléphone, chez quelqu'un. La fonction rangeait
+                donc son résultat dans un état que SEUL L'ANCIEN ÉCRAN
+                « Et maintenant ? » savait afficher, et cet écran-là ne fait
+                plus partie du parcours vêtement. Le geste partait dans le vide.
+
+                LE RÉSULTAT VIT MAINTENANT ICI, sur l'écran où l'on a appuyé :
+                le message qui partirait, le numéro barré, et la raison. Sur un
+                vrai numéro, WhatsApp s'ouvre et le panneau le confirme. */}
+            {envoi && (
+              <div className="mu-res-wa" role="status">
+                <b>
+                  {envoi.par === "fiction"
+                    ? `${mur.lieu} est un commerce inventé.`
+                    : envoi.par === "abandon"
+                      ? "Vous avez refermé le partage."
+                      : "WhatsApp s’est ouvert avec le message."}
+                </b>
+                {envoi.par === "fiction" && (
+                  <>
+                    <em>
+                      Son numéro <s>{envoi.telephone}</s> appartient à la plage
+                      réservée à la fiction&nbsp;: WhatsApp n’y trouve personne.
+                      Voilà le message qui partirait chez un vrai commerçant.
+                    </em>
+                    <q>
+                      Bonjour, je viens d’essayer «&nbsp;{piece.nom}&nbsp;» sur
+                      ClikMe et ça me plaît.{" "}
+                      {(mots.reserver ?? "Je réserve").replace(/^Je\s+/i, "Je ")}{" "}
+                      — auriez-vous un créneau&nbsp;?
+                    </q>
+                  </>
+                )}
+                <button type="button" onClick={() => setEnvoi(null)}>
+                  Fermer
+                </button>
+              </div>
+            )}
+
             {surprise && pourquoi && (
               <div className="mu-choix" role="dialog" aria-label="Le choix de ClikMe">
                 <b>
@@ -5375,7 +5450,12 @@ function Essai({
                     image: rendu && !rendu.souci ? rendu.image : piece.photo,
                     note,
                   });
-                  onFavori?.();
+                  // ON NE GARDE PLUS LE COMMERCE AU PASSAGE. « J'ai bien le
+                  // commerçant à qui j'ai mis de côté l'article, mais quand je
+                  // clique dessus ça m'amène sur son annonce, pas sur l'article
+                  // que j'ai essayé. » `onFavori` range la CARTE du commerce
+                  // dans l'autre poche : appelé ici, il ajoutait une ligne qui
+                  // ne mène pas là où le cœur venait de promettre.
                   setMisDeCote(true);
                   lancerLeCoeur(e.currentTarget);
                 }}
@@ -7379,22 +7459,57 @@ function Styles() {
            quatre redonnerait un bloc ; des retards differents donnent quatre
            objets qui existent separement. */
         .mu-rech-orb{position:absolute;inset:0;z-index:2;}
+        /* ═══ ON DEVINE LE VETEMENT, ON NE LE REGARDE PAS ══════════════════
+
+           « Les vetements derriere sont dans des carres assombris dont les
+           bordures sont scintillantes et lumineuses, avec des vetements qu'on
+           devine un peu dedans, noircis, en style bande dessinee. »
+
+           MES VIGNETTES ETAIENT DES PHOTOS EN PLEINE LUMIERE, et c'est ce qui
+           cassait la scene : quatre images nettes autour d'un fantome
+           lumineux, chacune tirant l'oeil pour elle. La maquette les PLONGE
+           DANS LE NOIR — on distingue une silhouette de veste, un jean, rien de
+           plus — et ne garde de lumiere que sur le bord. La scene redevient
+           alors ce qu'elle raconte : quelqu'un fouille dans une penderie
+           sombre, et ce qu'il tient n'est pas encore choisi.
+
+           TROIS FILTRES POUR Y ARRIVER : on baisse la lumiere, on pousse le
+           contraste pour garder les contours — c'est ce qui donne le trait de
+           bande dessinee — et on desature pour que la couleur ne revienne pas
+           par la fenetre. Le voile violet par-dessus recolle les quatre a la
+           meme scene. */
         .mu-rech-v{position:absolute;width:31%;aspect-ratio:1/1;
-          border-radius:16px;overflow:hidden;background:rgba(20,10,40,.72);
+          border-radius:16px;overflow:hidden;background:#0B0618;
           border:2px solid rgba(226,110,244,.9);
-          box-shadow:0 0 24px -2px rgba(226,110,244,.95),
-            0 0 50px -14px rgba(139,125,246,.85);
           display:grid;place-items:center;
           opacity:0;animation:muRechV .55s ease both,
-            muRechFlotte 4.4s ease-in-out infinite;
-          animation-delay:calc(var(--k) * .11s),calc(.6s + var(--k) * .5s);}
+            muRechFlotte 4.4s ease-in-out infinite,
+            muRechBord 2.6s ease-in-out infinite;
+          animation-delay:calc(var(--k) * .11s),calc(.6s + var(--k) * .5s),
+            calc(var(--k) * .42s);}
+        /* LE BORD SCINTILLE, CHACUN A SON RYTHME. Ensemble, les quatre
+           clignoteraient comme un avertissement ; decales, ils respirent. */
+        @keyframes muRechBord{
+          0%,100%{border-color:rgba(226,110,244,.72);
+            box-shadow:0 0 18px -4px rgba(226,110,244,.7),
+              0 0 40px -16px rgba(139,125,246,.6);}
+          50%{border-color:rgba(255,150,255,1);
+            box-shadow:0 0 30px 0 rgba(240,120,255,1),
+              0 0 64px -10px rgba(160,90,250,.9);}}
+        /* LE VOILE VIOLET PAR-DESSUS L'IMAGE : il recolle les quatre a la meme
+           scene, et il acheve d'en faire des ombres plutot que des photos. */
+        .mu-rech-v::after{content:"";position:absolute;inset:0;
+          pointer-events:none;
+          background:linear-gradient(155deg,rgba(150,60,220,.34),
+            rgba(10,6,22,.52) 62%,rgba(10,6,22,.72));}
         /* LES QUATRE COINS, ET AUCUN NE SE MARCHE DESSUS : le fantome occupe
            la moitie centrale, les mots manuscrits les bords gauches. */
         .mu-rech-v.v0{top:0;left:-2%;transform:rotate(-7deg);}
         .mu-rech-v.v1{top:13%;right:-3%;transform:rotate(6deg);}
         .mu-rech-v.v2{bottom:26%;left:-5%;transform:rotate(5deg);}
         .mu-rech-v.v3{bottom:-2%;right:4%;transform:rotate(-6deg);}
-        .mu-rech-v img{width:100%;height:100%;object-fit:cover;display:block;}
+        .mu-rech-v img{width:100%;height:100%;object-fit:cover;display:block;
+          filter:brightness(.42) contrast(1.5) saturate(.35);}
         .mu-rech-v .mu-tr{width:30px;height:30px;opacity:.6;}
         @keyframes muRechV{from{opacity:0;transform:scale(.7);}
           to{opacity:1;}}
@@ -7429,11 +7544,18 @@ function Styles() {
            elle lui barrait le bras : elle deborde donc a droite, la ou la
            maquette la pose — le fantome tient la loupe devant lui, il ne la
            porte pas sur le ventre. */
-        .mu-rech-loupe{position:absolute;right:-34%;bottom:16%;width:56%;
-          height:56%;fill:none;stroke:#D96BF5;stroke-width:3.4;
-          stroke-linecap:round;
-          filter:drop-shadow(0 0 9px rgba(217,107,245,.95));
+        /* ELLE EST A COTE DU FANTOME, PAS SUR SA JOUE. Calee dans son cadre,
+           elle lui barrait le visage : le fantome tient sa loupe DEVANT LUI, a
+           bout de bras, comme sur la maquette. */
+        .mu-rech-loupe{position:absolute;right:-46%;bottom:6%;width:62%;
+          height:62%;
+          filter:drop-shadow(0 0 14px rgba(200,75,240,.95))
+            drop-shadow(0 0 34px rgba(139,75,246,.7));
           animation:muLoupe 2.8s ease-in-out infinite;}
+        .mu-rech-verre{fill:url(#muLoupeV);stroke:none;}
+        .mu-rech-monture{fill:none;stroke:url(#muLoupeT);stroke-width:5.4;}
+        .mu-rech-manche{fill:none;stroke:url(#muLoupeT);stroke-width:6.4;
+          stroke-linecap:round;}
         @keyframes muLoupe{0%,100%{transform:translate(0,0) rotate(0deg);}
           35%{transform:translate(-14px,-10px) rotate(-16deg);}
           70%{transform:translate(6px,6px) rotate(9deg);}}
@@ -7449,14 +7571,23 @@ function Styles() {
 
            ILS ARRIVENT DONC L'UN APRES L'AUTRE PUIS RESTENT : l'apparition
            echelonnee garde la vie, la permanence rend l'image. */
-        .mu-rech-m{position:absolute;z-index:4;font-style:italic;
-          font-size:13.5px;font-weight:600;line-height:1.32;color:#F79BE8;
-          max-width:96px;
+        /* ILS SONT MANUSCRITS, ET LA POLICE ETAIT DEJA CHARGEE. « Les phrases
+           et la police de "peut-etre ca", "on regarde votre style", "juste pour
+           vous" sont absentes. » Elles etaient la, mais en Poppins penche : une
+           italique de labeur, alors que la maquette les ecrit A LA MAIN, dans
+           la marge, comme des annotations au crayon. Le site charge Caveat
+           depuis toujours sous --font-main-levee ; c'est exactement cette
+           ecriture-la. Plus grandes de deux points, parce qu'une cursive se lit
+           moins vite qu'une lineale. */
+        .mu-rech-m{position:absolute;z-index:4;
+          font-family:var(--font-main-levee),'Segoe Script',cursive;
+          font-size:16px;font-weight:600;line-height:1.16;color:#EFA8E4;
+          max-width:104px;
           text-shadow:0 2px 12px rgba(0,0,0,.95),0 0 22px rgba(0,0,0,.85);
           opacity:0;animation:muMot .7s ease both;}
         .mu-rech-m.m1{left:0;top:15%;text-align:left;animation-delay:.5s;}
-        .mu-rech-m.m2{right:0;top:7%;text-align:right;color:#DDC4FF;
-          animation-delay:1.1s;}
+        .mu-rech-m.m2{right:2%;top:5%;max-width:80px;text-align:right;
+          color:#DDC4FF;animation-delay:1.1s;}
         .mu-rech-m.m3{left:0;bottom:6%;text-align:left;animation-delay:1.7s;}
         /* LA FLECHE COURBE SOUS CHAQUE MOT, comme sur la maquette : elle
            rattache le chuchotement a la piece qu'il designe. */
@@ -8846,6 +8977,40 @@ function Styles() {
            repond a une question du client — donc ils partagent la mise en page
            et se distinguent par la couleur du liseré : violet quand ClikMe
            parle de lui, neutre quand il repond. */
+        /* ═══ CE QUE « RESERVER » A FAIT ══════════════════════════════════
+
+           « "Reserver cet article" ne marche pas et n'ouvre pas WhatsApp. »
+
+           IL MARCHAIT, ET IL NE SE VOYAIT PAS : sur un numero de fiction — et
+           tous les commerces de la maquette en ont un — on n'ouvre jamais
+           WhatsApp, et le resultat partait dans un etat que seul l'ancien ecran
+           « Et maintenant ? » savait afficher. Il s'ecrit donc ici, sur l'ecran
+           ou l'on vient d'appuyer.
+
+           LE MESSAGE EST MONTRE EN ENTIER, dans son cadre, parce que c'est lui
+           la reponse : on veut savoir ce qui serait parti chez le commercant. */
+        .mu-res-wa{border-radius:18px;padding:13px 15px;margin:0 0 14px;
+          background:rgba(14,12,20,.94);border:1px solid rgba(255,255,255,.14);
+          border-left:3px solid #25D366;
+          -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+          box-shadow:0 18px 40px -18px rgba(0,0,0,.9);
+          animation:muApres .3s ease both;}
+        .mu-res-wa>b{display:block;font-size:13.5px;font-weight:850;
+          color:#fff;line-height:1.3;}
+        .mu-res-wa em{display:block;margin-top:7px;font-style:normal;
+          font-size:12px;line-height:1.42;color:#A8B8CA;}
+        .mu-res-wa em s{text-decoration:line-through;color:#8496A8;}
+        .mu-res-wa q{display:block;margin-top:9px;border-radius:4px 14px 14px 14px;
+          padding:10px 12px;font-size:12.6px;line-height:1.45;color:#E9F5EC;
+          background:rgba(37,211,102,.12);
+          border:1px solid rgba(37,211,102,.3);quotes:none;}
+        .mu-res-wa>button{margin-top:11px;font:inherit;font-size:12.5px;
+          font-weight:750;cursor:pointer;color:#9FB0C4;background:none;
+          border:0;padding:5px 2px;text-decoration:underline;
+          text-underline-offset:3px;}
+        .mu-res-wa>button:focus-visible{outline:2px solid #C9BCFF;
+          outline-offset:2px;}
+
         /* ═══ « CHOIX CLIKME » EST UNE PASTILLE, PUIS UNE FEUILLE ══════════
 
            « La note de l'IA est en plein milieu de la photo et ca empeche
