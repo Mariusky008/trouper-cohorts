@@ -54,7 +54,7 @@
 // la personne est présente autrement — son prénom, son fantôme, son heure. Si
 // c'est le portrait qui est voulu, il faudra de vraies photos consenties et
 // changer la règle du dépôt : c'est une décision, pas un détail d'images.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   HEURES_PAR_DEFAUT,
@@ -77,6 +77,12 @@ import { essayerSurMoi, estUnRendu } from "@/lib/direct/essai-genere";
 import { prevenirPourEssai, numeroDeFiction } from "@/lib/direct/prevenir";
 import { partagerLEssai, type Sortie } from "@/lib/direct/partager-essai";
 import { jouer } from "@/lib/direct/sons";
+import {
+  abonnerAlertesLooks,
+  alertesLooksVides,
+  basculerAlerteLook,
+  chargerAlertesLooks,
+} from "@/lib/direct/alertes-looks";
 import { EcranGout } from "@/components/direct/gout-contenu";
 import { EcranSoiree } from "@/components/direct/soiree-contenu";
 
@@ -184,6 +190,48 @@ function zoneChangee(essai: TypeMur["essai"], piece: Piece | null): string | und
  */
 type EssaiVu = { piece: Piece; image: string; note: number };
 
+/**
+ * ═══ CE QUE CLIKME DIT D'UNE PIÈCE, ET CE QU'IL NE DIT JAMAIS ═══════════════
+ *
+ * « ClikMe ne doit pas donner spontanément un jugement stylistique du type
+ * "ça vous va", "ça ne vous va pas", "cette couleur ne vous convient pas".
+ * L'utilisateur peut aimer une pièce même si l'IA estime qu'une autre coupe
+ * serait plus adaptée. ClikMe ne doit pas devenir un juge du goût. »
+ *
+ * DEUX RÈGLES, ET ELLES TIENNENT TOUT CET ÉCRAN :
+ *
+ *   · QUAND C'EST LE CLIENT QUI A CHOISI, on se tait. L'avis ne sort que s'il
+ *     est demandé, et il décrit la pièce sans la noter : « cette coupe apporte
+ *     de la structure », jamais « cette pièce ne vous va pas ». On propose une
+ *     alternative, on ne corrige pas un goût.
+ *   · QUAND C'EST CLIKME QUI A CHOISI, il doit s'expliquer. Une machine qui
+ *     désigne sans dire pourquoi demande une confiance qu'elle n'a pas gagnée.
+ *
+ * ET L'EXPLICATION NE PARLE PAS DU VISAGE DE LA PERSONNE. « Le kaki fonctionne
+ * bien avec les tons de votre visage » suppose une analyse qu'aucun calcul de
+ * cette maquette ne fait : l'écrire serait fabriquer la compétence qu'on est
+ * en train de promettre. Elle parle donc de ce qui est VRAI ici — la pièce,
+ * sa coupe, et la façon dont elle a été sortie de la collection.
+ */
+function avisNeutre(piece: Piece): { dit: string; sinon: string } {
+  if (piece.couvre === "silhouette") {
+    return {
+      dit: "Cette pièce habille la silhouette entière : elle donne une ligne, et elle décide du reste de la tenue.",
+      sinon: "Si vous préférez garder votre bas, je peux vous proposer un haut.",
+    };
+  }
+  if (piece.couvre === "bas") {
+    return {
+      dit: "Cette pièce joue sur le bas : c'est elle qui donne l'allure, le haut reste libre.",
+      sinon: "Si vous voulez changer le haut plutôt, je peux vous proposer autre chose.",
+    };
+  }
+  return {
+    dit: "Cette pièce apporte de la structure sur le buste, et elle se porte avec ce que vous avez déjà.",
+    sinon: "Si vous voulez quelque chose de plus souple, je peux vous proposer une alternative.",
+  };
+}
+
 /** Le dessin du fantôme. Une seule forme, trois tailles, jamais deux dessins. */
 /**
  * LE MOMENT CHOISI, RECOLLÉ DANS UNE PHRASE.
@@ -195,6 +243,67 @@ type EssaiVu = { piece: Piece; image: string; note: number };
  */
 function quandDit(q: string): string {
   return q === "J’y suis" ? "maintenant" : q;
+}
+
+/**
+ * ═══ LE FANTÔME DE LA NOTE, ET IL N'EST PAS CELUI DE LA BARRE ═══════════════
+ *
+ * « Attention aux fantômes, et respecte le design des fantômes : sur ce que tu
+ * as fait, les fantômes sont un peu étranges. »
+ *
+ * IL AVAIT RAISON, ET J'AVAIS RÉUTILISÉ LE MAUVAIS DESSIN. `Signe` est le
+ * PICTOGRAMME du produit : un corps allongé, deux yeux ovales ouverts, une
+ * petite bouche. Il est fait pour vivre à dix-huit points dans une barre, où il
+ * doit se reconnaître plus que s'exprimer. Agrandi à cinquante-huit points sur
+ * une photo, ces mêmes yeux ronds fixes donnent un masque — et cinq masques
+ * alignés sous son propre visage mettent mal à l'aise.
+ *
+ * CELUI DE LA MAQUETTE EST UN VISAGE HEUREUX. Dôme large, trois festons en bas,
+ * YEUX FERMÉS EN ARC — le sourire des yeux, celui qu'on ne peut pas faire avec
+ * deux ovales — et une grande bouche courbe. C'est un dessin fait pour être vu
+ * grand, et pour qu'on ait envie de le toucher.
+ *
+ * LES DEUX COHABITENT, ET C'EST VOULU. Le tracé reste partout où le fantôme est
+ * un signe ; celui-ci ne sert que là où il est un VISAGE : les cinq de la note.
+ * Un seul dessin pour les deux emplois aurait mal fait les deux.
+ */
+function Frimousse({ classe, coeur }: { classe?: string; coeur?: boolean }) {
+  return (
+    <svg className={classe} viewBox="0 0 64 60" aria-hidden="true">
+      {/* LE CORPS : un dôme, des épaules droites, trois festons. Les festons
+          sont des arcs de cercle et non des vagues — la maquette les dessine
+          nets, et c'est ce qui donne la silhouette d'arcade plutôt que celle
+          d'un drap. */}
+      <path
+        className="mu-f-corps"
+        d="M32 2C16.5 2 5 13.8 5 29.4V52c0 3.3 4.2 4.9 6.5 2.5l4.6-4.8a4.5 4.5 0 0 1 6.5 0l3.1 3.2a4.5 4.5 0 0 0 6.5 0l3.1-3.2a4.5 4.5 0 0 1 6.5 0l4.6 4.8C48.8 56.9 53 55.3 53 52V29.4C59 13.8 47.5 2 32 2Z"
+      />
+      {coeur ? (
+        <>
+          {/* LES YEUX EN CŒUR DU CINQUIÈME. « Coup de cœur » n'est pas « cinq
+              sur cinq », c'est autre chose, et il faut que ça se voie avant
+              qu'on ait lu le mot. */}
+          <path
+            className="mu-f-oeil"
+            d="M21.5 31.4 16.9 27a3.2 3.2 0 0 1 0-4.6 3.2 3.2 0 0 1 4.6 0 3.2 3.2 0 0 1 4.6 0 3.2 3.2 0 0 1 0 4.6Z"
+          />
+          <path
+            className="mu-f-oeil"
+            d="M42.5 31.4 37.9 27a3.2 3.2 0 0 1 0-4.6 3.2 3.2 0 0 1 4.6 0 3.2 3.2 0 0 1 4.6 0 3.2 3.2 0 0 1 0 4.6Z"
+          />
+        </>
+      ) : (
+        <>
+          {/* LES YEUX FERMÉS, EN ARC. C'est le sourire des yeux : deux ovales
+              ouverts, à cette taille, font un regard fixe. */}
+          <path className="mu-f-trait" d="M16.5 27.2c1.6-3.4 6.3-3.4 7.9 0" />
+          <path className="mu-f-trait" d="M39.6 27.2c1.6-3.4 6.3-3.4 7.9 0" />
+        </>
+      )}
+      {/* LA BOUCHE : large et pleine, pas un trait. */}
+      <path className="mu-f-bouche2" d="M24.6 34.4c1.9 3.6 4.5 5.4 7.4 5.4s5.5-1.8 7.4-5.4" />
+    </svg>
+  );
 }
 
 function Signe({ classe, coeur }: { classe?: string; coeur?: boolean }) {
@@ -285,6 +394,15 @@ const TRACES: Record<string, string> = {
   etoile: "M12 2.8 14.8 9l6.8.7-5.1 4.6 1.5 6.7L12 17.6 6 21l1.5-6.7L2.4 9.7 9.2 9Z",
   idee: "M9 18.4h6M10 21.4h4M12 2.6a6.4 6.4 0 0 0-3.8 11.6c.6.5 1 1.2 1 2v.2h5.6v-.2c0-.8.4-1.5 1-2A6.4 6.4 0 0 0 12 2.6Z",
   sablier: "M6.4 2.8h11.2M6.4 21.2h11.2M7.4 2.8v3.6c0 2 1.6 3.6 3.2 4.6.9.5.9 1.5 0 2-1.6 1-3.2 2.6-3.2 4.6v3.6M16.6 2.8v3.6c0 2-1.6 3.6-3.2 4.6-.9.5-.9 1.5 0 2 1.6 1 3.2 2.6 3.2 4.6v3.6",
+  /* LA CLOCHE DE L'ALERTE, DANS SES DEUX ÉTATS. Muette, elle est POSÉE : le
+     battant pend, rien n'est demandé. Armée, elle PENCHE et deux ondes en
+     sortent — c'est la seule différence qui se lise à vingt points, et elle
+     se lit même quand la couleur ne passe pas. Voir `lib/direct/alertes-looks`. */
+  cloche: "M12 3.2a5.8 5.8 0 0 0-5.8 5.8c0 4-1.2 5.6-2 6.4a.9.9 0 0 0 .6 1.6h14.4a.9.9 0 0 0 .6-1.6c-.8-.8-2-2.4-2-6.4A5.8 5.8 0 0 0 12 3.2ZM10.2 20.2a2.2 2.2 0 0 0 3.6 0",
+  "cloche-on": "M11 4.4a5.8 5.8 0 0 0-4.3 6.7c.7 3.9-.3 5.8-.9 6.8a.9.9 0 0 0 .8 1.4l14.2-2.5a.9.9 0 0 0 .3-1.7c-1-.6-2.5-1.9-3.2-5.8A5.8 5.8 0 0 0 11 4.4ZM11.8 21.6a2.2 2.2 0 0 0 3.5-.6M2.6 6.4C3.4 5 4.6 4 6 3.4M3.6 9.8c.4-.8 1-1.5 1.8-1.9",
+  /* LES AUTRES, ET ILS SONT TROIS. Deux têtes se lisent comme un couple ;
+     trois se lisent comme « des gens », ce qui est le mot du bouton. */
+  gens: "M9 4.2a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4ZM2.8 20.4c0-3.4 2.8-6.2 6.2-6.2s6.2 2.8 6.2 6.2M16.4 5a3.2 3.2 0 0 1 0 6.2M17.8 14.8c2.1.7 3.6 2.6 3.6 5",
 };
 
 function Trace({ cle }: { cle: string }) {
@@ -1199,6 +1317,7 @@ export function MurContenu({
           }}
           onEssai={setEssaiVu}
           catalogue={catalogue}
+          onReserver={onReserver}
         />
         </div>
       )}
@@ -1940,6 +2059,7 @@ function EcranDepot({
   piecePrechoisie,
   onEssai,
   catalogue,
+  onReserver,
 }: {
   mur: TypeMur;
   clients: Fantome[];
@@ -1959,6 +2079,8 @@ function EcranDepot({
   /** Voir `Essai` : le favori de la CARTE, pas un second système. */
   onFavori?: () => void;
   favori?: boolean;
+  /** Voir `Essai` : le créneau de l'ANNONCE, pas une seconde réservation. */
+  onReserver?: () => void;
 }) {
   /**
    * ═══ L'ESSAI EST SEUL À L'ÉCRAN ═══════════════════════════════════════════
@@ -1990,6 +2112,7 @@ function EcranDepot({
         piecePrechoisie={piecePrechoisie}
         onEssai={onEssai}
         catalogue={catalogue}
+        onReserver={onReserver}
       />
     );
   }
@@ -2532,6 +2655,7 @@ function Essai({
   piecePrechoisie,
   onEssai,
   catalogue,
+  onReserver,
 }: {
   mur: TypeMur;
   restants: number;
@@ -2562,6 +2686,24 @@ function Essai({
   onFavori?: () => void;
   /** L'annonce est-elle déjà gardée ? Le bouton le dit plutôt que de le taire. */
   favori?: boolean;
+  /**
+   * RÉSERVER L'ARTICLE, ET C'EST LE CRÉNEAU DE L'ANNONCE.
+   *
+   * La maquette pose deux gestes côte à côte au bas du résultat — « Réserver
+   * cet article » et « Le mettre de côté » — et on peut les lire comme un
+   * doublon. Ils ne le sont pas, et la différence est celle du commerce réel :
+   * METTRE DE CÔTÉ demande au commerçant de garder la pièce (c'est
+   * `mots.reserver`, qui part en conversation et décompte ce qu'il reste) ;
+   * RÉSERVER prend un créneau pour venir l'essayer sur place, c'est-à-dire
+   * exactement ce que fait « Réserver » sur l'annonce. Le brancher ailleurs
+   * aurait fabriqué une seconde réservation qui ne décompte rien — même raison
+   * que `onReserver` sur `MurContenu`.
+   *
+   * ABSENT, LE BOUTON N'EST PAS DESSINÉ : sur le mur seul il n'y a pas
+   * d'annonce derrière, donc pas de créneau, et un geste qui n'ouvre rien est
+   * pire que pas de geste. Même règle que `onSalon` et `onFavori`.
+   */
+  onReserver?: () => void;
 }) {
   /**
    * ═══ LE PARCOURS A TROIS TEMPS, ET LE TROISIÈME EST NOUVEAU ════════════════
@@ -2695,6 +2837,16 @@ function Essai({
    * geste facultatif pour une étape du parcours. Fermé, il ne demande rien.
    */
   const [motOuvert, setMotOuvert] = useState(false);
+  /**
+   * LE DÉTAIL DU CHOIX, ET L'AVIS DEMANDÉ — DEUX PANNEAUX, DEUX PARCOURS.
+   *
+   * `pourquoi` n'existe que quand ClikMe a choisi : il justifie. `conseil`
+   * n'existe que quand c'est le client qui a choisi : il conseille, et
+   * seulement s'il est demandé. Les deux ne sont jamais ouverts ensemble,
+   * parce qu'ils ne peuvent jamais être proposés ensemble.
+   */
+  const [pourquoi, setPourquoi] = useState(false);
+  const [conseil, setConseil] = useState(false);
   /**
    * ═══ MON ESSAI REJOINT-IL LE MUR DU COMMERÇANT ? ═══════════════════════════
    *
@@ -3405,6 +3557,39 @@ function Essai({
   /** L'intention d'entrée a-t-elle déjà servi ? Voir `surprendre`. */
   const surpriseFaite = useRef(false);
 
+  /**
+   * ═══ « M'ALERTER POUR DES LOOKS SIMILAIRES ? » ════════════════════════════
+   *
+   * ELLE SE DÉCIDE ICI, ET NULLE PART AILLEURS. Une permission de notification
+   * demandée dans un réglage ne veut rien dire : on ne sait pas de quoi on
+   * parle. Demandée devant une pièce qu'on vient d'aimer, elle est évidente —
+   * et elle reste explicable le jour où la notification tombe : « parce que
+   * vous aviez adoré la veste kaki ». Voir `lib/direct/alertes-looks.ts`.
+   */
+  const alertes = useSyncExternalStore(
+    abonnerAlertesLooks,
+    chargerAlertesLooks,
+    alertesLooksVides,
+  );
+  /* ON LIT LE STORE PLUTOT QU'UNE FONCTION DE LECTURE, pour que React sache de
+     quoi dépend l'affichage : une fonction lirait le même cache sans rien
+     déclarer, et la cloche ne se rallumerait qu'au rendu suivant. */
+  const alerte = !!piece && alertes.some((x) => x.carte === mur.cle && x.piece === piece.id);
+
+  /**
+   * CE QUE LA PIÈCE FAIT SUR UN CORPS, EN UNE PROPOSITION.
+   *
+   * ELLE SERT DEUX FOIS SUR CET ÉCRAN — la bulle courte et le détail — et elle
+   * dit un fait, jamais un jugement : ce que la pièce REMPLACE, pas si elle
+   * « vous va ». Voir `couvre` dans `lib/direct/fantomes.ts` et `avisNeutre`.
+   */
+  const surLeCorps =
+    piece?.couvre === "silhouette"
+      ? "elle habille la silhouette entière"
+      : piece?.couvre === "bas"
+        ? "elle joue sur le bas, le haut reste libre"
+        : "elle se porte sur le buste, avec ce que vous avez déjà";
+
   const surprendsMoi = () => {
     if (!mur.essai?.pieces.some((p) => !p.bientot)) return;
     setRendu(null);
@@ -3413,6 +3598,8 @@ function Essai({
     setNoteVue(0);
     setCommentaire("");
     setMotOuvert(false);
+    setPourquoi(false);
+    setConseil(false);
     setRevele(false);
     setAvant(false);
     setX(58);
@@ -3443,6 +3630,8 @@ function Essai({
     setNoteVue(0);
     setCommentaire("");
     setMotOuvert(false);
+    setPourquoi(false);
+    setConseil(false);
     setRevele(false);
     setX(58);
     setEtape("calcul");
@@ -4298,26 +4487,48 @@ function Essai({
             </span>
           </div>
 
+          {/* ═══ ELLE AVANCE, ELLE N'EST PLUS DESSINÉE D'AVANCE ══════════════
+
+              « L'animation commence à peine et déjà je suis directement sur
+              "Prêt ?" au lieu de commencer sur "je regarde votre photo". »
+
+              LES TROIS ÉTATS ÉTAIENT ÉCRITS EN DUR : deux cochés, le troisième
+              allumé, dès la première image. La frise racontait donc la fin de
+              l'attente pendant toute l'attente — et comme elle ne bougeait
+              plus, elle ne disait plus rien du tout.
+
+              ELLE SUIT MAINTENANT LES TROIS ACTES, qui suivent eux-mêmes
+              l'avancement réel du rendu : voir `acte`. « Je regarde votre
+              photo » pendant que la détection travaille, « J'ajuste la pièce »
+              pendant la pose, « Prêt ? » quand l'anneau se referme. C'est le
+              même découpage que la scène juste au-dessus, donc les deux
+              racontent la même chose au même moment — sans quoi on lirait deux
+              horloges qui ne sont pas d'accord. */}
           <ol className="mu-prep-frise">
-            <li className="fait">
-              <i aria-hidden="true">
-                <Trace cle="photo" />
-              </i>
-              <span>Je regarde{"\n"}votre photo…</span>
-            </li>
-            <li className="fait">
-              <i aria-hidden="true">
-                <Trace cle="vetement" />
-              </i>
-              <span>J’ajuste{"\n"}la pièce…</span>
-            </li>
-            <li className="ici" aria-current="step">
-              <i aria-hidden="true">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={FANTOME} alt="" />
-              </i>
-              <span>👻 Prêt&nbsp;?</span>
-            </li>
+            {[
+              { cle: "photo", mot: "Je regarde\nvotre photo…" },
+              { cle: "vetement", mot: "J’ajuste\nla pièce…" },
+              { cle: "fantome", mot: "👻 Prêt ?" },
+            ].map((t, k) => {
+              const ou = acte === "a1" ? 0 : acte === "a2" ? 1 : 2;
+              return (
+                <li
+                  key={t.cle}
+                  className={k === ou ? "ici" : k < ou ? "fait" : undefined}
+                  aria-current={k === ou ? "step" : undefined}
+                >
+                  <i aria-hidden="true">
+                    {t.cle === "fantome" ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={FANTOME} alt="" />
+                    ) : (
+                      <Trace cle={t.cle} />
+                    )}
+                  </i>
+                  <span>{t.mot}</span>
+                </li>
+              );
+            })}
           </ol>
 
           {/* LA PROMESSE EST RÉPÉTÉE ICI, ET C'EST LE SEUL ENDROIT DU PARCOURS
@@ -4576,6 +4787,38 @@ function Essai({
             <span className="mu-res-jauge" aria-hidden="true">
               <i />
             </span>
+            {/* ═══ LA CLOCHE, ET CE QU'ELLE PROMET VRAIMENT ═══════════════
+
+                « M'alerter quand une pièce dans cet esprit arrive. »
+
+                ELLE SE DÉCIDE ICI ET NULLE PART AILLEURS. Une permission de
+                notification demandée dans un réglage ne veut rien dire : on ne
+                sait pas de quoi on parle. Demandée devant une pièce qu'on vient
+                d'aimer, elle est évidente — et elle reste explicable le jour où
+                la notification tombe : « parce que vous aviez adoré la veste
+                kaki ». Voir `lib/direct/alertes-looks.ts`, qui dit aussi
+                pourquoi elle ne garde pas un profil de goût. */}
+            <button
+              type="button"
+              className={`mu-res-rond mu-res-cloche${alerte ? " on" : ""}`}
+              aria-pressed={alerte}
+              aria-label={
+                alerte
+                  ? "Ne plus m’alerter pour des pièces dans cet esprit"
+                  : "M’alerter quand une pièce dans cet esprit arrive"
+              }
+              onClick={() =>
+                basculerAlerteLook({
+                  carte: mur.cle,
+                  piece: piece.id,
+                  nom: piece.nom,
+                  note,
+                })
+              }
+            >
+              <Trace cle={alerte ? "cloche-on" : "cloche"} />
+              <i aria-hidden="true">{alerte ? "✓" : "+"}</i>
+            </button>
             <button
               type="button"
               className="mu-res-rond"
@@ -4585,22 +4828,99 @@ function Essai({
               ✕
             </button>
           </div>
+          {/* LA BULLE DE LA CLOCHE. Elle dit ce que le pictogramme ne peut pas
+              dire, et elle disparaît une fois la chose demandée — une infobulle
+              qui reste après le geste devient une étiquette. */}
+          <span className={`mu-res-bulle${alerte ? " on" : ""}`} aria-hidden="true">
+            {alerte
+              ? "Je vous préviens quand il en arrive"
+              : "M’alerter pour des looks similaires ?"}
+          </span>
 
           <div className="mu-res-t">
             <h2>
               Alors, <b>ça vous plaît&nbsp;?</b>
             </h2>
-            <p>Touchez un fantôme pour donner votre avis</p>
+            {/* ELLE NE DIT PAS LA MÊME CHOSE DANS LES DEUX PARCOURS. Quand
+                ClikMe a choisi, la bulle de gauche explique déjà pourquoi :
+                la consigne n'a qu'à dire le geste. Quand c'est le client qui a
+                choisi, la note est la SEULE chose qu'il donne — et dire à quoi
+                elle sert est ce qui la fait donner. */}
+            <p>
+              {surprise
+                ? "Touchez un fantôme pour donner votre avis"
+                : "Touchez un fantôme : plus je vous connais, mieux je vous conseille."}
+            </p>
             {/* ON DIT QUE C'EST CLIKME QUI A CHOISI, ET SEULEMENT ALORS. Sans
                 cette ligne, une pièce sortie de la réserve se lit comme une
                 pièce qu'on aurait demandée — et « Surprends-moi encore », plus
                 bas, n'aurait plus de sens. */}
-            {surprise && (
-              <span className="mu-res-surp">
-                <i aria-hidden="true">✨</i> ClikMe a choisi&nbsp;: <b>{piece.nom}</b>
-              </span>
-            )}
           </div>
+
+          {/* ═══ POURQUOI CLIKME A CHOISI CELLE-LÀ ═══════════════════════════
+
+              « Après le reveal, ClikMe peut expliquer pourquoi il a choisi
+              cette pièce. Cette explication doit rester très courte sur l'écran
+              principal ; le détail peut être caché derrière "Pourquoi ?". »
+
+              ELLE N'EXISTE QUE DANS CE PARCOURS-LÀ, et c'est la règle qui tient
+              tout l'écran : quand c'est le client qui a choisi, ClikMe se tait.
+              Une machine qui commente un choix qu'on n'a pas demandé devient un
+              juge du goût ; une machine qui explique SON PROPRE choix rend des
+              comptes.
+
+              ET ELLE NE PARLE PAS DU VISAGE DE LA PERSONNE. « Le kaki
+              fonctionne avec les tons de votre visage » suppose une analyse
+              qu'aucun calcul de cette maquette ne fait. Elle parle de ce qui
+              est vrai : la pièce, sa coupe, et d'où elle a été sortie. */}
+          {surprise && (
+            <div className={`mu-choix${pourquoi ? " ouvert" : ""}`}>
+              <b>
+                <i aria-hidden="true">✨</i> Choix ClikMe
+              </b>
+              {/* PAS D'ARTICLE DEVANT LE NOM DE LA PIÈCE. « J'ai sorti robe à
+                  volants corail de la collection » est ce que donnait la phrase
+                  précédente : le français demande « la » ou « le », et la
+                  collection ne dit nulle part le genre de chaque pièce. On
+                  écrit donc le nom EN TÊTE, où il n'en a pas besoin — plutôt que
+                  de deviner un genre une fois sur deux. */}
+              <p>
+                <b>{piece.nom}</b> — {surLeCorps}.
+              </p>
+              {pourquoi ? (
+                <div className="mu-choix-d">
+                  <dl>
+                    <dt>La pièce</dt>
+                    <dd>{piece.decrire ?? piece.nom}</dd>
+                    {/* IL DÉVELOPPE, IL NE RÉPÈTE PAS. La bulle courte porte déjà
+                        `surLeCorps` : le redire ici mot pour mot, trois lignes
+                        plus bas, se lisait comme un défaut. `avisNeutre` dit la
+                        même chose en entier, et sans jamais noter la pièce. */}
+                    <dt>La coupe</dt>
+                    <dd>{avisNeutre(piece).dit}</dd>
+                    <dt>Comment je choisis</dt>
+                    {/* ON DIT OÙ EN EST LA MACHINE, PLUTÔT QUE DE LUI PRÊTER UN
+                        GOÛT QU'ELLE N'A PAS ENCORE. C'est exactement ce que le
+                        produit promet : « j'apprends ce que vous aimez », et
+                        non « je sais mieux que vous ce qui vous va ». */}
+                    <dd>
+                      Aujourd’hui, je pioche dans la collection en écartant ce que
+                      vous venez de voir. Bientôt, je tiendrai compte de ce que
+                      vous notez, de ce que vous faites mettre de côté et des
+                      surprises que vous gardez.
+                    </dd>
+                  </dl>
+                  <button type="button" onClick={() => setPourquoi(false)}>
+                    Fermer
+                  </button>
+                </div>
+              ) : (
+                <button type="button" className="mu-choix-b" onClick={() => setPourquoi(true)}>
+                  Pourquoi&nbsp;? <s aria-hidden="true">›</s>
+                </button>
+              )}
+            </div>
+          )}
 
           {/* L'ESPACE QUI POUSSE LE BAS EN BAS. C'est lui qui laisse la photo
               respirer quelle que soit la hauteur de l'écran, sans donner une
@@ -4628,91 +4948,158 @@ function Essai({
                   onBlur={() => setNoteVue(0)}
                   // ON PEUT SE DÉDIRE EN REVENANT SUR SON PROPRE FANTÔME. Sans
                   // ça, une note posée par erreur ne se retire plus.
+                  // ═══ TOUCHER UN FANTÔME OUVRE LA BULLE DU MOT ═══════════
+                  //
+                  // LA MAQUETTE L'ANCRE SOUS LE FANTÔME TOUCHÉ, avec sa flèche,
+                  // et c'est ce qui la rend évidente : elle répond à ce qu'on
+                  // vient de faire — « J'adore ! Envie d'ajouter un mot ? » —
+                  // au lieu d'attendre plus bas qu'on la trouve.
+                  //
+                  // SE DÉDIRE LA REFERME. Sans ça, une note posée par erreur ne
+                  // se retire plus, et la bulle reste ouverte sur un avis qu'on
+                  // vient d'annuler.
                   onClick={() => {
                     jouer("note");
-                    setNote((v) => (v === n ? 0 : n));
+                    const neuf = note === n ? 0 : n;
+                    setNote(neuf);
+                    setMotOuvert(neuf > 0);
                   }}
                 >
-                  <Signe classe="mu-note-s" coeur={n === 5} />
+                  <Frimousse classe="mu-note-s" coeur={n === 5} />
                   <em>{MOTS_FANTOME[n]}</em>
                 </button>
               ))}
             </div>
 
-            {/* ═══ LE MOT RESTE FERMÉ TANT QU'ON NE L'OUVRE PAS ═══════════════
+            {/* ═══ LA BULLE DU MOT, ANCRÉE SOUS LE FANTÔME TOUCHÉ ═══════════
 
-                LA MAQUETTE DESSINE UNE PASTILLE, PAS UN CHAMP. C'est la bonne
-                forme : un champ de texte ouvert demande d'écrire — il occupe
-                cent points, il attire le pouce, et il fait passer un geste
-                facultatif pour une étape. Une pastille « + Ajouter un mot »
-                ne demande rien et s'ouvre pour qui veut.
+                LA MAQUETTE L'ACCROCHE AU FANTÔME, pas au bas de l'écran, et
+                c'est ce qui change tout : elle répond à ce qu'on vient de
+                faire. « J'adore ! — Envie d'ajouter un mot ? (optionnel) ».
+                Posée plus bas, elle demandait de la trouver ; posée ici, elle
+                se lit sans qu'on la cherche.
 
-                ELLE NE S'OUVRE QU'UNE FOIS NOTÉ : demander pourquoi à quelqu'un
-                qui n'a pas encore dit si ça lui plaisait est une question posée
-                à l'envers. */}
-            {note > 0 && !motOuvert && (
-              <button type="button" className="mu-res-mot" onClick={() => setMotOuvert(true)}>
-                <i aria-hidden="true">+</i>
-                <span>{commentaire ? commentaire : "Ajouter un mot (optionnel)"}</span>
-              </button>
-            )}
+                SA FLÈCHE POINTE LE BON FANTÔME. Les cinq occupent cinq colonnes
+                égales : le centre du n-ième est à `(n − 0,5) / 5` de la largeur.
+                Une flèche qui pointe à côté annule tout le gain.
+
+                ET C'EST ICI QUE LA CASE DU MUR VIT MAINTENANT. La maquette ne
+                la dessine pas, et je ne peux pas la retirer : sans elle, on
+                publierait la photo de quelqu'un parce qu'il a touché un
+                fantôme. Elle est à sa vraie place — dans le panneau qui écrit
+                ce qui partira, juste au-dessus du bouton qui l'envoie. */}
             {note > 0 && motOuvert && (
-              <div className="mu-res-champ">
-                <textarea
-                  id="mu-mot-c"
-                  rows={2}
-                  maxLength={200}
-                  autoFocus
-                  value={commentaire}
-                  aria-label={`Un petit mot sur ${mots.ceci}`}
-                  placeholder={MOTS_EXEMPLE[note]}
-                  onChange={(e) => setCommentaire(e.target.value)}
-                />
-                <div className="mu-res-champ-b">
-                  <s>{commentaire.length}/200</s>
-                  {/* LE SIGNALEMENT VIT ICI, ET NULLE PART AILLEURS. Il doit
-                      exister — c'est lui qui nous dit sur quels métiers l'essai
-                      ne tient pas debout — mais sous une image qu'on découvre,
-                      « Signaler ce rendu » apprend à s'en méfier. Replié avec
-                      le mot, il reste à un geste de qui en a besoin. */}
-                  <button type="button" className="mu-res-x" onClick={() => setRate(true)}>
-                    Signaler ce rendu
+              <div
+                className="mu-res-mot"
+                style={{ "--i": note - 1 } as React.CSSProperties}
+              >
+                <div className="mu-res-mot-t">
+                  <Frimousse classe="mu-res-mot-f" coeur={note === 5} />
+                  <span>
+                    <b>{MOTS_FANTOME[note]}&nbsp;!</b>
+                    <em>Envie d’ajouter un mot&nbsp;? (optionnel)</em>
+                  </span>
+                  <button
+                    type="button"
+                    className="mu-res-mot-x"
+                    aria-label="Fermer"
+                    onClick={() => setMotOuvert(false)}
+                  >
+                    ✕
                   </button>
-                  <button type="button" onClick={() => setMotOuvert(false)}>
+                </div>
+                <label className="mu-res-champ">
+                  <textarea
+                    rows={2}
+                    maxLength={120}
+                    value={commentaire}
+                    aria-label={`Un petit mot sur ${mots.ceci}`}
+                    placeholder={MOTS_EXEMPLE[note]}
+                    onChange={(e) => setCommentaire(e.target.value)}
+                  />
+                  <s>{commentaire.length}/120</s>
+                </label>
+                <button
+                  type="button"
+                  className={`mu-res-part${partage ? " on" : ""}`}
+                  aria-pressed={partage}
+                  onClick={() => setPartage((v) => !v)}
+                >
+                  <i aria-hidden="true">{partage ? "✓" : ""}</i>
+                  <span>
+                    Ajouter {mots.essayage === "projection" ? "ma" : "mon"} {mots.essayage} au
+                    mur du commerçant
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="mu-res-valider"
+                  onClick={() => setMotOuvert(false)}
+                >
+                  Valider
+                </button>
+              </div>
+            )}
+
+            {/* ═══ L'AVIS CLIKME, ET IL N'ARRIVE QUE S'IL EST DEMANDÉ ═══════
+
+                « On peut éventuellement ajouter un lien secondaire discret :
+                "Demander l'avis ClikMe". Et seulement si l'utilisateur clique
+                dessus, ClikMe peut donner un conseil neutre et non jugeant.
+                Jamais : "cette pièce ne vous va pas". »
+
+                IL DIT CE QUE LA PIÈCE FAIT, PAS CE QU'ELLE VAUT. Voir
+                `avisNeutre` : la coupe, ce qu'elle remplace, et une porte de
+                sortie qui PROPOSE au lieu de corriger — « si vous préférez
+                garder votre bas, je peux vous proposer un haut ». C'est la
+                différence entre un vendeur et un juge.
+
+                ET SA SORTIE EST « SURPRENDS-MOI », pas un verdict. Un conseil
+                qui se termine sans rien à faire laisse la personne seule avec
+                un avis qu'elle n'avait pas demandé. */}
+            {conseil && !surprise && (
+              <div className="mu-conseil">
+                <b>
+                  <Signe classe="mu-conseil-s" /> L’avis ClikMe
+                </b>
+                <p>{avisNeutre(piece).dit}</p>
+                <p className="mu-conseil-s2">{avisNeutre(piece).sinon}</p>
+                <div className="mu-conseil-g">
+                  {mots.surprends && (
+                    <button type="button" className="mu-conseil-b" onClick={surprendsMoi}>
+                      ✨ Proposez-moi une alternative
+                    </button>
+                  )}
+                  <button type="button" onClick={() => setConseil(false)}>
                     Fermer
                   </button>
                 </div>
               </div>
             )}
 
-            {/* LA SEULE CHOSE QUE J'AI GARDÉE CONTRE LA MAQUETTE — voir le
-                commentaire en tête de cet écran. Une ligne, une coche, et elle
-                dit à quoi ça sert plutôt que ce que ça fait. */}
-            {note > 0 && (
-              <button
-                type="button"
-                className={`mu-res-part${partage ? " on" : ""}`}
-                aria-pressed={partage}
-                onClick={() => setPartage((v) => !v)}
-              >
-                <i aria-hidden="true">{partage ? "✓" : ""}</i>
-                <span>
-                  Ajouter {mots.essayage === "projection" ? "ma" : "mon"} {mots.essayage} au mur du
-                  commerçant
-                </span>
-              </button>
-            )}
+            {/* ═══ LES TROIS GESTES DU BAS ═════════════════════════════
 
+                LA MAQUETTE EN MET TROIS, ET CHACUN OUVRE AUTRE CHOSE : réserver
+                un créneau pour venir l'essayer, faire garder la pièce, montrer
+                le rendu à quelqu'un. Voir `onReserver` pour la raison pour
+                laquelle les deux premiers ne sont pas le même bouton.
+
+                CELUI DU MILIEU EST LE SEUL PLEIN. Trois boutons pleins côte à
+                côte ne désignent rien ; celui qui compte est celui qui engage le
+                commerçant, et c'est lui qui porte la couleur.
+
+                CHACUN DISPARAÎT S'IL N'OUVRE RIEN. Sans annonce derrière, pas
+                de créneau ; sans rendu, rien à montrer. */}
             <div className="mu-res-g">
-              {mots.surprends && (
-                <button type="button" className="mu-res-r" onClick={surprendsMoi}>
+              {onReserver && (
+                <button type="button" className="mu-res-c" onClick={onReserver}>
                   <i aria-hidden="true">✨</i>
-                  <span>Surprends-moi encore</span>
+                  <span>Réserver cet article</span>
                 </button>
               )}
               <button
                 type="button"
-                className="mu-res-p"
+                className="mu-res-c plein"
                 onClick={() => {
                   poser("pris");
                   setEtape("agir");
@@ -4723,18 +5110,67 @@ function Essai({
                 </i>
                 <span>{mots.reserver}</span>
               </button>
-            </div>
-
-            <div className="mu-res-l">
               {!!photo && !!rendu && !rendu.souci && (
-                <button type="button" onClick={() => void partagerLeLook(piece)}>
-                  <Trace cle="partage" />
-                  <span>Demander à mes amis</span>
+                <button
+                  type="button"
+                  className="mu-res-c"
+                  onClick={() => void partagerLeLook(piece)}
+                >
+                  <i aria-hidden="true">
+                    <Trace cle="partage" />
+                  </i>
+                  <span>Partager</span>
                 </button>
               )}
+            </div>
+
+            {/* ═══ LA LIGNE DISCRÈTE, ET ELLE N'EST PAS LA MÊME DANS LES DEUX
+                PARCOURS ════════════════════════════════════════════════
+
+                « Le bouton "Pourquoi ça vous va ?" ne doit apparaître par défaut
+                que dans le parcours Surprends-moi. Dans un essayage classique,
+                il est remplacé par "Demander l'avis ClikMe". »
+
+                LE PREMIER LIEN CHANGE DONC DE NATURE SELON QUI A CHOISI : quand
+                c'est ClikMe, on lui redemande une pièce ; quand c'est le
+                client, on lui demande un avis — et seulement si on le veut.
+                Les deux ne sont jamais là ensemble, parce qu'ils ne peuvent
+                jamais être proposés ensemble.
+
+                « VOIR SUR D'AUTRES » EST LE BOUTON QUI MANQUAIT. « Il manque
+                peut-être un bouton quelque part pour voir les personnes qui ont
+                essayé ce même vêtement, et surtout pouvoir ensuite revenir là
+                où on était dans l'essayage, c'est-à-dire cet écran. » Il y va
+                par `onMur`, le mur s'ouvre CADRÉ SUR LA PIÈCE grâce à `onEssai`,
+                et le retour est garanti par ailleurs : l'essai reste MONTÉ
+                pendant qu'on regarde le mur, donc « Revoir » ramène ici, note
+                posée et mot écrit compris. */}
+            <div className="mu-res-l">
+              {surprise ? (
+                mots.surprends && (
+                  <button type="button" onClick={surprendsMoi}>
+                    <i aria-hidden="true">✨</i>
+                    <span>Surprends-moi encore</span>
+                  </button>
+                )
+              ) : (
+                <button
+                  type="button"
+                  className={conseil ? "on" : undefined}
+                  aria-expanded={conseil}
+                  onClick={() => setConseil((v) => !v)}
+                >
+                  <Trace cle="idee" />
+                  <span>Demander l’avis ClikMe</span>
+                </button>
+              )}
+              <button type="button" onClick={onMur}>
+                <Trace cle="gens" />
+                <span>Voir sur d’autres</span>
+              </button>
               <button type="button" onClick={() => setEtape("choisir")}>
                 <Trace cle="cintre" />
-                <span>Voir les autres pièces</span>
+                <span>Autres pièces</span>
               </button>
             </div>
           </div>
@@ -6799,10 +7235,20 @@ function Styles() {
         .mu-prep-frise li+li::before{content:"";position:absolute;top:29px;
           right:calc(50% + 32px);left:calc(-50% + 32px);height:0;
           border-top:2px dashed rgba(199,125,240,.5);}
+        .mu-prep-frise li{color:#6C7A90;}
         .mu-prep-frise li i{width:58px;height:58px;border-radius:50%;
           display:grid;place-items:center;position:relative;
-          border:1.8px solid rgba(199,125,240,.7);
-          background:rgba(255,255,255,.03);color:#D9C6FF;}
+          border:1.8px solid rgba(255,255,255,.14);
+          background:rgba(255,255,255,.03);color:#6C7A90;
+          transition:border-color .3s ease,color .3s ease;}
+        /* CELLES QUI SONT PASSEES ET CELLE QUI SE JOUE. Une etape a venir reste
+           grise : dessinee comme les autres, elle annoncerait un travail deja
+           fait. */
+        .mu-prep-frise li.fait,.mu-prep-frise li.ici{color:#B9A9E8;}
+        .mu-prep-frise li.fait i,.mu-prep-frise li.ici i{
+          border-color:rgba(199,125,240,.7);color:#D9C6FF;}
+        .mu-prep-frise li:not(.fait):not(.ici) i img{opacity:.35;
+          filter:grayscale(.7);}
         .mu-prep-frise li .mu-tr{width:26px;height:26px;}
         .mu-prep-frise li.fait i::after{content:"✓";position:absolute;top:-4px;
           right:-4px;width:20px;height:20px;border-radius:50%;background:#9333EA;
@@ -7653,14 +8099,6 @@ function Styles() {
            414 points, et « avis » restait seul sur la seconde. */
         .mu-res-t p{margin:8px 0 0;font-size:12.8px;font-weight:650;
           color:#C4CFE4;text-shadow:0 1px 10px rgba(0,0,0,.7);}
-        .mu-res-surp{display:inline-flex;align-items:center;gap:6px;
-          margin-top:11px;font-size:12.5px;font-weight:700;border-radius:999px;
-          padding:7px 14px;color:#EFD9FF;
-          background:linear-gradient(100deg,rgba(139,43,224,.42),
-            rgba(240,38,155,.36));border:1px solid rgba(240,38,155,.45);
-          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
-        .mu-res-surp i{font-style:normal;}
-        .mu-res-surp b{color:#fff;font-weight:850;}
 
         /* L'ESPACE QUI POUSSE LE BAS EN BAS. Il a une hauteur minimale pour que
            la photo garde de la place meme sur un ecran court : sans elle, les
@@ -7683,8 +8121,18 @@ function Styles() {
           gap:4px;align-items:start;}
         .mu-note-f.res button{width:100%;height:auto;gap:8px;
           grid-auto-flow:row;padding:4px 0 0;}
-        .mu-note-f.res .mu-note-s{width:100%;max-width:58px;height:auto;
-          aspect-ratio:40/44;}
+        .mu-note-f.res .mu-note-s{width:100%;max-width:60px;height:auto;
+          aspect-ratio:64/60;}
+        /* LE VISAGE EST PLEIN, PAS DETOURE. Les deux traits des yeux fermes et
+           la bouche sont dessines a l'encre du fond, comme sur la maquette :
+           c'est ce qui donne un fantome LUMINEUX plutot qu'un pictogramme
+           colorie. */
+        .mu-note-f.res .mu-f-corps{fill:#F0EAFF;}
+        .mu-note-f.res .mu-f-trait{fill:none;stroke:#2A1E4D;stroke-width:3.2;
+          stroke-linecap:round;}
+        .mu-note-f.res .mu-f-bouche2{fill:none;stroke:#2A1E4D;stroke-width:3.4;
+          stroke-linecap:round;}
+        .mu-note-f.res .mu-f-oeil{fill:#2A1E4D;}
         .mu-note-f.res button em{font-style:normal;font-size:12px;
           line-height:1.18;font-weight:700;color:#D6DFEC;
           text-shadow:0 1px 8px rgba(0,0,0,.85);transition:color .16s ease;}
@@ -7692,9 +8140,9 @@ function Styles() {
         /* ETEINT, LE FANTOME RESTE LISIBLE SUR LA PHOTO. A trois dixiemes
            d'opacite — le reglage de la note posee sur fond sombre — il
            disparaissait sur un pull clair. */
-        .mu-note-f.res .mu-note-s{opacity:.62;
+        .mu-note-f.res .mu-note-s{opacity:.7;
           filter:drop-shadow(0 2px 10px rgba(0,0,0,.75));}
-        .mu-note-f.res .mu-note-s .mu-f-corps{fill:#9DA9BC;}
+        .mu-note-f.res button:not(.on) .mu-note-s .mu-f-corps{fill:#C8CEDC;}
         /* LE HALO ROSE EST UNE LUEUR SUR LE DESSIN, PAS UNE OMBRE SUR LE
            BOUTON : pose sur le bouton, il faisait un carre lumineux autour
            d'une forme arrondie. */
@@ -7708,50 +8156,81 @@ function Styles() {
         /* LE CINQUIEME PORTE DES YEUX EN COEUR — voir le composant Signe.
            « Coup de coeur » n'est pas « cinq sur cinq », c'est autre chose, et
            il faut que ca se voie avant qu'on ait lu le mot. */
-        .mu-note-f.res button:last-child .mu-note-s .mu-f-oeil{fill:#7A1436;}
-        .mu-note-f.res button:last-child.on .mu-note-s .mu-f-oeil{fill:#E4189C;}
+        /* LE CINQUIEME GARDE SES COEURS ROSES MEME ETEINT : c'est ce qui dit,
+           avant meme qu'on lise le mot, qu'il ne fait pas partie de l'echelle. */
+        .mu-note-f.res button:last-child .mu-note-s .mu-f-oeil{fill:#E4189C;}
+        .mu-note-f.res button:last-child .mu-note-s .mu-f-corps{fill:#E4DCFF;}
 
-        /* LE MOT : une pastille fermee, comme la maquette. Un champ ouvert
-           DEMANDE d'ecrire ; une pastille ne demande rien. */
-        .mu-res-mot{display:flex;align-items:center;justify-content:center;
-          gap:10px;width:100%;margin-top:18px;font:inherit;font-size:14.5px;
-          font-weight:650;cursor:pointer;border-radius:999px;padding:15px 18px;
-          color:#B9C6D8;background:rgba(10,14,24,.5);
+        /* ═══ LA BULLE DU MOT, ANCREE SOUS LE FANTOME TOUCHE ═══════════════
+
+           LA FLECHE POINTE LE BON FANTOME, et c'est tout l'interet de la
+           maquette : la bulle repond a ce qu'on vient de toucher. Les cinq
+           occupent cinq colonnes egales dans la meme largeur que la bulle, donc
+           le centre du n-ieme est a (n + 0,5) x 20 % — --i vaut n a partir de
+           zero. Une fleche qui pointe a cote annule le gain. */
+        .mu-res-mot{position:relative;margin-top:16px;border-radius:22px;
+          padding:14px;color:#EAF0F6;background:rgba(10,14,24,.82);
           border:1px solid rgba(255,255,255,.18);
-          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-          overflow:hidden;}
-        .mu-res-mot span{overflow:hidden;text-overflow:ellipsis;
-          white-space:nowrap;}
-        .mu-res-mot i{font-style:normal;font-size:19px;line-height:1;flex:none;
-          color:#E8EFF6;}
-        .mu-res-mot:active{transform:scale(.99);}
-        .mu-res-mot:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
+          -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+          box-shadow:0 22px 44px -20px rgba(0,0,0,.85);
+          animation:muResMot .28s cubic-bezier(.16,1,.3,1) both;}
+        .mu-res-mot::before{content:"";position:absolute;top:-7px;
+          left:calc((var(--i) + .5) * 20%);width:14px;height:14px;
+          margin-left:-7px;transform:rotate(45deg);border-radius:3px;
+          background:rgba(10,14,24,.82);
+          border-left:1px solid rgba(255,255,255,.18);
+          border-top:1px solid rgba(255,255,255,.18);}
+        @keyframes muResMot{
+          from{opacity:0;transform:translateY(-8px) scale(.97);}
+          to{opacity:1;transform:none;}}
+        @media (prefers-reduced-motion:reduce){
+          .mu-res-mot{animation:none;}}
 
-        .mu-res-champ{margin-top:18px;border-radius:20px;padding:12px;
-          background:rgba(10,14,24,.72);border:1px solid rgba(255,255,255,.16);
-          -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
-          animation:muApres .3s ease both;}
+        /* LA TETE DE LA BULLE : le fantome qu'on vient de toucher, le mot qui va
+           avec, et la croix. Le fantome REPETE le geste — c'est ce qui fait que
+           la bulle se lit comme une reponse et non comme un formulaire. */
+        .mu-res-mot-t{display:flex;align-items:center;gap:11px;}
+        /* IL REPREND LE DESSIN DE L'ECHELLE, PAS SES COULEURS PAR DEFAUT. Les
+           remplissages vivent sous .mu-note-f.res ; sans ces quatre lignes, le
+           meme fantome sortait en silhouette noire dans la bulle. */
+        .mu-res-mot-f{flex:none;width:38px;height:36px;}
+        .mu-res-mot-f .mu-f-corps{fill:#F3F0FF;}
+        .mu-res-mot-f .mu-f-oeil{fill:#2A1E4D;}
+        .mu-res-mot-f .mu-f-trait{fill:none;stroke:#2A1E4D;stroke-width:3.2;
+          stroke-linecap:round;stroke-linejoin:round;}
+        .mu-res-mot-f .mu-f-bouche2{fill:none;stroke:#2A1E4D;stroke-width:3.4;
+          stroke-linecap:round;}
+        .mu-res-mot-t span{flex:1 1 auto;min-width:0;display:block;}
+        .mu-res-mot-t b{display:block;font-size:15px;font-weight:900;
+          color:#fff;line-height:1.15;}
+        .mu-res-mot-t em{display:block;margin-top:2px;font-style:normal;
+          font-size:12px;font-weight:650;color:#9FB0C4;line-height:1.25;}
+        .mu-res-mot-x{flex:none;width:30px;height:30px;border-radius:50%;
+          display:grid;place-items:center;font:inherit;font-size:13px;
+          font-weight:800;cursor:pointer;color:#8A9AAE;background:none;
+          border:1px solid rgba(255,255,255,.16);}
+        .mu-res-mot-x:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
+
+        .mu-res-champ{position:relative;margin-top:12px;border-radius:16px;
+          padding:11px 12px 8px;background:rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.14);display:block;}
         .mu-res-champ textarea{display:block;width:100%;resize:none;
           font:inherit;font-size:14.5px;line-height:1.45;color:#EAF0F6;
-          background:transparent;border:0;padding:4px 4px 0;}
-        .mu-res-champ textarea::placeholder{color:#7D8FA3;}
+          background:transparent;border:0;padding:0;}
+        .mu-res-champ textarea::placeholder{color:#8496A8;}
         .mu-res-champ textarea:focus-visible{outline:none;}
-        .mu-res-champ-b{display:flex;align-items:center;gap:14px;
-          margin-top:8px;padding:0 4px;}
-        .mu-res-champ-b s{flex:1 1 auto;text-decoration:none;font-size:11.5px;
-          font-weight:700;color:#6F8697;}
-        .mu-res-champ-b button{font:inherit;font-size:12.5px;font-weight:700;
-          cursor:pointer;background:none;border:0;padding:6px 2px;
-          color:#9FB0C4;text-decoration:underline;text-underline-offset:3px;}
-        .mu-res-x{color:#8A9AAE!important;}
+        .mu-res-champ s{display:block;text-align:right;text-decoration:none;
+          font-size:11px;font-weight:700;color:#7D8FA3;}
+        .mu-res-champ:focus-within{border-color:rgba(201,188,255,.6);}
 
         /* LA SEULE CHOSE GARDEE CONTRE LA MAQUETTE : sans elle, on publierait
            la photo de quelqu'un sur le mur d'un commerce parce qu'il a touche un
-           fantome. Une ligne, une coche, et elle dit A QUOI CA SERT. */
+           fantome. Elle vit DANS la bulle, juste au-dessus du bouton qui envoie
+           — c'est-a-dire a l'endroit ou l'on decide ce qui partira. */
         .mu-res-part{display:flex;align-items:center;gap:10px;width:100%;
-          margin-top:12px;font:inherit;font-size:12.5px;line-height:1.35;
+          margin-top:10px;font:inherit;font-size:12.5px;line-height:1.35;
           text-align:left;font-weight:650;cursor:pointer;color:#8FA0B4;
-          background:none;border:0;padding:8px 4px;}
+          background:none;border:0;padding:6px 2px;}
         .mu-res-part i{flex:none;display:grid;place-items:center;width:20px;
           height:20px;border-radius:6px;font-style:normal;font-size:12px;
           font-weight:900;color:#0A1210;background:transparent;
@@ -7760,38 +8239,160 @@ function Styles() {
         .mu-res-part.on i{background:#C9BCFF;border-color:#C9BCFF;}
         .mu-res-part:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
 
-        /* LES DEUX GESTES DE LA MAQUETTE, DE POIDS DIFFERENTS. A gauche
-           « Surprends-moi encore », en contour : il ne decide rien. A droite le
-           seul aplat de l'ecran, en rose : c'est la seule decision. */
-        .mu-res-g{display:flex;gap:10px;align-items:stretch;margin-top:16px;}
-        .mu-res-r,.mu-res-p{flex:1 1 0;min-width:0;display:flex;
-          align-items:center;justify-content:center;gap:9px;font:inherit;
-          font-size:15px;font-weight:800;line-height:1.18;cursor:pointer;
-          border-radius:999px;padding:16px 14px;text-align:left;
+        .mu-res-valider{display:block;width:100%;margin-top:4px;font:inherit;
+          font-size:14.5px;font-weight:850;cursor:pointer;color:#231238;
+          background:#F0EAFF;border:0;border-radius:999px;padding:12px;
           transition:transform .12s ease;}
-        .mu-res-r{color:#E8EFF6;background:rgba(10,14,24,.55);
-          border:1px solid rgba(199,125,240,.45);
-          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
-        .mu-res-r i{font-style:normal;font-size:15px;flex:none;}
-        .mu-res-p{color:#fff;border:0;
-          background:linear-gradient(104deg,#E4189C,#F0269B 60%,#FF3FB0);
-          box-shadow:0 16px 34px -14px rgba(240,38,155,.9);}
-        .mu-res-p i{flex:none;display:flex;}
-        .mu-res-p .mu-tr{width:21px;height:21px;}
-        .mu-res-r:active,.mu-res-p:active{transform:scale(.98);}
-        .mu-res-r:focus-visible,.mu-res-p:focus-visible{
-          outline:2px solid #C9BCFF;outline-offset:3px;}
+        .mu-res-valider:active{transform:scale(.98);}
+        .mu-res-valider:focus-visible{outline:2px solid #C9BCFF;
+          outline-offset:3px;}
 
-        /* LES DEUX LIENS DU BAS. Ils ne decident rien, donc ils n'ont ni fond ni
-           contour. Le trait vertical entre les deux vient de la maquette. */
-        .mu-res-l{display:flex;align-items:stretch;margin-top:14px;}
-        .mu-res-l button{flex:1 1 0;min-width:0;display:flex;align-items:center;
-          justify-content:center;gap:9px;font:inherit;font-size:13.5px;
-          font-weight:650;color:#C3D0DE;cursor:pointer;background:transparent;
-          border:0;padding:10px 6px;line-height:1.2;}
+        /* ═══ LA CLOCHE, ET SA PASTILLE ════════════════════════════════════
+
+           ELLE DIT SON ETAT SANS LA COULEUR. Muette, une croix ; armee, une
+           coche et un aplat rose. Un bouton qui ne change que de teinte ne se
+           lit pas sur une photo, ou le fond varie d'une image a l'autre. */
+        .mu-res-cloche{position:relative;}
+        .mu-res-cloche .mu-tr{width:21px;height:21px;}
+        .mu-res-cloche i{position:absolute;right:-1px;bottom:-1px;width:17px;
+          height:17px;border-radius:50%;display:grid;place-items:center;
+          font-style:normal;font-size:10px;font-weight:900;color:#231238;
+          background:#F0EAFF;border:2px solid rgba(10,14,24,.85);}
+        .mu-res-cloche.on{border-color:rgba(240,38,155,.7);
+          background:rgba(240,38,155,.22);}
+        .mu-res-cloche.on i{background:#F0269B;color:#fff;}
+
+        /* SA BULLE DIT CE QUE LE PICTOGRAMME NE PEUT PAS DIRE.
+
+           ELLE EST DANS LE FLUX, SOUS LA BARRE, ET C'EST UNE CORRECTION. Posee
+           en absolu sous la cloche, elle traversait « Alors, ca vous plait ? »
+           en diagonale : a cette hauteur, la moitie droite de l'ecran
+           appartient deja au titre. Rangee entre la barre et le titre, calee a
+           droite, elle garde sa fleche sur la cloche et ne recouvre plus rien.
+
+           ET ELLE NE DISPARAIT PAS, ELLE CHANGE DE PHRASE. Retiree une fois la
+           chose demandee, elle aurait fait remonter le titre d'un cran au
+           moment meme ou l'on regarde ailleurs. */
+        .mu-res-bulle{display:block;width:fit-content;max-width:210px;
+          margin:9px 62px 0 auto;border-radius:14px;padding:8px 11px;
+          font-size:11.5px;font-weight:700;line-height:1.3;color:#DDE6F0;
+          background:rgba(10,14,24,.82);border:1px solid rgba(255,255,255,.16);
+          -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+          pointer-events:none;animation:muApres .4s ease .6s both;}
+        .mu-res-bulle::after{content:"";position:absolute;top:-6px;right:20px;
+          width:12px;height:12px;transform:rotate(45deg);border-radius:3px;
+          background:rgba(10,14,24,.82);
+          border-left:1px solid rgba(255,255,255,.16);
+          border-top:1px solid rgba(255,255,255,.16);}
+        .mu-res-bulle.on{color:#FFD9EE;border-color:rgba(240,38,155,.5);}
+
+        /* ═══ POURQUOI CLIKME A CHOISI, ET L'AVIS QU'ON LUI DEMANDE ═════════
+
+           DEUX PANNEAUX, DEUX PARCOURS, UNE SEULE FORME. Ils ne peuvent jamais
+           apparaitre ensemble — l'un justifie un choix de la machine, l'autre
+           repond a une question du client — donc ils partagent la mise en page
+           et se distinguent par la couleur du liseré : violet quand ClikMe
+           parle de lui, neutre quand il repond. */
+        .mu-choix,.mu-conseil{margin:14px 16px 0;border-radius:20px;
+          padding:13px 15px;background:rgba(10,14,24,.72);
+          border:1px solid rgba(255,255,255,.16);
+          -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+          animation:muApres .34s ease both;}
+        .mu-choix{border-left:3px solid #C77DF0;}
+        .mu-conseil{border-left:3px solid #9FB0C4;}
+        .mu-choix>b,.mu-conseil>b{display:flex;align-items:center;gap:7px;
+          font-size:11px;font-weight:900;letter-spacing:.1em;
+          text-transform:uppercase;color:#D8C4FF;}
+        .mu-conseil>b{color:#C3D0DE;}
+        .mu-choix>b i{font-style:normal;font-size:13px;letter-spacing:0;}
+        /* MEME RAISON QUE POUR LA BULLE DU MOT : le pictogramme ne porte pas
+           ses couleurs, il les recoit du bloc qui l'accueille. */
+        .mu-conseil-s{flex:none;width:17px;height:17px;}
+        .mu-conseil-s .mu-f-corps{fill:#C3D0DE;}
+        .mu-conseil-s .mu-f-oeil{fill:#0A1018;}
+        .mu-choix>p,.mu-conseil>p{margin:7px 0 0;font-size:13.5px;
+          line-height:1.45;color:#EAF0F6;font-weight:600;}
+        .mu-choix>p b{color:#fff;font-weight:850;}
+        .mu-conseil-s2{color:#A8B8CA!important;font-size:12.5px!important;}
+
+        /* « POURQUOI ? » EST UN LIEN, PAS UN BOUTON : il ne decide rien, il
+           deplie. Lui donner un aplat l'aurait mis au meme rang que le geste
+           rose du bas, qui, lui, engage le commercant. */
+        .mu-choix-b{margin-top:8px;font:inherit;font-size:13px;font-weight:800;
+          cursor:pointer;color:#D8C4FF;background:none;border:0;padding:4px 0;}
+        .mu-choix-b s{text-decoration:none;}
+        .mu-choix-b:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
+        .mu-choix-d{animation:muApres .3s ease both;}
+        .mu-choix-d dl{margin:10px 0 0;}
+        .mu-choix-d dt{font-size:10.5px;font-weight:900;letter-spacing:.09em;
+          text-transform:uppercase;color:#A18CD8;margin-top:9px;}
+        .mu-choix-d dd{margin:3px 0 0;font-size:12.8px;line-height:1.45;
+          color:#D5DFEA;font-weight:600;}
+        /* « FERMER » EST UN LIEN, LA PROPOSITION EST UN BOUTON. Sans le
+           :not, la regle du lien reprenait la pastille — un selecteur
+           element est plus fort qu'une classe seule. */
+        .mu-choix-d>button,.mu-conseil-g>button:not(.mu-conseil-b){
+          margin-top:11px;font:inherit;
+          font-size:12.5px;font-weight:750;cursor:pointer;color:#9FB0C4;
+          background:none;border:0;padding:5px 2px;text-decoration:underline;
+          text-underline-offset:3px;}
+        .mu-conseil-g{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+        /* LA SORTIE DU CONSEIL PROPOSE, ELLE NE CORRIGE PAS. Un avis qui se
+           termine sans rien a faire laisse la personne seule avec un jugement
+           qu'elle n'avait pas demande. */
+        .mu-conseil-b{margin-top:11px;font:inherit;font-size:12.8px;
+          font-weight:800;cursor:pointer;color:#EAF0F6;border-radius:999px;
+          padding:9px 14px;background:rgba(199,125,240,.18);
+          border:1px solid rgba(199,125,240,.5);}
+        .mu-conseil-b:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
+
+        /* ═══ LES TROIS GESTES DU BAS ══════════════════════════════════════
+
+           TROIS DE FRONT SUR UN TELEPHONE, DONC LE PICTOGRAMME AU-DESSUS DU
+           MOT. Cote a cote sur une ligne, « Reserver cet article » passait a
+           trois lignes pendant que « Partager » en tenait une : la rangee
+           devenait bancale. En colonne, les trois font la meme hauteur.
+
+           UN SEUL APLAT. Trois boutons pleins ne designent rien ; celui qui
+           engage le commercant porte la couleur, les deux autres le contour. */
+        .mu-res-g{display:flex;gap:9px;align-items:stretch;margin-top:16px;}
+        .mu-res-c{flex:1 1 0;min-width:0;display:flex;flex-direction:column;
+          align-items:center;justify-content:center;gap:7px;font:inherit;
+          font-size:12.5px;font-weight:800;line-height:1.2;cursor:pointer;
+          text-align:center;border-radius:20px;padding:13px 8px;
+          color:#E8EFF6;background:rgba(10,14,24,.55);
+          border:1px solid rgba(199,125,240,.45);
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+          transition:transform .12s ease;}
+        .mu-res-c i{flex:none;display:flex;font-style:normal;font-size:16px;
+          line-height:1;}
+        .mu-res-c .mu-tr{width:20px;height:20px;}
+        .mu-res-c.plein{color:#fff;border-color:transparent;
+          background:linear-gradient(104deg,#E4189C,#F0269B 60%,#FF3FB0);
+          box-shadow:0 16px 34px -16px rgba(240,38,155,.9);}
+        .mu-res-c:active{transform:scale(.97);}
+        .mu-res-c:focus-visible{outline:2px solid #C9BCFF;outline-offset:3px;}
+
+        /* ═══ LA LIGNE DISCRETE ════════════════════════════════════════════
+
+           ELLE NE DECIDE RIEN, donc ni fond ni contour : trois liens separes
+           par un trait, comme la maquette. Le premier change de nature selon
+           qui a choisi la piece — « Demander l'avis ClikMe » quand c'est le
+           client, « Surprends-moi encore » quand c'est ClikMe. */
+        .mu-res-l{display:flex;align-items:stretch;margin-top:12px;}
+        .mu-res-l button{flex:1 1 0;min-width:0;display:flex;
+          flex-direction:column;align-items:center;justify-content:flex-start;
+          gap:5px;font:inherit;font-size:11.5px;font-weight:700;color:#C3D0DE;
+          cursor:pointer;background:transparent;border:0;padding:8px 4px;
+          line-height:1.2;text-align:center;}
         .mu-res-l button+button{border-left:1px solid rgba(255,255,255,.16);}
         .mu-res-l .mu-tr{width:19px;height:19px;flex:none;}
+        .mu-res-l button i{font-style:normal;font-size:16px;line-height:19px;
+          height:19px;}
         .mu-res-l button:active{opacity:.7;}
+        .mu-res-l button.on{color:#D8C4FF;}
+        .mu-res-l button:focus-visible{outline:2px solid #C9BCFF;
+          outline-offset:2px;border-radius:12px;}
 
         .mu-note-f{display:flex;justify-content:center;gap:6px;}
         .mu-note-f button{display:grid;place-items:center;width:44px;height:44px;
