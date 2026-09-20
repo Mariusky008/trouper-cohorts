@@ -132,6 +132,58 @@ function leLieu(lieu: string): string {
  */
 const FANTOME = "/clikme-fantome.png";
 
+/**
+ * ═══ CE QUE LE MODÈLE A LE DROIT DE REMPLACER, POUR CETTE PIÈCE-LÀ ══════════
+ *
+ * « L'essai a un peu raté : il reste le pantalon à droite, sous la robe que
+ * j'ai essayée. »
+ *
+ * LE MODÈLE A FAIT EXACTEMENT CE QU'ON LUI DEMANDAIT. `essai.change` disait
+ * « uniquement le vêtement porté sur le buste », une phrase écrite une fois
+ * pour tout le métier : juste devant un pull, fausse devant une robe midi. Il a
+ * donc habillé le buste et laissé le jean dessous, et on voyait une robe posée
+ * par-dessus un pantalon.
+ *
+ * LA PHRASE SUIT MAINTENANT LA PIÈCE. Elle nomme la zone À REMPLACER **et** ce
+ * qui doit disparaître avec — c'est cette seconde moitié qui manquait, et sans
+ * elle « remplace la tenue entière » se lit encore comme « ajoute par-dessus ».
+ *
+ * LE REPLI EST LA PHRASE DU MÉTIER, INCHANGÉE. Une coupe, une monture, un
+ * vernis n'ont pas de « jusqu'où » : la question ne se pose que sur un corps
+ * qu'on habille. Voir `couvre` dans `lib/direct/fantomes.ts`.
+ */
+function zoneChangee(essai: TypeMur["essai"], piece: Piece | null): string | undefined {
+  if (!piece?.couvre) return essai?.change;
+  if (piece.couvre === "silhouette") {
+    return (
+      "la tenue entière portée sur le corps, du cou aux chevilles. Le vêtement " +
+      "qui était porté auparavant — haut ET bas — disparaît complètement et est " +
+      "remplacé par celui de l'image 2 ; il ne doit rester aucune trace du " +
+      "pantalon, de la jupe ou du haut d'origine."
+    );
+  }
+  if (piece.couvre === "bas") {
+    return (
+      "uniquement le bas de la tenue — pantalon ou jupe. Le haut porté sur le " +
+      "buste reste exactement tel qu'il est sur l'image 1."
+    );
+  }
+  return (
+    "uniquement le vêtement porté sur le buste. Le bas de la tenue — pantalon, " +
+    "jupe, chaussures — reste exactement tel qu'il est sur l'image 1."
+  );
+}
+
+/**
+ * L'ESSAI EN COURS, TEL QUE LE MUR A BESOIN DE LE CONNAÎTRE.
+ *
+ * TROIS CHOSES, ET PAS UNE DE PLUS : quelle pièce, à quoi ça ressemble sur soi,
+ * et ce qu'on en a pensé. Le mur n'a rien à faire du reste — la photo d'origine,
+ * la glissière, le commentaire — et le lui donner l'aurait couplé à l'intérieur
+ * de l'essai, c'est-à-dire condamné à changer avec lui.
+ */
+type EssaiVu = { piece: Piece; image: string; note: number };
+
 /** Le dessin du fantôme. Une seule forme, trois tailles, jamais deux dessins. */
 /**
  * LE MOMENT CHOISI, RECOLLÉ DANS UNE PHRASE.
@@ -457,7 +509,12 @@ function Carte({
           <span className="mu-c-sur" aria-hidden="true">
             <span className="mu-c-sur-q">
               <b>{f.qui}</b>
-              <s>{f.heure}</s>
+              {/* LA TAILLE PASSE DEVANT L'HEURE SUR UN MUR DE VÊTEMENTS.
+                  « Il y a 2 jours » situe ; « Taille M » DÉCIDE — c'est la
+                  seule chose qui dit si ce qu'on voit sur elle vaut pour soi.
+                  L'heure reste quand il n'y a pas de taille : un vernis ou une
+                  coupe n'en ont pas. */}
+              <s>{f.taille ? `Taille ${f.taille}` : f.heure}</s>
             </span>
             {!!f.essai?.note && (
               <span className="mu-c-note">
@@ -783,6 +840,33 @@ export function MurContenu({
 }) {
   /** Où l'on en est : le mur, ou le dépôt. Voir `entree` et `ouvrirSur`. */
   const [ecran, setEcran] = useState<"mur" | "depot">(() => ouvrirSur ?? entree(mur));
+  /**
+   * ═══ CE QU'ON VIENT D'ESSAYER, VU D'EN HAUT ═══════════════════════════════
+   *
+   * « Je ne suis pas certain que les gens comprennent que ce sont les gens qui
+   * ont essayé virtuellement le MÊME article, parce qu'on voit différents
+   * articles sur différentes femmes, ce qui n'est pas logique. »
+   *
+   * LE MUR NE SAVAIT PAS CE QU'ON VENAIT D'ESSAYER. Il montrait sept clientes
+   * portant sept pièces différentes, sous un titre qui disait « essayages de ce
+   * look » : le compte était vrai pour le MAGASIN et faux pour la PIÈCE, et rien
+   * à l'écran ne disait laquelle des deux on regardait.
+   *
+   * L'ESSAI LE LUI DIT MAINTENANT, et c'est ce qui permet au mur de se
+   * restreindre à cette pièce-là — « sur moi, et sur les autres » — avec le
+   * magasin entier à un geste de distance.
+   */
+  const [essaiVu, setEssaiVu] = useState<EssaiVu | null>(null);
+  /**
+   * LE COMPTEUR QUI RAMÈNE AU CATALOGUE.
+   *
+   * L'essai reste monté pendant qu'on regarde le mur — c'est ce qui préserve le
+   * rendu — donc lui dire « reviens à la grille » ne peut pas passer par un
+   * changement d'écran : il est déjà là. Ce compteur s'incrémente, l'essai le
+   * voit changer, et il repart sur le choix des pièces. Un booléen n'aurait
+   * marché qu'une fois.
+   */
+  const [catalogue, setCatalogue] = useState(0);
   const [dits, setDits] = useState<Record<string, string>>({});
   /** Le fantôme sur lequel on vient d'appuyer, et à qui on dit quand on passe. */
   const [passage, setPassage] = useState<Fantome | null>(null);
@@ -986,7 +1070,32 @@ export function MurContenu({
           onReserver={onReserver}
           onFermer={() => setGoutPasse(true)}
         />
-      ) : ecran === "mur" ? (
+      ) : null}
+
+      {/* ═══ L'ESSAI RESTE MONTÉ PENDANT QU'ON REGARDE LE MUR ════════════════
+
+          « À la fin de cette page on voit "Essayer sur moi — me photographier
+          en buste" alors que je viens tout juste d'essayer ce produit. Ce CTA
+          n'est pas bon : ça devrait me ramener à mon essai, parce que je n'ai
+          plus de bouton nulle part pour revoir mon essayage. »
+
+          IL AVAIT RAISON, ET LA CAUSE ÉTAIT STRUCTURELLE. Les deux écrans
+          étaient les deux branches d'un même ternaire : passer au mur
+          DÉMONTAIT l'essai, donc la pièce choisie, le rendu calculé, la note
+          donnée — tout partait. Le bouton du bas ne pouvait alors rien proposer
+          d'autre que de tout recommencer, parce qu'il n'y avait plus rien à
+          quoi revenir.
+
+          IL EST MAINTENANT CACHÉ, PAS DÉMONTÉ. `hidden` met l'écran hors du
+          flux et hors du champ des lecteurs, mais React garde son état : on
+          revient sur SON rendu, exactement là où on l'avait laissé. C'est la
+          différence entre une application et un site.
+
+          ET SEULEMENT SUR LES MURS D'ESSAI. Ailleurs — un bar, un restaurant —
+          il n'y a pas de rendu à préserver, et garder deux écrans montés
+          coûterait sans rien rendre. */}
+      {!soiree && !gout && (
+        <div hidden={ecran !== "mur"}>
         <EcranMur
           mur={mur}
           clients={clients}
@@ -1016,8 +1125,18 @@ export function MurContenu({
           }
           tout={tout}
           onTout={setTout}
+          essaiVu={essaiVu}
+          onRevoir={() => setEcran("depot")}
+          onCatalogue={() => {
+            setCatalogue(catalogue + 1);
+            setEcran("depot");
+          }}
         />
-      ) : (
+        </div>
+      )}
+
+      {!soiree && !gout && (
+        <div hidden={ecran !== "depot"}>
         <EcranDepot
           mur={mur}
           clients={clients}
@@ -1078,7 +1197,10 @@ export function MurContenu({
              */
             if (mur.depot !== "essai") setEcran("mur");
           }}
+          onEssai={setEssaiVu}
+          catalogue={catalogue}
         />
+        </div>
       )}
 
       {passage && (
@@ -1216,9 +1338,18 @@ function EcranMur({
   onParler,
   tout,
   onTout,
+  essaiVu,
+  onRevoir,
+  onCatalogue,
 }: {
   tout: boolean;
   onTout: (v: boolean) => void;
+  /** Ce qu'on vient d'essayer, quand on arrive d'un rendu. Voir `EssaiVu`. */
+  essaiVu?: EssaiVu | null;
+  /** Revenir à SON rendu — il n'a pas été démonté. Voir `MurContenu`. */
+  onRevoir?: () => void;
+  /** Revenir à la grille des pièces. */
+  onCatalogue?: () => void;
   mur: TypeMur;
   clients: Fantome[];
   restants: number;
@@ -1228,6 +1359,58 @@ function EcranMur({
   /** Le second geste des cartes, sur un mur de lieu : voir `onParler`. */
   onParler?: (f: Fantome) => void;
 }) {
+  /**
+   * ═══ SUR QUOI PORTE CE MUR ════════════════════════════════════════════════
+   *
+   * « Je ne suis pas certain que les gens comprennent que ce sont les gens qui
+   * ont essayé virtuellement le MÊME article, parce qu'on voit différents
+   * articles sur différentes femmes, ce qui n'est pas logique. »
+   *
+   * IL AVAIT RAISON, ET LE MUR MENTAIT SANS LE SAVOIR. Il affichait « 7
+   * essayages de ce look » au-dessus de sept clientes portant sept pièces
+   * DIFFÉRENTES : le compte était vrai pour le magasin et faux pour la pièce, et
+   * rien à l'écran ne disait laquelle des deux on regardait.
+   *
+   * IL A DONC DEUX CADRAGES, ET ILS SONT NOMMÉS. « Cette pièce » quand on
+   * arrive d'un essai — la même chose sur d'autres corps, c'est-à-dire la seule
+   * comparaison qui aide à décider. « Tout le magasin » pour le reste, et là le
+   * titre dit « pièces », au pluriel, parce que c'est ce qu'on voit.
+   *
+   * ON OUVRE SUR LA PIÈCE QUAND IL Y A UNE PIÈCE, et on retombe sur le magasin
+   * quand personne d'autre ne l'a essayée : un cadrage nommé « Cette pièce » qui
+   * ne montre rien apprend que le mur est vide, ce qui est faux.
+   */
+  const nomPiece = essaiVu?.piece.nom ?? null;
+  const memePiece = useMemo(
+    () => (nomPiece ? clients.filter((f) => f.essai?.quoi === nomPiece) : []),
+    [clients, nomPiece],
+  );
+  /**
+   * ═══ LE CADRAGE SE DÉDUIT, IL NE SE SYNCHRONISE PAS ═══════════════════════
+   *
+   * ON OUVRE SUR LA PIÈCE DÈS QU'ON ARRIVE D'UN ESSAI, même si personne d'autre
+   * ne l'a essayée. Retomber sur le magasin quand le compte est nul paraissait
+   * prévenant ; ça cachait surtout la mécanique — on ne découvrait jamais que
+   * ce mur SAIT se restreindre à une pièce. Le vide se dit, il ne se contourne
+   * pas : voir `mu-seule`.
+   *
+   * PREMIER JET : UN `useState` REMIS À JOUR PAR UN `useEffect` sur le nom de
+   * la pièce. ESLint l'a refusé, et il avait raison — poser un état dans un
+   * effet fait rendre deux fois, une fois avec l'ancien cadrage et une fois
+   * avec le nouveau, et c'est exactement la seconde où l'on voit l'écran
+   * changer d'avis.
+   *
+   * CE QU'ON GARDE EST LE CHOIX, PAS LE RÉSULTAT. L'état retient sur QUELLE
+   * pièce on a touché une pastille ; le cadrage s'en déduit. Changer de pièce
+   * périme le choix tout seul, sans que rien n'ait à le remettre à jour.
+   */
+  const [choix, setChoix] = useState<{ pour: string | null; cadre: "piece" | "tout" } | null>(null);
+  const cadre =
+    choix && choix.pour === nomPiece ? choix.cadre : nomPiece ? "piece" : "tout";
+  const setCadre = (c: "piece" | "tout") => setChoix({ pour: nomPiece, cadre: c });
+  const surPiece = cadre === "piece" && !!essaiVu;
+  const vus = surPiece ? memePiece : clients;
+
   return (
     <>
       {/* ═══ UNE SEULE TÊTE, ET ELLE DIT POURQUOI ON REGARDE ═══
@@ -1264,20 +1447,53 @@ function EcranMur({
            serait inventer la preuve sociale que ce mur existe justement pour
            montrer. */
         <div className="mu-haut essai">
+          {/* ═══ LA PIÈCE DONT ON PARLE, EN TÊTE ═══════════════════════════
+
+              LA MAQUETTE LA MET LÀ, et c'est ce qui manquait le plus : un
+              bandeau qui dit DE QUOI ce mur parle. Sans lui, on arrivait sur
+              une grille de vignettes sans savoir si on regardait une pièce, un
+              magasin ou une ville — et la réponse changeait selon d'où l'on
+              venait, ce que rien n'indiquait.
+
+              ELLE NE SE DESSINE QUE QUAND ON ARRIVE D'UN ESSAI. Sans essai, il
+              n'y a pas de pièce à nommer : le mur parle alors du magasin, et son
+              titre le dit. */}
+          {essaiVu && (
+            <div className="mu-piece">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="mu-piece-ph" src={essaiVu.piece.photo} alt="" />
+              <div className="mu-piece-t">
+                <b>{essaiVu.piece.nom}</b>
+                <em>
+                  {mur.lieu}
+                  <i aria-hidden="true"> · </i>
+                  {mur.ville} · {mur.distance}
+                </em>
+              </div>
+              <span className="mu-piece-x">{essaiVu.piece.prix}</span>
+            </div>
+          )}
           <h2 className="mu-haut-n">
             <b>
-              {clients.length} {mur.essai?.mots.essayage ?? "essayage"}
-              {clients.length > 1 ? "s" : ""}
+              {vus.length} {mur.essai?.mots.essayage ?? "essayage"}
+              {vus.length > 1 ? "s" : ""}
             </b>{" "}
-            {mur.essai?.mots.ceci ? `de ${mur.essai.mots.ceci}` : "ici"}
+            {surPiece ? "de cette pièce" : chezQui(mur.lieu)}
           </h2>
-          <p>Découvrez comment la communauté porte ça, en vrai.</p>
-          {/* LA PASTILLE DE LA MAQUETTE, ET ELLE PORTE DES FANTÔMES PLUTÔT QUE
-              DES VISAGES. On n'a pas de visages à empiler, et en inventer serait
-              fabriquer exactement ce que cette ligne certifie. */}
+          <p>
+            {surPiece
+              ? "La même pièce, sur d’autres personnes. C’est ce qui dit comment elle tombe."
+              : "Toutes les pièces essayées ici, sur de vraies personnes."}
+          </p>
+
+          {/* ELLE NE S'AFFICHE PLUS SOUS UN SEUL ESSAYAGE. Quatre fantômes
+              empilés au-dessus de « De vraies clientes » alors qu'il y en a une
+              certifient un nombre qui n'existe pas — et cette ligne-là est
+              précisément celle qui promet de ne rien fabriquer. */}
+          {vus.length > 1 && (
           <p className="mu-haut-vrai">
             <span aria-hidden="true">
-              {clients.slice(0, 4).map((f) => (
+              {vus.slice(0, 4).map((f) => (
                 <Signe key={f.id} classe="mu-haut-vs" />
               ))}
             </span>
@@ -1288,6 +1504,75 @@ function EcranMur({
                 qu'on est venu voir. */}
             <em>De vraies clientes, de vrais avis</em>
           </p>
+          )}
+
+          {/* ═══ LES DEUX CADRAGES, NOMMÉS ══════════════════════════════════
+
+              « Il faudrait repenser l'expérience pour qu'il comprenne où il est
+              déjà, et qu'il puisse revenir au catalogue des articles. »
+
+              DEUX PASTILLES PLUTÔT QUE QUATRE FILTRES. La maquette en dessine
+              quatre — morphologies, styles, lieux — et ils supposent des données
+              qu'aucune cliente n'a saisies : les remplir de listes vides serait
+              promettre un tri qui ne trie rien. Les deux qui existent vraiment
+              répondent à la question posée : est-ce que je regarde CETTE pièce,
+              ou tout le magasin ?
+
+              LE CATALOGUE N'EST PAS UN TROISIÈME CADRAGE, DONC IL N'EST PAS
+              ICI. Il ne restreint rien, il fait SORTIR du mur : sa place est en
+              bas, à côté du geste qui ramène à l'essai. Serré entre les deux
+              pastilles et le bord, il sortait de l'écran — mesuré à 414
+              points — et on ne voyait qu'un demi-cintre. */}
+          <div className="mu-cadre" role="tablist" aria-label="Ce que montre ce mur">
+            {essaiVu && (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={surPiece}
+                className={surPiece ? "on" : undefined}
+                onClick={() => setCadre("piece")}
+              >
+                Cette pièce <s>{memePiece.length}</s>
+              </button>
+            )}
+            <button
+              type="button"
+              role="tab"
+              aria-selected={!surPiece}
+              className={!surPiece ? "on" : undefined}
+              onClick={() => setCadre("tout")}
+            >
+              Tout le magasin <s>{clients.length}</s>
+            </button>
+          </div>
+
+          {/* ═══ « SUR MOI », AVANT « SUR LES AUTRES » ══════════════════════
+
+              C'est l'autre moitié de sa demande : « un endroit où tout est créé
+              pour lui faire comprendre cet article : sur lui ET sur les
+              autres ». Son propre rendu ouvre donc le mur, en grand et nommé —
+              et c'est aussi le chemin du retour, puisqu'il est cliquable. */}
+          {essaiVu && onRevoir && (
+            <button type="button" className="mu-moi" onClick={onRevoir}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={essaiVu.image} alt="" />
+              <span className="mu-moi-t">
+                <b>Sur vous</b>
+                <em>{essaiVu.piece.nom}</em>
+                {essaiVu.note > 0 && (
+                  <span className="mu-moi-n" aria-hidden="true">
+                    {Array.from({ length: 5 }, (_, k) => (
+                      <Signe key={k} classe={k < essaiVu.note ? "mu-c-ns on" : "mu-c-ns"} />
+                    ))}
+                  </span>
+                )}
+              </span>
+              <s aria-hidden="true">Revoir →</s>
+            </button>
+          )}
+          {/* LA PASTILLE DE LA MAQUETTE, ET ELLE PORTE DES FANTÔMES PLUTÔT QUE
+              DES VISAGES. On n'a pas de visages à empiler, et en inventer serait
+              fabriquer exactement ce que cette ligne certifie. */}
         </div>
       ) : (
         /* ═══ LA TÊTE TENAIT CINQ BLOCS EMPILÉS ═══════════════════════════════
@@ -1431,10 +1716,35 @@ function EcranMur({
           ET SEULEMENT SUR LES MURS D'ESSAI. Sur le mur d'un bar ou d'un
           restaurant, ce qui compte est ce que les gens ONT ÉCRIT — « qui vient
           ce soir ? » — et ça ne se lit pas dans une vignette carrée. */}
+      {/* ═══ PERSONNE D'AUTRE NE L'A ENCORE ESSAYÉE, ET ON LE DIT ═══════════
+
+          UNE GRILLE VIDE APPREND QUE LE MUR EST MORT, ce qui est faux : il est
+          plein, simplement pas de cette pièce-là. La phrase le dit, et le geste
+          juste est à côté — aller voir le reste du magasin. C'est la même règle
+          que partout ici : on dit ce qu'on n'a pas plutôt que de le maquiller. */}
+      {mur.depot === "essai" && surPiece && vus.length === 0 && (
+        <p className="mu-seule">
+          <Signe classe="mu-seule-f" />
+          <span>
+            {/* LA PHRASE NE PORTE AUCUN GENRE, ET C'EST EXPRÈS. « La première »
+                est juste dans une boutique de femme et faux dans le rayon
+                homme ; « la première personne » l'est partout, parce que
+                « personne » reste féminin quel que soit celui qu'il désigne.
+                Même règle que le plat du jour et que la suggestion du matin. */}
+            <b>Vous êtes la première personne à l’essayer.</b>
+            Votre essayage ouvrira le mur de cette pièce — et dira aux suivants
+            comment elle tombe.
+          </span>
+          <button type="button" onClick={() => setCadre("tout")}>
+            Voir tout le magasin →
+          </button>
+        </p>
+      )}
+
       <div
         className={`mu-rang${mur.depot === "essai" ? " grille" : ""}${tout ? " tout" : ""}`}
       >
-        {clients.map((f) => (
+        {vus.map((f) => (
           <Carte
             key={f.id}
             f={f}
@@ -1446,20 +1756,64 @@ function EcranMur({
         ))}
       </div>
 
-      {mur.depot === "essai" && (
-        <div className="mu-rang maison apres">
-          {mur.maison.map((f) => (
-            <Carte
-              key={f.id}
-              f={f}
-              grande
-              quand={dits[f.id]}
-              onDit={onDit}
-              onParler={onParler}
-              depot={mur.depot}
-            />
-          ))}
-        </div>
+      {/* ═══ LE MOT DE LA BOUTIQUE ═══════════════════════════════════════════
+
+          « Les conseils de "la vendeuse" et de "la boutique" : l'UX est très
+          mauvaise, on a du mal à comprendre que ce sont des conseils du
+          commerçant, et la cassure entre les annonces verticales et ces deux
+          conseils horizontaux est très maladroite. »
+
+          LA CAUSE ÉTAIT D'AVOIR RÉUTILISÉ LA CARTE DU CLIENT. Ces deux messages
+          passaient par le même composant que les essayages — même vignette,
+          même prénom, même heure, même bouton — avec pour seule différence une
+          pastille « Staff » de neuf points sur la photo. Posés en pleine largeur
+          sous une grille de vignettes carrées, ils cassaient le rythme sans rien
+          gagner : on lisait deux cartes ratées plutôt qu'un message du magasin.
+
+          CE N'EST PAS LE MÊME OBJET, DONC CE N'EST PLUS LA MÊME FORME. Un
+          essayage est une PREUVE — une photo, une note, un avis — et sa forme
+          est la vignette. Un mot du commerçant est une PAROLE : il a un
+          émetteur, un rôle et une phrase, et sa forme est la bulle. Le panneau
+          se nomme, il porte le nom du magasin, et chaque message y est signé.
+
+          IL PASSE APRÈS LA GRILLE, ET C'EST INCHANGÉ : on vient voir les
+          clientes, pas la boutique. « Les retouches sont offertes jusqu'à
+          samedi » est exactement ce qu'on veut lire APRÈS avoir vu que ça tombe
+          bien sur sept personnes. */}
+      {mur.depot === "essai" && mur.maison.length > 0 && (
+        <section className="mu-mot-b">
+          <h3>
+            <span className="mu-mot-b-e" aria-hidden="true">
+              <Trace cle="boutique" />
+            </span>
+            <span>
+              Le mot de la boutique
+              <em>{mur.lieu}</em>
+            </span>
+          </h3>
+          <ul>
+            {mur.maison.map((f) => (
+              <li key={f.id}>
+                <div className="mu-mot-b-q">
+                  <b>{f.qui}</b>
+                  {f.role && <s>{f.role}</s>}
+                  <i>{f.heure}</i>
+                </div>
+                <p>{f.mot}</p>
+                {/* LE GESTE RESTE, MAIS IL DIT CE QU'IL FAIT. « Ça
+                    m'intéresse » sous un message de commerçant se lisait comme
+                    un « j'aime » ; ici il prévient la boutique qu'on passera. */}
+                <button
+                  type="button"
+                  className={dits[f.id] ? "on" : undefined}
+                  onClick={() => onDit(f)}
+                >
+                  {dits[f.id] ? `✓ Prévenus · ${dits[f.id]}` : "Je passerai les voir"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {/* ═══ TROIS BLOCS DE PIED SUPPRIMÉS ═══════════════════════════════════
@@ -1482,7 +1836,7 @@ function EcranMur({
 
           CE QUI DÉPLIAIT LE MUR ÉTAIT DANS LE COMPTE, et c'est la seule chose
           qu'il faut remplacer : voir `mu-tout` juste dessous. */}
-      {clients.length + mur.maison.length > 3 && (
+      {vus.length + mur.maison.length > 3 && (
         <button
           type="button"
           className="mu-tout"
@@ -1516,16 +1870,50 @@ function EcranMur({
           « Voir chez moi » chez une fleuriste — et c'est le même bouton que sur
           l'annonce : le rituel ne change pas de forme selon la porte par
           laquelle on entre. */}
+      {/* ═══ ET IL NE PROPOSE PLUS DE REFAIRE CE QU'ON VIENT DE FAIRE ═══════
+
+          « À la fin de cette page on voit "Essayer sur moi — me photographier en
+          buste" alors que je viens tout juste d'essayer ce produit. Ce CTA n'est
+          pas bon : ça devrait me ramener à mon essai. »
+
+          IL DISAIT LA MÊME CHOSE DANS LES DEUX SITUATIONS, qui sont pourtant
+          opposées. À quelqu'un qui n'a rien essayé, « Me photographier en
+          buste » est le geste juste : c'est la porte. À quelqu'un qui sort d'un
+          rendu, c'est une porte qui donne sur la pièce qu'il vient de quitter —
+          et comme l'essai était démonté en chemin, c'était même la seule issue :
+          tout recommencer. */}
+      {/* LE CATALOGUE EST UNE SORTIE, DONC IL EST EN BAS. Il ne cadre pas le
+          mur, il en fait sortir : sa place est à côté du geste qui ramène à
+          l'essai, là où l'on cherche à aller ailleurs. */}
+      {mur.depot === "essai" && onCatalogue && (
+        <button type="button" className="mu-cat" onClick={onCatalogue}>
+          <Trace cle="cintre" />
+          Voir tout le catalogue
+          <s aria-hidden="true">→</s>
+        </button>
+      )}
+
       {mur.depot === "essai" && (
         <div className="mu-bas">
-          <button type="button" className="mu-cta plein essai" onClick={onDeposer}>
-            <Signe classe="mu-cta-f" />
-            <span>
-              <b>{mur.essai?.mots.surMoi ?? "Essayer sur moi"}</b>
-              <em>{mur.essai?.mots.geste}</em>
-            </span>
-            <s aria-hidden="true">→</s>
-          </button>
+          {essaiVu && onRevoir ? (
+            <button type="button" className="mu-cta plein essai" onClick={onRevoir}>
+              <Signe classe="mu-cta-f" />
+              <span>
+                <b>Revoir mon essayage</b>
+                <em>{essaiVu.piece.nom}</em>
+              </span>
+              <s aria-hidden="true">→</s>
+            </button>
+          ) : (
+            <button type="button" className="mu-cta plein essai" onClick={onDeposer}>
+              <Signe classe="mu-cta-f" />
+              <span>
+                <b>{mur.essai?.mots.surMoi ?? "Essayer sur moi"}</b>
+                <em>{mur.essai?.mots.geste}</em>
+              </span>
+              <s aria-hidden="true">→</s>
+            </button>
+          )}
         </div>
       )}
 
@@ -1550,6 +1938,8 @@ function EcranDepot({
   favori,
   surprendre,
   piecePrechoisie,
+  onEssai,
+  catalogue,
 }: {
   mur: TypeMur;
   clients: Fantome[];
@@ -1557,6 +1947,10 @@ function EcranDepot({
   /** Les deux intentions d'entrée ne font que traverser. Voir `MurContenu`. */
   surprendre?: boolean;
   piecePrechoisie?: string;
+  /** L'essai dit ce qu'il montre, pour que le mur sache de quoi parler. */
+  onEssai?: (e: EssaiVu | null) => void;
+  /** Il change quand on demande le catalogue depuis le mur. Voir `MurContenu`. */
+  catalogue?: number;
   dits: Record<string, string>;
   onDit: (f: Fantome) => void;
   onFerme: () => void;
@@ -1594,6 +1988,8 @@ function EcranDepot({
         favori={favori}
         surprendre={surprendre}
         piecePrechoisie={piecePrechoisie}
+        onEssai={onEssai}
+        catalogue={catalogue}
       />
     );
   }
@@ -2134,6 +2530,8 @@ function Essai({
   favori,
   surprendre,
   piecePrechoisie,
+  onEssai,
+  catalogue,
 }: {
   mur: TypeMur;
   restants: number;
@@ -2141,6 +2539,10 @@ function Essai({
   surprendre?: boolean;
   /** La pièce désignée dans la vitrine, avant d'entrer. Voir `MurContenu`. */
   piecePrechoisie?: string;
+  /** Ce qu'on montre, pour que le mur sache de quoi parler. Voir `EssaiVu`. */
+  onEssai?: (e: EssaiVu | null) => void;
+  /** Il change quand le mur demande le catalogue. Voir `MurContenu`. */
+  catalogue?: number;
   onPose: (f: Fantome) => void;
   /** Le seul chemin vers le mur depuis l'essai. Voir `mots.mur`. */
   onMur: () => void;
@@ -2521,6 +2923,42 @@ function Essai({
     return () => cancelAnimationFrame(t);
   }, [etape]);
 
+  /**
+   * ═══ L'ESSAI DIT AU MUR CE QU'IL MONTRE ═══════════════════════════════════
+   *
+   * ON N'ENVOIE QUE CE QUI EST VRAI, et donc rien tant que le rendu n'a pas
+   * abouti : un mur qui annoncerait « votre essayage » au-dessus d'une photo de
+   * catalogue montrerait la pièce de quelqu'un d'autre en disant qu'elle est la
+   * vôtre. C'est exactement la faute que l'écran d'échec existe pour éviter.
+   */
+  useEffect(() => {
+    if (!onEssai) return;
+    if (!piece || !rendu?.image || rendu.souci) {
+      onEssai(null);
+      return;
+    }
+    onEssai({ piece, image: rendu.image, note });
+  }, [onEssai, piece, rendu, note]);
+
+  /**
+   * LE MUR DEMANDE LE CATALOGUE, ET L'ESSAI Y RETOURNE.
+   *
+   * L'essai reste monté pendant qu'on regarde le mur — c'est ce qui préserve le
+   * rendu — donc « reviens à la grille » ne peut pas passer par un changement
+   * d'écran : il est déjà là. Le compteur change, l'essai le voit, il repart sur
+   * le choix. On saute la prise de vue parce qu'il y a déjà une photo : y
+   * renvoyer ferait recommencer ce qu'on vient de faire.
+   */
+  const premierCatalogue = useRef(catalogue);
+  useEffect(() => {
+    if (catalogue === premierCatalogue.current) return;
+    premierCatalogue.current = catalogue;
+    setEtape(laPhoto ? "choisir" : "cadrer");
+    // `laPhoto` est lu à l'instant du geste, pas au montage : le relister ici
+    // renverrait au catalogue chaque fois que la photo change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [catalogue]);
+
   const RECHERCHE_MS = 4_500;
   const [cherche, setCherche] = useState(0);
   useEffect(() => {
@@ -2669,7 +3107,11 @@ function Essai({
         // ET CE QU'IL A LE DROIT DE MODIFIER. Sans ce mot, la consigne disait
         // « reproduis la référence sur votre tête » — et le modèle refaisait
         // le visage, ce qui est exactement ce qui a été rapporté.
-        change: mur.essai?.change,
+        //
+        // LA PIÈCE PASSE DEVANT LE MÉTIER — voir `zoneChangee` : une robe et un
+        // pull ne remplacent pas la même chose sur un corps, et la phrase du
+        // métier ne pouvait dire que l'un des deux.
+        change: zoneChangee(mur.essai, piece),
         // ET CE QUE CETTE PIÈCE-LÀ EST, EN TOUTES LETTRES. Sans elle, on
         // demandait au modèle de deviner la coupe sur la photo d'une autre
         // personne avant de la poser — et « la coupe sélectionnée n'a pas été
@@ -5586,6 +6028,158 @@ function Styles() {
         /* LA PASTILLE PORTE DES FANTOMES PLUTOT QUE DES VISAGES : on n'a pas de
            visages a empiler, et en inventer serait fabriquer exactement ce que
            cette ligne certifie. Ils se chevauchent, comme une pile. */
+        /* PERSONNE D'AUTRE NE L'A ENCORE ESSAYEE. Une grille vide apprend que
+           le mur est mort, ce qui est faux : il est plein, simplement pas de
+           cette piece-la. */
+        .mu-seule{display:flex;align-items:center;gap:13px;flex-wrap:wrap;
+          margin:16px 0 0;padding:16px 14px;border-radius:18px;
+          background:rgba(139,125,246,.1);
+          border:1px solid rgba(139,125,246,.28);}
+        .mu-seule-f{flex:none;width:34px;height:38px;}
+        .mu-seule-f .mu-f-corps{fill:#C9BCFF;}
+        .mu-seule-f .mu-f-oeil{fill:#2A1E4D;}
+        .mu-seule-f .mu-f-bouche{fill:none;stroke:#2A1E4D;stroke-width:1.9;
+          stroke-linecap:round;}
+        .mu-seule span{flex:1 1 180px;min-width:0;font-size:13px;line-height:1.5;
+          color:var(--mu-pale);}
+        .mu-seule b{display:block;font-size:14.5px;font-weight:850;color:#fff;
+          margin-bottom:4px;}
+        .mu-seule button{flex:none;font:inherit;font-size:13px;font-weight:800;
+          cursor:pointer;border-radius:999px;padding:11px 16px;color:#C9BCFF;
+          background:transparent;border:1px solid rgba(201,188,255,.4);}
+
+        /* ═══ LA PIECE DONT CE MUR PARLE ══════════════════════════════════
+
+           C'est ce qui manquait le plus : un bandeau qui dit DE QUOI on parle.
+           Sans lui, on arrivait sur une grille de vignettes sans savoir si on
+           regardait une piece, un magasin ou une ville — et la reponse changeait
+           selon d'ou l'on venait, ce que rien n'indiquait. */
+        .mu-piece{display:flex;align-items:center;gap:12px;margin-bottom:16px;
+          padding:10px;border-radius:18px;background:var(--mu-carte);
+          border:1px solid var(--mu-ligne);}
+        .mu-piece-ph{flex:none;width:52px;height:64px;object-fit:cover;
+          object-position:center 22%;border-radius:11px;display:block;
+          background:rgba(255,255,255,.05);}
+        .mu-piece-t{flex:1 1 auto;min-width:0;}
+        .mu-piece-t b{display:block;font-size:15px;font-weight:850;
+          letter-spacing:-.015em;color:#fff;overflow:hidden;
+          text-overflow:ellipsis;white-space:nowrap;}
+        .mu-piece-t em{display:block;margin-top:3px;font-style:normal;
+          font-size:12px;color:var(--mu-pale);overflow:hidden;
+          text-overflow:ellipsis;white-space:nowrap;}
+        .mu-piece-x{flex:none;font-size:16px;font-weight:900;
+          letter-spacing:-.02em;color:var(--mu-ambre);}
+
+        /* ═══ LES DEUX CADRAGES, ET LA SORTIE VERS LE CATALOGUE ════════════
+
+           Deux pastilles plutot que quatre filtres : les quatre de la maquette
+           supposent des donnees qu'aucune cliente n'a saisies — morphologie,
+           style, lieu — et les remplir de listes vides serait promettre un tri
+           qui ne trie rien. Les deux qui existent repondent a la question
+           posee : cette piece, ou tout le magasin ?
+
+           LE CATALOGUE EST A PART, avec son trait et son picto : il ne cadre
+           rien, il fait SORTIR du mur. */
+        .mu-cadre{display:flex;align-items:center;gap:8px;margin-top:14px;
+          overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
+        .mu-cadre::-webkit-scrollbar{display:none;}
+        .mu-cadre button{flex:none;display:inline-flex;align-items:center;
+          gap:7px;font:inherit;font-size:13px;font-weight:750;cursor:pointer;
+          border-radius:999px;padding:9px 14px;color:var(--mu-pale);
+          background:transparent;border:1px solid var(--mu-ligne);
+          transition:color .16s ease,border-color .16s ease,background .16s ease;}
+        .mu-cadre button s{text-decoration:none;font-size:11px;font-weight:850;
+          border-radius:999px;padding:2px 7px;background:rgba(255,255,255,.08);}
+        .mu-cadre button.on{color:#0A1210;background:#C9BCFF;
+          border-color:#C9BCFF;font-weight:850;}
+        .mu-cadre button.on s{background:rgba(10,18,16,.16);color:#0A1210;}
+        /* LA SORTIE VERS LE CATALOGUE. En pleine largeur et en contour : elle
+           ne dispute rien au geste plein du pied, et elle se lit comme une
+           porte plutot que comme un filtre. */
+        .mu-cat{display:flex;align-items:center;justify-content:center;gap:10px;
+          width:100%;margin-top:18px;font:inherit;font-size:14px;
+          font-weight:800;cursor:pointer;border-radius:999px;padding:14px 16px;
+          color:#C9BCFF;background:transparent;
+          border:1px solid rgba(201,188,255,.38);}
+        .mu-cat .mu-tr{width:19px;height:19px;}
+        .mu-cat s{text-decoration:none;font-size:16px;line-height:1;}
+        .mu-cat:active{transform:scale(.99);}
+        .mu-cat:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
+        .mu-cadre button:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
+
+        /* ═══ « SUR VOUS », AVANT « SUR LES AUTRES » ═══════════════════════
+
+           L'autre moitie de sa demande : « un endroit ou tout est cree pour lui
+           faire comprendre cet article : sur lui ET sur les autres ». Son propre
+           rendu ouvre donc le mur, nomme, et il est le chemin du retour. */
+        .mu-moi{display:flex;align-items:center;gap:12px;width:100%;
+          margin-top:14px;padding:10px;text-align:left;font-family:inherit;
+          cursor:pointer;border-radius:18px;color:var(--mu-encre);
+          background:linear-gradient(104deg,rgba(139,125,246,.18),
+            rgba(240,38,155,.12));border:1px solid rgba(199,125,240,.4);
+          transition:transform .12s ease;}
+        .mu-moi:active{transform:scale(.99);}
+        .mu-moi:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
+        .mu-moi img{flex:none;width:52px;height:64px;object-fit:cover;
+          object-position:center 18%;border-radius:11px;display:block;}
+        .mu-moi-t{flex:1 1 auto;min-width:0;}
+        .mu-moi-t b{display:block;font-size:14.5px;font-weight:850;color:#fff;}
+        .mu-moi-t em{display:block;margin-top:2px;font-style:normal;
+          font-size:12px;color:#C9BCFF;overflow:hidden;text-overflow:ellipsis;
+          white-space:nowrap;}
+        .mu-moi-n{display:flex;gap:2px;margin-top:5px;}
+        .mu-moi s{flex:none;text-decoration:none;font-size:12.5px;
+          font-weight:800;color:#fff;}
+
+        /* ═══ LE MOT DE LA BOUTIQUE ════════════════════════════════════════
+
+           « On a du mal a comprendre que ce sont des conseils du commercant, et
+           la cassure entre les annonces verticales et ces deux conseils
+           horizontaux est tres maladroite. »
+
+           CE N'EST PLUS LA MEME FORME PARCE QUE CE N'EST PAS LE MEME OBJET. Un
+           essayage est une PREUVE — une photo, une note, un avis — et sa forme
+           est la vignette. Un mot du commercant est une PAROLE : un emetteur, un
+           role, une phrase. Sa forme est la bulle, dans un panneau qui se nomme
+           et qui porte l'enseigne. */
+        .mu-mot-b{margin-top:22px;padding:16px 14px 14px;border-radius:20px;
+          background:rgba(255,255,255,.035);
+          border:1px solid rgba(255,255,255,.1);}
+        .mu-mot-b h3{display:flex;align-items:center;gap:11px;margin:0 0 14px;
+          font-size:14px;font-weight:850;letter-spacing:-.01em;color:#E8EFF6;}
+        .mu-mot-b h3 em{display:block;margin-top:2px;font-style:normal;
+          font-size:12px;font-weight:600;color:var(--mu-pale);}
+        .mu-mot-b-e{flex:none;display:grid;place-items:center;width:34px;
+          height:34px;border-radius:10px;color:#C9BCFF;
+          background:rgba(139,125,246,.16);
+          border:1px solid rgba(139,125,246,.35);}
+        .mu-mot-b-e .mu-tr{width:19px;height:19px;}
+        .mu-mot-b ul{list-style:none;margin:0;padding:0;display:flex;
+          flex-direction:column;gap:10px;}
+        /* LA BULLE : un coin carre en haut a gauche, les trois autres arrondis.
+           C'est ce qui la distingue d'une carte au premier coup d'oeil, et c'est
+           la grammaire de tout le monde pour « quelqu'un parle ». */
+        .mu-mot-b li{padding:12px 14px;border-radius:4px 16px 16px 16px;
+          background:rgba(139,125,246,.1);
+          border:1px solid rgba(139,125,246,.22);}
+        .mu-mot-b-q{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+        .mu-mot-b-q b{font-size:13.5px;font-weight:850;color:#fff;}
+        .mu-mot-b-q s{text-decoration:none;font-size:10px;font-weight:900;
+          letter-spacing:.07em;text-transform:uppercase;border-radius:999px;
+          padding:3px 8px;color:#0A1210;background:#C9BCFF;}
+        .mu-mot-b-q i{margin-left:auto;font-style:normal;font-size:11.5px;
+          color:var(--mu-pale);}
+        .mu-mot-b li p{margin:8px 0 0;font-size:14px;line-height:1.45;
+          color:#D9E3ED;}
+        .mu-mot-b li button{margin-top:11px;font:inherit;font-size:12.5px;
+          font-weight:800;cursor:pointer;border-radius:999px;padding:9px 15px;
+          color:#C9BCFF;background:transparent;
+          border:1px solid rgba(201,188,255,.4);}
+        .mu-mot-b li button.on{color:var(--mu-menthe);
+          border-color:rgba(61,226,166,.45);background:rgba(61,226,166,.1);}
+        .mu-mot-b li button:focus-visible{outline:2px solid #C9BCFF;
+          outline-offset:2px;}
+
         .mu-haut-vrai{display:inline-flex;align-items:center;gap:10px;
           margin:12px 0 0;padding:7px 13px 7px 9px;border-radius:999px;
           background:rgba(255,255,255,.06);

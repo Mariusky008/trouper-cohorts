@@ -524,6 +524,25 @@ Même traitement que `vetement3.jpeg` et `atelier-tatouage.jpeg` avant elles.
 | `mode-jean-papillons.jpg` | Jean large clair imprimé de papillons noirs. | « Jean large à papillons » |
 | `mode-pantalon-zebre.jpg` | Pantalon fluide zébré, gilet blanc sans manches. | « Pantalon fluide imprimé » |
 
+#### Ce que le mur d'une PIÈCE demanderait
+
+**Le mur se cadre maintenant sur la pièce qu'on vient d'essayer** — « la même
+pièce, sur d'autres personnes », qui est la seule comparaison qui aide à
+décider. Dans la démonstration il n'affiche **qu'une cliente par pièce**, et
+c'est une limite de photos, pas de modèle.
+
+**En production, chaque vignette est le rendu de cette cliente-là** : son propre
+essayage, calculé sur sa propre photo. La démonstration ne peut pas en
+fabriquer, et le dépôt n'a qu'UNE image par pièce — en mettre deux clientes
+dessus afficherait deux fois la même photo côte à côte, c'est-à-dire un mur de
+figurants.
+
+**Pour qu'une pièce montre un vrai mur comme la maquette** (neuf femmes, le même
+pantalon), il faudrait **six à neuf photos d'une même pièce portée par des
+personnes différentes**, de morphologies et de tailles différentes, en pied ou
+en buste. Une seule pièce suffit à le démontrer : c'est elle qui deviendrait la
+pièce du jour.
+
 **Six en vitrine, dix-neuf en réserve.** Le client ne voit que celles marquées
 « en vitrine » ; les autres n'existent que pour « Surprends-moi ». C'est le
 champ `vitrine` de `Piece` dans `lib/direct/fantomes.ts`, et c'est délibéré :

@@ -2234,10 +2234,18 @@ function Styles() {
            commerce, le titre et la phrase montent dans l'en-tete de chapitre ;
            ce qui reste du composant est ce qu'il est seul a savoir faire : le
            geste, la legende du pouce, et les cartes. */
+        /* SAUF SUR LE MUR D'ESSAI, ET C'EST UNE CORRECTION. Le titre du
+           composant repetait le chapitre de la page — « Ce que les gens
+           laissent ici » deux fois a dix points d'ecart — donc on le cachait.
+           Depuis que le mur se cadre sur UNE PIECE, ce titre ne repete plus
+           rien : il dit « 3 essayages de cette piece » ou « 7 essayages dans le
+           magasin », c'est-a-dire la seule chose qui distingue les deux vues.
+           Le cacher, c'etait poser une grille de vignettes sans dire de quoi
+           elle parle. */
         .bq-mu .mu-chez,
-        .bq-mu .mu-haut>h2,
+        .bq-mu .mu-haut:not(.essai)>h2,
         .bq-mu .mu-haut-r h2,
-        .bq-mu .mu-haut>p,
+        .bq-mu .mu-haut:not(.essai)>p,
         .bq-mu .mu-e-tete{display:none;}
         .bq-mu .mu-haut{padding-top:0;}
         .bq-mu .mu-haut-r{justify-content:flex-start;}

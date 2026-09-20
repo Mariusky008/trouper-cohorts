@@ -228,6 +228,19 @@ export type Fantome = {
    * qui trie par ordre de disparition.
    */
   jusqua?: string;
+  /**
+   * ═══ LA TAILLE QU'ELLE PORTE ══════════════════════════════════════════════
+   *
+   * C'EST L'INFORMATION QUE TOUT LE MONDE CHERCHE SUR UN MUR DE VÊTEMENTS, et
+   * elle n'y était pas. « Ça tombe bien sur elle » ne sert à rien tant qu'on ne
+   * sait pas si elle fait deux tailles de moins que soi ; avec la taille, le
+   * mur répond à la seule question qui empêche d'acheter sans essayer — « et
+   * sur MOI, ça donnerait quoi ? »
+   *
+   * ELLE NE VAUT QUE SUR CE QUI SE TAILLE. Une coupe de cheveux, un vernis, un
+   * bouquet n'en ont pas, et le champ reste vide chez eux.
+   */
+  taille?: string;
 };
 
 /**
@@ -364,6 +377,34 @@ export type Piece = {
    * plus sûr est celui qui ne montre rien de trop.
    */
   vitrine?: boolean;
+  /**
+   * ═══ JUSQU'OÙ CETTE PIÈCE-LÀ DESCEND ══════════════════════════════════════
+   *
+   * « L'essai a un peu raté : il reste le pantalon à droite, sous la robe que
+   * j'ai essayée. »
+   *
+   * LA CAUSE ÉTAIT DANS UNE PHRASE ÉCRITE UNE FOIS POUR TOUT LE MÉTIER.
+   * `essai.change` disait « uniquement le vêtement porté sur le buste » — juste
+   * pour un pull, et faux pour une robe longue : le modèle a fait exactement ce
+   * qu'on lui demandait, il a habillé le buste et laissé le jean en dessous. On
+   * voyait donc une robe midi posée par-dessus un pantalon.
+   *
+   * CE N'EST PAS UNE PROPRIÉTÉ DU MÉTIER, C'EST UNE PROPRIÉTÉ DE LA PIÈCE. Une
+   * boutique de prêt-à-porter vend des pulls, des robes et des pantalons ; les
+   * trois ne remplacent pas la même chose sur un corps, et aucune règle ne le
+   * déduit d'un nom. C'est donc écrit à côté de chaque pièce, là où celui qui
+   * l'ajoute le sait sans réfléchir.
+   *
+   *   · `buste`       — un pull, une chemise, une veste : le bas ne bouge pas.
+   *   · `silhouette`  — une robe, une combinaison, un ensemble, un manteau
+   *                     long : la tenue entière est remplacée, bas compris.
+   *   · `bas`         — un pantalon, une jupe : le haut ne bouge pas.
+   *
+   * ABSENT, ON GARDE LA PHRASE DU MÉTIER. C'est le cas de tout ce qui ne
+   * s'habille pas — une coupe, une monture, un vernis — où la question ne se
+   * pose pas.
+   */
+  couvre?: "buste" | "silhouette" | "bas";
 };
 
 export type Mur = {
@@ -1748,14 +1789,14 @@ export const MURS: Mur[] = [
        */
       pieces: [
         {
-          id: "m-combinaison",
+          id: "m-combinaison", couvre: "silhouette",
           nom: "Combinaison beige, ceinturée", decrire: "une combinaison longue beige à manches longues, ceinturée à la taille",
           prix: "129 €",
           photo: "/direct/mode-combinaison.jpg",
           reference: "/direct/mode-combinaison.jpg",
         },
         {
-          id: "m-chemise",
+          id: "m-chemise", couvre: "buste",
           nom: "Chemise en jean", decrire: "une chemise en jean bleu clair, coupe droite, manches longues, boutonnée",
           prix: "69 €",
           photo: "/direct/mode-chemise-jean.jpg",
@@ -1775,15 +1816,15 @@ export const MURS: Mur[] = [
          * précisément ce que le tableau des branches est là pour faire, et
          * c'est pourquoi on élargit le modèle plutôt que d'écrire deux listes.
          */
-        { id: "m-boho", nom: "Blouse imprimée et jean flare", decrire: "une blouse imprimée à manches longues portée avec un jean évasé taille haute", prix: "115 €",
+        { id: "m-boho", couvre: "silhouette", nom: "Blouse imprimée et jean flare", decrire: "une blouse imprimée à manches longues portée avec un jean évasé taille haute", prix: "115 €",
           photo: "/direct/vetement1.jpeg", reference: "/direct/vetement1.jpeg" },
-        { id: "m-brode", nom: "Ensemble brodé écru", decrire: "un ensemble écru en coton brodé, haut et bas assortis", prix: "149 €",
+        { id: "m-brode", couvre: "silhouette", nom: "Ensemble brodé écru", decrire: "un ensemble écru en coton brodé, haut et bas assortis", prix: "149 €",
           photo: "/direct/vetement3.jpeg", reference: "/direct/vetement3.jpeg" },
-        { id: "m-carreaux", nom: "Marinière rose et pantalon vichy", decrire: "une marinière à rayures roses et blanches portée avec un pantalon à carreaux vichy", prix: "98 €",
+        { id: "m-carreaux", couvre: "silhouette", nom: "Marinière rose et pantalon vichy", decrire: "une marinière à rayures roses et blanches portée avec un pantalon à carreaux vichy", prix: "98 €",
           photo: "/direct/vetement4.jpg", reference: "/direct/vetement4.jpg" },
-        { id: "m-molleton", nom: "Ensemble molleton rose", decrire: "un ensemble en molleton rose, sweat et pantalon assortis", prix: "89 €",
+        { id: "m-molleton", couvre: "silhouette", nom: "Ensemble molleton rose", decrire: "un ensemble en molleton rose, sweat et pantalon assortis", prix: "89 €",
           photo: "/direct/vetement2.jpg", reference: "/direct/vetement2.jpg" },
-        { id: "m-polaire", nom: "Polaire rose, col zippé", decrire: "une veste polaire rose à col zippé", prix: "75 €",
+        { id: "m-polaire", couvre: "buste", nom: "Polaire rose, col zippé", decrire: "une veste polaire rose à col zippé", prix: "75 €",
           photo: "/direct/vetement5.jpeg", reference: "/direct/vetement5.jpeg" },
 
         /* ═══ L'ARRIVAGE D'AUTOMNE ══════════════════════════════════════════
@@ -1794,64 +1835,64 @@ export const MURS: Mur[] = [
            un rendu vague. Voir `decrire` dans `Piece`. */
 
         // ── Les mailles ──────────────────────────────────────────────────────
-        { id: "m-mohair-vert", nom: "Pull mohair vert d’eau", vitrine: true, prix: "95 €",
+        { id: "m-mohair-vert", couvre: "buste", nom: "Pull mohair vert d’eau", vitrine: true, prix: "95 €",
           decrire: "un pull en mohair vert d’eau, col rond, manches longues, coupe ample et duveteuse",
           photo: "/direct/mode-pull-mohair-vert.jpeg", reference: "/direct/mode-pull-mohair-vert.jpeg" },
-        { id: "m-mohair-marine", nom: "Pull mohair bleu marine", prix: "95 €",
+        { id: "m-mohair-marine", couvre: "buste", nom: "Pull mohair bleu marine", prix: "95 €",
           decrire: "un pull en mohair bleu marine, col rond, manches longues, coupe ample et duveteuse",
           photo: "/direct/mode-pull-mohair-marine.jpeg", reference: "/direct/mode-pull-mohair-marine.jpeg" },
-        { id: "m-chevron-canard", nom: "Pull chevron bleu canard", vitrine: true, prix: "110 €",
+        { id: "m-chevron-canard", couvre: "buste", nom: "Pull chevron bleu canard", vitrine: true, prix: "110 €",
           decrire: "un pull en mohair bleu canard avec un large chevron rose, blanc et or lamé sur la poitrine",
           photo: "/direct/mode-pull-chevron-canard.jpeg", reference: "/direct/mode-pull-chevron-canard.jpeg" },
-        { id: "m-chevron-noir", nom: "Pull chevron noir et or", prix: "110 €",
+        { id: "m-chevron-noir", couvre: "buste", nom: "Pull chevron noir et or", prix: "110 €",
           decrire: "un pull en mohair noir avec un large chevron bleu roi, blanc et or lamé sur la poitrine",
           photo: "/direct/mode-pull-chevron-noir.jpeg", reference: "/direct/mode-pull-chevron-noir.jpeg" },
-        { id: "m-ecru-rose", nom: "Pull écru, bande rose", prix: "98 €",
+        { id: "m-ecru-rose", couvre: "buste", nom: "Pull écru, bande rose", prix: "98 €",
           decrire: "un pull écru en maille duveteuse avec une large bande rose bordée d’un galon doré sur le devant",
           photo: "/direct/mode-pull-ecru-rose.webp", reference: "/direct/mode-pull-ecru-rose.webp" },
-        { id: "m-gilet-orchidee", nom: "Gilet fin rose orchidée", prix: "69 €",
+        { id: "m-gilet-orchidee", couvre: "buste", nom: "Gilet fin rose orchidée", prix: "69 €",
           decrire: "un gilet en maille fine rose orchidée, col V, boutons dorés, manches trois-quarts",
           photo: "/direct/mode-gilet-orchidee.jpg", reference: "/direct/mode-gilet-orchidee.jpg" },
-        { id: "m-maille-beige", nom: "Ensemble maille beige", vitrine: true, prix: "165 €",
+        { id: "m-maille-beige", couvre: "silhouette", nom: "Ensemble maille beige", vitrine: true, prix: "165 €",
           decrire: "un ensemble en maille beige : col roulé, jupe midi et long gilet boutonné assortis",
           photo: "/direct/mode-ensemble-maille-beige.jpg", reference: "/direct/mode-ensemble-maille-beige.jpg" },
 
         // ── Les robes ────────────────────────────────────────────────────────
-        { id: "m-robe-lavalliere", nom: "Robe midi, col lavallière", vitrine: true, prix: "125 €",
+        { id: "m-robe-lavalliere", couvre: "silhouette", nom: "Robe midi, col lavallière", vitrine: true, prix: "125 €",
           decrire: "une robe midi imprimée rouge et rose à motif géométrique, manches longues bouffantes, col lavallière noué",
           photo: "/direct/mode-robe-lavalliere.jpeg", reference: "/direct/mode-robe-lavalliere.jpeg" },
-        { id: "m-robe-pois", nom: "Robe à pois dorés", prix: "139 €",
+        { id: "m-robe-pois", couvre: "silhouette", nom: "Robe à pois dorés", prix: "139 €",
           decrire: "une robe longue prune à grands pois dorés, col montant froncé, manches bouffantes, ceinture nouée à la taille",
           photo: "/direct/mode-robe-pois-dores.jpg", reference: "/direct/mode-robe-pois-dores.jpg" },
-        { id: "m-robe-corail", nom: "Robe à volants corail", prix: "119 €",
+        { id: "m-robe-corail", couvre: "silhouette", nom: "Robe à volants corail", prix: "119 €",
           decrire: "une robe à bretelles en mousseline imprimée corail et rose, jupe à volants étagés",
           photo: "/direct/mode-robe-volants-corail.jpg", reference: "/direct/mode-robe-volants-corail.jpg" },
-        { id: "m-robe-fleurs", nom: "Robe noire à fleurs", prix: "119 €",
+        { id: "m-robe-fleurs", couvre: "silhouette", nom: "Robe noire à fleurs", prix: "119 €",
           decrire: "une robe noire sans manches imprimée de grandes fleurs multicolores, jupe à volant asymétrique",
           photo: "/direct/mode-robe-fleurs-noire.jpg", reference: "/direct/mode-robe-fleurs-noire.jpg" },
 
         // ── Les manteaux et les vestes ───────────────────────────────────────
-        { id: "m-doudoune", nom: "Doudoune kaki, capuche", vitrine: true, prix: "189 €",
+        { id: "m-doudoune", couvre: "buste", nom: "Doudoune kaki, capuche", vitrine: true, prix: "189 €",
           decrire: "une doudoune courte kaki brillante à capuche bordée de fourrure bordeaux, fermeture zippée",
           photo: "/direct/mode-doudoune-kaki.jpg", reference: "/direct/mode-doudoune-kaki.jpg" },
-        { id: "m-leopard", nom: "Manteau léopard", vitrine: true, prix: "175 €",
+        { id: "m-leopard", couvre: "silhouette", nom: "Manteau léopard", vitrine: true, prix: "175 €",
           decrire: "un manteau mi-long en fausse fourrure imprimée léopard, grand col cranté, porté ouvert",
           photo: "/direct/mode-manteau-leopard.jpg", reference: "/direct/mode-manteau-leopard.jpg" },
-        { id: "m-veste-dentelle", nom: "Veste longue en dentelle", prix: "159 €",
+        { id: "m-veste-dentelle", couvre: "silhouette", nom: "Veste longue en dentelle", prix: "159 €",
           decrire: "une veste longue ouverte en dentelle fleurie noire et blanche, bordée de noir, manches trois-quarts",
           photo: "/direct/mode-veste-dentelle.jpg", reference: "/direct/mode-veste-dentelle.jpg" },
 
         // ── Les hauts et les bas ─────────────────────────────────────────────
-        { id: "m-chemise-volants", nom: "Chemise rose à volants", prix: "59 €",
+        { id: "m-chemise-volants", couvre: "buste", nom: "Chemise rose à volants", prix: "59 €",
           decrire: "une chemise rose pâle boutonnée, col montant, jabot de volants sur le devant, manches longues",
           photo: "/direct/mode-chemise-volants-rose.jpeg", reference: "/direct/mode-chemise-volants-rose.jpeg" },
-        { id: "m-top-crochet", nom: "Top en crochet noir", prix: "55 €",
+        { id: "m-top-crochet", couvre: "buste", nom: "Top en crochet noir", prix: "55 €",
           decrire: "un top noir sans manches en crochet ajouré, bord festonné à la taille",
           photo: "/direct/mode-top-crochet-noir.jpg", reference: "/direct/mode-top-crochet-noir.jpg" },
-        { id: "m-jean-papillons", nom: "Jean large à papillons", prix: "79 €",
+        { id: "m-jean-papillons", couvre: "bas", nom: "Jean large à papillons", prix: "79 €",
           decrire: "un jean large taille haute en denim clair, imprimé de papillons noirs, déchirures aux genoux",
           photo: "/direct/mode-jean-papillons.jpg", reference: "/direct/mode-jean-papillons.jpg" },
-        { id: "m-pantalon-zebre", nom: "Pantalon fluide imprimé", prix: "129 €",
+        { id: "m-pantalon-zebre", couvre: "silhouette", nom: "Pantalon fluide imprimé", prix: "129 €",
           decrire: "un pantalon large et fluide à imprimé zébré brun et blanc, porté avec un gilet blanc sans manches",
           photo: "/direct/mode-pantalon-zebre.jpg", reference: "/direct/mode-pantalon-zebre.jpg" },
       ],
@@ -1869,8 +1910,11 @@ export const MURS: Mur[] = [
         qui: "Claire",
         role: "Vendeuse",
         maison: true,
-        photo: "/direct/mode-combinaison.jpg",
-        mot: "La combinaison est rentrée ce matin, en quatre tailles. Essayez-la 👗",
+        /* ELLE PARLAIT D'UNE COMBINAISON QUI N'EST PLUS MISE EN AVANT. Le mot
+           de la vendeuse nomme la PIÈCE DU JOUR — c'est ce qui le rend vrai un
+           matin donné — donc il suit `duJour` quand celle-ci change. */
+        photo: "/direct/mode-doudoune-kaki.jpg",
+        mot: "La doudoune kaki est rentrée ce matin. Il n’en reste que trois, essayez-la 🧥",
         heure: "09:45",
         interesses: 7,
       },
@@ -1911,44 +1955,69 @@ export const MURS: Mur[] = [
      * pas fait le déplacement » qui dit ce que le produit fait vraiment.
      */
     clients: [
+      /**
+       * ═══ ELLES PORTENT CE QU'ON PEUT ESSAYER ═══════════════════════════
+       *
+       * « Je ne suis pas certain que les gens comprennent que ce sont les gens
+       * qui ont essayé virtuellement le MÊME article. »
+       *
+       * ELLES PORTAIENT SEPT PIÈCES DE LA RÉSERVE, et aucune de la vitrine. Le
+       * mur cadré sur une pièce était donc vide QUOI QU'ON ESSAIE : on tombait
+       * sur « personne ne l'a encore essayée » à chaque fois, et la mécanique
+       * ne se voyait jamais. Six des sept portent maintenant une pièce de la
+       * vitrine ; la septième en garde une de la réserve, pour que « Tout le
+       * magasin » montre plus que ce que la vitrine propose.
+       *
+       * UNE SEULE PAR PIÈCE, ET C'EST UNE LIMITE DE PHOTOS, PAS DE MODÈLE. Le
+       * mur de la maquette montre neuf femmes portant le MÊME pantalon : en
+       * production, chaque vignette est le rendu de cette cliente-là. Ici on
+       * n'a qu'une photo par pièce — en mettre deux clientes dessus afficherait
+       * deux fois la même image côte à côte, c'est-à-dire un mur de figurants.
+       * Voir `public/direct/LISEZ-MOI.md`, qui dit ce qu'il faudrait.
+       *
+       * LES NOTES ET LES MOTS SONT VARIÉS EXPRÈS. Un mur où tout le monde met
+       * cinq fantômes et écrit « j'adore » est un mur publicitaire : c'est le
+       * « pas pour moi finalement, mais au moins je n'ai pas fait le
+       * déplacement » qui dit ce que le produit fait vraiment.
+       */
       {
-        id: "mo-emilie",
+        id: "mo-emilie", taille: "M",
         qui: "Émilie",
-        photo: "/direct/vetement1.jpeg",
-        essai: { quoi: "Blouse imprimée et jean flare", verdict: "pris", note: 5 },
-        mot: "Je ne pensais pas que le flare m’irait. J’ai pris les deux.",
+        photo: "/direct/mode-pull-mohair-vert.jpeg",
+        essai: { quoi: "Pull mohair vert d’eau", verdict: "pris", note: 5 },
+        mot: "La couleur est encore plus belle en vrai. J’ai pris la M.",
         heure: "09:40",
         humeur: "decouvre",
         interesses: 12,
         jusqua: "encore 2 jours",
       },
       {
-        id: "mo-manon",
+        id: "mo-manon", taille: "S",
         qui: "Manon",
-        photo: "/direct/vetement2.jpg",
-        essai: { quoi: "Ensemble molleton rose", verdict: "pris", note: 4 },
-        mot: "Confortable et ça tombe bien. Je le mets tout le temps.",
+        photo: "/direct/mode-pull-chevron-canard.jpeg",
+        essai: { quoi: "Pull chevron bleu canard", verdict: "pris", note: 4 },
+        mot: "Le chevron fait tout. Il taille grand, j’ai pris une S.",
         heure: "10:05",
         humeur: "decouvre",
         interesses: 7,
         jusqua: "encore 2 jours",
       },
       {
-        id: "mo-caroline",
+        id: "mo-caroline", taille: "XL",
         qui: "Caroline",
-        photo: "/direct/vetement3.jpeg",
-        essai: { quoi: "Ensemble brodé écru", verdict: null, note: 4 },
-        mot: "Très contente, même avec mes formes. J’hésite sur la taille.",
+        photo: "/direct/mode-ensemble-maille-beige.jpg",
+        essai: { quoi: "Ensemble maille beige", verdict: null, note: 4 },
+        mot: "Très contente, même avec mes formes. J’hésite sur la longueur du gilet.",
         heure: "14:20",
         humeur: "hesite",
         interesses: 9,
         jusqua: "encore 2 jours",
       },
       {
-        id: "mo-nathalie",
+        id: "mo-nathalie", taille: "L",
         qui: "Nathalie",
-        photo: "/direct/vetement4.jpg",
-        essai: { quoi: "Marinière rose et pantalon vichy", verdict: "passe", note: 2 },
+        photo: "/direct/mode-manteau-leopard.jpg",
+        essai: { quoi: "Manteau léopard", verdict: "passe", note: 2 },
         mot: "Pas pour moi finalement, mais au moins je n’ai pas fait le déplacement.",
         heure: "16:05",
         humeur: "hesite",
@@ -1956,21 +2025,21 @@ export const MURS: Mur[] = [
         jusqua: "encore 2 jours",
       },
       {
-        id: "mo-clara",
+        id: "mo-clara", taille: "M",
         qui: "Clara",
-        photo: "/direct/vetement5.jpeg",
-        essai: { quoi: "Polaire rose, col zippé", verdict: "pris", note: 5 },
-        mot: "Exactement la couleur que je cherchais. Mise de côté jusqu’à demain.",
+        photo: "/direct/mode-doudoune-kaki.jpg",
+        essai: { quoi: "Doudoune kaki, capuche", verdict: "pris", note: 5 },
+        mot: "Exactement ce que je cherchais pour l’hiver. Mise de côté jusqu’à demain.",
         heure: "17:30",
         humeur: "offrir",
         interesses: 6,
         jusqua: "encore 2 jours",
       },
       {
-        id: "mo-julie",
+        id: "mo-julie", taille: "38",
         qui: "Julie",
-        photo: "/direct/mode-chemise-jean.jpg",
-        essai: { quoi: "Chemise en jean", verdict: "pris", note: 4 },
+        photo: "/direct/mode-robe-lavalliere.jpeg",
+        essai: { quoi: "Robe midi, col lavallière", verdict: "pris", note: 4 },
         mot: "Essayée depuis mon canapé, je passe la chercher ce soir.",
         heure: "11:15",
         humeur: "decouvre",
@@ -1978,10 +2047,10 @@ export const MURS: Mur[] = [
         jusqua: "encore 2 jours",
       },
       {
-        id: "mo-sarah",
+        id: "mo-sarah", taille: "M",
         qui: "Sarah",
-        photo: "/direct/mode-combinaison.jpg",
-        essai: { quoi: "Combinaison beige, ceinturée", verdict: null, note: 3 },
+        photo: "/direct/vetement1.jpeg",
+        essai: { quoi: "Blouse imprimée et jean flare", verdict: null, note: 3 },
         mot: "Je la trouve très belle mais j’hésite sur la taille.",
         heure: "12:40",
         humeur: "hesite",
@@ -2106,36 +2175,36 @@ export const MURS: Mur[] = [
        */
       pieces: [
         // ── En vitrine ───────────────────────────────────────────────────────
-        { id: "h-veste-ciree", nom: "Veste cirée kaki", prix: "89 €", vitrine: true,
+        { id: "h-veste-ciree", couvre: "buste", nom: "Veste cirée kaki", prix: "89 €", vitrine: true,
           decrire: "une veste cirée kaki pour homme, col en velours côtelé bordeaux, fermeture zippée et boutons-pression, deux poches à rabat",
           photo: "/direct/homme-veste-ciree-kaki.jpg", reference: "/direct/homme-veste-ciree-kaki.jpg" },
-        { id: "h-chemise-denim", nom: "Chemise en denim", prix: "69 €", vitrine: true,
+        { id: "h-chemise-denim", couvre: "silhouette", nom: "Chemise en denim", prix: "69 €", vitrine: true,
           decrire: "une chemise en denim bleu moyen pour homme, deux poches poitrine à rabat, boutons nacrés, portée avec un pantalon large crème",
           photo: "/direct/homme-chemise-denim.jpg", reference: "/direct/homme-chemise-denim.jpg" },
-        { id: "h-polo-chino", nom: "Polo marine et chino beige", prix: "45 €", vitrine: true,
+        { id: "h-polo-chino", couvre: "silhouette", nom: "Polo marine et chino beige", prix: "45 €", vitrine: true,
           decrire: "un polo bleu marine à manches longues pour homme, col à deux boutons, porté avec un chino beige et une ceinture de cuir brun",
           photo: "/direct/homme-polo-marine-chino.jpg", reference: "/direct/homme-polo-marine-chino.jpg" },
-        { id: "h-chemise-lin", nom: "Chemise en lin bleu ciel", prix: "59 €", vitrine: true,
+        { id: "h-chemise-lin", couvre: "buste", nom: "Chemise en lin bleu ciel", prix: "59 €", vitrine: true,
           decrire: "une chemise en lin bleu ciel pour homme, col classique, coupe droite, manches longues",
           photo: "/direct/homme-chemise-lin-bleu.jpg", reference: "/direct/homme-chemise-lin-bleu.jpg" },
-        { id: "h-pull-col-roule", nom: "Pull col roulé écru", prix: "75 €", vitrine: true,
+        { id: "h-pull-col-roule", couvre: "buste", nom: "Pull col roulé écru", prix: "75 €", vitrine: true,
           decrire: "un pull col roulé écru en maille côtelée épaisse pour homme, coupe droite, manches longues",
           photo: "/direct/homme-pull-col-roule.jpeg", reference: "/direct/homme-pull-col-roule.jpeg" },
-        { id: "h-mariniere", nom: "Marinière et jean large", prix: "79 €", vitrine: true,
+        { id: "h-mariniere", couvre: "silhouette", nom: "Marinière et jean large", prix: "79 €", vitrine: true,
           decrire: "une marinière blanche à fines rayures bleu roi pour homme, encolure bateau, portée avec un jean large en denim brut",
           photo: "/direct/homme-mariniere-jean.jpeg", reference: "/direct/homme-mariniere-jean.jpeg" },
 
         // ── En réserve : ce dans quoi « Surprends-moi » pioche ────────────────
-        { id: "h-veste-jean", nom: "Veste en jean brut", prix: "99 €",
+        { id: "h-veste-jean", couvre: "buste", nom: "Veste en jean brut", prix: "99 €",
           decrire: "une veste en jean brut bleu foncé pour homme, coupe trucker, surpiqûres écrues, deux poches poitrine à rabat, portée ouverte sur un tee-shirt blanc",
           photo: "/direct/homme-veste-jean.jpg", reference: "/direct/homme-veste-jean.jpg" },
-        { id: "h-blouson-aviateur", nom: "Blouson aviateur, col mouton", prix: "249 €",
+        { id: "h-blouson-aviateur", couvre: "buste", nom: "Blouson aviateur, col mouton", prix: "249 €",
           decrire: "un blouson aviateur en cuir brun foncé pour homme, large col en peau lainée écrue, fermeture zippée, bords-côtes aux poignets et à la taille",
           photo: "/direct/homme-blouson-aviateur.jpg", reference: "/direct/homme-blouson-aviateur.jpg" },
-        { id: "h-carreaux-brique", nom: "Chemise à carreaux et chino brique", prix: "95 €",
+        { id: "h-carreaux-brique", couvre: "silhouette", nom: "Chemise à carreaux et chino brique", prix: "95 €",
           decrire: "une chemise à carreaux bleus, blancs et rouges pour homme, portée avec un chino rouge brique et une ceinture noire",
           photo: "/direct/homme-carreaux-chino-brique.jpg", reference: "/direct/homme-carreaux-chino-brique.jpg" },
-        { id: "h-costume-lin", nom: "Costume vert en lin", prix: "349 €",
+        { id: "h-costume-lin", couvre: "silhouette", nom: "Costume vert en lin", prix: "349 €",
           decrire: "un costume en lin vert forêt pour homme, veste deux boutons à revers crantés, porté avec une chemise bleu clair et une cravate beige",
           photo: "/direct/homme-costume-vert-lin.jpeg", reference: "/direct/homme-costume-vert-lin.jpeg" },
       ],
