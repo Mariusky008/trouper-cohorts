@@ -1331,6 +1331,7 @@ export function MurContenu({
           }}
           onEssai={setEssaiVu}
           catalogue={catalogue}
+          onReserver={onReserver}
         />
         </div>
       )}
@@ -2099,6 +2100,7 @@ function EcranDepot({
   piecePrechoisie,
   onEssai,
   catalogue,
+  onReserver,
 }: {
   mur: TypeMur;
   clients: Fantome[];
@@ -2118,6 +2120,8 @@ function EcranDepot({
   /** Voir `Essai` : le favori de la CARTE, pas un second système. */
   onFavori?: () => void;
   favori?: boolean;
+  /** Voir `Essai` : le créneau de l'ANNONCE, pas une seconde réservation. */
+  onReserver?: () => void;
 }) {
   /**
    * ═══ L'ESSAI EST SEUL À L'ÉCRAN ═══════════════════════════════════════════
@@ -2149,6 +2153,7 @@ function EcranDepot({
         piecePrechoisie={piecePrechoisie}
         onEssai={onEssai}
         catalogue={catalogue}
+        onReserver={onReserver}
       />
     );
   }
@@ -2691,6 +2696,7 @@ function Essai({
   piecePrechoisie,
   onEssai,
   catalogue,
+  onReserver,
 }: {
   mur: TypeMur;
   restants: number;
@@ -2721,6 +2727,21 @@ function Essai({
   onFavori?: () => void;
   /** L'annonce est-elle déjà gardée ? Le bouton le dit plutôt que de le taire. */
   favori?: boolean;
+  /**
+   * RÉSERVER L'ARTICLE, ET C'EST LE CRÉNEAU DE L'ANNONCE.
+   *
+   * LA MAQUETTE MET TROIS GESTES AU BAS DU RÉSULTAT, et ils n'ouvrent pas la
+   * même porte : RÉSERVER emmène là où l'annonce emmenait déjà — l'offre du
+   * jour, le créneau, le décompte de ce qu'il reste ; METTRE DE CÔTÉ garde la
+   * pièce dans sa propre poche ; EN PARLER l'emporte chez ses amis. Brancher
+   * le premier ailleurs aurait fabriqué une seconde réservation qui ne
+   * décompte rien.
+   *
+   * ABSENT, LE BOUTON N'EST PAS DESSINÉ : sur le mur seul il n'y a pas
+   * d'annonce derrière, donc pas de créneau, et un geste qui n'ouvre rien est
+   * pire que pas de geste. Même règle que `onSalon` et `onFavori`.
+   */
+  onReserver?: () => void;
 }) {
   /**
    * ═══ LE PARCOURS A TROIS TEMPS, ET LE TROISIÈME EST NOUVEAU ════════════════
@@ -4501,6 +4522,29 @@ function Essai({
           l'écran suivant. */}
       {etape === "calcul" && prepare && (
         <div className={`mu-prep ${acte}`} aria-live="polite">
+          {/* ═══ OÙ L'ON EST, ET COMMENT ON SORT ═════════════════════════════
+
+              LA MAQUETTE OUVRE SUR « 📍 Dax · 470 m » ET UNE CROIX, et ce n'est
+              pas de la décoration : c'est le seul écran du parcours qui dure —
+              dix secondes pendant lesquelles on ne peut rien faire. Y lire le
+              nom de sa ville rappelle que la pièce est À CÔTÉ, et la croix dit
+              qu'on n'est pas enfermé dedans.
+
+              ELLE RAMÈNE AU CHOIX, PAS À L'ACCUEIL : on referme une attente,
+              on n'abandonne pas le magasin. */}
+          <div className="mu-prep-ou">
+            <b>
+              <i aria-hidden="true">📍</i> {mur.ville}
+              {mur.distance ? ` · ${mur.distance}` : ""}
+            </b>
+            <button
+              type="button"
+              aria-label="Arrêter la préparation"
+              onClick={() => setEtape("choisir")}
+            >
+              ✕
+            </button>
+          </div>
           <div className="mu-prep-tete">
             <h2>
               Ton fantôme <b>prépare</b>
@@ -4836,6 +4880,32 @@ function Essai({
           {/* LA PHOTO, EN FOND ET EN PLEIN. `object-position` la cadre sur le
               haut du corps : une photo en pied centrée dans un cadre vertical
               montre les genoux, et on ne juge pas un vêtement sur ses genoux. */}
+          {/* ═══ LA PHOTO PREND TOUT L'ÉCRAN, ET LA TÊTE RESTE SOUS LE TITRE ═
+
+              « J'aimerais que la photo prenne toute la place comme sur la
+              maquette (très immersive), sans que le titre touche la tête. »
+
+              LES DEUX ENSEMBLE SONT IMPOSSIBLES AVEC NOS PHOTOS, et il faut le
+              dire : sur la maquette, le mannequin est cadré avec du ciel
+              au-dessus de lui, si bien que la tête tombe naturellement au quart
+              de l'image. Nos photos de catalogue commencent au sommet du crâne.
+              Une image en plein cadre y met donc la tête tout en haut — c'est-
+              à-dire sous le titre — et la descendre laissait une bande noire,
+              ce qui est l'inverse d'immersif.
+
+              LE FOND FLOU RÈGLE LES DEUX D'UN COUP. La même photo, agrandie et
+              floutée, remplit le cadre entier ; la photo nette se pose dessus,
+              descendue de ce qu'il faut. Plus de bande noire, plus de couture,
+              la couleur du vêtement baigne tout l'écran — et la tête arrive
+              enfin sous le sous-titre. C'est la grammaire des pochettes
+              d'album, pour la même raison qu'elles l'emploient. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className="mu-res-fond"
+            src={rendu?.image ?? piece.rendu ?? piece.photo}
+            alt=""
+            aria-hidden="true"
+          />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             className="mu-res-ph"
@@ -4924,9 +4994,19 @@ function Essai({
           {/* LA BULLE DE LA CLOCHE. Elle dit ce que le pictogramme ne peut pas
               dire, et elle disparaît une fois la chose demandée — une infobulle
               qui reste après le geste devient une étiquette. */}
-          {/* LA CLÉ PORTE LE COMPTEUR : changer de clé remonte l'élément, donc
+          {/* ═══ ELLE NE S'INVITE PAS DANS LE PARCOURS « SURPRENDS-MOI » ═════
+
+              LES DEUX BULLES SE DISPUTAIENT LE MÊME COIN. Quand ClikMe a
+              choisi, « Choix ClikMe » occupe déjà le haut de la photo et dit
+              l'essentiel ; une seconde bulle posée par-dessus, pour expliquer
+              une cloche qu'on n'a pas touchée, transforme l'écran en pile de
+              messages. Là, la cloche se passe de légende — et si on l'appuie,
+              la bulle revient pour ce geste-là, comme partout ailleurs.
+
+              LA CLÉ PORTE LE COMPTEUR : changer de clé remonte l'élément, donc
               relance l'animation depuis son début. Sans elle, le second appui
               sur la cloche changeait le texte d'une bulle déjà effacée. */}
+          {(!surprise || bulle > 0) && (
           <span
             key={bulle}
             className={`mu-res-bulle${alerte ? " on" : ""}`}
@@ -4936,22 +5016,27 @@ function Essai({
               ? "Je vous préviens quand il en arrive"
               : "M’alerter pour des looks similaires ?"}
           </span>
+          )}
 
           <div className="mu-res-t">
             <h2>
               Alors, <b>ça vous plaît&nbsp;?</b>
             </h2>
-            {/* ═══ UNE SEULE LIGNE, ET C'EST CELLE DE LA MAQUETTE ══════════
+            {/* ═══ DEUX PHRASES, UNE PAR PARCOURS — ET LA MAQUETTE LES ÉCRIT
+                TOUTES LES DEUX ══════════════════════════════════════════════
 
-                J'AVAIS ÉCRIT DEUX PHRASES, UNE PAR PARCOURS, et la plus longue
-                — « plus je vous connais, mieux je vous conseille » — passait à
-                la ligne : deux lignes de sous-titre descendent jusqu'au front
-                de la personne, c'est-à-dire par-dessus ce qu'on est venu
-                regarder. La promesse d'apprentissage n'est pas perdue : elle
-                vit dans « Comment je choisis », derrière « Pourquoi ? », et
-                dans l'avis ClikMe — aux deux endroits où elle est vraie plutôt
-                qu'au-dessus d'un visage. */}
-            <p>Touchez un fantôme pour donner votre avis</p>
+                JE LES AVAIS FONDUES EN UNE SEULE, par peur que la plus longue
+                passe sur le visage. C'était traiter la cause au mauvais
+                endroit : la maquette du parcours choisi écrit bien « plus je
+                vous connais, mieux je vous conseille » sur deux lignes, et
+                celle de « Surprends-moi » écrit la courte. Ce qu'il fallait
+                corriger, c'est la PLACE de la tête sous le titre — voir le
+                fond flou de `.mu-res-fond` — pas la phrase. */}
+            <p>
+              {surprise
+                ? "Touchez un fantôme pour donner votre avis"
+                : "Touchez un fantôme : plus je vous connais, mieux je vous conseille."}
+            </p>
             {/* ON DIT QUE C'EST CLIKME QUI A CHOISI, ET SEULEMENT ALORS. Sans
                 cette ligne, une pièce sortie de la réserve se lit comme une
                 pièce qu'on aurait demandée — et « Surprends-moi encore », plus
@@ -5017,7 +5102,7 @@ function Essai({
                 </div>
               ) : (
                 <button type="button" className="mu-choix-b" onClick={() => setPourquoi(true)}>
-                  Pourquoi&nbsp;? <s aria-hidden="true">›</s>
+                  <span>Pourquoi&nbsp;?</span> <s aria-hidden="true">›</s>
                 </button>
               )}
             </div>
@@ -5178,74 +5263,42 @@ function Essai({
               </div>
             )}
 
-            {/* ═══ LES DEUX GESTES DE LA MAQUETTE, ET IL N'Y EN A QUE DEUX ═══
+            {/* ═══ LES TROIS GESTES DE LA MAQUETTE, ET CHACUN OUVRE AILLEURS ═
 
-                « Les boutons du bas ne sont pas ceux du mockup, et ce n'est pas
-                le même design non plus. »
+                RÉSERVER emmène là où l'annonce emmenait déjà — l'offre du jour,
+                son créneau, son décompte. METTRE DE CÔTÉ garde la pièce dans sa
+                propre poche, sur place, avec le cœur qui monte. EN PARLER
+                l'emporte chez ses amis, dans le salon qui existe déjà.
 
-                J'EN AVAIS MIS TROIS, EN COLONNES, ET J'EN AVAIS INVENTÉ UN. La
-                maquette pose DEUX pastilles pleinement arrondies, côte à côte,
-                le pictogramme à GAUCHE du mot : « Surprends-moi encore » en
-                contour, « Le mettre de côté » en rose. « Réserver cet article »
-                ne vient d'aucune maquette — je l'avais déduit, et un geste de
-                plus sur cet écran est un geste de moins qu'on lit.
+                UN SEUL APLAT, ET C'EST CELUI DU MILIEU. Trois aplats côte à
+                côte ne désignent rien ; celui qui compte est celui qui fait
+                partir la pièce.
 
-                LE BOUTON DE GAUCHE CHANGE SELON QUI A CHOISI, et c'est la seule
-                chose que j'ajoute à la maquette parce qu'elle a été demandée :
-                « Surprends-moi encore » quand ClikMe a choisi, « Demander
-                l'avis ClikMe » quand c'est le client. Même place, même poids,
-                même forme — seul le mot change. */}
+                CHACUN DISPARAÎT S'IL N'OUVRE RIEN : pas d'annonce derrière,
+                pas de créneau ; pas de rendu, rien à montrer. */}
             <div className="mu-res-g">
-              {surprise ? (
-                mots.surprends && (
-                  <button type="button" className="mu-res-c" onClick={surprendsMoi}>
-                    <i aria-hidden="true">✨</i>
-                    <span>Surprends-moi encore</span>
-                  </button>
-                )
-              ) : (
-                <button
-                  type="button"
-                  className={`mu-res-c${conseil ? " on" : ""}`}
-                  aria-expanded={conseil}
-                  onClick={() => setConseil((v) => !v)}
-                >
-                  <i aria-hidden="true">
-                    <Trace cle="idee" />
-                  </i>
-                  {/* DEUX MOTS, PAS QUATRE. « Demander l'avis ClikMe » tenait
-                      en TROIS lignes dans la pastille pendant que sa voisine en
-                      tenait deux : la rangée devenait bancale, et la maquette
-                      ne met jamais plus de deux lignes. Le pictogramme de
-                      l'ampoule dit déjà « conseil ». */}
-                  <span>L’avis ClikMe</span>
+              {onReserver && (
+                <button type="button" className="mu-res-c" onClick={onReserver}>
+                  <i aria-hidden="true">✨</i>
+                  <span>Réserver cet article</span>
                 </button>
               )}
-              {/* ═══ METTRE DE CÔTÉ NE CHANGE PLUS D'ÉCRAN ══════════════════
+              {/* ═══ METTRE DE CÔTÉ NE CHANGE PAS D'ÉCRAN ════════════════════
 
-                  « Quand j'appuie sur "mettre de côté", tout à coup ça change
-                  de page au lieu de rester sur la même page avec juste une
-                  animation : un cœur qui part vers le haut, pour donner l'idée
-                  qu'on retrouve la mise de côté dans la section en haut à
-                  droite. »
+                  On venait de se voir habillé, on faisait le geste le plus
+                  engageant, et on était emmené ailleurs — c'est-à-dire qu'on
+                  perdait la seule chose qu'on regardait. Le cœur s'envole vers
+                  le coin où on le retrouvera, le bouton dit que c'est fait, la
+                  photo n'a pas bougé. Le décompte, lui, n'a pas changé, et
+                  `onFavori` remplit la MÊME poche que le cœur de l'annonce.
 
-                  C'ÉTAIT LE DÉFAUT LE PLUS COÛTEUX DE L'ÉCRAN. On venait de se
-                  voir habillé, on faisait le geste le plus engageant, et on
-                  était emmené ailleurs — c'est-à-dire qu'on perdait la seule
-                  chose qu'on regardait. Le geste se fait maintenant SUR PLACE :
-                  le cœur s'envole vers le coin où on le retrouvera, le bouton
-                  dit que c'est fait, et la photo n'a pas bougé.
-
-                  LE DÉCOMPTE, LUI, N'A PAS CHANGÉ : `poser("pris")` enregistre
-                  toujours que la pièce est partie, et `onFavori` remplit la
-                  MÊME poche que le cœur de l'annonce — jamais une seconde. */}
+                  Les métiers dont le geste ENGAGE le commerçant — « Je réserve
+                  ma séance » chez un coiffeur — gardent leur écran de
+                  conversation. C'est la donnée qui le dit, avec `garde`. */}
               <button
                 type="button"
                 className={`mu-res-c plein${misDeCote ? " fait" : ""}`}
                 onClick={(e) => {
-                  // UN GESTE QUI ENGAGE LE COMMERÇANT GARDE SON ÉCRAN. Chez un
-                  // coiffeur, « Je réserve ma séance » ouvre une conversation :
-                  // il faut bien la montrer quelque part. Voir `garde`.
                   if (!mots.garde) {
                     poser("pris");
                     setEtape("agir");
@@ -5263,35 +5316,82 @@ function Essai({
                 </i>
                 <span>{misDeCote ? "C’est mis de côté" : mots.reserver}</span>
               </button>
+              {/* ═══ EN PARLER AVEC MES AMIS ═════════════════════════════════
+
+                  « Change "Partager" pour "En parler avec mes amis", qui amène
+                  sur un salon de discussion où l'on invite ses amis, et qui
+                  existe déjà. »
+
+                  IL OUVRE LE SALON DE L'ANNONCE, avec ses propositions, son
+                  vote et sa réservation : on n'en fabrique pas un second pour
+                  l'essai. Le rendu, le prix et la note partent avec, et la
+                  première phrase du salon est déjà écrite.
+
+                  LÀ OÙ IL N'Y A PAS DE SALON — la page du commerce n'a pas la
+                  mécanique du fil — il retombe sur la feuille de partage du
+                  téléphone. Ce n'est pas un geste différent : c'est la même
+                  intention, servie par ce que l'écran a sous la main. */}
+              {!!rendu && !rendu.souci && (onSalon || !!photo) && (
+                <button
+                  type="button"
+                  className="mu-res-c"
+                  onClick={() => {
+                    if (onSalon && rendu) {
+                      onSalon({
+                        quoi: piece.nom,
+                        prix: piece.prix,
+                        image: rendu.image,
+                        note,
+                      });
+                      return;
+                    }
+                    void partagerLeLook(piece);
+                  }}
+                >
+                  <i aria-hidden="true">
+                    <Trace cle="partage" />
+                  </i>
+                  <span>En parler avec mes amis</span>
+                </button>
+              )}
             </div>
 
-            {/* ═══ LA LIGNE DISCRÈTE ═══════════════════════════════════════
+            {/* ═══ LA LIGNE DISCRÈTE, ET ELLE N'A PLUS QUE DEUX LIENS ═════════
 
-                LA MAQUETTE EN MET DEUX, séparés d'un trait vertical, le
-                pictogramme sur la MÊME LIGNE que le mot. J'en garde trois,
-                parce qu'un troisième chemin a été demandé — « voir les
-                personnes qui ont essayé ce même vêtement, et surtout pouvoir
-                revenir là où on était » — et je raccourcis les libellés pour
-                qu'ils tiennent tous sur une ligne : trois liens qui passent à
-                la ligne feraient exactement le pavé qu'on vient d'enlever.
+                « Supprime "Autres pièces". » Elle faisait double emploi avec la
+                flèche du haut, qui ramène déjà au choix de la pièce.
 
-                LE RETOUR EST GARANTI PAR AILLEURS : l'essai reste MONTÉ pendant
-                qu'on regarde le mur, donc « Revoir » ramène ici, note posée et
-                mot écrit compris. */}
+                LE PREMIER LIEN CHANGE SELON QUI A CHOISI : « Surprends-moi
+                encore » quand c'est ClikMe, « L'avis ClikMe » quand c'est le
+                client — et c'est bien un LIEN discret, jamais un bouton plein,
+                parce qu'un avis qu'on n'a pas demandé n'est pas un geste du
+                parcours.
+
+                « SUR D'AUTRES » OUVRE LE MUR CADRÉ SUR LA PIÈCE, et le retour
+                est garanti : l'essai reste MONTÉ pendant qu'on le regarde, donc
+                « Revoir » ramène ici, note posée et mot écrit compris. */}
             <div className="mu-res-l">
-              {!!photo && !!rendu && !rendu.souci && (
-                <button type="button" onClick={() => void partagerLeLook(piece)}>
-                  <Trace cle="partage" />
-                  <span>Mes amis</span>
+              {surprise ? (
+                mots.surprends && (
+                  <button type="button" onClick={surprendsMoi}>
+                    <i aria-hidden="true">✨</i>
+                    <span>Surprends-moi encore</span>
+                  </button>
+                )
+              ) : (
+                <button
+                  type="button"
+                  className={conseil ? "on" : undefined}
+                  aria-expanded={conseil}
+                  onClick={() => setConseil((v) => !v)}
+                >
+                  <Trace cle="idee" />
+                  <span>L’avis ClikMe</span>
                 </button>
               )}
               <button type="button" onClick={onMur}>
                 <Trace cle="gens" />
-                <span>Sur d’autres</span>
-              </button>
-              <button type="button" onClick={() => setEtape("choisir")}>
-                <Trace cle="cintre" />
-                <span>Autres pièces</span>
+                <span>Voir sur d’autres</span>
               </button>
             </div>
           </div>
@@ -7302,11 +7402,33 @@ function Styles() {
            choix que le halo du fantome, et pour la meme raison. */
         .mu-prep{text-align:center;padding:2px 0 8px;
           animation:muApres .4s ease both;}
-        .mu-prep-tete h2{margin:0;font-size:26px;line-height:1.14;font-weight:850;
-          letter-spacing:-.03em;color:#fff;}
-        .mu-prep-tete h2 b{color:#F06FD8;font-weight:900;}
-        .mu-prep-tete p{margin:9px 0 0;font-size:14px;font-weight:650;
-          color:#9FC0F5;}
+        /* IL ETAIT TROP PETIT D'UN QUART, ET SA CHASSE TROP SERREE. Sur la
+           maquette, « Ton fantome prepare ton essayage » occupe deux lignes
+           pleines et tient tout le haut de l'ecran : c'est lui qui donne le
+           ton avant que la scene ne demarre. A vingt-six points, il devenait
+           une legende au-dessus d'une illustration. */
+        .mu-prep-tete h2{margin:0;font-size:clamp(27px,7.6vw,34px);
+          line-height:1.14;font-weight:800;letter-spacing:-.018em;color:#fff;}
+        .mu-prep-tete h2 b{color:#F06FD8;font-weight:800;}
+        /* ET LA PHRASE DU DESSOUS EST LAVANDE, PAS BLEUE. La maquette la pose
+           dans le violet pale de tout l'ecran ; en bleu ciel elle appartenait
+           a une autre palette. */
+        .mu-prep-tete p{margin:10px 0 0;font-size:14.5px;font-weight:600;
+          color:#CDC5FF;}
+
+        /* ═══ OU L'ON EST, ET COMMENT ON SORT ═══════════════════════════════ */
+        .mu-prep-ou{display:flex;align-items:center;justify-content:space-between;
+          gap:12px;margin:0 0 16px;}
+        .mu-prep-ou b{display:flex;align-items:center;gap:7px;font-size:14px;
+          font-weight:700;color:#E7EDF6;}
+        .mu-prep-ou b i{font-style:normal;font-size:14px;}
+        .mu-prep-ou button{flex:none;width:38px;height:38px;border-radius:50%;
+          display:grid;place-items:center;font:inherit;font-size:15px;
+          font-weight:700;cursor:pointer;color:#D6DFEC;
+          background:rgba(255,255,255,.07);
+          border:1px solid rgba(255,255,255,.14);}
+        .mu-prep-ou button:focus-visible{outline:2px solid #C9BCFF;
+          outline-offset:2px;}
 
         .mu-prep-s{position:relative;width:min(320px,88vw);aspect-ratio:1/1;
           margin:14px auto 4px;}
@@ -7314,10 +7436,19 @@ function Styles() {
           background:radial-gradient(circle,rgba(190,60,220,.4),
             rgba(120,40,200,.16) 58%,transparent 72%);
           animation:muPulse 3s ease-in-out infinite;}
+        /* L'ANNEAU EST UN TUBE, PAS UN TRAIT. Sur la maquette c'est une
+           enseigne epaisse dont la lueur deborde largement ; a trois points de
+           bordure, le mien dessinait un cercle autour d'une image au lieu
+           d'etre la chose lumineuse qui tient l'ecran. Six points, un degrade
+           du magenta au violet, et le halo qui va avec. */
         .mu-prep-anneau{position:absolute;inset:11%;border-radius:50%;
-          border:3px solid rgba(240,38,155,.9);
-          box-shadow:0 0 26px -2px rgba(240,38,155,.85),
-            inset 0 0 26px -6px rgba(240,38,155,.7);
+          border:6px solid transparent;
+          background:linear-gradient(#0A0616,#0A0616) padding-box,
+            linear-gradient(145deg,#FF3FD0,#C33BF0 42%,#8B4BF6 72%,#FF2BB4)
+              border-box;
+          box-shadow:0 0 42px -4px rgba(240,38,155,.9),
+            0 0 90px -16px rgba(160,60,240,.75),
+            inset 0 0 34px -6px rgba(240,38,155,.55);
           animation:muPulse 3s ease-in-out infinite;}
         .mu-prep-anneau.b{inset:8%;border-width:1.5px;
           border-color:rgba(139,125,246,.75);
@@ -8232,15 +8363,23 @@ function Styles() {
            plait ? », qui s'ecrivait donc en travers du visage. Mesure faite a
            414 points. On pousse l'image, et le dixieme liberee devient le fond
            sombre sur lequel le titre se lit. */
-        /* ET SON BORD DU HAUT SE DISSOUT. Descendue d'un cinquieme, la photo
-           laissait une ARÊTE horizontale en travers de l'ecran, juste sous le
-           sous-titre : on voyait ou la photo commencait, ce qui est exactement
-           ce qu'une photo en plein ne doit pas montrer. Le masque la fait
-           naitre du noir. */
-        .mu-res-ph{position:absolute;left:0;right:0;top:17%;width:100%;
+        /* LE FOND : LA MEME PHOTO, AGRANDIE ET FLOUTEE, SUR TOUT LE CADRE.
+           C'est lui qui rend l'ecran immersif sans coller la tete au titre —
+           voir la note du composant. Il est assombri, parce qu'il est un decor
+           et non le sujet : a pleine lumiere il volait l'attention de la photo
+           nette posee dessus. */
+        .mu-res-fond{position:absolute;inset:0;width:100%;height:100%;
+          object-fit:cover;object-position:center 30%;z-index:0;
+          filter:blur(26px) saturate(1.25) brightness(.52);
+          transform:scale(1.18);}
+        /* LA PHOTO NETTE, DESCENDUE DE CE QU'IL FAUT POUR QUE LA TETE TOMBE
+           SOUS LE SOUS-TITRE. Son bord du haut se dissout dans le flou : sans
+           le masque, on voyait une arete horizontale en travers de l'ecran,
+           c'est-a-dire exactement ou la photo commence. */
+        .mu-res-ph{position:absolute;left:0;right:0;top:15%;width:100%;
           height:100%;object-fit:cover;object-position:center top;z-index:0;
-          -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 9%);
-          mask-image:linear-gradient(180deg,transparent 0,#000 9%);}
+          -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 11%);
+          mask-image:linear-gradient(180deg,transparent 0,#000 11%);}
         /* DEUX VOILES, UN EN HAUT ET UN EN BAS, ET RIEN AU MILIEU. Le titre et
            les gestes ont besoin d'un fond ; le visage n'a besoin de rien. Un
            voile uniforme aurait assombri la seule chose qu'on vient voir. */
@@ -8251,13 +8390,17 @@ function Styles() {
            La zone du titre occupe les vingt-six premiers pour cent ; le voile
            les couvre, puis se retire d'un coup pour ne pas assombrir le
            vetement, qui est la seule chose qu'on est venu voir. */
+        /* LE VOILE S'ALLEGE EN HAUT, PARCE QUE LE FOND FLOU FAIT DEJA LE
+           TRAVAIL. Empiles, les deux donnaient un bandeau noir opaque la ou la
+           maquette montre une image. Il ne reste que ce qu'il faut pour que le
+           titre tienne, et le bas garde son aplat pour les gestes. */
         .mu-res-voile{position:absolute;inset:0;z-index:1;pointer-events:none;
-          background:linear-gradient(180deg,rgba(5,7,14,.96) 0%,
-            rgba(5,7,14,.93) 14%,rgba(5,7,14,.72) 22%,rgba(5,7,14,.2) 30%,
-            transparent 39%,
-            transparent 47%,rgba(5,7,14,.64) 63%,rgba(5,7,14,.95) 76%,
+          background:linear-gradient(180deg,rgba(5,7,14,.78) 0%,
+            rgba(5,7,14,.6) 13%,rgba(5,7,14,.3) 23%,rgba(5,7,14,.08) 32%,
+            transparent 40%,
+            transparent 47%,rgba(5,7,14,.62) 63%,rgba(5,7,14,.94) 76%,
             #05070E 87%);}
-        .mu-res>*:not(.mu-res-ph):not(.mu-res-voile):not(.mu-res-eclat){
+        .mu-res>*:not(.mu-res-ph):not(.mu-res-fond):not(.mu-res-voile):not(.mu-res-eclat):not(.mu-res-bulle){
           position:relative;z-index:2;}
 
         /* LA REVELATION : un eclat qui balaie l'image UNE FOIS, puis disparait.
@@ -8291,23 +8434,35 @@ function Styles() {
         .mu-res-jauge i{display:block;width:72%;height:100%;border-radius:999px;
           background:linear-gradient(90deg,#6D28D9,#9D4EDD 46%,#F0269B);}
 
-        .mu-res-t{padding:16px 10px 0;text-align:center;}
+        /* IL MONTE, ET IL N'ATTEND PLUS LA BULLE DE LA CLOCHE. « Place le
+           titre et la phrase encore un peu plus haut. » La bulle etait dans le
+           flux entre la barre et le titre, donc elle le poussait de quarante
+           points ; elle est repassee en absolu, sous la cloche. */
+        .mu-res-t{padding:6px 10px 0;text-align:center;}
         /* A HUIT POUR CENT DE LA LARGEUR IL PASSAIT A LA LIGNE — mesure a 414
            points : « Alors, ca vous / plait ? ». Un titre coupe en deux n'est
            plus un titre, et celui-la est la question de l'ecran. */
-        .mu-res-t h2{margin:0;font-size:clamp(23px,6.6vw,30px);line-height:1.08;
-          font-weight:900;letter-spacing:-.035em;color:#fff;
+        /* LA CHASSE ET LA COULEUR SONT CELLES DE LA MAQUETTE. J'avais serre
+           les lettres de trois centiemes et choisi un rose plus sourd : le
+           titre paraissait condense et delave a cote de l'original, qui laisse
+           les lettres respirer et pousse le fuchsia. */
+        .mu-res-t h2{margin:0;font-size:clamp(25px,7.1vw,33px);line-height:1.1;
+          font-weight:800;letter-spacing:-.008em;color:#fff;
           text-shadow:0 2px 18px rgba(0,0,0,.6);}
-        .mu-res-t h2 b{color:#F0269B;font-weight:900;}
+        .mu-res-t h2 b{color:#FB18AE;font-weight:800;}
         /* « Touchez un fantome pour donner votre avis » passait a la ligne a
            414 points, et « avis » restait seul sur la seconde. */
-        .mu-res-t p{margin:8px 0 0;font-size:12.8px;font-weight:650;
-          color:#C4CFE4;text-shadow:0 1px 10px rgba(0,0,0,.7);}
+        .mu-res-t p{margin:7px auto 0;max-width:330px;font-size:13.5px;
+          line-height:1.3;font-weight:600;color:#E3E9F3;
+          text-shadow:0 1px 12px rgba(0,0,0,.85);}
 
         /* L'ESPACE QUI POUSSE LE BAS EN BAS. Il a une hauteur minimale pour que
            la photo garde de la place meme sur un ecran court : sans elle, les
            gestes remontent jusqu'au titre et l'image disparait. */
-        .mu-res-vide{flex:1 1 auto;min-height:150px;}
+        /* IL POUSSE LES GESTES EN BAS, MAIS IL CEDE QUAND UN PANNEAU S'OUVRE.
+           A cent cinquante points incompressibles, l'avis demande repoussait
+           les fantomes par-dessus le visage plutot que de manger le vide. */
+        .mu-res-vide{flex:1 1 auto;min-height:96px;}
         .mu-res-bas{padding:0 16px 18px;}
 
         /* ═══ LES CINQ FANTOMES, A CHEVAL SUR LA PHOTO ═════════════════════
@@ -8490,31 +8645,51 @@ function Styles() {
            ET ELLE NE DISPARAIT PAS, ELLE CHANGE DE PHRASE. Retiree une fois la
            chose demandee, elle aurait fait remonter le titre d'un cran au
            moment meme ou l'on regarde ailleurs. */
-        /* ELLE S'EFFACE AU BOUT DE TROIS SECONDES, ET C'EST TOUT LE POINT.
-           « J'ai bien un message, mais il devrait disparaitre au bout de 3
-           secondes pour avoir un visuel sur l'article. » Une fois lue, elle
-           n'est plus qu'un cache sur la photo. L'animation l'amene, la tient,
-           puis la retire ; elle garde sa PLACE (aucun saut du titre) parce que
-           seule son opacite change. */
-        .mu-res-bulle{display:block;width:fit-content;max-width:210px;
-          margin:9px 62px 0 auto;border-radius:14px;padding:8px 11px;
-          font-size:11.5px;font-weight:700;line-height:1.3;color:#DDE6F0;
-          background:rgba(10,14,24,.82);border:1px solid rgba(255,255,255,.16);
+        /* ═══ LA BULLE DE LA CLOCHE : ELLE SE LAISSE LIRE, PUIS ELLE PART ══
+
+           « La cloche en haut ne donne plus le message pour dire a quoi elle
+           sert. » Elle le donnait, mais trop tot et trop peu : posee a la
+           seconde zero, ses trois secondes s'ecoulaient PENDANT la revelation
+           de la photo — quand personne ne regarde encore le coin superieur. Le
+           temps d'arriver au bouton, elle etait deja partie.
+
+           ELLE ATTEND DONC LA FIN DE LA REVELATION (une seconde), puis tient
+           quatre secondes pleines. Et elle repart pour le meme tour a chaque
+           appui sur la cloche, parce que c'est la reponse a CE geste-la qu'on
+           veut lire.
+
+           ET ELLE EST EN ABSOLU, SOUS LA CLOCHE. Rangee dans le flux entre la
+           barre et le titre, elle poussait le titre de quarante points vers le
+           bas — c'est-a-dire l'inverse de ce qu'on demandait. */
+        .mu-res-bulle{position:absolute;z-index:6;top:152px;right:14px;
+          width:max-content;max-width:158px;border-radius:14px;
+          padding:8px 11px;font-size:11.5px;font-weight:700;line-height:1.3;
+          color:#EDF2F8;background:rgba(10,14,24,.92);
+          border:1px solid rgba(255,255,255,.18);
           -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
-          pointer-events:none;animation:muResBulle 3.9s ease both;}
+          box-shadow:0 14px 30px -14px rgba(0,0,0,.9);
+          pointer-events:none;animation:muResBulle 6s ease both;}
         @keyframes muResBulle{
           0%{opacity:0;transform:translateY(-6px);}
-          12%{opacity:1;transform:none;}
-          85%{opacity:1;transform:none;}
+          16%{opacity:0;transform:translateY(-6px);}
+          24%{opacity:1;transform:none;}
+          88%{opacity:1;transform:none;}
           100%{opacity:0;transform:translateY(-4px);}}
         @media (prefers-reduced-motion:reduce){
-          .mu-res-bulle{animation:muResBulleFixe 3.9s linear both;}
-          @keyframes muResBulleFixe{0%,85%{opacity:1;}100%{opacity:0;}}}
-        .mu-res-bulle::after{content:"";position:absolute;top:-6px;right:20px;
+          .mu-res-bulle{animation:muResBulleFixe 6s linear both;}
+          @keyframes muResBulleFixe{0%,16%{opacity:0;}24%,88%{opacity:1;}
+            100%{opacity:0;}}}
+        /* SA POINTE REMONTE VERS LA CLOCHE. Posee juste sous elle, la bulle
+           ecrivait par-dessus « Alors, ca vous plait ? » : a 414 points le
+           titre occupe toute la largeur, il n'y a pas de place a sa droite
+           comme sur la maquette, qui est dessinee bien plus large. Descendue
+           sous le sous-titre, elle ne recouvre plus que la photo, et sa pointe
+           dit d'ou elle parle. */
+        .mu-res-bulle::after{content:"";position:absolute;top:-6px;right:22px;
           width:12px;height:12px;transform:rotate(45deg);border-radius:3px;
-          background:rgba(10,14,24,.82);
-          border-left:1px solid rgba(255,255,255,.16);
-          border-top:1px solid rgba(255,255,255,.16);}
+          background:rgba(10,14,24,.92);
+          border-left:1px solid rgba(255,255,255,.18);
+          border-top:1px solid rgba(255,255,255,.18);}
         .mu-res-bulle.on{color:#FFD9EE;border-color:rgba(240,38,155,.5);}
 
         /* ═══ POURQUOI CLIKME A CHOISI, ET L'AVIS QU'ON LUI DEMANDE ═════════
@@ -8524,57 +8699,90 @@ function Styles() {
            repond a une question du client — donc ils partagent la mise en page
            et se distinguent par la couleur du liseré : violet quand ClikMe
            parle de lui, neutre quand il repond. */
-        .mu-choix,.mu-conseil{margin:14px 16px 0;border-radius:20px;
-          padding:13px 15px;background:rgba(10,14,24,.72);
-          border:1px solid rgba(255,255,255,.16);
-          -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
-          animation:muApres .34s ease both;}
-        .mu-choix{border-left:3px solid #C77DF0;}
-        .mu-conseil{border-left:3px solid #9FB0C4;}
-        .mu-choix>b,.mu-conseil>b{display:flex;align-items:center;gap:7px;
-          font-size:11px;font-weight:900;letter-spacing:.1em;
-          text-transform:uppercase;color:#D8C4FF;}
-        .mu-conseil>b{color:#C3D0DE;}
-        .mu-choix>b i{font-style:normal;font-size:13px;letter-spacing:0;}
-        /* MEME RAISON QUE POUR LA BULLE DU MOT : le pictogramme ne porte pas
-           ses couleurs, il les recoit du bloc qui l'accueille. */
-        .mu-conseil-s{flex:none;width:17px;height:17px;}
-        .mu-conseil-s .mu-f-corps{fill:#C3D0DE;}
-        .mu-conseil-s .mu-f-oeil{fill:#0A1018;}
-        .mu-choix>p,.mu-conseil>p{margin:7px 0 0;font-size:13.5px;
-          line-height:1.45;color:#EAF0F6;font-weight:600;}
-        .mu-choix>p b{color:#fff;font-weight:850;}
-        .mu-conseil-s2{color:#A8B8CA!important;font-size:12.5px!important;}
+        /* ═══ « CHOIX CLIKME » EST UNE BULLE, A GAUCHE, ET DISCRETE ════════
 
-        /* « POURQUOI ? » EST UN LIEN, PAS UN BOUTON : il ne decide rien, il
-           deplie. Lui donner un aplat l'aurait mis au meme rang que le geste
-           rose du bas, qui, lui, engage le commercant. */
-        .mu-choix-b{margin-top:8px;font:inherit;font-size:13px;font-weight:800;
-          cursor:pointer;color:#D8C4FF;background:none;border:0;padding:4px 0;}
-        .mu-choix-b s{text-decoration:none;}
+           « Le message de l'IA est en plein milieu au lieu d'etre, comme sur la
+           maquette, plus discretement sur le cote gauche de la photo, avec un
+           titre en rose fuchsia et un texte blanc dans un rectangle gris
+           sombre, et "Pourquoi" dans un rectangle a la bordure rose violette. »
+
+           EN PLEINE LARGEUR, ELLE BARRAIT LA PERSONNE. Ce panneau parle de la
+           piece qu'on regarde : posee en travers de l'image, il la cache au
+           moment meme ou il en parle. Rangee a gauche, sur un peu plus de la
+           moitie de la largeur, elle laisse le vetement visible et se lit comme
+           une remarque a cote plutot que comme un ecran par-dessus.
+
+           SA POINTE REGARDE LA PHOTO. Une bulle sans pointe est un encadre ;
+           avec, elle designe ce dont elle parle. */
+        /* L'AVIS DEMANDE PREND LA LARGEUR, LE CHOIX NON. Ils partagent la
+           forme et pas la place, parce qu'ils n'ont pas le meme role : « Choix
+           ClikMe » se glisse A COTE de la piece dont il parle, pendant qu'on la
+           regarde ; l'avis, lui, REPOND a une question qu'on vient de poser, et
+           on a arrete de regarder pour le lire. Serre dans une bulle de deux
+           cent cinquante points, il tenait sur douze lignes et repoussait les
+           fantomes par-dessus le visage. */
+        .mu-choix,.mu-conseil{position:relative;border-radius:18px;
+          padding:12px 14px;
+          background:rgba(18,18,24,.9);border:1px solid rgba(255,255,255,.12);
+          -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+          box-shadow:0 18px 40px -18px rgba(0,0,0,.9);
+          animation:muChoix .4s cubic-bezier(.16,1,.3,1) both;}
+        .mu-choix{width:min(58%,222px);margin:12px 0 0 14px;}
+        .mu-conseil{margin:14px 0 0;animation-name:muApres;}
+        @keyframes muChoix{
+          from{opacity:0;transform:translateX(-14px) scale(.96);}
+          to{opacity:1;transform:none;}}
+        @media (prefers-reduced-motion:reduce){
+          .mu-choix,.mu-conseil{animation:none;}}
+        .mu-choix::after{content:"";position:absolute;
+          top:34px;right:-6px;width:13px;height:13px;transform:rotate(45deg);
+          border-radius:3px;background:rgba(18,18,24,.9);
+          border-right:1px solid rgba(255,255,255,.12);
+          border-top:1px solid rgba(255,255,255,.12);}
+        .mu-choix.ouvert{width:min(84%,330px);}
+        /* LE TITRE EST EN ROSE FUCHSIA, EN CASSE NORMALE. Ecrit en capitales
+           espacees, il se lisait comme une etiquette de section ; la maquette
+           en fait une signature. */
+        .mu-choix>b,.mu-conseil>b{display:flex;align-items:center;gap:6px;
+          font-size:14px;font-weight:850;letter-spacing:-.01em;color:#FB18AE;}
+        .mu-conseil>b{color:#C9BCFF;}
+        .mu-choix>b i{font-style:normal;font-size:13px;}
+        .mu-conseil-s{flex:none;width:16px;height:16px;}
+        .mu-conseil-s .mu-f-corps{fill:#C9BCFF;}
+        .mu-conseil-s .mu-f-oeil{fill:#0A1018;}
+        .mu-choix>p,.mu-conseil>p{margin:7px 0 0;font-size:13px;
+          line-height:1.42;color:#F2F5FA;font-weight:600;}
+        .mu-choix>p b{color:#fff;font-weight:850;}
+        .mu-conseil-s2{color:#AFBDCE!important;font-size:12px!important;}
+
+        /* « POURQUOI ? » EST UN RECTANGLE A BORDURE ROSE VIOLETTE, comme la
+           maquette : il ne decide rien, il deplie, mais il doit se voir comme
+           une chose qu'on peut toucher. */
+        .mu-choix-b{display:flex;align-items:center;justify-content:space-between;
+          gap:10px;width:100%;margin-top:11px;font:inherit;font-size:13px;
+          font-weight:800;cursor:pointer;color:#fff;background:transparent;
+          border:1.5px solid #C84BD6;border-radius:999px;padding:8px 14px;
+          transition:background .16s ease;}
+        .mu-choix-b s{text-decoration:none;font-size:15px;line-height:1;
+          color:#FB18AE;}
+        .mu-choix-b:hover{background:rgba(200,75,214,.16);}
         .mu-choix-b:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
         .mu-choix-d{animation:muApres .3s ease both;}
         .mu-choix-d dl{margin:10px 0 0;}
-        .mu-choix-d dt{font-size:10.5px;font-weight:900;letter-spacing:.09em;
-          text-transform:uppercase;color:#A18CD8;margin-top:9px;}
-        .mu-choix-d dd{margin:3px 0 0;font-size:12.8px;line-height:1.45;
-          color:#D5DFEA;font-weight:600;}
-        /* « FERMER » EST UN LIEN, LA PROPOSITION EST UN BOUTON. Sans le
-           :not, la regle du lien reprenait la pastille — un selecteur
-           element est plus fort qu'une classe seule. */
+        .mu-choix-d dt{font-size:10.5px;font-weight:900;letter-spacing:.08em;
+          text-transform:uppercase;color:#FB18AE;margin-top:9px;}
+        .mu-choix-d dd{margin:3px 0 0;font-size:12.4px;line-height:1.42;
+          color:#E4EAF2;font-weight:600;}
         .mu-choix-d>button,.mu-conseil-g>button:not(.mu-conseil-b){
           margin-top:11px;font:inherit;
           font-size:12.5px;font-weight:750;cursor:pointer;color:#9FB0C4;
           background:none;border:0;padding:5px 2px;text-decoration:underline;
           text-underline-offset:3px;}
+        .mu-conseil>p{font-size:13.2px;}
         .mu-conseil-g{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
-        /* LA SORTIE DU CONSEIL PROPOSE, ELLE NE CORRIGE PAS. Un avis qui se
-           termine sans rien a faire laisse la personne seule avec un jugement
-           qu'elle n'avait pas demande. */
-        .mu-conseil-b{margin-top:11px;font:inherit;font-size:12.8px;
-          font-weight:800;cursor:pointer;color:#EAF0F6;border-radius:999px;
-          padding:9px 14px;background:rgba(199,125,240,.18);
-          border:1px solid rgba(199,125,240,.5);}
+        .mu-conseil-b{margin-top:11px;font:inherit;font-size:12.5px;
+          font-weight:800;cursor:pointer;color:#fff;border-radius:999px;
+          padding:8px 13px;background:transparent;border:1.5px solid #C84BD6;}
         .mu-conseil-b:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
 
         /* ═══ LES DEUX PASTILLES DE LA MAQUETTE ════════════════════════════
@@ -8588,17 +8796,26 @@ function Styles() {
            decide rien — il redemande ou il explique ; le rose de droite fait
            partir la piece. Deux aplats cote a cote ne designeraient rien. */
         .mu-res-g{display:flex;gap:11px;align-items:stretch;margin-top:18px;}
-        .mu-res-c{flex:1 1 0;min-width:0;display:flex;align-items:center;
-          justify-content:center;gap:10px;font:inherit;font-size:14.5px;
-          font-weight:800;line-height:1.18;cursor:pointer;text-align:left;
-          border-radius:999px;padding:14px 14px;
+        .mu-res-c{flex:1 1 0;min-width:0;display:flex;flex-direction:column;
+          align-items:center;justify-content:center;gap:7px;font:inherit;
+          font-size:11px;font-weight:800;line-height:1.24;cursor:pointer;
+          letter-spacing:-.018em;text-align:center;border-radius:22px;
+          padding:13px 5px;
           color:#EAF0F6;background:rgba(12,16,28,.62);
           border:1px solid rgba(178,138,255,.42);
           -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
           transition:transform .12s ease,background .16s ease;}
-        .mu-res-c i{flex:none;display:flex;font-style:normal;font-size:17px;
+        .mu-res-c i{flex:none;display:flex;font-style:normal;font-size:16px;
           line-height:1;}
-        .mu-res-c .mu-tr{width:22px;height:22px;}
+        .mu-res-c .mu-tr{width:21px;height:21px;}
+        /* A DEUX, ILS REPRENNENT LA PASTILLE COUCHEE DE LA MAQUETTE : le
+           pictogramme a gauche du mot, comme sur l'ecran « Surprends-moi ».
+           A trois, la meme mise en page donnait « Reserver cet article » sur
+           trois lignes a cote d'un « Partager » d'une seule, et la rangee
+           penchait. */
+        .mu-res-g:has(.mu-res-c:nth-child(2):last-child) .mu-res-c{
+          flex-direction:row;gap:10px;font-size:14.5px;text-align:left;
+          border-radius:999px;padding:14px;}
         .mu-res-c.on{background:rgba(178,138,255,.2);
           border-color:rgba(199,125,240,.75);}
         .mu-res-c.plein{color:#fff;border-color:transparent;
