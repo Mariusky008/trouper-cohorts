@@ -100,6 +100,12 @@ import {
 } from "@/lib/direct/journee";
 import { abonnerVus, chargerVus, marquerVu, RIEN_VU } from "@/lib/direct/premiere-fois";
 import {
+  abonnerPiecesGardees,
+  basculerPieceGardee,
+  chargerPiecesGardees,
+  piecesGardeesVides,
+} from "@/lib/direct/pieces-gardees";
+import {
   abonnerLecture,
   abonnerSuivis,
   AUCUN_SUIVI,
@@ -1423,6 +1429,28 @@ export function ApercuHabitant() {
     return () => window.removeEventListener(SIGNAL_FANTOMES, relire);
   }, []);
   const [gardees, setGardees] = useState<string[]>([]);
+  /**
+   * ═══ LES PIÈCES MISES DE CÔTÉ, ET C'EST UNE AUTRE POCHE ════════════════════
+   *
+   * « Le cœur part, mais je ne retrouve pas cet article dans le cœur en haut à
+   * droite. »
+   *
+   * `gardees` GARDE DES COMMERCES, pas des vêtements : c'est la liste des
+   * annonces qu'on a aimées. La pièce qu'on vient d'essayer n'y avait aucune
+   * place, si bien que le cœur s'envolait vers un coin où elle n'arrivait
+   * jamais. Une animation qui apprend un endroit vide coûte plus cher que pas
+   * d'animation : la fois suivante, on n'appuie plus.
+   *
+   * LES DEUX POCHES RESTENT DISTINCTES PARCE QU'ELLES NE DISENT PAS LA MÊME
+   * CHOSE — « j'aime bien cette friperie » et « je veux cette doudoune » — mais
+   * elles s'ouvrent par le MÊME cœur, qui les compte ensemble. Voir
+   * `lib/direct/pieces-gardees.ts`.
+   */
+  const piecesGardees = useSyncExternalStore(
+    abonnerPiecesGardees,
+    chargerPiecesGardees,
+    piecesGardeesVides,
+  );
   const [reserves, setReserves] = useState<string[]>([]);
   const [dx, setDx] = useState(0);
   const [sortant, setSortant] = useState<"" | "gauche" | "droite">("");
@@ -4324,6 +4352,8 @@ export function ApercuHabitant() {
   // Les trois listes se reconstruisent depuis les identifiants gardés : rien
   // n'est dupliqué, donc rien ne peut se désynchroniser de ce qui est à l'écran.
   const mesGardes = toutes.filter((c) => gardees.includes(c.id));
+  /** Ce que le cœur du bandeau compte : les commerces ET les pièces. */
+  const gardesTotal = gardees.length + piecesGardees.length;
   const mesSuivis = toutes.filter((c) => suivis.includes(c.id));
   /**
    * CE QUE MES COMMERCES ONT DIT AUJOURD'HUI — la matière de la pastille.
@@ -5101,10 +5131,65 @@ export function ApercuHabitant() {
         </div>
       )}
 
+      {/* ═══ LES PIÈCES D'ABORD, LES COMMERCES ENSUITE ═══════════════════════
+
+          ON VIENT CHERCHER UNE CHOSE, PAS UN LIEU. Le cœur se remplit surtout
+          depuis un essayage — « je la mets de côté » devant son propre reflet —
+          et c'est cette pièce-là qu'on rouvre la poche pour retrouver. Les
+          commerces gardés restent en dessous : ils étaient là avant, ils ne
+          partent pas, mais ils ne sont plus ce qu'on vient voir.
+
+          LA VIGNETTE EST LE RENDU, PAS LE CATALOGUE. On se souvient de la pièce
+          SUR SOI ; la photo du mannequin ne rappellerait pas le même moment. */}
+      {piecesGardees.length > 0 && (
+        <div className="ap-moi-bloc">
+          <h4>
+            Mises de côté<b>{piecesGardees.length}</b>
+          </h4>
+          <ul className="ap-moi-pieces">
+            {piecesGardees.map((x) => (
+              <li key={`${x.carte}-${x.piece}`}>
+                <span className="ap-moi-p">
+                  {x.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={x.image} alt="" />
+                  ) : (
+                    <i aria-hidden="true">🤍</i>
+                  )}
+                  <span>
+                    <b>{x.nom}</b>
+                    {x.lieu}
+                    {x.prix ? ` · ${x.prix}` : ""}
+                  </span>
+                  <button
+                    type="button"
+                    className="ap-moi-px"
+                    aria-label={`Retirer ${x.nom} de vos mises de côté`}
+                    onClick={() =>
+                      basculerPieceGardee({
+                        carte: x.carte,
+                        lieu: x.lieu,
+                        piece: x.piece,
+                        nom: x.nom,
+                        prix: x.prix,
+                        image: x.image,
+                        note: x.note,
+                      })
+                    }
+                  >
+                    ✕
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {mesGardes.length > 0 && (
         <div className="ap-moi-bloc">
           <h4>
-            Gardés<b>{mesGardes.length}</b>
+            Commerces gardés<b>{mesGardes.length}</b>
           </h4>
           <ul>
             {mesGardes.map((c) => (
@@ -6243,16 +6328,16 @@ export function ApercuHabitant() {
                     bas on décide. */}
                 <button
                   type="button"
-                  className={`ap-poche${gardees.length ? " plein" : ""}`}
+                  className={`ap-poche${gardesTotal ? " plein" : ""}`}
                   onClick={ouvrirMesFavoris}
                   aria-label={
-                    gardees.length === 0
+                    gardesTotal === 0
                       ? "Vos favoris du jour, pour l'instant vides"
-                      : `Vos favoris du jour (${gardees.length})`
+                      : `Vos favoris du jour (${gardesTotal})`
                   }
                 >
-                  <i aria-hidden="true">{gardees.length ? "❤️" : "♡"}</i>
-                  {gardees.length > 0 && gardees.length}
+                  <i aria-hidden="true">{gardesTotal ? "❤️" : "♡"}</i>
+                  {gardesTotal > 0 && gardesTotal}
                 </button>
                 {/* LE CŒUR QUI VOLE, ET IL TRAVERSE MAINTENANT TOUT L'ÉCRAN.
                     Le geste est descendu près de « Réserver », la poche est
@@ -16818,6 +16903,34 @@ export function ApercuHabitant() {
         .ap-moi-l b{display:block;font-size:14.5px;font-weight:850;color:#fff;
           letter-spacing:-.01em;margin-bottom:1px;}
         .ap-moi-l em{flex:none;font-style:normal;font-size:17px;color:#5E706A;}
+        /* ═══ LES PIECES MISES DE COTE, DANS LA POCHE DU COEUR ═════════════
+
+           LA VIGNETTE EST LE RENDU, PAS LE CATALOGUE : on se souvient d'une
+           piece SUR SOI. Assez grande pour qu'on la reconnaisse d'un coup
+           d'oeil — c'est tout ce qu'on demande a cette liste — et la croix
+           retire sans ouvrir de menu, parce qu'une poche qu'on ne peut pas
+           vider se remplit une fois puis ne sert plus. */
+        .ap-moi-pieces{list-style:none;margin:0;padding:0;}
+        .ap-moi-p{width:100%;display:flex;align-items:center;gap:11px;
+          font-size:13px;color:#B9C6CE;text-align:left;
+          background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+          border-radius:13px;padding:9px 11px;margin-bottom:7px;}
+        .ap-moi-p img{flex:none;width:44px;height:54px;object-fit:cover;
+          object-position:center 18%;border-radius:9px;display:block;
+          background:rgba(255,255,255,.06);}
+        .ap-moi-p>i{flex:none;display:grid;place-items:center;width:44px;
+          height:54px;border-radius:9px;font-style:normal;font-size:20px;
+          background:rgba(255,255,255,.06);}
+        .ap-moi-p span{flex:1;min-width:0;}
+        .ap-moi-p b{display:block;font-size:14px;font-weight:850;color:#fff;
+          letter-spacing:-.01em;margin-bottom:2px;overflow:hidden;
+          text-overflow:ellipsis;white-space:nowrap;}
+        .ap-moi-px{flex:none;width:30px;height:30px;border-radius:50%;
+          display:grid;place-items:center;font:inherit;font-size:12px;
+          font-weight:800;cursor:pointer;color:#8DA0A8;background:none;
+          border:1px solid rgba(255,255,255,.14);}
+        .ap-moi-px:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
+
         .ap-moi-vide{display:flex;flex-direction:column;align-items:center;
           justify-content:center;gap:8px;text-align:center;padding:36px 20px;}
         .ap-moi-vide span{font-size:34px;line-height:1;opacity:.7;}

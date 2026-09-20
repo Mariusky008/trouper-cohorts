@@ -58,7 +58,7 @@
 // `/autour-de-moi` verrouille le document et vit dans une hauteur mesurée : un
 // paquet qu'on balaie ne défile pas. Une PAGE défile — c'est même sa nature, et
 // c'est la seule chose ici qui ne doit surtout pas imiter le fil.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   HEURE_MAX,
@@ -86,6 +86,12 @@ import {
   monPrenom,
   ouvrirSalon,
 } from "@/lib/direct/salons";
+import {
+  abonnerPiecesGardees,
+  basculerPieceGardee,
+  chargerPiecesGardees,
+  piecesGardeesVides,
+} from "@/lib/direct/pieces-gardees";
 import { AnneauMetier, PictoMetier } from "@/components/direct/picto-metier";
 
 /** Une seule décimale, virgule française : « 4,7 ». */
@@ -480,6 +486,20 @@ export function Boutique() {
    */
   /** Quelle section occupe le haut de l'écran — c'est l'onglet allumé. */
   const [sectionVue, setSectionVue] = useState("essayer");
+  /**
+   * LA POCHE DES PIÈCES MISES DE CÔTÉ, ET SON TIROIR.
+   *
+   * Le cœur du bandeau ne faisait rien : l'envol du cœur, depuis le résultat
+   * d'essayage, désignait donc un bouton décoratif. C'est la MÊME poche que
+   * celle de l'accueil — un second magasin aurait donné deux listes, et celle
+   * qu'on ne regarde pas se vide toute seule.
+   */
+  const gardees = useSyncExternalStore(
+    abonnerPiecesGardees,
+    chargerPiecesGardees,
+    piecesGardeesVides,
+  );
+  const [pocheOuverte, setPocheOuverte] = useState(false);
   useEffect(() => {
     const sections = Array.from(document.querySelectorAll<HTMLElement>(".bq-s"));
     if (!sections.length) return;
@@ -685,8 +705,29 @@ export function Boutique() {
             </span>
           </div>
           <div className="bq-tete-d">
-            <button type="button" className="bq-rond" aria-label="Garder ce commerce">
-              <i aria-hidden="true">♡</i>
+            {/* ═══ LE CŒUR OUVRE LA POCHE, IL NE FAIT PLUS RIEN ════════════════
+
+                « Quand j'appuie sur "je le mets de côté", le cœur part, mais je
+                ne retrouve pas cet article dans le cœur en haut à droite. »
+
+                IL N'ÉTAIT BRANCHÉ SUR RIEN, et c'est ce qui rendait l'envol
+                mensonger : le cœur montait vers un bouton décoratif. Il compte
+                maintenant les pièces mises de côté et les montre — c'est la
+                MÊME poche que celle du bandeau de l'accueil, voir
+                `lib/direct/pieces-gardees.ts`, jamais une seconde liste. */}
+            <button
+              type="button"
+              className={`bq-rond${gardees.length ? " plein" : ""}`}
+              aria-label={
+                gardees.length
+                  ? `Vos pièces mises de côté (${gardees.length})`
+                  : "Vos pièces mises de côté, pour l’instant vides"
+              }
+              aria-expanded={pocheOuverte}
+              onClick={() => setPocheOuverte((v) => !v)}
+            >
+              <i aria-hidden="true">{gardees.length ? "❤️" : "♡"}</i>
+              {gardees.length > 0 && <s>{gardees.length}</s>}
             </button>
             <button type="button" className="bq-rond" aria-label="Partager">
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -700,6 +741,50 @@ export function Boutique() {
               <i aria-hidden="true">···</i>
             </button>
           </div>
+          {/* ═══ LE TIROIR DE LA POCHE ══════════════════════════════════════
+
+              IL S'OUVRE SOUS LE CŒUR, là où le cœur vient d'arriver, et il se
+              referme d'un appui. Une poche qu'on ne peut ni ouvrir ni vider
+              se remplit une fois puis ne sert plus.
+
+              LA VIGNETTE EST LE RENDU, PAS LE CATALOGUE : on se souvient de la
+              pièce SUR SOI, et la photo du mannequin ne rappellerait pas le
+              même moment. */}
+          {pocheOuverte && (
+            <div className="bq-poche" role="dialog" aria-label="Vos pièces mises de côté">
+              {gardees.length === 0 ? (
+                <p className="bq-poche-v">
+                  Rien de mis de côté pour l’instant. Essayez une pièce, puis
+                  «&nbsp;Je la mets de côté&nbsp;»&nbsp;: vous la retrouverez ici.
+                </p>
+              ) : (
+                <ul>
+                  {gardees.map((x) => (
+                    <li key={`${x.carte}-${x.piece}`}>
+                      {x.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={x.image} alt="" />
+                      ) : (
+                        <i aria-hidden="true">🤍</i>
+                      )}
+                      <span>
+                        <b>{x.nom}</b>
+                        {x.lieu}
+                        {x.prix ? ` · ${x.prix}` : ""}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={`Retirer ${x.nom}`}
+                        onClick={() => basculerPieceGardee({ ...x })}
+                      >
+                        ✕
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </header>
 
         {photoTete ? (
@@ -1757,6 +1842,55 @@ function Styles() {
         .bq-rond svg{width:17px;height:17px;fill:none;stroke:currentColor;
           stroke-width:1.9;stroke-linecap:round;}
         .bq-rond:active{transform:scale(.94);}
+        /* LE COEUR PLEIN PORTE SON COMPTE, comme la poche de l'accueil : un
+           coeur qui change de couleur dit qu'il s'est passe quelque chose, un
+           coeur qui compte dit COMBIEN, et c'est ce qui fait qu'on l'ouvre. */
+        .bq-rond{position:relative;}
+        .bq-rond.plein{border-color:rgba(240,38,155,.7);
+          background:rgba(240,38,155,.2);}
+        .bq-rond s{position:absolute;top:-3px;right:-3px;min-width:17px;
+          height:17px;padding:0 4px;border-radius:999px;display:grid;
+          place-items:center;text-decoration:none;font-size:10px;
+          font-weight:900;color:#fff;background:#F0269B;
+          border:2px solid rgba(12,10,22,.9);}
+
+        /* ═══ LE TIROIR DES PIECES MISES DE COTE ═══════════════════════════
+
+           IL S'OUVRE SOUS LE COEUR, la ou le coeur vient d'arriver. Une poche
+           qu'on ne peut ni ouvrir ni vider se remplit une fois puis ne sert
+           plus — et l'envol du coeur, depuis le resultat d'essayage, devient
+           un mensonge. */
+        .bq-poche{position:absolute;z-index:30;top:calc(100% + 8px);right:12px;
+          width:min(300px,calc(100vw - 28px));max-height:min(60vh,420px);
+          overflow:auto;border-radius:18px;padding:12px;
+          background:rgba(12,10,22,.96);border:1px solid rgba(255,255,255,.16);
+          backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+          box-shadow:0 26px 60px -22px rgba(0,0,0,.95);
+          animation:bqPoche .26s cubic-bezier(.16,1,.3,1) both;}
+        @keyframes bqPoche{
+          from{opacity:0;transform:translateY(-8px) scale(.98);}
+          to{opacity:1;transform:none;}}
+        .bq-poche-v{margin:0;padding:8px 6px;font-size:12.8px;line-height:1.45;
+          color:#B9C6D8;}
+        .bq-poche ul{list-style:none;margin:0;padding:0;}
+        .bq-poche li{display:flex;align-items:center;gap:10px;padding:8px;
+          border-radius:13px;background:rgba(255,255,255,.05);
+          border:1px solid rgba(255,255,255,.1);margin-bottom:7px;
+          font-size:12.5px;color:#B9C6D8;}
+        .bq-poche li:last-child{margin-bottom:0;}
+        .bq-poche img{flex:none;width:42px;height:52px;object-fit:cover;
+          object-position:center 18%;border-radius:9px;display:block;}
+        .bq-poche li>i{flex:none;display:grid;place-items:center;width:42px;
+          height:52px;border-radius:9px;font-style:normal;font-size:19px;
+          background:rgba(255,255,255,.06);}
+        .bq-poche li span{flex:1;min-width:0;}
+        .bq-poche li b{display:block;font-size:13.5px;font-weight:850;
+          color:#fff;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;
+          white-space:nowrap;}
+        .bq-poche li button{flex:none;width:28px;height:28px;border-radius:50%;
+          display:grid;place-items:center;font:inherit;font-size:11px;
+          font-weight:800;cursor:pointer;color:#8DA0B4;background:none;
+          border:1px solid rgba(255,255,255,.14);}
         /* LE NOM DU PRODUIT, DANS LA LETTRE DU PRODUIT. Le « Me » porte la
            couleur : c'est le logo, et il est le meme partout. */
         .bq-marque{font-size:20px;font-weight:800;letter-spacing:-.02em;
