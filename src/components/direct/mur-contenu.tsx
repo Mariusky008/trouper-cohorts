@@ -140,6 +140,37 @@ function leLieu(lieu: string): string {
 const FANTOME = "/clikme-fantome.png";
 
 /**
+ * ═══ LE FANTÔME QUI CHERCHE, ET SES QUATRE PIÈCES ═══════════════════════════
+ *
+ * IL TIENT SA LOUPE, ET C'EST UN SEUL DESSIN. Je l'avais fabriqué : le fantôme
+ * d'un côté, une loupe tracée en SVG de l'autre, posée à côté de lui. Deux
+ * objets qui ne se touchent jamais vraiment — on voyait un pictogramme flotter
+ * près d'un personnage, et le manche passait tantôt devant, tantôt derrière.
+ * Celui-ci est dessiné d'un bloc : la main tient le manche, le verre porte son
+ * reflet, la lueur du tube éclaire le fantôme. Aucun assemblage ne rattrape ça.
+ *
+ * LES QUATRE PIÈCES SONT DÉTOURÉES, ET C'ÉTAIT LE DERNIER ÉCART. La maquette
+ * montre une veste, un t-shirt, un jean, des baskets — des VÊTEMENTS, sur fond
+ * sombre. J'affichais les photos du catalogue, c'est-à-dire des mannequins en
+ * pied dans un décor de studio : quatre scènes entières autour d'un fantôme, là
+ * où il fallait quatre objets. Assombries pour compenser, elles devenaient des
+ * taches grises.
+ *
+ * CE SONT DES ACCESSOIRES DE SCÈNE, PAS LE STOCK, et il faut le dire : ces
+ * quatre-là ne viennent d'aucune collection. L'écran dure quatre secondes et ne
+ * promet rien — c'est la pièce qui SORT à la fin qui est vraie, tirée du
+ * magasin. Montrer quatre vraies pièces ici reviendrait à faire croire que la
+ * machine hésite entre celles-là, ce qui serait faux.
+ */
+const FANTOME_LOUPE = "/direct/clikme-fantome-loupe.png";
+const LOOKS = [
+  "/direct/look-veste.png",
+  "/direct/look-tshirt.png",
+  "/direct/look-baskets.png",
+  "/direct/look-jean.png",
+];
+
+/**
  * ═══ CE QUE LE MODÈLE A LE DROIT DE REMPLACER, POUR CETTE PIÈCE-LÀ ══════════
  *
  * « L'essai a un peu raté : il reste le pantalon à droite, sous la robe que
@@ -3572,25 +3603,6 @@ function Essai({
   const prepare: "femme" | "homme" | null =
     mur.essai?.genre === "femme" || mur.essai?.genre === "homme" ? mur.essai.genre : null;
 
-  /**
-   * LES QUATRE PIÈCES QUI ENTOURENT LE FANTÔME.
-   *
-   * QUATRE, ET PLUS SIX. La maquette en pose QUATRE aux quatre coins, assez
-   * grandes pour qu'on reconnaisse un jean d'une veste ; six sur un cercle
-   * régulier donnaient un cadran d'horloge de vignettes trop petites, et l'œil
-   * y voyait un mécanisme là où il devait voir quelqu'un fouiller.
-   *
-   * ON PIOCHE LOIN DANS LA LISTE plutôt que de prendre les quatre premières :
-   * les premières d'une collection se ressemblent souvent — même rayon, même
-   * saison — et quatre vestes autour du fantôme ne racontent pas une fouille.
-   */
-  const enOrbite = useMemo(() => {
-    const toutes = (mur.essai?.pieces ?? []).filter((p) => p.photo);
-    if (toutes.length <= 4) return toutes;
-    const pas = Math.max(1, Math.floor(toutes.length / 4));
-    return Array.from({ length: 4 }, (_, k) => toutes[(k * pas) % toutes.length]);
-  }, [mur.essai?.pieces]);
-
   const piocher = (sauf?: Piece | null): Piece | null => {
     const toutes = (mur.essai?.pieces ?? []).filter((p) => !p.bientot);
     if (toutes.length === 0) return null;
@@ -4399,58 +4411,30 @@ function Essai({
                 pièce par emplacement, chacune avec son propre retard : sans le
                 décalage elles entrent toutes ensemble et l'œil voit un
                 clignotement au lieu d'une fouille. */}
+            {/* LES QUATRE PIÈCES DE LA MAQUETTE — des vêtements détourés sur
+                fond sombre, pas des mannequins en pied. Voir `LOOKS`, qui dit
+                aussi pourquoi ce sont des accessoires de scène et non le
+                stock. */}
             <span className="mu-rech-orb">
-              {enOrbite.map((o, k) => (
-                <span key={o.id} className={`mu-rech-v v${k}`} style={{ "--k": k } as React.CSSProperties}>
-                  {o.photo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={o.photo} alt="" />
-                  ) : (
-                    <Trace cle="vetement" />
-                  )}
+              {LOOKS.map((src, k) => (
+                <span key={src} className={`mu-rech-v v${k}`} style={{ "--k": k } as React.CSSProperties}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={src} alt="" />
                 </span>
               ))}
             </span>
 
-            {/* LE FANTÔME ET SA LOUPE. Il flotte, la loupe balaie : c'est le
-                seul mouvement de la scène qui ne soit pas une rotation, et
-                c'est lui qui fait qu'on regarde quelqu'un chercher plutôt qu'un
-                mécanisme tourner. */}
+            {/* LE FANTÔME TIENT SA LOUPE, ET C'EST UN SEUL DESSIN. Voir
+                `FANTOME_LOUPE` : la main tient le manche, le verre porte son
+                reflet, la lueur du tube éclaire le fantôme. Assemblé à partir
+                de deux objets, on voyait un pictogramme flotter près d'un
+                personnage — et le manche passait tantôt devant, tantôt
+                derrière. */}
             <span className="mu-rech-f">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={FANTOME} alt="" />
-              {/* ═══ LA LOUPE EST UN TUBE, PAS UN TRAIT ════════════════════
-
-                  « La loupe est complètement nulle par rapport à la belle
-                  loupe de la maquette. »
-
-                  TROIS POINTS DE TRAIT NE FONT PAS UNE ENSEIGNE. Sur la
-                  maquette c'est un ANNEAU ÉPAIS, d'un violet dense, avec un
-                  verre sombre au milieu et un manche aussi gros que l'anneau —
-                  le même objet que les rubans, de la même matière. Dessiné en
-                  filaire, le mien était un pictogramme d'interface posé sur une
-                  scène lumineuse.
-
-                  D'OÙ DEUX COUCHES : le verre d'abord, qui assombrit ce qui est
-                  derrière, puis la monture par-dessus. Un anneau seul se lit
-                  comme un cercle vide ; c'est le verre qui en fait une loupe. */}
-              <svg className="mu-rech-loupe" viewBox="0 0 64 64" focusable="false">
-                <defs>
-                  <linearGradient id="muLoupeT" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0" stopColor="#F45BE0" />
-                    <stop offset="52%" stopColor="#C33BF0" />
-                    <stop offset="100%" stopColor="#8B4BF6" />
-                  </linearGradient>
-                  <radialGradient id="muLoupeV" cx="38%" cy="32%" r="72%">
-                    <stop offset="0" stopColor="rgba(200,140,255,.34)" />
-                    <stop offset="100%" stopColor="rgba(16,8,32,.74)" />
-                  </radialGradient>
-                </defs>
-                <circle className="mu-rech-verre" cx="24" cy="24" r="17" />
-                <path className="mu-rech-manche" d="M36.5 36.5 L54 54" />
-                <circle className="mu-rech-monture" cx="24" cy="24" r="17" />
-              </svg>
+              <img src={FANTOME_LOUPE} alt="" />
             </span>
+
             {/* LE SECOND RUBAN : celui qui passe DEVANT. Voir la note du
                 premier — c'est la même ellipse, vue de l'autre côté. */}
             <span className="mu-rech-r b" />
@@ -7498,18 +7482,36 @@ function Styles() {
               0 0 64px -10px rgba(160,90,250,.9);}}
         /* LE VOILE VIOLET PAR-DESSUS L'IMAGE : il recolle les quatre a la meme
            scene, et il acheve d'en faire des ombres plutot que des photos. */
-        .mu-rech-v::after{content:"";position:absolute;inset:0;
+        /* LE VOILE PASSE DERRIERE LE VETEMENT, PLUS DEVANT. Pose par-dessus,
+           il eteignait l'objet qu'il devait mettre en valeur ; en fond, il
+           donne au carre sa profondeur violette et laisse le vetement dessus. */
+        .mu-rech-v::before{content:"";position:absolute;inset:0;
           pointer-events:none;
-          background:linear-gradient(155deg,rgba(150,60,220,.34),
-            rgba(10,6,22,.52) 62%,rgba(10,6,22,.72));}
+          background:linear-gradient(155deg,rgba(120,50,190,.42),
+            rgba(10,6,22,.7) 58%,rgba(6,4,14,.9));}
         /* LES QUATRE COINS, ET AUCUN NE SE MARCHE DESSUS : le fantome occupe
            la moitie centrale, les mots manuscrits les bords gauches. */
         .mu-rech-v.v0{top:0;left:-2%;transform:rotate(-7deg);}
         .mu-rech-v.v1{top:13%;right:-3%;transform:rotate(6deg);}
-        .mu-rech-v.v2{bottom:26%;left:-5%;transform:rotate(5deg);}
-        .mu-rech-v.v3{bottom:-2%;right:4%;transform:rotate(-6deg);}
-        .mu-rech-v img{width:100%;height:100%;object-fit:cover;display:block;
-          filter:brightness(.42) contrast(1.5) saturate(.35);}
+        .mu-rech-v.v2{bottom:30%;left:-5%;transform:rotate(5deg);}
+        .mu-rech-v.v3{bottom:3%;right:2%;transform:rotate(-6deg);}
+        /* LE VETEMENT SE VOIT, ET C'EST LE CARRE QUI EST SOMBRE. Je les
+           assombrissais a quatre dixiemes pour obtenir le « on devine » de la
+           maquette — mais sur la maquette on RECONNAIT la veste marron, le jean
+           bleu, les baskets blanches : c'est leur FOND qui est noir, pas eux.
+           Avec des packshots detoures, il n'y a plus rien a masquer : l'objet
+           tient tout seul sur le carre sombre, et il se pose dedans avec sa
+           marge plutot que d'y etre recadre. */
+        /* ELLE EST POSEE EN ABSOLU, ET C'EST CE QUI REND LE CARRE CARRE. En
+           flux, une image a « height:100% » dans une boite dont la hauteur
+           vient d'un « aspect-ratio » cree une dependance circulaire : le
+           navigateur tranche en dimensionnant la boite sur le CONTENU, et le
+           carre devenait un rectangle a la hauteur du jean — mesure a 117 sur
+           190. Sortie du flux, l'image ne dit plus rien de la taille du carre,
+           et le rapport reprend la main. */
+        .mu-rech-v img{position:absolute;inset:10%;width:80%;height:80%;
+          object-fit:contain;display:block;
+          filter:drop-shadow(0 4px 12px rgba(0,0,0,.6));}
         .mu-rech-v .mu-tr{width:30px;height:30px;opacity:.6;}
         @keyframes muRechV{from{opacity:0;transform:scale(.7);}
           to{opacity:1;}}
@@ -7528,38 +7530,23 @@ function Styles() {
            le fantome partait se poser en bas a droite des la premiere image. Le
            centrage vit donc dans les marges negatives, et le mouvement dans la
            propriete de translation, qui est independante. */
+        /* IL EST PLUS LARGE QUE HAUT, PARCE QU'IL TIENT QUELQUE CHOSE. Le
+           dessin fourni mesure 709 sur 573 : la loupe deborde a droite, et
+           forcer un carre lui coupait le manche ou le rapetissait pour le faire
+           entrer. Le rapport du fichier decide, et le centrage suit. */
         .mu-rech-f{position:absolute;z-index:2;top:50%;left:50%;
-          width:50%;aspect-ratio:1/1;margin:-25% 0 0 -25%;
+          width:64%;aspect-ratio:709/573;margin:0;
+          translate:-50% -50%;
           display:grid;place-items:center;
           animation:muRechFlotteF 3.6s ease-in-out infinite;}
-        @keyframes muRechFlotteF{0%,100%{translate:0 0;rotate:-3deg;}
-          50%{translate:0 -8px;rotate:3deg;}}
+        @keyframes muRechFlotteF{0%,100%{translate:-50% -50%;rotate:-2.5deg;}
+          50%{translate:-50% calc(-50% - 9px);rotate:2.5deg;}}
         .mu-rech-f img{width:100%;height:100%;object-fit:contain;display:block;
-          filter:drop-shadow(0 0 30px rgba(199,125,240,.85))
-            drop-shadow(0 0 60px rgba(139,125,246,.5));}
+          filter:drop-shadow(0 0 26px rgba(199,125,240,.8))
+            drop-shadow(0 0 62px rgba(139,125,246,.55));}
         /* LA LOUPE BALAIE. Elle ne tourne pas avec le fantome : elle va et
            vient, ce qui est le geste de quelqu'un qui cherche plutot que celui
            d'un objet qui pivote. */
-        /* LA LOUPE EST A COTE DU FANTOME, PAS DESSUS. Calee dans son cadre,
-           elle lui barrait le bras : elle deborde donc a droite, la ou la
-           maquette la pose — le fantome tient la loupe devant lui, il ne la
-           porte pas sur le ventre. */
-        /* ELLE EST A COTE DU FANTOME, PAS SUR SA JOUE. Calee dans son cadre,
-           elle lui barrait le visage : le fantome tient sa loupe DEVANT LUI, a
-           bout de bras, comme sur la maquette. */
-        .mu-rech-loupe{position:absolute;right:-46%;bottom:6%;width:62%;
-          height:62%;
-          filter:drop-shadow(0 0 14px rgba(200,75,240,.95))
-            drop-shadow(0 0 34px rgba(139,75,246,.7));
-          animation:muLoupe 2.8s ease-in-out infinite;}
-        .mu-rech-verre{fill:url(#muLoupeV);stroke:none;}
-        .mu-rech-monture{fill:none;stroke:url(#muLoupeT);stroke-width:5.4;}
-        .mu-rech-manche{fill:none;stroke:url(#muLoupeT);stroke-width:6.4;
-          stroke-linecap:round;}
-        @keyframes muLoupe{0%,100%{transform:translate(0,0) rotate(0deg);}
-          35%{transform:translate(-14px,-10px) rotate(-16deg);}
-          70%{transform:translate(6px,6px) rotate(9deg);}}
-
         /* ═══ LES TROIS MOTS MANUSCRITS SE LISENT ENSEMBLE ═════════════════
 
            JE LES FAISAIS PASSER CHACUN SON TOUR, pour ne pas encombrer. La

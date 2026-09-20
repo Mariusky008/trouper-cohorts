@@ -701,3 +701,40 @@ photos d'illustration du dépôt**, celles qui montrent des inconnus à tout le
 monde. Ici, c'est **sa propre photo**, prise par lui, jamais publiée tant qu'il
 n'a pas appuyé sur « Je la prends » ou « Je passe ». L'écran le dit au moment du
 rendu.
+
+---
+
+## Les cinq dessins de l'écran « ClikMe cherche »
+
+Fournis par le commanditaire, détourés ici sur fond transparent depuis des
+packshots studio (`scripts` : diffusion depuis les bords de l'image, puis
+fermeture morphologique pour les baskets — blanches sur fond blanc, elles se
+vidaient par les lacets).
+
+| Fichier | Ce que c'est |
+| --- | --- |
+| `clikme-fantome-loupe.png` | Le fantôme **tenant sa loupe** — un seul dessin |
+| `look-veste.png` | Veste marron sur col roulé écru |
+| `look-tshirt.png` | T-shirt gris |
+| `look-jean.png` | Jean brut, coupe droite |
+| `look-baskets.png` | Baskets blanches |
+
+**Le fantôme et sa loupe ne font qu'un, et c'est la raison d'être du fichier.**
+Je l'avais fabriqué : le personnage d'un côté, une loupe tracée en SVG de
+l'autre, posée à côté de lui. Deux objets qui ne se touchent jamais vraiment —
+on voyait un pictogramme flotter près d'un personnage, et le manche passait
+tantôt devant, tantôt derrière. Ici la main tient le manche, le verre porte son
+reflet, la lueur du tube éclaire le fantôme. Aucun assemblage ne rattrape ça.
+
+**Les quatre vêtements sont des accessoires de scène, pas le stock.** Ils ne
+viennent d'aucune collection, et c'est volontaire : l'écran dure quatre secondes
+et ne promet rien — la pièce qui sort à la fin, elle, est tirée du magasin.
+Montrer quatre vraies pièces ici ferait croire que la machine hésite entre
+celles-là, ce qui serait faux.
+
+**Ils sont détourés, pas assombris.** J'affichais avant les photos du catalogue,
+c'est-à-dire des mannequins en pied dans un décor de studio : quatre scènes
+entières autour d'un fantôme, là où il fallait quatre objets. Assombries pour
+compenser, elles devenaient des taches grises. Sur la maquette on RECONNAÎT la
+veste marron, le jean bleu, les baskets blanches : c'est leur fond qui est noir,
+pas eux.
