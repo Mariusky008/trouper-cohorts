@@ -592,6 +592,26 @@ export type Mur = {
       choisir: string;
       /** Le geste d'achat, après le rendu. */
       reserver: string;
+      /**
+       * ═══ CE GESTE GARDE-T-IL LA PIÈCE, OU ENGAGE-T-IL LE COMMERÇANT ? ═══════
+       *
+       * « Quand j'appuie sur "mettre de côté", ça change de page au lieu de
+       * rester sur la même page avec juste une animation : un cœur qui part
+       * vers le haut. »
+       *
+       * LES DEUX GESTES PORTENT LE MÊME BOUTON ET NE FONT PAS LA MÊME CHOSE. Un
+       * coiffeur, un lunetier, un tatoueur : « Je réserve ma séance » ouvre une
+       * conversation, et il faut un écran pour la montrer. Un magasin de
+       * vêtements : « Je la mets de côté » ne demande rien à personne — c'est
+       * une poche personnelle, qu'on retrouve sous le cœur en haut à droite.
+       * L'emmener sur un écran de confirmation lui reprend la photo qu'il vient
+       * de regarder, pour ne rien lui annoncer.
+       *
+       * ON L'ÉCRIT DANS LA DONNÉE PLUTÔT QUE DE LIRE LE LIBELLÉ. Deviner le
+       * geste en cherchant « côté » dans la phrase marcherait aujourd'hui et
+       * casserait au premier métier qui écrit « Je la réserve » pour une poche.
+       */
+      garde?: boolean;
       /** Revenir choisir autre chose. */
       autres: string;
       /** Le seul lien vers le mur, depuis l'essai. */
@@ -1732,6 +1752,9 @@ export const MURS: Mur[] = [
         geste: "Me photographier en buste",
         choisir: "Choisissez la pièce",
         reserver: "Je la mets de côté",
+        // ELLE NE DEMANDE RIEN À PERSONNE : le geste garde la pièce dans sa
+        // propre poche, sous le cœur en haut à droite. Voir `garde`.
+        garde: true,
         autres: "Voir les autres pièces rentrées",
         mur: "Voir ces pièces portées par d’autres",
         surMoi: "Essayer sur moi",
@@ -2123,6 +2146,9 @@ export const MURS: Mur[] = [
         geste: "Me photographier en buste",
         choisir: "Choisissez la pièce",
         reserver: "Je la mets de côté",
+        // ELLE NE DEMANDE RIEN À PERSONNE : le geste garde la pièce dans sa
+        // propre poche, sous le cœur en haut à droite. Voir `garde`.
+        garde: true,
         autres: "Voir les autres pièces rentrées",
         mur: "Voir ces pièces portées par d’autres",
         surMoi: "Essayer sur moi",
