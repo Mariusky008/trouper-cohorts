@@ -2909,6 +2909,24 @@ function Essai({
    * de la laisser figée sur la fin de la première.
    */
   const [misDeCote, setMisDeCote] = useState(false);
+  /**
+   * ═══ LA PHOTO SEULE, SANS RIEN AUTOUR ══════════════════════════════════════
+   *
+   * « Ici c'est un jean que j'ai essayé mais on ne le voit pas bien : est-ce que
+   * je pourrais, d'une manière très intuitive, voir la photo en entier sans
+   * rien autour — aucun texte ni icône — afin de voir les vêtements ? »
+   *
+   * L'ÉCRAN DE RÉSULTAT EST UN ÉCRAN DE DÉCISION, et il est plein de ce qu'il
+   * faut pour décider : le titre, les cinq fantômes, trois gestes, deux liens.
+   * Tout cela mange le bas de la photo — c'est-à-dire le pantalon, les
+   * chaussures, la longueur d'une jupe. On ne peut pas à la fois demander un
+   * avis et ne rien montrer.
+   *
+   * D'OÙ UN SECOND TEMPS, ET PAS UN COMPROMIS. Un appui sur la photo l'ouvre
+   * SEULE, bord à bord, sans une ligne de texte ; un second appui la referme.
+   * Rien n'est perdu entre les deux : la note, le mot écrit, tout attend.
+   */
+  const [plein, setPlein] = useState(false);
   const [coeur, setCoeur] = useState(0);
   /** Le cadre du résultat : c'est lui qui donne le repère au vol du cœur. */
   const cadreRes = useRef<HTMLDivElement>(null);
@@ -3704,6 +3722,7 @@ function Essai({
     setConseil(false);
     setMisDeCote(false);
     setEnvoi(null);
+    setPlein(false);
     setBulle(0);
     setRevele(false);
     setAvant(false);
@@ -3739,6 +3758,7 @@ function Essai({
     setConseil(false);
     setMisDeCote(false);
     setEnvoi(null);
+    setPlein(false);
     setBulle(0);
     setRevele(false);
     setX(58);
@@ -3755,10 +3775,22 @@ function Essai({
     // second fantôme sous le même prénom : le mur en afficherait trois pour un
     // seul essai. Voir `pose`, qui garde celui qu'on vient de laisser.
     if (pose) return;
-    // ON PRÉVIENT LE COMMERÇANT AVANT DE POSER LE FANTÔME : le partage doit
-    // partir du geste de la personne, sans écran intercalé. Un `window.open`
-    // déclenché après un rendu d'écran se fait bloquer par Safari.
-    if (verdict === "pris" && piece) void prevenir(piece);
+    // ═══ POSER N'ÉCRIT PLUS AU COMMERÇANT ═══════════════════════════════
+    //
+    // « Quand j'appuie sur "mettre de côté", j'ai le texte d'un autre onglet
+    // qui apparaît : "Son numéro appartient à la plage réservée à la
+    // fiction…" »
+    //
+    // C'ÉTAIT VRAI TANT QUE LE BOUTON ROSE ÉTAIT « JE RÉSERVE ». Prévenir au
+    // moment de poser évitait un écran intercalé, et Safari bloque un
+    // `window.open` déclenché après un rendu. Mais ce bouton est devenu « Je
+    // la mets de côté » — un geste qui ne demande rien à personne — et il
+    // traînait la conversation derrière lui : on rangeait une pièce dans sa
+    // poche, et un message pour le commerçant s'ouvrait.
+    //
+    // ÉCRIRE AU COMMERÇANT EST MAINTENANT UN GESTE À PART, et un seul :
+    // « Réserver cet article ». Les métiers qui gardent l'écran « Et
+    // maintenant ? » y ont leurs propres boutons pour ça.
     // ON CONSTRUIT LE FANTÔME UNE FOIS, ET ON S'EN SERT DEUX FOIS : la mémoire
     // le reçoit, l'écran le montre. Deux constructions séparées finiraient par
     // diverger — ce serait alors un aperçu qui ment sur ce qui a été posé.
@@ -4924,6 +4956,27 @@ function Essai({
             src={rendu?.image ?? piece.rendu ?? piece.photo}
             alt={`Essai : ${piece.nom}`}
           />
+          {/* ═══ LA SURFACE DE LA PHOTO OUVRE LA PHOTO ════════════════════
+
+              ELLE EST LE GESTE, ET LE BOUTON N'EST QUE LA LÉGENDE. Un appui
+              n'importe où sur l'image l'ouvre en grand — c'est ce qu'on fait
+              d'instinct devant une photo — et la pastille « ⤢ » du coin est là
+              pour l'APPRENDRE à qui ne le tenterait pas. Le contraire, un
+              bouton seul, aurait obligé à viser vingt points pour une chose
+              qu'on veut faire avec le pouce.
+
+              ELLE NE COUVRE QUE LA PHOTO, JAMAIS LES GESTES. Posée sous les
+              fantômes et sous les boutons, elle ne vole aucun appui : c'est le
+              haut de l'écran, là où il n'y a rien d'autre à toucher. */}
+          <button
+            type="button"
+            className="mu-res-ouvrir"
+            aria-label="Voir la photo en grand"
+            onClick={() => setPlein(true)}
+          />
+          <span className="mu-res-loupe" aria-hidden="true">
+            <i>⤢</i>Voir en entier
+          </span>
           {/* DEUX VOILES, UN EN HAUT ET UN EN BAS, ET AUCUN AU MILIEU. Le titre
               et les gestes ont besoin d'un fond ; le visage n'a besoin de rien.
               Un voile uniforme aurait assombri la seule chose qu'on est venu
@@ -5044,11 +5097,12 @@ function Essai({
                 celle de « Surprends-moi » écrit la courte. Ce qu'il fallait
                 corriger, c'est la PLACE de la tête sous le titre — voir le
                 fond flou de `.mu-res-fond` — pas la phrase. */}
-            <p>
-              {surprise
-                ? "Touchez un fantôme pour donner votre avis"
-                : "Touchez un fantôme : plus je vous connais, mieux je vous conseille."}
-            </p>
+            {/* LA MÊME PHRASE DANS LES DEUX PARCOURS. J'en avais écrit deux —
+                la courte quand ClikMe avait choisi, en me disant que la bulle
+                « Choix ClikMe » disait déjà le reste. Elle ne le dit pas : elle
+                explique LA PIÈCE, pas à quoi sert la note. Ce que la note
+                apporte est vrai des deux côtés, donc la phrase aussi. */}
+            <p>Touchez un fantôme&nbsp;: plus je vous connais, mieux je vous conseille.</p>
             {/* ON DIT QUE C'EST CLIKME QUI A CHOISI, ET SEULEMENT ALORS. Sans
                 cette ligne, une pièce sortie de la réserve se lit comme une
                 pièce qu'on aurait demandée — et « Surprends-moi encore », plus
@@ -5528,6 +5582,27 @@ function Essai({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ═══ LA PHOTO SEULE, BORD À BORD ══════════════════════════════════
+
+          RIEN D'AUTRE À L'ÉCRAN : pas de titre, pas de fantômes, pas de
+          gestes. C'est la demande, et c'est la seule façon de voir tomber un
+          pantalon ou la longueur d'une jupe. Un appui n'importe où referme —
+          on revient exactement où l'on était, note et mot compris. */}
+      {plein && piece && (
+        <div
+          className="mu-plein"
+          role="dialog"
+          aria-label={`${piece.nom}, en grand`}
+          onClick={() => setPlein(false)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={rendu?.image ?? piece.rendu ?? piece.photo} alt={`Essai : ${piece.nom}`} />
+          <button type="button" aria-label="Fermer">
+            ✕
+          </button>
         </div>
       )}
 
@@ -8964,6 +9039,55 @@ function Styles() {
            repond a une question du client — donc ils partagent la mise en page
            et se distinguent par la couleur du liseré : violet quand ClikMe
            parle de lui, neutre quand il repond. */
+        /* ═══ LA PHOTO SEULE, SANS RIEN AUTOUR ════════════════════════════
+
+           « Est-ce que je pourrais voir la photo en entier sans rien autour —
+           aucun texte ni icone — afin de voir les vetements ? »
+
+           LA SURFACE EST LE GESTE, la pastille n'est que la legende. Un appui
+           n'importe ou sur l'image l'ouvre : c'est ce qu'on fait d'instinct
+           devant une photo. Le « ⤢ » du coin l'apprend a qui ne le tenterait
+           pas ; il ne recoit aucun appui lui-meme, ce qui evite d'avoir a viser
+           vingt points pour une chose qu'on veut faire avec le pouce.
+
+           LA ZONE S'ARRETE AVANT LES GESTES. Elle couvre le haut de l'ecran,
+           la ou il n'y a rien d'autre a toucher, et laisse les fantomes et les
+           boutons tranquilles. */
+        .mu-res-ouvrir{position:absolute;z-index:3;left:0;right:0;top:0;
+          bottom:31%;border:0;background:none;cursor:zoom-in;padding:0;}
+        .mu-res-ouvrir:focus-visible{outline:2px solid #C9BCFF;
+          outline-offset:-4px;border-radius:18px;}
+        /* ELLE PORTE SES MOTS. Un « agrandir » seul est un symbole qu'il faut
+           avoir appris ailleurs ; trois mots disent ce qui va se passer, et
+           c'etait la demande — « d'une maniere tres intuitive et claire ». */
+        .mu-res-loupe{position:absolute;z-index:4;right:14px;top:112px;
+          display:inline-flex;align-items:center;gap:6px;
+          height:32px;padding:0 12px 0 9px;border-radius:999px;
+          font-size:12px;font-weight:700;letter-spacing:-.01em;color:#EAF0F6;
+          background:rgba(10,14,24,.68);border:1px solid rgba(255,255,255,.22);
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+          pointer-events:none;}
+        .mu-res-loupe i{font-style:normal;font-size:15px;line-height:1;}
+
+        /* ═══ ET LA VOICI, BORD A BORD ════════════════════════════════════
+
+           RIEN D'AUTRE A L'ECRAN. Pas de titre, pas de fantomes, pas de
+           gestes : c'est la seule facon de voir tomber un pantalon ou la
+           longueur d'une jupe. La croix est la pour dire qu'on peut sortir ;
+           l'appui se prend sur toute la surface. */
+        .mu-plein{position:fixed;inset:0;z-index:160;display:grid;
+          place-items:center;padding:0;background:#05070E;cursor:zoom-out;
+          animation:muApres .22s ease both;}
+        .mu-plein img{width:100%;height:100%;object-fit:contain;display:block;}
+        .mu-plein>button{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);
+          right:16px;width:44px;height:44px;border-radius:50%;display:grid;
+          place-items:center;font:inherit;font-size:17px;font-weight:700;
+          cursor:pointer;color:#EAF0F6;background:rgba(10,14,24,.62);
+          border:1px solid rgba(255,255,255,.22);
+          -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
+        .mu-plein>button:focus-visible{outline:2px solid #C9BCFF;
+          outline-offset:2px;}
+
         /* ═══ CE QUE « RESERVER » A FAIT ══════════════════════════════════
 
            « "Reserver cet article" ne marche pas et n'ouvre pas WhatsApp. »

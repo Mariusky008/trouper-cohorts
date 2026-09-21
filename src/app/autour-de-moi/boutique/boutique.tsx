@@ -500,6 +500,45 @@ export function Boutique() {
     piecesGardeesVides,
   );
   const [pocheOuverte, setPocheOuverte] = useState(false);
+  /**
+   * LA PIÈCE QU'ON REGARDE EN GRAND, DEPUIS LA POCHE.
+   *
+   * « Quand je clique sur le cœur pour les revoir pour peut-être les acheter,
+   * j'ai une pop-up qui a l'air d'être cassée et qui n'est pas cliquable. »
+   *
+   * Une poche qui ne fait que LISTER ne sert à rien : on l'ouvre pour revoir
+   * la pièce SUR SOI, pas pour relire son nom. Chaque ligne est donc un
+   * bouton, et il mène à la photo en plein écran — le même geste que la loupe
+   * de l'écran de résultat.
+   */
+  const [pieceVue, setPieceVue] = useState<{ nom: string; image: string } | null>(null);
+  /**
+   * ═══ LE SALON RESTE SUR LA PAGE DU COMMERÇANT ═══════════════════════════
+   *
+   * « Quand je suis sur la page d'accueil du commerçant et que j'appuie sur
+   * "en parler à mes amis", on m'amène sur l'application au lieu de rester sur
+   * la page du commerçant. »
+   *
+   * C'ÉTAIT UNE SORTIE SANS PRÉVENIR, et c'est le défaut le plus désagréable
+   * qu'un bouton puisse avoir : on essayait une pièce, on demandait un avis, et
+   * la page du commerce — l'adresse, les horaires, le reste du catalogue —
+   * disparaissait sous le pied. Personne ne demande à quitter un magasin en
+   * appuyant sur « en parler ».
+   *
+   * LE SALON EST QUAND MÊME OUVERT, avec le rendu et la note dedans : c'est ce
+   * qui a de la valeur, et le refaire plus tard demanderait de ré-essayer la
+   * pièce. Mais on ANNONCE ce qui vient de se passer sur place, et le départ
+   * devient un choix : « Ouvrir la conversation » y va, « Rester ici » referme
+   * le panneau et la page n'a pas bougé. La conversation elle-même vit sur
+   * `/autour-de-moi` — cette page n'a pas le fil qui la porte, et en coller une
+   * copie ici donnerait deux salons pour une seule conversation.
+   */
+  const [salonPret, setSalonPret] = useState<{
+    cle: string;
+    quoi: string;
+    image?: string;
+    texte: string;
+  } | null>(null);
   useEffect(() => {
     const sections = Array.from(document.querySelectorAll<HTMLElement>(".bq-s"));
     if (!sections.length) return;
@@ -741,50 +780,22 @@ export function Boutique() {
               <i aria-hidden="true">···</i>
             </button>
           </div>
-          {/* ═══ LE TIROIR DE LA POCHE ══════════════════════════════════════
+          {/* ═══ LE TIROIR DE LA POCHE N'EST PLUS ICI ═══════════════════════
 
-              IL S'OUVRE SOUS LE CŒUR, là où le cœur vient d'arriver, et il se
-              referme d'un appui. Une poche qu'on ne peut ni ouvrir ni vider
-              se remplit une fois puis ne sert plus.
+              « J'ai une pop-up qui s'ouvre, qui a l'air d'être cassée / buguée
+              et qui n'est pas cliquable. »
 
-              LA VIGNETTE EST LE RENDU, PAS LE CATALOGUE : on se souvient de la
-              pièce SUR SOI, et la photo du mannequin ne rappellerait pas le
-              même moment. */}
-          {pocheOuverte && (
-            <div className="bq-poche" role="dialog" aria-label="Vos pièces mises de côté">
-              {gardees.length === 0 ? (
-                <p className="bq-poche-v">
-                  Rien de mis de côté pour l’instant. Essayez une pièce, puis
-                  «&nbsp;Je la mets de côté&nbsp;»&nbsp;: vous la retrouverez ici.
-                </p>
-              ) : (
-                <ul>
-                  {gardees.map((x) => (
-                    <li key={`${x.carte}-${x.piece}`}>
-                      {x.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={x.image} alt="" />
-                      ) : (
-                        <i aria-hidden="true">🤍</i>
-                      )}
-                      <span>
-                        <b>{x.nom}</b>
-                        {x.lieu}
-                        {x.prix ? ` · ${x.prix}` : ""}
-                      </span>
-                      <button
-                        type="button"
-                        aria-label={`Retirer ${x.nom}`}
-                        onClick={() => basculerPieceGardee({ ...x })}
-                      >
-                        ✕
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
+              ELLE N'ÉTAIT PAS BUGUÉE, ELLE ÉTAIT COUPÉE. Ce bandeau est posé
+              en absolu DANS la photo d'en-tête, et cette photo porte
+              `overflow:hidden` pour que rien ne déborde de son cadre arrondi.
+              Un tiroir qui s'ouvre sous le bandeau descend donc dans la zone
+              coupée : on en voyait la première ligne, le reste était rogné, et
+              ce qui est rogné ne reçoit aucun appui. Le défaut ne se voyait pas
+              tant que la poche était vide.
+
+              IL EST DONC SORTI DE LA PHOTO et posé en `fixed` par-dessus la
+              page, plus bas dans ce fichier, avec les autres panneaux. Rien ne
+              peut plus le couper. */}
         </header>
 
         {photoTete ? (
@@ -1134,12 +1145,16 @@ export function Boutique() {
                * chose que l'ouvrir dans ClikMe : l'un sort de l'app, l'autre y
                * fait entrer ses amis.
                *
-               * ON ÉCRIT DONC LE SALON ICI, ET ON Y EMMÈNE. `ouvrirSalon` le
-               * crée s'il n'existe pas — la clé est le commerce plus la pièce,
-               * donc deux personnes qui essaient la même veste se retrouvent au
-               * même endroit — `ecrireDansSalon` y pose le rendu et la note, et
-               * `/autour-de-moi?salon=` l'ouvre sur sa page. C'est le MÊME
-               * salon que celui de l'annonce, jamais un second.
+               * ON ÉCRIT DONC LE SALON ICI, ET ON N'Y EMMÈNE PLUS TOUT SEUL.
+               * `ouvrirSalon` le crée s'il n'existe pas — la clé est le
+               * commerce plus la pièce, donc deux personnes qui essaient la
+               * même veste se retrouvent au même endroit — `ecrireDansSalon` y
+               * pose le rendu et la note. C'est le MÊME salon que celui de
+               * l'annonce, jamais un second.
+               *
+               * MAIS LA PAGE NE PART PLUS : elle affiche ce qui vient d'être
+               * écrit et laisse choisir. Voir `salonPret` plus haut — on ne
+               * quitte une page de commerce que si on l'a demandé.
                */
               onSalon={(o) => {
                 const cle = `essai-${c.id}-${o.quoi}`;
@@ -1154,16 +1169,17 @@ export function Boutique() {
                   distance: c.distance,
                   photo: o.image,
                 });
+                const texte = o.note
+                  ? `J’ai essayé « ${o.quoi} »${o.prix ? ` (${o.prix})` : ""} sur moi. Je mets ${o.note}/5 — vous en pensez quoi ?`
+                  : `J’ai essayé « ${o.quoi} »${o.prix ? ` (${o.prix})` : ""} sur moi. Ça me va ou pas ?`;
                 ecrireDansSalon(cle, {
                   qui: monPrenom() || "Vous",
                   voix: "moi",
-                  texte: o.note
-                    ? `J’ai essayé « ${o.quoi} »${o.prix ? ` (${o.prix})` : ""} sur moi. Je mets ${o.note}/5 — vous en pensez quoi ?`
-                    : `J’ai essayé « ${o.quoi} »${o.prix ? ` (${o.prix})` : ""} sur moi. Ça me va ou pas ?`,
+                  texte,
                   quand: heureCourte(),
                   photo: o.image,
                 });
-                window.location.href = `/autour-de-moi?salon=${encodeURIComponent(cle)}`;
+                setSalonPret({ cle, quoi: o.quoi, image: o.image, texte });
               }}
             />
           )}
@@ -1757,6 +1773,142 @@ export function Boutique() {
         Maquette&nbsp;: ce commerce est inventé, ses photos sont des illustrations. Rien n’est
         publié, rien n’est réservable.
       </footer>
+
+      {/* ═══ LA POCHE, EN GRAND ET PAR-DESSUS TOUT ═════════════════════════
+
+          Elle est posée en `fixed` : le bandeau qui la commande vit dans la
+          photo d'en-tête, et cette photo coupe ce qui dépasse d'elle — c'est ce
+          qui donnait un panneau rogné et sourd au toucher.
+
+          CHAQUE LIGNE EST UN BOUTON, parce qu'on ouvre cette poche pour REVOIR
+          la pièce sur soi, pas pour relire son nom. La vignette est le rendu,
+          jamais le mannequin du catalogue : c'est le souvenir qu'on est venu
+          chercher. Le ✕ de droite retire, et il reste distinct de la ligne. */}
+      {pocheOuverte && (
+        <div
+          className="bq-voile"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Vos pièces mises de côté"
+          onClick={() => setPocheOuverte(false)}
+        >
+          <div className="bq-poche" onClick={(e) => e.stopPropagation()}>
+            <p className="bq-poche-t">
+              <b>Mises de côté</b>
+              <button type="button" aria-label="Fermer" onClick={() => setPocheOuverte(false)}>
+                ✕
+              </button>
+            </p>
+            {gardees.length === 0 ? (
+              <p className="bq-poche-v">
+                Rien de mis de côté pour l’instant. Essayez une pièce, puis
+                «&nbsp;Je la mets de côté&nbsp;»&nbsp;: vous la retrouverez ici.
+              </p>
+            ) : (
+              <ul>
+                {gardees.map((x) => (
+                  <li key={`${x.carte}-${x.piece}`}>
+                    <button
+                      type="button"
+                      className="bq-poche-o"
+                      disabled={!x.image}
+                      aria-label={x.image ? `Voir ${x.nom} en grand` : x.nom}
+                      onClick={() => x.image && setPieceVue({ nom: x.nom, image: x.image })}
+                    >
+                      {x.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={x.image} alt="" />
+                      ) : (
+                        <i aria-hidden="true">🤍</i>
+                      )}
+                      <span>
+                        <b>{x.nom}</b>
+                        {x.lieu}
+                        {x.prix ? ` · ${x.prix}` : ""}
+                        {x.image ? <em>Voir en grand</em> : null}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="bq-poche-x"
+                      aria-label={`Retirer ${x.nom}`}
+                      onClick={() => basculerPieceGardee({ ...x })}
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ LE PANNEAU DU SALON : ON RESTE ICI TANT QU'ON N'A PAS CHOISI ══
+
+          « On m'amène sur l'application au lieu de rester sur la page du
+          commerçant. »
+
+          LE MESSAGE EST DÉJÀ PARTI — c'est écrit noir sur blanc, avec la photo
+          qu'on vient d'essayer — et le seul bouton qui fait sortir de la page
+          porte le mot « ouvrir ». Un départ qu'on n'a pas demandé fait perdre
+          l'adresse, les horaires et le reste du catalogue d'un seul appui. */}
+      {salonPret && (
+        <div
+          className="bq-voile"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Votre message est dans le salon"
+          onClick={() => setSalonPret(null)}
+        >
+          <div className="bq-salon" onClick={(e) => e.stopPropagation()}>
+            <b>C’est parti dans le salon</b>
+            <p className="bq-salon-s">
+              Vos amis peuvent répondre&nbsp;: la conversation vit dans ClikMe, elle
+              reste ouverte, vous n’êtes pas obligé d’y aller maintenant.
+            </p>
+            <div className="bq-salon-m">
+              {salonPret.image && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={salonPret.image} alt={`Votre essai : ${salonPret.quoi}`} />
+              )}
+              <q>{salonPret.texte}</q>
+            </div>
+            <a
+              className="bq-salon-b"
+              href={`/autour-de-moi?salon=${encodeURIComponent(salonPret.cle)}`}
+            >
+              Ouvrir la conversation
+            </a>
+            <button type="button" className="bq-salon-r" onClick={() => setSalonPret(null)}>
+              Rester sur cette page
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ LA PIÈCE EN GRAND, SANS RIEN AUTOUR ════════════════════════════
+
+          « Être capable de voir la photo en entier sans rien autour (aucun
+          texte ou icône) afin de voir les vêtements. »
+
+          Un fond noir, la photo entière, et un seul ✕. Tout le reste de l'écran
+          ferme au toucher : c'est le geste qu'on fait déjà sans y penser. */}
+      {pieceVue && (
+        <div
+          className="bq-plein"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${pieceVue.nom}, en grand`}
+          onClick={() => setPieceVue(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={pieceVue.image} alt={`Votre essai : ${pieceVue.nom}`} />
+          <button type="button" aria-label="Fermer">
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -1854,43 +2006,115 @@ function Styles() {
           font-weight:900;color:#fff;background:#F0269B;
           border:2px solid rgba(12,10,22,.9);}
 
-        /* ═══ LE TIROIR DES PIECES MISES DE COTE ═══════════════════════════
+        /* ═══ LES PANNEAUX POSES PAR-DESSUS LA PAGE ═══════════════════════
 
-           IL S'OUVRE SOUS LE COEUR, la ou le coeur vient d'arriver. Une poche
-           qu'on ne peut ni ouvrir ni vider se remplit une fois puis ne sert
-           plus — et l'envol du coeur, depuis le resultat d'essayage, devient
-           un mensonge. */
-        .bq-poche{position:absolute;z-index:30;top:calc(100% + 8px);right:12px;
-          width:min(300px,calc(100vw - 28px));max-height:min(60vh,420px);
-          overflow:auto;border-radius:18px;padding:12px;
-          background:rgba(12,10,22,.96);border:1px solid rgba(255,255,255,.16);
-          backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+           LE TIROIR DE LA POCHE ETAIT COUPE, ET ON LE PRENAIT POUR UN BOGUE.
+           Il etait pose en absolu sous le bandeau ; le bandeau vit DANS la
+           photo d'en-tete, et cette photo porte overflow:hidden. Tout ce qui
+           descendait plus bas que 376 px etait rogne, donc invisible ET hors
+           d'atteinte du doigt. Un panneau fixe ne peut pas etre coupe : il ne
+           depend plus d'aucun cadre. */
+        .bq-voile{position:fixed;inset:0;z-index:120;
+          display:flex;align-items:flex-start;justify-content:center;
+          padding:calc(58px + env(safe-area-inset-top)) 14px 24px;
+          background:rgba(4,6,12,.72);
+          backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+          animation:bqVoile .2s ease both;overflow:auto;}
+        @keyframes bqVoile{from{opacity:0;}to{opacity:1;}}
+
+        .bq-poche{width:min(340px,100%);max-height:none;
+          border-radius:20px;padding:13px;
+          background:rgba(14,12,26,.98);border:1px solid rgba(255,255,255,.16);
           box-shadow:0 26px 60px -22px rgba(0,0,0,.95);
           animation:bqPoche .26s cubic-bezier(.16,1,.3,1) both;}
         @keyframes bqPoche{
-          from{opacity:0;transform:translateY(-8px) scale(.98);}
+          from{opacity:0;transform:translateY(-10px) scale(.98);}
           to{opacity:1;transform:none;}}
-        .bq-poche-v{margin:0;padding:8px 6px;font-size:12.8px;line-height:1.45;
-          color:#B9C6D8;}
+        .bq-poche-t{display:flex;align-items:center;justify-content:space-between;
+          gap:10px;margin:0 0 10px;padding:0 2px;}
+        .bq-poche-t b{font-size:15px;font-weight:850;color:#FFFFFF;}
+        .bq-poche-t button{width:30px;height:30px;flex:none;border-radius:50%;
+          display:grid;place-items:center;font:inherit;font-size:13px;
+          font-weight:800;cursor:pointer;color:#E6EDF6;background:none;
+          border:1px solid rgba(255,255,255,.22);}
+        .bq-poche-v{margin:0;padding:8px 6px;font-size:13px;line-height:1.45;
+          color:#C6D2E2;}
         .bq-poche ul{list-style:none;margin:0;padding:0;}
-        .bq-poche li{display:flex;align-items:center;gap:10px;padding:8px;
-          border-radius:13px;background:rgba(255,255,255,.05);
-          border:1px solid rgba(255,255,255,.1);margin-bottom:7px;
-          font-size:12.5px;color:#B9C6D8;}
+        .bq-poche li{display:flex;align-items:center;gap:8px;
+          border-radius:14px;background:rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.12);margin-bottom:8px;
+          padding:8px;}
         .bq-poche li:last-child{margin-bottom:0;}
-        .bq-poche img{flex:none;width:42px;height:52px;object-fit:cover;
-          object-position:center 18%;border-radius:9px;display:block;}
-        .bq-poche li>i{flex:none;display:grid;place-items:center;width:42px;
-          height:52px;border-radius:9px;font-style:normal;font-size:19px;
-          background:rgba(255,255,255,.06);}
-        .bq-poche li span{flex:1;min-width:0;}
-        .bq-poche li b{display:block;font-size:13.5px;font-weight:850;
+        /* LA LIGNE ENTIERE EST LE BOUTON. On ouvre cette poche pour revoir la
+           piece, donc la cible est la ligne et pas une fleche de 20 px. */
+        .bq-poche-o{flex:1;min-width:0;display:flex;align-items:center;gap:10px;
+          text-align:left;font:inherit;color:#C6D2E2;background:none;border:0;
+          padding:0;cursor:pointer;}
+        .bq-poche-o:disabled{cursor:default;}
+        .bq-poche-o:active{transform:scale(.99);}
+        /* CONTAIN ET PAS COVER : la vignette montre soit un rendu en pied,
+           soit un vetement detoure. Rogner l'un des deux coupe justement ce
+           qu'on est venu reconnaitre — un jean rogne a la cuisse devient un
+           short. */
+        .bq-poche img{flex:none;width:46px;height:58px;object-fit:contain;
+          border-radius:10px;display:block;background:rgba(255,255,255,.05);}
+        .bq-poche-o>i{flex:none;display:grid;place-items:center;width:46px;
+          height:58px;border-radius:10px;font-style:normal;font-size:20px;
+          background:rgba(255,255,255,.07);}
+        .bq-poche-o span{flex:1;min-width:0;font-size:12.5px;line-height:1.35;}
+        .bq-poche-o b{display:block;font-size:14px;font-weight:850;
           color:#fff;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;
           white-space:nowrap;}
-        .bq-poche li button{flex:none;width:28px;height:28px;border-radius:50%;
-          display:grid;place-items:center;font:inherit;font-size:11px;
-          font-weight:800;cursor:pointer;color:#8DA0B4;background:none;
-          border:1px solid rgba(255,255,255,.14);}
+        .bq-poche-o em{display:block;margin-top:3px;font-style:normal;
+          font-size:11.5px;font-weight:800;color:#FF7ABE;}
+        .bq-poche-x{flex:none;width:30px;height:30px;border-radius:50%;
+          display:grid;place-items:center;font:inherit;font-size:12px;
+          font-weight:800;cursor:pointer;color:#C6D2E2;background:none;
+          border:1px solid rgba(255,255,255,.18);}
+
+        /* ═══ LE PANNEAU DU SALON ══════════════════════════════════════════
+           On ne quitte pas la page d'un commerce sans l'avoir demande : le
+           message est deja parti, et le seul bouton qui fait sortir porte le
+           mot « ouvrir ». */
+        .bq-salon{width:min(340px,100%);border-radius:20px;padding:16px;
+          background:rgba(14,12,26,.98);border:1px solid rgba(255,255,255,.16);
+          box-shadow:0 26px 60px -22px rgba(0,0,0,.95);
+          animation:bqPoche .26s cubic-bezier(.16,1,.3,1) both;}
+        .bq-salon>b{display:block;font-size:18px;font-weight:850;
+          color:#FFFFFF;letter-spacing:-.01em;}
+        .bq-salon-s{margin:6px 0 12px;font-size:13px;line-height:1.45;
+          color:#C6D2E2;}
+        .bq-salon-m{display:flex;gap:10px;align-items:flex-start;
+          border-radius:14px;padding:10px;margin-bottom:13px;
+          background:rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.12);
+          border-left:3px solid #FF2D8E;}
+        .bq-salon-m img{flex:none;width:44px;height:56px;object-fit:contain;
+          border-radius:10px;display:block;background:rgba(255,255,255,.05);}
+        .bq-salon-m q{flex:1;min-width:0;font-size:12.5px;line-height:1.45;
+          color:#E6EDF6;quotes:none;}
+        .bq-salon-b{display:block;text-align:center;text-decoration:none;
+          border-radius:999px;padding:13px 16px;font-size:14.5px;
+          font-weight:850;color:#FFFFFF;background:#FF2D8E;
+          box-shadow:0 12px 26px -12px rgba(255,45,142,.9);}
+        .bq-salon-r{display:block;width:100%;margin-top:8px;font:inherit;
+          font-size:13px;font-weight:750;cursor:pointer;color:#C6D2E2;
+          background:none;border:0;padding:10px;}
+
+        /* ═══ LA PIECE EN GRAND, ET RIEN D'AUTRE ═══════════════════════════
+           « Voir la photo en entier sans rien autour. » Un fond noir, la photo
+           entiere, un seul ✕ — le reste de l'ecran ferme au toucher. */
+        .bq-plein{position:fixed;inset:0;z-index:150;display:grid;
+          place-items:center;background:#05070E;cursor:zoom-out;
+          animation:bqVoile .2s ease both;}
+        .bq-plein img{width:100%;height:100%;object-fit:contain;display:block;}
+        .bq-plein button{position:absolute;top:calc(12px + env(safe-area-inset-top));
+          right:12px;width:38px;height:38px;border-radius:50%;display:grid;
+          place-items:center;font:inherit;font-size:15px;font-weight:800;
+          cursor:pointer;color:#FFFFFF;background:rgba(18,14,32,.6);
+          border:1px solid rgba(255,255,255,.28);
+          backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+
         /* LE NOM DU PRODUIT, DANS LA LETTRE DU PRODUIT. Le « Me » porte la
            couleur : c'est le logo, et il est le meme partout. */
         .bq-marque{font-size:20px;font-weight:800;letter-spacing:-.02em;
