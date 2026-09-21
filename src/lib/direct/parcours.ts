@@ -66,6 +66,17 @@ export type Evenement =
    */
   | "republication"
   | "mise-en-avant"
+  /**
+   * LE RELOOKING — et c'est la seule mesure qui ne porte pas sur un commerce.
+   *
+   * Tous les autres événements comptent ce qu'on fait DEVANT une annonce. Le
+   * relooking retourne la question : il part d'une envie et traverse quatre
+   * commerces d'un coup. Le compter à part est la seule façon de répondre à
+   * « est-ce que ce chemin-là sert, et à partir de quelle annonce il accroche »
+   * — la valeur envoyée est justement le rang de la carte où la bande est
+   * apparue.
+   */
+  | "relooking"
   | "fin";
 
 type Ligne = { evenement: Evenement; valeur?: number; contexte?: string };

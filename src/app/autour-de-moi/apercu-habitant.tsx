@@ -162,6 +162,7 @@ import { PictoMetier } from "@/components/direct/picto-metier";
 // 👻 LE MUR MONTE ICI, sur l'annonce, et ne l'emmene nulle part. Voir le
 // commentaire du bouton dans la barre.
 import { MurContenu } from "@/components/direct/mur-contenu";
+import { RelookingContenu } from "@/components/direct/relooking-contenu";
 import { murDeLaCarte, murDuSouvenir, QUOTA_DU_JOUR } from "@/lib/direct/fantomes";
 import { motsDe, soireeDuLieu } from "@/lib/direct/soiree";
 import { basculerLeSon, jouer, sonCoupe } from "@/lib/direct/sons";
@@ -1831,6 +1832,23 @@ export function ApercuHabitant() {
   );
   /** Fermée à la main : on ne repropose plus de la visite. */
   const [inviteFermee, setInviteFermee] = useState(false);
+  /**
+   * ═══ LE RELOOKING, PROPOSÉ À PARTIR DE LA CINQUIÈME ANNONCE ══════════════
+   *
+   * PAS À L'ARRIVÉE, ET POUR LA MÊME RAISON QUE L'INSTALLATION. Une invitation
+   * posée sur le premier écran demande une photo du visage avant d'avoir rien
+   * montré, et se fait refuser par réflexe. À la cinquième carte, la personne a
+   * vu ce qu'est ce produit — des commerces d'ici, à cent mètres — et la
+   * proposition tombe dans un contexte qui la rend lisible : « ces boutiques,
+   * mises ensemble, ça donnerait quoi sur moi ? »
+   *
+   * ET C'EST LE MOMENT OÙ LE PAQUET COMMENCE À FATIGUER. Cinq annonces, c'est
+   * à peu près le point où l'on passe de « je découvre » à « je cherche quelque
+   * chose ». Le relooking retourne justement la question du produit : au lieu
+   * de demander ce qu'il y a autour, il demande ce qu'on voudrait devenir.
+   */
+  const [relookFermee, setRelookFermee] = useState(false);
+  const [relooking, setRelooking] = useState(false);
   /** Le signe qui accompagne le message d'écho. La flamme par défaut. */
   const [echoIcone, setEchoIcone] = useState("🔥");
 
@@ -4257,6 +4275,19 @@ export function ApercuHabitant() {
    * centimètres carrés d'image.
    */
   const gardeSommet = !!sommet && gardees.includes(sommet.id);
+  /**
+   * LA PROPOSITION DE RELOOKING EST-ELLE À L'ÉCRAN EN CE MOMENT&nbsp;?
+   *
+   * `passees.length >= 4` VEUT DIRE « À PARTIR DE LA CINQUIÈME ANNONCE » : on
+   * compte les cartes DÉJÀ passées, et celle qu'on regarde est la suivante.
+   * Voir `rangVu`, qui fait le même calcul pour la mesure.
+   *
+   * ELLE DISPARAÎT PENDANT UNE DEMANDE DE SORTIE. Quelqu'un qui attend des
+   * réponses de commerces n'est pas en train de se demander à quoi il
+   * ressemblerait — et une interruption à ce moment-là fait perdre le fil de
+   * la seule chose qui presse.
+   */
+  const inviteRelook = !relookFermee && !relooking && passees.length >= 4 && !sortie;
   /** Le commerce de la carte du dessus est-il en favori. */
   const suiviSommet = !!dessus && suivis.includes(dessus.id);
   /** ⚡ La carte du dessus porte-t-elle un Flash en cours — voir `flash.ts`. */
@@ -5839,6 +5870,19 @@ export function ApercuHabitant() {
   return (
     <div className="ap">
       <StylesDirect />
+      {/* ═══ LE RELOOKING PREND TOUT L'ÉCRAN, ET IL EST POSÉ ICI ════════════
+
+          HORS DU TÉLÉPHONE ET HORS DU PAQUET. C'est un parcours de sept écrans
+          qui ne parle d'aucun commerce en particulier : le glisser dans le fil
+          en ferait une carte de plus, avec un balayage qui le fermerait au
+          premier geste de travers. Posé au-dessus de tout, il se ferme par une
+          croix et par elle seule — et le paquet est retrouvé exactement là où
+          on l'avait laissé.
+
+          IL NE DÉMONTE PAS LE FIL EN DESSOUS. Le rendu du look prend une
+          minute ; remonter le paquet au retour relancerait l'ouverture, le
+          tri par fraîcheur et la première carte. */}
+      {relooking && <RelookingContenu onFermer={() => setRelooking(false)} />}
       <div className="ap-tel">
         {/* SUR LE DIRECT, LA PHOTO PASSE DERRIÈRE LES ONGLETS — voir la règle
             .ap-app.direct .ap-onglets. Ailleurs, la barre reste dans le flux :
@@ -6689,6 +6733,54 @@ export function ApercuHabitant() {
                 ) : null}
               </div>
             )}
+
+          {/* ═══ « ET SI ON VOUS RELOOKAIT ? » ══════════════════════════════
+
+              ELLE ARRIVE À LA CINQUIÈME ANNONCE, et c'est la seule chose de
+              cet écran qui ne parle pas d'un commerce en particulier. Tout le
+              reste du paquet répond à « qu'est-ce qu'il y a autour de moi ? » ;
+              celle-ci propose l'autre question — « à quoi je pourrais
+              ressembler ? » — dont la réponse traverse quatre boutiques d'ici.
+
+              ELLE PASSE DEVANT LA BANDE D'INSTALLATION, qui attend la même
+              carte. Deux interruptions sur la même annonce font exactement la
+              densité qu'on a passé des semaines à enlever ; celle-ci a une
+              raison d'être là maintenant, l'autre sera toujours vraie au
+              dixième balayage. Voir la condition ajoutée juste dessous. */}
+          {inviteRelook && (
+            <button
+              type="button"
+              className="ap-relook-bande"
+              onClick={() => {
+                noter("relooking", passees.length + 1, "bande");
+                setRelooking(true);
+              }}
+            >
+              <i aria-hidden="true">✨</i>
+              <span>
+                <b>Et si on vous relookait&nbsp;?</b>
+                Une coupe, une tenue, des lunettes — tout d’ici.
+              </span>
+              <em aria-hidden="true">Essayer</em>
+              <s
+                role="button"
+                tabIndex={0}
+                aria-label="Ne plus proposer"
+                onClick={(ev) => {
+                  ev.stopPropagation();
+                  setRelookFermee(true);
+                }}
+                onKeyDown={(ev) => {
+                  if (ev.key !== "Enter" && ev.key !== " ") return;
+                  ev.stopPropagation();
+                  ev.preventDefault();
+                  setRelookFermee(true);
+                }}
+              >
+                ✕
+              </s>
+            </button>
+          )}
           </div>
 
           <div className="ap-vue">
@@ -8823,6 +8915,7 @@ export function ApercuHabitant() {
               récupère les deux barres du navigateur, soit près de deux cents
               points sur un iPhone. */}
           {!inviteFermee &&
+            !inviteRelook &&
             !installation.deja &&
             installation.chemin !== "aucune" &&
             // ET PLUS AU MÊME BALAYAGE QUE LE TOUR DE RÔLE. Les deux bandes
@@ -16071,6 +16164,50 @@ export function ApercuHabitant() {
           border:0;border-radius:999px;padding:7px 12px;}
         .ap-poser-x{width:26px;padding:0!important;font-size:13px!important;
           color:#7F988B!important;background:none!important;}
+
+        /* ═══ LA BANDE DU RELOOKING ════════════════════════════════════════
+
+           ELLE EST ROSE LÀ OÙ TOUT LE DIRECT EST VERT, et c'est voulu : le
+           vert de cette application veut dire « un commerce d'ici, maintenant ».
+           Celle-ci ne parle d'aucun commerce — elle propose de retourner la
+           question — et lui donner la couleur des annonces la ferait lire
+           comme une annonce de plus, c'est-a-dire comme quelque chose qu'on
+           balaie.
+
+           MEME HAUTEUR QUE CELLE DE L'INSTALLATION. Quarante-quatre points sur
+           un ecran dont chaque pixel a ete disputé : deux rangs, jamais trois,
+           et chacun coupé plutot que replié. */
+        /* ELLE EST EN HAUT, AU-DESSUS DU PAQUET, et ce n'est pas un detail de
+           mise en page. Posee sous la carte, elle tombait dans les deux cents
+           points du bas que le rail des gestes et la barre d'onglets occupent
+           en absolu : mesuree a l'ecran, elle arrivait entierement sous la
+           barre — visible nulle part et hors d'atteinte du doigt. C'est le
+           meme defaut que le tiroir de la poche sur la page commercant, et il
+           se voit aussi peu.
+
+           ET ELLE VIT DANS LE CALQUE DU HAUT, PAS A COTE. Remontee en tete du flux,
+           elle passait sous le bandeau — qui est lui aussi pose en absolu, sur
+           deux cent vingt-six points. Dans cette mise en page, TOUT ce qui est
+           dans le flux est recouvert : le seul endroit visible est le calque du
+           haut, celui qui porte deja la banniere du tour de role. C'est la
+           bonne place pour une interruption, et c'est la sienne. */
+        .ap-relook-bande{flex:none;display:flex;align-items:center;gap:9px;
+          width:calc(100% - 24px);margin:6px 12px 0;
+          padding:7px 8px 7px 11px;cursor:pointer;text-align:left;font:inherit;
+          background:linear-gradient(92deg,rgba(245,17,192,.18),rgba(168,85,247,.14));
+          border:1px solid rgba(245,17,192,.45);
+          border-radius:13px;animation:apEcho .3s ease both;}
+        .ap-relook-bande>i{font-style:normal;font-size:16px;line-height:1;flex:none;}
+        .ap-relook-bande span{flex:1;min-width:0;font-size:10px;color:#C9A6D8;
+          line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .ap-relook-bande span b{display:block;font-size:12px;font-weight:850;
+          color:#FFE3F8;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;
+          text-overflow:ellipsis;}
+        .ap-relook-bande>em{flex:none;font-style:normal;font-size:11.5px;
+          font-weight:850;color:#FFFFFF;border-radius:999px;padding:7px 12px;
+          background:linear-gradient(92deg,#F511C0,#FF2D8E);}
+        .ap-relook-bande>s{flex:none;width:26px;text-align:center;
+          text-decoration:none;font-size:13px;color:#A98CBC;cursor:pointer;}
 
         /* LES POINTS DU CARROUSEL ONT DISPARU AVEC LUI, et la regle qui
            descendait les deux pastilles pour leur faire place avec eux : sans

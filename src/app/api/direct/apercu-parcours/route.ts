@@ -45,6 +45,29 @@ const EVENEMENTS = new Set([
   "notif-proposee",
   "notif-acceptee",
   "notif-refusee",
+  /**
+   * ═══ TROIS ÉVÉNEMENTS QUI PARTAIENT ET QUE PERSONNE NE RECEVAIT ═══════════
+   *
+   * `republication` ET `mise-en-avant` SONT ENVOYÉS DEPUIS DES MOIS. Le type
+   * les connaît — voir `lib/direct/parcours.ts`, qui explique précisément ce
+   * défaut pour l'autre moitié du problème — mais ce jeu-ci, qui est le filtre
+   * réel, ne les avait jamais reçus : ils tombaient sur le `return null` de la
+   * ligne 77, sans erreur, sans trace. « Le vocabulaire est fermé des deux
+   * côtés » : il l'était d'un seul.
+   *
+   * C'EST LA PIRE FORME DE MESURE MANQUANTE. Les deux gestes du matin côté
+   * commerçant — remettre une fournée, désigner une pièce — sont exactement
+   * ceux dont on voulait savoir lequel accroche. On croyait les compter, on
+   * décidait dessus, et le compteur était à zéro pour une raison qui n'a rien
+   * à voir avec les commerçants.
+   *
+   * `relooking` ARRIVE AVEC LE PARCOURS DU MÊME NOM, et il serait tombé dans
+   * le même trou. La valeur envoyée est le rang de la carte où la bande est
+   * apparue : c'est ce qui dira à partir de quelle annonce ce chemin accroche.
+   */
+  "republication",
+  "mise-en-avant",
+  "relooking",
   "fin",
 ]);
 
