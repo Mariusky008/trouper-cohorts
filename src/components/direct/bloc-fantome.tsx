@@ -34,6 +34,7 @@
 import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { FantomeMetier, outilDuMetier } from "@/components/direct/fantome-metier";
 import type { Mur } from "@/lib/direct/fantomes";
+import { rayonsGarnis } from "@/lib/direct/rayons";
 import {
   abonnerMisesEnAvant,
   chargerMisesEnAvant,
@@ -186,13 +187,46 @@ function laQuestion(
  */
 export type QuoiEssayer = "essai" | "gout" | "soiree" | "mur";
 
+/**
+ * LES PICTOGRAMMES DES QUATRE FAMILLES.
+ *
+ * TRACÉS, PAS EN EMOJI. Un emoji de robe n'existe qu'en version colorée et
+ * genrée ; ces quatre-là suivent la teinte du métier et restent les mêmes chez
+ * la friperie et chez le prêt-à-porter homme.
+ */
+function PictoRayon({ cle }: { cle: string }) {
+  if (cle === "robes")
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 3h6l-1 3.4 3 3.6-1.4 2 .9 9H7.5l.9-9L7 10l3-3.6Z" />
+      </svg>
+    );
+  if (cle === "bas")
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7.5 3h9l.8 18h-4l-1.3-10-1.3 10h-4Z" />
+      </svg>
+    );
+  if (cle === "accessoires")
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5.4 8h13.2l1 11.2a1.6 1.6 0 0 1-1.6 1.8H6a1.6 1.6 0 0 1-1.6-1.8Z" />
+        <path d="M9 10V6.6a3 3 0 0 1 6 0V10" />
+      </svg>
+    );
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M9 3.6 12 6l3-2.4 5 2.6-1.8 4.2-2-.7.6 11.3H8.2l.6-11.3-2 .7L5 6.2Z" />
+    </svg>
+  );
+}
+
 export function BlocFantome({
   mur,
   quoi,
   onPhoto,
-  onImporter,
   onStyle,
-  onSurprise,
+  onCollection,
   styleChoisi,
 }: {
   mur: Mur;
@@ -200,17 +234,27 @@ export function BlocFantome({
   quoi: QuoiEssayer;
   /** Ouvre l'appareil photo. C'est le geste principal de toute la page. */
   onPhoto: () => void;
-  /** Ouvre la photothèque. Deuxième chemin vers le même écran. */
-  onImporter: () => void;
+  /**
+   * LA PHOTOTHÈQUE N'EST PLUS UNE PORTE DE CETTE PAGE.
+   *
+   * Elle l'était sous « ou / Importer une photo », c'est-à-dire avant d'avoir
+   * montré la moindre pièce : on demandait un visage pour une raison qu'on
+   * n'avait pas encore. Le chemin existe toujours, dans l'atelier, à l'écran
+   * de la prise de vue — « Choisir une photo de ma photothèque » — là où la
+   * question se pose vraiment.
+   */
   /** Choisir un style dans la bande. */
   onStyle: (id: string) => void;
   /**
-   * LAISSER CLIKME CHERCHER. Il ouvre le même atelier que le grand bouton,
-   * mais avec l'intention : la prise de vue faite, on part sur la recherche au
-   * lieu de la grille. Absent, la carte ne se dessine pas — c'est une porte, et
-   * une porte qui ne mène nulle part est pire qu'un mur.
+   * OUVRIR LA COLLECTION, ÉVENTUELLEMENT SUR UNE FAMILLE.
+   *
+   * « Explorer la collection » l'appelle sans rien ; les pastilles « Robes »,
+   * « Hauts », « Bas » l'appellent avec leur clé. L'atelier s'ouvre alors sur
+   * la GRILLE et pas sur la prise de vue — voir `ouvrirSurGrille` dans
+   * `MurContenu` : un bouton qui promet une collection ne doit pas commencer
+   * par demander un visage.
    */
-  onSurprise?: () => void;
+  onCollection?: (rayon?: string) => void;
   styleChoisi?: string;
 }) {
   const q = useMemo(
@@ -241,6 +285,22 @@ export function BlocFantome({
    * vide avec une légende manuscrite serait un cadre qui parle de rien.
    */
   const polas = pieces.filter((p) => p.photo).slice(0, 2);
+
+  /**
+   * LES FAMILLES QU'ON PEUT VRAIMENT OUVRIR ICI.
+   *
+   * « Robes, Hauts, Bas, Accessoires » : quatre portes dans la collection,
+   * pas un menu de site marchand. Elles se déduisent du NOM des pièces et non
+   * des rayons du commerçant — voir `lib/direct/rayons.ts`, qui explique
+   * pourquoi ces rayons-là ne survivent pas à la fusion des catalogues.
+   *
+   * ELLES NE SE DESSINENT QUE SI ELLES SONT GARNIES. Une pastille qui ouvre
+   * sur une grille vide apprend à ne plus appuyer sur les pastilles.
+   */
+  const rayons = useMemo(
+    () => (quoi === "essai" ? rayonsGarnis(pieces.filter((p) => !p.bientot).map((p) => p.nom)) : []),
+    [pieces, quoi],
+  );
 
   /**
    * ═══ LA PIÈCE DU JOUR, ET ELLE N'EST PAS FORCÉMENT SOLDÉE ═════════════════
@@ -355,7 +415,9 @@ export function BlocFantome({
               {q.debut} <b>{q.fin}</b>
             </h2>
             <p className="bf-p">
-              {quoi === "gout"
+              {quoi === "essai"
+                ? "Explorez toute la collection de la boutique et trouvez des pièces uniques qui vous ressemblent."
+                : quoi === "gout"
                 ? // LA PHRASE NE PORTE AUCUN GENRE, ET C'EST EXPRÈS. Elle
                   // nommait le plat puis disait « ne LE regardez pas » : juste
                   // pour « le magret », faux pour « la côte de bœuf », et il
@@ -388,25 +450,66 @@ export function BlocFantome({
           )}
         </div>
 
+        {/* ═══ LES QUATRE PORTES DE LA COLLECTION ════════════════════════════
+
+            ELLES REMPLACENT « ou / Importer une photo », et ce n'est pas une
+            suppression : le second chemin vers la photothèque existe toujours,
+            mais il s'ouvre DANS l'atelier, à l'écran de la prise de vue, là où
+            la question se pose vraiment. Ici, il répondait à une question que
+            personne n'avait encore — on ne sait pas encore ce qu'on veut
+            essayer.
+
+            CE QU'ON VEUT SAVOIR DEVANT UNE VITRINE, c'est ce qu'il y a dedans.
+            Quatre familles, une par pastille, et la collection s'ouvre déjà
+            filtrée. Voir `rayons.ts` : elles se lisent dans le nom des pièces,
+            elles ne se dessinent que garnies, et elles ne cachent jamais
+            personne — la collection entière reste à un doigt. */}
+        {rayons.length > 0 && onCollection && (
+          <ul className="bf-rayons">
+            {rayons.map((r) => (
+              <li key={r.cle}>
+                <button type="button" onClick={() => onCollection(r.cle)}>
+                  <i aria-hidden="true">
+                    <PictoRayon cle={r.cle} />
+                  </i>
+                  {r.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
         {/* ═══ LE GRAND GESTE ════════════════════════════════════════════════
             Pastille pleine, dégradé du métier, un appareil photo à gauche et
             une flèche dans un rond à droite — c'est le dessin exact des trois
             maquettes, et le rond de droite n'est pas un ornement : il dit qu'on
             part ailleurs, là où l'icône de gauche dit avec quoi. */}
-        <button type="button" className="bf-cta" onClick={onPhoto}>
+        {/* ET IL PROMET LA COLLECTION, PAS L'APPAREIL PHOTO. « Me photographier
+            en buste » demandait un visage avant d'avoir montré quoi que ce
+            soit : c'est l'ordre inverse de celui d'une vitrine. On entre dans
+            la collection, on désigne une pièce, ET ALORS on donne sa photo —
+            au moment où la question a une réponse évidente. Voir
+            `ouvrirSurGrille` et `changerDeStyle` dans `mur-contenu`. */}
+        <button
+          type="button"
+          className="bf-cta"
+          onClick={quoi === "essai" && onCollection ? () => onCollection() : onPhoto}
+        >
           {/* L'ICÔNE DIT AVEC QUOI ON LE FAIT, DONC ELLE CHANGE AVEC LE CAS. Un
               appareil photo devant « Goûter le plat du jour » ferait chercher
               son téléphone à quelqu'un qui n'a rien à photographier. */}
           {quoi === "essai" ? (
+            /* UN SAC, PLUS UN APPAREIL PHOTO. L'icône dit où l'on va ; le
+               bouton ouvre une boutique, pas un viseur. */
             <svg className="bf-cta-i" viewBox="0 0 24 24" aria-hidden="true">
               <path
-                d="M4 8.5h3.2l1.4-2.2h6.8l1.4 2.2H20a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 20 19.5H4A1.5 1.5 0 0 1 2.5 18v-8A1.5 1.5 0 0 1 4 8.5z"
+                d="M5.4 8h13.2l1 11.2a1.6 1.6 0 0 1-1.6 1.8H6a1.6 1.6 0 0 1-1.6-1.8Z"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.8"
                 strokeLinejoin="round"
               />
-              <circle cx="12" cy="14" r="3.4" fill="none" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M9 10V6.6a3 3 0 0 1 6 0V10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
             </svg>
           ) : (
             <svg className="bf-cta-i" viewBox="0 0 24 24" aria-hidden="true">
@@ -428,72 +531,26 @@ export function BlocFantome({
                 ? "Essayer cette soirée"
                 : quoi === "mur"
                   ? "Laisser mon Fantôme"
-                  : (mur.essai?.mots.geste ?? "Je me prends en photo")}
+                  : "Explorer la collection"}
           </span>
           <s aria-hidden="true">→</s>
         </button>
 
-        {/* LE SECOND CHEMIN N'EXISTE QUE S'IL MÈNE AU MÊME ENDROIT. On importe
-            une photo pour ESSAYER ; on n'importe rien pour jouer avec un plat
-            ni pour laisser un mot sur un mur. */}
-        {quoi === "essai" && (
-          <div className="bf-ou" aria-hidden="true">
-            <i />
-            <span>ou</span>
-            <i />
-          </div>
-        )}
+        {/* ═══ « SURPRENDS-MOI » N'EST PLUS SUR CETTE PAGE ═══════════════════
 
-        {quoi === "essai" && (
-        <button type="button" className="bf-import" onClick={onImporter}>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="3" y="5" width="18" height="14" rx="2.4" fill="none" stroke="currentColor" strokeWidth="1.8" />
-            <circle cx="8.6" cy="10" r="1.7" fill="currentColor" />
-            <path d="M4 17l5-5 3.4 3.4L16 11l4 4.6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-          </svg>
-          Importer une photo
-        </button>
-        )}
+            « Supprimer cette section de la page commerçant sur sa page
+            centrale, je veux juste les deux blocs. »
 
-        {/* ═══ ✨ SURPRENDS-MOI — ET IL EST DANS LE PREMIER PANNEAU ═══════════
+            IL N'A PAS DISPARU DU PRODUIT, IL A PERDU CETTE PLACE-LÀ. Le geste
+            existe toujours là où il a un sens : DANS l'atelier, sur l'écran du
+            choix, sous « ou laissez ClikMe choisir pour vous » — c'est-à-dire
+            au moment exact où l'on est devant la grille et où l'on ne sait pas
+            quoi prendre. Voir `mu-surp` dans `mur-contenu`.
 
-          « Cette partie du deuxième bloc n'est vraiment pas nécessaire. »
-
-          ELLE NE L'ÉTAIT PAS À CET ENDROIT-LÀ, ET C'EST TOUT LE DÉFAUT. Elle
-          était posée SOUS l'annonce du jour, donc elle se lisait comme une
-          option de cette annonce : « surprends-moi » juste après une doudoune
-          kaki laisse croire qu'on va proposer une autre doudoune. Or elle
-          cherche dans la COLLECTION ENTIÈRE — c'est-à-dire exactement ce que
-          fait ce premier panneau, et rien de ce que fait le second.
-
-          REMONTÉE ICI, elle devient la troisième porte du même bloc : je me
-          photographie, j'importe une photo, ou je laisse ClikMe choisir. Trois
-          façons d'entrer dans la même chose, au même endroit.
-
-          « Laissez ClikMe chercher dans la boutique quelque chose pour vous. »
-
-          C'EST LA TROISIÈME RAISON DE REVENIR, et c'est celle qui n'existe
-          nulle part ailleurs. Les deux autres supposent qu'on sache : ce que la
-          boutique met en avant aujourd'hui, ou ce qu'on veut essayer. Celle-ci
-          est pour le cas le plus fréquent — on ne sait pas — et c'est justement
-          celui que tous les catalogues du monde traitent en montrant tout.
-
-          ELLE VA CHERCHER DANS LA COLLECTION ENTIÈRE, pas dans les cinq
-          vignettes du dessous. Sinon elle ne surprendrait rien : elle
-          désignerait au hasard une pièce déjà visible à l'écran. */}
-        {onSurprise && mur.essai?.mots.surprends && pieces.some((p) => !p.bientot) && (
-        <button type="button" className="bf-surp" onClick={onSurprise}>
-          <span className="bf-surp-t">
-            <b>
-              <i aria-hidden="true">✨</i> SURPRENDS-MOI
-            </b>
-            <em>
-              Laissez ClikMe chercher dans {mur.essai.mots.surprends.ou} quelque chose pour vous.
-            </em>
-          </span>
-          <s aria-hidden="true">→</s>
-        </button>
-      )}
+            SUR CETTE PAGE, IL FAISAIT UNE TROISIÈME PORTE POUR LA MÊME PIÈCE,
+            et trois portes côte à côte ne se choisissent pas : elles se
+            comptent. Deux blocs, deux intentions — toute la collection, ou la
+            pièce du jour. */}
 
       </div>
 
@@ -530,29 +587,72 @@ export function BlocFantome({
           et il porte toute la différence : ce n'est plus un second panneau,
           c'est une autre section. Le bandeau du dessus, lui, dit la sienne —
           voir `bf-quoi`. */}
-      {duJour && (
-        <div className="bf-coupe">
-          <h3>L’annonce du jour</h3>
-          <p>Ce que la boutique met en avant aujourd’hui — une seule pièce.</p>
-        </div>
-      )}
+      {/* ═══ LA PIÈCE DU JOUR — UNE CARTE CLAIRE, PAS UN SECOND PANNEAU ══════
+
+          « Pourquoi ai-je deux blocs maintenant pour essayer les vêtements ?
+          Ce bloc ressemble au premier sauf la photo. »
+
+          LE PREMIER DESSIN ÉTAIT UNE PHOTO PLEIN CADRE avec un bouton dessus :
+          exactement la forme du panneau du dessus, à la couleur près. Deux
+          rectangles arrondis de même silhouette, l'un sous l'autre, se lisent
+          comme une répétition — et une répétition, on la saute.
+
+          CELUI-CI EST D'UNE AUTRE NATURE, ET ÇA SE VOIT AVANT DE LIRE : fond
+          clair, titre de section avec son étoile, deux colonnes — ce qu'on dit
+          à gauche, ce qu'on montre à droite. Le panneau du dessus ouvre TOUTE
+          la collection ; cette carte-ci n'a qu'une seule pièce à défendre, et
+          sa mise en page le dit : un nom, un prix, un geste.
+
+          LES DEUX ÉTIQUETTES DU BAS SONT CE QUI MANQUE PARTOUT AILLEURS. « Une
+          seule pièce », « Taille 38 » : c'est la vraie raison de se déplacer
+          aujourd'hui plutôt que demain, et aucune fiche d'annuaire ne la
+          porte. */}
       {duJour && (
         <div className="bf-jour">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="bf-jour-ph" src={duJour.piece.photo} alt="" />
-          <div className="bf-jour-t">
-            <b className="bf-jour-e">{duJour.etiquette}</b>
-            <h3>{duJour.piece.nom}</h3>
-            <p>{duJour.raison}</p>
-            <span className="bf-jour-x">
-              {duJour.prixAvant && <s>{duJour.prixAvant}</s>}
-              <em>{duJour.piece.prix}</em>
+          <b className="bf-jour-e">{duJour.etiquette}</b>
+          <div className="bf-jour-h">
+            <span className="bf-jour-s" aria-hidden="true">
+              ✦
+            </span>
+            <span className="bf-jour-ht">
+              <h3>La pièce du jour</h3>
+              <p>Un coup de cœur sélectionné rien que pour vous</p>
             </span>
           </div>
-          <button type="button" className="bf-jour-b" onClick={() => onStyle(duJour.piece.id)}>
-            {mur.essai?.mots.surMoi ?? "Essayer sur moi"}
-            <s aria-hidden="true">→</s>
-          </button>
+
+          <div className="bf-jour-c">
+            <div className="bf-jour-g">
+              <h4>{duJour.piece.nom}</h4>
+              <p>{duJour.raison}</p>
+              <span className="bf-jour-x">
+                {duJour.prixAvant && <s>{duJour.prixAvant}</s>}
+                <em>{duJour.piece.prix}</em>
+              </span>
+              <button
+                type="button"
+                className="bf-jour-b"
+                onClick={() => onStyle(duJour.piece.id)}
+              >
+                <i aria-hidden="true">
+                  <PictoRayon cle="hauts" />
+                </i>
+                {mur.essai?.mots.surMoi ?? "Essayer sur moi"}
+                <s aria-hidden="true">→</s>
+              </button>
+            </div>
+
+            <div className="bf-jour-d">
+              {/* ELLE EST AU-DESSUS DE LA PHOTO, PAS DESSUS. Posee sur
+                  l'image, elle tombait sur un fond clair ou elle ne se lisait
+                  plus — et une annotation illisible n'est plus une voix, c'est
+                  une tache. */}
+              <span className="bf-jour-m" aria-hidden="true">
+                Confort et style ♡
+              </span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={duJour.piece.photo} alt="" />
+            </div>
+          </div>
         </div>
       )}
 
@@ -798,92 +898,112 @@ function Styles() {
            jour. Elle est rose quand il n'y a pas de remise, ambre quand il y en
            a une : la remise doit se voir immediatement DIFFERENTE, sinon elle
            se fond dans le decor et cesse d'etre un evenement. */
-        /* ═══ LA COUPURE ENTRE LES DEUX SECTIONS ═══════════════════════════
-           Deux panneaux arrondis l'un sous l'autre se lisent comme une
-           repetition ; un titre entre les deux en fait deux sections. Il est
-           dessine comme « Vous pourriez aussi aimer », plus bas, parce que
-           c'est le meme role. */
-        .bf-coupe{margin:26px 0 2px;}
-        .bf-coupe h3{margin:0;font-size:17px;font-weight:850;
-          letter-spacing:-.02em;color:#151B33;}
-        .bf-coupe p{margin:3px 0 0;font-size:12.5px;line-height:1.35;
-          color:#6B6484;}
+        /* ═══ LES QUATRE PORTES DE LA COLLECTION ═══════════════════════════
+           Des pastilles blanches bordees de la teinte du metier, qui defilent
+           au pouce plutot que de se replier : repliees, elles fabriqueraient
+           deux rangees dont la hauteur change avec le nombre de familles. */
+        .bf-rayons{list-style:none;display:flex;gap:8px;margin:16px 0 0;
+          padding:0 0 2px;overflow-x:auto;scrollbar-width:none;
+          -webkit-overflow-scrolling:touch;}
+        .bf-rayons::-webkit-scrollbar{display:none;}
+        .bf-rayons li{flex:none;}
+        .bf-rayons button{display:inline-flex;align-items:center;gap:7px;
+          border-radius:999px;padding:10px 16px 10px 13px;cursor:pointer;
+          font:inherit;font-size:13.5px;font-weight:800;letter-spacing:-.01em;
+          color:#3A2B52;background:#FFFFFF;
+          border:1.5px solid color-mix(in srgb,var(--bf-teinte) 34%,#FFFFFF);
+          box-shadow:0 6px 16px -10px rgba(60,30,90,.4);}
+        .bf-rayons button:active{transform:scale(.97);}
+        .bf-rayons svg{width:17px;height:17px;display:block;
+          fill:none;stroke:var(--bf-teinte);stroke-width:1.6;
+          stroke-linejoin:round;stroke-linecap:round;}
+
         /* L'ETIQUETTE DU PREMIER PANNEAU. Elle dit ce qu'il est, en capitales
            et en petit : c'est un reperage, pas un titre — le titre du panneau
-           est la question que le fantome pose. */
-        /* ELLE SE POSE A DROITE : le coin gauche est deja pris par la phrase
-           manuscrite du fantome, qui y est en absolu. Mesure a la capture :
-           les deux se chevauchaient mot pour mot. */
+           est la question que le fantome pose.
+           ELLE SE POSE A DROITE : le coin gauche est deja pris par la phrase
+           manuscrite du fantome, qui y est en absolu. */
         .bf-quoi{display:block;width:max-content;margin:0 0 10px auto;
           position:relative;z-index:3;border-radius:999px;
           padding:4px 11px;font-size:9.5px;font-weight:850;letter-spacing:.13em;
           text-transform:uppercase;color:#6A2FA8;
           background:rgba(139,43,224,.1);
           border:1px solid rgba(139,43,224,.24);}
-        .bf-jour{position:relative;margin-top:10px;border-radius:24px;
-          overflow:hidden;min-height:340px;display:flex;
-          flex-direction:column;justify-content:flex-end;
-          background:#151B33;
-          box-shadow:0 22px 48px -24px rgba(20,12,45,.55);}
-        .bf-jour-ph{position:absolute;inset:0;width:100%;height:100%;
-          object-fit:cover;object-position:center 26%;}
-        .bf-jour::after{content:"";position:absolute;inset:0;
-          background:linear-gradient(0deg,rgba(8,5,20,.94) 4%,
-            rgba(8,5,20,.66) 34%,transparent 62%);}
-        .bf-jour-t,.bf-jour-b{position:relative;z-index:1;}
-        .bf-jour-t{padding:0 18px;color:#fff;}
-        .bf-jour-e{display:inline-block;font-size:11px;font-weight:900;
-          letter-spacing:.09em;border-radius:999px;padding:6px 13px;
-          background:linear-gradient(100deg,#E4189C,#FF3FB0);color:#fff;
-          box-shadow:0 8px 20px -8px rgba(228,24,156,.9);}
-        .bf-jour-t h3{margin:11px 0 0;font-size:26px;line-height:1.1;
-          font-weight:850;letter-spacing:-.03em;color:#fff;}
-        .bf-jour-t p{margin:7px 0 0;font-size:14px;line-height:1.42;
-          color:rgba(255,255,255,.84);}
-        .bf-jour-x{display:flex;align-items:baseline;gap:10px;margin-top:11px;}
-        /* LE PRIX BARRE N'EXISTE QUE S'IL Y A VRAIMENT UNE REMISE. Barrer un
-           prix qui n'a pas bouge est le mensonge le plus courant du commerce en
-           ligne, et le plus vite repere. */
-        .bf-jour-x s{font-size:15px;font-weight:650;color:rgba(255,255,255,.5);}
-        .bf-jour-x em{font-style:normal;font-size:24px;font-weight:900;
-          letter-spacing:-.02em;color:#FFD866;}
-        .bf-jour-b{display:flex;align-items:center;justify-content:center;
-          gap:10px;margin:15px 18px 18px;font:inherit;font-size:16px;
-          font-weight:850;cursor:pointer;border:0;border-radius:999px;
-          padding:16px 20px;color:#151B33;background:#fff;
-          box-shadow:0 14px 30px -14px rgba(0,0,0,.7);
-          transition:transform .12s ease;}
-        .bf-jour-b s{text-decoration:none;font-size:18px;line-height:1;}
-        .bf-jour-b:active{transform:scale(.985);}
-        .bf-jour-b:focus-visible{outline:2px solid #fff;outline-offset:3px;}
 
-        /* ═══ ✨ SURPRENDS-MOI ══════════════════════════════════════════════
+        /* ═══ LA PIECE DU JOUR ═════════════════════════════════════════════
 
-           IL GARDE SA COULEUR D'UN BOUT A L'AUTRE DU PRODUIT. Le meme degrade
-           violet-rose ici, sur la page claire du commercant, et sur l'ecran
-           sombre du choix : c'est ce qui fait qu'on reconnait le bouton avant
-           de l'avoir lu, chez un coiffeur comme chez un fleuriste le jour ou il
-           y sera. */
-        .bf-surp{display:flex;align-items:center;gap:12px;width:100%;
-          margin-top:14px;padding:16px 16px;border:0;border-radius:22px;
-          font-family:inherit;text-align:left;cursor:pointer;color:#fff;
-          background:linear-gradient(104deg,#8B2BE0 0%,#B227D6 44%,#F0269B 100%);
-          box-shadow:0 18px 38px -18px rgba(200,40,170,.8);
-          transition:transform .12s ease;}
-        .bf-surp:active{transform:scale(.985);}
-        .bf-surp:focus-visible{outline:2px solid #151B33;outline-offset:3px;}
-        .bf-surp-t{flex:1 1 auto;min-width:0;}
-        .bf-surp-t b{display:flex;align-items:center;gap:7px;font-size:17px;
-          font-weight:900;line-height:1.1;}
-        .bf-surp-t b i{font-style:normal;font-size:15px;}
-        .bf-surp-t em{display:block;font-style:normal;margin-top:5px;
-          font-size:13.5px;line-height:1.36;font-weight:600;
-          color:rgba(255,255,255,.92);}
-        .bf-surp s{flex:none;text-decoration:none;width:38px;height:38px;
-          border-radius:50%;display:grid;place-items:center;background:#fff;
-          color:#E0219A;font-size:18px;font-weight:800;line-height:1;}
+           UNE CARTE CLAIRE, ET PAS UN SECOND PANNEAU. Le premier dessin etait
+           une photo plein cadre avec un bouton dessus — c'est-a-dire la meme
+           silhouette que le panneau du dessus. Deux rectangles arrondis de
+           meme forme l'un sous l'autre se lisent comme une repetition, et une
+           repetition se saute. */
+        .bf-jour{position:relative;margin-top:16px;border-radius:26px;
+          padding:18px;
+          background:linear-gradient(180deg,#FFFFFF 0%,#FDF8FF 100%);
+          border:1px solid rgba(139,43,224,.14);
+          box-shadow:0 20px 44px -28px rgba(60,30,90,.4);}
+        /* LE TITRE PREND TOUTE LA LARGEUR, L'ETIQUETTE EST POSEE AU-DESSUS.
+           Cote a cote dans le meme rang, « La piece du jour » se repliait sur
+           deux lignes des trois cent quatre-vingt-dix points — mesure a la
+           capture — et le titre d'une section qui tient sur deux lignes ne
+           ressemble plus a un titre. */
+        /* L'ETIQUETTE PREND SA PROPRE LIGNE, ET LE TITRE TOUTE LA LARGEUR.
+           Cote a cote, « La piece du jour » et « NOUVEAU AUJOURD'HUI » ne
+           tiennent pas dans trois cent quatre-vingt-dix points — mesure a la
+           capture : l'etiquette passait par-dessus le mot « jour ». */
+        .bf-jour-h{display:flex;align-items:flex-start;gap:10px;margin-top:10px;}
+        .bf-jour-s{flex:none;font-size:19px;line-height:1;color:#F0269B;
+          text-shadow:0 0 14px rgba(240,38,155,.5);}
+        .bf-jour-ht{flex:1;min-width:0;}
+        .bf-jour-ht h3{margin:0;font-family:var(--font-enseigne),Georgia,serif;
+          font-size:23px;font-weight:600;line-height:1.1;letter-spacing:-.01em;
+          color:#1A1230;}
+        .bf-jour-ht p{margin:2px 0 0;font-size:12.5px;line-height:1.35;
+          color:#6B6484;}
+        .bf-jour-e{display:block;width:max-content;margin-left:auto;
+          border-radius:999px;padding:5px 11px;
+          font-size:9.5px;font-weight:850;letter-spacing:.09em;
+          text-transform:uppercase;color:#C01E7C;
+          background:rgba(240,38,155,.08);
+          border:1px solid rgba(240,38,155,.3);}
 
-        .bf-aussi{margin:22px 0 0;font-size:17px;font-weight:850;
+        /* DEUX COLONNES : ce qu'on dit a gauche, ce qu'on montre a droite.
+           C'est ce qui distingue cette carte du panneau, avant meme qu'on
+           ait lu un mot. */
+        .bf-jour-c{display:grid;grid-template-columns:1fr 1.08fr;gap:14px;
+          align-items:center;margin-top:14px;}
+        .bf-jour-g h4{margin:0;font-family:var(--font-enseigne),Georgia,serif;
+          font-size:25px;font-weight:600;line-height:1.08;letter-spacing:-.015em;
+          color:#1A1230;}
+        .bf-jour-g>p{margin:6px 0 0;font-size:12.5px;line-height:1.35;
+          color:#6B6484;}
+        .bf-jour-x{display:flex;align-items:baseline;gap:8px;margin-top:9px;}
+        .bf-jour-x s{font-size:14px;color:#9A93AE;}
+        .bf-jour-x em{font-style:normal;font-size:27px;font-weight:900;
+          letter-spacing:-.03em;color:#F0269B;}
+        .bf-jour-b{display:inline-flex;align-items:center;gap:9px;
+          margin-top:12px;border:0;border-radius:999px;padding:13px 16px;
+          cursor:pointer;font:inherit;font-size:14.5px;font-weight:850;
+          letter-spacing:-.01em;color:#FFFFFF;
+          background:linear-gradient(92deg,#F0269B,#FF5FB2);
+          box-shadow:0 16px 34px -16px rgba(240,38,155,.95);}
+        .bf-jour-b:active{transform:scale(.98);}
+        .bf-jour-b svg{width:18px;height:18px;display:block;fill:none;
+          stroke:currentColor;stroke-width:1.7;stroke-linejoin:round;}
+        .bf-jour-b>s{display:grid;place-items:center;width:26px;height:26px;
+          border-radius:50%;text-decoration:none;font-size:14px;
+          color:#F0269B;background:#FFFFFF;}
+
+        .bf-jour-d{position:relative;}
+        .bf-jour-d img{width:100%;aspect-ratio:1/1;object-fit:cover;
+          border-radius:20px;display:block;
+          box-shadow:0 18px 38px -22px rgba(60,30,90,.55);}
+        .bf-jour-m{display:block;margin:0 0 6px;text-align:right;
+          font-family:var(--font-main-levee),'Segoe Script',cursive;
+          font-size:16px;line-height:1.12;color:#8A6B9E;
+          transform:rotate(-4deg);pointer-events:none;}
+
+                .bf-aussi{margin:22px 0 0;font-size:17px;font-weight:850;
           letter-spacing:-.02em;color:#151B33;}
         /* UNE PIECE SANS PHOTO GARDE SA PLACE DANS LE RANG. Le rectangle raye
            dit « elle arrive » ; un trou dans la bande dirait « il y a un bug ». */

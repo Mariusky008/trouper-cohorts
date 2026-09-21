@@ -335,6 +335,16 @@ export function Boutique() {
   const [styleChoisi, setStyleChoisi] = useState<string | undefined>(undefined);
   /** On est entré par « Surprends-moi ». Voir `surprendre` dans `MurContenu`. */
   const [surprendre, setSurprendre] = useState(false);
+  /**
+   * LA FAMILLE ET LA PORTE D'ENTRÉE DE L'ATELIER.
+   *
+   * On peut entrer par la prise de vue — c'est le chemin des autres métiers —
+   * ou par la grille, quand on vient de « Explorer la collection » ou d'une
+   * pastille de famille. Les deux mènent au même endroit ; ce qui change,
+   * c'est ce qu'on a promis avant d'ouvrir la porte.
+   */
+  const [rayonChoisi, setRayonChoisi] = useState("");
+  const [grilleDabord, setGrilleDabord] = useState(false);
   const c = useMemo(() => cartes.find((x) => x.id === id) ?? cartes[0], [cartes, id]);
 
   /**
@@ -1089,14 +1099,20 @@ export function Boutique() {
                       : "mur"
               }
               onPhoto={() => setEssaiOuvert(true)}
-              onImporter={() => setEssaiOuvert(true)}
-              /* « SURPRENDS-MOI » OUVRE LE MÊME ATELIER, AVEC UNE INTENTION.
-                 Il faut une photo avant de pouvoir poser quoi que ce soit ; on
-                 part donc sur la prise de vue comme le grand bouton, et c'est à
-                 sa validation que le parcours bifurque vers la recherche plutôt
-                 que vers la grille. Voir `surprendre` dans `MurContenu`. */
-              onSurprise={() => {
-                setSurprendre(true);
+              /* ═══ LA COLLECTION S'OUVRE SUR LA GRILLE ═══════════════════════
+
+                 « Explorer la collection » et les pastilles de familles mènent
+                 au MÊME atelier que le reste, mais ils entrent par la grille au
+                 lieu de la prise de vue : un bouton qui promet une collection
+                 ne doit pas commencer par demander un visage. La photo arrive
+                 quand on désigne une pièce — voir `ouvrirSurGrille` et
+                 `changerDeStyle` dans `MurContenu`.
+
+                 LE RAYON TRAVERSE, ET IL PEUT ÊTRE VIDE : « Explorer » n'en
+                 passe aucun, la grille montre alors tout. */
+              onCollection={(rayon) => {
+                setRayonChoisi(rayon ?? "");
+                setGrilleDabord(true);
                 setEssaiOuvert(true);
               }}
               onStyle={(id) => {
@@ -1116,6 +1132,8 @@ export function Boutique() {
                  et l'atelier s'ouvrait sur la grille, c'est-à-dire devant le
                  choix qu'on venait de faire. */
               piecePrechoisie={styleChoisi}
+              rayonPrechoisi={rayonChoisi || undefined}
+              ouvrirSurGrille={grilleDabord}
               /**
                * LE DERNIER GESTE DE L'AVANT-GOÛT MÈNE À L'OFFRE DU JOUR.
                *

@@ -84,6 +84,7 @@ import {
   chargerAlertesLooks,
 } from "@/lib/direct/alertes-looks";
 import { basculerPieceGardee } from "@/lib/direct/pieces-gardees";
+import { rayonDuNom } from "@/lib/direct/rayons";
 import { EcranGout } from "@/components/direct/gout-contenu";
 import { EcranSoiree } from "@/components/direct/soiree-contenu";
 
@@ -929,6 +930,8 @@ export function MurContenu({
   ouvrirSur,
   surprendre,
   piecePrechoisie,
+  rayonPrechoisi,
+  ouvrirSurGrille,
   onReserver,
 }: {
   mur: TypeMur;
@@ -988,6 +991,28 @@ export function MurContenu({
    * restent à un geste, dans la bande des styles sous le rendu.
    */
   piecePrechoisie?: string;
+  /**
+   * ═══ LA FAMILLE DE PIÈCES DEMANDÉE DEPUIS LA VITRINE ══════════════════════
+   *
+   * « Robes », « Hauts », « Bas » : les pastilles de la page du commerce
+   * ouvrent la collection déjà filtrée. Voir `lib/direct/rayons.ts`, qui dit
+   * aussi pourquoi ces familles se lisent dans le NOM de la pièce et pas dans
+   * les rayons du commerçant.
+   *
+   * ABSENT, LA GRILLE MONTRE TOUT, et c'est le cas normal — « Explorer la
+   * collection » n'a pas de filtre.
+   */
+  rayonPrechoisi?: string;
+  /**
+   * ON OUVRE SUR LA GRILLE, PAS SUR LA PRISE DE VUE.
+   *
+   * « Explorer la collection » promet une collection : la faire précéder d'un
+   * écran « prenez une photo de vous » serait tenir une autre promesse que
+   * celle du bouton. La photo est demandée au moment où l'on DÉSIGNE une
+   * pièce — c'est-à-dire quand elle sert enfin à quelque chose, et quand on
+   * sait pourquoi on la donne. Voir `changerDeStyle`.
+   */
+  ouvrirSurGrille?: boolean;
   /**
    * CE QUE FAIT LA FIN DE L'AVANT-GOÛT.
    *
@@ -1312,6 +1337,8 @@ export function MurContenu({
           favori={favori}
           surprendre={surprendre}
           piecePrechoisie={piecePrechoisie}
+          rayonPrechoisi={rayonPrechoisi}
+          ouvrirSurGrille={ouvrirSurGrille}
           onFerme={() => setEcran("mur")}
           onPose={(f) => {
             /**
@@ -2129,6 +2156,8 @@ function EcranDepot({
   favori,
   surprendre,
   piecePrechoisie,
+  rayonPrechoisi,
+  ouvrirSurGrille,
   onEssai,
   catalogue,
 }: {
@@ -2138,6 +2167,10 @@ function EcranDepot({
   /** Les deux intentions d'entrée ne font que traverser. Voir `MurContenu`. */
   surprendre?: boolean;
   piecePrechoisie?: string;
+  /** La famille demandée depuis la vitrine. Voir `MurContenu`. */
+  rayonPrechoisi?: string;
+  /** On entre par « Explorer la collection ». Voir `MurContenu`. */
+  ouvrirSurGrille?: boolean;
   /** L'essai dit ce qu'il montre, pour que le mur sache de quoi parler. */
   onEssai?: (e: EssaiVu | null) => void;
   /** Il change quand on demande le catalogue depuis le mur. Voir `MurContenu`. */
@@ -2179,6 +2212,8 @@ function EcranDepot({
         favori={favori}
         surprendre={surprendre}
         piecePrechoisie={piecePrechoisie}
+        rayonPrechoisi={rayonPrechoisi}
+        ouvrirSurGrille={ouvrirSurGrille}
         onEssai={onEssai}
         catalogue={catalogue}
       />
@@ -2721,6 +2756,8 @@ function Essai({
   favori,
   surprendre,
   piecePrechoisie,
+  rayonPrechoisi,
+  ouvrirSurGrille,
   onEssai,
   catalogue,
 }: {
@@ -2730,6 +2767,10 @@ function Essai({
   surprendre?: boolean;
   /** La pièce désignée dans la vitrine, avant d'entrer. Voir `MurContenu`. */
   piecePrechoisie?: string;
+  /** La famille demandée depuis la vitrine. Voir `MurContenu`. */
+  rayonPrechoisi?: string;
+  /** On entre par « Explorer la collection ». Voir `MurContenu`. */
+  ouvrirSurGrille?: boolean;
   /** Ce qu'on montre, pour que le mur sache de quoi parler. Voir `EssaiVu`. */
   onEssai?: (e: EssaiVu | null) => void;
   /** Il change quand le mur demande le catalogue. Voir `MurContenu`. */
@@ -2812,6 +2853,10 @@ function Essai({
   const [etape, setEtape] = useState<
     "cadrer" | "choisir" | "recherche" | "calcul" | "avis" | "agir"
   >(() => {
+    // « EXPLORER LA COLLECTION » TIENT SA PROMESSE : on entre sur la grille.
+    // Voir `ouvrirSurGrille` — la photo est demandée quand on désigne une
+    // pièce, c'est-à-dire quand on sait à quoi elle va servir.
+    if (ouvrirSurGrille) return "choisir";
     if (typeof window === "undefined") return "cadrer";
     try {
       return new URLSearchParams(window.location.search).get("exemple")
@@ -3579,8 +3624,18 @@ function Essai({
   const enVitrine = useMemo(() => {
     const toutes = mur.essai?.pieces ?? [];
     const choisies = toutes.filter((p) => p.vitrine);
-    return choisies.length > 0 ? choisies : toutes;
-  }, [mur.essai?.pieces]);
+    const base = choisies.length > 0 ? choisies : toutes;
+    /**
+     * LE RAYON DEMANDÉ DEPUIS LA VITRINE RESSERRE LA GRILLE — et il ne la vide
+     * jamais. Une pastille « Robes » qui ouvre sur un écran vide apprend à ne
+     * plus appuyer sur les pastilles ; quand le filtre ne trouve rien, on
+     * montre la collection entière plutôt que le néant. Voir `rayons.ts`, qui
+     * ne dessine d'ailleurs que les familles garnies.
+     */
+    if (!rayonPrechoisi) return base;
+    const dedans = base.filter((p) => rayonDuNom(p.nom) === rayonPrechoisi);
+    return dedans.length > 0 ? dedans : base;
+  }, [mur.essai?.pieces, rayonPrechoisi]);
 
   /**
    * CE DANS QUOI « SURPRENDS-MOI » PIOCHE — la collection essayable entière.
@@ -3762,10 +3817,23 @@ function Essai({
     setBulle(0);
     setRevele(false);
     setX(58);
-    setEtape("calcul");
+    /**
+     * ═══ LA PHOTO EST DEMANDÉE ICI, ET PAS AVANT ══════════════════════════
+     *
+     * DEPUIS QUE « EXPLORER LA COLLECTION » OUVRE LA GRILLE, on peut arriver
+     * devant une pièce sans avoir rien donné. Lancer le calcul dans cet état
+     * poserait le vêtement sur la photo de démonstration — c'est-à-dire sur
+     * quelqu'un d'autre, et sans le dire.
+     *
+     * ET C'EST LE MEILLEUR MOMENT POUR LA DEMANDER. On vient de choisir une
+     * pièce : la question « prenez une photo de vous » a enfin une réponse
+     * évidente à « pour quoi faire ? ». Posée avant, elle demandait un visage
+     * pour une raison qu'on n'avait pas encore.
+     */
+    setEtape(laPhoto ? "calcul" : "cadrer");
     // L'ESSAI PART : un glissement qui monte, et qui ne se referme pas.
     // C'est la révélation, une minute plus tard, qui finira la phrase.
-    jouer("essai");
+    if (laPhoto) jouer("essai");
   };
 
   const poser = (verdict: "pris" | "passe" | "essaye") => {
@@ -4143,6 +4211,16 @@ function Essai({
                   if (surprendre && !surpriseFaite.current) {
                     surpriseFaite.current = true;
                     surprendsMoi();
+                    return;
+                  }
+                  // ET SI LA PIÈCE EST DÉJÀ CHOISIE, ON NE REPASSE PAS PAR LA
+                  // GRILLE. C'est le chemin de « Explorer la collection » : on
+                  // a désigné une pièce, on nous a demandé la photo, on vient
+                  // de la donner — il ne reste qu'à calculer. Renvoyer vers la
+                  // grille ferait rechoisir ce qu'on a déjà choisi.
+                  if (piece && !rendu) {
+                    setEtape("calcul");
+                    jouer("essai");
                     return;
                   }
                   // LA MÊME RÈGLE POUR LA PIÈCE DÉSIGNÉE DEPUIS LA VITRINE :
@@ -4956,27 +5034,32 @@ function Essai({
             src={rendu?.image ?? piece.rendu ?? piece.photo}
             alt={`Essai : ${piece.nom}`}
           />
-          {/* ═══ LA SURFACE DE LA PHOTO OUVRE LA PHOTO ════════════════════
+          {/* ═══ SEULE LA PASTILLE OUVRE LA PHOTO ══════════════════════════
 
-              ELLE EST LE GESTE, ET LE BOUTON N'EST QUE LA LÉGENDE. Un appui
-              n'importe où sur l'image l'ouvre en grand — c'est ce qu'on fait
-              d'instinct devant une photo — et la pastille « ⤢ » du coin est là
-              pour l'APPRENDRE à qui ne le tenterait pas. Le contraire, un
-              bouton seul, aurait obligé à viser vingt points pour une chose
-              qu'on veut faire avec le pouce.
+              « Quand je veux laisser un message après avoir cliqué sur un
+              fantôme, ou cliquer sur un bouton, je ne peux pas : ça ouvre la
+              photo en entier. »
 
-              ELLE NE COUVRE QUE LA PHOTO, JAMAIS LES GESTES. Posée sous les
-              fantômes et sous les boutons, elle ne vole aucun appui : c'est le
-              haut de l'écran, là où il n'y a rien d'autre à toucher. */}
+              LA SURFACE ENTIÈRE ÉTAIT LE GESTE, ET C'ÉTAIT UNE MAUVAISE IDÉE.
+              Le raisonnement se tenait — on tape une photo d'instinct — mais
+              cet écran-ci n'est pas une photo : c'est une photo AVEC cinq
+              fantômes à noter, trois boutons et un champ de message. Un calque
+              qui couvre les deux tiers du cadre pour un geste secondaire prend
+              les appuis de tous les gestes principaux. Le confort d'un côté
+              coûtait l'usage de l'autre.
+
+              LA PASTILLE PORTE DONC LE GESTE, et elle est assez grande pour ne
+              pas se viser : elle a ses mots à côté du signe, ce qui lui fait
+              cent trente points de large. */}
           <button
             type="button"
-            className="mu-res-ouvrir"
-            aria-label="Voir la photo en grand"
-            onClick={() => setPlein(true)}
-          />
-          <span className="mu-res-loupe" aria-hidden="true">
-            <i>⤢</i>Voir en entier
-          </span>
+            className={`mu-res-loupe${plein ? " on" : ""}`}
+            aria-pressed={plein}
+            onClick={() => setPlein((v) => !v)}
+          >
+            <i aria-hidden="true">{plein ? "✕" : "⤢"}</i>
+            {plein ? "Revenir" : "Voir en entier"}
+          </button>
           {/* DEUX VOILES, UN EN HAUT ET UN EN BAS, ET AUCUN AU MILIEU. Le titre
               et les gestes ont besoin d'un fond ; le visage n'a besoin de rien.
               Un voile uniforme aurait assombri la seule chose qu'on est venu
@@ -5602,27 +5685,38 @@ function Essai({
               </button>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* ═══ LA PHOTO SEULE, BORD À BORD ══════════════════════════════════
+          {/* ═══ LA PHOTO ENTIÈRE, À LA TAILLE DE LA PHOTO ══════════════════
 
-          RIEN D'AUTRE À L'ÉCRAN : pas de titre, pas de fantômes, pas de
-          gestes. C'est la demande, et c'est la seule façon de voir tomber un
-          pantalon ou la longueur d'une jupe. Un appui n'importe où referme —
-          on revient exactement où l'on était, note et mot compris. */}
-      {plein && piece && (
-        <div
-          className="mu-plein"
-          role="dialog"
-          aria-label={`${piece.nom}, en grand`}
-          onClick={() => setPlein(false)}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={rendu?.image ?? piece.rendu ?? piece.photo} alt={`Essai : ${piece.nom}`} />
-          <button type="button" aria-label="Fermer">
-            ✕
-          </button>
+              « Ça ouvre la photo en immense et je ne peux pas tout voir. Il
+              faudrait que je puisse la voir en entier, mais de la taille de la
+              zone où il y a la photo, par-dessus les textes et les boutons. »
+
+              C'ÉTAIT UN PLEIN ÉCRAN, ET UN PLEIN ÉCRAN NE MONTRE PAS PLUS. La
+              photo y était agrandie à la hauteur du téléphone : une silhouette
+              debout dans un cadre deux fois plus haut que large se retrouvait
+              rognée sur les côtés, ou minuscule au milieu de deux bandes
+              noires. On sortait de l'écran pour voir moins bien.
+
+              ELLE RESTE DONC DANS SON CADRE, et c'est le calque qui change :
+              le titre, les fantômes et les gestes s'effacent le temps qu'on
+              regarde, et la photo passe en « contenir » — donc entière, sans
+              rognage, à la place exacte qu'elle occupait. Le même bouton
+              revient en arrière. */}
+          {plein && piece && (
+            <div
+              className="mu-plein"
+              role="dialog"
+              aria-label={`${piece.nom}, en entier`}
+              onClick={() => setPlein(false)}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={rendu?.image ?? piece.rendu ?? piece.photo}
+                alt={`Essai : ${piece.nom}`}
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -9109,10 +9203,6 @@ function Styles() {
            LA ZONE S'ARRETE AVANT LES GESTES. Elle couvre le haut de l'ecran,
            la ou il n'y a rien d'autre a toucher, et laisse les fantomes et les
            boutons tranquilles. */
-        .mu-res-ouvrir{position:absolute;z-index:3;left:0;right:0;top:0;
-          bottom:31%;border:0;background:none;cursor:zoom-in;padding:0;}
-        .mu-res-ouvrir:focus-visible{outline:2px solid #C9BCFF;
-          outline-offset:-4px;border-radius:18px;}
         /* ELLE PORTE SES MOTS. Un « agrandir » seul est un symbole qu'il faut
            avoir appris ailleurs ; trois mots disent ce qui va se passer, et
            c'etait la demande — « d'une maniere tres intuitive et claire ». */
@@ -9124,13 +9214,21 @@ function Styles() {
            capture, les deux occupaient la meme bande de trente points. Le coin
            droit appartient a la cloche, qui y a son bouton et sa legende ; le
            gauche est libre. */
-        .mu-res-loupe{position:absolute;z-index:4;left:14px;top:calc(15% + 22px);
-          display:inline-flex;align-items:center;gap:6px;
-          height:32px;padding:0 12px 0 9px;border-radius:999px;
+        /* ELLE PORTE LE GESTE, ET PLUS SEULEMENT SA LEGENDE. Elle recoit donc
+           les appuis — et elle est la SEULE a les recevoir : la surface qui
+           couvrait les deux tiers du cadre volait ceux des fantomes et des
+           boutons. Cent trente points de large avec ses mots : on ne la vise
+           pas, on la touche. */
+        .mu-res-loupe{position:absolute;z-index:6;left:14px;top:calc(15% + 44px);
+          display:inline-flex;align-items:center;gap:6px;cursor:pointer;
+          height:34px;padding:0 13px 0 10px;border-radius:999px;font:inherit;
           font-size:12px;font-weight:700;letter-spacing:-.01em;color:#EAF0F6;
-          background:rgba(10,14,24,.68);border:1px solid rgba(255,255,255,.22);
-          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-          pointer-events:none;}
+          background:rgba(10,14,24,.72);border:1px solid rgba(255,255,255,.24);
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+        .mu-res-loupe.on{top:14px;color:#FFFFFF;background:#F0269B;
+          border-color:rgba(255,255,255,.4);}
+        .mu-res-loupe:active{transform:scale(.96);}
+        .mu-res-loupe:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
         .mu-res-loupe i{font-style:normal;font-size:15px;line-height:1;}
 
         /* ═══ ET LA VOICI, BORD A BORD ════════════════════════════════════
@@ -9139,18 +9237,16 @@ function Styles() {
            gestes : c'est la seule facon de voir tomber un pantalon ou la
            longueur d'une jupe. La croix est la pour dire qu'on peut sortir ;
            l'appui se prend sur toute la surface. */
-        .mu-plein{position:fixed;inset:0;z-index:160;display:grid;
-          place-items:center;padding:0;background:#05070E;cursor:zoom-out;
-          animation:muApres .22s ease both;}
-        .mu-plein img{width:100%;height:100%;object-fit:contain;display:block;}
-        .mu-plein>button{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);
-          right:16px;width:44px;height:44px;border-radius:50%;display:grid;
-          place-items:center;font:inherit;font-size:17px;font-weight:700;
-          cursor:pointer;color:#EAF0F6;background:rgba(10,14,24,.62);
-          border:1px solid rgba(255,255,255,.22);
-          -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
-        .mu-plein>button:focus-visible{outline:2px solid #C9BCFF;
-          outline-offset:2px;}
+        /* IL COUVRE LA CARTE, PAS L'ECRAN. Un plein ecran ne montrait pas plus :
+           une silhouette debout dans un cadre deux fois plus haut que large y
+           etait rognee sur les cotes ou minuscule entre deux bandes noires. Ici
+           la photo garde sa place et passe seulement en « contenir » — donc
+           entiere — par-dessus le titre, les fantomes et les gestes. */
+        .mu-plein{position:absolute;inset:0;z-index:5;display:grid;
+          place-items:center;padding:12px;background:#05070E;cursor:zoom-out;
+          border-radius:24px;animation:muApres .22s ease both;}
+        .mu-plein img{max-width:100%;max-height:100%;width:auto;height:auto;
+          object-fit:contain;border-radius:14px;display:block;}
 
         /* ═══ CE QUE « RESERVER » A FAIT ══════════════════════════════════
 

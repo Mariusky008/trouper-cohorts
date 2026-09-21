@@ -56,6 +56,7 @@ import {
   totalDuLook,
   type ClePoste,
   type CleStyle,
+  type Genre,
   type LigneLook,
 } from "@/lib/direct/relooking";
 
@@ -127,6 +128,7 @@ function PictoPoste({ cle }: { cle: ClePoste }) {
 
 type Etape =
   | "accroche"
+  | "pourqui"
   | "photo"
   | "choix"
   | "prepare"
@@ -144,20 +146,44 @@ type Etape =
  */
 const RANG: Partial<Record<Etape, number>> = {
   accroche: 1,
+  pourqui: 1,
   photo: 2,
   choix: 3,
   look: 4,
   selection: 5,
 };
 
-const PHOTOS_EXEMPLE = [
-  { src: "/direct/coiffure-femme-face.jpg", bon: true },
-  { src: "/direct/coiffure-homme-face.jpg", bon: true },
-];
+/**
+ * LES EXEMPLES SUIVENT LE RAYON CHOISI.
+ *
+ * Montrer deux portraits de femmes à quelqu'un qui vient de dire « rayon
+ * homme » lui apprend, à l'écran suivant, que la question n'a servi à rien.
+ * Le premier de la liste sert aussi de photo de démonstration pour « Voir un
+ * exemple » — voir `PHOTOS_EXEMPLE`.
+ */
+const PHOTOS_EXEMPLE: Record<Genre, string[]> = {
+  femme: ["/direct/coiffure-femme-face.jpg", "/direct/accueil/coiffure-avant.jpg"],
+  homme: ["/direct/coiffure-homme-face.jpg", "/direct/homme-chemise-lin-bleu.jpg"],
+};
 
 export function RelookingContenu({ onFermer }: { onFermer: () => void }) {
   const [etape, setEtape] = useState<Etape>("accroche");
   const [laPhoto, setLaPhoto] = useState("");
+  /**
+   * POUR QUI ON CHERCHE — et c'est la première question, pas la dernière.
+   *
+   * « J'ai l'impression qu'on mélange femme et homme. Il faut savoir qui on
+   * relooke pour proposer des vêtements, coiffures, lunettes spécifiques. »
+   *
+   * SANS ELLE, LE LOOK N'ÉTAIT DE PERSONNE : un carré long avec une veste
+   * cirée pour homme, une monture papillon sur une coupe masculine. Chaque
+   * pièce venait d'un vrai commerçant, et l'ensemble ne ressemblait à rien.
+   *
+   * ELLE NE DEMANDE PAS UNE IDENTITÉ, ELLE DEMANDE UN RAYON — voir `Genre`
+   * dans `lib/direct/relooking.ts`. Rien n'est gardé : la réponse vit le temps
+   * du parcours.
+   */
+  const [genre, setGenre] = useState<Genre>("femme");
   /**
    * CE QU'ON TRANSFORME — trois cochés, pas quatre.
    *
@@ -184,8 +210,8 @@ export function RelookingContenu({ onFermer }: { onFermer: () => void }) {
   const fichier = useRef<HTMLInputElement | null>(null);
 
   const look = useMemo(
-    () => composerLook({ postes, style, cle: tirage }),
-    [postes, style, tirage],
+    () => composerLook({ postes, style, genre, cle: tirage }),
+    [postes, style, genre, tirage],
   );
   const total = totalDuLook(look.lignes);
   const retenues = look.lignes.filter((l) => choisies.includes(l.piece.id));
@@ -309,7 +335,7 @@ export function RelookingContenu({ onFermer }: { onFermer: () => void }) {
         aria-label={etape === "accroche" ? "Fermer" : "Revenir"}
         onClick={() => {
           if (etape === "accroche") return onFermer();
-          const ordre: Etape[] = ["accroche", "photo", "choix", "look", "selection", "carnet"];
+          const ordre: Etape[] = ["accroche", "pourqui", "photo", "choix", "look", "selection", "carnet"];
           const i = ordre.indexOf(etape);
           setEtape(i > 0 ? ordre[i - 1] : "accroche");
         }}
@@ -429,7 +455,7 @@ export function RelookingContenu({ onFermer }: { onFermer: () => void }) {
             className="rl-cta"
             onClick={() => {
               setRendu(null);
-              setEtape("photo");
+              setEtape("pourqui");
             }}
           >
             <i aria-hidden="true">📷</i>Commencer mon relooking<b aria-hidden="true">›</b>
@@ -443,12 +469,63 @@ export function RelookingContenu({ onFermer }: { onFermer: () => void }) {
             type="button"
             className="rl-cta2"
             onClick={() => {
-              setLaPhoto(PHOTOS_EXEMPLE[1].src);
-              setEtape("choix");
+              setEtape("pourqui");
             }}
           >
             Voir un exemple
           </button>
+        </section>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          1 bis. POUR QUI ?
+          ═══════════════════════════════════════════════════════════════════ */}
+      {etape === "pourqui" && (
+        <section className="rl-pq">
+          <h1 className="rl-t2 centre">
+            On cherche dans quel <b>rayon&nbsp;?</b>
+          </h1>
+          <p className="rl-s1">
+            C’est la seule chose dont ClikMe a besoin pour aller chercher au bon
+            endroit&nbsp;: les coupes, les pièces et les montures ne sont pas les
+            mêmes d’un rayon à l’autre.
+          </p>
+          <p className="rl-s2">
+            Rien n’est enregistré&nbsp;: la réponse vit le temps de ce relooking.
+          </p>
+
+          <ul className="rl-pq-l">
+            {(
+              [
+                ["femme", "Rayon femme", "/direct/accueil/mode-apres.jpg"],
+                ["homme", "Rayon homme", "/direct/homme-veste-ciree-kaki.jpg"],
+              ] as [Genre, string, string][]
+            ).map(([g, label, src]) => (
+              <li key={g}>
+                <button
+                  type="button"
+                  className={`rl-pq-b${genre === g ? " on" : ""}`}
+                  aria-pressed={genre === g}
+                  onClick={() => {
+                    setGenre(g);
+                    // ON REPART DE ZÉRO SUR LE LOOK. Changer de rayon après
+                    // coup laisserait à l'écran un rendu fait pour l'autre —
+                    // c'est-à-dire exactement le mélange qu'on corrige.
+                    setRendu(null);
+                    setChoisies([]);
+                    setEtape("photo");
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={src} alt="" />
+                  <span>{label}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="rl-prive">
+            <i aria-hidden="true">🔒</i>On choisit un rayon, pas une identité
+          </p>
         </section>
       )}
 
@@ -478,7 +555,7 @@ export function RelookingContenu({ onFermer }: { onFermer: () => void }) {
                 <img src={laPhoto} alt="Votre photo" />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src="/direct/coiffure-homme-face.jpg" alt="" aria-hidden="true" />
+                <img src={PHOTOS_EXEMPLE[genre][0]} alt="" aria-hidden="true" />
               )}
               <span className="rl-cadre-c">
                 <i aria-hidden="true">📷</i>
@@ -518,10 +595,10 @@ export function RelookingContenu({ onFermer }: { onFermer: () => void }) {
 
           <p className="rl-ex-t">Exemples de photos qui fonctionnent bien</p>
           <ul className="rl-ex">
-            {PHOTOS_EXEMPLE.map((x) => (
-              <li key={x.src}>
+            {PHOTOS_EXEMPLE[genre].map((src) => (
+              <li key={src}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={x.src} alt="" />
+                <img src={src} alt="" />
                 <b className="ok" aria-hidden="true">
                   ✓
                 </b>
@@ -546,8 +623,14 @@ export function RelookingContenu({ onFermer }: { onFermer: () => void }) {
           <button
             type="button"
             className="rl-cta"
-            disabled={!laPhoto}
-            onClick={() => setEtape("choix")}
+            onClick={() => {
+              // SANS PHOTO, ON JOUE L'EXEMPLE DU RAYON, ET L'ÉCRAN DU LOOK LE
+              // DIT. Bloquer ici renverrait tout le monde à la case départ
+              // pour voir ce que ça donne — c'est le chemin « Voir un
+              // exemple », et il doit rester ouvert jusqu'au bout.
+              if (!laPhoto) setLaPhoto(PHOTOS_EXEMPLE[genre][0]);
+              setEtape("choix");
+            }}
           >
             Continuer<b aria-hidden="true">›</b>
           </button>
@@ -582,7 +665,7 @@ export function RelookingContenu({ onFermer }: { onFermer: () => void }) {
                     onClick={() => basculerPoste(p.cle)}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={imageDuPoste(p.cle)} alt="" />
+                    <img src={imageDuPoste(p.cle, genre)} alt="" />
                     <b className="rl-coche" aria-hidden="true">
                       {on ? "✓" : ""}
                     </b>
@@ -616,7 +699,7 @@ export function RelookingContenu({ onFermer }: { onFermer: () => void }) {
                       </span>
                     ) : (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={imageDuStyle(s.cle)} alt="" />
+                      <img src={imageDuStyle(s.cle, genre)} alt="" />
                     )}
                     <b className="rl-coche" aria-hidden="true">
                       {on ? "✓" : ""}
@@ -1119,17 +1202,28 @@ export function RelookingContenu({ onFermer }: { onFermer: () => void }) {
  * commerces inventés. Elles illustrent le MÉTIER, jamais un commerce en
  * particulier — la tuile « Mode » n'est pas la vitrine de quelqu'un.
  */
-function imageDuPoste(c: ClePoste): string {
-  if (c === "coiffure") return "/direct/coiffure-femme-face.jpg";
-  if (c === "mode") return "/direct/homme-veste-ciree-kaki.jpg";
+function imageDuPoste(c: ClePoste, genre: Genre): string {
+  if (c === "coiffure")
+    return genre === "homme"
+      ? "/direct/coiffure-homme-face.jpg"
+      : "/direct/coiffure-femme-face.jpg";
+  if (c === "mode")
+    return genre === "homme"
+      ? "/direct/homme-veste-ciree-kaki.jpg"
+      : "/direct/mode-ensemble-maille-beige.jpg";
   if (c === "lunettes") return "/direct/lunettes1.jpg";
   return "/direct/pose-ongles.jpg";
 }
 
-function imageDuStyle(c: CleStyle): string {
-  if (c === "naturel") return "/direct/coiffure-homme-face.jpg";
-  if (c === "urbain") return "/direct/homme-veste-jean.jpg";
-  return "/direct/homme-blouson-aviateur.jpg";
+function imageDuStyle(c: CleStyle, genre: Genre): string {
+  if (genre === "homme") {
+    if (c === "naturel") return "/direct/homme-pull-col-roule.jpeg";
+    if (c === "urbain") return "/direct/homme-veste-jean.jpg";
+    return "/direct/homme-blouson-aviateur.jpg";
+  }
+  if (c === "naturel") return "/direct/mode-ensemble-maille-beige.jpg";
+  if (c === "urbain") return "/direct/mode-chemise-jean.jpg";
+  return "/direct/mode-robe-pois-dores.jpg";
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -1375,6 +1469,25 @@ function Styles() {
         .rl-tuile.t1{left:0;top:52%;}
         .rl-tuile.t2{right:0;top:30%;}
         .rl-tuile.t3{right:0;top:66%;}
+
+        /* ═══════════════════════════════════════════════════════════════════
+           1 bis. POUR QUI
+           ═══════════════════════════════════════════════════════════════════ */
+        .rl-pq{padding-top:calc(16px + env(safe-area-inset-top));text-align:center;}
+        .rl-pq-l{list-style:none;display:grid;grid-template-columns:1fr 1fr;
+          gap:12px;margin:22px 0 0;padding:0;}
+        .rl-pq-b{position:relative;display:block;width:100%;padding:0 0 12px;
+          overflow:hidden;border-radius:20px;cursor:pointer;
+          background:rgba(255,255,255,.05);
+          border:1.5px solid rgba(255,255,255,.14);}
+        .rl-pq-b img{width:100%;aspect-ratio:1/1.24;object-fit:cover;
+          object-position:center 18%;display:block;opacity:.72;}
+        .rl-pq-b span{display:block;margin-top:10px;padding:0 8px;
+          font-size:15px;font-weight:850;letter-spacing:-.015em;color:#FFFFFF;}
+        .rl-pq-b.on{border-color:#F511C0;
+          box-shadow:0 0 0 1px rgba(245,17,192,.5),0 0 24px rgba(245,17,192,.45);}
+        .rl-pq-b.on img{opacity:.92;}
+        .rl-pq-b:active{transform:scale(.99);}
 
         /* ═══════════════════════════════════════════════════════════════════
            2. LA PHOTO

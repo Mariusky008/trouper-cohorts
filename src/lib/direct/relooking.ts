@@ -159,6 +159,46 @@ export function posteDe(cle: ClePoste): Poste {
 export type CleStyle = "naturel" | "urbain" | "audacieux" | "surprise";
 
 /**
+ * ═══ POUR QUI ON RELOOKE ════════════════════════════════════════════════════
+ *
+ * « On mélange femme et homme. Il faut savoir qui on relooke pour proposer des
+ * vêtements, coiffures, lunettes spécifiques. »
+ *
+ * C'ÉTAIT LE DÉFAUT LE PLUS VISIBLE DU PARCOURS, et il rendait tout le reste
+ * inutile : un look qui mêle un carré long et une veste cirée pour homme ne
+ * ressemble à personne. Pire, il se voyait à l'écran — la coupe montrée était
+ * portée par une femme, la veste par un homme, et l'avant-après promettait
+ * donc un rendu impossible.
+ *
+ * LA QUESTION SE POSE AU DÉPART, EN DEUX APPUIS, et c'est le seul endroit où
+ * elle ne coûte rien : avant, on n'a encore rien construit. Posée plus tard —
+ * au moment du style, ou pire à la sélection — elle obligerait à refaire le
+ * look entier.
+ *
+ * ET ELLE NE DEMANDE PAS UNE IDENTITÉ. « Pour qui ? » porte sur des RAYONS,
+ * pas sur des personnes : on choisit dans quel rayon ClikMe va chercher, et
+ * c'est un renseignement de boutique, pas une déclaration. Rien n'est gardé —
+ * la réponse vit le temps du parcours et disparaît avec lui.
+ */
+export type Genre = "femme" | "homme";
+
+/**
+ * CE COMMERCE HABILLE-T-IL CE RAYON-LÀ ?
+ *
+ * ON LIT LE MÉTIER, ET C'EST LUI QUI LE DIT : « Prêt-à-porter homme » est un
+ * rayon homme, « Friperie » est les deux — une friperie ne trie pas ses
+ * portants par genre, et c'est d'ailleurs ce qu'on aime chez elle. Le reste
+ * est réputé féminin tant que le commerçant ne dit pas autre chose, parce que
+ * c'est ce que ses pièces montrent.
+ */
+export function commerceDuGenre(metier: string, genre: Genre): boolean {
+  const m = metier.toLowerCase();
+  if (/friperie|dépôt|depot|vintage/.test(m)) return true;
+  const homme = /\bhomme|barbier|masculin/.test(m);
+  return genre === "homme" ? homme : !homme;
+}
+
+/**
  * LE STYLE DÉSIGNE DE VRAIES PIÈCES, IL NE DÉCRIT PAS UNE AMBIANCE.
  *
  * ═══ POURQUOI C'EST ÉCRIT À LA MAIN, ET PAS DEVINÉ ═════════════════════════
@@ -202,8 +242,15 @@ export type Style = {
   titre: string;
   /** La phrase sous le titre. */
   phrase: string;
-  /** Les pièces de ce style, par poste, désignées par leur nom. */
-  pieces: Partial<Record<ClePoste, string[]>>;
+  /**
+   * LES PIÈCES DE CE STYLE, PAR RAYON PUIS PAR POSTE, DÉSIGNÉES PAR LEUR NOM.
+   *
+   * DEUX LISTES ET PAS UNE, parce qu'un style n'est pas la même chose des deux
+   * côtés : « audacieux » chez une femme, c'est une robe à pois dorés ; chez un
+   * homme, un costume vert en lin. Une liste commune donnait des looks qui
+   * mélangeaient les deux — le défaut exact qu'on corrige.
+   */
+  pieces: Record<Genre, Partial<Record<ClePoste, string[]>>>;
 };
 
 export const STYLES: Style[] = [
@@ -213,15 +260,18 @@ export const STYLES: Style[] = [
     titre: "Naturel et soigné",
     phrase: "Rien de spectaculaire, tout juste. Des pièces qui se portent tous les jours.",
     pieces: {
-      coiffure: ["Carré long, de face", "Boucles courtes, de face", "Coupe femme"],
-      mode: [
-        "Ensemble maille beige",
-        "Pull col roulé écru",
-        "Chemise en lin bleu ciel",
-        "Pulls en laine",
-      ],
-      lunettes: ["Carrée écaille, verres dégradés", "Épaisse dégradée caramel"],
-      ongles: ["Pastel amande, motif feuille", "Manucure russe", "Pose complète gel"],
+      femme: {
+        coiffure: ["Carré long, de face", "Coupe femme", "Boucles longues, frange"],
+        mode: ["Ensemble maille beige", "Pull mohair vert d’eau", "Pulls en laine"],
+        lunettes: ["Carrée écaille, verres dégradés", "Épaisse dégradée caramel"],
+        ongles: ["Pastel amande, motif feuille", "Manucure russe", "Pose complète gel"],
+      },
+      homme: {
+        coiffure: ["Boucles courtes, de face", "Coupe homme"],
+        mode: ["Pull col roulé écru", "Chemise en lin bleu ciel", "Polo marine et chino beige"],
+        lunettes: ["Carrée écaille, verres dégradés", "Épaisse dégradée caramel"],
+        ongles: ["Manucure russe"],
+      },
     },
   },
   {
@@ -230,15 +280,18 @@ export const STYLES: Style[] = [
     titre: "Urbain et net",
     phrase: "Des matières franches et des coupes droites. Ça tient du matin au soir.",
     pieces: {
-      coiffure: ["Motif rasé, nuque", "Boucles courtes, de face", "Coupe homme"],
-      mode: [
-        "Veste en jean brut",
-        "Veste cirée kaki",
-        "Chemise en jean",
-        "Jeans vintage",
-      ],
-      lunettes: ["Épaisse dégradée caramel", "Œil-de-chat vert bouteille"],
-      ongles: ["Semi-permanent", "Pastel amande, motif feuille"],
+      femme: {
+        coiffure: ["Carré cuivré, dégradé", "Carré long, de face"],
+        mode: ["Chemise en jean", "Jeans vintage", "Marinière rose et pantalon vichy"],
+        lunettes: ["Épaisse dégradée caramel", "Œil-de-chat vert bouteille"],
+        ongles: ["Semi-permanent", "Pastel amande, motif feuille"],
+      },
+      homme: {
+        coiffure: ["Motif rasé, nuque", "Boucles courtes, de face", "Coupe homme"],
+        mode: ["Veste en jean brut", "Veste cirée kaki", "Marinière et jean large"],
+        lunettes: ["Épaisse dégradée caramel", "Œil-de-chat vert bouteille"],
+        ongles: ["Semi-permanent"],
+      },
     },
   },
   {
@@ -247,15 +300,18 @@ export const STYLES: Style[] = [
     titre: "Audacieux et assumé",
     phrase: "Une pièce forte et tout le reste autour. On vous remarquera, c’est fait pour.",
     pieces: {
-      coiffure: ["Carré cuivré, dégradé", "Boucles longues, frange", "Balayage"],
-      mode: [
-        "Costume vert en lin",
-        "Robe à pois dorés",
-        "Blouson aviateur, col mouton",
-        "Vestes des années 70",
-      ],
-      lunettes: ["Papillon fuchsia translucide", "Œil-de-chat vert bouteille"],
-      ongles: ["Dégradé pailleté", "Motif cœurs, pose amande"],
+      femme: {
+        coiffure: ["Carré cuivré, dégradé", "Boucles longues, frange", "Balayage"],
+        mode: ["Robe à pois dorés", "Vestes des années 70", "Robe à volants corail"],
+        lunettes: ["Papillon fuchsia translucide", "Œil-de-chat vert bouteille"],
+        ongles: ["Dégradé pailleté", "Motif cœurs, pose amande"],
+      },
+      homme: {
+        coiffure: ["Motif rasé, nuque", "Boucles courtes, de face"],
+        mode: ["Costume vert en lin", "Blouson aviateur, col mouton", "Chemise à carreaux et chino brique"],
+        lunettes: ["Œil-de-chat vert bouteille", "Épaisse dégradée caramel"],
+        ongles: ["Manucure russe"],
+      },
     },
   },
   {
@@ -264,7 +320,7 @@ export const STYLES: Style[] = [
     titre: "Moderne et élégant",
     phrase: "Un look authentique, avec des commerces sélectionnés près de chez vous.",
     /** VIDE EXPRÈS : « ClikMe choisit pour vous » pioche dans tout le paquet. */
-    pieces: {},
+    pieces: { femme: {}, homme: {} },
   },
 ];
 
@@ -346,11 +402,25 @@ function estUnPlancher(t: string | undefined): boolean {
  * sont pas interchangeables, et rien d'autre ne nous autorise à préférer l'un
  * à l'autre — on n'a ni contrat, ni commission, ni note à faire remonter.
  */
-export function commercesDuPoste(cle: ClePoste): CarteAutour[] {
+export function commercesDuPoste(cle: ClePoste, genre?: Genre): CarteAutour[] {
   const p = posteDe(cle);
-  return toutesLesCartes()
+  const tous = toutesLesCartes()
     .filter((c) => c.branche === p.branche)
     .sort((a, b) => a.metres - b.metres);
+  /**
+   * LE RAYON NE TRIE QUE LES COMMERCES QUI EN ONT UN.
+   *
+   * Une boutique de vêtements a un rayon ; un lunetier, une prothésiste, un
+   * salon n'en ont pas — ils habillent tout le monde, et les écarter parce
+   * qu'ils ne portent pas « homme » dans leur nom viderait le parcours de
+   * trois postes sur quatre. On ne filtre donc que la mode.
+   *
+   * ET UN FILTRE QUI NE TROUVE RIEN NE VIDE PAS LE LOOK : mieux vaut proposer
+   * la boutique d'à côté que de retirer la ligne.
+   */
+  if (!genre || p.branche !== "mode") return tous;
+  const siens = tous.filter((c) => commerceDuGenre(c.metier, genre));
+  return siens.length > 0 ? siens : tous;
 }
 
 /**
@@ -421,6 +491,8 @@ function pareil(a: string): string {
 export function composerLook(opts: {
   postes: ClePoste[];
   style: CleStyle;
+  /** Pour qui on cherche. Voir `Genre` : c'est un rayon, pas une identité. */
+  genre: Genre;
   /** Ce qui distingue ce tirage-ci du précédent. Vide : le plus proche. */
   cle?: string;
 }): Look {
@@ -431,19 +503,19 @@ export function composerLook(opts: {
   for (const clePoste of POSTES.map((p) => p.cle)) {
     if (!opts.postes.includes(clePoste)) continue;
     const poste = posteDe(clePoste);
-    const commerces = commercesDuPoste(clePoste);
+    const commerces = commercesDuPoste(clePoste, opts.genre);
     if (!commerces.length) continue;
 
     const c = commerces[gCommerce % commerces.length];
     const pieces = piecesDuCommerce(c);
     if (!pieces.length) continue;
 
-    const voulus = (style.pieces[clePoste] ?? []).map(pareil);
+    const voulus = (style.pieces[opts.genre][clePoste] ?? []).map(pareil);
     const candidates = voulus.length
       ? pieces.filter((x) => voulus.includes(pareil(x.nom)))
       : pieces;
     const dans = candidates.length ? candidates : pieces;
-    const gPiece = graine(`${opts.style}|${opts.cle ?? ""}|${clePoste}`);
+    const gPiece = graine(`${opts.style}|${opts.genre}|${opts.cle ?? ""}|${clePoste}`);
     const piece = dans[gPiece % dans.length];
     if (!piece) continue;
 
