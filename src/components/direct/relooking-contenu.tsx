@@ -340,6 +340,18 @@ export function RelookingContenu({ onFermer }: { onFermer: () => void }) {
       <img className="rl-fond" src="/direct/vitrine-mode.jpg" alt="" aria-hidden="true" />
       <span className="rl-voile" aria-hidden="true" />
 
+      {/* ═══ CE QUI DÉFILE EST À L'INTÉRIEUR, LE DÉCOR EST À L'EXTÉRIEUR ════
+
+          LE PARCOURS EST PLUS HAUT QU'UN TÉLÉPHONE sur trois de ses écrans, il
+          faut donc qu'il défile. Mais la vitrine floutée du fond ne doit pas
+          défiler avec lui : posée dans le même calque, elle remontait et
+          laissait apparaître le noir en dessous.
+
+          DEUX CALQUES RÈGLENT LES DEUX. Le cadre porte le décor et ne bouge
+          jamais ; ce rectangle-ci porte le contenu et défile dedans. Les
+          panneaux — le message qui part, la photo en grand — restent au niveau
+          du cadre : ils couvrent tout, y compris ce qui a défilé. */}
+      <div className="rl-defile">
       {etape !== "accroche" && etape !== "prepare" && barre}
 
       {/* ═══════════════════════════════════════════════════════════════════
@@ -1024,6 +1036,8 @@ export function RelookingContenu({ onFermer }: { onFermer: () => void }) {
         </section>
       )}
 
+      </div>
+
       {/* ═══ LE MESSAGE QUI PART, MONTRÉ AVANT D'ÊTRE ENVOYÉ ═══════════════
 
           On écrit un message au nom de quelqu'un : il doit l'avoir lu avant,
@@ -1199,16 +1213,24 @@ function Styles() {
            Plein ecran, au-dessus de tout, et il defile. Le parcours a sept
            ecrans dont trois sont plus hauts qu'un telephone : les bloquer
            rendrait le bouton du bas inatteignable. */
-        .rl{position:fixed;inset:0;z-index:200;overflow-y:auto;
-          -webkit-overflow-scrolling:touch;
+        /* ─── LE CADRE ───
+           EN ABSOLU DANS L'ECRAN DU TELEPHONE, ET PAS EN FIXE DANS LA FENETRE.
+           « J'arrive sur un format totalement different. » Il l'etait : pose en
+           fixe, il s'etalait sur toute la fenetre d'un ordinateur pendant que
+           le reste de l'application tenait dans ses trois cent quatre-vingt-dix
+           points. Un parent en position relative suffit a le ramener dans le
+           cadre, et la demonstration redevient une seule chose. */
+        .rl{position:absolute;inset:0;z-index:200;overflow:hidden;
           background:#07070C;color:#EEF2F8;
-          font-family:var(--font-clikme),'Poppins',system-ui,sans-serif;
-          padding:0 0 calc(26px + env(safe-area-inset-bottom));}
+          font-family:var(--font-clikme),'Poppins',system-ui,sans-serif;}
         .rl *{box-sizing:border-box;}
-        .rl-fond{position:fixed;inset:0;width:100%;height:100%;
+        .rl-defile{position:absolute;inset:0;z-index:2;overflow-y:auto;
+          -webkit-overflow-scrolling:touch;
+          padding:0 0 calc(26px + env(safe-area-inset-bottom));}
+        .rl-fond{position:absolute;inset:0;width:100%;height:100%;
           object-fit:cover;filter:blur(26px) saturate(.75) brightness(.4);
           transform:scale(1.14);pointer-events:none;}
-        .rl-voile{position:fixed;inset:0;pointer-events:none;
+        .rl-voile{position:absolute;inset:0;pointer-events:none;
           background:radial-gradient(120% 78% at 50% 8%,rgba(233,48,200,.2) 0%,rgba(7,7,12,0) 62%),
             linear-gradient(180deg,rgba(7,7,12,.7) 0%,rgba(7,7,12,.9) 46%,#07070C 100%);}
         /* LA GOUTTIERE SEULEMENT. Cette regle remettait aussi le haut a zero,
@@ -1757,7 +1779,7 @@ function Styles() {
           color:#9BA5BA;text-align:center;}
 
         /* ═══ LE MESSAGE, MONTRE AVANT DE PARTIR ═══════════════════════════ */
-        .rl-msg-f{position:fixed;inset:0;z-index:210;display:flex;
+        .rl-msg-f{position:absolute;inset:0;z-index:210;display:flex;
           align-items:center;justify-content:center;padding:18px;
           background:rgba(4,4,10,.8);
           -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
@@ -1775,7 +1797,7 @@ function Styles() {
         .rl-msg .rl-cta{margin-top:14px;}
 
         /* ═══ LE LOOK EN ENTIER ════════════════════════════════════════════ */
-        .rl-plein{position:fixed;inset:0;z-index:220;display:grid;
+        .rl-plein{position:absolute;inset:0;z-index:220;display:grid;
           place-items:center;background:#05070E;cursor:zoom-out;}
         .rl-plein img{width:100%;height:100%;object-fit:contain;display:block;}
         .rl-plein>button{position:absolute;top:calc(16px + env(safe-area-inset-top));

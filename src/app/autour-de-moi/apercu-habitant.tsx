@@ -163,6 +163,7 @@ import { PictoMetier } from "@/components/direct/picto-metier";
 // commentaire du bouton dans la barre.
 import { MurContenu } from "@/components/direct/mur-contenu";
 import { RelookingContenu } from "@/components/direct/relooking-contenu";
+import { POSTES } from "@/lib/direct/relooking";
 import { murDeLaCarte, murDuSouvenir, QUOTA_DU_JOUR } from "@/lib/direct/fantomes";
 import { motsDe, soireeDuLieu } from "@/lib/direct/soiree";
 import { basculerLeSon, jouer, sonCoupe } from "@/lib/direct/sons";
@@ -1455,6 +1456,21 @@ export function ApercuHabitant() {
   );
   /** La pièce gardée qu'on regarde en grand. Vide : aucune. */
   const [pieceVue, setPieceVue] = useState<PieceGardee | null>(null);
+  /**
+   * LA DEMANDE QUI PART CHEZ LE COMMERÇANT POUR UNE PIÈCE GARDÉE.
+   *
+   * On la montre AVANT de l'envoyer : on écrit un message au nom de quelqu'un,
+   * il doit l'avoir lu sans changer d'application pour le découvrir. Et sur un
+   * numéro de fiction — celui de tous les commerces de la maquette — on n'ouvre
+   * rien du tout : WhatsApp s'ouvrirait sur le carnet d'adresses, ce qui se lit
+   * comme une panne. Même règle que `prevenir.ts`, partout.
+   */
+  const [demandePiece, setDemandePiece] = useState<{
+    piece: PieceGardee;
+    texte: string;
+    telephone: string;
+    fiction: boolean;
+  } | null>(null);
   const [reserves, setReserves] = useState<string[]>([]);
   const [dx, setDx] = useState(0);
   const [sortant, setSortant] = useState<"" | "gauche" | "droite">("");
@@ -4286,8 +4302,33 @@ export function ApercuHabitant() {
    * réponses de commerces n'est pas en train de se demander à quoi il
    * ressemblerait — et une interruption à ce moment-là fait perdre le fil de
    * la seule chose qui presse.
+   *
+   * ═══ ET ELLE NE SE POSE QUE SUR LES MÉTIERS DU STYLE ══════════════════════
+   *
+   * « On a la pastille de relooking tout en haut juste au-dessus des lasagnes,
+   * et ça ne va pas vraiment ensemble. »
+   *
+   * C'EST EXACT, ET CE N'EST PAS QU'UNE QUESTION DE GOÛT. Une bande posée sur
+   * une annonce parle forcément DE CETTE ANNONCE — c'est ce que sa position
+   * promet. Au-dessus d'un plat du jour, « et si on vous relookait ? » n'a
+   * aucun rapport avec ce qu'on est en train de regarder : elle devient une
+   * publicité, c'est-à-dire la seule chose que ce produit ne doit jamais avoir
+   * l'air d'être.
+   *
+   * SUR UNE FRIPERIE, UN SALON OU UNE ONGLERIE, ELLE EST LA SUITE DE LA PENSÉE.
+   * On regarde une veste, on se demande ce qu'elle donnerait — la question du
+   * relooking est déjà posée, la bande ne fait que l'écrire. Ce sont exactement
+   * les quatre métiers dont le parcours a besoin : voir `POSTES` dans
+   * `lib/direct/relooking.ts`, qui est la même liste et la seule.
+   *
+   * ELLE ATTEND DONC DEUX CHOSES À LA FOIS : la cinquième annonce, et la
+   * première qui s'y prête. Sur un paquet de restaurants, on ne la verra pas —
+   * et c'est juste : il n'y a rien à relooker.
    */
-  const inviteRelook = !relookFermee && !relooking && passees.length >= 4 && !sortie;
+  const metierDuStyle =
+    !!dessus && POSTES.some((p) => p.branche === dessus.branche);
+  const inviteRelook =
+    !relookFermee && !relooking && passees.length >= 4 && !sortie && metierDuStyle;
   /** Le commerce de la carte du dessus est-il en favori. */
   const suiviSommet = !!dessus && suivis.includes(dessus.id);
   /** ⚡ La carte du dessus porte-t-elle un Flash en cours — voir `flash.ts`. */
@@ -5146,6 +5187,24 @@ export function ApercuHabitant() {
    * poche par deux portes — le cœur du bandeau et l'onglet Profil — et qu'une
    * visionneuse rendue dans une seule des deux pages ne s'ouvre que là.
    */
+  /**
+   * RÉSERVER UNE PIÈCE DEPUIS LA POCHE — et c'est le même dernier centimètre
+   * que partout ailleurs : le commerçant lit WhatsApp, pas notre base.
+   */
+  function reserverLaPiece(x: PieceGardee) {
+    const c = toutesLesCartes().find((v) => v.id === x.carte);
+    const tel = c?.telephone || numeroDeFiction(x.carte);
+    const m = commentPrevenir({
+      telephone: tel,
+      quoi: `«\u00a0${x.nom}\u00a0»${x.prix ? ` (${x.prix})` : ""}`,
+      prenom: monPrenom() || undefined,
+      quand: "Je passe la chercher dans les jours qui viennent",
+    });
+    setPieceVue(null);
+    setDemandePiece({ piece: x, texte: m.texte, telephone: tel, fiction: !c?.telephone });
+    if (c?.telephone) window.open(m.whatsapp, "_blank", "noopener");
+  }
+
   const laPieceVue = pieceVue ? (
     <div
       className="ap-moi-vue"
@@ -5165,7 +5224,86 @@ export function ApercuHabitant() {
         </em>
         {pieceVue.note > 0 && <span aria-hidden="true">{"👻".repeat(pieceVue.note)}</span>}
       </div>
-      <button type="button" aria-label="Fermer">
+      {/* ═══ ELLE SE REGARDAIT, ET ON NE POUVAIT RIEN EN FAIRE ═══════════
+
+          « Quand je mets une tenue de mes essayages en favori, j'ai bien la
+          tenue dans mes favoris, mais aucun bouton ni moyen de pouvoir la
+          réserver ou de la revoir. »
+
+          C'ÉTAIT UN CUL-DE-SAC, ET LE PIRE ENDROIT POUR EN AVOIR UN. On ouvre
+          cette poche avec une intention — « je vais peut-être l'acheter » —
+          et l'écran ne répondait qu'en montrant la photo. Le geste de mise de
+          côté ne menait donc nulle part : il rangeait dans un tiroir sans
+          poignée.
+
+          DEUX GESTES, PAS TROIS. Écrire au commerçant, ou retourner chez lui.
+          C'est exactement ce que la ligne de l'essayage propose au moment où
+          on la met de côté, et il n'y a aucune raison que la poche en dise
+          moins que le moment où on l'a remplie. */}
+      <div className="ap-moi-vue-b" onClick={(ev) => ev.stopPropagation()}>
+        <button
+          type="button"
+          className="ap-moi-vue-r"
+          onClick={() => reserverLaPiece(pieceVue)}
+        >
+          <i aria-hidden="true">🛍️</i>Je la réserve
+        </button>
+        <button
+          type="button"
+          className="ap-moi-vue-c"
+          onClick={() => {
+            const c = toutesLesCartes().find((x) => x.id === pieceVue.carte);
+            setPieceVue(null);
+            if (!c) return;
+            // MÊME CHEMIN QUE LA LIGNE D'UN COMMERCE GARDÉ, juste en dessous :
+            // on vide le paquet et on épingle sa carte en tête. Deux façons
+            // d'ouvrir le même commerce finiraient par diverger.
+            setFavorisPage("");
+            setEmbauches(false);
+            setBranche(c.branche);
+            setVue("metiers");
+            setEnvies([]);
+            setPassees([]);
+            setEpingle(c.id);
+          }}
+        >
+          <i aria-hidden="true">📍</i>Voir la boutique
+        </button>
+      </div>
+      <button type="button" className="ap-moi-vue-x" aria-label="Fermer">
+        ✕
+      </button>
+    </div>
+  ) : null;
+
+  /** Le message qui part chez le commerçant, montré avant d'être envoyé. */
+  const laDemandePiece = demandePiece ? (
+    <div
+      className="ap-moi-vue"
+      role="dialog"
+      aria-label="Votre demande"
+      onClick={() => setDemandePiece(null)}
+    >
+      <div className="ap-pdem" onClick={(ev) => ev.stopPropagation()}>
+        <b>{demandePiece.piece.lieu}</b>
+        {demandePiece.fiction && (
+          <p className="ap-pdem-f">
+            Ce commerce est inventé, et son numéro {demandePiece.telephone}
+            &nbsp;appartient à la plage réservée à la fiction&nbsp;: WhatsApp n’y
+            trouve personne. Voilà le message qui partirait chez un vrai
+            commerçant.
+          </p>
+        )}
+        <q>{demandePiece.texte}</q>
+        <button
+          type="button"
+          className="ap-pdem-b"
+          onClick={() => setDemandePiece(null)}
+        >
+          {demandePiece.fiction ? "J’ai compris" : "Je l’ai prévenu"}
+        </button>
+      </div>
+      <button type="button" className="ap-moi-vue-x" aria-label="Fermer">
         ✕
       </button>
     </div>
@@ -5207,6 +5345,7 @@ export function ApercuHabitant() {
       )}
 
       {laPieceVue}
+      {laDemandePiece}
 
       {/* ═══ LES PIÈCES D'ABORD, LES COMMERCES ENSUITE ═══════════════════════
 
@@ -5870,19 +6009,6 @@ export function ApercuHabitant() {
   return (
     <div className="ap">
       <StylesDirect />
-      {/* ═══ LE RELOOKING PREND TOUT L'ÉCRAN, ET IL EST POSÉ ICI ════════════
-
-          HORS DU TÉLÉPHONE ET HORS DU PAQUET. C'est un parcours de sept écrans
-          qui ne parle d'aucun commerce en particulier : le glisser dans le fil
-          en ferait une carte de plus, avec un balayage qui le fermerait au
-          premier geste de travers. Posé au-dessus de tout, il se ferme par une
-          croix et par elle seule — et le paquet est retrouvé exactement là où
-          on l'avait laissé.
-
-          IL NE DÉMONTE PAS LE FIL EN DESSOUS. Le rendu du look prend une
-          minute ; remonter le paquet au retour relancerait l'ouverture, le
-          tri par fraîcheur et la première carte. */}
-      {relooking && <RelookingContenu onFermer={() => setRelooking(false)} />}
       <div className="ap-tel">
         {/* SUR LE DIRECT, LA PHOTO PASSE DERRIÈRE LES ONGLETS — voir la règle
             .ap-app.direct .ap-onglets. Ailleurs, la barre reste dans le flux :
@@ -5951,6 +6077,7 @@ export function ApercuHabitant() {
                     Profil — et rendue dans une seule des deux, elle ne s'ouvre
                     que là. Voir `laPieceVue`. */}
                 {laPieceVue}
+      {laDemandePiece}
                 {/* ═══ CE QU'ON A GARDÉ PASSE DEVANT ═══
 
                     L'ORDRE SUIVAIT L'ANCIEN SENS DU CŒUR. Tant qu'il servait
@@ -10012,7 +10139,7 @@ export function ApercuHabitant() {
                     heures.
                   </span>
                 </div>
-                <div className="ap-dem">
+                <div className="ap-pdem">
                   <textarea
                     className="ap-dem-t"
                     rows={3}
@@ -10053,7 +10180,7 @@ export function ApercuHabitant() {
 
                   <button
                     type="button"
-                    className="ap-dem-b"
+                    className="ap-pdem-b"
                     disabled={motVille.trim().length < 3}
                     onClick={() => {
                       // LA LONGUEUR, JAMAIS LE TEXTE. Ce qui est écrit ici ne
@@ -12624,7 +12751,7 @@ export function ApercuHabitant() {
                   </span>
                 </div>
                 <form
-                  className="ap-dem"
+                  className="ap-pdem"
                   onSubmit={(ev) => {
                     ev.preventDefault();
                     const n = brouillonPrenom.trim();
@@ -12653,7 +12780,7 @@ export function ApercuHabitant() {
                   </p>
                   <button
                     type="submit"
-                    className="ap-dem-b"
+                    className="ap-pdem-b"
                     disabled={!brouillonPrenom.trim()}
                   >
                     Continuer
@@ -12915,7 +13042,7 @@ export function ApercuHabitant() {
                       </span>
                     </div>
                     <form
-                      className="ap-dem"
+                      className="ap-pdem"
                       onSubmit={(e) => {
                         e.preventDefault();
                         lancerSortie(brouillon);
@@ -13170,6 +13297,24 @@ export function ApercuHabitant() {
               />
             </>
           )}
+
+          {/* ═══ LE RELOOKING PREND TOUT L'ÉCRAN — CELUI DU TÉLÉPHONE ═══════
+
+              IL EST POSÉ DANS LE CADRE, ET PAS À CÔTÉ. Il vivait au-dessus de
+              la maquette, comme frère du téléphone : sur un écran d'ordinateur
+              il s'étalait donc sur toute la fenêtre, pendant que le reste de
+              l'application restait sage dans ses trois cent quatre-vingt-dix
+              points. « J'arrive sur un format totalement différent. » C'était
+              exactement ça — pas un autre design, un autre cadre.
+
+              PLACÉ ICI, il est contenu comme la pièce vue en grand et comme
+              tous les autres calques de cette application, et la démonstration
+              redevient une seule et même chose.
+
+              IL NE DÉMONTE PAS LE FIL EN DESSOUS. Le rendu du look prend une
+              minute ; remonter le paquet au retour relancerait l'ouverture, le
+              tri par fraîcheur et la première carte. */}
+          {relooking && <RelookingContenu onFermer={() => setRelooking(false)} />}
         </div>
       </div>
 
@@ -17197,7 +17342,7 @@ export function ApercuHabitant() {
           -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
           animation:apMoiVue .26s ease both;}
         @keyframes apMoiVue{from{opacity:0;}to{opacity:1;}}
-        .ap-moi-vue img{max-width:100%;max-height:68vh;object-fit:contain;
+        .ap-moi-vue img{max-width:100%;max-height:44vh;object-fit:contain;
           border-radius:20px;display:block;
           box-shadow:0 30px 70px -24px rgba(0,0,0,.95);}
         .ap-moi-vue-t{text-align:center;}
@@ -17207,11 +17352,59 @@ export function ApercuHabitant() {
           font-size:13.5px;color:#9FB0C4;}
         .ap-moi-vue-t span{display:block;margin-top:8px;font-size:15px;
           letter-spacing:2px;}
-        .ap-moi-vue>button{position:absolute;top:18px;right:18px;width:42px;
+        /* LA CROIX EST NOMMEE, ELLE N'EST PLUS « le bouton enfant ».
+           Un selecteur qui attrape tous les boutons directs attrape aussi ceux
+           qu'on ajoutera — c'est exactement le defaut qui avait rendu la loupe
+           de l'essayage invisible et la photo insensible au doigt. */
+        .ap-moi-vue-x{position:absolute;top:18px;right:18px;width:42px;
           height:42px;border-radius:50%;display:grid;place-items:center;
           font:inherit;font-size:16px;font-weight:700;cursor:pointer;
           color:#D6DFEC;background:rgba(255,255,255,.08);
           border:1px solid rgba(255,255,255,.16);}
+
+        /* ═══ LES DEUX GESTES DE LA PIECE GARDEE ═══════════════════════════
+
+           Ecrire au commercant, ou retourner chez lui. Rien d'autre : une
+           poche qu'on ouvre avec l'intention d'acheter et qui ne repond qu'en
+           montrant la photo est un tiroir sans poignee. */
+        .ap-moi-vue-b{display:flex;gap:9px;width:min(340px,100%);}
+        /* UNE LIGNE CHACUN, JAMAIS DEUX. Mesure a la capture : « Voir la
+           boutique » se repliait, la rangee grandissait, et elle descendait
+           sous le bandeau des notifications. */
+        .ap-moi-vue-r,.ap-moi-vue-c{flex:1;display:inline-flex;
+          align-items:center;justify-content:center;gap:6px;
+          border-radius:999px;padding:13px 8px;cursor:pointer;
+          white-space:nowrap;
+          font:inherit;font-size:13px;font-weight:850;letter-spacing:-.015em;}
+        .ap-moi-vue-r i,.ap-moi-vue-c i{font-style:normal;font-size:15px;}
+        .ap-moi-vue-r{color:#fff;border:0;
+          background:linear-gradient(92deg,#F0269B,#FF5FB2);
+          box-shadow:0 14px 30px -14px rgba(240,38,155,.95);}
+        .ap-moi-vue-c{color:#D6DFEC;background:rgba(255,255,255,.07);
+          border:1px solid rgba(255,255,255,.18);}
+        .ap-moi-vue-r:active,.ap-moi-vue-c:active{transform:scale(.98);}
+
+        /* LE MESSAGE, MONTRE AVANT DE PARTIR. On ecrit au nom de quelqu'un :
+           il doit l'avoir lu avant, sans changer d'application.
+           IL S'APPELLE « pdem » ET PAS « dem » : la garde des styles a attrape
+           la collision — .ap-dem existe deja, mille sept cents lignes plus
+           haut, pour une demande d'un tout autre genre. Deux objets sans
+           rapport sous le meme nom heritent l'un de l'autre, et le resultat
+           depend de l'ordre d'ecriture. */
+        .ap-pdem{width:min(360px,100%);border-radius:20px;padding:16px;
+          background:rgba(16,22,30,.98);
+          border:1px solid rgba(255,255,255,.16);}
+        .ap-pdem>b{display:block;font-size:17px;font-weight:850;color:#fff;}
+        .ap-pdem-f{margin:8px 0 0;font-size:12px;line-height:1.45;color:#9FB0C4;}
+        .ap-pdem q{display:block;margin:12px 0 0;quotes:none;white-space:pre-line;
+          border-radius:4px 16px 16px 16px;padding:12px 14px;
+          font-size:13px;line-height:1.5;color:#EAF2E8;
+          background:rgba(37,211,102,.12);
+          border:1px solid rgba(37,211,102,.32);border-left:3px solid #25D366;}
+        .ap-pdem-b{width:100%;margin-top:14px;border:0;border-radius:999px;
+          padding:13px 16px;cursor:pointer;font:inherit;font-size:14.5px;
+          font-weight:850;color:#fff;
+          background:linear-gradient(92deg,#F0269B,#FF5FB2);}
 
         .ap-moi-px{flex:none;width:30px;height:30px;border-radius:50%;
           display:grid;place-items:center;font:inherit;font-size:12px;

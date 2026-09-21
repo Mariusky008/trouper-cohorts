@@ -5358,6 +5358,7 @@ function Essai({
 
                 « On peut éventuellement ajouter un lien secondaire discret :
                 "Demander l'avis ClikMe". Et seulement si l'utilisateur clique
+                dessus — il porte depuis un nom et un metier, voir plus bas.
                 dessus, ClikMe peut donner un conseil neutre et non jugeant.
                 Jamais : "cette pièce ne vous va pas". »
 
@@ -5372,8 +5373,27 @@ function Essai({
                 un avis qu'elle n'avait pas demandé. */}
             {conseil && !surprise && (
               <div className="mu-conseil">
+                {/* ═══ IL A UN NOM ET UN MÉTIER ══════════════════════════
+
+                    « Au lieu de "L'avis ClikMe", mets plutôt : L'avis de Nadia
+                    — experte en relooking. »
+
+                    UN AVIS SIGNÉ NE SE LIT PAS COMME UN AVIS DE MACHINE. « Le
+                    système pense que » se discute ; « Nadia pense que » se
+                    reçoit — c'est quelqu'un, et c'est quelqu'un dont le métier
+                    est écrit juste en dessous, ce qui dit pourquoi son avis
+                    vaut la peine d'être lu.
+
+                    ET ÇA NE CHANGE RIEN À CE QUI EST DIT. Le conseil reste
+                    celui de `avisNeutre` : ce que la pièce FAIT, jamais ce
+                    qu'elle vaut, et une porte de sortie qui propose au lieu de
+                    corriger. Le nom n'autorise pas à juger. */}
                 <b>
-                  <Signe classe="mu-conseil-s" /> L’avis ClikMe
+                  <Signe classe="mu-conseil-s" />
+                  <span>
+                    L’avis de Nadia
+                    <em>experte en relooking</em>
+                  </span>
                 </b>
                 <p>{avisNeutre(piece).dit}</p>
                 <p className="mu-conseil-s2">{avisNeutre(piece).sinon}</p>
@@ -5549,7 +5569,7 @@ function Essai({
                 flèche du haut, qui ramène déjà au choix de la pièce.
 
                 LE PREMIER LIEN CHANGE SELON QUI A CHOISI : « Surprends-moi
-                encore » quand c'est ClikMe, « L'avis ClikMe » quand c'est le
+                encore » quand c'est ClikMe, « L'avis de Nadia » quand c'est le
                 client — et c'est bien un LIEN discret, jamais un bouton plein,
                 parce qu'un avis qu'on n'a pas demandé n'est pas un geste du
                 parcours.
@@ -5573,7 +5593,7 @@ function Essai({
                   onClick={() => setConseil((v) => !v)}
                 >
                   <Trace cle="idee" />
-                  <span>L’avis ClikMe</span>
+                  <span>L’avis de Nadia</span>
                 </button>
               )}
               <button type="button" onClick={onMur}>
@@ -8728,7 +8748,35 @@ function Styles() {
             transparent 40%,
             transparent 47%,rgba(5,7,14,.62) 63%,rgba(5,7,14,.94) 76%,
             #05070E 87%);}
-        .mu-res>*:not(.mu-res-ph):not(.mu-res-fond):not(.mu-res-voile):not(.mu-res-eclat):not(.mu-res-bulle){
+        /* ═══ CE QUI EST DANS LE FLUX, NOMME UN PAR UN ════════════════════
+
+           CETTE REGLE ETAIT UNE LISTE DE CE QUI N'EST PAS DANS LE FLUX, et
+           c'est l'inverse qu'il fallait ecrire. Elle disait « tous les enfants
+           SAUF la photo, le fond, le voile, l'eclat et la bulle sont en
+           position relative » : autrement dit, tout calque ajoute plus tard
+           tombait dedans et se faisait REPOSITIONNER SANS QU'ON LE DEMANDE.
+
+           TROIS DEGATS, MESURES AU NAVIGATEUR, ET ILS ONT L'AIR DE TROIS
+           DEFAUTS DIFFERENTS :
+
+             1. La surface qui ouvre la photo en grand, mu-res-ouvrir,
+                passait d'absolue a relative : hauteur ZERO. « Quand je touche
+                la photo je ne la vois pas entierement » — normal, la zone
+                n'existait plus.
+             2. Sa legende, mu-res-loupe, devenait un bloc en pleine largeur
+                DANS le flux. Ses coordonnees ne la placaient plus : elles la
+                decalaient. Mesure : x=2 au lieu de 16, c'est-a-dire quatorze
+                points HORS de l'ecran a gauche, sous le titre. « Le texte voir
+                en entier est cache. »
+             3. Et comme elle etait dans le flux, elle y prenait ses trente-deux
+                points de hauteur, au-dessus de la barre du haut. C'est la
+                « enorme perte de place en haut » : une bande vide creee par une
+                pastille qu'on ne voyait pas.
+
+           ON NOMME DONC LES QUATRE QUI SONT VRAIMENT DANS LE FLUX. Une liste
+           blanche se trompe dans le sens sur : un calque oublie reste un
+           calque, il ne devient pas une ligne de mise en page. */
+        .mu-res-haut,.mu-res-t,.mu-res-vide,.mu-res-bas{
           position:relative;z-index:2;}
 
         /* LA REVELATION : un eclat qui balaie l'image UNE FOIS, puis disparait.
@@ -8998,7 +9046,15 @@ function Styles() {
            l'infobulle designait le mauvais bouton, ce qui est pire que pas
            d'infobulle. Seize points de marge, plus la croix (quarante-quatre)
            et l'ecart (quatorze) : soixante-quatorze. */
-        .mu-res-bulle{position:absolute;z-index:9;top:60px;right:74px;
+        /* ELLE DESCEND SOUS LE SOUS-TITRE, PARCE QUE LE TITRE EST MONTE.
+           Elle se posait a soixante points, c'est-a-dire juste sous la barre —
+           l'endroit ou il n'y avait rien tant qu'une bande vide de trente-deux
+           points separait la barre du titre. Cette bande etait un defaut, elle
+           a ete corrigee, et la bulle s'est retrouvee en travers de « ca vous
+           plait ? » : la question de l'ecran, masquee par une infobulle. Elle
+           se pose maintenant sur le haut de la photo, ou elle ne cache que du
+           flou, et sa fleche continue de designer la cloche. */
+        .mu-res-bulle{position:absolute;z-index:9;top:146px;right:74px;
           width:max-content;max-width:150px;border-radius:14px;
           padding:8px 11px;font-size:11.5px;font-weight:700;line-height:1.3;
           color:#EDF2F8;background:rgba(10,14,24,.92);
@@ -9060,7 +9116,15 @@ function Styles() {
         /* ELLE PORTE SES MOTS. Un « agrandir » seul est un symbole qu'il faut
            avoir appris ailleurs ; trois mots disent ce qui va se passer, et
            c'etait la demande — « d'une maniere tres intuitive et claire ». */
-        .mu-res-loupe{position:absolute;z-index:4;right:14px;top:112px;
+        /* ELLE SE POSE A GAUCHE, SUR LE HAUT DE LA PHOTO. La photo nette
+           commence a quinze pour cent de la hauteur : la pastille se cale juste
+           en dessous, ou il n'y a ni titre ni sous-titre — les deux sont
+           centres et s'arretent avant les bords.
+           A DROITE, ELLE RENCONTRAIT LA BULLE DE LA CLOCHE : mesure a la
+           capture, les deux occupaient la meme bande de trente points. Le coin
+           droit appartient a la cloche, qui y a son bouton et sa legende ; le
+           gauche est libre. */
+        .mu-res-loupe{position:absolute;z-index:4;left:14px;top:calc(15% + 22px);
           display:inline-flex;align-items:center;gap:6px;
           height:32px;padding:0 12px 0 9px;border-radius:999px;
           font-size:12px;font-weight:700;letter-spacing:-.01em;color:#EAF0F6;
@@ -9168,7 +9232,14 @@ function Styles() {
           .mu-choix,.mu-conseil{animation:none;}}
         .mu-choix>b,.mu-conseil>b{display:flex;align-items:center;gap:6px;
           font-size:13px;font-weight:850;letter-spacing:-.01em;color:#FB18AE;}
-        .mu-conseil>b{color:#C9BCFF;}
+        .mu-conseil>b{color:#C9BCFF;align-items:flex-start;}
+        /* LE METIER SOUS LE NOM, ET EN PLUS PETIT. C'est lui qui dit pourquoi
+           cet avis vaut la peine d'etre lu ; ecrit sur la meme ligne, il
+           passerait pour une precision entre parentheses. */
+        .mu-conseil>b span{display:block;line-height:1.2;}
+        .mu-conseil>b em{display:block;margin-top:1px;font-style:normal;
+          font-size:10.5px;font-weight:700;letter-spacing:.01em;color:#9AA7BE;}
+        .mu-conseil-s{margin-top:1px;}
         .mu-choix>b i{font-style:normal;font-size:13px;}
         .mu-choix-x{margin-left:auto;flex:none;width:26px;height:26px;
           border-radius:50%;display:grid;place-items:center;font:inherit;

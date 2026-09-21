@@ -341,6 +341,12 @@ export function BlocFantome({
             écrit à la main. Voir la feuille : sur téléphone, la question passe
             SOUS le fantôme et les polaroïds, ce qui lui rend toute la largeur
             et permet au fantôme d'être enfin grand. */}
+        {/* CE QUE CE PANNEAU-CI EST, EN TROIS MOTS. Il n'avait pas besoin de
+            le dire tant qu'il était seul ; il en a besoin depuis qu'une
+            seconde section lui ressemble. Voir `bf-coupe`. */}
+        {quoi === "essai" && (
+          <span className="bf-quoi">Toute la collection</span>
+        )}
         <div className="bf-haut">
           <FantomeMetier metier={mur.metier} classe="bf-f" />
 
@@ -449,6 +455,46 @@ export function BlocFantome({
         </button>
         )}
 
+        {/* ═══ ✨ SURPRENDS-MOI — ET IL EST DANS LE PREMIER PANNEAU ═══════════
+
+          « Cette partie du deuxième bloc n'est vraiment pas nécessaire. »
+
+          ELLE NE L'ÉTAIT PAS À CET ENDROIT-LÀ, ET C'EST TOUT LE DÉFAUT. Elle
+          était posée SOUS l'annonce du jour, donc elle se lisait comme une
+          option de cette annonce : « surprends-moi » juste après une doudoune
+          kaki laisse croire qu'on va proposer une autre doudoune. Or elle
+          cherche dans la COLLECTION ENTIÈRE — c'est-à-dire exactement ce que
+          fait ce premier panneau, et rien de ce que fait le second.
+
+          REMONTÉE ICI, elle devient la troisième porte du même bloc : je me
+          photographie, j'importe une photo, ou je laisse ClikMe choisir. Trois
+          façons d'entrer dans la même chose, au même endroit.
+
+          « Laissez ClikMe chercher dans la boutique quelque chose pour vous. »
+
+          C'EST LA TROISIÈME RAISON DE REVENIR, et c'est celle qui n'existe
+          nulle part ailleurs. Les deux autres supposent qu'on sache : ce que la
+          boutique met en avant aujourd'hui, ou ce qu'on veut essayer. Celle-ci
+          est pour le cas le plus fréquent — on ne sait pas — et c'est justement
+          celui que tous les catalogues du monde traitent en montrant tout.
+
+          ELLE VA CHERCHER DANS LA COLLECTION ENTIÈRE, pas dans les cinq
+          vignettes du dessous. Sinon elle ne surprendrait rien : elle
+          désignerait au hasard une pièce déjà visible à l'écran. */}
+        {onSurprise && mur.essai?.mots.surprends && pieces.some((p) => !p.bientot) && (
+        <button type="button" className="bf-surp" onClick={onSurprise}>
+          <span className="bf-surp-t">
+            <b>
+              <i aria-hidden="true">✨</i> SURPRENDS-MOI
+            </b>
+            <em>
+              Laissez ClikMe chercher dans {mur.essai.mots.surprends.ou} quelque chose pour vous.
+            </em>
+          </span>
+          <s aria-hidden="true">→</s>
+        </button>
+      )}
+
       </div>
 
       {/* ═══ À ESSAYER AUJOURD'HUI ════════════════════════════════════════════
@@ -465,6 +511,31 @@ export function BlocFantome({
           MÉTÉO » : ce sont des raisons de montrer, et elles ne coûtent rien au
           commerçant. Le prix barré n'apparaît QUE s'il y en a vraiment un —
           c'est ce qui lui rend son effet les jours où il sort. */}
+      {/* ═══ LE TITRE QUI SÉPARE LES DEUX BLOCS ══════════════════════════════
+
+          « Pourquoi ai-je deux blocs maintenant pour essayer les vêtements ?
+          Ce bloc ressemble au premier sauf la photo. Il faudrait que l'UX
+          permette de comprendre que c'est l'annonce du jour, et que ce soit
+          très clair. »
+
+          C'EST JUSTE, ET RIEN NE LE DISAIT. Deux panneaux arrondis l'un sous
+          l'autre, tous les deux avec une photo et un bouton « Essayer sur
+          moi » : il n'y avait aucune raison de deviner que le premier ouvre
+          TOUTE la collection et que le second met en avant UNE pièce. Sans
+          rupture entre les deux, on lit une répétition — et une répétition
+          fait sauter le second.
+
+          UN TITRE DE SECTION LES SÉPARE MAINTENANT, comme « Vous pourriez
+          aussi aimer » sépare la bande du dessous. Il ne coûte que deux lignes
+          et il porte toute la différence : ce n'est plus un second panneau,
+          c'est une autre section. Le bandeau du dessus, lui, dit la sienne —
+          voir `bf-quoi`. */}
+      {duJour && (
+        <div className="bf-coupe">
+          <h3>L’annonce du jour</h3>
+          <p>Ce que la boutique met en avant aujourd’hui — une seule pièce.</p>
+        </div>
+      )}
       {duJour && (
         <div className="bf-jour">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -483,33 +554,6 @@ export function BlocFantome({
             <s aria-hidden="true">→</s>
           </button>
         </div>
-      )}
-
-      {/* ═══ ✨ SURPRENDS-MOI ══════════════════════════════════════════════════
-
-          « Laissez ClikMe chercher dans la boutique quelque chose pour vous. »
-
-          C'EST LA TROISIÈME RAISON DE REVENIR, et c'est celle qui n'existe
-          nulle part ailleurs. Les deux autres supposent qu'on sache : ce que la
-          boutique met en avant aujourd'hui, ou ce qu'on veut essayer. Celle-ci
-          est pour le cas le plus fréquent — on ne sait pas — et c'est justement
-          celui que tous les catalogues du monde traitent en montrant tout.
-
-          ELLE VA CHERCHER DANS LA COLLECTION ENTIÈRE, pas dans les cinq
-          vignettes du dessous. Sinon elle ne surprendrait rien : elle
-          désignerait au hasard une pièce déjà visible à l'écran. */}
-      {onSurprise && mur.essai?.mots.surprends && pieces.some((p) => !p.bientot) && (
-        <button type="button" className="bf-surp" onClick={onSurprise}>
-          <span className="bf-surp-t">
-            <b>
-              <i aria-hidden="true">✨</i> SURPRENDS-MOI
-            </b>
-            <em>
-              Laissez ClikMe chercher dans {mur.essai.mots.surprends.ou} quelque chose pour vous.
-            </em>
-          </span>
-          <s aria-hidden="true">→</s>
-        </button>
       )}
 
       {/* ═══ VOUS POURRIEZ AUSSI AIMER ════════════════════════════════════════
@@ -754,7 +798,29 @@ function Styles() {
            jour. Elle est rose quand il n'y a pas de remise, ambre quand il y en
            a une : la remise doit se voir immediatement DIFFERENTE, sinon elle
            se fond dans le decor et cesse d'etre un evenement. */
-        .bf-jour{position:relative;margin-top:16px;border-radius:24px;
+        /* ═══ LA COUPURE ENTRE LES DEUX SECTIONS ═══════════════════════════
+           Deux panneaux arrondis l'un sous l'autre se lisent comme une
+           repetition ; un titre entre les deux en fait deux sections. Il est
+           dessine comme « Vous pourriez aussi aimer », plus bas, parce que
+           c'est le meme role. */
+        .bf-coupe{margin:26px 0 2px;}
+        .bf-coupe h3{margin:0;font-size:17px;font-weight:850;
+          letter-spacing:-.02em;color:#151B33;}
+        .bf-coupe p{margin:3px 0 0;font-size:12.5px;line-height:1.35;
+          color:#6B6484;}
+        /* L'ETIQUETTE DU PREMIER PANNEAU. Elle dit ce qu'il est, en capitales
+           et en petit : c'est un reperage, pas un titre — le titre du panneau
+           est la question que le fantome pose. */
+        /* ELLE SE POSE A DROITE : le coin gauche est deja pris par la phrase
+           manuscrite du fantome, qui y est en absolu. Mesure a la capture :
+           les deux se chevauchaient mot pour mot. */
+        .bf-quoi{display:block;width:max-content;margin:0 0 10px auto;
+          position:relative;z-index:3;border-radius:999px;
+          padding:4px 11px;font-size:9.5px;font-weight:850;letter-spacing:.13em;
+          text-transform:uppercase;color:#6A2FA8;
+          background:rgba(139,43,224,.1);
+          border:1px solid rgba(139,43,224,.24);}
+        .bf-jour{position:relative;margin-top:10px;border-radius:24px;
           overflow:hidden;min-height:340px;display:flex;
           flex-direction:column;justify-content:flex-end;
           background:#151B33;
