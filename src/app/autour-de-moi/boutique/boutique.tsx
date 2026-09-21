@@ -79,6 +79,7 @@ import { murDeLaCarte } from "@/lib/direct/fantomes";
 import { MurContenu } from "@/components/direct/mur-contenu";
 import { BlocFantome } from "@/components/direct/bloc-fantome";
 import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
+import { partager } from "@/lib/direct/partager";
 import { personnaliteDe } from "@/lib/direct/personnalites";
 import {
   ecrireDansSalon,
@@ -510,6 +511,21 @@ export function Boutique() {
     piecesGardeesVides,
   );
   const [pocheOuverte, setPocheOuverte] = useState(false);
+  /** Le menu des raccourcis, derrière les trois points. */
+  const [menuOuvert, setMenuOuvert] = useState(false);
+  /**
+   * CE QUE LE PARTAGE A DONNÉ, ET IL FAUT LE DIRE.
+   *
+   * Sur un ordinateur, `partager` COPIE le lien : sans un mot à l'écran, le
+   * bouton paraît ne rien faire — exactement le défaut qu'on corrige. Trois
+   * issues, trois phrases, et la ligne s'efface toute seule.
+   */
+  const [partage, setPartage] = useState<"" | "partage" | "copie" | "echec">("");
+  useEffect(() => {
+    if (!partage) return;
+    const t = window.setTimeout(() => setPartage(""), 3200);
+    return () => window.clearTimeout(t);
+  }, [partage]);
   /**
    * LA PIÈCE QU'ON REGARDE EN GRAND, DEPUIS LA POCHE.
    *
@@ -778,7 +794,35 @@ export function Boutique() {
               <i aria-hidden="true">{gardees.length ? "❤️" : "♡"}</i>
               {gardees.length > 0 && <s>{gardees.length}</s>}
             </button>
-            <button type="button" className="bq-rond" aria-label="Partager">
+            {/* ═══ LES DEUX PASTILLES DE DROITE NE FAISAIENT RIEN ═══════════
+
+                « Les deux boutons en haut à droite ne fonctionnent pas. »
+
+                ILS ÉTAIENT DESSINÉS ET PAS BRANCHÉS. C'est le pire état pour
+                un bouton : il occupe la place, il attire l'appui, et il
+                apprend que cette barre-là ne répond pas — ce qu'on finit par
+                croire des trois autres. Mieux valait n'en dessiner aucun.
+
+                LE PARTAGE UTILISE CE QUE LE NAVIGATEUR SAIT FAIRE. La feuille
+                native sur téléphone — WhatsApp, les Messages — et la copie du
+                lien à défaut, sur un ordinateur. Voir `lib/direct/partager.ts`,
+                qui explique aussi pourquoi refermer la feuille n'est pas une
+                panne. */}
+            <button
+              type="button"
+              className="bq-rond"
+              aria-label={`Partager ${c.nom}`}
+              onClick={async () => {
+                const r = await partager({
+                  titre: c.nom,
+                  // ON N'ÉCRIT RIEN QU'ON NE SACHE : son métier, sa ville, sa
+                  // distance. Pas de « le meilleur de Dax » sous son nom.
+                  texte: `${c.nom} — ${c.metier} à ${c.ville}, à ${c.distance}`,
+                  lien: typeof window === "undefined" ? "" : window.location.href,
+                });
+                setPartage(r);
+              }}
+            >
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="18" cy="5.5" r="2.6" />
                 <circle cx="6" cy="12" r="2.6" />
@@ -786,7 +830,18 @@ export function Boutique() {
                 <path d="M8.3 10.8l7.4-4M8.3 13.2l7.4 4" />
               </svg>
             </button>
-            <button type="button" className="bq-rond" aria-label="Plus d’options">
+            {/* LE TROISIÈME N'OUVRE PAS UN MENU DE RÉGLAGES, il rassemble les
+                RACCOURCIS de la page : le chemin, le numéro, la fiche. Ce sont
+                les trois choses qu'on cherche quand on remonte en haut — et
+                elles existent toutes plus bas, ce qui est la condition pour
+                qu'un menu soit un raccourci et pas une fonction de plus. */}
+            <button
+              type="button"
+              className="bq-rond"
+              aria-label="Plus d’options"
+              aria-expanded={menuOuvert}
+              onClick={() => setMenuOuvert((v) => !v)}
+            >
               <i aria-hidden="true">···</i>
             </button>
           </div>
@@ -1792,6 +1847,111 @@ export function Boutique() {
         publié, rien n’est réservable.
       </footer>
 
+      {/* ═══ LES RACCOURCIS DES TROIS POINTS ═══════════════════════════════
+
+          POSÉ EN FIXE, COMME LA POCHE, ET POUR LA MÊME RAISON : le bandeau
+          vit DANS la photo d'en-tête, qui coupe ce qui dépasse d'elle. Un
+          menu déroulant sous les trois points arriverait rogné et sourd au
+          doigt — c'est le défaut qu'on a déjà payé une fois ici. */}
+      {menuOuvert && (
+        <div
+          className="bq-voile"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Raccourcis"
+          onClick={() => setMenuOuvert(false)}
+        >
+          <div className="bq-menu" onClick={(e) => e.stopPropagation()}>
+            <p className="bq-menu-t">
+              <b>{c.nom}</b>
+              <button type="button" aria-label="Fermer" onClick={() => setMenuOuvert(false)}>
+                ✕
+              </button>
+            </p>
+            <a
+              className="bq-menu-l"
+              href={c.itineraire}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setMenuOuvert(false)}
+            >
+              <i aria-hidden="true">🧭</i>
+              <span>
+                <b>Y aller</b>
+                {c.fiche.ou || c.ville} · {c.distance}
+              </span>
+              <em aria-hidden="true">↗</em>
+            </a>
+            {/* SON NUMÉRO, ET PAS UN APPEL. Les commerces de la maquette sont
+                inventés : composer leur numéro ne sonnerait nulle part. On le
+                MONTRE, ce qui est vrai des deux côtés — et le jour où un
+                commerçant déclare le sien, la ligne devient un appel. */}
+            <button
+              type="button"
+              className="bq-menu-l"
+              onClick={() => {
+                setMenuOuvert(false);
+                allerA("infos");
+              }}
+            >
+              <i aria-hidden="true">☎️</i>
+              <span>
+                <b>Le joindre</b>
+                {c.telephone || numeroDeFiction(c.id)}
+              </span>
+              <em aria-hidden="true">›</em>
+            </button>
+            <button
+              type="button"
+              className="bq-menu-l"
+              onClick={() => {
+                setMenuOuvert(false);
+                allerA("infos");
+              }}
+            >
+              <i aria-hidden="true">ℹ️</i>
+              <span>
+                <b>Horaires et adresse</b>
+                {c.fiche.horaires || "Sa fiche complète"}
+              </span>
+              <em aria-hidden="true">›</em>
+            </button>
+            <button
+              type="button"
+              className="bq-menu-l"
+              onClick={async () => {
+                setMenuOuvert(false);
+                const r = await partager({
+                  titre: c.nom,
+                  texte: `${c.nom} — ${c.metier} à ${c.ville}, à ${c.distance}`,
+                  lien: typeof window === "undefined" ? "" : window.location.href,
+                });
+                setPartage(r);
+              }}
+            >
+              <i aria-hidden="true">🔗</i>
+              <span>
+                <b>Partager cette page</b>
+                Le lien s’ouvre chez qui le reçoit
+              </span>
+              <em aria-hidden="true">›</em>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* CE QUE LE PARTAGE A DONNÉ. Sur un ordinateur il copie : sans cette
+          ligne, le bouton paraît ne rien faire. */}
+      {partage && (
+        <p className="bq-dit" role="status">
+          {partage === "copie"
+            ? "Lien copié — collez-le où vous voulez."
+            : partage === "echec"
+              ? "Le partage n’a pas abouti. Vous pouvez copier l’adresse de la page."
+              : "C’est parti."}
+        </p>
+      )}
+
       {/* ═══ LA POCHE, EN GRAND ET PAR-DESSUS TOUT ═════════════════════════
 
           Elle est posée en `fixed` : le bandeau qui la commande vit dans la
@@ -2089,6 +2249,50 @@ function Styles() {
           display:grid;place-items:center;font:inherit;font-size:12px;
           font-weight:800;cursor:pointer;color:#C6D2E2;background:none;
           border:1px solid rgba(255,255,255,.18);}
+
+        /* ═══ LES RACCOURCIS DES TROIS POINTS ══════════════════════════════
+           Trois chemins qui existent deja plus bas, remontes a portee du
+           pouce : le chemin, le numero, la fiche — plus le partage. Un menu
+           qui inventerait une fonction de plus ne serait pas un raccourci. */
+        .bq-menu{width:min(340px,100%);border-radius:20px;padding:13px;
+          background:rgba(14,12,26,.98);border:1px solid rgba(255,255,255,.16);
+          box-shadow:0 26px 60px -22px rgba(0,0,0,.95);
+          animation:bqPoche .26s cubic-bezier(.16,1,.3,1) both;}
+        .bq-menu-t{display:flex;align-items:center;justify-content:space-between;
+          gap:10px;margin:0 0 10px;padding:0 2px;}
+        .bq-menu-t b{font-size:15px;font-weight:850;color:#FFFFFF;
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .bq-menu-t button{width:30px;height:30px;flex:none;border-radius:50%;
+          display:grid;place-items:center;font:inherit;font-size:13px;
+          font-weight:800;cursor:pointer;color:#E6EDF6;background:none;
+          border:1px solid rgba(255,255,255,.22);}
+        .bq-menu-l{display:flex;align-items:center;gap:11px;width:100%;
+          margin-bottom:8px;border-radius:14px;padding:11px;cursor:pointer;
+          text-align:left;text-decoration:none;font:inherit;
+          background:rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.12);}
+        .bq-menu-l:last-child{margin-bottom:0;}
+        .bq-menu-l:active{transform:scale(.99);}
+        .bq-menu-l>i{flex:none;display:grid;place-items:center;width:34px;
+          height:34px;border-radius:11px;font-style:normal;font-size:16px;
+          background:rgba(255,255,255,.07);}
+        .bq-menu-l span{flex:1;min-width:0;font-size:11.5px;line-height:1.3;
+          color:#B9C6D8;}
+        .bq-menu-l b{display:block;font-size:13.5px;font-weight:850;
+          color:#FFFFFF;margin-bottom:1px;}
+        .bq-menu-l em{flex:none;font-style:normal;font-size:15px;color:#8DA0B4;}
+
+        /* CE QUE LE PARTAGE A DONNE. Elle se pose au-dessus de la barre du
+           bas, la ou l'oeil revient apres un geste, et s'efface seule. */
+        .bq-dit{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));
+          z-index:40;transform:translateX(-50%);
+          width:max-content;max-width:calc(100vw - 40px);
+          border-radius:999px;padding:11px 18px;margin:0;
+          font-size:13px;font-weight:700;line-height:1.3;text-align:center;
+          color:#FFFFFF;background:rgba(14,12,26,.96);
+          border:1px solid rgba(255,255,255,.18);
+          box-shadow:0 18px 40px -18px rgba(0,0,0,.9);
+          animation:bqPoche .26s cubic-bezier(.16,1,.3,1) both;}
 
         /* ═══ LE PANNEAU DU SALON ══════════════════════════════════════════
            On ne quitte pas la page d'un commerce sans l'avoir demande : le
