@@ -416,7 +416,7 @@ export function BlocFantome({
             </h2>
             <p className="bf-p">
               {quoi === "essai"
-                ? "Explorez toute la collection de la boutique et trouvez des pièces uniques qui vous ressemblent."
+                ? "Explorez toute la collection de la boutique et essayez les pièces sur vous, ici même."
                 : quoi === "gout"
                 ? // LA PHRASE NE PORTE AUCUN GENRE, ET C'EST EXPRÈS. Elle
                   // nommait le plat puis disait « ne LE regardez pas » : juste
@@ -484,12 +484,17 @@ export function BlocFantome({
             une flèche dans un rond à droite — c'est le dessin exact des trois
             maquettes, et le rond de droite n'est pas un ornement : il dit qu'on
             part ailleurs, là où l'icône de gauche dit avec quoi. */}
-        {/* ET IL PROMET LA COLLECTION, PAS L'APPAREIL PHOTO. « Me photographier
-            en buste » demandait un visage avant d'avoir montré quoi que ce
-            soit : c'est l'ordre inverse de celui d'une vitrine. On entre dans
-            la collection, on désigne une pièce, ET ALORS on donne sa photo —
-            au moment où la question a une réponse évidente. Voir
-            `ouvrirSurGrille` et `changerDeStyle` dans `mur-contenu`. */}
+        {/* ═══ IL PROMET LES DEUX CHOSES, ET DANS CET ORDRE ══════════════════
+
+            « Il faut spécifier découvrir la collection ET l'essayer ici même,
+            suite à quoi après le clic on dépose sa photo. »
+
+            « ME PHOTOGRAPHIER EN BUSTE » NE DISAIT QUE LE MOYEN, « Explorer la
+            collection » ne disait que la destination — et cette version-là
+            sautait carrément la prise de vue, si bien qu'on choisissait un
+            vêtement sans avoir donné de visage. Les deux moitiés de la phrase
+            sont nécessaires : ce qu'on va voir, et le fait que ça se pose sur
+            SOI. C'est d'ailleurs la seule chose que cette page ait d'unique. */}
         <button
           type="button"
           className="bf-cta"
@@ -531,7 +536,7 @@ export function BlocFantome({
                 ? "Essayer cette soirée"
                 : quoi === "mur"
                   ? "Laisser mon Fantôme"
-                  : "Explorer la collection"}
+                  : "Découvrir la collection et l’essayer"}
           </span>
           <s aria-hidden="true">→</s>
         </button>

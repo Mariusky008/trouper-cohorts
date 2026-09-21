@@ -92,6 +92,7 @@ import {
   basculerPieceGardee,
   chargerPiecesGardees,
   piecesGardeesVides,
+  type PieceGardee,
 } from "@/lib/direct/pieces-gardees";
 import { AnneauMetier, PictoMetier } from "@/components/direct/picto-metier";
 
@@ -337,15 +338,12 @@ export function Boutique() {
   /** On est entré par « Surprends-moi ». Voir `surprendre` dans `MurContenu`. */
   const [surprendre, setSurprendre] = useState(false);
   /**
-   * LA FAMILLE ET LA PORTE D'ENTRÉE DE L'ATELIER.
+   * LA FAMILLE DEMANDÉE DEPUIS LA VITRINE.
    *
-   * On peut entrer par la prise de vue — c'est le chemin des autres métiers —
-   * ou par la grille, quand on vient de « Explorer la collection » ou d'une
-   * pastille de famille. Les deux mènent au même endroit ; ce qui change,
-   * c'est ce qu'on a promis avant d'ouvrir la porte.
+   * Elle traverse l'écran de la prise de vue sans rien y faire, et resserre la
+   * grille une fois qu'on y arrive. Voir `rayonPrechoisi` dans `MurContenu`.
    */
   const [rayonChoisi, setRayonChoisi] = useState("");
-  const [grilleDabord, setGrilleDabord] = useState(false);
   const c = useMemo(() => cartes.find((x) => x.id === id) ?? cartes[0], [cartes, id]);
 
   /**
@@ -537,7 +535,23 @@ export function Boutique() {
    * bouton, et il mène à la photo en plein écran — le même geste que la loupe
    * de l'écran de résultat.
    */
-  const [pieceVue, setPieceVue] = useState<{ nom: string; image: string } | null>(null);
+  /**
+   * LA PIÈCE GARDÉE QU'ON REGARDE, ET ELLE EST ENTIÈRE.
+   *
+   * Elle ne portait que son nom et sa photo : de quoi l'afficher, de quoi rien
+   * faire. « Je n'ai pas la possibilité de réserver ou de voir le commerçant
+   * comme sur l'application. » C'est exact, et c'était une régression sur
+   * cette page-ci seulement — la poche de l'application a ses deux gestes
+   * depuis l'autre jour. On garde donc la ligne complète.
+   */
+  const [pieceVue, setPieceVue] = useState<PieceGardee | null>(null);
+  /** La demande qui part chez le commerçant, montrée avant d'être envoyée. */
+  const [demandePiece, setDemandePiece] = useState<{
+    piece: PieceGardee;
+    texte: string;
+    telephone: string;
+    fiction: boolean;
+  } | null>(null);
   /**
    * ═══ LE SALON RESTE SUR LA PAGE DU COMMERÇANT ═══════════════════════════
    *
@@ -1154,20 +1168,26 @@ export function Boutique() {
                       : "mur"
               }
               onPhoto={() => setEssaiOuvert(true)}
-              /* ═══ LA COLLECTION S'OUVRE SUR LA GRILLE ═══════════════════════
+              /* ═══ LA PHOTO D'ABORD, LA COLLECTION ENSUITE ═══════════════════
 
-                 « Explorer la collection » et les pastilles de familles mènent
-                 au MÊME atelier que le reste, mais ils entrent par la grille au
-                 lieu de la prise de vue : un bouton qui promet une collection
-                 ne doit pas commencer par demander un visage. La photo arrive
-                 quand on désigne une pièce — voir `ouvrirSurGrille` et
-                 `changerDeStyle` dans `MurContenu`.
+                 « Quand je clique sur découvrir la collection, j'arrive
+                 directement sur Surprends-moi ou sur le choix de vêtements sans
+                 qu'on m'ait demandé de déposer une photo de moi. »
 
-                 LE RAYON TRAVERSE, ET IL PEUT ÊTRE VIDE : « Explorer » n'en
-                 passe aucun, la grille montre alors tout. */
+                 J'AVAIS INVERSÉ L'ORDRE, ET C'ÉTAIT UNE ERREUR. Le
+                 raisonnement paraissait bon — un bouton qui promet une
+                 collection ne devrait pas commencer par demander un visage —
+                 mais il oubliait ce que cette page vend : pas un catalogue,
+                 un ESSAYAGE. Sans photo, la grille ne mène à rien qu'on
+                 puisse essayer, et dans la maquette elle posait même la pièce
+                 sur le mannequin de démonstration sans le dire.
+
+                 LE BOUTON DIT DONC LES DEUX CHOSES — découvrir ET essayer ici
+                 même — et la prise de vue arrive juste après l'appui. Le rayon
+                 demandé traverse cet écran-là sans rien y faire et resserre la
+                 grille de l'autre côté. */
               onCollection={(rayon) => {
                 setRayonChoisi(rayon ?? "");
-                setGrilleDabord(true);
                 setEssaiOuvert(true);
               }}
               onStyle={(id) => {
@@ -1188,7 +1208,6 @@ export function Boutique() {
                  choix qu'on venait de faire. */
               piecePrechoisie={styleChoisi}
               rayonPrechoisi={rayonChoisi || undefined}
-              ouvrirSurGrille={grilleDabord}
               /**
                * LE DERNIER GESTE DE L'AVANT-GOÛT MÈNE À L'OFFRE DU JOUR.
                *
@@ -1991,7 +2010,7 @@ export function Boutique() {
                       className="bq-poche-o"
                       disabled={!x.image}
                       aria-label={x.image ? `Voir ${x.nom} en grand` : x.nom}
-                      onClick={() => x.image && setPieceVue({ nom: x.nom, image: x.image })}
+                      onClick={() => x.image && setPieceVue(x)}
                     >
                       {x.image ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -2065,26 +2084,116 @@ export function Boutique() {
         </div>
       )}
 
-      {/* ═══ LA PIÈCE EN GRAND, SANS RIEN AUTOUR ════════════════════════════
+      {/* ═══ LA PIÈCE GARDÉE : SA TAILLE, ET SES DEUX GESTES ════════════════
 
-          « Être capable de voir la photo en entier sans rien autour (aucun
-          texte ou icône) afin de voir les vêtements. »
+          « Ils apparaissent en immense au lieu d'être de taille normale, et je
+          n'ai pas la possibilité de réserver ou de voir le commerçant comme
+          sur l'application. »
 
-          Un fond noir, la photo entière, et un seul ✕. Tout le reste de l'écran
-          ferme au toucher : c'est le geste qu'on fait déjà sans y penser. */}
+          DEUX DÉFAUTS, ET LE MÊME OUBLI DERRIÈRE. Ce calque-ci avait été écrit
+          avant celui de l'application et n'a pas suivi : la photo y remplissait
+          l'écran — ce qui, sur un portrait vertical, le rogne ou l'écrase entre
+          deux bandes noires — et la pièce ne menait nulle part. On ouvre cette
+          poche avec l'intention d'acheter ; répondre en montrant une image est
+          un tiroir sans poignée.
+
+          IL EST MAINTENANT LE MÊME QUE DANS L'APPLICATION : la photo entière à
+          sa taille, le nom, le lieu, le prix, et les deux seuls gestes qui ont
+          un sens — écrire au commerçant, ou aller chez lui. */}
       {pieceVue && (
         <div
           className="bq-plein"
           role="dialog"
           aria-modal="true"
-          aria-label={`${pieceVue.nom}, en grand`}
+          aria-label={`${pieceVue.nom}, essayé sur vous`}
           onClick={() => setPieceVue(null)}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={pieceVue.image} alt={`Votre essai : ${pieceVue.nom}`} />
-          <button type="button" aria-label="Fermer">
+          <div className="bq-plein-t">
+            <b>{pieceVue.nom}</b>
+            <em>
+              {pieceVue.lieu}
+              {pieceVue.prix ? ` · ${pieceVue.prix}` : ""}
+            </em>
+          </div>
+          <div className="bq-plein-b" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="bq-plein-r"
+              onClick={() => {
+                const v = cartes.find((x) => x.id === pieceVue.carte);
+                const tel = v?.telephone || numeroDeFiction(pieceVue.carte);
+                const m = commentPrevenir({
+                  telephone: tel,
+                  quoi: `«\u00a0${pieceVue.nom}\u00a0»${pieceVue.prix ? ` (${pieceVue.prix})` : ""}`,
+                  prenom: monPrenom() || undefined,
+                  quand: "Je passe la chercher dans les jours qui viennent",
+                });
+                const p = pieceVue;
+                setPieceVue(null);
+                setDemandePiece({ piece: p, texte: m.texte, telephone: tel, fiction: !v?.telephone });
+                if (v?.telephone) window.open(m.whatsapp, "_blank", "noopener");
+              }}
+            >
+              <i aria-hidden="true">🛍️</i>Je la réserve
+            </button>
+            <button
+              type="button"
+              className="bq-plein-c"
+              onClick={() => {
+                // ON CHANGE DE COMMERCE SUR PLACE. Cette page EST une page de
+                // commerçant : la bonne réponse à « voir la boutique » est de
+                // montrer celle-là, pas d'ouvrir une seconde fenêtre sur la
+                // même chose.
+                const v = cartes.find((x) => x.id === pieceVue.carte);
+                setPieceVue(null);
+                setPocheOuverte(false);
+                if (v) {
+                  setId(v.id);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+              }}
+            >
+              <i aria-hidden="true">📍</i>Voir la boutique
+            </button>
+          </div>
+          <button type="button" className="bq-plein-x" aria-label="Fermer">
             ✕
           </button>
+        </div>
+      )}
+
+      {/* Le message qui part chez le commerçant, montré avant d'être envoyé. */}
+      {demandePiece && (
+        <div
+          className="bq-voile"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Votre demande"
+          onClick={() => setDemandePiece(null)}
+        >
+          <div className="bq-salon" onClick={(e) => e.stopPropagation()}>
+            <b>{demandePiece.piece.lieu}</b>
+            {demandePiece.fiction && (
+              <p className="bq-salon-s">
+                Ce commerce est inventé, et son numéro {demandePiece.telephone}
+                &nbsp;appartient à la plage réservée à la fiction&nbsp;: WhatsApp
+                n’y trouve personne. Voilà le message qui partirait chez un vrai
+                commerçant.
+              </p>
+            )}
+            <div className="bq-salon-m">
+              <q>{demandePiece.texte}</q>
+            </div>
+            <button
+              type="button"
+              className="bq-salon-b"
+              onClick={() => setDemandePiece(null)}
+            >
+              {demandePiece.fiction ? "J’ai compris" : "Je l’ai prévenu"}
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -2326,11 +2435,39 @@ function Styles() {
         /* ═══ LA PIECE EN GRAND, ET RIEN D'AUTRE ═══════════════════════════
            « Voir la photo en entier sans rien autour. » Un fond noir, la photo
            entiere, un seul ✕ — le reste de l'ecran ferme au toucher. */
-        .bq-plein{position:fixed;inset:0;z-index:150;display:grid;
-          place-items:center;background:#05070E;cursor:zoom-out;
+        /* ═══ LA PIECE GARDEE, A SA TAILLE ════════════════════════════════
+
+           « Ils apparaissent en immense au lieu d'etre de taille normale. »
+           La photo remplissait l'ecran : sur un portrait vertical, elle y etait
+           rognee ou ecrasee entre deux bandes noires — on sortait de l'ecran
+           pour voir moins bien. Elle est maintenant contenue, avec son nom et
+           ses deux gestes dessous, comme dans l'application. */
+        .bq-plein{position:fixed;inset:0;z-index:150;display:flex;
+          flex-direction:column;align-items:center;justify-content:center;
+          gap:14px;padding:24px;background:rgba(4,6,12,.97);cursor:zoom-out;
+          -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
           animation:bqVoile .2s ease both;}
-        .bq-plein img{width:100%;height:100%;object-fit:contain;display:block;}
-        .bq-plein button{position:absolute;top:calc(12px + env(safe-area-inset-top));
+        .bq-plein img{max-width:100%;max-height:44vh;width:auto;height:auto;
+          object-fit:contain;border-radius:20px;display:block;
+          box-shadow:0 30px 70px -24px rgba(0,0,0,.95);}
+        .bq-plein-t{text-align:center;}
+        .bq-plein-t b{display:block;font-size:19px;font-weight:850;
+          letter-spacing:-.01em;color:#FFFFFF;}
+        .bq-plein-t em{display:block;margin-top:4px;font-style:normal;
+          font-size:13.5px;color:#9FB0C4;}
+        .bq-plein-b{display:flex;gap:9px;width:min(340px,100%);cursor:auto;}
+        .bq-plein-r,.bq-plein-c{flex:1;display:inline-flex;align-items:center;
+          justify-content:center;gap:6px;border-radius:999px;padding:13px 8px;
+          cursor:pointer;white-space:nowrap;font:inherit;font-size:13px;
+          font-weight:850;letter-spacing:-.015em;}
+        .bq-plein-r i,.bq-plein-c i{font-style:normal;font-size:15px;}
+        .bq-plein-r{color:#fff;border:0;
+          background:linear-gradient(92deg,#F0269B,#FF5FB2);
+          box-shadow:0 14px 30px -14px rgba(240,38,155,.95);}
+        .bq-plein-c{color:#D6DFEC;background:rgba(255,255,255,.07);
+          border:1px solid rgba(255,255,255,.18);}
+        .bq-plein-r:active,.bq-plein-c:active{transform:scale(.98);}
+        .bq-plein-x{position:absolute;top:calc(12px + env(safe-area-inset-top));
           right:12px;width:38px;height:38px;border-radius:50%;display:grid;
           place-items:center;font:inherit;font-size:15px;font-weight:800;
           cursor:pointer;color:#FFFFFF;background:rgba(18,14,32,.6);
