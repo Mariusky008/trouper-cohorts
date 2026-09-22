@@ -145,154 +145,257 @@ export function creneauDe(cle: CleCreneau): Creneau {
   return CRENEAUX.find((c) => c.cle === cle) ?? CRENEAUX[1];
 }
 
-/* ═══ QUAND ? ═══════════════════════════════════════════════════════════════
+/* ═══ 1. LE MOMENT — LES QUATRE CARTES DU PREMIER ÉCRAN ════════════════════
 
-   TROIS RÉPONSES, PAS CINQ CASES À COCHER. « Cet après-midi », « Ce soir »,
-   « Toute la journée » : c'est ainsi qu'on y pense, et c'est la seule question
-   dont la réponse est immédiate. Cocher soi-même cinq créneaux serait un
-   travail de planification — or on ouvre cet écran justement pour ne pas
-   planifier. */
-export type CleTranche = "aprem" | "soir" | "jour";
+   QUATRE, ET CE SONT LES SIENNES : « Ce midi », « Cet après-midi », « Ce soir »,
+   « Surprends-moi ». C'est ainsi qu'on y pense, et c'est la seule question dont
+   la réponse est immédiate. Cocher soi-même cinq créneaux serait un travail de
+   planification — or on ouvre cet écran justement pour ne pas planifier.
 
-export type Tranche = {
-  cle: CleTranche;
+   « SURPRENDS-MOI » N'EST PAS UN QUATRIÈME MOMENT, C'EST L'ABSENCE DE CHOIX, et
+   c'est pour ça qu'il ouvre la journée entière : qui ne choisit pas son moment
+   ne veut pas qu'on lui en retire un. */
+export type CleMoment = "midi" | "aprem" | "soir" | "surprise";
+
+export type Moment = {
+  cle: CleMoment;
+  /** Sur la carte : « Ce midi ». */
   label: string;
+  /** Les deux lignes dessous : « Bien manger, bien profiter ». */
   detail: string;
+  /** Le pictogramme du rond : soleil, soleil couchant, lune, cadeau. */
+  signe: "soleil" | "couchant" | "lune" | "cadeau";
+  photo: string;
   creneaux: CleCreneau[];
 };
 
-export const TRANCHES: Tranche[] = [
+/**
+ * LES PHOTOS SONT CELLES DU DOSSIER, PAS DES IMAGES DE BANQUE NEUVES.
+ * `LISEZ-MOI.md` l'interdit pour les commerces inventés, et la règle vaut ici :
+ * une carte « Ce soir » illustrée par une terrasse qu'on n'a nulle part
+ * ailleurs ferait une promesse que le reste du produit ne tient pas.
+ */
+export const MOMENTS: Moment[] = [
+  {
+    cle: "midi",
+    label: "Ce midi",
+    detail: "Bien manger, bien profiter",
+    signe: "soleil",
+    photo: "/direct/plat-axoa.jpg",
+    creneaux: ["midi", "apresmidi"],
+  },
   {
     cle: "aprem",
     label: "Cet après-midi",
-    detail: "Du déjeuner à l’apéro",
-    creneaux: ["midi", "apresmidi", "apero"],
+    detail: "Activités, shopping, détente",
+    signe: "couchant",
+    photo: "/direct/vitrine-mode.jpg",
+    creneaux: ["apresmidi", "apero"],
   },
   {
     cle: "soir",
     label: "Ce soir",
-    detail: "De l’apéro à la fin de soirée",
+    detail: "Restaurant, bar, sortie, événement",
+    signe: "lune",
+    photo: "/direct/verre-au-comptoir.jpg",
     creneaux: ["apero", "soir"],
   },
   {
-    cle: "jour",
-    label: "Toute la journée",
-    detail: "Du matin à la nuit",
+    cle: "surprise",
+    label: "Surprends-moi",
+    detail: "Une journée sur mesure",
+    signe: "cadeau",
+    photo: "",
     creneaux: ["matin", "midi", "apresmidi", "apero", "soir"],
   },
 ];
 
-export function trancheDe(cle: CleTranche): Tranche {
-  return TRANCHES.find((t) => t.cle === cle) ?? TRANCHES[0];
+export function momentDe(cle: CleMoment): Moment {
+  return MOMENTS.find((m) => m.cle === cle) ?? MOMENTS[0];
 }
 
-/* ═══ QUOI ? ════════════════════════════════════════════════════════════════
+/* ═══ 2. L'AMBIANCE — LA GRILLE DE HUIT ════════════════════════════════════
 
-   CINQ SORTES D'ÉTAPES, ET CHACUNE EST ADOSSÉE À DES BRANCHES RÉELLES. C'est
-   ce qui sépare cette question de l'« ambiance » qu'on a retirée : « boire un
-   verre » se traduit par une branche déclarée, « une ambiance chaleureuse » ne
-   se traduit par rien.
+   HUIT VIGNETTES, LES SIENNES, DANS SON ORDRE. Elles se cumulent — une journée
+   est faite de plusieurs choses — et aucune n'est cochée d'avance : une case
+   pré-cochée décide à la place de quelqu'un, et on s'en aperçoit trop tard,
+   devant le résultat.
 
-   ELLES SE CUMULENT, ET C'EST NORMAL — une journée est faite de plusieurs
-   choses. Aucune n'est cochée d'avance : une case pré-cochée décide à la place
-   de quelqu'un, et on s'en aperçoit trop tard, devant le résultat. */
-export type CleEnvie = "table" | "verre" | "boutiques" | "sortie" | "soin";
+   ═══ CE QUE CHAQUE AMBIANCE SAIT VRAIMENT REMPLIR ═══════════════════════════
 
-export type EnvieJournee = {
-  cle: CleEnvie;
+   ET IL FAUT LE DIRE, PARCE QUE TOUTES NE SE VALENT PAS. Une ambiance n'est pas
+   un mot-clé : elle se traduit en branches et en organisateurs DÉCLARÉS, sans
+   quoi elle trierait au hasard — et une pastille qui trie au hasard apprend que
+   les réglages de ce produit ne servent à rien.
+
+   « ACTIVE » EST LA PLUS FAIBLE DES HUIT AUJOURD'HUI, et ce n'est pas un défaut
+   de code : le jeu de démonstration ne contient aucun commerce ni aucun
+   événement sportif. Elle tombe donc sur ce qui s'en approche le plus — les
+   sorties de plein air où l'on marche — et si un jour une base de loisirs
+   publie, elle la prendra sans qu'on touche à rien. En attendant, cochée seule,
+   elle rendra peu : l'écran le dit plutôt que de remplir avec autre chose. */
+export type CleAmbiance =
+  | "gourmande"
+  | "active"
+  | "shopping"
+  | "detente"
+  | "festive"
+  | "culturelle"
+  | "famille"
+  | "surprise";
+
+export type Ambiance = {
+  cle: CleAmbiance;
   label: string;
-  detail: string;
-  emoji: string;
-  /** Les branches qui savent répondre. Vide pour la sortie : ce sont les événements. */
+  photo: string;
+  /** Les branches de commerce qui savent répondre. */
   branches: CleMetier[];
-  /** Vrai quand cette envie se remplit avec les événements de la ville. */
-  evenements?: boolean;
-  /** Les créneaux où elle a un sens. On ne déjeune pas à 22 h. */
-  creneaux: CleCreneau[];
+  /** Les organisateurs d'événements qui savent répondre. Voir `typeQui`. */
+  organisateurs: string[];
+  /** Vrai pour « Surprends-moi » : tout est permis. */
+  tout?: boolean;
 };
 
-export const ENVIES_JOURNEE: EnvieJournee[] = [
+export const AMBIANCES: Ambiance[] = [
   {
-    cle: "table",
-    label: "Se mettre à table",
-    detail: "Un déjeuner, un dîner",
-    emoji: "🍽️",
+    cle: "gourmande",
+    label: "Gourmande",
+    photo: "/direct/plat-lasagnes.jpg",
     branches: ["restaurant"],
-    creneaux: ["matin", "midi", "soir"],
+    organisateurs: [],
   },
   {
-    cle: "verre",
-    label: "Boire un verre",
-    detail: "Un bar, une terrasse",
-    emoji: "🥂",
-    branches: ["bar"],
-    creneaux: ["apresmidi", "apero", "soir"],
-  },
-  {
-    cle: "boutiques",
-    label: "Faire les boutiques",
-    detail: "Mode, créateurs, artisans",
-    emoji: "🛍️",
-    branches: ["mode", "artisan", "fleuriste", "lunetier"],
-    creneaux: ["matin", "apresmidi"],
-  },
-  {
-    cle: "sortie",
-    label: "Une sortie en ville",
-    detail: "Ce que la ville propose",
-    emoji: "🎪",
+    cle: "active",
+    label: "Active",
+    photo: "/direct/vide-grenier.jpg",
     branches: [],
-    evenements: true,
-    creneaux: ["matin", "midi", "apresmidi", "apero", "soir"],
+    organisateurs: ["office", "association"],
   },
   {
-    cle: "soin",
-    label: "Prendre soin de soi",
-    detail: "Coiffeur, ongles",
-    emoji: "✨",
+    cle: "shopping",
+    label: "Shopping",
+    photo: "/direct/friperie-rayon.jpg",
+    branches: ["mode", "artisan", "lunetier", "fleuriste"],
+    organisateurs: ["association"],
+  },
+  {
+    cle: "detente",
+    label: "Détente",
+    photo: "/direct/salon-bacs.jpg",
     branches: ["coiffeur", "ongles"],
-    creneaux: ["matin", "apresmidi"],
+    organisateurs: [],
+  },
+  {
+    cle: "festive",
+    label: "Festive",
+    photo: "/direct/bar-planche.jpg",
+    branches: ["bar"],
+    organisateurs: ["mairie"],
+  },
+  {
+    cle: "culturelle",
+    label: "Culturelle",
+    photo: "/direct/nocturne-musee.jpg",
+    branches: [],
+    organisateurs: ["musee"],
+  },
+  {
+    cle: "famille",
+    label: "En famille",
+    photo: "/direct/concert-kiosque.jpg",
+    branches: [],
+    organisateurs: ["mairie", "office"],
+  },
+  {
+    cle: "surprise",
+    label: "Surprends-moi",
+    photo: "",
+    branches: [],
+    organisateurs: [],
+    tout: true,
   },
 ];
 
-export function envieDe(cle: CleEnvie): EnvieJournee {
-  return ENVIES_JOURNEE.find((e) => e.cle === cle) ?? ENVIES_JOURNEE[0];
+export function ambianceDe(cle: CleAmbiance): Ambiance {
+  return AMBIANCES.find((a) => a.cle === cle) ?? AMBIANCES[0];
 }
 
-/* ═══ LE BUDGET ═════════════════════════════════════════════════════════════
+/* ═══ 3. LA DURÉE ══════════════════════════════════════════════════════════
 
-   IL PORTE SUR L'ÉTAPE, PAS SUR LA JOURNÉE, et c'est la seule façon de s'en
-   servir honnêtement : on ne sait pas combien d'étapes il y aura — ça dépend de
-   ce qui a été publié — donc un plafond « 80 € la journée » serait un plafond
-   sur un nombre inconnu.
+   ELLE NE FILTRE RIEN, ELLE COMPTE. Trois heures ne changent pas ce qui est
+   ouvert : elles changent le nombre d'étapes qu'on peut y tenir. C'est donc un
+   plafond sur la longueur, pas un critère sur le contenu. */
+export type CleDuree = "court" | "demi" | "complete";
 
-   « PEU IMPORTE » EST UNE VRAIE RÉPONSE et elle est là pour ça : un écran de
-   budget sans porte de sortie force à mentir, et le mensonge écarte alors des
-   étapes dont on ne voulait pas être privé.
+export type Duree = {
+  cle: CleDuree;
+  label: string;
+  /** Ce qu'on écrit dans le bandeau du récapitulatif : « Demi-journée (3-6 h) ». */
+  entre: string;
+  /** Le nombre d'étapes au maximum. */
+  etapes: number;
+};
+
+export const DUREES: Duree[] = [
+  { cle: "court", label: "2 - 3 h", entre: "2-3 h", etapes: 2 },
+  { cle: "demi", label: "Demi-journée", entre: "3-6 h", etapes: 4 },
+  { cle: "complete", label: "Journée complète", entre: "6 h et plus", etapes: 5 },
+];
+
+export function dureeDe(cle: CleDuree): Duree {
+  return DUREES.find((d) => d.cle === cle) ?? DUREES[1];
+}
+
+/* ═══ 4. SEUL OU À PLUSIEURS ═══════════════════════════════════════════════
+
+   ELLE NE CHANGE PAS LA JOURNÉE, ELLE CHANGE LE TOTAL ET LE MESSAGE. Les prix
+   des commerçants sont par personne ; deux personnes, c'est deux fois — et le
+   commerçant, lui, a besoin de savoir combien vous serez avant de répondre.
+   C'est la seule des cinq questions dont la réponse part vraiment chez lui. */
+export type CleCompagnie = "seul" | "plusieurs";
+
+export const COMPAGNIES: { cle: CleCompagnie; label: string; personnes: number }[] = [
+  { cle: "seul", label: "Seul(e)", personnes: 1 },
+  { cle: "plusieurs", label: "À plusieurs", personnes: 2 },
+];
+
+export function personnesDe(cle: CleCompagnie): number {
+  return COMPAGNIES.find((c) => c.cle === cle)?.personnes ?? 1;
+}
+
+/* ═══ 5. LE BUDGET, PAR PERSONNE ET POUR LA JOURNÉE ════════════════════════
+
+   C'EST SA FORMULATION, ET ELLE EST MEILLEURE QUE LA MIENNE. J'avais mis un
+   plafond PAR ÉTAPE, en me disant qu'on ne connaît pas le nombre d'étapes. Mais
+   personne ne raisonne comme ça : on se dit « je mets cinquante euros dans ma
+   journée », pas « quinze euros par arrêt ». Le plafond porte donc sur le total
+   de la journée, pour une personne.
 
    CE QUI N'A PAS DE PRIX AFFICHÉ N'EST JAMAIS ÉCARTÉ. Un moment sans prix n'est
-   pas un moment cher : on n'en sait rien. Le filtrer reviendrait à punir le
-   commerçant qui n'a pas rempli, et à cacher au client une étape peut-être
-   gratuite. Même règle que les tailles — voir `aMaTaille` dans `tailles.ts`. */
-export type CleBudget = "petit" | "moyen" | "large" | "libre";
+   pas un moment cher : on n'en sait rien. Le filtrer punirait le commerçant qui
+   n'a pas rempli et cacherait au client une étape peut-être gratuite. Même
+   règle que les tailles — voir `aMaTaille` dans `tailles.ts`. */
+export type CleBudget = "petit" | "moyen" | "confort";
 
 export type Budget = {
   cle: CleBudget;
   label: string;
-  detail: string;
-  /** Le plafond par étape, en euros. Absent : aucun plafond. */
+  /** Les signes de la maquette : €, €€, €€€. */
+  signe: string;
+  /** Entre parenthèses : « (- de 20 €) ». */
+  entre: string;
+  /** Le plafond du total, par personne. Absent : aucun plafond. */
   plafond?: number;
 };
 
 export const BUDGETS: Budget[] = [
-  { cle: "petit", label: "Petit", detail: "Jusqu’à 15 € l’étape", plafond: 15 },
-  { cle: "moyen", label: "Moyen", detail: "Jusqu’à 30 € l’étape", plafond: 30 },
-  { cle: "large", label: "Large", detail: "Jusqu’à 60 € l’étape", plafond: 60 },
-  { cle: "libre", label: "Peu importe", detail: "On ne filtre pas", plafond: undefined },
+  { cle: "petit", label: "Petit", signe: "€", entre: "- de 20 €", plafond: 20 },
+  { cle: "moyen", label: "Moyen", signe: "€€", entre: "20 - 50 €", plafond: 50 },
+  { cle: "confort", label: "Confort", signe: "€€€", entre: "+ de 50 €" },
 ];
 
 export function budgetDe(cle: CleBudget): Budget {
-  return BUDGETS.find((b) => b.cle === cle) ?? BUDGETS[3];
+  return BUDGETS.find((b) => b.cle === cle) ?? BUDGETS[1];
 }
 
 /* ═══ UN CANDIDAT : UNE CHOSE QUI SE PASSE VRAIMENT ═════════════════════════ */
@@ -333,7 +436,10 @@ export type Candidat = {
   action?: string;
   metres: number;
   distance: string;
-  envie: CleEnvie;
+  /* L'AMBIANCE N'EST PLUS UN CHAMP DU CANDIDAT, et c'est une correction : une
+     friperie sert « Shopping » quand « Shopping » est coché, et rien de
+     particulier quand on n'a coché que « Surprends-moi ». Elle dépend donc de
+     ce qui est demandé, pas du commerce. Voir `ambianceDuCandidat`. */
   creneau: CleCreneau;
   /** L'un ou l'autre, jamais les deux. */
   carte?: CarteAutour;
@@ -384,7 +490,6 @@ function chevauche(a1: number, a2: number, b1: number, b2: number): boolean {
 function candidatDuMoment(
   c: CarteAutour,
   m: MomentJour,
-  envie: CleEnvie,
   creneau: CleCreneau,
 ): Candidat {
   return {
@@ -404,7 +509,6 @@ function candidatDuMoment(
     action: m.action,
     metres: c.metres,
     distance: c.distance,
-    envie,
     creneau,
     carte: c,
   };
@@ -430,7 +534,6 @@ function candidatDEvenement(e: EvenementVille, creneau: CleCreneau): Candidat {
     offert: !e.prix,
     metres: e.metres,
     distance: e.distance,
-    envie: "sortie",
     creneau,
     evenement: e,
   };
@@ -451,63 +554,72 @@ function candidatDEvenement(e: EvenementVille, creneau: CleCreneau): Candidat {
  */
 export function candidatsDuCreneau(
   creneau: Creneau,
-  envies: CleEnvie[],
-  budget: Budget,
+  ambiances: CleAmbiance[],
 ): Candidat[] {
+  const choisies = ambiances.map(ambianceDe);
+  const tout = choisies.some((a) => a.tout) || choisies.length === 0;
+  const branches = new Set<string>(choisies.flatMap((a) => a.branches));
+  const organisateurs = new Set<string>(choisies.flatMap((a) => a.organisateurs));
+
   const sortis: Candidat[] = [];
 
-  for (const cle of envies) {
-    const e = envieDe(cle);
-    if (!e.creneaux.includes(creneau.cle)) continue;
-
-    if (e.evenements) {
-      for (const ev of evenementsDeLaVille()) {
-        if (!ev.aujourdhui) continue;
-        if (!chevauche(ev.de, ev.a, creneau.de, creneau.a)) continue;
-        sortis.push(candidatDEvenement(ev, creneau.cle));
-      }
-      continue;
-    }
-
-    for (const c of toutesLesCartes()) {
-      if (c.silencieux || c.prepare) continue;
-      if (!e.branches.includes(c.branche)) continue;
-      for (const m of c.moments ?? []) {
-        if (m.demain) continue;
-        if (!chevauche(m.de, m.a, creneau.de, creneau.a)) continue;
-        sortis.push(candidatDuMoment(c, m, cle, creneau.cle));
-      }
-    }
+  for (const ev of evenementsDeLaVille()) {
+    if (!ev.aujourdhui) continue;
+    if (!tout && !organisateurs.has(ev.typeQui)) continue;
+    if (!chevauche(ev.de, ev.a, creneau.de, creneau.a)) continue;
+    sortis.push(candidatDEvenement(ev, creneau.cle));
   }
 
-  /* LE PLAFOND NE S'APPLIQUE QU'À CE QUI A UN PRIX. Voir `BUDGETS` : un moment
-     sans prix affiché n'est pas un moment cher, on n'en sait rien. */
-  const dansLeBudget = budget.plafond
-    ? sortis.filter((x) => x.euros === 0 || x.euros <= budget.plafond!)
-    : sortis;
+  for (const c of toutesLesCartes()) {
+    if (c.silencieux || c.prepare) continue;
+    if (!tout && !branches.has(c.branche)) continue;
+    for (const m of c.moments ?? []) {
+      if (m.demain) continue;
+      if (!chevauche(m.de, m.a, creneau.de, creneau.a)) continue;
+      sortis.push(candidatDuMoment(c, m, creneau.cle));
+    }
+  }
 
   /* ═══ CE DONT LE CŒUR TOMBE DANS LE CRÉNEAU PASSE DEVANT ═════════════════
 
      MESURÉ, ET LA CAUSE EST DANS LA DONNÉE : le bar à vins publie son happy
-     hour avec `de: 17` et `quand: "18 h – 20 h"`. Les deux sont vrais pour
-     lui — sa carte apparaît dès 17 h, l'offre court de 18 à 20 — mais pour
-     nous, `de` le rendait éligible à l'après-midi, qui s'arrête à 18 h. Le
-     programme affichait alors « L'après-midi · 18 h – 20 h ».
+     hour avec `de: 17` et « 18 h – 20 h ». Les deux sont vrais pour lui — sa
+     carte apparaît dès 17 h, l'offre court de 18 à 20 — mais pour nous, `de`
+     le rendait éligible à l'après-midi, qui s'arrête à 18 h.
 
      ON NE CORRIGE PAS SA DONNÉE, ON CHOISIT MIEUX. Le milieu d'un moment dit
-     mieux que son début à quel temps de la journée il appartient : 17 h – 20 h
-     a son cœur à 18 h 30, donc c'est un apéro. Ce n'est qu'une PRÉFÉRENCE :
-     quand rien d'autre ne se présente, on garde le candidat plutôt que de
-     laisser un trou, et c'est alors le verbe du créneau — « On prend un
-     verre » — et non son étiquette horaire qui porte l'ordre à l'écran. */
+     mieux que son début à quel temps de la journée il appartient. Ce n'est
+     qu'une PRÉFÉRENCE : quand rien d'autre ne se présente, on garde le
+     candidat plutôt que de laisser un trou. */
   const dedans = (x: Candidat) => {
     const coeur = (x.de + x.a) / 2;
     return coeur >= creneau.de && coeur < creneau.a ? 0 : 1;
   };
 
-  return dansLeBudget.sort(
+  /* L'ORDRE EST CELUI DE LA DISTANCE, et c'est le seul tri honnête dont on
+     dispose : on n'a ni contrat, ni commission, ni note à faire remonter. */
+  return sortis.sort(
     (a, b) => dedans(a) - dedans(b) || a.metres - b.metres || a.de - b.de,
   );
+}
+
+/**
+ * QUELLE AMBIANCE CE CANDIDAT SERT-IL, PARMI CELLES QU'ON A COCHÉES ?
+ *
+ * ON NE LE RANGE PAS UNE FOIS POUR TOUTES : une friperie sert « Shopping », et
+ * rien d'autre tant que « Shopping » est coché ; si l'on n'a coché que
+ * « Surprends-moi », elle ne sert aucune ambiance en particulier et ne doit pas
+ * empêcher la suivante de sortir. La réponse dépend donc de ce qui est coché,
+ * pas seulement du commerce.
+ */
+function ambianceDuCandidat(x: Candidat, cochees: CleAmbiance[]): CleAmbiance {
+  for (const cle of cochees) {
+    const a = ambianceDe(cle);
+    if (a.tout) continue;
+    if (x.evenement && a.organisateurs.includes(x.evenement.typeQui)) return cle;
+    if (x.carte && a.branches.includes(x.carte.branche)) return cle;
+  }
+  return "surprise";
 }
 
 /* ═══ LE PROGRAMME ═════════════════════════════════════════════════════════ */
@@ -523,6 +635,14 @@ export type Programme = {
   etapes: EtapeProgramme[];
   /** LES CRÉNEAUX OÙ IL N'Y AVAIT RIEN — et on le dit, on ne les efface pas. */
   vides: Creneau[];
+  /**
+   * LE BUDGET A ÉTÉ DÉPASSÉ, ET ON NE LE CACHE PAS. Plutôt qu'un trou dans la
+   * journée, on garde l'étape et le bandeau porte la mention : un chiffre juste
+   * avec un avertissement vaut mieux qu'un chiffre faux sans.
+   */
+  deborde: boolean;
+  /** Une ou deux. Les prix des commerçants sont par personne. */
+  personnes: number;
 };
 
 /**
@@ -531,12 +651,11 @@ export type Programme = {
  * UNE ÉTAPE PAR CRÉNEAU, ET JAMAIS DEUX. Deux restaurants à midi ne sont pas
  * une journée, c'est une liste de résultats — et une liste de résultats est
  * exactement ce qu'on est venu éviter. Quand un créneau a plusieurs candidats,
- * on en propose un et on garde les autres à portée de pouce : voir
- * `autresPour`, qui sert le bouton « une autre ».
+ * on en propose un et on garde les autres sous le bouton « Remplacer ».
  *
  * `cle` FAIT TOURNER LE CHOIX SANS HASARD. Un tirage aléatoire donnerait une
  * journée différente à chaque rendu de React, y compris pendant qu'on la
- * regarde. Ici le même numéro rend toujours la même journée, et « une autre »
+ * regarde. Ici le même numéro rend toujours la même journée, et « Remplacer »
  * avance simplement d'un cran.
  *
  * DEUX FOIS LE MÊME LIEU DANS LA JOURNÉE, NON. Déjeuner et dîner chez le même
@@ -544,25 +663,35 @@ export type Programme = {
  * demande qui se lit comme une erreur.
  */
 export function composerProgramme(opts: {
-  tranche: CleTranche;
-  envies: CleEnvie[];
+  moment: CleMoment;
+  ambiances: CleAmbiance[];
+  duree: CleDuree;
   budget: CleBudget;
+  compagnie?: CleCompagnie;
   cle?: number;
-  /** Les décalages par créneau, quand on a demandé « une autre ». */
+  /** Les décalages par créneau, quand on a appuyé sur « Remplacer ». */
   decales?: Partial<Record<CleCreneau, number>>;
+  /** Les créneaux décochés sur l'écran du programme. */
+  retires?: CleCreneau[];
 }): Programme {
-  const t = trancheDe(opts.tranche);
+  const m = momentDe(opts.moment);
+  const d = dureeDe(opts.duree);
   const b = budgetDe(opts.budget);
   const base = opts.cle ?? 0;
+  const retires = new Set<string>(opts.retires ?? []);
 
   const retenues: Candidat[] = [];
   const vides: Creneau[] = [];
   const lieuxPris = new Set<string>();
-  const enviesServies = new Set<CleEnvie>();
+  const ambiancesServies = new Set<CleAmbiance>();
+  let cumul = 0;
+  let deborde = false;
 
-  for (const cleCreneau of t.creneaux) {
+  for (const cleCreneau of m.creneaux) {
+    if (retenues.length >= d.etapes) break;
+    if (retires.has(cleCreneau)) continue;
     const creneau = creneauDe(cleCreneau);
-    const tous = candidatsDuCreneau(creneau, opts.envies, b).filter(
+    const tous = candidatsDuCreneau(creneau, opts.ambiances).filter(
       (x) => !lieuxPris.has(x.carte?.id ?? x.evenement?.id ?? x.cle),
     );
     if (tous.length === 0) {
@@ -573,37 +702,48 @@ export function composerProgramme(opts: {
       vides.push(creneau);
       continue;
     }
-    /* ═══ CHAQUE ENVIE COCHÉE DOIT APPARAÎTRE AU MOINS UNE FOIS ═══════════
 
-       MESURÉ À LA PREMIÈRE EXÉCUTION : en cochant les cinq envies, on obtenait
-       une fleuriste, un restaurant et un bar — et jamais un événement de la
-       ville, alors que c'est la seule chose de cette journée que personne
-       d'autre ne sait proposer. La cause n'était pas un bug : le tri par
-       distance est juste, et le concert du kiosque est à 450 m quand le bar
-       est à 190. À une étape par créneau, le plus proche gagnait toujours.
+    /* ═══ CHAQUE AMBIANCE COCHÉE DOIT APPARAÎTRE AU MOINS UNE FOIS ═════════
 
-       OR COCHER CINQ ENVIES ET RECEVOIR TROIS FOIS LA MÊME N'EST PAS UNE
-       RÉPONSE. On préfère donc, à chaque créneau, une envie qui n'a pas encore
-       servi ; à envies égales, la distance reprend la main. Ce n'est pas un
-       classement caché — c'est la traduction directe de ce qui a été coché. */
-    const neufs = tous.filter((x) => !enviesServies.has(x.envie));
-    const dedans = neufs.length > 0 ? neufs : tous;
+       MESURÉ : en cochant cinq ambiances, on obtenait trois fois la même. La
+       cause n'était pas un bug — le tri par distance est juste, et le concert
+       du kiosque est à 450 m quand le bar est à 190. À une étape par créneau,
+       le plus proche gagnait toujours. Or cocher cinq ambiances et en recevoir
+       une seule n'est pas une réponse. */
+    const neufs = tous.filter(
+      (x) => !ambiancesServies.has(ambianceDuCandidat(x, opts.ambiances)),
+    );
+    let liste = neufs.length > 0 ? neufs : tous;
+
+    /* ═══ LE BUDGET PORTE SUR LE TOTAL DE LA JOURNÉE, PAR PERSONNE ═════════
+
+       C'EST SA FORMULATION, ET ELLE EST MEILLEURE QUE LA MIENNE : personne ne
+       se dit « quinze euros par arrêt », on se dit « je mets cinquante euros
+       dans ma journée ».
+
+       ON NE JETTE RIEN QUAND PLUS RIEN NE TIENT : une étape hors budget vaut
+       mieux qu'un trou, à condition de le DIRE. Le bandeau porte alors la
+       mention, et le chiffre reste juste. */
+    if (b.plafond) {
+      const plafond = b.plafond;
+      const tiennent = liste.filter((x) => cumul + x.euros <= plafond);
+      if (tiennent.length > 0) liste = tiennent;
+      else deborde = true;
+    }
+
     const decale = opts.decales?.[cleCreneau] ?? 0;
-    const choisi = dedans[(base + decale) % dedans.length];
+    const choisi = liste[(base + decale) % liste.length];
     retenues.push(choisi);
-    enviesServies.add(choisi.envie);
+    cumul += choisi.euros;
+    ambiancesServies.add(ambianceDuCandidat(choisi, opts.ambiances));
     lieuxPris.add(choisi.carte?.id ?? choisi.evenement?.id ?? choisi.cle);
   }
 
-  /* ═══ L'ORDRE EST CELUI DE LA JOURNÉE, PAS CELUI DES HEURES D'OUVERTURE ═══
-
-     MESURÉ AUSSI : trier sur l'heure de début mettait la fleuriste — ouverte
-     depuis 8 h et retenue pour l'après-midi — devant le déjeuner de 11 h 30.
-     C'est que `de` dit quand la chose COMMENCE À ÊTRE VRAIE, pas quand on y
-     va : « jusqu'à 19 h » commence le matin et se vit l'après-midi. Le créneau,
-     lui, dit à quel moment de la journée on l'a placée, et c'est lui qui fait
-     l'ordre. L'heure ne départage plus que deux étapes du même créneau. */
-  const rang = (x: Candidat) => t.creneaux.indexOf(x.creneau);
+  /* L'ORDRE EST CELUI DE LA JOURNÉE, PAS CELUI DES HEURES D'OUVERTURE. Trier
+     sur `de` mettait la fleuriste — ouverte depuis 8 h et retenue pour
+     l'après-midi — devant le déjeuner de 11 h 30 : `de` dit quand la chose
+     COMMENCE À ÊTRE VRAIE, pas quand on y va. */
+  const rang = (x: Candidat) => m.creneaux.indexOf(x.creneau);
   const ordre = [...retenues].sort((a, b2) => rang(a) - rang(b2) || a.de - b2.de);
   const etapes = ordre.map((x, i) => ({
     ...x,
@@ -611,42 +751,56 @@ export function composerProgramme(opts: {
     /* LA MARCHE ENTRE DEUX ÉTAPES EST UN ÉCART DE DISTANCE AU POINT DE DÉPART,
        et rien de plus. On n'a pas leurs coordonnées : prétendre calculer un
        itinéraire réel serait inventer un chemin. L'écart est une MINORATION
-       honnête — c'est au moins ça — et l'écran l'écrit comme tel. Même raison
-       et même formule que `carnetDeRoute` dans `relooking.ts`. */
+       honnête — c'est au moins ça — et l'écran l'écrit comme tel. */
     depuisPrecedent: i === 0 ? 0 : Math.abs(x.metres - ordre[i - 1].metres),
   }));
 
-  return { etapes, vides };
+  return {
+    etapes,
+    vides,
+    deborde,
+    personnes: personnesDe(opts.compagnie ?? "seul"),
+  };
 }
 
-/**
- * ═══ CE QUI SE PASSE AUJOURD'HUI, EN TROIS IMAGES ══════════════════════════
- *
- * SERT À L'ANNONCE DANS LE FIL ET À L'ACCROCHE DU PARCOURS, et c'est la même
- * fonction aux deux endroits exprès : l'annonce promet ce que l'écran suivant
- * montrera, au même moment, avec les mêmes photos. Deux calculs séparés
- * auraient fini par promettre une journée et en montrer une autre.
- *
- * CE SONT DE VRAIES PHOTOS DE VRAIS MOMENTS PUBLIÉS. On ne dessine pas une
- * journée imaginaire pour vendre une journée réelle — ce serait exactement le
- * contraire de ce que ce parcours défend.
- */
 export function apercuDuJour(combien = 3): EtapeProgramme[] {
   const p = composerProgramme({
-    tranche: "jour",
-    envies: ENVIES_JOURNEE.map((e) => e.cle),
-    budget: "libre",
+    moment: "surprise",
+    ambiances: ["surprise"],
+    duree: "complete",
+    budget: "confort",
   });
   return p.etapes.filter((e) => e.photo).slice(0, combien);
 }
 
-/** Les autres possibilités pour ce créneau-là. Sert au bouton « une autre ». */
-export function autresPour(
-  creneau: CleCreneau,
-  envies: CleEnvie[],
-  budget: CleBudget,
-): number {
-  return candidatsDuCreneau(creneauDe(creneau), envies, budgetDe(budget)).length;
+/** Combien d'autres possibilités pour ce créneau-là. Sert à « Remplacer ». */
+export function autresPour(creneau: CleCreneau, ambiances: CleAmbiance[]): number {
+  return candidatsDuCreneau(creneauDe(creneau), ambiances).length;
+}
+
+/**
+ * ═══ ÉCRIRE UNE DISTANCE COMME ON LA DIT ═══════════════════════════════════
+ *
+ * MESURÉ : deux étapes à cent quatre-vingts et cent quatre-vingt-dix mètres
+ * donnaient « 0,2 km ». C'est exact et personne ne parle comme ça — en dessous
+ * du kilomètre on compte en mètres, et un « 0,2 » se lit comme un arrondi
+ * suspect plutôt que comme une marche de rien du tout.
+ */
+export function distanceEnMots(metres: number): string {
+  if (metres < 1000) return `${Math.round(metres / 10) * 10} m`;
+  return `${(metres / 1000).toFixed(1).replace(".", ",")} km`;
+}
+
+/**
+ * CE QU'ON MARCHE ENTRE LES ÉTAPES, ET RIEN D'AUTRE.
+ *
+ * LE TRAJET DEPUIS CHEZ SOI N'EN FAIT PAS PARTIE, et la distinction compte :
+ * le panneau de la carte dit « entre les activités ». Y glisser les cent
+ * quatre-vingts mètres qui séparent la première étape de la maison ferait un
+ * chiffre qui ne correspond à aucune des deux phrases.
+ */
+export function metresEntreLesEtapes(p: Programme): number {
+  return p.etapes.reduce((s, e) => s + e.depuisPrecedent, 0);
 }
 
 /** La distance totale, du point de départ à la dernière étape. */
@@ -669,12 +823,17 @@ export function metresDuProgramme(p: Programme): number {
  * de 34 €, deux étapes sans prix affiché » est un chiffre qu'on peut utiliser.
  */
 export function totalDuProgramme(p: Programme): {
-  euros: number;
+  /** Par personne. Les prix des commerçants sont tous par personne. */
+  parPersonne: number;
+  /** Pour tout le monde : le précédent multiplié par le nombre de personnes. */
+  total: number;
+  personnes: number;
   sansPrix: number;
   offertes: number;
+  /** « 71 € / pers. », ou « Aucun prix affiché ». */
   texte: string;
 } {
-  const euros = p.etapes.reduce((s, e) => s + e.euros, 0);
+  const parPersonne = p.etapes.reduce((s, e) => s + e.euros, 0);
   const offertes = p.etapes.filter((e) => e.offert).length;
   /* UN SEUL COMPTE POUR DEUX CAS, parce que c'est la même chose à l'arrivée :
      un prix qu'on ne connaît pas et un prix au kilo laissent l'un comme l'autre
@@ -682,12 +841,19 @@ export function totalDuProgramme(p: Programme): {
      n'a demandée devant un chiffre qu'on lit en une seconde. */
   const sansPrix = p.etapes.filter((e) => !e.offert && e.euros === 0).length;
   const texte =
-    euros === 0
+    parPersonne === 0
       ? sansPrix > 0
         ? "Aucun prix affiché"
         : "Gratuit"
-      : `À partir de ${euros} €`;
-  return { euros, sansPrix, offertes, texte };
+      : `${parPersonne} € / pers.`;
+  return {
+    parPersonne,
+    total: parPersonne * p.personnes,
+    personnes: p.personnes,
+    sansPrix,
+    offertes,
+    texte,
+  };
 }
 
 /**
