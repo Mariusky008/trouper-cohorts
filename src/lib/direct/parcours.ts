@@ -88,6 +88,16 @@ export type Evenement =
    * une déclaration, pas un abandon.
    */
   | "tailles"
+  /**
+   * LA JOURNÉE — et c'est la seconde mesure qui ne porte pas sur un commerce.
+   *
+   * COMME LE RELOOKING, ELLE PART D'UNE ENVIE ET TRAVERSE PLUSIEURS COMMERCES.
+   * Mais elle n'a ni le même rang ni le même public : le relooking se fait deux
+   * fois par an, une journée se cherche toutes les semaines. Les compter
+   * séparément est la seule façon de savoir laquelle des deux portes accroche
+   * — la valeur envoyée est le rang de la carte où l'annonce est apparue.
+   */
+  | "journee"
   | "fin";
 
 type Ligne = { evenement: Evenement; valeur?: number; contexte?: string };

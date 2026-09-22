@@ -163,11 +163,18 @@ import { PictoMetier } from "@/components/direct/picto-metier";
 // commentaire du bouton dans la barre.
 import { MurContenu } from "@/components/direct/mur-contenu";
 import { RelookingContenu } from "@/components/direct/relooking-contenu";
+import { JourneeContenu } from "@/components/direct/journee-contenu";
 import {
   RANG_ANNONCE_RELOOKING,
   annonceRelookingVue,
   marquerAnnonceRelookingVue,
 } from "@/lib/direct/relooking";
+import {
+  RANG_ANNONCE_JOURNEE,
+  annonceJourneeVue,
+  apercuDuJour,
+  marquerAnnonceJourneeVue,
+} from "@/lib/direct/programme";
 import { murDeLaCarte, murDuSouvenir, pieceDeLaCarte, QUOTA_DU_JOUR } from "@/lib/direct/fantomes";
 import {
   abonnerTailles,
@@ -1909,6 +1916,42 @@ export function ApercuHabitant() {
     setRelookFermee(true);
     setRelookDx(0);
   };
+
+  /**
+   * ═══ « VOTRE JOURNÉE » — LA SECONDE ANNONCE QUI N'EST À PERSONNE ═════════
+   *
+   * MÊME FORME QUE LE RELOOKING, ET UN RANG DIFFÉRENT. Deux cartes plein cadre
+   * qui tombent au même moment s'annulent : on en ferme une sans la lire, et
+   * probablement les deux. Six et dix ne se croisent jamais — voir
+   * `RANG_ANNONCE_JOURNEE` dans `lib/direct/programme.ts`.
+   *
+   * ET C'EST ELLE QUI PASSE EN PREMIÈRE. On se relooke deux fois par an ; on
+   * cherche quoi faire ce week-end toutes les semaines. Celle qu'on voit en
+   * premier doit être celle dont on se servira le plus.
+   */
+  const [journeeFermee, setJourneeFermee] = useState(false);
+  /* `journeeOuverte` ET NON `journee` : ce nom-là est déjà pris, à huit cents
+     lignes d'ici, par la journée que l'assistante a publiée pour le commerçant.
+     Deux choses différentes, et TypeScript l'a dit avant moi. */
+  const [journeeOuverte, setJourneeOuverte] = useState(false);
+  const [journeeDejaVue, setJourneeDejaVue] = useState(true);
+  useEffect(() => {
+    setJourneeDejaVue(annonceJourneeVue());
+  }, []);
+  const [journeeDx, setJourneeDx] = useState(0);
+  const priseJournee = useRef<number | null>(null);
+  const fermerAnnonceJournee = () => {
+    marquerAnnonceJourneeVue();
+    setJourneeDejaVue(true);
+    setJourneeFermee(true);
+    setJourneeDx(0);
+  };
+  /**
+   * CE QUI SE PASSE AUJOURD'HUI, EN DEUX IMAGES — et ce sont de vraies photos
+   * de vrais moments publiés. La carte promet donc exactement ce que l'écran
+   * suivant montrera : `apercuDuJour` est la même fonction des deux côtés.
+   */
+  const apercuJournee = useMemo(() => apercuDuJour(3), []);
   /** Le signe qui accompagne le message d'écho. La flamme par défaut. */
   const [echoIcone, setEchoIcone] = useState("🔥");
 
@@ -4355,6 +4398,32 @@ export function ApercuHabitant() {
    * demande de sortie : deux interruptions à la suite font exactement la
    * densité qu'on a passé des semaines à enlever.
    */
+  /**
+   * ═══ LA JOURNÉE, À LA SIXIÈME ANNONCE ═════════════════════════════════════
+   *
+   * MÊMES GARDES QUE LE RELOOKING, MOT POUR MOT : elle attend que l'accueil
+   * soit passé, elle ne s'invite pas pendant une demande de sortie ni dans un
+   * salon, elle ne revient pas deux fois dans la journée. Deux interruptions
+   * à la suite font exactement la densité qu'on a passé des semaines à enlever.
+   *
+   * ELLE N'APPARAÎT QUE S'IL Y A VRAIMENT QUELQUE CHOSE À MONTRER. Une carte
+   * qui promet une journée un jour où personne n'a rien publié ouvrirait sur
+   * un écran vide — et c'est la seule promesse de ce produit qu'on ne peut pas
+   * se permettre de ne pas tenir.
+   */
+  const annonceJournee =
+    monte &&
+    !!sommet &&
+    !journeeFermee &&
+    !journeeOuverte &&
+    !sortie &&
+    !embauches &&
+    !salonUrl &&
+    vus.includes("accueil") &&
+    passees.length + 1 >= RANG_ANNONCE_JOURNEE &&
+    apercuJournee.length > 0 &&
+    !journeeDejaVue;
+
   const annonceRelook =
     monte &&
     !!sommet &&
@@ -4363,6 +4432,11 @@ export function ApercuHabitant() {
     !sortie &&
     !embauches &&
     !salonUrl &&
+    /* JAMAIS LES DEUX EN MÊME TEMPS. Passé la dixième annonce, les deux
+       conditions de rang sont vraies à la fois ; sans cette ligne, la carte du
+       relooking se dessinerait DERRIÈRE celle de la journée, et on en fermerait
+       deux d'un seul geste sans en avoir lu une. */
+    !annonceJournee &&
     vus.includes("accueil") &&
     passees.length + 1 >= RANG_ANNONCE_RELOOKING &&
     !relookDejaVu;
@@ -6986,6 +7060,96 @@ export function ApercuHabitant() {
                 Elle ne vend rien de particulier — elle propose de faire
                 travailler QUATRE commerces ensemble, ce qu'aucun d'eux ne peut
                 promettre seul. */}
+            {/* ═══ « VOTRE JOURNÉE » — LA SECONDE CARTE QUI N'EST À PERSONNE
+
+                ELLE NE RESSEMBLE À AUCUNE ANNONCE DE COMMERÇANT, et pour la
+                même raison que celle du relooking : elle ne vend rien de
+                particulier. Elle propose d'enchaîner ce que PLUSIEURS commerces
+                ont annoncé chacun de leur côté, ce qu'aucun d'eux ne peut
+                promettre seul.
+
+                ET SES IMAGES SONT DE VRAIES PHOTOS D'AUJOURD'HUI. Pas une
+                illustration de journée idéale : les moments publiés ce matin,
+                avec leurs heures, telles qu'elles se liront à l'écran suivant.
+                Une accroche dessinée pour vendre du réel aurait dit l'inverse
+                de ce que ce parcours défend. */}
+            {annonceJournee && (
+              <div
+                className={`ap-jrn${journeeDx ? " part" : ""}`}
+                style={{
+                  transform: `translate3d(${journeeDx}px,0,0) rotate(${journeeDx * 0.04}deg)`,
+                }}
+                onPointerDown={(e) => {
+                  priseJournee.current = e.clientX;
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                }}
+                onPointerMove={(e) => {
+                  if (priseJournee.current == null) return;
+                  setJourneeDx(e.clientX - priseJournee.current);
+                }}
+                onPointerUp={() => {
+                  const d = journeeDx;
+                  priseJournee.current = null;
+                  if (Math.abs(d) > 30) fermerAnnonceJournee();
+                  else setJourneeDx(0);
+                }}
+              >
+                <span className="ap-jrn-f" aria-hidden="true">
+                  {apercuJournee.slice(0, 3).map((e) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={e.cle} src={e.photo} alt="" />
+                  ))}
+                </span>
+                <span className="ap-jrn-v" aria-hidden="true" />
+                <div className="ap-jrn-t">
+                  <span className="ap-jrn-e">
+                    <i aria-hidden="true">🗓️</i>Votre journée
+                  </span>
+                  <h2>
+                    Et si on relookait <b>votre journée&nbsp;?</b>
+                  </h2>
+                  <p>
+                    Pas une liste d’idées&nbsp;: ce qui se passe vraiment
+                    aujourd’hui à {dessus?.ville ?? "côté de chez vous"}, mis
+                    dans l’ordre.
+                  </p>
+                  {/* ═══ LES HEURES SONT LES VRAIES ══════════════════════════
+
+                      C'est la seule chose de cette carte qu'aucune application
+                      d'idées de sorties ne peut écrire, parce qu'il faut que
+                      quelqu'un l'ait dit ce matin. Le relooking montre quatre
+                      métiers ; celle-ci montre trois heures, et c'est son
+                      équivalent exact. */}
+                  <ul className="ap-jrn-m" aria-hidden="true">
+                    {apercuJournee.slice(0, 3).map((e) => (
+                      <li key={e.cle}>{e.quand}</li>
+                    ))}
+                  </ul>
+                  <button
+                    type="button"
+                    className="ap-jrn-b"
+                    onPointerDown={(ev) => ev.stopPropagation()}
+                    onClick={() => {
+                      noter("journee", passees.length + 1, "annonce");
+                      marquerAnnonceJourneeVue();
+                      setJourneeDejaVue(true);
+                      setJourneeOuverte(true);
+                    }}
+                  >
+                    Composer ma journée<b aria-hidden="true">›</b>
+                  </button>
+                  <button
+                    type="button"
+                    className="ap-jrn-x"
+                    onPointerDown={(ev) => ev.stopPropagation()}
+                    onClick={fermerAnnonceJournee}
+                  >
+                    Plus tard
+                  </button>
+                </div>
+              </div>
+            )}
+
             {annonceRelook && (
               <div
                 className={`ap-relook${relookDx ? " part" : ""}`}
@@ -13421,6 +13585,22 @@ export function ApercuHabitant() {
               minute ; remonter le paquet au retour relancerait l'ouverture, le
               tri par fraîcheur et la première carte. */}
           {relooking && <RelookingContenu onFermer={() => setRelooking(false)} />}
+          {/* MÊME PLACE QUE LE RELOOKING — À L'INTÉRIEUR DE `.ap-app`, donc
+              dans le cadre du téléphone. Posé dehors, il s'étalerait sur toute
+              la fenêtre d'un ordinateur pendant que l'application tient dans
+              ses trois cent quatre-vingt-dix points. */}
+          {journeeOuverte && (
+            <JourneeContenu
+              onFermer={() => setJourneeOuverte(false)}
+              /* LA PORTE DU SALON EST TENUE ICI : c'est cet écran-ci qui sait
+                 afficher un salon, et un second écran de salon écrit dans le
+                 parcours divergerait au premier changement. */
+              onSalon={(p) => {
+                setJourneeOuverte(false);
+                enParler(p.cle, p.sujet, p.ou, p.quand, p.photo, p.annonce, p.prix, p.distance);
+              }}
+            />
+          )}
         </div>
       </div>
 
@@ -14104,6 +14284,68 @@ export function ApercuHabitant() {
            les annonces portent la photo d'un commerce, et aucun prix, aucune
            distance, aucun nom de commercant. Elle ne vend rien de particulier :
            elle propose de faire travailler QUATRE commerces ensemble. */
+        /* ═══ « VOTRE JOURNEE » — LA SECONDE CARTE AUTONOME ═══════════════
+           MEME FORME QUE LE RELOOKING, UNE AUTRE COULEUR. Deux parcours qui se
+           ressemblent a l'oeil se confondent dans le souvenir : le relooking
+           est rose et se passe dans une cabine, la journee est vert d'eau et se
+           passe dehors, en ville. */
+        .ap-jrn{position:absolute;inset:0;z-index:8;overflow:hidden;
+          display:flex;flex-direction:column;justify-content:flex-end;
+          border-radius:26px;cursor:grab;touch-action:pan-y;
+          background:radial-gradient(120% 70% at 50% 0%,#0B3B3A 0%,#071C24 58%),#050E14;
+          box-shadow:0 30px 70px -30px rgba(0,0,0,.9);
+          font-family:var(--font-clikme),'Inter',system-ui,sans-serif;
+          animation:apMonteAcc .45s cubic-bezier(.22,1.1,.4,1) both;}
+        .ap-jrn.part{transition:none;}
+        /* TROIS IMAGES ET NON DEUX : une journee n'est pas un avant/apres,
+           c'est une suite. Trois vignettes cote a cote en disent la forme sans
+           qu'on ait lu un mot — et ce sont de vraies photos de vrais moments
+           publies ce matin. Elles n'occupent que le haut, pour la meme raison
+           que les portraits du relooking : sur toute la hauteur, chaque tiers
+           deviendrait une bande verticale ou rien ne se reconnait. */
+        .ap-jrn-f{position:absolute;top:0;left:0;right:0;height:56%;
+          display:grid;grid-template-columns:repeat(3,1fr);gap:2px;
+          opacity:.66;filter:saturate(1.05);}
+        .ap-jrn-f img{width:100%;height:100%;object-fit:cover;display:block;}
+        .ap-jrn-v{position:absolute;inset:0;pointer-events:none;
+          background:linear-gradient(180deg,rgba(5,14,20,.2) 0%,
+            rgba(5,14,20,.06) 22%,rgba(5,14,20,.5) 40%,
+            rgba(5,14,20,.94) 54%,#050E14 62%);}
+        .ap-jrn-t{position:relative;z-index:2;padding:0 20px 22px;}
+        .ap-jrn-e{display:inline-flex;align-items:center;gap:7px;
+          border-radius:999px;padding:6px 14px;margin-bottom:12px;
+          font-size:11px;font-weight:900;letter-spacing:.14em;
+          text-transform:uppercase;color:#FFFFFF;
+          background:rgba(45,212,191,.2);
+          border:1px solid rgba(45,212,191,.75);
+          box-shadow:0 0 18px rgba(45,212,191,.32);}
+        .ap-jrn-e i{font-style:normal;font-size:12px;}
+        .ap-jrn-t h2{margin:0;font-size:clamp(26px,7.4vw,32px);
+          font-weight:900;line-height:1.08;letter-spacing:-.03em;color:#FFFFFF;
+          text-shadow:0 2px 18px rgba(0,0,0,.6);}
+        .ap-jrn-t h2 b{font-weight:900;color:#2DD4BF;}
+        .ap-jrn-t>p{margin:9px 0 0;font-size:14px;line-height:1.4;
+          color:#C6DAD8;}
+        /* LES HEURES, ET CE SONT LES VRAIES. C'est l'equivalent exact des
+           quatre metiers du relooking : ce que cette carte a et qu'une annonce
+           de commercant n'a pas. */
+        .ap-jrn-m{list-style:none;display:flex;flex-wrap:wrap;gap:6px;
+          margin:13px 0 0;padding:0;}
+        .ap-jrn-m li{border-radius:999px;padding:5px 11px;font-size:11.5px;
+          font-weight:800;color:#CFF6EF;background:rgba(255,255,255,.08);
+          border:1px solid rgba(255,255,255,.2);}
+        .ap-jrn-b{display:flex;align-items:center;justify-content:center;
+          gap:8px;width:100%;margin:16px 0 0;border:0;border-radius:999px;
+          padding:16px 20px;cursor:pointer;font:inherit;font-size:16px;
+          font-weight:900;letter-spacing:.01em;text-transform:uppercase;
+          color:#04231E;background:linear-gradient(92deg,#2DD4BF,#5EEAD4);
+          box-shadow:0 16px 38px -14px rgba(45,212,191,.9);}
+        .ap-jrn-b b{font-weight:800;font-size:19px;line-height:1;}
+        .ap-jrn-b:active{transform:scale(.985);}
+        .ap-jrn-x{display:block;width:100%;margin-top:9px;padding:10px;
+          border:0;background:none;cursor:pointer;font:inherit;font-size:13px;
+          font-weight:700;color:#8FAAA8;}
+
         .ap-relook{position:absolute;inset:0;z-index:8;overflow:hidden;
           display:flex;flex-direction:column;justify-content:flex-end;
           border-radius:26px;cursor:grab;touch-action:pan-y;

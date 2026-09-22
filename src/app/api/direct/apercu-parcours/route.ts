@@ -69,6 +69,7 @@ const EVENEMENTS = new Set([
   "mise-en-avant",
   "relooking",
   "tailles",
+  "journee",
   "fin",
 ]);
 
