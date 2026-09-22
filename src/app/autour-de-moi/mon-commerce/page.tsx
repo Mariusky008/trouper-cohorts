@@ -164,6 +164,53 @@ function Styles() {
 .mc-coll .mc-n b{color:var(--or);font-weight:800}
 .mc-ok a{color:inherit}
 
+/* ─── LES TAILLES QU'IL LUI RESTE ───
+   Le seul bloc de saisie de tout le produit, et il est fait de pastilles. Un
+   champ de texte aurait donne « 38/40 env. » en trois jours : une information
+   que le client ne peut plus ni lire d'un coup d'oeil ni filtrer. Les
+   pastilles tiennent au pouce, gardent le meme vocabulaire d'une boutique a
+   l'autre, et se cochent debout derriere un comptoir. */
+.mc-tl{list-style:none;margin:14px 0 0;padding:0;display:flex;
+  flex-direction:column;gap:8px}
+.mc-tl li{border:1px solid var(--trait);border-radius:14px;
+  background:var(--nuit2);overflow:hidden}
+.mc-tl li.on{border-color:rgba(61,226,166,.4)}
+.mc-tl-h{display:flex;align-items:center;gap:11px;width:100%;font:inherit;
+  text-align:left;cursor:pointer;color:inherit;background:none;border:0;
+  padding:10px 12px}
+.mc-tl-h img{width:42px;height:52px;object-fit:cover;border-radius:8px;
+  flex:0 0 auto;background:rgba(234,242,236,.06)}
+.mc-tl-n{flex:1;min-width:0}
+.mc-tl-n b{display:block;font-size:14.5px;font-weight:750;
+  letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap}
+.mc-tl-n em{display:block;margin-top:2px;font-style:normal;font-size:12.5px;
+  font-weight:700;color:var(--menthe)}
+/* CE QUI N'EST PAS RENSEIGNE NE PREND PAS LA COULEUR DE CE QUI L'EST : la
+   menthe est la couleur de ce qui est en ligne, et rien d'autre. */
+.mc-tl-n em.vide{color:var(--craie2);font-weight:600}
+.mc-tl-h s{text-decoration:none;font-size:13px;color:var(--craie2);
+  flex:0 0 auto}
+.mc-tl-e{padding:2px 12px 12px;display:flex;flex-direction:column;gap:8px}
+.mc-tl-r{display:flex;flex-wrap:wrap;gap:6px}
+/* QUARANTE-SIX SUR QUARANTE-CINQ POINTS, MESURE SUR L'ECRAN. La premiere
+   version faisait 46 sur 41 : un pouce vise plus mal en hauteur qu'en largeur,
+   et 41 points, c'est la pastille d'a cote une fois sur dix. */
+.mc-tl-r button{font:inherit;font-size:14px;font-weight:800;cursor:pointer;
+  min-width:46px;padding:11px 12px;border-radius:999px;color:var(--craie2);
+  background:rgba(234,242,236,.05);border:1px solid var(--trait)}
+.mc-tl-r button.on{color:#04150E;background:var(--menthe);
+  border-color:var(--menthe)}
+.mc-tl-r button:active{transform:scale(.96)}
+.mc-tl-f{margin:2px 0 0;font-size:12.5px;line-height:1.5;color:var(--craie2)}
+.mc-tl-x{font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;
+  color:var(--craie2);background:none;border:0;padding:0;margin-left:8px;
+  text-decoration:underline}
+.mc-tl-plus{display:block;width:100%;margin-top:10px;font:inherit;
+  font-size:13.5px;font-weight:750;cursor:pointer;color:var(--craie2);
+  background:none;border:1px solid var(--trait);border-radius:999px;
+  padding:11px}
+
 /* ─── CE QUI REVIENT ───
    Deduit de l'historique, jamais declare. C'est la seule analyse qui serve a
    decider : « la garbure, plutot le jeudi » se relit, un taux de conversion

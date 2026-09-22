@@ -36,6 +36,14 @@ import { FantomeMetier, outilDuMetier } from "@/components/direct/fantome-metier
 import type { Mur } from "@/lib/direct/fantomes";
 import { rayonsGarnis } from "@/lib/direct/rayons";
 import {
+  abonnerTailles,
+  chargerTailles,
+  noteDeFraicheur,
+  phraseDesTailles,
+  taillesDeLaPiece,
+  taillesVides,
+} from "@/lib/direct/tailles";
+import {
   abonnerMisesEnAvant,
   chargerMisesEnAvant,
   misesEnAvantVides,
@@ -332,6 +340,15 @@ export function BlocFantome({
     misesEnAvantVides,
   );
 
+  /**
+   * LES TAILLES QU'IL LUI RESTE, LUES ICI COMME LA MISE EN AVANT.
+   *
+   * MÊME RAISON, ET ELLE VAUT D'ÊTRE REDITE : ce bloc est monté aux deux
+   * endroits — la page du commerce et la feuille du fil. Passées en propriété,
+   * il aurait fallu les brancher deux fois, et la deuxième aurait été oubliée.
+   */
+  const taillesDites = useSyncExternalStore(abonnerTailles, chargerTailles, taillesVides);
+
   const duJour = useMemo(() => {
     const sienne = misesEnAvant.find((m) => m.carte === mur.cle);
     if (sienne) {
@@ -352,6 +369,9 @@ export function BlocFantome({
     const p = pieces.find((x) => x.id === d.piece && x.photo && !x.bientot);
     return p ? { ...d, piece: p } : null;
   }, [misesEnAvant, mur.cle, mur.essai?.duJour, pieces]);
+
+  /** Ce qu'il reste de la pièce du jour. `null` : il n'a rien déclaré, on se tait. */
+  const taillesDuJour = duJour ? taillesDeLaPiece(mur.cle, duJour.piece, taillesDites) : null;
 
   /**
    * CE QU'ON MONTRE SOUS « VOUS POURRIEZ AUSSI AIMER ».
@@ -633,6 +653,29 @@ export function BlocFantome({
                 {duJour.prixAvant && <s>{duJour.prixAvant}</s>}
                 <em>{duJour.piece.prix}</em>
               </span>
+              {/* ═══ CE QU'IL LUI RESTE, SOUS LE PRIX ═══════════════════
+
+                  C'EST LA VRAIE RAISON DE SE DÉPLACER AUJOURD'HUI PLUTÔT QUE
+                  DEMAIN, et aucune fiche d'annuaire ne la porte. « Taille 38 »
+                  ne dit pas la même chose que « Tailles 36 à 42 » : la
+                  première fait venir, la seconde rassure. Les deux valent
+                  mieux que le silence, mais seulement si c'est le commerçant
+                  qui les a dites — voir `lib/direct/tailles.ts`.
+
+                  ELLE SE TAIT QUAND ELLE NE SAIT PAS. Pas de « toutes les
+                  tailles », pas de plage empruntée au fabricant : une pièce
+                  non renseignée n'affiche rien, et le bloc garde sa forme. */}
+              {taillesDuJour && (
+                <span className="bf-tl">
+                  <b>{phraseDesTailles(taillesDuJour)}</b>
+                  {/* L'ÂGE NE S'AFFICHE QU'AU MOMENT OÙ IL CHANGE LA LECTURE.
+                      Voir `noteDeFraicheur` : au-delà de quinze jours, on
+                      montre encore et on cesse d'affirmer. */}
+                  {noteDeFraicheur(taillesDuJour) && (
+                    <em>{noteDeFraicheur(taillesDuJour)}</em>
+                  )}
+                </span>
+              )}
               <button
                 type="button"
                 className="bf-jour-b"
@@ -986,6 +1029,18 @@ function Styles() {
         .bf-jour-x s{font-size:14px;color:#9A93AE;}
         .bf-jour-x em{font-style:normal;font-size:27px;font-weight:900;
           letter-spacing:-.03em;color:#F0269B;}
+        /* CE QU'IL LUI RESTE. Une pastille, pas une ligne de texte : posee
+           dans le flux sous le prix, elle se lisait comme une legende de plus,
+           alors que c'est la seule information de ce bloc qui fasse sortir de
+           chez soi. */
+        .bf-tl{display:flex;flex-direction:column;gap:3px;margin-top:9px;}
+        .bf-tl b{align-self:flex-start;font-size:12px;font-weight:850;
+          color:#4A2A66;background:rgba(240,38,155,.10);
+          border:1px solid rgba(240,38,155,.22);border-radius:999px;
+          padding:5px 10px;}
+        /* L'AGE EST PLUS PETIT QUE LA TAILLE, ET C'EST L'ORDRE JUSTE : il
+           nuance, il ne remplace pas. */
+        .bf-tl em{font-style:normal;font-size:11px;color:#6B6484;}
         .bf-jour-b{display:inline-flex;align-items:center;gap:9px;
           margin-top:12px;border:0;border-radius:999px;padding:13px 16px;
           cursor:pointer;font:inherit;font-size:14.5px;font-weight:850;

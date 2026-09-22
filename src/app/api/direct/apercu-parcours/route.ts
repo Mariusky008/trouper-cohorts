@@ -68,6 +68,7 @@ const EVENEMENTS = new Set([
   "republication",
   "mise-en-avant",
   "relooking",
+  "tailles",
   "fin",
 ]);
 

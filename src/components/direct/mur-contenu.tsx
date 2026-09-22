@@ -78,6 +78,13 @@ import { prevenirPourEssai, numeroDeFiction } from "@/lib/direct/prevenir";
 import { partagerLEssai, type Sortie } from "@/lib/direct/partager-essai";
 import { jouer } from "@/lib/direct/sons";
 import {
+  abonnerTailles,
+  chargerTailles,
+  phraseDesTailles,
+  taillesDeLaPiece,
+  taillesVides,
+} from "@/lib/direct/tailles";
+import {
   abonnerAlertesLooks,
   alertesLooksVides,
   basculerAlerteLook,
@@ -3720,6 +3727,29 @@ function Essai({
   const alerte = !!piece && alertes.some((x) => x.carte === mur.cle && x.piece === piece.id);
 
   /**
+   * CE QU'IL LUI RESTE, PIÈCE PAR PIÈCE.
+   *
+   * LU ICI PLUTÔT QUE PASSÉ EN PROPRIÉTÉ, pour la même raison que les alertes :
+   * l'atelier s'ouvre depuis le fil, depuis la page du commerce et depuis le
+   * relooking, et une donnée branchée à l'entrée aurait été oubliée par deux
+   * de ces trois portes.
+   */
+  const taillesDites = useSyncExternalStore(abonnerTailles, chargerTailles, taillesVides);
+  const taillesDe = (p: { id: string; tailles?: string[] }) =>
+    taillesDeLaPiece(mur.cle, p, taillesDites);
+  /* LA PHRASE EST CALCULÉE UNE FOIS POUR TOUTE LA GRILLE. Vingt-cinq vignettes
+     qui relisent chacune le stockage, c'est vingt-cinq lectures par rendu —
+     et la grille se redessine à chaque glissement du doigt. */
+  const taillesDuLot = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const p of mur.essai?.pieces ?? []) {
+      const t = taillesDeLaPiece(mur.cle, p, taillesDites);
+      if (t) m[p.id] = phraseDesTailles(t);
+    }
+    return m;
+  }, [mur.cle, mur.essai?.pieces, taillesDites]);
+
+  /**
    * CE QUE LA PIÈCE FAIT SUR UN CORPS, EN UNE PROPOSITION.
    *
    * ELLE SERT DEUX FOIS SUR CET ÉCRAN — la bulle courte et le détail — et elle
@@ -4417,6 +4447,12 @@ function Essai({
               )}
               <b>{p.nom}</b>
               <em>{p.prix}</em>
+              {/* CE QU'IL LUI RESTE, SOUS LE PRIX. « Taille 38 » sur une
+                  vignette est la seule chose qui répond, avant l'essai, à la
+                  question qui empêche d'acheter : et sur MOI ? Une pièce non
+                  renseignée n'affiche rien — voir `lib/direct/tailles.ts`,
+                  qui explique pourquoi on ne remplit pas ce silence. */}
+              {taillesDuLot[p.id] && <span className="mu-tl">{taillesDuLot[p.id]}</span>}
               {/* ON DIT CE QU'ON N'A PAS. Une piece dont le rendu n'existe pas
                   encore se voit, se lit, et ne se choisit pas — plutot que de
                   servir une image collee qui prouverait le contraire de ce
@@ -6006,6 +6042,19 @@ function Essai({
           <div className="mu-rendu-t">
             <b>{piece.nom}</b>
             <em>{piece.prix}</em>
+            {/* ═══ ET SUR MOI, ELLE EXISTE ? ════════════════════════════════
+
+                C'EST ICI QUE LA QUESTION SE POSE VRAIMENT. On vient de voir la
+                pièce sur soi, on la veut, et la seule chose qui décide du
+                déplacement est de savoir s'il en reste une à sa taille. Cette
+                ligne-là vaut tout l'écran qui la précède.
+
+                « IL N'EN RESTE PLUS » S'AFFICHE AUSSI, et c'est volontaire :
+                une réponse qui évite un déplacement pour rien est une bonne
+                réponse. Voir `phraseDesTailles`. */}
+            {taillesDe(piece) && (
+              <s>{phraseDesTailles(taillesDe(piece)!)}</s>
+            )}
           </div>
           {/* ═══ ET GARDER / PARTAGER SONT PARTIS AUSSI ═══════════════════
 
@@ -7458,6 +7507,14 @@ function Styles() {
           text-align:left;}
         .mu-pieces em{display:block;font-style:normal;font-size:12.5px;font-weight:800;
           color:var(--mu-ambre);padding:3px 10px 0;text-align:left;}
+        /* CE QU'IL LUI RESTE, SOUS LE PRIX DE LA VIGNETTE.
+           ELLE EST EN MENTHE ET PAS EN AMBRE : l'ambre est la couleur du prix
+           sur tout cet ecran, et deux lignes de la meme couleur l'une sous
+           l'autre se lisent comme un seul bloc de chiffres. La menthe est
+           ailleurs celle de ce qui est disponible — c'est exactement ce que
+           cette ligne dit. */
+        .mu-tl{display:block;font-size:11.5px;font-weight:800;
+          color:var(--mu-menthe);padding:3px 10px 0;text-align:left;}
         /* CE QU'ON N'A PAS ENCORE SE VOIT ET NE SE TOUCHE PAS. Grise, pas
            cachee : une piece absente du catalogue ferait croire qu'elle
            n'existe pas, alors qu'il manque seulement sa photo portee. */
@@ -9548,6 +9605,12 @@ function Styles() {
         .mu-rendu-t b{font-size:17px;font-weight:800;}
         .mu-rendu-t em{white-space:nowrap;font-style:normal;font-size:15px;font-weight:800;
           color:var(--mu-ambre);}
+        /* LA TAILLE, A COTE DU PRIX, SUR L'ECRAN DU RESULTAT. Elle passe a la
+           ligne quand les trois ne tiennent pas — le conteneur se replie deja —
+           et c'est le bon ordre : le nom, le prix, puis ce qu'il en reste. */
+        .mu-rendu-t s{white-space:nowrap;text-decoration:none;font-size:12.5px;
+          font-weight:800;color:var(--mu-menthe);
+          background:rgba(61,226,166,.12);border-radius:999px;padding:4px 10px;}
         .mu-rendu-g{display:flex;gap:9px;margin-top:14px;}
         .mu-rendu-g button{flex:1;font-family:inherit;font-size:14px;font-weight:800;
           cursor:pointer;border-radius:24px;padding:14px 12px;border:none;}

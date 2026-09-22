@@ -168,7 +168,15 @@ import {
   annonceRelookingVue,
   marquerAnnonceRelookingVue,
 } from "@/lib/direct/relooking";
-import { murDeLaCarte, murDuSouvenir, QUOTA_DU_JOUR } from "@/lib/direct/fantomes";
+import { murDeLaCarte, murDuSouvenir, pieceDeLaCarte, QUOTA_DU_JOUR } from "@/lib/direct/fantomes";
+import {
+  abonnerTailles,
+  chargerTailles,
+  noteDeFraicheur,
+  phraseDesTailles,
+  taillesDeLaPiece,
+  taillesVides,
+} from "@/lib/direct/tailles";
 import { motsDe, soireeDuLieu } from "@/lib/direct/soiree";
 import { basculerLeSon, jouer, sonCoupe } from "@/lib/direct/sons";
 import { EcranSoiree } from "@/components/direct/soiree-contenu";
@@ -1460,6 +1468,20 @@ export function ApercuHabitant() {
   );
   /** La pièce gardée qu'on regarde en grand. Vide : aucune. */
   const [pieceVue, setPieceVue] = useState<PieceGardee | null>(null);
+  /**
+   * CE QU'IL RESTE DE LA PIÈCE QU'ON REGARDE.
+   *
+   * RELU À CHAQUE OUVERTURE, JAMAIS FIGÉ DANS LA POCHE : une taille mise de
+   * côté il y a dix jours serait fausse le jour où elle décide du déplacement.
+   * Voir `pieceDeLaCarte` et `lib/direct/tailles.ts`.
+   */
+  const taillesDites = useSyncExternalStore(abonnerTailles, chargerTailles, taillesVides);
+  const taillesVues = useMemo(() => {
+    if (!pieceVue) return null;
+    const v = toutesLesCartes().find((x) => x.id === pieceVue.carte);
+    const p = v ? pieceDeLaCarte(v, pieceVue.piece) : undefined;
+    return p ? taillesDeLaPiece(pieceVue.carte, p, taillesDites) : null;
+  }, [pieceVue, taillesDites]);
   /**
    * LA DEMANDE QUI PART CHEZ LE COMMERÇANT POUR UNE PIÈCE GARDÉE.
    *
@@ -5237,6 +5259,16 @@ export function ApercuHabitant() {
           {pieceVue.lieu}
           {pieceVue.prix ? ` · ${pieceVue.prix}` : ""}
         </em>
+        {/* CE QU'IL EN RESTE, JUSTE AVANT « JE LA RÉSERVE ». C'est le dernier
+            centimètre avant le message au commerçant : si la 38 est partie,
+            il vaut mieux le lire ici que devant sa porte. Muette tant qu'il
+            n'a rien déclaré — voir `lib/direct/tailles.ts`. */}
+        {taillesVues && (
+          <span className="ap-tl">
+            {phraseDesTailles(taillesVues)}
+            {noteDeFraicheur(taillesVues) && <i>{noteDeFraicheur(taillesVues)}</i>}
+          </span>
+        )}
         {pieceVue.note > 0 && <span aria-hidden="true">{"👻".repeat(pieceVue.note)}</span>}
       </div>
       {/* ═══ ELLE SE REGARDAIT, ET ON NE POUVAIT RIEN EN FAIRE ═══════════
@@ -17463,6 +17495,17 @@ export function ApercuHabitant() {
           font-size:13.5px;color:#9FB0C4;}
         .ap-moi-vue-t span{display:block;margin-top:8px;font-size:15px;
           letter-spacing:2px;}
+        /* CE QU'IL EN RESTE. LE SELECTEUR EST QUALIFIE PAR SON PARENT, et
+           ce n'est pas du zele : la regle juste au-dessus attrape TOUS les
+           span de ce bloc — elle a ete ecrite pour la rangee de fantomes de la
+           note — et elle aurait etale la pastille sur toute la largeur avec
+           deux points d'interlettrage. */
+        .ap-moi-vue-t .ap-tl{display:inline-flex;align-items:baseline;gap:8px;
+          margin-top:9px;font-size:13px;font-weight:850;letter-spacing:0;
+          color:#3DE2A6;background:rgba(61,226,166,.13);border-radius:999px;
+          padding:6px 12px;}
+        .ap-moi-vue-t .ap-tl i{font-style:normal;font-size:11.5px;
+          font-weight:650;color:#9FB0C4;}
         /* LA CROIX EST NOMMEE, ELLE N'EST PLUS « le bouton enfant ».
            Un selecteur qui attrape tous les boutons directs attrape aussi ceux
            qu'on ajoutera — c'est exactement le defaut qui avait rendu la loupe

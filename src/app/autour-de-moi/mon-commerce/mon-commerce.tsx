@@ -54,6 +54,18 @@ import {
 import { noter } from "@/lib/direct/parcours";
 import { murDeLaCarte, type Piece } from "@/lib/direct/fantomes";
 import {
+  ECHELLES,
+  abonnerTailles,
+  chargerTailles,
+  declarerTailles,
+  echelleEnCours,
+  phraseDesTailles,
+  retirerLesTailles,
+  seTaille,
+  taillesDeLaPiece,
+  taillesVides,
+} from "@/lib/direct/tailles";
+import {
   RAISONS,
   abonnerMisesEnAvant,
   chargerMisesEnAvant,
@@ -90,6 +102,17 @@ export function MonCommerce() {
    */
   const [raison, setRaison] = useState(RAISONS[0].cle);
   const [prixAvant, setPrixAvant] = useState("");
+  /**
+   * LES TAILLES DÉCLARÉES, ET LA PIÈCE OUVERTE.
+   *
+   * UNE SEULE À LA FOIS, et c'est ce qui fait tenir le bloc sur un écran de
+   * téléphone. Vingt-cinq lignes dépliées en même temps, ce sont quinze
+   * pastilles par ligne : un mur de trois cent soixante-quinze boutons, dans
+   * lequel on ne retrouve pas la pièce qu'on avait en main.
+   */
+  const declarees = useSyncExternalStore(abonnerTailles, chargerTailles, taillesVides);
+  const [pieceOuverte, setPieceOuverte] = useState<string | null>(null);
+  const [toutesLesPieces, setToutesLesPieces] = useState(false);
   const c: CarteAutour | undefined = toutesLesCartes().find((x) => x.id === id);
   if (!c) return <p className="mc-vide">Commerce introuvable.</p>;
 
@@ -138,6 +161,55 @@ export function MonCommerce() {
   /* ON NE PROPOSE PAS CE QUI EST DÉJÀ EN AVANT — voir `suggestionDuJour`. */
   const suggestion = suggestionDuJour(collection, choisie?.piece);
   const laRaison = RAISONS.find((r) => r.cle === raison) ?? RAISONS[0];
+
+  /* ═══ CE QU'IL LUI RESTE, TAILLE PAR TAILLE ═══════════════════════════════
+
+     C'EST LE SEUL ENDROIT DE TOUT LE PRODUIT OÙ ON LUI DEMANDE DE SAISIR. On
+     le fait parce que c'est la seule information qu'un client ne peut pas
+     deviner et pour laquelle il traverse la ville — et on le fait au pouce,
+     par pastilles, sans champ libre et sans bouton « Enregistrer » : chaque
+     appui est déjà en ligne.
+
+     ═══ L'ORDRE NE DÉPEND PAS DE CE QU'IL VIENT DE COCHER ═══════════════
+
+     PREMIÈRE VERSION, ET LE DÉFAUT S'EST VU À LA PREMIÈRE MESURE : la liste
+     mettait devant ce qui n'était pas renseigné. On cochait donc une taille,
+     la pièce devenait renseignée, elle partait à la fin — et comme seules six
+     lignes sont dépliées, elle disparaissait sous le doigt au moment même où
+     l'on s'en servait. Une liste qui se réordonne pendant qu'on la remplit est
+     inutilisable, quelle que soit la justesse de son critère.
+
+     C'EST LA VITRINE QUI PASSE DEVANT, et c'est un meilleur critère de toute
+     façon : ce que ses clients voient vaut d'être renseigné avant ce qui dort
+     en réserve. Il ne bouge pas quand on coche, parce qu'il ne dépend pas de
+     ce qu'on coche. Le compte de la phrase au-dessus, lui, dit ce qu'il reste
+     à faire — et il peut bouger, puisqu'on ne l'a pas sous le pouce. */
+  const carteId = c.id;
+  const aTailles = seTaille(c.branche);
+  const taillesDe = (p: Piece) => taillesDeLaPiece(carteId, p, declarees);
+  const aTailler = aTailles
+    ? [...essayables].sort((x, y) => (y.vitrine ? 1 : 0) - (x.vitrine ? 1 : 0))
+    : [];
+  const renseignees = aTailler.filter((p) => taillesDe(p)).length;
+  const visibles = toutesLesPieces ? aTailler : aTailler.slice(0, 6);
+
+  /**
+   * UN APPUI = UNE DÉCLARATION, et elle part telle quelle.
+   *
+   * PAS DE BOUTON « ENREGISTRER », et ce n'est pas une facilité : un
+   * commerçant interrompu par un client au milieu de sa liste perdrait tout ce
+   * qu'il vient de cocher. Ce qui est coché est en ligne, y compris quand il
+   * repose le téléphone.
+   */
+  function basculer(p: Piece, taille: string) {
+    const t = taillesDeLaPiece(carteId, p, declarees);
+    const actuelles = t ? t.restantes : [];
+    const suivantes = actuelles.includes(taille)
+      ? actuelles.filter((x) => x !== taille)
+      : [...actuelles, taille];
+    declarerTailles(carteId, p.id, suivantes);
+    noter("tailles", suivantes.length, p.id);
+  }
 
   return (
     <div className="mc">
@@ -367,6 +439,131 @@ export function MonCommerce() {
               )}
             </p>
           </div>
+        </section>
+      )}
+
+      {/* ═══ LES TAILLES QU'IL LUI RESTE ══════════════════════════════════════
+
+          POURQUOI CE BLOC EXISTE, ALORS QUE TOUT LE RESTE SE CHOISIT AU POUCE.
+          « Il faudra que dans l'admin le commerçant rentre les tailles. » C'est
+          la seule information de toute la fiche qu'un client ne peut obtenir
+          ni en regardant la photo, ni en lisant le prix, ni en passant devant
+          la vitrine — et c'est celle pour laquelle il se déplace. Aucune fiche
+          d'annuaire ne la porte, et c'est exactement pour ça qu'elle vaut le
+          seul moment de saisie du produit.
+
+          CE QU'ON LUI DEMANDE N'EST PAS SON STOCK. On ne veut ni quantités, ni
+          références, ni inventaire : seulement CE QU'IL LUI RESTE, ce matin, en
+          pastilles. « Tailles 36 à 42 » se coche en quatre appuis ; un tableau
+          de stock ne se remplit jamais deux fois.
+
+          IL N'EST PAS CHEZ TOUT LE MONDE. Une coupe, un bouquet, une assiette
+          n'ont pas de taille — voir `seTaille` dans `lib/direct/tailles.ts`.
+          Un bloc qui ne concerne pas celui qui le lit lui apprend à sauter des
+          blocs. */}
+      {aTailles && aTailler.length > 0 && (
+        <section>
+          <p className="mc-t">Les tailles qu’il vous reste</p>
+          <p className="mc-n">
+            C’est ce qu’un client ne peut pas deviner, et c’est pour ça qu’il se
+            déplace. Chaque appui est en ligne tout de suite.{" "}
+            <b>
+              {renseignees} pièce{renseignees > 1 ? "s" : ""} sur {aTailler.length}
+            </b>{" "}
+            renseignée{renseignees > 1 ? "s" : ""}.
+          </p>
+
+          <ul className="mc-tl">
+            {visibles.map((p) => {
+              const t = taillesDe(p);
+              const ouverte = pieceOuverte === p.id;
+              const echelle = echelleEnCours(t?.restantes ?? []);
+              return (
+                <li key={p.id} className={ouverte ? "on" : undefined}>
+                  <button
+                    type="button"
+                    className="mc-tl-h"
+                    aria-expanded={ouverte}
+                    onClick={() => setPieceOuverte(ouverte ? null : p.id)}
+                  >
+                    {p.photo && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.photo} alt="" />
+                    )}
+                    <span className="mc-tl-n">
+                      <b>{p.nom}</b>
+                      {/* CE QUI N'EST PAS RENSEIGNÉ LE DIT, et ne se déguise pas
+                          en « toutes les tailles ». Voir `tailles` dans `Piece`. */}
+                      <em className={t ? undefined : "vide"}>
+                        {t ? phraseDesTailles(t) : "Pas encore indiqué"}
+                      </em>
+                    </span>
+                    <s aria-hidden="true">{ouverte ? "▴" : "▾"}</s>
+                  </button>
+
+                  {ouverte && (
+                    <div className="mc-tl-e">
+                      {/* LE PREMIER APPUI CHOISIT L'ÉCHELLE, et les autres
+                          rangées s'en vont : une robe est chiffrée ou lettrée,
+                          jamais les deux. Voir `echelleEnCours`. */}
+                      {ECHELLES.filter((e) => !echelle || e.cle === echelle).map((e) => (
+                        <div key={e.cle} className="mc-tl-r">
+                          {e.tailles.map((x) => {
+                            const prise = t?.restantes.includes(x) ?? false;
+                            return (
+                              <button
+                                key={x}
+                                type="button"
+                                className={prise ? "on" : undefined}
+                                aria-pressed={prise}
+                                onClick={() => basculer(p, x)}
+                              >
+                                {x}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ))}
+
+                      {/* DEUX PHRASES, ET ELLES DISENT CE QUE LE CLIENT LIRA.
+                          « Il n'en reste plus » est une vraie réponse — elle
+                          évite un déplacement pour rien — mais il faut qu'il
+                          sache qu'il vient de l'écrire. */}
+                      <p className="mc-tl-f">
+                        {t && t.restantes.length === 0
+                          ? "Vos clients lisent : « Il n’en reste plus »."
+                          : t
+                            ? `Vos clients lisent : « ${phraseDesTailles(t)} ».`
+                            : "Touchez les tailles qu’il vous reste."}
+                        {t && (
+                          <button
+                            type="button"
+                            className="mc-tl-x"
+                            onClick={() => retirerLesTailles(carteId, p.id)}
+                          >
+                            Ne rien indiquer
+                          </button>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* SIX LIGNES, PUIS LE RESTE SUR DEMANDE. Vingt-cinq pièces déroulées
+              d'un coup font de cet écran un gestionnaire de catalogue — la
+              chose qu'un commerçant n'ouvre jamais deux fois. */}
+          {!toutesLesPieces && aTailler.length > visibles.length && (
+            <button
+              type="button"
+              className="mc-tl-plus"
+              onClick={() => setToutesLesPieces(true)}
+            >
+              Afficher les {aTailler.length - visibles.length} autres pièces
+            </button>
+          )}
         </section>
       )}
 

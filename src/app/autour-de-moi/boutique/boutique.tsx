@@ -75,7 +75,15 @@ import {
 } from "@/lib/direct/apercu-habitant";
 import { ceQuiRevient, phraseHabitude } from "@/lib/direct/historique";
 import { momentEnCours } from "@/lib/direct/apercu-habitant";
-import { murDeLaCarte } from "@/lib/direct/fantomes";
+import { murDeLaCarte, pieceDeLaCarte } from "@/lib/direct/fantomes";
+import {
+  abonnerTailles,
+  chargerTailles,
+  noteDeFraicheur,
+  phraseDesTailles,
+  taillesDeLaPiece,
+  taillesVides,
+} from "@/lib/direct/tailles";
 import { MurContenu } from "@/components/direct/mur-contenu";
 import { BlocFantome } from "@/components/direct/bloc-fantome";
 import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
@@ -555,6 +563,20 @@ export function Boutique() {
    * depuis l'autre jour. On garde donc la ligne complète.
    */
   const [pieceVue, setPieceVue] = useState<PieceGardee | null>(null);
+  /**
+   * CE QU'IL RESTE DE LA PIÈCE QU'ON REGARDE, RELU À CHAQUE OUVERTURE.
+   *
+   * ON NE LE FIGE PAS DANS LA POCHE. Une taille mise de côté il y a dix jours
+   * serait fausse exactement le jour où elle décide du déplacement — voir
+   * `pieceDeLaCarte`, qui explique pourquoi on repasse par le catalogue.
+   */
+  const taillesDites = useSyncExternalStore(abonnerTailles, chargerTailles, taillesVides);
+  const taillesVues = useMemo(() => {
+    if (!pieceVue) return null;
+    const v = cartes.find((x) => x.id === pieceVue.carte);
+    const p = v ? pieceDeLaCarte(v, pieceVue.piece) : undefined;
+    return p ? taillesDeLaPiece(pieceVue.carte, p, taillesDites) : null;
+  }, [pieceVue, cartes, taillesDites]);
   /** La demande qui part chez le commerçant, montrée avant d'être envoyée. */
   const [demandePiece, setDemandePiece] = useState<{
     piece: PieceGardee;
@@ -2147,6 +2169,16 @@ export function Boutique() {
               {pieceVue.lieu}
               {pieceVue.prix ? ` · ${pieceVue.prix}` : ""}
             </em>
+            {/* CE QU'IL EN RESTE, JUSTE AVANT LE BOUTON DE RÉSERVATION.
+                C'est le dernier centimètre avant le message : si la 38 est
+                partie, mieux vaut le lire ici que devant la porte. Muette
+                quand le commerçant n'a rien déclaré. */}
+            {taillesVues && (
+              <span className="bq-tl">
+                {phraseDesTailles(taillesVues)}
+                {noteDeFraicheur(taillesVues) && <i>{noteDeFraicheur(taillesVues)}</i>}
+              </span>
+            )}
           </div>
           <div className="bq-plein-b" onClick={(e) => e.stopPropagation()}>
             <button
@@ -2486,6 +2518,14 @@ function Styles() {
           letter-spacing:-.01em;color:#FFFFFF;}
         .bq-plein-t em{display:block;margin-top:4px;font-style:normal;
           font-size:13.5px;color:#9FB0C4;}
+        /* CE QU'IL EN RESTE, ENTRE LE PRIX ET LES DEUX GESTES. Une pastille
+           menthe : c'est la couleur de ce qui est disponible partout ailleurs
+           dans le produit, et elle ne se confond avec aucun prix. */
+        .bq-tl{display:inline-flex;align-items:baseline;gap:8px;margin-top:9px;
+          font-size:13px;font-weight:850;color:#3DE2A6;
+          background:rgba(61,226,166,.13);border-radius:999px;padding:6px 12px;}
+        .bq-tl i{font-style:normal;font-size:11.5px;font-weight:650;
+          color:#C6D2E2;}
         .bq-plein-b{display:flex;gap:9px;width:min(340px,100%);cursor:auto;}
         .bq-plein-r,.bq-plein-c{flex:1;display:inline-flex;align-items:center;
           justify-content:center;gap:6px;border-radius:999px;padding:13px 8px;

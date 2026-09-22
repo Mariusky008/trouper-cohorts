@@ -405,6 +405,26 @@ export type Piece = {
    * pose pas.
    */
   couvre?: "buste" | "silhouette" | "bas";
+  /**
+   * ═══ LES TAILLES QU'IL LUI RESTE ═══════════════════════════════════════════
+   *
+   * CE N'EST PAS LA PLAGE DU FABRICANT. « Tailles 36 à 44 » est vrai le jour de
+   * la livraison et faux le surlendemain ; ce qui fait traverser la ville, c'est
+   * « il en reste une, et c'est une 38 ». Ce champ porte donc l'état du portant,
+   * pas l'étendue du catalogue.
+   *
+   * ABSENT, L'ÉCRAN SE TAIT. Il ne dit ni « toutes les tailles » ni « rupture » :
+   * une taille non déclarée est une chose qu'on ne sait pas, et l'inventer une
+   * fois suffit à ce que plus personne ne croie les autres. Une liste VIDE, en
+   * revanche, est une déclaration — « je n'ai plus rien » — et elle s'affiche.
+   *
+   * CE QUI SE TAILLE SEULEMENT. Une coupe de cheveux, un vernis, un bouquet
+   * n'en ont pas, et le champ reste absent chez eux.
+   *
+   * LE COMMERÇANT LE MET À JOUR DEPUIS SON ÉCRAN, et c'est sa déclaration qui
+   * gagne sur celle-ci dès qu'il y touche. Voir `lib/direct/tailles.ts`.
+   */
+  tailles?: string[];
 };
 
 export type Mur = {
@@ -1811,6 +1831,13 @@ export const MURS: Mur[] = [
        * pourquoi on élargit le modèle plutôt que d'écrire deux listes.
        */
       pieces: [
+        /* ═══ LES TAILLES NE SONT PAS SUR TOUTES LES PIÈCES ═════════════════
+           ET C'EST EXPRÈS. Une collection réelle n'est jamais renseignée à
+           cent pour cent : le commerçant coche ce qu'il a en main le jour de
+           l'arrivage, et le reste attend. Les écrans doivent donc savoir se
+           taire — une pièce sans tailles ne dit ni « toutes » ni « rupture ».
+           C'est ce que cette moitié vide démontre, et c'est aussi ce que
+           l'écran du commerçant donne à faire. Voir `tailles` dans `Piece`. */
         {
           id: "m-combinaison", couvre: "silhouette",
           nom: "Combinaison beige, ceinturée", decrire: "une combinaison longue beige à manches longues, ceinturée à la taille",
@@ -1859,6 +1886,7 @@ export const MURS: Mur[] = [
 
         // ── Les mailles ──────────────────────────────────────────────────────
         { id: "m-mohair-vert", couvre: "buste", nom: "Pull mohair vert d’eau", vitrine: true, prix: "95 €",
+          tailles: ["S", "M"],
           decrire: "un pull en mohair vert d’eau, col rond, manches longues, coupe ample et duveteuse",
           photo: "/direct/mode-pull-mohair-vert.jpeg", reference: "/direct/mode-pull-mohair-vert.jpeg" },
         { id: "m-mohair-marine", couvre: "buste", nom: "Pull mohair bleu marine", prix: "95 €",
@@ -1877,11 +1905,13 @@ export const MURS: Mur[] = [
           decrire: "un gilet en maille fine rose orchidée, col V, boutons dorés, manches trois-quarts",
           photo: "/direct/mode-gilet-orchidee.jpg", reference: "/direct/mode-gilet-orchidee.jpg" },
         { id: "m-maille-beige", couvre: "silhouette", nom: "Ensemble maille beige", vitrine: true, prix: "165 €",
+          tailles: ["36", "40", "44"],
           decrire: "un ensemble en maille beige : col roulé, jupe midi et long gilet boutonné assortis",
           photo: "/direct/mode-ensemble-maille-beige.jpg", reference: "/direct/mode-ensemble-maille-beige.jpg" },
 
         // ── Les robes ────────────────────────────────────────────────────────
         { id: "m-robe-lavalliere", couvre: "silhouette", nom: "Robe midi, col lavallière", vitrine: true, prix: "125 €",
+          tailles: ["38"],
           decrire: "une robe midi imprimée rouge et rose à motif géométrique, manches longues bouffantes, col lavallière noué",
           photo: "/direct/mode-robe-lavalliere.jpeg", reference: "/direct/mode-robe-lavalliere.jpeg" },
         { id: "m-robe-pois", couvre: "silhouette", nom: "Robe à pois dorés", prix: "139 €",
@@ -1896,9 +1926,11 @@ export const MURS: Mur[] = [
 
         // ── Les manteaux et les vestes ───────────────────────────────────────
         { id: "m-doudoune", couvre: "buste", nom: "Doudoune kaki, capuche", vitrine: true, prix: "189 €",
+          tailles: ["36", "38", "40", "42"],
           decrire: "une doudoune courte kaki brillante à capuche bordée de fourrure bordeaux, fermeture zippée",
           photo: "/direct/mode-doudoune-kaki.jpg", reference: "/direct/mode-doudoune-kaki.jpg" },
         { id: "m-leopard", couvre: "silhouette", nom: "Manteau léopard", vitrine: true, prix: "175 €",
+          tailles: ["S", "M", "L"],
           decrire: "un manteau mi-long en fausse fourrure imprimée léopard, grand col cranté, porté ouvert",
           photo: "/direct/mode-manteau-leopard.jpg", reference: "/direct/mode-manteau-leopard.jpg" },
         { id: "m-veste-dentelle", couvre: "silhouette", nom: "Veste longue en dentelle", prix: "159 €",
@@ -1913,6 +1945,7 @@ export const MURS: Mur[] = [
           decrire: "un top noir sans manches en crochet ajouré, bord festonné à la taille",
           photo: "/direct/mode-top-crochet-noir.jpg", reference: "/direct/mode-top-crochet-noir.jpg" },
         { id: "m-jean-papillons", couvre: "bas", nom: "Jean large à papillons", prix: "79 €",
+          tailles: [],
           decrire: "un jean large taille haute en denim clair, imprimé de papillons noirs, déchirures aux genoux",
           photo: "/direct/mode-jean-papillons.jpg", reference: "/direct/mode-jean-papillons.jpg" },
         { id: "m-pantalon-zebre", couvre: "silhouette", nom: "Pantalon fluide imprimé", prix: "129 €",
@@ -2966,6 +2999,27 @@ type MomentCourant = { titre: string; lignes?: string[]; prix?: string; photo?: 
  * est exactement ce que « Surprends-moi » existe pour éviter.
  */
 const PLACES_EN_VITRINE = 6;
+
+/**
+ * ═══ RETROUVER UNE PIÈCE DEPUIS SON COMMERCE ET SON IDENTIFIANT ════════════
+ *
+ * POURQUOI CE DÉTOUR PAR LE MUR. Une pièce gardée ne stocke que son nom, son
+ * prix et son image — voir `PieceGardee` : c'est exactement ce qu'il faut pour
+ * la redessiner dans la poche, et pas assez pour en dire autre chose. Or
+ * « il reste une 38 » est une information qui change entre le moment où on l'a
+ * mise de côté et celui où on la regarde : la figer dans la poche, ce serait
+ * garantir qu'elle soit fausse le jour où elle compte.
+ *
+ * ON REPASSE DONC PAR LE CATALOGUE, à chaque ouverture. C'est le même chemin
+ * que celui du client devant la vitrine, ce qui est la seule façon d'être sûr
+ * que les deux écrans disent la même chose.
+ */
+export function pieceDeLaCarte(
+  c: Parameters<typeof murDeLaCarte>[0],
+  pieceId: string,
+): Piece | undefined {
+  return murDeLaCarte(c).essai?.pieces.find((p) => p.id === pieceId);
+}
 
 export function murDeLaCarte(c: {
   id: string;

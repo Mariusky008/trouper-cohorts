@@ -77,6 +77,17 @@ export type Evenement =
    * apparue.
    */
   | "relooking"
+  /**
+   * LES TAILLES DÉCLARÉES — le seul geste de saisie de tout le produit.
+   *
+   * TOUT LE RESTE SE CHOISIT AU POUCE : une pastille, une republication, une
+   * pièce désignée. Cocher ses tailles demande de regarder son portant, donc
+   * c'est le premier endroit où l'on peut perdre un commerçant — et la seule
+   * façon de le savoir est de compter combien vont au bout. La valeur envoyée
+   * est le nombre de tailles cochées, zéro compris : « je n'ai plus rien » est
+   * une déclaration, pas un abandon.
+   */
+  | "tailles"
   | "fin";
 
 type Ligne = { evenement: Evenement; valeur?: number; contexte?: string };
