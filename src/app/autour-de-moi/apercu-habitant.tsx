@@ -163,7 +163,11 @@ import { PictoMetier } from "@/components/direct/picto-metier";
 // commentaire du bouton dans la barre.
 import { MurContenu } from "@/components/direct/mur-contenu";
 import { RelookingContenu } from "@/components/direct/relooking-contenu";
-import { POSTES } from "@/lib/direct/relooking";
+import {
+  RANG_ANNONCE_RELOOKING,
+  annonceRelookingVue,
+  marquerAnnonceRelookingVue,
+} from "@/lib/direct/relooking";
 import { murDeLaCarte, murDuSouvenir, QUOTA_DU_JOUR } from "@/lib/direct/fantomes";
 import { motsDe, soireeDuLieu } from "@/lib/direct/soiree";
 import { basculerLeSon, jouer, sonCoupe } from "@/lib/direct/sons";
@@ -1865,6 +1869,24 @@ export function ApercuHabitant() {
    */
   const [relookFermee, setRelookFermee] = useState(false);
   const [relooking, setRelooking] = useState(false);
+  /**
+   * A-T-ELLE DÉJÀ ÉTÉ MONTRÉE AUJOURD'HUI&nbsp;? Lu une fois au montage&nbsp;:
+   * `localStorage` n'existe pas au rendu serveur, et une lecture à chaque rendu
+   * ferait clignoter la carte au premier balayage.
+   */
+  const [relookDejaVu, setRelookDejaVu] = useState(true);
+  useEffect(() => {
+    setRelookDejaVu(annonceRelookingVue());
+  }, []);
+  /** Le glissement de l'annonce, exactement comme celui de la carte d'accueil. */
+  const [relookDx, setRelookDx] = useState(0);
+  const priseRelook = useRef<number | null>(null);
+  const fermerAnnonceRelook = () => {
+    marquerAnnonceRelookingVue();
+    setRelookDejaVu(true);
+    setRelookFermee(true);
+    setRelookDx(0);
+  };
   /** Le signe qui accompagne le message d'écho. La flamme par défaut. */
   const [echoIcone, setEchoIcone] = useState("🔥");
 
@@ -4292,43 +4314,36 @@ export function ApercuHabitant() {
    */
   const gardeSommet = !!sommet && gardees.includes(sommet.id);
   /**
-   * LA PROPOSITION DE RELOOKING EST-ELLE À L'ÉCRAN EN CE MOMENT&nbsp;?
+   * ═══ L'ANNONCE DU RELOOKING EST-ELLE À L'ÉCRAN&nbsp;? ══════════════════════
    *
-   * `passees.length >= 4` VEUT DIRE « À PARTIR DE LA CINQUIÈME ANNONCE » : on
-   * compte les cartes DÉJÀ passées, et celle qu'on regarde est la suivante.
-   * Voir `rangVu`, qui fait le même calcul pour la mesure.
+   * « Sur la prothésiste ongulaire, "Et si on vous relookait ?" ressemble à
+   * une fonctionnalité de cette prothésiste. Or c'est une expérience ClikMe
+   * qui combine plusieurs commerces. »
    *
-   * ELLE DISPARAÎT PENDANT UNE DEMANDE DE SORTIE. Quelqu'un qui attend des
-   * réponses de commerces n'est pas en train de se demander à quoi il
-   * ressemblerait — et une interruption à ce moment-là fait perdre le fil de
-   * la seule chose qui presse.
+   * LA BANDE POSÉE SUR UNE ANNONCE EN DEVENAIT UNE LIGNE — une option de plus
+   * chez ce commerçant-là. Elle est devenue une CARTE autonome, avec sa propre
+   * image et sa propre promesse ; les commerces concernés n'en gardent qu'un
+   * badge discret, sur leur page.
    *
-   * ═══ ET ELLE NE SE POSE QUE SUR LES MÉTIERS DU STYLE ══════════════════════
+   * TROIS RÈGLES, UNE RAISON : une seule carte, une fois par jour, vers la
+   * dixième annonce. Une proposition qui revient est une publicité. Voir
+   * `RANG_ANNONCE_RELOOKING` dans `lib/direct/relooking.ts`.
    *
-   * « On a la pastille de relooking tout en haut juste au-dessus des lasagnes,
-   * et ça ne va pas vraiment ensemble. »
-   *
-   * C'EST EXACT, ET CE N'EST PAS QU'UNE QUESTION DE GOÛT. Une bande posée sur
-   * une annonce parle forcément DE CETTE ANNONCE — c'est ce que sa position
-   * promet. Au-dessus d'un plat du jour, « et si on vous relookait ? » n'a
-   * aucun rapport avec ce qu'on est en train de regarder : elle devient une
-   * publicité, c'est-à-dire la seule chose que ce produit ne doit jamais avoir
-   * l'air d'être.
-   *
-   * SUR UNE FRIPERIE, UN SALON OU UNE ONGLERIE, ELLE EST LA SUITE DE LA PENSÉE.
-   * On regarde une veste, on se demande ce qu'elle donnerait — la question du
-   * relooking est déjà posée, la bande ne fait que l'écrire. Ce sont exactement
-   * les quatre métiers dont le parcours a besoin : voir `POSTES` dans
-   * `lib/direct/relooking.ts`, qui est la même liste et la seule.
-   *
-   * ELLE ATTEND DONC DEUX CHOSES À LA FOIS : la cinquième annonce, et la
-   * première qui s'y prête. Sur un paquet de restaurants, on ne la verra pas —
-   * et c'est juste : il n'y a rien à relooker.
+   * ELLE ATTEND QUE L'ACCUEIL SOIT PASSÉ, et elle ne s'invite pas pendant une
+   * demande de sortie : deux interruptions à la suite font exactement la
+   * densité qu'on a passé des semaines à enlever.
    */
-  const metierDuStyle =
-    !!dessus && POSTES.some((p) => p.branche === dessus.branche);
-  const inviteRelook =
-    !relookFermee && !relooking && passees.length >= 4 && !sortie && metierDuStyle;
+  const annonceRelook =
+    monte &&
+    !!sommet &&
+    !relookFermee &&
+    !relooking &&
+    !sortie &&
+    !embauches &&
+    !salonUrl &&
+    vus.includes("accueil") &&
+    passees.length + 1 >= RANG_ANNONCE_RELOOKING &&
+    !relookDejaVu;
   /** Le commerce de la carte du dessus est-il en favori. */
   const suiviSommet = !!dessus && suivis.includes(dessus.id);
   /** ⚡ La carte du dessus porte-t-elle un Flash en cours — voir `flash.ts`. */
@@ -6861,53 +6876,6 @@ export function ApercuHabitant() {
               </div>
             )}
 
-          {/* ═══ « ET SI ON VOUS RELOOKAIT ? » ══════════════════════════════
-
-              ELLE ARRIVE À LA CINQUIÈME ANNONCE, et c'est la seule chose de
-              cet écran qui ne parle pas d'un commerce en particulier. Tout le
-              reste du paquet répond à « qu'est-ce qu'il y a autour de moi ? » ;
-              celle-ci propose l'autre question — « à quoi je pourrais
-              ressembler ? » — dont la réponse traverse quatre boutiques d'ici.
-
-              ELLE PASSE DEVANT LA BANDE D'INSTALLATION, qui attend la même
-              carte. Deux interruptions sur la même annonce font exactement la
-              densité qu'on a passé des semaines à enlever ; celle-ci a une
-              raison d'être là maintenant, l'autre sera toujours vraie au
-              dixième balayage. Voir la condition ajoutée juste dessous. */}
-          {inviteRelook && (
-            <button
-              type="button"
-              className="ap-relook-bande"
-              onClick={() => {
-                noter("relooking", passees.length + 1, "bande");
-                setRelooking(true);
-              }}
-            >
-              <i aria-hidden="true">✨</i>
-              <span>
-                <b>Et si on vous relookait&nbsp;?</b>
-                Une coupe, une tenue, des lunettes — tout d’ici.
-              </span>
-              <em aria-hidden="true">Essayer</em>
-              <s
-                role="button"
-                tabIndex={0}
-                aria-label="Ne plus proposer"
-                onClick={(ev) => {
-                  ev.stopPropagation();
-                  setRelookFermee(true);
-                }}
-                onKeyDown={(ev) => {
-                  if (ev.key !== "Enter" && ev.key !== " ") return;
-                  ev.stopPropagation();
-                  ev.preventDefault();
-                  setRelookFermee(true);
-                }}
-              >
-                ✕
-              </s>
-            </button>
-          )}
           </div>
 
           <div className="ap-vue">
@@ -6970,6 +6938,108 @@ export function ApercuHabitant() {
                 d'un commerce, emmène ici avec la clé du salon en adresse : y
                 intercaler « Avant d'y aller… essayez » ferait perdre le fil au
                 moment précis où l'on venait le partager. */}
+            {/* ═══ « RELOOKE-MOI » — UNE ANNONCE QUI N'EST À PERSONNE ═══════
+
+                « Une vraie annonce autonome. Une carte spectaculaire,
+                différente des annonces commerçantes. »
+
+                ELLE SE BALAIE COMME LES AUTRES, et c'est la règle qui tient
+                tout ce produit : le geste est identique partout. Une carte
+                qu'on ne peut pas passer serait la seule de l'application, donc
+                celle qu'on remarquerait pour la mauvaise raison. Trente points
+                suffisent — ici le geste n'a pas de conséquence.
+
+                ELLE NE RESSEMBLE À AUCUNE ANNONCE DE COMMERÇANT, et c'est
+                voulu : pas de prix, pas de distance, pas de nom de commerce.
+                Elle ne vend rien de particulier — elle propose de faire
+                travailler QUATRE commerces ensemble, ce qu'aucun d'eux ne peut
+                promettre seul. */}
+            {annonceRelook && (
+              <div
+                className={`ap-relook${relookDx ? " part" : ""}`}
+                style={{
+                  transform: `translate3d(${relookDx}px,0,0) rotate(${relookDx * 0.04}deg)`,
+                }}
+                onPointerDown={(e) => {
+                  priseRelook.current = e.clientX;
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                }}
+                onPointerMove={(e) => {
+                  if (priseRelook.current == null) return;
+                  setRelookDx(e.clientX - priseRelook.current);
+                }}
+                onPointerUp={() => {
+                  const d = relookDx;
+                  priseRelook.current = null;
+                  if (Math.abs(d) > 30) fermerAnnonceRelook();
+                  else setRelookDx(0);
+                }}
+              >
+                {/* DEUX MOITIÉS, UN RAYON DE CHAQUE. Un seul portrait de femme
+                    disait à qui la proposition s'adresse, et écartait la moitié
+                    des gens avant même qu'ils aient lu le titre — le reproche
+                    exact qui a été fait à l'écran d'accroche. */}
+                <span className="ap-relook-f" aria-hidden="true">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/direct/coiffure-homme-face.jpg" alt="" />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/direct/accueil/coiffure-apres.jpg" alt="" />
+                  <b />
+                </span>
+                <span className="ap-relook-v" aria-hidden="true" />
+                <div className="ap-relook-t">
+                  <span className="ap-relook-e">
+                    <i aria-hidden="true">✨</i>Relooke-moi
+                  </span>
+                  <h2>
+                    Et si les commerces de {dessus?.ville ?? "votre ville"}{" "}
+                    inventaient une{" "}
+                    <b>nouvelle version de vous&nbsp;?</b>
+                  </h2>
+                  <p>
+                    Une coupe, une tenue, des lunettes — chez quatre commerces
+                    d’ici, en une matinée.
+                  </p>
+                  {/* LES QUATRE MÉTIERS, EN TOUTES LETTRES. C'est ce qui la
+                      distingue d'une annonce : elle n'a pas UN commerce, elle
+                      en a quatre, et c'est toute sa raison d'être. */}
+                  <ul className="ap-relook-m" aria-hidden="true">
+                    <li>Coiffure</li>
+                    <li>Mode</li>
+                    <li>Lunettes</li>
+                    <li>Ongles</li>
+                  </ul>
+                  {/* LE GESTE COMMENCE SUR LE BOUTON, DONC LA CARTE NE LE
+                      CAPTURE PAS. `setPointerCapture` sur le parent détourne
+                      tous les événements suivants vers lui : l'appui ne
+                      devenait jamais un clic, et « Me relooker » ne faisait
+                      rien — mesuré à la capture. Même parade que l'anneau de
+                      l'annonce, plus haut. */}
+                  <button
+                    type="button"
+                    className="ap-relook-b"
+                    onPointerDown={(ev) => ev.stopPropagation()}
+                    onClick={() => {
+                      noter("relooking", passees.length + 1, "annonce");
+                      marquerAnnonceRelookingVue();
+                      setRelookDejaVu(true);
+                      setRelooking(true);
+                    }}
+                  >
+                    Me relooker<b aria-hidden="true">›</b>
+                  </button>
+                  <button
+                    type="button"
+                    className="ap-relook-x"
+                    onPointerDown={(ev) => ev.stopPropagation()}
+                    onClick={fermerAnnonceRelook}
+                  >
+                    Plus tard
+                  </button>
+                </div>
+              </div>
+            )}
+
             {monte && sommet && !vus.includes("accueil") && !sortie && !embauches && !salonUrl && (
               <div
                 className={`ap-accueil${accueilDx ? " part" : ""}`}
@@ -9042,7 +9112,6 @@ export function ApercuHabitant() {
               récupère les deux barres du navigateur, soit près de deux cents
               points sur un iPhone. */}
           {!inviteFermee &&
-            !inviteRelook &&
             !installation.deja &&
             installation.chemin !== "aucune" &&
             // ET PLUS AU MÊME BALAYAGE QUE LE TOUR DE RÔLE. Les deux bandes
@@ -11731,7 +11800,12 @@ export function ApercuHabitant() {
             bulleDuMur &&
             !feuille &&
             !murOuvert &&
-            !accueilOuvert && (
+            !accueilOuvert &&
+            /* ET PAS NON PLUS PAR-DESSUS L'ANNONCE DU RELOOKING. Elle parle de
+               la carte du dessous, qui est cachée : posée sur « Me relooker »,
+               elle volait l'appui du seul bouton de cet écran — mesuré à la
+               capture. Même garde que pour l'écran d'accueil, juste au-dessus. */
+            !annonceRelook && (
             <button
               type="button"
               className="ap-murbul"
@@ -13981,8 +14055,89 @@ export function ApercuHabitant() {
            display:flex;flex-direction:column;justify-content:flex-end;
            border-radius:26px;cursor:grab;touch-action:pan-y;background:#050908;
            box-shadow:0 30px 70px -30px rgba(0,0,0,.9);
-           animation:apMonteAcc .45s cubic-bezier(.22,1.1,.4,1) both;}
+           animation:apMonteAcc .45s cubic-bezier(.22,1.1,.4,1) both;
+           /* LA POLICE ETAIT DECLAREE UNE SECONDE FOIS QUATRE-VINGTS LIGNES
+              PLUS BAS. Tant que les deux etaient voisines, personne ne voyait
+              rien ; la carte du relooking s'est glissee entre elles et la garde
+              des styles a crie — a juste titre : deux declarations du meme nom
+              a distance finissent par diverger. */
+           font-family:var(--font-clikme),'Inter',system-ui,sans-serif;}
         @keyframes apMonteAcc{from{opacity:0;transform:scale(.97);}to{opacity:1;transform:none;}}
+
+        /* ═══ « RELOOKE-MOI » — L'ANNONCE QUI N'EST A PERSONNE ═════════════
+
+           ELLE SE BALAIE COMME LES AUTRES et occupe la meme place : c'est une
+           carte du paquet, pas une fenetre posee dessus. Ce qui la distingue
+           n'est donc pas sa forme, c'est son fond — un violet profond la ou
+           les annonces portent la photo d'un commerce, et aucun prix, aucune
+           distance, aucun nom de commercant. Elle ne vend rien de particulier :
+           elle propose de faire travailler QUATRE commerces ensemble. */
+        .ap-relook{position:absolute;inset:0;z-index:8;overflow:hidden;
+          display:flex;flex-direction:column;justify-content:flex-end;
+          border-radius:26px;cursor:grab;touch-action:pan-y;
+          background:radial-gradient(120% 70% at 50% 0%,#3A0B4E 0%,#140A24 58%),#0C0718;
+          box-shadow:0 30px 70px -30px rgba(0,0,0,.9);
+          font-family:var(--font-clikme),'Inter',system-ui,sans-serif;
+          animation:apMonteAcc .45s cubic-bezier(.22,1.1,.4,1) both;}
+        .ap-relook.part{transition:none;}
+        /* LES DEUX PORTRAITS N'OCCUPENT QUE LE HAUT. Sur toute la hauteur,
+           chaque moitie faisait cent quatre-vingt-quinze points de large pour
+           huit cent quarante de haut — un rapport de un pour quatre dans lequel
+           aucun portrait ne tient : on n'y voyait qu'une bande verticale de
+           visage. Mesure a la capture. Sur un peu plus de la moitie de la
+           carte, chaque moitie redevient un cadre. */
+        .ap-relook-f{position:absolute;top:0;left:0;right:0;height:58%;
+          display:grid;grid-template-columns:1fr 1fr;opacity:.62;
+          filter:saturate(1.05);}
+        /* CHAQUE MOITIE A SON CADRAGE. Le cadre est tres haut et tres etroit :
+           une valeur commune montrait le front de l'un et le visage de l'autre.
+           Mesure a la capture. */
+        .ap-relook-f img{width:100%;height:100%;object-fit:cover;display:block;}
+        .ap-relook-f img:first-child{object-position:center 22%;}
+        .ap-relook-f img:nth-child(2){object-position:center 12%;}
+        /* LE TRAIT ENTRE LES DEUX MOITIES, comme sur l'ecran d'accroche. */
+        .ap-relook-f b{position:absolute;top:0;bottom:0;left:50%;width:3px;
+          margin-left:-1.5px;
+          background:linear-gradient(180deg,rgba(245,17,192,0),#FF6AE0,rgba(245,17,192,0));
+          box-shadow:0 0 18px 3px rgba(245,17,192,.6);}
+        /* LE VOILE MONTE DU BAS : le texte a besoin d'un fond, le visage n'a
+           besoin de rien. Un voile uniforme assombrirait la seule chose qui
+           donne envie. */
+        .ap-relook-v{position:absolute;inset:0;pointer-events:none;
+          background:linear-gradient(180deg,rgba(12,7,24,.2) 0%,
+            rgba(12,7,24,.06) 22%,rgba(12,7,24,.5) 42%,
+            rgba(12,7,24,.94) 56%,#0C0718 64%);}
+        .ap-relook-t{position:relative;z-index:2;padding:0 20px 22px;}
+        .ap-relook-e{display:inline-flex;align-items:center;gap:7px;
+          border-radius:999px;padding:6px 14px;margin-bottom:12px;
+          font-size:11px;font-weight:900;letter-spacing:.14em;
+          text-transform:uppercase;color:#FFFFFF;
+          background:rgba(240,38,155,.2);
+          border:1px solid rgba(240,38,155,.75);
+          box-shadow:0 0 18px rgba(240,38,155,.35);}
+        .ap-relook-e i{font-style:normal;font-size:12px;}
+        .ap-relook-t h2{margin:0;font-size:clamp(26px,7.4vw,32px);
+          font-weight:900;line-height:1.08;letter-spacing:-.03em;color:#FFFFFF;
+          text-shadow:0 2px 18px rgba(0,0,0,.6);}
+        .ap-relook-t h2 b{font-weight:900;color:#FF3FB0;}
+        .ap-relook-t>p{margin:9px 0 0;font-size:14px;line-height:1.4;
+          color:#D9CFEA;}
+        .ap-relook-m{list-style:none;display:flex;flex-wrap:wrap;gap:6px;
+          margin:13px 0 0;padding:0;}
+        .ap-relook-m li{border-radius:999px;padding:5px 11px;font-size:11.5px;
+          font-weight:800;color:#F0D9FF;background:rgba(255,255,255,.08);
+          border:1px solid rgba(255,255,255,.2);}
+        .ap-relook-b{display:flex;align-items:center;justify-content:center;
+          gap:8px;width:100%;margin:16px 0 0;border:0;border-radius:999px;
+          padding:16px 20px;cursor:pointer;font:inherit;font-size:16px;
+          font-weight:900;letter-spacing:.01em;text-transform:uppercase;
+          color:#FFFFFF;background:linear-gradient(92deg,#F0269B,#A855F7);
+          box-shadow:0 16px 38px -14px rgba(240,38,155,.95);}
+        .ap-relook-b b{font-weight:800;font-size:19px;line-height:1;}
+        .ap-relook-b:active{transform:scale(.985);}
+        .ap-relook-x{display:block;width:100%;margin-top:9px;padding:10px;
+          border:0;background:none;cursor:pointer;font:inherit;font-size:13px;
+          font-weight:700;color:#A796BE;}
 
         /* ═══ L'ECRAN D'OUVERTURE, AU TRAIT DE SA MAQUETTE ═════════════════
            SEPT BLOCS, DU HAUT VERS LE BAS, ET RIEN D'AUTRE : le mot-marque, la
@@ -13999,7 +14154,6 @@ export function ApercuHabitant() {
            est le bon caractère pour lire une fiche de commerce, des horaires et
            un fil de conversation. Une police d'affiche sur une liste de prix se
            lit moins bien — c'est un mot-marque, pas une charte. */
-        .ap-accueil{font-family:var(--font-clikme),'Inter',system-ui,sans-serif;}
         .ap-ac-marque{flex:none;padding:14px 20px 0;text-align:center;}
         .ap-ac-marque b{display:block;font-size:40px;font-weight:900;
           letter-spacing:-.02em;line-height:1;color:#fff;}
@@ -16310,49 +16464,6 @@ export function ApercuHabitant() {
         .ap-poser-x{width:26px;padding:0!important;font-size:13px!important;
           color:#7F988B!important;background:none!important;}
 
-        /* ═══ LA BANDE DU RELOOKING ════════════════════════════════════════
-
-           ELLE EST ROSE LÀ OÙ TOUT LE DIRECT EST VERT, et c'est voulu : le
-           vert de cette application veut dire « un commerce d'ici, maintenant ».
-           Celle-ci ne parle d'aucun commerce — elle propose de retourner la
-           question — et lui donner la couleur des annonces la ferait lire
-           comme une annonce de plus, c'est-a-dire comme quelque chose qu'on
-           balaie.
-
-           MEME HAUTEUR QUE CELLE DE L'INSTALLATION. Quarante-quatre points sur
-           un ecran dont chaque pixel a ete disputé : deux rangs, jamais trois,
-           et chacun coupé plutot que replié. */
-        /* ELLE EST EN HAUT, AU-DESSUS DU PAQUET, et ce n'est pas un detail de
-           mise en page. Posee sous la carte, elle tombait dans les deux cents
-           points du bas que le rail des gestes et la barre d'onglets occupent
-           en absolu : mesuree a l'ecran, elle arrivait entierement sous la
-           barre — visible nulle part et hors d'atteinte du doigt. C'est le
-           meme defaut que le tiroir de la poche sur la page commercant, et il
-           se voit aussi peu.
-
-           ET ELLE VIT DANS LE CALQUE DU HAUT, PAS A COTE. Remontee en tete du flux,
-           elle passait sous le bandeau — qui est lui aussi pose en absolu, sur
-           deux cent vingt-six points. Dans cette mise en page, TOUT ce qui est
-           dans le flux est recouvert : le seul endroit visible est le calque du
-           haut, celui qui porte deja la banniere du tour de role. C'est la
-           bonne place pour une interruption, et c'est la sienne. */
-        .ap-relook-bande{flex:none;display:flex;align-items:center;gap:9px;
-          width:calc(100% - 24px);margin:6px 12px 0;
-          padding:7px 8px 7px 11px;cursor:pointer;text-align:left;font:inherit;
-          background:linear-gradient(92deg,rgba(245,17,192,.18),rgba(168,85,247,.14));
-          border:1px solid rgba(245,17,192,.45);
-          border-radius:13px;animation:apEcho .3s ease both;}
-        .ap-relook-bande>i{font-style:normal;font-size:16px;line-height:1;flex:none;}
-        .ap-relook-bande span{flex:1;min-width:0;font-size:10px;color:#C9A6D8;
-          line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .ap-relook-bande span b{display:block;font-size:12px;font-weight:850;
-          color:#FFE3F8;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;
-          text-overflow:ellipsis;}
-        .ap-relook-bande>em{flex:none;font-style:normal;font-size:11.5px;
-          font-weight:850;color:#FFFFFF;border-radius:999px;padding:7px 12px;
-          background:linear-gradient(92deg,#F511C0,#FF2D8E);}
-        .ap-relook-bande>s{flex:none;width:26px;text-align:center;
-          text-decoration:none;font-size:13px;color:#A98CBC;cursor:pointer;}
 
         /* LES POINTS DU CARROUSEL ONT DISPARU AVEC LUI, et la regle qui
            descendait les deux pastilles pour leur faire place avec eux : sans

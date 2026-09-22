@@ -80,6 +80,7 @@ import { MurContenu } from "@/components/direct/mur-contenu";
 import { BlocFantome } from "@/components/direct/bloc-fantome";
 import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
 import { partager } from "@/lib/direct/partager";
+import { POSTES } from "@/lib/direct/relooking";
 import { personnaliteDe } from "@/lib/direct/personnalites";
 import {
   ecrireDansSalon,
@@ -456,6 +457,15 @@ export function Boutique() {
     [c, heure],
   );
   const onEssaie = murDuLieu.depot === "essai";
+  /**
+   * CE COMMERCE ENTRE-T-IL DANS UN RELOOKING&nbsp;?
+   *
+   * Les quatre métiers du parcours, et eux seuls — voir `POSTES` dans
+   * `lib/direct/relooking.ts`, qui est la même liste et la seule. Un boulanger
+   * n'a rien à faire dans un relooking, et lui coller le badge en ferait un
+   * mot décoratif : on apprendrait en trois pages qu'il ne veut rien dire.
+   */
+  const duRelooking = POSTES.some((p) => p.branche === c.branche);
 
   /**
    * COMBIEN DE SECTIONS DANS LA COLONNE DE GAUCHE — et pourquoi on les compte.
@@ -967,8 +977,29 @@ export function Boutique() {
               française », « Terrasse » — et elles ne se voyaient nulle part sur
               cette page. On en montre quatre au plus : au-delà, ce n'est plus
               un portrait, c'est une liste de mots-clés. */}
-          {murDuLieu.etiquettes.length > 0 && (
+          {(murDuLieu.etiquettes.length > 0 || duRelooking) && (
             <ul className="bq-tags">
+              {/* ═══ LE BADGE DU RELOOKING, ET RIEN DE PLUS ══════════════════
+
+                  « Chez les commerçants concernés, pas une nouvelle pub
+                  complète : juste un petit badge discret. »
+
+                  C'EST LA BONNE TAILLE POUR CE QU'IL DIT. Ce commerce ne
+                  PROPOSE pas le relooking — il n'appartient à personne, il
+                  traverse quatre boutiques qui ne se connaissent pas. Le badge
+                  dit seulement que celle-ci en fait partie, et c'est une
+                  information sur elle, au même titre que « Pièces uniques » ou
+                  « Retouches offertes » juste à côté.
+
+                  IL NE S'APPUIE PAS, COMME SES VOISINS. Un badge cliquable
+                  redeviendrait une porte d'entrée, c'est-à-dire la publicité
+                  qu'on vient d'enlever. L'annonce du relooking vit dans Le
+                  Direct, et c'est le seul endroit d'où le parcours part. */}
+              {duRelooking && (
+                <li className="bq-tag-rl">
+                  <i aria-hidden="true">✨</i>Compatible avec votre relooking
+                </li>
+              )}
               {murDuLieu.etiquettes.slice(0, 4).map((e) => (
                 <li key={e}>{e}</li>
               ))}
@@ -2527,6 +2558,13 @@ function Styles() {
         .bq-tags{list-style:none;margin:11px 0 0;padding:0 0 2px;display:flex;gap:7px;
           overflow-x:auto;scrollbar-width:none;}
         .bq-tags::-webkit-scrollbar{display:none;}
+        /* LE BADGE DU RELOOKING SE DISTINGUE DE SES VOISINS SANS CRIER : la
+           meme pastille, la couleur du parcours, et une etoile. Assez pour
+           qu'on le remarque, pas assez pour qu'on le prenne pour un bouton. */
+        .bq-tag-rl{display:inline-flex;align-items:center;gap:6px;
+          color:#FFD9F4 !important;background:rgba(240,38,155,.16) !important;
+          border-color:rgba(240,38,155,.5) !important;}
+        .bq-tag-rl i{font-style:normal;font-size:11px;}
         .bq-tags li{flex:none;font-size:12px;font-weight:650;color:#FFFFFF;
           padding:7px 13px;border-radius:99px;white-space:nowrap;
           background:rgba(18,14,32,.42);border:1px solid rgba(255,255,255,.28);

@@ -50,6 +50,65 @@ import { murDeLaCarte, type Piece } from "./fantomes";
 import { numeroDeFiction } from "./prevenir";
 
 /* ════════════════════════════════════════════════════════════════════════════
+   OÙ ET QUAND LE RELOOKING SE PROPOSE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * ═══ UNE ANNONCE À PART, ET PAS UNE FONCTION DE COMMERÇANT ══════════════════
+ *
+ * « Sur la prothésiste ongulaire, "Et si on vous relookait ?" ressemble à une
+ * fonctionnalité de cette prothésiste. Or ton relooking est beaucoup plus
+ * fort : c'est une expérience ClikMe qui combine plusieurs commerces. »
+ *
+ * C'EST EXACT, ET LA BANDE LE TRAHISSAIT PAR SA POSITION. Posée sur l'annonce
+ * d'un commerce, elle en devenait une ligne — une option de plus chez ce
+ * commerçant-là. Or ce parcours n'appartient à personne : il traverse un
+ * salon, une boutique, un lunetier et une onglerie qui ne se connaissent pas,
+ * et c'est exactement ce qu'aucun d'eux ne peut proposer seul.
+ *
+ * ELLE DEVIENT DONC UNE CARTE DU PAQUET, avec sa propre image et sa propre
+ * promesse — « et si les commerces de Dax inventaient une nouvelle version de
+ * vous ? » — et les commerces concernés n'en gardent qu'un badge discret.
+ *
+ * ═══ ET ELLE SE FAIT RARE ═══════════════════════════════════════════════════
+ *
+ * UNE SEULE, UNE FOIS PAR JOUR, ET VERS LA DIXIÈME CARTE. Trois règles, une
+ * raison : une annonce qui revient est une publicité. À la dixième, on a vu de
+ * quoi la ville est faite — donc « une nouvelle version de vous » se lit comme
+ * une proposition, pas comme un panneau à l'entrée.
+ *
+ * LE JOUR SUFFIT COMME MÉMOIRE. Pas de compte, pas de profil : la date du
+ * dernier affichage, et rien d'autre. Demain, la ville a changé, la
+ * proposition peut se reposer.
+ */
+export const RANG_ANNONCE_RELOOKING = 10;
+
+const CLE_VUE = "clikme-relooking-vu-v1";
+
+function aujourdhui(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+/** L'annonce a-t-elle déjà été montrée aujourd'hui ? */
+export function annonceRelookingVue(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    return window.localStorage.getItem(CLE_VUE) === aujourdhui();
+  } catch {
+    return false;
+  }
+}
+
+export function marquerAnnonceRelookingVue() {
+  try {
+    window.localStorage.setItem(CLE_VUE, aujourdhui());
+  } catch {
+    /* Stockage refusé : elle reviendra à la prochaine session, et c'est tout. */
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
    LES POSTES
    ═══════════════════════════════════════════════════════════════════════════ */
 

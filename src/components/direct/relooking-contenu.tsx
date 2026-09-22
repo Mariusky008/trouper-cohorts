@@ -414,27 +414,45 @@ export function RelookingContenu({ onFermer }: { onFermer: () => void }) {
           <p className="rl-ac-s">Nouvelle coiffure. Nouvelle tenue. Nouveau style.</p>
 
           <div className="rl-avap">
-            {/* ═══ LA MÊME PERSONNE DES DEUX CÔTÉS, ET C'EST TOUT L'ENJEU ═══
+            {/* ═══ DEUX PANNEAUX, ET CE N'EST PLUS UNE SEULE FEMME ═════════
 
-                LE PREMIER JET METTAIT UN PORTRAIT À GAUCHE ET UNE PHOTO DE
-                CATALOGUE À DROITE — deux personnes différentes, donc exactement
-                le contresens que cet écran doit éviter. Un avant-après de deux
-                inconnus ne prouve rien, sinon qu'on sait afficher deux images :
-                c'est le reproche qui a déjà été fait à l'essayage, « ce n'est
-                pas ma tête, donc assez déçu ».
+                « Je t'ai mis le nouvel écran qui est mixte plutôt que dirigé
+                vers les femmes. »
 
-                CES DEUX-LÀ SONT LA MÊME FEMME, ET ELLES EXISTENT DÉJÀ : c'est
-                le couple que l'écran d'accueil fait tourner. Aucune image n'est
-                fabriquée pour l'occasion — LISEZ-MOI.md l'interdit — et le
-                cadrage est le même des deux côtés, ce qui est la seule
-                condition pour qu'un trait vertical se lise comme une
-                transformation plutôt que comme un montage. */}
+                C'ÉTAIT UN DÉFAUT D'ADRESSE, ET IL SE VOYAIT AVANT D'ÊTRE LU :
+                un avant-après de femme, seul, dit à qui la proposition
+                s'adresse — et écarte la moitié des gens au premier écran,
+                avant même la question du rayon. Deux panneaux disent que les
+                deux rayons existent, et la question qui suit ne surprend plus.
+
+                ═══ CE QUE JE N'AI PAS PU FAIRE, ET IL FAUT LE DIRE ═══════════
+
+                L'AVANT-APRÈS N'EXISTE QUE DU CÔTÉ FEMME. Le dossier des
+                images contient un vrai couple — la même personne, même
+                cadrage, avant et après — et il n'en existe aucun pour un
+                homme. Fabriquer le sien en collant deux inconnus donnerait
+                exactement ce qu'on reproche partout ailleurs : un avant-après
+                de deux personnes différentes, qui ne prouve rien.
+
+                LE PANNEAU DE GAUCHE MONTRE DONC UN PORTRAIT, SANS COUPURE, et
+                le trait lumineux passe ENTRE les deux panneaux plutôt qu'au
+                milieu de chacun. La promesse reste portée par la phrase — «
+                Même vous, juste une nouvelle version » — et le jour où le
+                couple manquant arrive, ce panneau prend la même coupure que
+                son voisin. */}
             <div className="rl-avap-i">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="a" src="/direct/accueil/mode-avant.jpg" alt="Avant" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="b" src="/direct/accueil/mode-apres.jpg" alt="Après" />
+              <div className="rl-avap-p">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/direct/coiffure-homme-face.jpg" alt="Rayon homme" />
+              </div>
               <span className="rl-avap-l" aria-hidden="true" />
+              <div className="rl-avap-p">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="a" src="/direct/accueil/mode-avant.jpg" alt="Avant" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="b" src="/direct/accueil/mode-apres.jpg" alt="Après" />
+                <span className="rl-avap-l mi" aria-hidden="true" />
+              </div>
               <span className="rl-avap-e" aria-hidden="true">
                 ✦
               </span>
@@ -1434,18 +1452,26 @@ function Styles() {
            image coupee net par un trait lumineux se lit comme une
            transformation. C'est tout ce que cet ecran doit faire comprendre. */
         .rl-avap{position:relative;margin:20px 0 0;padding:0 46px;}
-        .rl-avap-i{position:relative;overflow:hidden;border-radius:22px;
-          aspect-ratio:3/3.4;background:#12101C;
-          border:1px solid rgba(255,255,255,.1);}
+        /* DEUX PANNEAUX COTE A COTE : un rayon de chaque. L'ecran disait a qui
+           la proposition s'adressait avant meme d'avoir pose la question. */
+        .rl-avap-i{position:relative;display:grid;grid-template-columns:1fr 1fr;
+          overflow:hidden;border-radius:22px;aspect-ratio:3/2.5;
+          background:#12101C;border:1px solid rgba(255,255,255,.1);}
+        .rl-avap-p{position:relative;overflow:hidden;}
         .rl-avap-i img{position:absolute;inset:0;width:100%;height:100%;
-          object-fit:cover;}
+          object-fit:cover;object-position:center 18%;}
         .rl-avap-i img.a{clip-path:polygon(0 0,50% 0,50% 100%,0 100%);}
         .rl-avap-i img.b{clip-path:polygon(50% 0,100% 0,100% 100%,50% 100%);
           filter:saturate(1.08) contrast(1.04);}
+        /* LE TRAIT PASSE ENTRE LES DEUX PANNEAUX, et une seconde fois au milieu
+           de celui qui porte un vrai avant-apres. Voir le composant : il n'en
+           existe qu'un, et on n'en invente pas un second. */
         .rl-avap-l{position:absolute;top:0;bottom:0;left:50%;width:3px;
-          margin-left:-1.5px;background:linear-gradient(180deg,rgba(245,17,192,0),#FF6AE0,rgba(245,17,192,0));
+          margin-left:-1.5px;z-index:2;
+          background:linear-gradient(180deg,rgba(245,17,192,0),#FF6AE0,rgba(245,17,192,0));
           box-shadow:0 0 18px 3px rgba(245,17,192,.75);}
-        .rl-avap-e{position:absolute;top:14%;right:16%;font-size:20px;
+        .rl-avap-l.mi{box-shadow:0 0 14px 2px rgba(245,17,192,.6);}
+        .rl-avap-e{position:absolute;z-index:3;top:12%;right:12%;font-size:20px;
           color:#FFFFFF;text-shadow:0 0 14px rgba(245,17,192,.95);
           animation:rlEclat 2.6s ease-in-out infinite;}
         @keyframes rlEclat{
@@ -1465,10 +1491,10 @@ function Styles() {
           flex:none;border-radius:8px;background:rgba(245,17,192,.18);}
         .rl-tuile svg{width:14px;height:14px;fill:none;stroke:#FF7ADA;
           stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
-        .rl-tuile.t0{left:0;top:16%;}
-        .rl-tuile.t1{left:0;top:52%;}
-        .rl-tuile.t2{right:0;top:30%;}
-        .rl-tuile.t3{right:0;top:66%;}
+        .rl-tuile.t0{left:0;top:14%;}
+        .rl-tuile.t1{left:0;top:58%;}
+        .rl-tuile.t2{right:0;top:32%;}
+        .rl-tuile.t3{right:0;top:76%;}
 
         /* ═══════════════════════════════════════════════════════════════════
            1 bis. POUR QUI
@@ -1925,7 +1951,7 @@ function Styles() {
         .rl-f{width:54px;height:auto;flex:none;
           filter:drop-shadow(0 0 4px rgba(245,17,192,.85))
             drop-shadow(0 0 12px rgba(245,17,192,.55));}
-        .rl-f.mini{position:absolute;left:50%;bottom:8%;width:46px;z-index:3;
+        .rl-f.mini{position:absolute;left:50%;bottom:6%;width:46px;z-index:4;
           margin-left:-23px;}
         .rl-f.grand{width:96px;}
         .rl-f-corps{fill:#FBF0FB;stroke:#F511C0;stroke-width:2;}
