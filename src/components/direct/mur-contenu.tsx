@@ -78,8 +78,14 @@ import { prevenirPourEssai, numeroDeFiction } from "@/lib/direct/prevenir";
 import { partagerLEssai, type Sortie } from "@/lib/direct/partager-essai";
 import { jouer } from "@/lib/direct/sons";
 import {
+  ECHELLES,
+  aMaTaille,
+  abonnerMaTaille,
   abonnerTailles,
   chargerTailles,
+  choisirMaTaille,
+  maTaille,
+  maTailleVide,
   phraseDesTailles,
   taillesDeLaPiece,
   taillesVides,
@@ -3628,6 +3634,29 @@ function Essai({
    * garde exactement la grille qu'il avait. Un drapeau absent ne doit jamais
    * vider un écran qui marchait.
    */
+  /**
+   * CE QU'IL LUI RESTE, PIÈCE PAR PIÈCE.
+   *
+   * LU ICI PLUTÔT QUE PASSÉ EN PROPRIÉTÉ, pour la même raison que les alertes :
+   * l'atelier s'ouvre depuis le fil, depuis la page du commerce et depuis le
+   * relooking, et une donnée branchée à l'entrée aurait été oubliée par deux
+   * de ces trois portes.
+   */
+  const taillesDites = useSyncExternalStore(abonnerTailles, chargerTailles, taillesVides);
+  const taillesDe = (p: { id: string; tailles?: string[] }) =>
+    taillesDeLaPiece(mur.cle, p, taillesDites);
+  /* LA PHRASE EST CALCULÉE UNE FOIS POUR TOUTE LA GRILLE. Vingt-cinq vignettes
+     qui relisent chacune le stockage, c'est vingt-cinq lectures par rendu —
+     et la grille se redessine à chaque glissement du doigt. */
+  const taillesDuLot = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const p of mur.essai?.pieces ?? []) {
+      const t = taillesDeLaPiece(mur.cle, p, taillesDites);
+      if (t) m[p.id] = phraseDesTailles(t);
+    }
+    return m;
+  }, [mur.cle, mur.essai?.pieces, taillesDites]);
+
   const enVitrine = useMemo(() => {
     const toutes = mur.essai?.pieces ?? [];
     const choisies = toutes.filter((p) => p.vitrine);
@@ -3643,6 +3672,61 @@ function Essai({
     const dedans = base.filter((p) => rayonDuNom(p.nom) === rayonPrechoisi);
     return dedans.length > 0 ? dedans : base;
   }, [mur.essai?.pieces, rayonPrechoisi]);
+
+  /**
+   * ═══ MA TAILLE ════════════════════════════════════════════════════════════
+   *
+   * C'EST LA SEULE CHOSE DE CET ÉCRAN QUI FASSE GAGNER DU TEMPS À QUELQU'UN
+   * QUI CHERCHE VRAIMENT. Devant une vitrine, la question n'est pas « qu'est-ce
+   * qui est joli » — on le voit — c'est « qu'est-ce qui existe dans ma
+   * taille ». Personne d'autre ne peut y répondre, parce que personne d'autre
+   * ne demande au commerçant ce qu'il lui reste.
+   *
+   * UNE SEULE TAILLE, GARDÉE DANS LE TÉLÉPHONE, JAMAIS ENVOYÉE. Pas de
+   * mensurations, pas de profil : « je fais du 38 » suffit, et un tour de
+   * poitrine ne servirait qu'à nous. Voir `maTaille` dans `lib/direct/tailles`.
+   */
+  const mienne = useSyncExternalStore(abonnerMaTaille, maTaille, maTailleVide);
+  const [filtreTaille, setFiltreTaille] = useState(true);
+  const [choisirSaTaille, setChoisirSaTaille] = useState(false);
+
+  /**
+   * LE BOUTON N'EXISTE QUE LÀ OÙ IL A DE QUOI RÉPONDRE.
+   *
+   * IL NE DÉPEND PAS DU MÉTIER MAIS DE CE QUI A ÉTÉ DÉCLARÉ, et c'est plus
+   * juste qu'une liste de branches : un filtre par taille dans une boutique où
+   * personne n'a rien rempli n'écarterait jamais rien, et un bouton qui ne fait
+   * rien est le pire état d'un bouton.
+   */
+  const laTailleSeDemande = useMemo(
+    () => enVitrine.some((p) => taillesDeLaPiece(mur.cle, p, taillesDites)),
+    [enVitrine, mur.cle, taillesDites],
+  );
+
+  /**
+   * TROIS CAS, PAS DEUX — et c'est toute la justesse du filtre.
+   *
+   *   · déclarée ET dans ma taille   → elle reste.
+   *   · déclarée ET pas ma taille    → elle part. C'est ce qu'on a demandé.
+   *   · PAS DÉCLARÉE                 → elle reste. Elle n'est pas « pas à ma
+   *                                    taille » : on n'en sait rien. La cacher
+   *                                    punirait le commerçant qui n'a pas
+   *                                    encore rempli, et priverait le client
+   *                                    d'une pièce qui lui allait peut-être.
+   *
+   * ET QUAND LE FILTRE NE LAISSE RIEN, ON NE TRICHE PAS. La grille du rayon se
+   * rabat sur la collection entière quand elle ne trouve rien, parce qu'une
+   * pastille n'est pas une demande. Une taille en est une : répondre « voilà
+   * tout le magasin » à « qu'avez-vous en 38 » serait exactement le mensonge
+   * qu'on est venu éviter. On dit qu'il n'y a rien, et on donne la sortie.
+   */
+  const grille = useMemo(() => {
+    if (!mienne || !filtreTaille) return { pieces: enVitrine, ecartees: 0 };
+    const gardees = enVitrine.filter(
+      (p) => aMaTaille(taillesDeLaPiece(mur.cle, p, taillesDites), mienne) !== false,
+    );
+    return { pieces: gardees, ecartees: enVitrine.length - gardees.length };
+  }, [enVitrine, mienne, filtreTaille, mur.cle, taillesDites]);
 
   /**
    * CE DANS QUOI « SURPRENDS-MOI » PIOCHE — la collection essayable entière.
@@ -3725,29 +3809,6 @@ function Essai({
      quoi dépend l'affichage : une fonction lirait le même cache sans rien
      déclarer, et la cloche ne se rallumerait qu'au rendu suivant. */
   const alerte = !!piece && alertes.some((x) => x.carte === mur.cle && x.piece === piece.id);
-
-  /**
-   * CE QU'IL LUI RESTE, PIÈCE PAR PIÈCE.
-   *
-   * LU ICI PLUTÔT QUE PASSÉ EN PROPRIÉTÉ, pour la même raison que les alertes :
-   * l'atelier s'ouvre depuis le fil, depuis la page du commerce et depuis le
-   * relooking, et une donnée branchée à l'entrée aurait été oubliée par deux
-   * de ces trois portes.
-   */
-  const taillesDites = useSyncExternalStore(abonnerTailles, chargerTailles, taillesVides);
-  const taillesDe = (p: { id: string; tailles?: string[] }) =>
-    taillesDeLaPiece(mur.cle, p, taillesDites);
-  /* LA PHRASE EST CALCULÉE UNE FOIS POUR TOUTE LA GRILLE. Vingt-cinq vignettes
-     qui relisent chacune le stockage, c'est vingt-cinq lectures par rendu —
-     et la grille se redessine à chaque glissement du doigt. */
-  const taillesDuLot = useMemo(() => {
-    const m: Record<string, string> = {};
-    for (const p of mur.essai?.pieces ?? []) {
-      const t = taillesDeLaPiece(mur.cle, p, taillesDites);
-      if (t) m[p.id] = phraseDesTailles(t);
-    }
-    return m;
-  }, [mur.cle, mur.essai?.pieces, taillesDites]);
 
   /**
    * CE QUE LA PIÈCE FAIT SUR UN CORPS, EN UNE PROPOSITION.
@@ -4406,9 +4467,93 @@ function Essai({
         <h3 className="mu-pieces-t">Ou choisissez {mots.surprends.quoi === "un look" ? "une pièce" : mots.surprends.quoi}</h3>
       )}
 
+      {/* ═══ MA TAILLE ════════════════════════════════════════════════════════
+
+          LE SEUL FILTRE DE TOUT LE PRODUIT, ET IL N'EST PAS LÀ POUR FAIRE
+          NOMBRE. Devant une vitrine on voit tout seul ce qui est joli ; ce
+          qu'on ne voit pas, c'est ce qui existe dans sa taille — et c'est la
+          seule question qui empêche de repartir avec quelque chose.
+
+          IL NE S'AFFICHE QUE QUAND IL PEUT RÉPONDRE. Dans une boutique où
+          personne n'a rien déclaré, il n'écarterait jamais rien : voir
+          `laTailleSeDemande`. */}
+      {etape === "choisir" && laTailleSeDemande && (
+        <div className="mu-mt">
+          <button
+            type="button"
+            className={`mu-mt-b${mienne && filtreTaille ? " on" : ""}`}
+            aria-pressed={!!mienne && filtreTaille}
+            /* LE MÊME BOUTON REFERME LE PANNEAU QU'IL A OUVERT. Sans ça, qui
+               l'ouvre par curiosité n'a plus que le choix de donner sa taille
+               ou de quitter l'écran — et personne ne donne quoi que ce soit
+               pour se débarrasser d'un panneau. */
+            onClick={() =>
+              mienne ? setFiltreTaille((v) => !v) : setChoisirSaTaille((v) => !v)
+            }
+          >
+            <i aria-hidden="true">📏</i>
+            {mienne ? `Ma taille · ${mienne}` : "Ma taille"}
+          </button>
+          {mienne && (
+            <button
+              type="button"
+              className="mu-mt-c"
+              onClick={() => setChoisirSaTaille(true)}
+            >
+              Changer
+            </button>
+          )}
+          {/* CE QUE LE FILTRE A ÉCARTÉ SE DIT. Une grille qui rétrécit sans
+              raison visible se lit comme un catalogue plus pauvre ; le compte
+              dit que c'est nous qui avons rangé, et combien. */}
+          {mienne && filtreTaille && grille.ecartees > 0 && (
+            <em>
+              {grille.ecartees} pièce{grille.ecartees > 1 ? "s" : ""} écartée
+              {grille.ecartees > 1 ? "s" : ""}
+            </em>
+          )}
+        </div>
+      )}
+
+      {/* LE CHOIX DE SA TAILLE : les trois échelles, une seule pastille
+          retenue. Pas de mensurations, pas de profil — « je fais du 38 » répond
+          à toute la question, et le reste ne servirait qu'à nous. */}
+      {etape === "choisir" && choisirSaTaille && (
+        <div className="mu-mt-p">
+          <p>Quelle taille portez-vous&nbsp;?</p>
+          {ECHELLES.filter((e) => e.cle !== "unique").map((e) => (
+            <div key={e.cle} className="mu-mt-r">
+              {e.tailles.map((x) => (
+                <button
+                  key={x}
+                  type="button"
+                  className={mienne === x ? "on" : undefined}
+                  aria-pressed={mienne === x}
+                  onClick={() => {
+                    choisirMaTaille(x);
+                    setFiltreTaille(true);
+                    setChoisirSaTaille(false);
+                  }}
+                >
+                  {x}
+                </button>
+              ))}
+            </div>
+          ))}
+          <span className="mu-mt-f">
+            Gardée dans votre téléphone, elle ne part nulle part.
+            {mienne && (
+              <button type="button" onClick={() => { choisirMaTaille(null); setChoisirSaTaille(false); }}>
+                Oublier ma taille
+              </button>
+            )}
+          </span>
+        </div>
+      )}
+
       {etape === "choisir" && (
         <div className="mu-pieces">
-          {enVitrine.map((p) => (
+          {grille.pieces.map((p) => (
             <button
               key={p.id}
               type="button"
@@ -4452,7 +4597,23 @@ function Essai({
                   question qui empêche d'acheter : et sur MOI ? Une pièce non
                   renseignée n'affiche rien — voir `lib/direct/tailles.ts`,
                   qui explique pourquoi on ne remplit pas ce silence. */}
-              {taillesDuLot[p.id] && <span className="mu-tl">{taillesDuLot[p.id]}</span>}
+              {taillesDuLot[p.id] ? (
+                <span className="mu-tl">{taillesDuLot[p.id]}</span>
+              ) : mienne && filtreTaille ? (
+                /* ═══ POURQUOI CELLE-CI EST RESTÉE ═══════════════════════════
+
+                   MESURE : en cherchant du 48, la grille gardait une pièce et
+                   n'affichait rien dessous. Elle avait raison de la garder —
+                   une pièce non déclarée n'est pas « pas à votre taille », on
+                   n'en sait rien — mais son silence, sous un filtre allumé, se
+                   lisait comme une confirmation : « celle-ci est en 48 ».
+
+                   LE FILTRE ALLUMÉ REND DONC L'ABSENCE VISIBLE, et seulement
+                   lui : hors filtre, personne n'a posé la question, et écrire
+                   « non indiqué » sur la moitié d'une vitrine ne ferait
+                   qu'afficher les devoirs du commerçant. */
+                <span className="mu-tl vide">Taille non indiquée</span>
+              ) : null}
               {/* ON DIT CE QU'ON N'A PAS. Une piece dont le rendu n'existe pas
                   encore se voit, se lit, et ne se choisit pas — plutot que de
                   servir une image collee qui prouverait le contraire de ce
@@ -4461,6 +4622,18 @@ function Essai({
             </button>
           ))}
         </div>
+      )}
+
+      {/* RÉPONDRE « VOILÀ TOUT LE MAGASIN » À « QU'AVEZ-VOUS EN 38 » SERAIT LE
+          MENSONGE QU'ON EST VENU ÉVITER. Quand le filtre ne laisse rien, on le
+          dit, et on rouvre la grille d'un appui. */}
+      {etape === "choisir" && grille.pieces.length === 0 && (
+        <p className="mu-mt-v">
+          Rien en {mienne} dans cette vitrine aujourd’hui.
+          <button type="button" onClick={() => setFiltreTaille(false)}>
+            Voir toute la collection
+          </button>
+        </p>
       )}
 
       {etape === "choisir" && (
@@ -7480,6 +7653,57 @@ function Styles() {
         .mu-cadrer .mu-cta{text-align:left;}
         .mu-cadrer .mu-cta>i{font-size:20px;}
 
+        /* ─── MA TAILLE ───
+           UNE SEULE PASTILLE AU-DESSUS DE LA GRILLE, et elle change d'etat :
+           eteinte elle propose, allumee elle filtre. Deux boutons separes —
+           « choisir » et « filtrer » — auraient demande de comprendre la
+           difference avant d'appuyer sur l'un des deux. */
+        .mu-mt{display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+          margin:0 0 10px;}
+        .mu-mt-b{display:inline-flex;align-items:center;gap:7px;font:inherit;
+          font-size:13px;font-weight:800;cursor:pointer;border-radius:999px;
+          padding:9px 14px;color:var(--mu-encre);background:var(--mu-carte);
+          border:1px solid var(--mu-ligne);}
+        .mu-mt-b i{font-style:normal;font-size:13px;}
+        .mu-mt-b.on{color:#08150F;background:var(--mu-menthe);
+          border-color:var(--mu-menthe);}
+        .mu-mt-b:active{transform:scale(.97);}
+        .mu-mt-c{font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;
+          color:var(--mu-pale);background:none;border:0;padding:6px 2px;
+          text-decoration:underline;}
+        /* LE COMPTE DES ECARTEES EST EN RETRAIT, PAS EN ALERTE : c'est une
+           precision sur ce qu'on vient de demander, pas un probleme. */
+        .mu-mt em{font-style:normal;font-size:12px;
+          color:var(--mu-pale);}
+        /* LE CHOIX DE SA TAILLE. Il remplace la grille le temps d'un appui :
+           pose a cote, il aurait fallu deux colonnes sur 375 points de large. */
+        .mu-mt-p{margin:0 0 12px;padding:14px;border-radius:16px;
+          background:var(--mu-carte);border:1px solid var(--mu-ligne);
+          display:flex;flex-direction:column;gap:9px;}
+        .mu-mt-p>p{margin:0;font-size:14px;font-weight:800;
+          color:var(--mu-encre);}
+        .mu-mt-r{display:flex;flex-wrap:wrap;gap:6px;}
+        .mu-mt-r button{font:inherit;font-size:14px;font-weight:800;
+          cursor:pointer;min-width:46px;padding:11px 12px;border-radius:999px;
+          color:var(--mu-encre);background:rgba(255,255,255,.06);
+          border:1px solid var(--mu-ligne);}
+        .mu-mt-r button.on{color:#08150F;background:var(--mu-menthe);
+          border-color:var(--mu-menthe);}
+        .mu-mt-r button:active{transform:scale(.96);}
+        .mu-mt-f{font-size:11.5px;line-height:1.5;color:var(--mu-pale);}
+        .mu-mt-f button{font:inherit;font-size:11.5px;font-weight:700;
+          cursor:pointer;color:var(--mu-pale);background:none;border:0;
+          padding:0;margin-left:8px;text-decoration:underline;}
+        /* LA GRILLE VIDE DIT POURQUOI ET DONNE LA SORTIE. Un ecran vide sans
+           phrase se lit comme une panne. */
+        .mu-mt-v{margin:0;padding:18px 14px;border-radius:16px;
+          background:var(--mu-carte);border:1px dashed var(--mu-ligne);
+          font-size:13.5px;line-height:1.5;color:var(--mu-pale);
+          text-align:center;}
+        .mu-mt-v button{display:block;margin:10px auto 0;font:inherit;
+          font-size:13px;font-weight:800;cursor:pointer;color:var(--mu-encre);
+          background:rgba(255,255,255,.07);border:1px solid var(--mu-ligne);
+          border-radius:999px;padding:10px 16px;}
         .mu-pieces{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;
           padding-bottom:4px;}
         .mu-pieces::-webkit-scrollbar{display:none;}
@@ -7515,6 +7739,8 @@ function Styles() {
            cette ligne dit. */
         .mu-tl{display:block;font-size:11.5px;font-weight:800;
           color:var(--mu-menthe);padding:3px 10px 0;text-align:left;}
+        /* CE QU'ON NE SAIT PAS N'A PAS LA COULEUR DE CE QU'ON SAIT. */
+        .mu-tl.vide{color:var(--mu-pale);font-weight:700;}
         /* CE QU'ON N'A PAS ENCORE SE VOIT ET NE SE TOUCHE PAS. Grise, pas
            cachee : une piece absente du catalogue ferait croire qu'elle
            n'existe pas, alors qu'il manque seulement sa photo portee. */
