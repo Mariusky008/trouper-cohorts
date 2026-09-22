@@ -167,6 +167,27 @@ const PHOTOS_EXEMPLE: Record<Genre, string[]> = {
 };
 
 export function RelookingContenu({ onFermer }: { onFermer: () => void }) {
+  /**
+   * ═══ LE COUPLE HOMME EXISTE-T-IL AUJOURD'HUI ? ════════════════════════════
+   *
+   * LE PANNEAU DE GAUCHE SE COUPE EN DEUX DÈS QUE L'APRÈS EST LÀ, et reprend le
+   * portrait entier quand il manque. Ce n'est pas un réglage : c'est l'image
+   * elle-même qui répond. On la demande, elle arrive ou elle ne répond pas, et
+   * l'écran en tire la conséquence.
+   *
+   * POURQUOI PAS UN DRAPEAU QU'ON LÈVE À LA MAIN. Parce qu'il faudrait le
+   * baisser aussi, et que personne ne le fera le jour où le fichier est retiré
+   * — on se retrouverait avec une moitié d'avant-après vide sur le premier
+   * écran du parcours. Ici, poser le fichier suffit à changer l'écran, le
+   * retirer suffit à le remettre comme avant, et il n'y a pas de troisième
+   * état possible.
+   *
+   * CE FICHIER SE FABRIQUE, IL NE SE TROUVE PAS. Voir
+   * `scripts/fabriquer-apres-homme.mjs` : il passe par la route d'essayage du
+   * produit, donc ce qu'on affiche est une vraie sortie de ClikMe sur une vraie
+   * photo — pas deux inconnus collés l'un à côté de l'autre.
+   */
+  const [apresHomme, setApresHomme] = useState(true);
   const [etape, setEtape] = useState<Etape>("accroche");
   const [laPhoto, setLaPhoto] = useState("");
   /**
@@ -437,13 +458,35 @@ export function RelookingContenu({ onFermer }: { onFermer: () => void }) {
                 LE PANNEAU DE GAUCHE MONTRE DONC UN PORTRAIT, SANS COUPURE, et
                 le trait lumineux passe ENTRE les deux panneaux plutôt qu'au
                 milieu de chacun. La promesse reste portée par la phrase — «
-                Même vous, juste une nouvelle version » — et le jour où le
-                couple manquant arrive, ce panneau prend la même coupure que
-                son voisin. */}
+                Même vous, juste une nouvelle version ».
+
+                ET LE JOUR OÙ LE COUPLE ARRIVE, CE PANNEAU PREND LA MÊME
+                COUPURE QUE SON VOISIN — tout seul, sans qu'on touche à cette
+                ligne. Voir `apresHomme` plus haut, et le script qui fabrique
+                l'image avec le moteur du produit. */}
             <div className="rl-avap-i">
               <div className="rl-avap-p">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/direct/coiffure-homme-face.jpg" alt="Rayon homme" />
+                <img
+                  className={apresHomme ? "a" : undefined}
+                  src="/direct/coiffure-homme-face.jpg"
+                  alt={apresHomme ? "Avant" : "Rayon homme"}
+                />
+                {apresHomme && (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      className="b"
+                      src="/direct/accueil/mode-homme-apres.jpg"
+                      alt="Après"
+                      /* L'IMAGE RÉPOND OU NE RÉPOND PAS, ET C'EST TOUT LE
+                         MÉCANISME. Pas de requête préalable, pas de drapeau :
+                         un 404 remet le portrait entier au rendu suivant. */
+                      onError={() => setApresHomme(false)}
+                    />
+                    <span className="rl-avap-l mi" aria-hidden="true" />
+                  </>
+                )}
               </div>
               <span className="rl-avap-l" aria-hidden="true" />
               <div className="rl-avap-p">

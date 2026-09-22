@@ -738,3 +738,41 @@ entières autour d'un fantôme, là où il fallait quatre objets. Assombries pou
 compenser, elles devenaient des taches grises. Sur la maquette on RECONNAÎT la
 veste marron, le jean bleu, les baskets blanches : c'est leur fond qui est noir,
 pas eux.
+
+## 👤 L'après du panneau de gauche — un fichier qui se fabrique, pas qui se trouve
+
+| Fichier | Ce qu'il montre |
+|---------|------------------|
+| `accueil/mode-homme-apres.jpg` | **ABSENT AUJOURD'HUI, ET IL DOIT LE RESTER TANT QU'IL N'EST PAS FABRIQUÉ.** Le même homme que `coiffure-homme-face.jpg`, même cadrage, habillé autrement. |
+
+**Pourquoi il n'y en a pas, et pourquoi on n'en cherche pas.** L'écran
+d'accroche du relooking montre deux panneaux : un rayon homme, un rayon femme.
+Celui de droite porte un vrai avant-après — la même personne, avant et après.
+Il n'existe aucun couple équivalent pour un homme dans ce dossier, et coller
+deux inconnus côte à côte donnerait exactement ce qu'on reproche partout
+ailleurs : un avant-après de deux personnes différentes, qui ne prouve rien.
+C'est un refus, pas un manque de temps.
+
+**Il se fabrique avec le moteur du produit.**
+
+```
+GEMINI_API_KEY=…  npx next dev --webpack -p 3821
+node scripts/fabriquer-apres-homme.mjs
+```
+
+Le script passe par `/api/direct/essayer`, c'est-à-dire la route que les clients
+utilisent : même consigne, mêmes garde-fous de fidélité au visage, mêmes
+fournisseurs. Ce qui s'affiche alors n'est pas un montage, c'est **une vraie
+sortie de ClikMe sur une vraie photo** — un argument plus fort que la photo de
+stock du panneau d'en face. Sans clé d'image, il s'arrête et le dit ; il ne
+fabrique jamais un à-peu-près.
+
+**L'écran le prend tout seul, dans les deux sens.** Poser le fichier suffit à
+couper le panneau de gauche en deux comme son voisin ; le retirer suffit à
+remettre le portrait entier. Il n'y a rien à rebrancher, et pas de troisième
+état possible : c'est l'image qui répond ou ne répond pas. Voir `apresHomme`
+dans `components/direct/relooking-contenu.tsx`.
+
+**Regardez-le avant de le garder.** Un rendu qui a changé le visage est à
+jeter : ce panneau doit prouver « même vous, juste une nouvelle version », et un
+inconnu prouve le contraire.
