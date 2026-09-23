@@ -187,6 +187,7 @@ import {
 import { INTENTIONS, motsDe, soireeDuLieu, SOIREES } from "@/lib/direct/soiree";
 import { basculerLeSon, jouer, sonCoupe } from "@/lib/direct/sons";
 import { EcranSoiree } from "@/components/direct/soiree-contenu";
+import { SortieEnTrois } from "@/components/direct/sortie-en-trois";
 import { mesFantomes, rappelerFantome, SIGNAL as SIGNAL_FANTOMES, tempsRestant, type FantomePose } from "@/lib/direct/mes-fantomes";
 import {
   ENVIES,
@@ -7422,6 +7423,32 @@ export function ApercuHabitant() {
                     réutiliserait les mêmes nœuds et se contenterait d'échanger
                     les images : on verrait des photos clignoter, pas des cartes
                     arriver. */}
+                {/* ═══ LES SORTIES NE SE PHOTOGRAPHIENT PAS ═══════════════
+
+                    « Je n'aime pas du tout le design de cet exemple. Je
+                    voudrais d'abord la musique, pouvoir appuyer dessus pour
+                    l'écouter, et appuyer sur "suivant" pour voir les deux
+                    autres phases. »
+
+                    LES QUATRE AUTRES EXEMPLES MONTRENT UN RÉSULTAT — une
+                    coupe, un bouquet, un plat — et une photo suffit, parce
+                    qu'un résultat EST une image. Ce qu'on vend d'une soirée
+                    est une MÉCANIQUE : on écoute, on dit ce qu'on cherche, on
+                    parle avec ceux qui y vont. Ça ne se photographie pas, et
+                    l'exemple le prouvait malgré lui — il posait « 10 s du son
+                    de ce soir » en petit dans le coin d'une photo de concert,
+                    c'est-à-dire l'ÉTIQUETTE d'un écran au lieu de l'écran.
+
+                    C'EST DONC LE SEUL EXEMPLE QUI RÉPOND AU DOIGT, et le seul
+                    qui en avait besoin. Voir `sortie-en-trois.tsx`. */}
+                {exemple.cle === "sorties" ? (
+                  <div className="ap-ac-scene n1" key={exemple.cle}>
+                    <SortieEnTrois
+                      actif={accueilOuvert}
+                      onPrendreLaMain={() => setFamillePrise("sorties")}
+                    />
+                  </div>
+                ) : (
                 <div
                   className={`ap-ac-scene n${exemple.photos.length}`}
                   key={exemple.cle}
@@ -7605,6 +7632,7 @@ export function ApercuHabitant() {
                     <img className="ap-ac-fp" src={FANTOME_PNG} alt="" />
                   </span>
                 </div>
+                )}
 
                 {/* ─── LA PROMESSE, EN DEUX LIGNES ───
                     LA SECONDE EST SOULIGNÉE À LA MAIN, et le trait est un tracé

@@ -494,6 +494,71 @@ if (premiere >= 0) {
 }
 dire(feuilleOuverte, `et le fantôme y ouvre bien l'essai de la soirée`);
 
+/* ═══ 8 · L'EXEMPLE SORTIES DE L'ÉCRAN D'OUVERTURE RÉPOND AU DOIGT ═══════
+ *
+ * « Je n'aime pas du tout le design de cet exemple. Je voudrais d'abord la
+ * musique, pouvoir appuyer dessus pour l'écouter, et appuyer sur "suivant"
+ * pour voir les deux autres phases. »
+ *
+ * C'EST LE SEUL ÉCRAN DU PRODUIT QUI SOIT À LA FOIS UNE DÉMONSTRATION
+ * AUTOMATIQUE ET UN OBJET QU'ON TOUCHE, et c'est exactement le genre qui se
+ * casse sans bruit : une minuterie qui reprend la main au milieu d'un appui,
+ * un bouton qui n'arme plus la lecture, un Fantôme qui repasse derrière la
+ * carte. Rien de tout ça ne lève d'erreur.
+ *
+ * ON MESURE DONC CE QUE ÇA PRODUIT : le son avance vraiment, « suivant »
+ * change vraiment de temps, et la ronde des exemples se tait dès qu'on a
+ * touché. */
+{
+  const q = await nav.newPage();
+  await q.goto(`${BASE}/autour-de-moi`, { waitUntil: "networkidle" });
+  await q.waitForTimeout(2200);
+  await q.evaluate(() => {
+    [...document.querySelectorAll(".ap-ac-famb")].find((x) => /sorties/i.test(x.textContent || ""))?.click();
+  });
+  await q.waitForTimeout(1000);
+  dire(await q.evaluate(() => Boolean(document.querySelector(".s3"))), "l'exemple Sorties rejoue les trois écrans de la soirée");
+
+  // LE SON, VRAIMENT — pas un bouton qui s'allume sur un silence.
+  await q.click(".s3-lire");
+  await q.waitForTimeout(1600);
+  const son = await q.evaluate(() => {
+    const a = document.querySelector(".s3 audio");
+    return a ? { joue: !a.paused, t: a.currentTime } : null;
+  });
+  dire(Boolean(son && son.joue && son.t > 0.5), `on écoute vraiment l'extrait (${son ? son.t.toFixed(1) : "0"} s)`);
+
+  // « SUIVANT » MÈNE AUX DEUX AUTRES PHASES, dans l'ordre du parcours.
+  const lu = async () => q.evaluate(() => document.querySelector(".s3-carte")?.innerText.replace(/\s+/g, " ") || "");
+  await q.click(".s3-suiv");
+  await q.waitForTimeout(600);
+  const deux = await lu();
+  dire(/cherchez ce soir/i.test(deux), "« suivant » mène à ce qu'on cherche ce soir");
+  await q.click(".s3-suiv");
+  await q.waitForTimeout(600);
+  const trois = await lu();
+  dire(/en direct|le live/i.test(trois), "puis au Live, où l'on voit ce que les gens disent");
+
+  /* ET LA RONDE DES EXEMPLES S'EST TUE. Sans ça, l'écran changerait d'exemple
+     pendant qu'on lit le Live — on reprendrait la main à quelqu'un qui vient
+     de la prendre, ce qui est la pire chose qu'un écran puisse faire. */
+  await q.waitForTimeout(6000);
+  dire(await q.evaluate(() => Boolean(document.querySelector(".s3"))), "et la ronde des exemples ne reprend pas la main");
+
+  /* LE FANTÔME N'EST JAMAIS COUPÉ PAR LA CARTE. Il absorbe la hauteur libre ;
+     posé en absolu, il passait derrière et on n'en voyait que la casquette. */
+  const chevauche = await q.evaluate(() => {
+    const f = document.querySelector(".s3-f");
+    const c = document.querySelector(".s3-carte");
+    if (!f || !c) return true;
+    const a = f.getBoundingClientRect();
+    const b = c.getBoundingClientRect();
+    return a.bottom > b.top + 2;
+  });
+  dire(!chevauche, "et le Fantôme reste entier, au-dessus de la carte");
+  await q.close();
+}
+
 await nav.close();
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT PASSE");
 process.exit(echecs ? 1 : 0);
