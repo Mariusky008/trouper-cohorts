@@ -808,11 +808,22 @@ n'a pas le droit de faire.
 
 ## Ce qu'une seconde photo doit être
 
-Le rideau ne marche que si les deux images **se superposent**. Sinon ce n'est
-pas un rideau, c'est un diaporama.
+**C'EST LE MÊME PLAT QUI COMPTE, PAS LE MÊME ANGLE.** Cette règle a été écrite
+trop stricte la première fois, et la première paire livrée l'a corrigée : deux
+photos recadrées dans le même rectangle tiennent très bien côte à côte même
+prises de points de vue différents — une plongée sur le gratin et une vue à
+hauteur d'œil sur l'assiette se lisent sans effort comme deux états de la même
+chose. Ce qui casse le rideau n'est pas l'angle, c'est le CONTENU.
 
-- **Même cadrage, même distance, même hauteur d'œil** que la première. C'est la
-  contrainte principale, et la seule qui se rattrape difficilement après coup.
+- **Le même plat, la même recette.** Non négociable, et c'est la seule règle
+  vraiment bloquante. La première paire livrée montrait une lasagne à la louche
+  d'un côté et une lasagne montée en couches de l'autre : deux recettes, donc
+  quelqu'un qui réserve après avoir vu l'une reçoit l'autre. La seconde paire —
+  la même lasagne au jambon des deux côtés — a résolu le problème d'un coup.
+- **Ni fond de studio, ni noir seamless** du côté « servi ». L'étiquette affirme
+  que c'est l'assiette qui arrive sur la table ; une photo de catalogue dit
+  exactement le contraire, et la bande de fond qui apparaît quand on tire le
+  rideau à fond se lit comme un défaut d'affichage.
 - **Même lumière, même jour.** Un « avant » de mardi et un « servi » de la
   semaine dernière est un montage.
 - **L'assiette telle qu'elle sort**, pas le dressage du site. Si la photo est
@@ -820,6 +831,12 @@ pas un rideau, c'est un diaporama.
   pire que pas de photo du tout.
 - **Format portrait ou carré, 1000 px de large au minimum.** Les cartes
   s'affichent en plein cadre vertical.
+- **Moins de 300 Ko, et on recompresse sans le demander.** La photo « au plat »
+  livrée avec la première paire pesait 1,1 Mo — quatorze fois les autres
+  assiettes de ce dossier — sur le PREMIER écran d'un parcours qu'on ouvre au
+  téléphone, dans la rue. Réencodée en qualité 86, elle est tombée à 233 Ko en
+  gardant ses 1000 × 1000 et sans différence visible à l'œil. Les pixels d'un
+  commerçant valent mieux qu'une image de banque ; son forfait mobile aussi.
 - **Ni filigrane, ni enseigne lisible, ni visage de face** — même règle que
   toutes les images de ce dossier.
 
@@ -827,7 +844,7 @@ pas un rideau, c'est un diaporama.
 
 | Fichier attendu | Commerce | Le plat | La première photo | Ce que montre la seconde |
 |---|---|---|---|---|
-| `plat-lasagnes-servi.jpg` | Le Bocal de Margot | Lasagnes maison, 11 € | `plat-lasagnes.jpg` — le plat entier | **Une part découpée sur l'assiette, les couches visibles de profil.** C'est le meilleur cas du lot : le contraste plat entier → part est spectaculaire, et c'est littéralement « je vous montre l'intérieur ». |
+| ✅ `plat-lasagnes-servi.jpeg` | Le Bocal de Margot | Lasagnes maison, 11 € | `plat-lasagnes.jpg` — le gratin au plat | **FAITE**, et c'était bien le meilleur cas du lot : la part montée sur l'assiette montre ses couches de jambon de profil, et le rideau dit littéralement « je vous montre l'intérieur ». **Noter l'extension : `.jpeg`, pas `.jpg`** — c'est celle du fichier livré, et le code la suit. |
 | `plat-garbure-servi.jpg` | Chez Bergine | Garbure landaise, magret grillé, 19 € | `plat-garbure.jpg` — la marmite | **L'assiette creuse servie** : le bouillon versé, le chou et le confit dedans, le magret posé dessus. |
 | `plat-axoa-servi.jpg` | L'Ardoise Landaise | Axoa de veau, 16 € | `plat-axoa.jpg` — la cocotte | **La portion dans l'assiette**, avec les pommes de terre à côté. |
 | `plat-basquaise-servi.jpg` | La Grande Tablée | Le menu du soir, 17 € | `plat-basquaise.jpg` — la poêle | **L'assiette de poulet basquaise avec son riz.** On ne photographie que le plat, pas les trois services : le menu entier ne se superpose à rien. |
@@ -846,6 +863,20 @@ exactement ce qu'on ne voit jamais avant d'acheter.
 
 ## Si une seule doit exister
 
-`plat-lasagnes-servi.jpg`. Le plat entier et la part découpée, c'est le rideau
-qui explique le principe en une seconde, sans texte. Les autres se comprennent
-parce qu'on a compris celui-là.
+C'était `plat-lasagnes-servi`, et elle existe. Le gratin entier et la part
+montée : c'est le rideau qui explique le principe en une seconde, sans texte.
+Les six autres se comprennent parce qu'on a compris celui-là — et la paire des
+lasagnes sert maintenant de référence pour les juger.
+
+## Ce que la première livraison a appris
+
+**Deux paires ont été nécessaires, et l'écart entre les deux est instructif.**
+La première mettait face à face une lasagne à la louche et une lasagne montée
+en couches — deux belles photos, deux recettes différentes. Le rideau
+fonctionnait mécaniquement et mentait sur le fond : quelqu'un qui réserve
+d'après le côté droit reçoit le côté gauche.
+
+**Ce n'était pas une question de qualité photo, mais de vérité.** C'est la
+raison pour laquelle la règle bloquante de cette section n'est ni le cadrage,
+ni la lumière, ni la définition : c'est que ce soit **le même plat**. Tout le
+reste se rattrape au recadrage.
