@@ -776,3 +776,76 @@ dans `components/direct/relooking-contenu.tsx`.
 **Regardez-le avant de le garder.** Un rendu qui a changé le visage est à
 jeter : ce panneau doit prouver « même vous, juste une nouvelle version », et un
 inconnu prouve le contraire.
+
+---
+
+# Les secondes photos — le rideau « avant / servi »
+
+## Pourquoi ce dossier en a besoin
+
+L'écran 2 du parcours restaurant est un rideau qu'on tire entre **le plat tel
+qu'il est en cuisine** et **la portion telle qu'elle arrive devant le client**.
+C'est le seul écran du parcours qu'un concurrent ne peut pas copier en une
+après-midi, parce qu'il ne tient pas au dessin mais à une donnée que personne
+d'autre n'a : deux photos du même plat, prises par le même commerçant, le même
+jour.
+
+Le champ existe déjà (`photoApres` dans `TempsGout`, `avant-gout.ts`) et le
+composant sait l'afficher (`gout-contenu.tsx`). **Ce qui manque, ce sont les
+images.** Comptées le jour où cette section a été écrite : 30 `photo:` et
+**0** `photoApres:`. L'écran le plus différentiant du parcours tourne
+aujourd'hui sur zéro donnée.
+
+## La règle avant la liste
+
+**Une seconde photo absente n'est pas un trou.** Sans elle, l'écran 2 n'existe
+pas et le parcours passe à trois écrans — exactement comme la bande de
+miniatures disparaît quand il n'y a qu'une photo, et comme la phrase des
+tailles disparaît quand le commerçant ne les a pas rentrées. On ne comble pas
+avec un zoom sur la première image : agrandir la même photo ne montre rien de
+plus et la présente comme une révélation. C'est la seule chose que ce parcours
+n'a pas le droit de faire.
+
+## Ce qu'une seconde photo doit être
+
+Le rideau ne marche que si les deux images **se superposent**. Sinon ce n'est
+pas un rideau, c'est un diaporama.
+
+- **Même cadrage, même distance, même hauteur d'œil** que la première. C'est la
+  contrainte principale, et la seule qui se rattrape difficilement après coup.
+- **Même lumière, même jour.** Un « avant » de mardi et un « servi » de la
+  semaine dernière est un montage.
+- **L'assiette telle qu'elle sort**, pas le dressage du site. Si la photo est
+  plus belle que la réalité, le premier client qui vient le voit — et c'est
+  pire que pas de photo du tout.
+- **Format portrait ou carré, 1000 px de large au minimum.** Les cartes
+  s'affichent en plein cadre vertical.
+- **Ni filigrane, ni enseigne lisible, ni visage de face** — même règle que
+  toutes les images de ce dossier.
+
+## Les cinq restaurants
+
+| Fichier attendu | Commerce | Le plat | La première photo | Ce que montre la seconde |
+|---|---|---|---|---|
+| `plat-lasagnes-servi.jpg` | Le Bocal de Margot | Lasagnes maison, 11 € | `plat-lasagnes.jpg` — le plat entier | **Une part découpée sur l'assiette, les couches visibles de profil.** C'est le meilleur cas du lot : le contraste plat entier → part est spectaculaire, et c'est littéralement « je vous montre l'intérieur ». |
+| `plat-garbure-servi.jpg` | Chez Bergine | Garbure landaise, magret grillé, 19 € | `plat-garbure.jpg` — la marmite | **L'assiette creuse servie** : le bouillon versé, le chou et le confit dedans, le magret posé dessus. |
+| `plat-axoa-servi.jpg` | L'Ardoise Landaise | Axoa de veau, 16 € | `plat-axoa.jpg` — la cocotte | **La portion dans l'assiette**, avec les pommes de terre à côté. |
+| `plat-basquaise-servi.jpg` | La Grande Tablée | Le menu du soir, 17 € | `plat-basquaise.jpg` — la poêle | **L'assiette de poulet basquaise avec son riz.** On ne photographie que le plat, pas les trois services : le menu entier ne se superpose à rien. |
+| `plat-parmentier-servi.jpg` | Maison Lartigue (traiteur) | Parmentier de canard, part individuelle, 12 € | `plat-parmentier.jpg` — le plat entamé | **La barquette individuelle, ouverte.** Chez un traiteur, la portion réellement servie est la boîte — pas une assiette de restaurant qu'il ne sert jamais. |
+
+## Les deux qui ne sont pas des restaurants
+
+Ils ont le même parcours parce qu'ils fabriquent quelque chose, et le rideau y
+est encore plus fort : l'intérieur d'un pain ou d'une viande coupée est
+exactement ce qu'on ne voit jamais avant d'acheter.
+
+| Fichier attendu | Commerce | Le produit | La première photo | Ce que montre la seconde |
+|---|---|---|---|---|
+| `tourte-tranchee.jpg` | Le Pétrin d'Amanieu | La tourte de seigle au levain, 4,20 € | `boulange-fournil.jpg` | **La tourte coupée en deux, la mie ouverte, les alvéoles visibles.** Vingt heures de pousse ne se voient que là. C'est probablement le plus beau « intérieur » de toute la liste. |
+| `cote-boeuf-coupee.jpg` | Une boucherie du centre | La côte de bœuf maturée, 34 €/kg | `etal-boucher.jpg` | **La côte coupée, posée sur le papier du boucher**, le gras et la maturation visibles sur la tranche. Attention au mot : ce n'est pas « servi », rien n'est servi chez un boucher. Et 34 €/kg n'est pas un prix par personne — voir `auPoids` dans `programme.ts`, où la même erreur a déjà été corrigée une fois. |
+
+## Si une seule doit exister
+
+`plat-lasagnes-servi.jpg`. Le plat entier et la part découpée, c'est le rideau
+qui explique le principe en une seconde, sans texte. Les autres se comprennent
+parce qu'on a compris celui-là.
