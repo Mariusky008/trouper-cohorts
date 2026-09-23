@@ -47,6 +47,30 @@ export type Ecoute = {
   /** « telephone » ou « serveur » — utile pour comprendre après coup. */
   par: "telephone" | "serveur" | "rien";
   erreur?: string;
+  /**
+   * ═══ SA VOIX, GARDÉE AU LIEU D'ÊTRE JETÉE ═════════════════════════════════
+   *
+   * ON L'ENREGISTRAIT DÉJÀ, ET ON L'EFFAÇAIT UNE LIGNE PLUS BAS. Le filet de
+   * sécurité construisait cette data-URL, l'envoyait au serveur de
+   * transcription, et la laissait tomber avec la fin de la fonction. La voix du
+   * commerçant existait, tous les matins, pendant deux secondes.
+   *
+   * ET C'EST LA SEULE CHOSE QU'UN CONCURRENT NE PEUT PAS FABRIQUER. Une photo
+   * se prend, un texte se réécrit ; « j'achète la bête entière à l'éleveur »
+   * dit par celui qui le fait ne s'imite pas. Personne d'autre n'a un canal qui
+   * fait parler un commerçant tous les matins — nous, on l'a, et on jetait ce
+   * qu'il disait.
+   *
+   * ON NE LA PUBLIE PAS POUR AUTANT. Ce champ n'est qu'une matière rendue à
+   * l'écran qui appelle ; c'est lui qui demande « on le garde ? », et rien ne
+   * part nulle part sans ce oui-là. Voir `sa-voix.ts`.
+   *
+   * VIDE EST UN CAS NORMAL : navigateur sans MediaRecorder, enregistrement trop
+   * court, micro refusé. On ne prétend pas avoir une voix qu'on n'a pas.
+   */
+  audio?: string;
+  /** La durée de cet enregistrement, en secondes. Zéro quand on n'a rien. */
+  secondes?: number;
 };
 
 const CONTENEURS = [
@@ -230,6 +254,8 @@ export function ouvrirEcoute(
   let aParle = false;
   /** Le niveau le plus fort entendu — un zéro strict vaut un diagnostic. */
   let niveauMax = 0;
+  /** Quand l'enregistreur a réellement démarré — voir `secondes` dans `Ecoute`. */
+  let debutEnr = 0;
 
   const Moteur = moteur();
   if (Moteur) {
@@ -274,6 +300,11 @@ export function ouvrirEcoute(
       };
       m.start();
       enr = m;
+      // L'HORODATAGE EST CELUI DE L'ENREGISTREUR, pas celui du bouton. Entre
+      // l'appui et le premier octet il y a l'autorisation du micro, qui peut
+      // durer une seconde comme dix : mesurer depuis l'appui donnerait « 12 s »
+      // pour une phrase de deux.
+      debutEnr = Date.now();
     } catch {
       return;
     }
@@ -339,7 +370,9 @@ export function ouvrirEcoute(
     arreter: async () => {
       await pret;
       let audio = "";
+      let secondes = 0;
       if (enr) {
+        if (debutEnr) secondes = Math.round((Date.now() - debutEnr) / 100) / 10;
         const m = enr;
         await new Promise<void>((r) => {
           m.onstop = () => r();
@@ -371,7 +404,7 @@ export function ouvrirEcoute(
       // CE QUE LE TÉLÉPHONE A DONNÉ SUFFIT-IL ? Le seuil est en MOTS : « oui »
       // est une réponse complète, « ma » est un début de phrase coupée.
       if (duTelephone.split(/\s+/).filter(Boolean).length >= 2) {
-        return { texte: duTelephone, par: "telephone" };
+        return { texte: duTelephone, par: "telephone", audio, secondes };
       }
 
       // ─── ON N'ENVOIE PAS DU SILENCE AU SERVEUR ───
@@ -386,6 +419,8 @@ export function ouvrirEcoute(
           erreur: duTelephone
             ? undefined
             : "Le micro n’a capté aucun son. Vérifiez qu’il est autorisé pour ce site.",
+          audio,
+          secondes,
         };
       }
 
@@ -394,6 +429,8 @@ export function ouvrirEcoute(
           texte: duTelephone,
           par: duTelephone ? "telephone" : "rien",
           erreur: duTelephone ? undefined : "Je n’ai rien entendu.",
+          audio,
+          secondes,
         };
       }
 
@@ -405,17 +442,21 @@ export function ouvrirEcoute(
         });
         const d = await rep.json();
         const t = String(d?.texte || "").trim();
-        if (rep.ok && t) return { texte: t, par: "serveur" };
+        if (rep.ok && t) return { texte: t, par: "serveur", audio, secondes };
         return {
           texte: duTelephone,
           par: duTelephone ? "telephone" : "rien",
           erreur: duTelephone ? undefined : String(d?.erreur || "Je n’ai rien compris."),
+          audio,
+          secondes,
         };
       } catch {
         return {
           texte: duTelephone,
           par: duTelephone ? "telephone" : "rien",
           erreur: duTelephone ? undefined : "Je n’ai pas pu vous entendre.",
+          audio,
+          secondes,
         };
       }
     },

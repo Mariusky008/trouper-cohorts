@@ -418,6 +418,53 @@ body{background:#05090C}
   cursor:pointer;background:transparent;border:1px solid var(--trait);
   border-radius:14px;padding:15px 17px}
 
+/* ═══ « VOUS VENEZ DE DIRE CA » ═══
+   ELLE RESSEMBLE A LA CARTE DE VALIDATION, ET C'EST VOULU : meme largeur, meme
+   gros bouton vert, meme « Non » discret a cote. Il a deja appris ce geste
+   trois ecrans plus tot ; lui en apprendre un deuxieme pour dire oui a une
+   phrase serait du travail en plus pour rien.
+   LA SEULE CHOSE QUI CHANGE EST LA COULEUR DU LISERE. La validation engage une
+   annonce et des chiffres ; celle-ci n'engage que sa voix, et n'est jamais
+   urgente. */
+.as-sienne{margin-top:14px;padding:16px 16px 14px;border-radius:19px;
+  border:1px solid rgba(61,226,166,.22);background:rgba(61,226,166,.05)}
+.as-sienne-t{display:block;font-size:10.5px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--menthe)}
+
+/* LA PHRASE EST LE SUJET DE LA CARTE, donc elle en est le plus gros texte.
+   On la laisse en italique de citation : c'est lui qui parle, pas nous. */
+.as-sienne-p{margin:9px 0 0;padding:0 0 0 12px;border-left:2px solid var(--menthe);
+  font-size:16.5px;line-height:1.42;font-weight:650;font-style:italic;
+  color:var(--craie)}
+
+/* LE BOUTON PORTE SA DUREE. « 8 s » se decide, « ecouter » se subit. */
+.as-sienne-ec{display:flex;align-items:center;gap:9px;margin-top:12px;width:100%;
+  font:inherit;font-size:13.5px;font-weight:750;color:var(--craie);cursor:pointer;
+  background:rgba(255,255,255,.04);border:1px solid var(--trait);
+  border-radius:13px;padding:10px 13px;text-align:left}
+.as-sienne-ec i{font-style:normal;font-size:12px;width:25px;height:25px;flex:none;
+  display:grid;place-items:center;border-radius:50%;color:#04150E;
+  background:var(--menthe)}
+.as-sienne-ec.on{border-color:rgba(61,226,166,.5);background:rgba(61,226,166,.1)}
+
+/* PAS DE VOIX N'EST PAS UNE PANNE, c'est une prise de parole trop longue pour
+   que l'enregistrement colle a la citation. On le dit, et on dit quoi faire. */
+/* CRAIE2 ET PAS CRAIE3, ET C'EST MESURE : sur le fond vert tres pale de cette
+   carte, la craie la plus sombre tombe a 4,47 pour un seuil a 4,5. Ailleurs
+   dans cet ecran elle passe, parce que le fond y est plus sombre — la teinte
+   d'ici suffit a la faire basculer. Voir scripts/verifier-contraste.mjs, qui ne
+   visite pas encore cette page. */
+.as-sienne-sans{margin:12px 0 0;font-size:12.5px;line-height:1.45;color:var(--craie2)}
+
+.as-sienne-r{display:block;margin-top:11px;font-style:normal;font-size:11.5px;
+  line-height:1.4;color:var(--craie2)}
+
+/* L'ACCUSE DE RECEPTION. Une ligne, pas une carte : ce qui est fait n'a plus
+   besoin de place. */
+.as-sienne-ok{margin:12px 0 0;padding:11px 13px;border-radius:14px;font-size:12.5px;
+  line-height:1.45;color:var(--craie2);background:rgba(61,226,166,.07);
+  border:1px solid rgba(61,226,166,.18)}
+
 /* ═══ LA FIN DE JOURNEE ═══
    LA PLUS GRANDE CARTE DE L'ECRAN, ET C'EST VOULU. C'est le seul retour qu'un
    commercant ait jamais de sa journee : ni sa fiche Google, ni son site, ni ses

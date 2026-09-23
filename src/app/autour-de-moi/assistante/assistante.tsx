@@ -91,6 +91,16 @@ import {
   viderLesFlash,
 } from "@/lib/direct/flash";
 import { dicteeDisponible, libererMicro, ouvrirEcoute } from "@/lib/direct/voix-micro";
+import {
+  abonnerPhrasesGardees,
+  chargerPhrasesGardees,
+  dureeEnMots,
+  garderLaPhrase,
+  phraseDeLaCarte,
+  phrasesGardeesVides,
+  repererLaPhrase,
+  type Reperage,
+} from "@/lib/direct/sa-voix";
 import { useSyncExternalStore } from "react";
 
 /**
@@ -494,6 +504,35 @@ export function Assistante() {
   const [carte, setCarte] = useState<Carte | null>(null);
   const [retour, setRetour] = useState<{ heure: number; pourquoi: string } | null>(null);
   const [ecoute, setEcoute] = useState(false);
+  /**
+   * ═══ LA PHRASE QU'ON VIENT DE REPÉRER, EN ATTENTE DE SON OUI ══════════════
+   *
+   * ELLE NE S'IMPOSE À RIEN. Elle se pose sous la conversation, comme la carte
+   * de validation, et n'interrompt ni Léa ni le micro. Une question qui coupe
+   * la parole à quelqu'un qui travaille est une question à laquelle on répond
+   * « non » pour qu'elle s'en aille.
+   */
+  const [aGarder, setAGarder] = useState<Reperage | null>(null);
+  /** Ce qu'il a déjà validé pendant cette visite : on ne le redemande pas. */
+  const [voixGardee, setVoixGardee] = useState("");
+  /** Ce qui est déjà rangé, toutes visites confondues — voir `sa-voix.ts`. */
+  const gardees = useSyncExternalStore(
+    abonnerPhrasesGardees,
+    chargerPhrasesGardees,
+    phrasesGardeesVides,
+  );
+  /**
+   * CE QU'IL A REFUSÉ, ET ON NE LE LUI REPROPOSE PAS.
+   *
+   * Un commerçant redit souvent la même chose d'un jour à l'autre — c'est même
+   * le signe que la phrase est vraie. Sans cette mémoire, la carte reviendrait
+   * chaque matin sur une phrase qu'il a déjà écartée, et une question qu'on
+   * repose est une question qu'on n'écoute pas.
+   */
+  const refusees = useRef<Set<string>>(new Set());
+  /** Le lecteur de SA voix — celui de Léa est `son`, et les deux ne se mélangent pas. */
+  const saVoix = useRef<HTMLAudioElement | null>(null);
+  const [joue, setJoue] = useState(false);
   const [vivant, setVivant] = useState("");
   const [tape, setTape] = useState("");
   const [dictee, setDictee] = useState(true);
@@ -1157,7 +1196,88 @@ export function Assistante() {
     setTape("");
     if (r.texte) parler((debut + r.texte).trim(), heure);
     else setEcho(r.erreur || "Je n’ai rien entendu.");
-  }, [heure, parler]);
+
+    /* ═══ ET ON REGARDE S'IL VIENT DE DIRE QUELQUE CHOSE QUI VAUT LA PEINE ═══
+
+       APRÈS `parler`, JAMAIS AVANT. Ce qu'il dit sert d'abord à ce qu'il est
+       venu faire — publier son annonce. Le repérage est un bonus qu'on trouve
+       en chemin ; le faire passer devant retarderait sa réponse pour lui
+       proposer autre chose, ce qui est exactement la définition d'un péage.
+
+       ON NE REPÈRE QUE SUR LE MICRO, et c'est volontaire : une phrase TAPÉE au
+       clavier n'a pas de voix, et sans voix cet écran n'a plus rien d'unique —
+       ce serait un champ de texte de plus. */
+    const trouve = repererLaPhrase(r);
+    if (!trouve || refusees.current.has(trouve.texte)) return;
+
+    /* ═══ ET ON NE LUI REDEMANDE PAS CE QU'IL A DÉJÀ DONNÉ ══════════════════
+
+       LE DÉFAUT MESURÉ AU NAVIGATEUR, ET IL SERAIT ARRIVÉ DÈS LE DEUXIÈME
+       MATIN : un boulanger dit la même chose tous les jours — c'est même le
+       signe que la phrase est vraie. On lui reposait donc chaque matin une
+       question à laquelle il avait répondu la veille, ce qui apprend très vite
+       à appuyer sur « Non » sans lire.
+
+       SAUF QUAND ON N'AVAIT QUE LE TEXTE ET QU'ON A ENFIN LA VOIX. C'est
+       exactement ce qu'on lui avait demandé de faire — « redites juste cette
+       phrase » — et ne rien proposer ce jour-là rendrait cette consigne
+       absurde : il redirait la phrase, et il ne se passerait rien. */
+    const deja = phraseDeLaCarte(journee?.commerce?.id ?? "", gardees);
+    const memeTexte = deja?.texte === trouve.texte;
+    if (memeTexte && !(trouve.colle && !deja?.audio)) return;
+
+    /* ET QUAND C'EST LA VOIX QU'ON ATTENDAIT, LA CARTE NE REDEMANDE PAS LA
+       MÊME CHOSE. « Vous venez de dire ça » à quelqu'un qui a déjà répondu oui
+       hier se lit comme un bug. Ici il a FAIT ce qu'on lui a demandé — redire
+       la phrase tout seul — et l'écran doit le reconnaître. */
+    setAGarder({ ...trouve, voixAttendue: memeTexte });
+  }, [gardees, heure, journee?.commerce, parler]);
+
+  /**
+   * ÉCOUTER CE QU'ON S'APPRÊTE À GARDER — et pouvoir s'arrêter en cours.
+   *
+   * LE SON EST COUPÉ PARTOUT AILLEURS PAR DÉFAUT, ici il ne part qu'à l'appui :
+   * c'est le seul endroit du produit où quelqu'un demande explicitement à
+   * entendre. Et on met Léa en pause avant, pour la même raison qu'au micro —
+   * sur iPhone la session audio ne fait qu'une chose à la fois.
+   */
+  const ecouterLaVoix = useCallback(() => {
+    const src = aGarder?.audio;
+    if (!src) return;
+    const lecteur = saVoix.current;
+    if (lecteur && !lecteur.paused) {
+      lecteur.pause();
+      setJoue(false);
+      return;
+    }
+    try {
+      son.current?.pause();
+    } catch {
+      /* Rien à relacher : tant mieux. */
+    }
+    const a = lecteur ?? new Audio();
+    saVoix.current = a;
+    a.src = src;
+    a.onended = () => setJoue(false);
+    // UN SON QUI NE PART PAS NE DOIT PAS LAISSER UN BOUTON EN PAUSE. Le
+    // navigateur refuse parfois la lecture ; l'état suit le fait, pas l'intention.
+    a.onerror = () => setJoue(false);
+    void a
+      .play()
+      .then(() => setJoue(true))
+      .catch(() => setJoue(false));
+  }, [aGarder]);
+
+  /* ON NE LAISSE PAS UNE VOIX TOURNER DERRIÈRE UNE CARTE FERMÉE. */
+  useEffect(() => {
+    if (aGarder) return;
+    try {
+      saVoix.current?.pause();
+    } catch {
+      /* Deja arrete. */
+    }
+    setJoue(false);
+  }, [aGarder]);
 
   const arreterRef = useRef<() => void>(() => {});
   arreterRef.current = () => {
@@ -2544,6 +2664,103 @@ export function Assistante() {
               </button>
             </div>
           </div>
+        )}
+
+
+        {/* ═══ « VOUS AVEZ DIT ÇA. ON LE GARDE ? » ═══════════════════════════
+
+            CE N'EST PAS UNE DEMANDE D'ENREGISTREMENT, ET TOUTE LA DIFFÉRENCE
+            EST LÀ. « Faites-nous un vocal de vingt secondes sur votre plat »
+            est un travail, et un commerçant en plein service ne le fait pas
+            deux fois. Ici on lui montre une phrase QU'IL VIENT DE DIRE, sans
+            savoir qu'elle valait quelque chose, et on demande un doigt.
+
+            C'EST NOUS QUI REPÉRONS, PAS LUI QUI FABRIQUE. Un artisan ne sait
+            jamais laquelle de ses phrases est bonne : pour lui, acheter la
+            bête entière n'est pas une histoire, c'est lundi matin. Voir
+            `repererLaPhrase` dans `lib/direct/sa-voix.ts`. */}
+        {aGarder && (
+          <div className="as-sienne">
+            <span className="as-sienne-t">
+              {aGarder.voixAttendue ? "Et voilà votre voix dessus" : "Vous venez de dire ça"}
+            </span>
+            <blockquote className="as-sienne-p">{aGarder.texte}</blockquote>
+
+            {/* LA TRANSCRIPTION EST AU-DESSUS DU SON, ET C'EST UNE MESURE, PAS
+                UN GOÛT : la plupart des gens font défiler en silence. Un écran
+                dont le fond tient dans un fichier audio est un écran vide pour
+                quatre personnes sur cinq. Le ▶ porte sa durée — « 8 s » se
+                décide, « écouter » se subit. */}
+            {aGarder.colle && aGarder.audio ? (
+              <button
+                type="button"
+                className={`as-sienne-ec${joue ? " on" : ""}`}
+                onClick={ecouterLaVoix}
+              >
+                <i aria-hidden="true">{joue ? "⏸" : "▶"}</i>
+                <span>Votre voix · {dureeEnMots(aGarder.secondes)}</span>
+              </button>
+            ) : (
+              /* ON NE PRÉTEND PAS AVOIR UNE VOIX QU'ON N'A PAS. L'enregistrement
+                 couvre tout ce qu'il vient de dire ; si la citation n'en est
+                 qu'un morceau, le ▶ jouerait autre chose que ce qui est écrit.
+                 On garde alors le texte et on lui dit comment obtenir le reste
+                 — en redisant cette phrase-là, toute seule. */
+              <p className="as-sienne-sans">
+                🎙️ Redites juste cette phrase au micro et votre voix sera dessus.
+              </p>
+            )}
+
+            <div className="as-valide">
+              <button
+                type="button"
+                className="as-oui"
+                onClick={() => {
+                  garderLaPhrase({
+                    carte: c.id,
+                    texte: aGarder.texte,
+                    audio: aGarder.audio,
+                    secondes: aGarder.secondes,
+                    qui: c.prenom,
+                  });
+                  setVoixGardee(aGarder.texte);
+                  setAGarder(null);
+                  setEcho(
+                    aGarder.colle
+                      ? "🎙️ Gardé, avec votre voix. Vos clients l’entendront sur votre plat."
+                      : "🎙️ Gardé. Redites-la au micro quand vous voulez et j’y mettrai votre voix.",
+                  );
+                }}
+              >
+                {aGarder.voixAttendue ? "Ajouter ma voix" : "On le garde"}
+              </button>
+              <button
+                type="button"
+                className="as-non"
+                onClick={() => {
+                  refusees.current.add(aGarder.texte);
+                  setAGarder(null);
+                }}
+              >
+                Non
+              </button>
+            </div>
+
+            {/* POURQUOI CELLE-LÀ ET PAS UNE AUTRE. Sans cette ligne, la carte
+                a l'air d'un tirage au sort ; avec elle, il comprend ce qu'on
+                cherche — et la fois suivante, il le dit tout seul. */}
+            {!aGarder.voixAttendue && (
+              <em className="as-sienne-r">
+                Ce qu’on n’entend nulle part ailleurs : {aGarder.raison}.
+              </em>
+            )}
+          </div>
+        )}
+
+        {/* IL VIENT DE LA GARDER. On le dit une fois, puis ça s'efface avec la
+            visite — ce n'est pas un réglage, c'est un accusé de réception. */}
+        {!!voixGardee && !aGarder && (
+          <p className="as-sienne-ok">🎙️ « {voixGardee} » — gardé pour vos clients.</p>
         )}
 
         {/* ═══ LA FIN DE JOURNÉE ═══
