@@ -379,7 +379,7 @@ export const GOUT_PESTO: Gout = {
          à regarder un plat entier, et le dernier geste avant de réserver est
          de découvrir la part qui arrivera sur la table. Voir `go-rideau` dans
          `components/direct/gout-contenu.tsx`. */
-      photoApres: "/direct/plat-lasagnes-servi.jpg",
+      photoApres: "/direct/plat-lasagnes-servi.jpeg",
     },
   ],
 };
