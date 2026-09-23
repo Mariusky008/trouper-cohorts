@@ -433,6 +433,30 @@ for (let i = 0; i < 26; i++) {
     bars++;
     if (premiere < 0) premiere = i;
   }
+  /* ═══ ON RÉPOND AUX ANNONCES, COMME UN HABITANT ═══════════════════════════
+
+     LE DÉFAUT MESURÉ, ET IL A COÛTÉ UN DIAGNOSTIC FAUX AVANT D'ÊTRE TROUVÉ :
+     la garde s'arrêtait au sixième appui, bloquée derrière `.ap-jrn` — la
+     carte « Et si on relookait votre journée ? ». Elle est à dessein
+     par-dessus le paquet et elle attend une réponse : « Composer ma journée »
+     ou « Plus tard ». La flèche est dessous, donc l'appui ne passait pas.
+
+     CE N'EST PAS UN DÉFAUT DU PRODUIT, C'EST LA GARDE QUI NE SAVAIT PAS
+     RÉPONDRE. Un habitant, lui, appuie sur « Plus tard » et continue. Une
+     garde qui exigerait que la flèche reste atteignable demanderait à l'écran
+     de renoncer à la seule chose que fait une annonce : attendre une réponse.
+
+     ET C'EST « PLUS TARD », PAS L'AUTRE BOUTON. Ouvrir le parcours de la
+     journée emmènerait la garde dans un écran qui n'est pas son sujet, et
+     elle reviendrait compter un paquet remis à zéro. */
+  for (const x of [".ap-jrn-x", ".ap-relook-x"]) {
+    const b2 = await p.$(x);
+    if (b2 && (await b2.isVisible())) {
+      await b2.click();
+      await p.waitForTimeout(400);
+    }
+  }
+
   const s = await p.$(".ap-suiv");
   if (!s || (await s.isDisabled())) break;
   await s.click();
