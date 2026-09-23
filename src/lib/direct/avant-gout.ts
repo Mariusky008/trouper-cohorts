@@ -367,6 +367,19 @@ export const GOUT_PESTO: Gout = {
       suite: "prêt !",
       phrase: "Vos lasagnes, comme la maison les sert.",
       photo: "/direct/plat-lasagnes.jpg",
+      /* ═══ LA PREMIÈRE SECONDE PHOTO DU PRODUIT ════════════════════════════
+
+         ELLE ARRIVE SUR CE TEMPS-CI PARCE QUE SA PHRASE LA RÉCLAMAIT DÉJÀ.
+         « Vos lasagnes, comme la maison les sert » était écrit sous la photo
+         du plat AU PLAT — le même cliché qu'à l'ouverture, avec une légende
+         qui promettait autre chose. C'était le seul endroit du parcours où le
+         texte disait une chose et l'image une autre.
+
+         ET C'EST ICI QUE LE RIDEAU A LE PLUS À DIRE : on a passé quatre temps
+         à regarder un plat entier, et le dernier geste avant de réserver est
+         de découvrir la part qui arrivera sur la table. Voir `go-rideau` dans
+         `components/direct/gout-contenu.tsx`. */
+      photoApres: "/direct/plat-lasagnes-servi.jpg",
     },
   ],
 };

@@ -66,6 +66,21 @@ export function EcranGout({
   /** Le geste déclenché, sur un temps qui en demande un. */
   const [declenche, setDeclenche] = useState(false);
   const [emotion, setEmotion] = useState("");
+  /**
+   * ═══ OÙ EN EST LE RIDEAU, EN POUR CENT DE LA LARGEUR ══════════════════════
+   *
+   * IL NE COMMENCE PAS FERMÉ, ET C'EST LA DÉCISION QUI COMPTE ICI. Fermé sur
+   * la première photo, personne ne saurait qu'il y en a une deuxième : on
+   * verrait une image normale avec un trait dessus, et on passerait. À
+   * soixante-deux pour cent, la portion servie dépasse déjà sur la droite —
+   * on voit qu'il y a autre chose, et la main va la chercher.
+   *
+   * ET SOIXANTE-DEUX PLUTÔT QUE CINQUANTE : à la moitié exacte, l'œil lit deux
+   * vignettes côte à côte, c'est-à-dire une comparaison. Décentré, il lit une
+   * image dont un coin est soulevé — ce qui est exactement la promesse du
+   * geste.
+   */
+  const [rideau, setRideau] = useState(62);
 
   /**
    * ═══ CHANGER DE TEMPS RAMÈNE EN HAUT DU PARCOURS ═══════════════════════
@@ -152,6 +167,19 @@ export function EcranGout({
    */
   const prete = t.options?.length ? !!choix[rang] : t.quoi === "geste" ? declenche : true;
 
+  /**
+   * LE DOIGT DONNE UNE POSITION DANS LA PAGE ; LE RIDEAU VEUT UN POUR CENT DU
+   * CADRE. On mesure le cadre à chaque mouvement plutôt qu'une fois : sur un
+   * téléphone qu'on tourne, un cadre mesuré à l'ouverture n'a plus la bonne
+   * largeur trois secondes plus tard.
+   */
+  const tirer = (e: { clientX: number; currentTarget: HTMLElement }) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    if (!r.width) return;
+    const x = ((e.clientX - r.left) / r.width) * 100;
+    setRideau(Math.min(100, Math.max(0, x)));
+  };
+
   const avancer = () => {
     // UNE DEVINETTE SE JOUE EN DEUX TEMPS SUR LE MÊME ÉCRAN : on répond, puis on
     // apprend. Passer directement au suivant escamoterait la seule chose qu'on
@@ -162,12 +190,14 @@ export function EcranGout({
     }
     setRevele(false);
     setDeclenche(false);
+    setRideau(62);
     setRang((r) => Math.min(r + 1, gout.temps.length - 1));
   };
 
   const reculer = () => {
     setRevele(false);
     setDeclenche(false);
+    setRideau(62);
     setRang((r) => Math.max(0, r - 1));
   };
 
@@ -223,12 +253,81 @@ export function EcranGout({
           Elle porte le tampon du plat et, sur un temps de geste, ce qui tombe
           dessus quand on appuie. */}
       <div className={`go-photo${declenche ? " tombe" : ""}${t.note ? " notee" : ""}`}>
-        {t.photo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={t.photo} alt="" />
-        ) : (
-          <span className="go-photo-v" aria-hidden="true" />
+        {/* ═══ LE RIDEAU — « JE VOUS MONTRE L'INTÉRIEUR ? » ══════════════════
+
+            LE SEUL ÉCRAN DE CE PARCOURS QU'UN CONCURRENT NE PEUT PAS COPIER EN
+            UNE APRÈS-MIDI, parce qu'il ne tient pas au dessin mais à une donnée
+            que personne d'autre n'a : deux photos du même plat, prises par le
+            même commerçant. Un Reel se refait ; une deuxième photo ne se
+            télécharge nulle part.
+
+            ON LE TIRE AU DOIGT, ON NE LE REGARDE PAS SE TIRER TOUT SEUL. Une
+            animation se subit et s'oublie ; un rideau qu'on tire soi-même
+            demande un geste, et un geste engage. C'est aussi la raison pour
+            laquelle il n'y a pas de bouton : la poignée EST le bouton, et elle
+            est au milieu de l'image, là où le pouce tombe.
+
+            ET IL N'EXISTE QUE QUAND LES DEUX PHOTOS EXISTENT. Sans la seconde,
+            ce bloc n'est pas rendu du tout et le temps reste une belle photo —
+            pas un rideau qui s'ouvre sur la même image. Voir la règle des
+            secondes photos dans public/direct/LISEZ-MOI.md : l'absence
+            raccourcit, elle ne remplit pas. */}
+        {t.photoApres && t.quoi !== "geste" && (
+          <div
+            className="go-rideau"
+            /* ═══ UN NOMBRE NU, PAS UN POURCENTAGE ═══════════════════════
+               MESURÉ : les étiquettes ne s'effaçaient jamais. En gardant
+               « 8% » dans la variable, `calc((8% - 18%) * 100)` reste un
+               POURCENTAGE — que `opacity` accepte sans broncher et interprète
+               tout autrement. Le nombre nu rend les deux usages possibles :
+               une longueur avec `* 1%`, une opacité sans rien. */
+            style={{ ["--go-x" as string]: String(rideau) }}
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture(e.pointerId);
+              tirer(e);
+            }}
+            onPointerMove={(e) => {
+              // ON NE SUIT QUE LE DOIGT QUI A PRIS LE RIDEAU. Sans la capture,
+              // un simple survol deplacait le separateur a la souris, et la
+              // photo bougeait sans que personne n'ait rien demande.
+              if (e.currentTarget.hasPointerCapture(e.pointerId)) tirer(e);
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="go-rid-a" src={t.photo} alt="" />
+            {/* LA SECONDE EST DÉCOUPÉE, PAS FONDUE. Un fondu croisé donne une
+                bouillie au milieu ; une coupe nette dit « voilà l'autre ». */}
+            <span className="go-rid-b">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={t.photoApres} alt="" />
+            </span>
+            <span className="go-rid-et a" aria-hidden="true">Au plat</span>
+            <span className="go-rid-et b" aria-hidden="true">Servi</span>
+            <span className="go-rid-t" aria-hidden="true">
+              <i />
+            </span>
+
+            {/* AU CLAVIER AUSSI, et ce n'est pas une politesse : le même
+                curseur sert de commande accessible et de valeur lisible par un
+                lecteur d'écran, qui n'a autrement aucun moyen de savoir qu'il
+                y a une deuxième photo ici. */}
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={rideau}
+              aria-label="Tirer le rideau entre le plat et la portion servie"
+              onChange={(e) => setRideau(Number(e.target.value))}
+            />
+          </div>
         )}
+        {!(t.photoApres && t.quoi !== "geste") &&
+          (t.photo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={t.photo} alt="" />
+          ) : (
+            <span className="go-photo-v" aria-hidden="true" />
+          ))}
         {gout.tampon && rang === 0 && <span className="go-tampon">{gout.tampon}</span>}
         {/* ═══ L'ANNOTATION MANUSCRITE, ET ELLE EST SUR LA PHOTO ═════════════
 
@@ -765,6 +864,71 @@ function Styles() {
            la main descend. Personne ne le remarque, et tout le monde le sent :
            c'est la respiration d'avant le geste, et c'est elle qui fait que le
            temps d'apres a du poids. */
+        /* ═══ LE RIDEAU ═══
+           LES DEUX IMAGES OCCUPENT LE MEME CADRE, l'une par-dessus l'autre, et
+           c'est la seconde qu'on decoupe. Les recadrer TOUTES DEUX dans le
+           meme rectangle est ce qui rend la comparaison possible : sans ca, une
+           photo carree et une photo portrait ne se lisent pas comme deux etats
+           de la meme chose. */
+        .go-rideau{position:absolute;inset:0;overflow:hidden;cursor:ew-resize;
+          touch-action:none;}
+        .go-rid-a,.go-rid-b img{position:absolute;inset:0;width:100%;height:100%;
+          object-fit:cover;display:block;}
+        /* ═══ LES DEUX IMAGES SONT INERTES, ET CE N'EST PAS UN DETAIL ═══
+           MESURE : le rideau se tirait d'un cran puis se figeait. La sonde a
+           montre une PERTE DE CAPTURE juste apres le premier mouvement —
+           Chromium demarrait son GLISSER-DEPOSER NATIF D'IMAGE, qui annule la
+           capture du pointeur au passage.
+           C'est le meme defaut, a la lettre, que le paquet de cartes qui ne
+           se balayait plus a la souris : une image est glissable par defaut, et
+           un geste construit par-dessus perd contre celui du navigateur. On lui
+           retire donc le glisser, la selection, et jusqu'au droit d'etre visee
+           par le pointeur — c'est le cadre qui recoit, toujours. */
+        .go-rideau img{pointer-events:none;user-select:none;-webkit-user-drag:none;}
+        /* LA COUPE EST NETTE, PAS FONDUE. Un fondu croise donne une bouillie au
+           milieu ; une coupe dit « voila l'autre ». */
+        .go-rid-b{position:absolute;inset:0;display:block;overflow:hidden;
+          clip-path:inset(0 0 0 calc(var(--go-x) * 1%));}
+
+        /* LE TRAIT ET SA POIGNEE. La poignee est au milieu de la HAUTEUR, la ou
+           le pouce tombe quand on tient un telephone d'une main. */
+        .go-rid-t{position:absolute;top:0;bottom:0;left:calc(var(--go-x) * 1%);width:2px;
+          margin-left:-1px;background:rgba(255,255,255,.92);
+          box-shadow:0 0 12px rgba(0,0,0,.45);pointer-events:none;}
+        .go-rid-t i{position:absolute;top:50%;left:50%;width:34px;height:34px;
+          margin:-17px 0 0 -17px;border-radius:50%;
+          background:rgba(255,255,255,.95);box-shadow:0 3px 14px rgba(0,0,0,.4);}
+        /* LES DEUX CHEVRONS DISENT LE SENS. Sans eux, la pastille est un point
+           qu'on regarde ; avec eux, c'est une chose qui se tire. */
+        .go-rid-t i::before,.go-rid-t i::after{content:"";position:absolute;
+          top:50%;width:7px;height:7px;margin-top:-4px;border:2px solid #10221B;
+          border-width:2px 2px 0 0;}
+        .go-rid-t i::before{left:9px;transform:rotate(-135deg);}
+        .go-rid-t i::after{right:9px;transform:rotate(45deg);}
+
+        /* LES ETIQUETTES NOMMENT CE QU'ON REGARDE, parce qu'un rideau sans
+           legende est un effet, et un effet ne prouve rien. Chacune reste de
+           son cote et s'efface quand le rideau passe dessus. */
+        .go-rid-et{position:absolute;bottom:12px;font-size:10.5px;font-weight:850;
+          letter-spacing:.1em;text-transform:uppercase;color:#fff;
+          padding:5px 9px;border-radius:9px;background:rgba(6,16,12,.62);
+          backdrop-filter:blur(4px);pointer-events:none;
+          transition:opacity .15s ease-out;}
+        /* ELLES S'EFFACENT QUAND LE RIDEAU LEUR PASSE DESSUS, sur six points de
+           course — assez pour que ce soit un fondu et pas un clignotement. Une
+           etiquette qui resterait collee au bord sous le trait dirait le nom de
+           la photo qu'on ne voit plus. */
+        .go-rid-et.a{left:12px;opacity:clamp(0,calc((var(--go-x) - 16) / 6),1);}
+        .go-rid-et.b{right:12px;opacity:clamp(0,calc((84 - var(--go-x)) / 6),1);}
+
+        /* LE CURSEUR EST LA COMMANDE REELLE AU CLAVIER, et il est invisible a
+           l'oeil : on ne superpose pas deux affordances pour la meme chose. Il
+           reste focalisable, et le trait s'allume quand il l'est. */
+        .go-rideau input{position:absolute;inset:auto 0 0;width:100%;height:1px;
+          opacity:0;margin:0;}
+        .go-rideau:focus-within .go-rid-t{background:#fff;
+          box-shadow:0 0 0 2px rgba(255,255,255,.55),0 0 14px rgba(0,0,0,.5);}
+
         .go-photo img{transition:transform .2s ease-out,filter .2s ease-out;}
         .go-photo.tombe img{animation:goPlat 1.5s cubic-bezier(.3,.9,.3,1) both;}
         @keyframes goPlat{
