@@ -22,12 +22,17 @@
 //
 // ═══ CE QUI A DISPARU ═════════════════════════════════════════════════════
 //
-// La maquette vitrine (`MaquetteSante` et ses vingt-huit composants), et avec
-// elle tout ce qu'elle seule chargeait : « Mon approche », la FAQ du métier,
-// les motifs de consultation, le mini-agenda, la démo de démarchage croisé,
-// les partenaires du collectif, la barre « Suivre ce commerce ». Le reste du
-// dépôt ne les appelle plus ; les fichiers restent, inertes, et personne ne
-// devrait les rallumer sans relire cet en-tête.
+// La maquette vitrine, et avec elle tout ce qu'elle seule chargeait : « Mon
+// approche », la FAQ du métier, les motifs de consultation, le mini-agenda, la
+// démo de démarchage croisé, les partenaires du collectif, la barre « Suivre
+// ce commerce ».
+//
+// `maquette-sante.tsx` A ÉTÉ SUPPRIMÉ, PAS LAISSÉ DE CÔTÉ. Il n'avait plus un
+// seul appelant, et un fichier de huit cents lignes que rien ne rend est pire
+// qu'absent : il continue de compiler, il apparaît dans les recherches, et le
+// jour où quelqu'un le retouche il croit travailler sur la page du commerçant.
+// Ses composants enfants sont maintenant orphelins à leur tour — ils tomberont
+// dans un ménage à eux, avec la vérification qui va avec.
 //
 // LES COMPTEURS, EUX, SONT RESTÉS. `contact_scanned_at`, `site_views` et
 // `catalogue_clicks` sont les trois chiffres que le commerçant regarde : ils
@@ -39,6 +44,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { noterClic } from "@/lib/direct/publications";
 import { horairesLisibles } from "@/lib/site-internet/horaires-pro";
 import { ligneDuJour } from "@/lib/site-internet/opening-hours";
+import { numeroAppel, numeroReservations } from "@/lib/site-internet/pro-phone";
 import { carteDepuisFiche, type FicheCommercant } from "@/lib/site-internet/carte-depuis-fiche";
 import { carteDeDemo, estAdresseDeDemo, listeDesDemos } from "@/lib/site-internet/fiches-demo";
 import { PageBoutique } from "./page-boutique";
@@ -270,6 +276,20 @@ export default async function ApercuMaquette({
     .filter((x) => x.nom.length > 0)
     .slice(0, 12);
 
+  // LES AVIS GOOGLE, TELS QU'ILS ONT ÉTÉ ÉCRITS. Ils dormaient dans le
+  // diagnostic depuis toujours et l'ancienne maquette les affichait ; la
+  // boutique, elle, ne connaissait que les avis laissés DANS ClikMe — donc
+  // aucun, chez un prospect. Bornés et nettoyés, comme le reste.
+  const avisGoogle = (Array.isArray(diag.reviews_top) ? diag.reviews_top : [])
+    .map((r) => (r && typeof r === "object" ? (r as Record<string, unknown>) : {}))
+    .map((r) => ({
+      qui: str(r.name).slice(0, 60) || "Un client",
+      texte: str(r.text).slice(0, 400),
+      note: typeof r.stars === "number" ? (r.stars as number) : null,
+    }))
+    .filter((r) => r.texte.length > 0)
+    .slice(0, 4);
+
   const waDigits = (process.env.SITE_LETTER_WHATSAPP || "").replace(/\D/g, "");
   const phoneDisplay = process.env.SITE_LETTER_PHONE || "";
   const waHref = waDigits
@@ -287,10 +307,26 @@ export default async function ApercuMaquette({
     photos,
     note: note ?? undefined,
     avis: reviews ?? undefined,
-    telephone: str(diag.telephone) || undefined,
-    site: str(diag.website) || undefined,
+    // ═══ SON NUMÉRO, ET IL Y A UNE SEULE VÉRITÉ SUR LE SUJET ══════════════
+    //
+    // « Ouvrir le WhatsApp avec le numéro du pro et le message pré-rempli. »
+    //
+    // `diag.telephone` N'EXISTE PAS. La clé du diagnostic est `phone`, et il y
+    // a trois endroits où un numéro peut se trouver selon la façon dont ce
+    // commerce est entré dans le produit — la colonne WhatsApp s'il a ouvert
+    // son espace, le formulaire de rappel s'il nous a laissé le sien, la fiche
+    // Google sinon. `pro-phone.ts` connaît les trois, plus les congés, et
+    // répond à la bonne question : « à quel numéro les HABITANTS écrivent-ils ? »
+    // — qui n'est pas la même que « comment joint-on le commerçant ? ».
+    //
+    // WHATSAPP D'ABORD, LE FIXE SINON. Un restaurant publie presque toujours
+    // un fixe, et un fixe ne fait pas de WhatsApp : la boutique retombe alors
+    // sur le bouton « Appeler », qui est juste en dessous.
+    telephone: numeroReservations(row) || numeroAppel(row) || undefined,
+    site: str(diag.website) || str(diag.site) || undefined,
     mapsHref: `https://www.google.com/maps/search/${encodeURIComponent(`${nom} ${ville}`)}`,
     services,
+    avisGoogle,
   };
 
   return (

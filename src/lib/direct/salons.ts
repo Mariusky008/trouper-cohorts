@@ -295,7 +295,56 @@ export type Salon = {
    * d'écrire, et il garde sa fin.
    */
   denouement?: string;
+  /**
+   * ═══ LA BOUTIQUE DONT CE SALON EST LE SALON ═══════════════════════════════
+   *
+   * « Il manque sur ces pages commerçant la possibilité d'ouvrir un salon pour
+   * parler et inviter nos amis à parler du produit ou service du commerçant,
+   * et depuis ce salon ouvrir les essayages et les mettre dans ce salon pour
+   * chaque personne du salon. »
+   *
+   * LES DEUX SENS DU CHEMIN, ET UN SEUL EXISTAIT. On savait déjà aller d'un
+   * essayage vers un salon — c'est le bouton « En parler avec mes amis » sous
+   * un rendu. On ne savait pas revenir : une fois dans la conversation, rien
+   * ne ramenait chez le commerçant, donc les autres ne pouvaient pas essayer à
+   * leur tour. Le salon montrait UNE photo au lieu de faire essayer QUATRE
+   * personnes, ce qui est pourtant tout ce qui le distingue d'un groupe
+   * WhatsApp : là-bas aussi on peut envoyer une photo.
+   *
+   * CE CHAMP EST LE CHEMIN DU RETOUR, et il n'est que ça : un identifiant, un
+   * nom, une adresse. Le salon ne connaît pas le catalogue du commerce et ne
+   * doit pas le connaître — sinon ce module, qui est la couche basse, se
+   * mettrait à dépendre de celui des annonces.
+   *
+   * ABSENT SUR TOUS LES AUTRES SALONS : celui d'une soirée, d'un événement ou
+   * d'un collectif ne mène chez personne.
+   */
+  boutique?: {
+    /** L'identifiant du commerce, tel que le porte sa carte. */
+    id: string;
+    nom: string;
+    /** Où retourner pour essayer — la page, ancrée sur son chapitre d'essai. */
+    lien: string;
+  };
 };
+
+/**
+ * LA CLÉ DU SALON D'UNE BOUTIQUE, ET IL N'Y EN A QU'UN PAR COMMERCE.
+ *
+ * ELLE ÉTAIT PAR PIÈCE — `essai-<commerce>-<pièce>` — pour que deux personnes
+ * qui essaient la même veste se retrouvent au même endroit. L'intention était
+ * juste et le résultat ne l'était pas : quatre amis qui parlent du même salon
+ * de coiffure se retrouvaient dans quatre conversations différentes dès qu'ils
+ * n'essayaient pas la même coupe, c'est-à-dire toujours.
+ *
+ * UN SALON PAR COMMERCE, DONC, ET TOUS LES ESSAIS DEDANS. C'est ce qui permet
+ * la phrase qu'il a écrite : « les mettre dans ce salon pour chaque personne
+ * du salon pour en discuter ». On compare quatre coupes côte à côte au lieu
+ * d'ouvrir quatre conversations d'une photo chacune.
+ */
+export function cleSalonBoutique(idCommerce: string): string {
+  return `boutique-${idCommerce}`;
+}
 
 /**
  * LES SALONS SEMÉS — ceux qui existent déjà quand on arrive.

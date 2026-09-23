@@ -86,7 +86,7 @@ import {
 } from "@/lib/direct/tailles";
 import { MurContenu } from "@/components/direct/mur-contenu";
 import { BlocFantome } from "@/components/direct/bloc-fantome";
-import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
+import { commentPrevenir, demanderRendezVous, numeroDeFiction } from "@/lib/direct/prevenir";
 import { partager } from "@/lib/direct/partager";
 import { POSTES } from "@/lib/direct/relooking";
 import { personnaliteDe } from "@/lib/direct/personnalites";
@@ -95,6 +95,7 @@ import {
   heureCourte,
   monPrenom,
   ouvrirSalon,
+  cleSalonBoutique,
 } from "@/lib/direct/salons";
 import {
   abonnerPiecesGardees,
@@ -451,6 +452,90 @@ export function Boutique({
    * seul cas où on lui préfère celui du métier.
    */
   const langage = personnaliteDe({ branche: c.branche, metier: c.metier });
+  /**
+   * ═══ LA DEMANDE DE RENDEZ-VOUS, PRÊTE À PARTIR ═══════════════════════════
+   *
+   * « Ça ne fait rien quand on clique dessus, au lieu d'ouvrir le WhatsApp
+   * avec le numéro du pro et le message pré-rempli. »
+   *
+   * IL DÉFILAIT VERS LE HAUT DE LA PAGE. Le seul bouton qui dise « je viens »
+   * remontait de deux écrans sans rien annoncer, et le geste se lisait comme
+   * une panne.
+   *
+   * SANS NUMÉRO DÉCLARÉ, ON MONTRE LE MESSAGE AU LIEU DE L'ENVOYER. C'est le
+   * mécanisme qui existe déjà pour les pièces mises de côté : une conversation
+   * WhatsApp ouverte sur un numéro de fiction fait croire que le message est
+   * parti, alors que personne ne le lira jamais. Le panneau, lui, dit
+   * exactement ce qui partirait chez un vrai commerçant — ce qui est utile sur
+   * une démonstration, et honnête partout.
+   */
+  const rdv = useMemo(
+    () =>
+      demanderRendezVous({
+        telephone: c.telephone || numeroDeFiction(c.id),
+        nom: c.nom,
+        geste: langage.reserver,
+        prenom: monPrenom() || undefined,
+      }),
+    [c.telephone, c.id, c.nom, langage.reserver],
+  );
+  /** Le panneau qui montre le message quand il ne peut pas partir. */
+  const [rdvVu, setRdvVu] = useState(false);
+  /**
+   * ═══ LE SALON DE CETTE BOUTIQUE ═══════════════════════════════════════════
+   *
+   * « Il manque la possibilité d'ouvrir un salon pour parler et inviter nos
+   * amis à parler du produit ou service du commerçant, et depuis ce salon
+   * ouvrir les essayages et les mettre dans ce salon pour chaque personne du
+   * salon pour en discuter. »
+   *
+   * IL EXISTAIT, ET PERSONNE NE POUVAIT LE TROUVER. On n'y arrivait que par
+   * le bouton « En parler avec mes amis » posé SOUS un rendu d'essayage :
+   * pour ouvrir une conversation sur ce commerce, il fallait d'abord se
+   * prendre en photo. Le geste le plus fréquent du monde réel — « regarde,
+   * ça vous dit ? » — était derrière le geste le plus engageant du produit.
+   *
+   * IL A DONC SA PORTE, DANS LA RANGÉE DES CHEMINS POSSIBLES. On peut ouvrir
+   * la conversation d'abord, inviter, et essayer ensuite — ce qui est l'ordre
+   * dans lequel ça se passe vraiment.
+   */
+  const cleSalon = cleSalonBoutique(c.id);
+  const [salonVu, setSalonVu] = useState(false);
+  /**
+   * L'ADRESSE DE CETTE PAGE, POUR Y REVENIR DEPUIS LE SALON.
+   *
+   * Calculée au navigateur et pas écrite en dur : la même boutique se sert
+   * sous deux adresses — la maquette et la page publique du commerçant — et
+   * une constante en renverrait la moitié des gens au mauvais endroit.
+   * L'ancre mène au chapitre d'essai, c'est-à-dire à ce qu'on vient y faire.
+   */
+  const lienBoutique = useMemo(
+    () => (typeof window === "undefined" ? "" : `${window.location.origin}${window.location.pathname}#essayer`),
+    [],
+  );
+  /** Où vit la conversation : l'application, ouverte sur ce salon. */
+  const lienSalon = `/autour-de-moi?salon=${encodeURIComponent(cleSalon)}`;
+  /** Ce que le panneau a à dire après un partage — « copié », ou rien. */
+  const [salonDit, setSalonDit] = useState("");
+  /**
+   * IL NE NAÎT QU'AU PREMIER GESTE, et jamais à l'affichage du panneau.
+   * `ouvrirSalon` ne fait rien s'il existe déjà, donc c'est sans risque de
+   * l'appeler deux fois — mais ouvrir une conversation parce que quelqu'un a
+   * regardé un écran créerait des salons vides que personne n'a demandés.
+   */
+  const ouvrirLeSalon = () => {
+    ouvrirSalon({
+      cle: cleSalon,
+      sujet: `Chez ${c.nom}`,
+      ou: c.nom,
+      parQui: monPrenom() || "Vous",
+      quand: "Aujourd’hui",
+      annonce: c.metier,
+      distance: c.distance,
+      photo: c.photo,
+      boutique: { id: c.id, nom: c.nom, lien: lienBoutique },
+    });
+  };
   const catal = motCatalogue(c.metier);
   const mots = catal.titre === "Le catalogue" ? { ...catal, titre: rond.carte } : catal;
   /**
@@ -475,6 +560,8 @@ export function Boutique({
   const [habitudes, setHabitudes] = useState<ReturnType<typeof ceQuiRevient>>([]);
   useEffect(() => setHabitudes(ceQuiRevient(c.passees)), [c.passees]);
   const avis = useMemo(() => avisDuCommerce(c), [c]);
+  /** Ce que ses clients ont écrit sur Google. Voir `avisGoogle` sur la carte. */
+  const googleDits = useMemo(() => (c.avisGoogle ?? []).filter((a) => a.texte), [c]);
   const mur = useMemo(() => murDuCommerce(c), [c]);
   const rayons = useMemo(() => parRayon(c.catalogue ?? []), [c.catalogue]);
   const enCours = c.moments.filter((m) => etatDuMoment(m, heure) === "en-cours");
@@ -1392,10 +1479,15 @@ export function Boutique({
                * quitte une page de commerce que si on l'a demandé.
                */
               onSalon={(o) => {
-                const cle = `essai-${c.id}-${o.quoi}`;
+                // UN SEUL SALON PAR COMMERCE, ET TOUS LES ESSAIS DEDANS.
+                // La clé était `essai-<commerce>-<pièce>` : quatre amis qui
+                // parlent du même salon de coiffure se retrouvaient dans
+                // quatre conversations dès qu'ils n'essayaient pas la même
+                // coupe — c'est-à-dire toujours. Voir `cleSalonBoutique`.
+                const cle = cleSalonBoutique(c.id);
                 ouvrirSalon({
                   cle,
-                  sujet: o.quoi,
+                  sujet: `Chez ${c.nom}`,
                   ou: c.nom,
                   parQui: monPrenom() || "Vous",
                   quand: "Aujourd’hui",
@@ -1403,6 +1495,7 @@ export function Boutique({
                   prix: o.prix,
                   distance: c.distance,
                   photo: o.image,
+                  boutique: { id: c.id, nom: c.nom, lien: lienBoutique },
                 });
                 const texte = o.note
                   ? `J’ai essayé « ${o.quoi} »${o.prix ? ` (${o.prix})` : ""} sur moi. Je mets ${o.note}/5 — vous en pensez quoi ?`
@@ -1607,14 +1700,52 @@ export function Boutique({
           « Mettre de côté », « Prendre rendez-vous ». Voir `Personnalite`. */}
       <section className="bq-fin" aria-label="Aller plus loin">
         <ul className="bq-fin-l">
+          {/* ═══ IL DEMANDE VRAIMENT, MAINTENANT ════════════════════════════
+
+              « "Prendre rendez-vous / En quelques secondes" ne fait rien quand
+              on clique dessus, au lieu d'ouvrir le WhatsApp avec le numéro du
+              pro et le message pré-rempli. »
+
+              IL DÉFILAIT VERS LA SECTION D'ESSAI, c'est-à-dire vers le HAUT de
+              la page : on remontait de deux écrans sans rien qui l'annonce, et
+              le geste se lisait comme une panne. C'était le seul bouton de la
+              page qui dise « je viens », et il ne disait rien à personne.
+
+              SANS NUMÉRO, IL DÉFILE ENCORE — et c'est le bon repli. Proposer
+              une conversation qui n'ira nulle part serait pire que de ramener
+              vers ce qu'on peut faire tout de suite : essayer. */}
           <li>
-            <button type="button" onClick={() => allerA("essayer")}>
+            <button
+              type="button"
+              onClick={() => {
+                if (c.telephone) {
+                  window.open(rdv.whatsapp, "_blank", "noopener");
+                  return;
+                }
+                setRdvVu(true);
+              }}
+            >
               <i aria-hidden="true">📅</i>
               <b>{langage.reserver}</b>
-              <em>En quelques secondes</em>
+              <em>Par message, il vous répond</em>
               <s aria-hidden="true">→</s>
             </button>
           </li>
+          {/* ═══ ET LES AVIS SONT LÀ OÙ IL LES ENVOIE ═══════════════════════
+
+              « Quand je clique dessus, rien ne se passe — et il faudrait même
+              qu'on voie les avis directement sur place, comme on avait
+              auparavant sur l'ancien design. »
+
+              IL MENAIT À UNE ANCRE QUI N'EXISTAIT PAS. Le chapitre « Vu chez
+              eux » se déduit des avis semés sur les MOMENTS du commerce ; sur
+              la page d'un vrai commerçant, les moments sont vides — il n'a
+              encore rien publié — donc le chapitre ne se dessine pas, et le
+              bouton défilait vers rien du tout. Aucune erreur, aucun signe :
+              exactement le genre de panne qu'on ne voit qu'en cliquant.
+
+              Le chapitre accueille désormais aussi ses avis GOOGLE, qui sont
+              une preuve qu'il a déjà, et qui existe le premier jour. */}
           {c.google && (
             <li>
               <button type="button" onClick={() => allerA("avis")}>
@@ -1627,6 +1758,21 @@ export function Boutique({
               </button>
             </li>
           )}
+          {/* ═══ LA PORTE DU SALON ═══════════════════════════════════════
+
+              ELLE EST DANS CETTE RANGÉE ET PAS AILLEURS, parce que cette
+              rangée est la liste des chemins possibles au moment où l'on a
+              fini de lire : y aller, appeler, demander un rendez-vous… et en
+              parler d'abord. Ce dernier est le plus fréquent des quatre dans
+              la vraie vie, et c'était le seul qui n'avait pas de porte. */}
+          <li>
+            <button type="button" onClick={() => setSalonVu(true)}>
+              <i aria-hidden="true">💬</i>
+              <b>En parler avec mes amis</b>
+              <em>Une conversation, ici, sur {c.nom}</em>
+              <s aria-hidden="true">→</s>
+            </button>
+          </li>
           <li>
             <a href={c.itineraire} target="_blank" rel="noreferrer">
               <i aria-hidden="true">📍</i>
@@ -1761,7 +1907,7 @@ export function Boutique({
           LE VIDE EST DIT, PAS CACHÉ. C'est le démarrage à froid : tant que
           personne n'a photographié il n'y a rien, et l'écrire est ce qui donne
           envie d'être le premier. */}
-      {(mur.length > 0 || avis.length > 0) && (
+      {(mur.length > 0 || avis.length > 0 || googleDits.length > 0) && (
         <section className="bq-s" id="avis">
           <Chapitre
             n={5}
@@ -1783,12 +1929,12 @@ export function Boutique({
                 </figure>
               ))}
             </div>
-          ) : (
+          ) : googleDits.length === 0 ? (
             <div className="bq-vu-vide">
               <i aria-hidden="true">📷</i>
               Personne n’a encore photographié ce qui a été servi ici.
             </div>
-          )}
+          ) : null}
 
           {avis.length > 0 && (
             <>
@@ -1813,6 +1959,43 @@ export function Boutique({
                 ))}
               </ul>
             </>
+          )}
+
+          {/* ═══ ET CE QUE GOOGLE EN DIT, SÉPARÉ ET ANNONCÉ ══════════════════
+
+              DEUX NATURES DE PREUVE, JAMAIS MÉLANGÉES — c'est la règle de ce
+              chapitre depuis le premier jour, et elle tient ici aussi. Au-
+              dessus : ce que quelqu'un a photographié et raconté ICI, daté,
+              attaché à un moment précis. En dessous : ce que Google recopie,
+              sans date et sans objet. Les fondre dans une même liste donnerait
+              un mur de phrases où l'on ne sait plus qui parle de quoi.
+
+              C'EST POURTANT LA SEULE PREUVE QU'UN COMMERÇANT A LE PREMIER
+              JOUR, et c'est pour ça qu'elle a sa place : sans elle, la page
+              d'un prospect n'avait rien à montrer, le chapitre entier
+              disparaissait, et le bouton « On en parle bien » défilait vers
+              une ancre qui n'existait pas. */}
+          {googleDits.length > 0 && (
+            <div className="bq-gg">
+              <div className="bq-gg-t">
+                <b>Sur Google</b>
+                {c.google && (
+                  <span>
+                    ★ {c.google.note} · {c.google.avis} avis
+                  </span>
+                )}
+              </div>
+              <ul className="bq-avis">
+                {googleDits.map((a, i) => (
+                  <li key={`${a.qui}-${i}`}>
+                    <p>«&nbsp;{a.texte}&nbsp;»</p>
+                    <span>
+                      {a.note != null && <Etoiles note={a.note} />} {a.qui} · Google
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </section>
       )}
@@ -2361,6 +2544,104 @@ export function Boutique({
               onClick={() => setDemandePiece(null)}
             >
               {demandePiece.fiction ? "J’ai compris" : "Je l’ai prévenu"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ LA DEMANDE DE RENDEZ-VOUS, QUAND ELLE NE PEUT PAS PARTIR ═══════
+
+          LE MÊME PANNEAU QUE POUR UNE PIÈCE, ET POUR LA MÊME RAISON : sur une
+          démonstration le numéro appartient à la plage réservée à la fiction,
+          et ouvrir WhatsApp dessus ferait croire qu'un message est parti. On
+          montre donc ce qui PARTIRAIT — ce qui est aussi la seule façon, pour
+          lui comme pour nous, de vérifier ce que ses clients lui écriront.
+
+          Chez un vrai commerçant qui a déclaré un numéro, ce panneau ne
+          s'ouvre jamais : le bouton va droit à WhatsApp. */}
+      {rdvVu && (
+        <div
+          className="bq-voile"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Votre demande de rendez-vous"
+          onClick={() => setRdvVu(false)}
+        >
+          <div className="bq-salon" onClick={(e) => e.stopPropagation()}>
+            <b>{c.nom}</b>
+            <p className="bq-salon-s">
+              Ce commerce n’a pas encore déclaré son numéro&nbsp;: WhatsApp n’y
+              trouverait personne. Voilà le message qui partirait chez un vrai
+              commerçant.
+            </p>
+            <div className="bq-salon-m">
+              <q>{rdv.texte}</q>
+            </div>
+            <button type="button" className="bq-salon-b" onClick={() => setRdvVu(false)}>
+              J’ai compris
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ OUVRIR LE SALON DE CETTE BOUTIQUE, ET Y INVITER ════════════════
+
+          TROIS GESTES, DANS L'ORDRE OÙ ILS SE FONT. On ouvre, on invite, on
+          essaie — et c'est l'inverse de ce que le produit imposait jusqu'ici,
+          où il fallait s'être pris en photo pour avoir le droit d'ouvrir une
+          conversation.
+
+          L'INVITATION EST UN LIEN, PAS UN COMPTE. C'est la réponse à
+          l'objection qui avait failli enterrer le salon — « tes amis ne sont
+          pas sur ClikMe » : celui qui reçoit l'adresse dans WhatsApp l'ouvre
+          dans le navigateur qu'il a déjà, voit le salon, et écrit dedans.
+          Rien à installer. Voir l'en-tête de `salons.ts`. */}
+      {salonVu && (
+        <div
+          className="bq-voile"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`En parler avec mes amis, à propos de ${c.nom}`}
+          onClick={() => setSalonVu(false)}
+        >
+          <div className="bq-salon" onClick={(e) => e.stopPropagation()}>
+            <b>En parler avec mes amis</b>
+            <p className="bq-salon-s">
+              Une conversation sur {c.nom}, dans ClikMe. Vos amis n’ont rien à
+              installer&nbsp;: ils ouvrent le lien et ils écrivent. Chacun peut y
+              essayer ce qu’il veut et poser son rendu ici, pour que vous
+              choisissiez ensemble.
+            </p>
+            <div className="bq-salon-g">
+              <button
+                type="button"
+                className="bq-salon-b"
+                onClick={async () => {
+                  ouvrirLeSalon();
+                  const r = await partager({
+                    titre: `Chez ${c.nom}`,
+                    texte: `On en parle ? J’ai ouvert une conversation sur ${c.nom}${c.ville ? ` à ${c.ville}` : ""}.`,
+                    lien: lienSalon,
+                  });
+                  // « Copié » se dit, sinon un ordinateur n'a l'air de rien
+                  // faire — c'est la même règle que le partage du bandeau.
+                  if (r === "copie") setSalonDit("Lien copié : collez-le dans votre groupe.");
+                  else if (r === "echec") setSalonDit("Le partage n’a pas abouti. Le lien est dans la barre d’adresse.");
+                }}
+              >
+                <i aria-hidden="true">✉️</i>&nbsp;Inviter mes amis
+              </button>
+              <a
+                className="bq-salon-b bq-salon-o"
+                href={lienSalon}
+                onClick={() => ouvrirLeSalon()}
+              >
+                Ouvrir la conversation
+              </a>
+            </div>
+            {salonDit && <p className="bq-salon-s">{salonDit}</p>}
+            <button type="button" className="bq-salon-r" onClick={() => setSalonVu(false)}>
+              Rester sur cette page
             </button>
           </div>
         </div>
@@ -3056,6 +3337,12 @@ function Styles() {
         .bq-note span{display:block;font-size:11.5px;color:var(--bq-pale);margin-top:2px;}
         .bq-et i{font-style:normal;font-size:12px;color:#3B4A42;}
         .bq-et i.on{color:var(--bq-ambre);}
+        .bq-salon-g{display:grid;gap:8px;margin-top:4px;}
+        .bq-salon-o{text-align:center;text-decoration:none;}
+        .bq-gg{margin-top:22px;padding-top:18px;border-top:1px solid var(--bq-ligne);}
+        .bq-gg-t{display:flex;align-items:baseline;gap:10px;}
+        .bq-gg-t b{font-size:14px;}
+        .bq-gg-t span{font-size:12px;color:var(--bq-pale);}
         .bq-avis{list-style:none;margin:14px 0 0;padding:0;display:flex;
           flex-direction:column;gap:11px;}
         .bq-avis li{background:var(--bq-carte);border-radius:16px;padding:12px;}

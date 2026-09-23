@@ -44,7 +44,30 @@ export type RetourDuJour = {
   quoi: string;
 };
 
+/**
+ * ═══ LA FAMILLE DU MÉTIER, ET ELLE DÉCIDE DE DEUX ÉCRANS ═══════════════════
+ *
+ * « J'étais sur la page d'accueil d'un coiffeur et au départ tout allait bien,
+ * et tout à coup la démo était faite pour un restaurateur. »
+ *
+ * VOICI POURQUOI. Ce fichier choisit déjà, depuis longtemps, entre quatre
+ * familles — la restauration, le commerce de passage, le travail sur
+ * rendez-vous, et le reste — et il en tire tous les mots de la voix. Mais le
+ * FIL DE LA VILLE montré à côté, lui, était écrit en dur : cinq cartes de
+ * restaurant, pour tout le monde. Un coiffeur entendait donc « aujourd'hui,
+ * six cents Dacquois vont chercher un créneau » au-dessus d'un menu à 19 € et
+ * d'un panneau de réservation de table.
+ *
+ * DEUX SOURCES POUR UNE SEULE IDÉE, C'EST TOUJOURS CELLE QU'ON OUBLIE QUI
+ * PARLE. La famille sort donc d'ici, avec le reste, et le fil s'écrit à partir
+ * d'elle : les deux écrans ne peuvent plus diverger, parce qu'ils ne sont plus
+ * décidés à deux endroits.
+ */
+export type FamilleMetier = "restauration" | "boutique" | "rdv" | "autre";
+
 export type GesteDuJour = {
+  /** Voir `FamilleMetier` : ce qui décide AUSSI du fil de la ville montré à côté. */
+  famille: FamilleMetier;
   /** LE MOMENT DE LA JOURNÉE OÙ ÇA SE JOUE CHEZ LUI : « Ce midi », « Ce
    *  matin », « Cette semaine ». L'acte l'ouvrait sur « Ce midi » pour tout le
    *  monde — un boulanger dont la fournée sort à 7 h et un plombier qui remplit
@@ -151,6 +174,7 @@ export function gesteDuJour(
   // ── LA RESTAURATION ────────────────────────────────────────────────────
   if (estRestauration(metier)) {
     return {
+      famille: "restauration",
       quand: "Ce midi",
       verbe: "se demander",
       cherchent: "où manger",
@@ -190,6 +214,7 @@ export function gesteDuJour(
   // ── LES COMMERCES DE PASSAGE ───────────────────────────────────────────
   if (v.boutique) {
     return {
+      famille: "boutique",
       quand: "Ce matin",
       verbe: "chercher",
       cherchent: "ce qu'il y a de frais",
@@ -222,6 +247,7 @@ export function gesteDuJour(
   // ── TOUT CE QUI TRAVAILLE SUR RENDEZ-VOUS ──────────────────────────────
   if (v.surRdv) {
     return {
+      famille: "rdv",
       quand: "Aujourd'hui",
       verbe: "chercher",
       cherchent: `${v.un} ${v.place}`,
@@ -251,6 +277,7 @@ export function gesteDuJour(
 
   // ── LE RESTE ───────────────────────────────────────────────────────────
   return {
+    famille: "autre",
     quand: "Cette semaine",
     verbe: "chercher",
     cherchent: "un artisan disponible",

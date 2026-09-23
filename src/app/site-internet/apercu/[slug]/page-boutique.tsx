@@ -39,7 +39,6 @@ import { Boutique } from "@/app/autour-de-moi/boutique/boutique";
 import { DemoTour } from "./demo-tour";
 import { GarderCeSite } from "./garder-ce-site";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
-import { acteMetier } from "@/lib/direct/acte-metier";
 import { gesteDuJour } from "@/lib/direct/geste-du-jour";
 import { murDeLaCarte } from "@/lib/direct/fantomes";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
@@ -175,11 +174,6 @@ export function PageBoutique(p: PageBoutiqueProps) {
   // récit « on vous fait connaître ». Un cabinet de santé ou de droit, non.
   const avisAllowed = mp.def.avis_sollicitation;
   const flash = annonceExemple(carte.metier, carte.nom);
-  // Composant serveur : rendu une fois par requête, jamais au re-rendu. Lire
-  // l'horloge y est stable — la règle « purity » vise les composants client.
-  // eslint-disable-next-line react-hooks/purity
-  const maintenant = new Date();
-  const actes = modeDemo ? acteMetier(carte.metier, confirmation, secteur, maintenant) : [];
   const geste = modeDemo ? gesteDuJour(carte.metier, confirmation, secteur, carte.ville) : undefined;
   const photos = [carte.photo, ...(carte.photos ?? [])].filter((x): x is string => Boolean(x));
 
@@ -204,7 +198,6 @@ export function PageBoutique(p: PageBoutiqueProps) {
           isResto={carte.branche === "restaurant"}
           flashExample={flash.annonce}
           flashDit={flash.dit}
-          actes={actes}
           geste={geste}
           essai={direLEssai(carte) ?? undefined}
           keepHref={keepHref}

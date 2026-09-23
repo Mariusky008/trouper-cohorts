@@ -14,10 +14,9 @@
 import { useEffect, useRef, useState } from "react";
 import { initCloudTts, unlockAudio, speak, stopSpeaking, onSpeakingChange, dureeVoixMs, precharger } from "@/lib/site-internet/speech";
 import { MARQUE } from "@/lib/marque";
-import { direActe, FIN_ACTE, INTRO_ACTE, type TempsMetier } from "@/lib/direct/acte-metier";
 import { direRetours, habitantsDe, type GesteDuJour } from "@/lib/direct/geste-du-jour";
 import { BarreDirect, CarteSwipe, GestesDirect, StylesDirect } from "@/components/direct/carte-swipe";
-import { cartesDeLaVille, motDAction, saCarte, tempsIllustres } from "@/lib/direct/cartes-demo";
+import { cartesDeLaVille, motDAction, saCarte } from "@/lib/direct/cartes-demo";
 
 type Props = {
   slug: string;
@@ -35,14 +34,10 @@ type Props = {
   flashExample?: string; // l'ANNONCE que l'assistante écrit — le résultat de la transformation
   flashDit?: string; // la phrase que le commerçant DIT — le point de départ
   tourChat?: { q: string; a: string }; // la conversation jouée à l'étape « votre site répond »
-  /**
-   * L'ACTE MÉTIER — les gestes de la semaine, dans les mots de CE métier.
-   *
-   * Calculé sur le serveur à partir des actions que le commerçant trouvera
-   * vraiment dans son espace (voir `acte-metier.ts`) : la démo ne peut donc pas
-   * montrer un geste qui n'existe pas, ni s'écarter des mots du produit.
-   */
-  actes?: TempsMetier[];
+  /* LA PROP `actes` A DISPARU AVEC SON ACTE. Elle portait les gestes de la
+     semaine dans les mots du métier — un travail juste, mais pour un écran qui
+     durait vingt-cinq secondes de trop. `acte-metier.ts` continue de servir
+     l'espace pro, où ces gestes sont des boutons et pas un récit. */
   /**
    * LE GESTE DU JOUR — la colonne vertébrale, dans les mots de CE métier.
    *
@@ -103,7 +98,6 @@ type Scene =
   | "invisible"
   | "photo"
   | "retour"
-  | "metier"
   | "boucle";
 
 export function DemoTour({
@@ -115,7 +109,6 @@ export function DemoTour({
   reviewsCount,
   avisAllowed,
   flashExample,
-  actes,
   geste,
   essai,
   keepHref,
@@ -232,7 +225,19 @@ export function DemoTour({
     ? [
         `${G.quand}, plus de ${G.combien} ${gentile} vont ${G.verbe} ${G.cherchent}.`,
         `Beaucoup ouvriront Le Direct de ${laVille} pour voir ce qui se passe autour d'eux.`,
-        `Ils y verront les menus du jour, les tables qui restent, les prix, la distance.`,
+        // CE QU'ILS Y VERRONT SUIT LA FAMILLE, comme le fil montré derrière.
+        // Cette ligne énumérait « les menus du jour, les tables qui restent »
+        // à tout le monde : un coiffeur l'entendait pendant que l'écran, lui,
+        // défilait — depuis la même correction — sur des créneaux libres.
+        `Ils y verront ${
+          G.famille === "restauration"
+            ? "les menus du jour, les tables qui restent"
+            : G.famille === "boutique"
+              ? "ce qui vient d'arriver, ce qui part le plus vite"
+              : G.famille === "rdv"
+                ? "les créneaux qui se libèrent, ce qu'on peut essayer"
+                : "qui est disponible cette semaine"
+        }, les prix, la distance.`,
         `Ce qui ne leur dit rien, ils le passent.`,
         `Ce qui leur plaît, ils le likent pour le garder en mémoire.`,
         // « Une table » n'a de sens que dans la restauration : ailleurs on
@@ -306,31 +311,47 @@ export function DemoTour({
    * ses clients.
    */
   const mesPhotos = Array.isArray(photos) ? photos.filter(Boolean) : [];
-  const cartesVille = G ? cartesDeLaVille(laVille) : [];
+  // LE FIL DE LA VILLE SUIT LA FAMILLE DU MÉTIER. Sans elle, il retombait sur
+  // cinq restaurants — voir `FamilleMetier` dans `geste-du-jour`.
+  const cartesVille = G ? cartesDeLaVille(laVille, G.famille) : [];
   const actionHabitant = G ? motDAction(G) : "Je veux";
   const maCarte = G ? saCarte(G, nom, metierLabel, laVille, mesPhotos[0]) : null;
 
-  // ── ACTE 7 · ET CE N'EST PAS QUE POUR MIDI ─────────────────────────────
-  //    La suite de sa journée, dans ses mots, heure par heure.
-  const actesListe: TempsMetier[] = Array.isArray(actes) ? actes : [];
-  const tempsCartes = G ? tempsIllustres(actesListe, G, nom, metierLabel, laVille, mesPhotos) : [];
-  const SAY_METIER = direActe(actesListe);
-  const METIER_AT = actesListe.map((t) => partAu(SAY_METIER, t.dit));
-  /** Où, dans la réplique, l'acte rassemble la journée entière (voir FIN_ACTE). */
-  const METIER_FIN = partAu(SAY_METIER, FIN_ACTE);
+  /* ═══ LA QUEUE DE LA DÉMONSTRATION N'EST PLUS QU'UN SEUL ACTE ════════════
+   *
+   * « À partir de l'étape 6 c'est beaucoup trop long, je pense qu'une seule
+   * étape suffit pour avoir au total 7 étapes maximum. »
+   *
+   * ELLE EN COMPTAIT NEUF, et les trois dernières disaient la même chose trois
+   * fois : ce qui lui revient, puis que ça vaut aussi pour le reste de sa
+   * journée, puis que sa page est prête. Or la décision est déjà prise au
+   * premier des trois — c'est le seul acte où quelque chose revient VERS lui.
+   * Les deux suivants ne la renforçaient pas, ils la laissaient refroidir.
+   *
+   * DEUX ACTES SONT DONC PARTIS. « Et ce n'est pas que pour midi » enchaînait
+   * cinq temps de métier et durait à lui seul près de vingt-cinq secondes —
+   * c'était la plus longue réplique de toute la visite, et elle arrivait au
+   * moment où l'on a déjà compris. La boucle, elle, ne faisait que redire
+   * l'écran de décision qui s'affiche juste après.
+   *
+   * IL RESTE LA CLÔTURE, ET ELLE SE DIT DANS LE MÊME ACTE. Les deux dernières
+   * phrases de la boucle ferment le récit par-dessus l'écran du retour, puis
+   * la scène bascule une dernière fois. Un acte, deux images, et le bouton
+   * arrive quand la voix se tait.
+   *
+   * `Voilà. Votre page est prête.` n'a pas été repris : c'est mot pour mot ce
+   * que dit le premier acte, et on ne clôt pas une démonstration en répétant
+   * sa première phrase. */
 
-  // ── ACTE 8 · LA BOUCLE, QUI EST AUSSI LA FIN ───────────────────────────
-  //    Deux actes n'en font plus qu'un : la phrase de clôture et l'écran de
-  //    décision disaient la même chose à la suite, et la démonstration
-  //    retombait entre les deux. Elle boucle sur l'acte 2 — le site était le
-  //    point de départ, voilà ce qu'il rapporte — puis le bouton arrive.
   const BOUCLE_DIT = [
-    `Voilà. Votre page est prête.`,
     `Votre actualité peut maintenant vivre dans Le Direct de ${laVille}.`,
     `Votre commerce, en direct dans votre ville.`,
   ];
-  const SAY_BOUCLE = BOUCLE_DIT.join(" ");
-  const BOUCLE_AT = BOUCLE_DIT.map((p) => partAu(SAY_BOUCLE, p));
+  /** Le retour, puis la clôture : une seule réplique, donc un seul acte. */
+  const SAY_FIN = `${SAY_RETOUR} ${BOUCLE_DIT.join(" ")}`;
+  const BOUCLE_AT = BOUCLE_DIT.map((p) => partAu(SAY_FIN, p));
+  /** Où, dans la réplique, l'image bascule du retour vers la clôture. */
+  const PART_BOUCLE = BOUCLE_AT[0] ?? 1;
 
   // L'icône de l'assistante qui rejoint son emplacement (bouton Action Flash).
   const [caption, setCaption] = useState("");
@@ -359,9 +380,7 @@ export function DemoTour({
    * Chaque ligne tombe sur SON mot : un acte qui s'affiche d'un bloc ne se lit
    * pas — on le survole, et rien n'en reste. C'est vrai de l'acte métier comme
    * des quatre écrans du récit. */
-  const [metierN, setMetierN] = useState(0);
   /** VRAI sur le dernier temps de l'acte 7 : les quatre cartes se rassemblent. */
-  const [journee, setJournee] = useState(false);
   const [quiN, setQuiN] = useState(0);
   const [invN, setInvN] = useState(0);
   const [photoN, setPhotoN] = useState(0);
@@ -906,10 +925,14 @@ export function DemoTour({
 
           // ③ LA RÉSERVATION. Le panneau du produit s'ouvre par-dessus la
           //    carte, avec le message déjà écrit.
-          // LA CARTE QUI SE RÉSERVE EST CELLE D'UN RESTAURANT, et ce n'est pas
-          // un détail : la voix dit « ils réservent une table » pendant que le
-          // paquet, lui, s'était arrêté là où la rotation l'avait laissé — on
-          // a vu le panneau de réservation s'ouvrir sur une formule sandwich.
+          // ON REVIENT SUR LA PREMIÈRE CARTE POUR RÉSERVER, et ce n'est pas un
+          // détail : sans ça le paquet s'arrêtait là où la rotation l'avait
+          // laissé, et on voyait le panneau de réservation s'ouvrir sur une
+          // formule sandwich pendant que la voix parlait d'une table.
+          // LA PREMIÈRE CARTE EST CELLE DE SA FAMILLE, maintenant — un créneau
+          // de salon chez un coiffeur, un menu chez un restaurateur. Elle était
+          // un restaurant pour tout le monde, ce qui faisait basculer toute la
+          // démonstration dans un métier qui n'était pas le sien.
           dans(t(5), () => { setCarteVille(0); setGesteQui("resa"); setResaQui(true); });
           // ④ ET LE MESSAGE PART. Le panneau s'arrêtait sur un bouton qu'on ne
           //    voyait jamais appuyer : la démonstration montrait une intention,
@@ -965,7 +988,7 @@ export function DemoTour({
       // affichées d'un bloc, elles se lisent comme un tableau de bord de plus.
       steps.push({
         title: "Ce qui vous revient",
-        say: SAY_RETOUR,
+        say: SAY_FIN,
         enter: () => {
           chime();
           setRetourN(-1);
@@ -977,61 +1000,16 @@ export function DemoTour({
             window.setTimeout(() => {
               setRetourN(i);
               setCaption(retourDit.phrases[i]);
-            }, quand(SAY_RETOUR, part));
+            }, quand(SAY_FIN, part));
           });
-        },
-      });
-    }
-
-    if (avisAllowed) {
-      // ── ACTE 7. ET CE N'EST PAS QUE POUR MIDI ────────────────────────────
-      //     L'acte métier, resserré : trois gestes et la demande inversée. Il
-      //     arrive APRÈS le retour économique, parce qu'il ne vaut que si l'on
-      //     a d'abord compris à quoi sert de dire ce qui se passe.
-      if (actesListe.length) {
-        steps.push({
-          title: "Et ce n'est pas que pour midi",
-          say: SAY_METIER,
-          enter: () => {
+          // ET LA BOUCLE SE FERME DANS LE MÊME ACTE. Elle en avait un à elle,
+          // plus l'acte métier avant : trois écrans pour finir, là où la
+          // décision était déjà prise. Voir `SAY_FIN`.
+          window.setTimeout(() => {
             chime();
-            setMetierN(0);
-            setJournee(false);
-            setScene("metier");
-            setCaption(INTRO_ACTE);
-            METIER_AT.forEach((part, i) => {
-              window.setTimeout(() => {
-                if (i > 0) setMetierN(i);
-                setCaption(actesListe[i].dit);
-              }, quand(SAY_METIER, part));
-            });
-            // LA JOURNÉE ENTIÈRE, À LA FIN. Les quatre temps défilaient et
-            // l'acte s'arrêtait net sur le dernier : on avait vu quatre
-            // choses, jamais qu'elles faisaient une journée — ce qui est
-            // pourtant tout l'argument.
-            window.setTimeout(() => {
-              chime();
-              setJournee(true);
-              setCaption(FIN_ACTE);
-            }, quand(SAY_METIER, METIER_FIN));
-          },
-        });
-      }
-
-      // ── ACTE 8. LA BOUCLE, QUI EST AUSSI LA FIN ──────────────────────────
-      //     La première phrase de la page d'accueil, rendue à la fin — et le
-      //     rappel de l'acte 2 : le site n'était que le point de départ.
-      //
-      //     IL N'Y A PLUS D'ACTE « À VOUS ». Il redisait ce que l'écran de
-      //     décision affiche déjà, deux fois de suite et avec les mêmes mots ;
-      //     la démonstration retombait entre les deux. Le bouton arrive quand
-      //     elle se tait.
-      steps.push({
-        title: "Votre commerce, en direct",
-        say: SAY_BOUCLE,
-        enter: () => {
-          chime();
-          setScene("boucle");
-          suivre(SAY_BOUCLE, BOUCLE_DIT, BOUCLE_AT, setBoucleN);
+            setScene("boucle");
+            suivre(SAY_FIN, BOUCLE_DIT, BOUCLE_AT, setBoucleN);
+          }, quand(SAY_FIN, PART_BOUCLE));
         },
       });
     }
@@ -1040,9 +1018,8 @@ export function DemoTour({
     // Durée de repli, utilisée UNIQUEMENT si l'audio est bloqué : c'est alors le
     // temps de LECTURE de la légende. Le plafond suit la plus longue réplique —
     // sinon la phrase la plus dense défile avant d'avoir pu être lue.
-    // Le plafond suit la réplique la plus longue — désormais l'acte métier, qui
-    // enchaîne cinq temps. Laissé à 17 s, il coupait la parole à sa dernière
-    // carte : elle apparaissait, et l'étape changeait dans la seconde.
+    // Le plafond suit la réplique la plus longue — désormais l'acte de clôture,
+    // qui porte le retour ET la fin du récit depuis qu'ils n'en font qu'un.
     const est = estimeMs;
     for (let i = 0; i < steps.length; i++) {
       if (cancelled.current) return;
@@ -1143,7 +1120,6 @@ export function DemoTour({
 
 
   // Le temps de l'acte métier actuellement à l'écran.
-  const tempsCourant = actesListe[Math.min(metierN, actesListe.length - 1)];
 
   return (
     <>
@@ -1914,13 +1890,18 @@ export function DemoTour({
           <div className="dtour-mark" style={{ ["--i" as string]: 0 }}><span>✦</span></div>
           <div className="kick" style={{ ["--i" as string]: 1 }}>✨ Votre page est prête</div>
           <div className="t" style={{ ["--i" as string]: 2 }}>{nom}</div>
-          {/* LA DURÉE ANNONCÉE EST CELLE QU'ON MET. Elle disait « un peu plus
-              d'une minute » et « ≈ 1 min 40 » ; la visite en fait 2 min 25
-              depuis que l'acte 3 joue les trois gestes et que l'acte 7
-              rassemble la journée — mesuré au navigateur, bout en bout. Un
-              commerçant qui a accepté une minute et en passe deux se sent
-              retenu, et c'est le pire moment pour ça. */}
-          <div className="s" style={{ ["--i" as string]: 3 }}>Votre assistante <b>Léa</b> vous la présente à voix haute, en un peu plus de deux minutes.</div>
+          {/* LA DURÉE ANNONCÉE EST CELLE QU'ON MET — un commerçant qui a
+              accepté une minute et en passe deux se sent retenu, et c'est le
+              pire moment pour ça.
+
+              ELLE A BAISSÉ AVEC LES DEUX ACTES QU'ON A RETIRÉS : l'acte métier
+              et sa journée en cinq temps, la boucle et sa clôture. Mesuré ici
+              sans la voix — le repli de lecture, qui est le seul mesurable
+              dans un navigateur sans clé — la visite passe de 2 min 40 à
+              2 min 15, dont dix-neuf secondes d'attente que la voix supprime.
+              D'où les deux minutes annoncées. À revérifier sur un téléphone,
+              voix allumée, parce que c'est là que le chiffre compte. */}
+          <div className="s" style={{ ["--i" as string]: 3 }}>Votre assistante <b>Léa</b> vous la présente à voix haute, en sept étapes et deux minutes.</div>
           {/* UNE SEULE PORTE.
               « Voir le site directement » était posé juste sous « Découvrir mon
               site », dans la même taille : deux propositions côte à côte, et
@@ -1932,7 +1913,7 @@ export function DemoTour({
               pendant la visite (voir `.dtour-quit`), et pas au moment où l'on
               demande deux minutes d'attention. */}
           <button className="go" style={{ ["--i" as string]: 4 }} onClick={start}>Découvrir ma page</button>
-          <div className="trust" style={{ ["--i" as string]: 5 }}>⏱️ ≈ 2 min 25 · montez le son 🔊</div>
+          <div className="trust" style={{ ["--i" as string]: 5 }}>⏱️ ≈ 2 min · montez le son 🔊</div>
         </div>
       )}
 
@@ -1992,86 +1973,17 @@ export function DemoTour({
               le fil » : l'inverse de ce qui se passe. Ce sont maintenant
               de petites fenêtres de sites, le fil s'y duplique, et des
               habitants apparaissent autour — on voit QUI découvre l'annonce. */}
-          {/* ── ACTE 7 · ET CE N'EST PAS QUE POUR MIDI ────────────────────
-              QUATRE MOMENTS DE SA JOURNÉE, ET CE QUE CHACUN DONNE DANS LE
-              DIRECT.
+          {/* ── L'ACTE « ET CE N'EST PAS QUE POUR MIDI » N'EXISTE PLUS ──
 
-              L'acte montrait une carte blanche par temps : une puce, sa phrase,
-              une flèche, l'annonce. Quatre écrans de produit à la suite, et le
-              commerçant décrochait exactement là où on voulait qu'il se
-              reconnaisse. Trois choses le corrigent :
+              « À partir de l'étape 6 c'est beaucoup trop long. » Il enchaînait
+              les quatre moments de sa journée et durait à lui seul près de
+              vingt-cinq secondes — la plus longue réplique de toute la visite,
+              placée juste après l'acte qui emporte la décision.
 
-               · L'HEURE ET UN TITRE, en haut. « 14 h — Il vous en reste ? » : il
-                 sait en une seconde de quel moment de SA journée on parle, et
-                 ce qu'il pourrait y faire. Sans ce titre, les quatre cartes se
-                 lisaient comme quatre fonctions d'un menu.
-               · CE QU'IL DIT, entre guillemets. C'est toujours lui qui apporte
-                 le fait — l'assistante ne sait pas combien il lui reste de
-                 tables et ne le saura jamais.
-               · LA CARTE DU DIRECT, en dessous. C'est-à-dire ce que ses clients
-                 reçoivent réellement. C'est la seule ligne de l'acte qui
-                 réponde à « et alors ? ». */}
-          {scene === "metier" && tempsCourant && tempsCartes[metierN] && (
-            /* CHAQUE MOMENT A SA COULEUR, et ce n'est pas de la décoration.
-               Les quatre temps s'enchaînaient dans la même livrée — même vert,
-               même cadre, même composition — et seul le texte changeait. En
-               quatre secondes chacun, on ne lit pas quatre textes : on voit
-               quatre fois le même écran, et on en conclut que le produit ne
-               fait qu'une chose. La teinte suit le SENS du geste (l'ambre de
-               l'ardoise, la brique de ce qui allait à la poubelle, le bleu des
-               places libres) et se pose sur l'heure, le titre, le trait et le
-               halo derrière la carte. */
-            <div
-              className={`dtour-ov mt-ov${journee ? " jour" : ""}`}
-              style={{ ["--teinte" as string]: tempsCartes[metierN].teinte }}
-            >
-              <div className="mt-wrap">
-                <div className="mt-dots" aria-hidden="true">
-                  {actesListe.map((t2, i) => (
-                    <i key={t2.cle} className={i === metierN ? "on" : i < metierN ? "done" : ""} />
-                  ))}
-                </div>
-                {/* La clé force le remontage : sans elle, React réutiliserait
-                    l'écran précédent et le texte changerait sans mouvement — on
-                    lirait un rafraîchissement, pas un temps qui succède. */}
-                <div className="mt-temps" key={metierN}>
-                  <div className="mt-hh">{tempsCartes[metierN].heure}</div>
-                  <div className="mt-titre">{tempsCartes[metierN].titre}</div>
-                  <div className="mt-dis">
-                    <i aria-hidden="true">{tempsCourant.via === "photo" ? "📷" : "🎙️"}</i>
-                    {`« ${tempsCartes[metierN].dit} »`}
-                  </div>
-                  <div className="mt-fleche" aria-hidden="true"><i /></div>
-                  <CarteSwipe carte={tempsCartes[metierN].carte} className="mt-carte" />
-                </div>
-              </div>
-
-              {/* LA JOURNÉE ENTIÈRE, en un seul écran, à la fin.
-                  L'acte montrait quatre moments et s'arrêtait sur le dernier :
-                  on avait vu quatre choses, jamais qu'elles font UNE journée —
-                  ce qui est pourtant tout l'argument. Les quatre cartes se
-                  posent ici côte à côte, chacune sous son heure et sa couleur.
-                  C'est la seule image de la démonstration qui répond à « et au
-                  bout d'une journée, ça donne quoi ? ». */}
-              {journee && (
-                <div className="mt-jour">
-                  <div className="mt-jour-h">Votre journée dans Le Direct</div>
-                  <div className="mt-jour-r">
-                    {tempsCartes.map((tc, i) => (
-                      <div
-                        className="mt-jour-c"
-                        key={tc.heure + tc.titre}
-                        style={{ ["--teinte" as string]: tc.teinte, ["--i" as string]: i }}
-                      >
-                        <span className="h">{tc.heure}</span>
-                        <CarteSwipe carte={tc.carte} className="mt-mini" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+              SON ÉCRAN EST PARTI AVEC LUI, et c'est la règle de ce fichier :
+              laisser une scène derrière un `Scene` qui ne la nomme plus ferait
+              croire qu'elle peut revenir toute seule. `acte-metier.ts` reste,
+              lui — il sert l'espace pro, pas cette visite. */}
 
           {/* ── ACTE 2 · LA BASCULE ───────────────────────────────────────
               Le site vient d'être montré. Cette phrase le garde et le

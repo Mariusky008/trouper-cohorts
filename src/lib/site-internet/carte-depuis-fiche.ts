@@ -55,6 +55,12 @@ export type FicheCommercant = {
   mapsHref?: string;
   /** Les prestations déclarées, quand il en a déclaré. */
   services?: { nom: string; prix?: string; detail?: string }[];
+  /**
+   * LES AVIS GOOGLE, EN TOUTES LETTRES — et c'est la seule preuve qu'il a le
+   * premier jour. Voir `avisGoogle` dans `apercu-habitant.ts` pour la raison
+   * pour laquelle ils ne se mélangent pas aux avis laissés ici.
+   */
+  avisGoogle?: { qui: string; texte: string; note: number | null }[];
 };
 
 /**
@@ -166,6 +172,10 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
     // LA NOTE VIENT DE GOOGLE ET ON LE DIT AINSI : c'est la seule chose de
     // cette page qu'il n'a pas écrite et qui parle pourtant de lui.
     google: f.note ? { note: f.note, avis: f.avis ?? 0 } : undefined,
+    // LE CHAPITRE « VU CHEZ EUX » NE TENAIT QU'À SES MOMENTS, qui sont vides
+    // ici : la page d'un prospect n'avait donc AUCUNE preuve sociale, et le
+    // bouton « On en parle bien » défilait vers une ancre absente.
+    avisGoogle: (f.avisGoogle ?? []).filter((a) => a.texte).slice(0, 4),
     /**
      * SES PRESTATIONS DEVIENNENT SON CATALOGUE, QUAND IL EN A DÉCLARÉ.
      *

@@ -26,6 +26,7 @@
 //     l'écran de ses clients. Quand il n'en a aucune, la carte tombe sur un
 //     fond dégradé et l'emoji du métier — jamais sur la photo d'un autre.
 import type { CarteDirect } from "@/components/direct/carte-swipe";
+import type { FamilleMetier } from "@/lib/direct/geste-du-jour";
 import { estRestauration } from "@/lib/direct/mots-metier";
 
 /**
@@ -167,7 +168,157 @@ export function motDAction(g: GesteDuJour): string {
  * Cinq cartes, aucun nom. Elles disent la VILLE, pas lui — et c'est
  * exactement ce qui rend l'acte suivant douloureux : il n'y est pas.
  */
-export function cartesDeLaVille(ville: string): CarteDirect[] {
+/**
+ * ═══ LES PHOTOS DES AUTRES FAMILLES ═══════════════════════════════════════
+ *
+ * Six images de plus, prises dans celles que le produit possède déjà : le
+ * salon, la coupe, la pose d'ongles, le rayon d'une friperie, le bouquet du
+ * jour, la planche d'un bar. Rien n'a été acheté pour l'occasion — ce sont
+ * les mêmes que celles des murs d'essai, et c'est voulu : le fil de la ville
+ * doit ressembler au reste du produit, pas à une banque d'images.
+ */
+const AILLEURS = {
+  salon: "/direct/fauteuil-coiffeur.jpg",
+  coupe: "/direct/avis-coupe.jpg",
+  ongles: "/direct/avis-ongles.jpg",
+  rayon: "/direct/friperie-rayon.jpg",
+  bouquet: "/direct/bouquet-du-jour.jpg",
+  vitrineBoulange: "/direct/boulange-vitrine.jpg",
+} as const;
+
+export function cartesDeLaVille(ville: string, famille: FamilleMetier = "restauration"): CarteDirect[] {
+  const yAllerF = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(ville);
+
+  /* ═══ CE QUE CHAQUE FAMILLE VOIT, ET POURQUOI CE N'EST PAS LA MÊME VILLE ══
+   *
+   * « Tout à coup la démo était faite pour un restaurateur. »
+   *
+   * CE FIL ÉTAIT ÉCRIT EN DUR : cinq restaurants, servis à tout le monde. Un
+   * coiffeur entendait « six cents Dacquois cherchent un créneau » au-dessus
+   * d'un menu à 19 €, et voyait s'ouvrir un panneau de réservation de table.
+   * La voix disait son métier, l'écran disait celui d'en face, et c'est
+   * l'écran qu'on croit.
+   *
+   * QUATRE FILS, PAS TREIZE. La famille vient de `geste-du-jour`, qui décide
+   * déjà de tous les mots de la voix — donc les deux ne peuvent plus diverger.
+   * Écrire un fil par métier aurait produit treize listes qui se seraient
+   * contredites au premier ajustement, pour un écran qu'on regarde neuf
+   * secondes.
+   *
+   * ET LA RÈGLE 1 TIENT TOUJOURS : aucun commerce n'est nommé. Ce sont ses
+   * VOISINS — donc, oui, ses concurrents. C'est précisément l'argument de
+   * l'acte : la ville cherche ce qu'il vend, et c'est chez eux qu'elle le
+   * trouve. */
+  if (famille === "rdv") {
+    return [
+      {
+        photo: AILLEURS.salon, cadrage: "60%",
+        nom: "Un salon du centre", metier: "Coiffeur", ville, distance: "300 m",
+        itineraire: yAllerF, reste: "Cet après-midi", icone: "✂️",
+        quoi: "3 créneaux libres", lignes: ["À partir de 14 h", "Coupe + brushing"],
+        prix: "", social: "2 ont demandé",
+      },
+      {
+        photo: AILLEURS.coupe, cadrage: "50%",
+        nom: "Un barbier à deux rues", metier: "Barbier", ville, distance: "250 m",
+        itineraire: yAllerF, reste: "Aujourd'hui", icone: "🪒",
+        quoi: "Une place à 16 h", lignes: ["Taille de barbe", "Sans rendez-vous si elle reste"],
+        prix: "", social: "1 a demandé",
+      },
+      {
+        photo: AILLEURS.ongles, cadrage: "50%",
+        nom: "Une onglerie", metier: "Onglerie", ville, distance: "450 m",
+        itineraire: yAllerF, reste: "Demain matin", icone: "💅",
+        quoi: "2 créneaux libres", lignes: ["Pose complète", "Semi-permanent"],
+        prix: "", social: "6 l'ont vu passer",
+      },
+      {
+        photo: AILLEURS.salon, cadrage: "38%",
+        nom: "Un institut", metier: "Institut de beauté", ville, distance: "600 m",
+        itineraire: yAllerF, reste: "Ce soir", icone: "✨",
+        quoi: "Un créneau à 18 h 30", lignes: ["Soin du visage", "Après le travail"],
+        prix: "", social: "3 l'ont vu passer",
+      },
+      {
+        photo: AILLEURS.coupe, cadrage: "70%",
+        nom: "Un salon qui vient d'ouvrir", metier: "Coiffeur", ville, distance: "800 m",
+        itineraire: yAllerF, reste: "Toute la semaine", icone: "🆕",
+        quoi: "Le carnet est vide", lignes: ["Toutes les heures sont libres"],
+        prix: "", social: "9 l'ont vu passer",
+      },
+    ];
+  }
+
+  if (famille === "boutique") {
+    return [
+      {
+        photo: AILLEURS.vitrineBoulange, cadrage: "72%",
+        nom: "Une boutique du centre", metier: "Commerce", ville, distance: "300 m",
+        itineraire: yAllerF, reste: "Ce matin", icone: "🧺",
+        quoi: "Arrivé ce matin", lignes: ["Ce qui part le plus vite"],
+        prix: "", social: "12 l'ont vu passer",
+      },
+      {
+        photo: AILLEURS.bouquet, cadrage: "55%",
+        nom: "Une fleuriste du marché", metier: "Fleuriste", ville, distance: "250 m",
+        itineraire: yAllerF, reste: "Jusqu'à midi", icone: "💐",
+        quoi: "Le bouquet du jour", lignes: ["Cueilli ce matin", "Emballé devant vous"],
+        prix: "18 €", social: "4 en ont pris",
+      },
+      {
+        photo: AILLEURS.rayon, cadrage: "50%",
+        nom: "Une friperie du vieux centre", metier: "Friperie", ville, distance: "400 m",
+        itineraire: yAllerF, reste: "Arrivage du jour", icone: "🧥",
+        quoi: "Ce qui vient de rentrer", lignes: ["Une pièce par taille", "Premier arrivé"],
+        prix: "", social: "7 l'ont vu passer",
+      },
+      {
+        photo: PHOTOS.four, cadrage: CADRAGE[PHOTOS.four],
+        nom: "Une boulangerie", metier: "Boulangerie", ville, distance: "600 m",
+        itineraire: yAllerF, reste: "Depuis 7 h", icone: "🥐",
+        quoi: "La fournée vient de sortir", lignes: ["Tant qu'elle est chaude"],
+        prix: "", social: "9 l'ont vu passer",
+      },
+      {
+        photo: AILLEURS.rayon, cadrage: "70%",
+        nom: "Un magasin de la rue piétonne", metier: "Prêt-à-porter", ville, distance: "180 m",
+        itineraire: yAllerF, reste: "Cette semaine", icone: "👕",
+        quoi: "La nouvelle collection", lignes: ["Essayable sur place"],
+        prix: "", social: "5 l'ont mise de côté",
+      },
+    ];
+  }
+
+  if (famille === "autre") {
+    return [
+      {
+        photo: AILLEURS.salon, cadrage: "50%",
+        nom: "Un artisan du coin", metier: "Artisan", ville, distance: "1,2 km",
+        itineraire: yAllerF, reste: "Cette semaine", icone: "🛠️",
+        quoi: "Deux jours de libres", lignes: ["Jeudi et vendredi", "Devis gratuit"],
+        prix: "", social: "3 ont demandé",
+      },
+      {
+        photo: AILLEURS.rayon, cadrage: "50%",
+        nom: "Un atelier du centre", metier: "Atelier", ville, distance: "700 m",
+        itineraire: yAllerF, reste: "Ce mois-ci", icone: "🔧",
+        quoi: "Une place cette semaine", lignes: ["Réparation sur place"],
+        prix: "", social: "2 ont demandé",
+      },
+      {
+        photo: AILLEURS.coupe, cadrage: "50%",
+        nom: "Un professionnel disponible", metier: "Service", ville, distance: "2 km",
+        itineraire: yAllerF, reste: "Dès demain", icone: "📅",
+        quoi: "Un rendez-vous demain", lignes: ["Première visite", "Sans engagement"],
+        prix: "", social: "5 l'ont vu passer",
+      },
+    ];
+  }
+
+  return cartesDeLaVilleRestauration(ville);
+}
+
+function cartesDeLaVilleRestauration(ville: string): CarteDirect[] {
   // CE QU'UN HABITANT A BESOIN DE SAVOIR POUR CHOISIR, et rien d'autre.
   //
   // LE DÉFAUT. Les trois cartes disaient « Le menu du jour · Servi jusqu'à

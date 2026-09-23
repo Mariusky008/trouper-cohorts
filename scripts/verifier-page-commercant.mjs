@@ -144,6 +144,120 @@ const rang = await p.evaluate(() => {
 });
 dire(rang === 1, "la demande est sous la boutique, jamais au milieu");
 
+// ── 5. LES DEUX BOUTONS DE LA RANGÉE DE RÉASSURANCE FONT QUELQUE CHOSE ─────
+//
+// « Ça ne fait rien quand on clique dessus. » Les deux échouaient en silence :
+// l'un défilait vers le haut de la page, l'autre vers une ancre absente. Une
+// garde qui vérifie leur PRÉSENCE n'aurait rien vu — ils étaient là, dessinés,
+// et ils ne répondaient pas. On mesure donc ce qu'ils PRODUISENT.
+await p.goto(`${BASE}/site-internet/apercu/demo-coiffeur?via=direct`, { waitUntil: "networkidle" });
+await p.waitForTimeout(1000);
+
+await p.evaluate(() => {
+  const b2 = [...document.querySelectorAll(".bq-fin-l button")].find((e) => /rendez-vous|réserver|côté/i.test(e.textContent || ""));
+  b2?.click();
+});
+await p.waitForTimeout(700);
+const ecrit = await p.evaluate(() => document.querySelector(".bq-salon q")?.textContent || "");
+dire(/bonjour/i.test(ecrit) && ecrit.includes("Un salon du centre"), "le geste du métier prépare un vrai message, nommant le commerce");
+// LE MESSAGE NE FIXE NI JOUR NI HEURE : la page ne connaît pas son agenda, et
+// annoncer « samedi 15 h » l'engagerait sur un créneau qu'il n'a peut-être pas.
+dire(!/\b\d{1,2}\s*h\b|samedi|lundi|demain/i.test(ecrit), "et il ne promet aucun créneau à sa place");
+await p.evaluate(() => document.querySelector(".bq-voile")?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+await p.waitForTimeout(400);
+
+const bouge = await p.evaluate(async () => {
+  const avant = window.scrollY;
+  [...document.querySelectorAll(".bq-fin-l button")].find((e) => /on en parle bien/i.test(e.textContent || ""))?.click();
+  await new Promise((r) => setTimeout(r, 1500));
+  return Math.abs(window.scrollY - avant);
+});
+dire(bouge > 200, `« On en parle bien » mène quelque part (${Math.round(bouge)} px)`);
+dire(
+  await p.evaluate(() => Boolean(document.querySelector(".bq-gg"))),
+  "et ce qu'on y trouve, ce sont ses avis Google, en toutes lettres",
+);
+
+// ── 6. LA VISITE NE DÉPASSE PAS SEPT ÉTAPES, ET PARLE DE SON MÉTIER ────────
+//
+// « À partir de l'étape 6 c'est beaucoup trop long, une seule étape suffit
+// pour avoir au total 7 étapes maximum. » — et « tout à coup la démo était
+// faite pour un restaurateur ».
+//
+// ON LIT LE COMPTEUR ET LES MOTS, pas la liste des actes : une garde qui
+// compterait les `steps.push` du code serait vraie même le jour où l'écran
+// n'affiche plus rien.
+for (const slug of ["demo-coiffeur", "demo-mode"]) {
+  await p.goto(`${BASE}/site-internet/apercu/${slug}`, { waitUntil: "networkidle" });
+  await p.waitForTimeout(800);
+  await p.click(".dtour-launch .go");
+  let total = null;
+  const dits = [];
+  for (let i = 0; i < 90; i++) {
+    await p.waitForTimeout(350);
+    const v = await p.evaluate(() => ({
+      s: document.querySelector(".dt-step")?.textContent || "",
+      c: document.body.innerText.replace(/\s+/g, " "),
+    }));
+    const m = v.s.match(/Étape\s+(\d+)\s*\/\s*(\d+)/);
+    if (m) total = Number(m[2]);
+    dits.push(v.c);
+  }
+  const tout = dits.join(" ");
+  dire(total !== null && total <= 7, `${slug} : la visite annonce ${total} étapes (7 au plus)`);
+  // LE FIL DE LA VILLE ÉTAIT CINQ RESTAURANTS POUR TOUT LE MONDE. Un coiffeur
+  // voyait un menu à 19 € et un panneau de réservation de table.
+  dire(!/menu du jour|magret|garbure|19 €|réserver une table/i.test(tout), `${slug} : et rien du restaurant d'en face`);
+}
+
+// ── 7. LE SALON S'OUVRE DE LA PAGE, ET RAMÈNE CHEZ LE COMMERÇANT ──────────
+//
+// « Il manque la possibilité d'ouvrir un salon pour parler et inviter nos
+// amis à parler du produit ou service du commerçant, et depuis ce salon
+// ouvrir les essayages et les mettre dans ce salon pour chaque personne du
+// salon pour en discuter. »
+//
+// LE CHEMIN TRAVERSE DEUX PAGES, et c'est ce qui le rend fragile : la page du
+// commerçant écrit un salon, l'application le lit. Chaque moitié peut marcher
+// seule pendant que le passage entre les deux est cassé — c'est exactement ce
+// qui est arrivé au bouton « On en parle bien ». On marche donc le chemin.
+await p.goto(`${BASE}/site-internet/apercu/demo-coiffeur?via=direct`, { waitUntil: "networkidle" });
+await p.waitForTimeout(1000);
+const porte = await p.evaluate(() =>
+  Boolean([...document.querySelectorAll(".bq-fin-l button")].find((e) => /en parler avec mes amis/i.test(e.textContent || ""))),
+);
+dire(porte, "la page offre d'en parler avec ses amis");
+
+await p.evaluate(() => {
+  [...document.querySelectorAll(".bq-fin-l button")].find((e) => /en parler avec mes amis/i.test(e.textContent || ""))?.click();
+});
+await p.waitForTimeout(600);
+// REGARDER UN ÉCRAN N'OUVRE PAS UNE CONVERSATION. Un salon créé parce que
+// quelqu'un a ouvert un panneau serait un salon vide que personne n'a demandé.
+const avant = await p.evaluate(() => {
+  try { return Object.keys(JSON.parse(localStorage.getItem("clikme-salons-v1") || "{}")).filter((k) => k.startsWith("boutique-")).length; }
+  catch { return -1; }
+});
+dire(avant === 0, "et ne crée rien tant qu'on n'a rien demandé");
+
+const lien = await p.evaluate(() => document.querySelector(".bq-salon-o")?.getAttribute("href") || "");
+dire(/\/autour-de-moi\?salon=boutique-/.test(lien), `le salon est celui du commerce, pas d'une pièce (${lien})`);
+await p.click(".bq-salon-o");
+await p.waitForTimeout(3000);
+
+const retour = await p.evaluate(() => {
+  const a = [...document.querySelectorAll("a")].find((x) => /essayer chez/i.test(x.textContent || ""));
+  return a ? a.getAttribute("href") || "" : "";
+});
+// LE CHEMIN DU RETOUR EST TOUT L'INTÉRÊT : sans lui le salon montre UNE photo
+// au lieu de faire essayer QUATRE personnes, et ce n'est plus qu'un groupe
+// WhatsApp — où l'on peut déjà envoyer une photo.
+dire(/\/site-internet\/apercu\/demo-coiffeur#essayer$/.test(retour), `et il ramène chez le commerçant, sur son essai (${retour})`);
+// LE SALON D'UNE BOUTIQUE NE PORTE PAS UNE OFFRE QUI EXPIRE. « Envoyez cette
+// offre » promettrait une affaire à durée limitée là où il n'y en a aucune.
+const entete = await p.evaluate(() => document.querySelector(".ap-invite-t")?.textContent || "");
+dire(!/offre/i.test(entete), `et il ne parle pas d'une offre (« ${entete.trim()} »)`);
+
 await b.close();
 console.log(echecs === 0 ? "\nLa page du commerçant tient ses promesses." : `\n${echecs} promesse(s) rompue(s).`);
 process.exit(echecs === 0 ? 0 : 1);
