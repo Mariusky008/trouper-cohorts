@@ -26,6 +26,7 @@
 // friperie du vieux centre » — aucun n'existe, aucun n'est désignable, et leur
 // adresse commence par `demo-`. Personne ne peut croire qu'il regarde le sien.
 import { toutesLesCartes, type CarteAutour } from "@/lib/direct/apercu-habitant";
+import { carteDepuisFiche, type FicheCommercant } from "@/lib/site-internet/carte-depuis-fiche";
 
 /**
  * LE MÉTIER → LE COMMERCE DU PAQUET QUI LE REPRÉSENTE LE MIEUX.
@@ -54,6 +55,58 @@ const DEMOS: Array<{ slug: string; carte: string; titre: string }> = [
   { slug: "demo-bijoux", carte: "bijoux-atelier", titre: "Un atelier de bijoux" },
 ];
 
+/**
+ * ═══ ET UNE DERNIÈRE, QUI N'EST PAS COMME LES AUTRES ═══════════════════════
+ *
+ * LES TREIZE CI-DESSUS MONTRENT LE COMMERCE HABITÉ — ses moments, son
+ * catalogue, sa voix, ce qui revient chez lui. C'est ce qu'on vend, et c'est
+ * ce qu'il faut pouvoir regarder métier par métier.
+ *
+ * AUCUNE NE MONTRE CE QUE VOIT UN VRAI PROSPECT. Sa page, elle, se fabrique
+ * depuis sa seule fiche Google — donc sans moment, sans catalogue, sans voix —
+ * et c'est un tout autre écran. Il a fallu qu'il ouvre la page d'un vrai
+ * coiffeur de Dax pour qu'on découvre quatre défauts qui n'existaient QUE sur
+ * ce chemin-là : pas de photo en couverture, pas de prestations, pas d'accès
+ * aux avis, et un salon qui ne s'ouvrait pas.
+ *
+ * CELLE-CI PASSE DONC PAR LE PONT, exactement comme la vraie : même fonction,
+ * mêmes champs, mêmes trous. C'est la seule façon de voir venir ce genre de
+ * défaut sans avoir à demander à quelqu'un d'ouvrir sa page.
+ *
+ * SES DONNÉES RESSEMBLENT À CE QU'APIFY RAMÈNE : des photos en `https://`, des
+ * horaires par jour, une note, trois avis, des prestations déclarées — et rien
+ * d'autre. Le commerce est inventé, et la page le dit en pied.
+ */
+const FICHE_PROSPECT: FicheCommercant = {
+  slug: "demo-prospect",
+  nom: "Un salon de quartier",
+  metier: "Coiffeur",
+  ville: "Dax",
+  adresse: "Rue des Carmes, Dax",
+  horaires: "Aujourd’hui, 9 h – 12 h et 14 h – 19 h",
+  // DES CHEMINS LOCAUX PLUTÔT QUE DES ADRESSES GOOGLE, et c'est le seul écart
+  // avec la vraie : une adresse `googleusercontent` ne se charge pas sur une
+  // machine qui n'a pas le droit d'aller sur Internet, et on passerait son
+  // temps à confondre « la page ne sait pas afficher la photo » avec « la
+  // photo n'est pas arrivée ». Tout le reste du chemin est identique.
+  photos: ["/direct/fauteuil-coiffeur.jpg", "/direct/salon-neuf.jpg", "/direct/avis-coupe.jpg"],
+  note: "4,7",
+  avis: 83,
+  telephone: "+33600000000",
+  mapsHref: "https://www.google.com/maps/search/Un+salon+de+quartier+Dax",
+  avisHref: "https://search.google.com/local/reviews?placeid=demo",
+  // AUCUNE PRESTATION DÉCLARÉE, ET C'EST LE CAS QU'IL FAUT VOIR. Un commerçant
+  // à qui l'on envoie sa page pour la première fois n'a jamais ouvert son
+  // espace : c'est exactement sa situation qui faisait disparaître le chapitre
+  // « Les prestations ». La page retombe donc sur celles de son métier, sans
+  // aucun prix, et le dit — voir `cataloguePropose`.
+  avisGoogle: [
+    { qui: "Sandra M.", texte: "Accueil chaleureux, on ne se sent jamais pressé. La coupe tient très bien.", note: 5 },
+    { qui: "Julien P.", texte: "Rendez-vous pris le matin pour l’après-midi, c’est appréciable.", note: 5 },
+    { qui: "Nadia B.", texte: "Bon conseil couleur, résultat naturel. Parking un peu compliqué.", note: 4 },
+  ],
+};
+
 /** Toute adresse de démonstration commence par là, et rien d'autre ne le fait. */
 export const PREFIXE_DEMO = "demo";
 
@@ -65,10 +118,21 @@ export function estAdresseDeDemo(slug: string): boolean {
 /** L'index : de quoi ouvrir les treize l'une après l'autre. */
 export function listeDesDemos(): Array<{ slug: string; titre: string; nom: string; metier: string }> {
   const cartes = toutesLesCartes();
-  return DEMOS.flatMap((d) => {
-    const c = cartes.find((x) => x.id === d.carte);
-    return c ? [{ slug: d.slug, titre: d.titre, nom: c.nom, metier: c.metier }] : [];
-  });
+  return [
+    // EN TÊTE, PARCE QUE C'EST CELLE QU'ON OUBLIE DE REGARDER. Les autres
+    // montrent le produit ; celle-ci montre ce qu'on envoie vraiment par la
+    // poste, et c'est là que les défauts se cachent.
+    {
+      slug: "demo-prospect",
+      titre: "Un prospect, depuis sa seule fiche Google",
+      nom: FICHE_PROSPECT.nom,
+      metier: FICHE_PROSPECT.metier,
+    },
+    ...DEMOS.flatMap((d) => {
+      const c = cartes.find((x) => x.id === d.carte);
+      return c ? [{ slug: d.slug, titre: d.titre, nom: c.nom, metier: c.metier }] : [];
+    }),
+  ];
 }
 
 /**
@@ -80,6 +144,10 @@ export function listeDesDemos(): Array<{ slug: string; titre: string; nom: strin
  * lesquelles existent.
  */
 export function carteDeDemo(slug: string): CarteAutour | null {
+  // LA DÉMO DU PROSPECT PASSE PAR LE PONT, pas par le paquet : voir
+  // `FICHE_PROSPECT`. C'est la seule qui montre une page telle qu'un vrai
+  // commerçant la reçoit.
+  if (slug === "demo-prospect") return carteDepuisFiche(FICHE_PROSPECT);
   const d = DEMOS.find((x) => x.slug === slug);
   if (!d) return null;
   return toutesLesCartes().find((c) => c.id === d.carte) ?? null;

@@ -1284,7 +1284,25 @@ export type CarteAutour = {
    * seule chose que les gens vont chercher ailleurs — donc la seule qui les
    * fasse quitter l'application.
    */
-  google?: { note: string; avis: number };
+  google?: {
+    note: string;
+    avis: number;
+    /**
+     * OÙ LIRE TOUS LES AUTRES — sa page d'avis Google.
+     *
+     * « Et aussi la possibilité de voir tous les avis. »
+     *
+     * ON N'EN AFFICHE QUE QUATRE, et c'est le bon nombre pour une page qu'on
+     * parcourt : au-delà on ne lit plus, on fait défiler. Mais quatre sur
+     * quatre-vingt-trois sans aucun moyen d'aller voir les autres, c'est une
+     * vitrine qui laisse croire qu'il n'y en a que quatre — et celui qui veut
+     * vérifier quitte l'application pour aller chercher sur Google.
+     *
+     * ABSENT QUAND ON N'A PAS SON `place_id` : on préfère ne pas de lien à un
+     * lien qui tomberait sur la fiche d'un homonyme.
+     */
+    lien?: string;
+  };
   /**
    * ═══ CE QUE SES CLIENTS ONT ÉCRIT SUR GOOGLE, EN TOUTES LETTRES ═════════
    *
@@ -1307,6 +1325,28 @@ export type CarteAutour = {
    * dessiné.
    */
   avisGoogle?: { qui: string; texte: string; note: number | null }[];
+  /**
+   * ═══ SON CATALOGUE EST UNE PROPOSITION, PAS SA CARTE ════════════════════
+   *
+   * « Il manque aussi sur cette page commerçant : Les prestations. »
+   *
+   * LE CHAPITRE DISPARAISSAIT CHEZ TOUS LES PROSPECTS. Il se remplit des
+   * prestations que le commerçant a saisies dans son espace ; quelqu'un à qui
+   * l'on envoie sa page pour la première fois n'en a évidemment saisi aucune,
+   * donc le chapitre n'existait pas — et c'est justement celui qui répond à
+   * « qu'est-ce qu'on trouve chez lui ? ».
+   *
+   * ON PROPOSE DONC CELLES DE SON MÉTIER, ET ON LE DIT. Un coiffeur fait des
+   * coupes : l'écrire n'invente rien sur lui. CE QU'ON N'ÉCRIT PAS, C'EST UN
+   * PRIX — et c'est toute la différence avec la remise de « −40 % » posée un
+   * jour sur un vrai commerce de Dax. Un tarif est une promesse commerciale ;
+   * « Coupe femme, 45 min » est le nom d'un métier.
+   *
+   * ET LE DIRE EST LA CONDITION. Ce drapeau fait apparaître, sous le chapitre,
+   * la ligne qui dit que ces lignes sont proposées et modifiables. Sans elle,
+   * on lirait sa carte là où il n'y a qu'un gabarit.
+   */
+  cataloguePropose?: boolean;
   /**
    * SON LOGO, ROND, DANS LA FICHE DU COMMERCE.
    *
