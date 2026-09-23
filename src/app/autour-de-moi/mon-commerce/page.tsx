@@ -63,6 +63,73 @@ function Styles() {
   letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .mc-b-mot{margin:14px 0 0;font-size:12.5px;line-height:1.5;color:var(--craie3)}
 
+/* ═══ ET VOILA CE QU'ILS EN ONT FAIT ══════════════════════════════════════
+   IL SUIT « HIER » ET IL LUI RESSEMBLE, mais en violet : le bilan compte des
+   passages en boutique, celui-ci compte des REGARDS sur son metier. Deux
+   cadres verts cote a cote se seraient lus comme un seul bloc de chiffres. */
+.mc-retour{margin-top:16px;padding:18px;border-radius:18px;
+  background:rgba(141,109,255,.07);border:1px solid rgba(141,109,255,.24)}
+
+/* ─── L'ENTONNOIR ───
+   UNE BARRE PAR MARCHE, A L'ECHELLE DE LA PREMIERE. C'est la seule facon de
+   VOIR ou ca tombe : a l'echelle de la precedente, toutes les barres feraient
+   la meme longueur et il n'y aurait plus rien a lire. */
+.mc-marches{list-style:none;margin:14px 0 0;padding:0;display:flex;
+  flex-direction:column;gap:7px;counter-reset:none}
+.mc-marches li{position:relative;display:flex;align-items:center;gap:11px;
+  padding:11px 13px;border-radius:13px;overflow:hidden;
+  background:var(--nuit2);border:1px solid var(--trait)}
+.mc-marche-b{position:absolute;inset:0 auto 0 0;width:var(--p);
+  background:linear-gradient(90deg,rgba(141,109,255,.3),rgba(141,109,255,.1));
+  pointer-events:none}
+.mc-marches li b{position:relative;flex:none;min-width:2.2ch;text-align:right;
+  font-size:21px;font-weight:900;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums}
+.mc-marche-m{position:relative;flex:1;min-width:0;font-size:13px;line-height:1.3}
+/* LA MENTION QUI DIT POURQUOI CETTE LIGNE EXISTE. Elle n'est pas decorative :
+   c'est la reponse a « est-ce que ca sert a quelque chose, tout ce qu'on me
+   demande ? ». */
+.mc-marche-m u{display:block;margin-top:2px;text-decoration:none;font-size:10.5px;
+  font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#B9A4FF}
+.mc-marches li em{position:relative;flex:none;font-style:normal;font-size:12px;
+  font-weight:750;color:var(--craie2);font-variant-numeric:tabular-nums}
+.mc-marches li.sien{border-color:rgba(141,109,255,.42)}
+
+/* ─── CE QU'ON NE COMPTERA JAMAIS ───
+   Un ecran qui s'arrete sans rien dire laisse croire qu'il a oublie ; celui-ci
+   refuse, et la difference se lit. */
+/* CRAIE2, ET MESUREE : a craie3 cette ligne tombait pile sur 4,50, c'est-a-dire
+   au seuil exact — or c'est la ligne qui dit ce qu'on REFUSE de compter, donc
+   la derniere qu'on peut se permettre de rendre discrete. */
+.mc-retour-non{margin:12px 0 0;font-size:12px;line-height:1.5;color:var(--craie2)}
+
+/* ─── LE CREUX ───
+   La seule chose de cet ecran qui ressemble a un conseil. Il suit les chiffres,
+   il ne les precede pas : voir creuxDe dans lib/direct/retour-commercant.ts. */
+.mc-retour-c{display:flex;gap:10px;margin:13px 0 0;padding:12px 13px;
+  border-radius:13px;background:rgba(141,109,255,.1);
+  border:1px solid rgba(141,109,255,.26)}
+.mc-retour-c i{flex:none;font-style:normal;font-size:15px;line-height:1.2;
+  color:#B9A4FF}
+.mc-retour-c span{flex:1;min-width:0;font-size:12.5px;line-height:1.5;
+  color:var(--craie2)}
+.mc-retour-c b{display:block;font-size:13px;color:var(--craie)}
+
+/* ─── LEURS PHOTOS ───
+   ELLES EXISTENT DEJA, SUR SES AVIS. Ce qui change ici, c'est qui les regarde :
+   jusqu'a present, lui ne les voyait pas. */
+.mc-clichés{margin-top:16px}
+.mc-clichés ul{list-style:none;margin:9px 0 0;padding:0;display:flex;
+  flex-wrap:wrap;gap:10px}
+.mc-clichés li{display:flex;align-items:center;gap:11px;padding:8px 13px 8px 8px;
+  border-radius:14px;background:var(--nuit2);border:1px solid var(--trait)}
+.mc-clichés img{flex:none;width:52px;height:52px;border-radius:11px;
+  object-fit:cover;display:block}
+/* MESURE : le prenom en craie3 sur ce fond tombait a 4,37 pour un seuil a
+   4,50. C'est le nom de quelqu'un, pas une mention legale. */
+.mc-clichés span{font-size:12px;line-height:1.35;color:var(--craie2)}
+.mc-clichés b{display:block;font-size:13px;font-weight:800;color:var(--craie)}
+
 /* ─── REMETTRE ───
    Le bouton est a droite et il est plein : c'est le seul geste de l'ecran, et
    il doit se toucher d'un pouce sans viser. */

@@ -66,6 +66,12 @@ import {
   taillesVides,
 } from "@/lib/direct/tailles";
 import {
+  abonnerPhrasesGardees,
+  chargerPhrasesGardees,
+  phrasesGardeesVides,
+} from "@/lib/direct/sa-voix";
+import { retourDuCommerce } from "@/lib/direct/retour-commercant";
+import {
   RAISONS,
   abonnerMisesEnAvant,
   chargerMisesEnAvant,
@@ -111,6 +117,13 @@ export function MonCommerce() {
    * lequel on ne retrouve pas la pièce qu'on avait en main.
    */
   const declarees = useSyncExternalStore(abonnerTailles, chargerTailles, taillesVides);
+  /* SA VOIX FAIT APPARAÎTRE UNE MARCHE DE PLUS dans l'entonnoir : on s'abonne,
+     donc la ligne arrive le matin où il dit oui, sans recharger la page. */
+  const motsGardes = useSyncExternalStore(
+    abonnerPhrasesGardees,
+    chargerPhrasesGardees,
+    phrasesGardeesVides,
+  );
   const [pieceOuverte, setPieceOuverte] = useState<string | null>(null);
   const [toutesLesPieces, setToutesLesPieces] = useState(false);
   const c: CarteAutour | undefined = toutesLesCartes().find((x) => x.id === id);
@@ -185,6 +198,9 @@ export function MonCommerce() {
      ce qu'on coche. Le compte de la phrase au-dessus, lui, dit ce qu'il reste
      à faire — et il peut bouger, puisqu'on ne l'a pas sous le pouce. */
   const carteId = c.id;
+  /* ABSENT QUAND LE COMMERCE N'A PAS DE PARCOURS, et c'est la majorité : on ne
+     fabrique pas un entonnoir pour un commerce qui n'a rien à mesurer. */
+  const retour = retourDuCommerce(carteId, motsGardes);
   const aTailles = seTaille(c.branche);
   const taillesDe = (p: Piece) => taillesDeLaPiece(carteId, p, declarees);
   const aTailler = aTailles
@@ -245,6 +261,102 @@ export function MonCommerce() {
           <p className="mc-b-mot">
             C&apos;est ce que vous ne pouvez pas compter derrière votre caisse.
           </p>
+        </section>
+      )}
+
+
+      {/* ═══ ET VOILÀ CE QU'ILS EN ONT FAIT ════════════════════════════════
+
+          UN RESTAURATEUR À QUI L'ON MONTRE LE PARCOURS DIT « C'EST JOLI ». Le
+          même, à qui l'on montre ensuite « trente et une personnes l'ont
+          ouvert, neuf ont tiré le rideau, six vous ont écrit », sort son
+          téléphone. Tout le produit est écrit du côté de l'habitant ; c'est ce
+          qui explique le mécanisme, et ça laisse entière la seule question
+          qu'un commerçant se pose — EST-CE QUE QUELQU'UN REGARDE.
+
+          IL VIENT APRÈS « HIER », ET C'EST LE MÊME RAISONNEMENT. Le bilan dit
+          combien sont passées prendre ; celui-ci dit ce qu'elles ont REGARDÉ
+          avant, et jusqu'où elles sont allées. La récompense d'abord, la
+          corvée ensuite.
+
+          ET IL S'ARRÊTE À « VOUS ONT ÉCRIT ». Voir `retour-commercant.ts` : on
+          sait qu'une demande est partie, on ne sait pas qui a poussé la porte.
+          La ligne manquante est dite, pas laissée à deviner. */}
+      {retour && (
+        <section className="mc-retour">
+          <p className="mc-t">Votre avant-goût</p>
+          <p className="mc-b-quoi">{retour.quoi}</p>
+
+          <ol className="mc-marches">
+            {retour.marches.map((m, i) => (
+              <li key={m.cle} className={m.sienne ? "sien" : undefined}>
+                {/* LA BARRE EST À L'ÉCHELLE DE LA PREMIÈRE MARCHE, pas de la
+                    précédente. C'est la seule façon de VOIR l'entonnoir : à
+                    l'échelle de la précédente, toutes les barres se
+                    ressembleraient et il n'y aurait plus rien à lire. */}
+                <span
+                  className="mc-marche-b"
+                  style={
+                    {
+                      "--p": `${Math.round(
+                        (m.combien / (retour.marches[0].combien || 1)) * 100,
+                      )}%`,
+                    } as React.CSSProperties
+                  }
+                />
+                <b>{m.combien}</b>
+                <span className="mc-marche-m">
+                  {m.mot}
+                  {/* CE QUI N'EXISTE QUE PARCE QU'IL A DONNÉ QUELQUE CHOSE. La
+                      ligne du rideau n'est là que s'il a fourni la seconde
+                      photo, celle de la voix que s'il a dit oui le matin :
+                      autant le lui dire, c'est la réponse à « est-ce que ça
+                      sert à quelque chose, tout ce qu'on me demande ? ». */}
+                  {m.sienne && <u>grâce à vous</u>}
+                </span>
+                {i > 0 && <em>{m.part} %</em>}
+              </li>
+            ))}
+          </ol>
+
+          {/* LA LIGNE QU'ON NE COMPTERA JAMAIS, ET ON LE DIT. Un écran qui
+              s'arrête sans rien dire laisse croire qu'il a oublié ; celui-ci
+              refuse, et la différence se lit. */}
+          <p className="mc-retour-non">
+            Ce qui se passe après, c’est vous qui le savez&nbsp;: on compte les
+            messages, jamais les entrées.
+          </p>
+
+          {retour.creux && (
+            <p className="mc-retour-c">
+              <i aria-hidden="true">↘</i>
+              <span>
+                <b>C’est là que ça tombe&nbsp;: {retour.creux.mot}.</b>
+                {retour.creux.conseil}
+              </span>
+            </p>
+          )}
+
+          {/* ═══ ET LEURS PHOTOS ═══════════════════════════════════════════
+              ELLES EXISTENT DÉJÀ, SUR SES AVIS — ce qui change ici, c'est qui
+              les regarde. Jusqu'à présent, lui ne les voyait pas. */}
+          {retour.photos.length > 0 && (
+            <div className="mc-clichés">
+              <p className="mc-m">Ce qu’ils ont pris en photo chez vous</p>
+              <ul>
+                {retour.photos.map((ph) => (
+                  <li key={ph.src}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={ph.src} alt="" />
+                    <span>
+                      <b>{ph.quoi}</b>
+                      {ph.qui}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </section>
       )}
 
