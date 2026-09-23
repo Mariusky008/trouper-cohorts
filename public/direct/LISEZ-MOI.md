@@ -868,6 +868,23 @@ montée : c'est le rideau qui explique le principe en une seconde, sans texte.
 Les six autres se comprennent parce qu'on a compris celui-là — et la paire des
 lasagnes sert maintenant de référence pour les juger.
 
+## L'état de la liste, et les quatre qui restent à refaire
+
+| Fichier | État |
+|---|---|
+| `plat-lasagnes-servi.jpeg` | ✅ **en place** — même lasagne au jambon des deux côtés |
+| `plat-parmentier-servi.jpeg` | ✅ **en place** — recadrée sur l'assiette : le cadre gardait le plat entier et coupait justement la part |
+| `cote-boeuf-coupee.jpeg` | ✅ **en place** — la côte cuite et tranchée. Étiquettes « À l'étal » ↔ « Chez vous » : rien n'est *servi* chez un boucher |
+| `plat-axoa-servi.jpeg` | ⚠️ **filigrane** « ©Papilles & Pupilles » en bas à droite. La photo est bonne — un vrai bol servi — mais elle appartient à quelqu'un. Troisième filigrane du dossier après les deux envois d'`etal-boucher.jpg` |
+| `plat-garbure-servi.jpeg` | ❌ **deux défauts** : c'est encore une cocotte et non une assiette, donc aucun contraste avec la marmite ; et une boîte de conserve porte une **marque lisible** |
+| `plat-basquaise-servi.jpg` | ❌ **encore une cocotte.** Le riz est dans un bol à côté, mais le sujet reste le plat de cuisson |
+| `tourte-entiere.jpg` | ❌ **pas le même pain** : deux pains de farine blanche avec une étiquette de papier, sur fond blanc. La tranchée est une tourte de seigle sur planche |
+
+**LE PIÈGE EST TOUJOURS LE MÊME, ET IL SE RÉPÈTE :** on cherche une belle photo
+du plat, et on retrouve une photo de CUISSON. Le mot qui trie est « assiette » :
+si le sujet principal est une cocotte, une marmite ou un plat à four, c'est un
+« avant », pas un « après » — quelle que soit sa beauté.
+
 ## Ce que la première livraison a appris
 
 **Deux paires ont été nécessaires, et l'écart entre les deux est instructif.**

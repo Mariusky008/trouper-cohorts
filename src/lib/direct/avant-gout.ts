@@ -120,6 +120,19 @@ export type TempsGout = {
    * rempli, `gout-contenu.tsx` s'en sert sans qu'on touche à rien d'autre.
    */
   photoApres?: string;
+  /**
+   * ═══ CE QUE DISENT LES DEUX CÔTÉS DU RIDEAU ═══════════════════════════════
+   *
+   * « AU PLAT » ET « SERVI » NE VONT PAS PARTOUT, et c'était écrit noir sur
+   * blanc dans la liste des secondes photos avant même qu'on en ait une :
+   * « attention au mot, ce n'est pas "servi", rien n'est servi chez un
+   * boucher ». Une côte de bœuf est CUITE, un pain est TRANCHÉ, une part de
+   * traiteur est EMPORTÉE.
+   *
+   * ABSENT, ON RETOMBE SUR « Au plat » / « Servi », qui vont aux restaurants
+   * — c'est-à-dire à la majorité.
+   */
+  rideau?: { avant: string; apres: string };
   options?: OptionGout[];
   /** Le libellé du geste qui avance. « Je valide ma réponse », « C'est parti ! ». */
   geste?: string;
@@ -564,6 +577,12 @@ export const GOUT_PARMENTIER: Gout = {
       suite: "jusqu’en bas",
       phrase: "Effiloché à la main, deux jours avant. C’est pour ça qu’il tient à la cuillère.",
       photo: "/direct/plat-parmentier.jpg",
+      /* « Effiloché à la main, c'est pour ça qu'il tient à la cuillère » : la
+         phrase promet une texture qu'on ne voit pas sur un plat entier. La
+         seconde photo montre la part sortie, le confit visible sous la croûte —
+         c'est exactement ce dont le texte parlait. */
+      photoApres: "/direct/plat-parmentier-servi.jpeg",
+      rideau: { avant: "Au plat", apres: "Votre part" },
     },
   ],
 };
@@ -695,6 +714,15 @@ export const GOUT_BILLOT: Gout = {
       suite: "mise de côté",
       phrase: "Serge la pare et la coupe à votre arrivée, pas avant.",
       photo: "/direct/etal-boucher.jpg",
+      /* ═══ ET LE MOT N'EST PAS « SERVI » ═══════════════════════════════════
+
+         RIEN N'EST SERVI CHEZ UN BOUCHER, et c'était noté dans la liste des
+         secondes photos avant même qu'on en ait une. Ce qu'il vend, c'est la
+         pièce crue ; ce que le client en fait, c'est ça. Le rideau dit donc
+         « À l'étal » puis « Chez vous » — la seconde photo montre la côte
+         cuite et tranchée, ce qui est un RÉSULTAT, pas une livraison. */
+      photoApres: "/direct/cote-boeuf-coupee.jpeg",
+      rideau: { avant: "À l’étal", apres: "Chez vous" },
       // LE GESTE FINAL EST LE SIEN, PAS CELUI D'UN RESTAURANT. « Réserver » se
       // dit d'une table ; une pièce de viande, on la fait garder — et
       // « Gardez-la-moi » est le mot que sa propre annonce emploie déjà.

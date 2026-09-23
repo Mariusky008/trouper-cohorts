@@ -301,8 +301,8 @@ export function EcranGout({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={t.photoApres} alt="" />
             </span>
-            <span className="go-rid-et a" aria-hidden="true">Au plat</span>
-            <span className="go-rid-et b" aria-hidden="true">Servi</span>
+            <span className="go-rid-et a" aria-hidden="true">{t.rideau?.avant ?? "Au plat"}</span>
+            <span className="go-rid-et b" aria-hidden="true">{t.rideau?.apres ?? "Servi"}</span>
             <span className="go-rid-t" aria-hidden="true">
               <i />
             </span>
