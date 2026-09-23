@@ -61,6 +61,81 @@ function parseRanges(raw: string): Array<[number, number]> | null {
   return out.length ? out : null;
 }
 
+/**
+ * ═══ L'ENTRÉE DU JOUR, Y COMPRIS QUAND ELLE EST GROUPÉE ═══════════════════
+ *
+ * `horairesLisibles` REGROUPE LES JOURS CONSÉCUTIFS IDENTIQUES — c'est sa
+ * raison d'être : « Lundi – Vendredi : 9 h – 19 h » plutôt que cinq lignes qui
+ * répètent la même chose. Et la recherche du jour, ici, ne connaissait que les
+ * lignes d'un seul jour : elle testait `startsWith("mardi")` sur une ligne qui
+ * commence par « lundi ». Résultat, chez tout commerçant ayant saisi ses
+ * horaires dans son espace pro, le badge « Ouvert » n'apparaissait QUE le
+ * lundi — et disparaissait du mardi au vendredi sans que rien ne le dise.
+ *
+ * ON LIT DONC LES DEUX BORNES. Une ligne « A – B » couvre A, B et tout ce qui
+ * les sépare dans l'ordre de lecture (lundi d'abord, dimanche en dernier), ce
+ * qui est exactement la façon dont elle a été fabriquée.
+ *
+ * LE DOUTE RESTE UN REFUS. Un intitulé qu'on n'arrive pas à rattacher à un jour
+ * ne rend rien : mieux vaut pas de badge qu'un « ouvert » faux, et c'est la
+ * règle d'honnêteté qui gouverne tout ce fichier.
+ */
+const ORDRE_SEMAINE = [1, 2, 3, 4, 5, 6, 0]; // lundi → dimanche, comme on lit
+
+/** L'indice JS (0 = dimanche) désigné par un intitulé, ou −1. */
+function jourNomme(mot: string): number {
+  const m = norm(mot);
+  if (!m) return -1;
+  for (let i = 0; i < 7; i++) {
+    if (m.startsWith(DAYS_FR[i]) || m.startsWith(DAYS_EN[i])) return i;
+  }
+  return -1;
+}
+
+export function entreeDuJour(horaires: Horaire[], dayIdx: number): Horaire | null {
+  if (!Array.isArray(horaires) || dayIdx < 0 || dayIdx > 6) return null;
+  const rang = (j: number) => ORDRE_SEMAINE.indexOf(j);
+  const cible = rang(dayIdx);
+  for (const h of horaires) {
+    const brut = String(h.jours || "");
+    // Les deux bornes d'un éventuel groupe. Une ligne simple n'en a qu'une, et
+    // le test se réduit alors à l'égalité — le comportement d'avant.
+    const bornes = brut.split(/\s*(?:-|–|—|to|a|à)\s*/).map(jourNomme).filter((j) => j >= 0);
+    if (!bornes.length) continue;
+    const debut = rang(bornes[0]);
+    const fin = rang(bornes[bornes.length - 1]);
+    if (debut < 0 || fin < 0) continue;
+    if (cible >= Math.min(debut, fin) && cible <= Math.max(debut, fin)) return h;
+  }
+  return null;
+}
+
+/**
+ * CE QUE LA PAGE D'UN COMMERCE ÉCRIT SOUS SON NOM : « Aujourd'hui, 9 h – 19 h ».
+ *
+ * LA BOUTIQUE NE MONTRE QU'UNE LIGNE D'HORAIRES, et c'est délibéré : on vient
+ * chez un commerce pour savoir s'il est ouvert MAINTENANT, pas pour consulter
+ * son tableau de la semaine — celui-ci reste plus bas, au chapitre « Y aller ».
+ * Rendre la semaine entière dans cette ligne l'aurait rendue illisible sur un
+ * téléphone, ce qui est le seul écran où elle compte.
+ *
+ * VIDE SI ON NE SAIT PAS. La ligne disparaît alors de la page, au lieu d'y
+ * afficher une approximation.
+ */
+export function ligneDuJour(horaires: Horaire[], now: Date = new Date()): string {
+  if (!Array.isArray(horaires) || horaires.length === 0) return "";
+  const wd = norm(
+    new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Paris", weekday: "long" }).format(now),
+  );
+  const dayIdx = DAYS_EN.indexOf(wd);
+  if (dayIdx < 0) return "";
+  const today = entreeDuJour(horaires, dayIdx);
+  const texte = String(today?.horaires || "").trim();
+  if (!texte) return "";
+  if (/(ferme|closed)/.test(norm(texte))) return "Fermé aujourd’hui";
+  return `Aujourd’hui, ${texte}`;
+}
+
 export function computeOpenState(horaires: Horaire[], now: Date = new Date()): OpenState {
   if (!Array.isArray(horaires) || horaires.length === 0) return null;
 
@@ -80,14 +155,8 @@ export function computeOpenState(horaires: Horaire[], now: Date = new Date()): O
 
   const dayIdx = DAYS_EN.indexOf(wd);
   if (dayIdx < 0) return null;
-  const enName = DAYS_EN[dayIdx];
-  const frName = DAYS_FR[dayIdx];
 
-  // Retrouve l'entrée du jour (jours stockés en anglais OU en français).
-  const today = horaires.find((h) => {
-    const j = norm(h.jours || "");
-    return j.startsWith(enName) || j.startsWith(frName) || j === enName || j === frName;
-  });
+  const today = entreeDuJour(horaires, dayIdx);
   if (!today) return null; // on ne connaît pas le jour → pas de badge
 
   const ranges = parseRanges(today.horaires || "");

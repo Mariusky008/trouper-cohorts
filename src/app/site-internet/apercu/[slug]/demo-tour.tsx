@@ -52,7 +52,37 @@ type Props = {
    * à onze heures — puis que quelque chose lui REVIENT. Voir `geste-du-jour`.
    */
   geste?: GesteDuJour;
+  /**
+   * CE QU'ON PEUT ESSAYER CHEZ CE COMMERÇANT, DANS SES MOTS À LUI.
+   *
+   * L'acte qui manquait, et c'est LA nouveauté de la page : la démonstration
+   * présentait un site vitrine — photos, horaires, avis — c'est-à-dire ce que
+   * tout le monde a. Elle ne nommait nulle part la seule chose que personne
+   * d'autre ne fait.
+   *
+   * IL N'Y A PAS DE SCÈNE ICI, ET C'EST VOLONTAIRE : l'acte fait défiler
+   * jusqu'à la VRAIE section d'essai de la page, qui est déjà écrite dans les
+   * mots du métier. C'est ce qui rend la démonstration juste chez un coiffeur
+   * comme chez une onglerie sans qu'on ait à écrire deux scènes. Les mots sont
+   * calculés sur le serveur — voir `direLEssai` dans `page-boutique.tsx`.
+   *
+   * Absent quand le commerce n'a ni essayage, ni avant-goût, ni soirée : on ne
+   * lui promet pas un écran qu'il n'a pas, l'acte saute.
+   */
+  essai?: { titre: string; say: string };
   keepHref?: string; // contact (WhatsApp/tel) pour « Garder mon site gratuitement »
+  /**
+   * LA PAGE SUR LAQUELLE LA DÉMONSTRATION SE JOUE, EN UN SÉLECTEUR.
+   *
+   * La visite ne se contente pas de parler par-dessus : elle fait réagir la
+   * VRAIE page derrière elle — elle la construit bloc par bloc, elle défile
+   * jusqu'à ses chapitres. Il lui faut donc savoir où est cette page, et le
+   * sélecteur était écrit en dur (`main.mqc`, la maquette vitrine). Le jour où
+   * la page du commerçant est devenue la boutique, tout ce qui la touchait est
+   * devenu silencieusement inerte : aucune erreur, juste une démonstration qui
+   * raconte des choses que l'écran ne fait pas.
+   */
+  racine?: string;
 };
 
 /** Les écrans du nouveau déroulé, et rien d'autre.
@@ -87,7 +117,9 @@ export function DemoTour({
   flashExample,
   actes,
   geste,
+  essai,
   keepHref,
+  racine = "main.mqc",
 }: Props) {
   const [phase, setPhase] = useState<"idle" | "playing" | "end" | "more" | "done">("idle");
   // Bonus « toucher plus de monde » : la scène se joue étape par étape (le site du
@@ -182,7 +214,7 @@ export function DemoTour({
   // ── ACTE 2 · LA BASCULE ────────────────────────────────────────────────
   //    La phrase qui fait tenir tout le reste, et qui n'existait pas. Elle
   //    garde le cadeau et le déclasse en une ligne.
-  const SAY_BASCULE = `Mais le plus important n'est pas votre site. C'est ce qu'il peut vous rapporter.`;
+  const SAY_BASCULE = `Mais le plus important n'est pas votre page. C'est ce qu'elle peut vous rapporter.`;
 
   // ── ACTE 3 · CE MIDI, DANS SA VILLE ────────────────────────────────────
   //    On ne dit pas « mille personnes » : ça se lit « ClikMe a mille
@@ -236,14 +268,14 @@ export function DemoTour({
   const PHOTO_DIT = G
     ? [
         `${G.gesteDit} C'est tout.`,
-        `${G.parPhoto ? "Je la lis, je l'écris" : "Je l'écris"}, et ${G.envoi} sur votre site et dans Le Direct — à l'heure où les ${gentile} cherchent ${G.cherchent}.`,
+        `${G.parPhoto ? "Je la lis, je l'écris" : "Je l'écris"}, et ${G.envoi} sur votre page et dans Le Direct — à l'heure où les ${gentile} cherchent ${G.cherchent}.`,
       ]
     : [];
   const SAY_PHOTO = PHOTO_DIT.join(" ");
   const PHOTO_AT = PHOTO_DIT.map((p) => partAu(SAY_PHOTO, p));
   /** L'instant où elle nomme les deux destinations : la carte les affiche là,
    *  et pas trois secondes avant qu'elle en parle. */
-  const PHOTO_OU = partAu(SAY_PHOTO, "sur votre site");
+  const PHOTO_OU = partAu(SAY_PHOTO, "sur votre page");
 
   // ── ACTE 6 · CE QUI VOUS REVIENT ───────────────────────────────────────
   //    Le seul moment de toute la démonstration où quelque chose revient VERS
@@ -293,7 +325,7 @@ export function DemoTour({
   //    retombait entre les deux. Elle boucle sur l'acte 2 — le site était le
   //    point de départ, voilà ce qu'il rapporte — puis le bouton arrive.
   const BOUCLE_DIT = [
-    `Voilà. Votre site est prêt.`,
+    `Voilà. Votre page est prête.`,
     `Votre actualité peut maintenant vivre dans Le Direct de ${laVille}.`,
     `Votre commerce, en direct dans votre ville.`,
   ];
@@ -415,6 +447,18 @@ export function DemoTour({
   }, [scene]);
   const cancelled = useRef(false);
   const resolveStep = useRef<(() => void) | null>(null);
+  /**
+   * LES BLOCS QUE « CONSTRUITE SOUS VOS YEUX » A MASQUÉS, ET LEUR STYLE D'AVANT.
+   *
+   * Déclaré ici, tout en haut, parce que le filet de sécurité au démontage — le
+   * tout premier effet de ce composant — doit pouvoir les rendre visibles. Voir
+   * `buildSite` plus bas pour le reste du raisonnement.
+   */
+  const built = useRef<Array<{ el: HTMLElement; avant: string }>>([]);
+  const unbuild = () => {
+    built.current.forEach(({ el, avant }) => { el.style.cssText = avant; });
+    built.current = [];
+  };
 
   /**
    * Le fil doit tenir ENTIER dans la hauteur disponible — les trois gestes
@@ -441,9 +485,7 @@ export function DemoTour({
       if (resolveStep.current) resolveStep.current();
       stopSpeaking();
       // Filet de sécurité au démontage : on ne laisse jamais un bloc masqué.
-      try {
-        document.querySelectorAll(".mqc-bhide,.mqc-bshow").forEach((el) => el.classList.remove("mqc-bhide", "mqc-bshow"));
-      } catch { /* best-effort */ }
+      try { unbuild(); } catch { /* best-effort */ }
     };
   }, []);
 
@@ -472,11 +514,11 @@ export function DemoTour({
   // Marque le site « en présentation » → masque les boutons destinés aux clients.
   useEffect(() => {
     const on = phase === "playing";
-    const main = document.querySelector("main.mqc");
+    const main = document.querySelector(racine);
     if (!main) return;
     main.classList.toggle("mqc-demoing", on);
     return () => main.classList.remove("mqc-demoing");
-  }, [phase]);
+  }, [phase, racine]);
 
   // Blocage FIABLE du défilement utilisateur pendant la présentation (iOS compris).
   // Le scroll auto programmatique (scrollIntoView/scrollTo) n'est PAS affecté.
@@ -557,22 +599,33 @@ export function DemoTour({
       }; // « Passer » avance immédiatement
     });
 
-  // ── « Construit sous vos yeux » ────────────────────────────────────────────
-  // Pendant l'étape 1, les blocs du site apparaissent un à un : le commerçant voit
-  // son site NAÎTRE (au lieu de le trouver déjà fait). On ne touche QUE les blocs
-  // de contenu (section/header/footer) — jamais l'overlay de la démo.
-  // SÉCURITÉ : on ne masque que ce qu'on a nous-même marqué, et on démasque à la
-  // fin, à l'annulation, au démontage ET via un garde-fou temporel. Le site ne
-  // peut donc jamais rester invisible, même si la démo casse.
-  const built = useRef<HTMLElement[]>([]);
-  const unbuild = () => {
-    built.current.forEach((el) => el.classList.remove("mqc-bhide", "mqc-bshow"));
-    built.current = [];
-  };
+  // ── « Construite sous vos yeux » ───────────────────────────────────────────
+  //
+  // Les chapitres de la page apparaissent un à un : le commerçant voit sa page
+  // NAÎTRE au lieu de la trouver déjà faite. On ne touche QUE les blocs de
+  // contenu (section/header/footer) — jamais l'overlay de la démo.
+  //
+  // ═══ ELLE ÉTAIT MUETTE, ET DEPUIS LONGTEMPS ═══════════════════════════════
+  //
+  // Cette animation posait deux classes, `mqc-bhide` et `mqc-bshow`, QUE PERSONNE
+  // N'A JAMAIS ÉCRITES : aucune feuille du dépôt ne les définit. Les blocs
+  // recevaient donc une classe sans effet, et tout ce que « construit sous vos
+  // yeux » produisait était un long défilement de la page — pendant que la voix
+  // annonçait une construction qu'on ne voyait pas.
+  //
+  // ON ÉCRIT DONC LE STYLE ICI, SUR L'ÉLÉMENT. Ce n'est pas seulement la
+  // réparation la plus courte : c'est la seule qui tient maintenant que la
+  // démonstration se joue sur une page dont elle n'écrit pas la feuille. Chaque
+  // bloc garde son `style` d'origine et le retrouve intact.
+  //
+  // SÉCURITÉ INCHANGÉE : on ne masque que ce qu'on a nous-même marqué, et on
+  // démasque à la fin, à l'annulation, au démontage ET via un garde-fou
+  // temporel. La page ne peut donc jamais rester invisible, même si la démo
+  // casse.
   const buildSite = async () => {
     let blocks: HTMLElement[] = [];
     try {
-      const main = document.querySelector<HTMLElement>("main.mqc");
+      const main = document.querySelector<HTMLElement>(racine);
       if (!main) return;
       blocks = Array.from(main.children).filter(
         (el): el is HTMLElement => el instanceof HTMLElement && /^(SECTION|HEADER|FOOTER)$/.test(el.tagName),
@@ -581,21 +634,27 @@ export function DemoTour({
       return;
     }
     if (!blocks.length) return;
-    built.current = blocks;
-    blocks.forEach((el) => el.classList.add("mqc-bhide"));
+    built.current = blocks.map((el) => ({ el, avant: el.style.cssText }));
+    blocks.forEach((el) => {
+      el.style.transition = "opacity .5s ease, transform .5s cubic-bezier(.2,.7,.3,1)";
+      el.style.opacity = "0";
+      el.style.transform = "translateY(22px)";
+    });
     window.setTimeout(unbuild, 30000); // garde-fou absolu
     // Rythme calé sur la voix : chaque bloc prend son temps, et LA CAMÉRA SUIT
     // (on défile jusqu'au bloc qui vient d'apparaître) — c'est ce qui donne la
-    // sensation que le site se construit devant soi.
+    // sensation que la page se construit devant soi.
     for (let i = 0; i < blocks.length; i++) {
       if (cancelled.current) { unbuild(); return; }
       const b = blocks[i];
-      b.classList.add("mqc-bshow");
+      b.style.opacity = "1";
+      b.style.transform = "none";
       if (i > 0) { try { b.scrollIntoView({ behavior: "smooth", block: "center" }); } catch { /* noop */ } }
       await new Promise((r) => setTimeout(r, 900));
     }
     if (cancelled.current) { unbuild(); return; }
-    // On remonte en haut : le pro voit son site entier, terminé.
+    unbuild(); // les blocs retrouvent leur style : plus rien de nous ne traîne
+    // On remonte en haut : le pro voit sa page entière, terminée.
     try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { /* noop */ }
   };
 
@@ -683,19 +742,46 @@ export function DemoTour({
      */
     const steps: Array<{ title: string; say: string; enter: () => void; respire?: number }> = [];
 
-    // ── 0. LE SITE, CINQ SECONDES, COMME PREUVE ────────────────────────────
+    // ── 0. LA PAGE, CINQ SECONDES, COMME PREUVE ────────────────────────────
     //
-    // On ne le renie pas : il vient d'être créé pour lui, gratuitement, et
-    // c'est ce qui rend le reste crédible. Mais il n'est plus le SUJET — il
-    // occupait les deux premiers actes d'une démonstration qui n'a jamais
+    // On ne la renie pas : elle vient d'être créée pour lui, gratuitement, et
+    // c'est ce qui rend le reste crédible. Mais elle n'est plus le SUJET — le
+    // site occupait les deux premiers actes d'une démonstration qui n'a jamais
     // montré ce que ça rapporte.
+    //
+    // ELLE NE S'APPELLE PLUS « VOTRE SITE ». La démonstration disait « site »
+    // douze fois, sur un écran qui n'en est plus un depuis qu'il est devenu la
+    // boutique. Et le mot n'est pas neutre : un commerçant qui entend « site »
+    // pense à ce qu'il a déjà, donc à rien de nouveau — alors qu'on lui montre
+    // une page où l'on peut essayer ce qu'il vend.
     steps.push({
-      title: "Votre site est prêt",
+      title: "Votre page est prête",
       say:
-        `Bonjour, je suis Léa. Votre site est déjà prêt : je l'ai créé à partir de votre fiche Google, ` +
-        `avec vos photos, vos horaires${hasReviews ? " et vos avis" : ""}.`,
+        `Bonjour, je suis Léa. Votre page ClikMe est déjà prête : je l'ai construite à partir de votre ` +
+        `fiche Google, avec vos photos, vos horaires${hasReviews ? " et vos avis" : ""}.`,
       enter: () => { envol(); scrollTo(null); setScene(""); void buildSite(); },
     });
+
+    // ── 1. CE QU'ON PEUT ESSAYER CHEZ VOUS ─────────────────────────────────
+    //
+    // L'ACTE QUI MANQUAIT LE PLUS APRÈS LE PREMIER. Ce qu'on venait de lui
+    // montrer — photos, horaires, avis — c'est ce que tout le monde a, et
+    // personne n'a jamais changé de fournisseur pour ça. La seule chose que
+    // personne d'autre ne fait n'était nommée nulle part.
+    //
+    // IL N'A PAS DE SCÈNE À LUI : il fait défiler jusqu'à la vraie section
+    // d'essai, qui est déjà écrite dans les mots du métier. Voir la prop
+    // `essai`, et `direLEssai` côté serveur, pour le pourquoi.
+    if (essai) {
+      steps.push({
+        title: essai.titre,
+        say: essai.say,
+        enter: () => { chime(); setScene(""); scrollTo("essayer"); },
+        // On laisse le bloc à l'écran après la phrase : c'est l'image qu'on
+        // veut qu'il emporte, et la suite la recouvre immédiatement.
+        respire: 1800,
+      });
+    }
 
     // ── ACTE 2. LA BASCULE ─────────────────────────────────────────────────
     //
@@ -709,7 +795,7 @@ export function DemoTour({
     // puisqu'ils ne se jouaient pas.
     if (avisAllowed) {
       steps.push({
-        title: "Le plus important n'est pas votre site",
+        title: "Le plus important n'est pas votre page",
         say: SAY_BASCULE,
         enter: () => { chime(); setScene("bascule"); },
       });
@@ -718,7 +804,7 @@ export function DemoTour({
         title: "À vous",
         say:
           `Il est à vous, gratuitement, et votre assistante répond aux questions à votre place. ` +
-          `Si vous souhaitez le garder, cliquez simplement sur « Garder mon site gratuitement ».`,
+          `Si vous souhaitez la garder, cliquez simplement sur « Garder ma page gratuitement ».`,
         enter: () => { setScene(""); },
       });
     }
@@ -1027,7 +1113,7 @@ export function DemoTour({
             {/* Le bénéfice, pas l'offre. « Sans engagement » occupait l'une des
                 trois grandes cases alors que ce n'est pas un bénéfice produit :
                 il redescend en mention sous les boutons. */}
-            <div className="et" style={{ ["--i" as string]: 1 }}>Votre site répond.<br />Vos annonces circulent.</div>
+            <div className="et" style={{ ["--i" as string]: 1 }}>Votre page répond.<br />Vos annonces circulent.</div>
             <div className="es" style={{ ["--i" as string]: 2 }}>Des habitants qui ne vous connaissent pas encore peuvent vous découvrir et contacter votre assistante.</div>
             <div className="end-list" style={{ ["--i" as string]: 3 }}>
               {([["🎁", "Site offert"], ["✨", "Assistante IA incluse"], ["📍", `Relié au Direct de ${villeAff || "votre ville"}`]] as const).map(
@@ -1043,8 +1129,8 @@ export function DemoTour({
                   démonstration a promis, et c'est celui que le commerçant
                   cherche des yeux. Raccourci en « Garder gratuitement », il
                   l'obligeait à vérifier de quoi on parle. */}
-              <button className="end-go" onClick={keep}>✓ Garder mon site gratuitement</button>
-              <button className="end-sec" onClick={explore}>Explorer mon site</button>
+              <button className="end-go" onClick={keep}>✓ Garder ma page gratuitement</button>
+              <button className="end-sec" onClick={explore}>Explorer ma page</button>
               {avisAllowed && (
                 <button className="end-ter" onClick={() => setPhase("more")}>Découvrir comment toucher plus de monde →</button>
               )}
@@ -1826,7 +1912,7 @@ export function DemoTour({
               — celui qui doit donner envie d'appuyer — se lisait comme une
               image fixe. */}
           <div className="dtour-mark" style={{ ["--i" as string]: 0 }}><span>✦</span></div>
-          <div className="kick" style={{ ["--i" as string]: 1 }}>✨ Votre site est prêt</div>
+          <div className="kick" style={{ ["--i" as string]: 1 }}>✨ Votre page est prête</div>
           <div className="t" style={{ ["--i" as string]: 2 }}>{nom}</div>
           {/* LA DURÉE ANNONCÉE EST CELLE QU'ON MET. Elle disait « un peu plus
               d'une minute » et « ≈ 1 min 40 » ; la visite en fait 2 min 25
@@ -1834,7 +1920,7 @@ export function DemoTour({
               rassemble la journée — mesuré au navigateur, bout en bout. Un
               commerçant qui a accepté une minute et en passe deux se sent
               retenu, et c'est le pire moment pour ça. */}
-          <div className="s" style={{ ["--i" as string]: 3 }}>Votre assistante <b>Léa</b> vous le présente à voix haute, en un peu plus de deux minutes.</div>
+          <div className="s" style={{ ["--i" as string]: 3 }}>Votre assistante <b>Léa</b> vous la présente à voix haute, en un peu plus de deux minutes.</div>
           {/* UNE SEULE PORTE.
               « Voir le site directement » était posé juste sous « Découvrir mon
               site », dans la même taille : deux propositions côte à côte, et
@@ -1845,7 +1931,7 @@ export function DemoTour({
               Personne n'est enfermé pour autant : la sortie existe, mais
               pendant la visite (voir `.dtour-quit`), et pas au moment où l'on
               demande deux minutes d'attention. */}
-          <button className="go" style={{ ["--i" as string]: 4 }} onClick={start}>Découvrir mon site</button>
+          <button className="go" style={{ ["--i" as string]: 4 }} onClick={start}>Découvrir ma page</button>
           <div className="trust" style={{ ["--i" as string]: 5 }}>⏱️ ≈ 2 min 25 · montez le son 🔊</div>
         </div>
       )}
@@ -1993,9 +2079,9 @@ export function DemoTour({
               la démonstration entière parlait d'un site web. */}
           {scene === "bascule" && (
             <div className="dtour-ov dt-noir">
-              <div className="cp-1">LE PLUS IMPORTANT<br />N&apos;EST PAS VOTRE SITE.</div>
+              <div className="cp-1">LE PLUS IMPORTANT<br />N&apos;EST PAS VOTRE PAGE.</div>
               <div className="bo-2" style={{ marginTop: 18, animationDelay: "1.5s" }}>
-                C&apos;EST CE QU&apos;IL PEUT VOUS RAPPORTER.
+                C&apos;EST CE QU&apos;ELLE PEUT VOUS RAPPORTER.
               </div>
             </div>
           )}
@@ -2317,7 +2403,7 @@ export function DemoTour({
             et aucune donnée client n&apos;est partagée, seulement votre annonce.
           </div>
           <div className="end-cta">
-            <button className="end-go" onClick={keep}>✓ Garder mon site gratuitement</button>
+            <button className="end-go" onClick={keep}>✓ Garder ma page gratuitement</button>
             <button className="end-sec" onClick={() => setPhase("end")}>← Retour</button>
           </div>
         </div>
