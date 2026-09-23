@@ -241,22 +241,101 @@ const avant = await p.evaluate(() => {
 dire(avant === 0, "et ne crée rien tant qu'on n'a rien demandé");
 
 const lien = await p.evaluate(() => document.querySelector(".bq-salon-o")?.getAttribute("href") || "");
-dire(/\/autour-de-moi\?salon=boutique-/.test(lien), `le salon est celui du commerce, pas d'une pièce (${lien})`);
+// ═══ CETTE VÉRIFICATION A DÛ ÊTRE RÉÉCRITE, ET C'EST LA LEÇON ═════════════
+//
+// Elle exigeait que le lien mène à `/autour-de-moi?salon=boutique-…`, parce
+// que c'est là que la conversation vivait. Elle décrivait donc une
+// IMPLÉMENTATION, et elle est tombée au premier changement de dessin — en
+// affirmant d'ailleurs le contraire de ce qu'il demandait : « ça ouvre un
+// salon sur l'app au lieu de l'ouvrir sur la page du commerçant ».
+//
+// LA PROMESSE, ELLE, N'A PAS BOUGÉ : une seule conversation par commerce, et
+// on ne quitte pas sa page pour y accéder. C'est ce qu'on mesure maintenant.
+dire(/\/site-internet\/apercu\/demo-coiffeur\?salon=/.test(lien), `l'invitation reste sur la page du commerçant (${lien})`);
 await p.click(".bq-salon-o");
-await p.waitForTimeout(3000);
-
-const retour = await p.evaluate(() => {
-  const a = [...document.querySelectorAll("a")].find((x) => /essayer chez/i.test(x.textContent || ""));
-  return a ? a.getAttribute("href") || "" : "";
+await p.waitForTimeout(1200);
+dire(await p.evaluate(() => Boolean(document.querySelector(".bq-conv"))), "et la conversation s'ouvre par-dessus, sans départ");
+// UN SEUL SALON PAR COMMERCE : deux essais du même commerce doivent se
+// retrouver au même endroit, sinon quatre amis parlent dans quatre fils.
+const cles = await p.evaluate(() => {
+  try { return Object.keys(JSON.parse(localStorage.getItem("clikme-salons-v1") || "{}")).filter((k) => k.startsWith("boutique-")); }
+  catch { return []; }
 });
-// LE CHEMIN DU RETOUR EST TOUT L'INTÉRÊT : sans lui le salon montre UNE photo
-// au lieu de faire essayer QUATRE personnes, et ce n'est plus qu'un groupe
-// WhatsApp — où l'on peut déjà envoyer une photo.
-dire(/\/site-internet\/apercu\/demo-coiffeur#essayer$/.test(retour), `et il ramène chez le commerçant, sur son essai (${retour})`);
-// LE SALON D'UNE BOUTIQUE NE PORTE PAS UNE OFFRE QUI EXPIRE. « Envoyez cette
-// offre » promettrait une affaire à durée limitée là où il n'y en a aucune.
-const entete = await p.evaluate(() => document.querySelector(".ap-invite-t")?.textContent || "");
-dire(!/offre/i.test(entete), `et il ne parle pas d'une offre (« ${entete.trim()} »)`);
+dire(cles.length === 1 && cles[0] === "boutique-coif-centre", `un seul salon, celui du commerce (${cles.join(", ") || "aucun"})`);
+
+// ── 8. LA PAGE D'UN PROSPECT, CELLE QU'ON ENVOIE VRAIMENT ─────────────────
+//
+// TOUT CE QUI PRÉCÈDE SE JOUE SUR DES COMMERCES HABITÉS — moments, catalogue,
+// voix, avis laissés sur place. La page d'un VRAI commerçant se fabrique
+// depuis sa seule fiche Google, et c'est un autre écran : il a fallu qu'il
+// ouvre celle d'un coiffeur de Dax pour qu'on découvre quatre défauts qui
+// n'existaient QUE sur ce chemin-là. `demo-prospect` passe par le même pont
+// que la vraie — voir `fiches-demo.ts`.
+const P = `${BASE}/site-internet/apercu/demo-prospect?via=direct`;
+await p.goto(P, { waitUntil: "networkidle" });
+await p.waitForTimeout(1200);
+
+// « Je ne vois pas de photo en couverture. »
+const couverture = await p.evaluate(() => {
+  const i = document.querySelector(".bq-hero img");
+  return i ? i.naturalWidth * i.naturalHeight : 0;
+});
+dire(couverture > 0, "un prospect a une photo de couverture, qui se charge vraiment");
+
+// « Il manque aussi sur cette page commerçant : Les prestations. »
+const presta = await p.evaluate(() => {
+  const s = document.getElementById("carte");
+  return s ? { lignes: s.querySelectorAll("li").length, t: s.innerText } : null;
+});
+dire(Boolean(presta && presta.lignes > 0), `le chapitre des prestations existe (${presta?.lignes ?? 0} lignes)`);
+// ET IL DIT QUE CE SONT DES PROPOSITIONS. Sans cette ligne on présenterait un
+// gabarit de métier comme SA carte, sur la page qui porte son nom.
+dire(/propos[ée]/i.test(presta?.t ?? ""), "et il dit que ces lignes sont proposées, pas déclarées");
+// AUCUN TARIF INVENTÉ : c'est la ligne à ne pas franchir. Un nom de prestation
+// est le nom d'un métier ; un prix est une promesse commerciale.
+dire(!/\d+\s*€/.test(presta?.t ?? ""), "et il n'affiche aucun tarif qu'il n'a pas donné");
+
+// « Et aussi la possibilité de voir tous les avis. »
+dire(
+  await p.evaluate(() => Boolean(document.querySelector(".bq-gg-tous"))),
+  "on peut aller lire tous ses avis, pas seulement les quatre montrés",
+);
+
+// ── 9. LA CONVERSATION RESTE SUR LA PAGE DU COMMERÇANT ────────────────────
+//
+// « Ça ouvre un salon sur l'app au lieu de l'ouvrir sur la page du commerçant
+// spécifiquement. » Un habitant venu d'un lien WhatsApp n'a rien à faire dans
+// la maquette de l'application : on le sortait de la boutique qu'il regardait
+// pour l'envoyer dans un écran dont il ignore tout.
+await p.evaluate(() => {
+  [...document.querySelectorAll(".bq-fin-l button")].find((e) => /en parler avec mes amis/i.test(e.textContent || ""))?.click();
+});
+await p.waitForTimeout(500);
+const invitation = await p.evaluate(() => document.querySelector(".bq-salon-o")?.getAttribute("href") || "");
+dire(/\/site-internet\/apercu\/demo-prospect\?salon=/.test(invitation), `l'invitation mène sur la page du commerçant (${invitation})`);
+await p.click(".bq-salon-o");
+await p.waitForTimeout(900);
+dire(await p.evaluate(() => Boolean(document.querySelector(".bq-conv"))), "et la conversation s'ouvre là, sans quitter la page");
+
+await p.fill(".bq-conv-b input", "Vous en pensez quoi ?");
+await p.click(".bq-conv-b button");
+await p.waitForTimeout(600);
+dire(
+  (await p.evaluate(() => document.querySelector(".bq-conv-m.moi p")?.textContent || "")) === "Vous en pensez quoi ?",
+  "on y écrit, et le message reste",
+);
+
+// L'AMI INVITÉ ARRIVE PAR CE LIEN, ET IL N'EST PAS LE PROSPECT. Sans origine
+// connue, la page le prenait pour le commerçant : visite guidée par-dessus
+// l'écran et « Garder cette page gratuitement » en pied. Il voyait donc son
+// commerçant se vendre son propre site.
+await p.goto(invitation.startsWith("http") ? invitation : `${BASE}${invitation}`, { waitUntil: "networkidle" });
+await p.waitForTimeout(1200);
+dire(await p.evaluate(() => Boolean(document.querySelector(".bq-conv"))), "l'invité arrive sur la conversation, déjà ouverte");
+dire(
+  await p.evaluate(() => !document.querySelector(".dtour-launch") && !document.querySelector(".gcs")),
+  "et il ne reçoit ni la visite guidée ni l'argumentaire adressés au commerçant",
+);
 
 await b.close();
 console.log(echecs === 0 ? "\nLa page du commerçant tient ses promesses." : `\n${echecs} promesse(s) rompue(s).`);

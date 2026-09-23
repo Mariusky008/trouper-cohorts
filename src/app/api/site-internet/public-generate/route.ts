@@ -31,7 +31,24 @@ const matchesBusiness = (title: string, self: string) => {
 type ReviewSnippet = { name: string; text: string; stars: number | null };
 
 function extractMedia(item: Record<string, unknown>): { photos: string[]; reviews: ReviewSnippet[] } {
-  const imgs = Array.isArray(item.imageUrls) ? item.imageUrls : [];
+  /**
+   * ═══ LA PHOTO DE COUVERTURE NE DOIT PAS TENIR À UN SEUL CHAMP ═══════════
+   *
+   * « Je ne vois pas de photo en couverture. »
+   *
+   * `imageUrls` N'EST REMPLI QUE PAR L'APPEL QUI DEMANDE DES IMAGES, et cet
+   * appel-là est le second : le premier identifie la fiche avec `maxImages: 0`.
+   * Quand le second échoue — quota, temps d'attente, homonyme — il est avalé en
+   * silence par un `catch` qui laisse la liste vide, et le commerçant reçoit
+   * une page sans aucune photo sans que rien, nulle part, ne l'ait signalé.
+   *
+   * `imageUrl` AU SINGULIER, LUI, ARRIVE TOUJOURS : c'est la photo principale
+   * de la fiche, et le scraper la pose sur chaque lieu même sans images
+   * demandées. Une seule photo ne fait pas une galerie, mais elle fait une
+   * COUVERTURE — c'est-à-dire précisément ce qui manquait.
+   */
+  const brutes = Array.isArray(item.imageUrls) ? item.imageUrls : [];
+  const imgs = brutes.length ? brutes : [item.imageUrl].filter(Boolean);
   const photos = imgs.map((u) => String(u)).filter((u) => /^https?:\/\//i.test(u)).slice(0, 8);
   const rv = Array.isArray(item.reviews) ? (item.reviews as Array<Record<string, unknown>>) : [];
   const reviews = rv

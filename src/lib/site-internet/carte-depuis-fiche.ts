@@ -36,6 +36,8 @@
 // meilleur argument de vente qu'on puisse lui faire : il voit exactement ce
 // qu'il gagne en s'y mettant.
 import type { CarteAutour, CleMetier, MomentJour } from "@/lib/direct/apercu-habitant";
+import { resolveMetierContent } from "@/lib/site-internet/metier-content";
+import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 
 /** Ce que la page sait déjà de lui, et rien de plus. */
 export type FicheCommercant = {
@@ -53,6 +55,8 @@ export type FicheCommercant = {
   site?: string;
   /** L'itinéraire, déjà construit par la page (Google Maps). */
   mapsHref?: string;
+  /** Sa page d'avis Google, quand on connaît son `place_id`. */
+  avisHref?: string;
   /** Les prestations déclarées, quand il en a déclaré. */
   services?: { nom: string; prix?: string; detail?: string }[];
   /**
@@ -141,6 +145,27 @@ function sansMoments(): MomentJour[] {
 export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
   const photos = (f.photos ?? []).filter(Boolean);
   const services = (f.services ?? []).filter((s) => s.nom);
+  /**
+   * LES PRESTATIONS DE SON MÉTIER, QUAND IL N'A ENCORE RIEN SAISI.
+   *
+   * ELLES N'ONT PAS DE PRIX, ET C'EST LA LIGNE À NE PAS FRANCHIR. Un coiffeur
+   * fait des coupes — l'écrire n'invente rien sur lui, et sans ça le chapitre
+   * qui répond à « qu'est-ce qu'on trouve chez lui ? » disparaissait purement
+   * et simplement de la page de tous les prospects. Un TARIF, lui, serait une
+   * promesse commerciale qu'il n'a pas faite : `demoServices` n'en porte
+   * aucun, et c'est exactement pour cette raison qu'on s'en sert.
+   *
+   * La durée et le détail viennent du même endroit, et ne disent rien d'autre
+   * que ce que fait le métier. Voir `metier-content.ts`.
+   */
+  const proposees = services.length
+    ? []
+    : (resolveMetierContent(f.metier, resolveMetier(f.metier).profil).demoServices ?? []).map((s, i) => ({
+        id: `${f.slug}-p${i}`,
+        rayon: "Prestations",
+        nom: s.name,
+        detail: [s.duration, s.desc].filter(Boolean).join(" · ") || undefined,
+      }));
   return {
     id: f.slug,
     branche: brancheDuMetier(f.metier),
@@ -171,7 +196,7 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
     site: f.site || undefined,
     // LA NOTE VIENT DE GOOGLE ET ON LE DIT AINSI : c'est la seule chose de
     // cette page qu'il n'a pas écrite et qui parle pourtant de lui.
-    google: f.note ? { note: f.note, avis: f.avis ?? 0 } : undefined,
+    google: f.note ? { note: f.note, avis: f.avis ?? 0, lien: f.avisHref } : undefined,
     // LE CHAPITRE « VU CHEZ EUX » NE TENAIT QU'À SES MOMENTS, qui sont vides
     // ici : la page d'un prospect n'avait donc AUCUNE preuve sociale, et le
     // bouton « On en parle bien » défilait vers une ancre absente.
@@ -193,6 +218,9 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
           detail: s.detail,
           prix: s.prix,
         }))
-      : undefined,
+      : proposees,
+    // Vrai seulement quand ce sont celles du MÉTIER et pas les siennes : c'est
+    // ce drapeau qui fait écrire, sous le chapitre, qu'elles sont proposées.
+    cataloguePropose: services.length === 0 && proposees.length > 0,
   };
 }

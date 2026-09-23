@@ -115,11 +115,27 @@ export default async function ApercuMaquette({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ via?: string; pub?: string }>;
+  searchParams: Promise<{ via?: string; pub?: string; salon?: string }>;
 }) {
   const { slug } = await params;
-  const { via, pub } = await searchParams;
-  const visiteurPublic = VIA_PUBLIC.has(str(via));
+  const { via, pub, salon } = await searchParams;
+  /**
+   * ═══ QUI ARRIVE PAR UNE CONVERSATION EST UN CLIENT, JAMAIS LE PROSPECT ═══
+   *
+   * Le lien d'invitation au salon porte `?salon=1` et rien d'autre : c'est
+   * quelqu'un à qui un ami vient d'écrire « regarde, ça vous dit ? ».
+   *
+   * SANS CETTE LIGNE, IL RECEVAIT L'ARGUMENTAIRE DE VENTE. Faute d'origine
+   * connue, la page le prenait pour le commerçant venu découvrir sa maquette :
+   * elle lui ouvrait la visite guidée par-dessus l'écran — « Votre page est
+   * prête », « Découvrir ma page » — et lui proposait en pied de la garder
+   * gratuitement. Un ami invité voyait donc le commerçant se vendre son propre
+   * site, ce qui est à la fois incompréhensible et humiliant.
+   *
+   * C'est la même règle que `VIA_PUBLIC`, appliquée à une origine qui n'y
+   * figurait pas parce qu'elle n'existait pas encore.
+   */
+  const visiteurPublic = VIA_PUBLIC.has(str(via)) || Boolean(str(salon));
   const venuDuDirect = str(via) === "direct";
 
   // ── LES ADRESSES DE DÉMONSTRATION, AVANT TOUTE LECTURE ────────────────────
@@ -325,6 +341,12 @@ export default async function ApercuMaquette({
     telephone: numeroReservations(row) || numeroAppel(row) || undefined,
     site: str(diag.website) || str(diag.site) || undefined,
     mapsHref: `https://www.google.com/maps/search/${encodeURIComponent(`${nom} ${ville}`)}`,
+    // SA PAGE D'AVIS, ET SEULEMENT SI ON SAIT DE QUELLE FICHE IL S'AGIT. Sans
+    // `place_id`, une recherche par nom peut tomber sur un homonyme — et
+    // envoyer ses clients lire les avis de quelqu'un d'autre.
+    avisHref: str(row.google_place_id)
+      ? `https://search.google.com/local/reviews?placeid=${encodeURIComponent(str(row.google_place_id))}`
+      : undefined,
     services,
     avisGoogle,
   };

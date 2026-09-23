@@ -96,6 +96,10 @@ import {
   monPrenom,
   ouvrirSalon,
   cleSalonBoutique,
+  chargerSalons,
+  abonnerSalons,
+  entrerDansSalon,
+  SALONS_VIDES,
 } from "@/lib/direct/salons";
 import {
   abonnerPiecesGardees,
@@ -513,16 +517,82 @@ export function Boutique({
     () => (typeof window === "undefined" ? "" : `${window.location.origin}${window.location.pathname}#essayer`),
     [],
   );
-  /** Où vit la conversation : l'application, ouverte sur ce salon. */
-  const lienSalon = `/autour-de-moi?salon=${encodeURIComponent(cleSalon)}`;
+  /**
+   * OÙ VIT LA CONVERSATION : ICI, SUR LA PAGE DU COMMERÇANT.
+   *
+   * Elle menait dans l'application (`/autour-de-moi?salon=…`). Celui qui
+   * recevait l'invitation atterrissait donc dans un écran qu'il n'avait pas
+   * demandé, sans savoir de quel commerce on parlait ni comment y revenir.
+   */
+  const lienSalon = useMemo(
+    () => (typeof window === "undefined" ? "" : `${window.location.origin}${window.location.pathname}?salon=1`),
+    [],
+  );
   /** Ce que le panneau a à dire après un partage — « copié », ou rien. */
   const [salonDit, setSalonDit] = useState("");
+  /**
+   * ═══ LA CONVERSATION VIT SUR CETTE PAGE, PLUS DANS L'APPLICATION ══════════
+   *
+   * « Ça ouvre un salon sur l'app au lieu de l'ouvrir sur la page du
+   * commerçant spécifiquement. » — et sur la page d'un vrai commerçant,
+   * « quand j'appuie sur le salon, rien ne se passe ».
+   *
+   * LES DEUX SONT LA MÊME FAUTE. Le bouton renvoyait vers
+   * `/autour-de-moi?salon=…`, c'est-à-dire vers la maquette de l'application.
+   * Un habitant qui arrive sur la page d'un coiffeur par un lien WhatsApp n'a
+   * rien à faire là : on le sort de la boutique qu'il regardait pour l'envoyer
+   * dans un écran dont il ignore tout, et depuis lequel plus rien ne ramène.
+   *
+   * LE SALON EST DONC UN PANNEAU DE CETTE PAGE. Même clé, mêmes messages, même
+   * stockage — c'est le salon de `salons.ts`, pas une seconde conversation —
+   * mais il s'ouvre PAR-DESSUS la boutique et se referme dessus. On ne quitte
+   * jamais la page du commerçant.
+   *
+   * ET L'INVITATION MÈNE ICI, pas dans l'application : celui qui reçoit le
+   * lien ouvre la boutique avec la conversation déjà ouverte, voit de quoi on
+   * parle, et peut essayer à son tour sans avoir rien appris de ClikMe.
+   */
+  const salons = useSyncExternalStore(abonnerSalons, chargerSalons, () => SALONS_VIDES);
+  const salon = salons[cleSalon];
+  const [salonOuvert, setSalonOuvert] = useState(false);
+  const [aEcrire, setAEcrire] = useState("");
+  /**
+   * `?salon=1` OUVRE LA CONVERSATION EN ARRIVANT — c'est ce que porte le lien
+   * d'invitation. Lu une seule fois, au montage : relire l'adresse à chaque
+   * rendu rouvrirait le panneau que l'on vient de fermer.
+   */
+  useEffect(() => {
+    try {
+      if (new URLSearchParams(window.location.search).get("salon")) setSalonOuvert(true);
+    } catch {
+      /* pas d'adresse lisible → on n'ouvre rien */
+    }
+  }, []);
   /**
    * IL NE NAÎT QU'AU PREMIER GESTE, et jamais à l'affichage du panneau.
    * `ouvrirSalon` ne fait rien s'il existe déjà, donc c'est sans risque de
    * l'appeler deux fois — mais ouvrir une conversation parce que quelqu'un a
    * regardé un écran créerait des salons vides que personne n'a demandés.
    */
+  /**
+   * ÉCRIRE, ET ENTRER SI ON N'Y ÉTAIT PAS ENCORE.
+   *
+   * L'ORDRE COMPTE : quelqu'un qui arrive par le lien d'invitation n'a jamais
+   * ouvert ce salon, et `ecrireDansSalon` ne fait rien sur un salon qui
+   * n'existe pas dans SON navigateur. On s'assure donc qu'il existe, on s'y
+   * inscrit, puis on écrit — sinon le premier message d'un invité disparaît
+   * sans rien dire.
+   */
+  const envoyerAuSalon = () => {
+    const texte = aEcrire.trim();
+    if (!texte) return;
+    const moi = monPrenom() || "Vous";
+    ouvrirLeSalon();
+    entrerDansSalon(cleSalon, moi, false);
+    ecrireDansSalon(cleSalon, { qui: moi, voix: "moi", texte, quand: heureCourte() });
+    setAEcrire("");
+  };
+
   const ouvrirLeSalon = () => {
     ouvrirSalon({
       cle: cleSalon,
@@ -577,6 +647,11 @@ export function Boutique({
    * page. La photo du jour, elle, reste sur les moments, à sa place.
    */
   const photoTete = c.sesPhotos?.[0]?.src || c.photo || c.moments[0]?.photo || "";
+  /** Vrai quand la photo de tête a refusé de se charger. Voir la couverture. */
+  const [photoCassee, setPhotoCassee] = useState(false);
+  // ON REDONNE SA CHANCE À CHAQUE COMMERCE : sans ça, une photo cassée sur un
+  // commerce condamnait la couverture de tous les suivants dans le sélecteur.
+  useEffect(() => setPhotoCassee(false), [photoTete]);
 
   /**
    * ═══ LE MUR DU COMMERCE, ET L'ESSAI EN DIRECT, SUR SA PAGE ════════════════
@@ -754,33 +829,11 @@ export function Boutique({
     telephone: string;
     fiction: boolean;
   } | null>(null);
-  /**
-   * ═══ LE SALON RESTE SUR LA PAGE DU COMMERÇANT ═══════════════════════════
-   *
-   * « Quand je suis sur la page d'accueil du commerçant et que j'appuie sur
-   * "en parler à mes amis", on m'amène sur l'application au lieu de rester sur
-   * la page du commerçant. »
-   *
-   * C'ÉTAIT UNE SORTIE SANS PRÉVENIR, et c'est le défaut le plus désagréable
-   * qu'un bouton puisse avoir : on essayait une pièce, on demandait un avis, et
-   * la page du commerce — l'adresse, les horaires, le reste du catalogue —
-   * disparaissait sous le pied. Personne ne demande à quitter un magasin en
-   * appuyant sur « en parler ».
-   *
-   * LE SALON EST QUAND MÊME OUVERT, avec le rendu et la note dedans : c'est ce
-   * qui a de la valeur, et le refaire plus tard demanderait de ré-essayer la
-   * pièce. Mais on ANNONCE ce qui vient de se passer sur place, et le départ
-   * devient un choix : « Ouvrir la conversation » y va, « Rester ici » referme
-   * le panneau et la page n'a pas bougé. La conversation elle-même vit sur
-   * `/autour-de-moi` — cette page n'a pas le fil qui la porte, et en coller une
-   * copie ici donnerait deux salons pour une seule conversation.
-   */
-  const [salonPret, setSalonPret] = useState<{
-    cle: string;
-    quoi: string;
-    image?: string;
-    texte: string;
-  } | null>(null);
+  /* LE PANNEAU « C'EST PARTI DANS LE SALON » A DISPARU, et avec lui le
+     dernier endroit d'où l'on sortait de cette page. Il annonçait le départ du
+     message, puis offrait un lien vers l'application — deux écrans pour
+     arriver à la conversation, et le second abandonnait le commerce. La
+     conversation s'ouvre maintenant ICI, voir `salonOuvert`. */
   useEffect(() => {
     const sections = Array.from(document.querySelectorAll<HTMLElement>(".bq-s"));
     if (!sections.length) return;
@@ -1086,9 +1139,34 @@ export function Boutique({
               peut plus le couper. */}
         </header>
 
-        {photoTete ? (
+        {/* ═══ LA COUVERTURE NE PEUT PLUS ÊTRE UN TROU ════════════════════
+
+            « Je ne vois pas de photo en couverture. »
+
+            DEUX CAUSES POSSIBLES, ET LE DESSIN NE SURVIVAIT À AUCUNE DES DEUX.
+            Ou bien la fiche n'a aucune photo — la reprise des médias chez
+            Apify échoue en silence, voir `public-generate` — ou bien elle en a
+            une qui refuse de se charger. Le premier cas tombait sur le fond
+            dégradé, ce qui est prévu ; le second laissait une balise vide dans
+            un cadre sombre, c'est-à-dire un trou, en tête de la page qui porte
+            son nom.
+
+            `onError` RAMÈNE DONC LE SECOND CAS SUR LE PREMIER : une photo qui
+            ne vient pas est traitée comme une photo qu'on n'a pas, et la page
+            garde le dessin prévu pour ça.
+
+            `referrerPolicy` PARCE QUE CES ADRESSES SONT CELLES DE GOOGLE.
+            Servies depuis un autre domaine avec un référent, elles répondent
+            parfois 403 — et c'est une ligne pour l'écarter. */}
+        {photoTete && !photoCassee ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={photoTete} alt="" style={{ objectPosition: `center ${c.cadrage || "50%"}` }} />
+          <img
+            src={photoTete}
+            alt=""
+            referrerPolicy="no-referrer"
+            onError={() => setPhotoCassee(true)}
+            style={{ objectPosition: `center ${c.cadrage || "50%"}` }}
+          />
         ) : (
           <div className="bq-hero-vide" aria-hidden="true" />
         )}
@@ -1507,7 +1585,11 @@ export function Boutique({
                   quand: heureCourte(),
                   photo: o.image,
                 });
-                setSalonPret({ cle, quoi: o.quoi, image: o.image, texte });
+                // ON OUVRE LA CONVERSATION SUR PLACE. Le panneau « c'est parti »
+                // annonçait le départ et proposait un lien vers l'application :
+                // deux écrans pour arriver là où l'on voulait aller, et le
+                // second sortait de la page du commerçant.
+                setSalonOuvert(true);
               }}
             />
           )}
@@ -1629,6 +1711,20 @@ export function Boutique({
             titre={mots.titre}
             dit="Ce qu’on trouve ici tous les jours, et pas seulement aujourd’hui."
           />
+          {/* ═══ ET ON DIT QUAND CE SONT DES PROPOSITIONS ═══════════════════
+
+              Chez un commerçant qui n'a encore rien saisi, ces lignes sont
+              celles de son MÉTIER, pas les siennes — voir `cataloguePropose`.
+              Elles ne portent aucun prix, justement parce qu'un tarif serait
+              une promesse qu'il n'a pas faite ; mais les afficher sans le dire
+              reviendrait à présenter un gabarit comme sa carte. La ligne est
+              la condition qui rend le chapitre honnête. */}
+          {c.cataloguePropose && (
+            <p className="bq-propose">
+              Proposé d’après votre métier — à ajuster ensemble. Aucun tarif n’est affiché
+              tant que vous ne l’avez pas donné.
+            </p>
+          )}
           {rayons.map(([rayon, articles]) => (
             <div className="bq-ray" key={rayon || "sans-rayon"}>
               {rayon && <div className="bq-ray-t">{rayon}</div>}
@@ -1995,6 +2091,26 @@ export function Boutique({
                   </li>
                 ))}
               </ul>
+              {/* ═══ ET LE CHEMIN VERS TOUS LES AUTRES ═══════════════════════
+
+                  « Et aussi la possibilité de voir tous les avis. »
+
+                  QUATRE SUR QUATRE-VINGT-TROIS, SANS PORTE DE SORTIE. C'est
+                  une vitrine qui laisse croire qu'il n'y en a que quatre, et
+                  celui qui veut vérifier quitte l'application pour aller
+                  chercher sur Google — c'est-à-dire exactement ce que cette
+                  page existe pour éviter.
+
+                  ON N'EN AFFICHE TOUJOURS QUE QUATRE ICI, et c'est le bon
+                  nombre pour une page qu'on parcourt : au-delà on ne lit plus,
+                  on fait défiler. Ce qui manquait n'était pas la quantité,
+                  c'était la sortie. */}
+              {c.google?.lien && (
+                <a className="bq-gg-tous" href={c.google.lien} target="_blank" rel="noreferrer">
+                  Voir les {c.google.avis} avis sur Google
+                  <s aria-hidden="true">→</s>
+                </a>
+              )}
             </div>
           )}
         </section>
@@ -2383,49 +2499,6 @@ export function Boutique({
         </div>
       )}
 
-      {/* ═══ LE PANNEAU DU SALON : ON RESTE ICI TANT QU'ON N'A PAS CHOISI ══
-
-          « On m'amène sur l'application au lieu de rester sur la page du
-          commerçant. »
-
-          LE MESSAGE EST DÉJÀ PARTI — c'est écrit noir sur blanc, avec la photo
-          qu'on vient d'essayer — et le seul bouton qui fait sortir de la page
-          porte le mot « ouvrir ». Un départ qu'on n'a pas demandé fait perdre
-          l'adresse, les horaires et le reste du catalogue d'un seul appui. */}
-      {salonPret && (
-        <div
-          className="bq-voile"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Votre message est dans le salon"
-          onClick={() => setSalonPret(null)}
-        >
-          <div className="bq-salon" onClick={(e) => e.stopPropagation()}>
-            <b>C’est parti dans le salon</b>
-            <p className="bq-salon-s">
-              Vos amis peuvent répondre&nbsp;: la conversation vit dans ClikMe, elle
-              reste ouverte, vous n’êtes pas obligé d’y aller maintenant.
-            </p>
-            <div className="bq-salon-m">
-              {salonPret.image && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={salonPret.image} alt={`Votre essai : ${salonPret.quoi}`} />
-              )}
-              <q>{salonPret.texte}</q>
-            </div>
-            <a
-              className="bq-salon-b"
-              href={`/autour-de-moi?salon=${encodeURIComponent(salonPret.cle)}`}
-            >
-              Ouvrir la conversation
-            </a>
-            <button type="button" className="bq-salon-r" onClick={() => setSalonPret(null)}>
-              Rester sur cette page
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* ═══ LA PIÈCE GARDÉE : SA TAILLE, ET SES DEUX GESTES ════════════════
 
           « Ils apparaissent en immense au lieu d'être de taille normale, et je
@@ -2644,6 +2717,91 @@ export function Boutique({
               Rester sur cette page
             </button>
           </div>
+        </div>
+      )}
+
+      {/* ═══ LA CONVERSATION, SUR CETTE PAGE ════════════════════════════════
+
+          Voir `salonOuvert` plus haut pour le pourquoi. Ici, les trois choses
+          qu'une conversation doit avoir et rien d'autre : ce qui a été dit,
+          de quoi répondre, et de quoi faire venir quelqu'un.
+
+          AUCUN AMI NE RÉPOND TOUT SEUL ICI. Dans la maquette de l'application,
+          des amis répondent en quelques secondes — c'est le seul moyen de
+          montrer l'effet à quelqu'un qui tient le téléphone seul. Sur la page
+          d'un VRAI commerçant, des réponses fabriquées seraient des gens
+          inventés parlant de son commerce sous son nom. Le silence est
+          préférable, et il est vrai. */}
+      {salonOuvert && (
+        <div className="bq-conv" role="dialog" aria-modal="true" aria-label={`La conversation sur ${c.nom}`}>
+          <header className="bq-conv-t">
+            <div>
+              <b>En parler avec mes amis</b>
+              <em>
+                {c.nom}
+                {salon && salon.presents.length > 1 ? ` · ${salon.presents.length} personnes` : ""}
+              </em>
+            </div>
+            <button type="button" aria-label="Fermer la conversation" onClick={() => setSalonOuvert(false)}>
+              ✕
+            </button>
+          </header>
+
+          <div className="bq-conv-l">
+            {!salon || salon.messages.length === 0 ? (
+              <p className="bq-conv-v">
+                Personne n’a encore écrit. Lancez la conversation, ou invitez quelqu’un —
+                chacun pourra essayer et poser son rendu ici.
+              </p>
+            ) : (
+              salon.messages.map((m) => (
+                <div className={`bq-conv-m${m.voix === "moi" ? " moi" : ""}`} key={m.id}>
+                  {m.voix !== "moi" && <span className="bq-conv-q">{m.qui}</span>}
+                  {m.photo && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={m.photo} alt="" />
+                  )}
+                  {m.texte && <p>{m.texte}</p>}
+                  <time>{m.quand}</time>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="bq-conv-b">
+            <input
+              value={aEcrire}
+              onChange={(e) => setAEcrire(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") envoyerAuSalon();
+              }}
+              placeholder="Écrire un message…"
+              aria-label="Écrire un message"
+            />
+            <button type="button" onClick={envoyerAuSalon} disabled={!aEcrire.trim()} aria-label="Envoyer">
+              ↑
+            </button>
+          </div>
+          <div className="bq-conv-g">
+            <button
+              type="button"
+              onClick={async () => {
+                ouvrirLeSalon();
+                const r = await partager({
+                  titre: `Chez ${c.nom}`,
+                  texte: `On en parle ? J’ai ouvert une conversation sur ${c.nom}${c.ville ? ` à ${c.ville}` : ""}.`,
+                  lien: lienSalon,
+                });
+                if (r === "copie") setSalonDit("Lien copié : collez-le dans votre groupe.");
+              }}
+            >
+              ✉️ Inviter
+            </button>
+            <button type="button" onClick={() => { setSalonOuvert(false); allerA("essayer"); }}>
+              ✨ Essayer et poser mon rendu
+            </button>
+          </div>
+          {salonDit && <p className="bq-conv-d">{salonDit}</p>}
         </div>
       )}
     </div>
@@ -3337,6 +3495,60 @@ function Styles() {
         .bq-note span{display:block;font-size:11.5px;color:var(--bq-pale);margin-top:2px;}
         .bq-et i{font-style:normal;font-size:12px;color:#3B4A42;}
         .bq-et i.on{color:var(--bq-ambre);}
+        /* ─── LA CONVERSATION, POSEE SUR LA PAGE ───
+           Une feuille pleine hauteur, comme une messagerie : l'en-tete tient
+           en haut, la liste prend ce qui reste, la barre d'ecriture tient en
+           bas. La hauteur est en dvh et non en vh : sur telephone la barre du
+           navigateur mange la difference, et le champ d'ecriture passait
+           dessous. */
+        .bq-conv{position:fixed;inset:0;z-index:70;display:flex;
+          flex-direction:column;background:var(--bq-fond);
+          max-width:560px;margin:0 auto;height:100dvh;}
+        .bq-conv-t{display:flex;align-items:center;justify-content:space-between;
+          gap:12px;padding:14px 16px 12px;
+          padding-top:calc(14px + env(safe-area-inset-top));
+          border-bottom:1px solid var(--bq-ligne);}
+        .bq-conv-t b{display:block;font-size:15px;}
+        .bq-conv-t em{display:block;font-style:normal;font-size:12px;
+          color:var(--bq-pale);margin-top:2px;}
+        .bq-conv-t button{font:inherit;font-size:18px;line-height:1;cursor:pointer;
+          background:var(--bq-carte);border:1px solid var(--bq-ligne);
+          border-radius:999px;width:34px;height:34px;color:var(--bq-encre);flex:none;}
+        .bq-conv-l{flex:1;overflow-y:auto;padding:16px;display:flex;
+          flex-direction:column;gap:12px;}
+        .bq-conv-v{margin:0;font-size:13.5px;line-height:1.5;color:var(--bq-pale);
+          text-align:center;padding:28px 12px;}
+        .bq-conv-m{max-width:82%;align-self:flex-start;background:var(--bq-carte);
+          border:1px solid var(--bq-ligne);border-radius:16px;padding:10px 12px;}
+        .bq-conv-m.moi{align-self:flex-end;background:var(--bq-rose);
+          border-color:transparent;}
+        .bq-conv-q{display:block;font-size:11.5px;font-weight:800;
+          color:var(--bq-menthe);margin-bottom:4px;}
+        .bq-conv-m img{display:block;width:100%;border-radius:11px;margin-bottom:8px;}
+        .bq-conv-m p{margin:0;font-size:13.5px;line-height:1.45;}
+        .bq-conv-m time{display:block;margin-top:5px;font-size:10.5px;color:var(--bq-pale);}
+        .bq-conv-b{display:flex;gap:8px;padding:10px 16px 0;}
+        .bq-conv-b input{flex:1;font:inherit;font-size:14px;padding:11px 14px;
+          border-radius:999px;border:1px solid var(--bq-ligne);
+          background:var(--bq-carte);color:var(--bq-encre);min-width:0;}
+        .bq-conv-b button{flex:none;width:42px;height:42px;border-radius:999px;
+          border:none;cursor:pointer;font-size:17px;font-weight:800;
+          background:var(--bq-menthe);color:#fff;}
+        .bq-conv-b button:disabled{opacity:.35;cursor:default;}
+        .bq-conv-g{display:flex;gap:8px;
+          padding:10px 16px calc(14px + env(safe-area-inset-bottom));}
+        .bq-conv-g button{flex:1;font:inherit;font-size:12.5px;font-weight:700;
+          cursor:pointer;padding:11px 8px;border-radius:14px;
+          background:none;border:1px solid var(--bq-ligne);color:var(--bq-encre);}
+        .bq-conv-d{margin:0 16px 12px;font-size:12px;color:var(--bq-pale);text-align:center;}
+        .bq-gg-tous{display:flex;align-items:center;justify-content:space-between;
+          gap:10px;margin-top:12px;padding:12px 14px;border-radius:14px;
+          text-decoration:none;font-size:13px;font-weight:700;
+          color:var(--bq-encre);background:var(--bq-carte);
+          border:1px solid var(--bq-ligne);}
+        .bq-gg-tous s{text-decoration:none;color:var(--bq-pale);}
+        .bq-propose{margin:-2px 0 14px;font-size:12px;line-height:1.45;
+          color:var(--bq-pale);font-style:italic;}
         .bq-salon-g{display:grid;gap:8px;margin-top:4px;}
         .bq-salon-o{text-align:center;text-decoration:none;}
         .bq-gg{margin-top:22px;padding-top:18px;border-top:1px solid var(--bq-ligne);}
