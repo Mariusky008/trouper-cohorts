@@ -330,9 +330,62 @@ function chezEux(metier: string): string {
   return CHEZ_EUX.find(([r]) => r.test(metier))?.[1] ?? "Le commerce";
 }
 
-export function Boutique() {
+export function Boutique({
+  commerce,
+  retourHref,
+  piedMaquette = true,
+}: {
+  /**
+   * ═══ LE COMMERCE À AFFICHER, QUAND IL VIENT DU DEHORS ═══════════════════
+   *
+   * « Il va falloir que les pages d'accueil des commerçants deviennent le
+   * style exact de /autour-de-moi/boutique. »
+   *
+   * C'EST LE PONT QUE L'EN-TÊTE DE `page.tsx` ANNONÇAIT depuis le début :
+   * « cette page lit CARTES et pas Supabase ; le pont entre les deux est le
+   * vrai chantier, et il n'est pas ici ». Le voici, et il tient en une prop.
+   *
+   * POURQUOI SI PEU SUFFIT. Les trois mille lignes de ce fichier pendent
+   * toutes à UN SEUL objet — `c`, un `CarteAutour`. Tant que quelque chose
+   * fournit cet objet, le dessin, les huit chapitres, l'essai, la voix et le
+   * mur fonctionnent sans qu'on y touche. La page du commerçant n'a donc pas
+   * besoin d'une copie du dessin : elle a besoin d'un adaptateur qui
+   * transforme sa fiche Google en `CarteAutour`.
+   *
+   * ET SANS ELLE, RIEN NE CHANGE. `/autour-de-moi/boutique` reste la maquette
+   * à quatorze commerces, avec son sélecteur — c'est là qu'on éprouve le
+   * gabarit sur des commerces très inégaux, et ça n'a pas de raison de
+   * disparaître parce que la vraie page existe.
+   */
+  commerce?: CarteAutour;
+  /**
+   * ═══ OÙ MÈNE LA FLÈCHE DE RETOUR, ET QUAND IL N'Y EN A PAS ══════════════
+   *
+   * DANS L'APPLICATION, ELLE EST LA CHOSE LA PLUS IMPORTANTE DE LA BARRE :
+   * une page ouverte depuis le fil qui n'offre aucun chemin de retour se
+   * termine par un onglet fermé, et on ne revient pas.
+   *
+   * SUR LA PAGE PUBLIQUE D'UN COMMERÇANT, LA MÊME FLÈCHE MENT. Quelqu'un qui
+   * arrive par Google, par le lien qu'il a envoyé sur WhatsApp ou par le QR
+   * de sa vitrine n'a jamais vu Le Direct : lui proposer d'y « revenir »,
+   * c'est le sortir de la boutique qu'il venait voir, vers un écran dont il
+   * ignore tout. À `null`, il ne reste que le mot ClikMe — qui est justement
+   * ce qu'on veut qu'il retienne.
+   */
+  retourHref?: string | null;
+  /**
+   * L'AVEU DE MAQUETTE EN PIED DE PAGE — « ce commerce est inventé ».
+   *
+   * Vrai par défaut, parce que c'est vrai partout où cette page a existé
+   * jusqu'ici. La page d'un VRAI commerçant le passe à faux ; voir le pied
+   * lui-même, qui explique pourquoi cette phrase est la pire qu'on puisse
+   * laisser traîner sur la page qui porte son nom.
+   */
+  piedMaquette?: boolean;
+}) {
+  const retour = retourHref === undefined ? "/autour-de-moi" : retourHref;
   const cartes = useMemo(() => toutesLesCartes(), []);
-  const [id, setId] = useState("emporter");
+  const [id, setId] = useState(commerce?.id ?? "emporter");
   /** Le rond de la voix, agrandi et sonore. Il se referme en changeant de commerce. */
   const [voixOuverte, setVoixOuverte] = useState(false);
   /**
@@ -353,7 +406,15 @@ export function Boutique() {
    * grille une fois qu'on y arrive. Voir `rayonPrechoisi` dans `MurContenu`.
    */
   const [rayonChoisi, setRayonChoisi] = useState("");
-  const c = useMemo(() => cartes.find((x) => x.id === id) ?? cartes[0], [cartes, id]);
+  /**
+   * LE COMMERCE DU DEHORS GAGNE TOUJOURS. Quand la page du commerçant en
+   * fournit un, le sélecteur n'a plus de sens — il n'y a qu'un commerce, et
+   * c'est le sien.
+   */
+  const c = useMemo(
+    () => commerce ?? cartes.find((x) => x.id === id) ?? cartes[0],
+    [commerce, cartes, id],
+  );
 
   /**
    * L'HEURE VRAIE, AVEC LE MÊME REPLI QUE LE FIL.
@@ -570,13 +631,35 @@ export function Boutique() {
    * serait fausse exactement le jour où elle décide du déplacement — voir
    * `pieceDeLaCarte`, qui explique pourquoi on repasse par le catalogue.
    */
+  /**
+   * ═══ RETROUVER UN COMMERCE PAR SON IDENTIFIANT, LE NÔTRE D'ABORD ════════
+   *
+   * ON CHERCHAIT DANS LE PAQUET DE DÉMONSTRATION, ET SEULEMENT LÀ. Tant que
+   * cette page n'était qu'une maquette, c'était juste : les quatorze commerces
+   * du paquet étaient tout ce qui existait. Le jour où elle est devenue la page
+   * d'un VRAI commerçant, son identifiant n'a évidemment plus rien trouvé.
+   *
+   * ET L'ÉCHEC ÉTAIT SILENCIEUX, CE QUI EST LE PIRE. Rien ne plantait : la
+   * recherche rendait `undefined`, le code retombait sur un numéro de fiction,
+   * et le panneau de réservation annonçait au client, sur la page qui porte le
+   * nom du commerçant : « Ce commerce est inventé, et son numéro appartient à
+   * la plage réservée à la fiction. » Sur l'écran exact où quelqu'un venait de
+   * décider de réserver chez lui.
+   *
+   * LE COMMERCE DE LA PAGE PASSE DONC EN PREMIER. Le paquet reste derrière,
+   * parce que la maquette, elle, en a toujours besoin.
+   */
+  const carteDe = (cle: string) => (c.id === cle ? c : cartes.find((x) => x.id === cle));
   const taillesDites = useSyncExternalStore(abonnerTailles, chargerTailles, taillesVides);
   const taillesVues = useMemo(() => {
     if (!pieceVue) return null;
-    const v = cartes.find((x) => x.id === pieceVue.carte);
+    const v = carteDe(pieceVue.carte);
     const p = v ? pieceDeLaCarte(v, pieceVue.piece) : undefined;
     return p ? taillesDeLaPiece(pieceVue.carte, p, taillesDites) : null;
-  }, [pieceVue, cartes, taillesDites]);
+    // `c` est dans les dépendances parce que `carteDe` le consulte en premier :
+    // sans lui, changer de commerce garderait les tailles du précédent.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pieceVue, c, cartes, taillesDites]);
   /** La demande qui part chez le commerçant, montrée avant d'être envoyée. */
   const [demandePiece, setDemandePiece] = useState<{
     piece: PieceGardee;
@@ -748,12 +831,16 @@ export function Boutique() {
       <Styles />
 
       {/* ─── LE SÉLECTEUR DE MAQUETTE ───
+          IL NE SE DESSINE QUE POUR LA MAQUETTE, maintenant : sur la page d'un
+          vrai commerçant, une rangée de quatorze concurrents sous son nom
+          serait la pire chose qu'on puisse lui faire.
           IL N'EXISTE QUE PARCE QUE C'EST UNE MAQUETTE, et il est le seul
           element de la page qui disparaitra a l'atterrissage. Sa raison
           d'etre : cette page doit tenir sur QUATORZE commerces tres inegaux —
           un restaurant qui a tout, une cireuse qui n'a qu'un catalogue, un
           hypnotherapeute sans photo. On ne juge pas un gabarit sur son
           meilleur cas. */}
+      {!commerce && (
       <div className="bq-maq">
         <span className="bq-maq-l">Maquette · un autre commerce</span>
         <div className="bq-maq-c">
@@ -782,6 +869,7 @@ export function Boutique() {
           ))}
         </div>
       </div>
+      )}
 
       {/* ─── LE BANDEAU DE BOUTIQUE ───
           Retour a gauche, geste a droite, et rien entre les deux. La sortie
@@ -808,9 +896,11 @@ export function Boutique() {
             qui ne soit pas un geste, et c'est celle qui manquait. */}
         <header className="bq-tete">
           <div className="bq-tete-g">
-            <Link className="bq-rond" href="/autour-de-moi" prefetch={false} aria-label="Revenir au direct">
-              <i aria-hidden="true">←</i>
-            </Link>
+            {retour && (
+              <Link className="bq-rond" href={retour} prefetch={false} aria-label="Revenir au direct">
+                <i aria-hidden="true">←</i>
+              </Link>
+            )}
             <span className="bq-marque" aria-hidden="true">
               Clik<b>Me</b>
             </span>
@@ -1914,10 +2004,26 @@ export function Boutique() {
         </p>
       )}
 
-      <footer className="bq-pied">
-        Maquette&nbsp;: ce commerce est inventé, ses photos sont des illustrations. Rien n’est
-        publié, rien n’est réservable.
-      </footer>
+      {/* ═══ L'AVEU DE MAQUETTE, ET IL NE DOIT JAMAIS MENTIR DANS L'AUTRE SENS ══
+
+          IL ÉTAIT INCONDITIONNEL, et c'est le défaut le plus grave qu'ait connu
+          ce fichier : le jour où la page du commerçant est devenue cette page,
+          un vrai commerce de Dax a hérité, sous son propre nom, de la phrase
+          « ce commerce est inventé, ses photos sont des illustrations ». Le
+          pire endroit possible pour une phrase fausse : celui qui porte son
+          nom, et où il envoie ses clients.
+
+          IL RESTE VRAI PARTOUT AILLEURS. La maquette à quatorze commerces et
+          les adresses de démonstration montrent des commerces qui n'existent
+          pas, et le dire est la condition pour avoir le droit de les montrer.
+          C'est donc l'appelant qui décide — parce que lui seul sait si ce qu'il
+          affiche est réel. */}
+      {piedMaquette && (
+        <footer className="bq-pied">
+          Maquette&nbsp;: ce commerce est inventé, ses photos sont des illustrations. Rien n’est
+          publié, rien n’est réservable.
+        </footer>
+      )}
 
       {/* ═══ LES RACCOURCIS DES TROIS POINTS ═══════════════════════════════
 
@@ -2185,7 +2291,7 @@ export function Boutique() {
               type="button"
               className="bq-plein-r"
               onClick={() => {
-                const v = cartes.find((x) => x.id === pieceVue.carte);
+                const v = carteDe(pieceVue.carte);
                 const tel = v?.telephone || numeroDeFiction(pieceVue.carte);
                 const m = commentPrevenir({
                   telephone: tel,
@@ -2209,7 +2315,7 @@ export function Boutique() {
                 // commerçant : la bonne réponse à « voir la boutique » est de
                 // montrer celle-là, pas d'ouvrir une seconde fenêtre sur la
                 // même chose.
-                const v = cartes.find((x) => x.id === pieceVue.carte);
+                const v = carteDe(pieceVue.carte);
                 setPieceVue(null);
                 setPocheOuverte(false);
                 if (v) {

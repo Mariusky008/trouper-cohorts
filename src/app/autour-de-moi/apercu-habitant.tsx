@@ -3163,6 +3163,37 @@ export function ApercuHabitant() {
       duree: 4500,
     },
     {
+      /**
+       * ═══ LES SORTIES, ET C'EST LA MÉCANIQUE DU PRODUIT ELLE-MÊME ═══════
+       *
+       * « Il manque l'exemple du pictogramme "sortie". »
+       *
+       * IL AVAIT RAISON, ET LE TROU SE VOYAIT : un pictogramme sur cinq ne
+       * s'allumait jamais, donc la rangée avait l'air d'attendre quelque chose
+       * qui ne venait pas.
+       *
+       * CES DEUX IMAGES NE SONT PAS DES PHOTOGRAPHIES, CE SONT DES CAPTURES DU
+       * PRODUIT. Aucun couple avant/après d'une sortie n'existait dans le
+       * dépôt, et en fabriquer un avec deux lieux différents aurait répété
+       * exactement ce qu'il avait reproché — « ce n'est jamais la même
+       * personne ». On a donc pris la terrasse et on a joué DANS
+       * L'APPLICATION le geste « Faire tomber le soir », en capturant le même
+       * cadre avant et après. C'est littéralement ce que l'essai montre quand
+       * on le touche : une preuve, pas une illustration.
+       *
+       * ELLES SONT À MOITIÉ RÉSOLUTION DE SES QUATRE AUTRES. La photo source
+       * du dépôt fait 540 points de large, là où ses maquettes en font mille
+       * quatre-vingts. Ça se verra sur un grand téléphone, et le jour où il
+       * fournit un vrai couple de sortie, ces deux fichiers se remplacent sans
+       * qu'une ligne change.
+       */
+      cle: "sorties",
+      famille: "sorties",
+      photos: ["/direct/accueil/sorties-avant.jpg", "/direct/accueil/sorties-apres.jpg"],
+      mots: ["À 18 h", "Quand vous viendrez"],
+      duree: 4500,
+    },
+    {
       cle: "fleuriste",
       famille: "commerces",
       photos: ["/direct/accueil/fleuriste-avant.jpg", "/direct/accueil/fleuriste-apres.jpg"],
@@ -7253,6 +7284,38 @@ export function ApercuHabitant() {
               </div>
             )}
 
+            {/* ═══ LE VOILE D'OUVERTURE — RIEN NE CLIGNOTE AVANT L'ACCUEIL ═══
+
+                « Il y a un petit bug : on voit pendant très peu de temps
+                d'abord d'autres écrans avant de voir cet écran. »
+
+                C'EST EXACT, ET C'EST UNE CONSÉQUENCE DIRECTE DE `monte`. Le
+                serveur ne sait rien de ce téléphone — ni ce qu'il a déjà vu, ni
+                ce qu'il a gardé — donc tout ce qui dépend de sa mémoire attend
+                que le navigateur reprenne la main. L'écran d'accueil en fait
+                partie. Pendant cette fraction de seconde, le HTML du serveur
+                affiche ce qu'il SAIT afficher : le paquet de cartes, la barre
+                du bas, l'annonce du sommet. Puis l'accueil se pose par-dessus.
+
+                CE N'EST PAS UN DÉFAUT DE `monte`, C'EST UN DÉFAUT DE CE QU'ON
+                MONTRE PENDANT. L'attente est légitime et ne peut pas être
+                supprimée — on ne devinera jamais côté serveur ce que ce
+                téléphone a déjà vu. Ce qu'on peut faire, c'est ne rien montrer
+                d'autre : un voile plein cadre, du même noir que l'accueil.
+
+                IL PORTE LE MOT-MARQUE, ET PAS UN TOURNIQUET. Une roue qui
+                tourne dirait « ça charge », c'est-à-dire « attendez » ; le nom
+                dit « ça commence ». Et comme l'accueil porte le même nom au
+                même endroit, le passage de l'un à l'autre ne se voit pas :
+                c'est la seule façon de faire disparaître le clignotement au
+                lieu de le déplacer d'un cran. */}
+            {!monte && (
+              <div className="ap-voile-ouv" aria-hidden="true">
+                <b>
+                  Clik<em>Me</em>
+                </b>
+              </div>
+            )}
             {monte && sommet && !vus.includes("accueil") && !sortie && !embauches && !salonUrl && (
               <div
                 className={`ap-accueil${accueilDx ? " part" : ""}`}
@@ -14327,6 +14390,21 @@ export function ApercuHabitant() {
               a distance finissent par diverger. */
            font-family:var(--font-clikme),'Inter',system-ui,sans-serif;}
         @keyframes apMonteAcc{from{opacity:0;transform:scale(.97);}to{opacity:1;transform:none;}}
+        /* ─── LE VOILE D'OUVERTURE ───
+           Voir le commentaire au point de rendu. IL EST AU-DESSUS DE TOUT, y
+           compris de l'accueil : celui-ci monte dans le meme instant que le
+           voile disparait, et un voile posé SOUS lui laisserait passer un
+           eclair de paquet entre les deux.
+           SON FOND EST CELUI DE L'ACCUEIL, au point pres. C'est ce qui rend le
+           passage invisible — deux noirs differents feraient un clignotement de
+           plus, pas un de moins. */
+        .ap-voile-ouv{position:absolute;inset:0;z-index:40;
+          display:flex;align-items:center;justify-content:center;
+          border-radius:26px;background:#050908;
+          font-family:var(--font-clikme),'Inter',system-ui,sans-serif;}
+        .ap-voile-ouv b{font-size:40px;font-weight:900;letter-spacing:-.02em;
+          line-height:1;color:#fff;}
+        .ap-voile-ouv b em{font-style:normal;color:#F0389C;}
 
         /* ═══ « RELOOKE-MOI » — L'ANNONCE QUI N'EST A PERSONNE ═════════════
 

@@ -1994,10 +1994,14 @@ function Styles() {
            Elle part du bas et gagne vers le haut, parce que c'est par le bas
            qu'une terrasse perd le soleil. Elle arrive un peu apres le debut :
            la lumiere baisse avant que l'ombre se voie. */
+        /* ELLE MONTE JUSQU'EN HAUT, MAINTENANT. Elle s'arretait aux trois
+           quarts : le haut du cadre restait donc au plein jour pendant que le
+           bas passait au soir, ce qui est exactement l'inverse de ce que fait
+           une fin de journee — c'est le CIEL qui s'eteint en premier. */
         .so-ombre{position:absolute;inset:0;pointer-events:none;opacity:0;
           background:linear-gradient(to top,
-            rgba(18,12,38,.82) 0%, rgba(24,16,48,.5) 24%,
-            rgba(30,20,60,.18) 52%, rgba(30,20,60,0) 78%);}
+            rgba(14,10,34,.9) 0%, rgba(18,13,44,.68) 26%,
+            rgba(24,17,56,.42) 58%, rgba(26,20,64,.22) 100%);}
         .so-geste.fait .so-ombre{animation:soOmbre 2.6s ease-in both;}
         @keyframes soOmbre{
           0%{opacity:0;transform:translateY(38%);}
@@ -2009,22 +2013,28 @@ function Styles() {
            Or, ambre, rose, bleu de nuit. Les paliers sont ce qui distingue un
            coucher de soleil d'un virage sepia : entre deux teintes, un fondu
            droit traverse le gris. */
+        /* IL MULTIPLIE, IL N'ECLAIRCIT PLUS. En « ecran », un degrade ne peut
+           QUE monter la luminosite : plus on le charge, plus l'image part au
+           blanc. C'est ce qui donnait un voile rose au lieu d'un ciel. En
+           « multiply », la meme suite de teintes TEINTE et assombrit, ce que
+           fait un ciel qui se couche. Seul le soleil reste en ecran, parce que
+           lui, effectivement, eclaire. */
         .so-soir{position:absolute;inset:0;pointer-events:none;opacity:0;
-          mix-blend-mode:screen;
+          mix-blend-mode:multiply;
           background:linear-gradient(200deg,rgba(255,206,120,.34),
             rgba(255,150,90,.18) 50%,rgba(70,40,110,.3));}
         .so-geste.fait .so-soir{animation:soCiel 2.6s ease-out both;}
         @keyframes soCiel{
           0%{opacity:0;}
           26%{opacity:.75;
-            background:linear-gradient(200deg,rgba(255,216,140,.4),
-              rgba(255,178,104,.2) 50%,rgba(120,80,140,.2));}
+            background:linear-gradient(200deg,rgba(255,226,170,.22),
+              rgba(255,196,140,.22) 50%,rgba(140,100,150,.3));}
           58%{opacity:.9;
-            background:linear-gradient(200deg,rgba(255,158,110,.42),
-              rgba(255,110,120,.26) 48%,rgba(92,54,132,.34));}
+            background:linear-gradient(200deg,rgba(255,178,120,.4),
+              rgba(210,110,130,.4) 48%,rgba(70,44,120,.62));}
           100%{opacity:1;
-            background:linear-gradient(200deg,rgba(224,110,132,.34),
-              rgba(150,74,150,.28) 44%,rgba(46,32,96,.52));}
+            background:linear-gradient(200deg,rgba(255,168,132,.5),
+              rgba(140,80,150,.62) 44%,rgba(26,20,72,.9));}
         }
 
         /* ─── 4 · ET LES LAMPES S'ALLUMENT, UNE PAR UNE ───
@@ -2062,7 +2072,13 @@ function Styles() {
         .so-geste.fait img{animation:soPhoto 2.6s ease-out both;}
         @keyframes soPhoto{
           0%{filter:none;transform:scale(1);}
-          100%{filter:saturate(1.1) brightness(.82) contrast(1.06) hue-rotate(-6deg);
+          /* HUIT DIXIEMES N'ETAIENT PAS LE SOIR, C'ETAIT MIDI UN PEU BAISSE.
+             CAPTURE A L'APPUI : l'etat d'arrivee ressortait PLUS CLAIR et plus
+             rose que la photo de depart — les deux couches en « ecran » ne
+             savent qu'eclaircir, et elles annulaient la seule qui assombrit.
+             A cinquante-cinq pour cent, avec le contraste qui remonte et les
+             couleurs qui se resserrent, on quitte le jour. */
+          100%{filter:saturate(1.18) brightness(.55) contrast(1.14) hue-rotate(-8deg);
             transform:scale(1.03);}
         }
 
