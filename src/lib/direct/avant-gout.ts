@@ -816,7 +816,24 @@ export const GOUT_LEVAIN: Gout = {
       titre: "Votre tourte est ",
       suite: "mise de côté",
       phrase: "Elle sort du four à six heures et demie. Amanieu la garde jusqu’à midi.",
-      photo: "/direct/boulange-comptoir.jpeg",
+      /* ═══ LA TOURTE, PAS LE COMPTOIR ═══════════════════════════════════════
+
+         ON FINISSAIT SUR LA VITRINE D'UNE BOULANGERIE. Quatre temps à parler
+         d'un levain de douze ans et de vingt heures de pousse, puis une photo
+         de présentoir où l'on cherche des yeux ce dont on vient de parler.
+         L'écran qui dit « votre tourte est mise de côté » doit montrer LA
+         TOURTE.
+
+         ET CELLE-CI EST OUVERTE, ce qui est tout le sujet : vingt heures de
+         pousse ne se voient que dans la mie. C'est le seul endroit du parcours
+         où la preuve est dans l'image et pas dans la phrase.
+
+         ELLE N'A PAS DE RIDEAU, ET C'EST ASSUMÉ. Un rideau demande un AVANT —
+         le pain fermé — et cette photo montre déjà la tranche : la découper en
+         deux donnerait la mie des deux côtés. Voir la section des secondes
+         photos dans public/direct/LISEZ-MOI.md : l'absence raccourcit, elle ne
+         se bricole pas. */
+      photo: "/direct/tourte-tranchee.jpg",
       // LE GESTE FINAL EST LE SIEN. On ne réserve pas un pain, on le fait
       // garder — et c'est le mot que son annonce emploie déjà.
       geste: "Gardez-la-moi",

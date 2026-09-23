@@ -3147,6 +3147,14 @@ export function ApercuHabitant() {
      * le titre qu'elles portent.
      */
     duree: number;
+    /**
+     * ═══ LA CARTE QUI PASSE AU SOIR ══════════════════════════════════════
+     *
+     * Le rang de celle qui reçoit le coucher de soleil — les mêmes couches
+     * que le geste « Faire tomber le soir » de l'écran Soirée. Absent : aucune
+     * carte ne bascule, ce qui est le cas des quatre autres exemples.
+     */
+    soir?: number;
   }[] = [
     {
       cle: "coiffure",
@@ -3164,33 +3172,42 @@ export function ApercuHabitant() {
     },
     {
       /**
-       * ═══ LES SORTIES, ET C'EST LA MÉCANIQUE DU PRODUIT ELLE-MÊME ═══════
+       * ═══ LES SORTIES : ON NE CAPTURE PAS LE PRODUIT, ON LE JOUE ════════
        *
-       * « Il manque l'exemple du pictogramme "sortie". »
+       * « Concernant "sortie" je me suis loupé, c'est très mauvais. »
        *
-       * IL AVAIT RAISON, ET LE TROU SE VOYAIT : un pictogramme sur cinq ne
-       * s'allumait jamais, donc la rangée avait l'air d'attendre quelque chose
-       * qui ne venait pas.
+       * IL A RAISON, ET LE DÉFAUT N'ÉTAIT PAS LE GOÛT. Les deux images
+       * étaient des CAPTURES D'ÉCRAN du geste « Faire tomber le soir », et
+       * elles cumulaient trois défauts qu'aucune retouche ne rattrape :
        *
-       * CES DEUX IMAGES NE SONT PAS DES PHOTOGRAPHIES, CE SONT DES CAPTURES DU
-       * PRODUIT. Aucun couple avant/après d'une sortie n'existait dans le
-       * dépôt, et en fabriquer un avec deux lieux différents aurait répété
-       * exactement ce qu'il avait reproché — « ce n'est jamais la même
-       * personne ». On a donc pris la terrasse et on a joué DANS
-       * L'APPLICATION le geste « Faire tomber le soir », en capturant le même
-       * cadre avant et après. C'est littéralement ce que l'essai montre quand
-       * on le touche : une preuve, pas une illustration.
+       *   · LA LÉGENDE ÉTAIT INCRUSTÉE DANS LE JPEG. Le bouton « ✨ Faire
+       *     tomber le soir » faisait partie des pixels : la pastille du cadre
+       *     s'ajoutait par-dessus, donc deux titres, et le cadre coupait
+       *     l'incrustation en deux dès que la carte penchait.
+       *   · L'APRÈS ÉTAIT LA MÊME PHOTO ASSOMBRIE. C'est le mot exact du
+       *     composant qui dessine ce geste : « le moment où l'image cesse
+       *     d'être une photo de jour assombrie pour devenir une terrasse le
+       *     soir ». La capture avait été prise AVANT ce moment-là.
+       *   · ET ON NE VOYAIT PLUS RIEN. Un écran d'accroche dont la seconde
+       *     image est illisible ne prouve pas une transformation, il prouve
+       *     qu'on baisse la lumière.
        *
-       * ELLES SONT À MOITIÉ RÉSOLUTION DE SES QUATRE AUTRES. La photo source
-       * du dépôt fait 540 points de large, là où ses maquettes en font mille
-       * quatre-vingts. Ça se verra sur un grand téléphone, et le jour où il
-       * fournit un vrai couple de sortie, ces deux fichiers se remplacent sans
-       * qu'une ligne change.
+       * ON REPREND DONC LES COUCHES ELLES-MÊMES. Le soleil qui descend,
+       * l'ombre qui monte, le ciel qui vire, les lampes qui s'allument : ce
+       * sont les quatre calques de `Geste` dans `soiree-contenu.tsx`, posés
+       * ici sur la même photo de terrasse. Ce n'est plus une image DU produit,
+       * c'est le produit — net à n'importe quelle définition, sans second
+       * fichier à charger, et impossible à désynchroniser du vrai écran.
+       *
+       * DEUX MOTS COURTS, ET C'EST UNE CORRECTION AUSSI. « Quand vous
+       * viendrez » ne tenait pas dans la pastille et s'affichait « Quand vous
+       * vien… ». Voir aussi `.ap-ac-carte i`, qui coupait en silence.
        */
       cle: "sorties",
       famille: "sorties",
-      photos: ["/direct/accueil/sorties-avant.jpg", "/direct/accueil/sorties-apres.jpg"],
-      mots: ["À 18 h", "Quand vous viendrez"],
+      photos: ["/direct/terrasse-au-soleil.jpg", "/direct/terrasse-au-soleil.jpg"],
+      mots: ["Maintenant", "Ce soir"],
+      soir: 1,
       duree: 4500,
     },
     {
@@ -7395,7 +7412,12 @@ export function ApercuHabitant() {
                 >
                   {exemple.photos.map((src, k) => (
                     <span
-                      key={src}
+                      /* LE RANG, PAS LE CHEMIN. L'exemple des sorties montre
+                         DEUX FOIS la même photo — c'est le principe : le même
+                         cadre, avant et après. Une clé tirée du chemin donnait
+                         donc deux clés identiques, ce que React ne pardonne
+                         pas. */
+                      key={`${src}-${k}`}
                       /* L'INCLINAISON SE CALCULE, ELLE N'EST PLUS ÉCRITE. Avec
                          deux cartes elle vaut ∓3,2° comme avant ; avec trois,
                          la première penche à gauche, celle du milieu reste
@@ -7419,6 +7441,33 @@ export function ApercuHabitant() {
                           superposés sur la même image, c'est deux titres qu'on
                           ne lit ni l'un ni l'autre. */}
                       {exemple.mots?.[k] && <i>{exemple.mots[k]}</i>}
+
+                      {/* ═══ LE SOIR TOMBE SUR CETTE CARTE-LÀ ═══════════════
+
+                          LES QUATRE MÊMES CALQUES QUE L'ÉCRAN SOIRÉE, dans le
+                          même ordre : le soleil bas, l'ombre qui monte, le ciel
+                          viré, et les lampes. On ne recopie pas une image du
+                          produit, on rejoue le produit — donc rien à
+                          resynchroniser le jour où le geste change, et net à
+                          n'importe quelle définition.
+
+                          SEULES LES LAMPES BOUGENT. Le reste est posé à son
+                          état d'arrivée, parce que la carte elle-même arrive en
+                          glissant : deux mouvements en même temps ne se
+                          regardent pas. Les lampes, elles, sont le paiement du
+                          geste — c'est le moment où la terrasse cesse d'être
+                          une photo sombre pour devenir un soir. */}
+                      {exemple.soir === k && (
+                        <s className="ap-ac-soir" aria-hidden="true">
+                          <u className="ap-ac-nuit" />
+                          <u className="ap-ac-soleil" />
+                          <u className="ap-ac-ombre" />
+                          <u className="ap-ac-ciel" />
+                          <b className="ap-ac-lampes">
+                            <em /><em /><em /><em /><em />
+                          </b>
+                        </s>
+                      )}
                     </span>
                   ))}
 
@@ -14624,13 +14673,88 @@ export function ApercuHabitant() {
           to{opacity:1;transform:rotate(var(--t));}
         }
         /* LES PASTILLES : grise sur les premieres, rose sur la derniere. */
+        /* ELLE REVIENT A LA LIGNE, ELLE NE COUPE PLUS. MESURE A L'ECRAN :
+           « Quand vous viendrez » s'affichait « Quand vous vien… » — la
+           pastille tronquait en silence, donc le seul endroit ou l'on aurait vu
+           le defaut est celui ou on ne regarde pas. Deux lignes tiennent dans
+           la carte ; un texte coupe, non. */
         .ap-ac-carte i{position:absolute;top:10px;left:10px;padding:6px 13px;
           border-radius:999px;font-style:normal;font-size:12px;font-weight:800;
-          white-space:nowrap;max-width:calc(100% - 20px);overflow:hidden;
-          text-overflow:ellipsis;color:#F2F5F8;background:rgba(58,62,72,.9);
+          line-height:1.3;max-width:calc(100% - 20px);
+          color:#F2F5F8;background:rgba(58,62,72,.9);
           -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
         .ap-ac-carte.fin i{left:auto;right:10px;color:#fff;background:#F0389C;
           box-shadow:0 4px 16px -4px rgba(240,56,156,.9);}
+
+        /* ═══ LE SOIR QUI TOMBE SUR LA CARTE DES SORTIES ════════════════════
+
+           LES QUATRE CALQUES DE L'ECRAN SOIREE, POSES A LEUR ETAT D'ARRIVEE.
+           Voir la fonction Geste dans soiree-contenu.tsx : meme suite, meme
+           ordre, les memes teintes. On ne montre pas une capture du produit, on
+           montre le produit — rien a resynchroniser le jour ou le geste change,
+           et net a n'importe quelle definition d'ecran.
+
+           CE QUI ETAIT LA AVANT : deux fichiers JPEG de 540 points, dont le
+           second n'etait que le premier assombri, avec le libelle du bouton
+           incruste dans les pixels. */
+        .ap-ac-soir{position:absolute;inset:0;display:block;overflow:hidden;
+          border-radius:inherit;pointer-events:none;}
+        .ap-ac-soir u{position:absolute;inset:0;display:block;
+          text-decoration:none;}
+
+        /* 0 · LA PHOTO PERD SA LUMIERE DE MIDI, ET C'EST CE QUI MANQUAIT.
+           MESURE A L'ECRAN : sans elle, le ciel en « multiply » se posait sur
+           un fond surexpose et rendait du lavande — un filtre violet, pas un
+           soir. Le produit, lui, filtre l'image AVANT de la teinter (voir
+           soPhoto dans soiree-contenu.tsx) ; ici la photo est un fond de carte
+           et non une balise image, donc on la reprend par-derriere. */
+        .ap-ac-nuit{-webkit-backdrop-filter:brightness(.55) saturate(1.18) contrast(1.14)
+          hue-rotate(-8deg);backdrop-filter:brightness(.55) saturate(1.18) contrast(1.14)
+          hue-rotate(-8deg);}
+
+        /* 1 · LE SOLEIL, DEJA BAS ET DEJA ROUGE. C'est le seul calque en
+           « ecran », parce que lui, effectivement, eclaire. */
+        .ap-ac-soleil{mix-blend-mode:screen;
+          background:radial-gradient(circle at 58% 88%,
+            rgba(255,128,86,.5) 0%, rgba(214,72,96,.22) 10%,
+            rgba(150,50,110,0) 28%);}
+
+        /* 2 · L'OMBRE, MONTEE JUSQU'EN HAUT. C'est le ciel qui s'eteint en
+           premier, pas le sol. */
+        .ap-ac-ombre{background:linear-gradient(to top,
+          rgba(14,10,34,.9) 0%, rgba(18,13,44,.68) 26%,
+          rgba(24,17,56,.42) 58%, rgba(26,20,64,.22) 100%);}
+
+        /* 3 · LE CIEL DE NUIT. Il MULTIPLIE : un degrade en « ecran » ne sait
+           qu'eclaircir, et c'est ce qui donnait un voile rose au lieu d'un
+           ciel. */
+        .ap-ac-ciel{mix-blend-mode:multiply;
+          background:linear-gradient(200deg,rgba(255,168,132,.5),
+            rgba(140,80,150,.62) 44%,rgba(26,20,72,.9));}
+
+        /* 4 · ET LES LAMPES S'ALLUMENT, EN QUINCONCE. Le seul mouvement de la
+           carte, parce que la carte elle-meme arrive deja en glissant. Personne
+           n'allume cinq guirlandes d'un coup : c'est le decalage qui les rend
+           vraies. */
+        .ap-ac-lampes{position:absolute;inset:0;display:block;font-weight:400;}
+        .ap-ac-lampes em{position:absolute;width:12px;height:12px;border-radius:50%;
+          opacity:0;filter:blur(3px);mix-blend-mode:screen;
+          background:radial-gradient(circle,rgba(255,232,168,.95),
+            rgba(255,186,96,.45) 42%,rgba(255,160,60,0) 72%);
+          animation:apLampe .7s cubic-bezier(.2,.9,.3,1) both;}
+        .ap-ac-lampes em:nth-child(1){left:13%;top:26%;animation-delay:.62s;}
+        .ap-ac-lampes em:nth-child(2){left:31%;top:19%;animation-delay:.94s;}
+        .ap-ac-lampes em:nth-child(3){left:52%;top:24%;animation-delay:.78s;}
+        .ap-ac-lampes em:nth-child(4){left:71%;top:17%;animation-delay:1.12s;}
+        .ap-ac-lampes em:nth-child(5){left:87%;top:29%;animation-delay:.86s;}
+        @keyframes apLampe{
+          /* Le sursaut d'allumage : une ampoule depasse sa luminosite d'un
+             cheveu avant de se stabiliser. Sans lui, elle apparait ; avec lui,
+             elle s'allume. */
+          0%{opacity:0;transform:scale(.3);}
+          45%{opacity:1;transform:scale(1.35);}
+          100%{opacity:.9;transform:scale(1);}
+        }
 
         /* ═══ LA FLECHE NEON ════════════════════════════════════════════════
            ELLE EST PLEINE, PAS TRACEE. Un trait de quatre points avec deux
