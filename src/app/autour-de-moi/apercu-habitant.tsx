@@ -14290,6 +14290,7 @@ export function ApercuHabitant() {
            est rose et se passe dans une cabine, la journee est vert d'eau et se
            passe dehors, en ville. */
         .ap-jrn{position:absolute;inset:0;z-index:8;overflow:hidden;
+          user-select:none;-webkit-user-select:none;
           display:flex;flex-direction:column;justify-content:flex-end;
           border-radius:26px;cursor:grab;touch-action:pan-y;
           background:radial-gradient(120% 70% at 50% 0%,#0B3B3A 0%,#071C24 58%),#050E14;
@@ -14347,6 +14348,7 @@ export function ApercuHabitant() {
           font-weight:700;color:#8FAAA8;}
 
         .ap-relook{position:absolute;inset:0;z-index:8;overflow:hidden;
+          user-select:none;-webkit-user-select:none;
           display:flex;flex-direction:column;justify-content:flex-end;
           border-radius:26px;cursor:grab;touch-action:pan-y;
           background:radial-gradient(120% 70% at 50% 0%,#3A0B4E 0%,#140A24 58%),#0C0718;
@@ -14695,7 +14697,24 @@ export function ApercuHabitant() {
         .ap-carte{position:absolute;inset:0;max-width:none;aspect-ratio:auto;
           border-radius:0;box-shadow:none;}
         .ap-carte.dessous{transform:scale(.955) translateY(9px);filter:brightness(.7);}
+        /* ═══ A LA SOURIS, LE BALAYAGE SELECTIONNAIT LE TEXTE ═══════════════
+
+           DEFAUT SIGNALE : « je ne vois plus les deux annonces quand je vais
+           sur l'app ». Elles etaient bien la — la journee a la sixieme carte,
+           le relooking a la dixieme — mais on ne pouvait plus y arriver.
+
+           LA PROPRIETE TOUCH-ACTION REGLE LE DOIGT, PAS LA SOURIS. Sur un telephone
+           il donne les gestes horizontaux a l'application, et le balayage
+           marche. Sur un ordinateur, tirer en travers d'une carte demarre une
+           SELECTION DE TEXTE native : le titre et le prix passent en bleu, la
+           carte ne bouge pas, et le paquet n'avance jamais. Mesure au
+           navigateur : sans cette ligne, un glissement sur deux echoue et on
+           n'atteint jamais la sixieme carte ; avec elle, les cinq passent.
+
+           ET C'EST LA DEMONSTRATION QUI SE MONTRE SUR UN ORDINATEUR. Le defaut
+           ne se voyait donc que la ou le produit se presente. */
         .ap-dessus{position:absolute;inset:0;touch-action:pan-y;cursor:grab;
+          user-select:none;-webkit-user-select:none;
           will-change:transform;}
         .ap-dessus:active{cursor:grabbing;}
         .ap-dessus.vole{transition:transform ${VOL_MS}ms cubic-bezier(.4,0,.6,1),opacity ${VOL_MS}ms ease;
