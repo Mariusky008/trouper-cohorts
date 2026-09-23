@@ -1286,6 +1286,28 @@ export type CarteAutour = {
    */
   google?: { note: string; avis: number };
   /**
+   * ═══ CE QUE SES CLIENTS ONT ÉCRIT SUR GOOGLE, EN TOUTES LETTRES ═════════
+   *
+   * « Il faudrait même qu'on voie les avis directement sur place, comme on
+   * avait auparavant sur l'ancien design de la page commerçant. »
+   *
+   * POURQUOI C'EST UN CHAMP À PART, ET PAS DES `AvisPlat`. La page distingue
+   * deux natures de preuve et ne les mélange jamais : ce qu'un habitant a
+   * photographié et raconté ICI, qui est daté et attaché à un moment précis,
+   * et ce que Google recopie, qui n'a ni date ni objet. Les fondre donnerait
+   * une liste où l'on ne sait plus qui parle de quoi — ce qui est exactement
+   * ce qui rend les avis illisibles ailleurs.
+   *
+   * ET C'EST LA SEULE PREUVE QU'UN COMMERÇANT A LE PREMIER JOUR. Le chapitre
+   * « Vu chez eux » se déduit de ses moments ; un prospect n'en a aucun, donc
+   * le chapitre entier disparaissait de sa page — avec le bouton qui y menait.
+   * Ses avis Google, eux, existent déjà, et ils sont à lui.
+   *
+   * ON NE LES INVENTE PAS DAVANTAGE QUE LE RESTE : absent, le bloc n'est pas
+   * dessiné.
+   */
+  avisGoogle?: { qui: string; texte: string; note: number | null }[];
+  /**
    * SON LOGO, ROND, DANS LA FICHE DU COMMERCE.
    *
    * À BRANCHER SUR L'ESPACE COMMERÇANT — c'est noté, et ce n'est pas fait :
@@ -2775,6 +2797,15 @@ const CARTES: CarteAutour[] = [
     // partagent leurs interieurs et deux bars leurs comptoirs — a remplacer
     // par de vraies photos de chaque commerce. Voir public/direct/LISEZ-MOI.md.
     photos: ["/direct/fauteuil-coiffeur.jpg", "/direct/salon-neuf.jpg"],
+    // CE QUE GOOGLE EN DIT, POUR QUE LE BLOC SE VOIE SUR UNE DÉMONSTRATION.
+    // Un vrai commerçant, lui, reçoit les siens depuis sa fiche — voir
+    // `carte-depuis-fiche.ts`. Ceux-là sont inventés, comme ce salon, et la
+    // page le dit en pied.
+    avisGoogle: [
+      { qui: "Marie L.", texte: "Il prend le temps, il écoute, et le résultat tient trois mois. Je ne vais plus ailleurs.", note: 5 },
+      { qui: "Thomas B.", texte: "Salon minuscule et c'est tout son charme. Rendez-vous à l'heure, coupe impeccable.", note: 5 },
+      { qui: "Céline R.", texte: "Très bon conseil couleur. Un peu d'attente le samedi, mais ça vaut le coup.", note: 4 },
+    ],
     // ELLE N'EN A QU'UNE DE PLUS, ET LA BANDE EN MONTRE DONC DEUX. Les deux
     // autres envoyees n'entrent pas : `salon-vitrine.jpg` est une devanture de
     // Noel avec un piano — ni un salon, ni la saison — et `salon-produits.jpg`

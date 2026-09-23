@@ -165,3 +165,50 @@ export function commentPrevenir(a: {
     texte,
   };
 }
+
+/**
+ * ═══ PRENDRE RENDEZ-VOUS CHEZ CE COMMERÇANT, DEPUIS SA PAGE ═══════════════
+ *
+ * « "📅 Prendre rendez-vous / En quelques secondes" ne fait rien quand on
+ * clique dessus, au lieu d'ouvrir le WhatsApp avec le numéro du pro et le
+ * message pré-rempli. »
+ *
+ * IL DÉFILAIT. Le bouton menait à la section d'essai, plus haut dans la page :
+ * sur un téléphone, ça remonte de deux écrans sans rien annoncer, et le geste
+ * se lit comme une panne. Or c'est le seul bouton de la page qui dise « je
+ * viens » — celui pour lequel toute la page existe.
+ *
+ * LE MESSAGE EST DANS LES MOTS DU MÉTIER, comme partout ailleurs ici. On ne
+ * demande pas une table à une onglerie ni un créneau à un restaurant : le
+ * libellé vient de `personnalites.ts`, qui décide déjà du verbe affiché sur le
+ * bouton — donc le bouton et le message ne peuvent pas se contredire.
+ *
+ * ON NE FIXE NI JOUR NI HEURE. La page ne connaît pas son agenda ; annoncer
+ * « samedi 15 h » engagerait le commerçant sur un créneau qu'il n'a peut-être
+ * pas. On ouvre une conversation, c'est lui qui répond — et sa réponse fait
+ * foi. C'est la même règle que la démonstration, qui « transmet la demande »
+ * sans jamais inventer une disponibilité.
+ */
+export function demanderRendezVous(a: {
+  telephone: string;
+  /** Le nom du commerce, tel qu'il s'affiche. */
+  nom: string;
+  /** Le verbe du métier : « Prendre rendez-vous », « Réserver une table »… */
+  geste: string;
+  prenom?: string;
+}): CommentPrevenir {
+  const signature = a.prenom ? ` — ${a.prenom}` : "";
+  const g = a.geste.trim().toLowerCase();
+  // « Réserver une table » → « réserver une table ». « Prendre rendez-vous »
+  // → « prendre rendez-vous ». Le verbe est déjà à l'infinitif dans la table
+  // des personnalités, donc la phrase se construit sans le réécrire.
+  const texte =
+    `Bonjour, je viens de voir votre page ClikMe. ` +
+    `J'aimerais ${g} chez ${a.nom} — quelles sont vos disponibilités ?${signature}`;
+  const num = international(a.telephone);
+  return {
+    whatsapp: `https://wa.me/${num}?text=${encodeURIComponent(texte)}`,
+    appel: `tel:+${num}`,
+    texte,
+  };
+}
