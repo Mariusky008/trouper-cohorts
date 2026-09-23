@@ -37,6 +37,30 @@ const CLE = "clikme-vu-v1";
 export const TOUJOURS_REVOIR = new Set<string>(["accueil"]);
 const CLE_DEMO = "clikme-demo-v1";
 
+/**
+ * ═══ SOMMES-NOUS EN DÉMONSTRATION ? ════════════════════════════════════════
+ *
+ * EXPORTÉE PARCE QUE DEUX AUTRES ÉCRANS EN ONT BESOIN, et qu'ils doivent
+ * répondre à la même question que celui-ci. Les deux annonces autonomes — le
+ * relooking et la journée — ne reviennent normalement qu'une fois par jour ;
+ * pendant une démonstration, c'est la règle qui les rend invisibles au deuxième
+ * commerçant de la matinée.
+ *
+ * « Quand je quitte la page et que je reviens en recommençant tout depuis le
+ * début, j'aimerais revoir les mêmes annonces pour refaire la démo à un nouveau
+ * commerçant dans la même journée. »
+ *
+ * C'EST EXACTEMENT LA RÈGLE DE L'ÉCRAN D'OUVERTURE, et il n'y en aura donc
+ * qu'une : en démonstration, ce qui a été vu l'a été POUR CETTE SESSION, pas
+ * pour la journée. Rouvrir la page rend les trois d'un coup. Le jour où le mode
+ * démonstration s'en va — `clikme-demo-v1 = "0"`, ou `TOUJOURS_REVOIR` vidé —
+ * les annonces retrouvent leur règle du jour sans qu'on touche à leur code.
+ */
+export function enModeDemonstration(): boolean {
+  if (typeof window === "undefined") return false;
+  return enDemo();
+}
+
 function enDemo(): boolean {
   if (!TOUJOURS_REVOIR.size) return false;
   try {

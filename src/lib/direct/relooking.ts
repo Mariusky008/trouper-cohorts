@@ -48,6 +48,7 @@ import {
 } from "./apercu-habitant";
 import { murDeLaCarte, type Piece } from "./fantomes";
 import { numeroDeFiction } from "./prevenir";
+import { enModeDemonstration } from "./premiere-fois";
 
 /* ════════════════════════════════════════════════════════════════════════════
    OÙ ET QUAND LE RELOOKING SE PROPOSE
@@ -90,9 +91,29 @@ function aujourdhui(): string {
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
 
-/** L'annonce a-t-elle déjà été montrée aujourd'hui ? */
+/**
+ * ═══ EN DÉMONSTRATION, « DÉJÀ VUE » VEUT DIRE « CETTE SESSION » ════════════
+ *
+ * « Quand je quitte la page et que je reviens en recommençant tout depuis le
+ * début, j'aimerais revoir les mêmes annonces pour refaire la démo à un nouveau
+ * commerçant dans la même journée. »
+ *
+ * LA RÈGLE DU JOUR RESTE LA BONNE POUR UN HABITANT — une proposition qui
+ * revient est une publicité. Mais elle rend la démonstration injouable deux
+ * fois de suite, et c'est précisément le geste du métier : montrer l'écran à un
+ * commerçant, puis au suivant, dans la même matinée.
+ *
+ * C'EST DONC LA MÊME RÈGLE QUE L'ÉCRAN D'OUVERTURE, et il n'y en a qu'une :
+ * voir `enModeDemonstration` dans `premiere-fois.ts`. On continue d'écrire la
+ * date dans le stockage — le jour où le mode démonstration s'en va, la règle du
+ * jour reprend toute seule, sans qu'on touche à ce fichier.
+ */
+let vueCetteSession = false;
+
+/** L'annonce a-t-elle déjà été montrée&nbsp;? Aujourd'hui, ou cette session. */
 export function annonceRelookingVue(): boolean {
   if (typeof window === "undefined") return true;
+  if (enModeDemonstration()) return vueCetteSession;
   try {
     return window.localStorage.getItem(CLE_VUE) === aujourdhui();
   } catch {
@@ -101,6 +122,7 @@ export function annonceRelookingVue(): boolean {
 }
 
 export function marquerAnnonceRelookingVue() {
+  vueCetteSession = true;
   try {
     window.localStorage.setItem(CLE_VUE, aujourdhui());
   } catch {

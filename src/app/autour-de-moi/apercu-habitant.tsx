@@ -1641,6 +1641,21 @@ export function ApercuHabitant() {
    * Dax sans qu'aucune liste ne le prétende.
    */
   const [acte, setActe] = useState(0);
+  /**
+   * ═══ LA FAMILLE QU'ON A CHOISIE SOI-MÊME ══════════════════════════════════
+   *
+   * « Est-ce que je peux cliquer sur les pictogrammes pour moi-même changer de
+   * catégorie, afin d'aller plus vite pour voir les exemples ? »
+   *
+   * UN APPUI VEUT DIRE « C'EST MOI QUI CONDUIS », ET LA RONDE S'ARRÊTE. Sans
+   * ça, l'exemple demandé s'afficherait deux secondes puis partirait tout seul
+   * — c'est-à-dire exactement l'inverse de ce qu'on vient de demander, et la
+   * pire réponse possible à un appui : on obéit, puis on reprend la main.
+   *
+   * ET LE MÊME APPUI LA RELANCE. Retoucher la famille allumée rend la ronde :
+   * c'est la seule façon de revenir à la visite guidée sans quitter l'écran.
+   */
+  const [famillePrise, setFamillePrise] = useState("");
   /* `tour` est deja pris plus bas par le bulletin du tour de file. */
   const [boucle, setBoucle] = useState(0);
   /**
@@ -3251,6 +3266,8 @@ export function ApercuHabitant() {
   const dureeActe = ACTES[acte]?.duree ?? 2200;
   useEffect(() => {
     if (!accueilOuvert) return;
+    /* ON A PRIS LA MAIN : la ronde se tait. Voir `famillePrise`. */
+    if (famillePrise) return;
     if (typeof window === "undefined") return;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     const t = window.setTimeout(() => {
@@ -3262,7 +3279,7 @@ export function ApercuHabitant() {
     }, dureeActe);
     return () => window.clearTimeout(t);
     // ACTES.length est une constante du fichier ; `dureeActe` porte déjà l'acte.
-  }, [accueilOuvert, acte, dureeActe, ACTES.length]);
+  }, [accueilOuvert, famillePrise, acte, dureeActe, ACTES.length]);
 
   /**
    * ═══ DEUX PHOTOS SE COMPARENT, TROIS SE SUIVENT ═══════════════════════════
@@ -7456,8 +7473,42 @@ export function ApercuHabitant() {
                 <ul className="ap-ac-fam">
                   {FAMILLES.map((f) => {
                     const on = f.cle === exemple.famille;
+                    /* ═══ UNE FAMILLE SANS EXEMPLE NE SE TOUCHE PAS ═════════
+                       « Sorties » n'a aucun exemple dans la table : les quatre
+                       autres portent un avant-après photographié, celle-ci
+                       n'en a pas. Un bouton qui n'ouvre sur rien apprend à ne
+                       plus appuyer sur les boutons — c'est le pire état d'un
+                       bouton. Elle reste dessinée, à sa place dans la rangée,
+                       et elle ne répond pas. */
+                    const rang = EXEMPLES.findIndex((x) => x.famille === f.cle);
+                    const ouvrable = rang >= 0;
                     return (
                       <li key={f.cle} className={on ? "on" : ""}>
+                        <button
+                          type="button"
+                          className="ap-ac-famb"
+                          disabled={!ouvrable}
+                          aria-pressed={on}
+                          aria-label={`Voir l’exemple ${f.mot}`}
+                          /* LE GESTE COMMENCE SUR LE BOUTON, DONC LA CARTE NE
+                             LE CAPTURE PAS. `setPointerCapture` sur l'écran
+                             d'ouverture détourne tous les événements suivants
+                             vers lui : l'appui ne deviendrait jamais un clic.
+                             Même parade que sur « Essayer Dax », juste en
+                             dessous. */
+                          onPointerDown={(ev) => ev.stopPropagation()}
+                          onClick={() => {
+                            if (!ouvrable) return;
+                            noter("onglet", 0, `famille-${f.cle}`);
+                            /* LE MÊME APPUI REND LA RONDE. Voir `famillePrise`. */
+                            if (famillePrise === f.cle) {
+                              setFamillePrise("");
+                              return;
+                            }
+                            setActe(rang);
+                            setFamillePrise(f.cle);
+                          }}
+                        >
                         <span className="ap-ac-pic">
                           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                             <path
@@ -7472,6 +7523,7 @@ export function ApercuHabitant() {
                           {on && <i className="ap-ac-onde" aria-hidden="true" />}
                         </span>
                         <b>{f.mot}</b>
+                        </button>
                       </li>
                     );
                   })}
@@ -14600,15 +14652,27 @@ export function ApercuHabitant() {
            pas dans une rangee de cinq pictogrammes de meme poids. */
         .ap-ac-fam{flex:none;list-style:none;display:flex;justify-content:center;
           gap:6px;margin:26px 0 0;padding:0 10px;}
-        .ap-ac-fam li{flex:1 1 0;min-width:0;display:flex;flex-direction:column;
-          align-items:center;gap:6px;}
+        .ap-ac-fam li{flex:1 1 0;min-width:0;display:flex;}
+        /* ═══ LA RANGEE EST DEVENUE CLIQUABLE, ET RIEN N'A BOUGE ════════════
+           Le bouton reprend exactement la mise en page que le li portait —
+           colonne, centre, six points d'ecart — et n'ajoute ni fond, ni bord,
+           ni rembourrage. On veut le geste, pas un bouton de plus a l'ecran. */
+        .ap-ac-famb{flex:1;min-width:0;display:flex;flex-direction:column;
+          align-items:center;gap:6px;font:inherit;cursor:pointer;color:inherit;
+          background:none;border:0;padding:0;}
+        .ap-ac-famb:active{transform:scale(.94);}
+        /* CELLE QUI N'A PAS D'EXEMPLE NE S'ETEINT PAS COMPLETEMENT : a demi
+           effacee elle aurait l'air d'un defaut d'affichage. Elle garde son
+           dessin et perd seulement le doigt. */
+        .ap-ac-famb:disabled{cursor:default;opacity:.55;}
+        .ap-ac-famb:disabled:active{transform:none;}
         .ap-ac-pic{position:relative;width:46px;height:46px;border-radius:15px;
           display:flex;align-items:center;justify-content:center;
           color:#8D97A6;border:1.5px solid rgba(255,255,255,.13);
           background:rgba(255,255,255,.03);
           transition:color .3s ease,border-color .3s ease,background .3s ease;}
         .ap-ac-pic svg{width:24px;height:24px;display:block;}
-        .ap-ac-fam li b{font-size:10px;font-weight:750;color:#8D97A6;
+        .ap-ac-famb b{font-size:10px;font-weight:750;color:#8D97A6;
           white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
           max-width:100%;transition:color .3s ease;}
         .ap-ac-fam li.on .ap-ac-pic{color:#FF52AE;border-color:#F0389C;

@@ -69,6 +69,7 @@ import {
   type MomentJour,
 } from "@/lib/direct/apercu-habitant";
 import { prixEnEuros } from "@/lib/direct/relooking";
+import { enModeDemonstration } from "@/lib/direct/premiere-fois";
 
 /* ═══ LA RARETÉ ═════════════════════════════════════════════════════════════
 
@@ -91,8 +92,19 @@ function ceJour(): string {
   return new Date().toLocaleDateString("fr-CA");
 }
 
+/**
+ * ═══ EN DÉMONSTRATION, « DÉJÀ VUE » VEUT DIRE « CETTE SESSION » ════════════
+ *
+ * MÊME RÈGLE QUE LE RELOOKING ET QUE L'ÉCRAN D'OUVERTURE, et il n'y en a
+ * qu'une : voir `enModeDemonstration` dans `premiere-fois.ts`. Rouvrir la page
+ * rend les trois d'un coup, ce qui est le geste du métier — montrer l'écran à
+ * un commerçant, puis au suivant, dans la même matinée.
+ */
+let vueCetteSession = false;
+
 export function annonceJourneeVue(): boolean {
   if (typeof window === "undefined") return true;
+  if (enModeDemonstration()) return vueCetteSession;
   try {
     return window.localStorage.getItem(CLE_VUE) === ceJour();
   } catch {
@@ -103,6 +115,7 @@ export function annonceJourneeVue(): boolean {
 }
 
 export function marquerAnnonceJourneeVue() {
+  vueCetteSession = true;
   try {
     window.localStorage.setItem(CLE_VUE, ceJour());
   } catch {
