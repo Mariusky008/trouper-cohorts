@@ -184,7 +184,7 @@ import {
   taillesDeLaPiece,
   taillesVides,
 } from "@/lib/direct/tailles";
-import { motsDe, soireeDuLieu } from "@/lib/direct/soiree";
+import { motsDe, soireeDuLieu, SOIREES } from "@/lib/direct/soiree";
 import { basculerLeSon, jouer, sonCoupe } from "@/lib/direct/sons";
 import { EcranSoiree } from "@/components/direct/soiree-contenu";
 import { mesFantomes, rappelerFantome, SIGNAL as SIGNAL_FANTOMES, tempsRestant, type FantomePose } from "@/lib/direct/mes-fantomes";
@@ -3148,13 +3148,14 @@ export function ApercuHabitant() {
      */
     duree: number;
     /**
-     * ═══ LA CARTE QUI PASSE AU SOIR ══════════════════════════════════════
+     * ═══ CE QU'ON POSE SUR CHAQUE CARTE ══════════════════════════════════
      *
-     * Le rang de celle qui reçoit le coucher de soleil — les mêmes couches
-     * que le geste « Faire tomber le soir » de l'écran Soirée. Absent : aucune
-     * carte ne bascule, ce qui est le cas des quatre autres exemples.
+     * Une entrée par photo. « son » pose le lecteur des dix secondes,
+     * « live » pose le nombre de gens qui y vont déjà. Absent partout ailleurs :
+     * les quatre autres exemples montrent une transformation, celui des sorties
+     * montre une RAISON D'Y ALLER, et ce n'est pas la même chose.
      */
-    soir?: number;
+    couches?: (undefined | "son" | "live")[];
   }[] = [
     {
       cle: "coiffure",
@@ -3172,43 +3173,39 @@ export function ApercuHabitant() {
     },
     {
       /**
-       * ═══ LES SORTIES : ON NE CAPTURE PAS LE PRODUIT, ON LE JOUE ════════
+       * ═══ LES SORTIES : MONTRER CE QUI DÉCIDE, PAS UNE TRANSFORMATION ═══
        *
-       * « Concernant "sortie" je me suis loupé, c'est très mauvais. »
+       * « Il n'y a aucun intérêt à voir cet endroit de jour ou de nuit, donc ce
+       * qu'on apporte comme solution pour motiver un client à venir est nul. »
        *
-       * IL A RAISON, ET LE DÉFAUT N'ÉTAIT PAS LE GOÛT. Les deux images
-       * étaient des CAPTURES D'ÉCRAN du geste « Faire tomber le soir », et
-       * elles cumulaient trois défauts qu'aucune retouche ne rattrape :
+       * IL A RAISON, ET LA FAUTE ÉTAIT PLUS PROFONDE QUE LES IMAGES. J'avais
+       * refait proprement le mauvais écran : le coucher de soleil rejoué en
+       * direct valait mieux que deux captures ratées, mais il répondait à une
+       * question que personne ne se pose. Savoir à quoi ressemble une terrasse
+       * vide à vingt et une heures ne fait venir personne.
        *
-       *   · LA LÉGENDE ÉTAIT INCRUSTÉE DANS LE JPEG. Le bouton « ✨ Faire
-       *     tomber le soir » faisait partie des pixels : la pastille du cadre
-       *     s'ajoutait par-dessus, donc deux titres, et le cadre coupait
-       *     l'incrustation en deux dès que la carte penchait.
-       *   · L'APRÈS ÉTAIT LA MÊME PHOTO ASSOMBRIE. C'est le mot exact du
-       *     composant qui dessine ce geste : « le moment où l'image cesse
-       *     d'être une photo de jour assombrie pour devenir une terrasse le
-       *     soir ». La capture avait été prise AVANT ce moment-là.
-       *   · ET ON NE VOYAIT PLUS RIEN. Un écran d'accroche dont la seconde
-       *     image est illisible ne prouve pas une transformation, il prouve
-       *     qu'on baisse la lumière.
+       * LES QUATRE AUTRES EXEMPLES MONTRENT UNE TRANSFORMATION — une chevelure,
+       * une tenue, une pièce meublée, un plat servi — parce que dans ces
+       * métiers-là, la transformation EST le produit. Une sortie, non : on ne
+       * transforme pas un concert, on décide d'y aller ou pas. Copier la
+       * grammaire des quatre autres était l'erreur de départ.
        *
-       * ON REPREND DONC LES COUCHES ELLES-MÊMES. Le soleil qui descend,
-       * l'ombre qui monte, le ciel qui vire, les lampes qui s'allument : ce
-       * sont les quatre calques de `Geste` dans `soiree-contenu.tsx`, posés
-       * ici sur la même photo de terrasse. Ce n'est plus une image DU produit,
-       * c'est le produit — net à n'importe quelle définition, sans second
-       * fichier à charger, et impossible à désynchroniser du vrai écran.
+       * CE QUI DÉCIDE, ON L'A DÉJÀ, ET C'EST DANS LA SOIRÉE : on entend DIX
+       * SECONDES du morceau de ce soir, et on voit combien de gens y vont
+       * déjà. Le premier n'existe nulle part ailleurs ; le second est la seule
+       * chose qui fait bouger quelqu'un qui hésite. Les deux sont de vraies
+       * données — voir `SOIREES.kiosque` dans `lib/direct/soiree.ts`, d'où
+       * viennent le fichier du son et le nombre du Live.
        *
-       * DEUX MOTS COURTS, ET C'EST UNE CORRECTION AUSSI. « Quand vous
-       * viendrez » ne tenait pas dans la pastille et s'affichait « Quand vous
-       * vien… ». Voir aussi `.ap-ac-carte i`, qui coupait en silence.
+       * ET C'EST DONC LA MÊME PHOTO DEUX FOIS, comme les quatre autres montrent
+       * le même sujet deux fois. Ce qui change n'est pas la lumière : c'est ce
+       * que ClikMe pose dessus.
        */
       cle: "sorties",
       famille: "sorties",
-      photos: ["/direct/terrasse-au-soleil.jpg", "/direct/terrasse-au-soleil.jpg"],
-      mots: ["Maintenant", "Ce soir"],
-      soir: 1,
-      duree: 4500,
+      photos: ["/direct/concert-kiosque.jpg", "/direct/concert-kiosque.jpg"],
+      couches: ["son", "live"],
+      duree: 5500,
     },
     {
       cle: "fleuriste",
@@ -7442,30 +7439,41 @@ export function ApercuHabitant() {
                           ne lit ni l'un ni l'autre. */}
                       {exemple.mots?.[k] && <i>{exemple.mots[k]}</i>}
 
-                      {/* ═══ LE SOIR TOMBE SUR CETTE CARTE-LÀ ═══════════════
+                      {/* ═══ CE QUI DONNE ENVIE D'Y ALLER ═══════════════════
 
-                          LES QUATRE MÊMES CALQUES QUE L'ÉCRAN SOIRÉE, dans le
-                          même ordre : le soleil bas, l'ombre qui monte, le ciel
-                          viré, et les lampes. On ne recopie pas une image du
-                          produit, on rejoue le produit — donc rien à
-                          resynchroniser le jour où le geste change, et net à
-                          n'importe quelle définition.
+                          DEUX CHOSES, ET CE SONT LES DEUX SEULES QUI DÉCIDENT.
+                          On entend dix secondes du morceau de ce soir — ça
+                          n'existe nulle part ailleurs — et on voit combien de
+                          gens y vont déjà, qui est la seule chose qui fait
+                          bouger quelqu'un qui hésite.
 
-                          SEULES LES LAMPES BOUGENT. Le reste est posé à son
-                          état d'arrivée, parce que la carte elle-même arrive en
-                          glissant : deux mouvements en même temps ne se
-                          regardent pas. Les lampes, elles, sont le paiement du
-                          geste — c'est le moment où la terrasse cesse d'être
-                          une photo sombre pour devenir un soir. */}
-                      {exemple.soir === k && (
-                        <s className="ap-ac-soir" aria-hidden="true">
-                          <u className="ap-ac-nuit" />
-                          <u className="ap-ac-soleil" />
-                          <u className="ap-ac-ombre" />
-                          <u className="ap-ac-ciel" />
-                          <b className="ap-ac-lampes">
-                            <em /><em /><em /><em /><em />
-                          </b>
+                          LES CHIFFRES SONT CEUX DE LA SOIRÉE, PAS DES NÔTRES.
+                          Le nombre du Live et la durée de l'extrait viennent de
+                          la soirée du kiosque : posés ici à la main, ils auraient
+                          divergé du vrai écran à la première retouche. */}
+                      {exemple.couches?.[k] === "son" && (
+                        <s className="ap-ac-ecoute" aria-hidden="true">
+                          <b>▶</b>
+                          <span>
+                            <u>10 s du son</u>
+                            de ce soir
+                          </span>
+                        </s>
+                      )}
+
+                      {exemple.couches?.[k] === "live" && (
+                        <s className="ap-ac-lv" aria-hidden="true">
+                          {/* LES TROIS TÊTES SONT DES POINTS, PAS DES VISAGES.
+                              Personne n'a donné son visage pour cet écran, et
+                              dessiner des inconnus serait la première fausseté
+                              d'une rangée qui ne vit que de vraies données. */}
+                          <i>
+                            <em /><em /><em />
+                          </i>
+                          <span>
+                            <u>{SOIREES.kiosque.dansLeLive} y vont</u>
+                            déjà ce soir
+                          </span>
                         </s>
                       )}
                     </span>
@@ -14686,75 +14694,52 @@ export function ApercuHabitant() {
         .ap-ac-carte.fin i{left:auto;right:10px;color:#fff;background:#F0389C;
           box-shadow:0 4px 16px -4px rgba(240,56,156,.9);}
 
-        /* ═══ LE SOIR QUI TOMBE SUR LA CARTE DES SORTIES ════════════════════
+        /* ═══ CE QUI DONNE ENVIE D'ALLER A UNE SORTIE ══════════════════════
 
-           LES QUATRE CALQUES DE L'ECRAN SOIREE, POSES A LEUR ETAT D'ARRIVEE.
-           Voir la fonction Geste dans soiree-contenu.tsx : meme suite, meme
-           ordre, les memes teintes. On ne montre pas une capture du produit, on
-           montre le produit — rien a resynchroniser le jour ou le geste change,
-           et net a n'importe quelle definition d'ecran.
+           DEUX PASTILLES, ET CE SONT LES DEUX SEULES CHOSES QUI DECIDENT : on
+           entend dix secondes du morceau de ce soir, et on voit combien de gens
+           y vont deja. Elles se posent en bas de la carte, la ou le regard
+           finit, et elles portent leur propre fond parce qu'une photo de
+           concert est noire par endroits et claire ailleurs.
 
-           CE QUI ETAIT LA AVANT : deux fichiers JPEG de 540 points, dont le
-           second n'etait que le premier assombri, avec le libelle du bouton
-           incruste dans les pixels. */
-        .ap-ac-soir{position:absolute;inset:0;display:block;overflow:hidden;
-          border-radius:inherit;pointer-events:none;}
-        .ap-ac-soir u{position:absolute;inset:0;display:block;
-          text-decoration:none;}
+           CE QUI ETAIT LA AVANT : un coucher de soleil sur une terrasse vide.
+           Bien dessine, et sans objet — savoir a quoi ressemble un endroit vide
+           a vingt et une heures ne fait venir personne. */
+        /* EN HAUT, COMME LES PASTILLES DES QUATRE AUTRES EXEMPLES — ET C'EST
+           MESURE : posees en bas, elles tombaient exactement sous le Fantome,
+           qui s'assoit au milieu de la scene et les couvrait toutes les deux.
+           Le haut de la carte est le seul endroit libre. */
+        .ap-ac-ecoute,.ap-ac-lv{position:absolute;left:8px;right:8px;top:8px;
+          display:flex;align-items:center;gap:8px;padding:7px 9px;
+          border-radius:12px;text-decoration:none;
+          background:rgba(8,10,16,.78);
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+          border:1px solid rgba(255,255,255,.14);}
+        /* ELLES TIENNENT DANS CENT SOIXANTE-CINQ POINTS, c'est-a-dire la moitie
+           d'un telephone : deux lignes courtes, jamais une phrase. La premiere
+           version portait une onde de treize barres et un titre de dix-sept
+           signes — les deux se faisaient couper. */
+        .ap-ac-ecoute span,.ap-ac-lv span{flex:1;min-width:0;font-size:9px;
+          line-height:1.2;color:#B7C0CC;text-align:left;}
+        .ap-ac-ecoute u,.ap-ac-lv u{display:block;text-decoration:none;
+          font-size:11.5px;font-weight:850;letter-spacing:-.02em;color:#FFF;}
 
-        /* 0 · LA PHOTO PERD SA LUMIERE DE MIDI, ET C'EST CE QUI MANQUAIT.
-           MESURE A L'ECRAN : sans elle, le ciel en « multiply » se posait sur
-           un fond surexpose et rendait du lavande — un filtre violet, pas un
-           soir. Le produit, lui, filtre l'image AVANT de la teinter (voir
-           soPhoto dans soiree-contenu.tsx) ; ici la photo est un fond de carte
-           et non une balise image, donc on la reprend par-derriere. */
-        .ap-ac-nuit{-webkit-backdrop-filter:brightness(.55) saturate(1.18) contrast(1.14)
-          hue-rotate(-8deg);backdrop-filter:brightness(.55) saturate(1.18) contrast(1.14)
-          hue-rotate(-8deg);}
+        /* LE ROND DE LECTURE. Le triangle suffit a dire qu'il y a du son
+           dedans ; l'onde qui l'accompagnait ne tenait pas dans la carte. */
+        .ap-ac-ecoute b{flex:none;width:24px;height:24px;border-radius:50%;
+          display:grid;place-items:center;font-size:9px;color:#fff;
+          background:linear-gradient(135deg,#F0389C,#8D6DFF);
+          box-shadow:0 3px 12px -3px rgba(240,56,156,.9);}
 
-        /* 1 · LE SOLEIL, DEJA BAS ET DEJA ROUGE. C'est le seul calque en
-           « ecran », parce que lui, effectivement, eclaire. */
-        .ap-ac-soleil{mix-blend-mode:screen;
-          background:radial-gradient(circle at 58% 88%,
-            rgba(255,128,86,.5) 0%, rgba(214,72,96,.22) 10%,
-            rgba(150,50,110,0) 28%);}
-
-        /* 2 · L'OMBRE, MONTEE JUSQU'EN HAUT. C'est le ciel qui s'eteint en
-           premier, pas le sol. */
-        .ap-ac-ombre{background:linear-gradient(to top,
-          rgba(14,10,34,.9) 0%, rgba(18,13,44,.68) 26%,
-          rgba(24,17,56,.42) 58%, rgba(26,20,64,.22) 100%);}
-
-        /* 3 · LE CIEL DE NUIT. Il MULTIPLIE : un degrade en « ecran » ne sait
-           qu'eclaircir, et c'est ce qui donnait un voile rose au lieu d'un
-           ciel. */
-        .ap-ac-ciel{mix-blend-mode:multiply;
-          background:linear-gradient(200deg,rgba(255,168,132,.5),
-            rgba(140,80,150,.62) 44%,rgba(26,20,72,.9));}
-
-        /* 4 · ET LES LAMPES S'ALLUMENT, EN QUINCONCE. Le seul mouvement de la
-           carte, parce que la carte elle-meme arrive deja en glissant. Personne
-           n'allume cinq guirlandes d'un coup : c'est le decalage qui les rend
-           vraies. */
-        .ap-ac-lampes{position:absolute;inset:0;display:block;font-weight:400;}
-        .ap-ac-lampes em{position:absolute;width:12px;height:12px;border-radius:50%;
-          opacity:0;filter:blur(3px);mix-blend-mode:screen;
-          background:radial-gradient(circle,rgba(255,232,168,.95),
-            rgba(255,186,96,.45) 42%,rgba(255,160,60,0) 72%);
-          animation:apLampe .7s cubic-bezier(.2,.9,.3,1) both;}
-        .ap-ac-lampes em:nth-child(1){left:13%;top:26%;animation-delay:.62s;}
-        .ap-ac-lampes em:nth-child(2){left:31%;top:19%;animation-delay:.94s;}
-        .ap-ac-lampes em:nth-child(3){left:52%;top:24%;animation-delay:.78s;}
-        .ap-ac-lampes em:nth-child(4){left:71%;top:17%;animation-delay:1.12s;}
-        .ap-ac-lampes em:nth-child(5){left:87%;top:29%;animation-delay:.86s;}
-        @keyframes apLampe{
-          /* Le sursaut d'allumage : une ampoule depasse sa luminosite d'un
-             cheveu avant de se stabiliser. Sans lui, elle apparait ; avec lui,
-             elle s'allume. */
-          0%{opacity:0;transform:scale(.3);}
-          45%{opacity:1;transform:scale(1.35);}
-          100%{opacity:.9;transform:scale(1);}
-        }
+        /* LES TROIS TETES SONT DES POINTS, PAS DES VISAGES. Personne n'a donne
+           son visage pour cet ecran, et dessiner des inconnus serait la
+           premiere faussete d'une rangee qui ne vit que de vraies donnees. */
+        .ap-ac-lv i{flex:none;display:flex;}
+        .ap-ac-lv i em{width:17px;height:17px;border-radius:50%;
+          border:2px solid #0B0E14;margin-left:-6px;}
+        .ap-ac-lv i em:first-child{margin-left:0;background:#F0389C;}
+        .ap-ac-lv i em:nth-child(2){background:#8D6DFF;}
+        .ap-ac-lv i em:nth-child(3){background:#3DE2A6;}
 
         /* ═══ LA FLECHE NEON ════════════════════════════════════════════════
            ELLE EST PLEINE, PAS TRACEE. Un trait de quatre points avec deux
