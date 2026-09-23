@@ -1266,6 +1266,9 @@ export function MurContenu({
       ) : gout ? (
         <EcranGout
           gout={gout}
+          /* SON IDENTIFIANT, POUR RETROUVER SA VOIX. Sans lui, le parcours se
+             compose sans l'écran « voix » — voir `ecransDuGout`. */
+          lieuId={mur.cle}
           lieu={mur.lieu}
           ville={mur.ville}
           distance={mur.distance}

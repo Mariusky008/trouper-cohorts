@@ -84,7 +84,10 @@ export type OptionGout = {
  *   · `final`   — ce qu'on a composé, l'émotion, et la réservation.
  */
 export type TempsGout = {
-  quoi: "ouvrir" | "devine" | "compose" | "ressens" | "geste" | "final";
+  /* « rideau » et « voix » ne sont jamais ÉCRITS dans les données : ils sont
+     composés par `ecransDuGout` à partir de la seconde photo et de la phrase
+     gardée. Voir le bas de ce fichier. */
+  quoi: "ouvrir" | "devine" | "compose" | "ressens" | "geste" | "final" | "rideau" | "voix";
   /**
    * LE PREMIER MORCEAU DU TITRE, EN BLANC.
    *
@@ -133,6 +136,10 @@ export type TempsGout = {
    * — c'est-à-dire à la majorité.
    */
   rideau?: { avant: string; apres: string };
+  /** Sa voix, quand l'écran « voix » en porte une. Voir `sa-voix.ts`. */
+  voix?: string;
+  /** La durée de cet enregistrement, en secondes. */
+  secondes?: number;
   options?: OptionGout[];
   /** Le libellé du geste qui avance. « Je valide ma réponse », « C'est parti ! ». */
   geste?: string;
@@ -282,6 +289,19 @@ export const GOUT_MAGRET: Gout = {
       suite: "appétit !",
       phrase: "Voici votre magret parfait, préparé selon vos envies.",
       photo: "/direct/plat-garbure.jpg",
+      /* ═══ DEUX COCOTTES, ET C'EST SON ARBITRAGE ═══════════════════════════
+
+         J'AVAIS REFUSÉ CETTE PHOTO parce que le sujet reste un plat de cuisson
+         et non une assiette. Il a tranché : « c'est dans les cocottes que le
+         plat est servi ». Il a raison sur la garbure — une garbure landaise
+         arrive à table dans sa cocotte, et vouloir une assiette ici serait
+         imposer un usage de restaurant gastronomique à un plat de ferme.
+
+         LES ÉTIQUETTES SUIVENT DONC LE MOMENT, PAS LE RÉCIPIENT : « Au feu »
+         puis « À table ». C'est ce qui change vraiment d'une photo à l'autre —
+         la vapeur, le pain coupé, le torchon. */
+      photoApres: "/direct/plat-garbure-servi.jpeg",
+      rideau: { avant: "Au feu", apres: "À table" },
     },
   ],
 };
@@ -393,6 +413,7 @@ export const GOUT_PESTO: Gout = {
          de découvrir la part qui arrivera sur la table. Voir `go-rideau` dans
          `components/direct/gout-contenu.tsx`. */
       photoApres: "/direct/plat-lasagnes-servi.jpeg",
+      rideau: { avant: "Au plat", apres: "Votre part" },
     },
   ],
 };
@@ -465,6 +486,10 @@ export const GOUT_AXOA: Gout = {
       suite: "attend",
       phrase: "Servi à la louche, comme à la maison.",
       photo: "/direct/plat-axoa.jpg",
+      /* « Servi à la louche » : la phrase promettait un bol qu'on ne voyait
+         pas. Le voilà. */
+      photoApres: "/direct/plat-axoa-servi.jpeg",
+      rideau: { avant: "En cuisine", apres: "Dans le bol" },
     },
   ],
 };
@@ -861,7 +886,17 @@ export const GOUT_LEVAIN: Gout = {
          deux donnerait la mie des deux côtés. Voir la section des secondes
          photos dans public/direct/LISEZ-MOI.md : l'absence raccourcit, elle ne
          se bricole pas. */
-      photo: "/direct/tourte-tranchee.jpg",
+      /* ═══ ET LA TOURTE RETROUVE SON AVANT ═════════════════════════════════
+
+         ELLE N'AVAIT PAS DE RIDEAU FAUTE D'UN PAIN FERMÉ — c'était écrit ici
+         même. Il est arrivé. Ce n'est pas exactement la même miche que la
+         tranchée, et il a tranché là-dessus aussi : à l'échelle d'une carte de
+         trois cent quarante points, deux pains de campagne se lisent comme un
+         seul, et ce que le rideau montre — la croûte puis la mie — reste vrai.
+         C'est un arbitrage, pas un oubli. */
+      photo: "/direct/tourte-entiere.jpg",
+      photoApres: "/direct/tourte-tranchee.jpg",
+      rideau: { avant: "Entière", apres: "Tranchée" },
       // LE GESTE FINAL EST LE SIEN. On ne réserve pas un pain, on le fait
       // garder — et c'est le mot que son annonce emploie déjà.
       geste: "Gardez-la-moi",
@@ -909,4 +944,103 @@ export const GOUTS: Record<string, Gout> = {
  */
 export function goutDuCommerce(id: string | undefined): Gout | undefined {
   return id ? GOUTS[id] : undefined;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LES QUATRE ÉCRANS — ce qu'on montre vraiment, dans l'ordre
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * ═══ POURQUOI LE PARCOURS SE COMPOSE AU LIEU DE S'ÉCRIRE ═════════════════
+ *
+ * « Le parcours actuel est joli, mais il est trop proche d'un quiz culinaire.
+ * Je passerais de sept écrans à quatre maximum. »
+ *
+ * LE DÉFAUT N'ÉTAIT PAS LE NOMBRE, C'ÉTAIT LE TRAVAIL DEMANDÉ. Les parcours
+ * font trois à cinq temps ; ce qui fatigue n'est pas leur longueur mais leur
+ * nature — sur trente et un temps, ONZE posent une question. On demandait de
+ * répondre à quelqu'un qui a faim, et qui n'est venu que pour voir.
+ *
+ * LES QUATRE ÉCRANS, ET AUCUN N'EST DÉCORATIF :
+ *
+ *   1 · ON OUVRE. Le plat, le prix, et ce qu'on sait vraiment de lui.
+ *   2 · ON MONTRE L'INTÉRIEUR. Le rideau entre les deux photos — le seul écran
+ *       qu'un concurrent ne peut pas copier, parce qu'il tient à une donnée.
+ *   3 · IL PARLE. Sa phrase, et sa voix si elle a été gardée.
+ *   4 · MAINTENANT. Le plat, le prix, la distance, et rien d'autre.
+ *
+ * DEUX ET TROIS N'EXISTENT QUE SI LA MATIÈRE EXISTE. Sans seconde photo, pas
+ * de rideau ; sans phrase gardée, pas de voix. Le parcours fait alors deux
+ * écrans, et c'est un parcours complet — pas un parcours amputé. C'est la même
+ * règle que partout : l'absence raccourcit, elle ne remplit pas.
+ *
+ * ═══ ET ON NE SUPPRIME RIEN DES DONNÉES ══════════════════════════════════
+ *
+ * Les `devine`, `compose`, `ressens` et `geste` restent écrits dans ce fichier.
+ * Ce sont ses textes, ils ont coûté du travail, et la règle qui les écarte tient
+ * en une fonction : la remettre est une ligne. Les effacer aurait rendu le choix
+ * irréversible pour gagner de la place dans un fichier que personne ne lit au
+ * poids.
+ */
+export type EcranGout = TempsGout & {
+  /** Le rang, pour la barre de progression. */
+  n: number;
+  /** Combien d'écrans en tout — voir la règle des absences. */
+  sur: number;
+};
+
+/** Ce que le commerçant a fait garder de sa voix — voir `sa-voix.ts`. */
+export type SaPhrase = { texte: string; audio?: string; secondes: number; qui?: string };
+
+export function ecransDuGout(gout: Gout, mot?: SaPhrase): EcranGout[] {
+  const ouvre = gout.temps.find((t) => t.quoi === "ouvrir") ?? gout.temps[0];
+  const fin = gout.temps.find((t) => t.quoi === "final") ?? gout.temps[gout.temps.length - 1];
+  const avecRideau = gout.temps.find((t) => t.photoApres);
+
+  const sortis: TempsGout[] = [ouvre];
+
+  if (avecRideau?.photoApres) {
+    /* LE RIDEAU DEVIENT SON PROPRE ÉCRAN, ET IL PASSE EN DEUXIÈME. Les six
+       secondes photos ont été posées sur le temps FINAL, qui est l'écran de
+       conversion : on y tirait un rideau juste au-dessus du bouton
+       « Réserver », c'est-à-dire qu'on demandait un geste de découverte au
+       moment précis où l'on demande un geste d'engagement. */
+    sortis.push({
+      ...avecRideau,
+      quoi: "rideau",
+      titre: "Je vous montre ",
+      suite: "l’intérieur ?",
+      phrase: avecRideau.phrase,
+      note: undefined,
+      geste: undefined,
+      options: undefined,
+      verite: undefined,
+    });
+  }
+
+  if (mot?.texte) {
+    /* IL A PARLÉ, ET C'EST LE SEUL ÉCRAN QU'UN CONCURRENT NE PEUT PAS ÉCRIRE.
+       La transcription est le contenu ; la voix, quand elle existe, est un
+       bouton. Jamais l'inverse — quatre personnes sur cinq font défiler en
+       silence. */
+    sortis.push({
+      quoi: "voix",
+      titre: "Ce que ",
+      suite: mot.qui ? `${mot.qui} en dit` : "le chef en dit",
+      phrase: mot.texte,
+      photo: avecRideau?.photoApres ?? fin.photo ?? ouvre.photo,
+      voix: mot.audio,
+      secondes: mot.secondes,
+    });
+  }
+
+  /* L'ÉCRAN DE FIN MONTRE LE PLAT SERVI, PAS LE PLAT AU FOUR — et il n'a plus
+     de rideau : celui-ci a son écran. */
+  sortis.push({
+    ...fin,
+    photo: avecRideau?.photoApres ?? fin.photo,
+    photoApres: undefined,
+  });
+
+  return sortis.map((t, i) => ({ ...t, n: i + 1, sur: sortis.length }));
 }

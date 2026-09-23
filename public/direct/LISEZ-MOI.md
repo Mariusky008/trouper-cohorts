@@ -868,22 +868,49 @@ montée : c'est le rideau qui explique le principe en une seconde, sans texte.
 Les six autres se comprennent parce qu'on a compris celui-là — et la paire des
 lasagnes sert maintenant de référence pour les juger.
 
-## L'état de la liste, et les quatre qui restent à refaire
+## L'état de la liste : six rideaux sur sept
 
-| Fichier | État |
-|---|---|
-| `plat-lasagnes-servi.jpeg` | ✅ **en place** — même lasagne au jambon des deux côtés |
-| `plat-parmentier-servi.jpeg` | ✅ **en place** — recadrée sur l'assiette : le cadre gardait le plat entier et coupait justement la part |
-| `cote-boeuf-coupee.jpeg` | ✅ **en place** — la côte cuite et tranchée. Étiquettes « À l'étal » ↔ « Chez vous » : rien n'est *servi* chez un boucher |
-| `plat-axoa-servi.jpeg` | ⚠️ **filigrane** « ©Papilles & Pupilles » en bas à droite. La photo est bonne — un vrai bol servi — mais elle appartient à quelqu'un. Troisième filigrane du dossier après les deux envois d'`etal-boucher.jpg` |
-| `plat-garbure-servi.jpeg` | ❌ **deux défauts** : c'est encore une cocotte et non une assiette, donc aucun contraste avec la marmite ; et une boîte de conserve porte une **marque lisible** |
-| `plat-basquaise-servi.jpg` | ❌ **encore une cocotte.** Le riz est dans un bol à côté, mais le sujet reste le plat de cuisson |
-| `tourte-entiere.jpg` | ❌ **pas le même pain** : deux pains de farine blanche avec une étiquette de papier, sur fond blanc. La tranchée est une tourte de seigle sur planche |
+| Fichier | Étiquettes du rideau | État |
+|---|---|---|
+| `plat-lasagnes-servi.jpeg` | Au plat ↔ Servi | ✅ |
+| `plat-parmentier-servi.jpeg` | Au plat ↔ Votre part | ✅ recadrée sur l'assiette |
+| `cote-boeuf-coupee.jpeg` | À l'étal ↔ Chez vous | ✅ |
+| `plat-garbure-servi.jpeg` | Au feu ↔ À table | ✅ |
+| `plat-axoa-servi.jpeg` | En cuisine ↔ Dans le bol | ✅ |
+| `tourte-entiere.jpg` + `tourte-tranchee.jpg` | Entière ↔ Tranchée | ✅ |
+| `plat-basquaise-servi.jpg` | — | ⏳ en attente : chez La Grande Tablée, le seul temps qui porte cette photo est un écran de CHOIX, et un rideau qu'on tire par-dessus des boutons fait deux gestes qui se disputent le même doigt. Il entrera à la refonte en quatre écrans |
 
-**LE PIÈGE EST TOUJOURS LE MÊME, ET IL SE RÉPÈTE :** on cherche une belle photo
-du plat, et on retrouve une photo de CUISSON. Le mot qui trie est « assiette » :
-si le sujet principal est une cocotte, une marmite ou un plat à four, c'est un
-« avant », pas un « après » — quelle que soit sa beauté.
+## LES TROIS ARBITRAGES QU'IL A TRANCHÉS, ET POURQUOI ILS SONT NOTÉS ICI
+
+J'avais refusé quatre de ces photos. Il les a gardées, et deux de ses trois
+raisons sont meilleures que mon refus.
+
+**1 · « C'est dans les cocottes que le plat est servi. » Il a raison.** Une
+garbure landaise arrive à table dans sa cocotte ; exiger une assiette, c'était
+imposer un usage de restaurant gastronomique à un plat de ferme. La règle du
+« mot qui trie » reste vraie pour un parmentier ou une lasagne — elle ne vaut
+pas pour les plats qu'on sert à la louche. LES ÉTIQUETTES SUIVENT DONC LE
+MOMENT, PAS LE RÉCIPIENT : « Au feu » puis « À table ».
+
+**2 · Le pain de la tourte n'est pas exactement le même.** À l'échelle d'une
+carte de trois cent quarante points, deux pains de campagne se lisent comme un
+seul, et ce que le rideau montre — la croûte puis la mie — reste vrai. Arbitrage
+assumé, pas oubli.
+
+**3 · LE FILIGRANE D'`plat-axoa-servi.jpeg`, ET CELUI-LÀ EST D'UNE AUTRE NATURE.**
+« ©Papilles & Pupilles » est incrusté en bas à droite. Ce n'est pas une question
+de goût : cette photo appartient à quelqu'un, et le filigrane le dit lui-même.
+C'est le troisième du dossier après les deux envois d'`etal-boucher.jpg`, qui
+ont été refusés à l'époque pour cette raison exacte — « il se serait imprimé sur
+le flyer, et l'image n'était pas à nous ».
+
+**ELLE EST DONC GARDÉE AVEC LA MÊME ÉCHÉANCE QUE `avis-cabine.jpg` ET
+`avis-verre.jpg`** : la page est en `noindex`, elle se partage par lien à une
+trentaine de testeurs, elle n'a aucun but commercial. **C'est la première à
+remplacer le jour où ça sort de ce cercle** — mise en ligne publique, capture
+dans un dossier investisseur, argumentaire commerçant, flyer imprimé. La
+troisième fois que cette ligne est écrite dans ce fichier, et les deux
+précédentes sont arrivées à échéance.
 
 ## Ce que la première livraison a appris
 

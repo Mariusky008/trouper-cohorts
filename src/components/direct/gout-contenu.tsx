@@ -28,9 +28,15 @@
 // LA SENSATION VISÉE EST LA SIENNE : « Tiens, touche ça… » → « Ah ! » →
 // « Maintenant regarde ça… » → « Oh, ça donne faim » → RÉSERVER.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { Gout, OptionGout } from "@/lib/direct/avant-gout";
-import { EMOTIONS } from "@/lib/direct/avant-gout";
+import { EMOTIONS, ecransDuGout } from "@/lib/direct/avant-gout";
+import {
+  abonnerPhrasesGardees,
+  chargerPhrasesGardees,
+  phraseDeLaCarte,
+  phrasesGardeesVides,
+} from "@/lib/direct/sa-voix";
 
 export function EcranGout({
   gout,
@@ -40,9 +46,18 @@ export function EcranGout({
   onReserver,
   onFermer,
   fantome,
+  lieuId,
 }: {
   gout: Gout;
   lieu: string;
+  /**
+   * L'IDENTIFIANT DU COMMERCE, POUR RETROUVER SA VOIX.
+   *
+   * Absent, le parcours se compose sans l'écran « voix » — c'est le cas des
+   * maquettes, qui montrent un parcours sans commerçant derrière. Voir
+   * `phraseDeLaCarte` dans `sa-voix.ts`.
+   */
+  lieuId?: string;
   ville: string;
   distance: string;
   /** Ce que fait le geste final. Absent, le bouton ne se dessine pas. */
@@ -67,6 +82,21 @@ export function EcranGout({
   const [declenche, setDeclenche] = useState(false);
   const [emotion, setEmotion] = useState("");
   /**
+   * ON SORT SANS AVOIR RÉSERVÉ — et c'est le seul moment où l'on demande un
+   * avis. Voir le bloc `go-sortie` plus bas.
+   */
+  const [sortie, setSortie] = useState(false);
+  /** Il a réservé : on ne lui demande plus rien, son geste a répondu. */
+  const aReserve = useRef(false);
+
+  const quitter = () => {
+    if (aReserve.current || emotion) {
+      onFermer?.();
+      return;
+    }
+    setSortie(true);
+  };
+  /**
    * ═══ OÙ EN EST LE RIDEAU, EN POUR CENT DE LA LARGEUR ══════════════════════
    *
    * IL NE COMMENCE PAS FERMÉ, ET C'EST LA DÉCISION QUI COMPTE ICI. Fermé sur
@@ -81,6 +111,36 @@ export function EcranGout({
    * geste.
    */
   const [rideau, setRideau] = useState(62);
+  /** Le lecteur de SA voix, sur l'écran « voix ». */
+  const saVoix = useRef<HTMLAudioElement | null>(null);
+  const [joue, setJoue] = useState(false);
+
+  /**
+   * ON N'ENTEND QUE SI ON APPUIE, ET ON PEUT COUPER EN COURS.
+   *
+   * UN SON QUI NE PART PAS NE DOIT PAS LAISSER UN BOUTON EN PAUSE : le
+   * navigateur refuse parfois la lecture, et l'état suit le fait, pas
+   * l'intention.
+   */
+  const ecouter = () => {
+    const src = t.voix;
+    if (!src) return;
+    const a = saVoix.current;
+    if (a && !a.paused) {
+      a.pause();
+      setJoue(false);
+      return;
+    }
+    const lecteur = a ?? new Audio();
+    saVoix.current = lecteur;
+    lecteur.src = src;
+    lecteur.onended = () => setJoue(false);
+    lecteur.onerror = () => setJoue(false);
+    void lecteur
+      .play()
+      .then(() => setJoue(true))
+      .catch(() => setJoue(false));
+  };
 
   /**
    * ═══ CHANGER DE TEMPS RAMÈNE EN HAUT DU PARCOURS ═══════════════════════
@@ -134,7 +194,25 @@ export function EcranGout({
     window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
   }, [rang]);
 
-  const t = gout.temps[rang];
+  /**
+   * ═══ QUATRE ÉCRANS, COMPOSÉS — PAS SEPT, ÉCRITS ═══════════════════════════
+   *
+   * « Le parcours actuel est joli, mais il est trop proche d'un quiz
+   * culinaire. Je passerais de sept écrans à quatre maximum. »
+   *
+   * LE COMPOSEUR EST DANS `avant-gout.ts`, et il s'abonne à ce que le
+   * commerçant a fait garder de sa voix : l'écran « voix » apparaît le matin
+   * où il dit oui, sans qu'on touche à la donnée du parcours.
+   */
+  const gardees = useSyncExternalStore(
+    abonnerPhrasesGardees,
+    chargerPhrasesGardees,
+    phrasesGardeesVides,
+  );
+  const sonMot = lieuId ? phraseDeLaCarte(lieuId, gardees) : undefined;
+  const ecrans = useMemo(() => ecransDuGout(gout, sonMot), [gout, sonMot]);
+
+  const t = ecrans[Math.min(rang, ecrans.length - 1)];
 
   /**
    * CE QU'ON A COMPOSÉ, POUR LE RÉCAPITULATIF FINAL.
@@ -145,7 +223,11 @@ export function EcranGout({
    * une réponse à un jeu, et l'écrire au même endroit que la cuisson ferait
    * croire qu'on a commandé une devinette.
    */
-  const composes = gout.temps
+  /* IL EST TOUJOURS VIDE DEPUIS LA REFONTE, et c'est voulu : les quatre écrans
+     ne contiennent plus de temps « compose », donc plus rien à récapituler. On
+     le garde branché sur `ecrans` — le jour où un choix revient, le
+     récapitulatif revient avec lui, sans qu'on y touche. */
+  const composes = ecrans
     .map((x, i) => ({ x, i }))
     .filter(({ x }) => x.quoi === "compose")
     .map(({ x, i }) => {
@@ -180,6 +262,16 @@ export function EcranGout({
     setRideau(Math.min(100, Math.max(0, x)));
   };
 
+  useEffect(() => {
+    if (t.quoi === "voix") return;
+    try {
+      saVoix.current?.pause();
+    } catch {
+      /* Deja arrete. */
+    }
+    setJoue(false);
+  }, [t.quoi]);
+
   const avancer = () => {
     // UNE DEVINETTE SE JOUE EN DEUX TEMPS SUR LE MÊME ÉCRAN : on répond, puis on
     // apprend. Passer directement au suivant escamoterait la seule chose qu'on
@@ -191,7 +283,7 @@ export function EcranGout({
     setRevele(false);
     setDeclenche(false);
     setRideau(62);
-    setRang((r) => Math.min(r + 1, gout.temps.length - 1));
+    setRang((r) => Math.min(r + 1, ecrans.length - 1));
   };
 
   const reculer = () => {
@@ -233,7 +325,7 @@ export function EcranGout({
           Un segment par temps, celui qu'on joue allumé et ceux qu'on a passés
           avec lui. Voir l'en-tête : le « 2 / 4 » de la maquette est parti. */}
       <div className="go-fil" aria-hidden="true">
-        {gout.temps.map((x, i) => (
+        {ecrans.map((x, i) => (
           <i key={`${x.titre}-${i}`} className={i <= rang ? "on" : ""} />
         ))}
       </div>
@@ -501,6 +593,33 @@ export function EcranGout({
         </div>
       )}
 
+      {/* ═══ IL PARLE, ET C'EST LE SEUL ÉCRAN QU'ON NE PEUT PAS ÉCRIRE ═══════
+
+          LA TRANSCRIPTION EST LE CONTENU, LA VOIX EST UN BOUTON — jamais
+          l'inverse. Quatre personnes sur cinq font défiler en silence : un
+          écran dont le fond tient dans un fichier audio est un écran vide pour
+          elles. Le son ne part donc qu'à l'appui, et le bouton porte sa durée,
+          parce que « 8 s » se décide et « écouter » se subit.
+
+          ET IL N'EXISTE QUE S'IL A DIT OUI. Voir `sa-voix.ts` : on lui montre
+          une phrase qu'il vient de dire et on lui demande s'il la garde. Rien
+          ne part sans ce oui-là. */}
+      {t.quoi === "voix" && (
+        <div className="go-voix">
+          <blockquote>{t.phrase}</blockquote>
+          {t.voix && (
+            <button
+              type="button"
+              className={`go-voix-e${joue ? " on" : ""}`}
+              onClick={ecouter}
+            >
+              <i aria-hidden="true">{joue ? "⏸" : "▶"}</i>
+              {joue ? "En écoute" : `Écouter sa voix · ${Math.round(t.secondes ?? 0)} s`}
+            </button>
+          )}
+        </div>
+      )}
+
       {/* ═══ LE DERNIER TEMPS ════════════════════════════════════════════════ */}
       {t.quoi === "final" && (
         <>
@@ -514,33 +633,78 @@ export function EcranGout({
               ))}
             </ul>
           )}
-          <div className="go-emo">
-            <p>
-              <b>Alors, ça vous fait quoi&nbsp;?</b>
-              Dites-nous en un mot.
-            </p>
-            <div className="go-emo-l">
-              {EMOTIONS.map((e) => (
-                <button
-                  key={e.cle}
-                  type="button"
-                  className={emotion === e.cle ? "on" : undefined}
-                  aria-pressed={emotion === e.cle}
-                  onClick={() => setEmotion(e.cle)}
-                >
-                  <i aria-hidden="true">{e.emoji}</i>
-                  <span>{e.mot}</span>
-                </button>
-              ))}
-            </div>
-          </div>
         </>
+      )}
+
+      {/* ═══ LES CINQ FANTÔMES, À LA SORTIE — PAS AVANT LE BOUTON ═══════════
+
+          « Je les déclencherais plutôt lorsque la personne sort sans réserver :
+          "Avant de partir, ça vous faisait quoi ?" Tu apprends alors pourquoi
+          quelqu'un d'intéressé n'a pas converti. »
+
+          IL A RAISON, ET LE DÉFAUT ÉTAIT ARITHMÉTIQUE : posés au-dessus du
+          bouton, ils VOLENT LE CLIC. On arrive au moment où l'on décide, et la
+          dernière chose qu'on voit est une rangée de cinq émojis qui demandent
+          un avis. Après, ils deviennent une raison de revenir.
+
+          ET ON NE LES POSE QU'À CELUI QUI PART SANS RÉSERVER. Celui qui a
+          réservé a répondu par son geste, et le relancer serait lui demander de
+          justifier ce qu'il vient de faire. C'est aussi la seule version qui
+          apprend quelque chose : pourquoi quelqu'un qui est allé au bout n'a
+          pas franchi le pas.
+
+          LA PREMIÈRE RÉPONSE FERME. Un avis n'est pas un formulaire : on en
+          donne un, et on s'en va. */}
+      {sortie && (
+        <div className="go-emo go-sortie">
+          <p>
+            <b>Avant de partir, ça vous faisait quoi&nbsp;?</b>
+            Un mot, et c’est tout.
+          </p>
+          <div className="go-emo-l">
+            {EMOTIONS.map((e) => (
+              <button
+                key={e.cle}
+                type="button"
+                className={emotion === e.cle ? "on" : undefined}
+                aria-pressed={emotion === e.cle}
+                onClick={() => {
+                  setEmotion(e.cle);
+                  setSortie(false);
+                  onFermer?.();
+                }}
+              >
+                <i aria-hidden="true">{e.emoji}</i>
+                <span>{e.mot}</span>
+              </button>
+            ))}
+          </div>
+          {/* PARTIR SANS RÉPONDRE RESTE POSSIBLE, ET SANS AVOIR À VISER : une
+              question qu'on ne peut pas refuser est un péage. */}
+          <button
+            type="button"
+            className="go-sortie-x"
+            onClick={() => {
+              setSortie(false);
+              onFermer?.();
+            }}
+          >
+            Je passe
+          </button>
+        </div>
       )}
 
       {/* ═══ LE GESTE QUI AVANCE ════════════════════════════════════════════ */}
       {t.quoi === "final" ? (
         onReserver && (
-          <button type="button" className="go-cta" onClick={onReserver}>
+          <button
+            type="button"
+            className="go-cta"
+            onClick={() => {
+              aReserve.current = true;
+              onReserver?.();
+            }}
+          >
             {/* LE MOT DU DERNIER GESTE APPARTIENT AU COMMERCE. « Réserver » se
                 dit d'une table ; chez le boucher, une pièce se fait GARDER, et
                 son annonce écrit déjà « Gardez-la-moi ». Le parcours porte donc
@@ -575,13 +739,20 @@ export function EcranGout({
              deux fois — « Étape précédente », « Revoir les étapes » — et c'est
              exactement le mot d'administration que l'en-tête de ce fichier
              refuse. « Revenir » dit la même chose sans nommer un formulaire. */
-          <button type="button" className="go-retour" onClick={reculer}>
+          <button
+            type="button"
+            className="go-retour"
+            /* SUR LE DERNIER ÉCRAN, « REVENIR » EST UNE SORTIE — c'est là qu'on
+               décide, et reculer d'un cran depuis là veut dire non. Ailleurs il
+               recule vraiment. */
+            onClick={t.quoi === "final" ? quitter : reculer}
+          >
             <s aria-hidden="true">←</s>
-            Revenir
+            {t.quoi === "final" ? "Plus tard" : "Revenir"}
           </button>
         ) : (
           onFermer && (
-            <button type="button" className="go-retour" onClick={onFermer}>
+            <button type="button" className="go-retour" onClick={quitter}>
               Passer cette découverte
             </button>
           )
@@ -870,6 +1041,25 @@ function Styles() {
            meme rectangle est ce qui rend la comparaison possible : sans ca, une
            photo carree et une photo portrait ne se lisent pas comme deux etats
            de la meme chose. */
+        /* ═══ IL PARLE ═══
+           LA CITATION EST LE SUJET, DONC ELLE EST LE PLUS GROS TEXTE. Le bouton
+           est en dessous et porte sa duree : « 8 s » se decide, « ecouter » se
+           subit. Et le son ne part qu'a l'appui — quatre personnes sur cinq font
+           defiler en silence. */
+        .go-voix{margin-top:14px;}
+        .go-voix blockquote{margin:0;padding:0 0 0 14px;
+          border-left:3px solid var(--go-accent,#E56BE0);
+          font-size:18px;line-height:1.45;font-weight:650;font-style:italic;}
+        .go-voix-e{display:inline-flex;align-items:center;gap:9px;margin-top:14px;
+          font:inherit;font-size:13.5px;font-weight:800;cursor:pointer;
+          color:#EAF0F6;background:rgba(255,255,255,.06);
+          border:1px solid rgba(255,255,255,.16);border-radius:999px;
+          padding:10px 16px 10px 11px;}
+        .go-voix-e i{font-style:normal;font-size:11px;width:24px;height:24px;
+          flex:none;display:grid;place-items:center;border-radius:50%;
+          color:#12121A;background:var(--go-accent,#E56BE0);}
+        .go-voix-e.on{border-color:var(--go-accent,#E56BE0);}
+
         .go-rideau{position:absolute;inset:0;overflow:hidden;cursor:ew-resize;
           touch-action:none;}
         .go-rid-a,.go-rid-b img{position:absolute;inset:0;width:100%;height:100%;
@@ -1172,6 +1362,27 @@ function Styles() {
            Elle defile de cote plutot que de se replier : cinq pastilles sur deux
            lignes se lisent comme une grille de reglages, sur une ligne comme un
            curseur de ressenti. */
+        /* ═══ LA SORTIE ═══
+           ELLE MONTE PAR-DESSUS, parce qu'elle remplace la page : on a decide
+           de partir, et la question est la derniere chose qui reste. Posee dans
+           le flux, elle serait un bloc de plus qu'on fait defiler. */
+        /* DEUX CLASSES, ET C'EST UN DEFAUT MESURE : le bloc des cinq fantomes
+           est declare PLUS BAS dans cette feuille avec un fond translucide, et
+           a specificite egale c'est le dernier qui gagne. La feuille de sortie
+           se dessinait donc transparente, la page au travers. */
+        .go-emo.go-sortie{position:fixed;inset:auto 0 0;z-index:30;
+          margin:0;border-radius:22px 22px 0 0;
+          padding:18px 16px calc(18px + env(safe-area-inset-bottom));
+          background:#111A16;border:1px solid rgba(255,255,255,.14);
+          box-shadow:0 -18px 50px -12px rgba(0,0,0,.8);
+          animation:goSortie .26s cubic-bezier(.2,.9,.3,1) both;}
+        @keyframes goSortie{from{transform:translateY(100%);}to{transform:none;}}
+        /* PARTIR SANS REPONDRE RESTE POSSIBLE, ET SANS AVOIR A VISER : une
+           question qu'on ne peut pas refuser est un peage. */
+        .go-sortie-x{display:block;width:100%;margin-top:12px;font:inherit;
+          font-size:13px;font-weight:750;color:#8C9C94;cursor:pointer;
+          background:transparent;border:0;padding:8px;}
+
         .go-emo{padding:13px 13px 11px;border-radius:18px;
           background:rgba(255,255,255,.05);
           border:1px solid rgba(255,255,255,.1);}
