@@ -95,6 +95,7 @@ import {
   heureCourte,
   monPrenom,
   ouvrirSalon,
+  cleSalonBoutique,
 } from "@/lib/direct/salons";
 import {
   abonnerPiecesGardees,
@@ -480,6 +481,61 @@ export function Boutique({
   );
   /** Le panneau qui montre le message quand il ne peut pas partir. */
   const [rdvVu, setRdvVu] = useState(false);
+  /**
+   * ═══ LE SALON DE CETTE BOUTIQUE ═══════════════════════════════════════════
+   *
+   * « Il manque la possibilité d'ouvrir un salon pour parler et inviter nos
+   * amis à parler du produit ou service du commerçant, et depuis ce salon
+   * ouvrir les essayages et les mettre dans ce salon pour chaque personne du
+   * salon pour en discuter. »
+   *
+   * IL EXISTAIT, ET PERSONNE NE POUVAIT LE TROUVER. On n'y arrivait que par
+   * le bouton « En parler avec mes amis » posé SOUS un rendu d'essayage :
+   * pour ouvrir une conversation sur ce commerce, il fallait d'abord se
+   * prendre en photo. Le geste le plus fréquent du monde réel — « regarde,
+   * ça vous dit ? » — était derrière le geste le plus engageant du produit.
+   *
+   * IL A DONC SA PORTE, DANS LA RANGÉE DES CHEMINS POSSIBLES. On peut ouvrir
+   * la conversation d'abord, inviter, et essayer ensuite — ce qui est l'ordre
+   * dans lequel ça se passe vraiment.
+   */
+  const cleSalon = cleSalonBoutique(c.id);
+  const [salonVu, setSalonVu] = useState(false);
+  /**
+   * L'ADRESSE DE CETTE PAGE, POUR Y REVENIR DEPUIS LE SALON.
+   *
+   * Calculée au navigateur et pas écrite en dur : la même boutique se sert
+   * sous deux adresses — la maquette et la page publique du commerçant — et
+   * une constante en renverrait la moitié des gens au mauvais endroit.
+   * L'ancre mène au chapitre d'essai, c'est-à-dire à ce qu'on vient y faire.
+   */
+  const lienBoutique = useMemo(
+    () => (typeof window === "undefined" ? "" : `${window.location.origin}${window.location.pathname}#essayer`),
+    [],
+  );
+  /** Où vit la conversation : l'application, ouverte sur ce salon. */
+  const lienSalon = `/autour-de-moi?salon=${encodeURIComponent(cleSalon)}`;
+  /** Ce que le panneau a à dire après un partage — « copié », ou rien. */
+  const [salonDit, setSalonDit] = useState("");
+  /**
+   * IL NE NAÎT QU'AU PREMIER GESTE, et jamais à l'affichage du panneau.
+   * `ouvrirSalon` ne fait rien s'il existe déjà, donc c'est sans risque de
+   * l'appeler deux fois — mais ouvrir une conversation parce que quelqu'un a
+   * regardé un écran créerait des salons vides que personne n'a demandés.
+   */
+  const ouvrirLeSalon = () => {
+    ouvrirSalon({
+      cle: cleSalon,
+      sujet: `Chez ${c.nom}`,
+      ou: c.nom,
+      parQui: monPrenom() || "Vous",
+      quand: "Aujourd’hui",
+      annonce: c.metier,
+      distance: c.distance,
+      photo: c.photo,
+      boutique: { id: c.id, nom: c.nom, lien: lienBoutique },
+    });
+  };
   const catal = motCatalogue(c.metier);
   const mots = catal.titre === "Le catalogue" ? { ...catal, titre: rond.carte } : catal;
   /**
@@ -1423,10 +1479,15 @@ export function Boutique({
                * quitte une page de commerce que si on l'a demandé.
                */
               onSalon={(o) => {
-                const cle = `essai-${c.id}-${o.quoi}`;
+                // UN SEUL SALON PAR COMMERCE, ET TOUS LES ESSAIS DEDANS.
+                // La clé était `essai-<commerce>-<pièce>` : quatre amis qui
+                // parlent du même salon de coiffure se retrouvaient dans
+                // quatre conversations dès qu'ils n'essayaient pas la même
+                // coupe — c'est-à-dire toujours. Voir `cleSalonBoutique`.
+                const cle = cleSalonBoutique(c.id);
                 ouvrirSalon({
                   cle,
-                  sujet: o.quoi,
+                  sujet: `Chez ${c.nom}`,
                   ou: c.nom,
                   parQui: monPrenom() || "Vous",
                   quand: "Aujourd’hui",
@@ -1434,6 +1495,7 @@ export function Boutique({
                   prix: o.prix,
                   distance: c.distance,
                   photo: o.image,
+                  boutique: { id: c.id, nom: c.nom, lien: lienBoutique },
                 });
                 const texte = o.note
                   ? `J’ai essayé « ${o.quoi} »${o.prix ? ` (${o.prix})` : ""} sur moi. Je mets ${o.note}/5 — vous en pensez quoi ?`
@@ -1696,6 +1758,21 @@ export function Boutique({
               </button>
             </li>
           )}
+          {/* ═══ LA PORTE DU SALON ═══════════════════════════════════════
+
+              ELLE EST DANS CETTE RANGÉE ET PAS AILLEURS, parce que cette
+              rangée est la liste des chemins possibles au moment où l'on a
+              fini de lire : y aller, appeler, demander un rendez-vous… et en
+              parler d'abord. Ce dernier est le plus fréquent des quatre dans
+              la vraie vie, et c'était le seul qui n'avait pas de porte. */}
+          <li>
+            <button type="button" onClick={() => setSalonVu(true)}>
+              <i aria-hidden="true">💬</i>
+              <b>En parler avec mes amis</b>
+              <em>Une conversation, ici, sur {c.nom}</em>
+              <s aria-hidden="true">→</s>
+            </button>
+          </li>
           <li>
             <a href={c.itineraire} target="_blank" rel="noreferrer">
               <i aria-hidden="true">📍</i>
@@ -2506,6 +2583,69 @@ export function Boutique({
           </div>
         </div>
       )}
+
+      {/* ═══ OUVRIR LE SALON DE CETTE BOUTIQUE, ET Y INVITER ════════════════
+
+          TROIS GESTES, DANS L'ORDRE OÙ ILS SE FONT. On ouvre, on invite, on
+          essaie — et c'est l'inverse de ce que le produit imposait jusqu'ici,
+          où il fallait s'être pris en photo pour avoir le droit d'ouvrir une
+          conversation.
+
+          L'INVITATION EST UN LIEN, PAS UN COMPTE. C'est la réponse à
+          l'objection qui avait failli enterrer le salon — « tes amis ne sont
+          pas sur ClikMe » : celui qui reçoit l'adresse dans WhatsApp l'ouvre
+          dans le navigateur qu'il a déjà, voit le salon, et écrit dedans.
+          Rien à installer. Voir l'en-tête de `salons.ts`. */}
+      {salonVu && (
+        <div
+          className="bq-voile"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`En parler avec mes amis, à propos de ${c.nom}`}
+          onClick={() => setSalonVu(false)}
+        >
+          <div className="bq-salon" onClick={(e) => e.stopPropagation()}>
+            <b>En parler avec mes amis</b>
+            <p className="bq-salon-s">
+              Une conversation sur {c.nom}, dans ClikMe. Vos amis n’ont rien à
+              installer&nbsp;: ils ouvrent le lien et ils écrivent. Chacun peut y
+              essayer ce qu’il veut et poser son rendu ici, pour que vous
+              choisissiez ensemble.
+            </p>
+            <div className="bq-salon-g">
+              <button
+                type="button"
+                className="bq-salon-b"
+                onClick={async () => {
+                  ouvrirLeSalon();
+                  const r = await partager({
+                    titre: `Chez ${c.nom}`,
+                    texte: `On en parle ? J’ai ouvert une conversation sur ${c.nom}${c.ville ? ` à ${c.ville}` : ""}.`,
+                    lien: lienSalon,
+                  });
+                  // « Copié » se dit, sinon un ordinateur n'a l'air de rien
+                  // faire — c'est la même règle que le partage du bandeau.
+                  if (r === "copie") setSalonDit("Lien copié : collez-le dans votre groupe.");
+                  else if (r === "echec") setSalonDit("Le partage n’a pas abouti. Le lien est dans la barre d’adresse.");
+                }}
+              >
+                <i aria-hidden="true">✉️</i>&nbsp;Inviter mes amis
+              </button>
+              <a
+                className="bq-salon-b bq-salon-o"
+                href={lienSalon}
+                onClick={() => ouvrirLeSalon()}
+              >
+                Ouvrir la conversation
+              </a>
+            </div>
+            {salonDit && <p className="bq-salon-s">{salonDit}</p>}
+            <button type="button" className="bq-salon-r" onClick={() => setSalonVu(false)}>
+              Rester sur cette page
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -3197,6 +3337,8 @@ function Styles() {
         .bq-note span{display:block;font-size:11.5px;color:var(--bq-pale);margin-top:2px;}
         .bq-et i{font-style:normal;font-size:12px;color:#3B4A42;}
         .bq-et i.on{color:var(--bq-ambre);}
+        .bq-salon-g{display:grid;gap:8px;margin-top:4px;}
+        .bq-salon-o{text-align:center;text-decoration:none;}
         .bq-gg{margin-top:22px;padding-top:18px;border-top:1px solid var(--bq-ligne);}
         .bq-gg-t{display:flex;align-items:baseline;gap:10px;}
         .bq-gg-t b{font-size:14px;}

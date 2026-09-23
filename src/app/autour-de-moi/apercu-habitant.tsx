@@ -11324,8 +11324,17 @@ export function ApercuHabitant() {
                       <span className="ap-invite-f" aria-hidden="true">
                         <Fantome classe="ap-invite-d" clin />
                       </span>
+                      {/* ═══ « CETTE OFFRE » N'EN EST PAS TOUJOURS UNE ══════
+
+                          Le salon d'une BOUTIQUE ne porte pas une offre qui
+                          expire : il porte un commerce, et on l'a ouvert pour
+                          demander un avis — « regarde, ça vous dit ? ». Lui
+                          annoncer « envoyez cette offre » promettait une
+                          affaire à durée limitée là où il n'y en a aucune, et
+                          c'est exactement le genre de mot qui fait passer
+                          ClikMe pour une plateforme de réductions. */}
                       <p className="ap-invite-t">
-                        Envoyez cette offre
+                        {salon.boutique ? "Demandez-leur" : "Envoyez cette offre"}
                         <b>à vos amis&nbsp;!</b>
                       </p>
                     </div>
@@ -11341,9 +11350,9 @@ export function ApercuHabitant() {
                           discuter ici » laisse les trois verbes suivants sans
                           sujet. Un seul « pourront » les rattache tous les
                           trois, et rien n'est perdu. */}
-                      Ils verront votre proposition, pourront en discuter ici,
-                      proposer autre chose si vous changez d&apos;avis, et
-                      réserver.
+                      {salon.boutique
+                        ? `Ils verront ce que propose ${salon.boutique.nom}, pourront essayer à leur tour, poser leur rendu ici, et en discuter avec vous.`
+                        : "Ils verront votre proposition, pourront en discuter ici, proposer autre chose si vous changez d’avis, et réserver."}
                     </p>
 
                     {/* ─── L'OFFRE, RAPPELEE ───
@@ -11416,13 +11425,43 @@ export function ApercuHabitant() {
                       Copier le lien du chat
                     </button>
 
+                    {/* ═══ LE CHEMIN DU RETOUR VERS LA BOUTIQUE ═════════════
+
+                        « Depuis ce salon, ouvrir les essayages et les mettre
+                        dans ce salon pour chaque personne du salon, pour en
+                        discuter. »
+
+                        LE CHEMIN N'EXISTAIT QUE DANS UN SENS. On savait aller
+                        d'un essayage vers le salon — c'est le bouton sous un
+                        rendu. On ne savait pas revenir : une fois dans la
+                        conversation, rien ne ramenait chez le commerçant, donc
+                        les autres ne pouvaient pas essayer à leur tour. Le
+                        salon montrait UNE photo au lieu de faire essayer
+                        QUATRE personnes, ce qui est pourtant la seule chose
+                        qui le distingue d'un groupe WhatsApp — là-bas aussi on
+                        peut envoyer une photo.
+
+                        IL NE S'AFFICHE QUE POUR UN SALON DE BOUTIQUE. Celui
+                        d'une soirée ou d'un collectif ne mène chez personne :
+                        voir `boutique` dans `salons.ts`. */}
+                    {salon.boutique && (
+                      <a className="ap-invite-l ap-invite-e" href={salon.boutique.lien}>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M12 3.5a4.2 4.2 0 0 1 4.2 4.2c0 3.1-4.2 7.3-4.2 7.3S7.8 10.8 7.8 7.7A4.2 4.2 0 0 1 12 3.5z" />
+                          <path d="M5 19.5h14" />
+                        </svg>
+                        Essayer chez {salon.boutique.nom}
+                      </a>
+                    )}
+
                     {/* LA NOTE DIT CE QU'ILS VIVRONT, PAS COMMENT CA MARCHE.
                         « Un salon ne contient que les gens que vous y mettez »
                         etait une notice ; celle-ci est une promesse. */}
                     <p className="ap-invite-i">
                       <i aria-hidden="true">ⓘ</i>
-                      Vos amis découvriront l&apos;offre et pourront discuter
-                      avec vous, sans rien installer.
+                      {salon.boutique
+                        ? "Vos amis ouvrent le lien, essaient à leur tour, et posent leur rendu ici. Rien à installer."
+                        : "Vos amis découvriront l'offre et pourront discuter avec vous, sans rien installer."}
                     </p>
 
                     {/* LA VISIBILITE RESTE ICI, ET ELLE DEVIENT LE BOUTON.
@@ -17789,6 +17828,11 @@ export function ApercuHabitant() {
           stroke:#8CF0CC;stroke-width:1.8;
           stroke-linecap:round;stroke-linejoin:round;}
         .ap-invite-l:active{background:rgba(140,240,204,.12);}
+        /* LE RETOUR VERS LA BOUTIQUE porte la meme forme que « copier le
+           lien » — c'est un chemin, pas une decision — mais il est un LIEN et
+           pas un bouton, donc il faut lui retirer le souligne que le
+           navigateur pose d'office. */
+        .ap-invite-e{text-decoration:none;}
         .ap-invite-i{display:flex;align-items:flex-start;gap:7px;
           margin:14px 0 0;font-size:11.5px;line-height:1.45;color:#7F988B;
           text-align:left;}

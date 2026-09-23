@@ -210,6 +210,54 @@ for (const slug of ["demo-coiffeur", "demo-mode"]) {
   dire(!/menu du jour|magret|garbure|19 €|réserver une table/i.test(tout), `${slug} : et rien du restaurant d'en face`);
 }
 
+// ── 7. LE SALON S'OUVRE DE LA PAGE, ET RAMÈNE CHEZ LE COMMERÇANT ──────────
+//
+// « Il manque la possibilité d'ouvrir un salon pour parler et inviter nos
+// amis à parler du produit ou service du commerçant, et depuis ce salon
+// ouvrir les essayages et les mettre dans ce salon pour chaque personne du
+// salon pour en discuter. »
+//
+// LE CHEMIN TRAVERSE DEUX PAGES, et c'est ce qui le rend fragile : la page du
+// commerçant écrit un salon, l'application le lit. Chaque moitié peut marcher
+// seule pendant que le passage entre les deux est cassé — c'est exactement ce
+// qui est arrivé au bouton « On en parle bien ». On marche donc le chemin.
+await p.goto(`${BASE}/site-internet/apercu/demo-coiffeur?via=direct`, { waitUntil: "networkidle" });
+await p.waitForTimeout(1000);
+const porte = await p.evaluate(() =>
+  Boolean([...document.querySelectorAll(".bq-fin-l button")].find((e) => /en parler avec mes amis/i.test(e.textContent || ""))),
+);
+dire(porte, "la page offre d'en parler avec ses amis");
+
+await p.evaluate(() => {
+  [...document.querySelectorAll(".bq-fin-l button")].find((e) => /en parler avec mes amis/i.test(e.textContent || ""))?.click();
+});
+await p.waitForTimeout(600);
+// REGARDER UN ÉCRAN N'OUVRE PAS UNE CONVERSATION. Un salon créé parce que
+// quelqu'un a ouvert un panneau serait un salon vide que personne n'a demandé.
+const avant = await p.evaluate(() => {
+  try { return Object.keys(JSON.parse(localStorage.getItem("clikme-salons-v1") || "{}")).filter((k) => k.startsWith("boutique-")).length; }
+  catch { return -1; }
+});
+dire(avant === 0, "et ne crée rien tant qu'on n'a rien demandé");
+
+const lien = await p.evaluate(() => document.querySelector(".bq-salon-o")?.getAttribute("href") || "");
+dire(/\/autour-de-moi\?salon=boutique-/.test(lien), `le salon est celui du commerce, pas d'une pièce (${lien})`);
+await p.click(".bq-salon-o");
+await p.waitForTimeout(3000);
+
+const retour = await p.evaluate(() => {
+  const a = [...document.querySelectorAll("a")].find((x) => /essayer chez/i.test(x.textContent || ""));
+  return a ? a.getAttribute("href") || "" : "";
+});
+// LE CHEMIN DU RETOUR EST TOUT L'INTÉRÊT : sans lui le salon montre UNE photo
+// au lieu de faire essayer QUATRE personnes, et ce n'est plus qu'un groupe
+// WhatsApp — où l'on peut déjà envoyer une photo.
+dire(/\/site-internet\/apercu\/demo-coiffeur#essayer$/.test(retour), `et il ramène chez le commerçant, sur son essai (${retour})`);
+// LE SALON D'UNE BOUTIQUE NE PORTE PAS UNE OFFRE QUI EXPIRE. « Envoyez cette
+// offre » promettrait une affaire à durée limitée là où il n'y en a aucune.
+const entete = await p.evaluate(() => document.querySelector(".ap-invite-t")?.textContent || "");
+dire(!/offre/i.test(entete), `et il ne parle pas d'une offre (« ${entete.trim()} »)`);
+
 await b.close();
 console.log(echecs === 0 ? "\nLa page du commerçant tient ses promesses." : `\n${echecs} promesse(s) rompue(s).`);
 process.exit(echecs === 0 ? 0 : 1);
