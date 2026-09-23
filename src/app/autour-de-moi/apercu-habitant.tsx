@@ -184,7 +184,7 @@ import {
   taillesDeLaPiece,
   taillesVides,
 } from "@/lib/direct/tailles";
-import { motsDe, soireeDuLieu, SOIREES } from "@/lib/direct/soiree";
+import { INTENTIONS, motsDe, soireeDuLieu, SOIREES } from "@/lib/direct/soiree";
 import { basculerLeSon, jouer, sonCoupe } from "@/lib/direct/sons";
 import { EcranSoiree } from "@/components/direct/soiree-contenu";
 import { mesFantomes, rappelerFantome, SIGNAL as SIGNAL_FANTOMES, tempsRestant, type FantomePose } from "@/lib/direct/mes-fantomes";
@@ -3110,6 +3110,19 @@ export function ApercuHabitant() {
    * la preuve s'allume. « Sorties » est la seule sans démonstration — il en a
    * nommé quatre.
    */
+  /**
+   * LES TITRES DES TROIS TEMPS D'UNE SOIRÉE.
+   *
+   * ILS SONT ÉCRITS DU POINT DE VUE DE QUELQU'UN QUI HÉSITE, pas du nôtre :
+   * « on l'entend avant » et non « découverte sonore ». C'est la seule
+   * différence entre une promesse et une rubrique.
+   */
+  const TEMPS_SOIREE: Record<string, string> = {
+    son: "On l’entend avant",
+    envies: "On dit ce qu’on cherche",
+    live: "On parle à ceux qui y vont",
+  };
+
   const EXEMPLES: {
     cle: string;
     /** La famille allumée dans la rangée du bas. Voir FAMILLES. */
@@ -3155,7 +3168,7 @@ export function ApercuHabitant() {
      * les quatre autres exemples montrent une transformation, celui des sorties
      * montre une RAISON D'Y ALLER, et ce n'est pas la même chose.
      */
-    couches?: (undefined | "son" | "live")[];
+    couches?: (undefined | "son" | "envies" | "live")[];
   }[] = [
     {
       cle: "coiffure",
@@ -3173,39 +3186,46 @@ export function ApercuHabitant() {
     },
     {
       /**
-       * ═══ LES SORTIES : MONTRER CE QUI DÉCIDE, PAS UNE TRANSFORMATION ═══
+       * ═══ LES SORTIES : LES TROIS TEMPS DU PARCOURS, DANS L'ORDRE ═══════
        *
-       * « Il n'y a aucun intérêt à voir cet endroit de jour ou de nuit, donc ce
-       * qu'on apporte comme solution pour motiver un client à venir est nul. »
+       * « Le système pour les bars et événements où il y a une ambiance
+       * musicale tourne autour de cela : la découverte du son qui sera joué,
+       * ensuite ce qu'on recherche dans cette soirée, et enfin le Live —
+       * c'est-à-dire le chat où les gens parlent de la soirée. »
        *
-       * IL A RAISON, ET LA FAUTE ÉTAIT PLUS PROFONDE QUE LES IMAGES. J'avais
-       * refait proprement le mauvais écran : le coucher de soleil rejoué en
-       * direct valait mieux que deux captures ratées, mais il répondait à une
-       * question que personne ne se pose. Savoir à quoi ressemble une terrasse
-       * vide à vingt et une heures ne fait venir personne.
+       * CET EXEMPLE N'INVENTE DONC PLUS RIEN : il montre les trois temps de
+       * `EcranSoiree`, dans leur ordre, sur la photo du concert. Trois cartes
+       * comme le restaurant en a trois — et pour la même raison : une SUITE ne
+       * se raconte pas en deux images.
        *
-       * LES QUATRE AUTRES EXEMPLES MONTRENT UNE TRANSFORMATION — une chevelure,
-       * une tenue, une pièce meublée, un plat servi — parce que dans ces
-       * métiers-là, la transformation EST le produit. Une sortie, non : on ne
-       * transforme pas un concert, on décide d'y aller ou pas. Copier la
-       * grammaire des quatre autres était l'erreur de départ.
+       * DEUX TENTATIVES RATÉES AVANT CELLE-CI, ET ELLES DISENT LA MÊME CHOSE.
+       * D'abord deux captures du geste « faire tomber le soir » ; puis le même
+       * geste rejoué proprement en direct. Les deux montraient un endroit vide
+       * qui s'assombrit, c'est-à-dire la réponse à une question que personne ne
+       * se pose. Bien dessiner le mauvais écran ne le rend pas meilleur.
        *
-       * CE QUI DÉCIDE, ON L'A DÉJÀ, ET C'EST DANS LA SOIRÉE : on entend DIX
-       * SECONDES du morceau de ce soir, et on voit combien de gens y vont
-       * déjà. Le premier n'existe nulle part ailleurs ; le second est la seule
-       * chose qui fait bouger quelqu'un qui hésite. Les deux sont de vraies
-       * données — voir `SOIREES.kiosque` dans `lib/direct/soiree.ts`, d'où
-       * viennent le fichier du son et le nombre du Live.
+       * ET QUAND IL N'Y A PAS DE MUSIQUE — un musée, un vide-grenier — le
+       * premier temps devient une découverte visuelle, les deux autres ne
+       * bougent pas. Voir `forme` dans `EssaiSoiree` : « son » et « image »
+       * sont deux façons d'ouvrir la même porte.
        *
-       * ET C'EST DONC LA MÊME PHOTO DEUX FOIS, comme les quatre autres montrent
-       * le même sujet deux fois. Ce qui change n'est pas la lumière : c'est ce
-       * que ClikMe pose dessus.
+       * LES CHIFFRES ET LES MOTS VIENNENT DE LA SOIRÉE, PAS D'ICI : le nombre
+       * du Live, le premier message du chat et les intentions sortent de
+       * `SOIREES.kiosque` et d'`INTENTIONS`. Posés à la main, ils auraient
+       * divergé du vrai écran à la première retouche.
        */
       cle: "sorties",
       famille: "sorties",
-      photos: ["/direct/concert-kiosque.jpg", "/direct/concert-kiosque.jpg"],
-      couches: ["son", "live"],
-      duree: 5500,
+      photos: [
+        "/direct/concert-kiosque.jpg",
+        "/direct/concert-kiosque.jpg",
+        "/direct/concert-kiosque.jpg",
+      ],
+      couches: ["son", "envies", "live"],
+      /* SEPT SECONDES ET DEMIE, COMME LE RESTAURANT — et pour la même raison :
+         trois images à lire, chacune avec son idée, demandent deux secondes et
+         demie chacune. À cinq secondes et demie, on en saute une. */
+      duree: 7500,
     },
     {
       cle: "fleuriste",
@@ -7439,18 +7459,24 @@ export function ApercuHabitant() {
                           ne lit ni l'un ni l'autre. */}
                       {exemple.mots?.[k] && <i>{exemple.mots[k]}</i>}
 
-                      {/* ═══ CE QUI DONNE ENVIE D'Y ALLER ═══════════════════
+                      {/* ═══ LES TROIS TEMPS DU PARCOURS SOIRÉE ═══════════
 
-                          DEUX CHOSES, ET CE SONT LES DEUX SEULES QUI DÉCIDENT.
-                          On entend dix secondes du morceau de ce soir — ça
-                          n'existe nulle part ailleurs — et on voit combien de
-                          gens y vont déjà, qui est la seule chose qui fait
-                          bouger quelqu'un qui hésite.
+                          DANS L'ORDRE, ET CHACUNE PORTE SON TITRE — comme les
+                          trois images du restaurant. Sans le titre, on voit
+                          trois fois la même photo de concert avec des choses
+                          dessus ; avec lui, on lit une suite : on écoute, on
+                          dit ce qu'on cherche, on parle avec ceux qui y vont.
 
-                          LES CHIFFRES SONT CEUX DE LA SOIRÉE, PAS DES NÔTRES.
-                          Le nombre du Live et la durée de l'extrait viennent de
-                          la soirée du kiosque : posés ici à la main, ils auraient
-                          divergé du vrai écran à la première retouche. */}
+                          TOUT VIENT DE LA SOIRÉE DU KIOSQUE — le nombre du
+                          Live, le premier message du chat, les intentions.
+                          Recopiés ici, ils auraient divergé du vrai écran à la
+                          première retouche. */}
+                      {exemple.couches?.[k] && (
+                        <s className="ap-ac-t3" aria-hidden="true">
+                          {TEMPS_SOIREE[exemple.couches[k] as string]}
+                        </s>
+                      )}
+
                       {exemple.couches?.[k] === "son" && (
                         <s className="ap-ac-ecoute" aria-hidden="true">
                           <b>▶</b>
@@ -7461,18 +7487,37 @@ export function ApercuHabitant() {
                         </s>
                       )}
 
+                      {/* CE QU'ON Y CHERCHE — DEUX DES SIX, ET LE COMPTE DU
+                          RESTE. Mesuré à l'écran : à trois, la casquette du
+                          Fantôme mordait la dernière. Deux tiennent au-dessus de
+                          lui, et « +4 autres » dit ce qu'on ne montre pas au
+                          lieu de laisser croire qu'il n'y a que ça. */}
+                      {exemple.couches?.[k] === "envies" && (
+                        <s className="ap-ac-env" aria-hidden="true">
+                          {INTENTIONS.slice(0, 2).map((x) => (
+                            <em key={x.cle}>
+                              <b>{x.emoji}</b>
+                              {x.mot}
+                            </em>
+                          ))}
+                          <em className="autres">+{INTENTIONS.length - 2} autres</em>
+                        </s>
+                      )}
+
+                      {/* LE LIVE — un vrai message du chat, et le nombre de
+                          gens dedans. Les trois têtes sont des points : personne
+                          n'a donné son visage pour cet écran. */}
                       {exemple.couches?.[k] === "live" && (
                         <s className="ap-ac-lv" aria-hidden="true">
-                          {/* LES TROIS TÊTES SONT DES POINTS, PAS DES VISAGES.
-                              Personne n'a donné son visage pour cet écran, et
-                              dessiner des inconnus serait la première fausseté
-                              d'une rangée qui ne vit que de vraies données. */}
-                          <i>
-                            <em /><em /><em />
-                          </i>
+                          <em>
+                            <b>{SOIREES.kiosque.live[0]?.qui ?? "Lucas"}</b>
+                            {SOIREES.kiosque.live[0]?.mot ?? ""}
+                          </em>
                           <span>
-                            <u>{SOIREES.kiosque.dansLeLive} y vont</u>
-                            déjà ce soir
+                            <b>
+                              <u /><u /><u />
+                            </b>
+                            {SOIREES.kiosque.dansLeLive} y sont
                           </span>
                         </s>
                       )}
@@ -14694,52 +14739,98 @@ export function ApercuHabitant() {
         .ap-ac-carte.fin i{left:auto;right:10px;color:#fff;background:#F0389C;
           box-shadow:0 4px 16px -4px rgba(240,56,156,.9);}
 
-        /* ═══ CE QUI DONNE ENVIE D'ALLER A UNE SORTIE ══════════════════════
+        /* ═══ LES TROIS TEMPS D'UNE SOIREE, SUR LA CARTE ═══════════════════
 
-           DEUX PASTILLES, ET CE SONT LES DEUX SEULES CHOSES QUI DECIDENT : on
-           entend dix secondes du morceau de ce soir, et on voit combien de gens
-           y vont deja. Elles se posent en bas de la carte, la ou le regard
-           finit, et elles portent leur propre fond parce qu'une photo de
-           concert est noire par endroits et claire ailleurs.
+           ON ECOUTE, ON DIT CE QU'ON CHERCHE, ON PARLE A CEUX QUI Y VONT. Les
+           trois temps de l'ecran Soiree, dans l'ordre, chacun sur sa carte et
+           chacun avec son titre — sans titre, on voit trois fois la meme photo
+           de concert avec des choses dessus.
 
-           CE QUI ETAIT LA AVANT : un coucher de soleil sur une terrasse vide.
-           Bien dessine, et sans objet — savoir a quoi ressemble un endroit vide
-           a vingt et une heures ne fait venir personne. */
-        /* EN HAUT, COMME LES PASTILLES DES QUATRE AUTRES EXEMPLES — ET C'EST
-           MESURE : posees en bas, elles tombaient exactement sous le Fantome,
-           qui s'assoit au milieu de la scene et les couvrait toutes les deux.
-           Le haut de la carte est le seul endroit libre. */
-        .ap-ac-ecoute,.ap-ac-lv{position:absolute;left:8px;right:8px;top:8px;
-          display:flex;align-items:center;gap:8px;padding:7px 9px;
-          border-radius:12px;text-decoration:none;
-          background:rgba(8,10,16,.78);
+           LE TITRE EN HAUT, LE CONTENU EN BAS, ET LE MILIEU LIBRE : le Fantome
+           s'assoit au centre de la scene et couvrirait tout ce qu'on y met.
+           Mesure a l'ecran, deux fois. */
+
+        /* AUCUNE BALISE I LA-DEDANS, ET C'EST UN DEFAUT MESURE : la feuille
+           porte deja une regle generique sur les I des cartes, qui les place en
+           absolu, et une autre qui les repeint en rose a droite sur la derniere.
+           Le titre de la troisieme carte se retrouvait donc rose et decale, et
+           les trois tetes du Live partaient se coller dans le coin. */
+        .ap-ac-t3{position:absolute;top:8px;left:8px;
+          display:inline-block;max-width:calc(100% - 16px);
+          padding:5px 9px;border-radius:999px;text-decoration:none;
+          font-size:9.5px;font-weight:850;letter-spacing:.04em;
+          text-transform:uppercase;color:#FFF;background:rgba(8,10,16,.8);
           -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-          border:1px solid rgba(255,255,255,.14);}
-        /* ELLES TIENNENT DANS CENT SOIXANTE-CINQ POINTS, c'est-a-dire la moitie
-           d'un telephone : deux lignes courtes, jamais une phrase. La premiere
-           version portait une onde de treize barres et un titre de dix-sept
-           signes — les deux se faisaient couper. */
-        .ap-ac-ecoute span,.ap-ac-lv span{flex:1;min-width:0;font-size:9px;
-          line-height:1.2;color:#B7C0CC;text-align:left;}
-        .ap-ac-ecoute u,.ap-ac-lv u{display:block;text-decoration:none;
-          font-size:11.5px;font-weight:850;letter-spacing:-.02em;color:#FFF;}
+          border:1px solid rgba(255,255,255,.16);}
 
-        /* LE ROND DE LECTURE. Le triangle suffit a dire qu'il y a du son
-           dedans ; l'onde qui l'accompagnait ne tenait pas dans la carte. */
+        /* ═══ TOUT EN HAUT, ET C'EST MESURE DEUX FOIS ═══
+           LE FANTOME S'ASSOIT AU CENTRE-BAS DE LA SCENE. Posees en bas, les
+           trois pastilles se faisaient couper par lui — « Faire la f… », « Etre
+           entre a… ». Posees en haut, sous le titre, elles sont dans la seule
+           zone qu'il ne touche jamais. C'est d'ailleurs la que le restaurant
+           pose les titres de ses trois images.
+
+           ET ELLES PORTENT LEUR PROPRE FOND : une photo de concert est noire
+           par endroits et claire ailleurs, donc rien ne s'y lit sans socle. */
+        .ap-ac-ecoute,.ap-ac-env,.ap-ac-lv{position:absolute;left:8px;right:8px;
+          top:40px;text-decoration:none;}
+
+        /* ─── 1 · ON L'ENTEND AVANT ───
+           Le triangle suffit a dire qu'il y a du son dedans. La premiere
+           version portait une onde de treize barres : elle ne tenait pas dans
+           cent soixante-cinq points, c'est-a-dire la moitie d'un telephone. */
+        .ap-ac-ecoute{display:flex;align-items:center;gap:8px;padding:7px 9px;
+          border-radius:12px;background:rgba(8,10,16,.8);
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+          border:1px solid rgba(255,255,255,.16);}
         .ap-ac-ecoute b{flex:none;width:24px;height:24px;border-radius:50%;
           display:grid;place-items:center;font-size:9px;color:#fff;
           background:linear-gradient(135deg,#F0389C,#8D6DFF);
           box-shadow:0 3px 12px -3px rgba(240,56,156,.9);}
+        .ap-ac-ecoute span{flex:1;min-width:0;font-size:9px;line-height:1.2;
+          color:#B7C0CC;text-align:left;}
+        .ap-ac-ecoute u{display:block;text-decoration:none;font-size:11.5px;
+          font-weight:850;letter-spacing:-.02em;color:#FFF;}
 
-        /* LES TROIS TETES SONT DES POINTS, PAS DES VISAGES. Personne n'a donne
-           son visage pour cet ecran, et dessiner des inconnus serait la
+        /* ─── 2 · ON DIT CE QU'ON CHERCHE ───
+           TROIS DES SIX, PAS LES SIX : une carte de cette largeur n'est pas un
+           formulaire, et trois suffisent a faire comprendre que la question est
+           posee. */
+        .ap-ac-env{display:flex;flex-direction:column;gap:4px;}
+        .ap-ac-env em{display:flex;align-items:center;gap:6px;
+          padding:5px 8px;border-radius:9px;font-style:normal;font-size:10px;
+          font-weight:750;line-height:1.15;color:#EAF0F6;
+          background:rgba(8,10,16,.8);
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+          border:1px solid rgba(255,255,255,.16);}
+        .ap-ac-env em b{flex:none;font-size:11px;font-weight:400;}
+        /* LE COMPTE DU RESTE : plus discret, et il hugge son texte — c'est une
+           mention, pas une sixieme reponse possible. */
+        .ap-ac-env em.autres{align-self:flex-start;font-size:9px;font-weight:800;
+          letter-spacing:.05em;text-transform:uppercase;color:#98A3B0;
+          padding:4px 8px;}
+
+        /* ─── 3 · ON PARLE A CEUX QUI Y VONT ───
+           UN VRAI MESSAGE DU CHAT, pas un texte d'exemple : il vient de la
+           soiree du kiosque. Et les trois tetes sont des points — personne n'a
+           donne son visage pour cet ecran, et dessiner des inconnus serait la
            premiere faussete d'une rangee qui ne vit que de vraies donnees. */
-        .ap-ac-lv i{flex:none;display:flex;}
-        .ap-ac-lv i em{width:17px;height:17px;border-radius:50%;
-          border:2px solid #0B0E14;margin-left:-6px;}
-        .ap-ac-lv i em:first-child{margin-left:0;background:#F0389C;}
-        .ap-ac-lv i em:nth-child(2){background:#8D6DFF;}
-        .ap-ac-lv i em:nth-child(3){background:#3DE2A6;}
+        .ap-ac-lv{display:flex;flex-direction:column;gap:5px;}
+        .ap-ac-lv em{display:block;padding:7px 9px;border-radius:11px;
+          font-style:normal;font-size:9.5px;line-height:1.3;color:#C6CFDA;
+          background:rgba(8,10,16,.8);
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+          border:1px solid rgba(255,255,255,.16);}
+        .ap-ac-lv em b{display:block;font-size:10px;font-weight:850;color:#FFF;}
+        .ap-ac-lv span{display:flex;align-items:center;gap:7px;
+          font-size:10px;font-weight:800;color:#FFF;}
+        .ap-ac-lv span b{flex:none;display:flex;}
+        .ap-ac-lv span u{width:15px;height:15px;border-radius:50%;
+          text-decoration:none;border:2px solid #0B0E14;margin-left:-6px;}
+        .ap-ac-lv span u:first-child{margin-left:0;background:#F0389C;}
+        .ap-ac-lv span u:nth-child(2){background:#8D6DFF;}
+        .ap-ac-lv span u:nth-child(3){background:#3DE2A6;}
+
 
         /* ═══ LA FLECHE NEON ════════════════════════════════════════════════
            ELLE EST PLEINE, PAS TRACEE. Un trait de quatre points avec deux
