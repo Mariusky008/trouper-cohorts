@@ -57,8 +57,18 @@ console.log("══ la photo de référence a le dernier mot sur la forme ══
   // EST la coupe. Quand les deux se contredisent, la phrase doit dire laquelle
   // gagne — sans quoi le modèle tranche tout seul, et il tranche pour le texte.
   dire(
-    /si les deux\s+ne concordent pas, c'est l'image qui a raison/i.test(avec),
-    "la consigne dit explicitement que l'image tranche en cas de désaccord",
+    /si les deux\s+ne concordent pas SUR .+, c'est l'image qui a raison/i.test(avec),
+    "la consigne dit que l'image tranche en cas de désaccord",
+  );
+  // ═══ ET ELLE DIT SUR QUOI ═══
+  // Une règle de préséance sans domaine est une règle qui déborde. Celle-ci
+  // était posée juste avant quarante lignes qui protègent le visage, les
+  // vêtements et le décor — et l'image 2 montre une AUTRE personne, dans
+  // d'autres vêtements, sur un autre fond.
+  dire(
+    /Cette préséance ne vaut QUE pour cela/i.test(avec) &&
+      /c'est l'image 1 qui fait foi, toujours/i.test(avec),
+    "et elle borne cette préséance à la seule chose qu'elle doit trancher",
   );
   dire(
     /c'est ELLE qui fait foi/i.test(avec),

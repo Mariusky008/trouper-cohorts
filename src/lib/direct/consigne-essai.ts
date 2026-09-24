@@ -262,8 +262,27 @@ export function consigne(
                 `L'image 2 montre ce résultat sur quelqu'un d'autre. C'est ELLE qui fait foi`,
                 `pour la forme ${du(court)} : la longueur, le tombé, les mèches, la`,
                 "matière et la finition.",
-                "La description ci-dessus dit quoi regarder dans l'image 2. Si les deux",
-                "ne concordent pas, c'est l'image qui a raison.",
+                /* ═══ ET CETTE PRÉSÉANCE NE VAUT QUE POUR ÇA ═════════════
+
+                   « Ce n'est même plus les mêmes vêtements, et la tête non
+                   plus réellement. »
+
+                   LA PHRASE DISAIT « SI LES DEUX NE CONCORDENT PAS, C'EST
+                   L'IMAGE QUI A RAISON » — sans dire sur quoi. Posée juste
+                   avant une liste qui protège le visage, les vêtements et le
+                   décor, elle pouvait s'entendre comme une permission
+                   générale : l'image 2 montre une AUTRE personne, dans
+                   d'autres vêtements, sur un autre fond, et on venait de lui
+                   donner le dernier mot.
+
+                   ELLE EST DONC BORNÉE À CE QU'ELLE DEVAIT TRANCHER. Une règle
+                   de préséance sans domaine est une règle qui déborde — et
+                   celle-ci débordait sur tout ce que la consigne passe
+                   quarante lignes à protéger. */
+                `La description ci-dessus dit quoi regarder dans l'image 2. Si les deux`,
+                `ne concordent pas SUR ${court.toUpperCase()}, c'est l'image qui a raison.`,
+                "Cette préséance ne vaut QUE pour cela : sur tout le reste — le visage,",
+                "les vêtements, le décor, la pose — c'est l'image 1 qui fait foi, toujours.",
               ]
             : ["Exécute cette description sur la personne de l'image 1."]),
         ]

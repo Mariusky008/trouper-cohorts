@@ -212,18 +212,61 @@ export async function essayerSurMoi(opts: {
    * pose précisément là où l'on interdit. Voir `zoneDe`.
    */
   const zone: ZoneVisage | null = zoneDe(opts.partie);
+  /**
+   * ═══ QUAND LE VERROU NE S'APPLIQUE PAS, ON LE DIT ═════════════════════════
+   *
+   * « Ce n'est même plus les mêmes vêtements, et la tête non plus réellement. »
+   *
+   * TROIS CHEMINS DIFFÉRENTS RENDAIENT LE MÊME ÉCRAN, ET AUCUN NE SE
+   * SIGNALAIT : pas de visage trouvé sur la photo, masque impossible à
+   * dessiner, recomposition qui échoue. Dans les trois cas on rend le portrait
+   * BRUT du modèle — celui où le visage a bougé — et rien nulle part ne dit
+   * que le verrou n'a pas tenu. On regarde alors le résultat en se demandant
+   * si le modèle a mal travaillé, alors que la question est : le verrou
+   * s'est-il seulement posé ?
+   *
+   * C'EST LA MÊME FAUTE QUE LE `catch` MUET DES PHOTOS GOOGLE, corrigé ce
+   * matin : un repli silencieux n'est pas une tolérance, c'est une panne qu'on
+   * a décidé de ne pas voir. Ces trois-là parlent maintenant, dans la console
+   * du téléphone, à côté des journaux `[essai]` du serveur.
+   */
+  const dire = (quoi: string, pourquoi?: unknown) => {
+    console.warn(
+      "[essai] verrou du visage",
+      JSON.stringify({
+        quoi,
+        partie: opts.partie,
+        pourquoi: pourquoi instanceof Error ? pourquoi.message : pourquoi ? String(pourquoi) : undefined,
+      }),
+    );
+  };
+
   /* EN MODE BRUT ON NE CHERCHE MÊME PAS LE VISAGE : sans masque et sans
      recomposition, la détection ne servirait qu'à faire attendre. */
-  if (zone && !brut) {
+  if (brut) {
+    dire("mode brut : ni masque ni recomposition, demandé dans l'adresse");
+  } else if (!zone) {
+    /* CE N'EST PAS UN DÉFAUT : une main, un poignet, une table n'ont pas de
+       visage à protéger. On le dit quand même, parce que la première question
+       devant un rendu raté est « le verrou était-il censé s'appliquer ? ». */
+    dire("pas de zone à protéger pour cette partie du corps");
+  } else {
     visage = await trouverLeVisage(photo);
-    if (visage) {
+    if (!visage) {
+      /* SANS VISAGE TROUVÉ, LES DEUX VERROUS TOMBENT ENSEMBLE — ni masque, ni
+         recomposition. C'est le chemin le plus probable derrière « ce n'est
+         plus tout à fait la même tête », et c'est celui qui ne se voyait
+         nulle part. */
+      dire("aucun visage trouvé sur la photo : ni masque ni recomposition");
+    } else {
       try {
         masque = masqueDEssai(visage, zone);
-      } catch {
+      } catch (e) {
         // UN MASQUE QU'ON NE SAIT PAS DESSINER N'EMPÊCHE PAS L'ESSAI. On part
         // sans lui, et la recomposition tient encore : elle n'a besoin que du
         // contour, qu'on a déjà.
         masque = "";
+        dire("masque impossible à dessiner ; la recomposition tient encore", e);
       }
     }
   }
@@ -322,9 +365,17 @@ export async function essayerSurMoi(opts: {
          repère, on alignait parfois sur le visage du modèle de la référence,
          et la couronne de cheveux se posait à côté du crâne de la cliente. */
       const vRendu = await trouverLeVisage(j.image, visage);
+      if (!vRendu) {
+        /* ON ALIGNE ALORS SUR L'ANCIEN CALCUL, et ça vaut mieux que rien —
+           mais si le modèle a recadré, le visage se repose à côté. C'est le
+           défaut « la femme a un visage qui se double un peu sur sa droite »,
+           et il redevient possible dès que cette détection-ci échoue. */
+        dire("visage introuvable sur le rendu : on repose à l'ancienne place");
+      }
       const fidele = await reposerLeVisage(photo, j.image, visage, zone, vRendu);
       return { image: fidele, ms: j.ms ?? 0, visageRepose: true };
-    } catch {
+    } catch (e) {
+      dire("la recomposition a échoué : on rend le portrait brut du modèle", e);
       return { image: j.image, ms: j.ms ?? 0 };
     }
   }
