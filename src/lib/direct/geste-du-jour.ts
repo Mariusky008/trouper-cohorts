@@ -101,6 +101,15 @@ export type GesteDuJour = {
    * demander le geste.
    */
   gesteDit: string;
+  /**
+   * LE MÊME GESTE, EN UNE PROPOSITION — pour la visite guidée d'une minute.
+   *
+   * `gesteDit` met huit mots avant le verbe : « Pour rejoindre Le Direct, tout
+   * ce que vous avez à faire, c'est de me dire… ». C'est juste à l'écrit, où
+   * l'œil saute en avant ; à la voix, on attend. Celle-ci met le verbe en
+   * tête, là où on l'entend. Absente, on retombe sur `gesteDit`.
+   */
+  gesteCourt?: string;
   /** Vrai quand le geste est une PHOTO — un coiffeur, lui, dicte. */
   parPhoto: boolean;
   /** CE QUI PART, avec son verbe déjà accordé : « votre menu part », « vos
@@ -190,6 +199,7 @@ export function gesteDuJour(
       pasVu: "Elle est très bien. Mais elle ne se lit que de la rue. Et eux sont à quatre cents mètres, en train de choisir.",
       geste: "Photographiez-la.",
       gesteDit: "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de photographier votre ardoise.",
+      gesteCourt: "Pour y être, photographiez votre ardoise.",
       parPhoto: true,
       envoi: "votre menu part",
       extrait: {
@@ -225,6 +235,7 @@ export function gesteDuJour(
       pasVu: "Elle est magnifique. Mais elle s'arrête à votre porte. Et eux sont à quatre cents mètres, en train de choisir.",
       geste: "Photographiez-la.",
       gesteDit: "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de photographier votre vitrine.",
+      gesteCourt: "Pour y être, photographiez votre vitrine.",
       parPhoto: true,
       envoi: "ce que vous avez ce matin part",
       // AUCUN MOT DE BOULANGER : cette branche sert aussi un fleuriste, un
@@ -258,6 +269,7 @@ export function gesteDuJour(
       pasVu: `Vous êtes le seul à les voir. Et eux cherchent, maintenant, à quatre cents mètres de chez vous.`,
       geste: "Dites-le-moi.",
       gesteDit: `Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me dire ce qu'il vous reste de ${v.places} libres.`,
+      gesteCourt: `Pour y être, dites-moi ce qu'il vous reste de ${v.places} libres.`,
       parPhoto: false,
       envoi: `vos ${v.places} libres partent`,
       extrait: {
@@ -288,6 +300,7 @@ export function gesteDuJour(
     pasVu: "Personne d'autre ne peut le deviner. Et eux cherchent, maintenant, à quelques rues de chez vous.",
     geste: "Dites-le-moi.",
     gesteDit: "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me dire quand vous êtes disponible.",
+    gesteCourt: "Pour y être, dites-moi quand vous êtes disponible.",
     parPhoto: false,
     envoi: "votre disponibilité part",
     extrait: { titre: "Cette semaine", lignes: ["Disponible à partir de jeudi"], prix: "" },
@@ -312,14 +325,37 @@ export function gesteDuJour(
  * chiffre entendu ET lu se retient, un chiffre seulement affiché se survole.
  */
 export function direRetours(g: GesteDuJour): { say: string; phrases: string[] } {
+  /* DEUX RELEVÉS ET LA CONCLUSION, comme avant — mais la conclusion n'est plus
+     comptée comme un relevé : c'est elle qui ferme, et l'écran l'affiche à
+     part. Rien n'est retiré ici ; la coupe, quand il en faudra une, se fera
+     dans `retours`, où chaque métier écrit les siens. */
   const phrases = g.retours.map((r) =>
     r.nombre ? `À ${r.heure}, ${r.nombre} ${r.quoi}.` : r.quoi
   );
-  // « ET VOILÀ CE QUI SE PASSERA ENSUITE » PROMETTAIT. Les chiffres qui suivent
-  // sont une projection — l'écran le dit, la phrase doit le dire aussi. Et elle
-  // rappelle d'où ça part : de son menu, publié une minute plus tôt.
+  /**
+   * ═══ « VOTRE MENU » ÉTAIT ÉCRIT EN DUR, POUR TOUT LE MONDE ═══════════════
+   *
+   * « J'ai écouté la démo pour un tatoueur et ce n'était pas du tout
+   * approprié : on parlait de repas servi… donc c'est que c'est le cas pour
+   * d'autres métiers aussi. »
+   *
+   * IL A RAISON, ET C'EST LA DERNIÈRE PHRASE DE LA VISITE. Tout ce fichier
+   * choisit ses mots selon le métier — le carnet du coiffeur, la vitrine du
+   * primeur, le créneau du tatoueur — et la conclusion, celle qu'on emporte,
+   * disait « votre menu » à un tatoueur, à un fleuriste et à un ostéopathe.
+   *
+   * ELLE SE DÉDUIT MAINTENANT DE `envoi`, qui porte déjà le bon mot pour
+   * chaque famille : « votre menu part », « vos créneaux libres partent »,
+   * « ce que vous avez ce matin part ». On retire le verbe et il reste le
+   * SUJET — c'est-à-dire exactement ce qu'on vient de publier. Une seule
+   * source, donc pas de seconde liste à tenir à jour.
+   *
+   * ET LA PHRASE DIT QUE C'EST UNE PROJECTION. Les chiffres qui suivent ne
+   * sont pas une promesse : l'écran le dit, la voix doit le dire aussi.
+   */
+  const quoi = g.envoi.replace(/\s+(part|partent)$/i, "").trim() || "votre annonce";
   return {
-    say: ["Une fois votre menu dans Le Direct, voilà ce qui pourrait se passer.", ...phrases].join(" "),
+    say: [`Une fois ${quoi} dans Le Direct, voilà ce qui pourrait se passer.`, ...phrases].join(" "),
     phrases,
   };
 }

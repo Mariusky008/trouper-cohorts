@@ -151,6 +151,29 @@ export async function POST(request: Request) {
     phone = String(biz.phone || biz.phoneUnformatted || "").trim();
     const oh = Array.isArray(biz.openingHours) ? (biz.openingHours as Array<Record<string, unknown>>) : [];
     horaires = oh.slice(0, 7).map((h) => ({ jours: String(h.day || "").trim(), horaires: String(h.hours || "").trim() }));
+    /**
+     * ═══ LA COUVERTURE EST PRISE DÈS LE PREMIER APPEL ═════════════════════
+     *
+     * « Toutes les photos de couverture des pages commerçants sont absentes. »
+     *
+     * LE SECOND APPEL EST LE SEUL QUI REMPLISSAIT `photos`, ET IL EST LE SEUL
+     * QUI PEUT ÉCHOUER. Le premier identifie la fiche ; le second va chercher
+     * les images et les avis, et il tombe pour trois raisons ordinaires —
+     * quota, temps d'attente, homonyme. Son échec était avalé par un `catch`
+     * muet : `photos` restait vide, la page partait sans couverture, et rien
+     * nulle part ne l'avait signalé.
+     *
+     * OR LA PHOTO ÉTAIT DÉJÀ LÀ. Le premier appel rend `imageUrl` au singulier
+     * — la photo principale de la fiche, que le scraper pose sur chaque lieu
+     * même quand on ne demande aucune image. On l'avait sous la main et on ne
+     * la lisait pas : c'est la définition d'un défaut évitable.
+     *
+     * ON SÈME DONC AVANT D'ESSAYER. Une photo d'abord, la galerie ensuite si
+     * elle vient. Le second appel ne peut plus faire PERDRE la couverture, il
+     * ne peut que l'améliorer — et c'est la seule forme qu'un appel faillible
+     * devrait jamais prendre.
+     */
+    photos = extractMedia(biz).photos;
     try {
       // On cible la fiche par son placeId si on l'a (fiable), sinon repli par nom.
       const media = (
@@ -161,11 +184,34 @@ export async function POST(request: Request) {
       const it = placeId ? media[0] : (media.find((x) => matchesBusiness(String(x.title || ""), self)) || media[0]);
       if (it) {
         const m = extractMedia(it);
-        photos = m.photos;
+        /* ET ON NE REMPLACE QUE SI L'ON A MIEUX. Une liste vide rendue par le
+           second appel écrasait la photo du premier : on perdait la couverture
+           en croyant la mettre à jour. */
+        if (m.photos.length) photos = m.photos;
         reviewsTop = m.reviews.filter((r) => r.stars == null || r.stars >= 4).slice(0, 3);
       }
-    } catch {
-      /* pas de média → maquette sur contenus métier */
+    } catch (e) {
+      /**
+       * L'ÉCHEC SE DIT, MÊME S'IL NE CASSE RIEN.
+       *
+       * Ce `catch` était muet, et c'est ce qui a rendu le défaut invisible
+       * pendant des semaines : les pages sortaient sans photo, personne ne
+       * savait que le second appel tombait, et on cherchait la panne dans le
+       * dessin de la page. Un repli silencieux n'est pas une tolérance, c'est
+       * une panne qu'on a décidé de ne pas voir.
+       */
+      console.warn(
+        "[public-generate] médias Apify indisponibles",
+        JSON.stringify({
+          slug: businessName,
+          placeId: placeId || null,
+          // CE QU'IL RESTE MALGRÉ L'ÉCHEC : si ce nombre est à zéro, la page
+          // partira sans couverture, et c'est le seul cas qui mérite qu'on
+          // regarde. S'il est à un, le premier appel a sauvé la mise.
+          photosGardees: photos.length,
+          pourquoi: e instanceof Error ? e.message : String(e),
+        }),
+      );
     }
   }
 

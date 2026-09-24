@@ -1168,7 +1168,29 @@ export function Boutique({
             style={{ objectPosition: `center ${c.cadrage || "50%"}` }}
           />
         ) : (
-          <div className="bq-hero-vide" aria-hidden="true" />
+          /* ═══ ET QUAND IL N'Y A PAS DE PHOTO, ON NE FAIT PAS SEMBLANT ════
+
+             « Toutes les photos de couverture des pages commerçants sont
+             absentes. » La cause est réparée à la source — voir
+             `public-generate`, où la photo du premier appel Apify était
+             disponible et jamais lue. Mais les pages DÉJÀ FABRIQUÉES gardent
+             leur liste vide : elles n'auront de photo qu'à la prochaine
+             génération.
+
+             ELLES MÉRITENT MIEUX QU'UN DÉGRADÉ GRIS. Un aplat sans rien est ce
+             qu'on voit quand une page est cassée, et c'est la première chose
+             qu'un commerçant voit de la sienne.
+
+             ON NE PRÊTE PAS LA PHOTO D'UN AUTRE COMMERCE POUR AUTANT. C'est la
+             faute qui a donné le mur des bougies à un hypnothérapeute, et sur
+             une page qui porte un nom réel elle serait pire encore. On dessine
+             donc ce qu'on sait VRAIMENT de lui : son initiale, son métier, et
+             la teinte de sa branche. Personne ne peut confondre ça avec une
+             photographie — c'est précisément ce qu'on veut. */
+          <div className="bq-hero-vide" aria-hidden="true">
+            <span>{(c.nom || "?").trim().charAt(0).toUpperCase()}</span>
+            <em>{c.metier}</em>
+          </div>
         )}
         <div className="bq-hero-voile" aria-hidden="true" />
 
@@ -3157,8 +3179,24 @@ function Styles() {
            qu'elle ne l'est — c'est le dessin des trois maquettes. */
         .bq-hero{position:relative;height:376px;overflow:hidden;}
         .bq-hero img{width:100%;height:100%;object-fit:cover;display:block;}
-        .bq-hero-vide{width:100%;height:100%;
-          background:linear-gradient(160deg,#E9DCEF,#F6EEF6);}
+        .bq-hero-vide{width:100%;height:100%;display:flex;
+          flex-direction:column;align-items:center;justify-content:center;
+          gap:10px;
+          background:
+            radial-gradient(120% 90% at 50% 12%,rgba(255,255,255,.55),transparent 62%),
+            linear-gradient(160deg,#E9DCEF,#F6EEF6);}
+        /* L'INITIALE EST GRANDE ET PALE : elle remplit le cadre sans se faire
+           passer pour un sujet. Une photographie a un point de nettete ; ceci
+           n'en a aucun, et c'est ce qui dit que ce n'est pas une photo. */
+        .bq-hero-vide span{display:flex;align-items:center;justify-content:center;
+          width:112px;height:112px;border-radius:50%;
+          background:rgba(255,255,255,.62);
+          border:1px solid rgba(20,10,30,.08);
+          font-size:52px;font-weight:800;color:rgba(40,22,56,.42);
+          line-height:1;}
+        .bq-hero-vide em{font-style:normal;font-size:13px;font-weight:700;
+          letter-spacing:.14em;text-transform:uppercase;
+          color:rgba(40,22,56,.42);}
         .bq-hero-voile{position:absolute;inset:0;
           background:linear-gradient(180deg,rgba(14,8,24,.42) 0%,rgba(14,8,24,.08) 26%,
             rgba(14,8,24,.42) 62%,rgba(14,8,24,.78) 100%);}

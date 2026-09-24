@@ -221,30 +221,41 @@ export function DemoTour({
   //    en le décrivant : il se comprend en voyant ce qu'un geste PRODUIT.
   //    Chacune de ces trois phrases porte donc son effet à l'écran — la carte
   //    qui part, le cœur qui monte se ranger, le message qui s'ouvre.
+  /* ═══ QUATRE PHRASES AU LIEU DE SEPT ═══════════════════════════════════
+
+     C'ÉTAIT LA PLUS LONGUE RÉPLIQUE DE LA VISITE, et de loin : sept phrases,
+     près de quarante secondes à elle seule. Trois d'entre elles racontaient le
+     GESTE de l'habitant — il passe ce qui ne lui dit rien, il aime ce qui lui
+     plaît, il réserve — c'est-à-dire trois façons de dire qu'on fait défiler
+     un fil. On le VOIT à l'écran pendant qu'elle parle ; le dire en plus,
+     c'est commenter ce qu'on montre.
+
+     CE QU'ON GARDE EST CE QUI NE SE VOIT PAS : combien ils sont, ce qu'ils
+     cherchent, et que la réservation arrive chez LUI. Les deux premières sont
+     des faits sur sa ville, la dernière est la seule qui le concerne.
+
+     ET LA BASCULE OUVRE, parce qu'elle annonce exactement cet acte-ci. */
   const QUI_DIT = G
     ? [
+        SAY_BASCULE,
         `${G.quand}, plus de ${G.combien} ${gentile} vont ${G.verbe} ${G.cherchent}.`,
-        `Beaucoup ouvriront Le Direct de ${laVille} pour voir ce qui se passe autour d'eux.`,
         // CE QU'ILS Y VERRONT SUIT LA FAMILLE, comme le fil montré derrière.
         // Cette ligne énumérait « les menus du jour, les tables qui restent »
         // à tout le monde : un coiffeur l'entendait pendant que l'écran, lui,
         // défilait — depuis la même correction — sur des créneaux libres.
-        `Ils y verront ${
+        `Dans Le Direct de ${laVille}, ils verront ${
           G.famille === "restauration"
             ? "les menus du jour, les tables qui restent"
             : G.famille === "boutique"
               ? "ce qui vient d'arriver, ce qui part le plus vite"
               : G.famille === "rdv"
-                ? "les créneaux qui se libèrent, ce qu'on peut essayer"
+                ? "les créneaux qui se libèrent"
                 : "qui est disponible cette semaine"
         }, les prix, la distance.`,
-        `Ce qui ne leur dit rien, ils le passent.`,
-        `Ce qui leur plaît, ils le likent pour le garder en mémoire.`,
         // « Une table » n'a de sens que dans la restauration : ailleurs on
         // réserve un créneau, une pièce, une place. Le mot suit le métier,
         // comme partout dans cette démonstration.
-        `Et quand ils sont convaincus, ils réservent${G.cherchent === "où manger" ? " une table" : ""}.`,
-        `La réservation est alors envoyée directement au commerçant.`,
+        `Et quand ils sont convaincus, ils réservent${G.cherchent === "où manger" ? " une table" : ""} — et la demande arrive chez vous.`,
       ]
     : [];
   const SAY_QUI = QUI_DIT.join(" ");
@@ -254,16 +265,14 @@ export function DemoTour({
   //    Trois temps : où dort son information, le compliment, le retournement.
   //    Le compliment n'est pas de la politesse — sans lui, la phrase suivante
   //    se lit comme un reproche sur son ardoise, et il se ferme.
+  /* DEUX TEMPS AU LIEU DE TROIS. Le troisième — « et eux cherchent,
+     maintenant, à quatre cents mètres de chez vous » — redit l'acte d'avant,
+     qui vient de montrer la ville en train de chercher. On garde le constat et
+     le compliment ; la comparaison a déjà été faite à l'écran. */
   const iEux = G ? G.pasVu.indexOf("Et eux") : -1;
   const INVISIBLE_DIT = G
-    ? [
-        G.ouDort,
-        iEux > 0 ? G.pasVu.slice(0, iEux).trim() : G.pasVu,
-        iEux > 0 ? G.pasVu.slice(iEux).trim() : "",
-      ].filter(Boolean)
+    ? [G.ouDort, iEux > 0 ? G.pasVu.slice(0, iEux).trim() : G.pasVu].filter(Boolean)
     : [];
-  const SAY_INVISIBLE = INVISIBLE_DIT.join(" ");
-  const INVISIBLE_AT = INVISIBLE_DIT.map((p) => partAu(SAY_INVISIBLE, p));
 
   // ── ACTE 5 · LE GESTE ──────────────────────────────────────────────────
   //    Trois secondes, et rien d'autre à faire. Le verbe de lecture suit le
@@ -272,15 +281,25 @@ export function DemoTour({
   //    « vos créneaux libres partent ».
   const PHOTO_DIT = G
     ? [
-        `${G.gesteDit} C'est tout.`,
-        `${G.parPhoto ? "Je la lis, je l'écris" : "Je l'écris"}, et ${G.envoi} sur votre page et dans Le Direct — à l'heure où les ${gentile} cherchent ${G.cherchent}.`,
+        // LE GESTE SE DIT EN UNE PROPOSITION. « Pour rejoindre Le Direct, tout
+        // ce que vous avez à faire, c'est de me dire… » met huit mots avant le
+        // verbe ; la version courte le met en tête, là où on l'entend.
+        `${G.gesteCourt ?? G.gesteDit}`,
+        `${G.parPhoto ? "Je la lis, je l'écris" : "Je l'écris"}, et ${G.envoi} sur votre page et dans Le Direct.`,
       ]
     : [];
-  const SAY_PHOTO = PHOTO_DIT.join(" ");
-  const PHOTO_AT = PHOTO_DIT.map((p) => partAu(SAY_PHOTO, p));
-  /** L'instant où elle nomme les deux destinations : la carte les affiche là,
-   *  et pas trois secondes avant qu'elle en parle. */
-  const PHOTO_OU = partAu(SAY_PHOTO, "sur votre page");
+  /**
+   * LE MANQUE ET SA RÉPONSE, EN UNE SEULE RÉPLIQUE — donc en un seul acte.
+   *
+   * Voir l'acte « Et vous ? » plus bas : les deux moitiés se disaient dans
+   * deux étapes séparées par une transition d'écran, alors qu'elles forment
+   * une phrase. `PART_GESTE` est l'instant où la voix passe de l'une à
+   * l'autre, et c'est là que la scène bascule.
+   */
+  const SAY_MANQUE = [...INVISIBLE_DIT, ...PHOTO_DIT].join(" ");
+  const INVISIBLE_AT = INVISIBLE_DIT.map((p) => partAu(SAY_MANQUE, p));
+  const PHOTO_AT2 = PHOTO_DIT.map((p) => partAu(SAY_MANQUE, p));
+  const PART_GESTE = PHOTO_AT2[0] ?? 1;
 
   // ── ACTE 6 · CE QUI VOUS REVIENT ───────────────────────────────────────
   //    Le seul moment de toute la démonstration où quelque chose revient VERS
@@ -343,10 +362,9 @@ export function DemoTour({
    * que dit le premier acte, et on ne clôt pas une démonstration en répétant
    * sa première phrase. */
 
-  const BOUCLE_DIT = [
-    `Votre actualité peut maintenant vivre dans Le Direct de ${laVille}.`,
-    `Votre commerce, en direct dans votre ville.`,
-  ];
+  /* UNE SEULE PHRASE DE CLÔTURE. Les deux disaient la même chose, et la
+     seconde nommait la ville une quatrième fois. */
+  const BOUCLE_DIT = [`Votre commerce, en direct dans ${laVille}.`];
   /** Le retour, puis la clôture : une seule réplique, donc un seul acte. */
   const SAY_FIN = `${SAY_RETOUR} ${BOUCLE_DIT.join(" ")}`;
   const BOUCLE_AT = BOUCLE_DIT.map((p) => partAu(SAY_FIN, p));
@@ -776,8 +794,11 @@ export function DemoTour({
     steps.push({
       title: "Votre page est prête",
       say:
-        `Bonjour, je suis Léa. Votre page ClikMe est déjà prête : je l'ai construite à partir de votre ` +
-        `fiche Google, avec vos photos, vos horaires${hasReviews ? " et vos avis" : ""}.`,
+        // TROIS FAITS SUFFISENT : qui parle, que la page existe, d'où elle
+        // vient. L'inventaire — photos, horaires, avis — se voit à l'écran
+        // pendant qu'elle parle, et il coûtait quatre secondes à énoncer.
+        `Bonjour, je suis Léa. Votre page ClikMe est prête : je l'ai construite ` +
+        `à partir de votre fiche Google${hasReviews ? ", avis compris" : ""}.`,
       enter: () => { envol(); scrollTo(null); setScene(""); void buildSite(); },
     });
 
@@ -812,13 +833,20 @@ export function DemoTour({
     // ne voit ni offre ni annonce : chez lui, « ce que ça peut vous rapporter »
     // ouvrait une promesse que les six actes suivants n'allaient jamais tenir,
     // puisqu'ils ne se jouaient pas.
-    if (avisAllowed) {
-      steps.push({
-        title: "Le plus important n'est pas votre page",
-        say: SAY_BASCULE,
-        enter: () => { chime(); setScene("bascule"); },
-      });
-    } else {
+    /* ═══ LA BASCULE N'A PLUS D'ACTE À ELLE ══════════════════════════════
+
+       « La démo en sept étapes est encore trop longue, il faut la raccourcir
+       en cinq étapes pour qu'elle ne dépasse pas une minute. »
+
+       C'EST UNE PHRASE, PAS UN ACTE. « Le plus important n'est pas votre page,
+       c'est ce qu'elle peut vous rapporter » dure trois secondes et ne montre
+       rien : elle ANNONCE l'acte suivant. Lui donner un écran, c'était faire
+       attendre huit secondes de plus pour une transition.
+
+       ELLE OUVRE DONC L'ACTE DU DIRECT, où elle est chez elle : on la dit, et
+       la ville arrive derrière. Un acte de moins, et la charnière est plus
+       serrée qu'avant. Voir `SAY_QUI`. */
+    if (!avisAllowed) {
       steps.push({
         title: "À vous",
         say:
@@ -953,28 +981,33 @@ export function DemoTour({
       // On vient de montrer la ville ; on montre maintenant qu'il n'y est pas.
       // Sans le compliment du deuxième temps, la phrase se lit comme un
       // reproche sur son ardoise — et il se ferme au lieu d'écouter.
+      /* ═══ LE PROBLÈME ET SA RÉPONSE NE FONT PLUS QU'UN ACTE ════════════
+
+         « Votre information dort dans votre carnet » et « voilà le geste de
+         trois secondes » sont les deux moitiés d'une même phrase : l'une pose
+         le manque, l'autre le comble. Séparées par une transition d'écran,
+         on laissait refroidir le manque avant d'y répondre — et on payait huit
+         secondes pour ça.
+
+         LA SCÈNE BASCULE AU MILIEU DE LA VOIX, pas entre deux actes. C'est le
+         mécanisme qui sert déjà au dernier acte, où le retour laisse la place
+         à la clôture sans qu'on change d'étape : on repère l'instant où la
+         voix attaque la seconde moitié, et l'image suit. */
       steps.push({
         title: "Et vous ?",
-        say: SAY_INVISIBLE,
+        say: SAY_MANQUE,
         enter: () => {
           setScene("invisible");
-          suivre(SAY_INVISIBLE, INVISIBLE_DIT, INVISIBLE_AT, setInvN);
-        },
-      });
-
-      // ── ACTE 5. LE GESTE ─────────────────────────────────────────────────
-      //
-      // Trois temps : la photo, ce qu'elle en tire, et où ça part. Le
-      // troisième n'a pas sa phrase à lui — il tombe sur les deux mots qui le
-      // nomment, au milieu de la seconde.
-      steps.push({
-        title: G.geste,
-        say: SAY_PHOTO,
-        enter: () => {
-          chime();
-          setScene("photo");
-          suivre(SAY_PHOTO, PHOTO_DIT, PHOTO_AT, setPhotoN);
-          window.setTimeout(() => setPhotoN(2), quand(SAY_PHOTO, PHOTO_OU));
+          suivre(SAY_MANQUE, INVISIBLE_DIT, INVISIBLE_AT, setInvN);
+          window.setTimeout(() => {
+            chime();
+            setScene("photo");
+            suivre(SAY_MANQUE, PHOTO_DIT, PHOTO_AT2, setPhotoN);
+            window.setTimeout(
+              () => setPhotoN(2),
+              quand(SAY_MANQUE, partAu(SAY_MANQUE, "sur votre page")) - quand(SAY_MANQUE, PART_GESTE),
+            );
+          }, quand(SAY_MANQUE, PART_GESTE));
         },
       });
 

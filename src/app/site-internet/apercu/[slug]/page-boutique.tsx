@@ -136,30 +136,37 @@ function direLEssai(carte: CarteAutour): { titre: string; say: string } | null {
     telephone: carte.telephone,
     catalogue: carte.catalogue,
   });
-  const ouvre = "Et voilà ce que votre page fait, et qu'aucun site ne sait faire.";
+  /* ═══ CHAQUE PHRASE COMPTE, MAINTENANT QU'ON VISE UNE MINUTE ═══════════
+     « La démo en sept étapes est encore trop longue, il faut la raccourcir en
+     cinq étapes pour qu'elle ne dépasse pas une minute. »
+     CINQ ACTES NE SUFFISENT PAS S'ILS SONT LONGS : ce qui tient une minute,
+     c'est la somme des répliques, pas leur nombre. Celle-ci nommait la chose
+     deux fois — « ce motif » dans le titre, puis « avec ce motif » — et disait
+     en dix mots ce que trois disent. */
+  const ouvre = "Et voilà ce qu'aucun site ne sait faire.";
   if (mur.essai) {
     const m = mur.essai.mots;
     return {
       titre: m.titre,
       say:
-        `${ouvre} ${m.titre} : vos clients se prennent en photo, et se voient avec ${m.ceci} ` +
-        `en quelques secondes, avant même d'avoir poussé votre porte.`,
+        `${ouvre} ${m.titre} : vos clients se prennent en photo et s'y voient ` +
+        `en quelques secondes, avant d'avoir poussé votre porte.`,
     };
   }
   if (mur.gout) {
     return {
       titre: `${mur.gout.plat}, avant d'y aller`,
       say:
-        `${ouvre} On y goûte votre ${mur.gout.plat.toLowerCase()} avant même d'y aller : ` +
-        `quelques secondes, et l'envie est déjà là.`,
+        `${ouvre} On goûte votre ${mur.gout.plat.toLowerCase()} avant d'y aller, ` +
+        `et l'envie est déjà là.`,
     };
   }
   if (mur.soiree) {
     return {
       titre: mur.soiree.titre,
       say:
-        `${ouvre} ${mur.soiree.quand}, on peut essayer un bout de ce qui se passe chez vous — ` +
-        `et dire qu'on vient, avant même d'être sorti de chez soi.`,
+        `${ouvre} ${mur.soiree.quand}, on essaie un bout de ce qui se passe chez vous ` +
+        `et on dit qu'on vient, sans être sorti de chez soi.`,
     };
   }
   return null;

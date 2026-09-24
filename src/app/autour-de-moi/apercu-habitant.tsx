@@ -7534,10 +7534,11 @@ export function ApercuHabitant() {
                       /* ET LE DERNIER ÉCRAN ENTRE DANS L'APPLICATION. Sans ce
                          geste, le quatrième écran d'une démonstration n'a plus
                          de bouton du tout : on arrive au moment où l'on décide,
-                         et il n'y a rien à faire. C'est le même geste que
-                         « Essayer Dax » juste en dessous — la démonstration
-                         mène à la ville, pas à une réservation qu'on ne peut
-                         pas honorer depuis l'écran d'accueil. */
+                         et il n'y a rien à faire.
+                         LE BOUTON DIT « RÉSERVER », PARCE QUE C'EST CE QU'ON
+                         DÉMONTRE — voir son commentaire dans `gout-contenu`.
+                         Il mène ici à la ville plutôt qu'à une table : une
+                         démonstration qui abrège ne ment pas, elle abrège. */
                       onReserver={() => {
                         jouer("ouvrir");
                         marquerVu("accueil");

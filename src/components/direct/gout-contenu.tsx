@@ -728,6 +728,23 @@ export function EcranGout({
             sur rien donnerait précisément le bouton mort qu'il vient de me
             signaler deux fois. Il porte donc ce qu'on sait et qui ne promet
             aucun geste — la note du lieu, ou son nom. */}
+        {/* ═══ ET AU MILIEU, EN DENSITÉ SERRÉE, ELLE N'EST PLUS LÀ ═══════
+
+            « Écrans 2 et 3, on peut gagner de la place en supprimant
+            "Lasagnes maison · 11 € · 180 m · Un grand classique… · 4,7". »
+
+            C'EST LA MÊME LIGNE QUE L'ÉCRAN D'AVANT ET QUE CELUI D'APRÈS. Sur
+            un parcours plein écran elle a sa place : on la relit entre deux
+            gestes, et elle ne coûte rien. Dans le cadre de l'écran de
+            démarrage, elle prend soixante points sur trois cent cinquante pour
+            répéter ce que l'étape 1 vient de dire et ce que l'étape 4 va
+            redire — au moment précis où l'on regarde le rideau ou l'on écoute
+            le chef.
+
+            ELLE RESTE AUX DEUX BOUTS, et c'est là qu'elle sert : à l'ouverture
+            elle présente le commerce, à la fin elle porte le prix au-dessus du
+            bouton. Au milieu, on joue. */}
+        {!(compact && (t.quoi === "rideau" || t.quoi === "voix")) && (
         <div className={`go-carte${t.quoi === "rideau" || t.quoi === "voix" ? " courte" : ""}`}>
           <span className="go-vig-l" aria-hidden="true">
             {photoLieu ? (
@@ -783,6 +800,7 @@ export function EcranGout({
             </>
           )}
         </div>
+        )}
 
         {/* ═══ LES CINQ FANTÔMES, SUR L'ÉTAPE 4 ═══════════════════════════
 
@@ -850,12 +868,23 @@ export function EcranGout({
                   se dit d'une table ; chez le boucher, une pièce se fait
                   GARDER, et son annonce écrit déjà « Gardez-la-moi ».
 
-                  ET EN DENSITÉ SERRÉE IL DIT AUTRE CHOSE, parce qu'il FAIT
-                  autre chose. Sur l'écran de démarrage, ce bouton n'ouvre
-                  aucune réservation : il entre dans l'application. Écrire
-                  « Réserver » sur un bouton qui n'a rien à réserver serait la
-                  promesse rompue la plus courte du produit. */}
-              <span>{compact ? `Essayer ${ville}` : (t.geste ?? "Réserver")}</span>
+                  ET IL DIT « RÉSERVER » MÊME SUR L'ÉCRAN DE DÉMARRAGE.
+                  J'avais écrit « Essayer Dax » en densité serrée, parce que ce
+                  bouton-là n'ouvre aucune réservation : il entre dans
+                  l'application. Il a tranché — « c'est "Réserver", sans que le
+                  bouton soit forcément opérationnel ».
+
+                  IL A RAISON, ET C'EST UNE QUESTION DE RÉCIT. Cet écran est
+                  une DÉMONSTRATION du parcours : il montre ce qu'on voit au
+                  bout, et ce qu'on voit au bout est « Réserver ». Remplacer le
+                  dernier mot par celui de l'écran d'accueil, c'est raconter la
+                  fin d'une autre histoire — et on ne comprend plus à quoi sert
+                  le parcours qu'on vient de regarder.
+
+                  IL N'EST PAS MORT POUR AUTANT : il entre dans l'application,
+                  là où la réservation existe vraiment. Un bouton de
+                  démonstration qui mène au produit ne ment pas, il abrège. */}
+              <span>{t.geste ?? "Réserver"}</span>
             </button>
           )
         ) : (

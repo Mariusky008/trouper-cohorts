@@ -2473,16 +2473,36 @@ export const MURS: Mur[] = [
       consigne: "Avant-bras à plat, manche remontée, à la lumière du jour, sans ombre portée.",
       avant: "/direct/avant-bras.jpg",
       gabarit: { forme: "cadre" },
+      /* ═══ « MOTIF » ET PLUS « FLASH » ═══════════════════════════════════
+
+         « J'ai écouté la démo pour un tatoueur et ce n'était pas du tout
+         approprié : on parlait de flash au lieu de tatouages. »
+
+         « FLASH » EST POURTANT LE BON MOT DU MÉTIER — un flash est un dessin
+         déjà tracé, qu'on choisit sur une planche plutôt que de le faire
+         dessiner pour soi. C'est même la raison pour laquelle je l'avais pris.
+
+         MAIS CE MOT EST DÉJÀ PRIS DANS CLIKME, et c'est ça qui le condamne.
+         « Flash » y désigne une offre courte — le Flash du jour, l'Action
+         Flash, le bouton « Flash du mois » qui est sur cette page-ci, à trois
+         centimètres. Le même mot pour deux choses sans rapport, sur le même
+         écran : le commerçant n'entend plus le mot de son métier, il entend le
+         nôtre, mal employé.
+
+         « MOTIF » NE SE DISPUTE AVEC RIEN, et il dit exactement ce qu'on
+         montre : le dessin qu'on va poser sur la peau. Entre le mot juste du
+         métier et le mot qui ne se confond pas, dans une démonstration d'une
+         minute, c'est le second qui gagne. */
       mots: {
-        titre: "Ce flash, sur votre peau",
+        titre: "Ce motif, sur votre peau",
         phrase: "Photographiez votre avant-bras : le dessin s\u2019y pose, à la bonne échelle.",
         geste: "Photographier mon avant-bras",
-        choisir: "Choisissez le flash",
+        choisir: "Choisissez le motif",
         reserver: "Demander un rendez-vous",
-        autres: "Voir les autres flashs du mois",
-        mur: "Voir les flashs déjà posés",
+        autres: "Voir les autres motifs",
+        mur: "Voir les motifs déjà posés",
         surMoi: "Essayer sur ma peau",
-        promesse: "Découvrez à quoi ce flash ressemble sur votre peau, en quelques secondes",
+        promesse: "Découvrez à quoi ce motif ressemble sur votre peau, en quelques secondes",
         // ON ESSAIE, ON NE PROJETTE PAS. « Le Fantôme n'est pas synonyme de
         // cabine d'essayage : il devient le moyen de voir quelque chose dans
         // MA PROPRE RÉALITÉ. » La nuance sépare la fleuriste et la cirière —
@@ -2492,9 +2512,9 @@ export const MURS: Mur[] = [
         // peau » : deux mots pour le même geste, dans le même écran.
         essayage: "essayage",
         voirLeMur: "Voir sur différentes peaux",
-        ceci: "ce flash",
+        ceci: "ce motif",
         photoTitre: "Photographiez la zone à tatouer",
-        photoSous: "Voyez ce flash sur votre peau en quelques secondes, grâce à l’IA.",
+        photoSous: "Voyez ce motif sur votre peau en quelques secondes, grâce à l’IA.",
         conseils: [
           { picto: "peau", titre: "La zone entière", detail: "Avant-bras, épaule, mollet…" },
           { picto: "lumiere", titre: "Bonne luminosité", detail: "Pas trop sombre" },
@@ -2566,7 +2586,7 @@ export const MURS: Mur[] = [
         role: "Tatoueuse",
         maison: true,
         photo: "/direct/atelier-tatouage.jpeg",
-        mot: "Trois flashs dessinés cette semaine. Essayez-les avant de venir 🪡",
+        mot: "Trois motifs dessinés cette semaine. Essayez-les avant de venir 🪡",
         heure: "10:20",
         interesses: 11,
       },
