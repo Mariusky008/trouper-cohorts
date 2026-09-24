@@ -2001,8 +2001,26 @@ export function Boutique({
               {c.sesPhotos.map((p) => (
                 <figure key={p.src}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.src} alt={p.quoi} />
-                  <figcaption>{p.quoi}</figcaption>
+                  <img
+                    src={p.src}
+                    alt={p.quoi}
+                    /* CES ADRESSES SONT CELLES DE GOOGLE : servies depuis un
+                       autre domaine avec un referent, elles repondent parfois
+                       403. Meme ligne que la couverture, juste au-dessus. */
+                    referrerPolicy="no-referrer"
+                    /* ET UNE PHOTO QUI NE VIENT PAS NE LAISSE PAS UN CADRE
+                       VIDE : on retire la vignette entiere plutot que de
+                       montrer un rectangle gris au milieu d'une bande. */
+                    onError={(ev) => {
+                      const f = ev.currentTarget.closest("figure");
+                      if (f) f.style.display = "none";
+                    }}
+                  />
+                  {/* SANS LEGENDE, PAS DE LIGNE VIDE. Les photos d'un vrai
+                      commerce viennent de Google et personne ne les a
+                      regardees : on ne leur invente pas de legende, et la
+                      place qu'elle prendrait ne se reserve pas. */}
+                  {p.quoi && <figcaption>{p.quoi}</figcaption>}
                 </figure>
               ))}
             </div>
@@ -3178,8 +3196,16 @@ function Styles() {
            remonte dessus de vingt points, ce qui la fait paraitre plus courte
            qu'elle ne l'est — c'est le dessin des trois maquettes. */
         .bq-hero{position:relative;height:376px;overflow:hidden;}
-        .bq-hero img{width:100%;height:100%;object-fit:cover;display:block;}
-        .bq-hero-vide{width:100%;height:100%;display:flex;
+        /* LA COUVERTURE NE PEUT PLUS SE RECROQUEVILLER. « La photo est bien en
+           haut a gauche, en tout petit. » Une image en flux depend de ce que
+           son parent lui accorde ; posee en absolu sur les quatre bords, elle
+           occupe le cadre quoi qu'il arrive autour. Et sa vraie cause etait
+           ailleurs — Google rendait la VIGNETTE, voir enGrand dans le pont
+           carte-depuis-fiche — mais une couverture est la premiere chose
+           qu'un commercant voit de sa page : elle merite les deux. */
+        .bq-hero img{position:absolute;inset:0;
+          width:100%;height:100%;object-fit:cover;display:block;}
+        .bq-hero-vide{position:absolute;inset:0;width:100%;height:100%;display:flex;
           flex-direction:column;align-items:center;justify-content:center;
           gap:10px;
           background:

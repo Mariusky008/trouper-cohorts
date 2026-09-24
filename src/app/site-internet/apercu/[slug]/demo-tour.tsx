@@ -235,15 +235,40 @@ export function DemoTour({
      des faits sur sa ville, la dernière est la seule qui le concerne.
 
      ET LA BASCULE OUVRE, parce qu'elle annonce exactement cet acte-ci. */
-  const QUI_DIT = G
+  /**
+   * ═══ CHAQUE TEMPS PORTE SON GESTE, ET PLUS SON NUMÉRO ═════════════════════
+   *
+   * « Étape 3, on ne voit pas les annonces, on voit juste "C'est à vous…" et
+   * derrière on voit des annonces cachées. »
+   *
+   * C'EST MOI QUI L'AI CASSÉ EN RACCOURCISSANT LA RÉPLIQUE. Les gestes de cet
+   * acte — la carte qu'on passe, le cœur qui s'envole, le panneau de
+   * réservation, l'accusé d'envoi — étaient calés sur les INDICES des phrases :
+   * `QUI_AT[3]`, `[4]`, `[5]`, `[6]`. J'ai supprimé trois phrases sans toucher
+   * aux indices. Les trois derniers gestes sont alors tombés sur
+   * `QUI_AT[i] ?? 0`, c'est-à-dire À LA SECONDE ZÉRO : le panneau de
+   * réservation s'ouvrait dès le début de l'acte, déjà envoyé, et couvrait les
+   * annonces pendant les quinze secondes suivantes.
+   *
+   * UN INDICE EST UN LIEN QUI NE SE PLAINT PAS QUAND ON LE CASSE. Le geste est
+   * donc écrit À CÔTÉ de la phrase qu'il illustre : si la phrase part, le geste
+   * part avec elle, et il ne peut plus atterrir ailleurs.
+   *
+   * ET LE REPLI « ?? 0 » A DISPARU AVEC. Un geste dont on ne sait pas quand il
+   * doit avoir lieu ne doit pas avoir lieu au début — il ne doit pas avoir
+   * lieu du tout. C'est ce repli, plus que l'indice, qui a rendu le défaut
+   * invisible : il fabriquait une réponse plausible à une question sans
+   * réponse.
+   */
+  const QUI_TEMPS: { dit: string; acte?: "passer" | "veux" | "resa" }[] = G
     ? [
-        SAY_BASCULE,
-        `${G.quand}, plus de ${G.combien} ${gentile} vont ${G.verbe} ${G.cherchent}.`,
+        { dit: SAY_BASCULE },
+        { dit: `${G.quand}, plus de ${G.combien} ${gentile} vont ${G.verbe} ${G.cherchent}.` },
         // CE QU'ILS Y VERRONT SUIT LA FAMILLE, comme le fil montré derrière.
         // Cette ligne énumérait « les menus du jour, les tables qui restent »
         // à tout le monde : un coiffeur l'entendait pendant que l'écran, lui,
         // défilait — depuis la même correction — sur des créneaux libres.
-        `Dans Le Direct de ${laVille}, ils verront ${
+        { acte: "passer", dit: `Dans Le Direct de ${laVille}, ils verront ${
           G.famille === "restauration"
             ? "les menus du jour, les tables qui restent"
             : G.famille === "boutique"
@@ -251,15 +276,21 @@ export function DemoTour({
               : G.famille === "rdv"
                 ? "les créneaux qui se libèrent"
                 : "qui est disponible cette semaine"
-        }, les prix, la distance.`,
+        }, les prix, la distance.` },
         // « Une table » n'a de sens que dans la restauration : ailleurs on
         // réserve un créneau, une pièce, une place. Le mot suit le métier,
         // comme partout dans cette démonstration.
-        `Et quand ils sont convaincus, ils réservent${G.cherchent === "où manger" ? " une table" : ""} — et la demande arrive chez vous.`,
+        { acte: "resa", dit: `Et quand ils sont convaincus, ils réservent${G.cherchent === "où manger" ? " une table" : ""} — et la demande arrive chez vous.` },
       ]
     : [];
+  const QUI_DIT = QUI_TEMPS.map((t) => t.dit);
   const SAY_QUI = QUI_DIT.join(" ");
   const QUI_AT = QUI_DIT.map((p) => partAu(SAY_QUI, p));
+  /** OÙ TOMBE UN GESTE — et rien du tout s'il n'a plus de phrase. */
+  const quiActe = (a: "passer" | "veux" | "resa"): number | null => {
+    const i = QUI_TEMPS.findIndex((t) => t.acte === a);
+    return i < 0 ? null : (QUI_AT[i] ?? null);
+  };
 
   // ── ACTE 4 · ET VOUS ? ─────────────────────────────────────────────────
   //    Trois temps : où dort son information, le compliment, le retournement.
@@ -920,55 +951,58 @@ export function DemoTour({
           const dans = (ms: number, f: () => void) => { gestes3.current.push(window.setTimeout(f, ms)); };
           const suivante = () => setCarteVille((n) => (n + 1) % Math.max(1, cartesVille.length));
 
-          // LA PILE NE TOURNE PLUS TOUTE SEULE PENDANT TOUT L'ACTE. Elle
-          // tournait de bout en bout, toutes les 1,7 s : la carte changeait
-          // pendant qu'on parlait du geste, et on ne savait plus si c'était
-          // le geste ou le minuteur qui l'avait fait partir. Elle tourne
-          // seulement le temps du troisième temps — celui qui énumère ce
-          // qu'on y trouve — puis les gestes prennent la main.
+          // LA PILE TOURNE JUSQU'À LA RÉSERVATION. « On ne voit pas les
+          // annonces » : elles doivent défiler pendant qu'on parle d'elles, et
+          // ne s'arrêter qu'au moment où l'on en choisit une.
           if (rotation.current) window.clearInterval(rotation.current);
           rotation.current = window.setInterval(suivante, 1900);
           suivre(SAY_QUI, QUI_DIT, QUI_AT, setQuiN);
 
-          // Chaque geste tombe SUR sa phrase, en fraction de la durée réelle
-          // de la voix — comme les légendes. Les décalages internes (la carte
-          // met 600 ms à sortir, le cœur 950 ms à monter) sont les durées des
-          // animations elles-mêmes, pas des réglages au jugé.
-          const t = (i: number) => quand(SAY_QUI, QUI_AT[i] ?? 0);
+          /* ═══ LES GESTES SUIVENT LEURS PHRASES ══════════════════════
 
-          // ① LE REFUS. La carte part vers la gauche, la suivante monte.
-          dans(t(3), () => {
-            if (rotation.current) { window.clearInterval(rotation.current); rotation.current = null; }
-            setGesteQui("passer");
-          });
-          dans(t(3) + 620, () => { suivante(); setGesteQui(""); });
+             Voir `QUI_TEMPS` : chaque geste est écrit à côté de la phrase
+             qu'il illustre, et `quiActe` rend `null` quand cette phrase
+             n'existe plus. Un geste sans phrase ne se joue pas — il ne tombe
+             plus à la seconde zéro.
 
-          // ② LE CŒUR. Il grossit sur la carte, s'envole vers « Ma carte »,
-          //    et le compteur du bandeau passe de 1 à 2 À SON ARRIVÉE — pas
-          //    au départ, sinon le chiffre change avant que le cœur parte et
-          //    le trajet ne veut plus rien dire.
-          dans(t(4), () => { setGesteQui("veux"); setCoeurVole(true); });
-          dans(t(4) + 900, () => setGardees(2));
-          dans(t(4) + 1200, () => { setCoeurVole(false); setGesteQui(""); });
+             LA PILE TOURNE JUSQU'À LA RÉSERVATION, et c'est ce qu'il demande :
+             « on ne voit pas les annonces ». Elles défilent donc pendant les
+             trois premiers temps, et le panneau ne vient les couvrir qu'à la
+             toute fin, sur la phrase qui parle de réserver.
 
-          // ③ LA RÉSERVATION. Le panneau du produit s'ouvre par-dessus la
-          //    carte, avec le message déjà écrit.
-          // ON REVIENT SUR LA PREMIÈRE CARTE POUR RÉSERVER, et ce n'est pas un
-          // détail : sans ça le paquet s'arrêtait là où la rotation l'avait
-          // laissé, et on voyait le panneau de réservation s'ouvrir sur une
-          // formule sandwich pendant que la voix parlait d'une table.
-          // LA PREMIÈRE CARTE EST CELLE DE SA FAMILLE, maintenant — un créneau
-          // de salon chez un coiffeur, un menu chez un restaurateur. Elle était
-          // un restaurant pour tout le monde, ce qui faisait basculer toute la
-          // démonstration dans un métier qui n'était pas le sien.
-          dans(t(5), () => { setCarteVille(0); setGesteQui("resa"); setResaQui(true); });
-          // ④ ET LE MESSAGE PART. Le panneau s'arrêtait sur un bouton qu'on ne
-          //    voyait jamais appuyer : la démonstration montrait une intention,
-          //    pas une réservation. Le bouton bascule donc en accusé de
-          //    réception, et c'est la dernière image de l'acte — celle qu'on
-          //    emporte. Rien de plus que ce qui se passe vraiment : le message
-          //    arrive sur le WhatsApp du commerce, et sa réponse fait foi.
-          dans(t(6), () => { chime(); setResaEnvoyee(true); });
+             LES DÉCALAGES INTERNES SONT LES DURÉES DES ANIMATIONS elles-mêmes
+             — la carte met 620 ms à sortir, le cœur 900 ms à monter — pas des
+             réglages au jugé. */
+          const tPasser = quiActe("passer");
+          const tResa = quiActe("resa");
+
+          // ① LE REFUS, PUIS LE CŒUR, SUR LA PHRASE QUI ÉNUMÈRE CE QU'ON TROUVE.
+          //    Les deux gestes disent la même chose que cette phrase : on
+          //    regarde, on écarte, on garde.
+          if (tPasser != null) {
+            dans(quand(SAY_QUI, tPasser), () => setGesteQui("passer"));
+            dans(quand(SAY_QUI, tPasser) + 620, () => { suivante(); setGesteQui(""); });
+            dans(quand(SAY_QUI, tPasser) + 1500, () => { setGesteQui("veux"); setCoeurVole(true); });
+            dans(quand(SAY_QUI, tPasser) + 2400, () => setGardees(2));
+            dans(quand(SAY_QUI, tPasser) + 2700, () => { setCoeurVole(false); setGesteQui(""); });
+          }
+
+          // ② LA RÉSERVATION, ET ELLE FERME L'ACTE.
+          //    ON REVIENT SUR LA PREMIÈRE CARTE POUR RÉSERVER : sans ça le
+          //    paquet s'arrêtait où la rotation l'avait laissé, et le panneau
+          //    s'ouvrait sur une annonce dont la voix ne parlait pas.
+          if (tResa != null) {
+            dans(quand(SAY_QUI, tResa), () => {
+              if (rotation.current) { window.clearInterval(rotation.current); rotation.current = null; }
+              setCarteVille(0);
+              setGesteQui("resa");
+              setResaQui(true);
+            });
+            // ③ ET LE MESSAGE PART. Le panneau s'arrêtait sur un bouton qu'on
+            //    ne voyait jamais appuyer : la démonstration montrait une
+            //    intention, pas une réservation.
+            dans(quand(SAY_QUI, tResa) + 2200, () => { chime(); setResaEnvoyee(true); });
+          }
         },
         // Le message vient de partir chez un autre commerce que le sien ;
         // l'acte suivant s'ouvre sur « et vous ? ». Enchaîné sans silence, le
@@ -1002,11 +1036,34 @@ export function DemoTour({
           window.setTimeout(() => {
             chime();
             setScene("photo");
-            suivre(SAY_MANQUE, PHOTO_DIT, PHOTO_AT2, setPhotoN);
-            window.setTimeout(
-              () => setPhotoN(2),
-              quand(SAY_MANQUE, partAu(SAY_MANQUE, "sur votre page")) - quand(SAY_MANQUE, PART_GESTE),
-            );
+            setPhotoN(0);
+            setCaption(PHOTO_DIT[0] ?? "");
+            /* ═══ TROIS TEMPS, ET LE DERNIER DURE ═════════════════════════
+
+               « Étape 4, les annonces ne se voient qu'une ou deux secondes et
+               le reste du temps c'est vide. »
+
+               C'EST ENCORE MOI, ET C'EST LE MÊME GENRE DE FAUTE. La carte du
+               Direct n'apparaît qu'à `photoN >= 2`, et je l'avais calée sur
+               les mots « sur votre page ». Dans la réplique courte d'avant,
+               ces mots tombaient au milieu ; dans la réplique fusionnée, ils
+               tombent à quatre-vingt-cinq pour cent — donc la carte n'avait
+               plus qu'une seconde d'écran, tout à la fin.
+
+               ELLE SE POSE MAINTENANT AU DÉBUT DE LA SECONDE PHRASE, celle qui
+               dit « je l'écris, et ça part sur votre page et dans Le Direct »,
+               et elle y reste jusqu'au bout de l'acte. C'est l'image de
+               bascule de toute la démonstration : le même contenu, mais dans
+               l'écran de ses clients. Elle mérite plus qu'une seconde. */
+            const t0 = quand(SAY_MANQUE, PART_GESTE);
+            // ① ON LIT L'ARDOISE — le temps de l'animation du cadre de visée.
+            window.setTimeout(() => setPhotoN(1), 1200);
+            // ② PUIS ÇA PART, et la carte reste à l'écran jusqu'à la fin.
+            const t1 = quand(SAY_MANQUE, PHOTO_AT2[1] ?? PART_GESTE) - t0;
+            window.setTimeout(() => {
+              setPhotoN(2);
+              setCaption(PHOTO_DIT[1] ?? "");
+            }, Math.max(1400, t1));
           }, quand(SAY_MANQUE, PART_GESTE));
         },
       });

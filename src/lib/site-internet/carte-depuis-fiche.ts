@@ -142,8 +142,40 @@ function sansMoments(): MomentJour[] {
  * ville — et zéro mètre, ce qui fait disparaître la mention plutôt que
  * d'afficher « à 0 m », qui serait faux et visible.
  */
+/**
+ * ═══ UNE PHOTO GOOGLE PORTE SA TAILLE DANS SON ADRESSE ══════════════════════
+ *
+ * « La photo de couverture est bien en haut à gauche, en tout petit, mais elle
+ * n'est pas lue apparemment. »
+ *
+ * CES ADRESSES SE TERMINENT PAR UN SUFFIXE DE TAILLE : `=w86-h86-k-no`,
+ * `=s120`, `=w203-h152-k-no`. Ce n'est pas une décoration de l'URL, c'est une
+ * COMMANDE adressée au serveur d'images : il rend exactement ce format. Le
+ * champ `imageUrl` que rend le scraper est la VIGNETTE de la fiche — quatre-
+ * vingt-six points de côté — et c'est elle qu'on posait en couverture sur
+ * trois cent soixante-seize points de haut.
+ *
+ * ON DEMANDE DONC LA GRANDE. Le suffixe est réécrit en `=w1600-h1200`, ce que
+ * le même serveur sait rendre sans qu'on change quoi que ce soit d'autre : ni
+ * clé, ni appel supplémentaire, ni stockage. La même adresse, lue en entier.
+ *
+ * ET ON NE TOUCHE À RIEN D'AUTRE. Une adresse qui n'est pas celle de Google
+ * ressort telle quelle : nos propres photos de démonstration sont des fichiers
+ * du dépôt, et leur ajouter un suffixe donnerait une image introuvable.
+ */
+export function enGrand(url: string): string {
+  if (!/googleusercontent\.com|ggpht\.com/i.test(url)) return url;
+  /* LE SUFFIXE EST TOUJOURS EN DERNIER, APRÈS UN « = », et il n'en existe
+     qu'un : on remplace donc à partir du dernier signe égal, et on n'en ajoute
+     un que s'il n'y en avait pas. */
+  const i = url.lastIndexOf("=");
+  const base = i > url.lastIndexOf("/") ? url.slice(0, i) : url;
+  return `${base}=w1600-h1200`;
+}
+
 export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
-  const photos = (f.photos ?? []).filter(Boolean);
+  /* CHAQUE PHOTO EST DEMANDÉE EN GRAND — voir `enGrand` juste au-dessus. */
+  const photos = (f.photos ?? []).filter(Boolean).map(enGrand);
   const services = (f.services ?? []).filter((s) => s.nom);
   /**
    * LES PRESTATIONS DE SON MÉTIER, QUAND IL N'A ENCORE RIEN SAISI.
@@ -192,6 +224,28 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
     },
     photo: photos[0],
     photos: photos.length > 1 ? photos : undefined,
+    /**
+     * ═══ SES PHOTOS GOOGLE N'ARRIVAIENT NULLE PART ════════════════════════
+     *
+     * « Il manque toutes les photos recueillies sur la fiche Google, qui ont
+     * normalement leur propre section dans les infos du commerçant. »
+     *
+     * DEUX CHAMPS POUR LA MÊME CHOSE, ET LA PAGE LISAIT L'AUTRE. Ce pont
+     * remplissait `photo` (la couverture) et `photos` (la liste brute), et la
+     * boutique affiche sa galerie depuis `sesPhotos` — un troisième champ, que
+     * personne ne remplissait ici. Résultat : la section existait, la donnée
+     * existait, et elles ne se rencontraient jamais. Sur la page de TOUS les
+     * prospects.
+     *
+     * LA LÉGENDE RESTE VIDE, ET C'EST LA SEULE RÉPONSE HONNÊTE. Les photos des
+     * commerces de démonstration sont légendées à la main — « la salle », « un
+     * autre jour » — parce que quelqu'un a regardé chaque image. Celles-ci
+     * viennent de Google : on ne sait pas ce qu'elles montrent. Écrire « Chez
+     * lui » ou « Son intérieur » sous une photo qu'on n'a pas regardée, c'est
+     * la même faute que le reste de ce dossier refuse — affirmer à sa place.
+     * La galerie sait se passer de légende ; voir `bq-gal`.
+     */
+    sesPhotos: photos.map((src) => ({ src, quoi: "" })),
     telephone: f.telephone || undefined,
     site: f.site || undefined,
     // LA NOTE VIENT DE GOOGLE ET ON LE DIT AINSI : c'est la seule chose de
