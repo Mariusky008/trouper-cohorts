@@ -566,18 +566,21 @@ export function EcranGout({
             </span>
           )}
 
-          {/* ═══ CE QU'IL RESTE, EN PASTILLE RONDE ═════════════════════════
-              Elle n'existe que si le parcours porte un compte écrit. Voir
-              `Gout.reste` : un compte à rebours inventé est le plus vieux
-              mensonge du commerce en ligne. */}
-          {t.quoi === "final" && gout.reste && (
-            <span className="go-reste" aria-hidden="true">
-              <i>🔥</i>
-              <b>{gout.reste.n}</b>
-              <em>{gout.reste.mot}</em>
-              <u>{gout.reste.detail}</u>
-            </span>
-          )}
+          {/* ═══ LA PASTILLE DU RESTE A ÉTÉ RETIRÉE ════════════════════════
+
+              « On ne peut pas savoir combien de portions il restera. »
+
+              ELLE DISAIT « 5 bols restants · Servis à la louche », et le
+              chiffre venait de moi : je l'avais écrit à la main dans chaque
+              parcours parce que sa maquette dessine une pastille ronde. Une
+              maquette dessine une INTENTION — « il n'y en aura pas pour tout
+              le monde » — elle ne fournit pas la donnée qui la rendrait vraie,
+              et personne ne compte les assiettes en cuisine au fil du service.
+
+              ELLE LIBÈRE AUSSI LA MOITIÉ DROITE DE LA SCÈNE, ce qui était la
+              seconde demande : « peut-être faudrait-il supprimer cette section
+              pour gagner de la place ». Voir `Gout.reste`, retiré des données
+              avec sa raison. */}
 
           {/* ═══ LE RIDEAU — « JE VOUS MONTRE L'INTÉRIEUR ? » ══════════════
 
@@ -862,26 +865,23 @@ export function EcranGout({
           </button>
         )}
 
-        {/* ═══ LES TROIS PREUVES DU BAS ═══════════════════════════════════
+        {/* ═══ LA RANGÉE DES TROIS PREUVES A ÉTÉ RETIRÉE ══════════════════
 
-            Elles sont sur les quatre maquettes, au même endroit, et elles ne
-            sont pas décoratives : c'est la seule ligne de l'écran qui parle du
-            COMMERCE plutôt que du plat. Elles viennent de `marques`, déjà
-            écrites dans le parcours — rien n'est inventé ici, et un parcours
-            qui n'en a pas n'affiche pas la rangée. */}
-        {!compact && !!gout.marques?.length && (
-          <ul className="go-preuves" aria-hidden="true">
-            {gout.marques.slice(0, 3).map((m) => (
-              <li key={m.nom}>
-                <i>{m.emoji}</i>
-                <span>
-                  <b>{m.nom}</b>
-                  <em>{m.detail}</em>
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+            « Peut-être faudrait-il supprimer cette section pour gagner de la
+            place et avoir plus d'espace sur les autres parties du parcours. »
+
+            ELLE COÛTAIT QUATRE-VINGTS POINTS EN BAS DE CHAQUE ÉCRAN, mesurés,
+            et elle disait la même chose aux quatre. Or ces quatre écrans
+            racontent déjà ce qu'elle résumait : le rideau montre la portion,
+            la voix du chef dit comment il travaille, la carte porte le plat et
+            son prix. Répéter « Coupé main · Jamais haché » sous tout ça, c'est
+            prendre à l'écran la place dont il manque pour redire ce qu'il
+            vient de montrer.
+
+            LES DONNÉES RESTENT, ELLES. `Gout.marques` porte des faits vrais —
+            ce que le plat est, comment il est fait — et ils serviront le jour
+            où un écran en aura vraiment besoin. Ce qui est retiré, c'est de
+            les afficher quatre fois de suite. */}
       </div>
 
       <Styles />
@@ -953,12 +953,23 @@ function Styles() {
             rgba(8,5,14,.12) 44%,rgba(8,5,14,.74) 62%,rgba(8,5,14,.95) 78%,
             rgba(8,5,14,.98) 100%);}
 
+        /* LA PLACE GAGNEE PAR LES DEUX BLOCS RETIRES SE REDONNE AU RESTE : ce
+           n'est pas du vide, c'est de l'air. « Pour que ce ne soit pas trop
+           etouffant. » */
         .go-sur{position:relative;z-index:1;display:flex;flex-direction:column;
-          flex:1;min-height:0;gap:10px;padding:12px 14px 14px;}
+          flex:1;min-height:0;gap:14px;padding:12px 14px 18px;}
 
         /* ─── LA BARRE DU HAUT ─── */
-        .go-bar{display:grid;grid-template-columns:44px 1fr auto;
+        /* LA PREMIERE COLONNE SE REPLIE QUAND LA FLECHE N'EST PAS LA, et ce
+           n'est pas une micro-optimisation : ecrite en dur a quarante-quatre
+           points, elle reservait la place d'un bouton absent, la colonne du
+           milieu tombait a presque rien, et « Etape 1 sur 4 » — centre —
+           debordait des DEUX cotes de sa colonne. Mesure sur l'ecran de
+           demarrage : on lisait « tape 1 sur 4 », le E coupe net par le bord
+           du cadre. */
+        .go-bar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;
           align-items:start;gap:8px;}
+        .go-bar .go-dos{margin-right:2px;}
         .go-dos{display:flex;align-items:center;justify-content:center;
           width:42px;height:42px;padding:0;border-radius:50%;
           border:1px solid rgba(255,255,255,.26);
@@ -974,7 +985,7 @@ function Styles() {
         .go-fil i.on{background:linear-gradient(90deg,#C22CE0,#FF2E93);
           box-shadow:0 0 12px -2px rgba(255,46,147,.85);}
         .go-etape{font-size:12.5px;font-weight:700;color:rgba(255,255,255,.88);
-          letter-spacing:.01em;white-space:nowrap;}
+          letter-spacing:.01em;white-space:nowrap;max-width:100%;}
         .go-marque{display:flex;flex-direction:column;align-items:flex-end;
           line-height:1;}
         .go-marque b{font-size:20px;font-weight:900;letter-spacing:-.02em;}
@@ -1017,10 +1028,9 @@ function Styles() {
            voulu : sur ses maquettes elle deborde sur l'image. Mordre de seize
            points n'est pas la meme chose que recouvrir. */
         .go-scene{position:relative;flex:1;min-height:150px;
-          display:grid;grid-template-columns:minmax(0,1fr) auto;
-          align-content:start;gap:6px 8px;}
-        .go-f-bloc{grid-column:1;grid-row:1;z-index:3;
-          margin-bottom:-16px;
+          display:grid;grid-template-columns:minmax(0,1fr);
+          align-content:start;gap:8px;}
+        .go-f-bloc{grid-row:2;z-index:3;margin-bottom:-14px;
           display:flex;align-items:flex-start;pointer-events:none;}
         .go-fant{display:block;width:96px;height:auto;
           filter:drop-shadow(0 6px 26px rgba(229,107,224,.55));}
@@ -1036,8 +1046,14 @@ function Styles() {
           backdrop-filter:blur(4px);
           font-family:"Bradley Hand","Segoe Script","Brush Script MT",cursive;
           font-size:15px;line-height:1.26;color:#fff;}
-        .go-signe{grid-column:2;grid-row:1;z-index:2;
-          max-width:150px;text-align:right;align-self:start;
+        /* ELLE A SA PROPRE RANGEE, ET PLUS SA PROPRE COLONNE. Mesure sur sa
+           capture : la bulle du Fantome faisait deux cent cinquante points a
+           elle seule et debordait de sa colonne, donc « On vous attend ! »
+           passait DESSOUS — on lisait « n vous attend ». Une colonne partagee
+           ne protege que si les deux contenus acceptent de retrecir ; une
+           bulle de texte, non. Une rangee, elle, ne se dispute avec personne. */
+        .go-signe{grid-row:1;z-index:2;justify-self:end;
+          max-width:78%;text-align:right;align-self:start;
           font-family:"Bradley Hand","Segoe Script","Brush Script MT",cursive;
           font-size:16px;line-height:1.28;color:#fff;white-space:pre-line;
           text-shadow:0 2px 10px rgba(0,0,0,.8);pointer-events:none;}
@@ -1048,23 +1064,6 @@ function Styles() {
           background:rgba(20,8,32,.86);
           border-left:1.5px solid #FF2E93;border-bottom:1.5px solid #FF2E93;
           transform:rotate(45deg);text-decoration:none;}
-
-        /* ─── CE QU'IL RESTE, EN PASTILLE RONDE ─── */
-        .go-reste{grid-column:2;grid-row:2;z-index:3;justify-self:end;
-          margin-top:6px;display:flex;flex-direction:column;align-items:center;
-          justify-content:center;gap:1px;
-          width:118px;height:118px;border-radius:50%;padding:8px;
-          background:radial-gradient(circle at 50% 34%,rgba(52,16,40,.94),rgba(10,6,16,.94));
-          border:1.5px solid rgba(255,46,147,.75);
-          box-shadow:0 0 26px -6px rgba(255,46,147,.8);
-          text-align:center;pointer-events:none;}
-        .go-reste i{font-style:normal;font-size:19px;line-height:1;}
-        .go-reste b{font-size:25px;font-weight:900;line-height:1;}
-        .go-reste em{font-style:normal;font-size:11.5px;font-weight:800;
-          line-height:1.1;color:#fff;}
-        .go-reste u{margin-top:4px;padding-top:4px;text-decoration:none;
-          border-top:1px solid rgba(255,255,255,.22);
-          font-size:10px;line-height:1.15;color:rgba(255,255,255,.72);}
 
         /* ─── LE RIDEAU ─── */
         .go-rideau{grid-column:1 / -1;grid-row:3;
@@ -1207,11 +1206,11 @@ function Styles() {
 
         /* ─── LES CINQ FANTOMES ─── */
         .go-emo{text-align:center;}
-        .go-emo>p{margin:0 0 7px;font-size:16px;font-weight:850;color:#fff;
+        .go-emo>p{margin:0 0 9px;font-size:16px;font-weight:850;color:#fff;
           text-shadow:0 2px 10px rgba(0,0,0,.8);}
         .go-emo-l{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
         .go-emo-l button{min-width:0;display:flex;flex-direction:column;
-          align-items:center;gap:4px;padding:8px 3px 7px;border-radius:14px;
+          align-items:center;gap:5px;padding:10px 3px 9px;border-radius:14px;
           background:rgba(10,6,16,.8);border:1px solid rgba(255,255,255,.13);
           color:#fff;cursor:pointer;}
         .go-emo-l button:active{transform:scale(.95);}
@@ -1237,31 +1236,18 @@ function Styles() {
         .go-cta:active{transform:scale(.985);}
         .go-cta:disabled{opacity:.45;cursor:default;box-shadow:none;}
 
-        /* ─── LES TROIS PREUVES ─── */
-        .go-preuves{display:grid;grid-template-columns:repeat(3,1fr);
-          margin:0;padding:2px 0 0;list-style:none;}
-        .go-preuves li{display:flex;align-items:center;gap:6px;
-          padding:0 6px;min-width:0;}
-        .go-preuves li + li{border-left:1px solid rgba(255,255,255,.16);}
-        .go-preuves i{font-style:normal;font-size:19px;line-height:1;}
-        .go-preuves span{min-width:0;display:flex;flex-direction:column;}
-        .go-preuves b{font-size:11px;font-weight:750;line-height:1.18;
-          color:rgba(255,255,255,.92);}
-        .go-preuves em{font-style:normal;font-size:11px;line-height:1.2;
-          color:rgba(255,255,255,.58);}
-
         /* ═══ LA DENSITE SERREE, POUR L'ECRAN DE DEMARRAGE ═════════════════
            Voir la prop compact, en haut du fichier : ce n'est pas un second
            dessin, c'est le meme
            a trois cents points au lieu de six cents. Tout ce qui reste reste ;
            seules les tailles et les reserves descendent d'un cran. */
         .go-ecran.go-serre{min-height:0;border-radius:18px;}
-        .go-serre .go-sur{gap:7px;padding:9px 10px 10px;}
-        .go-serre .go-bar{grid-template-columns:34px 1fr auto;}
+        .go-serre .go-sur{gap:9px;padding:9px 10px 12px;}
+        .go-serre .go-bar{gap:6px;}
         .go-serre .go-dos{width:32px;height:32px;font-size:15px;}
         .go-serre .go-fil i{height:5px;}
         .go-serre .go-etape{font-size:10.5px;}
-        .go-serre .go-marque b{font-size:15px;}
+        .go-serre .go-marque b{font-size:14px;}
         .go-serre .go-marque em{font-size:9px;}
         .go-serre .go-t{font-size:20px;}
         .go-serre .go-p{margin-top:4px;font-size:11.5px;}
@@ -1270,10 +1256,6 @@ function Styles() {
         .go-serre .go-bulle{max-width:150px;padding:7px 10px;font-size:12px;
           border-radius:13px;}
         .go-serre .go-f-bloc{margin-bottom:-10px;}
-        .go-serre .go-reste{width:86px;height:86px;}
-        .go-serre .go-reste b{font-size:19px;}
-        .go-serre .go-reste em{font-size:9px;}
-        .go-serre .go-reste u{font-size:8px;}
         .go-serre .go-rideau{aspect-ratio:16/9;border-radius:13px;}
         .go-serre .go-rid-t i{width:38px;height:38px;font-size:15px;}
         .go-serre .go-rid-et{padding:5px 8px;border-radius:10px;}
@@ -1313,7 +1295,6 @@ function Styles() {
           .go-fant{width:82px;}
           .go-bulle{max-width:150px;font-size:14px;}
           .go-signe{max-width:128px;}
-          .go-reste{width:104px;height:104px;}
           .go-carte-plat b,.go-carte-plat u{font-size:21px;}
           .go-cta{padding:15px 16px;font-size:17.5px;}
           .go-signe{font-size:14.5px;}

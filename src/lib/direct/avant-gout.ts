@@ -257,27 +257,40 @@ export type Gout = {
   /**
    * LES QUATRE BULLES DU FANTÔME, DANS L'ORDRE DES QUATRE ÉCRANS.
    *
+   * CELLE DU DERNIER ÉCRAN NE COMPTE RIEN, ET C'EST UNE CORRECTION. Elle
+   * disait « Plus que 5 bols aujourd'hui ! », c'est-à-dire un chiffre que
+   * personne ne mesure — voir le champ `reste`, retiré juste en dessous. Le
+   * Fantôme dit maintenant CE QU'IL EN PENSE, LUI : « Moi, j'ai déjà faim. »
+   * C'est la seule chose qu'il puisse dire sans engager le commerçant, et
+   * c'est aussi ce qu'il fait le mieux.
+   *
    * Voir `TempsGout.bulle` : elles sont réunies ici parce que deux des quatre
    * écrans sont composés et n'ont pas de temps où s'écrire. Chacune est
    * facultative — sans elle, le Fantôme se tait sur cet écran-là.
    */
   bulles?: { ouvrir?: string; rideau?: string; voix?: string; final?: string };
-  /**
-   * ═══ CE QU'IL RESTE, SUR LE DERNIER ÉCRAN ═════════════════════════════════
-   *
-   * « Plus que 3 portions aujourd'hui ! » et la pastille ronde « 3 portions
-   * restantes · Préparées aujourd'hui ».
-   *
-   * LE MOT APPARTIENT AU MÉTIER : un restaurant compte des PORTIONS, une
-   * boulangerie des PARTS, un boucher des PIÈCES. Le nombre et le mot sont donc
-   * écrits ensemble, et non calculés à partir d'un quota qui, lui, compte tout
-   * autre chose (voir `restants` dans `mur-contenu.tsx` : c'est le nombre de
-   * Fantômes qu'on peut encore déposer, pas le nombre d'assiettes).
-   *
-   * ABSENT, LA PASTILLE NE SE DESSINE PAS. Un compte à rebours inventé est le
-   * plus vieux mensonge du commerce en ligne.
-   */
-  reste?: { n: number; mot: string; detail: string };
+  /* ═══ CE QU'IL RESTE : LE CHAMP A ÉTÉ RETIRÉ, ET C'EST UNE CORRECTION ════
+
+     J'AVAIS ÉCRIT « 3 portions restantes », « 5 bols restants », « 2 pièces
+     restantes » — un nombre par parcours, à la main — parce que sa maquette
+     dessine une pastille ronde avec un chiffre dedans.
+
+     « On ne peut pas savoir combien de portions il restera. Donc ce que dit le
+     Fantôme — plus que 5 bols aujourd'hui — est forcément faux. »
+
+     IL A RAISON, ET J'AVAIS ÉCRIT LA RÈGLE JUSTE AU-DESSUS DU CHIFFRE : le
+     commentaire de ce champ disait mot pour mot « un compte à rebours inventé
+     est le plus vieux mensonge du commerce en ligne », et j'ai quand même posé
+     le chiffre parce que la maquette en montrait un. Une maquette dessine une
+     INTENTION — ici : « il n'y en aura pas pour tout le monde » — elle ne
+     fournit pas la donnée qui la rendrait vraie.
+
+     ET LA DONNÉE N'EXISTE PAS. Personne ne compte les assiettes en cuisine au
+     fil du service ; `restants`, dans `mur-contenu.tsx`, compte les Fantômes
+     qu'on peut encore déposer, ce qui n'a rien à voir. Le jour où un
+     restaurateur déclare lui-même un nombre de parts — comme il déclare déjà
+     un prix — la pastille revient avec SA donnée, et elle sera vraie. */
+
   temps: TempsGout[];
 };
 
@@ -343,9 +356,8 @@ export const GOUT_MAGRET: Gout = {
     ouvrir: "Je suis passé en cuisine…",
     rideau: "Regardez comme c’est gourmand !",
     voix: "J’ai demandé au chef ce qui fait la différence. Écoutez ça !",
-    final: "Plus que 4 parts aujourd’hui !",
+    final: "Moi, je reprendrais bien du bouillon…",
   },
-  reste: { n: 4, mot: "parts restantes", detail: "Servies ce midi" },
   marques: [
     { emoji: "🥘", nom: "Garbure", detail: "mijotée le matin" },
     { emoji: "🦆", nom: "Magret", detail: "grillé minute" },
@@ -462,9 +474,8 @@ export const GOUT_PESTO: Gout = {
     ouvrir: "Je suis passé en cuisine…",
     rideau: "Regardez comme c’est gourmand !",
     voix: "J’ai demandé au chef ce qui fait la différence. Écoutez ça !",
-    final: "Plus que 3 portions aujourd’hui !",
+    final: "Moi, j’ai déjà faim.",
   },
-  reste: { n: 3, mot: "portions restantes", detail: "Préparées aujourd’hui" },
   // MÊME ARBITRAGE, ET IL M'A COÛTÉ SA COPIE. Sa maquette raconte des pâtes au
   // pesto ; aucun commerce du paquet n'en sert, et le dépôt n'a aucune photo de
   // pesto. Servir « pâtes au pesto » sous une enseigne qui vend des lasagnes
@@ -609,9 +620,8 @@ export const GOUT_AXOA: Gout = {
     ouvrir: "Je suis passé en cuisine…",
     rideau: "Regardez comme c’est généreux !",
     voix: "J’ai demandé au chef ce qui fait la différence. Écoutez ça !",
-    final: "Plus que 5 bols aujourd’hui !",
+    final: "Moi, je me resservirais bien.",
   },
-  reste: { n: 5, mot: "bols restants", detail: "Servis à la louche" },
   plat: "Axoa de veau",
   detail: "Piment doux, pommes de terre",
   prix: "16 €",
@@ -688,9 +698,8 @@ export const GOUT_TABLEE: Gout = {
     ouvrir: "Je suis passé voir le menu du soir…",
     rideau: "Regardez comme c’est généreux !",
     voix: "J’ai demandé ce qui fait la différence. Écoutez ça !",
-    final: "Plus que 6 couverts ce soir !",
+    final: "Moi, je m’assiérais bien à cette table.",
   },
-  reste: { n: 6, mot: "couverts restants", detail: "Pour ce soir" },
   marques: [
     { emoji: "🍲", nom: "Entrée", detail: "au choix" },
     { emoji: "🍖", nom: "Plat", detail: "du jour" },
@@ -772,9 +781,8 @@ export const GOUT_PARMENTIER: Gout = {
     ouvrir: "Je suis passé au laboratoire…",
     rideau: "Regardez comme c’est généreux !",
     voix: "Je leur ai demandé ce qui fait la différence. Écoutez ça !",
-    final: "Plus que 7 parts aujourd’hui !",
+    final: "Moi, j’en emporterais bien une.",
   },
-  reste: { n: 7, mot: "parts restantes", detail: "Préparées ce matin" },
   marques: [
     { emoji: "🦆", nom: "Canard", detail: "effiloché à la main" },
     { emoji: "🥔", nom: "Purée", detail: "au beurre" },
@@ -887,9 +895,8 @@ export const GOUT_BILLOT: Gout = {
     ouvrir: "Je suis passé au billot…",
     rideau: "Regardez cette coupe !",
     voix: "J’ai demandé à Serge ce qui fait la différence. Écoutez ça !",
-    final: "Plus que 2 pièces aujourd’hui !",
+    final: "Moi, je la ferais griller ce soir.",
   },
-  reste: { n: 2, mot: "pièces restantes", detail: "Coupées à la demande" },
   plat: "La côte de bœuf maturée",
   detail: "Bazadaise, 40 jours · Coupée à l’épaisseur que vous voulez",
   prix: "34 €/kg",
@@ -1032,9 +1039,8 @@ export const GOUT_LEVAIN: Gout = {
     ouvrir: "Je suis passé au fournil…",
     rideau: "Regardez cette mie !",
     voix: "J’ai demandé à Amanieu ce qui fait la différence. Écoutez ça !",
-    final: "Plus que 8 tourtes aujourd’hui !",
+    final: "Moi, j’en couperais bien une tranche.",
   },
-  reste: { n: 8, mot: "tourtes restantes", detail: "Cuites ce matin" },
   plat: "La tourte de seigle au levain",
   detail: "Levain naturel · 20 heures de pousse · Cuite au four à sole",
   prix: "4,20 €",
