@@ -2454,7 +2454,7 @@ const CARTES: CarteAutour[] = [
     // points a deux fois la densite. Elle sera donc legerement molle sur un
     // telephone recent — visible, pas genant, et a remplacer par un tirage
     // plus grand quand il y en aura un.
-    photo: "/direct/vitrine-mode.jpg",
+    photo: "/direct/mode-ensemble-maille-beige.jpg",
     cadrage: "50%",
     nom: "Une boutique de la rue piétonne",
     google: { note: "4,4", avis: 27 },
@@ -2492,6 +2492,7 @@ const CARTES: CarteAutour[] = [
       {
         de: 10, a: 13, quand: "ce matin", icone: "✨",
         titre: "L'arrivage est en vitrine",
+        photo: "/direct/mode-ensemble-maille-beige.jpg",
         lignes: ["La collection d'automne", "Déballée ce matin"],
         places: 30, envies: ["arrivage", "maintenant"],
         avis: [
@@ -2502,6 +2503,7 @@ const CARTES: CarteAutour[] = [
       {
         de: 15, a: 17, quand: "15 h", icone: "🪞",
         titre: "Essayage privé",
+        photo: "/direct/mode-robe-lavalliere.jpeg",
         lignes: ["La boutique pour vous seule, 30 min", "Sur rendez-vous"],
         places: 2, action: "Réserver", envies: [],
         avis: [
@@ -2516,8 +2518,15 @@ const CARTES: CarteAutour[] = [
       // fait. Personne ne l'obtient seul, d'ou le salon.
       {
         de: 10, a: 19, quand: "toute la journée", icone: "👖",
-        titre: "Le pantalon en lin",
-        lignes: ["Coupe droite, du 36 au 44", "Trois coloris en rayon"],
+        /* LE TITRE SUIT LA PHOTO, PAS L'INVERSE. « Le pantalon en lin » et
+           « trois coloris » n'avaient aucune image dans le dépôt : l'annonce
+           retombait sur la vitrine du magasin, c'est-à-dire sur ce qu'il ne
+           veut plus voir. Celle-ci existe, et le texte dit ce qu'elle montre —
+           un pantalon large à imprimé zébré. La raison du collectif ne bouge
+           pas : dix pantalons valent toujours mieux qu'un. */
+        titre: "Le pantalon large",
+        photo: "/direct/mode-pantalon-zebre.jpg",
+        lignes: ["Coupe large, du 36 au 44", "Imprimé zébré"],
         prix: "50 €", places: 14, envies: ["arrivage"],
         collectif: {
           objectif: 10, participants: 7, prixGroupe: "45 €",
@@ -2527,6 +2536,7 @@ const CARTES: CarteAutour[] = [
       {
         de: 17, a: 19, quand: "18 h", icone: "🏷️",
         titre: "Dernier jour des soldes",
+        photo: "/direct/mode-manteau-leopard.jpg",
         lignes: ["Tout le rayon d'été", "Jusqu'à la fermeture"],
         prix: "−40 %", etiquette: "DERNIER JOUR", places: 60,
         envies: ["solde", "maintenant"],
@@ -2550,7 +2560,7 @@ const CARTES: CarteAutour[] = [
       { id: "fr-5", rayon: "Le service", nom: "Dépôt-vente", detail: "On reprend vos pièces, 50/50." },
     ],
     branche: "mode",
-    photo: "/direct/friperie-rayon.jpg",
+    photo: "/direct/mode-veste-dentelle.jpg",
     cadrage: "50%",
     nom: "Une friperie du vieux centre",
     google: { note: "4,6", avis: 33 },
@@ -2568,6 +2578,7 @@ const CARTES: CarteAutour[] = [
       {
         de: 11, a: 19, quand: "aujourd'hui", icone: "🧥", publie: 11,
         titre: "40 pièces sorties ce matin",
+        photo: "/direct/mode-veste-dentelle.jpg",
         lignes: ["Manteaux et vestes d'hiver", "Une seule de chaque"],
         prix: "à partir de 12 €", places: 40, envies: ["arrivage", "maintenant"],
       },
@@ -2638,6 +2649,7 @@ const CARTES: CarteAutour[] = [
       {
         de: 10, a: 13, quand: "ce matin", icone: "🧥",
         titre: "Les vestes cirées sont rentrées",
+        photo: "/direct/homme-veste-ciree-kaki.jpg",
         lignes: ["Kaki, col velours côtelé", "Il n'en reste que trois"],
         prix: "89 €", places: 3, envies: ["arrivage", "maintenant"],
         avis: [
@@ -2647,6 +2659,7 @@ const CARTES: CarteAutour[] = [
       {
         de: 14, a: 19, quand: "cet après-midi", icone: "📏",
         titre: "Retouches offertes",
+        photo: "/direct/homme-chemise-lin-bleu.jpg",
         lignes: ["Ourlets et manches", "Rendus sous 48 h"],
         places: 12, envies: [],
       },
@@ -2829,14 +2842,17 @@ const CARTES: CarteAutour[] = [
       { id: "k-5", rayon: "Couleurs", nom: "Balayage", detail: "Selon la longueur.", prix: "à partir de 75 €" },
       { id: "k-6", rayon: "Soins", nom: "Soin profond", detail: "Vingt minutes, avec massage.", prix: "18 €" },
     ],
-    // DEUX VUES DU MEME LIEU. Le carrousel ne s'allumait que sur les
-    // restaurants, dont les moments portent deja une photo de plat ; partout
-    // ailleurs il n'y avait qu'une image et le carrousel restait invisible.
-    // Ces listes sont la pour que la fonction se voie a l'essai. Elles sont
-    // faites d'images DEJA presentes : rien n'est invente, mais deux salons
-    // partagent leurs interieurs et deux bars leurs comptoirs — a remplacer
-    // par de vraies photos de chaque commerce. Voir public/direct/LISEZ-MOI.md.
-    photos: ["/direct/fauteuil-coiffeur.jpg", "/direct/salon-neuf.jpg"],
+    // LE TRAVAIL D'ABORD, LE LIEU ENSUITE.
+    //
+    // « Il faut que ca soit une coupe de coiffure en photo et pas un siege de
+    // salon pour donner envie d'essayer la coiffure. »
+    //
+    // CE CARROUSEL PASSE DEVANT `photo` — voir `photosDeLAnnonce` — donc hors
+    // des heures ou une annonce court, c'est SA premiere image que la carte
+    // affiche. Elle montrait un fauteuil vide. On ne supprime pas les vues du
+    // salon : elles disent ou l'on va, et c'est utile une fois qu'on a envie.
+    // Elles passent derriere, voila tout.
+    photos: ["/direct/coiffure-femme-face.jpg", "/direct/fauteuil-coiffeur.jpg", "/direct/salon-neuf.jpg"],
     // CE QUE GOOGLE EN DIT, POUR QUE LE BLOC SE VOIE SUR UNE DÉMONSTRATION.
     // Un vrai commerçant, lui, reçoit les siens depuis sa fiche — voir
     // `carte-depuis-fiche.ts`. Ceux-là sont inventés, comme ce salon, et la
@@ -2853,7 +2869,7 @@ const CARTES: CarteAutour[] = [
     // de ce qu'il faut des qu'on appuie dessus pour la mettre plein cadre.
     sesPhotos: [{ src: "/direct/salon-bacs.jpg", quoi: "Les bacs" }],
     branche: "coiffeur",
-    photo: "/direct/fauteuil-coiffeur.jpg",
+    photo: "/direct/coiffure-femme-face.jpg",
     cadrage: "50%",
     nom: "Un salon du centre",
     google: { note: "4,8", avis: 62 },
@@ -2887,6 +2903,7 @@ const CARTES: CarteAutour[] = [
         // 8 h qu'on dit fraîche à 18 h ne trompe personne deux fois.
         de: 14, a: 15.5, quand: "à 14 h 30", icone: "💇", publie: 14,
         titre: "Une place vient de se libérer",
+        photo: "/direct/coiffure-femme-face.jpg",
         lignes: ["Coupe + brushing", "45 minutes"],
         prix: "28 €", places: 1, action: "Réserver", envies: ["maintenant", "moins30"],
         avis: [
@@ -2899,6 +2916,7 @@ const CARTES: CarteAutour[] = [
       {
         de: 8, a: 19, quand: "16 h 30", icone: "✂️",
         titre: "Coupe homme",
+        photo: "/direct/coiffure-homme-face.jpg",
         lignes: ["Tondeuse + ciseaux", "20 minutes"],
         prix: "18 €", places: 3, action: "Réserver", envies: ["moins30", "homme"],
         // LE TROU DE FIN D'APRES-MIDI, COMBLE A DEUX. Une seule coupe a 15 €
@@ -2927,16 +2945,19 @@ const CARTES: CarteAutour[] = [
       { id: "cn-4", rayon: "Soins", nom: "Soin hydratant", detail: "Vingt minutes.", prix: "16 €" },
       { id: "cn-5", rayon: "Offre d'ouverture", nom: "Première visite", detail: "−20 % le premier mois." },
     ],
-    // DEUX VUES DU MEME LIEU. Le carrousel ne s'allumait que sur les
-    // restaurants, dont les moments portent deja une photo de plat ; partout
-    // ailleurs il n'y avait qu'une image et le carrousel restait invisible.
-    // Ces listes sont la pour que la fonction se voie a l'essai. Elles sont
-    // faites d'images DEJA presentes : rien n'est invente, mais deux salons
-    // partagent leurs interieurs et deux bars leurs comptoirs — a remplacer
-    // par de vraies photos de chaque commerce. Voir public/direct/LISEZ-MOI.md.
-    photos: ["/direct/salon-neuf.jpg", "/direct/fauteuil-coiffeur.jpg"],
+    // LE TRAVAIL D'ABORD, LE LIEU ENSUITE.
+    //
+    // « Il faut que ca soit une coupe de coiffure en photo et pas un siege de
+    // salon pour donner envie d'essayer la coiffure. »
+    //
+    // CE CARROUSEL PASSE DEVANT `photo` — voir `photosDeLAnnonce` — donc hors
+    // des heures ou une annonce court, c'est SA premiere image que la carte
+    // affiche. Elle montrait un fauteuil vide. On ne supprime pas les vues du
+    // salon : elles disent ou l'on va, et c'est utile une fois qu'on a envie.
+    // Elles passent derriere, voila tout.
+    photos: ["/direct/coiffure1.jpg", "/direct/salon-neuf.jpg", "/direct/fauteuil-coiffeur.jpg"],
     branche: "coiffeur",
-    photo: "/direct/salon-neuf.jpg",
+    photo: "/direct/coiffure1.jpg",
     cadrage: "50%",
     nom: "Un salon qui vient d'ouvrir",
     google: { note: "5,0", avis: 9 },
@@ -2969,6 +2990,7 @@ const CARTES: CarteAutour[] = [
       {
         de: 8, a: 18, quand: "cette semaine", icone: "🎨",
         titre: "Couleur + coupe",
+        photo: "/direct/coiffure1.jpg",
         lignes: ["Végétale ou classique", "1 h 30"],
         prix: "55 €", prixBarre: "69 €", etiquette: "OUVERTURE", places: 6,
         action: "Réserver", envies: ["couleur"],
@@ -3091,7 +3113,7 @@ const CARTES: CarteAutour[] = [
       { id: "lu-6", rayon: "L'atelier", nom: "Réparation et réglage", detail: "Offert, même si la monture vient d'ailleurs." },
     ],
     branche: "lunetier",
-    photo: "/direct/lunetier.jpeg",
+    photo: "/direct/lunettes3.jpeg",
     cadrage: "50%",
     nom: "Un lunetier de la rue piétonne",
     google: { note: "4,8", avis: 52 },
@@ -3109,6 +3131,7 @@ const CARTES: CarteAutour[] = [
       {
         de: 9, a: 19, quand: "aujourd'hui", icone: "👓", publie: 9,
         titre: "La collection d'automne est arrivée",
+        photo: "/direct/lunettes4.jpeg",
         lignes: ["Douze montures créateurs", "Essayables depuis la rue"],
         prix: "à partir de 139 €", places: 12,
         action: "Les essayer", envies: ["essayer", "solaire"],
@@ -3120,6 +3143,7 @@ const CARTES: CarteAutour[] = [
       {
         de: 14, a: 19, quand: "cet après-midi", icone: "🔧",
         titre: "Réparation pendant que vous attendez",
+        photo: "/direct/lunettes1.jpg",
         lignes: ["Branche cassée, vis, plaquettes", "Même si elles viennent d'ailleurs"],
         places: 6, action: "Passer", envies: ["reparer"],
       },
@@ -3156,12 +3180,14 @@ const CARTES: CarteAutour[] = [
         // MÊME CORRECTION QUE CHEZ LE COIFFEUR : un désistement a une heure.
         de: 11, a: 13, quand: "à 11 h 30", icone: "💅", publie: 11,
         titre: "Un désistement",
+        photo: "/direct/ongles2.jpeg",
         lignes: ["Remplissage", "45 minutes"],
         prix: "30 €", places: 1, action: "Réserver", envies: ["maintenant", "moins35"],
       },
       {
         de: 8, a: 19, quand: "17 h", icone: "✨",
         titre: "Pose complète",
+        photo: "/direct/ongles1.jpeg",
         lignes: ["Gel ou semi-permanent", "1 h 15"],
         prix: "45 €", places: 2, action: "Réserver", envies: ["pose"],
         // ELLE N'OUVRE PAS SON SAMEDI POUR UNE PERSONNE. Quatre poses a la
@@ -3295,6 +3321,7 @@ const CARTES: CarteAutour[] = [
         // seule qui justifie de venir A CETTE HEURE-LA plutot qu'a une autre.
         de: 14, a: 18, quand: "de 14 h à 18 h", icone: "🖐️", publie: 13.5,
         titre: "Bracelet monté devant vous",
+        photo: "/direct/poignet-bracelet.jpg",
         lignes: ["Cordon et fermoir au choix", "Ajusté au poignet, vingt minutes"],
         prix: "28 €", places: 4, action: "Réserver",
         envies: ["maintenant", "devantvous", "offrir"],
@@ -3305,6 +3332,7 @@ const CARTES: CarteAutour[] = [
       {
         de: 10.5, a: 19, quand: "toute la journée", icone: "✨",
         titre: "Trois pendentifs, trois pierres",
+        photo: "/direct/collier-seul.png",
         lignes: ["Aucune n'est identique", "Montées ce matin"],
         prix: "52 €", places: 3, action: "Réserver", envies: ["unique", "offrir"],
       },
@@ -3333,7 +3361,7 @@ const CARTES: CarteAutour[] = [
       { id: "ta-4", rayon: "Soins", nom: "Retouche", detail: "Offerte dans les six mois." },
     ],
     branche: "artisan",
-    photo: "/direct/atelier-tatouage.jpeg",
+    photo: "/direct/tattou1.jpg",
     nom: "Un tatoueur du centre",
     google: { note: "4,9", avis: 64 },
     metier: "Tatoueur",
@@ -3349,7 +3377,8 @@ const CARTES: CarteAutour[] = [
     moments: [
       {
         de: 11, a: 19, quand: "ce mois-ci", icone: "🪡",
-        titre: "Quatre flashs dessinés",
+        titre: "Quatre motifs dessinés",
+        photo: "/direct/tattou1.jpg",
         lignes: ["Petit Goku, Santa Muerte, hirondelle, chat", "Douze personnes portent déjà le Goku"],
         prix: "à partir de 110 €", places: 4, action: "Demander un rendez-vous",
         envies: ["unique", "saison"],
@@ -3357,6 +3386,7 @@ const CARTES: CarteAutour[] = [
       {
         de: 15, a: 17, quand: "à 15 h", icone: "🕰️", publie: 13,
         titre: "Un créneau se libère",
+        photo: "/direct/tatouE.jpg",
         lignes: ["Deux heures", "Désistement de ce matin"],
         prix: "180 €", places: 1, action: "Demander un rendez-vous",
         envies: ["maintenant"],

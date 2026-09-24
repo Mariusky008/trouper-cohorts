@@ -101,6 +101,35 @@ resterait sinon sur l'affiche sans rien dire.
 
 Format attendu pour les suivantes : vertical, 10 s maximum, sans musique.
 
+## LA PREMIÈRE RÈGLE : UNE ANNONCE MONTRE CE QU'ON PEUT ESSAYER
+
+> « Pour l'annonce coiffure il faut que ça soit une coupe de coiffure en photo
+> et pas un siège de salon pour donner envie d'essayer la coiffure. Idem pour le
+> magasin de vêtement : il faut un vêtement clair et net qui donne envie d'être
+> essayé. En fait chaque annonce doit être quelque chose qui donne envie d'être
+> essayé. »
+
+La carte porte un bouton qui dit **« Essayer sur moi »**, et elle montrait un
+fauteuil vide, une vitrine, des portants. Le défaut n'était pas dans le dessin :
+les annonces de ces métiers-là n'avaient aucune photo à elles, et la carte
+retombait sur celle du commerce. **Un repli qui montre le décor tue la
+promesse.**
+
+La photo se pose donc sur l'ANNONCE (`moments[].photo`), pas sur le commerce :
+c'est l'annonce que la carte affiche, et elle change dans la journée. La photo
+du commerce et le carrousel restent — ils disent où l'on va, ce qui est utile
+une fois qu'on a envie — mais ils passent derrière.
+
+`scripts/verifier-annonce-essayable.mjs` vérifie que chaque annonce des métiers
+qui proposent un essayage (mode, coiffeur, lunetier, ongles) porte sa propre
+photo, et que le fichier existe. Il ne peut pas juger si une photo donne envie —
+ça, c'est l'œil — mais il empêche le repli silencieux qui l'a fait rater.
+
+Conséquence pour les fichiers de lieux (`vitrine-mode.jpg`, `friperie-rayon.jpg`,
+`fauteuil-coiffeur.jpg`, `salon-neuf.jpg`, `lunetier.jpeg`,
+`atelier-tatouage.jpeg`) : ils ne sont plus des photos de tête, ils sont des
+vues secondaires.
+
 ## LA RÈGLE QUI VAUT POUR TOUTES
 
 Aucune enseigne lisible, aucun logo, aucun visage reconnaissable. Les commerces
