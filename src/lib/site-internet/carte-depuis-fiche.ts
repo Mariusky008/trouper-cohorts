@@ -180,41 +180,37 @@ function sansMoments(): MomentJour[] {
  * dans leur ordre. `=w86-h86-k-no` devient `=w1600-h1200-k-no`, `=s120`
  * devient `=w1600-h1200`, et une adresse sans suffixe en reçoit un.
  *
- * ET LA PAGE NE PARIE PAS SUR CE SEUL FORMAT. Je ne peux pas joindre
- * `lh3.googleusercontent.com` depuis ici — le mandataire refuse la connexion —
- * donc je ne peux pas VÉRIFIER lequel des deux formats ce serveur accepte.
- * Écrire le plus probable et l'afficher serait remettre une hypothèse en
- * production. La vignette essaie donc `=s1600` si celle-ci échoue, et ne
- * s'efface qu'après les deux. Voir `bq-gal` dans `boutique.tsx`.
+ * ═══ ET ON CESSE DE DEVINER : LA PHOTO PASSE PAR NOUS ══════════════════════
+ *
+ * « Les photos ne sont toujours pas lues. Elles semblent là mais pas lisibles,
+ * les deux dernières. »
+ *
+ * TROIS TOURS QUE JE RÉÉCRIS CE SUFFIXE SANS POUVOIR LE VÉRIFIER. Le
+ * mandataire de mon conteneur refuse la connexion vers
+ * `lh3.googleusercontent.com` : je n'ai jamais pu demander une seule de ces
+ * photos. À chaque tour j'ai mis en ligne l'écriture la plus probable, et à
+ * chaque tour il a revu les mêmes vignettes cassées. C'est une hypothèse
+ * publiée trois fois de suite, et ce n'est pas une méthode.
+ *
+ * LE SERVEUR DE PRODUCTION, LUI, JOINT GOOGLE. C'est lui qui a récupéré ces
+ * adresses. La bonne question n'était donc pas « quelle écriture Google
+ * accepte-t-il ? » mais « pourquoi est-ce le NAVIGATEUR qui doit deviner ? ».
+ *
+ * L'ADRESSE RENDUE EST DONC LA NÔTRE. `/api/photo-fiche?u=…` porte l'adresse
+ * d'origine INTACTE ; le serveur essaie les écritures pour de vrai, dans
+ * l'ordre, garde la première qui répond, et retombe sur l'originale si les
+ * deux agrandissements échouent — une vignette de quatre-vingt-six points qui
+ * s'affiche vaut mieux qu'une grande qui ne vient pas. Et quand plus rien ne
+ * répond, il écrit le code de retour dans les journaux, ce qu'un `<img>` cassé
+ * n'a jamais su faire. Voir `src/app/api/photo-fiche/route.ts`.
  */
 export function enGrand(url: string): string {
   if (!/googleusercontent\.com|ggpht\.com/i.test(url)) return url;
-  /* LE SUFFIXE EST TOUJOURS EN DERNIER, APRÈS UN « = », et il n'en existe
-     qu'un : on remplace donc à partir du dernier signe égal, et on n'en ajoute
-     un que s'il n'y en avait pas. */
-  const i = url.lastIndexOf("=");
-  const coupe = i > url.lastIndexOf("/");
-  const base = coupe ? url.slice(0, i) : url;
-  /* CE QUI N'EST PAS UNE DIMENSION SURVIT. Un jeton de dimension est une
-     lettre de format suivie de chiffres, ou le `c` seul du recadrage. */
-  const gardes = (coupe ? url.slice(i + 1) : "")
-    .split("-")
-    .filter((j) => j && !/^[whs]\d+$/i.test(j) && j.toLowerCase() !== "c");
-  return [`${base}=w1600-h1200`, ...gardes].join("-");
-}
-
-/**
- * LE SECOND FORMAT, QUAND LE PREMIER N'EST PAS VENU.
- *
- * `=s1600` demande le plus grand côté et laisse le serveur choisir l'autre.
- * C'est la forme la plus ancienne et la plus largement acceptée ; elle sert de
- * filet, pas de premier choix, parce qu'elle ne garantit pas le rapport.
- */
-export function enGrandAutrement(url: string): string {
-  if (!/googleusercontent\.com|ggpht\.com/i.test(url)) return "";
-  const i = url.lastIndexOf("=");
-  const base = i > url.lastIndexOf("/") ? url.slice(0, i) : url;
-  return `${base}=s1600`;
+  /* L'ADRESSE D'ORIGINE PART ENTIÈRE, SANS UN CARACTÈRE DE MOINS. C'est la
+     seule dont on sache avec certitude qu'elle existe : Google nous l'a
+     donnée. Toutes les autres sont des paris, et ils se prennent côté serveur,
+     là où l'on voit s'ils sont perdus. */
+  return `/api/photo-fiche?u=${encodeURIComponent(url)}`;
 }
 
 export function carteDepuisFiche(f: FicheCommercant): CarteAutour {

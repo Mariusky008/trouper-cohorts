@@ -23,7 +23,8 @@
     "lettres:pdf": "node scripts/lettres-pdf.mjs",
     "verifier:consigne": "node scripts/verifier-consigne.mjs",
     "verifier:photos-google": "node scripts/verifier-photos-google.mjs",
-    "verifier:regime-essai": "node scripts/verifier-regime-essai.mjs"
+    "verifier:regime-essai": "node scripts/verifier-regime-essai.mjs",
+    "verifier:coupe-decrite": "node scripts/verifier-coupe-decrite.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.27",

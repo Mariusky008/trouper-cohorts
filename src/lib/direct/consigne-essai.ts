@@ -225,9 +225,41 @@ export function consigne(
     // demandait de déduire une coupe d'une photo, puis de la poser. Quand la
     // déduction rate, le modèle se rabat sur ce qu'il sait faire — refabriquer
     // un portrait — et c'est exactement ce qu'on a vu.
+    /* ═══ ON REMPLACE, ON NE RETOUCHE PAS PAR-DESSUS ══════════════════════
+
+       « Le résultat Clikme garde presque la longueur et la forme de la
+       coiffure d'origine. Le contrôle le plus utile après génération est très
+       concret : si des cheveux descendent encore sur les épaules, la
+       transformation a échoué, même si la couleur a changé. »
+
+       CETTE CONSIGNE NE DISAIT NULLE PART QUE L'EXISTANT DISPARAÎT. Elle
+       disait ce qui change, elle disait que le changement doit être visible,
+       et elle passait quarante lignes à protéger tout le reste. Un modèle qui
+       lit ça restyle : il change la couleur, il ajoute du volume, il garde la
+       longueur — parce qu'on ne lui a jamais dit de la couper.
+
+       C'EST LA MOITIÉ DU TRAVAIL QU'ON N'AVAIT PAS DEMANDÉE. Raccourcir, c'est
+       enlever ; enlever ne se déduit pas de « modifie ». Et ça vaut pour les
+       huit métiers : le lunetier doit retirer la monture d'avant sous peine
+       d'en superposer deux, la boutique doit retirer le haut d'avant sous
+       peine de le laisser dépasser.
+
+       LA PHRASE DE CONTRÔLE EST LA SIENNE, RENDUE GÉNÉRIQUE. Donner au modèle
+       le critère d'échec en même temps que la cible vaut mieux que dix
+       interdictions : il sait à quoi comparer son propre résultat. */
     ...(decrire
       ? [
           `RÉSULTAT ATTENDU : ${decrire}.`,
+          /* LA TOURNURE EST IMPERSONNELLE, ET C'EST UNE NÉCESSITÉ. `court` vaut
+             « les cheveux », « la monture », « le vêtement porté sur le
+             buste » : accorder un participe derrière donnait « les cheveux de
+             l'image 1 EST REMPLACÉ ». Même faute que « la finition DE LES
+             cheveux », et même remède — une phrase qui n'a rien à accorder. */
+          `Sur l'image 1, on REMPLACE ${court} : on ne retouche pas par-dessus.`,
+          "Ce qui était là avant ne doit plus se voir nulle part dans le",
+          "résultat, même partiellement, même sur un bord.",
+          `CONTRÔLE : si l'on reconnaît encore ${court} de l'image 1 dans le`,
+          "résultat, c'est un échec, même si la couleur a changé.",
           ...(avecReference
             ? [
                 /* ═══ QUAND IL Y A UNE PHOTO, C'EST ELLE QUI DÉCIDE ══════════

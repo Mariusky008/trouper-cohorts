@@ -1687,7 +1687,35 @@ export const MURS: Mur[] = [
            `consigne-essai.ts`, où l'image reprend la main sur la forme : c'est
            ce qui fait qu'une description un peu à côté ne peut plus produire
            une autre coupe. */
-        { id: "c-femme", nom: "Carré long, de face", decrire: "un carré long dégradé qui s'arrête sous le menton, avec une raie au milieu, des mèches plus longues devant qui encadrent le visage et tombent devant l'épaule, des pointes effilées qui s'ouvrent vers l'extérieur, et du volume sur le dessus", prix: "38 €",
+        /**
+         * ═══ ÉCRITE DEVANT LA PHOTO, LA TROISIÈME FOIS ════════════════════
+         *
+         * « Le résultat Clikme garde presque la longueur et la forme de la
+         * coiffure d'origine : cheveux lisses qui descendent sur les épaules.
+         * Si des cheveux descendent encore sur les épaules, la transformation
+         * a échoué, même si la couleur a changé. »
+         *
+         * LA VERSION PRÉCÉDENTE DISAIT « des mèches plus longues devant qui
+         * TOMBENT DEVANT L'ÉPAULE », et sa photo ne montre rien de tel : le
+         * carré s'arrête à la base du cou, nettement au-dessus des épaules.
+         * J'avais écrit les deux dans la même phrase — « s'arrête sous le
+         * menton » ET « tombent devant l'épaule » — ce qui ne peut pas
+         * décrire une seule coupe.
+         *
+         * ET C'EST EXACTEMENT LE DÉFAUT QU'IL VOIT DEPUIS SIX TOURS. Le
+         * modèle exécutait fidèlement notre texte : on lui demandait de
+         * laisser des longueurs sur l'épaule, il les laissait. Ce n'était
+         * ni le masque, ni le cadre, ni la recomposition — c'était la
+         * phrase.
+         *
+         * DEUXIÈME FOIS QUE JE DÉCRIS CETTE PHOTO SANS LA REGARDER. La
+         * première, j'avais écrit « coupé net sans dégradé » sur une coupe
+         * qui en a un. La règle qui en sort n'est pas « faire attention » :
+         * c'est qu'une description de coupe DOIT DIRE OÙ ELLE S'ARRÊTE, et
+         * ne peut pas le dire deux fois différemment. Voir
+         * `verifier-coupe-decrite.mjs`, qui refuse désormais les deux.
+         */
+        { id: "c-femme", nom: "Carré long, de face", decrire: "un carré qui s'arrête à la base du cou, nettement au-dessus des épaules, avec une raie au milieu, beaucoup de volume sur les côtés, une ligne de pointes nette et légèrement arrondie, et aucune longueur qui descende sur les épaules", prix: "38 €",
           photo: "/direct/coiffure-femme-face.jpg", reference: "/direct/coiffure-femme-face.jpg" },
         /**
          * LES DEUX DERNIÈRES « BIENTÔT » SONT TOMBÉES.

@@ -108,6 +108,33 @@ console.log("\n══ sans photo, on ne parle pas d'une image qui n'existe pas �
   );
 }
 
+console.log("\n══ on dit que l'existant disparaît ══");
+{
+  // « Le résultat Clikme garde presque la longueur et la forme de la coiffure
+  // d'origine. Si des cheveux descendent encore sur les épaules, la
+  // transformation a échoué, même si la couleur a changé. »
+  //
+  // LA CONSIGNE NE DEMANDAIT QUE D'AJOUTER. Elle disait ce qui change, que le
+  // changement doit être visible, et elle passait quarante lignes à protéger
+  // le reste — mais elle ne disait nulle part que ce qui est là avant s'en va.
+  // Raccourcir, c'est enlever, et enlever ne se déduit pas de « modifie ».
+  const t = consigne("votre tête", [], CHANGE, COUPE, true, true);
+  dire(/on REMPLACE les cheveux : on ne retouche pas par-dessus/.test(t), "ce qu'on modifie est remplacé, pas retouché par-dessus");
+  dire(
+    /Ce qui était là avant ne doit plus se voir[\s\S]{0,40}nulle part/.test(t),
+    "et ce qui était là avant ne doit se voir nulle part",
+  );
+  // LE CRITÈRE D'ÉCHEC EST DONNÉ AU MODÈLE, pas seulement à nous. Il sait
+  // alors à quoi comparer son propre résultat, ce qui vaut mieux que dix
+  // interdictions de plus.
+  dire(/CONTRÔLE : si l'on reconnaît encore/.test(t), "et le critère d'échec part avec la cible");
+
+  // SANS DESCRIPTION, LA CLAUSE NE S'ÉCRIT PAS — elle n'aurait rien à
+  // remplacer par quoi. Le cas existe : une prestation sans `decrire`.
+  const sansCible = consigne("votre tête", [], CHANGE, undefined, true, true);
+  dire(!/on REMPLACE/.test(sansCible), "mais pas quand on n'a aucune cible à décrire");
+}
+
 console.log("\n══ le mode brut reste ce qu'on taperait dans ChatGPT ══");
 {
   const brut = consigneBrute("votre tête", CHANGE, COUPE, true);
