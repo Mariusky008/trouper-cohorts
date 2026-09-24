@@ -116,7 +116,7 @@ const COTE_LEGER = 1280;
  * `?atelier=1` REMET L'ANCIEN RÉGIME SANS REDÉPLOYER, parce qu'on compare deux
  * rendus sur un téléphone, pas dans un journal.
  */
-type Regime = "atelier" | "leger" | "brut";
+export type Regime = "atelier" | "leger" | "brut";
 
 function regimeDe(partie: string | undefined): Regime {
   const defaut: Regime = zoneDe(partie) === "coiffure" ? "leger" : "atelier";
@@ -340,9 +340,24 @@ export async function essayerSurMoi(opts: {
   change?: string;
   /** Ce que la pièce EST, en toutes lettres. Voir `decrire` dans `fantomes.ts`. */
   decrire?: string;
+  /**
+   * ═══ LE RÉGIME IMPOSÉ, POUR LE BANC D'ESSAI ═══════════════════════════════
+   *
+   * « Arrêter les essais de prompts isolés. Faire un test comparatif sur les
+   * mêmes photos, en ne changeant qu'un paramètre à la fois. »
+   *
+   * SANS CE CHAMP, LE RÉGIME SE LIT DANS L'ADRESSE — donc on ne peut en
+   * comparer qu'un par chargement de page, et on compare alors deux rendus
+   * faits à dix minutes d'écart sur deux pages différentes. C'est exactement
+   * la méthode qui nous a fait tourner huit tours.
+   *
+   * IL RESTE VIDE PARTOUT AILLEURS. Le produit ne choisit pas son régime :
+   * c'est le métier qui le décide, dans `regimeDe`.
+   */
+  regime?: Regime;
   signal?: AbortSignal;
 }): Promise<Rendu | Souci> {
-  const regime = regimeDe(opts.partie);
+  const regime = opts.regime ?? regimeDe(opts.partie);
   const brut = regime === "brut";
   /* LE RÉGIME LÉGER NE ROGNE PAS ET NE DEMANDE PAS DE CADRE — voir `regimeDe`.
      `brut` et `leger` partagent ces deux-là ; seule la recomposition les
@@ -369,7 +384,12 @@ export async function essayerSurMoi(opts: {
        */
       [photo, reference] = await Promise.all([
         reduire(opts.photo, COTE_LEGER),
-        reduire(opts.reference, COTE_LEGER),
+        /* UNE RÉFÉRENCE ABSENTE N'EST PAS UNE PHOTO ILLISIBLE. `reduire("")`
+           lève, et l'appelant lisait « Photo illisible » alors que sa photo à
+           lui allait parfaitement. La consigne sait déjà travailler sans
+           seconde image — voir `avecReference` — et le banc d'essai s'en sert
+           pour mesurer ce qu'elle apporte. */
+        opts.reference ? reduire(opts.reference, COTE_LEGER) : Promise.resolve(""),
       ]);
     } else {
       /**
@@ -385,7 +405,7 @@ export async function essayerSurMoi(opts: {
       cadre = cadreDe(d.l, d.h);
       [photo, reference] = await Promise.all([
         cadrer(opts.photo, cadre),
-        reduire(opts.reference, COTE),
+        opts.reference ? reduire(opts.reference, COTE) : Promise.resolve(""),
       ]);
     }
   } catch (e) {
