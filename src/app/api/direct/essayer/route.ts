@@ -365,12 +365,33 @@ async function parOpenAI(
      c'est le seul moyen de rattraper un format en production sans redéployer —
      puis le cadre que le navigateur a réellement découpé, et seulement ensuite
      la déduction d'autrefois, pour les appelants qui ne le disent pas. */
+  /**
+   * ═══ ET « auto » VEUT DIRE : ON NE DEMANDE RIEN ═══════════════════════════
+   *
+   * « Taille de sortie : je n'ai demandé aucune taille précise. L'outil a
+   * choisi son format de sortie automatiquement. »
+   *
+   * NE PAS POSER `size` N'EST PAS LA MÊME CHOSE QUE POSER LE BON. Quel que
+   * soit le format qu'on demande, on demande au modèle de rendre dans un cadre
+   * qui n'est pas exactement celui qu'il a reçu — trois valeurs existent, et
+   * une photo de téléphone n'en a jamais le rapport exact. Sans `size`, il
+   * garde le cadre de l'image qu'on lui donne, et il n'a plus rien à
+   * recomposer.
+   *
+   * LE RÉGLAGE D'ENVIRONNEMENT NE GAGNE PAS CONTRE CE MOT-LÀ, et c'est
+   * volontaire : `OPENAI_IMAGE_SIZE` reste la roue de secours des métiers qui
+   * demandent un cadre, mais si elle traînait à une valeur en production, elle
+   * remettrait en silence ce qu'on vient d'enlever — et on chercherait
+   * ailleurs pendant un tour de plus.
+   */
   const format =
-    s(process.env.OPENAI_IMAGE_SIZE) ||
-    (/^(1024x1024|1536x1024|1024x1536)$/.test(cadreDemande) ? cadreDemande : "") ||
-    formatDe(photo.donnees) ||
-    "1024x1024";
-  forme.append("size", format);
+    cadreDemande === "auto"
+      ? ""
+      : s(process.env.OPENAI_IMAGE_SIZE) ||
+        (/^(1024x1024|1536x1024|1024x1536)$/.test(cadreDemande) ? cadreDemande : "") ||
+        formatDe(photo.donnees) ||
+        "1024x1024";
+  if (format) forme.append("size", format);
   forme.append("input_fidelity", "high");
   const enFichier = (x: { type: string; donnees: string }, nom: string) =>
     new File([Buffer.from(x.donnees, "base64")], nom, { type: x.type });
@@ -420,7 +441,10 @@ async function parOpenAI(
     JSON.stringify({
       modele,
       images: reference ? ["client", "reference"] : ["client"],
-      format,
+      // « aucun » N'EST PAS UN FORMAT : c'est l'absence du champ `size`, et
+      // c'est ce qu'on veut lire dans le journal. Une chaîne vide s'y lit
+      // comme un réglage oublié.
+      format: format || "aucun",
       // LA TRACE DIT LA VRAIE VALEUR, PAS L'ANCIENNE. Un journal qui affiche
       // « medium » pendant qu'on envoie « high » fait chercher la panne du
       // mauvais côté pendant une heure.

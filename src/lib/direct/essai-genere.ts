@@ -64,6 +64,75 @@ export type Souci = {
 const COTE = 800;
 
 /**
+ * LE PLUS GRAND CÔTÉ EN RÉGIME LÉGER.
+ *
+ * « Je n'ai pas recadré ta photo avant l'envoi. »
+ *
+ * LA RÉDUCTION N'EST PAS UN RECADRAGE — elle garde le cadre entier et son
+ * rapport — mais huit cents points sur une coupe de cheveux, c'est cent points
+ * pour une mèche. On remonte donc à douze cent quatre-vingts là où la coupe
+ * est le sujet. LE PRIX EST UN RISQUE DE 504 UN PEU PLUS HAUT : l'envoi est
+ * deux fois et demie plus lourd, et il monte d'un téléphone. `OPENAI_IMAGE_
+ * QUALITY` reste le moyen de redescendre en production sans redéployer.
+ */
+const COTE_LEGER = 1280;
+
+/**
+ * ═══ LE RÉGIME DE L'ESSAI — ET CELUI DE LA COIFFURE A CHANGÉ ═══════════════
+ *
+ * « Je n'ai demandé aucune taille précise. Je n'ai pas envoyé de masque. Je
+ * n'ai pas recadré ta photo avant l'envoi. J'ai transmis les deux images comme
+ * références, avec une instruction textuelle. »
+ *
+ * C'EST SA RÉPONSE, ET ELLE CONTREDIT TROIS DE NOS CHOIX, UN PAR UN. Il est
+ * allé la chercher exprès, et elle vaut mieux que tout ce que j'ai pu déduire
+ * en lisant notre code : c'est la seule chose de ce dossier qui décrive la
+ * configuration qui MARCHE, mesurée sur sa photo à lui.
+ *
+ * CES TROIS CHOIX, C'EST MOI QUI LES AI DÉFENDUS PENDANT CINQ TOURS. Le
+ * masque, le cadre imposé, le rognage : chacun avait sa raison, chacun
+ * réparait un défaut réel, et aucun n'a jamais été mesuré avec les autres.
+ * Trois réparations correctes prises ensemble peuvent rendre le travail
+ * impossible — c'est exactement ce que le rendu montre depuis cinq tours.
+ * Les enlever n'est pas un aveu de détail : c'est revenir sur le raisonnement
+ * entier, et il vaut mieux le dire que le glisser dans un commit.
+ *
+ * TROIS RÉGIMES EXISTENT DONC MAINTENANT :
+ *
+ *   · `atelier` — nos trois verrous plus la recomposition. C'est ce qui tourne
+ *     depuis des semaines, et ça reste le régime de TOUS LES AUTRES MÉTIERS.
+ *     Le vêtement ne s'est jamais plaint : on ne touche pas à ce qui va.
+ *   · `leger` — ni masque, ni cadre demandé, ni rognage, MAIS LA RECOMPOSITION
+ *     RESTE. C'est le régime de la coiffure, par défaut, depuis ce tour.
+ *   · `brut` — plus rien du tout, recomposition comprise. Il ne sert qu'à
+ *     répondre à « le verrou fait-il du mal ? », et il se demande dans
+ *     l'adresse.
+ *
+ * ON GARDE LA RECOMPOSITION, ET CE N'EST PAS UNE HÉSITATION. Elle est la seule
+ * pièce de ce fichier qui GARANTISSE quelque chose : elle n'adresse aucune
+ * demande à un générateur, elle écrit des pixels. Tout le reste n'était que
+ * des prières. On enlève les prières, on garde l'arithmétique.
+ *
+ * `?atelier=1` REMET L'ANCIEN RÉGIME SANS REDÉPLOYER, parce qu'on compare deux
+ * rendus sur un téléphone, pas dans un journal.
+ */
+type Regime = "atelier" | "leger" | "brut";
+
+function regimeDe(partie: string | undefined): Regime {
+  const defaut: Regime = zoneDe(partie) === "coiffure" ? "leger" : "atelier";
+  if (typeof window === "undefined") return defaut;
+  try {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("brut") === "1") return "brut";
+    if (q.get("atelier") === "1") return "atelier";
+    if (q.get("leger") === "1") return "leger";
+    return defaut;
+  } catch {
+    return defaut;
+  }
+}
+
+/**
  * ═══ LE MODE BRUT — NOTRE PILE SANS NOS QUATRE AJOUTS ══════════════════════
  *
  * « ChatGPT réalise un rendu beaucoup plus naturel et ajusté à la photo de
@@ -95,17 +164,15 @@ const COTE = 800;
  *
  * IL SE DEMANDE DANS L'ADRESSE, `?brut=1`, et il ne change rien pour qui ne le
  * demande pas. Il ne protège rien — le visage peut bouger, c'est exactement ce
- * qu'il sert à voir — donc il ne doit pas devenir le régime par défaut sans
- * qu'on ait regardé ce qu'il rend.
+ * qu'il sert à voir.
+ *
+ * ET IL N'AURA JAMAIS ÉTÉ LANCÉ. Je l'ai construit pour obtenir une mesure, il
+ * demandait d'ouvrir une adresse à la main sur un téléphone, et ça ne s'est
+ * pas produit — pendant que je l'attendais, il est allé demander la réponse à
+ * ChatGPT directement. UN DIAGNOSTIC QUI SE DEMANDE DANS L'ADRESSE N'EST PAS
+ * UN DIAGNOSTIC : c'est une chose qu'on espère que quelqu'un fera. C'est de là
+ * que vient le régime `leger`, qui n'attend plus personne — voir `regimeDe`.
  */
-function modeBrut(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return new URLSearchParams(window.location.search).get("brut") === "1";
-  } catch {
-    return false;
-  }
-}
 
 /**
  * ═══ LES SEULS CADRES QUE LE MODÈLE SAIT RENDRE ═════════════════════════════
@@ -275,26 +342,52 @@ export async function essayerSurMoi(opts: {
   decrire?: string;
   signal?: AbortSignal;
 }): Promise<Rendu | Souci> {
-  const brut = modeBrut();
+  const regime = regimeDe(opts.partie);
+  const brut = regime === "brut";
+  /* LE RÉGIME LÉGER NE ROGNE PAS ET NE DEMANDE PAS DE CADRE — voir `regimeDe`.
+     `brut` et `leger` partagent ces deux-là ; seule la recomposition les
+     sépare. */
+  const leger = regime !== "atelier";
   let photo: string;
   let reference: string;
-  let cadre: { l: number; h: number } = CADRES[0];
+  let cadre: { l: number; h: number } | null = null;
   try {
-    /**
-     * LA PHOTO PART DANS LE CADRE EXACT QU'ON VA DEMANDER — voir `cadrer`.
-     * C'est ce qui permet au modèle d'ÉDITER au lieu de recomposer.
-     *
-     * LA RÉFÉRENCE, ELLE, GARDE SON PROPRE CADRE. Elle n'est pas éditée : elle
-     * est REGARDÉE. La rogner au rapport de la photo du client couperait la
-     * coupe qu'on veut montrer — sur celle du carré long, les mèches qui
-     * tombent devant l'épaule sont précisément dans le bas de l'image.
-     */
-    const d = await mesurer(opts.photo);
-    cadre = cadreDe(d.l, d.h);
-    [photo, reference] = await Promise.all([
-      cadrer(opts.photo, cadre),
-      reduire(opts.reference, brut ? 1280 : COTE),
-    ]);
+    if (leger) {
+      /**
+       * ON ENVOIE SA PHOTO ENTIÈRE, ET ON NE DEMANDE AUCUN FORMAT.
+       *
+       * « Je n'ai pas recadré ta photo avant l'envoi. Je n'ai demandé aucune
+       * taille précise. L'outil a choisi son format de sortie
+       * automatiquement. »
+       *
+       * LE RAISONNEMENT DU ROGNAGE SE RETOURNE ICI. Je rognais pour que la
+       * photo ait EXACTEMENT le rapport du cadre demandé, afin que le modèle
+       * n'ait pas à recomposer. Mais si l'on ne demande aucun cadre, le modèle
+       * garde celui qu'il reçoit : la correspondance est acquise sans qu'on
+       * coupe quoi que ce soit — et sans qu'on jette le haut du crâne, qui est
+       * précisément ce qu'une coupe longue a de plus à montrer.
+       */
+      [photo, reference] = await Promise.all([
+        reduire(opts.photo, COTE_LEGER),
+        reduire(opts.reference, COTE_LEGER),
+      ]);
+    } else {
+      /**
+       * LA PHOTO PART DANS LE CADRE EXACT QU'ON VA DEMANDER — voir `cadrer`.
+       * C'est ce qui permet au modèle d'ÉDITER au lieu de recomposer.
+       *
+       * LA RÉFÉRENCE, ELLE, GARDE SON PROPRE CADRE. Elle n'est pas éditée : elle
+       * est REGARDÉE. La rogner au rapport de la photo du client couperait la
+       * coupe qu'on veut montrer — sur celle du carré long, les mèches qui
+       * tombent devant l'épaule sont précisément dans le bas de l'image.
+       */
+      const d = await mesurer(opts.photo);
+      cadre = cadreDe(d.l, d.h);
+      [photo, reference] = await Promise.all([
+        cadrer(opts.photo, cadre),
+        reduire(opts.reference, COTE),
+      ]);
+    }
   } catch (e) {
     return { erreur: "Photo illisible.", pourquoi: e instanceof Error ? e.message : String(e) };
   }
@@ -381,6 +474,11 @@ export async function essayerSurMoi(opts: {
          plus tout à fait la même tête », et c'est celui qui ne se voyait
          nulle part. */
       dire("aucun visage trouvé sur la photo : ni masque ni recomposition");
+    } else if (leger) {
+      /* EN RÉGIME LÉGER ON A LE VISAGE, ET ON NE S'EN SERT QUE POUR LE
+         RECOLLER. Pas de masque : c'est l'un des trois choix que sa réponse
+         de ChatGPT contredit. Voir `regimeDe`. */
+      dire("régime léger : pas de masque, la recomposition tient seule");
     } else {
       try {
         masque = masqueDEssai(visage, zone);
@@ -412,8 +510,14 @@ export async function essayerSurMoi(opts: {
            des dimensions reçues, ce qui redonnait le même rapport — mais elle
            n'avait aucun moyen de savoir qu'on venait de rogner exprès. Un
            cadre décidé à un endroit et recalculé à un autre finit toujours par
-           diverger. */
-        taille: nomDuCadre(cadre),
+           diverger.
+
+           ET « auto » N'EST PAS UN CADRE : c'est la consigne de n'en demander
+           aucun. La route ne pose alors pas `size` du tout, et le modèle garde
+           le format qu'il reçoit. Sans ce mot, elle retomberait sur sa
+           déduction d'autrefois et redemanderait un cadre — exactement ce
+           qu'on vient d'enlever. */
+        taille: cadre ? nomDuCadre(cadre) : "auto",
       }),
       signal: opts.signal,
     });

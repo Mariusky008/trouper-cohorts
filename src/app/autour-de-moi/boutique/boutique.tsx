@@ -109,6 +109,35 @@ import {
   type PieceGardee,
 } from "@/lib/direct/pieces-gardees";
 import { AnneauMetier, PictoMetier } from "@/components/direct/picto-metier";
+import { enGrandAutrement } from "@/lib/site-internet/carte-depuis-fiche";
+
+/**
+ * ═══ UNE PHOTO GOOGLE A DROIT À UN SECOND ESSAI ════════════════════════════
+ *
+ * « Les photos ne sont toujours pas lues. »
+ *
+ * ON RÉÉCRIT LA TAILLE DANS LEUR ADRESSE — voir `enGrand` — et je ne peux pas
+ * vérifier d'ici laquelle des deux écritures ce serveur accepte : le
+ * mandataire de ce conteneur refuse la connexion vers Google. Choisir la plus
+ * probable et la mettre en ligne, c'est ce qu'on vient de faire deux fois.
+ *
+ * LA VIGNETTE ESSAIE DONC LES DEUX ELLE-MÊME. Le premier échec change
+ * l'adresse au lieu d'abandonner ; le second seulement fait disparaître la
+ * vignette. Ça coûte un aller-retour sur les photos qui manquent, et rien du
+ * tout sur celles qui viennent.
+ *
+ * ON NE RÉESSAIE QU'UNE FOIS, et c'est le rôle du marqueur : une balise qui se
+ * redonne une adresse à chaque erreur tourne en rond tant que la page est
+ * ouverte.
+ */
+function reessayerAutrement(img: HTMLImageElement): boolean {
+  if (img.dataset.repli === "1") return false;
+  const autre = enGrandAutrement(img.src);
+  if (!autre || autre === img.src) return false;
+  img.dataset.repli = "1";
+  img.src = autre;
+  return true;
+}
 
 /** Une seule décimale, virgule française : « 4,7 ». */
 function note1(n: number): string {
@@ -1164,7 +1193,13 @@ export function Boutique({
             src={photoTete}
             alt=""
             referrerPolicy="no-referrer"
-            onError={() => setPhotoCassee(true)}
+            /* LA COUVERTURE AUSSI A DROIT AU SECOND ESSAI, et c'est elle qui
+               en a le plus besoin : c'est la seule image de la page dont
+               l'absence se voit en grand. Voir `reessayerAutrement`. */
+            onError={(ev) => {
+              if (reessayerAutrement(ev.currentTarget)) return;
+              setPhotoCassee(true);
+            }}
             style={{ objectPosition: `center ${c.cadrage || "50%"}` }}
           />
         ) : (
@@ -2302,8 +2337,12 @@ export function Boutique({
                     referrerPolicy="no-referrer"
                     /* ET UNE PHOTO QUI NE VIENT PAS NE LAISSE PAS UN CADRE
                        VIDE : on retire la vignette entiere plutot que de
-                       montrer un rectangle gris au milieu d'une bande. */
+                       montrer un rectangle gris au milieu d'une bande.
+                       MAIS PAS AVANT D'AVOIR ESSAYE L'AUTRE ECRITURE de
+                       l'adresse — voir `reessayerAutrement` en tete de
+                       fichier. */
                     onError={(ev) => {
+                      if (reessayerAutrement(ev.currentTarget)) return;
                       const f = ev.currentTarget.closest("figure");
                       if (f) f.style.display = "none";
                     }}

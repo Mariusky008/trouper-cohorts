@@ -162,6 +162,30 @@ function sansMoments(): MomentJour[] {
  * ET ON NE TOUCHE À RIEN D'AUTRE. Une adresse qui n'est pas celle de Google
  * ressort telle quelle : nos propres photos de démonstration sont des fichiers
  * du dépôt, et leur ajouter un suffixe donnerait une image introuvable.
+ *
+ * ═══ ON RÉÉCRIT LA TAILLE, PAS LE RESTE DU SUFFIXE ═════════════════════════
+ *
+ * « Les photos ne sont toujours pas lues. »
+ *
+ * LE SUFFIXE N'EST PAS QU'UNE TAILLE : `=w86-h86-k-no` porte DEUX commandes de
+ * taille — `w86` et `h86` — et deux drapeaux, `k` et `no`, qui disent au
+ * serveur d'images comment servir le fichier. En remplaçant le suffixe ENTIER
+ * par `=w1600-h1200`, on jetait les drapeaux avec la taille. On demandait donc
+ * une adresse que Google n'avait jamais émise, et sur les photos de lieux elle
+ * revient en erreur — deux vignettes sur quatre manquaient dans sa bande, et
+ * les deux qui restaient étaient nos propres fichiers, pas celles de Google.
+ *
+ * ON NE REMPLACE DONC QUE CE QU'ON VEUT CHANGER : les jetons de dimension
+ * (`w…`, `h…`, `s…`, et le `c` de recadrage) sortent, tous les autres restent
+ * dans leur ordre. `=w86-h86-k-no` devient `=w1600-h1200-k-no`, `=s120`
+ * devient `=w1600-h1200`, et une adresse sans suffixe en reçoit un.
+ *
+ * ET LA PAGE NE PARIE PAS SUR CE SEUL FORMAT. Je ne peux pas joindre
+ * `lh3.googleusercontent.com` depuis ici — le mandataire refuse la connexion —
+ * donc je ne peux pas VÉRIFIER lequel des deux formats ce serveur accepte.
+ * Écrire le plus probable et l'afficher serait remettre une hypothèse en
+ * production. La vignette essaie donc `=s1600` si celle-ci échoue, et ne
+ * s'efface qu'après les deux. Voir `bq-gal` dans `boutique.tsx`.
  */
 export function enGrand(url: string): string {
   if (!/googleusercontent\.com|ggpht\.com/i.test(url)) return url;
@@ -169,8 +193,28 @@ export function enGrand(url: string): string {
      qu'un : on remplace donc à partir du dernier signe égal, et on n'en ajoute
      un que s'il n'y en avait pas. */
   const i = url.lastIndexOf("=");
+  const coupe = i > url.lastIndexOf("/");
+  const base = coupe ? url.slice(0, i) : url;
+  /* CE QUI N'EST PAS UNE DIMENSION SURVIT. Un jeton de dimension est une
+     lettre de format suivie de chiffres, ou le `c` seul du recadrage. */
+  const gardes = (coupe ? url.slice(i + 1) : "")
+    .split("-")
+    .filter((j) => j && !/^[whs]\d+$/i.test(j) && j.toLowerCase() !== "c");
+  return [`${base}=w1600-h1200`, ...gardes].join("-");
+}
+
+/**
+ * LE SECOND FORMAT, QUAND LE PREMIER N'EST PAS VENU.
+ *
+ * `=s1600` demande le plus grand côté et laisse le serveur choisir l'autre.
+ * C'est la forme la plus ancienne et la plus largement acceptée ; elle sert de
+ * filet, pas de premier choix, parce qu'elle ne garantit pas le rapport.
+ */
+export function enGrandAutrement(url: string): string {
+  if (!/googleusercontent\.com|ggpht\.com/i.test(url)) return "";
+  const i = url.lastIndexOf("=");
   const base = i > url.lastIndexOf("/") ? url.slice(0, i) : url;
-  return `${base}=w1600-h1200`;
+  return `${base}=s1600`;
 }
 
 export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
