@@ -38,8 +38,22 @@
 import { useEffect, useRef, useState } from "react";
 import { INTENTIONS, SOIREES } from "@/lib/direct/soiree";
 
-/** Les trois temps, dans l'ordre du parcours. */
-const TEMPS = ["son", "envies", "live"] as const;
+/**
+ * ═══ QUATRE TEMPS, ET LE PREMIER DIT DE QUELLE SOIRÉE ON PARLE ═════════════
+ *
+ * « Il manque le premier écran de l'annonce de départ : là je vois directement
+ * l'ambiance musicale sans qu'on sache quelle est l'annonce. Choisis une sortie
+ * parmi les annonces et elle devra apparaître en premier. »
+ *
+ * IL A RAISON, ET LE DÉFAUT ÉTAIT DE RÉCIT. On entrait par « LE SON DE CE
+ * SOIR » et une forme d'onde : un extrait de musique sans rien dire de quoi.
+ * Les trois temps qui suivaient — le son, les envies, le Live — répondent tous
+ * à la question « comment c'est ? », et aucun ne répond à « c'est quoi ? ».
+ *
+ * L'ANNONCE EST DONC LE PREMIER TEMPS, et elle vient de la soirée elle-même :
+ * son lieu, son heure, son titre. Rien n'est écrit ici — voir l'en-tête.
+ */
+const TEMPS = ["annonce", "son", "envies", "live"] as const;
 type Temps = (typeof TEMPS)[number];
 
 /**
@@ -62,7 +76,7 @@ export function SortieEnTrois({
 }) {
   const soiree = SOIREES.kiosque;
   const essai = soiree.essais[0];
-  const [temps, setTemps] = useState<Temps>("son");
+  const [temps, setTemps] = useState<Temps>("annonce");
   /** Vrai dès le premier appui : la suite se fait au doigt, plus au minuteur. */
   const [aLaMain, setALaMain] = useState(false);
   const [joue, setJoue] = useState(false);
@@ -179,6 +193,30 @@ export function SortieEnTrois({
       </div>
 
       <div className="s3-carte" key={temps}>
+        {/* ═══ L'ANNONCE — DE QUELLE SOIRÉE ON PARLE ═══════════════════════
+
+            ELLE PORTE CE QU'UNE ANNONCE PORTE, et rien de plus : le lieu,
+            l'heure, ce qu'on propose. Ce sont les trois choses qu'il faut
+            savoir avant de décider si l'on veut écouter dix secondes de
+            musique, et ce sont exactement celles que l'exemple ne disait pas.
+
+            LE COMPTE DES INTENTIONS EST DESSOUS, parce qu'il annonce la suite :
+            quelqu'un a déjà dit ce qu'il cherchait ce soir, donc l'écran des
+            envies ne sortira pas de nulle part. */}
+        {temps === "annonce" && (
+          <>
+            <span className="s3-ch">◉ {soiree.quand.toUpperCase()}</span>
+            <p className="s3-t">
+              {soiree.lieu.split(" ").slice(0, 1).join(" ")}{" "}
+              <b>{soiree.lieu.split(" ").slice(1).join(" ")}</b>
+            </p>
+            <p className="s3-ann">{soiree.phrase}</p>
+            <span className="s3-plus s3-cpt">
+              <b>{soiree.intentions}</b> ont déjà dit ce qu’ils cherchent
+            </span>
+          </>
+        )}
+
         {temps === "son" && essai && (
           <>
             <div className="s3-h">
@@ -288,7 +326,7 @@ export function SortieEnTrois({
         onPointerDown={(e) => e.stopPropagation()}
         onClick={suivant}
       >
-        {dernier ? "Revoir le son" : "Suivant"}
+        {dernier ? "Revoir l’annonce" : "Suivant"}
         <s aria-hidden="true">{dernier ? "↺" : "→"}</s>
       </button>
     </div>
@@ -329,9 +367,15 @@ function Styles() {
   filter:drop-shadow(0 10px 26px rgba(229,107,224,.42));}
 @keyframes s3Flotte{from{transform:translateY(0);}to{transform:translateY(-7px);}}
 .s3-rang{position:relative;display:flex;gap:5px;justify-content:center;}
-.s3-rang i{width:16px;height:3px;border-radius:99px;background:rgba(255,255,255,.26);
+.s3-rang i{width:14px;height:3px;border-radius:99px;background:rgba(255,255,255,.26);
   transition:background .2s ease;}
 .s3-rang i.on{background:#E56BE0;}
+
+/* LE TEXTE DE L'ANNONCE — deux lignes, pas plus : c'est une annonce, pas une
+   fiche. Ce qui vient apres (le son, les envies, le Live) repond deja au
+   « comment c'est ». */
+.s3-ann{margin:6px 0 0;font-size:12px;line-height:1.35;
+  color:rgba(255,255,255,.76);}
 
 .s3-carte{position:relative;border-radius:18px;padding:13px 14px;
   background:rgba(22,14,36,.82);border:1px solid rgba(229,107,224,.34);

@@ -188,6 +188,8 @@ import { INTENTIONS, motsDe, soireeDuLieu, SOIREES } from "@/lib/direct/soiree";
 import { basculerLeSon, jouer, sonCoupe } from "@/lib/direct/sons";
 import { EcranSoiree } from "@/components/direct/soiree-contenu";
 import { SortieEnTrois } from "@/components/direct/sortie-en-trois";
+import { EcranGout } from "@/components/direct/gout-contenu";
+import { GOUTS } from "@/lib/direct/avant-gout";
 import { mesFantomes, rappelerFantome, SIGNAL as SIGNAL_FANTOMES, tempsRestant, type FantomePose } from "@/lib/direct/mes-fantomes";
 import {
   ENVIES,
@@ -3412,6 +3414,34 @@ export function ApercuHabitant() {
     );
     return () => window.clearInterval(t);
   }, [accueilOuvert, raconte, acte, dureeActe, exemple.photos.length]);
+
+  /**
+   * ═══ L'EXEMPLE RESTAURANT EST LE VRAI PARCOURS, PAS SA PHOTOGRAPHIE ═══════
+   *
+   * « C'est l'écran de démarrage avec l'exemple du restaurant, mais c'est
+   * toujours les 3 anciens designs alors que maintenant on a 4 phases. Tu dois
+   * ici aussi mettre ces 4 écrans exactement identiques à mon mock-up. Et comme
+   * pour l'exemple "sortie", il faut que ce soit moi qui navigue d'un écran à
+   * l'autre, et pas que ça change toutes les 3,5 secondes. »
+   *
+   * LA CAUSE TIENT EN UNE PHRASE : IL Y AVAIT DEUX DESSINS. Cet écran faisait
+   * défiler trois photos écrites ici, le parcours en faisait quatre écrits dans
+   * `gout-contenu.tsx`, et les deux ne se connaissaient pas. Refaire le
+   * parcours laissait forcément l'exemple en arrière — et c'est exactement le
+   * défaut que l'exemple des soirées avait déjà produit, pour la même raison.
+   *
+   * ON NE RECOPIE DONC PLUS, ON PRÊTE. C'est le composant de l'avant-goût qui
+   * est monté ici, en densité serrée : les quatre écrans, la barre, le Fantôme,
+   * le rideau, le lecteur, les cinq Fantômes. Le jour où l'on retouche un
+   * écran, les deux endroits bougent ensemble parce qu'il n'y en a qu'un.
+   *
+   * ET LE PLAT EST CELUI DE SA MAQUETTE. Ses quatre images racontent des
+   * lasagnes chez Margot ; `emporter` est la carte de Margot dans le paquet de
+   * démonstration, et c'est elle qui porte le parcours des lasagnes. L'identité
+   * vient de la carte — nom, ville, distance, photo, note — et jamais d'un nom
+   * écrit ici, qui aurait divergé du paquet au premier changement.
+   */
+  const carteDuGout = toutes.find((c) => c.id === "emporter");
 
   /** LE COMMERCE DE CE TOUR-CI — un vrai, choisi dans le paquet du jour. */
   const vedette = vitrine.length ? vitrine[boucle % vitrine.length] : null;
@@ -7466,6 +7496,54 @@ export function ApercuHabitant() {
                       onPrendreLaMain={() => setFamillePrise("sorties")}
                     />
                   </div>
+                ) : exemple.cle === "restaurant" && carteDuGout && GOUTS.emporter ? (
+                  /* ═══ LE VRAI PARCOURS, MONTÉ ICI ═══════════════════════
+                     Voir `carteDuGout` plus haut : on prête le composant au
+                     lieu de redessiner ses écrans.
+
+                     LE PREMIER DOIGT ARRÊTE LA RONDE, comme pour les soirées.
+                     Sans ça, on commencerait à lire l'étape 2 et l'écran
+                     passerait à l'exemple suivant au milieu de la phrase.
+
+                     ET IL FAUT ARRÊTER LA PROPAGATION, SINON RIEN NE SE PASSE.
+                     Mesuré : les quatre appuis sur « C'est parti ! » laissaient
+                     l'écran sur l'étape 1. L'écran d'ouverture appelle
+                     `setPointerCapture` sur lui-même pour suivre le glissement
+                     d'un exemple à l'autre ; tout ce qui suit l'appui part alors
+                     chez LUI, donc l'appui ne devient jamais un clic. C'est la
+                     même parade que les cinq pictogrammes du bas et que
+                     l'exemple des soirées, et pour exactement la même raison. */
+                  <div
+                    className="ap-ac-scene n1 gout"
+                    key={exemple.cle}
+                    onPointerDown={(ev) => {
+                      ev.stopPropagation();
+                      setFamillePrise("restaurants");
+                    }}
+                  >
+                    <EcranGout
+                      compact
+                      gout={GOUTS.emporter}
+                      lieuId="emporter"
+                      lieu={carteDuGout.nom}
+                      ville={carteDuGout.ville}
+                      distance={carteDuGout.distance}
+                      photoLieu={carteDuGout.photo}
+                      note={carteDuGout.google?.note}
+                      avis={carteDuGout.google?.avis}
+                      /* ET LE DERNIER ÉCRAN ENTRE DANS L'APPLICATION. Sans ce
+                         geste, le quatrième écran d'une démonstration n'a plus
+                         de bouton du tout : on arrive au moment où l'on décide,
+                         et il n'y a rien à faire. C'est le même geste que
+                         « Essayer Dax » juste en dessous — la démonstration
+                         mène à la ville, pas à une réservation qu'on ne peut
+                         pas honorer depuis l'écran d'accueil. */
+                      onReserver={() => {
+                        jouer("ouvrir");
+                        marquerVu("accueil");
+                      }}
+                    />
+                  </div>
                 ) : (
                 <>
                 <div
@@ -7652,51 +7730,18 @@ export function ApercuHabitant() {
                   </span>
                 </div>
 
-                {/* ═══ LE RANG DES TEMPS, SOUS LA SCÈNE ════════════════════
+                {/* ═══ LE RANG DES TEMPS EST PARTI AVEC SON ÉCRAN ═════════
 
-                    « Chaque image portant une étape lisible. »
+                    IL COMPTAIT LES TROIS PHOTOS DE L'EXEMPLE RESTAURANT, et
+                    c'était la bonne réponse à « chaque image portant une étape
+                    lisible » tant que cet exemple ÉTAIT trois photos. Il en est
+                    maintenant quatre écrans, et chacun porte sa propre barre de
+                    progression avec « Étape 2 sur 4 » écrit dessous : un second
+                    rang sous le premier aurait compté deux fois la même chose.
 
-                    IL NE DIT PAS CE QU'ON VOIT, IL DIT OÙ L'ON EN EST. Les
-                    trois images du restaurant portent déjà leur titre incrusté
-                    — « LE DÉTAIL QUE VOUS NE VERREZ PAS SUR LE MENU » — et un
-                    second titre posé par-dessus, ce serait deux titres qu'on ne
-                    lit ni l'un ni l'autre : la faute qu'on a déjà évitée pour
-                    les pastilles, dix lignes plus haut.
-
-                    CE QUI MANQUAIT N'ÉTAIT DONC PAS UN MOT, C'ÉTAIT UN RANG. On
-                    voyait une image changer sans savoir si c'était la deuxième
-                    ou la dernière, ni combien de temps on avait pour la lire —
-                    et c'est ce deuxième manque qui fait se sentir pressé, bien
-                    plus que la durée elle-même. Le trait du moment SE REMPLIT
-                    pendant que l'image est là : on voit le temps qu'il reste,
-                    donc on cesse de le craindre. C'est le fil de progression du
-                    parcours d'avant-goût, et le rang de `sortie-en-trois`.
-
-                    DEUX PHOTOS N'EN ONT PAS BESOIN — un avant/après se regarde
-                    d'un coup, les deux cartes sont là en même temps, il n'y a
-                    pas d'étape. D'où la même condition que la scène en récit. */}
-                {raconte && (
-                  <div
-                    className="ap-ac-rang"
-                    aria-hidden="true"
-                    style={
-                      {
-                        "--p": `${Math.round(dureeActe / exemple.photos.length)}ms`,
-                      } as React.CSSProperties
-                    }
-                  >
-                    {exemple.photos.map((src, k) => (
-                      /* LE RANG, PAS LE CHEMIN — même raison qu'aux cartes :
-                         un exemple peut montrer deux fois la même photo. */
-                      <i
-                        key={`${src}-${k}`}
-                        className={k < plan ? "fait" : k === plan ? "ici" : ""}
-                      >
-                        <u />
-                      </i>
-                    ))}
-                  </div>
-                )}
+                    PLUS AUCUN EXEMPLE N'A TROIS PHOTOS. Les quatre qui restent
+                    sont des avant/après — deux images qu'on regarde ENSEMBLE,
+                    donc sans étape à compter. */}
                 </>
                 )}
 
@@ -14845,33 +14890,13 @@ export function ApercuHabitant() {
         .ap-ac-scene.n3 .ap-ac-carte.ici{border-color:rgba(240,56,156,.55);
           box-shadow:0 18px 44px -20px rgba(0,0,0,.9),
             0 0 22px -4px rgba(240,56,156,.55);}
-        /* ═══ LE RANG DES TEMPS ════════════════════════════════════════════
-           TROIS TRAITS SOUS LA SCENE, ET CELUI DU MOMENT SE REMPLIT. La duree
-           du remplissage arrive par la variable --p, posee par le composant :
-           c'est exactement celle de l'image, donc le trait ne peut pas mentir
-           sur le temps qui reste, meme le jour ou la duree de l'exemple
-           changera.
-           LE REMPLISSAGE EST UNE LARGEUR, PAS UNE ECHELLE. Sur trois points de
-           haut, une transformation d'echelle sur l'axe X fait baver les bouts
-           arrondis ; la largeur les garde nets. */
-        .ap-ac-rang{flex:none;display:flex;gap:6px;justify-content:center;
-          margin:11px 14px 0;}
-        .ap-ac-rang i{position:relative;width:28px;height:3px;
-          border-radius:99px;overflow:hidden;
-          background:rgba(255,255,255,.22);}
-        .ap-ac-rang i u{position:absolute;top:0;bottom:0;left:0;width:0;
-          border-radius:99px;background:#F0389C;
-          box-shadow:0 0 10px -2px rgba(240,56,156,.9);}
-        .ap-ac-rang i.fait u{width:100%;}
-        .ap-ac-rang i.ici u{animation:apAcRang var(--p,3500ms) linear both;}
-        @keyframes apAcRang{from{width:0;}to{width:100%;}}
-        /* SANS ANIMATION, LE TRAIT RESTE PLEIN plutot que vide : la ronde ne
-           tourne pas non plus dans ce mode, donc l'image montree est la
-           premiere, et un trait vide laisserait croire qu'elle n'a pas
-           commence. */
-        @media (prefers-reduced-motion: reduce){
-          .ap-ac-rang i.ici u{animation:none;width:100%;}
-        }
+        /* ═══ LE PARCOURS MONTE ICI, ET IL PREND TOUTE LA SCENE ════════════
+           Voir le rendu : l'exemple restaurant n'est plus une suite de photos,
+           c'est le composant de l'avant-gout en densite serree. Il se pose donc
+           comme celui des soirees — a plat dans la scene, sans carte ni
+           inclinaison autour. */
+        .ap-ac-scene.gout{display:block;margin-left:8px;margin-right:8px;}
+
         .ap-ac-carte{position:relative;flex:1 1 0;min-width:0;
           border-radius:20px;background-size:cover;background-position:center;
           transform:rotate(var(--t));

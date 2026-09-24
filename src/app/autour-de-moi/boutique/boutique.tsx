@@ -2232,9 +2232,19 @@ export function Boutique({
           <a className="bq-y-p" href={c.itineraire} target="_blank" rel="noreferrer">
             Itinéraire<i aria-hidden="true">→</i>
           </a>
-          <button type="button" className="bq-y-s">
-            Le prévenir
-          </button>
+          {/* ═══ « LE PRÉVENIR » EST PARTI ══════════════════════════════
+
+              « Ce bouton ne fonctionne pas et je ne sais pas à quoi il sert. »
+
+              LES DEUX MOITIÉS DE SA PHRASE DISENT LA MÊME CHOSE. Il n'avait
+              aucun `onClick` — c'était un bouton qui ne faisait rien — et
+              personne ne savait ce qu'il promettait : prévenir de quoi, pour
+              quand ? Prévenir un commerçant qu'on arrive est déjà ce que font
+              « Réserver » sur l'annonce et « Prendre rendez-vous » plus haut,
+              avec son numéro et le message déjà écrit.
+
+              ON NE LE REMPLACE DONC PAS, ON LE RETIRE. Un troisième chemin vers
+              le même geste n'aurait pas aidé : il aurait fallu choisir. */}
         </div>
       </section>
 
@@ -2733,7 +2743,38 @@ export function Boutique({
           inventés parlant de son commerce sous son nom. Le silence est
           préférable, et il est vrai. */}
       {salonOuvert && (
-        <div className="bq-conv" role="dialog" aria-modal="true" aria-label={`La conversation sur ${c.nom}`}>
+        /* ═══ ELLE EST POSÉE SUR LA PAGE, PLUS COLLÉE DESSUS ══════════════
+
+           « "En parler à mes amis" est très mauvais et ne ressemble pas du tout
+           au salon de discussion qu'on a déjà sur l'app. Quand je clique sur
+           "salon", rien ne se passe non plus. »
+
+           LES DEUX PHRASES SONT LE MÊME DÉFAUT, ET IL SE MESURE. Cette
+           conversation était `position:fixed; inset:0`, c'est-à-dire une page
+           blanche entière par-dessus la page du commerçant. En arrivant par le
+           lien d'invitation (`?salon=1`) elle s'ouvre toute seule : au point
+           exact de l'onglet « Le salon », ce qui répond au doigt n'est donc pas
+           l'onglet, c'est le vide de la conversation. Rien ne se passe parce
+           que rien ne peut se passer — tout est dessous.
+
+           LES FEUILLES DE L'APPLICATION SONT DES FEUILLES : elles montent du
+           bas, elles s'arrêtent avant le haut, on voit ce qu'on a quitté
+           derrière, et on retombe dessus en touchant à côté. C'est ce qui fait
+           qu'une conversation est UN ENDROIT DANS la page et pas une autre
+           page — et c'est exactement ce qu'il décrit quand il dit que ça ne
+           ressemble pas à l'application. */
+        <div
+          className="bq-conv-fond"
+          onClick={() => setSalonOuvert(false)}
+          role="presentation"
+        >
+        <div
+          className="bq-conv"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`La conversation sur ${c.nom}`}
+          onClick={(e) => e.stopPropagation()}
+        >
           <header className="bq-conv-t">
             <div>
               <b>En parler avec mes amis</b>
@@ -2749,10 +2790,21 @@ export function Boutique({
 
           <div className="bq-conv-l">
             {!salon || salon.messages.length === 0 ? (
-              <p className="bq-conv-v">
-                Personne n’a encore écrit. Lancez la conversation, ou invitez quelqu’un —
-                chacun pourra essayer et poser son rendu ici.
-              </p>
+              /* ═══ UN SALON VIDE N'EST PAS UNE PAGE VIDE ═══════════════
+                 Trois lignes de gris clair au milieu de six cents points de
+                 blanc : on ne lisait pas « personne n'a encore écrit », on
+                 lisait « c'est cassé ». Le Fantôme attend, et la phrase dit ce
+                 qu'il y a à faire — inviter — au lieu de constater ce qu'il
+                 n'y a pas. */
+              <div className="bq-conv-v">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/clikme-fantome.png" alt="" />
+                <b>Vous êtes le premier ici.</b>
+                <span>
+                  Invitez vos amis&nbsp;: ils ouvrent le lien, ils écrivent, et
+                  chacun peut essayer et poser son rendu dans cette conversation.
+                </span>
+              </div>
             ) : (
               salon.messages.map((m) => (
                 <div className={`bq-conv-m${m.voix === "moi" ? " moi" : ""}`} key={m.id}>
@@ -2802,6 +2854,7 @@ export function Boutique({
             </button>
           </div>
           {salonDit && <p className="bq-conv-d">{salonDit}</p>}
+        </div>
         </div>
       )}
     </div>
@@ -3501,12 +3554,32 @@ function Styles() {
            bas. La hauteur est en dvh et non en vh : sur telephone la barre du
            navigateur mange la difference, et le champ d'ecriture passait
            dessous. */
-        .bq-conv{position:fixed;inset:0;z-index:70;display:flex;
-          flex-direction:column;background:var(--bq-fond);
-          max-width:560px;margin:0 auto;height:100dvh;}
+        /* LE VOILE : on voit la page qu'on a quittee, et on y retombe en
+           touchant a cote. C'est ce qui fait la difference entre une feuille
+           et une autre page — voir le commentaire du rendu. */
+        .bq-conv-fond{position:fixed;inset:0;z-index:70;display:flex;
+          align-items:flex-end;justify-content:center;
+          background:rgba(12,18,16,.44);backdrop-filter:blur(2px);
+          animation:bqConvFond .22s ease both;}
+        @keyframes bqConvFond{from{opacity:0;}to{opacity:1;}}
+        .bq-conv{position:relative;display:flex;flex-direction:column;
+          width:100%;max-width:560px;
+          /* ELLE S'ARRETE AVANT LE HAUT, ET C'EST LA MOITIE DU SUJET : le
+             bandeau du commerce reste visible au-dessus, donc on sait d'ou
+             l'on vient et ou l'on revient. */
+          height:min(78dvh,680px);
+          background:var(--bq-fond);
+          border-radius:22px 22px 0 0;
+          box-shadow:0 -20px 50px -22px rgba(0,0,0,.45);
+          animation:bqConvMonte .28s cubic-bezier(.2,.75,.3,1) both;}
+        @keyframes bqConvMonte{from{transform:translateY(22px);opacity:.6;}
+          to{transform:none;opacity:1;}}
+        /* LA POIGNEE, comme sur toutes les feuilles de l'application. */
+        .bq-conv::before{content:"";position:absolute;top:8px;left:50%;
+          width:38px;height:4px;border-radius:99px;transform:translateX(-50%);
+          background:var(--bq-ligne);}
         .bq-conv-t{display:flex;align-items:center;justify-content:space-between;
-          gap:12px;padding:14px 16px 12px;
-          padding-top:calc(14px + env(safe-area-inset-top));
+          gap:12px;padding:18px 16px 12px;
           border-bottom:1px solid var(--bq-ligne);}
         .bq-conv-t b{display:block;font-size:15px;}
         .bq-conv-t em{display:block;font-style:normal;font-size:12px;
@@ -3516,8 +3589,16 @@ function Styles() {
           border-radius:999px;width:34px;height:34px;color:var(--bq-encre);flex:none;}
         .bq-conv-l{flex:1;overflow-y:auto;padding:16px;display:flex;
           flex-direction:column;gap:12px;}
-        .bq-conv-v{margin:0;font-size:13.5px;line-height:1.5;color:var(--bq-pale);
-          text-align:center;padding:28px 12px;}
+        /* LE SALON VIDE — voir le rendu : le Fantome attend, et la phrase dit
+           ce qu'il y a a faire plutot que ce qu'il n'y a pas. */
+        .bq-conv-v{flex:1;display:flex;flex-direction:column;
+          align-items:center;justify-content:center;gap:9px;
+          padding:14px 22px;text-align:center;}
+        .bq-conv-v img{width:76px;height:auto;
+          filter:drop-shadow(0 6px 18px rgba(0,0,0,.14));}
+        .bq-conv-v b{font-size:15.5px;font-weight:800;color:var(--bq-encre);}
+        .bq-conv-v span{font-size:13px;line-height:1.5;color:var(--bq-pale);
+          max-width:30em;}
         .bq-conv-m{max-width:82%;align-self:flex-start;background:var(--bq-carte);
           border:1px solid var(--bq-ligne);border-radius:16px;padding:10px 12px;}
         .bq-conv-m.moi{align-self:flex-end;background:var(--bq-rose);
@@ -3540,6 +3621,11 @@ function Styles() {
         .bq-conv-g button{flex:1;font:inherit;font-size:12.5px;font-weight:700;
           cursor:pointer;padding:11px 8px;border-radius:14px;
           background:none;border:1px solid var(--bq-ligne);color:var(--bq-encre);}
+        /* INVITER EST LE GESTE PRINCIPAL D'UN SALON VIDE, et il doit se voir :
+           deux boutons gris identiques cote a cote ne designent rien, donc on
+           n'appuie sur aucun des deux. */
+        .bq-conv-g button:first-child{background:var(--bq-menthe);
+          border-color:transparent;color:#fff;}
         .bq-conv-d{margin:0 16px 12px;font-size:12px;color:var(--bq-pale);text-align:center;}
         .bq-gg-tous{display:flex;align-items:center;justify-content:space-between;
           gap:10px;margin-top:12px;padding:12px 14px;border-radius:14px;

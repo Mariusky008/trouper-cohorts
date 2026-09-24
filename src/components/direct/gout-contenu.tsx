@@ -29,7 +29,7 @@
 // « Maintenant regarde ça… » → « Oh, ça donne faim » → RÉSERVER.
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import type { Gout, OptionGout } from "@/lib/direct/avant-gout";
+import type { Gout } from "@/lib/direct/avant-gout";
 import { EMOTIONS, ecransDuGout } from "@/lib/direct/avant-gout";
 // LA VOIX DU NAVIGATEUR, pour la voix de démonstration du chef. Voir `ecouter`.
 import { onSpeakingChange, speak, stopSpeaking } from "@/lib/site-internet/speech";
@@ -40,6 +40,47 @@ import {
   phrasesGardeesVides,
 } from "@/lib/direct/sa-voix";
 
+/**
+ * LE FANTÔME, EN IMAGE, ET C'EST LE SIEN.
+ *
+ * « Je t'ai donné le fantôme en PNG plus haut. » Ses quatre maquettes le
+ * montrent grand, à gauche, la bulle sortant de sa tête. Le dessin vectoriel de
+ * ce fichier reste en repli — voir `PetitFantome` — pour le jour où le fichier
+ * manque, et pour les appelants qui prêtent le leur.
+ */
+const FANTOME_PNG = "/clikme-fantome.png";
+
+/**
+ * ═══ LA FORME D'ONDE DU LECTEUR, EN QUARANTE-DEUX BARRES ══════════════════
+ *
+ * ELLE EST ÉCRITE, PAS TIRÉE AU HASARD, et pour la même raison que la pincée
+ * de sel plus bas : un `Math.random()` donnerait une onde différente entre le
+ * serveur et le navigateur — ce qui casse l'hydratation — et une onde qui
+ * SAUTE chaque fois qu'on touche autre chose sur l'écran.
+ *
+ * ELLE NE PRÉTEND PAS ÊTRE L'ANALYSE DU SON. C'est un dessin, comme sur sa
+ * maquette, et la seule chose qu'elle dit vraiment est la PROGRESSION : les
+ * barres déjà lues sont allumées, les autres non. Analyser pour de vrai
+ * demanderait de décoder l'audio avant de le jouer, c'est-à-dire d'attendre
+ * avant que le premier appui ne donne du son.
+ */
+const ONDE = [
+  18, 34, 52, 71, 44, 88, 62, 39, 76, 95, 58, 30, 47, 83, 66, 25, 54, 91, 42, 69, 36,
+  80, 57, 22, 64, 86, 49, 33, 73, 97, 41, 28, 60, 78, 51, 35, 68, 90, 45, 26, 56, 20,
+];
+
+/**
+ * DES SECONDES EN « 0:08 ».
+ *
+ * `Math.floor` ET PAS `Math.round` sur les secondes : arrondi, un compteur
+ * passerait de 0:00 à 0:01 au bout d'une demi-seconde, donc il afficherait une
+ * seconde qui n'a pas eu lieu. Un chronomètre compte ce qui est passé.
+ */
+function minsec(s: number): string {
+  const n = Math.max(0, Math.floor(s));
+  return `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
+}
+
 export function EcranGout({
   gout,
   lieu,
@@ -49,9 +90,49 @@ export function EcranGout({
   onFermer,
   fantome,
   lieuId,
+  photoLieu,
+  note,
+  avis,
+  compact,
 }: {
   gout: Gout;
   lieu: string;
+  /**
+   * LA DEVANTURE, POUR LA VIGNETTE DE LA CARTE.
+   *
+   * Ses quatre maquettes posent une petite photo d'enseigne à gauche du nom.
+   * ABSENTE, on dessine un couvert : un carré vide dirait qu'il manque quelque
+   * chose, et prêter la photo d'un autre commerce est la faute qui a déjà donné
+   * le mur des bougies à un hypnothérapeute.
+   */
+  photoLieu?: string;
+  /** Sa note, quand on l'a. Elle porte le jeton de droite sur la carte haute. */
+  note?: string;
+  /** Et sur combien d'avis. Sans elle, le jeton ne dit que la note. */
+  avis?: number;
+  /**
+   * ═══ LE MÊME PARCOURS, EN PLUS SERRÉ — ET C'EST BIEN LE MÊME ══════════════
+   *
+   * « C'est l'écran de démarrage avec l'exemple du restaurant, mais c'est
+   * toujours les 3 anciens designs alors que maintenant on a 4 phases : tu dois
+   * ici aussi mettre ces 4 écrans exactement identiques à mon mock-up. »
+   *
+   * LA CAUSE DU DÉFAUT EST QU'IL Y AVAIT DEUX DESSINS. L'écran d'ouverture
+   * faisait défiler trois photos écrites chez lui, le parcours en faisait
+   * quatre écrans écrits ici, et les deux ne se connaissaient pas : refaire
+   * l'un laissait l'autre en arrière. C'est la même faute que l'exemple des
+   * soirées avait produite, et elle reviendra chaque fois qu'on recopiera un
+   * écran au lieu de le prêter.
+   *
+   * CE N'EST DONC PAS UN SECOND DESSIN, C'EST UNE DENSITÉ. Rien n'est retiré de
+   * ce qui fait l'écran — la barre, le Fantôme, sa bulle, le rideau, le
+   * lecteur, la carte, les cinq Fantômes, le bouton. Ce qui part est ce qui ne
+   * sert qu'en grand : la signature manuscrite dans la marge et la rangée des
+   * trois preuves, deux blocs qui n'ont plus de marge à occuper quand la scène
+   * tombe à trois cents points. Le jour où l'on retouche un écran, les deux
+   * endroits bougent ensemble parce qu'il n'y en a qu'un.
+   */
+  compact?: boolean;
   /**
    * L'IDENTIFIANT DU COMMERCE, POUR RETROUVER SA VOIX.
    *
@@ -76,28 +157,25 @@ export function EcranGout({
   fantome?: React.ReactNode;
 }) {
   const [rang, setRang] = useState(0);
-  /** Ce qu'on a choisi, par rang de temps. La clé de l'option. */
-  const [choix, setChoix] = useState<Record<number, string>>({});
-  /** Le temps de la révélation : après avoir validé une devinette. */
-  const [revele, setRevele] = useState(false);
-  /** Le geste déclenché, sur un temps qui en demande un. */
-  const [declenche, setDeclenche] = useState(false);
   const [emotion, setEmotion] = useState("");
-  /**
-   * ON SORT SANS AVOIR RÉSERVÉ — et c'est le seul moment où l'on demande un
-   * avis. Voir le bloc `go-sortie` plus bas.
-   */
-  const [sortie, setSortie] = useState(false);
   /** Il a réservé : on ne lui demande plus rien, son geste a répondu. */
   const aReserve = useRef(false);
 
-  const quitter = () => {
-    if (aReserve.current || emotion) {
-      onFermer?.();
-      return;
-    }
-    setSortie(true);
-  };
+  /**
+   * ═══ PASSER LA DÉCOUVERTE, C'EST PARTIR — ET PLUS RIEN D'AUTRE ═══════════
+   *
+   * ELLE OUVRAIT UNE FEUILLE QUI N'EXISTE PLUS. « Avant de partir, ça vous
+   * faisait quoi ? » portait les cinq Fantômes, et sa maquette du quatrième
+   * écran les remet là où ils étaient au départ : sous la carte, au-dessus de
+   * « Réserver ». Garder les deux aurait posé la même question deux fois.
+   *
+   * ET C'EST AUSSI CE QUI RÉPARE LE BOUTON. Tant que la feuille existait,
+   * `quitter` posait un drapeau et laissait l'écran en place ; sans elle, le
+   * même code n'aurait plus rien fait du tout — c'est-à-dire exactement le
+   * bouton mort qu'il vient de signaler deux fois sur la page du commerçant.
+   */
+  const quitter = () => onFermer?.();
+
   /**
    * ═══ OÙ EN EST LE RIDEAU, EN POUR CENT DE LA LARGEUR ══════════════════════
    *
@@ -116,6 +194,22 @@ export function EcranGout({
   /** Le lecteur de SA voix, sur l'écran « voix ». */
   const saVoix = useRef<HTMLAudioElement | null>(null);
   const [joue, setJoue] = useState(false);
+  /**
+   * ═══ OÙ EN EST LA LECTURE, ET COMBIEN DE TEMPS ELLE DURE ══════════════════
+   *
+   * « Le son en plein milieu comme sur mon design est primordial. » Sa maquette
+   * écrit « 0:00 / 0:08 » à droite de l'onde : sans ce chiffre, on ne sait pas
+   * si l'on s'engage pour huit secondes ou pour deux minutes, et un bouton de
+   * lecture dont on ignore la longueur ne se presse pas.
+   *
+   * POUR UN VRAI ENREGISTREMENT, LA DURÉE EST CELLE DU FICHIER. Pour la voix de
+   * démonstration il n'y a pas de fichier — c'est le téléphone qui lit — donc
+   * la durée est ESTIMÉE à partir de la longueur du texte, et l'écran le dit en
+   * toutes lettres sous le lecteur. Quatorze caractères par seconde est le
+   * débit d'une synthèse française au réglage par défaut ; c'est une estimation
+   * honnête, et elle est annoncée comme telle.
+   */
+  const [ecoule, setEcoule] = useState(0);
 
   /**
    * ON N'ENTEND QUE SI ON APPUIE, ET ON PEUT COUPER EN COURS.
@@ -150,6 +244,11 @@ export function EcranGout({
         setJoue(false);
         return;
       }
+      /* LE COMPTEUR REPART D'ICI, ET PAS D'UN EFFET. Un effet qui pose un état
+         au montage est la faute que ce fichier signale déjà ailleurs ; remettre
+         à zéro au moment du geste dit exactement la même chose, au bon
+         endroit. */
+      setEcoule(0);
       setJoue(true);
       speak(t.phrase ?? "");
       return;
@@ -163,6 +262,7 @@ export function EcranGout({
       return;
     }
     const lecteur = a ?? new Audio();
+    setEcoule(0);
     saVoix.current = lecteur;
     lecteur.src = src;
     lecteur.onended = () => setJoue(false);
@@ -246,39 +346,21 @@ export function EcranGout({
   const t = ecrans[Math.min(rang, ecrans.length - 1)];
 
   /**
-   * CE QU'ON A COMPOSÉ, POUR LE RÉCAPITULATIF FINAL.
+   * ═══ LES QUATRE ÉCRANS NE DEMANDENT PLUS RIEN AVANT D'AVANCER ════════════
    *
-   * ON NE GARDE QUE LES TEMPS QUI ONT FAIT CHOISIR quelque chose sur le PLAT —
-   * `compose` — et pas ceux qui ont fait deviner ou ressentir. « Vous avez
-   * répondu : la sauce mijotée » n'est pas un ingrédient de son assiette, c'est
-   * une réponse à un jeu, et l'écrire au même endroit que la cuisson ferait
-   * croire qu'on a commandé une devinette.
+   * `ecransDuGout` NE COMPOSE QUE QUATRE SORTES D'ÉCRANS — ouvrir, rideau,
+   * voix, final — et aucune ne fait choisir. Les temps `compose`, `devine` et
+   * `geste` restent écrits dans les données et dans le type : ce sont les
+   * mécaniques que l'IA choisira quand elle écrira les parcours. Mais aucun
+   * n'arrive jusqu'ici, donc la garde « a-t-il choisi ? » gardait une porte
+   * qui n'existe plus.
+   *
+   * ON NE SIMULE PAS UNE CONDITION QU'AUCUN ÉCRAN NE PEUT REMPLIR. Le jour où
+   * un de ces temps ressort du composeur, il faudra les réécrire — et les
+   * réécrire sera plus honnête que de croire qu'elles tenaient encore.
    */
-  /* IL EST TOUJOURS VIDE DEPUIS LA REFONTE, et c'est voulu : les quatre écrans
-     ne contiennent plus de temps « compose », donc plus rien à récapituler. On
-     le garde branché sur `ecrans` — le jour où un choix revient, le
-     récapitulatif revient avec lui, sans qu'on y touche. */
-  const composes = ecrans
-    .map((x, i) => ({ x, i }))
-    .filter(({ x }) => x.quoi === "compose")
-    .map(({ x, i }) => {
-      const o = x.options?.find((p) => p.cle === choix[i]);
-      return o ? { quoi: x.titre.replace(/^Quel(le)?\s+/i, "").trim(), mot: o.resume ?? o.nom } : null;
-    })
-    .filter(Boolean) as { quoi: string; mot: string }[];
-
-  /**
-   * PEUT-ON AVANCER ?
-   *
-   * UN TEMPS QUI PROPOSE DES OPTIONS EN ATTEND UNE. Laisser passer sans choisir
-   * donnerait un récapitulatif à trous — « Cuisson : — » — c'est-à-dire la
-   * preuve que le jeu n'a servi à rien.
-   *
-   * ET UN TEMPS DE GESTE ATTEND SON GESTE. C'est le seul de tous qui demande un
-   * appui pour VOIR quelque chose : le sauter reviendrait à raconter le tour de
-   * magie sans le faire.
-   */
-  const prete = t.options?.length ? !!choix[rang] : t.quoi === "geste" ? declenche : true;
+  const geste = t.geste;
+  const prete = true;
 
   /**
    * LE DOIGT DONNE UNE POSITION DANS LA PAGE ; LE RIDEAU VEUT UN POUR CENT DU
@@ -313,522 +395,493 @@ export function EcranGout({
    */
   useEffect(() => onSpeakingChange((v) => { if (!v) setJoue(false); }), []);
 
+  const duree = t.secondes ?? Math.max(3, Math.round((t.phrase?.length ?? 0) / 14));
+
+  /**
+   * LE CHRONOMÈTRE NE TOURNE QUE PENDANT QUE ÇA PARLE, et il s'arrête tout
+   * seul : `joue` retombe quand la voix se tait — c'est l'abonnement
+   * ci-dessus — donc l'intervalle se démonte avec lui. On ne pose aucune
+   * minuterie qui survive à l'écran.
+   */
+  useEffect(() => {
+    if (!joue) return;
+    const depart = Date.now();
+    const m = window.setInterval(() => setEcoule((Date.now() - depart) / 1000), 100);
+    return () => window.clearInterval(m);
+  }, [joue]);
+
   const avancer = () => {
-    // UNE DEVINETTE SE JOUE EN DEUX TEMPS SUR LE MÊME ÉCRAN : on répond, puis on
-    // apprend. Passer directement au suivant escamoterait la seule chose qu'on
-    // était venu chercher.
-    if (t.quoi === "devine" && t.verite && !revele) {
-      setRevele(true);
-      return;
-    }
-    setRevele(false);
-    setDeclenche(false);
     setRideau(62);
     setRang((r) => Math.min(r + 1, ecrans.length - 1));
   };
 
   const reculer = () => {
-    setRevele(false);
-    setDeclenche(false);
     setRideau(62);
     setRang((r) => Math.max(0, r - 1));
   };
 
-  /**
-   * CE QUE DIT LE BOUTON, ET IL DOIT CHANGER QUAND QUELQUE CHOSE A EU LIEU.
-   *
-   * DEUX TEMPS SE JOUENT EN DEUX APPUIS SUR LE MÊME ÉCRAN — la devinette, qui
-   * répond puis révèle, et le geste, qui déclenche puis avance. Le libellé
-   * restait le même pour les deux appuis : après avoir lu le secret du chef, le
-   * bouton disait encore « Je valide ma réponse », et après avoir fait tomber le
-   * parmesan il disait encore « Faire tomber le parmesan ». On croit que l'appui
-   * n'a pas pris, donc on rappuie, donc on saute l'écran suivant sans l'avoir vu.
-   *
-   * UN BOUTON QUI NE BOUGE PAS APRÈS UN APPUI DIT QU'IL NE S'EST RIEN PASSÉ.
-   * Une fois la chose vue, il n'y a plus qu'une seule suite possible, et elle
-   * s'appelle « Continuer ».
-   */
-  const consomme = (t.quoi === "devine" && !!t.verite && revele) || (t.quoi === "geste" && declenche);
-  const geste = consomme
-    ? (t.apres ?? "Continuer")
-    : t.quoi === "devine" && t.verite
-      ? (t.geste ?? "Je valide")
-      : t.geste;
-
   return (
     <div
       ref={cadre}
-      className="go-ecran"
+      className={`go-ecran go-e-${t.quoi}${compact ? " go-serre" : ""}`}
       style={{ "--go-accent": gout.accent } as React.CSSProperties}
     >
-      {/* ═══ LA PROGRESSION, SANS SON CHIFFRE ═══════════════════════════════
+      {/* ═══ LA PHOTO N'EST PLUS UN BLOC, C'EST LE DÉCOR ════════════════════
 
-          Un segment par temps, celui qu'on joue allumé et ceux qu'on a passés
-          avec lui. Voir l'en-tête : le « 2 / 4 » de la maquette est parti. */}
-      <div className="go-fil" aria-hidden="true">
-        {ecrans.map((x, i) => (
-          <i key={`${x.titre}-${i}`} className={i <= rang ? "on" : ""} />
-        ))}
-      </div>
+          « Chaque étape doit être comme je l'ai imaginé sur ce fichier. »
 
-      <div className="go-haut">
-        {fantome ?? <PetitFantome />}
-        <div className="go-mots">
-          <h2 className="go-t">
-            {t.titre}
-            {t.suite && <b>{t.suite}</b>}
-          </h2>
-          {/* SUR L'ÉCRAN DE VOIX, LA PHRASE EST LA CITATION — et elle est plus
-              bas, en gros, avec son filet de couleur et le bouton d'écoute.
-              Posée ici aussi, on lisait deux fois le même mot du chef à trois
-              centimètres d'écart, la seconde fois en plus beau. */}
-          {t.phrase && t.quoi !== "voix" && <p className="go-p">{t.phrase}</p>}
-        </div>
-      </div>
+          SES QUATRE MAQUETTES N'ONT PAS DE VIGNETTE. La photo va d'un bord à
+          l'autre et du haut au bas, et TOUT est posé dessus : le titre, la
+          bulle, la carte du commerce, le bouton. La version d'avant posait une
+          image de trois cents points de haut au milieu d'une colonne — donc un
+          écran d'application autour d'une photo, quand lui dessine une PHOTO
+          dans laquelle il y a une application.
 
-      {/* ═══ LA PHOTO, PLEIN CADRE ═══════════════════════════════════════════
-          Elle porte le tampon du plat et, sur un temps de geste, ce qui tombe
-          dessus quand on appuie. */}
-      <div className={`go-photo${declenche ? " tombe" : ""}${t.note ? " notee" : ""}`}>
-        {/* ═══ LE RIDEAU — « JE VOUS MONTRE L'INTÉRIEUR ? » ══════════════════
+          LA DIFFÉRENCE N'EST PAS DÉCORATIVE. Ce parcours vend un plat : plein
+          cadre, c'est le plat qu'on regarde et l'interface qui s'efface ; en
+          vignette, c'est l'inverse, et on lit une fiche produit.
 
-            LE SEUL ÉCRAN DE CE PARCOURS QU'UN CONCURRENT NE PEUT PAS COPIER EN
-            UNE APRÈS-MIDI, parce qu'il ne tient pas au dessin mais à une donnée
-            que personne d'autre n'a : deux photos du même plat, prises par le
-            même commerçant. Un Reel se refait ; une deuxième photo ne se
-            télécharge nulle part.
-
-            ON LE TIRE AU DOIGT, ON NE LE REGARDE PAS SE TIRER TOUT SEUL. Une
-            animation se subit et s'oublie ; un rideau qu'on tire soi-même
-            demande un geste, et un geste engage. C'est aussi la raison pour
-            laquelle il n'y a pas de bouton : la poignée EST le bouton, et elle
-            est au milieu de l'image, là où le pouce tombe.
-
-            ET IL N'EXISTE QUE QUAND LES DEUX PHOTOS EXISTENT. Sans la seconde,
-            ce bloc n'est pas rendu du tout et le temps reste une belle photo —
-            pas un rideau qui s'ouvre sur la même image. Voir la règle des
-            secondes photos dans public/direct/LISEZ-MOI.md : l'absence
-            raccourcit, elle ne remplit pas. */}
-        {t.photoApres && t.quoi !== "geste" && (
-          <div
-            className="go-rideau"
-            /* ═══ UN NOMBRE NU, PAS UN POURCENTAGE ═══════════════════════
-               MESURÉ : les étiquettes ne s'effaçaient jamais. En gardant
-               « 8% » dans la variable, `calc((8% - 18%) * 100)` reste un
-               POURCENTAGE — que `opacity` accepte sans broncher et interprète
-               tout autrement. Le nombre nu rend les deux usages possibles :
-               une longueur avec `* 1%`, une opacité sans rien. */
-            style={{ ["--go-x" as string]: String(rideau) }}
-            onPointerDown={(e) => {
-              e.currentTarget.setPointerCapture(e.pointerId);
-              tirer(e);
-            }}
-            onPointerMove={(e) => {
-              // ON NE SUIT QUE LE DOIGT QUI A PRIS LE RIDEAU. Sans la capture,
-              // un simple survol deplacait le separateur a la souris, et la
-              // photo bougeait sans que personne n'ait rien demande.
-              if (e.currentTarget.hasPointerCapture(e.pointerId)) tirer(e);
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="go-rid-a" src={t.photo} alt="" />
-            {/* LA SECONDE EST DÉCOUPÉE, PAS FONDUE. Un fondu croisé donne une
-                bouillie au milieu ; une coupe nette dit « voilà l'autre ». */}
-            <span className="go-rid-b">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={t.photoApres} alt="" />
-            </span>
-            <span className="go-rid-et a" aria-hidden="true">{t.rideau?.avant ?? "Au plat"}</span>
-            <span className="go-rid-et b" aria-hidden="true">{t.rideau?.apres ?? "Servi"}</span>
-            <span className="go-rid-t" aria-hidden="true">
-              <i />
-            </span>
-
-            {/* AU CLAVIER AUSSI, et ce n'est pas une politesse : le même
-                curseur sert de commande accessible et de valeur lisible par un
-                lecteur d'écran, qui n'a autrement aucun moyen de savoir qu'il
-                y a une deuxième photo ici. */}
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={rideau}
-              aria-label="Tirer le rideau entre le plat et la portion servie"
-              onChange={(e) => setRideau(Number(e.target.value))}
-            />
-          </div>
-        )}
-        {!(t.photoApres && t.quoi !== "geste") &&
-          (t.photo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={t.photo} alt="" />
-          ) : (
-            <span className="go-photo-v" aria-hidden="true" />
-          ))}
-        {gout.tampon && rang === 0 && <span className="go-tampon">{gout.tampon}</span>}
-        {/* ═══ L'ANNOTATION MANUSCRITE, ET ELLE EST SUR LA PHOTO ═════════════
-
-            Elle n'informe pas, elle donne le ton : c'est une main qui parle,
-            pas une interface.
-
-            ELLE ÉTAIT POSÉE SOUS LE TITRE, EN ABSOLU, ET ELLE SORTAIT DE
-            L'ÉCRAN. `top:100%` la mettait PAR-DESSUS la photo, qui la recouvre
-            — on lisait « Choisissez votre cuisson en un » et le reste passait
-            sous l'image, coupé net au bord droit. Le défaut ne se voyait que
-            sur les temps qui portent une note, donc pas sur l'ouverture, donc
-            pas au premier coup d'œil.
-
-            SUR LA PHOTO, ELLE EST CHEZ ELLE : une note à la main s'écrit dans
-            la marge d'une image, le dégradé du bas la rend lisible sur
-            n'importe quel plat, et elle ne peut plus rien pousser puisqu'elle
-            ne prend aucune place dans le flux. */}
-        {t.note && <span className="go-main">{t.note}</span>}
-        {/* ═══ LE GESTE QUI FINIT LE PLAT ══════════════════════════════════
-
-            « Le dernier écran qui dit "la touche finale, faire tomber le
-            parmesan" : c'est très mauvais comme animation, ça ne donne pas du
-            tout envie. »
-
-            IL A RAISON, ET LE DÉFAUT ÉTAIT DE CONCEPTION. Huit rectangles
-            beiges tombaient en ligne droite DEVANT la photo et sortaient par le
-            bas : du confetti passé devant une assiette. Rien n'arrivait AU
-            PLAT — au bout d'une seconde et demie, l'image était exactement
-            celle d'avant. On demandait « regardez ce qui se passe » et il ne se
-            passait rien.
-
-            CE QU'UN GESTE DOIT FAIRE ICI : « Maintenant regardez ça… » → « Oh,
-            ça donne faim. » Donc le plat doit CHANGER, et changer en mieux.
-
-            QUATRE CHOSES ARRIVENT ENSEMBLE, et aucune n'est du confetti :
-
-              · LA CAMÉRA S'APPROCHE — un lent zoom de trois pour cent. C'est le
-                geste du cuisinier qui pousse l'assiette vers vous.
-              · LE PLAT SORT DU FOUR — saturation, chaleur et contraste montent
-                d'un cran. C'est ce qui sépare une photo d'un plat qui fume.
-              · UNE LUEUR DORÉE NAÎT DU CENTRE et se répand, comme un gratin qui
-                prend.
-              · UNE MAIN PINCE, S'ARRÊTE, FROTTE ET LÂCHE. C'est ce qui
-                manquait à la version d'avant : les grains venaient de nulle
-                part, donc personne ne faisait rien.
-              · LES GRAINS TOMBENT D'UN SEUL POINT, EN ACCÉLÉRANT, et
-                s'effacent AU PLAT. Vingt-six, fins, rapides — trois dixièmes
-                de seconde, pas une seconde et demie.
-              · PUIS LA VAPEUR MONTE, une seule volute lente. Elle arrive
-                APRÈS, quand tout le reste est retombé : c'est elle qui dit que
-                le plat est chaud, maintenant, et c'est la dernière image qu'on
-                garde avant d'appuyer sur RÉSERVER.
-
-            LE VRAI GESTE RESTERA CELUI DU RESTAURATEUR. Le jour où il filme ses
-            trois plans de quinze secondes, `photoApres` porte le plat fini et la
-            transformation devient un fondu entre deux images RÉELLES — ce qui
-            battra toujours n'importe quel filtre. En attendant, ceci tient
-            debout tout seul. */}
-        {t.quoi === "geste" && (
-          <>
-            {t.photoApres && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="go-apres" src={t.photoApres} alt="" />
-            )}
-            <span className="go-braise" aria-hidden="true" />
-            {/* ─── LA MAIN QUI PINCE, ET C'EST ELLE QUI MANQUAIT ───
-                Deux doigts vus de profil, tracés au trait. Elle descend, elle
-                s'arrête, elle frotte, elle lâche, elle remonte. Sans elle, les
-                grains apparaissaient de nulle part ; avec elle, quelqu'un fait
-                quelque chose — et c'est la seule chose qui donne envie. */}
-            <span className="go-pince" aria-hidden="true">
-              <svg viewBox="0 0 44 40" focusable="false">
-                {/* Le pouce et l'index qui se rejoignent en bas au centre :
-                    le point de lâcher est à 22,34 — exactement d'où partent
-                    les grains. */}
-                <path
-                  d="M6 4 C10 14 16 24 21 33 M38 6 C34 15 28 25 23 33"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3.2"
-                  strokeLinecap="round"
-                />
-                <circle cx="22" cy="34.5" r="2.6" fill="currentColor" />
-              </svg>
-            </span>
-            <span className="go-grains" aria-hidden="true">
-              {GRAINS.map((n, k) => (
-                <i
-                  key={k}
-                  style={
-                    {
-                      "--d": `${n.d}s`,
-                      "--t": `${n.t}s`,
-                      "--s": n.s,
-                      "--r": `${n.r}deg`,
-                      "--f": `${n.f}px`,
-                    } as React.CSSProperties
-                  }
-                />
-              ))}
-            </span>
-            {/* UNE SEULE VOLUTE, ET ELLE VIENT EN DERNIER. Trois montaient
-                ensemble et se lisaient comme un brouillard ; une seule, lente,
-                dit qu'il reste de la chaleur. */}
-            <span className="go-vapeur" aria-hidden="true">
-              <i />
-            </span>
-          </>
+          LE VOILE EST EN DEUX MORCEAUX, en haut et en bas, et c'est ce qui
+          garde le plat visible AU MILIEU. Un voile uniforme rendrait le texte
+          lisible partout en éteignant la photo partout. */}
+      <div className="go-fond" aria-hidden="true">
+        {t.photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={t.photo} alt="" />
+        ) : (
+          <span className="go-fond-v" />
         )}
       </div>
 
-      {/* ═══ L'OUVERTURE : LE MOT DU CHEF, OU CE QUE LE PLAT EST ═══════════ */}
-      {t.quoi === "ouvrir" && gout.chef && (
-        <blockquote className="go-chef">
-          <i aria-hidden="true">“</i>
-          <p>{gout.chef.mot}</p>
-          <cite>{gout.chef.qui}</cite>
-        </blockquote>
-      )}
-      {t.quoi === "ouvrir" && !!gout.marques?.length && (
-        <ul className="go-marques">
-          {gout.marques.map((m) => (
-            <li key={m.nom}>
-              <i aria-hidden="true">{m.emoji}</i>
-              <b>{m.nom}</b>
-              <em>{m.detail}</em>
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="go-sur">
+        {/* ═══ LA BARRE DU HAUT ════════════════════════════════════════════
 
-      {/* ═══ CE QU'ON CHOISIT ════════════════════════════════════════════════
+            ET LE COMPTEUR EST REVENU, CONTRE CE QUE DIT L'EN-TÊTE DE CE
+            FICHIER. Il avait écrit une fois : « une progression visuelle
+            discrète, parce qu'un compteur donne l'impression d'un
+            questionnaire à terminer » — et j'avais retiré le « 2 / 4 » en le
+            citant. Ses quatre maquettes écrivent « Étape 1 sur 4 » en toutes
+            lettres, quatre fois, et il demande le pixel près.
 
-          DEUX COLONNES À PARTIR DE QUATRE OPTIONS, TROIS EN DESSOUS. Quatre
-          vignettes sur une ligne de trois cent quatre-vingt-dix points font
-          quatre-vingts points chacune : on n'y voit plus ce qu'on choisit, ce
-          qui est le seul travail d'une vignette. */}
-      {!!t.options?.length && !revele && (
-        <ul
-          className={`go-choix${t.options.length > 3 ? " deux" : ""}${
-            enMots(t.options) ? " mots" : ""
-          }`}
-        >
-          {t.options.map((o) => (
-            <li key={o.cle}>
-              <button
-                type="button"
-                className={choix[rang] === o.cle ? "on" : undefined}
-                aria-pressed={choix[rang] === o.cle}
-                onClick={() => setChoix((c) => ({ ...c, [rang]: o.cle }))}
-              >
-                <Vignette o={o} />
-                <b>{o.nom}</b>
-                {o.detail && <em>{o.detail}</em>}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* ═══ LA VÉRITÉ, APRÈS LA DEVINETTE ══════════════════════════════════
-
-          IL N'Y A NI BONNE NI MAUVAISE RÉPONSE, et l'écran ne dit jamais
-          « perdu ». Les quatre réponses sont vraies ; celle du chef est celle
-          qu'on vient apprendre. Un jeu qui corrige devant un plat donne envie
-          d'aller manger ailleurs. */}
-      {t.quoi === "devine" && t.verite && revele && (
-        <div className="go-verite">
-          <b>{t.verite.titre}</b>
-          <p>{t.verite.mot}</p>
-        </div>
-      )}
-
-      {/* ═══ IL PARLE, ET C'EST LE SEUL ÉCRAN QU'ON NE PEUT PAS ÉCRIRE ═══════
-
-          LA TRANSCRIPTION EST LE CONTENU, LA VOIX EST UN BOUTON — jamais
-          l'inverse. Quatre personnes sur cinq font défiler en silence : un
-          écran dont le fond tient dans un fichier audio est un écran vide pour
-          elles. Le son ne part donc qu'à l'appui, et le bouton porte sa durée,
-          parce que « 8 s » se décide et « écouter » se subit.
-
-          ET IL N'EXISTE QUE S'IL A DIT OUI. Voir `sa-voix.ts` : on lui montre
-          une phrase qu'il vient de dire et on lui demande s'il la garde. Rien
-          ne part sans ce oui-là. */}
-      {t.quoi === "voix" && (
-        <div className="go-voix">
-          <blockquote>{t.phrase}</blockquote>
-          {(t.voix || t.voixDemo) && (
+            IL A RAISON CONTRE SA PROPRE PHRASE D'AVANT, ET LA RAISON A CHANGÉ
+            AVEC LE PARCOURS : à sept écrans, un compteur annonçait une corvée ;
+            à quatre, il annonce que c'est court. « Étape 1 sur 4 » est une
+            promesse de brièveté, pas un formulaire. */}
+        <div className="go-bar">
+          {(rang > 0 || onFermer) && (
             <button
               type="button"
-              className={`go-voix-e${joue ? " on" : ""}`}
-              onClick={ecouter}
+              className="go-dos"
+              aria-label={rang > 0 ? "Revenir à l’écran précédent" : "Passer cette découverte"}
+              onClick={rang > 0 ? reculer : quitter}
             >
-              <i aria-hidden="true">{joue ? "⏸" : "▶"}</i>
-              {joue
-                ? "En écoute"
-                : t.voixDemo
-                  ? "Écouter sa voix"
-                  : `Écouter sa voix · ${Math.round(t.secondes ?? 0)} s`}
+              <s aria-hidden="true">←</s>
             </button>
           )}
-          {/* ON DIT QUE CETTE VOIX-LÀ EST UNE DÉMONSTRATION. Chez un vrai
-              commerçant, l'écran ne s'ouvre que s'il a parlé, et c'est SA voix
-              qu'on entend — voir `sa-voix.ts`. Laisser croire que celle-ci est
-              la sienne serait lui prêter des mots à travers un haut-parleur. */}
-          {t.voixDemo && <span className="go-voix-d">Démonstration · voix de synthèse</span>}
-        </div>
-      )}
-
-      {/* ═══ LE DERNIER TEMPS ════════════════════════════════════════════════ */}
-      {t.quoi === "final" && (
-        <>
-          {composes.length > 0 && (
-            <ul className="go-recap">
-              {composes.map((c) => (
-                <li key={c.quoi}>
-                  <b>{c.quoi}</b>
-                  <em>{c.mot}</em>
-                </li>
+          <div className="go-prog">
+            <div className="go-fil" aria-hidden="true">
+              {ecrans.map((x, i) => (
+                <i key={`${x.titre}-${i}`} className={i <= rang ? "on" : ""} />
               ))}
-            </ul>
-          )}
-        </>
-      )}
-
-      {/* ═══ LES CINQ FANTÔMES, À LA SORTIE — PAS AVANT LE BOUTON ═══════════
-
-          « Je les déclencherais plutôt lorsque la personne sort sans réserver :
-          "Avant de partir, ça vous faisait quoi ?" Tu apprends alors pourquoi
-          quelqu'un d'intéressé n'a pas converti. »
-
-          IL A RAISON, ET LE DÉFAUT ÉTAIT ARITHMÉTIQUE : posés au-dessus du
-          bouton, ils VOLENT LE CLIC. On arrive au moment où l'on décide, et la
-          dernière chose qu'on voit est une rangée de cinq émojis qui demandent
-          un avis. Après, ils deviennent une raison de revenir.
-
-          ET ON NE LES POSE QU'À CELUI QUI PART SANS RÉSERVER. Celui qui a
-          réservé a répondu par son geste, et le relancer serait lui demander de
-          justifier ce qu'il vient de faire. C'est aussi la seule version qui
-          apprend quelque chose : pourquoi quelqu'un qui est allé au bout n'a
-          pas franchi le pas.
-
-          LA PREMIÈRE RÉPONSE FERME. Un avis n'est pas un formulaire : on en
-          donne un, et on s'en va. */}
-      {sortie && (
-        <div className="go-emo go-sortie">
-          <p>
-            <b>Avant de partir, ça vous faisait quoi&nbsp;?</b>
-            Un mot, et c’est tout.
-          </p>
-          <div className="go-emo-l">
-            {EMOTIONS.map((e) => (
-              <button
-                key={e.cle}
-                type="button"
-                className={emotion === e.cle ? "on" : undefined}
-                aria-pressed={emotion === e.cle}
-                onClick={() => {
-                  setEmotion(e.cle);
-                  setSortie(false);
-                  onFermer?.();
-                }}
-              >
-                {/* LE DESSIN D'ABORD, L'ÉMOJI EN REPLI. Voir `EMOTIONS` :
-                    l'émoji change de visage d'un téléphone à l'autre, donc il
-                    ne peut pas porter une mascotte — mais il reste la bonne
-                    réponse quand l'image n'arrive pas. */}
-                <i aria-hidden="true">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={e.image}
-                    alt=""
-                    onError={(ev) => {
-                      ev.currentTarget.style.display = "none";
-                      const p = ev.currentTarget.parentElement;
-                      if (p) p.textContent = e.emoji;
-                    }}
-                  />
-                </i>
-                <span>{e.mot}</span>
-              </button>
-            ))}
-          </div>
-          {/* PARTIR SANS RÉPONDRE RESTE POSSIBLE, ET SANS AVOIR À VISER : une
-              question qu'on ne peut pas refuser est un péage. */}
-          <button
-            type="button"
-            className="go-sortie-x"
-            onClick={() => {
-              setSortie(false);
-              onFermer?.();
-            }}
-          >
-            Je passe
-          </button>
-        </div>
-      )}
-
-      {/* ═══ LE GESTE QUI AVANCE ════════════════════════════════════════════ */}
-      {t.quoi === "final" ? (
-        onReserver && (
-          <button
-            type="button"
-            className="go-cta"
-            onClick={() => {
-              aReserve.current = true;
-              onReserver?.();
-            }}
-          >
-            {/* LE MOT DU DERNIER GESTE APPARTIENT AU COMMERCE. « Réserver » se
-                dit d'une table ; chez le boucher, une pièce se fait GARDER, et
-                son annonce écrit déjà « Gardez-la-moi ». Le parcours porte donc
-                son libellé quand il en a un. */}
-            <span>
-              {t.geste ?? "Réserver"}{gout.prix ? ` · ${gout.prix.replace(/\s+(€)/g, " $1")}` : ""}
+            </div>
+            <span className="go-etape">
+              Étape {t.n} sur {t.sur}
             </span>
-            <s aria-hidden="true">→</s>
-          </button>
-        )
-      ) : t.quoi === "geste" && !declenche ? (
-        <button type="button" className="go-cta" onClick={() => setDeclenche(true)}>
-          <span>{geste ?? "Voir"}</span>
-          <s aria-hidden="true">→</s>
-        </button>
-      ) : (
-        <button type="button" className="go-cta" disabled={!prete} onClick={avancer}>
-          <span>{geste ?? "Suivant"}</span>
-          <s aria-hidden="true">→</s>
-        </button>
-      )}
+          </div>
+          <span className="go-marque" aria-hidden="true">
+            <b>
+              Clik<i>Me</i>
+            </b>
+            <em>{ville.toUpperCase()} 📍</em>
+          </span>
+        </div>
 
-      {/* ═══ ET ON PEUT TOUJOURS REVENIR, OU SORTIR ════════════════════════
+        {/* ═══ LA SIGNATURE MANUSCRITE ═════════════════════════════════════
 
-          « Passer cette découverte » est sur sa maquette d'ouverture, et il a
-          raison de l'y mettre : quelqu'un qui veut juste l'adresse et l'heure ne
-          doit pas avoir à jouer pour les obtenir. Un jeu obligatoire n'est plus
-          un jeu. */}
-      <div className="go-pied">
-        {rang > 0 ? (
-          /* ET LE MOT « ÉTAPE » N'APPARAÎT PAS ICI NON PLUS. Il l'avait écrit
-             deux fois — « Étape précédente », « Revoir les étapes » — et c'est
-             exactement le mot d'administration que l'en-tête de ce fichier
-             refuse. « Revenir » dit la même chose sans nommer un formulaire. */
-          <button
-            type="button"
-            className="go-retour"
-            /* SUR LE DERNIER ÉCRAN, « REVENIR » EST UNE SORTIE — c'est là qu'on
-               décide, et reculer d'un cran depuis là veut dire non. Ailleurs il
-               recule vraiment. */
-            onClick={t.quoi === "final" ? quitter : reculer}
-          >
-            <s aria-hidden="true">←</s>
-            {t.quoi === "final" ? "Plus tard" : "Revenir"}
-          </button>
-        ) : (
-          onFermer && (
-            <button type="button" className="go-retour" onClick={quitter}>
-              Passer cette découverte
+            « Du vrai. Du frais. Chez Margot ♡ », au même endroit sur trois de
+            ses quatre maquettes. Elle n'est jamais composée à partir du nom du
+            commerce : voir `Gout.signature`. Sur le dernier écran elle laisse
+            la place à « On vous attend ! », qui est la phrase du Fantôme et non
+            une promesse du commerçant. */}
+        {/* ═══ LE TITRE, PUIS LE FANTÔME ET SA BULLE ═══════════════════════
+
+            LE TITRE EST CENTRÉ SOUS LA BARRE, comme sur trois de ses quatre
+            maquettes. La première le pose à droite du Fantôme ; une mise en
+            page par écran aurait donné quatre gabarits qui divergent à la
+            première retouche, et c'est exactement la faute que ce dossier
+            paie à chaque fois qu'il l'a commise.
+
+            LE DERNIER ÉCRAN N'A PAS DE TITRE, ET C'EST SA MAQUETTE QUI LE DIT.
+            À ce moment-là on ne présente plus rien : la bulle annonce ce qu'il
+            reste, la pastille le compte, la carte porte le plat et le prix. Un
+            titre de plus ne ferait que pousser le bouton vers le bas. */}
+        {t.quoi !== "final" && (
+          <div className="go-mots">
+            <h2 className="go-t">
+              {t.titre}
+              {t.suite && <b>{t.suite}</b>}
+            </h2>
+            {/* SUR L'ÉCRAN DE VOIX, LA PHRASE EST LA CITATION — elle est plus
+                bas, dans le lecteur, avec le bouton et la forme d'onde. Posée
+                ici aussi, on lisait deux fois le mot du chef à trois
+                centimètres d'écart. */}
+            {t.phrase && t.quoi !== "voix" && <p className="go-p">{t.phrase}</p>}
+          </div>
+        )}
+
+        <div className="go-scene">
+          {/* LE FANTÔME ET SA BULLE, COLLÉS L'UN À L'AUTRE. La bulle sort de
+              sa tête vers la droite, avec sa pointe — c'est ce qui fait qu'il
+              PARLE au lieu d'être posé à côté d'un texte. */}
+          <div className="go-f-bloc">
+            {t.bulle && (
+              <span className="go-bulle">
+                {t.bulle}
+                <s aria-hidden="true" />
+              </span>
+            )}
+            {fantome ?? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="go-fant" src={FANTOME_PNG} alt="" />
+            )}
+          </div>
+
+          {/* ═══ LA SIGNATURE MANUSCRITE ══════════════════════════════════
+
+              « Du vrai. Du frais. Chez Margot ♡ », au même endroit sur trois de
+              ses quatre maquettes : en haut à droite, en face du Fantôme.
+
+              ELLE EST DANS LA GRILLE, ET PLUS EN ABSOLU. Posée sur la fenêtre,
+              elle tombait EN TRAVERS DU TITRE — mesuré à l'écran : « Du vrai.
+              Du frais. » passait par-dessus « de Pello ». Une note à la main
+              s'écrit dans la marge, pas sur le texte, et une marge ça se
+              réserve : c'est ce que fait la seconde colonne.
+
+              SUR LE DERNIER ÉCRAN ELLE LAISSE LA PLACE à « On vous attend ! »,
+              qui est la phrase du Fantôme et non une promesse du commerçant.
+              Voir `Gout.signature` : rien ici n'est composé à partir du nom. */}
+          {!compact && (t.quoi === "final" || gout.signature) && (
+            <span className="go-signe" aria-hidden="true">
+              {t.quoi === "final" ? "On vous attend !" : gout.signature} <s>♡</s>
+            </span>
+          )}
+
+          {/* ═══ CE QU'IL RESTE, EN PASTILLE RONDE ═════════════════════════
+              Elle n'existe que si le parcours porte un compte écrit. Voir
+              `Gout.reste` : un compte à rebours inventé est le plus vieux
+              mensonge du commerce en ligne. */}
+          {t.quoi === "final" && gout.reste && (
+            <span className="go-reste" aria-hidden="true">
+              <i>🔥</i>
+              <b>{gout.reste.n}</b>
+              <em>{gout.reste.mot}</em>
+              <u>{gout.reste.detail}</u>
+            </span>
+          )}
+
+          {/* ═══ LE RIDEAU — « JE VOUS MONTRE L'INTÉRIEUR ? » ══════════════
+
+              LE SEUL ÉCRAN DE CE PARCOURS QU'UN CONCURRENT NE PEUT PAS COPIER
+              EN UNE APRÈS-MIDI, parce qu'il ne tient pas au dessin mais à une
+              donnée que personne d'autre n'a : deux photos du même plat, par le
+              même commerçant. Un Reel se refait ; une deuxième photo ne se
+              télécharge nulle part.
+
+              ON LE TIRE AU DOIGT. La poignée EST le bouton, et elle est au
+              milieu de l'image, là où le pouce tombe. Sa maquette la dessine en
+              gros rond rose avec deux chevrons — c'est ce qu'on a maintenant,
+              au lieu du trait de deux points d'avant. */}
+          {t.quoi === "rideau" && t.photoApres && (
+            <div
+              className="go-rideau"
+              /* UN NOMBRE NU, PAS UN POURCENTAGE : en gardant « 8% » dans la
+                 variable, une soustraction reste un POURCENTAGE, que l'opacité
+                 accepte sans broncher et interprète tout autrement. */
+              style={{ ["--go-x" as string]: String(rideau) }}
+              onPointerDown={(e) => {
+                e.currentTarget.setPointerCapture(e.pointerId);
+                tirer(e);
+              }}
+              onPointerMove={(e) => {
+                // ON NE SUIT QUE LE DOIGT QUI A PRIS LE RIDEAU. Sans la
+                // capture, un simple survol deplacait le separateur a la
+                // souris, et la photo bougeait sans que personne n'ait rien
+                // demande.
+                if (e.currentTarget.hasPointerCapture(e.pointerId)) tirer(e);
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="go-rid-a" src={t.photo} alt="" />
+              {/* LA SECONDE EST DÉCOUPÉE, PAS FONDUE. Un fondu croisé donne une
+                  bouillie au milieu ; une coupe nette dit « voilà l'autre ». */}
+              <span className="go-rid-b">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={t.photoApres} alt="" />
+              </span>
+              <span className="go-rid-et a" aria-hidden="true">
+                <b>{t.rideau?.avant ?? "Au plat"}</b>
+                {t.rideauDetail?.avant && <em>{t.rideauDetail.avant}</em>}
+              </span>
+              <span className="go-rid-et b" aria-hidden="true">
+                <b>{t.rideau?.apres ?? "Servi"}</b>
+                {t.rideauDetail?.apres && <em>{t.rideauDetail.apres}</em>}
+              </span>
+              <span className="go-rid-t" aria-hidden="true">
+                <i>‹›</i>
+              </span>
+
+              {/* AU CLAVIER AUSSI, et ce n'est pas une politesse : le même
+                  curseur sert de commande accessible et de valeur lisible par
+                  un lecteur d'écran, qui n'a autrement aucun moyen de savoir
+                  qu'il y a une deuxième photo ici. */}
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={rideau}
+                aria-label="Tirer le rideau entre le plat et la portion servie"
+                onChange={(e) => setRideau(Number(e.target.value))}
+              />
+            </div>
+          )}
+
+          {/* ═══ L'APOTHÉOSE : IL PARLE, ET C'EST AU MILIEU DE L'ÉCRAN ═════
+
+              « L'étape 3 doit vraiment être l'apothéose, donc le son en plein
+              milieu comme sur mon design est primordial. »
+
+              IL AVAIT RAISON, ET LE DÉFAUT ÉTAIT DE HIÉRARCHIE. La voix était
+              un petit bouton gris sous une citation, tout en bas de la
+              colonne : le seul écran qu'un concurrent ne peut pas écrire
+              ressemblait à une note de bas de page. Sa maquette en fait un
+              LECTEUR — un gros bouton rond, une forme d'onde en travers de
+              l'écran, la durée à droite — posé au centre, par-dessus la photo
+              du chef.
+
+              LA TRANSCRIPTION RESTE SOUS L'ONDE, ET ELLE RESTE LE CONTENU.
+              Quatre personnes sur cinq font défiler en silence : un écran dont
+              le fond tient dans un fichier audio est un écran vide pour elles.
+              Le son ne part donc qu'à l'appui.
+
+              LA FORME D'ONDE EST ÉCRITE, PAS TIRÉE AU HASARD. Un
+              `Math.random()` donnerait une onde différente entre le serveur et
+              le navigateur — ce qui casse l'hydratation — et une onde qui saute
+              à chaque fois qu'on touche autre chose sur l'écran. */}
+          {t.quoi === "voix" && (
+            <div className="go-voix">
+              <div className="go-voix-h">
+                {(t.voix || t.voixDemo) && (
+                  <button
+                    type="button"
+                    className={`go-voix-b${joue ? " on" : ""}`}
+                    aria-label={joue ? "Arrêter" : "Écouter sa voix"}
+                    onClick={ecouter}
+                  >
+                    <s aria-hidden="true">{joue ? "❙❙" : "▶"}</s>
+                  </button>
+                )}
+                <span className={`go-onde${joue ? " on" : ""}`} aria-hidden="true">
+                  {ONDE.map((h, k) => (
+                    <i
+                      key={k}
+                      className={duree && ecoule / duree > k / ONDE.length ? "lu" : undefined}
+                      style={{ "--h": `${h}%`, "--d": `${(k % 7) * 0.08}s` } as React.CSSProperties}
+                    />
+                  ))}
+                </span>
+                <span className="go-chrono" aria-hidden="true">
+                  {minsec(ecoule)} / {minsec(duree)}
+                </span>
+              </div>
+              <blockquote>{t.phrase}</blockquote>
+              <cite>
+                {t.suite?.replace(/\s+en dit$/, "") ?? "Le chef"}
+                {lieu ? `, ${lieu}` : ""}
+              </cite>
+              {/* ON DIT QUE CETTE VOIX-LÀ EST UNE DÉMONSTRATION. Chez un vrai
+                  commerçant, l'écran ne s'ouvre que s'il a parlé, et c'est SA
+                  voix qu'on entend — voir `sa-voix.ts`. Laisser croire que
+                  celle-ci est la sienne serait lui prêter des mots à travers un
+                  haut-parleur. Et la durée est une ESTIMATION de lecture, pas
+                  la longueur d'un enregistrement : il n'y en a pas. */}
+              {t.voixDemo && (
+                <span className="go-voix-d">Démonstration · voix de synthèse · durée estimée</span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ═══ LA CARTE DU COMMERCE ═══════════════════════════════════════
+
+            DEUX FORMES, ET C'EST SA MAQUETTE QUI LES DISTINGUE. Sur le premier
+            et le dernier écran elle est HAUTE : l'enseigne sur une ligne, le
+            plat et son prix en gros sur la suivante — c'est là qu'on présente
+            et qu'on décide. Au milieu, pendant qu'on joue, elle se ramasse sur
+            une seule ligne : l'écran appartient au rideau et à la voix.
+
+            LE JETON DE DROITE NE SE CLIQUE PAS, ET C'EST DÉLIBÉRÉ. Sa maquette
+            y dessine « Menu du jour » et « Voir le restaurant › », mais cet
+            écran n'a reçu aucun moyen d'ouvrir l'un ou l'autre : le brancher
+            sur rien donnerait précisément le bouton mort qu'il vient de me
+            signaler deux fois. Il porte donc ce qu'on sait et qui ne promet
+            aucun geste — la note du lieu, ou son nom. */}
+        <div className={`go-carte${t.quoi === "rideau" || t.quoi === "voix" ? " courte" : ""}`}>
+          <span className="go-vig-l" aria-hidden="true">
+            {photoLieu ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photoLieu} alt="" />
+            ) : (
+              <s>🍽</s>
+            )}
+          </span>
+          {t.quoi === "rideau" || t.quoi === "voix" ? (
+            <>
+              <span className="go-carte-c">
+                <b>{gout.plat}</b>
+                <em>
+                  {gout.prix ? `${gout.prix} · ` : ""}
+                  {distance}
+                </em>
+                {gout.detail && <u>{gout.detail}</u>}
+              </span>
+              {/* LE JETON DE LA CARTE RAMASSÉE DOIT ÊTRE COURT, et c'est
+                  mesuré : « L'Ardoise Landaise » prenait la moitié de la ligne
+                  et le nom du plat tombait à « Ax… ». La note tient en cinq
+                  caractères et dit quelque chose ; le nom de l'enseigne, lui,
+                  est déjà sur les deux écrans qui l'encadrent. */}
+              {note && (
+                <span className="go-jeton" aria-hidden="true">
+                  <s>★</s>
+                  {note}
+                </span>
+              )}
+            </>
+          ) : (
+            <>
+              <span className="go-carte-c">
+                {t.quoi === "ouvrir" && <i>AUJOURD’HUI CHEZ</i>}
+                <b>{lieu}</b>
+                <em>
+                  📍 {distance} · {ville}
+                </em>
+              </span>
+              {note && (
+                <span className="go-jeton" aria-hidden="true">
+                  <s>★</s>
+                  {note}
+                  {avis ? ` · ${avis} avis` : ""}
+                </span>
+              )}
+              <span className="go-carte-plat">
+                <b>{gout.plat}</b>
+                {gout.prix && <u>{gout.prix}</u>}
+                {gout.detail && <em>{gout.detail}</em>}
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* ═══ LES CINQ FANTÔMES, SUR L'ÉTAPE 4 ═══════════════════════════
+
+            « J'ai remarqué qu'à l'étape 4 il n'y avait pas les 5 fantômes sur
+            certains parcours. »
+
+            ILS ÉTAIENT SUR LA FEUILLE DE SORTIE, ET PAS SUR L'ÉCRAN. Je les y
+            avais mis en citant une phrase à lui — « je les déclencherais plutôt
+            lorsque la personne sort sans réserver » — qui valait quand l'avis
+            volait le clic du bouton. Sa maquette du quatrième écran les pose
+            SOUS la carte et AU-DESSUS de « Réserver », avec la question en
+            toutes lettres, et c'est elle qui fait foi maintenant.
+
+            CE QUI CHANGE VRAIMENT : ils ne se voyaient QUE si l'on passait la
+            découverte. Quelqu'un qui allait jusqu'au bout ne les rencontrait
+            jamais — ce qui est exactement le cas qu'il décrit. */}
+        {t.quoi === "final" && (
+          <div className="go-emo">
+            <p>Ça vous fait quoi&nbsp;?</p>
+            <div className="go-emo-l">
+              {EMOTIONS.map((e) => (
+                <button
+                  key={e.cle}
+                  type="button"
+                  className={emotion === e.cle ? "on" : undefined}
+                  aria-pressed={emotion === e.cle}
+                  onClick={() => setEmotion(emotion === e.cle ? "" : e.cle)}
+                >
+                  {/* LE DESSIN D'ABORD, L'ÉMOJI EN REPLI. Voir `EMOTIONS` :
+                      l'émoji change de visage d'un téléphone à l'autre, donc il
+                      ne peut pas porter une mascotte — mais il reste la bonne
+                      réponse quand l'image n'arrive pas. */}
+                  <i aria-hidden="true">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={e.image}
+                      alt=""
+                      onError={(ev) => {
+                        ev.currentTarget.style.display = "none";
+                        const p = ev.currentTarget.parentElement;
+                        if (p) p.textContent = e.emoji;
+                      }}
+                    />
+                  </i>
+                  <span>{e.mot}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ LE GESTE QUI AVANCE ════════════════════════════════════════ */}
+        {t.quoi === "final" ? (
+          onReserver && (
+            <button
+              type="button"
+              className="go-cta plein"
+              onClick={() => {
+                aReserve.current = true;
+                onReserver?.();
+              }}
+            >
+              <s aria-hidden="true">🗓</s>
+              {/* LE MOT DU DERNIER GESTE APPARTIENT AU COMMERCE. « Réserver »
+                  se dit d'une table ; chez le boucher, une pièce se fait
+                  GARDER, et son annonce écrit déjà « Gardez-la-moi ».
+
+                  ET EN DENSITÉ SERRÉE IL DIT AUTRE CHOSE, parce qu'il FAIT
+                  autre chose. Sur l'écran de démarrage, ce bouton n'ouvre
+                  aucune réservation : il entre dans l'application. Écrire
+                  « Réserver » sur un bouton qui n'a rien à réserver serait la
+                  promesse rompue la plus courte du produit. */}
+              <span>{compact ? `Essayer ${ville}` : (t.geste ?? "Réserver")}</span>
             </button>
           )
+        ) : (
+          <button type="button" className="go-cta" disabled={!prete} onClick={avancer}>
+            <span>{geste ?? "Continuer"}</span>
+            <s aria-hidden="true">→</s>
+          </button>
         )}
-        <span className="go-ou">
-          {lieu} · {ville} · {distance}
-        </span>
+
+        {/* ═══ LES TROIS PREUVES DU BAS ═══════════════════════════════════
+
+            Elles sont sur les quatre maquettes, au même endroit, et elles ne
+            sont pas décoratives : c'est la seule ligne de l'écran qui parle du
+            COMMERCE plutôt que du plat. Elles viennent de `marques`, déjà
+            écrites dans le parcours — rien n'est inventé ici, et un parcours
+            qui n'en a pas n'affiche pas la rangée. */}
+        {!compact && !!gout.marques?.length && (
+          <ul className="go-preuves" aria-hidden="true">
+            {gout.marques.slice(0, 3).map((m) => (
+              <li key={m.nom}>
+                <i>{m.emoji}</i>
+                <span>
+                  <b>{m.nom}</b>
+                  <em>{m.detail}</em>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <Styles />
@@ -836,718 +889,440 @@ export function EcranGout({
   );
 }
 
-/**
- * LA VIGNETTE D'UNE OPTION, ET SON REPLI.
- *
- * AUCUNE DES QUINZE IMAGES DE SES MAQUETTES N'EXISTE ENCORE — trois cuissons,
- * quatre accompagnements, trois sauces, et autant pour l'autre plat. Une option
- * sans photo se dessine donc avec son pictogramme sur un fond teinté : le
- * parcours se joue en entier le premier jour, et il embellit le jour où le
- * restaurateur filme. C'est la même règle que la bande de photos de l'annonce —
- * on montre ce qu'il y a, on ne réserve pas un emplacement vide.
- */
-/**
- * TROIS FOIS LE MÊME DESSIN N'EST PAS UN CHOIX — C'EST UNE LISTE DE MOTS.
- *
- * « Bleu / Saignant / À point » se dessinait en trois grandes vignettes portant
- * TOUTES LE MÊME 🥩 : trois images identiques côte à côte, à la place exacte où
- * l'écran demande de faire une différence. C'est pire que pas d'image, parce que
- * l'œil va d'abord à l'image, et que celle-là dit « ces trois choses sont
- * pareilles » au moment où on demande de les distinguer.
- *
- * QUAND LES OPTIONS NE SE DISTINGUENT PAS À L'IMAGE, ON LES DISTINGUE AU MOT.
- * La grille passe en rangées basses, le pictogramme devient petit et se range à
- * gauche du nom. L'écran y gagne deux cents points de hauteur, et le
- * commerçant qui filmera un jour ses trois cuissons les fera remonter en
- * vignettes sans qu'on touche à quoi que ce soit : il suffira qu'elles diffèrent.
- */
-function enMots(options: OptionGout[]): boolean {
-  if (options.some((o) => o.photo)) return false;
-  const premier = options[0]?.emoji;
-  return options.every((o) => o.emoji === premier);
-}
+/* ═══ CE QUI A ÉTÉ RETIRÉ D'ICI, ET POURQUOI ═══════════════════════════════
 
-/**
- * LE FANTÔME QUI PARLE, EN AUTARCIE COMPLÈTE.
- *
- * C'est LUI qui pose les questions — « qu'est-ce qui rend les vôtres
- * particulières ? » est sa phrase, et l'écran entier est sa manière de la
- * reposer au client. Sans lui, le parcours devient un formulaire à voix neutre.
- *
- * IL NE DÉPEND DE RIEN : ni `defs`, ni dégradé nommé, ni feuille de style
- * extérieure — uniquement de `currentColor` et de deux couleurs en dur. C'est la
- * condition pour qu'il tienne dans une feuille montée par-dessus l'application,
- * là où les identifiants SVG de la page d'accueil n'existent pas.
- */
-/**
- * LA PINCÉE — vingt-six grains, aucun identique.
- *
- * ELLE EST ÉCRITE, PAS TIRÉE AU HASARD, et c'est délibéré. Un `Math.random()`
- * donnerait une chute différente à chaque rendu de React — donc une chute qui
- * SAUTE quand on touche autre chose sur l'écran — et surtout une chute
- * différente entre le serveur et le navigateur, ce qui casse l'hydratation.
- * Vingt-six valeurs choisies à la main se lisent comme du hasard et se
- * comportent comme une animation.
- *
- * ═══ ET ELLES PARTENT TOUTES DU MÊME POINT, MAINTENANT ════════════════════
- *
- * « L'animation "faire tomber le sel" est très mauvaise aussi. De manière
- * générale les animations de fin de parcours sont toutes extrêmement
- * mauvaises. »
- *
- * IL AVAIT DÉJÀ DIT CELLE-CI UNE FOIS, ET MA CORRECTION N'EN ÉTAIT PAS UNE :
- * j'avais empilé des calques — lueur, chaleur, zoom, vapeur — sur une chute qui
- * restait fausse. On ne répare pas un mouvement en ajoutant des effets autour.
- *
- * CE QUI CLOCHAIT TIENT EN TROIS MOTS : pas de source, pas de gravité, pas
- * d'impact.
- *
- *   · PAS DE SOURCE. Les éclats naissaient répartis sur toute la largeur du
- *     cadre — `x` allait de 6 à 91 pour cent. Du sel ne tombe pas d'un plafond :
- *     il tombe d'une MAIN, c'est-à-dire d'un point, et il s'ouvre en cône en
- *     descendant. C'est la première chose que l'œil vérifie sans le savoir, et
- *     c'est pour ça que ça ressemblait à de la neige, donc à un décor.
- *   · PAS DE GRAVITÉ. Ils mettaient une seconde et demie à traverser, à vitesse
- *     presque constante. Un grain de sel traverse une assiette en trois dixièmes
- *     de seconde, EN ACCÉLÉRANT. Le mouvement lent transformait le geste du
- *     cuisinier en chute de confettis.
- *   · PAS D'IMPACT. Le plat changeait DÈS L'APPUI, en même temps que la chute :
- *     donc le changement n'était causé par rien. Il se produit maintenant à
- *     l'ARRIVÉE des grains, et c'est là toute la différence entre « il se passe
- *     des choses » et « ce que j'ai fait a fait quelque chose ».
- *
- * `f` LA DÉRIVE LATÉRALE, en points depuis le point de lâcher — c'est elle qui
- * fait le cône. `d` LE RETARD, minuscule : tout part en un huitième de seconde,
- * parce qu'une pincée se lâche d'un coup. `t` LA DURÉE, trois dixièmes. `s`
- * L'ÉCHELLE et `r` LA ROTATION, pour qu'aucun grain ne soit le jumeau d'un
- * autre.
- */
-const GRAINS = [
-  { f: -34, d: 0.0, t: 0.34, s: 0.9, r: 120 },
-  { f: 29, d: 0.01, t: 0.31, s: 0.75, r: -90 },
-  { f: -12, d: 0.02, t: 0.38, s: 1.1, r: 160 },
-  { f: 7, d: 0.0, t: 0.29, s: 0.6, r: -140 },
-  { f: 41, d: 0.03, t: 0.36, s: 0.85, r: 200 },
-  { f: -47, d: 0.04, t: 0.33, s: 0.7, r: -60 },
-  { f: 18, d: 0.02, t: 0.42, s: 1.0, r: 110 },
-  { f: -25, d: 0.05, t: 0.3, s: 0.55, r: -180 },
-  { f: 53, d: 0.06, t: 0.39, s: 0.95, r: 140 },
-  { f: -6, d: 0.03, t: 0.27, s: 0.65, r: -100 },
-  { f: 35, d: 0.07, t: 0.35, s: 0.8, r: 170 },
-  { f: -58, d: 0.05, t: 0.41, s: 1.05, r: -130 },
-  { f: 12, d: 0.08, t: 0.28, s: 0.5, r: 90 },
-  { f: -39, d: 0.06, t: 0.37, s: 0.9, r: -210 },
-  { f: 63, d: 0.09, t: 0.33, s: 0.7, r: 150 },
-  { f: -17, d: 0.07, t: 0.44, s: 1.15, r: -80 },
-  { f: 26, d: 0.1, t: 0.3, s: 0.6, r: 190 },
-  { f: -68, d: 0.08, t: 0.38, s: 0.85, r: -160 },
-  { f: 2, d: 0.11, t: 0.26, s: 0.45, r: 100 },
-  { f: 46, d: 0.09, t: 0.4, s: 1.0, r: -120 },
-  { f: -30, d: 0.12, t: 0.32, s: 0.75, r: 210 },
-  { f: 57, d: 0.1, t: 0.43, s: 0.9, r: -70 },
-  { f: -50, d: 0.13, t: 0.29, s: 0.55, r: 130 },
-  { f: 21, d: 0.11, t: 0.36, s: 0.8, r: -190 },
-  { f: -9, d: 0.14, t: 0.34, s: 0.65, r: 80 },
-  { f: 38, d: 0.12, t: 0.31, s: 0.7, r: -150 },
-];
+   QUATRE OUTILS SONT PARTIS AVEC LES ÉCRANS QU'ILS SERVAIENT : la vignette
+   d'une option, la règle qui décidait si trois options se distinguent à
+   l'image, les vingt-six grains de la pincée de sel, et le Fantôme dessiné au
+   trait.
 
-function PetitFantome() {
-  return (
-    <svg className="go-f" viewBox="0 0 40 44" aria-hidden="true" focusable="false">
-      <path
-        d="M20 3C11.2 3 4 10.2 4 19v18.6c0 1.2 1.4 1.9 2.4 1.2l2.9-2c.7-.5 1.6-.4 2.2.2l2 2c.8.8 2 .8 2.8 0l1.9-1.9c.7-.7 1.9-.7 2.6 0l1.9 1.9c.8.8 2 .8 2.8 0l2-2c.6-.6 1.5-.7 2.2-.2l2.9 2c1 .7 2.4 0 2.4-1.2V19c0-8.8-7.2-16-16-16z"
-        fill="#fff"
-      />
-      <ellipse cx="10.4" cy="24.6" rx="2.8" ry="1.7" fill="var(--go-accent,#E56BE0)" opacity=".34" />
-      <ellipse cx="29.6" cy="24.6" rx="2.8" ry="1.7" fill="var(--go-accent,#E56BE0)" opacity=".34" />
-      <ellipse cx="14.2" cy="19" rx="2.5" ry="3.3" fill="#1A1030" />
-      <ellipse cx="25.8" cy="19" rx="2.5" ry="3.3" fill="#1A1030" />
-      <circle cx="15.1" cy="17.7" r=".9" fill="#fff" />
-      <circle cx="26.7" cy="17.7" r=".9" fill="#fff" />
-      <path d="M16.4 26.2c1.5 2 5.7 2 7.2 0" stroke="#1A1030" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-    </svg>
-  );
-}
+   ILS NE SERVAIENT PLUS DEPUIS QUE LE PARCOURS TIENT EN QUATRE ÉCRANS —
+   ouvrir, rideau, voix, final — dont aucun ne fait choisir ni ne demande un
+   geste. Ils tenaient trois cents lignes de code et de feuille de style que
+   personne ne pouvait atteindre, et du code qu'on ne peut pas atteindre ne
+   se relit pas : il se contente de vieillir jusqu'au jour où quelqu'un le
+   rebranche en croyant qu'il marche encore.
 
-function Vignette({ o }: { o: OptionGout }) {
-  if (o.photo) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img className="go-vig" src={o.photo} alt="" />;
-  }
-  return (
-    <span className="go-vig sans" aria-hidden="true">
-      {o.emoji ?? "🍽️"}
-    </span>
-  );
-}
+   RIEN N'EST PERDU DE CE QU'ILS DISAIENT. Les données, elles, sont intactes —
+   `OptionGout`, `verite`, `geste` sont toujours dans `avant-gout.ts` avec leurs
+   parcours remplis, et l'historique garde ce qui les dessinait. Le jour où
+   l'IA écrira les parcours et ressortira un temps qui fait choisir, il faudra
+   le redessiner pour CE cadre-ci, plein écran, et pas ressusciter une mise en
+   page faite pour une colonne.
 
-/**
- * dangerouslySetInnerHTML ET PAS UN ENFANT DE STYLE, ET C'EST UNE GARDE.
- *
- * scripts/verifier-styles-en-ligne.mjs ne cherche QUE la forme __html suivie
- * d'un littéral de gabarit
- * — c'est elle qu'il sait relire caractère par caractère pour trouver l'accent
- * grave égaré dans un commentaire CSS, celui qui referme le littéral au milieu
- * de la feuille et emporte tout ce qui suit. Un écran écrit dans l'autre forme
- * n'est pas couvert : il ne se signale pas, il attend. Voir ce script.
- */
+   LE FANTÔME EST MAINTENANT LE SIEN, EN PNG. Voir `FANTOME_PNG` en haut :
+   « je t'ai donné le fantôme en PNG, et ce n'est toujours pas le bon fantôme ;
+   si tu n'arrives pas à lui faire faire un clin d'œil, garde-le tel quel. »
+   Un second fantôme dessiné à la main, à côté du vrai, était la meilleure
+   façon de finir par montrer le mauvais. */
+
 function Styles() {
   return (
     <style
       dangerouslySetInnerHTML={{
         __html: `
-        /* LA POSITION RELATIVE EST ICI, ET PAS PLUS BAS : c'est ce qui fait de cet
-           ecran le repere de la feuille de sortie. Declaree une seconde fois
-           en bas du fichier, elle aurait fait deux objets du meme nom, dont le
-           resultat depend de l'ordre d'ecriture. Voir la feuille de sortie. */
-        .go-ecran{position:relative;display:flex;flex-direction:column;gap:12px;
-          padding-bottom:4px;}
+        /* ═══ L'ECRAN EST UNE PHOTO, ET L'APPLICATION EST DESSUS ════════════
+           Voir le commentaire du bloc go-fond dans le rendu : ses quatre
+           maquettes n'ont pas de vignette, la photo va d'un bord a l'autre.
+           LA HAUTEUR MINIMALE EST CELLE DU PARENT ET PAS CELLE DE LA FENETRE.
+           Cet ecran sert dans DEUX cadres : la feuille qui monte par-dessus
+           l'application, ou il occupe tout, et une section de la page du
+           commercant, ou il est au milieu d'une page qui defile. Une hauteur
+           de fenetre ecrite ici aurait fait un trou d'un ecran dans la page. */
+        .go-ecran{position:relative;display:flex;flex-direction:column;
+          min-height:560px;border-radius:20px;overflow:hidden;
+          background:#0B0713;color:#fff;
+          font-family:inherit;}
 
-        /* ═══ LA PROGRESSION, SANS CHIFFRE ══════════════════════════════════
-           Un segment par temps. Voir l'en-tete du fichier : le « 2 / 4 » de la
-           maquette est parti, et le mot « etape » avec lui. */
-        .go-fil{display:flex;gap:6px;}
-        .go-fil i{flex:1;height:4px;border-radius:99px;
-          background:rgba(255,255,255,.16);transition:background .3s ease;}
-        .go-fil i.on{background:linear-gradient(90deg,#8B5CF6,var(--go-accent,#E56BE0));}
+        .go-fond{position:absolute;inset:0;z-index:0;}
+        .go-fond img{display:block;width:100%;height:100%;object-fit:cover;
+          /* CALEE PAR LE HAUT : les photos de plat sont plus hautes que larges,
+             et le cadrage couvrant rogne en haut ET en bas quand il centre. Le
+             haut porte la vapeur et le titre incruste ; le bas ne porte que le
+             bord de l'assiette. */
+          object-position:center top;}
+        .go-fond-v{display:block;width:100%;height:100%;
+          background:linear-gradient(160deg,#1A1030,#0B0713);}
+        /* LE VOILE EST EN DEUX MORCEAUX, ET C'EST CE QUI GARDE LE PLAT VISIBLE.
+           Un voile uniforme rendrait le texte lisible partout en eteignant la
+           photo partout ; celui-ci est noir en haut, noir en bas, transparent
+           au tiers du milieu — c'est-a-dire exactement la ou le plat est. */
+        .go-fond::after{content:"";position:absolute;inset:0;
+          background:linear-gradient(180deg,
+            rgba(8,5,14,.92) 0%,rgba(8,5,14,.66) 16%,rgba(8,5,14,.12) 34%,
+            rgba(8,5,14,.12) 44%,rgba(8,5,14,.74) 62%,rgba(8,5,14,.95) 78%,
+            rgba(8,5,14,.98) 100%);}
 
-        .go-haut{position:relative;display:flex;align-items:flex-start;gap:11px;}
-        .go-haut>svg,.go-haut>span:first-child{flex:none;}
-        /* IL FLOTTE, PARCE QU'UN FANTOME POSE NE FLOTTE PAS. Deux secondes,
-           quatre pixels : assez pour qu'on le voie vivre, trop peu pour qu'on
-           regarde autre chose que le plat. */
-        .go-f{width:40px;height:44px;animation:go-flotte 2.6s ease-in-out infinite;}
-        @keyframes go-flotte{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
-        @media (prefers-reduced-motion:reduce){.go-f{animation:none;}}
-        .go-mots{flex:1;min-width:0;}
-        .go-t{margin:0;font-size:clamp(24px,7vw,30px);font-weight:850;
-          letter-spacing:-.03em;line-height:1.08;color:#fff;}
-        /* LE SECOND MORCEAU DU TITRE PORTE LA COULEUR DU PLAT. C'est ce qui fait
-           qu'un parcours ressemble a SON plat plutot qu'a l'application : le
-           magret est magenta, les lasagnes sont vertes. */
-        .go-t b{font-weight:850;color:var(--go-accent,#E56BE0);}
-        /* LE POINT D'INTERROGATION NE RESTE PAS SEUL SUR SA LIGNE. « Qu'est-ce
-           qui vous attire le plus dans ce plat / ? » : la ligne tombait au
-           caractere pres, et la phrase se terminait sur un signe isole. */
-        .go-p{margin:7px 0 0;font-size:13.5px;line-height:1.4;color:#B9C6D6;
-          text-wrap:pretty;}
-        /* ─── L'ANNOTATION MANUSCRITE ───
-           Elle est en absolu et sur deux cent points au plus : posee dans le
-           flux, elle poussait le titre et la photo vers le bas a chaque ecran
-           qui en porte une, donc la mise en page sautait d'un temps a l'autre. */
-        /* ELLE TIENT DANS LA PHOTO, AVEC SES DEUX BORDS DECLARES. Le bord droit
-           seul laissait la ligne s'etendre vers la gauche sans limite utile et
-           deborder du cadre ; les DEUX bords lui donnent une largeur, donc un
-           retour a la ligne. Le voile du bas la rend lisible sur un plat clair
-           comme sur un plat sombre. */
-        /* ELLE NE PREND PAS TOUTE LA LARGEUR, POUR NE PAS LAISSER SON DERNIER
-           MOT SEUL. Sur toute la largeur, « Des saveurs simples qui font toute
-           la difference ! » remplissait la ligne au caractere pres et renvoyait
-           le point d'exclamation a la ligne suivante, tout seul dans le coin.
-           Quatre cinquiemes de la photo, et deux lignes equilibrees. */
-        .go-main{position:absolute;left:18%;right:14px;bottom:12px;z-index:2;
-          text-wrap:balance;
-          /* LA MEME MAIN QUE PARTOUT AILLEURS. Les trois polices citees ici
-             n'existent que sur macOS et Windows : sur un telephone et sur le
-             serveur, la note manuscrite retombait sur le cursive du systeme,
-             c'est-a-dire un serif penche. La variable porte Caveat, chargee
-             une fois pour toute l'application. */
-          font-family:var(--font-main-levee),'Segoe Script','Bradley Hand',cursive;
-          font-size:17px;line-height:1.25;text-align:right;color:#fff;
-          text-shadow:0 2px 12px rgba(0,0,0,.95);transform:rotate(-2.5deg);
-          pointer-events:none;}
-        /* LE VOILE NE SE POSE QUE SUR LES PHOTOS QUI PORTENT UNE NOTE. Partout
-           ailleurs il assombrirait le plat pour rien, et c'est le plat qu'on
-           est venu regarder. */
-        .go-photo.notee::after{content:"";position:absolute;inset:auto 0 0;
-          height:46%;background:linear-gradient(to top,rgba(4,8,14,.84),transparent);
-          pointer-events:none;}
+        .go-sur{position:relative;z-index:1;display:flex;flex-direction:column;
+          flex:1;min-height:0;gap:10px;padding:12px 14px 14px;}
 
-        .go-photo{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;
-          border-radius:20px;background:#0B1310;}
-        .go-photo img{width:100%;height:100%;object-fit:cover;display:block;}
-        .go-photo-v{display:block;width:100%;height:100%;
-          background:linear-gradient(150deg,#1B2436,#0E141F);}
-        /* LE TAMPON DU COIN, SUR L'OUVERTURE SEULEMENT. « FAIT MAISON » est une
-           promesse du commercant : elle se pose une fois, a l'arrivee. */
-        .go-tampon{position:absolute;right:12px;bottom:12px;width:76px;height:76px;
-          display:flex;align-items:center;justify-content:center;text-align:center;
-          border-radius:50%;border:1.5px solid rgba(255,255,255,.8);
-          font-size:11.5px;font-weight:850;line-height:1.15;color:#fff;
-          text-transform:uppercase;letter-spacing:.04em;
-          background:rgba(6,12,10,.34);
-          -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);}
+        /* ─── LA BARRE DU HAUT ─── */
+        .go-bar{display:grid;grid-template-columns:44px 1fr auto;
+          align-items:start;gap:8px;}
+        .go-dos{display:flex;align-items:center;justify-content:center;
+          width:42px;height:42px;padding:0;border-radius:50%;
+          border:1px solid rgba(255,255,255,.26);
+          background:rgba(12,8,20,.55);backdrop-filter:blur(6px);
+          color:#fff;font-size:19px;line-height:1;cursor:pointer;}
+        .go-dos s{text-decoration:none;}
+        .go-dos:active{transform:scale(.94);}
+        .go-prog{display:flex;flex-direction:column;align-items:center;gap:6px;
+          padding-top:5px;min-width:0;}
+        .go-fil{display:flex;gap:6px;justify-content:center;width:100%;}
+        .go-fil i{flex:1 1 0;max-width:64px;height:6px;border-radius:99px;
+          background:rgba(255,255,255,.26);transition:background .25s ease;}
+        .go-fil i.on{background:linear-gradient(90deg,#C22CE0,#FF2E93);
+          box-shadow:0 0 12px -2px rgba(255,46,147,.85);}
+        .go-etape{font-size:12.5px;font-weight:700;color:rgba(255,255,255,.88);
+          letter-spacing:.01em;white-space:nowrap;}
+        .go-marque{display:flex;flex-direction:column;align-items:flex-end;
+          line-height:1;}
+        .go-marque b{font-size:20px;font-weight:900;letter-spacing:-.02em;}
+        .go-marque b i{font-style:normal;color:#FF2E93;}
+        .go-marque em{margin-top:3px;font-style:normal;font-size:11.5px;
+          font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,.62);}
 
-        /* ═══ LE GESTE QU'ON DECLENCHE ══════════════════════════════════════
-           C'est le seul temps qui demande un appui pour VOIR quelque chose. Huit
-           copeaux tombent en quinconce : sans le decalage, ils forment une ligne
-           qui descend, et une ligne ne ressemble a rien qu'on connaisse. */
-        /* ═══ LE GESTE QUI FINIT LE PLAT ══════════════════════════════════
-           Voir le grand commentaire dans le composant : l'ancienne version
-           faisait tomber huit rectangles DEVANT la photo, et au bout d'une
-           seconde et demie l'image etait exactement celle d'avant. Ici, c'est
-           le PLAT qui change. */
 
-        /* ═══ QUATRE TEMPS, ET ILS NE SE CHEVAUCHENT PAS ══════════════════
-           C'est toute la correction. L'ancienne version lancait cinq effets a
-           l'instant zero et les laissait se recouvrir pendant cinq secondes :
-           l'oeil ne voyait ni debut, ni cause, ni fin. Un geste se lit en
-           quatre battements, et chacun doit avoir fini avant que le suivant
-           commence.
+        /* ─── LE TITRE ─── */
+        .go-mots{margin-top:2px;text-align:center;}
+        .go-t{margin:0;font-size:30px;font-weight:900;line-height:1.06;
+          letter-spacing:-.02em;color:#fff;
+          text-shadow:0 2px 14px rgba(0,0,0,.75);}
+        .go-t b{color:#FF2E93;}
+        .go-p{margin:7px auto 0;max-width:30em;font-size:14px;line-height:1.35;
+          color:rgba(255,255,255,.9);text-shadow:0 2px 10px rgba(0,0,0,.8);}
 
-             0 → 200 ms   ANTICIPATION  la main descend et s'arrete
-             200 → 320    LE LACHER     elle frotte, les grains partent
-             320 → 640    LA CHUTE      ils accelerent et disparaissent au plat
-             560 → 1500   LA REACTION   le plat repond, puis la vapeur monte
+        /* ─── LE FANTOME, SA BULLE, ET CE QUI SE JOUE AU MILIEU ───
+           LA SCENE PREND LA PLACE QUI RESTE, et ses enfants s'y posent en
+           absolu ou dans le flux selon ce qu'ils sont : le Fantome et la
+           pastille flottent sur la photo, le rideau et le lecteur occupent le
+           milieu. C'est ce qui permet aux quatre ecrans de partager une seule
+           mise en page. */
+/* ═══ LA SCENE EST UNE GRILLE, ET C'EST ELLE QUI EMPECHE LES CHEVAUCHEMENTS
 
-           LE TOUT FAIT UNE SECONDE ET DEMIE. L'ancienne en faisait cinq. Un
-           geste de cuisine dure le temps d'un geste de cuisine : au-dela, ce
-           n'est plus un geste, c'est une attente. */
+           TOUT Y ETAIT EN ABSOLU, ET TOUT SE RECOUVRAIT. Mesure sur capture :
+           la signature passait en travers du titre, la bulle du Fantome
+           couvrait ENTIEREMENT le lecteur de l'etape 3 — bouton, onde et duree
+           — et elle mordait la pastille du reste a l'etape 4. Trois defauts,
+           une seule cause : des elements poses les uns sur les autres sans que
+           rien ne reserve la place de personne.
 
-        /* ─── 1 · L'ANTICIPATION : LE PLAT RETIENT SON SOUFFLE ───
-           Il s'assombrit d'un rien et se retracte de deux millimes pendant que
-           la main descend. Personne ne le remarque, et tout le monde le sent :
-           c'est la respiration d'avant le geste, et c'est elle qui fait que le
-           temps d'apres a du poids. */
-        /* ═══ LE RIDEAU ═══
-           LES DEUX IMAGES OCCUPENT LE MEME CADRE, l'une par-dessus l'autre, et
-           c'est la seconde qu'on decoupe. Les recadrer TOUTES DEUX dans le
-           meme rectangle est ce qui rend la comparaison possible : sans ca, une
-           photo carree et une photo portrait ne se lisent pas comme deux etats
-           de la meme chose. */
-        /* ═══ IL PARLE ═══
-           LA CITATION EST LE SUJET, DONC ELLE EST LE PLUS GROS TEXTE. Le bouton
-           est en dessous et porte sa duree : « 8 s » se decide, « ecouter » se
-           subit. Et le son ne part qu'a l'appui — quatre personnes sur cinq font
-           defiler en silence. */
-        .go-voix{margin-top:14px;}
-        .go-voix blockquote{margin:0;padding:0 0 0 14px;
-          border-left:3px solid var(--go-accent,#E56BE0);
-          font-size:18px;line-height:1.45;font-weight:650;font-style:italic;}
-        .go-voix-e{display:inline-flex;align-items:center;gap:9px;margin-top:14px;
-          font:inherit;font-size:13.5px;font-weight:800;cursor:pointer;
-          color:#EAF0F6;background:rgba(255,255,255,.06);
-          border:1px solid rgba(255,255,255,.16);border-radius:999px;
-          padding:10px 16px 10px 11px;}
-        .go-voix-e i{font-style:normal;font-size:11px;width:24px;height:24px;
-          flex:none;display:grid;place-items:center;border-radius:50%;
-          color:#12121A;background:var(--go-accent,#E56BE0);}
-        .go-voix-e.on{border-color:var(--go-accent,#E56BE0);}
-        /* ON DIT QUE C'EST UNE DEMONSTRATION, en petit et sous le bouton :
-           chez un vrai commercant, c'est SA voix qu'on entend. */
-        .go-voix-d{display:block;margin-top:7px;font-size:10.5px;
-          color:rgba(234,240,246,.45);letter-spacing:.02em;}
+           DEUX COLONNES ET TROIS RANGEES SUFFISENT, et elles disent la meme
+           chose que ses quatre maquettes : le Fantome et sa bulle en haut a
+           gauche, la signature en haut a droite, ce qu'il reste sous la
+           signature, et ce avec quoi on joue — le rideau, le lecteur — sur
+           toute la largeur en dessous.
 
-        .go-rideau{position:absolute;inset:0;overflow:hidden;cursor:ew-resize;
-          touch-action:none;}
-        .go-rid-a,.go-rid-b img{position:absolute;inset:0;width:100%;height:100%;
-          object-fit:cover;display:block;}
-        /* ═══ LES DEUX IMAGES SONT INERTES, ET CE N'EST PAS UN DETAIL ═══
-           MESURE : le rideau se tirait d'un cran puis se figeait. La sonde a
-           montre une PERTE DE CAPTURE juste apres le premier mouvement —
-           Chromium demarrait son GLISSER-DEPOSER NATIF D'IMAGE, qui annule la
-           capture du pointeur au passage.
-           C'est le meme defaut, a la lettre, que le paquet de cartes qui ne
-           se balayait plus a la souris : une image est glissable par defaut, et
-           un geste construit par-dessus perd contre celui du navigateur. On lui
-           retire donc le glisser, la selection, et jusqu'au droit d'etre visee
-           par le pointeur — c'est le cadre qui recoit, toujours. */
-        .go-rideau img{pointer-events:none;user-select:none;-webkit-user-drag:none;}
-        /* LA COUPE EST NETTE, PAS FONDUE. Un fondu croise donne une bouillie au
-           milieu ; une coupe dit « voila l'autre ». */
-        .go-rid-b{position:absolute;inset:0;display:block;overflow:hidden;
+           LA BULLE MORD DE SEIZE POINTS SUR LA RANGEE DU DESSOUS, et c'est
+           voulu : sur ses maquettes elle deborde sur l'image. Mordre de seize
+           points n'est pas la meme chose que recouvrir. */
+        .go-scene{position:relative;flex:1;min-height:150px;
+          display:grid;grid-template-columns:minmax(0,1fr) auto;
+          align-content:start;gap:6px 8px;}
+        .go-f-bloc{grid-column:1;grid-row:1;z-index:3;
+          margin-bottom:-16px;
+          display:flex;align-items:flex-start;pointer-events:none;}
+        .go-fant{display:block;width:96px;height:auto;
+          filter:drop-shadow(0 6px 26px rgba(229,107,224,.55));}
+        .go-f-bloc>.go-f{width:96px;height:auto;}
+        /* LA BULLE SORT DE SA TETE VERS LA DROITE, avec sa pointe. C'est ce
+           qui fait qu'il PARLE, au lieu d'etre pose a cote d'un texte. */
+        .go-bulle{position:relative;order:2;align-self:flex-start;
+          margin:2px 0 0 -14px;max-width:172px;
+          padding:10px 13px;border-radius:17px;
+          background:rgba(20,8,32,.86);border:1.5px solid #FF2E93;
+          box-shadow:0 0 18px -4px rgba(255,46,147,.8),
+            inset 0 0 14px -6px rgba(255,46,147,.6);
+          backdrop-filter:blur(4px);
+          font-family:"Bradley Hand","Segoe Script","Brush Script MT",cursive;
+          font-size:15px;line-height:1.26;color:#fff;}
+        .go-signe{grid-column:2;grid-row:1;z-index:2;
+          max-width:150px;text-align:right;align-self:start;
+          font-family:"Bradley Hand","Segoe Script","Brush Script MT",cursive;
+          font-size:16px;line-height:1.28;color:#fff;white-space:pre-line;
+          text-shadow:0 2px 10px rgba(0,0,0,.8);pointer-events:none;}
+        .go-signe s{text-decoration:none;color:#FF6FC0;}
+
+        .go-bulle s{position:absolute;left:-9px;bottom:11px;
+          width:14px;height:14px;
+          background:rgba(20,8,32,.86);
+          border-left:1.5px solid #FF2E93;border-bottom:1.5px solid #FF2E93;
+          transform:rotate(45deg);text-decoration:none;}
+
+        /* ─── CE QU'IL RESTE, EN PASTILLE RONDE ─── */
+        .go-reste{grid-column:2;grid-row:2;z-index:3;justify-self:end;
+          margin-top:6px;display:flex;flex-direction:column;align-items:center;
+          justify-content:center;gap:1px;
+          width:118px;height:118px;border-radius:50%;padding:8px;
+          background:radial-gradient(circle at 50% 34%,rgba(52,16,40,.94),rgba(10,6,16,.94));
+          border:1.5px solid rgba(255,46,147,.75);
+          box-shadow:0 0 26px -6px rgba(255,46,147,.8);
+          text-align:center;pointer-events:none;}
+        .go-reste i{font-style:normal;font-size:19px;line-height:1;}
+        .go-reste b{font-size:25px;font-weight:900;line-height:1;}
+        .go-reste em{font-style:normal;font-size:11.5px;font-weight:800;
+          line-height:1.1;color:#fff;}
+        .go-reste u{margin-top:4px;padding-top:4px;text-decoration:none;
+          border-top:1px solid rgba(255,255,255,.22);
+          font-size:10px;line-height:1.15;color:rgba(255,255,255,.72);}
+
+        /* ─── LE RIDEAU ─── */
+        .go-rideau{grid-column:1 / -1;grid-row:3;
+          position:relative;width:100%;aspect-ratio:16/11;
+          border-radius:16px;overflow:hidden;touch-action:none;cursor:ew-resize;
+          border:1px solid rgba(255,255,255,.14);
+          box-shadow:0 22px 50px -26px rgba(0,0,0,.95);}
+        .go-rideau img{position:absolute;inset:0;display:block;
+          width:100%;height:100%;object-fit:cover;}
+        /* LE « AVANT » EST DECOUPE, PAS RETRECI, et la nuance est tout : a
+           largeur reduite, la photo se remet en page DANS cette largeur, donc
+           on comparerait un plat comprime a un plat normal — c'est-a-dire deux
+           plats differents, c'est-a-dire rien. */
+        .go-rid-b{position:absolute;inset:0;
           clip-path:inset(0 0 0 calc(var(--go-x) * 1%));}
+        .go-rid-t{position:absolute;top:0;bottom:0;left:calc(var(--go-x) * 1%);
+          width:2px;margin-left:-1px;background:#fff;
+          box-shadow:0 0 14px rgba(255,255,255,.75);}
+        /* LA POIGNEE EST UN GROS ROND ROSE A DEUX CHEVRONS, comme sur sa
+           maquette. Le trait de deux points d'avant etait un separateur ; un
+           rond au milieu de l'image est une poignee, et on la prend. */
+        .go-rid-t i{position:absolute;top:50%;left:50%;
+          display:flex;align-items:center;justify-content:center;
+          width:54px;height:54px;border-radius:50%;
+          transform:translate(-50%,-50%);
+          background:linear-gradient(140deg,#C22CE0,#FF2E93);
+          border:2.5px solid rgba(255,255,255,.92);
+          box-shadow:0 0 26px -2px rgba(255,46,147,.9);
+          font-style:normal;font-size:21px;font-weight:900;letter-spacing:.06em;
+          color:#fff;}
+        .go-rid-et{position:absolute;bottom:10px;display:flex;
+          flex-direction:column;gap:1px;max-width:46%;
+          padding:8px 11px;border-radius:13px;
+          background:rgba(10,6,16,.78);backdrop-filter:blur(6px);
+          border:1px solid rgba(255,255,255,.14);}
+        .go-rid-et b{font-size:13.5px;font-weight:850;line-height:1.1;}
+        .go-rid-et em{font-style:normal;font-size:11px;line-height:1.15;
+          color:rgba(255,255,255,.72);}
+        .go-rid-et.a{left:10px;opacity:clamp(0,calc((var(--go-x) - 16) / 8),1);}
+        .go-rid-et.b{right:10px;opacity:clamp(0,calc((84 - var(--go-x)) / 8),1);}
+        .go-rideau input{position:absolute;inset:0;z-index:4;
+          width:100%;height:100%;margin:0;opacity:0;cursor:ew-resize;
+          appearance:none;background:transparent;}
+        .go-rideau input::-webkit-slider-thumb{appearance:none;
+          width:54px;height:100%;}
+        .go-rideau input::-moz-range-thumb{width:54px;height:100%;border:0;
+          background:transparent;}
+        .go-rideau input:focus-visible{outline:2px solid #fff;
+          outline-offset:-3px;}
 
-        /* LE TRAIT ET SA POIGNEE. La poignee est au milieu de la HAUTEUR, la ou
-           le pouce tombe quand on tient un telephone d'une main. */
-        .go-rid-t{position:absolute;top:0;bottom:0;left:calc(var(--go-x) * 1%);width:2px;
-          margin-left:-1px;background:rgba(255,255,255,.92);
-          box-shadow:0 0 12px rgba(0,0,0,.45);pointer-events:none;}
-        .go-rid-t i{position:absolute;top:50%;left:50%;width:34px;height:34px;
-          margin:-17px 0 0 -17px;border-radius:50%;
-          background:rgba(255,255,255,.95);box-shadow:0 3px 14px rgba(0,0,0,.4);}
-        /* LES DEUX CHEVRONS DISENT LE SENS. Sans eux, la pastille est un point
-           qu'on regarde ; avec eux, c'est une chose qui se tire. */
-        .go-rid-t i::before,.go-rid-t i::after{content:"";position:absolute;
-          top:50%;width:7px;height:7px;margin-top:-4px;border:2px solid #10221B;
-          border-width:2px 2px 0 0;}
-        .go-rid-t i::before{left:9px;transform:rotate(-135deg);}
-        .go-rid-t i::after{right:9px;transform:rotate(45deg);}
+        /* ─── L'APOTHEOSE : LE LECTEUR, AU MILIEU ─── */
+        .go-voix{grid-column:1 / -1;grid-row:3;margin:0 -2px;
+          padding:13px 14px 14px;border-radius:19px;
+          background:rgba(10,6,16,.84);backdrop-filter:blur(9px);
+          border:1px solid rgba(255,46,147,.34);
+          box-shadow:0 24px 54px -28px rgba(0,0,0,.95);}
+        .go-voix-h{display:flex;align-items:center;gap:11px;}
+        .go-voix-b{flex:none;display:flex;align-items:center;
+          justify-content:center;width:54px;height:54px;padding:0;
+          border:0;border-radius:50%;cursor:pointer;
+          background:linear-gradient(140deg,#C22CE0,#FF2E93);
+          box-shadow:0 0 22px -3px rgba(255,46,147,.85);
+          color:#fff;font-size:18px;line-height:1;}
+        .go-voix-b s{text-decoration:none;padding-left:3px;}
+        .go-voix-b.on s{padding-left:0;}
+        .go-voix-b:active{transform:scale(.94);}
+        /* L'ONDE DIT LA PROGRESSION, PAS LE SON. Voir la constante ONDE : c'est
+           un dessin, et les barres deja lues sont celles qui sont allumees. */
+        .go-onde{flex:1;min-width:0;display:flex;align-items:center;gap:2px;
+          height:38px;}
+        .go-onde i{flex:1 1 0;min-width:1px;height:var(--h,40%);
+          border-radius:99px;background:rgba(255,255,255,.3);
+          transition:background .18s ease;}
+        .go-onde i.lu{background:#fff;}
+        .go-onde.on i{animation:goOnde .9s ease-in-out var(--d,0s) infinite;}
+        @keyframes goOnde{0%,100%{transform:scaleY(1);}50%{transform:scaleY(1.45);}}
+        .go-chrono{flex:none;font-size:13px;font-weight:700;
+          font-variant-numeric:tabular-nums;color:rgba(255,255,255,.82);}
+        .go-voix blockquote{margin:12px 0 0;
+          font-family:"Bradley Hand","Segoe Script","Brush Script MT",cursive;
+          font-size:17px;line-height:1.35;color:#fff;}
+        .go-voix cite{display:block;margin-top:7px;font-style:normal;
+          font-size:12.5px;color:rgba(255,255,255,.6);}
+        .go-voix-d{display:block;margin-top:8px;font-size:10.5px;
+          letter-spacing:.02em;color:rgba(255,255,255,.46);}
 
-        /* LES ETIQUETTES NOMMENT CE QU'ON REGARDE, parce qu'un rideau sans
-           legende est un effet, et un effet ne prouve rien. Chacune reste de
-           son cote et s'efface quand le rideau passe dessus. */
-        .go-rid-et{position:absolute;bottom:12px;font-size:10.5px;font-weight:850;
-          letter-spacing:.1em;text-transform:uppercase;color:#fff;
-          padding:5px 9px;border-radius:9px;background:rgba(6,16,12,.62);
-          backdrop-filter:blur(4px);pointer-events:none;
-          transition:opacity .15s ease-out;}
-        /* ELLES S'EFFACENT QUAND LE RIDEAU LEUR PASSE DESSUS, sur six points de
-           course — assez pour que ce soit un fondu et pas un clignotement. Une
-           etiquette qui resterait collee au bord sous le trait dirait le nom de
-           la photo qu'on ne voit plus. */
-        .go-rid-et.a{left:12px;opacity:clamp(0,calc((var(--go-x) - 16) / 6),1);}
-        .go-rid-et.b{right:12px;opacity:clamp(0,calc((84 - var(--go-x)) / 6),1);}
+        /* ─── LA CARTE DU COMMERCE ─── */
+        .go-carte{display:grid;grid-template-columns:auto 1fr auto;
+          align-items:center;gap:10px 11px;
+          padding:11px 12px;border-radius:18px;
+          background:rgba(10,6,16,.84);backdrop-filter:blur(9px);
+          border:1px solid rgba(255,255,255,.12);
+          box-shadow:0 20px 46px -26px rgba(0,0,0,.95);}
+        .go-vig-l{display:flex;align-items:center;justify-content:center;
+          width:52px;height:52px;border-radius:13px;overflow:hidden;
+          background:rgba(255,255,255,.07);font-size:21px;}
+        .go-vig-l img{width:100%;height:100%;object-fit:cover;}
+        .go-vig-l s{text-decoration:none;}
+        .go-carte-c{min-width:0;display:flex;flex-direction:column;gap:1px;}
+        .go-carte-c i{font-style:normal;font-size:10.5px;font-weight:800;
+          letter-spacing:.07em;color:rgba(255,255,255,.55);white-space:nowrap;}
+        /* LE NOM TIENT SUR DEUX LIGNES PLUTOT QUE D'ETRE COUPE. Mesure :
+           « L'Ardoise Landaise » sortait en « L'Ardois… », c'est-a-dire le nom
+           du commerce tronque sur l'ecran qui le presente. Deux lignes coutent
+           dix-neuf points ; un nom illisible coute le commerce. */
+        .go-carte-c b{font-size:17px;font-weight:850;line-height:1.15;
+          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+          overflow:hidden;}
+        /* LE LIEU ET LA DISTANCE NE SE COUPENT PAS EN DEUX. « 250 m · Dax »
+           passait a la ligne au milieu du point mediant, ce qui donnait une
+           distance sur une ligne et une ville sur la suivante. */
+        .go-carte-c em{font-style:normal;font-size:12.5px;white-space:nowrap;
+          color:rgba(255,255,255,.66);}
+        .go-carte-c u{text-decoration:none;font-size:12px;
+          color:rgba(255,255,255,.55);
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        /* LE JETON NE SE CLIQUE PAS : voir le commentaire de la carte dans le
+           rendu. Il est donc dessine comme une etiquette — pas de fond plein,
+           pas de chevron, rien qui dise « appuyez ici ». */
+        .go-jeton{display:flex;align-items:center;gap:5px;
+          padding:6px 10px;border-radius:99px;
+          border:1px solid rgba(255,255,255,.2);
+          font-size:11.5px;font-weight:750;color:rgba(255,255,255,.86);
+          white-space:nowrap;}
+        .go-jeton s{text-decoration:none;color:#FFC24B;}
+        /* LE PLAT ET SON PRIX PASSENT SOUS TOUTE LA LARGEUR, separes par un
+           filet : c'est la ligne qu'on lit en dernier et celle qui decide. */
+        .go-carte-plat{grid-column:1 / -1;display:grid;
+          grid-template-columns:1fr auto;align-items:baseline;gap:4px 10px;
+          margin-top:1px;padding-top:11px;
+          border-top:1px solid rgba(255,255,255,.12);}
+        .go-carte-plat b{font-size:24px;font-weight:900;line-height:1.1;
+          letter-spacing:-.015em;}
+        .go-carte-plat u{text-decoration:none;font-size:24px;font-weight:900;
+          line-height:1.1;white-space:nowrap;}
+        .go-carte-plat em{grid-column:1 / -1;font-style:normal;font-size:13px;
+          color:rgba(255,255,255,.66);}
+        .go-carte.courte{grid-template-columns:auto 1fr auto;}
+        .go-carte.courte .go-vig-l{width:58px;height:58px;}
 
-        /* LE CURSEUR EST LA COMMANDE REELLE AU CLAVIER, et il est invisible a
-           l'oeil : on ne superpose pas deux affordances pour la meme chose. Il
-           reste focalisable, et le trait s'allume quand il l'est. */
-        .go-rideau input{position:absolute;inset:auto 0 0;width:100%;height:1px;
-          opacity:0;margin:0;}
-        .go-rideau:focus-within .go-rid-t{background:#fff;
-          box-shadow:0 0 0 2px rgba(255,255,255,.55),0 0 14px rgba(0,0,0,.5);}
-
-        .go-photo img{transition:transform .2s ease-out,filter .2s ease-out;}
-        .go-photo.tombe img{animation:goPlat 1.5s cubic-bezier(.3,.9,.3,1) both;}
-        @keyframes goPlat{
-          0%{transform:scale(1);filter:none;}
-          /* Le creux : il rentre avant de sortir. */
-          13%{transform:scale(.998);filter:brightness(.97);}
-          /* L'IMPACT, A L'ARRIVEE DES GRAINS ET PAS AVANT. Le plat sursaute
-             d'un pour cent et demi — c'est peu, c'est net, et c'est ce qui dit
-             que quelque chose vient de le toucher. */
-          42%{transform:scale(1.022);
-            filter:saturate(1.26) contrast(1.07) brightness(1.08) hue-rotate(-4deg);}
-          /* Le suivi : il redescend sans revenir tout a fait. Une chose qui
-             revient exactement a sa place n'a pas ete touchee. */
-          100%{transform:scale(1.012);
-            filter:saturate(1.2) contrast(1.05) brightness(1.04) hue-rotate(-3deg);}
-        }
-
-        /* ─── 2 · LA PHOTO DU PLAT FINI, AU BATTEMENT DE L'IMPACT ───
-           Voir photoApres : le jour ou le restaurateur filme ses deux etats,
-           la transformation devient un fondu entre deux images REELLES.
-           ELLE NE COMMENCE PLUS A ZERO. Elle demarrait avec la chute, donc le
-           plat avait fini de changer avant que le premier grain l'atteigne :
-           la cause arrivait apres l'effet. */
-        .go-apres{position:absolute;inset:0;width:100%;height:100%;
-          object-fit:cover;opacity:0;
-          transition:opacity .62s ease-out .5s;}
-        .go-photo.tombe .go-apres{opacity:1;}
-
-        /* ─── 3 · LA MAIN QUI PINCE ───
-           ELLE DESCEND, S'ARRETE, FROTTE, LACHE, REMONTE. Le frottement est
-           deux rotations de six degres a un vingtieme de seconde d'intervalle :
-           c'est court, c'est sec, et c'est exactement le mouvement qu'on fait
-           avec le pouce et l'index. */
-        .go-pince{position:absolute;left:50%;top:6%;width:44px;height:40px;
-          margin-left:-22px;pointer-events:none;opacity:0;
-          color:rgba(255,248,232,.92);
-          filter:drop-shadow(0 3px 7px rgba(0,0,0,.45));}
-        .go-pince svg{width:100%;height:100%;display:block;}
-        .go-photo.tombe .go-pince{animation:goPince 1.05s cubic-bezier(.3,.85,.35,1) both;}
-        @keyframes goPince{
-          0%{opacity:0;transform:translateY(-38px) rotate(-4deg);}
-          /* Elle arrive et DEPASSE d'un cheveu avant de se poser : sans ce
-             depassement, elle se pose comme un calque, pas comme une main. */
-          16%{opacity:1;transform:translateY(3px) rotate(0deg);}
-          20%{transform:translateY(0) rotate(0deg);}
-          /* Le frottement. */
-          25%{transform:translateY(0) rotate(7deg);}
-          30%{transform:translateY(0) rotate(-6deg);}
-          35%{transform:translateY(0) rotate(3deg);}
-          42%{opacity:1;transform:translateY(-2px) rotate(0deg);}
-          /* Elle remonte et sort, pendant que les grains tombent : elle a fini
-             son travail, elle ne doit pas rester a regarder. */
-          100%{opacity:0;transform:translateY(-46px) rotate(5deg);}
-        }
-
-        /* ─── 4 · LES GRAINS, D'UN SEUL POINT, EN ACCELERANT ───
-           Ils partent tous de la pince — meme abscisse, meme ordonnee — et
-           s'ouvrent en cone par leur derive laterale. La courbe est une
-           GRAVITE : lente au depart, rapide a l'arrivee. C'est l'inverse de
-           l'ancienne, qui partait vite et finissait lentement, ce qui est le
-           mouvement d'une plume et non d'un grain de sel.
-           ILS S'EFFACENT AU PLAT, a soixante-six pour cent de la hauteur : un
-           grain qui sort par le bas du cadre est passe a cote de l'assiette. */
-        .go-grains{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
-        .go-grains i{position:absolute;left:50%;top:16%;
-          width:3px;height:3px;border-radius:50%;
-          margin:-1.5px 0 0 -1.5px;opacity:0;
-          background:#FFF8E4;
-          box-shadow:0 0 3px rgba(255,236,180,.7);}
-        .go-photo.tombe .go-grains i{
-          animation:goGrain var(--t) cubic-bezier(.5,0,.85,.5) both;
-          animation-delay:calc(.26s + var(--d));}
-        @keyframes goGrain{
-          0%{opacity:0;transform:translate(0,0) scale(calc(var(--s) * .5)) rotate(0deg);}
-          12%{opacity:1;}
-          80%{opacity:1;}
-          100%{opacity:0;
-            transform:translate(var(--f),50vh) scale(var(--s)) rotate(var(--r));}
-        }
-
-        /* ─── 5 · LA LUEUR, AU MOMENT OU ILS ARRIVENT ───
-           Elle naissait a l'appui ; elle nait maintenant a l'impact, et elle
-           est deux fois plus rapide. Une lueur qui met deux secondes a s'ouvrir
-           est un eclairage ; une lueur qui s'ouvre en un quart de seconde est
-           un evenement. */
-        .go-braise{position:absolute;inset:0;pointer-events:none;opacity:0;
-          background:radial-gradient(circle at 50% 56%,
-            rgba(255,214,130,.5) 0%, rgba(255,176,74,.24) 26%,
-            rgba(255,150,40,0) 62%);
-          mix-blend-mode:screen;}
-        .go-photo.tombe .go-braise{animation:goBraise .9s cubic-bezier(.2,.9,.3,1) both;
-          animation-delay:.5s;}
-        @keyframes goBraise{
-          0%{opacity:0;transform:scale(.5);}
-          30%{opacity:1;transform:scale(1.04);}
-          100%{opacity:.2;transform:scale(1.14);}
-        }
-
-        /* ─── 6 · ET LA VAPEUR MONTE, EN DERNIER ───
-           UNE SEULE, et elle part du centre. Trois volutes montaient en meme
-           temps et formaient un brouillard ; une seule, lente, dit qu'il reste
-           de la chaleur. C'est la derniere image qu'on garde avant d'appuyer
-           sur RESERVER, et elle doit etre calme. */
-        .go-vapeur{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
-        .go-vapeur i{position:absolute;bottom:38%;left:46%;width:44px;height:44px;
-          border-radius:50%;opacity:0;filter:blur(12px);
-          background:radial-gradient(circle,rgba(255,255,255,.5),rgba(255,255,255,0) 70%);}
-        .go-photo.tombe .go-vapeur i{animation:goVapeur 2.6s ease-out both;
-          animation-delay:.9s;}
-        @keyframes goVapeur{
-          0%{opacity:0;transform:translateY(0) scale(.5);}
-          24%{opacity:.55;}
-          100%{opacity:0;transform:translateY(-120px) scale(1.8);}
-        }
-
-        /* ET QUI NE VEUT PAS DE MOUVEMENT VOIT QUAND MEME LE PLAT CHANGER.
-           On garde l'etat d'arrivee — plat plus chaud, lueur posee — et on
-           retire la main, la chute et la vapeur. Le geste tient sa promesse
-           sans rien faire bouger, ce qui est le seul repli honnete : couper
-           l'animation en laissant l'image d'avant reviendrait a ne rien
-           montrer. */
-        @media (prefers-reduced-motion:reduce){
-          .go-photo img,.go-apres{transition:none;}
-          .go-photo.tombe img{animation:none;
-            filter:saturate(1.2) contrast(1.05) brightness(1.04);}
-          .go-photo.tombe .go-braise{animation:none;opacity:.3;}
-          .go-photo.tombe .go-pince,
-          .go-photo.tombe .go-grains,
-          .go-photo.tombe .go-vapeur{display:none;}
-        }
-
-        /* ═══ LE MOT DU CHEF ════════════════════════════════════════════════
-           Signe, parce qu'une phrase signee n'est pas la meme phrase. C'est la
-           seule voix humaine de l'ecran. */
-        .go-chef{position:relative;margin:0;padding:13px 15px 13px 34px;
-          border-radius:18px;background:rgba(255,255,255,.05);
-          border:1px solid rgba(255,255,255,.1);}
-        .go-chef>i{position:absolute;left:13px;top:6px;font-style:normal;
-          font-size:30px;line-height:1;color:var(--go-accent,#E56BE0);opacity:.8;}
-        .go-chef p{margin:0;font-size:13.5px;line-height:1.45;color:#E8EFF6;}
-        .go-chef cite{display:block;margin-top:7px;font-style:normal;
-          /* LA MEME MAIN QUE PARTOUT AILLEURS. Les trois polices citees ici
-             n'existent que sur macOS et Windows : sur un telephone et sur le
-             serveur, la note manuscrite retombait sur le cursive du systeme,
-             c'est-a-dire un serif penche. La variable porte Caveat, chargee
-             une fois pour toute l'application. */
-          font-family:var(--font-main-levee),'Segoe Script','Bradley Hand',cursive;
-          font-size:17px;text-align:right;color:#fff;}
-
-        /* CE QUE LE PLAT EST, EN TROIS PASTILLES. Elles ne se lisent pas une par
-           une : elles se lisent d'un coup, et elles disent « ici on choisit ce
-           qu'on met dedans ». */
-        .go-marques{list-style:none;margin:0;padding:0;display:flex;gap:8px;}
-        .go-marques li{flex:1;min-width:0;text-align:center;padding:9px 6px;
-          border-radius:14px;background:rgba(255,255,255,.05);
-          border:1px solid rgba(255,255,255,.09);}
-        .go-marques i{display:block;font-style:normal;font-size:19px;}
-        .go-marques b{display:block;margin-top:3px;font-size:11.5px;font-weight:800;
-          line-height:1.2;color:#EAF2EC;}
-        .go-marques em{display:block;font-style:normal;font-size:10.5px;
-          color:#8C9C94;}
-
-        /* ═══ CE QU'ON CHOISIT ══════════════════════════════════════════════ */
-        .go-choix{list-style:none;margin:0;padding:0;
-          display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
-          align-items:stretch;}
-        .go-choix.deux{grid-template-columns:repeat(2,1fr);}
-        .go-choix li{display:flex;}
-        .go-choix button{flex:1;min-width:0;display:flex;flex-direction:column;
-          align-items:center;gap:5px;padding:9px 8px 11px;font-family:inherit;
-          text-align:center;cursor:pointer;border-radius:16px;
-          background:rgba(255,255,255,.045);
-          border:1.5px solid rgba(255,255,255,.1);
-          transition:border-color .18s ease,background .18s ease,transform .18s ease;}
-        .go-choix button:active{transform:scale(.97);}
-        /* CELLE QU'ON A CHOISIE PORTE LA COULEUR DU PLAT ET SON HALO : sans
-           marque nette, on ne sait plus ce qu'on vient de toucher, et on
-           retouche. */
-        .go-choix button.on{border-color:var(--go-accent,#E56BE0);
-          background:rgba(255,255,255,.08);
-          box-shadow:0 0 0 1px var(--go-accent,#E56BE0),
-            0 10px 30px -14px var(--go-accent,#E56BE0);}
-        .go-choix b{font-size:12.5px;font-weight:800;line-height:1.2;color:#fff;}
-        .go-choix em{font-style:normal;font-size:10.5px;line-height:1.25;
-          color:#8C9C94;}
-        .go-vig{width:100%;aspect-ratio:1;object-fit:cover;border-radius:11px;
-          display:flex;align-items:center;justify-content:center;font-size:26px;
-          background:#101825;}
-        /* ═══ LA PASTILLE DE REPLI NE SE PREND PAS POUR UNE PHOTO ═══════════
-
-           Un rapport d'un pour un est juste pour une VRAIE photo : elle
-           remplit son
-           carre. Applique au repli, il fabriquait un carre de cent cinquante
-           points contenant un pictogramme de vingt-six — quatre options
-           faisaient sortir le bouton de l'ecran, et ce qu'on voyait etait
-           surtout du vide. Une bande basse suffit : c'est un ornement, pas le
-           choix. Le jour ou le restaurateur filme, la vignette sans son
-           repli reprend son carre, et rien d'autre ne bouge. */
-        .go-vig.sans{aspect-ratio:auto;height:58px;
-          background:linear-gradient(150deg,rgba(255,255,255,.09),
-          rgba(255,255,255,.03));}
-
-        /* ─── ET QUAND LES IMAGES NE DISTINGUENT RIEN, ON PASSE AUX MOTS ───
-           Voir enMots. Une colonne, des rangees basses, le pictogramme range
-           a gauche : il accompagne le mot au lieu de pretendre etre le choix. */
-        .go-choix.mots{grid-template-columns:1fr;gap:7px;}
-        /* UNE RANGEE, UNE LIGNE. Le detail passait a la ligne suivante et
-           chaque choix prenait cent trente points de haut : trois cuissons
-           remplissaient l'ecran a elles seules, et le geste qui avance sortait
-           du champ. Pictogramme, nom, detail sur la meme ligne. */
-        .go-choix.mots button{flex-direction:row;align-items:center;
-          gap:11px;text-align:left;padding:9px 13px;}
-        .go-choix.mots .go-vig{width:34px;height:34px;flex:none;aspect-ratio:1;
-          font-size:19px;border-radius:10px;}
-        .go-choix.mots b{font-size:14.5px;flex:none;}
-        .go-choix.mots em{flex:1;min-width:0;text-align:right;font-size:11.5px;}
-
-        /* ═══ LA VERITE, APRES LA DEVINETTE ═════════════════════════════════
-           Elle prend la place des reponses : les laisser sous elle inviterait a
-           rejouer un tour qui vient de se terminer. */
-        .go-verite{padding:14px 16px;border-radius:18px;
-          background:rgba(255,255,255,.06);
-          border:1px solid var(--go-accent,#E56BE0);}
-        .go-verite b{display:block;font-size:12px;font-weight:850;
-          letter-spacing:.06em;text-transform:uppercase;
-          color:var(--go-accent,#E56BE0);}
-        .go-verite p{margin:6px 0 0;font-size:14px;line-height:1.5;color:#EAF2EC;}
-
-        /* ═══ CE QU'ON A COMPOSE ════════════════════════════════════════════ */
-        .go-recap{list-style:none;margin:0;padding:0;display:flex;
-          flex-wrap:wrap;gap:7px;}
-        .go-recap li{flex:1 1 46%;min-width:0;padding:9px 12px;border-radius:14px;
-          background:rgba(255,255,255,.05);
-          border:1px solid rgba(255,255,255,.1);}
-        .go-recap b{display:block;font-size:10.5px;font-weight:800;
-          letter-spacing:.05em;text-transform:uppercase;color:#8C9C94;}
-        .go-recap em{display:block;margin-top:2px;font-style:normal;
-          font-size:13.5px;font-weight:800;color:#fff;}
-
-        /* ═══ L'EMOTION ═════════════════════════════════════════════════════
-           Elle defile de cote plutot que de se replier : cinq pastilles sur deux
-           lignes se lisent comme une grille de reglages, sur une ligne comme un
-           curseur de ressenti. */
-        /* ═══ LA SORTIE ═══
-           ELLE MONTE PAR-DESSUS, parce qu'elle remplace la page : on a decide
-           de partir, et la question est la derniere chose qui reste. Posee dans
-           le flux, elle serait un bloc de plus qu'on fait defiler. */
-        /* DEUX CLASSES, ET C'EST UN DEFAUT MESURE : le bloc des cinq fantomes
-           est declare PLUS BAS dans cette feuille avec un fond translucide, et
-           a specificite egale c'est le dernier qui gagne. La feuille de sortie
-           se dessinait donc transparente, la page au travers. */
-        /* ═══ LA FEUILLE DE SORTIE SE POSE SUR L'ECRAN, PLUS SUR LA FENETRE ═
-           « Bug quand je clique sur "passer cette decouverte". »
-           ELLE ETAIT EN POSITION FIXE, donc calee sur la FENETRE du navigateur
-           et pas sur l'application. Mesure au navigateur, en 1200 de large : la
-           feuille faisait 1200 points de large a partir de zero, pendant que le
-           cadre du telephone faisait 390 points a partir de 405. Elle sortait
-           du telephone par les deux cotes et se posait sous lui.
-           SUR UN TELEPHONE LE DEFAUT NE SE VOIT PAS — la fenetre EST
-           l'application — ce qui est exactement pourquoi il a tenu : on ne le
-           rencontre qu'en ouvrant la demo sur un ordinateur.
-           ELLE EST DONC ABSOLUE, ET SON REPERE EST L'ECRAN AUQUEL ELLE
-           APPARTIENT — la classe go-ecran, qui devient positionnee juste en
-           dessous.
-           C'est vrai dans l'application comme sur la page d'un commercant, ou
-           il n'y a pas de cadre de telephone du tout. */
-        .go-emo.go-sortie{position:absolute;inset:auto 0 0;z-index:30;
-          margin:0;border-radius:22px 22px 0 0;
-          padding:18px 16px calc(18px + env(safe-area-inset-bottom));
-          background:#111A16;border:1px solid rgba(255,255,255,.14);
-          box-shadow:0 -18px 50px -12px rgba(0,0,0,.8);
-          animation:goSortie .26s cubic-bezier(.2,.9,.3,1) both;}
-        @keyframes goSortie{from{transform:translateY(100%);}to{transform:none;}}
-        /* PARTIR SANS REPONDRE RESTE POSSIBLE, ET SANS AVOIR A VISER : une
-           question qu'on ne peut pas refuser est un peage. */
-        .go-sortie-x{display:block;width:100%;margin-top:12px;font:inherit;
-          font-size:13px;font-weight:750;color:#8C9C94;cursor:pointer;
-          background:transparent;border:0;padding:8px;}
-
-        .go-emo{padding:13px 13px 11px;border-radius:18px;
-          background:rgba(255,255,255,.05);
-          border:1px solid rgba(255,255,255,.1);}
-        .go-emo>p{margin:0;font-size:11.5px;line-height:1.35;color:#8C9C94;}
-        .go-emo>p b{display:block;font-size:14.5px;font-weight:850;color:#fff;
-          margin-bottom:1px;}
-        /* LES CINQ TIENNENT DANS LA LARGEUR, ET LA CINQUIEME EST CELLE QUI
-           COMPTE. En bande qui defile, « Je le veux ! » tombait hors du champ :
-           la seule reponse enthousiaste de la liste etait la seule qu'on ne
-           voyait pas, et rien ne disait qu'il fallait pousser la bande. Cinq
-           colonnes egales, un mot plus petit, tout est visible d'un coup. */
-        .go-emo-l{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;
-          margin-top:10px;}
+        /* ─── LES CINQ FANTOMES ─── */
+        .go-emo{text-align:center;}
+        .go-emo>p{margin:0 0 7px;font-size:16px;font-weight:850;color:#fff;
+          text-shadow:0 2px 10px rgba(0,0,0,.8);}
+        .go-emo-l{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
         .go-emo-l button{min-width:0;display:flex;flex-direction:column;
-          align-items:center;gap:4px;padding:9px 2px;font-family:inherit;
-          cursor:pointer;border-radius:14px;background:rgba(255,255,255,.05);
-          border:1.5px solid rgba(255,255,255,.1);
-          transition:border-color .18s ease,transform .18s ease;}
+          align-items:center;gap:4px;padding:8px 3px 7px;border-radius:14px;
+          background:rgba(10,6,16,.8);border:1px solid rgba(255,255,255,.13);
+          color:#fff;cursor:pointer;}
         .go-emo-l button:active{transform:scale(.95);}
-        .go-emo-l button.on{border-color:var(--go-accent,#E56BE0);
-          box-shadow:0 0 0 1px var(--go-accent,#E56BE0);}
-        /* LE FANTOME OCCUPE LA CASE, L'EMOJI GARDE SA TAILLE D'AVANT.
-           La hauteur est fixe : sans elle, une image qui n'arrive pas ferait
-           sauter les cinq cases pendant le chargement. */
+        .go-emo-l button.on{border-color:var(--go-accent,#FF2E93);
+          background:rgba(255,46,147,.16);}
         .go-emo-l i{font-style:normal;font-size:23px;line-height:1;
           display:flex;align-items:center;justify-content:center;height:34px;}
         .go-emo-l i img{width:34px;height:34px;object-fit:contain;
-          filter:drop-shadow(0 2px 7px rgba(229,107,224,.35));}
-        .go-emo-l button.on i img{filter:drop-shadow(0 2px 10px rgba(229,107,224,.7));}
+          filter:drop-shadow(0 2px 7px rgba(0,0,0,.6));}
+        .go-emo-l button.on i img{
+          filter:drop-shadow(0 2px 10px rgba(255,46,147,.7));}
         .go-emo-l span{font-size:9.5px;font-weight:750;line-height:1.15;
-          text-align:center;color:#EAF2EC;hyphens:auto;}
+          color:rgba(255,255,255,.82);}
 
-        /* ═══ LE GESTE QUI AVANCE ═══════════════════════════════════════════
-           Le meme degrade que partout ailleurs dans le produit : c'est ce qui
-           dit « ceci avance » sans qu'on ait a le lire. */
+        /* ─── LE BOUTON ─── */
         .go-cta{display:flex;align-items:center;justify-content:center;gap:10px;
-          width:100%;padding:16px 18px;font-family:inherit;font-size:16px;
-          font-weight:850;color:#fff;cursor:pointer;border:none;border-radius:999px;
-          /* IL GARDE LE DEGRADE DE L'APPLICATION, ET C'EST VOULU. L'accent du
-             plat a ete essaye ici : il est fait pour porter du texte SUR FOND
-             SOMBRE — un titre, une pastille, un liisere — donc il est clair, et
-             du blanc gras pose dessus devient illisible (le vert des lasagnes
-             tombe sous deux pour un). L'accent teinte tout ce qui se lit sur le
-             noir ; le geste principal reste celui de Clikme, partout pareil. */
-          background:linear-gradient(103deg,#6D5BF6,#C94FD9 52%,#F0459B);
-          box-shadow:0 16px 38px -16px rgba(201,79,217,.9);}
+          width:100%;padding:16px 18px;border:0;border-radius:99px;
+          cursor:pointer;color:#fff;font-size:19px;font-weight:850;
+          background:linear-gradient(90deg,#8B2BE2,#FF2E93);
+          box-shadow:0 14px 34px -14px rgba(255,46,147,.9);}
+        .go-cta.plein{background:#FF1F8F;}
+        .go-cta s{text-decoration:none;font-size:20px;}
         .go-cta:active{transform:scale(.985);}
-        /* DESACTIVE, IL RESTE LISIBLE ET DIT POURQUOI PAR SON ETAT : un bouton
-           qui disparait fait croire que l'ecran est casse. */
-        .go-cta:disabled{cursor:default;opacity:.42;box-shadow:none;}
-        .go-cta s{text-decoration:none;font-size:17px;}
+        .go-cta:disabled{opacity:.45;cursor:default;box-shadow:none;}
 
-        .go-pied{display:flex;align-items:center;justify-content:space-between;
-          gap:10px;padding-top:2px;}
-        /* LE GESTE DE RETOUR NE PASSE PAS A LA LIGNE, ET L'ADRESSE NON PLUS.
-           « Revenir en arriere » se cassait en deux et poussait le lieu a se
-           tronquer — « Le Bocal de Margot · Dax · 180… » — c'est-a-dire que la
-           distance, seule information decidante du pied, etait la premiere a
-           partir. */
-        .go-retour{display:inline-flex;align-items:center;gap:7px;flex:none;
-          white-space:nowrap;
-          font-family:inherit;font-size:12.5px;font-weight:750;color:#8C9C94;
-          cursor:pointer;background:none;border:none;padding:6px 0;}
-        .go-retour s{text-decoration:none;}
-        .go-ou{font-size:11px;font-weight:700;color:#5E6E80;text-align:right;
-          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        /* ─── LES TROIS PREUVES ─── */
+        .go-preuves{display:grid;grid-template-columns:repeat(3,1fr);
+          margin:0;padding:2px 0 0;list-style:none;}
+        .go-preuves li{display:flex;align-items:center;gap:6px;
+          padding:0 6px;min-width:0;}
+        .go-preuves li + li{border-left:1px solid rgba(255,255,255,.16);}
+        .go-preuves i{font-style:normal;font-size:19px;line-height:1;}
+        .go-preuves span{min-width:0;display:flex;flex-direction:column;}
+        .go-preuves b{font-size:11px;font-weight:750;line-height:1.18;
+          color:rgba(255,255,255,.92);}
+        .go-preuves em{font-style:normal;font-size:11px;line-height:1.2;
+          color:rgba(255,255,255,.58);}
+
+        /* ═══ LA DENSITE SERREE, POUR L'ECRAN DE DEMARRAGE ═════════════════
+           Voir la prop compact, en haut du fichier : ce n'est pas un second
+           dessin, c'est le meme
+           a trois cents points au lieu de six cents. Tout ce qui reste reste ;
+           seules les tailles et les reserves descendent d'un cran. */
+        .go-ecran.go-serre{min-height:0;border-radius:18px;}
+        .go-serre .go-sur{gap:7px;padding:9px 10px 10px;}
+        .go-serre .go-bar{grid-template-columns:34px 1fr auto;}
+        .go-serre .go-dos{width:32px;height:32px;font-size:15px;}
+        .go-serre .go-fil i{height:5px;}
+        .go-serre .go-etape{font-size:10.5px;}
+        .go-serre .go-marque b{font-size:15px;}
+        .go-serre .go-marque em{font-size:9px;}
+        .go-serre .go-t{font-size:20px;}
+        .go-serre .go-p{margin-top:4px;font-size:11.5px;}
+        .go-serre .go-scene{min-height:96px;}
+        .go-serre .go-fant{width:62px;}
+        .go-serre .go-bulle{max-width:150px;padding:7px 10px;font-size:12px;
+          border-radius:13px;}
+        .go-serre .go-f-bloc{margin-bottom:-10px;}
+        .go-serre .go-reste{width:86px;height:86px;}
+        .go-serre .go-reste b{font-size:19px;}
+        .go-serre .go-reste em{font-size:9px;}
+        .go-serre .go-reste u{font-size:8px;}
+        .go-serre .go-rideau{aspect-ratio:16/9;border-radius:13px;}
+        .go-serre .go-rid-t i{width:38px;height:38px;font-size:15px;}
+        .go-serre .go-rid-et{padding:5px 8px;border-radius:10px;}
+        .go-serre .go-rid-et b{font-size:11px;}
+        .go-serre .go-rid-et em{font-size:9.5px;}
+        .go-serre .go-voix{padding:9px 10px 10px;border-radius:15px;}
+        .go-serre .go-voix-b{width:38px;height:38px;font-size:13px;}
+        .go-serre .go-onde{height:26px;}
+        .go-serre .go-chrono{font-size:10.5px;}
+        .go-serre .go-voix blockquote{margin-top:8px;font-size:13px;}
+        .go-serre .go-voix cite{font-size:10.5px;}
+        .go-serre .go-voix-d{font-size:9px;}
+        .go-serre .go-carte{padding:8px 9px;border-radius:14px;gap:7px 8px;}
+        .go-serre .go-vig-l{width:38px;height:38px;border-radius:10px;}
+        .go-serre .go-carte.courte .go-vig-l{width:42px;height:42px;}
+        .go-serre .go-carte-c i{font-size:8.5px;}
+        .go-serre .go-carte-c b{font-size:13px;}
+        .go-serre .go-carte-c em,.go-serre .go-carte-c u{font-size:10.5px;}
+        .go-serre .go-jeton{padding:4px 8px;font-size:10px;}
+        .go-serre .go-carte-plat{padding-top:7px;}
+        .go-serre .go-carte-plat b,.go-serre .go-carte-plat u{font-size:17px;}
+        .go-serre .go-carte-plat em{font-size:10.5px;}
+        .go-serre .go-emo>p{margin-bottom:5px;font-size:12.5px;}
+        .go-serre .go-emo-l{gap:4px;}
+        .go-serre .go-emo-l button{padding:5px 2px;border-radius:11px;gap:2px;}
+        .go-serre .go-emo-l i{height:24px;}
+        .go-serre .go-emo-l i img{width:24px;height:24px;}
+        .go-serre .go-emo-l span{font-size:8px;}
+        .go-serre .go-cta{padding:11px 14px;font-size:14.5px;}
+        .go-serre .go-cta s{font-size:15px;}
+
+        /* ─── LES ETROITS ───
+           MESURE : a 360 points, le titre a trente tombait sur trois lignes et
+           poussait le bouton hors de l'ecran. Tout descend d'un cran. */
+        @media (max-width:380px){
+          .go-t{font-size:26px;}
+          .go-fant{width:82px;}
+          .go-bulle{max-width:150px;font-size:14px;}
+          .go-signe{max-width:128px;}
+          .go-reste{width:104px;height:104px;}
+          .go-carte-plat b,.go-carte-plat u{font-size:21px;}
+          .go-cta{padding:15px 16px;font-size:17.5px;}
+          .go-signe{font-size:14.5px;}
+        }
 
         @media (prefers-reduced-motion:reduce){
-          .go-photo.tombe .go-pluie i{animation:none;opacity:.9;
-            transform:translateY(300px) rotate(180deg);}
-          .go-cta:active,.go-choix button:active,.go-emo-l button:active{
-            transform:none;}
+          .go-onde.on i{animation:none;}
+          .go-cta:active,.go-emo-l button:active,.go-dos:active,
+          .go-voix-b:active{transform:none;}
         }
     `,
       }}

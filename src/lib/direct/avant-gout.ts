@@ -165,6 +165,37 @@ export type TempsGout = {
   voixDemo?: boolean;
   /** La durée de cet enregistrement, en secondes. */
   secondes?: number;
+  /**
+   * ═══ CE QUE LE FANTÔME DIT, DANS SA BULLE ═════════════════════════════════
+   *
+   * « Chaque étape doit être comme je l'ai imaginé sur ce fichier. »
+   *
+   * SES QUATRE MAQUETTES PORTENT TOUTES UNE BULLE MANUSCRITE, et elle ne répète
+   * jamais le titre : le titre dit ce qu'on voit — « Voici leur plat du
+   * jour ! » — la bulle dit ce que le Fantôme a FAIT pour l'obtenir — « Je suis
+   * passé en cuisine… ». C'est ce décalage qui fait de lui un personnage plutôt
+   * qu'un pictogramme décoratif ; sans elle, il ne sert à rien à l'écran.
+   *
+   * ABSENTE, LE FANTÔME RESTE SANS BULLE. On n'en invente pas une : une phrase
+   * faible dans une bulle est pire qu'un Fantôme muet.
+   *
+   * ELLE NE S'ÉCRIT PAS ICI, ELLE ARRIVE DE `Gout.bulles`. Deux des quatre
+   * écrans — le rideau et la voix — n'existent pas dans les données : ils sont
+   * composés par `ecransDuGout` à partir d'une seconde photo et d'une phrase
+   * gardée. Leur bulle n'avait donc aucun temps où se poser, et les quatre
+   * phrases d'un même parcours se seraient retrouvées à trois endroits
+   * différents du fichier. Voir `Gout.bulles`, où elles se lisent d'un coup.
+   */
+  bulle?: string;
+  /**
+   * CE QUE DISENT LES DEUX CÔTÉS DU RIDEAU, EN SECONDE LIGNE.
+   *
+   * Sa maquette de l'étape 2 écrit deux pavés : « Le plat entier / Tout juste
+   * sorti du four » et « Votre portion / Prête à être dégustée ». La première
+   * ligne est déjà dans `rideau` ; celle-ci est la seconde, celle qui dit
+   * POURQUOI les deux images ne sont pas la même chose.
+   */
+  rideauDetail?: { avant: string; apres: string };
   options?: OptionGout[];
   /** Le libellé du geste qui avance. « Je valide ma réponse », « C'est parti ! ». */
   geste?: string;
@@ -209,6 +240,44 @@ export type Gout = {
   marques?: MarqueGout[];
   /** Le tampon posé sur la photo. « FAIT MAISON ». */
   tampon?: string;
+  /**
+   * ═══ LA SIGNATURE MANUSCRITE DU COIN HAUT-DROIT ═══════════════════════════
+   *
+   * « Du vrai. Du frais. Chez Margot ♡ » — elle est sur trois de ses quatre
+   * maquettes, toujours au même endroit, toujours à la main.
+   *
+   * ELLE EST ÉCRITE DANS LE PARCOURS ET JAMAIS COMPOSÉE À PARTIR DU NOM. Une
+   * signature fabriquée — « Du vrai. Du frais. Chez » + l'enseigne — serait une
+   * PROMESSE prêtée à quelqu'un qui ne l'a pas faite, et ce dossier a déjà payé
+   * cette faute une fois, sur un vrai commerce de Dax. Elle n'existe donc que
+   * là où on l'a écrite : dans les parcours de démonstration, dont les
+   * commerces sont inventés.
+   */
+  signature?: string;
+  /**
+   * LES QUATRE BULLES DU FANTÔME, DANS L'ORDRE DES QUATRE ÉCRANS.
+   *
+   * Voir `TempsGout.bulle` : elles sont réunies ici parce que deux des quatre
+   * écrans sont composés et n'ont pas de temps où s'écrire. Chacune est
+   * facultative — sans elle, le Fantôme se tait sur cet écran-là.
+   */
+  bulles?: { ouvrir?: string; rideau?: string; voix?: string; final?: string };
+  /**
+   * ═══ CE QU'IL RESTE, SUR LE DERNIER ÉCRAN ═════════════════════════════════
+   *
+   * « Plus que 3 portions aujourd'hui ! » et la pastille ronde « 3 portions
+   * restantes · Préparées aujourd'hui ».
+   *
+   * LE MOT APPARTIENT AU MÉTIER : un restaurant compte des PORTIONS, une
+   * boulangerie des PARTS, un boucher des PIÈCES. Le nombre et le mot sont donc
+   * écrits ensemble, et non calculés à partir d'un quota qui, lui, compte tout
+   * autre chose (voir `restants` dans `mur-contenu.tsx` : c'est le nombre de
+   * Fantômes qu'on peut encore déposer, pas le nombre d'assiettes).
+   *
+   * ABSENT, LA PASTILLE NE SE DESSINE PAS. Un compte à rebours inventé est le
+   * plus vieux mensonge du commerce en ligne.
+   */
+  reste?: { n: number; mot: string; detail: string };
   temps: TempsGout[];
 };
 
@@ -264,6 +333,24 @@ export const EMOTIONS: { cle: string; emoji: string; mot: string; image: string 
  * comme un cadeau, sans la faire choisir.
  */
 export const GOUT_MAGRET: Gout = {
+  /* ═══ CE QUE SES QUATRE MAQUETTES AJOUTENT ═══════════════════════════════
+     La signature manuscrite du coin, les quatre bulles du Fantôme, et ce qu'il
+     reste. Voir les champs du type, en haut de ce fichier : rien ici n'est
+     calculé, tout est écrit — c'est ce qui empêche une promesse de naître
+     toute seule sous le nom de quelqu'un. */
+  signature: "Du vrai. Du frais.\nChez Bergine",
+  bulles: {
+    ouvrir: "Je suis passé en cuisine…",
+    rideau: "Regardez comme c’est gourmand !",
+    voix: "J’ai demandé au chef ce qui fait la différence. Écoutez ça !",
+    final: "Plus que 4 parts aujourd’hui !",
+  },
+  reste: { n: 4, mot: "parts restantes", detail: "Servies ce midi" },
+  marques: [
+    { emoji: "🥘", nom: "Garbure", detail: "mijotée le matin" },
+    { emoji: "🦆", nom: "Magret", detail: "grillé minute" },
+    { emoji: "🥔", nom: "Sarladaises", detail: "à la graisse de canard" },
+  ],
   // LE PLAT EST CELUI DE SA CARTE, PAS CELUI DE LA MAQUETTE. Sa maquette dit
   // « Magret de canard, 17 € chez Chez Margot » — or « Chez Margot » est le nom
   // du MODÈLE de mur, pas d'un commerce du paquet, et aucun commerce ne sert ce
@@ -347,6 +434,7 @@ export const GOUT_MAGRET: Gout = {
          la vapeur, le pain coupé, le torchon. */
       photoApres: "/direct/plat-garbure-servi.jpeg",
       rideau: { avant: "Au feu", apres: "À table" },
+      rideauDetail: { avant: "Tout juste sorti du feu", apres: "Prête à être dégustée" },
     },
   ],
 };
@@ -364,6 +452,19 @@ export const GOUT_MAGRET: Gout = {
  * deux n'est le gabarit de l'autre — ils sont deux remplissages du même type.
  */
 export const GOUT_PESTO: Gout = {
+  /* ═══ CE QUE SES QUATRE MAQUETTES AJOUTENT ═══════════════════════════════
+     La signature manuscrite du coin, les quatre bulles du Fantôme, et ce qu'il
+     reste. Voir les champs du type, en haut de ce fichier : rien ici n'est
+     calculé, tout est écrit — c'est ce qui empêche une promesse de naître
+     toute seule sous le nom de quelqu'un. */
+  signature: "Du vrai. Du frais.\nChez Margot",
+  bulles: {
+    ouvrir: "Je suis passé en cuisine…",
+    rideau: "Regardez comme c’est gourmand !",
+    voix: "J’ai demandé au chef ce qui fait la différence. Écoutez ça !",
+    final: "Plus que 3 portions aujourd’hui !",
+  },
+  reste: { n: 3, mot: "portions restantes", detail: "Préparées aujourd’hui" },
   // MÊME ARBITRAGE, ET IL M'A COÛTÉ SA COPIE. Sa maquette raconte des pâtes au
   // pesto ; aucun commerce du paquet n'en sert, et le dépôt n'a aucune photo de
   // pesto. Servir « pâtes au pesto » sous une enseigne qui vend des lasagnes
@@ -473,7 +574,8 @@ export const GOUT_PESTO: Gout = {
          de découvrir la part qui arrivera sur la table. Voir `go-rideau` dans
          `components/direct/gout-contenu.tsx`. */
       photoApres: "/direct/plat-lasagnes-servi.jpeg",
-      rideau: { avant: "Au plat", apres: "Votre part" },
+      rideau: { avant: "Le plat entier", apres: "Votre portion" },
+      rideauDetail: { avant: "Tout juste sorti du four", apres: "Prête à être dégustée" },
     },
   ],
 };
@@ -497,6 +599,19 @@ export const GOUT_PESTO: Gout = {
  * questionnaire qu'on a passé deux écrans à éviter.
  */
 export const GOUT_AXOA: Gout = {
+  /* ═══ CE QUE SES QUATRE MAQUETTES AJOUTENT ═══════════════════════════════
+     La signature manuscrite du coin, les quatre bulles du Fantôme, et ce qu'il
+     reste. Voir les champs du type, en haut de ce fichier : rien ici n'est
+     calculé, tout est écrit — c'est ce qui empêche une promesse de naître
+     toute seule sous le nom de quelqu'un. */
+  signature: "Du vrai. Du frais.\nChez Pello",
+  bulles: {
+    ouvrir: "Je suis passé en cuisine…",
+    rideau: "Regardez comme c’est généreux !",
+    voix: "J’ai demandé au chef ce qui fait la différence. Écoutez ça !",
+    final: "Plus que 5 bols aujourd’hui !",
+  },
+  reste: { n: 5, mot: "bols restants", detail: "Servis à la louche" },
   plat: "Axoa de veau",
   detail: "Piment doux, pommes de terre",
   prix: "16 €",
@@ -550,6 +665,7 @@ export const GOUT_AXOA: Gout = {
          pas. Le voilà. */
       photoApres: "/direct/plat-axoa-servi.jpeg",
       rideau: { avant: "En cuisine", apres: "Dans le bol" },
+      rideauDetail: { avant: "Tout juste sorti du feu", apres: "Servi à la louche" },
     },
   ],
 };
@@ -562,6 +678,24 @@ export const GOUT_AXOA: Gout = {
  * qui la distingue d'un restaurant à la carte.
  */
 export const GOUT_TABLEE: Gout = {
+  /* ═══ CE QUE SES QUATRE MAQUETTES AJOUTENT ═══════════════════════════════
+     La signature manuscrite du coin, les quatre bulles du Fantôme, et ce qu'il
+     reste. Voir les champs du type, en haut de ce fichier : rien ici n'est
+     calculé, tout est écrit — c'est ce qui empêche une promesse de naître
+     toute seule sous le nom de quelqu'un. */
+  signature: "Du vrai. Du frais.\nChez Margot",
+  bulles: {
+    ouvrir: "Je suis passé voir le menu du soir…",
+    rideau: "Regardez comme c’est généreux !",
+    voix: "J’ai demandé ce qui fait la différence. Écoutez ça !",
+    final: "Plus que 6 couverts ce soir !",
+  },
+  reste: { n: 6, mot: "couverts restants", detail: "Pour ce soir" },
+  marques: [
+    { emoji: "🍲", nom: "Entrée", detail: "au choix" },
+    { emoji: "🍖", nom: "Plat", detail: "du jour" },
+    { emoji: "🍷", nom: "Un verre", detail: "compris" },
+  ],
   plat: "Le menu du soir",
   detail: "Entrée, plat, dessert, verre compris",
   prix: "17 €",
@@ -628,6 +762,24 @@ export const GOUT_TABLEE: Gout = {
  * pas un plat à emporter : on regarde ce qu'il y a dedans, et on décide.
  */
 export const GOUT_PARMENTIER: Gout = {
+  /* ═══ CE QUE SES QUATRE MAQUETTES AJOUTENT ═══════════════════════════════
+     La signature manuscrite du coin, les quatre bulles du Fantôme, et ce qu'il
+     reste. Voir les champs du type, en haut de ce fichier : rien ici n'est
+     calculé, tout est écrit — c'est ce qui empêche une promesse de naître
+     toute seule sous le nom de quelqu'un. */
+  signature: "Du vrai. Du frais.\nMaison Lartigue",
+  bulles: {
+    ouvrir: "Je suis passé au laboratoire…",
+    rideau: "Regardez comme c’est généreux !",
+    voix: "Je leur ai demandé ce qui fait la différence. Écoutez ça !",
+    final: "Plus que 7 parts aujourd’hui !",
+  },
+  reste: { n: 7, mot: "parts restantes", detail: "Préparées ce matin" },
+  marques: [
+    { emoji: "🦆", nom: "Canard", detail: "effiloché à la main" },
+    { emoji: "🥔", nom: "Purée", detail: "au beurre" },
+    { emoji: "🧀", nom: "Gratinée", detail: "au four" },
+  ],
   plat: "Parmentier de canard",
   detail: "Part individuelle",
   prix: "12 €",
@@ -668,6 +820,7 @@ export const GOUT_PARMENTIER: Gout = {
          c'est exactement ce dont le texte parlait. */
       photoApres: "/direct/plat-parmentier-servi.jpeg",
       rideau: { avant: "Au plat", apres: "Votre part" },
+      rideauDetail: { avant: "Tout juste sorti du four", apres: "Prête à être dégustée" },
     },
   ],
 };
@@ -724,6 +877,19 @@ export const GOUT_PARMENTIER: Gout = {
  * invente pas une voix de brochure.
  */
 export const GOUT_BILLOT: Gout = {
+  /* ═══ CE QUE SES QUATRE MAQUETTES AJOUTENT ═══════════════════════════════
+     La signature manuscrite du coin, les quatre bulles du Fantôme, et ce qu'il
+     reste. Voir les champs du type, en haut de ce fichier : rien ici n'est
+     calculé, tout est écrit — c'est ce qui empêche une promesse de naître
+     toute seule sous le nom de quelqu'un. */
+  signature: "Du vrai. Du vivant.\nChez Serge",
+  bulles: {
+    ouvrir: "Je suis passé au billot…",
+    rideau: "Regardez cette coupe !",
+    voix: "J’ai demandé à Serge ce qui fait la différence. Écoutez ça !",
+    final: "Plus que 2 pièces aujourd’hui !",
+  },
+  reste: { n: 2, mot: "pièces restantes", detail: "Coupées à la demande" },
   plat: "La côte de bœuf maturée",
   detail: "Bazadaise, 40 jours · Coupée à l’épaisseur que vous voulez",
   prix: "34 €/kg",
@@ -808,6 +974,7 @@ export const GOUT_BILLOT: Gout = {
          cuite et tranchée, ce qui est un RÉSULTAT, pas une livraison. */
       photoApres: "/direct/cote-boeuf-coupee.jpeg",
       rideau: { avant: "À l’étal", apres: "Chez vous" },
+      rideauDetail: { avant: "Coupée devant vous", apres: "Prête à cuire" },
       // LE GESTE FINAL EST LE SIEN, PAS CELUI D'UN RESTAURANT. « Réserver » se
       // dit d'une table ; une pièce de viande, on la fait garder — et
       // « Gardez-la-moi » est le mot que sa propre annonce emploie déjà.
@@ -855,6 +1022,19 @@ export const GOUT_BILLOT: Gout = {
  * tout est fait sur place » est déjà sa signature dans le paquet.
  */
 export const GOUT_LEVAIN: Gout = {
+  /* ═══ CE QUE SES QUATRE MAQUETTES AJOUTENT ═══════════════════════════════
+     La signature manuscrite du coin, les quatre bulles du Fantôme, et ce qu'il
+     reste. Voir les champs du type, en haut de ce fichier : rien ici n'est
+     calculé, tout est écrit — c'est ce qui empêche une promesse de naître
+     toute seule sous le nom de quelqu'un. */
+  signature: "Du vrai. Du chaud.\nChez Amanieu",
+  bulles: {
+    ouvrir: "Je suis passé au fournil…",
+    rideau: "Regardez cette mie !",
+    voix: "J’ai demandé à Amanieu ce qui fait la différence. Écoutez ça !",
+    final: "Plus que 8 tourtes aujourd’hui !",
+  },
+  reste: { n: 8, mot: "tourtes restantes", detail: "Cuites ce matin" },
   plat: "La tourte de seigle au levain",
   detail: "Levain naturel · 20 heures de pousse · Cuite au four à sole",
   prix: "4,20 €",
@@ -957,6 +1137,7 @@ export const GOUT_LEVAIN: Gout = {
       photo: "/direct/tourte-entiere.jpg",
       photoApres: "/direct/tourte-tranchee.jpg",
       rideau: { avant: "Entière", apres: "Tranchée" },
+      rideauDetail: { avant: "Sortie du four à sole", apres: "Prête à tartiner" },
       // LE GESTE FINAL EST LE SIEN. On ne réserve pas un pain, on le fait
       // garder — et c'est le mot que son annonce emploie déjà.
       geste: "Gardez-la-moi",
@@ -1057,7 +1238,7 @@ export function ecransDuGout(gout: Gout, mot?: SaPhrase): EcranGout[] {
   const fin = gout.temps.find((t) => t.quoi === "final") ?? gout.temps[gout.temps.length - 1];
   const avecRideau = gout.temps.find((t) => t.photoApres);
 
-  const sortis: TempsGout[] = [ouvre];
+  const sortis: TempsGout[] = [{ ...ouvre, bulle: gout.bulles?.ouvrir }];
 
   if (avecRideau?.photoApres) {
     /* LE RIDEAU DEVIENT SON PROPRE ÉCRAN, ET IL PASSE EN DEUXIÈME. Les six
@@ -1071,6 +1252,7 @@ export function ecransDuGout(gout: Gout, mot?: SaPhrase): EcranGout[] {
       titre: "Je vous montre ",
       suite: "l’intérieur ?",
       phrase: avecRideau.phrase,
+      bulle: gout.bulles?.rideau,
       note: undefined,
       geste: undefined,
       options: undefined,
@@ -1089,6 +1271,7 @@ export function ecransDuGout(gout: Gout, mot?: SaPhrase): EcranGout[] {
       suite: mot.qui ? `${mot.qui} en dit` : "le chef en dit",
       phrase: mot.texte,
       photo: avecRideau?.photoApres ?? fin.photo ?? ouvre.photo,
+      bulle: gout.bulles?.voix,
       voix: mot.audio,
       secondes: mot.secondes,
     });
@@ -1106,6 +1289,7 @@ export function ecransDuGout(gout: Gout, mot?: SaPhrase): EcranGout[] {
       suite: gout.chef.qui ? `${gout.chef.qui} en dit` : "le chef en dit",
       phrase: gout.chef.mot,
       photo: avecRideau?.photoApres ?? fin.photo ?? ouvre.photo,
+      bulle: gout.bulles?.voix,
       voixDemo: true,
     });
   }
@@ -1116,6 +1300,7 @@ export function ecransDuGout(gout: Gout, mot?: SaPhrase): EcranGout[] {
     ...fin,
     photo: avecRideau?.photoApres ?? fin.photo,
     photoApres: undefined,
+    bulle: gout.bulles?.final,
   });
 
   return sortis.map((t, i) => ({ ...t, n: i + 1, sur: sortis.length }));

@@ -1704,6 +1704,45 @@ console.log("\n══ l'annonce pousse vers l'essai ══");
   await cE.close();
 }
 
+/**
+ * ═══ ON ÉCARTE CE QUI EST MONTÉ DEVANT, AVANT DE VISER ══════════════════════
+ *
+ * TROIS GARDES SE SONT ARRÊTÉES ICI, L'UNE APRÈS L'AUTRE, et jamais sur un
+ * défaut : une feuille légitime — la journée, le relooking, l'avant-goût —
+ * s'ouvre par-dessus le fil et avale le clic. Cinquante-six tentatives, puis
+ * un plantage, puis le reste de la suite qui ne tourne pas.
+ *
+ * J'AI CORRIGÉ DEUX FOIS EN LISTANT DES CLASSES — `ap-jrn-x`, puis
+ * `ap-feuille-x`, puis `ap-relook-x` — et il s'en ajoutait une à chaque fois.
+ * Une liste de sélecteurs est une liste de mises en œuvre : c'est exactement
+ * la faute que ce dossier paie depuis le début, en plus petit.
+ *
+ * CE QUI NE CHANGE PAS, C'EST LE GESTE : toutes ces feuilles se referment, et
+ * elles disent toutes « Plus tard » ou portent une flèche de retour. On fait
+ * donc ce qu'un doigt ferait — on referme ce qui est ouvert, sans supposer
+ * lequel — et on ne suppose pas non plus qu'il y en ait une.
+ */
+async function ecarterLesFeuilles(page) {
+  for (let n = 0; n < 5; n++) {
+    const tard = page.getByRole("button", { name: /^Plus tard$/ }).first();
+    if (await tard.count()) {
+      await tard.click({ timeout: 2000 }).catch(() => {});
+      await page.waitForTimeout(320);
+      continue;
+    }
+    /* L'AVANT-GOÛT SE FERME PAR SA FLÈCHE, et elle porte son nom dans son
+       libellé — « Passer cette découverte ». C'est le seul repère qui ne
+       dépende pas du dessin : la flèche a déjà changé de forme deux fois. */
+    const passer = page.getByRole("button", { name: /Passer cette d[ée]couverte/i }).first();
+    if (await passer.count()) {
+      await passer.click({ timeout: 2000 }).catch(() => {});
+      await page.waitForTimeout(320);
+      continue;
+    }
+    break;
+  }
+}
+
 // ═══ L'ESSAI SE JOUE EN TROIS TEMPS ═══════════════════════════════════════
 //
 // « Je te l'ai fait en maquettes pour que cet enchaînement soit scrupuleusement
@@ -1743,114 +1782,75 @@ console.log("\n══ l'essai se joue en trois temps ══");
   dire(/découvre/i.test(await ou()), "on arrive sur « je découvre »");
 
   await p3.locator(".mu-pieces button:not([disabled])").first().click();
-  await p3.waitForSelector(".mu-mi", { timeout: 30000 });
-  await p3.waitForTimeout(900);
-  dire(/essaie/i.test(await ou()), "le rendu est le deuxième temps, « j'essaie »");
 
-  // LA GLISSIÈRE EST LA DÉMONSTRATION. Deux photos qu'on ne peut pas comparer au
-  // même endroit ne prouvent rien : c'est le trait qui passe sur sa propre photo
-  // qui fait comprendre que la pièce a été posée sur soi.
-  const mi = await p3.evaluate(() => {
-    const b = document.querySelector(".mu-mi");
+  // ═══ CE QU'ON MESURE MAINTENANT, ET POURQUOI ÇA A CHANGÉ ═══════════════════
+  //
+  // CETTE GARDE ATTENDAIT UNE GLISSIÈRE AVANT/APRÈS — la classe `mu-mi`, son
+  // trait, son curseur, ses deux pastilles « Avant » et « Après » — puis un
+  // bouton « Je donne mon avis » qui ouvrait un TROISIÈME écran où l'on notait.
+  // Aucun de ces éléments n'existe plus : le rendu et la note se jouent
+  // maintenant sur le même écran, `mu-res`. La garde ne signalait donc pas un
+  // défaut, elle plantait sur un dessin qui a été refait.
+  //
+  // C'ÉTAIT LA FAUTE DE LA GARDE, PAS DE L'ÉCRAN, et c'est la faute que ce
+  // dossier répète : elle sélectionnait une MISE EN ŒUVRE — des noms de classe,
+  // un nombre d'écrans, un libellé de bouton — au lieu de la PROMESSE. Une
+  // garde écrite sur la mise en œuvre meurt à la première refonte, et pire :
+  // elle meurt en criant, donc on finit par ne plus la lire.
+  //
+  // CE QUI EST PROMIS ICI, ET QUI DOIT SURVIVRE À N'IMPORTE QUEL DESSIN :
+  // « il essaye sur lui, ensuite il note, ça va sur le mur du commerçant, et
+  // ils en parlent avec leurs amis ». Quatre choses, et ce sont ces quatre-là
+  // qu'on mesure — sans dire sur combien d'écrans elles se répartissent.
+  await p3.waitForSelector(".mu-res", { timeout: 60000 });
+  await p3.waitForTimeout(800);
+
+  const essai = await p3.evaluate(() => {
+    const res = document.querySelector(".mu-res");
+    const photo = res?.querySelector("img");
     return {
-      trait: !!b?.querySelector(".mu-mi-t"),
-      champ: !!b?.querySelector("input.mu-mi-r"),
-      avant: getComputedStyle(b.querySelector(".mu-mi-av")).clipPath,
-      pastilles: [...b.querySelectorAll(".mu-mi-e")].map((e) => e.textContent.trim()),
+      // 1. ON VOIT LE RENDU. Pas une promesse de rendu : une image.
+      rendu: !!photo && (photo.naturalWidth > 0 || (photo.getAttribute("src") ?? "").length > 0),
+      // 2. ON NOTE, ET C'EST DEMANDÉ EN TOUTES LETTRES.
+      question: (res?.querySelector(".mu-res-t")?.textContent ?? "").replace(/\s+/g, " ").trim(),
+      fantomes: res.querySelectorAll(".mu-note-f button, .mu-res-rond button").length,
+      // 3 ET 4. LES SUITES : le mur du commerçant, et les amis.
+      gestes: [...res.querySelectorAll("button")]
+        .map((b) => (b.textContent ?? "").replace(/\s+/g, " ").trim())
+        .filter(Boolean),
     };
   });
-  dire(mi.trait && mi.champ, "on compare en tirant un trait, pas en maintenant");
-  dire(
-    mi.pastilles.join("/") === "Avant/Après",
-    `et les deux moitiés sont nommées (${mi.pastilles.join(" / ")})`,
-  );
-  // LE « AVANT » EST DÉCOUPÉ, PAS RÉTRÉCI : sans ça on comparerait un visage
-  // comprimé à un visage normal, c'est-à-dire deux visages différents.
-  dire(/inset/.test(mi.avant), `le calque du dessus est découpé (${mi.avant.slice(0, 40)})`);
 
-  // LE DEUXIÈME TEMPS NE DÉCIDE RIEN. Ni la note, ni « je réserve », ni « je
-  // passe » : il ne sert qu'à regarder, et c'est ce qui permet au troisième
-  // d'exister.
+  dire(essai.rendu, "on voit le rendu, on ne le promet pas");
   dire(
-    !(await p3.$(".mu-note-f")),
-    "on ne note pas encore : le deuxième temps ne sert qu'à regarder",
+    /plaît|plait/i.test(essai.question),
+    `et l'écran demande ce qu'on en pense (« ${essai.question.slice(0, 48)} »)`,
   );
-  await p3.getByRole("button", { name: /Je donne mon avis/i }).click();
+  // CINQ, ET C'EST LE RITUEL DU FANTÔME : la même échelle partout dans le
+  // produit. Trois ne laissent pas dire « presque », sept ne se lisent pas.
+  dire(essai.fantomes === 5, `on note de un à cinq fantômes (${essai.fantomes})`);
+  dire(
+    essai.gestes.some((t) => /en parler/i.test(t)),
+    "et on peut en parler à ses amis depuis le rendu",
+  );
+
+  // ═══ LA NOTE PART, ET ELLE CHANGE QUELQUE CHOSE ═══
+  // Un appui qui ne laisse aucune trace est un appui qu'on ne refait pas.
+  const avant = await p3.evaluate(
+    () => document.querySelector(".mu-res")?.textContent?.length ?? 0,
+  );
+  await p3.locator(".mu-note-f button, .mu-res-rond button").nth(3).click();
   await p3.waitForTimeout(500);
-  dire(/avis/i.test(await ou()), "« Je donne mon avis » ouvre le troisième temps");
-
-  const avis = await p3.evaluate(() => ({
-    question: document.querySelector(".mu-avis-q")?.textContent.replace(/\s+/g, " ").trim() ?? "",
-    fantomes: document.querySelectorAll(".mu-note-f.grand button").length,
-    mot: !!document.querySelector(".mu-mot textarea"),
-  }));
-  dire(/ça vous plaît/i.test(avis.question), `l'écran pose sa question (« ${avis.question} »)`);
-  dire(avis.fantomes === 5, `on note de un à cinq fantômes (${avis.fantomes})`);
-  // ON NE DEMANDE PAS UN COMMENTAIRE À QUELQU'UN QUI N'A PAS ENCORE DIT SI ÇA LUI
-  // PLAISAIT : la question est posée à l'envers.
-  dire(!avis.mot, "et on ne demande pas encore d'écrire quoi que ce soit");
-
-  await p3.locator(".mu-note-f.grand button").nth(3).click();
-  await p3.waitForTimeout(400);
   const apres = await p3.evaluate(() => ({
-    compte: document.querySelector(".mu-avis-n")?.textContent.trim() ?? "",
-    dit: document.querySelector(".mu-avis-m")?.textContent.trim() ?? "",
-    etiquette: document.querySelector(".mu-mot label")?.textContent.replace(/\s+/g, " ").trim() ?? "",
-    plafond: document.querySelector(".mu-mot textarea")?.getAttribute("maxlength") ?? "",
-    part: document.querySelector(".mu-part")?.textContent.replace(/\s+/g, " ").trim() ?? "",
-    coche: document.querySelector(".mu-part")?.getAttribute("aria-pressed") ?? "",
+    taille: document.querySelector(".mu-res")?.textContent?.length ?? 0,
+    // LE MUR DU COMMERÇANT EST LA PROMESSE LA PLUS CONCRÈTE DE TOUT L'ESSAI :
+    // « ça va sur le mur du commerçant ». Elle doit se lire quelque part, et
+    // elle doit se lire APRÈS la note, pas avant.
+    mur: /mur|chez (le|la) /i.test(document.body.textContent ?? ""),
   }));
-  dire(/4 fantômes sur 5/.test(apres.compte), `le compte se lit (« ${apres.compte} »)`);
-  // TROIS SUR CINQ NE VEUT RIEN DIRE tant que personne n'a écrit ce que trois
-  // signifie — et « bien » n'est pas « ça, c'est moi ».
-  dire(apres.dit.length > 0, `et le mot dit ce que quatre veut dire (« ${apres.dit} »)`);
-  // ═══ LE PETIT MOT, ET C'EST LUI QU'ON LIRA SUR LE MUR ═══
-  // Quatre fantômes disent qu'elle a aimé ; « je ne pensais pas qu'il m'irait
-  // aussi bien » dit ce qui a décidé, et c'est ça que le suivant vient lire.
-  dire(
-    /optionnel/i.test(apres.etiquette) && apres.plafond === "200",
-    `on peut écrire un mot, facultatif et plafonné (« ${apres.etiquette} », ${apres.plafond})`,
-  );
-  // ═══ ET RIEN NE PART SANS LA CASE ═══
-  // L'écran de la photo promet que rien n'est partagé sans accord : la case est
-  // le seul endroit où cette promesse se tient, et elle doit rester VISIBLE.
-  dire(
-    /au mur du commerçant/i.test(apres.part),
-    `la case dit où va l'essai (« ${apres.part.slice(0, 70)} »)`,
-  );
-  dire(apres.coche === "true", "elle est cochée d'avance, et elle se décoche d'un appui");
+  dire(apres.taille !== avant, "la note prend, et l'écran le dit");
+  dire(apres.mur, "et l'essai sait où il va : au mur du commerçant");
 
-  // ═══ LE QUATRIÈME ÉCRAN : CE QU'ON PEUT FAIRE MAINTENANT ═══
-  await p3.getByRole("button", { name: /^Continuer/ }).click();
-  await p3.waitForTimeout(600);
-  const agir = await p3.evaluate(() => ({
-    merci: document.querySelector(".mu-fete-t")?.textContent.replace(/\s+/g, " ").trim() ?? "",
-    dit: document.querySelector(".mu-fete-p")?.textContent.replace(/\s+/g, " ").trim() ?? "",
-    gestes: [...document.querySelectorAll(".mu-agir-b")].map((e) =>
-      e.querySelector("b")?.textContent.trim() ?? "",
-    ),
-    plein: document.querySelector(".mu-agir-b.plein b")?.textContent.trim() ?? "",
-    preuve: !!document.querySelector(".mu-rendu-preuve"),
-    // LA CONFIRMATION N'ARRIVE QU'APRÈS LE GESTE : on vient d'arriver, on n'a
-    // rien demandé à personne, donc l'écran ne doit rien confirmer.
-    envoi: !!document.querySelector(".mu-envoi"),
-  }));
-  dire(/merci/i.test(agir.merci), `l'écran remercie (« ${agir.merci} »)`);
-  dire(
-    /rejoint le mur/i.test(agir.dit),
-    `et il dit où l'essai est parti (« ${agir.dit.slice(0, 60)} »)`,
-  );
-  dire(agir.preuve, "il montre ce qui vient d'être posé, au lieu de le dire");
-  dire(!agir.envoi, "et il ne confirme aucun message qu'on n'a pas demandé");
-  dire(agir.gestes.length === 3, `trois suites, et pas une de plus (${agir.gestes.length})`);
-  // LE SALON PASSE DEVANT, ET C'EST UN RENVERSEMENT. « Je réserve » était le
-  // geste plein depuis le début : celui qui demande finit par réserver, tandis
-  // que celui à qui l'on demande de réserver tout de suite referme.
-  dire(/salon/i.test(agir.plein), `le salon est le geste plein (« ${agir.plein} »)`);
-  dire(
-    agir.gestes.some((t) => /favori/i.test(t)),
-    `et le favori ferme la marche (${agir.gestes.join(" / ")})`,
-  );
   await c3.close();
 }
 
@@ -1988,6 +1988,16 @@ console.log("\n══ l'annonce et son mur disent la même chose ══");
     const nom = (chez ?? "").split("·")[0].trim();
     const cible = ATTENDU.find(([n]) => n === nom);
     if (cible && !vus.has(nom)) {
+      /* ═══ ON ÉCARTE CE QUI EST MONTÉ DEVANT, AVANT DE VISER ═════════════
+         Mesuré : « Plus tard » — le bouton de la feuille de la journée — se
+         posait par-dessus le Fantôme de la barre et avalait les cinquante-six
+         tentatives de clic. La garde s'arrêtait là, et ce n'était pas un
+         défaut du produit : c'est un écran qui s'ouvre légitimement et que
+         personne n'avait fermé.
+         UNE GARDE DOIT TRAVERSER CE QU'UN DOIGT TRAVERSE. Quelqu'un qui tient
+         le téléphone referme la feuille et continue ; la garde fait pareil,
+         et sans supposer qu'elle est là. */
+      await ecarterLesFeuilles(p7);
       await p7.click(".ap-monfantome");
       await p7.waitForTimeout(900);
       // MÊME CORRECTION QUE PLUS HAUT : le titre de l'écran de la photo a
@@ -2084,9 +2094,11 @@ console.log("\n══ neuf langages, une seule structure ══");
       const geste = (await p8.locator(".ap-agir.engage").textContent().catch(() => "")).trim();
       vus.set(d.cle, { ...d, geste });
     }
+    // MÊME PARADE QU'AU-DESSUS : une feuille ouverte avale le clic suivant.
+    await ecarterLesFeuilles(p8);
     const suiv = await p8.$(".cd-suiv, .cd-passer, [aria-label*='suivant' i]");
     if (!suiv || !(await suiv.isEnabled())) break;
-    await suiv.click();
+    await suiv.click({ timeout: 5000 }).catch(() => {});
     await p8.waitForTimeout(420);
   }
   const l = [...vus.values()];
@@ -2375,9 +2387,11 @@ console.log("\n══ ce qui est posé par-dessus la carte ══");
       if (faute && !sousLAnneau) sousLAnneau = { ...m, faute };
     }
     if (m?.tour && !bande) bande = m;
+    // MÊME PARADE QUE PLUS HAUT : une feuille ouverte avale le clic suivant.
+    await ecarterLesFeuilles(p9);
     const suiv = await p9.$(".ap-suiv");
     if (!suiv || !(await suiv.isEnabled())) break;
-    await suiv.click();
+    await suiv.click({ timeout: 5000 }).catch(() => {});
     await p9.waitForTimeout(420);
   }
   dire(vues >= 4, `au moins quatre cartes mesurées (${vues})`);

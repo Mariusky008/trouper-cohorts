@@ -1310,6 +1310,13 @@ export function MurContenu({
           lieu={mur.lieu}
           ville={mur.ville}
           distance={mur.distance}
+          /* CE QUE LE MUR SAIT DÉJÀ DU LIEU, ET QUI MANQUAIT À SES MAQUETTES :
+             la devanture en vignette, la note et le nombre d'avis. Aucune de
+             ces trois choses n'est inventée ici — elles viennent du commerce,
+             et là où elles manquent l'écran ne dessine simplement rien. */
+          photoLieu={mur.photoLieu}
+          note={mur.note}
+          avis={mur.avis}
           onReserver={onReserver}
           onFermer={() => (murDAvant ? onSortir?.() : setGoutPasse(true))}
         />
