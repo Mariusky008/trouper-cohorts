@@ -309,6 +309,8 @@ async function parOpenAI(
    * `consigneBrute` dans `consigne-essai.ts`.
    */
   brut: boolean,
+  /** Le cadre exact découpé par le navigateur. Voir `taille` dans le corps. */
+  cadreDemande: string,
 ): Promise<{ image: string } | { erreur: string }> {
   const modele = s(process.env.OPENAI_IMAGE_MODEL) || "gpt-image-1";
   // L'API d'édition d'OpenAI prend les images en multipart, et elle accepte
@@ -359,7 +361,15 @@ async function parOpenAI(
   // LE RÉGLAGE D'ENVIRONNEMENT GAGNE TOUJOURS, parce que c'est le seul moyen de
   // rattraper un format en production sans redéployer. À défaut, on suit la
   // photo du client ; à défaut encore, le carré d'avant.
-  const format = s(process.env.OPENAI_IMAGE_SIZE) || formatDe(photo.donnees) || "1024x1024";
+  /* L'ORDRE EST CELUI DE LA CONFIANCE : le réglage d'exploitation d'abord —
+     c'est le seul moyen de rattraper un format en production sans redéployer —
+     puis le cadre que le navigateur a réellement découpé, et seulement ensuite
+     la déduction d'autrefois, pour les appelants qui ne le disent pas. */
+  const format =
+    s(process.env.OPENAI_IMAGE_SIZE) ||
+    (/^(1024x1024|1536x1024|1024x1536)$/.test(cadreDemande) ? cadreDemande : "") ||
+    formatDe(photo.donnees) ||
+    "1024x1024";
   forme.append("size", format);
   forme.append("input_fidelity", "high");
   const enFichier = (x: { type: string; donnees: string }, nom: string) =>
@@ -475,7 +485,7 @@ async function parOpenAI(
       // LE BUDGET NE SE REMET PAS À ZÉRO : ce qu'a coûté le refus est décompté
       // du temps qu'on donne au second appel, sans quoi les deux tentatives
       // additionnées dépasseraient ce que la fonction a le droit de vivre.
-      return parOpenAI(cle, photo, null, partie, garder, change, decrire, masque, debut, qualite, brut);
+      return parOpenAI(cle, photo, null, partie, garder, change, decrire, masque, debut, qualite, brut, cadreDemande);
     }
     if (bloque) {
       return {
@@ -529,6 +539,24 @@ export async function POST(req: Request) {
      * toujours — masque, recomposition, consigne longue.
      */
     brut?: boolean;
+    /**
+     * ═══ LE CADRE, DÉCIDÉ PAR LE NAVIGATEUR ══════════════════════════════════
+     *
+     * « C'est une coupe qui a été réinventée au lieu d'avoir pris la même
+     * coupe et de l'avoir ajustée. »
+     *
+     * LA ROUTE DEVINAIT LE FORMAT à partir du rapport de la photo reçue, et
+     * elle le devinait bien — mais le rapport reçu n'était pas celui d'un des
+     * trois cadres que le modèle sait rendre. On envoyait du 1,559 et on
+     * demandait du 1,5 : le modèle ne pouvait pas recopier, il devait
+     * recadrer, donc recomposer.
+     *
+     * LE NAVIGATEUR ROGNE MAINTENANT LA PHOTO AU CADRE EXACT avant de
+     * l'envoyer — voir `cadrer` dans `essai-genere.ts` — et il dit lequel.
+     * Recalculer ici ce qui a déjà été décidé là-bas donnerait deux vérités
+     * pour une seule question.
+     */
+    taille?: string;
   };
   try {
     corps = (await req.json()) as typeof corps;
@@ -540,6 +568,7 @@ export async function POST(req: Request) {
   const reference = decoder(s(corps.reference));
   const masque = decoder(s(corps.masque));
   const brut = corps.brut === true;
+  const cadreDemande = s(corps.taille);
   const partie = s(corps.partie) || "la zone concernée";
   /**
    * CE QUE LE MÉTIER DEMANDE DE PRÉSERVER, ET IL VIENT DE L'ÉCRAN.
@@ -671,6 +700,7 @@ export async function POST(req: Request) {
               debut,
               QUALITE,
               brut,
+              cadreDemande,
             ),
         }
       : null,
@@ -706,7 +736,7 @@ export async function POST(req: Request) {
     ordre.push({
       nom: `openai·${leger}`,
       aller: () =>
-        parOpenAI(openai, photo, reference, partie, garder, change, decrire, masque, debut, leger, brut),
+        parOpenAI(openai, photo, reference, partie, garder, change, decrire, masque, debut, leger, brut, cadreDemande),
     });
   }
 

@@ -269,7 +269,29 @@ export default async function ApercuMaquette({
     /* table absente → on garde ceux de Google */
   }
 
-  // Photos : celles gérées par le pro en priorité (data URI), sinon Google.
+  /**
+   * ═══ SES PHOTOS D'ABORD, PUIS CELLES DE GOOGLE — PLUS « SINON » ═══════════
+   *
+   * « Sur la fiche Google de Gaïa je vois des dizaines de photos, et pourtant
+   * sur sa page ClikMe il n'y en a aucune. Et je vois deux photos qui sont des
+   * photos que j'ai moi-même prises, pas du tout celles de la fiche Google. »
+   *
+   * LES DEUX MOITIÉS DE SA PHRASE SONT LA MÊME LIGNE DE CODE. Elle disait
+   * `proPhotos.length ? proPhotos : googlePhotos` : dès que le commerçant
+   * dépose UNE photo, toutes celles de Google disparaissent. Deux photos
+   * déposées effaçaient donc les dizaines de la fiche — et sur les commerces
+   * où il en avait déposé, la galerie Google n'a jamais existé.
+   *
+   * « EN PRIORITÉ » VEUT DIRE EN PREMIER, PAS À LA PLACE. C'est tout le
+   * malentendu de ce ternaire, et il est facile à faire : le mot « priorité »
+   * du commentaire décrivait un ORDRE, le code appliquait un REMPLACEMENT.
+   * Les siennes ouvrent la bande — ce sont les plus récentes et les plus
+   * justes — et celles de Google suivent.
+   *
+   * ET ON NE MONTRE PAS DEUX FOIS LA MÊME. Un doublon dans une bande de
+   * vignettes se lit comme un bogue, même quand c'est la même photo publiée
+   * deux fois.
+   */
   const proPhotos = (Array.isArray(row.gallery_photos) ? row.gallery_photos : [])
     .map((p) => str(p))
     .filter((u) => /^data:image\//i.test(u))
@@ -277,8 +299,8 @@ export default async function ApercuMaquette({
   const googlePhotos = (Array.isArray(diag.photos) ? diag.photos : [])
     .map((p) => str(p))
     .filter((u) => /^https?:\/\//i.test(u))
-    .slice(0, 6);
-  const photos = proPhotos.length ? proPhotos : googlePhotos;
+    .slice(0, 12);
+  const photos = [...new Set([...proPhotos, ...googlePhotos])];
 
   // Prestations RÉELLES saisies par le pro. Bornées et nettoyées : aucun tarif
   // inventé ne peut entrer ici, et le catalogue reste vide s'il n'a rien saisi.

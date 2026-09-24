@@ -107,6 +107,121 @@ function modeBrut(): boolean {
   }
 }
 
+/**
+ * ═══ LES SEULS CADRES QUE LE MODÈLE SAIT RENDRE ═════════════════════════════
+ *
+ * `gpt-image-1` ne rend QUE ces trois formats. Ce n'est pas une préférence,
+ * c'est la liste fermée de ce qu'il sait produire.
+ */
+const CADRES = [
+  { l: 1024, h: 1024 },
+  { l: 1536, h: 1024 },
+  { l: 1024, h: 1536 },
+] as const;
+
+/**
+ * ═══ ON ENVOIE EXACTEMENT LE CADRE QU'ON DEMANDE ════════════════════════════
+ *
+ * « Ce n'est pas du tout la bonne coupe, c'est une coupe qui ressemble un peu
+ * mais qui a été RÉINVENTÉE au lieu d'avoir pris la même coupe et de l'avoir
+ * ajustée. »
+ *
+ * VOICI CE QU'ON ENVOYAIT, MESURÉ SUR SA PHOTO. Elle fait 1409 × 904, soit un
+ * rapport de 1,559. On la réduisait à 800 × 513 — même rapport — et on
+ * demandait au modèle une sortie en 1536 × 1024, c'est-à-dire un rapport de
+ * 1,5.
+ *
+ * UN MODÈLE À QUI L'ON DEMANDE UNE AUTRE FORME NE PEUT PAS RECOPIER. Entre
+ * 1,559 et 1,5 il n'y a aucune correspondance pixel à pixel : il doit
+ * RECADRER, donc recomposer, donc redessiner ce qu'il déplace. C'est
+ * exactement ce qu'il décrit — une coupe qui ressemble, un visage qui a
+ * bougé, des vêtements qui ont changé. Pas un mauvais travail : un travail
+ * qu'on a rendu impossible.
+ *
+ * ET C'EST LA SEULE DES CINQ PISTES QUI EXPLIQUE LES TROIS SYMPTÔMES À LA
+ * FOIS. Le masque n'explique pas les vêtements, la consigne n'explique pas le
+ * visage, la recomposition n'explique pas la coupe. Une reprise de cadre, si.
+ *
+ * ON RECADRE DONC AVANT D'ENVOYER, au rapport exact du cadre demandé, et à sa
+ * taille exacte. Le modèle reçoit et rend la même géométrie : il n'a plus
+ * aucune raison de recomposer, le masque tombe au bon endroit, et la
+ * recomposition du visage se repose au pixel près.
+ *
+ * ON ROGNE, ON NE COMPLÈTE PAS. Ajouter des bandes pour atteindre le rapport
+ * donnerait au modèle des zones vides à remplir — et il les remplit. Le
+ * rognage centré coûte quelques pour cent sur un bord ; sur sa photo, quatre
+ * pour cent de largeur.
+ */
+function cadreDe(l: number, h: number): { l: number; h: number } {
+  const r = l / h;
+  let choisi: { l: number; h: number } = CADRES[0];
+  let ecart = Infinity;
+  for (const c of CADRES) {
+    const d = Math.abs(c.l / c.h - r);
+    if (d < ecart) {
+      ecart = d;
+      choisi = c;
+    }
+  }
+  return choisi;
+}
+
+/** Le format tel que l'API l'attend : « 1536x1024 ». */
+export function nomDuCadre(c: { l: number; h: number }): string {
+  return `${c.l}x${c.h}`;
+}
+
+/** Charge une image, la rogne au centre au rapport du cadre, et la rend à sa taille. */
+async function cadrer(source: string, cadre: { l: number; h: number }): Promise<string> {
+  const img = await new Promise<HTMLImageElement>((ok, non) => {
+    const i = new Image();
+    i.crossOrigin = "anonymous";
+    i.onload = () => ok(i);
+    i.onerror = () => non(new Error(`image illisible : ${source.slice(0, 40)}`));
+    i.src = source;
+  });
+  const rCible = cadre.l / cadre.h;
+  const rSource = img.width / img.height;
+  /* LE RECTANGLE QU'ON GARDE : le plus grand possible au bon rapport. */
+  let sl = img.width;
+  let sh = img.height;
+  if (rSource > rCible) sl = Math.round(img.height * rCible);
+  else sh = Math.round(img.width / rCible);
+  /* EN LARGEUR ON CENTRE — un buste est au milieu du cadre.
+
+     EN HAUTEUR ON NE CENTRE PAS, ET C'EST MESURÉ SUR LES FORMATS RÉELS. Une
+     photo de téléphone en 3:4 perd onze pour cent de sa hauteur pour entrer
+     dans le seul cadre vertical que le modèle sache rendre. Centré, c'est cinq
+     et demi en haut : sur un portrait cadré serré, cinq et demi en haut,
+     c'est le dessus du crâne — donc précisément le volume dont une coupe
+     longue a besoin, et la première chose qu'on ne doit pas couper dans un
+     essayage de coiffure.
+     ON RETIRE DONC UN QUART EN HAUT ET TROIS QUARTS EN BAS. Le bas d'un
+     portrait porte un buste et un fond ; le haut porte les cheveux. */
+  const sx = Math.round((img.width - sl) / 2);
+  const sy = Math.round((img.height - sh) * 0.25);
+
+  const c = document.createElement("canvas");
+  c.width = cadre.l;
+  c.height = cadre.h;
+  const ctx = c.getContext("2d");
+  if (!ctx) throw new Error("canvas indisponible");
+  ctx.drawImage(img, sx, sy, sl, sh, 0, 0, cadre.l, cadre.h);
+  return c.toDataURL("image/jpeg", 0.9);
+}
+
+/** Lit les dimensions d'une image sans la redessiner. */
+async function mesurer(source: string): Promise<{ l: number; h: number }> {
+  const img = await new Promise<HTMLImageElement>((ok, non) => {
+    const i = new Image();
+    i.crossOrigin = "anonymous";
+    i.onload = () => ok(i);
+    i.onerror = () => non(new Error("image illisible"));
+    i.src = source;
+  });
+  return { l: img.width, h: img.height };
+}
+
 /** Charge une image et la rend en `data:` JPEG, réduite. */
 async function reduire(source: string, cote = COTE): Promise<string> {
   const img = await new Promise<HTMLImageElement>((ok, non) => {
@@ -163,13 +278,21 @@ export async function essayerSurMoi(opts: {
   const brut = modeBrut();
   let photo: string;
   let reference: string;
+  let cadre: { l: number; h: number } = CADRES[0];
   try {
-    /* EN MODE BRUT LA PHOTO PART PLUS GRANDE : c'est le troisième des quatre
-       ajouts qu'on mesure. Mille deux cent quatre-vingts plutôt que huit
-       cents — assez pour voir si le grain manquait, pas assez pour faire
-       exploser le temps de la fonction. */
+    /**
+     * LA PHOTO PART DANS LE CADRE EXACT QU'ON VA DEMANDER — voir `cadrer`.
+     * C'est ce qui permet au modèle d'ÉDITER au lieu de recomposer.
+     *
+     * LA RÉFÉRENCE, ELLE, GARDE SON PROPRE CADRE. Elle n'est pas éditée : elle
+     * est REGARDÉE. La rogner au rapport de la photo du client couperait la
+     * coupe qu'on veut montrer — sur celle du carré long, les mèches qui
+     * tombent devant l'épaule sont précisément dans le bas de l'image.
+     */
+    const d = await mesurer(opts.photo);
+    cadre = cadreDe(d.l, d.h);
     [photo, reference] = await Promise.all([
-      reduire(opts.photo, brut ? 1280 : COTE),
+      cadrer(opts.photo, cadre),
       reduire(opts.reference, brut ? 1280 : COTE),
     ]);
   } catch (e) {
@@ -285,6 +408,12 @@ export async function essayerSurMoi(opts: {
         change: opts.change ?? "",
         decrire: opts.decrire ?? "",
         brut,
+        /* LE CADRE EST CHOISI ICI, PAS DEVINÉ LÀ-BAS. La route le déduisait
+           des dimensions reçues, ce qui redonnait le même rapport — mais elle
+           n'avait aucun moyen de savoir qu'on venait de rogner exprès. Un
+           cadre décidé à un endroit et recalculé à un autre finit toujours par
+           diverger. */
+        taille: nomDuCadre(cadre),
       }),
       signal: opts.signal,
     });

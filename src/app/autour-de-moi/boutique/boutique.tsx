@@ -2276,7 +2276,19 @@ export function Boutique({
               qu'une bande d'images. Sans legende on ne sait pas si le plat
               qu'on voit est servi AUJOURD'HUI — exactement la confusion qu'une
               carte du jour existe pour eviter. */}
+          {/* ═══ ET ELLES ONT LEUR TITRE ════════════════════════════════════
+
+              « Je vois deux photos qui apparaissent sur "Les horaires" au lieu
+              d'avoir leur section dédiée. »
+
+              POSÉE JUSTE SOUS LES HORAIRES, SANS UN MOT, UNE BANDE DE
+              VIGNETTES SE RATTACHE À CE QUI LA PRÉCÈDE. C'est ce que fait
+              l'œil : il rattache. Le titre coûte une ligne et rend la bande
+              autonome — elle appartient au chapitre « Y aller », pas à la
+              ligne des horaires. */}
           {c.sesPhotos && c.sesPhotos.length > 0 && (
+            <>
+            <div className="bq-gal-t">Ses photos</div>
             <div className="bq-gal">
               {c.sesPhotos.map((p) => (
                 <figure key={p.src}>
@@ -2304,6 +2316,7 @@ export function Boutique({
                 </figure>
               ))}
             </div>
+            </>
           )}
         <div className="bq-y">
           <a className="bq-y-p" href={c.itineraire} target="_blank" rel="noreferrer">
@@ -3638,7 +3651,9 @@ function Styles() {
           color:var(--bq-encre);font-style:italic;}
         .bq-mot{margin:8px 0 0;font-size:12.5px;line-height:1.55;color:var(--bq-pale);}
 
-        .bq-gal{display:flex;gap:9px;overflow-x:auto;margin-top:16px;
+        .bq-gal-t{margin-top:18px;font-size:12px;font-weight:800;
+          letter-spacing:.09em;text-transform:uppercase;color:var(--bq-pale);}
+        .bq-gal{display:flex;gap:9px;overflow-x:auto;margin-top:9px;
           scrollbar-width:none;-webkit-overflow-scrolling:touch;}
         .bq-gal::-webkit-scrollbar{display:none;}
         .bq-gal figure{flex:none;width:146px;margin:0;}

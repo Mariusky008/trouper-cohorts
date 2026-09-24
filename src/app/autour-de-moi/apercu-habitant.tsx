@@ -3231,10 +3231,28 @@ export function ApercuHabitant() {
       duree: 7500,
     },
     {
-      cle: "fleuriste",
+      /* ═══ LA PASTILLE DISAIT UN BOUQUET, L'IMAGE MONTRE UN SALON ═══════
+
+         « L'exemple est faux : ce n'est pas avec le bouquet, c'est avec les
+         meubles. Donc l'exemple n'est pas "commerçant" mais "Déco". »
+
+         LES DEUX PHOTOS SONT UN SÉJOUR AVANT ET APRÈS AMEUBLEMENT — fauteuil,
+         lampe d'arc, tapis, plantes. Pas une fleur. La pastille venait du NOM
+         DES FICHIERS, qui commencent par « fleuriste- » parce qu'ils avaient
+         été choisis pour un autre exemple ; le nom a survécu au changement
+         d'image, et personne n'a relu la pastille devant la photo.
+
+         C'EST EXACTEMENT LA FAUTE DE LA COUPE DE CHEVEUX, en plus visible : un
+         texte écrit d'après un nom plutôt que d'après ce qu'on voit. Ici elle
+         se corrige en deux mots ; là-bas elle avait coûté une coupe entière.
+
+         LA FAMILLE RESTE « COMMERCES », et c'est juste : un magasin de
+         décoration en est un. Ce qui était faux, c'est ce que la pastille
+         annonçait. */
+      cle: "deco",
       famille: "commerces",
       photos: ["/direct/accueil/fleuriste-avant.jpg", "/direct/accueil/fleuriste-apres.jpg"],
-      mots: ["Chez vous", "Avec le bouquet"],
+      mots: ["Chez vous", "Avec les meubles"],
       duree: 4500,
     },
     {
