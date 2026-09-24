@@ -75,16 +75,29 @@ function hoteAutorise(u: URL): boolean {
  * échouent.
  */
 function ecritures(brut: string): string[] {
-  const l: string[] = [];
   const i = brut.lastIndexOf("=");
   const coupe = i > brut.lastIndexOf("/");
   const base = coupe ? brut.slice(0, i) : brut;
-  const gardes = (coupe ? brut.slice(i + 1) : "")
-    .split("-")
-    .filter((j) => j && !/^[whs]\d+$/i.test(j) && j.toLowerCase() !== "c");
-  l.push([`${base}=w1600-h1200`, ...gardes].join("-"));
-  l.push(`${base}=s1600`);
-  l.push(brut);
+  const jetons = (coupe ? brut.slice(i + 1) : "").split("-").filter(Boolean);
+  const gardes = jetons.filter((j) => !/^[whs]\d+$/i.test(j) && j.toLowerCase() !== "c");
+  /**
+   * ═══ UNE ADRESSE DÉJÀ GRANDE NE SE RÉÉCRIT PAS ════════════════════════════
+   *
+   * Les photos de Gaïa arrivent en `=w1920-h1080-k-no`. On les réécrivait
+   * d'office en `=w1600-h1200-k-no` : plus PETIT que l'original, et dans un
+   * autre rapport — on demandait à Google un recadrage qu'il n'avait pas
+   * forcément publié, à la place d'une adresse qui existait déjà.
+   *
+   * L'AGRANDISSEMENT NE SERT QU'AUX VIGNETTES. `imageUrl` arrive en
+   * quatre-vingt-six points de côté, et c'est ÇA qu'il fallait agrandir. Une
+   * adresse qui demande déjà mille points ou plus n'a rien à gagner à être
+   * réécrite, et tout à perdre : on essaie d'abord celle qu'on a.
+   */
+  const grand = jetons
+    .map((j) => (/^[whs](\d+)$/i.test(j) ? Number(j.slice(1)) : 0))
+    .reduce((a, b) => Math.max(a, b), 0);
+  const agrandies = [[`${base}=w1600-h1200`, ...gardes].join("-"), `${base}=s1600`];
+  const l = grand >= 1000 ? [brut, ...agrandies] : [...agrandies, brut];
   // ON NE DEMANDE PAS DEUX FOIS LA MÊME CHOSE : une adresse sans suffixe rend
   // trois fois la même chaîne, et on paierait trois allers-retours pour rien.
   return [...new Set(l)];
@@ -115,6 +128,35 @@ export async function GET(requete: Request) {
         // aucun.
         referrerPolicy: "no-referrer",
         redirect: "follow",
+        /**
+         * ═══ ON SE PRÉSENTE COMME UN NAVIGATEUR ══════════════════════════
+         *
+         * « 502 (Bad Gateway) » sur les huit photos de Gaïa, y compris sur
+         * l'adresse d'origine — celle que Google nous a donnée lui-même.
+         *
+         * UNE REQUÊTE SANS EN-TÊTES N'EST PAS UNE REQUÊTE NEUTRE, c'est une
+         * requête reconnaissable. `fetch` côté serveur part sans `user-agent`
+         * de navigateur et sans `accept`, et le serveur d'images de Google
+         * répond alors en 403 à une part des adresses — celles des fiches de
+         * lieux en particulier. C'était la moitié invisible du problème : on
+         * a passé trois tours sur l'écriture de l'adresse alors que ce qui
+         * manquait était dans l'en-tête.
+         *
+         * ON NE PRÉTEND PAS ÊTRE QUELQU'UN D'AUTRE : on demande une image
+         * publique dans le format où un navigateur la demande. Rien ici ne
+         * contourne une autorisation — la photo est celle que Google publie
+         * sur la fiche du commerce.
+         */
+        headers: {
+          "user-agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36",
+          accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+          "accept-language": "fr-FR,fr;q=0.9",
+        },
+        // ON NE GARDE RIEN EN ROUTE : c'est nous qui posons le cache, à la
+        // sortie, et un cache d'étape masquerait un échec derrière un succès
+        // d'hier.
+        cache: "no-store",
         signal: AbortSignal.timeout(8000),
       });
     } catch (e) {
@@ -157,12 +199,56 @@ export async function GET(requete: Request) {
   }
 
   /**
-   * ═══ ET QUAND AUCUNE N'A RÉPONDU, ON L'ÉCRIT ══════════════════════════════
+   * ═══ ET QUAND AUCUNE N'A RÉPONDU, ON L'ÉCRIT LÀ OÙ IL PEUT LE LIRE ════════
    *
    * C'EST TOUTE LA RAISON D'ÊTRE DE CETTE ROUTE. Trois tours durant, la seule
    * information disponible était « la vignette est cassée » — sans code, sans
-   * adresse, sans écriture essayée. Cette ligne-là vaut les trois.
+   * adresse, sans écriture essayée.
+   *
+   * ON NE REND PLUS 502, ET C'EST IMPORTANT. Une passerelle qui tombe rend 502
+   * elle aussi : dans sa console, notre panne et celle de l'hébergeur
+   * s'écrivaient exactement pareil, et il n'y avait aucun moyen de les
+   * distinguer. 404 ne peut venir que de nous.
+   *
+   * ET LE CORPS DIT CE QU'ON A ESSAYÉ, EN CLAIR. Une adresse de photo qui
+   * échoue s'ouvre dans un onglet : il lit les trois codes de retour sans
+   * console, sans outil, sans moi. Ça ne coûte rien et ça remplace un tour
+   * d'aller-retour.
+   *
+   * CE QU'IL FAUT LIRE DANS CES CODES :
+   *   · 403 partout → Google refuse la requête elle-même (en-têtes, origine).
+   *   · 404 ou 410 → ces adresses ont expiré ; une fiche de lieu en émet de
+   *     nouvelles, et il faut la reprendre chez le fournisseur plutôt que
+   *     s'acharner sur celles-ci. Voir `/api/site-internet/pro/refresh-photos`.
+   *   · un dépassement de temps → ce n'est ni l'adresse ni l'en-tête.
    */
   console.warn("[photo-fiche] aucune écriture n'a répondu", JSON.stringify({ u, echecs }));
-  return new Response("photo indisponible", { status: 502 });
+  return new Response(
+    [
+      "Aucune écriture de cette adresse n'a répondu.",
+      "",
+      ...echecs.map((e) => `- ${e}`),
+      "",
+      "403 partout : Google refuse la requête (en-têtes ou origine).",
+      "404 ou 410 : ces adresses ont expiré, il faut reprendre la fiche.",
+    ].join("\n"),
+    {
+      status: 404,
+      headers: {
+        "content-type": "text/plain; charset=utf-8",
+        /* L'EN-TÊTE PORTE LE RÉSUMÉ pour qui regarde l'onglet réseau plutôt
+           que le corps — c'est la même information, au même prix.
+
+           EN PUR ASCII, ET CE N'EST PAS UNE COQUETTERIE. Une valeur d'en-tête
+           HTTP est une suite d'octets : la flèche « → » de nos messages y vaut
+           8594, et le serveur jette la réponse ENTIÈRE avec une 500. La route
+           de diagnostic tombait donc au moment précis où elle devait
+           expliquer — mesuré sur le serveur local avant de partir. */
+        "x-photo-fiche": echecs.join(" | ").replace(/[^\x20-\x7e]/g, "-").slice(0, 400),
+        // ON NE MET PAS UN ÉCHEC EN CACHE : le jour où la fiche est reprise,
+        // la photo doit revenir sans attendre l'expiration d'un cache.
+        "cache-control": "no-store",
+      },
+    },
+  );
 }

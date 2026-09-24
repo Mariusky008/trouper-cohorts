@@ -1715,7 +1715,31 @@ export const MURS: Mur[] = [
          * ne peut pas le dire deux fois différemment. Voir
          * `verifier-coupe-decrite.mjs`, qui refuse désormais les deux.
          */
-        { id: "c-femme", nom: "Carré long, de face", decrire: "un carré qui s'arrête à la base du cou, nettement au-dessus des épaules, avec une raie au milieu, beaucoup de volume sur les côtés, une ligne de pointes nette et légèrement arrondie, et aucune longueur qui descende sur les épaules", prix: "38 €",
+        /**
+         * ═══ ET LA DEUXIÈME MOITIÉ : CE N'EST PAS UN CARRÉ DROIT ══════════
+         *
+         * « Cette fois Clikme a corrigé la longueur, mais la coupe reste
+         * différente. Sur son résultat, c'est un carré droit, plat et brun.
+         * Sur la référence, les cheveux sont presque noirs, avec davantage de
+         * volume sur les côtés, des mèches qui encadrent le visage et des
+         * pointes qui rentrent vers le cou. »
+         *
+         * MA PHRASE DISAIT « UNE LIGNE DE POINTES NETTE » — c'est-à-dire
+         * exactement le carré droit et plat qu'il a obtenu. J'avais corrigé
+         * la longueur et introduit un autre écart dans la même ligne.
+         *
+         * ET LA COULEUR MANQUAIT TOUT SIMPLEMENT. Je l'avais laissée dehors
+         * par prudence ; l'essai porte sur « leur coupe, leur longueur, LEUR
+         * COULEUR », et ne rien dire laissait le brun d'origine. Un mot
+         * suffisait.
+         *
+         * LE NÉGATIF EST ASSUMÉ ICI, ET C'EST UNE EXCEPTION À LA RÈGLE. Ce
+         * fichier interdit de décrire un objet absent — nommer des lunettes
+         * les fait apparaître. Une FORME qu'on écarte n'est pas un objet
+         * qu'on ajoute : « pas un carré droit et symétrique » ne dessine
+         * rien, ça écarte le repli le plus probable d'un modèle prudent.
+         */
+        { id: "c-femme", nom: "Carré long, de face", decrire: "un carré noir très foncé qui s'arrête à la base du cou, nettement au-dessus des épaules, avec une raie au milieu, des mèches souples qui s'ouvrent autour du visage, du volume arrondi sur les côtés, des pointes qui rentrent vers l'intérieur au niveau du cou, et aucune longueur qui descende sur les épaules ; surtout pas un carré droit, plat et symétrique, ni une couleur brune", prix: "38 €",
           photo: "/direct/coiffure-femme-face.jpg", reference: "/direct/coiffure-femme-face.jpg" },
         /**
          * LES DEUX DERNIÈRES « BIENTÔT » SONT TOMBÉES.

@@ -102,11 +102,18 @@ console.log("══ l'adresse d'origine part entière vers nous ══");
 console.log("\n══ les écritures essayées, dans l'ordre ══");
 {
   const l = ecritures(VIGNETTE);
-  dire(l[0] === `${P}=w1600-h1200-k-no`, `la grande d'abord, drapeaux gardés (${l[0].slice(l[0].lastIndexOf("="))})`);
+  dire(l[0] === `${P}=w1600-h1200-k-no`, `une vignette s'agrandit d'abord (${l[0].slice(l[0].lastIndexOf("="))})`);
   dire(l.includes(`${P}=s1600`), "l'autre écriture de la grande ensuite");
   // SI LES DEUX PARIS SONT PERDUS, IL RESTE CE QU'ON SAIT. Une vignette de
   // quatre-vingt-six points qui s'affiche vaut mieux qu'une grande absente.
   dire(l[l.length - 1] === VIGNETTE, "et l'originale en dernier recours");
+
+  /* LE CAS DE GAÏA : huit photos en `=w1920-h1080-k-no`, huit échecs. On les
+     réécrivait en `=w1600-h1200` — plus petit que l'original, et dans un autre
+     rapport. On demandait un recadrage à la place d'une adresse qui existait. */
+  const deja = `${P}=w1920-h1080-k-no`;
+  dire(ecritures(deja)[0] === deja, "une adresse déjà grande est essayée telle quelle d'abord");
+  dire(ecritures(deja).length === 3, "et les agrandissements restent en secours");
 
   const long = ecritures("https://lh5.googleusercontent.com/gps-cs-s/XYZ=w408-h306-k-no-pi0-ya0");
   dire(
