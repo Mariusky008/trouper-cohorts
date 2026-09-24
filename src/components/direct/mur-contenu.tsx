@@ -259,7 +259,38 @@ type EssaiVu = { piece: Piece; image: string; note: number };
  * en train de promettre. Elle parle donc de ce qui est VRAI ici — la pièce,
  * sa coupe, et la façon dont elle a été sortie de la collection.
  */
-function avisNeutre(piece: Piece): { dit: string; sinon: string } {
+/**
+ * ═══ ET IL N'EXISTE QUE POUR UN VÊTEMENT ═══════════════════════════════════
+ *
+ * « Ce n'est pas du tout un avis pour la coiffure. Il faut que l'avis de Nadia
+ * soit seulement pour les vêtements et qu'il ne soit pas accessible pour le
+ * reste des métiers. »
+ *
+ * IL A RAISON, ET LA FAUTE ÉTAIT DANS LE REPLI. Cette fonction se terminait par
+ * un `return` sans condition : tout ce qui n'était ni « silhouette » ni « bas »
+ * recevait la phrase du BUSTE. Une coupe de cheveux n'a aucun de ces trois
+ * mots, donc elle tombait dans le repli, et Nadia annonçait à quelqu'un qui
+ * regardait sa coiffure que « cette pièce apporte de la structure sur le buste
+ * et se porte avec ce que vous avez déjà ».
+ *
+ * UN REPLI N'EST PAS UNE VALEUR PAR DÉFAUT : c'est une réponse qu'on donne
+ * quand on ne sait pas. Ici on savait — on savait même que la question ne se
+ * posait pas — et on répondait quand même.
+ *
+ * `couvre` EST LE BON DISCRIMINANT, ET IL ÉTAIT DÉJÀ ÉCRIT. Voir son
+ * commentaire dans `fantomes.ts` : « absent, on garde la phrase du métier ;
+ * c'est le cas de tout ce qui ne s'habille pas — une coupe, une monture, un
+ * vernis ». Il est posé à côté de chaque pièce par celui qui l'ajoute, donc il
+ * ne peut pas se désynchroniser d'une liste de métiers écrite ailleurs — et une
+ * liste de métiers, ici, aurait oublié le prochain métier ajouté.
+ *
+ * ABSENT, ON NE REND RIEN, et les trois endroits qui l'appellent disparaissent
+ * avec : le lien discret, le panneau de Nadia, et la ligne « La coupe » de
+ * l'explication. Une experte en relooking qui se tait devant une coiffure est
+ * plus crédible qu'une experte en relooking qui en parle.
+ */
+function avisNeutre(piece: Piece): { dit: string; sinon: string } | null {
+  if (!piece.couvre) return null;
   if (piece.couvre === "silhouette") {
     return {
       dit: "Cette pièce habille la silhouette entière : elle donne une ligne, et elle décide du reste de la tenue.",
@@ -5566,8 +5597,12 @@ function Essai({
                       déjà `surLeCorps` : le redire ici mot pour mot se lisait
                       comme un défaut. `avisNeutre` dit la même chose en entier,
                       et sans jamais noter la pièce. */}
-                  <dt>La coupe</dt>
-                  <dd>{avisNeutre(piece).dit}</dd>
+                  {avisNeutre(piece) && (
+                    <>
+                      <dt>La coupe</dt>
+                      <dd>{avisNeutre(piece)?.dit}</dd>
+                    </>
+                  )}
                   <dt>Comment je choisis</dt>
                   {/* ON DIT OÙ EN EST LA MACHINE, PLUTÔT QUE DE LUI PRÊTER UN
                       GOÛT QU'ELLE N'A PAS ENCORE. C'est exactement ce que le
@@ -5711,7 +5746,7 @@ function Essai({
                 ET SA SORTIE EST « SURPRENDS-MOI », pas un verdict. Un conseil
                 qui se termine sans rien à faire laisse la personne seule avec
                 un avis qu'elle n'avait pas demandé. */}
-            {conseil && !surprise && (
+            {conseil && !surprise && avisNeutre(piece) && (
               <div className="mu-conseil">
                 {/* ═══ IL A UN NOM ET UN MÉTIER ══════════════════════════
 
@@ -5735,8 +5770,8 @@ function Essai({
                     <em>experte en relooking</em>
                   </span>
                 </b>
-                <p>{avisNeutre(piece).dit}</p>
-                <p className="mu-conseil-s2">{avisNeutre(piece).sinon}</p>
+                <p>{avisNeutre(piece)?.dit}</p>
+                <p className="mu-conseil-s2">{avisNeutre(piece)?.sinon}</p>
                 <div className="mu-conseil-g">
                   {mots.surprends && (
                     <button type="button" className="mu-conseil-b" onClick={surprendsMoi}>
@@ -5926,15 +5961,21 @@ function Essai({
                   </button>
                 )
               ) : (
-                <button
-                  type="button"
-                  className={conseil ? "on" : undefined}
-                  aria-expanded={conseil}
-                  onClick={() => setConseil((v) => !v)}
-                >
-                  <Trace cle="idee" />
-                  <span>L’avis de Nadia</span>
-                </button>
+                /* ET LE LIEN N'EXISTE PAS LÀ OÙ L'AVIS N'EXISTE PAS. Voir
+                   `avisNeutre` : un lien qui ouvre un panneau vide est pire
+                   qu'un lien absent, et un lien qui ouvre l'avis d'une experte
+                   en relooking sur une coupe de cheveux est pire encore. */
+                avisNeutre(piece) && (
+                  <button
+                    type="button"
+                    className={conseil ? "on" : undefined}
+                    aria-expanded={conseil}
+                    onClick={() => setConseil((v) => !v)}
+                  >
+                    <Trace cle="idee" />
+                    <span>L’avis de Nadia</span>
+                  </button>
+                )
               )}
               <button type="button" onClick={onMur}>
                 <Trace cle="gens" />

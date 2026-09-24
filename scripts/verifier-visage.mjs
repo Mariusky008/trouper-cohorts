@@ -738,5 +738,60 @@ console.log("\n══ le masque laisse la place d'une coupe longue ══");
   dire(m.toutEnBas > 200, `et le bas de la photo n'est pas repeint (alpha ${m.toutEnBas})`);
 }
 
+
+// ═══ L'AVIS DE NADIA NE PARLE QUE DE VÊTEMENTS ════════════════════════════
+//
+// « Ce n'est pas du tout un avis pour la coiffure. Il faut que l'avis de Nadia
+// soit seulement pour les vêtements et qu'il ne soit pas accessible pour le
+// reste des métiers. »
+//
+// LA FAUTE ÉTAIT DANS UN REPLI. `avisNeutre` se terminait par un `return` sans
+// condition : tout ce qui n'était ni « silhouette » ni « bas » recevait la
+// phrase du BUSTE. Une coupe de cheveux n'a aucun de ces trois mots, donc elle
+// tombait dans le repli — et une experte en relooking expliquait à quelqu'un
+// qui regardait sa coiffure que « cette pièce apporte de la structure sur le
+// buste ».
+//
+// CE QUI SE MESURE ICI EST LA DONNÉE, PAS L'ÉCRAN. Le code ne rend plus rien
+// sans `couvre` ; ce qui peut encore ramener le défaut, c'est que quelqu'un
+// écrive `couvre` sur une pièce qui ne s'habille pas. Cette garde lit donc la
+// collection et vérifie que les trois mots ne sortent jamais d'un mur de
+// vêtements — c'est l'invariant, et il survit à n'importe quel dessin.
+console.log("\n══ l'avis de Nadia ne parle que de vêtements ══");
+{
+  const src = readFileSync("src/lib/direct/fantomes.ts", "utf8");
+  dire(
+    /function avisNeutre[\s\S]{0,400}?if \(!piece\.couvre\) return null;/.test(
+      readFileSync("src/components/direct/mur-contenu.tsx", "utf8"),
+    ),
+    "sans `couvre`, il n'y a pas d'avis du tout",
+  );
+  /* ON DÉCOUPE PAR MUR : chaque bloc commence à `cle:` et court jusqu'au
+     suivant. Une expression qui chercherait `couvre` dans tout le fichier
+     dirait seulement qu'il y en a, pas CHEZ QUI.
+
+     ET LE DISCRIMINANT EST `change`, PAS UNE LISTE DE MOTS. Premier jet : une
+     liste — « cheveux, coupe, ongles, monture… » — et le mur de MODE tombait
+     dedans, parce qu'une robe a une coupe elle aussi. C'est la faute que ce
+     dossier paie à chaque fois qu'il la commet : deviner une catégorie au lieu
+     de lire ce que la donnée dit d'elle-même. `change` dit en toutes lettres
+     ce que l'essai modifie — « uniquement le vêtement porté sur le buste »,
+     « uniquement les cheveux », « uniquement la monture de lunettes ». */
+  const murs = src.split(/\n  \{\n    cle: "/).slice(1);
+  const fautifs = [];
+  for (const bloc of murs) {
+    if (!/couvre: "/.test(bloc)) continue;
+    const nom = bloc.slice(0, bloc.indexOf('"'));
+    const m = bloc.match(/change: "([^"]+)"/);
+    if (!m || !/v[êe]tement|tenue/i.test(m[1])) fautifs.push(`${nom} → ${m ? m[1] : "sans change"}`);
+  }
+  dire(
+    fautifs.length === 0,
+    fautifs.length
+      ? `des essais qui ne portent pas un vêtement utilisent « couvre » (${fautifs.join(" ; ")})`
+      : `et « couvre » ne sert que là où l'essai porte un vêtement (${murs.filter((b) => /couvre: "/.test(b)).length} murs)`,
+  );
+}
+
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT PASSE");
 process.exit(echecs ? 1 : 0);

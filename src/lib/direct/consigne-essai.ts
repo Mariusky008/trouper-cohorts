@@ -299,3 +299,76 @@ export function consigne(
     "Rends uniquement l'image modifiée.",
   ].join("\n");
 }
+
+/**
+ * ═══ LA CONSIGNE NUE — CELLE QU'ON ÉCRIRAIT DANS CHATGPT ═══════════════════
+ *
+ * « ChatGPT réalise un rendu beaucoup plus naturel et ajusté à la photo de
+ * départ que via ClikMe. Ça fait un moment qu'on essaie de réaliser quelque
+ * chose comme ChatGPT et on est encore et toujours très loin, alors qu'on
+ * utilise leur API. »
+ *
+ * ═══ CE QUI NOUS SÉPARE DE CHATGPT, ET CE N'EST PAS LE MODÈLE ══════════════
+ *
+ * C'EST LE MÊME MOTEUR, LE MÊME POINT D'ENTRÉE, LA MÊME FIDÉLITÉ D'ENTRÉE.
+ * Quatre choses seulement diffèrent, et nous les avons toutes les quatre
+ * ajoutées nous-mêmes, chacune pour une bonne raison :
+ *
+ *   1. LA RECOMPOSITION. Après la génération, on repose les pixels du visage
+ *      d'origine par-dessus le rendu, avec un fondu de huit à dix-huit points.
+ *      C'est ce qui garantit l'identité — et c'est aussi ce qui donne l'air
+ *      d'une tête collée : le modèle a re-éclairé le visage pour la nouvelle
+ *      coupe, et on repose par-dessus un visage éclairé pour l'ancienne.
+ *      ChatGPT ne fait rien de tel.
+ *   2. LE MASQUE. Il interdit au modèle de retoucher hors de la couronne de
+ *      cheveux. Il ne peut donc pas rattraper une ombre sur la joue, un reflet
+ *      sur l'épaule, un contre-jour dans la nuque — tout ce qui fait qu'une
+ *      coupe a l'air POSÉE SUR quelqu'un plutôt que collée devant.
+ *   3. LA RÉDUCTION À HUIT CENTS POINTS avant l'envoi, pour tenir le budget de
+ *      temps d'une fonction serveur. ChatGPT reçoit la photo entière.
+ *   4. CETTE CONSIGNE-CI. Deux mille signes d'interdictions — « le visage trait
+ *      pour trait », « absolument rien d'autre ne bouge », « un résultat
+ *      identique est un échec ». Chaque ligne a été ajoutée après un défaut
+ *      constaté, et l'ensemble tire le modèle vers la prudence : une image
+ *      qu'on retouche le moins possible est une image qui a l'air retouchée.
+ *
+ * ═══ CE QUE CETTE FONCTION SERT À MESURER ══════════════════════════════════
+ *
+ * ELLE EST LA PHRASE QU'ON TAPERAIT DANS CHATGPT, et rien de plus. Avec le
+ * mode brut — voir `essai-genere.ts` — elle part sans masque et le rendu
+ * revient sans recomposition, sur une photo moins réduite. C'est donc la
+ * comparaison à UNE SEULE VARIABLE qu'on n'avait jamais faite : notre pile,
+ * sans nos quatre ajouts.
+ *
+ * ET ELLE TRANCHE UNE QUESTION QU'ON NE PEUT PAS TRANCHER EN LISANT DU CODE.
+ * Si le rendu brut ressemble à celui de ChatGPT, le défaut est dans nos
+ * verrous, et il faut les refaire autrement — un fondu qui suit la lumière
+ * plutôt qu'un contour, un masque plus large, une consigne plus courte. S'il
+ * reste mauvais, le défaut est ailleurs, et on aura cessé de soupçonner les
+ * bons.
+ *
+ * ELLE NE PROTÈGE RIEN, ET C'EST ASSUMÉ. Le visage peut bouger ; c'est
+ * exactement ce que le mode brut sert à voir. Il ne doit donc jamais devenir
+ * le mode par défaut sans qu'on ait regardé ce qu'il rend.
+ */
+export function consigneBrute(
+  partie: string,
+  change?: string,
+  decrire?: string,
+  avecReference = true,
+): string {
+  const quoi = change?.trim() || "la zone concernée";
+  return [
+    `Voici la photo d'une personne, montrant ${partie}.`,
+    decrire
+      ? `Modifie ${quoi} pour obtenir : ${decrire}.`
+      : `Modifie ${quoi} en suivant la seconde image.`,
+    avecReference && decrire
+      ? "La seconde image montre le résultat visé sur quelqu'un d'autre : elle ne sert que de référence pour la forme, la couleur et la matière."
+      : "",
+    "Garde la même personne, la même pose, le même cadrage et la même lumière.",
+    "Le résultat doit ressembler à une vraie photographie de cette personne.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}

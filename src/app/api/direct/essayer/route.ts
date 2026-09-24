@@ -42,7 +42,7 @@
 // repli. Aucun des deux n'est câblé en dur dans l'écran : c'est la route qui
 // choisit selon la clé présente, et l'écran ne sait rien du fournisseur.
 import { NextResponse } from "next/server";
-import { consigne } from "@/lib/direct/consigne-essai";
+import { consigne, consigneBrute } from "@/lib/direct/consigne-essai";
 
 export const dynamic = "force-dynamic";
 /**
@@ -291,6 +291,24 @@ async function parOpenAI(
    * en haute. Voir la boucle en bas de fichier.
    */
   qualite: string,
+  /**
+   * ═══ LE MODE BRUT — NOTRE PILE SANS NOS QUATRE AJOUTS ═════════════════════
+   *
+   * « ChatGPT réalise un rendu beaucoup plus naturel et ajusté à la photo de
+   * départ que via ClikMe, alors qu'on utilise leur API. »
+   *
+   * C'EST LE MÊME MOTEUR ET LE MÊME POINT D'ENTRÉE. Ce qui diffère, c'est ce
+   * que NOUS avons ajouté autour : un masque, une recomposition du visage, une
+   * réduction à huit cents points, et deux mille signes d'interdictions. Chacun
+   * a été ajouté après un défaut constaté, et personne n'a jamais mesuré ce
+   * qu'ils coûtent ENSEMBLE.
+   *
+   * CE DRAPEAU LES ENLÈVE TOUS LES QUATRE D'UN COUP. Il ne corrige rien : il
+   * rend la comparaison possible sur une vraie photo, avec une vraie clé, sur
+   * son téléphone — ce qu'aucune lecture de code ne peut remplacer. Voir
+   * `consigneBrute` dans `consigne-essai.ts`.
+   */
+  brut: boolean,
 ): Promise<{ image: string } | { erreur: string }> {
   const modele = s(process.env.OPENAI_IMAGE_MODEL) || "gpt-image-1";
   // L'API d'édition d'OpenAI prend les images en multipart, et elle accepte
@@ -298,7 +316,10 @@ async function parOpenAI(
   // référence. C'est exactement la forme dont on a besoin.
   const forme = new FormData();
   forme.append("model", modele);
-  forme.append("prompt", consigne(partie, garder, change, decrire, !!masque, !!reference));
+  const phrase = brut
+    ? consigneBrute(partie, change, decrire, !!reference)
+    : consigne(partie, garder, change, decrire, !!masque, !!reference);
+  forme.append("prompt", phrase);
   forme.append("n", "1");
   /**
    * TROIS RÉGLAGES QUI DÉCIDENT SI LE RENDU ARRIVE, OU PAS DU TOUT.
@@ -362,7 +383,11 @@ async function parOpenAI(
    * resterait fidèle ; si c'était l'autre, on retomberait sur des visages
    * refaits.
    */
-  if (masque) forme.append("mask", enFichier(masque, "masque.png"));
+  /* EN MODE BRUT, PAS DE MASQUE — c'est l'un des quatre ajouts qu'on mesure.
+     Le navigateur n'en envoie déjà pas, mais on le redit ici : une route qui
+     dépend de la discipline de son appelant finit par recevoir ce qu'elle
+     n'attendait pas. */
+  if (masque && !brut) forme.append("mask", enFichier(masque, "masque.png"));
   const base = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
   /**
    * ═══ CE QU'ON A VRAIMENT ENVOYÉ, DANS LES JOURNAUX ════════════════════════
@@ -402,8 +427,11 @@ async function parOpenAI(
       // LE MASQUE EST-IL PARTI, ET À LA BONNE TAILLE ? Un masque aux dimensions
       // d'une autre image est refusé par l'API, et le message ne dit pas
       // toujours lequel des trois fichiers est en cause.
-      masque: masque ? dimensions(masque.donnees) : null,
-      consigne: consigne(partie, garder, change, decrire, !!masque, !!reference).length,
+      masque: masque && !brut ? dimensions(masque.donnees) : null,
+      // LE JOURNAL DIT LEQUEL DES DEUX RÉGIMES A TOURNÉ. Sans ça, deux rendus
+      // très différents au même horodatage resteraient inexplicables.
+      brut,
+      consigne: phrase.length,
     }),
   );
   const r = await fetch(`${base}/v1/images/edits`, {
@@ -447,7 +475,7 @@ async function parOpenAI(
       // LE BUDGET NE SE REMET PAS À ZÉRO : ce qu'a coûté le refus est décompté
       // du temps qu'on donne au second appel, sans quoi les deux tentatives
       // additionnées dépasseraient ce que la fonction a le droit de vivre.
-      return parOpenAI(cle, photo, null, partie, garder, change, decrire, masque, debut, qualite);
+      return parOpenAI(cle, photo, null, partie, garder, change, decrire, masque, debut, qualite, brut);
     }
     if (bloque) {
       return {
@@ -493,6 +521,14 @@ export async function POST(req: Request) {
     garder?: string[];
     change?: string;
     decrire?: string;
+    /**
+     * ═══ LE MODE BRUT — VOIR `parOpenAI` ═════════════════════════════════════
+     *
+     * Il vient du navigateur, qui le lit dans l'adresse (`?brut=1`). Il ne
+     * change rien pour qui ne le demande pas : absent, le régime est celui de
+     * toujours — masque, recomposition, consigne longue.
+     */
+    brut?: boolean;
   };
   try {
     corps = (await req.json()) as typeof corps;
@@ -503,6 +539,7 @@ export async function POST(req: Request) {
   const photo = decoder(s(corps.photo));
   const reference = decoder(s(corps.reference));
   const masque = decoder(s(corps.masque));
+  const brut = corps.brut === true;
   const partie = s(corps.partie) || "la zone concernée";
   /**
    * CE QUE LE MÉTIER DEMANDE DE PRÉSERVER, ET IL VIENT DE L'ÉCRAN.
@@ -633,6 +670,7 @@ export async function POST(req: Request) {
               masque,
               debut,
               QUALITE,
+              brut,
             ),
         }
       : null,
@@ -668,7 +706,7 @@ export async function POST(req: Request) {
     ordre.push({
       nom: `openai·${leger}`,
       aller: () =>
-        parOpenAI(openai, photo, reference, partie, garder, change, decrire, masque, debut, leger),
+        parOpenAI(openai, photo, reference, partie, garder, change, decrire, masque, debut, leger, brut),
     });
   }
 

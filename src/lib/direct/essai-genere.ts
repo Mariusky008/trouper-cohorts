@@ -63,6 +63,50 @@ export type Souci = {
  */
 const COTE = 800;
 
+/**
+ * ═══ LE MODE BRUT — NOTRE PILE SANS NOS QUATRE AJOUTS ══════════════════════
+ *
+ * « ChatGPT réalise un rendu beaucoup plus naturel et ajusté à la photo de
+ * départ que via ClikMe. Ça fait un moment qu'on essaie de réaliser quelque
+ * chose comme ChatGPT et on est encore et toujours très loin, alors qu'on
+ * utilise leur API. »
+ *
+ * C'EST LE MÊME MOTEUR, LE MÊME POINT D'ENTRÉE, LA MÊME FIDÉLITÉ D'ENTRÉE.
+ * Quatre choses seulement nous séparent d'une édition faite dans ChatGPT, et
+ * nous les avons toutes ajoutées nous-mêmes :
+ *
+ *   1. LA RECOMPOSITION du visage par-dessus le rendu. C'est elle qui garantit
+ *      l'identité, et c'est aussi elle qui donne l'air d'une tête collée : le
+ *      modèle a ré-éclairé le visage pour la nouvelle coupe, et on repose
+ *      par-dessus un visage éclairé pour l'ancienne.
+ *   2. LE MASQUE, qui interdit de retoucher hors de la couronne de cheveux —
+ *      donc interdit de rattraper une ombre sur la joue ou un reflet sur
+ *      l'épaule, c'est-à-dire tout ce qui fait qu'une coupe a l'air POSÉE SUR
+ *      quelqu'un plutôt que collée devant.
+ *   3. LA RÉDUCTION À HUIT CENTS POINTS avant l'envoi, pour tenir le budget de
+ *      temps de la fonction. ChatGPT reçoit la photo entière.
+ *   4. LA CONSIGNE LONGUE — deux mille signes d'interdictions accumulées après
+ *      chaque défaut constaté, et qui tirent le modèle vers la prudence.
+ *
+ * AUCUN DE CES QUATRE N'A JAMAIS ÉTÉ MESURÉ AVEC LES AUTRES. Chacun a été
+ * ajouté seul, pour réparer un défaut réel, et la somme n'a jamais été
+ * comparée à ce qu'elle remplace. Ce drapeau les enlève tous les quatre d'un
+ * coup : on obtient la comparaison à une seule variable qui manquait.
+ *
+ * IL SE DEMANDE DANS L'ADRESSE, `?brut=1`, et il ne change rien pour qui ne le
+ * demande pas. Il ne protège rien — le visage peut bouger, c'est exactement ce
+ * qu'il sert à voir — donc il ne doit pas devenir le régime par défaut sans
+ * qu'on ait regardé ce qu'il rend.
+ */
+function modeBrut(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return new URLSearchParams(window.location.search).get("brut") === "1";
+  } catch {
+    return false;
+  }
+}
+
 /** Charge une image et la rend en `data:` JPEG, réduite. */
 async function reduire(source: string, cote = COTE): Promise<string> {
   const img = await new Promise<HTMLImageElement>((ok, non) => {
@@ -116,10 +160,18 @@ export async function essayerSurMoi(opts: {
   decrire?: string;
   signal?: AbortSignal;
 }): Promise<Rendu | Souci> {
+  const brut = modeBrut();
   let photo: string;
   let reference: string;
   try {
-    [photo, reference] = await Promise.all([reduire(opts.photo), reduire(opts.reference)]);
+    /* EN MODE BRUT LA PHOTO PART PLUS GRANDE : c'est le troisième des quatre
+       ajouts qu'on mesure. Mille deux cent quatre-vingts plutôt que huit
+       cents — assez pour voir si le grain manquait, pas assez pour faire
+       exploser le temps de la fonction. */
+    [photo, reference] = await Promise.all([
+      reduire(opts.photo, brut ? 1280 : COTE),
+      reduire(opts.reference, brut ? 1280 : COTE),
+    ]);
   } catch (e) {
     return { erreur: "Photo illisible.", pourquoi: e instanceof Error ? e.message : String(e) };
   }
@@ -160,7 +212,9 @@ export async function essayerSurMoi(opts: {
    * pose précisément là où l'on interdit. Voir `zoneDe`.
    */
   const zone: ZoneVisage | null = zoneDe(opts.partie);
-  if (zone) {
+  /* EN MODE BRUT ON NE CHERCHE MÊME PAS LE VISAGE : sans masque et sans
+     recomposition, la détection ne servirait qu'à faire attendre. */
+  if (zone && !brut) {
     visage = await trouverLeVisage(photo);
     if (visage) {
       try {
@@ -187,6 +241,7 @@ export async function essayerSurMoi(opts: {
         garder: opts.garder ?? [],
         change: opts.change ?? "",
         decrire: opts.decrire ?? "",
+        brut,
       }),
       signal: opts.signal,
     });
