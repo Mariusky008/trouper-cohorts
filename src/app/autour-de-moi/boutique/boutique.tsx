@@ -1747,10 +1747,26 @@ export function Boutique({
               tant que vous ne l’avez pas donné.
             </p>
           )}
+          {/* ═══ ET LA COLONNE DES VIGNETTES N'EXISTE QUE SI ELLE SERT ═════
+
+              « Les photos ou miniatures n'apparaissent pas. »
+
+              LE CARRÉ VIDE ÉTAIT UNE BONNE IDÉE, ET ELLE NE VAUT QUE DANS UN
+              CAS. Il réserve la place d'une photo pour que les lignes qui en
+              ont une ne décalent pas les autres — une carte qui zigzague se
+              lit comme une faute de mise en page. Mais chez un commerçant qui
+              n'a RIEN saisi, aucune ligne n'a de photo : on aligne alors une
+              colonne entière de carrés gris, et trois carrés gris côte à côte
+              ne se lisent pas comme un alignement, ils se lisent comme trois
+              images qui n'ont pas chargé.
+
+              LA RÉSERVE NE SE FAIT DONC QUE QUAND IL Y A QUELQUE CHOSE À
+              ALIGNER. C'est la même règle que partout ailleurs dans ce
+              dossier : l'absence raccourcit, elle ne remplit pas. */}
           {rayons.map(([rayon, articles]) => (
             <div className="bq-ray" key={rayon || "sans-rayon"}>
               {rayon && <div className="bq-ray-t">{rayon}</div>}
-              <ul className="bq-art">
+              <ul className={`bq-art${articles.some((a) => a.photo) ? "" : " nue"}`}>
                 {articles.map((a) => (
                   <li key={a.id}>
                     {/* LA VIGNETTE EXISTE MEME SANS PHOTO, ET C'EST VOLONTAIRE.
@@ -1764,6 +1780,8 @@ export function Boutique({
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={a.photo} alt="" />
                     ) : (
+                      /* VOIR AU-DESSUS : le carré sourd ne tient le rang que
+                         dans une liste où au moins une ligne est illustrée. */
                       <span className="bq-art-v" aria-hidden="true" />
                     )}
                     <div>
@@ -1991,40 +2009,25 @@ export function Boutique({
             </div>
           </div>
 
-          {/* SES PHOTOS SONT LEGENDEES, et ce n'est pas de la decoration :
-              « la salle » et « un autre jour » ne disent pas la meme chose
-              qu'une bande d'images. Sans legende on ne sait pas si le plat
-              qu'on voit est servi AUJOURD'HUI — exactement la confusion qu'une
-              carte du jour existe pour eviter. */}
-          {c.sesPhotos && c.sesPhotos.length > 0 && (
-            <div className="bq-gal">
-              {c.sesPhotos.map((p) => (
-                <figure key={p.src}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={p.src}
-                    alt={p.quoi}
-                    /* CES ADRESSES SONT CELLES DE GOOGLE : servies depuis un
-                       autre domaine avec un referent, elles repondent parfois
-                       403. Meme ligne que la couverture, juste au-dessus. */
-                    referrerPolicy="no-referrer"
-                    /* ET UNE PHOTO QUI NE VIENT PAS NE LAISSE PAS UN CADRE
-                       VIDE : on retire la vignette entiere plutot que de
-                       montrer un rectangle gris au milieu d'une bande. */
-                    onError={(ev) => {
-                      const f = ev.currentTarget.closest("figure");
-                      if (f) f.style.display = "none";
-                    }}
-                  />
-                  {/* SANS LEGENDE, PAS DE LIGNE VIDE. Les photos d'un vrai
-                      commerce viennent de Google et personne ne les a
-                      regardees : on ne leur invente pas de legende, et la
-                      place qu'elle prendrait ne se reserve pas. */}
-                  {p.quoi && <figcaption>{p.quoi}</figcaption>}
-                </figure>
-              ))}
-            </div>
-          )}
+          {/* ═══ SES PHOTOS ONT DÉMÉNAGÉ, ET C'ÉTAIT LA CAUSE ═════════════
+
+              « Il manque toutes les photos recueillies sur la fiche Google,
+              qui ont normalement leur propre section dans les infos du
+              commerçant. »
+
+              ELLES ÉTAIENT ICI, DANS LA SECTION « QUI VOUS RECEVRA », et cette
+              section ne se dessine QUE s'il y a une voix ou un mot du
+              commerçant. Or le pont d'un prospect n'écrit ni l'un ni l'autre —
+              délibérément : une phrase générée serait une phrase qu'il n'a pas
+              dite, signée de sa main. Donc pour TOUS les prospects, la section
+              entière était sautée, et la galerie avec elle. Ses photos étaient
+              chargées, présentes, et rendues nulle part.
+
+              UN BLOC NE DOIT PAS DÉPENDRE D'UNE CONDITION QUI NE LE CONCERNE
+              PAS. Des photos n'ont rien à voir avec l'existence d'un portrait
+              vidéo ; les ranger sous lui, c'est les faire disparaître avec
+              lui. Elles sont maintenant dans « Y aller », où il les cherchait,
+              et leur seule condition est qu'il y en ait. */}
         </section>
       )}
 
@@ -2268,6 +2271,40 @@ export function Boutique({
             </div>
           )}
         </dl>
+          {/* SES PHOTOS, QUAND ELLES SONT LEGENDEES, et ce n'est pas de la decoration :
+              « la salle » et « un autre jour » ne disent pas la meme chose
+              qu'une bande d'images. Sans legende on ne sait pas si le plat
+              qu'on voit est servi AUJOURD'HUI — exactement la confusion qu'une
+              carte du jour existe pour eviter. */}
+          {c.sesPhotos && c.sesPhotos.length > 0 && (
+            <div className="bq-gal">
+              {c.sesPhotos.map((p) => (
+                <figure key={p.src}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={p.src}
+                    alt={p.quoi}
+                    /* CES ADRESSES SONT CELLES DE GOOGLE : servies depuis un
+                       autre domaine avec un referent, elles repondent parfois
+                       403. Meme ligne que la couverture, juste au-dessus. */
+                    referrerPolicy="no-referrer"
+                    /* ET UNE PHOTO QUI NE VIENT PAS NE LAISSE PAS UN CADRE
+                       VIDE : on retire la vignette entiere plutot que de
+                       montrer un rectangle gris au milieu d'une bande. */
+                    onError={(ev) => {
+                      const f = ev.currentTarget.closest("figure");
+                      if (f) f.style.display = "none";
+                    }}
+                  />
+                  {/* SANS LEGENDE, PAS DE LIGNE VIDE. Les photos d'un vrai
+                      commerce viennent de Google et personne ne les a
+                      regardees : on ne leur invente pas de legende, et la
+                      place qu'elle prendrait ne se reserve pas. */}
+                  {p.quoi && <figcaption>{p.quoi}</figcaption>}
+                </figure>
+              ))}
+            </div>
+          )}
         <div className="bq-y">
           <a className="bq-y-p" href={c.itineraire} target="_blank" rel="noreferrer">
             Itinéraire<i aria-hidden="true">→</i>
@@ -3552,6 +3589,9 @@ function Styles() {
         .bq-art img,.bq-art .bq-art-v{flex:none;width:46px;height:46px;border-radius:11px;
           object-fit:cover;display:block;}
         .bq-art .bq-art-v{background:#FBF8FC;}
+        /* AUCUNE LIGNE ILLUSTREE : pas de colonne a aligner, donc pas de
+           colonne. Voir le commentaire du rendu. */
+        .bq-art.nue .bq-art-v{display:none;}
         .bq-art li>div{flex:1;min-width:0;}
         .bq-art b{display:block;font-size:14px;font-weight:650;line-height:1.25;}
         .bq-art span{display:block;font-size:12px;color:var(--bq-pale);margin-top:1px;}

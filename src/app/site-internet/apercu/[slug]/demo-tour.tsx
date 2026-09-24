@@ -1991,7 +1991,20 @@ export function DemoTour({
               2 min 15, dont dix-neuf secondes d'attente que la voix supprime.
               D'où les deux minutes annoncées. À revérifier sur un téléphone,
               voix allumée, parce que c'est là que le chiffre compte. */}
-          <div className="s" style={{ ["--i" as string]: 3 }}>Votre assistante <b>Léa</b> vous la présente à voix haute, en sept étapes et deux minutes.</div>
+          {/* ═══ LA DURÉE ANNONCÉE EST CELLE QU'ON MET ══════════════════
+
+              « Sept étapes et deux minutes » était encore écrit ici après que
+              la visite soit passée à CINQ actes et à un peu plus d'une minute.
+              C'est la première phrase qu'un commerçant lit, et c'est la seule
+              promesse de tout cet écran : la laisser fausse, c'est promettre
+              deux minutes à quelqu'un qui en accordera une.
+
+              ET ON ANNONCE PLUTÔT MOINS QUE PLUS. Mesuré sur trois métiers, la
+              lecture des cinq répliques fait entre soixante-dix et
+              quatre-vingts secondes selon la voix. « Un peu plus d'une
+              minute » est vrai dans tous les cas ; « une minute » serait un
+              chiffre rond et faux. */}
+          <div className="s" style={{ ["--i" as string]: 3 }}>Votre assistante <b>Léa</b> vous la présente à voix haute, en cinq étapes et un peu plus d’une minute.</div>
           {/* UNE SEULE PORTE.
               « Voir le site directement » était posé juste sous « Découvrir mon
               site », dans la même taille : deux propositions côte à côte, et
@@ -2003,7 +2016,7 @@ export function DemoTour({
               pendant la visite (voir `.dtour-quit`), et pas au moment où l'on
               demande deux minutes d'attention. */}
           <button className="go" style={{ ["--i" as string]: 4 }} onClick={start}>Découvrir ma page</button>
-          <div className="trust" style={{ ["--i" as string]: 5 }}>⏱️ ≈ 2 min · montez le son 🔊</div>
+          <div className="trust" style={{ ["--i" as string]: 5 }}>⏱️ ≈ 1 min 15 · montez le son 🔊</div>
         </div>
       )}
 
