@@ -1660,7 +1660,34 @@ export const MURS: Mur[] = [
          */
         { id: "c-homme", nom: "Boucles courtes, de face", decrire: "une coupe courte masculine, cheveux bouclés d'environ cinq centimètres sur le dessus, nuque et côtés plus courts, pas de raie marquée", prix: "26 €",
           photo: "/direct/coiffure-homme-face.jpg", reference: "/direct/coiffure-homme-face.jpg" },
-        { id: "c-femme", nom: "Carré long, de face", decrire: "un carré long qui s'arrête juste sous la mâchoire, coupé net à la même longueur tout autour, raie au milieu, sans dégradé ni frange", prix: "38 €",
+        /* ═══ CETTE DESCRIPTION DÉCRIVAIT UNE AUTRE COUPE QUE SA PHOTO ══════
+
+           « Ce n'est toujours pas la même coupe et pas du tout ajustée à la
+           photo de départ. »
+
+           J'AI CHERCHÉ LA CAUSE DANS LE MASQUE, DANS LA RECOMPOSITION, DANS LA
+           TAILLE DE L'IMAGE ENVOYÉE. Elle était ici, en une ligne de données.
+           La description disait « coupé net à la même longueur tout autour,
+           sans dégradé ni frange ». Sa photo de référence —
+           `coiffure-femme-face.jpg` — montre l'inverse : un carré DÉGRADÉ, plus
+           long devant que derrière, aux pointes effilées qui s'ouvrent, avec
+           des mèches qui encadrent le visage et tombent devant l'épaule.
+
+           TROIS DES CINQ AFFIRMATIONS ÉTAIENT FAUSSES SUR LA PHOTO, et la
+           consigne dit au modèle, en toutes lettres : « cette description est
+           la CIBLE ; l'image 2 ne sert qu'à confirmer la couleur ». Le modèle a
+           donc exécuté le texte — et il l'a bien exécuté : le rendu est un
+           carré net, sans dégradé, à la même longueur tout autour. Ce n'est pas
+           le modèle qui s'est trompé de coupe, c'est nous qui la lui avons
+           demandée.
+
+           UNE DESCRIPTION S'ÉCRIT DEVANT LA PHOTO, JAMAIS DE MÉMOIRE. Celle-ci
+           venait du NOM de la pièce — « Carré long » — et un nom de prestation
+           dit ce qu'on vend, pas ce que l'image montre. Voir aussi
+           `consigne-essai.ts`, où l'image reprend la main sur la forme : c'est
+           ce qui fait qu'une description un peu à côté ne peut plus produire
+           une autre coupe. */
+        { id: "c-femme", nom: "Carré long, de face", decrire: "un carré long dégradé qui s'arrête sous le menton, avec une raie au milieu, des mèches plus longues devant qui encadrent le visage et tombent devant l'épaule, des pointes effilées qui s'ouvrent vers l'extérieur, et du volume sur le dessus", prix: "38 €",
           photo: "/direct/coiffure-femme-face.jpg", reference: "/direct/coiffure-femme-face.jpg" },
         /**
          * LES DEUX DERNIÈRES « BIENTÔT » SONT TOMBÉES.
@@ -1675,7 +1702,7 @@ export const MURS: Mur[] = [
          * condition : on se photographie de face, donc la référence doit être
          * prise du même angle, sinon le modèle doit deviner un profil.
          */
-        { id: "c-boucles", nom: "Boucles longues, frange", decrire: "des cheveux longs très bouclés, volumineux, tombant sous les épaules, avec une frange bouclée qui couvre le front", prix: "68 €",
+        { id: "c-boucles", nom: "Boucles longues, frange", decrire: "des cheveux très bouclés en petites boucles serrées, blond caramel, très volumineux, tombant jusqu'aux épaules, avec une frange bouclée qui couvre le front", prix: "68 €",
           photo: "/direct/coiffure1.jpg", reference: "/direct/coiffure1.jpg" },
         { id: "c-cuivre", nom: "Carré cuivré, dégradé", decrire: "un carré dégradé au niveau du menton, très volumineux et ondulé, couleur cuivre roux, avec une frange épaisse", prix: "95 €",
           photo: "/direct/coiffure2.jpg", reference: "/direct/coiffure2.jpg" },

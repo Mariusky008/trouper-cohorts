@@ -68,6 +68,26 @@
  * lunetier elles sont précisément ce qui change — et il faut alors demander de
  * RETIRER celles qui sont là, sans quoi le modèle en superpose deux paires.
  */
+/**
+ * « DE » + UN GROUPE QUI COMMENCE PAR UN ARTICLE, EN FRANÇAIS CORRECT.
+ *
+ * `court` vaut « les cheveux », « le dessin tatoué », « la monture » selon le
+ * métier, et on l'écrivait derrière « de » sans rien faire : la consigne disait
+ * « la finition DE LES CHEVEUX ». Personne ne l'avait vu parce que personne ne
+ * lit un prompt de deux mille signes en entier — et un modèle qui bute sur une
+ * faute de français au milieu d'une phrase d'instruction y perd un peu de ce
+ * qu'on lui demande.
+ */
+function du(x: string): string {
+  const t = x.trim();
+  if (/^les\s/i.test(t)) return `des ${t.slice(4)}`;
+  if (/^le\s/i.test(t)) return `du ${t.slice(3)}`;
+  if (/^la\s/i.test(t)) return `de la ${t.slice(3)}`;
+  if (/^l['’]/i.test(t)) return `de ${t}`;
+  if (/^un\s|^une\s/i.test(t)) return `de ${t}`;
+  return `de ${t}`;
+}
+
 export function consigne(
   partie: string,
   garder: string[] = [],
@@ -207,15 +227,49 @@ export function consigne(
     // un portrait — et c'est exactement ce qu'on a vu.
     ...(decrire
       ? [
-          `RÉSULTAT ATTENDU, EN TOUTES LETTRES : ${decrire}.`,
-          "Cette description est la CIBLE. Exécute-la sur la personne de l'image 1.",
+          `RÉSULTAT ATTENDU : ${decrire}.`,
           ...(avecReference
-            ? [`L'image 2 ne sert qu'à confirmer la couleur, la matière et la finition de ${court}.`]
-            : []),
+            ? [
+                /* ═══ QUAND IL Y A UNE PHOTO, C'EST ELLE QUI DÉCIDE ══════════
+
+                   « Ce n'est toujours pas la même coupe. »
+
+                   CES DEUX LIGNES DISAIENT L'INVERSE : « cette description est
+                   la CIBLE, exécute-la » et « l'image 2 ne sert qu'à confirmer
+                   la couleur, la matière et la finition ». Le texte l'emportait
+                   donc sur la photo — et le jour où une description est écrite
+                   de mémoire plutôt que devant l'image, le modèle exécute
+                   fidèlement la mauvaise coupe. C'est arrivé, et c'est mesuré :
+                   voir `c-femme` dans `fantomes.ts`, dont la description niait
+                   le dégradé que sa propre photo montre.
+
+                   JE L'AVAIS ÉCRIT POUR UNE BONNE RAISON, et elle tient
+                   toujours : « reproduis ce que l'image 2 montre des cheveux »
+                   demandait au modèle de DÉDUIRE une coupe d'une photo de
+                   quelqu'un d'autre, puis de la poser ailleurs — deux
+                   opérations difficiles au lieu d'une, et quand la déduction
+                   ratait il refabriquait un portrait.
+
+                   LES DEUX SE CONCILIENT, ET L'ORDRE EST LA CLÉ. La description
+                   dit OÙ REGARDER — « un carré dégradé, des mèches devant, des
+                   pointes effilées » — et l'image dit À QUOI ÇA RESSEMBLE. Le
+                   modèle n'a plus à deviner ce qu'on veut, et il n'a plus à
+                   croire un texte contre ce qu'il voit.
+
+                   ET LA DERNIÈRE LIGNE EST CELLE QUI COMPTE VRAIMENT : elle
+                   rend une description imparfaite inoffensive. C'est la seule
+                   forme de correction qui survive au prochain oubli. */
+                `L'image 2 montre ce résultat sur quelqu'un d'autre. C'est ELLE qui fait foi`,
+                `pour la forme ${du(court)} : la longueur, le tombé, les mèches, la`,
+                "matière et la finition.",
+                "La description ci-dessus dit quoi regarder dans l'image 2. Si les deux",
+                "ne concordent pas, c'est l'image qui a raison.",
+              ]
+            : ["Exécute cette description sur la personne de l'image 1."]),
         ]
       : avecReference
         ? [
-            `Reproduis fidèlement ce que l'image 2 montre de ${court} : la forme, la`,
+            `Reproduis fidèlement ce que l'image 2 montre ${du(court)} : la forme, la`,
             "longueur, la couleur, la matière, le motif, la finition et la brillance.",
           ]
         : [
