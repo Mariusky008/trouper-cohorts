@@ -939,6 +939,7 @@ export function MurContenu({
   mur,
   onSalon,
   onFavori,
+  onSortir,
   favori,
   ouvrirSur,
   surprendre,
@@ -962,6 +963,29 @@ export function MurContenu({
    * commerce il n'y a pas de carte, donc pas de favori, donc pas de bouton.
    */
   onFavori?: () => void;
+  /**
+   * ═══ SORTIR POUR DE BON, QUAND IL N'Y A RIEN DERRIÈRE ═══════════════════
+   *
+   * « On a tout à coup une ancienne fonctionnalité des restaurants complètement
+   * désuète : "Faites savoir que vous êtes ici… Laisser mon Fantôme… Qui est
+   * là, ce qu'ils ont à dire". »
+   *
+   * VOICI LE CHEMIN, ET IL EST COURT : passer l'avant-goût faisait retomber sur
+   * le mur de présence. C'était un choix assumé — « le mur de présence existe
+   * toujours, il n'est plus que la porte de derrière » — et il était juste tant
+   * qu'un restaurant n'avait rien d'autre. Depuis que le fantôme d'un
+   * restaurant OUVRE UNE DÉCOUVERTE, cette porte de derrière donne sur l'ancien
+   * concept : des messages de personnel, un bouton « JE SUIS ICI », et pas une
+   * ligne de ce qu'on vient de lui montrer.
+   *
+   * QUAND IL N'Y A PAS DE MUR D'ESSAI DERRIÈRE, PASSER VEUT DIRE PARTIR. On a
+   * demandé à sauter la découverte, pas à voir un autre écran — et sur ces
+   * commerces-là, l'autre écran est d'avant.
+   *
+   * FACULTATIF : là où l'appelant n'a pas de feuille à fermer — la page d'un
+   * commerçant, par exemple — on retombe sur l'ancien comportement.
+   */
+  onSortir?: () => void;
   /** L'annonce est-elle déjà gardée ? Le bouton le dit plutôt que de le taire. */
   favori?: boolean;
   /**
@@ -1103,6 +1127,20 @@ export function MurContenu({
    * l'autre écran, six heures plus tôt.
    */
   const [soireePassee, setSoireePassee] = useState(false);
+  /**
+   * LE MUR QUI ATTEND DERRIÈRE EST-IL CELUI D'AVANT ?
+   *
+   * Un mur d'ESSAI a quelque chose à montrer : les pièces portées par de vraies
+   * personnes, et le geste pour en essayer une. Un mur d'ANNONCE, lui, n'a que
+   * le mur de présence — « Faites savoir que vous êtes ici », les messages du
+   * personnel, « JE SUIS ICI » — c'est-à-dire l'ancien concept, celui que la
+   * découverte a précisément remplacé.
+   *
+   * ON NE SORT DONC QUE DANS CE CAS-LÀ, et le reste ne bouge pas : chez une
+   * onglerie ou une friperie, passer l'essai mène toujours au mur, parce que le
+   * mur y est encore la bonne réponse.
+   */
+  const murDAvant = mur.depot !== "essai" && Boolean(onSortir);
 
   useEffect(() => {
     /**
@@ -1257,7 +1295,7 @@ export function MurContenu({
         <EcranSoiree
           soiree={soiree}
           distance={mur.distance}
-          onFermer={() => setSoireePassee(true)}
+          onFermer={() => (murDAvant ? onSortir?.() : setSoireePassee(true))}
           /* « J'Y VAIS » EST LE MÊME GESTE QUE « RÉSERVER » SUR L'ANNONCE.
              Le quatrième temps de son cahier des charges ne fabrique pas un
              second chemin : il emmène là où l'annonce emmenait déjà. */
@@ -1273,7 +1311,7 @@ export function MurContenu({
           ville={mur.ville}
           distance={mur.distance}
           onReserver={onReserver}
-          onFermer={() => setGoutPasse(true)}
+          onFermer={() => (murDAvant ? onSortir?.() : setGoutPasse(true))}
         />
       ) : null}
 

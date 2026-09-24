@@ -31,6 +31,8 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { Gout, OptionGout } from "@/lib/direct/avant-gout";
 import { EMOTIONS, ecransDuGout } from "@/lib/direct/avant-gout";
+// LA VOIX DU NAVIGATEUR, pour la voix de démonstration du chef. Voir `ecouter`.
+import { onSpeakingChange, speak, stopSpeaking } from "@/lib/site-internet/speech";
 import {
   abonnerPhrasesGardees,
   chargerPhrasesGardees,
@@ -123,6 +125,35 @@ export function EcranGout({
    * l'intention.
    */
   const ecouter = () => {
+    /**
+     * ═══ LA VOIX DE DÉMONSTRATION EST LUE PAR LE TÉLÉPHONE ═════════════════
+     *
+     * « Il faut que l'étape apparaisse avec une voix fictive qui dit quelque
+     * chose, tu peux utiliser l'IA voix pour faire ce message. »
+     *
+     * AUCUNE CLÉ DE SYNTHÈSE N'EXISTE ICI, et un fichier fabriqué à la main
+     * ne fait pas de la parole — on sait écrire un trio de jazz en échantillons
+     * bruts (voir `son-de-soiree.mjs`), pas une phrase en français.
+     *
+     * LA VOIX DU NAVIGATEUR, ELLE, EST SUR TOUS LES TÉLÉPHONES. Elle ne coûte
+     * rien, ne demande aucun réseau, et elle est déjà la voix de repli de tout
+     * le produit — c'est elle qui parle quand la voix premium n'est pas
+     * joignable. Le bouton joue donc vraiment quelque chose, ce qui est la
+     * seule chose qui compte : un bouton de lecture muet est pire que pas de
+     * bouton.
+     *
+     * ELLE S'ARRÊTE AU SECOND APPUI, comme un enregistrement.
+     */
+    if (t.voixDemo) {
+      if (joue) {
+        stopSpeaking();
+        setJoue(false);
+        return;
+      }
+      setJoue(true);
+      speak(t.phrase ?? "");
+      return;
+    }
     const src = t.voix;
     if (!src) return;
     const a = saVoix.current;
@@ -272,6 +303,16 @@ export function EcranGout({
     setJoue(false);
   }, [t.quoi]);
 
+  /**
+   * LA VOIX DU NAVIGATEUR DIT QUAND ELLE S'ARRÊTE, ET C'EST ELLE QUI A RAISON.
+   *
+   * Sans cet abonnement, le bouton restait « En écoute » une fois la phrase
+   * finie : l'état suivait l'INTENTION et pas le fait. C'est exactement la
+   * règle écrite au-dessus de `ecouter` pour le lecteur de fichier, appliquée
+   * à l'autre façon de parler.
+   */
+  useEffect(() => onSpeakingChange((v) => { if (!v) setJoue(false); }), []);
+
   const avancer = () => {
     // UNE DEVINETTE SE JOUE EN DEUX TEMPS SUR LE MÊME ÉCRAN : on répond, puis on
     // apprend. Passer directement au suivant escamoterait la seule chose qu'on
@@ -337,7 +378,11 @@ export function EcranGout({
             {t.titre}
             {t.suite && <b>{t.suite}</b>}
           </h2>
-          {t.phrase && <p className="go-p">{t.phrase}</p>}
+          {/* SUR L'ÉCRAN DE VOIX, LA PHRASE EST LA CITATION — et elle est plus
+              bas, en gros, avec son filet de couleur et le bouton d'écoute.
+              Posée ici aussi, on lisait deux fois le même mot du chef à trois
+              centimètres d'écart, la seconde fois en plus beau. */}
+          {t.phrase && t.quoi !== "voix" && <p className="go-p">{t.phrase}</p>}
         </div>
       </div>
 
@@ -607,16 +652,25 @@ export function EcranGout({
       {t.quoi === "voix" && (
         <div className="go-voix">
           <blockquote>{t.phrase}</blockquote>
-          {t.voix && (
+          {(t.voix || t.voixDemo) && (
             <button
               type="button"
               className={`go-voix-e${joue ? " on" : ""}`}
               onClick={ecouter}
             >
               <i aria-hidden="true">{joue ? "⏸" : "▶"}</i>
-              {joue ? "En écoute" : `Écouter sa voix · ${Math.round(t.secondes ?? 0)} s`}
+              {joue
+                ? "En écoute"
+                : t.voixDemo
+                  ? "Écouter sa voix"
+                  : `Écouter sa voix · ${Math.round(t.secondes ?? 0)} s`}
             </button>
           )}
+          {/* ON DIT QUE CETTE VOIX-LÀ EST UNE DÉMONSTRATION. Chez un vrai
+              commerçant, l'écran ne s'ouvre que s'il a parlé, et c'est SA voix
+              qu'on entend — voir `sa-voix.ts`. Laisser croire que celle-ci est
+              la sienne serait lui prêter des mots à travers un haut-parleur. */}
+          {t.voixDemo && <span className="go-voix-d">Démonstration · voix de synthèse</span>}
         </div>
       )}
 
@@ -674,7 +728,22 @@ export function EcranGout({
                   onFermer?.();
                 }}
               >
-                <i aria-hidden="true">{e.emoji}</i>
+                {/* LE DESSIN D'ABORD, L'ÉMOJI EN REPLI. Voir `EMOTIONS` :
+                    l'émoji change de visage d'un téléphone à l'autre, donc il
+                    ne peut pas porter une mascotte — mais il reste la bonne
+                    réponse quand l'image n'arrive pas. */}
+                <i aria-hidden="true">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={e.image}
+                    alt=""
+                    onError={(ev) => {
+                      ev.currentTarget.style.display = "none";
+                      const p = ev.currentTarget.parentElement;
+                      if (p) p.textContent = e.emoji;
+                    }}
+                  />
+                </i>
                 <span>{e.mot}</span>
               </button>
             ))}
@@ -927,7 +996,12 @@ function Styles() {
     <style
       dangerouslySetInnerHTML={{
         __html: `
-        .go-ecran{display:flex;flex-direction:column;gap:12px;padding-bottom:4px;}
+        /* LA POSITION RELATIVE EST ICI, ET PAS PLUS BAS : c'est ce qui fait de cet
+           ecran le repere de la feuille de sortie. Declaree une seconde fois
+           en bas du fichier, elle aurait fait deux objets du meme nom, dont le
+           resultat depend de l'ordre d'ecriture. Voir la feuille de sortie. */
+        .go-ecran{position:relative;display:flex;flex-direction:column;gap:12px;
+          padding-bottom:4px;}
 
         /* ═══ LA PROGRESSION, SANS CHIFFRE ══════════════════════════════════
            Un segment par temps. Voir l'en-tete du fichier : le « 2 / 4 » de la
@@ -1059,6 +1133,10 @@ function Styles() {
           flex:none;display:grid;place-items:center;border-radius:50%;
           color:#12121A;background:var(--go-accent,#E56BE0);}
         .go-voix-e.on{border-color:var(--go-accent,#E56BE0);}
+        /* ON DIT QUE C'EST UNE DEMONSTRATION, en petit et sous le bouton :
+           chez un vrai commercant, c'est SA voix qu'on entend. */
+        .go-voix-d{display:block;margin-top:7px;font-size:10.5px;
+          color:rgba(234,240,246,.45);letter-spacing:.02em;}
 
         .go-rideau{position:absolute;inset:0;overflow:hidden;cursor:ew-resize;
           touch-action:none;}
@@ -1370,7 +1448,22 @@ function Styles() {
            est declare PLUS BAS dans cette feuille avec un fond translucide, et
            a specificite egale c'est le dernier qui gagne. La feuille de sortie
            se dessinait donc transparente, la page au travers. */
-        .go-emo.go-sortie{position:fixed;inset:auto 0 0;z-index:30;
+        /* ═══ LA FEUILLE DE SORTIE SE POSE SUR L'ECRAN, PLUS SUR LA FENETRE ═
+           « Bug quand je clique sur "passer cette decouverte". »
+           ELLE ETAIT EN POSITION FIXE, donc calee sur la FENETRE du navigateur
+           et pas sur l'application. Mesure au navigateur, en 1200 de large : la
+           feuille faisait 1200 points de large a partir de zero, pendant que le
+           cadre du telephone faisait 390 points a partir de 405. Elle sortait
+           du telephone par les deux cotes et se posait sous lui.
+           SUR UN TELEPHONE LE DEFAUT NE SE VOIT PAS — la fenetre EST
+           l'application — ce qui est exactement pourquoi il a tenu : on ne le
+           rencontre qu'en ouvrant la demo sur un ordinateur.
+           ELLE EST DONC ABSOLUE, ET SON REPERE EST L'ECRAN AUQUEL ELLE
+           APPARTIENT — la classe go-ecran, qui devient positionnee juste en
+           dessous.
+           C'est vrai dans l'application comme sur la page d'un commercant, ou
+           il n'y a pas de cadre de telephone du tout. */
+        .go-emo.go-sortie{position:absolute;inset:auto 0 0;z-index:30;
           margin:0;border-radius:22px 22px 0 0;
           padding:18px 16px calc(18px + env(safe-area-inset-bottom));
           background:#111A16;border:1px solid rgba(255,255,255,.14);
@@ -1404,7 +1497,14 @@ function Styles() {
         .go-emo-l button:active{transform:scale(.95);}
         .go-emo-l button.on{border-color:var(--go-accent,#E56BE0);
           box-shadow:0 0 0 1px var(--go-accent,#E56BE0);}
-        .go-emo-l i{font-style:normal;font-size:23px;line-height:1;}
+        /* LE FANTOME OCCUPE LA CASE, L'EMOJI GARDE SA TAILLE D'AVANT.
+           La hauteur est fixe : sans elle, une image qui n'arrive pas ferait
+           sauter les cinq cases pendant le chargement. */
+        .go-emo-l i{font-style:normal;font-size:23px;line-height:1;
+          display:flex;align-items:center;justify-content:center;height:34px;}
+        .go-emo-l i img{width:34px;height:34px;object-fit:contain;
+          filter:drop-shadow(0 2px 7px rgba(229,107,224,.35));}
+        .go-emo-l button.on i img{filter:drop-shadow(0 2px 10px rgba(229,107,224,.7));}
         .go-emo-l span{font-size:9.5px;font-weight:750;line-height:1.15;
           text-align:center;color:#EAF2EC;hyphens:auto;}
 

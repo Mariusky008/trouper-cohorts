@@ -3248,6 +3248,24 @@ export function ApercuHabitant() {
        * ET IL VIENT EN DERNIER, PARCE QU'IL EST LE PLUS DEMANDANT. Voir
        * l'en-tête de la table : une suite ne se suit qu'une fois qu'on a
        * compris ce que fait l'application.
+       *
+       * ═══ DIX SECONDES ET DEMIE, ET UN RANG SOUS LA SCÈNE ══════════════
+       *
+       * « Plus de temps par image, et chaque image portant une étape
+       * lisible. »
+       *
+       * DEUX SECONDES ET DEMIE NE SUFFISAIENT PAS, et c'est mesurable : ses
+       * trois images portent chacune trois à quatre lignes de texte incrusté
+       * — un titre, un prix, une note manuscrite du chef. On ne lit pas
+       * quatre lignes en deux secondes et demie, on en lit deux et l'image
+       * change. Trois secondes et demie chacune, donc.
+       *
+       * ET « L'ÉTAPE LISIBLE » N'EST PAS UN SECOND TITRE — ce serait la faute
+       * écrite juste au-dessus. C'est un RANG : trois traits sous la scène,
+       * celui du moment allumé, comme le fil de progression du parcours
+       * d'avant-goût. Il ne dit pas ce qu'on voit, il dit OÙ L'ON EN EST,
+       * c'est-à-dire la seule chose qu'une suite de trois images ne peut pas
+       * dire toute seule.
        */
       cle: "restaurant",
       famille: "restaurants",
@@ -3256,7 +3274,7 @@ export function ApercuHabitant() {
         "/direct/accueil/restaurant-2.jpg",
         "/direct/accueil/restaurant-3.jpg",
       ],
-      duree: 7500,
+      duree: 10500,
     },
   ];
 
@@ -7449,6 +7467,7 @@ export function ApercuHabitant() {
                     />
                   </div>
                 ) : (
+                <>
                 <div
                   className={`ap-ac-scene n${exemple.photos.length}`}
                   key={exemple.cle}
@@ -7632,6 +7651,53 @@ export function ApercuHabitant() {
                     <img className="ap-ac-fp" src={FANTOME_PNG} alt="" />
                   </span>
                 </div>
+
+                {/* ═══ LE RANG DES TEMPS, SOUS LA SCÈNE ════════════════════
+
+                    « Chaque image portant une étape lisible. »
+
+                    IL NE DIT PAS CE QU'ON VOIT, IL DIT OÙ L'ON EN EST. Les
+                    trois images du restaurant portent déjà leur titre incrusté
+                    — « LE DÉTAIL QUE VOUS NE VERREZ PAS SUR LE MENU » — et un
+                    second titre posé par-dessus, ce serait deux titres qu'on ne
+                    lit ni l'un ni l'autre : la faute qu'on a déjà évitée pour
+                    les pastilles, dix lignes plus haut.
+
+                    CE QUI MANQUAIT N'ÉTAIT DONC PAS UN MOT, C'ÉTAIT UN RANG. On
+                    voyait une image changer sans savoir si c'était la deuxième
+                    ou la dernière, ni combien de temps on avait pour la lire —
+                    et c'est ce deuxième manque qui fait se sentir pressé, bien
+                    plus que la durée elle-même. Le trait du moment SE REMPLIT
+                    pendant que l'image est là : on voit le temps qu'il reste,
+                    donc on cesse de le craindre. C'est le fil de progression du
+                    parcours d'avant-goût, et le rang de `sortie-en-trois`.
+
+                    DEUX PHOTOS N'EN ONT PAS BESOIN — un avant/après se regarde
+                    d'un coup, les deux cartes sont là en même temps, il n'y a
+                    pas d'étape. D'où la même condition que la scène en récit. */}
+                {raconte && (
+                  <div
+                    className="ap-ac-rang"
+                    aria-hidden="true"
+                    style={
+                      {
+                        "--p": `${Math.round(dureeActe / exemple.photos.length)}ms`,
+                      } as React.CSSProperties
+                    }
+                  >
+                    {exemple.photos.map((src, k) => (
+                      /* LE RANG, PAS LE CHEMIN — même raison qu'aux cartes :
+                         un exemple peut montrer deux fois la même photo. */
+                      <i
+                        key={`${src}-${k}`}
+                        className={k < plan ? "fait" : k === plan ? "ici" : ""}
+                      >
+                        <u />
+                      </i>
+                    ))}
+                  </div>
+                )}
+                </>
                 )}
 
                 {/* ─── LA PROMESSE, EN DEUX LIGNES ───
@@ -12130,11 +12196,16 @@ export function ApercuHabitant() {
                       key={murRevisite.souvenir.cle}
                       mur={murDuSouvenir(murRevisite.souvenir)}
                       onSalon={envoyerLEssaiAuSalon}
+                      onSortir={() => { setMurOuvert(false); setMurRevisite(null); }}
                     />
                   ) : dessus ? (
                     <MurContenu
                       key={dessus.id}
                       onSalon={envoyerLEssaiAuSalon}
+                      /* PASSER LA DÉCOUVERTE FERME LA FEUILLE, chez un commerce
+                         dont le mur de derrière est celui d'avant. Voir
+                         `onSortir` dans `mur-contenu`. */
+                      onSortir={() => { setMurOuvert(false); setMurRevisite(null); }}
                       /* METTRE EN FAVORI DEPUIS L'ESSAI, ET C'EST LE MÊME
                          GESTE QUE SUR L'ANNONCE. La maquette du troisième temps
                          le pose à côté de « Prendre rendez-vous » ; il est
@@ -14774,6 +14845,33 @@ export function ApercuHabitant() {
         .ap-ac-scene.n3 .ap-ac-carte.ici{border-color:rgba(240,56,156,.55);
           box-shadow:0 18px 44px -20px rgba(0,0,0,.9),
             0 0 22px -4px rgba(240,56,156,.55);}
+        /* ═══ LE RANG DES TEMPS ════════════════════════════════════════════
+           TROIS TRAITS SOUS LA SCENE, ET CELUI DU MOMENT SE REMPLIT. La duree
+           du remplissage arrive par la variable --p, posee par le composant :
+           c'est exactement celle de l'image, donc le trait ne peut pas mentir
+           sur le temps qui reste, meme le jour ou la duree de l'exemple
+           changera.
+           LE REMPLISSAGE EST UNE LARGEUR, PAS UNE ECHELLE. Sur trois points de
+           haut, une transformation d'echelle sur l'axe X fait baver les bouts
+           arrondis ; la largeur les garde nets. */
+        .ap-ac-rang{flex:none;display:flex;gap:6px;justify-content:center;
+          margin:11px 14px 0;}
+        .ap-ac-rang i{position:relative;width:28px;height:3px;
+          border-radius:99px;overflow:hidden;
+          background:rgba(255,255,255,.22);}
+        .ap-ac-rang i u{position:absolute;top:0;bottom:0;left:0;width:0;
+          border-radius:99px;background:#F0389C;
+          box-shadow:0 0 10px -2px rgba(240,56,156,.9);}
+        .ap-ac-rang i.fait u{width:100%;}
+        .ap-ac-rang i.ici u{animation:apAcRang var(--p,3500ms) linear both;}
+        @keyframes apAcRang{from{width:0;}to{width:100%;}}
+        /* SANS ANIMATION, LE TRAIT RESTE PLEIN plutot que vide : la ronde ne
+           tourne pas non plus dans ce mode, donc l'image montree est la
+           premiere, et un trait vide laisserait croire qu'elle n'a pas
+           commence. */
+        @media (prefers-reduced-motion: reduce){
+          .ap-ac-rang i.ici u{animation:none;width:100%;}
+        }
         .ap-ac-carte{position:relative;flex:1 1 0;min-width:0;
           border-radius:20px;background-size:cover;background-position:center;
           transform:rotate(var(--t));

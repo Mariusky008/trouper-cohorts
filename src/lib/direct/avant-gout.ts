@@ -138,6 +138,31 @@ export type TempsGout = {
   rideau?: { avant: string; apres: string };
   /** Sa voix, quand l'écran « voix » en porte une. Voir `sa-voix.ts`. */
   voix?: string;
+  /**
+   * ═══ LA VOIX DE DÉMONSTRATION, ET CE QUI LA SÉPARE DE LA VRAIE ══════════
+   *
+   * « Je n'ai pas l'étape "voice message du cuisinier", qui est la vraie
+   * plus-value, donc il faut qu'elle apparaisse avec une voix fictive. »
+   *
+   * L'ÉCRAN N'EXISTAIT QUE SI QUELQU'UN AVAIT VRAIMENT PARLÉ. C'est la bonne
+   * règle pour un vrai commerçant — on ne lui fabrique pas une phrase — mais
+   * elle rendait l'écran invisible partout : aucun commerce du paquet de
+   * démonstration n'a enregistré quoi que ce soit, donc le seul écran qu'un
+   * concurrent ne peut pas copier ne se montrait jamais.
+   *
+   * ELLE EST LUE PAR LE TÉLÉPHONE, PAS PAR UN FICHIER. Il n'y a aucune clé de
+   * synthèse dans cet environnement, et un bouton de lecture qui ne joue rien
+   * est pire que pas de bouton : c'est la faute déjà signalée deux fois dans
+   * ce dossier. La voix du navigateur, elle, existe sur tous les téléphones,
+   * ne coûte rien et ne demande aucun réseau.
+   *
+   * ET ELLE NE PEUT PAS ATTEINDRE UN VRAI COMMERÇANT. Elle ne naît que de
+   * `Gout.chef`, c'est-à-dire de la table des commerces INVENTÉS ; la page
+   * d'un vrai prospect n'a pas d'entrée dans cette table, donc pas de
+   * parcours, donc pas de voix. Sa voix à lui ne peut venir que de ce qu'il a
+   * dit — voir `sa-voix.ts`, qui ne garde rien sans son accord.
+   */
+  voixDemo?: boolean;
   /** La durée de cet enregistrement, en secondes. */
   secondes?: number;
   options?: OptionGout[];
@@ -199,12 +224,32 @@ export type Gout = {
  * émotions dont cinq positives ne mesurent rien ; celle qui permet de dire non
  * est celle qui donne du poids aux quatre autres.
  */
-export const EMOTIONS: { cle: string; emoji: string; mot: string }[] = [
-  { cle: "non", emoji: "😐", mot: "Pas pour moi" },
-  { cle: "curieux", emoji: "👀", mot: "Curieux" },
-  { cle: "faim", emoji: "😋", mot: "Ça donne faim" },
-  { cle: "envie", emoji: "🤤", mot: "Très envie" },
-  { cle: "veux", emoji: "🔥", mot: "Je le veux" },
+export const EMOTIONS: { cle: string; emoji: string; mot: string; image: string }[] = [
+  /**
+   * ═══ CINQ FANTÔMES, ET PLUS CINQ ÉMOJIS ════════════════════════════════
+   *
+   * « Il faut changer les fantômes sous la phrase "Ça vous fait quoi ?" »
+   * — avec ses cinq dessins en pièce jointe, et la maquette de l'étape.
+   *
+   * L'ÉMOJI N'EST PAS UNE MASCOTTE, C'EST UNE POLICE. Il change de visage
+   * d'un téléphone à l'autre : le 😐 d'Apple et celui d'Android ne font pas
+   * la même tête, et celui d'un navigateur de bureau en fait une troisième.
+   * On mesurait donc une émotion dont le dessin dépendait de l'appareil —
+   * et sur l'écran qui porte le Fantôme partout ailleurs, c'était le seul
+   * endroit où il n'était pas là.
+   *
+   * L'ÉMOJI RESTE ÉCRIT, ET IL SERT ENCORE : c'est le repli quand l'image
+   * n'arrive pas, et c'est ce qui part dans un message. Une image ne se
+   * recopie pas dans un WhatsApp.
+   */
+  { cle: "non", emoji: "😐", mot: "Pas pour moi", image: "/direct/fantomes/avis/non.png" },
+  { cle: "curieux", emoji: "👀", mot: "Curieux", image: "/direct/fantomes/avis/curieux.png" },
+  // LES MOTS SONT CEUX DE SA MAQUETTE. « Ça donne faim » et « Très envie »
+  // décrivaient une sensation ; « Ça me tente » et « Trop bon » décrivent un
+  // JUGEMENT, ce qui est la question posée — « ça vous fait quoi ? ».
+  { cle: "faim", emoji: "😋", mot: "Ça me tente", image: "/direct/fantomes/avis/faim.png" },
+  { cle: "envie", emoji: "🤤", mot: "Trop bon", image: "/direct/fantomes/avis/envie.png" },
+  { cle: "veux", emoji: "🔥", mot: "J’en veux !", image: "/direct/fantomes/avis/veux.png" },
 ];
 
 /**
@@ -333,6 +378,21 @@ export const GOUT_PESTO: Gout = {
   detail: "Un grand classique, mais pas comme les autres.",
   prix: "11 €",
   accent: "#8CE06A",
+  /**
+   * LE MOT DE MARGOT, ET IL MANQUAIT — c'était le seul parcours du paquet sans
+   * `chef`, donc le seul sans écran de voix : trois temps là où les autres en
+   * font quatre. « Je n'ai pas l'étape voice message du cuisinier, qui est la
+   * vraie plus-value. »
+   *
+   * ELLE DIT COMMENT ELLE TRAVAILLE, et pas que c'est bon. C'est la règle de
+   * `sa-voix.ts` : « la sauce mijote trois heures la veille » vaut quelque
+   * chose, « nos lasagnes sont délicieuses » ne vaut rien. La phrase reprend
+   * donc le secret déjà écrit dans son parcours, dit à la première personne.
+   */
+  chef: {
+    mot: "La sauce, je la fais mijoter trois heures la veille. Et je monte les plaques le matin même, à froid — une lasagne montée à chaud s’effondre dans l’assiette.",
+    qui: "Margot",
+  },
   tampon: "Fait maison",
   marques: [
     { emoji: "🍅", nom: "Sauce", detail: "mijotée trois heures" },
@@ -1018,11 +1078,11 @@ export function ecransDuGout(gout: Gout, mot?: SaPhrase): EcranGout[] {
     });
   }
 
+  /* IL A PARLÉ, ET C'EST LE SEUL ÉCRAN QU'UN CONCURRENT NE PEUT PAS ÉCRIRE.
+     La transcription est le contenu ; la voix, quand elle existe, est un
+     bouton. Jamais l'inverse — quatre personnes sur cinq font défiler en
+     silence. */
   if (mot?.texte) {
-    /* IL A PARLÉ, ET C'EST LE SEUL ÉCRAN QU'UN CONCURRENT NE PEUT PAS ÉCRIRE.
-       La transcription est le contenu ; la voix, quand elle existe, est un
-       bouton. Jamais l'inverse — quatre personnes sur cinq font défiler en
-       silence. */
     sortis.push({
       quoi: "voix",
       titre: "Ce que ",
@@ -1031,6 +1091,22 @@ export function ecransDuGout(gout: Gout, mot?: SaPhrase): EcranGout[] {
       photo: avecRideau?.photoApres ?? fin.photo ?? ouvre.photo,
       voix: mot.audio,
       secondes: mot.secondes,
+    });
+  } else if (gout.chef?.mot) {
+    /* ET QUAND PERSONNE N'A ENCORE PARLÉ, LE CHEF DE LA DÉMONSTRATION PREND
+       SA PLACE. Sa phrase est déjà écrite dans le parcours — c'est le mot
+       signé qu'on lit sur l'écran d'ouverture — et elle n'est pas inventée
+       pour l'occasion : elle dit comment il travaille, ce qui est exactement
+       ce que `sa-voix.ts` cherche à repérer chez un vrai commerçant.
+       LE TÉLÉPHONE LA LIT. Voir `voixDemo` : aucun fichier, aucune clé, et
+       jamais sur la page de quelqu'un de réel. */
+    sortis.push({
+      quoi: "voix",
+      titre: "Ce que ",
+      suite: gout.chef.qui ? `${gout.chef.qui} en dit` : "le chef en dit",
+      phrase: gout.chef.mot,
+      photo: avecRideau?.photoApres ?? fin.photo ?? ouvre.photo,
+      voixDemo: true,
     });
   }
 
