@@ -107,6 +107,41 @@ const TROIS = [
   { quoi: "coiffure", fichier: "src/lib/direct/parcours-coiffure.ts", liste: "VISAGES_COIFFURE", dit: "visages qui portent la coupe" },
 ];
 
+/**
+ * ═══ LE PARCOURS SORTIE : SES PHOTOS, ET SON SON ═══════════════════════════
+ *
+ * IL N'A PAS DE PIÈCE DANS UNE JOURNÉE — c'est un événement de la ville, pas
+ * un commerce. Ce qu'il faut vérifier est donc différent : que l'événement
+ * qu'il désigne existe, que ses deux photos sont là, et surtout QUE L'EXTRAIT
+ * SONORE EXISTE. Ce parcours ne se regarde pas, il s'écoute : un fichier
+ * absent le vide de son seul argument, et un fichier absent ne fait aucun
+ * bruit — au sens propre.
+ */
+const sortie = readFileSync("src/lib/direct/parcours-sortie.ts", "utf8");
+const idSortie = constante(sortie, "SORTIE_ID");
+if (!idSortie) {
+  soucis.push("sortie : SORTIE_ID est introuvable.");
+} else if (!catalogue.includes(`id: "${idSortie}"`)) {
+  soucis.push(`sortie : l'evenement « ${idSortie} » n'existe pas dans le catalogue.`);
+} else {
+  for (const nom of ["TRIO_SORTIE", "TABLEE_SORTIE"]) {
+    const f = constante(sortie, nom);
+    if (!f) soucis.push(`sortie : ${nom} est introuvable.`);
+    else if (!existsSync(`public${f}`)) soucis.push(`sortie : ${f} n'est pas dans public/.`);
+  }
+  /* L'EXTRAIT EST DÉCLARÉ DANS LA SOIRÉE, PAS ICI, et c'est la bonne place —
+     mais c'est ce parcours qui le joue, donc c'est ici qu'on le surveille. */
+  const soirees = readFileSync("src/lib/direct/soiree.ts", "utf8");
+  const bloc = soirees.slice(soirees.indexOf("const SOIREE_KIOSQUE"), soirees.indexOf("const SOIREE_MARCHE"));
+  const media = bloc.match(/media: "([^"]+)"/);
+  if (!media) soucis.push(`sortie : la soiree « ${idSortie} » ne declare aucun extrait sonore.`);
+  else if (!existsSync(`public${media[1]}`)) {
+    soucis.push(`sortie : l'extrait ${media[1]} n'est pas dans public/ — le parcours n'a plus rien a faire ecouter.`);
+  } else {
+    console.log(`  ok   sortie : l'evenement, ses deux photos et son extrait de ${media[1].split("/").pop()} sont la`);
+  }
+}
+
 for (const t of TROIS) {
   const texte = readFileSync(t.fichier, "utf8");
   const debut = texte.indexOf(`export const ${t.liste}`);

@@ -115,12 +115,25 @@ export function EcranChoix({
   onParcoursMode,
   /** Le parcours de la coiffure, dessine apres celui de la mode. */
   onParcoursCoiffure,
+  /** Le parcours de la sortie, le troisieme. */
+  onParcoursSortie,
+  /**
+   * SUR QUELLE CATEGORIE OUVRIR, QUAND ON REVIENT D'AILLEURS.
+   *
+   * La bande des cinq onglets, au fond du parcours sortie, est un raccourci :
+   * elle referme le parcours et rouvre cet ecran SUR LA CATEGORIE TOUCHEE.
+   * Sans cette propriete, on retomberait sur la categorie de depart et le
+   * raccourci mentirait sur ou il mene.
+   */
+  depart,
 }: {
   onEntrer?: () => void;
   onParcoursMode?: () => void;
   onParcoursCoiffure?: () => void;
+  onParcoursSortie?: () => void;
+  depart?: CleCategorie;
 }) {
-  const [cle, setCle] = useState<CleCategorie>(CATEGORIE_DEPART);
+  const [cle, setCle] = useState<CleCategorie>(depart ?? CATEGORIE_DEPART);
   const categorie = categorieDe(cle);
   const [actif, setActif] = useState(0);
   const [dx, setDx] = useState(0);
@@ -412,11 +425,12 @@ export function EcranChoix({
         type="button"
         className="cx-go"
         onClick={() => {
-          /* DEUX PARCOURS SUR CINQ, ET LES TROIS AUTRES LE DISENT. Le jour où
+          /* TROIS PARCOURS SUR CINQ, ET LES DEUX AUTRES LE DISENT. Le jour où
              ils existeront tous, cette liste deviendra une propriété par
-             catégorie ; a deux, un ou-bien se lit mieux qu'une table. */
+             catégorie ; a trois, un ou-bien se lit encore mieux qu'une table. */
           if (cle === "mode" && onParcoursMode) return onParcoursMode();
           if (cle === "beaute" && onParcoursCoiffure) return onParcoursCoiffure();
+          if (cle === "sorties" && onParcoursSortie) return onParcoursSortie();
           setBientot(true);
         }}
         aria-describedby="cx-bientot"

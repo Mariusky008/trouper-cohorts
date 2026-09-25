@@ -1418,7 +1418,16 @@ export type CarteAutour = {
   site?: string;
 };
 
-const VILLE = "Dax";
+/**
+ * LA VILLE DE LA DÉMONSTRATION, EXPORTÉE DEPUIS LE PARCOURS SORTIE.
+ *
+ * ELLE ÉTAIT PRIVÉE, ET LES ÉCRANS LA LISAIENT SUR LEUR COMMERCE — `c.ville`.
+ * Un événement de la ville n'a pas de commerce : il a un lieu, « Kiosque du
+ * parc Théodore-Denis », et la ville autour. La sortir ici évite de réécrire
+ * « Dax » dans un quatrième fichier, ce qui est exactement la faute que tout
+ * ce module passe son temps à éviter.
+ */
+export const VILLE = "Dax";
 const YALLER = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(VILLE);
 const YALLER_VILLE = YALLER;
 

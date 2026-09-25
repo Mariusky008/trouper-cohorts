@@ -165,6 +165,9 @@ import { ParcoursMode } from "@/components/direct/parcours-mode-ecran";
 import { StylesParcoursMode } from "@/components/direct/styles-parcours-mode";
 import { ParcoursCoiffure } from "@/components/direct/parcours-coiffure-ecran";
 import { StylesParcoursCoiffure } from "@/components/direct/styles-parcours-coiffure";
+import { ParcoursSortie } from "@/components/direct/parcours-sortie-ecran";
+import { StylesParcoursSortie } from "@/components/direct/styles-parcours-sortie";
+import type { CleCategorie } from "@/lib/direct/choisir-commerce";
 // Il vivait ici ; la page boutique en a besoin aussi pour rejouer le MEME
 // anneau en tête de la fiche du commerce. Voir le fichier : c'est la copie qui
 // aurait été dangereuse, pas le partage.
@@ -2072,6 +2075,11 @@ export function ApercuHabitant() {
      choisie qui le dira, pas cinq drapeaux. */
   const [parcoursMode, setParcoursMode] = useState(false);
   const [parcoursCoiffure, setParcoursCoiffure] = useState(false);
+  const [parcoursSortie, setParcoursSortie] = useState(false);
+  /* SUR QUELLE CATEGORIE ROUVRIR L'ECRAN DE CHOIX. La bande des cinq onglets,
+     au fond du parcours sortie, referme le parcours et rouvre l'ecran SUR
+     CELLE QU'ON A TOUCHEE — sans quoi le raccourci mentirait sur ou il mene. */
+  const [categorieChoix, setCategorieChoix] = useState<CleCategorie | undefined>(undefined);
 
   /**
    * LE TOUR DE RÔLE — voir `TourDeRole` dans les fiches.
@@ -6376,6 +6384,7 @@ export function ApercuHabitant() {
       <StylesChoix />
       <StylesParcoursMode />
       <StylesParcoursCoiffure />
+      <StylesParcoursSortie />
       <div className="ap-tel">
         {/* SUR LE DIRECT, LA PHOTO PASSE DERRIÈRE LES ONGLETS — voir la règle
             .ap-app.direct .ap-onglets. Ailleurs, la barre reste dans le flux :
@@ -7649,8 +7658,17 @@ export function ApercuHabitant() {
                   <ParcoursMode onFermer={() => setParcoursMode(false)} />
                 ) : parcoursCoiffure ? (
                   <ParcoursCoiffure onFermer={() => setParcoursCoiffure(false)} />
+                ) : parcoursSortie ? (
+                  <ParcoursSortie
+                    onFermer={() => setParcoursSortie(false)}
+                    onCategorie={(c) => {
+                      setCategorieChoix(c as CleCategorie);
+                      setParcoursSortie(false);
+                    }}
+                  />
                 ) : (
                   <EcranChoix
+                    depart={categorieChoix}
                     onEntrer={() => {
                       jouer("ouvrir");
                       marquerVu("accueil");
@@ -7662,6 +7680,10 @@ export function ApercuHabitant() {
                     onParcoursCoiffure={() => {
                       jouer("ouvrir");
                       setParcoursCoiffure(true);
+                    }}
+                    onParcoursSortie={() => {
+                      jouer("ouvrir");
+                      setParcoursSortie(true);
                     }}
                   />
                 )
