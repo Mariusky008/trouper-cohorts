@@ -194,6 +194,44 @@ export default async function ApercuMaquette({
   } catch {
     /* best-effort */
   }
+  /**
+   * ═══ EST-IL CLIENT ? ON LE DEMANDE À LA COLONNE QUE L'ADMIN ÉCRIT ═════════
+   *
+   * SYMPTÔME : « je l'ai validé sur l'admin et j'ai encore la présentation avec
+   * la voix IA et l'invitation à confirmer ». Le commerçant validé continuait de
+   * recevoir l'argumentaire de vente de sa propre page — exactement le bug que
+   * la migration `separer_client_et_visibilite` avait déjà corrigé ailleurs.
+   *
+   * POURQUOI ICI ET NULLE PART AILLEURS : cette page était le DERNIER lecteur de
+   * `published`. Les onze autres (le fil de la ville, les voisins, le sitemap,
+   * l'espace pro, le géocodeur) lisent `est_client` depuis la migration ; l'admin
+   * écrit `est_client` et commente explicitement que « `published` reste tenue à
+   * jour par le déclencheur miroir ». Toute la chaîne tenait donc sur ce
+   * déclencheur — et un déclencheur absent de la base ne se signale pas : il ne
+   * fait simplement rien. L'écriture réussit, l'admin relit `est_client`, trouve
+   * la bonne valeur, annonce « publié » — et cette page, seule, lit l'ancienne
+   * colonne restée fausse.
+   *
+   * ON NE DÉPEND PLUS DE LUI. `est_client` d'abord, `published` en secours : la
+   * page est juste que le miroir tourne ou non, et elle le restera le jour où la
+   * colonne obsolète disparaîtra.
+   *
+   * LECTURE SÉPARÉE, comme les autres colonnes récentes : si la migration n'est
+   * pas appliquée sur cette base-là, c'est cette requête qui échoue, pas la
+   * page.
+   */
+  let estClient = Boolean(row.published);
+  try {
+    const { data: axe } = await supabase
+      .from("human_vitrine_sites")
+      .select("est_client")
+      .eq("id", str(row.id))
+      .maybeSingle();
+    const a = (axe as Record<string, unknown> | null) ?? null;
+    if (a && typeof a.est_client === "boolean") estClient = a.est_client;
+  } catch {
+    /* colonne non migrée → on retombe sur `published`, l'ancien sens */
+  }
   // Colonnes RÉCENTES (site_views, services) : lecture séparée et défensive. Si
   // la migration n'est pas encore appliquée, cette requête échoue seule — et la
   // page s'affiche quand même, avec un catalogue vide.
@@ -378,9 +416,10 @@ export default async function ApercuMaquette({
       slug={slug}
       carte={carteDepuisFiche(fiche)}
       // « On montre au commerçant SA page » — la seule chose que `!published`
-      // voulait dire. Un visiteur venu du public n'est jamais dans ce cas,
-      // même si la page n'est pas encore publiée.
-      modeDemo={!row.published && !visiteurPublic}
+      // voulait dire, et que `est_client` dit maintenant sans ambiguïté. Un
+      // visiteur venu du public n'est jamais dans ce cas, même si le commerçant
+      // n'a pas encore signé.
+      modeDemo={!estClient && !visiteurPublic}
       venuDuDirect={venuDuDirect}
       phoneDisplay={phoneDisplay}
       keepHref={keepHref}
