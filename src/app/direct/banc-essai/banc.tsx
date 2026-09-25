@@ -46,28 +46,34 @@ type Config = {
 
 const CONFIGS: Config[] = [
   {
-    cle: "leger",
+    cle: "calquee",
     nom: "1 · Régime actuel",
-    quoi: "Deux images, pas de masque, aucun cadre demandé, photo entière, consigne longue.",
+    quoi: "Deux images, pas de masque, aucun cadre demandé, photo entière — et la consigne calquée sur celle de ChatGPT, en anglais, 1 200 signes.",
+    regime: "calquee",
+  },
+  {
+    cle: "leger",
+    nom: "2 · Notre consigne longue",
+    quoi: "Tout pareil, SAUF la phrase : nos 3 900 signes d'interdictions accumulées, en français.",
     regime: "leger",
   },
   {
     cle: "brut",
-    nom: "2 · Consigne courte",
-    quoi: "Tout pareil, SAUF la consigne : celle qu'on taperait dans ChatGPT, 497 signes au lieu de 3 900.",
+    nom: "3 · Consigne courte",
+    quoi: "Tout pareil, SAUF la phrase : cinq lignes, celles qu'on taperait dans ChatGPT sans réfléchir.",
     regime: "brut",
   },
   {
     cle: "atelier",
-    nom: "3 · Masque + cadre imposé",
-    quoi: "Tout pareil que 1, SAUF qu'on rogne la photo, qu'on demande un format et qu'on envoie un masque.",
+    nom: "4 · Masque + cadre imposé",
+    quoi: "Tout pareil que 2, SAUF qu'on rogne la photo, qu'on demande un format et qu'on envoie un masque.",
     regime: "atelier",
   },
   {
     cle: "sans-ref",
-    nom: "4 · Sans la photo de la coupe",
+    nom: "5 · Sans la photo de la coupe",
     quoi: "Tout pareil que 1, SAUF qu'il n'y a qu'une image : la description écrite fait tout le travail.",
-    regime: "leger",
+    regime: "calquee",
     sansReference: true,
   },
 ];
@@ -99,6 +105,32 @@ export default function Banc() {
 
   const [encours, setEncours] = useState<string | null>(null);
   const [res, setRes] = useState<Resultat[]>([]);
+
+  /* LA RAISON D'UNE PHOTO ABSENTE — voir le repli plus bas. On demande
+     l'adresse telle qu'il la colle : si elle pointe sur clikme.fr depuis un
+     autre domaine, on ne garde que le chemin, parce qu'un navigateur refusera
+     la requête entre domaines et qu'il verrait « échec » sans savoir pourquoi. */
+  const [adresse, setAdresse] = useState("");
+  const [raison, setRaison] = useState("");
+
+  async function diagnostiquer() {
+    setRaison("…");
+    let chemin = adresse.trim();
+    try {
+      const u = new URL(chemin, window.location.origin);
+      chemin = u.pathname + u.search;
+    } catch {
+      /* UNE ADRESSE QU'ON NE SAIT PAS LIRE PART TELLE QUELLE. Elle échouera,
+         et l'échec se lira — ce qui vaut mieux que de refuser sans rien dire. */
+    }
+    try {
+      const r = await fetch(chemin);
+      const t = await r.text();
+      setRaison(`HTTP ${r.status}\n\n${t.slice(0, 1200)}`);
+    } catch (e) {
+      setRaison(`La demande n'est pas partie : ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
 
   async function lancer() {
     if (!photo || !piece || !mur?.essai) return;
@@ -260,6 +292,38 @@ export default function Banc() {
           journaux du serveur, sous la forme d'une ligne `[essai]` — ce qui
           veut dire qu'il doit me la demander, et que je la lui récite. La
           voici écrite, avec ce qui varie d'une configuration à l'autre. */}
+      {/* ═══ ET POURQUOI UNE PHOTO DE FICHE NE VIENT PAS ══════════════════
+
+          « 404 (Not Found) ; toujours aucune photo sur la page commerçant. »
+
+          LA ROUTE RÉPOND DÉJÀ LA RAISON, EN TEXTE, DANS LE CORPS — trois
+          lignes, une par écriture essayée, avec le code de retour de Google.
+          Mais il faut ouvrir l'adresse dans un onglet pour la lire, et je l'ai
+          demandé deux fois sans l'obtenir. Une information qui demande un
+          geste qu'on ne fait pas n'est pas une information.
+
+          ICI IL COLLE L'ADRESSE QU'IL VOIT DANS LA CONSOLE, et la raison
+          s'affiche. C'est le même texte, à un endroit où il passe déjà. */}
+      <details className="bn-det" open={false}>
+        <summary>Pourquoi une photo de fiche ne vient pas</summary>
+        <p className="bn-aide">
+          Collez ici l’adresse <code>/api/photo-fiche?u=…</code> qui échoue dans la console de
+          la page commerçant. Le serveur dit ce qu’il a essayé, et ce que Google a répondu.
+        </p>
+        <div className="bn-diag">
+          <input
+            type="text"
+            value={adresse}
+            placeholder="https://www.clikme.fr/api/photo-fiche?u=…"
+            onChange={(e) => setAdresse(e.target.value)}
+          />
+          <button type="button" onClick={diagnostiquer} disabled={!adresse.trim()}>
+            Demander
+          </button>
+        </div>
+        {raison && <pre>{raison}</pre>}
+      </details>
+
       <details className="bn-det bn-req">
         <summary>La requête exacte, à recopier</summary>
         <pre>{`POST https://api.openai.com/v1/images/edits   (multipart)
@@ -274,12 +338,19 @@ n                1
 CE QUI CHANGE D'UNE CONFIGURATION À L'AUTRE :
 
 1 · Régime actuel      size absent · mask absent · photo entière, 1280 px
-                       prompt ≈ 3 900 signes
-2 · Consigne courte    idem, prompt ≈ 500 signes
-3 · Masque + cadre     size 1024x1024 (ou 1536x1024 / 1024x1536)
+                       prompt anglais calqué sur ChatGPT, ≈ 1 200 signes
+2 · Consigne longue    idem, prompt français ≈ 3 900 signes
+3 · Consigne courte    idem, prompt ≈ 500 signes
+4 · Masque + cadre     size 1024x1024 (ou 1536x1024 / 1024x1536)
                        mask PNG aux dimensions de la photo
                        photo rognée au rapport du cadre, 800 px
-4 · Sans référence     un seul image[] · le reste comme 1`}</pre>
+5 · Sans référence     un seul image[] · le reste comme 1
+
+ORDRE DES IMAGES : la cliente est TOUJOURS image[] n° 1, parce que sur
+/v1/images/edits la première image est la toile qu'on édite. ChatGPT avait
+mis la référence en premier — mais il appelait son outil interne, pas ce
+point d'entrée. Inverser ici risquerait de rendre la référence retouchée,
+c'est-à-dire une autre personne.`}</pre>
       </details>
 
       <style
@@ -332,6 +403,13 @@ CE QUI CHANGE D'UNE CONFIGURATION À L'AUTRE :
         .bn-det{margin-top:16px;background:#141828;border-radius:12px;padding:12px 14px;}
         .bn-det summary{cursor:pointer;font-weight:600;font-size:14px;}
         .bn-det p{color:#c4cbe4;font-size:13.5px;}
+        .bn-aide{font-size:13px;color:#9aa4c4;margin:8px 0 10px;}
+        .bn-aide code{background:#0b0d14;padding:1px 5px;border-radius:5px;font-size:12px;}
+        .bn-diag{display:flex;gap:8px;}
+        .bn-diag input{flex:1;min-width:0;background:#0b0d14;color:#eef;border:1px solid #2a3150;
+            border-radius:10px;padding:10px;font-size:13px;}
+        .bn-det pre{white-space:pre-wrap;word-break:break-word;
+            font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;color:#c4cbe4;margin:10px 0 0;}
         .bn-req pre{white-space:pre-wrap;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;
             color:#c4cbe4;margin:10px 0 0;}
         /* DEUX COLONNES MEME SUR UN TELEPHONE, ET C'EST TOUT L'INTERET. Une

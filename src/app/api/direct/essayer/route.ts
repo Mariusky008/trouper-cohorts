@@ -42,7 +42,7 @@
 // repli. Aucun des deux n'est câblé en dur dans l'écran : c'est la route qui
 // choisit selon la clé présente, et l'écran ne sait rien du fournisseur.
 import { NextResponse } from "next/server";
-import { consigne, consigneBrute } from "@/lib/direct/consigne-essai";
+import { consigne, consigneBrute, consigneCalquee } from "@/lib/direct/consigne-essai";
 
 export const dynamic = "force-dynamic";
 /**
@@ -311,6 +311,8 @@ async function parOpenAI(
   brut: boolean,
   /** Le cadre exact découpé par le navigateur. Voir `taille` dans le corps. */
   cadreDemande: string,
+  /** Laquelle des trois phrases part. Voir `consigne` dans le corps. */
+  quelleConsigne: "longue" | "courte" | "calquee",
 ): Promise<{ image: string } | { erreur: string }> {
   const modele = s(process.env.OPENAI_IMAGE_MODEL) || "gpt-image-1";
   // L'API d'édition d'OpenAI prend les images en multipart, et elle accepte
@@ -318,9 +320,18 @@ async function parOpenAI(
   // référence. C'est exactement la forme dont on a besoin.
   const forme = new FormData();
   forme.append("model", modele);
-  const phrase = brut
-    ? consigneBrute(partie, change, decrire, !!reference)
-    : consigne(partie, garder, change, decrire, !!masque, !!reference);
+  /* ═══ TROIS CONSIGNES, ET C'EST LE NAVIGATEUR QUI CHOISIT ════════════════
+
+     Un seul booléen ne suffit plus : il y a trois phrases possibles pour
+     quatre régimes. `quelleConsigne` arrive dans le corps, et la route ne
+     devine plus rien — une décision prise à un endroit et recalculée à un
+     autre finit toujours par diverger, on l'a déjà payé sur le cadre. */
+  const phrase =
+    quelleConsigne === "calquee"
+      ? consigneCalquee(partie, change, decrire, !!reference)
+      : quelleConsigne === "courte" || brut
+        ? consigneBrute(partie, change, decrire, !!reference)
+        : consigne(partie, garder, change, decrire, !!masque, !!reference);
   forme.append("prompt", phrase);
   forme.append("n", "1");
   /**
@@ -465,7 +476,7 @@ async function parOpenAI(
       // LE JOURNAL DIT LEQUEL DES DEUX RÉGIMES A TOURNÉ. Sans ça, deux rendus
       // très différents au même horodatage resteraient inexplicables.
       brut,
-      consigne: phrase.length,
+      consigne: `${quelleConsigne} (${phrase.length})`,
     }),
   );
   const r = await fetch(`${base}/v1/images/edits`, {
@@ -509,7 +520,7 @@ async function parOpenAI(
       // LE BUDGET NE SE REMET PAS À ZÉRO : ce qu'a coûté le refus est décompté
       // du temps qu'on donne au second appel, sans quoi les deux tentatives
       // additionnées dépasseraient ce que la fonction a le droit de vivre.
-      return parOpenAI(cle, photo, null, partie, garder, change, decrire, masque, debut, qualite, brut, cadreDemande);
+      return parOpenAI(cle, photo, null, partie, garder, change, decrire, masque, debut, qualite, brut, cadreDemande, quelleConsigne);
     }
     if (bloque) {
       return {
@@ -563,6 +574,8 @@ export async function POST(req: Request) {
      * toujours — masque, recomposition, consigne longue.
      */
     brut?: boolean;
+    /** « longue », « courte » ou « calquee » — voir `parOpenAI`. */
+    consigne?: string;
     /**
      * ═══ LE CADRE, DÉCIDÉ PAR LE NAVIGATEUR ══════════════════════════════════
      *
@@ -593,6 +606,11 @@ export async function POST(req: Request) {
   const masque = decoder(s(corps.masque));
   const brut = corps.brut === true;
   const cadreDemande = s(corps.taille);
+  /* ON NE PREND QUE CE QU'ON CONNAÎT. Un mot inattendu retombe sur la consigne
+     historique plutôt que sur rien : une route qui fait confiance à son
+     appelant finit par recevoir ce qu'elle n'attendait pas. */
+  const quelleConsigne: "longue" | "courte" | "calquee" =
+    corps.consigne === "calquee" ? "calquee" : corps.consigne === "courte" || brut ? "courte" : "longue";
   const partie = s(corps.partie) || "la zone concernée";
   /**
    * CE QUE LE MÉTIER DEMANDE DE PRÉSERVER, ET IL VIENT DE L'ÉCRAN.
@@ -725,6 +743,7 @@ export async function POST(req: Request) {
               QUALITE,
               brut,
               cadreDemande,
+              quelleConsigne,
             ),
         }
       : null,
@@ -760,7 +779,7 @@ export async function POST(req: Request) {
     ordre.push({
       nom: `openai·${leger}`,
       aller: () =>
-        parOpenAI(openai, photo, reference, partie, garder, change, decrire, masque, debut, leger, brut, cadreDemande),
+        parOpenAI(openai, photo, reference, partie, garder, change, decrire, masque, debut, leger, brut, cadreDemande, quelleConsigne),
     });
   }
 

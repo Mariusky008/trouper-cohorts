@@ -477,3 +477,81 @@ export function consigneBrute(
     .filter(Boolean)
     .join("\n");
 }
+
+/**
+ * ═══ LA CONSIGNE CALQUÉE SUR CELLE QUI MARCHE ══════════════════════════════
+ *
+ * « Dis-moi ce que tu as demandé à l'API pour réaliser cette coupe, ainsi je
+ * le dirai à mon codeur pour qu'il fasse à l'identique. »
+ *
+ * IL EST ALLÉ CHERCHER LE TEXTE EXACT, ET LE VOICI TRADUIT EN GABARIT. C'est
+ * la seule formulation de ce dossier dont on ait la preuve qu'elle rend le bon
+ * résultat sur SA photo. Tout le reste — trois mille neuf cents signes
+ * d'interdictions accumulées — n'a jamais produit que des rendus qu'il refuse.
+ *
+ * ═══ CE QUI LA DISTINGUE DE LA NÔTRE, ET C'EST STRUCTUREL ══════════════════
+ *
+ *   · ELLE DÉSIGNE L'IMAGE DE BASE EN PREMIÈRE PHRASE, et elle la DÉCRIT :
+ *     « the photograph of the client showing … ». La nôtre présentait deux
+ *     images à rôles égaux et expliquait ensuite lequel était lequel.
+ *   · ELLE DIT « CHANGE ONLY … », une seule fois, au lieu de répartir la même
+ *     idée sur quarante lignes de protections.
+ *   · ELLE ORDONNE D'EFFACER L'EXISTANT, explicitement — c'est la ligne qu'on
+ *     n'avait pas du tout, et celle qui laissait les longueurs sur les épaules.
+ *   · ELLE EST EN ANGLAIS, d'un bout à l'autre, et d'un seul tenant.
+ *   · ELLE FINIT PAR « Output only the edited photograph. »
+ *
+ * ═══ CE QUE JE N'AI PAS RECOPIÉ, ET POURQUOI ═══════════════════════════════
+ *
+ * IL A MIS LA RÉFÉRENCE EN PREMIER ET LA CLIENTE EN SECOND. Nous envoyons la
+ * cliente en premier. Sur `/v1/images/edits`, la PREMIÈRE image est la toile :
+ * c'est elle que le modèle édite, et c'est elle dont le masque prend les
+ * dimensions. Inverser l'ordre risquerait de rendre la photo de la RÉFÉRENCE
+ * retouchée — c'est-à-dire une autre femme, exactement le défaut qu'on vient
+ * de corriger.
+ *
+ * ET SON OUTIL N'EST PAS CETTE API. Il l'a écrit lui-même : « j'ai appelé
+ * l'outil de création d'images intégré à cette conversation, pas directement
+ * l'API publique ». L'ordre des images n'y veut donc pas forcément dire la
+ * même chose. La phrase est recopiée ; la place des images reste celle que
+ * notre point d'entrée impose. L'inversion se mesure au banc d'essai, où elle
+ * ne casse rien si elle échoue.
+ *
+ * LA DESCRIPTION RESTE EN FRANÇAIS AU MILIEU DE L'ANGLAIS. Elle vit dans les
+ * données du métier — `decrire` — et la traduire pièce par pièce serait une
+ * seconde source de vérité à maintenir, donc une seconde source d'erreur. Ces
+ * modèles lisent les deux langues dans la même phrase.
+ */
+export function consigneCalquee(
+  partie: string,
+  change?: string,
+  decrire?: string,
+  avecReference = true,
+): string {
+  /* LE « uniquement » FRANÇAIS SORT, PARCE QUE L'ANGLAIS DIT DÉJÀ « ONLY ».
+     Sans ça la phrase donnait « Change ONLY uniquement les cheveux », et une
+     consigne qui bégaie dans deux langues est une consigne qu'on lit mal. */
+  const quoi =
+    change?.trim().replace(/^uniquement\s+/i, "") || "the area shown in the second image";
+  const court = quoi.split(":")[0].trim() || quoi;
+  return [
+    `Edit the FIRST image as the base: the photograph of a client showing ${partie}.`,
+    "Preserve this person's exact facial identity, expression, face shape, body,",
+    "pose, clothes, accessories, framing, lighting and background.",
+    avecReference
+      ? `Change ONLY this, and nothing else — ${quoi} — to match the SECOND image, treating that second image solely as a visual reference for ${court}, never as a face, body, clothing or background reference.`
+      : `Change ONLY this, and nothing else — ${quoi} — following the written specification below.`,
+    decrire ? `Reproduce the geometry faithfully: ${decrire}.` : "",
+    /* LA LIGNE QU'ON N'AVAIT PAS DU TOUT, et celle qui laissait les longueurs
+       sur les épaules. Raccourcir, c'est ENLEVER, et « modifier » ne le dit
+       pas. On nomme la chose en français entre parenthèses plutôt que de la
+       traduire : traduire chaque métier serait une seconde vérité à tenir. */
+    `Completely remove what is currently there (${court}); nothing of it may remain visible in the result, not even partially, not even at an edge.`,
+    "Do not produce a flat, generic or artificial-looking result.",
+    "Fit it naturally at the scale of the base photograph, maintaining photographic",
+    "realism and the existing lighting.",
+    "Output only the edited photograph.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}

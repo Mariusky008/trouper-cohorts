@@ -117,16 +117,32 @@ const COTE_LEGER = 1280;
  * `?atelier=1` REMET L'ANCIEN RÉGIME SANS REDÉPLOYER, parce qu'on compare deux
  * rendus sur un téléphone, pas dans un journal.
  */
-export type Regime = "atelier" | "leger" | "brut";
+/**
+ * ═══ ET UN QUATRIÈME, CALQUÉ SUR CE QUI MARCHE ════════════════════════════
+ *
+ * « Dis-moi ce que tu as demandé à l'API, ainsi je le dirai à mon codeur pour
+ * qu'il fasse à l'identique. »
+ *
+ * `calquee` A LA MÊME GÉOMÉTRIE QUE `leger` — ni masque, ni cadre demandé, ni
+ * rognage — ET LA CONSIGNE QU'IL EST ALLÉ CHERCHER : celle dont on a la preuve
+ * qu'elle rend le bon résultat sur sa photo. Voir `consigneCalquee`.
+ *
+ * C'EST DÉSORMAIS LE RÉGIME DE LA COIFFURE. Notre consigne longue a produit
+ * huit rendus qu'il refuse ; celle-là en a produit un qu'il appelle parfait.
+ * Entre les deux il n'y a pas à hésiter — et l'ancienne reste au banc d'essai,
+ * en deuxième ligne, pour que la comparaison ne se perde pas.
+ */
+export type Regime = "atelier" | "leger" | "brut" | "calquee";
 
 function regimeDe(partie: string | undefined): Regime {
-  const defaut: Regime = zoneDe(partie) === "coiffure" ? "leger" : "atelier";
+  const defaut: Regime = zoneDe(partie) === "coiffure" ? "calquee" : "atelier";
   if (typeof window === "undefined") return defaut;
   try {
     const q = new URLSearchParams(window.location.search);
     if (q.get("brut") === "1") return "brut";
     if (q.get("atelier") === "1") return "atelier";
     if (q.get("leger") === "1") return "leger";
+    if (q.get("calquee") === "1") return "calquee";
     return defaut;
   } catch {
     return defaut;
@@ -364,6 +380,10 @@ export async function essayerSurMoi(opts: {
      `brut` et `leger` partagent ces deux-là ; seule la recomposition les
      sépare. */
   const leger = regime !== "atelier";
+  /* QUELLE PHRASE PART. La route ne peut plus la déduire d'un seul booléen :
+     il y a maintenant trois consignes pour quatre régimes. On le lui dit. */
+  const phrase: "longue" | "courte" | "calquee" =
+    regime === "brut" ? "courte" : regime === "calquee" ? "calquee" : "longue";
   let photo: string;
   let reference: string;
   let cadre: { l: number; h: number } | null = null;
@@ -527,6 +547,7 @@ export async function essayerSurMoi(opts: {
         change: opts.change ?? "",
         decrire: opts.decrire ?? "",
         brut,
+        consigne: phrase,
         /* LE CADRE EST CHOISI ICI, PAS DEVINÉ LÀ-BAS. La route le déduisait
            des dimensions reçues, ce qui redonnait le même rapport — mais elle
            n'avait aucun moyen de savoir qu'on venait de rogner exprès. Un

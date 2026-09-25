@@ -80,6 +80,7 @@ async function ceQuiPart(carte) {
     vu = {
       taille: c.taille,
       brut: c.brut === true,
+      consigne: c.consigne,
       masque: !!c.masque,
       photo: await mesurer(c.photo),
     };
@@ -127,6 +128,10 @@ console.log("══ la coiffure part en régime léger ══");
       ].some(([l, h]) => c.photo.l === l && c.photo.h === h);
     dire(!rogne, `la photo garde son propre cadre (${c.photo?.l}×${c.photo?.h})`);
     dire(!c.brut, "et la recomposition du visage reste demandée");
+    /* LA PHRASE EST CELLE QU'IL EST ALLÉ CHERCHER — voir `consigneCalquee`.
+       C'est la seule de ce dossier dont on ait la preuve qu'elle rend le bon
+       résultat, et elle se remettrait en « longue » sans qu'on le voie. */
+    dire(c.consigne === "calquee", `la consigne calquée sur ChatGPT part bien (${c.consigne})`);
   }
 }
 
@@ -142,6 +147,7 @@ console.log("\n══ le lunetier garde ses verrous ══");
     // qu'il a déjà signalé une fois.
     dire(c.masque, "le masque part toujours");
     dire(/^\d+x\d+$/.test(c.taille || ""), `et on demande un cadre précis (${c.taille})`);
+    dire(c.consigne === "longue", `et il garde la consigne d'atelier (${c.consigne})`);
   }
 }
 
