@@ -130,6 +130,35 @@ Conséquence pour les fichiers de lieux (`vitrine-mode.jpg`, `friperie-rayon.jpg
 `atelier-tatouage.jpeg`) : ils ne sont plus des photos de tête, ils sont des
 vues secondaires.
 
+## LE FORMAT : VERTICALE, DEUX TIERS SUR TROIS
+
+La carte affiche désormais la photo **en entier dans sa largeur** : elle n'est
+jamais rognée sur les côtés. Ce qui manquait le plus — les côtés d'une coupe,
+les manches d'un vêtement, les doigts d'une main — était précisément ce que
+`cover` coupait, et c'est précisément ce qu'on vient regarder.
+
+Conséquence directe : **c'est la hauteur de la photo qui décide de sa place à
+l'écran.**
+
+| Format envoyé | Place prise | Rogné sur les côtés |
+|---------------|-------------|---------------------|
+| 2:3 (vertical) | 69 % | rien |
+| 1:1 (carré)    | 62 % | 12,5 % par bord |
+| 16:9 (paysage) | 35 % | 12,5 % par bord |
+
+**Une photo verticale ne perd rien et remplit le plus.** Un carré n'atteint la
+cible qu'en cédant un huitième de chaque côté ; un panoramique n'y arrive pas
+et s'arrête court — c'est voulu : mieux vaut une image courte qu'une image
+amputée.
+
+Sous la photo, la carte pose un panneau de **la couleur moyenne du bas de
+l'image**, assombrie de plus de moitié pour qu'elle se lise comme un panneau et
+non comme une photo floutée. Le raccord tient entièrement dans la photo et
+atteint cette couleur à son dernier point : mesuré au pixel, un point d'écart
+entre deux lignes voisines, puis plus rien.
+
+Voir `partDeLaPhoto` et `basDeLImage` dans `src/components/direct/carte-swipe.tsx`.
+
 ## LA RÈGLE QUI VAUT POUR TOUTES
 
 Aucune enseigne lisible, aucun logo, aucun visage reconnaissable. Les commerces

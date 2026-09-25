@@ -432,6 +432,74 @@ export function GestesDirect({
  */
 export type FaceCarte = "fiche" | "seconde";
 
+/**
+ * JUSQU'OÙ LA PHOTO DESCEND, EN PART DE LA HAUTEUR DE LA CARTE.
+ *
+ * On la veut à soixante-deux pour cent. À pleine largeur, une image verticale
+ * y arrive toute seule ; une image carrée ou panoramique n'y arrive qu'en
+ * perdant de la largeur, et LE PLAFOND EST LE CŒUR DE LA RÈGLE : au-delà d'un
+ * quart de la largeur — douze et demi par bord — on renonce à la cible plutôt
+ * qu'au sujet.
+ *
+ * ELLE REND UNE PART, PAS DES POINTS. La carte n'a pas la même hauteur dans la
+ * démonstration du site et dans le fil de la ville ; un nombre de points calé
+ * sur l'une décadrerait l'autre.
+ */
+export function partDeLaPhoto(l: number, h: number): number {
+  if (!l || !h) return 1;
+  const CIBLE = 0.62;
+  const ROGNAGE_MAX = 0.25;
+  /* LA PART QU'ELLE PREND À PLEINE LARGEUR, sur une carte au format d'un
+     téléphone — neuf sur dix-neuf et demi, le rapport de tous nos écrans. */
+  const pleine = h / l / (19.5 / 9);
+  if (pleine >= CIBLE) return Math.min(1, pleine);
+  return Math.min(CIBLE, pleine / (1 - ROGNAGE_MAX));
+}
+
+/**
+ * LA COULEUR MOYENNE DU BAS D'UNE IMAGE, ASSOMBRIE.
+ *
+ * ON NE LIT QU'UN PIXEL SUR SEIZE : la moyenne ne bouge pas d'un point et le
+ * calcul coûte seize fois moins.
+ *
+ * ET ON ASSOMBRIT DE PLUS DE MOITIÉ, ce qui n'est pas qu'une question de
+ * lisibilité. À soixante-dix pour cent de la teinte d'origine, le bas d'une
+ * photo de studio donnait un gris-beige moyen — exactement la couleur d'une
+ * image FLOUTÉE. À quarante-cinq, la même teinte devient un PANNEAU : elle
+ * appartient toujours à l'image, mais plus personne ne la confond avec elle.
+ */
+export function basDeLImage(img: HTMLImageElement): string {
+  try {
+    const l = Math.min(img.naturalWidth, 240);
+    const h = Math.max(1, Math.round((l / img.naturalWidth) * img.naturalHeight));
+    const c = document.createElement("canvas");
+    c.width = l;
+    c.height = h;
+    const g = c.getContext("2d", { willReadFrequently: true });
+    if (!g) return "";
+    g.drawImage(img, 0, 0, l, h);
+    const depuis = Math.max(0, h - Math.max(2, Math.round(h * 0.08)));
+    const d = g.getImageData(0, depuis, l, h - depuis).data;
+    let r = 0;
+    let v = 0;
+    let b = 0;
+    let n = 0;
+    for (let i = 0; i < d.length; i += 16) {
+      r += d[i];
+      v += d[i + 1];
+      b += d[i + 2];
+      n++;
+    }
+    if (!n) return "";
+    const t = (x: number) => Math.round((x / n) * 0.45);
+    return `rgb(${t(r)}, ${t(v)}, ${t(b)})`;
+  } catch {
+    /* UNE TOILE QUE LE NAVIGATEUR REFUSE DE LIRE N'EST PAS UNE PANNE : sans
+       couleur, la carte garde son fond d'avant. */
+    return "";
+  }
+}
+
 export function CarteSwipe({
   carte,
   style,
@@ -522,6 +590,52 @@ export function CarteSwipe({
   }, [photoAnnonce]);
   const auMur = regardee || photoAnnonce;
 
+  /**
+   * ═══ LA PHOTO N'EST PLUS ROGNÉE SUR LES CÔTÉS ════════════════════════════
+   *
+   * « On voit la coupe encore une fois qu'en partie, mais pas vraiment
+   * clairement et totalement. »
+   *
+   * « cover » REMPLIT LE CADRE EN COUPANT CE QUI DÉPASSE — et sur un téléphone,
+   * ce qui dépasse est TOUJOURS la largeur. Une photo carrée y perdait vingt-
+   * six pour cent de chaque côté : les côtés de la coupe, les manches du
+   * vêtement, les doigts de la main. C'est exactement ce qu'on vient regarder.
+   *
+   * ON VISE DONC UNE HAUTEUR, ET ON ROGNE LE MINIMUM POUR L'ATTEINDRE. La
+   * photo descend jusqu'à soixante-deux pour cent de la carte quand elle le
+   * peut ; si son format ne le permet qu'en coupant, on coupe — mais jamais
+   * plus de douze et demi pour cent par bord. Une photo panoramique n'atteint
+   * pas la cible, et c'est voulu : mieux vaut une image courte qu'amputée.
+   *
+   * ET CE QUI RESTE DESSOUS N'EST PAS UN VIDE : c'est la couleur moyenne du
+   * bas de l'image, assombrie de plus de moitié pour qu'elle se lise comme un
+   * panneau et non comme une photo floutée. Le raccord finit exactement au
+   * dernier point de la photo — voir `.cd-raccord` — donc il n'y a pas de
+   * bord à voir.
+   *
+   * TANT QUE LA MESURE N'A PAS EU LIEU, RIEN NE CHANGE. La classe `mesuree`
+   * n'arrive qu'avec elle : une image qui ne charge pas, un rendu serveur, un
+   * navigateur qui refuse la toile — et la carte garde le cadrage d'avant.
+   */
+  const [cadre, setCadre] = useState<{ h: number; fond: string } | null>(null);
+  useEffect(() => {
+    if (!auMur) {
+      setCadre(null);
+      return;
+    }
+    let vivant = true;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      if (!vivant || !img.naturalWidth || !img.naturalHeight) return;
+      setCadre({ h: partDeLaPhoto(img.naturalWidth, img.naturalHeight), fond: basDeLImage(img) });
+    };
+    img.src = auMur;
+    return () => {
+      vivant = false;
+    };
+  }, [auMur]);
+
   return (
     /* ⚡ UNE CARTE FLASH NE RESSEMBLE À AUCUNE AUTRE — c'est la demande, et
        c'était le défaut : « l'annonce ne fait pas différente d'une autre alors
@@ -553,18 +667,26 @@ export function CarteSwipe({
          la place. Le rond ne monte donc que là. */
       className={`cd-carte${sec ? " sec" : ""}${c.flash ? " flash" : ""}${
         c.quoi.length > 14 ? " hautrond" : ""
-      }${
+      }${cadre ? " mesuree" : ""}${
         c.langage ? ` m-${c.langage.cle}` : ""
       } ${className}`}
       style={
-        c.langage
-          ? ({
-              ...style,
-              "--cd-accent": c.langage.accent,
-              "--cd-accent-encre": c.langage.encre,
-              "--cd-halo": c.langage.halo,
-            } as React.CSSProperties)
-          : style
+        {
+          ...style,
+          ...(c.langage
+            ? {
+                "--cd-accent": c.langage.accent,
+                "--cd-accent-encre": c.langage.encre,
+                "--cd-halo": c.langage.halo,
+              }
+            : {}),
+          /* LA MESURE VOYAGE EN VARIABLES — voir `partDeLaPhoto`. Sans elle, la
+             classe `mesuree` n'est pas posée et aucune de ces deux lignes ne
+             sert : la carte garde le cadrage d'avant. */
+          ...(cadre
+            ? { "--cd-photo-h": `${(cadre.h * 100).toFixed(2)}%`, "--cd-fond": cadre.fond || "#0D1A15" }
+            : {}),
+        } as React.CSSProperties
       }
     >
       {/* DEUX COUCHES, PAS UNE, et c'est un filet de sécurité.
@@ -583,7 +705,12 @@ export function CarteSwipe({
                    pour ELLE — « le sujet est bas, remonte de dix pour cent » —
                    et l'appliquer à une autre image la décadre. Les siennes
                    prennent le milieu, qui ne trahit aucune. */
-                backgroundPosition: `center ${regardee ? "50%" : c.cadrage || "50%"}`,
+                /* LE CADRAGE VERTICAL NE SERT QU'AU MODE D'AVANT. Quand la
+                   photo est mesurée, elle est entière : il n'y a plus de
+                   hauteur à choisir, donc plus rien à remonter. */
+                backgroundPosition: cadre
+                  ? "center top"
+                  : `center ${regardee ? "50%" : c.cadrage || "50%"}`,
               }
             : undefined
         }
@@ -637,6 +764,12 @@ export function CarteSwipe({
       {/* Le voile n'est pas un effet : sans lui, un texte blanc posé sur une
           photo claire devient illisible une fois sur deux. */}
       <div className="cd-voile" aria-hidden="true" />
+      {/* LE RACCORD ENTRE LA PHOTO ET LE PANNEAU. Il tient ENTIÈREMENT dans la
+          photo et atteint la couleur du fond à son dernier point : sous ce
+          point, c'est la même couleur, donc il n'y a pas de bord à voir. Mis
+          en travers du bord — un peu avant, un peu après — il laissait un
+          écart de quinze pour cent, et quinze pour cent font un trait. */}
+      {cadre && <div className="cd-raccord" aria-hidden="true" />}
 
       {/* ═══ L'ANNEAU ═══
           « Le chrono devrait être très différent, comme l'acteur principal. »
@@ -2198,6 +2331,62 @@ export function StylesDirect() {
         @media (prefers-reduced-motion:reduce){
           .cd-g i{transition:none;}
         }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           LA PHOTO ENTIERE, ET UN PANNEAU DE SA COULEUR SOUS ELLE
+           ═══════════════════════════════════════════════════════════════════
+
+           « On voit la coupe encore une fois qu'en partie. » — « Je ne veux
+           pas de separation entre la photo et cette section grise, je veux que
+           ce soit soft et adouci. »
+
+           CE BLOC EST EN DERNIER, ET CE N'EST PAS DU RANGEMENT. Les variantes
+           « sec » et « flash » redefinissent le voile plus haut avec la meme
+           force de selecteur : a egalite, c'est l'ordre du fichier qui tranche.
+           Place avant elles, ce bloc ne s'appliquerait pas aux cartes seches ni
+           aux flashs — c'est-a-dire a deux des cas qu'on veut justement
+           uniformiser.
+
+           ET IL NE S'APPLIQUE QU'APRES LA MESURE. La classe « mesuree » arrive
+           avec la hauteur et la couleur ; sans elle — rendu serveur, image qui
+           ne charge pas, toile refusee — la carte garde exactement le cadrage
+           d'avant. Voir partDeLaPhoto et basDeLImage, en tete de fichier. */
+        .cd-carte.mesuree{background:var(--cd-fond,#0D1A15);}
+        /* LA LARGEUR EST PLEINE, LA HAUTEUR SUIT. Le sujet n'est plus ampute
+           sur les cotes ; ce qui depasse en hauteur sort par le bas, sous le
+           raccord. */
+        .cd-carte.mesuree .cd-photo{inset:auto 0 auto 0;top:0;
+          height:var(--cd-photo-h,100%);
+          background-size:auto var(--cd-photo-h,100%);
+          background-position:center top;}
+        .cd-carte.mesuree .cd-film{inset:auto 0 auto 0;top:0;
+          height:var(--cd-photo-h,100%);object-fit:cover;}
+        /* LE VOILE NE SERT PLUS SOUS LA PHOTO : le panneau y fait le contraste.
+           Il reste sur l'image, la ou du texte peut passer dessus. */
+        .cd-carte.mesuree .cd-voile{inset:auto 0 auto 0;top:0;
+          height:var(--cd-photo-h,100%);}
+        /* LE RACCORD. Il tient ENTIEREMENT dans la photo et atteint la couleur
+           du fond a son dernier point — mesure au pixel : un point d'ecart
+           entre deux lignes voisines, puis plus rien. */
+        /* ═══ ET LE TITRE DESCEND AU BAS DE LA PHOTO ═══
+           La carte poussait son titre TOUT EN HAUT et le reste TOUT EN BAS,
+           la photo respirant entre les deux. C'etait juste quand l'image
+           occupait l'ecran entier ; avec un panneau sous elle, ca laisse une
+           bande de couleur vide en plein milieu — et le titre se retrouve pose
+           sur un visage.
+           TOUT SE RANGE DONC EN BAS, dans l'ordre ou on le lit : le titre et le
+           prix d'abord, a cheval sur le dernier tiers de la photo, puis le nom,
+           les gestes et la barre. C'est la mise en page qu'il a validee sur la
+           proposition. */
+        .cd-carte.sec.mesuree .cd-bas{justify-content:flex-end;}
+        .cd-carte.sec.mesuree .cd-dit{margin-bottom:0;}
+        .cd-raccord{position:absolute;left:0;right:0;height:130px;z-index:1;
+          top:min(max(0px, calc(var(--cd-photo-h,100%) - 130px)), calc(100% - 130px));
+          background:linear-gradient(180deg,
+            rgba(0,0,0,0) 0%,
+            color-mix(in srgb, var(--cd-fond,#0D1A15) 34%, transparent) 40%,
+            color-mix(in srgb, var(--cd-fond,#0D1A15) 82%, transparent) 74%,
+            var(--cd-fond,#0D1A15) 100%);}
       `,
       }}
     />
