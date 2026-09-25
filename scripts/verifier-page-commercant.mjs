@@ -48,6 +48,37 @@ const dire = (ok, t) => {
   console.log(`${ok ? "  ok  " : "ÉCHEC "} ${t}`);
 };
 
+/**
+ * ═══ ON ATTEND LA CONVERSATION, PLUS UN CHRONOMÈTRE ═══════════════════════
+ *
+ * CES DEUX PROMESSES SE SONT MISES À TOMBER SANS QUE RIEN NE CASSE. Le lien
+ * d'invitation ne change que la requête de l'adresse : le navigateur RECHARGE
+ * donc la page entière, et en développement ce rechargement recompile. Les
+ * `waitForTimeout(1200)` et `(900)` qui suivaient le clic dataient d'une page
+ * plus petite ; l'application a grossi, la recompilation a dépassé la seconde,
+ * et la garde a commencé à mesurer un écran qui n'était pas encore là.
+ *
+ * VÉRIFIÉ AVANT DE CORRIGER : la même page ouverte directement sur `?salon=1`
+ * montre la conversation, et le même clic suivi de quatre secondes d'attente
+ * aussi. Ce n'était donc pas le produit. Une garde qui échoue à tort est pire
+ * qu'une garde absente — on apprend à ne plus la croire, et le jour où elle a
+ * raison, personne n'écoute.
+ *
+ * ON ATTEND DONC CE QU'ON MESURE. `waitForSelector` rend la main dès que la
+ * conversation est là, et la garde échoue quand même si elle ne vient jamais :
+ * le verdict est le même, la patience n'est plus une constante écrite à la
+ * main. Le délai reste borné — c'est une garde, pas une attente infinie.
+ */
+async function ouvrirLInvitation(p) {
+  await p.click(".bq-salon-o");
+  try {
+    await p.waitForSelector(".bq-conv", { timeout: 15000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const METIERS = [
   { slug: "demo-coiffeur", mot: /coup|cheveu|t[êe]te|coiff/i },
   { slug: "demo-onglerie", mot: /ongle|pose|main/i },
@@ -252,9 +283,7 @@ const lien = await p.evaluate(() => document.querySelector(".bq-salon-o")?.getAt
 // LA PROMESSE, ELLE, N'A PAS BOUGÉ : une seule conversation par commerce, et
 // on ne quitte pas sa page pour y accéder. C'est ce qu'on mesure maintenant.
 dire(/\/site-internet\/apercu\/demo-coiffeur\?salon=/.test(lien), `l'invitation reste sur la page du commerçant (${lien})`);
-await p.click(".bq-salon-o");
-await p.waitForTimeout(1200);
-dire(await p.evaluate(() => Boolean(document.querySelector(".bq-conv"))), "et la conversation s'ouvre par-dessus, sans départ");
+dire(await ouvrirLInvitation(p), "et la conversation s'ouvre par-dessus, sans départ");
 // UN SEUL SALON PAR COMMERCE : deux essais du même commerce doivent se
 // retrouver au même endroit, sinon quatre amis parlent dans quatre fils.
 const cles = await p.evaluate(() => {
@@ -313,9 +342,7 @@ await p.evaluate(() => {
 await p.waitForTimeout(500);
 const invitation = await p.evaluate(() => document.querySelector(".bq-salon-o")?.getAttribute("href") || "");
 dire(/\/site-internet\/apercu\/demo-prospect\?salon=/.test(invitation), `l'invitation mène sur la page du commerçant (${invitation})`);
-await p.click(".bq-salon-o");
-await p.waitForTimeout(900);
-dire(await p.evaluate(() => Boolean(document.querySelector(".bq-conv"))), "et la conversation s'ouvre là, sans quitter la page");
+dire(await ouvrirLInvitation(p), "et la conversation s'ouvre là, sans quitter la page");
 
 await p.fill(".bq-conv-b input", "Vous en pensez quoi ?");
 await p.click(".bq-conv-b button");

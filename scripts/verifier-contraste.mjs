@@ -207,7 +207,17 @@ async function ecart(image, r, taille) {
  * où elle sera entière. Sans lui, une bande de texte pourrait n'être mesurée
  * nulle part.
  */
-async function mesurerLaPage(nom) {
+/**
+ * `preuve` À VRAI QUAND LES FAUTES SONT CE QU'ON CHERCHE.
+ *
+ * L'AUTO-PREUVE ÉCRIVAIT « ÉCHEC » SUR SA PROPRE RÉUSSITE. Elle retire les
+ * fonds exprès, donc elle DOIT trouver des textes illisibles — et la ligne
+ * s'affichait quand même en rouge, juste avant celle qui dit que tout va bien.
+ * Le compte était juste (on le retranche plus bas), la lecture ne l'était pas :
+ * un journal qui affiche un échec là où il y a une réussite est exactement ce
+ * qui fait qu'on cesse de lire les journaux.
+ */
+async function mesurerLaPage(nom, preuve = false) {
   const haut = await p.evaluate(() => document.documentElement.scrollHeight);
   const ecran = await p.evaluate(() => window.innerHeight);
   const vus = new Set();
@@ -236,7 +246,11 @@ async function mesurerLaPage(nom) {
     }
   }
   await p.evaluate(() => window.scrollTo(0, 0));
-  dire(fautifs.length === 0, `${nom} — ${combien} textes mesurés, ${fautifs.length} illisible(s)`);
+  if (preuve) {
+    console.log(`       ${nom} — ${combien} textes mesurés, ${fautifs.length} illisible(s)`);
+  } else {
+    dire(fautifs.length === 0, `${nom} — ${combien} textes mesurés, ${fautifs.length} illisible(s)`);
+  }
   for (const f of fautifs.slice(0, 6)) {
     console.log(`        · ${f.balise}.${f.classe} « ${f.mot} » écart ${f.e}`);
   }
@@ -287,6 +301,23 @@ for (const n of noms) {
  * ON REMET DONC LE FOND TRANSPARENT — le défaut exact qu'il a signalé — et on
  * exige que la garde le voie. Si elle ne le voit pas, c'est elle qui est
  * cassée, et c'est ce verdict-là qui compte le plus.
+ *
+ * ═══ ET ELLE A CESSÉ DE LE VOIR SANS QUE RIEN NE CASSE ═══════════════════
+ *
+ * La preuve visait un nom de classe : `.mu.bq-mu.atelier`, le grand panneau
+ * derrière la porte de la boucherie. Ce panneau existe toujours — mais ce
+ * n'est plus lui qui est derrière le texte. La porte de la boucherie ouvre
+ * maintenant l'Avant-goût, dont l'écran porte SON PROPRE fond opaque, à
+ * l'intérieur du panneau. Rendre le panneau transparent ne changeait donc plus
+ * un seul pixel : la garde ne signalait rien, et l'auto-preuve échouait en
+ * accusant la garde d'être aveugle alors qu'elle voyait très bien.
+ *
+ * ON NE VISE PLUS UNE CLASSE, ON RETIRE TOUS LES FONDS. Aucun nom n'est écrit,
+ * donc plus rien à tenir à jour : chaque texte de la page retombe sur ce qu'il
+ * y a tout en dessous, et les écrans habillés pour la nuit — texte blanc sur
+ * fond sombre — deviennent du blanc sur blanc. C'est le défaut d'origine, en
+ * plus large, et il se reproduira quel que soit l'écran que la porte ouvre
+ * dans six mois.
  */
 console.log("\n══ la garde voit-elle encore le défaut d'origine ? ══");
 await p.goto(`${BASE}/autour-de-moi/boutique`, { waitUntil: "networkidle" });
@@ -294,13 +325,15 @@ await p.locator(".bq-maq-c button", { hasText: "boucherie" }).first().click();
 await p.waitForTimeout(300);
 await p.click(".bf-cta");
 await p.waitForTimeout(700);
-await p.addStyleTag({ content: ".mu.bq-mu.atelier{background:transparent !important;}" });
+/* LE FOND DE `body` RESTE, ET C'EST VOLONTAIRE : sans lui la page devient
+   transparente au sens du navigateur, qui la rend alors blanche — on ne saurait
+   plus si l'on mesure un défaut ou une page vide. */
+await p.addStyleTag({
+  content: "body *{background-image:none !important;background-color:transparent !important;}",
+});
 await p.waitForTimeout(200);
-const revus = await mesurerLaPage("(fond rendu transparent exprès)");
+const revus = await mesurerLaPage("(fond rendu transparent exprès)", true);
 dire(revus > 0, `le fond retiré, la garde signale ${revus} texte(s) — elle voit bien le défaut`);
-// LA LIGNE PRÉCÉDENTE COMPTE POUR UNE FAUTE PUISQUE `mesurerLaPage` en déclare
-// une : on la retranche, sinon la preuve ferait échouer la garde qu'elle prouve.
-if (revus > 0) echecs--;
 
 await nav.close();
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT PASSE");
