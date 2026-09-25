@@ -1031,7 +1031,22 @@ export function DemoTour({
           gestes3.current.forEach(clearTimeout);
           gestes3.current = [];
           const dans = (ms: number, f: () => void) => { gestes3.current.push(window.setTimeout(f, ms)); };
-          const suivante = () => setCarteVille((n) => (n + 1) % Math.max(1, cartesVille.length));
+          /* ═══ IL NE REPASSE PLUS SUR LES MÊMES ══════════════════════════
+
+             « Étape 2 : il y a un bug parce que ça met plus ou moins, et
+             surtout à la fin, les mêmes restaurants. »
+
+             LE MODULO. Cinq cartes, une toutes les 1,9 seconde, un acte qui
+             dure une vingtaine : on faisait deux tours complets. Le paquet ne
+             montrait donc pas une ville, il montrait une boucle — et c'est
+             exactement ce qu'un fil d'annonces ne doit jamais donner à voir.
+
+             IL AVANCE MAINTENANT UNE FOIS, ET IL S'ARRÊTE SUR LA DERNIÈRE. Ce
+             n'est pas une régression : à ce moment de la visite, la voix parle
+             déjà de réserver, et la carte sur laquelle on s'arrête est celle
+             qu'on réserve. */
+          const suivante = () =>
+            setCarteVille((n) => Math.min(n + 1, Math.max(0, cartesVille.length - 1)));
 
           // LA PILE TOURNE JUSQU'À LA RÉSERVATION. « On ne voit pas les
           // annonces » : elles doivent défiler pendant qu'on parle d'elles, et
@@ -1070,13 +1085,18 @@ export function DemoTour({
           }
 
           // ② LA RÉSERVATION, ET ELLE FERME L'ACTE.
-          //    ON REVIENT SUR LA PREMIÈRE CARTE POUR RÉSERVER : sans ça le
-          //    paquet s'arrêtait où la rotation l'avait laissé, et le panneau
-          //    s'ouvrait sur une annonce dont la voix ne parlait pas.
+          //
+          //    ON RÉSERVE CELLE QU'ON REGARDE. Le retour à la première carte
+          //    datait du temps où le paquet bouclait : il fallait bien choisir
+          //    une carte, et la première était la seule dont on était sûr. Il
+          //    produisait le défaut qu'il devait éviter — « surtout à la fin,
+          //    les mêmes restaurants » : on venait d'en faire défiler cinq, et
+          //    la dernière image de l'acte était la première d'entre elles.
+          //    Maintenant que le paquet avance une fois et s'arrête, la carte
+          //    du dessus est la bonne.
           if (tResa != null) {
             dans(quand(SAY_QUI, tResa), () => {
               if (rotation.current) { window.clearInterval(rotation.current); rotation.current = null; }
-              setCarteVille(0);
               setGesteQui("resa");
               setResaQui(true);
             });
@@ -1569,7 +1589,27 @@ export function DemoTour({
             border:1px solid rgba(255,255,255,.07);border-bottom:0;transform:translateX(-50%);}
           .qi-dos.d1{width:86%;top:6px;}
           .qi-dos.d2{width:72%;top:0;}
-          .qi-c{position:relative;margin:0 auto;animation:dtCarteEntre .5s var(--exp);}
+          /* ═══ LA CARTE EST L'ECRAN, PLUS UNE CARTE POSEE DESSUS ══════════
+
+             « Ce n'est pas du tout le bon visuel qu'on a sur /autour-de-moi. »
+
+             MESURE : dans l'application, la carte du Direct porte la classe
+             ap-carte — position absolue, inset zero, aucun arrondi, aucune
+             ombre. Elle EST l'ecran. Ici elle etait bridee a 300 px de large,
+             arrondie et ombree, flottant au milieu d'un cadre : la meme donnee,
+             la meme composante, deux presentations differentes — et c'est la
+             presentation qui fait qu'on reconnait un produit.
+
+             LA PILE DEVIENT DONC LA SCENE, aux proportions d'un ecran de
+             telephone, et la carte la remplit. Les trois gestes n'ont pas
+             bouge : ils s'appliquent a la couche du dessus, qui remplit la
+             scene elle aussi. */
+          .qi-pile.scene{aspect-ratio:9 / 15.5;padding-top:14px;}
+          .qi-c{position:absolute;inset:14px 0 0;width:100%;max-width:none;
+            margin:0;border-radius:0;box-shadow:none;aspect-ratio:auto;
+            animation:dtCarteEntre .5s var(--exp);}
+          .qi-dessus{position:absolute;inset:14px 0 0;}
+          .qi-dessus .qi-c{inset:0;}
           /* Le remontage (clé React) rejoue cette entrée à chaque rotation :
              une carte qui se remplace sans bouger se lit comme un texte qui
              change, pas comme une carte qu'on fait défiler. */
@@ -1593,7 +1633,8 @@ export function DemoTour({
              jamais étranglée en largeur, sinon le nom du commerce reste écrit
              en 25 px sur une carte de 180 et passe par-dessus le compte à
              rebours. Mêmes paliers que l'aperçu de l'espace commerçant. */
-          .qi-app .cd-carte{max-width:300px;}
+          /* LE MAXIMUM DE 300 px EST PARTI AVEC LE CADRE : c'est lui qui
+             faisait la « carte posee sur un ecran » au lieu de l'ecran. */
           @media (max-height:860px){.qi-app{zoom:.90;}}
           @media (max-height:790px){.qi-app{zoom:.80;}}
           @media (max-height:720px){.qi-app{zoom:.70;}}
@@ -1608,7 +1649,7 @@ export function DemoTour({
             transform:scale(.945) translateY(9px);opacity:.5;filter:saturate(.55);animation:none;}
           .qi-c.dessous.monte{animation:dtMonte .62s var(--exp) forwards;}
           @keyframes dtMonte{to{transform:none;opacity:1;filter:none}}
-          .qi-dessus{position:relative;z-index:2;}
+          .qi-dessus{z-index:2;}
 
           /* ① LE REFUS — la carte s'en va, la suivante prend sa place. */
           .qi-dessus.part{animation:dtPart .62s var(--exp) forwards;}
@@ -2294,7 +2335,7 @@ export function DemoTour({
                         l'un par-dessus l'autre. Une pile, ça ne se lit pas par
                         transparence : on voit la carte du dessus, et on DEVINE
                         les autres. */}
-                    <div className="qi-pile">
+                    <div className="qi-pile scene">
                       <span className="qi-dos d2" aria-hidden="true" />
                       <span className="qi-dos d1" aria-hidden="true" />
                       {/* LA CARTE SUIVANTE EST DÉJÀ LÀ, DERRIÈRE.
