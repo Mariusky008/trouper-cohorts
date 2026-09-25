@@ -153,11 +153,26 @@ export default function Proposition() {
     };
   }, []);
 
-  /* ON OUVRE SUR LA PHOTO DE L'ANNONCE, pas sur la première pièce du salon :
-     « Coupe homme » ouvrait sur un motif rasé vu de dos. */
+  /**
+   * ═══ JAMAIS UNE PHOTO CARRÉE ══════════════════════════════════════════════
+   *
+   * « C'est très moche, ces deux sections avec ce gris-marron qui arrive tout
+   * à coup. Donc jamais de photo carrée : mets plutôt la photo de la femme
+   * avec un carré, qui est une photo en longueur, et intitule donc Coupe
+   * femme. »
+   *
+   * IL A RAISON, ET C'EST UNE RÈGLE DE DONNÉES, PAS DE DESSIN. Une photo
+   * carrée ne descend qu'à la moitié de l'écran : le panneau de couleur qui
+   * suit occupe l'autre moitié, et aucun réglage de dégradé ne rend ça beau.
+   * J'ai passé trois tours à déplacer un fondu pour compenser un format.
+   *
+   * ON OUVRE DONC SUR LA PIÈCE À LA PHOTO VERTICALE — le carré long, mille sur
+   * mille cinq cents — et la carte s'appelle « Coupe femme ». Le nom de la
+   * prestation et le prix viennent de ses données, rien n'est inventé.
+   */
   const depart = Math.max(
     0,
-    coupes.findIndex((p) => p.photo === annonce?.photo),
+    coupes.findIndex((p) => p.id === "c-femme"),
   );
   const [choisie, setChoisie] = useState(depart);
   const grande = coupes[choisie]?.photo || annonce?.photo || carte?.photo || "";
@@ -252,15 +267,44 @@ export default function Proposition() {
               <span>📍 à {carte.metres} m · {carte.ville}</span>
             </div>
           </div>
-          <span className="pr-filtre">☰ COIFFEURS</span>
+          {/* ═══ LA PASTILLE DE DROITE PREND LA FORME DE SA MAQUETTE ═══════
+              Une gélule haute, un pictogramme dans un rond, deux lignes et un
+              chevron — au lieu de deux petites étiquettes posées côte à côte.
+              Elle porte le filtre, qui est ce que ce coin fait réellement. */}
           <span className="pr-coeur">♥ 2</span>
+          <button type="button" className="pr-filtre">
+            <i>☰</i>
+            <span>
+              <b>COIFFEURS</b>
+              <em>Changer</em>
+            </span>
+            <u>›</u>
+          </button>
         </header>
 
         {/* LE ROND DES TARIFS, COMME AVANT. */}
+        {/* ═══ LE ROND EST CELUI DE L'APPLICATION, PAS UN NOUVEAU ══════════
+            « Ce n'est pas celui de la photo 2, qui est beaucoup plus
+            esthétique et que nous avons déjà sur l'annonce actuelle. »
+            JUSTE, ET J'AVAIS REDESSINÉ AU LIEU DE REPRENDRE. Celui de la carte
+            — `cd-anneau` dans `carte-swipe.tsx` — n'est pas un cercle bordé :
+            c'est un disque sombre en dégradé radial, flouté par derrière, ceint
+            d'un CADRAN dessiné en SVG dont l'arc porte une lueur. Un trait de
+            deux points n'imite pas ça. */}
         <button type="button" className="pr-tarifs">
-          <span>LES TARIFS</span>
+          <svg className="pr-an-c" viewBox="0 0 104 104" aria-hidden="true">
+            <defs>
+              <linearGradient id="prAnG" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#c9a2ff" />
+                <stop offset="100%" stopColor="#7b4dff" />
+              </linearGradient>
+            </defs>
+            <circle className="pr-an-p" cx="52" cy="52" r="48" />
+            <circle className="pr-an-a" cx="52" cy="52" r="48" />
+          </svg>
+          <span className="pr-an-t">LES TARIFS</span>
           <i>✂️</i>
-          <span>VOIR ›</span>
+          <em>VOIR</em>
         </button>
 
         {/* LA COLONNE DE DROITE, EN PETITS RONDS, COMME AVANT. */}
@@ -290,16 +334,16 @@ export default function Proposition() {
         {/* ═══ 2 · TOUT LE TEXTE DANS LE BAS, SUR LE FONDU ══════════════════
             Le milieu de la photo reste vide : c'est la seule règle. */}
         <div className="pr-bas">
-          <h1>{annonce.titre}</h1>
-          <p className="pr-detail">
-            {annonce.lignes?.[0]}
-            {annonce.lignes?.[1] ? ` · ${annonce.lignes[1]}` : ""}
-          </p>
+          <h1>Coupe femme</h1>
+          {/* LA DURÉE VENAIT DE L'ANNONCE DE L'HOMME : « 20 minutes » sous un
+              carré long, c'est faux. La pièce n'en porte pas, donc on n'en
+              affiche pas — plutôt que d'emprunter celle du voisin. */}
+          <p className="pr-detail">{coupes[choisie]?.nom}</p>
           {/* LA DISTANCE EST MONTÉE EN HAUT AVEC LE RESTE, elle ne se répète
               pas ici : c'est le doublon qu'on vient d'enlever, déplacé d'une
               ligne. Le prix reste seul, et il se voit mieux. */}
           <div className="pr-prix">
-            <b>{annonce.prix}</b>
+            <b>{coupes[choisie]?.prix ?? annonce.prix}</b>
           </div>
 
           <div className="pr-vignettes">
@@ -420,21 +464,24 @@ export default function Proposition() {
             var(--fond) 82%);}
 
         .pr-haut{position:absolute;left:0;right:0;top:0;z-index:3;display:flex;
-          align-items:center;gap:6px;padding:11px;
+          align-items:center;gap:5px;padding:10px 8px;
           background:linear-gradient(180deg,rgba(0,0,0,.55),transparent);}
         /* ═══ LA PASTILLE, COMME SUR SA CAPTURE ═══
            Une carte a coins arrondis, pas une gelule : l'avatar est plus gros,
            les trois lignes respirent, et le fond est presque opaque pour que
            le nom se lise sur n'importe quelle photo. */
-        .pr-puce{display:flex;align-items:center;gap:10px;background:rgba(16,19,28,.9);
-          border-radius:20px;padding:7px 12px 7px 7px;min-width:0;flex:1;
+        .pr-puce{display:flex;align-items:center;gap:9px;background:rgba(16,19,28,.9);
+          border-radius:18px;padding:6px 11px 6px 6px;min-width:0;flex:1;
           box-shadow:0 6px 22px rgba(0,0,0,.35);}
-        .pr-puce img{width:50px;height:50px;border-radius:50%;object-fit:cover;flex:none;
+        .pr-puce img{width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none;
           border:2px solid rgba(255,255,255,.22);}
         .pr-puce div{min-width:0;}
-        .pr-puce b{display:block;color:#fff;font-size:14px;font-weight:800;line-height:1.25;
-          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em;}
-        .pr-puce span{display:block;color:#fff;font-size:12px;font-weight:700;line-height:1.35;
+        /* IL MANQUAIT UN POINT. Mesuré : le nom voulait 136, il en avait 135.
+           Un resserrement de deux centièmes d'em le rend entier — c'est moins
+           que ce qu'un œil distingue, et ça vaut mieux que « Un salon du c… ». */
+        .pr-puce b{display:block;color:#fff;font-size:13px;font-weight:800;line-height:1.25;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.02em;}
+        .pr-puce span{display:block;color:#fff;font-size:11px;font-weight:700;line-height:1.35;
           white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
         .pr-puce span em{font-style:normal;color:#9aa4c4;font-weight:500;}
         .pr-puce i{font-style:normal;color:#ffc422;}
@@ -442,22 +489,46 @@ export default function Proposition() {
            pastille prenait ce qui restait, et ce qui restait ne suffisait pas.
            Le filtre et le cœur reculent de dix-huit points a eux deux, ce qui
            est exactement ce qui manquait. */
-        .pr-filtre{background:rgba(18,20,30,.82);color:#fff;border-radius:999px;
-          padding:5px 7px;font-size:9px;font-weight:700;letter-spacing:.04em;white-space:nowrap;}
-        .pr-coeur{background:rgba(18,20,30,.82);color:#ff5b8a;border-radius:999px;
-          padding:5px 7px;font-size:10px;font-weight:700;white-space:nowrap;}
+        .pr-filtre{display:flex;align-items:center;gap:6px;flex:none;
+          background:rgba(16,19,28,.9);border:0;border-radius:18px;
+          padding:6px 7px 6px 6px;cursor:pointer;
+          box-shadow:0 6px 22px rgba(0,0,0,.35);}
+        .pr-filtre i{font-style:normal;width:26px;height:26px;border-radius:50%;
+          background:rgba(255,255,255,.1);display:grid;place-items:center;
+          font-size:13px;color:#fff;}
+        .pr-filtre span{display:grid;text-align:left;}
+        .pr-filtre b{color:#fff;font-size:10px;font-weight:800;letter-spacing:.05em;
+          line-height:1.2;}
+        .pr-filtre em{font-style:normal;color:#9aa4c4;font-size:9px;line-height:1.2;}
+        .pr-filtre u{text-decoration:none;color:#9aa4c4;font-size:15px;line-height:1;}
+        .pr-coeur{background:rgba(16,19,28,.9);color:#ff5b8a;border-radius:50%;
+          width:30px;height:30px;flex:none;display:grid;place-items:center;
+          font-size:11px;font-weight:800;line-height:1;}
 
-        .pr-tarifs{position:absolute;right:13px;top:86px;z-index:3;
-          width:76px;height:76px;border-radius:50%;border:2px solid #c4a2ff;
-          background:rgba(10,12,20,.8);color:#fff;display:grid;place-content:center;gap:2px;
-          font-size:8.5px;font-weight:800;letter-spacing:.07em;cursor:pointer;}
-        .pr-tarifs i{font-style:normal;font-size:17px;}
+        .pr-tarifs{position:absolute;right:14px;top:104px;z-index:3;
+          width:104px;height:104px;border-radius:50%;border:0;padding:0;
+          display:flex;flex-direction:column;align-items:center;justify-content:center;
+          color:#fff;cursor:pointer;
+          background:radial-gradient(circle at 50% 38%,
+            rgba(24,18,38,.93) 0%, rgba(8,8,14,.95) 72%);
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+          box-shadow:0 12px 34px rgba(0,0,0,.55), 0 0 26px -6px rgba(150,110,255,.5);}
+        .pr-an-c{position:absolute;inset:0;width:100%;height:100%;
+          transform:rotate(-90deg);overflow:visible;pointer-events:none;}
+        .pr-an-p{fill:none;stroke:rgba(255,255,255,.16);stroke-width:5;}
+        .pr-an-a{fill:none;stroke:url(#prAnG);stroke-width:5.4;stroke-linecap:round;
+          filter:drop-shadow(0 0 5px rgba(150,110,255,.85));}
+        .pr-an-t{position:relative;z-index:1;font-size:8.5px;font-weight:900;
+          letter-spacing:.12em;color:#E7D8FF;text-shadow:0 1px 8px rgba(0,0,0,.7);}
+        .pr-tarifs i{position:relative;z-index:1;font-style:normal;font-size:22px;
+          margin:2px 0 1px;filter:drop-shadow(0 1px 6px rgba(0,0,0,.55));}
+        .pr-tarifs em{position:relative;z-index:1;display:inline-flex;align-items:center;
+          gap:3px;font-style:normal;font-size:10px;font-weight:900;letter-spacing:.12em;
+          color:#c9a2ff;text-shadow:0 1px 8px rgba(0,0,0,.7);}
+        .pr-tarifs em::after{content:"›";font-size:13px;font-weight:700;
+          line-height:1;letter-spacing:0;opacity:.9;}
+        .pr-tarifs:active{transform:scale(.95);}
 
-        /* LES TROIS PETITS RONDS, SUR LE COTE, COMME AVANT. */
-        /* LES TROIS RONDS REMONTENT AU-DESSUS DU TEXTE. A quarante-sept pour
-           cent, « En parler » tombait sur le E de « Coupe homme » : deux
-           choses a la meme hauteur sur un ecran de trois cent quatre-vingt-dix
-           points se marchent dessus, quoi qu'on fasse. */
         /* ELLE DESCEND : le titre casse en deux lui laisse la place, et trois
            boutons pousses en haut d'un ecran donnent l'impression que la
            carte commence par ses outils. */
