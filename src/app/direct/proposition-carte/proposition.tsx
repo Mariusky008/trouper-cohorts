@@ -78,6 +78,9 @@ function couleurDuBas(img: HTMLImageElement): string | null {
   }
 }
 
+/** La largeur de la carte, en points. Le fondu en dépend, donc elle est écrite une fois. */
+const LARGEUR = 390;
+
 export default function Proposition() {
   /* ON PREND LA CARTE ET L'ANNONCE DONT IL PARLE — la coupe homme du salon du
      centre — dans les VRAIES données. Une proposition faite sur des chiffres
@@ -111,20 +114,23 @@ export default function Proposition() {
      vignette : c'est tout l'intérêt d'aller chercher la couleur dans l'image
      plutôt que de l'écrire une fois pour toutes. */
   const [fond, setFond] = useState<string | null>(null);
+  const [hauteur, setHauteur] = useState(LARGEUR);
   const cache = useRef<Record<string, string>>({});
   useEffect(() => {
     if (!grande) return;
     const connue = cache.current[grande];
-    if (connue) {
-      setFond(connue);
-      return;
-    }
+    if (connue) setFond(connue);
     let vivant = true;
     const i = new Image();
     i.crossOrigin = "anonymous";
     i.onload = () => {
+      if (!vivant) return;
+      /* LA HAUTEUR QUE LA PHOTO PRENDRA, une fois sa largeur ramenée à celle
+         de la carte. C'est elle qui dit où le fondu doit commencer — et elle
+         change d'une photo à l'autre, donc elle se mesure. */
+      setHauteur(Math.round((LARGEUR * i.naturalHeight) / i.naturalWidth));
       const c = couleurDuBas(i);
-      if (!vivant || !c) return;
+      if (!c) return;
       cache.current[grande] = c;
       setFond(c);
     };
@@ -156,7 +162,12 @@ export default function Proposition() {
     <div className="pr-tel">
       <div
         className="pr-carte"
-        style={fond ? ({ ["--fond"]: fond } as React.CSSProperties) : undefined}
+        style={
+          {
+            ...(fond ? { ["--fond"]: fond } : {}),
+            ["--photo-h"]: `${hauteur}px`,
+          } as React.CSSProperties
+        }
       >
         {/* ═══ 1 · LA PHOTO, PLEIN ÉCRAN ═══════════════════════════════════ */}
         <div className="pr-photo" style={{ backgroundImage: `url("${encodeURI(grande)}")` }} />
@@ -307,18 +318,41 @@ export default function Proposition() {
           box-shadow:0 30px 80px rgba(0,0,0,.6);}
 
         /* LA PHOTO PREND TOUT, ET RIEN NE SE POSE EN SON MILIEU. */
-        .pr-photo{position:absolute;inset:0;background:#11131f center 18%/cover no-repeat;
+        /* ═══ JAMAIS DE ROGNAGE LATERAL ═══
+           « On voit la coupe encore une fois qu'en partie mais pas vraiment
+           clairement et totalement. »
+           « cover » remplit le cadre en coupant ce qui depasse — et sur un
+           telephone, ce qui depasse est TOUJOURS la largeur : une photo carree
+           y perd vingt-six pour cent de chaque cote, c'est-a-dire les cotes de
+           la coupe, les manches du vetement, les doigts de la main.
+           LA LARGEUR EST DONC TOUJOURS PLEINE, et la hauteur suit. Ce qui
+           reste dessous n'est pas un vide : c'est la couleur du bas de la
+           photo elle-meme, et le fondu s'y rend sans qu'on voie la jointure.
+           Une photo plus haute que l'ecran ne perd que son bas, sous le
+           fondu. */
+        .pr-photo{position:absolute;left:0;right:0;top:0;height:var(--photo-h);
+          background:transparent center top/100% auto no-repeat;
           background-image:inherit;}
-        .pr-photo{background-size:cover;background-position:center 18%;}
+        .pr-photo{background-size:100% auto;background-position:center top;}
         /* LE FONDU VA VERS LA COULEUR LUE DANS L'IMAGE — voir couleurDuBas. */
         /* LE FONDU PART PLUS BAS QUE LE VISAGE. A trente-huit pour cent il
            voilait les yeux ; le titre commence de toute facon a cinquante. */
-        .pr-fondu{position:absolute;left:0;right:0;bottom:0;top:50%;
+        /* ═══ LE FONDU FINIT EXACTEMENT OU LA PHOTO FINIT ═══
+           Premier essai : il atteignait sa pleine opacite bien APRES le bas de
+           l'image. Resultat, une arete nette — photo voilee a trente pour cent
+           d'un cote, couleur pleine de l'autre. Mesure : la cassure tombait a
+           390 points, la ou la photo s'arrete.
+           IL OCCUPE DONC LES CENT SOIXANTE-DIX DERNIERS POINTS DE LA PHOTO, et
+           il arrive a la couleur pile a son bord. Sous ce bord, c'est le fond
+           de la carte — la meme couleur. La jointure n'existe plus.
+           SUR UNE PHOTO PLUS HAUTE QUE L'ECRAN il se colle au bas de l'ecran :
+           sans ce min, il partirait hors champ et on perdrait le fondu. */
+        .pr-fondu{position:absolute;left:0;right:0;height:170px;
+          top:min(max(0px, calc(var(--photo-h) - 170px)), calc(100% - 170px));
           background:linear-gradient(180deg,
             rgba(0,0,0,0) 0%,
-            color-mix(in srgb, var(--fond) 32%, transparent) 26%,
-            color-mix(in srgb, var(--fond) 88%, transparent) 52%,
-            var(--fond) 72%);}
+            color-mix(in srgb, var(--fond) 62%, transparent) 58%,
+            var(--fond) 100%);}
 
         .pr-haut{position:absolute;left:0;right:0;top:0;z-index:3;display:flex;
           align-items:center;gap:6px;padding:11px;
