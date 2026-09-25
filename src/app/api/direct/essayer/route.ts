@@ -315,8 +315,10 @@ async function parOpenAI(
   decrireEn: string,
   /** Laquelle des trois phrases part. Voir `consigne` dans le corps. */
   quelleConsigne: "longue" | "courte" | "calquee",
+  /** Le modèle imposé par le banc, vide en production. Voir `modele` dans le corps. */
+  modeleDemande: string,
 ): Promise<{ image: string } | { erreur: string }> {
-  const modele = s(process.env.OPENAI_IMAGE_MODEL) || "gpt-image-1";
+  const modele = modeleDemande || s(process.env.OPENAI_IMAGE_MODEL) || "gpt-image-1";
   // L'API d'édition d'OpenAI prend les images en multipart, et elle accepte
   // PLUSIEURS images : la première est celle qu'on modifie, la seconde sert de
   // référence. C'est exactement la forme dont on a besoin.
@@ -484,14 +486,47 @@ async function parOpenAI(
       consigne: `${quelleConsigne} (${phrase.length})`,
     }),
   );
-  const r = await fetch(`${base}/v1/images/edits`, {
-    method: "POST",
-    headers: { authorization: `Bearer ${cle}` },
-    body: forme,
-    // ON ABANDONNE AVANT LA PASSERELLE, pour rendre une raison plutôt qu'un 504
-    // muet dont la page d'erreur n'est même pas du JSON.
-    signal: AbortSignal.timeout(reste(debut)),
-  });
+  const envoyer = () =>
+    fetch(`${base}/v1/images/edits`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${cle}` },
+      body: forme,
+      // ON ABANDONNE AVANT LA PASSERELLE, pour rendre une raison plutôt qu'un 504
+      // muet dont la page d'erreur n'est même pas du JSON.
+      signal: AbortSignal.timeout(reste(debut)),
+    });
+  let r = await envoyer();
+  /**
+   * ═══ UN MODÈLE RÉCENT PEUT REFUSER UN RÉGLAGE DE L'ANCIEN ═════════════════
+   *
+   * `input_fidelity` et les trois formats de `size` sont des réglages de
+   * `gpt-image-1`. Un autre modèle d'édition peut très bien ne pas les
+   * connaître — et il répond alors 400 en nommant le paramètre fautif.
+   *
+   * SANS CE REPLI, LA COMPARAISON NE SE FERAIT JAMAIS. Le banc afficherait
+   * « HTTP 400 » sur toute la colonne du nouveau modèle, on conclurait qu'il ne
+   * sait pas éditer, et on serait passé à côté du seul essai qui comptait —
+   * pour un champ de trop dans un formulaire.
+   *
+   * ON N'ENLÈVE QUE CE QUE L'ERREUR DÉSIGNE, et une seule fois. Retirer les
+   * deux d'office pénaliserait `gpt-image-1`, chez qui `input_fidelity` est
+   * justement ce qui tient le visage : la comparaison doit donner à chacun ses
+   * propres réglages, pas le plus petit dénominateur commun.
+   */
+  if (!r.ok && r.status === 400) {
+    const premier = await r.clone().text().catch(() => "");
+    const inconnus = ["input_fidelity", "size", "mask", "quality"].filter(
+      (k) => new RegExp(`(unknown|unsupported|unrecognized|not supported)[^.]{0,60}${k}|${k}[^.]{0,60}(unknown|unsupported|not supported|invalid)`, "i").test(premier),
+    );
+    if (inconnus.length) {
+      for (const k of inconnus) forme.delete(k);
+      console.info(
+        "[essai] le modèle refuse un réglage, on rejoue sans",
+        JSON.stringify({ modele, retires: inconnus }),
+      );
+      r = await envoyer();
+    }
+  }
   if (!r.ok) {
     const txt = await r.text().catch(() => "");
     /**
@@ -525,7 +560,7 @@ async function parOpenAI(
       // LE BUDGET NE SE REMET PAS À ZÉRO : ce qu'a coûté le refus est décompté
       // du temps qu'on donne au second appel, sans quoi les deux tentatives
       // additionnées dépasseraient ce que la fonction a le droit de vivre.
-      return parOpenAI(cle, photo, null, partie, garder, change, decrire, masque, debut, qualite, brut, cadreDemande, decrireEn, quelleConsigne);
+      return parOpenAI(cle, photo, null, partie, garder, change, decrire, masque, debut, qualite, brut, cadreDemande, decrireEn, quelleConsigne, modeleDemande);
     }
     if (bloque) {
       return {
@@ -601,6 +636,26 @@ export async function POST(req: Request) {
      * pour une seule question.
      */
     taille?: string;
+    /**
+     * ═══ LE MODÈLE DEVIENT UN AXE DU BANC ══════════════════════════════════
+     *
+     * « Comparer les modèles sur les mêmes fichiers. Garder le prompt complet,
+     * les images et leur ordre identiques. Faire plusieurs générations avec
+     * gpt-image-1, puis avec un modèle d'édition plus récent accessible à
+     * votre compte. »
+     *
+     * C'EST LE SEUL RÉGLAGE QU'ON N'AVAIT JAMAIS FAIT VARIER. Huit tours
+     * d'affilée sur la consigne, le masque, le cadre et la fidélité, et
+     * toujours le même moteur en dessous. Le banc montre les deux échecs
+     * possibles de celui-ci — la coupe ressemble et le visage change, ou le
+     * visage reste et la coupe devient générique — et aucune phrase ne les
+     * fait disparaître tous les deux.
+     *
+     * IL NE SERT QU'AU BANC. Le produit garde OPENAI_IMAGE_MODEL, posé par
+     * l'environnement : le jour où un modèle gagne la comparaison, c'est cette
+     * variable qu'on change, pas un appel dans une page.
+     */
+    modele?: string;
   };
   try {
     corps = (await req.json()) as typeof corps;
@@ -614,6 +669,14 @@ export async function POST(req: Request) {
   const brut = corps.brut === true;
   const cadreDemande = s(corps.taille);
   const decrireEn = s(corps.decrireEn);
+  /* ON BORNE LA FORME, PAS LA LISTE. Un identifiant de modèle part chez OpenAI
+     avec la clé du compte : ce n'est pas une adresse réseau, donc il n'y a rien
+     a ouvrir ici. Mais une chaîne libre recopiée dans un multipart se retrouve
+     dans les journaux, donc on la limite a ce a quoi ressemble un identifiant.
+     Une valeur qui ne ressemble a rien est ignoree et le serveur reprend le
+     sien — un banc qui tombe en panne a cause d'une faute de frappe n'apprend
+     rien. */
+  const modeleDemande = /^[a-zA-Z0-9._:-]{1,64}$/.test(s(corps.modele)) ? s(corps.modele) : "";
   /* ON NE PREND QUE CE QU'ON CONNAÎT. Un mot inattendu retombe sur la consigne
      historique plutôt que sur rien : une route qui fait confiance à son
      appelant finit par recevoir ce qu'elle n'attendait pas. */
@@ -753,6 +816,7 @@ export async function POST(req: Request) {
               cadreDemande,
               decrireEn,
               quelleConsigne,
+              modeleDemande,
             ),
         }
       : null,
@@ -788,7 +852,7 @@ export async function POST(req: Request) {
     ordre.push({
       nom: `openai·${leger}`,
       aller: () =>
-        parOpenAI(openai, photo, reference, partie, garder, change, decrire, masque, debut, leger, brut, cadreDemande, decrireEn, quelleConsigne),
+        parOpenAI(openai, photo, reference, partie, garder, change, decrire, masque, debut, leger, brut, cadreDemande, decrireEn, quelleConsigne, modeleDemande),
     });
   }
 

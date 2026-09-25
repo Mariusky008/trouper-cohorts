@@ -25,7 +25,7 @@
 //
 // ELLE NE FAIT PAS PARTIE DU PRODUIT. Aucun lien n'y mène ; elle vit à son
 // adresse, pour lui et pour moi.
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MURS } from "@/lib/direct/fantomes";
 import { essayerSurMoi, estUnRendu, type Regime } from "@/lib/direct/essai-genere";
 import { consigne, consigneBrute, consigneCalquee } from "@/lib/direct/consigne-essai";
@@ -79,7 +79,18 @@ const CONFIGS: Config[] = [
   },
 ];
 
-type Resultat = { cle: string; image?: string; ms?: number; erreur?: string; pourquoi?: string };
+/* `nom` et `quoi` ne sont remplis que par la comparaison de modèles : les cinq
+   consignes, elles, les tiennent de CONFIGS. Un résultat qui porte son propre
+   titre peut être produit par une série qui n'existe pas dans CONFIGS. */
+type Resultat = {
+  cle: string;
+  nom?: string;
+  quoi?: string;
+  image?: string;
+  ms?: number;
+  erreur?: string;
+  pourquoi?: string;
+};
 
 /** Les murs qui savent essayer quelque chose, avec leurs pièces. */
 function essayables() {
@@ -107,6 +118,56 @@ export default function Banc() {
   const [encours, setEncours] = useState<string | null>(null);
   const [res, setRes] = useState<Resultat[]>([]);
 
+  /**
+   * ═══ LE MODÈLE, LE SEUL RÉGLAGE QU'ON N'AVAIT JAMAIS FAIT VARIER ══════════
+   *
+   * « Comparer les modèles sur les mêmes fichiers. Garder le prompt complet,
+   * les images et leur ordre identiques. Faire plusieurs générations avec
+   * gpt-image-1, puis avec un modèle d'édition plus récent accessible à votre
+   * compte. Juger chaque rendu sur deux critères indépendants : même personne
+   * et même coupe. »
+   *
+   * LA LISTE VIENT DU COMPTE, PAS DE MA MÉMOIRE. Le catalogue des modèles
+   * d'image change, et il dépend de ce que l'organisation a activé : un nom
+   * écrit de mémoire rend un 404 qui ressemble à une panne. Voir
+   * `/api/direct/modeles-image` — c'est la clé du serveur qui demande, et la
+   * réponse est la seule qui fasse foi.
+   */
+  const [modeles, setModeles] = useState<{ id: string; cree: number }[]>([]);
+  const [enService, setEnService] = useState("");
+  const [soucisModeles, setSoucisModeles] = useState("");
+  const [modeleA, setModeleA] = useState("");
+  const [modeleB, setModeleB] = useState("");
+  /** Combien de fois chaque moteur rejoue. Un seul rendu ne prouve rien. */
+  const [fois, setFois] = useState(2);
+
+  useEffect(() => {
+    let vivant = true;
+    fetch("/api/direct/modeles-image")
+      .then((r) => r.json())
+      .then((j) => {
+        if (!vivant) return;
+        if (j?.erreur) {
+          setSoucisModeles(`${j.erreur} ${j.pourquoi ?? ""}`.trim());
+          return;
+        }
+        setModeles(j.images ?? []);
+        setEnService(j.enService ?? "");
+        setModeleA(j.enService ?? "");
+        /* LE SECOND EST LE PLUS RÉCENT QUI N'EST PAS DÉJÀ LE PREMIER. C'est
+           la comparaison qu'on vient chercher ; on peut toujours en choisir un
+           autre dans la liste. */
+        const autre = (j.images ?? []).find(
+          (m: { id: string }) => m.id !== (j.enService ?? "") && /image|edit|paint|canvas/i.test(m.id),
+        );
+        setModeleB(autre?.id ?? "");
+      })
+      .catch((e) => vivant && setSoucisModeles(String(e)));
+    return () => {
+      vivant = false;
+    };
+  }, []);
+
   /* LA RAISON D'UNE PHOTO ABSENTE — voir le repli plus bas. On demande
      l'adresse telle qu'il la colle : si elle pointe sur clikme.fr depuis un
      autre domaine, on ne garde que le chemin, parce qu'un navigateur refusera
@@ -131,6 +192,64 @@ export default function Banc() {
     } catch (e) {
       setRaison(`La demande n'est pas partie : ${e instanceof Error ? e.message : String(e)}`);
     }
+  }
+
+  /**
+   * ═══ LA COMPARAISON DE MODÈLES ════════════════════════════════════════════
+   *
+   * UNE SEULE CHOSE CHANGE D'UNE LIGNE À L'AUTRE : le moteur. Même photo, même
+   * référence, même consigne, même ordre des images. C'est la règle de tout ce
+   * banc, et c'est la seule façon d'attribuer une différence à une cause.
+   *
+   * ET CHAQUE MOTEUR REJOUE PLUSIEURS FOIS. Un générateur d'images n'est pas
+   * déterministe : deux appels identiques rendent deux images différentes. Un
+   * seul rendu par moteur ne compare pas deux moteurs, il compare deux tirages
+   * — et c'est exactement l'erreur qu'on ferait en regardant une capture.
+   *
+   * LE RÉGIME EST CELUI QUI TIENT LE MIEUX LE VISAGE AUJOURD'HUI. On ne teste
+   * pas le moteur ET la phrase en même temps : les cinq consignes ont déjà leur
+   * banc, juste au-dessus.
+   */
+  async function comparerLesModeles() {
+    if (!photo || !piece || !mur?.essai) return;
+    setRes([]);
+    const paires: { cle: string; nom: string; quoi: string; modele: string }[] = [];
+    for (const [rang, m] of [modeleA, modeleB].filter(Boolean).entries()) {
+      for (let i = 1; i <= fois; i++) {
+        paires.push({
+          cle: `m-${rang}-${i}`,
+          nom: `${m} · tirage ${i}`,
+          quoi:
+            i === 1
+              ? `Même photo, même référence, même consigne. Seul le moteur change.${m === enService ? " C'est celui en service." : ""}`
+              : "Le même appel, rejoué : un générateur d’images ne rend pas deux fois la même chose.",
+          modele: m,
+        });
+      }
+    }
+    for (const t of paires) {
+      setEncours(t.cle);
+      const debut = Date.now();
+      const r = await essayerSurMoi({
+        photo,
+        reference: piece.reference ?? "",
+        partie: mur.essai.partie,
+        garder: mur.essai.garder,
+        change: mur.essai.change,
+        decrire: piece.decrire,
+        decrireEn: piece.decrireEn,
+        regime: "calquee",
+        modele: t.modele,
+      });
+      const ms = Date.now() - debut;
+      setRes((l) => [
+        ...l,
+        estUnRendu(r)
+          ? { cle: t.cle, nom: t.nom, quoi: t.quoi, image: r.image, ms }
+          : { cle: t.cle, nom: t.nom, quoi: t.quoi, erreur: r.erreur, pourquoi: r.pourquoi, ms },
+      ]);
+    }
+    setEncours(null);
   }
 
   async function lancer() {
@@ -253,8 +372,104 @@ export default function Banc() {
       </section>
 
       <button className="bn-go" type="button" disabled={!photo || !!encours} onClick={lancer}>
-        {encours ? "En cours…" : "Lancer les quatre essais"}
+        {encours ? "En cours…" : "Lancer les cinq consignes"}
       </button>
+
+      {/* ═══ ET L'AUTRE BANC : LE MÊME ESSAI SUR DEUX MOTEURS ════════════════
+
+          « Cesse d'optimiser uniquement le prompt sur gpt-image-1. Ton banc
+          montre déjà ses deux échecs possibles : soit la coupe ressemble à la
+          référence et le visage change, soit le visage reste et la coupe
+          devient générique. »
+
+          C'EST LE SEUL RÉGLAGE QU'ON N'A JAMAIS FAIT VARIER, en huit tours. La
+          liste ci-dessous vient du compte lui-même, pas d'un nom écrit de
+          mémoire : voir /api/direct/modeles-image. */}
+      <section className="bn-bloc">
+        <h2 className="bn-t2">Le même essai, sur deux moteurs</h2>
+        <p className="bn-quoi">
+          Même photo, même référence, même consigne, même ordre des images. Seul le moteur change.
+          Chacun rejoue plusieurs fois, parce qu’un générateur d’images ne rend jamais deux fois la
+          même chose : un seul rendu par moteur comparerait deux tirages, pas deux moteurs.
+        </p>
+        {soucisModeles ? (
+          <p className="bn-rate">
+            <b>La liste des moteurs n’a pas pu être lue.</b>
+            <span>{soucisModeles}</span>
+          </p>
+        ) : (
+          <div className="bn-duo">
+            <label>
+              <span>Moteur A</span>
+              <select value={modeleA} onChange={(e) => setModeleA(e.target.value)}>
+                <option value="">— aucun —</option>
+                {modeles.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.id}
+                    {m.id === enService ? " (en service)" : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>Moteur B</span>
+              <select value={modeleB} onChange={(e) => setModeleB(e.target.value)}>
+                <option value="">— aucun —</option>
+                {modeles.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.id}
+                    {m.id === enService ? " (en service)" : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>Tirages par moteur</span>
+              <select value={fois} onChange={(e) => setFois(Number(e.target.value))}>
+                <option value={1}>1</option>
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+              </select>
+            </label>
+          </div>
+        )}
+        <button
+          className="bn-go"
+          type="button"
+          disabled={!photo || !!encours || (!modeleA && !modeleB)}
+          onClick={comparerLesModeles}
+        >
+          {encours ? "En cours…" : `Comparer (${(modeleA ? fois : 0) + (modeleB ? fois : 0)} rendus)`}
+        </button>
+      </section>
+
+      {/* LES RÉSULTATS QUI PORTENT LEUR PROPRE TITRE viennent de la comparaison
+          de moteurs : ils n'existent pas dans CONFIGS, donc ils s'affichent
+          d'abord, dans l'ordre où ils sont tombés. */}
+      {res.some((r) => r.nom) && (
+        <section className="bn-grille">
+          {res
+            .filter((r) => r.nom)
+            .map((r) => (
+              <article key={r.cle} className="bn-carte">
+                <h2>{r.nom}</h2>
+                <p className="bn-quoi">{r.quoi}</p>
+                <div className="bn-rendu">
+                  {r.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={r.image} alt="" />
+                  ) : (
+                    <div className="bn-rate">
+                      <b>{r.erreur}</b>
+                      {r.pourquoi && <span>{r.pourquoi}</span>}
+                    </div>
+                  )}
+                </div>
+                {r.ms != null && <p className="bn-ms">{(r.ms / 1000).toFixed(1)} s</p>}
+              </article>
+            ))}
+        </section>
+      )}
 
       <section className="bn-grille">
         {CONFIGS.map((c) => {
@@ -430,6 +645,24 @@ c'est-à-dire une autre personne.`}</pre>
         .bn-carte.en{border-color:#7b4dff;}
         .bn-carte h2{font-size:15px;margin:0 0 4px;}
         .bn-quoi{font-size:12.5px;color:#9aa4c4;margin:0 0 10px;min-height:48px;}
+        /* LE SECOND BANC : MEME HABIT QUE LE PREMIER. Deux bancs qui ne se
+           ressemblent pas se lisent comme deux outils ; c'est le meme outil,
+           avec un autre axe. */
+        .bn-bloc{margin:26px 0 0;padding:16px;border-radius:14px;
+          background:#141a2e;border:1px solid #222b47;}
+        .bn-t2{margin:0 0 6px;font-size:15px;font-weight:800;color:#e8ecf8;}
+        .bn-bloc .bn-quoi{min-height:0;}
+        .bn-bloc .bn-go{margin:14px 0 0;}
+        /* LES TROIS REGLAGES SUR UNE LIGNE TANT QU'ILS TIENNENT. En dessous de
+           520 points ils s'empilent : un selecteur de modele porte des
+           identifiants longs, et un identifiant coupe ne sert a rien. */
+        .bn-duo{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;}
+        .bn-duo label{flex:1 1 200px;min-width:0;display:flex;flex-direction:column;gap:4px;}
+        .bn-duo span{font-size:10.5px;font-weight:800;letter-spacing:.08em;
+          text-transform:uppercase;color:#8d97b8;}
+        .bn-duo select{width:100%;min-width:0;padding:9px 10px;border-radius:9px;
+          font:inherit;font-size:13px;color:#e8ecf8;
+          background:#0e1324;border:1px solid #2a3454;}
         .bn-rendu{aspect-ratio:3/4;background:#0b0d14;border-radius:12px;
             display:grid;place-items:center;overflow:hidden;}
         .bn-rendu img{width:100%;height:100%;object-fit:contain;}
