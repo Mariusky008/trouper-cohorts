@@ -374,6 +374,16 @@ export async function essayerSurMoi(opts: {
    * c'est le métier qui le décide, dans `regimeDe`.
    */
   regime?: Regime;
+  /**
+   * LE MODÈLE À APPELER, QUAND LE BANC EN IMPOSE UN.
+   *
+   * VIDE EN PRODUCTION, ET C'EST LE POINT. Le produit suit OPENAI_IMAGE_MODEL,
+   * posé par l'environnement : un modèle choisi dans une page serait un réglage
+   * de plus à tenir à jour à deux endroits. Le banc, lui, doit pouvoir poser la
+   * question « le même essai, mot pour mot, sur un autre moteur » — c'est le
+   * seul réglage qu'on n'a jamais fait varier en huit tours.
+   */
+  modele?: string;
   signal?: AbortSignal;
 }): Promise<Rendu | Souci> {
   const regime = opts.regime ?? regimeDe(opts.partie);
@@ -563,6 +573,8 @@ export async function essayerSurMoi(opts: {
            déduction d'autrefois et redemanderait un cadre — exactement ce
            qu'on vient d'enlever. */
         taille: cadre ? nomDuCadre(cadre) : "auto",
+        // VIDE = LE SERVEUR GARDE LE SIEN. Voir `modele` au-dessus.
+        modele: opts.modele ?? "",
       }),
       signal: opts.signal,
     });
