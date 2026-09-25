@@ -17182,12 +17182,29 @@ export function ApercuHabitant() {
            l'or du Flash passe devant tout — il parle de l'annonce qu'on a sous
            les yeux. Trois couches, une seule visible a la fois, et jamais de
            doute sur laquelle. */
+        /* ═══ ET SES ETATS SUIVENT LA BARRE ══════════════════════════════════
+           « Les couleurs des icones du bas ne sont pas toutes aux bonnes
+           couleurs, il reste du vert. »
+           IL A RAISON, ET JE N'AVAIS REPEINT QUE LE CAS PAR DEFAUT. Le fantome
+           de la barre a des ETATS : « sec » quand il accompagne une section,
+           « veille » quand il surveille quelque chose. Chacun redefinit son
+           fond, avec la menthe en valeur de repli — donc la menthe revenait des
+           qu'il se passait quelque chose, c'est-a-dire tout le temps.
+           LES DEUX REPLIS PASSENT AU DEGRADE DE LA BARRE. Ce qui ne bouge pas,
+           ce sont les etats QUI VEULENT DIRE QUELQUE CHOSE : rose pour ce qui
+           se passe en ville, bleu pour les embauches, et les quatre couleurs de
+           la veille — rouge presse, vert decide, ambre hesite, violet neuf. Un
+           vert qui signifie « c'est decide » n'est pas le vert de marque qu'on
+           enleve : c'est un feu tricolore, et on ne repeint pas un feu. */
         .ap-onglets .ap-monfantome.sec{
-          background:var(--ap-sec-f, linear-gradient(150deg,#8CF0CC,#2FD39A));
-          box-shadow:0 12px 30px var(--ap-sec-h, rgba(47,211,154,.42)),
+          background:var(--ap-sec-f, linear-gradient(150deg,#8B6BFF,#E24FB0));
+          box-shadow:0 12px 30px var(--ap-sec-h, rgba(168,85,247,.45)),
             0 0 0 5px var(--ap-barre-fond, #070C0A);}
         .ap-onglets .ap-monfantome.sec .ap-f-corps{fill:var(--ap-sec-p, url(#apFg));}
-        .ap-onglets .ap-monfantome.sec .ap-f-bras{fill:var(--ap-sec-b, #CFE9DC);}
+        /* LES BRAS PRENNENT UN BLANC LAVANDE : la menthe claire d'avant etait
+           calee sur un disque vert, elle jure sur le violet. Les etats qui
+           declarent leur propre teinte gardent la leur. */
+        .ap-onglets .ap-monfantome.sec .ap-f-bras{fill:var(--ap-sec-b, #E7DBFF);}
         .ap-onglets .ap-monfantome.sec .ap-f-lueur{opacity:.4;}
         .ap-onglets .ap-monfantome.sec.evenement{
           --ap-sec-f:linear-gradient(150deg,#FFC5E4,#D6379B);
@@ -17229,15 +17246,15 @@ export function ApercuHabitant() {
            d'animation, la couleur reste et le scintillement s'arrete : le signal
            survit, le battement non. */
         .ap-onglets .ap-monfantome.veille{
-          background:var(--ap-veille-f, linear-gradient(150deg,#8CF0CC,#2FD39A));
-          box-shadow:0 12px 30px var(--ap-veille-h, rgba(47,211,154,.5)),
+          background:var(--ap-veille-f, linear-gradient(150deg,#8B6BFF,#E24FB0));
+          box-shadow:0 12px 30px var(--ap-veille-h, rgba(168,85,247,.5)),
             0 0 0 5px var(--ap-barre-fond, #070C0A);
           animation:apVeille 2.4s ease-in-out infinite;}
         /* LE CORPS DU FANTOME PREND LA TEINTE CLAIRE DE L'ETAT, le disque la
            teinte profonde. Deux valeurs de la meme couleur : le personnage
            reste lisible sur son fond, ce qu'un aplat unique ne permet pas. */
         .ap-onglets .ap-monfantome.veille .ap-f-corps{fill:var(--ap-veille-p, url(#apFg));}
-        .ap-onglets .ap-monfantome.veille .ap-f-bras{fill:var(--ap-veille-b, #CFE9DC);}
+        .ap-onglets .ap-monfantome.veille .ap-f-bras{fill:var(--ap-veille-b, #E7DBFF);}
         /* LE REFLET DU VOLUME S'ATTENUE SOUS LA VEILLE, ET IL LE FAUT.
            Mesure a l'ecran : le corps prenait bien la teinte, et on voyait un
            fantome BLANC — la lueur blanche a 95 % qui lui donne son relief
@@ -17302,7 +17319,7 @@ export function ApercuHabitant() {
           display:grid;grid-template-columns:auto 1fr;gap:4px 10px;
           align-items:center;padding:12px 14px;
           background:#101A16;border-radius:18px;
-          border:1px solid var(--ap-veille-c, #2FD39A);
+          border:1px solid var(--ap-veille-c, #B95BE0);
           box-shadow:0 18px 40px rgba(0,0,0,.55);
           animation:apVeilleE .28s cubic-bezier(.34,1.4,.64,1);}
         .ap-veille.presse{--ap-veille-c:#F5232E;}
@@ -17320,9 +17337,16 @@ export function ApercuHabitant() {
         .ap-veille-b{grid-column:2;justify-self:start;margin-top:8px;
           font:inherit;font-size:13px;font-weight:850;cursor:pointer;
           border:0;border-radius:999px;padding:9px 18px;
-          color:#062018;background:var(--ap-veille-c, #2FD39A);
+          color:#062018;background:var(--ap-veille-c, #B95BE0);
           transition:transform .12s ease;}
-        .ap-veille.presse .ap-veille-b{color:#fff;}
+        /* LE TEXTE SUIT LA CLARTE DU FOND, ETAT PAR ETAT. Le sombre est le cas
+           general parce que trois des quatre etats sont clairs — vert, ambre,
+           lavande. Le rouge et le violet par defaut sont fonces : dessus, c'est
+           le blanc qui se lit. Une seule couleur de texte pour cinq fonds
+           rendrait deux d'entre eux illisibles, et c'est ce que je venais
+           d'ecrire. */
+        .ap-veille.presse .ap-veille-b,
+        .ap-veille:not(.presse):not(.decide):not(.hesite):not(.neuf) .ap-veille-b{color:#fff;}
         .ap-veille-b:active{transform:scale(.96);}
         /* LE FOND NU : il ferme au moindre appui a cote, sans rien assombrir.
            Un voile noir sur la conversation aurait fait de l'arbitre une
