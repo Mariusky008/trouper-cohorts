@@ -155,6 +155,11 @@ import {
   RIEN_A_INSTALLER,
 } from "@/lib/direct/installer";
 import { CarteSwipe, StylesDirect } from "@/components/direct/carte-swipe";
+// L'ECRAN DE DEPART DE LA DEMO — ses cinq maquettes. Il vit dans son propre
+// fichier parce que c'est un ecran entier : le poser ici, dans dix-neuf mille
+// lignes, aurait rendu les deux illisibles.
+import { EcranChoix } from "@/components/direct/ecran-choix";
+import { StylesChoix } from "@/components/direct/styles-choix";
 // Il vivait ici ; la page boutique en a besoin aussi pour rejouer le MEME
 // anneau en tête de la fiche du commerce. Voir le fichier : c'est la copie qui
 // aurait été dangereuse, pas le partage.
@@ -334,6 +339,25 @@ const LES_ENVIES = false;
  * POUR LA RALLUMER : passer cette constante à `true`. Rien d'autre.
  */
 const CLOCHE_EN_HAUT = false;
+
+/**
+ * L'ANCIEN ECRAN D'OUVERTURE, ETEINT — remplace par celui de ses cinq maquettes.
+ *
+ * CE QU'IL EST : la carte « Essayer Dax » avec ses trois actes animes, sa
+ * signature sonore, son bouton de son et son geste de glisser. Une dizaine de
+ * tours de travail, dont plusieurs corrections qu'il a lui-meme demandees.
+ *
+ * POURQUOI ON NE LE SUPPRIME PAS. Rien ne dit qu'aucun de ses morceaux ne
+ * resservira — l'animation d'arrivee, le son, la facon dont il presentait un
+ * commerce. Un bloc efface se retrouve dans un historique ; un bloc eteint se
+ * rallume en changeant `false` en `true`, et se lit en attendant.
+ *
+ * CE QUI LE REMPLACE : `EcranChoix`. Cinq categories, quatre a cinq commercants
+ * chacune, qu'on fait defiler. Voir `components/direct/ecran-choix.tsx`.
+ *
+ * POUR LE RALLUMER : passer cette constante a `true`. Rien d'autre.
+ */
+const ANCIENNE_OUVERTURE = false;
 
 /**
  * LE NOM DE L'ONGLET, POUR LE BOUTON DE RETOUR.
@@ -6338,6 +6362,7 @@ export function ApercuHabitant() {
   return (
     <div className="ap">
       <StylesDirect />
+      <StylesChoix />
       <div className="ap-tel">
         {/* SUR LE DIRECT, LA PHOTO PASSE DERRIÈRE LES ONGLETS — voir la règle
             .ap-app.direct .ap-onglets. Ailleurs, la barre reste dans le flux :
@@ -7584,7 +7609,38 @@ export function ApercuHabitant() {
                 </b>
               </div>
             )}
-            {monte && sommet && !vus.includes("accueil") && !sortie && !embauches && !salonUrl && (
+            {/* ═══ L'ECRAN DE DEPART EST CELUI DE SES CINQ MAQUETTES ═══════
+
+                « J'ai revu l'ecran de demarrage de l'app demo pour qu'elle soit
+                plus claire et gamifiee. Quand on appuie sur un des 5
+                pictogrammes on arrive sur les commercants. »
+
+                CELUI D'AVANT EST JUSTE EN DESSOUS, ENTIER, sous ANCIENNE_OUVERTURE.
+                Il represente une dizaine de tours de travail — trois actes
+                animes, le son, le geste de glisser — et rien ne dit qu'aucun de
+                ses morceaux ne resservira. On l'eteint, on ne l'efface pas.
+
+                LE NOUVEL ECRAN NE SAIT RIEN DE CELUI-CI. Il lit les commerces de
+                la demo par leur identifiant et n'emmene nulle part : sa seule
+                porte vers l'application est `onEntrer`, qui fait exactement ce
+                que faisait « Essayer Dax ». Voir
+                `components/direct/ecran-choix.tsx`. */}
+            {!ANCIENNE_OUVERTURE &&
+              monte &&
+              sommet &&
+              !vus.includes("accueil") &&
+              !sortie &&
+              !embauches &&
+              !salonUrl && (
+                <EcranChoix
+                  onEntrer={() => {
+                    jouer("ouvrir");
+                    marquerVu("accueil");
+                  }}
+                />
+              )}
+
+            {ANCIENNE_OUVERTURE && monte && sommet && !vus.includes("accueil") && !sortie && !embauches && !salonUrl && (
               <div
                 className={`ap-accueil${accueilDx ? " part" : ""}`}
                 style={{ transform: `translate3d(${accueilDx}px,0,0) rotate(${accueilDx * 0.04}deg)` }}
