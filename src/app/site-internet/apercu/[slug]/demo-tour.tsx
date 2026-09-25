@@ -65,6 +65,21 @@ type Props = {
    * lui promet pas un écran qu'il n'a pas, l'acte saute.
    */
   essai?: { titre: string; say: string };
+  /**
+   * CE QUE LA CONVERSATION REMPLIT, QUAND IL Y A UN PARCOURS DERRIÈRE.
+   *
+   * « On discute avec l'IA pour lui dire le menu et les spécificités qui iront
+   * dans le parcours en quatre étapes, avec la voix du restaurateur à
+   * l'étape 3. »
+   *
+   * SANS ÇA, L'ACTE DU GESTE S'ARRÊTAIT À LA CARTE DU DIRECT — vrai, mais
+   * incomplet : c'est la moitié de ce que cette conversation produit. Le bloc
+   * « Ce que votre page fera », quelques centimètres plus bas sur la page,
+   * annonce l'autre moitié, et la voix ne la nommait pas. Absent chez un
+   * coiffeur, qui n'a pas de parcours à remplir : l'acte se termine alors sur
+   * la carte, comme avant.
+   */
+  parcours?: { combien: string; voixA: number };
   keepHref?: string; // contact (WhatsApp/tel) pour « Garder mon site gratuitement »
   /**
    * LA PAGE SUR LAQUELLE LA DÉMONSTRATION SE JOUE, EN UN SÉLECTEUR.
@@ -111,6 +126,7 @@ export function DemoTour({
   flashExample,
   geste,
   essai,
+  parcours,
   keepHref,
   racine = "main.mqc",
 }: Props) {
@@ -316,7 +332,24 @@ export function DemoTour({
         // ce que vous avez à faire, c'est de me dire… » met huit mots avant le
         // verbe ; la version courte le met en tête, là où on l'entend.
         `${G.gesteCourt ?? G.gesteDit}`,
+        /* ═══ ET ELLE DIT CE QUE LA CONVERSATION PRODUIT VRAIMENT ══════════
+
+           « On discute avec l'IA pour lui dire le menu et les spécificités qui
+           iront dans le parcours en quatre étapes, avec la voix du restaurateur
+           à l'étape 3. »
+
+           LA PHRASE S'ARRÊTAIT À LA CARTE DU DIRECT, et c'était la moitié de la
+           vérité. La seconde moitié est celle qui distingue ClikMe de n'importe
+           quelle publication : la même conversation remplit son parcours, et sa
+           VOIX y reste telle quelle. Une photo d'ardoise n'aurait jamais pu
+           produire ça — c'est pour cette raison que le geste a changé, et il
+           faut donc que la phrase le dise. */
         `${G.parPhoto ? "Je la lis, je l'écris" : "Je l'écris"}, et ${G.envoi} sur votre page et dans Le Direct.`,
+        ...(parcours
+          ? [
+              `Et votre parcours se remplit en ${parcours.combien} — avec votre voix, telle quelle, à l'étape ${parcours.voixA}.`,
+            ]
+          : []),
       ]
     : [];
   /**
@@ -365,7 +398,43 @@ export function DemoTour({
   // cinq restaurants — voir `FamilleMetier` dans `geste-du-jour`.
   const cartesVille = G ? cartesDeLaVille(laVille, G.famille) : [];
   const actionHabitant = G ? motDAction(G) : "Je veux";
-  const maCarte = G ? saCarte(G, nom, metierLabel, laVille, mesPhotos[0]) : null;
+  /**
+   * ═══ SA PHOTO, MAIS SEULEMENT SI ELLE ARRIVE ═════════════════════════════
+   *
+   * « À l'étape 3 on a l'exemple, mais il n'y a pas la photo qui se voit, elle
+   * est absente. »
+   *
+   * LA CARTE POSE SA PHOTO EN FOND CSS, ET UN FOND CSS ÉCHOUE EN SILENCE. Les
+   * images d'une fiche Google sont servies depuis `googleusercontent` et
+   * répondent parfois 403 quand on les demande avec un référent — c'est déjà
+   * écrit deux fois dans ce dossier, sur la couverture et sur la galerie, qui
+   * s'en protègent avec `referrerPolicy="no-referrer"`. UNE PROPRIÉTÉ QUI
+   * N'EXISTE PAS POUR UN `background-image` : la carte n'avait aucun moyen de
+   * s'en protéger, et le dégradé qui sert de doublure prenait toute la place —
+   * un rectangle vert sombre, sans photo, au moment exact où la démonstration
+   * dit « voilà votre commerce dans Le Direct ».
+   *
+   * ON L'ESSAIE DONC AVANT DE S'EN SERVIR. Tant qu'on ne sait pas, on garde la
+   * sienne — c'est le cas normal, et attendre ferait clignoter la carte. Dès
+   * qu'elle échoue, on retombe sur l'illustration que `saCarte` prévoit déjà
+   * pour les commerces sans photo. La carte porte « exemple » : une
+   * illustration y est honnête, un trou ne l'est pas.
+   */
+  const [photoKO, setPhotoKO] = useState(false);
+  /* LA PREMIÈRE, SORTIE DU TABLEAU : `mesPhotos` est reconstruit à chaque
+     rendu, donc le tableau entier en dépendance relancerait l'essai en boucle.
+     C'est cette adresse-là, et elle seule, qui décide. */
+  const saPhoto = mesPhotos[0];
+  useEffect(() => {
+    setPhotoKO(false);
+    if (!saPhoto) return;
+    const img = new Image();
+    let vivant = true;
+    img.onerror = () => { if (vivant) setPhotoKO(true); };
+    img.src = saPhoto;
+    return () => { vivant = false; };
+  }, [saPhoto]);
+  const maCarte = G ? saCarte(G, nom, metierLabel, laVille, photoKO ? undefined : saPhoto) : null;
 
   /* ═══ LA QUEUE DE LA DÉMONSTRATION N'EST PLUS QU'UN SEUL ACTE ════════════
    *
@@ -1056,7 +1125,7 @@ export function DemoTour({
                bascule de toute la démonstration : le même contenu, mais dans
                l'écran de ses clients. Elle mérite plus qu'une seconde. */
             const t0 = quand(SAY_MANQUE, PART_GESTE);
-            // ① ON LIT L'ARDOISE — le temps de l'animation du cadre de visée.
+            // ① ON LIT L'ARDOISE, OU ON L'ÉCOUTE — le temps de l'animation.
             window.setTimeout(() => setPhotoN(1), 1200);
             // ② PUIS ÇA PART, et la carte reste à l'écran jusqu'à la fin.
             const t1 = quand(SAY_MANQUE, PHOTO_AT2[1] ?? PART_GESTE) - t0;
@@ -1064,6 +1133,18 @@ export function DemoTour({
               setPhotoN(2);
               setCaption(PHOTO_DIT[1] ?? "");
             }, Math.max(1400, t1));
+            /* ③ ET LE PARCOURS, SUR LA PHRASE QUI LE NOMME. Posée avec la
+               carte, la pastille aurait annoncé les quatre écrans pendant que
+               la voix parlait encore du Direct — c'est le défaut qu'il avait
+               relevé sur cet acte même : une image qui prend de l'avance sur
+               ce qu'on entend. Elle n'existe que là où il y a un parcours. */
+            if (PHOTO_DIT[2]) {
+              const t2 = quand(SAY_MANQUE, PHOTO_AT2[2] ?? PART_GESTE) - t0;
+              window.setTimeout(() => {
+                setPhotoN(3);
+                setCaption(PHOTO_DIT[2]);
+              }, Math.max(2600, t2));
+            }
           }, quand(SAY_MANQUE, PART_GESTE));
         },
       });
@@ -1681,6 +1762,73 @@ export function DemoTour({
             animation:dtScan 1.4s var(--exp) .3s;pointer-events:none;}
           @keyframes dtScan{from{transform:translateY(-120%)}to{transform:translateY(320%)}}
 
+          /* ── LA CONVERSATION, QUAND LE GESTE N'EST PAS UNE PHOTO ──
+             Deux tours, et ils ne se ressemblent pas : le sien est aligne a
+             droite et porte ses barres de voix, celui de l'assistante est a
+             gauche avec sa pastille. Un fil de discussion ou les deux cotes
+             se ressemblent ne se lit pas comme une conversation. */
+          .ph-dial{position:relative;border-radius:18px;padding:13px 13px 14px;
+            display:flex;flex-direction:column;gap:9px;
+            background:linear-gradient(160deg,#243029,#141C18);
+            border:1px solid rgba(255,255,255,.08);
+            box-shadow:0 30px 60px -28px rgba(0,0,0,.9);
+            transition:box-shadow .6s var(--exp);
+            animation:dtRise .45s var(--exp) .1s both;}
+          .ph-dial.lu{box-shadow:0 30px 60px -26px rgba(18,185,129,.55),
+            0 0 0 1px rgba(126,230,192,.35);}
+          .ph-elle,.ph-lui{display:flex;gap:8px;align-items:flex-start;max-width:90%;}
+          .ph-elle p,.ph-lui p{margin:0;font-size:13px;line-height:1.45;
+            border-radius:13px;padding:8px 11px;}
+          .ph-elle p{color:#D4DED8;background:rgba(255,255,255,.07);
+            border-top-left-radius:5px;}
+          .ph-av{flex:none;width:22px;height:22px;border-radius:999px;margin-top:2px;
+            display:inline-flex;align-items:center;justify-content:center;
+            font-size:11px;color:#0B1218;background:#8FE9C4;}
+          /* SON TOUR A LUI VIENT APRES : il attend qu'on lui ait demande. */
+          .ph-lui{align-self:flex-end;flex-direction:column;align-items:flex-end;gap:5px;
+            animation:dtRise .45s var(--exp) .55s both;}
+          .ph-lui p{color:#fff;background:rgba(126,230,192,.16);
+            border-top-right-radius:5px;text-align:right;}
+          /* LES BARRES MONTENT ET DESCENDENT : une onde figee se lit comme une
+             image de micro, pas comme quelqu'un en train de parler. */
+          .ph-onde{display:flex;align-items:flex-end;gap:3px;height:20px;}
+          .ph-onde i{width:3px;border-radius:2px;background:#8FE9C4;
+            height:var(--h,10px);opacity:.75;
+            animation:dtBarre 1s ease-in-out infinite alternate;
+            animation-delay:calc(var(--i,0) * 70ms);}
+          /* PAS « dtOnde » : ce nom est deja celui des anneaux de la pastille
+             vivante, huit cents lignes plus bas, et la seconde declaration
+             aurait ecrase la premiere en silence. La garde des feuilles en
+             ligne l'a vu ; voir npm run verifier:styles. */
+          @keyframes dtBarre{from{transform:scaleY(.42)}to{transform:scaleY(1)}}
+
+          /* CE QUE LA CONVERSATION REMPLIT EN PLUS DE LA CARTE. */
+          .ph-parc{display:flex;align-items:center;justify-content:center;gap:9px;
+            padding:8px 12px;border-radius:999px;
+            background:rgba(126,230,192,.12);
+            border:1px solid rgba(126,230,192,.26);}
+          .ph-parc b{font-size:12.5px;font-weight:850;color:#8FE9C4;}
+          /* PAS LE GRIS DES SOUS-TITRES : la pastille est posee sur un fond
+             clair translucide, et ce gris-la y perdait la moitie de son
+             contraste. Voir npm run verifier:contraste. */
+          .ph-parc em{font-style:normal;font-size:11.5px;color:#D8E9E1;}
+
+          /* ── LE TAMPON « LU » / « ECRIT » ──
+             IL N'AVAIT AUCUN STYLE. Rendu depuis toujours, jamais declare : il
+             heritait de la couleur du bloc et se lisait en rouge sombre sur
+             vert sombre, c'est-a-dire pas du tout. Pose sur le bord, il dit ce
+             qu'il a toujours voulu dire — c'est entre, elle l'a pris. */
+          .ph-lu{position:absolute;right:11px;bottom:-10px;
+            padding:3px 9px;border-radius:999px;
+            font-size:10.5px;font-weight:850;letter-spacing:.04em;
+            color:#0B1218;background:#8FE9C4;
+            box-shadow:0 8px 18px -8px rgba(18,185,129,.8);
+            animation:dtRise .35s var(--exp) both;}
+
+          .ph-wrap.a-parc{gap:7px;}
+          .ph-wrap.a-parc .ph-mini{zoom:.48;}
+          .ph-wrap.a-parc .ph-dial{padding:11px 11px 12px;gap:7px;}
+
           .ph-vers{display:flex;align-items:center;justify-content:center;gap:7px;padding-top:9px;
             font-size:12px;font-weight:800;color:#8FE9C4;}
           .ph-vers i{font-style:normal;font-size:14px;line-height:1;}
@@ -1705,9 +1853,13 @@ export function DemoTour({
             .ph-ard span{font-size:10.5px;}
             .ph-ard i{font-size:12px;}
             .ph-ard b{font-size:16px;}
+            .ph-dial{padding:10px 11px 11px;gap:7px;}
+            .ph-elle p,.ph-lui p{font-size:12px;padding:7px 10px;}
+            .ph-parc{padding:6px 10px;}
             .ph-vers{padding-top:6px;font-size:11px;}
             .ph-mini{margin-top:5px;}
             .ph-mini{zoom:.44;}
+            .ph-wrap.a-parc .ph-mini{zoom:.38;}
           }
           /* ── ACTE 6 · CE QUI LUI REVIENT ─────────────────────────────── */
           .dtour-card.rt{text-align:left;}
@@ -1963,6 +2115,7 @@ export function DemoTour({
             .dtour-launch>*,.dtour-end>*,.dtour-card,.dtour-ov,.dtour-top,.dtour-bar,.dtour-bar .cap,
             .dtour-bar .mini::before,.dtour-top .dt-prog i::after,.dtour-end .end-go::after,
             .ph-shot::before,.ph-flash,.ph-lu,.dtour-alive .al-ring,.dtour-mark::after{display:none;}
+            .ph-onde i{animation:none;}
             .al-fly{display:none;}
             .rt-i,.rt-t b{transition:opacity .2s linear;transform:none;filter:none;}
             .dt-ouvre{transition:none;}
@@ -2272,21 +2425,76 @@ export function DemoTour({
               n'existait pas. */}
           {scene === "photo" && G && maCarte && (
             <div className="dtour-ov ph-ov">
-              <div className="ph-wrap">
+              {/* LA BANDE DU PARCOURS PREND DE LA HAUTEUR, ET IL N'Y EN AVAIT
+                  PAS EN TROP. Mesurée sur un écran de 844 px, elle passait sous
+                  la barre des légendes : ouverte, visible pour le code, invisible
+                  pour qui regarde. La carte se réduit donc d'un cran quand la
+                  bande existe — c'est elle qui peut se permettre d'être plus
+                  petite, puisqu'on vient de la voir en entier à l'acte d'avant. */}
+              <div className={`ph-wrap${parcours ? " a-parc" : ""}`}>
                 <div className="ph-h">{G.geste}<em>C&apos;est tout.</em></div>
 
-                {/* LE CADRE DE VISÉE SE POSE SUR L'ARDOISE. Vide, il ne
-                    montrait rien ; posé sur ce qu'il vient d'écrire à la craie,
-                    il dit le geste en une image. */}
-                <div className={`ph-shot${photoN >= 1 ? " lu" : ""}`}>
-                  <div className="ph-ard" aria-hidden="true">
-                    <span>{G.extrait.titre}</span>
-                    {G.extrait.lignes.map((l) => (<i key={l}>{l}</i>))}
-                    {G.extrait.prix && <b>{G.extrait.prix}</b>}
+                {/* ═══ ON PHOTOGRAPHIE, OU ON PARLE — ET CE N'EST PLUS LE
+                        MÊME ÉCRAN ══════════════════════════════════════════
+
+                    « On ne photographie plus le menu : on discute avec l'IA
+                    pour lui dire le menu et les spécificités. »
+
+                    LE CADRE DE VISÉE SE JOUAIT POUR TOUT LE MONDE, y compris
+                    là où la voix disait « dites-le-moi » depuis toujours : un
+                    coiffeur s'entendait demander de dicter ses créneaux pendant
+                    qu'un appareil photo visait une ardoise. Le défaut existait
+                    donc avant le changement de concept ; le restaurateur l'a
+                    simplement rendu visible en rejoignant sa famille.
+
+                    LA CONVERSATION N'EST PAS UN CADRE VIDE POUR AUTANT. On
+                    montre les deux tours — sa question à elle, sa réponse à lui
+                    — parce que c'est exactement ce qui fait la différence avec
+                    une photo : ce qu'il DIT en plus des lignes de l'ardoise est
+                    ce qui remplit l'étape 3. Sa réponse se compose depuis le
+                    même `extrait` que la carte qui en sort ; aucune des deux ne
+                    peut donc dire autre chose que l'autre. */}
+                {G.parPhoto ? (
+                  <div className={`ph-shot${photoN >= 1 ? " lu" : ""}`}>
+                    <div className="ph-ard" aria-hidden="true">
+                      <span>{G.extrait.titre}</span>
+                      {G.extrait.lignes.map((l) => (<i key={l}>{l}</i>))}
+                      {G.extrait.prix && <b>{G.extrait.prix}</b>}
+                    </div>
+                    {photoN < 1 && <span className="ph-flash" aria-hidden="true" />}
+                    {photoN >= 1 && <span className="ph-lu" aria-hidden="true">✓ lu</span>}
                   </div>
-                  {photoN < 1 && <span className="ph-flash" aria-hidden="true" />}
-                  {photoN >= 1 && <span className="ph-lu" aria-hidden="true">✓ lu</span>}
-                </div>
+                ) : (
+                  <div className={`ph-dial${photoN >= 1 ? " lu" : ""}`}>
+                    <div className="ph-elle">
+                      <span className="ph-av" aria-hidden="true">✦</span>
+                      <p>{G.demande}</p>
+                    </div>
+                    <div className="ph-lui">
+                      {/* LES BARRES DISENT QUE C'EST SA VOIX, PAS UN CHAMP DE
+                          SAISIE. C'est toute la promesse de l'étape 3 : ce
+                          qu'on garde est ce qu'il a dit, pas ce qu'il a tapé. */}
+                      <span className="ph-onde" aria-hidden="true">
+                        {[7, 13, 9, 17, 11, 20, 14, 8, 16, 10].map((h, i) => (
+                          <i key={`${h}-${i}`} style={{ ["--h" as string]: `${h}px`, ["--i" as string]: i }} />
+                        ))}
+                      </span>
+                      {/* UN POINT ENTRE LES LIGNES, PAS UNE VIRGULE. Les
+                          lignes de l'extrait ne sont pas toujours une liste :
+                          chez un bar ce sont deux phrases — « Jazz en trio, à
+                          partir de 21 h » puis « Ardoise et verres au
+                          comptoir » — et la virgule y collait une majuscule au
+                          milieu d'une phrase. Le point marche dans les deux
+                          cas, et c'est de toute façon ainsi qu'on parle quand
+                          on énumère à voix haute. */}
+                      <p>
+                        {G.extrait.lignes.join(". ")}
+                        {G.extrait.prix ? `. ${G.extrait.prix}.` : "."}
+                      </p>
+                    </div>
+                    {photoN >= 1 && <span className="ph-lu" aria-hidden="true">✓ écrit</span>}
+                  </div>
+                )}
 
                 {/* CE QUE ÇA DEVIENT — et c'est le moment de bascule de toute
                     la démonstration : le même contenu, mais dans l'écran de ses
@@ -2300,6 +2508,22 @@ export function DemoTour({
                     </div>
                   </div>
                 </div>
+
+                {/* ET L'AUTRE MOITIÉ DE CE QUE LA CONVERSATION PRODUIT.
+                    La carte du Direct était le seul aboutissement montré ;
+                    le parcours, qui est ce qu'on lui promet dix centimètres
+                    plus bas sur sa propre page, n'apparaissait nulle part dans
+                    la visite. Voir la prop `parcours`. */}
+                {parcours && (
+                  <div className={`dt-ouvre${photoN >= 3 ? " on" : ""}`}>
+                    <div className="dt-ec">
+                      <div className="ph-parc">
+                        <b>{parcours.combien}</b>
+                        <em>votre voix à l’étape {parcours.voixA}</em>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

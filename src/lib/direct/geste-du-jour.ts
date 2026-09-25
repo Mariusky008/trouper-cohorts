@@ -110,8 +110,38 @@ export type GesteDuJour = {
    * tête, là où on l'entend. Absente, on retombe sur `gesteDit`.
    */
   gesteCourt?: string;
-  /** Vrai quand le geste est une PHOTO — un coiffeur, lui, dicte. */
+  /**
+   * VRAI QUAND LE GESTE EST UNE PHOTO — et la restauration n'en est plus.
+   *
+   * « On ne photographie plus le menu : on discute avec l'IA pour lui dire le
+   * menu et les spécificités qui iront dans le parcours en quatre étapes, avec
+   * la voix du restaurateur à l'étape 3. »
+   *
+   * DEUX RAISONS, ET LA SECONDE EST LA VRAIE. La première est pratique : une
+   * ardoise photographiée donne trois lignes de texte, jamais « ce qu'il a de
+   * particulier ». La seconde décide : L'ÉTAPE 3 DU PARCOURS EST SA VOIX, et
+   * une photo ne peut pas la produire. La même conversation qui donne le plat
+   * donne la voix — c'est pour ça qu'il n'y a plus deux gestes à demander.
+   *
+   * LA VITRINE, ELLE, RESTE UNE PHOTO. Ce qu'un boulanger ou un fleuriste a ce
+   * matin SE VOIT ; le dire prendrait plus de temps que le montrer, et il n'y a
+   * pas de parcours en quatre écrans derrière à remplir.
+   */
   parPhoto: boolean;
+  /**
+   * CE QUE L'ASSISTANTE LUI DEMANDE, quand le geste est une conversation.
+   *
+   * ÉCRIT ICI PARCE QUE LA QUESTION EST DU MÉTIER, pas de l'interface. « Qu'est-
+   * ce que vous servez aujourd'hui ? » chez un restaurateur, « qu'est-ce qu'il
+   * vous reste » chez un coiffeur : c'est la première phrase qu'il entend, et
+   * une question générique — « que voulez-vous annoncer ? » — se répond par un
+   * silence.
+   *
+   * SA RÉPONSE, ELLE, N'EST PAS ÉCRITE : elle se compose depuis `extrait`, qui
+   * est déjà ce que l'assistante en tire. Les recopier serait garantir qu'un
+   * jour la réponse dise autre chose que la carte qui en sort.
+   */
+  demande: string;
   /** CE QUI PART, avec son verbe déjà accordé : « votre menu part », « vos
    *  tables libres partent ». La phrase de l'acte du geste se construit autour
    *  — et « votre menu » servi à un coiffeur donnait une démonstration qui
@@ -171,6 +201,16 @@ export function habitantsDe(villeAff: string): string {
   return GENTILES[clef] || "habitants";
 }
 
+/**
+ * CE QUI OUVRE LE SOIR ET NE SERT PAS DE MENU DU JOUR.
+ *
+ * VOLONTAIREMENT ÉTROITE. « Brasserie » n'y est pas : une brasserie sert à midi,
+ * et lui demander sa soirée à dix-huit heures raterait le service qui la fait
+ * vivre. La règle du dossier vaut ici comme ailleurs — mieux vaut une famille
+ * générale et juste qu'une famille précise et fausse.
+ */
+const LE_COMPTOIR_DU_SOIR = /\bbar\b|bar à|caviste|pub\b|cave à (vin|bière|biere)|à vins?\b|à bières?\b/i;
+
 export function gesteDuJour(
   metier: string,
   confirmation: Confirmation,
@@ -182,6 +222,53 @@ export function gesteDuJour(
 
   // ── LA RESTAURATION ────────────────────────────────────────────────────
   if (estRestauration(metier)) {
+    /**
+     * ═══ LE COMPTOIR EST DANS CETTE FAMILLE, MAIS PAS AU MÊME MOMENT ═══════
+     *
+     * « Le système dont je parle est juste pour les bars et les sorties. »
+     *
+     * UN BAR À VINS S'ENTENDAIT DEMANDER SON MENU DU JOUR, et sa démonstration
+     * répondait « Garbure landaise, magret grillé, dessert maison, 19 € ».
+     * C'était déjà vrai avec l'ardoise photographiée ; la conversation l'a
+     * seulement rendu lisible, parce qu'on voit maintenant SA réponse écrite en
+     * toutes lettres à côté de la question.
+     *
+     * LA FAMILLE NE CHANGE PAS, LE MOMENT ET L'OBJET SI. Le fil de la ville
+     * reste celui de la restauration — on y cherche où sortir comme on y
+     * cherche où manger, et écrire un cinquième fil pour deux lignes de
+     * dialogue reviendrait à créer une liste de plus qui divergera. Ce qui
+     * change est ce qui devait changer : chez lui ça se joue à dix-huit heures,
+     * et ce qu'il a à dire n'est pas une carte, c'est une soirée.
+     */
+    if (LE_COMPTOIR_DU_SOIR.test(metier)) {
+      return {
+        famille: "restauration",
+        quand: "Ce soir",
+        verbe: "se demander",
+        cherchent: "où sortir",
+        combien: 700,
+        heure: "18 h",
+        support: "votre ardoise",
+        ouDort: "Vous, à cette heure-là, ce qui se passe chez vous ce soir, vous êtes seul à le savoir.",
+        pasVu: "Votre devanture le dit très bien. Mais elle ne se lit que de la rue. Et eux sont à quatre cents mètres, en train de choisir.",
+        geste: "Dites-le-moi.",
+        gesteDit: "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me dire ce qui se passe chez vous ce soir.",
+        gesteCourt: "Pour y être, dites-moi ce qui se passe chez vous ce soir.",
+        parPhoto: false,
+        demande: "Qu'est-ce qui se passe chez vous ce soir ?",
+        envoi: "votre soirée part",
+        extrait: {
+          titre: "Ce soir",
+          lignes: ["Jazz en trio, à partir de 21 h", "Ardoise et verres au comptoir"],
+          prix: "",
+        },
+        retours: [
+          { heure: "18 h 20", icone: "❤️", nombre: "41", quoi: `${gentile} l'auront vu passer` },
+          { heure: "19 h 05", icone: "🍷", nombre: "9", quoi: "ont dit qu'ils venaient" },
+          { heure: "20 h 00", icone: "📊", nombre: "", quoi: "Avant l'ouverture, vous saurez à quoi ressemble votre soirée." },
+        ],
+      };
+    }
     return {
       famille: "restauration",
       quand: "Ce midi",
@@ -197,10 +284,17 @@ export function gesteDuJour(
       // jour n'existe nulle part.
       ouDort: "Vous, à cette heure-là, votre ardoise est devant votre porte.",
       pasVu: "Elle est très bien. Mais elle ne se lit que de la rue. Et eux sont à quatre cents mètres, en train de choisir.",
-      geste: "Photographiez-la.",
-      gesteDit: "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de photographier votre ardoise.",
-      gesteCourt: "Pour y être, photographiez votre ardoise.",
-      parPhoto: true,
+      /* ═══ IL NE PHOTOGRAPHIE PLUS SON ARDOISE, IL M'EN PARLE ═════════
+
+         Voir `parPhoto` dans le type, qui porte le pourquoi : une photo
+         d'ardoise donne trois lignes et ne donnera jamais la voix de l'étape 3.
+         L'ardoise reste le CONSTAT — c'est là que son menu dort à onze heures —
+         elle n'est simplement plus le geste. */
+      geste: "Dites-le-moi.",
+      gesteDit: "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me dire ce que vous servez aujourd'hui.",
+      gesteCourt: "Pour y être, dites-moi ce que vous servez aujourd'hui.",
+      parPhoto: false,
+      demande: "Qu'est-ce que vous servez aujourd'hui ?",
       envoi: "votre menu part",
       extrait: {
         titre: "Menu du jour",
@@ -237,6 +331,10 @@ export function gesteDuJour(
       gesteDit: "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de photographier votre vitrine.",
       gesteCourt: "Pour y être, photographiez votre vitrine.",
       parPhoto: true,
+      /* JAMAIS AFFICHÉE ICI, mais le champ est obligatoire, et une question
+         vide serait pire qu'une question juste : le jour où un fleuriste passe
+         à la conversation, la phrase est déjà écrite dans ses mots. */
+      demande: "Qu'est-ce que vous avez de frais ce matin ?",
       envoi: "ce que vous avez ce matin part",
       // AUCUN MOT DE BOULANGER : cette branche sert aussi un fleuriste, un
       // primeur et un poissonnier. « Sortis du four à 7 h · Tourtière
@@ -271,6 +369,7 @@ export function gesteDuJour(
       gesteDit: `Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me dire ce qu'il vous reste de ${v.places} libres.`,
       gesteCourt: `Pour y être, dites-moi ce qu'il vous reste de ${v.places} libres.`,
       parPhoto: false,
+      demande: `Qu'est-ce qu'il vous reste de ${v.places} libres aujourd'hui ?`,
       envoi: `vos ${v.places} libres partent`,
       extrait: {
         titre: "Aujourd'hui",
@@ -302,6 +401,7 @@ export function gesteDuJour(
     gesteDit: "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me dire quand vous êtes disponible.",
     gesteCourt: "Pour y être, dites-moi quand vous êtes disponible.",
     parPhoto: false,
+    demande: "Quand êtes-vous disponible cette semaine ?",
     envoi: "votre disponibilité part",
     extrait: { titre: "Cette semaine", lignes: ["Disponible à partir de jeudi"], prix: "" },
     retours: [

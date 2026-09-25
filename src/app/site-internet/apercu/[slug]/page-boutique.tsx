@@ -41,6 +41,7 @@ import { GarderCeSite } from "./garder-ce-site";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { gesteDuJour } from "@/lib/direct/geste-du-jour";
 import { murDeLaCarte } from "@/lib/direct/fantomes";
+import { parcoursPromis } from "@/lib/direct/parcours-promis";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 
 export type PageBoutiqueProps = {
@@ -172,6 +173,32 @@ function direLEssai(carte: CarteAutour): { titre: string; say: string } | null {
   return null;
 }
 
+/**
+ * CE QUE LA DÉMONSTRATION ANNONCE DU PARCOURS, OU RIEN.
+ *
+ * L'ÉTAPE DE LA VOIX EST CHERCHÉE, PAS ÉCRITE. Les étapes de `parcoursPromis`
+ * portent déjà leur rang ; celle qui prend sa voix est celle qui la demande. Un
+ * « 3 » écrit à la main ici deviendrait faux le jour où le parcours gagne un
+ * écran — et personne ne le verrait, puisque la phrase resterait plausible.
+ *
+ * RIEN QUAND AUCUNE ÉTAPE NE PREND SA VOIX : le comptoir, par exemple, remplit
+ * ses trois temps sans qu'il parle. Lui promettre sa voix serait promettre un
+ * écran qu'il n'aura pas.
+ *
+ * ET RIEN NON PLUS QUAND LE GESTE RESTE UNE PHOTO — voir l'appel. La phrase
+ * dit « et votre parcours se remplit », au sujet de la conversation qu'on vient
+ * de montrer ; posée derrière une vitrine photographiée, elle attribuerait à la
+ * photo ce que seule la conversation produit. Un boulanger l'entendait ainsi
+ * promettre sa voix à l'étape 3 juste après qu'on lui ait dit de photographier
+ * sa devanture.
+ */
+function parcoursDuGeste(carte: CarteAutour): { combien: string; voixA: number } | undefined {
+  const p = parcoursPromis({ branche: carte.branche, metier: carte.metier });
+  if (!p) return undefined;
+  const voix = p.etapes.find((e) => /voix/i.test(e.fournir ?? ""));
+  return voix ? { combien: p.combien, voixA: voix.n } : undefined;
+}
+
 export function PageBoutique(p: PageBoutiqueProps) {
   const { slug, carte, modeDemo, venuDuDirect, phoneDisplay, keepHref, note, reviewsCount, invente = false } = p;
   const mp = resolveMetier(carte.metier);
@@ -210,6 +237,13 @@ export function PageBoutique(p: PageBoutiqueProps) {
           flashDit={flash.dit}
           geste={geste}
           essai={direLEssai(carte) ?? undefined}
+          /* CE QUE LA CONVERSATION REMPLIT, ET L'ÉTAPE OÙ SA VOIX RESTE.
+             Le rang se compte plutôt que de s'écrire : c'est l'étape de la voix
+             dans le parcours qu'on vient de lire, et il suffirait d'un écran
+             ajouté là-bas pour qu'un « 3 » écrit ici devienne faux. Sans
+             parcours — un coiffeur —, la prop est absente et l'acte se termine
+             sur la carte, comme avant. Voir `parcours-promis.ts`. */
+          parcours={geste && !geste.parPhoto ? parcoursDuGeste(carte) : undefined}
           keepHref={keepHref}
         />
       )}
