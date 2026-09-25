@@ -447,7 +447,27 @@ export type FaceCarte = "fiche" | "seconde";
  */
 export function partDeLaPhoto(l: number, h: number): number {
   if (!l || !h) return 1;
-  const CIBLE = 0.62;
+  /* ═══ LA CIBLE MONTE À TROIS QUARTS D'ÉCRAN ═══════════════════════════════
+
+     « La démarcation entre la photo et le flou coloré n'est-elle pas un peu
+     trop haute encore ? »
+
+     ELLE L'ÉTAIT, ET C'EST LA CIBLE QUI LA TENAIT HAUT. À 0,62, une photo
+     verticale s'arrêtait aux deux tiers de l'écran et le fondu commençait un
+     tiers plus haut encore : la couleur du bas occupait le dernier tiers, ce
+     qui est beaucoup pour une chose qui ne fait que raccorder. Sur la carte de
+     la boucherie — celle qu'il montre en comparaison — la photo descend jusque
+     sous le prix, et c'est ce qu'on veut retrouver.
+
+     TROIS QUARTS, ET PAS PLUS. Au-delà, la bande de miniatures et le bouton
+     n'ont plus de fond à eux : ils se poseraient sur le sujet, et on revient
+     au défaut d'avant — un texte sur un visage.
+
+     LE GARDE-FOU NE BOUGE PAS. Une photo qui ne peut atteindre la cible qu'en
+     cédant plus d'un quart de sa hauteur ne l'atteint pas : elle s'arrête où
+     elle peut. C'est ce qui protège les carrés et les panoramiques, dont le
+     sujet serait décapité pour gagner de la place. */
+  const CIBLE = 0.76;
   const ROGNAGE_MAX = 0.25;
   /* LA PART QU'ELLE PREND À PLEINE LARGEUR, sur une carte au format d'un
      téléphone — neuf sur dix-neuf et demi, le rapport de tous nos écrans. */
@@ -2452,6 +2472,15 @@ export function StylesDirect() {
            QUARANTE-DEUX POUR CENT DE LA PHOTO, c'est-a-dire deux cent trente
            points sur une verticale : le sujet s'efface au lieu de s'arreter, et
            le raccord s'adapte tout seul a la hauteur de chaque image. */
+        /* ET IL DESCEND A TRENTE-DEUX POUR CENT. Quarante-deux etait la
+           reponse a un sujet coupe net, et c'etait la bonne ; mais avec la
+           cible remontee a trois quarts d'ecran, quarante-deux pour cent d'une
+           photo plus haute redonne exactement la bande de couleur qu'on vient
+           d'enlever. Trente-deux pour cent d'une photo de six cent quarante
+           points font encore deux cent cinq points de fondu — plus long, en
+           valeur absolue, que les deux cent trente d'avant ne l'etaient sur une
+           photo de cinq cent quatre-vingts. Le fondu ne raccourcit pas : c'est
+           la photo qui s'allonge sous lui. */
         /* ═══ ET LE RACCORD PASSE DERRIÈRE LE TEXTE ═════════════════════════
 
            LE TITRE ÉTAIT PEINT PAR-DESSUS, ET C'EST TOUT CE QU'IL AVAIT. Le
@@ -2472,7 +2501,7 @@ export function StylesDirect() {
            reste au-dessus d'eux ; le bas de la carte vient après lui, donc il
            passe devant. Aucune couche ne change de place, seule la règle qui
            doublait l'ordre naturel disparaît. */
-        .cd-raccord{--cd-fondu:calc(var(--cd-photo-h,100%) * .42);
+        .cd-raccord{--cd-fondu:calc(var(--cd-photo-h,100%) * .32);
           position:absolute;left:0;right:0;z-index:0;
           height:var(--cd-fondu);
           top:calc(var(--cd-photo-h,100%) - var(--cd-fondu));
