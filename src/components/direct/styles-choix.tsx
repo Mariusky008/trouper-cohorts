@@ -25,7 +25,7 @@ export function StylesChoix() {
            telephone, et c'est elle qui porte toute la navigation. */
         .cx{position:absolute;inset:0;z-index:30;overflow:hidden;
           display:flex;flex-direction:column;align-items:center;
-          padding:calc(10px + var(--ap-encoche,0px)) 0 8px;
+          padding:calc(7px + var(--ap-encoche,0px)) 0 6px;
           background:
             radial-gradient(120% 55% at 50% 0%, #1A0F1E 0%, #08070C 58%),
             #06060A;
@@ -38,11 +38,11 @@ export function StylesChoix() {
            et il est ecrit en texte et non en image. Une image de mot se
            crenelle sur un ecran dense et ne suit pas la police du produit. */
         .cx-tete{flex:none;}
-        .cx-logo{margin:0;font-weight:900;font-size:clamp(30px,8.6vw,38px);
+        .cx-logo{margin:0;font-weight:900;font-size:clamp(24px,min(7.4vw,3.6vh),34px);
           line-height:1;letter-spacing:-.03em;}
         .cx-logo b{font-weight:900;color:#fff;}
         .cx-logo i{font-style:normal;font-weight:900;color:#FF2E9A;}
-        .cx-sur{margin:5px 0 0;font-size:10.5px;font-weight:800;
+        .cx-sur{margin:3px 0 0;font-size:9.5px;font-weight:800;
           letter-spacing:.24em;text-transform:uppercase;color:#B8BDD4;
           display:flex;align-items:center;justify-content:center;gap:7px;}
         .cx-sur s{text-decoration:none;color:#FF2E9A;letter-spacing:0;}
@@ -52,8 +52,12 @@ export function StylesChoix() {
            soulignement : un soulignement de texte passe sous les jambages et se
            casse sous les accents, celui-ci reste droit et deborde du mot comme
            sur ses maquettes. */
-        .cx-titre{margin:clamp(10px,2.4vh,18px) 0 0;padding:0 14px;
-          font-weight:900;font-size:clamp(28px,9.4vw,42px);line-height:1.02;
+        /* IL SE MESURE EN LARGEUR ET EN HAUTEUR. Un titre calibre sur la seule
+           largeur garde sa taille sur un ecran court et mange la photo : c'est
+           exactement ce qui se passait. min() prend la plus petite des deux,
+           donc il maigrit quand l'ecran raccourcit. */
+        .cx-titre{margin:clamp(6px,1.4vh,12px) 0 0;padding:0 14px;
+          font-weight:900;font-size:clamp(23px,min(8.2vw,4.3vh),38px);line-height:1.02;
           letter-spacing:-.025em;text-transform:uppercase;
           text-shadow:0 2px 18px rgba(0,0,0,.6);}
         .cx-titre em{position:relative;font-style:normal;color:#FF2E9A;
@@ -64,12 +68,15 @@ export function StylesChoix() {
 
         /* ═══ LE FANTOME ET SA BULLE ══════════════════════════════════════ */
         .cx-dit{flex:none;display:flex;align-items:center;justify-content:center;
-          gap:2px;margin:clamp(10px,2.2vh,16px) 0 0;padding:0 12px;width:100%;}
-        .cx-f{flex:none;width:clamp(62px,17vw,80px);height:auto;
+          gap:2px;margin:clamp(6px,1.3vh,12px) 0 0;padding:0 12px;width:100%;}
+        .cx-f{flex:none;width:clamp(50px,min(14vw,7vh),70px);height:auto;
           filter:drop-shadow(0 0 16px rgba(196,132,255,.55));}
-        .cx-bulle{position:relative;margin:0;text-align:left;
-          padding:9px 13px;border-radius:14px;
-          font-size:clamp(12px,3.5vw,14.5px);font-weight:650;line-height:1.3;
+        /* ELLE A UNE LARGEUR MAXIMALE, pour se couper la ou une phrase se
+           coupe. Sans elle, « Glissez pour choisir un salon pres de vous » tenait
+           sur une ligne entiere et laissait la fleche seule sur la seconde. */
+        .cx-bulle{position:relative;margin:0;text-align:left;max-width:245px;
+          padding:7px 12px;border-radius:13px;
+          font-size:clamp(11px,min(3.3vw,1.7vh),13.5px);font-weight:650;line-height:1.26;
           color:#F2E9FF;background:rgba(40,8,32,.72);
           border:1.5px solid #FF2E9A;
           box-shadow:0 0 18px rgba(255,46,154,.32);}
@@ -90,8 +97,21 @@ export function StylesChoix() {
            ELLE OCCUPE CE QUI RESTE. flex:1 lui donne toute la hauteur libre
            entre la bulle et le bouton, donc les cartes grandissent sur un grand
            telephone au lieu de laisser un trou. */
-        .cx-scene{flex:1 1 auto;position:relative;width:100%;min-height:0;
-          margin-top:clamp(8px,1.8vh,14px);
+        /* ═══ LA CARTE EST LA STAR, DONC ELLE NE RETRECIT PLUS LA PREMIERE ═══
+           « Je trouve que les annonces sont trop petites. Il faut que l'annonce
+           soit plus grande parce que c'est la star de l'ecran. »
+           IL A RAISON, ET LE DEFAUT EST STRUCTUREL. Tout le reste de cet ecran
+           a une hauteur fixe ; la scene, elle, prenait « ce qui reste ». Sur un
+           telephone court, ce qui reste est peu — mesure : quarante-quatre pour
+           cent de la hauteur sur un ecran de huit cent quarante-quatre points,
+           vingt-huit sur le sien. La seule chose qu'on vient regarder etait la
+           seule a payer le manque de place.
+           ELLE A DONC UN PLANCHER. En dessous de quarante-six pour cent de la
+           hauteur, c'est aux autres de ceder : le titre, la bulle et la barre
+           des categories savent maigrir, une photo non. */
+        .cx-scene{flex:1 1 auto;position:relative;width:100%;
+          min-height:clamp(300px,46vh,470px);
+          margin-top:clamp(6px,1.2vh,10px);
           perspective:1100px;perspective-origin:50% 50%;
           cursor:grab;}
         .cx-scene:active{cursor:grabbing;}
@@ -106,7 +126,12 @@ export function StylesChoix() {
            vide entre la bulle et les points. Le rapport 1:1,42 est celui de ses
            maquettes, mesure sur la carte du centre. */
         .cx-carte{position:absolute;top:50%;left:50%;
-          height:100%;aspect-ratio:1 / 1.42;width:auto;max-width:66vw;
+          /* UN POUR UN VIRGULE CINQUANTE-CINQ, mesure sur sa maquette : la
+             carte du centre y prend quarante-trois pour cent de la hauteur et
+             soixante de la largeur. Maintenant que la scene a un plancher, la
+             hauteur ne manque plus — c'est la largeur qui bridait, et la carte
+             sortait a un pour un virgule soixante-quinze, trop etroite. */
+          height:100%;aspect-ratio:1 / 1.55;width:auto;max-width:76vw;
           border-radius:20px;overflow:hidden;
           background:#12121A;border:0;padding:0;margin:0;
           transform-style:preserve-3d;
@@ -191,7 +216,7 @@ export function StylesChoix() {
            depuis la scene. */
         .cx-bords{position:absolute;top:50%;left:50%;z-index:4;
           transform:translate(-50%,-50%);
-          height:100%;aspect-ratio:1 / 1.42;width:auto;max-width:66vw;
+          height:100%;aspect-ratio:1 / 1.55;width:auto;max-width:76vw;
           pointer-events:none;}
         .cx-fl{pointer-events:auto;}
         .cx-fl.g{left:-17px;}
@@ -199,7 +224,7 @@ export function StylesChoix() {
         .cx-fl:active{transform:translateY(-50%) scale(.92);}
 
         .cx-points{flex:none;display:flex;gap:6px;
-          margin:clamp(8px,1.6vh,12px) 0 0;}
+          margin:clamp(6px,1.1vh,10px) 0 0;}
         .cx-points s{width:18px;height:4px;border-radius:999px;
           text-decoration:none;background:rgba(255,255,255,.22);
           transition:background .2s ease,width .2s ease;}
@@ -211,7 +236,7 @@ export function StylesChoix() {
            l'habit du geste principal et pas encore sa destination — voir
            .cx-bientot, qui le dit apres l'appui. */
         .cx-go{flex:none;width:min(92%,420px);
-          margin:clamp(10px,2vh,16px) 0 0;padding:15px 18px;
+          margin:clamp(7px,1.4vh,13px) 0 0;padding:13px 18px;
           display:flex;align-items:center;justify-content:center;gap:11px;
           font:inherit;font-size:clamp(15px,4.4vw,18px);font-weight:900;
           letter-spacing:-.01em;color:#fff;cursor:pointer;
@@ -233,12 +258,13 @@ export function StylesChoix() {
            poser sur une pastille. */
         .cx-cats{flex:none;width:100%;
           display:grid;grid-template-columns:repeat(5,1fr);
-          gap:2px;padding:clamp(8px,1.8vh,14px) 6px 0;}
+          gap:2px;padding:clamp(6px,1.2vh,11px) 6px 0;}
         .cx-cats button{display:flex;flex-direction:column;align-items:center;
-          gap:6px;font:inherit;font-size:11px;font-weight:750;cursor:pointer;
+          gap:4px;font:inherit;font-size:10.5px;font-weight:750;cursor:pointer;
           color:#9BA3BF;background:none;border:0;padding:0;
           transition:color .16s ease;}
-        .cx-picto{width:clamp(44px,13vw,54px);height:clamp(44px,13vw,54px);
+        .cx-picto{width:clamp(38px,min(11.5vw,5.6vh),50px);
+          height:clamp(38px,min(11.5vw,5.6vh),50px);
           display:flex;align-items:center;justify-content:center;
           border-radius:15px;
           background:rgba(255,255,255,.045);
@@ -258,8 +284,8 @@ export function StylesChoix() {
         /* LA SORTIE DE SECOURS. Petite, en bas, parce que ce n'est pas le geste
            de l'ecran : c'est ce qui evite que la demonstration soit un
            cul-de-sac tant que le grand bouton ne mene nulle part. */
-        .cx-passer{flex:none;margin:clamp(6px,1.4vh,10px) 0 0;padding:6px 12px;
-          font:inherit;font-size:11.5px;font-weight:700;cursor:pointer;
+        .cx-passer{flex:none;margin:clamp(4px,0.9vh,8px) 0 0;padding:4px 12px;
+          font:inherit;font-size:11px;font-weight:700;cursor:pointer;
           color:rgba(255,255,255,.5);background:none;border:0;
           text-decoration:underline;text-underline-offset:3px;}
         .cx-passer:active{color:rgba(255,255,255,.8);}
