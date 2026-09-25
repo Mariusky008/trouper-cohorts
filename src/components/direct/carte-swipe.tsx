@@ -1236,31 +1236,44 @@ export function CarteSwipe({
                 on ne compte jamais à sa place, et une fiche à trous vaut mieux
                 qu'une fiche inventée. */}
             <ul className="cd-infos">
-              {c.combien != null && c.combien > 0 && (
-                <li>
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="12" cy="12" r="9.2" />
-                    <path d="M12 6.6V12l3.6 2.2" />
-                  </svg>
-                  {/* ═══ « IL RESTE N », ET PAS « N RESTANTES » ═══════════════
+              {/* ═══ LE DÉCOMPTE NE S'AFFICHE PLUS NULLE PART ════════════════
 
-                      DEUX RAISONS, ET LA PREMIÈRE EST UNE FAUTE. « 12 bouquets
-                      restantes » : le mot du métier vient des données — part,
-                      place, bouquet, créneau, pièce — et son genre avec lui.
-                      Accorder l'adjectif ici revenait à parier, et le pari
-                      était toujours au féminin. « Il reste » ne s'accorde avec
-                      rien.
+                  « Partout où il y a "il reste encore … places", le supprimer. »
 
-                      LA SECONDE EST QUE CE NOMBRE DOIT SE LIRE COMME UN
-                      DÉCOMPTE. « Il reste 12 » dit qu'il en restait treize ;
-                      « 12 restantes » décrit un stock. C'est la même
-                      information et ce n'est pas la même phrase. */}
-                  <span>
-                    Il reste <b>{c.combien}</b>
-                    {c.langage ? ` ${c.langage.unite[c.combien > 1 ? 1 : 0]}` : ""}
-                  </span>
-                </li>
-              )}
+                  ET C'EST LA SECONDE FOIS QU'IL LE DEMANDE, en plus large. La
+                  première portait sur les créneaux d'un coiffeur — « supprimer
+                  "il reste 3 créneaux" parce qu'on ne le sait pas » — et je
+                  n'avais retiré que ceux-là. Le reproche vaut pour tous : un
+                  nombre que le produit ne saura pas compter le jour du
+                  lancement est un nombre qu'il faudra retirer ce jour-là, qu'il
+                  s'agisse de créneaux, de parts, de pièces ou de montures.
+
+                  C'EST LA RÈGLE DE CE DÉPÔT, APPLIQUÉE À LA LETTRE : on n'écrit
+                  jamais un chiffre qu'on ne sait pas. Un commerçant qui vend
+                  deux pantalons dans l'après-midi ne rouvre pas son téléphone
+                  pour corriger son annonce ; le compte affiché est donc faux
+                  dès la première vente, et un compte faux sur une rareté est le
+                  pire des chiffres — c'est celui qui fait courir.
+
+                  LA DONNÉE RESTE, ET C'EST VOULU. `combien` et `langage.unite`
+                  ne bougent pas : ils servent au décompte à la réservation, qui
+                  lui est vrai puisque c'est nous qui l'opérons. Ce qui
+                  disparaît, c'est l'affichage d'un stock déclaré une fois le
+                  matin et jamais revu.
+
+                  LA LISTE PEUT DONC ÊTRE VIDE, et le <ul> ne se dessine pas
+                  tout seul : sans puce ni fond, une liste sans enfant ne laisse
+                  qu'une marge. Rien à nettoyer. */}
+              {/* ═══ « IL RESTE N », ET PAS « N RESTANTES » ═══════════════════
+                  ON GARDE LE RAISONNEMENT, PARCE QU'IL RESSERVIRA. « 12 bouquets
+                  restantes » : le mot du métier vient des données — part, place,
+                  bouquet, créneau, pièce — et son genre avec lui. Accorder
+                  l'adjectif revenait à parier, et le pari était toujours au
+                  féminin. « Il reste » ne s'accorde avec rien. Et le nombre se
+                  lit comme un décompte : « Il reste 12 » dit qu'il en restait
+                  treize, « 12 restantes » décrit un stock. Le jour où ce
+                  décompte sera VRAI — tenu par les réservations, pas déclaré —
+                  c'est cette phrase-là qu'il faudra réécrire. */}
               {/* ═══ LA LIGNE DU LIEU PORTE UN NOM, POUR QU'ON PUISSE LA TAIRE ═══
 
                   « À 220 m est à supprimer puisque c'est déjà présent en haut. »
@@ -2191,9 +2204,24 @@ export function StylesDirect() {
            points qui restent sont l'ecart voulu entre les deux. Sans encoche il
            ne bouge presque pas ; avec, il descend d'autant qu'elle. */
         .cd-carte.hautrond .cd-anneau{top:calc(70px + var(--ap-encoche,0px));}
-        .cd-carte.hautrond .cd-offre{padding-right:120px;}
+        .cd-carte.hautrond .cd-offre{padding-right:104px;}
+        /* ═══ LE DISQUE MAIGRIT DE SEIZE POINTS ═══════════════════════════
+           « Le rond avec "les pièces / voir", ou tout autre rond avec le texte
+           et l'icône dedans, me paraît un peu trop gros. »
+           IL A GROSSI PAR ETAPES, ET CHAQUE ETAPE ETAIT JUSTIFIEE : il a fallu
+           loger un mot de metier sur deux lignes, un pictogramme, « VOIR » et
+           son chevron, et un cadran qui deborde de deux points. A cent quatre,
+           il pesait autant que le titre — et depuis que la photo descend a trois
+           quarts d'ecran, il se pose en plein sur le sujet au lieu de flotter
+           dans un coin sombre.
+           QUATRE-VINGT-HUIT, ET TOUT CE QU'IL Y A DEDANS SUIT DANS LA MEME
+           PROPORTION : le mot, le pictogramme et « VOIR » perdent chacun leur
+           septieme. Ce qui compte ici n'est pas la taille absolue mais le
+           rapport — un disque reduit dont le texte ne l'est pas mord son propre
+           trait, et c'est le defaut qu'on a deja corrige deux fois sur ce
+           cercle. */
         .cd-anneau{position:absolute;right:18px;top:29%;z-index:3;
-          width:104px;height:104px;border-radius:50%;
+          width:88px;height:88px;border-radius:50%;
           display:flex;flex-direction:column;align-items:center;
           justify-content:center;gap:0;text-align:center;
           font:inherit;color:#fff;cursor:default;border:0;padding:0;
@@ -2220,16 +2248,19 @@ export function StylesDirect() {
            mais en petit et en clair : sur un fond sombre, un caractere fin et
            pale se lit comme une legende, pas comme une etiquette. Un cran de
            plus, plus grand, et blanc casse. */
-        .cd-anneau .cd-an-t{display:flex;align-items:center;gap:4px;
+        /* LE COMPTEUR DU FLASH SUIT LE MEME RAPPORT QUE LA PORTE. Le disque a perdu
+           son septieme ; son chiffre et ses deux mots le perdent aussi, sans quoi
+           « 12:04 » viendrait toucher le cadran qui l'entoure. */
+        .cd-anneau .cd-an-t{display:flex;align-items:center;gap:3px;
           margin-bottom:1px;
-          font-size:9.5px;font-weight:900;letter-spacing:.12em;
+          font-size:8.5px;font-weight:900;letter-spacing:.1em;
           text-transform:uppercase;color:#FFD2C4;}
-        .cd-anneau .cd-an-t i{font-style:normal;font-size:9.5px;}
+        .cd-anneau .cd-an-t i{font-style:normal;font-size:8.5px;}
         .cd-anneau b{font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
-          font-size:38px;font-weight:400;line-height:.92;letter-spacing:.01em;
+          font-size:32px;font-weight:400;line-height:.92;letter-spacing:.01em;
           font-variant-numeric:tabular-nums;
           text-shadow:0 2px 12px rgba(0,0,0,.6);}
-        .cd-anneau em{font-style:normal;font-size:10px;font-weight:900;
+        .cd-anneau em{font-style:normal;font-size:9px;font-weight:900;
           margin-top:2px;
           letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.86);}
         /* LA RARETE, SOUS L'ANNEAU. Deux lignes de neuf points, centrees sur le
@@ -2302,16 +2333,16 @@ export function StylesDirect() {
            LE RETOUR A LA LIGNE RESTE, EN FILET DE SECURITE : le champ du metier
            est libre, et le jour ou quelqu'un ecrit « Les compositions », mieux
            vaut deux lignes qu'un mot coupe par un cercle. */
-        .cd-anneau.porte .cd-an-t{display:block;color:#D8FFEE;font-size:8.5px;
-          max-width:70px;letter-spacing:.04em;line-height:1.15;
+        .cd-anneau.porte .cd-an-t{display:block;color:#D8FFEE;font-size:7.5px;
+          max-width:60px;letter-spacing:.04em;line-height:1.15;
           text-align:center;text-wrap:balance;
           text-shadow:0 1px 8px rgba(0,0,0,.7);}
         /* LE PICTOGRAMME SEUL, ET PAS LE CADRAN. Le selecteur portait sur tous
            les enfants svg ; depuis que le cadran en est un, il faut l'excepter
            — sans quoi l'anneau se retrouvait a trente points au milieu du
            disque. */
-        .cd-anneau.porte>svg:not(.cd-po-c){width:32px;height:32px;
-          margin:3px 0 2px;position:relative;z-index:1;
+        .cd-anneau.porte>svg:not(.cd-po-c){width:27px;height:27px;
+          margin:2px 0 1px;position:relative;z-index:1;
           stroke:#F2FBF6;stroke-width:1.7;fill:none;
           stroke-linecap:round;stroke-linejoin:round;
           filter:drop-shadow(0 1px 6px rgba(0,0,0,.55));}
@@ -2320,8 +2351,8 @@ export function StylesDirect() {
            geste ; le chevron le dit sans ajouter de ligne. */
         .cd-anneau.porte em{position:relative;z-index:1;
           display:inline-flex;align-items:center;gap:3px;
-          font-style:normal;font-size:10px;font-weight:900;
-          letter-spacing:.12em;text-transform:uppercase;color:var(--cd-accent);
+          font-style:normal;font-size:8.5px;font-weight:900;
+          letter-spacing:.1em;text-transform:uppercase;color:var(--cd-accent);
           text-shadow:0 1px 8px rgba(0,0,0,.7);}
         /* LE CHEVRON EST ECRIT EN CLAIR, PAS EN ECHAPPEMENT. Un « \u00e9chappement
            unicode » dans un litteral de gabarit est lu par JavaScript avant

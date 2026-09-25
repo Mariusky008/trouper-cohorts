@@ -3799,8 +3799,21 @@ export function ApercuHabitant() {
    * le rond garde alors son épingle. Voir `.ap-loin-v` : le fond du rond est
    * dessiné, l'image ne fait que s'y poser.
    */
-  const vignetteDuCommerce =
-    dessus?.sesPhotos?.[0]?.src ?? dessus?.photo ?? dessusEv?.photo ?? "";
+  const vignetteDuCommerce = dessus?.sesPhotos?.[0]?.src ?? dessus?.photo ?? "";
+  /**
+   * ET UN ÉVÉNEMENT MET SON ORGANISATEUR DANS LE ROND, PAS SA PHOTO.
+   *
+   * UN ÉVÉNEMENT N'A PAS DE `sesPhotos` — il n'a qu'une image, et c'est celle
+   * qui remplit déjà l'écran derrière. La reprendre en miniature à quarante
+   * points de haut affichait deux fois le même concert, dont une fois trop
+   * petit pour qu'on y voie quoi que ce soit.
+   *
+   * CE QUI MANQUE SUR UN ÉVÉNEMENT EST QUI L'ORGANISE, et c'est justement ce
+   * que le rond peut dire : la mairie, l'office de tourisme, une association.
+   * Le même emplacement répond à la même question — chez qui suis-je — avec ce
+   * que chaque nature a de disponible.
+   */
+  const emojiOrganisateur = dessusEv ? ORGANISATEURS[dessusEv.typeQui].emoji : "";
   /**
    * LE LANGAGE DE L'ANNONCE QU'ON REGARDE — voir `lib/direct/personnalites.ts`.
    *
@@ -6767,7 +6780,7 @@ export function ApercuHabitant() {
                       vignetteDuCommerce ? { backgroundImage: `url("${vignetteDuCommerce}")` } : undefined
                     }
                   >
-                    {!vignetteDuCommerce && <i>📍</i>}
+                    {!vignetteDuCommerce && <i>{emojiOrganisateur || "📍"}</i>}
                   </span>
                   <span className="ap-loin-t">
                     <b>{dessus?.nom ?? dessusEv?.qui ?? "Autour de moi"}</b>
@@ -6809,7 +6822,13 @@ export function ApercuHabitant() {
                     )}
                     <em>
                       <i aria-hidden="true">📍</i>
-                      {[dessus?.distance ?? dessusEv?.distance, dessus?.ville ?? dessusEv?.lieu]
+                      {/* LE LIEU D'UN ÉVÉNEMENT NE SE RÉPÈTE PAS ICI : « Kiosque
+                          du parc Théodore-Denis » est le TITRE de la carte,
+                          trois cents points plus bas et en gros. Écrit aussi en
+                          haut, il débordait la ligne et poussait la pastille du
+                          filtre hors de sa propre bordure — le défaut qu'il a
+                          vu. Un événement n'affiche donc que sa distance. */}
+                      {[dessus?.distance ?? dessusEv?.distance, dessus?.ville]
                         .filter(Boolean)
                         .join(" · ")}
                     </em>
@@ -6825,7 +6844,7 @@ export function ApercuHabitant() {
                     vignetteDuCommerce ? { backgroundImage: `url("${vignetteDuCommerce}")` } : undefined
                   }
                 >
-                  {!vignetteDuCommerce && <i>📍</i>}
+                  {!vignetteDuCommerce && <i>{emojiOrganisateur || "📍"}</i>}
                 </span>
                 <span className="ap-loin-t">
                   <b>{dessus?.nom ?? dessusEv?.qui ?? "Autour de moi"}</b>
@@ -6842,7 +6861,7 @@ export function ApercuHabitant() {
                   )}
                   <em>
                     <i>📍</i>
-                    {[dessus?.distance ?? dessusEv?.distance, dessus?.ville ?? dessusEv?.lieu]
+                    {[dessus?.distance ?? dessusEv?.distance, dessus?.ville]
                       .filter(Boolean)
                       .join(" · ")}
                   </em>
@@ -10163,13 +10182,25 @@ export function ApercuHabitant() {
                 L'ESSAI : ce qu'on va voir, et combien de temps ça prend. Sans
                 cette ligne, « Essayer cette soirée » est un verbe qu'on n'a lu
                 nulle part, et dans le doute on n'appuie pas. */}
-            {onPeutSoirer && soireeDuSommet && (
-              <p className="ap-essayer-p">
-                <i aria-hidden="true">✨</i>
-                {soireeDuSommet.essais[0].chapeau.toLowerCase()}, en quelques secondes — puis le
-                Live {motsDe(soireeDuSommet).live}.
-              </p>
-            )}
+            {/* ═══ ET LA SOIRÉE PERD LA SIENNE AUSSI ═══════════════════════
+
+                « Supprimer les lignes en dessous du CTA essayage comme "le
+                cocktail de ce soir, en quelques secondes — puis le Live de ce
+                soir", "le son de ce soir, en quelques secondes — puis le Live
+                de ce soir"… »
+
+                J'AVAIS GARDÉ CELLE-CI EN LA JUSTIFIANT, et l'argument était
+                mauvais. J'ai écrit que la soirée n'avait pas encore eu son mot
+                de métier, donc que sa ligne servait encore. C'est vrai du
+                bouton — « Essayer cette soirée » ne dit pas ce qu'on va voir —
+                mais ce n'est pas une raison de garder DEUX objets : c'est une
+                raison d'en réparer un. Le bouton dira ce qu'il ouvre le jour où
+                la soirée aura son vocabulaire, comme les neuf autres métiers
+                l'ont eu.
+
+                ET LA RÈGLE EST LA MÊME PARTOUT : rien ne se pose sous le geste
+                principal pour expliquer le geste principal. Voir juste
+                au-dessus, et `Piece.surMoi` dans fantomes.ts. */}
 
             {/* ═══ CE QUE LES AUTRES ONT DÉJÀ ESSAYÉ, SOUS L'ANNONCE ════════════
 
@@ -14449,10 +14480,27 @@ export function ApercuHabitant() {
            dessous on ne voit rien, au-dessus on retombe sur la pastille pleine
            qui criait « reglage » et qu'on venait justement d'enlever. */
         .ap-metier{font:inherit;font-size:12px;font-weight:850;cursor:pointer;
-          /* C'EST AU FILTRE DE SE SERRER, PAS AU NOM — voir le commentaire
-             au-dessus de .ap-loin-v. Il cede sa largeur en premier parce qu'on
-             vient de le choisir : on sait ce qu'il dit. */
-          min-width:0;flex:0 1 auto;
+          /* ═══ ET C'EST L'INVERSE, MAINTENANT QUE LE NOM SAIT SE PLIER ═════
+
+             « "En ville / Changer" ça dépasse, et il y a d'autres labels comme
+             en ville qui dépassent aussi. Je pense que c'est à cause de
+             "300 m · Sous les halles" qui pousse le label. »
+
+             LE DIAGNOSTIC EST EXACT, ET LA FAUTE EST LA MIENNE. J'avais laissé
+             flex:0 1 auto sur ce bouton — « c'est au filtre de se serrer, pas
+             au nom » — en lui retirant au passage l'overflow qui rendait ce
+             serrage propre. Un bouton autorisé à rétrécir sous la largeur de
+             son texte ne coupe pas le texte : il le laisse sortir. « EN VILLE »
+             débordait donc de sa propre pastille, poussé par le lieu de
+             l'événement, qui est long.
+
+             LA RÈGLE S'INVERSE PARCE QUE LE NOM A CHANGÉ. Quand il tenait sur
+             une ligne, lui seul pouvait céder de la place, donc le filtre
+             cédait à sa place. Le nom s'écrit maintenant sur deux lignes : il
+             se plie tout seul, proprement, sans rien perdre. C'est donc lui qui
+             absorbe, et le filtre garde sa largeur — il n'a aucune façon
+             honnête de rétrécir, son texte étant deux mots courts. */
+          flex:none;
           margin:0 auto;transition:transform .12s ease,background .16s ease;
           background:rgba(255,255,255,.08);
           border:1px solid rgba(255,255,255,.2);border-radius:999px;
