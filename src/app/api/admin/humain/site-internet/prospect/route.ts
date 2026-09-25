@@ -1,5 +1,6 @@
 // Actions sur un prospect "Site internet" (canal lettre) depuis la liste admin.
-// - validate  : letter_status = 'validated'
+// - validate  : letter_status = 'validated'   (LA LETTRE, pas le client)
+// - client_on / client_off : est_client — CE QUI RETIRE LA DÉMONSTRATION
 // - printed   : letter_status = 'printed'  + letter_printed_at = now
 // - delivered : letter_status = 'delivered' + letter_delivered_at = now
 // - skip      : letter_status = 'skipped'
@@ -50,6 +51,56 @@ export async function POST(req: Request) {
         .maybeSingle();
       const m = { ...(((cur as { metadata: Record<string, unknown> | null } | null)?.metadata) || {}), demarchage_target: true };
       await supabase.from("human_vitrine_sites").update({ metadata: m }).eq("id", id);
+    }
+    return NextResponse.redirect(new URL(redirectTo, req.url), { status: 303 });
+  }
+
+  /**
+   * ═══ DEVENIR CLIENT N'EST PAS UNE ÉTAPE DE LA LETTRE ═════════════════════
+   *
+   * « J'ai revalidé la page du commerçant sur l'admin, mais j'ai toujours la
+   * démo du début avec la voix de l'IA et la bannière de confirmation. »
+   *
+   * IL AVAIT APPUYÉ SUR « VALIDER », QUI VALIDE LA LETTRE. La bascule qui
+   * retire la démonstration s'appelait « 🚀 Mise en ligne » et vivait sur une
+   * AUTRE page — le détail de la lettre. Deux actions sans rapport portaient le
+   * même mot, et la colonne d'état affichait « ✅ Validée » juste à côté : tout
+   * lui confirmait qu'il avait fait ce qu'il fallait.
+   *
+   * ON ÉCRIT LE MÊME AXE QUE `publish`, ET RIEN D'AUTRE. Surtout pas
+   * `letter_status` : « client » n'est pas une valeur autorisée par la
+   * contrainte, l'UPDATE échouerait EN ENTIER, et les compteurs de l'entonnoir
+   * — imprimées + remises + contacts — verraient la prospection se vider à
+   * mesure qu'elle réussit. Le fichier `publish/route.ts` porte le
+   * raisonnement complet ; celui-ci n'en est qu'un raccourci depuis la liste.
+   */
+  if (action === "client_on" || action === "client_off") {
+    const devient = action === "client_on";
+    const { error } = await supabase
+      .from("human_vitrine_sites")
+      .update({ est_client: devient, est_client_depuis: devient ? now : null })
+      .eq("id", id)
+      .eq("channel", "letter");
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    /* ON RELIT, COMME `publish`. Une écriture sans erreur n'est pas une
+       écriture qui a pris : un déclencheur ou une politique peut l'annuler sans
+       rien remonter ici, et le symptôme est alors invisible — l'admin annonce
+       « client », la page reste en démonstration. */
+    const { data: apres } = await supabase
+      .from("human_vitrine_sites")
+      .select("est_client")
+      .eq("id", id)
+      .maybeSingle();
+    const reel = Boolean((apres as Record<string, unknown> | null)?.est_client);
+    if (reel !== devient) {
+      return NextResponse.json(
+        {
+          error:
+            "La base n'a pas retenu le changement. La ligne existe et l'écriture n'a pas signalé d'erreur : " +
+            "cherchez du côté d'un déclencheur ou d'une politique sur human_vitrine_sites.",
+        },
+        { status: 500 },
+      );
     }
     return NextResponse.redirect(new URL(redirectTo, req.url), { status: 303 });
   }

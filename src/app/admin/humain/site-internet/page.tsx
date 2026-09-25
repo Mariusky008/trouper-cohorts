@@ -18,6 +18,15 @@ type Row = {
   variant: string | null;
   google_rating: number | null;
   letter_status: string | null;
+  /**
+   * L'AXE COMMERCIAL, ET IL N'EST PAS CELUI DE LA LETTRE.
+   *
+   * Voir la migration `separer_client_et_visibilite` : `letter_status` suit le
+   * cycle de la LETTRE — brouillon, imprimée, remise — et `est_client` dit que
+   * ce commerçant a accepté. Cette liste ne montrait que le premier, et son
+   * bouton « Valider » n'écrit que le premier lui aussi.
+   */
+  est_client: boolean | null;
   letter_delivered_at: string | null;
   contact_scanned_at: string | null;
   metadata: Record<string, unknown> | null;
@@ -41,7 +50,7 @@ export default async function AdminSiteInternetPage() {
   const { data, error } = await supabase
     .from("human_vitrine_sites")
     .select(
-      "id,slug,business_name,city,activite,variant,google_rating,letter_status,letter_delivered_at,contact_scanned_at,metadata"
+      "id,slug,business_name,city,activite,variant,google_rating,letter_status,letter_delivered_at,contact_scanned_at,metadata,est_client"
     )
     .eq("channel", "letter")
     .order("created_at", { ascending: false })
@@ -214,6 +223,13 @@ export default async function AdminSiteInternetPage() {
                         {r.contact_scanned_at && (
                           <div className="text-[11px] font-semibold text-sky-600">👁 QR scanné</div>
                         )}
+                        {/* L'ÉTAT COMMERCIAL, SOUS L'ÉTAT DE LA LETTRE. « ✅
+                            Validée » se lisait comme « c'est bon, il est
+                            client » : deux axes dans une seule colonne, dont un
+                            seul s'affichait. */}
+                        {r.est_client && (
+                          <div className="text-[11px] font-bold text-emerald-700">🚀 Client</div>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <Link
@@ -230,7 +246,25 @@ export default async function AdminSiteInternetPage() {
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap items-center gap-1">
                           {[
-                            { action: "validate", label: "Valider" },
+                            /* ═══ « VALIDER » NE VOULAIT PAS DIRE CE QU'ON CROYAIT ═══
+
+                               « J'ai revalidé la page du commerçant sur
+                               l'admin, mais j'ai toujours la démo du début avec
+                               la voix de l'IA et la bannière de confirmation. »
+
+                               RIEN N'ÉTAIT CASSÉ : ce bouton écrit
+                               `letter_status = "validated"`, c'est-à-dire « la
+                               lettre est bonne à imprimer ». Il ne touche pas à
+                               `est_client`, qui est ce qui retire la
+                               démonstration. Deux actions très différentes
+                               portaient le même mot, et la colonne d'état
+                               affichait « ✅ Validée » juste à côté — donc tout
+                               confirmait qu'il avait fait ce qu'il fallait.
+
+                               LE BOUTON DIT MAINTENANT CE QU'IL VALIDE, et la
+                               vraie bascule est dans la même rangée, juste
+                               après. */
+                            { action: "validate", label: "Lettre OK" },
                             { action: "printed", label: "Imprimée" },
                             { action: "delivered", label: "Remise" },
                             { action: "skip", label: "Ignorer" },
@@ -246,6 +280,34 @@ export default async function AdminSiteInternetPage() {
                               </button>
                             </form>
                           ))}
+                          {/* ═══ LA BASCULE QUI RETIRE LA DÉMONSTRATION ══════
+
+                              Elle n'existait QUE sur le détail de la lettre,
+                              sous le nom « 🚀 Mise en ligne ». On la ramène
+                              ici, où l'on décide, et elle DIT SON ÉTAT : un
+                              bouton qui ne montre pas où l'on en est se
+                              represse dans le doute, et l'on repasse en
+                              démonstration un commerçant qu'on venait de
+                              faire entrer. */}
+                          <form action="/api/admin/humain/site-internet/prospect" method="post">
+                            <input type="hidden" name="id" value={r.id} />
+                            <input type="hidden" name="action" value={r.est_client ? "client_off" : "client_on"} />
+                            <button
+                              type="submit"
+                              title={
+                                r.est_client
+                                  ? "Ce commerçant est client : sa page ne montre ni visite guidée ni invitation. Repasser en démonstration."
+                                  : "Le faire passer en client : retire la visite guidée de l'IA et la bannière « Garder cette page »"
+                              }
+                              className={
+                                r.est_client
+                                  ? "rounded border border-emerald-300 bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-800 hover:bg-emerald-100"
+                                  : "rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-emerald-50"
+                              }
+                            >
+                              {r.est_client ? "🚀 Client ✓" : "🚀 Passer client"}
+                            </button>
+                          </form>
                           {r.metadata && (r.metadata as Record<string, unknown>).demarchage_target ? (
                             <form action="/api/admin/humain/site-internet/prospect" method="post">
                               <input type="hidden" name="id" value={r.id} />
