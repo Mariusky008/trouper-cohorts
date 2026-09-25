@@ -77,7 +77,6 @@ import { ceQuiRevient, phraseHabitude } from "@/lib/direct/historique";
 import { momentEnCours } from "@/lib/direct/apercu-habitant";
 import { murDeLaCarte, pieceDeLaCarte } from "@/lib/direct/fantomes";
 import { parcoursPromis } from "@/lib/direct/parcours-promis";
-import { ParcoursAVenir } from "@/components/direct/parcours-a-venir";
 import {
   abonnerTailles,
   chargerTailles,
@@ -1565,12 +1564,36 @@ export function Boutique({
               `QuoiEssayer` : la question et le geste suivent ce qu'il y a
               derrière — un essayage, un avant-goût, ou le mur. */}
           {promis ? (
-            /* ON NE LUI OUVRE PAS UNE PORTE QUI NE MENE NULLE PART. La vitrine
-               et l'atelier vont par paire — la première annonce ce que le second
-               ouvre — et il n'y a rien à ouvrir tant que la matière n'existe
-               pas. Le bloc remplace donc les deux, et il ne porte aucun bouton :
-               la demande est déjà en pied de page, une seule fois. */
-            <ParcoursAVenir p={promis} nom={c.nom} />
+            /* ═══ C'EST LA VITRINE, PAS UN BLOC À PART ════════════════════════
+
+               « Ce n'est pas du tout ça qu'il faut : il faut le style qu'on a
+               déjà mis en place, mais pour les restaurants dans ce cas précis,
+               avec le parcours en quatre étapes. Et s'il n'a encore rien mis,
+               au lieu d'avoir "essayer le menu" on peut dire "le chef n'a
+               encore rien mis". »
+
+               J'AVAIS ÉCRIT UN SECOND DESSIN POUR LA MÊME PLACE. Une carte
+               blanche, une liste numérotée, ses propres couleurs — correcte,
+               lisible, et étrangère à la page : au même endroit, tous les
+               autres métiers ont le panneau rose, le Fantôme et la question
+               manuscrite. Un commerçant qui compare sa page à celle du coiffeur
+               d'à côté voit d'abord qu'il n'a pas la même.
+
+               C'EST DONC LE MÊME PANNEAU, avec une cinquième valeur — voir
+               `QuoiEssayer`. Le grand bouton devient une bande muette qui dit ce
+               qu'il n'y a pas encore, et les quatre étapes se lisent dessous.
+               Rien de neuf à dessiner, rien de neuf à tenir à jour.
+
+               ET IL N'OUVRE RIEN : la vitrine et l'atelier vont par paire — la
+               première annonce ce que le second ouvre — et il n'y a rien à
+               ouvrir tant que la matière n'existe pas. */
+            <BlocFantome
+              mur={murDuLieu}
+              quoi="bientot"
+              promis={promis}
+              onPhoto={() => {}}
+              onStyle={() => {}}
+            />
           ) : !essaiOuvert ? (
             <BlocFantome
               mur={murDuLieu}

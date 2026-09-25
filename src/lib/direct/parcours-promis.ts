@@ -79,6 +79,34 @@ export type ParcoursPromis = {
   cle: "gout" | "soiree";
   /** Ce que le parcours fait, en une ligne, dans les mots de son métier. */
   titre: string;
+  /**
+   * LA MÊME CHOSE, MAIS DITE À SES CLIENTS.
+   *
+   * DEUX VOIX DANS UN SEUL PANNEAU, ET C'EST VOULU. Ce bloc est la VITRINE
+   * telle que ses clients la verront — question manuscrite, Fantôme, grande
+   * phrase — posée sur sa page à lui pour qu'il voie ce qu'elle donnera. La
+   * phrase du haut est donc écrite pour eux ; ce qui est écrit pour lui
+   * commence plus bas, à la bande et aux étapes.
+   *
+   * SANS CE CHAMP, `titre` SERVAIT AUX DEUX : « on goûte VOTRE plat » s'affichait
+   * à la place de la phrase que lisent ses clients, et le panneau se mettait à
+   * tutoyer le commerçant au milieu de sa propre vitrine.
+   */
+  vitrine: string;
+  /**
+   * CE QU'IL N'Y A PAS ENCORE, À LA PLACE DU GRAND BOUTON.
+   *
+   * SES MOTS : « au lieu d'avoir "essayer le menu" on peut dire "le chef n'a
+   * encore rien mis" ». La phrase est juste et elle est gentille — elle dit que
+   * quelqu'un doit poser quelque chose, pas que la page est cassée.
+   *
+   * ELLE EST ÉCRITE PAR PARCOURS, PAS DÉDUITE DU MÉTIER. Un premier jet la
+   * décidait sur la même expression régulière qui sépare ce qui se sert de ce
+   * qui se fabrique — et cette expression compte le bar parmi les tables. Un
+   * bar à vins lisait donc « le chef n'a encore rien mis » au-dessus des trois
+   * temps de sa soirée. Le parcours, lui, sait toujours de quoi il parle.
+   */
+  rien: string;
   /** « 4 écrans », « 3 temps ». Écrit ici parce que le compte suit les étapes. */
   combien: string;
   etapes: EtapePromise[];
@@ -153,6 +181,10 @@ function laTable(sert: boolean): ParcoursPromis {
     titre: sert
       ? "On goûte votre plat avant d’y aller"
       : "On découvre vos secrets avant de venir",
+    vitrine: sert
+      ? "Le plat du jour, goûté d’ici, en quatre écrans — dès qu’il est posé."
+      : "La pièce du jour et ce qu’elle cache, en quatre écrans — dès qu’elle est posée.",
+    rien: sert ? "Le chef n’a encore rien mis" : "Rien n’est encore en vitrine",
     combien: "4 écrans",
     etapes: [
       {
@@ -209,6 +241,8 @@ function laTable(sert: boolean): ParcoursPromis {
 const LE_COMPTOIR: ParcoursPromis = {
   cle: "soiree",
   titre: "On essaie un bout de votre soirée",
+  vitrine: "Un bout de la soirée, essayé d’ici, en trois temps — dès qu’elle est annoncée.",
+  rien: "La soirée n’est pas encore annoncée",
   combien: "3 temps",
   etapes: [
     {

@@ -577,9 +577,15 @@ export function saCarte(
   // métier de personne en particulier.
   const repli = g.cherchent === "où manger"
     ? PHOTOS.plat
-    : /boulanger|pâtissier|patissier/i.test(metierLabel)
-      ? PHOTOS.four
-      : PHOTOS.vitrine;
+    /* ET « OÙ SORTIR » N'EST PAS « OÙ MANGER ». Le comptoir tombait sur la
+       vitrine — une devanture de jour sous une carte qui annonce un concert à
+       vingt et une heures. La tablée du soir dit l'heure et l'ambiance, ce qui
+       est tout ce que cette carte-là vend. */
+    : g.cherchent === "où sortir"
+      ? PHOTOS.tablee
+      : /boulanger|pâtissier|patissier/i.test(metierLabel)
+        ? PHOTOS.four
+        : PHOTOS.vitrine;
   return {
     photo: photo || repli,
     // Le cadrage n'est connu que pour NOS illustrations : celles du commerçant

@@ -65,21 +65,6 @@ type Props = {
    * lui promet pas un écran qu'il n'a pas, l'acte saute.
    */
   essai?: { titre: string; say: string };
-  /**
-   * CE QUE LA CONVERSATION REMPLIT, QUAND IL Y A UN PARCOURS DERRIÈRE.
-   *
-   * « On discute avec l'IA pour lui dire le menu et les spécificités qui iront
-   * dans le parcours en quatre étapes, avec la voix du restaurateur à
-   * l'étape 3. »
-   *
-   * SANS ÇA, L'ACTE DU GESTE S'ARRÊTAIT À LA CARTE DU DIRECT — vrai, mais
-   * incomplet : c'est la moitié de ce que cette conversation produit. Le bloc
-   * « Ce que votre page fera », quelques centimètres plus bas sur la page,
-   * annonce l'autre moitié, et la voix ne la nommait pas. Absent chez un
-   * coiffeur, qui n'a pas de parcours à remplir : l'acte se termine alors sur
-   * la carte, comme avant.
-   */
-  parcours?: { combien: string; voixA: number };
   keepHref?: string; // contact (WhatsApp/tel) pour « Garder mon site gratuitement »
   /**
    * LA PAGE SUR LAQUELLE LA DÉMONSTRATION SE JOUE, EN UN SÉLECTEUR.
@@ -126,7 +111,6 @@ export function DemoTour({
   flashExample,
   geste,
   essai,
-  parcours,
   keepHref,
   racine = "main.mqc",
 }: Props) {
@@ -345,11 +329,16 @@ export function DemoTour({
            produire ça — c'est pour cette raison que le geste a changé, et il
            faut donc que la phrase le dise. */
         `${G.parPhoto ? "Je la lis, je l'écris" : "Je l'écris"}, et ${G.envoi} sur votre page et dans Le Direct.`,
-        ...(parcours
-          ? [
-              `Et votre parcours se remplit en ${parcours.combien} — avec votre voix, telle quelle, à l'étape ${parcours.voixA}.`,
-            ]
-          : []),
+        /* ═══ LA TROISIÈME PHRASE EST PARTIE, ET LA PASTILLE AVEC ══════════
+
+           « Étape 3 : supprimer "4 écrans, votre voix à l'étape 3". »
+
+           ELLE DISAIT VRAI ET ELLE ARRIVAIT TROP TÔT. L'acte montre UNE chose —
+           ce qu'il dit part dans Le Direct — et on lui en empilait une seconde,
+           en vocabulaire interne (« votre parcours », « l'étape 3 ») devant
+           quelqu'un qui n'a encore vu aucun parcours. Le bloc « Ce que votre
+           page fera », lui, est sur sa page, en entier, avec les quatre écrans
+           nommés : c'est là que cette phrase a un sens, et pas avant. */
       ]
     : [];
   /**
@@ -434,7 +423,31 @@ export function DemoTour({
     img.src = saPhoto;
     return () => { vivant = false; };
   }, [saPhoto]);
-  const maCarte = G ? saCarte(G, nom, metierLabel, laVille, photoKO ? undefined : saPhoto) : null;
+  /**
+   * ═══ LA CARTE DE L'EXEMPLE PORTE LA PHOTO DE L'EXEMPLE ═══════════════════
+   *
+   * « Étape 3 : il manque la photo du menu du jour du restaurant. »
+   *
+   * ELLE NE MANQUAIT PAS, ELLE ÉTAIT AILLEURS. La carte reprenait sa PREMIÈRE
+   * PHOTO GOOGLE — et la première photo Google d'un restaurant est sa
+   * devanture, prise de la rue, souvent de nuit. On posait donc sa façade
+   * derrière un menu du jour entièrement inventé pour la démonstration :
+   * « Garbure landaise, magret grillé, dessert maison, 19 € ». Le contenu de
+   * cette carte est un exemple de bout en bout ; sa photo doit l'être aussi.
+   *
+   * SON NOM, SON MÉTIER, SA VILLE ET SA DISTANCE RESTENT LES SIENS — c'est ce
+   * qui fait qu'il se reconnaît. Ce qu'on remplace est l'illustration d'un plat
+   * qu'il n'a pas encore déclaré, et `saCarte` en prévoit déjà une par famille.
+   *
+   * ET ÇA SUPPRIME AU PASSAGE TOUTE UNE CLASSE DE PANNES : un fichier local ne
+   * répond jamais 403 à cause d'un référent, ne dépend d'aucun domaine tiers, et
+   * ne peut pas rendre la carte noire au moment exact où la démonstration dit
+   * « voilà votre commerce dans Le Direct ».
+   */
+  const carteDeLExemple = G?.famille === "restauration";
+  const maCarte = G
+    ? saCarte(G, nom, metierLabel, laVille, carteDeLExemple || photoKO ? undefined : saPhoto)
+    : null;
 
   /* ═══ LA QUEUE DE LA DÉMONSTRATION N'EST PLUS QU'UN SEUL ACTE ════════════
    *
@@ -1133,18 +1146,6 @@ export function DemoTour({
               setPhotoN(2);
               setCaption(PHOTO_DIT[1] ?? "");
             }, Math.max(1400, t1));
-            /* ③ ET LE PARCOURS, SUR LA PHRASE QUI LE NOMME. Posée avec la
-               carte, la pastille aurait annoncé les quatre écrans pendant que
-               la voix parlait encore du Direct — c'est le défaut qu'il avait
-               relevé sur cet acte même : une image qui prend de l'avance sur
-               ce qu'on entend. Elle n'existe que là où il y a un parcours. */
-            if (PHOTO_DIT[2]) {
-              const t2 = quand(SAY_MANQUE, PHOTO_AT2[2] ?? PART_GESTE) - t0;
-              window.setTimeout(() => {
-                setPhotoN(3);
-                setCaption(PHOTO_DIT[2]);
-              }, Math.max(2600, t2));
-            }
           }, quand(SAY_MANQUE, PART_GESTE));
         },
       });
@@ -1802,16 +1803,6 @@ export function DemoTour({
              ligne l'a vu ; voir npm run verifier:styles. */
           @keyframes dtBarre{from{transform:scaleY(.42)}to{transform:scaleY(1)}}
 
-          /* CE QUE LA CONVERSATION REMPLIT EN PLUS DE LA CARTE. */
-          .ph-parc{display:flex;align-items:center;justify-content:center;gap:9px;
-            padding:8px 12px;border-radius:999px;
-            background:rgba(126,230,192,.12);
-            border:1px solid rgba(126,230,192,.26);}
-          .ph-parc b{font-size:12.5px;font-weight:850;color:#8FE9C4;}
-          /* PAS LE GRIS DES SOUS-TITRES : la pastille est posee sur un fond
-             clair translucide, et ce gris-la y perdait la moitie de son
-             contraste. Voir npm run verifier:contraste. */
-          .ph-parc em{font-style:normal;font-size:11.5px;color:#D8E9E1;}
 
           /* ── LE TAMPON « LU » / « ECRIT » ──
              IL N'AVAIT AUCUN STYLE. Rendu depuis toujours, jamais declare : il
@@ -1825,9 +1816,6 @@ export function DemoTour({
             box-shadow:0 8px 18px -8px rgba(18,185,129,.8);
             animation:dtRise .35s var(--exp) both;}
 
-          .ph-wrap.a-parc{gap:7px;}
-          .ph-wrap.a-parc .ph-mini{zoom:.48;}
-          .ph-wrap.a-parc .ph-dial{padding:11px 11px 12px;gap:7px;}
 
           .ph-vers{display:flex;align-items:center;justify-content:center;gap:7px;padding-top:9px;
             font-size:12px;font-weight:800;color:#8FE9C4;}
@@ -1859,7 +1847,6 @@ export function DemoTour({
             .ph-vers{padding-top:6px;font-size:11px;}
             .ph-mini{margin-top:5px;}
             .ph-mini{zoom:.44;}
-            .ph-wrap.a-parc .ph-mini{zoom:.38;}
           }
           /* ── ACTE 6 · CE QUI LUI REVIENT ─────────────────────────────── */
           .dtour-card.rt{text-align:left;}
@@ -2425,13 +2412,7 @@ export function DemoTour({
               n'existait pas. */}
           {scene === "photo" && G && maCarte && (
             <div className="dtour-ov ph-ov">
-              {/* LA BANDE DU PARCOURS PREND DE LA HAUTEUR, ET IL N'Y EN AVAIT
-                  PAS EN TROP. Mesurée sur un écran de 844 px, elle passait sous
-                  la barre des légendes : ouverte, visible pour le code, invisible
-                  pour qui regarde. La carte se réduit donc d'un cran quand la
-                  bande existe — c'est elle qui peut se permettre d'être plus
-                  petite, puisqu'on vient de la voir en entier à l'acte d'avant. */}
-              <div className={`ph-wrap${parcours ? " a-parc" : ""}`}>
+              <div className="ph-wrap">
                 <div className="ph-h">{G.geste}<em>C&apos;est tout.</em></div>
 
                 {/* ═══ ON PHOTOGRAPHIE, OU ON PARLE — ET CE N'EST PLUS LE
@@ -2509,21 +2490,6 @@ export function DemoTour({
                   </div>
                 </div>
 
-                {/* ET L'AUTRE MOITIÉ DE CE QUE LA CONVERSATION PRODUIT.
-                    La carte du Direct était le seul aboutissement montré ;
-                    le parcours, qui est ce qu'on lui promet dix centimètres
-                    plus bas sur sa propre page, n'apparaissait nulle part dans
-                    la visite. Voir la prop `parcours`. */}
-                {parcours && (
-                  <div className={`dt-ouvre${photoN >= 3 ? " on" : ""}`}>
-                    <div className="dt-ec">
-                      <div className="ph-parc">
-                        <b>{parcours.combien}</b>
-                        <em>votre voix à l’étape {parcours.voixA}</em>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           )}

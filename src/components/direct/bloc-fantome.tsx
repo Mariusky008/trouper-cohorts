@@ -31,6 +31,7 @@
 // verbe du bouton, ce que montrent les vignettes. Tout vient de
 // `Mur.essai.mots` et du catalogue — donc du métier, pas d'un réglage écrit ici.
 
+import type { ParcoursPromis } from "@/lib/direct/parcours-promis";
 import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { FantomeMetier, outilDuMetier } from "@/components/direct/fantome-metier";
 import type { Mur } from "@/lib/direct/fantomes";
@@ -92,6 +93,8 @@ function laQuestion(
   metier: string,
   quoi: QuoiEssayer,
   plat?: string,
+  /** La mécanique promise, quand `quoi` vaut `bientot`. Voir juste en dessous. */
+  cle?: ParcoursPromis["cle"],
 ): { debut: string; fin: string } {
   /**
    * CHEZ UN RESTAURANT OU UN BAR, LA QUESTION PORTE LE PLAT, PAS LE MÉTIER.
@@ -157,6 +160,28 @@ function laQuestion(
   if (quoi === "mur") {
     return { debut: "Qui est là", fin: "en ce moment ?" };
   }
+  /**
+   * ET QUAND LE PARCOURS EXISTE MAIS QUE RIEN N'EST ENCORE DEDANS.
+   *
+   * LA QUESTION NE CHANGE PAS, ET C'EST LE POINT. Ce panneau montre au
+   * commerçant LA VITRINE QUE SES CLIENTS VERRONT : la question est donc celle
+   * qu'ils liront, mot pour mot, le jour où il aura posé son plat. Ce qui
+   * manque se dit à la place du grand bouton — « le chef n'a encore rien
+   * mis » —, pas à la place de la promesse.
+   *
+   * J'AVAIS MIS SA PHRASE ICI, ET ELLE S'Y RÉPÉTAIT : le titre et la bande
+   * disaient la même chose à dix centimètres d'écart, ce qui faisait du panneau
+   * un avis de fermeture plutôt qu'un aperçu.
+   */
+  if (quoi === "bientot") {
+    /* LA CLÉ DU PARCOURS DÉCIDE, PAS LE MÉTIER. `SERT` compte le bar parmi les
+       tables — c'est juste pour le verbe « servir », faux pour la mécanique : un
+       bar à vins lisait « et si vous goûtiez avant d'y aller ? » au-dessus des
+       trois temps de sa soirée. */
+    if (cle === "soiree") return { debut: "Et si vous essayiez", fin: "un bout de cette soirée ?" };
+    if (!SERT.test(metier)) return { debut: "Et si vous découvriez", fin: "ses secrets ?" };
+    return { debut: "Et si vous goûtiez", fin: "avant d’y aller ?" };
+  }
   const c = CHOSES.find((x) => x.quand.test(metier));
   // LE REPLI NE PRÉTEND RIEN SAVOIR DU MÉTIER, et c'est la règle de tout ce
   // dossier : mieux vaut une question générale et juste qu'une question précise
@@ -192,8 +217,15 @@ function laQuestion(
  *     propose de laisser son Fantôme, ce qui est exactement ce que le bloc
  *     ouvre. Un bouton qui annonce autre chose que ce qu'il fait est la
  *     promesse la plus concrète qu'un écran puisse rompre.
+ *   · `bientot` — le parcours existe pour son métier, mais il n'a encore rien
+ *     donné. C'est LE MÊME PANNEAU, et c'est la demande : « il faut le style
+ *     qu'on a déjà mis en place, mais pour les restaurants, avec le parcours en
+ *     quatre étapes ; et s'il n'a encore rien mis, au lieu d'avoir "essayer le
+ *     menu" on peut dire "le chef n'a encore rien mis" ». Le grand bouton
+ *     devient donc une bande muette : un bouton qui n'ouvre rien se presse
+ *     quand même, et ne rien voir arriver est pire que de lire qu'il n'y a rien.
  */
-export type QuoiEssayer = "essai" | "gout" | "soiree" | "mur";
+export type QuoiEssayer = "essai" | "gout" | "soiree" | "mur" | "bientot";
 
 /**
  * LES PICTOGRAMMES DES QUATRE FAMILLES.
@@ -236,6 +268,7 @@ export function BlocFantome({
   onStyle,
   onCollection,
   styleChoisi,
+  promis,
 }: {
   mur: Mur;
   /** Ce qu'il y a derrière le grand bouton. Voir `QuoiEssayer`. */
@@ -264,10 +297,19 @@ export function BlocFantome({
    */
   onCollection?: (rayon?: string) => void;
   styleChoisi?: string;
+  /**
+   * LE PARCOURS QU'IL AURA, quand `quoi` vaut `bientot`.
+   *
+   * IL N'EST PAS CALCULÉ ICI, et ce n'est pas un détail : ce panneau sert
+   * l'habitant comme le commerçant, et seule la page sait lequel des deux
+   * regarde. Voir `parcours-promis.ts` pour le contenu, et `saPage` dans la
+   * boutique pour la décision.
+   */
+  promis?: ParcoursPromis;
 }) {
   const q = useMemo(
-    () => laQuestion(mur.metier, quoi, mur.gout?.plat?.toLowerCase()),
-    [mur.metier, quoi, mur.gout],
+    () => laQuestion(mur.metier, quoi, mur.gout?.plat?.toLowerCase(), promis?.cle),
+    [mur.metier, quoi, mur.gout, promis?.cle],
   );
   const outil = useMemo(() => outilDuMetier(mur.metier), [mur.metier]);
   /**
@@ -448,6 +490,12 @@ export function BlocFantome({
                   ? `${mur.soiree?.quand ?? "Ce soir"} : écoutez, regardez, dites ce que vous cherchez, et voyez ce qui se prépare.`
                   : quoi === "mur"
                     ? "Laissez un mot, dites ce que vous cherchez, ou simplement que vous êtes là."
+                  : quoi === "bientot"
+                    ? /* ÉCRITE POUR SES CLIENTS, comme tout le haut de ce
+                         panneau. Voir `vitrine` dans `parcours-promis.ts` : le
+                         champ existe précisément parce que `titre`, lui, est
+                         écrit pour le commerçant. */
+                      (promis?.vitrine ?? "Le parcours s’ouvre dès que la matière arrive.")
                   : (mur.essai?.mots.phrase ?? "Essayez sur vous, en quelques secondes.")}
             </p>
           </div>
@@ -515,6 +563,46 @@ export function BlocFantome({
             vêtement sans avoir donné de visage. Les deux moitiés de la phrase
             sont nécessaires : ce qu'on va voir, et le fait que ça se pose sur
             SOI. C'est d'ailleurs la seule chose que cette page ait d'unique. */}
+        {quoi === "bientot" ? (
+          /* ═══ LA BANDE MUETTE, ET LES ÉTAPES SOUS ELLE ═══════════════════
+
+             « Au lieu d'avoir "essayer le menu" on peut dire "le chef n'a
+             encore rien mis". »
+
+             CE N'EST PAS UN BOUTON DÉSACTIVÉ. Un bouton grisé se presse quand
+             même — c'est le geste le plus automatique d'une page — et ne rien
+             voir arriver est pire que de lire qu'il n'y a rien. C'est une
+             bande : même place, même largeur, même arrondi, aucune promesse.
+
+             ET LES QUATRE ÉTAPES SONT DESSOUS, parce qu'il a demandé les deux :
+             le panneau de la vitrine ET le parcours en quatre étapes. Elles
+             disent chacune ce qu'elles feront et ce qu'elles attendent de lui —
+             c'est la seule chose de cet écran qui lui donne une prise. */
+          <>
+            <div className="bf-muet">
+              <span>{promis?.rien ?? "Rien n’est encore en ligne"}</span>
+            </div>
+            {promis && (
+              <ol className="bf-pas">
+                {promis.etapes.map((e) => (
+                  <li key={e.n}>
+                    <b aria-hidden="true">{e.n}</b>
+                    <div>
+                      <strong>{e.titre}</strong>
+                      <p>{e.dit}</p>
+                      {e.fournir ? (
+                        <em className="bf-pas-f">{e.fournir}</em>
+                      ) : e.sans ? (
+                        <em className="bf-pas-d">{e.sans}</em>
+                      ) : null}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+            {promis && <p className="bf-pas-c">{promis.comment}</p>}
+          </>
+        ) : (
         <button
           type="button"
           className="bf-cta"
@@ -560,6 +648,7 @@ export function BlocFantome({
           </span>
           <s aria-hidden="true">→</s>
         </button>
+        )}
 
         {/* ═══ « SURPRENDS-MOI » N'EST PLUS SUR CETTE PAGE ═══════════════════
 
@@ -842,6 +931,45 @@ function Styles() {
             color-mix(in srgb, var(--bf-teinte) 78%, #FF2D6F) 100%);
           box-shadow:0 14px 30px -14px color-mix(in srgb, var(--bf-teinte) 80%, transparent);}
         .bf-cta:active{transform:scale(.985);}
+
+        /* ─── LA BANDE MUETTE, ET LES ETAPES ───
+           MEME PLACE, MEME ARRONDI, AUCUN DEGRADE. Le degrade est ce qui dit
+           « appuyez » dans tout ce produit : le retirer suffit a dire que celle
+           -ci n'attend rien. Elle garde la hauteur du bouton pour que le
+           panneau ne change pas de forme selon l'etat du commerce. */
+        .bf-muet{position:relative;z-index:2;width:100%;
+          margin-top:16px;padding:14px 17px;border-radius:999px;
+          font-size:14.5px;font-weight:800;text-align:center;
+          color:color-mix(in srgb, var(--bf-teinte) 70%, #2A1F3A);
+          background:rgba(255,255,255,.62);
+          border:1px dashed color-mix(in srgb, var(--bf-teinte) 45%, #FFFFFF);}
+
+        .bf-pas{position:relative;z-index:2;list-style:none;
+          margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:11px;}
+        .bf-pas li{display:flex;gap:11px;align-items:flex-start;}
+        /* LE NUMERO PORTE LE COMPTE QUE LA PHRASE ANNONCE : il se lit de loin
+           et il ne bouge pas quand le texte d'a cote fait cinq lignes. */
+        .bf-pas b{flex:none;width:25px;height:25px;border-radius:999px;
+          display:inline-flex;align-items:center;justify-content:center;
+          font-size:12.5px;font-weight:850;color:#fff;margin-top:1px;
+          background:color-mix(in srgb, var(--bf-teinte) 72%, #2A1F3A);}
+        .bf-pas li>div{min-width:0;}
+        .bf-pas strong{display:block;font-size:14.5px;font-weight:800;
+          line-height:1.3;color:#241A33;}
+        .bf-pas p{margin:3px 0 0;font-size:12.5px;line-height:1.5;color:#6B6180;}
+        .bf-pas-f,.bf-pas-d{display:block;margin-top:5px;font-style:normal;
+          font-size:11.5px;font-weight:700;line-height:1.4;}
+        /* A FOURNIR : la fleche dit qu'on attend quelque chose de lui. */
+        .bf-pas-f{color:#C01C64;}
+        .bf-pas-f::before{content:"\\2192\\00a0";}
+        .bf-pas-d{color:#2E7D55;}
+        .bf-pas-d::before{content:"\\2713\\00a0";}
+        /* L'ETAPE QUI TOURNE DEJA EST PLUS CLAIRE, PAS PLUS PALE : une etape
+           grisee se lit desactivee, ce qui est l'inverse de ce qu'elle dit. */
+        .bf-pas li:has(.bf-pas-d) b{background:#2E7D55;}
+        .bf-pas-c{position:relative;z-index:2;margin:13px 0 0;padding-top:12px;
+          font-size:12.5px;line-height:1.55;color:#241A33;
+          border-top:1px solid rgba(42,31,58,.12);}
         .bf-cta-i{width:21px;height:21px;flex:none;}
         .bf-cta span{flex:1;min-width:0;}
         /* LA FLECHE EST DANS UN ROND BLANC, comme sur les trois maquettes. Elle
