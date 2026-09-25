@@ -26,6 +26,7 @@
 // que ce qu'il prétend.
 
 import {
+  alignementSurLeRendu,
   masqueDEssai,
   reposerLeVisage,
   trouverLeVisage,
@@ -624,6 +625,52 @@ export async function essayerSurMoi(opts: {
            défaut « la femme a un visage qui se double un peu sur sa droite »,
            et il redevient possible dès que cette détection-ci échoue. */
         dire("visage introuvable sur le rendu : on repose à l'ancienne place");
+      }
+      /**
+       * ═══ UN RENDU QUI N'EST PAS SA PHOTO RETOUCHÉE NE SE MONTRE PAS ══════
+       *
+       * « C'est pire qu'avant : c'est plus les mêmes habits, plus la même
+       * tête, et en plus c'est pas la bonne coupe. »
+       *
+       * CE QU'IL A REÇU N'ÉTAIT PAS UN ESSAI RATÉ, C'ÉTAIT UNE AUTRE PERSONNE.
+       * Un portrait en buste est parti, une photo EN PIED est revenue, avec
+       * d'autres vêtements et un autre visage : le modèle n'a pas retouché, il
+       * a fabriqué. Et on l'affichait tel quel.
+       *
+       * L'ALIGNEMENT SAIT DÉJÀ LE DIRE, et il le disait déjà. Il refuse une
+       * similitude aberrante — échelle hors de [0,5 ; 2,2], angle au-delà de
+       * dix-huit degrés — parce qu'à ce moment-là ce ne sont plus les repères
+       * de la même tête. Ce refus ne servait qu'à ne PAS recoller ; on
+       * montrait quand même l'image.
+       *
+       * J'AI DÉJÀ HÉSITÉ DEUX FOIS SUR CE POINT, ET LA TROISIÈME EST DIFFÉRENTE.
+       * Premier tour : on rendait SA PHOTO inchangée — échec muet, écarté à
+       * raison. Deuxième tour : on rend le portrait brut, « parce qu'il porte
+       * la coupe ». Ce raisonnement vaut quand le rendu est elle, décalée de
+       * quelques points. Il s'effondre quand le rendu est quelqu'un d'autre :
+       * il ne porte plus SA coupe à ELLE, il porte la coupe de personne.
+       *
+       * LA DIFFÉRENCE SE MESURE, ELLE NE SE PRÉFÈRE PAS. C'est précisément ce
+       * que l'alignement calcule. Quand il tient, on recompose et on montre.
+       * Quand il ne tient pas, sur un métier qui cadre un visage, on le dit et
+       * on propose de recommencer — un échec annoncé se refait en dix
+       * secondes, une image d'inconnue se montre à des amis et décide de ce
+       * qu'on pense du produit.
+       *
+       * ET ÇA NE CONCERNE QUE LES MÉTIERS DU VISAGE. Un buste — un vêtement
+       * sous le menton — n'a pas de visage dans sa zone de travail : le repli
+       * centré y reste bon, et c'est le métier qui s'en sert le plus.
+       */
+      if (zone === "coiffure" || zone === "lunettes") {
+        const ali = vRendu ? alignementSurLeRendu(visage, vRendu) : null;
+        if (!ali) {
+          dire("le rendu n'est pas une retouche de sa photo : on ne le montre pas");
+          return {
+            erreur: "L’essai n’a pas abouti.",
+            pourquoi:
+              "le modèle a refabriqué un portrait au lieu de retoucher le vôtre — on peut recommencer",
+          };
+        }
       }
       const fidele = await reposerLeVisage(photo, j.image, visage, zone, vRendu);
       return { image: fidele, ms: j.ms ?? 0, visageRepose: true };

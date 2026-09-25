@@ -2901,11 +2901,24 @@ const CARTES: CarteAutour[] = [
         // heures du soir, la même place venait de se libérer. C'était faux, et
         // c'est devenu visible en horodatant les annonces — une place libérée à
         // 8 h qu'on dit fraîche à 18 h ne trompe personne deux fois.
+        /* ═══ ET ON NE COMPTE PLUS LES CRÉNEAUX ═══════════════════════════
+
+           « Supprimer "il reste 3 créneaux" parce qu'on ne le sait pas. »
+
+           C'EST LA MÊME RÈGLE QUE LES CINQ BOLS DU RESTAURANT, et je l'avais
+           laissée passer ici. ClikMe ne tient pas l'agenda du salon : il
+           publie une annonce. Écrire « il reste un créneau » invente un
+           chiffre que personne n'a saisi, et un chiffre inventé sur un écran
+           qui dit « Réserver » est une promesse commerciale.
+
+           `places` RESTE AILLEURS QUAND C'EST UN STOCK QU'ON A SOUS LES YEUX —
+           quatorze pantalons en rayon, quatre bouquets sur l'étal. Un créneau
+           n'est pas dans un rayon : il est dans un agenda qu'on ne lit pas. */
         de: 14, a: 15.5, quand: "à 14 h 30", icone: "💇", publie: 14,
         titre: "Une place vient de se libérer",
         photo: "/direct/coiffure-femme-face.jpg",
         lignes: ["Coupe + brushing", "45 minutes"],
-        prix: "28 €", places: 1, action: "Réserver", envies: ["maintenant", "moins30"],
+        prix: "28 €", action: "Réserver", envies: ["maintenant", "moins30"],
         avis: [
           { note: 5, texte: "Elle écoute avant de couper, ça change tout.", qui: "Camille", quand: "il y a 3 semaines",
             photo: "/direct/avis-coupe.jpg" },
@@ -2918,7 +2931,7 @@ const CARTES: CarteAutour[] = [
         titre: "Coupe homme",
         photo: "/direct/coiffure-homme-face.jpg",
         lignes: ["Tondeuse + ciseaux", "20 minutes"],
-        prix: "18 €", places: 3, action: "Réserver", envies: ["moins30", "homme"],
+        prix: "18 €", action: "Réserver", envies: ["moins30", "homme"],
         // LE TROU DE FIN D'APRES-MIDI, COMBLE A DEUX. Une seule coupe a 15 €
         // dans un creux, c'est une perte ; deux qui s'enchaînent, c'est une
         // heure pleine. Le seuil est donc de DEUX, et c'est le plus petit
@@ -2992,7 +3005,7 @@ const CARTES: CarteAutour[] = [
         titre: "Couleur + coupe",
         photo: "/direct/coiffure1.jpg",
         lignes: ["Végétale ou classique", "1 h 30"],
-        prix: "55 €", prixBarre: "69 €", etiquette: "OUVERTURE", places: 6,
+        prix: "55 €", prixBarre: "69 €", etiquette: "OUVERTURE",
         action: "Réserver", envies: ["couleur"],
         // UN SALON QUI VIENT D'OUVRIR A PEU D'AVIS, et c'est la vérité : deux,
         // pas trente. Lui en inventer une pleine page le rendrait moins

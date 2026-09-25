@@ -1616,7 +1616,13 @@ export const MURS: Mur[] = [
         autres: "Voir les autres coupes du salon",
         mur: "Voir les coupes faites dans ce salon",
         surMoi: "Essayer sur moi",
-        promesse: "Découvrez à quoi cette coupe vous va, en quelques secondes",
+        /* SA PHRASE, ET ELLE EST PLUS JUSTE QUE LA MIENNE. « Découvrez à quoi
+           cette coupe VOUS VA » porte un jugement — elle dit que le rendu
+           décide si la coupe vous convient. « Visualisez » ne promet que ce
+           qu'on sait tenir : une image pour se figurer, pas un verdict. Et
+           « ou une autre » dit la vraie liberté de l'écran : le salon en a
+           plusieurs, on les essaie toutes. */
+        promesse: "Visualisez cette coupe ou une autre sur vous",
                 essayage: "essayage",
         voirLeMur: "Voir le résultat sur d’autres",
         ceci: "cette coupe",
@@ -1733,13 +1739,23 @@ export const MURS: Mur[] = [
          * COULEUR », et ne rien dire laissait le brun d'origine. Un mot
          * suffisait.
          *
-         * LE NÉGATIF EST ASSUMÉ ICI, ET C'EST UNE EXCEPTION À LA RÈGLE. Ce
-         * fichier interdit de décrire un objet absent — nommer des lunettes
-         * les fait apparaître. Une FORME qu'on écarte n'est pas un objet
-         * qu'on ajoute : « pas un carré droit et symétrique » ne dessine
-         * rien, ça écarte le repli le plus probable d'un modèle prudent.
+         * ═══ ET LE NÉGATIF EST REPARTI, PARCE QU'IL A EMPIRÉ LES TROIS ═══
+         *
+         * « C'est pire qu'avant : c'est plus les mêmes habits, plus la même
+         * tête, et en plus c'est pas la bonne coupe. »
+         *
+         * J'AVAIS AJOUTÉ « surtout pas un carré droit, plat et symétrique, ni
+         * une couleur brune », EN ASSUMANT UNE EXCEPTION À LA RÈGLE DE CE
+         * FICHIER. La règle dit : ne jamais décrire ce qui ne doit pas être —
+         * nommer des lunettes absentes les fait apparaître. J'ai soutenu
+         * qu'une FORME écartée n'était pas un objet ajouté. Le rendu suivant
+         * a changé la coupe, les vêtements ET le visage d'un coup : le modèle
+         * n'a pas écarté une forme, il a refait un portrait.
+         *
+         * UNE RÈGLE QUE CE DOSSIER A PAYÉE DEUX FOIS NE SE CONTOURNE PAS SUR
+         * une intuition. La description ne dit plus que ce qui DOIT être.
          */
-        { id: "c-femme", nom: "Carré long, de face", decrire: "un carré noir très foncé qui s'arrête à la base du cou, nettement au-dessus des épaules, avec une raie au milieu, des mèches souples qui s'ouvrent autour du visage, du volume arrondi sur les côtés, des pointes qui rentrent vers l'intérieur au niveau du cou, et aucune longueur qui descende sur les épaules ; surtout pas un carré droit, plat et symétrique, ni une couleur brune", prix: "38 €",
+        { id: "c-femme", nom: "Carré long, de face", decrire: "un carré noir très foncé qui s'arrête à la base du cou, nettement au-dessus des épaules, avec une raie au milieu, des mèches souples qui s'ouvrent autour du visage, du volume arrondi sur les côtés, des pointes qui rentrent vers l'intérieur au niveau du cou, et aucune longueur qui descende sur les épaules", prix: "38 €",
           photo: "/direct/coiffure-femme-face.jpg", reference: "/direct/coiffure-femme-face.jpg" },
         /**
          * LES DEUX DERNIÈRES « BIENTÔT » SONT TOMBÉES.
