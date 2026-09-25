@@ -2946,6 +2946,37 @@ const CARTES: CarteAutour[] = [
         ],
       },
       {
+        /* ═══ LA COUPE DU PARCOURS, ET ELLE MANQUAIT ══════════════════════
+
+           « C'est une femme et c'est marqué coupe homme et tondeuse +
+           ciseaux. »
+
+           IL A RAISON, ET LA CAUSE EST UNE REPLI QUI N'AURAIT PAS DU SERVIR.
+           Le parcours coiffure cherche le moment dont la photo est celle de
+           l'essayage ; aucun ne l'avait, alors il prenait l'offre en cours du
+           salon — a 14 h, la coupe homme. La photo montrait un carre sur une
+           femme, le titre annonçait une tondeuse sur un homme.
+
+           LA COUPE EXISTE DONC POUR DE VRAI DANS SA JOURNEE, comme le blazer
+           rose existe dans celle de la boutique de mode. Le parcours la
+           trouve, l'affiche avec son nom et son prix, et le repli ne sert
+           plus jamais — c'est une garde qui le verifie desormais.
+
+           SON PRIX EST CELUI DE SON PROPRE CATALOGUE : « Coupe femme —
+           shampoing, coupe, brushing — 38 € », juste au-dessus. On ne choisit
+           pas un chiffre, on lit celui qui est deja ecrit. */
+        de: 9, a: 19, quand: "aujourd'hui", icone: "💇‍♀️",
+        titre: "Le carré, au ras des épaules",
+        photo: "/direct/accueil/coiffure-apres.jpg",
+        lignes: ["Carré souple, pointes nettes", "Shampoing, coupe, brushing"],
+        /* AUCUNE ENVIE, ET C'EST EXACT. Un coiffeur en propose quatre : tout de
+           suite, moins de 30 €, couleur, coupe homme. Un carré à 38 € sur
+           rendez-vous n'en est aucune. Lui en coller une pour qu'il apparaisse
+           dans un filtre le ferait ressortir sur une demande à laquelle il ne
+           répond pas — c'est le filtre qui deviendrait faux. */
+        prix: "38 €", action: "Réserver", envies: [],
+      },
+      {
         de: 8, a: 19, quand: "16 h 30", icone: "✂️",
         titre: "Coupe homme",
         photo: "/direct/coiffure-homme-face.jpg",

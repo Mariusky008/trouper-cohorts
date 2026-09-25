@@ -38,6 +38,7 @@ import {
   COMMERCE_MODE,
   DEVANTURE_MODE,
   ETAPES_MODE,
+  FACONS_MODE,
   PIECE_MODE,
 } from "@/lib/direct/parcours-mode";
 
@@ -71,21 +72,6 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
     const m = b ? (b.moments ?? []).find((x) => x.photo === PIECE_MODE) : undefined;
     return { boutique: b, piece: m ?? (b ? momentEnCours(b, heure) : null) };
   }, [heure]);
-
-  /**
-   * LES AUTRES PIÈCES DU JOUR, LUES DANS SA JOURNÉE.
-   *
-   * TOUS SES MOMENTS QUI ONT UNE PHOTO, SAUF CELUI DU PARCOURS : on ne remontre
-   * pas la pièce qu'on vient de regarder trois écrans durant. Leur titre et
-   * leur prix sont les siens — rien n'est écrit ici.
-   */
-  const autresPieces = useMemo(
-    () =>
-      (boutique?.moments ?? [])
-        .filter((m) => m.photo && m.photo !== PIECE_MODE)
-        .slice(0, 3),
-    [boutique],
-  );
 
   if (!boutique) return null;
 
@@ -288,12 +274,16 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
           <div className="pm-hero">
             <div className="pm-hero-img" style={{ backgroundImage: `url("${APRES_MODE}")` }} />
             <div className="pm-hero-t">
+              {/* LE TITRE NOMME CE QUE MONTRENT LES IMAGES, et il a mis deux
+                  relectures à y arriver. « Chez elle aujourd'hui » annonçait le
+                  rayon d'une boutique ; ce qu'on montre, c'est une veste sur
+                  trois femmes. Le titre dit donc la veste, pas la boutique. */}
               <h1 className="pm-t3">
-                Et aussi,
+                La même veste,
                 <br />
-                <em>chez elle</em>
+                <em>sur d’autres</em>
                 <br />
-                aujourd’hui
+                femmes
                 <s aria-hidden="true" />
               </h1>
               <div className="pm-dit petit">
@@ -303,26 +293,20 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
             </div>
           </div>
 
-          {/* ═══ CE SONT SES AUTRES PIÈCES, ET NON « TROIS FAÇONS DE LA PORTER »
+          {/* ═══ LA MÊME VESTE, SUR TROIS FEMMES QUI NE SE RESSEMBLENT PAS ═══
 
-              « Les trois femmes ne portent pas du tout la même veste que la
-              modèle. »
+              « Je t'ai mis trois femmes qui portent la même veste. »
 
-              IL A RAISON, ET C'ÉTAIT INDÉFENDABLE. Ma maquette promettait « une
-              pièce, plusieurs façons de la porter » et montrait trois autres
-              vêtements sur trois autres personnes. Le titre annonçait une
-              chose, les images en montraient une autre — c'est le défaut qu'on
-              vient de corriger deux fois ailleurs sur ce produit.
+              C'ÉTAIT LA PIÈCE QUI MANQUAIT, ET ELLE CHANGE CE QUE L'ÉCRAN DIT.
+              Trois autres vêtements répondaient « voici le reste du rayon » ;
+              le même blazer sur trois corps répond « ça tombe comme ça sur
+              quelqu'un comme vous », qui est la question qu'on se pose devant
+              un essayage.
 
-              JE N'AI PAS TROIS PHOTOS DU MÊME BLAZER PORTÉ AUTREMENT, et je ne
-              peux pas en fabriquer. Ce que j'ai, ce sont les AUTRES PIÈCES de
-              cette boutique — vraies, avec leur nom et leur prix, dans sa
-              journée. L'écran dit donc ce qu'il montre.
-
-              POUR RETROUVER SA MAQUETTE : trois photos du même blazer porté
-              différemment, et ce bloc redevient « plusieurs façons de la
-              porter » en changeant le titre et la source. Voir
-              `parcours-mode.ts`. */}
+              LA LÉGENDE DÉCRIT LA PHOTO, ELLE NE LA COMMENTE PAS. Un lieu et ce
+              que la veste couvre : deux choses qu'on vérifie en regardant.
+              Aucun prix ici — c'est la même veste, elle a le prix qu'on a déjà
+              lu deux écrans plus haut, et le réécrire en ferait un second. */}
           <p className="pm-insp">
             <span className="pm-cintre petit" aria-hidden="true">
               <svg viewBox="0 0 24 24">
@@ -330,15 +314,15 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
                 <path d="M12 6.2v2.1L3.6 15c-.9.7-.4 2.1.7 2.1h15.4c1.1 0 1.6-1.4.7-2.1L12 8.3" />
               </svg>
             </span>
-            Chez elle aujourd’hui
+            Portée autrement, dans la même ville
           </p>
           <div className="pm-facons">
-            {autresPieces.map((m) => (
-              <article key={m.photo} className="pm-facon">
-                <div style={{ backgroundImage: `url("${m.photo}")` }} />
+            {FACONS_MODE.map((f) => (
+              <article key={f.photo} className="pm-facon">
+                <div style={{ backgroundImage: `url("${f.photo}")` }} />
                 <span>
-                  <b>{m.titre}</b>
-                  {m.prix && <em>{m.prix}</em>}
+                  <b>{f.ou}</b>
+                  <em>{f.avec}</em>
                 </span>
               </article>
             ))}

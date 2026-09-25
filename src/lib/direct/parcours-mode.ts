@@ -51,24 +51,32 @@ export const APRES_MODE = "/direct/accueil/mode-apres.jpg";
 export const DEVANTURE_MODE = "/direct/vitrine-mode.jpg";
 
 /**
- * ═══ CE QUE MONTRAIT LA TROISIÈME ÉTAPE, ET POURQUOI ELLE NE LE MONTRE PLUS ══
+ * ═══ LA TROISIÈME ÉTAPE : LA MÊME VESTE, SUR D'AUTRES FEMMES ═══════════════
  *
- * « Les trois femmes ne portent pas du tout la même veste que la modèle. »
+ * « On a une veste rose à l'essai et trois femmes en bas qui ont des tenues qui
+ * n'ont rien à voir avec la veste rose d'essayage. Je t'ai mis trois femmes qui
+ * portent la même veste. »
  *
- * IL A RAISON, ET C'ÉTAIT INDÉFENDABLE. Le titre promettait « une pièce,
- * plusieurs façons de la porter » et les images montraient trois autres
- * vêtements sur trois autres personnes. Le titre annonçait une chose, les
- * images en montraient une autre.
+ * IL AVAIT RAISON DEUX FOIS, ET IL VIENT DE DÉBLOQUER LA BONNE VERSION. Le
+ * premier jet promettait « plusieurs façons de la porter » et montrait trois
+ * autres vêtements ; le rattrapage montrait les autres pièces de la boutique,
+ * ce qui était honnête mais répondait à une autre question. La vraie question
+ * d'un essayage est « est-ce que ça tombe bien sur quelqu'un comme moi », et on
+ * n'y répond qu'avec LA MÊME PIÈCE SUR D'AUTRES CORPS.
  *
- * JE N'AI PAS TROIS PHOTOS DU MÊME BLAZER PORTÉ AUTREMENT, et je ne peux pas en
- * fabriquer ici. L'étape montre donc les AUTRES PIÈCES de cette boutique, lues
- * dans sa journée avec leur nom et leur prix — voir `autresPieces` dans
- * l'écran. Rien n'est déclaré ici : ce serait un second endroit où les écrire.
+ * TROIS FEMMES, TROIS ÂGES, TROIS ENDROITS DE LA VILLE, UN SEUL BLAZER. C'est
+ * ce qui rend le bloc utile : la mannequin de l'essayage a vingt-cinq ans, et
+ * celle qui regarde l'écran n'en a pas forcément vingt-cinq.
  *
- * POUR RETROUVER SA MAQUETTE : trois photos du même blazer porté différemment,
- * déclarées ici comme les autres images du parcours, et le bloc redevient
- * « plusieurs façons de la porter ».
+ * LA LÉGENDE DÉCRIT CE QU'ON VOIT, ET RIEN DE PLUS. Pas de prénom, pas d'avis,
+ * pas de « taille 38 » : on n'a ni l'un ni l'autre. On a une photo, et on dit
+ * sur quoi la veste est portée — c'est vérifiable à l'œil, sur l'image même.
  */
+export const FACONS_MODE: { photo: string; ou: string; avec: string }[] = [
+  { photo: "/direct/accueil/mode-porte-bureau.jpg", ou: "Au bureau", avec: "Sur un jean noir" },
+  { photo: "/direct/accueil/mode-porte-terrasse.jpg", ou: "En terrasse", avec: "Sur un tee-shirt blanc" },
+  { photo: "/direct/accueil/mode-porte-marche.jpg", ou: "Au marché", avec: "Sur une chemise claire" },
+];
 
 /** Combien d'étapes, et dans quel ordre. Le numéro « 1/4 » en dépend. */
 export const ETAPES_MODE = 4;

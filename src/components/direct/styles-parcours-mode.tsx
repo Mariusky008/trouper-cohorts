@@ -219,10 +219,28 @@ export function StylesParcoursMode() {
         .pm-troise{flex:1 1 auto;display:flex;flex-direction:column;
           padding:0 14px calc(16px + var(--ap-bas,0px));}
         .pm-troise .pm-fiche{margin-top:auto;}
-        .pm-hero{position:relative;display:grid;grid-template-columns:1fr 1fr;
-          gap:10px;align-items:center;}
-        .pm-hero-img{aspect-ratio:1 / 1.3;border-radius:16px;
-          background-size:cover;background-position:center 15%;}
+        /* ═══ LES DEUX BLOCS D'IMAGES SE PARTAGENT LE VIDE ═══════════════════
+           MESURE AVANT : 182 points de noir entre les vignettes et la fiche sur
+           un iPhone 14, 229 sur un Max — plus haut que les vignettes
+           elles-memes. La fiche est collee en bas par une marge haute
+           automatique, donc tout ce que les images ne prennent pas devient
+           un trou.
+           LES DEUX GRANDISSENT, DANS L'ORDRE DE CE QU'ON REGARDE : la piece sur
+           la mannequin prend deux parts, les trois facons une. Le rapport de
+           forme reste un PLANCHER — sur un petit ecran il n'y a rien a partager
+           et la mise en page ne bouge pas. */
+        /* ET LE RAPPORT DE FORME A DU PARTIR, SINON IL POUSSE LE TITRE DEHORS.
+           Mesure a l'ecran : l'image etiree gardait son 1/1.3, donc plus la
+           colonne grandissait en hauteur, plus elle reclamait de LARGEUR — la
+           grille cedait et « sur d'autres femmes » sortait du cadre a droite.
+           Une hauteur minimale dit la meme chose sans tirer sur la largeur, et
+           les deux colonnes sont bornees a zero pour qu'aucune ne deborde. */
+        .pm-hero{position:relative;display:grid;
+          grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+          gap:10px;align-items:center;flex:2 1 auto;min-height:0;}
+        .pm-hero-img{border-radius:16px;
+          background-size:cover;background-position:center 15%;
+          align-self:stretch;min-width:0;min-height:clamp(180px,24vh,250px);}
         .pm-hero-t{text-align:right;}
         .pm-t3{position:relative;margin:0;font-size:clamp(22px,6.6vw,30px);
           font-weight:900;line-height:1.08;letter-spacing:-.025em;}
@@ -234,24 +252,35 @@ export function StylesParcoursMode() {
 
         .pm-insp{display:flex;align-items:center;gap:7px;margin:16px 0 8px;
           font-size:13px;font-weight:800;color:rgba(255,255,255,.72);}
-        .pm-facons{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;}
+        .pm-facons{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;
+          flex:1 1 auto;min-height:0;margin-bottom:14px;}
         .pm-facon{position:relative;border-radius:14px;overflow:hidden;
+          min-height:0;
           border:1.5px solid rgba(255,46,154,.75);
           box-shadow:0 0 16px -6px rgba(255,46,154,.7);}
-        .pm-facon>div{aspect-ratio:1 / 1.42;background-size:cover;
-          background-position:center 20%;}
-        /* LE NOM ET LE PRIX DE LA PIECE, sur deux lignes : ce sont les siens,
-           lus dans sa journee. Le nom se coupe a deux lignes plutot que de
-           deborder — « Dernier jour des soldes » ne tient pas sur une. */
+        /* LE CADRAGE DESCEND AVEC LA HAUTEUR. Ces vignettes montraient un
+           visage ; elles montrent maintenant une veste, et une veste se porte
+           plus bas qu'un visage. A 20 % on coupait aux epaules. */
+        .pm-facon>div{aspect-ratio:1 / 1.42;height:100%;min-height:0;
+          background-size:cover;background-position:center 32%;}
+        /* LE LIEU PUIS CE QUE LA VESTE COUVRE, sur deux lignes.
+           LA HIERARCHIE S'EST INVERSEE AVEC LE CONTENU. Ces vignettes portaient
+           un nom de piece et son prix : le prix en magenta gras etait la
+           deuxieme ligne, et il devait sauter aux yeux. Elles portent maintenant
+           un lieu et une description, et un magenta gras sous « Au bureau »
+           ferait lire « Sur un jean noir » comme un montant. Le lieu prend donc
+           le gras, la description passe en gris clair. */
         .pm-facon>span{position:absolute;left:0;right:0;bottom:0;
           display:flex;flex-direction:column;gap:1px;padding:20px 7px 7px;
           color:#fff;text-align:left;
           background:linear-gradient(180deg,rgba(6,6,10,0),rgba(6,6,10,.94));}
-        .pm-facon b{font-size:10.5px;font-weight:850;line-height:1.16;
+        .pm-facon b{font-size:11.5px;font-weight:900;line-height:1.16;
           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
           overflow:hidden;}
-        .pm-facon em{font-style:normal;font-size:12px;font-weight:900;
-          color:#FF2E9A;}
+        .pm-facon em{font-style:normal;font-size:9.5px;font-weight:700;
+          line-height:1.2;color:rgba(255,255,255,.72);
+          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+          overflow:hidden;}
 
         /* ═══ 4/4 · LA BOUTIQUE ══════════════════════════════════════════ */
         .pm-quatre{flex:1 1 auto;display:flex;flex-direction:column;
