@@ -447,7 +447,27 @@ export type FaceCarte = "fiche" | "seconde";
  */
 export function partDeLaPhoto(l: number, h: number): number {
   if (!l || !h) return 1;
-  const CIBLE = 0.62;
+  /* ═══ LA CIBLE MONTE À TROIS QUARTS D'ÉCRAN ═══════════════════════════════
+
+     « La démarcation entre la photo et le flou coloré n'est-elle pas un peu
+     trop haute encore ? »
+
+     ELLE L'ÉTAIT, ET C'EST LA CIBLE QUI LA TENAIT HAUT. À 0,62, une photo
+     verticale s'arrêtait aux deux tiers de l'écran et le fondu commençait un
+     tiers plus haut encore : la couleur du bas occupait le dernier tiers, ce
+     qui est beaucoup pour une chose qui ne fait que raccorder. Sur la carte de
+     la boucherie — celle qu'il montre en comparaison — la photo descend jusque
+     sous le prix, et c'est ce qu'on veut retrouver.
+
+     TROIS QUARTS, ET PAS PLUS. Au-delà, la bande de miniatures et le bouton
+     n'ont plus de fond à eux : ils se poseraient sur le sujet, et on revient
+     au défaut d'avant — un texte sur un visage.
+
+     LE GARDE-FOU NE BOUGE PAS. Une photo qui ne peut atteindre la cible qu'en
+     cédant plus d'un quart de sa hauteur ne l'atteint pas : elle s'arrête où
+     elle peut. C'est ce qui protège les carrés et les panoramiques, dont le
+     sujet serait décapité pour gagner de la place. */
+  const CIBLE = 0.76;
   const ROGNAGE_MAX = 0.25;
   /* LA PART QU'ELLE PREND À PLEINE LARGEUR, sur une carte au format d'un
      téléphone — neuf sur dix-neuf et demi, le rapport de tous nos écrans. */
@@ -491,8 +511,36 @@ export function basDeLImage(img: HTMLImageElement): string {
       n++;
     }
     if (!n) return "";
-    const t = (x: number) => Math.round((x / n) * 0.45);
-    return `rgb(${t(r)}, ${t(v)}, ${t(b)})`;
+    // ═══ ET LE FOND NE PEUT PAS ÊTRE CLAIR, MÊME SI LA PHOTO L'EST ═══════
+    //
+    // QUARANTE-CINQ POUR CENT SUFFISAIENT TANT QUE LES BAS DE PHOTO ÉTAIENT
+    // SOMBRES. Sur le prêt-à-porter homme — chemise blanche sur mur clair — le
+    // bas moyen est à 210 ; assombri d'autant, il tombe à 95, c'est-à-dire un
+    // gris moyen. Le titre blanc et le sous-titre gris s'y posaient dessus :
+    // « Retouches offertes » était illisible, mesuré à la capture.
+    //
+    // ON RAISONNE DONC EN LUMINANCE, PAS EN POURCENTAGE. Un facteur fixe donne
+    // un résultat qui dépend de la photo ; un plafond donne un résultat qui
+    // dépend de ce qu'on veut lire. Au-dessus du plafond, on redescend juste
+    // ce qu'il faut — la teinte de la photo est conservée, seule sa clarté
+    // cède. En dessous, on ne touche à rien : une photo sombre garde son noir.
+    //
+    // LE PLAFOND EST CELUI DU TEXTE BLANC. À 0,09 de luminance relative, du
+    // blanc dessus donne un rapport de contraste de 7,5 pour 1 — au-dessus des
+    // 4,5 exigés, avec de la marge pour le sous-titre qui n'est pas blanc.
+    const PLAFOND = 0.09;
+    const moy = (x: number) => (x / n) * 0.45;
+    let cr = moy(r);
+    let cv = moy(v);
+    let cb = moy(b);
+    const lum = (0.2126 * cr + 0.7152 * cv + 0.0722 * cb) / 255;
+    if (lum > PLAFOND) {
+      const k = PLAFOND / lum;
+      cr *= k;
+      cv *= k;
+      cb *= k;
+    }
+    return `rgb(${Math.round(cr)}, ${Math.round(cv)}, ${Math.round(cb)})`;
   } catch {
     /* UNE TOILE QUE LE NAVIGATEUR REFUSE DE LIRE N'EST PAS UNE PANNE : sans
        couleur, la carte garde son fond d'avant. */
@@ -1213,8 +1261,22 @@ export function CarteSwipe({
                   </span>
                 </li>
               )}
+              {/* ═══ LA LIGNE DU LIEU PORTE UN NOM, POUR QU'ON PUISSE LA TAIRE ═══
+
+                  « À 220 m est à supprimer puisque c'est déjà présent en haut. »
+
+                  IL A RAISON LÀ OÙ LA BARRE DU HAUT EXISTE, et elle n'existe pas
+                  partout : la carte sert aussi la page du commerçant et le fil
+                  de la ville, où rien d'autre ne dit où c'est. Supprimer la
+                  ligne ici la supprimerait aussi là-bas, et on perdrait une
+                  information au lieu d'en perdre un doublon.
+
+                  ELLE EST DONC NOMMÉE, ET C'EST L'ÉCRAN QUI LA TAIT. Voir
+                  .ap-carte .cd-ou dans la feuille de l'aperçu habitant : le seul
+                  endroit qui affiche déjà le lieu en haut est le seul endroit
+                  qui le retire en bas. */}
               {!!c.distance && (
-                <li>
+                <li className="cd-ou">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M12 21.4s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" />
                     <circle cx="12" cy="10.2" r="2.6" />
@@ -2355,9 +2417,30 @@ export function StylesDirect() {
         /* LA LARGEUR EST PLEINE, LA HAUTEUR SUIT. Le sujet n'est plus ampute
            sur les cotes ; ce qui depasse en hauteur sort par le bas, sous le
            raccord. */
+        /* ═══ LA TAILLE DU FOND EST « COUVRIR », PAS LA VARIABLE ═══
+           « Je ne veux surtout pas qu'il y ait des demarcations. »
+
+           VOILA D'OU ELLES VENAIENT, ET C'ETAIT MA FAUTE. --cd-photo-h vaut un
+           POURCENTAGE, par exemple 69%. En hauteur d'element, 69% se compte sur
+           la carte : 69% de 844 = 584 points, ce qui est juste. Mais la meme
+           variable servait aussi de taille de fond, et une taille de fond en
+           pourcentage se compte sur l'element lui-meme : 69% de 584 = 403. La
+           photo etait donc dessinee a 403 points de haut dans une boite de 584,
+           et a 270 points de large dans une boite de 390.
+
+           CE QU'ON VOYAIT : deux bandes verticales de fond nu a gauche et a
+           droite du sujet, et un trait net sous lui a 403 points, bien avant le
+           raccord qui l'attendait a 584. Trois demarcations pour une variable
+           lue dans la mauvaise boite.
+
+           « COUVRIR » EST EXACTEMENT CE QU'IL FAUT ICI, et sans rogner quoi que
+           ce soit : partDeLaPhoto a justement calcule la hauteur pour que
+           l'image pleine largeur y tienne. La boite a donc deja le rapport de
+           l'image ; couvrir la remplit au point pres. Voir partDeLaPhoto, en
+           tete de fichier. */
         .cd-carte.mesuree .cd-photo{inset:auto 0 auto 0;top:0;
           height:var(--cd-photo-h,100%);
-          background-size:auto var(--cd-photo-h,100%);
+          background-size:cover;
           background-position:center top;}
         .cd-carte.mesuree .cd-film{inset:auto 0 auto 0;top:0;
           height:var(--cd-photo-h,100%);object-fit:cover;}
@@ -2380,13 +2463,139 @@ export function StylesDirect() {
            proposition. */
         .cd-carte.sec.mesuree .cd-bas{justify-content:flex-end;}
         .cd-carte.sec.mesuree .cd-dit{margin-bottom:0;}
-        .cd-raccord{position:absolute;left:0;right:0;height:130px;z-index:1;
-          top:min(max(0px, calc(var(--cd-photo-h,100%) - 130px)), calc(100% - 130px));
+        /* ═══ LE RACCORD EST PROPORTIONNEL, PAS FIXE ═══
+           « Je ne veux surtout pas qu'il y ait des demarcations. »
+           CENT TRENTE POINTS SUFFISAIENT SUR UN PORTRAIT DE STUDIO, dont le bas
+           est un mur uni. Sur une photo ou le sujet continue — des jambes, un
+           bras, un motif — cent trente points ne dissolvent pas le sujet : ils
+           le coupent en douceur, ce qui se voit encore plus qu'une coupe nette.
+           QUARANTE-DEUX POUR CENT DE LA PHOTO, c'est-a-dire deux cent trente
+           points sur une verticale : le sujet s'efface au lieu de s'arreter, et
+           le raccord s'adapte tout seul a la hauteur de chaque image. */
+        /* ET IL DESCEND A TRENTE-DEUX POUR CENT. Quarante-deux etait la
+           reponse a un sujet coupe net, et c'etait la bonne ; mais avec la
+           cible remontee a trois quarts d'ecran, quarante-deux pour cent d'une
+           photo plus haute redonne exactement la bande de couleur qu'on vient
+           d'enlever. Trente-deux pour cent d'une photo de six cent quarante
+           points font encore deux cent cinq points de fondu — plus long, en
+           valeur absolue, que les deux cent trente d'avant ne l'etaient sur une
+           photo de cinq cent quatre-vingts. Le fondu ne raccourcit pas : c'est
+           la photo qui s'allonge sous lui. */
+        /* ═══ ET LE RACCORD PASSE DERRIÈRE LE TEXTE ═════════════════════════
+
+           LE TITRE ÉTAIT PEINT PAR-DESSUS, ET C'EST TOUT CE QU'IL AVAIT. Le
+           raccord portait z-index:1 ; le titre, comme tout le bas de la carte,
+           n'en porte aucun. Un dégradé qui finit opaque, posé sur un texte
+           blanc, le recouvre de sa propre couleur de fond — et le seul reste
+           visible du mot est le trou que ses ombres avaient creusé autour de
+           lui. Vérifié au navigateur : elementFromPoint, au premier signe de
+           « Retouches offertes », répondait .cd-raccord.
+
+           C'EST CE QUI FAISAIT « TRÈS MAL MODIFIÉ » sur trois des huit cartes —
+           celles dont le titre descend assez bas pour croiser le raccord. Sur
+           les autres, le titre passe au-dessus et rien ne se voyait ; le défaut
+           avait l'air d'un problème de contraste, c'était un problème d'ordre.
+
+           ZÉRO SUFFIT, ET C'EST L'ORDRE DU FICHIER QUI FAIT LE RESTE. Le
+           raccord vient après la photo et le voile dans le balisage, donc il
+           reste au-dessus d'eux ; le bas de la carte vient après lui, donc il
+           passe devant. Aucune couche ne change de place, seule la règle qui
+           doublait l'ordre naturel disparaît. */
+        .cd-raccord{--cd-fondu:calc(var(--cd-photo-h,100%) * .32);
+          position:absolute;left:0;right:0;z-index:0;
+          height:var(--cd-fondu);
+          top:calc(var(--cd-photo-h,100%) - var(--cd-fondu));
           background:linear-gradient(180deg,
             rgba(0,0,0,0) 0%,
-            color-mix(in srgb, var(--cd-fond,#0D1A15) 34%, transparent) 40%,
-            color-mix(in srgb, var(--cd-fond,#0D1A15) 82%, transparent) 74%,
+            color-mix(in srgb, var(--cd-fond,#0D1A15) 22%, transparent) 34%,
+            color-mix(in srgb, var(--cd-fond,#0D1A15) 62%, transparent) 62%,
+            color-mix(in srgb, var(--cd-fond,#0D1A15) 92%, transparent) 84%,
             var(--cd-fond,#0D1A15) 100%);}
+
+        /* ═══ LE TITRE ET LE PRIX PRENNENT LA POLICE DE SA MAQUETTE ═══
+           La carte ecrivait en Anton, condense et tout en capitales — une
+           affiche. Sa maquette ecrit en Poppins noir, minuscules comprises :
+           « Coupe femme », pas « COUPE FEMME ». Le titre passe a deux lignes et
+           garde son flanc droit libre pour la colonne de boutons. */
+        /* TROIS LIGNES, PAS DEUX, ET PLUS PETIT QUE SUR LA MAQUETTE. « Coupe
+           femme » tient en deux mots ; « Une place vient de se libérer » et
+           « 40 pièces sorties ce matin » n'y tiennent pas. À quarante-deux
+           points sur deux lignes, ils s'affichaient « Une pla… » et « 40 piè… »
+           — mesuré sur les huit cartes. Le corps descend et la troisième ligne
+           s'ouvre : un titre entier vaut mieux qu'un titre grand. */
+        /* QUATRE LIGNES, ET TROIS N'ONT PAS SUFFI. « Une place vient de se
+           libérer » s'affichait encore « Une place vient d… » à trente-deux
+           points : trois mots par ligne sur trois lignes, ça fait neuf mots et
+           la phrase en a six longs. On descend d'un cran de plus et on ouvre la
+           quatrième ligne. Aucun des huit titres n'est alors coupé — c'est la
+           seule mesure qui compte, et elle se refait sur la planche. */
+        /* CINQ, ET C'EST LA MESURE QUI L'A DIT. Sur les huit annonces, sept
+           tiennent en trois lignes ou moins ; une seule demandait la cinquième,
+           « La collection d'automne est arrivée » — cent quarante-deux points
+           de texte dans une boîte de cent dix, donc « est… » à la place de
+           « est arrivée ». Le cran suivant ne coûte rien aux sept autres : la
+           limite ne s'applique qu'à ce qui la dépasse. */
+        /* ═══ LE TEXTE PORTE SON PROPRE FOND, ET CE N'EST PAS UN RECTANGLE ═══
+
+           « Mais je ne veux pas de rectangle, je veux comme photo 2. »
+
+           LE TITRE EST POSÉ SUR LA PHOTO, PAS SUR LE RACCORD — mesuré : la
+           photo occupe de 61 à 69 % de la carte selon l'image, et le titre vit
+           dans son dernier tiers, donc sur le sujet. Sur un visage clair, une
+           chemise blanche ou un mur de studio, du blanc sur du blanc ne se lit
+           pas : sur la coiffeuse, le fond moyen derrière le titre monte à 0,30
+           de luminance, soit un contraste de 3 pour 1 — sous le minimum de 4,5.
+
+           UN RECTANGLE RÉGLERAIT ÇA ET IL N'EN VEUT PAS, avec raison : un
+           panneau derrière le titre le décolle de la photo et redonne à
+           l'annonce l'air de fiche qu'on vient de lui enlever.
+
+           TROIS OMBRES EMPILÉES FONT LE MÊME TRAVAIL SANS BORD. La première est
+           serrée et opaque — elle détoure la lettre, c'est elle qui donne le
+           contraste ; les deux autres sont larges et molles — elles assombrissent
+           le halo autour du mot sans qu'on voie où elles s'arrêtent. De près
+           c'est une lettre nette ; de loin, aucun bord. */
+        /* ═══ ET LE GRAIN D'AFFICHE S'ARRÊTE ICI ════════════════════════════
+
+           LE TITRE ÉTAIT MANGÉ PAR UN MASQUE, ET C'EST LUI QUI LE RENDAIT GRIS.
+           Le grain — un bruit posé en masque sur la lettre — a été calibré pour
+           l'Anton d'affiche, entre quarante-six et soixante-dix points : à cette
+           taille il grignote le bord et donne de l'imprimé. La maquette qu'il a
+           validée écrit en Poppins à vingt-sept ; le même bruit, sur une lettre
+           deux fois et demie plus petite, ne grignote plus le bord — il troue le
+           plein. Mesuré sur le prêt-à-porter homme : « Retouches offertes »
+           ressortait à 0,19 de luminance là où le sous-titre, non masqué,
+           ressortait à 0,95. Le titre était plus sombre que son sous-titre.
+
+           ET LE MASQUE EFFAÇAIT AUSSI SES OMBRES, puisqu'un masque s'applique à
+           tout ce que l'élément dessine, ombre portée comprise : les trois
+           ombres qu'on venait d'empiler pour le détourer étaient trouées par le
+           même bruit. Sans masque, elles font leur travail.
+
+           IL RESTE PARTOUT AILLEURS. La face historique garde son Anton et son
+           grain : on ne retire pas un parti pris, on le limite à la taille pour
+           laquelle il a été fait. */
+        .cd-carte.mesuree .cd-offre,
+        .cd-carte.mesuree .cd-prixg b{
+          -webkit-mask-image:none;mask-image:none;}
+        .cd-carte.mesuree .cd-offre{
+          font-family:var(--font-clikme),system-ui,sans-serif;font-weight:900;
+          font-size:clamp(23px,6.9vw,29px);line-height:1.02;letter-spacing:-.02em;
+          text-transform:none;-webkit-line-clamp:5;max-width:74%;
+          text-shadow:0 1px 3px rgba(0,0,0,.92),0 3px 12px rgba(0,0,0,.8),
+            0 6px 34px rgba(0,0,0,.66);}
+        .cd-carte.mesuree .cd-prixg{
+          font-family:var(--font-clikme),system-ui,sans-serif;font-weight:900;
+          font-size:clamp(32px,10vw,42px);letter-spacing:-.03em;color:#FFD233;
+          text-shadow:0 1px 3px rgba(0,0,0,.92),0 3px 12px rgba(0,0,0,.8),
+            0 6px 34px rgba(0,0,0,.66);}
+        /* LE SOUS-TITRE MONTE EN CLARTÉ, LUI AUSSI. Il était à #D9E4DC, un gris
+           vert calculé pour un voile sombre ; sur une photo claire il tombait
+           sous le titre en lisibilité alors qu'il dit ce qu'on achète — « Coupe
+           + brushing · 45 minutes ». Presque blanc, avec les mêmes ombres. */
+        .cd-carte.mesuree .cd-detail{max-width:74%;color:#F2F7F3;
+          text-shadow:0 1px 3px rgba(0,0,0,.92),0 2px 10px rgba(0,0,0,.78),
+            0 5px 26px rgba(0,0,0,.6);}
       `,
       }}
     />

@@ -671,6 +671,25 @@ export type Mur = {
        * une coupe SUR SOI, on pose une bougie CHEZ SOI. « Essayer sur moi »
        * devant une table de salon serait le même contresens que « Choisissez la
        * pièce » chez un coiffeur.
+       *
+       * ═══ ET IL NOMME LA CHOSE, PARCE QU'IL EST SEUL À LE FAIRE ══════════
+       *
+       * « Les deux phrases n'en faisaient plus qu'une : "visualiser une coupe
+       * sur moi", ou "visualisez un vêtement, dessin, bougie, meuble…" »
+       *
+       * L'ANNONCE DISAIT DEUX FOIS LA MÊME CHOSE, À TRENTE POINTS D'ÉCART : le
+       * bouton « Essayer sur moi », puis une ligne « Découvrez à quoi cette
+       * pièce vous va, en quelques secondes ». La ligne existait pour réparer
+       * le bouton — « essayer sur moi » ne dit pas essayer QUOI — et deux
+       * objets dont l'un rattrape l'autre valent moins qu'un seul objet juste.
+       *
+       * LE BOUTON PORTE DONC LE NOM DE LA CHOSE : une coupe, un vêtement, un
+       * dessin, une bougie, un bouquet, une monture, une pose, un bijou. C'est
+       * ce que la ligne apportait, et c'est maintenant le bouton qui le dit.
+       *
+       * LE VERBE RESTE CELUI DU MÉTIER. « Sur moi » chez un coiffeur, un
+       * tatoueur, un lunetier ; « chez moi » chez une cirière et une fleuriste,
+       * où l'on photographie une table, pas un visage.
        */
       surMoi: string;
       /**
@@ -1115,7 +1134,7 @@ export const MURS: Mur[] = [
         reserver: "Je réserve ma séance",
         autres: "Voir les autres poses du jour",
         mur: "Voir les poses portées par les clientes",
-        surMoi: "Essayer sur mes ongles",
+        surMoi: "Visualiser une pose sur moi",
         promesse: "Découvrez à quoi cette pose ressemble sur votre main, en quelques secondes",
                 essayage: "essayage",
         voirLeMur: "Voir sur d’autres mains",
@@ -1326,7 +1345,7 @@ export const MURS: Mur[] = [
         reserver: "Je la réserve",
         autres: "Voir les autres pièces de l’atelier",
         mur: "Voir les bijoux portés par les clientes",
-        surMoi: "Essayer sur moi",
+        surMoi: "Visualiser un bijou sur moi",
         promesse: "Découvrez à quoi cette pièce ressemble à votre poignet, en quelques secondes",
                 essayage: "essayage",
         voirLeMur: "Voir portées par d’autres",
@@ -1492,7 +1511,7 @@ export const MURS: Mur[] = [
         reserver: "Je la réserve",
         autres: "Voir les autres bougies du moment",
         mur: "Voir ces bougies chez d’autres",
-        surMoi: "La voir chez moi",
+        surMoi: "Visualiser une bougie chez moi",
         promesse: "Découvrez à quoi cette bougie ressemble sur votre table, en quelques secondes",
                 essayage: "projection",
         voirLeMur: "Voir chez les autres",
@@ -1640,7 +1659,7 @@ export const MURS: Mur[] = [
         reserver: "Je réserve mon créneau",
         autres: "Voir les autres coupes du salon",
         mur: "Voir les coupes faites dans ce salon",
-        surMoi: "Essayer sur moi",
+        surMoi: "Visualiser une coupe sur moi",
         /* SA PHRASE, ET ELLE EST PLUS JUSTE QUE LA MIENNE. « Découvrez à quoi
            cette coupe VOUS VA » porte un jugement — elle dit que le rendu
            décide si la coupe vous convient. « Visualisez » ne promet que ce
@@ -1897,7 +1916,7 @@ export const MURS: Mur[] = [
         garde: true,
         autres: "Voir les autres pièces rentrées",
         mur: "Voir ces pièces portées par d’autres",
-        surMoi: "Essayer sur moi",
+        surMoi: "Visualiser un vêtement sur moi",
         promesse: "Découvrez à quoi cette pièce vous va, en quelques secondes",
                 essayage: "essayage",
         voirLeMur: "Voir ce qu’ils en pensent",
@@ -2304,7 +2323,7 @@ export const MURS: Mur[] = [
         garde: true,
         autres: "Voir les autres pièces rentrées",
         mur: "Voir ces pièces portées par d’autres",
-        surMoi: "Essayer sur moi",
+        surMoi: "Visualiser un vêtement sur moi",
         promesse: "Découvrez à quoi cette pièce vous va, en quelques secondes",
         essayage: "essayage",
         voirLeMur: "Voir ce qu’ils en pensent",
@@ -2465,7 +2484,7 @@ export const MURS: Mur[] = [
         reserver: "Je le fais mettre de côté",
         autres: "Voir les autres bouquets du jour",
         mur: "Voir ces bouquets chez d’autres",
-        surMoi: "Le voir chez moi",
+        surMoi: "Visualiser un bouquet chez moi",
         promesse: "Découvrez à quoi ce bouquet ressemble sur votre table, en quelques secondes",
                 essayage: "projection",
         voirLeMur: "Voir chez les autres",
@@ -2621,7 +2640,7 @@ export const MURS: Mur[] = [
         reserver: "Demander un rendez-vous",
         autres: "Voir les autres motifs",
         mur: "Voir les motifs déjà posés",
-        surMoi: "Essayer sur ma peau",
+        surMoi: "Visualiser un dessin sur moi",
         promesse: "Découvrez à quoi ce motif ressemble sur votre peau, en quelques secondes",
         // ON ESSAIE, ON NE PROJETTE PAS. « Le Fantôme n'est pas synonyme de
         // cabine d'essayage : il devient le moyen de voir quelque chose dans
@@ -2933,7 +2952,7 @@ export const MURS: Mur[] = [
         reserver: "Les essayer en boutique",
         autres: "Voir les autres montures",
         mur: "Voir les montures portées par les clients",
-        surMoi: "Essayer sur moi",
+        surMoi: "Visualiser une monture sur moi",
         promesse: "Découvrez à quoi cette monture vous va, en quelques secondes",
                 essayage: "essayage",
         voirLeMur: "Voir portées par d’autres",

@@ -319,6 +319,23 @@ const DEMANDE_A_LA_VILLE = false;
 const LES_ENVIES = false;
 
 /**
+ * LA CLOCHE DE LA BARRE DU HAUT, ÉTEINTE — « supprime la cloche pour le moment
+ * pour gagner de la place ».
+ *
+ * LA BARRE PORTE QUATRE OBJETS sur trois cent quatre-vingt-dix points : le nom
+ * du commerce, le filtre, le cœur et la cloche. Le premier est le seul qui dise
+ * quelque chose de l'annonce qu'on regarde, et c'était le seul tronqué : « Un
+ * salon du ce… ». Un objet de moins lui rend sa ligne.
+ *
+ * ET ON NE PERD PAS DE PORTE. Les nouvelles des commerces suivis s'ouvrent
+ * aussi par le cœur d'à côté et par l'onglet Profil, qui en porte le compte :
+ * la cloche était le troisième chemin vers le même endroit.
+ *
+ * POUR LA RALLUMER : passer cette constante à `true`. Rien d'autre.
+ */
+const CLOCHE_EN_HAUT = false;
+
+/**
  * LE NOM DE L'ONGLET, POUR LE BOUTON DE RETOUR.
  *
  * IL DIT OÙ L'ON RETOURNE, PAS « RETOUR ». Une flèche seule ne se voyait pas —
@@ -3767,6 +3784,24 @@ export function ApercuHabitant() {
   /** La carte du dessus, telle que l'écran la dessine — pour la fiche et l'anneau. */
   const dessusCarte = dessus ? carteDe(dessus) : undefined;
   /**
+   * ═══ LA MINIATURE RONDE DU COMMERÇANT, EN HAUT À GAUCHE ═══════════════════
+   *
+   * « Pas de rectangle, et une petite miniature du commerçant. »
+   *
+   * D'OÙ ELLE VIENT, ET C'EST IMPORTANT QUE CE NE SOIT PAS L'ANNONCE. On prend
+   * `sesPhotos` — la salle, la devanture, l'atelier — et jamais la photo de
+   * l'annonce du jour. La miniature répond à « chez qui suis-je », pas à « que
+   * vend-il aujourd'hui » : la grande image derrière dit déjà la seconde, et
+   * deux fois la même photo à trente points d'écart ne dit rien deux fois.
+   *
+   * ELLE PEUT MANQUER, ET LA BARRE TIENT QUAND MÊME. Un commerce préparé pour
+   * une visite n'a pas encore de photos à lui, un événement n'en a pas du tout :
+   * le rond garde alors son épingle. Voir `.ap-loin-v` : le fond du rond est
+   * dessiné, l'image ne fait que s'y poser.
+   */
+  const vignetteDuCommerce =
+    dessus?.sesPhotos?.[0]?.src ?? dessus?.photo ?? dessusEv?.photo ?? "";
+  /**
    * LE LANGAGE DE L'ANNONCE QU'ON REGARDE — voir `lib/direct/personnalites.ts`.
    *
    * « Pour bien reconnaître un type de commerçant d'un autre et ne pas avoir
@@ -4776,6 +4811,17 @@ export function ApercuHabitant() {
   // l'autocollant d'un boulanger n'a rien à faire d'un résumé sur trois autres
   // commerces. Il est venu pour un seul.
   useEffect(() => {
+    // ═══ ET L'AVIS DU MATIN SUIT LA CLOCHE ═══════════════════════════════
+    //
+    // IL NE DIT QU'UNE CHOSE : allez voir la cloche. « 3 de vos commerces ont
+    // publié » n'est pas une information en soi — c'est une flèche vers
+    // l'endroit où on les lit. La cloche partie, la flèche ne désigne plus
+    // rien, et elle se posait en plein milieu de l'annonce, par-dessus le prix
+    // et la bande de miniatures : mesuré à l'écran, un bandeau ambre de cent
+    // points sur les « 28 € ».
+    //
+    // IL REVIENT AVEC ELLE, à la même constante. Voir CLOCHE_EN_HAUT.
+    if (!CLOCHE_EN_HAUT) return;
     if (combienDeNouvelles === 0 || arrivee || avisDuMatinDejaEnvoye()) return;
     const t = setTimeout(() => {
       // UN GESTE DÉLIBÉRÉ PASSE TOUJOURS AVANT UN AVIS AUTOMATIQUE. Mesuré
@@ -6714,14 +6760,56 @@ export function ApercuHabitant() {
                   onClick={() => noter("pli-ouvert", 0, "itineraire-tete")}
                   aria-label={`Y aller — ${dessus?.nom ?? dessusEv?.qui ?? "ce commerce"}`}
                 >
-                  <i aria-hidden="true">📍</i>
+                  <span
+                    className="ap-loin-v"
+                    aria-hidden="true"
+                    style={
+                      vignetteDuCommerce ? { backgroundImage: `url("${vignetteDuCommerce}")` } : undefined
+                    }
+                  >
+                    {!vignetteDuCommerce && <i>📍</i>}
+                  </span>
                   <span className="ap-loin-t">
                     <b>{dessus?.nom ?? dessusEv?.qui ?? "Autour de moi"}</b>
+                    {/* ═══ LA NOTE MONTE ICI, PARCE QU'ELLE DESCEND LÀ-BAS ═══
+
+                        « Au lieu d'avoir deux fois les mêmes informations, en
+                        haut et en dessous des miniatures, peux-tu enlever cette
+                        section et juste garder en haut les infos. »
+
+                        LE BLOC DU BAS DISAIT TROIS CHOSES : le métier, l'enseigne
+                        et la note. La barre en disait déjà deux — il ne manquait
+                        que la note pour que le bloc du bas ne dise plus rien de
+                        neuf. Elle prend trois caractères ; le bloc prenait cent
+                        points de haut au milieu de l'annonce.
+
+                        ON NE L'ÉCRIT QUE SI ELLE EXISTE. Un événement n'a pas de
+                        note Google et n'en aura pas : on ne note pas un marché
+                        de producteurs, et en afficher une serait inventer. */}
+                    {/* ═══ ET ELLE PASSE SUR SA PROPRE LIGNE ════════════════
+
+                        « En haut à gauche ce n'est pas le même design par
+                        rapport à l'original : pas de rectangle, une petite
+                        miniature du commerçant, et le reste des infos comme sur
+                        l'originale. »
+
+                        TROIS LIGNES, PAS UNE. L'enseigne, la note avec son
+                        nombre d'avis, puis le lieu — c'est l'ordre de sa
+                        maquette, et c'est l'ordre des questions : chez qui,
+                        est-ce que c'est bien, est-ce que c'est loin. Tout
+                        tassé sur une ligne, « ★ 4,8 » se lisait comme une
+                        décoration entre deux mots ; sur sa ligne, avec
+                        « (62 avis) » derrière, il se lit comme une note. */}
+                    {dessus?.google && (
+                      <u>
+                        <i aria-hidden="true">★</i>
+                        {dessus.google.note}
+                        <span>({dessus.google.avis} avis)</span>
+                      </u>
+                    )}
                     <em>
-                      {[
-                        dessus?.metier ?? (dessusEv ? "Événement" : null),
-                        dessus?.distance ?? dessusEv?.distance,
-                      ]
+                      <i aria-hidden="true">📍</i>
+                      {[dessus?.distance ?? dessusEv?.distance, dessus?.ville ?? dessusEv?.lieu]
                         .filter(Boolean)
                         .join(" · ")}
                     </em>
@@ -6731,14 +6819,30 @@ export function ApercuHabitant() {
                 </a>
               ) : (
               <span className="ap-loin" aria-hidden="true">
-                <i>📍</i>
+                <span
+                  className="ap-loin-v"
+                  style={
+                    vignetteDuCommerce ? { backgroundImage: `url("${vignetteDuCommerce}")` } : undefined
+                  }
+                >
+                  {!vignetteDuCommerce && <i>📍</i>}
+                </span>
                 <span className="ap-loin-t">
                   <b>{dessus?.nom ?? dessusEv?.qui ?? "Autour de moi"}</b>
+                  {/* LES MÊMES TROIS LIGNES QUE LA VERSION CLIQUABLE, ET POUR
+                      LA MÊME RAISON : un commerce sans itinéraire déclaré n'a
+                      pas à être moins bien présenté que son voisin. Voir
+                      au-dessus. */}
+                  {dessus?.google && (
+                    <u>
+                      <i>★</i>
+                      {dessus.google.note}
+                      <span>({dessus.google.avis} avis)</span>
+                    </u>
+                  )}
                   <em>
-                    {[
-                      dessus?.metier ?? (dessusEv ? "Événement" : null),
-                      dessus?.distance ?? dessusEv?.distance,
-                    ]
+                    <i>📍</i>
+                    {[dessus?.distance ?? dessusEv?.distance, dessus?.ville ?? dessusEv?.lieu]
                       .filter(Boolean)
                       .join(" · ")}
                   </em>
@@ -6814,18 +6918,39 @@ export function ApercuHabitant() {
                   <path d="M6.5 12h11" />
                   <path d="M9.5 17.5h5" />
                 </svg>
-                {vue === "recrute"
-                  ? "Ils recrutent"
-                  : vue === "evenements"
-                    ? "En ville"
-                    : vue === "offert"
-                      ? "C’est offert"
-                      : vue === "tout"
-                        ? "Tout"
-                        : /* LA FORME COURTE ICI, LA COMPLETE DANS LA LISTE —
-                             voir METIERS. La pastille partage sa ligne avec
-                             trois autres objets ; la liste a l'ecran entier. */
-                          metier.court}
+                {/* ═══ DEUX LIGNES : L'ÉTAT, PUIS CE QU'ON PEUT EN FAIRE ═════
+
+                    « Ce n'est pas le même design par rapport à l'original. »
+
+                    SA MAQUETTE EMPILE LE MOT ET LE VERBE : « COIFFEURS » en
+                    capitales, « Changer » en dessous, en minuscules. Le chevron
+                    seul demandait de deviner qu'un mot était un réglage ; le
+                    verbe le dit. C'est le même argument qu'il avait déjà fait
+                    gagner deux fois sur ce bouton — « ça ne donne pas
+                    l'intuition qu'il faut cliquer dessus » — et cette fois la
+                    réponse est un mot, pas un contour.
+
+                    LA HAUTEUR EST GRATUITE. La barre fait maintenant trois
+                    lignes à gauche, pour la miniature, le nom, la note et le
+                    lieu : le filtre avait de la place à côté et ne s'en servait
+                    pas. */}
+                <span className="ap-metier-t">
+                  <b>
+                    {vue === "recrute"
+                      ? "Ils recrutent"
+                      : vue === "evenements"
+                        ? "En ville"
+                        : vue === "offert"
+                          ? "C’est offert"
+                          : vue === "tout"
+                            ? "Tout"
+                            : /* LA FORME COURTE ICI, LA COMPLETE DANS LA LISTE —
+                                 voir METIERS. La pastille partage sa ligne avec
+                                 trois autres objets ; la liste a l'ecran entier. */
+                              metier.court}
+                  </b>
+                  <s>Changer</s>
+                </span>
                 {/* LES ENVIES SONT PARTIES DANS CETTE FEUILLE, DONC LEUR
                     NOMBRE DOIT SE VOIR D'ICI. Un filtre actif qu'on ne voit
                     plus est un piège : on croit que la ville est vide alors
@@ -6833,7 +6958,11 @@ export function ApercuHabitant() {
                 {LES_ENVIES && envies.length > 0 && (
                   <s className="ap-filtres-n">{envies.length}</s>
                 )}
-                <em aria-hidden="true">▾</em>
+                {/* LE CHEVRON BAS A DISPARU AVEC SON TRAVAIL. Il disait « ceci
+                    ouvre quelque chose » ; « Changer », juste au-dessus, le dit
+                    en toutes lettres. Deux signes pour la même promesse, dont
+                    un muet, c'était un de trop — le même raisonnement que pour
+                    les deux phrases du bouton vert. */}
               </button>
               {reserves.length > 0 && (
                 <button
@@ -6936,7 +7065,26 @@ export function ApercuHabitant() {
                     même taille, l'un qui ouvre ce que J'AI gardé, l'autre ce
                     qu'ON m'a dit. Le geste, lui, est ailleurs — c'est ce qui
                     les rendait illisibles. */}
-                {!sortie && (
+                {/* ═══ ET LA CLOCHE S'EN VA, POUR L'INSTANT ═══════════════════
+
+                    « Supprime la cloche pour le moment pour gagner de la place. »
+
+                    LA PLACE N'EST PAS UN DÉTAIL ICI, c'est le sujet même de tout
+                    ce qu'on vient de refaire : la photo doit occuper l'écran et
+                    le sujet y être entier. Quatre ronds dans la barre du haut
+                    poussaient l'enseigne à « Un salon du ce… » ; trois la
+                    laissent respirer.
+
+                    ET ELLE NE PERD AUCUNE PORTE. Ce qu'elle ouvrait — les
+                    nouvelles des commerces suivis — s'ouvre aussi par le cœur
+                    d'à côté et par l'onglet Profil, qui en porte le compte.
+                    C'était le troisième chemin vers le même endroit.
+
+                    « POUR LE MOMENT » : c'est son mot, et il tient. Le bouton
+                    est commenté ici, pas effacé ailleurs — ouvrirMesCommerces et
+                    nonLues vivent toujours, et la cloche revient en décommentant
+                    ce bloc le jour où la barre aura de la place. */}
+                {CLOCHE_EN_HAUT && !sortie && (
                   <button
                     type="button"
                     className={`ap-cloche${nonLues.length ? " neuf" : ""}`}
@@ -9992,12 +10140,25 @@ export function ApercuHabitant() {
                 quelque chose, et dans le doute on n'appuie pas. Le mot du métier
                 la remplit — « cette coupe », « ce vernis », « ce tatouage » —
                 parce que « ce produit » ne se dit dans aucune boutique. */}
-            {onPeutEssayer && (
-              <p className="ap-essayer-p">
-                <i aria-hidden="true">✨</i>
-                {essaiDuSommet.mots.promesse}
-              </p>
-            )}
+            {/* ═══ ET CETTE LIGNE-LÀ DISPARAÎT ════════════════════════════════
+
+                « Les deux phrases n'en faisaient plus qu'une : "visualiser une
+                coupe sur moi", ou "visualisez un vêtement, dessin, bougie,
+                meuble…" »
+
+                ELLE RÉPARAIT LE BOUTON, ET LE BOUTON EST RÉPARÉ. Le commentaire
+                au-dessus le dit lui-même : elle existait parce que « Essayer sur
+                moi » ne nomme pas ce qu'on essaie. Le bouton dit maintenant
+                « Visualiser une coupe sur moi » — il nomme la chose, donc la
+                ligne ne fait plus que la redire trente points plus bas.
+
+                DEUX PHRASES QUI SE COUVRENT COÛTENT DEUX FOIS LEUR PLACE, et
+                cette place-là est celle qu'on vient de rendre à la photo. Voir
+                `Piece.surMoi`, dans fantomes.ts, pour les neuf libellés.
+
+                LA SOIRÉE GARDE LA SIENNE, juste en dessous : son bouton dit
+                « Essayer cette soirée », ce qui ne nomme pas non plus ce qu'on
+                va voir — elle n'a pas encore eu son mot de métier. */}
             {/* ET LA SOIRÉE DIT CE QU'ELLE PROMET, AVEC LES MÊMES MOTS QUE
                 L'ESSAI : ce qu'on va voir, et combien de temps ça prend. Sans
                 cette ligne, « Essayer cette soirée » est un verbe qu'on n'a lu
@@ -14122,7 +14283,13 @@ export function ApercuHabitant() {
              du noir plein sur le premier tiers de l'ecran. Les pastilles de
              cette barre ont deja leur propre fond flou — elles n'ont pas besoin
              d'un bandeau derriere elles, juste d'un peu d'assise. */
-          background:linear-gradient(180deg,rgba(4,8,6,.52) 0%,rgba(4,8,6,.3) 55%,rgba(4,8,6,0) 100%);
+          /* ET LE VOILE REPREND LE TRAVAIL DE LA PASTILLE. Elle avait son
+             propre fond flou ; elle n'en a plus — « pas de rectangle ». Le
+             voile descend donc plus bas et part d'un peu plus haut : il doit
+             maintenant asseoir trois lignes de texte et non plus une boîte qui
+             se portait elle-même. Il meurt toujours en transparence, donc il
+             n'ajoute aucun bord. */
+          background:linear-gradient(180deg,rgba(4,8,6,.72) 0%,rgba(4,8,6,.5) 46%,rgba(4,8,6,.18) 78%,rgba(4,8,6,0) 100%);
           transition:background .18s ease;}
         /* DES QU'ON DESCEND, LA BARRE DEVIENT UN SOL. Sur la photo au repos le
            degrade laisse tout passer ; sous du texte qui defile il faut que ce
@@ -14170,20 +14337,50 @@ export function ApercuHabitant() {
            suspension, c'est-a-dire rien. Un plancher lui garantit de quoi lire
            un nom, et c'est au filtre de se serrer : lui, on sait deja ce qu'il
            dit, on vient de le choisir. */
+        /* ═══ PAS DE RECTANGLE, UNE MINIATURE, ET TROIS LIGNES ══════════════
+
+           « En haut à gauche ce n'est pas le même design par rapport à
+           l'original : pas de rectangle, une petite miniature du commerçant, et
+           le reste des infos comme sur l'originale. »
+
+           LA PASTILLE ÉTAIT UN OBJET, ET L'ANNONCE N'EN VEUT QU'UN. Un fond
+           flouté, un contour, un rayon de 999 : trois façons de dire « ceci est
+           une boîte » posées sur une photo qu'on venait de rendre pleine. La
+           même information sans boîte — un rond, trois lignes, et les ombres du
+           texte pour la lisibilité — laisse la photo commencer au bord de
+           l'écran.
+
+           LE VOILE DU HAUT REMPLACE LE FOND. Voir .ap-haut : un dégradé qui
+           part du noir et meurt en transparence fait ce que faisait la boîte,
+           sans bord et sans arrêt visible. C'est la même règle que le raccord
+           du bas — on assombrit, on n'encadre pas. */
         .ap-loin{flex:1 1 auto;min-width:0;max-width:none;
           display:inline-flex;align-items:center;
-          gap:6px;color:rgba(234,242,236,.82);
-          background:rgba(9,12,10,.5);border:1px solid rgba(234,242,236,.14);
-          border-radius:999px;padding:5px 11px 5px 10px;
-          -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+          gap:9px;color:rgba(234,242,236,.82);
+          background:none;border:0;border-radius:0;padding:0;
+          -webkit-backdrop-filter:none;backdrop-filter:none;}
         .ap-loin>i{font-style:normal;font-size:11px;flex:none;}
+        /* LA MINIATURE. Le fond et le bord appartiennent au ROND, pas à
+           l'image : sans photo — un commerce préparé, un événement — il reste
+           un rond avec une épingle, et la barre garde exactement sa hauteur. */
+        .ap-loin-v{flex:none;width:44px;height:44px;border-radius:50%;
+          display:flex;align-items:center;justify-content:center;
+          background-color:rgba(9,12,10,.62);
+          background-size:cover;background-position:center;
+          border:1.5px solid rgba(255,255,255,.5);
+          box-shadow:0 3px 12px rgba(0,0,0,.6);}
+        .ap-loin-v i{font-style:normal;font-size:15px;}
         /* ─── ET C'EST AU FILTRE DE SE SERRER, PAS AU NOM ───
            « ILS RECRUTENT » prend deux mots en capitales et se servait le
            premier : le nom du commerce tombait a « Une boutiq… / Prêt-à… ».
            On vient de choisir le filtre — on sait ce qu'il dit — alors que le
-           nom est la seule chose que cette barre existe pour apprendre. */
-        .ap-metier{min-width:0;flex:0 1 auto;overflow:hidden;
-          text-overflow:ellipsis;white-space:nowrap;}
+           nom est la seule chose que cette barre existe pour apprendre.
+           CETTE REGLE A REJOINT LE BLOC PRINCIPAL DE .ap-metier, plus bas. Elle
+           vivait ici, a soixante-dix lignes de lui : deux declarations du meme
+           nom a deux endroits eloignes se surchargent dans l'ordre du fichier,
+           et la garde des styles le refuse — a raison, ca a deja coute trois
+           fois. Le raisonnement ci-dessus reste, parce que c'est lui qui
+           explique le flex:0 1 auto qu'on lira la-bas. */
         /* ─── QUAND ELLE EMMENE SUR PLACE ───
            Elle ne change pas de dessin : c'est le meme reperage, qui repond en
            plus. La fleche suffit a dire qu'on sort — meme signe que « Infos
@@ -14192,13 +14389,46 @@ export function ApercuHabitant() {
         a.ap-loin:active{transform:scale(.97);}
         .ap-loin>s{flex:none;text-decoration:none;font-size:11px;
           color:rgba(234,242,236,.6);}
+        /* TROIS LIGNES, ET UNE SEULE OMBRE POUR LES TROIS. Le texte est posé
+           sur la photo : l'ombre serrée le détoure, comme pour le titre plus
+           bas. Même recette, même raison — voir .cd-carte.mesuree .cd-offre. */
         .ap-loin-t{min-width:0;display:flex;flex-direction:column;
-          align-items:flex-start;line-height:1.2;}
-        .ap-loin-t b{max-width:100%;font-size:12px;font-weight:800;color:#EAF2EC;
+          align-items:flex-start;line-height:1.24;gap:1px;
+          text-shadow:0 1px 3px rgba(0,0,0,.9),0 2px 10px rgba(0,0,0,.7);}
+        /* ═══ LE NOM A DROIT À DEUX LIGNES ══════════════════════════════════
+
+           NOS ENSEIGNES SONT DES PHRASES, PAS DES MARQUES. « Le salon du
+           centre » tient sur une ligne ; « Une prothésiste ongulaire du centre »
+           et « Un prêt-à-porter homme de la rue piétonne » n'y tiendront jamais
+           — ce sont des descriptions, parce que les commerces de la maquette
+           sont anonymes exprès.
+
+           MESURÉ : la barre laisse environ cent vingt points au nom, une fois
+           la miniature, le filtre et le cœur servis. À quatorze points, ça fait
+           quinze signes. Les huit enseigues en ont entre dix-huit et
+           trente-deux : sur une seule ligne, sept sur huit finissaient en
+           points de suspension.
+
+           DEUX LIGNES PLUTÔT QU'UN NOM COUPÉ. On perd douze points de haut sur
+           un voile qui était déjà là ; on gagne de savoir chez qui on est —
+           c'est la seule raison d'être de cette barre. */
+        .ap-loin-t b{max-width:100%;font-size:13.5px;font-weight:850;color:#fff;
+          letter-spacing:-.01em;line-height:1.18;
+          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+          overflow:hidden;white-space:normal;}
+        /* LA NOTE : l'étoile en ambre, le chiffre en blanc plein, le nombre
+           d'avis en retrait. C'est la hiérarchie de sa maquette, et c'est la
+           bonne — on lit « 4,8 », le reste qualifie. */
+        .ap-loin-t u{max-width:100%;text-decoration:none;
+          display:inline-flex;align-items:baseline;gap:4px;
+          font-size:12.5px;font-weight:850;color:#fff;white-space:nowrap;}
+        .ap-loin-t u i{font-style:normal;color:#FFC400;font-size:12px;}
+        .ap-loin-t u span{font-weight:650;color:rgba(234,242,236,.66);}
+        .ap-loin-t em{max-width:100%;font-style:normal;font-size:11.5px;
+          font-weight:700;color:rgba(234,242,236,.8);
+          display:inline-flex;align-items:baseline;gap:4px;
           overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-        .ap-loin-t em{max-width:100%;font-style:normal;font-size:10px;
-          font-weight:700;color:rgba(234,242,236,.62);
-          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .ap-loin-t em i{font-style:normal;font-size:10px;}
         /* LE FILTRE AU MILIEU : il dit d'abord ou l'on est, ensuite ce qu'on
            regarde. La marge automatique le centre entre la distance et les deux
            ronds, quelle que soit leur largeur. */
@@ -14219,13 +14449,28 @@ export function ApercuHabitant() {
            dessous on ne voit rien, au-dessus on retombe sur la pastille pleine
            qui criait « reglage » et qu'on venait justement d'enlever. */
         .ap-metier{font:inherit;font-size:12px;font-weight:850;cursor:pointer;
+          /* C'EST AU FILTRE DE SE SERRER, PAS AU NOM — voir le commentaire
+             au-dessus de .ap-loin-v. Il cede sa largeur en premier parce qu'on
+             vient de le choisir : on sait ce qu'il dit. */
+          min-width:0;flex:0 1 auto;
           margin:0 auto;transition:transform .12s ease,background .16s ease;
           background:rgba(255,255,255,.08);
           border:1px solid rgba(255,255,255,.2);border-radius:999px;
-          color:#EAF2EC;padding:6px 12px 6px 10px;
-          letter-spacing:.1em;text-transform:uppercase;
-          display:inline-flex;align-items:center;gap:6px;}
+          color:#EAF2EC;padding:7px 13px 7px 11px;
+          letter-spacing:0;text-transform:none;
+          display:inline-flex;align-items:center;gap:8px;}
         .ap-metier>i{display:none;}
+        /* LE MOT EN CAPITALES, LE VERBE EN DESSOUS. Les capitales et
+           l'espacement descendent sur le seul <b> : « Changer » est une phrase,
+           pas une étiquette, et des capitales espacées la rendraient illisible
+           à dix points. */
+        .ap-metier-t{display:flex;flex-direction:column;align-items:flex-start;
+          line-height:1.15;min-width:0;}
+        .ap-metier-t b{font-size:12px;font-weight:850;letter-spacing:.1em;
+          text-transform:uppercase;white-space:nowrap;}
+        .ap-metier-t s{text-decoration:none;font-size:10.5px;font-weight:650;
+          letter-spacing:0;text-transform:none;
+          color:rgba(234,242,236,.62);white-space:nowrap;}
         .ap-filtre-i{width:15px;height:15px;flex:none;fill:none;
           stroke:currentColor;stroke-width:2;stroke-linecap:round;
           opacity:.8;}
@@ -15400,6 +15645,30 @@ export function ApercuHabitant() {
            lisibles — c'est deja son travail pour le titre juste au-dessus. */
         .ap-ident{width:min(100%,340px);margin-top:10px;
           display:flex;flex-direction:column;align-items:flex-start;gap:9px;}
+        /* ═══ LES DEUX DOUBLONS DISPARAISSENT DE L'ANNONCE ════════════════
+
+           « Au lieu d'avoir deux fois les mêmes informations, en haut et en
+           dessous des miniatures, peux-tu enlever cette section et juste garder
+           en haut les infos. » Et, sur le lieu : « À 220 m est à supprimer
+           puisque c'est déjà présent en haut. »
+
+           C'EST LE MÊME DÉFAUT DEUX FOIS, et il se voit à l'écran : la barre du
+           haut dit « Un salon du centre — Coiffeur · ★ 4,8 · 220 m », et cent
+           points plus bas la carte redisait « À 220 m / Dax », puis « COIFFEUR /
+           Un salon du centre ★ 4,8 (62 avis) ». Trois cents points d'écran pour
+           répéter ce qu'on venait de lire.
+
+           ON CACHE, ON NE SUPPRIME PAS, et la nuance est le tout : ces deux
+           lignes sont les SEULES à dire où c'est et chez qui sur la page du
+           commerçant et dans le fil de la ville, où il n'y a pas de barre en
+           haut. Seul l'écran qui affiche déjà l'information la tait.
+
+           LA PORTE, ELLE, RESTE. Il a demandé le retrait des informations
+           répétées, pas celui du bouton qui descend : « Voir toutes les offres
+           + infos » est le seul chemin vers le reste de la carte. */
+        .ap-carte .cd-ou{display:none;}
+        .ap-carte .ap-ident-l{display:none;}
+        .ap-carte .ap-ident{margin-top:2px;}
         /* ─── DEUX LIGNES : LE METIER, PUIS QUI ET SI C'EST BIEN ───
            Trois choses sur une ligne tenaient toute la largeur et se repliaient
            n'importe ou. Deux niveaux typographiques les separent mieux que deux
@@ -18899,8 +19168,14 @@ export function ApercuHabitant() {
            porte un PERSONNAGE plutot qu'un pictogramme, et c'est ce qui le relie
            au bouton rond de la barre du bas — le meme, par lequel on arrivait
            ici avant que personne ne le trouve. */
-        .ap-agir.essayer{padding:15px 16px;font-size:15.5px;border-radius:18px;
-          gap:10px;letter-spacing:.01em;font-weight:850;justify-content:center;
+        /* LE LIBELLE A GRANDI, DONC LE CORPS DESCEND. « Essayer sur moi » tenait
+           large a quinze points et demi ; « Visualiser une monture sur moi »
+           venait toucher la fleche — mesure sur le lunetier et sur le
+           pret-a-porter, les deux plus longs des neuf. Un demi-point de moins et
+           un peu de marge en moins autour du fantome suffisent : le bouton garde
+           sa hauteur, c'est le mot qui s'ajuste. Voir Piece.surMoi. */
+        .ap-agir.essayer{padding:15px 12px;font-size:14.5px;border-radius:18px;
+          gap:9px;letter-spacing:-.005em;font-weight:850;justify-content:center;
           color:#fff;
           background:linear-gradient(112deg,#6D5BFF,#A855F7 58%,#D946B8);
           box-shadow:0 16px 34px -14px rgba(139,92,246,.85);}
