@@ -190,6 +190,9 @@ export function PageBoutique(p: PageBoutiqueProps) {
         commerce={carte}
         retourHref={venuDuDirect ? "/autour-de-moi" : null}
         piedMaquette={invente}
+        /* LE MÊME DRAPEAU QUE LA VOIX ET LE FORMULAIRE. Il décide d'un bloc
+           écrit à la deuxième personne — voir `saPage` dans la boutique. */
+        saPage={modeDemo}
       />
       {modeDemo && (
         <DemoTour

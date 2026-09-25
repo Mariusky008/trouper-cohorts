@@ -107,6 +107,78 @@ const FICHE_PROSPECT: FicheCommercant = {
   ],
 };
 
+/**
+ * ═══ ET UN SECOND PROSPECT, PARCE QU'UN COIFFEUR NE MONTRE PAS TOUT ═══════
+ *
+ * IL A FALLU QU'IL OUVRE LA PAGE D'UN VRAI RESTAURANT POUR VOIR LE DÉFAUT :
+ * « c'est l'ancien concept, "Qui est là" n'est plus d'actualité pour les
+ * restaurants ». Exactement le scénario que le prospect de démonstration existe
+ * pour éviter — et il ne pouvait pas l'attraper, parce qu'il est coiffeur.
+ *
+ * ET CE N'EST PAS UN HASARD DE MÉTIER, C'EST UN PARTAGE DE MÉCANIQUE. Un
+ * coiffeur, une onglerie, une boutique de mode ont leur essayage sur photo dès
+ * la fiche Google : ils ne sont JAMAIS tombés sur le mur de présence. Les trois
+ * familles qui y tombaient — la table, le comptoir, le métier de bouche —
+ * n'avaient aucune démonstration. Le seul chemin où le défaut se voyait était
+ * la page d'un vrai commerçant.
+ *
+ * UN RESTAURANT, DONC, ET LE MÊME PONT. Mêmes trous que le salon : pas de
+ * moment, pas de catalogue, pas de voix. La seule différence est celle qui
+ * compte — sa branche.
+ */
+const FICHE_PROSPECT_TABLE: FicheCommercant = {
+  slug: "demo-prospect-table",
+  nom: "Une table de quartier",
+  metier: "Restaurant",
+  ville: "Dax",
+  adresse: "Rue Neuve, Dax",
+  horaires: "Aujourd’hui, 12 h – 14 h et 19 h – 22 h",
+  // MÊME ÉCART QUE POUR LE SALON, ET POUR LA MÊME RAISON : des chemins locaux
+  // plutôt que des adresses `googleusercontent`, qui ne se chargent pas ici.
+  photos: ["/direct/tables-libres.jpg", "/direct/tablee-du-soir.jpg", "/direct/terrasse-au-soleil.jpg"],
+  note: "4,5",
+  avis: 214,
+  telephone: "+33600000000",
+  mapsHref: "https://www.google.com/maps/search/Une+table+de+quartier+Dax",
+  avisHref: "https://search.google.com/local/reviews?placeid=demo",
+  // AUCUNE PRESTATION DÉCLARÉE, comme le salon : un restaurant à qui l'on
+  // envoie sa page pour la première fois n'a jamais ouvert son espace.
+  avisGoogle: [
+    { qui: "Marc L.", texte: "Cuisine du marché, carte courte qui change. On sent que c’est fait le jour même.", note: 5 },
+    { qui: "Élodie R.", texte: "Service rapide le midi, bon rapport qualité-prix. Un peu bruyant quand c’est plein.", note: 4 },
+    { qui: "Hervé C.", texte: "Le plat du jour est toujours une bonne surprise. Pensez à réserver le soir.", note: 5 },
+  ],
+};
+
+/**
+ * ET LE COMPTOIR, PARCE QUE SON PARCOURS N'EST PAS CELUI DE LA TABLE.
+ *
+ * Trois temps au lieu de quatre écrans, et aucun des trois ne ressemble aux
+ * autres — on écoute ce qui passera ce soir, on dit ce qu'on vient y chercher,
+ * on parle à ceux qui y vont. C'est un texte entier que personne ne verrait
+ * jamais sans cette entrée-là, puisque les deux bars de démonstration ont, eux,
+ * leur soirée écrite.
+ */
+const FICHE_PROSPECT_COMPTOIR: FicheCommercant = {
+  slug: "demo-prospect-bar",
+  nom: "Un comptoir de quartier",
+  metier: "Bar à vins",
+  ville: "Dax",
+  adresse: "Place de la Fontaine, Dax",
+  horaires: "Aujourd’hui, 17 h – 1 h",
+  photos: ["/direct/bar-salle.jpg", "/direct/table-salon-bougie.jpg"],
+  note: "4,6",
+  avis: 137,
+  telephone: "+33600000000",
+  mapsHref: "https://www.google.com/maps/search/Un+comptoir+de+quartier+Dax",
+  avisHref: "https://search.google.com/local/reviews?placeid=demo",
+  avisGoogle: [
+    { qui: "Camille D.", texte: "Belle sélection au verre, le patron explique sans en faire trop.", note: 5 },
+    { qui: "Yann B.", texte: "On y reste plus longtemps que prévu. Planche correcte pour accompagner.", note: 5 },
+    { qui: "Sonia T.", texte: "Un peu serré le vendredi soir, mais l’ambiance vaut le coup.", note: 4 },
+  ],
+};
+
 /** Toute adresse de démonstration commence par là, et rien d'autre ne le fait. */
 export const PREFIXE_DEMO = "demo";
 
@@ -128,6 +200,18 @@ export function listeDesDemos(): Array<{ slug: string; titre: string; nom: strin
       nom: FICHE_PROSPECT.nom,
       metier: FICHE_PROSPECT.metier,
     },
+    {
+      slug: "demo-prospect-table",
+      titre: "Un prospect restaurateur, même chemin",
+      nom: FICHE_PROSPECT_TABLE.nom,
+      metier: FICHE_PROSPECT_TABLE.metier,
+    },
+    {
+      slug: "demo-prospect-bar",
+      titre: "Un prospect au comptoir, même chemin",
+      nom: FICHE_PROSPECT_COMPTOIR.nom,
+      metier: FICHE_PROSPECT_COMPTOIR.metier,
+    },
     ...DEMOS.flatMap((d) => {
       const c = cartes.find((x) => x.id === d.carte);
       return c ? [{ slug: d.slug, titre: d.titre, nom: c.nom, metier: c.metier }] : [];
@@ -148,6 +232,8 @@ export function carteDeDemo(slug: string): CarteAutour | null {
   // `FICHE_PROSPECT`. C'est la seule qui montre une page telle qu'un vrai
   // commerçant la reçoit.
   if (slug === "demo-prospect") return carteDepuisFiche(FICHE_PROSPECT);
+  if (slug === "demo-prospect-table") return carteDepuisFiche(FICHE_PROSPECT_TABLE);
+  if (slug === "demo-prospect-bar") return carteDepuisFiche(FICHE_PROSPECT_COMPTOIR);
   const d = DEMOS.find((x) => x.slug === slug);
   if (!d) return null;
   return toutesLesCartes().find((c) => c.id === d.carte) ?? null;

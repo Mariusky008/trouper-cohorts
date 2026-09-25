@@ -76,6 +76,8 @@ import {
 import { ceQuiRevient, phraseHabitude } from "@/lib/direct/historique";
 import { momentEnCours } from "@/lib/direct/apercu-habitant";
 import { murDeLaCarte, pieceDeLaCarte } from "@/lib/direct/fantomes";
+import { parcoursPromis } from "@/lib/direct/parcours-promis";
+import { ParcoursAVenir } from "@/components/direct/parcours-a-venir";
 import {
   abonnerTailles,
   chargerTailles,
@@ -345,6 +347,7 @@ export function Boutique({
   commerce,
   retourHref,
   piedMaquette = true,
+  saPage = false,
 }: {
   /**
    * ═══ LE COMMERCE À AFFICHER, QUAND IL VIENT DU DEHORS ═══════════════════
@@ -393,6 +396,18 @@ export function Boutique({
    * laisser traîner sur la page qui porte son nom.
    */
   piedMaquette?: boolean;
+  /**
+   * ═══ ON MONTRE AU COMMERÇANT SA PROPRE PAGE ══════════════════════════════
+   *
+   * LE MÊME DRAPEAU QUE `modeDemo` CÔTÉ APERÇU, et il ne sert ici qu'à une
+   * chose : un bloc écrit à la deuxième personne — « votre plat du jour »,
+   * « votre voix » — n'a de sens que devant lui. Servi à un habitant, il lui
+   * demanderait une photo d'un plat qui n'est pas le sien.
+   *
+   * FAUX PAR DÉFAUT, parce que cette page est d'abord celle de l'habitant :
+   * c'est l'aperçu du commerçant qui est le cas particulier, pas l'inverse.
+   */
+  saPage?: boolean;
 }) {
   const retour = retourHref === undefined ? "/autour-de-moi" : retourHref;
   const cartes = useMemo(() => toutesLesCartes(), []);
@@ -695,6 +710,26 @@ export function Boutique({
   );
   const onEssaie = murDuLieu.depot === "essai";
   /**
+   * ═══ LE PARCOURS QU'IL AURA, QUAND IL N'EN A PAS ENCORE ═══════════════════
+   *
+   * « Qui est là n'est plus d'actualité pour les restaurants, et c'est un
+   * parcours en quatre étapes qui a été mis en place ; pour les bars, les
+   * événements et les sorties c'est un autre type de parcours. »
+   *
+   * TROIS CONDITIONS, ET CHACUNE RETIRE UN FAUX POSITIF. Sa page, parce que le
+   * bloc est écrit à la deuxième personne. Aucune des trois mécaniques, parce
+   * qu'un commerce qui a son avant-goût n'a rien à se faire promettre. Et un
+   * parcours qui existe pour son métier — voir `parcours-promis.ts`, qui répond
+   * `undefined` partout ailleurs plutôt que d'inventer un parcours par métier.
+   */
+  const promis = useMemo(
+    () =>
+      saPage && !onEssaie && !murDuLieu.gout && !murDuLieu.soiree
+        ? parcoursPromis({ branche: c.branche, metier: c.metier })
+        : undefined,
+    [saPage, onEssaie, murDuLieu.gout, murDuLieu.soiree, c.branche, c.metier],
+  );
+  /**
    * CE COMMERCE ENTRE-T-IL DANS UN RELOOKING&nbsp;?
    *
    * Les quatre métiers du parcours, et eux seuls — voir `POSTES` dans
@@ -967,8 +1002,17 @@ export function Boutique({
    * selon le métier. Le jour où le bar a son parcours, il reprend « À essayer »
    * tout seul, sans qu'on touche à cette liste.
    */
+  /* ET L'ONGLET SUIT, COMME IL LE FAISAIT DEJA. « Qui est là » promettrait le
+     mur de présence à qui appuie, alors que le bloc annonce maintenant son
+     parcours : c'est la règle écrite juste au-dessus, appliquée à un cas de
+     plus. « Bientôt chez vous » dit les deux choses qu'il doit lire — que c'est
+     pour lui, et que ce n'est pas encore en route. */
   const motCoeur =
-    onEssaie || murDuLieu.gout || murDuLieu.soiree ? "À essayer" : "Qui est là";
+    onEssaie || murDuLieu.gout || murDuLieu.soiree
+      ? "À essayer"
+      : promis
+        ? "Bientôt"
+        : "Qui est là";
 
   const onglets = [
     { id: "essayer", mot: motCoeur, picto: "✨" },
@@ -1520,7 +1564,14 @@ export function Boutique({
               TOUS L'ONT MAINTENANT, ET CE QU'IL ANNONCE RESTE VRAI. Voir
               `QuoiEssayer` : la question et le geste suivent ce qu'il y a
               derrière — un essayage, un avant-goût, ou le mur. */}
-          {!essaiOuvert ? (
+          {promis ? (
+            /* ON NE LUI OUVRE PAS UNE PORTE QUI NE MENE NULLE PART. La vitrine
+               et l'atelier vont par paire — la première annonce ce que le second
+               ouvre — et il n'y a rien à ouvrir tant que la matière n'existe
+               pas. Le bloc remplace donc les deux, et il ne porte aucun bouton :
+               la demande est déjà en pied de page, une seule fois. */
+            <ParcoursAVenir p={promis} nom={c.nom} />
+          ) : !essaiOuvert ? (
             <BlocFantome
               mur={murDuLieu}
               /* L'ORDRE EST CELUI DE LA VÉRITÉ, PAS CELUI DES ARRIVÉES. La
