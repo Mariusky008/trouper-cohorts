@@ -127,7 +127,7 @@ export default function Proposition() {
   /* ON PREND LA CARTE ET L'ANNONCE DONT IL PARLE — la coupe homme du salon du
      centre — dans les VRAIES données. Une proposition faite sur des chiffres
      inventés ne prouve rien. */
-  const { carte, annonce, coupes, lieu, promesse } = useMemo(() => {
+  const { carte, annonce, coupes, lieu } = useMemo(() => {
     const c = toutesLesCartes().find((x) => x.id === "coif-centre");
     const a = c?.moments.find((m) => m.titre === "Coupe homme") ?? c?.moments[0];
     /* LE MUR PORTE LA CLÉ DU MÉTIER, pas celle de la carte : « coiffeur », et
@@ -139,7 +139,6 @@ export default function Proposition() {
       annonce: a,
       coupes: (mur?.essai?.pieces ?? []).filter((p) => p.photo).slice(0, 5),
       lieu: mur?.photoLieu ?? "",
-      promesse: mur?.essai?.mots?.promesse ?? "",
     };
   }, []);
 
@@ -215,6 +214,20 @@ export default function Proposition() {
         <div className="pr-fondu" />
 
         <header className="pr-haut">
+          {/* ═══ LE COMMERCE SE PRÉSENTE UNE SEULE FOIS ════════════════════
+
+              « Au lieu d'avoir deux fois les mêmes informations — en haut, et
+              en dessous des miniatures — enlève cette section et garde juste
+              celles du haut. »
+
+              JUSTE : « Un salon du centre » apparaissait à deux endroits, et
+              la note à un seul — il fallait lire les deux pour avoir
+              l'ensemble. Le haut porte désormais tout : le nom, l'étoile, les
+              avis, la distance et la ville. Rien n'est perdu, une ligne
+              disparaît.
+
+              ET LA CLOCHE S'EN VA, comme il l'a demandé : elle prenait la
+              place dont ces trois lignes avaient besoin. */}
           <div className="pr-puce">
             {lieu && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -223,14 +236,13 @@ export default function Proposition() {
             <div>
               <b>{carte.nom}</b>
               <span>
-                {carte.metier} · {carte.metres} m
+                <i>★</i> {carte.google?.note} <em>({carte.google?.avis} avis)</em>
               </span>
+              <span>📍 à {carte.metres} m · {carte.ville}</span>
             </div>
-            <i>↗</i>
           </div>
           <span className="pr-filtre">☰ COIFFEURS</span>
           <span className="pr-coeur">♥ 2</span>
-          <span className="pr-cloche">🔔</span>
         </header>
 
         {/* LE ROND DES TARIFS, COMME AVANT. */}
@@ -272,11 +284,11 @@ export default function Proposition() {
             {annonce.lignes?.[0]}
             {annonce.lignes?.[1] ? ` · ${annonce.lignes[1]}` : ""}
           </p>
+          {/* LA DISTANCE EST MONTÉE EN HAUT AVEC LE RESTE, elle ne se répète
+              pas ici : c'est le doublon qu'on vient d'enlever, déplacé d'une
+              ligne. Le prix reste seul, et il se voit mieux. */}
           <div className="pr-prix">
             <b>{annonce.prix}</b>
-            <span>
-              <i>📍</i> à {carte.metres} m · {carte.ville}
-            </span>
           </div>
 
           <div className="pr-vignettes">
@@ -294,20 +306,22 @@ export default function Proposition() {
             ))}
           </div>
 
-          <div className="pr-nom">
-            <b>{carte.nom}</b>
-            <span>
-              <i>★</i> {carte.google?.note} ({carte.google?.avis} avis)
-            </span>
-            <button type="button" className="pr-offres">
-              Voir toutes les offres + infos ↓
-            </button>
-          </div>
-
-          <button type="button" className="pr-essai">
-            <i>👻</i> Essayer sur moi <b>→</b>
+          <button type="button" className="pr-offres">
+            Voir toutes les offres + infos ↓
           </button>
-          <p className="pr-promesse">✨ {promesse}</p>
+
+          {/* ═══ UN SEUL GESTE, UN SEUL TEXTE ═══════════════════════════════
+
+              « "Essayer sur moi" et en dessous "visualisez cette coupe ou une
+              autre sur vous", c'est un peu identique. »
+
+              C'ÉTAIT LA MÊME PHRASE DITE DEUX FOIS, dont une en petit sous
+              l'autre. Le bouton dit maintenant ce que la ligne disait, et la
+              ligne s'en va. La promesse reste dans les données du métier —
+              elle sert ailleurs, sur l'écran de prise de vue. */}
+          <button type="button" className="pr-essai">
+            <i>👻</i> Visualiser une coupe sur moi <b>→</b>
+          </button>
         </div>
 
         {/* LA BULLE, PETITE, AU-DESSUS DU FANTÔME, ET ELLE S'EN VA. */}
@@ -399,20 +413,21 @@ export default function Proposition() {
           background:linear-gradient(180deg,rgba(0,0,0,.55),transparent);}
         .pr-puce{display:flex;align-items:center;gap:7px;background:rgba(18,20,30,.82);
           border-radius:999px;padding:5px 9px 5px 5px;min-width:0;flex:1;}
-        .pr-puce img{width:26px;height:26px;border-radius:50%;object-fit:cover;flex:none;}
+        .pr-puce img{width:46px;height:46px;border-radius:50%;object-fit:cover;flex:none;
+          border:2px solid rgba(255,255,255,.35);}
         .pr-puce div{min-width:0;}
-        .pr-puce b{display:block;color:#fff;font-size:12px;line-height:1.15;
+        .pr-puce b{display:block;color:#fff;font-size:14px;font-weight:800;line-height:1.2;
           white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .pr-puce span{display:block;color:#9aa4c4;font-size:10px;}
-        .pr-puce i{font-style:normal;color:#9aa4c4;font-size:10px;}
+        .pr-puce span{display:block;color:#e7ebf6;font-size:11.5px;line-height:1.3;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .pr-puce span em{font-style:normal;color:#a7b0cc;}
+        .pr-puce i{font-style:normal;color:#ffcc33;}
         .pr-filtre{background:rgba(18,20,30,.82);color:#fff;border-radius:999px;
           padding:6px 9px;font-size:10px;font-weight:700;letter-spacing:.05em;white-space:nowrap;}
         .pr-coeur{background:rgba(18,20,30,.82);color:#ff5b8a;border-radius:999px;
           padding:6px 8px;font-size:11px;font-weight:700;white-space:nowrap;}
-        .pr-cloche{background:rgba(18,20,30,.82);border-radius:50%;width:28px;height:28px;
-          display:grid;place-items:center;font-size:12px;flex:none;}
 
-        .pr-tarifs{position:absolute;right:13px;top:62px;z-index:3;
+        .pr-tarifs{position:absolute;right:13px;top:86px;z-index:3;
           width:76px;height:76px;border-radius:50%;border:2px solid #c4a2ff;
           background:rgba(10,12,20,.8);color:#fff;display:grid;place-content:center;gap:2px;
           font-size:8.5px;font-weight:800;letter-spacing:.07em;cursor:pointer;}
@@ -436,7 +451,11 @@ export default function Proposition() {
           color:#fff;font-size:19px;line-height:1;cursor:pointer;}
 
         /* ═══ LE BAS ═══ */
-        .pr-bas{position:absolute;left:0;right:0;bottom:62px;z-index:2;padding:0 14px;
+        /* LE BAS REMONTE DE VINGT-DEUX POINTS, et c'est la ligne supprimée qui
+           l'impose : la promesse servait de coussin sous le bouton, la bulle
+           tombait dessus. Elle passe maintenant juste au-dessous, sans rien
+           recouvrir. */
+        .pr-bas{position:absolute;left:0;right:0;bottom:84px;z-index:2;padding:0 14px;
           display:grid;gap:8px;}
         /* LA POLICE DE SA MAQUETTE — Poppins 900, déjà servie par le site sous
            --font-clikme. Pas de capitales forcées : « Coupe homme » s'écrit
@@ -463,21 +482,19 @@ export default function Proposition() {
         .pr-vignettes button.on{border-color:#c4a2ff;box-shadow:0 0 0 3px rgba(168,85,247,.3);}
         .pr-vignettes img{width:100%;height:100%;object-fit:cover;display:block;}
 
-        .pr-nom{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-        .pr-nom b{color:#fff;font-size:13.5px;}
-        .pr-nom>span{color:rgba(255,255,255,.7);font-size:12px;}
-        .pr-nom i{color:#ffcc33;font-style:normal;}
-        .pr-offres{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:999px;
-          padding:7px 12px;font-size:11.5px;font-weight:600;cursor:pointer;}
+        /* IL NE S'ÉTIRE PAS SUR TOUTE LA LARGEUR : dans une grille, un bouton
+           prend toute sa colonne s'il ne dit pas le contraire, et il se met
+           alors à ressembler au geste principal juste en dessous. */
+        .pr-offres{justify-self:start;background:rgba(255,255,255,.12);color:#fff;border:0;
+          border-radius:999px;padding:8px 13px;font-size:12px;font-weight:600;cursor:pointer;}
 
         .pr-essai{display:flex;align-items:center;justify-content:center;gap:9px;
           background:linear-gradient(90deg,#7b4dff,#e0389f);color:#fff;border:0;
           border-radius:17px;padding:14px;font-size:17px;font-weight:800;cursor:pointer;}
         .pr-essai i,.pr-essai b{font-style:normal;}
-        .pr-promesse{margin:0;font-size:11.5px;color:#d9c6ff;}
 
         /* LA BULLE : PETITE, AU-DESSUS DU FANTOME, ET ELLE S'EN VA. */
-        .pr-bulle{position:absolute;left:50%;bottom:58px;z-index:5;transform:translateX(-50%);
+        .pr-bulle{position:absolute;left:50%;bottom:50px;z-index:5;transform:translateX(-50%);
           display:flex;align-items:center;gap:7px;background:rgba(40,32,78,.94);
           border:1px solid rgba(140,116,220,.5);border-radius:12px;padding:5px 10px;
           white-space:nowrap;box-shadow:0 8px 26px rgba(0,0,0,.5);
