@@ -164,11 +164,6 @@ export function StylesChoix() {
             rgba(6,6,10,.22) 52%, rgba(6,6,10,.86) 82%, rgba(6,6,10,.96) 100%);}
         .cx-carte.de-cote .cx-photo{filter:brightness(.78);}
 
-        .cx-demo{position:absolute;top:8px;left:8px;z-index:2;
-          padding:3px 8px;border-radius:999px;
-          font-size:8.5px;font-weight:800;letter-spacing:.02em;
-          color:#fff;background:rgba(255,46,154,.92);
-          box-shadow:0 2px 10px rgba(0,0,0,.45);}
 
         .cx-bas{position:absolute;left:0;right:0;bottom:0;z-index:2;
           padding:0 13px 13px;text-align:left;}

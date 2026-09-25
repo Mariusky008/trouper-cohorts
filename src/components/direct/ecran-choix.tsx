@@ -113,9 +113,12 @@ export function EcranChoix({
    * catégorie — et pas le bouton.
    */
   onParcoursMode,
+  /** Le parcours de la coiffure, dessine apres celui de la mode. */
+  onParcoursCoiffure,
 }: {
   onEntrer?: () => void;
   onParcoursMode?: () => void;
+  onParcoursCoiffure?: () => void;
 }) {
   const [cle, setCle] = useState<CleCategorie>(CATEGORIE_DEPART);
   const categorie = categorieDe(cle);
@@ -309,10 +312,21 @@ export function EcranChoix({
             >
               <div className="cx-photo" style={{ backgroundImage: `url("${v.photo}")` }} />
               <div className="cx-voile" />
-              {/* LA MENTION EST SUR CHAQUE CARTE, pas une fois en bas de page.
-                  C'est la carte qu'on regarde, c'est elle qui doit dire qu'elle
-                  est une démonstration — voir LISEZ-MOI.md. */}
-              <span className="cx-demo">Exemple de démonstration</span>
+              {/* ═══ PLUS DE PASTILLE « EXEMPLE DE DÉMONSTRATION » ═══════════
+
+                  « Supprimer "démonstration" et "exemple de démonstration"
+                  partout, ça ne sert à rien. »
+
+                  ELLE ÉTAIT SUR CHAQUE CARTE, et elle disait la même chose que
+                  les quatre autres cartes à côté : tout cet écran est une
+                  démonstration, on ne montre rien d'autre. Une mention qui ne
+                  distingue rien n'informe personne — elle occupe le coin de
+                  chaque photo et on cesse de la lire dès la seconde.
+
+                  CE QUI RESTE, ET QUI N'EST PAS LA MÊME CHOSE : la mention de
+                  SIMULATION sur l'essayage. Celle-là dit « cette image n'est
+                  pas une photo de vous », et c'est une information, pas un
+                  rappel de contexte. Voir `.pm-simu` dans le parcours. */}
               <div className="cx-bas">
                 <h2>{v.nom}</h2>
                 {v.quoi && <p className="cx-quoi">{v.quoi}</p>}
@@ -397,7 +411,14 @@ export function EcranChoix({
       <button
         type="button"
         className="cx-go"
-        onClick={() => (cle === "mode" && onParcoursMode ? onParcoursMode() : setBientot(true))}
+        onClick={() => {
+          /* DEUX PARCOURS SUR CINQ, ET LES TROIS AUTRES LE DISENT. Le jour où
+             ils existeront tous, cette liste deviendra une propriété par
+             catégorie ; a deux, un ou-bien se lit mieux qu'une table. */
+          if (cle === "mode" && onParcoursMode) return onParcoursMode();
+          if (cle === "beaute" && onParcoursCoiffure) return onParcoursCoiffure();
+          setBientot(true);
+        }}
         aria-describedby="cx-bientot"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}

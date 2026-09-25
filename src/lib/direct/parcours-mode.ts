@@ -51,22 +51,24 @@ export const APRES_MODE = "/direct/accueil/mode-apres.jpg";
 export const DEVANTURE_MODE = "/direct/vitrine-mode.jpg";
 
 /**
- * ═══ LES TROIS FAÇONS DE LA PORTER ═════════════════════════════════════════
+ * ═══ CE QUE MONTRAIT LA TROISIÈME ÉTAPE, ET POURQUOI ELLE NE LE MONTRE PLUS ══
  *
- * « Une veste, plusieurs façons de la porter. »
+ * « Les trois femmes ne portent pas du tout la même veste que la modèle. »
  *
- * ELLES SONT ANNONCÉES COMME DES INSPIRATIONS, PAS COMME SON STOCK. Ce sont
- * des photos de mode du dépôt, pas des pièces que la boutique vend : le dire
- * est la seule façon de les montrer sans mentir. D'où le titre « Inspirations
- * de la démo » au-dessus, qui est le mot de sa propre maquette.
+ * IL A RAISON, ET C'ÉTAIT INDÉFENDABLE. Le titre promettait « une pièce,
+ * plusieurs façons de la porter » et les images montraient trois autres
+ * vêtements sur trois autres personnes. Le titre annonçait une chose, les
+ * images en montraient une autre.
+ *
+ * JE N'AI PAS TROIS PHOTOS DU MÊME BLAZER PORTÉ AUTREMENT, et je ne peux pas en
+ * fabriquer ici. L'étape montre donc les AUTRES PIÈCES de cette boutique, lues
+ * dans sa journée avec leur nom et leur prix — voir `autresPieces` dans
+ * l'écran. Rien n'est déclaré ici : ce serait un second endroit où les écrire.
+ *
+ * POUR RETROUVER SA MAQUETTE : trois photos du même blazer porté différemment,
+ * déclarées ici comme les autres images du parcours, et le bloc redevient
+ * « plusieurs façons de la porter ».
  */
-export type Facon = { cle: string; mot: string; icone: string; photo: string };
-
-export const FACONS_MODE: Facon[] = [
-  { cle: "jour", mot: "Au quotidien", icone: "☀️", photo: "/direct/vetement2.jpg" },
-  { cle: "travail", mot: "Au travail", icone: "💼", photo: "/direct/mode-robe-lavalliere.jpeg" },
-  { cle: "soir", mot: "En soirée", icone: "🌙", photo: "/direct/vetement5.jpeg" },
-];
 
 /** Combien d'étapes, et dans quel ordre. Le numéro « 1/4 » en dépend. */
 export const ETAPES_MODE = 4;

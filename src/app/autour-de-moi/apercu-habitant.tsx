@@ -163,6 +163,8 @@ import { StylesChoix } from "@/components/direct/styles-choix";
 // LE PARCOURS MODE — la « partie 2 », pour une categorie sur cinq.
 import { ParcoursMode } from "@/components/direct/parcours-mode-ecran";
 import { StylesParcoursMode } from "@/components/direct/styles-parcours-mode";
+import { ParcoursCoiffure } from "@/components/direct/parcours-coiffure-ecran";
+import { StylesParcoursCoiffure } from "@/components/direct/styles-parcours-coiffure";
 // Il vivait ici ; la page boutique en a besoin aussi pour rejouer le MEME
 // anneau en tête de la fiche du commerce. Voir le fichier : c'est la copie qui
 // aurait été dangereuse, pas le partage.
@@ -2069,6 +2071,7 @@ export function ApercuHabitant() {
      il n'y en a qu'un, et le jour ou il y en aura cinq ce sera la categorie
      choisie qui le dira, pas cinq drapeaux. */
   const [parcoursMode, setParcoursMode] = useState(false);
+  const [parcoursCoiffure, setParcoursCoiffure] = useState(false);
 
   /**
    * LE TOUR DE RÔLE — voir `TourDeRole` dans les fiches.
@@ -6372,6 +6375,7 @@ export function ApercuHabitant() {
       <StylesDirect />
       <StylesChoix />
       <StylesParcoursMode />
+      <StylesParcoursCoiffure />
       <div className="ap-tel">
         {/* SUR LE DIRECT, LA PHOTO PASSE DERRIÈRE LES ONGLETS — voir la règle
             .ap-app.direct .ap-onglets. Ailleurs, la barre reste dans le flux :
@@ -7643,6 +7647,8 @@ export function ApercuHabitant() {
               !salonUrl && (
                 parcoursMode ? (
                   <ParcoursMode onFermer={() => setParcoursMode(false)} />
+                ) : parcoursCoiffure ? (
+                  <ParcoursCoiffure onFermer={() => setParcoursCoiffure(false)} />
                 ) : (
                   <EcranChoix
                     onEntrer={() => {
@@ -7652,6 +7658,10 @@ export function ApercuHabitant() {
                     onParcoursMode={() => {
                       jouer("ouvrir");
                       setParcoursMode(true);
+                    }}
+                    onParcoursCoiffure={() => {
+                      jouer("ouvrir");
+                      setParcoursCoiffure(true);
                     }}
                   />
                 )

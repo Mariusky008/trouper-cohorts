@@ -42,14 +42,17 @@ export function StylesParcoursMode() {
           transition:background .2s ease;}
         .pm-pas s.on{background:#FF2E9A;box-shadow:0 0 10px rgba(255,46,154,.7);}
         .pm-num{flex:none;font-size:12.5px;font-weight:850;color:#fff;}
-        .pm-demo{flex:none;padding:6px 12px;border-radius:999px;
-          font-size:11px;font-weight:850;color:#fff;background:#FF2E9A;
-          box-shadow:0 3px 14px -4px rgba(255,46,154,.9);}
-        /* SUR LES ETAPES 2 ET 3, LA PASTILLE « DEMONSTRATION » CEDE LA PLACE :
-           l'une porte deja « Simulation · demonstration » sous son bouton,
-           l'autre « Inspirations de la demo » sur ses vignettes. Le dire trois
-           fois sur le meme ecran ne le dit pas mieux. */
-        .pm-e2 .pm-demo,.pm-e3 .pm-demo{display:none;}
+        /* LA PORTE VERS L'ACCUEIL. Elle a la forme de la fleche de gauche — meme
+           rond, meme fond — parce que ce sont deux gestes de navigation ; elle
+           s'en distingue par son dessin, une maison, et pas par son habit. */
+        .pm-accueil{flex:none;width:38px;height:38px;border-radius:50%;
+          display:flex;align-items:center;justify-content:center;
+          font:inherit;cursor:pointer;color:#fff;
+          background:rgba(12,10,16,.72);border:1px solid rgba(255,255,255,.16);
+          -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+        .pm-accueil svg{width:19px;height:19px;fill:none;stroke:currentColor;
+          stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+        .pm-accueil:active{transform:scale(.93);}
 
         /* ═══ 1/4 · LA PIECE ══════════════════════════════════════════════ */
         .pm-un{position:relative;flex:1 1 auto;min-height:0;display:flex;}
@@ -237,11 +240,18 @@ export function StylesParcoursMode() {
           box-shadow:0 0 16px -6px rgba(255,46,154,.7);}
         .pm-facon>div{aspect-ratio:1 / 1.42;background-size:cover;
           background-position:center 20%;}
+        /* LE NOM ET LE PRIX DE LA PIECE, sur deux lignes : ce sont les siens,
+           lus dans sa journee. Le nom se coupe a deux lignes plutot que de
+           deborder — « Dernier jour des soldes » ne tient pas sur une. */
         .pm-facon>span{position:absolute;left:0;right:0;bottom:0;
-          display:flex;align-items:center;gap:5px;padding:18px 7px 7px;
-          font-size:11px;font-weight:850;color:#fff;
-          background:linear-gradient(180deg,rgba(6,6,10,0),rgba(6,6,10,.92));}
-        .pm-facon i{font-style:normal;font-size:11px;}
+          display:flex;flex-direction:column;gap:1px;padding:20px 7px 7px;
+          color:#fff;text-align:left;
+          background:linear-gradient(180deg,rgba(6,6,10,0),rgba(6,6,10,.94));}
+        .pm-facon b{font-size:10.5px;font-weight:850;line-height:1.16;
+          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+          overflow:hidden;}
+        .pm-facon em{font-style:normal;font-size:12px;font-weight:900;
+          color:#FF2E9A;}
 
         /* ═══ 4/4 · LA BOUTIQUE ══════════════════════════════════════════ */
         .pm-quatre{flex:1 1 auto;display:flex;flex-direction:column;

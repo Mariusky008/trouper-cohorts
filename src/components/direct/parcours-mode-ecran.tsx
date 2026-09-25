@@ -38,7 +38,6 @@ import {
   COMMERCE_MODE,
   DEVANTURE_MODE,
   ETAPES_MODE,
-  FACONS_MODE,
   PIECE_MODE,
 } from "@/lib/direct/parcours-mode";
 
@@ -72,6 +71,21 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
     const m = b ? (b.moments ?? []).find((x) => x.photo === PIECE_MODE) : undefined;
     return { boutique: b, piece: m ?? (b ? momentEnCours(b, heure) : null) };
   }, [heure]);
+
+  /**
+   * LES AUTRES PIÈCES DU JOUR, LUES DANS SA JOURNÉE.
+   *
+   * TOUS SES MOMENTS QUI ONT UNE PHOTO, SAUF CELUI DU PARCOURS : on ne remontre
+   * pas la pièce qu'on vient de regarder trois écrans durant. Leur titre et
+   * leur prix sont les siens — rien n'est écrit ici.
+   */
+  const autresPieces = useMemo(
+    () =>
+      (boutique?.moments ?? [])
+        .filter((m) => m.photo && m.photo !== PIECE_MODE)
+        .slice(0, 3),
+    [boutique],
+  );
 
   if (!boutique) return null;
 
@@ -110,7 +124,31 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
         <span className="pm-num">
           {etape}/{ETAPES_MODE}
         </span>
-        <span className="pm-demo">Démonstration</span>
+        {/* ═══ ET UNE PORTE DIRECTE VERS L'ACCUEIL ═══════════════════════════
+
+            « Il faudrait que sur les étapes on puisse revenir à l'accueil si on
+            veut voir autre chose, parce qu'autrement on doit cliquer trois fois
+            sur la flèche pour revenir à l'accueil de la démo. »
+
+            LA FLÈCHE RECULE D'UN PAS, ET C'EST SON TRAVAIL : depuis l'étape 3
+            on veut parfois revoir l'étape 2. Mais reculer trois fois pour
+            changer d'avis est un chemin qu'on ne prend pas — on ferme
+            l'application à la place. Les deux gestes sont différents, ils ont
+            donc deux boutons. */}
+        <button
+          type="button"
+          className="pm-accueil"
+          onClick={onFermer}
+          aria-label="Revenir au choix des commerçants"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3.6 10.6 12 3.8l8.4 6.8" />
+            <path d="M5.8 9v10.4a1 1 0 0 0 1 1h10.4a1 1 0 0 0 1-1V9" />
+          </svg>
+        </button>
+        {/* PLUS DE PASTILLE « DÉMONSTRATION » : tout ce parcours en est une,
+            donc elle ne distinguait rien. Ce qui reste est la mention de
+            SIMULATION sur l'essayage, qui dit autre chose — voir `.pm-simu`. */}
       </header>
 
       {/* ───────────────────────── 1/4 · LA PIÈCE ───────────────────────── */}
@@ -236,8 +274,11 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
           <button type="button" className="pm-lien" onClick={suivant}>
             Voir d’autres looks <s aria-hidden="true">→</s>
           </button>
-          {/* CE QUI EST UNE SIMULATION LE DIT. Voir l'en-tête du fichier. */}
-          <p className="pm-simu">Simulation · démonstration</p>
+          {/* CE QUI EST UNE SIMULATION LE DIT, et c'est la seule mention qui
+              reste. « Cette image n'est pas une photo de vous » est une
+              information ; « ceci est une démonstration » n'en était pas une,
+              sur un écran qui ne montre que ça. */}
+          <p className="pm-simu">Simulation · résultat indicatif</p>
         </section>
       )}
 
@@ -248,11 +289,11 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
             <div className="pm-hero-img" style={{ backgroundImage: `url("${APRES_MODE}")` }} />
             <div className="pm-hero-t">
               <h1 className="pm-t3">
-                Une pièce,
+                Et aussi,
                 <br />
-                <em>plusieurs façons</em>
+                <em>chez elle</em>
                 <br />
-                de la porter
+                aujourd’hui
                 <s aria-hidden="true" />
               </h1>
               <div className="pm-dit petit">
@@ -262,9 +303,26 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
             </div>
           </div>
 
-          {/* ELLES SONT ANNONCÉES COMME DES INSPIRATIONS, et c'est le mot de sa
-              maquette. Ce ne sont pas des pièces que la boutique vend : le dire
-              est la seule façon de les montrer sans mentir. */}
+          {/* ═══ CE SONT SES AUTRES PIÈCES, ET NON « TROIS FAÇONS DE LA PORTER »
+
+              « Les trois femmes ne portent pas du tout la même veste que la
+              modèle. »
+
+              IL A RAISON, ET C'ÉTAIT INDÉFENDABLE. Ma maquette promettait « une
+              pièce, plusieurs façons de la porter » et montrait trois autres
+              vêtements sur trois autres personnes. Le titre annonçait une
+              chose, les images en montraient une autre — c'est le défaut qu'on
+              vient de corriger deux fois ailleurs sur ce produit.
+
+              JE N'AI PAS TROIS PHOTOS DU MÊME BLAZER PORTÉ AUTREMENT, et je ne
+              peux pas en fabriquer. Ce que j'ai, ce sont les AUTRES PIÈCES de
+              cette boutique — vraies, avec leur nom et leur prix, dans sa
+              journée. L'écran dit donc ce qu'il montre.
+
+              POUR RETROUVER SA MAQUETTE : trois photos du même blazer porté
+              différemment, et ce bloc redevient « plusieurs façons de la
+              porter » en changeant le titre et la source. Voir
+              `parcours-mode.ts`. */}
           <p className="pm-insp">
             <span className="pm-cintre petit" aria-hidden="true">
               <svg viewBox="0 0 24 24">
@@ -272,15 +330,15 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
                 <path d="M12 6.2v2.1L3.6 15c-.9.7-.4 2.1.7 2.1h15.4c1.1 0 1.6-1.4.7-2.1L12 8.3" />
               </svg>
             </span>
-            Inspirations de la démo
+            Chez elle aujourd’hui
           </p>
           <div className="pm-facons">
-            {FACONS_MODE.map((f) => (
-              <article key={f.cle} className="pm-facon">
-                <div style={{ backgroundImage: `url("${f.photo}")` }} />
+            {autresPieces.map((m) => (
+              <article key={m.photo} className="pm-facon">
+                <div style={{ backgroundImage: `url("${m.photo}")` }} />
                 <span>
-                  <i aria-hidden="true">{f.icone}</i>
-                  {f.mot}
+                  <b>{m.titre}</b>
+                  {m.prix && <em>{m.prix}</em>}
                 </span>
               </article>
             ))}
