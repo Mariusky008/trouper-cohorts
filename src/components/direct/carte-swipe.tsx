@@ -2204,7 +2204,7 @@ export function StylesDirect() {
            points qui restent sont l'ecart voulu entre les deux. Sans encoche il
            ne bouge presque pas ; avec, il descend d'autant qu'elle. */
         .cd-carte.hautrond .cd-anneau{top:calc(70px + var(--ap-encoche,0px));}
-        .cd-carte.hautrond .cd-offre{padding-right:104px;}
+        .cd-carte.hautrond .cd-offre{padding-right:92px;}
         /* ═══ LE DISQUE MAIGRIT DE SEIZE POINTS ═══════════════════════════
            « Le rond avec "les pièces / voir", ou tout autre rond avec le texte
            et l'icône dedans, me paraît un peu trop gros. »
@@ -2214,14 +2214,22 @@ export function StylesDirect() {
            il pesait autant que le titre — et depuis que la photo descend a trois
            quarts d'ecran, il se pose en plein sur le sujet au lieu de flotter
            dans un coin sombre.
-           QUATRE-VINGT-HUIT, ET TOUT CE QU'IL Y A DEDANS SUIT DANS LA MEME
+           SOIXANTE-QUATORZE, ET TOUT CE QU'IL Y A DEDANS SUIT DANS LA MEME
            PROPORTION : le mot, le pictogramme et « VOIR » perdent chacun leur
-           septieme. Ce qui compte ici n'est pas la taille absolue mais le
-           rapport — un disque reduit dont le texte ne l'est pas mord son propre
-           trait, et c'est le defaut qu'on a deja corrige deux fois sur ce
-           cercle. */
+           quart. Ce qui compte ici n'est pas la taille absolue mais le rapport
+           — un disque reduit dont le texte ne l'est pas mord son propre trait,
+           et c'est le defaut qu'on a deja corrige deux fois sur ce cercle.
+
+           ET J'Y SUIS PASSE EN DEUX FOIS, CE QUI ETAIT UNE FOIS DE TROP. Le
+           premier essai s'arretait a quatre-vingt-huit : mesure, c'etait bien
+           applique — quatre-vingt-huit points a l'ecran au lieu de cent quatre
+           — mais quinze pour cent ne se voient pas entre deux captures prises
+           a dix minutes d'ecart. « Ca n'a pas bouge, c'est comme avant, j'ai
+           l'impression. » Un reglage qu'on ne voit pas est un reglage qui n'a
+           pas eu lieu : ce qui compte n'est pas le chiffre dans la feuille de
+           style, c'est ce que l'oeil lit. Trente pour cent se voient. */
         .cd-anneau{position:absolute;right:18px;top:29%;z-index:3;
-          width:88px;height:88px;border-radius:50%;
+          width:74px;height:74px;border-radius:50%;
           display:flex;flex-direction:column;align-items:center;
           justify-content:center;gap:0;text-align:center;
           font:inherit;color:#fff;cursor:default;border:0;padding:0;
@@ -2252,15 +2260,15 @@ export function StylesDirect() {
            son septieme ; son chiffre et ses deux mots le perdent aussi, sans quoi
            « 12:04 » viendrait toucher le cadran qui l'entoure. */
         .cd-anneau .cd-an-t{display:flex;align-items:center;gap:3px;
-          margin-bottom:1px;
-          font-size:8.5px;font-weight:900;letter-spacing:.1em;
+          margin-bottom:0;
+          font-size:7.5px;font-weight:900;letter-spacing:.08em;
           text-transform:uppercase;color:#FFD2C4;}
-        .cd-anneau .cd-an-t i{font-style:normal;font-size:8.5px;}
+        .cd-anneau .cd-an-t i{font-style:normal;font-size:7.5px;}
         .cd-anneau b{font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
-          font-size:32px;font-weight:400;line-height:.92;letter-spacing:.01em;
+          font-size:27px;font-weight:400;line-height:.92;letter-spacing:.01em;
           font-variant-numeric:tabular-nums;
           text-shadow:0 2px 12px rgba(0,0,0,.6);}
-        .cd-anneau em{font-style:normal;font-size:9px;font-weight:900;
+        .cd-anneau em{font-style:normal;font-size:8px;font-weight:900;
           margin-top:2px;
           letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.86);}
         /* LA RARETE, SOUS L'ANNEAU. Deux lignes de neuf points, centrees sur le
@@ -2333,16 +2341,21 @@ export function StylesDirect() {
            LE RETOUR A LA LIGNE RESTE, EN FILET DE SECURITE : le champ du metier
            est libre, et le jour ou quelqu'un ecrit « Les compositions », mieux
            vaut deux lignes qu'un mot coupe par un cercle. */
-        .cd-anneau.porte .cd-an-t{display:block;color:#D8FFEE;font-size:7.5px;
-          max-width:60px;letter-spacing:.04em;line-height:1.15;
+        /* L'APPROCHE SE RESSERRE AVEC LE DISQUE. Mesure de l'ENCRE — pas de la
+           boite, qui est toujours plus large que les lettres qu'elle contient :
+           a .04em, « LES PIECES » arrivait exactement sur le rayon utile, donc a
+           zero point de marge. Deux centiemes de cadratin en moins rendent ces
+           deux points, et rien ne se lit differemment a sept points. */
+        .cd-anneau.porte .cd-an-t{display:block;color:#D8FFEE;font-size:7px;
+          max-width:54px;letter-spacing:.02em;line-height:1.15;
           text-align:center;text-wrap:balance;
           text-shadow:0 1px 8px rgba(0,0,0,.7);}
         /* LE PICTOGRAMME SEUL, ET PAS LE CADRAN. Le selecteur portait sur tous
            les enfants svg ; depuis que le cadran en est un, il faut l'excepter
            — sans quoi l'anneau se retrouvait a trente points au milieu du
            disque. */
-        .cd-anneau.porte>svg:not(.cd-po-c){width:27px;height:27px;
-          margin:2px 0 1px;position:relative;z-index:1;
+        .cd-anneau.porte>svg:not(.cd-po-c){width:22px;height:22px;
+          margin:1px 0 1px;position:relative;z-index:1;
           stroke:#F2FBF6;stroke-width:1.7;fill:none;
           stroke-linecap:round;stroke-linejoin:round;
           filter:drop-shadow(0 1px 6px rgba(0,0,0,.55));}
@@ -2351,14 +2364,14 @@ export function StylesDirect() {
            geste ; le chevron le dit sans ajouter de ligne. */
         .cd-anneau.porte em{position:relative;z-index:1;
           display:inline-flex;align-items:center;gap:3px;
-          font-style:normal;font-size:8.5px;font-weight:900;
-          letter-spacing:.1em;text-transform:uppercase;color:var(--cd-accent);
+          font-style:normal;font-size:7.5px;font-weight:900;
+          letter-spacing:.08em;text-transform:uppercase;color:var(--cd-accent);
           text-shadow:0 1px 8px rgba(0,0,0,.7);}
         /* LE CHEVRON EST ECRIT EN CLAIR, PAS EN ECHAPPEMENT. Un « \u00e9chappement
            unicode » dans un litteral de gabarit est lu par JavaScript avant
            d'atteindre la feuille de style : il casse la compilation, et le
            verificateur l'a pris au vol. */
-        .cd-anneau.porte em::after{content:"›";font-size:13px;
+        .cd-anneau.porte em::after{content:"›";font-size:11px;
           font-weight:700;line-height:1;letter-spacing:0;opacity:.9;}
         .cd-anneau.porte:active{transform:scale(.95);}
         @media (prefers-reduced-motion:reduce){.cd-tombe{animation:none;}}
