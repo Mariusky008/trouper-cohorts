@@ -160,6 +160,9 @@ import { CarteSwipe, StylesDirect } from "@/components/direct/carte-swipe";
 // lignes, aurait rendu les deux illisibles.
 import { EcranChoix } from "@/components/direct/ecran-choix";
 import { StylesChoix } from "@/components/direct/styles-choix";
+// LE PARCOURS MODE — la « partie 2 », pour une categorie sur cinq.
+import { ParcoursMode } from "@/components/direct/parcours-mode-ecran";
+import { StylesParcoursMode } from "@/components/direct/styles-parcours-mode";
 // Il vivait ici ; la page boutique en a besoin aussi pour rejouer le MEME
 // anneau en tête de la fiche du commerce. Voir le fichier : c'est la copie qui
 // aurait été dangereuse, pas le partage.
@@ -2061,6 +2064,11 @@ export function ApercuHabitant() {
    * l'autre : on y arrive par le bouton qui la nomme.
    */
   const [favorisPage, setFavorisPage] = useState<"" | "favoris" | "nouvelles">("");
+  /* LE PARCOURS MODE EST OUVERT PAR-DESSUS L'ECRAN DE CHOIX, pas a cote : on y
+     entre depuis une categorie et on en revient a la meme. Un drapeau suffit —
+     il n'y en a qu'un, et le jour ou il y en aura cinq ce sera la categorie
+     choisie qui le dira, pas cinq drapeaux. */
+  const [parcoursMode, setParcoursMode] = useState(false);
 
   /**
    * LE TOUR DE RÔLE — voir `TourDeRole` dans les fiches.
@@ -6363,6 +6371,7 @@ export function ApercuHabitant() {
     <div className="ap">
       <StylesDirect />
       <StylesChoix />
+      <StylesParcoursMode />
       <div className="ap-tel">
         {/* SUR LE DIRECT, LA PHOTO PASSE DERRIÈRE LES ONGLETS — voir la règle
             .ap-app.direct .ap-onglets. Ailleurs, la barre reste dans le flux :
@@ -7632,12 +7641,20 @@ export function ApercuHabitant() {
               !sortie &&
               !embauches &&
               !salonUrl && (
-                <EcranChoix
-                  onEntrer={() => {
-                    jouer("ouvrir");
-                    marquerVu("accueil");
-                  }}
-                />
+                parcoursMode ? (
+                  <ParcoursMode onFermer={() => setParcoursMode(false)} />
+                ) : (
+                  <EcranChoix
+                    onEntrer={() => {
+                      jouer("ouvrir");
+                      marquerVu("accueil");
+                    }}
+                    onParcoursMode={() => {
+                      jouer("ouvrir");
+                      setParcoursMode(true);
+                    }}
+                  />
+                )
               )}
 
             {ANCIENNE_OUVERTURE && monte && sommet && !vus.includes("accueil") && !sortie && !embauches && !salonUrl && (

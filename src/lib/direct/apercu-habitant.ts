@@ -2489,6 +2489,25 @@ const CARTES: CarteAutour[] = [
       apres: 7,
     },
     moments: [
+      /* ═══ LA VESTE BLAZER ROSE ═══════════════════════════════════════════
+         ELLE EXISTAIT DEJA DANS LE DEPOT, SANS APPARTENIR A PERSONNE.
+         `accueil/mode-avant.jpg` et `accueil/mode-apres.jpg` sont la meme femme
+         dans la meme boutique, sans puis avec le blazer : c'est la paire qui
+         servait a l'ancien ecran d'ouverture, et c'est exactement ce que le
+         parcours mode a besoin de montrer — un avant et un apres qui ne sont
+         pas deux photos differentes.
+         ELLE DEVIENT UN MOMENT DE SA JOURNEE, et pas une donnee a part. Trois
+         ecrans la montrent maintenant : l'annonce, l'ecran de choix et le
+         parcours. Ecrite une fois ici, elle porte le meme nom et le meme prix
+         aux trois endroits ; ecrite trois fois, elle aurait diverge au premier
+         changement. */
+      {
+        de: 10, a: 19, quand: "toute la journée", icone: "🧥",
+        titre: "La veste blazer rose",
+        photo: "/direct/accueil/mode-apres.jpg",
+        lignes: ["Coupe droite, du 36 au 44", "Doublure imprimée"],
+        prix: "59 €", places: 6, envies: ["arrivage"],
+      },
       {
         de: 10, a: 13, quand: "ce matin", icone: "✨",
         titre: "L'arrivage est en vitrine",

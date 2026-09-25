@@ -100,7 +100,7 @@ export const CATEGORIES: Categorie[] = [
     bulle: "Glissez pour découvrir les boutiques près de vous",
     bouton: "Découvrir cette tenue",
     cartes: [
-      { id: "mode-centre", photo: "/direct/mode-ensemble-maille-beige.jpg" },
+      { id: "mode-centre", photo: "/direct/accueil/mode-apres.jpg" },
       { id: "mode-friperie", photo: "/direct/mode-veste-dentelle.jpg" },
       { id: "mode-homme", photo: "/direct/homme-veste-ciree-kaki.jpg" },
       { id: "bijoux-atelier", photo: "/direct/poignet-bracelet.jpg" },

@@ -103,8 +103,19 @@ const PICTOS: Record<CleCategorie, ReactNode> = {
 export function EcranChoix({
   /** Le geste qui fait sortir de l'écran. Voir `.ap-accueil` : glisser entre. */
   onEntrer,
+  /**
+   * LE PARCOURS DE LA MODE, QUAND IL EXISTE.
+   *
+   * IL N'Y EN A QU'UN POUR L'INSTANT, et c'est ce qu'il a demandé : « parcours
+   * mode d'abord et on fera la suite après ». Les quatre autres catégories
+   * gardent le bouton inerte et sa ligne « la partie 2 arrive ». Le jour où
+   * elles auront le leur, c'est cette propriété qui se dédoublera — une par
+   * catégorie — et pas le bouton.
+   */
+  onParcoursMode,
 }: {
   onEntrer?: () => void;
+  onParcoursMode?: () => void;
 }) {
   const [cle, setCle] = useState<CleCategorie>(CATEGORIE_DEPART);
   const categorie = categorieDe(cle);
@@ -374,10 +385,19 @@ export function EcranChoix({
         ))}
       </div>
 
+      {/* ═══ ET LE BOUTON OUVRE LE PARCOURS, POUR LA MODE ══════════════════
+
+          « Voici la suite : parcours mode d'abord et on fera la suite après. »
+
+          IL NE FAISAIT RIEN, ET C'ÉTAIT SA RÉPONSE AU TOUR PRÉCÉDENT : le
+          parcours n'existait pas encore. Il existe pour la mode, donc le bouton
+          y mène — et il ne fait toujours rien pour les quatre autres, avec la
+          même ligne sous lui. Un bouton qui marcherait à moitié sans le dire
+          serait pire que les deux. */}
       <button
         type="button"
         className="cx-go"
-        onClick={() => setBientot(true)}
+        onClick={() => (cle === "mode" && onParcoursMode ? onParcoursMode() : setBientot(true))}
         aria-describedby="cx-bientot"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
