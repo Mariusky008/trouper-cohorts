@@ -324,6 +324,31 @@ export type Piece = {
    * faite pour être exécutée.
    */
   decrire?: string;
+  /**
+   * ═══ LA MÊME DESCRIPTION, EN ANGLAIS ══════════════════════════════════════
+   *
+   * « Le nouveau résultat garde la femme et ses vêtements, mais lui donne
+   * encore un carré droit, alors que ma génération avait des mèches ouvertes
+   * et du volume sur les côtés. »
+   *
+   * LA CONSIGNE CALQUÉE EST EN ANGLAIS ET LA DESCRIPTION RESTAIT EN FRANÇAIS,
+   * au milieu. J'avais écrit que ces modèles lisent les deux langues dans la
+   * même phrase — c'est vrai pour COMPRENDRE, et ça l'est beaucoup moins pour
+   * EXÉCUTER une géométrie. « Des mèches souples qui s'ouvrent autour du
+   * visage » et « open curtain-like face-framing layers sweeping away from the
+   * forehead » ne portent pas la même précision pour un modèle entraîné
+   * surtout sur de l'anglais.
+   *
+   * ET ON A LE TEXTE ANGLAIS, il n'est pas à inventer : c'est celui du rendu
+   * qu'il appelle parfait. On le recopie plutôt que de le traduire.
+   *
+   * ELLE EST FACULTATIVE, ET LE REPLI EST LE FRANÇAIS. Une pièce sans version
+   * anglaise part avec la sienne, comme avant : mieux vaut une description
+   * française qu'une traduction devinée par moi, qui serait exactement la
+   * faute — décrire une photo sans la regarder — payée trois fois dans ce
+   * dossier.
+   */
+  decrireEn?: string;
   id: string;
   nom: string;
   prix: string;
@@ -1755,7 +1780,7 @@ export const MURS: Mur[] = [
          * UNE RÈGLE QUE CE DOSSIER A PAYÉE DEUX FOIS NE SE CONTOURNE PAS SUR
          * une intuition. La description ne dit plus que ce qui DOIT être.
          */
-        { id: "c-femme", nom: "Carré long, de face", decrire: "un carré noir très foncé qui s'arrête à la base du cou, nettement au-dessus des épaules, avec une raie au milieu, des mèches souples qui s'ouvrent autour du visage, du volume arrondi sur les côtés, des pointes qui rentrent vers l'intérieur au niveau du cou, et aucune longueur qui descende sur les épaules", prix: "38 €",
+        { id: "c-femme", nom: "Carré long, de face", decrireEn: "near-black glossy hair, a center part, open curtain-like face-framing layers sweeping away from the forehead, a generous rounded and airy silhouette with volume around the cheeks and jaw, slightly layered ends curling inward, length ending at the lower jaw and upper neck, and nothing falling onto the shoulders", decrire: "un carré noir très foncé qui s'arrête à la base du cou, nettement au-dessus des épaules, avec une raie au milieu, des mèches souples qui s'ouvrent autour du visage, du volume arrondi sur les côtés, des pointes qui rentrent vers l'intérieur au niveau du cou, et aucune longueur qui descende sur les épaules", prix: "38 €",
           photo: "/direct/coiffure-femme-face.jpg", reference: "/direct/coiffure-femme-face.jpg" },
         /**
          * LES DEUX DERNIÈRES « BIENTÔT » SONT TOMBÉES.

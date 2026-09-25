@@ -311,6 +311,8 @@ async function parOpenAI(
   brut: boolean,
   /** Le cadre exact découpé par le navigateur. Voir `taille` dans le corps. */
   cadreDemande: string,
+  /** La description en anglais, quand la pièce en a une. Voir `decrireEn`. */
+  decrireEn: string,
   /** Laquelle des trois phrases part. Voir `consigne` dans le corps. */
   quelleConsigne: "longue" | "courte" | "calquee",
 ): Promise<{ image: string } | { erreur: string }> {
@@ -328,7 +330,10 @@ async function parOpenAI(
      autre finit toujours par diverger, on l'a déjà payé sur le cadre. */
   const phrase =
     quelleConsigne === "calquee"
-      ? consigneCalquee(partie, change, decrire, !!reference)
+      ? /* LA VERSION ANGLAISE GAGNE DANS UNE CONSIGNE ANGLAISE. À défaut, la
+           française part quand même : une description imparfaite vaut mieux
+           qu'une traduction devinée. */
+        consigneCalquee(partie, change, decrireEn || decrire, !!reference)
       : quelleConsigne === "courte" || brut
         ? consigneBrute(partie, change, decrire, !!reference)
         : consigne(partie, garder, change, decrire, !!masque, !!reference);
@@ -520,7 +525,7 @@ async function parOpenAI(
       // LE BUDGET NE SE REMET PAS À ZÉRO : ce qu'a coûté le refus est décompté
       // du temps qu'on donne au second appel, sans quoi les deux tentatives
       // additionnées dépasseraient ce que la fonction a le droit de vivre.
-      return parOpenAI(cle, photo, null, partie, garder, change, decrire, masque, debut, qualite, brut, cadreDemande, quelleConsigne);
+      return parOpenAI(cle, photo, null, partie, garder, change, decrire, masque, debut, qualite, brut, cadreDemande, decrireEn, quelleConsigne);
     }
     if (bloque) {
       return {
@@ -576,6 +581,8 @@ export async function POST(req: Request) {
     brut?: boolean;
     /** « longue », « courte » ou « calquee » — voir `parOpenAI`. */
     consigne?: string;
+    /** La description en anglais de la pièce, quand elle existe. */
+    decrireEn?: string;
     /**
      * ═══ LE CADRE, DÉCIDÉ PAR LE NAVIGATEUR ══════════════════════════════════
      *
@@ -606,6 +613,7 @@ export async function POST(req: Request) {
   const masque = decoder(s(corps.masque));
   const brut = corps.brut === true;
   const cadreDemande = s(corps.taille);
+  const decrireEn = s(corps.decrireEn);
   /* ON NE PREND QUE CE QU'ON CONNAÎT. Un mot inattendu retombe sur la consigne
      historique plutôt que sur rien : une route qui fait confiance à son
      appelant finit par recevoir ce qu'elle n'attendait pas. */
@@ -743,6 +751,7 @@ export async function POST(req: Request) {
               QUALITE,
               brut,
               cadreDemande,
+              decrireEn,
               quelleConsigne,
             ),
         }
@@ -779,7 +788,7 @@ export async function POST(req: Request) {
     ordre.push({
       nom: `openai·${leger}`,
       aller: () =>
-        parOpenAI(openai, photo, reference, partie, garder, change, decrire, masque, debut, leger, brut, cadreDemande, quelleConsigne),
+        parOpenAI(openai, photo, reference, partie, garder, change, decrire, masque, debut, leger, brut, cadreDemande, decrireEn, quelleConsigne),
     });
   }
 

@@ -357,6 +357,8 @@ export async function essayerSurMoi(opts: {
   change?: string;
   /** Ce que la pièce EST, en toutes lettres. Voir `decrire` dans `fantomes.ts`. */
   decrire?: string;
+  /** La même, en anglais, quand elle existe. Voir `decrireEn` dans `fantomes.ts`. */
+  decrireEn?: string;
   /**
    * ═══ LE RÉGIME IMPOSÉ, POUR LE BANC D'ESSAI ═══════════════════════════════
    *
@@ -546,6 +548,7 @@ export async function essayerSurMoi(opts: {
         garder: opts.garder ?? [],
         change: opts.change ?? "",
         decrire: opts.decrire ?? "",
+        decrireEn: opts.decrireEn ?? "",
         brut,
         consigne: phrase,
         /* LE CADRE EST CHOISI ICI, PAS DEVINÉ LÀ-BAS. La route le déduisait

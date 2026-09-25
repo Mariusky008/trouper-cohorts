@@ -28,6 +28,7 @@
 import { useMemo, useRef, useState } from "react";
 import { MURS } from "@/lib/direct/fantomes";
 import { essayerSurMoi, estUnRendu, type Regime } from "@/lib/direct/essai-genere";
+import { consigne, consigneBrute, consigneCalquee } from "@/lib/direct/consigne-essai";
 
 /**
  * LES QUATRE CONFIGURATIONS, ET CE QUI LES SÉPARE.
@@ -146,6 +147,7 @@ export default function Banc() {
         garder: mur.essai.garder,
         change: mur.essai.change,
         decrire: piece.decrire,
+        decrireEn: piece.decrireEn,
         regime: c.regime,
       });
       const ms = Date.now() - debut;
@@ -245,7 +247,7 @@ export default function Banc() {
         {piece?.decrire && (
           <details className="bn-det">
             <summary>La description envoyée pour cette pièce</summary>
-            <p>{piece.decrire}</p>
+            <p>{piece.decrireEn || piece.decrire}</p>
           </details>
         )}
       </section>
@@ -323,6 +325,42 @@ export default function Banc() {
         </div>
         {raison && <pre>{raison}</pre>}
       </details>
+
+      {/* ═══ LA CONSIGNE, MOT POUR MOT ═══════════════════════════════════
+
+          « Colle-moi la requête exacte affichée par son banc d'essai — modèle,
+          ordre des images, prompt final, masque et paramètres — et je pourrai
+          chercher la différence concrète, plutôt que te proposer encore une
+          formulation au hasard. »
+
+          LE BANC N'EN MONTRAIT QU'UN RÉSUMÉ. Un résumé ne permet de trouver
+          aucune différence : c'est justement ce qu'on cherche. La phrase
+          réelle est calculée ici, par la même fonction pure que la route
+          appelle — pas recopiée, sans quoi elle divergerait au premier
+          changement. */}
+      {mur?.essai && piece && (
+        <details className="bn-det">
+          <summary>La consigne envoyée, mot pour mot</summary>
+          {CONFIGS.map((c) => {
+            const e = mur.essai!;
+            const ref = !c.sansReference;
+            const t =
+              c.regime === "calquee"
+                ? consigneCalquee(e.partie, e.change, piece.decrireEn || piece.decrire, ref)
+                : c.regime === "brut"
+                  ? consigneBrute(e.partie, e.change, piece.decrire, ref)
+                  : consigne(e.partie, e.garder, e.change, piece.decrire, c.regime === "atelier", ref);
+            return (
+              <div key={c.cle} className="bn-mot">
+                <b>
+                  {c.nom} — {t.length} signes
+                </b>
+                <pre>{t}</pre>
+              </div>
+            );
+          })}
+        </details>
+      )}
 
       <details className="bn-det bn-req">
         <summary>La requête exacte, à recopier</summary>
@@ -403,6 +441,8 @@ c'est-à-dire une autre personne.`}</pre>
         .bn-det{margin-top:16px;background:#141828;border-radius:12px;padding:12px 14px;}
         .bn-det summary{cursor:pointer;font-weight:600;font-size:14px;}
         .bn-det p{color:#c4cbe4;font-size:13.5px;}
+        .bn-mot{margin-top:12px;}
+        .bn-mot b{display:block;font-size:12.5px;color:#8e98ba;margin-bottom:4px;}
         .bn-aide{font-size:13px;color:#9aa4c4;margin:8px 0 10px;}
         .bn-aide code{background:#0b0d14;padding:1px 5px;border-radius:5px;font-size:12px;}
         .bn-diag{display:flex;gap:8px;}

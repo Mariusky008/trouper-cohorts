@@ -3501,6 +3501,7 @@ function Essai({
         // personne avant de la poser — et « la coupe sélectionnée n'a pas été
         // créée ». Voir `decrire` dans `fantomes.ts`.
         decrire: piece.decrire,
+        decrireEn: piece.decrireEn,
       })
         .then((r) =>
           estUnRendu(r)
