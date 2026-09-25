@@ -446,49 +446,57 @@ export default function Proposition() {
         /* LE FONDU VA VERS LA COULEUR LUE DANS L'IMAGE — voir couleurDuBas. */
         /* LE FONDU PART PLUS BAS QUE LE VISAGE. A trente-huit pour cent il
            voilait les yeux ; le titre commence de toute facon a cinquante. */
-        /* ═══ LE FONDU NE TOUCHE QUE LE BORD DE LA PHOTO ═══
-           « Le flou est encore bien trop haut, il faut qu'il commence au
-           niveau des miniatures ; au-dessus ça fait etrange. »
-           IL MANGEAIT CENT SOIXANTE-DIX POINTS DE L'IMAGE, c'est-a-dire son
-           tiers inferieur : sur un portrait, ça commence au menton et ça
-           voile la moitie du visage. Un fondu n'a pas besoin d'etre long pour
-           etre doux, il a besoin d'etre BIEN PLACE.
-           IL NE COUVRE PLUS QUE SOIXANTE-DIX POINTS AVANT LE BORD et quarante
-           apres : la photo reste nette jusqu'a son dernier dixieme, et la
-           couleur prend le relais sans marche. */
-        .pr-fondu{position:absolute;left:0;right:0;height:110px;
-          top:min(max(0px, calc(var(--photo-h) - 70px)), calc(100% - 110px));
+        /* ═══ LE RACCORD FINIT EXACTEMENT OU LA PHOTO FINIT ═══
+           « Je ne veux pas de separation entre la photo et cette section
+           grise, je veux que ce soit soft et adouci. »
+           LA CAUSE EST ARITHMETIQUE, PAS ESTHETIQUE. Le degrade s'etendait
+           soixante-dix points AVANT le bord et quarante APRES : au bord, il
+           n'avait fait que les deux tiers de son chemin, donc il y restait
+           quinze pour cent d'ecart entre la photo voilee et la couleur pleine.
+           Quinze pour cent, c'est un trait.
+           IL TIENT DONC ENTIEREMENT DANS LA PHOTO et atteint la couleur a son
+           dernier point. Sous ce point, c'est la meme couleur, a l'identique :
+           il n'y a plus de bord a voir. */
+        .pr-fondu{position:absolute;left:0;right:0;height:130px;
+          top:min(max(0px, calc(var(--photo-h) - 130px)), calc(100% - 130px));
           background:linear-gradient(180deg,
             rgba(0,0,0,0) 0%,
-            color-mix(in srgb, var(--fond) 55%, transparent) 46%,
-            var(--fond) 82%);}
+            color-mix(in srgb, var(--fond) 34%, transparent) 40%,
+            color-mix(in srgb, var(--fond) 82%, transparent) 74%,
+            var(--fond) 100%);}
 
         .pr-haut{position:absolute;left:0;right:0;top:0;z-index:3;display:flex;
           align-items:center;gap:5px;padding:10px 8px;
           background:linear-gradient(180deg,rgba(0,0,0,.55),transparent);}
-        /* ═══ LA PASTILLE, COMME SUR SA CAPTURE ═══
-           Une carte a coins arrondis, pas une gelule : l'avatar est plus gros,
-           les trois lignes respirent, et le fond est presque opaque pour que
-           le nom se lise sur n'importe quelle photo. */
-        .pr-puce{display:flex;align-items:center;gap:9px;background:rgba(16,19,28,.9);
-          border-radius:18px;padding:6px 11px 6px 6px;min-width:0;flex:1;
-          box-shadow:0 6px 22px rgba(0,0,0,.35);}
-        .pr-puce img{width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none;
-          border:2px solid rgba(255,255,255,.22);}
+        /* ═══ PAS DE RECTANGLE : LE NOM SE POSE SUR LA PHOTO ═══
+           « Je ne veux pas de rectangle, je veux comme la photo 2. »
+           SA MAQUETTE N'A AUCUN PANNEAU : l'avatar est un rond pose sur
+           l'image, et les trois lignes sont ecrites par-dessus. Le cartouche
+           que j'avais dessine faisait une etiquette collee sur la photo — il
+           protegeait la lisibilite, mais au prix d'un bloc opaque en plein
+           haut du cadre.
+           C'EST L'OMBRE PORTEE QUI REMPLACE LE FOND. Deux ombres croisees sous
+           chaque ligne tiennent le texte sur un ciel clair comme sur une
+           chevelure sombre, sans rien masquer de l'image. */
+        .pr-puce{display:flex;align-items:center;gap:10px;background:none;
+          padding:0;min-width:0;flex:1;}
+        .pr-puce img{width:52px;height:52px;border-radius:50%;object-fit:cover;flex:none;
+          border:2px solid rgba(255,255,255,.75);
+          box-shadow:0 4px 16px rgba(0,0,0,.55);}
         .pr-puce div{min-width:0;}
-        /* IL MANQUAIT UN POINT. Mesuré : le nom voulait 136, il en avait 135.
-           Un resserrement de deux centièmes d'em le rend entier — c'est moins
-           que ce qu'un œil distingue, et ça vaut mieux que « Un salon du c… ». */
-        .pr-puce b{display:block;color:#fff;font-size:13px;font-weight:800;line-height:1.25;
-          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.02em;}
-        .pr-puce span{display:block;color:#fff;font-size:11px;font-weight:700;line-height:1.35;
-          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .pr-puce span em{font-style:normal;color:#9aa4c4;font-weight:500;}
+        /* QUATORZE POINTS, PAS QUINZE. Sans le cartouche, le nom a gagne les
+           vingt-deux points de rembourrage — et les a repris aussitot en
+           grossissant d'un point. Mesure : il lui manquait encore quatre
+           points pour tenir. */
+        .pr-puce b{display:block;color:#fff;font-size:14px;font-weight:800;line-height:1.25;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.015em;
+          text-shadow:0 1px 3px rgba(0,0,0,.85), 0 2px 14px rgba(0,0,0,.6);}
+        .pr-puce span{display:block;color:#fff;font-size:12.5px;font-weight:700;line-height:1.35;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+          text-shadow:0 1px 3px rgba(0,0,0,.85), 0 2px 14px rgba(0,0,0,.6);}
+        .pr-puce span em{font-style:normal;color:rgba(255,255,255,.78);font-weight:500;}
         .pr-puce i{font-style:normal;color:#ffc422;}
-        /* LA CHROME MAIGRIT POUR QUE LE NOM TIENNE. « Un salon du c… » : la
-           pastille prenait ce qui restait, et ce qui restait ne suffisait pas.
-           Le filtre et le cœur reculent de dix-huit points a eux deux, ce qui
-           est exactement ce qui manquait. */
+
         .pr-filtre{display:flex;align-items:center;gap:6px;flex:none;
           background:rgba(16,19,28,.9);border:0;border-radius:18px;
           padding:6px 7px 6px 6px;cursor:pointer;
