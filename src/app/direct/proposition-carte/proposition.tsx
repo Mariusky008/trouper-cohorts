@@ -80,6 +80,48 @@ function couleurDuBas(img: HTMLImageElement): string | null {
 
 /** La largeur de la carte, en points. Le fondu en dépend, donc elle est écrite une fois. */
 const LARGEUR = 390;
+/** Sa hauteur. Les deux décident de tout le cadrage ci-dessous. */
+const HAUTEUR = 844;
+
+/**
+ * ═══ JUSQU'OÙ LA PHOTO DESCEND ════════════════════════════════════════════
+ *
+ * « Pour l'homme, le flou commence beaucoup trop haut et prend plus de la
+ * moitié de l'écran, au lieu d'être à partir de juste en dessous des
+ * miniatures comme pour la femme. »
+ *
+ * ET LA CAUSE EST DANS LA PHOTO, PAS DANS LE DESSIN. Sa photo d'homme est
+ * CARRÉE : à pleine largeur elle ne fait que 390 points de haut sur 844. Le
+ * fondu, qui finit au bord de l'image, commençait donc à 220 — un quart de
+ * l'écran — et tout le bas devenait de la couleur. Celle de la femme est
+ * verticale : 585 points, et le compte tombe juste. Même règle, deux formats,
+ * deux résultats.
+ *
+ * ON VISE DONC UNE HAUTEUR, ET ON ROGNE LE MINIMUM POUR L'ATTEINDRE. La photo
+ * descend jusqu'à soixante-deux pour cent de la carte quand elle le peut ; si
+ * son format ne le permet qu'en coupant, on coupe — MAIS JAMAIS PLUS DE VINGT-
+ * CINQ POUR CENT DE LA LARGEUR, douze et demi de chaque côté.
+ *
+ * LE PLAFOND EST LE CŒUR DE LA RÈGLE. Sans lui on retombe sur « cover », qui
+ * mangeait vingt-six pour cent de chaque côté — les côtés de la coupe. Avec
+ * lui, une photo carrée monte de 390 à 520 points en perdant douze et demi par
+ * bord au lieu de vingt-six : le sujet reste entier et le fondu redescend.
+ * Une photo panoramique, elle, n'atteindra pas la cible et c'est très bien :
+ * mieux vaut une image courte qu'une image amputée.
+ */
+const CIBLE = Math.round(HAUTEUR * 0.62);
+const ROGNAGE_MAX = 0.25;
+
+export function hauteurDe(l: number, h: number): number {
+  if (!l || !h) return LARGEUR;
+  /* À PLEINE LARGEUR, SANS RIEN COUPER. */
+  const pleine = (LARGEUR * h) / l;
+  if (pleine >= CIBLE) return Math.round(pleine);
+  /* IL FAUT AGRANDIR POUR ATTEINDRE LA CIBLE, donc rogner les côtés. Un
+     agrandissement de facteur k coupe (1 − 1/k) de la largeur. */
+  const kMax = 1 / (1 - ROGNAGE_MAX);
+  return Math.round(Math.min(CIBLE, pleine * kMax));
+}
 
 export default function Proposition() {
   /* ON PREND LA CARTE ET L'ANNONCE DONT IL PARLE — la coupe homme du salon du
@@ -125,10 +167,7 @@ export default function Proposition() {
     i.crossOrigin = "anonymous";
     i.onload = () => {
       if (!vivant) return;
-      /* LA HAUTEUR QUE LA PHOTO PRENDRA, une fois sa largeur ramenée à celle
-         de la carte. C'est elle qui dit où le fondu doit commencer — et elle
-         change d'une photo à l'autre, donc elle se mesure. */
-      setHauteur(Math.round((LARGEUR * i.naturalHeight) / i.naturalWidth));
+      setHauteur(hauteurDe(i.naturalWidth, i.naturalHeight));
       const c = couleurDuBas(i);
       if (!c) return;
       cache.current[grande] = c;
@@ -331,9 +370,10 @@ export default function Proposition() {
            Une photo plus haute que l'ecran ne perd que son bas, sous le
            fondu. */
         .pr-photo{position:absolute;left:0;right:0;top:0;height:var(--photo-h);
-          background:transparent center top/100% auto no-repeat;
-          background-image:inherit;}
-        .pr-photo{background-size:100% auto;background-position:center top;}
+          background:transparent center top no-repeat;background-image:inherit;}
+        /* LA HAUTEUR COMMANDE, LA LARGEUR SUIT — et déborde quand il le faut,
+           d'au plus douze et demi pour cent de chaque côté. Voir hauteurDe. */
+        .pr-photo{background-size:auto var(--photo-h);background-position:center top;}
         /* LE FONDU VA VERS LA COULEUR LUE DANS L'IMAGE — voir couleurDuBas. */
         /* LE FONDU PART PLUS BAS QUE LE VISAGE. A trente-huit pour cent il
            voilait les yeux ; le titre commence de toute facon a cinquante. */
