@@ -15769,8 +15769,11 @@ export function ApercuHabitant() {
           border:1px solid rgba(234,242,236,.24);border-radius:999px;
           padding:7px 13px;transition:transform .12s ease,background .14s ease;
           -webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);}
+        /* LA FLECHE QUI DESCEND SUIT LA BARRE. Elle est a quarante points du
+           bouton magenta et a cent de la barre : menthe entre les deux, elle
+           etait le dernier vert de l'ecran. */
         .ap-ident-d button i,.ap-ident-d a i{font-style:normal;font-size:13px;line-height:1;
-          color:#8CF0CC;}
+          color:#E86FC0;}
         .ap-ident-d button:active,.ap-ident-d a:active{transform:scale(.97);
           background:rgba(234,242,236,.12);}
 
@@ -16895,7 +16898,15 @@ export function ApercuHabitant() {
            faire passer le nom du commerce dessous. */
         .ap-murf .mu-tete{padding-right:44px;}
 
-        .ap-onglets{flex:none;display:grid;
+        .ap-onglets{
+          /* LES DEUX TEINTES DE LA BARRE, prises sur le bouton qu'elle borde.
+             Voir le commentaire au-dessus de .ap-onglets button. Elles vivent
+             ICI et pas dans un second bloc : deux declarations du meme nom a
+             deux endroits eloignes se surchargent dans l'ordre du fichier, et
+             la garde des styles le refuse — a raison, ca a deja coute quatre
+             fois. */
+          --ap-violet:#8B6BFF;--ap-magenta:#E24FB0;
+          flex:none;display:grid;
           /* SIX ENFANTS, ET CELUI DU MILIEU N'EST PAS UN ONGLET. Les cinq
              onglets se partagent la largeur a parts egales ; le fantome prend
              sa taille propre au centre. Reste a cinq colonnes et « Profil »
@@ -16950,6 +16961,28 @@ export function ApercuHabitant() {
         .ap-app.direct .ap-gestes.pose{background:#0A1210;}
         .ap-app.direct:has(.ap-gestes.pose) .ap-onglets{
           border-top-color:rgba(255,255,255,.09);}
+        /* ═══ LA BARRE DU BAS QUITTE LE VERT ═══════════════════════════════════
+
+           « Les couleurs vertes tout en bas dans le menu et le fantôme ne sont
+           pas cohérentes avec les couleurs de l'app maintenant. J'ai fait une
+           modif pour que ce soit plus cohérent. »
+
+           IL A RAISON, ET C'EST L'ANNONCE QUI A DEPLACE LE CENTRE DE GRAVITE.
+           La menthe etait la couleur du produit quand l'ecran etait sombre et
+           vert ; depuis que le geste principal est un bouton violet-magenta
+           pleine largeur, c'est LUI qui donne le ton. Une barre verte sous un
+           bouton magenta ne se lit pas comme un second accent : elle se lit
+           comme un reste.
+
+           DEUX TEINTES, PRISES SUR LE BOUTON LUI-MEME. Le violet de son bord
+           gauche et le magenta de son bord droit — voir .ap-agir.essayer. Rien
+           d'invente : la barre reprend les deux bouts du degrade qu'elle borde,
+           ce qui est la facon la plus simple de ne pas ajouter une couleur de
+           plus au produit.
+
+           CE QUI NE CHANGE PAS : l'ambre. Dans tout le produit le neuf est
+           ambre, et le prix aussi. Une couleur qui ne veut dire qu'une chose
+           n'a aucune raison de bouger parce qu'une autre a bouge. */
         .ap-onglets button{position:relative;display:flex;flex-direction:column;
           align-items:center;justify-content:center;gap:3px;font:inherit;
           font-size:10.5px;font-weight:800;cursor:pointer;color:#6C8078;
@@ -16960,11 +16993,17 @@ export function ApercuHabitant() {
         /* L'ONGLET COURANT SE VOIT A LA COULEUR ET AU FOND, pas seulement a
            l'opacite : sur un ecran au soleil, un gris un peu plus clair ne se
            distingue pas d'un gris un peu plus fonce. */
-        .ap-onglets button.on{color:#CFF7E6;background:rgba(61,226,166,.13);}
+        /* L'ONGLET COURANT PORTE UN CONTOUR, PAS SEULEMENT UN FOND. Sur sa modif,
+           « LE DIRECT » est cercle d'un filet magenta : un fond teinte seul, a
+           treize pour cent, disparait sur une photo claire derriere la barre —
+           c'etait deja vrai en vert, et le filet le repare. */
+        .ap-onglets button.on{color:var(--ap-magenta);
+          background:rgba(226,79,176,.14);
+          box-shadow:inset 0 0 0 1.5px rgba(226,79,176,.62);}
         .ap-onglets button.on i{filter:none;}
         .ap-onglets button b{position:absolute;top:2px;right:calc(50% - 24px);
           min-width:16px;font-size:9.5px;font-weight:850;line-height:16px;
-          text-align:center;color:#04150E;background:#3DE2A6;border-radius:999px;
+          text-align:center;color:#fff;background:var(--ap-magenta);border-radius:999px;
           padding:0 4px;}
         /* LE BADGE DES NOUVELLES EST AMBRE — c'est la cloche qui a demenage
            ici. Dans tout le produit le vert dit « a vous » et l'ambre « du
@@ -17031,8 +17070,12 @@ export function ApercuHabitant() {
         .ap-onglets .ap-monfantome{position:relative;flex:none;width:62px;height:62px;
           margin:-22px 4px 0;padding:0;border-radius:50%;border:0;
           display:flex;align-items:center;justify-content:center;
-          background:linear-gradient(150deg,#8CF0CC,#2FD39A);
-          box-shadow:0 12px 30px rgba(47,211,154,.42),
+          /* LE MEME DEGRADE QUE LE BOUTON QU'IL OUVRE. Le fantome de la barre
+             et le fantome du bouton « Visualiser une coupe sur moi » menent au
+             meme endroit ; ils portaient deux couleurs, ce qui etait la seule
+             chose a expliquer dans cette barre. */
+          background:linear-gradient(150deg,#8B6BFF,#E24FB0);
+          box-shadow:0 12px 30px rgba(168,85,247,.45),
             0 0 0 5px var(--ap-barre-fond, #070C0A);
           transition:transform .16s cubic-bezier(.34,1.6,.64,1);}
         .ap-onglets .ap-monfantome:disabled{opacity:.45;}
