@@ -3225,10 +3225,10 @@ export function ApercuHabitant() {
         "/direct/concert-kiosque.jpg",
       ],
       couches: ["son", "envies", "live"],
-      /* SEPT SECONDES ET DEMIE, COMME LE RESTAURANT — et pour la même raison :
-         trois images à lire, chacune avec son idée, demandent deux secondes et
-         demie chacune. À cinq secondes et demie, on en saute une. */
-      duree: 7500,
+      /* DIX SECONDES ET DEMIE, COMME LE RESTAURANT — voir sa durée pour la
+         mesure : deux secondes et demie par image ne suffisent pas à lire un
+         titre, un contenu et à comprendre que le suivant continue l'histoire. */
+      duree: 10500,
     },
     {
       /* ═══ LA PASTILLE DISAIT UN BOUQUET, L'IMAGE MONTRE UN SALON ═══════
@@ -7614,6 +7614,33 @@ export function ApercuHabitant() {
                           Live, le premier message du chat, les intentions.
                           Recopiés ici, ils auraient divergé du vrai écran à la
                           première retouche. */}
+                      {/* ═══ « 1 SUR 3 » — CE QUI DIT QUE C'EST UNE SUITE ═══
+
+                          « L'exemple restaurant ne retranscrit pas assez le
+                          concept du restaurant, qui montre en plusieurs étapes
+                          ce qui se passe dans la cuisine, et ça passe trop
+                          vite. »
+
+                          LES TROIS IMAGES RACONTAIENT DÉJÀ UNE SUITE — le chef
+                          qui saisit, le détail qu'on ne lit pas sur le menu, le
+                          plat qui attend — et RIEN NE DISAIT QU'ELLES EN
+                          ÉTAIENT UNE. Elles se fondent l'une dans l'autre au
+                          même endroit : sans compteur, on croit voir trois
+                          photos du même plat, pas trois moments.
+
+                          IL EST À DROITE PARCE QUE LE TEXTE EST À GAUCHE. Ses
+                          trois maquettes portent leur titre en haut à gauche,
+                          incrusté dans l'image ; le seul coin libre est celui-là.
+
+                          ET IL N'APPARAÎT QU'À PARTIR DE TROIS. À deux, on voit
+                          un avant et un après — personne n'a besoin qu'on les
+                          compte. */}
+                      {exemple.photos.length >= 3 && (
+                        <b className="ap-ac-pas" aria-hidden="true">
+                          {k + 1} sur {exemple.photos.length}
+                        </b>
+                      )}
+
                       {exemple.couches?.[k] && (
                         <s className="ap-ac-t3" aria-hidden="true">
                           {TEMPS_SOIREE[exemple.couches[k] as string]}
@@ -14964,6 +14991,19 @@ export function ApercuHabitant() {
            absolu, et une autre qui les repeint en rose a droite sur la derniere.
            Le titre de la troisieme carte se retrouvait donc rose et decale, et
            les trois tetes du Live partaient se coller dans le coin. */
+        /* ═══ « 1 SUR 3 » ═══
+           IL EST A DROITE PARCE QUE LE TEXTE EST A GAUCHE : les trois maquettes
+           du restaurant portent leur titre incruste en haut a gauche, et le
+           seul coin libre est celui-la. Discret : il ne dit pas une etape, il
+           dit qu'il y en a d'autres. */
+        .ap-ac-pas{position:absolute;top:8px;right:8px;z-index:2;
+          padding:4px 8px;border-radius:999px;
+          font-size:9px;font-weight:850;letter-spacing:.06em;
+          text-transform:uppercase;color:#E6ECF3;
+          background:rgba(8,10,16,.72);
+          -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+          border:1px solid rgba(255,255,255,.16);}
+
         .ap-ac-t3{position:absolute;top:8px;left:8px;
           display:inline-block;max-width:calc(100% - 16px);
           padding:5px 9px;border-radius:999px;text-decoration:none;
