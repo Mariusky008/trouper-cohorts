@@ -65,11 +65,22 @@ function couleurDuBas(img: HTMLImageElement): string | null {
       n++;
     }
     if (!n) return null;
-    /* ON ASSOMBRIT DE TRENTE POUR CENT. La couleur brute du bas d'une photo
-       est souvent claire — un fond de studio, un pull beige — et du texte
-       blanc n'y tient pas. Assombrie, elle reste la MÊME couleur : c'est ce
-       qui fait que le fondu a l'air d'appartenir à l'image. */
-    const t = (x: number) => Math.round((x / n) * 0.7);
+    /**
+     * ON ASSOMBRIT DE PLUS DE MOITIÉ, ET CE N'EST PAS QU'UNE QUESTION DE
+     * LISIBILITÉ.
+     *
+     * « Le flou est encore bien trop haut. »
+     *
+     * À SOIXANTE-DIX POUR CENT DE LA COULEUR D'ORIGINE, le bas d'une photo de
+     * studio donnait un gris-beige moyen — exactement la teinte d'une image
+     * FLOUTÉE. D'où le mot : ce qu'il voyait n'était pas un dégradé mal placé,
+     * c'était une zone de couleur qui ressemblait à de la photo abîmée.
+     *
+     * À QUARANTE-CINQ POUR CENT, LA MÊME COULEUR DEVIENT UN PANNEAU. Elle
+     * garde la teinte de l'image — c'est ce qui fait que le fondu lui
+     * appartient — mais plus personne ne la prend pour la photo elle-même.
+     */
+    const t = (x: number) => Math.round((x / n) * 0.45);
     return `rgb(${t(r)}, ${t(v)}, ${t(b)})`;
   } catch {
     /* UNE TOILE QUE LE NAVIGATEUR REFUSE DE LIRE N'EST PAS UNE PANNE : on
@@ -391,41 +402,50 @@ export default function Proposition() {
         /* LE FONDU VA VERS LA COULEUR LUE DANS L'IMAGE — voir couleurDuBas. */
         /* LE FONDU PART PLUS BAS QUE LE VISAGE. A trente-huit pour cent il
            voilait les yeux ; le titre commence de toute facon a cinquante. */
-        /* ═══ LE FONDU FINIT EXACTEMENT OU LA PHOTO FINIT ═══
-           Premier essai : il atteignait sa pleine opacite bien APRES le bas de
-           l'image. Resultat, une arete nette — photo voilee a trente pour cent
-           d'un cote, couleur pleine de l'autre. Mesure : la cassure tombait a
-           390 points, la ou la photo s'arrete.
-           IL OCCUPE DONC LES CENT SOIXANTE-DIX DERNIERS POINTS DE LA PHOTO, et
-           il arrive a la couleur pile a son bord. Sous ce bord, c'est le fond
-           de la carte — la meme couleur. La jointure n'existe plus.
-           SUR UNE PHOTO PLUS HAUTE QUE L'ECRAN il se colle au bas de l'ecran :
-           sans ce min, il partirait hors champ et on perdrait le fondu. */
-        .pr-fondu{position:absolute;left:0;right:0;height:170px;
-          top:min(max(0px, calc(var(--photo-h) - 170px)), calc(100% - 170px));
+        /* ═══ LE FONDU NE TOUCHE QUE LE BORD DE LA PHOTO ═══
+           « Le flou est encore bien trop haut, il faut qu'il commence au
+           niveau des miniatures ; au-dessus ça fait etrange. »
+           IL MANGEAIT CENT SOIXANTE-DIX POINTS DE L'IMAGE, c'est-a-dire son
+           tiers inferieur : sur un portrait, ça commence au menton et ça
+           voile la moitie du visage. Un fondu n'a pas besoin d'etre long pour
+           etre doux, il a besoin d'etre BIEN PLACE.
+           IL NE COUVRE PLUS QUE SOIXANTE-DIX POINTS AVANT LE BORD et quarante
+           apres : la photo reste nette jusqu'a son dernier dixieme, et la
+           couleur prend le relais sans marche. */
+        .pr-fondu{position:absolute;left:0;right:0;height:110px;
+          top:min(max(0px, calc(var(--photo-h) - 70px)), calc(100% - 110px));
           background:linear-gradient(180deg,
             rgba(0,0,0,0) 0%,
-            color-mix(in srgb, var(--fond) 62%, transparent) 58%,
-            var(--fond) 100%);}
+            color-mix(in srgb, var(--fond) 55%, transparent) 46%,
+            var(--fond) 82%);}
 
         .pr-haut{position:absolute;left:0;right:0;top:0;z-index:3;display:flex;
           align-items:center;gap:6px;padding:11px;
           background:linear-gradient(180deg,rgba(0,0,0,.55),transparent);}
-        .pr-puce{display:flex;align-items:center;gap:7px;background:rgba(18,20,30,.82);
-          border-radius:999px;padding:5px 9px 5px 5px;min-width:0;flex:1;}
-        .pr-puce img{width:46px;height:46px;border-radius:50%;object-fit:cover;flex:none;
-          border:2px solid rgba(255,255,255,.35);}
+        /* ═══ LA PASTILLE, COMME SUR SA CAPTURE ═══
+           Une carte a coins arrondis, pas une gelule : l'avatar est plus gros,
+           les trois lignes respirent, et le fond est presque opaque pour que
+           le nom se lise sur n'importe quelle photo. */
+        .pr-puce{display:flex;align-items:center;gap:10px;background:rgba(16,19,28,.9);
+          border-radius:20px;padding:7px 12px 7px 7px;min-width:0;flex:1;
+          box-shadow:0 6px 22px rgba(0,0,0,.35);}
+        .pr-puce img{width:50px;height:50px;border-radius:50%;object-fit:cover;flex:none;
+          border:2px solid rgba(255,255,255,.22);}
         .pr-puce div{min-width:0;}
-        .pr-puce b{display:block;color:#fff;font-size:14px;font-weight:800;line-height:1.2;
+        .pr-puce b{display:block;color:#fff;font-size:14px;font-weight:800;line-height:1.25;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em;}
+        .pr-puce span{display:block;color:#fff;font-size:12px;font-weight:700;line-height:1.35;
           white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .pr-puce span{display:block;color:#e7ebf6;font-size:11.5px;line-height:1.3;
-          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .pr-puce span em{font-style:normal;color:#a7b0cc;}
-        .pr-puce i{font-style:normal;color:#ffcc33;}
+        .pr-puce span em{font-style:normal;color:#9aa4c4;font-weight:500;}
+        .pr-puce i{font-style:normal;color:#ffc422;}
+        /* LA CHROME MAIGRIT POUR QUE LE NOM TIENNE. « Un salon du c… » : la
+           pastille prenait ce qui restait, et ce qui restait ne suffisait pas.
+           Le filtre et le cœur reculent de dix-huit points a eux deux, ce qui
+           est exactement ce qui manquait. */
         .pr-filtre{background:rgba(18,20,30,.82);color:#fff;border-radius:999px;
-          padding:6px 9px;font-size:10px;font-weight:700;letter-spacing:.05em;white-space:nowrap;}
+          padding:5px 7px;font-size:9px;font-weight:700;letter-spacing:.04em;white-space:nowrap;}
         .pr-coeur{background:rgba(18,20,30,.82);color:#ff5b8a;border-radius:999px;
-          padding:6px 8px;font-size:11px;font-weight:700;white-space:nowrap;}
+          padding:5px 7px;font-size:10px;font-weight:700;white-space:nowrap;}
 
         .pr-tarifs{position:absolute;right:13px;top:86px;z-index:3;
           width:76px;height:76px;border-radius:50%;border:2px solid #c4a2ff;
@@ -438,7 +458,10 @@ export default function Proposition() {
            cent, « En parler » tombait sur le E de « Coupe homme » : deux
            choses a la meme hauteur sur un ecran de trois cent quatre-vingt-dix
            points se marchent dessus, quoi qu'on fasse. */
-        .pr-rail{position:absolute;right:10px;top:27%;z-index:3;display:grid;gap:11px;
+        /* ELLE DESCEND : le titre casse en deux lui laisse la place, et trois
+           boutons pousses en haut d'un ecran donnent l'impression que la
+           carte commence par ses outils. */
+        .pr-rail{position:absolute;right:10px;top:42%;z-index:3;display:grid;gap:11px;
           justify-items:center;}
         .pr-rail button{width:46px;border:0;background:none;color:#fff;display:grid;
           gap:3px;justify-items:center;cursor:pointer;padding:0;}
@@ -446,7 +469,7 @@ export default function Proposition() {
           background:rgba(12,14,22,.66);display:grid;place-items:center;}
         .pr-rail span{font-size:8.5px;line-height:1.15;text-align:center;font-weight:600;
           text-shadow:0 1px 6px rgba(0,0,0,.7);}
-        .pr-suite{position:absolute;right:16px;top:19%;z-index:3;
+        .pr-suite{position:absolute;right:16px;top:33%;z-index:3;
           width:32px;height:32px;border-radius:50%;border:0;background:rgba(12,14,22,.66);
           color:#fff;font-size:19px;line-height:1;cursor:pointer;}
 
@@ -460,8 +483,11 @@ export default function Proposition() {
         /* LA POLICE DE SA MAQUETTE — Poppins 900, déjà servie par le site sous
            --font-clikme. Pas de capitales forcées : « Coupe homme » s'écrit
            comme il l'a dessiné. */
-        .pr-bas h1{margin:0;font-family:var(--font-clikme),system-ui,sans-serif;
-          font-weight:900;font-size:41px;line-height:.92;letter-spacing:-.025em;color:#fff;
+        /* SUR DEUX LIGNES, ET C'EST LUI QUI LE DEMANDE. Le titre tenait sur
+           une ligne large ; casse en deux, il laisse le flanc droit libre et
+           la colonne de boutons peut descendre. */
+        .pr-bas h1{margin:0;max-width:60%;font-family:var(--font-clikme),system-ui,sans-serif;
+          font-weight:900;font-size:40px;line-height:.9;letter-spacing:-.025em;color:#fff;
           text-shadow:0 2px 20px rgba(0,0,0,.45);}
         /* LE TITRE S'ARRETE AVANT LA COLONNE, meme quand elle est plus haut :
            une ligne longue irait la rejoindre. */
