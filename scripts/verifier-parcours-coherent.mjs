@@ -94,21 +94,35 @@ for (const p of PARCOURS) {
 }
 
 /**
- * ET LES TROIS FAÇONS DE PORTER LA PIÈCE EXISTENT AUSSI.
+ * ET LA TROISIÈME ÉTAPE A SES TROIS IMAGES, DANS LES DEUX PARCOURS.
  *
- * « Trois femmes qui ont des tenues qui n'ont rien à voir avec la veste rose
- * d'essayage. » Le bloc n'est juste que si les trois fichiers sont là ; s'il en
- * manque un, la vignette s'affiche vide et personne ne s'en aperçoit.
+ * « Les trois femmes ne portent pas du tout la même veste » puis « pareil ici,
+ * il faut que ce soit la même coupe. » Deux fois le même défaut, à deux écrans
+ * différents. Les blocs ne sont justes que si les trois fichiers sont là ; s'il
+ * en manque un, la vignette s'affiche VIDE et personne ne s'en aperçoit — une
+ * image absente ne fait pas de bruit.
  */
-const mode = readFileSync("src/lib/direct/parcours-mode.ts", "utf8");
-const facons = [...mode.matchAll(/photo: "(\/direct\/[^"]+)"/g)].map((m) => m[1]);
-if (facons.length !== 3) {
-  soucis.push(`mode : FACONS_MODE declare ${facons.length} photo(s), il en faut trois.`);
-} else {
-  for (const f of facons) {
-    if (!existsSync(`public${f}`)) soucis.push(`mode : la facon ${f} n'est pas dans public/.`);
+const TROIS = [
+  { quoi: "mode", fichier: "src/lib/direct/parcours-mode.ts", liste: "FACONS_MODE", dit: "façons de porter la pièce" },
+  { quoi: "coiffure", fichier: "src/lib/direct/parcours-coiffure.ts", liste: "VISAGES_COIFFURE", dit: "visages qui portent la coupe" },
+];
+
+for (const t of TROIS) {
+  const texte = readFileSync(t.fichier, "utf8");
+  const debut = texte.indexOf(`export const ${t.liste}`);
+  if (debut < 0) { soucis.push(`${t.quoi} : ${t.liste} est introuvable dans ${t.fichier}.`); continue; }
+  const bloc = texte.slice(debut, texte.indexOf("];", debut));
+  const images = [...bloc.matchAll(/photo: "(\/direct\/[^"]+)"/g)].map((m) => m[1]);
+  if (images.length !== 3) {
+    soucis.push(`${t.quoi} : ${t.liste} declare ${images.length} photo(s), il en faut trois.`);
+    continue;
   }
-  if (!soucis.length) console.log(`  ok   mode : les trois façons de porter la pièce sont sur le disque`);
+  const absentes = images.filter((f) => !existsSync(`public${f}`));
+  if (absentes.length) {
+    for (const f of absentes) soucis.push(`${t.quoi} : ${f} n'est pas dans public/ — la vignette s'affichera vide.`);
+    continue;
+  }
+  console.log(`  ok   ${t.quoi} : les trois ${t.dit} sont sur le disque`);
 }
 
 if (soucis.length) {

@@ -36,20 +36,28 @@ export const APRES_COIFFURE = "/direct/accueil/coiffure-apres.jpg";
 export const SALON_COIFFURE = "/direct/salon-neuf.jpg";
 
 /**
- * ═══ CE QUE MONTRE LA TROISIÈME ÉTAPE ══════════════════════════════════════
+ * ═══ LA TROISIÈME ÉTAPE : LE MÊME CARRÉ, SUR D'AUTRES VISAGES ══════════════
  *
- * SA MAQUETTE MONTRE LA MÊME COUPE SUR TROIS VISAGES — trente, cinquante-cinq
- * et soixante-sept ans. C'est le bon écran : il répond à « est-ce que ça marche
- * sur une tête comme la mienne », qui est la vraie question d'un essayage.
+ * « Pareil ici, il faut que ce soit la même coupe. »
  *
- * JE N'AI PAS CES TROIS PHOTOS, et je ne peux pas les fabriquer ici. Trois
- * portraits de femmes différentes avec des coupes différentes ne diraient pas
- * « la même coupe sur d'autres visages » : ils diraient « d'autres coupes »,
- * et c'est exactement le reproche qu'il vient de faire au parcours mode.
+ * C'ÉTAIT SA MAQUETTE DEPUIS LE DÉBUT, ET ELLE ATTENDAIT SES PHOTOS. Elle
+ * montre une seule coupe sur trois femmes qui ne se ressemblent pas, et c'est
+ * le bon écran : il répond à « est-ce que ça marche sur une tête comme la
+ * mienne », qui est la vraie question d'un essayage.
  *
- * L'ÉTAPE MONTRE DONC CE QU'ELLE A : les autres coupes que ce salon propose
- * aujourd'hui, avec leur nom et leur prix, lues dans sa journée. Le titre le
- * dit. Le jour où les trois portraits arrivent, cette étape redevient la
- * sienne — c'est un titre et une source à changer.
+ * L'ÉTAPE MONTRAIT EN ATTENDANT LES AUTRES COUPES DU QUARTIER — honnête, mais
+ * ça répondait « en voici d'autres » à quelqu'un qui demande « et celle-là,
+ * sur moi ? ». C'est le même défaut que les trois vestes du parcours mode, et
+ * il se répare de la même façon : avec les bonnes images.
+ *
+ * LA LÉGENDE DÉCRIT CE QU'ON VOIT, ET RIEN DE PLUS. Sa maquette annonçait des
+ * âges — trente, cinquante-cinq, soixante-sept ans. On ne les connaît pas, et
+ * un âge inventé sous un visage réel est un chiffre de trop. Un lieu et un
+ * détail de la coupe se vérifient à l'œil, sur l'image même.
  */
+export const VISAGES_COIFFURE: { photo: string; ou: string; avec: string }[] = [
+  { photo: "/direct/accueil/coiffure-visage-marche.jpg", ou: "Au marché", avec: "Avec des lunettes" },
+  { photo: "/direct/accueil/coiffure-visage-cuisine.jpg", ou: "En cuisine", avec: "Raie sur le côté" },
+  { photo: "/direct/accueil/coiffure-visage-terrasse.jpg", ou: "En terrasse", avec: "Mèche vers l’avant" },
+];
 export const ETAPES_COIFFURE = 4;

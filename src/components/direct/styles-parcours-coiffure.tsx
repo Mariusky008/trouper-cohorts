@@ -149,21 +149,24 @@ export function StylesParcoursCoiffure() {
         .pc-vign{position:relative;border-radius:14px;overflow:hidden;
           border:1px solid rgba(255,255,255,.16);
           box-shadow:0 10px 26px -12px rgba(0,0,0,.9);}
+        /* LE CADRAGE EST HAUT, ET C'EST VOULU : on regarde une coupe, donc des
+           cheveux. A la moitie de l'image on aurait montre trois cols. */
         .pc-vign>div{aspect-ratio:1 / 1.3;background-size:cover;
-          background-position:center 18%;}
+          background-position:center 12%;}
         .pc-vign>span{position:absolute;left:0;right:0;bottom:0;
           display:flex;flex-direction:column;gap:1px;padding:20px 7px 7px;
           text-align:left;
           background:linear-gradient(180deg,rgba(6,6,10,0),rgba(6,6,10,.94));}
-        .pc-vign b{font-size:10.5px;font-weight:850;line-height:1.16;color:#fff;
+        .pc-vign b{font-size:11.5px;font-weight:900;line-height:1.16;color:#fff;
           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
           overflow:hidden;}
-        .pc-vign em{font-style:normal;font-size:12px;font-weight:900;color:#FF2E9A;}
-        /* CHEZ QUI : petit, sous le prix. Toutes ces coupes ne sont pas du meme
-           salon, et une vignette qui ne le dit pas laisse croire qu'elles le
-           sont. */
-        .pc-vign u{text-decoration:none;font-size:9px;font-weight:700;
-          line-height:1.14;color:rgba(255,255,255,.62);
+        /* LE DETAIL DE LA COUPE, sous le lieu. Ces vignettes portaient un prix
+           en magenta gras ; elles n'en portent plus, parce que c'est la meme
+           coupe que deux ecrans plus haut et qu'un prix repete est un prix qui
+           divergera. Ce qui reste se lit comme une legende, pas comme un
+           montant. */
+        .pc-vign u{text-decoration:none;font-size:9.5px;font-weight:700;
+          line-height:1.18;color:rgba(255,255,255,.72);
           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
           overflow:hidden;}
 

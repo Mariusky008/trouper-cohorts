@@ -34,6 +34,7 @@ import {
   COMMERCE_COIFFURE,
   ETAPES_COIFFURE,
   SALON_COIFFURE,
+  VISAGES_COIFFURE,
 } from "@/lib/direct/parcours-coiffure";
 
 function Fant({ classe }: { classe: string }) {
@@ -71,32 +72,10 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
     return { salon: s, coupe: m ?? (s ? momentEnCours(s, heure) : null) };
   }, [heure]);
 
-  /**
-   * ═══ LES AUTRES COUPES, ET ELLES DEBORDENT DE CE SALON ═══════════════════
-   *
-   * CE SALON N'EN A QU'UNE AUTRE, et une seule vignette dans une grille de
-   * trois se lit comme une panne — vu a la capture. Les coupes des salons
-   * voisins completent, et chaque carte dit chez qui elle est : c'est ce qui
-   * la rend honnete, et c'est aussi ce qui la rend utile.
-   *
-   * ON NE PREND QUE DES COIFFEURS. La categorie « Beaute » contient aussi les
-   * ongles, les tatouages et les lunettes ; les melanger repondrait a une autre
-   * question que celle qu'on vient de poser.
-   */
-  const autresCoupes = useMemo(() => {
-    const out: { photo: string; titre: string; prix: string; chez: string }[] = [];
-    for (const c of toutesLesCartes()) {
-      if (c.branche !== "coiffeur") continue;
-      for (const m of c.moments ?? []) {
-        if (!m.photo || m.titre === coupe?.titre) continue;
-        out.push({ photo: m.photo, titre: m.lignes?.[0] ?? m.titre, prix: m.prix ?? "", chez: c.nom });
-      }
-    }
-    /* LES SIENNES D'ABORD : on est chez elle, ses coupes passent avant celles
-       d'a cote. */
-    out.sort((a, b) => Number(b.chez === salon?.nom) - Number(a.chez === salon?.nom));
-    return out.slice(0, 3);
-  }, [coupe, salon]);
+  /* LES AUTRES COUPES DU QUARTIER ONT QUITTE LA TROISIEME ETAPE. Elles y
+     tenaient lieu des trois portraits qu'on n'avait pas ; les portraits sont
+     arrives, et l'ecran repond enfin a la question qu'il pose. Voir
+     `VISAGES_COIFFURE`. */
 
   if (!salon) return null;
 
@@ -267,28 +246,38 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
       {/* ───────────────────── 3/4 · LES AUTRES COUPES ──────────────────── */}
       {etape === 3 && (
         <section className="pc-bas">
+          {/* ═══ UNE SEULE COUPE, TROIS VISAGES QUI NE SE RESSEMBLENT PAS ═══
+
+              « Pareil ici, il faut que ce soit la même coupe. »
+
+              CET ÉCRAN MONTRAIT LES AUTRES COUPES DU QUARTIER, avec leur nom et
+              leur prix. C'était vrai, et ça répondait « en voici d'autres » à
+              quelqu'un qui demande « et celle-là, sur moi ? ». Le même carré
+              sur trois femmes différentes répond à la question posée.
+
+              AUCUN PRIX SUR LES VIGNETTES : c'est la même coupe, elle a celui
+              qu'on a lu deux écrans plus haut. Et plus de nom de salon non
+              plus — les trois sont chez elle, la pastille du haut le dit. */}
           <h1 className="pc-t">
-            D’autres coupes,
+            Le même carré,
             <br />
-            <em>tout près.</em>
+            <em>sur d’autres visages.</em>
           </h1>
           <div className="pc-trois">
-            {autresCoupes.map((m) => (
-              <article key={m.photo} className="pc-vign">
-                <div style={{ backgroundImage: `url("${m.photo}")` }} />
+            {VISAGES_COIFFURE.map((v) => (
+              <article key={v.photo} className="pc-vign">
+                <div style={{ backgroundImage: `url("${v.photo}")` }} />
                 <span>
-                  <b>{m.titre}</b>
-                  {m.prix && <em>{m.prix}</em>}
-                  {/* CHEZ QUI, parce que toutes ne sont pas de ce salon. */}
-                  <u>{m.chez}</u>
+                  <b>{v.ou}</b>
+                  <u>{v.avec}</u>
                 </span>
               </article>
             ))}
           </div>
-          {/* SA MAQUETTE DIT « Aperçus simulés pour la démonstration » sous des
-              rendus. Ici ce sont de vraies photos du salon, pas des rendus :
-              écrire « simulés » serait faux dans l'autre sens. */}
-          <p className="pc-simu">Ce qui se coupe aujourd’hui autour de vous, avec les prix.</p>
+          {/* CE SONT DE VRAIES PHOTOS, PAS DES RENDUS, et la ligne le dit dans
+              ce sens-là. Écrire « aperçus simulés » sous elles serait faux à
+              l'envers — aussi faux que de ne rien dire sous un rendu. */}
+          <p className="pc-simu">La même coupe, portée par d’autres. Ce ne sont pas des rendus.</p>
           <button type="button" className="pc-go" onClick={suivant}>
             <Appareil />
             Voir le salon
