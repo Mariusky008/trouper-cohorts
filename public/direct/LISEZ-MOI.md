@@ -157,7 +157,37 @@ non comme une photo floutée. Le raccord tient entièrement dans la photo et
 atteint cette couleur à son dernier point : mesuré au pixel, un point d'écart
 entre deux lignes voisines, puis plus rien.
 
+Cette couleur ne peut pas être claire, même si la photo l'est. Un mur de studio
+ou une chemise blanche donnent un bas moyen à 210 ; assombri de moitié, il
+tombe sur un gris moyen où le titre blanc ne se lit plus. Le calcul raisonne
+donc en **luminance plafonnée**, pas en pourcentage : au-dessus de 0,09 — la
+limite où du blanc dessus garde 7,5 pour 1 de contraste — la couleur redescend
+juste ce qu'il faut, en gardant sa teinte. En dessous, on n'y touche pas.
+
 Voir `partDeLaPhoto` et `basDeLImage` dans `src/components/direct/carte-swipe.tsx`.
+
+### DEUX PIÈGES, TOUS LES DEUX INVISIBLES À LA RELECTURE
+
+Ils ont coûté deux allers-retours chacun parce qu'aucun des deux ne ressemble à
+sa cause. Ils sont gardés par `npm run verifier:raccord`.
+
+**1. `--cd-photo-h` est un pourcentage, et un pourcentage ne se compte pas dans
+la même boîte selon la propriété.** En `height`, il se compte sur la carte :
+69 % de 844 = 584, ce qui est juste. En `background-size`, il se compte sur
+l'élément lui-même : 69 % de 584 = 403. La photo se dessinait à 403 points de
+haut dans une boîte de 584, et à 270 de large dans une boîte de 390 — deux
+bandes de fond nu sur les côtés, et un trait net sous le sujet, bien avant le
+raccord qui l'attendait plus bas. **Écrire `cover`** : `partDeLaPhoto` a déjà
+donné à la boîte le rapport de l'image, donc couvrir la remplit sans rogner.
+
+**2. Le raccord finit opaque, donc il ne doit jamais passer devant le texte.**
+Il portait `z-index:1` ; le titre et le prix n'en portent aucun. Le dégradé les
+repeignait de la couleur du fond, et le seul reste visible du mot était le creux
+que ses ombres avaient laissé autour de lui. Ça se lit comme un défaut de
+contraste — j'ai cherché deux fois du côté de la couleur, des ombres et du grain
+avant de demander au navigateur QUI était au-dessus. **`elementFromPoint` sur le
+premier signe du titre répond en une seconde ce que la relecture ne trouve pas.**
+Le balisage suffit à ranger les couches : photo, voile, raccord, puis le texte.
 
 ## LA RÈGLE QUI VAUT POUR TOUTES
 

@@ -319,6 +319,23 @@ const DEMANDE_A_LA_VILLE = false;
 const LES_ENVIES = false;
 
 /**
+ * LA CLOCHE DE LA BARRE DU HAUT, ÉTEINTE — « supprime la cloche pour le moment
+ * pour gagner de la place ».
+ *
+ * LA BARRE PORTE QUATRE OBJETS sur trois cent quatre-vingt-dix points : le nom
+ * du commerce, le filtre, le cœur et la cloche. Le premier est le seul qui dise
+ * quelque chose de l'annonce qu'on regarde, et c'était le seul tronqué : « Un
+ * salon du ce… ». Un objet de moins lui rend sa ligne.
+ *
+ * ET ON NE PERD PAS DE PORTE. Les nouvelles des commerces suivis s'ouvrent
+ * aussi par le cœur d'à côté et par l'onglet Profil, qui en porte le compte :
+ * la cloche était le troisième chemin vers le même endroit.
+ *
+ * POUR LA RALLUMER : passer cette constante à `true`. Rien d'autre.
+ */
+const CLOCHE_EN_HAUT = false;
+
+/**
  * LE NOM DE L'ONGLET, POUR LE BOUTON DE RETOUR.
  *
  * IL DIT OÙ L'ON RETOURNE, PAS « RETOUR ». Une flèche seule ne se voyait pas —
@@ -4776,6 +4793,17 @@ export function ApercuHabitant() {
   // l'autocollant d'un boulanger n'a rien à faire d'un résumé sur trois autres
   // commerces. Il est venu pour un seul.
   useEffect(() => {
+    // ═══ ET L'AVIS DU MATIN SUIT LA CLOCHE ═══════════════════════════════
+    //
+    // IL NE DIT QU'UNE CHOSE : allez voir la cloche. « 3 de vos commerces ont
+    // publié » n'est pas une information en soi — c'est une flèche vers
+    // l'endroit où on les lit. La cloche partie, la flèche ne désigne plus
+    // rien, et elle se posait en plein milieu de l'annonce, par-dessus le prix
+    // et la bande de miniatures : mesuré à l'écran, un bandeau ambre de cent
+    // points sur les « 28 € ».
+    //
+    // IL REVIENT AVEC ELLE, à la même constante. Voir CLOCHE_EN_HAUT.
+    if (!CLOCHE_EN_HAUT) return;
     if (combienDeNouvelles === 0 || arrivee || avisDuMatinDejaEnvoye()) return;
     const t = setTimeout(() => {
       // UN GESTE DÉLIBÉRÉ PASSE TOUJOURS AVANT UN AVIS AUTOMATIQUE. Mesuré
@@ -6717,9 +6745,25 @@ export function ApercuHabitant() {
                   <i aria-hidden="true">📍</i>
                   <span className="ap-loin-t">
                     <b>{dessus?.nom ?? dessusEv?.qui ?? "Autour de moi"}</b>
+                    {/* ═══ LA NOTE MONTE ICI, PARCE QU'ELLE DESCEND LÀ-BAS ═══
+
+                        « Au lieu d'avoir deux fois les mêmes informations, en
+                        haut et en dessous des miniatures, peux-tu enlever cette
+                        section et juste garder en haut les infos. »
+
+                        LE BLOC DU BAS DISAIT TROIS CHOSES : le métier, l'enseigne
+                        et la note. La barre en disait déjà deux — il ne manquait
+                        que la note pour que le bloc du bas ne dise plus rien de
+                        neuf. Elle prend trois caractères ; le bloc prenait cent
+                        points de haut au milieu de l'annonce.
+
+                        ON NE L'ÉCRIT QUE SI ELLE EXISTE. Un événement n'a pas de
+                        note Google et n'en aura pas : on ne note pas un marché
+                        de producteurs, et en afficher une serait inventer. */}
                     <em>
                       {[
                         dessus?.metier ?? (dessusEv ? "Événement" : null),
+                        dessus?.google ? `★ ${dessus.google.note}` : null,
                         dessus?.distance ?? dessusEv?.distance,
                       ]
                         .filter(Boolean)
@@ -6734,9 +6778,13 @@ export function ApercuHabitant() {
                 <i>📍</i>
                 <span className="ap-loin-t">
                   <b>{dessus?.nom ?? dessusEv?.qui ?? "Autour de moi"}</b>
+                  {/* LA MÊME LIGNE QUE CELLE D'À CÔTÉ, ET POUR LA MÊME RAISON :
+                      la barre porte maintenant la note, donc le bloc du milieu
+                      n'a plus rien à dire. Voir la version cliquable au-dessus. */}
                   <em>
                     {[
                       dessus?.metier ?? (dessusEv ? "Événement" : null),
+                      dessus?.google ? `★ ${dessus.google.note}` : null,
                       dessus?.distance ?? dessusEv?.distance,
                     ]
                       .filter(Boolean)
@@ -6936,7 +6984,26 @@ export function ApercuHabitant() {
                     même taille, l'un qui ouvre ce que J'AI gardé, l'autre ce
                     qu'ON m'a dit. Le geste, lui, est ailleurs — c'est ce qui
                     les rendait illisibles. */}
-                {!sortie && (
+                {/* ═══ ET LA CLOCHE S'EN VA, POUR L'INSTANT ═══════════════════
+
+                    « Supprime la cloche pour le moment pour gagner de la place. »
+
+                    LA PLACE N'EST PAS UN DÉTAIL ICI, c'est le sujet même de tout
+                    ce qu'on vient de refaire : la photo doit occuper l'écran et
+                    le sujet y être entier. Quatre ronds dans la barre du haut
+                    poussaient l'enseigne à « Un salon du ce… » ; trois la
+                    laissent respirer.
+
+                    ET ELLE NE PERD AUCUNE PORTE. Ce qu'elle ouvrait — les
+                    nouvelles des commerces suivis — s'ouvre aussi par le cœur
+                    d'à côté et par l'onglet Profil, qui en porte le compte.
+                    C'était le troisième chemin vers le même endroit.
+
+                    « POUR LE MOMENT » : c'est son mot, et il tient. Le bouton
+                    est commenté ici, pas effacé ailleurs — ouvrirMesCommerces et
+                    nonLues vivent toujours, et la cloche revient en décommentant
+                    ce bloc le jour où la barre aura de la place. */}
+                {CLOCHE_EN_HAUT && !sortie && (
                   <button
                     type="button"
                     className={`ap-cloche${nonLues.length ? " neuf" : ""}`}
@@ -15400,6 +15467,30 @@ export function ApercuHabitant() {
            lisibles — c'est deja son travail pour le titre juste au-dessus. */
         .ap-ident{width:min(100%,340px);margin-top:10px;
           display:flex;flex-direction:column;align-items:flex-start;gap:9px;}
+        /* ═══ LES DEUX DOUBLONS DISPARAISSENT DE L'ANNONCE ════════════════
+
+           « Au lieu d'avoir deux fois les mêmes informations, en haut et en
+           dessous des miniatures, peux-tu enlever cette section et juste garder
+           en haut les infos. » Et, sur le lieu : « À 220 m est à supprimer
+           puisque c'est déjà présent en haut. »
+
+           C'EST LE MÊME DÉFAUT DEUX FOIS, et il se voit à l'écran : la barre du
+           haut dit « Un salon du centre — Coiffeur · ★ 4,8 · 220 m », et cent
+           points plus bas la carte redisait « À 220 m / Dax », puis « COIFFEUR /
+           Un salon du centre ★ 4,8 (62 avis) ». Trois cents points d'écran pour
+           répéter ce qu'on venait de lire.
+
+           ON CACHE, ON NE SUPPRIME PAS, et la nuance est le tout : ces deux
+           lignes sont les SEULES à dire où c'est et chez qui sur la page du
+           commerçant et dans le fil de la ville, où il n'y a pas de barre en
+           haut. Seul l'écran qui affiche déjà l'information la tait.
+
+           LA PORTE, ELLE, RESTE. Il a demandé le retrait des informations
+           répétées, pas celui du bouton qui descend : « Voir toutes les offres
+           + infos » est le seul chemin vers le reste de la carte. */
+        .ap-carte .cd-ou{display:none;}
+        .ap-carte .ap-ident-l{display:none;}
+        .ap-carte .ap-ident{margin-top:2px;}
         /* ─── DEUX LIGNES : LE METIER, PUIS QUI ET SI C'EST BIEN ───
            Trois choses sur une ligne tenaient toute la largeur et se repliaient
            n'importe ou. Deux niveaux typographiques les separent mieux que deux
