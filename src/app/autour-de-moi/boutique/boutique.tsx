@@ -793,6 +793,41 @@ export function Boutique({
    */
   const [pieceVue, setPieceVue] = useState<PieceGardee | null>(null);
   /**
+   * LA PHOTO QU'ON REGARDE EN GRAND — son rang, pas son adresse.
+   *
+   * « J'aurais aimé pouvoir cliquer dessus et les voir en grand. »
+   *
+   * ON GARDE LE RANG PARCE QU'ON PEUT ALORS PASSER À LA SUIVANTE. Une visionneuse
+   * qu'il faut refermer entre chaque photo transforme une bande de six vignettes
+   * en douze gestes ; avec le rang, le doigt reste au même endroit. C'est aussi
+   * pour ça que le calque de la pièce gardée, juste en dessous, n'a pas pu servir
+   * ici : il montre UNE pièce, et il ouvre sur « je la réserve » — deux gestes
+   * qui n'ont aucun sens devant la photo de la salle.
+   */
+  const [galVue, setGalVue] = useState<number | null>(null);
+  const sesPhotos = c.sesPhotos ?? [];
+  /* ON CHANGE DE COMMERCE, LA VISIONNEUSE SE FERME. « Voir la boutique » change
+     le commerce sur place sans démonter la page : une photo restée ouverte
+     appartiendrait alors à quelqu'un d'autre, et son rang tomberait peut-être
+     hors de la nouvelle bande. */
+  useEffect(() => setGalVue(null), [c.id]);
+  /* ÉCHAP FERME, LES FLÈCHES AVANCENT. Sur un téléphone on balaie, sur un
+     ordinateur on n'a que ça — et sans Échap, un calque plein écran devient un
+     piège pour qui navigue au clavier. */
+  useEffect(() => {
+    if (galVue == null) return;
+    const au = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") setGalVue(null);
+      else if (ev.key === "ArrowRight") setGalVue((n) => (n == null ? n : (n + 1) % sesPhotos.length));
+      else if (ev.key === "ArrowLeft")
+        setGalVue((n) => (n == null ? n : (n - 1 + sesPhotos.length) % sesPhotos.length));
+      else return;
+      ev.preventDefault();
+    };
+    window.addEventListener("keydown", au);
+    return () => window.removeEventListener("keydown", au);
+  }, [galVue, sesPhotos.length]);
+  /**
    * CE QU'IL RESTE DE LA PIÈCE QU'ON REGARDE, RELU À CHAQUE OUVERTURE.
    *
    * ON NE LE FIGE PAS DANS LA POCHE. Une taille mise de côté il y a dix jours
@@ -2296,8 +2331,19 @@ export function Boutique({
             <>
             <div className="bq-gal-t">Ses photos</div>
             <div className="bq-gal">
-              {c.sesPhotos.map((p) => (
+              {c.sesPhotos.map((p, i) => (
                 <figure key={p.src}>
+                  {/* ON CLIQUE SUR UN BOUTON, PAS SUR UNE IMAGE.
+                      Une image rendue cliquable par un `onClick` n'existe pas
+                      pour le clavier ni pour un lecteur d'écran : le bouton lui
+                      donne le focus, l'entrée au clavier et un nom — « Voir "la
+                      salle" en grand » — que la légende seule ne fournit pas. */}
+                  <button
+                    type="button"
+                    className="bq-gal-v"
+                    aria-label={p.quoi ? `Voir « ${p.quoi} » en grand` : "Voir la photo en grand"}
+                    onClick={() => setGalVue(i)}
+                  >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={p.src}
@@ -2316,6 +2362,7 @@ export function Boutique({
                       if (f) f.style.display = "none";
                     }}
                   />
+                  </button>
                   {/* SANS LEGENDE, PAS DE LIGNE VIDE. Les photos d'un vrai
                       commerce viennent de Google et personne ne les a
                       regardees : on ne leur invente pas de legende, et la
@@ -2604,6 +2651,93 @@ export function Boutique({
               </ul>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ═══ SES PHOTOS, EN GRAND ═══════════════════════════════════════════
+
+          « "Ses photos" : j'aurais aimé pouvoir cliquer dessus et les voir en
+          grand. »
+
+          UNE VIGNETTE DE 146 × 104 EST UNE PROMESSE, PAS UNE PHOTO. On y
+          reconnaît qu'il y a une salle, on ne voit pas si elle est pleine, si
+          les tables sont serrées, si on a envie d'y être — c'est-à-dire
+          exactement ce qu'on cherchait en regardant. Et sur une page de
+          commerçant, ces images-là sont souvent les seules qu'il n'a pas
+          choisies : ce sont celles de sa fiche Google.
+
+          LA PHOTO ENTIÈRE, JAMAIS ROGNÉE. La bande, elle, recadre en
+          `object-fit:cover` pour que six vignettes s'alignent ; ici on est venu
+          voir l'image, et la rogner une seconde fois serait couper deux fois la
+          même chose. Un portrait vertical garde donc ses côtés vides plutôt que
+          de perdre son haut.
+
+          ON PASSE À LA SUIVANTE SANS REFERMER — flèches à l'écran, flèches du
+          clavier, et le rang affiché pour savoir combien il en reste. */}
+      {galVue != null && sesPhotos[galVue] && (
+        <div
+          className="bq-gv"
+          role="dialog"
+          aria-modal="true"
+          aria-label={sesPhotos[galVue].quoi || "Photo du commerce"}
+          onClick={() => setGalVue(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={sesPhotos[galVue].src}
+            alt={sesPhotos[galVue].quoi || "Photo du commerce"}
+            /* MÊME LIGNE QUE LA VIGNETTE : ces adresses sont celles de Google et
+               répondent 403 avec un référent. */
+            referrerPolicy="no-referrer"
+            onClick={(e) => e.stopPropagation()}
+          />
+          {/* LA LÉGENDE ET LE RANG SUR LA MÊME LIGNE, ET LE RANG SEULEMENT S'IL
+              Y A UNE SUITE. « 1 / 1 » est une information qui ne dit rien, et
+              la place qu'elle prend se voit. Une photo de vrai commerce n'a
+              souvent pas de légende — on ne lui en invente pas, et la ligne
+              disparaît alors entièrement. */}
+          {(sesPhotos[galVue].quoi || sesPhotos.length > 1) && (
+            <div className="bq-gv-l" onClick={(e) => e.stopPropagation()}>
+              {sesPhotos[galVue].quoi && <b>{sesPhotos[galVue].quoi}</b>}
+              {sesPhotos.length > 1 && (
+                <em>
+                  {galVue + 1} / {sesPhotos.length}
+                </em>
+              )}
+            </div>
+          )}
+          {sesPhotos.length > 1 && (
+            <>
+              <button
+                type="button"
+                className="bq-gv-p bq-gv-g"
+                aria-label="Photo précédente"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setGalVue((n) => (n == null ? n : (n - 1 + sesPhotos.length) % sesPhotos.length));
+                }}
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                className="bq-gv-p bq-gv-d"
+                aria-label="Photo suivante"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setGalVue((n) => (n == null ? n : (n + 1) % sesPhotos.length));
+                }}
+              >
+                ›
+              </button>
+            </>
+          )}
+          {/* LA CROIX EST DANS LE VOILE, DONC ELLE FERME SANS `onClick` PROPRE.
+              Elle existe pour qu'on la VOIE : « toucher à côté » se devine sur
+              un téléphone, jamais sur un écran d'ordinateur. */}
+          <button type="button" className="bq-gv-x" aria-label="Fermer">
+            ✕
+          </button>
         </div>
       )}
 
@@ -3667,6 +3801,46 @@ function Styles() {
         .bq-gal figure{flex:none;width:146px;margin:0;}
         .bq-gal img{width:146px;height:104px;object-fit:cover;border-radius:13px;display:block;}
         .bq-gal figcaption{margin-top:5px;font-size:11px;color:var(--bq-pale);line-height:1.3;}
+        /* LE BOUTON NE SE VOIT PAS, IL SE TOUCHE. Il n'ajoute ni bordure ni
+           fond : la bande garde l'allure qu'elle avait, et c'est le curseur —
+           puis le contour de focus au clavier — qui dit qu'on peut appuyer. */
+        .bq-gal-v{display:block;padding:0;border:0;background:none;cursor:zoom-in;
+          border-radius:13px;line-height:0;}
+        .bq-gal-v:active{transform:scale(.985);}
+        .bq-gal-v:focus-visible{outline:2px solid var(--bq-encre);outline-offset:3px;}
+
+        /* ─── SES PHOTOS, EN GRAND ─── */
+        .bq-gv{position:fixed;inset:0;z-index:150;display:flex;
+          flex-direction:column;align-items:center;justify-content:center;gap:14px;
+          padding:calc(46px + env(safe-area-inset-top)) 18px
+            calc(24px + env(safe-area-inset-bottom));
+          background:rgba(8,11,16,.94);cursor:zoom-out;
+          -webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);}
+        .bq-gv img{max-width:100%;max-height:74vh;width:auto;height:auto;
+          object-fit:contain;border-radius:12px;cursor:auto;
+          box-shadow:0 26px 70px rgba(0,0,0,.6);}
+        .bq-gv-l{text-align:center;cursor:auto;}
+        .bq-gv-l b{display:block;font-size:15.5px;font-weight:800;color:#fff;}
+        .bq-gv-l em{display:block;margin-top:4px;font-style:normal;
+          font-size:11.5px;letter-spacing:.06em;color:#9FB0C6;}
+        /* LES FLÈCHES SONT AUX BORDS, PAS SOUS LA PHOTO. Le pouce les atteint
+           sans traverser l'écran, et surtout elles ne poussent pas l'image vers
+           le haut : posées dessous, elles lui prendraient une bande de hauteur
+           sur tous les écrans, y compris quand il n'y a qu'une photo. Elles
+           mordent donc sur les bords de l'image — d'où le fond translucide,
+           qui les détache d'une photo claire comme d'une photo sombre. */
+        .bq-gv-p{position:absolute;top:50%;transform:translateY(-50%);
+          width:42px;height:42px;border:0;border-radius:999px;
+          display:inline-flex;align-items:center;justify-content:center;
+          font-size:26px;line-height:1;color:#fff;cursor:pointer;
+          background:rgba(255,255,255,.12);}
+        .bq-gv-p:active{transform:translateY(-50%) scale(.94);}
+        .bq-gv-g{left:10px;padding-right:3px;}
+        .bq-gv-d{right:10px;padding-left:3px;}
+        .bq-gv-x{position:absolute;top:calc(12px + env(safe-area-inset-top));
+          right:12px;width:36px;height:36px;border:0;border-radius:999px;
+          font-size:15px;color:#fff;background:rgba(255,255,255,.12);
+          cursor:pointer;}
 
         /* ─── LES AVIS ─── */
         .bq-note{display:flex;align-items:center;gap:12px;margin-top:14px;}
