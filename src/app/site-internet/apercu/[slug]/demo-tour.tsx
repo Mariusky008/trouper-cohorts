@@ -1605,9 +1605,12 @@ export function DemoTour({
              bouge : ils s'appliquent a la couche du dessus, qui remplit la
              scene elle aussi. */
           .qi-pile.scene{aspect-ratio:9 / 15.5;padding-top:14px;}
-          .qi-c{position:absolute;inset:14px 0 0;width:100%;max-width:none;
-            margin:0;border-radius:0;box-shadow:none;aspect-ratio:auto;
-            animation:dtCarteEntre .5s var(--exp);}
+          /* LA PRESENTATION EST CELLE DE LA COMPOSANTE — voir la classe
+             « plein » dans carte-swipe : position absolue, aucun arrondi,
+             aucune ombre, le texte pose sur la photo. Il ne reste ici que
+             l'entree animee et la place a prendre dans la scene, qui sont
+             propres a cette visite. */
+          .qi-c{inset:14px 0 0;animation:dtCarteEntre .5s var(--exp);}
           .qi-dessus{position:absolute;inset:14px 0 0;}
           .qi-dessus .qi-c{inset:0;}
           /* Le remontage (clé React) rejoue cette entrée à chaque rotation :
@@ -1862,6 +1865,11 @@ export function DemoTour({
             font-size:12px;font-weight:800;color:#8FE9C4;}
           .ph-vers i{font-style:normal;font-size:14px;line-height:1;}
           .ph-mini{margin-top:8px;display:flex;flex-direction:column;align-items:center;}
+          /* LA SCENE DONNE SA PLACE A LA CARTE PLEINE : sans hauteur, une carte
+             en position absolue n'en a aucune. Les proportions sont celles d'un
+             ecran de telephone, comme dans le paquet de l'acte d'avant. */
+          .ph-scene{position:relative;display:block;width:340px;
+            aspect-ratio:9 / 15.5;}
           /* La carte est réduite : l'ardoise est au-dessus, et les deux
              doivent tenir ensemble à l'écran — c'est la comparaison qui
              démontre, pas chacune prise à part. */
@@ -2348,7 +2356,8 @@ export function DemoTour({
                       <CarteSwipe
                         key={`dessous-${carteVille}`}
                         carte={cartesVille[(carteVille + 1) % Math.max(1, cartesVille.length)]}
-                        className={`qi-c dessous${gesteQui === "passer" ? " monte" : ""}`}
+                        variante="seconde"
+                        className={`qi-c plein dessous${gesteQui === "passer" ? " monte" : ""}`}
                       />
                       {/* La carte du dessus et son tampon partent ENSEMBLE :
                           le tampon posé dans la pile restait à l'écran après le
@@ -2356,7 +2365,12 @@ export function DemoTour({
                       <div
                         className={`qi-dessus${gesteQui === "passer" ? " part" : ""}${gesteQui === "veux" ? " aime" : ""}`}
                       >
-                        <CarteSwipe key={cartesVille[carteVille]?.quoi} carte={cartesVille[carteVille]} className="qi-c" />
+                        <CarteSwipe
+                          key={cartesVille[carteVille]?.quoi}
+                          carte={cartesVille[carteVille]}
+                          variante="seconde"
+                          className="qi-c plein"
+                        />
                         {/* LE TAMPON dit CE QUI VIENT D'ÊTRE FAIT pendant que
                             l'effet court : un geste dont la conséquence arrive
                             une demi-seconde plus tard laisse sinon un temps mort. */}
@@ -2525,7 +2539,16 @@ export function DemoTour({
                   <div className="dt-ec">
                     <div className="ph-vers"><i aria-hidden="true">↓</i>Dans Le Direct de {laVille}, à l&apos;instant</div>
                     <div className="ph-mini">
-                      <CarteSwipe carte={maCarte} className="ph-carte" />
+                      {/* LA MÊME FACE QU'À L'ACTE D'AVANT, ET QUE DANS
+                          L'APPLICATION. Deux actes de la même visite montraient
+                          la même carte sous deux présentations : l'une pleine,
+                          l'autre en vignette arrondie. C'est précisément ce
+                          qu'il a relevé — « ce n'est pas du tout le bon visuel
+                          qu'on a sur /autour-de-moi » — et le corriger à un seul
+                          endroit l'aurait laissé vrai à l'autre. */}
+                      <span className="ph-scene">
+                        <CarteSwipe carte={maCarte} variante="seconde" className="ph-carte plein" />
+                      </span>
                       <GestesDirect action={actionHabitant} actif="veux" />
                     </div>
                   </div>

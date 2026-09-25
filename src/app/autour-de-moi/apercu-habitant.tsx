@@ -8112,7 +8112,7 @@ export function ApercuHabitant() {
                     key={`d-${dessous.id}`}
                     carte={sansVideo(carteDe(dessous))}
                     variante="seconde"
-                    className="ap-carte dessous"
+                    className="ap-carte plein dessous"
                   />
                 )}
                 <div
@@ -8270,7 +8270,7 @@ export function ApercuHabitant() {
                            la page d'accueil gardent la face historique : rien
                            ne devait changer ailleurs. */
                         variante="seconde"
-                        className="ap-carte"
+                        className="ap-carte plein"
                         /* ─── L'ANNEAU, QUAND IL N'Y A PAS DE FLASH ───
                            « Le compteur est là quand il y a une offre flash,
                            autrement il est remplacé par l'offre du moment dans
@@ -14879,7 +14879,8 @@ export function ApercuHabitant() {
            disparaitrait sous les gestes. */
         .ap-dessus .cd-bas{max-height:calc(100% - var(--ap-haut-h, 100px) - 8px);
           overflow:hidden;padding-bottom:calc(var(--ap-gestes-h, 80px) + 6px);}
-        .ap-dessus .cd-aller{top:calc(var(--ap-haut-h, 100px) + 8px);}
+        /* Le bouton d'itineraire suit les memes variables, posees plus bas
+           et lues dans la composante. */
 
         /* ─── LA FACE « UNE SECONDE » : ELLE OCCUPE TOUTE LA CARTE ───
            Sur la face historique, .cd-bas est une boite ancree en bas dont la
@@ -14896,10 +14897,13 @@ export function ApercuHabitant() {
               flottait au milieu de la photo sur une annonce courte.
            Le padding du haut remplace la borne : la face ne peut toujours pas
            passer sous le bandeau des filtres. */
-        .ap-carte.sec .cd-bas{inset:0;max-height:none;
-          display:flex;flex-direction:column;justify-content:flex-end;
-          padding:calc(var(--ap-haut-h, 100px) + 8px) 18px
-            calc(var(--ap-gestes-h, 80px) + 10px);}
+        /* ELLE AUSSI EST PARTIE DANS carte-swipe — voir « plein » et « sec ».
+           Ce qui
+           reste ici est la MESURE du mobilier de cet ecran : la composante ne
+           peut pas connaitre la hauteur d'une barre qui ne lui appartient pas,
+           donc on la lui passe. */
+        .ap-dessus,.ap-carte{--cd-haut:var(--ap-haut-h, 100px);
+          --cd-pied:var(--ap-gestes-h, 80px);}
 
         /* « Y ALLER » REDEVIENT UNE PASTILLE DE VERRE, comme « Garder ».
            MESURE FAITE SUR LA CAPTURE : avec la nouvelle barre, l'ecran
@@ -15578,8 +15582,12 @@ export function ApercuHabitant() {
            quatre gestes qui commencent a 550 — et plus AUCUN bouton n'etait
            cliquable sur un ecran court. Poser inset:0 ne suffit pas a
            contraindre une boite qui porte un rapport d'aspect. */
-        .ap-carte{position:absolute;inset:0;max-width:none;aspect-ratio:auto;
-          border-radius:0;box-shadow:none;}
+        /* LA GEOMETRIE EST PARTIE DANS carte-swipe, sous la classe « plein » :
+           position absolue, aucun arrondi, aucune ombre. Elle decrivait « la
+           carte est l'ecran », ce qui n'a rien d'habitant — le fil de la ville
+           et la visite guidee du commercant en avaient besoin aussi, et ne la
+           voyaient pas. Il ne reste ici que ce qui appartient vraiment a cet
+           ecran-la : la carte du dessous, qui n'existe que dans un paquet. */
         .ap-carte.dessous{transform:scale(.955) translateY(9px);filter:brightness(.7);}
         /* ═══ A LA SOURIS, LE BALAYAGE SELECTIONNAIT LE TEXTE ═══════════════
 
@@ -19081,13 +19089,9 @@ export function ApercuHabitant() {
              retrecit : c'est le meme ecran, en plus serre. Les marges du haut
              et du bas restent, elles, calculees sur les bandeaux — les couper
              ferait passer le bloc dessous. */
-          .ap-dessus .sec .cd-bas{padding-left:14px;padding-right:14px;}
-          .ap-dessus .cd-offre{font-size:clamp(23px,7.4vw,30px);margin-top:6px;}
-          .ap-dessus .cd-detail{margin-top:5px;font-size:11.5px;
-            -webkit-line-clamp:1;}
-          .ap-dessus .cd-prixg{margin-top:6px;font-size:clamp(21px,6.4vw,26px);}
-          .ap-dessus .cd-chez{margin-top:7px;font-size:13px;}
-          .ap-dessus .cd-quand{margin-top:7px;font-size:10.5px;padding:4px 10px;}
+          /* LA REDUCTION SUR ECRAN COURT EST PARTIE AVEC LE RESTE, dans
+             carte-swipe : elle decrit la carte quand elle est l'ecran, pas
+             cet ecran-ci. */
         }
 
         /* LES GESTES S'ARRETENT AU-DESSUS DE LA BARRE DES ONGLETS. Poses a

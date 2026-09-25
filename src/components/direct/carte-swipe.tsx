@@ -2505,6 +2505,46 @@ export function StylesDirect() {
            prix d'abord, a cheval sur le dernier tiers de la photo, puis le nom,
            les gestes et la barre. C'est la mise en page qu'il a validee sur la
            proposition. */
+        /* ═══ QUAND LA CARTE EST L'ECRAN, ET PLUS UNE CARTE POSEE DESSUS ═══
+           « Ce n'est pas du tout le bon visuel qu'on a sur /autour-de-moi. »
+
+           LA MEME COMPOSANTE, DEUX PRESENTATIONS, ET C'EST LA PRESENTATION
+           QU'ON RECONNAIT. Dans l'application, la carte du Direct remplit
+           l'ecran : pas d'arrondi, pas d'ombre, le texte pose SUR la photo.
+           Ailleurs — le fil de la ville, la visite guidee du commercant — elle
+           restait une vignette arrondie flottant au milieu d'un cadre.
+
+           CES REGLES VIVAIENT DANS LA FEUILLE DE L'ECRAN HABITANT, donc les
+           autres surfaces ne les voyaient pas. Les recopier la-bas aurait cree
+           deux dessins qui divergent des la premiere retouche ; elles sont donc
+           ici, avec la composante, et chaque surface se contente de poser la
+           classe.
+
+           LES DEUX VARIABLES SONT LA PLACE QUE PREND SON PROPRE MOBILIER : la
+           barre du haut et la rangee des gestes en bas. Chaque surface les
+           mesure chez elle — l'application les ecrit sur la racine — et celle
+           qui n'a ni l'un ni l'autre garde les valeurs par defaut, qui ne
+           reservent presque rien. */
+        .cd-carte.plein{position:absolute;inset:0;max-width:none;
+          aspect-ratio:auto;border-radius:0;box-shadow:none;}
+        .cd-carte.plein.sec .cd-bas{inset:0;max-height:none;
+          display:flex;flex-direction:column;justify-content:flex-end;
+          padding:calc(var(--cd-haut, 12px) + 8px) 18px
+            calc(var(--cd-pied, 14px) + 10px);}
+        .cd-carte.plein .cd-aller{top:calc(var(--cd-haut, 12px) + 8px);}
+        /* SUR UN ECRAN COURT, RIEN NE DISPARAIT : tout retrecit. Les marges du
+           haut et du bas restent calculees sur les bandeaux — les couper ferait
+           passer le bloc dessous. */
+        @media (max-height:620px){
+          .cd-carte.plein.sec .cd-bas{padding-left:14px;padding-right:14px;}
+          .cd-carte.plein .cd-offre{font-size:clamp(23px,7.4vw,30px);margin-top:6px;}
+          .cd-carte.plein .cd-detail{margin-top:5px;font-size:11.5px;
+            -webkit-line-clamp:1;}
+          .cd-carte.plein .cd-prixg{margin-top:6px;font-size:clamp(21px,6.4vw,26px);}
+          .cd-carte.plein .cd-chez{margin-top:7px;font-size:13px;}
+          .cd-carte.plein .cd-quand{margin-top:7px;font-size:10.5px;padding:4px 10px;}
+        }
+
         .cd-carte.sec.mesuree .cd-bas{justify-content:flex-end;}
         .cd-carte.sec.mesuree .cd-dit{margin-bottom:0;}
         /* ═══ LE RACCORD EST PROPORTIONNEL, PAS FIXE ═══
