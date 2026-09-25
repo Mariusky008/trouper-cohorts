@@ -117,6 +117,43 @@ const TROIS = [
  * absent le vide de son seul argument, et un fichier absent ne fait aucun
  * bruit — au sens propre.
  */
+/**
+ * ═══ LE PARCOURS RESTAURANT : SES QUATRE PHOTOS ET SES DEUX LIGNES DE CARTE ═
+ *
+ * IL NE DESIGNE PAS UN MOMENT DE LA JOURNEE mais DEUX ENTREES DE CARTE — le
+ * plat sur place et la part a emporter — par leur identifiant. Un identifiant
+ * qui ne correspond a rien ne plante pas : l'ecran affiche une vignette sans
+ * nom et sans prix, et personne ne s'en apercoit. C'est le meme silence que
+ * les cartes vides de l'ecran de depart, et il se surveille pareil.
+ */
+const table = readFileSync("src/lib/direct/parcours-table.ts", "utf8");
+const idTable = constante(table, "COMMERCE_TABLE");
+if (!idTable) {
+  soucis.push("restaurant : COMMERCE_TABLE est introuvable.");
+} else {
+  const bloc = blocDuCommerce(catalogue, idTable);
+  if (!bloc) {
+    soucis.push(`restaurant : le commerce « ${idTable} » n'existe pas dans le catalogue.`);
+  } else {
+    for (const nom of ["PLAT_TABLE", "PART_TABLE"]) {
+      const art = constante(table, nom);
+      if (!art) soucis.push(`restaurant : ${nom} est introuvable.`);
+      else if (!bloc.includes(`id: "${art}"`)) {
+        soucis.push(
+          `restaurant : la carte de « ${idTable} » n'a pas d'article « ${art} ».\n` +
+          `      La vignette s'affichera sans nom et sans prix, en silence.`,
+        );
+      }
+    }
+    for (const nom of ["PLAT_PHOTO", "PART_PHOTO", "MARGOT_PHOTO", "DEVANTURE_TABLE"]) {
+      const f = constante(table, nom);
+      if (!f) soucis.push(`restaurant : ${nom} est introuvable.`);
+      else if (!existsSync(`public${f}`)) soucis.push(`restaurant : ${f} n'est pas dans public/.`);
+    }
+    console.log(`  ok   restaurant : « ${idTable} », ses deux lignes de carte et ses quatre photos sont la`);
+  }
+}
+
 const sortie = readFileSync("src/lib/direct/parcours-sortie.ts", "utf8");
 const idSortie = constante(sortie, "SORTIE_ID");
 if (!idSortie) {

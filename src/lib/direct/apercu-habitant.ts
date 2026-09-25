@@ -1129,6 +1129,22 @@ export type Voix = {
    * part. Elle ne change jamais, donc elle ne coûte rien à entretenir.
    */
   signature?: string;
+  /**
+   * SA PHRASE, DITE PAR ELLE — une dizaine de secondes, et c'est une PLACE
+   * VIDE tant que personne n'a enregistré.
+   *
+   * SA MAQUETTE DU RESTAURANT DESSINE « Écouter Margot raconter son plat · 11 s »
+   * avec un bouton de lecture. On n'a pas ce fichier, et je ne le fabrique pas :
+   * une voix inventée sur une démonstration qu'on montre à des commerçants est
+   * exactement le genre de chose qu'il faudrait démentir en rendez-vous.
+   *
+   * LE PARCOURS NE DESSINE DONC LE LECTEUR QUE SI CE CHAMP EST REMPLI — même
+   * règle que l'extrait sonore de la soirée, qui lui existe. Un bouton de
+   * lecture sur un silence se lit comme une panne, et un écran avec une panne
+   * dessus ne se montre à personne. Le jour où il enregistre Margot, c'est
+   * cette ligne-ci qui change, et le lecteur apparaît tout seul.
+   */
+  extrait?: string;
 };
 
 /**

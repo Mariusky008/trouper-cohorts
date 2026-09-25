@@ -117,6 +117,8 @@ export function EcranChoix({
   onParcoursCoiffure,
   /** Le parcours de la sortie, le troisieme. */
   onParcoursSortie,
+  /** Le parcours du restaurant, le quatrieme. */
+  onParcoursTable,
   /**
    * SUR QUELLE CATEGORIE OUVRIR, QUAND ON REVIENT D'AILLEURS.
    *
@@ -131,6 +133,7 @@ export function EcranChoix({
   onParcoursMode?: () => void;
   onParcoursCoiffure?: () => void;
   onParcoursSortie?: () => void;
+  onParcoursTable?: () => void;
   depart?: CleCategorie;
 }) {
   const [cle, setCle] = useState<CleCategorie>(depart ?? CATEGORIE_DEPART);
@@ -425,12 +428,13 @@ export function EcranChoix({
         type="button"
         className="cx-go"
         onClick={() => {
-          /* TROIS PARCOURS SUR CINQ, ET LES DEUX AUTRES LE DISENT. Le jour où
-             ils existeront tous, cette liste deviendra une propriété par
-             catégorie ; a trois, un ou-bien se lit encore mieux qu'une table. */
+          /* QUATRE PARCOURS SUR CINQ, ET LE DERNIER LE DIT. Seuls les
+             commerces n'ont pas encore le leur, et leur bouton garde la ligne
+             « la partie 2 arrive » sous lui. */
           if (cle === "mode" && onParcoursMode) return onParcoursMode();
           if (cle === "beaute" && onParcoursCoiffure) return onParcoursCoiffure();
           if (cle === "sorties" && onParcoursSortie) return onParcoursSortie();
+          if (cle === "restaurants" && onParcoursTable) return onParcoursTable();
           setBientot(true);
         }}
         aria-describedby="cx-bientot"

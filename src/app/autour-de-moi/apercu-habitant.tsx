@@ -167,6 +167,8 @@ import { ParcoursCoiffure } from "@/components/direct/parcours-coiffure-ecran";
 import { StylesParcoursCoiffure } from "@/components/direct/styles-parcours-coiffure";
 import { ParcoursSortie } from "@/components/direct/parcours-sortie-ecran";
 import { StylesParcoursSortie } from "@/components/direct/styles-parcours-sortie";
+import { ParcoursTable } from "@/components/direct/parcours-table-ecran";
+import { StylesParcoursTable } from "@/components/direct/styles-parcours-table";
 import type { CleCategorie } from "@/lib/direct/choisir-commerce";
 // Il vivait ici ; la page boutique en a besoin aussi pour rejouer le MEME
 // anneau en tête de la fiche du commerce. Voir le fichier : c'est la copie qui
@@ -2076,6 +2078,7 @@ export function ApercuHabitant() {
   const [parcoursMode, setParcoursMode] = useState(false);
   const [parcoursCoiffure, setParcoursCoiffure] = useState(false);
   const [parcoursSortie, setParcoursSortie] = useState(false);
+  const [parcoursTable, setParcoursTable] = useState(false);
   /* SUR QUELLE CATEGORIE ROUVRIR L'ECRAN DE CHOIX. La bande des cinq onglets,
      au fond du parcours sortie, referme le parcours et rouvre l'ecran SUR
      CELLE QU'ON A TOUCHEE — sans quoi le raccourci mentirait sur ou il mene. */
@@ -6385,6 +6388,7 @@ export function ApercuHabitant() {
       <StylesParcoursMode />
       <StylesParcoursCoiffure />
       <StylesParcoursSortie />
+      <StylesParcoursTable />
       <div className="ap-tel">
         {/* SUR LE DIRECT, LA PHOTO PASSE DERRIÈRE LES ONGLETS — voir la règle
             .ap-app.direct .ap-onglets. Ailleurs, la barre reste dans le flux :
@@ -7666,6 +7670,8 @@ export function ApercuHabitant() {
                       setParcoursSortie(false);
                     }}
                   />
+                ) : parcoursTable ? (
+                  <ParcoursTable onFermer={() => setParcoursTable(false)} />
                 ) : (
                   <EcranChoix
                     depart={categorieChoix}
@@ -7684,6 +7690,10 @@ export function ApercuHabitant() {
                     onParcoursSortie={() => {
                       jouer("ouvrir");
                       setParcoursSortie(true);
+                    }}
+                    onParcoursTable={() => {
+                      jouer("ouvrir");
+                      setParcoursTable(true);
                     }}
                   />
                 )
