@@ -269,6 +269,7 @@ export function BlocFantome({
   onCollection,
   styleChoisi,
   promis,
+  pourLui = false,
 }: {
   mur: Mur;
   /** Ce qu'il y a derrière le grand bouton. Voir `QuoiEssayer`. */
@@ -306,6 +307,16 @@ export function BlocFantome({
    * boutique pour la décision.
    */
   promis?: ParcoursPromis;
+  /**
+   * VRAI QUAND C'EST SA PAGE À LUI QU'ON REGARDE.
+   *
+   * LES QUATRE ÉTAPES LUI DEMANDENT DES CHOSES — une seconde photo, trente
+   * secondes de conversation — et la ligne du bas explique comment on les
+   * recueille. Rien de tout ça ne regarde un habitant : il reçoit la vitrine et
+   * la phrase qui dit ce qu'il n'y a pas encore, et c'est tout ce qui le
+   * concerne.
+   */
+  pourLui?: boolean;
 }) {
   const q = useMemo(
     () => laQuestion(mur.metier, quoi, mur.gout?.plat?.toLowerCase(), promis?.cle),
@@ -582,7 +593,7 @@ export function BlocFantome({
             <div className="bf-muet">
               <span>{promis?.rien ?? "Rien n’est encore en ligne"}</span>
             </div>
-            {promis && (
+            {promis && pourLui && (
               <ol className="bf-pas">
                 {promis.etapes.map((e) => (
                   <li key={e.n}>
@@ -600,7 +611,7 @@ export function BlocFantome({
                 ))}
               </ol>
             )}
-            {promis && <p className="bf-pas-c">{promis.comment}</p>}
+            {promis && pourLui && <p className="bf-pas-c">{promis.comment}</p>}
           </>
         ) : (
         <button

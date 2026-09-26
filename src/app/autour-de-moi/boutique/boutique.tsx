@@ -723,10 +723,10 @@ export function Boutique({
    */
   const promis = useMemo(
     () =>
-      saPage && !onEssaie && !murDuLieu.gout && !murDuLieu.soiree
+      !onEssaie && !murDuLieu.gout && !murDuLieu.soiree
         ? parcoursPromis({ branche: c.branche, metier: c.metier })
         : undefined,
-    [saPage, onEssaie, murDuLieu.gout, murDuLieu.soiree, c.branche, c.metier],
+    [onEssaie, murDuLieu.gout, murDuLieu.soiree, c.branche, c.metier],
   );
   /**
    * CE COMMERCE ENTRE-T-IL DANS UN RELOOKING&nbsp;?
@@ -1586,11 +1586,35 @@ export function Boutique({
 
                ET IL N'OUVRE RIEN : la vitrine et l'atelier vont par paire — la
                première annonce ce que le second ouvre — et il n'y a rien à
-               ouvrir tant que la matière n'existe pas. */
+               ouvrir tant que la matière n'existe pas.
+
+               ═══ ET L'HABITANT LE VOIT AUSSI, MAINTENANT ══════════════════
+
+               « Le restaurant que j'ai validé est redevenu comme avant,
+               c'est-à-dire avec l'ancien concept : "Qui est là" au lieu du
+               parcours en quatre étapes. »
+
+               IL AVAIT OUVERT LE LIEN D'INVITATION (`?salon=1`), donc la page
+               le prenait pour un invité et non pour le commerçant — et j'avais
+               réservé ce bloc à la vue du commerçant. Rien n'avait donc
+               régressé : c'est MA LIMITE qui se voyait, et elle était mauvaise.
+
+               IL M'AVAIT DIT L'INVERSE, NOIR SUR BLANC : « "Qui est là" n'est
+               plus d'actualité pour les restaurants ». J'avais choisi de ne pas
+               toucher à la vue habitant pour ne rien lui enlever sans qu'il le
+               demande — sauf qu'il l'avait demandé, et que le seul effet de ma
+               prudence était de laisser l'ancien concept sur le chemin le plus
+               fréquenté.
+
+               CE QU'IL VOIT N'EST PAS CE QUE VOIT LE COMMERÇANT. Les quatre
+               étapes et la ligne « on en parle avec l'IA » lui demandent des
+               choses : elles ne regardent que lui. L'habitant reçoit la vitrine
+               et la phrase qui dit ce qu'il n'y a pas encore — voir `pourLui`. */
             <BlocFantome
               mur={murDuLieu}
               quoi="bientot"
               promis={promis}
+              pourLui={saPage}
               onPhoto={() => {}}
               onStyle={() => {}}
             />

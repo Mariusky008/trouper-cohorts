@@ -20,14 +20,12 @@ const SYMBOLE =
   Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 42">` +
       `<rect x="1" y="1.5" width="6.8" height="38" fill="#FFFFFF"/>` +
-      /* #3DE2A6 — l'accent de l'application de démonstration, relevé dans sa
-         feuille : cinquante-huit déclarations, de loin la couleur la plus
-         employée. Le symbole portait #3FD79A, un voisin de deux points arrivé
-         là on ne sait quand ; deux verts presque pareils sont pires qu'un seul,
-         parce qu'on ne sait plus lequel est le bon. Voir
-         scripts/recolorer-logo.mjs, qui repeint les fichiers. */
-      `<path d="M11.8 23.5 L11.8 6.5 L26 20.5 L19.5 21 Z" fill="#3DE2A6"/>` +
-      `<path d="M11.8 23.5 L17 23.5 L27.5 38.5 L22 41 Z" fill="#3DE2A6"/>` +
+      /* #FF2E9A — l'accent de l'écran de démarrage, relevé dans ses six
+         feuilles : soixante-douze déclarations, de très loin la couleur la plus
+         employée. Le symbole portait #3FD79A, un vert hérité d'avant la charte
+         rose. Voir scripts/recolorer-logo.mjs, qui repeint les fichiers. */
+      `<path d="M11.8 23.5 L11.8 6.5 L26 20.5 L19.5 21 Z" fill="#FF2E9A"/>` +
+      `<path d="M11.8 23.5 L17 23.5 L27.5 38.5 L22 41 Z" fill="#FF2E9A"/>` +
       `</svg>`,
   ).toString("base64");
 

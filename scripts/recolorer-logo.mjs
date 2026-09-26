@@ -7,19 +7,27 @@
 // démo. Peux-tu prendre les couleurs dominantes de l'app de démo et refaire les
 // couleurs du logo Clikme, et les appliquer partout où il y a le logo ? »
 //
-// LES COULEURS NE SONT PAS CHOISIES, ELLES SONT RELEVÉES. Comptées dans la
-// feuille de `apercu-habitant.tsx`, qui EST l'application de démonstration :
+// LES COULEURS NE SONT PAS CHOISIES, ELLES SONT RELEVÉES. Comptées dans les six
+// feuilles de l'écran de démarrage — `styles-choix.tsx` et les cinq
+// `styles-parcours-*.tsx` — qui SONT la charte d'aujourd'hui :
 //
-//   · #3DE2A6 — 58 déclarations. C'est de loin la plus utilisée : l'accent de
-//     toute action, le prix, le bouton qui engage. C'est la couleur de la
-//     marque telle qu'elle est vraiment employée aujourd'hui.
-//   · #04150E — 34 déclarations. Le fond, un noir très légèrement vert.
-//   · #0BA97B —  9 déclarations. Le même vert en plus profond ; il sert à
-//     fabriquer les dégradés sans introduire une teinte de plus.
+//   · #FF2E9A — 72 déclarations à elles six. De très loin la plus utilisée :
+//     le titre, le bouton qui engage, le cadre de la bulle, l'onglet actif.
+//   · #FF4FB0 — le rose clair, une fois par feuille. Il n'existe que pour
+//     faire les dégradés avec le premier, jamais seul.
+//   · #06060A — le fond, un noir neutre.
 //
-// LE VERT DU LOGO ÉTAIT #0F8F5F, ET C'EST UN AUTRE VERT. Plus sombre, plus
-// terne, hérité d'avant. Posé à côté d'un bouton #3DE2A6, il ne se lit pas
-// comme la même marque — il se lit comme une marque qui a mal imprimé.
+// ═══ ET J'AVAIS RELEVÉ LA MAUVAISE PALETTE ═══════════════════════════════
+//
+// PREMIÈRE VERSION DE CE FICHIER : le vert menthe #3DE2A6, compté dans
+// `apercu-habitant.tsx`. Le compte était juste et la conclusion fausse — cette
+// feuille-là porte les écrans du Direct, pas l'écran de démarrage, et c'est
+// l'écran de démarrage qu'il venait de refaire en rose. J'avais mesuré ce qui
+// était facile à mesurer plutôt que ce qu'il montrait du doigt.
+//
+// L'APPLICATION PORTE DONC ENCORE DEUX CHARTES : le rose à l'entrée, le vert
+// derrière. Ce fichier suit celle de l'entrée, parce que c'est celle qu'il
+// vient d'écrire et celle qu'on voit en premier.
 //
 // ═══ POURQUOI UN SCRIPT PLUTÔT QU'UNE RETOUCHE ════════════════════════════
 //
@@ -35,12 +43,23 @@
 import sharp from "sharp";
 import { readFile, writeFile } from "node:fs/promises";
 
-const MENTHE = [0x3d, 0xe2, 0xa6];
-const ENCRE = [0x04, 0x15, 0x0e];
+const ACCENT = [0xff, 0x2e, 0x9a];
+const ENCRE = [0x06, 0x06, 0x0a];
 
-/** Vrai pour le vert du logo : dominante verte franche. */
-const estVert = (r, g, b) => g > r + 18 && g > b + 8 && g > 40;
-/** Vrai pour l'encre du mot : sombre et sans teinte marquée. */
+/**
+ * VRAI POUR LE CURSEUR, QUELLE QU'AIT ÉTÉ SA COULEUR.
+ *
+ * La première version cherchait « du vert », et elle ne trouvait plus rien dès
+ * qu'elle avait tourné une fois : elle avait elle-même repeint le curseur. Une
+ * règle qui ne marche qu'au premier passage est une règle qu'il faut réécrire à
+ * chaque changement de charte.
+ *
+ * ON DÉCRIT DONC LE DESSIN, PAS LA COULEUR : le mot-marque n'a que deux
+ * aplats — une encre et un accent — plus le blanc de la version claire. Tout ce
+ * qui n'est ni sombre ni blanc EST le curseur, aujourd'hui comme après.
+ */
+const estAccent = (r, g, b) => Math.max(r, g, b) >= 110 && Math.min(r, g, b) <= 210;
+/** Vrai pour l'encre du mot : sombre, quelle que soit sa nuance. */
 const estEncre = (r, g, b) => Math.max(r, g, b) < 110;
 
 async function recolorer(entree, sortie, { encre = true } = {}) {
@@ -50,8 +69,8 @@ async function recolorer(entree, sortie, { encre = true } = {}) {
   for (let i = 0; i < data.length; i += 4) {
     if (data[i + 3] === 0) continue;
     const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
-    if (estVert(r, g, b)) {
-      [data[i], data[i + 1], data[i + 2]] = MENTHE;
+    if (estAccent(r, g, b)) {
+      [data[i], data[i + 1], data[i + 2]] = ACCENT;
       verts++;
     } else if (encre && estEncre(r, g, b)) {
       [data[i], data[i + 1], data[i + 2]] = ENCRE;
@@ -61,7 +80,7 @@ async function recolorer(entree, sortie, { encre = true } = {}) {
   await sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } })
     .png()
     .toFile(sortie);
-  console.log(`  ${sortie.padEnd(42)} ${info.width}×${info.height} — ${verts} px de vert, ${encres} px d'encre`);
+  console.log(`  ${sortie.padEnd(42)} ${info.width}×${info.height} — ${verts} px d'accent, ${encres} px d'encre`);
 }
 
 /** Les icônes se REFABRIQUENT depuis leur SVG : elles en sont le rendu. */
@@ -74,8 +93,8 @@ async function depuisSvg(svg, sortie, taille) {
 console.log("Le mot-marque :");
 await recolorer("public/clikme-logo.png", "public/clikme-logo.png");
 /* LA VERSION BLANCHE GARDE SON BLANC : son encre EST le blanc, et la passer en
-   #04150E la rendrait invisible sur le fond sombre où elle sert. Seul le
-   curseur change — il était déjà proche, il est maintenant exact. */
+   l'encre sombre la rendrait invisible sur le fond où elle sert. Seul le
+   curseur change. */
 await recolorer("public/clikme-logo-blanc.png", "public/clikme-logo-blanc.png", { encre: false });
 
 console.log("Les icônes :");
