@@ -261,6 +261,7 @@ import {
   partCollectif,
 } from "@/lib/direct/apercu-habitant";
 import { MARQUE } from "@/lib/marque";
+import { MotMarque } from "@/components/direct/mot-marque";
 
 /** Au-delà de cette distance en pixels, le doigt a décidé : la carte part. */
 /**
@@ -7634,8 +7635,12 @@ export function ApercuHabitant() {
                 lieu de le déplacer d'un cran. */}
             {!monte && (
               <div className="ap-voile-ouv" aria-hidden="true">
+                {/* LE VRAI LOGO SUR LE PREMIER ECRAN DE TOUS. « Clikme » n'a
+                    pas de k : il a un curseur a sa place. C'est la premiere
+                    image que quelqu'un voit du produit — elle ne peut pas etre
+                    le nom tape au clavier. Voir `mot-marque.tsx`. */}
                 <b>
-                  Clik<em>Me</em>
+                  <MotMarque accent="#FF2E9A" />
                 </b>
               </div>
             )}
@@ -7760,7 +7765,7 @@ export function ApercuHabitant() {
                     bouton. Rien d'autre. */}
                 <div className="ap-ac-marque">
                   <b>
-                    Clik<em>Me</em>
+                    <MotMarque accent="#FF2E9A" />
                   </b>
                   <span>
                     Votre ville à essayer <i aria-hidden="true">♡</i>

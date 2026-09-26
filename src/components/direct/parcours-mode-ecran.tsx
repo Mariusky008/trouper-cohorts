@@ -31,6 +31,7 @@
  */
 
 import { useMemo, useRef, useState } from "react";
+import { MotMarque } from "@/components/direct/mot-marque";
 import { momentEnCours, toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import {
   APRES_MODE,
@@ -191,9 +192,13 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
       {/* ───────────────────────── 2/4 · LE RENDU ───────────────────────── */}
       {etape === 2 && (
         <section className="pm-deuxe">
+          {/* LE VRAI LOGO, PAS UN MOT EN GRAS. « Clikme » n'a pas de k :
+              il a un curseur a sa place, et c'est tout le nom — on clique,
+              et c'est moi. Ecrit au clavier, le mot perdait la seule chose
+              qui en fait une marque. Le curseur est un trace, donc il suit
+              la taille et la couleur de la ligne. Voir `mot-marque.tsx`. */}
           <p className="pm-logo">
-            <b>Clik</b>
-            <i>Me</i>
+            <MotMarque />
           </p>
           <p className="pm-sur">
             Votre ville à essayer <s aria-hidden="true">♡</s>

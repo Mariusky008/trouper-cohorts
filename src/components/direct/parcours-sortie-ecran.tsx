@@ -33,6 +33,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { MotMarque } from "@/components/direct/mot-marque";
 import { evenementsDeLaVille, VILLE } from "@/lib/direct/apercu-habitant";
 import { intentionDe, SOIREES } from "@/lib/direct/soiree";
 import { CATEGORIES } from "@/lib/direct/choisir-commerce";
@@ -172,9 +173,13 @@ export function ParcoursSortie({
             </svg>
           </button>
         )}
+        {/* LE VRAI LOGO, PAS UN MOT EN GRAS. « Clikme » n'a pas de k :
+            il a un curseur a sa place, et c'est tout le nom — on clique,
+            et c'est moi. Ecrit au clavier, le mot perdait la seule chose
+            qui en fait une marque. Le curseur est un trace, donc il suit
+            la taille et la couleur de la ligne. Voir `mot-marque.tsx`. */}
         <p className="ps-logo">
-          <b>Clik</b>
-          <i>Me</i>
+          <MotMarque />
         </p>
         <div className="ps-pas" aria-label={`Étape ${etape} sur ${ETAPES_SORTIE}`}>
           {Array.from({ length: ETAPES_SORTIE }, (_, i) => (

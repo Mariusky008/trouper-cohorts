@@ -27,6 +27,7 @@
  */
 
 import { useMemo, useRef, useState } from "react";
+import { MotMarque } from "@/components/direct/mot-marque";
 import { momentEnCours, toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import {
   APRES_COIFFURE,
@@ -122,9 +123,13 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
 
       {/* ═══ LA COQUE, IDENTIQUE AUX QUATRE ÉTAPES ═══════════════════════ */}
       <header className="pc-haut">
+        {/* LE VRAI LOGO, PAS UN MOT EN GRAS. « Clikme » n'a pas de k :
+            il a un curseur a sa place, et c'est tout le nom — on clique,
+            et c'est moi. Ecrit au clavier, le mot perdait la seule chose
+            qui en fait une marque. Le curseur est un trace, donc il suit
+            la taille et la couleur de la ligne. Voir `mot-marque.tsx`. */}
         <p className="pc-logo">
-          <b>Clik</b>
-          <i>Me</i>
+          <MotMarque />
         </p>
         <div className="pc-pas" aria-label={`Étape ${etape} sur ${ETAPES_COIFFURE}`}>
           {Array.from({ length: ETAPES_COIFFURE }, (_, i) => (

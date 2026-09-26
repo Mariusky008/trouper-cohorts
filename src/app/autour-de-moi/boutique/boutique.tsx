@@ -59,6 +59,7 @@
 // paquet qu'on balaie ne défile pas. Une PAGE défile — c'est même sa nature, et
 // c'est la seule chose ici qui ne doit surtout pas imiter le fil.
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { MotMarque } from "@/components/direct/mot-marque";
 import Link from "next/link";
 import {
   HEURE_MAX,
@@ -1125,9 +1126,11 @@ export function Boutique({
                 <i aria-hidden="true">←</i>
               </Link>
             )}
-            <span className="bq-marque" aria-hidden="true">
-              Clik<b>Me</b>
-            </span>
+            {/* LE VRAI LOGO, PAS UN MOT EN GRAS — « Clikme » n'a pas de k, il
+                a un curseur à sa place, et c'est tout le nom. Voir
+                `mot-marque.tsx` : c'est un tracé, donc il suit la taille et la
+                couleur de la ligne, et il reste net sur n'importe quel écran. */}
+            <MotMarque className="bq-marque" />
           </div>
           <div className="bq-tete-d">
             {/* ═══ LE CŒUR OUVRE LA POCHE, IL NE FAIT PLUS RIEN ════════════════
@@ -3475,9 +3478,12 @@ function Styles() {
 
         /* LE NOM DU PRODUIT, DANS LA LETTRE DU PRODUIT. Le « Me » porte la
            couleur : c'est le logo, et il est le meme partout. */
+        /* LE FUCHSIA DE LA CHARTE, ET PLUS UN VOISIN. Il portait #FF2D8E,
+           a un point de #FF2E9A : deux roses presque pareils sont pires qu'un
+           seul, parce qu'on ne sait plus lequel est le bon. */
         .bq-marque{font-size:20px;font-weight:800;letter-spacing:-.02em;
           color:#FFFFFF;text-shadow:0 2px 12px rgba(0,0,0,.5);}
-        .bq-marque b{font-weight:800;color:#FF2D8E;}
+        .bq-marque b{font-weight:800;color:#FF2E9A;}
 
         /* ─── LA TETE DE PAGE ───
            Elle est plus haute que sur l'ancienne version parce qu'elle porte
