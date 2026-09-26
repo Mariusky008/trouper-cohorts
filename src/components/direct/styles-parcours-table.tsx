@@ -97,19 +97,84 @@ export function StylesParcoursTable() {
           font-size:11.5px;font-weight:750;color:rgba(255,255,255,.76);
           white-space:nowrap;}
         .pt-lieu-t i{font-style:normal;font-size:10px;flex:none;}
-        .pt-sortir{flex:none;width:34px;height:34px;border-radius:50%;
+        /* LE FANTOME EST LA PORTE DE L'ACCUEIL — meme geste que sur les
+           autres parcours. La petite maison sur son epaule est ce qui le fait
+           comprendre : une mascotte cliquable sans aucun signe reste une
+           mascotte. */
+        .pt-accueil{position:relative;flex:none;padding:0;border:0;
+          background:none;font:inherit;cursor:pointer;line-height:0;
+          border-radius:999px;}
+        .pt-accueil:active{transform:scale(.94);}
+        .pt-accueil:focus-visible{outline:2px solid #FF2E9A;outline-offset:3px;}
+        .pt-accueil-m{position:absolute;right:-2px;bottom:-2px;
+          width:22px;height:22px;border-radius:50%;
           display:flex;align-items:center;justify-content:center;
-          font:inherit;cursor:pointer;color:#fff;
-          background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);}
-        .pt-sortir svg{width:17px;height:17px;fill:none;stroke:currentColor;
-          stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
-        .pt-sortir:active{transform:scale(.92);}
+          color:#06060A;background:#FF2E9A;
+          box-shadow:0 2px 10px rgba(255,46,154,.55);}
+        .pt-accueil-m svg{width:12px;height:12px;fill:none;stroke:currentColor;
+          stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
 
         /* LA BULLE DU FANTOME, sur la photo, en haut a gauche : c'est sa
            maquette de la premiere etape, et c'est la seule place ou elle ne
            couvre ni le plat ni un bouton. */
-        .pt-dit{position:absolute;left:14px;top:calc(92px + var(--ap-encoche,0px));
-          z-index:4;display:flex;align-items:center;gap:0;max-width:74%;}
+        /* DANS LE FLUX, EN TETE DU BLOC. Posee en absolu a 92 points du haut
+           — mais d'un bloc qui commence au bas de l'ecran — elle atterrissait
+           au milieu du texte, coincee entre le sous-titre et la fiche. */
+        .pt-dit{position:relative;z-index:4;margin:0 0 6px;
+          display:flex;align-items:center;gap:0;max-width:92%;}
+        /* ═══ LE RIDEAU : DEUX PHOTOS, UNE SEULE A LA FOIS ══════════════
+           C'est le geste de l'application. Les deux vignettes cote a cote
+           faisaient comparer deux PRIX avant de montrer deux formats ; ici il
+           n'y a qu'un prix a l'ecran, celui de ce qu'on regarde. */
+        .pt-rideau{position:relative;width:100%;aspect-ratio:4 / 3;
+          margin:2px 0 0;border-radius:18px;overflow:hidden;
+          touch-action:pan-y;cursor:ew-resize;user-select:none;
+          -webkit-user-select:none;
+          border:1px solid rgba(255,255,255,.12);
+          box-shadow:0 18px 40px -22px rgba(0,0,0,.9);}
+        .pt-rid-img{position:absolute;inset:0;background-size:cover;
+          background-position:center;}
+        /* ON DECOUPE, ON NE REDIMENSIONNE PAS : la boite garde ses dimensions,
+           donc les deux moities restent cadrees pareil. */
+        .pt-rid-img.entier{clip-path:inset(0 calc((100% - var(--pt-x,58) * 1%)) 0 0);}
+        /* UNE SEULE ETIQUETTE, CENTREE EN BAS : deux etiquettes portant deux
+           prix ramenaient le defaut des deux vignettes — on comparait des prix
+           par-dessus le rideau au lieu de regarder le plat. */
+        .pt-rid-et{position:absolute;left:50%;bottom:10px;z-index:3;
+          transform:translateX(-50%);
+          display:flex;flex-direction:column;align-items:center;gap:1px;
+          padding:8px 16px;border-radius:16px;text-align:center;
+          background:rgba(8,7,12,.86);border:1px solid rgba(255,255,255,.14);
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+          max-width:calc(100% - 24px);
+          animation:ptEtiq .22s ease both;}
+        @keyframes ptEtiq{from{opacity:0;transform:translateX(-50%) translateY(4px)}
+          to{opacity:1;transform:translateX(-50%) translateY(0)}}
+        .pt-rid-et b{font-size:13.5px;font-weight:850;line-height:1.2;color:#fff;}
+        .pt-rid-et u{text-decoration:none;font-size:11px;font-weight:700;
+          color:rgba(255,255,255,.62);}
+        .pt-rid-et em{font-style:normal;font-size:16px;font-weight:900;
+          color:#FFD233;margin-top:1px;}
+        .pt-rid-trait{position:absolute;top:0;bottom:0;z-index:4;width:2px;
+          margin-left:-1px;background:rgba(255,255,255,.92);
+          box-shadow:0 0 14px rgba(255,46,154,.8);
+          display:flex;align-items:center;justify-content:center;}
+        .pt-rid-trait s{flex:none;width:38px;height:38px;border-radius:50%;
+          display:flex;align-items:center;justify-content:center;
+          text-decoration:none;font-size:17px;color:#06060A;
+          background:#FF2E9A;box-shadow:0 6px 18px -6px rgba(255,46,154,.9);}
+        /* LA GLISSIERE EST INVISIBLE MAIS ELLE EXISTE : elle donne le clavier
+           et le lecteur d'ecran a un geste qui n'aurait sinon que le doigt.
+           UN POINT, PAS UNE BANDE : etalee sur toute la largeur a opacite
+           zero, son curseur natif reapparaissait quand meme dans le coin —
+           Chromium peint la poignee des que la boite forme une couche. Reduite
+           a un point, il n'y a plus rien a peindre, et c'est le cadre qui
+           montre le focus. */
+        .pt-rid-clavier{position:absolute;left:0;bottom:0;
+          width:1px;height:1px;opacity:0;margin:0;padding:0;border:0;
+          appearance:none;-webkit-appearance:none;}
+        .pt-rideau:focus-within{outline:2px solid #FF2E9A;outline-offset:3px;}
+
         .pt-dit-f{flex:none;width:clamp(58px,17vw,74px);height:auto;
           filter:drop-shadow(0 0 16px rgba(196,132,255,.7));}
         .pt-dit p{position:relative;margin:0 0 14px -6px;padding:9px 15px;
@@ -173,12 +238,30 @@ export function StylesParcoursTable() {
           -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
         .pt-mot i{position:absolute;left:12px;top:10px;font-style:normal;
           font-size:30px;line-height:1;color:#FF2E9A;}
-        /* LA PLACE VIDE DU LECTEUR : elle DIT qu'il manque quelque chose, au
-           lieu de dessiner un bouton qui ne joue rien. Voir le champ extrait
-           de la voix, dans apercu-habitant. */
-        .pt-attente{margin:9px 0 0;font-size:12px;font-weight:700;
-          color:rgba(255,255,255,.55);}
-        .pt-audio{display:block;width:100%;margin:11px 0 0;}
+        /* ═══ ON L'ENTEND : LE BOUTON, L'ONDE, ET CE QU'ON EN DIT ════════
+           L'ecran annoncait « sa voix arrive ». C'etait vrai et c'etait une
+           promesse repoussee : le seul ecran qu'un concurrent ne peut pas
+           copier, annonce et pas joue. Le telephone lit sa phrase, et la ligne
+           du dessous dit que c'est une voix de synthese — voir l'ecran. */
+        .pt-ecoute{display:flex;align-items:center;gap:13px;margin:12px 0 0;}
+        .pt-ecoute-b{flex:none;width:52px;height:52px;border-radius:50%;
+          display:flex;align-items:center;justify-content:center;
+          font:inherit;font-size:17px;cursor:pointer;color:#06060A;border:0;
+          background:#FF2E9A;box-shadow:0 10px 26px -10px rgba(255,46,154,.95);}
+        .pt-ecoute-b s{text-decoration:none;}
+        .pt-ecoute-b:active{transform:scale(.94);}
+        .pt-onde{flex:1;min-width:0;height:38px;display:flex;align-items:center;
+          gap:3px;}
+        .pt-onde i{flex:1;min-width:2px;border-radius:2px;
+          height:var(--h,40%);background:rgba(255,255,255,.28);}
+        /* ELLES NE BOUGENT QUE PENDANT LA LECTURE : une onde qui s'agite sur un
+           silence dit que ca joue, et on attend un son qui ne vient pas. */
+        .pt-onde.on i{background:#FF2E9A;
+          animation:ptOnde .9s ease-in-out infinite alternate;
+          animation-delay:var(--d,0s);}
+        @keyframes ptOnde{from{transform:scaleY(.45)}to{transform:scaleY(1)}}
+        .pt-synth{margin:8px 0 0;font-size:11.5px;font-weight:700;
+          letter-spacing:.02em;color:rgba(255,255,255,.5);}
 
         /* ═══ 4/4 · CE QU'IL FAUT SAVOIR ════════════════════════════════ */
         .pt-pratique{list-style:none;display:flex;flex-wrap:wrap;

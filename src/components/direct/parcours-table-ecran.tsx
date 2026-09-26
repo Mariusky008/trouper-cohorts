@@ -32,8 +32,9 @@
  *    et saute à la dernière étape. Sa promesse est tenue, son parcours aussi.
  */
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
+import { onSpeakingChange, speak, stopSpeaking } from "@/lib/site-internet/speech";
 import { toutesLesCartes, VILLE } from "@/lib/direct/apercu-habitant";
 import { demanderRendezVous, numeroDeFiction } from "@/lib/direct/prevenir";
 import {
@@ -53,8 +54,65 @@ function Fant({ classe }: { classe: string }) {
   return <img className={classe} src="/clikme-fantome.png" alt="" />;
 }
 
+/**
+ * LA FORME D'ONDE EST ÉCRITE, PAS TIRÉE AU HASARD.
+ *
+ * Un Math.random() donnerait une onde différente entre le serveur et le
+ * navigateur — ce qui casse l'hydratation — et une onde qui saute à chaque fois
+ * qu'on touche autre chose sur l'écran. Reprise de l'écran de l'Avant-goût,
+ * pour que les deux se ressemblent.
+ */
+const ONDE = [18, 34, 26, 52, 40, 68, 46, 78, 58, 88, 64, 74, 50, 62, 38, 56, 30, 44, 24, 36];
+
 export function ParcoursTable({ onFermer }: { onFermer: () => void }) {
   const [etape, setEtape] = useState(1);
+  /**
+   * LE RIDEAU DE LA DEUXIÈME ÉTAPE — sa position en pour cent.
+   *
+   * UN NOMBRE SANS UNITÉ, ET C'EST UNE LEÇON PAYÉE AILLEURS. Stocké en
+   * « 62% », il arrive tel quel dans `calc((62% - 16%) / 6)` pour les
+   * étiquettes, qui reste alors un pourcentage : l'opacité l'accepte et
+   * l'interprète autrement, si bien que les libellés ne s'effacent jamais.
+   */
+  const [rideau, setRideau] = useState(58);
+  const cadre = useRef<HTMLDivElement | null>(null);
+  /**
+   * LA VOIX DE LA TROISIÈME ÉTAPE.
+   *
+   * `joue` SUIT CE QUI PARLE VRAIMENT, pas ce qu'on a demandé : la lecture du
+   * téléphone s'arrête toute seule à la fin de la phrase, et un état posé au
+   * clic resterait allumé sur un silence. `onSpeakingChange` le remet à sa
+   * place. Voir `speech.ts`.
+   */
+  const [joue, setJoue] = useState(false);
+  useEffect(() => onSpeakingChange(setJoue), []);
+  /* ON ARRÊTE EN QUITTANT L'ÉCRAN. Sans ça, la phrase continue par-dessus
+     l'étape suivante — et on l'entend encore une fois revenu au choix. */
+  useEffect(() => () => stopSpeaking(), []);
+  const ecouterMargot = () => {
+    if (joue) {
+      stopSpeaking();
+      return;
+    }
+    /* SA VOIX D'ABORD, LA LECTURE ENSUITE : le jour où l'enregistrement
+       existe, c'est lui qui part, et la mention « voix de synthèse » tombe
+       toute seule. */
+    if (voix?.extrait) {
+      const a = new Audio(voix.extrait);
+      setJoue(true);
+      a.onended = () => setJoue(false);
+      void a.play().catch(() => setJoue(false));
+      return;
+    }
+    speak(voix?.signature ?? "");
+  };
+  /* ON BORNE À 2 ET 98, PAS À 0 ET 100 : tout au bord, la poignée sort du
+     cadre et il n'y a plus rien à rattraper avec le doigt. */
+  const tirer = useCallback((x: number) => {
+    const b = cadre.current?.getBoundingClientRect();
+    if (!b || !b.width) return;
+    setRideau(Math.min(98, Math.max(2, ((x - b.left) / b.width) * 100)));
+  }, []);
 
   const resto = toutesLesCartes().find((c) => c.id === COMMERCE_TABLE);
   if (!resto) return null;
@@ -145,32 +203,52 @@ export function ParcoursTable({ onFermer }: { onFermer: () => void }) {
             {etape}/{ETAPES_TABLE}
           </em>
         </div>
-        <Fant classe="pt-f" />
+        {/* LE FANTÔME EST LA PORTE DE L'ACCUEIL — même geste que sur les
+            autres parcours : il est déjà à cette place sur les quatre écrans,
+            lui donner la fonction évite une icône de plus. La petite maison
+            sur son épaule est ce qui le fait comprendre. */}
+        <button
+          type="button"
+          className="pt-accueil"
+          onClick={onFermer}
+          aria-label="Revenir à l’accueil"
+          title="Revenir à l’accueil"
+        >
+          <Fant classe="pt-f" />
+          <s className="pt-accueil-m" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M3.6 10.6 12 3.8l8.4 6.8" />
+              <path d="M5.8 9v10.4a1 1 0 0 0 1 1h10.4a1 1 0 0 0 1-1V9" />
+            </svg>
+          </s>
+        </button>
       </header>
 
-      {/* LA PASTILLE DU RESTAURANT : où l'on est, et la porte de sortie. */}
-      <div className="pt-lieu">
-        <span className="pt-lieu-v" style={{ backgroundImage: `url("${vignette}")` }} />
-        <span className="pt-lieu-t">
-          <b>{nom}</b>
-          <em>
-            <i aria-hidden="true">📍</i>
-            {ou}
-          </em>
-        </span>
-        <button type="button" className="pt-sortir" onClick={onFermer} aria-label="Revenir au choix des restaurants">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3.6 10.6 12 3.8l8.4 6.8" />
-            <path d="M5.8 9v10.4a1 1 0 0 0 1 1h10.4a1 1 0 0 0 1-1V9" />
-          </svg>
-        </button>
-      </div>
+      {/* ═══ LA PASTILLE DU RESTAURANT A QUITTÉ LA PHOTO ═══════════════════
+
+          ELLE DISAIT DEUX FOIS LA MÊME CHOSE. « Le Bocal de Margot · 180 m ·
+          Dax » en haut, posé sur le plat, et la même ligne dans la fiche du
+          bloc du bas, vingt centimètres plus bas sur le même écran. Celle du
+          haut couvrait la seule chose qu'on est venu regarder.
+
+          C'est la même correction que sur le parcours coiffure, pour la même
+          raison. La porte de sortie qu'elle portait est passée dans le
+          Fantôme. */}
 
       {/* ───────────────────────── 1/4 · LE PLAT ─────────────────────────── */}
       {etape === 1 && (
         <section className="pt-bas">
-          {/* LE FANTÔME POSE LA QUESTION DE SA MAQUETTE, et il la pose en haut
-              de la photo où il ne mange la place de personne. */}
+          {/* ═══ LA BULLE N'ÉTAIT PAS AU BON ENDROIT ═══════════════════════
+
+              « "Ça vous tente ?" n'est pas au bon endroit. »
+
+              ELLE ÉTAIT POSÉE EN ABSOLU À 92 POINTS DU HAUT — mais d'un bloc
+              qui commence au bas de l'écran, pas de l'écran. Elle atterrissait
+              donc au milieu du texte, coincée entre le sous-titre et la fiche,
+              et le Fantôme mordait dessus.
+
+              DANS LE FLUX, EN TÊTE DU BLOC : elle ouvre l'écran, comme sur sa
+              maquette, et rien ne peut plus la pousser ailleurs. */}
           <div className="pt-dit">
             <Fant classe="pt-dit-f" />
             <p>Ça vous tente ?</p>
@@ -185,18 +263,32 @@ export function ParcoursTable({ onFermer }: { onFermer: () => void }) {
           </p>
           {plat.prix && <p className="pt-prix">{plat.prix}</p>}
           {fiche(false)}
+          {/* ═══ « RÉSERVER » QUITTE LES DEUX PREMIERS ÉCRANS ═════════════
+
+              Il l'a demandé sur le second ; c'est le même bouton, la même
+              taille et la même faute sur le premier. On demandait de réserver
+              une table à quelqu'un qui vient de voir une photo et n'a encore
+              rien appris du plat — c'est-à-dire avant d'avoir la seule raison
+              de réserver.
+
+              IL RESTE À L'ÉTAPE 3, où l'on vient d'entendre la cuisinière, et
+              il est tout l'écran 4. */}
           <button type="button" className="pt-go" onClick={suivant}>
             <Oeil />
             Voir de plus près
             <s aria-hidden="true">→</s>
           </button>
-          {versLaTable("Réserver")}
         </section>
       )}
 
-      {/* ──────────────── 2/4 · CE QU'ON MANGERA VRAIMENT ────────────────── */}
+      {/* ──────────────── 2/4 · CE QU'ON MANGERA VRAIMENT ──────────────────
+
+          `pt-haute` collait le bloc tout en haut pour loger les deux grandes
+          vignettes. Le rideau a un rapport fixe et tient dans la moitié de
+          l'écran : le bloc reprend sa place normale, et le vide qui restait
+          sous le bouton disparaît. */}
       {etape === 2 && (
-        <section className="pt-bas pt-haute">
+        <section className="pt-bas">
           <h1 className="pt-t">
             Voilà ce que
             <br />
@@ -204,27 +296,73 @@ export function ParcoursTable({ onFermer }: { onFermer: () => void }) {
             <s aria-hidden="true" />
           </h1>
 
-          {/* ═══ DEUX PHOTOS, DEUX LIGNES DE SA CARTE ═══════════════════════
-              Le plat entier et la part dans son assiette. Chaque étiquette
-              porte le nom de la carte, son détail et son prix : onze euros sur
-              place, neuf euros à emporter. Sa maquette écrivait « Le plat
-              entier » et « Votre portion » ; sa carte dit mieux, et c'est vrai. */}
-          <div className="pt-deux-photos">
-            {[
-              { photo: PLAT_PHOTO, a: plat },
-              { photo: PART_PHOTO, a: part },
-            ]
-              .filter((x) => x.a)
-              .map(({ photo, a }) => (
-                <article key={a!.id} className="pt-vue">
-                  <div style={{ backgroundImage: `url("${photo}")` }} />
-                  <span>
-                    <b>{a!.nom}</b>
-                    {a!.detail && <u>{a!.detail}</u>}
-                    {a!.prix && <em>{a!.prix}</em>}
-                  </span>
-                </article>
-              ))}
+          {/* ═══ UN RIDEAU, PLUS DEUX PHOTOS CÔTE À CÔTE ═══════════════════
+
+              « Normalement ça devrait être le plat en entier et une part comme
+              sur l'app démo, mais là on a le même plat avec deux prix
+              différents. »
+
+              LES DEUX VIGNETTES DISAIENT VRAI ET SE LISAIENT FAUX. Le plat à
+              onze euros et la part à neuf, posés côte à côte dans le même
+              cadre, à la même taille : l'œil compare deux prix avant de
+              comprendre que ce sont deux formats. On répondait « combien ? » à
+              quelqu'un qui demande « à quoi ça ressemble ? ».
+
+              LE RIDEAU EST LE GESTE DE L'APPLICATION, et c'est le seul écran
+              qu'un concurrent ne peut pas copier : il tient à une donnée — deux
+              photos du même plat — pas à un effet. On tire, le plat entier
+              devient la part, et il n'y a qu'un prix à l'écran à la fois, celui
+              de ce qu'on regarde.
+
+              LA GLISSIÈRE INVISIBLE EST LÀ POUR LE CLAVIER. Un rideau qui ne
+              répond qu'au doigt est un écran mort pour qui n'en a pas — et la
+              démonstration se montre souvent sur un ordinateur. */}
+          <div
+            className="pt-rideau"
+            ref={cadre}
+            style={{ "--pt-x": rideau } as React.CSSProperties}
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture(e.pointerId);
+              tirer(e.clientX);
+            }}
+            onPointerMove={(e) => e.buttons > 0 && tirer(e.clientX)}
+          >
+            <div className="pt-rid-img" style={{ backgroundImage: `url("${PART_PHOTO}")` }} />
+            <div className="pt-rid-img entier" style={{ backgroundImage: `url("${PLAT_PHOTO}")` }} />
+            {/* ═══ UNE SEULE ÉTIQUETTE, DONC UN SEUL PRIX ════════════════
+
+                PREMIER JET : une étiquette de chaque côté, comme les libellés
+                « Avant / Servi » de l'Avant-goût. Sauf que celles-ci portent
+                des PRIX — onze euros et neuf euros, visibles ensemble, ce qui
+                ramenait exactement le défaut qu'il avait relevé sur les deux
+                vignettes. Le rideau ne servait plus à rien : on comparait deux
+                prix par-dessus lui.
+
+                ELLE SUIT CE QU'ON REGARDE. Au-delà de la moitié c'est le plat
+                entier, en deçà c'est la part, et il n'y a jamais qu'un nom et
+                qu'un prix à l'écran. */}
+            {(() => {
+              const vu = rideau >= 50 ? plat : (part ?? plat);
+              return (
+                <span className="pt-rid-et" key={vu.id}>
+                  <b>{vu.nom}</b>
+                  {vu.detail && <u>{vu.detail}</u>}
+                  {vu.prix && <em>{vu.prix}</em>}
+                </span>
+              );
+            })()}
+            <span className="pt-rid-trait" style={{ left: `${rideau}%` }} aria-hidden="true">
+              <s>↔</s>
+            </span>
+            <input
+              className="pt-rid-clavier"
+              type="range"
+              min={0}
+              max={100}
+              value={rideau}
+              onChange={(e) => setRideau(Number(e.target.value))}
+              aria-label="Tirer le rideau entre le plat entier et la part"
+            />
           </div>
 
           {fiche(false)}
@@ -233,7 +371,6 @@ export function ParcoursTable({ onFermer }: { onFermer: () => void }) {
             {voix?.prenom ? `${voix.prenom} vous raconte` : "Qui le cuisine"}
             <s aria-hidden="true">→</s>
           </button>
-          {versLaTable("Réserver")}
         </section>
       )}
 
@@ -264,15 +401,46 @@ export function ParcoursTable({ onFermer }: { onFermer: () => void }) {
             </p>
           )}
 
-          {/* LE LECTEUR N'APPARAIT QUE S'IL Y A QUELQUE CHOSE A ECOUTER. Voir
-              `Voix.extrait` : tant que personne n'a enregistre Margot, cet
-              ecran n'affiche pas de bouton de lecture sur un silence. */}
-          {voix?.extrait ? (
-            <audio className="pt-audio" src={voix.extrait} controls preload="none" />
-          ) : (
-            <p className="pt-attente">
-              Sa voix arrive : ce sera dix secondes, enregistrées par elle.
-            </p>
+          {/* ═══ ON L'ENTEND, COMME DANS L'APPLICATION ═════════════════════
+
+              « "Margot vous raconte" : on devra avoir sa voix comme sur l'app
+              démo. »
+
+              L'ÉCRAN DISAIT « SA VOIX ARRIVE ». C'était vrai et c'était une
+              promesse repoussée : on annonçait le seul écran que personne ne
+              peut copier, et on ne le jouait pas.
+
+              L'APPLICATION A DÉJÀ LA RÉPONSE, et elle est honnête : le
+              téléphone lit sa phrase à voix haute, et l'écran DIT que c'est une
+              voix de synthèse. Voir `voixDemo` dans `gout-contenu.tsx`. On ne
+              prête pas des mots à Margot à travers un haut-parleur en laissant
+              croire que c'est elle — on lui prête une lecture, et on le dit.
+
+              LE JOUR OÙ ELLE S'ENREGISTRE, `voix.extrait` existe et c'est SA
+              voix qui part : le bouton ne change pas, la mention disparaît.
+
+              LA TRANSCRIPTION RESTE LE CONTENU. Quatre personnes sur cinq font
+              défiler en silence ; sa phrase est écrite au-dessus, en grand, et
+              le son ne part qu'à l'appui. */}
+          {(voix?.extrait || voix?.signature) && (
+            <div className="pt-ecoute">
+              <button
+                type="button"
+                className={`pt-ecoute-b${joue ? " on" : ""}`}
+                aria-label={joue ? "Arrêter" : `Écouter ${voix.prenom ?? "sa voix"}`}
+                onClick={ecouterMargot}
+              >
+                <s aria-hidden="true">{joue ? "❙❙" : "▶"}</s>
+              </button>
+              <span className={`pt-onde${joue ? " on" : ""}`} aria-hidden="true">
+                {ONDE.map((h, k) => (
+                  <i key={k} style={{ "--h": `${h}%`, "--d": `${(k % 7) * 0.08}s` } as React.CSSProperties} />
+                ))}
+              </span>
+            </div>
+          )}
+          {!voix?.extrait && voix?.signature && (
+            <p className="pt-synth">Démonstration · voix de synthèse</p>
           )}
 
           {fiche(true)}
