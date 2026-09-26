@@ -111,25 +111,78 @@ export function ParcoursTable({
   useEffect(() => onSpeakingChange(setJoue), []);
   /* ON ARRÊTE EN QUITTANT L'ÉCRAN. Sans ça, la phrase continue par-dessus
      l'étape suivante — et on l'entend encore une fois revenu au choix. */
-  useEffect(() => () => stopSpeaking(), []);
-  const ecouterMargot = () => {
+  useEffect(
+    () => () => {
+      stopSpeaking();
+      try {
+        sonRef.current?.pause();
+      } catch {
+        /* rien en cours */
+      }
+    },
+    [],
+  );
+  /* ═══ TROIS VOIX POSSIBLES, DANS CET ORDRE ════════════════════════════
+
+     « La voix est hyper robotique, il faut que tu trouves des voix
+     naturelles. »
+
+     1. SON ENREGISTREMENT, si quelqu'un l'a fait. Rien ne bat une vraie voix,
+        et c'est la seule qui ne soit pas une imitation.
+     2. LA VOIX CLOUD DU PROJET — `/api/direct/voix`. ElevenLabs ou OpenAI, avec
+        une consigne de ton par personne : chaleureuse pour Margot, un léger
+        accent du Sud-Ouest pour Jean-Marie. Le projet la servait déjà à
+        l'Espace Pro ; le parcours ne l'appelait simplement pas.
+     3. LA VOIX DU NAVIGATEUR, s'il n'y a ni l'un ni l'autre. C'est celle qu'il
+        a entendue, et c'est pour ça qu'elle l'a choqué : elle articule, elle ne
+        raconte pas. Elle reste, parce qu'une démonstration muette est pire
+        qu'une démonstration robotique — mais elle n'est plus le premier choix.
+
+     `cloud` SUIT CE QUI A RÉELLEMENT JOUÉ, pas ce qu'on espérait : c'est lui
+     qui décide si la mention « voix de synthèse » s'affiche. L'écrire d'avance
+     aurait menti dans les deux sens. */
+  const [cloud, setCloud] = useState(false);
+  const sonRef = useRef<HTMLAudioElement | null>(null);
+
+  const jouerFichier = (src: string, estCloud: boolean) =>
+    new Promise<boolean>((resolve) => {
+      try {
+        const a = new Audio(src);
+        a.setAttribute("playsinline", "");
+        sonRef.current = a;
+        let parti = false;
+        a.onplay = () => {
+          parti = true;
+          setJoue(true);
+          setCloud(estCloud);
+        };
+        a.onended = () => {
+          setJoue(false);
+          resolve(true);
+        };
+        a.onerror = () => resolve(parti);
+        void a.play().catch(() => resolve(false));
+      } catch {
+        resolve(false);
+      }
+    });
+
+  const ecouterMargot = async () => {
     if (joue) {
       stopSpeaking();
+      try {
+        sonRef.current?.pause();
+      } catch {
+        /* rien en cours */
+      }
+      setJoue(false);
       return;
     }
-    /* SA VOIX D'ABORD, LA LECTURE ENSUITE : le jour où l'enregistrement
-       existe, c'est lui qui part, et la mention « voix de synthèse » tombe
-       toute seule. */
-    if (voix?.extrait) {
-      const a = new Audio(voix.extrait);
-      setJoue(true);
-      a.onended = () => setJoue(false);
-      void a.play().catch(() => setJoue(false));
-      return;
-    }
-    /* ON LIT LE RÉCIT QUAND IL Y EN A UN, la signature sinon. Le récit est le
-       texte qu'il a écrit pour la voix ; la signature reste la phrase courte
-       des bandeaux. Voir `recit` dans `apercu-habitant.ts`. */
+    if (voix?.extrait && (await jouerFichier(voix.extrait, true))) return;
+    /* LA VOIX CLOUD NE PEUT DIRE QUE CE QUI EST DÉJÀ ÉCRIT : on lui passe la
+       clé du commerce, elle va chercher le récit elle-même. Voir la route. */
+    if (voix?.recit && (await jouerFichier(`/api/direct/voix?cle=${encodeURIComponent(cle)}`, true))) return;
+    setCloud(false);
     speak(voix?.recit || voix?.signature || "");
   };
   /* ON BORNE À 2 ET 98, PAS À 0 ET 100 : tout au bord, la poignée sort du
@@ -430,72 +483,75 @@ export function ParcoursTable({
         </section>
       )}
 
-      {/* ─────────────────── 3/4 · LA CUISINIÈRE ─────────────────────────── */}
-      {ici === "voix" && (
-        <section className="pt-bas">
-          <h1 className="pt-t">
-            {voix?.prenom ?? "Elle"}
-            <br />
-            <em>vous raconte son plat.</em>
-            <s aria-hidden="true" />
-          </h1>
+      {/* ═══ L'ÉCRAN DU RÉCIT — REFAIT, PARCE QU'IL ÉTAIT LAID ════════════
 
-          {/* ═══ SA PHRASE, ÉCRITE UNE FOIS POUR TOUTES ═════════════════════
-              « Je fais mes pâtes le matin même. » Elle est dans ses données
-              depuis le début — c'est la réponse permanente à « pourquoi chez
-              elle plutôt qu'en grande surface ». Sa maquette en invente une
-              autre ; celle-ci a l'avantage d'exister. */}
-          {(voix?.recit || voix?.signature) && (
-            <blockquote className={`pt-mot${voix?.recit ? " long" : ""}`}>
-              <i aria-hidden="true">“</i>
-              {voix?.recit || voix?.signature}
-            </blockquote>
-          )}
+          « C'est très laid, ce design avec tout ce texte. Il faut supprimer le
+          texte et revoir tout l'UX de cet écran pour qu'il soit plus
+          chaleureux. »
+
+          IL AVAIT RAISON, ET C'ÉTAIT MA FAUTE DE LA VEILLE. J'avais posé son
+          récit de six phrases dans la boîte prévue pour une phrase : deux cent
+          trente-six points de gras italique, encadrés de magenta, au milieu de
+          l'écran. Un mur. On ne lit pas un mur, on le contourne — et il cachait
+          la seule chose qui compte ici, qui est la voix.
+
+          CE QUI PREND SA PLACE : LA PERSONNE, PUIS LE GESTE. Un grand bouton
+          rond qu'on a envie de toucher, son prénom, son métier, et une seule
+          ligne — la phrase de comptoir, celle qui tient debout toute seule. Le
+          récit complet ne disparaît pas, il se replie : « Lire ce qu'elle
+          raconte » l'ouvre.
+
+          POURQUOI LE GARDER, ALORS QU'IL A DIT DE SUPPRIMER LE TEXTE. Parce
+          qu'une personne sourde n'entendra jamais la voix, et parce que quatre
+          personnes sur cinq font défiler en silence dans le bus. Supprimer le
+          texte de l'écran était juste ; le supprimer du produit aurait rendu
+          cette étape muette pour elles. Replié, il ne coûte plus une ligne. */}
+      {ici === "voix" && (
+        <section className="pt-bas pt-voixbas">
+          {/* LE HALO DERRIÈRE LE BOUTON RESPIRE QUAND ÇA PARLE. C'est le seul
+              mouvement de l'écran, et il dit « ça sort de là ». */}
+          <div className={`pt-parle${joue ? " on" : ""}`}>
+            <button
+              type="button"
+              className={`pt-rond${joue ? " on" : ""}`}
+              aria-label={joue ? "Arrêter" : `Écouter ${voix?.prenom ?? "sa voix"}`}
+              onClick={ecouterMargot}
+            >
+              {/* DANS LE ROND : LE PLAT, PAS SON VISAGE. Son visage remplit deja
+                  tout l'ecran derriere — le repeter en petit par-dessus
+                  lui-meme ne montrait rien de plus et faisait un doublon.
+                  L'ecran dit « Margot vous raconte SON PLAT » : le plat a sa
+                  place ici, et le bouton de lecture se pose dessus. */}
+              <span className="pt-rond-p" style={{ backgroundImage: `url("${PHOTO_PLAT}")` }} aria-hidden="true" />
+              <span className="pt-rond-s" aria-hidden="true">{joue ? "❙❙" : "▶"}</span>
+            </button>
+            <span className={`pt-onde${joue ? " on" : ""}`} aria-hidden="true">
+              {ONDE.map((h, k) => (
+                <i key={k} style={{ "--h": `${h}%`, "--d": `${(k % 7) * 0.08}s` } as React.CSSProperties} />
+              ))}
+            </span>
+          </div>
+
+          <h1 className="pt-t pt-t-voix">
+            {voix?.prenom ?? "Elle"} <em>vous raconte.</em>
+          </h1>
           {voix?.role && (
-            <p className="pt-sous">
-              {voix.prenom}, {voix.role} · {nom}
+            <p className="pt-qui">
+              {voix.role} · {nom}
             </p>
           )}
+          {/* UNE SEULE LIGNE, CELLE QUI TIENT DEBOUT TOUTE SEULE. « Je fais mes
+              pâtes le matin même » répond à « pourquoi chez elle » sans qu'on
+              ait besoin de la recette. */}
+          {voix?.signature && <p className="pt-phrase">« {voix.signature} »</p>}
 
-          {/* ═══ ON L'ENTEND, COMME DANS L'APPLICATION ═════════════════════
-
-              « "Margot vous raconte" : on devra avoir sa voix comme sur l'app
-              démo. »
-
-              L'ÉCRAN DISAIT « SA VOIX ARRIVE ». C'était vrai et c'était une
-              promesse repoussée : on annonçait le seul écran que personne ne
-              peut copier, et on ne le jouait pas.
-
-              L'APPLICATION A DÉJÀ LA RÉPONSE, et elle est honnête : le
-              téléphone lit sa phrase à voix haute, et l'écran DIT que c'est une
-              voix de synthèse. Voir `voixDemo` dans `gout-contenu.tsx`. On ne
-              prête pas des mots à Margot à travers un haut-parleur en laissant
-              croire que c'est elle — on lui prête une lecture, et on le dit.
-
-              LE JOUR OÙ ELLE S'ENREGISTRE, `voix.extrait` existe et c'est SA
-              voix qui part : le bouton ne change pas, la mention disparaît.
-
-              LA TRANSCRIPTION RESTE LE CONTENU. Quatre personnes sur cinq font
-              défiler en silence ; sa phrase est écrite au-dessus, en grand, et
-              le son ne part qu'à l'appui. */}
-          {(voix?.extrait || voix?.recit || voix?.signature) && (
-            <div className="pt-ecoute">
-              <button
-                type="button"
-                className={`pt-ecoute-b${joue ? " on" : ""}`}
-                aria-label={joue ? "Arrêter" : `Écouter ${voix.prenom ?? "sa voix"}`}
-                onClick={ecouterMargot}
-              >
-                <s aria-hidden="true">{joue ? "❙❙" : "▶"}</s>
-              </button>
-              <span className={`pt-onde${joue ? " on" : ""}`} aria-hidden="true">
-                {ONDE.map((h, k) => (
-                  <i key={k} style={{ "--h": `${h}%`, "--d": `${(k % 7) * 0.08}s` } as React.CSSProperties} />
-                ))}
-              </span>
-            </div>
+          {voix?.recit && (
+            <details className="pt-lire">
+              <summary>Lire ce qu’{voix.prenom === "Margot" ? "elle" : "il"} raconte</summary>
+              <p>{voix.recit}</p>
+            </details>
           )}
-          {!voix?.extrait && (voix?.recit || voix?.signature) && (
+          {!voix?.extrait && !cloud && (voix?.recit || voix?.signature) && (
             <p className="pt-synth">Démonstration · voix de synthèse</p>
           )}
 

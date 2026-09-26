@@ -21,6 +21,13 @@ export function StylesParcoursCoiffure() {
           -webkit-user-select:none;user-select:none;}
         .pc-fond{position:absolute;inset:0;background-size:cover;
           background-position:center 12%;}
+        /* LA COPIE QUI REMPLIT : floue, sombre, elle ne sert que de fond. */
+        .pc-fond.flou{filter:blur(26px) brightness(.5) saturate(1.1);
+          transform:scale(1.14);}
+        /* LA PHOTO ENTIERE : contenue, donc jamais rognee, et posee au-dessus
+           du tiers haut ou se trouvent les cheveux. */
+        .pc-fond.entier{background-size:contain;background-repeat:no-repeat;
+          background-position:center 26%;}
         /* LE VOILE NE COUVRE QUE LE BAS ET LE TOUT EN HAUT : le milieu, c'est le
            visage, et c'est ce qu'on vient regarder. */
         .pc-voile{position:absolute;inset:0;pointer-events:none;
@@ -98,6 +105,13 @@ export function StylesParcoursCoiffure() {
         .pc-prix{margin:6px 0 0;font-size:clamp(22px,6.4vw,28px);font-weight:900;
           letter-spacing:-.02em;color:#FFD233;
           text-shadow:0 2px 12px rgba(0,0,0,.85);}
+        /* CE QUE FAIT L'ECRAN, EN UNE LIGNE. Elle se lit avant la mention de
+           simulation, plus grande qu'elle et moins qu'un titre : c'est une
+           explication, pas une accroche. */
+        .pc-geste{margin:0 0 4px;font-size:11.5px;font-weight:750;
+          line-height:1.25;color:#E9DCF4;text-align:center;
+          text-shadow:0 1px 10px rgba(0,0,0,.7);}
+        .pc-geste::first-line{color:#fff;}
         .pc-simu{margin:7px 0 0;font-size:12.5px;font-weight:700;
           color:rgba(255,255,255,.6);text-shadow:0 1px 8px rgba(0,0,0,.8);}
 
@@ -155,8 +169,17 @@ export function StylesParcoursCoiffure() {
           box-shadow:0 10px 26px -12px rgba(0,0,0,.9);}
         /* LE CADRAGE EST HAUT, ET C'EST VOULU : on regarde une coupe, donc des
            cheveux. A la moitie de l'image on aurait montre trois cols. */
-        .pc-vign>div{flex:none;width:72px;background-size:cover;
-          background-position:center 12%;}
+        /* ═══ ON VIENT REGARDER DES CHEVEUX ══════════════════════════════
+           « Idem etape 3 » — on n'y voyait pas la coupe non plus, et pour une
+           raison differente de l'etape 1 : ses photos sont des PLANS ENTIERS,
+           tete aux pieds. A soixante-douze points de large, la tete faisait
+           treize points de haut. On ne juge pas un degrade sur treize points.
+           ON ZOOME SUR LE HAUT. auto 340% agrandit l'image a trois fois et
+           demie la hauteur de la case, et center 7% la cale sur la tete : le
+           visage et la coupe remplissent enfin la vignette. Le corps est perdu,
+           et c'est bien — cet ecran parle de cheveux. */
+        .pc-vign>div{flex:none;width:86px;background-repeat:no-repeat;
+          background-size:auto 340%;background-position:center 7%;}
         .pc-vign>span{flex:1 1 auto;min-width:0;
           display:flex;flex-direction:column;justify-content:center;gap:1px;
           padding:8px 10px 8px 0;text-align:left;}

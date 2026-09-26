@@ -31,6 +31,7 @@ import { MotMarque } from "@/components/direct/mot-marque";
 import { FantomeAccueil } from "@/components/direct/fantome-accueil";
 import { NoteFantomes } from "@/components/direct/note-fantomes";
 import { essaiDuCommerce, essayeursDu, photoDeLaCarte } from "@/lib/direct/plaque-parcours";
+import { useRevelation } from "@/lib/direct/revelation";
 import { momentEnCours, toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import {
   APRES_COIFFURE,
@@ -68,7 +69,10 @@ export function ParcoursCoiffure({
   commerce?: string;
 }) {
   const [etape, setEtape] = useState(1);
-  const [glissiere, setGlissiere] = useState(50);
+  /* ELLE OUVRE SUR LA PERSONNE, PAS AU MILIEU — voir `revelation.ts`. Un
+     demi-visage coiffe a cote d'un demi-visage qui ne l'est pas ne se lit pas
+     comme un essayage : il faut DEJA savoir ce que la poignee fait. */
+  const [glissiere, setGlissiere] = useState(6);
   const cadre = useRef<HTMLDivElement>(null);
 
   const heure = useMemo(() => {
@@ -101,6 +105,30 @@ export function ParcoursCoiffure({
      tenaient lieu des trois portraits qu'on n'avait pas ; les portraits sont
      arrives, et l'ecran repond enfin a la question qu'il pose. Voir
      `VISAGES_COIFFURE`. */
+
+  /* ═══ LES CROCHETS PASSENT AVANT LE RETOUR ANTICIPE ══════════════════
+
+     `useRevelation` etait appele APRES `if (!salon) return null;`. Un crochet qui ne
+     s'execute pas a tous les rendus casse l'ordre sur lequel React compte : le
+     jour ou ce commerce n'existe pas — une faute de frappe dans un
+     identifiant — le composant ne rendrait pas une page vide, il planterait.
+     Ca ne se voyait pas parce que le commerce est toujours trouve ; la garde
+     eslint `rules-of-hooks`, elle, l'a vu.
+
+     RIEN ICI N'A BESOIN DU COMMERCE : les pas se comptent a partir de la cle et
+     de l'etape, qui sont connues des le premier rendu. */
+  /* CHAQUE SALON A SES TROIS ESSAYEURS — voir `ESSAYEURS`. Le salon du centre
+     garde ses trois portraits d'origine, qui portent deja un prenom, un mot et
+     une note ; les trois autres ont les leurs depuis qu'il les a fournis. */
+  const essayeurs = essayeursDu(cle);
+  const aLesAutres = cle === COMMERCE_COIFFURE || essayeurs.length > 0;
+  const total = aLesAutres ? ETAPES_COIFFURE : ETAPES_COIFFURE - 1;
+  /** Le pas reellement joue : on saute « les autres » quand on ne l'a pas. */
+  const ici = !aLesAutres && etape >= 3 ? etape + 1 : etape;
+
+  /* L'ESSAYAGE SE JOUE TOUT SEUL EN ARRIVANT : la personne, une seconde, puis
+     la coupe qui se pose sur elle. Le premier doigt l'arrete. */
+  const arreter = useRevelation({ actif: ici === 2, poser: setGlissiere, depart: 6, fin: 94 });
 
   if (!salon) return null;
 
@@ -144,14 +172,6 @@ export function ParcoursCoiffure({
      affichant trois femmes coiffees autrement. On ne le dit donc que la ou
      c'est vrai, et le parcours des autres salons a une etape de moins. Meme
      regle que le rideau du restaurant : l'etape existe si sa matiere existe. */
-  /* CHAQUE SALON A SES TROIS ESSAYEURS — voir `ESSAYEURS`. Le salon du centre
-     garde ses trois portraits d'origine, qui portent deja un prenom, un mot et
-     une note ; les trois autres ont les leurs depuis qu'il les a fournis. */
-  const essayeurs = essayeursDu(cle);
-  const aLesAutres = cle === COMMERCE_COIFFURE || essayeurs.length > 0;
-  const total = aLesAutres ? ETAPES_COIFFURE : ETAPES_COIFFURE - 1;
-  /** Le pas reellement joue : on saute « les autres » quand on ne l'a pas. */
-  const ici = !aLesAutres && etape >= 3 ? etape + 1 : etape;
 
   /* ═══ L'ETAPE 1 MONTRE LE MODELE DE L'ANNONCE, PAS LE RESULTAT ════════
 
@@ -169,6 +189,7 @@ export function ParcoursCoiffure({
      TROIS TEMPS, TROIS VISAGES : la coupe telle que le salon l'annonce, puis
      elle sur vous, puis sur d'autres que vous. `photoAnnonce` est exactement
      celle de la carte du paquet — voir `photoDeLaCarte`. */
+
   const photoAnnonce = photoDeLaCarte(cle) ?? salon.photo ?? APRES;
   const fond = ici === 1 ? photoAnnonce : ici === 4 ? salonPhoto : APRES;
 
@@ -178,7 +199,18 @@ export function ParcoursCoiffure({
           la photo n'est pas une photo mais une comparaison. */}
       {etape !== 2 && (
         <>
-          <div className="pc-fond" style={{ backgroundImage: `url("${fond}")` }} />
+          {/* ═══ DEUX COUCHES, POUR VOIR TOUTE LA COUPE ════════════════════
+              « On ne voit pas la coupe quasiment, il y a un trop gros
+              close-up. »
+              MESURÉ : `coiffure-homme-face.jpg` FAIT 590 × 590 et le cadre du
+              téléphone 420 × 900. En `cover`, la photo est agrandie jusqu'à
+              900 points de large pour remplir la hauteur — on n'en voyait donc
+              que 47 % de la largeur, et les cheveux sortaient des deux côtés.
+              LA PHOTO ENTIÈRE SE POSE SUR UNE COPIE FLOUE D'ELLE-MÊME. Le
+              cadre reste plein, rien n'est coupé, et le flou derrière fait un
+              fond de studio au lieu de deux bandes noires. */}
+          <div className="pc-fond flou" style={{ backgroundImage: `url("${fond}")` }} aria-hidden="true" />
+          <div className="pc-fond entier" style={{ backgroundImage: `url("${fond}")` }} />
           <div className="pc-voile" />
         </>
       )}
@@ -289,6 +321,7 @@ export function ParcoursCoiffure({
             ref={cadre}
             style={{ "--pc-g": `${glissiere}%` } as React.CSSProperties}
             onPointerDown={(e) => {
+              arreter();
               e.currentTarget.setPointerCapture(e.pointerId);
               bouger(e.clientX);
             }}
@@ -299,8 +332,8 @@ export function ParcoursCoiffure({
                 dimensions, donc les deux moitiés restent cadrées pareil. */}
             <div className="pc-g-img avant" style={{ backgroundImage: `url("${AVANT}")` }} />
             <span className="pc-g-trait" aria-hidden="true" />
-            <span className="pc-g-et g">Avant</span>
-            <span className="pc-g-et d">Sur moi</span>
+            <span className="pc-g-et g">Sa photo</span>
+            <span className="pc-g-et d">Avec la coupe</span>
           </div>
           <div className="pc-voile" />
           <section className="pc-bas">
@@ -310,6 +343,14 @@ export function ParcoursCoiffure({
             {/* LA SEULE MENTION QUI RESTE SUR CE PRODUIT. Elle ne dit pas « ceci
                 est une démonstration » — tout l'écran en est une — elle dit
                 « cette image n'est pas une photo de vous ». */}
+            {/* CE QUE FAIT L'ECRAN, EN UNE LIGNE. « Il faut que cette etape
+                soit comprehensible : c'est quelqu'un qui met sa photo et qui
+                veut voir ce que la coupe donne sur lui. » L'animation le
+                montre ; cette ligne le nomme, pour qui arrive apres elle. */}
+            {/* NEUTRE, PARCE QUE LE BARBIER COIFFE DES HOMMES. « Elle a envoyé
+                sa photo » s'affichait sous un visage d'homme : la phrase
+                nomme maintenant le geste, pas la personne. */}
+            <p className="pc-geste">Sa photo, et la coupe posée dessus. Tirez pour comparer.</p>
             <p className="pc-simu">Simulation · résultat indicatif</p>
             <button type="button" className="pc-go" onClick={suivant}>
               <Appareil />

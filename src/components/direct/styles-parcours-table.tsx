@@ -263,6 +263,68 @@ export function StylesParcoursTable() {
            promesse repoussee : le seul ecran qu'un concurrent ne peut pas
            copier, annonce et pas joue. Le telephone lit sa phrase, et la ligne
            du dessous dit que c'est une voix de synthese — voir l'ecran. */
+        /* ═══ L'ECRAN DU RECIT, REFAIT ═══════════════════════════════════
+           « C'est tres laid, ce design avec tout ce texte. Il faut supprimer le
+           texte et revoir tout l'UX de cet ecran pour qu'il soit plus
+           chaleureux. »
+           CE QUI ETAIT LAID : deux cent trente-six points de gras italique
+           encadres de magenta, au milieu de l'ecran. Un mur. Il cachait la
+           seule chose qui compte ici, qui est la voix.
+           CE QUI PREND SA PLACE : le visage, puis le geste. Tout est centre,
+           tout respire, et le plus gros objet de l'ecran est le bouton qu'on
+           veut toucher. */
+        .pt-voixbas{align-items:center;text-align:center;}
+        /* LE BLOC QUI PARLE : le rond, et l'onde dessous. */
+        .pt-parle{display:flex;flex-direction:column;align-items:center;gap:10px;
+          margin:0 0 4px;}
+        /* LE ROND : sa photo dedans, un anneau magenta autour, et le signe de
+           lecture pose en bas a droite comme une pastille. */
+        .pt-rond{position:relative;flex:none;
+          width:clamp(96px,min(28vw,14vh),124px);aspect-ratio:1;
+          border-radius:50%;padding:0;border:0;cursor:pointer;
+          background:none;font:inherit;
+          box-shadow:0 0 0 3px rgba(255,46,154,.85),
+                     0 18px 44px -14px rgba(255,46,154,.75);
+          transition:transform .18s ease,box-shadow .3s ease;}
+        .pt-rond:active{transform:scale(.96);}
+        .pt-rond:focus-visible{outline:2px solid #fff;outline-offset:5px;}
+        .pt-rond-p{position:absolute;inset:0;border-radius:50%;
+          background-size:cover;background-position:center 30%;}
+        /* LA PASTILLE DE LECTURE. Elle est en bas a droite pour ne pas couvrir
+           le visage : un triangle plante au milieu d'une tete est desagreable. */
+        .pt-rond-s{position:absolute;right:-2px;bottom:-2px;
+          width:38px;height:38px;border-radius:50%;
+          display:flex;align-items:center;justify-content:center;
+          font-size:14px;color:#06060A;background:#FF2E9A;
+          box-shadow:0 6px 18px -6px rgba(0,0,0,.9);}
+        /* IL RESPIRE QUAND CA PARLE, et seulement alors. */
+        .pt-rond.on{box-shadow:0 0 0 3px #FF2E9A,
+                    0 0 0 12px rgba(255,46,154,.22),
+                    0 18px 44px -12px rgba(255,46,154,.9);}
+        .pt-t-voix{font-size:clamp(25px,min(8vw,4.4vh),36px);}
+        .pt-qui{margin:5px 0 0;font-size:12.5px;font-weight:800;
+          letter-spacing:.06em;text-transform:uppercase;color:#FF7FC2;}
+        /* LA PHRASE QUI TIENT DEBOUT TOUTE SEULE. Elle n'a plus de cadre, plus
+           de guillemet geant, plus de fond : une phrase se lit mieux posee sur
+           la photo qu'enfermee dans une boite. */
+        .pt-phrase{margin:9px 0 0;max-width:30ch;
+          font-size:clamp(14px,4.2vw,17px);font-weight:700;font-style:italic;
+          line-height:1.35;color:#F4E9FF;
+          text-shadow:0 2px 14px rgba(0,0,0,.9);}
+        /* LE RECIT SE REPLIE. Il reste pour qui n'entend pas et pour qui fait
+           defiler en silence ; replie, il ne coute plus une ligne. */
+        .pt-lire{margin:9px 0 0;width:100%;max-width:340px;text-align:left;}
+        .pt-lire summary{list-style:none;cursor:pointer;text-align:center;
+          font-size:11.5px;font-weight:800;letter-spacing:.03em;
+          color:rgba(255,255,255,.62);text-decoration:underline;
+          text-underline-offset:3px;}
+        .pt-lire summary::-webkit-details-marker{display:none;}
+        .pt-lire[open] summary{color:#FF7FC2;}
+        .pt-lire p{margin:9px 0 0;padding:11px 13px;border-radius:14px;
+          font-size:12.5px;font-weight:600;line-height:1.45;color:#E7DCF2;
+          background:rgba(12,10,16,.7);
+          border:1px solid rgba(255,255,255,.12);
+          max-height:26vh;overflow-y:auto;}
         .pt-ecoute{display:flex;align-items:center;gap:13px;margin:12px 0 0;}
         .pt-ecoute-b{flex:none;width:52px;height:52px;border-radius:50%;
           display:flex;align-items:center;justify-content:center;
@@ -270,7 +332,7 @@ export function StylesParcoursTable() {
           background:#FF2E9A;box-shadow:0 10px 26px -10px rgba(255,46,154,.95);}
         .pt-ecoute-b s{text-decoration:none;}
         .pt-ecoute-b:active{transform:scale(.94);}
-        .pt-onde{flex:1;min-width:0;height:38px;display:flex;align-items:center;
+        .pt-onde{width:min(72vw,300px);height:30px;display:flex;align-items:center;
           gap:3px;}
         .pt-onde i{flex:1;min-width:2px;border-radius:2px;
           height:var(--h,40%);background:rgba(255,255,255,.28);}

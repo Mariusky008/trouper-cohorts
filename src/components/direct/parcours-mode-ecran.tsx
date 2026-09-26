@@ -35,6 +35,7 @@ import { MotMarque } from "@/components/direct/mot-marque";
 import { FantomeAccueil } from "@/components/direct/fantome-accueil";
 import { NoteFantomes } from "@/components/direct/note-fantomes";
 import { essaiDuCommerce, essayeursDu } from "@/lib/direct/plaque-parcours";
+import { useRevelation } from "@/lib/direct/revelation";
 import { momentEnCours, toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import {
   APRES_MODE,
@@ -73,7 +74,10 @@ export function ParcoursMode({
 }) {
   const [etape, setEtape] = useState(1);
   /** La position de la poignée avant/après, en pourcentage. */
-  const [glissiere, setGlissiere] = useState(50);
+  /* ELLE OUVRE SUR LA SILHOUETTE ENTIERE, pas au milieu — « on voit d'abord
+     la silhouette entiere normale de la personne, et puis le resultat ». Voir
+     `revelation.ts`. */
+  const [glissiere, setGlissiere] = useState(4);
   const cadre = useRef<HTMLDivElement>(null);
 
   const heure = useMemo(() => {
@@ -109,6 +113,33 @@ export function ParcoursMode({
     apres: APRES_MODE,
   });
 
+  /* ═══ LES CROCHETS PASSENT AVANT LE RETOUR ANTICIPE ══════════════════
+
+     `useRevelation` etait appele APRES `if (!boutique) return null;`. Un crochet qui ne
+     s'execute pas a tous les rendus casse l'ordre sur lequel React compte : le
+     jour ou ce commerce n'existe pas — une faute de frappe dans un
+     identifiant — le composant ne rendrait pas une page vide, il planterait.
+     Ca ne se voyait pas parce que le commerce est toujours trouve ; la garde
+     eslint `rules-of-hooks`, elle, l'a vu.
+
+     RIEN ICI N'A BESOIN DU COMMERCE : les pas se comptent a partir de la cle et
+     de l'etape, qui sont connues des le premier rendu. */
+  /* ═══ L'ETAPE DES ESSAYEURS REVIENT, ET PARTOUT ═══════════════════════
+     « La logique est bonne, mais il manque une etape : les avis et les
+     fantomes de 3 personnes qui ont essaye la tenue. »
+     JE L'AVAIS RETIREE PARCE QU'ELLE MENTAIT, faute d'avoir une serie par
+     commerce : trois femmes en blazer rose sous « Un pret-a-porter homme ».
+     Avec ses trois personnes par tenue, elle dit vrai partout et revient. */
+  const essayeurs = essayeursDu(cle);
+  const aLesAutres = cle === COMMERCE_MODE || essayeurs.length > 0;
+  const total = aLesAutres ? ETAPES_MODE : ETAPES_MODE - 1;
+  /** Le pas reellement joue : on saute « les autres » quand on ne l'a pas. */
+  const ici = !aLesAutres && etape >= 3 ? etape + 1 : etape;
+
+  /* L'ESSAYAGE SE JOUE TOUT SEUL EN ARRIVANT : la personne telle qu'elle est,
+     une seconde, puis la piece qui se pose sur elle. Le doigt l'arrete. */
+  const arreter = useRevelation({ actif: ici === 2, poser: setGlissiere, depart: 4, fin: 96 });
+
   if (!boutique) return null;
 
   const nom = boutique.nom;
@@ -122,17 +153,6 @@ export function ParcoursMode({
      annoncait « la meme veste » en affichant trois femmes en rose. Meme regle
      que le rideau du restaurant : l'etape existe si sa matiere existe, et le
      compteur compte ce qui est la. */
-  /* ═══ L'ETAPE DES ESSAYEURS REVIENT, ET PARTOUT ═══════════════════════
-     « La logique est bonne, mais il manque une etape : les avis et les
-     fantomes de 3 personnes qui ont essaye la tenue. »
-     JE L'AVAIS RETIREE PARCE QU'ELLE MENTAIT, faute d'avoir une serie par
-     commerce : trois femmes en blazer rose sous « Un pret-a-porter homme ».
-     Avec ses trois personnes par tenue, elle dit vrai partout et revient. */
-  const essayeurs = essayeursDu(cle);
-  const aLesAutres = cle === COMMERCE_MODE || essayeurs.length > 0;
-  const total = aLesAutres ? ETAPES_MODE : ETAPES_MODE - 1;
-  /** Le pas reellement joue : on saute « les autres » quand on ne l'a pas. */
-  const ici = !aLesAutres && etape >= 3 ? etape + 1 : etape;
 
   /* LA DEVANTURE EST CELLE DE CETTE BOUTIQUE-LA. `DEVANTURE_MODE` est la
      vitrine de la rue pietonne : les quatre cartes finissaient devant elle. */
@@ -143,6 +163,7 @@ export function ParcoursMode({
      vaut pour les trois endroits qui la montrent : l'ecran d'ouverture, la
      fiche de l'essayage et le panneau de la derniere etape. */
   const piecePhoto = piece?.photo ?? boutique.photo ?? PIECE_MODE;
+
 
   const suivant = () => setEtape((e) => Math.min(total, e + 1));
   const precedent = () => (etape === 1 ? onFermer() : setEtape((e) => e - 1));
@@ -208,7 +229,12 @@ export function ParcoursMode({
       {/* ───────────────────────── 1/4 · LA PIÈCE ───────────────────────── */}
       {ici === 1 && (
         <section className="pm-un">
-          <div className="pm-photo" style={{ backgroundImage: `url("${piecePhoto}")` }} />
+          {/* DEUX COUCHES, comme sur la coiffure et pour la meme raison : la
+              piece entiere posee sur une copie floue d'elle-meme. Une veste
+              carree agrandie pour remplir un ecran de telephone perd ses
+              manches. */}
+          <div className="pm-photo flou" style={{ backgroundImage: `url("${piecePhoto}")` }} aria-hidden="true" />
+          <div className="pm-photo entier" style={{ backgroundImage: `url("${piecePhoto}")` }} />
           <div className="pm-voile" />
           <div className="pm-bas">
             {/* ═══ LA BULLE A QUITTÉ LE VISAGE ═══════════════════════════
@@ -306,6 +332,7 @@ export function ParcoursMode({
             ref={cadre}
             style={{ "--pm-g": `${glissiere}%` } as React.CSSProperties}
             onPointerDown={(e) => {
+              arreter();
               e.currentTarget.setPointerCapture(e.pointerId);
               bouger(e.clientX);
             }}
@@ -317,11 +344,15 @@ export function ParcoursMode({
                 changeait le cadrage et les deux moities ne se comparaient
                 plus. */}
             <div className="pm-g-img avant" style={{ backgroundImage: `url("${AVANT}")` }} />
+            {/* « SA PHOTO » ET « LA PIECE SUR ELLE » PLUTOT QU'« AVANT » ET
+                « SUR MOI ». Les deux anciens mots decrivaient un etat ; ceux-ci
+                disent QUI et QUOI — c'est ce qu'il demandait de rendre
+                comprehensible. */}
             <span className="pm-g-et g" style={{ opacity: glissiere > 18 ? 1 : 0 }}>
-              Avant
+              Sa photo
             </span>
             <span className="pm-g-et d" style={{ opacity: glissiere < 82 ? 1 : 0 }}>
-              Sur moi
+              Avec la pièce
             </span>
             <span className="pm-g-trait" style={{ left: `${glissiere}%` }} aria-hidden="true">
               <s>↔</s>
@@ -356,6 +387,9 @@ export function ParcoursMode({
               reste. « Cette image n'est pas une photo de vous » est une
               information ; « ceci est une démonstration » n'en était pas une,
               sur un écran qui ne montre que ça. */}
+          {/* CE QUE FAIT L'ECRAN, EN UNE LIGNE — voir le meme bloc sur la
+              coiffure, ecrit le meme jour. */}
+          <p className="pm-geste">Sa photo, et la pièce posée dessus. Tirez pour comparer.</p>
           <p className="pm-simu">Simulation · résultat indicatif</p>
         </section>
       )}

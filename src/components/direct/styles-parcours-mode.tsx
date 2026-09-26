@@ -58,6 +58,10 @@ export function StylesParcoursMode() {
         .pm-un{position:relative;flex:1 1 auto;min-height:0;display:flex;}
         .pm-photo{position:absolute;inset:0;background-size:cover;
           background-position:center top;}
+        .pm-photo.flou{filter:blur(26px) brightness(.5) saturate(1.1);
+          transform:scale(1.14);}
+        .pm-photo.entier{background-size:contain;background-repeat:no-repeat;
+          background-position:center 24%;}
         .pm-voile{position:absolute;inset:0;
           background:linear-gradient(180deg,
             rgba(6,6,10,.62) 0%, rgba(6,6,10,.12) 22%,
@@ -218,6 +222,13 @@ export function StylesParcoursMode() {
           text-decoration:underline;text-underline-offset:5px;
           text-decoration-color:rgba(255,255,255,.35);}
         .pm-lien s{text-decoration:none;}
+        /* CE QUE FAIT L'ECRAN, EN UNE LIGNE. Elle se lit avant la mention de
+           simulation, plus grande qu'elle et moins qu'un titre : c'est une
+           explication, pas une accroche. */
+        .pm-geste{margin:0 0 4px;font-size:11.5px;font-weight:750;
+          line-height:1.25;color:#E9DCF4;text-align:center;
+          text-shadow:0 1px 10px rgba(0,0,0,.7);}
+        .pm-geste::first-line{color:#fff;}
         .pm-simu{margin:9px 0 0;font-size:11px;font-weight:700;
           color:rgba(255,255,255,.44);}
 
@@ -290,8 +301,12 @@ export function StylesParcoursMode() {
         /* LE CADRAGE DESCEND AVEC LA HAUTEUR. Ces vignettes montraient un
            visage ; elles montrent maintenant une veste, et une veste se porte
            plus bas qu'un visage. A 20 % on coupait aux epaules. */
-        .pm-facon>div{flex:none;width:72px;min-height:0;
-          background-size:cover;background-position:center 30%;}
+        /* ICI, C'EST LA SILHOUETTE QU'ON REGARDE, pas la tete : une tenue se
+           juge en entier. La case s'elargit et l'image tient dedans au lieu
+           d'etre rognee — meme raison qu'a l'etape 1, une taille plus bas. */
+        .pm-facon>div{flex:none;width:86px;min-height:0;
+          background-repeat:no-repeat;
+          background-size:contain;background-position:center;}
         /* LE LIEU PUIS CE QUE LA VESTE COUVRE, sur deux lignes.
            LA HIERARCHIE S'EST INVERSEE AVEC LE CONTENU. Ces vignettes portaient
            un nom de piece et son prix : le prix en magenta gras etait la
