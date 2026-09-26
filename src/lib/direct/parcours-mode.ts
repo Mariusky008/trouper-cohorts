@@ -81,14 +81,61 @@ export const DEVANTURE_MODE = "/direct/vitrine-mode.jpg";
  * ce qui rend le bloc utile : la mannequin de l'essayage a vingt-cinq ans, et
  * celle qui regarde l'écran n'en a pas forcément vingt-cinq.
  *
- * LA LÉGENDE DÉCRIT CE QU'ON VOIT, ET RIEN DE PLUS. Pas de prénom, pas d'avis,
- * pas de « taille 38 » : on n'a ni l'un ni l'autre. On a une photo, et on dit
- * sur quoi la veste est portée — c'est vérifiable à l'œil, sur l'image même.
+ * ═══ ET ELLES PARLENT, MAINTENANT ═════════════════════════════════════════
+ *
+ * « C'est dommage, parce qu'on manque l'essentiel de ce que les autres ont pu
+ * mettre comme commentaires quand ils l'ont essayé, et aussi ils ont mis 1 à 5
+ * fantômes pour dire s'ils l'ont aimé, comme on l'a fait sur l'app démo. »
+ *
+ * J'AVAIS ÉCRIT LE CONTRAIRE, ICI MÊME, ET C'ÉTAIT L'ERREUR. La version
+ * précédente de ce commentaire disait : « Pas de prénom, pas d'avis : on n'a ni
+ * l'un ni l'autre. » C'est vrai d'une photo trouvée sur une banque d'images ;
+ * ce n'est pas vrai de l'écran qu'on montre. Dans l'application, une personne
+ * qui essaie une pièce la note et dit un mot — c'est tout le mécanisme du mur.
+ * Reprendre les photos sans reprendre les voix, c'est montrer le décor du
+ * produit et pas le produit.
+ *
+ * ET C'EST L'ESSENTIEL, COMME IL LE DIT : trois photos muettes répondent « en
+ * voici trois autres » ; trois personnes qui disent ce qu'elles en ont pensé
+ * répondent « voilà ce que ça donne quand on la porte vraiment ». La deuxième
+ * réponse est la seule qui fasse acheter.
+ *
+ * CHAQUE MOT DIT UNE CHOSE QUE LA PHOTO NE DIT PAS. La polyvalence, la couleur
+ * sous le soleil, la peur de la couleur : trois doutes différents, trois
+ * réponses. Trois fois « superbe » n'aurait rien appris — et on aurait lu le
+ * premier seulement.
+ *
+ * LA NOTE VA DE UN À CINQ FANTÔMES, et le cinquième a des yeux en cœur : c'est
+ * le signe du produit, pas une étoile. Voir `note-fantomes.tsx`.
  */
-export const FACONS_MODE: { photo: string; ou: string; avec: string }[] = [
-  { photo: "/direct/accueil/mode-porte-bureau.jpg", ou: "Au bureau", avec: "Sur un jean noir" },
-  { photo: "/direct/accueil/mode-porte-terrasse.jpg", ou: "En terrasse", avec: "Sur un tee-shirt blanc" },
-  { photo: "/direct/accueil/mode-porte-marche.jpg", ou: "Au marché", avec: "Sur une chemise claire" },
+export type FaconPortee = {
+  photo: string;
+  ou: string;
+  avec: string;
+  /** Qui l'a essayée. Un prénom, comme partout ailleurs dans le produit. */
+  qui: string;
+  /** Ce qu'elle en dit — un doute levé, pas un compliment. */
+  mot: string;
+  /** Un à cinq fantômes. Le cinquième est un coup de cœur. */
+  note: number;
+};
+
+export const FACONS_MODE: FaconPortee[] = [
+  {
+    photo: "/direct/accueil/mode-porte-bureau.jpg", ou: "Au bureau", avec: "Sur un jean noir",
+    qui: "Camille", note: 5,
+    mot: "Prise pour le bureau, je la mets aussi le week-end.",
+  },
+  {
+    photo: "/direct/accueil/mode-porte-terrasse.jpg", ou: "En terrasse", avec: "Sur un tee-shirt blanc",
+    qui: "Awa", note: 4,
+    mot: "Au soleil, le rose tire plus clair qu'en boutique.",
+  },
+  {
+    photo: "/direct/accueil/mode-porte-marche.jpg", ou: "Au marché", avec: "Sur une chemise claire",
+    qui: "Martine", note: 5,
+    mot: "Je me méfiais de la couleur. C'est ce que je porte le plus.",
+  },
 ];
 
 /** Combien d'étapes, et dans quel ordre. Le numéro « 1/4 » en dépend. */

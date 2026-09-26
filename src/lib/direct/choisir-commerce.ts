@@ -124,10 +124,24 @@ export const CATEGORIES: Categorie[] = [
     titreRose: "je porte ?",
     bulle: "Glissez pour découvrir les boutiques près de vous",
     bouton: "Découvrir cette tenue",
+    /* ═══ QUATRE VETEMENTS, PARCE QUE LE TITRE NE DEMANDE QUE CA ══════════
+
+       « Peux-tu remplacer la derniere annonce, qui est un bijou, par un
+       vetement. »
+
+       C'EST LE MEME DEFAUT QUE L'ONGLERIE SOUS « QUELLE COUPE M'IRAIT ? », et
+       je l'avais laisse passer ici apres l'avoir repare la-bas. Le bracelet de
+       l'atelier etait dans la categorie « mode » au sens du metier, et hors
+       sujet sous la question posee : on ne PORTE pas un bracelet au sens ou
+       l'on porte un manteau — on ne se demande pas s'il tombe bien.
+
+       LE DEPOT-VENTE PREND SA PLACE, avec un manteau. L'atelier de bijoux
+       n'est pas perdu : il est dans l'application, avec son propre essayage au
+       poignet, qui est exactement l'ecran qu'il lui faut. */
     cartes: [
       { id: "mode-friperie", photo: "/direct/mode-veste-dentelle.jpg" },
       { id: "mode-homme", photo: "/direct/homme-veste-ciree-kaki.jpg" },
-      { id: "bijoux-atelier", photo: "/direct/poignet-bracelet.jpg" },
+      { id: "mode-depot", photo: "/direct/mode-manteau-leopard.jpg" },
       { id: "mode-centre", photo: "/direct/accueil/mode-apres.jpg" },
     ],
   },
@@ -138,17 +152,50 @@ export const CATEGORIES: Categorie[] = [
     titreRose: "je mange quoi ?",
     bulle: "Glissez pour découvrir les menus près de vous",
     bouton: "Découvrir ce menu",
+    /* ═══ SEPT REPAS DU JOUR, TOUS DIFFERENTS ═════════════════════════════
+
+       « Il faut que les 5 annonces montrent des repas du jour et pas une
+       ambiance, et la boucherie un plat aussi du jour. Et si tu peux, meme
+       rajouter deux ou trois autres annonces avec des plats du jour varies,
+       pour montrer vraiment qu'on represente plein de repas differents a
+       choisir le midi. »
+
+       DEUX CARTES SUR CINQ MONTRAIENT UNE SALLE. La grande tablee eclairee a
+       la bougie et l'etal du boucher sont de belles photos, et aucune des deux
+       ne repond a « ce midi, je mange quoi ? ». Elles s'affichaient parce que
+       ces deux commerces n'avaient AUCUNE offre a midi : l'ecran se rabattait
+       alors sur la photo du commerce, faute de mieux. La reparation n'est donc
+       pas dans cette liste, elle est dans leur journee — ils servent a midi
+       maintenant, et ils le disent. Voir `apercu-habitant.ts`.
+
+       CHAQUE PHOTO EST CELLE D'UN MOMENT DE LA JOURNEE, sans exception. C'est
+       ce qui accroche le titre et le prix a l'assiette qu'on regarde : l'ecran
+       n'ecrit un chiffre que s'il peut le rattacher a la chose montree.
+
+       ET LA BOULANGERIE ET LE TRAITEUR ARRIVENT ICI. Il les avait sortis de la
+       Deco — « hors sujet dans l'onglet Commerces, qui est plutot Deco » — et
+       il avait raison deux fois : ils n'y repondaient a rien, et ils repondent
+       exactement a celle-ci. Une formule sandwich et une barquette du jour
+       sont ce qu'on mange a midi quand on ne s'assoit pas.
+
+       SEPT PLATS, SEPT COMMERCES, SEPT ASSIETTES QUI NE SE RESSEMBLENT PAS :
+       magret, poulet basquaise, axoa, parmentier, sandwich, barquette,
+       lasagnes. C'est le nombre qui fait la demonstration — un midi ou l'on
+       choisit vraiment, et pas une vitrine de cinq restaurants.
+
+       LE `quoi` N'EST ECRIT QUE LA OU LE TITRE DE L'OFFRE N'EST PAS UN PLAT.
+       « Le service du midi » et « Les deux plats du jour » disent l'heure, pas
+       ce qu'on mange ; le plat, lui, est ecrit dans le `menu` du commerce, au
+       meme prix. Ailleurs le titre nomme deja l'assiette, et on ne le double
+       pas. */
     cartes: [
-      /* DEUX DE CES CINQ PHOTOS SONT CELLES D'UN MOMENT DE LA JOURNEE, et
-         c'est ce qui leur donne leur prix : l'écran ne l'écrit que s'il peut
-         le rattacher à la chose montrée. Les trois autres sont les photos de
-         l'annonce — un vrai plat du commerce, sans prix, plutôt qu'un prix
-         emprunté au plat d'à côté. */
-      { id: "centre", photo: "/direct/plat-du-jour.jpg" },
-      { id: "tablee", photo: "/direct/tablee-du-soir.jpg" },
-      { id: "deux-rues", photo: "/direct/plat-axoa.jpg" },
-      { id: "boucher", photo: "/direct/etal-boucher.jpg" },
-      { id: "emporter", photo: "/direct/plat-lasagnes.jpg" },
+      { id: "centre", photo: "/direct/plat-du-jour.jpg", quoi: "Magret grillé, pommes sarladaises" },
+      { id: "tablee", photo: "/direct/plat-basquaise.jpg" },
+      { id: "deux-rues", photo: "/direct/plat-axoa.jpg", quoi: "Axoa de veau, riz de pays" },
+      { id: "boucher", photo: "/direct/plat-parmentier.jpg" },
+      { id: "boulange", photo: "/direct/plat-formule.jpg", quoi: "Sandwich, boisson, dessert" },
+      { id: "traiteur", photo: "/direct/portion-a-emporter.jpg", quoi: "Le gratin du jour, en barquette" },
+      { id: "emporter", photo: "/direct/plat-lasagnes.jpg", quoi: "Lasagnes maison" },
     ],
   },
   {

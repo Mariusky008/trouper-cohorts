@@ -33,6 +33,7 @@
 import { useMemo, useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { FantomeAccueil } from "@/components/direct/fantome-accueil";
+import { NoteFantomes } from "@/components/direct/note-fantomes";
 import { momentEnCours, toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import {
   APRES_MODE,
@@ -330,9 +331,13 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
               quelqu'un comme vous », qui est la question qu'on se pose devant
               un essayage.
 
-              LA LÉGENDE DÉCRIT LA PHOTO, ELLE NE LA COMMENTE PAS. Un lieu et ce
-              que la veste couvre : deux choses qu'on vérifie en regardant.
-              Aucun prix ici — c'est la même veste, elle a le prix qu'on a déjà
+              ELLES DISENT CE QU'ELLES EN ONT PENSÉ, et c'est ce qui manquait :
+              « on manque l'essentiel de ce que les autres ont pu mettre comme
+              commentaires quand ils l'ont essayé ». Un prénom, un mot, et un à
+              cinq fantômes — le même mécanisme que le mur de l'application.
+              Voir `FACONS_MODE` et `note-fantomes.tsx`.
+
+              AUCUN PRIX ICI : c'est la même veste, elle a le prix qu'on a déjà
               lu deux écrans plus haut, et le réécrire en ferait un second. */}
           <p className="pm-insp">
             <span className="pm-cintre petit" aria-hidden="true">
@@ -348,8 +353,14 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
               <article key={f.photo} className="pm-facon">
                 <div style={{ backgroundImage: `url("${f.photo}")` }} />
                 <span>
-                  <b>{f.ou}</b>
-                  <em>{f.avec}</em>
+                  <i className="pm-facon-q">
+                    {f.qui}
+                    <NoteFantomes note={f.note} />
+                  </i>
+                  <b>{f.mot}</b>
+                  <em>
+                    {f.ou} · {f.avec}
+                  </em>
                 </span>
               </article>
             ))}

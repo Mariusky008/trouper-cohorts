@@ -29,6 +29,7 @@
 import { useMemo, useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { FantomeAccueil } from "@/components/direct/fantome-accueil";
+import { NoteFantomes } from "@/components/direct/note-fantomes";
 import { momentEnCours, toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import {
   APRES_COIFFURE,
@@ -279,8 +280,18 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
               <article key={v.photo} className="pc-vign">
                 <div style={{ backgroundImage: `url("${v.photo}")` }} />
                 <span>
-                  <b>{v.ou}</b>
-                  <u>{v.avec}</u>
+                  {/* QUI, COMBIEN, ET CE QU'ELLE EN DIT — voir
+                      `VISAGES_COIFFURE` et `note-fantomes.tsx`. Les trois
+                      portraits étaient muets ; ils répondaient « en voici
+                      trois » à quelqu'un qui demande « et sur moi ? ». */}
+                  <i className="pc-vign-q">
+                    {v.qui}
+                    <NoteFantomes note={v.note} />
+                  </i>
+                  <b>{v.mot}</b>
+                  <u>
+                    {v.ou} · {v.avec}
+                  </u>
                 </span>
               </article>
             ))}

@@ -1751,6 +1751,11 @@ const CARTES: CarteAutour[] = [
       {
         de: 12, a: 14, quand: "12 h – 14 h", icone: "🍽️",
         titre: "Le service du midi",
+        // LE MIDI A SA PHOTO, PARCE QUE L'ECRAN DE DEMARRAGE DEMANDE « CE MIDI,
+        // JE MANGE QUOI ? ». Sans elle, la carte tombait sur la photo du
+        // commerce et montrait une salle vide a quelqu'un qui a faim. Voir
+        // `choisir-commerce.ts`, le paquet des restaurants.
+        photo: "/direct/plat-du-jour.jpg",
         video: {
           mp4: "/direct/service-cuisine.mp4",
           webm: "/direct/service-cuisine.webm",
@@ -1906,6 +1911,7 @@ const CARTES: CarteAutour[] = [
       {
         de: 11, a: 13, quand: "11 h – 13 h", icone: "🍲",
         titre: "Les deux plats du jour",
+        photo: "/direct/plat-lasagnes.jpg",
         // UN JUGEMENT, PAS UNE DESCRIPTION — voir `conseil`. « Faites le
         // matin » serait une information de plus ; « prenez les lasagnes »
         // est quelqu'un qui choisit à votre place, et c'est ce qu'on ne
@@ -2017,6 +2023,9 @@ const CARTES: CarteAutour[] = [
         // pas à l'afficher.
         titre: "De la place, sans attendre",
         lignes: ["Plat + dessert", "On vous installe"],
+        // LE PLAT DU JOUR, EN PHOTO — meme raison que chez Bergine. Il est
+        // ecrit dans `menu.plat` juste au-dessus, au meme prix : 16 €.
+        photo: "/direct/plat-axoa.jpg",
         prix: "16 €", places: 4, action: "Réserver", envies: ["maintenant"],
         avis: [
           { note: 5, texte: "Servi en dix minutes, et c'était bon.", qui: "Bruno", quand: "mardi dernier",
@@ -2176,6 +2185,7 @@ const CARTES: CarteAutour[] = [
       {
         de: 11, a: 14, quand: "11 h – 14 h", icone: "🥪",
         titre: "Formule du midi",
+        photo: "/direct/plat-formule.jpg",
         lignes: ["Sandwich au choix", "Boisson + dessert"],
         prix: "8,50 €", places: 20, action: "Gardez-m'en une",
         envies: ["moins15", "maintenant", "emporter"],
@@ -2322,6 +2332,31 @@ const CARTES: CarteAutour[] = [
           qui: ["Jean-Marc", "Hélène", "Karim", "Sofia", "Paul", "Anne"],
         },
       },
+      // ═══ ET SON PLAT CUISINE DU JOUR, A L'HEURE OU ON LE MANGE ═════════
+      //
+      // « Et la boucherie, un plat aussi du jour. »
+      //
+      // ELLE N'ANNONCAIT SES PLATS CUISINES QU'A PARTIR DE 15 H 30, et encore
+      // : a moitie prix, comme un fond de vitrine. A midi, l'ecran tombait
+      // donc sur l'etal — de la viande crue sous « Ce midi, je mange quoi ? ».
+      //
+      // LE PRIX PLEIN EST DEJA ECRIT PLUS BAS : le moment de 15 h 30 barre 9 €
+      // pour en demander 6. Celui-ci est donc a 9 €, et les deux se suivent
+      // sans se contredire — c'est le meme plat, plus tot dans la journee.
+      {
+        de: 11, a: 14, quand: "11 h – 14 h", icone: "🍲", publie: 11,
+        titre: "Hachis parmentier, fait ce matin",
+        photo: "/direct/plat-parmentier.jpg",
+        lignes: ["Préparé au laboratoire, derrière le billot", "À emporter chaud ou à réchauffer"],
+        prix: "9 €", places: 14, action: "Gardez-m'en une part",
+        envies: ["moins15", "maintenant", "emporter"],
+        rappels: 4,
+        avis: [
+          { note: 5, texte: "La viande vient de chez lui, ça change tout.", qui: "Jean-Marc", quand: "mardi dernier",
+            photo: "/direct/plat-parmentier.jpg" },
+          { note: 4, texte: "Deux parts pour le prix d'un plat au resto.", qui: "Anne", quand: "la semaine dernière" },
+        ],
+      },
       {
         de: 15.5, a: 19.5, quand: "18 h", icone: "🏷️", publie: 15.5,
         titre: "Les plats cuisinés du jour",
@@ -2374,6 +2409,31 @@ const CARTES: CarteAutour[] = [
       cadrage: "50%",
     },
     moments: [
+      // ═══ ELLE SERT AUSSI LE MIDI, ET ELLE NE LE DISAIT NULLE PART ═══════
+      //
+      // « Il faut que les 5 annonces montrent des repas du jour, et pas une
+      // ambiance. »
+      //
+      // SA CARTE NE PORTAIT QUE LA GRANDE TABLE DU SOIR, donc l'ecran de midi
+      // se rabattait sur la photo du commerce — une tablee eclairee a la
+      // bougie, sous le titre « Ce midi, je mange quoi ? ». Une ambiance a la
+      // place d'une reponse.
+      //
+      // LE PLAT EST CELUI DE SA CARTE, au prix de sa carte : « Poulet
+      // basquaise », 17 €, ecrit dans `menu` quinze lignes plus haut. On ne
+      // lui invente pas un plat, on publie celui qu'il annonce deja.
+      {
+        de: 11.5, a: 14, quand: "12 h – 14 h", icone: "🍽️",
+        titre: "Poulet basquaise, riz du pays",
+        photo: "/direct/plat-basquaise.jpg",
+        lignes: ["Plat + fromage de brebis", "Servi a la grande table"],
+        prix: "17 €", places: 10, action: "Réserver", envies: ["maintenant"],
+        avis: [
+          { note: 5, texte: "Le poulet mijote depuis le matin, ça se sent.", qui: "Chloé", quand: "jeudi dernier",
+            photo: "/direct/plat-basquaise.jpg" },
+          { note: 4, texte: "On mange vite et bien, même seul.", qui: "Hugo", quand: "il y a 10 jours" },
+        ],
+      },
       {
         de: 17, a: 23, quand: "20 h", icone: "🎲", publie: 19.5,
         titre: "La grande table des inconnus",
@@ -2435,6 +2495,7 @@ const CARTES: CarteAutour[] = [
       {
         de: 10, a: 18, quand: "toute la journée", icone: "🍱", publie: 10,
         titre: "Les barquettes du jour",
+        photo: "/direct/portion-a-emporter.jpg",
         lignes: ["Six plats au choix", "À emporter"],
         prix: "12 €", places: 25, action: "Gardez-m'en une",
         envies: ["maintenant", "emporter"],
@@ -2706,6 +2767,71 @@ const CARTES: CarteAutour[] = [
         photo: "/direct/homme-chemise-lin-bleu.jpg",
         lignes: ["Ourlets et manches", "Rendus sous 48 h"],
         places: 12, envies: [],
+      },
+    ],
+  },
+
+  /* ═══ LE DEPOT-VENTE, A LA PLACE DU BIJOU ═══════════════════════════════
+     « Peux-tu remplacer la derniere annonce, qui est un bijou, par un
+     vetement. » Le paquet « Qu'est-ce que je porte ? » comptait trois
+     boutiques de vetements et un atelier de bijoux ; il lui fallait une
+     quatrieme boutique, pas une troisieme et demie. Voir le commentaire du
+     paquet dans `choisir-commerce.ts`.
+
+     UN DEPOT-VENTE, PARCE QUE LES TROIS AUTRES SONT DEJA PRISES : une
+     friperie, un pret-a-porter homme et une boutique de centre-ville. Une
+     quatrieme boutique neuve n'aurait rien ajoute a la demonstration ; le
+     depot-vente montre une piece unique, ce qui donne a l'annonce une urgence
+     qu'aucune des trois autres n'a. */
+  {
+    id: "mode-depot",
+    branche: "mode",
+    photo: "/direct/mode-manteau-leopard.jpg",
+    cadrage: "35%",
+    nom: "Un dépôt-vente de la place",
+    google: { note: "4,7", avis: 37 },
+    metier: "Dépôt-vente",
+    ville: VILLE,
+    itineraire: YALLER,
+    /* QUATRE CENT DIX METRES : la friperie est a 470, le pret-a-porter a 320,
+       la boutique du centre a 180. Quatre adresses, quatre distances — deux
+       chiffres identiques se lisent comme une donnee recopiee. */
+    metres: 410,
+    distance: "410 m",
+    fiche: {
+      ou: "Place du marché, au-dessus du fleuriste",
+      horaires: "Aujourd'hui, 10 h 30 – 18 h 30",
+      mot: "On dépose, on vend, on reverse. Chaque pièce est unique : ce qui part ne revient pas.",
+    },
+    catalogue: [
+      { id: "dp-1", rayon: "Manteaux", nom: "Manteau façon léopard", detail: "Taille 38, très peu porté.", prix: "68 €", photo: "/direct/mode-manteau-leopard.jpg" },
+      { id: "dp-2", rayon: "Manteaux", nom: "Doudoune kaki", detail: "Taille 40.", prix: "45 €", photo: "/direct/mode-doudoune-kaki.jpg" },
+      { id: "dp-3", rayon: "Robes", nom: "Robe à fleurs", detail: "Taille 36.", prix: "32 €", photo: "/direct/mode-robe-fleurs-noire.jpg" },
+      { id: "dp-4", rayon: "Mailles", nom: "Gilet orchidée", detail: "Taille 38.", prix: "28 €", photo: "/direct/mode-gilet-orchidee.jpg" },
+      { id: "dp-5", rayon: "Le service", nom: "Dépôt", detail: "On reverse 50 % à la vente, sous 30 jours." },
+    ],
+    reponse: {
+      cadeau: "La pièce mise de côté jusqu'à la fermeture",
+      texte: "Je vous la garde derrière le comptoir, passez quand vous voulez.",
+      tenu: "18 h 30",
+      apres: 3,
+    },
+    moments: [
+      {
+        de: 10.5, a: 18.5, quand: "aujourd'hui", icone: "🐆",
+        titre: "Manteau façon léopard, taille 38",
+        photo: "/direct/mode-manteau-leopard.jpg",
+        // UNE SEULE PIECE, ET C'EST VRAI ICI. Ailleurs, « il n'en reste que
+        // trois » est un stock ; dans un depot-vente, l'unicite est la nature
+        // meme du commerce, pas une facon de presser.
+        lignes: ["Déposé hier, très peu porté", "Une seule pièce, une seule taille"],
+        prix: "68 €", places: 1, action: "Gardez-le-moi",
+        envies: ["arrivage", "maintenant"],
+        rappels: 6,
+        avis: [
+          { note: 5, texte: "J'y trouve une pièce sur deux visites, jamais la même.", qui: "Léa", quand: "la semaine dernière" },
+          { note: 4, texte: "Tout est vérifié et repassé avant d'être mis en rayon.", qui: "Sofia", quand: "en février" },
+        ],
       },
     ],
   },

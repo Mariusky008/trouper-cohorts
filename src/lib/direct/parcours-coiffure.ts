@@ -63,14 +63,51 @@ export const SALON_COIFFURE = "/direct/salon-neuf.jpg";
  * sur moi ? ». C'est le même défaut que les trois vestes du parcours mode, et
  * il se répare de la même façon : avec les bonnes images.
  *
- * LA LÉGENDE DÉCRIT CE QU'ON VOIT, ET RIEN DE PLUS. Sa maquette annonçait des
- * âges — trente, cinquante-cinq, soixante-sept ans. On ne les connaît pas, et
- * un âge inventé sous un visage réel est un chiffre de trop. Un lieu et un
- * détail de la coupe se vérifient à l'œil, sur l'image même.
+ * L'ÂGE RESTE DEHORS. Sa maquette annonçait trente, cinquante-cinq et
+ * soixante-sept ans. On ne les connaît pas, et un âge inventé sous un visage
+ * réel est un chiffre de trop. Un lieu et un détail de la coupe, eux, se
+ * vérifient à l'œil sur l'image même.
+ *
+ * ═══ MAIS ELLES DISENT CE QU'ELLES EN ONT PENSÉ ═══════════════════════════
+ *
+ * « On manque l'essentiel de ce que les autres ont pu mettre comme
+ * commentaires quand ils l'ont essayé, et aussi ils ont mis 1 à 5 fantômes. »
+ *
+ * UN MOT N'EST PAS UN ÂGE. L'âge, on l'invente ; ce qu'une personne dit de sa
+ * coupe, elle le dit dans l'application — c'est exactement ce que fait le mur,
+ * et c'est ce que cet écran promettait sans le tenir. Trois portraits muets
+ * montrent que la coupe existe ; trois phrases disent si on peut la porter.
+ *
+ * ET LES TROIS DOUTES NE SONT PAS LES MÊMES : les lunettes, le temps qu'elle
+ * prend le matin, la façon dont elle repousse. Ce sont les trois questions
+ * qu'on pose vraiment chez le coiffeur, et aucune ne se voit sur une photo.
+ *
+ * LA NOTE VA DE UN À CINQ FANTÔMES — voir `note-fantomes.tsx`.
  */
-export const VISAGES_COIFFURE: { photo: string; ou: string; avec: string }[] = [
-  { photo: "/direct/accueil/coiffure-visage-marche.jpg", ou: "Au marché", avec: "Avec des lunettes" },
-  { photo: "/direct/accueil/coiffure-visage-cuisine.jpg", ou: "En cuisine", avec: "Raie sur le côté" },
-  { photo: "/direct/accueil/coiffure-visage-terrasse.jpg", ou: "En terrasse", avec: "Mèche vers l’avant" },
+export type VisagePorte = {
+  photo: string;
+  ou: string;
+  avec: string;
+  qui: string;
+  mot: string;
+  note: number;
+};
+
+export const VISAGES_COIFFURE: VisagePorte[] = [
+  {
+    photo: "/direct/accueil/coiffure-visage-marche.jpg", ou: "Au marché", avec: "Avec des lunettes",
+    qui: "Nadia", note: 5,
+    mot: "J'avais peur que ça fasse trop avec les lunettes. Pas du tout.",
+  },
+  {
+    photo: "/direct/accueil/coiffure-visage-cuisine.jpg", ou: "En cuisine", avec: "Raie sur le côté",
+    qui: "Inès", note: 4,
+    mot: "Dix minutes le matin, pas plus. C'est ce que je cherchais.",
+  },
+  {
+    photo: "/direct/accueil/coiffure-visage-terrasse.jpg", ou: "En terrasse", avec: "Mèche vers l’avant",
+    qui: "Claire", note: 5,
+    mot: "Trois mois après, elle repousse sans prendre de forme bizarre.",
+  },
 ];
 export const ETAPES_COIFFURE = 4;

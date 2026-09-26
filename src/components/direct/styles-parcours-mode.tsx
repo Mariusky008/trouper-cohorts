@@ -263,17 +263,35 @@ export function StylesParcoursMode() {
 
         .pm-insp{display:flex;align-items:center;gap:7px;margin:16px 0 8px;
           font-size:13px;font-weight:800;color:rgba(255,255,255,.72);}
-        .pm-facons{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;
-          flex:1 1 auto;min-height:0;margin-bottom:14px;}
-        .pm-facon{position:relative;border-radius:14px;overflow:hidden;
-          min-height:0;
-          border:1.5px solid rgba(255,46,154,.75);
-          box-shadow:0 0 16px -6px rgba(255,46,154,.7);}
+        /* ═══ TROIS RANGEES, ET NON TROIS COLONNES ═════════════════════
+           LA PHRASE A CHANGE LA FORME DU BLOC. Trois vignettes cote a cote
+           font cent dix-huit points de large chacune sur un telephone : de
+           quoi ecrire un lieu, pas une phrase. « Prise pour le bureau, je la
+           mets aussi le week-end » s'y coupait a « je la mets aussi le... »,
+           et une opinion tronquee ne vaut pas mieux qu'une opinion absente.
+           EN RANGEES, LA PHRASE A TOUTE LA LARGEUR et la photo garde de quoi
+           juger la coupe — c'est le meme dessin que le mur de l'application,
+           ou la vignette porte QUI et le texte a cote porte CE QU'ELLE EN DIT.
+           Voir mur-contenu.tsx. */
+        .pm-facons{display:flex;flex-direction:column;gap:7px;
+          flex:none;margin-bottom:14px;}
+        /* LES RANGEES GARDENT LEUR HAUTEUR DE CONTENU, et c'est le bloc qui
+           cesse de reclamer la place. Les faire grandir (flex:1 1 0) les
+           rendait AUSSI compressibles : la grande photo du haut prenait tout
+           et les trois phrases se retrouvaient ecrasees sur un tiers de ligne.
+           Une phrase coupee etait le defaut de depart ; la reparer par le haut
+           l'aurait recree par le bas. Le vide va donc a la photo, qui est la
+           seule chose ici qui gagne a etre grande. */
+        .pm-facon{display:flex;gap:9px;flex:none;
+          border-radius:14px;overflow:hidden;
+          background:rgba(255,46,154,.07);
+          border:1.5px solid rgba(255,46,154,.55);
+          box-shadow:0 0 16px -8px rgba(255,46,154,.7);}
         /* LE CADRAGE DESCEND AVEC LA HAUTEUR. Ces vignettes montraient un
            visage ; elles montrent maintenant une veste, et une veste se porte
            plus bas qu'un visage. A 20 % on coupait aux epaules. */
-        .pm-facon>div{aspect-ratio:1 / 1.42;height:100%;min-height:0;
-          background-size:cover;background-position:center 32%;}
+        .pm-facon>div{flex:none;width:72px;min-height:0;
+          background-size:cover;background-position:center 30%;}
         /* LE LIEU PUIS CE QUE LA VESTE COUVRE, sur deux lignes.
            LA HIERARCHIE S'EST INVERSEE AVEC LE CONTENU. Ces vignettes portaient
            un nom de piece et son prix : le prix en magenta gras etait la
@@ -281,17 +299,33 @@ export function StylesParcoursMode() {
            un lieu et une description, et un magenta gras sous « Au bureau »
            ferait lire « Sur un jean noir » comme un montant. Le lieu prend donc
            le gras, la description passe en gris clair. */
-        .pm-facon>span{position:absolute;left:0;right:0;bottom:0;
-          display:flex;flex-direction:column;gap:1px;padding:20px 7px 7px;
-          color:#fff;text-align:left;
-          background:linear-gradient(180deg,rgba(6,6,10,0),rgba(6,6,10,.94));}
-        .pm-facon b{font-size:11.5px;font-weight:900;line-height:1.16;
+        .pm-facon>span{flex:1 1 auto;min-width:0;
+          display:flex;flex-direction:column;justify-content:center;gap:1px;
+          padding:7px 10px 7px 0;color:#fff;text-align:left;}
+        /* ═══ QUI PARLE, PUIS CE QU'ELLE DIT, PUIS OU ══════════════════
+           LA HIERARCHIE S'EST INVERSEE UNE SECONDE FOIS, avec le contenu.
+           « Le lieu prend le gras » valait quand la legende decrivait la photo ;
+           maintenant qu'elle porte une PHRASE, c'est la phrase qui doit etre
+           lue. Le lieu et ce que la veste couvre descendent d'un cran : on les
+           voit deja sur l'image, ils ne sont la que pour situer.
+           LE PRENOM ET LES CINQ FANTOMES TIENNENT SUR UNE LIGNE, aux deux
+           bouts. C'est la ligne qui dit A QUI on a affaire et COMBIEN elle a
+           aime — les deux choses qu'on lit avant la phrase, et sans lesquelles
+           la phrase n'est qu'un slogan. */
+        .pm-facon-q{display:flex;align-items:center;justify-content:space-between;
+          gap:4px;font-style:normal;font-size:9.5px;font-weight:900;
+          letter-spacing:.02em;color:#FF7FC2;margin-bottom:1px;}
+        /* >span>b ET NON b : LA RANGEE DE FANTOMES EST ELLE AUSSI UN
+           <b>, et cette regle lui posait display:-webkit-box avec
+           box-orient:vertical — les cinq fantomes s'empilaient en colonne le
+           long du bord. Un selecteur d'element attrape ce qu'on n'a pas
+           prevu ; l'enfant direct ne prend que la phrase. */
+        .pm-facon>span>b{font-size:11px;font-weight:800;line-height:1.24;
           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
           overflow:hidden;}
-        .pm-facon em{font-style:normal;font-size:9.5px;font-weight:700;
-          line-height:1.2;color:rgba(255,255,255,.72);
-          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-          overflow:hidden;}
+        .pm-facon em{font-style:normal;font-size:8.5px;font-weight:700;
+          line-height:1.18;color:rgba(255,255,255,.66);margin-top:2px;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
         /* ═══ 4/4 · LA BOUTIQUE ══════════════════════════════════════════ */
         .pm-quatre{flex:1 1 auto;display:flex;flex-direction:column;
