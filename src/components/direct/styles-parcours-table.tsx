@@ -238,6 +238,26 @@ export function StylesParcoursTable() {
           -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
         .pt-mot i{position:absolute;left:12px;top:10px;font-style:normal;
           font-size:30px;line-height:1;color:#FF2E9A;}
+        /* ═══ UN RECIT N'EST PAS UNE SIGNATURE ════════════════════════════
+           « J'ai besoin d'avoir de super belles voix bien naturelles. »
+           LE TEXTE QU'IL A ECRIT FAIT SIX PHRASES, la la signature en faisait
+           une. A dix-huit points et en gras italique, la recette de Margot
+           debordait sous le bouton d'ecoute : on lisait « je melange la farine
+           et les oeufs » et le reste passait sous le bord.
+           IL MAIGRIT ET IL DEFILE. Plus petit, moins appuye, interligne plus
+           aere — un paragraphe se lit autrement qu'une phrase a claquer — et
+           une hauteur bornee avec defilement, pour qu'un recit plus long que
+           prevu ne pousse jamais le bouton hors de l'ecran. */
+        .pt-mot.long{font-size:clamp(12.5px,3.5vw,14.5px);font-weight:650;
+          line-height:1.44;letter-spacing:0;
+          max-height:min(34vh,260px);overflow-y:auto;
+          padding:12px 14px 13px 32px;
+          -webkit-overflow-scrolling:touch;
+          scrollbar-width:thin;scrollbar-color:rgba(255,46,154,.5) transparent;}
+        .pt-mot.long::-webkit-scrollbar{width:4px;}
+        .pt-mot.long::-webkit-scrollbar-thumb{background:rgba(255,46,154,.5);
+          border-radius:999px;}
+        .pt-mot.long i{top:7px;font-size:24px;}
         /* ═══ ON L'ENTEND : LE BOUTON, L'ONDE, ET CE QU'ON EN DIT ════════
            L'ecran annoncait « sa voix arrive ». C'etait vrai et c'etait une
            promesse repoussee : le seul ecran qu'un concurrent ne peut pas

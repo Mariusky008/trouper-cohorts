@@ -97,7 +97,7 @@ function saitRaconter(c: CarteAutour): boolean {
      vide. C'est ce qui s'affichait chez Bergine, qui a une vidéo de service
      mais aucune signature. Une vidéo ne remplit pas un écran fait pour une
      citation ; mieux vaut une étape de moins. */
-  return Boolean(c.voix?.signature || c.voix?.extrait);
+  return Boolean(c.voix?.recit || c.voix?.signature || c.voix?.extrait);
 }
 
 /**
@@ -249,4 +249,99 @@ export const ESSAIS: Record<string, PaireEssai> = {
 /** La paire de CE commerce, ou celle du parcours par défaut s'il n'en a pas. */
 export function essaiDuCommerce(id: string, secours: PaireEssai): PaireEssai {
   return ESSAIS[id] ?? secours;
+}
+
+/**
+ * ═══ CEUX QUI L'ONT DÉJÀ ESSAYÉE ═══════════════════════════════════════════
+ *
+ * « Il manque une étape : les avis et les fantômes de 3 personnes qui ont
+ * essayé la tenue. Donc je t'ai mis 3 personnes en attaché par type de tenue. »
+ *
+ * TROIS PERSONNES PAR COUPE ET PAR TENUE, ET C'EST LE NOMBRE QUI COMPTE. Une
+ * seule se lit comme une mise en scène ; trois corps, trois âges, trois rues,
+ * ça se lit comme un fait. C'est le même écran que le mur de l'application,
+ * ramené au démarrage — voir `mur-contenu.tsx`.
+ *
+ * ELLES REMPLACENT LES TROIS PORTRAITS MUETS. La version précédente montrait
+ * bien trois photos, mais celles d'une seule pièce — le blazer rose — et sans
+ * un mot. Sous la veste cirée du prêt-à-porter homme, l'écran annonçait « la
+ * même veste » en affichant trois femmes en rose ; j'avais donc retiré l'étape
+ * là où elle mentait. Avec une série par commerce, elle revient partout, et
+ * elle dit vrai partout.
+ *
+ * CHAQUE MOT LÈVE UN DOUTE DIFFÉRENT, et c'est la règle qu'on s'est donnée sur
+ * les trois premiers : la tenue du bureau, la couleur au soleil, la peur de la
+ * couleur. Trois fois « superbe » n'apprend rien, et on ne lit que le premier.
+ */
+export type Essayeur = {
+  photo: string;
+  /** Un prénom, comme partout ailleurs dans le produit. */
+  qui: string;
+  /** Ce qu'elle ou il en dit — un doute levé, pas un compliment. */
+  mot: string;
+  /** Un à cinq fantômes. Le cinquième a des yeux en cœur. */
+  note: number;
+  /** Où, et avec quoi. Ce qui se vérifie sur l'image même. */
+  ou: string;
+};
+
+const D = "/direct/essayeurs/";
+
+export const ESSAYEURS: Record<string, Essayeur[]> = {
+  // ── BEAUTÉ ───────────────────────────────────────────────────────────────
+  "coif-nouveau": [
+    { photo: `${D}coif-nouveau-1.jpg`, qui: "Hélène", note: 5, ou: "Devant chez elle",
+      mot: "Mes boucles, je les subissais. Là je les porte." },
+    { photo: `${D}coif-nouveau-2.jpg`, qui: "Sofia", note: 4, ou: "Au marché aux fleurs",
+      mot: "Il faut du produit les jours humides, sinon ça gonfle." },
+    { photo: `${D}coif-nouveau-3.jpg`, qui: "Awa", note: 5, ou: "En terrasse",
+      mot: "Je sors du lit, je secoue, c'est fait." },
+  ],
+  "coif-barbier": [
+    { photo: `${D}coif-barbier-1.jpg`, qui: "Serge", note: 5, ou: "Devant l'épicerie",
+      mot: "Il rattrape les épis au lieu de lutter contre." },
+    { photo: `${D}coif-barbier-2.jpg`, qui: "Marc", note: 4, ou: "Rue du marché",
+      mot: "Au bout de six semaines elle bouge, mais elle reste nette." },
+    { photo: `${D}coif-barbier-3.jpg`, qui: "Hugo", note: 5, ou: "Devant le café",
+      mot: "Première fois qu'on me demande ce que je fais le matin." },
+  ],
+  "coif-halle": [
+    { photo: `${D}coif-halle-1.jpg`, qui: "Martine", note: 5, ou: "Sous les arcades",
+      mot: "Le cuivré tient trois mois sans virer orange." },
+    { photo: `${D}coif-halle-2.jpg`, qui: "Nadia", note: 4, ou: "Devant la librairie",
+      mot: "Les pointes demandent un passage tous les deux mois." },
+    { photo: `${D}coif-halle-3.jpg`, qui: "Camille", note: 5, ou: "Devant le bistrot",
+      mot: "J'avais peur du roux sur ma peau. C'est ce qui l'éclaire." },
+  ],
+
+  // ── MODE ─────────────────────────────────────────────────────────────────
+  "mode-friperie": [
+    { photo: `${D}mode-friperie-1.jpg`, qui: "Lucie", note: 5, ou: "En terrasse",
+      mot: "Le noir dessous calme les fleurs. Ça passe au bureau." },
+    { photo: `${D}mode-friperie-2.jpg`, qui: "Awa", note: 5, ou: "Devant la librairie",
+      mot: "Trouvé en friperie, donc personne d'autre ne l'a." },
+    { photo: `${D}mode-friperie-3.jpg`, qui: "Martine", note: 4, ou: "Place de la fontaine",
+      mot: "La coupe longue allonge, même quand on est petite." },
+  ],
+  "mode-homme": [
+    { photo: `${D}mode-homme-1.jpg`, qui: "Rémi", note: 5, ou: "Devant le café",
+      mot: "Elle prend la pluie de Dax sans faire imperméable." },
+    { photo: `${D}mode-homme-2.jpg`, qui: "Bruno", note: 5, ou: "Sur les allées",
+      mot: "Je la mets à vélo tous les matins depuis l'automne." },
+    { photo: `${D}mode-homme-3.jpg`, qui: "Paul", note: 4, ou: "Au marché",
+      mot: "Prenez une taille au-dessus si vous mettez un pull." },
+  ],
+  "mode-depot": [
+    { photo: `${D}mode-depot-1.jpg`, qui: "Inès", note: 5, ou: "Devant la librairie",
+      mot: "Le léopard sur du prune, ça ne crie pas. J'ai essayé pour voir." },
+    { photo: `${D}mode-depot-2.jpg`, qui: "Chloé", note: 4, ou: "Sur les allées",
+      mot: "Chaud sans être lourd. Je l'ai mis tout l'hiver." },
+    { photo: `${D}mode-depot-3.jpg`, qui: "Léa", note: 5, ou: "Devant l'épicerie",
+      mot: "Déposé par quelqu'un d'ici. Ça compte, pour moi." },
+  ],
+};
+
+/** Ceux qui ont essayé chez CE commerce, ou rien — et l'étape saute. */
+export function essayeursDu(id: string): Essayeur[] {
+  return ESSAYEURS[id] ?? [];
 }

@@ -127,7 +127,10 @@ export function ParcoursTable({
       void a.play().catch(() => setJoue(false));
       return;
     }
-    speak(voix?.signature ?? "");
+    /* ON LIT LE RÉCIT QUAND IL Y EN A UN, la signature sinon. Le récit est le
+       texte qu'il a écrit pour la voix ; la signature reste la phrase courte
+       des bandeaux. Voir `recit` dans `apercu-habitant.ts`. */
+    speak(voix?.recit || voix?.signature || "");
   };
   /* ON BORNE À 2 ET 98, PAS À 0 ET 100 : tout au bord, la poignée sort du
      cadre et il n'y a plus rien à rattraper avec le doigt. */
@@ -442,10 +445,10 @@ export function ParcoursTable({
               depuis le début — c'est la réponse permanente à « pourquoi chez
               elle plutôt qu'en grande surface ». Sa maquette en invente une
               autre ; celle-ci a l'avantage d'exister. */}
-          {voix?.signature && (
-            <blockquote className="pt-mot">
+          {(voix?.recit || voix?.signature) && (
+            <blockquote className={`pt-mot${voix?.recit ? " long" : ""}`}>
               <i aria-hidden="true">“</i>
-              {voix.signature}
+              {voix?.recit || voix?.signature}
             </blockquote>
           )}
           {voix?.role && (
@@ -475,7 +478,7 @@ export function ParcoursTable({
               LA TRANSCRIPTION RESTE LE CONTENU. Quatre personnes sur cinq font
               défiler en silence ; sa phrase est écrite au-dessus, en grand, et
               le son ne part qu'à l'appui. */}
-          {(voix?.extrait || voix?.signature) && (
+          {(voix?.extrait || voix?.recit || voix?.signature) && (
             <div className="pt-ecoute">
               <button
                 type="button"
@@ -492,7 +495,7 @@ export function ParcoursTable({
               </span>
             </div>
           )}
-          {!voix?.extrait && voix?.signature && (
+          {!voix?.extrait && (voix?.recit || voix?.signature) && (
             <p className="pt-synth">Démonstration · voix de synthèse</p>
           )}
 

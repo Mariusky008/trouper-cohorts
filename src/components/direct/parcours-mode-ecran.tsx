@@ -34,7 +34,7 @@ import { useMemo, useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { FantomeAccueil } from "@/components/direct/fantome-accueil";
 import { NoteFantomes } from "@/components/direct/note-fantomes";
-import { essaiDuCommerce } from "@/lib/direct/plaque-parcours";
+import { essaiDuCommerce, essayeursDu } from "@/lib/direct/plaque-parcours";
 import { momentEnCours, toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import {
   APRES_MODE,
@@ -122,7 +122,14 @@ export function ParcoursMode({
      annoncait « la meme veste » en affichant trois femmes en rose. Meme regle
      que le rideau du restaurant : l'etape existe si sa matiere existe, et le
      compteur compte ce qui est la. */
-  const aLesAutres = cle === COMMERCE_MODE;
+  /* ═══ L'ETAPE DES ESSAYEURS REVIENT, ET PARTOUT ═══════════════════════
+     « La logique est bonne, mais il manque une etape : les avis et les
+     fantomes de 3 personnes qui ont essaye la tenue. »
+     JE L'AVAIS RETIREE PARCE QU'ELLE MENTAIT, faute d'avoir une serie par
+     commerce : trois femmes en blazer rose sous « Un pret-a-porter homme ».
+     Avec ses trois personnes par tenue, elle dit vrai partout et revient. */
+  const essayeurs = essayeursDu(cle);
+  const aLesAutres = cle === COMMERCE_MODE || essayeurs.length > 0;
   const total = aLesAutres ? ETAPES_MODE : ETAPES_MODE - 1;
   /** Le pas reellement joue : on saute « les autres » quand on ne l'a pas. */
   const ici = !aLesAutres && etape >= 3 ? etape + 1 : etape;
@@ -363,12 +370,30 @@ export function ParcoursMode({
                   relectures à y arriver. « Chez elle aujourd'hui » annonçait le
                   rayon d'une boutique ; ce qu'on montre, c'est une veste sur
                   trois femmes. Le titre dit donc la veste, pas la boutique. */}
+              {/* ═══ « LA MEME PIECE », ET PAS LE TITRE DE L'ANNONCE ══════
+
+                  « La meme veste » etait vrai du blazer rose et faux du
+                  manteau leopard, qui passent par le meme ecran depuis que le
+                  parcours suit la carte. J'ai d'abord mis le titre du moment a
+                  la place — et l'ecran a affiche « 40 pieces sorties ce matin,
+                  sur d'autres qu'elle ». Un titre d'annonce dit QUAND, pas
+                  QUOI ; c'est exactement la faute qu'on avait deja corrigee sur
+                  la coiffure, ou « une place vient de se liberer » s'affichait
+                  a la place du nom de la coupe.
+
+                  UN MOT GENERAL ET VRAI VAUT MIEUX QU'UN NOM A MOITIE JUSTE. La
+                  piece est nommee deux ecrans plus haut, avec son prix ; la
+                  renommer ici ne sert qu'a la renommer mal.
+
+                  « SUR D'AUTRES QUE VOUS » plutot que « d'autres qu'elle » : la
+                  veste ciree et le barbier se portent aussi sur des hommes, et
+                  le parcours vient de dire « sur vous ». */}
               <h1 className="pm-t3">
-                La même veste,
+                La même pièce,
                 <br />
                 <em>sur d’autres</em>
                 <br />
-                femmes
+                que vous
                 <s aria-hidden="true" />
               </h1>
               <div className="pm-dit petit">
@@ -406,7 +431,10 @@ export function ParcoursMode({
             Portée autrement, dans la même ville
           </p>
           <div className="pm-facons">
-            {FACONS_MODE.map((f) => (
+            {(essayeurs.length
+              ? essayeurs.map((e) => ({ photo: e.photo, qui: e.qui, mot: e.mot, note: e.note, ou: e.ou, avec: "" }))
+              : FACONS_MODE.map((f) => ({ ...f, ou: f.ou, avec: f.avec }))
+            ).map((f) => (
               <article key={f.photo} className="pm-facon">
                 <div style={{ backgroundImage: `url("${f.photo}")` }} />
                 <span>
@@ -415,9 +443,7 @@ export function ParcoursMode({
                     <NoteFantomes note={f.note} />
                   </i>
                   <b>{f.mot}</b>
-                  <em>
-                    {f.ou} · {f.avec}
-                  </em>
+                  <em>{f.avec ? `${f.ou} · ${f.avec}` : f.ou}</em>
                 </span>
               </article>
             ))}

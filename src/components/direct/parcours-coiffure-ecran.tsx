@@ -30,7 +30,7 @@ import { useMemo, useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { FantomeAccueil } from "@/components/direct/fantome-accueil";
 import { NoteFantomes } from "@/components/direct/note-fantomes";
-import { essaiDuCommerce } from "@/lib/direct/plaque-parcours";
+import { essaiDuCommerce, essayeursDu, photoDeLaCarte } from "@/lib/direct/plaque-parcours";
 import { momentEnCours, toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import {
   APRES_COIFFURE,
@@ -144,12 +144,33 @@ export function ParcoursCoiffure({
      affichant trois femmes coiffees autrement. On ne le dit donc que la ou
      c'est vrai, et le parcours des autres salons a une etape de moins. Meme
      regle que le rideau du restaurant : l'etape existe si sa matiere existe. */
-  const aLesAutres = cle === COMMERCE_COIFFURE;
+  /* CHAQUE SALON A SES TROIS ESSAYEURS — voir `ESSAYEURS`. Le salon du centre
+     garde ses trois portraits d'origine, qui portent deja un prenom, un mot et
+     une note ; les trois autres ont les leurs depuis qu'il les a fournis. */
+  const essayeurs = essayeursDu(cle);
+  const aLesAutres = cle === COMMERCE_COIFFURE || essayeurs.length > 0;
   const total = aLesAutres ? ETAPES_COIFFURE : ETAPES_COIFFURE - 1;
   /** Le pas reellement joue : on saute « les autres » quand on ne l'a pas. */
   const ici = !aLesAutres && etape >= 3 ? etape + 1 : etape;
 
-  const fond = ici === 4 ? salonPhoto : APRES;
+  /* ═══ L'ETAPE 1 MONTRE LE MODELE DE L'ANNONCE, PAS LE RESULTAT ════════
+
+     « Etape 1 : il faut que ce soit la meme personne que la personne de
+     l'annonce de depart, puisque la personne n'a pas encore essaye. A l'etape
+     2 c'est celle qui essaye. Et etape 3, il faut que ce soit la personne qui
+     vient d'essayer, donc de l'etape 2. »
+
+     IL A RAISON SUR LA CHRONOLOGIE, ET C'EST UNE FAUTE DE RECIT. Le premier
+     ecran ouvrait sur l'APRES : on voyait le resultat de l'essayage avant
+     d'avoir appuye sur « essayer ». Les deux ecrans suivants ne montraient donc
+     plus rien de neuf, et la glissiere avant/apres perdait son effet — on avait
+     deja vu la reponse.
+
+     TROIS TEMPS, TROIS VISAGES : la coupe telle que le salon l'annonce, puis
+     elle sur vous, puis sur d'autres que vous. `photoAnnonce` est exactement
+     celle de la carte du paquet — voir `photoDeLaCarte`. */
+  const photoAnnonce = photoDeLaCarte(cle) ?? salon.photo ?? APRES;
+  const fond = ici === 1 ? photoAnnonce : ici === 4 ? salonPhoto : APRES;
 
   return (
     <div className={`pc pc-e${ici}`}>
@@ -314,13 +335,22 @@ export function ParcoursCoiffure({
               AUCUN PRIX SUR LES VIGNETTES : c'est la même coupe, elle a celui
               qu'on a lu deux écrans plus haut. Et plus de nom de salon non
               plus — les trois sont chez elle, la pastille du haut le dit. */}
+          {/* « LE MEME CARRE » ETAIT FAUX CHEZ LE BARBIER, et le remplacer
+              par la premiere ligne du moment l'etait tout autant : l'ecran
+              affichait « Vegetale ou classique, sur d'autres qu'elle ». Ces
+              lignes decrivent une prestation, pas une coupe. Le nom exact est
+              deja deux ecrans plus haut, avec son prix — voir le meme
+              raisonnement dans la feuille de la mode. */}
           <h1 className="pc-t">
-            Le même carré,
+            La même coupe,
             <br />
-            <em>sur d’autres visages.</em>
+            <em>sur d’autres que vous.</em>
           </h1>
           <div className="pc-trois">
-            {VISAGES_COIFFURE.map((v) => (
+            {(essayeurs.length
+              ? essayeurs.map((e) => ({ photo: e.photo, qui: e.qui, mot: e.mot, note: e.note, ou: e.ou, avec: "" }))
+              : VISAGES_COIFFURE.map((v) => ({ ...v, ou: v.ou, avec: v.avec }))
+            ).map((v) => (
               <article key={v.photo} className="pc-vign">
                 <div style={{ backgroundImage: `url("${v.photo}")` }} />
                 <span>
@@ -333,9 +363,7 @@ export function ParcoursCoiffure({
                     <NoteFantomes note={v.note} />
                   </i>
                   <b>{v.mot}</b>
-                  <u>
-                    {v.ou} · {v.avec}
-                  </u>
+                  <u>{v.avec ? `${v.ou} · ${v.avec}` : v.ou}</u>
                 </span>
               </article>
             ))}

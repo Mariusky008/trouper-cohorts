@@ -1145,6 +1145,28 @@ export type Voix = {
    * cette ligne-ci qui change, et le lecteur apparaît tout seul.
    */
   extrait?: string;
+  /**
+   * ═══ SON RÉCIT — CE QU'ELLE RACONTE, EN PLUSIEURS PHRASES ════════════════
+   *
+   * « J'ai besoin, pour certaines annonces, d'avoir de super belles voix bien
+   * naturelles pour donner vraiment de l'âme à cette démo. »
+   *
+   * `signature` EST UNE PHRASE, CELLE QU'ON DIT EN TROIS MOTS au comptoir —
+   * « Je fais mes pâtes le matin même ». Elle répond une fois pour toutes à
+   * « pourquoi chez elle », et elle tient dans un bandeau.
+   *
+   * CE QU'IL DEMANDE EST AUTRE CHOSE : un RÉCIT. La recette, dite comme on la
+   * raconte à quelqu'un qui attend son plat — six phrases, une pause au milieu,
+   * une odeur à la fin. Ça ne tient pas dans une signature et ça ne remplace
+   * pas : les deux cohabitent, la signature dans les bandeaux, le récit sur
+   * l'écran qui lui est consacré.
+   *
+   * C'EST LE TEXTE QUE LA VOIX DIT. Tant que `extrait` est vide, le téléphone
+   * le lit à voix haute et l'écran ÉCRIT que c'est une voix de synthèse. Le
+   * jour où l'enregistrement existe, `extrait` le remplace et la mention tombe
+   * toute seule — voir `public/direct/voix/LISEZ-MOI.md`.
+   */
+  recit?: string;
 };
 
 /**
@@ -1700,6 +1722,28 @@ const CARTES: CarteAutour[] = [
       { qui: "Karim B.", combien: 9 },
       { qui: "Sofia R.", combien: 6 },
     ],
+    /* ═══ SA VOIX, ET SON PARCOURS QUI PASSE DE DEUX ÉCRANS À TROIS ═══════
+
+       « Pour le magret grillé et sarladaises : voix d'un homme avec un petit
+       accent du sud. »
+
+       C'ÉTAIT LE MANQUE QUE J'AVAIS SIGNALÉ. Chez Bergine est le restaurant le
+       mieux rempli de la démonstration, et il avait le parcours le plus court —
+       deux écrans — parce qu'il n'avait personne pour raconter son plat. Une
+       vidéo de service ne remplit pas un écran fait pour une citation.
+
+       L'ACCENT N'EST PAS DANS LE TEXTE, ET C'EST VOLONTAIRE. On n'écrit pas
+       « putaing » pour faire entendre le Sud-Ouest : un accent transcrit se lit
+       comme une moquerie. Il est dans la CONSIGNE DE JEU, à côté du fichier à
+       enregistrer — voir `public/direct/voix/LISEZ-MOI.md`. */
+    voix: {
+      prenom: "Jean-Marie",
+      role: "cuisinier",
+      signature: "Je quadrille la peau et je prends mon temps.",
+      recit:
+        "Bonjour. Bon, mon magret, je commence par quadriller la peau. Je le pose côté peau sur le gril, doucement, pour qu'elle devienne bien croustillante sans brusquer la viande. Pendant qu'il repose, je fais dorer les pommes de terre à la graisse de canard, avec de l'ail et du persil. Et au dernier moment, je tranche le magret. Vous avez le croustillant, le fondant… et l'odeur qui arrive avant l'assiette.",
+      // extrait: "/direct/voix/bergine-magret.mp3",
+    },
     site: "chezbergine.fr",
     fiche: {
       ou: "Rue piétonne, à côté de la halle",
@@ -1824,6 +1868,21 @@ const CARTES: CarteAutour[] = [
       prenom: "Margot",
       role: "cuisinière",
       signature: "Je fais mes pâtes le matin même.",
+      /* SON RÉCIT, MOT POUR MOT — il l'a écrit lui-même, avec l'indication de
+         jeu : « chaleureuse et souriante, comme si Margot parlait à un client,
+         avec une petite pause après "ça mijote doucement" ». Les points de
+         suspension portent cette pause ; la synthèse les respecte, et un
+         comédien aussi. On ne retouche pas son texte.
+         SA CONSIGNE RESTE AU-DESSUS DU RESTE : « si c'est destiné à
+         représenter une vraie restauratrice, fais valider les étapes de la
+         recette par elle ». Tant que Margot est un commerce de démonstration,
+         personne n'a rien à valider ; le jour où une vraie cuisinière prend sa
+         place, c'est elle qui écrit ces lignes. */
+      recit:
+        "Salut à tous. Alors, mes pâtes, je les fais le matin même. Je mélange la farine et les œufs, je pétris, puis je laisse la pâte se reposer un peu. Ensuite, je l'étale et je la coupe à la main. Et pour la sauce, je prends vraiment mon temps, parce que c'est la clé pour que vos papilles salivent : quelques bons ingrédients secrets, et je laisse mijoter doucement… Voilà, c'est simple, mais c'est vraiment fait ici.",
+      // SA VRAIE VOIX PREND CETTE PLACE DÈS QU'ELLE EXISTE. Une ligne à
+      // décommenter, et le lecteur joue l'enregistrement au lieu de lire :
+      // extrait: "/direct/voix/margot-lasagnes.mp3",
       // ─── LA DOUBLURE DE LA MAQUETTE, ET CE QU'ON EN SAIT ───
       //
       // C'est le plan de service qui existe déjà dans le produit. Vérification
@@ -2395,6 +2454,16 @@ const CARTES: CarteAutour[] = [
     metres: 320,
     distance: "320 m",
     pouces: [{ qui: "Chloé V.", combien: 4 }],
+    /* « Poulet basquaise et riz du pays : voix d'homme, sans accent. » Son
+       récit, mot pour mot, et la place de son enregistrement en dessous. */
+    voix: {
+      prenom: "Yann",
+      role: "cuisinier",
+      signature: "Je laisse mijoter le temps qu'il faut.",
+      recit:
+        "Salut. Pour mon poulet basquaise, je fais revenir les poivrons et les oignons, puis j'ajoute la tomate et le poulet. Je laisse mijoter doucement, le temps que la sauce prenne du goût. Et je le sers avec notre riz du pays.",
+      // extrait: "/direct/voix/tablee-basquaise.mp3",
+    },
     site: "lagrandetablee.fr",
     fiche: {
       ou: "Quai, au bord de l'eau",
