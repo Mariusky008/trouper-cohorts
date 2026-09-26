@@ -40,6 +40,31 @@
  * `scripts/verifier-annonce-essayable.mjs`.
  */
 
+/**
+ * ═══ LA CARTE DU PARCOURS EST LA DERNIÈRE, PAS LA PREMIÈRE ════════════════
+ *
+ * « J'aimerais que la première annonce de chaque onglet se retrouve en
+ * dernier, puisque c'est seulement celle-là qui amène sur le parcours du
+ * commerçant — sachant que les autres annonces amènent sur le parcours de
+ * cette première annonce. Comme cela, quand j'arrive à la dernière annonce, je
+ * peux cliquer et ce sera le bon parcours. »
+ *
+ * LE BOUTON OUVRE TOUJOURS LE MÊME PARCOURS, quelle que soit la carte qu'on
+ * regarde : il est attaché au commerce écrit dans `parcours-*.ts`, pas à la
+ * carte du dessus. Tant que ce commerce était en PREMIER, on balayait quatre
+ * cartes et on appuyait sur un bouton qui rouvrait la première — la promesse
+ * la plus concrète qu'un écran puisse rompre.
+ *
+ * ON LE MET DONC AU BOUT. Celui qui balaie jusqu'à la fin tombe sur la carte
+ * dont le parcours va s'ouvrir, et celui qui appuie tout de suite voit une
+ * carte qui n'est pas la sienne — c'est le même défaut, mais dans le sens où
+ * il coûte le moins : on n'a rien parcouru, donc on n'a rien perdu.
+ *
+ * LA VRAIE CORRECTION RESTE À FAIRE, et elle est ailleurs : que le bouton
+ * ouvre le parcours DE LA CARTE QU'ON REGARDE. Elle demande un parcours par
+ * commerce, pas un par catégorie.
+ */
+
 /** Les cinq pictogrammes du bas, dans l'ordre de ses maquettes. */
 export type CleCategorie = "mode" | "restaurants" | "beaute" | "sorties" | "commerces";
 
@@ -100,10 +125,10 @@ export const CATEGORIES: Categorie[] = [
     bulle: "Glissez pour découvrir les boutiques près de vous",
     bouton: "Découvrir cette tenue",
     cartes: [
-      { id: "mode-centre", photo: "/direct/accueil/mode-apres.jpg" },
       { id: "mode-friperie", photo: "/direct/mode-veste-dentelle.jpg" },
       { id: "mode-homme", photo: "/direct/homme-veste-ciree-kaki.jpg" },
       { id: "bijoux-atelier", photo: "/direct/poignet-bracelet.jpg" },
+      { id: "mode-centre", photo: "/direct/accueil/mode-apres.jpg" },
     ],
   },
   {
@@ -120,10 +145,10 @@ export const CATEGORIES: Categorie[] = [
          l'annonce — un vrai plat du commerce, sans prix, plutôt qu'un prix
          emprunté au plat d'à côté. */
       { id: "centre", photo: "/direct/plat-du-jour.jpg" },
-      { id: "emporter", photo: "/direct/plat-lasagnes.jpg" },
       { id: "tablee", photo: "/direct/tablee-du-soir.jpg" },
       { id: "deux-rues", photo: "/direct/plat-axoa.jpg" },
       { id: "boucher", photo: "/direct/etal-boucher.jpg" },
+      { id: "emporter", photo: "/direct/plat-lasagnes.jpg" },
     ],
   },
   {
@@ -155,10 +180,10 @@ export const CATEGORIES: Categorie[] = [
        l'application, avec leurs propres essayages. Ils n'ont simplement rien à
        faire sous une question qui parle de cheveux. */
     cartes: [
-      { id: "coif-centre", photo: "/direct/coiffure-femme-face.jpg" },
       { id: "coif-nouveau", photo: "/direct/coiffure1.jpg" },
       { id: "coif-barbier", photo: "/direct/coiffure-homme-face.jpg" },
       { id: "coif-halle", photo: "/direct/coiffure2.jpg" },
+      { id: "coif-centre", photo: "/direct/coiffure-femme-face.jpg" },
     ],
   },
   {
@@ -169,30 +194,43 @@ export const CATEGORIES: Categorie[] = [
     bulle: "Glissez pour découvrir les sorties",
     bouton: "Découvrir cette soirée",
     cartes: [
-      { id: "kiosque", photo: "/direct/concert-kiosque.jpg" },
       { id: "bar-terrasse", photo: "/direct/terrasse-au-soleil.jpg" },
       { id: "marche-nuit", photo: "/direct/marche-producteurs.jpg" },
       { id: "expo", photo: "/direct/nocturne-musee.jpg" },
       { id: "vide-grenier", photo: "/direct/vide-grenier.jpg" },
+      { id: "kiosque", photo: "/direct/concert-kiosque.jpg" },
     ],
   },
   {
     cle: "commerces",
-    onglet: "Commerces",
+    /* ═══ L'ONGLET DIT CE QU'IL CONTIENT ═══════════════════════════════════
+
+       « Le Pétrin d'Amanieu et Maison Lartigues sont hors sujet dans l'onglet
+       "Commerces", qui est plutôt "Déco". »
+
+       IL AVAIT RAISON SUR LES DEUX BOUTS. Le titre demande « et chez moi ? »,
+       le bouton dit « Découvrir cette pièce », et le parcours derrière est
+       celui de la déco : on essaie un fauteuil dans son salon. Une boulangerie
+       et un traiteur n'y répondent pas — ils sont excellents, et ailleurs.
+
+       LE MOT « COMMERCES » NE DISAIT RIEN, en plus : tout est un commerce dans
+       cette application. Un onglet qui ne trie pas ne sert qu'à être compté.
+
+       (La clé technique reste `commerces` : elle est lue à six endroits et la
+       renommer ne changerait rien à l'écran.) */
+    onglet: "Déco",
     titreBlanc: "Et",
     titreRose: "chez moi ?",
     bulle: "Glissez pour découvrir les boutiques près de vous",
     bouton: "Découvrir cette pièce",
     cartes: [
-      /* MAISON DAX PASSE EN TETE, et c'est le parcours qui le demande : c'est
-         le seul des cinq a porter un essai « chez vous », et c'est lui que le
-         bouton ouvre. Une categorie dont la premiere carte ne mene pas au
-         parcours ferait chercher. */
-      { id: "maison-dax", photo: "/direct/deco/fauteuil-grand.jpg" },
       { id: "cirier", photo: "/direct/table-salon-bougie.jpg" },
       { id: "fleur-marche", photo: "/direct/bouquet-du-jour.jpg" },
-      { id: "boulange", photo: "/direct/sortie-du-four.jpg" },
-      { id: "traiteur", photo: "/direct/plat-parmentier.jpg" },
+      /* TROIS PLUTOT QUE CINQ. La boulangerie et le traiteur remplissaient le
+         paquet, pas l'onglet : mieux vaut trois cartes qui repondent a la
+         question que cinq dont deux parlent d'autre chose. C'est la meme
+         decision que sur la beaute, le meme jour, pour la meme raison. */
+      { id: "maison-dax", photo: "/direct/deco/fauteuil-grand.jpg" },
     ],
   },
 ];

@@ -69,8 +69,16 @@ export function StylesParcoursMode() {
           display:flex;align-items:flex-start;gap:0;max-width:86%;}
         /* LE FANTOME A GAUCHE, LA BULLE A SA DROITE ET PLUS HAUT, comme sur sa
            maquette : la pointe descend vers lui. */
+        /* LE FANTOME DE L'EN-TETE A SA PROPRE MESURE. Il empruntait .pm-f,
+           qui habille le fantome QUI PARLE au milieu de l'ecran : quatre-vingt-
+           seize points. Dans le coin, il sortait donc a 86 points quand les
+           quatre autres parcours en font 53. « Il manque a pas mal d'endroits,
+           et parfois c'est une maison au lieu du fantome » — une mascotte deux
+           fois plus grosse sur un parcours sur cinq est le meme defaut, vu de
+           l'autre bout. Meme formule que .pc-f, .pt-f, .ps-f et .pd-f. */
+        .pm-tete-f{flex:none;width:clamp(46px,min(12.5vw,6.2vh),62px);height:auto;}
         .pm-f{width:96px;height:auto;order:1;margin-right:-10px;align-self:flex-end;
-          filter:drop-shadow(0 0 18px rgba(196,132,255,.6));}
+          filter:drop-shadow(0 0 18px rgba(255,46,154,.6));}
         .pm-bulle{order:2;position:relative;margin:0 0 34px;
           padding:11px 15px;border-radius:16px;
           font-size:15px;font-weight:750;line-height:1.24;color:#F6ECFF;
@@ -180,7 +188,7 @@ export function StylesParcoursMode() {
         .pm-g-trait s{text-decoration:none;font-size:17px;font-weight:900;color:#fff;}
         .pm-g-f{position:absolute;left:50%;bottom:-6px;z-index:4;
           width:96px;height:auto;transform:translateX(-50%);
-          filter:drop-shadow(0 0 18px rgba(196,132,255,.7));
+          filter:drop-shadow(0 0 18px rgba(255,46,154,.7));
           pointer-events:none;}
 
         /* ═══ LA FICHE DU COMMERCE, SUR LES ETAPES 2 ET 3 ════════════════ */

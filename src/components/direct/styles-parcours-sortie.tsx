@@ -62,7 +62,7 @@ export function StylesParcoursSortie() {
         .ps-pas em{position:absolute;top:100%;margin-top:3px;font-style:normal;
           font-size:12.5px;font-weight:850;text-shadow:0 1px 8px rgba(0,0,0,.8);}
         .ps-f{flex:none;width:clamp(46px,min(12.5vw,6.2vh),62px);height:auto;
-          filter:drop-shadow(0 0 16px rgba(196,132,255,.65));}
+          filter:drop-shadow(0 0 16px rgba(255,46,154,.65));}
 
         .ps-lieu{position:relative;z-index:3;flex:none;align-self:flex-start;
           display:flex;align-items:center;gap:10px;

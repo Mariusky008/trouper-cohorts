@@ -32,6 +32,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
+import { FantomeAccueil } from "@/components/direct/fantome-accueil";
 import { momentEnCours, toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import {
   APRES_MODE,
@@ -100,7 +101,17 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
           la vue d'ensemble, « 1/4 » pour le chiffre. Sa maquette met les deux,
           et elle a raison — un trait rempli se compte mal du coin de l'œil. */}
       <header className="pm-haut">
-        <button type="button" className="pm-retour" onClick={precedent} aria-label="Revenir">
+        {/* « REVENIR » TOUT COURT NE DIT PLUS RIEN depuis que le Fantome est a
+            cote : deux boutons de retour dans le meme en-tete, et un lecteur
+            d'ecran les annoncait tous les deux « Revenir ». La fleche recule
+            d'un pas, le Fantome rentre a l'accueil — chacun le dit. */}
+        <button
+          type="button"
+          className="pm-retour"
+          onClick={precedent}
+          aria-label="Revenir à l’étape précédente"
+          title="Revenir à l’étape précédente"
+        >
           ←
         </button>
         <div className="pm-pas" aria-label={`Étape ${etape} sur ${ETAPES_MODE}`}>
@@ -122,17 +133,11 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
             changer d'avis est un chemin qu'on ne prend pas — on ferme
             l'application à la place. Les deux gestes sont différents, ils ont
             donc deux boutons. */}
-        <button
-          type="button"
-          className="pm-accueil"
-          onClick={onFermer}
-          aria-label="Revenir au choix des commerçants"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3.6 10.6 12 3.8l8.4 6.8" />
-            <path d="M5.8 9v10.4a1 1 0 0 0 1 1h10.4a1 1 0 0 0 1-1V9" />
-          </svg>
-        </button>
+        {/* LE FANTÔME RAMÈNE À L'ACCUEIL, comme sur les quatre autres
+            parcours. Voir `fantome-accueil.tsx` : un composant, une place, un
+            geste — chaque écran avait sa version, donc celui qu'on n'avait pas
+            encore regardé n'avait rien. */}
+        <FantomeAccueil onClick={onFermer} classe="pm-tete-f" />
         {/* PLUS DE PASTILLE « DÉMONSTRATION » : tout ce parcours en est une,
             donc elle ne distinguait rien. Ce qui reste est la mention de
             SIMULATION sur l'essayage, qui dit autre chose — voir `.pm-simu`. */}
@@ -437,11 +442,15 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
               <s aria-hidden="true">→</s>
             </a>
           )}
-          <button type="button" className="pm-deux" onClick={onFermer}>
-            <i aria-hidden="true">💬</i>
-            Revenir au choix
-            <s aria-hidden="true">→</s>
-          </button>
+          {/* ═══ PLUS DE « REVENIR AU CHOIX » EN BAS ════════════════════
+
+              « Étape 4 : revenir au choix : supprimer. »
+
+              IL LE DISAIT DE LA BEAUTÉ, ET LA MODE PORTAIT LE MÊME BOUTON.
+              Le Fantôme de l'en-tête fait ce geste-là depuis n'importe quel
+              écran du parcours, et pas seulement depuis le dernier ; garder
+              les deux, c'est apprendre la sortie de secours à la place de la
+              porte. Voir `fantome-accueil.tsx`. */}
         </section>
       )}
     </div>

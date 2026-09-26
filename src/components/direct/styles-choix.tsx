@@ -37,7 +37,30 @@ export function StylesChoix() {
            « Clik » en blanc, « Me » en magenta : c'est le logo de sa maquette,
            et il est ecrit en texte et non en image. Une image de mot se
            crenelle sur un ecran dense et ne suit pas la police du produit. */
-        .cx-tete{flex:none;}
+        /* L'EN-TETE PREND TOUTE LA LARGEUR, sinon le coin n'est pas le coin.
+           Elle se reduisait a ses 184 points de contenu, donc le Fantome, pose
+           a right:12px, atterrissait SUR le nom au lieu du bord de l'ecran.
+           Le logo est centre par le texte, il ne bouge pas de sa place. */
+        .cx-tete{position:relative;flex:none;width:100%;}
+        /* LE FANTOME QUI MENE DANS L'APPLICATION : en haut a droite, la meme
+           place que sur les cinq parcours, ou il fait l'inverse. Une seule
+           mascotte, une seule place, deux directions selon l'endroit. */
+        .cx-entrer{position:absolute;right:12px;top:-2px;z-index:5;}
+        .cx-entrer-f{width:clamp(40px,11vw,54px);}
+
+        /* LA CONSIGNE S'EFFACE AU PREMIER GLISSEMENT — voir l'ecran.
+           ELLE REND SA PLACE, ET PAS SEULEMENT SON ENCRE. La premiere version
+           ne faisait disparaitre que la bulle et laissait le Fantome seul au
+           milieu de l'ecran : soixante-dix points de haut pour une mascotte
+           qui ne dit plus rien, alors que la plainte portait sur la place.
+           TOUTE LA BANDE SE REPLIE donc, hauteur et marge ensemble, et les
+           cartes prennent ce qu'elle rend. Le repli est progressif, sur un
+           tiers de seconde, pour que rien ne saute sous le doigt qui glisse ;
+           overflow:hidden empeche la bulle de deborder pendant le repli. */
+        .cx-dit{max-height:150px;overflow:hidden;
+          transition:max-height .34s ease,margin .34s ease,opacity .24s ease;}
+        .cx-dit.parti{max-height:0;margin-top:0;opacity:0;pointer-events:none;}
+        .cx-bulle{transition:opacity .3s ease,transform .3s ease;}
         .cx-logo{margin:0;font-weight:900;font-size:clamp(24px,min(7.4vw,3.6vh),34px);
           line-height:1;letter-spacing:-.03em;}
         .cx-logo b{font-weight:900;color:#fff;}
@@ -70,7 +93,7 @@ export function StylesChoix() {
         .cx-dit{flex:none;display:flex;align-items:center;justify-content:center;
           gap:2px;margin:clamp(6px,1.3vh,12px) 0 0;padding:0 12px;width:100%;}
         .cx-f{flex:none;width:clamp(50px,min(14vw,7vh),70px);height:auto;
-          filter:drop-shadow(0 0 16px rgba(196,132,255,.55));}
+          filter:drop-shadow(0 0 16px rgba(255,46,154,.55));}
         /* ELLE A UNE LARGEUR MAXIMALE, pour se couper la ou une phrase se
            coupe. Sans elle, « Glissez pour choisir un salon pres de vous » tenait
            sur une ligne entiere et laissait la fleche seule sur la seconde. */

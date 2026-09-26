@@ -28,6 +28,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
+import { FantomeAccueil } from "@/components/direct/fantome-accueil";
 import { momentEnCours, toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import {
   APRES_COIFFURE,
@@ -37,11 +38,6 @@ import {
   SALON_COIFFURE,
   VISAGES_COIFFURE,
 } from "@/lib/direct/parcours-coiffure";
-
-function Fant({ classe }: { classe: string }) {
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img className={classe} src="/clikme-fantome.png" alt="" />;
-}
 
 /** L'appareil photo des deux boutons pleins de ses maquettes. */
 function Appareil() {
@@ -156,21 +152,7 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
             lecteurs d'écran, et la petite maison se pose sur son épaule pour
             dire où il mène. Une mascotte cliquable sans aucun signe reste une
             mascotte. */}
-        <button
-          type="button"
-          className="pc-accueil"
-          onClick={onFermer}
-          aria-label="Revenir à l’accueil"
-          title="Revenir à l’accueil"
-        >
-          <Fant classe="pc-f" />
-          <s className="pc-accueil-m" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M3.6 10.6 12 3.8l8.4 6.8" />
-              <path d="M5.8 9v10.4a1 1 0 0 0 1 1h10.4a1 1 0 0 0 1-1V9" />
-            </svg>
-          </s>
-        </button>
+        <FantomeAccueil onClick={onFermer} classe="pc-f" />
       </header>
 
       {/* ═══ LA PASTILLE DU SALON A QUITTÉ LE MILIEU DE LA PHOTO ═══════════

@@ -35,6 +35,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
+import { FantomeAccueil } from "@/components/direct/fantome-accueil";
 import {
   CATEGORIES,
   CATEGORIE_DEPART,
@@ -143,6 +144,11 @@ export function EcranChoix({
   const [cle, setCle] = useState<CleCategorie>(depart ?? CATEGORIE_DEPART);
   const categorie = categorieDe(cle);
   const [actif, setActif] = useState(0);
+  /** Vrai dès qu'on a bougé dans le paquet : la consigne a fait son travail. */
+  const [aGlisse, setAGlisse] = useState(false);
+  useEffect(() => {
+    if (actif !== 0) setAGlisse(true);
+  }, [actif]);
   const [dx, setDx] = useState(0);
   const [bientot, setBientot] = useState(false);
   const prise = useRef<number | null>(null);
@@ -256,6 +262,14 @@ export function EcranChoix({
   return (
     <div className="cx">
       <header className="cx-tete">
+        {/* LE FANTÔME MÈNE DANS L'APPLICATION, sur les cinq onglets, toujours
+            à la même place — voir le commentaire du bas, là où le bouton
+            « Entrer dans l'application » se tenait par intermittence. */}
+        {onEntrer && (
+          <span className="cx-entrer">
+            <FantomeAccueil onClick={onEntrer} classe="cx-entrer-f" ou="l’application" verbe="Entrer dans" />
+          </span>
+        )}
         {/* LE VRAI LOGO, PAS UN MOT EN GRAS. « Clikme » n'a pas de k :
             il a un curseur a sa place, et c'est tout le nom — on clique,
             et c'est moi. Ecrit au clavier, le mot perdait la seule chose
@@ -280,7 +294,24 @@ export function EcranChoix({
         </em>
       </h1>
 
-      <div className="cx-dit">
+      {/* ═══ LA CONSIGNE S'EFFACE UNE FOIS APPRISE ══════════════════════════
+
+          « "Glissez pour découvrir les boutiques près de chez vous" : penses-tu
+          que c'est utile ? Ça prend pas mal de place. »
+
+          UTILE UNE FOIS, ENCOMBRANTE ENSUITE. C'est une leçon, et une leçon qui
+          reste à l'écran se paie à chaque visite pour quelque chose qu'on a
+          compris au premier geste. Mesurée ici, elle prend quatre-vingts points
+          de haut — la moitié de ce qui manque à la carte pour respirer.
+
+          LA SUPPRIMER SERAIT ALLER TROP LOIN. Un paquet qu'on ne sait pas
+          balayer est un paquet dont on ne voit que la première carte, et c'est
+          le défaut le plus cher de cet écran : on choisirait parmi un, en
+          croyant avoir tout vu.
+
+          ELLE PART DONC AU PREMIER GLISSEMENT, et le Fantôme reste. Elle a
+          appris ce qu'elle avait à apprendre ; la place revient aux cartes. */}
+      <div className={`cx-dit${aGlisse ? " parti" : ""}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="cx-f" src="/clikme-fantome.png" alt="" />
         <p className="cx-bulle">
@@ -480,15 +511,21 @@ export function EcranChoix({
         ))}
       </nav>
 
-      {/* LA PORTE VERS L'APP RESTE, ET ELLE EST DISCRÈTE. Le grand bouton ne
-          mène nulle part pour l'instant : sans celle-ci, la démonstration
-          serait un cul-de-sac. Elle vit en bas, petite, parce que ce n'est pas
-          le geste de l'écran — c'est la sortie de secours de la partie 1. */}
-      {onEntrer && (
-        <button type="button" className="cx-passer" onClick={onEntrer}>
-          Entrer dans l’application
-        </button>
-      )}
+      {/* ═══ « ENTRER DANS L'APPLICATION » A QUITTÉ LE BAS ══════════════════
+
+          « "Rentrer dans l'application" n'est que sur certains onglets, donc le
+          supprimer du bas, et peut-être mettre un petit logo fantôme sur chaque
+          page d'accueil métier qui mène à l'application. »
+
+          IL NE S'AFFICHAIT QUE LÀ OÙ LE PARENT LUI PASSAIT `onEntrer` — donc
+          par intermittence, ce qui est pire qu'absent : une porte qui apparaît
+          et disparaît selon l'onglet ne s'apprend pas, elle se subit.
+
+          LE FANTÔME DE L'EN-TÊTE LA REMPLACE, sur les cinq onglets, toujours à
+          la même place. C'est le même geste que sur les parcours — voir
+          `fantome-accueil.tsx` — sauf qu'ici il mène vers l'application au lieu
+          d'en revenir. Une seule mascotte, une seule place, deux directions
+          selon l'endroit où l'on se tient. */}
     </div>
   );
 }

@@ -34,6 +34,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
+import { FantomeAccueil } from "@/components/direct/fantome-accueil";
 import { onSpeakingChange, speak, stopSpeaking } from "@/lib/site-internet/speech";
 import { toutesLesCartes, VILLE } from "@/lib/direct/apercu-habitant";
 import { demanderRendezVous, numeroDeFiction } from "@/lib/direct/prevenir";
@@ -207,21 +208,7 @@ export function ParcoursTable({ onFermer }: { onFermer: () => void }) {
             autres parcours : il est déjà à cette place sur les quatre écrans,
             lui donner la fonction évite une icône de plus. La petite maison
             sur son épaule est ce qui le fait comprendre. */}
-        <button
-          type="button"
-          className="pt-accueil"
-          onClick={onFermer}
-          aria-label="Revenir à l’accueil"
-          title="Revenir à l’accueil"
-        >
-          <Fant classe="pt-f" />
-          <s className="pt-accueil-m" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M3.6 10.6 12 3.8l8.4 6.8" />
-              <path d="M5.8 9v10.4a1 1 0 0 0 1 1h10.4a1 1 0 0 0 1-1V9" />
-            </svg>
-          </s>
-        </button>
+        <FantomeAccueil onClick={onFermer} classe="pt-f" />
       </header>
 
       {/* ═══ LA PASTILLE DU RESTAURANT A QUITTÉ LA PHOTO ═══════════════════

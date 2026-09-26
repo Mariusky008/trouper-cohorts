@@ -32,6 +32,7 @@
 
 import { useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
+import { FantomeAccueil } from "@/components/direct/fantome-accueil";
 import { toutesLesCartes, VILLE } from "@/lib/direct/apercu-habitant";
 import { demanderRendezVous, numeroDeFiction } from "@/lib/direct/prevenir";
 import {
@@ -149,7 +150,11 @@ export function ParcoursDeco({ onFermer }: { onFermer: () => void }) {
             {etape}/{ETAPES_DECO}
           </em>
         </div>
-        <Fant classe="pd-f" />
+        {/* LE FANTÔME RAMÈNE À L'ACCUEIL, comme sur les quatre autres
+            parcours. Voir `fantome-accueil.tsx` : un composant, une place, un
+            geste — chaque écran avait sa version, donc celui qu'on n'avait pas
+            encore regardé n'avait rien. */}
+        <FantomeAccueil onClick={onFermer} classe="pd-f" />
       </header>
 
       <div className="pd-lieu">
@@ -161,12 +166,6 @@ export function ParcoursDeco({ onFermer }: { onFermer: () => void }) {
             {ou}
           </em>
         </span>
-        <button type="button" className="pd-sortir" onClick={onFermer} aria-label="Revenir au choix des boutiques">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3.6 10.6 12 3.8l8.4 6.8" />
-            <path d="M5.8 9v10.4a1 1 0 0 0 1 1h10.4a1 1 0 0 0 1-1V9" />
-          </svg>
-        </button>
       </div>
 
       {/* ──────────────────────── 1/4 · LA PIÈCE ────────────────────────── */}

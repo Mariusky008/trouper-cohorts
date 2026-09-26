@@ -34,6 +34,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
+import { FantomeAccueil } from "@/components/direct/fantome-accueil";
 import { evenementsDeLaVille, VILLE } from "@/lib/direct/apercu-habitant";
 import { intentionDe, SOIREES } from "@/lib/direct/soiree";
 import { CATEGORIES } from "@/lib/direct/choisir-commerce";
@@ -189,7 +190,11 @@ export function ParcoursSortie({
             {etape}/{ETAPES_SORTIE}
           </em>
         </div>
-        <Fant classe="ps-f" />
+        {/* LE FANTÔME RAMÈNE À L'ACCUEIL, comme sur les quatre autres
+            parcours. Voir `fantome-accueil.tsx` : un composant, une place, un
+            geste — chaque écran avait sa version, donc celui qu'on n'avait pas
+            encore regardé n'avait rien. */}
+        <FantomeAccueil onClick={onFermer} classe="ps-f" />
       </header>
 
       {/* LA PASTILLE DE LA SOIRÉE : elle dit où l'on est, aux quatre étapes,
@@ -211,12 +216,6 @@ export function ParcoursSortie({
             {evt.distance} · {VILLE}
           </em>
         </span>
-        <button type="button" className="ps-sortir" onClick={onFermer} aria-label="Revenir au choix des sorties">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3.6 10.6 12 3.8l8.4 6.8" />
-            <path d="M5.8 9v10.4a1 1 0 0 0 1 1h10.4a1 1 0 0 0 1-1V9" />
-          </svg>
-        </button>
       </div>
 
       {/* ──────────────────────── 1/4 · L'AFFICHE ───────────────────────── */}

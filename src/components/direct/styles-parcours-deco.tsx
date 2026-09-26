@@ -57,7 +57,7 @@ export function StylesParcoursDeco() {
         .pd-pas em{position:absolute;top:100%;margin-top:3px;font-style:normal;
           font-size:12.5px;font-weight:850;text-shadow:0 1px 8px rgba(0,0,0,.8);}
         .pd-f{flex:none;width:clamp(46px,min(12.5vw,6.2vh),62px);height:auto;
-          filter:drop-shadow(0 0 16px rgba(196,132,255,.65));}
+          filter:drop-shadow(0 0 16px rgba(255,46,154,.65));}
 
         .pd-lieu{position:relative;z-index:3;flex:none;align-self:flex-start;
           display:flex;align-items:center;gap:10px;
@@ -87,7 +87,7 @@ export function StylesParcoursDeco() {
         .pd-dit{display:flex;align-items:center;gap:0;
           margin:0 auto 10px;width:max-content;max-width:100%;}
         .pd-dit-f{flex:none;width:clamp(54px,16vw,70px);height:auto;
-          filter:drop-shadow(0 0 16px rgba(196,132,255,.7));}
+          filter:drop-shadow(0 0 16px rgba(255,46,154,.7));}
         .pd-dit p{margin:0 0 14px -6px;padding:9px 15px;border-radius:999px;
           font-size:clamp(14px,4.2vw,17px);font-weight:850;
           letter-spacing:-.01em;color:#fff;

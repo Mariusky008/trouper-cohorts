@@ -52,7 +52,7 @@ export function StylesParcoursCoiffure() {
         .pc-pas em{position:absolute;top:100%;margin-top:3px;font-style:normal;
           font-size:12.5px;font-weight:850;text-shadow:0 1px 8px rgba(0,0,0,.8);}
         .pc-f{flex:none;width:clamp(48px,min(13vw,6.4vh),64px);height:auto;
-          filter:drop-shadow(0 0 16px rgba(196,132,255,.65));}
+          filter:drop-shadow(0 0 16px rgba(255,46,154,.65));}
 
         /* ═══ LE FANTOME EST LA PORTE DE L'ACCUEIL ══════════════════════
            Il etait deja a cette place sur les quatre ecrans : lui donner la

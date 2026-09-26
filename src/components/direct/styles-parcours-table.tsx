@@ -77,7 +77,7 @@ export function StylesParcoursTable() {
         .pt-pas em{position:absolute;top:100%;margin-top:3px;font-style:normal;
           font-size:12.5px;font-weight:850;text-shadow:0 1px 8px rgba(0,0,0,.8);}
         .pt-f{flex:none;width:clamp(46px,min(12.5vw,6.2vh),62px);height:auto;
-          filter:drop-shadow(0 0 16px rgba(196,132,255,.65));}
+          filter:drop-shadow(0 0 16px rgba(255,46,154,.65));}
 
         .pt-lieu{position:relative;z-index:3;flex:none;align-self:flex-start;
           display:flex;align-items:center;gap:10px;
@@ -176,7 +176,7 @@ export function StylesParcoursTable() {
         .pt-rideau:focus-within{outline:2px solid #FF2E9A;outline-offset:3px;}
 
         .pt-dit-f{flex:none;width:clamp(58px,17vw,74px);height:auto;
-          filter:drop-shadow(0 0 16px rgba(196,132,255,.7));}
+          filter:drop-shadow(0 0 16px rgba(255,46,154,.7));}
         .pt-dit p{position:relative;margin:0 0 14px -6px;padding:9px 15px;
           border-radius:999px;font-size:clamp(14px,4.2vw,17px);font-weight:850;
           letter-spacing:-.01em;color:#fff;
