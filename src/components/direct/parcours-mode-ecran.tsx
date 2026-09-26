@@ -384,7 +384,11 @@ export function ParcoursMode({
             <span className="pm-g-trait" style={{ left: `${glissiere}%` }} aria-hidden="true">
               <s>↔</s>
             </span>
-            <Fant classe="pm-g-f" />
+            {/* LE FANTOME A QUITTE L'ESSAYAGE. Il etait pose au milieu du bas de
+                l'image, c'est-a-dire SUR LE VETEMENT — la seule chose que cet
+                ecran demande de juger. Une mascotte qui couvre la piece qu'on
+                essaie travaille contre l'ecran. Le parcours coiffure n'en a
+                jamais eu a cet endroit : les deux se ressemblent enfin. */}
           </div>
 
           <div className="pm-fiche">
@@ -393,7 +397,10 @@ export function ParcoursMode({
                 fiche montrait une femme en rose a cote du nom de la boutique. */}
             <span className="pm-fiche-v" style={{ backgroundImage: `url("${piecePhoto}")` }} />
             <span className="pm-fiche-t">
-              <b>{titre}</b>
+              {/* LA PIECE, PAS L'ANNONCE — meme raison qu'au dernier ecran :
+                  « 40 pieces sorties ce matin » dit QUAND, pas QUOI, et sur
+                  deux lignes dans une colonne etroite ca ne dit plus rien. */}
+              <b>{nomPiece}</b>
               <em>
                 <i aria-hidden="true">📍</i>
                 {nom} · {boutique.distance}

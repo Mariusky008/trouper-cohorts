@@ -51,7 +51,7 @@ export type MotsRdv = {
 
 export const MOTS_RDV: Record<string, MotsRdv> = {
   coiffure: {
-    question: "Cette coupe vous plaît sur vous ?",
+    question: "Cette coupe vous plaît sur vous\u202f?",
     bouton: "Demander un rendez-vous",
     chose: "la coupe",
     /* « QUELQU'UN » PLUTOT QUE « UN CLIENT », et c'est un ecart assume par
@@ -63,7 +63,7 @@ export const MOTS_RDV: Record<string, MotsRdv> = {
     image: "Joindre mon essai à la demande",
   },
   mode: {
-    question: "Cette pièce vous plaît sur vous ?",
+    question: "Cette pièce vous plaît sur vous\u202f?",
     bouton: "Demander à l’essayer en boutique",
     chose: "la pièce",
     notification: (q) => `Quelqu’un a essayé cette pièce et souhaite venir ${q}.`,
@@ -74,7 +74,7 @@ export const MOTS_RDV: Record<string, MotsRdv> = {
      et la demande est d'aller le voir en vrai — parce qu'on ne juge pas une
      matière sur un écran. */
   deco: {
-    question: "Cette pièce vous plaît chez vous ?",
+    question: "Cette pièce vous plaît chez vous\u202f?",
     bouton: "Demander à la voir en boutique",
     chose: "la pièce",
     notification: (q) => `Quelqu’un a essayé cette pièce chez lui et souhaite passer ${q}.`,

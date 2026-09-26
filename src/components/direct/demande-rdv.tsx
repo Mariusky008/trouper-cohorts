@@ -87,7 +87,7 @@ export function DemandeRdv({
 
       {temps === "quand" && (
         <>
-          <h1 className="rdv-t">Vous voulez venir quand ?</h1>
+          <h1 className="rdv-t">Vous voulez venir quand ?</h1>
           {/* AUCUNE HEURE N'EST PROPOSÉE, et c'est la règle du produit : on
               n'annonce pas un créneau qu'on ne peut pas tenir. On dit une
               envie, il répond avec ce qui est libre. */}
@@ -141,7 +141,32 @@ export function DemandeRdv({
               l'application et l'heure. Écrite en paragraphe, elle se serait lue
               comme une promesse de ce que le produit fera ; dessinée, elle se
               lit comme ce qu'il verra. */}
-          <p className="rdv-cap">Ce que {nom} reçoit, à l’instant</p>
+          {/* ═══ D'ABORD CE QUI VIENT DE SE PASSER ═════════════════════════
+
+              « Design très mauvais, à refaire en beaucoup mieux. »
+
+              CE QUI N'ALLAIT PAS, ET IL Y AVAIT TROIS CHOSES. L'écran s'ouvrait
+              sur une grande photo vide, puis sur une ligne en capitales roses
+              qui se cassait en deux — « CE QUE UN BARBIER DE LA HALLE REÇOIT, À
+              L'INSTANT », avec la faute de liaison en prime — posée sur une
+              photo chargée. On ne savait pas ce qu'on regardait : une
+              confirmation ? un aperçu ? Et rien ne disait que la demande était
+              PARTIE.
+
+              TROIS TEMPS, DANS L'ORDRE OÙ ON SE LES DEMANDE : c'est fait —
+              voilà ce qu'il voit — voilà la suite. La pastille verte répond à
+              la première question en un dixième de seconde, avant toute
+              lecture. */}
+          <span className="rdv-ok" aria-hidden="true">✓</span>
+          <h1 className="rdv-t">Demande envoyée</h1>
+          <p className="rdv-ligne">
+            à <b>{nom}</b>
+          </p>
+
+          {/* ET VOILÀ CE QU'IL REÇOIT. La légende est courte et neutre : la
+              notification porte déjà « Clikme · maintenant » dans son en-tête,
+              le répéter en capitales roses au-dessus ne disait rien de plus. */}
+          <p className="rdv-cap">Sur son téléphone</p>
           <div className="rdv-notif">
             <span className="rdv-notif-h">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -244,8 +269,13 @@ const FEUILLE = `
    commercant est la seule exception — elle se dimensionne sur son texte, et sa
    largeur est posee avec le reste de son dessin, plus bas. */
 .rdv>*{flex:none;width:100%;}
+/* LE TITRE SE REPARTIT SUR SES LIGNES AU LIEU DE LAISSER UN ORPHELIN. Mesure a
+   l'ecran : « Vous voulez venir quand ? » posait le point d'interrogation seul
+   sur la seconde ligne. L'espace fine insecable avant le « ? » — qui est de
+   toute facon la typographie francaise — l'attache au dernier mot, et
+   text-wrap:balance egalise les deux lignes. */
 .rdv-t{margin:0;font-size:clamp(23px,min(7.4vw,4vh),32px);font-weight:900;
-  line-height:1.08;letter-spacing:-.03em;color:#fff;
+  line-height:1.08;letter-spacing:-.03em;color:#fff;text-wrap:balance;
   text-shadow:0 2px 18px rgba(0,0,0,.85);}
 /* LA LIGNE DE SA MAQUETTE : « Coupe homme · 22 € · Un barbier de la halle ».
    Le nom du commerce prend le gras, parce que c'est la seule des trois
@@ -306,8 +336,20 @@ const FEUILLE = `
    DESSINEE COMME UNE NOTIFICATION DE TELEPHONE : fond clair, coins ronds, nom
    de l'application et heure en haut. Ecrite en paragraphe, elle se serait lue
    comme une promesse ; dessinee, elle se lit comme ce qu'il verra. */
-.rdv-cap{margin:0 0 9px;font-size:11px;font-weight:850;letter-spacing:.09em;
-  text-transform:uppercase;color:#FF7FC2;}
+/* LA PASTILLE DU FAIT ACCOMPLI. Elle repond « c'est parti » avant qu'on ait
+   lu un mot, ce qui est la premiere question qu'on se pose apres avoir appuye
+   sur un bouton d'envoi. Verte, parce que c'est la seule couleur que personne
+   n'a besoin d'apprendre. */
+.rdv-ok{display:flex;align-items:center;justify-content:center;
+  width:52px;height:52px;margin:0 auto 11px;border-radius:50%;
+  font-size:25px;font-weight:900;color:#06120C;
+  background:linear-gradient(180deg,#5BE9A8,#22C07C);
+  box-shadow:0 14px 34px -12px rgba(34,192,124,.9);}
+/* LA LEGENDE DE LA NOTIFICATION : courte, grise, en bas de casse. En capitales
+   roses sur une photo chargee, elle se cassait en deux lignes et criait plus
+   fort que la notification qu'elle annonce. */
+.rdv-cap{margin:16px 0 8px;font-size:11px;font-weight:800;letter-spacing:.06em;
+  text-transform:uppercase;color:rgba(255,255,255,.5);}
 .rdv-notif{position:relative;width:100%;padding:12px 13px 13px;
   border-radius:18px;text-align:left;color:#14101C;
   background:linear-gradient(180deg,#FFFFFF,#F1ECF8);

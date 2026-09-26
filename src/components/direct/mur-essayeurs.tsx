@@ -148,15 +148,27 @@ const FEUILLE = `
 /* LA SCENE PORTE LES TROIS CARTES SUPERPOSEES. Elles sont placees par leur
    ECART au centre, pas par un defilement : c'est ce qui permet aux voisines
    d'etre plus petites et en retrait. */
+/* ═══ LA SCENE COUPE CE QUI SORT DU CADRE ═══════════════════════════════
+   MESURE : la carte voisine s'etendait jusqu'a 707 points sur un ecran de 420,
+   et elle emportait SA LEGENDE avec elle — le prenom et la phrase de Sofia
+   tombaient par-dessus ceux d'Helene. « Les avis semblent superposes » : ce
+   n'etait pas une impression, les deux textes etaient au meme endroit.
+   ON COUPE AU BORD, et on garde un lisere de la voisine pour qu'on sache
+   qu'il y en a d'autres. La legende, elle, n'appartient qu'a la carte du
+   centre : une phrase qu'on ne peut pas lire en entier ne sert qu'a gener
+   celle qu'on lit. */
 .mes-scene{position:relative;flex:1 1 auto;min-height:0;width:100%;
+  overflow:hidden;border-radius:20px;
   touch-action:pan-y;cursor:grab;}
 .mes-scene:active{cursor:grabbing;}
 .mes-c{position:absolute;inset:0;border-radius:20px;overflow:hidden;
-  transform:translate3d(calc(var(--mes-e) * 84% + var(--mes-dx) * .8),0,0)
+  transform:translate3d(calc(var(--mes-e) * 93% + var(--mes-dx) * .8),0,0)
             scale(calc(1 - 0.12 * max(var(--mes-e), calc(-1 * var(--mes-e)))));
   transition:transform .26s cubic-bezier(.22,.61,.36,1),opacity .26s ease;
   box-shadow:0 26px 60px -22px rgba(0,0,0,.95);}
-.mes-c.de-cote{opacity:.42;cursor:pointer;}
+.mes-c.de-cote{opacity:.3;cursor:pointer;}
+/* LA VOISINE SE TAIT : ni legende, ni pastille de preuve. */
+.mes-c.de-cote .mes-bas,.mes-c.de-cote .mes-preuve{display:none;}
 .mes-c.au-centre{border:1.5px solid rgba(255,46,154,.6);}
 .mes-ph{position:absolute;inset:0;background-size:cover;
   background-repeat:no-repeat;}
@@ -188,8 +200,15 @@ const FEUILLE = `
 .mes-bas{position:absolute;left:0;right:0;bottom:0;z-index:2;
   display:flex;flex-direction:column;gap:3px;padding:16px 14px 14px;
   text-align:left;color:#fff;}
-.mes-qui{display:flex;align-items:center;justify-content:space-between;gap:6px;
-  font-size:12.5px;font-weight:900;letter-spacing:.02em;color:#FF7FC2;}
+/* « LES FANTOMES TOUT PETITS ». Ils faisaient douze points de haut, colles au
+   bord droit d'une ligne deja chargee : on ne comptait pas quatre sur cinq, on
+   voyait une tache rose. Ils passent sur leur propre ligne, au-dessus du
+   prenom, a dix-huit points — la note se lit avant la phrase, ce qui est
+   l'ordre dans lequel on la veut. */
+.mes-qui{display:flex;flex-direction:column;align-items:flex-start;gap:4px;
+  font-size:13px;font-weight:900;letter-spacing:.02em;color:#FF7FC2;}
+.mes-qui .nf{gap:3px;}
+.mes-qui .nf-s{width:19px;height:20.5px;}
 .mes-mot{font-size:clamp(14px,4.2vw,17px);font-weight:850;line-height:1.28;
   letter-spacing:-.01em;text-shadow:0 2px 12px rgba(0,0,0,.9);}
 .mes-ou{font-style:normal;font-size:11px;font-weight:700;margin-top:1px;

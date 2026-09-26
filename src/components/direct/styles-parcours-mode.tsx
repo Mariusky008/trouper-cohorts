@@ -212,9 +212,20 @@ export function StylesParcoursMode() {
           overflow:hidden;}
         .pm-fiche-t em{display:flex;align-items:center;gap:5px;font-style:normal;
           font-size:12.5px;font-weight:700;color:rgba(255,255,255,.7);
-          overflow:hidden;}
-        .pm-fiche-t i{font-style:normal;font-size:11px;}
-        .pm-fiche-p{flex:none;font-size:clamp(19px,5.4vw,23px);font-weight:900;
+          min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .pm-fiche-t i{flex:none;font-style:normal;font-size:11px;}
+        /* ═══ LE PRIX NE MANGE PLUS LA COLONNE DU TEXTE ══════════════════
+           « Le texte est vertical et illisible. »
+           MESURE : le prix etait en flex:none a vingt-trois points. « A partir
+           de 12 € » fait alors cent soixante-dix points de large ; avec la
+           vignette et les marges, il ne restait qu'une cinquantaine de points
+           au nom de la boutique — d'ou une colonne d'une lettre par ligne. Ce
+           n'etait pas du texte vertical, c'etait du texte a un caractere.
+           IL SE BORNE A UN TIERS DE LA FICHE ET PEUT SE REPLIER. Les prix
+           courts — « 89 € » — gardent leur taille ; les longs maigrissent et
+           passent sur deux lignes plutot que d'ecraser leur voisin. */
+        .pm-fiche-p{flex:0 1 auto;max-width:36%;text-align:right;
+          font-size:clamp(15px,4.4vw,22px);font-weight:900;line-height:1.1;
           letter-spacing:-.02em;color:#fff;}
 
         .pm-lien{margin:12px 0 0;padding:6px 4px;font:inherit;font-size:14px;
