@@ -3376,6 +3376,67 @@ const CARTES: CarteAutour[] = [
     ],
   },
   {
+    /**
+     * ═══ MAISON DAX — LE MAGASIN DE DÉCO, ET IL N'EXISTAIT PAS ═════════════
+     *
+     * « Dernier : déco. »
+     *
+     * LA CATÉGORIE « COMMERCES » N'AVAIT AUCUN MEUBLE. Une cirière, une
+     * fleuriste, un boulanger, un traiteur — quatre commerces de bouche ou de
+     * cadeau. Or l'essai que sa maquette demande est « ce fauteuil chez vous »,
+     * et on ne pose pas un pain dans un salon pour voir s'il va avec le tapis.
+     * Il fallait donc un vendeur de meubles, et il est ici.
+     *
+     * IL PORTE UN NOM, ET C'EST LE TROISIÈME. Les commerces de démonstration
+     * sont anonymes par principe — « une cirière », « un salon du centre » —
+     * mais Le Pétrin d'Amanieu et Maison Lartigue en portent déjà un. Un nom
+     * inventé pour une boutique inventée ne trompe personne ; ce qu'on
+     * s'interdit, c'est le nom d'un VRAI commerçant qui n'a rien signé. Et ce
+     * nom-là permet de montrer sa devanture avec son enseigne, comme pour Le
+     * Bocal de Margot — l'enseigne est la nôtre.
+     *
+     * SES PRIX SORTENT DE SA CARTE, une seule fois, comme partout ailleurs.
+     */
+    id: "maison-dax",
+    catalogue: [
+      { id: "md-1", rayon: "Fauteuils", nom: "Le fauteuil orange", detail: "Velours côtelé, pieds bois massif.", prix: "390 €", photo: "/direct/deco/fauteuil-grand.jpg" },
+      { id: "md-2", rayon: "Fauteuils", nom: "Le même, en vert sapin", detail: "Sur commande, trois semaines.", prix: "390 €" },
+      { id: "md-3", rayon: "Coussins", nom: "Coussin tissé noir et écru", detail: "Motif berbère, 45 × 45.", prix: "34 €", photo: "/direct/deco/detail-coussin.jpg" },
+      { id: "md-4", rayon: "Luminaires", nom: "Lampadaire arc, métal noir", prix: "129 €" },
+      { id: "md-5", rayon: "Tapis", nom: "Tapis jute tressé, 160 × 230", prix: "149 €" },
+      { id: "md-6", rayon: "Petit mobilier", nom: "Bout de canapé, chêne", detail: "Fait dans les Landes.", prix: "89 €" },
+    ],
+    branche: "artisan",
+    photo: "/direct/deco/fauteuil-grand.jpg",
+    nom: "Maison Dax",
+    google: { note: "4,7", avis: 51 },
+    metier: "Meubles et décoration",
+    ville: VILLE,
+    itineraire: YALLER,
+    metres: 600,
+    distance: "600 m",
+    sesPhotos: [{ src: "/direct/deco/boutique-maison-dax.jpg", quoi: "La boutique" }],
+    fiche: {
+      ou: "Avenue de la gare, au bout du parking",
+      horaires: "Aujourd'hui, 10 h – 19 h",
+      mot: "On fait venir des petites séries. Quand une pièce part, elle ne revient pas toujours.",
+    },
+    moments: [
+      {
+        de: 10, a: 19, quand: "toute la journée", icone: "🛋️",
+        titre: "Le fauteuil orange est en vitrine",
+        photo: "/direct/deco/fauteuil-grand.jpg",
+        lignes: ["Velours côtelé, pieds bois massif", "Essayez-le chez vous avant de venir"],
+        /* AUCUNE ENVIE, ET C'EST EXACT. Un artisan en propose quatre : tout de
+           suite, fait devant vous, pièce unique, à offrir. Un fauteuil de
+           petite série n'est aucune des quatre — « on fait venir des petites
+           séries » est écrit dans sa fiche, donc le cocher « pièce unique »
+           serait se contredire soi-même trois lignes plus haut. */
+        prix: "390 €", action: "Réserver", envies: [],
+      },
+    ],
+  },
+  {
     id: "bijoux-atelier",
     catalogue: [
       { id: "bj-1", rayon: "Bracelets", nom: "Bracelet cordon, fermoir argent", detail: "Ajusté au poignet, sur place.", prix: "28 €" },

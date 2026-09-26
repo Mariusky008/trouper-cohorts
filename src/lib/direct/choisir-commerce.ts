@@ -164,6 +164,11 @@ export const CATEGORIES: Categorie[] = [
     bulle: "Glissez pour découvrir les boutiques près de vous",
     bouton: "Découvrir cette pièce",
     cartes: [
+      /* MAISON DAX PASSE EN TETE, et c'est le parcours qui le demande : c'est
+         le seul des cinq a porter un essai « chez vous », et c'est lui que le
+         bouton ouvre. Une categorie dont la premiere carte ne mene pas au
+         parcours ferait chercher. */
+      { id: "maison-dax", photo: "/direct/deco/fauteuil-grand.jpg" },
       { id: "cirier", photo: "/direct/table-salon-bougie.jpg" },
       { id: "fleur-marche", photo: "/direct/bouquet-du-jour.jpg" },
       { id: "boulange", photo: "/direct/sortie-du-four.jpg" },

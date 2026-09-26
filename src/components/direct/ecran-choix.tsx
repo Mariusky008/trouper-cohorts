@@ -119,6 +119,8 @@ export function EcranChoix({
   onParcoursSortie,
   /** Le parcours du restaurant, le quatrieme. */
   onParcoursTable,
+  /** Le parcours de la deco, et il ferme la serie. */
+  onParcoursDeco,
   /**
    * SUR QUELLE CATEGORIE OUVRIR, QUAND ON REVIENT D'AILLEURS.
    *
@@ -134,6 +136,7 @@ export function EcranChoix({
   onParcoursCoiffure?: () => void;
   onParcoursSortie?: () => void;
   onParcoursTable?: () => void;
+  onParcoursDeco?: () => void;
   depart?: CleCategorie;
 }) {
   const [cle, setCle] = useState<CleCategorie>(depart ?? CATEGORIE_DEPART);
@@ -428,13 +431,15 @@ export function EcranChoix({
         type="button"
         className="cx-go"
         onClick={() => {
-          /* QUATRE PARCOURS SUR CINQ, ET LE DERNIER LE DIT. Seuls les
-             commerces n'ont pas encore le leur, et leur bouton garde la ligne
-             « la partie 2 arrive » sous lui. */
+          /* LES CINQ CATEGORIES ONT LEUR PARCOURS. La ligne « la partie 2
+             arrive » ne s'affiche donc plus jamais — elle reste sous le
+             bouton, invisible, parce que c'est elle qui rattraperait une
+             sixieme categorie ajoutee sans son parcours. */
           if (cle === "mode" && onParcoursMode) return onParcoursMode();
           if (cle === "beaute" && onParcoursCoiffure) return onParcoursCoiffure();
           if (cle === "sorties" && onParcoursSortie) return onParcoursSortie();
           if (cle === "restaurants" && onParcoursTable) return onParcoursTable();
+          if (cle === "commerces" && onParcoursDeco) return onParcoursDeco();
           setBientot(true);
         }}
         aria-describedby="cx-bientot"

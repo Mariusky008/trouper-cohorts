@@ -154,6 +154,48 @@ if (!idTable) {
   }
 }
 
+/**
+ * ═══ LE PARCOURS DÉCO : SA BOUTIQUE, SES DEUX LIGNES DE CARTE, SES SIX IMAGES
+ *
+ * SA BOUTIQUE N'EXISTAIT PAS — il a fallu écrire `maison-dax`, la catégorie
+ * « Commerces » n'ayant aucun meuble. Un commerce ajouté à la main peut être
+ * supprimé à la main : sans cette garde, le parcours afficherait un écran vide
+ * et l'écran de choix une carte qui ne dessine rien, tous les deux en silence.
+ */
+const deco = readFileSync("src/lib/direct/parcours-deco.ts", "utf8");
+const idDeco = constante(deco, "COMMERCE_DECO");
+if (!idDeco) {
+  soucis.push("deco : COMMERCE_DECO est introuvable.");
+} else {
+  const bloc = blocDuCommerce(catalogue, idDeco);
+  if (!bloc) {
+    soucis.push(`deco : le commerce « ${idDeco} » n'existe pas dans le catalogue.`);
+  } else {
+    for (const nom of ["PIECE_DECO", "COUSSIN_DECO"]) {
+      const art = constante(deco, nom);
+      if (!art) soucis.push(`deco : ${nom} est introuvable.`);
+      else if (!bloc.includes(`id: "${art}"`)) {
+        soucis.push(`deco : la carte de « ${idDeco} » n'a pas d'article « ${art} ».`);
+      }
+    }
+    for (const nom of ["SALON_AVANT", "SALON_APRES", "FAUTEUIL_DECO", "BOUTIQUE_DECO"]) {
+      const f = constante(deco, nom);
+      if (!f) soucis.push(`deco : ${nom} est introuvable.`);
+      else if (!existsSync(`public${f}`)) soucis.push(`deco : ${f} n'est pas dans public/.`);
+    }
+    /* LES DEUX GROS PLANS, comme les trois façons et les trois visages : une
+       image absente laisse une vignette vide, et une vignette vide ne fait
+       pas de bruit. */
+    const detail = deco.slice(deco.indexOf("export const DETAILS_DECO"), deco.indexOf("];", deco.indexOf("export const DETAILS_DECO")));
+    const gros = [...detail.matchAll(/photo: "(\/direct\/[^"]+)"/g)].map((m) => m[1]);
+    if (gros.length !== 2) soucis.push(`deco : DETAILS_DECO declare ${gros.length} photo(s), il en faut deux.`);
+    else for (const g of gros) {
+      if (!existsSync(`public${g}`)) soucis.push(`deco : le gros plan ${g} n'est pas dans public/.`);
+    }
+    console.log(`  ok   deco : « ${idDeco} », ses deux lignes de carte et ses six images sont la`);
+  }
+}
+
 const sortie = readFileSync("src/lib/direct/parcours-sortie.ts", "utf8");
 const idSortie = constante(sortie, "SORTIE_ID");
 if (!idSortie) {
