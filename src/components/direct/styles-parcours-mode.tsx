@@ -62,8 +62,11 @@ export function StylesParcoursMode() {
           background:linear-gradient(180deg,
             rgba(6,6,10,.62) 0%, rgba(6,6,10,.12) 22%,
             rgba(6,6,10,0) 40%, rgba(6,6,10,.72) 68%, rgba(6,6,10,.97) 88%);}
-        .pm-dit{position:absolute;left:14px;top:72px;z-index:3;
-          display:flex;align-items:flex-start;gap:0;max-width:74%;}
+        /* DANS LE FLUX, PLUS EN ABSOLU. Pose a 72 points du haut, elle
+           tombait sur le visage du modele — voir le commentaire de l'ecran.
+           Au-dessus du titre, elle ne peut plus rien recouvrir. */
+        .pm-dit{position:relative;z-index:3;margin:0 0 10px;
+          display:flex;align-items:flex-start;gap:0;max-width:86%;}
         /* LE FANTOME A GAUCHE, LA BULLE A SA DROITE ET PLUS HAUT, comme sur sa
            maquette : la pointe descend vers lui. */
         .pm-f{width:96px;height:auto;order:1;margin-right:-10px;align-self:flex-end;

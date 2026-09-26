@@ -41,11 +41,24 @@ export const PIECE_MODE = "/direct/accueil/mode-apres.jpg";
  *
  * DEUX PHOTOS DE LA MÊME PERSONNE, AU MÊME ENDROIT, sans puis avec la pièce.
  * C'est ce qui rend la comparaison honnête : deux mannequins différentes
- * montreraient deux photos, pas un essayage. Elles existaient déjà dans le
- * dépôt — elles servaient à l'ancien écran d'ouverture.
+ * montreraient deux photos, pas un essayage.
+ *
+ * ═══ ET CE N'EST PAS LA MANNEQUIN DE L'ANNONCE ════════════════════════════
+ *
+ * « La femme qui est censée être moi, à ce moment, est la même que le
+ * modèle. »
+ *
+ * LES DEUX PHOTOS ÉTAIENT CELLES DE LA PIÈCE. `mode-avant` et `mode-apres`
+ * servaient à la fois d'annonce et d'essayage : on montrait donc la mannequin
+ * de la vitrine en prétendant que c'était la personne qui regarde. Tout
+ * l'écran repose sur « ça, c'est vous » — et il montrait quelqu'un d'autre.
+ *
+ * CE SONT MAINTENANT SES DEUX PHOTOS À LUI, prises au marché, même cadre,
+ * même lumière, sans puis avec le blazer. La pièce, elle, garde sa photo
+ * d'annonce : voir `PIECE_MODE` juste au-dessus, qui n'a pas changé.
  */
-export const AVANT_MODE = "/direct/accueil/mode-avant.jpg";
-export const APRES_MODE = "/direct/accueil/mode-apres.jpg";
+export const AVANT_MODE = "/direct/accueil/moi-mode-sans.jpg";
+export const APRES_MODE = "/direct/accueil/moi-mode-avec.jpg";
 
 /** La devanture, pour la dernière étape. */
 export const DEVANTURE_MODE = "/direct/vitrine-mode.jpg";

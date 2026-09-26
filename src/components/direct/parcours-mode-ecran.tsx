@@ -143,11 +143,25 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
         <section className="pm-un">
           <div className="pm-photo" style={{ backgroundImage: `url("${PIECE_MODE}")` }} />
           <div className="pm-voile" />
-          <div className="pm-dit">
-            <Fant classe="pm-f" />
-            <p className="pm-bulle">Et si vous l’essayiez ?</p>
-          </div>
           <div className="pm-bas">
+            {/* ═══ LA BULLE A QUITTÉ LE VISAGE ═══════════════════════════
+
+                « "Et si vous l'essayiez ?" est en plein milieu du visage du
+                modèle. »
+
+                ELLE ÉTAIT POSÉE À 72 POINTS DU HAUT, en absolu. Sur une photo
+                de vêtement cadrée en pied, c'est exactement la hauteur d'un
+                visage — et la seule chose qu'on regarde sur un portrait est
+                celle qu'on venait de recouvrir.
+
+                ELLE EST MAINTENANT DANS LE FLUX, juste au-dessus du titre.
+                Elle ne peut plus tomber sur quoi que ce soit : c'est la mise
+                en page qui lui donne sa place, pas un chiffre écrit à la main
+                qui vaut pour une photo et pas pour la suivante. */}
+            <div className="pm-dit">
+              <Fant classe="pm-f" />
+              <p className="pm-bulle">Et si vous l’essayiez ?</p>
+            </div>
             {/* LE TITRE EST CELUI DU MOMENT, coupé en deux couleurs sur son
                 dernier mot — c'est le dessin de sa maquette, et il marche avec
                 n'importe quel titre : le dernier mot passe en magenta. */}
@@ -176,15 +190,18 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
               Essayer sur moi
               <s aria-hidden="true">→</s>
             </button>
-            <button type="button" className="pm-deux" onClick={() => setEtape(4)}>
-              <span className="pm-cabas" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <path d="M5.2 8.6h13.6l1 11.2a1.6 1.6 0 0 1-1.6 1.8H5.8a1.6 1.6 0 0 1-1.6-1.8Z" />
-                  <path d="M8.8 10.6V7.4a3.2 3.2 0 0 1 6.4 0v3.2" />
-                </svg>
-              </span>
-              Voir en boutique
-            </button>
+            {/* ═══ « VOIR EN BOUTIQUE » EST PARTI DU PREMIER ÉCRAN ═══════
+
+                « "Voir la boutique" n'est pas utile, donc supprimer. »
+
+                IL SAUTAIT À LA QUATRIÈME ÉTAPE, c'est-à-dire par-dessus tout
+                ce que ce parcours a à montrer. Une porte de sortie posée à
+                côté de la porte d'entrée, dans la même taille : celle qui
+                demande le moins d'effort gagne toujours, et c'est celle qui
+                ne montre rien.
+
+                LA BOUTIQUE N'EST PAS PERDUE POUR AUTANT — c'est l'étape 4, et
+                on y arrive en ayant vu la pièce sur soi. */}
           </div>
         </section>
       )}
