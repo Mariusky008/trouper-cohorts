@@ -33,15 +33,15 @@
 import { useMemo, useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { FantomeAccueil } from "@/components/direct/fantome-accueil";
-import { NoteFantomes } from "@/components/direct/note-fantomes";
 import { essaiDuCommerce, essayeursDu } from "@/lib/direct/plaque-parcours";
 import { useRevelation } from "@/lib/direct/revelation";
+import { DemandeRdv } from "@/components/direct/demande-rdv";
+import { MurEssayeurs } from "@/components/direct/mur-essayeurs";
 import { momentEnCours, toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import {
   APRES_MODE,
   AVANT_MODE,
   COMMERCE_MODE,
-  DEVANTURE_MODE,
   ETAPES_MODE,
   FACONS_MODE,
   PIECE_MODE,
@@ -131,6 +131,19 @@ export function ParcoursMode({
      commerce : trois femmes en blazer rose sous « Un pret-a-porter homme ».
      Avec ses trois personnes par tenue, elle dit vrai partout et revient. */
   const essayeurs = essayeursDu(cle);
+  /* LA BOUTIQUE DE LA RUE PIETONNE GARDE SES TROIS PHOTOS D'ORIGINE, au meme
+     format. Ce sont des essais : elles viennent de `FACONS_MODE`. */
+  const essayeursMontres =
+    essayeurs.length > 0
+      ? essayeurs
+      : FACONS_MODE.map((v) => ({
+          photo: v.photo,
+          qui: v.qui,
+          mot: v.mot,
+          note: v.note,
+          ou: `${v.ou} · ${v.avec}`,
+          preuve: "essai" as const,
+        }));
   const aLesAutres = cle === COMMERCE_MODE || essayeurs.length > 0;
   const total = aLesAutres ? ETAPES_MODE : ETAPES_MODE - 1;
   /** Le pas reellement joue : on saute « les autres » quand on ne l'a pas. */
@@ -154,15 +167,29 @@ export function ParcoursMode({
      que le rideau du restaurant : l'etape existe si sa matiere existe, et le
      compteur compte ce qui est la. */
 
-  /* LA DEVANTURE EST CELLE DE CETTE BOUTIQUE-LA. `DEVANTURE_MODE` est la
-     vitrine de la rue pietonne : les quatre cartes finissaient devant elle. */
-  const devanture = boutique.sesPhotos?.[0]?.src ?? boutique.photo ?? DEVANTURE_MODE;
 
   /* LA PIECE EN PHOTO — celle de l'annonce ouverte, jamais le blazer rose de
      la rue pietonne quand ce n'est pas lui. C'est toute la demande, et elle
      vaut pour les trois endroits qui la montrent : l'ecran d'ouverture, la
      fiche de l'essayage et le panneau de la derniere etape. */
   const piecePhoto = piece?.photo ?? boutique.photo ?? PIECE_MODE;
+
+  /* ═══ LE NOM DE LA PIECE, ET NON LE TITRE DE L'ANNONCE ════════════════
+     Il a ecrit la ligne du dernier ecran lui-meme : « Coupe homme · 22 € · Un
+     barbier de la halle ». C'est un NOM DE PRODUIT. Le titre du moment, lui,
+     dit QUAND — « Les vestes cirees sont rentrees » — et s'affichait a sa
+     place. C'est la troisieme fois que cette confusion se paie sur ce
+     parcours ; la coiffure lit deja la premiere ligne du moment pour la meme
+     raison.
+     ON LE RETROUVE PAR LE PRIX. Le catalogue de la boutique porte les vrais
+     noms — « Veste ciree kaki », 89 € — et l'annonce porte le meme prix. Deux
+     lignes au meme prix chez le meme commercant designent la meme chose. A
+     defaut, la premiere ligne du moment decrit la piece ; a defaut encore, le
+     titre reprend sa place, parce qu'une ligne vide serait pire. */
+  const nomPiece =
+    (piece?.prix ? (boutique.catalogue ?? []).find((a) => a.prix === piece.prix)?.nom : "") ||
+    piece?.lignes?.[0] ||
+    titre;
 
 
   const suivant = () => setEtape((e) => Math.min(total, e + 1));
@@ -395,190 +422,56 @@ export function ParcoursMode({
       )}
 
       {/* ──────────────────────── 3/4 · LES FAÇONS ──────────────────────── */}
+      {/* ═══ 3/4 · TROIS GRANDES SILHOUETTES, QU'ON FAIT DÉFILER ════════
+          Le même écran que la beauté, écrit une fois — voir
+          `mur-essayeurs.tsx`. La grande photo du haut, qui répétait l'étape
+          d'avant, laisse la place aux trois personnes. */}
       {ici === 3 && (
-        <section className="pm-troise">
-          <div className="pm-hero">
-            <div className="pm-hero-img" style={{ backgroundImage: `url("${APRES}")` }} />
-            <div className="pm-hero-t">
-              {/* LE TITRE NOMME CE QUE MONTRENT LES IMAGES, et il a mis deux
-                  relectures à y arriver. « Chez elle aujourd'hui » annonçait le
-                  rayon d'une boutique ; ce qu'on montre, c'est une veste sur
-                  trois femmes. Le titre dit donc la veste, pas la boutique. */}
-              {/* ═══ « LA MEME PIECE », ET PAS LE TITRE DE L'ANNONCE ══════
-
-                  « La meme veste » etait vrai du blazer rose et faux du
-                  manteau leopard, qui passent par le meme ecran depuis que le
-                  parcours suit la carte. J'ai d'abord mis le titre du moment a
-                  la place — et l'ecran a affiche « 40 pieces sorties ce matin,
-                  sur d'autres qu'elle ». Un titre d'annonce dit QUAND, pas
-                  QUOI ; c'est exactement la faute qu'on avait deja corrigee sur
-                  la coiffure, ou « une place vient de se liberer » s'affichait
-                  a la place du nom de la coupe.
-
-                  UN MOT GENERAL ET VRAI VAUT MIEUX QU'UN NOM A MOITIE JUSTE. La
-                  piece est nommee deux ecrans plus haut, avec son prix ; la
-                  renommer ici ne sert qu'a la renommer mal.
-
-                  « SUR D'AUTRES QUE VOUS » plutot que « d'autres qu'elle » : la
-                  veste ciree et le barbier se portent aussi sur des hommes, et
-                  le parcours vient de dire « sur vous ». */}
-              <h1 className="pm-t3">
-                La même pièce,
-                <br />
-                <em>sur d’autres</em>
-                <br />
-                que vous
-                <s aria-hidden="true" />
-              </h1>
-              <div className="pm-dit petit">
-                <Fant classe="pm-f" />
-                <p className="pm-bulle">Vous vous y voyez ?</p>
-              </div>
-            </div>
-          </div>
-
-          {/* ═══ LA MÊME VESTE, SUR TROIS FEMMES QUI NE SE RESSEMBLENT PAS ═══
-
-              « Je t'ai mis trois femmes qui portent la même veste. »
-
-              C'ÉTAIT LA PIÈCE QUI MANQUAIT, ET ELLE CHANGE CE QUE L'ÉCRAN DIT.
-              Trois autres vêtements répondaient « voici le reste du rayon » ;
-              le même blazer sur trois corps répond « ça tombe comme ça sur
-              quelqu'un comme vous », qui est la question qu'on se pose devant
-              un essayage.
-
-              ELLES DISENT CE QU'ELLES EN ONT PENSÉ, et c'est ce qui manquait :
-              « on manque l'essentiel de ce que les autres ont pu mettre comme
-              commentaires quand ils l'ont essayé ». Un prénom, un mot, et un à
-              cinq fantômes — le même mécanisme que le mur de l'application.
-              Voir `FACONS_MODE` et `note-fantomes.tsx`.
-
-              AUCUN PRIX ICI : c'est la même veste, elle a le prix qu'on a déjà
-              lu deux écrans plus haut, et le réécrire en ferait un second. */}
-          <p className="pm-insp">
-            <span className="pm-cintre petit" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="M12 3.6a2 2 0 1 0 1.9 2.6" />
-                <path d="M12 6.2v2.1L3.6 15c-.9.7-.4 2.1.7 2.1h15.4c1.1 0 1.6-1.4.7-2.1L12 8.3" />
-              </svg>
-            </span>
-            Portée autrement, dans la même ville
-          </p>
-          <div className="pm-facons">
-            {(essayeurs.length
-              ? essayeurs.map((e) => ({ photo: e.photo, qui: e.qui, mot: e.mot, note: e.note, ou: e.ou, avec: "" }))
-              : FACONS_MODE.map((f) => ({ ...f, ou: f.ou, avec: f.avec }))
-            ).map((f) => (
-              <article key={f.photo} className="pm-facon">
-                <div style={{ backgroundImage: `url("${f.photo}")` }} />
-                <span>
-                  <i className="pm-facon-q">
-                    {f.qui}
-                    <NoteFantomes note={f.note} />
-                  </i>
-                  <b>{f.mot}</b>
-                  <em>{f.avec ? `${f.ou} · ${f.avec}` : f.ou}</em>
-                </span>
-              </article>
-            ))}
-          </div>
-
-          <div className="pm-fiche">
-            <span className="pm-fiche-v" style={{ backgroundImage: `url("${devanture}")` }} />
-            <span className="pm-fiche-t">
-              <b>{nom}</b>
-              <em>
-                <i aria-hidden="true">📍</i>
-                {ou}
-              </em>
-            </span>
-            {prix && <b className="pm-fiche-p">{prix}</b>}
-          </div>
+        <section className="pm-troise pm-mur">
+          <h1 className="pm-t3 court">
+            La même pièce, <em>sur d’autres que vous.</em>
+          </h1>
+          <MurEssayeurs essayeurs={essayeursMontres} classe="pm" />
           <button type="button" className="pm-go" onClick={suivant}>
-            <span className="pm-cabas" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="M5.2 8.6h13.6l1 11.2a1.6 1.6 0 0 1-1.6 1.8H5.8a1.6 1.6 0 0 1-1.6-1.8Z" />
-                <path d="M8.8 10.6V7.4a3.2 3.2 0 0 1 6.4 0v3.2" />
-              </svg>
-            </span>
-            Voir la boutique
+            <Fant classe="pm-go-f" />
+            Je la veux sur moi
             <s aria-hidden="true">→</s>
           </button>
         </section>
       )}
 
       {/* ─────────────────────── 4/4 · LA BOUTIQUE ─────────────────────── */}
+      {/* ═══ 4/4 · LA DEMANDE D'ESSAYAGE EN BOUTIQUE ════════════════════
+
+          « Même chemin pour l'étape 4 de mode, qui est trop plate et sans
+          intérêt. »
+
+          IL AVAIT RAISON, ET ELLE ÉTAIT PIRE QUE PLATE : la devanture, le nom,
+          la distance, le plan, la vignette de la pièce, son prix, et « Y
+          aller ». Sept choses déjà dites, et pour seule action un itinéraire.
+          La photo du haut gardait la place de la seule question qui vaille à ce
+          moment-là — est-ce que vous la voulez ?
+
+          LE MÊME ÉCRAN QUE LA BEAUTÉ ET LA DÉCO — voir `demande-rdv.tsx`. */}
       {ici === 4 && (
-        <section className="pm-quatre">
-          <div className="pm-devant">
-            <div style={{ backgroundImage: `url("${devanture}")` }} />
-            <h1 className="pm-t4">
-              Elle vous attend chez
-              <br />
-              <em>
-                {nom}
-                <s aria-hidden="true" />
-              </em>
-            </h1>
-          </div>
-
-          <div className="pm-panneau">
-            <span className="pm-pan-v" style={{ backgroundImage: `url("${APRES}")` }} />
-            <div className="pm-pan-t">
-              <h2>{nom}</h2>
-              <p className="pm-ou">
-                <i aria-hidden="true">📍</i>
-                {ou}
-              </p>
-              {/* ═══ PAS DE FAUSSE CARTE ═══════════════════════════════════
-                  Sa maquette dessine un plan de ville. Un plan dessiné est un
-                  plan faux : il montre des rues qui ne sont pas celles de Dax,
-                  et on le lira comme le vrai chemin. À la place, le lien qui
-                  ouvre le VRAI plan — celui que le commerce porte déjà dans
-                  ses données, et qui marche. */}
-              {boutique.itineraire && (
-                <a
-                  className="pm-plan"
-                  href={boutique.itineraire}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                >
-                  <i aria-hidden="true">📍</i>
-                  Ouvrir le plan
-                  <s aria-hidden="true">↗</s>
-                </a>
-              )}
-              <div className="pm-pan-piece">
-                <span style={{ backgroundImage: `url("${piecePhoto}")` }} />
-                <span>
-                  <b>{titre}</b>
-                  {prix && <em>{prix}</em>}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {boutique.itineraire && (
-            <a
-              className="pm-go"
-              href={boutique.itineraire}
-              target="_blank"
-              rel="noreferrer noopener"
-            >
-              <i aria-hidden="true">🚶</i>
-              Y aller
-              <s aria-hidden="true">→</s>
-            </a>
-          )}
-          {/* ═══ PLUS DE « REVENIR AU CHOIX » EN BAS ════════════════════
-
-              « Étape 4 : revenir au choix : supprimer. »
-
-              IL LE DISAIT DE LA BEAUTÉ, ET LA MODE PORTAIT LE MÊME BOUTON.
-              Le Fantôme de l'en-tête fait ce geste-là depuis n'importe quel
-              écran du parcours, et pas seulement depuis le dernier ; garder
-              les deux, c'est apprendre la sortie de secours à la place de la
-              porte. Voir `fantome-accueil.tsx`. */}
+        <section className="pm-quatre pm-quatre-rdv">
+          {/* L'ESSAI RESTE DERRIERE LA QUESTION. Sans lui, l'ecran etait un
+              bloc de texte en haut d'un rectangle noir : on demandait « cette
+              piece vous plait SUR VOUS ? » devant rien. La reponse est la
+              silhouette qu'on vient de voir. Deux couches, comme partout —
+              voir `.pm-photo.flou`. */}
+          <div className="pm-photo flou" style={{ backgroundImage: `url("${APRES}")` }} aria-hidden="true" />
+          <div className="pm-photo entier" style={{ backgroundImage: `url("${APRES}")` }} aria-hidden="true" />
+          <div className="pm-voile" aria-hidden="true" />
+          <DemandeRdv
+            metier="mode"
+            commerce={cle}
+            quoi={nomPiece}
+            prix={prix}
+            nom={nom}
+            essai={APRES}
+            classe="pm"
+          />
         </section>
       )}
     </div>

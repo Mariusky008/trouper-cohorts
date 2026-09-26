@@ -29,16 +29,16 @@
 import { useMemo, useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { FantomeAccueil } from "@/components/direct/fantome-accueil";
-import { NoteFantomes } from "@/components/direct/note-fantomes";
 import { essaiDuCommerce, essayeursDu, photoDeLaCarte } from "@/lib/direct/plaque-parcours";
 import { useRevelation } from "@/lib/direct/revelation";
+import { DemandeRdv } from "@/components/direct/demande-rdv";
+import { MurEssayeurs } from "@/components/direct/mur-essayeurs";
 import { momentEnCours, toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import {
   APRES_COIFFURE,
   AVANT_COIFFURE,
   COMMERCE_COIFFURE,
   ETAPES_COIFFURE,
-  SALON_COIFFURE,
   VISAGES_COIFFURE,
 } from "@/lib/direct/parcours-coiffure";
 
@@ -121,6 +121,20 @@ export function ParcoursCoiffure({
      garde ses trois portraits d'origine, qui portent deja un prenom, un mot et
      une note ; les trois autres ont les leurs depuis qu'il les a fournis. */
   const essayeurs = essayeursDu(cle);
+  /* LE SALON DU CENTRE GARDE SES TROIS PORTRAITS D'ORIGINE, convertis au meme
+     format : ils portent deja un prenom, un mot et une note, et ce sont des
+     essais — ils viennent de `VISAGES_COIFFURE`, pas d'un passage au salon. */
+  const essayeursMontres =
+    essayeurs.length > 0
+      ? essayeurs
+      : VISAGES_COIFFURE.map((v) => ({
+          photo: v.photo,
+          qui: v.qui,
+          mot: v.mot,
+          note: v.note,
+          ou: `${v.ou} · ${v.avec}`,
+          preuve: "essai" as const,
+        }));
   const aLesAutres = cle === COMMERCE_COIFFURE || essayeurs.length > 0;
   const total = aLesAutres ? ETAPES_COIFFURE : ETAPES_COIFFURE - 1;
   /** Le pas reellement joue : on saute « les autres » quand on ne l'a pas. */
@@ -149,7 +163,6 @@ export function ParcoursCoiffure({
   const laCoupe = coupe?.lignes?.[0] ?? titre;
   const prix = coupe?.prix ?? "";
   const ou = `${salon.distance}${salon.ville ? ` · ${salon.ville}` : ""}`;
-  const vignette = salon.sesPhotos?.[0]?.src ?? salon.photo ?? SALON_COIFFURE;
 
   const suivant = () => setEtape((e) => Math.min(total, e + 1));
 
@@ -160,11 +173,6 @@ export function ParcoursCoiffure({
   };
 
   /** Le fond plein écran de l'étape courante. */
-  /* ═══ LE SALON DE LA DERNIERE ETAPE EST LE SIEN ═══════════════════════
-     `SALON_COIFFURE` est la devanture du salon du centre. Les quatre cartes
-     l'affichaient toutes : on finissait le parcours du barbier devant la
-     vitrine d'un autre. */
-  const salonPhoto = salon.sesPhotos?.[0]?.src ?? salon.photo ?? SALON_COIFFURE;
 
   /* ═══ « LE MEME CARRE SUR D'AUTRES VISAGES » N'EST PAS VRAI PARTOUT ════
      Les trois portraits sont ceux d'UNE coupe — le carre du salon du centre.
@@ -191,7 +199,10 @@ export function ParcoursCoiffure({
      celle de la carte du paquet — voir `photoDeLaCarte`. */
 
   const photoAnnonce = photoDeLaCarte(cle) ?? salon.photo ?? APRES;
-  const fond = ici === 1 ? photoAnnonce : ici === 4 ? salonPhoto : APRES;
+  /* ET LE DERNIER ECRAN GARDE L'ESSAI DERRIERE LUI. Il montrait la devanture
+     du salon : on demandait « cette coupe vous plait SUR VOUS ? » devant une
+     vitrine. La reponse est la tete qu'on vient de voir, pas l'adresse. */
+  const fond = ici === 1 ? photoAnnonce : APRES;
 
   return (
     <div className={`pc pc-e${ici}`}>
@@ -362,102 +373,57 @@ export function ParcoursCoiffure({
       )}
 
       {/* ───────────────────── 3/4 · LES AUTRES COUPES ──────────────────── */}
+      {/* ═══ 3/4 · TROIS GRANDS VISAGES, QU'ON FAIT DÉFILER ═════════════
+
+          « Rendre l'écran beaucoup plus visuel. Aujourd'hui les témoignages
+          sont petits et le grand portrait ressemble encore à une image de
+          campagne. Je montrerais trois grands visages différents portant cette
+          coupe, que l'on peut faire défiler. »
+
+          LE PLUS GRAND ESPACE ALLAIT À CE QU'ON AVAIT DÉJÀ VU — le portrait de
+          l'étape d'avant — et le plus petit à ce qu'on venait montrer. Les
+          trois prennent maintenant l'écran, une à la fois. Voir
+          `mur-essayeurs.tsx`, qui porte aussi la distinction des deux preuves. */}
       {ici === 3 && (
-        <section className="pc-bas">
-          {/* ═══ UNE SEULE COUPE, TROIS VISAGES QUI NE SE RESSEMBLENT PAS ═══
-
-              « Pareil ici, il faut que ce soit la même coupe. »
-
-              CET ÉCRAN MONTRAIT LES AUTRES COUPES DU QUARTIER, avec leur nom et
-              leur prix. C'était vrai, et ça répondait « en voici d'autres » à
-              quelqu'un qui demande « et celle-là, sur moi ? ». Le même carré
-              sur trois femmes différentes répond à la question posée.
-
-              AUCUN PRIX SUR LES VIGNETTES : c'est la même coupe, elle a celui
-              qu'on a lu deux écrans plus haut. Et plus de nom de salon non
-              plus — les trois sont chez elle, la pastille du haut le dit. */}
-          {/* « LE MEME CARRE » ETAIT FAUX CHEZ LE BARBIER, et le remplacer
-              par la premiere ligne du moment l'etait tout autant : l'ecran
-              affichait « Vegetale ou classique, sur d'autres qu'elle ». Ces
-              lignes decrivent une prestation, pas une coupe. Le nom exact est
-              deja deux ecrans plus haut, avec son prix — voir le meme
-              raisonnement dans la feuille de la mode. */}
-          <h1 className="pc-t">
-            La même coupe,
-            <br />
-            <em>sur d’autres que vous.</em>
+        <section className="pc-bas pc-mur">
+          <h1 className="pc-t court">
+            La même coupe, <em>sur d’autres que vous.</em>
           </h1>
-          <div className="pc-trois">
-            {(essayeurs.length
-              ? essayeurs.map((e) => ({ photo: e.photo, qui: e.qui, mot: e.mot, note: e.note, ou: e.ou, avec: "" }))
-              : VISAGES_COIFFURE.map((v) => ({ ...v, ou: v.ou, avec: v.avec }))
-            ).map((v) => (
-              <article key={v.photo} className="pc-vign">
-                <div style={{ backgroundImage: `url("${v.photo}")` }} />
-                <span>
-                  {/* QUI, COMBIEN, ET CE QU'ELLE EN DIT — voir
-                      `VISAGES_COIFFURE` et `note-fantomes.tsx`. Les trois
-                      portraits étaient muets ; ils répondaient « en voici
-                      trois » à quelqu'un qui demande « et sur moi ? ». */}
-                  <i className="pc-vign-q">
-                    {v.qui}
-                    <NoteFantomes note={v.note} />
-                  </i>
-                  <b>{v.mot}</b>
-                  <u>{v.avec ? `${v.ou} · ${v.avec}` : v.ou}</u>
-                </span>
-              </article>
-            ))}
-          </div>
-          {/* CE SONT DE VRAIES PHOTOS, PAS DES RENDUS, et la ligne le dit dans
-              ce sens-là. Écrire « aperçus simulés » sous elles serait faux à
-              l'envers — aussi faux que de ne rien dire sous un rendu. */}
-          <p className="pc-simu">La même coupe, portée par d’autres. Ce ne sont pas des rendus.</p>
+          <MurEssayeurs essayeurs={essayeursMontres} classe="pc" cadrage="visage" />
           <button type="button" className="pc-go" onClick={suivant}>
             <Appareil />
-            Voir le salon
+            Je la veux sur moi
             <s aria-hidden="true">→</s>
           </button>
         </section>
       )}
 
       {/* ───────────────────────── 4/4 · LE SALON ───────────────────────── */}
+      {/* ═══ 4/4 · LA DEMANDE DE RENDEZ-VOUS ════════════════════════════
+
+          « Je remplacerais le dernier écran par : "Cette coupe vous plaît sur
+          vous ? Coupe homme · 22 € · Un barbier de la halle · Demander un
+          rendez-vous →". »
+
+          CE QUI ÉTAIT LÀ NE FAISAIT RIEN. « Envie de la faire pour de vrai ? »
+          félicitait, puis proposait un itinéraire — c'est-à-dire la seule chose
+          que n'importe quelle fiche Google donne déjà. Tout le parcours menait
+          à ce que ClikMe n'apporte pas.
+
+          L'ÉCRAN EST LE MÊME SUR LES TROIS PARCOURS. Voir `demande-rdv.tsx` :
+          la suite — quand, ce que le commerçant reçoit, et ses trois chiffres —
+          y est écrite une fois pour la mode, la beauté et la déco. */}
       {ici === 4 && (
         <section className="pc-bas">
-          <h1 className="pc-t">
-            Envie de la faire
-            <br />
-            <em>pour de vrai ?</em>
-          </h1>
-          <div className="pc-fiche">
-            <span className="pc-fiche-v" style={{ backgroundImage: `url("${APRES}")` }} />
-            <span className="pc-fiche-t">
-              <b>{titre}</b>
-              <em>
-                <i aria-hidden="true">📍</i>
-                {nom} · {ou}
-              </em>
-            </span>
-            {prix && <b className="pc-fiche-p">{prix}</b>}
-          </div>
-          {/* ═══ LE RENDEZ-VOUS PASSE PAR LE VRAI CHEMIN ═══════════════════
-              Le produit prend déjà rendez-vous par WhatsApp, avec le message
-              écrit d'avance — voir `prevenir.ts`. Tant que ce parcours n'y est
-              pas branché, ce bouton mène à l'itinéraire du salon, qui est vrai,
-              plutôt qu'à un formulaire qui ne l'est pas. */}
-          {salon.itineraire ? (
-            <a className="pc-go" href={salon.itineraire} target="_blank" rel="noreferrer noopener">
-              <Appareil />
-              Y aller
-              <s aria-hidden="true">→</s>
-            </a>
-          ) : (
-            <button type="button" className="pc-go" onClick={onFermer}>
-              <Appareil />
-              Revenir au choix
-              <s aria-hidden="true">→</s>
-            </button>
-          )}
+          <DemandeRdv
+            metier="coiffure"
+            commerce={cle}
+            quoi={laCoupe}
+            prix={prix}
+            nom={nom}
+            essai={APRES}
+            classe="pc"
+          />
         </section>
       )}
     </div>

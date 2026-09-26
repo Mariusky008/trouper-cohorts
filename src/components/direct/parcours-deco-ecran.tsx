@@ -34,8 +34,8 @@ import { useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { FantomeAccueil } from "@/components/direct/fantome-accueil";
 import { VILLE } from "@/lib/direct/apercu-habitant";
-import { demanderRendezVous, numeroDeFiction } from "@/lib/direct/prevenir";
 import { plaqueDuParcours } from "@/lib/direct/plaque-parcours";
+import { DemandeRdv } from "@/components/direct/demande-rdv";
 import {
   BOUTIQUE_DECO,
   COMMERCE_DECO,
@@ -120,11 +120,6 @@ export function ParcoursDeco({
     : (boutique.sesPhotos?.[0]?.src ?? boutique.photo ?? plaque.photo);
   const DETAILS = chezDax ? DETAILS_DECO : plaque.details;
 
-  const joindre = demanderRendezVous({
-    telephone: numeroDeFiction(cle),
-    nom,
-    geste: "Poser une question sur une pièce",
-  });
 
   const suivant = () => setEtape((e) => Math.min(total, e + 1));
   const precedent = () => (etape === 1 ? onFermer() : setEtape((e) => e - 1));
@@ -348,42 +343,33 @@ export function ParcoursDeco({
       )}
 
       {/* ──────────────────────── 4/4 · LA BOUTIQUE ─────────────────────── */}
+      {/* ═══ LE DERNIER ÉCRAN : LA DEMANDE ══════════════════════════════
+
+          « Et pour la déco aussi, même raisonnement. »
+
+          IL DISAIT LES HORAIRES, L'ADRESSE, LE MOT DE LA BOUTIQUE, LA FICHE,
+          « Y aller » et « Poser une question ». Six blocs pour finir un
+          parcours d'essayage, et rien qui transforme l'essai en demande.
+
+          LA DÉCO NE SE PORTE PAS, ELLE SE POSE — la question du dernier écran
+          est donc « chez vous », pas « sur vous », et la demande est d'aller la
+          VOIR : on ne juge pas une matière sur un écran. Le reste est le même
+          écran que la mode et la beauté, voir `demande-rdv.tsx`.
+
+          LA MENTION DES DIMENSIONS RESTE, parce qu'elle est la règle de tout ce
+          parcours : un rendu qui fait croire qu'un fauteuil passe la porte, et
+          qui se trompe, coûte une livraison et un client. */}
       {ici === "venir" && (
         <section className="pd-bas">
-          {/* TROIS LIGNES ECRITES, ET PAS DEUX QUI SE CASSENT TOUTES SEULES.
-              Vu a l'ecran : « Vous l'avez vu chez / vous. » laissait « chez »
-              en bout de ligne et « vous. » seul dessous. Un titre qui se
-              replie ou il veut n'est plus une phrase, c'est du texte. */}
-          <h1 className="pd-t">
-            Vous l’avez vu
-            <br />
-            <em>chez vous.</em>
-            <br />
-            Venez le découvrir.
-            <s aria-hidden="true" />
-          </h1>
-
-          {boutique.fiche && (
-            <ul className="pd-pratique">
-              {boutique.fiche.ou && <li>{boutique.fiche.ou}</li>}
-              {boutique.fiche.horaires && <li>{boutique.fiche.horaires}</li>}
-            </ul>
-          )}
-          {boutique.fiche?.mot && <p className="pd-motfiche">{boutique.fiche.mot}</p>}
-
-          {fiche(true)}
-
-          {boutique.itineraire && (
-            <a className="pd-go" href={boutique.itineraire} target="_blank" rel="noreferrer noopener">
-              <Fant classe="pd-go-f" />
-              Y aller
-              <s aria-hidden="true">→</s>
-            </a>
-          )}
-          <a className="pd-deux" href={joindre.whatsapp} target="_blank" rel="noreferrer noopener">
-            <Bulle />
-            Poser une question
-          </a>
+          <DemandeRdv
+            metier="deco"
+            commerce={cle}
+            quoi={piece.nom}
+            prix={piece.prix}
+            nom={nom}
+            essai={PHOTO_POSEE}
+            classe="pd"
+          />
           {aVerifier("Disponibilité et dimensions à confirmer en boutique.")}
         </section>
       )}
@@ -402,10 +388,3 @@ function Boutique() {
 }
 
 /** La bulle de « Poser une question ». */
-function Bulle() {
-  return (
-    <svg className="pd-ico" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M20.4 12.4c0 3.8-3.8 6.8-8.4 6.8a10 10 0 0 1-2.6-.34L4.6 20.4l1.3-3.5A6.5 6.5 0 0 1 3.6 12.4C3.6 8.6 7.4 5.6 12 5.6s8.4 3 8.4 6.8Z" />
-    </svg>
-  );
-}

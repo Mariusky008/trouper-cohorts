@@ -283,6 +283,30 @@ export type Essayeur = {
   note: number;
   /** Où, et avec quoi. Ce qui se vérifie sur l'image même. */
   ou: string;
+  /**
+   * ═══ DEUX PREUVES, ET IL NE FAUT PAS LES CONFONDRE ════════════════════
+   *
+   * « Je distinguerais clairement les simulations d'essayage des résultats
+   * réellement réalisés au salon : ce sont deux preuves différentes. »
+   *
+   * IL A RAISON, ET C'EST LA DISTINCTION LA PLUS IMPORTANTE DE L'ÉCRAN.
+   * « salon » dit : cette personne est allée chez lui, il a fait la coupe, la
+   * photo est de sa tête. C'est la preuve qu'il SAIT FAIRE.
+   * « essai » dit : cette personne a mis sa photo dans l'application, et voilà
+   * ce que ça donnerait. C'est la preuve que ça LUI IRAIT.
+   *
+   * LES DEUX ONT LEUR VALEUR, ET AUCUNE NE REMPLACE L'AUTRE. Trois essais et
+   * zéro réalisation, c'est un catalogue de rendus ; trois réalisations et
+   * zéro essai, c'est le book d'un coiffeur. Ensemble, ça dit « ça se fait
+   * ici, et ça vous irait ».
+   *
+   * LES MÉLANGER SANS LE DIRE SERAIT FAIRE PASSER UN RENDU POUR UNE TÊTE, ce
+   * que ce produit refuse partout ailleurs. La répartition ci-dessous est
+   * celle de la démonstration, et elle est illustrative comme le reste : deux
+   * réalisations et un essai par série, pour que les deux preuves se voient
+   * sur le même écran.
+   */
+  preuve: "salon" | "essai";
 };
 
 const D = "/direct/essayeurs/";
@@ -290,53 +314,53 @@ const D = "/direct/essayeurs/";
 export const ESSAYEURS: Record<string, Essayeur[]> = {
   // ── BEAUTÉ ───────────────────────────────────────────────────────────────
   "coif-nouveau": [
-    { photo: `${D}coif-nouveau-1.jpg`, qui: "Hélène", note: 5, ou: "Devant chez elle",
+    { photo: `${D}coif-nouveau-1.jpg`, preuve: "salon", qui: "Hélène", note: 5, ou: "Devant chez elle",
       mot: "Mes boucles, je les subissais. Là je les porte." },
-    { photo: `${D}coif-nouveau-2.jpg`, qui: "Sofia", note: 4, ou: "Au marché aux fleurs",
+    { photo: `${D}coif-nouveau-2.jpg`, preuve: "salon", qui: "Sofia", note: 4, ou: "Au marché aux fleurs",
       mot: "Il faut du produit les jours humides, sinon ça gonfle." },
-    { photo: `${D}coif-nouveau-3.jpg`, qui: "Awa", note: 5, ou: "En terrasse",
+    { photo: `${D}coif-nouveau-3.jpg`, preuve: "essai", qui: "Awa", note: 5, ou: "En terrasse",
       mot: "Je sors du lit, je secoue, c'est fait." },
   ],
   "coif-barbier": [
-    { photo: `${D}coif-barbier-1.jpg`, qui: "Serge", note: 5, ou: "Devant l'épicerie",
+    { photo: `${D}coif-barbier-1.jpg`, preuve: "salon", qui: "Serge", note: 5, ou: "Devant l'épicerie",
       mot: "Il rattrape les épis au lieu de lutter contre." },
-    { photo: `${D}coif-barbier-2.jpg`, qui: "Marc", note: 4, ou: "Rue du marché",
+    { photo: `${D}coif-barbier-2.jpg`, preuve: "salon", qui: "Marc", note: 4, ou: "Rue du marché",
       mot: "Au bout de six semaines elle bouge, mais elle reste nette." },
-    { photo: `${D}coif-barbier-3.jpg`, qui: "Hugo", note: 5, ou: "Devant le café",
+    { photo: `${D}coif-barbier-3.jpg`, preuve: "essai", qui: "Hugo", note: 5, ou: "Devant le café",
       mot: "Première fois qu'on me demande ce que je fais le matin." },
   ],
   "coif-halle": [
-    { photo: `${D}coif-halle-1.jpg`, qui: "Martine", note: 5, ou: "Sous les arcades",
+    { photo: `${D}coif-halle-1.jpg`, preuve: "salon", qui: "Martine", note: 5, ou: "Sous les arcades",
       mot: "Le cuivré tient trois mois sans virer orange." },
-    { photo: `${D}coif-halle-2.jpg`, qui: "Nadia", note: 4, ou: "Devant la librairie",
+    { photo: `${D}coif-halle-2.jpg`, preuve: "salon", qui: "Nadia", note: 4, ou: "Devant la librairie",
       mot: "Les pointes demandent un passage tous les deux mois." },
-    { photo: `${D}coif-halle-3.jpg`, qui: "Camille", note: 5, ou: "Devant le bistrot",
+    { photo: `${D}coif-halle-3.jpg`, preuve: "essai", qui: "Camille", note: 5, ou: "Devant le bistrot",
       mot: "J'avais peur du roux sur ma peau. C'est ce qui l'éclaire." },
   ],
 
   // ── MODE ─────────────────────────────────────────────────────────────────
   "mode-friperie": [
-    { photo: `${D}mode-friperie-1.jpg`, qui: "Lucie", note: 5, ou: "En terrasse",
+    { photo: `${D}mode-friperie-1.jpg`, preuve: "salon", qui: "Lucie", note: 5, ou: "En terrasse",
       mot: "Le noir dessous calme les fleurs. Ça passe au bureau." },
-    { photo: `${D}mode-friperie-2.jpg`, qui: "Awa", note: 5, ou: "Devant la librairie",
+    { photo: `${D}mode-friperie-2.jpg`, preuve: "salon", qui: "Awa", note: 5, ou: "Devant la librairie",
       mot: "Trouvé en friperie, donc personne d'autre ne l'a." },
-    { photo: `${D}mode-friperie-3.jpg`, qui: "Martine", note: 4, ou: "Place de la fontaine",
+    { photo: `${D}mode-friperie-3.jpg`, preuve: "essai", qui: "Martine", note: 4, ou: "Place de la fontaine",
       mot: "La coupe longue allonge, même quand on est petite." },
   ],
   "mode-homme": [
-    { photo: `${D}mode-homme-1.jpg`, qui: "Rémi", note: 5, ou: "Devant le café",
+    { photo: `${D}mode-homme-1.jpg`, preuve: "salon", qui: "Rémi", note: 5, ou: "Devant le café",
       mot: "Elle prend la pluie de Dax sans faire imperméable." },
-    { photo: `${D}mode-homme-2.jpg`, qui: "Bruno", note: 5, ou: "Sur les allées",
+    { photo: `${D}mode-homme-2.jpg`, preuve: "salon", qui: "Bruno", note: 5, ou: "Sur les allées",
       mot: "Je la mets à vélo tous les matins depuis l'automne." },
-    { photo: `${D}mode-homme-3.jpg`, qui: "Paul", note: 4, ou: "Au marché",
+    { photo: `${D}mode-homme-3.jpg`, preuve: "essai", qui: "Paul", note: 4, ou: "Au marché",
       mot: "Prenez une taille au-dessus si vous mettez un pull." },
   ],
   "mode-depot": [
-    { photo: `${D}mode-depot-1.jpg`, qui: "Inès", note: 5, ou: "Devant la librairie",
+    { photo: `${D}mode-depot-1.jpg`, preuve: "salon", qui: "Inès", note: 5, ou: "Devant la librairie",
       mot: "Le léopard sur du prune, ça ne crie pas. J'ai essayé pour voir." },
-    { photo: `${D}mode-depot-2.jpg`, qui: "Chloé", note: 4, ou: "Sur les allées",
+    { photo: `${D}mode-depot-2.jpg`, preuve: "salon", qui: "Chloé", note: 4, ou: "Sur les allées",
       mot: "Chaud sans être lourd. Je l'ai mis tout l'hiver." },
-    { photo: `${D}mode-depot-3.jpg`, qui: "Léa", note: 5, ou: "Devant l'épicerie",
+    { photo: `${D}mode-depot-3.jpg`, preuve: "essai", qui: "Léa", note: 5, ou: "Devant l'épicerie",
       mot: "Déposé par quelqu'un d'ici. Ça compte, pour moi." },
   ],
 };

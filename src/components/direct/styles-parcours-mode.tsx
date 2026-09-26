@@ -342,6 +342,30 @@ export function StylesParcoursMode() {
           line-height:1.18;color:rgba(255,255,255,.66);margin-top:2px;
           white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
+
+        /* ═══ LE DERNIER ECRAN : LA DEMANDE ═════════════════════════════
+           IL PORTE SON FOND, comme les trois autres. .pm-quatre n'avait
+           jamais eu de photo derriere — l'ancien ecran remplissait l'espace
+           avec la devanture et le panneau de la boutique. Vide de tout ca, il
+           laissait un rectangle noir sous le bouton.
+           ET LE BLOC DESCEND EN BAS, la ou il est sur les autres parcours : un
+           texte colle en haut d'un ecran vide se lit comme une erreur. */
+        .pm-quatre-rdv{position:relative;justify-content:flex-end;
+          padding-bottom:calc(18px + var(--ap-bas,0px));}
+        .pm-quatre-rdv .rdv{position:relative;z-index:2;}
+
+        /* ═══ L'ECRAN DES TROIS VISAGES ══════════════════════════════════
+           IL PREND TOUT, et c'est le point : « les temoignages sont petits et
+           le grand portrait ressemble encore a une image de campagne ». Le
+           titre en haut, le paquet au milieu qui prend ce qui reste, le bouton
+           en bas. Rien d'autre — la photo de l'etape d'avant ne revient pas. */
+        .pm-mur{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
+          gap:10px;}
+        .pm-mur .pm-go{margin-top:0;}
+        /* LE TITRE NE MORD PLUS SUR LE PAQUET. Mesure a l'ecran : il passait
+           par-dessus le haut de la carte, c'est-a-dire par-dessus la tete. */
+        .pm-mur>h1{flex:none;margin-bottom:2px;}
+        .pm-mes{margin:0;}
         /* ═══ 4/4 · LA BOUTIQUE ══════════════════════════════════════════ */
         .pm-quatre{flex:1 1 auto;display:flex;flex-direction:column;
           padding:0 14px calc(16px + var(--ap-bas,0px));}

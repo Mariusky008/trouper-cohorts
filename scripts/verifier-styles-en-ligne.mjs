@@ -78,6 +78,25 @@ function erreurDeSyntaxe(source) {
  * Une liste écrite à la main vieillit à chaque écran ajouté. On cherche donc
  * les fichiers, et un écran neuf est couvert le jour où il est écrit.
  */
+/**
+ * LES CONSTANTES QUE CE FICHIER INJECTE DANS `__html`, et dont la valeur est un
+ * littéral de gabarit écrit dans le même fichier.
+ *
+ * C'EST LE TROU PAR LEQUEL UNE FAUTE EST PASSÉE. `demande-rdv.tsx` range sa
+ * feuille dans `const FEUILLE = ...` et écrit `__html: FEUILLE` : la garde ne
+ * voyait pas d'accent grave après `__html:`, donc elle ignorait le fichier —
+ * alors qu'il contient exactement le littéral qu'elle cherche. Un accent grave
+ * dans un commentaire CSS y est passé, et c'est le déploiement qui l'a dit.
+ */
+function nommeesDansHtml(src) {
+  const noms = new Set();
+  for (const m of src.matchAll(/__html:\s*([A-Za-z_$][\w$]*)\s*\}/g)) {
+    const re = new RegExp(`(?:const|let|var)\\s+${m[1]}\\s*=\\s*\``);
+    if (re.test(src)) noms.add(m[1]);
+  }
+  return [...noms];
+}
+
 function fichiersAvecFeuille(dossier, trouves = []) {
   for (const e of readdirSync(new URL(`../${dossier}`, import.meta.url), { withFileTypes: true })) {
     if (e.name === "node_modules" || e.name.startsWith(".")) continue;
@@ -87,7 +106,29 @@ function fichiersAvecFeuille(dossier, trouves = []) {
       // UN LITTÉRAL DE GABARIT, PAS N'IMPORTE QUEL `__html`. Beaucoup d'écrans
       // injectent une variable déjà construite ; ceux-là n'ont pas de feuille à
       // couper, et les compter en fautes désarmerait la garde d'un coup.
-      if (/__html:\s*`/.test(readFileSync(new URL(`../${rel}`, import.meta.url), "utf8"))) {
+      //
+      // ═══ SAUF QUAND LA VARIABLE EST ELLE-MÊME UN LITTÉRAL ════════════════
+      //
+      // C'EST LE TROU PAR LEQUEL UNE FAUTE EST PASSÉE. `demande-rdv.tsx` range
+      // sa feuille dans `const FEUILLE = ...` et écrit `__html: FEUILLE` : la
+      // garde ne voyait pas d'accent grave après `__html:`, donc elle ignorait
+      // le fichier — alors qu'il contient exactement le littéral qu'elle
+      // cherche. Un accent grave dans un commentaire CSS y est passé, et c'est
+      // le déploiement qui l'a dit.
+      //
+      // LE COMMENTAIRE CI-DESSUS ÉTAIT VRAI ET INCOMPLET : une variable
+      // CONSTRUITE n'a rien à couper, une variable LITTÉRALE si. On regarde
+      // donc les deux formes.
+      //
+      // ON SUIT LE FIL DEPUIS `__html`, ET PAS L'INVERSE. Première tentative :
+      // prendre toute constante en majuscules qui porte un littéral. Elle a
+      // sorti quatorze faux positifs d'un coup — des requêtes SQL, des gabarits
+      // de courriel, des consignes de voix. Aucun n'est une feuille de style, et
+      // une garde qui crie quatorze fois pour rien se fait désarmer la semaine
+      // suivante. On ne retient donc que les constantes RÉELLEMENT passées à
+      // `__html` : c'est ce qui les rend cuttables, et rien d'autre.
+      const src = readFileSync(new URL(`../${rel}`, import.meta.url), "utf8");
+      if (/__html:\s*`/.test(src) || nommeesDansHtml(src).length) {
         trouves.push(rel);
       }
     }
@@ -103,7 +144,12 @@ const FICHIERS = fichiersAvecFeuille("src").sort();
  */
 function blocsDeStyle(source) {
   const blocs = [];
-  const debut = /__html:\s*`/g;
+  // LES DEUX FORMES : la feuille écrite sur place, et celle rangée dans une
+  // constante que `__html` consomme — voir `nommeesDansHtml`.
+  const noms = nommeesDansHtml(source);
+  const morceaux = ["__html:\\s*`"];
+  for (const n of noms) morceaux.push(`(?:const|let|var)\\s+${n}\\s*=\\s*\``);
+  const debut = new RegExp(morceaux.join("|"), "g");
   let m;
   while ((m = debut.exec(source))) {
     const i = m.index + m[0].length;
@@ -138,7 +184,18 @@ function blocsDeStyle(source) {
  * accolades. Quand il se ferme trop tôt, ce qui suit est du CSS. On ne devine
  * rien, on lit.
  */
-const APRES_ATTENDU = /^\s*[,}]/;
+/*
+ * ET UNE CONSTANTE NOMMÉE SE TERMINE AUTREMENT. Quand la feuille est rangée
+ * dans `const FEUILLE = ...`, ce qui suit l'accent grave de fermeture n'est pas
+ * une virgule de propriété JSX mais un point-virgule d'instruction. La première
+ * version de cette extension a donc crié sur sept fichiers parfaitement sains,
+ * dont les deux qu'elle venait d'apprendre à lire.
+ *
+ * LES DEUX FINS SONT LÉGITIMES, ET AUCUNE AUTRE NE L'EST. Une feuille coupée
+ * trop tôt est suivie de CSS — une lettre, un point, une accolade ouvrante —
+ * jamais d'un point-virgule seul en fin de ligne.
+ */
+const APRES_ATTENDU = /^\s*[,}]|^;\s*$/m;
 
 /**
  * LE MÊME NOM POUR DEUX CHOSES — trois fois payé sur ce projet.
