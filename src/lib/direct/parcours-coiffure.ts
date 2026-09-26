@@ -28,9 +28,22 @@ export const COMMERCE_COIFFURE = "coif-centre";
  * C'EST L'APRÈS DE LA PAIRE. La même femme, au même endroit, dans le même haut,
  * avant et après : c'est ce qui rend l'essayage lisible. Deux mannequins
  * différentes montreraient deux photos, pas une coupe.
+ *
+ * ═══ ET CE N'EST PAS LA MANNEQUIN DE L'ANNONCE ════════════════════════════
+ *
+ * « La femme qui essaye ne doit pas être un modèle. »
+ *
+ * MÊME DÉFAUT QUE SUR LE PARCOURS MODE, ET MÊME CAUSE : les deux photos de
+ * l'essayage étaient celles de l'annonce, donc on montrait la mannequin du
+ * salon en prétendant que c'était la personne qui regarde. Tout l'écran repose
+ * sur « ça, c'est vous ».
+ *
+ * CE SONT MAINTENANT SES DEUX PHOTOS À LUI, prises au même endroit, dans le
+ * même pull, longueur d'avant puis carré. La coupe, elle, garde la photo de
+ * son annonce.
  */
-export const AVANT_COIFFURE = "/direct/accueil/coiffure-avant.jpg";
-export const APRES_COIFFURE = "/direct/accueil/coiffure-apres.jpg";
+export const AVANT_COIFFURE = "/direct/accueil/moi-coiffure-avant.jpg";
+export const APRES_COIFFURE = "/direct/accueil/moi-coiffure-apres.jpg";
 
 /** Le salon, pour la dernière étape. */
 export const SALON_COIFFURE = "/direct/salon-neuf.jpg";

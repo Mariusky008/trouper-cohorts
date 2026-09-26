@@ -54,32 +54,31 @@ export function StylesParcoursCoiffure() {
         .pc-f{flex:none;width:clamp(48px,min(13vw,6.4vh),64px);height:auto;
           filter:drop-shadow(0 0 16px rgba(196,132,255,.65));}
 
-        /* LA PASTILLE DU SALON : elle dit chez qui on est, aux quatre etapes. */
-        .pc-salon{position:relative;z-index:3;flex:none;align-self:flex-start;
-          display:flex;align-items:center;gap:10px;
-          margin:12px 0 0 14px;padding:6px 6px 6px 6px;border-radius:999px;
-          background:rgba(12,10,16,.72);border:1px solid rgba(255,255,255,.14);
-          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-          max-width:calc(100% - 28px);}
-        .pc-salon-v{flex:none;width:42px;height:42px;border-radius:50%;
-          background-size:cover;background-position:center;
-          border:1.5px solid rgba(255,255,255,.4);}
-        .pc-salon-t{min-width:0;display:flex;flex-direction:column;gap:1px;}
-        .pc-salon-t b{font-size:14px;font-weight:900;letter-spacing:-.015em;
-          line-height:1.14;
-          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-          overflow:hidden;}
-        .pc-salon-t em{display:flex;align-items:center;gap:5px;font-style:normal;
-          font-size:12px;font-weight:750;color:rgba(255,255,255,.76);
-          white-space:nowrap;}
-        .pc-salon-t i{font-style:normal;font-size:10px;}
-        .pc-sortir{flex:none;width:34px;height:34px;border-radius:50%;
+        /* ═══ LE FANTOME EST LA PORTE DE L'ACCUEIL ══════════════════════
+           Il etait deja a cette place sur les quatre ecrans : lui donner la
+           fonction evite d'ajouter une sixieme icone a un en-tete qui en porte
+           trois. Ce qui manquait pour qu'on le comprenne, c'est que ca se
+           voie — d'ou la petite maison posee sur son epaule. */
+        .pc-accueil{position:relative;flex:none;padding:0;border:0;
+          background:none;font:inherit;cursor:pointer;line-height:0;
+          border-radius:999px;}
+        .pc-accueil:active{transform:scale(.94);}
+        .pc-accueil:focus-visible{outline:2px solid #FF2E9A;outline-offset:3px;}
+        .pc-accueil-m{position:absolute;right:-2px;bottom:-2px;
+          width:22px;height:22px;border-radius:50%;
           display:flex;align-items:center;justify-content:center;
-          font:inherit;cursor:pointer;color:#fff;
-          background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);}
-        .pc-sortir svg{width:17px;height:17px;fill:none;stroke:currentColor;
-          stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
-        .pc-sortir:active{transform:scale(.92);}
+          color:#06060A;background:#FF2E9A;
+          box-shadow:0 2px 10px rgba(255,46,154,.55);}
+        .pc-accueil-m svg{width:12px;height:12px;fill:none;stroke:currentColor;
+          stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+
+        /* CHEZ QUI, DANS LE BLOC DU BAS. La pastille qui le disait en
+           permanence tombait sur le visage ; ici la ligne ne recouvre rien. */
+        .pc-chez{margin:8px 0 0;font-size:13.5px;font-weight:750;
+          color:rgba(255,255,255,.82);display:flex;align-items:center;gap:6px;
+          flex-wrap:wrap;}
+        .pc-chez b{color:#FF2E9A;font-weight:900;}
+        .pc-chez i{font-style:normal;font-size:11px;}
 
         /* ═══ CE QUI CHANGE : LE BAS DE L'ECRAN ══════════════════════════ */
         .pc-bas{position:relative;z-index:3;margin-top:auto;
@@ -190,7 +189,7 @@ export function StylesParcoursCoiffure() {
           letter-spacing:-.02em;color:#FFD233;}
 
         @media (prefers-reduced-motion:reduce){
-          .pc-go,.pc-deux,.pc-sortir{transition:none;}
+          .pc-go,.pc-deux,.pc-accueil{transition:none;}
         }
       `,
       }}

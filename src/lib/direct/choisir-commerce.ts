@@ -133,12 +133,32 @@ export const CATEGORIES: Categorie[] = [
     titreRose: "m’irait ?",
     bulle: "Glissez pour choisir un salon près de vous",
     bouton: "Découvrir cette coupe",
+    /* ═══ QUE DES COUPES, PARCE QUE LE TITRE NE DEMANDE QUE ÇA ═════════════
+
+       « On a comme titre "Quelle coupe m'irait ?" et, à partir de la troisième
+       annonce, on a des ongles, des lunettes... Il faut que ce soit que des
+       coupes de coiffure pour être dans le thème. »
+
+       LE PAQUET TENAIT CINQ CARTES ET LA CATÉGORIE N'AVAIT QUE DEUX SALONS. Je
+       l'avais rempli avec l'onglerie, l'opticien et le tatoueur — tous de la
+       catégorie « Beauté », tous hors sujet sous ce titre-là. Un écran qui
+       demande « quelle coupe m'irait ? » et répond par une paire de lunettes
+       ne se rattrape pas : la question était la promesse, et c'est le gabarit
+       que j'avais servi à sa place.
+
+       DEUX SALONS DE PLUS EXISTENT MAINTENANT — un barbier, un salon près du
+       parc — et les quatre cartes portent quatre coupes. Quatre plutôt que
+       cinq : mieux vaut une carte de moins qu'une cinquième qui reparle du
+       même salon. Voir `apercu-habitant.ts`.
+
+       L'ONGLERIE, L'OPTICIEN ET LE TATOUEUR NE SONT PAS PERDUS : ils sont dans
+       l'application, avec leurs propres essayages. Ils n'ont simplement rien à
+       faire sous une question qui parle de cheveux. */
     cartes: [
       { id: "coif-centre", photo: "/direct/coiffure-femme-face.jpg" },
       { id: "coif-nouveau", photo: "/direct/coiffure1.jpg" },
-      { id: "ongle-institut", photo: "/direct/pose-ongles.jpg" },
-      { id: "lunetier-pietonne", photo: "/direct/lunettes1.jpg" },
-      { id: "tatoueur", photo: "/direct/tattou1.jpg" },
+      { id: "coif-barbier", photo: "/direct/coiffure-homme-face.jpg" },
+      { id: "coif-halle", photo: "/direct/coiffure2.jpg" },
     ],
   },
   {

@@ -139,39 +139,56 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
             {etape}/{ETAPES_COIFFURE}
           </em>
         </div>
-        <Fant classe="pc-f" />
-      </header>
+        {/* ═══ LE FANTÔME EST LA PORTE DE L'ACCUEIL ═══════════════════════
 
-      {/* LA PASTILLE DU SALON : elle dit chez qui on est, à toutes les étapes.
-          C'est ce que sa maquette coiffure fait mieux que sa maquette mode. */}
-      <div className="pc-salon">
-        <span className="pc-salon-v" style={{ backgroundImage: `url("${vignette}")` }} />
-        <span className="pc-salon-t">
-          <b>{nom}</b>
-          <em>
-            <i aria-hidden="true">📍</i>
-            {ou}
-          </em>
-        </span>
-        {/* ═══ LA PORTE VERS L'ACCUEIL ═══════════════════════════════════════
-            « Il faudrait que sur les étapes on puisse revenir à l'accueil si on
-            veut voir autre chose, parce qu'autrement on doit cliquer trois fois
-            sur la flèche. »
-            ELLE EST DANS LA PASTILLE DU SALON, et c'est là qu'elle a du sens :
-            on quitte ce salon pour en voir un autre. Reculer d'une étape et
-            changer d'avis sont deux gestes différents. */}
+            « Placer partout sur tous les écrans la petite maison pour revenir
+            à l'accueil en haut à droite — ou mieux encore, il faut qu'on
+            comprenne que le petit fantôme en haut à droite est fait pour
+            revenir à l'accueil. »
+
+            SA SECONDE IDÉE EST LA BONNE, et elle coûte moins cher que la
+            première : le Fantôme est déjà là, à cette place, sur chaque écran
+            de chaque parcours. Lui donner la fonction évite d'ajouter une
+            sixième icône à un en-tête qui en porte déjà trois.
+
+            CE QUI MANQUAIT POUR QU'ON LE COMPRENNE : que ça se voie. Il est
+            donc un BOUTON — il réagit au doigt, il porte un nom pour les
+            lecteurs d'écran, et la petite maison se pose sur son épaule pour
+            dire où il mène. Une mascotte cliquable sans aucun signe reste une
+            mascotte. */}
         <button
           type="button"
-          className="pc-sortir"
+          className="pc-accueil"
           onClick={onFermer}
-          aria-label="Revenir au choix des commerçants"
+          aria-label="Revenir à l’accueil"
+          title="Revenir à l’accueil"
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3.6 10.6 12 3.8l8.4 6.8" />
-            <path d="M5.8 9v10.4a1 1 0 0 0 1 1h10.4a1 1 0 0 0 1-1V9" />
-          </svg>
+          <Fant classe="pc-f" />
+          <s className="pc-accueil-m" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M3.6 10.6 12 3.8l8.4 6.8" />
+              <path d="M5.8 9v10.4a1 1 0 0 0 1 1h10.4a1 1 0 0 0 1-1V9" />
+            </svg>
+          </s>
         </button>
-      </div>
+      </header>
+
+      {/* ═══ LA PASTILLE DU SALON A QUITTÉ LE MILIEU DE LA PHOTO ═══════════
+
+          « "Un salon du centre" est là aussi en plein milieu, donc supprimer
+          cette section. »
+
+          ELLE ÉTAIT POSÉE EN ABSOLU SOUS L'EN-TÊTE, donc en plein sur le
+          visage — la même faute que la bulle du parcours mode, au même endroit,
+          pour la même raison : une position écrite à la main vaut pour une
+          photo et pas pour la suivante.
+
+          CHEZ QUI ON EST N'EST PAS PERDU : le premier écran le dit dans son
+          bloc du bas, là où rien ne peut être recouvert, et le dernier écran
+          est celui du salon. Ce qui disparaît est une étiquette qui répétait à
+          toutes les étapes une information déjà donnée.
+
+          ET LA PORTE VERS L'ACCUEIL PASSE DANS LE FANTÔME — voir l'en-tête. */}
 
       {/* ───────────────────────── 1/4 · LA COUPE ───────────────────────── */}
       {etape === 1 && (
@@ -185,19 +202,34 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
               et elle n'a jamais eu vocation a nommer la coupe. */}
           {titre && titre !== laCoupe && <p className="pc-annonce">{titre}</p>}
           {prix && <p className="pc-prix">{prix}</p>}
+          {/* CHEZ QUI, DANS LE BLOC DU BAS. La pastille qui le disait en
+              permanence tombait sur le visage ; ici la ligne ne peut rien
+              recouvrir, et elle suffit — le dernier écran est celui du salon. */}
+          <p className="pc-chez">
+            Chez <b>{nom}</b> <i aria-hidden="true">📍</i>
+            {ou}
+          </p>
           <button type="button" className="pc-go" onClick={suivant}>
             <Appareil />
             Essayer cette coupe
             <s aria-hidden="true">→</s>
           </button>
-          <button type="button" className="pc-deux" onClick={() => setEtape(4)}>
-            <svg className="pc-i" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="3.6" y="5.4" width="16.8" height="15" rx="2.6" />
-              <path d="M3.6 10.2h16.8M8.4 3.6v3.4M15.6 3.6v3.4" />
-            </svg>
-            Prendre rendez-vous
-            <s aria-hidden="true">→</s>
-          </button>
+          {/* ═══ LE SECOND BOUTON EST PARTI DES QUATRE ÉCRANS ══════════════
+
+              « "Prendre rendez-vous" : trop tôt pour l'afficher, donc
+              supprimer. Étape 3 : "Revenir à mon essai", supprimer. Étape 4 :
+              "Revenir au choix", supprimer. »
+
+              C'EST LA MÊME FAUTE QUATRE FOIS, ET C'EST LA MIENNE. Chaque écran
+              portait un second bouton de la taille du premier : deux
+              propositions côte à côte ne se choisissent pas, elles se comptent.
+              Et l'une d'elles demandait un rendez-vous à quelqu'un qui n'a pas
+              encore vu la coupe sur lui — c'est-à-dire avant d'avoir la seule
+              raison de le prendre.
+
+              RECULER RESTE POSSIBLE : la flèche du haut est là pour ça, et le
+              Fantôme ramène à l'accueil. Ce qui disparaît est la deuxième porte
+              au milieu du chemin, pas le chemin de retour. */}
         </section>
       )}
 
@@ -234,14 +266,6 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
             <button type="button" className="pc-go" onClick={suivant}>
               <Appareil />
               Voir d’autres essais
-              <s aria-hidden="true">→</s>
-            </button>
-            <button type="button" className="pc-deux" onClick={() => setEtape(4)}>
-              <svg className="pc-i" viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="3.6" y="5.4" width="16.8" height="15" rx="2.6" />
-                <path d="M3.6 10.2h16.8M8.4 3.6v3.4M15.6 3.6v3.4" />
-              </svg>
-              Prendre rendez-vous
               <s aria-hidden="true">→</s>
             </button>
           </section>
@@ -288,10 +312,6 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
             Voir le salon
             <s aria-hidden="true">→</s>
           </button>
-          <button type="button" className="pc-deux" onClick={() => setEtape(2)}>
-            <s aria-hidden="true">←</s>
-            Revenir à mon essai
-          </button>
         </section>
       )}
 
@@ -332,13 +352,6 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
               <s aria-hidden="true">→</s>
             </button>
           )}
-          <button type="button" className="pc-deux" onClick={onFermer}>
-            <svg className="pc-i" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M20.4 12.2c0 3.9-3.8 7-8.4 7-1 0-2-.15-2.9-.42l-5 1.6 1.7-4.3a6.4 6.4 0 0 1-2.2-4.7c0-3.9 3.8-7 8.4-7s8.4 3.1 8.4 7Z" />
-            </svg>
-            Revenir au choix
-            <s aria-hidden="true">→</s>
-          </button>
         </section>
       )}
     </div>

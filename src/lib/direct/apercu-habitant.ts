@@ -3093,6 +3093,96 @@ const CARTES: CarteAutour[] = [
     ],
   },
 
+  /* ═══ DEUX SALONS DE PLUS, PARCE QUE L'ÉCRAN DEMANDE UNE COUPE ═══════════
+
+     « On a comme titre "Quelle coupe m'irait ?" et, à partir de la troisième
+     annonce, on a des ongles, des lunettes... Il faut que ce soit que des
+     coupes de coiffure pour être dans le thème. Tu peux inventer deux autres
+     salons avec une coupe homme et une autre coupe femme. »
+
+     LE PAQUET TENAIT CINQ CARTES ET LA CATÉGORIE N'AVAIT QUE DEUX SALONS. On
+     l'avait donc rempli avec l'onglerie, l'opticien et le tatoueur — tous de
+     la catégorie « Beauté », tous hors sujet sous ce titre-là. Un écran qui
+     demande « quelle coupe m'irait ? » et répond par une paire de lunettes ne
+     se rattrape pas : la question était la promesse.
+
+     CE SONT DEUX ENTRÉES COURTES, ET C'EST VOULU. Un moment chacun, pas
+     d'annonce d'emploi, pas d'offre de bienvenue : ils existent pour porter une
+     coupe dans le paquet du choix. Le jour où ils ont plus à dire, ils
+     grandiront comme les autres. */
+  {
+    id: "coif-barbier",
+    photos: ["/direct/coiffure-homme-face.jpg"],
+    branche: "coiffeur",
+    photo: "/direct/coiffure-homme-face.jpg",
+    cadrage: "42%",
+    nom: "Un barbier de la halle",
+    google: { note: "4,8", avis: 64 },
+    metier: "Barbier",
+    ville: VILLE,
+    itineraire: YALLER,
+    metres: 340,
+    distance: "340 m",
+    fiche: {
+      ou: "À côté de la halle",
+      horaires: "Aujourd'hui, 9 h – 19 h",
+      mot: "Coupe et barbe, sans rendez-vous quand une place se libère.",
+    },
+    catalogue: [
+      { id: "cb-1", rayon: "Coupes", nom: "Coupe homme", prix: "22 €", photo: "/direct/coiffure-homme-face.jpg" },
+      { id: "cb-2", rayon: "Coupes", nom: "Coupe + barbe", detail: "Serviette chaude.", prix: "32 €" },
+    ],
+    moments: [
+      {
+        de: 9, a: 19, quand: "aujourd'hui", icone: "✂️",
+        titre: "Coupe homme, dégradé net",
+        photo: "/direct/coiffure-homme-face.jpg",
+        lignes: ["Dégradé et finition rasoir", "30 min"],
+        prix: "22 €",
+        action: "Réserver", envies: ["coupe"],
+        avis: [
+          { note: 5, texte: "Dégradé propre, et il prend le temps d'expliquer.", qui: "Thomas", quand: "la semaine dernière" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "coif-halle",
+    photos: ["/direct/coiffure2.jpg"],
+    branche: "coiffeur",
+    photo: "/direct/coiffure2.jpg",
+    cadrage: "45%",
+    nom: "Un salon près du parc",
+    google: { note: "4,6", avis: 118 },
+    metier: "Coiffeur",
+    ville: VILLE,
+    itineraire: YALLER,
+    metres: 700,
+    distance: "700 m",
+    fiche: {
+      ou: "Face au parc",
+      horaires: "Aujourd'hui, 9 h 30 – 18 h 30",
+      mot: "Coupes longues et dégradés, avec un diagnostic avant de toucher aux ciseaux.",
+    },
+    catalogue: [
+      { id: "ch-1", rayon: "Coupes", nom: "Coupe femme", prix: "32 €", photo: "/direct/coiffure2.jpg" },
+      { id: "ch-2", rayon: "Coupes", nom: "Coupe + brushing", detail: "Cheveux longs.", prix: "42 €" },
+    ],
+    moments: [
+      {
+        de: 9, a: 18, quand: "aujourd'hui", icone: "💇",
+        titre: "Coupe femme, longueurs travaillées",
+        photo: "/direct/coiffure2.jpg",
+        lignes: ["Dégradé long, sans couleur", "45 min"],
+        prix: "32 €",
+        action: "Réserver", envies: ["coupe"],
+        avis: [
+          { note: 5, texte: "Elle a gardé la longueur et ça bouge enfin.", qui: "Sarah", quand: "il y a 3 semaines" },
+        ],
+      },
+    ],
+  },
+
   // ── FLEURISTES ───────────────────────────────────────────────────────────
   {
     id: "fleur-marche",
