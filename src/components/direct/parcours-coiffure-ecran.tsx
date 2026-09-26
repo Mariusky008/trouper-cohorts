@@ -30,6 +30,7 @@ import { useMemo, useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { FantomeAccueil } from "@/components/direct/fantome-accueil";
 import { NoteFantomes } from "@/components/direct/note-fantomes";
+import { essaiDuCommerce } from "@/lib/direct/plaque-parcours";
 import { momentEnCours, toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import {
   APRES_COIFFURE,
@@ -50,7 +51,22 @@ function Appareil() {
   );
 }
 
-export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
+export function ParcoursCoiffure({
+  onFermer,
+  /* ═══ LA BONNE TÊTE POUR LA BONNE COUPE ════════════════════════════════
+
+     « Pour chaque coupe, on va quand même mettre la bonne tête. »
+
+     LE PARCOURS MONTRAIT UN SEUL AVANT/APRÈS pour les quatre salons : on
+     choisissait un dégradé chez le barbier et on voyait un carré sur une
+     femme. C'est le même défaut que les lasagnes du restaurant, vu de l'autre
+     paquet, et il se répare de la même façon — par une paire de photos par
+     commerce, dans `plaque-parcours.ts`. */
+  commerce,
+}: {
+  onFermer: () => void;
+  commerce?: string;
+}) {
   const [etape, setEtape] = useState(1);
   const [glissiere, setGlissiere] = useState(50);
   const cadre = useRef<HTMLDivElement>(null);
@@ -60,15 +76,26 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
     return d.getHours() + d.getMinutes() / 60;
   }, []);
 
+  const cle = commerce || COMMERCE_COIFFURE;
   const { salon, coupe } = useMemo(() => {
-    const s = toutesLesCartes().find((c) => c.id === COMMERCE_COIFFURE);
+    const s = toutesLesCartes().find((c) => c.id === cle);
     /* LA COUPE EST LE MOMENT DONT LA PHOTO EST CELLE DU PARCOURS. Il n'y en a
        pas pour la paire avant/après — ce sont des photos d'accueil, pas des
        moments — donc on prend l'offre en cours du salon : c'est bien la coupe
        qu'il propose à cette heure-ci, et son prix est le sien. */
-    const m = s ? (s.moments ?? []).find((x) => x.photo === APRES_COIFFURE) : undefined;
+    const m = s
+      ? (s.moments ?? []).find((x) => x.photo === APRES_COIFFURE) ??
+        (s.moments ?? []).find((x) => x.photo)
+      : undefined;
     return { salon: s, coupe: m ?? (s ? momentEnCours(s, heure) : null) };
-  }, [heure]);
+  }, [heure, cle]);
+
+  /* LA PAIRE DE CE SALON-LÀ. L'avant est celui de la même personne d'un salon
+     à l'autre ; chez le barbier, la personne change, donc les deux photos. */
+  const { avant: AVANT, apres: APRES } = essaiDuCommerce(cle, {
+    avant: AVANT_COIFFURE,
+    apres: APRES_COIFFURE,
+  });
 
   /* LES AUTRES COUPES DU QUARTIER ONT QUITTE LA TROISIEME ETAPE. Elles y
      tenaient lieu des trois portraits qu'on n'avait pas ; les portraits sont
@@ -96,7 +123,7 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
   const ou = `${salon.distance}${salon.ville ? ` · ${salon.ville}` : ""}`;
   const vignette = salon.sesPhotos?.[0]?.src ?? salon.photo ?? SALON_COIFFURE;
 
-  const suivant = () => setEtape((e) => Math.min(ETAPES_COIFFURE, e + 1));
+  const suivant = () => setEtape((e) => Math.min(total, e + 1));
 
   const bouger = (x: number) => {
     const r = cadre.current?.getBoundingClientRect();
@@ -105,10 +132,27 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
   };
 
   /** Le fond plein écran de l'étape courante. */
-  const fond = etape === 4 ? SALON_COIFFURE : APRES_COIFFURE;
+  /* ═══ LE SALON DE LA DERNIERE ETAPE EST LE SIEN ═══════════════════════
+     `SALON_COIFFURE` est la devanture du salon du centre. Les quatre cartes
+     l'affichaient toutes : on finissait le parcours du barbier devant la
+     vitrine d'un autre. */
+  const salonPhoto = salon.sesPhotos?.[0]?.src ?? salon.photo ?? SALON_COIFFURE;
+
+  /* ═══ « LE MEME CARRE SUR D'AUTRES VISAGES » N'EST PAS VRAI PARTOUT ════
+     Les trois portraits sont ceux d'UNE coupe — le carre du salon du centre.
+     Les montrer sous un degrade de barbier dirait « voici la meme coupe » en
+     affichant trois femmes coiffees autrement. On ne le dit donc que la ou
+     c'est vrai, et le parcours des autres salons a une etape de moins. Meme
+     regle que le rideau du restaurant : l'etape existe si sa matiere existe. */
+  const aLesAutres = cle === COMMERCE_COIFFURE;
+  const total = aLesAutres ? ETAPES_COIFFURE : ETAPES_COIFFURE - 1;
+  /** Le pas reellement joue : on saute « les autres » quand on ne l'a pas. */
+  const ici = !aLesAutres && etape >= 3 ? etape + 1 : etape;
+
+  const fond = ici === 4 ? salonPhoto : APRES;
 
   return (
-    <div className={`pc pc-e${etape}`}>
+    <div className={`pc pc-e${ici}`}>
       {/* L'ÉTAPE 2 remplace le fond par sa glissière : c'est le seul écran où
           la photo n'est pas une photo mais une comparaison. */}
       {etape !== 2 && (
@@ -128,12 +172,12 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
         <p className="pc-logo">
           <MotMarque />
         </p>
-        <div className="pc-pas" aria-label={`Étape ${etape} sur ${ETAPES_COIFFURE}`}>
-          {Array.from({ length: ETAPES_COIFFURE }, (_, i) => (
+        <div className="pc-pas" aria-label={`Étape ${etape} sur ${total}`}>
+          {Array.from({ length: total }, (_, i) => (
             <s key={i} className={i + 1 <= etape ? "on" : ""} />
           ))}
           <em>
-            {etape}/{ETAPES_COIFFURE}
+            {etape}/{total}
           </em>
         </div>
         {/* ═══ LE FANTÔME EST LA PORTE DE L'ACCUEIL ═══════════════════════
@@ -174,7 +218,7 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
           ET LA PORTE VERS L'ACCUEIL PASSE DANS LE FANTÔME — voir l'en-tête. */}
 
       {/* ───────────────────────── 1/4 · LA COUPE ───────────────────────── */}
-      {etape === 1 && (
+      {ici === 1 && (
         <section className="pc-bas">
           <h1 className="pc-t">
             {laCoupe.split(" ").slice(0, -1).join(" ")}{" "}
@@ -217,7 +261,7 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
       )}
 
       {/* ──────────────────────── 2/4 · L'ESSAYAGE ──────────────────────── */}
-      {etape === 2 && (
+      {ici === 2 && (
         <>
           <div
             className="pc-gliss"
@@ -229,10 +273,10 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
             }}
             onPointerMove={(e) => e.buttons > 0 && bouger(e.clientX)}
           >
-            <div className="pc-g-img" style={{ backgroundImage: `url("${APRES_COIFFURE}")` }} />
+            <div className="pc-g-img" style={{ backgroundImage: `url("${APRES}")` }} />
             {/* ON DÉCOUPE, ON NE REDIMENSIONNE PAS : la boîte garde ses
                 dimensions, donc les deux moitiés restent cadrées pareil. */}
-            <div className="pc-g-img avant" style={{ backgroundImage: `url("${AVANT_COIFFURE}")` }} />
+            <div className="pc-g-img avant" style={{ backgroundImage: `url("${AVANT}")` }} />
             <span className="pc-g-trait" aria-hidden="true" />
             <span className="pc-g-et g">Avant</span>
             <span className="pc-g-et d">Sur moi</span>
@@ -256,7 +300,7 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
       )}
 
       {/* ───────────────────── 3/4 · LES AUTRES COUPES ──────────────────── */}
-      {etape === 3 && (
+      {ici === 3 && (
         <section className="pc-bas">
           {/* ═══ UNE SEULE COUPE, TROIS VISAGES QUI NE SE RESSEMBLENT PAS ═══
 
@@ -309,7 +353,7 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
       )}
 
       {/* ───────────────────────── 4/4 · LE SALON ───────────────────────── */}
-      {etape === 4 && (
+      {ici === 4 && (
         <section className="pc-bas">
           <h1 className="pc-t">
             Envie de la faire
@@ -317,7 +361,7 @@ export function ParcoursCoiffure({ onFermer }: { onFermer: () => void }) {
             <em>pour de vrai ?</em>
           </h1>
           <div className="pc-fiche">
-            <span className="pc-fiche-v" style={{ backgroundImage: `url("${APRES_COIFFURE}")` }} />
+            <span className="pc-fiche-v" style={{ backgroundImage: `url("${APRES}")` }} />
             <span className="pc-fiche-t">
               <b>{titre}</b>
               <em>

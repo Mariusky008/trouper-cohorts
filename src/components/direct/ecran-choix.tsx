@@ -36,6 +36,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { FantomeAccueil } from "@/components/direct/fantome-accueil";
+import { photoDeLaCarte } from "@/lib/direct/plaque-parcours";
 import {
   CATEGORIES,
   CATEGORIE_DEPART,
@@ -134,11 +135,27 @@ export function EcranChoix({
   depart,
 }: {
   onEntrer?: () => void;
-  onParcoursMode?: () => void;
-  onParcoursCoiffure?: () => void;
-  onParcoursSortie?: () => void;
-  onParcoursTable?: () => void;
-  onParcoursDeco?: () => void;
+  /* ═══ LE PARCOURS SUIT LA CARTE QU'ON REGARDE ═════════════════════════
+
+     « Il faut que, lorsqu'on clique sur le menu du restaurant, la photo soit la
+     même que sur l'annonce, parce que présentement c'est toujours une lasagne
+     maison même quand je clique sur un magret grillé ou un poulet basquaise. »
+
+     LE BOUTON N'OUVRAIT QU'UN SEUL COMMERCE PAR CATÉGORIE, celui dont le
+     parcours avait été dessiné. Il ne le disait pas : on appuyait sous un
+     magret et on tombait sur des lasagnes. C'est la note que j'avais laissée
+     dans `choisir-commerce.ts` en déplaçant les cartes — « le vrai correctif
+     est que le bouton ouvre le parcours DE LA CARTE » — et c'est elle qu'on
+     fait maintenant.
+
+     CHAQUE RAPPEL REÇOIT DONC L'IDENTIFIANT DE LA CARTE AU CENTRE. Ce que le
+     parcours sait en faire dépend de la matière que ce commerce a publiée :
+     voir `plaque-parcours.ts`. */
+  onParcoursMode?: (commerce: string) => void;
+  onParcoursCoiffure?: (commerce: string) => void;
+  onParcoursSortie?: (commerce: string) => void;
+  onParcoursTable?: (commerce: string) => void;
+  onParcoursDeco?: (commerce: string) => void;
   depart?: CleCategorie;
 }) {
   const [cle, setCle] = useState<CleCategorie>(depart ?? CATEGORIE_DEPART);
@@ -203,7 +220,10 @@ export function EcranChoix({
         const offre = moment ?? momentEnCours(com, heure);
         out.push({
           id: c.id,
-          photo: moment ? c.photo : com.photo || c.photo,
+          /* LA MEME FONCTION QUE LE PARCOURS. La regle etait ecrite ici et
+             redevinee la-bas : deux ecrans, deux images, et chacun avait
+             raison. Voir `photoDeLaCarte` dans `plaque-parcours.ts`. */
+          photo: photoDeLaCarte(c.id) ?? c.photo,
           nom: com.nom,
           quoi: c.quoi ?? offre?.titre ?? com.metier,
           prix: offre?.prix ?? "",
@@ -471,11 +491,12 @@ export function EcranChoix({
              arrive » ne s'affiche donc plus jamais — elle reste sous le
              bouton, invisible, parce que c'est elle qui rattraperait une
              sixieme categorie ajoutee sans son parcours. */
-          if (cle === "mode" && onParcoursMode) return onParcoursMode();
-          if (cle === "beaute" && onParcoursCoiffure) return onParcoursCoiffure();
-          if (cle === "sorties" && onParcoursSortie) return onParcoursSortie();
-          if (cle === "restaurants" && onParcoursTable) return onParcoursTable();
-          if (cle === "commerces" && onParcoursDeco) return onParcoursDeco();
+          const ici = vues[actif]?.id ?? "";
+          if (cle === "mode" && onParcoursMode) return onParcoursMode(ici);
+          if (cle === "beaute" && onParcoursCoiffure) return onParcoursCoiffure(ici);
+          if (cle === "sorties" && onParcoursSortie) return onParcoursSortie(ici);
+          if (cle === "restaurants" && onParcoursTable) return onParcoursTable(ici);
+          if (cle === "commerces" && onParcoursDeco) return onParcoursDeco(ici);
           setBientot(true);
         }}
         aria-describedby="cx-bientot"

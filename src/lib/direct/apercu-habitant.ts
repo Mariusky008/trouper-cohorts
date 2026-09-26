@@ -3576,6 +3576,11 @@ const CARTES: CarteAutour[] = [
         // traverser la rue.
         de: 15, a: 18.5, quand: "à 15 h", icone: "🕯️", publie: 14.5,
         titre: "Douze bougies sortent du moule",
+        // LA PHOTO QUE LE PAQUET DECLARE — sans elle, la carte de « Et chez
+        // moi ? » se rabattait sur la photo du commerce, c'est-a-dire sur
+        // l'atelier : un plan de travail sous un titre qui parle de chez soi.
+        // Et le parcours ouvrait l'autre. Voir `plaque-parcours.ts`.
+        photo: "/direct/table-salon-bougie.jpg",
         lignes: ["Fleurs séchées coulées dans la cire", "Mèche bois, pot de grès réutilisable"],
         prix: "22 €", places: 12, action: "Réserver",
         envies: ["maintenant", "devantvous", "offrir"],

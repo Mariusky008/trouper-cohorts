@@ -36,12 +36,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { FantomeAccueil } from "@/components/direct/fantome-accueil";
 import { onSpeakingChange, speak, stopSpeaking } from "@/lib/site-internet/speech";
-import { toutesLesCartes, VILLE } from "@/lib/direct/apercu-habitant";
+import { VILLE } from "@/lib/direct/apercu-habitant";
 import { demanderRendezVous, numeroDeFiction } from "@/lib/direct/prevenir";
+import { plaqueDuParcours } from "@/lib/direct/plaque-parcours";
 import {
   COMMERCE_TABLE,
   DEVANTURE_TABLE,
-  ETAPES_TABLE,
   MARGOT_PHOTO,
   PART_PHOTO,
   PART_TABLE,
@@ -65,7 +65,29 @@ function Fant({ classe }: { classe: string }) {
  */
 const ONDE = [18, 34, 26, 52, 40, 68, 46, 78, 58, 88, 64, 74, 50, 62, 38, 56, 30, 44, 24, 36];
 
-export function ParcoursTable({ onFermer }: { onFermer: () => void }) {
+export function ParcoursTable({
+  onFermer,
+  /* ═══ SEPT RESTAURANTS, ET UNE SEULE LASAGNE ═══════════════════════════
+
+     « Il faut que, lorsqu'on clique sur le menu du restaurant, la photo soit
+     la même que sur l'annonce, parce que présentement c'est toujours une
+     lasagne maison même quand je clique sur un magret grillé ou un poulet
+     basquaise. »
+
+     `COMMERCE_TABLE` ÉTAIT FIGÉ SUR LE BOCAL DE MARGOT. Le paquet montre sept
+     plats du jour, le bouton en ouvrait toujours le même : la promesse de la
+     carte était rompue au premier appui.
+
+     ET LES QUATRE ÉTAPES NE SONT PAS DUES À TOUT LE MONDE. Le rideau demande
+     deux photos du même plat, la cuisinière demande une voix ou une vidéo —
+     Margot a les deux, le traiteur n'a ni l'une ni l'autre. Les pas jouables
+     se calculent donc par commerce, dans `plaque-parcours.ts`, et le compteur
+     compte ce qui est là. On dégrade, on n'invente pas de cuisinière. */
+  commerce,
+}: {
+  onFermer: () => void;
+  commerce?: string;
+}) {
   const [etape, setEtape] = useState(1);
   /**
    * LE RIDEAU DE LA DEUXIÈME ÉTAPE — sa position en pour cent.
@@ -115,40 +137,84 @@ export function ParcoursTable({ onFermer }: { onFermer: () => void }) {
     setRideau(Math.min(98, Math.max(2, ((x - b.left) / b.width) * 100)));
   }, []);
 
-  const resto = toutesLesCartes().find((c) => c.id === COMMERCE_TABLE);
-  if (!resto) return null;
+  const cle = commerce || COMMERCE_TABLE;
+  const plaque = plaqueDuParcours(cle, ["chose", "paire", "voix", "venir"]);
+  const resto = plaque?.commerce;
+  if (!plaque || !resto) return null;
 
-  /* LE PLAT ET SA PART VIENNENT DE SA CARTE, par leur identifiant. Les
-     chercher par leur nom casserait au premier accent ou à la première
-     majuscule changée. */
+  /* ═══ LE PLAT : DE SA CARTE CHEZ MARGOT, DE SON ANNONCE AILLEURS ═══════
+
+     LE BOCAL DE MARGOT A DEUX LIGNES DE CARTE FAITES POUR CET ÉCRAN : le plat
+     à onze euros et la part à neuf. Les six autres restaurants n'ont pas cette
+     paire, et leur plat du jour est dans leur ANNONCE — c'est elle que la carte
+     du paquet montrait, donc c'est elle qu'on ouvre.
+
+     ON GARDE LES DEUX CHEMINS. Lire l'annonce partout ferait perdre à Margot
+     le détail de sa carte et le prix de sa barquette, qui sont écrits et vrais.
+     Lire la carte partout ferait inventer des identifiants qui n'existent pas.
+     Chacun rend ce qu'il a. */
   const carte = resto.catalogue ?? [];
-  const plat = carte.find((a) => a.id === PLAT_TABLE);
-  const part = carte.find((a) => a.id === PART_TABLE);
-  if (!plat) return null;
+  const deLaCarte = carte.find((a) => a.id === PLAT_TABLE);
+  const chezMargot = cle === COMMERCE_TABLE && deLaCarte;
+  const plat = chezMargot
+    ? deLaCarte
+    : {
+        id: plaque.offre?.titre ?? cle,
+        nom: plaque.offre?.titre ?? resto.nom,
+        detail: plaque.offre?.lignes?.[0],
+        prix: plaque.offre?.prix,
+        rayon: "",
+      };
+  const part = chezMargot
+    ? carte.find((a) => a.id === PART_TABLE)
+    : plaque.motDeux
+      ? { id: `${cle}-servi`, nom: plat.nom, detail: plaque.motDeux, prix: undefined, rayon: "" }
+      : undefined;
 
   /* L'AUTRE PLAT DU JOUR, s'il y en a un au même prix : c'est ce qui remplace
      la recette inventée de sa maquette, et c'est plus utile. */
-  const autrePlat = carte.find((a) => a.id !== PLAT_TABLE && a.rayon === plat.rayon && a.prix === plat.prix);
+  const autrePlat = chezMargot
+    ? carte.find((a) => a.id !== PLAT_TABLE && a.rayon === plat.rayon && a.prix === plat.prix)
+    : undefined;
 
   const nom = resto.nom;
   const ou = `${resto.distance}${resto.ville ? ` · ${resto.ville}` : ` · ${VILLE}`}`;
   const voix = resto.voix;
-  const vignette = resto.sesPhotos?.[0]?.src ?? resto.photo ?? PLAT_PHOTO;
+  const vignette = resto.sesPhotos?.[0]?.src ?? resto.photo ?? plaque.photo;
+
+  /* ═══ LES PAS SONT CEUX QUE CE COMMERCE PEUT TENIR ════════════════════
+     Voir `plaque-parcours.ts` : le rideau demande deux photos, la cuisinière
+     demande une voix ou une vidéo. Le compteur compte ce qui est là — annoncer
+     « 1/4 » pour en montrer deux serait la même promesse rompue, d'un cran
+     plus bas. */
+  const PAS = plaque.pas;
+  const total = PAS.length;
+  const ici = PAS[Math.min(etape, total) - 1];
+
+  /* LE PLAT ET SA PART, EN PHOTO : celles de l'annonce, jamais celles de
+     Margot quand ce n'est pas chez elle. C'est toute la demande. */
+  const PHOTO_PLAT = chezMargot ? PLAT_PHOTO : plaque.photo;
+  const PHOTO_PART = chezMargot ? PART_PHOTO : (plaque.photoDeux ?? plaque.photo);
+  /* LE PORTRAIT ET LA DEVANTURE N'EXISTENT QUE CHEZ MARGOT. Ailleurs, l'écran
+     de la voix prend l'affiche de la vidéo du commerçant s'il en a une, et la
+     dernière étape prend sa première photo à lui. */
+  const PHOTO_VOIX = chezMargot ? MARGOT_PHOTO : (plaque.offre?.video?.affiche ?? vignette);
+  const PHOTO_VENIR = chezMargot ? DEVANTURE_TABLE : (resto.sesPhotos?.[0]?.src ?? resto.photo ?? plaque.photo);
 
   /* LE RENDEZ-VOUS PASSE PAR LE VRAI CHEMIN DU PRODUIT — voir `prevenir.ts` :
      un message deja ecrit sur WhatsApp, et le numero en secours. Le numero est
      une fiction stable, derivee de l'identifiant : voir `numeroDeFiction`. */
   const joindre = demanderRendezVous({
-    telephone: numeroDeFiction(COMMERCE_TABLE),
+    telephone: numeroDeFiction(cle),
     nom,
     geste: "Réserver une table",
   });
 
-  const suivant = () => setEtape((e) => Math.min(ETAPES_TABLE, e + 1));
+  const suivant = () => setEtape((e) => Math.min(total, e + 1));
   const precedent = () => (etape === 1 ? onFermer() : setEtape((e) => e - 1));
 
   /** Le fond plein écran de l'étape courante. */
-  const fond = etape === 3 ? MARGOT_PHOTO : etape === 4 ? DEVANTURE_TABLE : PLAT_PHOTO;
+  const fond = ici === "voix" ? PHOTO_VOIX : ici === "venir" ? PHOTO_VENIR : PHOTO_PLAT;
 
   /** La fiche du restaurant, la même aux quatre étapes du bas. */
   const fiche = (avecPrix: boolean) => (
@@ -167,15 +233,15 @@ export function ParcoursTable({ onFermer }: { onFermer: () => void }) {
 
   /** Le second bouton : « Réserver », qui saute à la dernière étape. */
   const versLaTable = (mot: string) =>
-    etape < ETAPES_TABLE ? (
-      <button type="button" className="pt-deux" onClick={() => setEtape(ETAPES_TABLE)}>
+    etape < total ? (
+      <button type="button" className="pt-deux" onClick={() => setEtape(total)}>
         {mot}
         <s aria-hidden="true">→</s>
       </button>
     ) : null;
 
   return (
-    <div className={`pt pt-e${etape}`}>
+    <div className={`pt pt-e${PAS.indexOf(ici) + 1} pt-p-${ici}`}>
       <div className="pt-fond" style={{ backgroundImage: `url("${fond}")` }} aria-hidden="true" />
       <div className="pt-voile" aria-hidden="true" />
 
@@ -196,12 +262,12 @@ export function ParcoursTable({ onFermer }: { onFermer: () => void }) {
         <p className="pt-logo">
           <MotMarque />
         </p>
-        <div className="pt-pas" aria-label={`Étape ${etape} sur ${ETAPES_TABLE}`}>
-          {Array.from({ length: ETAPES_TABLE }, (_, i) => (
+        <div className="pt-pas" aria-label={`Étape ${etape} sur ${total}`}>
+          {Array.from({ length: total }, (_, i) => (
             <s key={i} className={i + 1 <= etape ? "on" : ""} />
           ))}
           <em>
-            {etape}/{ETAPES_TABLE}
+            {etape}/{total}
           </em>
         </div>
         {/* LE FANTÔME EST LA PORTE DE L'ACCUEIL — même geste que sur les
@@ -223,7 +289,7 @@ export function ParcoursTable({ onFermer }: { onFermer: () => void }) {
           Fantôme. */}
 
       {/* ───────────────────────── 1/4 · LE PLAT ─────────────────────────── */}
-      {etape === 1 && (
+      {ici === "chose" && (
         <section className="pt-bas">
           {/* ═══ LA BULLE N'ÉTAIT PAS AU BON ENDROIT ═══════════════════════
 
@@ -274,7 +340,7 @@ export function ParcoursTable({ onFermer }: { onFermer: () => void }) {
           vignettes. Le rideau a un rapport fixe et tient dans la moitié de
           l'écran : le bloc reprend sa place normale, et le vide qui restait
           sous le bouton disparaît. */}
-      {etape === 2 && (
+      {ici === "paire" && (
         <section className="pt-bas">
           <h1 className="pt-t">
             Voilà ce que
@@ -314,8 +380,8 @@ export function ParcoursTable({ onFermer }: { onFermer: () => void }) {
             }}
             onPointerMove={(e) => e.buttons > 0 && tirer(e.clientX)}
           >
-            <div className="pt-rid-img" style={{ backgroundImage: `url("${PART_PHOTO}")` }} />
-            <div className="pt-rid-img entier" style={{ backgroundImage: `url("${PLAT_PHOTO}")` }} />
+            <div className="pt-rid-img" style={{ backgroundImage: `url("${PHOTO_PART}")` }} />
+            <div className="pt-rid-img entier" style={{ backgroundImage: `url("${PHOTO_PLAT}")` }} />
             {/* ═══ UNE SEULE ÉTIQUETTE, DONC UN SEUL PRIX ════════════════
 
                 PREMIER JET : une étiquette de chaque côté, comme les libellés
@@ -362,7 +428,7 @@ export function ParcoursTable({ onFermer }: { onFermer: () => void }) {
       )}
 
       {/* ─────────────────── 3/4 · LA CUISINIÈRE ─────────────────────────── */}
-      {etape === 3 && (
+      {ici === "voix" && (
         <section className="pt-bas">
           <h1 className="pt-t">
             {voix?.prenom ?? "Elle"}
@@ -440,7 +506,7 @@ export function ParcoursTable({ onFermer }: { onFermer: () => void }) {
       )}
 
       {/* ──────────────────────── 4/4 · LA TABLE ─────────────────────────── */}
-      {etape === 4 && (
+      {ici === "venir" && (
         <section className="pt-bas">
           <h1 className="pt-t">
             À midi,

@@ -162,3 +162,41 @@ export function marquerVu(quoi: string) {
   }
   abonnes.forEach((f) => f());
 }
+
+/**
+ * ═══ ON REVIENT EN ARRIÈRE : CET ÉCRAN N'A PLUS ÉTÉ VU ═════════════════════
+ *
+ * « Quand je suis sur /autour-de-moi, que je vais de la démo sur l'appli, que
+ * je veux revenir à la démo et que je clique sur la flèche de l'ordi pour aller
+ * en arrière, je me retrouve sur /autour-de-moi/mur?metier=bar. »
+ *
+ * MESURÉ : ENTRER DANS L'APPLICATION NE CHANGEAIT RIEN À L'HISTORIQUE. La
+ * longueur restait à trois, l'adresse ne bougeait pas — l'écran de choix et
+ * l'application sont le même document. La flèche « en arrière » quittait donc
+ * la page entière et rendait la précédente, quelle qu'elle soit. Chez lui,
+ * c'était le mur d'un bar visité plus tôt ; ça aurait pu être n'importe quoi.
+ *
+ * SA FLÈCHE EST DANS SON DROIT. « En arrière » veut dire « défais ce que je
+ * viens de faire », et ce qu'il venait de faire, c'était entrer. Pour que la
+ * flèche le défasse, il faut qu'entrer LAISSE UNE TRACE — d'où l'entrée
+ * d'historique posée à l'entrée, et cette fonction pour rouvrir l'accueil quand
+ * elle est dépilée. Voir `apercu-habitant.tsx`.
+ *
+ * ELLE NE DÉFAIT QUE LES ÉCRANS QUI REVIENNENT (`TOUJOURS_REVOIR`). Effacer du
+ * stockage une explication déjà donnée la ferait réapparaître pour de bon, et
+ * personne ne demande à revoir une aide en appuyant sur « en arrière ».
+ */
+export function oublierVu(quoi: string) {
+  const v = chargerVus();
+  if (!v.includes(quoi)) return;
+  fermesCetteSession.delete(quoi);
+  cache = v.filter((x) => x !== quoi);
+  if (!TOUJOURS_REVOIR.has(quoi)) {
+    try {
+      window.localStorage.setItem(CLE, JSON.stringify(cache));
+    } catch {
+      /* Stockage refusé : rien à défaire de ce côté-là. */
+    }
+  }
+  abonnes.forEach((f) => f());
+}

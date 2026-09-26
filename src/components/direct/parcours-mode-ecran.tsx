@@ -34,6 +34,7 @@ import { useMemo, useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { FantomeAccueil } from "@/components/direct/fantome-accueil";
 import { NoteFantomes } from "@/components/direct/note-fantomes";
+import { essaiDuCommerce } from "@/lib/direct/plaque-parcours";
 import { momentEnCours, toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import {
   APRES_MODE,
@@ -51,7 +52,25 @@ function Fant({ classe }: { classe: string }) {
   return <img className={classe} src="/clikme-fantome.png" alt="" />;
 }
 
-export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
+export function ParcoursMode({
+  onFermer,
+  /* ═══ LE PARCOURS S'OUVRE SUR LA CARTE QU'ON REGARDAIT ══════════════════
+
+     « Pour chaque coupe, on va quand même mettre la bonne tête. »
+
+     IL LE DISAIT DE LA BEAUTÉ, ET LA MODE AVAIT LE MÊME DÉFAUT : quelle que
+     soit la carte ouverte — la friperie, le prêt-à-porter homme, le dépôt-vente
+     — on voyait le blazer rose de la boutique de la rue piétonne. Un essayage
+     qui montre autre chose que ce qu'on a choisi n'est pas un essayage.
+
+     `commerce` VIENT DU PAQUET, et vaut la boutique du parcours quand personne
+     ne le passe — l'écran reste donc ouvrable seul. Les photos sont dans
+     `plaque-parcours.ts`, une paire par commerce. */
+  commerce,
+}: {
+  onFermer: () => void;
+  commerce?: string;
+}) {
   const [etape, setEtape] = useState(1);
   /** La position de la poignée avant/après, en pourcentage. */
   const [glissiere, setGlissiere] = useState(50);
@@ -70,11 +89,25 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
    * l'offre en cours plutôt que sur rien : un écran sans titre ni prix serait
    * plus dur à diagnostiquer qu'un écran qui montre autre chose.
    */
+  const cle = commerce || COMMERCE_MODE;
   const { boutique, piece } = useMemo(() => {
-    const b = toutesLesCartes().find((c) => c.id === COMMERCE_MODE);
-    const m = b ? (b.moments ?? []).find((x) => x.photo === PIECE_MODE) : undefined;
+    const b = toutesLesCartes().find((c) => c.id === cle);
+    /* LA PIÈCE EST LE MOMENT QUI PORTE UNE PHOTO — c'est lui que la carte du
+       paquet montrait. Sur la boutique du parcours, c'est `PIECE_MODE` ; sur
+       les autres, c'est simplement leur offre en image. */
+    const m = b
+      ? (b.moments ?? []).find((x) => x.photo === PIECE_MODE) ??
+        (b.moments ?? []).find((x) => x.photo)
+      : undefined;
     return { boutique: b, piece: m ?? (b ? momentEnCours(b, heure) : null) };
-  }, [heure]);
+  }, [heure, cle]);
+
+  /* LA PAIRE AVANT/APRÈS DE CE COMMERCE-LÀ. L'avant se partage quand c'est la
+     même personne — voir `ESSAIS` — et change entièrement chez l'homme. */
+  const { avant: AVANT, apres: APRES } = essaiDuCommerce(cle, {
+    avant: AVANT_MODE,
+    apres: APRES_MODE,
+  });
 
   if (!boutique) return null;
 
@@ -83,7 +116,28 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
   const titre = piece?.titre ?? "";
   const ou = `${boutique.distance}${boutique.ville ? ` · ${boutique.ville}` : ""}`;
 
-  const suivant = () => setEtape((e) => Math.min(ETAPES_MODE, e + 1));
+  /* ═══ « LA MEME VESTE SUR D'AUTRES FEMMES » N'EST PAS VRAI PARTOUT ═════
+     Les trois photos sont celles d'UNE piece — le blazer rose de la boutique
+     de la rue pietonne. Les montrer sous la veste ciree du pret-a-porter homme
+     annoncait « la meme veste » en affichant trois femmes en rose. Meme regle
+     que le rideau du restaurant : l'etape existe si sa matiere existe, et le
+     compteur compte ce qui est la. */
+  const aLesAutres = cle === COMMERCE_MODE;
+  const total = aLesAutres ? ETAPES_MODE : ETAPES_MODE - 1;
+  /** Le pas reellement joue : on saute « les autres » quand on ne l'a pas. */
+  const ici = !aLesAutres && etape >= 3 ? etape + 1 : etape;
+
+  /* LA DEVANTURE EST CELLE DE CETTE BOUTIQUE-LA. `DEVANTURE_MODE` est la
+     vitrine de la rue pietonne : les quatre cartes finissaient devant elle. */
+  const devanture = boutique.sesPhotos?.[0]?.src ?? boutique.photo ?? DEVANTURE_MODE;
+
+  /* LA PIECE EN PHOTO — celle de l'annonce ouverte, jamais le blazer rose de
+     la rue pietonne quand ce n'est pas lui. C'est toute la demande, et elle
+     vaut pour les trois endroits qui la montrent : l'ecran d'ouverture, la
+     fiche de l'essayage et le panneau de la derniere etape. */
+  const piecePhoto = piece?.photo ?? boutique.photo ?? PIECE_MODE;
+
+  const suivant = () => setEtape((e) => Math.min(total, e + 1));
   const precedent = () => (etape === 1 ? onFermer() : setEtape((e) => e - 1));
 
   /* LA POIGNÉE SUIT LE DOIGT EN POURCENTAGE DU CADRE, pas en points : le cadre
@@ -96,7 +150,7 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
   };
 
   return (
-    <div className={`pm pm-e${etape}`}>
+    <div className={`pm pm-e${ici}`}>
       {/* ═══ LA BARRE DU HAUT ════════════════════════════════════════════
           ELLE DIT OÙ L'ON EN EST, ET ELLE LE DIT DEUX FOIS : des traits pour
           la vue d'ensemble, « 1/4 » pour le chiffre. Sa maquette met les deux,
@@ -115,13 +169,13 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
         >
           ←
         </button>
-        <div className="pm-pas" aria-label={`Étape ${etape} sur ${ETAPES_MODE}`}>
-          {Array.from({ length: ETAPES_MODE }, (_, i) => (
+        <div className="pm-pas" aria-label={`Étape ${etape} sur ${total}`}>
+          {Array.from({ length: total }, (_, i) => (
             <s key={i} className={i + 1 <= etape ? "on" : ""} />
           ))}
         </div>
         <span className="pm-num">
-          {etape}/{ETAPES_MODE}
+          {etape}/{total}
         </span>
         {/* ═══ ET UNE PORTE DIRECTE VERS L'ACCUEIL ═══════════════════════════
 
@@ -145,9 +199,9 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
       </header>
 
       {/* ───────────────────────── 1/4 · LA PIÈCE ───────────────────────── */}
-      {etape === 1 && (
+      {ici === 1 && (
         <section className="pm-un">
-          <div className="pm-photo" style={{ backgroundImage: `url("${PIECE_MODE}")` }} />
+          <div className="pm-photo" style={{ backgroundImage: `url("${piecePhoto}")` }} />
           <div className="pm-voile" />
           <div className="pm-bas">
             {/* ═══ LA BULLE A QUITTÉ LE VISAGE ═══════════════════════════
@@ -213,7 +267,7 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
       )}
 
       {/* ───────────────────────── 2/4 · LE RENDU ───────────────────────── */}
-      {etape === 2 && (
+      {ici === 2 && (
         <section className="pm-deuxe">
           {/* LE VRAI LOGO, PAS UN MOT EN GRAS. « Clikme » n'a pas de k :
               il a un curseur a sa place, et c'est tout le nom — on clique,
@@ -250,12 +304,12 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
             }}
             onPointerMove={(e) => e.buttons > 0 && bouger(e.clientX)}
           >
-            <div className="pm-g-img" style={{ backgroundImage: `url("${APRES_MODE}")` }} />
+            <div className="pm-g-img" style={{ backgroundImage: `url("${APRES}")` }} />
             {/* SA LARGEUR NE BOUGE PAS : c'est clip-path qui en cache la
                 partie droite. Voir .pm-g-img.avant — redimensionner la boite
                 changeait le cadrage et les deux moities ne se comparaient
                 plus. */}
-            <div className="pm-g-img avant" style={{ backgroundImage: `url("${AVANT_MODE}")` }} />
+            <div className="pm-g-img avant" style={{ backgroundImage: `url("${AVANT}")` }} />
             <span className="pm-g-et g" style={{ opacity: glissiere > 18 ? 1 : 0 }}>
               Avant
             </span>
@@ -269,7 +323,10 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
           </div>
 
           <div className="pm-fiche">
-            <span className="pm-fiche-v" style={{ backgroundImage: `url("${PIECE_MODE}")` }} />
+            {/* LA VIGNETTE EST CELLE DE SA PIECE A LUI. `PIECE_MODE` est le blazer
+                rose de la rue pietonne : sous « Un pret-a-porter homme », la
+                fiche montrait une femme en rose a cote du nom de la boutique. */}
+            <span className="pm-fiche-v" style={{ backgroundImage: `url("${piecePhoto}")` }} />
             <span className="pm-fiche-t">
               <b>{titre}</b>
               <em>
@@ -297,10 +354,10 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
       )}
 
       {/* ──────────────────────── 3/4 · LES FAÇONS ──────────────────────── */}
-      {etape === 3 && (
+      {ici === 3 && (
         <section className="pm-troise">
           <div className="pm-hero">
-            <div className="pm-hero-img" style={{ backgroundImage: `url("${APRES_MODE}")` }} />
+            <div className="pm-hero-img" style={{ backgroundImage: `url("${APRES}")` }} />
             <div className="pm-hero-t">
               {/* LE TITRE NOMME CE QUE MONTRENT LES IMAGES, et il a mis deux
                   relectures à y arriver. « Chez elle aujourd'hui » annonçait le
@@ -367,7 +424,7 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
           </div>
 
           <div className="pm-fiche">
-            <span className="pm-fiche-v" style={{ backgroundImage: `url("${DEVANTURE_MODE}")` }} />
+            <span className="pm-fiche-v" style={{ backgroundImage: `url("${devanture}")` }} />
             <span className="pm-fiche-t">
               <b>{nom}</b>
               <em>
@@ -391,10 +448,10 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
       )}
 
       {/* ─────────────────────── 4/4 · LA BOUTIQUE ─────────────────────── */}
-      {etape === 4 && (
+      {ici === 4 && (
         <section className="pm-quatre">
           <div className="pm-devant">
-            <div style={{ backgroundImage: `url("${DEVANTURE_MODE}")` }} />
+            <div style={{ backgroundImage: `url("${devanture}")` }} />
             <h1 className="pm-t4">
               Elle vous attend chez
               <br />
@@ -406,7 +463,7 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
           </div>
 
           <div className="pm-panneau">
-            <span className="pm-pan-v" style={{ backgroundImage: `url("${APRES_MODE}")` }} />
+            <span className="pm-pan-v" style={{ backgroundImage: `url("${APRES}")` }} />
             <div className="pm-pan-t">
               <h2>{nom}</h2>
               <p className="pm-ou">
@@ -432,7 +489,7 @@ export function ParcoursMode({ onFermer }: { onFermer: () => void }) {
                 </a>
               )}
               <div className="pm-pan-piece">
-                <span style={{ backgroundImage: `url("${PIECE_MODE}")` }} />
+                <span style={{ backgroundImage: `url("${piecePhoto}")` }} />
                 <span>
                   <b>{titre}</b>
                   {prix && <em>{prix}</em>}

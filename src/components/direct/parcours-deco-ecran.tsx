@@ -33,14 +33,14 @@
 import { useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { FantomeAccueil } from "@/components/direct/fantome-accueil";
-import { toutesLesCartes, VILLE } from "@/lib/direct/apercu-habitant";
+import { VILLE } from "@/lib/direct/apercu-habitant";
 import { demanderRendezVous, numeroDeFiction } from "@/lib/direct/prevenir";
+import { plaqueDuParcours } from "@/lib/direct/plaque-parcours";
 import {
   BOUTIQUE_DECO,
   COMMERCE_DECO,
   COUSSIN_DECO,
   DETAILS_DECO,
-  ETAPES_DECO,
   FAUTEUIL_DECO,
   PIECE_DECO,
   SALON_APRES,
@@ -53,7 +53,24 @@ function Fant({ classe }: { classe: string }) {
   return <img className={classe} src="/clikme-fantome.png" alt="" />;
 }
 
-export function ParcoursDeco({ onFermer }: { onFermer: () => void }) {
+export function ParcoursDeco({
+  onFermer,
+  /* ═══ « LES IMAGES DU PARCOURS NE MATCHENT PAS AVEC L'ANNONCE » ════════
+
+     MÊME DÉFAUT QUE LE RESTAURANT, MÊME RÉPARATION. `COMMERCE_DECO` était figé
+     sur Maison Dax : on appuyait sous une bougie ou un bouquet et le fauteuil
+     orange s'ouvrait.
+
+     ET LES QUATRE ÉTAPES NE SONT PAS DUES À TOUT LE MONDE. Le salon avant/après
+     n'existe que pour le fauteuil — c'est une paire fabriquée pour lui. La
+     cirière n'a pas de salon où poser sa bougie, et lui en inventer un serait
+     promettre un rendu qu'on ne sait pas faire. Son parcours est donc plus
+     court, et il est vrai. Voir `plaque-parcours.ts`. */
+  commerce,
+}: {
+  onFermer: () => void;
+  commerce?: string;
+}) {
   const [etape, setEtape] = useState(1);
   /* LA POIGNÉE DE LA GLISSIÈRE, en pourcentage du cadre et non en points :
      le cadre n'a pas la même largeur sur tous les téléphones. Même mécanique
@@ -62,24 +79,54 @@ export function ParcoursDeco({ onFermer }: { onFermer: () => void }) {
   const cadre = useRef<HTMLDivElement | null>(null);
   const prise = useRef(false);
 
-  const boutique = toutesLesCartes().find((c) => c.id === COMMERCE_DECO);
-  if (!boutique) return null;
+  const cle = commerce || COMMERCE_DECO;
+  const plaque = plaqueDuParcours(cle, ["chose", "paire", "details", "venir"]);
+  const boutique = plaque?.commerce;
+  if (!plaque || !boutique) return null;
 
+  /* LA PIÈCE VIENT DE SA CARTE CHEZ MAISON DAX — le fauteuil et le coussin y
+     sont écrits pour cet écran — et de son ANNONCE ailleurs, qui est ce que la
+     carte du paquet montrait. Même partage que sur le parcours restaurant. */
   const carte = boutique.catalogue ?? [];
-  const piece = carte.find((a) => a.id === PIECE_DECO);
-  const coussin = carte.find((a) => a.id === COUSSIN_DECO);
-  if (!piece) return null;
+  const deLaCarte = carte.find((a) => a.id === PIECE_DECO);
+  const chezDax = cle === COMMERCE_DECO && deLaCarte;
+  const piece = chezDax
+    ? deLaCarte
+    : {
+        id: cle,
+        nom: plaque.offre?.titre ?? boutique.nom,
+        detail: plaque.offre?.lignes?.[0],
+        prix: plaque.offre?.prix,
+        rayon: "",
+      };
+  const coussin = chezDax ? carte.find((a) => a.id === COUSSIN_DECO) : undefined;
 
   const nom = boutique.nom;
   const ou = `${boutique.distance}${boutique.ville ? ` · ${boutique.ville}` : ` · ${VILLE}`}`;
 
+  /* LES PAS QUE CE COMMERCE PEUT TENIR, et le compteur qui compte ce qui est
+     là plutôt que ce qui était prévu. */
+  const PAS = plaque.pas;
+  const total = PAS.length;
+  const ici = PAS[Math.min(etape, total) - 1];
+
+  /* LES PHOTOS : CELLES DE L'ANNONCE, jamais le fauteuil quand ce n'est pas
+     lui. C'est toute la demande. */
+  const PHOTO_PIECE = chezDax ? FAUTEUIL_DECO : plaque.photo;
+  const PHOTO_POSEE = chezDax ? SALON_APRES : (plaque.photoDeux ?? plaque.photo);
+  const PHOTO_NUE = chezDax ? SALON_AVANT : plaque.photo;
+  const PHOTO_BOUTIQUE = chezDax
+    ? BOUTIQUE_DECO
+    : (boutique.sesPhotos?.[0]?.src ?? boutique.photo ?? plaque.photo);
+  const DETAILS = chezDax ? DETAILS_DECO : plaque.details;
+
   const joindre = demanderRendezVous({
-    telephone: numeroDeFiction(COMMERCE_DECO),
+    telephone: numeroDeFiction(cle),
     nom,
     geste: "Poser une question sur une pièce",
   });
 
-  const suivant = () => setEtape((e) => Math.min(ETAPES_DECO, e + 1));
+  const suivant = () => setEtape((e) => Math.min(total, e + 1));
   const precedent = () => (etape === 1 ? onFermer() : setEtape((e) => e - 1));
 
   const bouger = (x: number) => {
@@ -89,12 +136,12 @@ export function ParcoursDeco({ onFermer }: { onFermer: () => void }) {
   };
 
   /** Le fond plein écran de l'étape courante. */
-  const fond = etape === 4 ? BOUTIQUE_DECO : etape === 3 ? FAUTEUIL_DECO : SALON_APRES;
+  const fond = ici === "venir" ? PHOTO_BOUTIQUE : ici === "details" ? PHOTO_PIECE : PHOTO_POSEE;
 
   /** La fiche de la boutique, la même à chaque étape. */
   const fiche = (avecPrix: boolean) => (
     <div className="pd-fiche">
-      <span className="pd-fiche-v" style={{ backgroundImage: `url("${BOUTIQUE_DECO}")` }} />
+      <span className="pd-fiche-v" style={{ backgroundImage: `url("${PHOTO_BOUTIQUE}")` }} />
       <span className="pd-fiche-t">
         <b>{nom}</b>
         <em>
@@ -115,7 +162,7 @@ export function ParcoursDeco({ onFermer }: { onFermer: () => void }) {
   );
 
   return (
-    <div className={`pd pd-e${etape}`}>
+    <div className={`pd pd-e${PAS.indexOf(ici) + 1} pd-p-${ici}`}>
       {/* L'ÉTAPE 2 remplace le fond par sa glissière : c'est le seul écran où
           la photo n'est pas une photo mais une comparaison. */}
       {etape !== 2 && (
@@ -142,12 +189,12 @@ export function ParcoursDeco({ onFermer }: { onFermer: () => void }) {
         <p className="pd-logo">
           <MotMarque />
         </p>
-        <div className="pd-pas" aria-label={`Étape ${etape} sur ${ETAPES_DECO}`}>
-          {Array.from({ length: ETAPES_DECO }, (_, i) => (
+        <div className="pd-pas" aria-label={`Étape ${etape} sur ${total}`}>
+          {Array.from({ length: total }, (_, i) => (
             <s key={i} className={i + 1 <= etape ? "on" : ""} />
           ))}
           <em>
-            {etape}/{ETAPES_DECO}
+            {etape}/{total}
           </em>
         </div>
         {/* LE FANTÔME RAMÈNE À L'ACCUEIL, comme sur les quatre autres
@@ -158,7 +205,7 @@ export function ParcoursDeco({ onFermer }: { onFermer: () => void }) {
       </header>
 
       <div className="pd-lieu">
-        <span className="pd-lieu-v" style={{ backgroundImage: `url("${BOUTIQUE_DECO}")` }} />
+        <span className="pd-lieu-v" style={{ backgroundImage: `url("${PHOTO_BOUTIQUE}")` }} />
         <span className="pd-lieu-t">
           <b>{nom}</b>
           <em>
@@ -169,7 +216,7 @@ export function ParcoursDeco({ onFermer }: { onFermer: () => void }) {
       </div>
 
       {/* ──────────────────────── 1/4 · LA PIÈCE ────────────────────────── */}
-      {etape === 1 && (
+      {ici === "chose" && (
         <section className="pd-bas">
           <div className="pd-dit">
             <Fant classe="pd-dit-f" />
@@ -196,7 +243,7 @@ export function ParcoursDeco({ onFermer }: { onFermer: () => void }) {
             Essayer chez moi
             <s aria-hidden="true">→</s>
           </button>
-          <button type="button" className="pd-deux" onClick={() => setEtape(ETAPES_DECO)}>
+          <button type="button" className="pd-deux" onClick={() => setEtape(total)}>
             Voir la boutique
             <s aria-hidden="true">→</s>
           </button>
@@ -204,7 +251,7 @@ export function ParcoursDeco({ onFermer }: { onFermer: () => void }) {
       )}
 
       {/* ─────────────────── 2/4 · CHEZ VOUS, AVEC ──────────────────────── */}
-      {etape === 2 && (
+      {ici === "paire" && (
         <section className="pd-bas pd-haute">
           <h1 className="pd-t">
             Voyez-le dans
@@ -231,11 +278,11 @@ export function ParcoursDeco({ onFermer }: { onFermer: () => void }) {
             onPointerUp={() => (prise.current = false)}
             onPointerCancel={() => (prise.current = false)}
           >
-            <div className="pd-g-img" style={{ backgroundImage: `url("${SALON_APRES}")` }} />
+            <div className="pd-g-img" style={{ backgroundImage: `url("${PHOTO_POSEE}")` }} />
             <div
               className="pd-g-img avant"
               style={{
-                backgroundImage: `url("${SALON_AVANT}")`,
+                backgroundImage: `url("${PHOTO_NUE}")`,
                 clipPath: `inset(0 calc(100% - ${glissiere}%) 0 0)`,
               }}
             />
@@ -253,7 +300,7 @@ export function ParcoursDeco({ onFermer }: { onFermer: () => void }) {
             Le voir de plus près
             <s aria-hidden="true">→</s>
           </button>
-          <button type="button" className="pd-deux" onClick={() => setEtape(ETAPES_DECO)}>
+          <button type="button" className="pd-deux" onClick={() => setEtape(total)}>
             Voir en boutique
             <s aria-hidden="true">→</s>
           </button>
@@ -261,7 +308,7 @@ export function ParcoursDeco({ onFermer }: { onFermer: () => void }) {
       )}
 
       {/* ───────────────────── 3/4 · LES DÉTAILS ────────────────────────── */}
-      {etape === 3 && (
+      {ici === "details" && (
         <section className="pd-bas">
           <h1 className="pd-t">
             Regardez
@@ -275,7 +322,7 @@ export function ParcoursDeco({ onFermer }: { onFermer: () => void }) {
               le coussin a son propre prix, et c'est une vraie information :
               on peut repartir avec lui sans le fauteuil. */}
           <div className="pd-details">
-            {DETAILS_DECO.map((d, i) => (
+            {DETAILS.map((d, i) => (
               <article key={d.photo} className="pd-detail">
                 <div style={{ backgroundImage: `url("${d.photo}")` }} />
                 <span>
@@ -301,7 +348,7 @@ export function ParcoursDeco({ onFermer }: { onFermer: () => void }) {
       )}
 
       {/* ──────────────────────── 4/4 · LA BOUTIQUE ─────────────────────── */}
-      {etape === 4 && (
+      {ici === "venir" && (
         <section className="pd-bas">
           {/* TROIS LIGNES ECRITES, ET PAS DEUX QUI SE CASSENT TOUTES SEULES.
               Vu a l'ecran : « Vous l'avez vu chez / vous. » laissait « chez »

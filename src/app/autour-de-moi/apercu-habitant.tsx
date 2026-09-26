@@ -98,7 +98,7 @@ import {
   chargerJournee,
   journeeVide,
 } from "@/lib/direct/journee";
-import { abonnerVus, chargerVus, marquerVu, RIEN_VU } from "@/lib/direct/premiere-fois";
+import { abonnerVus, chargerVus, marquerVu, oublierVu, RIEN_VU } from "@/lib/direct/premiere-fois";
 import {
   abonnerPiecesGardees,
   basculerPieceGardee,
@@ -2078,11 +2078,92 @@ export function ApercuHabitant() {
      entre depuis une categorie et on en revient a la meme. Un drapeau suffit —
      il n'y en a qu'un, et le jour ou il y en aura cinq ce sera la categorie
      choisie qui le dira, pas cinq drapeaux. */
-  const [parcoursMode, setParcoursMode] = useState(false);
-  const [parcoursCoiffure, setParcoursCoiffure] = useState(false);
-  const [parcoursSortie, setParcoursSortie] = useState(false);
-  const [parcoursTable, setParcoursTable] = useState(false);
-  const [parcoursDeco, setParcoursDeco] = useState(false);
+  /* CHAQUE DRAPEAU PORTE MAINTENANT L'IDENTIFIANT DE LA CARTE, et non plus un
+     simple oui/non : « il faut que, lorsqu'on clique sur le menu du restaurant,
+     la photo soit la même que sur l'annonce ». Vide = ferme, un identifiant =
+     ouvert sur CE commerce-la. Voir `plaque-parcours.ts`. */
+  const [parcoursMode, setParcoursMode] = useState("");
+  const [parcoursCoiffure, setParcoursCoiffure] = useState("");
+  const [parcoursSortie, setParcoursSortie] = useState("");
+  const [parcoursTable, setParcoursTable] = useState("");
+  const [parcoursDeco, setParcoursDeco] = useState("");
+  /* ═══ LA FLECHE « EN ARRIERE » DU NAVIGATEUR RAMENE A LA DEMO ═════════
+
+     « Quand je suis sur /autour-de-moi, que je vais de la demo sur l'appli, que
+     je veux revenir a la demo et que je clique sur la fleche de l'ordi pour
+     aller en arriere, je me retrouve sur /autour-de-moi/mur?metier=bar. »
+
+     MESURE : ENTRER NE LAISSAIT AUCUNE TRACE. history.length restait a trois et
+     l'adresse ne bougeait pas — l'ecran de choix et l'application sont le meme
+     document, et passer de l'un a l'autre n'est qu'un changement d'etat React.
+     La fleche quittait donc la page entiere et rendait la precedente, quelle
+     qu'elle soit. Chez lui, le mur d'un bar ouvert plus tot.
+
+     SA FLECHE EST DANS SON DROIT : « en arriere » veut dire « defais ce que je
+     viens de faire ». On pose donc UNE entree d'historique en entrant, et on la
+     depile pour rouvrir l'accueil. L'adresse ne change pas — il n'y a rien a
+     partager de plus, et une adresse par ecran ferait indexer la demonstration.
+
+     UNE SEULE ENTREE, JAMAIS DEUX. `poseEntree` est un verrou, pas un compteur :
+     entrer puis ouvrir un parcours empilerait sinon deux retours pour un seul
+     geste, et il faudrait appuyer deux fois pour revenir une fois. */
+  const poseEntree = useRef(false);
+  const enRetour = useRef(false);
+  const dedans =
+    vus.includes("accueil") ||
+    !!parcoursMode ||
+    !!parcoursCoiffure ||
+    !!parcoursSortie ||
+    !!parcoursTable ||
+    !!parcoursDeco;
+
+  useEffect(() => {
+    if (dedans && !poseEntree.current) {
+      poseEntree.current = true;
+      try {
+        window.history.pushState({ clikme: "dedans" }, "", window.location.href);
+      } catch {
+        /* Historique refuse : la fleche fera ce qu'elle faisait avant. */
+      }
+    }
+  }, [dedans]);
+
+  useEffect(() => {
+    const revenir = () => {
+      if (!poseEntree.current) return;
+      poseEntree.current = false;
+      /* CE QUI ETAIT OUVERT SE REFERME, ET L'ACCUEIL REDEVIENT NON VU : c'est
+         la condition que l'ecran de choix regarde pour se remontrer. */
+      setParcoursMode("");
+      setParcoursCoiffure("");
+      setParcoursSortie("");
+      setParcoursTable("");
+      setParcoursDeco("");
+      oublierVu("accueil");
+    };
+    window.addEventListener("popstate", revenir);
+    return () => window.removeEventListener("popstate", revenir);
+  }, []);
+
+  /* ET QUAND ON REVIENT PAR LE FANTOME, ON DEPILE NOTRE ENTREE. Sans ca, elle
+     resterait posee : depuis l'ecran de choix, la fleche « en arriere » aurait
+     semble ne rien faire une fois, puis aurait quitte le site. `enRetour` evite
+     que le popstate qui suit ne refasse le travail une seconde fois. */
+  useEffect(() => {
+    if (dedans || !poseEntree.current || enRetour.current) return;
+    poseEntree.current = false;
+    enRetour.current = true;
+    try {
+      window.history.back();
+    } catch {
+      /* Rien a depiler : sans effet. */
+    }
+    const t = window.setTimeout(() => {
+      enRetour.current = false;
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [dedans]);
+
   /* SUR QUELLE CATEGORIE ROUVRIR L'ECRAN DE CHOIX. La bande des cinq onglets,
      au fond du parcours sortie, referme le parcours et rouvre l'ecran SUR
      CELLE QU'ON A TOUCHEE — sans quoi le raccourci mentirait sur ou il mene. */
@@ -7668,21 +7749,21 @@ export function ApercuHabitant() {
               !embauches &&
               !salonUrl && (
                 parcoursMode ? (
-                  <ParcoursMode onFermer={() => setParcoursMode(false)} />
+                  <ParcoursMode commerce={parcoursMode} onFermer={() => setParcoursMode("")} />
                 ) : parcoursCoiffure ? (
-                  <ParcoursCoiffure onFermer={() => setParcoursCoiffure(false)} />
+                  <ParcoursCoiffure commerce={parcoursCoiffure} onFermer={() => setParcoursCoiffure("")} />
                 ) : parcoursSortie ? (
                   <ParcoursSortie
-                    onFermer={() => setParcoursSortie(false)}
+                    onFermer={() => setParcoursSortie("")}
                     onCategorie={(c) => {
                       setCategorieChoix(c as CleCategorie);
-                      setParcoursSortie(false);
+                      setParcoursSortie("");
                     }}
                   />
                 ) : parcoursTable ? (
-                  <ParcoursTable onFermer={() => setParcoursTable(false)} />
+                  <ParcoursTable commerce={parcoursTable} onFermer={() => setParcoursTable("")} />
                 ) : parcoursDeco ? (
-                  <ParcoursDeco onFermer={() => setParcoursDeco(false)} />
+                  <ParcoursDeco commerce={parcoursDeco} onFermer={() => setParcoursDeco("")} />
                 ) : (
                   <EcranChoix
                     depart={categorieChoix}
@@ -7690,25 +7771,25 @@ export function ApercuHabitant() {
                       jouer("ouvrir");
                       marquerVu("accueil");
                     }}
-                    onParcoursMode={() => {
+                    onParcoursMode={(c) => {
                       jouer("ouvrir");
-                      setParcoursMode(true);
+                      setParcoursMode(c);
                     }}
-                    onParcoursCoiffure={() => {
+                    onParcoursCoiffure={(c) => {
                       jouer("ouvrir");
-                      setParcoursCoiffure(true);
+                      setParcoursCoiffure(c);
                     }}
-                    onParcoursSortie={() => {
+                    onParcoursSortie={(c) => {
                       jouer("ouvrir");
-                      setParcoursSortie(true);
+                      setParcoursSortie(c || "sortie");
                     }}
-                    onParcoursTable={() => {
+                    onParcoursTable={(c) => {
                       jouer("ouvrir");
-                      setParcoursTable(true);
+                      setParcoursTable(c);
                     }}
-                    onParcoursDeco={() => {
+                    onParcoursDeco={(c) => {
                       jouer("ouvrir");
-                      setParcoursDeco(true);
+                      setParcoursDeco(c);
                     }}
                   />
                 )
