@@ -159,6 +159,7 @@ import { CarteSwipe, StylesDirect } from "@/components/direct/carte-swipe";
 // fichier parce que c'est un ecran entier : le poser ici, dans dix-neuf mille
 // lignes, aurait rendu les deux illisibles.
 import { EcranChoix } from "@/components/direct/ecran-choix";
+import { Ouverture } from "@/components/direct/ouverture";
 import { StylesChoix } from "@/components/direct/styles-choix";
 // LE PARCOURS MODE — la « partie 2 », pour une categorie sur cinq.
 import { ParcoursMode } from "@/components/direct/parcours-mode-ecran";
@@ -2082,6 +2083,14 @@ export function ApercuHabitant() {
      simple oui/non : « il faut que, lorsqu'on clique sur le menu du restaurant,
      la photo soit la même que sur l'annonce ». Vide = ferme, un identifiant =
      ouvert sur CE commerce-la. Voir `plaque-parcours.ts`. */
+  /* ═══ L'OUVERTURE, UNE FOIS PAR VISITE ═══════════════════════════════════
+
+     ELLE N'EST PAS DANS `vus`, ET C'EST VOULU. `vus` survit d'une visite a
+     l'autre — c'est ce qui evite de reexpliquer l'application a quelqu'un qui
+     la connait. Or celle-ci est une demonstration qu'il remontre a des
+     commercants : elle doit repartir a chaque ouverture, et ne pas se rejouer
+     quand on revient d'un parcours. Un etat de composant dit exactement ca. */
+  const [ouvertureVue, setOuvertureVue] = useState(false);
   const [parcoursMode, setParcoursMode] = useState("");
   const [parcoursCoiffure, setParcoursCoiffure] = useState("");
   const [parcoursSortie, setParcoursSortie] = useState("");
@@ -7748,7 +7757,21 @@ export function ApercuHabitant() {
               !sortie &&
               !embauches &&
               !salonUrl && (
-                parcoursMode ? (
+                /* ═══ L'OUVERTURE PASSE AVANT TOUT LE RESTE ═══════════════
+                   « Avant le premier écran de démo, j'aimerais qu'on ait une
+                   petite animation avec ces 3 écrans. »
+                   ELLE EST DANS LA MEME CONDITION QUE L'ECRAN DE CHOIX, et pas
+                   dans une au-dessus : les deux appartiennent au même moment —
+                   la démonstration n'a pas encore commencé. Posée plus haut,
+                   elle se serait rejouée par-dessus un parcours ouvert.
+                   ET ELLE NE SE MONTRE PAS DEUX FOIS DANS LA MEME VISITE :
+                   `ouvertureVue` tombe au premier passage, donc revenir à
+                   l'écran de choix depuis un parcours ne relance rien. Elle
+                   repart à la visite suivante, parce que « accueil » est dans
+                   `TOUJOURS_REVOIR` — c'est une démonstration qu'il remontre. */
+                !ouvertureVue ? (
+                  <Ouverture onFini={() => setOuvertureVue(true)} />
+                ) : parcoursMode ? (
                   <ParcoursMode commerce={parcoursMode} onFermer={() => setParcoursMode("")} />
                 ) : parcoursCoiffure ? (
                   <ParcoursCoiffure commerce={parcoursCoiffure} onFermer={() => setParcoursCoiffure("")} />
