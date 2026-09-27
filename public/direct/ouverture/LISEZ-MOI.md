@@ -53,7 +53,55 @@ commerçant. » commence à douze pour cent du bord gauche. Douze contre neuf, c
 trois pour cent de marge — un téléphone un peu plus haut et sa phrase est coupée.
 On ne joue pas la composition de quelqu'un à trois pour cent près.
 
-## Les trois films, et ce qu'ils doivent respecter
+## Les trois films existent — et voici exactement ce qu'ils animent
+
+Ils sont fabriqués par `scripts/fabriquer-ouverture.mjs`, à partir des trois
+images. **Relancer le script les refait à l'identique**, donc tout se règle en
+changeant une ligne du script plutôt qu'en redemandant un rendu.
+
+**CE QU'ILS N'ANIMENT PAS, ET IL FAUT LE DIRE EN PREMIER : le corps du Fantôme.**
+Ces trois fichiers sont des images plates — le Fantôme, le canapé et la lampe y
+sont le même objet. Mesuré en essayant de le détourer : son corps se sépare du
+canapé (luminance 173 contre 47), mais **sa casquette est à 29**, plus sombre que
+le canapé, et reste dans le fond. Et même détouré, il resterait le trou derrière
+lui. Le faire marcher demande le rendu d'origine, en calques.
+
+**CE QU'ILS ANIMENT : ce qui porte le concept.** Dans chaque scène, la chose à
+comprendre n'est pas que le Fantôme remue — c'est qu'un écran s'allume, qu'une
+veste se pose sur lui, qu'on retrouve la même en vitrine. Ces trois-là s'animent
+sans toucher au personnage, parce que ce sont des lumières et des objets.
+
+| Acte | Ce qui bouge | Durée |
+|---|---|---|
+| 1 | Un doigt touche son téléphone, **l'écran s'allume**. Son halo respire. | 2 s |
+| 2 | **La vignette de la veste se soulève, grandit, vole jusqu'à son buste et s'y fond.** Une lueur rose marque l'atterrissage, puis le bouton respire. | 4 s |
+| 3 | **Un cercle se trace autour de la veste en vitrine, puis autour de celle de son téléphone**, les deux battent ensemble, puis s'effacent. La lumière de la porte monte : l'accueil. | 3 s |
+
+**L'acte 2 est le seul qui montre le produit lui-même**, et c'est pour ça qu'il
+est le plus long. Il est faisable parce qu'on anime une **copie** de la vignette :
+l'originale reste en place dessous, donc le vol ne laisse aucun trou — et quand
+la copie se dissout, c'est le Fantôme déjà vêtu de l'image qui apparaît.
+
+### Ce que les essais ont appris
+
+- **Une flaque ronde n'est pas un écran.** Première version : un halo rond posé
+  sur son téléphone débordait sur sa main et sur le canapé. Un écran a la forme
+  d'un écran — rectangle aux coins ronds, flou juste ce qu'il faut.
+- **La vignette pleine se lisait comme une carte d'interface qui glisse**, et son
+  bord supérieur couvrait la tête au moment d'atterrir. À mi-transparence, bords
+  fondus, posée sur le buste, elle se lit comme un vêtement.
+- **Les cercles laissés en place cessaient d'être un geste** pour devenir une
+  annotation : l'écran finissait avec deux ronds roses dessus. Ils s'effacent.
+
+## Si un jour on veut que le Fantôme bouge vraiment
+
+Il faut, par scène : **le décor sans lui**, et **lui seul en `png` transparent,
+casquette comprise**. Là il pourra se pencher, se tourner, sauter — et chaque
+geste se réglera dans le code sans refaire une image.
+
+## Le format, pour qui refera ces films
+
+
 
 C'est la voie choisie : **le mouvement est dans le film, pas dans le code.** Le
 code n'enchaîne que les trois actes.
