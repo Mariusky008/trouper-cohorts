@@ -43,6 +43,16 @@ l'image elle-même, agrandie et floutée.** C'est le procédé déjà en place d
 parcours mode et sur les photos des cuisiniers : le bord ne se voit pas, et il
 n'y a aucune couleur à deviner.
 
+**MESURÉ SUR QUATRE TÉLÉPHONES.** Sur un écran court — 440 × 760, 360 × 640 —
+l'image remplit tout et il n'y a aucune bande. Sur un grand — 390 × 844,
+430 × 932 — il reste 76 à 84 points en haut et en bas, remplis par le flou.
+
+**POURQUOI PAS « COVER », QUI REMPLIRAIT TOUJOURS.** Il rognerait par les côtés :
+sur un 390 × 900, neuf pour cent de chaque bord. « Maintenant, chez le
+commerçant. » commence à douze pour cent du bord gauche. Douze contre neuf, c'est
+trois pour cent de marge — un téléphone un peu plus haut et sa phrase est coupée.
+On ne joue pas la composition de quelqu'un à trois pour cent près.
+
 ## Sans les images, il ne se passe rien
 
 Si `1.jpg` est absente, **l'ouverture se retire d'elle-même** et la démonstration
