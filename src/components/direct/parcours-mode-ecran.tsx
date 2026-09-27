@@ -77,7 +77,8 @@ export function ParcoursMode({
   /* ELLE OUVRE SUR LA SILHOUETTE ENTIERE, pas au milieu — « on voit d'abord
      la silhouette entiere normale de la personne, et puis le resultat ». Voir
      `revelation.ts`. */
-  const [glissiere, setGlissiere] = useState(4);
+  /* ON OUVRE SUR SA PHOTO A ELLE, pas sur le resultat — voir le balayage. */
+  const [glissiere, setGlissiere] = useState(96);
   const cadre = useRef<HTMLDivElement>(null);
 
   const heure = useMemo(() => {
@@ -151,7 +152,25 @@ export function ParcoursMode({
 
   /* L'ESSAYAGE SE JOUE TOUT SEUL EN ARRIVANT : la personne telle qu'elle est,
      une seconde, puis la piece qui se pose sur elle. Le doigt l'arrete. */
-  const arreter = useRevelation({ actif: ici === 2, poser: setGlissiere, depart: 4, fin: 96 });
+  /* ═══ ELLE PARTAIT DU RESULTAT ET FINISSAIT SUR LA PHOTO ═══════════════
+
+     « L'animation pour voir avant et après est à l'envers : on voit d'abord la
+     femme ou l'homme avec sa nouvelle coupe, et on voit ensuite son ancienne
+     coupe, au lieu d'avoir l'inverse. »
+
+     IL A RAISON, ET L'INTENTION ETAIT ECRITE JUSTE AU-DESSUS : « la personne,
+     une seconde, puis la coupe qui se pose sur elle ». Le code faisait le
+     contraire. La moitie GAUCHE porte la photo d'origine, et le balayage allait
+     de 6 % a 94 % : a 6 % il ne reste qu'un liseré d'origine, donc on ouvrait
+     sur le resultat ; a 94 % l'origine recouvre tout, donc on finissait sur
+     l'ancienne coupe.
+
+     LE SENS COMPTE PLUS QUE L'ANIMATION. Un essayage raconte une transformation,
+     et une transformation se lit dans un seul sens : on part de ce qu'on a, on
+     arrive a ce qu'on pourrait avoir. A l'envers, l'ecran disait « voila une
+     belle coupe… et voila ce que vous avez vraiment », ce qui est exactement le
+     contraire de l'effet cherche. */
+  const arreter = useRevelation({ actif: ici === 2, poser: setGlissiere, depart: 96, fin: 4 });
 
   if (!boutique) return null;
 

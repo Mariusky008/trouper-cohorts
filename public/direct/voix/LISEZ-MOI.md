@@ -24,8 +24,9 @@ toute seule. Rien d'autre à toucher.
 | Fichier à déposer ici | Qui | Consigne de jeu |
 |---|---|---|
 | `margot-lasagnes.mp3` | Margot, cuisinière du Bocal de Margot | Chaleureuse et souriante, comme si elle parlait à un client. **Une petite pause après « ça mijote doucement »** (les points de suspension du texte la portent). |
-| `bergine-magret.mp3` | Jean-Marie, cuisinier de Chez Bergine | Voix d'homme, **petit accent du Sud-Ouest**. Posée, pas pressée. |
+| ~~`bergine-magret.mp3`~~ | Jean-Marie, cuisinier de Chez Bergine | **Fait.** Son enregistrement est en place et dure 28 secondes. |
 | `tablee-basquaise.mp3` | Yann, cuisinier de La Grande Tablée | Voix d'homme, **sans accent**. Simple, directe. |
+| `ardoise-axoa.mp3` | Maïté, cuisinière de L'Ardoise Landaise | Voix de femme, **posée, chaleureuse**. Elle prend son temps — c'est le sujet de son récit. |
 
 **L'accent n'est pas écrit dans le texte, et c'est volontaire.** On ne
 transcrit pas « putaing » pour faire entendre le Sud-Ouest : un accent écrit se

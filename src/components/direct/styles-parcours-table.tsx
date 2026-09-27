@@ -401,7 +401,7 @@ export function StylesParcoursTable() {
            rapport seul mangerait tout l'ecran ; c'est le seul cas ou l'on
            rogne encore, et le mode contain s'en charge sans jamais couper. */
         .pt-suite{pointer-events:none;position:absolute;inset:0 0 auto;
-          width:100%;aspect-ratio:758 / 750;max-height:56%;}
+          width:100%;aspect-ratio:758 / 838;max-height:62%;}
         .pt-suite span{position:absolute;inset:0;opacity:0;
           background-size:contain;background-repeat:no-repeat;
           background-position:center top;
@@ -427,6 +427,28 @@ export function StylesParcoursTable() {
            Vingt batons qui remuent au-dessus d'une barre qui avance, c'est deux
            fois le meme mouvement dans deux centimetres. */
         .pt-suitebas .pt-onde{display:none;}
+        /* ═══ LES DEUX FLECHES, DE PART ET D'AUTRE DU ROND ═══════════════
+           « Si on ne veut pas ecouter la voix du restaurateur, on pourrait
+           quand meme faire defiler les 4 photos avec des fleches. »
+           EN RANGEE AVEC LE ROND, PAS POSEES SUR LA PHOTO. Sur la photo, elles
+           auraient couvert ce qu'on regarde et demande de viser ; en rangee,
+           elles encadrent le geste principal et se touchent sans regarder.
+           DISCRETES EXPRES : celui qui ecoute n'a rien a faire, et une fleche
+           qui crie plus fort que le bouton de lecture ferait croire qu'il faut
+           s'en servir. */
+        .pt-parle-fl{flex-direction:row;align-items:center;justify-content:center;
+          gap:16px;}
+        .pt-fl{flex:none;width:38px;height:38px;border-radius:50%;
+          display:flex;align-items:center;justify-content:center;
+          font:inherit;cursor:pointer;color:#fff;
+          background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);
+          transition:opacity .18s ease;}
+        .pt-fl svg{width:19px;height:19px;fill:none;stroke:currentColor;
+          stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+        .pt-fl:active{transform:scale(.92);}
+        /* AU BOUT DU RANG, ELLE S'ETEINT SANS DISPARAITRE : une fleche qui
+           s'efface fait sauter la rangee et deplace le rond sous le doigt. */
+        .pt-fl:disabled{opacity:.28;cursor:default;}
         /* LE BAS EST PLUS SERRE QUE SUR L'ECRAN D'AVANT : il porte une legende,
            un rond, une barre, une ligne, une fiche et un bouton. */
         .pt-suitebas .pt-parle{margin:8px 0 0;}
@@ -514,8 +536,19 @@ export function StylesParcoursTable() {
            un ecran haut se recadre par les COTES. En plein cadre on ne voyait
            plus qu'une epaule et une nappe ; en bande, on voit l'homme, sa main
            tendue et sa salle. La hauteur est celle de sa maquette. */
-        .pt-p-venir .pt-fond{bottom:auto;height:62%;
+        /* ELLE A LE FORMAT DE L'IMAGE, comme la bande du recit et pour la
+           meme raison : une hauteur en pour cent ne vaut pas le format de la
+           photo, donc elle rogne. Les trois photos d'accueil sont exportees au
+           meme rapport — voir le dossier public/direct/table. */
+        .pt-p-venir .pt-fond{bottom:auto;height:auto;aspect-ratio:70 / 100;
+          max-height:66%;
+          background-size:contain;background-repeat:no-repeat;
           background-position:center top;}
+        /* LE BAS SE FOND DANS LE NOIR, sinon la photo s'arrete sur une ligne
+           droite au milieu de l'ecran — on verrait le bord de la boite. */
+        .pt-p-venir .pt-fond::after{content:"";position:absolute;
+          left:0;right:0;bottom:0;height:24%;
+          background:linear-gradient(180deg,rgba(6,6,10,0),#06060A 92%);}
         .pt-venirbas{align-items:flex-start;text-align:left;}
         /* LA DISTANCE EN PASTILLE, SUR LA PHOTO : c'est la seule information
            qui change la reponse a la question posee juste au-dessus. */

@@ -166,6 +166,14 @@ export const INTENTIONS: Intention[] = [
   { cle: "musique", emoji: "🎵", mot: "Profiter de la musique", detail: "Venu pour le son" },
   { cle: "verre", emoji: "🍸", mot: "Boire un verre tranquille", detail: "Sans bruit, sans presse" },
   { cle: "decouvrir", emoji: "✨", mot: "Découvrir quelque chose", detail: "Voir ce que ça donne" },
+  /* ═══ « RENCONTRER DU MONDE » N'EST PAS « FAIRE UNE RENCONTRE » ══════════
+     Sa liste les sépare : « je viens pour rencontrer des gens » et « je viens
+     pour trouver mon âme sœur ». C'étaient deux phrases dans sa bouche, et une
+     seule ligne ici — donc celui qui vient simplement parler à des voisins
+     n'avait que la case du cœur pour se ranger, ce qui n'est pas la même
+     soirée. « Être entre amis » ne le disait pas non plus : on y vient EN
+     bande, pas pour en rencontrer une. */
+  { cle: "monde", emoji: "🙋", mot: "Rencontrer du monde", detail: "Parler à des gens d’ici" },
   { cle: "rencontre", emoji: "❤️", mot: "Faire une rencontre", detail: "Ouvert à ce qui vient" },
 ];
 
@@ -700,7 +708,7 @@ const SOIREE_KIOSQUE: Soiree = {
       reactions: AMBIANCE,
     },
   ],
-  intentions: 26,
+  intentions: 18,
   dansLeLive: 43,
   rapides: [
     { emoji: "🔥", mot: "Ça va être lourd !" },
@@ -713,12 +721,46 @@ const SOIREE_KIOSQUE: Soiree = {
     { quand: 21, heure: "21 h", emoji: "🎧", quoi: "Le morceau que vous avez essayé", siEssaye: "son" },
     { quand: 22, heure: "22 h", emoji: "👏", quoi: "Dernier morceau" },
   ],
+  /* ═══ DIX-HUIT FANTOMES, ET C'EST CE QUI REND LE COMPTE LISIBLE ════════
+
+     « J'aimerais que, lorsqu'on clique sur ces fantômes, on voie le nombre qui
+     ont dit : je viens pour la musique, je viens pour rencontrer des gens, je
+     viens pour m'amuser, je viens pour me détendre, je viens pour trouver mon
+     âme sœur, etc. Et dessous, on pourrait voir individuellement les fantômes
+     inscrits avec leur étiquette de recherche. »
+
+     CINQ NE SUFFISAIENT PAS POUR UN COMPTE. « 1 pour la musique, 1 pour la
+     fête » ne dit rien de la soirée : ce sont des individus, pas une tendance.
+     À dix-huit, on lit d'un coup d'œil que c'est une soirée de musique et de
+     bandes d'amis, et pas une soirée de rencontres — ce qui est exactement
+     l'information qu'on cherche avant de décider d'y aller.
+
+     LE TOTAL N'EST PLUS ECRIT A COTE, IL SE COMPTE. `intentions` valait 26 et
+     cette liste en valait 5 : deux nombres pour la même chose, qui se
+     contredisaient dès qu'on ouvrait le panneau. Voir `intentionsDe` plus bas.
+
+     `present` DISTINGUE DEUX CHOSES QU'ON CONFOND : avoir dit qu'on viendrait,
+     et être là maintenant. La rangée du haut montre les présents, le panneau
+     montre tous ceux qui ont laissé une intention. */
   fantomes: [
     { id: "k1", nom: "Violet 34", teinte: "#A855F7", accessoire: "🕶️", intention: "musique", mot: "Ici pour le son, et pour l’herbe fraîche.", present: true },
     { id: "k2", nom: "Bleu 27", teinte: "#5B8DEF", accessoire: "🧢", intention: "amis", mot: "On vient à six avec les enfants.", present: true },
     { id: "k3", nom: "Orange 41", teinte: "#FF8A5B", intention: "decouvrir", mot: "Je n’ai jamais écouté de jazz en vrai.", present: true },
     { id: "k4", nom: "Rose 12", teinte: "#FF7EB6", accessoire: "♡", intention: "fete", mot: "On finira au bar d’après, qui vient ?", present: true },
     { id: "k5", nom: "Indigo 31", teinte: "#7C93FF", intention: "verre", mot: "Une bière dans l’herbe et je suis bien.", present: false },
+    { id: "k6", nom: "Menthe 08", teinte: "#3DE2A6", intention: "musique", mot: "Le trio a joué à Mont-de-Marsan, j’y étais.", present: true },
+    { id: "k7", nom: "Ambre 52", teinte: "#F0A93B", accessoire: "🎷", intention: "musique", mot: "Je joue du sax, je viens écouter les autres pour une fois.", present: true },
+    { id: "k8", nom: "Corail 19", teinte: "#FF6B6B", intention: "amis", mot: "On se retrouve après le boulot, on sera quatre.", present: true },
+    { id: "k9", nom: "Ardoise 63", teinte: "#8899AA", intention: "verre", mot: "Je passe boire un coup, je repars tôt.", present: false },
+    { id: "k10", nom: "Turquoise 07", teinte: "#2DD4BF", accessoire: "🧺", intention: "amis", mot: "On apporte le pique-nique, il y a de la place.", present: true },
+    { id: "k11", nom: "Prune 45", teinte: "#9D4EDD", intention: "rencontre", mot: "Nouvelle en ville. Ouverte à ce qui vient.", present: true },
+    { id: "k12", nom: "Citron 22", teinte: "#D4D93B", intention: "monde", mot: "Je viens d’emménager, je ne connais personne encore.", present: true },
+    { id: "k13", nom: "Brique 38", teinte: "#C45D3A", intention: "musique", mot: "Le jazz en plein air, il n’y a que ça.", present: false },
+    { id: "k14", nom: "Céladon 14", teinte: "#7FB77E", accessoire: "🐕", intention: "verre", mot: "Je viens avec le chien, on restera au fond.", present: true },
+    { id: "k15", nom: "Fuchsia 29", teinte: "#FF2E9A", accessoire: "♡", intention: "rencontre", mot: "Autant essayer, c’est gratuit.", present: true },
+    { id: "k16", nom: "Sable 51", teinte: "#D6B88A", intention: "monde", mot: "Je viens seul, mais je ne compte pas le rester.", present: false },
+    { id: "k17", nom: "Nuit 03", teinte: "#4C5C9B", intention: "fete", mot: "Après, on continue. Il y a bien un endroit ouvert.", present: true },
+    { id: "k18", nom: "Paille 60", teinte: "#E8C468", intention: "decouvrir", mot: "Ma fille m’a dit d’y aller, alors j’y vais.", present: false },
   ],
   live: [
     { id: "k-m1", sorte: "question", qui: "Lucas", photo: "", heure: "17:12", mot: "Quelqu’un sait à quelle heure ça commence vraiment ?" },
@@ -1022,6 +1064,31 @@ export const SOIREES: Record<string, Soiree> = {
   expo: SOIREE_EXPO,
   "vide-grenier": SOIREE_VIDE_GRENIER,
 };
+
+/**
+ * ═══ CE QUE CHERCHENT LES FANTOMES D'UNE SOIREE, PAR INTENTION ════════════
+ *
+ * « Je voudrais voir le nombre qui ont dit : je viens pour la musique, je viens
+ * pour rencontrer des gens, je viens pour m'amuser… »
+ *
+ * ON COMPTE, ON N'ECRIT PAS LE NOMBRE. Un compte écrit à la main se met à
+ * mentir au premier Fantôme ajouté, et personne ne s'en aperçoit — c'est déjà
+ * arrivé ici : `intentions` disait 26 quand la liste en contenait 5.
+ *
+ * L'ORDRE EST CELUI DU RESULTAT, PAS CELUI DE LA LISTE DES INTENTIONS. Ce qui
+ * intéresse avant d'y aller, c'est ce que cherche le plus de monde ; la ligne
+ * la plus longue passe donc devant. Les intentions que personne n'a choisies ne
+ * s'affichent pas : une ligne à zéro n'apprend rien et occupe une place.
+ */
+export function intentionsDe(s: Soiree | undefined): { intention: Intention; combien: number }[] {
+  if (!s) return [];
+  return INTENTIONS.map((intention) => ({
+    intention,
+    combien: (s.fantomes ?? []).filter((f) => f.intention === intention.cle).length,
+  }))
+    .filter((r) => r.combien > 0)
+    .sort((a, b) => b.combien - a.combien);
+}
 
 export function soireeDuLieu(id: string | undefined): Soiree | undefined {
   return id ? SOIREES[id] : undefined;

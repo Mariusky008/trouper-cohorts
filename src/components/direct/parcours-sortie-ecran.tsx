@@ -36,7 +36,7 @@ import { useEffect, useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { FantomeAccueil } from "@/components/direct/fantome-accueil";
 import { evenementsDeLaVille, VILLE } from "@/lib/direct/apercu-habitant";
-import { SOIREES, type MessageLive } from "@/lib/direct/soiree";
+import { intentionDe, intentionsDe, SOIREES, type MessageLive } from "@/lib/direct/soiree";
 import { BoutonCote, CoteCommercant } from "@/components/direct/cote-commercant";
 import {
   ETAPES_SORTIE,
@@ -129,6 +129,21 @@ export function ParcoursSortie({
      ET ON OUVRE SUR « AVANT », parce que c'est là qu'on est : le parcours se
      fait dans la journée, l'événement est le soir. */
   const [moment, setMoment] = useState<"avant" | "pendant">("avant");
+  /* ═══ CE QUE CHERCHENT LES FANTOMES, QUAND ON LE DEMANDE ═══════════════
+
+     « J'aimerais que, lorsqu'on clique sur ces fantômes, on voie le nombre qui
+     ont dit : je viens pour la musique, je viens pour rencontrer des gens… Et
+     dessous, on pourrait voir individuellement les fantômes inscrits avec leur
+     étiquette de recherche. »
+
+     REPLIE PAR DEFAUT, ET C'EST VOULU. L'écran est venu pour le fil — ce qui se
+     dit maintenant — et dix-huit lignes de Fantômes posées d'office au-dessus
+     l'auraient repoussé sous le bord. La rangée devient donc un BOUTON : elle
+     montre déjà qui est là, et elle s'ouvre sur ce qu'ils cherchent.
+
+     ET C'EST BIEN LA MEME RANGEE QU'ON TOUCHE, pas une icône ajoutée à côté.
+     L'objet qui porte l'information est celui qui l'ouvre. */
+  const [quiCherche, setQuiCherche] = useState(false);
   /** Le panneau de l'organisateur, ouvert par la pastille. */
   const [cote, setCote] = useState(false);
   const audio = useRef<HTMLAudioElement | null>(null);
@@ -469,7 +484,12 @@ export function ParcoursSortie({
               jusqu'à ce qu'on se rencontre. Ce qu'ils cherchent tient dans leur
               accessoire et leur teinte ; ce qu'ils pensent est plus bas, dans
               ce qu'ils écrivent — c'est là que ça vaut quelque chose. */}
-          <div className="ps-presents">
+          <button
+            type="button"
+            className={`ps-presents${quiCherche ? " on" : ""}`}
+            onClick={() => setQuiCherche((v) => !v)}
+            aria-expanded={quiCherche}
+          >
             <span className="ps-tetes" aria-hidden="true">
               {presents.slice(0, 5).map((f) => (
                 <span key={f.id} className="ps-tete" style={{ background: f.teinte }}>
@@ -482,7 +502,81 @@ export function ParcoursSortie({
               <b>{soiree.dansLeLive}</b>
               <em>dans le Live en ce moment</em>
             </span>
-          </div>
+            <s className="ps-presents-f" aria-hidden="true">
+              {quiCherche ? "▴" : "▾"}
+            </s>
+          </button>
+
+          {/* ═══ CE QU'ILS CHERCHENT, ET QUI SONT-ILS ════════════════════
+              DEUX LECTURES DU MEME GROUPE, dans cet ordre : d'abord la forme de
+              la soirée — dix pour la musique, quatre entre amis, deux pour une
+              rencontre — puis les personnes une par une. Le compte répond à
+              « est-ce que c'est pour moi » ; la liste répond à « avec qui ».
+              LES NOMBRES SE COMPTENT SUR LA LISTE, ils ne sont pas écrits à côté
+              — voir `intentionsDe` dans `soiree.ts`. */}
+          {quiCherche && (
+            <div className="ps-cherche">
+              <p className="ps-cherche-t">
+                <b>{soiree.fantomes.length}</b> Fantômes ont dit pourquoi ils viennent
+              </p>
+              <ul className="ps-parts">
+                {intentionsDe(soiree).map(({ intention, combien }) => (
+                  <li key={intention.cle}>
+                    <i aria-hidden="true">{intention.emoji}</i>
+                    <span className="ps-part-t">
+                      <b>{intention.mot}</b>
+                      <em>{intention.detail}</em>
+                    </span>
+                    <span className="ps-part-n">{combien}</span>
+                    {/* LA JAUGE SE LIT AVANT LE CHIFFRE : on voit la forme du
+                        groupe sans compter. Elle se mesure sur la plus longue,
+                        pas sur le total — sur six lignes qui se partagent
+                        dix-huit personnes, un pourcentage du total donnerait six
+                        barres courtes et illisibles. */}
+                    <span
+                      className="ps-part-j"
+                      style={{ width: `${(combien / intentionsDe(soiree)[0].combien) * 100}%` }}
+                      aria-hidden="true"
+                    />
+                  </li>
+                ))}
+              </ul>
+
+              <ul className="ps-inscrits">
+                {soiree.fantomes.map((f) => {
+                  const envie = intentionDe(f.intention);
+                  return (
+                    <li key={f.id}>
+                      <span className="ps-tete" style={{ background: f.teinte }} aria-hidden="true">
+                        <Fant classe="ps-tete-f" />
+                        {f.accessoire && <s>{f.accessoire}</s>}
+                      </span>
+                      <span className="ps-inscrit-t">
+                        <b>
+                          {f.nom}
+                          {/* L'ETIQUETTE DE RECHERCHE, a cote du nom : c'est la
+                              seule chose qu'on sait de lui, et c'est voulu. Ni
+                              age, ni genre, ni photo — voir `FantomePresent`. */}
+                          <s>
+                            {envie?.emoji} {envie?.mot ?? f.intention}
+                          </s>
+                        </b>
+                        <em>{f.mot}</em>
+                      </span>
+                      {/* PRESENT OU PAS : avoir dit qu'on vient et etre la ne
+                          sont pas la meme chose, et sur un Live ca compte. */}
+                      {f.present && (
+                        <span className="ps-ici" title="Dans le Live en ce moment">
+                          <i aria-hidden="true" />
+                          là
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
 
           {/* LES DEUX MOMENTS, ET L'HEURE EST ECRITE SUR CHACUN. « Avant » et
               « Pendant » seuls demanderaient de deviner de quand on parle. */}

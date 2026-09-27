@@ -203,6 +203,22 @@ export function ParcoursTable({
      l'horloge quand c'est le téléphone qui lit, faute de mieux. */
   const [avance, setAvance] = useState(0);
   const [duree, setDuree] = useState(0);
+  /* ═══ ET ON PEUT AUSSI LES FAIRE DEFILER A LA MAIN ═════════════════════
+
+     « Si on ne veut pas écouter la voix du restaurateur, on pourrait quand
+     même faire défiler les 4 photos avec des flèches avant et arrière. »
+
+     J'AVAIS ECRIT QU'ON N'AJOUTAIT AUCUN GESTE, ET C'ETAIT VRAI A MOITIE. Le
+     raisonnement tenait pour qui écoute : on appuie une fois, l'écran suit la
+     voix, et des flèches seraient du travail en plus pendant qu'on vous parle.
+     Il ne tenait pas pour qui n'écoute PAS — dans un bus, en réunion, sans
+     écouteurs — et ceux-là voyaient une seule photo, définitivement.
+
+     `aLaMain` EST L'IMAGE CHOISIE AU DOIGT, ET ELLE S'EFFACE DES QUE LA VOIX
+     REPREND : deux maîtres pour une même image finiraient par se battre, et
+     c'est la voix qui doit gagner, puisque c'est elle qu'on est venu écouter.
+     Voir `vu` plus bas. */
+  const [aLaMain, setALaMain] = useState<number | null>(null);
   /** Le panneau du commerçant, ouvert par la pastille de la dernière étape. */
   const [cote, setCote] = useState(false);
 
@@ -260,6 +276,7 @@ export function ParcoursTable({
       return;
     }
     setAvance(0);
+    setALaMain(null);
     if (voix?.extrait && (await jouerFichier(voix.extrait, true))) return;
     /* LA VOIX CLOUD NE PEUT DIRE QUE CE QUI EST DÉJÀ ÉCRIT : on lui passe la
        clé du commerce, elle va chercher le récit elle-même. Voir la route. */
@@ -411,9 +428,23 @@ export function ParcoursTable({
      réponse qu'on ait. Dès qu'un fichier joue, sa vraie durée prend la place. */
   const dureeVoix = duree > 0 ? duree : 12;
   const pasVoix = suite.length ? dureeVoix / suite.length : 0;
-  const vu = suite.length
+  const parLaVoix = suite.length
     ? Math.min(suite.length - 1, Math.max(0, Math.floor(avance / pasVoix)))
     : 0;
+  /* LA VOIX REPREND LA MAIN DES QU'ELLE PARLE : on écoute, on ne pilote plus. */
+  const vu = joue || aLaMain === null ? parLaVoix : aLaMain;
+  const allerA = (k: number) => {
+    const n = Math.min(suite.length - 1, Math.max(0, k));
+    setALaMain(n);
+    /* ON DEPLACE AUSSI LE CURSEUR DU LECTEUR, pas seulement l'image : sans ça,
+       la barre resterait à zéro pendant qu'on avance de photo en photo, et elle
+       dirait le contraire de ce qu'on voit.
+       ON NE TOUCHE PAS A L'AUDIO LUI-MEME, et c'est inutile de le faire : la
+       lecture crée un nouvel élément à chaque appui et repart de zéro — voir
+       `jouerFichier`. Déplacer un élément qui va être remplacé ne déplace
+       rien. */
+    setAvance(n * pasVoix);
+  };
 
   /** Le fond plein écran de l'étape courante. */
   const fond =
@@ -722,8 +753,25 @@ export function ParcoursTable({
             </>
           )}
           {/* LE HALO DERRIÈRE LE BOUTON RESPIRE QUAND ÇA PARLE. C'est le seul
-              mouvement de l'écran, et il dit « ça sort de là ». */}
-          <div className={`pt-parle${joue ? " on" : ""}`}>
+              mouvement de l'écran, et il dit « ça sort de là ».
+              LES DEUX FLECHES L'ENCADRENT, et elles ne sont là que si la suite
+              existe. Elles sont discrètes exprès : le geste principal reste
+              d'appuyer au milieu et d'écouter ; elles servent à celui qui ne
+              peut pas, et qui sinon ne verrait qu'une seule photo. */}
+          <div className={`pt-parle${joue ? " on" : ""}${suite.length ? " pt-parle-fl" : ""}`}>
+            {suite.length > 0 && (
+              <button
+                type="button"
+                className="pt-fl pt-fl-g"
+                onClick={() => allerA(vu - 1)}
+                disabled={vu === 0}
+                aria-label="La photo précédente"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M14.4 5.4 7.8 12l6.6 6.6" />
+                </svg>
+              </button>
+            )}
             <button
               type="button"
               className={`pt-rond${joue ? " on" : ""}`}
@@ -747,6 +795,19 @@ export function ParcoursTable({
               />
               <span className="pt-rond-s" aria-hidden="true">{joue ? "❙❙" : "▶"}</span>
             </button>
+            {suite.length > 0 && (
+              <button
+                type="button"
+                className="pt-fl pt-fl-d"
+                onClick={() => allerA(vu + 1)}
+                disabled={vu === suite.length - 1}
+                aria-label="La photo suivante"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M9.6 5.4 16.2 12l-6.6 6.6" />
+                </svg>
+              </button>
+            )}
             <span className={`pt-onde${joue ? " on" : ""}`} aria-hidden="true">
               {ONDE.map((h, k) => (
                 <i key={k} style={{ "--h": `${h}%`, "--d": `${(k % 7) * 0.08}s` } as React.CSSProperties} />

@@ -257,7 +257,7 @@ export const CHIFFRES: Record<string, ChiffresCommerce> = {
      soiree, le nombre de Fantomes qui ont dit qu'ils y seraient — 26 au
      kiosque. Deux ecrans de la meme demonstration qui comptent la meme chose
      doivent dire le meme nombre, sinon aucun des deux n'est cru. */
-  kiosque: { essais: 318, gardes: 64, contacts: 26, moyenne: 4.6 },
+  kiosque: { essais: 318, gardes: 64, contacts: 18, moyenne: 4.6 },
   "bar-vins": { essais: 142, gardes: 29, contacts: 18, moyenne: 4.4 },
   "bar-terrasse": { essais: 176, gardes: 38, contacts: 11, moyenne: 4.3 },
   "marche-nuit": { essais: 97, gardes: 21, contacts: 9, moyenne: 4.3 },

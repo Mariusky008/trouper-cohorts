@@ -1764,7 +1764,7 @@ const CARTES: CarteAutour[] = [
     branche: "restaurant",
     photo: "/direct/plat-du-jour.jpg",
     /* LUI, SUR LE PAS DE SA PORTE — voir `photoAccueil` dans le type. */
-    photoAccueil: "/direct/table/bergine-accueil.jpg",
+    photoAccueil: "/direct/table/accueil-bergine.jpg",
     cadrage: "68%",
     nom: "Chez Bergine",
     google: { note: "4,8", avis: 128 },
@@ -2116,6 +2116,34 @@ const CARTES: CarteAutour[] = [
       { qui: "Ana T.", combien: 7 },
       { qui: "Nadia S.", combien: 3 },
     ],
+    /* ═══ SA VOIX, ET SON PARCOURS QUI PASSE DE DEUX ECRANS A TROIS ═══════
+
+       « On a déjà le parcours complet avec le magret, on va faire le même avec
+       le poulet basquaise et aussi l'axoa de veau et riz du pays. »
+
+       C'EST LA TROISIEME CUISINE DE LA DEMONSTRATION, et la première tenue par
+       une femme. Sa maquette la nomme « Maïté » et écrit « 15 s avec LA
+       CHEFFE » : le métier s'accorde, et c'est le genre de détail qu'un
+       commerçant remarque le premier.
+
+       L'ACCENT N'EST PAS DANS LE TEXTE, MEME REGLE QUE POUR LES DEUX AUTRES.
+       Il est dans la consigne de jeu, à côté du fichier à enregistrer — voir
+       `public/direct/voix/LISEZ-MOI.md`. */
+    voix: {
+      prenom: "Maïté",
+      role: "cuisinière",
+      signature: "Je le prépare tout doucement, jamais pressée.",
+      recit:
+        "Bonjour. Mon axoa, je le prépare tout doucement. Je taille le veau au couteau, jamais à la machine — c'est ça qui fait la texture. Les poivrons fondent avec la viande, lentement, presque une heure. Et à la fin, le riz du pays prend tout le jus. C'est un plat de chez nous, on le mange depuis toujours.",
+      // extrait: "/direct/voix/ardoise-axoa.mp3",
+      photosVoix: [
+        { src: "/direct/table/axoa/1.jpg", mot: "Mon axoa, je le prépare tout doucement.", fort: "tout doucement" },
+        { src: "/direct/table/axoa/2.jpg", mot: "Les poivrons fondent avec le veau.", fort: "Les poivrons" },
+        { src: "/direct/table/axoa/3.jpg", mot: "Et le riz du pays prend tout le jus.", fort: "tout le jus" },
+        { src: "/direct/table/axoa/4.jpg", mot: "Ça vous dit de venir goûter\u202f?", fort: "venir goûter\u202f?" },
+      ],
+    },
+    photoAccueil: "/direct/table/accueil-axoa.jpg",
     site: "ardoise-landaise.fr",
     fiche: {
       ou: "Place du marché, sous les arcades",
@@ -2538,7 +2566,16 @@ const CARTES: CarteAutour[] = [
       recit:
         "Salut. Pour mon poulet basquaise, je fais revenir les poivrons et les oignons, puis j'ajoute la tomate et le poulet. Je laisse mijoter doucement, le temps que la sauce prenne du goût. Et je le sers avec notre riz du pays.",
       // extrait: "/direct/voix/tablee-basquaise.mp3",
+      /* LES QUATRE TEMPS DE SON POULET, DANS L'ORDRE OU IL LES RACONTE — et
+         ses légendes à lui, à la première personne. */
+      photosVoix: [
+        { src: "/direct/table/basquaise/1.jpg", mot: "Moi, ce que j’aime…", fort: "j’aime" },
+        { src: "/direct/table/basquaise/2.jpg", mot: "…c’est laisser les poivrons fondre doucement.", fort: "fondre doucement" },
+        { src: "/direct/table/basquaise/3.jpg", mot: "Et le poulet prend tout le goût.", fort: "tout le goût" },
+        { src: "/direct/table/basquaise/4.jpg", mot: "Allez, venez goûter.", fort: "Allez, venez goûter." },
+      ],
     },
+    photoAccueil: "/direct/table/accueil-basquaise.jpg",
     site: "lagrandetablee.fr",
     fiche: {
       ou: "Quai, au bord de l'eau",

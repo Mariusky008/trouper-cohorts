@@ -70,6 +70,15 @@ const TIMBRES: Record<string, { voix: string; ton: string }> = {
     voix: "echo",
     ton: "Parle en français, voix d'homme, sans accent régional. Simple et direct, comme quelqu'un qui explique sa recette en deux phrases parce qu'il a du monde en salle. Chaleureux, pas solennel.",
   },
+  /* LA TROISIEME CUISINE DE LA DEMONSTRATION, ET SANS TIMBRE ELLE SERAIT
+     RESTEE MUETTE. La route répond 404 pour une clé qu'elle ne connaît pas, et
+     l'écran retombe alors sur la voix du téléphone — celle qui articule sans
+     raconter, et qui l'avait choqué. Une donnée ajoutée d'un côté doit être
+     ajoutée de l'autre : c'est le prix d'avoir deux fichiers pour une voix. */
+  "deux-rues": {
+    voix: "nova",
+    ton: "Parle en français, voix de femme d'une soixantaine d'années, posée et chaleureuse, avec la musique du Pays basque sans jamais la caricaturer. Elle prend son temps — c'est le sujet même de ce qu'elle raconte. Un peu de fierté tranquille sur la dernière phrase.",
+  },
 };
 
 export async function GET(request: Request) {

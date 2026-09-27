@@ -227,11 +227,17 @@ export function StylesParcoursSortie() {
            verra bien » — et ne disaient rien de la soiree. La rangee ci-dessous
            repond a « qui est la » en une ligne, et tout le reste de la place
            passe a ce qu'ils ecrivent. */
-        .ps-presents{display:flex;align-items:center;gap:10px;
+        .ps-presents{display:flex;align-items:center;gap:10px;width:100%;
           margin:11px 0 0;padding:7px 12px 7px 9px;border-radius:999px;
-          text-align:left;
+          text-align:left;font:inherit;color:#fff;cursor:pointer;
           background:rgba(12,10,18,.66);border:1px solid rgba(255,46,154,.42);
           -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+        .ps-presents.on{background:rgba(255,46,154,.16);border-color:#FF2E9A;}
+        .ps-presents:active{transform:scale(.99);}
+        /* LE CHEVRON DIT QUE CA S'OUVRE. Sans lui, une rangee d'informations
+           ressemble a une rangee d'informations, et personne n'essaie. */
+        .ps-presents-f{margin-left:auto;text-decoration:none;
+          font-size:13px;color:rgba(255,255,255,.66);}
         /* LES TETES SE CHEVAUCHENT, comme une pile de jetons. C'est ce qui fait
            lire « un groupe » plutot que « cinq comptes » : espacees, elles
            deviennent une liste qu'on compte, et personne ne compte. */
@@ -251,6 +257,73 @@ export function StylesParcoursSortie() {
           color:#FF7FC2;}
         .ps-presents-t em{font-style:normal;font-size:11.5px;font-weight:750;
           color:rgba(255,255,255,.76);}
+
+        /* ═══ CE QU'ILS CHERCHENT ══════════════════════════════════════
+           « Je voudrais voir le nombre qui ont dit : je viens pour la musique,
+           je viens pour rencontrer des gens… et dessous les fantomes inscrits
+           avec leur etiquette de recherche. »
+           IL DEFILE DANS SA PROPRE BOITE, comme le fil : le bas de l'ecran
+           porte deja deux boutons, et dix-huit lignes posees d'office les
+           auraient pousses sous le bord. */
+        /* LA HAUTEUR LAISSE DEPASSER LE PREMIER FANTOME DE LA LISTE, et c'est
+           la seule chose qui dit qu'il y en a d'autres dessous. Reglee a 42 %,
+           la boite s'arretait pile apres le sixieme motif : le panneau semblait
+           fini, et personne ne faisait defiler. Le fondu du bas fait le reste. */
+        .ps-cherche{margin:9px 0 0;text-align:left;
+          max-height:47vh;overflow-y:auto;overscroll-behavior:contain;
+          scrollbar-width:none;-ms-overflow-style:none;
+          -webkit-mask-image:linear-gradient(180deg,#000 0,#000 90%,transparent 100%);
+          mask-image:linear-gradient(180deg,#000 0,#000 90%,transparent 100%);}
+        .ps-cherche::-webkit-scrollbar{width:0;height:0;display:none;}
+        .ps-cherche-t{margin:0 0 8px;font-size:12px;font-weight:750;
+          color:rgba(255,255,255,.72);}
+        .ps-cherche-t b{font-size:15px;font-weight:900;color:#FF7FC2;}
+        /* LES SIX MOTIFS, LE PLUS CHOISI EN PREMIER. La jauge est DERRIERE le
+           texte et non a cote : a cote, elle prendrait la moitie de la largeur
+           sur un telephone et le motif ne tiendrait plus sur une ligne. */
+        .ps-parts{list-style:none;margin:0;padding:0;
+          display:flex;flex-direction:column;gap:5px;}
+        .ps-parts li{position:relative;display:flex;align-items:center;gap:9px;
+          padding:8px 11px;border-radius:12px;overflow:hidden;
+          background:rgba(12,10,18,.62);
+          border:1px solid rgba(255,255,255,.1);}
+        .ps-part-j{position:absolute;left:0;top:0;bottom:0;z-index:0;
+          border-radius:12px 0 0 12px;
+          background:linear-gradient(90deg,rgba(255,46,154,.34),rgba(255,46,154,.12));}
+        .ps-parts li>i,.ps-part-t,.ps-part-n{position:relative;z-index:1;}
+        .ps-parts li>i{flex:none;font-style:normal;font-size:16px;line-height:1;}
+        .ps-part-t{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;}
+        .ps-part-t b{font-size:12.5px;font-weight:850;line-height:1.2;color:#fff;}
+        .ps-part-t em{font-style:normal;font-size:10.5px;font-weight:650;
+          color:rgba(255,255,255,.58);}
+        .ps-part-n{flex:none;font-size:17px;font-weight:900;letter-spacing:-.02em;
+          font-variant-numeric:tabular-nums;color:#FF7FC2;}
+
+        /* ═══ ET QUI SONT-ILS, UN PAR UN ════════════════════════════════ */
+        .ps-inscrits{list-style:none;margin:10px 0 0;padding:0;
+          display:flex;flex-direction:column;gap:5px;}
+        .ps-inscrits li{display:flex;align-items:flex-start;gap:9px;
+          padding:8px 11px;border-radius:12px;
+          background:rgba(255,255,255,.045);
+          border:1px solid rgba(255,255,255,.09);}
+        .ps-inscrit-t{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;
+          gap:1px;}
+        .ps-inscrit-t b{display:flex;align-items:baseline;flex-wrap:wrap;gap:7px;
+          font-size:12px;font-weight:900;color:#fff;}
+        /* L'ETIQUETTE DE RECHERCHE : rose et en pastille, parce que c'est la
+           seule chose qu'on sait de lui et qu'elle doit se lire en diagonale. */
+        .ps-inscrit-t b s{text-decoration:none;padding:2px 8px;border-radius:999px;
+          font-size:10px;font-weight:800;color:#FFC7E4;
+          background:rgba(255,46,154,.18);
+          border:1px solid rgba(255,46,154,.36);}
+        .ps-inscrit-t em{font-style:normal;font-size:11px;font-weight:650;
+          line-height:1.3;color:rgba(255,255,255,.66);}
+        /* « LA » : un point vert et deux lettres. Avoir dit qu'on vient et etre
+           la ne sont pas la meme chose, et sur un Live c'est la difference. */
+        .ps-ici{flex:none;align-self:center;display:flex;align-items:center;gap:4px;
+          font-size:10px;font-weight:800;color:#5BE9A8;}
+        .ps-ici i{width:6px;height:6px;border-radius:50%;background:#22C07C;
+          box-shadow:0 0 8px rgba(34,192,124,.9);}
 
         /* ═══ AVANT / PENDANT ═══════════════════════════════════════════
            DEUX ONGLETS, ET L'HEURE EST ECRITE SUR CHACUN. « Avant » et
