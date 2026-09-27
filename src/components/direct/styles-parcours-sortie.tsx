@@ -269,8 +269,20 @@ export function StylesParcoursSortie() {
            la seule chose qui dit qu'il y en a d'autres dessous. Reglee a 42 %,
            la boite s'arretait pile apres le sixieme motif : le panneau semblait
            fini, et personne ne faisait defiler. Le fondu du bas fait le reste. */
+        /* LA HAUTEUR SE MESURE SUR CE QUI RESTE, PAS SUR L'ECRAN ENTIER.
+           Mesure a 670 points de haut : le panneau ouvert poussait « J'y vais »
+           sous le bord. Le bloc defile, donc le bouton restait atteignable —
+           mais un ecran ou le geste principal a disparu est un ecran ou l'on ne
+           sait plus quoi faire, et c'est exactement le defaut qu'on vient de
+           corriger ailleurs.
+           Le calc retranche le haut de l'ecran, le titre, la rangee, les deux
+           onglets et les deux boutons du bas : ce qui reste est pour le
+           panneau. Il ne depasse jamais 47 % sur un grand telephone, ou le fil
+           doit garder sa place. */
+        /* IL PREND LA PLACE DU FIL, DONC IL EN PREND LA HAUTEUR. Voir le
+           composant : les deux ne s'empilent plus, on regarde l'un ou l'autre. */
         .ps-cherche{margin:9px 0 0;text-align:left;
-          max-height:47vh;overflow-y:auto;overscroll-behavior:contain;
+          max-height:44vh;overflow-y:auto;overscroll-behavior:contain;
           scrollbar-width:none;-ms-overflow-style:none;
           -webkit-mask-image:linear-gradient(180deg,#000 0,#000 90%,transparent 100%);
           mask-image:linear-gradient(180deg,#000 0,#000 90%,transparent 100%);}

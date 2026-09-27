@@ -578,6 +578,19 @@ export function ParcoursSortie({
             </div>
           )}
 
+          {/* ═══ LE PANNEAU PREND LA PLACE DU FIL, IL NE S'EMPILE PAS ═══════
+              MESURE AUX QUATRE HAUTEURS : empilé au-dessus, il repoussait
+              « J'y vais » sous le bord à 900 points comme à 670 — le bloc
+              défile, donc le bouton restait atteignable, mais un écran dont le
+              geste principal a disparu est un écran où l'on ne sait plus quoi
+              faire. Aucune hauteur de panneau ne réglait ça : c'est l'empilement
+              qui était faux.
+              ET LES DEUX NE SE LISENT PAS ENSEMBLE. Le fil dit ce qui se passe,
+              le panneau dit qui vient : on regarde l'un ou l'autre. C'est la
+              correction déjà faite pour le côté commerçant, pour la même
+              raison. */}
+          {!quiCherche && (
+            <>
           {/* LES DEUX MOMENTS, ET L'HEURE EST ECRITE SUR CHACUN. « Avant » et
               « Pendant » seuls demanderaient de deviner de quand on parle. */}
           <div className="ps-moments" role="tablist" aria-label="Le moment du Live">
@@ -630,6 +643,8 @@ export function ParcoursSortie({
             <i aria-hidden="true">ⓘ</i>
             Fantômes de démonstration. Dans l’application, personne ne montre son visage.
           </p>
+            </>
+          )}
 
           {/* ═══ LA BANDE DES CATEGORIES EST PARTIE ═════════════════════
               « Je vois qu'il y a les pictogrammes sur la photo de "mode,
