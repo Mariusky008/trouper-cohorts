@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { DELAIS, MOTS_RDV, chiffresDu } from "@/lib/direct/rendez-vous";
-import { NoteFantomes } from "@/components/direct/note-fantomes";
+import { DELAIS, MOTS_RDV } from "@/lib/direct/rendez-vous";
+import { BoutonCote, CoteCommercant } from "@/components/direct/cote-commercant";
 
 /**
  * 📅 LE DERNIER ÉCRAN DES TROIS PARCOURS — un essai qui devient une demande.
@@ -65,7 +65,6 @@ export function DemandeRdv({
   const [cote, setCote] = useState(false);
 
   const mots = MOTS_RDV[metier];
-  const chiffres = chiffresDu(commerce);
 
   return (
     <div className={`rdv ${classe}-rdv`}>
@@ -193,16 +192,7 @@ export function DemandeRdv({
               les deux points de vue à la fin d'un parcours d'habitant ; la
               pastille laisse le commerçant l'ouvrir quand il est prêt, en
               rendez-vous, et laisse l'habitant l'ignorer. */}
-          {chiffres && (
-            <button
-              type="button"
-              className="rdv-cote"
-              onClick={() => setCote(true)}
-            >
-              <s aria-hidden="true">📊</s>
-              Et côté {metier === "coiffure" ? "salon" : "boutique"} ?
-            </button>
-          )}
+          <BoutonCote commerce={commerce} branche={metier} onClick={() => setCote(true)} />
         </>
       )}
 
@@ -219,50 +209,31 @@ export function DemandeRdv({
 
           LE PANNEAU REMPLACE DONC TOUT, et un bandeau dit chez qui l'on est. On
           en revient par la flèche, qui ramène à l'écran du client. */}
-      {temps === "envoye" && cote && chiffres && (
-        <>
-          <button type="button" className="rdv-retour" onClick={() => setCote(false)}>
-            <s aria-hidden="true">←</s>
-            Revenir côté client
-          </button>
-          <p className="rdv-cap">Côté {metier === "coiffure" ? "salon" : "boutique"}</p>
-          <span className="rdv-bilan-v" style={{ backgroundImage: `url("${essai}")` }} aria-hidden="true" />
-          <h1 className="rdv-t rdv-bilan-t">{quoi}</h1>
-          <p className="rdv-ligne">
-            chez <b>{nom}</b>
-          </p>
+      {/* ═══ COTE COMMERCANT : ON Y EST, DONC ON N'EST PLUS AILLEURS ═══════
 
-          {/* ═══ LA MOYENNE EN FANTOMES ════════════════════════════════════
-              « Avec peut-être les fantômes comme références, qui permettent
-              aussi de savoir la moyenne en fantômes (comme des cœurs). »
-              C'EST LA MEME UNITE QUE PARTOUT AILLEURS, et c'est ce qui la rend
-              lisible : l'habitant note en fantômes sur le mur, le commerçant
-              lit une moyenne en fantômes. Un « 4,6/5 » aurait demandé
-              d'apprendre une seconde echelle pour dire la meme chose. */}
-          <span className="rdv-moy">
-            <NoteFantomes note={Math.round(chiffres.moyenne)} classe="vient" />
-            <b>
-              {chiffres.moyenne.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
-              <i> de moyenne</i>
-            </b>
-          </span>
+          « Ici on est côté salon, donc on devrait pas voir le message : on
+          devrait juste voir les stats. »
 
-          {/* L'ENTONNOIR, DE GAUCHE A DROITE : essaye, garde, ecrit. */}
-          <ul className="rdv-chiffres">
-            <li>
-              <b>{chiffres.essais}</b>
-              <em>l’ont essayée</em>
-            </li>
-            <li>
-              <b>{chiffres.gardes}</b>
-              <em>l’ont gardée</em>
-            </li>
-            <li className="fort">
-              <b>{chiffres.contacts}</b>
-              <em>ont écrit</em>
-            </li>
-          </ul>
-        </>
+          IL A RAISON, ET C'ETAIT UN MELANGE DE POINTS DE VUE. Le panneau
+          s'ouvrait SOUS la notification du client : on lisait « voilà ce que
+          vous avez envoyé » et, dessous, le tableau de bord de celui qui le
+          reçoit. Deux personnes différentes sur le même écran, sans que rien ne
+          dise qu'on avait changé de côté.
+
+          IL EST MAINTENANT LE MEME QU'AU RESTAURANT ET A LA SORTIE — voir
+          `cote-commercant.tsx`. « Pour toutes les autres catégories, faire la
+          même chose pour avoir la même logique et le même impact en fin de
+          parcours » : deux dessins d'un même panneau auraient divergé au
+          premier changement. */}
+      {temps === "envoye" && cote && (
+        <CoteCommercant
+          commerce={commerce}
+          branche={metier}
+          quoi={quoi}
+          nom={nom}
+          visuel={essai}
+          onRetour={() => setCote(false)}
+        />
       )}
       <style dangerouslySetInnerHTML={{ __html: FEUILLE }} />
     </div>
@@ -394,61 +365,14 @@ const FEUILLE = `
 .rdv-suite{margin:10px 0 0;max-width:34ch;font-size:11.5px;font-weight:650;
   line-height:1.4;color:rgba(255,255,255,.66);}
 
-/* ═══ LE COTE COMMERCANT ══════════════════════════════════════════════════ */
-.rdv-cote{width:auto;margin:12px 0 0;padding:8px 15px;border-radius:999px;
-  cursor:pointer;
-  display:flex;align-items:center;gap:7px;
-  font:inherit;font-size:12.5px;font-weight:850;color:#F2E9FF;
-  background:rgba(255,255,255,.08);
-  border:1.5px solid rgba(255,255,255,.18);}
-.rdv-cote.on{border-color:#FF2E9A;background:rgba(255,46,154,.14);}
-.rdv-cote s{text-decoration:none;font-size:14px;}
-/* LA FLECHE DE RETOUR, en haut a gauche du panneau : on est passe de l'autre
-   cote, on doit pouvoir revenir. */
-.rdv-retour{align-self:flex-start;width:auto;margin:0 0 4px;padding:6px 13px 6px 9px;
-  border-radius:999px;cursor:pointer;display:flex;align-items:center;gap:6px;
-  font:inherit;font-size:12px;font-weight:850;color:#E9DCF4;
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.16);}
-.rdv-retour s{text-decoration:none;font-size:14px;}
-.rdv-bilan-v{display:block;width:96px;height:118px;margin:2px auto 0;
-  border-radius:16px;background-size:cover;background-position:center 14%;
-  box-shadow:0 18px 40px -16px rgba(0,0,0,.95);}
-.rdv-bilan-t{margin:11px 0 0;}
-/* LA MOYENNE : la rangee en grand, le chiffre a cote. Meme unite que le mur. */
-.rdv-moy{display:flex;align-items:center;justify-content:center;gap:10px;
-  margin:12px 0 0;padding:9px 15px;border-radius:999px;
-  background:rgba(255,46,154,.13);
-  border:1.5px solid rgba(255,46,154,.4);}
-.rdv-moy .nf{gap:4px;}
-.rdv-moy .nf-s{width:26px;height:28px;}
-.rdv-moy>b{font-size:17px;font-weight:900;letter-spacing:-.02em;color:#fff;}
-.rdv-moy>b i{font-style:normal;font-size:11.5px;font-weight:750;
-  color:rgba(255,255,255,.62);}
-/* L'ENTONNOIR SE LIT DE GAUCHE A DROITE : essaye, garde, ecrit. Le dernier est
-   le seul qui rapporte de l'argent, donc c'est le seul en couleur. */
-.rdv-chiffres{list-style:none;display:flex;gap:7px;margin:13px 0 0;padding:0;
-  width:100%;}
-.rdv-chiffres li{flex:1;padding:9px 4px;border-radius:13px;
-  display:flex;flex-direction:column;align-items:center;gap:1px;
-  background:rgba(255,255,255,.06);}
-.rdv-chiffres b{font-size:22px;font-weight:900;letter-spacing:-.03em;
-  line-height:1;color:#fff;}
-.rdv-chiffres em{font-style:normal;font-size:10px;font-weight:750;
-  line-height:1.2;color:rgba(255,255,255,.62);text-align:center;}
-.rdv-chiffres li.fort{background:rgba(255,46,154,.2);}
-.rdv-chiffres li.fort b{color:#FF7FC2;}
-.rdv-chiffres li.fort em{color:#FFC7E4;}
-/* ═══ PLUS DE PARAGRAPHE D'EXPLICATION ═══════════════════════════════════
-   « C'est une démo, donc les commerçants à qui je la montre le savent déjà,
-   donc supprime cette section partout où elle se trouve. »
-   J'AVAIS ECRIT « chiffres d'exemple » PARCE QUE LE PRODUIT NE MONTRE JAMAIS
-   UN CHIFFRE SANS DIRE D'OU IL VIENT. La regle vaut pour un habitant qui
-   decouvre l'application seul ; elle ne vaut pas ici, ou l'ecran est montre en
-   main propre par quelqu'un qui vient d'annoncer que c'est une demonstration.
-   Expliquer a quelqu'un ce qu'il vient de vous dire, c'est lui faire perdre son
-   temps — et c'etait huit lignes sur l'ecran qui doit le convaincre. */
-.rdv-chiffres{margin-top:13px;}
+/* ═══ LE COTE COMMERCANT A DEMENAGE ═══════════════════════════════════════
+   Son dessin — la pastille, la fleche de retour, la moyenne en fantomes et les
+   trois colonnes — est dans cote-commercant.tsx, sous le prefixe cc-,
+   parce que le restaurant et la sortie le montrent maintenant aussi. Le laisser
+   ici aurait voulu dire trois feuilles pour un seul panneau.
+   CE QUI RESTE : le panneau arrive comme enfant direct de .rdv, donc il herite
+   du width:100% et du flex:none plus haut, ce qui est exactement ce qu'il
+   lui faut. */
 @media (prefers-reduced-motion:reduce){
   .rdv-go:active,.rdv-q:active,.rdv-img:active{transform:none;}
   .rdv-bascule,.rdv-bascule::after{transition:none;}

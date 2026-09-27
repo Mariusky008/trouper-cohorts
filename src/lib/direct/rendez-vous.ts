@@ -128,6 +128,84 @@ export const DELAIS: Delai[] = [
  * d'une démonstration à l'autre. Un chiffre qui change entre deux ouvertures se
  * remarque, et à partir de là plus rien n'est cru.
  */
+/**
+ * ═══ LES MOTS DU PANNEAU, PAR BRANCHE ══════════════════════════════════════
+ *
+ * « En fait, à la fin de tous les écrans de tous les commerçants visités, il
+ * faudrait avoir ce "côté commerçant" avec ses stats. Pour toutes les autres
+ * catégories, faire la même chose pour avoir la même logique et le même
+ * impact en fin de parcours. »
+ *
+ * L'ENTONNOIR EST LE MÊME PARTOUT, LES VERBES NON. « 214 l'ont essayée » a du
+ * sens pour une coupe ; un magret ne s'essaie pas, il se regarde, et personne
+ * n'« écrit » à un restaurant — on y réserve une table. Si l'on gardait les
+ * mêmes mots, le panneau dirait faux dans quatre parcours sur cinq pour ne pas
+ * avoir à écrire douze lignes ici.
+ *
+ * TROIS COLONNES ET PAS QUATRE, ET C'EST VRAI DE TOUTES LES BRANCHES : ce qui
+ * se regarde, ce qui se garde, ce qui se transforme en quelqu'un qui pousse la
+ * porte. Le commerçant lit l'écart entre la première et la dernière, et c'est
+ * tout ce que ce panneau a à dire.
+ */
+export type MotsCote = {
+  /** « Côté salon », « Côté cuisine » — chez qui l'on vient de passer. */
+  cote: string;
+  /** La pastille qui y mène, en fin de parcours. */
+  pastille: string;
+  /** Les trois marches, dans l'ordre. */
+  vus: string;
+  gardes: string;
+  contacts: string;
+};
+
+export const MOTS_COTE: Record<string, MotsCote> = {
+  coiffure: {
+    cote: "salon",
+    pastille: "Et côté salon\u202f?",
+    vus: "l’ont essayée",
+    gardes: "l’ont gardée",
+    contacts: "ont écrit",
+  },
+  mode: {
+    cote: "boutique",
+    pastille: "Et côté boutique\u202f?",
+    vus: "l’ont essayée",
+    gardes: "l’ont gardée",
+    contacts: "ont écrit",
+  },
+  deco: {
+    cote: "boutique",
+    pastille: "Et côté boutique\u202f?",
+    vus: "l’ont essayée",
+    gardes: "l’ont gardée",
+    contacts: "ont écrit",
+  },
+  /* LE RESTAURANT NE FAIT PAS ESSAYER, IL FAIT VENIR. On ne pose pas un magret
+     sur soi : on le regarde, on le garde pour midi, et la dernière marche est
+     une table demandée — le geste que la dernière étape propose vraiment. */
+  restaurant: {
+    cote: "cuisine",
+    pastille: "Voir les stats de ce plat",
+    vus: "l’ont regardé",
+    gardes: "l’ont gardé pour midi",
+    contacts: "ont demandé une table",
+  },
+  /* LA SORTIE N'A PAS DE CLIENT, ELLE A DU MONDE. « Ont écrit » ne dit rien
+     d'un concert ; ce que l'organisateur veut savoir, c'est combien ont écouté
+     l'extrait et combien ont dit qu'ils y seraient. */
+  sortie: {
+    cote: "organisateur",
+    pastille: "Et côté organisateur\u202f?",
+    vus: "l’ont écoutée",
+    gardes: "l’ont gardée",
+    contacts: "ont dit «\u202fj’y serai\u202f»",
+  },
+};
+
+export function motsCoteDe(branche: string | undefined): MotsCote {
+  return MOTS_COTE[branche ?? ""] ?? MOTS_COTE.mode;
+}
+
 export type ChiffresCommerce = {
   essais: number;
   gardes: number;
@@ -161,6 +239,30 @@ export const CHIFFRES: Record<string, ChiffresCommerce> = {
   "maison-dax": { essais: 176, gardes: 44, contacts: 13, moyenne: 4.4 },
   cirier: { essais: 88, gardes: 19, contacts: 5, moyenne: 4.3 },
   "fleur-marche": { essais: 103, gardes: 22, contacts: 6, moyenne: 4.3 },
+  /* ── RESTAURANTS ─────────────────────────────────────────────────────────
+     PLUS DE MONDE QUE PARTOUT AILLEURS, ET C'EST LA VERITE DU METIER. Un plat
+     du jour se regarde le matin par toute une ville ; une coupe de cheveux se
+     regarde par ceux qui pensent a se faire couper les cheveux. Les tables
+     demandees restent basses en proportion — on ne reserve pas pour un midi ou
+     l'on passe sans prevenir. */
+  centre: { essais: 412, gardes: 78, contacts: 23, moyenne: 4.5 },
+  emporter: { essais: 268, gardes: 54, contacts: 17, moyenne: 4.4 },
+  "deux-rues": { essais: 337, gardes: 61, contacts: 14, moyenne: 4.4 },
+  boulange: { essais: 194, gardes: 42, contacts: 9, moyenne: 4.5 },
+  boucher: { essais: 226, gardes: 47, contacts: 12, moyenne: 4.4 },
+  tablee: { essais: 289, gardes: 58, contacts: 21, moyenne: 4.6 },
+  traiteur: { essais: 151, gardes: 33, contacts: 8, moyenne: 4.3 },
+  // ── SORTIES ──────────────────────────────────────────────────────────────
+  /* LA DERNIERE COLONNE N'EST PAS INVENTEE ICI : c'est `intentions` de la
+     soiree, le nombre de Fantomes qui ont dit qu'ils y seraient — 26 au
+     kiosque. Deux ecrans de la meme demonstration qui comptent la meme chose
+     doivent dire le meme nombre, sinon aucun des deux n'est cru. */
+  kiosque: { essais: 318, gardes: 64, contacts: 26, moyenne: 4.6 },
+  "bar-vins": { essais: 142, gardes: 29, contacts: 18, moyenne: 4.4 },
+  "bar-terrasse": { essais: 176, gardes: 38, contacts: 11, moyenne: 4.3 },
+  "marche-nuit": { essais: 97, gardes: 21, contacts: 9, moyenne: 4.3 },
+  expo: { essais: 84, gardes: 19, contacts: 7, moyenne: 4.4 },
+  "vide-grenier": { essais: 121, gardes: 26, contacts: 14, moyenne: 4.3 },
 };
 
 /** Les chiffres de ce commerce, ou de quoi ne rien afficher. */

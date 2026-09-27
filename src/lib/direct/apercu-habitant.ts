@@ -1167,6 +1167,37 @@ export type Voix = {
    * toute seule — voir `public/direct/voix/LISEZ-MOI.md`.
    */
   recit?: string;
+  /**
+   * ═══ CE QU'ON VOIT PENDANT QU'IL PARLE — quatre images, dans l'ordre ═════
+   *
+   * « On va tester autre chose pour l'étape 3, qui est hyper importante. Je
+   * t'ai mis les 4 photos qui devraient se succéder pendant que la voix parle.
+   * 1. rencontre avec le restaurateur. 2. cuisson, peau croustillante.
+   * 3. magret rosé et pommes dorées. 4. "Je vous le prépare ce midi ?" Même
+   * principe : un seul écran qui évolue pendant la voix. »
+   *
+   * UN SEUL ÉCRAN, ET C'EST TOUTE LA DIFFÉRENCE AVEC UN DIAPORAMA. On n'avance
+   * pas, on ne glisse pas, on n'appuie sur rien : on écoute, et ce qu'on a sous
+   * les yeux suit ce qu'il raconte. L'écran précédent montrait une photo fixe
+   * pendant une demi-minute de récit — la voix disait « je quadrille la peau »
+   * devant une assiette déjà servie.
+   *
+   * L'ORDRE EST LE SIEN, ET IL N'EST PAS DÉCORATIF : on rencontre quelqu'un, on
+   * le regarde travailler, on voit ce que ça donne, et il vous le propose. Une
+   * seule de ces quatre images sortie de son rang casse le récit.
+   *
+   * LES BORNES SE CALCULENT SUR LA VRAIE DURÉE DE L'ENREGISTREMENT, PAS SUR UN
+   * NOMBRE ÉCRIT ICI. Sa maquette prévoyait « une photo toutes les 3 secondes »
+   * pour 12 secondes de voix ; le fichier qu'il a fourni en dure 28. Écrire les
+   * secondes dans les données aurait laissé la quatrième image quinze secondes
+   * après la fin de la phrase qu'elle illustre. L'écran divise donc la durée
+   * mesurée en quatre — voir `parcours-table-ecran.tsx`.
+   *
+   * ET `mot` EST DIT PAR L'IMAGE, PAS PAR LE NARRATEUR. C'est la légende de sa
+   * maquette, en deux tons : ce qui est en gras est le mot sur lequel on
+   * l'entend appuyer.
+   */
+  photosVoix?: { src: string; mot: string; fort?: string }[];
 };
 
 /**
@@ -1742,7 +1773,18 @@ const CARTES: CarteAutour[] = [
       signature: "Je quadrille la peau et je prends mon temps.",
       recit:
         "Bonjour. Bon, mon magret, je commence par quadriller la peau. Je le pose côté peau sur le gril, doucement, pour qu'elle devienne bien croustillante sans brusquer la viande. Pendant qu'il repose, je fais dorer les pommes de terre à la graisse de canard, avec de l'ail et du persil. Et au dernier moment, je tranche le magret. Vous avez le croustillant, le fondant… et l'odeur qui arrive avant l'assiette.",
-      // extrait: "/direct/voix/bergine-magret.mp3",
+      /* SON ENREGISTREMENT EXISTE, DONC LA MENTION « voix de synthese » TOMBE.
+         C'est la seule ligne qu'il y avait a changer — voir le LISEZ-MOI a cote
+         du fichier. Jean-Marie est le premier des trois cuisiniers a avoir sa
+         vraie voix ; Margot et Yann gardent la synthese en attendant la leur. */
+      extrait: "/direct/voix/bergine-magret.mp3",
+      /* LES QUATRE TEMPS DE SON MAGRET, DANS L'ORDRE OU IL LES RACONTE. */
+      photosVoix: [
+        { src: "/direct/table/magret/1.jpg", mot: "Dans sa cuisine, avant le service.", fort: "sa cuisine" },
+        { src: "/direct/table/magret/2.jpg", mot: "Il le pose côté peau, et il prend son temps.", fort: "côté peau" },
+        { src: "/direct/table/magret/3.jpg", mot: "Rosé au centre, pommes dorées à la graisse de canard.", fort: "Rosé au centre" },
+        { src: "/direct/table/magret/4.jpg", mot: "Je vous le prépare ce midi\u202f?", fort: "ce midi" },
+      ],
     },
     site: "chezbergine.fr",
     fiche: {

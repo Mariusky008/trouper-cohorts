@@ -39,6 +39,7 @@ import { onSpeakingChange, speak, stopSpeaking } from "@/lib/site-internet/speec
 import { VILLE } from "@/lib/direct/apercu-habitant";
 import { demanderRendezVous, numeroDeFiction } from "@/lib/direct/prevenir";
 import { plaqueDuParcours } from "@/lib/direct/plaque-parcours";
+import { BoutonCote, CoteCommercant } from "@/components/direct/cote-commercant";
 import {
   COMMERCE_TABLE,
   DEVANTURE_TABLE,
@@ -64,6 +65,43 @@ function Fant({ classe }: { classe: string }) {
  * pour que les deux se ressemblent.
  */
 const ONDE = [18, 34, 26, 52, 40, 68, 46, 78, 58, 88, 64, 74, 50, 62, 38, 56, 30, 44, 24, 36];
+
+/**
+ * « 0:07 / 0:28 » — les secondes de sa maquette, lisibles.
+ *
+ * PAS DE `toFixed` NI DE `Intl` : on écrit deux nombres, et un zéro devant les
+ * secondes sous dix. Une durée mal formée — « 0:7 » — se remarque plus que
+ * l'absence de durée.
+ */
+function minutes(secondes: number): string {
+  const t = Math.max(0, Math.floor(secondes));
+  return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
+}
+
+/**
+ * LA LEGENDE EN DEUX TONS — c'est le dessin de sa maquette.
+ *
+ * « Mon magret, je le commence **côté peau**. » Le mot en gras est celui sur
+ * lequel on l'entend appuyer ; le reste est en demi-ton. Ce n'est pas de la
+ * décoration : sur une photo chargée, une phrase entièrement en gras blanc
+ * n'accroche nulle part, et l'œil la saute.
+ *
+ * ON COUPE SUR LE MOT, PAS SUR UNE BALISE. Écrire du HTML dans les données
+ * aurait mis du balisage dans la bouche du commerçant — c'est lui qui remplira
+ * ces lignes un jour, et il n'écrira pas de balises.
+ */
+function decouper(phrase: string, fort?: string) {
+  if (!fort) return phrase;
+  const i = phrase.indexOf(fort);
+  if (i < 0) return phrase;
+  return (
+    <>
+      {phrase.slice(0, i)}
+      <b>{fort}</b>
+      {phrase.slice(i + fort.length)}
+    </>
+  );
+}
 
 export function ParcoursTable({
   onFermer,
@@ -143,6 +181,49 @@ export function ParcoursTable({
      aurait menti dans les deux sens. */
   const [cloud, setCloud] = useState(false);
   const sonRef = useRef<HTMLAudioElement | null>(null);
+  /* ═══ OU EN EST LA VOIX — c'est ce qui fait tourner les quatre photos ══
+
+     « Les 4 photos devraient se succéder pendant que la voix parle, en 12
+     secondes ; une photo toutes les 3 secondes je pense serait bien. »
+
+     SON ENREGISTREMENT DURE 28 SECONDES, PAS 12 — mesuré sur le fichier qu'il a
+     envoyé. Écrire « 3 secondes » dans le code aurait donc posé la quatrième
+     image, celle qui dit « je vous le prépare ce midi ? », quinze secondes
+     avant qu'il ne prononce la phrase, puis l'aurait laissée là tout le reste
+     du récit.
+
+     ON DIVISE DONC LA DURÉE RÉELLE EN QUATRE, et ses quatre temps gardent leur
+     ordre quelle que soit la longueur de la prise — la sienne aujourd'hui,
+     celle d'un vrai commerçant demain. C'est la même règle que partout
+     ailleurs ici : on lit ce qui est là, on n'écrit pas un nombre qu'il faudra
+     retoucher à chaque nouveau fichier.
+
+     `avance` EST EN SECONDES DE VOIX, PAS EN IMAGES. Il vient de `currentTime`
+     quand un fichier joue — donc il recule si l'on revient en arrière — et de
+     l'horloge quand c'est le téléphone qui lit, faute de mieux. */
+  const [avance, setAvance] = useState(0);
+  const [duree, setDuree] = useState(0);
+  /** Le panneau du commerçant, ouvert par la pastille de la dernière étape. */
+  const [cote, setCote] = useState(false);
+
+  useEffect(() => {
+    if (!joue) return undefined;
+    const depart = Date.now();
+    const t = window.setInterval(() => {
+      const a = sonRef.current;
+      if (a && !a.paused && Number.isFinite(a.duration) && a.duration > 0) {
+        setDuree(a.duration);
+        setAvance(a.currentTime);
+      } else {
+        /* LA VOIX DU NAVIGATEUR NE DIT PAS OU ELLE EN EST. `speechSynthesis`
+           n'expose ni durée ni position : il ne reste que l'horloge, et la
+           durée de repli plus bas. C'est moins juste, et c'est la seule chose
+           qu'on puisse faire sans inventer. */
+        setAvance((Date.now() - depart) / 1000);
+      }
+    }, 120);
+    return () => window.clearInterval(t);
+  }, [joue]);
 
   const jouerFichier = (src: string, estCloud: boolean) =>
     new Promise<boolean>((resolve) => {
@@ -178,6 +259,7 @@ export function ParcoursTable({
       setJoue(false);
       return;
     }
+    setAvance(0);
     if (voix?.extrait && (await jouerFichier(voix.extrait, true))) return;
     /* LA VOIX CLOUD NE PEUT DIRE QUE CE QUI EST DÉJÀ ÉCRIT : on lui passe la
        clé du commerce, elle va chercher le récit elle-même. Voir la route. */
@@ -196,6 +278,34 @@ export function ParcoursTable({
   const cle = commerce || COMMERCE_TABLE;
   const plaque = plaqueDuParcours(cle, ["chose", "paire", "voix", "venir"]);
   const resto = plaque?.commerce;
+  /* ═══ LA DUREE SE LIT AVANT QU'ON APPUIE ═══════════════════════════════
+
+     MESURE A L'ECRAN : la ligne disait « 0:00 / 0:12 » sur un enregistrement de
+     vingt-huit secondes, jusqu'au premier appui. Douze est la valeur de repli,
+     et elle s'affichait comme une promesse — on annonçait un récit deux fois
+     plus court que le sien.
+
+     `preload="metadata"` NE TELECHARGE QUE L'EN-TETE, quelques centaines
+     d'octets : assez pour connaître la durée, pas assez pour peser. On la lit
+     donc à l'ouverture du parcours, et la ligne est juste dès la première
+     seconde. L'objet est jeté ensuite — il n'a jamais servi à jouer.
+
+     IL EST ICI, ET PAS PLUS HAUT AVEC LES AUTRES CROCHETS, parce qu'il lui faut
+     le commerce — et le commerce n'est connu qu'une fois la plaque résolue. Il
+     reste au-dessus du `return null`, qui est la seule chose qui compte. */
+  const extrait = resto?.voix?.extrait;
+  useEffect(() => {
+    if (!extrait) return undefined;
+    const a = new Audio();
+    a.preload = "metadata";
+    const lu = () => {
+      if (Number.isFinite(a.duration) && a.duration > 0) setDuree(a.duration);
+    };
+    a.addEventListener("loadedmetadata", lu);
+    a.src = extrait;
+    return () => a.removeEventListener("loadedmetadata", lu);
+  }, [extrait]);
+
   if (!plaque || !resto) return null;
 
   /* ═══ LE PLAT : DE SA CARTE CHEZ MARGOT, DE SON ANNONCE AILLEURS ═══════
@@ -269,8 +379,35 @@ export function ParcoursTable({
   const suivant = () => setEtape((e) => Math.min(total, e + 1));
   const precedent = () => (etape === 1 ? onFermer() : setEtape((e) => e - 1));
 
+  /* ═══ LES QUATRE TEMPS DU PLAT, ET QUI LES A ════════════════════════════
+
+     « Même principe : un seul écran qui évolue pendant la voix. »
+
+     SEUL CHEZ BERGINE LES A AUJOURD'HUI, et c'est la règle de tout ce parcours :
+     le rideau ne se dessine que si le commerce a deux photos du même plat, la
+     voix ne se dessine que s'il a quelque chose à dire, et les quatre temps ne
+     se dessinent que s'il les a photographiés. Les six autres restaurants
+     gardent l'écran chaleureux d'avant — une photo, un rond, une phrase — qui
+     n'est pas un second choix mais ce que leurs données permettent de tenir.
+     Voir `photosVoix` dans `apercu-habitant.ts`. */
+  const suite = voix?.photosVoix ?? [];
+  /* DOUZE SECONDES QUAND ON NE SAIT PAS, ET C'EST SON CHIFFRE A LUI. Il s'agit
+     du cas où c'est le téléphone qui lit : aucune durée n'est connue, et son
+     plan de départ — « 12 secondes, une photo toutes les 3 » — est la meilleure
+     réponse qu'on ait. Dès qu'un fichier joue, sa vraie durée prend la place. */
+  const dureeVoix = duree > 0 ? duree : 12;
+  const pasVoix = suite.length ? dureeVoix / suite.length : 0;
+  const vu = suite.length
+    ? Math.min(suite.length - 1, Math.max(0, Math.floor(avance / pasVoix)))
+    : 0;
+
   /** Le fond plein écran de l'étape courante. */
-  const fond = ici === "voix" ? PHOTO_VOIX : ici === "venir" ? PHOTO_VENIR : PHOTO_PLAT;
+  const fond =
+    ici === "voix"
+      ? (suite[vu]?.src ?? PHOTO_VOIX)
+      : ici === "venir"
+        ? PHOTO_VENIR
+        : PHOTO_PLAT;
 
   /** La fiche du restaurant, la même aux quatre étapes du bas. */
   const fiche = (avecPrix: boolean) => (
@@ -297,8 +434,29 @@ export function ParcoursTable({
     ) : null;
 
   return (
-    <div className={`pt pt-e${PAS.indexOf(ici) + 1} pt-p-${ici}`}>
-      <div className="pt-fond" style={{ backgroundImage: `url("${fond}")` }} aria-hidden="true" />
+    <div className={`pt pt-e${PAS.indexOf(ici) + 1} pt-p-${ici}${ici === "voix" && suite.length ? " pt-suite-la" : ""}`}>
+      {/* ═══ LES QUATRE PHOTOS SONT EMPILEES, PAS ECHANGEES ══════════════
+
+          UNE SEULE BOITE DONT ON CHANGE `backgroundImage` FAIT UN BLANC. Le
+          navigateur ne commence a telecharger l'image qu'au moment ou on la lui
+          demande : la deuxieme photo serait arrivee une demi-seconde apres la
+          phrase qu'elle illustre, sur un fond vide. Empilees, elles sont toutes
+          chargees des l'ouverture de l'etape, et il ne reste qu'une opacite a
+          faire glisser — ce qui donne aussi le fondu, qu'un echange n'aurait
+          jamais donne. */}
+      {ici === "voix" && suite.length > 0 ? (
+        <div className="pt-suite" aria-hidden="true">
+          {suite.map((ph, k) => (
+            <span
+              key={ph.src}
+              className={k === vu ? "on" : undefined}
+              style={{ backgroundImage: `url("${ph.src}")` }}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="pt-fond" style={{ backgroundImage: `url("${fond}")` }} aria-hidden="true" />
+      )}
       <div className="pt-voile" aria-hidden="true" />
 
       {/* ═══ LA COQUE, IDENTIQUE AUX QUATRE ÉTAPES ═══════════════════════ */}
@@ -512,8 +670,43 @@ export function ParcoursTable({
           personnes sur cinq font défiler en silence dans le bus. Supprimer le
           texte de l'écran était juste ; le supprimer du produit aurait rendu
           cette étape muette pour elles. Replié, il ne coûte plus une ligne. */}
+      {/* ═══ L'ECRAN QUI EVOLUE PENDANT LA VOIX ════════════════════════
+
+          « On va tester autre chose pour l'étape 3, qui est hyper importante.
+          Les 4 photos devraient se succéder pendant que la voix parle. Même
+          principe : un seul écran qui évolue pendant la voix. »
+
+          CE QU'IL REMPLACE : UNE PHOTO FIXE PENDANT UNE DEMI-MINUTE DE RECIT.
+          On entendait « je le pose côté peau sur le gril » devant une assiette
+          déjà servie, puis « je tranche » devant la même assiette. Le récit et
+          l'image ne parlaient pas du même moment, et c'est l'image qui gagnait.
+
+          ET ON N'A AJOUTE AUCUN GESTE. Pas de flèches, pas de points à toucher,
+          rien qui se glisse : on appuie une fois sur le rond, et l'écran fait le
+          reste. Un diaporama qu'on fait défiler soi-même aurait remis l'habitant
+          au travail pendant qu'on lui raconte quelque chose.
+
+          PAS DE PASTILLES « 1 2 3 4 » NON PLUS, et c'est la même règle que les
+          barres de progression qu'il a fait retirer partout : la photo qui
+          change EST l'avancement. Ce qui reste, c'est la barre du lecteur — elle
+          ne compte pas des écrans, elle dit combien de temps il parle encore,
+          et c'est ce que sa maquette dessine. */}
       {ici === "voix" && (
-        <section className="pt-bas pt-voixbas">
+        <section className={`pt-bas pt-voixbas${suite.length ? " pt-suitebas" : ""}`}>
+          {/* ═══ SA LEGENDE, EN DEUX TONS — elle change avec la photo ══════
+              C'est le seul texte de l'écran, et il est court exprès : on est en
+              train d'écouter quelqu'un. Le mot en gras est celui sur lequel on
+              l'entend appuyer. */}
+          {suite.length > 0 && (
+            <>
+              <p className="pt-chapeau">
+                Dans la cuisine de {voix?.prenom ?? "la maison"}
+              </p>
+              <p className="pt-legende" aria-live="polite" key={suite[vu]?.src}>
+                {decouper(suite[vu]?.mot ?? "", suite[vu]?.fort)}
+              </p>
+            </>
+          )}
           {/* LE HALO DERRIÈRE LE BOUTON RESPIRE QUAND ÇA PARLE. C'est le seul
               mouvement de l'écran, et il dit « ça sort de là ». */}
           <div className={`pt-parle${joue ? " on" : ""}`}>
@@ -528,7 +721,16 @@ export function ParcoursTable({
                   lui-meme ne montrait rien de plus et faisait un doublon.
                   L'ecran dit « Margot vous raconte SON PLAT » : le plat a sa
                   place ici, et le bouton de lecture se pose dessus. */}
-              <span className="pt-rond-p" style={{ backgroundImage: `url("${PHOTO_PLAT}")` }} aria-hidden="true" />
+              {/* DANS LE ROND : LE PLAT D'HABITUDE, LUI QUAND LA SUITE EXISTE.
+                  Les quatre photos montrent deja l'assiette au troisieme temps :
+                  la remettre en petit dans le rond en aurait fait un doublon.
+                  Ce que le rond dit alors, c'est QUI parle — et la bande du
+                  haut dit ce qu'il fait pendant ce temps. */}
+              <span
+                className="pt-rond-p"
+                style={{ backgroundImage: `url("${suite[0]?.src ?? PHOTO_PLAT}")` }}
+                aria-hidden="true"
+              />
               <span className="pt-rond-s" aria-hidden="true">{joue ? "❙❙" : "▶"}</span>
             </button>
             <span className={`pt-onde${joue ? " on" : ""}`} aria-hidden="true">
@@ -538,9 +740,33 @@ export function ParcoursTable({
             </span>
           </div>
 
-          <h1 className="pt-t pt-t-voix">
-            {voix?.prenom ?? "Elle"} <em>vous raconte.</em>
-          </h1>
+          {/* ═══ LA BARRE DU LECTEUR, ET CE N'EST PAS UNE BARRE D'ETAPES ══
+              Elle est dans sa maquette, et elle survit à « supprimer les barres
+              de progression partout » parce qu'elle ne compte pas des écrans :
+              elle dit combien de temps il parle encore. Sans elle, on ne sait
+              pas si l'on s'engage pour dix secondes ou pour une minute — c'est
+              la première chose qu'on veut savoir avant d'appuyer. */}
+          {suite.length > 0 && (
+            <div className="pt-lecteur">
+              <span className="pt-piste" aria-hidden="true">
+                <i style={{ width: `${Math.min(100, (avance / dureeVoix) * 100)}%` }} />
+              </span>
+              <span className="pt-chrono">
+                {minutes(avance)} / {minutes(dureeVoix)}
+              </span>
+            </div>
+          )}
+
+          {suite.length === 0 && (
+            <h1 className="pt-t pt-t-voix">
+              {voix?.prenom ?? "Elle"} <em>vous raconte.</em>
+            </h1>
+          )}
+          {/* SON PRENOM EST DEJA DANS LE CHAPEAU quand la suite existe — « DANS
+              LA CUISINE DE JEAN-MARIE » — donc la ligne ne le redit pas. Mesure
+              a l'ecran : « JEAN-MARIE · CUISINIER · CHEZ BERGINE » sous un
+              chapeau qui le nommait deja faisait lire son nom deux fois en
+              trois centimetres. */}
           {voix?.role && (
             <p className="pt-qui">
               {voix.role} · {nom}
@@ -548,8 +774,10 @@ export function ParcoursTable({
           )}
           {/* UNE SEULE LIGNE, CELLE QUI TIENT DEBOUT TOUTE SEULE. « Je fais mes
               pâtes le matin même » répond à « pourquoi chez elle » sans qu'on
-              ait besoin de la recette. */}
-          {voix?.signature && <p className="pt-phrase">« {voix.signature} »</p>}
+              ait besoin de la recette. LA LEGENDE DES QUATRE PHOTOS LA REMPLACE
+              quand elle existe : deux phrases courtes l'une sur l'autre se
+              gênent, et celle qui suit l'image est la plus vivante des deux. */}
+          {voix?.signature && suite.length === 0 && <p className="pt-phrase">« {voix.signature} »</p>}
 
           {voix?.recit && (
             <details className="pt-lire">
@@ -571,7 +799,7 @@ export function ParcoursTable({
       )}
 
       {/* ──────────────────────── 4/4 · LA TABLE ─────────────────────────── */}
-      {ici === "venir" && (
+      {ici === "venir" && !cote && (
         <section className="pt-bas">
           <h1 className="pt-t">
             À midi,
@@ -597,16 +825,49 @@ export function ParcoursTable({
               Le message WhatsApp est déjà écrit, l'appel part sur le même
               numéro. Voir `prevenir.ts` — le produit fait déjà exactement ça
               pour les rendez-vous, on ne refait pas un formulaire à côté. */}
+          {/* ═══ UN SEUL GESTE, ET IL MARCHE ════════════════════════════
+              « Il faut supprimer "Contacter le restaurant", qui est un doublon
+              de "Réserver une table", et supprimer "Numéro de démonstration". »
+              LES DEUX BOUTONS FAISAIENT LA MEME CHOSE PAR DEUX PORTES — le
+              message WhatsApp déjà écrit, et le même numéro composé. Deux
+              boutons côte à côte disent qu'il y a deux décisions à prendre ;
+              ici il n'y en avait qu'une, et le second ne servait qu'à la
+              retarder. La ligne « Numéro de démonstration » partait avec lui :
+              elle n'expliquait plus rien une fois le numéro disparu, et elle
+              disait à un commerçant en rendez-vous une chose qu'il sait déjà. */}
           <a className="pt-go" href={joindre.whatsapp} target="_blank" rel="noreferrer noopener">
             <Calendrier />
             Réserver une table
             <s aria-hidden="true">→</s>
           </a>
-          <a className="pt-deux" href={joindre.appel}>
-            <Combine />
-            Contacter le restaurant
-          </a>
-          <p className="pt-note">Numéro de démonstration.</p>
+
+          {/* ═══ ET ON PASSE DE SON COTE ═════════════════════════════════
+              « Rajouter "voir les stats de ce plat" […] et pour toutes les
+              autres catégories faire la même chose, pour avoir la même logique
+              et le même impact en fin de parcours. »
+              C'EST LE MEME PANNEAU QU'AU SALON ET A LA BOUTIQUE — voir
+              `cote-commercant.tsx`. Le restaurant finissait sur un numéro de
+              téléphone : le commerçant à qui on montre la démonstration voyait
+              ce que l'habitant fait, jamais ce que ça lui rapporte à lui. */}
+          <BoutonCote commerce={cle} branche="restaurant" onClick={() => setCote(true)} />
+        </section>
+      )}
+
+      {/* LE PANNEAU PREND TOUTE LA PLACE, il ne s'ajoute pas dessous. On est
+          passé côté cuisine : y laisser le bouton de réservation de l'habitant
+          aurait mélangé les deux points de vue sur le même écran — la correction
+          qu'il avait déjà demandée pour le salon. */}
+      {ici === "venir" && cote && (
+        <section className="pt-bas">
+          <CoteCommercant
+            commerce={cle}
+            branche="restaurant"
+            quoi={plat.nom}
+            nom={nom}
+            visuel={PHOTO_PLAT}
+            onRetour={() => setCote(false)}
+            motRetour="Revenir côté habitant"
+          />
         </section>
       )}
     </div>
@@ -643,11 +904,7 @@ function Guillemets() {
   );
 }
 
-/** Le combiné de « Contacter le restaurant ». */
-function Combine() {
-  return (
-    <svg className="pt-ico" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M7.4 3.8 9.8 8 8 10.2a12 12 0 0 0 5.8 5.8L16 14.2l4.2 2.4-.6 3a1.6 1.6 0 0 1-1.8 1.3C10.6 19.8 4.2 13.4 3.1 6.2A1.6 1.6 0 0 1 4.4 4.4Z" />
-    </svg>
-  );
-}
+/* LE COMBINE A DISPARU AVEC SON BOUTON. « Contacter le restaurant » etait un
+   doublon de « Reserver une table » : les deux ouvraient la meme demande. Le
+   dessin partait avec le bouton — un pictogramme garde sans usage finit par
+   revenir sur un ecran ou il ne veut plus rien dire. */

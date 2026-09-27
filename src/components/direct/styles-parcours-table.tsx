@@ -356,6 +356,91 @@ export function StylesParcoursTable() {
           animation:ptOnde .9s ease-in-out infinite alternate;
           animation-delay:var(--d,0s);}
         @keyframes ptOnde{from{transform:scaleY(.45)}to{transform:scaleY(1)}}
+        /* ═══ L'ECRAN QUI EVOLUE PENDANT LA VOIX ══════════════════════
+           « Les 4 photos devraient se succeder pendant que la voix parle. Meme
+           principe : un seul ecran qui evolue pendant la voix. »
+           LES QUATRE SONT EMPILEES ET TOUTES CHARGEES. Une seule boite dont on
+           changerait l'image ferait un blanc a chaque bascule : le navigateur
+           ne telecharge qu'au moment ou on la demande. Empilees, il ne reste
+           qu'une opacite a faire glisser — d'ou le fondu, gratuit. */
+        /* ═══ ET C'EST UNE BANDE, PAS UN PLEIN CADRE ══════════════════
+           MESURE A L'ECRAN : en plein cadre, la premiere photo ne montrait plus
+           qu'un menton et un tablier. La cause est la meme que pour les deux
+           premieres etapes, et elle est deja ecrite plus haut — une photo large
+           posee dans un ecran haut se recadre par les COTES, et il ne reste que
+           la tranche du milieu. Ses quatre images sont presque carrees ; en
+           bande, on voit l'homme entier, sa poele et sa cuisine.
+           LA BANDE EST UN PEU PLUS HAUTE QUE CELLE DES ETAPES 1 ET 2 : ce qu'on
+           regarde ici change toutes les sept secondes, donc il faut en voir
+           davantage. */
+        .pt-suite{position:absolute;inset:0 0 auto;height:60%;}
+        .pt-suite span{position:absolute;inset:0;opacity:0;
+          background-size:cover;background-position:center 42%;
+          transition:opacity .62s ease;}
+        .pt-suite span.on{opacity:1;}
+        /* LE VOILE SUIT LA BANDE : sans ca, il degradait vers le noir au milieu
+           de la photo et la coupait en deux. */
+        .pt-p-voix.pt-suite-la .pt-voile{background:linear-gradient(180deg,
+            rgba(6,6,10,.84) 0%, rgba(6,6,10,.3) 12%, rgba(6,6,10,0) 26%,
+            rgba(6,6,10,.5) 46%, rgba(6,6,10,.94) 58%, #06060A 64%);}
+        /* L'ONDE S'EFFACE QUAND LA BARRE DU LECTEUR EST LA. Les deux disent la
+           meme chose — ca parle — et l'une des deux la dit avec des chiffres.
+           Vingt batons qui remuent au-dessus d'une barre qui avance, c'est deux
+           fois le meme mouvement dans deux centimetres. */
+        .pt-suitebas .pt-onde{display:none;}
+        /* LE BAS EST PLUS SERRE QUE SUR L'ECRAN D'AVANT : il porte une legende,
+           un rond, une barre, une ligne, une fiche et un bouton. */
+        .pt-suitebas .pt-parle{margin:8px 0 0;}
+        .pt-suitebas .pt-rond{width:clamp(74px,min(21vw,11vh),94px);}
+        .pt-suitebas .pt-rond-s{width:32px;height:32px;font-size:12px;}
+        /* LE CHAPEAU DE SA MAQUETTE : « DANS LA CUISINE DE JULIEN », en petites
+           capitales, precede d'un tiret. Il dit ou l'on est avant qu'on ait lu
+           la legende, et il ne bouge pas quand les photos tournent. */
+        .pt-chapeau{margin:0;font-size:11px;font-weight:850;letter-spacing:.09em;
+          text-transform:uppercase;color:#FFB3DA;
+          text-shadow:0 2px 12px rgba(0,0,0,.95);}
+        .pt-chapeau::before{content:"— ";opacity:.7;}
+        /* LA LEGENDE, EN DEUX TONS. Elle arrive avec sa photo : la cle de React
+           change a chaque temps, donc l'animation se rejoue — sans quoi le
+           texte se remplacerait sans qu'on le remarque. */
+        .pt-legende{margin:7px 0 0;max-width:24ch;
+          font-size:clamp(19px,min(6vw,3.4vh),26px);font-weight:800;
+          /* LE CRENAGE EST PRESQUE NUL, ET C'EST UNE MESURE. A -.02em et 26px,
+             « Rose au centre » se lisait « Rose aucentre » : le gras serre les
+             lettres ET l'espace, qui n'a rien pour resister. On rend l'espace
+             a l'espace. */
+          line-height:1.18;letter-spacing:-.005em;word-spacing:.05em;
+          color:rgba(255,255,255,.72);
+          text-wrap:balance;text-shadow:0 2px 18px rgba(0,0,0,.95);
+          animation:ptLegende .5s ease backwards;}
+        .pt-legende b{font-weight:900;color:#fff;}
+        @keyframes ptLegende{from{opacity:0;transform:translateY(7px)}
+          to{opacity:1;transform:none}}
+        /* LA BARRE DU LECTEUR, ET CE N'EST PAS UNE BARRE D'ETAPES. Elle dit
+           combien de temps il parle encore — la premiere chose qu'on veut
+           savoir avant d'appuyer. Les barres qu'il a fait retirer comptaient
+           des ecrans ; celle-ci compte des secondes, et elle est dans sa
+           maquette. */
+        .pt-lecteur{display:flex;align-items:center;gap:10px;
+          width:100%;max-width:280px;margin:10px 0 0;}
+        .pt-piste{position:relative;flex:1 1 auto;height:4px;border-radius:999px;
+          background:rgba(255,255,255,.2);overflow:hidden;}
+        .pt-piste i{position:absolute;inset:0 auto 0 0;border-radius:999px;
+          background:linear-gradient(90deg,#FF7FC2,#FF2E9A);
+          transition:width .18s linear;}
+        .pt-chrono{flex:none;font-size:11px;font-weight:800;
+          font-variant-numeric:tabular-nums;color:rgba(255,255,255,.66);}
+        .pt-suitebas .pt-qui{margin:9px 0 0;}
+        .pt-suitebas .pt-qui b{color:#fff;}
+        @media (prefers-reduced-motion:reduce){
+          /* ON NE SUPPRIME PAS LE CHANGEMENT D'IMAGE, ON SUPPRIME LE GLISSE.
+             Retirer la bascule rendrait l'ecran faux — la voix parlerait de la
+             cuisson devant l'assiette servie. Ce qui gene ici est le mouvement
+             du texte, pas la photo qui change. */
+          .pt-legende{animation:none;}
+          .pt-piste i{transition:none;}
+        }
+
         .pt-synth{margin:8px 0 0;font-size:11.5px;font-weight:700;
           letter-spacing:.02em;color:rgba(255,255,255,.5);}
 
