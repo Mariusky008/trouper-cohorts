@@ -39,6 +39,20 @@ export function StylesParcoursDeco() {
         .pd-retour svg{width:19px;height:19px;fill:none;stroke:currentColor;
           stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
         .pd-retour:active{transform:scale(.92);}
+        /* ═══ LE FANTOME REPREND SA PLACE, TOUT A DROITE ═══════════════════
+           EN RETIRANT LA BARRE DE PROGRESSION, J'AI FAIT GLISSER LE FANTOME.
+           C'est elle qui occupait le milieu de la ligne et le poussait au bord ;
+           sans elle, les trois elements se sont serres a gauche et le Fantome
+           s'est retrouve au tiers de l'ecran. Mesure : x = 133 au lieu de 353.
+           « Nouvelle demande et cote salon n'ont pas le fantome en haut. » Il
+           etait la, mais plus a sa place — et une porte qui change de place
+           n'est plus une porte, c'est une surprise.
+           ET LA BARRE PORTE UN FOND. Le bloc de la demande defile dessous ;
+           sans voile, le texte passait a travers le logo. */
+        .pd-haut::before{content:"";position:absolute;inset:0;z-index:-1;
+          background:linear-gradient(180deg,rgba(6,6,10,.82),rgba(6,6,10,0));
+          pointer-events:none;}
+        .pd-haut>.fa{margin-left:auto;}
         .pd-logo{margin:0;flex:none;font-weight:900;
           font-size:clamp(23px,min(6.8vw,3.4vh),31px);line-height:1;
           letter-spacing:-.03em;text-shadow:0 2px 12px rgba(0,0,0,.7);}

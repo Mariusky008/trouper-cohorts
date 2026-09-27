@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { DELAIS, MOTS_RDV, chiffresDu } from "@/lib/direct/rendez-vous";
+import { NoteFantomes } from "@/components/direct/note-fantomes";
 
 /**
  * 📅 LE DERNIER ÉCRAN DES TROIS PARCOURS — un essai qui devient une demande.
@@ -131,7 +132,7 @@ export function DemandeRdv({
         </>
       )}
 
-      {temps === "envoye" && (
+      {temps === "envoye" && !cote && (
         <>
           {/* ═══ CE QU'IL REÇOIT, COMME IL LE REÇOIT ════════════════════════
               « Le moment fort devient la notification : "Nouvelle demande : un
@@ -195,49 +196,72 @@ export function DemandeRdv({
           {chiffres && (
             <button
               type="button"
-              className={`rdv-cote${cote ? " on" : ""}`}
-              aria-expanded={cote}
-              onClick={() => setCote((v) => !v)}
+              className="rdv-cote"
+              onClick={() => setCote(true)}
             >
               <s aria-hidden="true">📊</s>
-              {cote ? "Masquer le côté commerçant" : `Et côté ${metier === "coiffure" ? "salon" : "boutique"} ?`}
+              Et côté {metier === "coiffure" ? "salon" : "boutique"} ?
             </button>
           )}
+        </>
+      )}
 
-          {cote && chiffres && (
-            <div className="rdv-bilan">
-              <span className="rdv-bilan-v" style={{ backgroundImage: `url("${essai}")` }} aria-hidden="true" />
-              <p className="rdv-bilan-t">
-                {quoi} <em>travaille pour {nom}</em>
-              </p>
-              <ul className="rdv-chiffres">
-                <li>
-                  <b>{chiffres.essais}</b>
-                  <em>l’ont essayée</em>
-                </li>
-                <li>
-                  <b>{chiffres.gardes}</b>
-                  <em>l’ont gardée</em>
-                </li>
-                <li className="fort">
-                  <b>{chiffres.contacts}</b>
-                  <em>ont écrit</em>
-                </li>
-              </ul>
-              {/* LA MENTION EN TOUTES LETTRES, PAS EN PETIT DANS UN COIN. Voir
-                  le grand commentaire de `CHIFFRES` : un chiffre montré sans
-                  dire d'où il vient est pris pour une mesure. */}
-              <p className="rdv-illus">
-                Chiffres d’exemple, pour montrer l’écran. Dans l’application, ce
-                sont les essais, les enregistrements et les messages réellement
-                comptés.
-              </p>
-              <p className="rdv-lecon">
-                Il voit lesquelles de ses réalisations donnent envie de venir —
-                et il remet celles-là en avant.
-              </p>
-            </div>
-          )}
+      {/* ═══ COTE COMMERCANT : ON Y EST, DONC ON N'EST PLUS AILLEURS ═══════
+
+          « Ici on est côté salon, donc on devrait pas voir le message : on
+          devrait juste voir les stats. »
+
+          IL A RAISON, ET C'ETAIT UN MELANGE DE POINTS DE VUE. Le panneau
+          s'ouvrait SOUS la notification du client : on lisait « voilà ce que
+          vous avez envoyé » et, dessous, le tableau de bord de celui qui le
+          reçoit. Deux personnes différentes sur le même écran, sans que rien ne
+          dise qu'on avait changé de côté.
+
+          LE PANNEAU REMPLACE DONC TOUT, et un bandeau dit chez qui l'on est. On
+          en revient par la flèche, qui ramène à l'écran du client. */}
+      {temps === "envoye" && cote && chiffres && (
+        <>
+          <button type="button" className="rdv-retour" onClick={() => setCote(false)}>
+            <s aria-hidden="true">←</s>
+            Revenir côté client
+          </button>
+          <p className="rdv-cap">Côté {metier === "coiffure" ? "salon" : "boutique"}</p>
+          <span className="rdv-bilan-v" style={{ backgroundImage: `url("${essai}")` }} aria-hidden="true" />
+          <h1 className="rdv-t rdv-bilan-t">{quoi}</h1>
+          <p className="rdv-ligne">
+            chez <b>{nom}</b>
+          </p>
+
+          {/* ═══ LA MOYENNE EN FANTOMES ════════════════════════════════════
+              « Avec peut-être les fantômes comme références, qui permettent
+              aussi de savoir la moyenne en fantômes (comme des cœurs). »
+              C'EST LA MEME UNITE QUE PARTOUT AILLEURS, et c'est ce qui la rend
+              lisible : l'habitant note en fantômes sur le mur, le commerçant
+              lit une moyenne en fantômes. Un « 4,6/5 » aurait demandé
+              d'apprendre une seconde echelle pour dire la meme chose. */}
+          <span className="rdv-moy">
+            <NoteFantomes note={Math.round(chiffres.moyenne)} classe="vient" />
+            <b>
+              {chiffres.moyenne.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+              <i> de moyenne</i>
+            </b>
+          </span>
+
+          {/* L'ENTONNOIR, DE GAUCHE A DROITE : essaye, garde, ecrit. */}
+          <ul className="rdv-chiffres">
+            <li>
+              <b>{chiffres.essais}</b>
+              <em>l’ont essayée</em>
+            </li>
+            <li>
+              <b>{chiffres.gardes}</b>
+              <em>l’ont gardée</em>
+            </li>
+            <li className="fort">
+              <b>{chiffres.contacts}</b>
+              <em>ont écrit</em>
+            </li>
+          </ul>
         </>
       )}
       <style dangerouslySetInnerHTML={{ __html: FEUILLE }} />
@@ -260,10 +284,9 @@ const FEUILLE = `
   text-align:center;
   max-height:calc(100dvh - 104px);overflow-y:auto;overscroll-behavior:contain;
   padding-bottom:6px;
-  scrollbar-width:thin;scrollbar-color:rgba(255,46,154,.45) transparent;}
-.rdv::-webkit-scrollbar{width:4px;}
-.rdv::-webkit-scrollbar-thumb{background:rgba(255,46,154,.45);
-  border-radius:999px;}
+  /* PAS DE BARRE VISIBLE — voir .pm dans la feuille de la mode. */
+  scrollbar-width:none;-ms-overflow-style:none;}
+.rdv::-webkit-scrollbar{width:0;height:0;display:none;}
 /* LES BLOCS NE SE COMPRESSENT PAS EN DEFILANT : sans ca, flex les ecrase pour
    les faire tenir, et la notification perd sa hauteur. La pastille du cote
    commercant est la seule exception — elle se dimensionne sur son texte, et sa
@@ -380,19 +403,32 @@ const FEUILLE = `
   border:1.5px solid rgba(255,255,255,.18);}
 .rdv-cote.on{border-color:#FF2E9A;background:rgba(255,46,154,.14);}
 .rdv-cote s{text-decoration:none;font-size:14px;}
-.rdv-bilan{width:100%;margin:11px 0 0;padding:13px;border-radius:18px;
-  background:rgba(10,8,16,.82);
-  border:1.5px solid rgba(255,46,154,.45);
-  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
-.rdv-bilan-v{display:block;width:74px;height:90px;margin:0 auto;
-  border-radius:12px;background-size:cover;background-position:center 18%;}
-.rdv-bilan-t{margin:9px 0 0;font-size:13.5px;font-weight:850;line-height:1.25;
-  color:#fff;}
-.rdv-bilan-t em{display:block;font-style:normal;font-weight:700;
-  color:rgba(255,255,255,.7);font-size:12px;margin-top:1px;}
+/* LA FLECHE DE RETOUR, en haut a gauche du panneau : on est passe de l'autre
+   cote, on doit pouvoir revenir. */
+.rdv-retour{align-self:flex-start;width:auto;margin:0 0 4px;padding:6px 13px 6px 9px;
+  border-radius:999px;cursor:pointer;display:flex;align-items:center;gap:6px;
+  font:inherit;font-size:12px;font-weight:850;color:#E9DCF4;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.16);}
+.rdv-retour s{text-decoration:none;font-size:14px;}
+.rdv-bilan-v{display:block;width:96px;height:118px;margin:2px auto 0;
+  border-radius:16px;background-size:cover;background-position:center 14%;
+  box-shadow:0 18px 40px -16px rgba(0,0,0,.95);}
+.rdv-bilan-t{margin:11px 0 0;}
+/* LA MOYENNE : la rangee en grand, le chiffre a cote. Meme unite que le mur. */
+.rdv-moy{display:flex;align-items:center;justify-content:center;gap:10px;
+  margin:12px 0 0;padding:9px 15px;border-radius:999px;
+  background:rgba(255,46,154,.13);
+  border:1.5px solid rgba(255,46,154,.4);}
+.rdv-moy .nf{gap:4px;}
+.rdv-moy .nf-s{width:26px;height:28px;}
+.rdv-moy>b{font-size:17px;font-weight:900;letter-spacing:-.02em;color:#fff;}
+.rdv-moy>b i{font-style:normal;font-size:11.5px;font-weight:750;
+  color:rgba(255,255,255,.62);}
 /* L'ENTONNOIR SE LIT DE GAUCHE A DROITE : essaye, garde, ecrit. Le dernier est
    le seul qui rapporte de l'argent, donc c'est le seul en couleur. */
-.rdv-chiffres{list-style:none;display:flex;gap:7px;margin:11px 0 0;padding:0;}
+.rdv-chiffres{list-style:none;display:flex;gap:7px;margin:13px 0 0;padding:0;
+  width:100%;}
 .rdv-chiffres li{flex:1;padding:9px 4px;border-radius:13px;
   display:flex;flex-direction:column;align-items:center;gap:1px;
   background:rgba(255,255,255,.06);}
@@ -403,10 +439,16 @@ const FEUILLE = `
 .rdv-chiffres li.fort{background:rgba(255,46,154,.2);}
 .rdv-chiffres li.fort b{color:#FF7FC2;}
 .rdv-chiffres li.fort em{color:#FFC7E4;}
-.rdv-illus{margin:10px 0 0;font-size:10.5px;font-weight:700;line-height:1.35;
-  color:rgba(255,255,255,.55);}
-.rdv-lecon{margin:7px 0 0;font-size:11.5px;font-weight:750;line-height:1.35;
-  color:#E9DCF4;}
+/* ═══ PLUS DE PARAGRAPHE D'EXPLICATION ═══════════════════════════════════
+   « C'est une démo, donc les commerçants à qui je la montre le savent déjà,
+   donc supprime cette section partout où elle se trouve. »
+   J'AVAIS ECRIT « chiffres d'exemple » PARCE QUE LE PRODUIT NE MONTRE JAMAIS
+   UN CHIFFRE SANS DIRE D'OU IL VIENT. La regle vaut pour un habitant qui
+   decouvre l'application seul ; elle ne vaut pas ici, ou l'ecran est montre en
+   main propre par quelqu'un qui vient d'annoncer que c'est une demonstration.
+   Expliquer a quelqu'un ce qu'il vient de vous dire, c'est lui faire perdre son
+   temps — et c'etait huit lignes sur l'ecran qui doit le convaincre. */
+.rdv-chiffres{margin-top:13px;}
 @media (prefers-reduced-motion:reduce){
   .rdv-go:active,.rdv-q:active,.rdv-img:active{transform:none;}
   .rdv-bascule,.rdv-bascule::after{transition:none;}

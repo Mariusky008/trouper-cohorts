@@ -62,6 +62,16 @@ export function MurEssayeurs({
   const [actif, setActif] = useState(0);
   const prise = useRef<number | null>(null);
   const [dx, setDx] = useState(0);
+  /* ═══ POURQUOI LE GLISSEMENT « NE MARCHAIT PAS TRES BIEN » ═════════════
+     LA CARTE AVAIT UNE TRANSITION DE 260 ms EN PERMANENCE. Pendant qu'on tire,
+     chaque position demandait donc un quart de seconde pour etre atteinte : le
+     doigt etait toujours en avance sur la carte, et au relache elle continuait
+     encore un moment. C'est le defaut classique du glissement anime, et il se
+     sent avant de se voir — « ca marche pas tres bien », sans pouvoir dire
+     pourquoi.
+     PENDANT LE DOIGT : AUCUNE TRANSITION, et la carte suit au point pres. AU
+     RELACHE : la transition revient, et c'est elle qui fait l'atterrissage. */
+  const [tire, setTire] = useState(false);
 
   const bouger = (pas: number) => {
     setActif((i) => Math.min(essayeurs.length - 1, Math.max(0, i + pas)));
@@ -73,9 +83,10 @@ export function MurEssayeurs({
   return (
     <div className={`mes ${classe}-mes`}>
       <div
-        className="mes-scene"
+        className={`mes-scene${tire ? " tire" : ""}`}
         onPointerDown={(e) => {
           prise.current = e.clientX;
+          setTire(true);
           e.currentTarget.setPointerCapture(e.pointerId);
         }}
         onPointerMove={(e) => {
@@ -85,12 +96,17 @@ export function MurEssayeurs({
         onPointerUp={() => {
           const d = dx;
           prise.current = null;
-          if (d < -55) bouger(1);
-          else if (d > 55) bouger(-1);
+          setTire(false);
+          /* QUARANTE POINTS SUFFISENT. A cinquante-cinq, un pouce qui balaie
+             vite ne parcourait pas la distance avant de quitter l'ecran et la
+             carte revenait en place — le geste avait l'air ignore. */
+          if (d < -40) bouger(1);
+          else if (d > 40) bouger(-1);
           else setDx(0);
         }}
         onPointerCancel={() => {
           prise.current = null;
+          setTire(false);
           setDx(0);
         }}
       >
@@ -107,17 +123,55 @@ export function MurEssayeurs({
               style={{ "--mes-e": ecart, "--mes-dx": `${dx}px` } as React.CSSProperties}
               onClick={() => ecart !== 0 && bouger(ecart)}
             >
-              <div className={`mes-ph ${cadrage}`} style={{ backgroundImage: `url("${e.photo}")` }} />
+              {/* LA VERSION CADREE SUR LA TETE QUAND ELLE EXISTE — voir
+                  `portrait` dans `plaque-parcours.ts`. On coupe la photo, pas
+                  le cadre : aucun reglage de background-size ne donne a la fois
+                  la coupe entiere et une tete assez grande. */}
+              <div
+                className={`mes-ph ${cadrage}`}
+                style={{ backgroundImage: `url("${(cadrage === "visage" && e.portrait) || e.photo}")` }}
+              />
               <div className="mes-voile" />
-              {/* LA PREUVE, EN HAUT, DU CÔTÉ OPPOSÉ AU VISAGE. */}
-              <span className={`mes-preuve ${e.preuve}`}>
-                {e.preuve === "salon" ? "Fait au salon" : "Essai en photo"}
-              </span>
+              {/* ═══ PLUS DE PASTILLE DE PREUVE ═══════════════════════════
+
+                  « Et "fait au salon" à supprimer. »
+
+                  JE LE DIS COMME JE LE VOIS : c'est lui qui m'avait demandé de
+                  distinguer les essais des réalisations, « ce sont deux preuves
+                  différentes », et c'est lui qui la retire. Je la retire donc en
+                  entier — garder « Essai en photo » sans son contraire aurait
+                  laissé une étiquette qui ne distingue plus rien, ce qui est
+                  pire que pas d'étiquette.
+
+                  LA DONNÉE RESTE (`preuve` dans `ESSAYEURS`) : le jour où il la
+                  reveut, c'est une ligne à remettre, pas une série à réécrire. */}
               <div className="mes-bas">
-                <span className="mes-qui">
-                  {e.qui}
-                  <NoteFantomes note={e.note} />
+                {/* ═══ LES FANTOMES SONT LE « J'AIME » DU PRODUIT ═════════
+
+                    « Je trouve dommage que les fantômes soient si petits et
+                    discrets, c'est le cœur de nos références en tant que
+                    "like" : il faut animer cette partie et montrer sa plus-value
+                    en rendant ces fantômes attrayants et très clairement
+                    utilisés. »
+
+                    ILS ÉTAIENT UNE DÉCORATION DE FIN DE LIGNE. Petits, gris
+                    pour les éteints, posés après un prénom : on les prenait
+                    pour un ornement, pas pour une note que quelqu'un a donnée.
+
+                    ILS DEVIENNENT LE PREMIER OBJET DE LA LÉGENDE, sur leur
+                    propre ligne, avec le chiffre écrit à côté — « 5 sur 5 » —
+                    et ils S'ALLUMENT UN PAR UN quand la carte arrive. Une note
+                    qui se pose sous les yeux se lit comme un geste que
+                    quelqu'un vient de faire ; la même note peinte d'un coup se
+                    lit comme une image. C'est toute la différence entre
+                    décorer et montrer. */}
+                <span className="mes-note">
+                  <NoteFantomes note={e.note} classe={ecart === 0 ? "vient" : ""} />
+                  <b>
+                    {e.note} <i>sur 5</i>
+                  </b>
                 </span>
+                <span className="mes-qui">{e.qui}</span>
                 <b className="mes-mot">{e.mot}</b>
                 <em className="mes-ou">{e.ou}</em>
               </div>
@@ -162,10 +216,12 @@ const FEUILLE = `
   touch-action:pan-y;cursor:grab;}
 .mes-scene:active{cursor:grabbing;}
 .mes-c{position:absolute;inset:0;border-radius:20px;overflow:hidden;
-  transform:translate3d(calc(var(--mes-e) * 93% + var(--mes-dx) * .8),0,0)
+  transform:translate3d(calc(var(--mes-e) * 93% + var(--mes-dx)),0,0)
             scale(calc(1 - 0.12 * max(var(--mes-e), calc(-1 * var(--mes-e)))));
   transition:transform .26s cubic-bezier(.22,.61,.36,1),opacity .26s ease;
   box-shadow:0 26px 60px -22px rgba(0,0,0,.95);}
+/* PENDANT LE DOIGT, PLUS DE TRANSITION : la carte colle a la main. */
+.mes-scene.tire .mes-c{transition:none;}
 .mes-c.de-cote{opacity:.3;cursor:pointer;}
 /* LA VOISINE SE TAIT : ni legende, ni pastille de preuve. */
 .mes-c.de-cote .mes-bas,.mes-c.de-cote .mes-preuve{display:none;}
@@ -174,9 +230,11 @@ const FEUILLE = `
   background-repeat:no-repeat;}
 /* LA SILHOUETTE : l'image remplit la carte, cadree haut pour garder la tete. */
 .mes-ph.entier{background-position:center 16%;}
-/* LE VISAGE : on agrandit a deux fois et demie la hauteur de la carte et on se
-   cale sur le haut. La coupe remplit alors l'ecran, ce qui est la demande. */
-.mes-ph.visage{background-size:auto 250%;background-position:center 4%;}
+/* LE PORTRAIT EST DEJA CADRE — plus aucun zoom ici. Voir portrait dans
+   plaque-parcours.ts : deux essais de background-size ont echoue avant, l'un
+   trop pres, l'autre trop loin, parce que la carte et la photo n'ont pas le
+   meme rapport de forme. On coupe la photo, pas le cadre. */
+.mes-ph.visage{background-size:cover;background-position:center 12%;}
 /* LE VOILE NE COUVRE QUE LE BAS : le milieu, c'est la tete, et c'est ce qu'on
    vient regarder. Meme regle que le fond des parcours. */
 .mes-voile{position:absolute;inset:0;pointer-events:none;
@@ -205,10 +263,25 @@ const FEUILLE = `
    voyait une tache rose. Ils passent sur leur propre ligne, au-dessus du
    prenom, a dix-huit points — la note se lit avant la phrase, ce qui est
    l'ordre dans lequel on la veut. */
-.mes-qui{display:flex;flex-direction:column;align-items:flex-start;gap:4px;
-  font-size:13px;font-weight:900;letter-spacing:.02em;color:#FF7FC2;}
-.mes-qui .nf{gap:3px;}
-.mes-qui .nf-s{width:19px;height:20.5px;}
+/* LA NOTE PASSE DEVANT LE PRENOM, ET ELLE EST GRANDE. Vingt-six points de
+   haut, le chiffre ecrit a cote pour ceux qui comptent mal de loin. */
+.mes-note{display:flex;align-items:center;gap:9px;margin-bottom:3px;}
+.mes-note .nf{gap:4px;}
+.mes-note .nf-s{width:26px;height:28px;}
+.mes-note>b{font-size:14px;font-weight:900;letter-spacing:-.01em;color:#fff;
+  text-shadow:0 2px 10px rgba(0,0,0,.9);}
+.mes-note>b i{font-style:normal;font-weight:750;font-size:11.5px;
+  color:rgba(255,255,255,.62);}
+/* ILS S'ALLUMENT UN PAR UN, de gauche a droite. Le retard est porte par
+   --nf-i, que la rangee pose sur chaque fantome. */
+.mes-note .nf.vient .nf-s.on{animation:mesPose .34s cubic-bezier(.34,1.56,.64,1) backwards;
+  animation-delay:calc(var(--nf-i,0) * .11s + .18s);}
+@keyframes mesPose{
+  from{opacity:0;transform:scale(.4) translateY(6px);}
+  60%{opacity:1;transform:scale(1.18) translateY(0);}
+  to{opacity:1;transform:scale(1) translateY(0);}
+}
+.mes-qui{font-size:12.5px;font-weight:900;letter-spacing:.02em;color:#FF7FC2;}
 .mes-mot{font-size:clamp(14px,4.2vw,17px);font-weight:850;line-height:1.28;
   letter-spacing:-.01em;text-shadow:0 2px 12px rgba(0,0,0,.9);}
 .mes-ou{font-style:normal;font-size:11px;font-weight:700;margin-top:1px;

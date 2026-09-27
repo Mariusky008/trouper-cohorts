@@ -307,6 +307,26 @@ export type Essayeur = {
    * sur le même écran.
    */
   preuve: "salon" | "essai";
+  /**
+   * ═══ LE MEME ESSAYEUR, CADRE SUR SA TETE ══════════════════════════════
+   *
+   * « Les coupes des 3 femmes sont en très gros plans et donc on voit rien. »
+   *
+   * J'AI CORRIGE DANS LE MAUVAIS SENS, PUIS DANS L'AUTRE. Ses photos sont des
+   * plans entiers ; j'ai d'abord zoome en CSS jusqu'a n'avoir qu'un front, puis
+   * dezoome jusqu'a retrouver un corps entier dont la tete fait un quart de la
+   * carte. Aucun reglage de `background-size` ne donne les deux a la fois : la
+   * carte est deux fois plus haute que large, la photo pas — agrandir pour
+   * remplir la hauteur rogne forcement les cotes.
+   *
+   * ON COUPE LA PHOTO, PAS LE CADRE. `-tete.jpg` est un portrait 3:4 tire du
+   * haut de l'original : la coupe entiere, les epaules, et rien d'autre. Voir
+   * `scripts/` — le decoupage est fait une fois, pas a chaque affichage.
+   *
+   * FACULTATIF : les series qui n'en ont pas — la mode, ou c'est la silhouette
+   * qu'on regarde — gardent leur plan entier.
+   */
+  portrait?: string;
 };
 
 const D = "/direct/essayeurs/";
@@ -314,27 +334,27 @@ const D = "/direct/essayeurs/";
 export const ESSAYEURS: Record<string, Essayeur[]> = {
   // ── BEAUTÉ ───────────────────────────────────────────────────────────────
   "coif-nouveau": [
-    { photo: `${D}coif-nouveau-1.jpg`, preuve: "salon", qui: "Hélène", note: 5, ou: "Devant chez elle",
+    { photo: `${D}coif-nouveau-1.jpg`, portrait: `${D}coif-nouveau-1-tete.jpg`, preuve: "salon", qui: "Hélène", note: 5, ou: "Devant chez elle",
       mot: "Mes boucles, je les subissais. Là je les porte." },
-    { photo: `${D}coif-nouveau-2.jpg`, preuve: "salon", qui: "Sofia", note: 4, ou: "Au marché aux fleurs",
+    { photo: `${D}coif-nouveau-2.jpg`, portrait: `${D}coif-nouveau-2-tete.jpg`, preuve: "salon", qui: "Sofia", note: 4, ou: "Au marché aux fleurs",
       mot: "Il faut du produit les jours humides, sinon ça gonfle." },
-    { photo: `${D}coif-nouveau-3.jpg`, preuve: "essai", qui: "Awa", note: 5, ou: "En terrasse",
+    { photo: `${D}coif-nouveau-3.jpg`, portrait: `${D}coif-nouveau-3-tete.jpg`, preuve: "essai", qui: "Awa", note: 5, ou: "En terrasse",
       mot: "Je sors du lit, je secoue, c'est fait." },
   ],
   "coif-barbier": [
-    { photo: `${D}coif-barbier-1.jpg`, preuve: "salon", qui: "Serge", note: 5, ou: "Devant l'épicerie",
+    { photo: `${D}coif-barbier-1.jpg`, portrait: `${D}coif-barbier-1-tete.jpg`, preuve: "salon", qui: "Serge", note: 5, ou: "Devant l'épicerie",
       mot: "Il rattrape les épis au lieu de lutter contre." },
-    { photo: `${D}coif-barbier-2.jpg`, preuve: "salon", qui: "Marc", note: 4, ou: "Rue du marché",
+    { photo: `${D}coif-barbier-2.jpg`, portrait: `${D}coif-barbier-2-tete.jpg`, preuve: "salon", qui: "Marc", note: 4, ou: "Rue du marché",
       mot: "Au bout de six semaines elle bouge, mais elle reste nette." },
-    { photo: `${D}coif-barbier-3.jpg`, preuve: "essai", qui: "Hugo", note: 5, ou: "Devant le café",
+    { photo: `${D}coif-barbier-3.jpg`, portrait: `${D}coif-barbier-3-tete.jpg`, preuve: "essai", qui: "Hugo", note: 5, ou: "Devant le café",
       mot: "Première fois qu'on me demande ce que je fais le matin." },
   ],
   "coif-halle": [
-    { photo: `${D}coif-halle-1.jpg`, preuve: "salon", qui: "Martine", note: 5, ou: "Sous les arcades",
+    { photo: `${D}coif-halle-1.jpg`, portrait: `${D}coif-halle-1-tete.jpg`, preuve: "salon", qui: "Martine", note: 5, ou: "Sous les arcades",
       mot: "Le cuivré tient trois mois sans virer orange." },
-    { photo: `${D}coif-halle-2.jpg`, preuve: "salon", qui: "Nadia", note: 4, ou: "Devant la librairie",
+    { photo: `${D}coif-halle-2.jpg`, portrait: `${D}coif-halle-2-tete.jpg`, preuve: "salon", qui: "Nadia", note: 4, ou: "Devant la librairie",
       mot: "Les pointes demandent un passage tous les deux mois." },
-    { photo: `${D}coif-halle-3.jpg`, preuve: "essai", qui: "Camille", note: 5, ou: "Devant le bistrot",
+    { photo: `${D}coif-halle-3.jpg`, portrait: `${D}coif-halle-3-tete.jpg`, preuve: "essai", qui: "Camille", note: 5, ou: "Devant le bistrot",
       mot: "J'avais peur du roux sur ma peau. C'est ce qui l'éclaire." },
   ],
 

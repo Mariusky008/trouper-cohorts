@@ -168,7 +168,7 @@ export function ParcoursDeco({
       )}
 
       {/* ═══ LA COQUE, IDENTIQUE AUX QUATRE ÉTAPES ═══════════════════════ */}
-      <header className="pd-haut">
+      <header className="pd-haut" aria-label={`Étape ${etape} sur ${total}`}>
         {etape > 1 && (
           <button type="button" className="pd-retour" onClick={precedent} aria-label="L’étape précédente">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -184,14 +184,20 @@ export function ParcoursDeco({
         <p className="pd-logo">
           <MotMarque />
         </p>
-        <div className="pd-pas" aria-label={`Étape ${etape} sur ${total}`}>
-          {Array.from({ length: total }, (_, i) => (
-            <s key={i} className={i + 1 <= etape ? "on" : ""} />
-          ))}
-          <em>
-            {etape}/{total}
-          </em>
-        </div>
+        {/* ═══ PLUS DE BARRE DE PROGRESSION ══════════════════════════════
+
+            « Supprimer les barres de progression partout où il y en a. »
+
+            ELLE NE SERVAIT QU'À COMPTER, ET PERSONNE NE COMPTE. Quatre traits
+            et « 3/4 » disent combien d'écrans restent — une information de
+            formulaire administratif, posée en haut de la seule ligne où l'on a
+            le logo et la porte de sortie. Sur un parcours de quatre écrans
+            qu'on traverse en glissant, l'effort n'est pas assez grand pour
+            qu'on ait besoin de le mesurer.
+
+            LE COMPTE RESTE POUR LES LECTEURS D'ÉCRAN, sur l'en-tête : eux ne
+            voient pas qu'il ne reste qu'un écran, et le leur retirer serait
+            leur enlever quelque chose que personne d'autre ne perd. */}
         {/* LE FANTÔME RAMÈNE À L'ACCUEIL, comme sur les quatre autres
             parcours. Voir `fantome-accueil.tsx` : un composant, une place, un
             geste — chaque écran avait sa version, donc celui qu'on n'avait pas

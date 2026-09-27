@@ -39,6 +39,20 @@ export function StylesParcoursCoiffure() {
         .pc-haut{position:relative;z-index:3;flex:none;
           display:flex;align-items:center;gap:10px;
           padding:calc(8px + var(--ap-encoche,0px)) 14px 0;}
+        /* ═══ LE FANTOME REPREND SA PLACE, TOUT A DROITE ═══════════════════
+           EN RETIRANT LA BARRE DE PROGRESSION, J'AI FAIT GLISSER LE FANTOME.
+           C'est elle qui occupait le milieu de la ligne et le poussait au bord ;
+           sans elle, les trois elements se sont serres a gauche et le Fantome
+           s'est retrouve au tiers de l'ecran. Mesure : x = 133 au lieu de 353.
+           « Nouvelle demande et cote salon n'ont pas le fantome en haut. » Il
+           etait la, mais plus a sa place — et une porte qui change de place
+           n'est plus une porte, c'est une surprise.
+           ET LA BARRE PORTE UN FOND. Le bloc de la demande defile dessous ;
+           sans voile, le texte passait a travers le logo. */
+        .pc-haut::before{content:"";position:absolute;inset:0;z-index:-1;
+          background:linear-gradient(180deg,rgba(6,6,10,.82),rgba(6,6,10,0));
+          pointer-events:none;}
+        .pc-haut>.fa{margin-left:auto;}
         .pc-logo{margin:0;flex:none;font-weight:900;
           font-size:clamp(24px,min(7.2vw,3.5vh),32px);line-height:1;
           letter-spacing:-.03em;text-shadow:0 2px 12px rgba(0,0,0,.7);}

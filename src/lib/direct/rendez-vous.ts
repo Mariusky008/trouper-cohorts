@@ -128,23 +128,39 @@ export const DELAIS: Delai[] = [
  * d'une démonstration à l'autre. Un chiffre qui change entre deux ouvertures se
  * remarque, et à partir de là plus rien n'est cru.
  */
-export type ChiffresCommerce = { essais: number; gardes: number; contacts: number };
+export type ChiffresCommerce = {
+  essais: number;
+  gardes: number;
+  contacts: number;
+  /**
+   * LA MOYENNE DES NOTES, EN FANTOMES.
+   *
+   * « Avec peut-être les fantômes comme références, qui permettent aussi de
+   * savoir la moyenne en fantômes (comme des cœurs). »
+   *
+   * LA MEME UNITE QUE PARTOUT AILLEURS, et c'est ce qui la rend lisible : celui
+   * qui essaie note en fantômes sur le mur, celui qui reçoit lit une moyenne en
+   * fantômes. Un « 4,6 sur 5 » aurait demandé d'apprendre une seconde échelle
+   * pour dire exactement la même chose.
+   */
+  moyenne: number;
+};
 
 export const CHIFFRES: Record<string, ChiffresCommerce> = {
   // ── BEAUTÉ ───────────────────────────────────────────────────────────────
-  "coif-nouveau": { essais: 214, gardes: 47, contacts: 11 },
-  "coif-barbier": { essais: 168, gardes: 39, contacts: 14 },
-  "coif-halle": { essais: 132, gardes: 28, contacts: 7 },
-  "coif-centre": { essais: 286, gardes: 61, contacts: 19 },
+  "coif-nouveau": { essais: 214, gardes: 47, contacts: 11, moyenne: 4.3 },
+  "coif-barbier": { essais: 168, gardes: 39, contacts: 14, moyenne: 4.4 },
+  "coif-halle": { essais: 132, gardes: 28, contacts: 7, moyenne: 4.3 },
+  "coif-centre": { essais: 286, gardes: 61, contacts: 19, moyenne: 4.4 },
   // ── MODE ─────────────────────────────────────────────────────────────────
-  "mode-friperie": { essais: 149, gardes: 34, contacts: 9 },
-  "mode-homme": { essais: 121, gardes: 26, contacts: 8 },
-  "mode-depot": { essais: 97, gardes: 31, contacts: 12 },
-  "mode-centre": { essais: 243, gardes: 58, contacts: 16 },
+  "mode-friperie": { essais: 149, gardes: 34, contacts: 9, moyenne: 4.4 },
+  "mode-homme": { essais: 121, gardes: 26, contacts: 8, moyenne: 4.4 },
+  "mode-depot": { essais: 97, gardes: 31, contacts: 12, moyenne: 4.6 },
+  "mode-centre": { essais: 243, gardes: 58, contacts: 16, moyenne: 4.4 },
   // ── DÉCO ─────────────────────────────────────────────────────────────────
-  "maison-dax": { essais: 176, gardes: 44, contacts: 13 },
-  cirier: { essais: 88, gardes: 19, contacts: 5 },
-  "fleur-marche": { essais: 103, gardes: 22, contacts: 6 },
+  "maison-dax": { essais: 176, gardes: 44, contacts: 13, moyenne: 4.4 },
+  cirier: { essais: 88, gardes: 19, contacts: 5, moyenne: 4.3 },
+  "fleur-marche": { essais: 103, gardes: 22, contacts: 6, moyenne: 4.3 },
 };
 
 /** Les chiffres de ce commerce, ou de quoi ne rien afficher. */

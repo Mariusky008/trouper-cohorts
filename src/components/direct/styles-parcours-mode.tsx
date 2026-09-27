@@ -16,11 +16,20 @@ export function StylesParcoursMode() {
     <style
       dangerouslySetInnerHTML={{
         __html: `
+        /* ═══ LA BARRE DE DEFILEMENT NE SE MONTRE PLUS ═══════════════════
+           « Une barre de progression sur le cote qui est tres laide et a
+           supprimer. » C'etait la barre de DEFILEMENT du navigateur, pas une
+           barre de progression — mais le reproche est le meme et il est juste :
+           un trait clair sur toute la hauteur, a cote d'un ecran qui se veut
+           une application. Une application n'a pas de barre de defilement
+           visible. Le contenu defile toujours, elle ne se dessine plus. */
         .pm{position:absolute;inset:0;z-index:40;overflow-y:auto;overflow-x:hidden;
+          scrollbar-width:none;-ms-overflow-style:none;
           display:flex;flex-direction:column;
           background:radial-gradient(120% 50% at 50% 0%, #1A0F1E 0%, #08070C 60%), #06060A;
           font-family:var(--font-clikme),system-ui,sans-serif;color:#fff;
           -webkit-user-select:none;user-select:none;}
+        .pm::-webkit-scrollbar{width:0;height:0;display:none;}
 
         /* ═══ LA BARRE DU HAUT ════════════════════════════════════════════
            ELLE FLOTTE SUR LA PREMIERE ETAPE, dont la photo part du bord haut ;
@@ -142,6 +151,20 @@ export function StylesParcoursMode() {
         .pm-deuxe{flex:1 1 auto;display:flex;flex-direction:column;
           align-items:center;text-align:center;
           padding:0 14px calc(16px + var(--ap-bas,0px));}
+        /* ═══ LE FANTOME REPREND SA PLACE, TOUT A DROITE ═══════════════════
+           EN RETIRANT LA BARRE DE PROGRESSION, J'AI FAIT GLISSER LE FANTOME.
+           C'est elle qui occupait le milieu de la ligne et le poussait au bord ;
+           sans elle, les trois elements se sont serres a gauche et le Fantome
+           s'est retrouve au tiers de l'ecran. Mesure : x = 133 au lieu de 353.
+           « Nouvelle demande et cote salon n'ont pas le fantome en haut. » Il
+           etait la, mais plus a sa place — et une porte qui change de place
+           n'est plus une porte, c'est une surprise.
+           ET LA BARRE PORTE UN FOND. Le bloc de la demande defile dessous ;
+           sans voile, le texte passait a travers le logo. */
+        .pm-haut::before{content:"";position:absolute;inset:0;z-index:-1;
+          background:linear-gradient(180deg,rgba(6,6,10,.82),rgba(6,6,10,0));
+          pointer-events:none;}
+        .pm-haut>.fa{margin-left:auto;}
         .pm-logo{margin:0;font-weight:900;font-size:clamp(26px,7.6vw,34px);
           line-height:1;letter-spacing:-.03em;}
         .pm-logo b{color:#fff;font-weight:900;}

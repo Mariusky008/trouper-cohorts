@@ -210,7 +210,7 @@ export function ParcoursMode({
           ELLE DIT OÙ L'ON EN EST, ET ELLE LE DIT DEUX FOIS : des traits pour
           la vue d'ensemble, « 1/4 » pour le chiffre. Sa maquette met les deux,
           et elle a raison — un trait rempli se compte mal du coin de l'œil. */}
-      <header className="pm-haut">
+      <header className="pm-haut" aria-label={`Étape ${etape} sur ${total}`}>
         {/* « REVENIR » TOUT COURT NE DIT PLUS RIEN depuis que le Fantome est a
             cote : deux boutons de retour dans le meme en-tete, et un lecteur
             d'ecran les annoncait tous les deux « Revenir ». La fleche recule
@@ -224,14 +224,23 @@ export function ParcoursMode({
         >
           ←
         </button>
-        <div className="pm-pas" aria-label={`Étape ${etape} sur ${total}`}>
-          {Array.from({ length: total }, (_, i) => (
-            <s key={i} className={i + 1 <= etape ? "on" : ""} />
-          ))}
-        </div>
-        <span className="pm-num">
-          {etape}/{total}
-        </span>
+        {/* ═══ PLUS DE BARRE DE PROGRESSION ══════════════════════════════
+
+            « Supprimer les barres de progression partout où il y en a. »
+
+            ELLE NE SERVAIT QU'À COMPTER, ET PERSONNE NE COMPTE. Quatre traits
+            et « 3/4 » disent combien d'écrans restent — une information de
+            formulaire administratif, posée en haut de la seule ligne où l'on a
+            le logo et la porte de sortie. Sur un parcours de quatre écrans
+            qu'on traverse en glissant, l'effort n'est pas assez grand pour
+            qu'on ait besoin de le mesurer.
+
+            LE COMPTE RESTE POUR LES LECTEURS D'ÉCRAN, sur l'en-tête : eux ne
+            voient pas qu'il ne reste qu'un écran, et le leur retirer serait
+            leur enlever quelque chose que personne d'autre ne perd. */}
+        {/* LE COMPTEUR « 2/4 » PART AVEC LA BARRE. Il en etait le chiffre,
+            pose a part dans l'en-tete : retirer les traits et garder le compte
+            revient a garder ce qu'on a demande d'enlever, en plus petit. */}
         {/* ═══ ET UNE PORTE DIRECTE VERS L'ACCUEIL ═══════════════════════════
 
             « Il faudrait que sur les étapes on puisse revenir à l'accueil si on
@@ -409,13 +418,24 @@ export function ParcoursMode({
             {prix && <b className="pm-fiche-p">{prix}</b>}
           </div>
 
+          {/* ═══ LE BOUTON DIT OU IL MENE ══════════════════════════════════
+
+              « Étape 2 : j'ai en titre en bas "Je la veux" au lieu d'avoir
+              "Voir cet article sur d'autres personnes". »
+
+              IL AVAIT RAISON, ET C'ETAIT UNE PROMESSE FAUSSE. « Je la veux »
+              annonce un achat ou une mise de cote ; l'ecran suivant montre
+              trois autres personnes qui l'ont portee. On appuyait pour prendre,
+              on arrivait sur une galerie.
+
+              ET LE SECOND BOUTON MENAIT AU MEME ENDROIT. « Voir d'autres
+              looks » sous « Je la veux », les deux vers l'ecran 3 : deux
+              libelles pour un seul geste, dont un faux. Il n'en reste qu'un, et
+              il dit ce qu'il fait. */}
           <button type="button" className="pm-go" onClick={suivant}>
             <Fant classe="pm-go-f" />
-            Je la veux
+            Voir cette pièce sur d’autres
             <s aria-hidden="true">→</s>
-          </button>
-          <button type="button" className="pm-lien" onClick={suivant}>
-            Voir d’autres looks <s aria-hidden="true">→</s>
           </button>
           {/* CE QUI EST UNE SIMULATION LE DIT, et c'est la seule mention qui
               reste. « Cette image n'est pas une photo de vous » est une

@@ -1,5 +1,7 @@
 "use client";
 
+import type React from "react";
+
 // 👻 LA NOTE EN FANTÔMES — un à cinq, le signe du produit à la place des étoiles.
 //
 // ═══ POURQUOI ELLE EXISTE ICI, ET PLUS SEULEMENT DANS LE MUR ═══════════════
@@ -39,9 +41,17 @@
  * « Coup de cœur » n'est pas « cinq sur cinq », et cinq dessins identiques
  * auraient rendu cette différence invisible.
  */
-export function SigneFantome({ classe, coeur }: { classe?: string; coeur?: boolean }) {
+export function SigneFantome({
+  classe,
+  coeur,
+  style,
+}: {
+  classe?: string;
+  coeur?: boolean;
+  style?: React.CSSProperties;
+}) {
   return (
-    <svg className={classe} viewBox="0 0 40 44" aria-hidden="true">
+    <svg className={classe} style={style} viewBox="0 0 40 44" aria-hidden="true">
       <path
         className="mu-f-corps"
         d="M20 2.5c-8.7 0-15.6 6.6-15.6 15.1v18.6c0 2.2 2.3 3.3 3.9 1.9l2.4-2.1c.9-.8 2.2-.8 3.1 0l2.3 2c.9.8 2.2.8 3.1 0l2.3-2c.9-.8 2.2-.8 3.1 0l2.4 2.1c1.6 1.4 3.9.3 3.9-1.9V17.6C35.6 9.1 28.7 2.5 20 2.5Z"
@@ -85,7 +95,15 @@ export function NoteFantomes({ note, classe = "" }: { note: number; classe?: str
           coller, dans une garde qui relit la page. */}
       <b className={`nf ${classe}`.trim()} aria-label={`${note} fantômes sur 5`}>
         {Array.from({ length: 5 }, (_, k) => (
-          <SigneFantome key={k} classe={k < note ? "nf-s on" : "nf-s"} coeur={k === 4} />
+          <SigneFantome
+          key={k}
+          classe={k < note ? "nf-s on" : "nf-s"}
+          coeur={k === 4}
+          /* SON RANG, POUR QUI VEUT LES ALLUMER UN PAR UN — voir `.mes-note`
+             dans `mur-essayeurs.tsx`. La rangee ne decide pas de l'animation,
+             elle donne seulement de quoi la faire. */
+          style={{ "--nf-i": k } as React.CSSProperties}
+        />
         ))}
       </b>
       <style

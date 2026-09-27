@@ -227,7 +227,7 @@ export function ParcoursCoiffure({
       )}
 
       {/* ═══ LA COQUE, IDENTIQUE AUX QUATRE ÉTAPES ═══════════════════════ */}
-      <header className="pc-haut">
+      <header className="pc-haut" aria-label={`Étape ${etape} sur ${total}`}>
         {/* LE VRAI LOGO, PAS UN MOT EN GRAS. « Clikme » n'a pas de k :
             il a un curseur a sa place, et c'est tout le nom — on clique,
             et c'est moi. Ecrit au clavier, le mot perdait la seule chose
@@ -236,14 +236,20 @@ export function ParcoursCoiffure({
         <p className="pc-logo">
           <MotMarque />
         </p>
-        <div className="pc-pas" aria-label={`Étape ${etape} sur ${total}`}>
-          {Array.from({ length: total }, (_, i) => (
-            <s key={i} className={i + 1 <= etape ? "on" : ""} />
-          ))}
-          <em>
-            {etape}/{total}
-          </em>
-        </div>
+        {/* ═══ PLUS DE BARRE DE PROGRESSION ══════════════════════════════
+
+            « Supprimer les barres de progression partout où il y en a. »
+
+            ELLE NE SERVAIT QU'À COMPTER, ET PERSONNE NE COMPTE. Quatre traits
+            et « 3/4 » disent combien d'écrans restent — une information de
+            formulaire administratif, posée en haut de la seule ligne où l'on a
+            le logo et la porte de sortie. Sur un parcours de quatre écrans
+            qu'on traverse en glissant, l'effort n'est pas assez grand pour
+            qu'on ait besoin de le mesurer.
+
+            LE COMPTE RESTE POUR LES LECTEURS D'ÉCRAN, sur l'en-tête : eux ne
+            voient pas qu'il ne reste qu'un écran, et le leur retirer serait
+            leur enlever quelque chose que personne d'autre ne perd. */}
         {/* ═══ LE FANTÔME EST LA PORTE DE L'ACCUEIL ═══════════════════════
 
             « Placer partout sur tous les écrans la petite maison pour revenir
