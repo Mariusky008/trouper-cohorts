@@ -53,6 +53,33 @@ commerçant. » commence à douze pour cent du bord gauche. Douze contre neuf, c
 trois pour cent de marge — un téléphone un peu plus haut et sa phrase est coupée.
 On ne joue pas la composition de quelqu'un à trois pour cent près.
 
+## Pour que le Fantôme bouge, il faut qu'il soit décollé de son décor
+
+« Je veux que ce soit dans chaque image qu'il y ait des animations pour faire
+comprendre le concept. Donc c'est le Fantôme qui bouge. »
+
+**AUCUNE LIGNE DE CODE NE PEUT FAIRE BOUGER QUELQU'UN QUI EST PEINT DANS UNE
+PHOTO.** Ces trois fichiers sont des images plates : le Fantôme, le canapé et la
+lampe y sont le même objet. Pour qu'il bouge, il faut qu'il soit un calque à
+part, et que le décor existe sans lui.
+
+**J'AI ESSAYÉ DE LE DÉCOUPER TOUT SEUL, ET C'EST MESURÉ, PAS SUPPOSÉ.** Son corps
+est très clair — luminance 173 — et se sépare proprement du canapé, qui est à
+47. Mais sa **casquette est à 29**, c'est-à-dire plus sombre que le canapé : elle
+reste dans le fond. Le détourage donne un Fantôme sans casquette, et la
+casquette est ce qui en fait le personnage. Même réussi, il resterait le trou :
+en le décollant, on voit ce qu'il y avait derrière lui, et il n'y a rien.
+
+**CE QU'IL FAUT, AU CHOIX :**
+
+1. **Trois courtes vidéos** — 2 s, 3 s et 4 s, même cadrage, en `mp4` + `webm`.
+   C'est le meilleur rendu et le moins de travail des deux : tout le mouvement
+   est déjà dans le fichier, et le projet sait déjà jouer ce format.
+2. **Deux fichiers par scène** : le décor SANS le Fantôme, et le Fantôme seul en
+   `png` transparent, casquette comprise. Là, le mouvement se pilote depuis le
+   code — il respire, il se penche vers le téléphone, il se tourne vers la
+   commerçante — et chaque geste se règle sans refaire une image.
+
 ## Sans les images, il ne se passe rien
 
 Si `1.jpg` est absente, **l'ouverture se retire d'elle-même** et la démonstration

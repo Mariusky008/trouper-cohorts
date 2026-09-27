@@ -41,9 +41,12 @@ import { useEffect, useRef, useState } from "react";
  * fini par le poser à côté sur un téléphone plus étroit — et il n'y a aucune
  * façon de vérifier un alignement qu'on n'a pas mesuré.
  *
- * IL N'AJOUTE QUE LE MOUVEMENT : le fondu, le lent rapprochement de la caméra
- * — plus marqué au deuxième acte, puisque c'est là qu'on « se rapproche du
- * téléphone » — et la sortie.
+ * IL N'AJOUTE QUE LE FONDU ENTRE LES ACTES. L'image, elle, ne bouge pas : « je
+ * veux déjà que l'image remplisse l'écran sans bouger ». Le mouvement qu'il
+ * attend est DANS chaque scène — le Fantôme qui fait quelque chose — et cela
+ * demande que le Fantôme existe séparément de son décor. Voir le LISEZ-MOI à
+ * côté des images : tant qu'il est peint dedans, aucune ligne de code ne peut
+ * l'en décoller.
  */
 
 /** Les trois actes, dans l'ordre, avec leur durée en millisecondes. */
@@ -126,23 +129,9 @@ export function Ouverture({ onFini }: { onFini: () => void }) {
        qu'une surface qui réagit sans le dire ne se découvre jamais. */
     <button type="button" className="ouv" onClick={finir} aria-label="Passer l’ouverture">
       {ACTES.map((a, k) => (
-        /* ═══ `joue` SE POSE ET NE SE RETIRE PLUS ══════════════════════════
-
-           MESURE : PENDANT UN FONDU, L'ACTE SORTANT RETOMBAIT A L'ECHELLE 1 —
-           quarante-neuf points de decalage sur un ecran de trois cent quatre-
-           vingt-dix. L'animation etait accrochee a `.on` ; en perdant cette
-           classe, l'acte ne correspondait plus au selecteur, l'animation cessait
-           de s'appliquer, et `both` ne gardait plus rien puisqu'il n'y avait
-           plus d'animation. Le texte incruste se lisait donc deux fois, a deux
-           tailles.
-           `joue` SE POSE DES QUE L'ACTE DEMARRE ET NE PART JAMAIS — les actes
-           n'avancent que dans un sens, donc « k <= acte » veut dire « a deja
-           commence ». L'animation reste appliquee, `both` garde sa derniere
-           valeur, et l'acte sortant tient l'echelle exacte ou l'entrant
-           commence. */
         <span
           key={a.src}
-          className={`ouv-acte ouv-a${k + 1}${k <= acte ? " joue" : ""}${k === acte ? " on" : ""}`}
+          className={`ouv-acte ouv-a${k + 1}${k === acte ? " on" : ""}`}
           aria-hidden={k !== acte}
         >
           {/* ═══ DEUX COUCHES, ET C'EST LA MÊME IMAGE ═══════════════════════
@@ -184,48 +173,32 @@ const FEUILLE = `
 .ouv-acte{position:absolute;inset:0;opacity:0;
   transition:opacity ${Math.round(FONDU * 0.45)}ms ease-out;}
 .ouv-acte.on{opacity:1;transition:opacity ${FONDU}ms ease-in;}
+/* LE CALQUE FLOU RESTE SOUS L'IMAGE, et il ne sert plus qu'aux ecrans si
+   larges que meme « cover » laisserait paraitre un bord. Il ne coute rien et il
+   evite d'avoir a en decouvrir le besoin en rendez-vous. */
 .ouv-flou{position:absolute;inset:0;
   background-size:cover;background-position:center;
   filter:blur(38px) brightness(.7);transform:scale(1.2);}
-.ouv-img{position:absolute;inset:0;
-  background-size:contain;background-repeat:no-repeat;background-position:center;}
+.ouv-img{position:absolute;inset:0;background-position:center;
+  background-repeat:no-repeat;}
 
-/* ═══ LA CAMERA AVANCE, ET PLUS VITE AU DEUXIEME ACTE ════════════════════
-   « 4 secondes : ON SE RAPPROCHE DU TELEPHONE. » Le mouvement n'est pas une
-   decoration ici, c'est ce que l'acte raconte — on passe de la piece au petit
-   ecran qu'il tient. Le premier acte avance a peine, juste assez pour que
-   l'image ne soit pas une photo posee ; le troisieme recule, parce qu'on sort
-   du telephone pour arriver dans la rue.
-   LA DUREE DE CHAQUE ANIMATION EST EXACTEMENT CELLE DE SON ACTE, et pas une
-   milliseconde de plus. Reglees a quatre cents millisecondes de rab — pour que
-   le mouvement ne s'arrete pas avant l'image — elles n'avaient pas fini leur
-   course au moment du raccord : l'acte sortant etait a 1,124 quand l'entrant
-   demarrait a 1,13, et la promesse se lisait deux fois, a deux hauteurs.
-   Le mode both GARDE LA DERNIERE VALEUR une fois l'animation finie : l'acte sortant
-   reste donc pose a son echelle d'arrivee pendant son fondu, exactement la ou
-   l'entrant commence. Le raccord est invisible parce qu'il est exact. */
-.ouv-a1.joue .ouv-img,.ouv-a1.joue .ouv-flou{animation:ouvUn 2000ms ease-out both;}
-.ouv-a2.joue .ouv-img,.ouv-a2.joue .ouv-flou{animation:ouvDeux 4000ms ease-in-out both;}
-.ouv-a3.joue .ouv-img,.ouv-a3.joue .ouv-flou{animation:ouvTrois 3000ms ease-in-out both;}
-/* ═══ CHAQUE ACTE REPART A L'ECHELLE OU LE PRECEDENT S'ARRETE ═══════════
-   MESURE A L'ECRAN, PENDANT UN FONDU : la promesse se lisait DEUX FOIS, a deux
-   hauteurs. Elle est pourtant au meme endroit sur les trois images — c'est le
-   zoom qui les separait. L'acte sortant finissait a 1,13 quand l'entrant
-   commencait a 1,10 : le meme texte, a deux tailles, superpose.
-   LES ECHELLES SE TOUCHENT DONC AUX RACCORDS. La camera avance toujours, mais
-   sans a-coup au moment ou l'on change d'image — et le texte incruste, lui, ne
-   bouge plus du tout. */
-@keyframes ouvUn{from{transform:scale(1)}to{transform:scale(1.06)}}
-@keyframes ouvDeux{from{transform:scale(1.06)}to{transform:scale(1.13)}}
-@keyframes ouvTrois{from{transform:scale(1.13)}to{transform:scale(1.05)}}
-/* LE FLOU GARDE SON AGRANDISSEMENT PAR-DESSUS LE MOUVEMENT : sans lui, il
-   reviendrait a sa taille reelle et laisserait ses propres bords apparaitre. */
-.ouv-a1.joue .ouv-flou{animation-name:ouvUnFlou;}
-.ouv-a2.joue .ouv-flou{animation-name:ouvDeuxFlou;}
-.ouv-a3.joue .ouv-flou{animation-name:ouvTroisFlou;}
-@keyframes ouvUnFlou{from{transform:scale(1.2)}to{transform:scale(1.27)}}
-@keyframes ouvDeuxFlou{from{transform:scale(1.27)}to{transform:scale(1.35)}}
-@keyframes ouvTroisFlou{from{transform:scale(1.35)}to{transform:scale(1.26)}}
+/* ═══ L'IMAGE REMPLIT L'ECRAN, ET ELLE NE BOUGE PLUS ════════════════════
+   « Je veux deja que l'image remplisse l'ecran sans bouger, et que ce soit dans
+   chaque image qu'il y ait des animations pour faire comprendre le concept.
+   Donc c'est le fantome qui bouge. »
+   J'AVAIS FAIT L'INVERSE DES DEUX, ET C'ETAIT UN CONTRESENS. J'avais pose
+   l'image en entier — donc avec des bandes — et fait avancer la camera par-
+   dessus. Un mouvement de camera sur une photo fixe donne un diaporama de
+   presentation ; ce qu'il demande est une scene ou quelqu'un fait quelque
+   chose. Les deux erreurs allaient ensemble : la camera bougeait faute de
+   quelque chose qui bouge DANS l'image.
+   « COVER » ROGNE PAR LES COTES, et j'avais garde « contain » pour cette
+   raison : sur un ecran tres haut, la rogne atteint neuf pour cent de chaque
+   bord et sa legende du bas commence a douze. C'etait une prudence contre une
+   demande claire — il veut l'ecran rempli. On le remplit, et la rogne reste
+   bornee par le centrage : c'est toujours le milieu de son image qu'on garde,
+   et tout son texte est centre. */
+.ouv-img{background-size:cover;}
 
 /* LA PASTILLE DIT QUE CA SE PASSE. Discrete, en bas a droite, la ou le pouce
    est deja — et pas au milieu, ou elle serait posee sur l'image. */
@@ -238,12 +211,10 @@ const FEUILLE = `
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
 
 @media (prefers-reduced-motion:reduce){
-  /* ON GARDE LES TROIS ACTES ET ON RETIRE LE MOUVEMENT. Supprimer les actes
+  /* ON GARDE LES TROIS ACTES ET ON RETIRE LE FONDU. Supprimer les actes
      retirerait l'histoire a ceux qui ne supportent pas le mouvement, alors que
-     c'est l'histoire qu'on est venu raconter ; ce qui gene, c'est la camera. */
-  .ouv-a1.joue .ouv-img,.ouv-a2.joue .ouv-img,.ouv-a3.joue .ouv-img,
-  .ouv-a1.joue .ouv-flou,.ouv-a2.joue .ouv-flou,.ouv-a3.joue .ouv-flou{animation:none;}
-  .ouv-flou{transform:scale(1.2);}
+     c'est l'histoire qu'on est venu raconter ; ce qui gene, c'est le glissement
+     d'une image a l'autre, pas le fait qu'elles se suivent. */
   .ouv-acte{transition:none;}
 }
 `;
