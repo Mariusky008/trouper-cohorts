@@ -61,6 +61,13 @@ export function StylesParcoursSortie() {
         .ps-pas s.on+s.on::before{background:#FF2E9A;}
         .ps-pas em{position:absolute;top:100%;margin-top:3px;font-style:normal;
           font-size:12.5px;font-weight:850;text-shadow:0 1px 8px rgba(0,0,0,.8);}
+        /* LE FANTOME RESTE A DROITE SANS LA BARRE. Lecon deja payee sur les
+           quatre autres parcours : c'etait la barre qui tenait le milieu de la
+           rangee, et en la retirant le Fantome glissait contre le logo.
+           LA REGLE VISE LE BOUTON, PAS L'IMAGE. La classe va sur le <img> a
+           l'interieur — c'est le <button.fa> qui est l'element de la rangee, et
+           une marge posee sur l'image n'aurait rien pousse du tout. */
+        .ps-haut>.fa{margin-left:auto;}
         .ps-f{flex:none;width:clamp(46px,min(12.5vw,6.2vh),62px);height:auto;
           filter:drop-shadow(0 0 16px rgba(255,46,154,.65));}
 
@@ -92,8 +99,27 @@ export function StylesParcoursSortie() {
         .ps-sortir:active{transform:scale(.92);}
 
         /* ═══ CE QUI CHANGE : LE BAS DE L'ECRAN ══════════════════════════ */
+        /* ═══ IL DEFILE QUAND IL NE TIENT PLUS ══════════════════════════
+           MESURE, PAS PRECAUTION : sur un telephone de 670 points de haut, la
+           derniere etape descendait a 789 — le bouton de l'itineraire et la
+           pastille du cote organisateur passaient sous le bord, et l'ecran
+           n'avait plus de sortie. La cause est le contenu qui a grossi, pas une
+           erreur de mise en page : carte, plan, infos pratiques, trois gestes.
+           Le margin-top:auto LE GARDE COLLE EN BAS QUAND IL EST COURT, et la
+           hauteur bornee le fait defiler quand il est long. C'est le meme
+           reglage que le bloc du rendez-vous, pour la meme raison.
+           overscroll-behavior:contain empeche le geste de continuer sur la page
+           derriere une fois arrive en bas. */
         .ps-bas{position:relative;z-index:3;margin-top:auto;width:100%;
-          padding:0 16px calc(14px + var(--ap-bas,0px));text-align:center;}
+          padding:0 16px calc(14px + var(--ap-bas,0px));text-align:center;
+          max-height:calc(100dvh - 76px);overflow-y:auto;
+          overscroll-behavior:contain;
+          /* PAS DE BARRE VISIBLE — elle couperait la photo de l'evenement. */
+          scrollbar-width:none;-ms-overflow-style:none;}
+        .ps-bas::-webkit-scrollbar{width:0;height:0;display:none;}
+        /* LES BLOCS NE SE COMPRESSENT PAS EN DEFILANT. Sans ca, flex les ecrase
+           pour les faire tenir et la carte de la soiree perd sa hauteur. */
+        .ps-bas>*{flex:none;}
         .ps-t{position:relative;margin:0;
           font-size:clamp(26px,min(8.2vw,4.2vh),36px);
           font-weight:900;line-height:1.05;letter-spacing:-.03em;
@@ -180,38 +206,116 @@ export function StylesParcoursSortie() {
           font-weight:900;line-height:1.08;letter-spacing:-.03em;
           text-shadow:0 2px 14px rgba(0,0,0,.9);}
 
-        /* ═══ 3/4 · LES TROIS FANTOMES ══════════════════════════════════ */
-        .ps-qui{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
-          gap:8px;margin:12px 0 0;}
-        .ps-fant{position:relative;display:flex;flex-direction:column;
-          align-items:center;gap:3px;padding:12px 6px 10px;border-radius:16px;
-          background:rgba(12,10,18,.66);border:1.5px solid rgba(255,46,154,.48);
-          box-shadow:0 0 20px -10px rgba(255,46,154,.8);
+        /* ═══ 3/4 · LE LIVE — QUI EST LA, ET CE QU'ILS EN DISENT ═══════
+           « Au lieu d'avoir cet ecran sympa mais qui ne donne pas vraiment
+           d'infos, je prefererais avoir un ecran ou l'on voit qui est present
+           dans les lieux et ce qu'ils en disent : un chat live avant et pendant
+           l'evenement. »
+           LES TROIS CARTES DE FANTOMES ONT DISPARU D'ICI. Elles prenaient la
+           moitie de l'ecran pour dire trois humeurs — « jamais venu ici, on
+           verra bien » — et ne disaient rien de la soiree. La rangee ci-dessous
+           repond a « qui est la » en une ligne, et tout le reste de la place
+           passe a ce qu'ils ecrivent. */
+        .ps-presents{display:flex;align-items:center;gap:10px;
+          margin:11px 0 0;padding:7px 12px 7px 9px;border-radius:999px;
+          text-align:left;
+          background:rgba(12,10,18,.66);border:1px solid rgba(255,46,154,.42);
           -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
-        /* LA PASTILLE RONDE TEINTEE : c'est le Fantome de la personne, avec sa
-           couleur et son accessoire. Sa maquette y mettait une photo de
-           visage ; le produit n'en a pas, et c'est exactement sa promesse. */
-        .ps-rond{position:relative;width:clamp(44px,13vw,56px);
-          aspect-ratio:1;border-radius:50%;
+        /* LES TETES SE CHEVAUCHENT, comme une pile de jetons. C'est ce qui fait
+           lire « un groupe » plutot que « cinq comptes » : espacees, elles
+           deviennent une liste qu'on compte, et personne ne compte. */
+        .ps-tetes{flex:none;display:flex;}
+        .ps-tete{position:relative;width:30px;height:30px;border-radius:50%;
           display:flex;align-items:center;justify-content:center;
-          box-shadow:0 0 0 2px rgba(255,255,255,.28) inset,
-            0 8px 20px -8px rgba(0,0,0,.9);}
-        .ps-rond-f{width:72%;height:auto;
-          filter:drop-shadow(0 1px 4px rgba(0,0,0,.5));}
-        .ps-rond s{position:absolute;right:-3px;bottom:-2px;font-size:13px;
+          margin-left:-9px;
+          box-shadow:0 0 0 2px #0B0912,0 4px 12px -5px rgba(0,0,0,.9);}
+        .ps-tete:first-child{margin-left:0;}
+        .ps-tete-f{width:70%;height:auto;
+          filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));}
+        .ps-tete s{position:absolute;right:-2px;bottom:-1px;font-size:10px;
           text-decoration:none;line-height:1;
-          text-shadow:0 1px 4px rgba(0,0,0,.8);}
-        .ps-badge{position:absolute;top:8px;right:8px;
-          width:22px;height:22px;border-radius:50%;font-size:11px;
+          text-shadow:0 1px 3px rgba(0,0,0,.85);}
+        .ps-presents-t{display:flex;align-items:baseline;gap:5px;min-width:0;}
+        .ps-presents-t b{font-size:16px;font-weight:900;letter-spacing:-.02em;
+          color:#FF7FC2;}
+        .ps-presents-t em{font-style:normal;font-size:11.5px;font-weight:750;
+          color:rgba(255,255,255,.76);}
+
+        /* ═══ AVANT / PENDANT ═══════════════════════════════════════════
+           DEUX ONGLETS, ET L'HEURE EST ECRITE SUR CHACUN. « Avant » et
+           « Pendant » seuls demanderaient de deviner de quand on parle ; avec
+           l'heure, on sait qu'on lit l'apres-midi ou la soiree. */
+        .ps-moments{display:grid;grid-template-columns:1fr 1fr;gap:6px;
+          margin:10px 0 0;}
+        .ps-moments button{padding:8px 6px;border-radius:12px;cursor:pointer;
+          font:inherit;font-size:11px;font-weight:850;line-height:1.15;
+          color:rgba(255,255,255,.66);
+          background:rgba(255,255,255,.05);
+          border:1px solid rgba(255,255,255,.12);}
+        .ps-moments button.on{color:#fff;background:rgba(255,46,154,.18);
+          border-color:rgba(255,46,154,.75);
+          box-shadow:0 0 14px -6px rgba(255,46,154,.9);}
+
+        /* ═══ LE FIL ════════════════════════════════════════════════════
+           IL DEFILE DANS SA PROPRE BOITE, et c'est ce qui lui permet d'exister
+           sur cet ecran. Le bas porte deja une bande de categories et deux
+           boutons : un fil qui pousse tout ca sous le bord aurait rendu le
+           parcours impossible a finir. Borne a 34 % de la hauteur, il montre
+           trois messages et se laisse remonter.
+           overscroll-behavior:contain empeche le geste de continuer sur l'ecran
+           derriere une fois arrive en bas — sinon on fait sauter le parcours en
+           croyant lire la suite. */
+        .ps-live{list-style:none;margin:9px 0 0;padding:0;text-align:left;
+          max-height:34vh;overflow-y:auto;overscroll-behavior:contain;
+          display:flex;flex-direction:column;gap:7px;
+          scrollbar-width:none;-ms-overflow-style:none;
+          -webkit-mask-image:linear-gradient(180deg,#000 0,#000 88%,transparent 100%);
+          mask-image:linear-gradient(180deg,#000 0,#000 88%,transparent 100%);}
+        .ps-live::-webkit-scrollbar{width:0;height:0;display:none;}
+        .ps-msg{position:relative;display:flex;align-items:flex-start;gap:8px;
+          padding:8px 10px 9px;border-radius:14px;
+          background:rgba(12,10,18,.68);border:1px solid rgba(255,255,255,.1);
+          -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+        /* LE MESSAGE DU LIEU SE VOIT : c'est le seul dont l'information est
+           sure, et c'est pour ca qu'il porte une coche. */
+        .ps-msg.ps-info{border-color:rgba(91,141,239,.5);
+          background:rgba(14,20,38,.7);}
+        /* LE FANTOME CLIKME N'EST PAS QUELQU'UN DE LA SOIREE. C'est le produit
+           qui parle, et il ne parle qu'a qui a essaye le son : il porte donc la
+           couleur de la marque, pas un rond tire d'un nom. */
+        .ps-msg.ps-fantome{border-color:rgba(255,46,154,.55);
+          background:rgba(30,10,24,.72);}
+        .ps-av{flex:none;width:30px;height:30px;border-radius:50%;
           display:flex;align-items:center;justify-content:center;
-          background:rgba(168,85,247,.9);
-          box-shadow:0 0 0 1.5px rgba(255,255,255,.22) inset;}
-        .ps-fant b{margin-top:4px;font-size:12px;font-weight:900;
-          letter-spacing:-.01em;line-height:1.1;}
-        .ps-fant em{font-style:normal;font-size:10.5px;font-weight:750;
-          line-height:1.18;color:rgba(255,255,255,.76);
-          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-          overflow:hidden;}
+          font-size:12px;font-weight:900;color:#fff;
+          background:var(--ps-av,#5B8DEF);
+          box-shadow:0 0 0 1.5px rgba(255,255,255,.2) inset;}
+        .ps-msg.ps-fantome .ps-av{background:linear-gradient(180deg,#FF48A8,#B5179E);}
+        .ps-av-f{width:68%;height:auto;}
+        .ps-dire{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;
+          gap:2px;}
+        /* LE NOM SE COUPE, L'HEURE NON. Sans ca, « Fantome ClikMe » passait sur
+           deux lignes et poussait l'heure dessous : deux lignes d'en-tete pour
+           une phrase d'une. */
+        .ps-nom{display:flex;align-items:center;gap:4px;
+          font-size:11.5px;font-weight:900;letter-spacing:-.01em;color:#fff;}
+        .ps-nom>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .ps-nom i{flex:none;font-style:normal;font-size:8px;line-height:1;
+          width:13px;height:13px;border-radius:50%;color:#06120C;
+          display:flex;align-items:center;justify-content:center;
+          background:#5BE9A8;}
+        .ps-nom s{flex:none;margin-left:auto;text-decoration:none;
+          font-size:10px;font-weight:750;font-variant-numeric:tabular-nums;
+          color:rgba(255,255,255,.5);}
+        .ps-bulle{font-size:12.5px;font-weight:650;line-height:1.35;
+          color:rgba(255,255,255,.88);}
+        .ps-msg.ps-fantome .ps-bulle{color:#FFD8EC;font-weight:750;}
+        .ps-voix{margin-top:3px;font-size:10.5px;font-weight:800;
+          font-variant-numeric:tabular-nums;color:rgba(255,255,255,.6);}
+        .ps-coeurs{flex:none;align-self:center;
+          font-size:10px;font-weight:800;color:#FF7FC2;}
+        .ps-coeurs em{font-style:normal;}
+
         /* LA MENTION N'EST PAS UNE PRECAUTION, C'EST L'ARGUMENT. « Personne ne
            montre son visage » est ce qui distingue ce produit d'un reseau. */
         .ps-note{display:flex;align-items:center;justify-content:center;gap:6px;
@@ -332,7 +436,9 @@ export function StylesParcoursSortie() {
            seuil qui ne couvre pas le cas mesure ne sert a rien. */
         @media (max-height: 800px){
           .ps-carte{margin-top:9px;}
-          .ps-carte-i{aspect-ratio:1 / .42;}
+          /* LA PHOTO DE LA SOIREE SE FAIT PLUS BASSE, elle ne disparait pas :
+             c'est elle qui donne envie, et 133 points suffisent a la voir. */
+          .ps-carte-i{aspect-ratio:1 / .34;}
           .ps-carte-t{padding:9px 13px 11px;}
           .ps-plan{margin-top:7px;padding:7px 12px 7px 7px;}
           .ps-plan-d{height:34px;}
@@ -340,8 +446,16 @@ export function StylesParcoursSortie() {
           .ps-compte{margin-top:5px;}
         }
         @media (max-height: 740px){
-          .ps-qui{gap:6px;}
-          .ps-fant{padding:9px 4px 8px;}
+          .ps-live{max-height:27vh;}
+          /* LE DESSIN DE LA CARTE PART LE PREMIER QUAND LA PLACE MANQUE, et
+             c'est le bon ordre : il ne pretend deja pas etre un plan de Dax —
+             le vrai chemin est derriere le bouton « Itineraire », qui ouvre la
+             carte du telephone. Le nom du lieu, lui, reste. Mesure : sans ca, la
+             derniere etape descendait a 781 sur un ecran de 740, et la pastille
+             du cote organisateur passait sous le bord. */
+          .ps-plan-d{display:none;}
+          .ps-plan{padding:8px 12px;}
+          .ps-presents{margin-top:8px;padding:5px 11px 5px 8px;}
           .ps-cats{margin-top:8px;}
           .ps-cats button{padding:6px 2px;font-size:10px;}
           .ps-go{margin-top:10px;padding:13px 16px;}

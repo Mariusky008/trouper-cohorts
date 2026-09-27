@@ -36,7 +36,8 @@ import { useEffect, useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { FantomeAccueil } from "@/components/direct/fantome-accueil";
 import { evenementsDeLaVille, VILLE } from "@/lib/direct/apercu-habitant";
-import { intentionDe, SOIREES } from "@/lib/direct/soiree";
+import { SOIREES, type MessageLive } from "@/lib/direct/soiree";
+import { BoutonCote, CoteCommercant } from "@/components/direct/cote-commercant";
 import { CATEGORIES } from "@/lib/direct/choisir-commerce";
 import {
   ETAPES_SORTIE,
@@ -61,6 +62,34 @@ function Fant({ classe }: { classe: string }) {
  */
 const ONDE = Array.from({ length: 30 }, (_, i) => 0.28 + 0.72 * Math.abs(Math.sin(i * 1.7)));
 
+/**
+ * LA COULEUR DU ROND, TIREE DU NOM.
+ *
+ * ELLE EST STABLE SANS QU'ON AIT RIEN A RANGER : Emma aura le même rond d'un
+ * message à l'autre et d'une soirée à l'autre, parce que c'est son nom qui la
+ * calcule. C'est le procédé déjà en place dans le Live complet — voir
+ * `soiree-contenu.tsx` — et le reprendre garde les deux écrans d'accord.
+ */
+function couleurDe(nom: string): string {
+  let n = 0;
+  for (let i = 0; i < nom.length; i += 1) n = (n * 31 + nom.charCodeAt(i)) % 360;
+  return `hsl(${n} 62% 46%)`;
+}
+
+/**
+ * UNE SEULE LETTRE, ET PAS CELLE DE L'ARTICLE.
+ *
+ * « La mairie » donnait « L ». Sur un rond de trente points, l'initiale d'un
+ * article ne désigne personne ; celle du premier mot qui porte le sens
+ * ressemble à une enseigne.
+ */
+const ARTICLES = new Set(["un", "une", "le", "la", "les", "des", "du", "de", "au", "aux", "à", "l", "d"]);
+function initiale(nom: string): string {
+  const mots = nom.split(/[\s’']+/).filter(Boolean);
+  const porteur = mots.find((x) => !ARTICLES.has(x.toLowerCase())) ?? mots[0] ?? "?";
+  return porteur.charAt(0).toUpperCase();
+}
+
 export function ParcoursSortie({
   onFermer,
   /**
@@ -80,6 +109,22 @@ export function ParcoursSortie({
   const [joue, setJoue] = useState(false);
   const [reste, setReste] = useState(10);
   const [jyVais, setJyVais] = useState(false);
+  /* ═══ AVANT OU PENDANT — les deux moitiés du fil ══════════════════════
+
+     « Un chat live avant ET pendant l'événement. »
+
+     DEUX ONGLETS, PAS UN FIL CONTINU QU'ON FAIT DÉFILER. Un seul fil aurait
+     mis les quatorze messages bout à bout : on aurait lu « ça commence à
+     quelle heure ? » en haut et il aurait fallu descendre pour trouver ce qui
+     donne envie d'y aller. Les deux moments ne répondent pas à la même
+     question — avant, on décide ; pendant, on regrette de ne pas y être — donc
+     ils se choisissent au lieu de se suivre.
+
+     ET ON OUVRE SUR « AVANT », parce que c'est là qu'on est : le parcours se
+     fait dans la journée, l'événement est le soir. */
+  const [moment, setMoment] = useState<"avant" | "pendant">("avant");
+  /** Le panneau de l'organisateur, ouvert par la pastille. */
+  const [cote, setCote] = useState(false);
   const audio = useRef<HTMLAudioElement | null>(null);
 
   const evt = evenementsDeLaVille().find((e) => e.id === SORTIE_ID);
@@ -152,8 +197,27 @@ export function ParcoursSortie({
   /** Le compte-tours de l'extrait, « 0:10 » puis « 0:09 »… */
   const chrono = `0:${String(reste).padStart(2, "0")}`;
 
-  /** Les trois Fantômes que l'étape 3 montre, pris parmi ceux qui y seront. */
-  const troisFantomes = (soiree.fantomes ?? []).filter((f) => f.present).slice(0, 3);
+  /** Les Fantômes présents — la rangée qui dit QUI est là. */
+  const presents = (soiree.fantomes ?? []).filter((f) => f.present);
+
+  /* ═══ OU COUPE-T-ON LE FIL EN DEUX ═════════════════════════════════════
+
+     SUR L'HEURE DU PREMIER TEMPS FORT, PRISE DANS SON PROGRAMME : au kiosque,
+     c'est « 19 h · premier morceau ». Le lieu sait à quelle heure il commence,
+     et personne d'autre ne le sait — c'est déjà la règle du programme.
+
+     ON NE RANGE DONC RIEN A LA MAIN. Écrire « avant » ou « pendant » sur chaque
+     message aurait créé un second endroit où dire la même chose que l'heure, et
+     les deux auraient fini par se contredire le jour où quelqu'un déplace un
+     message de vingt minutes. L'heure est déjà là, elle suffit. */
+  const debut = soiree.programme?.find((t) => t.quand >= 19)?.quand ?? 19;
+  const enHeures = (h: string) => {
+    const [a, b] = h.split(":");
+    return Number(a) + Number(b ?? 0) / 60;
+  };
+  const fil: MessageLive[] = (soiree.live ?? []).filter((m) =>
+    moment === "avant" ? enHeures(m.heure) < debut : enHeures(m.heure) >= debut,
+  );
 
   return (
     <div className={`ps ps-e${etape}`}>
@@ -166,7 +230,7 @@ export function ParcoursSortie({
       <div className="ps-voile" aria-hidden="true" />
 
       {/* ═══ LA COQUE, IDENTIQUE AUX QUATRE ÉTAPES ═══════════════════════ */}
-      <header className="ps-haut">
+      <header className="ps-haut" aria-label={`Étape ${etape} sur ${ETAPES_SORTIE}`}>
         {etape > 1 && (
           <button type="button" className="ps-retour" onClick={precedent} aria-label="L’étape précédente">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -182,14 +246,16 @@ export function ParcoursSortie({
         <p className="ps-logo">
           <MotMarque />
         </p>
-        <div className="ps-pas" aria-label={`Étape ${etape} sur ${ETAPES_SORTIE}`}>
-          {Array.from({ length: ETAPES_SORTIE }, (_, i) => (
-            <s key={i} className={i + 1 <= etape ? "on" : ""} />
-          ))}
-          <em>
-            {etape}/{ETAPES_SORTIE}
-          </em>
-        </div>
+        {/* ═══ PLUS DE BARRE DE PROGRESSION ═══════════════════════════════
+            « Supprimer les barres de progression partout où il y en a. »
+            ELLE ETAIT ENCORE LA, ET C'ETAIT UN OUBLI : les quatre autres
+            parcours l'ont perdue, celui-ci l'avait gardée. Quatre traits et
+            « 3/4 » disent combien d'écrans restent — une information de
+            formulaire administratif, posée sur la seule ligne qui porte le logo
+            et la porte de sortie. Sur quatre écrans qu'on traverse en glissant,
+            l'effort n'est pas assez grand pour qu'on ait besoin de le mesurer.
+            LE COMPTE RESTE POUR LES LECTEURS D'ECRAN, sur l'en-tête : eux ne
+            voient pas qu'il ne reste qu'un écran. */}
         {/* LE FANTÔME RAMÈNE À L'ACCUEIL, comme sur les quatre autres
             parcours. Voir `fantome-accueil.tsx` : un composant, une place, un
             geste — chaque écran avait sa version, donc celui qu'on n'avait pas
@@ -341,41 +407,110 @@ export function ParcoursSortie({
         </section>
       )}
 
-      {/* ──────────────────── 3/4 · AVEC QUI Y ALLER ─────────────────────── */}
+      {/* ═══ 3/4 · LE LIVE — QUI EST LA, ET CE QU'ILS EN DISENT ═══════════
+
+          « Au lieu d'avoir cet écran sympa mais qui ne donne pas vraiment
+          d'infos, je préférerais avoir un écran où l'on voit qui est présent
+          dans les lieux et ce qu'ils en disent : donc un chat live avant et
+          pendant l'événement. »
+
+          IL AVAIT RAISON, ET LE DEFAUT ETAIT DANS SON NOM. L'écran s'appelait
+          « Et avec qui partager la soirée ? » et montrait trois Fantômes avec,
+          chacun, une phrase de présentation : « jamais venu ici, on verra
+          bien ». C'est joli, et ça ne dit rien de la soirée — on apprenait qui
+          serait là, jamais ce qui s'y passe. Trois cartes pour trois humeurs.
+
+          CE QUI PREND SA PLACE DIT LES DEUX. La rangée du haut répond à « qui
+          est là » d'un coup d'œil, et tout le reste de l'écran est ce qu'ils
+          écrivent — l'heure du camion à crêpes, la couverture qu'on prête, le
+          morceau qui démarre. C'est la même chose que le Live de la soirée
+          complète, en plus court : on ne refait pas un second salon à côté du
+          premier, on en montre le fil. Voir `soiree-contenu.tsx`.
+
+          ET C'EST LA SEULE CHOSE QU'UNE AFFICHE NE SAIT PAS FAIRE. Une affiche
+          dit qu'il y a un concert à 19 h ; elle ne dit pas à 20 h 52 que le
+          morceau que vous aviez écouté cet après-midi démarre maintenant. */}
       {etape === 3 && (
         <section className="ps-bas">
+          {/* DEUX LIGNES, PAS TROIS. Mesure a l'ecran : « Ce qui se dit au
+              kiosque, maintenant. » en prenait trois et poussait le fil sous le
+              bord. Le lieu est deja ecrit deux fois plus haut — dans la pastille
+              et dans la fiche — donc le titre n'a pas a le redire. */}
           <h1 className="ps-t">
-            Et avec qui
+            Ce qui s’y dit,
             <br />
-            <em>partager la soirée ?</em>
+            <em>en ce moment.</em>
             <s aria-hidden="true" />
           </h1>
-          <p className="ps-dit">Découvrez qui aimerait venir</p>
 
-          {/* ═══ CE SONT DES FANTÔMES, ET C'EST LE PRODUIT ═══════════════════
-              Sa maquette montre Alice, Karim et Lila, avec leurs visages. Le
-              produit ne montre personne : on est un Fantôme jusqu'à ce qu'on
-              se rencontre. Le dessin de sa maquette est gardé au point près —
-              pastille ronde, nom, ce qu'on cherche — et ce qu'il y a dedans
-              vient des Fantômes de cette soirée. */}
-          <div className="ps-qui">
-            {troisFantomes.map((f) => {
-              const envie = intentionDe(f.intention);
-              return (
-                <article key={f.id} className="ps-fant">
-                  <span className="ps-rond" style={{ background: f.teinte }}>
-                    <Fant classe="ps-rond-f" />
-                    {f.accessoire && <s aria-hidden="true">{f.accessoire}</s>}
-                  </span>
-                  <span className="ps-badge" aria-hidden="true">
-                    {envie?.emoji ?? "✨"}
-                  </span>
-                  <b>{f.nom}</b>
-                  <em>{envie?.mot ?? f.mot}</em>
-                </article>
-              );
-            })}
+          {/* ═══ QUI EST LA — une rangée, pas trois cartes ═══════════════
+              CE SONT DES FANTOMES, ET C'EST LE PRODUIT : on est un Fantôme
+              jusqu'à ce qu'on se rencontre. Ce qu'ils cherchent tient dans leur
+              accessoire et leur teinte ; ce qu'ils pensent est plus bas, dans
+              ce qu'ils écrivent — c'est là que ça vaut quelque chose. */}
+          <div className="ps-presents">
+            <span className="ps-tetes" aria-hidden="true">
+              {presents.slice(0, 5).map((f) => (
+                <span key={f.id} className="ps-tete" style={{ background: f.teinte }}>
+                  <Fant classe="ps-tete-f" />
+                  {f.accessoire && <s>{f.accessoire}</s>}
+                </span>
+              ))}
+            </span>
+            <span className="ps-presents-t">
+              <b>{soiree.dansLeLive}</b>
+              <em>dans le Live en ce moment</em>
+            </span>
           </div>
+
+          {/* LES DEUX MOMENTS, ET L'HEURE EST ECRITE SUR CHACUN. « Avant » et
+              « Pendant » seuls demanderaient de deviner de quand on parle. */}
+          <div className="ps-moments" role="tablist" aria-label="Le moment du Live">
+            {(["avant", "pendant"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={moment === m}
+                className={moment === m ? "on" : undefined}
+                onClick={() => setMoment(m)}
+              >
+                {m === "avant" ? "Avant · cet après-midi" : `Pendant · dès ${evt.heure}`}
+              </button>
+            ))}
+          </div>
+
+          <ul className="ps-live">
+            {fil.map((m) => (
+              <li key={m.id} className={`ps-msg ps-${m.sorte}`}>
+                <span className="ps-av" style={{ "--ps-av": couleurDe(m.qui) } as React.CSSProperties}>
+                  {m.sorte === "fantome" ? <Fant classe="ps-av-f" /> : <b>{initiale(m.qui)}</b>}
+                </span>
+                <span className="ps-dire">
+                  <b className="ps-nom">
+                    <span>{m.qui}</span>
+                    {m.maison && <i aria-hidden="true">✓</i>}
+                    <s>{m.heure}</s>
+                  </b>
+                  <span className="ps-bulle">{m.mot}</span>
+                  {/* LE SONDAGE SE RESUME A SA QUESTION ET A SON COMPTE. On ne
+                      vote pas ici : le vrai vote est dans le Live de la soirée,
+                      et deux endroits où voter la même chose donneraient deux
+                      résultats différents sur le même écran. */}
+                  {m.options && (
+                    <span className="ps-voix">
+                      {m.options.map((o) => `${o.mot} ${o.voix}`).join("  ·  ")}
+                    </span>
+                  )}
+                </span>
+                {!!m.coeurs && (
+                  <span className="ps-coeurs" aria-label={`${m.coeurs} cœurs`}>
+                    ♥ <em>{m.coeurs}</em>
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
           <p className="ps-note">
             <i aria-hidden="true">ⓘ</i>
             Fantômes de démonstration. Dans l’application, personne ne montre son visage.
@@ -411,7 +546,7 @@ export function ParcoursSortie({
       )}
 
       {/* ───────────────────── 4/4 · LA SOIRÉE ───────────────────────────── */}
-      {etape === 4 && (
+      {etape === 4 && !cote && (
         <section className="ps-bas">
           <h1 className="ps-t">
             Votre soirée
@@ -491,6 +626,35 @@ export function ParcoursSortie({
               <s aria-hidden="true">→</s>
             </a>
           )}
+
+          {/* ═══ ET ON PASSE DE SON COTE ═════════════════════════════════
+              « À la fin de tous les écrans de tous les commerçants visités, il
+              faudrait avoir ce côté commerçant avec ses stats […] pour avoir la
+              même logique et le même impact en fin de parcours. »
+              UNE SORTIE N'A PAS DE CLIENT, ELLE A DU MONDE — d'où des verbes à
+              elle : qui a écouté l'extrait, qui l'a gardée, qui a dit qu'il y
+              serait. Ce dernier nombre n'est pas inventé ici : c'est celui des
+              Fantômes de la soirée, le même que la ligne au-dessus. Deux écrans
+              de la même démonstration qui comptent la même chose doivent dire
+              le même nombre. Voir `cote-commercant.tsx`. */}
+          <BoutonCote commerce={SORTIE_ID} branche="sortie" onClick={() => setCote(true)} />
+        </section>
+      )}
+
+      {/* LE PANNEAU PREND TOUTE LA PLACE : on est passé côté organisateur, donc
+          on ne voit plus le bouton de l'habitant. Même correction qu'au salon. */}
+      {etape === 4 && cote && (
+        <section className="ps-bas">
+          <CoteCommercant
+            commerce={SORTIE_ID}
+            branche="sortie"
+            quoi={evt.quoi}
+            nom={evt.lieu}
+            visuel={soiree.photo ?? evt.photo}
+            onRetour={() => setCote(false)}
+            motRetour="Revenir côté habitant"
+            avant="au"
+          />
         </section>
       )}
     </div>

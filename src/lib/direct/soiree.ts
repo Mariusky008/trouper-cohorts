@@ -747,6 +747,44 @@ const SOIREE_KIOSQUE: Soiree = {
       coeurs: 24,
       siEssaye: "son",
     },
+    /* ═══ ET CE QUI SE DIT PENDANT — la moitié qui manquait ═══════════════
+
+       « Au lieu d'avoir cet écran sympa mais qui ne donne pas vraiment
+       d'infos, je préférerais avoir un écran où l'on voit qui est présent dans
+       les lieux et ce qu'ils en disent : donc un chat live avant ET pendant
+       l'événement. »
+
+       LE FIL S'ARRETAIT A 18 H 25, SOIT TRENTE-CINQ MINUTES AVANT LE CONCERT.
+       Tout ce qu'on lisait était donc de l'organisation — « ça commence à
+       quelle heure », « installation à 18 h » — et rien de ce qui fait qu'on
+       se lève pour y aller. Or c'est exactement ce que le produit sait faire
+       et qu'une affiche ne sait pas : dire à vingt heures quarante ce qu'on
+       rate en restant chez soi.
+
+       CE QUI CHANGE DE TON, ET C'EST VOULU. Avant, on demande ; pendant, on
+       raconte. Les questions disparaissent presque, les cœurs montent, et le
+       lieu cesse d'informer pour commenter. Un fil qui garderait le même ton
+       des deux côtés n'aurait pas eu besoin d'être coupé en deux.
+
+       LES HEURES SONT LE SEUL SEPARATEUR : l'écran coupe sur l'heure du premier
+       morceau, prise dans le programme. Un champ « avant/pendant » écrit ici
+       aurait été un second endroit où dire la même chose, et les deux auraient
+       fini par se contredire. */
+    { id: "k-m8", sorte: "mot", qui: "Emma", heure: "19:06", mot: "On est arrivés, il y a encore de la place devant 🎺", coeurs: 9 },
+    { id: "k-m9", sorte: "info", qui: "La mairie", maison: true, heure: "19:20", mot: "Le camion à crêpes s’installe côté allées. Il reste jusqu’à 22 h 30.", coeurs: 19 },
+    { id: "k-m10", sorte: "mot", qui: "Orange 41", heure: "19:48", mot: "Premier concert de jazz de ma vie. Je comprends pourquoi les gens aiment ça.", coeurs: 31 },
+    { id: "k-m11", sorte: "question", qui: "Nadia", heure: "20:15", mot: "Il fait frais dans l’herbe, quelqu’un a une couverture en trop ?" },
+    { id: "k-m12", sorte: "mot", qui: "Bleu 27", heure: "20:19", mot: "On en a deux, on est près du grand platane 👋", coeurs: 22 },
+    {
+      id: "k-m13",
+      sorte: "fantome",
+      qui: "Fantôme ClikMe",
+      heure: "20:52",
+      mot: "Ils l’attaquent maintenant : c’est le morceau que vous aviez essayé. 🎧",
+      coeurs: 37,
+      siEssaye: "son",
+    },
+    { id: "k-m14", sorte: "mot", qui: "Violet 34", heure: "21:04", mot: "Le contrebassiste est en feu. Ça valait le déplacement.", coeurs: 28 },
   ],
 };
 

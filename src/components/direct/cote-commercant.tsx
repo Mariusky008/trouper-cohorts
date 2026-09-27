@@ -61,6 +61,15 @@ export function CoteCommercant({
   onRetour,
   /** Le mot du bouton de retour, quand « client » ne convient pas. */
   motRetour,
+  /**
+   * LE PETIT MOT AVANT LE NOM — « chez », « au », « à la ».
+   *
+   * « chez Kiosque du parc Théodore-Denis » ÉTAIT FAUX, ET SE VOYAIT. « Chez »
+   * va devant quelqu'un : chez Bergine, chez le barbier de la halle. Devant un
+   * lieu, il faut la préposition du lieu — et personne ne peut la deviner
+   * depuis le nom, donc c'est l'écran qui la passe.
+   */
+  avant = "chez",
 }: {
   commerce: string;
   branche: string;
@@ -69,6 +78,7 @@ export function CoteCommercant({
   visuel?: string;
   onRetour: () => void;
   motRetour?: string;
+  avant?: string;
 }) {
   const chiffres = chiffresDu(commerce);
   /* PAS DE CHIFFRES, PAS DE PANNEAU. On dégrade, on n'invente pas : un commerce
@@ -87,7 +97,7 @@ export function CoteCommercant({
       {visuel && <span className="cc-v" style={{ backgroundImage: `url("${visuel}")` }} aria-hidden="true" />}
       <h1 className="cc-t">{quoi}</h1>
       <p className="cc-ligne">
-        chez <b>{nom}</b>
+        {avant} <b>{nom}</b>
       </p>
 
       {/* LA MOYENNE DANS LA MEME UNITE QUE LE RESTE DU PRODUIT. L'habitant note
@@ -187,7 +197,11 @@ const FEUILLE = `
 .cc-moy .nf{gap:4px;}
 .cc-moy .nf-s{width:26px;height:28px;}
 .cc-moy>b{font-size:17px;font-weight:900;letter-spacing:-.02em;color:#fff;}
-.cc-moy>b i{font-style:normal;font-size:11.5px;font-weight:750;
+/* L'ESPACE AVANT « de moyenne » EST POSE ICI, PAS DANS LE TEXTE. Mesure a
+   l'ecran : le crenage negatif du nombre mange l'espace du JSX et l'on lisait
+   « 4,6de moyenne ». Une marge ne se laisse pas serrer. */
+.cc-moy>b i{display:inline-block;margin-left:5px;
+  font-style:normal;font-size:11.5px;font-weight:750;letter-spacing:0;
   color:rgba(255,255,255,.62);}
 /* L'ENTONNOIR SE LIT DE GAUCHE A DROITE : regarde, garde, demande. Le dernier
    est le seul qui rapporte de l'argent, donc c'est le seul en couleur. */
