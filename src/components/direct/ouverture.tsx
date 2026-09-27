@@ -18,8 +18,7 @@ import { useEffect, useRef, useState } from "react";
  * neuf : un fantôme sur un canapé est une mascotte, un essayage virtuel existe
  * ailleurs, une commerçante qui accueille est une photo de site. C'est la
  * SUITE des trois qui dit ce que fait le produit — on découvre chez soi, on
- * essaie sur son écran, on va voir la personne. Déplacer un acte casse la
- * phrase.
+ * essaie sur son écran, on va voir la personne.
  *
  * ═══ ET LA PROMESSE RESTE GÉNÉRALE ════════════════════════════════════════
  *
@@ -30,40 +29,88 @@ import { useEffect, useRef, useState } from "react";
  *
  * C'EST LE RISQUE RÉEL DE CETTE OUVERTURE, et il fallait le dire. Neuf secondes
  * de veste laissent croire à une application de mode ; la phrase au-dessus dit
- * que la veste est un exemple. Elle est incrustée dans les trois images, au même
+ * que la veste est un exemple. Elle est incrustée dans les trois plans, au même
  * endroit, donc elle ne bouge pas pendant les fondus — et l'écran suivant montre
  * les cinq catégories, ce qui referme la question avant qu'on la pose.
  *
- * ═══ CE QUE CE COMPOSANT AJOUTE, ET CE QU'IL N'AJOUTE PAS ══════════════════
+ * ═══ LE MOUVEMENT EST DANS LES FILMS, PAS DANS LE CODE ═════════════════════
  *
- * IL N'ÉCRIT RIEN PAR-DESSUS LES IMAGES. La promesse, les légendes et le bouton
- * sont dans les images. Redessiner un texte au-dessus d'un texte incrusté aurait
- * fini par le poser à côté sur un téléphone plus étroit — et il n'y a aucune
- * façon de vérifier un alignement qu'on n'a pas mesuré.
+ * « Je veux déjà que l'image remplisse l'écran sans bouger, et que ce soit dans
+ * chaque image qu'il y ait des animations pour faire comprendre le concept.
+ * Donc c'est le Fantôme qui bouge. »
  *
- * IL N'AJOUTE QUE LE FONDU ENTRE LES ACTES. L'image, elle, ne bouge pas : « je
- * veux déjà que l'image remplisse l'écran sans bouger ». Le mouvement qu'il
- * attend est DANS chaque scène — le Fantôme qui fait quelque chose — et cela
- * demande que le Fantôme existe séparément de son décor. Voir le LISEZ-MOI à
- * côté des images : tant qu'il est peint dedans, aucune ligne de code ne peut
- * l'en décoller.
+ * J'AVAIS FAIT L'INVERSE, ET C'ÉTAIT UN CONTRESENS : la caméra avançait sur une
+ * photo fixe, faute de quelque chose qui bouge DANS l'image. Un mouvement de
+ * caméra sur une photo donne un diaporama de présentation ; ce qu'il demande est
+ * une scène où quelqu'un fait quelque chose.
+ *
+ * AUCUNE LIGNE DE CODE NE FAIT BOUGER QUELQU'UN PEINT DANS UNE PHOTO. Mesuré en
+ * essayant de le détourer : son corps se sépare du canapé — luminance 173 contre
+ * 47 — mais sa casquette est à 29, plus sombre que le canapé, et reste dans le
+ * fond. Et même réussi, il resterait le trou derrière lui.
+ *
+ * CHAQUE ACTE EST DONC UN FILM. Le mouvement est dedans, réglé une fois pour
+ * toutes ; le code n'enchaîne que les trois. Voir le LISEZ-MOI à côté des
+ * fichiers pour le format attendu.
  */
 
-/** Les trois actes, dans l'ordre, avec leur durée en millisecondes. */
+/**
+ * LES TROIS ACTES, DANS L'ORDRE, AVEC LEUR DURÉE.
+ *
+ * `film` EST UN NOM SANS EXTENSION : les deux sources — `webm` puis `mp4` — se
+ * déduisent de lui. Le `webm` passe en premier parce qu'il est plus léger à
+ * qualité égale ; le navigateur qui ne sait pas le lire prend le `mp4` tout
+ * seul, et c'est à ça que sert d'en donner deux.
+ *
+ * `image` N'EST PAS UNE COPIE DE SECOURS, C'EST L'AFFICHE DU FILM. Elle s'affiche
+ * tant que la première image du film n'est pas prête — sans elle, chaque acte
+ * commencerait par un éclair noir. Et si le film n'existe pas du tout, elle reste
+ * : l'ouverture se joue alors en trois photos fixes, ce qui est exactement ce
+ * qu'elle faisait avant.
+ */
 const ACTES = [
-  { src: "/direct/ouverture/1.jpg", duree: 2000, alt: "Le Fantôme, chez lui, ouvre ClikMe." },
-  { src: "/direct/ouverture/2.jpg", duree: 4000, alt: "Sur son téléphone, la veste apparaît sur son image." },
-  { src: "/direct/ouverture/3.jpg", duree: 3000, alt: "Devant la boutique, la veste en vitrine, la commerçante l’accueille." },
+  {
+    film: "/direct/ouverture/1",
+    image: "/direct/ouverture/1.jpg",
+    duree: 2000,
+    alt: "Le Fantôme, chez lui, ouvre ClikMe.",
+  },
+  {
+    film: "/direct/ouverture/2",
+    image: "/direct/ouverture/2.jpg",
+    duree: 4000,
+    alt: "Sur son téléphone, la veste apparaît sur son image.",
+  },
+  {
+    film: "/direct/ouverture/3",
+    image: "/direct/ouverture/3.jpg",
+    duree: 3000,
+    alt: "Devant la boutique, la veste en vitrine, la commerçante l’accueille.",
+  },
 ] as const;
 
 /**
  * LE FONDU EST PLUS COURT QUE LE PLUS COURT DES ACTES.
  *
  * Deux secondes pour le premier : un fondu d'une seconde en mangerait la
- * moitié, et l'on ne verrait jamais l'image nette. À 420 millisecondes, le
+ * moitié, et l'on ne verrait jamais le plan net. À 420 millisecondes, le
  * passage se sent sans se regarder.
  */
 const FONDU = 420;
+
+/**
+ * LE FILET DE SÉCURITÉ, QUAND LE FILM NE DIT PAS QU'IL EST FINI.
+ *
+ * `ended` EST LA BONNE HORLOGE : c'est le film lui-même qui dit quand son geste
+ * est terminé, donc une prise un peu plus longue que prévu ne se fait pas couper
+ * au milieu. Mais un fichier abîmé, un décodeur qui cale, un onglet mis en
+ * arrière-plan — et l'événement n'arrive jamais. L'ouverture resterait figée sur
+ * un acte, avant le premier écran d'une démonstration qu'on montre à quelqu'un.
+ *
+ * ON LAISSE DONC UNE SECONDE ET DEMIE DE PLUS QUE LA DURÉE ANNONCÉE, et passé ce
+ * délai on avance quoi qu'il arrive.
+ */
+const RAB = 1500;
 
 export function Ouverture({ onFini }: { onFini: () => void }) {
   const [acte, setActe] = useState(0);
@@ -79,44 +126,85 @@ export function Ouverture({ onFini }: { onFini: () => void }) {
     parti.current = true;
     onFini();
   };
+  const suite = () => (acte + 1 < ACTES.length ? setActe(acte + 1) : finir());
 
   /* ═══ SANS LES IMAGES, L'OUVERTURE SE RETIRE D'ELLE-MÊME ════════════════
 
      UNE OUVERTURE À MOITIÉ CHARGÉE EST PIRE QUE PAS D'OUVERTURE. Neuf secondes
-     de fond violet vide avant une démonstration qu'on montre à quelqu'un, c'est
-     une panne que personne ne peut deviner ni contourner.
+     de fond vide avant une démonstration qu'on montre à quelqu'un, c'est une
+     panne que personne ne peut deviner ni contourner.
 
-     ON CHARGE DONC LA PREMIÈRE IMAGE AVANT DE COMMENCER : si elle n'arrive pas,
-     on passe la main tout de suite et la démonstration s'ouvre comme avant. Et
-     le jour où les trois fichiers sont déposés, l'ouverture apparaît sans qu'on
-     ait touché une ligne de code. Voir `public/direct/ouverture/LISEZ-MOI.md`. */
+     ON CHARGE DONC LA PREMIÈRE AFFICHE AVANT DE COMMENCER : si elle n'arrive
+     pas, on passe la main tout de suite et la démonstration s'ouvre comme
+     avant. C'est l'affiche qu'on teste et pas le film, parce que l'affiche est
+     le plus petit des deux et qu'elle suffit à jouer l'ouverture : les films
+     peuvent manquer sans que rien ne casse. */
   const [prete, setPrete] = useState(false);
   useEffect(() => {
     const img = new Image();
     let vivant = true;
     img.onload = () => vivant && setPrete(true);
     img.onerror = () => vivant && finir();
-    img.src = ACTES[0].src;
-    /* LES DEUX SUIVANTES SE CHARGENT PENDANT QUE LA PREMIÈRE JOUE. Demandées au
-       moment du fondu, elles arriveraient après lui : on verrait le noir entre
+    img.src = ACTES[0].image;
+    /* LES AFFICHES SUIVANTES SE CHARGENT PENDANT QUE LA PREMIÈRE JOUE. Demandées
+       au moment du fondu, elles arriveraient après lui : on verrait le noir entre
        deux actes, ce qui est exactement ce qu'un fondu sert à éviter. */
-    for (const a of ACTES.slice(1)) new Image().src = a.src;
+    for (const a of ACTES.slice(1)) new Image().src = a.image;
     return () => {
       vivant = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* L'HORLOGE DES ACTES. Elle ne démarre qu'une fois la première image là,
-     sinon les deux premières secondes se joueraient sur un écran vide. */
+  /* ═══ DEUX HORLOGES, ET C'EST LE FILM QUI DIT LAQUELLE ═════════════════
+
+     MESURE, SANS LES FILMS : les actes duraient 3,5 puis 5,5 puis 4,5 secondes
+     au lieu de 2, 4 et 3. Le rab attendait la fin d'un film qui n'existait pas.
+
+     TANT QU'AUCUN FILM N'A DEMARRE, L'ACTE DURE EXACTEMENT CE QU'IL ANNONCE —
+     c'est le minutage d'une ouverture en photos, et il doit rester le sien.
+     DES QU'UN FILM JOUE, C'EST LUI QUI COMMANDE : `ended` dit quand son geste
+     est fini, donc une prise un peu plus longue que prévu ne se fait pas couper
+     au milieu, et le rab n'est plus qu'un filet si l'événement n'arrive jamais. */
+  const [filmJoue, setFilmJoue] = useState(false);
+  useEffect(() => setFilmJoue(false), [acte]);
   useEffect(() => {
     if (!prete) return undefined;
-    const t = window.setTimeout(
-      () => (acte + 1 < ACTES.length ? setActe(acte + 1) : finir()),
-      ACTES[acte].duree,
-    );
+    const t = window.setTimeout(suite, ACTES[acte].duree + (filmJoue ? RAB : 0));
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prete, acte, filmJoue]);
+
+  /* ═══ ON NE JOUE QUE L'ACTE EN COURS ═══════════════════════════════════
+
+     LES TROIS FILMS SONT MONTÉS EN MÊME TEMPS, parce qu'un film monté au moment
+     du fondu arriverait après lui. Mais trois vidéos qui jouent ensemble, ce
+     sont trois décodages en parallèle pour deux images visibles : sur un
+     téléphone, c'est ce qui fait saccader le fondu.
+
+     CELUI QUI SORT EST REMIS A ZERO, et pas seulement mis en pause. Il n'est
+     plus visible mais il reste monté ; laissé au milieu, il reprendrait là où on
+     l'a laissé si l'on revenait dessus — et une ouverture qui se rejoue doit se
+     rejouer entière. */
+  const films = useRef<(HTMLVideoElement | null)[]>([]);
+  useEffect(() => {
+    if (!prete) return;
+    films.current.forEach((v, k) => {
+      if (!v) return;
+      if (k === acte) {
+        /* LE REFUS DE LECTURE N'EST PAS UNE PANNE : un navigateur peut refuser
+           de démarrer une vidéo, et l'affiche reste alors à l'écran. L'horloge
+           de secours fait avancer l'acte comme si c'était une photo. */
+        void v.play().catch(() => {});
+      } else {
+        v.pause();
+        try {
+          v.currentTime = 0;
+        } catch {
+          /* pas encore chargée */
+        }
+      }
+    });
   }, [prete, acte]);
 
   if (!prete) return null;
@@ -129,22 +217,35 @@ export function Ouverture({ onFini }: { onFini: () => void }) {
        qu'une surface qui réagit sans le dire ne se découvre jamais. */
     <button type="button" className="ouv" onClick={finir} aria-label="Passer l’ouverture">
       {ACTES.map((a, k) => (
-        <span
-          key={a.src}
-          className={`ouv-acte ouv-a${k + 1}${k === acte ? " on" : ""}`}
-          aria-hidden={k !== acte}
-        >
-          {/* ═══ DEUX COUCHES, ET C'EST LA MÊME IMAGE ═══════════════════════
-              SES IMAGES FONT 941 SUR 1672 ET L'ÉCRAN D'UN TÉLÉPHONE EST PLUS
-              ÉTROIT. Posée en « cover », l'image est rognée par les côtés — et
-              c'est la promesse, qui prend presque toute la largeur, qui part la
-              première. Posée en entier, il reste des bandes.
-              LES BANDES SONT DONC REMPLIES PAR L'IMAGE ELLE-MÊME, agrandie et
-              floutée. Le bord ne se voit plus, et il n'y a aucune couleur à
-              deviner — ce qui compte, parce que je n'ai pas ces images sous la
-              main pour y prendre la bonne. Même procédé que le parcours mode. */}
-          <span className="ouv-flou" style={{ backgroundImage: `url("${a.src}")` }} />
-          <span className="ouv-img" style={{ backgroundImage: `url("${a.src}")` }} role="img" aria-label={a.alt} />
+        <span key={a.film} className={`ouv-acte${k === acte ? " on" : ""}`} aria-hidden={k !== acte}>
+          {/* LE CALQUE FLOU RESTE SOUS LE FILM, et il ne sert qu'aux écrans si
+              larges que même « cover » laisserait paraître un bord. Il ne coûte
+              rien et il évite d'avoir à en découvrir le besoin en rendez-vous. */}
+          <span className="ouv-flou" style={{ backgroundImage: `url("${a.image}")` }} />
+          <video
+            ref={(n) => {
+              films.current[k] = n;
+            }}
+            className="ouv-film"
+            poster={a.image}
+            /* MUET, ET CE N'EST PAS UN CHOIX DE GOÛT : un navigateur refuse de
+               démarrer tout seul une vidéo qui a du son. Une ouverture sonore
+               serait de toute façon la façon la plus rapide de faire fermer une
+               démonstration ouverte dans une salle d'attente. */
+            muted
+            autoPlay={k === 0}
+            playsInline
+            /* `preload="auto"` SUR LES TROIS : le deuxième film doit être prêt
+               deux secondes après l'ouverture, ce qui ne laisse pas le temps de
+               le demander au moment du fondu. */
+            preload="auto"
+            onPlaying={() => k === acte && setFilmJoue(true)}
+            onEnded={() => k === acte && suite()}
+            aria-label={a.alt}
+          >
+            <source src={`${a.film}.webm`} type="video/webm" />
+            <source src={`${a.film}.mp4`} type="video/mp4" />
+          </video>
         </span>
       ))}
       <span className="ouv-passer">Passer</span>
@@ -161,10 +262,11 @@ const FEUILLE = `
   padding:0;border:0;font:inherit;cursor:pointer;
   background:#1A0820;
   -webkit-user-select:none;user-select:none;}
+
 /* ═══ L'ACTE QUI SORT PART PLUS VITE QUE CELUI QUI ARRIVE ════════════════
    MESURE A L'ECRAN, AU MILIEU DU FONDU : les deux legendes du bas se lisaient
    en meme temps, l'une sur l'autre. La promesse du haut, elle, ne se voit pas
-   se croiser — elle est identique sur les trois images — mais les legendes
+   se croiser — elle est identique sur les trois plans — mais les legendes
    changent a chaque acte, et un croisement symetrique les montre toutes les
    deux a moitie.
    LA SORTIE EST DONC DEUX FOIS PLUS COURTE QUE L'ENTREE : l'ancienne legende a
@@ -173,35 +275,25 @@ const FEUILLE = `
 .ouv-acte{position:absolute;inset:0;opacity:0;
   transition:opacity ${Math.round(FONDU * 0.45)}ms ease-out;}
 .ouv-acte.on{opacity:1;transition:opacity ${FONDU}ms ease-in;}
-/* LE CALQUE FLOU RESTE SOUS L'IMAGE, et il ne sert plus qu'aux ecrans si
-   larges que meme « cover » laisserait paraitre un bord. Il ne coute rien et il
-   evite d'avoir a en decouvrir le besoin en rendez-vous. */
+
 .ouv-flou{position:absolute;inset:0;
   background-size:cover;background-position:center;
   filter:blur(38px) brightness(.7);transform:scale(1.2);}
-.ouv-img{position:absolute;inset:0;background-position:center;
-  background-repeat:no-repeat;}
 
-/* ═══ L'IMAGE REMPLIT L'ECRAN, ET ELLE NE BOUGE PLUS ════════════════════
-   « Je veux deja que l'image remplisse l'ecran sans bouger, et que ce soit dans
-   chaque image qu'il y ait des animations pour faire comprendre le concept.
-   Donc c'est le fantome qui bouge. »
-   J'AVAIS FAIT L'INVERSE DES DEUX, ET C'ETAIT UN CONTRESENS. J'avais pose
-   l'image en entier — donc avec des bandes — et fait avancer la camera par-
-   dessus. Un mouvement de camera sur une photo fixe donne un diaporama de
-   presentation ; ce qu'il demande est une scene ou quelqu'un fait quelque
-   chose. Les deux erreurs allaient ensemble : la camera bougeait faute de
-   quelque chose qui bouge DANS l'image.
-   « COVER » ROGNE PAR LES COTES, et j'avais garde « contain » pour cette
-   raison : sur un ecran tres haut, la rogne atteint neuf pour cent de chaque
-   bord et sa legende du bas commence a douze. C'etait une prudence contre une
-   demande claire — il veut l'ecran rempli. On le remplit, et la rogne reste
-   bornee par le centrage : c'est toujours le milieu de son image qu'on garde,
-   et tout son texte est centre. */
-.ouv-img{background-size:cover;}
+/* ═══ LE PLAN REMPLIT L'ECRAN, ET IL NE BOUGE PAS ════════════════════════
+   « Je veux deja que l'image remplisse l'ecran sans bouger. »
+   Le mode object-fit:cover ROGNE PAR LES COTES, et j'avais garde l'image entiere pour
+   cette raison : sur un ecran tres haut, la rogne atteint neuf pour cent de
+   chaque bord et sa legende du bas commence a douze. C'etait une prudence
+   contre une demande claire. On remplit, et la rogne reste bornee par le
+   centrage : c'est toujours le milieu du plan qu'on garde, et tout son texte y
+   est centre. */
+.ouv-film{position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;object-position:center;
+  display:block;background:transparent;}
 
 /* LA PASTILLE DIT QUE CA SE PASSE. Discrete, en bas a droite, la ou le pouce
-   est deja — et pas au milieu, ou elle serait posee sur l'image. */
+   est deja — et pas au milieu, ou elle serait posee sur le plan. */
 .ouv-passer{position:absolute;right:14px;
   bottom:calc(14px + var(--ap-bas,0px));
   padding:7px 14px;border-radius:999px;
@@ -213,8 +305,11 @@ const FEUILLE = `
 @media (prefers-reduced-motion:reduce){
   /* ON GARDE LES TROIS ACTES ET ON RETIRE LE FONDU. Supprimer les actes
      retirerait l'histoire a ceux qui ne supportent pas le mouvement, alors que
-     c'est l'histoire qu'on est venu raconter ; ce qui gene, c'est le glissement
-     d'une image a l'autre, pas le fait qu'elles se suivent. */
+     c'est l'histoire qu'on est venu raconter ; ce qui gene ici, c'est le
+     glissement d'un plan a l'autre, pas le fait qu'ils se suivent.
+     LES FILMS, EUX, RESTENT. Un reglage systeme qui reduit les animations d'une
+     interface ne demande pas de couper le son de la television : ce qu'il
+     designe, ce sont les mouvements que l'interface s'ajoute a elle-meme. */
   .ouv-acte{transition:none;}
 }
 `;

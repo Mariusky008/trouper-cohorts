@@ -53,32 +53,60 @@ commerçant. » commence à douze pour cent du bord gauche. Douze contre neuf, c
 trois pour cent de marge — un téléphone un peu plus haut et sa phrase est coupée.
 On ne joue pas la composition de quelqu'un à trois pour cent près.
 
-## Pour que le Fantôme bouge, il faut qu'il soit décollé de son décor
+## Les trois films, et ce qu'ils doivent respecter
 
-« Je veux que ce soit dans chaque image qu'il y ait des animations pour faire
-comprendre le concept. Donc c'est le Fantôme qui bouge. »
+C'est la voie choisie : **le mouvement est dans le film, pas dans le code.** Le
+code n'enchaîne que les trois actes.
 
-**AUCUNE LIGNE DE CODE NE PEUT FAIRE BOUGER QUELQU'UN QUI EST PEINT DANS UNE
-PHOTO.** Ces trois fichiers sont des images plates : le Fantôme, le canapé et la
-lampe y sont le même objet. Pour qu'il bouge, il faut qu'il soit un calque à
-part, et que le décor existe sans lui.
+| Fichier | La scène | Durée |
+|---|---|---|
+| `1.mp4` + `1.webm` | Le Fantôme sur son canapé, qui ouvre ClikMe. | **2 s** |
+| `2.mp4` + `2.webm` | On s'est rapproché du téléphone : il touche une veste, elle apparaît sur son image. | **4 s** |
+| `3.mp4` + `3.webm` | Il est devant la boutique, la veste en vitrine, la commerçante l'accueille. | **3 s** |
 
-**J'AI ESSAYÉ DE LE DÉCOUPER TOUT SEUL, ET C'EST MESURÉ, PAS SUPPOSÉ.** Son corps
-est très clair — luminance 173 — et se sépare proprement du canapé, qui est à
-47. Mais sa **casquette est à 29**, c'est-à-dire plus sombre que le canapé : elle
-reste dans le fond. Le détourage donne un Fantôme sans casquette, et la
-casquette est ce qui en fait le personnage. Même réussi, il resterait le trou :
-en le décollant, on voit ce qu'il y avait derrière lui, et il n'y a rien.
+**L'ORDRE DES DURÉES EST 2, 4, 3 — PAS 2, 3, 4.** Le deuxième acte est le plus
+long parce que c'est celui qui doit être compris : c'est là qu'on voit la veste
+se poser sur lui alors que lui ne change pas. Les deux autres posent le décor et
+referment.
 
-**CE QU'IL FAUT, AU CHOIX :**
+### Six règles, et chacune a coûté quelque chose
 
-1. **Trois courtes vidéos** — 2 s, 3 s et 4 s, même cadrage, en `mp4` + `webm`.
-   C'est le meilleur rendu et le moins de travail des deux : tout le mouvement
-   est déjà dans le fichier, et le projet sait déjà jouer ce format.
-2. **Deux fichiers par scène** : le décor SANS le Fantôme, et le Fantôme seul en
-   `png` transparent, casquette comprise. Là, le mouvement se pilote depuis le
-   code — il respire, il se penche vers le téléphone, il se tourne vers la
-   commerçante — et chaque geste se règle sans refaire une image.
+1. **Largeur et hauteur PAIRES.** 941 × 1672 ne s'encode pas en H.264 — mesuré,
+   l'encodeur refuse : « width not divisible by 2 ». **940 × 1672** convient.
+2. **Aucune piste son.** Un navigateur refuse de démarrer tout seul une vidéo
+   qui a du son, et le film resterait sur son affiche. Une ouverture sonore
+   serait de toute façon la meilleure façon de faire fermer une démonstration
+   ouverte dans une salle d'attente.
+3. **Le même cadrage que les images, sans zoom qui pousse le texte dehors.**
+   L'écran est plus étroit que le film : il est rogné par les côtés, et
+   « Maintenant, chez le commerçant. » commence déjà à douze pour cent du bord.
+   Un zoom avant de douze pour cent suffit à la couper — vérifié sur un film
+   d'essai.
+4. **La promesse au même endroit sur les trois**, comme sur les images : deux
+   textes identiques qui se croisent pendant un fondu ne se voient pas se
+   croiser.
+5. **Les deux formats.** Le `webm` passe en premier — plus léger à qualité
+   égale — et le `mp4` sert aux navigateurs qui ne le lisent pas. Un seul des
+   deux suffit à jouer, mais les deux évitent de découvrir le manquant en
+   rendez-vous.
+6. **Le poids.** Ils sont servis avant le premier écran de chaque
+   démonstration. En dessous de 1,5 Mo par fichier, ça ne se sent pas.
+
+### Les images restent, et elles servent
+
+Les trois `.jpg` ne sont pas remplacés : ils deviennent **l'affiche** de chaque
+film — ce qu'on voit tant que la première image n'est pas prête, sans quoi chaque
+acte commencerait par un éclair noir. **Et si un film manque, son affiche reste
+et l'acte dure exactement sa durée annoncée** : l'ouverture se joue alors en
+photos fixes, comme aujourd'hui.
+
+### Qui décide de la fin d'un acte
+
+**Le film.** C'est son `ended` qui fait passer au suivant, donc une prise un peu
+plus longue que prévu ne se fait pas couper au milieu. Une horloge de secours
+tranche une seconde et demie plus tard si l'événement n'arrive jamais — fichier
+abîmé, décodeur qui cale, onglet mis en arrière-plan. Sans film, c'est la durée
+annoncée qui commande, au dixième près.
 
 ## Sans les images, il ne se passe rien
 
