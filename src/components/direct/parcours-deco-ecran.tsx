@@ -158,9 +158,25 @@ export function ParcoursDeco({
 
   return (
     <div className={`pd pd-e${PAS.indexOf(ici) + 1} pd-p-${ici}`}>
-      {/* L'ÉTAPE 2 remplace le fond par sa glissière : c'est le seul écran où
-          la photo n'est pas une photo mais une comparaison. */}
-      {etape !== 2 && (
+      {/* ═══ LE FOND SUIT CE QU'EST L'ETAPE, PAS SON NUMERO ══════════════
+
+          « Déco : la photo n'apparaît pas. »
+
+          LA GLISSIERE EST LE SEUL ECRAN SANS FOND — elle EST la photo, en deux
+          moitiés qu'on fait coulisser. La condition disait « pas à l'étape 2 »,
+          parce que la glissière est la deuxième chez Maison Dax.
+
+          ELLE NE L'EST PAS CHEZ TOUT LE MONDE. Les pas se calculent par
+          commerce — voir `plaque-parcours.ts` : la cirière n'a qu'une photo de
+          sa bougie, donc pas de glissière, donc son parcours fait DEUX écrans
+          et son numéro 2 est la demande de rendez-vous. Elle perdait son fond
+          et l'écran devenait noir.
+
+          C'EST LA MEME ERREUR QUE LE COMPTEUR D'ETAPES CORRIGE LE MOIS DERNIER,
+          et pour la même raison : dès qu'un parcours se raccourcit, tout ce qui
+          est accroché à un RANG se décale d'un cran. On accroche donc au NOM du
+          pas, qui lui ne bouge pas. */}
+      {ici !== "paire" && (
         <>
           <div className="pd-fond" style={{ backgroundImage: `url("${fond}")` }} aria-hidden="true" />
           <div className="pd-voile" aria-hidden="true" />

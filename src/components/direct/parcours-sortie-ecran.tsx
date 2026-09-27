@@ -38,7 +38,6 @@ import { FantomeAccueil } from "@/components/direct/fantome-accueil";
 import { evenementsDeLaVille, VILLE } from "@/lib/direct/apercu-habitant";
 import { SOIREES, type MessageLive } from "@/lib/direct/soiree";
 import { BoutonCote, CoteCommercant } from "@/components/direct/cote-commercant";
-import { CATEGORIES } from "@/lib/direct/choisir-commerce";
 import {
   ETAPES_SORTIE,
   SORTIE_ID,
@@ -93,18 +92,25 @@ function initiale(nom: string): string {
 export function ParcoursSortie({
   onFermer,
   /**
-   * LA BANDE DES CINQ CATÉGORIES, DANS SA MAQUETTE DE L'ÉTAPE 3.
+   * LA BANDE DES CINQ CATÉGORIES A QUITTÉ L'ÉCRAN — le réglage reste.
    *
-   * ELLE DOIT MENER QUELQUE PART, SINON C'EST UN DÉCOR QUI RESSEMBLE À UNE
-   * PANNE. Appuyer sur une autre catégorie referme le parcours et rouvre
-   * l'écran de choix SUR CELLE-LÀ — c'est ce qu'on attend d'une barre
-   * d'onglets, et c'est un raccourci réel depuis le fond d'un parcours.
+   * « Je vois qu'il y a les pictogrammes sur la photo de "mode, beauté,
+   * restaurants…" : c'est à supprimer, ils n'ont rien à faire là. »
+   *
+   * IL RESTE PARCE QUE C'EST LA PAGE QUI LE PASSE, et qu'il est juste : si un
+   * jour un écran de ce parcours a besoin de renvoyer vers une autre envie,
+   * c'est par là que ça passera, et la page n'aura rien à changer. Le retirer
+   * de l'interface ne demandait pas de retirer le chemin.
    */
   onCategorie,
 }: {
   onFermer: () => void;
   onCategorie?: (cle: string) => void;
 }) {
+  /* ON LE CITE UNE FOIS POUR QU'IL NE SE PERDE PAS. Une propriété qu'aucune
+     ligne ne nomme finit par être supprimee par le premier nettoyage, et la
+     page qui la passe se met alors a parler dans le vide. */
+  void onCategorie;
   const [etape, setEtape] = useState(1);
   const [joue, setJoue] = useState(false);
   const [reste, setReste] = useState(10);
@@ -336,9 +342,22 @@ export function ParcoursSortie({
             Écouter {duree} secondes
             <s aria-hidden="true">→</s>
           </button>
-          <button type="button" className="ps-deux" onClick={() => setEtape(ETAPES_SORTIE)}>
-            Voir la soirée
-          </button>
+          {/* ═══ PLUS DE RACCOURCI « VOIR LA SOIREE » ══════════════════
+              « Je ne vois cet écran que lorsque je reviens en arrière,
+              autrement je ne le vois pas. Il faut qu'il soit à l'étape après
+              avoir écouté la musique, pour voir qui y sera et ce qu'ils
+              disent. »
+              C'EST CE BOUTON QUI LE CACHAIT. Il sautait directement à la
+              dernière étape, donc par-dessus le Live — et il était posé juste
+              sous le bouton principal, aux deux premières étapes. On pouvait
+              faire le parcours entier sans jamais voir l'écran qui porte tout
+              ce que le produit sait faire, puis le découvrir par hasard en
+              appuyant sur la flèche de retour. C'est exactement ce qui lui est
+              arrivé.
+              UN PARCOURS DE QUATRE ECRANS N'A PAS BESOIN D'UN RACCOURCI. Il se
+              traverse en trois appuis ; celui qui veut les informations
+              pratiques y est dans cinq secondes. Le raccourci ne faisait
+              gagner que le temps de ce qu'on est venu montrer. */}
         </section>
       )}
 
@@ -396,13 +415,15 @@ export function ParcoursSortie({
               jolie : « Ça vous met dans l'ambiance ? » est écrite dans ses
               données, à côté du son qu'elle commente. */}
           <h2 className="ps-q">{essai?.question ?? "Ça vous donne envie de rester ?"}</h2>
+          {/* LE BOUTON DIT CE QU'IL Y A DERRIERE. « Découvrir l'ambiance »
+              pouvait aussi bien mener à la fiche de la soirée qu'au Live ;
+              « Voir qui y sera » ne peut mener qu'à une seule chose, et c'est
+              celle-là. Ses mots à lui : « pour voir qui y sera et ce qu'ils
+              disent ». */}
           <button type="button" className="ps-go" onClick={suivant}>
             <Billet />
-            Découvrir l’ambiance
+            Voir qui y sera
             <s aria-hidden="true">→</s>
-          </button>
-          <button type="button" className="ps-deux" onClick={() => setEtape(ETAPES_SORTIE)}>
-            Voir la soirée
           </button>
         </section>
       )}
@@ -516,22 +537,18 @@ export function ParcoursSortie({
             Fantômes de démonstration. Dans l’application, personne ne montre son visage.
           </p>
 
-          {/* LA BANDE DES CINQ CATÉGORIES DE SA MAQUETTE. Elle dit où l'on est,
-              et elle sert de raccourci vers une autre envie — voir
-              `onCategorie`. */}
-          <nav className="ps-cats" aria-label="Changer d’envie">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c.cle}
-                type="button"
-                className={c.cle === "sorties" ? "on" : ""}
-                aria-current={c.cle === "sorties" ? "page" : undefined}
-                onClick={() => (onCategorie ? onCategorie(c.cle) : onFermer())}
-              >
-                {c.onglet}
-              </button>
-            ))}
-          </nav>
+          {/* ═══ LA BANDE DES CATEGORIES EST PARTIE ═════════════════════
+              « Je vois qu'il y a les pictogrammes sur la photo de "mode,
+              beauté, restaurants…" : c'est à supprimer, ils n'ont rien à faire
+              là. »
+              IL A RAISON, ET C'ETAIT UNE BARRE DE NAVIGATION AU MILIEU D'UNE
+              HISTOIRE. Elle venait de sa maquette de l'étape 3, où elle disait
+              « vous êtes dans Sorties ». Mais on le sait déjà — on vient de
+              choisir une soirée, de l'écouter, et on lit ce que les gens y
+              disent. Ce qu'elle apportait vraiment, c'était cinq portes de
+              sortie posées entre le fil et le bouton qui continue.
+              LE FANTOME RESTE LA PORTE, en haut à droite, comme sur les quatre
+              autres parcours. Une seule sortie, toujours à la même place. */}
 
           <button type="button" className="ps-go" onClick={suivant}>
             <Billet />

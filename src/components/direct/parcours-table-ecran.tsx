@@ -38,7 +38,7 @@ import { FantomeAccueil } from "@/components/direct/fantome-accueil";
 import { onSpeakingChange, speak, stopSpeaking } from "@/lib/site-internet/speech";
 import { VILLE } from "@/lib/direct/apercu-habitant";
 import { demanderRendezVous, numeroDeFiction } from "@/lib/direct/prevenir";
-import { plaqueDuParcours } from "@/lib/direct/plaque-parcours";
+import { motDeLaCarte, plaqueDuParcours } from "@/lib/direct/plaque-parcours";
 import { BoutonCote, CoteCommercant } from "@/components/direct/cote-commercant";
 import {
   COMMERCE_TABLE,
@@ -322,11 +322,16 @@ export function ParcoursTable({
   const carte = resto.catalogue ?? [];
   const deLaCarte = carte.find((a) => a.id === PLAT_TABLE);
   const chezMargot = cle === COMMERCE_TABLE && deLaCarte;
+  /* LE NOM EST CELUI QUE LA CARTE DU PAQUET PROMETTAIT — voir `motDeLaCarte`.
+     Le titre du moment dit l'heure (« Le service du midi ») là où la carte dit
+     l'assiette (« Magret grillé, pommes sarladaises ») : on ouvrait un magret
+     pour arriver sur un horaire. Quand la carte ne nomme rien, c'est que le
+     titre du moment nomme déjà le plat, et il reprend sa place. */
   const plat = chezMargot
     ? deLaCarte
     : {
         id: plaque.offre?.titre ?? cle,
-        nom: plaque.offre?.titre ?? resto.nom,
+        nom: motDeLaCarte(cle) ?? plaque.offre?.titre ?? resto.nom,
         detail: plaque.offre?.lignes?.[0],
         prix: plaque.offre?.prix,
         rayon: "",
@@ -365,7 +370,16 @@ export function ParcoursTable({
      de la voix prend l'affiche de la vidéo du commerçant s'il en a une, et la
      dernière étape prend sa première photo à lui. */
   const PHOTO_VOIX = chezMargot ? MARGOT_PHOTO : (plaque.offre?.video?.affiche ?? vignette);
-  const PHOTO_VENIR = chezMargot ? DEVANTURE_TABLE : (resto.sesPhotos?.[0]?.src ?? resto.photo ?? plaque.photo);
+  /* LA PHOTO DU DERNIER ECRAN : CELLE DE L'ACCUEIL, SI ELLE EXISTE.
+     « Le dernier écran est trop faible. » Il finissait sur une salle vide,
+     c'est-à-dire sur des tables mises et personne dedans, juste après qu'on a
+     entendu quelqu'un raconter son plat. Quand le commerce a photographié la
+     personne qui accueille — voir `photoAccueil` — c'est elle qui ouvre la
+     porte ; sinon on garde sa première photo à lui, et l'écran ne change pas
+     d'une ligne pour autant. */
+  const PHOTO_VENIR =
+    resto.photoAccueil ??
+    (chezMargot ? DEVANTURE_TABLE : (resto.sesPhotos?.[0]?.src ?? resto.photo ?? plaque.photo));
 
   /* LE RENDEZ-VOUS PASSE PAR LE VRAI CHEMIN DU PRODUIT — voir `prevenir.ts` :
      un message deja ecrit sur WhatsApp, et le numero en secours. Le numero est
@@ -799,56 +813,91 @@ export function ParcoursTable({
       )}
 
       {/* ──────────────────────── 4/4 · LA TABLE ─────────────────────────── */}
+      {/* ═══ LE DERNIER ECRAN, REFAIT — « On se retrouve chez nous ? » ════
+
+          « Le dernier écran est trop faible. Quelque chose de plus fort, comme
+          la photo 2. »
+
+          CE QUI ETAIT FAIBLE, ET CE N'ETAIT PAS LA MISE EN PAGE. L'écran disait
+          « À midi, vous savez où aller » devant une salle vide, puis alignait
+          trois pastilles grises d'informations pratiques. On venait d'entendre
+          un homme raconter son magret pendant une demi-minute, et l'écran
+          suivant ressemblait à une fiche d'annuaire. Toute la chaleur tombait
+          d'un coup, juste avant le seul geste qui compte.
+
+          SA MAQUETTE REGLE CA EN CHANGEANT DE SUJET : la personne, pas le lieu.
+          Le restaurateur sur le pas de sa porte, la main tendue, sa salle
+          pleine derrière lui — et la question posée par-dessus. C'est la même
+          personne qu'à l'étape d'avant, et c'est ce qui fait tenir les deux
+          écrans ensemble : il vous a raconté son plat, maintenant il vous
+          ouvre la porte.
+
+          LE RESTE DESCEND DANS L'ORDRE OU L'ON DECIDE : chez qui, où, quoi et
+          combien, quand c'est ouvert, ce qu'ils font — puis le geste. Rien de
+          neuf n'est inventé : tout est lu sur sa fiche. */}
+      {/* LA QUESTION EST POSEE HAUT, DANS LA PHOTO — et c'est sa maquette.
+          Laissée dans le flux, elle arrivait à mi-hauteur et couvrait les
+          tables : on lisait l'invitation par-dessus ce à quoi elle invite. En
+          haut, elle laisse la salle entière visible sous elle. */}
       {ici === "venir" && !cote && (
-        <section className="pt-bas">
-          <h1 className="pt-t">
-            À midi,
+        <div className="pt-invite">
+          <h1 className="pt-t pt-t-venir">
+            On se retrouve
             <br />
-            <em>vous savez où aller.</em>
-            <s aria-hidden="true" />
+            <em>chez nous ?</em>
           </h1>
+          {/* LA DISTANCE EN PASTILLE. Elle est la seule information qui change
+              la réponse : « c'est là » ne se pense pas pareil à quatre cents
+              mètres et à quatre kilomètres. */}
+          <p className="pt-loin">
+            <i aria-hidden="true">📍</i>
+            À {resto.distance} de vous
+          </p>
+        </div>
+      )}
 
-          {/* CE QU'IL FAUT SAVOIR AVANT D'Y ALLER, lu sur sa fiche : où c'est,
-              quand c'est ouvert, et son mot — « quand c'est fini, c'est fini ».
-              C'est la phrase qui fait venir à midi plutôt qu'à deux heures. */}
-          {resto.fiche && (
-            <ul className="pt-pratique">
-              {resto.fiche.ou && <li>{resto.fiche.ou}</li>}
-              {resto.fiche.horaires && <li>{resto.fiche.horaires}</li>}
-            </ul>
-          )}
-          {resto.fiche?.mot && <p className="pt-motfiche">{resto.fiche.mot}</p>}
+      {ici === "venir" && !cote && (
+        <section className="pt-bas pt-venirbas">
+          <div className="pt-carte-fin">
+            <b className="pt-nomfin">{nom}</b>
+            {resto.fiche?.ou && <em className="pt-oufin">{resto.fiche.ou}</em>}
 
-          {fiche(true)}
+            <span className="pt-trait" aria-hidden="true" />
 
-          {/* LES DEUX GESTES DE SA MAQUETTE, ET ILS MARCHENT TOUS LES DEUX.
-              Le message WhatsApp est déjà écrit, l'appel part sur le même
-              numéro. Voir `prevenir.ts` — le produit fait déjà exactement ça
-              pour les rendez-vous, on ne refait pas un formulaire à côté. */}
+            <span className="pt-platfin">
+              <b>{plat.nom}</b>
+              {plat.prix && <s>{plat.prix}</s>}
+            </span>
+
+            {resto.fiche?.horaires && (
+              <span className="pt-heurefin">
+                <i aria-hidden="true">🕐</i>
+                {resto.fiche.horaires}
+              </span>
+            )}
+            {resto.fiche?.mot && <em className="pt-motfin">{resto.fiche.mot}</em>}
+          </div>
+
           {/* ═══ UN SEUL GESTE, ET IL MARCHE ════════════════════════════
               « Il faut supprimer "Contacter le restaurant", qui est un doublon
               de "Réserver une table", et supprimer "Numéro de démonstration". »
               LES DEUX BOUTONS FAISAIENT LA MEME CHOSE PAR DEUX PORTES — le
-              message WhatsApp déjà écrit, et le même numéro composé. Deux
-              boutons côte à côte disent qu'il y a deux décisions à prendre ;
-              ici il n'y en avait qu'une, et le second ne servait qu'à la
-              retarder. La ligne « Numéro de démonstration » partait avec lui :
-              elle n'expliquait plus rien une fois le numéro disparu, et elle
-              disait à un commerçant en rendez-vous une chose qu'il sait déjà. */}
+              message WhatsApp déjà écrit, et le même numéro composé.
+              ET LE MOT EST LE SIEN : « DEMANDER » une table, pas « réserver ».
+              On envoie un message, le restaurant répond ; tant qu'il n'a pas
+              répondu, rien n'est réservé. C'est la même règle que les
+              rendez-vous du salon — on n'annonce pas un créneau que personne ne
+              peut tenir. */}
           <a className="pt-go" href={joindre.whatsapp} target="_blank" rel="noreferrer noopener">
-            <Calendrier />
-            Réserver une table
+            <Bulle />
+            Demander une table
             <s aria-hidden="true">→</s>
           </a>
 
           {/* ═══ ET ON PASSE DE SON COTE ═════════════════════════════════
               « Rajouter "voir les stats de ce plat" […] et pour toutes les
               autres catégories faire la même chose, pour avoir la même logique
-              et le même impact en fin de parcours. »
-              C'EST LE MEME PANNEAU QU'AU SALON ET A LA BOUTIQUE — voir
-              `cote-commercant.tsx`. Le restaurant finissait sur un numéro de
-              téléphone : le commerçant à qui on montre la démonstration voyait
-              ce que l'habitant fait, jamais ce que ça lui rapporte à lui. */}
+              et le même impact en fin de parcours. » */}
           <BoutonCote commerce={cle} branche="restaurant" onClick={() => setCote(true)} />
         </section>
       )}
@@ -900,6 +949,21 @@ function Guillemets() {
     <svg className="pt-ico" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M9.4 6.6C6.6 7.8 5 10.2 5 13.2v4.2h5.2v-5.2H7.8c0-2 .6-3.4 2.4-4.2Z" />
       <path d="M19.4 6.6c-2.8 1.2-4.4 3.6-4.4 6.6v4.2h5.2v-5.2h-2.4c0-2 .6-3.4 2.4-4.2Z" />
+    </svg>
+  );
+}
+
+/**
+ * LA BULLE DE « DEMANDER UNE TABLE ».
+ *
+ * UN MESSAGE, PAS UN CALENDRIER. Le calendrier disait « réserver », c'est-à-dire
+ * une case prise dans un planning ; le geste réel est d'écrire au restaurant et
+ * d'attendre sa réponse. Le dessin dit maintenant ce qui se passe vraiment.
+ */
+function Bulle() {
+  return (
+    <svg className="pt-ico" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20.4 12.2c0 4-3.8 7.2-8.4 7.2a9.7 9.7 0 0 1-2.6-.35L4.2 20.4l1.5-3.5A6.8 6.8 0 0 1 3.6 12.2C3.6 8.2 7.4 5 12 5s8.4 3.2 8.4 7.2Z" />
     </svg>
   );
 }

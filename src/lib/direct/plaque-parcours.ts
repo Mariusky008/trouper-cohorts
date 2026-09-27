@@ -146,6 +146,32 @@ export function photoDeLaCarte(id: string): string | undefined {
 }
 
 /**
+ * ═══ LE NOM QUE LA CARTE DU PAQUET PROMETTAIT ══════════════════════════════
+ *
+ * MEME RAISON QUE `photoDeLaCarte`, ET MEME REMEDE. La carte du paquet annonce
+ * « Magret grillé, pommes sarladaises » ; le parcours, lui, lisait le titre du
+ * MOMENT de la journée, qui dit « Le service du midi ». Les deux sont vrais et
+ * ne parlent pas de la même chose : l'un nomme l'assiette, l'autre nomme
+ * l'heure. On ouvrait donc un magret pour arriver sur un horaire.
+ *
+ * LE `quoi` N'EST ECRIT QUE LA OU LE TITRE DE L'OFFRE N'EST PAS UN PLAT — c'est
+ * la règle du paquet, écrite dans `choisir-commerce.ts`. Quand il est absent,
+ * le titre du moment nomme déjà l'assiette et on le garde : renvoyer `undefined`
+ * laisse l'appelant retomber dessus, ce qui est le bon comportement.
+ *
+ * UNE SEULE FONCTION, LUE DES DEUX COTES. C'est la leçon déjà payée avec la
+ * photo de la cirière : deux règles écrites séparément finissent par montrer
+ * deux choses, et chacune a raison de son côté.
+ */
+export function motDeLaCarte(id: string): string | undefined {
+  for (const cat of CATEGORIES) {
+    const c = cat.cartes.find((x) => x.id === id);
+    if (c) return c.quoi;
+  }
+  return undefined;
+}
+
+/**
  * CE QUE CE COMMERCE PEUT MONTRER, et rien de plus.
  *
  * Renvoie `null` quand le commerce n'existe pas ou n'a publié aucune offre :

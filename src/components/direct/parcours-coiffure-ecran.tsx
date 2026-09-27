@@ -165,6 +165,18 @@ export function ParcoursCoiffure({
   const ou = `${salon.distance}${salon.ville ? ` · ${salon.ville}` : ""}`;
 
   const suivant = () => setEtape((e) => Math.min(total, e + 1));
+  /* ═══ ET LE PAS EN ARRIERE, QUI MANQUAIT ICI ═══════════════════════════
+
+     « On est bloqué à cette étape et celle d'avant. »
+
+     LES QUATRE AUTRES PARCOURS ONT LEUR FLECHE, CELUI-CI NON — un oubli, et
+     c'est le seul des cinq. On avançait de la coupe au rendez-vous sans jamais
+     pouvoir revoir l'essai qu'on venait de faire, ce qui est précisément ce
+     qu'on veut revoir avant de demander un rendez-vous.
+
+     A LA PREMIERE ETAPE, ELLE REFERME LE PARCOURS, comme partout ailleurs :
+     une flèche qui ne fait rien au premier écran apprend à ne plus l'essayer. */
+  const precedent = () => (etape === 1 ? onFermer() : setEtape((e) => e - 1));
 
   const bouger = (x: number) => {
     const r = cadre.current?.getBoundingClientRect();
@@ -206,9 +218,15 @@ export function ParcoursCoiffure({
 
   return (
     <div className={`pc pc-e${ici}`}>
-      {/* L'ÉTAPE 2 remplace le fond par sa glissière : c'est le seul écran où
-          la photo n'est pas une photo mais une comparaison. */}
-      {etape !== 2 && (
+      {/* LA GLISSIERE REMPLACE LE FOND : c'est le seul écran où la photo n'est
+          pas une photo mais une comparaison.
+          ON TESTE `ici`, PAS `etape` — les deux valent 2 au même moment
+          aujourd'hui, et c'est justement pourquoi la confusion ne se voit pas.
+          `etape` est le rang, `ici` est l'écran ; le jour où un salon perd un
+          pas, c'est `ici` qui reste juste. La même ligne écrite avec `etape`
+          dans le parcours déco a rendu le dernier écran de la cirière tout
+          noir. */}
+      {ici !== 2 && (
         <>
           {/* ═══ DEUX COUCHES, POUR VOIR TOUTE LA COUPE ════════════════════
               « On ne voit pas la coupe quasiment, il y a un trop gros
@@ -228,6 +246,13 @@ export function ParcoursCoiffure({
 
       {/* ═══ LA COQUE, IDENTIQUE AUX QUATRE ÉTAPES ═══════════════════════ */}
       <header className="pc-haut" aria-label={`Étape ${etape} sur ${total}`}>
+        {etape > 1 && (
+          <button type="button" className="pc-retour" onClick={precedent} aria-label="L’étape précédente">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M14.4 5.4 7.8 12l6.6 6.6" />
+            </svg>
+          </button>
+        )}
         {/* LE VRAI LOGO, PAS UN MOT EN GRAS. « Clikme » n'a pas de k :
             il a un curseur a sa place, et c'est tout le nom — on clique,
             et c'est moi. Ecrit au clavier, le mot perdait la seule chose

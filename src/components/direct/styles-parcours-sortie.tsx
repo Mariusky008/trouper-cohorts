@@ -23,7 +23,18 @@ export function StylesParcoursSortie() {
           background:#06060A;
           font-family:var(--font-clikme),system-ui,sans-serif;color:#fff;
           -webkit-user-select:none;user-select:none;}
-        .ps-fond{position:absolute;inset:0;background-size:cover;
+        /* ═══ UN CALQUE DE DECOR NE PREND JAMAIS LE DOIGT ══════════════
+           « On est bloque a cette etape et celle d'avant, pas impossible de
+           revenir a l'accueil. »
+           LE CALQUE FLOU EST AGRANDI DE 14 POUR CENT — c'est ce qui lui evite
+           de laisser un bord net quand on le floute de vingt-six points. Un
+           element mis a l'echelle DEBORDE de sa boite : mesure a l'ecran, il
+           commencait a 10 points du haut alors que sa section commence a 65,
+           donc il passait PAR-DESSUS l'en-tete. Le Fantome et la fleche de
+           retour etaient dessous, visibles et intouchables.
+           TOUS CES CALQUES SONT caches aux lecteurs d ecran : ils n'existent pour personne,
+           donc ils ne doivent exister pour aucun doigt. */
+        .ps-fond{pointer-events:none;position:absolute;inset:0;background-size:cover;
           background-position:center 26%;}
         /* LE VOILE EST PLUS APPUYE QUE CELUI DE LA COIFFURE. Un portrait a un
            visage au milieu qu'on protege ; une scene de concert est deja

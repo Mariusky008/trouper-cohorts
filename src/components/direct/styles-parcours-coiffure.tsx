@@ -19,7 +19,18 @@ export function StylesParcoursCoiffure() {
           background:#06060A;
           font-family:var(--font-clikme),system-ui,sans-serif;color:#fff;
           -webkit-user-select:none;user-select:none;}
-        .pc-fond{position:absolute;inset:0;background-size:cover;
+        /* ═══ UN CALQUE DE DECOR NE PREND JAMAIS LE DOIGT ══════════════
+           « On est bloque a cette etape et celle d'avant, pas impossible de
+           revenir a l'accueil. »
+           LE CALQUE FLOU EST AGRANDI DE 14 POUR CENT — c'est ce qui lui evite
+           de laisser un bord net quand on le floute de vingt-six points. Un
+           element mis a l'echelle DEBORDE de sa boite : mesure a l'ecran, il
+           commencait a 10 points du haut alors que sa section commence a 65,
+           donc il passait PAR-DESSUS l'en-tete. Le Fantome et la fleche de
+           retour etaient dessous, visibles et intouchables.
+           TOUS CES CALQUES SONT caches aux lecteurs d ecran : ils n'existent pour personne,
+           donc ils ne doivent exister pour aucun doigt. */
+        .pc-fond{pointer-events:none;position:absolute;inset:0;background-size:cover;
           background-position:center 12%;}
         /* LA COPIE QUI REMPLIT : floue, sombre, elle ne sert que de fond. */
         .pc-fond.flou{filter:blur(26px) brightness(.5) saturate(1.1);
@@ -39,6 +50,15 @@ export function StylesParcoursCoiffure() {
         .pc-haut{position:relative;z-index:3;flex:none;
           display:flex;align-items:center;gap:10px;
           padding:calc(8px + var(--ap-encoche,0px)) 14px 0;}
+        /* LA FLECHE DU PAS EN ARRIERE — le meme dessin que sur les quatre
+           autres parcours. Elle manquait ici, et c'etait le seul des cinq. */
+        .pc-retour{flex:none;width:36px;height:36px;border-radius:50%;
+          display:flex;align-items:center;justify-content:center;
+          font:inherit;cursor:pointer;color:#fff;
+          background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);}
+        .pc-retour svg{width:19px;height:19px;fill:none;stroke:currentColor;
+          stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+        .pc-retour:active{transform:scale(.93);}
         /* ═══ LE FANTOME REPREND SA PLACE, TOUT A DROITE ═══════════════════
            EN RETIRANT LA BARRE DE PROGRESSION, J'AI FAIT GLISSER LE FANTOME.
            C'est elle qui occupait le milieu de la ligne et le poussait au bord ;

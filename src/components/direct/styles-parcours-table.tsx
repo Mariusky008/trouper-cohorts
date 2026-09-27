@@ -22,7 +22,18 @@ export function StylesParcoursTable() {
           background:#06060A;
           font-family:var(--font-clikme),system-ui,sans-serif;color:#fff;
           -webkit-user-select:none;user-select:none;}
-        .pt-fond{position:absolute;inset:0;background-size:cover;
+        /* ═══ UN CALQUE DE DECOR NE PREND JAMAIS LE DOIGT ══════════════
+           « On est bloque a cette etape et celle d'avant, pas impossible de
+           revenir a l'accueil. »
+           LE CALQUE FLOU EST AGRANDI DE 14 POUR CENT — c'est ce qui lui evite
+           de laisser un bord net quand on le floute de vingt-six points. Un
+           element mis a l'echelle DEBORDE de sa boite : mesure a l'ecran, il
+           commencait a 10 points du haut alors que sa section commence a 65,
+           donc il passait PAR-DESSUS l'en-tete. Le Fantome et la fleche de
+           retour etaient dessous, visibles et intouchables.
+           TOUS CES CALQUES SONT caches aux lecteurs d ecran : ils n'existent pour personne,
+           donc ils ne doivent exister pour aucun doigt. */
+        .pt-fond{pointer-events:none;position:absolute;inset:0;background-size:cover;
           background-position:center 30%;}
         /* ═══ LE PLAT EST UN BANDEAU, PAS UN FOND PLEIN CADRE ══════════════
            MESURE A L'ECRAN : en plein cadre, on ne voyait plus un plat mais
@@ -373,16 +384,44 @@ export function StylesParcoursTable() {
            LA BANDE EST UN PEU PLUS HAUTE QUE CELLE DES ETAPES 1 ET 2 : ce qu'on
            regarde ici change toutes les sept secondes, donc il faut en voir
            davantage. */
-        .pt-suite{position:absolute;inset:0 0 auto;height:60%;}
+        /* ═══ ET LA BANDE A LE FORMAT DES PHOTOS ══════════════════════
+           « Pour les 4 ecrans du restaurateur qui parle, on ne les voit pas en
+           entier. »
+           UNE BANDE DONT LE FORMAT NE VAUT PAS CELUI DE L'IMAGE RECADRE, et il
+           n'y a pas d'autre issue : en « cover » elle rogne, en « contain »
+           elle laisse des bandes noires. Ses quatre images sont presque
+           carrees — 758 sur 750, c'est le cadrage de sa maquette — et la bande
+           faisait 60 % de la hauteur, soit 0,77 de rapport. Elle coupait donc
+           160 points sur les cotes : la tete du cuisinier en haut, sa poele en
+           bas.
+           ON DONNE A LA BANDE LE RAPPORT DE L'IMAGE. Plus rien a rogner, donc
+           on voit tout, et la place occupee — 47 % de l'ecran — est celle de sa
+           maquette au point pres.
+           La borne max-height GARDE LA MAIN SUR LES ECRANS LARGES ET COURTS, ou le
+           rapport seul mangerait tout l'ecran ; c'est le seul cas ou l'on
+           rogne encore, et le mode contain s'en charge sans jamais couper. */
+        .pt-suite{pointer-events:none;position:absolute;inset:0 0 auto;
+          width:100%;aspect-ratio:758 / 750;max-height:56%;}
         .pt-suite span{position:absolute;inset:0;opacity:0;
-          background-size:cover;background-position:center 42%;
+          background-size:contain;background-repeat:no-repeat;
+          background-position:center top;
           transition:opacity .62s ease;}
         .pt-suite span.on{opacity:1;}
+        /* LE BAS DE LA BANDE SE FOND DANS LE NOIR. Sans ca, la photo s'arrete
+           net sur une ligne droite au milieu de l'ecran : on voit le bord de la
+           boite, ce qui est la seule chose qu'on ne doit jamais voir. Le fondu
+           est sur la bande et pas sur le voile general, parce que c'est la
+           hauteur de la bande qui commande, et elle suit le format de l'image. */
+        .pt-suite::after{content:"";position:absolute;left:0;right:0;bottom:0;
+          height:26%;
+          background:linear-gradient(180deg,rgba(6,6,10,0),#06060A 92%);}
         /* LE VOILE SUIT LA BANDE : sans ca, il degradait vers le noir au milieu
            de la photo et la coupait en deux. */
+        /* LE VOILE NE FAIT PLUS QUE LE HAUT : la bande gere son propre bas.
+           Il assombrit juste ce qu'il faut derriere l'en-tete pour que le logo
+           et le Fantome se lisent sur une cuisine eclairee. */
         .pt-p-voix.pt-suite-la .pt-voile{background:linear-gradient(180deg,
-            rgba(6,6,10,.84) 0%, rgba(6,6,10,.3) 12%, rgba(6,6,10,0) 26%,
-            rgba(6,6,10,.5) 46%, rgba(6,6,10,.94) 58%, #06060A 64%);}
+            rgba(6,6,10,.8) 0%, rgba(6,6,10,.26) 11%, rgba(6,6,10,0) 24%);}
         /* L'ONDE S'EFFACE QUAND LA BARRE DU LECTEUR EST LA. Les deux disent la
            meme chose — ca parle — et l'une des deux la dit avec des chiffres.
            Vingt batons qui remuent au-dessus d'une barre qui avance, c'est deux
@@ -410,10 +449,14 @@ export function StylesParcoursTable() {
              lettres ET l'espace, qui n'a rien pour resister. On rend l'espace
              a l'espace. */
           line-height:1.18;letter-spacing:-.005em;word-spacing:.05em;
-          color:rgba(255,255,255,.72);
+          color:#fff;
           text-wrap:balance;text-shadow:0 2px 18px rgba(0,0,0,.95);
           animation:ptLegende .5s ease backwards;}
-        .pt-legende b{font-weight:900;color:#fff;}
+        /* LE ROSE PORTE L'APPUI, LE BLANC PORTE LA PHRASE — c'est le dessin
+           de sa maquette : « Mon magret, je le commence cote peau. » L'inverse
+           — un mot blanc dans une phrase grise — faisait lire la phrase comme
+           un sous-titre eteint. */
+        .pt-legende b{font-weight:900;color:#FF2E9A;}
         @keyframes ptLegende{from{opacity:0;transform:translateY(7px)}
           to{opacity:1;transform:none}}
         /* LA BARRE DU LECTEUR, ET CE N'EST PAS UNE BARRE D'ETAPES. Elle dit
@@ -443,6 +486,84 @@ export function StylesParcoursTable() {
 
         .pt-synth{margin:8px 0 0;font-size:11.5px;font-weight:700;
           letter-spacing:.02em;color:rgba(255,255,255,.5);}
+
+        /* ═══ 4/4 · « ON SE RETROUVE CHEZ NOUS ? » ══════════════════════
+           « Le dernier ecran est trop faible. Quelque chose de plus fort. »
+           CE QUI ETAIT FAIBLE : trois pastilles grises d'informations pratiques
+           posees sur une salle vide, juste apres qu'un homme a raconte son plat
+           pendant une demi-minute. Toute la chaleur tombait d'un coup, au
+           moment precis ou l'on demande de venir.
+           CE QUI PREND SA PLACE : sa personne en grand, la question par-dessus,
+           et tout le reste dans une seule carte qui se lit dans l'ordre ou l'on
+           decide — chez qui, ou, quoi et combien, quand, ce qu'ils font. */
+        /* LE BLOC DE LA QUESTION, POSE DANS LA PHOTO. En pour cent et pas en
+           points : il doit rester au meme endroit de l'image quelle que soit la
+           hauteur du telephone, puisque c'est l'image qu'il habite. */
+        .pt-invite{position:absolute;left:16px;right:16px;top:19%;z-index:3;
+          display:flex;flex-direction:column;align-items:flex-start;}
+        .pt-t-venir{margin:0;font-size:clamp(28px,min(8.6vw,4.6vh),40px);
+          text-align:left;}
+        .pt-t-venir em{font-style:normal;color:#FF2E9A;}
+        /* LA PHOTO PREND TOUT LE HAUT : le titre et la pastille se posent
+           dessus, le bloc du bas commence sous le degrade. */
+        .pt-p-venir .pt-voile{background:linear-gradient(180deg,
+            rgba(6,6,10,.7) 0%, rgba(6,6,10,.16) 12%, rgba(6,6,10,0) 30%,
+            rgba(6,6,10,.12) 44%, rgba(6,6,10,.72) 60%, #06060A 72%);}
+        /* LA PHOTO EST UNE BANDE, comme celle du recit — et pour la meme
+           raison, mesuree deux fois : une image large posee en plein cadre dans
+           un ecran haut se recadre par les COTES. En plein cadre on ne voyait
+           plus qu'une epaule et une nappe ; en bande, on voit l'homme, sa main
+           tendue et sa salle. La hauteur est celle de sa maquette. */
+        .pt-p-venir .pt-fond{bottom:auto;height:62%;
+          background-position:center top;}
+        .pt-venirbas{align-items:flex-start;text-align:left;}
+        /* LA DISTANCE EN PASTILLE, SUR LA PHOTO : c'est la seule information
+           qui change la reponse a la question posee juste au-dessus. */
+        /* ELLE SE DIMENSIONNE SUR SON TEXTE. Etiree sur toute la largeur, une
+           pastille cesse d'etre une pastille : elle devient une barre, et une
+           barre se lit comme un bouton qu'on peut toucher. */
+        .pt-loin{align-self:flex-start;width:auto;max-width:100%;
+          margin:11px 0 0;padding:7px 13px;border-radius:999px;
+          display:flex;align-items:center;gap:6px;
+          font-size:12px;font-weight:850;color:#fff;
+          background:rgba(12,10,16,.7);border:1px solid rgba(255,255,255,.18);
+          -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+        .pt-loin i{font-style:normal;font-size:12px;line-height:1;}
+        /* UNE SEULE CARTE, PAS QUATRE BLOCS. Les informations d'un restaurant
+           se lisent ensemble ou pas du tout : eparpillees en pastilles, elles
+           demandent quatre arrets pour dire une chose. */
+        .pt-carte-fin{display:flex;flex-direction:column;align-items:stretch;
+          width:100%;margin:14px 0 0;}
+        .pt-nomfin{font-size:clamp(24px,7vw,31px);font-weight:900;
+          letter-spacing:-.03em;line-height:1.05;color:#fff;
+          text-shadow:0 2px 16px rgba(0,0,0,.9);}
+        .pt-oufin{margin-top:3px;font-style:normal;
+          font-size:14px;font-weight:700;color:rgba(255,255,255,.72);}
+        .pt-trait{height:1px;margin:12px 0 11px;
+          background:rgba(255,255,255,.16);}
+        /* LE PLAT ET SON PRIX SUR UNE LIGNE, le prix cale a droite. Il ne se
+           laisse pas ecraser : c'est la lecon du texte vertical de la fiche. */
+        .pt-platfin{display:flex;align-items:baseline;gap:12px;}
+        .pt-platfin b{flex:1 1 auto;min-width:0;
+          font-size:clamp(16px,4.8vw,19px);font-weight:900;letter-spacing:-.02em;
+          line-height:1.2;color:#fff;}
+        .pt-platfin s{flex:none;text-decoration:none;
+          font-size:clamp(20px,6vw,25px);font-weight:900;letter-spacing:-.03em;
+          color:#fff;}
+        .pt-heurefin{display:flex;align-items:center;gap:8px;
+          margin-top:10px;padding:9px 13px;border-radius:13px;
+          font-size:12.5px;font-weight:800;color:rgba(255,255,255,.88);
+          background:rgba(255,255,255,.07);
+          border:1px solid rgba(255,255,255,.13);}
+        .pt-heurefin i{flex:none;font-style:normal;font-size:13px;line-height:1;}
+        /* SON MOT S'ALIGNE COMME TOUT LE RESTE DU BLOC. Centre au milieu de
+           six lignes alignees a gauche, il faisait un accident. */
+        .pt-motfin{margin-top:9px;font-style:normal;text-align:left;
+          font-size:12px;font-weight:700;line-height:1.35;
+          color:rgba(255,255,255,.6);}
+        .pt-venirbas .pt-go{margin-top:14px;}
+        .pt-venirbas .cc-bouton{align-self:stretch;width:100%;
+          justify-content:center;margin-top:9px;padding:11px 15px;}
 
         /* ═══ 4/4 · CE QU'IL FAUT SAVOIR ════════════════════════════════ */
         .pt-pratique{list-style:none;display:flex;flex-wrap:wrap;

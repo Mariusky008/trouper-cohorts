@@ -1283,6 +1283,29 @@ export type CarteAutour = {
    * c'est précisément la confusion qu'une carte du jour existe pour éviter.
    */
   sesPhotos?: { src: string; quoi: string }[];
+  /**
+   * ═══ LA PHOTO D'ACCUEIL — celle du dernier écran du parcours ════════════
+   *
+   * « Le dernier écran est trop faible. Quelque chose de plus fort. »
+   *
+   * IL AVAIT RAISON, ET LE DEFAUT ETAIT DANS LE SUJET DE LA PHOTO. Le dernier
+   * écran finissait sur une salle vide : des tables mises, personne dedans.
+   * C'est la photo qu'on met sur un site pour montrer qu'on a de la place, et
+   * c'est exactement le contraire de ce que cet écran doit faire — il arrive
+   * après qu'on a entendu quelqu'un raconter son plat, et il demande de venir.
+   *
+   * CE QU'ON Y MET : LA PERSONNE QUI VOUS ACCUEILLE. Sa maquette montre le
+   * restaurateur sur le pas de sa porte, la main tendue, sa salle pleine
+   * derrière lui. Ce n'est pas une photo de décoration, c'est l'invitation
+   * elle-même — et c'est la seule image qui puisse répondre à « On se retrouve
+   * chez nous ? ».
+   *
+   * FACULTATIVE, ET LE RESTE DE L'ECRAN NE BOUGE PAS SANS ELLE. Les six autres
+   * restaurants gardent leur première photo à eux : même mise en page, même
+   * titre, même fiche — seule l'image change. On ne fabrique pas un
+   * restaurateur à qui n'en a pas.
+   */
+  photoAccueil?: string;
   cadrage?: string;
   /** Anonyme : ce sont les voisins de celui qui lit. */
   nom: string;
@@ -1740,6 +1763,8 @@ const CARTES: CarteAutour[] = [
     ],
     branche: "restaurant",
     photo: "/direct/plat-du-jour.jpg",
+    /* LUI, SUR LE PAS DE SA PORTE — voir `photoAccueil` dans le type. */
+    photoAccueil: "/direct/table/bergine-accueil.jpg",
     cadrage: "68%",
     nom: "Chez Bergine",
     google: { note: "4,8", avis: 128 },
@@ -1779,11 +1804,19 @@ const CARTES: CarteAutour[] = [
          vraie voix ; Margot et Yann gardent la synthese en attendant la leur. */
       extrait: "/direct/voix/bergine-magret.mp3",
       /* LES QUATRE TEMPS DE SON MAGRET, DANS L'ORDRE OU IL LES RACONTE. */
+      /* ═══ SES QUATRE LEGENDES, MOT POUR MOT ═══════════════════════════
+
+         ELLES SONT DE LUI, ET J'AVAIS ECRIT LES MIENNES A COTE. Les miennes
+         décrivaient la photo à la troisième personne — « Dans sa cuisine,
+         avant le service » — c'est-à-dire la voix d'un narrateur posée sur
+         celle du cuisinier, qui parle en même temps. Les siennes sont à la
+         PREMIERE personne : c'est lui qui dit ce qu'on est en train de voir,
+         et l'image, la légende et la voix ne font plus qu'un. */
       photosVoix: [
-        { src: "/direct/table/magret/1.jpg", mot: "Dans sa cuisine, avant le service.", fort: "sa cuisine" },
-        { src: "/direct/table/magret/2.jpg", mot: "Il le pose côté peau, et il prend son temps.", fort: "côté peau" },
-        { src: "/direct/table/magret/3.jpg", mot: "Rosé au centre, pommes dorées à la graisse de canard.", fort: "Rosé au centre" },
-        { src: "/direct/table/magret/4.jpg", mot: "Je vous le prépare ce midi\u202f?", fort: "ce midi" },
+        { src: "/direct/table/magret/1.jpg", mot: "Mon magret, je le commence côté peau.", fort: "côté peau" },
+        { src: "/direct/table/magret/2.jpg", mot: "Je laisse la peau devenir bien croustillante.", fort: "bien croustillante" },
+        { src: "/direct/table/magret/3.jpg", mot: "Rosé à cœur, avec ses pommes dorées.", fort: "Rosé à cœur" },
+        { src: "/direct/table/magret/4.jpg", mot: "Je vous le prépare ce midi\u202f?", fort: "ce midi\u202f?" },
       ],
     },
     site: "chezbergine.fr",

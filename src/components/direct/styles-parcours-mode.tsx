@@ -65,13 +65,24 @@ export function StylesParcoursMode() {
 
         /* ═══ 1/4 · LA PIECE ══════════════════════════════════════════════ */
         .pm-un{position:relative;flex:1 1 auto;min-height:0;display:flex;}
-        .pm-photo{position:absolute;inset:0;background-size:cover;
+        /* ═══ UN CALQUE DE DECOR NE PREND JAMAIS LE DOIGT ══════════════
+           « On est bloque a cette etape et celle d'avant, pas impossible de
+           revenir a l'accueil. »
+           LE CALQUE FLOU EST AGRANDI DE 14 POUR CENT — c'est ce qui lui evite
+           de laisser un bord net quand on le floute de vingt-six points. Un
+           element mis a l'echelle DEBORDE de sa boite : mesure a l'ecran, il
+           commencait a 10 points du haut alors que sa section commence a 65,
+           donc il passait PAR-DESSUS l'en-tete. Le Fantome et la fleche de
+           retour etaient dessous, visibles et intouchables.
+           TOUS CES CALQUES SONT caches aux lecteurs d ecran : ils n'existent pour personne,
+           donc ils ne doivent exister pour aucun doigt. */
+        .pm-photo{pointer-events:none;position:absolute;inset:0;background-size:cover;
           background-position:center top;}
         .pm-photo.flou{filter:blur(26px) brightness(.5) saturate(1.1);
           transform:scale(1.14);}
         .pm-photo.entier{background-size:contain;background-repeat:no-repeat;
           background-position:center 24%;}
-        .pm-voile{position:absolute;inset:0;
+        .pm-voile{pointer-events:none;position:absolute;inset:0;
           background:linear-gradient(180deg,
             rgba(6,6,10,.62) 0%, rgba(6,6,10,.12) 22%,
             rgba(6,6,10,0) 40%, rgba(6,6,10,.72) 68%, rgba(6,6,10,.97) 88%);}
