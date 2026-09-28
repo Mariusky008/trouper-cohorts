@@ -1535,8 +1535,21 @@ export function StylesDirect() {
            ClikMe. Voir lib/direct/personnalites.ts.
            LA VALEUR PAR DEFAUT EST LE BLANC D'AVANT : une carte sans langage
            est exactement celle d'hier. */
+        /* ═══ ET LE PRIX LE PORTE AUSSI, SAUF QUAND IL EXPIRE ═══════════
+           « Le cercle, le prix et l'interieur de la bulle du fantome de la
+           meme couleur. »
+           LE PRIX PASSE DONC A L'ACCENT, et c'est la plus grande surface
+           coloree de la carte apres le disque : a soixante-dix points, c'est
+           lui qui decide de quelle couleur est une annonce.
+           L'AMBRE NE DISPARAIT PAS, ELLE SE REDUIT A CE QU'ELLE DIT. Elle
+           voulait dire « regarde ce chiffre » sur tout le produit — le prix, et
+           « il en reste 12 ». Ce que l'ambre designe vraiment, c'est CE QUI
+           EXPIRE : un Flash. Un prix de metier n'expire pas, il identifie ;
+           le prix barre d'un Flash, si. Les deux couleurs disent maintenant
+           deux choses differentes, ce qui est la seule facon d'en garder deux.
+           LE DEFAUT RESTE L'AMBRE : une carte sans langage est celle d'hier. */
         .cd-carte{--cd-accent:#EAF2EC;--cd-accent-encre:#0B141E;
-          --cd-halo:rgba(61,226,166,.5);
+          --cd-halo:rgba(61,226,166,.5);--cd-prix:var(--cd-accent);
           position:relative;width:100%;max-width:340px;aspect-ratio:3/4.15;border-radius:26px;overflow:hidden;
           text-align:left;
           background:#0C1310;box-shadow:0 40px 80px -30px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.07);
@@ -1901,7 +1914,7 @@ export function StylesDirect() {
         .cd-prixg{margin:2px 0 0;display:flex;align-items:baseline;gap:10px;
           font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
           font-size:clamp(52px,16.5vw,80px);font-weight:400;
-          letter-spacing:.004em;line-height:.96;color:#FFC400;
+          letter-spacing:.004em;line-height:.96;color:var(--cd-prix);
           text-shadow:0 2px 10px rgba(0,0,0,.72),0 4px 30px rgba(0,0,0,.55);
           font-variant-numeric:tabular-nums;}
         /* ─── ET LE PRIX NE SE COUPE PAS, MEME SI LA POLICE CHANGE ───
@@ -1940,14 +1953,14 @@ export function StylesDirect() {
           font-family:'Inter',system-ui,-apple-system,sans-serif;
           font-size:12.5px;font-weight:800;letter-spacing:.04em;
           text-transform:uppercase;line-height:1.1;margin-bottom:1px;
-          color:rgba(255,196,0,.78);}
+          color:var(--cd-prix);opacity:.78;}
         /* MEME RESERVE QUE LE TITRE : l'anneau du metier couvre la bande
            245-349 points, et le prix y tombe. Mesure sur iPhone a 390 points —
            « a partir de 12 € » passait dessous. */
         .cd-prixg{padding-right:114px;}
         /* L'ASTERISQUE EST EN EXPOSANT ET PETIT : il signale, il n'annonce pas. */
         .cd-prixg b em{font-style:normal;font-size:.42em;vertical-align:super;
-          margin-left:.04em;color:rgba(255,196,0,.7);}
+          margin-left:.04em;color:var(--cd-prix);opacity:.7;}
         .cd-prixg s{margin:0;font-family:var(--font-affiche),'Inter',system-ui,sans-serif;
           font-size:clamp(20px,6vw,28px);font-weight:400;
           color:#FF6B6B;text-decoration-color:#FF6B6B;
@@ -1955,7 +1968,13 @@ export function StylesDirect() {
         /* ⚡ SUR UN FLASH, L'ANCIEN PRIX EST LA MOITIE DE L'INFORMATION — il
            reste a cote du neuf, et c'est le meme dessin : une seule facon
            d'ecrire un prix dans tout le produit. */
-        .cd-prixg.flash{color:#FFC400;}
+        /* SA SPECIFICITE EST CELLE DE LA REGLE QU'ELLE DOIT BATTRE. Ecrite
+           en .cd-prixg.flash seule — deux classes — elle perdait contre
+           .cd-carte.mesuree .cd-prixg, qui en compte trois : l'ambre du Flash
+           ne serait jamais revenue dans l'application, ou toutes les cartes
+           portent la classe mesuree. */
+        .cd-carte .cd-prixg.flash,
+        .cd-carte.mesuree .cd-prixg.flash{--cd-prix:#FFC400;color:#FFC400;}
         /* COMBIEN IL EN RESTE : petit, sous le prix, le nombre en ambre. */
         .cd-encore{margin:6px 0 0;font-size:13px;font-weight:800;
           color:#EAF2EC;text-shadow:0 2px 12px rgba(4,8,6,.9);}
@@ -2346,7 +2365,17 @@ export function StylesDirect() {
            a .04em, « LES PIECES » arrivait exactement sur le rayon utile, donc a
            zero point de marge. Deux centiemes de cadratin en moins rendent ces
            deux points, et rien ne se lit differemment a sept points. */
-        .cd-anneau.porte .cd-an-t{display:block;color:#D8FFEE;font-size:7px;
+        /* ═══ LE MOT ET LE PICTOGRAMME PRENNENT LA COULEUR DU METIER ═══
+           « Harmonise les couleurs : le cercle, le prix et l'interieur de la
+           bulle du fantome de la meme couleur. »
+           LE CERCLE ETAIT A MOITIE REPEINT, ET C'EST CE QUI SE VOYAIT. Le trait
+           du cadran et le mot VOIR portaient deja l'accent ; le mot du metier
+           restait sur un vert menthe fixe et le pictogramme sur un blanc casse.
+           Releve dans l'application sur une carte de bar : anneau rose, VOIR
+           rose, L'ARDOISE en #D8FFEE — un vert. Deux couleurs a dix points
+           l'une de l'autre sur le meme disque, dont une qui n'a rien a voir
+           avec le commerce. */
+        .cd-anneau.porte .cd-an-t{display:block;color:var(--cd-accent);font-size:7px;
           max-width:54px;letter-spacing:.02em;line-height:1.15;
           text-align:center;text-wrap:balance;
           text-shadow:0 1px 8px rgba(0,0,0,.7);}
@@ -2356,7 +2385,7 @@ export function StylesDirect() {
            disque. */
         .cd-anneau.porte>svg:not(.cd-po-c){width:22px;height:22px;
           margin:1px 0 1px;position:relative;z-index:1;
-          stroke:#F2FBF6;stroke-width:1.7;fill:none;
+          stroke:var(--cd-accent);stroke-width:1.7;fill:none;
           stroke-linecap:round;stroke-linejoin:round;
           filter:drop-shadow(0 1px 6px rgba(0,0,0,.55));}
         /* « VOIR » PORTE SON CHEVRON. Deux mots au meme rang — le metier en
@@ -2670,7 +2699,7 @@ export function StylesDirect() {
             0 6px 34px rgba(0,0,0,.66);}
         .cd-carte.mesuree .cd-prixg{
           font-family:var(--font-clikme),system-ui,sans-serif;font-weight:900;
-          font-size:clamp(32px,10vw,42px);letter-spacing:-.03em;color:#FFD233;
+          font-size:clamp(32px,10vw,42px);letter-spacing:-.03em;color:var(--cd-prix);
           text-shadow:0 1px 3px rgba(0,0,0,.92),0 3px 12px rgba(0,0,0,.8),
             0 6px 34px rgba(0,0,0,.66);}
         /* LE SOUS-TITRE MONTE EN CLARTÉ, LUI AUSSI. Il était à #D9E4DC, un gris

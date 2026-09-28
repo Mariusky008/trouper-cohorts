@@ -6499,6 +6499,44 @@ export function ApercuHabitant() {
           className={`ap-app${onglet === "direct" ? " direct" : ""}${
             salonPage || favorisPage ? " sur-page" : ""
           }${coeurDuSommet ? " essai" : ""}`}
+          /* ═══ LA COULEUR DU METIER DESCEND JUSQU'A LA BARRE ═══════════════
+
+             « Harmonise les couleurs du Fantôme : le cercle, le prix et
+             l'intérieur de la bulle du Fantôme de la même couleur. Donc pour
+             chaque métier différent on aurait les couleurs harmonisées. »
+
+             LES DEUX PREMIERS SONT SUR LA CARTE, LE TROISIÈME NE L'EST PAS.
+             Le disque du Fantôme vit dans la barre du bas, qui n'est ni dans la
+             carte ni dedans — elle est à côté, et elle survit au balayage. Elle
+             ne peut donc pas hériter de `--cd-accent`, qui est posé sur la
+             carte elle-même.
+             ON POSE DONC LA COULEUR ICI, SUR L'APPLICATION ENTIÈRE, et elle
+             suit l'annonce du dessus. C'est la seule variable de ce fichier qui
+             change à chaque balayage, et c'est voulu : la bulle dit chez qui on
+             est, au même titre que l'anneau de la carte.
+
+             ET SEULEMENT SUR LE DIRECT. Sur « La Ville », « Propositions » ou
+             « Profil », il n'y a pas d'annonce sous les yeux — le paquet est
+             derrière, mais on ne le regarde pas. La bulle garderait alors la
+             couleur du dernier commerce balayé, c'est-à-dire une couleur qui ne
+             désigne plus rien. Sans la variable, elle retrouve le violet du
+             Fantôme, qui est sa couleur quand il ne parle de personne. */
+          style={
+            onglet === "direct"
+              ? ({
+                  "--ap-metier": langage.accent,
+                  "--ap-metier-halo": langage.halo,
+                  /* LE VOILE CLAIR EST POSÉ ICI ET PAS DANS LA FEUILLE, et
+                     c'est une précaution, pas un choix de rangement. Écrit
+                     dans la règle, il s'appliquerait AUSSI au violet de repli
+                     — donc hors du Direct, où rien ne l'a demandé. Passé par
+                     une variable qui naît et meurt avec la couleur du métier,
+                     le disque par défaut reste exactement celui d'avant. */
+                  "--ap-metier-voile":
+                    "linear-gradient(150deg,rgba(255,255,255,.62),rgba(255,255,255,0) 62%)",
+                } as React.CSSProperties)
+              : undefined
+          }
         >
           {/* ─── LE SALON, EN PAGE PLEINE ───
               Il vivait dans une feuille qui remonte par-dessus le paquet. Une
@@ -17312,12 +17350,31 @@ export function ApercuHabitant() {
         .ap-onglets .ap-monfantome{position:relative;flex:none;width:62px;height:62px;
           margin:-22px 4px 0;padding:0;border-radius:50%;border:0;
           display:flex;align-items:center;justify-content:center;
-          /* LE MEME DEGRADE QUE LE BOUTON QU'IL OUVRE. Le fantome de la barre
-             et le fantome du bouton « Visualiser une coupe sur moi » menent au
-             meme endroit ; ils portaient deux couleurs, ce qui etait la seule
-             chose a expliquer dans cette barre. */
-          background:linear-gradient(150deg,#8B6BFF,#E24FB0);
-          box-shadow:0 12px 30px rgba(168,85,247,.45),
+          /* ═══ LE DISQUE PORTE LA COULEUR DU METIER QU'ON REGARDE ═══
+
+             IL PORTAIT CELLE DU BOUTON QU'IL OUVRE — le violet-rose de
+             « Visualiser un vetement sur moi » — et c'etait une bonne regle
+             pour un objet seul. Mais trois objets sont en jeu, pas un : le
+             cercle de la carte, le prix, et lui. Les deux premiers disent chez
+             qui on est ; le troisieme disait autre chose, et c'est ce
+             desaccord qui se voyait.
+
+             LE VIOLET NE DISPARAIT PAS DU PRODUIT : c'est toujours la couleur
+             du Fantome partout ailleurs — le grand bouton, les bulles, l'aide.
+             Ce disque-la est le seul qui vive COLLE a une annonce, et c'est
+             pour ca qu'il est le seul a en prendre la couleur.
+
+             LE BLANC EST POSE PAR-DESSUS, PAS MELANGE. On n'eclaircit pas
+             l'accent — color-mix ne s'affiche pas partout, et une couleur qui
+             manque sur un telephone se remarque par son ABSENCE. Un voile clair
+             en haut a gauche sur l'accent plein donne le meme disque bombe, et
+             il se calcule partout.
+
+             LE DEFAUT RESTE LE VIOLET : hors du Direct, il n'y a pas d'annonce
+             au-dessus, donc pas de metier a porter. */
+          background:var(--ap-metier-voile, none),
+            var(--ap-metier, linear-gradient(150deg,#8B6BFF,#E24FB0));
+          box-shadow:0 12px 30px var(--ap-metier-halo, rgba(168,85,247,.45)),
             0 0 0 5px var(--ap-barre-fond, #070C0A);
           transition:transform .16s cubic-bezier(.34,1.6,.64,1);}
         .ap-onglets .ap-monfantome:disabled{opacity:.45;}
