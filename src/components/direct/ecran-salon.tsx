@@ -246,7 +246,16 @@ const FEUILLE = `
 .sal{position:absolute;inset:0;z-index:60;overflow:hidden;
   background:#1A0820;isolation:isolate;
   font-family:var(--font-clikme),"Poppins",system-ui,sans-serif;
+  container-type:size;
   -webkit-user-select:none;user-select:none;}
+/* ═══ LES TAILLES SUIVENT L'ECRAN DU SALON, PAS LA FENETRE ════════════════
+   « Le titre prend tout le haut de la page, il ne faut pas que ca empiete sur
+   le fantome. » Mesure en largeur de FENETRE, il grandissait sur un
+   ordinateur alors que l'ecran, lui, est un telephone de trois cent
+   soixante-dix points au milieu : quarante-deux points de lettre dans un
+   cadre etroit, six lignes, et la casquette du fantome dessous. Les unites
+   de conteneur mesurent le cadre lui-meme — et la hauteur borne aussi, pour
+   qu'un ecran court ne pousse pas le titre sur le personnage. */
 
 /* ═══ LA SCENE RESPIRE ═══════════════════════════════════════════════════
    Le travelling est pose sur le conteneur des calques, jamais sur un calque
@@ -324,14 +333,14 @@ const FEUILLE = `
 .sal-bas{bottom:0;padding-top:34px;padding-bottom:calc(26px + var(--ap-bas,0px));
   background:linear-gradient(to top,rgba(10,4,16,.9),rgba(10,4,16,.5) 55%,rgba(10,4,16,0));}
 
-.sal-logo{font-size:24px;font-weight:900;letter-spacing:-.02em;color:#fff;
+.sal-logo{font-size:clamp(18px,6cqw,24px);font-weight:900;letter-spacing:-.02em;color:#fff;
   margin-bottom:14px;}
 /* ═══ LE TITRE, A LA LETTRE DE LA MAQUETTE ════════════════════════════════
    « La police n'est pas tres impactante sur cet ecran. » Elle etait celle de
    l'interface, en 900 a 34 points : lourde mais petite, et serree dans une
    largeur de paragraphe. La maquette montre la geometrique ronde de ClikMe,
    grande, sur quatre lignes courtes, la promesse seule sur la sienne. */
-.sal-t{margin:0;font-size:clamp(29px,8.4vw,42px);font-weight:800;
+.sal-t{margin:0;font-size:clamp(22px,min(7.2cqw,3.4cqh),38px);font-weight:800;
   line-height:1.07;letter-spacing:-.03em;color:#fff;text-wrap:balance;
   text-shadow:0 3px 18px rgba(0,0,0,.55);}
 /* LA CHARNIERE DU PROPOS EN ROSE : « essayer votre ville » est la promesse,
@@ -339,7 +348,7 @@ const FEUILLE = `
 .sal-t em{display:block;font-style:normal;color:#FF2E9A;
   text-shadow:0 0 22px rgba(255,46,154,.45),0 3px 16px rgba(0,0,0,.5);}
 
-.sal-s{margin:0 0 18px;font-size:clamp(15px,4.3vw,17px);font-weight:600;
+.sal-s{margin:0 0 16px;font-size:clamp(13px,min(4cqw,2.1cqh),17px);font-weight:600;
   line-height:1.4;color:rgba(255,255,255,.94);
   text-shadow:0 2px 12px rgba(0,0,0,.7);}
 
@@ -356,7 +365,7 @@ const FEUILLE = `
    rendu au bouton seul, sinon le bandeau du bas avalerait l'appui. */
 .sal-b{pointer-events:auto;cursor:pointer;font:inherit;border:0;
   padding:17px 34px;border-radius:999px;
-  font-size:clamp(16px,4.7vw,18px);font-weight:800;letter-spacing:-.01em;
+  font-size:clamp(15px,min(4.4cqw,2.3cqh),18px);font-weight:800;letter-spacing:-.01em;
   color:#fff;background:linear-gradient(101deg,#FF2E9A,#E0399B 60%,#C544E6);
   box-shadow:0 12px 34px -8px rgba(255,46,154,.7),
     0 0 0 1px rgba(255,255,255,.14) inset;

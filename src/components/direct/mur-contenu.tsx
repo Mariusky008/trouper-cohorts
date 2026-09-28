@@ -73,6 +73,7 @@ import {
 import { composer, type Gabarit } from "@/lib/direct/essai";
 import { fantomesDuLieu, mesFantomes, poserFantome, tempsRestant } from "@/lib/direct/mes-fantomes";
 import { laMainEstPrete, poserVernis } from "@/lib/direct/ongles";
+import { MOTS, VISAGES, type FamilleReaction } from "@/lib/direct/reaction-fantome";
 import { essayerSurMoi, estUnRendu } from "@/lib/direct/essai-genere";
 import { prevenirPourEssai, numeroDeFiction } from "@/lib/direct/prevenir";
 import { partagerLEssai, type Sortie } from "@/lib/direct/partager-essai";
@@ -320,81 +321,6 @@ function avisNeutre(piece: Piece): { dit: string; sinon: string } | null {
  */
 function quandDit(q: string): string {
   return q === "J’y suis" ? "maintenant" : q;
-}
-
-/**
- * ═══ LE FANTÔME DE LA NOTE, ET IL N'EST PAS CELUI DE LA BARRE ═══════════════
- *
- * « Attention aux fantômes, et respecte le design des fantômes : sur ce que tu
- * as fait, les fantômes sont un peu étranges. »
- *
- * IL AVAIT RAISON, ET J'AVAIS RÉUTILISÉ LE MAUVAIS DESSIN. `Signe` est le
- * PICTOGRAMME du produit : un corps allongé, deux yeux ovales ouverts, une
- * petite bouche. Il est fait pour vivre à dix-huit points dans une barre, où il
- * doit se reconnaître plus que s'exprimer. Agrandi à cinquante-huit points sur
- * une photo, ces mêmes yeux ronds fixes donnent un masque — et cinq masques
- * alignés sous son propre visage mettent mal à l'aise.
- *
- * CELUI DE LA MAQUETTE EST UN VISAGE HEUREUX. Dôme large, trois festons en bas,
- * YEUX FERMÉS EN ARC — le sourire des yeux, celui qu'on ne peut pas faire avec
- * deux ovales — et une grande bouche courbe. C'est un dessin fait pour être vu
- * grand, et pour qu'on ait envie de le toucher.
- *
- * LES DEUX COHABITENT, ET C'EST VOULU. Le tracé reste partout où le fantôme est
- * un signe ; celui-ci ne sert que là où il est un VISAGE : les cinq de la note.
- * Un seul dessin pour les deux emplois aurait mal fait les deux.
- */
-function Frimousse({ classe, coeur }: { classe?: string; coeur?: boolean }) {
-  return (
-    <svg className={classe} viewBox="0 0 64 70" aria-hidden="true">
-      {/* ═══ LE CORPS : UNE CLOCHE, PAS UN ŒUF ══════════════════════════════
-
-          « Les fantômes ne sont pas comme ceux du mockup de départ. »
-
-          IL AVAIT RAISON, ET L'ERREUR ÉTAIT DANS LA SILHOUETTE. Le mien était
-          un dôme de largeur constante : un œuf posé sur trois bosses. Celui de
-          la maquette S'ÉVASE — le crâne est étroit, les épaules s'écartent en
-          descendant, et les deux lobes extérieurs débordent la largeur du
-          dôme. C'est cet évasement qui donne le petit drap flottant ; sans lui
-          on obtient un pictogramme, ce qui est exactement ce qu'on lui
-          reprochait.
-
-          ET IL EST PLUS HAUT QUE LARGE, de peu. Le cadre était 64×60, donc plus
-          large que haut : le dôme s'aplatissait. Mesuré sur la maquette, le
-          rapport est de 0,91. */}
-      <path
-        className="mu-f-corps"
-        d="M32 2C20.6 2 12.4 7.6 7.4 16 3.6 22.4 2 30.2 2 38.6V51c0 6.6 4.5 11 10 11s10-4.4 10-11c0 6.6 4.5 11 10 11s10-4.4 10-11c0 6.6 4.5 11 10 11s10-4.4 10-11V38.6c0-8.4-1.6-16.2-5.4-22.6C51.6 7.6 43.4 2 32 2Z"
-      />
-      {coeur ? (
-        <>
-          {/* LES YEUX EN CŒUR DU CINQUIÈME. « Coup de cœur » n'est pas « cinq
-              sur cinq », c'est autre chose, et il faut que ça se voie avant
-              qu'on ait lu le mot. */}
-          <path
-            className="mu-f-oeil"
-            d="M23.5 36 18.5 31a3.5 3.5 0 0 1 0-5 3.5 3.5 0 0 1 5 0 3.5 3.5 0 0 1 5 0 3.5 3.5 0 0 1 0 5Z"
-          />
-          <path
-            className="mu-f-oeil"
-            d="M40.5 36 35.5 31a3.5 3.5 0 0 1 0-5 3.5 3.5 0 0 1 5 0 3.5 3.5 0 0 1 5 0 3.5 3.5 0 0 1 0 5Z"
-          />
-        </>
-      ) : (
-        <>
-          {/* LES YEUX FERMÉS, EN ARCHE. Deux arcs dont les bouts pointent vers
-              le bas, comme sur la maquette : c'est le sourire des yeux. Deux
-              ovales ouverts, à cette taille, font un regard fixe. */}
-          <path className="mu-f-trait" d="M18.2 32.6C19.6 27.4 27.4 27.4 28.8 32.6" />
-          <path className="mu-f-trait" d="M35.2 32.6C36.6 27.4 44.4 27.4 45.8 32.6" />
-        </>
-      )}
-      {/* LA BOUCHE : UN VRAI U, PROFOND ET ÉPAIS. Le mien était un arc large et
-          plat qui barrait tout le bas du visage ; celui de la maquette est
-          court, creusé, et posé entre les deux yeux. */}
-      <path className="mu-f-bouche2" d="M24.6 39.8C26.4 46.8 37.6 46.8 39.4 39.8" />
-    </svg>
-  );
 }
 
 function Signe({ classe, coeur }: { classe?: string; coeur?: boolean }) {
@@ -2769,7 +2695,7 @@ export type VersLeSalon = {
  * n'a écrit ce que trois signifie.
  *
  * DEPUIS QUE CHAQUE FANTÔME PORTE SON MOT, l'écho répétait ce qui était écrit
- * deux centimètres plus haut. Voir `MOTS_FANTOME`, qui dit la même chose au bon
+ * deux centimètres plus haut. Voir les mots du métier sous les fantômes, qui disent la même chose au bon
  * endroit : AVANT le choix, sous le dessin qu'on va toucher.
  */
 
@@ -2781,28 +2707,34 @@ export type VersLeSalon = {
  * on la laisse et on continue. C'est un exemple, pas un texte pré-rempli — il
  * disparaît au premier caractère et ne part jamais sur le mur tout seul.
  */
+
 /**
- * ═══ LE MOT SOUS CHAQUE FANTÔME ══════════════════════════════════════════════
+ * ═══ LES CINQ FANTÔMES DE L'APP, ET LES MOTS DU MÉTIER ═══════════════════════
  *
- * CE NE SONT PAS LES MÊMES QUE `MOTS_NOTE`, ET LA DIFFÉRENCE EST DE PLACE.
- * `MOTS_NOTE` s'affiche APRÈS le choix, seul, sous la ligne : c'est un écho —
- * « Ça, c'est moi 🔥 ». Ceux-ci s'affichent AVANT, cinq à la fois, sous cinq
- * dessins identiques : ce sont des étiquettes, et une étiquette doit tenir en
- * deux mots sur un écran de téléphone.
+ * « Ce serait mieux de continuer avec les fantômes pour tous les essayages
+ * qu'on utilise déjà, avec le bon wording en label sous les fantômes pour
+ * chaque métier bien sûr. »
  *
- * LE CINQUIÈME N'EST PAS UNE NOTE, ET C'EST VOULU. « Coup de cœur » ne veut pas
- * dire « cinq sur cinq », ça veut dire autre chose : c'est ce qu'on écrira sur
- * le mur, et ce que le commerçant lira. Une échelle de satisfaction s'arrête à
- * « j'adore » ; ce produit-là va un cran plus loin, parce que le cran d'après
- * est celui où l'on se déplace.
+ * L'ESSAI AVAIT SES PROPRES FANTÔMES, ET C'ÉTAIT UN DEUXIÈME ALPHABET. Partout
+ * ailleurs dans l'app, on répond avec les cinq visages de `reaction-fantome.ts`
+ * — celui qui boude, le curieux, celui qui salive, les yeux en cœur, celui qui
+ * prend feu. Ici, cinq silhouettes grises presque identiques et des mots
+ * d'échelle (« Bof », « J'adore »). On passait d'un écran à l'autre sans
+ * reconnaître le geste qu'on venait d'apprendre.
+ *
+ * LES MOTS SUIVENT LE MÉTIER DU MUR. La table dit « Trop bon », la coiffure
+ * « Ça me va trop bien », la déco « Parfait chez moi » : les listes existent
+ * déjà, on les prend telles quelles. Le métier du mur est un libellé
+ * (« Coiffeur », « Prêt-à-porter homme ») ; on le range dans sa famille ici.
  */
-const MOTS_FANTOME: Record<number, string> = {
-  1: "Bof",
-  2: "Pas sûr",
-  3: "Ça me va",
-  4: "J’adore",
-  5: "Coup de cœur",
-};
+function familleDuMetier(metier: string | undefined): FamilleReaction {
+  const m = (metier ?? "").toLowerCase();
+  if (/restaurant|traiteur|boulang|p[âa]tiss/.test(m)) return "table";
+  if (/bar|soir[ée]e|concert/.test(m)) return "sortie";
+  if (/fleur|cir|d[ée]co|bougie|artisan/.test(m)) return "deco";
+  if (/coiff|barbier|ongl|onglu|tatou|esth[ée]t|beaut/.test(m)) return "coiffure";
+  return "mode";
+}
 
 const MOTS_EXEMPLE: Record<number, string> = {
   1: "Pas du tout pour moi, mais au moins je sais.",
@@ -5340,15 +5272,24 @@ function Essai({
               LA PASTILLE PORTE DONC LE GESTE, et elle est assez grande pour ne
               pas se viser : elle a ses mots à côté du signe, ce qui lui fait
               cent trente points de large. */}
-          <button
-            type="button"
-            className={`mu-res-loupe${plein ? " on" : ""}`}
-            aria-pressed={plein}
-            onClick={() => setPlein((v) => !v)}
-          >
-            <i aria-hidden="true">{plein ? "✕" : "⤢"}</i>
-            {plein ? "Revenir" : "Voir en entier"}
-          </button>
+          {/* ═══ « REVENIR » SEUL RESTE POSÉ SUR L'IMAGE ════════════════════
+              « Voir en entier empiète sur le texte. » Posée en absolu sous le
+              titre, la pastille tombait sur le sous-titre dès que « ça vous
+              plaît ? » prenait deux lignes — et plus bas, sur la bulle du mot.
+              Elle passe donc DANS le texte, juste sous la phrase : elle suit sa
+              hauteur, quelle qu'elle soit. Seul « Revenir », qui vit au-dessus
+              de la photo en entier, garde sa place fixe en haut. */}
+          {plein && (
+            <button
+              type="button"
+              className="mu-res-loupe on"
+              aria-pressed={plein}
+              onClick={() => setPlein(false)}
+            >
+              <i aria-hidden="true">✕</i>
+              Revenir
+            </button>
+          )}
           {/* DEUX VOILES, UN EN HAUT ET UN EN BAS, ET AUCUN AU MILIEU. Le titre
               et les gestes ont besoin d'un fond ; le visage n'a besoin de rien.
               Un voile uniforme aurait assombri la seule chose qu'on est venu
@@ -5475,6 +5416,17 @@ function Essai({
                 explique LA PIÈCE, pas à quoi sert la note. Ce que la note
                 apporte est vrai des deux côtés, donc la phrase aussi. */}
             <p>Touchez un fantôme&nbsp;: plus je vous connais, mieux je vous conseille.</p>
+            {!plein && (
+              <button
+                type="button"
+                className="mu-res-loupe dans"
+                aria-pressed={false}
+                onClick={() => setPlein(true)}
+              >
+                <i aria-hidden="true">⤢</i>
+                Voir en entier
+              </button>
+            )}
             {/* ON DIT QUE C'EST CLIKME QUI A CHOISI, ET SEULEMENT ALORS. Sans
                 cette ligne, une pièce sortie de la réserve se lit comme une
                 pièce qu'on aurait demandée — et « Surprends-moi encore », plus
@@ -5630,8 +5582,10 @@ function Essai({
                   type="button"
                   role="radio"
                   aria-checked={note === n}
-                  aria-label={`${MOTS_FANTOME[n]} — ${n} fantôme${n > 1 ? "s" : ""} sur 5`}
-                  className={(noteVue || note) >= n ? "on" : undefined}
+                  aria-label={MOTS[familleDuMetier(mur.metier)][n - 1]}
+                  /* UN CHOIX, PAS UNE NOTE : seul le fantôme touché s'allume.
+                     Allumer tous ceux d'avant en faisait des étoiles. */
+                  className={(noteVue || note) === n ? "on" : undefined}
                   onPointerEnter={() => setNoteVue(n)}
                   onFocus={() => setNoteVue(n)}
                   onBlur={() => setNoteVue(0)}
@@ -5654,8 +5608,9 @@ function Essai({
                     setMotOuvert(neuf > 0);
                   }}
                 >
-                  <Frimousse classe="mu-note-s" coeur={n === 5} />
-                  <em>{MOTS_FANTOME[n]}</em>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img className="mu-note-s mu-note-v" src={VISAGES[n - 1].image} alt="" draggable={false} />
+                  <em>{MOTS[familleDuMetier(mur.metier)][n - 1]}</em>
                 </button>
               ))}
             </div>
@@ -5683,9 +5638,10 @@ function Essai({
                 style={{ "--i": note - 1 } as React.CSSProperties}
               >
                 <div className="mu-res-mot-t">
-                  <Frimousse classe="mu-res-mot-f" coeur={note === 5} />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img className="mu-res-mot-f mu-note-v" src={VISAGES[note - 1].image} alt="" />
                   <span>
-                    <b>{MOTS_FANTOME[note]}&nbsp;!</b>
+                    <b>{MOTS[familleDuMetier(mur.metier)][note - 1].replace(/\s*!$/, "")}&nbsp;!</b>
                     <em>Envie d’ajouter un mot&nbsp;? (optionnel)</em>
                   </span>
                   <button
@@ -9379,6 +9335,22 @@ function Styles() {
         .mu-note-f.res button:last-child .mu-note-s .mu-f-oeil{fill:#6E0B3A;}
         .mu-note-f.res button.on:last-child .mu-note-s .mu-f-oeil{fill:#C4006A;}
         .mu-note-f.res button.on:last-child .mu-note-s .mu-f-corps{fill:#FDEFF8;}
+        /* ═══ LES VISAGES DE L'APP, DANS LEURS TUILES ═════════════════════
+           Meme habit que partout ailleurs dans l'app : une tuile sombre
+           arrondie, le visage au-dessus, le mot du metier dessous. Eteints ils
+           sont un peu gris ; celui qu'on touche s'allume, grandit et saute. */
+        .mu-note-f.res button{background:rgba(16,14,28,.66);border-radius:14px;
+          border:1px solid rgba(255,255,255,.1);padding:7px 2px 8px;
+          -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+          transition:border-color .16s ease,background .16s ease;}
+        .mu-note-f.res img.mu-note-v{width:100%;max-width:46px;aspect-ratio:1;
+          object-fit:contain;opacity:.86;filter:saturate(.8) drop-shadow(0 2px 6px rgba(0,0,0,.6));
+          transition:transform .2s cubic-bezier(.3,1.6,.5,1),opacity .16s ease,filter .16s ease;}
+        .mu-note-f.res button.on{border-color:#F0269B;background:rgba(240,38,155,.2);
+          box-shadow:0 0 0 1px rgba(240,38,155,.5),0 6px 22px -6px rgba(240,38,155,.7);}
+        .mu-note-f.res button.on img.mu-note-v{opacity:1;filter:none;transform:scale(1.18) translateY(-2px);}
+        .mu-note-f.res button em{font-size:10.5px;}
+        img.mu-res-mot-f{object-fit:contain;}
 
         /* ═══ LA BULLE DU MOT, ANCREE SOUS LE FANTOME TOUCHE ═══════════════
 
@@ -9592,7 +9564,9 @@ function Styles() {
            couvrait les deux tiers du cadre volait ceux des fantomes et des
            boutons. Cent trente points de large avec ses mots : on ne la vise
            pas, on la touche. */
-        .mu-res-loupe{position:absolute;z-index:6;left:14px;top:calc(15% + 44px);
+        /* « REVENIR », EN HAUT A GAUCHE, au-dessus de la photo en entier.
+           « Voir en entier » vit dans le texte : voir .mu-res-loupe.dans. */
+        .mu-res-loupe{position:absolute;z-index:6;left:12px;top:14px;
           display:inline-flex;align-items:center;gap:6px;cursor:pointer;
           height:34px;padding:0 13px 0 10px;border-radius:999px;font:inherit;
           font-size:12px;font-weight:700;letter-spacing:-.01em;color:#EAF0F6;
@@ -9600,6 +9574,8 @@ function Styles() {
           -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
         .mu-res-loupe.on{top:14px;color:#FFFFFF;background:#F0269B;
           border-color:rgba(255,255,255,.4);}
+        .mu-res-loupe.dans{position:relative;left:auto;top:auto;margin:9px auto 0;
+          height:30px;font-size:11.5px;}
         .mu-res-loupe:active{transform:scale(.96);}
         .mu-res-loupe:focus-visible{outline:2px solid #C9BCFF;outline-offset:2px;}
         .mu-res-loupe i{font-style:normal;font-size:15px;line-height:1;}
