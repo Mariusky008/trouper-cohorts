@@ -209,6 +209,7 @@ import { SortieEnTrois } from "@/components/direct/sortie-en-trois";
 import { EcranGout } from "@/components/direct/gout-contenu";
 import { GOUTS } from "@/lib/direct/avant-gout";
 import { mesFantomes, rappelerFantome, SIGNAL as SIGNAL_FANTOMES, tempsRestant, type FantomePose } from "@/lib/direct/mes-fantomes";
+import { estUneSortie, mesAnnoncesDe } from "@/lib/direct/mes-annonces";
 import {
   ENVIES,
   HEURE_MAX,
@@ -5506,6 +5507,28 @@ export function ApercuHabitant() {
     (x) => x.ouvert && !dansLeSalon(x) && !x.prive,
   );
   const salonsPasses = Object.values(salons).filter((x) => !x.ouvert);
+
+  /* ═══ L'ONGLET « PROPOSITIONS » EN TROIS PARTIES ════════════════════════
+
+     « J'aimerais qu'on puisse retrouver toutes les annonces dans lesquelles on
+     a interagi, surtout les sorties en tout premier pour voir l'évolution du
+     chat live, et ensuite le reste (essayage…). Et ensuite une partie
+     distincte où on retrouvera les salons dans lesquels on converse avec nos
+     amis. Et enfin une troisième partie où ce sont les salons ouverts à
+     tous. »
+
+     UNE SORTIE N'EST ÉCRITE QU'UNE FOIS, ET C'EST EN HAUT. Elle est à la fois
+     une annonce sur laquelle on a agi et un salon entre amis : les deux
+     parties pouvaient donc la revendiquer. Elle va dans la première, parce que
+     c'est celle qu'il demande de voir en premier — et la deuxième garde tout
+     le reste des conversations. Une même ligne dans deux listes se lit comme
+     deux choses, et on finit par ouvrir les deux pour vérifier. */
+  const mesAnnonces = mesAnnoncesDe({
+    salons: salonsOuverts.filter(estUneSortie),
+    pieces: piecesGardees,
+    traces: mesTraces,
+  });
+  const mesSalonsAmis = salonsOuverts.filter((x) => !estUneSortie(x));
 
   /* ═══ CE QUE LE FANTÔME VOIT DU GROUPE ═══
 
@@ -11017,25 +11040,125 @@ export function ApercuHabitant() {
             <div className="ap-page ap-onglet-vue">
               <div className="ap-page-h">
                 <span className="ap-page-t">
-                  <b>Mes salons</b>
+                  <b>Mes propositions</b>
+                  {/* LE SOUS-TITRE COMPTE LES TROIS PARTIES, DANS LEUR ORDRE.
+                      Il sert de sommaire : on sait avant de faire défiler s'il
+                      y a quelque chose plus bas. */}
                   <em>
-                    {salonsOuverts.length}{" "}
-                    {salonsOuverts.length > 1 ? "ouverts" : "ouvert"} ·{" "}
-                    {salonsADecouvrir.length} à découvrir
+                    {mesAnnonces.length} annonce{mesAnnonces.length > 1 ? "s" : ""} ·{" "}
+                    {mesSalonsAmis.length + salonsPasses.length} salon
+                    {mesSalonsAmis.length + salonsPasses.length > 1 ? "s" : ""} ·{" "}
+                    {salonsADecouvrir.length} ouvert{salonsADecouvrir.length > 1 ? "s" : ""} à tous
                   </em>
                 </span>
               </div>
 
               <div className="ap-sal-corps">
-                {salonsOuverts.length > 0 && (
-                  <div className="ap-liste">
+                {/* ═══ 1 · CE QUE VOUS AVEZ TOUCHÉ ═══════════════════════════
+
+                    « Toutes les annonces dans lesquelles on a interagi, pour
+                    pouvoir y accéder de nouveau. »
+
+                    ELLE NE TIENT AUCUN CARNET, ELLE RELIT CE QUI EXISTE — les
+                    salons de sortie, les pièces mises de côté, les fantômes
+                    laissés sur un mur. Voir `lib/direct/mes-annonces.ts` : une
+                    liste qu'il faut penser à remplir a autant d'oublis que de
+                    points d'appel.
+
+                    LES SORTIES SONT EN HAUT PARCE QU'ELLES BOUGENT. Une pièce
+                    mise de côté sera la même ce soir ; un salon de sortie aura
+                    dix messages de plus. Ce qui change vite se met devant. */}
+                {/* ELLE S'AFFICHE MEME VIDE, ET C'EST VOULU. Les deux autres
+                    parties, elles, ont du contenu des la premiere visite : si
+                    celle-ci disparaissait tant qu'on n'a rien touche, on
+                    ouvrirait cet onglet et on verrait DEUX listes — donc on
+                    n'apprendrait jamais qu'il en existe une troisieme, ni
+                    qu'elle est la premiere. Une ligne suffit a le dire. */}
+                <div className="ap-liste ap-part mien">
+                  <h4>
+                    <i aria-hidden="true">👻</i>
+                    Vos annonces{mesAnnonces.length > 0 && <b>{mesAnnonces.length}</b>}
+                  </h4>
+                  {mesAnnonces.length === 0 && (
+                    <p className="ap-part-vide">
+                      Ce que vous essayez, ce que vous mettez de côté et les
+                      sorties où vous entrez se rangent ici, pour y revenir.
+                    </p>
+                  )}
+                  {mesAnnonces.map((a) => (
+                      <button
+                        key={a.cle}
+                        type="button"
+                        className="ap-ligne"
+                        onClick={() => {
+                          /* UN SEUL DES TROIS CHAMPS EST REMPLI, et c'est lui
+                             qui dit par où l'on rentre. Voir `MonAnnonce`. */
+                          if (a.salon) {
+                            setSalonOuvert(a.salon);
+                            setSalonPage(true);
+                            return;
+                          }
+                          if (a.piece) {
+                            const p = piecesGardees.find(
+                              (x) => x.carte === a.piece?.carte && x.piece === a.piece?.piece,
+                            );
+                            if (p) setPieceVue(p);
+                            return;
+                          }
+                          if (a.mur) {
+                            const t = mesTraces.find((f) => f.id === a.cle.slice("trace:".length));
+                            if (t) {
+                              setMurRevisite(t);
+                              allerA_onglet("direct");
+                            }
+                          }
+                        }}
+                      >
+                        {a.photo ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={a.photo} alt="" loading="lazy" />
+                        ) : (
+                          <i aria-hidden="true">👻</i>
+                        )}
+                        <span>
+                          <b>{a.titre}</b>
+                          <u>{a.mot}</u>
+                          <em>
+                            {a.ou}
+                            {a.detail ? ` · ${a.detail}` : ""}
+                          </em>
+                        </span>
+                        {/* LA SORTIE PORTE SON ÉTIQUETTE : c'est la seule ligne
+                            de la liste dont le contenu bouge sans nous, et la
+                            seule qu'on rouvre pour cette raison-là. */}
+                        {a.geste === "sortie" ? <s className="direct">EN DIRECT</s> : <s>›</s>}
+                      </button>
+                  ))}
+                </div>
+
+                {/* ═══ 2 · VOS SALONS, ENTRE AMIS ════════════════════════════
+                    « Une partie distincte de cet onglet où on retrouvera les
+                    salons dans lesquels on converse avec nos amis (donc
+                    vraiment distincte avec couleurs différentes). »
+                    LA COULEUR EST LE SÉPARATEUR, et pas un trait : trois
+                    titres de la même couleur se lisent comme un seul bloc
+                    qu'on fait défiler. Rose pour les gens — c'est déjà la
+                    couleur des présences et du direct — violet pour ce qui est
+                    à vous, bleu pour ce qui est au monde. */}
+                {(mesSalonsAmis.length > 0 || salonsPasses.length > 0) && (
+                  <div className="ap-liste ap-part amis">
                     <h4>
-                      <i className="vif" aria-hidden="true">
-                        ●
-                      </i>
-                      Ouverts maintenant<b>{salonsOuverts.length}</b>
+                      {mesSalonsAmis.length > 0 ? (
+                        <i className="vif" aria-hidden="true">
+                          ●
+                        </i>
+                      ) : (
+                        <i aria-hidden="true">💬</i>
+                      )}
+                      Vos salons
+                      <b>{mesSalonsAmis.length + salonsPasses.length}</b>
                     </h4>
-                    {salonsOuverts.map((x) => (
+                    {mesSalonsAmis.map((x) => (
                       <button
                         key={x.cle}
                         type="button"
@@ -11069,59 +11192,18 @@ export function ApercuHabitant() {
                         )}
                       </button>
                     ))}
-                  </div>
-                )}
-
-                {/* ─── CE QU'ON PEUT DÉCOUVRIR ───
-                    Les salons PUBLICS où l'on n'est pas encore. C'est la seule
-                    chose que ce produit sache faire et qu'une messagerie ne
-                    saura jamais : voir que des gens vont quelque part ce soir,
-                    et pouvoir s'y joindre sans connaître personne. Sans cette
-                    liste, « public » ne veut rien dire et le réglage du salon
-                    serait un interrupteur qui n'allume rien. */}
-                {salonsADecouvrir.length > 0 && (
-                  <div className="ap-liste">
-                    <h4>
-                      <i aria-hidden="true">🌍</i>
-                      Ouverts près de vous<b>{salonsADecouvrir.length}</b>
-                    </h4>
-                    {salonsADecouvrir.map((x) => (
-                      <button
-                        key={x.cle}
-                        type="button"
-                        className="ap-ligne"
-                        onClick={() => {
-                          noter("partage", 0, "decouverte");
-                          setSalonOuvert(x.cle);
-                          setSalonPage(true);
-                        }}
-                      >
-                        {x.photo ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={x.photo} alt="" loading="lazy" />
-                        ) : (
-                          <i aria-hidden="true">💬</i>
-                        )}
-                        <span>
-                          <b>{x.annonce ?? x.sujet}</b>
-                          <u>{x.ou}</u>
-                          <em>
-                            {x.quand} · ouvert par {x.parQui} · {x.viennent.length}{" "}
-                            {x.viennent.length > 1 ? "viennent" : "vient"}
-                          </em>
-                        </span>
-                        {x.reste ? <s className="reste">{x.reste}</s> : <s>›</s>}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
+                    {/* LES PASSES SONT DANS LA MEME PARTIE, PAS A COTE.
+                        Un salon fini reste un salon : lui donner son propre
+                        titre au meme rang que les trois autres aurait fait
+                        QUATRE parties la ou il en a demande trois, et l'une
+                        d'elles n'aurait rien a voir avec les autres. Il garde
+                        son sous-titre et ses lignes en retrait. */}
                 {salonsPasses.length > 0 && (
-                  <div className="ap-liste passe">
-                    <h4>
+                  <div className="ap-liste passe ap-sous">
+                    <h5>
                       <i aria-hidden="true">🕘</i>
                       Passés<b>{salonsPasses.length}</b>
-                    </h4>
+                    </h5>
                     {salonsPasses.map((x) => (
                       <button
                         key={x.cle}
@@ -11155,16 +11237,67 @@ export function ApercuHabitant() {
                     ))}
                   </div>
                 )}
+                  </div>
+                )}
 
-                {salonsOuverts.length === 0 &&
+                {/* ─── CE QU'ON PEUT DÉCOUVRIR ───
+                    Les salons PUBLICS où l'on n'est pas encore. C'est la seule
+                    chose que ce produit sache faire et qu'une messagerie ne
+                    saura jamais : voir que des gens vont quelque part ce soir,
+                    et pouvoir s'y joindre sans connaître personne. Sans cette
+                    liste, « public » ne veut rien dire et le réglage du salon
+                    serait un interrupteur qui n'allume rien. */}
+                {salonsADecouvrir.length > 0 && (
+                  <div className="ap-liste ap-part tous">
+                    <h4>
+                      <i aria-hidden="true">🌍</i>
+                      Ouverts à tous<b>{salonsADecouvrir.length}</b>
+                    </h4>
+                    {salonsADecouvrir.map((x) => (
+                      <button
+                        key={x.cle}
+                        type="button"
+                        className="ap-ligne"
+                        onClick={() => {
+                          noter("partage", 0, "decouverte");
+                          setSalonOuvert(x.cle);
+                          setSalonPage(true);
+                        }}
+                      >
+                        {x.photo ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={x.photo} alt="" loading="lazy" />
+                        ) : (
+                          <i aria-hidden="true">💬</i>
+                        )}
+                        <span>
+                          <b>{x.annonce ?? x.sujet}</b>
+                          <u>{x.ou}</u>
+                          <em>
+                            {x.quand} · ouvert par {x.parQui} · {x.viennent.length}{" "}
+                            {x.viennent.length > 1 ? "viennent" : "vient"}
+                          </em>
+                        </span>
+                        {x.reste ? <s className="reste">{x.reste}</s> : <s>›</s>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {mesAnnonces.length === 0 &&
+                  mesSalonsAmis.length === 0 &&
                   salonsADecouvrir.length === 0 &&
                   salonsPasses.length === 0 && (
                   <div className="ap-moi-vide">
-                    <span aria-hidden="true">💬</span>
-                    <b>Aucun salon pour l&apos;instant.</b>
+                    <span aria-hidden="true">👻</span>
+                    <b>Rien ici pour l&apos;instant.</b>
+                    {/* ELLE NE PARLE PLUS QUE DES SALONS. La page en montre
+                        trois sortes maintenant, et « balayez pour ouvrir un
+                        salon » n'expliquait pas les deux autres — on aurait
+                        cru que l'essayage ne se range nulle part. */}
                     <i>
-                      Balayez une annonce vers la droite : elle ouvre un salon,
-                      et il se range ici.
+                      Essayez une pièce, laissez votre fantôme quelque part ou
+                      ouvrez un salon : tout ce que vous touchez se range ici.
                     </i>
                   </div>
                 )}
@@ -18888,6 +19021,56 @@ export function ApercuHabitant() {
           animation:apVoyant 2.4s ease-in-out infinite;}
         .ap-liste h4 b{font-size:10px;color:#7F988B;}
         .ap-liste.passe h4{color:#8C9C94;}
+
+        /* ═══ LES TROIS PARTIES DE « MES PROPOSITIONS » ════════════════════
+
+           « Une partie vraiment distincte, avec des couleurs differentes. »
+
+           TROIS TITRES DE LA MEME COULEUR SE LISENT COMME UN SEUL BLOC qu'on
+           fait defiler. Ce qui separe deux listes, ce n'est pas un trait — un
+           trait se prend pour une bordure — c'est un CHANGEMENT DE COULEUR :
+           on voit qu'on a change de sujet avant d'avoir lu le titre.
+
+           ET CHAQUE COULEUR DIT DE QUI EST LA CHOSE, ce qui est la seule facon
+           d'en avoir trois sans les apprendre par coeur :
+             · VIOLET, c'est le Fantome, donc VOUS — ce que vous avez touche ;
+             · ROSE, ce sont les gens, et c'est deja la couleur des presences
+               et du direct — vos salons ;
+             · BLEU CLAIR, c'est le dehors — ce qui est ouvert a tous.
+
+           LE FILET A GAUCHE VAUT POUR TOUTE LA PARTIE. Le titre seul colore
+           une ligne ; le filet tient les lignes ensemble, ce qui est
+           exactement ce qu'on demande de voir. */
+        .ap-part{position:relative;padding-left:11px;}
+        .ap-part::before{content:"";position:absolute;left:0;top:2px;bottom:8px;
+          width:2.5px;border-radius:999px;background:var(--ap-part, #8B6BFF);
+          opacity:.55;}
+        .ap-part h4{color:var(--ap-part, #8B6BFF);}
+        .ap-part h4 i{color:var(--ap-part, #8B6BFF);}
+        .ap-part .ap-ligne u{color:var(--ap-part, #8B6BFF);}
+        .ap-part.mien{--ap-part:#B79BFF;}
+        .ap-part.amis{--ap-part:#FF7DBE;}
+        .ap-part.tous{--ap-part:#8BD6FF;}
+        /* LE VOYANT DU DIRECT GARDE SA COULEUR : il ne dit pas de quelle
+           partie on parle, il dit que quelque chose se passe MAINTENANT. */
+        .ap-part h4 i.vif{color:#3DE2A6;}
+        /* UN SALON PASSE PERD SA COULEUR, PAS SA PLACE. Il reste sous le meme
+           titre que les salons ouverts — c'est la meme sorte de chose — mais
+           en gris : on ne va pas y ecrire. */
+        /* LE SOUS-TITRE DES PASSES. Plus petit que les titres de partie et
+           sans filet a lui : il ouvre une sous-liste, il n'ouvre pas une
+           quatrieme partie. */
+        .ap-sous{margin-top:2px;}
+        .ap-sous h5{display:flex;align-items:center;gap:6px;margin:0 2px 7px;
+          font-size:10px;font-weight:850;letter-spacing:.1em;
+          text-transform:uppercase;color:#8C9C94;}
+        .ap-sous h5 i{font-style:normal;font-size:10px;line-height:1;}
+        .ap-sous h5 b{font-size:9.5px;color:#6F8279;}
+        /* LA LIGNE DE VIDE DIT CE QUI VIENDRA LA, pas qu'il n'y a rien. « Aucune
+           annonce » se lit comme une panne ; une phrase qui nomme les trois
+           gestes se lit comme une promesse, et elle apprend ou ils se rangent. */
+        .ap-part-vide{margin:0 0 8px;font-size:12px;line-height:1.45;
+          color:#8FA39A;}
         .ap-ligne{display:flex;align-items:center;gap:11px;width:100%;font:inherit;
           text-align:left;cursor:pointer;color:#A9BBB1;
           background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
