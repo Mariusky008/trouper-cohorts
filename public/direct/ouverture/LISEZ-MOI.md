@@ -1,164 +1,87 @@
 # L'ouverture en trois actes
 
-Trois images, et l'animation les joue dans cet ordre :
+Neuf secondes avant le premier écran de la démonstration. Trois actes, joués
+dans cet ordre — et l'ordre est tout le propos :
 
-| Fichier | Ce qu'on y voit | Durée |
-|---|---|---|
-| `1.jpg` | Le Fantôme sur son canapé, qui ouvre ClikMe. | 2 s |
-| `2.jpg` | On s'est rapproché du téléphone : il touche une veste, elle apparaît sur son image. | 4 s |
-| `3.jpg` | Il est devant la boutique, la veste est en vitrine, la commerçante l'accueille. | 3 s |
+| Acte | Ce qu'on y voit | Durée | Poses |
+|---|---|---|---|
+| 1 | Le Fantôme sur son canapé, qui ouvre ClikMe. | 2 s | `poses/1` `poses/2` `poses/3` |
+| 2 | Sur son téléphone : il touche une veste, elle apparaît sur son image. | 4 s | `poses/4` `poses/5` `poses/6` |
+| 3 | Devant la boutique, la même veste en vitrine, la commerçante l'accueille. | 3 s | `poses/7` `poses/8` `poses/9` |
 
-**Une découverte, un essai, une vraie rencontre.** C'est la phrase qui résume ce
-que l'ouverture doit faire comprendre, et c'est aussi l'ordre des trois actes :
-on ne peut en déplacer aucun.
+**Une découverte, un essai, une vraie rencontre.** C'est ce que l'ouverture doit
+faire comprendre, et c'est aussi l'ordre des trois actes : on ne peut en
+déplacer aucun. Chacun pris seul ne dit rien de neuf — un fantôme sur un canapé
+est une mascotte, un essayage virtuel existe ailleurs, une commerçante qui
+accueille est une photo de site. C'est la SUITE qui dit ce que fait le produit.
 
-## Ce que les images doivent porter, et ce que le code ajoute
+## Les neuf poses
 
-**LA PROMESSE EST DANS L'IMAGE, EN HAUT, ET IDENTIQUE SUR LES TROIS.** « Votre
-ville à essayer. Avant d'y aller. » ne bouge donc pas d'un pixel pendant les
-fondus : deux textes identiques qui se croisent ne se voient pas se croiser.
-C'est ce qui permet de garder la promesse générale à l'écran pendant les neuf
-secondes sans qu'elle clignote — et c'était sa demande : « garde la promesse
-générale, puis affiche les cinq catégories sur l'écran qui suit ».
+`poses/1.jpg` … `poses/9.jpg`, **941 × 1672 à l'origine, servies en 940 × 1672**.
+Trois par acte. Ce sont elles la matière première : les films n'existent que
+pour passer de l'une à l'autre.
 
-**LA LÉGENDE DU BAS EST DANS L'IMAGE AUSSI**, et elle change à chaque acte :
-« On fait quoi aujourd'hui ? », « Cette tenue, sur mon téléphone. », « Essayé
-sur mon écran. Maintenant, chez le commerçant. »
+**CE QUI DOIT ÊTRE IDENTIQUE D'UNE POSE À L'AUTRE : tout sauf le Fantôme.** Même
+cadrage, même lumière, même décor au point près. C'est la condition du procédé —
+mesuré sur ce jeu-ci, 2 à 22 % des pixels changent d'une pose à la suivante, et
+le reste ne bouge pas du tout. Un fond qui bouge, même d'un point, et le fondu
+se lit comme une secousse de caméra.
 
-**LE CODE N'AJOUTE QUE LE MOUVEMENT** : le fondu entre les actes, le lent
-rapprochement de la caméra — plus marqué au deuxième acte, puisque c'est là
-qu'on « se rapproche du téléphone » — et la sortie. Rien n'est écrit par-dessus
-les images : un texte dessiné en plus d'un texte incrusté aurait fini par ne
-plus être au même endroit sur un téléphone étroit.
+**CE QUE CHAQUE TRIO DOIT RACONTER**, dans l'ordre :
 
-## Le format
+- **1, 2, 3** — affalé, sans téléphone · il le lève, l'écran s'allume dans ses
+  yeux · il sourit.
+- **4, 5, 6** — son écran le montre **en tee-shirt** · son doigt touche la
+  vignette de la veste · **la veste est sur lui**. La 4 est la plus importante
+  des neuf : c'est elle qui permet de faire *apparaître* la veste sur lui au
+  lieu de faire voler une vignette.
+- **7, 8, 9** — il arrive, elle ne l'a pas vu · elle le voit et s'avance · elle
+  lui ouvre les bras.
 
-Les images de ses maquettes font **941 × 1672**. L'écran d'un téléphone est plus
-étroit que ça, donc l'image entière ne peut pas remplir le cadre sans être
-rognée par les côtés — et c'est la promesse, qui prend presque toute la largeur,
-qui serait coupée la première.
+**AUCUN TEXTE INCRUSTÉ.** La promesse et le mot de chaque acte sont écrits en
+HTML par-dessus le film (voir plus bas). Un texte peint dans l'image serait flou
+à l'échelle du téléphone, impossible à corriger sans refabriquer les films, et
+il traverserait les fondus.
 
-**L'IMAGE EST DONC POSÉE EN ENTIER, et les bandes qui restent sont remplies par
-l'image elle-même, agrandie et floutée.** C'est le procédé déjà en place dans le
-parcours mode et sur les photos des cuisiniers : le bord ne se voit pas, et il
-n'y a aucune couleur à deviner.
+## Les films
 
-**MESURÉ SUR QUATRE TÉLÉPHONES.** Sur un écran court — 440 × 760, 360 × 640 —
-l'image remplit tout et il n'y a aucune bande. Sur un grand — 390 × 844,
-430 × 932 — il reste 76 à 84 points en haut et en bas, remplis par le flou.
+`npm exec -- node scripts/fabriquer-ouverture.mjs` lit les neuf poses et écrit
+six fichiers — `1.mp4` `1.webm` `2.mp4` `2.webm` `3.mp4` `3.webm` — plus les
+trois affiches `1.jpg` `2.jpg` `3.jpg`.
 
-**POURQUOI PAS « COVER », QUI REMPLIRAIT TOUJOURS.** Il rognerait par les côtés :
-sur un 390 × 900, neuf pour cent de chaque bord. « Maintenant, chez le
-commerçant. » commence à douze pour cent du bord gauche. Douze contre neuf, c'est
-trois pour cent de marge — un téléphone un peu plus haut et sa phrase est coupée.
-On ne joue pas la composition de quelqu'un à trois pour cent près.
+- **940 × 1672, 30 images par seconde, sans audio.** 940 et pas 941 : H.264
+  refuse une dimension impaire.
+- **Les deux formats.** Le `webm` passe en premier parce qu'il est plus léger à
+  qualité égale ; le navigateur qui ne sait pas le lire prend le `mp4`.
+- **Moins de 800 ko chacun.**
 
-## Les trois films existent — et voici exactement ce qu'ils animent
+Le script explique en détail comment il passe d'une pose à l'autre. En deux
+lignes : un **flou de bougé posé à travers un masque** tiré de la différence
+entre les deux poses — le personnage traîne, le décor reste net — et, pour la
+veste, un **voile qui descend sur lui** dont la vitesse suit la quantité de
+pixels que chaque rangée change, pour que la révélation occupe tout son temps.
 
-Ils sont fabriqués par `scripts/fabriquer-ouverture.mjs`, à partir des trois
-images. **Relancer le script les refait à l'identique**, donc tout se règle en
-changeant une ligne du script plutôt qu'en redemandant un rendu.
+## Ce que le code ajoute, et rien de plus
 
-**CE QU'ILS N'ANIMENT PAS, ET IL FAUT LE DIRE EN PREMIER : le corps du Fantôme.**
-Ces trois fichiers sont des images plates — le Fantôme, le canapé et la lampe y
-sont le même objet. Mesuré en essayant de le détourer : son corps se sépare du
-canapé (luminance 173 contre 47), mais **sa casquette est à 29**, plus sombre que
-le canapé, et reste dans le fond. Et même détouré, il resterait le trou derrière
-lui. Le faire marcher demande le rendu d'origine, en calques.
+`src/components/direct/ouverture.tsx` :
 
-**CE QU'ILS ANIMENT : ce qui porte le concept.** Dans chaque scène, la chose à
-comprendre n'est pas que le Fantôme remue — c'est qu'un écran s'allume, qu'une
-veste se pose sur lui, qu'on retrouve la même en vitrine. Ces trois-là s'animent
-sans toucher au personnage, parce que ce sont des lumières et des objets.
+- **La promesse, immobile, en haut** : « Votre ville à essayer. **Avant d'y
+  aller.** » Elle est posée au-dessus des trois actes, donc elle ne bouge pas
+  d'un point pendant les passages. C'était sa demande — garder la promesse
+  générale pour éviter que neuf secondes de veste laissent croire à une
+  application de mode — et l'écran suivant montre les cinq catégories.
+- **Le mot de l'acte, en bas** : « Une découverte. » « Un essai. » « Une vraie
+  rencontre. » Il est *dans* l'acte, donc il traverse le passage avec lui.
+- **Le passage** : celui qui arrive RECOUVRE celui qui sort. Deux opacités qui
+  se croisent laissent remonter le fond entre les deux plans ; ici le sortant
+  garde son opacité pleine le temps du fondu, puis tombe quand il est déjà
+  caché. Mesuré : l'opacité cumulée ne descend jamais sous 1.
+- **Un doigt posé n'importe où passe l'ouverture.**
 
-| Acte | Ce qui bouge | Durée |
-|---|---|---|
-| 1 | Un doigt touche son téléphone, **l'écran s'allume**. Son halo respire. | 2 s |
-| 2 | **La vignette de la veste se soulève, grandit, vole jusqu'à son buste et s'y fond.** Une lueur rose marque l'atterrissage, puis le bouton respire. | 4 s |
-| 3 | **Un cercle se trace autour de la veste en vitrine, puis autour de celle de son téléphone**, les deux battent ensemble, puis s'effacent. La lumière de la porte monte : l'accueil. | 3 s |
+## Si un fichier manque
 
-**L'acte 2 est le seul qui montre le produit lui-même**, et c'est pour ça qu'il
-est le plus long. Il est faisable parce qu'on anime une **copie** de la vignette :
-l'originale reste en place dessous, donc le vol ne laisse aucun trou — et quand
-la copie se dissout, c'est le Fantôme déjà vêtu de l'image qui apparaît.
-
-### Ce que les essais ont appris
-
-- **Une flaque ronde n'est pas un écran.** Première version : un halo rond posé
-  sur son téléphone débordait sur sa main et sur le canapé. Un écran a la forme
-  d'un écran — rectangle aux coins ronds, flou juste ce qu'il faut.
-- **La vignette pleine se lisait comme une carte d'interface qui glisse**, et son
-  bord supérieur couvrait la tête au moment d'atterrir. À mi-transparence, bords
-  fondus, posée sur le buste, elle se lit comme un vêtement.
-- **Les cercles laissés en place cessaient d'être un geste** pour devenir une
-  annotation : l'écran finissait avec deux ronds roses dessus. Ils s'effacent.
-
-## Si un jour on veut que le Fantôme bouge vraiment
-
-Il faut, par scène : **le décor sans lui**, et **lui seul en `png` transparent,
-casquette comprise**. Là il pourra se pencher, se tourner, sauter — et chaque
-geste se réglera dans le code sans refaire une image.
-
-## Le format, pour qui refera ces films
-
-
-
-C'est la voie choisie : **le mouvement est dans le film, pas dans le code.** Le
-code n'enchaîne que les trois actes.
-
-| Fichier | La scène | Durée |
-|---|---|---|
-| `1.mp4` + `1.webm` | Le Fantôme sur son canapé, qui ouvre ClikMe. | **2 s** |
-| `2.mp4` + `2.webm` | On s'est rapproché du téléphone : il touche une veste, elle apparaît sur son image. | **4 s** |
-| `3.mp4` + `3.webm` | Il est devant la boutique, la veste en vitrine, la commerçante l'accueille. | **3 s** |
-
-**L'ORDRE DES DURÉES EST 2, 4, 3 — PAS 2, 3, 4.** Le deuxième acte est le plus
-long parce que c'est celui qui doit être compris : c'est là qu'on voit la veste
-se poser sur lui alors que lui ne change pas. Les deux autres posent le décor et
-referment.
-
-### Six règles, et chacune a coûté quelque chose
-
-1. **Largeur et hauteur PAIRES.** 941 × 1672 ne s'encode pas en H.264 — mesuré,
-   l'encodeur refuse : « width not divisible by 2 ». **940 × 1672** convient.
-2. **Aucune piste son.** Un navigateur refuse de démarrer tout seul une vidéo
-   qui a du son, et le film resterait sur son affiche. Une ouverture sonore
-   serait de toute façon la meilleure façon de faire fermer une démonstration
-   ouverte dans une salle d'attente.
-3. **Le même cadrage que les images, sans zoom qui pousse le texte dehors.**
-   L'écran est plus étroit que le film : il est rogné par les côtés, et
-   « Maintenant, chez le commerçant. » commence déjà à douze pour cent du bord.
-   Un zoom avant de douze pour cent suffit à la couper — vérifié sur un film
-   d'essai.
-4. **La promesse au même endroit sur les trois**, comme sur les images : deux
-   textes identiques qui se croisent pendant un fondu ne se voient pas se
-   croiser.
-5. **Les deux formats.** Le `webm` passe en premier — plus léger à qualité
-   égale — et le `mp4` sert aux navigateurs qui ne le lisent pas. Un seul des
-   deux suffit à jouer, mais les deux évitent de découvrir le manquant en
-   rendez-vous.
-6. **Le poids.** Ils sont servis avant le premier écran de chaque
-   démonstration. En dessous de 1,5 Mo par fichier, ça ne se sent pas.
-
-### Les images restent, et elles servent
-
-Les trois `.jpg` ne sont pas remplacés : ils deviennent **l'affiche** de chaque
-film — ce qu'on voit tant que la première image n'est pas prête, sans quoi chaque
-acte commencerait par un éclair noir. **Et si un film manque, son affiche reste
-et l'acte dure exactement sa durée annoncée** : l'ouverture se joue alors en
-photos fixes, comme aujourd'hui.
-
-### Qui décide de la fin d'un acte
-
-**Le film.** C'est son `ended` qui fait passer au suivant, donc une prise un peu
-plus longue que prévu ne se fait pas couper au milieu. Une horloge de secours
-tranche une seconde et demie plus tard si l'événement n'arrive jamais — fichier
-abîmé, décodeur qui cale, onglet mis en arrière-plan. Sans film, c'est la durée
-annoncée qui commande, au dixième près.
-
-## Sans les images, il ne se passe rien
-
-Si `1.jpg` est absente, **l'ouverture se retire d'elle-même** et la démonstration
-s'ouvre directement sur les cinq catégories, comme avant. C'est volontaire : une
-ouverture à moitié chargée est pire que pas d'ouverture du tout, et personne ne
-doit avoir à toucher au code pour la désactiver.
+- **Pas de film** → l'affiche de l'acte reste à l'écran et l'acte garde sa durée
+  annoncée. L'ouverture se joue en trois photos fixes.
+- **Pas d'affiche du premier acte** → l'ouverture se retire d'elle-même et la
+  démonstration s'ouvre directement. Neuf secondes de fond vide seraient une
+  panne que personne ne peut deviner ni contourner.

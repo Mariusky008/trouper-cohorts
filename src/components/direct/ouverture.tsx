@@ -29,9 +29,17 @@ import { useEffect, useRef, useState } from "react";
  *
  * C'EST LE RISQUE RÉEL DE CETTE OUVERTURE, et il fallait le dire. Neuf secondes
  * de veste laissent croire à une application de mode ; la phrase au-dessus dit
- * que la veste est un exemple. Elle est incrustée dans les trois plans, au même
- * endroit, donc elle ne bouge pas pendant les fondus — et l'écran suivant montre
- * les cinq catégories, ce qui referme la question avant qu'on la pose.
+ * que la veste est un exemple, et les trois mots du bas — « une découverte, un
+ * essai, une vraie rencontre » — nomment des moments et pas des rayons. L'écran
+ * suivant montre les cinq catégories, ce qui referme la question avant qu'on la
+ * pose.
+ *
+ * LA PHRASE EST ÉCRITE ICI, PAS DANS LES FILMS. Elle était incrustée dans les
+ * premiers rendus ; les neuf nouveaux n'ont aucun texte, et c'est mieux ainsi.
+ * Écrite en HTML elle reste nette à toutes les tailles, elle se corrige sans
+ * refabriquer les films, et surtout ELLE NE TRAVERSE AUCUN FONDU : posée
+ * au-dessus des trois actes, elle ne bouge pas d'un point pendant qu'ils se
+ * croisent.
  *
  * ═══ LE MOUVEMENT EST DANS LES FILMS, PAS DANS LE CODE ═════════════════════
  *
@@ -49,7 +57,17 @@ import { useEffect, useRef, useState } from "react";
  * 47 — mais sa casquette est à 29, plus sombre que le canapé, et reste dans le
  * fond. Et même réussi, il resterait le trou derrière lui.
  *
- * CHAQUE ACTE EST DONC UN FILM. Le mouvement est dedans, réglé une fois pour
+ * LA PREMIÈRE VERSION DES FILMS A ÉTÉ REFUSÉE POUR ÇA, et c'était juste : « ça
+ * fait vraiment très pauvre comme animation ». Elle posait des lueurs et faisait
+ * voler une vignette autour d'un personnage immobile. À l'écran, ce qui raconte,
+ * c'est le personnage — tant qu'il ne bouge pas, aucune lumière ne sauve le plan.
+ *
+ * IL A DONC FALLU D'AUTRES RENDUS. Neuf images au lieu de trois : trois poses par
+ * acte, même cadrage, même lumière, seul le Fantôme change. Les films sont
+ * fabriqués ENTRE ces poses — voir `scripts/fabriquer-ouverture.mjs`, qui
+ * explique le flou de bougé masqué et le voile de la veste.
+ *
+ * CHAQUE ACTE RESTE DONC UN FILM. Le mouvement est dedans, réglé une fois pour
  * toutes ; le code n'enchaîne que les trois. Voir le LISEZ-MOI à côté des
  * fichiers pour le format attendu.
  */
@@ -73,18 +91,21 @@ const ACTES = [
     film: "/direct/ouverture/1",
     image: "/direct/ouverture/1.jpg",
     duree: 2000,
+    mot: "Une découverte.",
     alt: "Le Fantôme, chez lui, ouvre ClikMe.",
   },
   {
     film: "/direct/ouverture/2",
     image: "/direct/ouverture/2.jpg",
     duree: 4000,
+    mot: "Un essai.",
     alt: "Sur son téléphone, la veste apparaît sur son image.",
   },
   {
     film: "/direct/ouverture/3",
     image: "/direct/ouverture/3.jpg",
     duree: 3000,
+    mot: "Une vraie rencontre.",
     alt: "Devant la boutique, la veste en vitrine, la commerçante l’accueille.",
   },
 ] as const;
@@ -182,27 +203,35 @@ export function Ouverture({ onFini }: { onFini: () => void }) {
      sont trois décodages en parallèle pour deux images visibles : sur un
      téléphone, c'est ce qui fait saccader le fondu.
 
-     CELUI QUI SORT EST REMIS A ZERO, et pas seulement mis en pause. Il n'est
-     plus visible mais il reste monté ; laissé au milieu, il reprendrait là où on
-     l'a laissé si l'on revenait dessus — et une ouverture qui se rejoue doit se
-     rejouer entière. */
+     CELUI QUI SORT EST SEULEMENT MIS EN PAUSE, ET SURTOUT PAS REMIS A ZERO.
+
+     LE DEFAUT, MESURE A L'ECRAN : on le rembobinait en le quittant, et comme le
+     plan sortant garde son opacité pleine le temps du fondu, on voyait pendant
+     420 ms LE DEBUT DE L'ACTE QU'ON VENAIT DE REGARDER. Relevé sur l'acte 2 : à
+     5,6 secondes, le Fantôme était de nouveau en tee-shirt, vignette blanche
+     encadrée, comme à la première image — juste après l'avoir vu habillé.
+
+     EN PAUSE, IL GARDE SA DERNIERE IMAGE, qui est exactement ce qu'il faut sous
+     le plan qui arrive. LE REMBOBINAGE A DONC CHANGE DE PLACE : c'est celui qui
+     ENTRE qui repart de zéro, juste avant de jouer. Une ouverture qui se rejoue
+     se rejoue toujours entière, et plus rien ne clignote en sortant. */
   const films = useRef<(HTMLVideoElement | null)[]>([]);
   useEffect(() => {
     if (!prete) return;
     films.current.forEach((v, k) => {
       if (!v) return;
       if (k === acte) {
+        try {
+          v.currentTime = 0;
+        } catch {
+          /* pas encore chargée : elle démarrera de toute façon à zéro */
+        }
         /* LE REFUS DE LECTURE N'EST PAS UNE PANNE : un navigateur peut refuser
            de démarrer une vidéo, et l'affiche reste alors à l'écran. L'horloge
            de secours fait avancer l'acte comme si c'était une photo. */
         void v.play().catch(() => {});
       } else {
         v.pause();
-        try {
-          v.currentTime = 0;
-        } catch {
-          /* pas encore chargée */
-        }
       }
     });
   }, [prete, acte]);
@@ -246,8 +275,29 @@ export function Ouverture({ onFini }: { onFini: () => void }) {
             <source src={`${a.film}.webm`} type="video/webm" />
             <source src={`${a.film}.mp4`} type="video/mp4" />
           </video>
+          {/* LE MOT DE L'ACTE EST DANS L'ACTE, donc il traverse le fondu avec
+              lui : l'ancien s'efface pendant que le nouveau monte, sans qu'on
+              ait une deuxième horloge à tenir. */}
+          <span className="ouv-mot">{a.mot}</span>
         </span>
       ))}
+      {/* LES DEUX VOILES SONT HORS DES ACTES, ET C'EST MESURABLE : mis dedans,
+          ils se croiseraient comme le reste, et deux voiles à moitié
+          transparents laissent passer plus de lumière qu'un seul — le texte
+          perdrait son fond au milieu de chaque fondu, là où l'image est la
+          plus chargée. Immobiles, ils tiennent la lisibilité du début à la
+          fin. */}
+      <span className="ouv-voile ouv-voile-haut" aria-hidden="true" />
+      <span className="ouv-voile ouv-voile-bas" aria-hidden="true" />
+      {/* LA PROMESSE NE BOUGE JAMAIS, et c'est sa seule raison d'être ici
+          plutôt que dans les films. Neuf secondes de veste laissent croire à
+          une application de mode ; cette phrase dit que la veste est un
+          exemple. Elle était incrustée dans les anciens rendus — les nouveaux
+          n'ont aucun texte, ce qui vaut mieux : écrite en HTML elle est nette
+          à toutes les tailles, et elle ne traverse aucun fondu. */}
+      <p className="ouv-promesse">
+        Votre ville à essayer.<b>Avant d’y aller.</b>
+      </p>
       <span className="ouv-passer">Passer</span>
       <style dangerouslySetInnerHTML={{ __html: FEUILLE }} />
     </button>
@@ -263,17 +313,25 @@ const FEUILLE = `
   background:#1A0820;
   -webkit-user-select:none;user-select:none;}
 
-/* ═══ L'ACTE QUI SORT PART PLUS VITE QUE CELUI QUI ARRIVE ════════════════
-   MESURE A L'ECRAN, AU MILIEU DU FONDU : les deux legendes du bas se lisaient
-   en meme temps, l'une sur l'autre. La promesse du haut, elle, ne se voit pas
-   se croiser — elle est identique sur les trois plans — mais les legendes
-   changent a chaque acte, et un croisement symetrique les montre toutes les
-   deux a moitie.
-   LA SORTIE EST DONC DEUX FOIS PLUS COURTE QUE L'ENTREE : l'ancienne legende a
-   disparu avant que la nouvelle soit lisible. C'est le fondu enchaine du
-   cinema, ou l'on baisse l'un plus vite qu'on ne monte l'autre. */
+/* ═══ CELUI QUI ARRIVE RECOUVRE CELUI QUI SORT ═══════════════════════════
+
+   DEUX OPACITES QUI SE CROISENT LAISSENT VOIR LE FOND ENTRE LES DEUX. Mesure a
+   l'ecran, au milieu du passage : les deux plans a moitie transparents ne font
+   pas un plan opaque, et le #1A0820 du bouton remontait entre eux — l'ouverture
+   plongeait vers le noir trois fois en neuf secondes.
+
+   ALORS ON NE CROISE PLUS, ON RECOUVRE. Le sortant GARDE son opacite pleine le
+   temps du fondu, puis tombe d'un coup quand il est deja cache dessous ; c'est
+   le 1ms lineaire precede de son delai. L'entrant, lui, monte par-dessus — et
+   il est toujours plus bas dans le document, donc toujours au-dessus a l'ecran,
+   puisque l'ouverture ne va que dans un sens.
+
+   ET LES LEGENDES NE SE SUPERPOSENT PLUS NON PLUS. L'ancienne reste nette
+   jusqu'au bout, mais elle est DERRIERE le plan qui arrive : on ne la voit pas
+   se melanger a la nouvelle, on la voit disparaitre sous l'image. C'est ce que
+   l'ancien reglage asymetrique cherchait a obtenir, en moins bien. */
 .ouv-acte{position:absolute;inset:0;opacity:0;
-  transition:opacity ${Math.round(FONDU * 0.45)}ms ease-out;}
+  transition:opacity 1ms linear ${FONDU}ms;}
 .ouv-acte.on{opacity:1;transition:opacity ${FONDU}ms ease-in;}
 
 .ouv-flou{position:absolute;inset:0;
@@ -291,6 +349,41 @@ const FEUILLE = `
 .ouv-film{position:absolute;inset:0;width:100%;height:100%;
   object-fit:cover;object-position:center;
   display:block;background:transparent;}
+
+/* ═══ DE QUOI LIRE LE TEXTE SUR N'IMPORTE QUELLE IMAGE ═══════════════════
+   Les trois plans sont clairs par endroits — la lampe du salon, la vitrine
+   allumee, le pave au soleil. Du texte blanc pose dessus se perd. Les deux
+   voiles sont des degrades qui ne foncent que les bords : au milieu, la ou se
+   joue la scene, ils valent zero. */
+.ouv-voile{position:absolute;left:0;right:0;pointer-events:none;}
+.ouv-voile-haut{top:0;height:30%;
+  background:linear-gradient(to bottom,rgba(10,4,16,.78),rgba(10,4,16,.34) 52%,rgba(10,4,16,0));}
+.ouv-voile-bas{bottom:0;height:34%;
+  background:linear-gradient(to top,rgba(10,4,16,.80),rgba(10,4,16,.36) 50%,rgba(10,4,16,0));}
+
+/* LA PROMESSE, EN DEUX LIGNES ET DEUX COULEURS. La seconde est la charniere du
+   propos — « avant d'y aller » — donc elle prend le rose de la marque et le
+   poids. Le retrait par le haut suit l'encoche du telephone. */
+.ouv-promesse{position:absolute;left:0;right:0;
+  top:calc(22px + var(--ap-haut,0px));margin:0;padding:0 22px;
+  text-align:center;pointer-events:none;
+  font-size:clamp(15px,4.6vw,19px);font-weight:800;line-height:1.28;
+  letter-spacing:.005em;color:#FFFFFF;
+  text-shadow:0 2px 12px rgba(0,0,0,.55);}
+.ouv-promesse b{display:block;font-weight:900;color:#FF2E9A;}
+
+/* LE MOT DE L'ACTE. Trois mots pour trois actes — « une decouverte, un essai,
+   une vraie rencontre » — et c'est aussi ce qui dit que l'application ne
+   s'arrete pas aux vetements : on nomme des moments, pas des rayons.
+   IL EST AU-DESSUS DE LA PASTILLE, pas a cote : la pastille est en bas a
+   droite, et un mot centre sur la meme ligne finirait dessous sur un ecran
+   etroit. */
+.ouv-mot{position:absolute;left:0;right:0;
+  bottom:calc(60px + var(--ap-bas,0px));padding:0 22px;
+  text-align:center;pointer-events:none;
+  font-size:clamp(14px,4.1vw,17px);font-weight:800;line-height:1.3;
+  letter-spacing:.01em;color:rgba(255,255,255,.94);
+  text-shadow:0 2px 12px rgba(0,0,0,.6);}
 
 /* LA PASTILLE DIT QUE CA SE PASSE. Discrete, en bas a droite, la ou le pouce
    est deja — et pas au milieu, ou elle serait posee sur le plan. */
