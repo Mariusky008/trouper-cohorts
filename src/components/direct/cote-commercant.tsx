@@ -212,8 +212,12 @@ const FEUILLE = `
   background:rgba(255,46,154,.13);
   border:1.5px solid rgba(255,46,154,.4);}
 /* LE VISAGE ET LE MOT D'ABORD, LE CHIFFRE ENSUITE : on lit le ton avant la
-   precision, ce qui est l'ordre dans lequel on les veut. */
-.cc-moy .fc{gap:10px;}
+   precision, ce qui est l'ordre dans lequel on les veut.
+   ET LA PILULE PASSE A LA LIGNE PLUTOT QUE DE COUPER. Trois morceaux sur une
+   ligne tiennent en 390 points et pas en 320 ; sans le retour, c'est le
+   premier et le dernier qui sortent par les deux bords — mesure faite. */
+.cc-moy{flex-wrap:wrap;justify-content:center;row-gap:5px;}
+.cc-moy .fc{gap:9px;}
 .cc-moy>b{font-size:17px;font-weight:900;letter-spacing:-.02em;color:#fff;}
 /* L'ESPACE AVANT « de moyenne » EST POSE ICI, PAS DANS LE TEXTE. Mesure a
    l'ecran : le crenage negatif du nombre mange l'espace du JSX et l'on lisait

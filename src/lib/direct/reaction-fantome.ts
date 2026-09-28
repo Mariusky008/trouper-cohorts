@@ -100,23 +100,43 @@ export function motDe(niveau: number, famille: FamilleReaction = "table") {
 /**
  * LA FAMILLE D'UNE BRANCHE DE COMMERCE.
  *
- * ELLE EST ÉCRITE ET PAS DEVINÉE. Un `includes("coiff")` marcherait jusqu'au
- * jour où quelqu'un écrit « barbier », et le mot serait faux sans que rien ne
- * le signale. Une branche inconnue prend « table », qui est la formulation la
- * plus neutre des cinq — elle parle de la chose, pas de soi.
+ * ═══ DEUX VOCABULAIRES ARRIVENT ICI, ET IL FAUT LES DEUX ══════════════════
+ *
+ * « "Trop bon" comme wording pour mode ou beauté n'est pas approprié. »
+ *
+ * ET C'ÉTAIT EXACT, SUR UN SALON DE COIFFURE. Le défaut n'était pas dans les
+ * mots — la famille `coiffure` dit bien « ça me va trop bien » — il était dans
+ * la TRADUCTION. Deux vocabulaires désignent le même métier dans ce produit :
+ *
+ *   · celui du paquet d'annonces — `coiffeur`, `fleuriste`, `artisan` ;
+ *   · celui des parcours de démonstration — `coiffure`, `deco`, `sortie`.
+ *
+ * Cette fonction ne connaissait que le premier, et le panneau du commerçant lui
+ * passe le second. `coiffure` tombait donc dans le repli, qui est `table` : un
+ * salon de coiffure affichait « Trop bon ».
+ *
+ * LES DEUX SONT ÉCRITS, ET PAS DEVINÉS. Un `includes("coiff")` marcherait
+ * jusqu'au jour où quelqu'un écrit « barbier », et le mot serait faux sans que
+ * rien ne le signale.
  */
 export function familleDe(branche: string | undefined): FamilleReaction {
   switch (branche) {
     case "mode":
       return "mode";
+    // `coiffeur` et `ongles` viennent du paquet, `coiffure` et `beaute` des parcours.
     case "coiffeur":
+    case "coiffure":
     case "ongles":
+    case "beaute":
       return "coiffure";
     case "artisan":
     case "fleuriste":
+    case "deco":
       return "deco";
     case "evenement":
     case "bar":
+    case "sortie":
+    case "sorties":
       return "sortie";
     default:
       return "table";

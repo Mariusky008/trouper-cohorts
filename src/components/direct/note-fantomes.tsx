@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type React from "react";
-import { familleDe, motDe, visageDe, type FamilleReaction } from "@/lib/direct/reaction-fantome";
+import { familleDe, motDe, VISAGES, type FamilleReaction } from "@/lib/direct/reaction-fantome";
 
 // 👻 LA NOTE EN FANTÔMES — un à cinq, le signe du produit à la place des étoiles.
 //
@@ -81,33 +81,45 @@ export function SigneFantome({
 }
 
 /**
- * 👻 LE VISAGE QU'ON A CHOISI — un seul, en grand, avec son mot.
+ * 👻 LES CINQ VISAGES, ET CELUI QU'ELLE A CHOISI SAUTILLE.
  *
- * ═══ POURQUOI IL REMPLACE LA RANGÉE À CÔTÉ ════════════════════════════════
+ * ═══ POURQUOI IL Y EN A CINQ ET PAS UN ════════════════════════════════════
  *
- * « À la place de ces fantômes sans aucune personnalité, plutôt le fantôme que
- * chaque personne a choisi. Il pourrait être plus gros et se voir plus, pour
- * bien montrer que cette personne a choisi CE fantôme-là. »
+ * « J'ai bien le fantôme, mais j'aurais plutôt tous les fantômes, et que l'un
+ * d'eux sautille et soit plus gros que les autres pour montrer que c'est
+ * celui-ci que la personne a choisi — parce que présentement, on ne comprend
+ * pas ce fantôme tout seul. »
  *
- * DEUX CHOSES ÉTAIENT CONFONDUES SOUS UN SEUL DESSIN. Une NOTE est un compte —
- * quatre sur cinq, comme des étoiles. Une RÉACTION est un CHOIX : quelqu'un a
- * posé le doigt sur un visage parmi cinq, dont l'un tire la langue et le
- * dernier est en feu. L'application demande la seconde et dessinait la
- * première : le geste de quelqu'un devenait un compte anonyme.
+ * IL A RAISON, ET C'EST UNE ERREUR DE MA PART. J'avais retiré la rangée de cinq
+ * parce qu'elle disait un COMPTE au lieu d'un CHOIX, et j'ai retiré le choix
+ * avec : un fantôme seul ne dit pas qu'il en existait quatre autres, donc il ne
+ * dit pas qu'on a choisi. Il se lit comme une décoration, ou comme une humeur
+ * du produit — pas comme le geste de quelqu'un.
  *
- * LE MOT EST SOUS LE VISAGE, ET IL CHANGE AVEC LE MÉTIER. Voir
- * `lib/direct/reaction-fantome.ts` : « J'en veux ! » sous une coupe de cheveux
- * ne veut rien dire. Les cinq visages, eux, sont les mêmes partout — c'est ce
- * qui fait qu'on les reconnaît d'un écran à l'autre.
+ * LE CHOIX A BESOIN DE CE QUI N'A PAS ÉTÉ CHOISI. On remet donc les cinq, et
+ * trois choses désignent le bon, dans cet ordre de force :
  *
- * ET L'IMAGE A UN REPLI, MAIS IL NE SE VOIT QU'EN CAS DE PANNE. Premier jet :
- * l'émoji était posé DERRIÈRE l'image, en `z-index:-1`, pour n'avoir aucun
- * gestionnaire à écrire. Mesuré à l'écran — un PNG de fantôme est transparent
- * partout autour du corps, donc l'émoji se voyait AU TRAVERS : un carré pâle
- * derrière chaque visage, sur les deux écrans. Un repli qui s'affiche quand
- * tout va bien n'est pas un repli, c'est un défaut.
- * IL NE SE MONTE DONC QUE SI L'IMAGE ÉCHOUE. Un `onError` et un état : deux
- * lignes, et plus rien derrière le dessin.
+ *   · IL EST PLUS GROS. C'est ce qu'on voit de loin, avant de lire.
+ *   · IL SAUTILLE. Un objet qui bouge au milieu de quatre immobiles est
+ *     désigné sans qu'aucun mot ne le dise.
+ *   · LES AUTRES S'EFFACENT — gris et à demi transparents. Ils restent
+ *     lisibles, parce qu'ils sont l'échelle ; ils ne concurrencent pas.
+ *
+ * CE N'EST PLUS LA RANGÉE D'AVANT POUR AUTANT. Elle allumait les N PREMIERS
+ * comme des étoiles — quatre sur cinq — ce qui compte au lieu de désigner. Ici
+ * UN SEUL est allumé, et c'est celui qu'on a touché : « trop bon » n'est pas
+ * « quatre fois curieux ».
+ *
+ * ═══ ET LE MOT CHANGE AVEC LE MÉTIER ══════════════════════════════════════
+ *
+ * Voir `lib/direct/reaction-fantome.ts` : « J'en veux ! » sous une coupe de
+ * cheveux ne veut rien dire. Les cinq visages, eux, sont les mêmes partout —
+ * c'est ce qui fait qu'on les reconnaît d'un écran à l'autre.
+ *
+ * L'IMAGE A UN REPLI QUI NE SE VOIT QU'EN CAS DE PANNE. Premier jet : l'émoji
+ * était posé DERRIÈRE l'image, en z-index négatif. Un PNG de fantôme est
+ * transparent partout autour du corps — l'émoji se voyait au travers, en carré
+ * pâle derrière chaque visage. Il passe sur `onError`.
  */
 export function FantomeChoisi({
   niveau,
@@ -124,18 +136,29 @@ export function FantomeChoisi({
   /** Le cran au-dessus, pour un écran qui n'en montre qu'un. */
   grand?: boolean;
 }) {
-  const v = visageDe(niveau);
+  const choisi = Math.min(5, Math.max(1, Math.round(niveau))) - 1;
   const mot = motDe(niveau, famille ?? familleDe(branche));
-  const [rate, setRate] = useState(false);
+  const [rates, setRates] = useState<Record<number, boolean>>({});
   return (
     <>
       <span className={`fc${grand ? " grand" : ""} ${classe}`.trim()}>
-        {rate ? (
-          <i aria-hidden="true">{v.emoji}</i>
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={v.image} alt="" loading="lazy" onError={() => setRate(true)} />
-        )}
+        <span className="fc-r">
+          {VISAGES.map((v, k) => (
+            <span key={v.cle} className={`fc-v${k === choisi ? " on" : ""}`}>
+              {rates[k] ? (
+                <i aria-hidden="true">{v.emoji}</i>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={v.image}
+                  alt=""
+                  loading="lazy"
+                  onError={() => setRates((r) => ({ ...r, [k]: true }))}
+                />
+              )}
+            </span>
+          ))}
+        </span>
         <b>{mot}</b>
       </span>
       <style dangerouslySetInnerHTML={{ __html: FEUILLE_CHOISI }} />
@@ -147,23 +170,60 @@ export function FantomeChoisi({
    litteral de gabarit et un seul terminerait la chaine.
    npm run verifier:styles le mesure avant chaque construction. */
 const FEUILLE_CHOISI = `
-.fc{display:inline-flex;align-items:center;gap:9px;flex:none;position:relative;}
-/* LE VISAGE EST LE PREMIER OBJET DE LA LIGNE, ET IL EST GROS. A douze points,
-   les cinq dessins se ressemblaient tous ; a quarante-quatre, on voit la
-   langue tiree, les yeux en coeur et le feu — c'est-a-dire la seule chose qui rend
-   cinq dessins utiles plutot qu'un seul repete. */
-.fc img{width:44px;height:44px;flex:none;object-fit:contain;display:block;
-  filter:drop-shadow(0 3px 10px rgba(255,46,154,.3));}
-.fc.grand img{width:58px;height:58px;}
-/* L'EMOJI NE PREND LA PLACE DE L'IMAGE QUE SI ELLE ECHOUE — voir le
-   commentaire du composant. Il occupe la meme largeur, pour que la ligne ne
-   bouge pas quand il apparait. */
-.fc i{width:44px;flex:none;text-align:center;
-  font-style:normal;font-size:34px;line-height:1;}
-.fc.grand i{width:58px;font-size:46px;}
+.fc{display:inline-flex;align-items:center;gap:10px;flex:none;}
+/* LA RANGEE LAISSE DE LA PLACE AU PLUS GROS SANS POUSSER LES AUTRES :
+   align-items:flex-end les pose sur la meme ligne de sol, comme cinq
+   personnages debout, et c'est ce qui rend la difference de taille lisible. */
+.fc-r{display:inline-flex;align-items:flex-end;gap:3px;flex:none;}
+.fc-v{display:inline-flex;align-items:flex-end;justify-content:center;
+  width:21px;flex:none;}
+.fc-v img{width:21px;height:21px;object-fit:contain;display:block;
+  /* CEUX QU'ON N'A PAS CHOISIS SONT L'ECHELLE, PAS LE PROPOS. Gris et a demi
+     transparents : assez presents pour qu'on voie qu'il y en avait cinq,
+     assez discrets pour ne pas disputer la place au bon. */
+  filter:grayscale(1) brightness(1.25);opacity:.34;}
+.fc-v i{font-style:normal;font-size:17px;line-height:1;opacity:.34;
+  filter:grayscale(1);}
+/* CELUI QU'ELLE A TOUCHE : deux fois plus grand, en couleur, et il sautille. */
+.fc-v.on{width:42px;}
+.fc-v.on img{width:42px;height:42px;filter:none;opacity:1;
+  filter:drop-shadow(0 3px 10px rgba(255,46,154,.45));
+  animation:fcSaut 1.9s ease-in-out infinite;}
+.fc-v.on i{font-size:33px;opacity:1;filter:none;
+  animation:fcSaut 1.9s ease-in-out infinite;}
+/* LE CRAN « GRAND » EST CELUI DU PANNEAU DU COMMERCANT, ET IL PARTAGE SA LIGNE
+   AVEC LE CHIFFRE. Mesure a l'ecran, en 390 points : a vingt-cinq et
+   cinquante-deux, la rangee, le mot et « 4,3 de moyenne » faisaient 420 points
+   dans une pilule de 358 — le fantome de gauche sortait par la gauche et le
+   chiffre par la droite. Deux points de moins sur chaque petit et huit sur le
+   grand rendent la place, et la pilule passe a la ligne au lieu de couper si
+   un mot plus long arrive. */
+.fc.grand .fc-r{gap:3px;}
+.fc.grand .fc-v{width:19px;}
+.fc.grand .fc-v img{width:19px;height:19px;}
+.fc.grand .fc-v i{font-size:15px;}
+.fc.grand .fc-v.on{width:44px;}
+.fc.grand .fc-v.on img{width:44px;height:44px;}
+.fc.grand .fc-v.on i{font-size:35px;}
+/* LE SAUT EST COURT ET ESPACE. Un rebond continu au ras du texte devient une
+   nuisance au bout de trois secondes ; deux bonds puis une pause se remarquent
+   sans fatiguer. C'est pour ca que la courbe passe deux fois par zero avant la
+   fin du cycle. */
+@keyframes fcSaut{
+  0%,58%,100%{transform:translateY(0) scale(1);}
+  12%{transform:translateY(-7px) scale(1.05);}
+  24%{transform:translateY(0) scale(.98);}
+  34%{transform:translateY(-4px) scale(1.02);}
+  44%{transform:translateY(0) scale(1);}
+}
+@media (prefers-reduced-motion:reduce){
+  /* LA TAILLE ET LA COULEUR SUFFISENT A DESIGNER : on retire le bond, pas le
+     signal. */
+  .fc-v.on img,.fc-v.on i{animation:none;}
+}
 .fc b{font-size:13.5px;font-weight:850;letter-spacing:-.01em;color:#FFD9EC;
   text-shadow:0 2px 10px rgba(0,0,0,.6);}
-.fc.grand b{font-size:16px;}
+.fc.grand b{font-size:15px;}
 `;
 
 /**

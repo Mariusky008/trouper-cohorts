@@ -57,6 +57,10 @@ export type MonAnnonce = {
   geste: GesteAnnonce;
   /** Le mot du geste, tel qu'il s'écrit sous le titre. */
   mot: string;
+  /** Ce qui a été écrit depuis la dernière ouverture. Zéro : rien de neuf. */
+  nonLus?: number;
+  /** Quelqu'un y est en ce moment. */
+  direct?: boolean;
   photo?: string;
   /** Le plus récent devant, à geste égal. */
   quand: number;
@@ -84,6 +88,8 @@ type SalonLu = {
   messages: unknown[];
   ouvert: boolean;
   enDirect?: unknown;
+  /** Ceux qui ont dit qu'ils venaient. Sert à distinguer « j'y vais » de « je suis. */
+  viennent?: string[];
 };
 type PieceLue = {
   carte: string;
@@ -117,9 +123,26 @@ export function estUneSortie(s: SalonLu): boolean {
   return s.cle.startsWith("ev|") || !!s.enDirect;
 }
 
-/** Le mot du geste, sous le titre. Il dit ce qu'on a fait, pas ce que c'est. */
+/**
+ * LE MOT DU GESTE, SOUS LE TITRE. Il dit ce qu'on a fait, pas ce que c'est.
+ *
+ * ═══ « VOUS Y ÊTES » ÉTAIT UNE PROMESSE QU'ON NE TENAIT PAS ═══════════════
+ *
+ * « Quand je clique dessus, ça m'amène sur le salon — mais est-ce que j'ai déjà
+ * ouvert ce salon ? Il semble que je n'y ai jamais été. »
+ *
+ * IL AVAIT RAISON DE DOUTER, ET LA LIGNE L'AVAIT INDUIT EN ERREUR. Être dans un
+ * salon, dans les données, veut seulement dire qu'on y est INSCRIT : le paquet
+ * de démonstration nous y met, et on peut y être sans avoir jamais lu une
+ * ligne. « Vous y êtes » promettait un souvenir qu'on n'a pas.
+ *
+ * DEUX MOTS DONC, ET LA DIFFÉRENCE EST CELLE QU'ON RESSENT : on a dit qu'on
+ * venait (« Vous y allez »), ou on suit la conversation sans s'être prononcé
+ * (« Vous suivez »). Et le compte de ce qui a été écrit depuis la dernière
+ * ouverture répond à la vraie question — qu'est-ce qui a bougé.
+ */
 export const MOT_DU_GESTE: Record<GesteAnnonce, string> = {
-  sortie: "Vous y êtes",
+  sortie: "Vous suivez",
   parle: "Vous en parlez",
   essai: "Essayé sur vous",
   trace: "Votre fantôme y est",
@@ -137,6 +160,10 @@ export function mesAnnoncesDe(source: {
   salons: SalonLu[];
   pieces: PieceLue[];
   traces: TraceLue[];
+  /** Combien de messages ont déjà été lus, par clé de salon. */
+  lus?: Record<string, number>;
+  /** Le test « c'est moi », qui dépend du prénom et vit dans l'application. */
+  cestMoi?: (qui: string) => boolean;
   /** L'instant de lecture, injecté pour que la fonction reste pure. */
   maintenant?: number;
 }): MonAnnonce[] {
@@ -145,13 +172,17 @@ export function mesAnnoncesDe(source: {
 
   for (const s of source.salons) {
     const sortie = estUneSortie(s);
+    const jyVais = !!source.cestMoi && (s.viennent ?? []).some(source.cestMoi);
+    const nonLus = Math.max(0, s.messages.length - (source.lus?.[s.cle] ?? 0));
     out.push({
       cle: `salon:${s.cle}`,
       titre: s.annonce ?? s.sujet,
       ou: s.ou,
       detail: `${s.quand} · ${s.messages.length} message${s.messages.length > 1 ? "s" : ""}`,
       geste: sortie ? "sortie" : "parle",
-      mot: MOT_DU_GESTE[sortie ? "sortie" : "parle"],
+      mot: sortie && jyVais ? "Vous y allez" : MOT_DU_GESTE[sortie ? "sortie" : "parle"],
+      nonLus,
+      direct: !!s.enDirect,
       photo: s.photo,
       /* UN SALON N'A PAS D'HORODATAGE : on se sert de son état. Ouvert, il est
          d'aujourd'hui ; fermé, il est derrière. Deviner une heure à partir de

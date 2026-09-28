@@ -5527,6 +5527,11 @@ export function ApercuHabitant() {
     salons: salonsOuverts.filter(estUneSortie),
     pieces: piecesGardees,
     traces: mesTraces,
+    /* CE QU'ON A DÉJÀ LU, ET QUI DIT CE QUI A BOUGÉ — la seule raison de
+       rouvrir une sortie. Sans ça, la ligne répétait « Vous y êtes » sur une
+       conversation qui n'avait pas changé depuis hier. */
+    lus,
+    cestMoi,
   });
   const mesSalonsAmis = salonsOuverts.filter((x) => !estUneSortie(x));
 
@@ -11054,6 +11059,26 @@ export function ApercuHabitant() {
               </div>
 
               <div className="ap-sal-corps">
+                {/* ═══ LA VISIONNEUSE EST POSÉE ICI AUSSI ════════════════════
+
+                    « Les deux annonces suivantes, rien ne se passe quand je
+                    clique dessus. »
+
+                    ET C'ÉTAIT LA TROISIÈME FOIS QUE CE DÉFAUT SE PAIE. La
+                    visionneuse d'une pièce essayée est un NŒUD DU RENDU, pas un
+                    état global : `setPieceVue` marchait très bien, mais le
+                    nœud n'était rendu que dans la page des favoris. Depuis cet
+                    onglet, on changeait donc un état que personne n'affichait —
+                    le clic était silencieux, ce qui est la pire des pannes.
+
+                    ELLE EST POSÉE PARTOUT OÙ L'ON PEUT OUVRIR UNE PIÈCE. On
+                    entre dans cette poche par trois portes maintenant : le cœur
+                    du bandeau, l'onglet Profil, et cette liste. Le commentaire
+                    de la page des favoris disait déjà la règle pour deux ;
+                    elle vaut pour trois. */}
+                {laPieceVue}
+                {laDemandePiece}
+
                 {/* ═══ 1 · CE QUE VOUS AVEZ TOUCHÉ ═══════════════════════════
 
                     « Toutes les annonces dans lesquelles on a interagi, pour
@@ -11128,10 +11153,22 @@ export function ApercuHabitant() {
                             {a.detail ? ` · ${a.detail}` : ""}
                           </em>
                         </span>
-                        {/* LA SORTIE PORTE SON ÉTIQUETTE : c'est la seule ligne
-                            de la liste dont le contenu bouge sans nous, et la
-                            seule qu'on rouvre pour cette raison-là. */}
-                        {a.geste === "sortie" ? <s className="direct">EN DIRECT</s> : <s>›</s>}
+                        {/* ═══ L'ÉTIQUETTE DIT CE QUI A BOUGÉ, PAS CE QUE C'EST
+
+                            « EN DIRECT » sur les trois sorties ne distinguait
+                            rien : c'est la nature de la ligne, pas sa
+                            nouvelle. Le compte des messages non lus est la
+                            seule chose qui donne une raison d'appuyer, donc il
+                            passe devant ; « EN DIRECT » ne reste que quand
+                            quelqu'un y est VRAIMENT en ce moment, et qu'il n'y
+                            a rien de neuf à lire. */}
+                        {a.nonLus ? (
+                          <s className="neuf">{a.nonLus} neuf{a.nonLus > 1 ? "s" : ""}</s>
+                        ) : a.direct ? (
+                          <s className="direct">EN DIRECT</s>
+                        ) : (
+                          <s>›</s>
+                        )}
                       </button>
                   ))}
                 </div>
@@ -19095,6 +19132,11 @@ export function ApercuHabitant() {
            pas une chose a faire. */
         .ap-liste.passe .ap-ligne img{filter:grayscale(.55) brightness(.8);}
         .ap-liste.passe .ap-ligne u{color:#8C9C94;}
+        /* CE QUI EST NEUF PORTE LA COULEUR DE SA PARTIE : on voit d'un coup
+           d'oeil dans QUELLE liste quelque chose a bouge. */
+        .ap-ligne s.neuf{color:#0B141E;background:var(--ap-part,#B79BFF);
+          border-radius:999px;font-size:9.5px;letter-spacing:.04em;
+          padding:4px 8px;white-space:nowrap;}
         .ap-ligne s.direct{color:#FFC9C9;background:rgba(239,68,68,.2);
           border:1px solid rgba(239,68,68,.42);border-radius:999px;
           font-size:8.5px;letter-spacing:.08em;padding:4px 7px;}
