@@ -932,6 +932,32 @@ function Fantome({ classe = "ap-fantome", clin = false }: { classe?: string; cli
                     <stop offset=".5" stopColor="#F3FAF6" />
                     <stop offset="1" stopColor="#BFDFD0" />
                   </linearGradient>
+                  {/* ═══ LE MEME VOLUME, SANS LA MENTHE ═══════════════════
+
+                      « La bulle du Fantôme est toujours verte quel que soit le
+                      métier. »
+
+                      ET C'ÉTAIT LUI, PAS LE DISQUE. Le disque prend bien la
+                      couleur du commerce ; c'est le FANTÔME DESSUS qui restait
+                      vert — son corps finissait sur un #BFDFD0 et ses bras
+                      étaient à #CFE9DC. Deux menthes calées du temps où son
+                      disque était vert lui aussi, et qu'on avait corrigées
+                      seulement dans les états `sec` et `or`.
+
+                      UN GRIS FROID TRÈS CLAIR À LA PLACE, et c'est le seul choix
+                      qui marche pour tous : les états qui connaissent leur
+                      couleur peuvent teinter le personnage vers elle — l'or du
+                      Flash le fait — mais le disque du métier en change à chaque
+                      balayage. Une teinte neutre se pose sur l'orange, le crème,
+                      le bleu et le rose sans en contredire aucun.
+
+                      LE VOLUME NE CHANGE PAS : même départ blanc, même descente,
+                      seule la couleur d'arrivée quitte le vert. */}
+                  <linearGradient id="apFgNeutre" x1=".2" y1="0" x2=".82" y2="1">
+                    <stop offset="0" stopColor="#ffffff" />
+                    <stop offset=".5" stopColor="#F7F9FB" />
+                    <stop offset="1" stopColor="#D5DFE7" />
+                  </linearGradient>
                   <radialGradient id="apFl" cx=".32" cy=".24" r=".44">
                     <stop offset="0" stopColor="#ffffff" stopOpacity=".95" />
                     <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
@@ -1018,6 +1044,17 @@ function Fantome({ classe = "ap-fantome", clin = false }: { classe?: string; cli
                   <radialGradient id="apFy" cx=".38" cy=".3" r=".8">
                     <stop offset="0" stopColor="#2A5C4A" />
                     <stop offset="1" stopColor="#07211A" />
+                  </radialGradient>
+                  {/* ET SES YEUX AUSSI ÉTAIENT VERTS. Le premier jet n'avait
+                      neutralisé que le corps et les bras ; sur le disque orange,
+                      ce qui restait vert, c'étaient les deux plus gros aplats
+                      sombres du personnage — des yeux en #2A5C4A vers #07211A.
+                      Un ardoise très foncé à la place : même profondeur, même
+                      point de lumière, plus de teinte qui appartient à une
+                      couleur de métier plutôt qu'à une autre. */}
+                  <radialGradient id="apFyNeutre" cx=".38" cy=".3" r=".8">
+                    <stop offset="0" stopColor="#2E3A47" />
+                    <stop offset="1" stopColor="#0E151C" />
                   </radialGradient>
                 </defs>
                 <ellipse className="ap-f-ombre" cx="20" cy="41.6" rx="11" ry="2.4" />
@@ -17380,6 +17417,21 @@ export function ApercuHabitant() {
         .ap-onglets .ap-monfantome:disabled{opacity:.45;}
         .ap-onglets .ap-monfantome:active{transform:scale(.9);}
         .ap-onglets .ap-monfantome b{display:none;}
+        /* ═══ ET LE FANTOME DESSUS CESSE D'ETRE VERT ═══════════════════════
+           QUATRE ENDROITS LE TEIGNAIENT, ET IL FALLAIT LES QUATRE : le corps
+           (degrade apFg, qui finit sur un #BFDFD0), les bras (#CFE9DC), les
+           yeux (#2A5C4A vers #07211A) et le trait de la bouche. Mesure apres
+           la premiere correction, qui n'avait pris que le corps et les bras :
+           sur le disque orange, ce qui restait vert etait justement les deux
+           plus gros aplats sombres du personnage, ses yeux.
+           LES REGLES PASSENT PAR LA BARRE, donc a trois classes, et l'ordre
+           des etats est verifie : sec et veille en comptent quatre, or en
+           compte trois mais s'ecrit plus bas dans la feuille — le fantome dore
+           du Flash reste dore. Verifie ligne a ligne, pas suppose. */
+        .ap-onglets .ap-monfantome .ap-f-corps{fill:url(#apFgNeutre);}
+        .ap-onglets .ap-monfantome .ap-f-bras{fill:#DCE6EE;}
+        .ap-onglets .ap-monfantome .ap-f-oeil{fill:url(#apFyNeutre);}
+        .ap-onglets .ap-monfantome .ap-f-bouche{stroke:#0E151C;}
         /* ═══ LA COULEUR DE LA SECTION OU L'ON EST ═══
            Les memes teintes que le selecteur de categorie : rose pour ce qui
            se passe en ville, bleu pour les embauches. Elles disent OU L'ON EST,
