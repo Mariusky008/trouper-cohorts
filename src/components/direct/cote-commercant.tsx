@@ -1,7 +1,7 @@
 "use client";
 
-import { FantomeChoisi } from "@/components/direct/note-fantomes";
-import { chiffresDu, motsCoteDe } from "@/lib/direct/rendez-vous";
+import { FantomesVotes } from "@/components/direct/note-fantomes";
+import { chiffresDu, motsCoteDe, voixDe } from "@/lib/direct/rendez-vous";
 
 /**
  * 📊 LE CÔTÉ COMMERÇANT — la fin de TOUS les parcours, et plus d'un seul.
@@ -86,6 +86,7 @@ export function CoteCommercant({
      dirait quelque chose de faux sur son annonce. */
   if (!chiffres) return null;
   const mots = motsCoteDe(branche);
+  const voix = voixDe(chiffres.votes);
 
   return (
     <div className="cc">
@@ -100,33 +101,29 @@ export function CoteCommercant({
         {avant} <b>{nom}</b>
       </p>
 
-      {/* ═══ LA MOYENNE EST UNE VALEUR, PAS UN COMPTE ══════════════════════
+      {/* ═══ LA SALLE, ET PLUS UN CHIFFRE ═════════════════════════════════
 
-          « Ce sont des moyennes, donc je ne sais pas comment tu pourrais
-          améliorer le design de ces fantômes en utilisant les fantômes de la
-          photo 1 ? »
+          « Pour la moyenne, on ne veut pas voir ce que la personne précédente a
+          mis, mais seulement la moyenne des fantômes — donc pas 4,3, mais
+          plutôt tous les fantômes avec le nombre de votes pour chaque
+          fantôme. »
 
-          LA RANGÉE DE CINQ ÉTAIT LA MAUVAISE FORME, ET C'EST MESURABLE : à
-          4,6, elle en allumait cinq — donc elle affichait la même chose qu'à
-          5,0. Une rangée ne sait dire que des entiers ; on lui demandait une
-          décimale, et elle arrondissait en silence.
+          DEUX DÉFAUTS DANS UN SEUL DESSIN, ET IL A VU LES DEUX. Je réutilisais
+          ici le dessin du CHOIX — un visage grossi qui saute — c'est-à-dire
+          « cette personne-là a répondu ça ». Sur ce panneau, personne n'a
+          répondu ça : c'est la somme de deux cents réponses. On lisait l'avis
+          d'un client imaginaire. Et « 4,3 » cache la salle : deux commerces à
+          4,3 peuvent avoir quarante enthousiastes et dix mécontents, ou
+          l'unanimité en tiède — le même chiffre, deux choses à faire opposées.
 
-          UNE MOYENNE TOMBE SUR UN VISAGE, et c'est ce qu'on montre : le
-          fantôme du cran où elle atterrit, en grand, avec le mot du métier.
-          Le nombre exact reste écrit à côté — c'est lui qui porte la décimale
-          que le dessin ne peut pas porter. Les deux disent alors deux choses
-          différentes au lieu de la même en moins bien : le visage donne le
-          ton, le chiffre donne la précision.
-
-          ET C'EST LE MÊME DESSIN QUE CELUI QUE SES CLIENTS ONT TOUCHÉ. Le
-          commerçant voit la tête que les gens ont choisie, pas une note sur
-          cinq — c'est la traduction la plus courte de ce qui s'est passé. */}
+          LES CINQ COMPTES DISENT LA FORME. Où penche le paquet, et s'il traîne
+          une queue de « pas pour moi ». C'est la seule lecture qui donne au
+          commerçant quelque chose à FAIRE. */}
       <span className="cc-moy">
-        <FantomeChoisi niveau={chiffres.moyenne} branche={branche} grand />
-        <b>
-          {chiffres.moyenne.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
-          <i> de moyenne</i>
-        </b>
+        <FantomesVotes votes={chiffres.votes} branche={branche} />
+        <em>
+          {voix} réponse{voix > 1 ? "s" : ""}
+        </em>
       </span>
 
       <ul className="cc-chiffres">
@@ -211,13 +208,13 @@ const FEUILLE = `
   margin:12px 0 0;padding:9px 15px;border-radius:999px;
   background:rgba(255,46,154,.13);
   border:1.5px solid rgba(255,46,154,.4);}
-/* LE VISAGE ET LE MOT D'ABORD, LE CHIFFRE ENSUITE : on lit le ton avant la
-   precision, ce qui est l'ordre dans lequel on les veut.
-   ET LA PILULE PASSE A LA LIGNE PLUTOT QUE DE COUPER. Trois morceaux sur une
-   ligne tiennent en 390 points et pas en 320 ; sans le retour, c'est le
-   premier et le dernier qui sortent par les deux bords — mesure faite. */
-.cc-moy{flex-wrap:wrap;justify-content:center;row-gap:5px;}
-.cc-moy .fc{gap:9px;}
+/* LA SALLE PREND TOUTE LA LARGEUR DE LA PILULE : cinq colonnes avec leur mot
+   sous chacune, ce n'est plus une ligne mais un petit tableau. */
+.cc-moy{flex-direction:column;align-items:stretch;gap:7px;
+  padding:12px 14px 10px;}
+.cc-moy>em{font-style:normal;text-align:center;
+  font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:rgba(255,255,255,.55);}
 .cc-moy>b{font-size:17px;font-weight:900;letter-spacing:-.02em;color:#fff;}
 /* L'ESPACE AVANT « de moyenne » EST POSE ICI, PAS DANS LE TEXTE. Mesure a
    l'ecran : le crenage negatif du nombre mange l'espace du JSX et l'on lisait

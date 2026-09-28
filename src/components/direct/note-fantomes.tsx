@@ -105,6 +105,23 @@ export function SigneFantome({
  *   · LES AUTRES S'EFFACENT — gris et à demi transparents. Ils restent
  *     lisibles, parce qu'ils sont l'échelle ; ils ne concurrencent pas.
  *
+ * ═══ ET CHACUN PORTE SON LIBELLÉ ══════════════════════════════════════════
+ *
+ * « On ne comprend toujours pas les fantômes. Il faut les voir tous AVEC LEURS
+ * LIBELLÉS, et l'un d'eux sautille et est plus gros : comme ceci on comprendra
+ * automatiquement que c'est le choix de la personne. »
+ *
+ * IL A RAISON UNE DEUXIÈME FOIS, ET C'EST LE MÊME DÉFAUT D'UN CRAN PLUS HAUT.
+ * Cinq dessins muets dont un est gros, ça désigne — mais ça ne dit toujours pas
+ * DE QUOI on a choisi. On voit qu'il y avait cinq possibilités sans savoir
+ * lesquelles, donc on ne sait pas ce que veut dire celle qui est prise. Un seul
+ * mot flottant à côté de la rangée n'aide pas : rien ne dit à quel visage il
+ * appartient.
+ *
+ * LES CINQ MOTS SONT DONC SOUS LES CINQ VISAGES, chacun sous le sien. C'est
+ * l'échelle entière, lisible d'un coup — « pas mon style … je la prends ! » —
+ * et le gros qui saute est alors évident.
+ *
  * CE N'EST PLUS LA RANGÉE D'AVANT POUR AUTANT. Elle allumait les N PREMIERS
  * comme des étoiles — quatre sur cinq — ce qui compte au lieu de désigner. Ici
  * UN SEUL est allumé, et c'est celui qu'on a touché : « trop bon » n'est pas
@@ -137,29 +154,105 @@ export function FantomeChoisi({
   grand?: boolean;
 }) {
   const choisi = Math.min(5, Math.max(1, Math.round(niveau))) - 1;
-  const mot = motDe(niveau, famille ?? familleDe(branche));
+  const langue = famille ?? familleDe(branche);
   const [rates, setRates] = useState<Record<number, boolean>>({});
   return (
     <>
-      <span className={`fc${grand ? " grand" : ""} ${classe}`.trim()}>
-        <span className="fc-r">
-          {VISAGES.map((v, k) => (
-            <span key={v.cle} className={`fc-v${k === choisi ? " on" : ""}`}>
-              {rates[k] ? (
-                <i aria-hidden="true">{v.emoji}</i>
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={v.image}
-                  alt=""
-                  loading="lazy"
-                  onError={() => setRates((r) => ({ ...r, [k]: true }))}
-                />
-              )}
-            </span>
-          ))}
-        </span>
-        <b>{mot}</b>
+      <span
+        className={`fc${grand ? " grand" : ""} ${classe}`.trim()}
+        aria-label={`A choisi : ${motDe(niveau, langue)}`}
+      >
+        {VISAGES.map((v, k) => (
+          <span key={v.cle} className={`fc-v${k === choisi ? " on" : ""}`}>
+            {rates[k] ? (
+              <i aria-hidden="true">{v.emoji}</i>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={v.image}
+                alt=""
+                loading="lazy"
+                onError={() => setRates((r) => ({ ...r, [k]: true }))}
+              />
+            )}
+            <u>{motDe(k + 1, langue)}</u>
+          </span>
+        ))}
+      </span>
+      <style dangerouslySetInnerHTML={{ __html: FEUILLE_CHOISI }} />
+    </>
+  );
+}
+
+/**
+ * 📊 LES CINQ FANTÔMES ET LEURS VOIX — la moyenne, côté commerçant.
+ *
+ * ═══ UNE MOYENNE N'EST PAS LE CHOIX DE QUELQU'UN ══════════════════════════
+ *
+ * « Pour la moyenne, on ne veut pas voir ce que la personne précédente a mis,
+ * mais seulement la moyenne des fantômes — donc pas 4,3, mais plutôt tous les
+ * fantômes avec le nombre de votes pour chaque fantôme. »
+ *
+ * ET LE DÉFAUT ÉTAIT DE MA FAÇON DE FAIRE, PAS DE LA DONNÉE. Je réutilisais le
+ * dessin du CHOIX pour afficher une MOYENNE : un visage grossi et qui saute, ce
+ * qui veut dire « cette personne-là a répondu ça ». Sur le panneau du
+ * commerçant, personne n'a répondu ça — c'est la somme de deux cents réponses.
+ * On lisait donc l'avis d'un client imaginaire.
+ *
+ * ET « 4,3 » NE DIT PAS CE QU'IL SEMBLE DIRE. Deux commerces à 4,3 peuvent
+ * avoir des salles très différentes : l'un fait l'unanimité en tiède, l'autre a
+ * quarante enthousiastes et dix mécontents. Le premier doit rassurer, le second
+ * doit comprendre qui il déçoit — et le même chiffre leur dit la même chose.
+ *
+ * LES CINQ COMPTES DISENT LES DEUX. On voit la forme de la salle : où penche le
+ * paquet, et s'il traîne une queue de « pas pour moi ». C'est la seule lecture
+ * qui donne au commerçant quelque chose à FAIRE.
+ *
+ * LA BARRE EST PROPORTIONNELLE AU PLUS GROS, PAS AU TOTAL. Sur une échelle très
+ * penchée — et elles le sont toutes, les gens qui répondent aiment — cinq
+ * barres calées sur le total donnent quatre traits invisibles et un plein. Calée
+ * sur le maximum, la forme se lit.
+ */
+export function FantomesVotes({
+  votes,
+  famille,
+  branche,
+  classe = "",
+}: {
+  /** Cinq comptes, dans l'ordre des visages. */
+  votes: readonly number[];
+  famille?: FamilleReaction;
+  branche?: string;
+  classe?: string;
+}) {
+  const langue = famille ?? familleDe(branche);
+  const fort = Math.max(1, ...votes);
+  const [rates, setRates] = useState<Record<number, boolean>>({});
+  return (
+    <>
+      <span className={`fv ${classe}`.trim()}>
+        {VISAGES.map((v, k) => (
+          <span
+            key={v.cle}
+            className="fv-c"
+            style={{ "--fv-h": `${Math.round((100 * (votes[k] ?? 0)) / fort)}%` } as React.CSSProperties}
+          >
+            <b>{votes[k] ?? 0}</b>
+            <s aria-hidden="true" />
+            {rates[k] ? (
+              <i aria-hidden="true">{v.emoji}</i>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={v.image}
+                alt=""
+                loading="lazy"
+                onError={() => setRates((r) => ({ ...r, [k]: true }))}
+              />
+            )}
+            <u>{motDe(k + 1, langue)}</u>
+          </span>
+        ))}
       </span>
       <style dangerouslySetInnerHTML={{ __html: FEUILLE_CHOISI }} />
     </>
@@ -170,41 +263,46 @@ export function FantomeChoisi({
    litteral de gabarit et un seul terminerait la chaine.
    npm run verifier:styles le mesure avant chaque construction. */
 const FEUILLE_CHOISI = `
-.fc{display:inline-flex;align-items:center;gap:10px;flex:none;}
-/* LA RANGEE LAISSE DE LA PLACE AU PLUS GROS SANS POUSSER LES AUTRES :
-   align-items:flex-end les pose sur la meme ligne de sol, comme cinq
-   personnages debout, et c'est ce qui rend la difference de taille lisible. */
-.fc-r{display:inline-flex;align-items:flex-end;gap:3px;flex:none;}
-.fc-v{display:inline-flex;align-items:flex-end;justify-content:center;
-  width:21px;flex:none;}
-.fc-v img{width:21px;height:21px;object-fit:contain;display:block;
+/* ═══ LES CINQ COLONNES ═══════════════════════════════════════════════════
+   CHAQUE VISAGE A SON MOT SOUS LUI, et c'est ce qui fait qu'on lit une ECHELLE
+   au lieu de cinq dessins. La rangee prend toute la largeur qu'on lui donne et
+   repartit les cinq colonnes egalement : le gros qui saute deborde alors dans
+   sa propre colonne sans pousser ses voisins.
+   LES COLONNES SONT ALIGNEES PAR LE HAUT DU MOT, pas par le bas du dessin :
+   les mots restent sur la meme ligne quand l'un d'eux fait deux lignes, et
+   c'est ce qui empeche la rangee de gondoler. */
+.fc{display:flex;align-items:flex-start;justify-content:space-between;
+  gap:2px;width:100%;}
+/* ═══ LES CINQ MOTS COMMENCENT A LA MEME HAUTEUR ═══════════════════════════
+   MESURE A L'ECRAN : empiles simplement, le gros fantome poussait son mot
+   quarante points plus bas que les quatre autres — la rangee des mots
+   gondolait, et une echelle qui gondole ne se lit plus comme une echelle.
+   LA CASE DU DESSIN A DONC UNE HAUTEUR FIXE, celle du plus grand, et chaque
+   fantome y est pose PAR LE BAS. Les cinq sont alors debout sur le meme sol,
+   et les cinq mots partent de la meme ligne. */
+.fc-v{flex:1 1 0;min-width:0;display:grid;grid-template-rows:44px auto;
+  align-items:end;justify-items:center;gap:3px;}
+.fc-v img{width:22px;height:22px;object-fit:contain;display:block;
   /* CEUX QU'ON N'A PAS CHOISIS SONT L'ECHELLE, PAS LE PROPOS. Gris et a demi
      transparents : assez presents pour qu'on voie qu'il y en avait cinq,
      assez discrets pour ne pas disputer la place au bon. */
-  filter:grayscale(1) brightness(1.25);opacity:.34;}
-.fc-v i{font-style:normal;font-size:17px;line-height:1;opacity:.34;
+  filter:grayscale(1) brightness(1.25);opacity:.38;}
+.fc-v i{font-style:normal;font-size:18px;line-height:1.22;opacity:.38;
   filter:grayscale(1);}
+/* LE MOT SOUS CHAQUE VISAGE. Tres petit et sur deux lignes au besoin : il est
+   la pour etre RECONNU, pas lu mot a mot — sauf celui du dessus. */
+.fc-v u{display:block;text-decoration:none;text-align:center;
+  font-size:8px;font-weight:800;line-height:1.16;letter-spacing:-.01em;
+  color:rgba(255,255,255,.5);text-wrap:balance;
+  overflow-wrap:anywhere;hyphens:auto;}
 /* CELUI QU'ELLE A TOUCHE : deux fois plus grand, en couleur, et il sautille. */
-.fc-v.on{width:42px;}
-.fc-v.on img{width:42px;height:42px;filter:none;opacity:1;
+.fc-v.on img{width:44px;height:44px;opacity:1;
   filter:drop-shadow(0 3px 10px rgba(255,46,154,.45));
   animation:fcSaut 1.9s ease-in-out infinite;}
-.fc-v.on i{font-size:33px;opacity:1;filter:none;
+.fc-v.on i{font-size:35px;opacity:1;filter:none;
   animation:fcSaut 1.9s ease-in-out infinite;}
-/* LE CRAN « GRAND » EST CELUI DU PANNEAU DU COMMERCANT, ET IL PARTAGE SA LIGNE
-   AVEC LE CHIFFRE. Mesure a l'ecran, en 390 points : a vingt-cinq et
-   cinquante-deux, la rangee, le mot et « 4,3 de moyenne » faisaient 420 points
-   dans une pilule de 358 — le fantome de gauche sortait par la gauche et le
-   chiffre par la droite. Deux points de moins sur chaque petit et huit sur le
-   grand rendent la place, et la pilule passe a la ligne au lieu de couper si
-   un mot plus long arrive. */
-.fc.grand .fc-r{gap:3px;}
-.fc.grand .fc-v{width:19px;}
-.fc.grand .fc-v img{width:19px;height:19px;}
-.fc.grand .fc-v i{font-size:15px;}
-.fc.grand .fc-v.on{width:44px;}
-.fc.grand .fc-v.on img{width:44px;height:44px;}
-.fc.grand .fc-v.on i{font-size:35px;}
+.fc-v.on u{font-size:10.5px;font-weight:900;color:#FFD9EC;
+  text-shadow:0 2px 10px rgba(0,0,0,.65);}
 /* LE SAUT EST COURT ET ESPACE. Un rebond continu au ras du texte devient une
    nuisance au bout de trois secondes ; deux bonds puis une pause se remarquent
    sans fatiguer. C'est pour ca que la courbe passe deux fois par zero avant la
@@ -221,9 +319,32 @@ const FEUILLE_CHOISI = `
      signal. */
   .fc-v.on img,.fc-v.on i{animation:none;}
 }
-.fc b{font-size:13.5px;font-weight:850;letter-spacing:-.01em;color:#FFD9EC;
-  text-shadow:0 2px 10px rgba(0,0,0,.6);}
-.fc.grand b{font-size:15px;}
+
+/* ═══ LA MOYENNE : CINQ COMPTES, PAS UN CHOIX ═════════════════════════════
+   Meme rangee, mais AUCUN visage n'est designe : ils sont tous a la meme
+   taille et tous en couleur, et ce qui les distingue est la hauteur de leur
+   barre. Rien ne saute — personne n'a repondu ca. */
+.fv{display:flex;align-items:flex-end;justify-content:space-between;
+  gap:3px;width:100%;}
+.fv-c{flex:1 1 0;min-width:0;display:flex;flex-direction:column;
+  align-items:center;gap:3px;}
+.fv-c b{font-size:12.5px;font-weight:900;letter-spacing:-.02em;color:#fff;
+  font-variant-numeric:tabular-nums;}
+/* LA BARRE MONTE DEPUIS LE BAS, et sa hauteur est celle du plus gros compte —
+   voir le commentaire du composant. Le fond gris est la piste : sans elle, une
+   barre courte flotte sans qu'on sache par rapport a quoi. */
+.fv-c s{display:block;width:100%;height:34px;border-radius:999px;
+  text-decoration:none;background:rgba(255,255,255,.1);
+  position:relative;overflow:hidden;}
+.fv-c s::after{content:"";position:absolute;left:0;right:0;bottom:0;
+  height:var(--fv-h,0%);border-radius:999px;
+  background:linear-gradient(to top,#FF2E9A,#FF7FC2);}
+.fv-c img{width:24px;height:24px;object-fit:contain;display:block;}
+.fv-c i{font-style:normal;font-size:19px;line-height:1.22;}
+.fv-c u{display:block;text-decoration:none;text-align:center;
+  font-size:8px;font-weight:800;line-height:1.16;letter-spacing:-.01em;
+  color:rgba(255,255,255,.62);text-wrap:balance;
+  overflow-wrap:anywhere;hyphens:auto;}
 `;
 
 /**

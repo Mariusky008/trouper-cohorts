@@ -211,58 +211,82 @@ export type ChiffresCommerce = {
   gardes: number;
   contacts: number;
   /**
-   * LA MOYENNE DES NOTES, EN FANTOMES.
+   * ═══ CINQ COMPTES, ET PLUS UNE MOYENNE ════════════════════════════════
    *
-   * « Avec peut-être les fantômes comme références, qui permettent aussi de
-   * savoir la moyenne en fantômes (comme des cœurs). »
+   * « Pour la moyenne, on ne veut pas voir ce que la personne précédente a mis,
+   * mais seulement la moyenne des fantômes — donc pas 4,3, mais plutôt tous
+   * les fantômes avec le nombre de votes pour chaque fantôme. »
    *
-   * LA MEME UNITE QUE PARTOUT AILLEURS, et c'est ce qui la rend lisible : celui
-   * qui essaie note en fantômes sur le mur, celui qui reçoit lit une moyenne en
-   * fantômes. Un « 4,6 sur 5 » aurait demandé d'apprendre une seconde échelle
-   * pour dire exactement la même chose.
+   * UN CHIFFRE UNIQUE CACHE LA SALLE. Deux commerces à 4,3 peuvent avoir des
+   * salles très différentes : l'un fait l'unanimité en tiède, l'autre a
+   * quarante enthousiastes et dix mécontents. Le premier doit rassurer, le
+   * second doit comprendre qui il déçoit — et le même chiffre leur dit la même
+   * chose. Les cinq comptes disent la forme, c'est-à-dire ce qu'il y a à faire.
+   *
+   * ET LA MOYENNE ÉCRITE À LA MAIN A DISPARU. Elle vivait à côté des trois
+   * chiffres, sans aucun lien avec eux : deux vérités pour une seule chose, et
+   * c'est toujours la seconde qui ment le jour où l'on corrige la première.
+   * Les répartitions ont été posées pour retomber sur les moyennes d'alors —
+   * à un dixième près au pire, parce qu'un 4,6 ne survit pas à une vraie queue
+   * de « pas pour moi », et que c'est le chiffre qui était trop beau.
+   *
+   * LES CINQ SONT DANS L'ORDRE DE L'ÉCHELLE — de « pas pour moi » à « j'en
+   * veux ». Voir `lib/direct/reaction-fantome.ts` pour les mots de chaque
+   * métier.
    */
-  moyenne: number;
+  votes: readonly number[];
 };
+
+/**
+ * COMBIEN DE PERSONNES ONT RÉPONDU.
+ *
+ * C'EST LA SEULE CHOSE QU'ON DÉRIVE DES VOTES, et il n'y a plus de fonction
+ * `moyenneDe` à côté : elle n'aurait eu aucun appelant. Le panneau du
+ * commerçant montre la SALLE — les cinq comptes — et plus un chiffre unique.
+ * Une moyenne calculée que personne n'affiche est un commentaire déguisé en
+ * code : le jour où quelqu'un la rebranche, elle a déjà cessé d'être juste.
+ */
+export const voixDe = (votes: readonly number[]) => votes.reduce((a, b) => a + b, 0);
 
 export const CHIFFRES: Record<string, ChiffresCommerce> = {
   // ── BEAUTÉ ───────────────────────────────────────────────────────────────
-  "coif-nouveau": { essais: 214, gardes: 47, contacts: 11, moyenne: 4.3 },
-  "coif-barbier": { essais: 168, gardes: 39, contacts: 14, moyenne: 4.4 },
-  "coif-halle": { essais: 132, gardes: 28, contacts: 7, moyenne: 4.3 },
-  "coif-centre": { essais: 286, gardes: 61, contacts: 19, moyenne: 4.4 },
+  "coif-nouveau": { essais: 214, gardes: 47, contacts: 11, votes: [1, 1, 1, 22, 20] },
+  "coif-barbier": { essais: 168, gardes: 39, contacts: 14, votes: [1, 1, 4, 6, 23] },
+  "coif-halle": { essais: 132, gardes: 28, contacts: 7, votes: [2, 2, 2, 2, 20] },
+  "coif-centre": { essais: 286, gardes: 61, contacts: 19, votes: [2, 2, 4, 14, 38] },
   // ── MODE ─────────────────────────────────────────────────────────────────
-  "mode-friperie": { essais: 149, gardes: 34, contacts: 9, moyenne: 4.4 },
-  "mode-homme": { essais: 121, gardes: 26, contacts: 8, moyenne: 4.4 },
-  "mode-depot": { essais: 97, gardes: 31, contacts: 12, moyenne: 4.6 },
-  "mode-centre": { essais: 243, gardes: 58, contacts: 16, moyenne: 4.4 },
+  "mode-friperie": { essais: 149, gardes: 34, contacts: 9, votes: [1, 1, 3, 6, 20] },
+  "mode-homme": { essais: 121, gardes: 26, contacts: 8, votes: [1, 1, 2, 4, 17] },
+  "mode-depot": { essais: 97, gardes: 31, contacts: 12, votes: [1, 1, 1, 1, 16] },
+  "mode-centre": { essais: 243, gardes: 58, contacts: 16, votes: [2, 2, 5, 7, 35] },
   // ── DÉCO ─────────────────────────────────────────────────────────────────
-  "maison-dax": { essais: 176, gardes: 44, contacts: 13, moyenne: 4.4 },
-  cirier: { essais: 88, gardes: 19, contacts: 5, moyenne: 4.3 },
-  "fleur-marche": { essais: 103, gardes: 22, contacts: 6, moyenne: 4.3 },
+  "maison-dax": { essais: 176, gardes: 44, contacts: 13, votes: [2, 2, 2, 4, 27] },
+  cirier: { essais: 88, gardes: 19, contacts: 5, votes: [1, 1, 2, 2, 12] },
+  "fleur-marche": { essais: 103, gardes: 22, contacts: 6, votes: [1, 1, 1, 6, 13] },
   /* ── RESTAURANTS ─────────────────────────────────────────────────────────
      PLUS DE MONDE QUE PARTOUT AILLEURS, ET C'EST LA VERITE DU METIER. Un plat
      du jour se regarde le matin par toute une ville ; une coupe de cheveux se
      regarde par ceux qui pensent a se faire couper les cheveux. Les tables
      demandees restent basses en proportion — on ne reserve pas pour un midi ou
      l'on passe sans prevenir. */
-  centre: { essais: 412, gardes: 78, contacts: 23, moyenne: 4.5 },
-  emporter: { essais: 268, gardes: 54, contacts: 17, moyenne: 4.4 },
-  "deux-rues": { essais: 337, gardes: 61, contacts: 14, moyenne: 4.4 },
-  boulange: { essais: 194, gardes: 42, contacts: 9, moyenne: 4.5 },
-  boucher: { essais: 226, gardes: 47, contacts: 12, moyenne: 4.4 },
-  tablee: { essais: 289, gardes: 58, contacts: 21, moyenne: 4.6 },
-  traiteur: { essais: 151, gardes: 33, contacts: 8, moyenne: 4.3 },
+  centre: { essais: 412, gardes: 78, contacts: 23, votes: [2, 2, 3, 23, 57] },
+  emporter: { essais: 268, gardes: 54, contacts: 17, votes: [2, 2, 2, 16, 34] },
+  "deux-rues": { essais: 337, gardes: 61, contacts: 14, votes: [3, 3, 3, 16, 46] },
+  boulange: { essais: 194, gardes: 42, contacts: 9, votes: [2, 2, 2, 2, 33] },
+  boucher: { essais: 226, gardes: 47, contacts: 12, votes: [2, 2, 2, 10, 31] },
+  tablee: { essais: 289, gardes: 58, contacts: 21, votes: [2, 2, 2, 6, 49] },
+  traiteur: { essais: 151, gardes: 33, contacts: 8, votes: [1, 1, 5, 5, 20] },
   // ── SORTIES ──────────────────────────────────────────────────────────────
   /* LA DERNIERE COLONNE N'EST PAS INVENTEE ICI : c'est `intentions` de la
      soiree, le nombre de Fantomes qui ont dit qu'ils y seraient — 26 au
      kiosque. Deux ecrans de la meme demonstration qui comptent la meme chose
      doivent dire le meme nombre, sinon aucun des deux n'est cru. */
-  kiosque: { essais: 318, gardes: 64, contacts: 18, moyenne: 4.6 },
-  "bar-vins": { essais: 142, gardes: 29, contacts: 18, moyenne: 4.4 },
-  "bar-terrasse": { essais: 176, gardes: 38, contacts: 11, moyenne: 4.3 },
-  "marche-nuit": { essais: 97, gardes: 21, contacts: 9, moyenne: 4.3 },
-  expo: { essais: 84, gardes: 19, contacts: 7, moyenne: 4.4 },
-  "vide-grenier": { essais: 121, gardes: 26, contacts: 14, moyenne: 4.3 },
+  kiosque: { essais: 318, gardes: 64, contacts: 18, votes: [2, 2, 2, 9, 52] },
+  "bar-vins": { essais: 142, gardes: 29, contacts: 18, votes: [1, 1, 2, 7, 19] },
+  "bar-terrasse": { essais: 176, gardes: 38, contacts: 11, votes: [1, 1, 5, 9, 21] },
+  "marche-nuit": { essais: 97, gardes: 21, contacts: 9, votes: [1, 1, 2, 3, 13] },
+  expo: { essais: 84, gardes: 19, contacts: 7, votes: [1, 1, 1, 2, 13] },
+  "vide-grenier": { essais: 121, gardes: 26, contacts: 14, votes: [1, 1, 3, 5, 15] },
 };
 
 /** Les chiffres de ce commerce, ou de quoi ne rien afficher. */

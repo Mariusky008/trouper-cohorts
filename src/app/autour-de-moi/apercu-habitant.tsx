@@ -159,7 +159,13 @@ import { CarteSwipe, StylesDirect } from "@/components/direct/carte-swipe";
 // fichier parce que c'est un ecran entier : le poser ici, dans dix-neuf mille
 // lignes, aurait rendu les deux illisibles.
 import { EcranChoix } from "@/components/direct/ecran-choix";
-import { Ouverture } from "@/components/direct/ouverture";
+/* ═══ L'OUVERTURE EN TROIS ACTES EST MISE DE CÔTÉ, PAS EFFACÉE ═════════════
+   « L'animation de départ ne fonctionne pas assez bien, garde-la de côté, on
+   essaiera de faire mieux plus tard. »
+   `components/direct/ouverture.tsx`, son LISEZ-MOI et ses six films restent
+   dans le dossier : ce qui est mis de côté doit pouvoir revenir sans qu'on le
+   refasse. Seule la ligne qui la montait est remplacée. */
+import { EcranSalon } from "@/components/direct/ecran-salon";
 import { StylesChoix } from "@/components/direct/styles-choix";
 // LE PARCOURS MODE — la « partie 2 », pour une categorie sur cinq.
 import { ParcoursMode } from "@/components/direct/parcours-mode-ecran";
@@ -7860,20 +7866,21 @@ export function ApercuHabitant() {
               !sortie &&
               !embauches &&
               !salonUrl && (
-                /* ═══ L'OUVERTURE PASSE AVANT TOUT LE RESTE ═══════════════
-                   « Avant le premier écran de démo, j'aimerais qu'on ait une
-                   petite animation avec ces 3 écrans. »
-                   ELLE EST DANS LA MEME CONDITION QUE L'ECRAN DE CHOIX, et pas
+                /* ═══ L'ÉCRAN DU SALON PASSE AVANT TOUT LE RESTE ══════════
+                   « Mets juste cet écran avec une animation sur le fantôme qui
+                   cligne des yeux et sur le café qui fume. »
+                   IL EST DANS LA MEME CONDITION QUE L'ECRAN DE CHOIX, et pas
                    dans une au-dessus : les deux appartiennent au même moment —
-                   la démonstration n'a pas encore commencé. Posée plus haut,
-                   elle se serait rejouée par-dessus un parcours ouvert.
-                   ET ELLE NE SE MONTRE PAS DEUX FOIS DANS LA MEME VISITE :
-                   `ouvertureVue` tombe au premier passage, donc revenir à
-                   l'écran de choix depuis un parcours ne relance rien. Elle
-                   repart à la visite suivante, parce que « accueil » est dans
-                   `TOUJOURS_REVOIR` — c'est une démonstration qu'il remontre. */
+                   la démonstration n'a pas encore commencé. Posé plus haut, il
+                   se serait rejoué par-dessus un parcours ouvert.
+                   ET IL NE SE MONTRE PAS DEUX FOIS DANS LA MEME VISITE :
+                   `ouvertureVue` tombe dès qu'on appuie sur son bouton, donc
+                   revenir à l'écran de choix depuis un parcours ne le relance
+                   pas. Il repart à la visite suivante, parce que « accueil »
+                   est dans `TOUJOURS_REVOIR` — c'est une démonstration qu'il
+                   remontre. */
                 !ouvertureVue ? (
-                  <Ouverture onFini={() => setOuvertureVue(true)} />
+                  <EcranSalon onEntrer={() => setOuvertureVue(true)} />
                 ) : parcoursMode ? (
                   <ParcoursMode commerce={parcoursMode} onFermer={() => setParcoursMode("")} />
                 ) : parcoursCoiffure ? (
