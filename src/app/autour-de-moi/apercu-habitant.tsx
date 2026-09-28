@@ -6569,7 +6569,7 @@ export function ApercuHabitant() {
              de retirer une fonction pour en poser une. */
           className={`ap-app${onglet === "direct" ? " direct" : ""}${
             salonPage || favorisPage ? " sur-page" : ""
-          }${coeurDuSommet ? " essai" : ""}`}
+          }${coeurDuSommet ? " essai" : ""}${onglet === "direct" ? " metier" : ""}`}
           /* ═══ LA COULEUR DU METIER DESCEND JUSQU'A LA BARRE ═══════════════
 
              « Harmonise les couleurs du Fantôme : le cercle, le prix et
@@ -17700,18 +17700,22 @@ export function ApercuHabitant() {
         .ap-onglets .ap-monfantome.veille .ap-f-lueur{opacity:.34;}
         .ap-onglets .ap-monfantome.veille .ap-f-fil{opacity:.5;}
         .ap-onglets .ap-monfantome.veille.presse{
+          --ap-veille-c:#FF5A48;
           --ap-veille-f:linear-gradient(150deg,#FF7A6A,#D80D1C);
           --ap-veille-h:rgba(216,13,28,.55);
           --ap-veille-p:#FFB4A6;--ap-veille-b:#EE9080;}
         .ap-onglets .ap-monfantome.veille.decide{
+          --ap-veille-c:#2BD79B;
           --ap-veille-f:linear-gradient(150deg,#7BFFD4,#06B87E);
           --ap-veille-h:rgba(6,184,126,.6);
           --ap-veille-p:#A9F2D5;--ap-veille-b:#7ED9B4;}
         .ap-onglets .ap-monfantome.veille.hesite{
+          --ap-veille-c:#F0A81E;
           --ap-veille-f:linear-gradient(150deg,#FFDE7A,#E29200);
           --ap-veille-h:rgba(226,146,0,.55);
           --ap-veille-p:#FFDD9B;--ap-veille-b:#EFC469;}
         .ap-onglets .ap-monfantome.veille.neuf{
+          --ap-veille-c:#A97BFF;
           --ap-veille-f:linear-gradient(150deg,#CFAAFF,#6D28D9);
           --ap-veille-h:rgba(109,40,217,.55);
           --ap-veille-p:#D6BAFF;--ap-veille-b:#BC9AF0;}
@@ -17733,6 +17737,51 @@ export function ApercuHabitant() {
            aurait COUPE LE BOND du fantome hors de sa bulle, c'est-a-dire
            l'animation qu'il avait demandee. Un degrade large qu'on fait defiler
            donne exactement le meme reflet et ne franchit jamais le bord. */
+        /* ═══ SUR LE DIRECT, LA VEILLE PASSE DU DISQUE A L'ANNEAU ═════════
+
+           « La bulle du fantome reste toujours verte quel que soit le metier. »
+
+           TROISIEME FOIS QU'IL LE DIT, ET LA CAUSE N'ETAIT PAS OU JE
+           REGARDAIS. Le disque prend bien la couleur du commerce — releve sur
+           sa capture : anneau orange, prix orange, --ap-metier a #FF9E5A. Mais
+           quand le Fantome VEILLE, l'etat repeint toute la masse d'un de ses
+           quatre tons, et « decide » est un vert. Comme sa demonstration a
+           toujours une veille en cours, le disque etait toujours vert.
+
+           DEUX DEMANDES SE CONTREDISENT ICI, ET IL FAUT LE DIRE. Celle d'avant
+           disait : « que ce soit le fantome et le background qui changent de
+           couleur », et c'est pour ca que la veille peint la masse — un anneau
+           se lit comme de la finition, pas comme un signal. Celle-ci dit que le
+           disque appartient au metier. Les deux ne peuvent pas avoir la masse.
+
+           ON TRANCHE PAR L'ENDROIT, ET CHACUNE GARDE SON TERRAIN :
+             · SUR LE DIRECT, une annonce est sous les yeux — le disque porte
+               son metier, et la veille passe a un anneau EPAIS de sa couleur,
+               avec le scintillement qu'elle avait deja. Trois points et demi,
+               pas un lisere : c'est une bague, elle se voit.
+             · AILLEURS — La Ville, Propositions, Profil — il n'y a pas de
+               metier a porter, et la veille reprend toute la masse, exactement
+               comme avant. La decision d'alors tient partout ou elle ne se
+               heurte a rien.
+
+           L'OR DU FLASH RESTE AU-DESSUS DE TOUT, et c'est pour ca que ces
+           regles l'excluent en toutes lettres : il parle de l'annonce qu'on est
+           en train de regarder, et il ne dure que le temps du compte a rebours.
+        */
+        .ap-app.metier .ap-onglets .ap-monfantome.veille:not(.or){
+          background:var(--ap-metier-voile, none),
+            var(--ap-metier, linear-gradient(150deg,#8B6BFF,#E24FB0));
+          box-shadow:0 0 0 3.5px var(--ap-veille-c, #8B6BFF),
+            0 0 0 7px var(--ap-barre-fond, #070C0A),
+            0 12px 30px var(--ap-veille-h, rgba(168,85,247,.5));}
+        /* ET LE FANTOME DESSUS REDEVIENT NEUTRE : teinte vers le ton de la
+           veille, il ferait deux couleurs sur un disque qui en porte une
+           troisieme. Voir le degrade apFgNeutre. */
+        .ap-app.metier .ap-onglets .ap-monfantome.veille:not(.or) .ap-f-corps{
+          fill:url(#apFgNeutre);}
+        .ap-app.metier .ap-onglets .ap-monfantome.veille:not(.or) .ap-f-bras{
+          fill:#DCE6EE;}
+
         .ap-onglets .ap-monfantome.veille::after{content:"";position:absolute;
           inset:0;border-radius:50%;pointer-events:none;
           background:linear-gradient(115deg,transparent 38%,
