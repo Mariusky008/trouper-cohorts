@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { NoteFantomes } from "@/components/direct/note-fantomes";
+import { FantomeChoisi } from "@/components/direct/note-fantomes";
+import type { FamilleReaction } from "@/lib/direct/reaction-fantome";
 import type { Essayeur } from "@/lib/direct/plaque-parcours";
 
 /**
@@ -54,10 +55,23 @@ export function MurEssayeurs({
    * vêtement qu'on vient regarder, pas la tête.
    */
   cadrage = "entier",
+  /**
+   * ═══ LA LANGUE DES CINQ MOTS ═══════════════════════════════════════════
+   *
+   * « Tu dois évidemment changer le wording, parce que la photo montre des
+   * fantômes avec le wording pour quelqu'un qui parle du menu du jour. »
+   *
+   * LES CINQ VISAGES SONT LES MÊMES PARTOUT — c'est ce qui fait qu'on les
+   * reconnaît d'un écran à l'autre — MAIS PAS LEURS MOTS. « J'en veux ! » sous
+   * une coupe de cheveux ne veut rien dire. Le parcours qui affiche ce mur sait
+   * de quel métier il parle ; il le dit ici plutôt que de le laisser deviner.
+   */
+  famille = "table",
 }: {
   essayeurs: Essayeur[];
   classe: string;
   cadrage?: "visage" | "entier";
+  famille?: FamilleReaction;
 }) {
   const [actif, setActif] = useState(0);
   const prise = useRef<number | null>(null);
@@ -165,11 +179,20 @@ export function MurEssayeurs({
                     quelqu'un vient de faire ; la même note peinte d'un coup se
                     lit comme une image. C'est toute la différence entre
                     décorer et montrer. */}
+                {/* ═══ SON FANTÔME, PAS SA NOTE ═════════════════════════
+
+                    « À la place de ces fantômes sans aucune personnalité,
+                    plutôt le fantôme que chaque personne a choisi. Il pourrait
+                    être plus gros et se voir plus, pour bien montrer que cette
+                    personne a choisi CE fantôme-là. »
+
+                    LA RANGÉE DISAIT UN COMPTE, PAS UN CHOIX. Cinq silhouettes
+                    identiques dont on en allumait quatre : le geste de
+                    quelqu'un — le doigt posé sur le visage qui tire la langue
+                    ou sur celui qui est en feu — devenait « 4 sur 5 ». On avait
+                    dessiné cinq têtes différentes pour n'en montrer aucune. */}
                 <span className="mes-note">
-                  <NoteFantomes note={e.note} classe={ecart === 0 ? "vient" : ""} />
-                  <b>
-                    {e.note} <i>sur 5</i>
-                  </b>
+                  <FantomeChoisi niveau={e.note} famille={famille} />
                 </span>
                 <span className="mes-qui">{e.qui}</span>
                 <b className="mes-mot">{e.mot}</b>
@@ -263,22 +286,20 @@ const FEUILLE = `
    voyait une tache rose. Ils passent sur leur propre ligne, au-dessus du
    prenom, a dix-huit points — la note se lit avant la phrase, ce qui est
    l'ordre dans lequel on la veut. */
-/* LA NOTE PASSE DEVANT LE PRENOM, ET ELLE EST GRANDE. Vingt-six points de
-   haut, le chiffre ecrit a cote pour ceux qui comptent mal de loin. */
-.mes-note{display:flex;align-items:center;gap:9px;margin-bottom:3px;}
-.mes-note .nf{gap:4px;}
-.mes-note .nf-s{width:26px;height:28px;}
-.mes-note>b{font-size:14px;font-weight:900;letter-spacing:-.01em;color:#fff;
-  text-shadow:0 2px 10px rgba(0,0,0,.9);}
-.mes-note>b i{font-style:normal;font-weight:750;font-size:11.5px;
-  color:rgba(255,255,255,.62);}
-/* ILS S'ALLUMENT UN PAR UN, de gauche a droite. Le retard est porte par
-   --nf-i, que la rangee pose sur chaque fantome. */
-.mes-note .nf.vient .nf-s.on{animation:mesPose .34s cubic-bezier(.34,1.56,.64,1) backwards;
-  animation-delay:calc(var(--nf-i,0) * .11s + .18s);}
+/* SON FANTOME PASSE DEVANT LE PRENOM. Il est le premier objet de la legende,
+   sur sa propre ligne : on lit ce qu'elle a repondu avant de lire qui elle est.
+   LA RANGEE DE CINQ EST PARTIE — voir le commentaire dans le corps du fichier.
+   Ses regles la suivent : elles visaient .nf, qui n'existe plus ici. */
+.mes-note{display:flex;align-items:center;gap:9px;margin-bottom:4px;}
+/* IL ARRIVE AVEC LA CARTE, ET D'UN SEUL BOND. L'ancienne rangee s'allumait un
+   fantome apres l'autre, parce qu'il y en avait cinq a faire compter ; ici il
+   n'y en a qu'un, et cinq retards pour un objet unique auraient fait attendre
+   sans rien dire de plus. */
+.mes-scene article.au-centre .mes-note{animation:mesPose .38s cubic-bezier(.34,1.56,.64,1) backwards;
+  animation-delay:.16s;}
 @keyframes mesPose{
   from{opacity:0;transform:scale(.4) translateY(6px);}
-  60%{opacity:1;transform:scale(1.18) translateY(0);}
+  60%{opacity:1;transform:scale(1.14) translateY(0);}
   to{opacity:1;transform:scale(1) translateY(0);}
 }
 .mes-qui{font-size:12.5px;font-weight:900;letter-spacing:.02em;color:#FF7FC2;}

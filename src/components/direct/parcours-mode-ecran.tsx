@@ -477,7 +477,7 @@ export function ParcoursMode({
           <h1 className="pm-t3 court">
             La même pièce, <em>sur d’autres que vous.</em>
           </h1>
-          <MurEssayeurs essayeurs={essayeursMontres} classe="pm" />
+          <MurEssayeurs essayeurs={essayeursMontres} classe="pm" famille="mode" />
           <button type="button" className="pm-go" onClick={suivant}>
             <Fant classe="pm-go-f" />
             Je la veux sur moi

@@ -1,6 +1,6 @@
 "use client";
 
-import { NoteFantomes } from "@/components/direct/note-fantomes";
+import { FantomeChoisi } from "@/components/direct/note-fantomes";
 import { chiffresDu, motsCoteDe } from "@/lib/direct/rendez-vous";
 
 /**
@@ -100,12 +100,29 @@ export function CoteCommercant({
         {avant} <b>{nom}</b>
       </p>
 
-      {/* LA MOYENNE DANS LA MEME UNITE QUE LE RESTE DU PRODUIT. L'habitant note
-          en fantômes sur le mur, le commerçant lit une moyenne en fantômes : un
-          « 4,6/5 » aurait demandé d'apprendre une seconde échelle pour dire
-          exactement la même chose. */}
+      {/* ═══ LA MOYENNE EST UNE VALEUR, PAS UN COMPTE ══════════════════════
+
+          « Ce sont des moyennes, donc je ne sais pas comment tu pourrais
+          améliorer le design de ces fantômes en utilisant les fantômes de la
+          photo 1 ? »
+
+          LA RANGÉE DE CINQ ÉTAIT LA MAUVAISE FORME, ET C'EST MESURABLE : à
+          4,6, elle en allumait cinq — donc elle affichait la même chose qu'à
+          5,0. Une rangée ne sait dire que des entiers ; on lui demandait une
+          décimale, et elle arrondissait en silence.
+
+          UNE MOYENNE TOMBE SUR UN VISAGE, et c'est ce qu'on montre : le
+          fantôme du cran où elle atterrit, en grand, avec le mot du métier.
+          Le nombre exact reste écrit à côté — c'est lui qui porte la décimale
+          que le dessin ne peut pas porter. Les deux disent alors deux choses
+          différentes au lieu de la même en moins bien : le visage donne le
+          ton, le chiffre donne la précision.
+
+          ET C'EST LE MÊME DESSIN QUE CELUI QUE SES CLIENTS ONT TOUCHÉ. Le
+          commerçant voit la tête que les gens ont choisie, pas une note sur
+          cinq — c'est la traduction la plus courte de ce qui s'est passé. */}
       <span className="cc-moy">
-        <NoteFantomes note={Math.round(chiffres.moyenne)} classe="vient" />
+        <FantomeChoisi niveau={chiffres.moyenne} branche={branche} grand />
         <b>
           {chiffres.moyenne.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
           <i> de moyenne</i>
@@ -194,8 +211,9 @@ const FEUILLE = `
   margin:12px 0 0;padding:9px 15px;border-radius:999px;
   background:rgba(255,46,154,.13);
   border:1.5px solid rgba(255,46,154,.4);}
-.cc-moy .nf{gap:4px;}
-.cc-moy .nf-s{width:26px;height:28px;}
+/* LE VISAGE ET LE MOT D'ABORD, LE CHIFFRE ENSUITE : on lit le ton avant la
+   precision, ce qui est l'ordre dans lequel on les veut. */
+.cc-moy .fc{gap:10px;}
 .cc-moy>b{font-size:17px;font-weight:900;letter-spacing:-.02em;color:#fff;}
 /* L'ESPACE AVANT « de moyenne » EST POSE ICI, PAS DANS LE TEXTE. Mesure a
    l'ecran : le crenage negatif du nombre mange l'espace du JSX et l'on lisait

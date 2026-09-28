@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import type React from "react";
+import { familleDe, motDe, visageDe, type FamilleReaction } from "@/lib/direct/reaction-fantome";
 
 // 👻 LA NOTE EN FANTÔMES — un à cinq, le signe du produit à la place des étoiles.
 //
@@ -77,6 +79,92 @@ export function SigneFantome({
     </svg>
   );
 }
+
+/**
+ * 👻 LE VISAGE QU'ON A CHOISI — un seul, en grand, avec son mot.
+ *
+ * ═══ POURQUOI IL REMPLACE LA RANGÉE À CÔTÉ ════════════════════════════════
+ *
+ * « À la place de ces fantômes sans aucune personnalité, plutôt le fantôme que
+ * chaque personne a choisi. Il pourrait être plus gros et se voir plus, pour
+ * bien montrer que cette personne a choisi CE fantôme-là. »
+ *
+ * DEUX CHOSES ÉTAIENT CONFONDUES SOUS UN SEUL DESSIN. Une NOTE est un compte —
+ * quatre sur cinq, comme des étoiles. Une RÉACTION est un CHOIX : quelqu'un a
+ * posé le doigt sur un visage parmi cinq, dont l'un tire la langue et le
+ * dernier est en feu. L'application demande la seconde et dessinait la
+ * première : le geste de quelqu'un devenait un compte anonyme.
+ *
+ * LE MOT EST SOUS LE VISAGE, ET IL CHANGE AVEC LE MÉTIER. Voir
+ * `lib/direct/reaction-fantome.ts` : « J'en veux ! » sous une coupe de cheveux
+ * ne veut rien dire. Les cinq visages, eux, sont les mêmes partout — c'est ce
+ * qui fait qu'on les reconnaît d'un écran à l'autre.
+ *
+ * ET L'IMAGE A UN REPLI, MAIS IL NE SE VOIT QU'EN CAS DE PANNE. Premier jet :
+ * l'émoji était posé DERRIÈRE l'image, en `z-index:-1`, pour n'avoir aucun
+ * gestionnaire à écrire. Mesuré à l'écran — un PNG de fantôme est transparent
+ * partout autour du corps, donc l'émoji se voyait AU TRAVERS : un carré pâle
+ * derrière chaque visage, sur les deux écrans. Un repli qui s'affiche quand
+ * tout va bien n'est pas un repli, c'est un défaut.
+ * IL NE SE MONTE DONC QUE SI L'IMAGE ÉCHOUE. Un `onError` et un état : deux
+ * lignes, et plus rien derrière le dessin.
+ */
+export function FantomeChoisi({
+  niveau,
+  famille,
+  branche,
+  classe = "",
+  grand = false,
+}: {
+  niveau: number;
+  /** La langue des cinq mots. À défaut, on la déduit de `branche`. */
+  famille?: FamilleReaction;
+  branche?: string;
+  classe?: string;
+  /** Le cran au-dessus, pour un écran qui n'en montre qu'un. */
+  grand?: boolean;
+}) {
+  const v = visageDe(niveau);
+  const mot = motDe(niveau, famille ?? familleDe(branche));
+  const [rate, setRate] = useState(false);
+  return (
+    <>
+      <span className={`fc${grand ? " grand" : ""} ${classe}`.trim()}>
+        {rate ? (
+          <i aria-hidden="true">{v.emoji}</i>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={v.image} alt="" loading="lazy" onError={() => setRate(true)} />
+        )}
+        <b>{mot}</b>
+      </span>
+      <style dangerouslySetInnerHTML={{ __html: FEUILLE_CHOISI }} />
+    </>
+  );
+}
+
+/* ATTENTION : pas d'accent grave dans ces commentaires, ce bloc est un
+   litteral de gabarit et un seul terminerait la chaine.
+   npm run verifier:styles le mesure avant chaque construction. */
+const FEUILLE_CHOISI = `
+.fc{display:inline-flex;align-items:center;gap:9px;flex:none;position:relative;}
+/* LE VISAGE EST LE PREMIER OBJET DE LA LIGNE, ET IL EST GROS. A douze points,
+   les cinq dessins se ressemblaient tous ; a quarante-quatre, on voit la
+   langue tiree, les yeux en coeur et le feu — c'est-a-dire la seule chose qui rend
+   cinq dessins utiles plutot qu'un seul repete. */
+.fc img{width:44px;height:44px;flex:none;object-fit:contain;display:block;
+  filter:drop-shadow(0 3px 10px rgba(255,46,154,.3));}
+.fc.grand img{width:58px;height:58px;}
+/* L'EMOJI NE PREND LA PLACE DE L'IMAGE QUE SI ELLE ECHOUE — voir le
+   commentaire du composant. Il occupe la meme largeur, pour que la ligne ne
+   bouge pas quand il apparait. */
+.fc i{width:44px;flex:none;text-align:center;
+  font-style:normal;font-size:34px;line-height:1;}
+.fc.grand i{width:58px;font-size:46px;}
+.fc b{font-size:13.5px;font-weight:850;letter-spacing:-.01em;color:#FFD9EC;
+  text-shadow:0 2px 10px rgba(0,0,0,.6);}
+.fc.grand b{font-size:16px;}
+`;
 
 /**
  * LA RANGÉE DE CINQ, dont `note` sont allumés.

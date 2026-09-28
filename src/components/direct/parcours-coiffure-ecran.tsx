@@ -439,7 +439,12 @@ export function ParcoursCoiffure({
           <h1 className="pc-t court">
             La même coupe, <em>sur d’autres que vous.</em>
           </h1>
-          <MurEssayeurs essayeurs={essayeursMontres} classe="pc" cadrage="visage" />
+          <MurEssayeurs
+            essayeurs={essayeursMontres}
+            classe="pc"
+            cadrage="visage"
+            famille="coiffure"
+          />
           <button type="button" className="pc-go" onClick={suivant}>
             <Appareil />
             Je la veux sur moi
