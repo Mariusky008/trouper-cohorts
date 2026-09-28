@@ -45,36 +45,48 @@ type Config = {
   sansReference?: boolean;
 };
 
+/* ═══ LA PREMIÈRE LIGNE EST CELLE DU PRODUIT ════════════════════════════════
+
+   « Comme ChatGPT » est ce que la coiffure fait maintenant : le moteur le plus
+   proche de ChatGPT dans le catalogue du compte, les deux photos entières, la
+   consigne calquée, et rien autour. La deuxième est l'ancien régime, pour voir
+   d'un coup d'œil ce que le recollage du visage faisait à une coupe. */
 const CONFIGS: Config[] = [
   {
+    cle: "chatgpt",
+    nom: "1 · Comme ChatGPT (régime actuel)",
+    quoi: "Deux images, la vôtre jusqu’à 2 048 points, la consigne calquée sur celle de ChatGPT — et plus rien autour : ni masque, ni cadre, ni visage recollé.",
+    regime: "chatgpt",
+  },
+  {
     cle: "calquee",
-    nom: "1 · Régime actuel",
-    quoi: "Deux images, pas de masque, aucun cadre demandé, photo entière — et la consigne calquée sur celle de ChatGPT, en anglais, 1 200 signes.",
+    nom: "2 · L’ancien régime",
+    quoi: "Pareil que 1, SAUF la photo réduite à 1 280 points et le visage d’origine recollé par-dessus le rendu.",
     regime: "calquee",
   },
   {
     cle: "leger",
-    nom: "2 · Notre consigne longue",
-    quoi: "Tout pareil, SAUF la phrase : nos 3 900 signes d'interdictions accumulées, en français.",
+    nom: "3 · Notre consigne longue",
+    quoi: "Pareil que 2, SAUF la phrase : nos 3 900 signes d'interdictions accumulées, en français.",
     regime: "leger",
   },
   {
     cle: "brut",
-    nom: "3 · Consigne courte",
-    quoi: "Tout pareil, SAUF la phrase : cinq lignes, celles qu'on taperait dans ChatGPT sans réfléchir.",
+    nom: "4 · Consigne courte",
+    quoi: "Pareil que 2, SAUF la phrase — cinq lignes — et sans visage recollé.",
     regime: "brut",
   },
   {
     cle: "atelier",
-    nom: "4 · Masque + cadre imposé",
-    quoi: "Tout pareil que 2, SAUF qu'on rogne la photo, qu'on demande un format et qu'on envoie un masque.",
+    nom: "5 · Masque + cadre imposé",
+    quoi: "Pareil que 3, SAUF qu'on rogne la photo, qu'on demande un format et qu'on envoie un masque.",
     regime: "atelier",
   },
   {
     cle: "sans-ref",
-    nom: "5 · Sans la photo de la coupe",
-    quoi: "Tout pareil que 1, SAUF qu'il n'y a qu'une image : la description écrite fait tout le travail.",
-    regime: "calquee",
+    nom: "6 · Sans la photo de la coupe",
+    quoi: "Pareil que 1, SAUF qu'il n'y a qu'une image : la description écrite fait tout le travail.",
+    regime: "chatgpt",
     sansReference: true,
   },
 ];
@@ -90,6 +102,8 @@ type Resultat = {
   ms?: number;
   erreur?: string;
   pourquoi?: string;
+  /** Le moteur qui a VRAIMENT rendu l'image — pas celui qu'on croyait appeler. */
+  modele?: string;
 };
 
 /** Les murs qui savent essayer quelque chose, avec leurs pièces. */
@@ -135,6 +149,10 @@ export default function Banc() {
    */
   const [modeles, setModeles] = useState<{ id: string; cree: number }[]>([]);
   const [enService, setEnService] = useState("");
+  /** Pourquoi celui-là : le catalogue du compte, ou OPENAI_IMAGE_MODEL qui l'impose. */
+  const [pourquoiService, setPourquoiService] = useState("");
+  /** L'ordre dans lequel l'essai descend si le compte refuse le premier. */
+  const [ordreService, setOrdreService] = useState<string[]>([]);
   const [soucisModeles, setSoucisModeles] = useState("");
   const [modeleA, setModeleA] = useState("");
   const [modeleB, setModeleB] = useState("");
@@ -153,14 +171,19 @@ export default function Banc() {
         }
         setModeles(j.images ?? []);
         setEnService(j.enService ?? "");
+        setPourquoiService(j.pourquoi ?? "");
+        setOrdreService(Array.isArray(j.ordre) ? j.ordre : []);
         setModeleA(j.enService ?? "");
-        /* LE SECOND EST LE PLUS RÉCENT QUI N'EST PAS DÉJÀ LE PREMIER. C'est
-           la comparaison qu'on vient chercher ; on peut toujours en choisir un
-           autre dans la liste. */
+        /* LE SECOND EST LE SUIVANT DANS L'ORDRE DE L'ESSAI, à défaut le plus
+           récent qui n'est pas déjà le premier. C'est la comparaison qu'on
+           vient chercher ; on peut toujours en choisir un autre dans la liste. */
+        const suivant = (Array.isArray(j.ordre) ? (j.ordre as string[]) : []).find(
+          (m) => m !== (j.enService ?? ""),
+        );
         const autre = (j.images ?? []).find(
           (m: { id: string }) => m.id !== (j.enService ?? "") && /image|edit|paint|canvas/i.test(m.id),
         );
-        setModeleB(autre?.id ?? "");
+        setModeleB(suivant ?? autre?.id ?? "");
       })
       .catch((e) => vivant && setSoucisModeles(String(e)));
     return () => {
@@ -238,14 +261,14 @@ export default function Banc() {
         change: mur.essai.change,
         decrire: piece.decrire,
         decrireEn: piece.decrireEn,
-        regime: "calquee",
+        regime: "chatgpt",
         modele: t.modele,
       });
       const ms = Date.now() - debut;
       setRes((l) => [
         ...l,
         estUnRendu(r)
-          ? { cle: t.cle, nom: t.nom, quoi: t.quoi, image: r.image, ms }
+          ? { cle: t.cle, nom: t.nom, quoi: t.quoi, image: r.image, ms, modele: r.modele }
           : { cle: t.cle, nom: t.nom, quoi: t.quoi, erreur: r.erreur, pourquoi: r.pourquoi, ms },
       ]);
     }
@@ -273,7 +296,7 @@ export default function Banc() {
       setRes((l) => [
         ...l,
         estUnRendu(r)
-          ? { cle: c.cle, image: r.image, ms }
+          ? { cle: c.cle, image: r.image, ms, modele: r.modele }
           : { cle: c.cle, erreur: r.erreur, pourquoi: r.pourquoi, ms },
       ]);
     }
@@ -292,8 +315,8 @@ export default function Banc() {
     <main className="bn">
       <h1>Banc d’essai</h1>
       <p className="bn-sous">
-        Les quatre configurations, à la suite, sur la même photo et la même référence. Un seul
-        réglage change d’une ligne à l’autre.
+        Les {CONFIGS.length} configurations, à la suite, sur la même photo et la même référence.
+        Sous chaque rendu : le moteur qui l’a vraiment fait.
       </p>
 
       <section className="bn-reg">
@@ -372,7 +395,7 @@ export default function Banc() {
       </section>
 
       <button className="bn-go" type="button" disabled={!photo || !!encours} onClick={lancer}>
-        {encours ? "En cours…" : "Lancer les cinq consignes"}
+        {encours ? "En cours…" : `Lancer les ${CONFIGS.length} configurations`}
       </button>
 
       {/* ═══ ET L'AUTRE BANC : LE MÊME ESSAI SUR DEUX MOTEURS ════════════════
@@ -398,6 +421,16 @@ export default function Banc() {
             <span>{soucisModeles}</span>
           </p>
         ) : (
+          <>
+          {enService && (
+            <p className="bn-service">
+              En service : <b>{enService}</b>
+              {pourquoiService && <span> — {pourquoiService}</span>}
+              {ordreService.length > 1 && (
+                <span className="bn-ordre">Si le compte le refuse : {ordreService.slice(1).join(" → ")}</span>
+              )}
+            </p>
+          )}
           <div className="bn-duo">
             <label>
               <span>Moteur A</span>
@@ -432,6 +465,7 @@ export default function Banc() {
               </select>
             </label>
           </div>
+          </>
         )}
         <button
           className="bn-go"
@@ -465,7 +499,12 @@ export default function Banc() {
                     </div>
                   )}
                 </div>
-                {r.ms != null && <p className="bn-ms">{(r.ms / 1000).toFixed(1)} s</p>}
+                {r.ms != null && (
+                  <p className="bn-ms">
+                    {r.modele && <span className="bn-moteur">{r.modele}</span>}
+                    <span className="bn-temps">{(r.ms / 1000).toFixed(1)} s</span>
+                  </p>
+                )}
               </article>
             ))}
         </section>
@@ -493,7 +532,12 @@ export default function Banc() {
                   <div className="bn-attend">—</div>
                 )}
               </div>
-              {r?.ms != null && <p className="bn-ms">{(r.ms / 1000).toFixed(1)} s</p>}
+              {r?.ms != null && (
+                <p className="bn-ms">
+                  {r.modele && <span className="bn-moteur">{r.modele}</span>}
+                  <span className="bn-temps">{(r.ms / 1000).toFixed(1)} s</span>
+                </p>
+              )}
             </article>
           );
         })}
@@ -560,7 +604,7 @@ export default function Banc() {
             const e = mur.essai!;
             const ref = !c.sansReference;
             const t =
-              c.regime === "calquee"
+              c.regime === "calquee" || c.regime === "chatgpt"
                 ? consigneCalquee(e.partie, e.change, piece.decrireEn || piece.decrire, ref)
                 : c.regime === "brut"
                   ? consigneBrute(e.partie, e.change, piece.decrire, ref)
@@ -579,25 +623,30 @@ export default function Banc() {
 
       <details className="bn-det bn-req">
         <summary>La requête exacte, à recopier</summary>
+        {/* LE NOM DU MOTEUR N'EST PLUS ÉCRIT ICI : il était recopié à la main,
+            « gpt-image-1 », et c'était justement la cause. Il vient maintenant
+            de la même réponse que le sélecteur au-dessus. */}
         <pre>{`POST https://api.openai.com/v1/images/edits   (multipart)
 
-model            gpt-image-1
-image[]          1 · la photo de la personne   ← c'est elle qu'on modifie
-image[]          2 · la photo de la coupe      ← référence
-input_fidelity   high
-quality          high            (OPENAI_IMAGE_QUALITY)
-n                1
+model              ${enService || "le plus proche de ChatGPT dans le catalogue du compte"}
+image[]            1 · la photo de la personne   ← c'est elle qu'on modifie
+image[]            2 · la photo de la coupe      ← référence
+input_fidelity     high
+quality            high            (OPENAI_IMAGE_QUALITY)
+output_format      jpeg · output_compression 95
+n                  1
 
 CE QUI CHANGE D'UNE CONFIGURATION À L'AUTRE :
 
-1 · Régime actuel      size absent · mask absent · photo entière, 1280 px
-                       prompt anglais calqué sur ChatGPT, ≈ 1 200 signes
-2 · Consigne longue    idem, prompt français ≈ 3 900 signes
-3 · Consigne courte    idem, prompt ≈ 500 signes
-4 · Masque + cadre     size 1024x1024 (ou 1536x1024 / 1024x1536)
+1 · Comme ChatGPT      size absent · mask absent · photo entière, 2 048 px
+                       prompt anglais calqué sur ChatGPT · rendu montré tel quel
+2 · Ancien régime      idem, photo 1 280 px · visage d'origine recollé
+3 · Consigne longue    comme 2, prompt français ≈ 3 900 signes
+4 · Consigne courte    comme 2, prompt ≈ 500 signes, sans recollage
+5 · Masque + cadre     size 1024x1024 (ou 1536x1024 / 1024x1536)
                        mask PNG aux dimensions de la photo
                        photo rognée au rapport du cadre, 800 px
-5 · Sans référence     un seul image[] · le reste comme 1
+6 · Sans référence     un seul image[] · le reste comme 1
 
 ORDRE DES IMAGES : la cliente est TOUJOURS image[] n° 1, parce que sur
 /v1/images/edits la première image est la toile qu'on édite. ChatGPT avait
@@ -670,7 +719,25 @@ c'est-à-dire une autre personne.`}</pre>
         .bn-rate{display:grid;gap:4px;padding:12px;text-align:center;}
         .bn-rate b{color:#ff8ba0;font-size:13px;}
         .bn-rate span{color:#8e98ba;font-size:11.5px;}
-        .bn-ms{margin:8px 0 0;font-size:12px;color:#8e98ba;text-align:right;}
+        /* UNE ERREUR DU FOURNISSEUR EST DU JSON SANS UNE ESPACE. Posee dans
+           une carte de grille, elle l'elargissait jusqu'a 424 points et la page
+           debordait de 484 sur un telephone. Mesure avant : page 874, vue 390.
+           La carte a donc le droit de retrecir, et le texte celui de se couper
+           n'importe ou. */
+        .bn-grille>*{min-width:0;}
+        .bn-rendu .bn-rate{max-height:100%;overflow:auto;}
+        .bn-rate b,.bn-rate span,.bn-carte h2{overflow-wrap:anywhere;}
+        .bn-ms{margin:8px 0 0;font-size:12px;color:#8e98ba;text-align:right;
+            display:flex;justify-content:flex-end;align-items:baseline;gap:8px;}
+        /* LE MOTEUR QUI A RENDU L'IMAGE, A GAUCHE DU TEMPS. Il peut etre long,
+           donc il se coupe plutot que de pousser la carte hors de l'ecran. */
+        .bn-moteur{font:600 11.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;
+            color:#b9a6ff;text-align:left;min-width:0;overflow-wrap:anywhere;margin-right:auto;}
+        .bn-temps{flex:none;white-space:nowrap;}
+        .bn-service{margin:10px 0 0;font-size:13px;color:#c4cbe4;}
+        .bn-service b{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#b9a6ff;}
+        .bn-service span{color:#8e98ba;}
+        .bn-ordre{display:block;margin-top:3px;font-size:11.5px;overflow-wrap:anywhere;}
         .bn-det{margin-top:16px;background:#141828;border-radius:12px;padding:12px 14px;}
         .bn-det summary{cursor:pointer;font-weight:600;font-size:14px;}
         .bn-det p{color:#c4cbe4;font-size:13.5px;}

@@ -31,6 +31,7 @@
  * des identifiants de modèles et leur date. Ce qui sort d'ici est déjà public.
  */
 import { NextResponse } from "next/server";
+import { PREFERENCE, choisirDansLeCatalogue } from "@/lib/direct/moteur-image";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -99,6 +100,18 @@ export async function GET() {
     // LE PLUS RÉCENT EN PREMIER : c'est celui qu'on est venu chercher.
     .sort((a, b) => b.cree - a.cree);
   const images = tous.filter((m) => INDICES.some((i) => m.id.toLowerCase().includes(i)));
+  /**
+   * ═══ CE QUE L'ESSAI APPELLE VRAIMENT — LE MÊME CALCUL, PAS UNE COPIE ══════
+   *
+   * CETTE LIGNE DISAIT `|| "gpt-image-1"`, comme la route d'essai. Les deux
+   * affirmaient la même chose, et c'était vrai — c'était justement le défaut.
+   * Elles appellent maintenant la même fonction, sur le même catalogue : le
+   * banc ne peut plus afficher « en service » un moteur que l'essai n'appelle
+   * pas. Voir `lib/direct/moteur-image.ts`.
+   */
+  const force = (process.env.OPENAI_IMAGE_MODEL || "").trim();
+  const choix = choisirDansLeCatalogue(tous.map((m) => m.id));
+  const ordre = force ? [force] : choix.length ? choix : [...PREFERENCE];
   return NextResponse.json({
     images,
     // LE COMPTE TOTAL, PAS LA LISTE ENTIÈRE : quelques centaines d'identifiants
@@ -107,6 +120,16 @@ export async function GET() {
     combien: tous.length,
     // CE QUE LE SERVEUR APPELLE AUJOURD'HUI, pour qu'on voie tout de suite si
     // le banc compare le modèle en service ou un autre.
-    enService: (process.env.OPENAI_IMAGE_MODEL || "").trim() || "gpt-image-1",
+    enService: ordre[0],
+    // ET POURQUOI CELUI-LÀ. « Imposé par OPENAI_IMAGE_MODEL » est la ligne à
+    // lire en premier : si elle nomme un vieux moteur, c'est elle qu'il faut
+    // enlever sur l'hébergeur, et rien d'autre.
+    pourquoi: force
+      ? "imposé par OPENAI_IMAGE_MODEL"
+      : choix.length
+        ? "le plus proche de ChatGPT dans le catalogue du compte"
+        : "aucun moteur connu dans le catalogue : ordre de préférence",
+    // LES SUIVANTS, SI LE COMPTE REFUSE LE PREMIER AU MOMENT DE L'APPEL.
+    ordre,
   });
 }

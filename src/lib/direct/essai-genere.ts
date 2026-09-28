@@ -47,6 +47,15 @@ export type Rendu = {
    * de retirer du bas du résultat.
    */
   visageRepose?: boolean;
+  /**
+   * QUEL MOTEUR A RENDU CETTE IMAGE, ET PAR QUEL CHEMIN.
+   *
+   * « Deux essais sur ClikMe » sont arrivés sans que personne puisse dire quel
+   * moteur les avait rendus. Le banc l'écrit sous chaque image ; l'écran de
+   * l'essai ne l'affiche pas, mais la console du téléphone le garde.
+   */
+  modele?: string;
+  fournisseur?: string;
 };
 
 export type Souci = {
@@ -77,6 +86,21 @@ const COTE = 800;
  * QUALITY` reste le moyen de redescendre en production sans redéployer.
  */
 const COTE_LEGER = 1280;
+
+/**
+ * ═══ LE PLUS GRAND CÔTÉ QUAND ON FAIT COMME CHATGPT ═══════════════════════
+ *
+ * SA PHOTO EST UNE PHOTO EN PIED, ET C'EST LE CAS LE PLUS DUR. Réduite à
+ * douze cent quatre-vingts points de haut, son visage en fait à peine
+ * quatre-vingts de large : c'est avec ça que le moteur devait le reconnaître
+ * et le garder. ChatGPT reçoit la photo entière.
+ *
+ * DEUX MILLE QUARANTE-HUIT, C'EST CE QUE LES NOUVEAUX MOTEURS SAVENT RENDRE,
+ * et c'est encore léger à envoyer : sa photo y pèse un demi-mégaoctet, loin
+ * des quatre et demi que l'hébergeur accepte par requête. Une photo plus
+ * petite n'est jamais agrandie — voir `reduire`.
+ */
+const COTE_CHATGPT = 2048;
 
 /**
  * ═══ LE RÉGIME DE L'ESSAI — ET CELUI DE LA COIFFURE A CHANGÉ ═══════════════
@@ -127,15 +151,46 @@ const COTE_LEGER = 1280;
  * rognage — ET LA CONSIGNE QU'IL EST ALLÉ CHERCHER : celle dont on a la preuve
  * qu'elle rend le bon résultat sur sa photo. Voir `consigneCalquee`.
  *
- * C'EST DÉSORMAIS LE RÉGIME DE LA COIFFURE. Notre consigne longue a produit
- * huit rendus qu'il refuse ; celle-là en a produit un qu'il appelle parfait.
- * Entre les deux il n'y a pas à hésiter — et l'ancienne reste au banc d'essai,
- * en deuxième ligne, pour que la comparaison ne se perde pas.
+ * CE FUT LE RÉGIME DE LA COIFFURE, jusqu'à `chatgpt` juste en dessous : sa
+ * consigne est restée, sa recomposition est partie. Notre consigne longue a
+ * produit huit rendus qu'il refuse ; celle-là en a produit un qu'il appelle
+ * parfait — et l'ancienne reste au banc d'essai pour que la comparaison ne se
+ * perde pas.
  */
-export type Regime = "atelier" | "leger" | "brut" | "calquee";
+/**
+ * ═══ ET UN CINQUIÈME : COMME CHATGPT, JUSQU'AU BOUT ═══════════════════════
+ *
+ * « Quand je donne ma photo et la photo de la coupe à ChatGPT, dans 100 % des
+ * cas il me donne un résultat parfait. Nous aussi nous sommes connectés à
+ * OpenAI, pourtant le résultat est totalement différent et très mauvais. »
+ *
+ * LE MOTEUR ÉTAIT LA CAUSE, ET IL EST RÉPARÉ DANS LA ROUTE — voir
+ * `lib/direct/moteur-image.ts`. Mais `calquee` gardait encore deux choses que
+ * ChatGPT ne fait pas, et un bon moteur les rend nuisibles :
+ *
+ *   · LA RECOMPOSITION. Elle recolle le visage d'ORIGINE par-dessus le rendu.
+ *     Avec un moteur qui garde le visage, elle ne protège plus rien — et elle
+ *     abîme ce qu'on essaie : une coupe bouclée qui tombe sur le front se fait
+ *     couper net au bord de l'ovale recollé, qui porte encore le front d'avant.
+ *     C'est la « tête collée » qu'il a déjà décrite.
+ *   · LA DÉTECTION DE VISAGE et son refus d'afficher. Sur une photo en pied, la
+ *     tête fait quelques dizaines de points : quand MediaPipe ne la retrouve
+ *     pas sur le rendu, on refusait de montrer une image peut-être parfaite.
+ *     ET C'EST MESURÉ SUR SA PHOTO, AU NAVIGATEUR : MediaPipe n'y trouve aucun
+ *     visage du tout. Ni masque, ni recomposition, ni refus ne se sont donc
+ *     jamais posés sur ses essais — ce qu'il a vu, c'était le vieux moteur
+ *     tout seul. Tous nos verrous protégeaient les portraits serrés, et il
+ *     essayait avec une photo en pied.
+ *
+ * `chatgpt` FAIT DONC CE QUE FAIT CHATGPT, ET RIEN DE PLUS : les deux photos
+ * entières — la sienne jusqu'à `COTE_CHATGPT` —, la consigne calquée, aucun
+ * format, aucun masque, et le rendu du moteur tel qu'il sort. C'est le régime
+ * de la coiffure. Les quatre autres restent au banc, pour la comparaison.
+ */
+export type Regime = "atelier" | "leger" | "brut" | "calquee" | "chatgpt";
 
 function regimeDe(partie: string | undefined): Regime {
-  const defaut: Regime = zoneDe(partie) === "coiffure" ? "calquee" : "atelier";
+  const defaut: Regime = zoneDe(partie) === "coiffure" ? "chatgpt" : "atelier";
   if (typeof window === "undefined") return defaut;
   try {
     const q = new URLSearchParams(window.location.search);
@@ -143,6 +198,7 @@ function regimeDe(partie: string | undefined): Regime {
     if (q.get("atelier") === "1") return "atelier";
     if (q.get("leger") === "1") return "leger";
     if (q.get("calquee") === "1") return "calquee";
+    if (q.get("chatgpt") === "1") return "chatgpt";
     return defaut;
   } catch {
     return defaut;
@@ -388,14 +444,16 @@ export async function essayerSurMoi(opts: {
 }): Promise<Rendu | Souci> {
   const regime = opts.regime ?? regimeDe(opts.partie);
   const brut = regime === "brut";
+  /* COMME CHATGPT : ni détection, ni recomposition — voir `Regime`. */
+  const commeChatGPT = regime === "chatgpt";
   /* LE RÉGIME LÉGER NE ROGNE PAS ET NE DEMANDE PAS DE CADRE — voir `regimeDe`.
      `brut` et `leger` partagent ces deux-là ; seule la recomposition les
      sépare. */
   const leger = regime !== "atelier";
   /* QUELLE PHRASE PART. La route ne peut plus la déduire d'un seul booléen :
-     il y a maintenant trois consignes pour quatre régimes. On le lui dit. */
+     il y a maintenant trois consignes pour cinq régimes. On le lui dit. */
   const phrase: "longue" | "courte" | "calquee" =
-    regime === "brut" ? "courte" : regime === "calquee" ? "calquee" : "longue";
+    regime === "brut" ? "courte" : regime === "calquee" || commeChatGPT ? "calquee" : "longue";
   let photo: string;
   let reference: string;
   let cadre: { l: number; h: number } | null = null;
@@ -416,7 +474,7 @@ export async function essayerSurMoi(opts: {
        * précisément ce qu'une coupe longue a de plus à montrer.
        */
       [photo, reference] = await Promise.all([
-        reduire(opts.photo, COTE_LEGER),
+        reduire(opts.photo, commeChatGPT ? COTE_CHATGPT : COTE_LEGER),
         /* UNE RÉFÉRENCE ABSENTE N'EST PAS UNE PHOTO ILLISIBLE. `reduire("")`
            lève, et l'appelant lisait « Photo illisible » alors que sa photo à
            lui allait parfaitement. La consigne sait déjà travailler sans
@@ -514,6 +572,11 @@ export async function essayerSurMoi(opts: {
      recomposition, la détection ne servirait qu'à faire attendre. */
   if (brut) {
     dire("mode brut : ni masque ni recomposition, demandé dans l'adresse");
+  } else if (commeChatGPT) {
+    /* PAS UN VERROU QUI SAUTE : un verrou qu'on retire exprès. Le moteur
+       garde le visage lui-même, comme dans ChatGPT ; le recoller par-dessus
+       couperait la coupe qu'on essaie. Voir `Regime`. */
+    dire("comme ChatGPT : ni masque ni recomposition, le moteur garde le visage");
   } else if (!zone) {
     /* CE N'EST PAS UN DÉFAUT : une main, un poignet, une table n'ont pas de
        visage à protéger. On le dit quand même, parce que la première question
@@ -587,7 +650,14 @@ export async function essayerSurMoi(opts: {
     };
   }
 
-  let j: { image?: string; ms?: number; erreur?: string; pourquoi?: string };
+  let j: {
+    image?: string;
+    ms?: number;
+    erreur?: string;
+    pourquoi?: string;
+    modele?: string;
+    fournisseur?: string;
+  };
   try {
     j = (await r.json()) as typeof j;
   } catch {
@@ -613,6 +683,13 @@ export async function essayerSurMoi(opts: {
       pourquoi: j.pourquoi ?? `HTTP ${r.status}`,
     };
   }
+  /* LE MOTEUR, DANS LA CONSOLE DU TÉLÉPHONE. C'est la première question devant
+     un rendu décevant, et elle n'avait jamais de réponse. */
+  console.info(
+    "[essai] rendu",
+    JSON.stringify({ regime, modele: j.modele, fournisseur: j.fournisseur, ms: j.ms }),
+  );
+  const moteur = { modele: j.modele, fournisseur: j.fournisseur };
   /**
    * ═══ ET LE VRAI VISAGE REVIENT PAR-DESSUS LE RENDU ════════════════════════
    *
@@ -709,13 +786,13 @@ export async function essayerSurMoi(opts: {
         }
       }
       const fidele = await reposerLeVisage(photo, j.image, visage, zone, vRendu);
-      return { image: fidele, ms: j.ms ?? 0, visageRepose: true };
+      return { image: fidele, ms: j.ms ?? 0, visageRepose: true, ...moteur };
     } catch (e) {
       dire("la recomposition a échoué : on rend le portrait brut du modèle", e);
-      return { image: j.image, ms: j.ms ?? 0 };
+      return { image: j.image, ms: j.ms ?? 0, ...moteur };
     }
   }
-  return { image: j.image, ms: j.ms ?? 0 };
+  return { image: j.image, ms: j.ms ?? 0, ...moteur };
 }
 
 /** Distingue un rendu d'un souci sans avoir à tester `"image" in x` partout. */

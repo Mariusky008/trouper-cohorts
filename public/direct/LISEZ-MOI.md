@@ -500,6 +500,17 @@ Réglages facultatifs : `GEMINI_IMAGE_MODEL`, `OPENAI_IMAGE_MODEL`,
 `GEMINI_BASE_URL`, `OPENAI_BASE_URL` (ces deux dernières servent à pointer vers
 un faux fournisseur en recette, pour éprouver tout le chemin sans dépenser).
 
+**Le moteur OpenAI se choisit tout seul — laissez `OPENAI_IMAGE_MODEL` vide.**
+La route demande au compte ce qu'il peut appeler et prend, dans cet ordre :
+`chatgpt-image-latest` (le moteur de ChatGPT), `gpt-image-2.5-sunburst`,
+`gpt-image-2.5-flare`, `gpt-image-2`, `gpt-image-1.5`, puis `gpt-image-1`. Si le
+compte en refuse un au moment de l'appel, elle descend au suivant sans faire
+attendre. `OPENAI_IMAGE_MODEL`, si on la pose, **impose** un moteur et coupe ce
+choix : **si elle vaut `gpt-image-1` sur l'hébergeur, supprimez-la** — c'est
+l'ancien moteur, celui qui recopiait le visage du mannequin de la référence. Le
+banc d'essai (`/direct/banc-essai`) affiche le moteur en service et, sous
+chaque rendu, celui qui l'a réellement fait. Voir `lib/direct/moteur-image.ts`.
+
 ### Ce que ça coûte, et ce que ça implique
 
 Quelques centimes et quelques secondes par essai. Le quota de trois fantômes par
@@ -724,6 +735,19 @@ réglage que Gemini n'a pas, et qui existe précisément pour garder le visage. 
 coûte quelques secondes de plus par essai. Aucune comparaison n'a pu être faite
 ici — **il n'y a aucune clé d'image dans l'environnement de développement**,
 donc aucun rendu réel n'y a jamais été vu.
+
+> **Septembre 2026 — la cause était le moteur.** « ChatGPT me donne un résultat
+> parfait dans 100 % des cas, et nous sommes connectés à OpenAI comme lui. »
+> Connectés au même fournisseur, pas au même moteur : la route appelait
+> `gpt-image-1`, écrit en dur, trois générations derrière ChatGPT (Images 2.5).
+> Et **sur une photo en pied, aucun verrou ne s'est jamais posé** : mesuré au
+> navigateur sur sa photo, le détecteur de visage n'en trouve aucun quand la
+> tête ne fait que quelques dizaines de points — ni masque, ni visage recollé,
+> ni refus. Ce qu'il voyait était le vieux moteur tout seul. La coiffure passe
+> donc au régime `chatgpt` (`lib/direct/essai-genere.ts`) : le moteur le plus
+> proche de ChatGPT dans le catalogue du compte, sa photo entière jusqu'à
+> 2 048 points, la consigne calquée, et le rendu montré tel qu'il sort. Le
+> portrait du relooking (« votre portrait ») suit le même régime.
 
 ### 👓 Le lunetier — cinq photos, un métier de plus
 

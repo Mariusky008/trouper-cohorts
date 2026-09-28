@@ -43,6 +43,7 @@
 // choisit selon la clé présente, et l'écran ne sait rien du fournisseur.
 import { NextResponse } from "next/server";
 import { consigne, consigneBrute, consigneCalquee } from "@/lib/direct/consigne-essai";
+import { moteurRefuse, moteursDImage, noterRefus } from "@/lib/direct/moteur-image";
 
 export const dynamic = "force-dynamic";
 /**
@@ -122,7 +123,7 @@ async function parGemini(
   decrire: string,
   /** L'INSTANT OÙ LA ROUTE A ÉTÉ APPELÉE. Le temps restant s'en déduit — voir `reste`. */
   debut: number,
-): Promise<{ image: string } | { erreur: string }> {
+): Promise<{ image: string; modele: string } | { erreur: string }> {
   const modele = s(process.env.GEMINI_IMAGE_MODEL) || "gemini-2.5-flash-image";
   /**
    * L'ADRESSE EST SURCHARGEABLE, ET C'EST POUR LA RECETTE.
@@ -186,7 +187,7 @@ async function parGemini(
   };
   for (const p of j.candidates?.[0]?.content?.parts ?? []) {
     const d = p.inlineData?.data;
-    if (d) return { image: `data:${p.inlineData?.mimeType ?? "image/png"};base64,${d}` };
+    if (d) return { image: `data:${p.inlineData?.mimeType ?? "image/png"};base64,${d}`, modele };
   }
   return { erreur: "Gemini n'a pas rendu d'image." };
 }
@@ -315,10 +316,21 @@ async function parOpenAI(
   decrireEn: string,
   /** Laquelle des trois phrases part. Voir `consigne` dans le corps. */
   quelleConsigne: "longue" | "courte" | "calquee",
-  /** Le modèle imposé par le banc, vide en production. Voir `modele` dans le corps. */
-  modeleDemande: string,
-): Promise<{ image: string } | { erreur: string }> {
-  const modele = modeleDemande || s(process.env.OPENAI_IMAGE_MODEL) || "gpt-image-1";
+  /**
+   * ═══ LES MOTEURS À ESSAYER, DANS L'ORDRE — ET PLUS UN NOM ÉCRIT EN DUR ════
+   *
+   * IL Y AVAIT ICI `|| "gpt-image-1"`, et c'était la cause de tout. Voir
+   * `lib/direct/moteur-image.ts` : le premier modèle d'image d'OpenAI, trois
+   * générations derrière celui de ChatGPT, et celui dont le défaut connu est
+   * exactement ce qu'il a photographié — le visage du mannequin de la
+   * référence posé sur son corps.
+   *
+   * C'EST UNE LISTE, PAS UN NOM : si le compte refuse le premier, on descend
+   * au suivant sans faire attendre personne. Le banc, lui, en impose un seul.
+   */
+  modeles: string[],
+): Promise<{ image: string; modele: string } | { erreur: string }> {
+  const modele = modeles[0];
   // L'API d'édition d'OpenAI prend les images en multipart, et elle accepte
   // PLUSIEURS images : la première est celle qu'on modifie, la seconde sert de
   // référence. C'est exactement la forme dont on a besoin.
@@ -411,6 +423,20 @@ async function parOpenAI(
         "1024x1024";
   if (format) forme.append("size", format);
   forme.append("input_fidelity", "high");
+  /**
+   * ═══ LA SORTIE EN JPEG, PARCE QUE LA RÉPONSE A UNE TAILLE MAXIMALE ════════
+   *
+   * UN PNG DE PHOTOGRAPHIE NE SE COMPRESSE PAS. Un rendu de 1024 × 1536 plein
+   * de briques et de tweed pèse déjà trois mégaoctets, quatre en base64 — et
+   * l'hébergeur coupe toute réponse de fonction au-delà de quatre et demi. Les
+   * nouveaux moteurs savent rendre plus grand que ça : sans ce réglage, le
+   * meilleur essai serait précisément celui qui n'arrive jamais.
+   *
+   * À 95, L'ŒIL NE VOIT PAS LA DIFFÉRENCE, et l'image pèse cinq fois moins.
+   * Un moteur qui refuserait le champ le voit retiré — voir le repli sur 400.
+   */
+  forme.append("output_format", "jpeg");
+  forme.append("output_compression", "95");
   const enFichier = (x: { type: string; donnees: string }, nom: string) =>
     new File([Buffer.from(x.donnees, "base64")], nom, { type: x.type });
   forme.append("image[]", enFichier(photo, "client.png"));
@@ -484,6 +510,9 @@ async function parOpenAI(
       // très différents au même horodatage resteraient inexplicables.
       brut,
       consigne: `${quelleConsigne} (${phrase.length})`,
+      // CE QU'IL RESTE DERRIÈRE CELUI-CI, SI LE COMPTE LE REFUSE. Une liste
+      // d'un seul nom veut dire : imposé, par le banc ou par l'environnement.
+      suivants: modeles.slice(1),
     }),
   );
   const envoyer = () =>
@@ -515,7 +544,7 @@ async function parOpenAI(
    */
   if (!r.ok && r.status === 400) {
     const premier = await r.clone().text().catch(() => "");
-    const inconnus = ["input_fidelity", "size", "mask", "quality"].filter(
+    const inconnus = ["input_fidelity", "size", "mask", "quality", "output_format", "output_compression"].filter(
       (k) => new RegExp(`(unknown|unsupported|unrecognized|not supported)[^.]{0,60}${k}|${k}[^.]{0,60}(unknown|unsupported|not supported|invalid)`, "i").test(premier),
     );
     if (inconnus.length) {
@@ -529,6 +558,22 @@ async function parOpenAI(
   }
   if (!r.ok) {
     const txt = await r.text().catch(() => "");
+    /**
+     * ═══ LE COMPTE REFUSE CE MOTEUR : ON PREND LE SUIVANT ═════════════════
+     *
+     * Un modèle listé n'est pas forcément ouvert à ce compte — voir
+     * `moteurRefuse`. Le refus arrive avant toute génération, donc descendre
+     * d'un cran ne coûte presque rien ; échouer coûterait l'essai entier. On
+     * le note, pour que le client suivant n'aille pas se cogner au même mur.
+     */
+    if (modeles.length > 1 && moteurRefuse(r.status, txt)) {
+      noterRefus(modele);
+      console.info(
+        "[essai] le compte refuse ce moteur, on descend au suivant",
+        JSON.stringify({ modele, statut: r.status, suivant: modeles[1], pourquoi: txt.slice(0, 200) }),
+      );
+      return parOpenAI(cle, photo, reference, partie, garder, change, decrire, masque, debut, qualite, brut, cadreDemande, decrireEn, quelleConsigne, modeles.slice(1));
+    }
     /**
      * ═══ LE SYSTÈME DE SÉCURITÉ REFUSE, ET ON SAIT POURQUOI ═══════════════
      *
@@ -560,7 +605,7 @@ async function parOpenAI(
       // LE BUDGET NE SE REMET PAS À ZÉRO : ce qu'a coûté le refus est décompté
       // du temps qu'on donne au second appel, sans quoi les deux tentatives
       // additionnées dépasseraient ce que la fonction a le droit de vivre.
-      return parOpenAI(cle, photo, null, partie, garder, change, decrire, masque, debut, qualite, brut, cadreDemande, decrireEn, quelleConsigne, modeleDemande);
+      return parOpenAI(cle, photo, null, partie, garder, change, decrire, masque, debut, qualite, brut, cadreDemande, decrireEn, quelleConsigne, modeles);
     }
     if (bloque) {
       return {
@@ -572,7 +617,11 @@ async function parOpenAI(
   const j = (await r.json()) as { data?: { b64_json?: string }[] };
   const b = j.data?.[0]?.b64_json;
   if (!b) return { erreur: "OpenAI n'a pas rendu d'image." };
-  return { image: `data:image/png;base64,${b}` };
+  /* LE TYPE SE LIT DANS LES PREMIERS OCTETS, PAS DANS CE QU'ON A DEMANDÉ. Un
+     moteur qui a refusé `output_format` rend du PNG ; annoncer du JPEG devant
+     du PNG, c'est une image que certains navigateurs refusent d'afficher. */
+  const type = b.startsWith("/9j/") ? "image/jpeg" : b.startsWith("UklGR") ? "image/webp" : "image/png";
+  return { image: `data:${type};base64,${b}`, modele };
 }
 
 export async function POST(req: Request) {
@@ -651,9 +700,9 @@ export async function POST(req: Request) {
      * visage reste et la coupe devient générique — et aucune phrase ne les
      * fait disparaître tous les deux.
      *
-     * IL NE SERT QU'AU BANC. Le produit garde OPENAI_IMAGE_MODEL, posé par
-     * l'environnement : le jour où un modèle gagne la comparaison, c'est cette
-     * variable qu'on change, pas un appel dans une page.
+     * IL NE SERT QU'AU BANC. Le produit prend lui-même, dans le catalogue du
+     * compte, le moteur le plus proche de ChatGPT — et OPENAI_IMAGE_MODEL le
+     * force quand on le pose. Voir `lib/direct/moteur-image.ts`.
      */
     modele?: string;
   };
@@ -716,10 +765,20 @@ export async function POST(req: Request) {
    */
   const decrire = s(corps.decrire).slice(0, 300);
   if (!photo) return NextResponse.json({ erreur: "Photo manquante ou illisible." }, { status: 400 });
-  if (!reference) {
-    return NextResponse.json({ erreur: "Photo de référence manquante." }, { status: 400 });
-  }
-  if (photo.donnees.length + reference.donnees.length > POIDS_MAX) {
+  /**
+   * ═══ LA RÉFÉRENCE PEUT MANQUER — C'EST UNE QUESTION QUE LE BANC POSE ══════
+   *
+   * « Sans la photo de la coupe » répondait « Photo de référence manquante »
+   * sur chaque essai : la consigne savait travailler sans seconde image
+   * depuis des semaines — voir `avecReference` —, mais cette garde refusait
+   * la requête avant qu'elle n'arrive jusqu'à elle. La question « que nous
+   * apporte la photo de la coupe ? » n'a donc jamais reçu de réponse.
+   *
+   * LE PRODUIT, LUI, EN ENVOIE TOUJOURS UNE : l'écran de l'essai ne part pas
+   * sans elle. Et Gemini, dont la requête est bâtie autour des deux images,
+   * n'est simplement pas tenté quand elle manque.
+   */
+  if (photo.donnees.length + (reference?.donnees.length ?? 0) > POIDS_MAX) {
     return NextResponse.json(
       { erreur: "Photos trop lourdes : réduisez-les avant l'envoi." },
       { status: 413 },
@@ -788,9 +847,27 @@ export async function POST(req: Request) {
    */
   const PLUS_LEGER: Record<string, string> = { high: "medium", medium: "low" };
 
-  type Chemin = { nom: string; aller: () => Promise<{ image: string } | { erreur: string }> };
+  /**
+   * ═══ QUEL MOTEUR OPENAI, DEMANDÉ AU MOMENT DE PARTIR ══════════════════════
+   *
+   * LE BANC EN IMPOSE UN, ET IL EST SEUL. Le produit, lui, prend ce que le
+   * compte a de plus proche de ChatGPT — voir `lib/direct/moteur-image.ts`.
+   *
+   * ET LA LISTE SE REDEMANDE À CHAQUE TENTATIVE. Le catalogue est gardé en
+   * mémoire, donc ça ne coûte rien ; mais si la première tentative a découvert
+   * qu'un moteur est refusé à ce compte, la seconde ne doit pas recommencer
+   * par lui.
+   */
+  const baseOpenAI = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
+  const moteurs = async (cle: string) =>
+    modeleDemande ? [modeleDemande] : (await moteursDImage(cle, baseOpenAI)).liste;
+
+  type Chemin = {
+    nom: string;
+    aller: () => Promise<{ image: string; modele: string } | { erreur: string }>;
+  };
   const chemins: (Chemin | null)[] = [
-    gemini
+    gemini && reference
       ? {
           nom: "gemini",
           aller: () =>
@@ -800,7 +877,7 @@ export async function POST(req: Request) {
     openai
       ? {
           nom: `openai·${QUALITE}`,
-          aller: () =>
+          aller: async () =>
             parOpenAI(
               openai,
               photo,
@@ -816,7 +893,7 @@ export async function POST(req: Request) {
               cadreDemande,
               decrireEn,
               quelleConsigne,
-              modeleDemande,
+              await moteurs(openai),
             ),
         }
       : null,
@@ -851,8 +928,8 @@ export async function POST(req: Request) {
   if (openai && leger) {
     ordre.push({
       nom: `openai·${leger}`,
-      aller: () =>
-        parOpenAI(openai, photo, reference, partie, garder, change, decrire, masque, debut, leger, brut, cadreDemande, decrireEn, quelleConsigne, modeleDemande),
+      aller: async () =>
+        parOpenAI(openai, photo, reference, partie, garder, change, decrire, masque, debut, leger, brut, cadreDemande, decrireEn, quelleConsigne, await moteurs(openai)),
     });
   }
 
@@ -870,7 +947,13 @@ export async function POST(req: Request) {
     try {
       const r = await chemin.aller();
       if ("image" in r) {
-        return NextResponse.json({ image: r.image, ms: Date.now() - debut });
+        const ms = Date.now() - debut;
+        /* LE RENDU DIT QUI L'A FAIT. « Deux essais sur ClikMe » sont arrivés
+           sans que personne puisse dire quel moteur les avait rendus — ni
+           même si c'était OpenAI ou le repli Gemini. Le banc l'affiche sous
+           chaque image ; le journal le garde. */
+        console.info("[essai] rendu", JSON.stringify({ fournisseur: chemin.nom, modele: r.modele, ms }));
+        return NextResponse.json({ image: r.image, ms, fournisseur: chemin.nom, modele: r.modele });
       }
       essais.push(`${chemin.nom} : ${r.erreur}`);
     } catch (e) {
