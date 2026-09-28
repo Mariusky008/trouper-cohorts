@@ -26,6 +26,14 @@
 // que ce qu'il prétend.
 
 import {
+  cacherLeVisage,
+  cadrerLaTete,
+  decouperLaTete,
+  recollerLaTete,
+  trouverLaTete,
+  type CadreTete,
+} from "@/lib/direct/tete";
+import {
   alignementSurLeRendu,
   masqueDEssai,
   reposerLeVisage,
@@ -608,6 +616,49 @@ export async function essayerSurMoi(opts: {
     }
   }
 
+  /**
+   * ═══ COMME CHATGPT, MAIS SANS LUI LAISSER DE VISAGE À RECOPIER ════════════
+   *
+   * « Elle fait plus naturelle, mais le visage n'est toujours pas le même. »
+   * Voir `lib/direct/tete.ts` : on cache le visage de la référence, et quand
+   * sa tête est petite dans la photo, on n'envoie qu'un cadre autour d'elle,
+   * qu'on recolle ensuite sur sa photo intacte.
+   *
+   * LE CADRE NE SERT QU'À UNE COUPE. Le portrait du relooking change aussi la
+   * tenue : lui découper la tête laisserait les vêtements hors du travail.
+   */
+  const photoEntiere = photo;
+  let cadreTete: CadreTete | null = null;
+  let visageReferenceCache = false;
+  if (commeChatGPT && zone === "coiffure") {
+    try {
+      if (reference) {
+        const c = await cacherLeVisage(reference);
+        reference = c.image;
+        visageReferenceCache = c.cache;
+      }
+      const seulementLesCheveux =
+        /cheveux|coupe|coiffure/i.test(opts.change ?? "") &&
+        !/v[êe]tement|tenue|buste|habit|robe|veste|pantalon/i.test(opts.change ?? "");
+      if (seulementLesCheveux) {
+        const t = await trouverLaTete(photoEntiere);
+        cadreTete = t ? cadrerLaTete(t) : null;
+        if (cadreTete) photo = await decouperLaTete(photoEntiere, cadreTete);
+      }
+      dire(
+        `comme ChatGPT : visage de la référence ${visageReferenceCache ? "caché" : "absent"}, ${
+          cadreTete ? "cadre serré sur la tête" : "photo entière"
+        }`,
+      );
+    } catch (e) {
+      /* UN PRÉPARATIF QUI ÉCHOUE N'EMPÊCHE PAS L'ESSAI : on part avec la
+         photo entière, comme avant. */
+      photo = photoEntiere;
+      cadreTete = null;
+      dire("préparation de la tête impossible : photo entière", e);
+    }
+  }
+
   let r: Response;
   try {
     r = await fetch("/api/direct/essayer", {
@@ -635,6 +686,7 @@ export async function essayerSurMoi(opts: {
            le format qu'il reçoit. Sans ce mot, elle retomberait sur sa
            déduction d'autrefois et redemanderait un cadre — exactement ce
            qu'on vient d'enlever. */
+        visageReferenceCache,
         taille: cadre ? nomDuCadre(cadre) : "auto",
         // VIDE = LE SERVEUR GARDE LE SIEN. Voir `modele` au-dessus.
         modele: opts.modele ?? "",
@@ -690,6 +742,17 @@ export async function essayerSurMoi(opts: {
     JSON.stringify({ regime, modele: j.modele, fournisseur: j.fournisseur, ms: j.ms }),
   );
   const moteur = { modele: j.modele, fournisseur: j.fournisseur };
+  /* LE CADRE REVIENT À SA PLACE, SUR SA PHOTO INTACTE — voir `recollerLaTete`.
+     S'il ne se recolle pas, on montre au moins la tête recoiffée. */
+  if (cadreTete) {
+    try {
+      const image = await recollerLaTete(photoEntiere, cadreTete, photo, j.image);
+      return { image, ms: j.ms ?? 0, ...moteur };
+    } catch (e) {
+      dire("le cadre n'a pas pu être recollé : on montre la tête seule", e);
+      return { image: j.image, ms: j.ms ?? 0, ...moteur };
+    }
+  }
   /**
    * ═══ ET LE VRAI VISAGE REVIENT PAR-DESSUS LE RENDU ════════════════════════
    *

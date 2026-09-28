@@ -748,6 +748,14 @@ donc aucun rendu réel n'y a jamais été vu.
 > proche de ChatGPT dans le catalogue du compte, sa photo entière jusqu'à
 > 2 048 points, la consigne calquée, et le rendu montré tel qu'il sort. Le
 > portrait du relooking (« votre portrait ») suit le même régime.
+>
+> **Et le moteur seul n'a pas suffi** : son essai suivant était plus naturel,
+> mais le visage restait celui du mannequin de la référence. Deux gestes de
+> plus, dans `lib/direct/tete.ts` : le **visage de la référence est caché**
+> (un aplat gris des sourcils au menton — il ne reste qu'une chevelure à
+> recopier), et quand la tête est petite dans la photo, **on n'envoie qu'un
+> cadre serré autour d'elle**, agrandi, puis on le recolle en fondu sur sa
+> photo intacte : le costume et le décor ne passent plus du tout par le moteur.
 
 ### 👓 Le lunetier — cinq photos, un métier de plus
 

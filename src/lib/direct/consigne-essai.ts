@@ -527,6 +527,12 @@ export function consigneCalquee(
   change?: string,
   decrire?: string,
   avecReference = true,
+  /**
+   * LE VISAGE DE LA RÉFÉRENCE A-T-IL ÉTÉ CACHÉ ? Voir `cacherLeVisage` dans
+   * `tete.ts`. On le dit au moteur : un aplat gris qu'on n'expliquerait pas,
+   * il pourrait vouloir le reproduire — ou le « réparer » avec un visage.
+   */
+  visageReferenceCache = false,
 ): string {
   /* LE « uniquement » FRANÇAIS SORT, PARCE QUE L'ANGLAIS DIT DÉJÀ « ONLY ».
      Sans ça la phrase donnait « Change ONLY uniquement les cheveux », et une
@@ -541,6 +547,14 @@ export function consigneCalquee(
     avecReference
       ? `Change ONLY this, and nothing else — ${quoi} — to match the SECOND image, treating that second image solely as a visual reference for ${court}, never as a face, body, clothing or background reference.`
       : `Change ONLY this, and nothing else — ${quoi} — following the written specification below.`,
+    avecReference && visageReferenceCache
+      ? "In the SECOND image the face has been deliberately covered with a flat grey patch: it is not a person, only a head of hair. Take nothing from it except the hair."
+      : "",
+    /* ═══ L'IDENTITÉ, DITE EN TOUTES LETTRES ═══════════════════════════════
+       « Le visage n'est toujours pas le même que sur la photo de départ. » Ce
+       qui a changé sur ses essais, c'est la peau, les yeux, la barbe : on les
+       nomme, parce que ce sont eux qui ont dérivé vers la référence. */
+    "The face must remain the same real person as in the FIRST image: same skin tone, eyes, eyebrows, nose, mouth, jaw, beard or stubble and expression — do not beautify, lighten or replace it.",
     decrire ? `Reproduce the geometry faithfully: ${decrire}.` : "",
     /* LA LIGNE QU'ON N'AVAIT PAS DU TOUT, et celle qui laissait les longueurs
        sur les épaules. Raccourcir, c'est ENLEVER, et « modifier » ne le dit

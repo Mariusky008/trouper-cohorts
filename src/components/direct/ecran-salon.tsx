@@ -61,13 +61,26 @@ const YEUX = [
 /** Les huit étapes de vapeur, rangées par le script. */
 const VAPEURS = Array.from({ length: 8 }, (_, k) => `/direct/ouverture/salon/vapeur-${k + 1}.png`);
 
-/** Le clignement : mi-clos, fermé, mi-clos, ouvert. 250 ms en tout. */
+/**
+ * LE CLIGNEMENT : mi-clos, fermé, mi-clos, ouvert.
+ *
+ * « Il faudrait qu'il cligne plus souvent, on a l'impression qu'il n'y a aucune
+ * animation. » LES TROIS PAUPIÈRES ÉTAIENT BONNES, C'EST LE TEMPO QUI LES
+ * CACHAIT : 250 ms toutes les quatre à six secondes, c'est un battement qu'on
+ * rate si l'on lit le titre à ce moment-là. L'œil fermé tient donc plus
+ * longtemps — 150 ms, assez pour être vu sans devenir une sieste —, et le
+ * battement revient toutes les deux à trois secondes et demie.
+ */
 const CLIN = [
-  { etat: 1, ms: 60 },
-  { etat: 2, ms: 90 },
-  { etat: 1, ms: 60 },
-  { etat: 0, ms: 40 },
+  { etat: 1, ms: 70 },
+  { etat: 2, ms: 150 },
+  { etat: 1, ms: 70 },
+  { etat: 0, ms: 60 },
 ];
+/** L'écart entre deux battements, et la part de doubles clignements. */
+const ENTRE_MIN = 1900;
+const ENTRE_MAX = 3400;
+const DOUBLE = 0.3;
 
 /** Le temps d'une étape de vapeur, et la durée de son fondu. */
 const VAPEUR_MS = 1100;
@@ -103,14 +116,23 @@ export function EcranSalon({ onEntrer }: { onEntrer: () => void }) {
     const minuteurs: number[] = [];
     const battre = () => {
       if (!vivant) return;
+      /* UNE FOIS SUR TROIS, DEUX BATTEMENTS COLLÉS : c'est ce que fait un
+         visage qui regarde un écran, et c'est ce qui le rend vivant plutôt que
+         mécanique. */
+      const fois = Math.random() < DOUBLE ? 2 : 1;
       let t = 0;
-      for (const pas of CLIN) {
-        t += pas.ms;
-        minuteurs.push(window.setTimeout(() => vivant && setPaupiere(pas.etat), t));
+      for (let k = 0; k < fois; k++) {
+        for (const pas of CLIN) {
+          t += pas.ms;
+          minuteurs.push(window.setTimeout(() => vivant && setPaupiere(pas.etat), t));
+        }
+        t += 120;
       }
-      minuteurs.push(window.setTimeout(battre, t + 4000 + Math.random() * 2000));
+      minuteurs.push(window.setTimeout(battre, t + ENTRE_MIN + Math.random() * (ENTRE_MAX - ENTRE_MIN)));
     };
-    minuteurs.push(window.setTimeout(battre, 1200 + Math.random() * 1500));
+    /* LE PREMIER TOMBE VITE : c'est lui qui dit, dès l'arrivée, que l'image
+       est vivante. */
+    minuteurs.push(window.setTimeout(battre, 700 + Math.random() * 500));
     return () => {
       vivant = false;
       for (const m of minuteurs) window.clearTimeout(m);
@@ -127,9 +149,15 @@ export function EcranSalon({ onEntrer }: { onEntrer: () => void }) {
   }, [calme]);
 
   return (
-    <div className="sal">
-      {/* LE FOND EST LA SEULE IMAGE ENTIÈRE, et il ne bouge jamais. */}
-      <span className="sal-fond" aria-hidden="true" />
+    <div className={calme ? "sal calme" : "sal"}>
+      {/* ═══ LA SCÈNE RESPIRE, TOUT ENTIÈRE ═════════════════════════════════
+          Un travelling lent — quatre pour cent en quatorze secondes — posé sur
+          le conteneur, pas sur les calques : le fond, les paupières, la vapeur
+          et la fumée dessinée bougent ENSEMBLE, donc restent alignés. C'est ce
+          qui fait passer une image fixe pour un plan de film. */}
+      <div className="sal-scene" aria-hidden="true">
+      {/* LE FOND EST LA SEULE IMAGE ENTIÈRE. */}
+      <span className="sal-fond" />
 
       {/* LES HUIT VAPEURS SONT TOUTES MONTÉES, et leur rang change avec le
           temps : celle qui arrive est toujours la plus haute, celle qui part
@@ -158,14 +186,41 @@ export function EcranSalon({ onEntrer }: { onEntrer: () => void }) {
         />
       ))}
 
+      {/* ═══ LA FUMÉE DU CAFÉ, DESSINÉE ════════════════════════════════════
+          « La fumée du café ne se voit pas beaucoup. » Les huit rendus de
+          vapeur diffèrent de quelques traits pâles sur un fond clair : à la
+          taille d'un téléphone, il n'en reste rien. On dessine donc la fumée
+          par-dessus — trois volutes blanches, floues, qui montent de la tasse
+          et se dissipent sur le velours sombre du canapé, où elles se voient.
+
+          LE DESSIN EST DANS LE REPÈRE DE L'IMAGE : même taille (941 × 1672),
+          et « slice » fait pour un SVG exactement ce que « cover » fait pour le
+          fond. La tasse reste sous la fumée sur n'importe quel écran. */}
+      <svg className="sal-fumee" viewBox="0 0 941 1672" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <filter id="sal-flou" x="-50%" y="-20%" width="200%" height="140%">
+            <feGaussianBlur stdDeviation="5" />
+          </filter>
+        </defs>
+        <g filter="url(#sal-flou)">
+          <path className="sal-volute v1" d="M632 1066 C 612 1030, 656 1004, 634 968 S 612 912, 640 880" />
+          <path className="sal-volute v2" d="M650 1066 C 672 1034, 628 1002, 652 962 S 680 910, 654 872" />
+          <path className="sal-volute v3" d="M642 1066 C 628 1040, 660 1016, 644 984 S 626 938, 648 900" />
+        </g>
+      </svg>
+      </div>
+
       {/* ═══ LE TEXTE EST ÉCRIT, PAS INCRUSTÉ ══════════════════════════════
           La maquette le montre peint dans l'image. Écrit en HTML il reste net à
           toutes les tailles, il se corrige sans refabriquer le rendu, et le
           bouton est un vrai bouton — pas une zone à deviner sur une photo. */}
       <div className="sal-haut">
         <MotMarque className="sal-logo" encre="#FFFFFF" />
+        {/* LES COUPURES SONT CELLES DE LA MAQUETTE : la promesse tient seule
+            sur sa ligne, en rose, et la question se lit en quatre temps. */}
         <h1 className="sal-t">
-          Et si vous pouviez <em>essayer votre ville</em> sans quitter votre canapé ?
+          Et si vous pouviez <em>essayer votre ville</em>
+          sans quitter votre canapé&nbsp;?
         </h1>
       </div>
 
@@ -190,7 +245,36 @@ export function EcranSalon({ onEntrer }: { onEntrer: () => void }) {
 const FEUILLE = `
 .sal{position:absolute;inset:0;z-index:60;overflow:hidden;
   background:#1A0820;isolation:isolate;
+  font-family:var(--font-clikme),"Poppins",system-ui,sans-serif;
   -webkit-user-select:none;user-select:none;}
+
+/* ═══ LA SCENE RESPIRE ═══════════════════════════════════════════════════
+   Le travelling est pose sur le conteneur des calques, jamais sur un calque
+   seul : ils restent donc alignes au point pres. Quatre pour cent en
+   quatorze secondes, aller et retour : on ne le voit pas bouger, on le sent. */
+.sal-scene{position:absolute;inset:0;z-index:0;transform-origin:50% 58%;
+  animation:salSouffle 14s ease-in-out infinite alternate;will-change:transform;}
+@keyframes salSouffle{from{transform:scale(1)}to{transform:scale(1.04) translateY(-.6%)}}
+
+/* ═══ LA FUMEE DESSINEE ══════════════════════════════════════════════════
+   Trois volutes, chacune un trait blanc flou dont un tiers seulement est
+   visible a la fois. Le tiret glisse le long du trace, de la tasse vers le
+   haut, pendant que le trait s'eclaire puis s'efface : c'est une fumee qui
+   monte et se dissipe, en boucle, sans jamais repasser au meme endroit au
+   meme moment. En mode ecran, elle eclaircit le velours sans le peindre. */
+.sal-fumee{position:absolute;inset:0;width:100%;height:100%;z-index:25;
+  pointer-events:none;mix-blend-mode:screen;overflow:visible;}
+.sal-volute{fill:none;stroke:rgba(255,246,236,.95);stroke-linecap:round;
+  stroke-width:12;stroke-dasharray:80 200;stroke-dashoffset:280;opacity:0;
+  transform-box:fill-box;transform-origin:50% 100%;
+  animation:salVolute 3.8s ease-in-out infinite;}
+.sal-volute.v2{stroke-width:10;animation-delay:1.3s;animation-duration:4.2s;}
+.sal-volute.v3{stroke-width:15;animation-delay:2.5s;animation-duration:3.5s;}
+@keyframes salVolute{
+  0%{stroke-dashoffset:280;opacity:0;transform:translateX(0) scaleX(1)}
+  18%{opacity:.85}
+  60%{opacity:.55;transform:translateX(-5px) scaleX(1.15)}
+  100%{stroke-dashoffset:0;opacity:0;transform:translateX(4px) scaleX(1.35)}}
 
 /* ═══ LE PLAN REMPLIT L'ECRAN, ET LES TROIS CALQUES SUIVENT LE MEME CADRAGE
    C'est la condition de tout le reste : le fond, les yeux et la vapeur sont
@@ -240,28 +324,53 @@ const FEUILLE = `
 .sal-bas{bottom:0;padding-top:34px;padding-bottom:calc(26px + var(--ap-bas,0px));
   background:linear-gradient(to top,rgba(10,4,16,.9),rgba(10,4,16,.5) 55%,rgba(10,4,16,0));}
 
-.sal-logo{font-size:22px;font-weight:900;letter-spacing:-.02em;color:#fff;
+.sal-logo{font-size:24px;font-weight:900;letter-spacing:-.02em;color:#fff;
   margin-bottom:14px;}
-.sal-t{margin:0;font-size:clamp(25px,7.6vw,34px);font-weight:900;
-  line-height:1.14;letter-spacing:-.02em;color:#fff;text-wrap:balance;
-  text-shadow:0 2px 14px rgba(0,0,0,.6);}
+/* ═══ LE TITRE, A LA LETTRE DE LA MAQUETTE ════════════════════════════════
+   « La police n'est pas tres impactante sur cet ecran. » Elle etait celle de
+   l'interface, en 900 a 34 points : lourde mais petite, et serree dans une
+   largeur de paragraphe. La maquette montre la geometrique ronde de ClikMe,
+   grande, sur quatre lignes courtes, la promesse seule sur la sienne. */
+.sal-t{margin:0;font-size:clamp(29px,8.4vw,42px);font-weight:800;
+  line-height:1.07;letter-spacing:-.03em;color:#fff;text-wrap:balance;
+  text-shadow:0 3px 18px rgba(0,0,0,.55);}
 /* LA CHARNIERE DU PROPOS EN ROSE : « essayer votre ville » est la promesse,
-   le reste est la phrase autour. */
-.sal-t em{font-style:normal;color:#FF2E9A;}
+   elle a sa ligne, et une lueur qui la detache du salon. */
+.sal-t em{display:block;font-style:normal;color:#FF2E9A;
+  text-shadow:0 0 22px rgba(255,46,154,.45),0 3px 16px rgba(0,0,0,.5);}
 
-.sal-s{margin:0 0 16px;font-size:clamp(14px,4.1vw,16px);font-weight:700;
-  line-height:1.38;color:rgba(255,255,255,.9);
+.sal-s{margin:0 0 18px;font-size:clamp(15px,4.3vw,17px);font-weight:600;
+  line-height:1.4;color:rgba(255,255,255,.94);
   text-shadow:0 2px 12px rgba(0,0,0,.7);}
+
+/* ═══ LE TEXTE ARRIVE, IL N'EST PAS DEJA LA ════════════════════════════════
+   Le logo, puis la question, puis la phrase, puis le bouton : un demi-temps
+   entre chacun. C'est le premier ecran de ClikMe, il a le droit d'entrer. */
+.sal-haut>*,.sal-bas>*{animation:salMonte .75s cubic-bezier(.2,.8,.2,1) both;}
+.sal-haut>*:nth-child(2){animation-delay:.18s;}
+.sal-bas>*:nth-child(1){animation-delay:.42s;}
+.sal-bas>*:nth-child(2){animation-delay:.6s;}
+@keyframes salMonte{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 /* LE BOUTON EST LE SEUL OBJET CLIQUABLE DE L'ECRAN, et il le dit : plein,
    rose, large. Les deux voiles ne prennent pas le doigt — pointer-events est
    rendu au bouton seul, sinon le bandeau du bas avalerait l'appui. */
 .sal-b{pointer-events:auto;cursor:pointer;font:inherit;border:0;
-  padding:15px 30px;border-radius:999px;
-  font-size:clamp(15px,4.4vw,17px);font-weight:900;letter-spacing:-.01em;
+  padding:17px 34px;border-radius:999px;
+  font-size:clamp(16px,4.7vw,18px);font-weight:800;letter-spacing:-.01em;
   color:#fff;background:linear-gradient(101deg,#FF2E9A,#E0399B 60%,#C544E6);
   box-shadow:0 12px 34px -8px rgba(255,46,154,.7),
     0 0 0 1px rgba(255,255,255,.14) inset;
   display:inline-flex;align-items:center;gap:9px;}
 .sal-b i{font-style:normal;font-size:1em;}
 .sal-b:active{transform:scale(.97);}
+/* LE BOUTON APPELLE, DOUCEMENT : une lueur qui gonfle toutes les trois
+   secondes, apres son entree. */
+.sal-b{animation:salMonte .75s cubic-bezier(.2,.8,.2,1) .6s both,salAppel 3s ease-in-out 1.6s infinite;}
+@keyframes salAppel{0%,100%{box-shadow:0 12px 34px -8px rgba(255,46,154,.7),0 0 0 1px rgba(255,255,255,.14) inset}
+  50%{box-shadow:0 14px 44px -6px rgba(255,46,154,.95),0 0 0 1px rgba(255,255,255,.22) inset}}
+
+/* MOINS DE MOUVEMENT DEMANDE : la scene ne bouge plus, la fumee reste posee,
+   le texte est la d'emblee. */
+.sal.calme .sal-scene,.sal.calme .sal-haut>*,.sal.calme .sal-bas>*,.sal.calme .sal-b{animation:none;}
+.sal.calme .sal-volute{animation:none;opacity:.35;stroke-dashoffset:120;}
 `;

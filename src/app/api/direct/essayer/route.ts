@@ -329,6 +329,8 @@ async function parOpenAI(
    * au suivant sans faire attendre personne. Le banc, lui, en impose un seul.
    */
   modeles: string[],
+  /** Le navigateur a caché le visage de la référence — voir `tete.ts`. */
+  visageCache = false,
 ): Promise<{ image: string; modele: string } | { erreur: string }> {
   const modele = modeles[0];
   // L'API d'édition d'OpenAI prend les images en multipart, et elle accepte
@@ -347,7 +349,7 @@ async function parOpenAI(
       ? /* LA VERSION ANGLAISE GAGNE DANS UNE CONSIGNE ANGLAISE. À défaut, la
            française part quand même : une description imparfaite vaut mieux
            qu'une traduction devinée. */
-        consigneCalquee(partie, change, decrireEn || decrire, !!reference)
+        consigneCalquee(partie, change, decrireEn || decrire, !!reference, visageCache)
       : quelleConsigne === "courte" || brut
         ? consigneBrute(partie, change, decrire, !!reference)
         : consigne(partie, garder, change, decrire, !!masque, !!reference);
@@ -572,7 +574,7 @@ async function parOpenAI(
         "[essai] le compte refuse ce moteur, on descend au suivant",
         JSON.stringify({ modele, statut: r.status, suivant: modeles[1], pourquoi: txt.slice(0, 200) }),
       );
-      return parOpenAI(cle, photo, reference, partie, garder, change, decrire, masque, debut, qualite, brut, cadreDemande, decrireEn, quelleConsigne, modeles.slice(1));
+      return parOpenAI(cle, photo, reference, partie, garder, change, decrire, masque, debut, qualite, brut, cadreDemande, decrireEn, quelleConsigne, modeles.slice(1), visageCache);
     }
     /**
      * ═══ LE SYSTÈME DE SÉCURITÉ REFUSE, ET ON SAIT POURQUOI ═══════════════
@@ -605,7 +607,7 @@ async function parOpenAI(
       // LE BUDGET NE SE REMET PAS À ZÉRO : ce qu'a coûté le refus est décompté
       // du temps qu'on donne au second appel, sans quoi les deux tentatives
       // additionnées dépasseraient ce que la fonction a le droit de vivre.
-      return parOpenAI(cle, photo, null, partie, garder, change, decrire, masque, debut, qualite, brut, cadreDemande, decrireEn, quelleConsigne, modeles);
+      return parOpenAI(cle, photo, null, partie, garder, change, decrire, masque, debut, qualite, brut, cadreDemande, decrireEn, quelleConsigne, modeles, visageCache);
     }
     if (bloque) {
       return {
@@ -705,6 +707,8 @@ export async function POST(req: Request) {
      * force quand on le pose. Voir `lib/direct/moteur-image.ts`.
      */
     modele?: string;
+    /** Le visage de la référence a été caché dans le navigateur. Voir `tete.ts`. */
+    visageReferenceCache?: boolean;
   };
   try {
     corps = (await req.json()) as typeof corps;
@@ -718,6 +722,7 @@ export async function POST(req: Request) {
   const brut = corps.brut === true;
   const cadreDemande = s(corps.taille);
   const decrireEn = s(corps.decrireEn);
+  const visageCache = corps.visageReferenceCache === true;
   /* ON BORNE LA FORME, PAS LA LISTE. Un identifiant de modèle part chez OpenAI
      avec la clé du compte : ce n'est pas une adresse réseau, donc il n'y a rien
      a ouvrir ici. Mais une chaîne libre recopiée dans un multipart se retrouve
@@ -894,6 +899,7 @@ export async function POST(req: Request) {
               decrireEn,
               quelleConsigne,
               await moteurs(openai),
+              visageCache,
             ),
         }
       : null,
@@ -929,7 +935,7 @@ export async function POST(req: Request) {
     ordre.push({
       nom: `openai·${leger}`,
       aller: async () =>
-        parOpenAI(openai, photo, reference, partie, garder, change, decrire, masque, debut, leger, brut, cadreDemande, decrireEn, quelleConsigne, await moteurs(openai)),
+        parOpenAI(openai, photo, reference, partie, garder, change, decrire, masque, debut, leger, brut, cadreDemande, decrireEn, quelleConsigne, await moteurs(openai), visageCache),
     });
   }
 
