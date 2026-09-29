@@ -35,6 +35,9 @@ export type ReponseDouble = {
   suggestions: string[];
   /** D'où vient la réponse — utile au journal, jamais affiché. */
   par?: "ia" | "local";
+  /** Le sceau du serveur sur ce texte : sans lui, la route de la voix refuse
+   *  de le dire. Voir `api/direct/double/voix`. */
+  sig?: string;
 };
 
 export type FicheDouble = {
@@ -116,6 +119,11 @@ export function suggestionsDeDepart(): string[] {
 export function accueilDuDouble(prenomClient?: string): string {
   const p = (prenomClient ?? "").trim();
   return `Salut${p ? ` ${p}` : ""} ! Tu es du coin ou de passage ?`;
+}
+
+/** Ce qu'il répond quand on vient de lui demander une table. */
+export function confirmationDuDouble(f: FicheDouble): string {
+  return `C’est noté ! Je transmets ta demande à ${f.prenomConnu ? f.prenom : "le chef"}. Tu auras la confirmation ici même.`;
 }
 
 /**

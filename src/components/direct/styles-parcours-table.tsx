@@ -576,7 +576,7 @@ export function StylesParcoursTable() {
           background:rgba(255,255,255,.16);}
         /* LE PLAT ET SON PRIX SUR UNE LIGNE, le prix cale a droite. Il ne se
            laisse pas ecraser : c'est la lecon du texte vertical de la fiche. */
-        .pt-platfin{display:flex;align-items:baseline;gap:12px;}
+        .pt-platfin{display:flex;align-items:baseline;gap:12px;margin-top:12px;}
         .pt-platfin b{flex:1 1 auto;min-width:0;
           font-size:clamp(16px,4.8vw,19px);font-weight:900;letter-spacing:-.02em;
           line-height:1.2;color:#fff;}
@@ -607,7 +607,20 @@ export function StylesParcoursTable() {
           object-position:50% 14%;transform:scale(1.16);}
         @keyframes ptParle{0%,100%{box-shadow:0 0 0 2px #fff,0 0 0 0 rgba(255,255,255,.55)}
           60%{box-shadow:0 0 0 2px #fff,0 0 0 9px rgba(255,255,255,0)}}
-        .pt-venirbas .pt-deux{margin-top:9px;}
+        /* LES DEUX GESTES SECONDAIRES, COTE A COTE, EN LIENS. Ils passent
+           l'un sous l'autre sur un ecran trop etroit, jamais hors du cadre. */
+        .pt-liens{display:flex;flex-wrap:wrap;justify-content:center;
+          align-items:center;gap:4px 18px;width:100%;margin:12px 0 0;}
+        .pt-lien{display:flex;align-items:center;gap:6px;padding:6px 2px;
+          font-size:13px;font-weight:850;color:rgba(255,255,255,.86);
+          text-decoration:underline;text-decoration-color:rgba(255,46,154,.7);
+          text-underline-offset:4px;}
+        .pt-lien .pt-ico{width:17px;height:17px;}
+        .pt-venirbas .pt-liens .cc-bouton{align-self:auto;width:auto;margin:0;
+          padding:6px 2px;background:none;border:0;box-shadow:none;
+          font-size:13px;color:rgba(255,255,255,.86);
+          text-decoration:underline;text-decoration-color:rgba(255,255,255,.35);
+          text-underline-offset:4px;}
         @media (prefers-reduced-motion:reduce){.pt-parler-v{animation:none;}}
         .pt-venirbas .cc-bouton{align-self:stretch;width:100%;
           justify-content:center;margin-top:9px;padding:11px 15px;}

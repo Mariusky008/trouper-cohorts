@@ -38,53 +38,19 @@
  */
 import { NextResponse } from "next/server";
 import { toutesLesCartes } from "@/lib/direct/apercu-habitant";
+import { faireParler, TIMBRES } from "@/lib/direct/timbres";
 
 export const dynamic = "force-dynamic";
 
 const s = (v: unknown) => String(v ?? "").trim();
 
-/**
- * LE TIMBRE DE CHACUN, ET SA CONSIGNE DE JEU.
- *
- * Ses indications, mot pour mot : Margot « chaleureuse et souriante, comme si
- * elle parlait à un client, avec une petite pause après ça mijote doucement » ;
- * Chez Bergine « voix d'un homme avec un petit accent du sud » ; La Grande
- * Tablée « voix d'homme sans accent ».
- *
- * L'ACCENT EST UNE CONSIGNE, PAS UNE ORTHOGRAPHE. On n'écrit pas « putaing »
- * dans le texte pour le faire entendre : un accent transcrit se lit comme une
- * moquerie. `gpt-4o-mini-tts` prend justement une consigne de ton — c'est là
- * qu'il va, et un comédien lirait la même ligne.
- */
-const TIMBRES: Record<string, { voix: string; ton: string }> = {
-  emporter: {
-    // Voix féminine, ronde. Sur ElevenLabs, remplacer par un ID via la variable.
-    voix: "shimmer",
-    ton: "Parle en français, voix de femme chaleureuse et souriante, comme une cuisinière qui parle à un client accoudé au comptoir. Débit posé, jamais pressé. Marque une petite pause après « ça mijote doucement ». Termine sur un sourire dans la voix.",
-  },
-  centre: {
-    voix: "onyx",
-    ton: "Parle en français, voix d'homme avec un léger accent du Sud-Ouest, celui des Landes. Posé, tranquille, un peu gourmand quand il parle de l'odeur. Ne force jamais l'accent : il s'entend dans la musique de la phrase, pas dans la caricature.",
-  },
-  tablee: {
-    voix: "echo",
-    ton: "Parle en français, voix d'homme, sans accent régional. Simple et direct, comme quelqu'un qui explique sa recette en deux phrases parce qu'il a du monde en salle. Chaleureux, pas solennel.",
-  },
-  /* LA TROISIEME CUISINE DE LA DEMONSTRATION, ET SANS TIMBRE ELLE SERAIT
-     RESTEE MUETTE. La route répond 404 pour une clé qu'elle ne connaît pas, et
-     l'écran retombe alors sur la voix du téléphone — celle qui articule sans
-     raconter, et qui l'avait choqué. Une donnée ajoutée d'un côté doit être
-     ajoutée de l'autre : c'est le prix d'avoir deux fichiers pour une voix. */
-  "deux-rues": {
-    voix: "nova",
-    ton: "Parle en français, voix de femme d'une soixantaine d'années, posée et chaleureuse, avec la musique du Pays basque sans jamais la caricaturer. Elle prend son temps — c'est le sujet même de ce qu'elle raconte. Un peu de fierté tranquille sur la dernière phrase.",
-  },
-};
+/* LES TIMBRES ONT DÉMÉNAGÉ DANS `lib/direct/timbres.ts` : le double du chef
+   parle avec la même voix que son récit, et deux copies d'une voix finissent
+   toujours par ne plus se ressembler. */
 
 export async function GET(request: Request) {
   const cle = s(new URL(request.url).searchParams.get("cle"));
-  const timbre = TIMBRES[cle];
-  if (!timbre) return NextResponse.json({ error: "Voix inconnue." }, { status: 404 });
+  if (!TIMBRES[cle]) return NextResponse.json({ error: "Voix inconnue." }, { status: 404 });
 
   /* LE TEXTE VIENT DES DONNÉES, JAMAIS DE LA REQUÊTE. C'est toute la garde de
      cette route : on ne peut faire dire que ce qui est déjà écrit. */
@@ -92,69 +58,19 @@ export async function GET(request: Request) {
   const texte = s(commerce?.voix?.recit || commerce?.voix?.signature);
   if (!texte) return NextResponse.json({ error: "Rien à dire." }, { status: 404 });
 
-  const elevenKey = s(process.env.ELEVENLABS_API_KEY);
-  const openaiKey = s(process.env.OPENAI_TTS_API_KEY) || s(process.env.OPENAI_API_KEY);
-  const force = s(process.env.SITE_TTS_PROVIDER).toLowerCase();
-  const eleven = force === "elevenlabs" ? Boolean(elevenKey) : force === "openai" ? false : Boolean(elevenKey);
-  const openai = force === "openai" ? Boolean(openaiKey) : force === "elevenlabs" ? false : !elevenKey && Boolean(openaiKey);
-  if (!eleven && !openai) {
-    return NextResponse.json({ error: "Voix cloud non configurée." }, { status: 503 });
-  }
+  /* UN PEU PLUS LENT QUE LA NORMALE. Ailleurs dans le produit la voix est
+     vive parce qu'elle présente ; ici elle RACONTE, et une recette qu'on
+     récite à toute vitesse ne donne pas faim. */
+  const r = await faireParler(cle, texte, { vitesse: 0.96 });
+  if (!r.ok) return NextResponse.json({ error: r.erreur }, { status: r.statut });
 
   /* UNE JOURNÉE DE CACHE, ET C'EST BEAUCOUP POUR TROIS PHRASES QUI NE BOUGENT
      PAS. `immutable` dit au navigateur de ne même pas revenir demander. */
-  const son = (buf: ArrayBuffer) =>
-    new NextResponse(buf, {
-      status: 200,
-      headers: {
-        "Content-Type": "audio/mpeg",
-        "Cache-Control": "public, max-age=86400, s-maxage=604800, immutable",
-      },
-    });
-
-  try {
-    if (eleven) {
-      /* SUR ELEVENLABS, LA CONSIGNE DE TON N'EXISTE PAS : le timbre est dans le
-         choix de la voix. On laisse donc l'installateur poser trois ID dans ses
-         variables, et on retombe sur celui du projet à défaut. */
-      const id =
-        s(process.env[`ELEVENLABS_VOICE_${cle.toUpperCase().replace(/-/g, "_")}`]) ||
-        s(process.env.ELEVENLABS_VOICE_ID) ||
-        "21m00Tcm4TlvDq8ikWAM";
-      const r = await fetch(
-        `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(id)}?output_format=mp3_44100_128`,
-        {
-          method: "POST",
-          headers: { "xi-api-key": elevenKey, "content-type": "application/json" },
-          body: JSON.stringify({
-            text: texte,
-            model_id: "eleven_multilingual_v2",
-            voice_settings: { stability: 0.45, similarity_boost: 0.8, style: 0.35, use_speaker_boost: true },
-          }),
-        },
-      );
-      if (!r.ok) return NextResponse.json({ error: "tts_failed", status: r.status }, { status: 502 });
-      return son(await r.arrayBuffer());
-    }
-
-    const r = await fetch("https://api.openai.com/v1/audio/speech", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${openaiKey}`, "content-type": "application/json" },
-      body: JSON.stringify({
-        model: "gpt-4o-mini-tts",
-        voice: s(process.env[`OPENAI_TTS_VOICE_${cle.toUpperCase().replace(/-/g, "_")}`]) || timbre.voix,
-        input: texte,
-        instructions: timbre.ton,
-        response_format: "mp3",
-        /* UN PEU PLUS LENT QUE LA NORMALE. Ailleurs dans le produit la voix est
-           vive parce qu'elle présente ; ici elle RACONTE, et une recette qu'on
-           récite à toute vitesse ne donne pas faim. */
-        speed: 0.96,
-      }),
-    });
-    if (!r.ok) return NextResponse.json({ error: "tts_failed", status: r.status }, { status: 502 });
-    return son(await r.arrayBuffer());
-  } catch {
-    return NextResponse.json({ error: "Synthèse indisponible." }, { status: 502 });
-  }
+  return new NextResponse(r.son, {
+    status: 200,
+    headers: {
+      "Content-Type": "audio/mpeg",
+      "Cache-Control": "public, max-age=86400, s-maxage=604800, immutable",
+    },
+  });
 }

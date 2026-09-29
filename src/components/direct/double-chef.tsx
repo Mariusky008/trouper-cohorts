@@ -27,11 +27,12 @@
  * déjà, et c'est le seul changement qu'il faudra faire ici.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import {
   accueilDuDouble,
+  confirmationDuDouble,
   ficheDuDouble,
   repondreSansIA,
   suggestionsDeDepart,
@@ -41,6 +42,8 @@ import {
 import { onSpeakingChange, speak, speechSupported, stopSpeaking, unlockAudio } from "@/lib/site-internet/speech";
 
 const D = "/direct/double/";
+/** Un silence d'une frame, pour débloquer le son dans un appui (iPhone). */
+const SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
 const POSES = {
   accueil: `${D}accueil.webp`,
   content: `${D}content.webp`,
@@ -50,8 +53,11 @@ const POSES = {
 /** Les trois bouches, jouées l'une après l'autre quand il parle. */
 const BOUCHES = [`${D}parle-1.webp`, `${D}parle-3.webp`, `${D}parle-2.webp`, `${D}parle-3.webp`];
 
+/** Ce qu'on demande à la route de la voix — jamais un texte libre, voir la route. */
+type DemandeVoix = { quoi: "accueil" } | { quoi: "confirmation" } | { quoi: "reponse"; sig: string };
+
 type Bulle =
-  | { id: number; de: "double" | "client"; texte: string; heure: string; provisoire?: boolean }
+  | { id: number; de: "double" | "client"; texte: string; heure: string; provisoire?: boolean; voix?: DemandeVoix }
   | { id: number; de: "carte"; carte: CarteDouble; heure: string };
 
 /** Une bulle avant qu'on lui donne son numéro et son heure — pour chaque sorte. */
@@ -157,34 +163,169 @@ export function DoubleChef({
   const joursListe = useMemo(jours, []);
   const lui = fiche.prenomConnu ? fiche.prenom : "le chef";
 
+  /* ═══ SA VOIX : CELLE DE SON RÉCIT, PAS CELLE DU TÉLÉPHONE ════════════
+
+     « La voix est très métallique et robotique, peux-tu mettre une voix
+     naturelle et spontanée ? »
+
+     LE DOUBLE PARLAIT AVEC `speechSynthesis`, la voix du système. Il parle
+     maintenant avec le timbre de son cuisinier — le même que dans le récit
+     du parcours — joué en conversation : voir `lib/direct/timbres.ts`. La
+     voix du téléphone ne reste qu'en secours, quand aucune voix cloud n'est
+     configurée ou qu'elle ne répond pas.
+
+     LA BULLE ET LA VOIX ARRIVENT ENSEMBLE. Le texte attend le son quelques
+     instants (le double « réfléchit » pendant ce temps) : une phrase écrite
+     qui se met à parler une seconde plus tard, c'est un doublage décalé, et
+     c'est exactement ce qui fait robot. Au-delà de quatre secondes et demie,
+     on n'attend plus : le texte s'affiche, la voix du téléphone le lit. */
+  const audio = useRef<HTMLAudioElement | null>(null);
+  /** Chaque prise de parole a son numéro : une voix arrivée en retard ne coupe pas la suivante. */
+  const tour = useRef(0);
+  /** Faux dès que la voix cloud manque (503) : on n'insiste pas de la conversation. */
+  const nuage = useRef(true);
+  const sons = useRef(new Map<string, Promise<string | null>>());
+  const sonActif = useRef(son);
+  useEffect(() => {
+    sonActif.current = son;
+  }, [son]);
+
+  /* L'ÉLÉMENT AUDIO EST « DÉBLOQUÉ » DANS UN GESTE : sur iPhone, un son lancé
+     après une attente réseau est refusé si l'élément n'a jamais joué dans un
+     appui. On lui fait donc jouer un silence à chaque appui. */
+  const debloquer = () => {
+    try {
+      if (!audio.current) {
+        audio.current = new Audio();
+        audio.current.setAttribute("playsinline", "");
+      }
+      if (!audio.current.paused) return;
+      audio.current.src = SILENCE;
+      void audio.current.play().catch(() => {});
+    } catch {
+      /* au mieux */
+    }
+    unlockAudio();
+  };
+
+  /** Coupe ce qui parle, quelle que soit la voix. */
+  const taire = () => {
+    tour.current++;
+    stopSpeaking();
+    try {
+      audio.current?.pause();
+    } catch {
+      /* rien en cours */
+    }
+    setParle(false);
+  };
+
+  /** Le son d'une phrase — téléchargé une fois, rejoué ensuite sans réseau. */
+  const voixDe = (texte: string, demande: DemandeVoix): Promise<string | null> => {
+    const cle = `${demande.quoi}\n${texte}`;
+    const deja = sons.current.get(cle);
+    if (deja) return deja;
+    const p = fetch("/api/direct/double/voix", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: carte.id, prenom: prenomClient ?? "", texte, ...demande }),
+    })
+      .then(async (r) => {
+        if (r.status === 503 || r.status === 404) nuage.current = false;
+        if (!r.ok) return null;
+        return URL.createObjectURL(await r.blob());
+      })
+      .catch(() => null)
+      .then((url) => {
+        if (!url) sons.current.delete(cle);
+        return url;
+      });
+    sons.current.set(cle, p);
+    return p;
+  };
+
+  /** Le son prêt, ou rien au bout de quatre secondes et demie. */
+  const preparer = (texte: string, demande?: DemandeVoix): Promise<string | null> => {
+    if (!demande || !nuage.current || !sonActif.current) return Promise.resolve(null);
+    return Promise.race([
+      voixDe(texte, demande),
+      new Promise<null>((ok) => window.setTimeout(() => ok(null), 4500)),
+    ]);
+  };
+
+  /** La voix du téléphone, en secours. */
+  const repli = (texte: string) => {
+    if (speechSupported()) {
+      speak(texte);
+    } else {
+      /* SANS VOIX SUR CE TÉLÉPHONE, LA BOUCHE BOUGE QUAND MÊME le temps
+         qu'on lise : un double muet et immobile ressemble à une panne. */
+      setParle(true);
+      window.setTimeout(() => setParle(false), Math.min(6000, 600 + texte.length * 55));
+    }
+  };
+
+  /** Dit la phrase : avec sa voix si elle est prête, sinon avec celle du téléphone. */
+  const parler = (texte: string, url: string | null) => {
+    if (!sonActif.current) return;
+    taire();
+    const n = tour.current;
+    if (!url) return repli(texte);
+    const a = audio.current ?? new Audio();
+    audio.current = a;
+    /* UN SEUL REPLI PAR PHRASE : l'erreur de chargement et le refus de jouer
+       arrivent souvent ensemble, et la phrase serait dite deux fois. */
+    let replie = false;
+    const echec = () => {
+      if (n !== tour.current || replie) return;
+      replie = true;
+      setParle(false);
+      repli(texte);
+    };
+    a.onplay = () => n === tour.current && setParle(true);
+    a.onended = () => n === tour.current && setParle(false);
+    a.onpause = a.onended;
+    a.onerror = echec;
+    a.src = url;
+    void a.play().catch(echec);
+  };
+
+  /** Prépare puis dit — pour une phrase déjà à l'écran (« Réécouter »). */
+  const dire = (texte: string, demande?: DemandeVoix) => {
+    const n = ++tour.current;
+    void preparer(texte, demande).then((url) => {
+      if (n === tour.current) parler(texte, url);
+    });
+  };
+
   /* ═══ IL DIT BONJOUR, AVEC SA VOIX, DÈS L'ARRIVÉE ═════════════════════
      L'appui sur le fantôme qui a ouvert cet écran est un geste de la
      personne : le téléphone autorise donc le son. C'est ce premier « Salut
      Marius ! » entendu qui fait l'effet — pas le texte. */
-  const dire = useCallback(
-    (texte: string) => {
-      if (!son) return;
-      if (speechSupported()) {
-        speak(texte);
-      } else {
-        /* SANS VOIX SUR CE TÉLÉPHONE, LA BOUCHE BOUGE QUAND MÊME le temps
-           qu'on lise : un double muet et immobile ressemble à une panne. */
-        setParle(true);
-        window.setTimeout(() => setParle(false), Math.min(6000, 600 + texte.length * 55));
-      }
-    },
-    [son],
-  );
-
   useEffect(() => {
-    const off = onSpeakingChange(setParle);
-    unlockAudio();
-    const t = window.setTimeout(() => dire(accueilDuDouble(prenomClient)), 450);
+    const off = onSpeakingChange((v) => {
+      if (audio.current && !audio.current.paused) return;
+      setParle(v);
+    });
+    debloquer();
+    const texte = accueilDuDouble(prenomClient);
+    let fini = false;
+    const attente = new Promise((ok) => window.setTimeout(ok, 450));
+    void Promise.all([preparer(texte, { quoi: "accueil" }), attente]).then(([url]) => {
+      if (!fini) parler(texte, url);
+    });
+    const liste = sons.current;
     return () => {
+      fini = true;
       off();
-      window.clearTimeout(t);
-      stopSpeaking();
+      taire();
       reco.current?.stop();
+      /* ON VIDE LA LISTE EN LIBÉRANT LES SONS : un écran remonté juste après
+         (React le fait exprès en développement) redemande les siens, au lieu de
+         jouer une adresse déjà libérée — ce qui retombait sur la voix du
+         téléphone. */
+      for (const p of liste.values()) void p.then((u) => u && URL.revokeObjectURL(u));
+      liste.clear();
     };
     // Une seule fois, à l'ouverture.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -231,7 +372,8 @@ export function DoubleChef({
   const envoyer = async (texte: string) => {
     const t = texte.trim();
     if (!t || reflechit) return;
-    stopSpeaking();
+    taire();
+    debloquer();
     setPhase("conversation");
     setSaisie("");
     setMenu(false);
@@ -252,8 +394,10 @@ export function DoubleChef({
     } catch {
       r = repondreSansIA(t, fiche);
     }
+    const voix: DemandeVoix | undefined = r.sig ? { quoi: "reponse", sig: r.sig } : undefined;
+    const url = await preparer(r.texte, voix);
     setReflechit(false);
-    ajouter({ de: "double", texte: r.texte });
+    ajouter({ de: "double", texte: r.texte, voix });
     if (r.carte) {
       if (r.carte === "reservation") {
         setResa(preRemplir(t));
@@ -262,7 +406,7 @@ export function DoubleChef({
       ajouter({ de: "carte", carte: r.carte });
     }
     if (r.suggestions?.length) setSuggestions(r.suggestions);
-    dire(r.texte);
+    parler(r.texte, url);
   };
 
   /* ═══ LE MICRO : APPUYER, PARLER, RELÂCHER ═══════════════════════════════
@@ -281,7 +425,8 @@ export function DoubleChef({
       window.setTimeout(() => champ.current?.focus(), 30);
       return;
     }
-    stopSpeaking();
+    taire();
+    debloquer();
     reco.current = r;
     r.lang = "fr-FR";
     r.interimResults = true;
@@ -318,14 +463,19 @@ export function DoubleChef({
       de: "client",
       texte: `Une table pour ${resa.personnes}, ${jour} à ${resa.heure}.`,
     });
-    const texte = `C’est noté ! Je transmets ta demande à ${lui}. Tu auras la confirmation ici même.`;
-    window.setTimeout(() => {
-      ajouter({ de: "double", texte });
+    const texte = confirmationDuDouble(fiche);
+    const voix: DemandeVoix = { quoi: "confirmation" };
+    taire();
+    debloquer();
+    const pret = preparer(texte, voix);
+    const attente = new Promise((ok) => window.setTimeout(ok, 500));
+    void Promise.all([pret, attente]).then(([url]) => {
+      ajouter({ de: "double", texte, voix });
       setContent(true);
       window.setTimeout(() => setContent(false), 2600);
       setSuggestions(["Le plat du jour ?", "C'est où ?"]);
-      dire(texte);
-    }, 500);
+      parler(texte, url);
+    });
   };
 
   const plat = fiche.plat;
@@ -442,7 +592,7 @@ export function DoubleChef({
       className="dc-rond"
       aria-label={son ? "Couper le son" : "Remettre le son"}
       onClick={() => {
-        if (son) stopSpeaking();
+        if (son) taire();
         setSon(!son);
       }}
     >
@@ -614,7 +764,10 @@ export function DoubleChef({
                     <small>{b.heure}</small>
                   </p>
                   {b.de === "double" && (
-                    <button type="button" className="dc-rejoue" aria-label="Réécouter" onClick={() => { stopSpeaking(); speak(b.texte); }}>
+                    <button type="button" className="dc-rejoue" aria-label="Réécouter" onClick={() => {
+                        debloquer();
+                        dire(b.texte, b.voix);
+                      }}>
                       ▶
                     </button>
                   )}

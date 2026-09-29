@@ -1065,7 +1065,20 @@ profite ».
   cerveau de secours par mots-clés — plus court, jamais faux.
 - **Les cartes** posées dans la conversation (plat, réservation, horaires,
   carte) sont lues dans les données, jamais écrites par le modèle.
-- **La voix** est celle du téléphone pour l'instant. La voix reproduite du
-  commerçant viendra avec son accord écrit et son enregistrement.
+- **La voix** est celle du récit de son cuisinier (même timbre, joué en
+  conversation : plus vif, spontané) — `lib/direct/timbres.ts`, servie par
+  `/api/direct/double/voix` avec ElevenLabs ou OpenAI (`gpt-4o-mini-tts`). La
+  route ne dit que trois choses : le bonjour, la confirmation de table, et les
+  réponses **scellées** par la route du double (`lib/direct/sceau-voix.ts`) —
+  jamais un texte libre. La bulle attend le son (4,5 s au plus) pour que texte
+  et voix arrivent ensemble. Sans voix cloud → voix du téléphone.
+  Réglages : `OPENAI_TTS_VOICE_<CLE>` / `ELEVENLABS_VOICE_<CLE>` (ex.
+  `OPENAI_TTS_VOICE_CENTRE=ash`), `OPENAI_TTS_MODEL`, `DOUBLE_VOIX_SECRET`
+  (sinon la clé OpenAI sert de secret). La voix reproduite du commerçant
+  viendra avec son accord écrit et son enregistrement.
+- **Dernier écran du parcours restaurant** : « On se retrouve chez nous ? »
+  garde sa question, et son geste principal devient **« Parler à … »** (le
+  double). « Demander une table » et « Voir les stats de ce plat » passent en
+  liens ; horaires et mot de la maison sont retirés (le double les donne).
 - **Images** : `public/direct/double/` (7 poses et le comptoir), fabriquées par
   `scripts/fabriquer-double.mjs`.

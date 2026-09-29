@@ -922,24 +922,20 @@ export function ParcoursTable({
 
       {ici === "venir" && !cote && (
         <section className="pt-bas pt-venirbas">
+          {/* ═══ ALLÉGÉ : TROIS LIGNES, UN GESTE ════════════════════════════
+              « Je trouve l'écran un peu compliqué visuellement, il y a
+              beaucoup de choses. »
+              ON COMPTAIT ONZE CHOSES À LIRE SOUS UNE QUESTION QUI N'EN DEMANDE
+              QU'UNE. Les horaires et le mot de la maison partent : son double
+              les donne dès qu'on les lui demande, et c'est lui le geste de cet
+              écran. Restent chez qui, où, et ce qu'on vient manger. */}
           <div className="pt-carte-fin">
             <b className="pt-nomfin">{nom}</b>
             {resto.fiche?.ou && <em className="pt-oufin">{resto.fiche.ou}</em>}
-
-            <span className="pt-trait" aria-hidden="true" />
-
             <span className="pt-platfin">
               <b>{plat.nom}</b>
               {plat.prix && <s>{plat.prix}</s>}
             </span>
-
-            {resto.fiche?.horaires && (
-              <span className="pt-heurefin">
-                <i aria-hidden="true">🕐</i>
-                {resto.fiche.horaires}
-              </span>
-            )}
-            {resto.fiche?.mot && <em className="pt-motfin">{resto.fiche.mot}</em>}
           </div>
 
           {/* ═══ UN SEUL GESTE, ET IL MARCHE ════════════════════════════
@@ -982,17 +978,20 @@ export function ParcoursTable({
             {voix?.prenom ? `Parler à ${voix.prenom}` : "Parler au chef"}
             <Micro />
           </button>
-          <a className="pt-deux" href={joindre.whatsapp} target="_blank" rel="noreferrer noopener">
-            <Bulle />
-            Demander une table
-            <s aria-hidden="true">→</s>
-          </a>
-
-          {/* ═══ ET ON PASSE DE SON COTE ═════════════════════════════════
-              « Rajouter "voir les stats de ce plat" […] et pour toutes les
-              autres catégories faire la même chose, pour avoir la même logique
-              et le même impact en fin de parcours. » */}
-          <BoutonCote commerce={cle} branche="restaurant" onClick={() => setCote(true)} />
+          {/* LES DEUX AUTRES GESTES DESCENDENT D'UN CRAN, EN LIENS : trois
+              boutons de même poids empilés, c'est trois questions posées à la
+              fois. Un seul bouton plein — lui parler — et le reste à côté. */}
+          <div className="pt-liens">
+            <a className="pt-lien" href={joindre.whatsapp} target="_blank" rel="noreferrer noopener">
+              <Bulle />
+              Demander une table
+            </a>
+            {/* ═══ ET ON PASSE DE SON COTE ═════════════════════════════════
+                « Rajouter "voir les stats de ce plat" […] et pour toutes les
+                autres catégories faire la même chose, pour avoir la même
+                logique et le même impact en fin de parcours. » */}
+            <BoutonCote commerce={cle} branche="restaurant" onClick={() => setCote(true)} />
+          </div>
         </section>
       )}
 

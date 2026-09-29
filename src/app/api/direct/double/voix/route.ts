@@ -1,0 +1,98 @@
+// 🎙️ LA VOIX DU DOUBLE — la même que celle de son récit, en conversation.
+//
+// « La voix est très métallique et robotique, peux-tu mettre une voix
+// naturelle et spontanée ? »
+//
+// ═══ CE QU'ELLE ACCEPTE DE DIRE ════════════════════════════════════════════
+//
+// TROIS SORTES DE PHRASES, ET AUCUNE N'EST LIBRE :
+//
+//   · « accueil » — le bonjour ; le serveur l'écrit lui-même à partir du
+//     prénom, borné à quarante signes ;
+//   · « confirmation » — la table demandée ; écrite ici aussi ;
+//   · « reponse » — ce que le double vient de répondre, SEULEMENT avec le
+//     sceau que la route du double y a posé. Voir `sceau-voix.ts`.
+//
+// Sans ça, n'importe qui pourrait faire lire son courrier à nos frais.
+//
+// ═══ SANS VOIX CLOUD ═══════════════════════════════════════════════════════
+//
+// 503, et l'écran retombe sur la voix du téléphone. La conversation marche
+// partout ; elle est seulement plus vivante là où la clé existe.
+import { NextResponse } from "next/server";
+import { toutesLesCartes } from "@/lib/direct/apercu-habitant";
+import { accueilDuDouble, confirmationDuDouble, ficheDuDouble } from "@/lib/direct/double-chef";
+import { faireParler, JEU_CONVERSATION, voixCloudConfiguree } from "@/lib/direct/timbres";
+import { sceauValide } from "@/lib/direct/sceau-voix";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const s = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+
+/** Les pictogrammes ne se prononcent pas : une voix qui dit « visage souriant » casse tout. */
+const propre = (t: string) =>
+  t
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}\u{FE0F}\u{2022}]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/**
+ * LES PHRASES QUI REVIENNENT, GARDÉES EN MÉMOIRE.
+ *
+ * Le bonjour et la confirmation sont les mêmes pour tout le monde — ou presque,
+ * au prénom près. Les refaire synthétiser à chaque ouverture, c'est payer cent
+ * fois la même seconde de voix. Soixante phrases au plus : au-delà, on oublie
+ * les plus anciennes.
+ */
+const memoire = new Map<string, ArrayBuffer>();
+const garder = (cle: string, son: ArrayBuffer) => {
+  memoire.set(cle, son);
+  if (memoire.size > 60) memoire.delete(memoire.keys().next().value as string);
+};
+
+export async function POST(req: Request) {
+  let corps: { id?: unknown; quoi?: unknown; prenom?: unknown; texte?: unknown; sig?: unknown };
+  try {
+    corps = (await req.json()) as typeof corps;
+  } catch {
+    return NextResponse.json({ erreur: "Requête illisible." }, { status: 400 });
+  }
+  if (!voixCloudConfiguree()) return NextResponse.json({ erreur: "Voix cloud non configurée." }, { status: 503 });
+  const carte = toutesLesCartes().find((c) => c.id === s(corps.id));
+  if (!carte) return NextResponse.json({ erreur: "Commerce inconnu." }, { status: 404 });
+  const fiche = ficheDuDouble(carte);
+
+  const quoi = s(corps.quoi);
+  let texte = "";
+  if (quoi === "accueil") texte = accueilDuDouble(s(corps.prenom).slice(0, 40));
+  else if (quoi === "confirmation") texte = confirmationDuDouble(fiche);
+  else if (quoi === "reponse") {
+    const t = s(corps.texte);
+    if (t.length > 700 || !sceauValide(fiche.id, t, s(corps.sig))) {
+      return NextResponse.json({ erreur: "Phrase non reconnue." }, { status: 403 });
+    }
+    texte = t;
+  }
+  texte = propre(texte);
+  if (!texte) return NextResponse.json({ erreur: "Rien à dire." }, { status: 400 });
+
+  const son = (buf: ArrayBuffer) =>
+    new NextResponse(buf, {
+      status: 200,
+      headers: { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=86400" },
+    });
+
+  const cle = `${fiche.id}\n${texte}`;
+  const deja = memoire.get(cle);
+  if (deja) return son(deja);
+
+  /* UN PEU PLUS VIF QUE LE RÉCIT : il répond, il ne raconte pas. */
+  const r = await faireParler(fiche.id, texte, { jeu: JEU_CONVERSATION, vitesse: 1.04, spontane: true });
+  if (!r.ok) {
+    console.info("[double/voix] synthèse impossible", r.statut, r.erreur);
+    return NextResponse.json({ erreur: r.erreur }, { status: r.statut });
+  }
+  if (quoi !== "reponse") garder(cle, r.son);
+  return son(r.son);
+}

@@ -27,6 +27,7 @@ import {
   repondreSansIA,
   type ReponseDouble,
 } from "@/lib/direct/double-chef";
+import { scellerVoix } from "@/lib/direct/sceau-voix";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -66,7 +67,10 @@ export async function POST(req: Request) {
   const question = [...messages].reverse().find((m) => m.de === "client")?.texte ?? "";
   if (!question) return NextResponse.json({ erreur: "Aucune question." }, { status: 400 });
 
-  const secours = (): ReponseDouble => ({ ...repondreSansIA(question, fiche), par: "local" });
+  /* CHAQUE RÉPONSE PART AVEC SON SCEAU : c'est lui qui permet ensuite à la
+     route de la voix de la dire, et à elle seule. Voir `sceau-voix.ts`. */
+  const scelle = (r: ReponseDouble): ReponseDouble => ({ ...r, sig: scellerVoix(fiche.id, r.texte) });
+  const secours = (): ReponseDouble => scelle({ ...repondreSansIA(question, fiche), par: "local" });
   const cle = s(process.env.OPENAI_API_KEY);
   if (!cle) return NextResponse.json(secours());
 
@@ -101,7 +105,7 @@ export async function POST(req: Request) {
       brut = null;
     }
     const propre = nettoyerReponse(brut, fiche);
-    return NextResponse.json(propre ? { ...propre, par: "ia" } : secours());
+    return NextResponse.json(propre ? scelle({ ...propre, par: "ia" }) : secours());
   } catch (e) {
     console.info("[double] appel impossible, on répond sans le modèle", e instanceof Error ? e.message : String(e));
     return NextResponse.json(secours());
