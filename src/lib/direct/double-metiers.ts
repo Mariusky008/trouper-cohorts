@@ -320,6 +320,11 @@ export const TENUES: Partial<Record<FamilleDouble, { dossier: string; decor: str
   /* LE MAGASIN DE VÊTEMENTS : casquette au cintre, gilet violet, foulard, et
      la boutique derrière son comptoir. */
   mode: { dossier: "/direct/double/mode/", decor: "/direct/double/mode/decor.jpg" },
+  /* LE SALON DE COIFFURE : casquette et salopette aux ciseaux, peigne dans la
+     poche, et le salon — fauteuils, miroirs dorés — derrière le comptoir. Il
+     ne va PAS à l'onglerie, qui a sa propre famille : des ciseaux sur une
+     prothésiste ongulaire, c'est encore un métier mal compris. */
+  coiffure: { dossier: "/direct/double/coiffure/", decor: "/direct/double/coiffure/decor.jpg" },
 };
 
 /** La tenue d'un commerce, s'il en a une. */
