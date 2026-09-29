@@ -20,10 +20,10 @@
 // 503, et l'écran retombe sur la voix du téléphone. La conversation marche
 // partout ; elle est seulement plus vivante là où la clé existe.
 import { NextResponse } from "next/server";
-import { accueilDuDouble, confirmationDuDouble } from "@/lib/direct/double-chef";
+import { accueilDuDouble, confirmationDuDouble, phrasesADire } from "@/lib/direct/double-chef";
 import { trouverLeCommerce } from "@/lib/direct/double-commerce";
 import { compterSignes, voixAutorisee } from "@/lib/direct/voix-clonee";
-import { faireParler, faireParlerEnFlux, JEU_CONVERSATION, voixCloudConfiguree } from "@/lib/direct/timbres";
+import { faireParler, JEU_CONVERSATION, voixCloudConfiguree } from "@/lib/direct/timbres";
 import { sceauValide } from "@/lib/direct/sceau-voix";
 
 export const runtime = "nodejs";
@@ -52,7 +52,7 @@ const garder = (cle: string, son: ArrayBuffer) => {
   if (memoire.size > 60) memoire.delete(memoire.keys().next().value as string);
 };
 
-type Demande = { id?: unknown; quoi?: unknown; prenom?: unknown; texte?: unknown; sig?: unknown };
+type Demande = { id?: unknown; quoi?: unknown; prenom?: unknown; texte?: unknown; sig?: unknown; partie?: unknown };
 
 /**
  * LA PHRASE À DIRE, OU LA RAISON DE REFUSER — et AVEC QUELLE VOIX.
@@ -82,6 +82,16 @@ async function phraseDe(corps: Demande): Promise<Phrase | NextResponse> {
     }
     texte = t;
   }
+  /* UNE PHRASE DE LA RÉPONSE, si on en demande une — découpée ICI, sur le
+     texte scellé : voir `phrasesADire`. */
+  const n = Number(corps.partie);
+  if (corps.partie != null && corps.partie !== "") {
+    const parties = phrasesADire(texte);
+    if (!Number.isInteger(n) || n < 0 || n >= parties.length) {
+      return NextResponse.json({ erreur: "Phrase inconnue." }, { status: 400 });
+    }
+    texte = parties[n];
+  }
   texte = propre(texte);
   if (!texte) return NextResponse.json({ erreur: "Rien à dire." }, { status: 400 });
   let voixClonee = commerce.voixClonee;
@@ -97,30 +107,17 @@ const compter = (p: Phrase) => {
 };
 
 /**
- * AU FIL DE L'EAU — c'est la porte de l'écran.
- *
- * Un GET, parce qu'un élément audio sait lire une adresse pendant qu'elle se
- * télécharge, et pas un corps de POST. Le son sort donc du haut-parleur dès
- * sa première syllabe fabriquée. Les paramètres sont les mêmes que ceux du
- * POST, sceau compris.
+ * PAR ADRESSE — pour un simple lecteur audio (« Écouter mon double » dans
+ * l'Espace Pro). Le son part ENTIER, avec sa longueur : Safari refuse de
+ * lire un son dont il ne connaît pas la taille, et c'est ce qui rendait la
+ * voix robotique sur iPhone et sur Mac.
  */
 export async function GET(req: Request) {
   const q = new URL(req.url).searchParams;
-  const p = await phraseDe({ id: q.get("id"), quoi: q.get("quoi"), prenom: q.get("prenom"), texte: q.get("texte"), sig: q.get("sig") });
-  if (p instanceof NextResponse) return p;
-  const entetes = { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=86400" };
-  const deja = memoire.get(cleMemoire(p));
-  if (deja) return new NextResponse(deja, { status: 200, headers: entetes });
-  const r = await faireParlerEnFlux(p.id, p.texte, { ...JEU, voixClonee: p.voixClonee });
-  if (!r.ok) {
-    console.info("[double/voix] synthèse impossible", r.statut, r.erreur);
-    return NextResponse.json({ erreur: r.erreur }, { status: r.statut });
-  }
-  compter(p);
-  return new NextResponse(r.flux, { status: 200, headers: entetes });
+  return repondre({ id: q.get("id"), quoi: q.get("quoi"), prenom: q.get("prenom"), texte: q.get("texte"), sig: q.get("sig"), partie: q.get("partie") });
 }
 
-/** D'un bloc — gardé pour qui veut le fichier entier (et pour la mémoire des phrases fixes). */
+/** La porte de l'écran du double : une phrase à la fois, chacune un fichier entier. */
 export async function POST(req: Request) {
   let corps: Demande;
   try {
@@ -128,13 +125,17 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ erreur: "Requête illisible." }, { status: 400 });
   }
+  return repondre(corps);
+}
+
+async function repondre(corps: Demande) {
   const p = await phraseDe(corps);
   if (p instanceof NextResponse) return p;
 
   const son = (buf: ArrayBuffer) =>
     new NextResponse(buf, {
       status: 200,
-      headers: { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=86400" },
+      headers: { "Content-Type": "audio/mpeg", "Content-Length": String(buf.byteLength), "Cache-Control": "private, max-age=86400" },
     });
 
   const cle = cleMemoire(p);
@@ -149,5 +150,6 @@ export async function POST(req: Request) {
   }
   compter(p);
   if (p.fixe) garder(cle, r.son);
+  /* LA LONGUEUR EST DITE : c'est ce que Safari attend pour lire un son. */
   return son(r.son);
 }

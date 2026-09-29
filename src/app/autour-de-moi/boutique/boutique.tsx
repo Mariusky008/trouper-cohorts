@@ -4233,10 +4233,22 @@ function Styles() {
            page, et c'est exactement ce qu'il vient de constater.
            CE QUI RESTE SUR GRAND ECRAN : la meme colonne, centree, un peu plus
            large. On ne remplit pas l'ecran pour le remplir. */
+        /* ═══ MAIS UNE COLONNE DE TELEPHONE SUR DU NOIR N'EST PAS UNE PAGE ═══
+           « La page commercant n'est pas responsive et ne s'adapte pas a la
+           page entiere, etrangement. »
+           SEIZE CENTS POINTS DE NUIT AUTOUR DE SIX CENTS POINTS DE BLANC : sur
+           un ordinateur on voyait un telephone pose dans le noir, pas le site
+           d'un restaurant. La regle d'une seule colonne tient toujours — deux
+           colonnes avaient laisse des trous — mais la colonne devient une
+           PAGE : large, photo haute, posee sur un fond clair qui prolonge le
+           blanc au lieu de l'encadrer de noir. */
         @media (min-width:1040px){
-          .bq{max-width:600px;}
-          .bq-hero{height:400px;}
-          .bq-hero-c h1{font-size:44px;}
+          html:has(.bq),body:has(.bq),
+          html:has(.bq):has(.mu),body:has(.bq):has(.mu){background:#F3EEF6;}
+          .bq{max-width:880px;border-left:0;border-right:0;
+            box-shadow:0 0 0 1px rgba(20,16,40,.06),0 40px 90px -50px rgba(20,16,40,.35);}
+          .bq-hero{height:480px;}
+          .bq-hero-c h1{font-size:54px;}
         }
 
         /* Une personne qui a demande moins d'animation n'a pas demande moins

@@ -94,7 +94,6 @@ export const JEU_CONVERSATION =
   "Tu réponds à quelqu'un dans une vraie conversation, pas une lecture : spontané, naturel, détendu, comme au comptoir entre deux assiettes. Débit vivant, un peu plus rapide qu'un récit. Souris quand tu dis bonjour. Petites respirations naturelles, intonation qui monte sur les questions. Jamais de ton d'annonce ni de voix de répondeur.";
 
 export type ResultatVoix = { ok: true; son: ArrayBuffer } | { ok: false; statut: number; erreur: string };
-export type FluxVoix = { ok: true; flux: ReadableStream<Uint8Array> } | { ok: false; statut: number; erreur: string };
 
 /** Vrai quand une voix cloud est configurée — sinon l'écran garde celle du téléphone. */
 export function voixCloudConfiguree(): boolean {
@@ -133,50 +132,77 @@ function fournisseur(cle: string, voixClonee = ""): { eleven: string; openai: st
   const idEleven = saVoix || s(process.env.ELEVENLABS_VOICE_ID) || "21m00Tcm4TlvDq8ikWAM";
   const eleven =
     force === "openai" ? false : force === "elevenlabs" ? !!elevenKey : !!elevenKey && (!!saVoix || !openaiKey);
-  if (eleven) return { eleven: elevenKey, openai: "", idEleven };
-  if (openaiKey && force !== "elevenlabs") return { eleven: "", openai: openaiKey, idEleven };
+  /* OPENAI RESTE EN RÉSERVE MÊME QUAND ELEVENLABS PARLE : voir `appeler`. */
+  const openai = openaiKey && force !== "elevenlabs" ? openaiKey : "";
+  if (eleven) return { eleven: elevenKey, openai, idEleven };
+  if (openai) return { eleven: "", openai, idEleven };
   return null;
 }
 
-/** L'appel lui-même — la réponse brute, pour la lire d'un bloc ou au fil de l'eau. */
-async function appeler(cle: string, texte: string, o: Options, flux: boolean): Promise<Response | { statut: number; erreur: string }> {
+/**
+ * L'APPEL LUI-MÊME — ELEVENLABS S'IL PARLE POUR CE COMMERCE, ET OPENAI EN RÉSERVE.
+ *
+ * « Sur la page commerçant, les voix sont encore robotiques. »
+ *
+ * UN REFUS D'ELEVENLABS NE DOIT JAMAIS FINIR EN VOIX ROBOT. Un compte gratuit
+ * refuse les voix clonées (« Upgrade to use your cloned voice »), un quota
+ * s'épuise, une voix est supprimée : la route renvoyait alors une erreur, et
+ * l'écran passait la parole au téléphone. Maintenant le serveur reprend tout
+ * de suite avec le timbre OpenAI — une autre voix, mais une vraie.
+ */
+async function appeler(cle: string, texte: string, o: Options): Promise<Response | { statut: number; erreur: string }> {
   const f = fournisseur(cle, o.voixClonee);
   if (!f) return { statut: 503, erreur: "Voix cloud non configurée." };
   const timbre = TIMBRES[cle] ?? TIMBRE_PAR_DEFAUT;
   const variable = cle.toUpperCase().replace(/-/g, "_");
   const { jeu = "", vitesse = 0.96, spontane = false } = o;
-  try {
-    const r = f.eleven
-      ? /* SUR ELEVENLABS, LA CONSIGNE DE TON N'EXISTE PAS : le timbre est dans
-           la voix elle-même — c'est pour ça qu'on y met une voix clonée.
-           EN CONVERSATION, UN PEU MOINS DE STABILITÉ ET UN PEU PLUS DE STYLE :
-           c'est ce qui laisse passer les variations d'une voix qui répond. */
-        await fetch(
-          `${s(process.env.ELEVENLABS_BASE_URL) || "https://api.elevenlabs.io"}/v1/text-to-speech/${encodeURIComponent(f.idEleven)}${flux ? "/stream" : ""}?output_format=mp3_44100_128`,
-          {
-            method: "POST",
-            headers: { "xi-api-key": f.eleven, "content-type": "application/json" },
-            body: JSON.stringify({
-              text: texte,
-              model_id: s(process.env.ELEVENLABS_MODEL) || "eleven_multilingual_v2",
-              voice_settings: spontane
-                ? { stability: 0.34, similarity_boost: 0.85, style: 0.45, use_speaker_boost: true }
-                : { stability: 0.45, similarity_boost: 0.8, style: 0.35, use_speaker_boost: true },
-            }),
-          },
-        )
-      : await fetch(`${s(process.env.OPENAI_TTS_BASE_URL) || "https://api.openai.com"}/v1/audio/speech`, {
+
+  if (f.eleven) {
+    try {
+      /* SUR ELEVENLABS, LA CONSIGNE DE TON N'EXISTE PAS : le timbre est dans
+         la voix elle-même — c'est pour ça qu'on y met une voix clonée.
+         EN CONVERSATION, LE MODÈLE « FLASH » : deux fois moins cher au signe
+         que « Multilingual v2 », et plus rapide à répondre — c'est ce qui
+         compte quand quelqu'un attend la réponse. Le récit, lui, garde le
+         modèle le plus riche. Les deux se changent par variable. */
+      const modele = spontane
+        ? s(process.env.ELEVENLABS_MODEL_CONVERSATION) || "eleven_flash_v2_5"
+        : s(process.env.ELEVENLABS_MODEL) || "eleven_multilingual_v2";
+      const r = await fetch(
+        `${s(process.env.ELEVENLABS_BASE_URL) || "https://api.elevenlabs.io"}/v1/text-to-speech/${encodeURIComponent(f.idEleven)}?output_format=mp3_44100_128`,
+        {
           method: "POST",
-          headers: { Authorization: `Bearer ${f.openai}`, "content-type": "application/json" },
+          headers: { "xi-api-key": f.eleven, "content-type": "application/json" },
           body: JSON.stringify({
-            model: s(process.env.OPENAI_TTS_MODEL) || "gpt-4o-mini-tts",
-            voice: s(process.env[`OPENAI_TTS_VOICE_${variable}`]) || timbre.voix,
-            input: texte,
-            instructions: jeu ? `${timbre.ton} ${jeu}` : timbre.ton,
-            response_format: "mp3",
-            speed: vitesse,
+            text: texte,
+            model_id: modele,
+            voice_settings: spontane
+              ? { stability: 0.34, similarity_boost: 0.85, style: 0.45, use_speaker_boost: true }
+              : { stability: 0.45, similarity_boost: 0.8, style: 0.35, use_speaker_boost: true },
           }),
-        });
+        },
+      );
+      if (r.ok && r.body) return r;
+      console.info("[voix] ElevenLabs a refusé, on reprend avec OpenAI", r.status, (await r.text().catch(() => "")).slice(0, 200));
+    } catch {
+      /* réseau : on tente OpenAI */
+    }
+    if (!f.openai) return { statut: 502, erreur: "tts_failed" };
+  }
+
+  try {
+    const r = await fetch(`${s(process.env.OPENAI_TTS_BASE_URL) || "https://api.openai.com"}/v1/audio/speech`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${f.openai}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        model: s(process.env.OPENAI_TTS_MODEL) || "gpt-4o-mini-tts",
+        voice: s(process.env[`OPENAI_TTS_VOICE_${variable}`]) || timbre.voix,
+        input: texte,
+        instructions: jeu ? `${timbre.ton} ${jeu}` : timbre.ton,
+        response_format: "mp3",
+        speed: vitesse,
+      }),
+    });
     if (!r.ok || !r.body) return { statut: 502, erreur: `tts_failed ${r.status}` };
     return r;
   } catch {
@@ -184,27 +210,9 @@ async function appeler(cle: string, texte: string, o: Options, flux: boolean): P
   }
 }
 
-/** FAIT DIRE `texte` AVEC LE TIMBRE DE `cle`, d'un bloc — pour ce qu'on garde en cache. */
+/** FAIT DIRE `texte` AVEC LE TIMBRE DE `cle`, d'un bloc. */
 export async function faireParler(cle: string, texte: string, o: Options = {}): Promise<ResultatVoix> {
-  const r = await appeler(cle, texte, o, false);
+  const r = await appeler(cle, texte, o);
   if (!(r instanceof Response)) return { ok: false, ...r };
   return { ok: true, son: await r.arrayBuffer() };
-}
-
-/**
- * LA MÊME CHOSE, AU FIL DE L'EAU.
- *
- * « Au début c'est la voix normale, et dès qu'on commence à échanger ça
- * devient la voix robotique. »
- *
- * LE BONJOUR EST COURT, SA VOIX ARRIVAIT À TEMPS. Une réponse de deux phrases
- * demandait plusieurs secondes de fabrication AVANT le premier octet, l'écran
- * perdait patience et passait la parole à la voix du téléphone. En flux, le
- * son part dès sa première syllabe fabriquée : le navigateur commence à jouer
- * pendant que la suite arrive.
- */
-export async function faireParlerEnFlux(cle: string, texte: string, o: Options = {}): Promise<FluxVoix> {
-  const r = await appeler(cle, texte, o, true);
-  if (!(r instanceof Response)) return { ok: false, ...r };
-  return { ok: true, flux: r.body as ReadableStream<Uint8Array> };
 }

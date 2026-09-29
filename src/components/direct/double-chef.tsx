@@ -32,6 +32,7 @@ import { MotMarque } from "@/components/direct/mot-marque";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import {
   accueilDuDouble,
+  phrasesADire,
   confirmationDuDouble,
   ficheDuDouble,
   repondreSansIA,
@@ -177,26 +178,30 @@ export function DoubleChef({
      voix du téléphone ne reste qu'en secours, quand aucune voix cloud n'est
      configurée ou qu'elle ne répond pas.
 
-     LA VOIX ARRIVE AU FIL DE L'EAU. « Au début c'est la voix normale, et dès
-     qu'on commence à échanger ça devient la voix robotique. » Le bonjour,
-     court, arrivait à temps ; une réponse de deux phrases demandait
-     plusieurs secondes de fabrication, l'écran perdait patience et passait la
-     parole au téléphone. L'élément audio lit donc maintenant une ADRESSE qui
-     se télécharge pendant qu'il joue (voir le GET de la route) : le son sort
-     dès sa première syllabe.
+     PHRASE PAR PHRASE, CHACUNE UN VRAI FICHIER. « Au début c'est la voix
+     normale, et dès qu'on commence à échanger ça devient la voix robotique »,
+     puis « sur la page commerçant, les voix sont encore robotiques ».
+     Fabriquer toute la réponse d'un coup était trop lent ; la lire au fil de
+     l'eau, pendant qu'elle se fabriquait, ne marche pas sur Safari (iPhone et
+     Mac refusent un son dont ils ne connaissent pas la longueur). La réponse
+     est donc découpée — voir `phrasesADire` — et chaque phrase demandée à
+     part : la première, courte, arrive vite et joue pendant que les suivantes
+     se fabriquent.
 
      ET UNE FOIS SA VRAIE VOIX ENTENDUE, PLUS JAMAIS LA VOIX ROBOT. Changer de
      voix au milieu d'une conversation, c'est changer d'interlocuteur. Si une
      phrase échoue ensuite, sa bouche bouge en silence le temps qu'on la lise.
 
      LA BULLE ARRIVE AVEC LE SON : le double « réfléchit » jusqu'à la
-     première syllabe — trois secondes au plus, après quoi le texte s'affiche
-     et la voix le rattrape. */
+     première syllabe — quatre secondes et demie au plus, après quoi le texte
+     s'affiche et la voix le rattrape. */
   const audio = useRef<HTMLAudioElement | null>(null);
   /** Chaque prise de parole a son numéro : une voix arrivée en retard ne coupe pas la suivante. */
   const tour = useRef(0);
   /** Vrai dès que sa vraie voix a joué une fois : on ne revient plus à celle du téléphone. */
   const entendue = useRef(false);
+  /** Les phrases déjà fabriquées : « Réécouter » ne repasse pas par le réseau. */
+  const sons = useRef(new Map<string, Promise<string | null>>());
   const sonActif = useRef(son);
   useEffect(() => {
     sonActif.current = son;
@@ -233,15 +238,31 @@ export function DoubleChef({
     setParle(false);
   };
 
-  /** L'adresse de sa voix pour cette phrase — lue au fil de l'eau par l'élément audio. */
-  const adresse = (texte: string, demande: DemandeVoix) => {
-    const q = new URLSearchParams({ id: carte.id, quoi: demande.quoi });
-    if (demande.quoi === "accueil" && prenomClient) q.set("prenom", prenomClient);
-    if (demande.quoi === "reponse") {
-      q.set("texte", texte);
-      q.set("sig", demande.sig);
-    }
-    return `/api/direct/double/voix?${q.toString()}`;
+  /** Le son d'UNE phrase de la réponse, en fichier entier — ou rien. */
+  const fichier = (texte: string, demande: DemandeVoix, partie: number): Promise<string | null> => {
+    const cle = `${demande.quoi}\n${texte}\n${partie}`;
+    const deja = sons.current.get(cle);
+    if (deja) return deja;
+    const p = fetch("/api/direct/double/voix", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: carte.id,
+        prenom: prenomClient ?? "",
+        ...(demande.quoi === "reponse" ? { texte, sig: demande.sig } : {}),
+        quoi: demande.quoi,
+        partie,
+      }),
+      signal: AbortSignal.timeout(15_000),
+    })
+      .then(async (r) => (r.ok ? URL.createObjectURL(await r.blob()) : null))
+      .catch(() => null)
+      .then((url) => {
+        if (!url) sons.current.delete(cle);
+        return url;
+      });
+    sons.current.set(cle, p);
+    return p;
   };
 
   /** La bouche bouge sans le son, le temps qu'on lise. */
@@ -276,30 +297,47 @@ export function DoubleChef({
         lache = true;
         pret();
       };
-      window.setTimeout(lacher, 3000);
-      /* UN SEUL REPLI PAR PHRASE : l'erreur de chargement et le refus de
-         jouer arrivent souvent ensemble, et la phrase serait dite deux fois. */
-      let replie = false;
-      const echec = () => {
-        if (n !== tour.current || replie) return;
-        replie = true;
+      window.setTimeout(lacher, 4500);
+      /* TOUTES LES PHRASES SONT DEMANDÉES D'UN COUP : la deuxième se fabrique
+         pendant que la première se dit. */
+      const parties = phrasesADire(texte);
+      const urls = parties.map((_, i) => fichier(texte, demande, i));
+      /* UN SEUL REPLI : l'erreur de chargement et le refus de jouer arrivent
+         souvent ensemble, et la phrase serait dite deux fois. */
+      let fini = false;
+      const echec = (i: number) => {
+        if (n !== tour.current || fini) return;
+        fini = true;
         setParle(false);
-        repli(texte);
+        if (i === 0) repli(texte);
         lacher();
       };
-      const a = audio.current ?? new Audio();
-      audio.current = a;
-      a.onplaying = () => {
+      const jouer = async (i: number) => {
         if (n !== tour.current) return;
-        entendue.current = true;
-        setParle(true);
-        lacher();
+        if (i >= parties.length) {
+          setParle(false);
+          return;
+        }
+        const url = await urls[i];
+        if (n !== tour.current) return;
+        if (!url) return echec(i);
+        const a = audio.current ?? new Audio();
+        audio.current = a;
+        a.onplaying = () => {
+          if (n !== tour.current) return;
+          entendue.current = true;
+          setParle(true);
+          lacher();
+        };
+        a.onended = () => {
+          if (n === tour.current) void jouer(i + 1);
+        };
+        a.onpause = null;
+        a.onerror = () => echec(i);
+        a.src = url;
+        void a.play().catch(() => echec(i));
       };
-      a.onended = () => n === tour.current && setParle(false);
-      a.onpause = a.onended;
-      a.onerror = echec;
-      a.src = adresse(texte, demande);
-      void a.play().catch(echec);
+      void jouer(0);
     });
 
   /* ═══ IL DIT BONJOUR, AVEC SA VOIX, DÈS L'ARRIVÉE ═════════════════════
@@ -313,11 +351,17 @@ export function DoubleChef({
     });
     debloquer();
     const t = window.setTimeout(() => void parler(accueilDuDouble(prenomClient), { quoi: "accueil" }), 450);
+    const liste = sons.current;
     return () => {
       window.clearTimeout(t);
       off();
       taire();
       reco.current?.stop();
+      /* LES SONS SONT LIBÉRÉS ET LA LISTE VIDÉE : un écran remonté juste après
+         (React le fait exprès en développement) redemande les siens au lieu
+         de jouer une adresse déjà libérée. */
+      for (const p of liste.values()) void p.then((u) => u && URL.revokeObjectURL(u));
+      liste.clear();
     };
     // Une seule fois, à l'ouverture.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -648,7 +692,6 @@ export function DoubleChef({
               <b>
                 {fiche.prenomConnu ? fiche.prenom : "Le chef"} <span>· {fiche.nom}</span>
               </b>
-              <em>🎙️ Double IA · il répond pour {fiche.prenomConnu ? fiche.prenom : "le restaurant"}</em>
             </div>
           </div>
           <div className="dc-scene">

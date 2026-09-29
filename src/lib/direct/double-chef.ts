@@ -135,6 +135,38 @@ export function accueilDuDouble(prenomClient?: string): string {
   return `Salut${p ? ` ${p}` : ""} ! Tu es du coin ou de passage ?`;
 }
 
+/**
+ * LA RÉPONSE, DÉCOUPÉE EN PHRASES À DIRE L'UNE APRÈS L'AUTRE.
+ *
+ * « Sur la page commerçant, les voix sont encore robotiques. »
+ *
+ * FABRIQUER TOUTE LA RÉPONSE AVANT DE LA DIRE PRENAIT TROP LONGTEMPS, et la
+ * lire pendant qu'elle se fabriquait (un flux sans taille) ne marche pas sur
+ * Safari : iPhone et Mac refusent souvent un son dont ils ne connaissent pas la
+ * longueur, et l'écran passait la parole à la voix du téléphone.
+ *
+ * ON DIT DONC PHRASE PAR PHRASE. La première, courte, est prête en une seconde
+ * et joue pendant que les suivantes se fabriquent ; chacune est un vrai
+ * fichier, que tous les navigateurs savent lire.
+ *
+ * LE MÊME DÉCOUPAGE DES DEUX CÔTÉS. Le navigateur demande « la phrase 2 » d'une
+ * réponse scellée, le serveur redécoupe la réponse et dit la sienne : aucun
+ * texte libre ne passe, le sceau reste celui de la réponse entière. Les
+ * morceaux trop courts (« Salut ! ») se collent au suivant — une syllabe seule
+ * dans un fichier, c'est une respiration coupée.
+ */
+export function phrasesADire(texte: string): string[] {
+  const brut = (texte.match(/[^.!?…]+(?:[.!?…]+["»”)\s]*|$)/g) ?? [texte]).map((x) => x.trim()).filter(Boolean);
+  const out: string[] = [];
+  for (const p of brut) {
+    if (out.length && out[out.length - 1].length < 30) out[out.length - 1] += ` ${p}`;
+    else out.push(p);
+  }
+  /* PAS PLUS DE SIX MORCEAUX : au-delà, le reste part avec le dernier. */
+  if (out.length > 6) out.splice(5, out.length - 5, out.slice(5).join(" "));
+  return out.length ? out : [texte.trim()];
+}
+
 /** Ce qu'il répond quand on vient de lui demander une table. */
 export function confirmationDuDouble(f: FicheDouble): string {
   return `C’est noté ! Je transmets ta demande ${aLui(f)}. Tu auras la confirmation ici même.`;

@@ -1075,11 +1075,17 @@ profite ».
   Réglages : `OPENAI_TTS_VOICE_<CLE>` / `ELEVENLABS_VOICE_<CLE>` (ex.
   `OPENAI_TTS_VOICE_CENTRE=ash`), `OPENAI_TTS_MODEL`, `DOUBLE_VOIX_SECRET`
   (sinon la clé OpenAI sert de secret).
-  **Au fil de l'eau** : l'écran lit une adresse (GET de la route) qui se
-  télécharge pendant qu'elle joue — le son part dès la première syllabe, au
-  lieu d'attendre le fichier entier (c'est ce qui faisait basculer les réponses
-  sur la voix robot). Une fois la vraie voix entendue, plus jamais la voix du
-  téléphone : si une phrase échoue, la bouche bouge en silence.
+  **Phrase par phrase** : la réponse est découpée (`phrasesADire`, même
+  découpage côté serveur, sur le texte scellé) et chaque phrase est demandée à
+  part, en fichier entier avec sa longueur. La première arrive vite et joue
+  pendant que les suivantes se fabriquent. (Un flux sans longueur ne se lit
+  pas sur Safari — c'est ce qui rendait la voix robotique sur iPhone et Mac.)
+  Une fois la vraie voix entendue, plus jamais la voix du téléphone : si une
+  phrase échoue, la bouche bouge en silence.
+  **Refus d'ElevenLabs** (compte gratuit, quota, voix supprimée) : le serveur
+  reprend aussitôt avec le timbre OpenAI. En conversation, ElevenLabs utilise
+  `eleven_flash_v2_5` (moitié prix, plus rapide ; `ELEVENLABS_MODEL_CONVERSATION`
+  pour changer), le récit garde `eleven_multilingual_v2`.
 - **Chaque restaurateur donne SA voix, seul, depuis son Espace Pro** — carte
   « Donnez votre voix à votre double » (`pro/[slug]/pro-voix.tsx`, route
   `api/site-internet/pro/voix`). Il coche l'accord (texte gardé mot pour mot

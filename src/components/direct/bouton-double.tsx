@@ -120,5 +120,11 @@ const FEUILLE = `
 @media (min-width:600px){
   .bd-tel{width:min(430px,100%);height:min(900px,100%);border-radius:28px;box-shadow:0 30px 80px rgba(0,0,0,.6);}
 }
+/* SUR UN ORDINATEUR, LE FANTOME SE RANGE DANS LE COIN DE LA PAGE, pas dans
+   celui de l'ecran : a mille deux cents points de large, il flottait tout au
+   bord, loin du restaurant dont il parle. La colonne fait 560 points, puis
+   880 au-dela de 1040 — voir la feuille de la boutique. */
+@media (min-width:600px){.bd{right:max(16px,calc(50vw - 264px));}}
+@media (min-width:1040px){.bd{right:max(16px,calc(50vw - 424px));}}
 @media (prefers-reduced-motion:reduce){.bd{animation:none;}}
 `;
