@@ -175,6 +175,7 @@ import { StylesParcoursCoiffure } from "@/components/direct/styles-parcours-coif
 import { ParcoursSortie } from "@/components/direct/parcours-sortie-ecran";
 import { StylesParcoursSortie } from "@/components/direct/styles-parcours-sortie";
 import { ParcoursTable } from "@/components/direct/parcours-table-ecran";
+import { DoubleChef } from "@/components/direct/double-chef";
 import { StylesParcoursTable } from "@/components/direct/styles-parcours-table";
 import { ParcoursDeco } from "@/components/direct/parcours-deco-ecran";
 import { StylesParcoursDeco } from "@/components/direct/styles-parcours-deco";
@@ -2139,6 +2140,19 @@ export function ApercuHabitant() {
   const [parcoursCoiffure, setParcoursCoiffure] = useState("");
   const [parcoursSortie, setParcoursSortie] = useState("");
   const [parcoursTable, setParcoursTable] = useState("");
+  /* ═══ DANS L'APPLICATION : LE DOUBLE DU CHEF, ET LE PARCOURS DU PLAT ═══
+
+     « Au lieu d'avoir, quand on clique sur le fantôme, le parcours en quatre
+     étapes, on aura ce parcours sur le bouton qui remplace "Réserver mon
+     plat" — "Découvrir ce plat". Et le fantôme deviendra un endroit où l'on
+     pourrait discuter avec le chef du restaurant. »
+
+     DEUX ÉTATS À PART DE CEUX DE LA DÉMONSTRATION. `parcoursTable` vit dans
+     l'écran de choix, avant l'entrée dans l'application ; ceux-ci vivent
+     dans l'application, par-dessus l'annonce qu'on regarde. Les mélanger
+     rouvrirait la démonstration en revenant d'un plat. */
+  const [doubleOuvert, setDoubleOuvert] = useState("");
+  const [platOuvert, setPlatOuvert] = useState("");
   const [parcoursDeco, setParcoursDeco] = useState("");
   /* ═══ LA FLECHE « EN ARRIERE » DU NAVIGATEUR RAMENE A LA DEMO ═════════
 
@@ -4027,6 +4041,16 @@ export function ApercuHabitant() {
     recrute: !!(dessus && estPoste(dessus)),
     evenement: !!dessusEv,
   });
+  /**
+   * UN RESTAURANT, AU SENS DES DEUX NOUVEAUX GESTES.
+   *
+   * Pas une offre d'emploi, pas une invitation reçue : ceux-là gardent leurs
+   * propres boutons. Pour tous les autres, le fantôme ouvre le double du chef
+   * et le gros bouton dit « Découvrir ce plat ». Les autres métiers suivront
+   * le même chemin quand ils auront leur double.
+   */
+  const estResto =
+    !!dessus && dessus.branche === "restaurant" && !estPoste(dessus) && !estInvitation(dessus);
 
   /**
    * ═══ LE MUR DE L'ANNONCE DU DESSUS, CALCULÉ UNE FOIS ═══════════════════════
@@ -10413,6 +10437,29 @@ export function ApercuHabitant() {
                 <span>{motsDe(soireeDuSommet).geste}</span>
                 <s aria-hidden="true">→</s>
               </button>
+            ) : enPlace && estResto && !flashDuSommet ? (
+              /* ═══ CHEZ UN RESTAURANT, LE GESTE PLEIN FAIT DÉCOUVRIR ═══════
+                 « Le bouton qui remplace "Réserver mon plat" sera "Découvrir
+                 ce plat". » Il ouvre le parcours en quatre étapes de la
+                 démonstration — le plat, le rideau avant/servi, la voix du
+                 chef, la venue — sur CE restaurant-là. « Réserver » n'est pas
+                 perdu : il monte en tête du rail de droite, avec les trois
+                 autres gestes. Un Flash garde son « J'en profite » : il n'a
+                 pas le temps d'un parcours. */
+              <button
+                type="button"
+                className="ap-agir reserver ap-decouvrir"
+                onClick={() => {
+                  noter("onglet", 0, "decouvrir-plat");
+                  setPlatOuvert(dessus?.id ?? "");
+                }}
+              >
+                <svg className="ap-agir-i" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 14.5h16M5.2 14.5a6.8 6.8 0 0 1 13.6 0M12 7.7V6M3 17.8h18" />
+                </svg>
+                <span>Découvrir ce plat</span>
+                <s aria-hidden="true">→</s>
+              </button>
             ) : enPlace &&
               // UN EVENEMENT ET UN POSTE N'ONT PAS DE CRENEAU A RESERVER, et
               // c'est la seconde porte qui les tenait dehors : `aReserver` liste
@@ -10698,6 +10745,24 @@ export function ApercuHabitant() {
                 chose qu'on lui demande. Voir `nombreDeDemo`. */}
             {enPlace && sommet && (
               <div className="ap-rail" aria-label="Autres gestes sur cette annonce">
+                {/* « RÉSERVER » EN TÊTE DU RAIL, CHEZ UN RESTAURANT : le gros
+                    bouton fait découvrir le plat, celui-ci garde la table. */}
+                {estResto && !flashDuSommet && (
+                  <button
+                    type="button"
+                    className="ap-rail-b ap-engager"
+                    onClick={engagerLeSommet}
+                    disabled={!aReserver.length}
+                  >
+                    <i aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <rect x="3.2" y="5" width="17.6" height="16" rx="3" />
+                        <path d="M3.2 10h17.6M8 2.8v4.4M16 2.8v4.4" />
+                      </svg>
+                    </i>
+                    <span>Réserver</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   className={`ap-rail-b ap-favori${gardeSommet ? " on" : ""}`}
@@ -12935,6 +13000,28 @@ export function ApercuHabitant() {
               cette condition. Une soirée suffit maintenant à ouvrir la porte :
               voir le contenu de la feuille, qui monte `EcranSoiree` quand il
               n'y a pas de mur. */}
+          {/* ═══ LE DOUBLE ET LE PARCOURS DU PLAT, PLEIN ÉCRAN ═══════════
+              Ils couvrent aussi la barre du bas : ce sont des moments à part,
+              qui ont chacun leur bouton de retour. */}
+          {(doubleOuvert || platOuvert) && (
+            <div className="ap-plein-ecran">
+              {platOuvert ? (
+                <ParcoursTable commerce={platOuvert} onFermer={() => setPlatOuvert("")} />
+              ) : (
+                (() => {
+                  const c = toutesLesCartes().find((x) => x.id === doubleOuvert);
+                  return c ? (
+                    <DoubleChef
+                      carte={c}
+                      prenomClient={prenom}
+                      onFermer={() => setDoubleOuvert("")}
+                      onDecouvrir={() => setPlatOuvert(c.id)}
+                    />
+                  ) : null;
+                })()
+              )}
+            </div>
+          )}
           {(murOuvert || murRevisite) && (dessus || murRevisite || soireeDuSommet) && (
             <>
               <button
@@ -13276,6 +13363,16 @@ export function ApercuHabitant() {
                 setClin("simple");
                 sonDuBond(false);
                 window.setTimeout(() => setClin(""), BOND_MS);
+                /* ═══ CHEZ UN RESTAURANT, IL OUVRE LE DOUBLE DU CHEF ═══
+                   « Le fantôme deviendra un endroit où l'on pourrait
+                   discuter avec le chef du restaurant. » Il porte d'ailleurs
+                   sa tenue — casquette et tablier aux couverts —, c'est ce
+                   qui rend le changement de rôle lisible. */
+                if (estResto) {
+                  noter("onglet", 0, "double-chef");
+                  setDoubleOuvert(dessus.id);
+                  return;
+                }
                 noter("onglet", 0, "mur");
                 // IL NE DIT RIEN DE CE QU'ON VEUT : c'est `entree` qui tranche,
                 // selon qu'il y a du monde sur le mur ou pas.
@@ -13311,7 +13408,12 @@ export function ApercuHabitant() {
                   pour ceux dont le balayage ne prend pas, et un bouton de
                   secours qui ne répond pas visiblement au doigt ne vaut pas
                   mieux que le geste qu'il remplace. */}
-              <Fantome />
+              {estResto ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="ap-mf-chef" src="/direct/double/accueil.webp" alt="" />
+              ) : (
+                <Fantome />
+              )}
             </button>
             <button
               type="button"
@@ -20134,6 +20236,14 @@ export function ApercuHabitant() {
         }
 
         /* ── LES DEUX FEUILLES QUI RESTENT ── */
+        /* LE DOUBLE DU CHEF ET LE PARCOURS DU PLAT : par-dessus tout, barre
+           du bas comprise. Ils ont chacun leur bouton de retour. */
+        .ap-plein-ecran{position:absolute;inset:0;z-index:95;background:#0B0710;}
+        .ap-plein-ecran>.pt{z-index:1;}
+        /* LE FANTOME PORTE LA TENUE DU CHEF quand l'annonce est un restaurant :
+           c'est la pose d'accueil du double, cadree sur le visage. */
+        .ap-onglets .ap-monfantome .ap-mf-chef{position:absolute;inset:0;width:100%;height:100%;
+          border-radius:50%;object-fit:cover;object-position:50% 14%;transform:scale(1.18);}
         .ap-fond{position:absolute;inset:0;z-index:8;border:0;padding:0;cursor:pointer;
           background:rgba(3,7,6,.7);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
           animation:apFond .25s ease;}

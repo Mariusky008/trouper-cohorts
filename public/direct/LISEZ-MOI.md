@@ -1044,3 +1044,28 @@ d'après le côté droit reçoit le côté gauche.
 raison pour laquelle la règle bloquante de cette section n'est ni le cadrage,
 ni la lumière, ni la définition : c'est que ce soit **le même plat**. Tout le
 reste se rattrape au recadrage.
+
+## 👻 Le double du chef (restaurants)
+
+> « Le fantôme deviendra un endroit où l'on pourrait discuter avec le chef du
+> restaurant. »
+
+Sur une annonce de restaurant, **le fantôme de la barre porte la tenue du chef
+et ouvre sa conversation** (`components/direct/double-chef.tsx`). Le gros
+bouton de l'annonce devient **« Découvrir ce plat »** et ouvre le parcours en
+quatre étapes de la démonstration (`ParcoursTable`) sur ce restaurant-là ;
+**« Réserver »** monte en tête du rail de droite. Un Flash garde son « J'en
+profite ».
+
+- **Ce qu'il sait** : uniquement la fiche du commerce — plat du jour, carte,
+  horaires, adresse, récit de la cuisinière (`lib/direct/double-chef.ts`). Pour
+  les allergies et tout ce qui n'y est pas, il dit qu'il transmet.
+- **Qui répond** : avec `OPENAI_API_KEY`, un petit modèle (`gpt-5.4-mini` par
+  défaut, `OPENAI_DOUBLE_MODEL` pour changer). Sans clé ou en cas d'échec, un
+  cerveau de secours par mots-clés — plus court, jamais faux.
+- **Les cartes** posées dans la conversation (plat, réservation, horaires,
+  carte) sont lues dans les données, jamais écrites par le modèle.
+- **La voix** est celle du téléphone pour l'instant. La voix reproduite du
+  commerçant viendra avec son accord écrit et son enregistrement.
+- **Images** : `public/direct/double/` (7 poses et le comptoir), fabriquées par
+  `scripts/fabriquer-double.mjs`.
