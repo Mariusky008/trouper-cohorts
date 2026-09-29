@@ -22,7 +22,7 @@
 import { NextResponse } from "next/server";
 import { toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import { accueilDuDouble, confirmationDuDouble, ficheDuDouble } from "@/lib/direct/double-chef";
-import { faireParler, JEU_CONVERSATION, voixCloudConfiguree } from "@/lib/direct/timbres";
+import { faireParler, faireParlerEnFlux, JEU_CONVERSATION, voixCloudConfiguree } from "@/lib/direct/timbres";
 import { sceauValide } from "@/lib/direct/sceau-voix";
 
 export const runtime = "nodejs";
@@ -51,18 +51,19 @@ const garder = (cle: string, son: ArrayBuffer) => {
   if (memoire.size > 60) memoire.delete(memoire.keys().next().value as string);
 };
 
-export async function POST(req: Request) {
-  let corps: { id?: unknown; quoi?: unknown; prenom?: unknown; texte?: unknown; sig?: unknown };
-  try {
-    corps = (await req.json()) as typeof corps;
-  } catch {
-    return NextResponse.json({ erreur: "Requête illisible." }, { status: 400 });
-  }
+type Demande = { id?: unknown; quoi?: unknown; prenom?: unknown; texte?: unknown; sig?: unknown };
+
+/**
+ * LA PHRASE À DIRE, OU LA RAISON DE REFUSER.
+ *
+ * Les deux portes — POST d'un bloc, GET au fil de l'eau — passent par ici :
+ * une garde écrite deux fois finit toujours par n'être tenue qu'une fois.
+ */
+function phraseDe(corps: Demande): { id: string; texte: string; fixe: boolean } | NextResponse {
   if (!voixCloudConfiguree()) return NextResponse.json({ erreur: "Voix cloud non configurée." }, { status: 503 });
   const carte = toutesLesCartes().find((c) => c.id === s(corps.id));
   if (!carte) return NextResponse.json({ erreur: "Commerce inconnu." }, { status: 404 });
   const fiche = ficheDuDouble(carte);
-
   const quoi = s(corps.quoi);
   let texte = "";
   if (quoi === "accueil") texte = accueilDuDouble(s(corps.prenom).slice(0, 40));
@@ -76,6 +77,44 @@ export async function POST(req: Request) {
   }
   texte = propre(texte);
   if (!texte) return NextResponse.json({ erreur: "Rien à dire." }, { status: 400 });
+  return { id: fiche.id, texte, fixe: quoi !== "reponse" };
+}
+
+const JEU = { jeu: JEU_CONVERSATION, vitesse: 1.04, spontane: true };
+
+/**
+ * AU FIL DE L'EAU — c'est la porte de l'écran.
+ *
+ * Un GET, parce qu'un élément audio sait lire une adresse pendant qu'elle se
+ * télécharge, et pas un corps de POST. Le son sort donc du haut-parleur dès
+ * sa première syllabe fabriquée. Les paramètres sont les mêmes que ceux du
+ * POST, sceau compris.
+ */
+export async function GET(req: Request) {
+  const q = new URL(req.url).searchParams;
+  const p = phraseDe({ id: q.get("id"), quoi: q.get("quoi"), prenom: q.get("prenom"), texte: q.get("texte"), sig: q.get("sig") });
+  if (p instanceof NextResponse) return p;
+  const deja = memoire.get(`${p.id}\n${p.texte}`);
+  const entetes = { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=86400" };
+  if (deja) return new NextResponse(deja, { status: 200, headers: entetes });
+  const r = await faireParlerEnFlux(p.id, p.texte, JEU);
+  if (!r.ok) {
+    console.info("[double/voix] synthèse impossible", r.statut, r.erreur);
+    return NextResponse.json({ erreur: r.erreur }, { status: r.statut });
+  }
+  return new NextResponse(r.flux, { status: 200, headers: entetes });
+}
+
+/** D'un bloc — gardé pour qui veut le fichier entier (et pour la mémoire des phrases fixes). */
+export async function POST(req: Request) {
+  let corps: Demande;
+  try {
+    corps = (await req.json()) as Demande;
+  } catch {
+    return NextResponse.json({ erreur: "Requête illisible." }, { status: 400 });
+  }
+  const p = phraseDe(corps);
+  if (p instanceof NextResponse) return p;
 
   const son = (buf: ArrayBuffer) =>
     new NextResponse(buf, {
@@ -83,16 +122,16 @@ export async function POST(req: Request) {
       headers: { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=86400" },
     });
 
-  const cle = `${fiche.id}\n${texte}`;
+  const cle = `${p.id}\n${p.texte}`;
   const deja = memoire.get(cle);
   if (deja) return son(deja);
 
   /* UN PEU PLUS VIF QUE LE RÉCIT : il répond, il ne raconte pas. */
-  const r = await faireParler(fiche.id, texte, { jeu: JEU_CONVERSATION, vitesse: 1.04, spontane: true });
+  const r = await faireParler(p.id, p.texte, JEU);
   if (!r.ok) {
     console.info("[double/voix] synthèse impossible", r.statut, r.erreur);
     return NextResponse.json({ erreur: r.erreur }, { status: r.statut });
   }
-  if (quoi !== "reponse") garder(cle, r.son);
+  if (p.fixe) garder(cle, r.son);
   return son(r.son);
 }

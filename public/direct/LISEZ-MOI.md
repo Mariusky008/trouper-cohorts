@@ -1074,8 +1074,19 @@ profite ».
   et voix arrivent ensemble. Sans voix cloud → voix du téléphone.
   Réglages : `OPENAI_TTS_VOICE_<CLE>` / `ELEVENLABS_VOICE_<CLE>` (ex.
   `OPENAI_TTS_VOICE_CENTRE=ash`), `OPENAI_TTS_MODEL`, `DOUBLE_VOIX_SECRET`
-  (sinon la clé OpenAI sert de secret). La voix reproduite du commerçant
-  viendra avec son accord écrit et son enregistrement.
+  (sinon la clé OpenAI sert de secret).
+  **Au fil de l'eau** : l'écran lit une adresse (GET de la route) qui se
+  télécharge pendant qu'elle joue — le son part dès la première syllabe, au
+  lieu d'attendre le fichier entier (c'est ce qui faisait basculer les réponses
+  sur la voix robot). Une fois la vraie voix entendue, plus jamais la voix du
+  téléphone : si une phrase échoue, la bouche bouge en silence.
+- **Mettre une vraie voix (clonée)** : ElevenLabs → Voices → *Instant Voice
+  Clone*, 1 à 3 minutes d'enregistrement propre, avec l'accord de la personne.
+  Copier l'identifiant de la voix, puis sur Vercel : `ELEVENLABS_API_KEY` et
+  `ELEVENLABS_VOICE_<CLE>` (ex. `ELEVENLABS_VOICE_CENTRE` pour Chez Bergine).
+  Seul ce commerce passe chez ElevenLabs ; les autres gardent leur timbre
+  OpenAI. `ELEVENLABS_MODEL` change le modèle (par défaut
+  `eleven_multilingual_v2`).
 - **Dernier écran du parcours restaurant** : « On se retrouve chez nous ? »
   garde sa question, et son geste principal devient **« Parler à … »** (le
   double). « Demander une table » et « Voir les stats de ce plat » passent en
