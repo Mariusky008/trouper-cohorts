@@ -24,6 +24,7 @@
 // « 14 € ».
 
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
+import { profilDuDouble, type ProfilDouble } from "@/lib/direct/double-metiers";
 
 /** Ce que le double peut poser dans la conversation, en plus de sa phrase. */
 export type CarteDouble = "plat" | "reservation" | "horaires" | "carte";
@@ -61,6 +62,8 @@ export type FicheDouble = {
   cadeau?: string;
   /** Ce que le commerçant a écrit sur sa maison dans son Espace Pro (spécialités, questions fréquentes). */
   notes?: string;
+  /** Son métier, vu par le double : les mots, la demande, les questions. Voir `double-metiers.ts`. */
+  profil: ProfilDouble;
 };
 
 /**
@@ -78,15 +81,24 @@ export function ficheDuDouble(c: CarteAutour, plus: SavoirEnPlus = {}): FicheDou
   const v = c.voix;
   const prenom = (plus.prenom ?? "").trim() || v?.prenom || "";
   const prenomConnu = !!prenom;
+  const profil = profilDuDouble(c);
+  /* CE QUE MONTRE L'ANNONCE, ET ON L'APPELLE « PLAT » PAR HISTOIRE.
+     Au restaurant, c'est le plat du jour de son menu. Ailleurs, c'est l'annonce
+     elle-même — le bouquet, la coupe, la pièce — telle qu'elle est publiée :
+     son titre, sa première ligne, son prix, sa photo. Un restaurant sans menu
+     n'en prend pas : « le service du midi » n'est pas un plat. */
+  const moment = profil.famille === "table" ? undefined : (c.moments ?? []).find((m) => m.titre);
   const plat = c.menu
     ? { nom: c.menu.plat, detail: c.menu.description, prix: c.menu.prix, photo: c.menu.photo }
-    : null;
+    : moment
+      ? { nom: moment.titre, detail: moment.lignes?.[0] ?? "", prix: moment.prix ?? "", photo: moment.photo || c.photo || "" }
+      : null;
   return {
     id: c.id,
     nom: c.nom,
-    prenom: prenom || "le chef",
+    prenom: prenom || profil.anonyme,
     prenomConnu,
-    role: v?.role || "cuisinier",
+    role: v?.role || profil.role,
     // LE PORTRAIT S'IL EXISTE, SINON LA PREMIÈRE PHOTO DE SA CUISINE : une
     // image de ses mains au travail dit mieux « une vraie personne » qu'un
     // cercle vide.
@@ -102,12 +114,18 @@ export function ficheDuDouble(c: CarteAutour, plus: SavoirEnPlus = {}): FicheDou
     carte: (c.catalogue ?? []).map((a) => ({ nom: a.nom, prix: a.prix, rayon: a.rayon, detail: a.detail })),
     cadeau: c.reponse?.cadeau,
     notes: (plus.notes ?? "").trim() || undefined,
+    profil,
   };
 }
 
-/** « à Julien », ou « au chef » — pour les phrases où l'on parle de lui ; « à le chef » ne se dit pas. */
+/** « à Julien », ou « au chef », « à l'équipe » — « à le chef » ne se dit pas. */
 function aLui(f: FicheDouble): string {
-  return f.prenomConnu ? `à ${f.prenom}` : "au chef";
+  return f.prenomConnu ? `à ${f.prenom}` : f.profil.aAnonyme;
+}
+
+/** « de Julien », ou « du chef », « de l'équipe ». */
+export function deLui(f: FicheDouble): string {
+  return f.prenomConnu ? `de ${f.prenom}` : f.profil.deAnonyme;
 }
 
 /** Les deux premières phrases d'un récit : un double qui récite tout lasse. */
@@ -124,9 +142,9 @@ function plat_(s: string): string {
     .replace(/[̀-ͯ]/g, "");
 }
 
-/** Les trois questions du premier écran. */
-export function suggestionsDeDepart(): string[] {
-  return ["Le plat du jour ?", "Ton histoire ?", "Ta spécialité ?"];
+/** Les trois questions du premier écran — celles de son métier. */
+export function suggestionsDeDepart(f?: FicheDouble): string[] {
+  return f ? f.profil.suggestions : ["Le plat du jour ?", "Ton histoire ?", "Ta spécialité ?"];
 }
 
 /** Le premier message, dit avec sa voix dès l'arrivée. */
@@ -186,26 +204,42 @@ export function confirmationDuDouble(f: FicheDouble): string {
 export function repondreSansIA(question: string, f: FicheDouble): ReponseDouble {
   const q = plat_(question);
   const plat = f.plat;
+  const p = f.profil;
+  const table = p.famille === "table";
+  /* LES PASTILLES PARLENT LE MÉTIER : « Une table ce soir ? » au restaurant,
+     « Un rendez-vous ? » au salon, « Commander un bouquet ? » chez la fleuriste. */
+  const demande = p.demande.pastille;
+  const vedette = p.questionVedette;
 
-  if (/allerg|gluten|lactose|arachide|vegan|vegetar|sans porc|halal|intoleran/.test(q)) {
+  if (/allerg|gluten|lactose|arachide|vegan|vegetar|sans porc|halal|intoleran|enceinte|sante|medical|ordonnance/.test(q)) {
     return {
-      texte: `Pour les allergies et les régimes, demande directement ${aLui(f)} : c'est trop important pour que je devine.`,
+      texte: table
+        ? `Pour les allergies et les régimes, demande directement ${aLui(f)} : c'est trop important pour que je devine.`
+        : `C'est trop important pour que je devine : pose la question directement ${aLui(f)}.`,
       carte: "reservation",
-      suggestions: ["Une table ce soir ?", "Tes horaires ?"],
+      suggestions: [demande, "Tes horaires ?"],
     };
   }
-  if (/reserv|une table|de la place|on vient|venir a|ce soir|demain|midi pour|on sera|nous sommes|on est \d|personnes/.test(q)) {
+  /* « CE SOIR, IL Y A QUOI ? » N'EST PAS UNE RÉSERVATION, même s'il dit « ce
+     soir » : au bar, c'est la question du programme. */
+  const surLaVedette = /il y a quoi|quoi de (neuf|bon)|du moment|en ce moment/.test(q);
+  if (
+    !surLaVedette &&
+    /reserv|une table|de la place|on vient|venir a|ce soir|demain|midi pour|on sera|nous sommes|on est \d|personnes|rendez.vous|\brdv\b|creneau|dispo|commander|de cote|mettre de cote|je passe|passer/.test(q)
+  ) {
     return {
-      texte: `Je transmets ta demande ${aLui(f)}. Dis-moi quand et combien vous êtes.`,
+      texte: p.demande.personnes
+        ? `Je transmets ta demande ${aLui(f)}. Dis-moi quand et combien vous êtes.`
+        : `Je transmets ta demande ${aLui(f)}. Dis-moi quand ça t'arrange.`,
       carte: "reservation",
-      suggestions: ["Le plat du jour ?", "C'est où ?"],
+      suggestions: [vedette, "C'est où ?"],
     };
   }
   if (/horaire|ouvert|ouvre|ferme|quelle heure|a quelle heure/.test(q)) {
     return {
       texte: f.horaires ? `${f.horaires}.` : `Je n'ai pas les horaires sous la main : je demande ${aLui(f)}.`,
       carte: f.horaires ? "horaires" : null,
-      suggestions: ["Une table ce soir ?", "C'est où ?"],
+      suggestions: [demande, "C'est où ?"],
     };
   }
   // « OÙ » SEUL NE SUFFIT PAS : « du coin ou de passage » s'écrit pareil sans accent.
@@ -213,68 +247,73 @@ export function repondreSansIA(question: string, f: FicheDouble): ReponseDouble 
     return {
       texte: f.ou ? `${f.ou}, à ${f.distance} de toi.` : `On est à ${f.distance}, à ${f.ville}.`,
       carte: "horaires",
-      suggestions: ["Une table ce soir ?", "Le plat du jour ?"],
+      suggestions: [demande, vedette],
     };
   }
-  if (/histoire|qui es|t.es qui|pourquoi|comment tu|ta cuisine|depuis/.test(q) && f.recit) {
+  if (/histoire|qui es|t.es qui|pourquoi|comment tu|ta cuisine|ton metier|ta passion|depuis/.test(q) && f.recit) {
     return {
       texte: extrait(f.recit, 3),
       carte: plat ? "plat" : null,
-      suggestions: ["Ta spécialité ?", "Une table ce soir ?"],
+      suggestions: [p.suggestions[2] ?? vedette, demande],
     };
   }
-  /* SANS PLAT DU JOUR, LA CARTE RÉPOND À SA PLACE. Un vrai restaurant n'a pas
-     toujours publié son plat du jour, mais il a souvent saisi ses prestations :
-     « je ne sais pas » quand on a sa carte sous la main, c'est une panne. */
-  const surLaCarte = /carte|menu|autre chose|quoi d.autre|dessert|entree|prix|combien/.test(q);
-  const surLeJour = /plat du jour|aujourd|ce midi|a manger|faim|special|conseill|recommand|meilleur|quoi de bon|tu sers|avec quoi/.test(q);
+  /* SANS VEDETTE, LA LISTE RÉPOND À SA PLACE. Un vrai commerçant n'a pas
+     toujours publié son plat du jour ou son bouquet du moment, mais il a
+     souvent saisi ses prestations : « je ne sais pas » quand on a sa liste sous
+     la main, c'est une panne. */
+  const surLaCarte = /carte|menu|autre chose|quoi d.autre|dessert|entree|prix|combien|tarif|prestation|collection|bouquets|creations|montures|seances/.test(q);
+  const surLeJour = /plat du jour|aujourd|ce midi|a manger|faim|special|conseill|recommand|meilleur|quoi de bon|tu sers|avec quoi|du moment|en ce moment|ce soir.*quoi|il y a quoi|nouveau|nouveaute|comment ca se passe/.test(q);
   if ((surLaCarte || (surLeJour && !plat)) && f.carte.length) {
     const lignes = f.carte.slice(0, 4).map((l) => `${l.nom}${l.prix ? ` (${l.prix})` : ""}`);
     return {
-      texte: `Sur la carte : ${lignes.join(", ")}.`,
+      texte: `${p.carteNom} : ${lignes.join(", ")}.`,
       carte: "carte",
-      suggestions: ["Le plat du jour ?", "Une table ce soir ?"],
+      suggestions: [vedette, demande],
     };
   }
   if (surLeJour && plat) {
     const conseil = /special|conseill|recommand|meilleur/.test(q);
+    const prix = plat.prix ? `, ${plat.prix}` : "";
+    const detail = plat.detail ? ` ${plat.detail.replace(/[.\s]+$/, "")}.` : "";
     return {
       texte: conseil
-        ? `${plat.nom} ! ${f.signature || "C'est ma fierté du jour."} Tu veux le découvrir ?`
-        : `Aujourd'hui c'est ${plat.nom}, ${plat.prix}. ${plat.detail}.`,
+        ? `${plat.nom} ! ${f.signature || "C'est ma fierté du moment."} Tu veux ${table ? "le découvrir" : "venir le voir"} ?`
+        : table
+          ? `Aujourd'hui c'est ${plat.nom}${prix}.${detail}`
+          : `En ce moment : ${plat.nom}${prix}.${detail}`,
       carte: "plat",
-      suggestions: ["Ton histoire ?", "Une table ce soir ?", "C'est où ?"],
+      suggestions: ["Ton histoire ?", demande, "C'est où ?"],
     };
   }
   if (/coin|passage|habite|j.habite|de dax|touriste|vacances|je visite/.test(q)) {
     return {
       texte: plat
-        ? `Bienvenue ! Alors je te conseille ${plat.nom}, c'est ce qu'on fait de mieux aujourd'hui.`
-        : "Bienvenue ! Demande-moi ce que tu veux sur la maison.",
+        ? `Bienvenue ! Alors je te conseille ${plat.nom}, c'est ce qu'on fait de mieux en ce moment.`
+        : `Bienvenue ! Demande-moi ce que tu veux sur ${p.lieu}.`,
       carte: plat ? "plat" : null,
-      suggestions: ["Ton histoire ?", "Une table ce soir ?"],
+      suggestions: ["Ton histoire ?", demande],
     };
   }
   if (/merci|super|top|genial|parfait|ok\b|d.accord|cool/.test(q)) {
     return {
-      texte: "Avec plaisir ! Je te garde une table ?",
+      texte: `Avec plaisir ! ${p.demande.proposition}`,
       carte: null,
-      suggestions: ["Oui, une table ce soir", "Le plat du jour ?"],
+      suggestions: [demande, vedette],
     };
   }
   if (/salut|bonjour|hello|coucou|bonsoir/.test(q)) {
     return {
-      texte: `Salut ! Je suis le double ${f.prenomConnu ? `de ${f.prenom}` : "du chef"}. Demande-moi le plat du jour, ou une table.`,
+      texte: `Salut ! Je suis le double ${deLui(f)}. Demande-moi ${p.vedette}, ou ${p.demande.objet}.`,
       carte: null,
-      suggestions: suggestionsDeDepart(),
+      suggestions: suggestionsDeDepart(f),
     };
   }
   return {
     texte: `Bonne question ! Je préfère ne pas te dire de bêtise : je la transmets ${aLui(f)}.${
-      plat ? ` En attendant, le plat du jour, c'est ${plat.nom}.` : ""
+      plat ? ` En attendant, ${p.vedette}, c'est ${plat.nom}.` : ""
     }`,
     carte: plat ? "plat" : null,
-    suggestions: ["Une table ce soir ?", "Tes horaires ?"],
+    suggestions: [demande, "Tes horaires ?"],
   };
 }
 
@@ -286,27 +325,27 @@ export function repondreSansIA(question: string, f: FicheDouble): ReponseDouble 
  * et une carte quand elle aide — le plat, une table, les horaires.
  */
 export function consigneDuDouble(f: FicheDouble, prenomClient?: string): string {
+  const p = f.profil;
+  const liste = (l: FicheDouble["carte"][number]) => `${l.nom}${l.prix ? ` (${l.prix})` : ""}${l.detail ? ` — ${l.detail}` : ""}`;
   const lignes = [
-    `Tu es le double IA de ${f.prenomConnu ? `${f.prenom}, ${f.role}` : "l'équipe en cuisine"} du restaurant « ${f.nom} » à ${f.ville}.`,
-    "Tu parles comme lui, avec chaleur et bonne humeur, en TUTOYANT, en français.",
-    `Tu réponds à un habitant${prenomClient ? ` qui s'appelle ${prenomClient}` : ""} qui découvre le restaurant sur l'application ClikMe.`,
+    `Tu es le double IA ${f.prenomConnu ? `de ${f.prenom}, ${f.role},` : p.deAnonyme} ${p.famille === "table" ? "du restaurant" : `de « ${p.typeLieu} »`} « ${f.nom} » à ${f.ville}.`,
+    "Tu parles comme lui ou elle, avec chaleur et bonne humeur, en TUTOYANT, en français.",
+    `Tu réponds à un habitant${prenomClient ? ` qui s'appelle ${prenomClient}` : ""} qui découvre ${p.lieu} sur l'application ClikMe.`,
     "",
     "RÈGLES ABSOLUES :",
     "- Une ou deux phrases courtes, 220 caractères au maximum. C'est une conversation, pas un discours.",
-    "- Tu n'utilises QUE les informations de la fiche ci-dessous. Tu n'inventes ni prix, ni plat, ni horaire, ni ingrédient.",
-    `- Allergies, régimes, ingrédients précis, vin, ou tout ce qui n'est pas dans la fiche : tu dis que tu transmets la question ${aLui(f)}.`,
+    "- Tu n'utilises QUE les informations de la fiche ci-dessous. Tu n'inventes ni prix, ni produit, ni horaire, ni disponibilité.",
+    `- ${p.sensible}, ou tout ce qui n'est pas dans la fiche : tu dis que tu transmets la question ${aLui(f)}.`,
     "- Tu es une IA et tu ne le caches pas si on te le demande.",
-    "- Quand c'est utile, tu proposes de réserver une table : c'est ce qui fait venir les gens.",
+    `- Quand c'est utile, tu proposes de ${p.demande.verbe} : c'est ce qui fait venir les gens.`,
     "",
     "FICHE :",
-    `Restaurant : ${f.nom}, à ${f.distance} (${f.ville}).`,
+    `${p.typeLieu[0].toUpperCase()}${p.typeLieu.slice(1)} : ${f.nom}, à ${f.distance} (${f.ville}).`,
     f.ou ? `Adresse : ${f.ou}.` : "",
     f.horaires ? `Horaires : ${f.horaires}.` : "",
     f.mot ? `Le lieu : ${f.mot}` : "",
-    f.plat ? `Plat du jour : ${f.plat.nom}, ${f.plat.prix} — ${f.plat.detail}.` : "",
-    f.carte.length
-      ? `Carte : ${f.carte.map((l) => `${l.nom}${l.prix ? ` (${l.prix})` : ""}${l.detail ? ` — ${l.detail}` : ""}`).join(" ; ")}.`
-      : "",
+    f.plat ? `${p.vedette[0].toUpperCase()}${p.vedette.slice(1)} : ${f.plat.nom}${f.plat.prix ? `, ${f.plat.prix}` : ""}${f.plat.detail ? ` — ${f.plat.detail}` : ""}.` : "",
+    f.carte.length ? `${p.carteNom} : ${f.carte.map(liste).join(" ; ")}.` : "",
     f.recit ? `Son récit, à la première personne : « ${f.recit} »` : "",
     f.signature ? `Sa phrase : « ${f.signature} »` : "",
     f.cadeau ? `Petit plus proposé aux clients ClikMe : ${f.cadeau}.` : "",
@@ -314,7 +353,7 @@ export function consigneDuDouble(f: FicheDouble, prenomClient?: string): string 
     "",
     "RÉPONDS EN JSON UNIQUEMENT, de cette forme :",
     '{"texte": "ta réponse", "carte": "plat" | "reservation" | "horaires" | "carte" | null, "suggestions": ["2 ou 3 questions courtes que l\'habitant pourrait poser ensuite, 24 caractères max chacune"]}',
-    "carte = plat pour montrer le plat du jour ; reservation pour proposer une table ; horaires pour l'adresse et les horaires ; carte pour la carte complète.",
+    `carte = plat pour montrer ${p.vedette} ; reservation pour proposer ${p.demande.objet} ; horaires pour l'adresse et les horaires ; carte pour ${p.carteNom.toLowerCase()}.`,
   ];
   return lignes.filter((l) => l !== "").join("\n");
 }
@@ -334,5 +373,5 @@ export function nettoyerReponse(brut: unknown, f: FicheDouble): ReponseDouble | 
     .filter((x): x is string => typeof x === "string" && !!x.trim())
     .map((x) => x.trim().slice(0, 32))
     .slice(0, 3);
-  return { texte, carte, suggestions: suggestions.length ? suggestions : ["Une table ce soir ?", "Le plat du jour ?"] };
+  return { texte, carte, suggestions: suggestions.length ? suggestions : [f.profil.demande.pastille, f.profil.questionVedette] };
 }

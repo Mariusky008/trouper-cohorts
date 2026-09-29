@@ -64,7 +64,7 @@ type Demande = { id?: unknown; quoi?: unknown; prenom?: unknown; texte?: unknown
  * du plafond, son double reprend la voix standard : il change de timbre, il ne
  * se tait pas. Voir `voix-clonee.ts`.
  */
-type Phrase = { id: string; texte: string; fixe: boolean; voixClonee?: string; siteId?: string };
+type Phrase = { id: string; texte: string; fixe: boolean; voixClonee?: string; siteId?: string; voixParDefaut?: string };
 
 async function phraseDe(corps: Demande): Promise<Phrase | NextResponse> {
   if (!voixCloudConfiguree()) return NextResponse.json({ erreur: "Voix cloud non configurée." }, { status: 503 });
@@ -96,7 +96,12 @@ async function phraseDe(corps: Demande): Promise<Phrase | NextResponse> {
   if (!texte) return NextResponse.json({ erreur: "Rien à dire." }, { status: 400 });
   let voixClonee = commerce.voixClonee;
   if (voixClonee && commerce.siteId && !(await voixAutorisee(commerce.siteId, texte.length))) voixClonee = undefined;
-  return { id: fiche.id, texte, fixe: quoi !== "reponse", voixClonee, siteId: commerce.siteId };
+  /* UNE VOIX DE FEMME QUAND LE COMMERCE SE PRÉSENTE AU FÉMININ — « Une
+     fleuriste du marché », « Une prothésiste ongulaire » : la démonstration
+     l'écrit, le double ne doit pas lui répondre avec une voix d'homme. Les
+     autres gardent le timbre standard, jusqu'à ce qu'ils donnent le leur. */
+  const voixParDefaut = /^une\s/i.test(commerce.carte.nom) ? "coral" : undefined;
+  return { id: fiche.id, texte, fixe: quoi !== "reponse", voixClonee, siteId: commerce.siteId, voixParDefaut };
 }
 
 const JEU = { jeu: JEU_CONVERSATION, vitesse: 1.04, spontane: true };
@@ -143,7 +148,7 @@ async function repondre(corps: Demande) {
   if (deja) return son(deja);
 
   /* UN PEU PLUS VIF QUE LE RÉCIT : il répond, il ne raconte pas. */
-  const r = await faireParler(p.id, p.texte, { ...JEU, voixClonee: p.voixClonee });
+  const r = await faireParler(p.id, p.texte, { ...JEU, voixClonee: p.voixClonee, voixParDefaut: p.voixParDefaut });
   if (!r.ok) {
     console.info("[double/voix] synthèse impossible", r.statut, r.erreur);
     return NextResponse.json({ erreur: r.erreur }, { status: r.statut });

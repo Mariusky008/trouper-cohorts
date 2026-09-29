@@ -176,6 +176,7 @@ import { ParcoursSortie } from "@/components/direct/parcours-sortie-ecran";
 import { StylesParcoursSortie } from "@/components/direct/styles-parcours-sortie";
 import { ParcoursTable } from "@/components/direct/parcours-table-ecran";
 import { DoubleChef } from "@/components/direct/double-chef";
+import { aUnDouble, nomDansPhrase, profilDuDouble } from "@/lib/direct/double-metiers";
 import { StylesParcoursTable } from "@/components/direct/styles-parcours-table";
 import { ParcoursDeco } from "@/components/direct/parcours-deco-ecran";
 import { StylesParcoursDeco } from "@/components/direct/styles-parcours-deco";
@@ -2151,7 +2152,10 @@ export function ApercuHabitant() {
      l'écran de choix, avant l'entrée dans l'application ; ceux-ci vivent
      dans l'application, par-dessus l'annonce qu'on regarde. Les mélanger
      rouvrirait la démonstration en revenant d'un plat. */
-  const [doubleOuvert, setDoubleOuvert] = useState("");
+  /* LE COMMERCE LUI-MÊME, PAS SON IDENTIFIANT : tous les métiers ont leur
+     double, et certains commerces du paquet ne sont pas dans la démonstration
+     écrite à la main. */
+  const [doubleOuvert, setDoubleOuvert] = useState<CarteAutour | null>(null);
   const [platOuvert, setPlatOuvert] = useState("");
   const [parcoursDeco, setParcoursDeco] = useState("");
   /* ═══ LA FLECHE « EN ARRIERE » DU NAVIGATEUR RAMENE A LA DEMO ═════════
@@ -4051,6 +4055,20 @@ export function ApercuHabitant() {
    */
   const estResto =
     !!dessus && dessus.branche === "restaurant" && !estPoste(dessus) && !estInvitation(dessus);
+  /**
+   * ═══ TOUS LES COMMERCES ONT LEUR DOUBLE ═══════════════════════════════════
+   *
+   * « Il va falloir uniformiser tout ceci avec le reste des métiers, mais
+   * attention, tout le monde n'a pas la même logique. »
+   *
+   * LE FANTÔME DE LA BARRE OUVRE LE DOUBLE PARTOUT : la fleuriste, le coiffeur,
+   * la boutique — chacun avec les mots de son métier (voir
+   * `double-metiers.ts`). Ce qu'il ouvrait avant chez eux — les autres clients
+   * qui ont essayé la même coupe, le même bouquet, les mêmes ongles — ne
+   * disparaît pas : il passe dans un quatrième bouton de la colonne de droite,
+   * comme « Réserver » chez le restaurant. Voir `aDesEssais`.
+   */
+  const aDouble = !!dessus && !estPoste(dessus) && !estInvitation(dessus) && aUnDouble(dessus);
 
   /**
    * ═══ LE MUR DE L'ANNONCE DU DESSUS, CALCULÉ UNE FOIS ═══════════════════════
@@ -10745,6 +10763,35 @@ export function ApercuHabitant() {
                 chose qu'on lui demande. Voir `nombreDeDemo`. */}
             {enPlace && sommet && (
               <div className="ap-rail" aria-label="Autres gestes sur cette annonce">
+                {/* ═══ LES AUTRES CLIENTS, EN TÊTE DU RAIL, HORS DU RESTAURANT ═══
+                    « Cette fonctionnalité des autres clients qui ont essayé la
+                    même chose, il va falloir la mettre autre part — un
+                    quatrième bouton à droite avec les trois autres. » Le
+                    fantôme ouvre maintenant le double ; ce qu'il ouvrait avant
+                    est ici, avec les mots du métier : « Leurs coupes », « Chez
+                    eux », « Leurs ongles ». */}
+                {aDouble && !estResto && murDuSommet && dessus && (
+                  <button
+                    type="button"
+                    className="ap-rail-b ap-essais"
+                    onClick={() => {
+                      noter("onglet", 0, "mur");
+                      setMurSur(undefined);
+                      setMurOuvert(true);
+                    }}
+                  >
+                    <i aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <rect x="3" y="6.2" width="12.4" height="14.4" rx="2.6" />
+                        <path d="M8.2 3.4h10.2a2.6 2.6 0 0 1 2.6 2.6v10.4" />
+                        <circle cx="9.2" cy="11.6" r="2.3" />
+                        <path d="M5.4 18.4c.8-2 2.1-3.1 3.8-3.1s3 1.1 3.8 3.1" />
+                      </svg>
+                      {murDuSommet.clients.length > 0 && <b className="ap-essais-n">{murDuSommet.clients.length}</b>}
+                    </i>
+                    <span>{profilDuDouble(dessus).murCourt}</span>
+                  </button>
+                )}
                 {/* « RÉSERVER » EN TÊTE DU RAIL, CHEZ UN RESTAURANT : le gros
                     bouton fait découvrir le plat, celui-ci garde la table. */}
                 {estResto && !flashDuSommet && (
@@ -10817,6 +10864,30 @@ export function ApercuHabitant() {
             )}
             {coeurDuSommet && (
               <div className="ap-rail" aria-label="Autres gestes sur cette annonce">
+                {/* LE MÊME QUATRIÈME BOUTON que sur l'autre colonne : les autres
+                    clients qui ont essayé la même chose. Voir plus haut. */}
+                {aDouble && !estResto && murDuSommet && dessus && (
+                  <button
+                    type="button"
+                    className="ap-rail-b ap-essais"
+                    onClick={() => {
+                      noter("onglet", 0, "mur");
+                      setMurSur(undefined);
+                      setMurOuvert(true);
+                    }}
+                  >
+                    <i aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <rect x="3" y="6.2" width="12.4" height="14.4" rx="2.6" />
+                        <path d="M8.2 3.4h10.2a2.6 2.6 0 0 1 2.6 2.6v10.4" />
+                        <circle cx="9.2" cy="11.6" r="2.3" />
+                        <path d="M5.4 18.4c.8-2 2.1-3.1 3.8-3.1s3 1.1 3.8 3.1" />
+                      </svg>
+                      {murDuSommet.clients.length > 0 && <b className="ap-essais-n">{murDuSommet.clients.length}</b>}
+                    </i>
+                    <span>{profilDuDouble(dessus).murCourt}</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   className="ap-rail-b ap-parler"
@@ -13007,19 +13078,17 @@ export function ApercuHabitant() {
             <div className="ap-plein-ecran">
               {platOuvert ? (
                 <ParcoursTable commerce={platOuvert} onFermer={() => setPlatOuvert("")} />
-              ) : (
-                (() => {
-                  const c = toutesLesCartes().find((x) => x.id === doubleOuvert);
-                  return c ? (
-                    <DoubleChef
-                      carte={c}
-                      prenomClient={prenom}
-                      onFermer={() => setDoubleOuvert("")}
-                      onDecouvrir={() => setPlatOuvert(c.id)}
-                    />
-                  ) : null;
-                })()
-              )}
+              ) : doubleOuvert ? (
+                <DoubleChef
+                  carte={doubleOuvert}
+                  prenomClient={prenom}
+                  onFermer={() => setDoubleOuvert(null)}
+                  /* LE PARCOURS DU PLAT N'EXISTE QU'AU RESTAURANT. */
+                  onDecouvrir={
+                    doubleOuvert.branche === "restaurant" ? () => setPlatOuvert(doubleOuvert.id) : undefined
+                  }
+                />
+              ) : null}
             </div>
           )}
           {(murOuvert || murRevisite) && (dessus || murRevisite || soireeDuSommet) && (
@@ -13205,6 +13274,11 @@ export function ApercuHabitant() {
             dessus &&
             bulle === dessus.id &&
             bulleDuMur &&
+            /* PLUS DE BULLE QUI DÉSIGNE LE FANTÔME QUAND IL OUVRE LE DOUBLE : elle
+               promettait les essais des autres sous un bouton qui fait autre
+               chose. Son chiffre passe en pastille sur le quatrième bouton de
+               la colonne de droite, là où ces essais se trouvent maintenant. */
+            !aDouble &&
             !feuille &&
             !murOuvert &&
             !accueilOuvert &&
@@ -13301,7 +13375,9 @@ export function ApercuHabitant() {
               aria-label={
                 arbitre
                   ? `Le fantôme a quelque chose à dire : ${arbitre.phrase}`
-                  : "Mon fantôme : ce qui a été laissé ici aujourd’hui"
+                  : aDouble && dessus
+                    ? `Parler avec ${nomDansPhrase(dessus.nom)}`
+                    : "Mon fantôme : ce qui a été laissé ici aujourd’hui"
               }
               // SANS COMMERCE SOUS LES YEUX, IL N'Y A PAS DE MUR A OUVRIR : un
               // evenement de la ville n'a pas de comptoir. Le fantome s'eteint,
@@ -13368,9 +13444,9 @@ export function ApercuHabitant() {
                    discuter avec le chef du restaurant. » Il porte d'ailleurs
                    sa tenue — casquette et tablier aux couverts —, c'est ce
                    qui rend le changement de rôle lisible. */
-                if (estResto) {
-                  noter("onglet", 0, "double-chef");
-                  setDoubleOuvert(dessus.id);
+                if (aDouble) {
+                  noter("onglet", 0, estResto ? "double-chef" : "double");
+                  setDoubleOuvert(dessus);
                   return;
                 }
                 noter("onglet", 0, "mur");
@@ -13408,6 +13484,8 @@ export function ApercuHabitant() {
                   pour ceux dont le balayage ne prend pas, et un bouton de
                   secours qui ne répond pas visiblement au doigt ne vaut pas
                   mieux que le geste qu'il remplace. */}
+              {/* LA TENUE DE CHEF AU RESTAURANT ; ailleurs le fantôme ClikMe, qui
+                  ouvre lui aussi le double du commerçant. */}
               {estResto ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img className="ap-mf-chef" src="/direct/double/accueil.webp" alt="" />
@@ -20202,6 +20280,13 @@ export function ApercuHabitant() {
         .ap-rail-b.ap-favori.on i svg{fill:currentColor;}
         .ap-rail-b span{max-width:100%;}
         .ap-rail-b:active{transform:scale(.94);}
+        /* LE NOMBRE D'ESSAIS DES AUTRES, sur le quatrieme bouton : ce que la
+           bulle du fantome disait, au bon endroit. */
+        .ap-rail-b.ap-essais i{position:relative;}
+        .ap-essais-n{position:absolute;top:-5px;right:-7px;min-width:19px;height:19px;
+          padding:0 5px;border-radius:10px;display:grid;place-items:center;
+          font-size:11px;font-weight:900;font-style:normal;line-height:1;color:#fff;
+          background:#FF2E9A;box-shadow:0 0 0 2px rgba(10,6,14,.85);}
         .ap-rail-b:disabled{opacity:.34;cursor:default;}
         .ap-rail-b:disabled:active{transform:none;}
         .ap-rail-b:focus-visible{outline:2px solid #3DE2A6;outline-offset:3px;

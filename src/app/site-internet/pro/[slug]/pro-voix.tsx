@@ -50,7 +50,18 @@ const enDataUrl = (b: Blob) =>
     r.readAsDataURL(b);
   });
 
-export function ProVoix({ slug, token, nom }: { slug: string; token: string; nom: string }) {
+export function ProVoix({
+  slug,
+  token,
+  nom,
+  chef = false,
+}: {
+  slug: string;
+  token: string;
+  nom: string;
+  /** Au restaurant, le double porte la tenue de chef ; ailleurs, c'est le fantôme ClikMe. */
+  chef?: boolean;
+}) {
   const [etat, setEtat] = useState<Etat | null>(null);
   const [etape, setEtape] = useState<"repos" | "accord" | "questions" | "envoi" | "fait">("repos");
   const [prenom, setPrenom] = useState("");
@@ -262,7 +273,7 @@ export function ProVoix({ slug, token, nom }: { slug: string; token: string; nom
         <div className="k">Votre double</div>
         <div className="tete">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/direct/double/accueil.webp" alt="" />
+          <img src={chef ? "/direct/double/accueil.webp" : "/clikme-fantome.png"} alt="" />
           <div className="q">
             {etat.donnee ? `Votre double parle avec votre voix` : `Donnez votre voix à votre double`}
           </div>
@@ -327,7 +338,11 @@ export function ProVoix({ slug, token, nom }: { slug: string; token: string; nom
               <input type="checkbox" checked={accord} onChange={(e) => setAccord(e.target.checked)} />
               <span>{etat.accord}</span>
             </label>
-            <div className="s">Installez-vous au calme, loin de la hotte. Parlez comme à un client au comptoir.</div>
+            <div className="s">
+              {chef
+                ? "Installez-vous au calme, loin de la hotte. Parlez comme à un client au comptoir."
+                : "Installez-vous au calme, loin de la musique et de la rue. Parlez comme à un client qui entre."}
+            </div>
             <div className="row">
               <button type="button" className="go" disabled={!accord || !prenom.trim()} onClick={() => setEtape("questions")}>
                 Commencer

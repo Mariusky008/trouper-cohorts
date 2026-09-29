@@ -79,7 +79,7 @@ export const TIMBRES: Record<string, Timbre> = {
 /** Le timbre de repli, pour un restaurant qui n'a pas encore le sien. */
 export const TIMBRE_PAR_DEFAUT: Timbre = {
   voix: "ash",
-  ton: "Parle en français, voix chaleureuse de restaurateur qui parle à un client au comptoir.",
+  ton: "Parle en français, voix chaleureuse de commerçant de quartier qui parle à un client entré dans sa boutique.",
 };
 
 /**
@@ -106,6 +106,8 @@ type Options = {
   spontane?: boolean;
   /** La voix que le commerçant a donnée lui-même (identifiant ElevenLabs), lue dans sa fiche. */
   voixClonee?: string;
+  /** Le timbre OpenAI à prendre quand ce commerce n'a pas le sien — voir la route du double. */
+  voixParDefaut?: string;
 };
 
 /**
@@ -196,7 +198,7 @@ async function appeler(cle: string, texte: string, o: Options): Promise<Response
       headers: { Authorization: `Bearer ${f.openai}`, "content-type": "application/json" },
       body: JSON.stringify({
         model: s(process.env.OPENAI_TTS_MODEL) || "gpt-4o-mini-tts",
-        voice: s(process.env[`OPENAI_TTS_VOICE_${variable}`]) || timbre.voix,
+        voice: s(process.env[`OPENAI_TTS_VOICE_${variable}`]) || (TIMBRES[cle] ? timbre.voix : o.voixParDefaut || timbre.voix),
         input: texte,
         instructions: jeu ? `${timbre.ton} ${jeu}` : timbre.ton,
         response_format: "mp3",

@@ -20,6 +20,8 @@
  * FICHIER SERVEUR : il lit les clés.
  */
 import { createAdminClient } from "@/lib/supabase/admin";
+import { profilDuDouble } from "@/lib/direct/double-metiers";
+import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
 
 const s = (v: unknown) => String(v ?? "").trim();
 
@@ -27,12 +29,21 @@ const s = (v: unknown) => String(v ?? "").trim();
 export const ACCORD_VOIX =
   "J'accepte que ClikMe crée une copie de ma voix à partir de mes enregistrements, pour que le double de mon commerce réponde aux clients avec ma voix sur ClikMe, et uniquement là. Je peux la supprimer à tout moment depuis mon Espace Pro.";
 
-/** Les trois questions posées au commerçant — spontanées, pour une voix spontanée. */
-export const QUESTIONS_VOIX = [
-  "Raconte-moi ton plat du jour, comme à un client au comptoir.",
-  "Pourquoi tu fais ce métier ? Qu'est-ce qui te plaît le plus ?",
-  "Qu'est-ce que tu dirais à quelqu'un qui hésite à venir ?",
-];
+/**
+ * LES TROIS QUESTIONS POSÉES AU COMMERÇANT — spontanées, pour une voix spontanée.
+ *
+ * LA PREMIÈRE PARLE SON MÉTIER : « ton plat du jour » au restaurant, « le
+ * bouquet du moment » chez la fleuriste. Demander son plat du jour à un
+ * coiffeur, c'est lui dire que la carte a été faite pour quelqu'un d'autre.
+ */
+export function questionsVoix(activite: string): string[] {
+  const p = profilDuDouble({ branche: brancheDuMetier(activite), metier: activite });
+  const premiere =
+    p.famille === "table"
+      ? "Raconte-moi ton plat du jour, comme à un client au comptoir."
+      : `Raconte-moi ${p.vedette}, comme à quelqu'un qui entre dans ${p.lieu.replace(/^(le|la|l')\s?/, (m) => (m === "le " ? "ton " : m === "la " ? "ta " : "ton "))}.`;
+  return [premiere, "Pourquoi tu fais ce métier ? Qu'est-ce qui te plaît le plus ?", "Qu'est-ce que tu dirais à quelqu'un qui hésite à venir ?"];
+}
 
 /** Vrai quand ClikMe peut créer des voix : la clé ElevenLabs est posée. */
 export function clonageDisponible(): boolean {

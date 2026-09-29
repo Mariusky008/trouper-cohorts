@@ -21,6 +21,7 @@ import { toutesLesCartes, type CarteAutour } from "@/lib/direct/apercu-habitant"
 import { carteDeDemo, estAdresseDeDemo } from "@/lib/site-internet/fiches-demo";
 import { lireLeSite } from "@/lib/site-internet/fiche-du-site";
 import { ficheDuDouble, type FicheDouble } from "@/lib/direct/double-chef";
+import { aUnDouble } from "@/lib/direct/double-metiers";
 
 export type CommerceDuDouble = {
   carte: CarteAutour;
@@ -38,18 +39,21 @@ const DUREE = 60_000;
 export async function trouverLeCommerce(id: string): Promise<CommerceDuDouble | null> {
   const cle = String(id ?? "").trim();
   if (!cle) return null;
+  /* TOUS LES MÉTIERS ONT LEUR DOUBLE, pas seulement les restaurants — voir
+     `double-metiers.ts`. Un événement n'en a pas : il n'y a personne derrière
+     le comptoir à qui parler. */
   const duPaquet = toutesLesCartes().find((c) => c.id === cle);
-  if (duPaquet) return { carte: duPaquet, fiche: ficheDuDouble(duPaquet) };
+  if (duPaquet) return aUnDouble(duPaquet) ? { carte: duPaquet, fiche: ficheDuDouble(duPaquet) } : null;
   if (estAdresseDeDemo(cle)) {
     const c = carteDeDemo(cle);
-    return c ? { carte: c, fiche: ficheDuDouble(c) } : null;
+    return c && aUnDouble(c) ? { carte: c, fiche: ficheDuDouble(c) } : null;
   }
   const r = recent.get(cle);
   if (r && Date.now() - r.quand < DUREE) return r.c;
   let c: CommerceDuDouble | null = null;
   try {
     const lu = await lireLeSite(cle);
-    if (lu && lu.carte.branche === "restaurant") {
+    if (lu && aUnDouble(lu.carte)) {
       c = {
         carte: lu.carte,
         fiche: ficheDuDouble(lu.carte, lu.savoir),

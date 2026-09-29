@@ -40,19 +40,30 @@ import {
   type CarteDouble,
   type ReponseDouble,
 } from "@/lib/direct/double-chef";
+import { nomDansPhrase, type FamilleDouble } from "@/lib/direct/double-metiers";
 import { onSpeakingChange, speak, speechSupported, stopSpeaking, unlockAudio } from "@/lib/site-internet/speech";
 
-const D = "/direct/double/";
+/**
+ * ═══ LA TENUE ET LE DÉCOR DE CHAQUE MÉTIER ═════════════════════════════════
+ *
+ * « Je vais devoir te donner le fantôme avec toutes les expressions et le
+ * décor pour chaque métier ? »
+ *
+ * CE N'EST PAS OBLIGATOIRE, ET C'EST PRÊT POUR QUAND ÇA ARRIVE. Sans tenue, le
+ * double d'un métier prend le fantôme ClikMe devant la photo de la boutique —
+ * il marche, il parle, il ne ment pas sur ce qu'on vient voir. Avec une tenue,
+ * il prend ses sept poses et son décor : il suffit de les poser dans
+ * `public/direct/double/<métier>/` avec les MÊMES NOMS que ceux du chef
+ * (accueil, content, ecoute, reflechit, parle-1, parle-2, parle-3 en .webp,
+ * decor.jpg — voir `scripts/fabriquer-double.mjs`) et d'ajouter le métier
+ * ci-dessous. Le décor doit poser son comptoir à mi-hauteur, comme celui du
+ * restaurant : c'est là que le fantôme se tient.
+ */
+const TENUES: Partial<Record<FamilleDouble, { dossier: string; decor: string }>> = {
+  table: { dossier: "/direct/double/", decor: "/direct/double/comptoir.jpg" },
+};
 /** Un silence d'une frame, pour débloquer le son dans un appui (iPhone). */
 const SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
-const POSES = {
-  accueil: `${D}accueil.webp`,
-  content: `${D}content.webp`,
-  ecoute: `${D}ecoute.webp`,
-  reflechit: `${D}reflechit.webp`,
-};
-/** Les trois bouches, jouées l'une après l'autre quand il parle. */
-const BOUCHES = [`${D}parle-1.webp`, `${D}parle-3.webp`, `${D}parle-2.webp`, `${D}parle-3.webp`];
 
 /** Ce qu'on demande à la route de la voix — jamais un texte libre, voir la route. */
 type DemandeVoix = { quoi: "accueil" } | { quoi: "confirmation" } | { quoi: "reponse"; sig: string };
@@ -87,7 +98,8 @@ function jours(): { cle: string; mot: string }[] {
   }
   return l;
 }
-const HEURES = ["12 h", "12 h 30", "13 h", "13 h 30", "19 h 30", "20 h", "20 h 30", "21 h"];
+/** Le fantôme ClikMe, pour les métiers qui n'ont pas encore leur tenue. */
+const FANTOME = "/clikme-fantome.png";
 
 /**
  * CE QUE LA PHRASE DIT DÉJÀ, POUR PRÉ-REMPLIR LA RÉSERVATION.
@@ -96,7 +108,7 @@ const HEURES = ["12 h", "12 h 30", "13 h", "13 h 30", "19 h 30", "20 h", "20 h 3
  * phrase, et les redemander dans un formulaire donne l'impression de ne pas
  * avoir été écouté.
  */
-function preRemplir(phrase: string): { jour: string; heure: string; personnes: number } {
+function preRemplir(phrase: string, heures: string[]): { jour: string; heure: string; personnes: number } {
   const q = phrase.toLowerCase();
   const nombres: Record<string, number> = { un: 1, deux: 2, trois: 3, quatre: 4, cinq: 5, six: 6, sept: 7, huit: 8 };
   let personnes = 2;
@@ -104,7 +116,10 @@ function preRemplir(phrase: string): { jour: string; heure: string; personnes: n
   if (chiffre) personnes = Math.min(12, Math.max(1, Number(chiffre[1])));
   for (const [mot, n] of Object.entries(nombres)) if (new RegExp(`\\b(à|a|on est|nous sommes) ${mot}\\b`).test(q)) personnes = n;
   const jour = /demain/.test(q) ? "1" : "0";
-  const heure = /soir|dîner|diner/.test(q) ? "20 h" : /midi|déjeuner|dejeuner/.test(q) ? "12 h 30" : new Date().getHours() >= 15 ? "20 h" : "12 h 30";
+  const voulue = /soir|dîner|diner/.test(q) ? "20 h" : /midi|déjeuner|dejeuner/.test(q) ? "12 h 30" : new Date().getHours() >= 15 ? "20 h" : "12 h 30";
+  /* L'HEURE PROPOSÉE EST TOUJOURS UNE HEURE DU MÉTIER : « 20 h » n'existe pas
+     dans l'agenda d'un salon de coiffure. */
+  const heure = heures.includes(voulue) ? voulue : heures[Math.min(heures.length - 1, new Date().getHours() >= 13 ? Math.floor(heures.length / 2) : 0)];
   return { jour, heure, personnes };
 }
 
@@ -147,7 +162,7 @@ export function DoubleChef({
   const [bulles, setBulles] = useState<Bulle[]>(() => [
     { id: 0, de: "double", texte: accueilDuDouble(prenomClient), heure: maintenant() },
   ]);
-  const [suggestions, setSuggestions] = useState<string[]>(suggestionsDeDepart);
+  const [suggestions, setSuggestions] = useState<string[]>(() => suggestionsDeDepart(fiche));
   /** « arrivee » tant que personne n'a rien dit ; « conversation » ensuite. */
   const [phase, setPhase] = useState<"arrivee" | "conversation">("arrivee");
   const [saisie, setSaisie] = useState("");
@@ -159,13 +174,37 @@ export function DoubleChef({
   const [content, setContent] = useState(false);
   const [bouche, setBouche] = useState(0);
   const [menu, setMenu] = useState(false);
-  const [resa, setResa] = useState(() => preRemplir(""));
+  /* SON MÉTIER DÉCIDE DES MOTS ET DE LA DEMANDE — voir `double-metiers.ts`. */
+  const p = fiche.profil;
+  /* LA TENUE DE CHEF ET LE COMPTOIR NE VONT QU'AU RESTAURANT. Ailleurs, le
+     fantôme ClikMe se tient devant la photo de la boutique elle-même : c'est
+     chez la fleuriste qu'on entre, pas dans une cuisine. */
+  const tenue = TENUES[p.famille];
+  /** Vrai quand ce métier a sa tenue et son décor dessinés — le chef, pour l'instant. */
+  const chef = !!tenue;
+  const art = tenue
+    ? {
+        accueil: `${tenue.dossier}accueil.webp`,
+        content: `${tenue.dossier}content.webp`,
+        ecoute: `${tenue.dossier}ecoute.webp`,
+        reflechit: `${tenue.dossier}reflechit.webp`,
+      }
+    : { accueil: FANTOME, content: FANTOME, ecoute: FANTOME, reflechit: FANTOME };
+  /** Les trois bouches, jouées l'une après l'autre quand il parle. */
+  const bouches = tenue
+    ? [`${tenue.dossier}parle-1.webp`, `${tenue.dossier}parle-3.webp`, `${tenue.dossier}parle-2.webp`, `${tenue.dossier}parle-3.webp`]
+    : [FANTOME];
+  const [resa, setResa] = useState(() => preRemplir("", fiche.profil.demande.heures));
   const [resaFaite, setResaFaite] = useState(false);
   const fil = useRef<HTMLDivElement | null>(null);
   const reco = useRef<Reco | null>(null);
   const champ = useRef<HTMLInputElement | null>(null);
   const joursListe = useMemo(jours, []);
-  const lui = fiche.prenomConnu ? fiche.prenom : "le chef";
+  const lui = fiche.prenomConnu ? fiche.prenom : chef ? "le chef" : "l'équipe";
+  /** Sa bouille dans le fil : le chef en tenue, ou la photo de la boutique — le client, lui, garde le fantôme ClikMe. */
+  const avatar = chef ? art.accueil : fiche.portrait || FANTOME;
+  /** Le nom qu'on affiche en tête : son prénom, « Le chef », ou le commerce lui-même. */
+  const quiAffiche = fiche.prenomConnu ? fiche.prenom : chef ? "Le chef" : "";
 
   /* ═══ SA VOIX : CELLE DE SON RÉCIT, PAS CELLE DU TÉLÉPHONE ════════════
 
@@ -371,18 +410,20 @@ export function DoubleChef({
      au rythme d'une syllabe. */
   useEffect(() => {
     if (!parle) return undefined;
-    const b = window.setInterval(() => setBouche((k) => (k + 1) % BOUCHES.length), 150);
+    const b = window.setInterval(() => setBouche((k) => (k + 1) % 4), 150);
     return () => window.clearInterval(b);
   }, [parle]);
 
   /* TOUTES LES POSES SONT CHARGÉES D'AVANCE : une bouche qui arrive après
      la syllabe, c'est un fantôme qui clignote. */
   useEffect(() => {
-    for (const src of [...Object.values(POSES), ...BOUCHES]) {
+    for (const src of chef ? [...Object.values(art), ...bouches] : [FANTOME]) {
       const i = new Image();
       i.src = src;
     }
-  }, []);
+    // Les poses dépendent du métier, fixé à l'ouverture de l'écran.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chef]);
 
   /* LE FIL DESCEND TOUT SEUL au dernier message. */
   useEffect(() => {
@@ -390,15 +431,15 @@ export function DoubleChef({
     if (f) f.scrollTo({ top: f.scrollHeight, behavior: "smooth" });
   }, [bulles, reflechit]);
 
-  const pose = parle
-    ? BOUCHES[bouche]
+  const pose = parle && chef
+    ? bouches[bouche]
     : content
-      ? POSES.content
+      ? art.content
       : ecoute
-        ? POSES.ecoute
+        ? art.ecoute
         : reflechit
-          ? POSES.reflechit
-          : POSES.accueil;
+          ? art.reflechit
+          : art.accueil;
   const etat = parle ? "Il te parle…" : ecoute ? "Il t’écoute…" : reflechit ? "Il réfléchit…" : "En ligne";
 
   const ajouter = (b: SansHeure<Bulle>) =>
@@ -436,7 +477,7 @@ export function DoubleChef({
     ajouter({ de: "double", texte: r.texte, voix });
     if (r.carte) {
       if (r.carte === "reservation") {
-        setResa(preRemplir(t));
+        setResa(preRemplir(t, p.demande.heures));
         setResaFaite(false);
       }
       ajouter({ de: "carte", carte: r.carte });
@@ -494,10 +535,7 @@ export function DoubleChef({
   const confirmer = () => {
     const jour = joursListe.find((j) => j.cle === resa.jour)?.mot.toLowerCase() ?? "aujourd’hui";
     setResaFaite(true);
-    ajouter({
-      de: "client",
-      texte: `Une table pour ${resa.personnes}, ${jour} à ${resa.heure}.`,
-    });
+    ajouter({ de: "client", texte: p.demande.phrase(jour, resa.heure, resa.personnes) });
     const texte = confirmationDuDouble(fiche);
     const voix: DemandeVoix = { quoi: "confirmation" };
     taire();
@@ -506,7 +544,7 @@ export function DoubleChef({
       ajouter({ de: "double", texte, voix });
       setContent(true);
       window.setTimeout(() => setContent(false), 2600);
-      setSuggestions(["Le plat du jour ?", "C'est où ?"]);
+      setSuggestions([p.questionVedette, "C'est où ?"]);
     });
   };
 
@@ -520,15 +558,15 @@ export function DoubleChef({
           <img src={plat.photo} alt="" />
           <div>
             <b>{plat.nom}</b>
-            <span>{plat.detail.split("·")[0].trim()} · {plat.prix}</span>
+            <span>{[plat.detail.split("·")[0].trim(), plat.prix].filter(Boolean).join(" · ")}</span>
             <div className="dc-plat-b">
               {onDecouvrir && (
                 <button type="button" className="plein" onClick={onDecouvrir}>
                   Découvrir <i aria-hidden="true">→</i>
                 </button>
               )}
-              <button type="button" onClick={() => void envoyer("Je voudrais réserver une table")}>
-                Réserver
+              <button type="button" onClick={() => void envoyer(`Je voudrais ${p.demande.verbe}`)}>
+                {p.demande.court}
               </button>
             </div>
           </div>
@@ -543,7 +581,7 @@ export function DoubleChef({
               <path d="M3.2 10h17.6M8 2.8v4.4M16 2.8v4.4" />
             </svg>
             <span>
-              <b>Réservation</b>
+              <b>{p.demande.titre}</b>
               <em>{fiche.nom}</em>
             </span>
           </div>
@@ -560,13 +598,14 @@ export function DoubleChef({
           <label>
             <span>Heure souhaitée</span>
             <select value={resa.heure} disabled={resaFaite} onChange={(e) => setResa({ ...resa, heure: e.target.value })}>
-              {HEURES.map((h) => (
+              {p.demande.heures.map((h) => (
                 <option key={h} value={h}>
                   {h}
                 </option>
               ))}
             </select>
           </label>
+          {p.demande.personnes && (
           <div className="dc-resa-n">
             <span>Personnes</span>
             <div>
@@ -579,10 +618,11 @@ export function DoubleChef({
               </button>
             </div>
           </div>
+          )}
           <button type="button" className="dc-resa-ok" disabled={resaFaite} onClick={confirmer}>
             {resaFaite ? "Demande envoyée ✓" : "Confirmer"}
           </button>
-          <small>Sous réserve de confirmation du restaurant</small>
+          <small>Sous réserve de confirmation par {fiche.nom}</small>
         </div>
       );
     if (c === "horaires")
@@ -596,7 +636,7 @@ export function DoubleChef({
     if (c === "carte")
       return (
         <div className="dc-info">
-          <b>La carte</b>
+          <b>{p.carteNom}</b>
           {fiche.carte.slice(0, 6).map((l) => (
             <span key={l.nom} className="dc-ligne">
               {l.nom}
@@ -612,9 +652,13 @@ export function DoubleChef({
     <>
       Parle avec le double de <em>{fiche.prenom}</em>
     </>
-  ) : (
+  ) : chef ? (
     <>
       Parle avec le double <em>du chef</em>
+    </>
+  ) : (
+    <>
+      Parle avec <em>{nomDansPhrase(fiche.nom)}</em>
     </>
   );
 
@@ -672,8 +716,18 @@ export function DoubleChef({
   );
 
   return (
-    <div className={`dc ${phase}`}>
-      <span className="dc-fond" aria-hidden="true" />
+    <div className={`dc ${phase}${chef ? "" : " boutique"}${parle ? " parle" : ""}`}>
+      <span
+        className="dc-fond"
+        aria-hidden="true"
+        style={
+          tenue
+            ? p.famille === "table"
+              ? undefined
+              : { backgroundImage: `url("${tenue.decor}")` }
+            : { backgroundImage: `url("${fiche.portrait || carte.photo || ""}")` }
+        }
+      />
 
       {phase === "arrivee" ? (
         <div className="dc-arr">
@@ -690,7 +744,13 @@ export function DoubleChef({
             {fiche.portrait && <img src={fiche.portrait} alt="" />}
             <div>
               <b>
-                {fiche.prenomConnu ? fiche.prenom : "Le chef"} <span>· {fiche.nom}</span>
+                {quiAffiche ? (
+                  <>
+                    {quiAffiche} <span>· {fiche.nom}</span>
+                  </>
+                ) : (
+                  fiche.nom
+                )}
               </b>
             </div>
           </div>
@@ -709,7 +769,7 @@ export function DoubleChef({
           <div className="dc-bas">
             <div className="dc-l double">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="dc-av" src={POSES.accueil} alt="" />
+              <img className="dc-av" src={avatar} alt="" />
               <p>{bulles[0].de !== "carte" ? fr(bulles[0].texte) : ""}</p>
             </div>
             {pastilles}
@@ -741,7 +801,13 @@ export function DoubleChef({
             <img className="dc-mini" src={pose} alt="" />
             <div className="dc-qui">
               <b>
-                {fiche.prenomConnu ? fiche.prenom : "Le chef"} <span>· {fiche.nom}</span>
+                {quiAffiche ? (
+                  <>
+                    {quiAffiche} <span>· {fiche.nom}</span>
+                  </>
+                ) : (
+                  fiche.nom
+                )}
               </b>
               <em>
                 <i aria-hidden="true">🎙️</i> Double IA · {etat.toLowerCase()}
@@ -753,16 +819,16 @@ export function DoubleChef({
             </button>
             {menu && (
               <div className="dc-menu" role="menu">
-                <button type="button" role="menuitem" onClick={() => void envoyer("Je voudrais réserver une table")}>
-                  📅 Réserver une table
+                <button type="button" role="menuitem" onClick={() => void envoyer(`Je voudrais ${p.demande.verbe}`)}>
+                  📅 {p.demande.titre}
                 </button>
                 {plat && onDecouvrir && (
                   <button type="button" role="menuitem" onClick={() => { setMenu(false); onDecouvrir(); }}>
                     🍽️ Découvrir le plat du jour
                   </button>
                 )}
-                <button type="button" role="menuitem" onClick={() => void envoyer("Tu peux me montrer la carte ?")}>
-                  📖 Voir la carte
+                <button type="button" role="menuitem" onClick={() => void envoyer(`Tu peux me montrer ${p.carteNom.toLowerCase()} ?`)}>
+                  📖 Voir {p.carteNom.toLowerCase()}
                 </button>
                 <button
                   type="button"
@@ -783,13 +849,13 @@ export function DoubleChef({
               b.de === "carte" ? (
                 <div key={b.id} className="dc-l carte">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img className="dc-av" src={POSES.accueil} alt="" />
+                  <img className="dc-av" src={avatar} alt="" />
                   {carteHtml(b.carte)}
                 </div>
               ) : (
                 <div key={b.id} className={`dc-l ${b.de}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img className="dc-av" src={b.de === "double" ? POSES.accueil : "/clikme-fantome.png"} alt="" />
+                  <img className="dc-av" src={b.de === "double" ? avatar : FANTOME} alt="" />
                   <p>
                     {fr(b.texte)}
                     <small>{b.heure}</small>
@@ -808,7 +874,7 @@ export function DoubleChef({
             {reflechit && (
               <div className="dc-l double">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="dc-av" src={POSES.accueil} alt="" />
+                <img className="dc-av" src={avatar} alt="" />
                 <p className="dc-points" aria-label="Il réfléchit">
                   <s /> <s /> <s />
                 </p>
@@ -850,6 +916,16 @@ const FEUILLE = `
 .dc-fond::after{content:"";position:absolute;inset:-2px;transition:background .4s ease;
   background:linear-gradient(to bottom,rgba(20,6,16,.62),rgba(20,6,16,.18) 26%,rgba(20,6,16,.2) 46%,rgba(20,6,16,.82) 64%,rgba(20,6,16,.94));}
 .dc.conversation .dc-fond::after{background:rgba(20,6,16,.72);}
+/* ═══ HORS DU RESTAURANT : SA BOUTIQUE EN FOND, LE FANTOME CLIKME DEVANT ═══
+   Pas de comptoir a viser : la photo de la boutique se pose telle quelle,
+   assombrie pour que le titre et le fantome se lisent dessus. Quand il parle,
+   le fantome respire — il n'a pas de bouche dessinee a animer. */
+.dc.boutique .dc-fond{transform:none;background-position:center;background-size:cover;background-color:#2A0F24;}
+.dc.boutique .dc-fond::after{background:linear-gradient(to bottom,rgba(20,6,16,.7),rgba(20,6,16,.35) 28%,rgba(20,6,16,.45) 46%,rgba(20,6,16,.86) 64%,rgba(20,6,16,.95));}
+.dc.boutique .dc-fant{filter:drop-shadow(0 14px 30px rgba(0,0,0,.55)) drop-shadow(0 0 22px rgba(255,120,220,.35));}
+.dc.boutique.parle .dc-fant{animation:dcParle .3s ease-in-out infinite alternate;}
+@keyframes dcParle{from{transform:translateX(-50%) scale(1,1)}to{transform:translateX(-50%) scale(1.03,.97) translateY(2%)}}
+@media (prefers-reduced-motion:reduce){.dc.boutique.parle .dc-fant{animation:none;}}
 .dc button{font:inherit;cursor:pointer;}
 .dc-rond{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
   border:1px solid rgba(255,255,255,.28);background:rgba(20,8,18,.55);color:#fff;font-size:22px;line-height:1;

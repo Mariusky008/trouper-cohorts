@@ -22,7 +22,7 @@ import {
   clonageDisponible,
   creerVoixClonee,
   lireEnregistrement,
-  QUESTIONS_VOIX,
+  questionsVoix,
   supprimerVoixClonee,
   transcrireReponse,
   type Enregistrement,
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   const { data: row } = await supabase
     .from("human_vitrine_sites")
-    .select("id, pro_token, business_name, contact_prenom")
+    .select("id, pro_token, business_name, contact_prenom, activite")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -65,6 +65,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   }
   const siteId = s(site.id);
+  /* LES QUESTIONS DE SON MÉTIER — voir `questionsVoix`. */
+  const QUESTIONS_VOIX = questionsVoix(s(site.activite));
 
   /* L'ÉTAT DE SA VOIX. Lu à part : sans la migration, la carte dit simplement
      que la fonction arrive, au lieu de faire tomber l'Espace Pro. */

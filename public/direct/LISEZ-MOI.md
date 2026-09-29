@@ -1045,6 +1045,35 @@ raison pour laquelle la règle bloquante de cette section n'est ni le cadrage,
 ni la lumière, ni la définition : c'est que ce soit **le même plat**. Tout le
 reste se rattrape au recadrage.
 
+## 👻 Le double du commerçant — tous les métiers
+
+> « Il va falloir uniformiser tout ceci avec le reste des métiers, mais
+> attention, tout le monde n'a pas la même logique. »
+
+- **Le fantôme de la barre ouvre le double partout** (sauf événements, offres
+  d'emploi et invitations). Au restaurant, il porte la tenue de chef et se
+  tient au comptoir ; ailleurs, c'est le fantôme ClikMe devant la photo de la
+  boutique.
+- **Ce qu'il ouvrait avant** — les autres clients qui ont essayé la même
+  coupe, le même bouquet, les mêmes ongles — passe dans un **4e bouton de la
+  colonne de droite** (« Leurs coupes », « Chez eux », « Leurs ongles »,
+  « Leurs essais »…), avec en pastille le nombre d'essais. La bulle qui
+  désignait le fantôme ne s'affiche plus chez un commerce qui a un double.
+- **Chaque métier parle sa langue** — `lib/direct/double-metiers.ts` : table,
+  bar, coiffure, ongles, fleurs, mode, créateur, lunettes, séance (tatoueur,
+  hypno…). Pour chacun : comment on l'appelle sans prénom, son lieu, ce que
+  montre l'annonce (« le bouquet du moment »), la demande (« Réserver une
+  table » avec nombre de personnes, « Prendre rendez-vous », « Commander un
+  bouquet », « Faire mettre de côté ») et ses heures, les questions de départ,
+  ce qu'il transmet plutôt que de deviner, le libellé du 4e bouton.
+- **Tenues des autres métiers** : prêtes à brancher. Poser les 7 poses et le
+  décor dans `public/direct/double/<métier>/` avec
+  `node scripts/fabriquer-double.mjs <dossier> <métier>`, puis ajouter le
+  métier à `TENUES` dans `components/direct/double-chef.tsx`.
+- **Page commerçant et Espace Pro** : le fantôme flottant et la carte « Donnez
+  votre voix » sont là pour tous les métiers ; les trois questions posées pour
+  donner sa voix parlent le métier (`questionsVoix`).
+
 ## 👻 Le double du chef (restaurants)
 
 > « Le fantôme deviendra un endroit où l'on pourrait discuter avec le chef du

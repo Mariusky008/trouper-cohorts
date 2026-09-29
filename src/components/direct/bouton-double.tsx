@@ -18,6 +18,7 @@
 
 import { useEffect, useState } from "react";
 import { DoubleChef } from "@/components/direct/double-chef";
+import { nomDansPhrase } from "@/lib/direct/double-metiers";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { ParcoursTable } from "@/components/direct/parcours-table-ecran";
 import { StylesParcoursTable } from "@/components/direct/styles-parcours-table";
@@ -56,6 +57,10 @@ export function BoutonDouble({
   }, [ouvert]);
 
   const prenom = prenomChef || carte.voix?.prenom;
+  /* LA TENUE DE CHEF AU RESTAURANT ; ailleurs le fantôme ClikMe, qui ouvre le
+     même double, dans les mots du métier — voir `double-metiers.ts`. */
+  const chef = carte.branche === "restaurant";
+  const appel = prenom ? `Parle avec ${prenom} 👋` : chef ? "Parle avec le chef 👋" : "Une question ? Parle-moi 👋";
 
   return (
     <>
@@ -63,7 +68,7 @@ export function BoutonDouble({
         <button
           type="button"
           className="bd"
-          aria-label={prenom ? `Parler avec le double de ${prenom}` : "Parler avec le double du chef"}
+          aria-label={prenom ? `Parler avec le double de ${prenom}` : `Parler avec ${nomDansPhrase(carte.nom)}`}
           onClick={() => {
             setBulle(false);
             setOuvert(true);
@@ -71,15 +76,15 @@ export function BoutonDouble({
         >
           {bulle && (
             <span className="bd-bulle">
-              {prenom ? `Parle avec ${prenom} 👋` : "Parle avec le chef 👋"}
+              {appel}
             </span>
           )}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/direct/double/accueil.webp" alt="" />
+          <img className={chef ? "" : "bd-fantome"} src={chef ? "/direct/double/accueil.webp" : "/clikme-fantome.png"} alt="" />
         </button>
       )}
       {ouvert && (
-        <div className="bd-scene" role="dialog" aria-label="Conversation avec le double du chef">
+        <div className="bd-scene" role="dialog" aria-label={`Conversation avec ${nomDansPhrase(carte.nom)}`}>
           <div className="bd-tel">
             {plat ? (
               <ParcoursTable commerce={carte.id} onFermer={() => setPlat(false)} />
@@ -109,6 +114,7 @@ const FEUILLE = `
   box-shadow:0 0 0 3px #F5A23A,0 10px 30px rgba(0,0,0,.45),0 0 26px rgba(245,162,58,.45);
   animation:bdFlotte 3.2s ease-in-out infinite;}
 .bd img{width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:50% 14%;transform:scale(1.16);}
+.bd img.bd-fantome{object-fit:contain;object-position:50% 50%;transform:scale(.86);border-radius:0;}
 .bd-bulle{position:absolute;right:84px;top:50%;transform:translateY(-50%);white-space:nowrap;
   padding:9px 14px;border-radius:16px 16px 4px 16px;font:700 14px/1.2 var(--font-clikme),"Poppins",system-ui,sans-serif;
   color:#fff;background:linear-gradient(100deg,#FF2E9A,#E0399B);box-shadow:0 8px 24px rgba(255,46,154,.45);

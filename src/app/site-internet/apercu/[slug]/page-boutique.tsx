@@ -39,6 +39,7 @@ import { Boutique } from "@/app/autour-de-moi/boutique/boutique";
 import { DemoTour } from "./demo-tour";
 import { GarderCeSite } from "./garder-ce-site";
 import { BoutonDouble } from "@/components/direct/bouton-double";
+import { aUnDouble } from "@/lib/direct/double-metiers";
 import { toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { gesteDuJour } from "@/lib/direct/geste-du-jour";
@@ -218,17 +219,17 @@ export function PageBoutique(p: PageBoutiqueProps) {
         />
       )}
       {modeDemo && <GarderCeSite slug={slug} phoneDisplay={phoneDisplay} />}
-      {/* ═══ LE FANTÔME DU CHEF, AUSSI SUR SA PAGE ═══════════════════════
+      {/* ═══ LE FANTÔME DU COMMERÇANT, AUSSI SUR SA PAGE ═══════════════════
           « Il va falloir rajouter ce fantôme sur la page d'accueil du
-          commerçant aussi. » Les restaurants d'abord, comme dans
-          l'application. Le parcours du plat ne s'ouvre que pour un commerce
-          que la démonstration connaît en entier ; ailleurs, le double
-          répond sans lui. */}
-      {carte.branche === "restaurant" && (
+          commerçant aussi. » Tous les métiers, comme dans l'application,
+          chacun dans ses mots. Le parcours du plat ne s'ouvre que pour un
+          restaurant que la démonstration connaît en entier ; ailleurs, le
+          double répond sans lui. */}
+      {aUnDouble(carte) && (
         <BoutonDouble
           carte={carte}
           prenomChef={p.prenomChef}
-          avecParcours={toutesLesCartes().some((c) => c.id === carte.id)}
+          avecParcours={carte.branche === "restaurant" && toutesLesCartes().some((c) => c.id === carte.id)}
         />
       )}
     </>
