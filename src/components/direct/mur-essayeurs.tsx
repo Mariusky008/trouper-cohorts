@@ -91,6 +91,22 @@ export function MurEssayeurs({
     setActif((i) => Math.min(essayeurs.length - 1, Math.max(0, i + pas)));
     setDx(0);
   };
+  /* ═══ UN APPUI SUR LA PHOTO PASSE A LA PERSONNE SUIVANTE ═════════════════
+     « Quand je tape ou clique sur une photo, ça passe à la suivante : le
+     swipe marche parfois mal. » Le glissement reste ; l'appui devient le
+     geste sûr. Après la troisième, on revient à la première — un appui qui
+     ne fait plus rien au bout du paquet se lit comme une panne.
+     UN DOUBLE APPUI NE SAUTE PAS DEUX PERSONNES : un second appui dans les
+     350 ms qui suivent est ignoré, sinon « double-taper » ferait passer
+     Hélène sans qu'on l'ait vue. */
+  const dernierAppui = useRef(0);
+  const avancer = () => {
+    const t = Date.now();
+    if (t - dernierAppui.current < 350) return;
+    dernierAppui.current = t;
+    setActif((i) => (i + 1) % essayeurs.length);
+    setDx(0);
+  };
 
   if (!essayeurs.length) return null;
 
@@ -116,6 +132,7 @@ export function MurEssayeurs({
              carte revenait en place — le geste avait l'air ignore. */
           if (d < -40) bouger(1);
           else if (d > 40) bouger(-1);
+          else if (Math.abs(d) < 8) avancer();
           else setDx(0);
         }}
         onPointerCancel={() => {
@@ -135,7 +152,6 @@ export function MurEssayeurs({
               key={e.photo}
               className={`mes-c${ecart === 0 ? " au-centre" : " de-cote"}`}
               style={{ "--mes-e": ecart, "--mes-dx": `${dx}px` } as React.CSSProperties}
-              onClick={() => ecart !== 0 && bouger(ecart)}
             >
               {/* LA VERSION CADREE SUR LA TETE QUAND ELLE EXISTE — voir
                   `portrait` dans `plaque-parcours.ts`. On coupe la photo, pas

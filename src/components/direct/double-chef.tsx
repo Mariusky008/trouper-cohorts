@@ -128,8 +128,9 @@ export function DoubleChef({
   carte: CarteAutour;
   prenomClient?: string;
   onFermer: () => void;
-  /** Ouvre le parcours du plat — le même que « Découvrir ce plat » sur l'annonce. */
-  onDecouvrir: () => void;
+  /** Ouvre le parcours du plat — le même que « Découvrir ce plat » sur l'annonce.
+   *  Absent quand le commerce n'a pas de parcours : le bouton ne s'affiche pas. */
+  onDecouvrir?: () => void;
 }) {
   const fiche = useMemo(() => ficheDuDouble(carte), [carte]);
   const idSuivant = useRef(1);
@@ -339,9 +340,11 @@ export function DoubleChef({
             <b>{plat.nom}</b>
             <span>{plat.detail.split("·")[0].trim()} · {plat.prix}</span>
             <div className="dc-plat-b">
-              <button type="button" className="plein" onClick={onDecouvrir}>
-                Découvrir <i aria-hidden="true">→</i>
-              </button>
+              {onDecouvrir && (
+                <button type="button" className="plein" onClick={onDecouvrir}>
+                  Découvrir <i aria-hidden="true">→</i>
+                </button>
+              )}
               <button type="button" onClick={() => void envoyer("Je voudrais réserver une table")}>
                 Réserver
               </button>
@@ -572,7 +575,7 @@ export function DoubleChef({
                 <button type="button" role="menuitem" onClick={() => void envoyer("Je voudrais réserver une table")}>
                   📅 Réserver une table
                 </button>
-                {plat && (
+                {plat && onDecouvrir && (
                   <button type="button" role="menuitem" onClick={() => { setMenu(false); onDecouvrir(); }}>
                     🍽️ Découvrir le plat du jour
                   </button>

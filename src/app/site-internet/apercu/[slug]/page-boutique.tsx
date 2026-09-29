@@ -38,6 +38,8 @@
 import { Boutique } from "@/app/autour-de-moi/boutique/boutique";
 import { DemoTour } from "./demo-tour";
 import { GarderCeSite } from "./garder-ce-site";
+import { BoutonDouble } from "@/components/direct/bouton-double";
+import { toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { gesteDuJour } from "@/lib/direct/geste-du-jour";
 import { murDeLaCarte } from "@/lib/direct/fantomes";
@@ -214,6 +216,15 @@ export function PageBoutique(p: PageBoutiqueProps) {
         />
       )}
       {modeDemo && <GarderCeSite slug={slug} phoneDisplay={phoneDisplay} />}
+      {/* ═══ LE FANTÔME DU CHEF, AUSSI SUR SA PAGE ═══════════════════════
+          « Il va falloir rajouter ce fantôme sur la page d'accueil du
+          commerçant aussi. » Les restaurants d'abord, comme dans
+          l'application. Le parcours du plat ne s'ouvre que pour un commerce
+          que la démonstration connaît en entier ; ailleurs, le double
+          répond sans lui. */}
+      {carte.branche === "restaurant" && (
+        <BoutonDouble carte={carte} avecParcours={toutesLesCartes().some((c) => c.id === carte.id)} />
+      )}
     </>
   );
 }
