@@ -325,6 +325,9 @@ export const TENUES: Partial<Record<FamilleDouble, { dossier: string; decor: str
      ne va PAS à l'onglerie, qui a sa propre famille : des ciseaux sur une
      prothésiste ongulaire, c'est encore un métier mal compris. */
   coiffure: { dossier: "/direct/double/coiffure/", decor: "/direct/double/coiffure/decor.jpg" },
+  /* L'ONGLERIE : casquette et salopette roses au flacon de vernis, limes en
+     poche, et les tables de pose — étagères de vernis — derrière le comptoir. */
+  ongles: { dossier: "/direct/double/ongles/", decor: "/direct/double/ongles/decor.jpg" },
 };
 
 /** La tenue d'un commerce, s'il en a une. */

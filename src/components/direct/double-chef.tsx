@@ -163,7 +163,7 @@ export function DoubleChef({
      fantôme ClikMe se tient devant la photo de la boutique elle-même : c'est
      chez la fleuriste qu'on entre, pas dans une cuisine. */
   const tenue = TENUES[p.famille];
-  /** Vrai quand ce métier a sa tenue et son décor dessinés — le chef, la boutique de mode et le salon de coiffure, pour l'instant. */
+  /** Vrai quand ce métier a sa tenue et son décor dessinés — le chef, la boutique de mode, le salon de coiffure et l'onglerie, pour l'instant. */
   const chef = !!tenue;
   const art = tenue
     ? {

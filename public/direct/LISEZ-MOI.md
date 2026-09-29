@@ -1070,7 +1070,9 @@ reste se rattrape au recadrage.
   (casquette au cintre, gilet violet, foulard, boutique derrière le comptoir —
   `public/direct/double/mode/`), et le **salon de coiffure** (casquette et
   salopette aux ciseaux, salon aux miroirs dorés — `public/direct/double/coiffure/` ;
-  pas pour l'onglerie, qui a sa propre famille). La tenue ne fait pas le métier : les mots
+  pas pour l'onglerie, qui a sa propre famille), et l'**onglerie** (casquette
+  et salopette roses au flacon de vernis, tables de pose derrière —
+  `public/direct/double/ongles/`). La tenue ne fait pas le métier : les mots
   restent ceux de la boutique (« le chef » n'existe qu'au restaurant).
 - **Tenues des autres métiers** : prêtes à brancher. Poser les 7 poses et le
   décor dans `public/direct/double/<métier>/` avec
