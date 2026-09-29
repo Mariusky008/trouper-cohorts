@@ -70,6 +70,8 @@ export type PageBoutiqueProps = {
    * dans la boutique.
    */
   invente?: boolean;
+  /** Le prénom qu'il a donné à son double dans son Espace Pro — voir `pro-voix.tsx`. */
+  prenomChef?: string;
 };
 
 /**
@@ -223,7 +225,11 @@ export function PageBoutique(p: PageBoutiqueProps) {
           que la démonstration connaît en entier ; ailleurs, le double
           répond sans lui. */}
       {carte.branche === "restaurant" && (
-        <BoutonDouble carte={carte} avecParcours={toutesLesCartes().some((c) => c.id === carte.id)} />
+        <BoutonDouble
+          carte={carte}
+          prenomChef={p.prenomChef}
+          avecParcours={toutesLesCartes().some((c) => c.id === carte.id)}
+        />
       )}
     </>
   );

@@ -1080,13 +1080,28 @@ profite ».
   lieu d'attendre le fichier entier (c'est ce qui faisait basculer les réponses
   sur la voix robot). Une fois la vraie voix entendue, plus jamais la voix du
   téléphone : si une phrase échoue, la bouche bouge en silence.
-- **Mettre une vraie voix (clonée)** : ElevenLabs → Voices → *Instant Voice
-  Clone*, 1 à 3 minutes d'enregistrement propre, avec l'accord de la personne.
-  Copier l'identifiant de la voix, puis sur Vercel : `ELEVENLABS_API_KEY` et
-  `ELEVENLABS_VOICE_<CLE>` (ex. `ELEVENLABS_VOICE_CENTRE` pour Chez Bergine).
-  Seul ce commerce passe chez ElevenLabs ; les autres gardent leur timbre
-  OpenAI. `ELEVENLABS_MODEL` change le modèle (par défaut
-  `eleven_multilingual_v2`).
+- **Chaque restaurateur donne SA voix, seul, depuis son Espace Pro** — carte
+  « Donnez votre voix à votre double » (`pro/[slug]/pro-voix.tsx`, route
+  `api/site-internet/pro/voix`). Il coche l'accord (texte gardé mot pour mot
+  avec sa date), choisit le prénom de son double, répond à voix haute à trois
+  questions (8 à 45 s chacune, 30 s au total minimum). ClikMe crée sa voix
+  chez ElevenLabs (*Instant Voice Clone*, bruit de fond retiré), garde
+  l'identifiant — jamais les enregistrements — et la transcription de ce qu'il
+  a raconté, qui nourrit son double. « Supprimer ma voix » l'efface chez
+  ElevenLabs et ici. **Seul réglage côté ClikMe : `ELEVENLABS_API_KEY` sur
+  Vercel, et la migration `20260929120000_voix_du_double.sql`.** Sans l'un ou
+  l'autre, la carte ne s'affiche pas.
+- **Plafond** : `DOUBLE_VOIX_PLAFOND` signes par mois et par commerce (50 000
+  par défaut). Au-delà, son double reprend la voix OpenAI jusqu'au mois
+  suivant — il change de timbre, il ne se tait pas.
+- **Le double des vrais restaurants** : `lib/direct/double-commerce.ts` trouve
+  le commerce (démonstration, adresse de démo, ou base via
+  `lib/site-internet/fiche-du-site.ts` — la même recette que la page
+  commerçant). Il sait sa carte, ses horaires, sa fiche de connaissances de
+  l'Espace Pro et ce qu'il a raconté en donnant sa voix.
+- **Démonstration** : `ELEVENLABS_VOICE_<CLE>` pose une voix à la main (ex.
+  `ELEVENLABS_VOICE_CENTRE` pour Chez Bergine). `ELEVENLABS_MODEL` change le
+  modèle (par défaut `eleven_multilingual_v2`).
 - **Dernier écran du parcours restaurant** : « On se retrouve chez nous ? »
   garde sa question, et son geste principal devient **« Parler à … »** (le
   double). « Demander une table » et « Voir les stats de ce plat » passent en

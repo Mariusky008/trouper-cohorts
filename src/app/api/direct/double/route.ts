@@ -19,10 +19,9 @@
 // l'historique aux douze derniers messages et chaque message à cinq cents
 // signes : une conversation qui s'allonge ne doit pas faire grossir la facture.
 import { NextResponse } from "next/server";
-import { toutesLesCartes } from "@/lib/direct/apercu-habitant";
+import { trouverLeCommerce } from "@/lib/direct/double-commerce";
 import {
   consigneDuDouble,
-  ficheDuDouble,
   nettoyerReponse,
   repondreSansIA,
   type ReponseDouble,
@@ -53,9 +52,10 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ erreur: "Requête illisible." }, { status: 400 });
   }
-  const carte = toutesLesCartes().find((c) => c.id === s(corps.id));
-  if (!carte) return NextResponse.json({ erreur: "Commerce inconnu." }, { status: 404 });
-  const fiche = ficheDuDouble(carte);
+  /* LA DÉMONSTRATION OU UN VRAI RESTAURANT — voir `double-commerce.ts`. */
+  const commerce = await trouverLeCommerce(s(corps.id));
+  if (!commerce) return NextResponse.json({ erreur: "Commerce inconnu." }, { status: 404 });
+  const fiche = commerce.fiche;
   const prenom = s(corps.prenom).slice(0, 40);
   const messages: Message[] = (Array.isArray(corps.messages) ? corps.messages : [])
     .map((m) => {

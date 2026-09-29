@@ -59,19 +59,32 @@ export type FicheDouble = {
   plat: { nom: string; detail: string; prix: string; photo: string } | null;
   carte: { nom: string; prix?: string; rayon?: string; detail?: string }[];
   cadeau?: string;
+  /** Ce que le commerçant a écrit sur sa maison dans son Espace Pro (spécialités, questions fréquentes). */
+  notes?: string;
 };
 
+/**
+ * CE QU'UN VRAI COMMERÇANT AJOUTE À SA CARTE.
+ *
+ * Les restaurants de la démonstration ont tout dans leurs données. Un vrai
+ * commerçant a sa carte (nom, horaires, prestations) et, à côté, ce qu'il a dit
+ * de lui dans son Espace Pro : le prénom de son double, sa fiche de
+ * connaissances, et ce qu'il a raconté en donnant sa voix.
+ */
+export type SavoirEnPlus = { prenom?: string; notes?: string; recit?: string };
+
 /** La fiche du double, lue dans les données du commerce — et nulle part ailleurs. */
-export function ficheDuDouble(c: CarteAutour): FicheDouble {
+export function ficheDuDouble(c: CarteAutour, plus: SavoirEnPlus = {}): FicheDouble {
   const v = c.voix;
-  const prenomConnu = !!v?.prenom;
+  const prenom = (plus.prenom ?? "").trim() || v?.prenom || "";
+  const prenomConnu = !!prenom;
   const plat = c.menu
     ? { nom: c.menu.plat, detail: c.menu.description, prix: c.menu.prix, photo: c.menu.photo }
     : null;
   return {
     id: c.id,
     nom: c.nom,
-    prenom: v?.prenom || "le chef",
+    prenom: prenom || "le chef",
     prenomConnu,
     role: v?.role || "cuisinier",
     // LE PORTRAIT S'IL EXISTE, SINON LA PREMIÈRE PHOTO DE SA CUISINE : une
@@ -83,17 +96,18 @@ export function ficheDuDouble(c: CarteAutour): FicheDouble {
     horaires: c.fiche?.horaires ?? "",
     ou: c.fiche?.ou ?? "",
     mot: c.fiche?.mot ?? "",
-    recit: v?.recit ?? "",
+    recit: v?.recit || (plus.recit ?? "").trim(),
     signature: v?.signature ?? "",
     plat,
     carte: (c.catalogue ?? []).map((a) => ({ nom: a.nom, prix: a.prix, rayon: a.rayon, detail: a.detail })),
     cadeau: c.reponse?.cadeau,
+    notes: (plus.notes ?? "").trim() || undefined,
   };
 }
 
-/** « Julien », ou « le chef » — pour les phrases où l'on parle de lui. */
-function lui(f: FicheDouble): string {
-  return f.prenomConnu ? f.prenom : "le chef";
+/** « à Julien », ou « au chef » — pour les phrases où l'on parle de lui ; « à le chef » ne se dit pas. */
+function aLui(f: FicheDouble): string {
+  return f.prenomConnu ? `à ${f.prenom}` : "au chef";
 }
 
 /** Les deux premières phrases d'un récit : un double qui récite tout lasse. */
@@ -123,7 +137,7 @@ export function accueilDuDouble(prenomClient?: string): string {
 
 /** Ce qu'il répond quand on vient de lui demander une table. */
 export function confirmationDuDouble(f: FicheDouble): string {
-  return `C’est noté ! Je transmets ta demande à ${f.prenomConnu ? f.prenom : "le chef"}. Tu auras la confirmation ici même.`;
+  return `C’est noté ! Je transmets ta demande ${aLui(f)}. Tu auras la confirmation ici même.`;
 }
 
 /**
@@ -139,26 +153,25 @@ export function confirmationDuDouble(f: FicheDouble): string {
  */
 export function repondreSansIA(question: string, f: FicheDouble): ReponseDouble {
   const q = plat_(question);
-  const a = lui(f);
   const plat = f.plat;
 
   if (/allerg|gluten|lactose|arachide|vegan|vegetar|sans porc|halal|intoleran/.test(q)) {
     return {
-      texte: `Pour les allergies et les régimes, demande directement à ${a} : c'est trop important pour que je devine.`,
+      texte: `Pour les allergies et les régimes, demande directement ${aLui(f)} : c'est trop important pour que je devine.`,
       carte: "reservation",
       suggestions: ["Une table ce soir ?", "Tes horaires ?"],
     };
   }
   if (/reserv|une table|de la place|on vient|venir a|ce soir|demain|midi pour|on sera|nous sommes|on est \d|personnes/.test(q)) {
     return {
-      texte: `Je transmets ta demande à ${a}. Dis-moi quand et combien vous êtes.`,
+      texte: `Je transmets ta demande ${aLui(f)}. Dis-moi quand et combien vous êtes.`,
       carte: "reservation",
       suggestions: ["Le plat du jour ?", "C'est où ?"],
     };
   }
   if (/horaire|ouvert|ouvre|ferme|quelle heure|a quelle heure/.test(q)) {
     return {
-      texte: f.horaires ? `${f.horaires}.` : `Je n'ai pas les horaires sous la main : je demande à ${a}.`,
+      texte: f.horaires ? `${f.horaires}.` : `Je n'ai pas les horaires sous la main : je demande ${aLui(f)}.`,
       carte: f.horaires ? "horaires" : null,
       suggestions: ["Une table ce soir ?", "C'est où ?"],
     };
@@ -178,7 +191,12 @@ export function repondreSansIA(question: string, f: FicheDouble): ReponseDouble 
       suggestions: ["Ta spécialité ?", "Une table ce soir ?"],
     };
   }
-  if (/carte|menu|autre chose|quoi d.autre|dessert|entree|prix|combien/.test(q) && f.carte.length) {
+  /* SANS PLAT DU JOUR, LA CARTE RÉPOND À SA PLACE. Un vrai restaurant n'a pas
+     toujours publié son plat du jour, mais il a souvent saisi ses prestations :
+     « je ne sais pas » quand on a sa carte sous la main, c'est une panne. */
+  const surLaCarte = /carte|menu|autre chose|quoi d.autre|dessert|entree|prix|combien/.test(q);
+  const surLeJour = /plat du jour|aujourd|ce midi|a manger|faim|special|conseill|recommand|meilleur|quoi de bon|tu sers|avec quoi/.test(q);
+  if ((surLaCarte || (surLeJour && !plat)) && f.carte.length) {
     const lignes = f.carte.slice(0, 4).map((l) => `${l.nom}${l.prix ? ` (${l.prix})` : ""}`);
     return {
       texte: `Sur la carte : ${lignes.join(", ")}.`,
@@ -186,7 +204,7 @@ export function repondreSansIA(question: string, f: FicheDouble): ReponseDouble 
       suggestions: ["Le plat du jour ?", "Une table ce soir ?"],
     };
   }
-  if (/plat du jour|aujourd|ce midi|a manger|faim|special|conseill|recommand|meilleur|quoi de bon|tu sers|avec quoi/.test(q) && plat) {
+  if (surLeJour && plat) {
     const conseil = /special|conseill|recommand|meilleur/.test(q);
     return {
       texte: conseil
@@ -214,13 +232,13 @@ export function repondreSansIA(question: string, f: FicheDouble): ReponseDouble 
   }
   if (/salut|bonjour|hello|coucou|bonsoir/.test(q)) {
     return {
-      texte: `Salut ! Je suis le double de ${a}. Demande-moi le plat du jour, ou une table.`,
+      texte: `Salut ! Je suis le double ${f.prenomConnu ? `de ${f.prenom}` : "du chef"}. Demande-moi le plat du jour, ou une table.`,
       carte: null,
       suggestions: suggestionsDeDepart(),
     };
   }
   return {
-    texte: `Bonne question ! Je préfère ne pas te dire de bêtise : je la transmets à ${a}.${
+    texte: `Bonne question ! Je préfère ne pas te dire de bêtise : je la transmets ${aLui(f)}.${
       plat ? ` En attendant, le plat du jour, c'est ${plat.nom}.` : ""
     }`,
     carte: plat ? "plat" : null,
@@ -244,7 +262,7 @@ export function consigneDuDouble(f: FicheDouble, prenomClient?: string): string 
     "RÈGLES ABSOLUES :",
     "- Une ou deux phrases courtes, 220 caractères au maximum. C'est une conversation, pas un discours.",
     "- Tu n'utilises QUE les informations de la fiche ci-dessous. Tu n'inventes ni prix, ni plat, ni horaire, ni ingrédient.",
-    `- Allergies, régimes, ingrédients précis, vin, ou tout ce qui n'est pas dans la fiche : tu dis que tu transmets la question à ${lui(f)}.`,
+    `- Allergies, régimes, ingrédients précis, vin, ou tout ce qui n'est pas dans la fiche : tu dis que tu transmets la question ${aLui(f)}.`,
     "- Tu es une IA et tu ne le caches pas si on te le demande.",
     "- Quand c'est utile, tu proposes de réserver une table : c'est ce qui fait venir les gens.",
     "",
@@ -260,6 +278,7 @@ export function consigneDuDouble(f: FicheDouble, prenomClient?: string): string 
     f.recit ? `Son récit, à la première personne : « ${f.recit} »` : "",
     f.signature ? `Sa phrase : « ${f.signature} »` : "",
     f.cadeau ? `Petit plus proposé aux clients ClikMe : ${f.cadeau}.` : "",
+    f.notes ? `Ce qu'il a écrit lui-même sur sa maison :\n${f.notes}` : "",
     "",
     "RÉPONDS EN JSON UNIQUEMENT, de cette forme :",
     '{"texte": "ta réponse", "carte": "plat" | "reservation" | "horaires" | "carte" | null, "suggestions": ["2 ou 3 questions courtes que l\'habitant pourrait poser ensuite, 24 caractères max chacune"]}',

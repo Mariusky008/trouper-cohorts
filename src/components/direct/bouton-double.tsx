@@ -22,7 +22,16 @@ import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { ParcoursTable } from "@/components/direct/parcours-table-ecran";
 import { StylesParcoursTable } from "@/components/direct/styles-parcours-table";
 
-export function BoutonDouble({ carte, avecParcours = true }: { carte: CarteAutour; avecParcours?: boolean }) {
+export function BoutonDouble({
+  carte,
+  avecParcours = true,
+  prenomChef,
+}: {
+  carte: CarteAutour;
+  avecParcours?: boolean;
+  /** Le prénom qu'un vrai commerçant a donné à son double dans son Espace Pro. */
+  prenomChef?: string;
+}) {
   const [ouvert, setOuvert] = useState(false);
   const [plat, setPlat] = useState(false);
   /* LA BULLE « PARLE AU CHEF » APPARAÎT UN PEU APRÈS L'ARRIVÉE, puis
@@ -46,7 +55,7 @@ export function BoutonDouble({ carte, avecParcours = true }: { carte: CarteAutou
     };
   }, [ouvert]);
 
-  const prenom = carte.voix?.prenom;
+  const prenom = prenomChef || carte.voix?.prenom;
 
   return (
     <>
@@ -77,6 +86,7 @@ export function BoutonDouble({ carte, avecParcours = true }: { carte: CarteAutou
             ) : (
               <DoubleChef
                 carte={carte}
+                prenomChef={prenomChef}
                 onFermer={() => setOuvert(false)}
                 onDecouvrir={avecParcours ? () => setPlat(true) : undefined}
               />

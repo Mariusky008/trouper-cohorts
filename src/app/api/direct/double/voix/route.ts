@@ -20,8 +20,9 @@
 // 503, et l'écran retombe sur la voix du téléphone. La conversation marche
 // partout ; elle est seulement plus vivante là où la clé existe.
 import { NextResponse } from "next/server";
-import { toutesLesCartes } from "@/lib/direct/apercu-habitant";
-import { accueilDuDouble, confirmationDuDouble, ficheDuDouble } from "@/lib/direct/double-chef";
+import { accueilDuDouble, confirmationDuDouble } from "@/lib/direct/double-chef";
+import { trouverLeCommerce } from "@/lib/direct/double-commerce";
+import { compterSignes, voixAutorisee } from "@/lib/direct/voix-clonee";
 import { faireParler, faireParlerEnFlux, JEU_CONVERSATION, voixCloudConfiguree } from "@/lib/direct/timbres";
 import { sceauValide } from "@/lib/direct/sceau-voix";
 
@@ -54,16 +55,22 @@ const garder = (cle: string, son: ArrayBuffer) => {
 type Demande = { id?: unknown; quoi?: unknown; prenom?: unknown; texte?: unknown; sig?: unknown };
 
 /**
- * LA PHRASE À DIRE, OU LA RAISON DE REFUSER.
+ * LA PHRASE À DIRE, OU LA RAISON DE REFUSER — et AVEC QUELLE VOIX.
  *
  * Les deux portes — POST d'un bloc, GET au fil de l'eau — passent par ici :
  * une garde écrite deux fois finit toujours par n'être tenue qu'une fois.
+ *
+ * LA VOIX DU COMMERÇANT, S'IL L'A DONNÉE, ET TANT QUE LE MOIS LE PERMET. Au-delà
+ * du plafond, son double reprend la voix standard : il change de timbre, il ne
+ * se tait pas. Voir `voix-clonee.ts`.
  */
-function phraseDe(corps: Demande): { id: string; texte: string; fixe: boolean } | NextResponse {
+type Phrase = { id: string; texte: string; fixe: boolean; voixClonee?: string; siteId?: string };
+
+async function phraseDe(corps: Demande): Promise<Phrase | NextResponse> {
   if (!voixCloudConfiguree()) return NextResponse.json({ erreur: "Voix cloud non configurée." }, { status: 503 });
-  const carte = toutesLesCartes().find((c) => c.id === s(corps.id));
-  if (!carte) return NextResponse.json({ erreur: "Commerce inconnu." }, { status: 404 });
-  const fiche = ficheDuDouble(carte);
+  const commerce = await trouverLeCommerce(s(corps.id));
+  if (!commerce) return NextResponse.json({ erreur: "Commerce inconnu." }, { status: 404 });
+  const fiche = commerce.fiche;
   const quoi = s(corps.quoi);
   let texte = "";
   if (quoi === "accueil") texte = accueilDuDouble(s(corps.prenom).slice(0, 40));
@@ -77,10 +84,17 @@ function phraseDe(corps: Demande): { id: string; texte: string; fixe: boolean } 
   }
   texte = propre(texte);
   if (!texte) return NextResponse.json({ erreur: "Rien à dire." }, { status: 400 });
-  return { id: fiche.id, texte, fixe: quoi !== "reponse" };
+  let voixClonee = commerce.voixClonee;
+  if (voixClonee && commerce.siteId && !(await voixAutorisee(commerce.siteId, texte.length))) voixClonee = undefined;
+  return { id: fiche.id, texte, fixe: quoi !== "reponse", voixClonee, siteId: commerce.siteId };
 }
 
 const JEU = { jeu: JEU_CONVERSATION, vitesse: 1.04, spontane: true };
+const cleMemoire = (p: Phrase) => `${p.id}\n${p.voixClonee ?? ""}\n${p.texte}`;
+/** Seule SA voix se compte : c'est elle qui se paie au signe. */
+const compter = (p: Phrase) => {
+  if (p.voixClonee && p.siteId) void compterSignes(p.siteId, p.texte.length);
+};
 
 /**
  * AU FIL DE L'EAU — c'est la porte de l'écran.
@@ -92,16 +106,17 @@ const JEU = { jeu: JEU_CONVERSATION, vitesse: 1.04, spontane: true };
  */
 export async function GET(req: Request) {
   const q = new URL(req.url).searchParams;
-  const p = phraseDe({ id: q.get("id"), quoi: q.get("quoi"), prenom: q.get("prenom"), texte: q.get("texte"), sig: q.get("sig") });
+  const p = await phraseDe({ id: q.get("id"), quoi: q.get("quoi"), prenom: q.get("prenom"), texte: q.get("texte"), sig: q.get("sig") });
   if (p instanceof NextResponse) return p;
-  const deja = memoire.get(`${p.id}\n${p.texte}`);
   const entetes = { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=86400" };
+  const deja = memoire.get(cleMemoire(p));
   if (deja) return new NextResponse(deja, { status: 200, headers: entetes });
-  const r = await faireParlerEnFlux(p.id, p.texte, JEU);
+  const r = await faireParlerEnFlux(p.id, p.texte, { ...JEU, voixClonee: p.voixClonee });
   if (!r.ok) {
     console.info("[double/voix] synthèse impossible", r.statut, r.erreur);
     return NextResponse.json({ erreur: r.erreur }, { status: r.statut });
   }
+  compter(p);
   return new NextResponse(r.flux, { status: 200, headers: entetes });
 }
 
@@ -113,7 +128,7 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ erreur: "Requête illisible." }, { status: 400 });
   }
-  const p = phraseDe(corps);
+  const p = await phraseDe(corps);
   if (p instanceof NextResponse) return p;
 
   const son = (buf: ArrayBuffer) =>
@@ -122,16 +137,17 @@ export async function POST(req: Request) {
       headers: { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=86400" },
     });
 
-  const cle = `${p.id}\n${p.texte}`;
+  const cle = cleMemoire(p);
   const deja = memoire.get(cle);
   if (deja) return son(deja);
 
   /* UN PEU PLUS VIF QUE LE RÉCIT : il répond, il ne raconte pas. */
-  const r = await faireParler(p.id, p.texte, JEU);
+  const r = await faireParler(p.id, p.texte, { ...JEU, voixClonee: p.voixClonee });
   if (!r.ok) {
     console.info("[double/voix] synthèse impossible", r.statut, r.erreur);
     return NextResponse.json({ erreur: r.erreur }, { status: r.statut });
   }
+  compter(p);
   if (p.fixe) garder(cle, r.son);
   return son(r.son);
 }

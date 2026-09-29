@@ -42,10 +42,8 @@
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { noterClic } from "@/lib/direct/publications";
-import { horairesLisibles } from "@/lib/site-internet/horaires-pro";
-import { ligneDuJour } from "@/lib/site-internet/opening-hours";
-import { numeroAppel, numeroReservations } from "@/lib/site-internet/pro-phone";
-import { carteDepuisFiche, type FicheCommercant } from "@/lib/site-internet/carte-depuis-fiche";
+import { carteDepuisFiche } from "@/lib/site-internet/carte-depuis-fiche";
+import { COLONNES_FICHE, construireFiche } from "@/lib/site-internet/fiche-du-site";
 import { carteDeDemo, estAdresseDeDemo, listeDesDemos } from "@/lib/site-internet/fiches-demo";
 import { PageBoutique } from "./page-boutique";
 import { IndexDesDemos } from "./index-demos";
@@ -167,7 +165,7 @@ export default async function ApercuMaquette({
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
-    .select("id, business_name, city, activite, address, google_rating, google_reviews, google_place_id, diagnostic, published, gallery_photos")
+    .select(COLONNES_FICHE)
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -275,96 +273,35 @@ export default async function ApercuMaquette({
   // a fonctionné, pas seulement qu'on est venu du Direct.
   if (venuDuDirect && str(pub)) void noterClic(supabase, str(pub));
 
-  const nom = str(row.business_name) || "Votre commerce";
-  const ville = str(row.city);
-  const activite = str(row.activite) || "Commerce";
-  const villeAff = capWords(ville);
-  const rating = typeof row.google_rating === "number" ? row.google_rating : null;
-  const reviews = typeof row.google_reviews === "number" ? row.google_reviews : null;
-  const note = rating != null ? rating.toFixed(1).replace(".", ",") : null;
-  const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
-
-  // LES HORAIRES DU COMMERÇANT PRIMENT. `diagnostic.horaires` vient de Google :
-  // c'est une information de seconde main, qu'il ne contrôle pas. Lui les
-  // saisit dans son espace pro, où ils partent dans `human_site_availability`.
-  // Repli sur Google quand il n'a rien saisi : mieux vaut une information de
-  // seconde main qu'une ligne vide.
-  let horaires = (Array.isArray(diag.horaires) ? diag.horaires : []) as Array<{ jours?: string; horaires?: string }>;
+  /* LA FICHE SE FABRIQUE DANS `fiche-du-site.ts` — le double du chef suit la
+     même recette, pour que sa conversation et cette page disent la même
+     chose. Seuls ses horaires saisis sont lus ici, la page lisant déjà tout le
+     reste. */
+  let disponibilites: Array<Record<string, unknown>> = [];
   try {
     const { data: av } = await supabase
       .from("human_site_availability")
       .select("weekday, start_min, end_min")
       .eq("site_id", str(row.id));
-    const siennes = horairesLisibles(
-      ((Array.isArray(av) ? av : []) as Array<Record<string, unknown>>).map((w) => ({
-        weekday: Number(w.weekday),
-        start_min: Number(w.start_min),
-        end_min: Number(w.end_min),
-      }))
-    );
-    if (siennes.length) horaires = siennes;
+    disponibilites = (Array.isArray(av) ? av : []) as Array<Record<string, unknown>>;
   } catch {
     /* table absente → on garde ceux de Google */
   }
+  const { fiche, nom, note, reviews } = construireFiche(slug, row, { disponibilites, services: proServicesRaw });
 
-  /**
-   * ═══ SES PHOTOS D'ABORD, PUIS CELLES DE GOOGLE — PLUS « SINON » ═══════════
-   *
-   * « Sur la fiche Google de Gaïa je vois des dizaines de photos, et pourtant
-   * sur sa page ClikMe il n'y en a aucune. Et je vois deux photos qui sont des
-   * photos que j'ai moi-même prises, pas du tout celles de la fiche Google. »
-   *
-   * LES DEUX MOITIÉS DE SA PHRASE SONT LA MÊME LIGNE DE CODE. Elle disait
-   * `proPhotos.length ? proPhotos : googlePhotos` : dès que le commerçant
-   * dépose UNE photo, toutes celles de Google disparaissent. Deux photos
-   * déposées effaçaient donc les dizaines de la fiche — et sur les commerces
-   * où il en avait déposé, la galerie Google n'a jamais existé.
-   *
-   * « EN PRIORITÉ » VEUT DIRE EN PREMIER, PAS À LA PLACE. C'est tout le
-   * malentendu de ce ternaire, et il est facile à faire : le mot « priorité »
-   * du commentaire décrivait un ORDRE, le code appliquait un REMPLACEMENT.
-   * Les siennes ouvrent la bande — ce sont les plus récentes et les plus
-   * justes — et celles de Google suivent.
-   *
-   * ET ON NE MONTRE PAS DEUX FOIS LA MÊME. Un doublon dans une bande de
-   * vignettes se lit comme un bogue, même quand c'est la même photo publiée
-   * deux fois.
-   */
-  const proPhotos = (Array.isArray(row.gallery_photos) ? row.gallery_photos : [])
-    .map((p) => str(p))
-    .filter((u) => /^data:image\//i.test(u))
-    .slice(0, 10);
-  const googlePhotos = (Array.isArray(diag.photos) ? diag.photos : [])
-    .map((p) => str(p))
-    .filter((u) => /^https?:\/\//i.test(u))
-    .slice(0, 12);
-  const photos = [...new Set([...proPhotos, ...googlePhotos])];
-
-  // Prestations RÉELLES saisies par le pro. Bornées et nettoyées : aucun tarif
-  // inventé ne peut entrer ici, et le catalogue reste vide s'il n'a rien saisi.
-  const services = (Array.isArray(proServicesRaw) ? proServicesRaw : [])
-    .map((x) => (x && typeof x === "object" ? (x as Record<string, unknown>) : {}))
-    .map((x) => ({
-      nom: str(x.name).slice(0, 80),
-      prix: str(x.price).slice(0, 40) || undefined,
-      detail: str(x.desc).slice(0, 160) || undefined,
-    }))
-    .filter((x) => x.nom.length > 0)
-    .slice(0, 12);
-
-  // LES AVIS GOOGLE, TELS QU'ILS ONT ÉTÉ ÉCRITS. Ils dormaient dans le
-  // diagnostic depuis toujours et l'ancienne maquette les affichait ; la
-  // boutique, elle, ne connaissait que les avis laissés DANS ClikMe — donc
-  // aucun, chez un prospect. Bornés et nettoyés, comme le reste.
-  const avisGoogle = (Array.isArray(diag.reviews_top) ? diag.reviews_top : [])
-    .map((r) => (r && typeof r === "object" ? (r as Record<string, unknown>) : {}))
-    .map((r) => ({
-      qui: str(r.name).slice(0, 60) || "Un client",
-      texte: str(r.text).slice(0, 400),
-      note: typeof r.stars === "number" ? (r.stars as number) : null,
-    }))
-    .filter((r) => r.texte.length > 0)
-    .slice(0, 4);
+  /* LE PRÉNOM DE SON DOUBLE, s'il en a donné un avec sa voix. Lecture à part :
+     sans la migration, le double s'appelle simplement « le chef ». */
+  let prenomChef = "";
+  try {
+    const { data: dv } = await supabase
+      .from("human_vitrine_sites")
+      .select("double_voix_prenom")
+      .eq("id", str(row.id))
+      .maybeSingle();
+    prenomChef = str((dv as Record<string, unknown> | null)?.double_voix_prenom).slice(0, 30);
+  } catch {
+    /* colonne non migrée */
+  }
 
   const waDigits = (process.env.SITE_LETTER_WHATSAPP || "").replace(/\D/g, "");
   const phoneDisplay = process.env.SITE_LETTER_PHONE || "";
@@ -373,48 +310,11 @@ export default async function ApercuMaquette({
     : "";
   const keepHref = waHref || (waDigits ? `tel:+${waDigits}` : "");
 
-  const fiche: FicheCommercant = {
-    slug,
-    nom,
-    metier: activite,
-    ville: villeAff,
-    adresse: str(row.address).replace(/,?\s*France\s*$/i, "").trim(),
-    horaires: ligneDuJour(horaires),
-    photos,
-    note: note ?? undefined,
-    avis: reviews ?? undefined,
-    // ═══ SON NUMÉRO, ET IL Y A UNE SEULE VÉRITÉ SUR LE SUJET ══════════════
-    //
-    // « Ouvrir le WhatsApp avec le numéro du pro et le message pré-rempli. »
-    //
-    // `diag.telephone` N'EXISTE PAS. La clé du diagnostic est `phone`, et il y
-    // a trois endroits où un numéro peut se trouver selon la façon dont ce
-    // commerce est entré dans le produit — la colonne WhatsApp s'il a ouvert
-    // son espace, le formulaire de rappel s'il nous a laissé le sien, la fiche
-    // Google sinon. `pro-phone.ts` connaît les trois, plus les congés, et
-    // répond à la bonne question : « à quel numéro les HABITANTS écrivent-ils ? »
-    // — qui n'est pas la même que « comment joint-on le commerçant ? ».
-    //
-    // WHATSAPP D'ABORD, LE FIXE SINON. Un restaurant publie presque toujours
-    // un fixe, et un fixe ne fait pas de WhatsApp : la boutique retombe alors
-    // sur le bouton « Appeler », qui est juste en dessous.
-    telephone: numeroReservations(row) || numeroAppel(row) || undefined,
-    site: str(diag.website) || str(diag.site) || undefined,
-    mapsHref: `https://www.google.com/maps/search/${encodeURIComponent(`${nom} ${ville}`)}`,
-    // SA PAGE D'AVIS, ET SEULEMENT SI ON SAIT DE QUELLE FICHE IL S'AGIT. Sans
-    // `place_id`, une recherche par nom peut tomber sur un homonyme — et
-    // envoyer ses clients lire les avis de quelqu'un d'autre.
-    avisHref: str(row.google_place_id)
-      ? `https://search.google.com/local/reviews?placeid=${encodeURIComponent(str(row.google_place_id))}`
-      : undefined,
-    services,
-    avisGoogle,
-  };
-
   return (
     <PageBoutique
       slug={slug}
       carte={carteDepuisFiche(fiche)}
+      prenomChef={prenomChef || undefined}
       // « On montre au commerçant SA page » — la seule chose que `!published`
       // voulait dire, et que `est_client` dit maintenant sans ambiguïté. Un
       // visiteur venu du public n'est jamais dans ce cas, même si le commerçant

@@ -101,7 +101,13 @@ export function voixCloudConfiguree(): boolean {
   return !!(s(process.env.ELEVENLABS_API_KEY) || s(process.env.OPENAI_TTS_API_KEY) || s(process.env.OPENAI_API_KEY));
 }
 
-type Options = { jeu?: string; vitesse?: number; spontane?: boolean };
+type Options = {
+  jeu?: string;
+  vitesse?: number;
+  spontane?: boolean;
+  /** La voix que le commerçant a donnée lui-même (identifiant ElevenLabs), lue dans sa fiche. */
+  voixClonee?: string;
+};
 
 /**
  * QUI FAIT LA VOIX DE CE COMMERCE : ELEVENLABS OU OPENAI.
@@ -115,12 +121,15 @@ type Options = { jeu?: string; vitesse?: number; spontane?: boolean };
  * (`ELEVENLABS_VOICE_CENTRE=…` pour Chez Bergine) ; les autres gardent leur
  * timbre OpenAI. `SITE_TTS_PROVIDER` force encore l'un ou l'autre pour tous.
  */
-function fournisseur(cle: string): { eleven: string; openai: string; idEleven: string } | null {
+function fournisseur(cle: string, voixClonee = ""): { eleven: string; openai: string; idEleven: string } | null {
   const variable = cle.toUpperCase().replace(/-/g, "_");
   const elevenKey = s(process.env.ELEVENLABS_API_KEY);
   const openaiKey = s(process.env.OPENAI_TTS_API_KEY) || s(process.env.OPENAI_API_KEY);
   const force = s(process.env.SITE_TTS_PROVIDER).toLowerCase();
-  const saVoix = s(process.env[`ELEVENLABS_VOICE_${variable}`]);
+  /* LA VOIX QU'IL A DONNÉE DEPUIS SON ESPACE PRO PASSE AVANT CELLE POSÉE À LA
+     MAIN SUR VERCEL : c'est la sienne, et elle arrive sans que personne n'ait
+     à toucher un réglage. */
+  const saVoix = s(voixClonee) || s(process.env[`ELEVENLABS_VOICE_${variable}`]);
   const idEleven = saVoix || s(process.env.ELEVENLABS_VOICE_ID) || "21m00Tcm4TlvDq8ikWAM";
   const eleven =
     force === "openai" ? false : force === "elevenlabs" ? !!elevenKey : !!elevenKey && (!!saVoix || !openaiKey);
@@ -131,7 +140,7 @@ function fournisseur(cle: string): { eleven: string; openai: string; idEleven: s
 
 /** L'appel lui-même — la réponse brute, pour la lire d'un bloc ou au fil de l'eau. */
 async function appeler(cle: string, texte: string, o: Options, flux: boolean): Promise<Response | { statut: number; erreur: string }> {
-  const f = fournisseur(cle);
+  const f = fournisseur(cle, o.voixClonee);
   if (!f) return { statut: 503, erreur: "Voix cloud non configurée." };
   const timbre = TIMBRES[cle] ?? TIMBRE_PAR_DEFAUT;
   const variable = cle.toUpperCase().replace(/-/g, "_");
@@ -143,7 +152,7 @@ async function appeler(cle: string, texte: string, o: Options, flux: boolean): P
            EN CONVERSATION, UN PEU MOINS DE STABILITÉ ET UN PEU PLUS DE STYLE :
            c'est ce qui laisse passer les variations d'une voix qui répond. */
         await fetch(
-          `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(f.idEleven)}${flux ? "/stream" : ""}?output_format=mp3_44100_128`,
+          `${s(process.env.ELEVENLABS_BASE_URL) || "https://api.elevenlabs.io"}/v1/text-to-speech/${encodeURIComponent(f.idEleven)}${flux ? "/stream" : ""}?output_format=mp3_44100_128`,
           {
             method: "POST",
             headers: { "xi-api-key": f.eleven, "content-type": "application/json" },

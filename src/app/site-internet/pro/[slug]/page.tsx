@@ -19,6 +19,8 @@ import { ProAgenda } from "./pro-agenda";
 import { ProAssistant } from "./pro-assistant";
 import { ProHome } from "./pro-home";
 import { ProHistoire } from "./pro-histoire";
+import { ProVoix } from "./pro-voix";
+import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
 import { ProEngagements } from "./pro-engagements";
 import { ProWhatsapp } from "./pro-whatsapp";
 import { ProGallery } from "./pro-gallery";
@@ -364,6 +366,11 @@ export default async function EspacePro({
           Réservée aux métiers qui sollicitent : raconter sa journée n'a pas de
           sens pour une profession réglementée, et sa déontologie l'interdirait. */}
       {soliciter && <ProHistoire slug={slug} token={token} />}
+      {/* SA VOIX POUR SON DOUBLE — les restaurants d'abord, comme le double
+          lui-même. La carte ne s'affiche que si ClikMe peut créer des voix
+          (clé ElevenLabs posée, base à jour) : jamais un bouton qui ne mène
+          nulle part. */}
+      {brancheDuMetier(activite) === "restaurant" && <ProVoix slug={slug} token={token} nom={nom} />}
       {/* SANS NUMÉRO, RIEN N'ARRIVE NULLE PART : le bouton de confirmation de
           l'habitant n'ouvre aucune conversation, et le QR de l'affiche non
           plus. Ce n'est pas un réglage à ranger dans un onglet, c'est une

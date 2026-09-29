@@ -127,18 +127,21 @@ function nouvelleReco(): Reco | null {
 
 export function DoubleChef({
   carte,
+  prenomChef,
   prenomClient,
   onFermer,
   onDecouvrir,
 }: {
   carte: CarteAutour;
+  /** Le prénom qu'un vrai commerçant a donné à son double (sinon celui des données). */
+  prenomChef?: string;
   prenomClient?: string;
   onFermer: () => void;
   /** Ouvre le parcours du plat — le même que « Découvrir ce plat » sur l'annonce.
    *  Absent quand le commerce n'a pas de parcours : le bouton ne s'affiche pas. */
   onDecouvrir?: () => void;
 }) {
-  const fiche = useMemo(() => ficheDuDouble(carte), [carte]);
+  const fiche = useMemo(() => ficheDuDouble(carte, { prenom: prenomChef }), [carte, prenomChef]);
   const idSuivant = useRef(1);
   const [bulles, setBulles] = useState<Bulle[]>(() => [
     { id: 0, de: "double", texte: accueilDuDouble(prenomClient), heure: maintenant() },
