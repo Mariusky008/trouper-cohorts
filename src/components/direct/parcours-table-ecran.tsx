@@ -40,6 +40,7 @@ import { VILLE } from "@/lib/direct/apercu-habitant";
 import { demanderRendezVous, numeroDeFiction } from "@/lib/direct/prevenir";
 import { motDeLaCarte, plaqueDuParcours } from "@/lib/direct/plaque-parcours";
 import { BoutonCote, CoteCommercant } from "@/components/direct/cote-commercant";
+import { DoubleChef } from "@/components/direct/double-chef";
 import {
   COMMERCE_TABLE,
   DEVANTURE_TABLE,
@@ -221,6 +222,8 @@ export function ParcoursTable({
   const [aLaMain, setALaMain] = useState<number | null>(null);
   /** Le panneau du commerçant, ouvert par la pastille de la dernière étape. */
   const [cote, setCote] = useState(false);
+  /** Le double du chef, ouvert par le bouton principal de la dernière étape. */
+  const [double, setDouble] = useState(false);
 
   useEffect(() => {
     if (!joue) return undefined;
@@ -949,7 +952,37 @@ export function ParcoursTable({
               répondu, rien n'est réservé. C'est la même règle que les
               rendez-vous du salon — on n'annonce pas un créneau que personne ne
               peut tenir. */}
-          <a className="pt-go" href={joindre.whatsapp} target="_blank" rel="noreferrer noopener">
+          {/* ═══ LE GESTE PRINCIPAL : LUI PARLER ══════════════════════════
+              « Que penses-tu de remplacer la dernière étape par le nouveau
+              système du fantôme vocal ? »
+              ON GARDE L'ECRAN, ON CHANGE SON GESTE. On vient de l'entendre
+              raconter son plat : c'est le moment où l'envie est la plus forte,
+              et c'est lui qui répond. Le parcours finit sur ce que ClikMe a de
+              neuf, pas sur un formulaire. Le double sait aussi garder une
+              table : « on sera quatre samedi soir » préremplit la demande.
+              « DEMANDER UNE TABLE » RESTE, EN SECOND : certains veulent
+              réserver sans parler à personne, et c'est leur droit. */}
+          <button
+            type="button"
+            className="pt-go pt-parler"
+            onClick={() => {
+              stopSpeaking();
+              try {
+                sonRef.current?.pause();
+              } catch {
+                /* rien en cours */
+              }
+              setDouble(true);
+            }}
+          >
+            <span className="pt-parler-v" aria-hidden="true">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/direct/double/accueil.webp" alt="" />
+            </span>
+            {voix?.prenom ? `Parler à ${voix.prenom}` : "Parler au chef"}
+            <Micro />
+          </button>
+          <a className="pt-deux" href={joindre.whatsapp} target="_blank" rel="noreferrer noopener">
             <Bulle />
             Demander une table
             <s aria-hidden="true">→</s>
@@ -980,6 +1013,11 @@ export function ParcoursTable({
           />
         </section>
       )}
+
+      {/* LE DOUBLE S'OUVRE PAR-DESSUS LE PARCOURS, et on y revient en le
+          fermant : pas de « Découvrir ce plat » là-dedans, on vient d'en
+          sortir. */}
+      {double && <DoubleChef carte={resto} onFermer={() => setDouble(false)} />}
     </div>
   );
 }
@@ -1000,6 +1038,16 @@ function Calendrier() {
     <svg className="pt-ico" viewBox="0 0 24 24" aria-hidden="true">
       <rect x="3.6" y="5.2" width="16.8" height="15.2" rx="3" />
       <path d="M3.6 10.2h16.8M8.4 3.6v3.4M15.6 3.6v3.4" />
+    </svg>
+  );
+}
+
+/** Le micro de « Parler à … » : on lui parle, il répond à voix haute. */
+function Micro() {
+  return (
+    <svg className="pt-ico" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="9" y="3.4" width="6" height="11" rx="3" />
+      <path d="M5.6 11.4a6.4 6.4 0 0 0 12.8 0M12 17.8v3" />
     </svg>
   );
 }

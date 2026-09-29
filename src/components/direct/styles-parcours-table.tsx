@@ -595,6 +595,20 @@ export function StylesParcoursTable() {
           font-size:12px;font-weight:700;line-height:1.35;
           color:rgba(255,255,255,.6);}
         .pt-venirbas .pt-go{margin-top:14px;}
+        /* LE BOUTON DU DOUBLE : le chef en petit, dans une pastille qui
+           respire. C'est une invitation, pas une deuxieme photo — la grande
+           est deja au-dessus. */
+        .pt-parler{position:relative;}
+        .pt-parler-v{flex:none;width:34px;height:34px;margin:-6px 0 -6px -6px;
+          border-radius:50%;overflow:hidden;
+          background:radial-gradient(circle at 50% 40%,#3A1230,#1A0714);
+          box-shadow:0 0 0 2px #fff;animation:ptParle 2.4s ease-in-out infinite;}
+        .pt-parler-v img{width:100%;height:100%;object-fit:cover;
+          object-position:50% 14%;transform:scale(1.16);}
+        @keyframes ptParle{0%,100%{box-shadow:0 0 0 2px #fff,0 0 0 0 rgba(255,255,255,.55)}
+          60%{box-shadow:0 0 0 2px #fff,0 0 0 9px rgba(255,255,255,0)}}
+        .pt-venirbas .pt-deux{margin-top:9px;}
+        @media (prefers-reduced-motion:reduce){.pt-parler-v{animation:none;}}
         .pt-venirbas .cc-bouton{align-self:stretch;width:100%;
           justify-content:center;margin-top:9px;padding:11px 15px;}
 
