@@ -1066,10 +1066,14 @@ reste se rattrape au recadrage.
   table » avec nombre de personnes, « Prendre rendez-vous », « Commander un
   bouquet », « Faire mettre de côté ») et ses heures, les questions de départ,
   ce qu'il transmet plutôt que de deviner, le libellé du 4e bouton.
+- **Tenues dessinées** : le chef (restaurants) et la **boutique de mode**
+  (casquette au cintre, gilet violet, foulard, boutique derrière le comptoir —
+  `public/direct/double/mode/`). La tenue ne fait pas le métier : les mots
+  restent ceux de la boutique (« le chef » n'existe qu'au restaurant).
 - **Tenues des autres métiers** : prêtes à brancher. Poser les 7 poses et le
   décor dans `public/direct/double/<métier>/` avec
   `node scripts/fabriquer-double.mjs <dossier> <métier>`, puis ajouter le
-  métier à `TENUES` dans `components/direct/double-chef.tsx`.
+  métier à `TENUES` dans `lib/direct/double-metiers.ts`.
 - **Page commerçant et Espace Pro** : le fantôme flottant et la carte « Donnez
   votre voix » sont là pour tous les métiers ; les trois questions posées pour
   donner sa voix parlent le métier (`questionsVoix`).

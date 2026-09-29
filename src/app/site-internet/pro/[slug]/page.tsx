@@ -20,6 +20,7 @@ import { ProAssistant } from "./pro-assistant";
 import { ProHome } from "./pro-home";
 import { ProHistoire } from "./pro-histoire";
 import { ProVoix } from "./pro-voix";
+import { tenueDu } from "@/lib/direct/double-metiers";
 import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
 import { ProEngagements } from "./pro-engagements";
 import { ProWhatsapp } from "./pro-whatsapp";
@@ -370,7 +371,16 @@ export default async function EspacePro({
           qu'il parle la langue de chacun (voir `double-metiers.ts`). La carte
           ne s'affiche que si ClikMe peut créer des voix (clé ElevenLabs posée,
           base à jour) : jamais un bouton qui ne mène nulle part. */}
-      <ProVoix slug={slug} token={token} nom={nom} chef={brancheDuMetier(activite) === "restaurant"} />
+      <ProVoix
+        slug={slug}
+        token={token}
+        nom={nom}
+        chef={brancheDuMetier(activite) === "restaurant"}
+        image={(() => {
+          const t = tenueDu({ branche: brancheDuMetier(activite), metier: activite });
+          return t ? `${t.dossier}accueil.webp` : undefined;
+        })()}
+      />
       {/* SANS NUMÉRO, RIEN N'ARRIVE NULLE PART : le bouton de confirmation de
           l'habitant n'ouvre aucune conversation, et le QR de l'affiche non
           plus. Ce n'est pas un réglage à ranger dans un onglet, c'est une

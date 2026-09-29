@@ -304,6 +304,30 @@ export function profilDuDouble(c: { branche?: string | null; metier?: string | n
 }
 
 /**
+ * ═══ LES TENUES DESSINÉES — le fantôme habillé pour son métier ═════════════
+ *
+ * « Je vais devoir te donner le fantôme avec toutes les expressions et le
+ * décor pour chaque métier ? » Pas obligatoire : sans tenue, le double prend
+ * le fantôme ClikMe devant la photo de la boutique. Avec une tenue, il prend
+ * ses sept poses et son décor, rangés dans `public/direct/double/<métier>/`
+ * par `scripts/fabriquer-double.mjs`, aux mêmes noms que ceux du chef.
+ *
+ * LE DÉCOR POSE SON COMPTOIR À LA MÊME HAUTEUR QUE CELUI DU CHEF (941 × 1672,
+ * comptoir vers 41 %) : le fantôme se tient au même endroit dans les deux.
+ */
+export const TENUES: Partial<Record<FamilleDouble, { dossier: string; decor: string }>> = {
+  table: { dossier: "/direct/double/", decor: "/direct/double/comptoir.jpg" },
+  /* LE MAGASIN DE VÊTEMENTS : casquette au cintre, gilet violet, foulard, et
+     la boutique derrière son comptoir. */
+  mode: { dossier: "/direct/double/mode/", decor: "/direct/double/mode/decor.jpg" },
+};
+
+/** La tenue d'un commerce, s'il en a une. */
+export function tenueDu(c: { branche?: string | null; metier?: string | null }) {
+  return TENUES[familleDuDouble(c)];
+}
+
+/**
  * LE NOM DU COMMERCE AU MILIEU D'UNE PHRASE. « Parle avec Une fleuriste du
  * marché » : l'article d'un nom de démonstration garde sa majuscule de début
  * de ligne. Seuls « Un » et « Une » tombent en minuscule — « Chez Bergine »

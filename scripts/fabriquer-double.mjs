@@ -17,7 +17,7 @@
  *     accueil, content, ecoute, reflechit, parle-1, parle-2, parle-3 (bouche
  *     grande ouverte, ouverte, entrouverte) et decor — en .png, .jpg ou .webp.
  *     Ils partent dans public/direct/double/<métier>/ ; il reste à ajouter le
- *     métier à TENUES dans `components/direct/double-chef.tsx`.
+ *     métier à TENUES dans `lib/direct/double-metiers.ts`.
  */
 import sharp from "../node_modules/sharp/lib/index.js";
 import { existsSync, mkdirSync } from "node:fs";
@@ -59,5 +59,5 @@ if (!METIER) {
     await sharp(trouver(nom)).resize(512, 512).webp({ quality: 86, alphaQuality: 90 }).toFile(`${OUT}/${nom}.webp`);
   }
   await sharp(trouver("decor")).resize({ width: 1080, withoutEnlargement: true }).jpeg({ quality: 82, mozjpeg: true }).toFile(`${OUT}/decor.jpg`);
-  console.log(`fini : 7 poses et le décor dans ${OUT} — ajoute « ${METIER} » à TENUES dans double-chef.tsx`);
+  console.log(`fini : 7 poses et le décor dans ${OUT} — ajoute « ${METIER} » à TENUES dans lib/direct/double-metiers.ts`);
 }

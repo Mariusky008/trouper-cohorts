@@ -55,12 +55,15 @@ export function ProVoix({
   token,
   nom,
   chef = false,
+  image,
 }: {
   slug: string;
   token: string;
   nom: string;
   /** Au restaurant, le double porte la tenue de chef ; ailleurs, c'est le fantôme ClikMe. */
   chef?: boolean;
+  /** Le portrait du double quand son métier a sa tenue dessinée — voir `TENUES`. */
+  image?: string;
 }) {
   const [etat, setEtat] = useState<Etat | null>(null);
   const [etape, setEtape] = useState<"repos" | "accord" | "questions" | "envoi" | "fait">("repos");
@@ -273,7 +276,7 @@ export function ProVoix({
         <div className="k">Votre double</div>
         <div className="tete">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={chef ? "/direct/double/accueil.webp" : "/clikme-fantome.png"} alt="" />
+          <img src={image || (chef ? "/direct/double/accueil.webp" : "/clikme-fantome.png")} alt="" />
           <div className="q">
             {etat.donnee ? `Votre double parle avec votre voix` : `Donnez votre voix à votre double`}
           </div>

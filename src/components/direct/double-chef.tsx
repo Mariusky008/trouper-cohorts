@@ -40,28 +40,11 @@ import {
   type CarteDouble,
   type ReponseDouble,
 } from "@/lib/direct/double-chef";
-import { nomDansPhrase, type FamilleDouble } from "@/lib/direct/double-metiers";
+import { nomDansPhrase, TENUES } from "@/lib/direct/double-metiers";
 import { onSpeakingChange, speak, speechSupported, stopSpeaking, unlockAudio } from "@/lib/site-internet/speech";
 
-/**
- * ═══ LA TENUE ET LE DÉCOR DE CHAQUE MÉTIER ═════════════════════════════════
- *
- * « Je vais devoir te donner le fantôme avec toutes les expressions et le
- * décor pour chaque métier ? »
- *
- * CE N'EST PAS OBLIGATOIRE, ET C'EST PRÊT POUR QUAND ÇA ARRIVE. Sans tenue, le
- * double d'un métier prend le fantôme ClikMe devant la photo de la boutique —
- * il marche, il parle, il ne ment pas sur ce qu'on vient voir. Avec une tenue,
- * il prend ses sept poses et son décor : il suffit de les poser dans
- * `public/direct/double/<métier>/` avec les MÊMES NOMS que ceux du chef
- * (accueil, content, ecoute, reflechit, parle-1, parle-2, parle-3 en .webp,
- * decor.jpg — voir `scripts/fabriquer-double.mjs`) et d'ajouter le métier
- * ci-dessous. Le décor doit poser son comptoir à mi-hauteur, comme celui du
- * restaurant : c'est là que le fantôme se tient.
- */
-const TENUES: Partial<Record<FamilleDouble, { dossier: string; decor: string }>> = {
-  table: { dossier: "/direct/double/", decor: "/direct/double/comptoir.jpg" },
-};
+/* LES TENUES DE CHAQUE MÉTIER sont rangées dans `double-metiers.ts` — voir
+   `TENUES`. L'application et la page commerçant les lisent aussi. */
 /** Un silence d'une frame, pour débloquer le son dans un appui (iPhone). */
 const SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
 
@@ -180,7 +163,7 @@ export function DoubleChef({
      fantôme ClikMe se tient devant la photo de la boutique elle-même : c'est
      chez la fleuriste qu'on entre, pas dans une cuisine. */
   const tenue = TENUES[p.famille];
-  /** Vrai quand ce métier a sa tenue et son décor dessinés — le chef, pour l'instant. */
+  /** Vrai quand ce métier a sa tenue et son décor dessinés — le chef et la boutique de mode, pour l'instant. */
   const chef = !!tenue;
   const art = tenue
     ? {
@@ -200,11 +183,14 @@ export function DoubleChef({
   const reco = useRef<Reco | null>(null);
   const champ = useRef<HTMLInputElement | null>(null);
   const joursListe = useMemo(jours, []);
-  const lui = fiche.prenomConnu ? fiche.prenom : chef ? "le chef" : "l'équipe";
+  /* « LE CHEF » N'EXISTE QU'AU RESTAURANT — la tenue ne fait pas le métier :
+     la boutique de mode a la sienne, et son double n'est pas un chef. */
+  const table = p.famille === "table";
+  const lui = fiche.prenomConnu ? fiche.prenom : table ? "le chef" : "l'équipe";
   /** Sa bouille dans le fil : le chef en tenue, ou la photo de la boutique — le client, lui, garde le fantôme ClikMe. */
   const avatar = chef ? art.accueil : fiche.portrait || FANTOME;
   /** Le nom qu'on affiche en tête : son prénom, « Le chef », ou le commerce lui-même. */
-  const quiAffiche = fiche.prenomConnu ? fiche.prenom : chef ? "Le chef" : "";
+  const quiAffiche = fiche.prenomConnu ? fiche.prenom : table ? "Le chef" : "";
 
   /* ═══ SA VOIX : CELLE DE SON RÉCIT, PAS CELLE DU TÉLÉPHONE ════════════
 
@@ -652,7 +638,7 @@ export function DoubleChef({
     <>
       Parle avec le double de <em>{fiche.prenom}</em>
     </>
-  ) : chef ? (
+  ) : table ? (
     <>
       Parle avec le double <em>du chef</em>
     </>

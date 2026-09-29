@@ -128,6 +128,17 @@ export function deLui(f: FicheDouble): string {
   return f.prenomConnu ? `de ${f.prenom}` : f.profil.deAnonyme;
 }
 
+/**
+ * UN TITRE D'ANNONCE AU MILIEU D'UNE PHRASE : « En ce moment : la veste
+ * blazer rose », pas « La veste ». Seul l'article tombe en minuscule — un nom
+ * de plat ou de pièce qui commence par un nom propre garde sa majuscule.
+ */
+function enPhrase(titre: string): string {
+  return /^(Le|La|Les|L'|L’|Un|Une|Des|Du|De la) /.test(titre) || /^(L'|L’)/.test(titre)
+    ? titre[0].toLowerCase() + titre.slice(1)
+    : titre;
+}
+
 /** Les deux premières phrases d'un récit : un double qui récite tout lasse. */
 function extrait(t: string, n = 2): string {
   const phrases = t.match(/[^.!?…]+[.!?…]+/g) ?? [t];
@@ -280,7 +291,7 @@ export function repondreSansIA(question: string, f: FicheDouble): ReponseDouble 
         ? `${plat.nom} ! ${f.signature || "C'est ma fierté du moment."} Tu veux ${table ? "le découvrir" : "venir le voir"} ?`
         : table
           ? `Aujourd'hui c'est ${plat.nom}${prix}.${detail}`
-          : `En ce moment : ${plat.nom}${prix}.${detail}`,
+          : `En ce moment : ${enPhrase(plat.nom)}${prix}.${detail}`,
       carte: "plat",
       suggestions: ["Ton histoire ?", demande, "C'est où ?"],
     };
@@ -288,7 +299,7 @@ export function repondreSansIA(question: string, f: FicheDouble): ReponseDouble 
   if (/coin|passage|habite|j.habite|de dax|touriste|vacances|je visite/.test(q)) {
     return {
       texte: plat
-        ? `Bienvenue ! Alors je te conseille ${plat.nom}, c'est ce qu'on fait de mieux en ce moment.`
+        ? `Bienvenue ! Alors je te conseille ${enPhrase(plat.nom)}, c'est ce qu'on fait de mieux en ce moment.`
         : `Bienvenue ! Demande-moi ce que tu veux sur ${p.lieu}.`,
       carte: plat ? "plat" : null,
       suggestions: ["Ton histoire ?", demande],
@@ -310,7 +321,7 @@ export function repondreSansIA(question: string, f: FicheDouble): ReponseDouble 
   }
   return {
     texte: `Bonne question ! Je préfère ne pas te dire de bêtise : je la transmets ${aLui(f)}.${
-      plat ? ` En attendant, ${p.vedette}, c'est ${plat.nom}.` : ""
+      plat ? ` En attendant, ${p.vedette}, c'est ${enPhrase(plat.nom)}.` : ""
     }`,
     carte: plat ? "plat" : null,
     suggestions: [demande, "Tes horaires ?"],

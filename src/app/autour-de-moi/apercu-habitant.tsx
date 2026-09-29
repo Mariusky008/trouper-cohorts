@@ -176,7 +176,7 @@ import { ParcoursSortie } from "@/components/direct/parcours-sortie-ecran";
 import { StylesParcoursSortie } from "@/components/direct/styles-parcours-sortie";
 import { ParcoursTable } from "@/components/direct/parcours-table-ecran";
 import { DoubleChef } from "@/components/direct/double-chef";
-import { aUnDouble, nomDansPhrase, profilDuDouble } from "@/lib/direct/double-metiers";
+import { aUnDouble, nomDansPhrase, profilDuDouble, tenueDu } from "@/lib/direct/double-metiers";
 import { StylesParcoursTable } from "@/components/direct/styles-parcours-table";
 import { ParcoursDeco } from "@/components/direct/parcours-deco-ecran";
 import { StylesParcoursDeco } from "@/components/direct/styles-parcours-deco";
@@ -13486,9 +13486,9 @@ export function ApercuHabitant() {
                   mieux que le geste qu'il remplace. */}
               {/* LA TENUE DE CHEF AU RESTAURANT ; ailleurs le fantôme ClikMe, qui
                   ouvre lui aussi le double du commerçant. */}
-              {estResto ? (
+              {aDouble && dessus && tenueDu(dessus) ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img className="ap-mf-chef" src="/direct/double/accueil.webp" alt="" />
+                <img className="ap-mf-chef" src={`${tenueDu(dessus)!.dossier}accueil.webp`} alt="" />
               ) : (
                 <Fantome />
               )}

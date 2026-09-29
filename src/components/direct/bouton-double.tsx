@@ -18,7 +18,7 @@
 
 import { useEffect, useState } from "react";
 import { DoubleChef } from "@/components/direct/double-chef";
-import { nomDansPhrase } from "@/lib/direct/double-metiers";
+import { nomDansPhrase, tenueDu } from "@/lib/direct/double-metiers";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { ParcoursTable } from "@/components/direct/parcours-table-ecran";
 import { StylesParcoursTable } from "@/components/direct/styles-parcours-table";
@@ -60,6 +60,7 @@ export function BoutonDouble({
   /* LA TENUE DE CHEF AU RESTAURANT ; ailleurs le fantôme ClikMe, qui ouvre le
      même double, dans les mots du métier — voir `double-metiers.ts`. */
   const chef = carte.branche === "restaurant";
+  const tenue = tenueDu(carte);
   const appel = prenom ? `Parle avec ${prenom} 👋` : chef ? "Parle avec le chef 👋" : "Une question ? Parle-moi 👋";
 
   return (
@@ -80,7 +81,7 @@ export function BoutonDouble({
             </span>
           )}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className={chef ? "" : "bd-fantome"} src={chef ? "/direct/double/accueil.webp" : "/clikme-fantome.png"} alt="" />
+          <img className={tenue ? "" : "bd-fantome"} src={tenue ? `${tenue.dossier}accueil.webp` : "/clikme-fantome.png"} alt="" />
         </button>
       )}
       {ouvert && (
