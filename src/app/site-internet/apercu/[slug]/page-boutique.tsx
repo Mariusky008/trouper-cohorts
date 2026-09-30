@@ -40,7 +40,6 @@ import { DemoTour } from "./demo-tour";
 import { GarderCeSite } from "./garder-ce-site";
 import { BoutonDouble } from "@/components/direct/bouton-double";
 import { aUnDouble } from "@/lib/direct/double-metiers";
-import { toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { gesteDuJour } from "@/lib/direct/geste-du-jour";
 import { murDeLaCarte } from "@/lib/direct/fantomes";
@@ -198,6 +197,7 @@ export function PageBoutique(p: PageBoutiqueProps) {
         /* LE MÊME DRAPEAU QUE LA VOIX ET LE FORMULAIRE. Il décide d'un bloc
            écrit à la deuxième personne — voir `saPage` dans la boutique. */
         saPage={modeDemo}
+        prenomChef={p.prenomChef}
       />
       {modeDemo && (
         <DemoTour
@@ -225,11 +225,16 @@ export function PageBoutique(p: PageBoutiqueProps) {
           chacun dans ses mots. Le parcours du plat ne s'ouvre que pour un
           restaurant que la démonstration connaît en entier ; ailleurs, le
           double répond sans lui. */}
-      {aUnDouble(carte) && (
+      {/* LE RESTAURANT PORTE DÉJÀ SON DOUBLE, dans le coin de chaque onglet —
+          voir « On discute ? » dans `boutique-table.tsx`. Le bouton flottant
+          en ferait un second, empilé au même endroit. */}
+      {aUnDouble(carte) && carte.branche !== "restaurant" && (
         <BoutonDouble
           carte={carte}
           prenomChef={p.prenomChef}
-          avecParcours={carte.branche === "restaurant" && toutesLesCartes().some((c) => c.id === carte.id)}
+          /* LE PARCOURS DU PLAT EST CELUI DES RESTAURANTS, et ils ne passent
+             plus par ici : c'est leur page à onglets qui l'ouvre. */
+          avecParcours={false}
         />
       )}
     </>

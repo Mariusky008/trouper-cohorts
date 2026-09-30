@@ -111,6 +111,7 @@ import {
   type PieceGardee,
 } from "@/lib/direct/pieces-gardees";
 import { AnneauMetier, PictoMetier } from "@/components/direct/picto-metier";
+import { BoutiqueTable } from "./boutique-table";
 
 /* LE SECOND ESSAI A QUITTÉ LE NAVIGATEUR. Il réécrivait l'adresse d'une photo
    Google après un premier échec ; c'est désormais le serveur qui essaie les
@@ -343,12 +344,78 @@ function chezEux(metier: string): string {
   return CHEZ_EUX.find(([r]) => r.test(metier))?.[1] ?? "Le commerce";
 }
 
-export function Boutique({
+/**
+ * ═══ L'AIGUILLAGE : LES RESTAURANTS ONT LEUR PAGE À ONGLETS ════════════════
+ *
+ * « Aujourd'hui on va travailler le look and feel de la page d'accueil des
+ * commerçants. Je t'ai fait un mock up à respecter au pixel, où les couleurs
+ * sont chaudes et où on donne envie au client d'en savoir plus. Essayons déjà
+ * avec les restaurants, et ensuite on continuera avec les autres métiers. »
+ *
+ * SA MAQUETTE N'EST PAS UNE PAGE QUI DÉFILE, C'EST UNE APPLICATION : six
+ * onglets en bas — le lieu, l'expérience, la carte, les avis, les amis, les
+ * infos — et chacun tient sur un écran. On ne la tire donc pas de la longue
+ * page en la repeignant ; c'est un second dessin, `BoutiqueTable`, et cette
+ * fonction choisit lequel servir.
+ *
+ * LES AUTRES MÉTIERS NE BOUGENT PAS. Ils gardent la longue page, telle quelle,
+ * jusqu'à ce qu'on fasse les leurs. L'aiguillage se fait sur la BRANCHE, pas
+ * sur une liste de commerces : un vrai restaurant venu de sa fiche Google y
+ * passe exactement comme ceux de la démonstration.
+ *
+ * LE SÉLECTEUR DE LA MAQUETTE VIT ICI, et c'est ce qui permet de passer d'un
+ * dessin à l'autre : ouvrir Le Bocal de Margot puis la cirière change de page,
+ * pas seulement de commerce.
+ */
+export function Boutique(p: {
+  commerce?: CarteAutour;
+  retourHref?: string | null;
+  piedMaquette?: boolean;
+  saPage?: boolean;
+  /** Le prénom qu'un vrai restaurateur a donné à son double — voir `pro-voix.tsx`. */
+  prenomChef?: string;
+}) {
+  const cartes = useMemo(() => toutesLesCartes(), []);
+  const [id, setId] = useState(p.commerce?.id ?? "emporter");
+  const c = p.commerce ?? cartes.find((x) => x.id === id) ?? cartes[0];
+  if (c.branche === "restaurant") {
+    return (
+      <BoutiqueTable
+        carte={c}
+        retourHref={p.retourHref === undefined ? "/autour-de-moi" : p.retourHref}
+        saPage={p.saPage ?? false}
+        piedMaquette={p.piedMaquette ?? true}
+        /* LE SÉLECTEUR N'EXISTE QUE DANS LA MAQUETTE — sur la page d'un vrai
+           commerçant, une rangée de concurrents sous son nom serait la pire
+           chose qu'on puisse lui faire. */
+        autres={p.commerce ? undefined : { cartes, choisir: setId }}
+        prenomChef={p.prenomChef}
+      />
+    );
+  }
+  return (
+    <BoutiqueLongue
+      commerce={p.commerce}
+      retourHref={p.retourHref}
+      piedMaquette={p.piedMaquette}
+      saPage={p.saPage}
+      idControle={id}
+      onChoisir={setId}
+    />
+  );
+}
+
+function BoutiqueLongue({
   commerce,
   retourHref,
   piedMaquette = true,
   saPage = false,
+  idControle,
+  onChoisir,
 }: {
+  /** Le commerce choisi dans le sélecteur de la maquette — voir `Boutique`. */
+  idControle?: string;
+  onChoisir?: (id: string) => void;
   /**
    * ═══ LE COMMERCE À AFFICHER, QUAND IL VIENT DU DEHORS ═══════════════════
    *
@@ -411,7 +478,12 @@ export function Boutique({
 }) {
   const retour = retourHref === undefined ? "/autour-de-moi" : retourHref;
   const cartes = useMemo(() => toutesLesCartes(), []);
-  const [id, setId] = useState(commerce?.id ?? "emporter");
+  /* LE CHOIX EST TENU PAR L'AIGUILLAGE quand il y en a un : c'est lui qui
+     décide si le commerce suivant est un restaurant, donc s'il change de
+     dessin. L'état local ne sert plus que si la longue page est montée seule. */
+  const [idLocal, setIdLocal] = useState(commerce?.id ?? idControle ?? "emporter");
+  const id = idControle ?? idLocal;
+  const setId = onChoisir ?? setIdLocal;
   /** Le rond de la voix, agrandi et sonore. Il se referme en changeant de commerce. */
   const [voixOuverte, setVoixOuverte] = useState(false);
   /**

@@ -141,6 +141,9 @@ async function lignes() {
           }
           return c;
         })();
+        /* CE QUE LES CONTENEURS AU-DESSUS ONT DÉFILÉ, additionné. */
+        let defile = 0;
+        for (let n = e.parentElement; n && n !== document.body; n = n.parentElement) defile += n.scrollTop || 0;
         for (const brut of r.getClientRects()) {
           const b = clip
             ? new DOMRect(
@@ -154,6 +157,13 @@ async function lignes() {
           // il ne reste plus assez de pixels pour que les centiles disent quoi
           // que ce soit de fiable.
           if (b.width < 30 || b.height < 7) continue;
+          // ET PAS UNE TRANCHE. Un conteneur qui défile coupe une ligne à son
+          // bord comme l'écran la coupe au sien : il n'en reste alors que le
+          // bas des lettres, sept points d'aplat qui se lisent « illisible ».
+          // Vu sur l'onglet Infos d'un restaurant. On écarte la ligne à ce
+          // passage-là, exactement comme au bord de l'écran — le recouvrement
+          // des passes lui en donne un autre où elle est entière.
+          if (b.height < brut.height * 0.9) continue;
           // ENTIÈREMENT DANS LE CHAMP DE VISION : une ligne coupée par le bord
           // donnerait un découpage dont la moitié n'existe pas dans l'image.
           if (b.top < 1 || b.bottom > H - 1 || b.left < 0 || b.right > L) continue;
@@ -169,7 +179,10 @@ async function lignes() {
             y: Math.round(b.y),
             l: Math.round(b.width),
             h: Math.round(b.height),
-            cle: `${Math.round(b.x)}:${Math.round(b.y + window.scrollY)}:${mot.slice(0, 20)}`,
+            // LA POSITION DANS LE CONTENU, PAS À L'ÉCRAN. `window.scrollY` ne
+            // suffit plus quand c'est un conteneur qui défile : il reste à 0,
+            // et la même ligne revenait à chaque passe sous une clé neuve.
+            cle: `${Math.round(b.x)}:${Math.round(b.y + window.scrollY + defile)}:${mot.slice(0, 20)}`,
           });
         }
       }
@@ -217,9 +230,19 @@ async function ecart(image, r, taille) {
  * un journal qui affiche un échec là où il y a une réussite est exactement ce
  * qui fait qu'on cesse de lire les journaux.
  */
-async function mesurerLaPage(nom, preuve = false) {
-  const haut = await p.evaluate(() => document.documentElement.scrollHeight);
-  const ecran = await p.evaluate(() => window.innerHeight);
+async function mesurerLaPage(nom, preuve = false, conteneur = null) {
+  /* LE CONTENEUR QUI DEFILE. La longue page fait defiler le document ; la page
+     a onglets des restaurants est fixe, et c'est chaque onglet qui defile a
+     l'interieur. Sans ce parametre, la garde ne voyait que le haut de chaque
+     onglet. */
+  const haut = await p.evaluate(
+    (sel) => (sel ? document.querySelector(sel)?.scrollHeight ?? 0 : document.documentElement.scrollHeight),
+    conteneur,
+  );
+  const ecran = await p.evaluate(
+    (sel) => (sel ? document.querySelector(sel)?.clientHeight ?? window.innerHeight : window.innerHeight),
+    conteneur,
+  );
   const vus = new Set();
   const fautifs = [];
   let combien = 0;
@@ -233,7 +256,10 @@ async function mesurerLaPage(nom, preuve = false) {
      * retrouvait décalé de quelques dizaines de points, et la garde déclarait
      * soixante textes illisibles par page, ce qui ne voulait plus rien dire.
      */
-    await p.evaluate((v) => window.scrollTo({ top: v, behavior: "instant" }), y);
+    await p.evaluate(
+      ([v, sel]) => (sel ? document.querySelector(sel) : window)?.scrollTo({ top: v, behavior: "instant" }),
+      [y, conteneur],
+    );
     await p.waitForTimeout(220);
     const image = await p.screenshot();
     const taille = await sharp(image).metadata().then((m) => ({ l: m.width, h: m.height }));
@@ -245,7 +271,7 @@ async function mesurerLaPage(nom, preuve = false) {
       if (e < ECART_MIN) fautifs.push({ ...r, e });
     }
   }
-  await p.evaluate(() => window.scrollTo(0, 0));
+  await p.evaluate((sel) => (sel ? document.querySelector(sel) : window)?.scrollTo(0, 0), conteneur);
   if (preuve) {
     console.log(`       ${nom} — ${combien} textes mesurés, ${fautifs.length} illisible(s)`);
   } else {
@@ -257,13 +283,50 @@ async function mesurerLaPage(nom, preuve = false) {
   return fautifs.length;
 }
 
+/**
+ * ═══ DEUX PAGES, DEUX SELECTEURS ═══════════════════════════════════════════
+ *
+ * LES RESTAURANTS ONT LEUR PAGE A ONGLETS, voir `boutique-table.tsx`, et la
+ * maquette s'ouvre sur un restaurant. Son selecteur n'est pas la rangee de
+ * boutons de la longue page mais une liste deroulante. La garde les connait
+ * tous les deux : sans ca, elle trouvait ZERO commerce, ne mesurait rien, et
+ * ne le disait pas — une garde muette est pire qu'une garde en echec.
+ */
+async function nomsDesCommerces() {
+  if (await p.$(".bt-maq select")) return p.locator(".bt-maq select option").allTextContents();
+  return p.locator(".bq-maq-c button").allTextContents();
+}
+async function choisir(nom) {
+  if (await p.$(".bt-maq select")) {
+    const options = await p.locator(".bt-maq select option").evaluateAll((os) =>
+      os.map((o) => ({ v: o.value, t: o.textContent ?? "" })),
+    );
+    const o = options.find((x) => x.t.includes(nom.trim()));
+    if (!o) throw new Error(`commerce introuvable dans la liste : ${nom}`);
+    await p.selectOption(".bt-maq select", o.v);
+  } else {
+    await p.locator(".bq-maq-c button", { hasText: nom }).first().click();
+  }
+  await p.waitForTimeout(420);
+}
+/** Les six onglets d'un restaurant, chacun mesuré jusqu'en bas. */
+async function mesurerLesOnglets(nom) {
+  const onglets = await p.locator(".bt-nav button").allTextContents();
+  for (let i = 0; i < onglets.length; i++) {
+    await p.locator(".bt-nav button").nth(i).click();
+    await p.waitForTimeout(450);
+    await mesurerLaPage(`${nom} · ${onglets[i].trim()}`, false, ".bt-ecran");
+  }
+}
+
 console.log("\n══ la page commerçant, métier par métier ══");
 await p.goto(`${BASE}/autour-de-moi/boutique`, { waitUntil: "networkidle" });
-const noms = await p.locator(".bq-maq-c button").allTextContents();
+const noms = await nomsDesCommerces();
+dire(noms.length >= 10, `la garde trouve ${noms.length} commerces à mesurer`);
 for (const n of noms) {
-  await p.locator(".bq-maq-c button", { hasText: n }).first().click();
-  await p.waitForTimeout(320);
-  await mesurerLaPage(n.trim());
+  await choisir(n);
+  if (await p.$(".bt-nav")) await mesurerLesOnglets(n.trim());
+  else await mesurerLaPage(n.trim());
 }
 
 /**
@@ -277,8 +340,17 @@ for (const n of noms) {
 console.log("\n══ et derrière le grand bouton, sur chaque métier ══");
 for (const n of noms) {
   await p.goto(`${BASE}/autour-de-moi/boutique`, { waitUntil: "networkidle" });
-  await p.locator(".bq-maq-c button", { hasText: n }).first().click();
-  await p.waitForTimeout(300);
+  await choisir(n);
+  /* CHEZ UN RESTAURANT, LA PORTE EST LE BOUTON ROSE DE L'EXPERIENCE — il ouvre
+     le parcours du plat, ou la voix du chef quand il n'y a pas de parcours. */
+  if (await p.$(".bt-nav")) {
+    await p.locator(".bt-nav button", { hasText: "Expérience" }).click();
+    await p.waitForTimeout(450);
+    await p.click(".bt-e-exp .bt-go");
+    await p.waitForTimeout(900);
+    await mesurerLaPage(`${n.trim()} · derrière la porte`);
+    continue;
+  }
   const cta = await p.$(".bf-cta");
   if (!cta) {
     dire(false, `${n.trim()} — pas de grand bouton dans la vitrine`);
@@ -321,8 +393,11 @@ for (const n of noms) {
  */
 console.log("\n══ la garde voit-elle encore le défaut d'origine ? ══");
 await p.goto(`${BASE}/autour-de-moi/boutique`, { waitUntil: "networkidle" });
-await p.locator(".bq-maq-c button", { hasText: "boucherie" }).first().click();
-await p.waitForTimeout(300);
+/* LA BOUCHERIE EST UN RESTAURANT, et les restaurants ont quitté la longue
+   page pour leurs onglets : elle n'a plus de « .bf-cta ». La preuve n'a pas
+   besoin d'elle — elle a besoin d'un écran habillé pour la nuit derrière une
+   porte, et le salon de coiffure en a un : son parcours d'essai. */
+await choisir("Un salon du centre");
 await p.click(".bf-cta");
 await p.waitForTimeout(700);
 /* LE FOND DE `body` RESTE, ET C'EST VOLONTAIRE : sans lui la page devient

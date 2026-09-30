@@ -73,7 +73,20 @@ const ou = () =>
 /** Ouvre la page d'un commerce et pousse la porte de la vitrine. */
 async function entrer(nom) {
   await p.goto(`${BASE}/autour-de-moi/boutique`, { waitUntil: "networkidle" });
-  await p.locator(".bq-maq-c button", { hasText: nom }).first().click();
+  /* LA MAQUETTE S'OUVRE SUR UN RESTAURANT, donc sur sa page à onglets — voir
+     `boutique-table.tsx` — dont le sélecteur est une liste déroulante. Les
+     bars, eux, gardent la longue page : une fois choisis, on retrouve ici
+     exactement ce que la garde vérifiait. */
+  if (await p.$(".bt-maq select")) {
+    const options = await p.locator(".bt-maq select option").evaluateAll((os) =>
+      os.map((o) => ({ v: o.value, t: o.textContent ?? "" })),
+    );
+    const o = options.find((x) => x.t.includes(nom));
+    if (!o) throw new Error(`commerce introuvable dans la liste : ${nom}`);
+    await p.selectOption(".bt-maq select", o.v);
+  } else {
+    await p.locator(".bq-maq-c button", { hasText: nom }).first().click();
+  }
   await p.waitForTimeout(400);
   const v = await p.evaluate(() => ({
     question: (document.querySelector(".bf-q") || {}).innerText?.replace(/\s+/g, " ").trim() ?? "",
