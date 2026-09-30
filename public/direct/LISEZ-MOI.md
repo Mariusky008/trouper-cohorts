@@ -1083,8 +1083,11 @@ reste se rattrape au recadrage.
   éclairées derrière le comptoir — `public/direct/double/lunettes/`), et le
   **tatoueur** (casquette et salopette noires surpiquées de rouge, bras tatoué,
   studio aux flashs encadrés derrière le comptoir — `public/direct/double/tatouage/`).
-  L'hypnothérapeute et la sophrologue, de la même famille « séance », gardent
-  le fantôme ClikMe : pas de flashs dans un cabinet calme.
+  L'hypnothérapeute et la sophrologue, de la même famille « séance », ont la
+  tenue du **bien-être** (casquette aux ondes, gilet vert sauge, foulard
+  lavande, cabinet aux fauteuils clairs — `public/direct/double/bien-etre/`) :
+  pas de flashs dans un cabinet calme. Sa photo posait la table à la moitié
+  de l'image ; elle a été remontée pour tomber à 41 %, comme les comptoirs.
   Les événements de la ville n'ont pas de
   double : personne derrière un comptoir. La tenue ne fait pas le métier : les mots
   restent ceux de la boutique (« le chef » n'existe qu'au restaurant).

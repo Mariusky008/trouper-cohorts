@@ -164,7 +164,7 @@ export function DoubleChef({
      fleuriste devant ses seaux de roses. Un métier sans tenue garde le
      fantôme ClikMe devant la photo de la boutique elle-même. */
   const tenue = tenueDu(carte);
-  /** Vrai quand ce métier a sa tenue et son décor dessinés — le chef, la boutique de mode, le salon de coiffure, l'onglerie, le bar, le fleuriste, les créateurs, l'opticien et le tatoueur, pour l'instant. */
+  /** Vrai quand ce métier a sa tenue et son décor dessinés — le chef, la boutique de mode, le salon de coiffure, l'onglerie, le bar, le fleuriste, les créateurs, l'opticien, le tatoueur et le bien-être. */
   const chef = !!tenue;
   const art = tenue
     ? {

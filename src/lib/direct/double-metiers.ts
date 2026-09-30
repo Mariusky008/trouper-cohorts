@@ -351,6 +351,14 @@ export const TENUES: Partial<Record<FamilleDouble, { dossier: string; decor: str
      bleu canard sur chemise blanche, et la boutique — montures alignées sur
      des étagères éclairées, miroirs ovales — derrière un comptoir de bois. */
   lunettes: { dossier: "/direct/double/lunettes/", decor: "/direct/double/lunettes/decor.jpg" },
+  /* LE BIEN-ÊTRE (hypnothérapeute, sophrologue…) : casquette aux ondes,
+     gilet de laine vert sauge, foulard lavande, et le cabinet — deux
+     fauteuils clairs, table basse, lumière de fin d'après-midi — derrière une
+     table de bois. La photo posait sa table à la moitié de l'image : elle a
+     été remontée de 195 points pour tomber à 41 %, comme les autres
+     comptoirs, le bas prolongé de son propre dégradé. Le tatoueur, de la
+     même famille, a sa tenue à lui — voir `tenueDu`. */
+  seance: { dossier: "/direct/double/bien-etre/", decor: "/direct/double/bien-etre/decor.jpg" },
 };
 
 /* LE TATOUEUR : casquette et salopette noires surpiquées de rouge, la
@@ -358,8 +366,7 @@ export const TENUES: Partial<Record<FamilleDouble, { dossier: string; decor: str
    studio — fauteuil de cuir, flashs encadrés sur la brique — derrière le
    comptoir. Il est rangé HORS DE `TENUES` : il partage la famille « séance »
    avec l'hypnothérapeute et la sophrologue, qui reçoivent dans un cabinet
-   calme, pas sous des flashs. Elles gardent le fantôme ClikMe en attendant
-   leur propre tenue. */
+   calme, pas sous des flashs — elles ont la tenue du bien-être. */
 const TATOUAGE = { dossier: "/direct/double/tatouage/", decor: "/direct/double/tatouage/decor.jpg" };
 
 /** La tenue d'un commerce, s'il en a une. */
