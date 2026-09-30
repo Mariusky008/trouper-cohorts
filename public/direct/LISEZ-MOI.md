@@ -1074,7 +1074,9 @@ reste se rattrape au recadrage.
   et salopette roses au flacon de vernis, tables de pose derrière —
   `public/direct/double/ongles/`), et le **bar** avec ses soirées (casquette à
   la note de musique, gilet et nœud papillon bleus, salle et petite scène —
-  `public/direct/double/bar/`). Les événements de la ville n'ont pas de
+  `public/direct/double/bar/`), et le **fleuriste** (casquette verte à la
+  fleur, salopette de jardinier, seaux de roses derrière le comptoir de bois —
+  `public/direct/double/fleurs/`). Les événements de la ville n'ont pas de
   double : personne derrière un comptoir. La tenue ne fait pas le métier : les mots
   restent ceux de la boutique (« le chef » n'existe qu'au restaurant).
 - **Tenues des autres métiers** : prêtes à brancher. Poser les 7 poses et le

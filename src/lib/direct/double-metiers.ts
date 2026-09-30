@@ -334,6 +334,10 @@ export const TENUES: Partial<Record<FamilleDouble, { dossier: string; decor: str
      des annonces du bar : elles ont ce double. Un événement de la ville, lui,
      n'a personne derrière un comptoir — voir `aUnDouble`. */
   bar: { dossier: "/direct/double/bar/", decor: "/direct/double/bar/decor.jpg" },
+  /* LE FLEURISTE : casquette verte à la fleur, salopette de jardinier, un brin
+     de verdure dans la poche, et la boutique — seaux de roses, étagères de
+     plantes — derrière un comptoir de bois. */
+  fleurs: { dossier: "/direct/double/fleurs/", decor: "/direct/double/fleurs/decor.jpg" },
 };
 
 /** La tenue d'un commerce, s'il en a une. */
