@@ -328,6 +328,12 @@ export const TENUES: Partial<Record<FamilleDouble, { dossier: string; decor: str
   /* L'ONGLERIE : casquette et salopette roses au flacon de vernis, limes en
      poche, et les tables de pose — étagères de vernis — derrière le comptoir. */
   ongles: { dossier: "/direct/double/ongles/", decor: "/direct/double/ongles/decor.jpg" },
+  /* LE BAR ET SES SOIRÉES : casquette à la note de musique, gilet et nœud
+     papillon bleus, et la salle — banquettes, petite scène, lumières bleues
+     et violettes — derrière le comptoir. Les soirées publiées par un bar sont
+     des annonces du bar : elles ont ce double. Un événement de la ville, lui,
+     n'a personne derrière un comptoir — voir `aUnDouble`. */
+  bar: { dossier: "/direct/double/bar/", decor: "/direct/double/bar/decor.jpg" },
 };
 
 /** La tenue d'un commerce, s'il en a une. */

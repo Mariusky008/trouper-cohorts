@@ -69,7 +69,12 @@ export async function POST(req: Request) {
 
   /* CHAQUE RÉPONSE PART AVEC SON SCEAU : c'est lui qui permet ensuite à la
      route de la voix de la dire, et à elle seule. Voir `sceau-voix.ts`. */
-  const scelle = (r: ReponseDouble): ReponseDouble => ({ ...r, sig: scellerVoix(fiche.id, r.texte) });
+  /* LA CARTE « PLAT » PART AVEC CE DONT ELLE PARLE — voir `ReponseDouble.plat`. */
+  const scelle = (r: ReponseDouble): ReponseDouble => ({
+    ...r,
+    sig: scellerVoix(fiche.id, r.texte),
+    ...(r.carte === "plat" && fiche.plat ? { plat: fiche.plat } : {}),
+  });
   const secours = (): ReponseDouble => scelle({ ...repondreSansIA(question, fiche), par: "local" });
   const cle = s(process.env.OPENAI_API_KEY);
   if (!cle) return NextResponse.json(secours());

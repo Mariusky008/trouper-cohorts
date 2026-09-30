@@ -1072,7 +1072,10 @@ reste se rattrape au recadrage.
   salopette aux ciseaux, salon aux miroirs dorés — `public/direct/double/coiffure/` ;
   pas pour l'onglerie, qui a sa propre famille), et l'**onglerie** (casquette
   et salopette roses au flacon de vernis, tables de pose derrière —
-  `public/direct/double/ongles/`). La tenue ne fait pas le métier : les mots
+  `public/direct/double/ongles/`), et le **bar** avec ses soirées (casquette à
+  la note de musique, gilet et nœud papillon bleus, salle et petite scène —
+  `public/direct/double/bar/`). Les événements de la ville n'ont pas de
+  double : personne derrière un comptoir. La tenue ne fait pas le métier : les mots
   restent ceux de la boutique (« le chef » n'existe qu'au restaurant).
 - **Tenues des autres métiers** : prêtes à brancher. Poser les 7 poses et le
   décor dans `public/direct/double/<métier>/` avec

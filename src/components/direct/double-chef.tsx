@@ -38,6 +38,7 @@ import {
   repondreSansIA,
   suggestionsDeDepart,
   type CarteDouble,
+  type FicheDouble,
   type ReponseDouble,
 } from "@/lib/direct/double-chef";
 import { nomDansPhrase, TENUES } from "@/lib/direct/double-metiers";
@@ -53,7 +54,7 @@ type DemandeVoix = { quoi: "accueil" } | { quoi: "confirmation" } | { quoi: "rep
 
 type Bulle =
   | { id: number; de: "double" | "client"; texte: string; heure: string; provisoire?: boolean; voix?: DemandeVoix }
-  | { id: number; de: "carte"; carte: CarteDouble; heure: string };
+  | { id: number; de: "carte"; carte: CarteDouble; heure: string; plat?: FicheDouble["plat"] };
 
 /** Une bulle avant qu'on lui donne son numéro et son heure — pour chaque sorte. */
 type SansHeure<T> = T extends unknown ? Omit<T, "id" | "heure"> : never;
@@ -163,7 +164,7 @@ export function DoubleChef({
      fantôme ClikMe se tient devant la photo de la boutique elle-même : c'est
      chez la fleuriste qu'on entre, pas dans une cuisine. */
   const tenue = TENUES[p.famille];
-  /** Vrai quand ce métier a sa tenue et son décor dessinés — le chef, la boutique de mode, le salon de coiffure et l'onglerie, pour l'instant. */
+  /** Vrai quand ce métier a sa tenue et son décor dessinés — le chef, la boutique de mode, le salon de coiffure, l'onglerie et le bar, pour l'instant. */
   const chef = !!tenue;
   const art = tenue
     ? {
@@ -466,7 +467,7 @@ export function DoubleChef({
         setResa(preRemplir(t, p.demande.heures));
         setResaFaite(false);
       }
-      ajouter({ de: "carte", carte: r.carte });
+      ajouter({ de: "carte", carte: r.carte, plat: r.plat });
     }
     if (r.suggestions?.length) setSuggestions(r.suggestions);
   };
@@ -536,7 +537,9 @@ export function DoubleChef({
 
   const plat = fiche.plat;
 
-  const carteHtml = (c: CarteDouble) => {
+  const carteHtml = (c: CarteDouble, platDit?: FicheDouble["plat"]) => {
+    /* CE QUE LA PHRASE VIENT DE DIRE, s'il l'a précisé — sinon la fiche de l'écran. */
+    const plat = platDit ?? fiche.plat;
     if (c === "plat" && plat)
       return (
         <div className="dc-plat">
@@ -836,7 +839,7 @@ export function DoubleChef({
                 <div key={b.id} className="dc-l carte">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img className="dc-av" src={avatar} alt="" />
-                  {carteHtml(b.carte)}
+                  {carteHtml(b.carte, b.plat)}
                 </div>
               ) : (
                 <div key={b.id} className={`dc-l ${b.de}`}>

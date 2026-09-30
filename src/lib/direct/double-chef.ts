@@ -39,6 +39,16 @@ export type ReponseDouble = {
   /** Le sceau du serveur sur ce texte : sans lui, la route de la voix refuse
    *  de le dire. Voir `api/direct/double/voix`. */
   sig?: string;
+  /**
+   * CE DONT IL PARLE, QUAND IL MONTRE LA CARTE « PLAT ».
+   *
+   * LE TEXTE VIENT DU SERVEUR, LA CARTE VENAIT DE L'ÉCRAN — et les deux ne
+   * lisaient pas le même commerce : l'appli passe une annonce enrichie, le
+   * serveur relit la fiche. Le bar disait « Deux verres pour un, 9 € » au-
+   * dessus d'une carte « La planche à partager, 8,40 € ». La carte montre
+   * maintenant ce que la phrase vient de dire.
+   */
+  plat?: FicheDouble["plat"];
 };
 
 export type FicheDouble = {
@@ -87,7 +97,11 @@ export function ficheDuDouble(c: CarteAutour, plus: SavoirEnPlus = {}): FicheDou
      elle-même — le bouquet, la coupe, la pièce — telle qu'elle est publiée :
      son titre, sa première ligne, son prix, sa photo. Un restaurant sans menu
      n'en prend pas : « le service du midi » n'est pas un plat. */
-  const moment = profil.famille === "table" ? undefined : (c.moments ?? []).find((m) => m.titre);
+  /* L'ANNONCE DE L'HEURE QU'IL EST, À PARIS. Le bar publie son « Deux verres
+     pour un » de 17 h et son concert de 20 h : à 21 h, c'est le concert qu'on
+     vient chercher. En cours d'abord, puis la prochaine, puis la première —
+     et l'heure est celle de Paris des deux côtés, serveur compris. */
+  const moment = profil.famille === "table" ? undefined : momentDeLHeure(c.moments ?? []);
   const plat = c.menu
     ? { nom: c.menu.plat, detail: c.menu.description, prix: c.menu.prix, photo: c.menu.photo }
     : moment
@@ -116,6 +130,25 @@ export function ficheDuDouble(c: CarteAutour, plus: SavoirEnPlus = {}): FicheDou
     notes: (plus.notes ?? "").trim() || undefined,
     profil,
   };
+}
+
+/** L'heure qu'il est à Paris, en heures décimales. */
+function heureDeParis(): number {
+  const p = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(new Date());
+  const h = Number(p.find((x) => x.type === "hour")?.value ?? 12);
+  const m = Number(p.find((x) => x.type === "minute")?.value ?? 0);
+  return h + m / 60;
+}
+
+/** L'annonce en cours, sinon la prochaine de la journée, sinon la première. */
+function momentDeLHeure<T extends { titre: string; de: number; a: number }>(moments: T[]): T | undefined {
+  const avecTitre = moments.filter((m) => m.titre);
+  const h = heureDeParis();
+  return (
+    avecTitre.find((m) => m.de <= h && h < m.a) ??
+    avecTitre.filter((m) => m.de > h).sort((x, y) => x.de - y.de)[0] ??
+    avecTitre[0]
+  );
 }
 
 /** « à Julien », ou « au chef », « à l'équipe » — « à le chef » ne se dit pas. */
