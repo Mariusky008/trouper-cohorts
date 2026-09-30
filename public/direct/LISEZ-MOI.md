@@ -1076,7 +1076,10 @@ reste se rattrape au recadrage.
   la note de musique, gilet et nœud papillon bleus, salle et petite scène —
   `public/direct/double/bar/`), et le **fleuriste** (casquette verte à la
   fleur, salopette de jardinier, seaux de roses derrière le comptoir de bois —
-  `public/direct/double/fleurs/`). Les événements de la ville n'ont pas de
+  `public/direct/double/fleurs/`), et les **créateurs et indépendants**
+  (casquette brune à l'étoile, salopette orange aux crayons, atelier de
+  céramiques et de tissus derrière le comptoir — `public/direct/double/createur/`).
+  Les événements de la ville n'ont pas de
   double : personne derrière un comptoir. La tenue ne fait pas le métier : les mots
   restent ceux de la boutique (« le chef » n'existe qu'au restaurant).
 - **Tenues des autres métiers** : prêtes à brancher. Poser les 7 poses et le

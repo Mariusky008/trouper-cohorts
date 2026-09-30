@@ -284,7 +284,9 @@ export function familleDuDouble(c: { branche?: string | null; metier?: string | 
   if (b === "lunetier") return "lunettes";
   if (b === "artisan") {
     if (/tatou|tattoo|pierc/.test(m)) return "seance";
-    if (/cir|bougie|bijou|bracelet|collier|joaill|c[ée]ram|potier|atelier|cr[ée]at/.test(m)) return "createur";
+    /* UNE BOUTIQUE DE MEUBLES ET DE DÉCO VEND CE QU'ON MET DE CÔTÉ : elle
+       tombait dans les séances, avec un « cabinet » et des rendez-vous. */
+    if (/cir|bougie|bijou|bracelet|collier|joaill|c[ée]ram|potier|atelier|cr[ée]at|meuble|d[ée]co/.test(m)) return "createur";
     return "seance";
   }
   if (/restaur|pizz|burger|traiteur|boulang|p[âa]tiss/.test(m)) return "table";
@@ -338,6 +340,12 @@ export const TENUES: Partial<Record<FamilleDouble, { dossier: string; decor: str
      de verdure dans la poche, et la boutique — seaux de roses, étagères de
      plantes — derrière un comptoir de bois. */
   fleurs: { dossier: "/direct/double/fleurs/", decor: "/direct/double/fleurs/decor.jpg" },
+  /* LES CRÉATEURS ET INDÉPENDANTS : casquette brune à l'étoile, salopette
+     orange, crayons dans la poche, et l'atelier — céramiques, tissus pliés,
+     grande table de travail — derrière un comptoir de bois. Il habille ceux
+     qui fabriquent (bougies, bijoux, céramique…) ; le tatoueur et les autres
+     séances gardent leur famille — voir `familleDuDouble`. */
+  createur: { dossier: "/direct/double/createur/", decor: "/direct/double/createur/decor.jpg" },
 };
 
 /** La tenue d'un commerce, s'il en a une. */
