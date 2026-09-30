@@ -275,6 +275,7 @@ export function familleDuDouble(c: { branche?: string | null; metier?: string | 
   if (/ongl|manucur/.test(m)) return "ongles";
   if (/coiff|barbier/.test(m)) return "coiffure";
   if (/fleur/.test(m)) return "fleurs";
+  if (/tatou|tattoo|pierc/.test(m)) return "seance";
   if (b === "restaurant" || b === "boulangerie") return "table";
   if (b === "bar") return "bar";
   if (b === "coiffeur") return /ongl/.test(m) ? "ongles" : "coiffure";
@@ -352,9 +353,20 @@ export const TENUES: Partial<Record<FamilleDouble, { dossier: string; decor: str
   lunettes: { dossier: "/direct/double/lunettes/", decor: "/direct/double/lunettes/decor.jpg" },
 };
 
+/* LE TATOUEUR : casquette et salopette noires surpiquées de rouge, la
+   machine brodée, une branche tatouée sur le bras, crayon en poche, et le
+   studio — fauteuil de cuir, flashs encadrés sur la brique — derrière le
+   comptoir. Il est rangé HORS DE `TENUES` : il partage la famille « séance »
+   avec l'hypnothérapeute et la sophrologue, qui reçoivent dans un cabinet
+   calme, pas sous des flashs. Elles gardent le fantôme ClikMe en attendant
+   leur propre tenue. */
+const TATOUAGE = { dossier: "/direct/double/tatouage/", decor: "/direct/double/tatouage/decor.jpg" };
+
 /** La tenue d'un commerce, s'il en a une. */
 export function tenueDu(c: { branche?: string | null; metier?: string | null }) {
-  return TENUES[familleDuDouble(c)];
+  const famille = familleDuDouble(c);
+  if (famille === "seance" && /tatou|tattoo|pierc/.test((c.metier ?? "").toLowerCase())) return TATOUAGE;
+  return TENUES[famille];
 }
 
 /**

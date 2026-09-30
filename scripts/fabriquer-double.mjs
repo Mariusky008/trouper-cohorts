@@ -13,7 +13,7 @@
  *
  *   node scripts/fabriquer-double.mjs <dossier> <métier>
  *     Un autre métier (fleurs, coiffure, ongles, mode, bar, createur,
- *     lunettes, seance). Les fichiers sont nommés par leur expression :
+ *     lunettes, tatouage…). Les fichiers sont nommés par leur expression :
  *     accueil, content, ecoute, reflechit, parle-1, parle-2, parle-3 (bouche
  *     grande ouverte, ouverte, entrouverte) et decor — en .png, .jpg ou .webp.
  *     Ils partent dans public/direct/double/<métier>/ ; il reste à ajouter le

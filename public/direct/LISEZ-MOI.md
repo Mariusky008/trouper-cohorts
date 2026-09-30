@@ -1080,7 +1080,11 @@ reste se rattrape au recadrage.
   (casquette brune à l'étoile, salopette orange aux crayons, atelier de
   céramiques et de tissus derrière le comptoir — `public/direct/double/createur/`),
   et l'**opticien** (lunettes rondes, gilet bleu canard, montures sur étagères
-  éclairées derrière le comptoir — `public/direct/double/lunettes/`).
+  éclairées derrière le comptoir — `public/direct/double/lunettes/`), et le
+  **tatoueur** (casquette et salopette noires surpiquées de rouge, bras tatoué,
+  studio aux flashs encadrés derrière le comptoir — `public/direct/double/tatouage/`).
+  L'hypnothérapeute et la sophrologue, de la même famille « séance », gardent
+  le fantôme ClikMe : pas de flashs dans un cabinet calme.
   Les événements de la ville n'ont pas de
   double : personne derrière un comptoir. La tenue ne fait pas le métier : les mots
   restent ceux de la boutique (« le chef » n'existe qu'au restaurant).

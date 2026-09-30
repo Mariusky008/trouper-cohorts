@@ -41,11 +41,11 @@ import {
   type FicheDouble,
   type ReponseDouble,
 } from "@/lib/direct/double-chef";
-import { nomDansPhrase, TENUES } from "@/lib/direct/double-metiers";
+import { nomDansPhrase, tenueDu } from "@/lib/direct/double-metiers";
 import { onSpeakingChange, speak, speechSupported, stopSpeaking, unlockAudio } from "@/lib/site-internet/speech";
 
 /* LES TENUES DE CHAQUE MÉTIER sont rangées dans `double-metiers.ts` — voir
-   `TENUES`. L'application et la page commerçant les lisent aussi. */
+   `tenueDu`. L'application et la page commerçant les lisent aussi. */
 /** Un silence d'une frame, pour débloquer le son dans un appui (iPhone). */
 const SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
 
@@ -160,11 +160,11 @@ export function DoubleChef({
   const [menu, setMenu] = useState(false);
   /* SON MÉTIER DÉCIDE DES MOTS ET DE LA DEMANDE — voir `double-metiers.ts`. */
   const p = fiche.profil;
-  /* LA TENUE DE CHEF ET LE COMPTOIR NE VONT QU'AU RESTAURANT. Ailleurs, le
-     fantôme ClikMe se tient devant la photo de la boutique elle-même : c'est
-     chez la fleuriste qu'on entre, pas dans une cuisine. */
-  const tenue = TENUES[p.famille];
-  /** Vrai quand ce métier a sa tenue et son décor dessinés — le chef, la boutique de mode, le salon de coiffure, l'onglerie et le bar, pour l'instant. */
+  /* CHAQUE MÉTIER DESSINÉ A SA TENUE ET SON COMPTOIR : le chef en cuisine, la
+     fleuriste devant ses seaux de roses. Un métier sans tenue garde le
+     fantôme ClikMe devant la photo de la boutique elle-même. */
+  const tenue = tenueDu(carte);
+  /** Vrai quand ce métier a sa tenue et son décor dessinés — le chef, la boutique de mode, le salon de coiffure, l'onglerie, le bar, le fleuriste, les créateurs, l'opticien et le tatoueur, pour l'instant. */
   const chef = !!tenue;
   const art = tenue
     ? {

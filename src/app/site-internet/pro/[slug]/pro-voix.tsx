@@ -62,7 +62,7 @@ export function ProVoix({
   nom: string;
   /** Au restaurant, le double porte la tenue de chef ; ailleurs, c'est le fantôme ClikMe. */
   chef?: boolean;
-  /** Le portrait du double quand son métier a sa tenue dessinée — voir `TENUES`. */
+  /** Le portrait du double quand son métier a sa tenue dessinée — voir `tenueDu`. */
   image?: string;
 }) {
   const [etat, setEtat] = useState<Etat | null>(null);
