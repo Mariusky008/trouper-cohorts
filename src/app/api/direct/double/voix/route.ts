@@ -73,7 +73,7 @@ async function phraseDe(corps: Demande): Promise<Phrase | NextResponse> {
   const fiche = commerce.fiche;
   const quoi = s(corps.quoi);
   let texte = "";
-  if (quoi === "accueil") texte = accueilDuDouble(s(corps.prenom).slice(0, 40));
+  if (quoi === "accueil") texte = accueilDuDouble(fiche, s(corps.prenom).slice(0, 40));
   else if (quoi === "confirmation") texte = confirmationDuDouble(fiche);
   else if (quoi === "reponse") {
     const t = s(corps.texte);

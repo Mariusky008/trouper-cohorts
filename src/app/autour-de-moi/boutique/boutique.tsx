@@ -582,9 +582,25 @@ export function Boutique({
    * d'invitation. Lu une seule fois, au montage : relire l'adresse à chaque
    * rendu rouvrirait le panneau que l'on vient de fermer.
    */
+  /*
+   * « À chaque fois que je vais sur la page d'un commerçant j'ai un salon qui
+   * s'ouvre alors que je n'ai jamais cliqué dessus. »
+   *
+   * LE LIEN RESTAIT DANS L'ADRESSE. Une fois arrivé par l'invitation, chaque
+   * rechargement, chaque retour arrière, chaque adresse que le navigateur
+   * propose de lui-même rouvrait la conversation — vide, puisque les salons
+   * vivent sur l'appareil. Il ne s'ouvre donc plus qu'une fois : `salon=1`
+   * devient `salon=lu`, qui garde la page en vue client (voir `visiteurPublic`
+   * dans `page.tsx`) sans plus rien ouvrir.
+   */
   useEffect(() => {
     try {
-      if (new URLSearchParams(window.location.search).get("salon")) setSalonOuvert(true);
+      const adresse = new URL(window.location.href);
+      if (adresse.searchParams.get("salon") === "1") {
+        setSalonOuvert(true);
+        adresse.searchParams.set("salon", "lu");
+        window.history.replaceState(window.history.state, "", adresse.toString());
+      }
     } catch {
       /* pas d'adresse lisible → on n'ouvre rien */
     }

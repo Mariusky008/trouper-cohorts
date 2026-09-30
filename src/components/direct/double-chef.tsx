@@ -27,7 +27,7 @@
  * déjà, et c'est le seul changement qu'il faudra faire ici.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import {
@@ -144,7 +144,7 @@ export function DoubleChef({
   const fiche = useMemo(() => ficheDuDouble(carte, { prenom: prenomChef }), [carte, prenomChef]);
   const idSuivant = useRef(1);
   const [bulles, setBulles] = useState<Bulle[]>(() => [
-    { id: 0, de: "double", texte: accueilDuDouble(prenomClient), heure: maintenant() },
+    { id: 0, de: "double", texte: accueilDuDouble(fiche, prenomClient), heure: maintenant() },
   ]);
   const [suggestions, setSuggestions] = useState<string[]>(() => suggestionsDeDepart(fiche));
   /** « arrivee » tant que personne n'a rien dit ; « conversation » ensuite. */
@@ -368,7 +368,7 @@ export function DoubleChef({
 
   /* ═══ IL DIT BONJOUR, AVEC SA VOIX, DÈS L'ARRIVÉE ═════════════════════
      L'appui sur le fantôme qui a ouvert cet écran est un geste de la
-     personne : le téléphone autorise donc le son. C'est ce premier « Salut
+     personne : le téléphone autorise donc le son. C'est ce premier « Bonjour
      Marius ! » entendu qui fait l'effet — pas le texte. */
   useEffect(() => {
     const off = onSpeakingChange((v) => {
@@ -376,7 +376,7 @@ export function DoubleChef({
       setParle(v);
     });
     debloquer();
-    const t = window.setTimeout(() => void parler(accueilDuDouble(prenomClient), { quoi: "accueil" }), 450);
+    const t = window.setTimeout(() => void parler(accueilDuDouble(fiche, prenomClient), { quoi: "accueil" }), 450);
     const liste = sons.current;
     return () => {
       window.clearTimeout(t);
@@ -705,7 +705,10 @@ export function DoubleChef({
   );
 
   return (
-    <div className={`dc ${phase}${chef ? "" : " boutique"}${parle ? " parle" : ""}`}>
+    <div
+      className={`dc ${phase}${chef ? "" : " boutique"}${parle ? " parle" : ""}`}
+      style={tenue ? ({ "--comptoir": tenue.comptoir, "--pied": tenue.pied } as CSSProperties) : undefined}
+    >
       <span
         className="dc-fond"
         aria-hidden="true"
@@ -945,6 +948,24 @@ const FEUILLE = `
 .dc-fant{position:absolute;left:50%;transform:translateX(-50%);z-index:0;
   height:min(26cqh,62cqw);width:auto;top:calc(49.5cqh - min(26cqh,62cqw));
   filter:drop-shadow(0 0 26px rgba(255,120,220,.45));}
+/* LE CORPS TOUCHE LE BOIS, QUEL QUE SOIT LE DECOR ET QUELLE QUE SOIT LA
+   FENETRE. « Certains fantomes sont decolles de la table. » La hauteur
+   ci-dessus etait celle du chef, pour tous : le fleuriste et l'onglerie ont
+   leur comptoir plus bas, il flottait au-dessus.
+   Le decor couvre l'ecran (cover) puis grandit de vingt pour cent depuis le
+   haut. Il se cale sur la hauteur si l'ecran est plus etroit que l'image, sur
+   la largeur sinon : sa hauteur affichee est le plus grand de 100cqh et
+   177.7cqw (1672 / 941). Le bord arriere du bois tombe donc a
+   1,2 x (50cqh + (comptoir - 0,5) x cette hauteur). On y pose le bas du corps
+   (le haut du vide transparent, voir pied), enfonce de deux centiemes de sa
+   taille pour qu'il se tienne derriere et non au-dessus.
+   IL NE MONTE JAMAIS PLUS HAUT QU'AVANT : au bar, le comptoir est haut et le
+   fantome passerait sous le titre. La, il reste debout devant le bois, ce
+   qui se lit comme pose — seul le vide dessous se lisait comme decolle.
+   Les deux mesures viennent de la tenue : voir Tenue dans double-metiers. */
+.dc:not(.boutique) .dc-fant{top:max(
+  calc(49.5cqh - min(26cqh,62cqw)),
+  calc(1.2 * (50cqh + (var(--comptoir) - 0.5) * max(100cqh, 177.7cqw)) - (0.98 - var(--pied)) * min(26cqh,62cqw)));}
 .dc-etat{position:absolute;right:16px;top:calc(49.5cqh - 15cqh);display:grid;justify-items:center;gap:4px;
   font-size:11.5px;font-weight:600;opacity:.9;z-index:1;}
 .dc-etat i{display:flex;gap:2px;height:22px;align-items:center;}

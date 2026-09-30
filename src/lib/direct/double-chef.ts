@@ -24,7 +24,7 @@
 // « 14 € ».
 
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
-import { profilDuDouble, type ProfilDouble } from "@/lib/direct/double-metiers";
+import { nomDansPhrase, profilDuDouble, type ProfilDouble } from "@/lib/direct/double-metiers";
 
 /** Ce que le double peut poser dans la conversation, en plus de sa phrase. */
 export type CarteDouble = "plat" | "reservation" | "horaires" | "carte";
@@ -191,10 +191,36 @@ export function suggestionsDeDepart(f?: FicheDouble): string[] {
   return f ? f.profil.suggestions : ["Le plat du jour ?", "Ton histoire ?", "Ta spécialité ?"];
 }
 
-/** Le premier message, dit avec sa voix dès l'arrivée. */
-export function accueilDuDouble(prenomClient?: string): string {
+/**
+ * LE PREMIER MESSAGE, DIT AVEC SA VOIX DÈS L'ARRIVÉE.
+ *
+ * « "Salut ! Tu es du coin ou de passage ?" je trouve ça très bizarre comme
+ * question, il faudrait quelque chose de plus introductif : le commerçant qui
+ * se présente — bonjour, moi c'est…, comment puis-je t'aider ? »
+ *
+ * ON ENTRE CHEZ QUELQU'UN : il dit bonjour, il dit qui il est, il demande ce
+ * qu'on vient chercher. Son prénom s'il l'a donné, et d'où il parle ; sans
+ * prénom, le nom de la maison. Le serveur écrit la même phrase pour la voix :
+ * voir la route `double/voix`.
+ */
+export function accueilDuDouble(f: FicheDouble, prenomClient?: string): string {
   const p = (prenomClient ?? "").trim();
-  return `Salut${p ? ` ${p}` : ""} ! Tu es du coin ou de passage ?`;
+  const bonjour = `Bonjour${p ? ` ${p}` : ""} !`;
+  const aider = "Comment je peux t'aider ?";
+  if (f.prenomConnu) return `${bonjour} Moi, c'est ${f.prenom}, ${deLaMaison(f.nom)}. ${aider}`;
+  /* SANS PRÉNOM, LA MAISON RÉPOND : « Ici Passion Fleur », « Ici un bar à
+     vins ». « Je suis un bar à vins » faisait parler le comptoir. */
+  return `${bonjour} Ici ${nomDansPhrase(f.nom)}. ${aider}`;
+}
+
+/** « de Chez Léon », « du Petit Bistrot », « d'un salon du centre » — la maison dans « Moi, c'est Julien, … ». */
+function deLaMaison(nom: string): string {
+  if (/^(Un|Une)\s/.test(nom)) return `d'${nom[0].toLowerCase()}${nom.slice(1)}`;
+  if (/^Le\s/.test(nom)) return `du ${nom.slice(3)}`;
+  if (/^Les\s/.test(nom)) return `des ${nom.slice(4)}`;
+  if (/^La\s/.test(nom)) return `de la ${nom.slice(3)}`;
+  if (/^L['’]/.test(nom)) return `de l'${nom.slice(2)}`;
+  return `de ${nom}`;
 }
 
 /**
@@ -286,7 +312,7 @@ export function repondreSansIA(question: string, f: FicheDouble): ReponseDouble 
       suggestions: [demande, "C'est où ?"],
     };
   }
-  // « OÙ » SEUL NE SUFFIT PAS : « du coin ou de passage » s'écrit pareil sans accent.
+  // « OÙ » SEUL NE SUFFIT PAS : « ou » et « où » s'écrivent pareil sans accent.
   if (/c.est ou|ou est|ou se trouve|adresse|c.est loin|trouver|parking|itineraire/.test(q)) {
     return {
       texte: f.ou ? `${f.ou}, à ${f.distance} de toi.` : `On est à ${f.distance}, à ${f.ville}.`,
@@ -347,7 +373,7 @@ export function repondreSansIA(question: string, f: FicheDouble): ReponseDouble 
   }
   if (/salut|bonjour|hello|coucou|bonsoir/.test(q)) {
     return {
-      texte: `Salut ! Je suis le double ${deLui(f)}. Demande-moi ${p.vedette}, ou ${p.demande.objet}.`,
+      texte: `Bonjour ! Je suis le double ${deLui(f)}. Demande-moi ${p.vedette}, ou ${p.demande.objet}.`,
       carte: null,
       suggestions: suggestionsDeDepart(f),
     };
