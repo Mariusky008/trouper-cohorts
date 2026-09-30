@@ -1078,7 +1078,9 @@ reste se rattrape au recadrage.
   fleur, salopette de jardinier, seaux de roses derrière le comptoir de bois —
   `public/direct/double/fleurs/`), et les **créateurs et indépendants**
   (casquette brune à l'étoile, salopette orange aux crayons, atelier de
-  céramiques et de tissus derrière le comptoir — `public/direct/double/createur/`).
+  céramiques et de tissus derrière le comptoir — `public/direct/double/createur/`),
+  et l'**opticien** (lunettes rondes, gilet bleu canard, montures sur étagères
+  éclairées derrière le comptoir — `public/direct/double/lunettes/`).
   Les événements de la ville n'ont pas de
   double : personne derrière un comptoir. La tenue ne fait pas le métier : les mots
   restent ceux de la boutique (« le chef » n'existe qu'au restaurant).

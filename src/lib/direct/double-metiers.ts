@@ -346,6 +346,10 @@ export const TENUES: Partial<Record<FamilleDouble, { dossier: string; decor: str
      qui fabriquent (bougies, bijoux, céramique…) ; le tatoueur et les autres
      séances gardent leur famille — voir `familleDuDouble`. */
   createur: { dossier: "/direct/double/createur/", decor: "/direct/double/createur/decor.jpg" },
+  /* L'OPTICIEN : lunettes rondes sur le nez, casquette aux lunettes, gilet
+     bleu canard sur chemise blanche, et la boutique — montures alignées sur
+     des étagères éclairées, miroirs ovales — derrière un comptoir de bois. */
+  lunettes: { dossier: "/direct/double/lunettes/", decor: "/direct/double/lunettes/decor.jpg" },
 };
 
 /** La tenue d'un commerce, s'il en a une. */
