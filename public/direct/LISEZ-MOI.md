@@ -1140,6 +1140,13 @@ profite ».
   reprend aussitôt avec le timbre OpenAI. En conversation, ElevenLabs utilise
   `eleven_flash_v2_5` (moitié prix, plus rapide ; `ELEVENLABS_MODEL_CONVERSATION`
   pour changer), le récit garde `eleven_multilingual_v2`.
+  **Toutes les boutiques chez ElevenLabs** (voix plus naturelles, plus
+  chères) : `SITE_TTS_PROVIDER=elevenlabs`, `ELEVENLABS_VOICE_ID` (voix
+  d'homme) et `ELEVENLABS_VOICE_ID_FEMME` (voix de femme — prise quand le
+  commerce parle au féminin), choisies dans la bibliothèque ElevenLabs en
+  français ; `ELEVENLABS_MODEL_CONVERSATION` pour le modèle le plus récent.
+  Le plafond mensuel ne compte que les voix clonées. Sans ces réglages :
+  OpenAI, conversation à la vitesse 1,12.
 - **Chaque restaurateur donne SA voix, seul, depuis son Espace Pro** — carte
   « Donnez votre voix à votre double » (`pro/[slug]/pro-voix.tsx`, route
   `api/site-internet/pro/voix`). Il coche l'accord (texte gardé mot pour mot

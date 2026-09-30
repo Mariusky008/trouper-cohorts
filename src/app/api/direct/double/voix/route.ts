@@ -104,7 +104,10 @@ async function phraseDe(corps: Demande): Promise<Phrase | NextResponse> {
   return { id: fiche.id, texte, fixe: quoi !== "reponse", voixClonee, siteId: commerce.siteId, voixParDefaut };
 }
 
-const JEU = { jeu: JEU_CONVERSATION, vitesse: 1.04, spontane: true };
+/* « LES VOIX SONT LENTES. » UN COMPTOIR NE PARLE PAS AU RYTHME D'UN RÉCIT :
+   la conversation passe de 1,04 à 1,12, la vitesse d'une réponse du tac au
+   tac. Le récit du parcours garde son pas posé — voir `api/direct/voix`. */
+const JEU = { jeu: JEU_CONVERSATION, vitesse: 1.12, spontane: true };
 const cleMemoire = (p: Phrase) => `${p.id}\n${p.voixClonee ?? ""}\n${p.texte}`;
 /** Seule SA voix se compte : c'est elle qui se paie au signe. */
 const compter = (p: Phrase) => {

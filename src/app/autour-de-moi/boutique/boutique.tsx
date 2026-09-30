@@ -1149,6 +1149,35 @@ export function Boutique({
             <MotMarque className="bq-marque" />
           </div>
           <div className="bq-tete-d">
+            {/* ═══ LE SALON ENTRE AMIS, À PORTÉE DE POUCE ══════════════════════
+
+                « Dans le menu du haut, j'aimerais bien qu'on ait aussi, sur
+                les pages des commerçants, ouvrir un salon de discussion entre
+                amis, comme raccourci de "En parler avec mes amis". »
+
+                LE MÊME SALON, PAS UN SECOND. Le bouton ouvre la conversation de
+                ce commerce — celle où « En parler avec mes amis » pose les
+                essais — et il la montre telle qu'elle est : vide, elle invite ;
+                pleine, la pastille dit combien de messages y attendent. Rien ne
+                s'y écrit en ouvrant : voir `ouvrirLeSalon`, qui ne naît qu'au
+                premier message. */}
+            <button
+              type="button"
+              className={`bq-rond${salon?.messages.length ? " plein" : ""}`}
+              aria-label={
+                salon?.messages.length
+                  ? `En parler avec mes amis — ${salon.messages.length} message${salon.messages.length > 1 ? "s" : ""}`
+                  : "En parler avec mes amis"
+              }
+              title="En parler avec mes amis"
+              onClick={() => setSalonOuvert(true)}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4.5 5.5h11a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H10l-3.8 3v-3H4.5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z" />
+                <path d="M19.5 9.5a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-.8v2.5l-3-2.5" />
+              </svg>
+              {!!salon?.messages.length && <s>{salon.messages.length}</s>}
+            </button>
             {/* ═══ LE CŒUR OUVRE LA POCHE, IL NE FAIT PLUS RIEN ════════════════
 
                 « Quand j'appuie sur "je le mets de côté", le cœur part, mais je

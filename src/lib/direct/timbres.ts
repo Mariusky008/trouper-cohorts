@@ -122,7 +122,7 @@ type Options = {
  * (`ELEVENLABS_VOICE_CENTRE=…` pour Chez Bergine) ; les autres gardent leur
  * timbre OpenAI. `SITE_TTS_PROVIDER` force encore l'un ou l'autre pour tous.
  */
-function fournisseur(cle: string, voixClonee = ""): { eleven: string; openai: string; idEleven: string } | null {
+function fournisseur(cle: string, voixClonee = "", femme = false): { eleven: string; openai: string; idEleven: string } | null {
   const variable = cle.toUpperCase().replace(/-/g, "_");
   const elevenKey = s(process.env.ELEVENLABS_API_KEY);
   const openaiKey = s(process.env.OPENAI_TTS_API_KEY) || s(process.env.OPENAI_API_KEY);
@@ -131,7 +131,14 @@ function fournisseur(cle: string, voixClonee = ""): { eleven: string; openai: st
      MAIN SUR VERCEL : c'est la sienne, et elle arrive sans que personne n'ait
      à toucher un réglage. */
   const saVoix = s(voixClonee) || s(process.env[`ELEVENLABS_VOICE_${variable}`]);
-  const idEleven = saVoix || s(process.env.ELEVENLABS_VOICE_ID) || "21m00Tcm4TlvDq8ikWAM";
+  /* UNE VOIX DE FEMME POUR CELLES QUI PARLENT AU FÉMININ, quand toutes les
+     boutiques passent chez ElevenLabs (`SITE_TTS_PROVIDER=elevenlabs`) :
+     une fleuriste ne répond pas avec la voix d'un boucher. */
+  const idEleven =
+    saVoix ||
+    (femme ? s(process.env.ELEVENLABS_VOICE_ID_FEMME) : "") ||
+    s(process.env.ELEVENLABS_VOICE_ID) ||
+    "21m00Tcm4TlvDq8ikWAM";
   const eleven =
     force === "openai" ? false : force === "elevenlabs" ? !!elevenKey : !!elevenKey && (!!saVoix || !openaiKey);
   /* OPENAI RESTE EN RÉSERVE MÊME QUAND ELEVENLABS PARLE : voir `appeler`. */
@@ -153,10 +160,11 @@ function fournisseur(cle: string, voixClonee = ""): { eleven: string; openai: st
  * de suite avec le timbre OpenAI — une autre voix, mais une vraie.
  */
 async function appeler(cle: string, texte: string, o: Options): Promise<Response | { statut: number; erreur: string }> {
-  const f = fournisseur(cle, o.voixClonee);
-  if (!f) return { statut: 503, erreur: "Voix cloud non configurée." };
   const timbre = TIMBRES[cle] ?? TIMBRE_PAR_DEFAUT;
   const variable = cle.toUpperCase().replace(/-/g, "_");
+  const voixOpenAI = s(process.env[`OPENAI_TTS_VOICE_${variable}`]) || (TIMBRES[cle] ? timbre.voix : o.voixParDefaut || timbre.voix);
+  const f = fournisseur(cle, o.voixClonee, /^(shimmer|nova|coral)$/.test(voixOpenAI));
+  if (!f) return { statut: 503, erreur: "Voix cloud non configurée." };
   const { jeu = "", vitesse = 0.96, spontane = false } = o;
 
   if (f.eleven) {
@@ -198,7 +206,7 @@ async function appeler(cle: string, texte: string, o: Options): Promise<Response
       headers: { Authorization: `Bearer ${f.openai}`, "content-type": "application/json" },
       body: JSON.stringify({
         model: s(process.env.OPENAI_TTS_MODEL) || "gpt-4o-mini-tts",
-        voice: s(process.env[`OPENAI_TTS_VOICE_${variable}`]) || (TIMBRES[cle] ? timbre.voix : o.voixParDefaut || timbre.voix),
+        voice: voixOpenAI,
         input: texte,
         instructions: jeu ? `${timbre.ton} ${jeu}` : timbre.ton,
         response_format: "mp3",
