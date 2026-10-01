@@ -156,3 +156,93 @@ async function appeler(token: string, body: Record<string, unknown>, reste = 185
 }
 
 export const normName = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * LES LECTURES QUI N'ATTENDENT PAS — lancer, puis venir chercher.
+ *
+ * « recherche par le nom : 400 run-failed — Actor run did not succeed
+ * (status: TIMED-OUT) »
+ *
+ * L'ACTEUR N'AVAIT PAS FINI, ET C'EST NOUS QUI L'AVIONS ARRÊTÉ. L'appel
+ * « synchrone » attend la fin de la lecture dans la requête, avec le temps
+ * qu'il reste à la fonction ; une fiche, ses photos et ses avis demandent
+ * souvent plus. On ne peut pas allonger une requête au-delà de cinq minutes —
+ * mais on n'a pas besoin de l'attendre : on LANCE la lecture chez Apify, elle
+ * prend le temps qu'il lui faut (dix minutes au plus), et on vient chercher le
+ * résultat quand elle a fini. Voir `avancerLaFiche`.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+const baseApify = () => (process.env.APIFY_BASE_URL || "https://api.apify.com").trim();
+
+export type RunApify = { runId: string; datasetId: string };
+
+/** Lance une lecture et rend son numéro. Répare l'entrée si Apify en refuse un champ. */
+export async function lancerRunApify(
+  token: string,
+  entree: Record<string, unknown>,
+): Promise<(RunApify & { corrige: string[] }) | { erreur: string }> {
+  let body = { ...entree };
+  const corrige: string[] = [];
+  for (let essai = 0; essai < 3; essai++) {
+    try {
+      const r = await fetch(
+        `${baseApify()}/v2/acts/compass~crawler-google-places/runs?token=${encodeURIComponent(token)}&timeout=600`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(30_000),
+        },
+      );
+      const texte = await r.text();
+      let j: { data?: { id?: string; defaultDatasetId?: string }; error?: { type?: string; message?: string } } = {};
+      try {
+        j = JSON.parse(texte);
+      } catch {
+        /* corps illisible */
+      }
+      if (r.ok && j.data?.id) return { runId: j.data.id, datasetId: j.data.defaultDatasetId || "", corrige };
+      const msg = `${r.status} ${j.error?.type || ""} — ${j.error?.message || texte.slice(0, 300)}`.trim();
+      const designes = [...new Set([...msg.matchAll(/input\.([A-Za-z]+)/g)].map((m) => m[1]))].filter(
+        (k) => k in body && !ESSENTIELS.has(k),
+      );
+      if (r.status !== 400 || !designes.length) return { erreur: msg.slice(0, 500) };
+      for (const k of designes) delete body[k];
+      body = { ...body };
+      corrige.push(...designes);
+    } catch (e) {
+      return { erreur: `réseau: ${String(e).slice(0, 160)}` };
+    }
+  }
+  return { erreur: "entrée refusée trois fois" };
+}
+
+/** Où en est une lecture : READY, RUNNING, SUCCEEDED, FAILED, TIMED-OUT, ABORTED… */
+export async function etatRunApify(token: string, runId: string): Promise<{ statut: string; datasetId: string } | { erreur: string }> {
+  try {
+    const r = await fetch(`${baseApify()}/v2/actor-runs/${encodeURIComponent(runId)}?token=${encodeURIComponent(token)}`, {
+      signal: AbortSignal.timeout(15_000),
+      cache: "no-store",
+    });
+    const j = (await r.json().catch(() => ({}))) as { data?: { status?: string; defaultDatasetId?: string } };
+    if (!r.ok || !j.data?.status) return { erreur: `état de la lecture : ${r.status}` };
+    return { statut: j.data.status, datasetId: j.data.defaultDatasetId || "" };
+  } catch (e) {
+    return { erreur: `réseau: ${String(e).slice(0, 160)}` };
+  }
+}
+
+/** Ce qu'une lecture terminée a trouvé. */
+export async function resultatsRunApify(token: string, datasetId: string): Promise<ApifyPlaceItem[] | { erreur: string }> {
+  try {
+    const r = await fetch(
+      `${baseApify()}/v2/datasets/${encodeURIComponent(datasetId)}/items?token=${encodeURIComponent(token)}&clean=true&format=json`,
+      { signal: AbortSignal.timeout(30_000), cache: "no-store" },
+    );
+    const j = await r.json().catch(() => null);
+    if (!r.ok || !Array.isArray(j)) return { erreur: `résultats de la lecture : ${r.status}` };
+    return j as ApifyPlaceItem[];
+  } catch (e) {
+    return { erreur: `réseau: ${String(e).slice(0, 160)}` };
+  }
+}

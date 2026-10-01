@@ -31,7 +31,7 @@
  *
  * FICHIER SERVEUR (jeton Apify).
  */
-import { apifyGoogleMaps, normName } from "@/lib/site-internet/apify";
+import { etatRunApify, lancerRunApify, normName, resultatsRunApify, type RunApify } from "@/lib/site-internet/apify";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isDirectoryUrl } from "@/lib/site-internet/directories";
 
@@ -105,182 +105,259 @@ function extraireMedias(item: Record<string, unknown>): { photos: string[]; revi
   return { photos, reviews };
 }
 
-export async function lireFicheGoogle(
-  token: string,
-  nom: string,
-  ville: string,
-  activite: string,
-  placeIdConnu = "",
-  /** L'heure avant laquelle tout doit être fini (voir `ApifyOptions.finAvant`). */
-  finAvant = Date.now() + 200_000,
-): Promise<FicheLue> {
-  const lue: FicheLue = {
-    trouvee: false,
-    titre: "",
-    photos: [],
-    reviewsTop: [],
-    rating: null,
-    reviews: null,
-    placeId: "",
-    address: "",
-    phone: "",
-    website: "",
-    horaires: [],
-    erreurs: [],
-    corrections: [],
-    menu: "",
-    prix: "",
-    services: [],
+/**
+ * ═══ LA LECTURE EN TROIS TEMPS, SANS JAMAIS L'ATTENDRE ═════════════════════
+ *
+ * « recherche par le nom : 400 run-failed — Actor run did not succeed
+ * (status: TIMED-OUT) ». Le robot d'Apify n'avait pas fini : nous l'attendions
+ * dans la requête, avec le peu de temps qui lui restait — et la version
+ * précédente lui demandait tout d'un coup, fiche, photos et avis.
+ *
+ * ON LANCE, PUIS ON VIENT CHERCHER. Chaque temps est une lecture Apify lancée
+ * en arrière-plan (dix minutes au plus de son côté), dont on garde le numéro
+ * dans le diagnostic (`fiche_run`) :
+ *   1. « recherche » : son nom et sa ville, trois résultats, SANS photos ni
+ *      avis — c'est ce qui rend la recherche rapide, et c'est exactement
+ *      l'appel qui marchait avant ;
+ *   2. « metier » : en secours seulement, si son nom n'a rien donné ;
+ *   3. « medias » : SA fiche, par son repère, avec ses photos et ses avis.
+ * `avancerLaFiche` regarde où en est la lecture et passe au temps suivant.
+ * Ce qui la fait avancer : la boucle lancée à l'inscription (`after`), et la
+ * page du commerçant, qui demande où on en est toutes les cinq secondes.
+ */
+type RunFiche = RunApify & { etape: "recherche" | "metier" | "medias"; lance: string; renommer?: boolean };
+
+const ENTREE_COMMUNE = { language: "fr", countryCode: "fr" };
+const entreeRecherche = (q: string, ville: string, n: number) => ({
+  ...ENTREE_COMMUNE,
+  searchStringsArray: [q],
+  locationQuery: `${ville}, france`,
+  maxCrawledPlacesPerSearch: n,
+  maxImages: 0,
+  maxReviews: 0,
+});
+const entreeMedias = (placeId: string) => ({
+  ...ENTREE_COMMUNE,
+  placeIds: [placeId],
+  maxCrawledPlacesPerSearch: 1,
+  maxImages: 10,
+  maxReviews: 8,
+  reviewsSort: "newest",
+});
+
+/** Une lecture plus vieille que ça est abandonnée : le robot a sa limite à dix minutes. */
+export const LECTURE_PERIMEE_MS = 14 * 60_000;
+
+type Site = { id: string; nom: string; ville: string; activite: string; placeId: string; adresse: string; diag: Record<string, unknown> };
+
+async function lireLeSite(slug: string): Promise<Site | null> {
+  const { data } = await createAdminClient()
+    .from("human_vitrine_sites")
+    .select("id, business_name, city, activite, address, google_place_id, diagnostic")
+    .eq("slug", slug)
+    .eq("channel", "letter")
+    .maybeSingle();
+  const r = (data as Record<string, unknown> | null) ?? null;
+  if (!r) return null;
+  return {
+    id: str(r.id),
+    nom: str(r.business_name),
+    ville: str(r.city),
+    activite: str(r.activite),
+    placeId: str(r.google_place_id),
+    adresse: str(r.address),
+    diag: (r.diagnostic && typeof r.diagnostic === "object" ? r.diagnostic : {}) as Record<string, unknown>,
   };
-  if (!token) {
-    lue.erreurs.push("jeton Apify absent sur ce serveur");
-    return lue;
-  }
-  const loc = `${ville}, france`;
-  const reste = () => finAvant - Date.now();
-  const noter = (etape: string, r: { ok: boolean; error: string; corrige?: string[] }) => {
-    if (!r.ok) lue.erreurs.push(`${etape} : ${r.error || "échec"}`.slice(0, 400));
-    if (r.corrige?.length) lue.corrections.push(`${etape} : ${r.corrige.join(", ")}`);
-  };
-  const COMPLET = { maxImages: 12, maxReviews: 10, reviewsSort: "newest", finAvant };
+}
 
-  /**
-   * ═══ UN SEUL APPEL QUAND C'EST POSSIBLE ══════════════════════════════════
-   *
-   * Chaque appel à Apify relance un navigateur chez eux : trente secondes à
-   * deux minutes. On demandait la fiche, PUIS ses photos et ses avis — deux
-   * fois ce temps. On demande maintenant tout d'un coup, sur les trois
-   * premiers résultats de son nom ; le métier ne sert qu'en secours, et
-   * seulement s'il reste le temps.
-   */
-  let biz: Record<string, unknown> | null = null;
-  let complet = false;
-  if (placeIdConnu) {
-    const r = await apifyGoogleMaps(token, [], loc, 1, { ...COMPLET, placeIds: [placeIdConnu] });
-    noter("fiche (repère connu)", r);
-    biz = r.items[0] ?? null;
-    complet = Boolean(biz);
-  }
-  if (!biz) {
-    const r = await apifyGoogleMaps(token, [`${nom} ${ville}`.trim()], loc, 3, COMPLET);
-    noter("recherche par le nom", r);
-    biz = r.items.find((it) => memeCommerce(str(it.title), nom)) ?? null;
-    complet = Boolean(biz);
-  }
-  if (!biz && activite && reste() > 90_000) {
-    const r = await apifyGoogleMaps(token, [activite], loc, 20, { finAvant });
-    noter("recherche par le métier", r);
-    biz = r.items.find((it) => memeCommerce(str(it.title), nom)) ?? null;
-  }
-  if (!biz) {
-    if (!lue.erreurs.length) lue.erreurs.push(`aucune fiche Google au nom de « ${nom} » à ${ville}`);
-    return lue;
-  }
+const runDe = (diag: Record<string, unknown>): RunFiche | null => {
+  const r = diag.fiche_run && typeof diag.fiche_run === "object" ? (diag.fiche_run as Record<string, unknown>) : null;
+  return r && str(r.runId) ? (r as unknown as RunFiche) : null;
+};
 
-  // SES PHOTOS ET SES AVIS, s'ils ne sont pas venus avec la fiche et qu'il reste le temps.
-  if (!complet && str(biz.placeId) && reste() > 60_000) {
-    const media = await apifyGoogleMaps(token, [], loc, 1, { ...COMPLET, placeIds: [str(biz.placeId)] });
-    noter("photos et avis", media);
-    if (media.items[0]) biz = { ...biz, ...media.items[0] };
-  }
+/**
+ * ÉCRIT SANS ÉCRASER : on part du diagnostic RELU, on n'ajoute que ce que
+ * Google a rendu, et — quand `exigeRun` est donné — on n'écrit que si la
+ * lecture en cours est toujours celle-là. Deux pages ouvertes qui demandent
+ * en même temps n'en lancent ainsi pas deux.
+ */
+async function ecrire(site: Site, diag: Record<string, unknown>, colonnes: Record<string, unknown> = {}, exigeRun?: string): Promise<boolean> {
+  let q = createAdminClient().from("human_vitrine_sites").update({ ...colonnes, diagnostic: diag }).eq("id", site.id);
+  if (exigeRun) q = q.eq("diagnostic->fiche_run->>runId", exigeRun);
+  const { data, error } = await q.select("id");
+  return !error && Array.isArray(data) && data.length > 0;
+}
 
-  lue.trouvee = true;
-  lue.titre = str(biz.title);
-  lue.rating = typeof biz.totalScore === "number" ? biz.totalScore : null;
-  lue.reviews = typeof biz.reviewsCount === "number" ? biz.reviewsCount : null;
-  lue.placeId = str(biz.placeId);
-  lue.address = str(biz.address);
-  lue.website = str(biz.website);
-  lue.phone = str(biz.phone || biz.phoneUnformatted);
-  const oh = Array.isArray(biz.openingHours) ? (biz.openingHours as Array<Record<string, unknown>>) : [];
-  lue.horaires = oh.slice(0, 7).map((h) => ({ jours: str(h.day), horaires: str(h.hours) }));
+/** Ce qu'une fiche Google donne, rangé dans le site (sans rien effacer). */
+function rangerUneFiche(site: Site, biz: Record<string, unknown>, renommer: boolean) {
+  const d = site.diag;
   const m = extraireMedias(biz);
-  lue.photos = m.photos;
-  lue.reviewsTop = m.reviews.filter((r) => r.stars == null || r.stars >= 4).slice(0, 3);
-  lue.menu = /^https?:\/\//i.test(str(biz.menu)) ? str(biz.menu) : "";
-  lue.prix = str(biz.price).slice(0, 30);
-  lue.services = servicesDe(biz);
-  return lue;
+  const prendre = (nouveau: unknown[], ancien: unknown) => (nouveau.length ? nouveau : ancien);
+  const oh = Array.isArray(biz.openingHours) ? (biz.openingHours as Array<Record<string, unknown>>) : [];
+  const diag: Record<string, unknown> = {
+    ...d,
+    places_found: true,
+    photos: prendre(m.photos, d.photos),
+    reviews_top: prendre(m.reviews.filter((r) => r.stars == null || r.stars >= 4).slice(0, 3), d.reviews_top),
+    horaires: prendre(
+      oh.slice(0, 7).map((h) => ({ jours: str(h.day), horaires: str(h.hours) })),
+      d.horaires,
+    ),
+    phone: str(biz.phone || biz.phoneUnformatted) || d.phone || "",
+    menu_url: (/^https?:\/\//i.test(str(biz.menu)) ? str(biz.menu) : "") || d.menu_url || null,
+    prix_moyen: str(biz.price).slice(0, 30) || d.prix_moyen || null,
+    services_google: prendre(servicesDe(biz), d.services_google ?? []),
+  };
+  const colonnes: Record<string, unknown> = {};
+  if (typeof biz.totalScore === "number") colonnes.google_rating = biz.totalScore;
+  if (typeof biz.reviewsCount === "number") colonnes.google_reviews = biz.reviewsCount;
+  if (str(biz.placeId)) colonnes.google_place_id = str(biz.placeId);
+  if (str(biz.address) && !site.adresse) colonnes.address = str(biz.address);
+  // LE NOM QUE GOOGLE ÉCRIT, à l'inscription seulement : « Le Bordeaux »
+  // plutôt que « le bordeaux » tapé vite. Une relecture ne renomme jamais.
+  if (renommer && str(biz.title).length >= 2) colonnes.business_name = str(biz.title).slice(0, 90);
+  const site_web = str(biz.website);
+  if (site_web && !isDirectoryUrl(site_web)) colonnes.source_website = site_web;
+  return { diag, colonnes };
+}
+
+/** Termine la lecture : plus de lecture en cours, et ce qui a échoué est gardé. */
+const fini = (diag: Record<string, unknown>, erreur?: string, trouvee?: boolean) => ({
+  ...diag,
+  fiche_run: null,
+  fiche_en_cours: null,
+  fiche_lue_at: new Date().toISOString(),
+  places_found: trouvee ?? diag.places_found === true,
+  fiche_erreurs: erreur ? [...(Array.isArray(diag.fiche_erreurs) ? diag.fiche_erreurs : []), erreur].slice(-4) : diag.fiche_erreurs ?? [],
+});
+
+/**
+ * LANCE LA LECTURE DE SA FICHE. Par son repère s'il est connu (une seule
+ * lecture, avec ses photos et ses avis), par son nom sinon.
+ */
+export async function lancerLaFiche(slug: string, o: { renommer?: boolean } = {}): Promise<boolean> {
+  const site = await lireLeSite(slug);
+  if (!site) return false;
+  const token = str(process.env.APIFY_TOKEN);
+  const maintenant = new Date().toISOString();
+  if (!token) {
+    await ecrire(site, fini({ ...site.diag, fiche_erreurs: [] }, "jeton Apify absent sur ce serveur", false));
+    return false;
+  }
+  const etape: RunFiche["etape"] = site.placeId ? "medias" : "recherche";
+  const r = await lancerRunApify(token, etape === "medias" ? entreeMedias(site.placeId) : entreeRecherche(`${site.nom} ${site.ville}`.trim(), site.ville, 3));
+  if ("erreur" in r) {
+    await ecrire(site, fini({ ...site.diag, fiche_erreurs: [] }, `lancement de la lecture : ${r.erreur}`, false));
+    return false;
+  }
+  const run: RunFiche = { runId: r.runId, datasetId: r.datasetId, etape, lance: maintenant, renommer: o.renommer };
+  await ecrire(site, {
+    ...site.diag,
+    fiche_run: run,
+    fiche_en_cours: maintenant,
+    fiche_erreurs: [],
+    fiche_corrections: r.corrige.length ? [`${etape} : ${r.corrige.join(", ")}`] : [],
+  });
+  return true;
+}
+
+export type EtatFiche = { enCours: boolean; lue: boolean; photos: number; avis: number; erreurs: string[]; corrections: string[] };
+
+export function etatDeLaFiche(diag: Record<string, unknown>): EtatFiche {
+  const run = runDe(diag);
+  const lance = Date.parse(str(run?.lance ?? diag.fiche_en_cours));
+  return {
+    enCours: Boolean(run || diag.fiche_en_cours) && Number.isFinite(lance) && Date.now() - lance < LECTURE_PERIMEE_MS,
+    lue: diag.places_found === true,
+    photos: Array.isArray(diag.photos) ? diag.photos.length : 0,
+    avis: Array.isArray(diag.reviews_top) ? diag.reviews_top.length : 0,
+    erreurs: (Array.isArray(diag.fiche_erreurs) ? diag.fiche_erreurs : []).map((e) => str(e)).filter(Boolean),
+    corrections: (Array.isArray(diag.fiche_corrections) ? diag.fiche_corrections : []).map((e) => str(e)).filter(Boolean),
+  };
 }
 
 /**
- * ═══ LIRE LA FICHE ET LA RANGER DANS LE SITE — en arrière-plan ═════════════
- *
- * « /api/site-internet/public-generate : 504. » L'inscription attendait la
- * fiche avant de répondre ; quand Apify prenait son temps, la passerelle
- * coupait, et il ne restait qu'un écran d'erreur. La page se crée donc
- * TOUT DE SUITE, et la fiche se lit ensuite (`after`), ici. Sa page affiche
- * « Lecture de votre fiche Google… » et se recharge quand c'est fini.
- *
- * ON NE FAIT QU'AJOUTER : un champ que Google ne rend pas laisse en place ce
- * qui y était. Et le diagnostic est RELU juste avant d'écrire — la photo
- * ClikMe a pu y ranger son état pendant ce temps.
+ * FAIT AVANCER LA LECTURE D'UN TEMPS, SI ELLE A FINI LE PRÉCÉDENT. Rapide :
+ * deux ou trois questions à Apify, jamais d'attente. Rend l'état.
  */
-export async function lireEtRangerLaFiche(
-  slug: string,
-  o: { finAvant?: number; renommer?: boolean } = {},
-): Promise<FicheLue | null> {
-  const supabase = createAdminClient();
-  const lire = async () => {
-    const { data } = await supabase
-      .from("human_vitrine_sites")
-      .select("id, business_name, city, activite, address, google_place_id, diagnostic")
-      .eq("slug", slug)
-      .eq("channel", "letter")
-      .maybeSingle();
-    return (data as Record<string, unknown> | null) ?? null;
-  };
-  const row = await lire();
-  if (!row) return null;
-  const fiche = await lireFicheGoogle(
-    str(process.env.APIFY_TOKEN),
-    str(row.business_name),
-    str(row.city),
-    str(row.activite),
-    str(row.google_place_id),
-    o.finAvant,
-  );
-  if (fiche.erreurs.length || fiche.corrections.length) {
-    console.warn("[fiche-google]", JSON.stringify({ slug, erreurs: fiche.erreurs, corrections: fiche.corrections }));
+export async function avancerLaFiche(slug: string): Promise<EtatFiche | null> {
+  const site = await lireLeSite(slug);
+  if (!site) return null;
+  const run = runDe(site.diag);
+  const token = str(process.env.APIFY_TOKEN);
+  if (!run || !token) return etatDeLaFiche(site.diag);
+
+  // TROP VIEILLE : le robot s'arrête de lui-même à dix minutes.
+  if (Date.now() - Date.parse(run.lance) > LECTURE_PERIMEE_MS) {
+    await ecrire(site, fini(site.diag, `${run.etape} : la lecture n'a pas fini à temps`), {}, run.runId);
+    return etatDeLaFiche((await lireLeSite(slug))?.diag ?? site.diag);
   }
-  const frais = (await lire()) ?? row;
-  const diag = (frais.diagnostic && typeof frais.diagnostic === "object" ? frais.diagnostic : {}) as Record<string, unknown>;
-  const prendre = (nouveau: unknown[], ancien: unknown) => (nouveau.length ? nouveau : ancien);
-  const maj: Record<string, unknown> = {
-    diagnostic: {
-      ...diag,
-      fiche_en_cours: null,
-      fiche_lue_at: new Date().toISOString(),
-      fiche_erreurs: fiche.erreurs,
-      fiche_corrections: fiche.corrections,
-      places_found: fiche.trouvee || diag.places_found === true,
-      photos: prendre(fiche.photos, diag.photos),
-      reviews_top: prendre(fiche.reviewsTop, diag.reviews_top),
-      horaires: prendre(fiche.horaires, diag.horaires),
-      phone: fiche.phone || diag.phone || "",
-      menu_url: fiche.menu || diag.menu_url || null,
-      prix_moyen: fiche.prix || diag.prix_moyen || null,
-      services_google: prendre(fiche.services, diag.services_google ?? []),
-    },
-  };
-  if (fiche.trouvee) {
-    if (fiche.rating != null) maj.google_rating = fiche.rating;
-    if (fiche.reviews != null) maj.google_reviews = fiche.reviews;
-    if (fiche.placeId) maj.google_place_id = fiche.placeId;
-    if (fiche.address && !str(frais.address)) maj.address = fiche.address;
-    // LE NOM QUE GOOGLE ÉCRIT, à l'inscription seulement : « Le Bordeaux »
-    // plutôt que « le bordeaux » tapé vite. Une relecture ne renomme jamais.
-    if (o.renommer && fiche.titre.length >= 2) maj.business_name = fiche.titre.slice(0, 90);
-    if (fiche.website && !isDirectoryUrl(fiche.website)) {
-      maj.source_website = fiche.website;
+  const e = await etatRunApify(token, run.runId);
+  if ("erreur" in e) return etatDeLaFiche(site.diag);
+  if (["READY", "RUNNING", "TIMING-OUT", "ABORTING"].includes(e.statut)) return etatDeLaFiche(site.diag);
+
+  if (e.statut !== "SUCCEEDED") {
+    // LA FICHE EST PEUT-ÊTRE DÉJÀ LÀ : un échec des photos n'efface pas la note.
+    await ecrire(site, fini(site.diag, `${run.etape} : la lecture s'est arrêtée (${e.statut})`), {}, run.runId);
+    return etatDeLaFiche((await lireLeSite(slug))?.diag ?? site.diag);
+  }
+  const items = await resultatsRunApify(token, run.datasetId || e.datasetId);
+  if (!Array.isArray(items)) return etatDeLaFiche(site.diag);
+
+  if (run.etape === "medias") {
+    const biz = items[0];
+    if (!biz) {
+      await ecrire(site, fini(site.diag, "medias : aucune donnée rendue"), {}, run.runId);
+    } else {
+      const { diag, colonnes } = rangerUneFiche(site, biz, Boolean(run.renommer));
+      await ecrire(site, fini(diag, undefined, true), colonnes, run.runId);
     }
+    return etatDeLaFiche((await lireLeSite(slug))?.diag ?? site.diag);
   }
-  await supabase.from("human_vitrine_sites").update(maj).eq("id", str(frais.id));
-  return fiche;
+
+  // « recherche » ou « metier » : est-ce bien lui ?
+  const biz = items.find((it) => memeCommerce(str(it.title), site.nom)) ?? null;
+  if (!biz) {
+    if (run.etape === "recherche" && site.activite) {
+      const r = await lancerRunApify(token, entreeRecherche(site.activite, site.ville, 20));
+      if (!("erreur" in r)) {
+        const suite: RunFiche = { runId: r.runId, datasetId: r.datasetId, etape: "metier", lance: new Date().toISOString(), renommer: run.renommer };
+        await ecrire(site, { ...site.diag, fiche_run: suite }, {}, run.runId);
+        return etatDeLaFiche({ ...site.diag, fiche_run: suite });
+      }
+    }
+    await ecrire(site, fini(site.diag, `aucune fiche Google au nom de « ${site.nom} » à ${site.ville}`, false), {}, run.runId);
+    return etatDeLaFiche((await lireLeSite(slug))?.diag ?? site.diag);
+  }
+
+  // TROUVÉ : on range tout de suite ce que la recherche donne (note, adresse,
+  // horaires, photo principale), puis on lance la lecture de ses photos et avis.
+  const { diag, colonnes } = rangerUneFiche(site, biz, Boolean(run.renommer));
+  const placeId = str(biz.placeId);
+  const r = placeId ? await lancerRunApify(token, entreeMedias(placeId)) : null;
+  if (r && !("erreur" in r)) {
+    const suite: RunFiche = { runId: r.runId, datasetId: r.datasetId, etape: "medias", lance: new Date().toISOString(), renommer: run.renommer };
+    await ecrire(site, { ...diag, fiche_run: suite }, colonnes, run.runId);
+  } else {
+    await ecrire(site, fini(diag, r && "erreur" in r ? `medias : ${r.erreur}` : undefined, true), colonnes, run.runId);
+  }
+  return etatDeLaFiche((await lireLeSite(slug))?.diag ?? site.diag);
 }
 
-/** Une lecture « en cours » depuis plus longtemps que ça est morte en route. */
-export const LECTURE_PERIMEE_MS = 6 * 60_000;
+/**
+ * CONDUIT LA LECTURE JUSQU'AU BOUT, PENDANT LE TEMPS QU'ON A. Pour la boucle
+ * lancée à l'inscription : on redemande toutes les huit secondes. Si le
+ * temps manque, la page du commerçant prend le relais.
+ */
+export async function conduireLaFiche(slug: string, finAvant: number): Promise<EtatFiche | null> {
+  let etat: EtatFiche | null = null;
+  while (Date.now() < finAvant - 10_000) {
+    await new Promise((ok) => setTimeout(ok, 8_000));
+    etat = await avancerLaFiche(slug);
+    if (!etat || !etat.enCours) return etat;
+  }
+  return etat;
+}
 
 /**
  * LA RAISON, DITE AU COMMERÇANT. « 402 not-enough-usage-to-run-paid-actor »
@@ -295,6 +372,8 @@ export function raisonLisible(erreur: string): string {
   if (/jeton Apify absent/i.test(erreur)) return "la lecture des fiches Google n'est pas configurée sur ClikMe (de notre côté, pas du vôtre)";
   if (/402|usage|limit|credit|quota/i.test(erreur)) return `le service qui lit les fiches Google a atteint sa limite (de notre côté, pas du vôtre)${entre}`;
   if (/401|403|token|unauthori[sz]ed|forbidden/i.test(erreur)) return `l'accès au service qui lit les fiches Google a été refusé (de notre côté)${entre}`;
-  if (/réseau|timeout|timed out|408|504|abort/i.test(erreur)) return `le service qui lit les fiches Google n'a pas répondu à temps${entre}`;
+  if (/n'a pas fini à temps|timed[- ]out|timeout|réseau|408|504|abort/i.test(erreur))
+    return `la lecture de votre fiche a pris trop de temps chez notre prestataire — relancez-la${entre}`;
+  if (/s'est arrêtée|failed|aborted/i.test(erreur)) return `la lecture de votre fiche s'est arrêtée chez notre prestataire — relancez-la${entre}`;
   return `le service qui lit les fiches Google n'a pas répondu correctement${entre}`;
 }

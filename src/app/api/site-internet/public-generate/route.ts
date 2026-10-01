@@ -14,7 +14,7 @@ import { NextResponse, after } from "next/server";
 import { createHash } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/popey-marketplace";
-import { lireEtRangerLaFiche } from "@/lib/site-internet/fiche-google";
+import { conduireLaFiche, lancerLaFiche } from "@/lib/site-internet/fiche-google";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { fabriquerCouverture } from "@/lib/site-internet/couverture";
 import { nomPropre } from "@/lib/site-internet/nom-propre";
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
    * aucune page. La page se crée maintenant tout de suite ; sa fiche se lit
    * juste après, en arrière-plan (`after`), et la page affiche « Lecture de
    * votre fiche Google… » puis se recharge avec ses avis et ses photos. Voir
-   * `lireEtRangerLaFiche`.
+   * `lancerLaFiche` et `avancerLaFiche`.
    */
   const debut = Date.now();
   const profil = resolveMetier(activite).profil;
@@ -161,8 +161,12 @@ export async function POST(request: Request) {
   const origine = new URL(request.url).origin;
   after(async () => {
     try {
-      const fiche = await lireEtRangerLaFiche(slug, { finAvant: debut + 235_000, renommer: true });
-      const aDesPhotos = Boolean(photoValide) || Boolean(fiche?.photos.length);
+      // LA LECTURE EST LANCÉE CHEZ APIFY, PUIS SUIVIE ; elle continue même si
+      // ce suivi s'arrête — sa page prend le relais. Voir `avancerLaFiche`.
+      const lancee = await lancerLaFiche(slug, { renommer: true });
+      const etat = lancee ? await conduireLaFiche(slug, debut + 280_000) : null;
+      const aDesPhotos = Boolean(photoValide) || Boolean(etat?.photos);
+      // LA PHOTO CLIKME S'IL RESTE LE TEMPS ; sinon sa page la lancera.
       if (aDesPhotos && Date.now() - debut < 200_000) {
         const r = await fabriquerCouverture(slug, origine);
         if (r.raison) console.warn("[public-generate] couverture", JSON.stringify({ slug, raison: r.raison }));

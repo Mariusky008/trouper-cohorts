@@ -44,7 +44,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { noterClic } from "@/lib/direct/publications";
 import { carteDepuisFiche, enGrand } from "@/lib/site-internet/carte-depuis-fiche";
 import { couvertureDuDiagnostic, photosCandidates } from "@/lib/site-internet/couverture";
-import { LECTURE_PERIMEE_MS, raisonLisible } from "@/lib/site-internet/fiche-google";
+import { etatDeLaFiche, raisonLisible } from "@/lib/site-internet/fiche-google";
 import { COLONNES_FICHE, construireFiche } from "@/lib/site-internet/fiche-du-site";
 import { carteDeDemo, estAdresseDeDemo, listeDesDemos } from "@/lib/site-internet/fiches-demo";
 import { PageBoutique } from "./page-boutique";
@@ -117,20 +117,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
  */
 function ficheLue(row: Record<string, unknown>): { lue: boolean; erreurs: string[]; detail?: string; enCours: boolean } {
   const d = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
-  // UNE LECTURE LANCÉE IL Y A MOINS DE SIX MINUTES EST EN COURS — voir `lireEtRangerLaFiche`.
-  const lancee = Date.parse(String(d.fiche_en_cours ?? ""));
-  const enCours = Number.isFinite(lancee) && Date.now() - lancee < LECTURE_PERIMEE_MS;
-  const erreurs = (Array.isArray(d.fiche_erreurs) ? d.fiche_erreurs : []).map((e) => String(e)).filter(Boolean);
+  const e = etatDeLaFiche(d);
   const rien =
     row.google_rating == null &&
     !(Array.isArray(d.photos) && d.photos.length) &&
     !(Array.isArray(d.reviews_top) && d.reviews_top.length);
   return {
-    lue: d.places_found === false ? false : !rien,
-    erreurs: erreurs.map(raisonLisible),
-    // LE MESSAGE EXACT, POUR NOUS : c'est lui qui nomme le champ refusé.
-    detail: erreurs.length ? erreurs.join(" | ").slice(0, 600) : undefined,
-    enCours,
+    lue: e.lue || (d.places_found !== false && !rien),
+    erreurs: e.erreurs.map(raisonLisible),
+    // LE MESSAGE EXACT, POUR NOUS : c'est lui qui dit ce qui a coincé.
+    detail: e.erreurs.length || e.corrections.length ? [...e.erreurs, ...e.corrections].join(" | ").slice(0, 600) : undefined,
+    enCours: e.enCours,
   };
 }
 

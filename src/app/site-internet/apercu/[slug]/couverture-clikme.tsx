@@ -241,7 +241,7 @@ export function VeilleCouverture({
       <>
         <style>{STYLE_VEILLE}</style>
         <div className="ccl-veille" role="status">
-          🔎 Lecture de votre fiche Google… jusqu&apos;à trois minutes
+          🔎 Lecture de votre fiche Google… une à trois minutes
         </div>
       </>
     );
