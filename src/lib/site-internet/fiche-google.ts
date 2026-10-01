@@ -32,6 +32,8 @@
  * FICHIER SERVEUR (jeton Apify).
  */
 import { apifyGoogleMaps, normName } from "@/lib/site-internet/apify";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { isDirectoryUrl } from "@/lib/site-internet/directories";
 
 const str = (v: unknown) => String(v ?? "").trim();
 
@@ -109,6 +111,8 @@ export async function lireFicheGoogle(
   ville: string,
   activite: string,
   placeIdConnu = "",
+  /** L'heure avant laquelle tout doit être fini (voir `ApifyOptions.finAvant`). */
+  finAvant = Date.now() + 200_000,
 ): Promise<FicheLue> {
   const lue: FicheLue = {
     trouvee: false,
@@ -133,31 +137,51 @@ export async function lireFicheGoogle(
     return lue;
   }
   const loc = `${ville}, france`;
+  const reste = () => finAvant - Date.now();
   const noter = (etape: string, r: { ok: boolean; error: string; corrige?: string[] }) => {
     if (!r.ok) lue.erreurs.push(`${etape} : ${r.error || "échec"}`.slice(0, 400));
     if (r.corrige?.length) lue.corrections.push(`${etape} : ${r.corrige.join(", ")}`);
   };
+  const COMPLET = { maxImages: 12, maxReviews: 10, reviewsSort: "newest", finAvant };
 
-  // ── 1. LA FICHE : par son repère s'il est connu, sinon par son nom, puis par son métier ──
+  /**
+   * ═══ UN SEUL APPEL QUAND C'EST POSSIBLE ══════════════════════════════════
+   *
+   * Chaque appel à Apify relance un navigateur chez eux : trente secondes à
+   * deux minutes. On demandait la fiche, PUIS ses photos et ses avis — deux
+   * fois ce temps. On demande maintenant tout d'un coup, sur les trois
+   * premiers résultats de son nom ; le métier ne sert qu'en secours, et
+   * seulement s'il reste le temps.
+   */
   let biz: Record<string, unknown> | null = null;
+  let complet = false;
   if (placeIdConnu) {
-    const r = await apifyGoogleMaps(token, [], loc, 1, { placeIds: [placeIdConnu] });
+    const r = await apifyGoogleMaps(token, [], loc, 1, { ...COMPLET, placeIds: [placeIdConnu] });
     noter("fiche (repère connu)", r);
     biz = r.items[0] ?? null;
+    complet = Boolean(biz);
   }
   if (!biz) {
-    const r = await apifyGoogleMaps(token, [`${nom} ${ville}`.trim()], loc, 5);
+    const r = await apifyGoogleMaps(token, [`${nom} ${ville}`.trim()], loc, 3, COMPLET);
     noter("recherche par le nom", r);
     biz = r.items.find((it) => memeCommerce(str(it.title), nom)) ?? null;
+    complet = Boolean(biz);
   }
-  if (!biz && activite) {
-    const r = await apifyGoogleMaps(token, [activite], loc, 20);
+  if (!biz && activite && reste() > 90_000) {
+    const r = await apifyGoogleMaps(token, [activite], loc, 20, { finAvant });
     noter("recherche par le métier", r);
     biz = r.items.find((it) => memeCommerce(str(it.title), nom)) ?? null;
   }
   if (!biz) {
     if (!lue.erreurs.length) lue.erreurs.push(`aucune fiche Google au nom de « ${nom} » à ${ville}`);
     return lue;
+  }
+
+  // SES PHOTOS ET SES AVIS, s'ils ne sont pas venus avec la fiche et qu'il reste le temps.
+  if (!complet && str(biz.placeId) && reste() > 60_000) {
+    const media = await apifyGoogleMaps(token, [], loc, 1, { ...COMPLET, placeIds: [str(biz.placeId)] });
+    noter("photos et avis", media);
+    if (media.items[0]) biz = { ...biz, ...media.items[0] };
   }
 
   lue.trouvee = true;
@@ -170,28 +194,93 @@ export async function lireFicheGoogle(
   lue.phone = str(biz.phone || biz.phoneUnformatted);
   const oh = Array.isArray(biz.openingHours) ? (biz.openingHours as Array<Record<string, unknown>>) : [];
   lue.horaires = oh.slice(0, 7).map((h) => ({ jours: str(h.day), horaires: str(h.hours) }));
-  // LA PHOTO PRINCIPALE D'ABORD : le second appel ne peut qu'ajouter.
-  lue.photos = extraireMedias(biz).photos;
+  const m = extraireMedias(biz);
+  lue.photos = m.photos;
+  lue.reviewsTop = m.reviews.filter((r) => r.stars == null || r.stars >= 4).slice(0, 3);
   lue.menu = /^https?:\/\//i.test(str(biz.menu)) ? str(biz.menu) : "";
   lue.prix = str(biz.price).slice(0, 30);
   lue.services = servicesDe(biz);
-
-  // ── 2. SES PHOTOS ET SES AVIS, en ciblant SA fiche ──
-  const media = lue.placeId
-    ? await apifyGoogleMaps(token, [], loc, 1, { maxImages: 12, maxReviews: 10, reviewsSort: "newest", placeIds: [lue.placeId] })
-    : await apifyGoogleMaps(token, [`${nom} ${ville}`], loc, 2, { maxImages: 12, maxReviews: 10, reviewsSort: "newest" });
-  noter("photos et avis", media);
-  const it = lue.placeId ? media.items[0] : media.items.find((x) => memeCommerce(str(x.title), nom));
-  if (it) {
-    const m = extraireMedias(it);
-    if (m.photos.length) lue.photos = m.photos;
-    if (!lue.menu && /^https?:\/\//i.test(str(it.menu))) lue.menu = str(it.menu);
-    if (!lue.prix) lue.prix = str(it.price).slice(0, 30);
-    if (!lue.services.length) lue.services = servicesDe(it);
-    lue.reviewsTop = m.reviews.filter((r) => r.stars == null || r.stars >= 4).slice(0, 3);
-  }
   return lue;
 }
+
+/**
+ * ═══ LIRE LA FICHE ET LA RANGER DANS LE SITE — en arrière-plan ═════════════
+ *
+ * « /api/site-internet/public-generate : 504. » L'inscription attendait la
+ * fiche avant de répondre ; quand Apify prenait son temps, la passerelle
+ * coupait, et il ne restait qu'un écran d'erreur. La page se crée donc
+ * TOUT DE SUITE, et la fiche se lit ensuite (`after`), ici. Sa page affiche
+ * « Lecture de votre fiche Google… » et se recharge quand c'est fini.
+ *
+ * ON NE FAIT QU'AJOUTER : un champ que Google ne rend pas laisse en place ce
+ * qui y était. Et le diagnostic est RELU juste avant d'écrire — la photo
+ * ClikMe a pu y ranger son état pendant ce temps.
+ */
+export async function lireEtRangerLaFiche(
+  slug: string,
+  o: { finAvant?: number; renommer?: boolean } = {},
+): Promise<FicheLue | null> {
+  const supabase = createAdminClient();
+  const lire = async () => {
+    const { data } = await supabase
+      .from("human_vitrine_sites")
+      .select("id, business_name, city, activite, address, google_place_id, diagnostic")
+      .eq("slug", slug)
+      .eq("channel", "letter")
+      .maybeSingle();
+    return (data as Record<string, unknown> | null) ?? null;
+  };
+  const row = await lire();
+  if (!row) return null;
+  const fiche = await lireFicheGoogle(
+    str(process.env.APIFY_TOKEN),
+    str(row.business_name),
+    str(row.city),
+    str(row.activite),
+    str(row.google_place_id),
+    o.finAvant,
+  );
+  if (fiche.erreurs.length || fiche.corrections.length) {
+    console.warn("[fiche-google]", JSON.stringify({ slug, erreurs: fiche.erreurs, corrections: fiche.corrections }));
+  }
+  const frais = (await lire()) ?? row;
+  const diag = (frais.diagnostic && typeof frais.diagnostic === "object" ? frais.diagnostic : {}) as Record<string, unknown>;
+  const prendre = (nouveau: unknown[], ancien: unknown) => (nouveau.length ? nouveau : ancien);
+  const maj: Record<string, unknown> = {
+    diagnostic: {
+      ...diag,
+      fiche_en_cours: null,
+      fiche_lue_at: new Date().toISOString(),
+      fiche_erreurs: fiche.erreurs,
+      fiche_corrections: fiche.corrections,
+      places_found: fiche.trouvee || diag.places_found === true,
+      photos: prendre(fiche.photos, diag.photos),
+      reviews_top: prendre(fiche.reviewsTop, diag.reviews_top),
+      horaires: prendre(fiche.horaires, diag.horaires),
+      phone: fiche.phone || diag.phone || "",
+      menu_url: fiche.menu || diag.menu_url || null,
+      prix_moyen: fiche.prix || diag.prix_moyen || null,
+      services_google: prendre(fiche.services, diag.services_google ?? []),
+    },
+  };
+  if (fiche.trouvee) {
+    if (fiche.rating != null) maj.google_rating = fiche.rating;
+    if (fiche.reviews != null) maj.google_reviews = fiche.reviews;
+    if (fiche.placeId) maj.google_place_id = fiche.placeId;
+    if (fiche.address && !str(frais.address)) maj.address = fiche.address;
+    // LE NOM QUE GOOGLE ÉCRIT, à l'inscription seulement : « Le Bordeaux »
+    // plutôt que « le bordeaux » tapé vite. Une relecture ne renomme jamais.
+    if (o.renommer && fiche.titre.length >= 2) maj.business_name = fiche.titre.slice(0, 90);
+    if (fiche.website && !isDirectoryUrl(fiche.website)) {
+      maj.source_website = fiche.website;
+    }
+  }
+  await supabase.from("human_vitrine_sites").update(maj).eq("id", str(frais.id));
+  return fiche;
+}
+
+/** Une lecture « en cours » depuis plus longtemps que ça est morte en route. */
+export const LECTURE_PERIMEE_MS = 6 * 60_000;
 
 /**
  * LA RAISON, DITE AU COMMERÇANT. « 402 not-enough-usage-to-run-paid-actor »

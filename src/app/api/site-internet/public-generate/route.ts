@@ -14,8 +14,7 @@ import { NextResponse, after } from "next/server";
 import { createHash } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/popey-marketplace";
-import { lireFicheGoogle } from "@/lib/site-internet/fiche-google";
-import { isDirectoryUrl } from "@/lib/site-internet/directories";
+import { lireEtRangerLaFiche } from "@/lib/site-internet/fiche-google";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { fabriquerCouverture } from "@/lib/site-internet/couverture";
 import { nomPropre } from "@/lib/site-internet/nom-propre";
@@ -98,62 +97,52 @@ export async function POST(request: Request) {
     /* colonne metadata absente → on continue sans compteur (best-effort) */
   }
 
-  // ── 1 et 2. SA FICHE GOOGLE : son nom d'abord, le métier en secours ─────────
-  // Tout est dans `lib/site-internet/fiche-google.ts`, et la page s'en sert
-  // aussi pour la relire. CE QUI A ÉCHOUÉ EST GARDÉ (`fiche_erreurs`) : une
-  // page vide doit pouvoir dire pourquoi.
-  const fiche = await lireFicheGoogle(apifyToken, businessName, city, activite);
-  if (fiche.erreurs.length) {
-    console.warn("[public-generate] fiche Google", JSON.stringify({ nom: businessName, ville: city, erreurs: fiche.erreurs }));
-  }
-  const biz = fiche.trouvee ? fiche : null;
-  const { photos, reviewsTop, rating, reviews, placeId, address, phone, horaires } = fiche;
-  const rawWebsite = fiche.website;
-
-  const websiteIsDirectory = isDirectoryUrl(rawWebsite);
+  /**
+   * ═══ LA PAGE D'ABORD, LA FICHE ENSUITE ══════════════════════════════════
+   *
+   * « /api/site-internet/public-generate : 504. » On lisait sa fiche Google
+   * AVANT de créer sa page, et Apify prend de trente secondes à plusieurs
+   * minutes : la passerelle coupait, il ne restait qu'un écran d'erreur, et
+   * aucune page. La page se crée maintenant tout de suite ; sa fiche se lit
+   * juste après, en arrière-plan (`after`), et la page affiche « Lecture de
+   * votre fiche Google… » puis se recharge avec ses avis et ses photos. Voir
+   * `lireEtRangerLaFiche`.
+   */
+  const debut = Date.now();
   const profil = resolveMetier(activite).profil;
-  const variant: "A" | "B" = rawWebsite && !websiteIsDirectory ? "B" : "A";
-
-  // ── 3. Création de la maquette (channel "letter" pour être servie par /apercu) ─
   const baseSlug = slugify(businessName).slice(0, 50) || "site";
   const suffix = slugify(crypto.randomUUID()).slice(0, 6) || String(Date.now()).slice(-6);
   const slug = `${baseSlug}-${suffix}`.slice(0, 80);
+  const maintenant = new Date().toISOString();
 
   const row = {
     slug,
     channel: "letter" as const,
-    /* LE NOM QUE GOOGLE ÉCRIT, QUAND C'EST BIEN LA SIENNE : « Le Bordeaux »,
-       pas « le bordeaux » tapé vite. Sinon le sien, redressé s'il est tout en
-       minuscules — voir `nom-propre.ts`. */
-    business_name:
-      biz && fiche.titre.length >= 2 ? fiche.titre.slice(0, 90) : nomPropre(businessName),
+    // SON NOM, REDRESSÉ S'IL EST TOUT EN MINUSCULES ; celui que Google écrit
+    // le remplacera dès que la fiche sera lue.
+    business_name: nomPropre(businessName),
     city,
     activite,
-    address,
-    source_website: websiteIsDirectory ? "" : rawWebsite,
-    variant,
-    google_rating: rating,
-    google_reviews: reviews,
-    google_place_id: placeId || null,
+    address: "",
+    source_website: "",
+    variant: "A" as const,
+    google_rating: null,
+    google_reviews: null,
+    google_place_id: null,
     diagnostic: {
       source: "apify",
-      places_found: Boolean(biz),
-      fiche_erreurs: fiche.erreurs,
-      fiche_corrections: fiche.corrections,
-      menu_url: fiche.menu || null,
-      prix_moyen: fiche.prix || null,
-      services_google: fiche.services,
-      directory_url: websiteIsDirectory ? rawWebsite : null,
+      places_found: null,
+      fiche_en_cours: maintenant,
       profil,
-      photos,
-      reviews_top: reviewsTop,
-      horaires,
-      phone,
-      ran_at: new Date().toISOString(),
+      photos: [],
+      reviews_top: [],
+      horaires: [],
+      phone: "",
+      ran_at: maintenant,
     },
     letter_status: "draft" as const,
     ...(photoValide ? { gallery_photos: [photoValide] } : {}),
-    metadata: { self_serve: true, self_serve_ip: ipHash, self_serve_at: new Date().toISOString() },
+    metadata: { self_serve: true, self_serve_ip: ipHash, self_serve_at: maintenant },
   };
 
   const { error } = await supabase.from("human_vitrine_sites").insert(row);
@@ -162,28 +151,26 @@ export async function POST(request: Request) {
   }
 
   /**
-   * ═══ LA PHOTO CLIKME SE FABRIQUE PENDANT QU'IL DECOUVRE SA PAGE ══════════
+   * ═══ EN ARRIÈRE-PLAN : SA FICHE, PUIS SA PHOTO CLIKME ════════════════════
    *
-   * « Pour chaque inscription, on aurait pendant la création du site une étape
-   * qui consisterait à choisir la photo la plus appropriée. »
-   *
-   * ELLE NE RETARDE PAS LA PAGE : le rendu prend de vingt secondes à une
-   * minute, et il n'a pas à les attendre devant un sablier. La page s'ouvre
-   * avec sa photo d'origine ; la couverture ClikMe la remplace dès qu'elle est
-   * prête, et sa page le lui dit. Sans aucune photo — ni déposée, ni sur
-   * Google —, il n'y a rien à transformer, et rien n'est lancé.
+   * La fiche a jusqu'à quatre minutes après le début de la requête — la
+   * fonction en a cinq. La photo ClikMe part ensuite s'il reste de quoi la
+   * faire ; sinon sa page la lancera à sa prochaine visite. Sans aucune photo
+   * — ni déposée, ni sur Google —, il n'y a rien à transformer.
    */
-  if (photoValide || photos.length) {
-    const origine = new URL(request.url).origin;
-    after(async () => {
-      try {
+  const origine = new URL(request.url).origin;
+  after(async () => {
+    try {
+      const fiche = await lireEtRangerLaFiche(slug, { finAvant: debut + 235_000, renommer: true });
+      const aDesPhotos = Boolean(photoValide) || Boolean(fiche?.photos.length);
+      if (aDesPhotos && Date.now() - debut < 200_000) {
         const r = await fabriquerCouverture(slug, origine);
         if (r.raison) console.warn("[public-generate] couverture", JSON.stringify({ slug, raison: r.raison }));
-      } catch (e) {
-        console.warn("[public-generate] couverture", JSON.stringify({ slug, erreur: e instanceof Error ? e.message : String(e) }));
       }
-    });
-  }
+    } catch (e) {
+      console.warn("[public-generate] arrière-plan", JSON.stringify({ slug, erreur: e instanceof Error ? e.message : String(e) }));
+    }
+  });
 
-  return NextResponse.json({ slug, found: Boolean(biz) }, { status: 201 });
+  return NextResponse.json({ slug }, { status: 201 });
 }

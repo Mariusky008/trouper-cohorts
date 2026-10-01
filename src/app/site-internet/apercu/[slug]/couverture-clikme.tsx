@@ -139,14 +139,44 @@ export function VeilleCouverture({
   initial: Etat;
   aDesPhotos: boolean;
   /** Sa fiche Google a-t-elle été lue, et sinon pourquoi. */
-  fiche?: { lue: boolean; erreurs: string[]; detail?: string };
+  fiche?: { lue: boolean; erreurs: string[]; detail?: string; enCours?: boolean };
 }) {
   const { etat, demander, envoyerPhoto, occupe, dit } = useCouverture(slug, initial);
   const router = useRouter();
   const [relit, setRelit] = useState(false);
   const [ficheDit, setFicheDit] = useState("");
   const [ficheDetail, setFicheDetail] = useState(fiche?.detail ?? "");
-  /** Relit sa fiche Google : jusqu'à une minute, puis la page se recharge avec. */
+  /**
+   * ═══ LA FICHE SE LIT EN ARRIÈRE-PLAN ; LA PAGE ATTEND, PUIS SE RECHARGE ══
+   *
+   * La lecture tourne côté serveur (voir `/api/site-internet/fiche-google`) :
+   * la page demande où elle en est toutes les cinq secondes, et se relit quand
+   * c'est fini — ses avis, sa note et ses photos y entrent sans qu'il ait rien
+   * à toucher. Un téléphone qui perd le réseau ne perd pas la lecture.
+   */
+  const [ficheEnCours, setFicheEnCours] = useState(Boolean(fiche?.enCours));
+  useEffect(() => setFicheEnCours(Boolean(fiche?.enCours)), [fiche?.enCours]);
+  useEffect(() => {
+    if (!ficheEnCours) return;
+    const t = window.setInterval(async () => {
+      try {
+        const r = await fetch(`/api/site-internet/fiche-google?slug=${encodeURIComponent(slug)}`, { cache: "no-store" });
+        const j = (await r.json()) as { enCours?: boolean; lue?: boolean; raison?: string; detail?: string; photos?: number; avis?: number };
+        if (j.enCours) return;
+        setFicheEnCours(false);
+        if (j.detail) setFicheDetail(j.detail);
+        setFicheDit(
+          j.lue
+            ? `Fiche lue : ${j.photos ?? 0} photo${(j.photos ?? 0) > 1 ? "s" : ""}, ${j.avis ?? 0} avis.`
+            : j.raison || "La fiche n'a pas pu être lue.",
+        );
+        router.refresh();
+      } catch {
+        /* réseau coupé : on redemandera au tour suivant */
+      }
+    }, 5000);
+    return () => window.clearInterval(t);
+  }, [ficheEnCours, slug, router]);
   const relire = async () => {
     setRelit(true);
     setFicheDit("");
@@ -156,14 +186,12 @@ export function VeilleCouverture({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ slug }),
       });
-      const j = (await r.json()) as { ok?: boolean; raison?: string; photos?: number; avis?: number; detail?: string };
+      const j = (await r.json()) as { ok?: boolean; enCours?: boolean; raison?: string; detail?: string };
       if (j.detail) setFicheDetail(j.detail);
-      if (j.ok) {
-        setFicheDit(`Fiche lue : ${j.photos ?? 0} photo${(j.photos ?? 0) > 1 ? "s" : ""}, ${j.avis ?? 0} avis.`);
-        router.refresh();
-      } else setFicheDit(j.raison || "La fiche n'a pas pu être lue.");
+      if (j.enCours) setFicheEnCours(true);
+      else if (!j.ok) setFicheDit(j.raison || "La fiche n'a pas pu être relue.");
     } catch {
-      setFicheDit("La lecture n'a pas abouti. Réessayez dans un instant.");
+      setFicheDit("La demande n'est pas partie. Réessayez dans un instant.");
     } finally {
       setRelit(false);
     }
@@ -208,6 +236,16 @@ export function VeilleCouverture({
    * raison, et propose de la relire : c'est d'elle que viennent les photos,
    * les avis, la note — et donc aussi la photo ClikMe.
    */
+  if (ficheEnCours) {
+    return (
+      <>
+        <style>{STYLE_VEILLE}</style>
+        <div className="ccl-veille" role="status">
+          🔎 Lecture de votre fiche Google… jusqu&apos;à trois minutes
+        </div>
+      </>
+    );
+  }
   if (fiche && !fiche.lue && !ferme && !couvertureFaite(etat)) {
     const raison = fiche.erreurs[0];
     return (
@@ -224,7 +262,7 @@ export function VeilleCouverture({
           </span>
           <div>
             <button type="button" className="plein" disabled={relit} onClick={relire}>
-              {relit ? "Lecture… jusqu'à une minute" : "Relire ma fiche Google"}
+              {relit ? "Envoi…" : "Relire ma fiche Google"}
             </button>
             <EnvoyerPhoto onPhoto={envoyerPhoto} desactive={occupe || relit}>
               {occupe ? "Envoi…" : "Envoyer une photo"}

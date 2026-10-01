@@ -6,7 +6,28 @@
 export type ApifyPlaceItem = Record<string, unknown>;
 export type ApifyResult = { items: ApifyPlaceItem[]; ok: boolean; status: number; error: string };
 
-export type ApifyOptions = { maxImages?: number; maxReviews?: number; reviewsSort?: string; placeIds?: string[] };
+export type ApifyOptions = {
+  maxImages?: number;
+  maxReviews?: number;
+  reviewsSort?: string;
+  placeIds?: string[];
+  /**
+   * L'HEURE (en millisecondes) AVANT LAQUELLE TOUT DOIT ÊTRE FINI.
+   *
+   * « /api/site-internet/public-generate : 504 ». Chaque appel pouvait durer
+   * trois minutes, et la réparation en rejouait jusqu'à quatre : bien plus
+   * que les cinq minutes qu'une fonction a le droit de vivre. Chaque appel
+   * reçoit donc ce qui reste, et on ne rejoue pas sans le temps de le faire.
+   */
+  finAvant?: number;
+};
+
+/**
+ * Le temps laissé à un appel : ce qui reste, plafonné à deux minutes. Sans
+ * échéance (la découverte d'un secteur, côté administration), on garde les
+ * trois minutes d'avant : trente lieux d'un coup ne se lisent pas en deux.
+ */
+const tempsPour = (finAvant?: number) => (finAvant ? Math.min(120_000, finAvant - Date.now()) : 185_000);
 
 /**
  * ═══ UN « 400 » D'APIFY SE RÉPARE AU LIEU DE TOUT FAIRE TOMBER ═════════════
@@ -57,8 +78,16 @@ export async function apifyGoogleMaps(
   const corrige: string[] = [];
   let dernier: ApifyResult = { items: [], ok: false, status: 0, error: "" };
   for (let essai = 0; essai < 4; essai++) {
-    dernier = await appeler(token, body);
+    const reste = tempsPour(opts?.finAvant);
+    if (reste < 15_000) {
+      if (!essai) dernier = { items: [], ok: false, status: 0, error: "délai : plus le temps de lire la fiche" };
+      break;
+    }
+    dernier = await appeler(token, body, reste);
     if (dernier.ok || dernier.status !== 400) break;
+    // UN REFUS DE L'ENTRÉE TOMBE EN UNE SECONDE ; UN ÉCHEC DU CRAWL, LUI, A
+    // DÉJÀ COÛTÉ SON TEMPS. On ne le rejoue qu'une fois.
+    if (!/invalid-input|input/i.test(dernier.error) && essai >= 1) break;
     const designes = [...new Set([...dernier.error.matchAll(/input\.([A-Za-z]+)/g)].map((m) => m[1]))];
     const retirables = designes.filter((k) => k in body && !ESSENTIELS.has(k));
     const avant = JSON.stringify(body);
@@ -91,16 +120,18 @@ export async function apifyGoogleMaps(
   return corrige.length ? { ...dernier, corrige } : dernier;
 }
 
-async function appeler(token: string, body: Record<string, unknown>): Promise<ApifyResult> {
+async function appeler(token: string, body: Record<string, unknown>, reste = 185_000): Promise<ApifyResult> {
   try {
     const res = await fetch(
       // L'ADRESSE EST SURCHARGEABLE POUR LA RECETTE, comme celle de Gemini :
       // sans jeton, un faux Apify permet de mesurer tout le chemin.
-      `${(process.env.APIFY_BASE_URL || "https://api.apify.com").trim()}/v2/acts/compass~crawler-google-places/run-sync-get-dataset-items?token=${encodeURIComponent(token)}&timeout=180`,
+      `${(process.env.APIFY_BASE_URL || "https://api.apify.com").trim()}/v2/acts/compass~crawler-google-places/run-sync-get-dataset-items?token=${encodeURIComponent(token)}&timeout=${Math.max(10, Math.floor(reste / 1000) - 5)}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
+        // ON COUPE AVANT LA PASSERELLE : une réponse « délai » vaut mieux qu'un 504.
+        signal: AbortSignal.timeout(reste),
       }
     );
     const text = await res.text();
