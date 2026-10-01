@@ -619,6 +619,21 @@ export function StylesBoutiqueTable() {
           background:#1A120E;border:1px solid rgba(255,244,230,.28);}
         @keyframes btFlotte{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
         @media (prefers-reduced-motion: reduce){.bt-discute{animation:none;}}
+        /* ═══ TOC TOC : il tapote la vitre, une fois, avec sa bulle ═══ */
+        .bt-discute.toque img{animation:btToque .9s ease-in-out 3;}
+        @keyframes btToque{0%,100%{transform:translateX(0) rotate(0);}
+          15%{transform:translateX(-4px) rotate(-6deg);}30%{transform:translateX(2px) rotate(3deg);}
+          45%{transform:translateX(-4px) rotate(-6deg);}60%{transform:translateX(0) rotate(0);}}
+        .bt-toc{position:absolute;right:calc(100% + 8px);top:6px;white-space:nowrap;pointer-events:none;
+          padding:8px 12px;border-radius:14px;background:#FFF4E6;color:#1A0F08;font-style:normal;
+          font-family:var(--font-ecrit,"Caveat"),cursive;font-size:18px;font-weight:600;
+          box-shadow:0 10px 24px -10px rgba(0,0,0,.6);animation:btBulle .35s ease-out both;}
+        .bt-toc::after{content:"";position:absolute;right:-6px;top:50%;width:12px;height:12px;
+          background:#FFF4E6;transform:translateY(-50%) rotate(45deg);border-radius:2px;}
+        @media (prefers-reduced-motion: reduce){.bt-discute.toque img{animation:none;}}
+        /* IL POUSSE LA PORTE : un pas vers elle, le temps que la façade s'ouvre. */
+        .bt-double.pousse{animation:none !important;transform:translateY(-6px) scale(.96);
+          transition:transform .35s ease-in;}
         /* SUR L'ECRAN DU LIEU, LE DOUBLE EST DEJA LA EN GRAND : le coin se fait
            plus petit, pour ne pas faire deux personnages de la meme taille. */
         .bt-lieu .bt-discute img{width:54px;height:54px;}

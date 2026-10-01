@@ -83,6 +83,19 @@ import { StylesBoutiqueTable } from "./styles-boutique-table";
 
 type Onglet = "lieu" | "experience" | "carte" | "avis" | "amis" | "infos";
 
+/** Les poses validées, demandées une fois par visite et partagées par toutes les pages. */
+let posesValideesPromesse: Promise<Record<string, Partial<Record<"regard-gauche" | "regard-droite" | "pousse-porte", string>>>> | null = null;
+function lesPosesValidees() {
+  if (posesValideesPromesse) return posesValideesPromesse;
+  // CINQ SECONDES AU PLUS : une demande qui pend ne doit rien retenir de la page.
+  const fin = new AbortController();
+  window.setTimeout(() => fin.abort(), 5000);
+  posesValideesPromesse = fetch("/api/direct/poses", { signal: fin.signal, cache: "no-store" })
+    .then((r) => (r.ok ? r.json() : {}))
+    .catch(() => ({}));
+  return posesValideesPromesse;
+}
+
 /** Un silence, joué DANS le geste : c'est lui qui autorise la voix ensuite. */
 const SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
 
@@ -438,6 +451,52 @@ export function BoutiqueTable({
   const voixSeuil = useRef<Promise<string | null> | null>(null);
   const phraseSeuil = useMemo(() => seuilDuDouble(c), [c]);
 
+  /* ═══ SES NOUVELLES POSES, QUAND ELLES ONT ÉTÉ VALIDÉES ════════════════════
+     « Ses yeux suivent le doigt » et « il se retourne et pousse la porte » :
+     des images fabriquées par l'IA, puis VALIDÉES une à une dans
+     l'administration (`/admin/poses-double`). Sans elles, il garde son penché
+     vers le doigt et s'efface dans la lumière — rien ne se dégrade. */
+  const [posesEnPlus, setPosesEnPlus] = useState<Partial<Record<"regard-gauche" | "regard-droite" | "pousse-porte", string>>>({});
+  useEffect(() => {
+    if (!tenue) return;
+    let vivant = true;
+    void lesPosesValidees().then((toutes) => {
+      const siennes = toutes[tenue.dossier] ?? {};
+      if (!vivant) return;
+      setPosesEnPlus(siennes);
+      // CHARGÉES D'AVANCE : un regard qui change ne doit pas clignoter.
+      for (const src of Object.values(siennes)) if (src) new Image().src = src;
+    });
+    return () => {
+      vivant = false;
+    };
+  }, [tenue]);
+  /** Où il regarde : à gauche, en face, à droite — selon le doigt. */
+  const [regard, setRegard] = useState<"gauche" | "face" | "droite">("face");
+  const regardRef = useRef(regard);
+  /** Vrai le temps qu'il pousse la porte. */
+  const [pousse, setPousse] = useState(false);
+  /* ═══ TOC TOC ═════════════════════════════════════════════════════════════
+     « S'il descend sans le toucher, il réapparaît dans un coin et tapote la
+     vitre. » On quitte le lieu sans l'avoir touché : le fantôme du coin toque,
+     une fois, avec sa bulle. Un seul toc par visite — au-delà, c'est insister. */
+  const [toque, setToque] = useState(false);
+  const aTouche = useRef(false);
+  const aToque = useRef(false);
+  const ongletAvant = useRef(onglet);
+  useEffect(() => {
+    const avant = ongletAvant.current;
+    ongletAvant.current = onglet;
+    if (avant !== "lieu" || onglet === "lieu" || onglet === "amis" || aTouche.current || aToque.current) return;
+    aToque.current = true;
+    const debut = window.setTimeout(() => setToque(true), 700);
+    const fin = window.setTimeout(() => setToque(false), 4200);
+    return () => {
+      window.clearTimeout(debut);
+      window.clearTimeout(fin);
+    };
+  }, [onglet]);
+
   /** Où se tient l'hôte peint sur la photo ClikMe, en pixels de l'écran du lieu. */
   const [hoteEcran, setHoteEcran] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   useLayoutEffect(() => {
@@ -486,11 +545,18 @@ export function BoutiqueTable({
     const py = Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height) * 2 - 1));
     sec.style.setProperty("--px", px.toFixed(3));
     sec.style.setProperty("--py", py.toFixed(3));
+    // SES YEUX SUIVENT — seulement s'il a ses poses de regard validées.
+    const r2 = px < -0.33 ? "gauche" : px > 0.33 ? "droite" : "face";
+    if (r2 !== regardRef.current && posesEnPlus["regard-gauche"] && posesEnPlus["regard-droite"]) {
+      regardRef.current = r2;
+      setRegard(r2);
+    }
   };
 
   /** LE GESTE : le son débloqué, la voix demandée, la porte franchie. */
   const entrer = (depuis?: HTMLElement | null) => {
-    if (franchit) return;
+    if (franchit || pousse) return;
+    aTouche.current = true;
     try {
       const a = sonSeuil.current ?? new Audio();
       a.setAttribute("playsinline", "");
@@ -521,14 +587,18 @@ export function BoutiqueTable({
       };
     }
     const reduit = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    setFranchit(origine);
+    // IL SE RETOURNE ET POUSSE LA PORTE, s'il a cette pose : un temps, puis le zoom.
+    const tempsPousse = posesEnPlus["pousse-porte"] && !couv && !reduit ? 380 : 0;
+    if (tempsPousse) setPousse(true);
+    window.setTimeout(() => setFranchit(origine), tempsPousse);
     window.setTimeout(
       () => {
         setOnglet("experience");
         setArrive(true);
         setFranchit(null);
+        setPousse(false);
       },
-      reduit ? 120 : 950,
+      tempsPousse + (reduit ? 120 : 950),
     );
   };
 
@@ -855,7 +925,23 @@ export function BoutiqueTable({
                 aria-label={`Entrer chez ${c.nom} avec son fantôme`}
               >
                 <span className="bt-invite">Entre, je te fais visiter 👋</span>
-                <span className="bt-penche">{double("accueil", "centre")}</span>
+                <span className="bt-penche">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    className={`bt-double centre${pousse ? " pousse" : ""}`}
+                    src={
+                      pousse && posesEnPlus["pousse-porte"]
+                        ? posesEnPlus["pousse-porte"]
+                        : regard === "gauche" && posesEnPlus["regard-gauche"]
+                          ? posesEnPlus["regard-gauche"]
+                          : regard === "droite" && posesEnPlus["regard-droite"]
+                            ? posesEnPlus["regard-droite"]
+                            : pose("accueil")
+                    }
+                    alt=""
+                    draggable={false}
+                  />
+                </span>
               </button>
             )}
             {/* ═══ DEUX PORTES, PLUS UNE ════════════════════════════════════
@@ -1401,7 +1487,16 @@ export function BoutiqueTable({
           Sauf chez les amis : on y discute déjà, et le champ d'écriture
           occupe le bas. Deux conversations empilées ne se lisent plus. */}
       {onglet !== "amis" && !discute && !plat && (
-        <button type="button" className="bt-discute" onClick={() => setDiscute(true)}>
+        <button
+          type="button"
+          className={`bt-discute${toque ? " toque" : ""}`}
+          onClick={() => {
+            aTouche.current = true;
+            setToque(false);
+            setDiscute(true);
+          }}
+        >
+          {toque && <em className="bt-toc">Toc toc ! Je te fais visiter&nbsp;?</em>}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={pose("accueil")} alt="" />
           <span>On discute&nbsp;?</span>
