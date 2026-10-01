@@ -140,7 +140,9 @@ const entreeMedias = (placeId: string) => ({
   ...ENTREE_COMMUNE,
   placeIds: [placeId],
   maxCrawledPlacesPerSearch: 1,
-  maxImages: 10,
+  // VINGT PHOTOS : la page de sa carte est souvent parmi elles, et c'est de
+  // là qu'on lit ses plats et ses prix — voir `carte-lue.ts`.
+  maxImages: 20,
   maxReviews: 8,
   reviewsSort: "newest",
 });

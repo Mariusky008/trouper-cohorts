@@ -40,6 +40,9 @@
 // aurait fait croire que le collectif ne lui apporte plus rien, au moment
 // précis où on lui montre le contraire.
 import type { Metadata } from "next";
+import { after } from "next/server";
+import { headers } from "next/headers";
+import { carteALire, lireLaCarte } from "@/lib/site-internet/carte-lue";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { noterClic } from "@/lib/direct/publications";
 import { carteDepuisFiche, enGrand } from "@/lib/site-internet/carte-depuis-fiche";
@@ -311,6 +314,23 @@ export default async function ApercuMaquette({
     /* table absente → on garde ceux de Google */
   }
   const { fiche, nom, note, reviews } = construireFiche(slug, row, { disponibilites, services: proServicesRaw });
+
+  /* SA CARTE N'A PAS ENCORE ÉTÉ LUE SUR SES PHOTOS ? On la lit après avoir
+     servi la page (`after`) : les pages créées avant cette étape — et celles
+     dont la lecture a échoué — la rattrapent à la visite suivante. Une
+     tentative par demi-heure au plus, voir `carte-lue.ts`. */
+  if (carteALire(row.diagnostic)) {
+    const h = await headers();
+    const hote = h.get("x-forwarded-host") || h.get("host") || "";
+    const origine = `${h.get("x-forwarded-proto") || (/^(localhost|127\.)/.test(hote) ? "http" : "https")}://${hote}`;
+    after(async () => {
+      try {
+        await lireLaCarte(slug, origine);
+      } catch {
+        /* la visite suivante réessaiera */
+      }
+    });
+  }
 
   /* LE PRÉNOM DE SON DOUBLE, s'il en a donné un avec sa voix. Lecture à part :
      sans la migration, le double s'appelle simplement « le chef ». */

@@ -1259,6 +1259,11 @@ export type CarteAutour = {
    */
   ficheGoogle?: { menu?: string; prix?: string; services?: string[] };
   /**
+   * SA CARTE A ÉTÉ LUE SUR LES PHOTOS DE SA FICHE GOOGLE — pas saisie par lui.
+   * La page le dit sous la carte : « prix à confirmer sur place ».
+   */
+  catalogueLuSurPhotos?: boolean;
+  /**
    * LES AUTRES PHOTOS DE L'ANNONCE — le carrousel du commerçant.
    *
    * DEMANDÉ PAR DE VRAIES PERSONNES : « on m'a demandé si on pouvait voir

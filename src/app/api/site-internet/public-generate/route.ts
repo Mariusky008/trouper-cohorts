@@ -15,6 +15,7 @@ import { createHash } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/popey-marketplace";
 import { conduireLaFiche, lancerLaFiche } from "@/lib/site-internet/fiche-google";
+import { lireLaCarte } from "@/lib/site-internet/carte-lue";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { fabriquerCouverture } from "@/lib/site-internet/couverture";
 import { nomPropre } from "@/lib/site-internet/nom-propre";
@@ -164,7 +165,9 @@ export async function POST(request: Request) {
       // LA LECTURE EST LANCÉE CHEZ APIFY, PUIS SUIVIE ; elle continue même si
       // ce suivi s'arrête — sa page prend le relais. Voir `avancerLaFiche`.
       const lancee = await lancerLaFiche(slug, { renommer: true });
-      const etat = lancee ? await conduireLaFiche(slug, debut + 280_000) : null;
+      const etat = lancee ? await conduireLaFiche(slug, debut + 250_000) : null;
+      // SA CARTE, LUE SUR LES PHOTOS DE SA FICHE — voir `carte-lue.ts`.
+      if (etat?.lue && etat.photos && Date.now() - debut < 230_000) await lireLaCarte(slug, origine);
       const aDesPhotos = Boolean(photoValide) || Boolean(etat?.photos);
       // LA PHOTO CLIKME S'IL RESTE LE TEMPS ; sinon sa page la lancera.
       if (aDesPhotos && Date.now() - debut < 200_000) {

@@ -21,6 +21,7 @@ import {
   raisonLisible,
   type EtatFiche,
 } from "@/lib/site-internet/fiche-google";
+import { lireLaCarte } from "@/lib/site-internet/carte-lue";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -48,6 +49,17 @@ export async function GET(requete: Request) {
   if (!lisible(slug)) return NextResponse.json({ erreur: "adresse illisible" }, { status: 400 });
   const e = await avancerLaFiche(slug);
   if (!e) return NextResponse.json({ erreur: "site introuvable" }, { status: 404 });
+  // LA FICHE EST LUE : SA CARTE SE LIT ENSUITE, sur ses photos (une fois).
+  if (!e.enCours && e.lue && e.photos) {
+    const origine = new URL(requete.url).origin;
+    after(async () => {
+      try {
+        await lireLaCarte(slug, origine);
+      } catch {
+        /* la page la redemandera */
+      }
+    });
+  }
   return NextResponse.json(reponse(e), { headers: { "cache-control": "no-store" } });
 }
 

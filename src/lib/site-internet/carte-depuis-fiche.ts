@@ -67,6 +67,8 @@ export type FicheCommercant = {
   avisGoogle?: { qui: string; texte: string; note: number | null }[];
   /** Sa photo ClikMe, quand elle est prête — voir `lib/site-internet/couverture.ts`. */
   couverture?: string;
+  /** Ses plats et leurs prix, lus sur les photos de sa carte — voir `carte-lue.ts`. */
+  carteLue?: { rubrique?: string; nom: string; prix?: string; detail?: string }[];
   /** Ce que sa fiche Google dit de sa carte : lien du menu, prix par personne, services. */
   ficheGoogle?: { menu?: string; prix?: string; services?: string[] };
 };
@@ -319,9 +321,13 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
           detail: s.detail,
           prix: s.prix,
         }))
-      : proposees,
+      : f.carteLue?.length
+        ? // SA CARTE, LUE SUR SES PHOTOS : ses plats, ses rubriques, ses prix.
+          f.carteLue.map((p, i) => ({ id: `${f.slug}-c${i}`, rayon: p.rubrique || "La carte", nom: p.nom, detail: p.detail, prix: p.prix }))
+        : proposees,
     // Vrai seulement quand ce sont celles du MÉTIER et pas les siennes : c'est
     // ce drapeau qui fait écrire, sous le chapitre, qu'elles sont proposées.
-    cataloguePropose: services.length === 0 && proposees.length > 0,
+    cataloguePropose: services.length === 0 && !f.carteLue?.length && proposees.length > 0,
+    catalogueLuSurPhotos: services.length === 0 && Boolean(f.carteLue?.length),
   };
 }

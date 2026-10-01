@@ -256,6 +256,21 @@ export function StylesBoutiqueTable() {
           box-shadow:0 12px 30px -10px rgba(0,0,0,.8);
           -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
         .bt-entrer s{text-decoration:none;color:var(--bt-rose);}
+        /* DEUX PORTES SUR UNE LIGNE CHACUNE : « Découvrir le lieu » passait
+           sur deux lignes dans la largeur d'« Entrer ». ET À GAUCHE DU COIN :
+           élargies au centre, elles passaient sous le double « On discute ? ».
+           Elles s'alignent donc à gauche et s'arrêtent avant lui. */
+        .bt-e-lieu .bt-seuil{align-items:flex-start;}
+        .bt-e-lieu .bt-accueille{align-self:center;}
+        .bt-e-lieu .bt-entrer{width:calc(100% - var(--bt-coin) + 14px);max-width:330px;
+          white-space:nowrap;font-size:17.5px;padding:14px 18px;}
+        .bt-e-lieu .bt-entrer.second{font-size:16px;padding:12px 18px;}
+        /* LA SECONDE PORTE : « Carte et prix », plus discrète, juste dessous. */
+        .bt-entrer.second{margin-top:10px;padding:12px 20px;font-size:17px;font-weight:700;
+          background:rgba(18,12,9,.55);border-color:rgba(255,244,230,.4);}
+        .bt-entrer.second .bt-ico{width:22px;height:22px;fill:none;stroke:currentColor;
+          stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+        .bt-entrer.second s{color:var(--bt-creme);font-size:20px;}
         .bt-liens{display:flex;align-items:center;gap:10px;margin:12px 0 0;
           font-size:15px;}
         .bt-liens button{background:none;border:0;padding:4px 2px;cursor:pointer;
@@ -449,6 +464,8 @@ export function StylesBoutiqueTable() {
         .bt-trait::before,.bt-trait::after{content:"";flex:1;height:1px;
           background:var(--bt-trait);}
         .bt-fil{display:flex;flex-direction:column;gap:6px;}
+        .bt-rubrique{margin:14px 4px 6px;font-size:12px;font-weight:700;letter-spacing:.1em;
+          text-transform:uppercase;color:var(--bt-ambre);}
         .bt-menu-g{margin:12px 0 8px;width:100%;justify-content:center;}
         .bt-services{margin:12px 2px 0;font-size:14px;line-height:1.45;color:var(--bt-gris);}
         .bt-services b{display:block;margin-bottom:2px;color:var(--bt-creme);font-weight:700;}
@@ -568,10 +585,13 @@ export function StylesBoutiqueTable() {
           height:var(--bt-nav);display:grid;grid-template-columns:repeat(6,1fr);
           padding:0 4px env(safe-area-inset-bottom,0px);
           background:#0E0907;border-top:1px solid var(--bt-trait);}
-        .bt-nav button{position:relative;display:flex;flex-direction:column;
+        .bt-nav button,.bt-nav .bt-explorer{position:relative;display:flex;flex-direction:column;
           align-items:center;justify-content:center;gap:4px;padding:0;
           background:none;border:0;cursor:pointer;color:#B9A594;
           font-size:11.5px;font-weight:500;}
+        /* « EXPLORER MA VILLE » TIENT SUR DEUX LIGNES SUR UN PETIT TÉLÉPHONE,
+           et garde l'ambre : c'est la seule sortie de la page. */
+        .bt-nav .bt-explorer{text-decoration:none;text-align:center;line-height:1.1;color:var(--bt-ambre);}
         .bt-nav svg{width:24px;height:24px;fill:none;stroke:currentColor;
           stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
         .bt-nav button.on{color:var(--bt-rose);font-weight:600;}
@@ -651,7 +671,8 @@ export function StylesBoutiqueTable() {
           .bt-e-lieu .bt-seuil{position:static;margin-top:34px;align-items:flex-start;}
           .bt-e-lieu .bt-accueille{position:absolute;left:calc(var(--bt-g) / 2);
             bottom:12%;margin:0;transform:translateX(-50%);}
-          .bt-e-lieu .bt-entrer{width:auto;min-width:240px;}
+          .bt-e-lieu .bt-entrer{width:auto;min-width:260px;font-size:19px;padding:15px 24px;}
+          .bt-e-lieu .bt-entrer.second{font-size:17px;padding:13px 24px;}
           .bt-e-lieu .bt-liens{margin-left:24px;}
           /* LES ECRANS A NAPPE : la nappe flotte au milieu de la moitie droite. */
           .bt-e-exp,.bt-e-carte{justify-content:center;}

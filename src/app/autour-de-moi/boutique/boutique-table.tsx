@@ -81,10 +81,15 @@ import { StylesBoutiqueTable } from "./styles-boutique-table";
 
 type Onglet = "lieu" | "experience" | "carte" | "avis" | "amis" | "infos";
 
+/**
+ * LA BARRE DU BAS. « Le menu du bas : on aurait "Explorer ma ville". » La
+ * carte n'y est plus — elle s'ouvre depuis le lieu (« Carte et prix ») — et la
+ * sixième place mène hors de la page, vers l'application de la ville. Voir
+ * `explorer` plus bas : un lien, pas un onglet.
+ */
 const ONGLETS: { cle: Onglet; mot: string }[] = [
   { cle: "lieu", mot: "Le lieu" },
   { cle: "experience", mot: "Expérience" },
-  { cle: "carte", mot: "Carte" },
   { cle: "avis", mot: "Avis" },
   { cle: "amis", mot: "Amis" },
   { cle: "infos", mot: "Infos" },
@@ -102,6 +107,8 @@ function aLaMaison(nom: string): string {
      « Bienvenue à le bordeaux ». L'article se contracte quelle que soit la
      façon dont il a été écrit, et le nom qui suit garde sa capitale. */
   const cap = (s: string) => s.replace(/^(\p{L})/u, (x) => x.toUpperCase());
+  // « Bienvenue à Chez Bergine » → « Bienvenue chez Bergine ».
+  if (/^chez\s/i.test(nom)) return `chez ${cap(nom.slice(5))}`;
   if (/^le\s/i.test(nom)) return `au ${cap(nom.slice(3))}`;
   if (/^les\s/i.test(nom)) return `aux ${cap(nom.slice(4))}`;
   if (/^la\s/i.test(nom)) return `à la ${cap(nom.slice(3))}`;
@@ -198,6 +205,24 @@ function IconeCarte({ nom }: { nom: string }) {
 }
 
 /** Les six icônes de la barre, dessinées au même trait. */
+function IconeBoussole() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="8.6" />
+      <path d="m15.6 8.4-2.2 5-5 2.2 2.2-5z" />
+    </svg>
+  );
+}
+
+function IconeLivre() {
+  return (
+    <svg className="bt-ico" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 6.6c-1.8-1.3-4.4-1.9-8-1.6v12.6c3.6-.3 6.2.3 8 1.6 1.8-1.3 4.4-1.9 8-1.6V5c-3.6-.3-6.2.3-8 1.6z" />
+      <path d="M12 6.6v12.6M6.5 9h3M6.5 12h3M14.5 9h3M14.5 12h3" />
+    </svg>
+  );
+}
+
 function IconeOnglet({ cle }: { cle: Onglet }) {
   switch (cle) {
     case "lieu":
@@ -371,6 +396,9 @@ export function BoutiqueTable({
    * autres écrans gardent les vraies photos de la salle.
    */
   const couv = c.couverture && !cassees.includes(c.couverture) ? c.couverture : undefined;
+  /** D'où l'on part vers « Explorer ma ville » : on y revient par « Retour ». */
+  const [retourExplorer, setRetourExplorer] = useState<string>();
+  useEffect(() => setRetourExplorer(window.location.pathname + window.location.search), []);
 
   const pose = (p: "accueil" | "content" | "reflechit" | "ecoute") =>
     tenue ? `${tenue.dossier}${p}.webp` : "/clikme-fantome.png";
@@ -404,7 +432,9 @@ export function BoutiqueTable({
    * génériques se retirent.
    */
   const carteGoogleSeule = Boolean(c.cataloguePropose && c.ficheGoogle?.menu);
-  const carteLignes = carteGoogleSeule ? [] : (c.catalogue ?? []).slice(0, 4);
+  /* SA VRAIE CARTE, LUE OU SAISIE, SE MONTRE EN ENTIER ; les formules du
+     métier, elles, restent quatre — ce ne sont que des exemples. */
+  const carteLignes = carteGoogleSeule ? [] : (c.catalogue ?? []).slice(0, c.cataloguePropose ? 4 : 40);
   const prenom = prenomChef || c.voix?.prenom;
   const leChef = prenom ? prenom : "le chef";
 
@@ -620,18 +650,19 @@ export function BoutiqueTable({
                 coupé net sous la poitrine : on le fond, comme le bas d'un
                 fantôme, au lieu de le trancher. */}
             {!couv && <span className="bt-accueille">{double("accueil", "centre")}</span>}
+            {/* ═══ DEUX PORTES, PLUS UNE ════════════════════════════════════
+                « Une partie de la droite de "Le lieu" avec deux nouveaux
+                boutons. » La carte quitte la barre du bas — elle y prenait la
+                place d'« Explorer ma ville » — et devient la seconde porte du
+                lieu : c'est la question qu'on se pose juste après « c'est
+                comment, là-dedans ? ». */}
             <button type="button" className="bt-entrer" onClick={() => setOnglet("experience")}>
-              Entrer <s aria-hidden="true">→</s>
+              Découvrir le lieu <s aria-hidden="true">→</s>
             </button>
-            <p className="bt-liens">
-              <button type="button" onClick={() => setOnglet("carte")}>
-                Carte
-              </button>
-              <i aria-hidden="true">·</i>
-              <button type="button" onClick={() => setOnglet("infos")}>
-                Infos
-              </button>
-            </p>
+            <button type="button" className="bt-entrer second" onClick={() => setOnglet("carte")}>
+              <IconeLivre />
+              Carte et prix <s aria-hidden="true">›</s>
+            </button>
           </div>
         </section>
       )}
@@ -736,8 +767,13 @@ export function BoutiqueTable({
               </div>
               {carteLignes.length > 0 ? (
                 <ul className="bt-lignes">
-                  {carteLignes.map((a) => (
+                  {carteLignes.map((a, i) => (
                     <li key={a.id}>
+                      {/* LES RUBRIQUES DE SA CARTE (« Tapas & entrées »),
+                          telles qu'elles sont écrites, quand elle a été lue. */}
+                      {c.catalogueLuSurPhotos && a.rayon && a.rayon !== carteLignes[i - 1]?.rayon && (
+                        <p className="bt-rubrique">{a.rayon}</p>
+                      )}
                       {/* UNE LIGNE QUI A L'AIR DE S'OUVRIR DOIT S'OUVRIR. Elle
                           ouvre le double : c'est lui qui sait dire ce qu'il
                           y a dans la formule du jour. */}
@@ -783,6 +819,14 @@ export function BoutiqueTable({
               {/* SA MAQUETTE DIT « Prestations proposées · À valider par le
                   restaurant ». Au restaurateur, oui ; au client, ces mots ne
                   lui demandent rien — il lit que les prix se donnent sur place. */}
+              {c.catalogueLuSurPhotos && (
+                <p className="bt-note">
+                  <i aria-hidden="true">ⓘ</i>{" "}
+                  {saPage
+                    ? "Lue sur les photos de votre carte Google · saisissez-la dans l’Espace Pro pour la corriger."
+                    : "Lue sur les photos de sa carte · prix à confirmer sur place."}
+                </p>
+              )}
               {c.cataloguePropose && !carteGoogleSeule && (
                 <p className="bt-note">
                   <i aria-hidden="true">ⓘ</i> {saPage ? "Proposées · À valider par vous." : "Formules habituelles · Prix sur place."}
@@ -1171,6 +1215,16 @@ export function BoutiqueTable({
             <span>{o.mot}</span>
           </button>
         ))}
+        {/* EXPLORER MA VILLE : l'application, ouverte sur ses deux copains du
+            quartier — voir `/autour-de-moi?depuis=`. Un lien, parce qu'on
+            quitte la page ; le retour ramène ici. */}
+        <Link
+          className="bt-explorer"
+          href={`/autour-de-moi?depuis=${encodeURIComponent(c.id)}&retour=${encodeURIComponent(retourExplorer ?? "")}`}
+        >
+          <IconeBoussole />
+          <span>Explorer ma ville</span>
+        </Link>
       </nav>
 
       {/* ═══ LES TROIS COUCHES QUI PASSENT PAR-DESSUS ═══════════════════ */}

@@ -309,13 +309,23 @@ async function choisir(nom) {
   }
   await p.waitForTimeout(420);
 }
-/** Les six onglets d'un restaurant, chacun mesuré jusqu'en bas. */
+/** Les onglets d'un restaurant, et sa carte, chacun mesuré jusqu'en bas. */
 async function mesurerLesOnglets(nom) {
   const onglets = await p.locator(".bt-nav button").allTextContents();
   for (let i = 0; i < onglets.length; i++) {
     await p.locator(".bt-nav button").nth(i).click();
     await p.waitForTimeout(450);
     await mesurerLaPage(`${nom} · ${onglets[i].trim()}`, false, ".bt-ecran");
+  }
+  /* LA CARTE N'EST PLUS UN ONGLET : elle s'ouvre depuis le lieu, par « Carte
+     et prix ». Sans ce détour, la garde ne la mesurerait plus du tout. */
+  await p.locator(".bt-nav button").first().click();
+  await p.waitForTimeout(350);
+  const porte = p.locator(".bt-entrer.second");
+  if (await porte.count()) {
+    await porte.click();
+    await p.waitForTimeout(450);
+    await mesurerLaPage(`${nom} · Carte`, false, ".bt-ecran");
   }
 }
 
