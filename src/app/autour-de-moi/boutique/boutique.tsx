@@ -58,7 +58,7 @@
 // `/autour-de-moi` verrouille le document et vit dans une hauteur mesurée : un
 // paquet qu'on balaie ne défile pas. Une PAGE défile — c'est même sa nature, et
 // c'est la seule chose ici qui ne doit surtout pas imiter le fil.
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import Link from "next/link";
 import {
@@ -374,6 +374,8 @@ export function Boutique(p: {
   saPage?: boolean;
   /** Le prénom qu'un vrai restaurateur a donné à son double — voir `pro-voix.tsx`. */
   prenomChef?: string;
+  /** Ce qui ne s'adresse qu'au commerçant — voir `pied` dans `boutique-table.tsx`. */
+  pied?: ReactNode;
 }) {
   const cartes = useMemo(() => toutesLesCartes(), []);
   const [id, setId] = useState(p.commerce?.id ?? "emporter");
@@ -390,6 +392,7 @@ export function Boutique(p: {
            chose qu'on puisse lui faire. */
         autres={p.commerce ? undefined : { cartes, choisir: setId }}
         prenomChef={p.prenomChef}
+        pied={p.pied}
       />
     );
   }

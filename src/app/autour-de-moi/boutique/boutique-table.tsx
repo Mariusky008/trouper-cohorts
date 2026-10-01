@@ -54,7 +54,7 @@
 // « à compléter par le restaurant » ne s'adresse qu'au restaurateur — voir
 // `saPage`. Le client, lui, lit « à confirmer sur place ».
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { DoubleChef } from "@/components/direct/double-chef";
@@ -261,6 +261,7 @@ export function BoutiqueTable({
   piedMaquette,
   autres,
   prenomChef,
+  pied,
 }: {
   carte: CarteAutour;
   /** `null` : pas de flèche. Voir `retourHref` dans la longue page. */
@@ -272,8 +273,32 @@ export function BoutiqueTable({
   /** Le sélecteur de la maquette — absent sur la page d'un vrai commerçant. */
   autres?: { cartes: CarteAutour[]; choisir: (id: string) => void };
   prenomChef?: string;
+  /**
+   * ═══ CE QUI S'ADRESSE AU COMMERÇANT, ET RIEN QU'À LUI ═══════════════════
+   *
+   * « Quand quelqu'un s'inscrit depuis clikme.fr et arrive sur sa page, il y
+   * a apparemment quelque chose derrière le site. »
+   *
+   * C'ÉTAIT LE FORMULAIRE « GARDER CETTE PAGE ». Il était rendu APRÈS la page,
+   * dans le flux du document : sous la longue page, il tombait en bas, à sa
+   * place. Sous une page à onglets fixe, il se retrouvait DERRIÈRE elle —
+   * visible autour du cadre sur un ordinateur, et son bouton passait même
+   * par-dessus. Il vit donc maintenant dans la page, au bout des infos, et une
+   * pastille en haut y mène.
+   */
+  pied?: ReactNode;
 }) {
   const [onglet, setOnglet] = useState<Onglet>("lieu");
+  /* ALLER AU FORMULAIRE : l'onglet des infos, puis jusqu'en bas. */
+  const [versPied, setVersPied] = useState(false);
+  useEffect(() => {
+    if (!versPied || onglet !== "infos") return;
+    const t = window.setTimeout(() => {
+      document.getElementById("garder")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setVersPied(false);
+    }, 380);
+    return () => window.clearTimeout(t);
+  }, [versPied, onglet]);
   /** La conversation avec le double, par-dessus la page. */
   const [discute, setDiscute] = useState(false);
   /** Le parcours du plat, par-dessus la page. */
@@ -301,10 +326,30 @@ export function BoutiqueTable({
    * ne répète pas la même image six fois ; un restaurant qui n'en a qu'une la
    * montre partout, ce qui vaut mieux qu'un fond vide.
    */
-  const photos = useMemo(() => {
+  const photosFiche = useMemo(() => {
     const brut = [...(c.sesPhotos ?? []).map((p) => p.src), c.photo, ...(c.photos ?? [])];
     return brut.filter((x, i): x is string => Boolean(x) && brut.indexOf(x) === i);
   }, [c]);
+  /**
+   * ═══ UNE PHOTO QUI NE SE CHARGE PAS SORT DE LA LISTE ═════════════════════
+   *
+   * « Bienvenue à Crescendo » s'affichait sur un fond noir : sa fiche n'avait
+   * aucune photo utilisable, et l'écran d'accueil d'un restaurant devenait une
+   * page vide avec un titre. Une photo Google peut aussi expirer ou refuser de
+   * se charger. On essaie donc chacune au montage, on retire celles qui
+   * échouent — voir `devanture` pour ce qui les remplace quand il n'en reste
+   * aucune.
+   */
+  const [cassees, setCassees] = useState<string[]>([]);
+  useEffect(() => {
+    setCassees([]);
+    for (const src of photosFiche) {
+      const i = new Image();
+      i.onerror = () => setCassees((x) => (x.includes(src) ? x : [...x, src]));
+      i.src = src;
+    }
+  }, [photosFiche]);
+  const photos = useMemo(() => photosFiche.filter((p) => !cassees.includes(p)), [photosFiche, cassees]);
   /**
    * LA DEVANTURE D'UN CÔTÉ, LA SALLE DE L'AUTRE.
    *
@@ -315,10 +360,13 @@ export function BoutiqueTable({
    * devanture, et les quatre écrans « du dedans » se partagent le reste. Un
    * restaurant qui n'a qu'une photo la montre partout, faute de mieux.
    */
-  const devanture = photos[0] ?? "";
+  /* SANS PHOTO, LE DÉCOR DU DOUBLE : le comptoir aux lampes ambrées dans lequel
+     il parle déjà. Un restaurant sans image garde ainsi une salle chaude, et
+     ce n'est pas la salle d'un autre — c'est un fond flou, sans enseigne. */
+  const tenue = tenueDu(c);
+  const devanture = photos[0] ?? tenue?.decor ?? "";
   const dedans = (i: number) => (photos.length > 1 ? photos[1 + (i % (photos.length - 1))] : devanture);
 
-  const tenue = tenueDu(c);
   const pose = (p: "accueil" | "content" | "reflechit" | "ecoute") =>
     tenue ? `${tenue.dossier}${p}.webp` : "/clikme-fantome.png";
 
@@ -446,6 +494,9 @@ export function BoutiqueTable({
           mappage pour 35 % de la photo d'origine, un peu plus saturée. Il
           vit dans le document parce qu'un filtre SVG se désigne par son id. */}
       <svg width="0" height="0" aria-hidden="true" style={{ position: "absolute" }}>
+        {/* LE SOIR — salles, plats, vignettes. Échelle brun, orange brûlé, or ;
+            58 % de ce mappage pour 42 % de la photo saturée ; puis une courbe
+            qui creuse les ombres et laisse l'orange chanter. */}
         <filter id="bt-ambre" colorInterpolationFilters="sRGB">
           <feColorMatrix
             in="SourceGraphic"
@@ -454,12 +505,41 @@ export function BoutiqueTable({
             result="gris"
           />
           <feComponentTransfer in="gris" result="miel">
-            <feFuncR type="table" tableValues=".07 .45 .82 1" />
-            <feFuncG type="table" tableValues=".04 .22 .55 .9" />
-            <feFuncB type="table" tableValues=".03 .10 .26 .68" />
+            <feFuncR type="table" tableValues=".06 .38 .78 1" />
+            <feFuncG type="table" tableValues=".025 .14 .42 .84" />
+            <feFuncB type="table" tableValues=".02 .05 .14 .48" />
           </feComponentTransfer>
-          <feColorMatrix in="SourceGraphic" type="saturate" values="1.25" result="vive" />
-          <feComposite in="miel" in2="vive" operator="arithmetic" k1="0" k2=".65" k3=".35" k4="0" />
+          <feColorMatrix in="SourceGraphic" type="saturate" values="1.6" result="vive" />
+          <feComposite in="miel" in2="vive" operator="arithmetic" k1="0" k2=".58" k3=".42" k4="0" result="mix" />
+          <feComponentTransfer in="mix">
+            <feFuncR type="gamma" amplitude="1.06" exponent="1.12" offset="0" />
+            <feFuncG type="gamma" amplitude="1" exponent="1.22" offset="0" />
+            <feFuncB type="gamma" amplitude=".95" exponent="1.32" offset="0" />
+          </feComponentTransfer>
+        </filter>
+        {/* LA NUIT — la façade seulement. La même échelle, et une courbe bien
+            plus forte : une devanture photographiée à midi passe au soir, la
+            façade rentre dans l'ombre et le pavé ensoleillé devient doré. La
+            lumière, elle, revient avec le double — voir .bt-accueille. */}
+        <filter id="bt-soir" colorInterpolationFilters="sRGB">
+          <feColorMatrix
+            in="SourceGraphic"
+            type="matrix"
+            values=".30 .59 .11 0 0  .30 .59 .11 0 0  .30 .59 .11 0 0  0 0 0 1 0"
+            result="gris"
+          />
+          <feComponentTransfer in="gris" result="miel">
+            <feFuncR type="table" tableValues=".05 .34 .74 1" />
+            <feFuncG type="table" tableValues=".02 .12 .38 .80" />
+            <feFuncB type="table" tableValues=".02 .05 .13 .45" />
+          </feComponentTransfer>
+          <feColorMatrix in="SourceGraphic" type="saturate" values="1.6" result="vive" />
+          <feComposite in="miel" in2="vive" operator="arithmetic" k1="0" k2=".62" k3=".38" k4="0" result="mix" />
+          <feComponentTransfer in="mix">
+            <feFuncR type="gamma" amplitude="1" exponent="1.55" offset="0" />
+            <feFuncG type="gamma" amplitude=".95" exponent="1.75" offset="0" />
+            <feFuncB type="gamma" amplitude=".9" exponent="1.95" offset="0" />
+          </feComponentTransfer>
         </filter>
       </svg>
 
@@ -487,7 +567,7 @@ export function BoutiqueTable({
       {/* ═══════════════════════════ 1 · LE LIEU ═══════════════════════════ */}
       {onglet === "lieu" && (
         <section className="bt-ecran bt-e-lieu" key="lieu">
-          <div className="bt-photo" style={{ backgroundImage: `url("${devanture}")` }} />
+          <div className="bt-photo facade" style={{ backgroundImage: `url("${devanture}")` }} />
           <div className="bt-voile haut-bas" />
           {entete(false)}
           <div className="bt-accueil">
@@ -500,7 +580,16 @@ export function BoutiqueTable({
             <p className="bt-dit">Entre, je te fais découvrir.</p>
           </div>
           <div className="bt-seuil">
-            {double("accueil", "centre")}
+            {/* ═══ IL SE TIENT DANS LA LUMIÈRE, IL N'EST PLUS SOUS LE BOUTON ══
+                « Le fantôme ne semble pas faire partie du restaurant, et il
+                est sous le bouton "Entrer". »
+                IL L'ÉTAIT : accoudé à la plaque, le bas de son buste passait
+                derrière elle. Il se tient maintenant au-dessus, sur le seuil,
+                avec la lumière de la salle derrière lui et sa lueur au sol —
+                c'est elle qui l'ancre dans la photo. Le bas de ses poses est
+                coupé net sous la poitrine : on le fond, comme le bas d'un
+                fantôme, au lieu de le trancher. */}
+            <span className="bt-accueille">{double("accueil", "centre")}</span>
             <button type="button" className="bt-entrer" onClick={() => setOnglet("experience")}>
               Entrer <s aria-hidden="true">→</s>
             </button>
@@ -844,7 +933,7 @@ export function BoutiqueTable({
         <section className="bt-ecran bt-e-infos defile" key="infos">
           {entete(true)}
           <div className="bt-hero">
-            <div className="bt-photo" style={{ backgroundImage: `url("${devanture}")` }} />
+            <div className="bt-photo facade" style={{ backgroundImage: `url("${devanture}")` }} />
             <div className="bt-voile gauche" />
             <h1 className="bt-titre moyen">On se retrouve ici&nbsp;?</h1>
             {double("accueil", "droite")}
@@ -934,6 +1023,7 @@ export function BoutiqueTable({
               <Boutique />
               Découvrir les commerces autour <s aria-hidden="true">›</s>
             </Link>
+            {pied && <div className="bt-pied">{pied}</div>}
             {piedMaquette && <p className="bt-note">Commerce de démonstration : il n’existe pas.</p>}
           </div>
         </section>
@@ -947,6 +1037,21 @@ export function BoutiqueTable({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={pose("accueil")} alt="" />
           <span>On discute&nbsp;?</span>
+        </button>
+      )}
+
+      {/* LA PASTILLE DU COMMERÇANT, en haut à droite, sur tous les onglets :
+          elle mène au formulaire. Le client ne la voit jamais — voir `pied`. */}
+      {pied && !(onglet === "infos") && (
+        <button
+          type="button"
+          className="bt-garder"
+          onClick={() => {
+            setOnglet("infos");
+            setVersPied(true);
+          }}
+        >
+          ✨ Garder ma page
         </button>
       )}
 

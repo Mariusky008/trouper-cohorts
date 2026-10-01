@@ -187,6 +187,10 @@ export function PageBoutique(p: PageBoutiqueProps) {
   const flash = annonceExemple(carte.metier, carte.nom);
   const geste = modeDemo ? gesteDuJour(carte.metier, confirmation, secteur, carte.ville) : undefined;
   const photos = [carte.photo, ...(carte.photos ?? [])].filter((x): x is string => Boolean(x));
+  /* LES RESTAURANTS ONT LEUR PAGE À ONGLETS, FIXE : le formulaire entre dedans,
+     au bout des infos. Rendu après elle, il se retrouvait derrière. */
+  const aOnglets = carte.branche === "restaurant";
+  const garder = modeDemo ? <GarderCeSite slug={slug} phoneDisplay={phoneDisplay} /> : null;
 
   return (
     <>
@@ -198,6 +202,7 @@ export function PageBoutique(p: PageBoutiqueProps) {
            écrit à la deuxième personne — voir `saPage` dans la boutique. */
         saPage={modeDemo}
         prenomChef={p.prenomChef}
+        pied={aOnglets ? garder : undefined}
       />
       {modeDemo && (
         <DemoTour
@@ -218,7 +223,7 @@ export function PageBoutique(p: PageBoutiqueProps) {
           keepHref={keepHref}
         />
       )}
-      {modeDemo && <GarderCeSite slug={slug} phoneDisplay={phoneDisplay} />}
+      {!aOnglets && garder}
       {/* ═══ LE FANTÔME DU COMMERÇANT, AUSSI SUR SA PAGE ═══════════════════
           « Il va falloir rajouter ce fantôme sur la page d'accueil du
           commerçant aussi. » Tous les métiers, comme dans l'application,
