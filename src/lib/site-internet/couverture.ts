@@ -50,6 +50,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
 import { moteursDImage, moteurRefuse, noterRefus } from "@/lib/direct/moteur-image";
 import type { CleMetier } from "@/lib/direct/apercu-habitant";
+import { tenueDu } from "@/lib/direct/double-metiers";
 
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 
@@ -120,23 +121,39 @@ export function couvertureDuDiagnostic(diag: unknown): EtatCouverture | null {
  * terrasse ne doit pas en recevoir une : on ajoute des fantômes, pas des
  * tables.
  */
-const SCENES: Record<CleMetier, string> = {
-  restaurant:
-    "One ghost stands in the open entrance door, waving to welcome guests. If the photo shows a terrace or outdoor tables, two more ghosts sit at a table in the foreground, enjoying a coffee or a dish.",
-  bar:
-    "One ghost waves from the entrance door. If the photo shows a terrace or outdoor tables, two more ghosts sit at a table in the foreground and raise their glasses together.",
-  fleuriste:
-    "In front of the shop, one ghost wearing a florist apron wraps a bouquet in kraft paper on a wooden table, while a second ghost admires it with delight. A third, smaller ghost waves from inside the open door.",
-  coiffeur:
-    "One ghost stands at the entrance door, waving to welcome clients. Through the window, a second ghost sits in a salon chair, delighted with its fresh haircut.",
-  ongles:
-    "One ghost stands at the entrance door, waving to welcome clients. Near the window, a second ghost proudly shows its freshly painted nails.",
-  mode:
-    "One ghost stands at the entrance door, waving, holding a small shopping bag. A second ghost looks at the window display with wonder.",
-  artisan:
-    "One ghost stands at the entrance door, waving to welcome visitors. A second ghost admires the handmade pieces displayed in the window.",
-  lunetier:
-    "One ghost stands at the entrance door, waving to welcome clients. Near the window, a second ghost tries on a pair of glasses and smiles at its reflection.",
+const SCENES: Record<CleMetier, { hote: string; clients: string }> = {
+  restaurant: {
+    hote: "stands in the open entrance door, waving to welcome guests",
+    clients: "If the photo shows a terrace or outdoor tables, two customer ghosts sit at a table in the foreground, enjoying a coffee or a dish.",
+  },
+  bar: {
+    hote: "stands in the open entrance door, waving to welcome guests",
+    clients: "If the photo shows a terrace or outdoor tables, two customer ghosts sit at a table in the foreground and raise their glasses together.",
+  },
+  fleuriste: {
+    hote: "stands at a wooden table in front of the shop, wrapping a bouquet in kraft paper",
+    clients: "A customer ghost stands next to the table and admires the bouquet with delight.",
+  },
+  coiffeur: {
+    hote: "stands at the entrance door, waving to welcome clients",
+    clients: "Through the window, a customer ghost sits in a salon chair, delighted with its fresh haircut.",
+  },
+  ongles: {
+    hote: "stands at the entrance door, waving to welcome clients",
+    clients: "Near the window, a customer ghost proudly shows its freshly painted nails.",
+  },
+  mode: {
+    hote: "stands at the entrance door, waving to welcome clients",
+    clients: "A customer ghost, holding a small shopping bag, looks at the window display with wonder.",
+  },
+  artisan: {
+    hote: "stands at the entrance door, waving to welcome visitors",
+    clients: "A customer ghost admires the handmade pieces displayed in the window.",
+  },
+  lunetier: {
+    hote: "stands at the entrance door, waving to welcome clients",
+    clients: "Near the window, a customer ghost tries on a pair of glasses and smiles at its reflection.",
+  },
 };
 
 /**
@@ -166,8 +183,8 @@ const EMBLEMES: Record<CleMetier, string> = {
 export function casquette(nom: string, branche: CleMetier): string {
   const court = nom.trim().length >= 2 && nom.trim().length <= 18;
   return court
-    ? `Instead of the ClikMe logo of IMAGE 2, the front of every cap shows the shop name "${nom.trim()}" embroidered in small pink letters, spelled exactly like that, letter for letter.`
-    : `Instead of the ClikMe logo of IMAGE 2, the front of every cap shows a small pink embroidered emblem: ${EMBLEMES[branche] ?? EMBLEMES.restaurant}.`;
+    ? `Instead of the ClikMe logo of IMAGE 2, the front of every customer's cap shows the shop name "${nom.trim()}" embroidered in small pink letters, spelled exactly like that, letter for letter.`
+    : `Instead of the ClikMe logo of IMAGE 2, the front of every customer's cap shows a small pink embroidered emblem: ${EMBLEMES[branche] ?? EMBLEMES.restaurant}.`;
 }
 
 /**
@@ -189,9 +206,11 @@ export function consigneCouverture(nom: string, metier: string, ville: string, b
     "1. KEEP THE PLACE. Same building, same architecture, same shopfront, same awning and colours, same terrace layout, same camera viewpoint. Someone who knows this place must recognise it at first glance.",
     "2. KEEP EVERY SIGN EXACTLY. Every word on the sign, awning or windows stays exactly as in IMAGE 1: same spelling, same letters, same position. Never invent, translate, correct or add any text, logo or brand. If a text is unreadable in IMAGE 1, leave it unreadable rather than guessing.",
     "3. LIGHT AND COLOUR. Late-afternoon golden hour: warm sunlight on the facade, glowing warm lamps inside, rich and luminous but natural colours, soft depth of field, crisp details. Tidy the street (bins, cars, clutter) only where it does not alter the building.",
-    `4. THE GHOSTS. Use the ghost character from IMAGE 2: a soft white rounded ghost, big glossy purple eyes, pink cheeks, a black cap. ${casquette(nom, branche)} ${SCENES[branche] ?? SCENES.restaurant} They must truly belong to the photo: realistic scale next to doors and furniture, matching perspective, light direction and colour temperature, soft contact shadows, reflections in windows where relevant. Cute, friendly, polished 3D finish; every ghost is the same character.`,
-    "5. PEOPLE. Real people already present may stay, unchanged and not in focus. Do not add any new person.",
-    "6. FRAMING. Vertical 4:5 framing centred on the entrance. Keep the top fifth calm (facade or sky), because a title is written over it.",
+    `4. THE HOST. Exactly one ghost is the shop's host: the ghost of IMAGE 3, wearing exactly the outfit of IMAGE 3 (same clothes, same cap and emblem — the outfit of this trade), shown full body. It ${(SCENES[branche] ?? SCENES.restaurant).hote}.`,
+    `5. THE CUSTOMERS. The other ghosts are customers: the ghost character from IMAGE 2 (soft white rounded ghost, big glossy purple eyes, pink cheeks, a black cap), NOT dressed like the host. ${casquette(nom, branche)} ${(SCENES[branche] ?? SCENES.restaurant).clients}`,
+    "6. ALL GHOSTS must truly belong to the photo: realistic scale next to doors and furniture, matching perspective, light direction and colour temperature, soft contact shadows, reflections in windows where relevant. Cute, friendly, polished 3D finish; host and customers are the same kind of character.",
+    "7. PEOPLE. Real people already present may stay, unchanged and not in focus. Do not add any new person.",
+    "8. FRAMING. Vertical 4:5 framing centred on the entrance. Keep the top fifth calm (facade or sky), because a title is written over it.",
     "No ClikMe logo anywhere. No watermark, no border, no caption, and no added text other than what is asked on the caps.",
   ].join("\n");
 }
@@ -205,9 +224,9 @@ function decoder(src: string): { type: string; donnees: string } | null {
 /**
  * LE FANTOME DE REFERENCE, LU SUR LE DISQUE DU SERVEUR.
  *
- * C'est la mascotte à casquette ClikMe, la même que sur ses deux exemples — et
- * pas le double en tenue de métier : la photo ClikMe est la signature de la
- * marque, commune à tous les commerces. Le fichier est déclaré à
+ * C'est la mascotte à casquette ClikMe, la même que sur ses deux exemples :
+ * elle habille LES CLIENTS. L'hôte, lui, porte la tenue de son métier — voir
+ * `laTenue` juste dessous. Le fichier est déclaré à
  * `outputFileTracingIncludes` : sans ça, il manquerait en production.
  */
 let fantome: { type: string; donnees: string } | null = null;
@@ -217,6 +236,30 @@ function leFantome(): { type: string; donnees: string } {
     fantome = { type: "image/png", donnees: octets.toString("base64") };
   }
   return fantome;
+}
+
+/**
+ * ═══ LA TENUE DE SON MÉTIER, POUR LE FANTÔME QUI ACCUEILLE ═════════════════
+ *
+ * « Le premier fantôme doit être habillé dans le métier du commerçant, et les
+ * deux autres sont des clients, qui restent comme ils sont, avec la casquette
+ * et le nom du commerce. »
+ *
+ * LE FANTÔME QUI ACCUEILLE, C'EST LUI : son double, dans la tenue que la page
+ * lui donne déjà partout (le tablier et la casquette brodée du restaurant, la
+ * blouse du fleuriste…). On montre donc au moteur une troisième image — ce
+ * double en tenue — et il habille l'hôte ainsi ; les clients gardent la
+ * mascotte à casquette. Fichiers déclarés à `outputFileTracingIncludes`.
+ */
+function laTenue(branche: CleMetier, metier: string): { type: string; donnees: string } | null {
+  const t = tenueDu({ branche, metier });
+  if (!t) return null;
+  try {
+    const octets = readFileSync(join(process.cwd(), "public", `${t.dossier}accueil.webp`.replace(/^\//, "")));
+    return { type: "image/webp", donnees: octets.toString("base64") };
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -303,6 +346,7 @@ async function parGemini(
   cle: string,
   photo: { type: string; donnees: string },
   consigne: string,
+  tenue: { type: string; donnees: string } | null,
 ): Promise<{ image: { type: string; donnees: string }; modele: string } | { erreur: string }> {
   const modele = s(process.env.GEMINI_IMAGE_MODEL) || "gemini-2.5-flash-image";
   const base = s(process.env.GEMINI_BASE_URL) || "https://generativelanguage.googleapis.com";
@@ -317,6 +361,12 @@ async function parGemini(
             { inlineData: { mimeType: photo.type, data: photo.donnees } },
             { text: "IMAGE 2 — THE CLIKME GHOST. Character reference only: its background is not part of the result." },
             { inlineData: { mimeType: ref.type, data: ref.donnees } },
+            ...(tenue
+              ? [
+                  { text: "IMAGE 3 — THE HOST'S OUTFIT. The same ghost, dressed for this trade: the host wears exactly this. Its background is not part of the result." },
+                  { inlineData: { mimeType: tenue.type, data: tenue.donnees } },
+                ]
+              : []),
             { text: consigne },
           ],
         },
@@ -353,6 +403,7 @@ async function parOpenAI(
   cle: string,
   photo: { type: string; donnees: string },
   consigne: string,
+  tenue: { type: string; donnees: string } | null,
 ): Promise<{ image: { type: string; donnees: string }; modele: string } | { erreur: string }> {
   const base = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
   const ref = leFantome();
@@ -364,7 +415,11 @@ async function parOpenAI(
     forme.append("model", modele);
     forme.append("image[]", fichier(photo, `lieu.${photo.type.split("/")[1] || "jpg"}`));
     forme.append("image[]", fichier(ref, "fantome.png"));
-    forme.append("prompt", `IMAGE 1 is the real place; IMAGE 2 is the ClikMe ghost (character reference only).\n${consigne}`);
+    if (tenue) forme.append("image[]", fichier(tenue, "hote.webp"));
+    forme.append(
+      "prompt",
+      `IMAGE 1 is the real place; IMAGE 2 is the ClikMe ghost (customers); IMAGE 3 is the host's outfit (character references only).\n${consigne}`,
+    );
     forme.append("size", "1024x1536");
     forme.append("quality", s(process.env.OPENAI_IMAGE_QUALITY) || "high");
     const r = await fetch(`${base}/v1/images/edits`, {
@@ -394,6 +449,7 @@ async function parOpenAI(
 async function rendre(
   photo: { type: string; donnees: string },
   consigne: string,
+  tenue: { type: string; donnees: string } | null,
 ): Promise<{ image: { type: string; donnees: string }; modele: string } | { erreur: string }> {
   const gemini = s(process.env.GEMINI_API_KEY) || s(process.env.GOOGLE_API_KEY);
   const openai = s(process.env.OPENAI_API_KEY);
@@ -402,7 +458,14 @@ async function rendre(
   const erreurs: string[] = [];
   for (const f of ordre) {
     try {
-      const r = f === "gemini" ? (gemini ? await parGemini(gemini, photo, consigne) : null) : openai ? await parOpenAI(openai, photo, consigne) : null;
+      const r =
+        f === "gemini"
+          ? gemini
+            ? await parGemini(gemini, photo, consigne, tenue)
+            : null
+          : openai
+            ? await parOpenAI(openai, photo, consigne, tenue)
+            : null;
       if (!r) continue;
       if ("image" in r) return r;
       erreurs.push(r.erreur);
@@ -610,7 +673,7 @@ async function rendreEtRanger(
   const nom = s(row.business_name);
   const metier = s(row.activite);
   const branche = brancheDuMetier(metier);
-  const r = await rendre(photo, consigneCouverture(nom, metier, s(row.city), branche));
+  const r = await rendre(photo, consigneCouverture(nom, metier, s(row.city), branche), laTenue(branche, metier));
   if ("erreur" in r) return echouer(r.erreur);
 
   const ext = r.image.type.includes("jpeg") ? "jpg" : r.image.type.includes("webp") ? "webp" : "png";

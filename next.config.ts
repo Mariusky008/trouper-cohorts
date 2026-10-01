@@ -18,8 +18,9 @@ const config: NextConfig = {
     // LA PHOTO CLIKME LIT LE FANTOME DE REFERENCE SUR LE DISQUE (voir
     // `lib/site-internet/couverture.ts`). Les deux routes qui la fabriquent
     // doivent l'emporter, sinon le rendu tombe en production seulement.
-    "/api/site-internet/couverture": ["./public/clikme-fantome.png"],
-    "/api/site-internet/public-generate": ["./public/clikme-fantome.png"],
+    // …ET LE DOUBLE EN TENUE DE CHAQUE MÉTIER, pour le fantôme qui accueille.
+    "/api/site-internet/couverture": ["./public/clikme-fantome.png", "./public/direct/double/**/accueil.webp"],
+    "/api/site-internet/public-generate": ["./public/clikme-fantome.png", "./public/direct/double/**/accueil.webp"],
   },
   typescript: {
     ignoreBuildErrors: true,
