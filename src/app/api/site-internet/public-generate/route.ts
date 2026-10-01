@@ -10,57 +10,20 @@
 // GARDE-FOUS (Apify est payant à l'usage) :
 //  - plafond par IP / 24 h (anti-abus) et plafond global / 24 h (budget) ;
 //  - entrées bornées ; jeton Apify requis, sinon on refuse proprement.
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createHash } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/popey-marketplace";
-import { apifyGoogleMaps, normName } from "@/lib/site-internet/apify";
-import { isDirectoryUrl } from "@/lib/site-internet/directories";
+import { conduireLaFiche, lancerLaFiche } from "@/lib/site-internet/fiche-google";
+import { lireLaCarte } from "@/lib/site-internet/carte-lue";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
+import { fabriquerCouverture } from "@/lib/site-internet/couverture";
+import { nomPropre } from "@/lib/site-internet/nom-propre";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 const str = (v: unknown) => String(v ?? "").trim();
-const norm = normName;
-const matchesBusiness = (title: string, self: string) => {
-  const t = norm(title);
-  return Boolean(t) && (t.includes(self) || self.includes(t));
-};
-
-type ReviewSnippet = { name: string; text: string; stars: number | null };
-
-function extractMedia(item: Record<string, unknown>): { photos: string[]; reviews: ReviewSnippet[] } {
-  /**
-   * ═══ LA PHOTO DE COUVERTURE NE DOIT PAS TENIR À UN SEUL CHAMP ═══════════
-   *
-   * « Je ne vois pas de photo en couverture. »
-   *
-   * `imageUrls` N'EST REMPLI QUE PAR L'APPEL QUI DEMANDE DES IMAGES, et cet
-   * appel-là est le second : le premier identifie la fiche avec `maxImages: 0`.
-   * Quand le second échoue — quota, temps d'attente, homonyme — il est avalé en
-   * silence par un `catch` qui laisse la liste vide, et le commerçant reçoit
-   * une page sans aucune photo sans que rien, nulle part, ne l'ait signalé.
-   *
-   * `imageUrl` AU SINGULIER, LUI, ARRIVE TOUJOURS : c'est la photo principale
-   * de la fiche, et le scraper la pose sur chaque lieu même sans images
-   * demandées. Une seule photo ne fait pas une galerie, mais elle fait une
-   * COUVERTURE — c'est-à-dire précisément ce qui manquait.
-   */
-  const brutes = Array.isArray(item.imageUrls) ? item.imageUrls : [];
-  const imgs = brutes.length ? brutes : [item.imageUrl].filter(Boolean);
-  const photos = imgs.map((u) => String(u)).filter((u) => /^https?:\/\//i.test(u)).slice(0, 8);
-  const rv = Array.isArray(item.reviews) ? (item.reviews as Array<Record<string, unknown>>) : [];
-  const reviews = rv
-    .map((r) => ({
-      name: String(r?.name || "").trim(),
-      text: String(r?.text || r?.textTranslated || "").replace(/\s+/g, " ").trim(),
-      stars: typeof r?.stars === "number" ? (r.stars as number) : typeof r?.rating === "number" ? (r.rating as number) : null,
-    }))
-    .filter((r) => r.text.length >= 12);
-  return { photos, reviews };
-}
-
 export async function POST(request: Request) {
   let p: Record<string, unknown> | null = null;
   try {
@@ -71,6 +34,24 @@ export async function POST(request: Request) {
   const businessName = str(p?.businessName).slice(0, 90);
   const city = str(p?.city).slice(0, 60);
   const activite = str(p?.activite).slice(0, 60);
+  /**
+   * ═══ LA PHOTO DE SA DEVANTURE, S'IL EN A UNE — FACULTATIVE ═══════════════
+   *
+   * « Peut-être même que la meilleure solution pour le commerçant lors de
+   * l'inscription serait de mettre la photo de son commerce, s'il en a une
+   * (optionnel). »
+   *
+   * C'EST LA MEILLEURE PHOTO DE DEPART QUI SOIT : c'est lui qui l'a choisie, et
+   * elle montre sa porte. Elle entre dans SES photos (`gallery_photos`), qui
+   * passent avant celles de Google partout — donc aussi pour la couverture.
+   * Réduite par le navigateur avant l'envoi ; au-delà de quatre millions de
+   * signes, c'est qu'elle ne l'a pas été, et on s'en passe sans bloquer.
+   */
+  const photoDeposee = str(p?.photo);
+  const photoValide =
+    /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(photoDeposee) && photoDeposee.length < 4_000_000
+      ? photoDeposee
+      : "";
   if (businessName.length < 2 || city.length < 2 || activite.length < 2) {
     return NextResponse.json({ error: "Indiquez le nom, la ville et l'activité." }, { status: 400 });
   }
@@ -117,138 +98,52 @@ export async function POST(request: Request) {
     /* colonne metadata absente → on continue sans compteur (best-effort) */
   }
 
-  // ── 1. Fiche Google du commerce (Apify) : recherche par activité puis par nom ─
-  const loc = `${city}, france`;
-  const self = norm(businessName);
-  let biz: Record<string, unknown> | null = null;
-  try {
-    const items = (await apifyGoogleMaps(apifyToken, [activite], loc, 12)).items;
-    biz = items.find((it) => matchesBusiness(String(it.title || ""), self)) || null;
-    if (!biz) {
-      const byName = (await apifyGoogleMaps(apifyToken, [`${businessName} ${city}`], loc, 5)).items;
-      biz = byName.find((it) => matchesBusiness(String(it.title || ""), self)) || byName[0] || null;
-    }
-  } catch {
-    biz = null;
-  }
-
-  // ── 2. Photos + avis réels (contenus publics de sa fiche) ────────────────────
-  let photos: string[] = [];
-  let reviewsTop: ReviewSnippet[] = [];
-  let rating: number | null = null;
-  let reviews: number | null = null;
-  let placeId = "";
-  let address = "";
-  let phone = "";
-  let horaires: Array<{ jours: string; horaires: string }> = [];
-  let rawWebsite = "";
-  if (biz) {
-    rating = typeof biz.totalScore === "number" ? biz.totalScore : null;
-    reviews = typeof biz.reviewsCount === "number" ? biz.reviewsCount : null;
-    placeId = String(biz.placeId || "");
-    address = String(biz.address || "").trim();
-    rawWebsite = String(biz.website || "").trim();
-    phone = String(biz.phone || biz.phoneUnformatted || "").trim();
-    const oh = Array.isArray(biz.openingHours) ? (biz.openingHours as Array<Record<string, unknown>>) : [];
-    horaires = oh.slice(0, 7).map((h) => ({ jours: String(h.day || "").trim(), horaires: String(h.hours || "").trim() }));
-    /**
-     * ═══ LA COUVERTURE EST PRISE DÈS LE PREMIER APPEL ═════════════════════
-     *
-     * « Toutes les photos de couverture des pages commerçants sont absentes. »
-     *
-     * LE SECOND APPEL EST LE SEUL QUI REMPLISSAIT `photos`, ET IL EST LE SEUL
-     * QUI PEUT ÉCHOUER. Le premier identifie la fiche ; le second va chercher
-     * les images et les avis, et il tombe pour trois raisons ordinaires —
-     * quota, temps d'attente, homonyme. Son échec était avalé par un `catch`
-     * muet : `photos` restait vide, la page partait sans couverture, et rien
-     * nulle part ne l'avait signalé.
-     *
-     * OR LA PHOTO ÉTAIT DÉJÀ LÀ. Le premier appel rend `imageUrl` au singulier
-     * — la photo principale de la fiche, que le scraper pose sur chaque lieu
-     * même quand on ne demande aucune image. On l'avait sous la main et on ne
-     * la lisait pas : c'est la définition d'un défaut évitable.
-     *
-     * ON SÈME DONC AVANT D'ESSAYER. Une photo d'abord, la galerie ensuite si
-     * elle vient. Le second appel ne peut plus faire PERDRE la couverture, il
-     * ne peut que l'améliorer — et c'est la seule forme qu'un appel faillible
-     * devrait jamais prendre.
-     */
-    photos = extractMedia(biz).photos;
-    try {
-      // On cible la fiche par son placeId si on l'a (fiable), sinon repli par nom.
-      const media = (
-        placeId
-          ? await apifyGoogleMaps(apifyToken, [], loc, 1, { maxImages: 12, maxReviews: 10, reviewsSort: "newest", placeIds: [placeId] })
-          : await apifyGoogleMaps(apifyToken, [`${businessName} ${city}`], loc, 2, { maxImages: 12, maxReviews: 10, reviewsSort: "newest" })
-      ).items;
-      const it = placeId ? media[0] : (media.find((x) => matchesBusiness(String(x.title || ""), self)) || media[0]);
-      if (it) {
-        const m = extractMedia(it);
-        /* ET ON NE REMPLACE QUE SI L'ON A MIEUX. Une liste vide rendue par le
-           second appel écrasait la photo du premier : on perdait la couverture
-           en croyant la mettre à jour. */
-        if (m.photos.length) photos = m.photos;
-        reviewsTop = m.reviews.filter((r) => r.stars == null || r.stars >= 4).slice(0, 3);
-      }
-    } catch (e) {
-      /**
-       * L'ÉCHEC SE DIT, MÊME S'IL NE CASSE RIEN.
-       *
-       * Ce `catch` était muet, et c'est ce qui a rendu le défaut invisible
-       * pendant des semaines : les pages sortaient sans photo, personne ne
-       * savait que le second appel tombait, et on cherchait la panne dans le
-       * dessin de la page. Un repli silencieux n'est pas une tolérance, c'est
-       * une panne qu'on a décidé de ne pas voir.
-       */
-      console.warn(
-        "[public-generate] médias Apify indisponibles",
-        JSON.stringify({
-          slug: businessName,
-          placeId: placeId || null,
-          // CE QU'IL RESTE MALGRÉ L'ÉCHEC : si ce nombre est à zéro, la page
-          // partira sans couverture, et c'est le seul cas qui mérite qu'on
-          // regarde. S'il est à un, le premier appel a sauvé la mise.
-          photosGardees: photos.length,
-          pourquoi: e instanceof Error ? e.message : String(e),
-        }),
-      );
-    }
-  }
-
-  const websiteIsDirectory = isDirectoryUrl(rawWebsite);
+  /**
+   * ═══ LA PAGE D'ABORD, LA FICHE ENSUITE ══════════════════════════════════
+   *
+   * « /api/site-internet/public-generate : 504. » On lisait sa fiche Google
+   * AVANT de créer sa page, et Apify prend de trente secondes à plusieurs
+   * minutes : la passerelle coupait, il ne restait qu'un écran d'erreur, et
+   * aucune page. La page se crée maintenant tout de suite ; sa fiche se lit
+   * juste après, en arrière-plan (`after`), et la page affiche « Lecture de
+   * votre fiche Google… » puis se recharge avec ses avis et ses photos. Voir
+   * `lancerLaFiche` et `avancerLaFiche`.
+   */
+  const debut = Date.now();
   const profil = resolveMetier(activite).profil;
-  const variant: "A" | "B" = rawWebsite && !websiteIsDirectory ? "B" : "A";
-
-  // ── 3. Création de la maquette (channel "letter" pour être servie par /apercu) ─
   const baseSlug = slugify(businessName).slice(0, 50) || "site";
   const suffix = slugify(crypto.randomUUID()).slice(0, 6) || String(Date.now()).slice(-6);
   const slug = `${baseSlug}-${suffix}`.slice(0, 80);
+  const maintenant = new Date().toISOString();
 
   const row = {
     slug,
     channel: "letter" as const,
-    business_name: businessName,
+    // SON NOM, REDRESSÉ S'IL EST TOUT EN MINUSCULES ; celui que Google écrit
+    // le remplacera dès que la fiche sera lue.
+    business_name: nomPropre(businessName),
     city,
     activite,
-    address,
-    source_website: websiteIsDirectory ? "" : rawWebsite,
-    variant,
-    google_rating: rating,
-    google_reviews: reviews,
-    google_place_id: placeId || null,
+    address: "",
+    source_website: "",
+    variant: "A" as const,
+    google_rating: null,
+    google_reviews: null,
+    google_place_id: null,
     diagnostic: {
       source: "apify",
-      places_found: Boolean(biz),
-      directory_url: websiteIsDirectory ? rawWebsite : null,
+      places_found: null,
+      fiche_en_cours: maintenant,
       profil,
-      photos,
-      reviews_top: reviewsTop,
-      horaires,
-      phone,
-      ran_at: new Date().toISOString(),
+      photos: [],
+      reviews_top: [],
+      horaires: [],
+      phone: "",
+      ran_at: maintenant,
     },
     letter_status: "draft" as const,
-    metadata: { self_serve: true, self_serve_ip: ipHash, self_serve_at: new Date().toISOString() },
+    ...(photoValide ? { gallery_photos: [photoValide] } : {}),
+    metadata: { self_serve: true, self_serve_ip: ipHash, self_serve_at: maintenant },
   };
 
   const { error } = await supabase.from("human_vitrine_sites").insert(row);
@@ -256,5 +151,33 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "La création a échoué. Réessayez dans un instant." }, { status: 500 });
   }
 
-  return NextResponse.json({ slug, found: Boolean(biz) }, { status: 201 });
+  /**
+   * ═══ EN ARRIÈRE-PLAN : SA FICHE, PUIS SA PHOTO CLIKME ════════════════════
+   *
+   * La fiche a jusqu'à quatre minutes après le début de la requête — la
+   * fonction en a cinq. La photo ClikMe part ensuite s'il reste de quoi la
+   * faire ; sinon sa page la lancera à sa prochaine visite. Sans aucune photo
+   * — ni déposée, ni sur Google —, il n'y a rien à transformer.
+   */
+  const origine = new URL(request.url).origin;
+  after(async () => {
+    try {
+      // LA LECTURE EST LANCÉE CHEZ APIFY, PUIS SUIVIE ; elle continue même si
+      // ce suivi s'arrête — sa page prend le relais. Voir `avancerLaFiche`.
+      const lancee = await lancerLaFiche(slug, { renommer: true });
+      const etat = lancee ? await conduireLaFiche(slug, debut + 250_000) : null;
+      // SA CARTE, LUE SUR LES PHOTOS DE SA FICHE — voir `carte-lue.ts`.
+      if (etat?.lue && etat.photos && Date.now() - debut < 230_000) await lireLaCarte(slug, origine);
+      const aDesPhotos = Boolean(photoValide) || Boolean(etat?.photos);
+      // LA PHOTO CLIKME S'IL RESTE LE TEMPS ; sinon sa page la lancera.
+      if (aDesPhotos && Date.now() - debut < 200_000) {
+        const r = await fabriquerCouverture(slug, origine);
+        if (r.raison) console.warn("[public-generate] couverture", JSON.stringify({ slug, raison: r.raison }));
+      }
+    } catch (e) {
+      console.warn("[public-generate] arrière-plan", JSON.stringify({ slug, erreur: e instanceof Error ? e.message : String(e) }));
+    }
+  });
+
+  return NextResponse.json({ slug }, { status: 201 });
 }

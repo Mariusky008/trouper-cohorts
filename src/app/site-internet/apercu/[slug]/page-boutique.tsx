@@ -38,9 +38,10 @@
 import { Boutique } from "@/app/autour-de-moi/boutique/boutique";
 import { DemoTour } from "./demo-tour";
 import { GarderCeSite } from "./garder-ce-site";
+import { ChoixCouverture, VeilleCouverture } from "./couverture-clikme";
+import type { EtatCouverture } from "@/lib/site-internet/couverture";
 import { BoutonDouble } from "@/components/direct/bouton-double";
 import { aUnDouble } from "@/lib/direct/double-metiers";
-import { toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { gesteDuJour } from "@/lib/direct/geste-du-jour";
 import { murDeLaCarte } from "@/lib/direct/fantomes";
@@ -73,6 +74,11 @@ export type PageBoutiqueProps = {
   invente?: boolean;
   /** Le prénom qu'il a donné à son double dans son Espace Pro — voir `pro-voix.tsx`. */
   prenomChef?: string;
+  /**
+   * SA PHOTO CLIKME, VUE PAR LUI. Absente pour un visiteur et pour les
+   * commerces de démonstration. Voir `couverture-clikme.tsx`.
+   */
+  couverture?: { etat: EtatCouverture | null; candidates: string[]; fiche?: { lue: boolean; erreurs: string[]; detail?: string; enCours?: boolean } };
 };
 
 /**
@@ -188,6 +194,15 @@ export function PageBoutique(p: PageBoutiqueProps) {
   const flash = annonceExemple(carte.metier, carte.nom);
   const geste = modeDemo ? gesteDuJour(carte.metier, confirmation, secteur, carte.ville) : undefined;
   const photos = [carte.photo, ...(carte.photos ?? [])].filter((x): x is string => Boolean(x));
+  /* LES RESTAURANTS ONT LEUR PAGE À ONGLETS, FIXE : le formulaire entre dedans,
+     au bout des infos. Rendu après elle, il se retrouvait derrière. */
+  const aOnglets = carte.branche === "restaurant";
+  const garder = modeDemo ? (
+    <>
+      {p.couverture && <ChoixCouverture slug={slug} initial={p.couverture.etat} candidates={p.couverture.candidates} />}
+      <GarderCeSite slug={slug} phoneDisplay={phoneDisplay} />
+    </>
+  ) : null;
 
   return (
     <>
@@ -198,7 +213,17 @@ export function PageBoutique(p: PageBoutiqueProps) {
         /* LE MÊME DRAPEAU QUE LA VOIX ET LE FORMULAIRE. Il décide d'un bloc
            écrit à la deuxième personne — voir `saPage` dans la boutique. */
         saPage={modeDemo}
+        prenomChef={p.prenomChef}
+        pied={aOnglets ? garder : undefined}
       />
+      {p.couverture && (
+        <VeilleCouverture
+          slug={slug}
+          initial={p.couverture.etat}
+          aDesPhotos={p.couverture.candidates.length > 0}
+          fiche={modeDemo ? p.couverture.fiche : undefined}
+        />
+      )}
       {modeDemo && (
         <DemoTour
           racine=".bq"
@@ -218,18 +243,23 @@ export function PageBoutique(p: PageBoutiqueProps) {
           keepHref={keepHref}
         />
       )}
-      {modeDemo && <GarderCeSite slug={slug} phoneDisplay={phoneDisplay} />}
+      {!aOnglets && garder}
       {/* ═══ LE FANTÔME DU COMMERÇANT, AUSSI SUR SA PAGE ═══════════════════
           « Il va falloir rajouter ce fantôme sur la page d'accueil du
           commerçant aussi. » Tous les métiers, comme dans l'application,
           chacun dans ses mots. Le parcours du plat ne s'ouvre que pour un
           restaurant que la démonstration connaît en entier ; ailleurs, le
           double répond sans lui. */}
-      {aUnDouble(carte) && (
+      {/* LE RESTAURANT PORTE DÉJÀ SON DOUBLE, dans le coin de chaque onglet —
+          voir « On discute ? » dans `boutique-table.tsx`. Le bouton flottant
+          en ferait un second, empilé au même endroit. */}
+      {aUnDouble(carte) && carte.branche !== "restaurant" && (
         <BoutonDouble
           carte={carte}
           prenomChef={p.prenomChef}
-          avecParcours={carte.branche === "restaurant" && toutesLesCartes().some((c) => c.id === carte.id)}
+          /* LE PARCOURS DU PLAT EST CELUI DES RESTAURANTS, et ils ne passent
+             plus par ici : c'est leur page à onglets qui l'ouvre. */
+          avecParcours={false}
         />
       )}
     </>

@@ -6,6 +6,7 @@
 // redirige vers la maquette (qui lance la Démo Vivante).
 import { useEffect, useRef, useState } from "react";
 import { vocabulaire } from "@/lib/site-internet/actions-flash";
+import { reduirePhoto } from "@/lib/site-internet/reduire-photo";
 
 const WA_HREF = "https://wa.me/33768233347?text=" +
   encodeURIComponent("Bonjour Marius, je voudrais voir ce que Popey construirait pour mon activité.");
@@ -28,6 +29,14 @@ export function HeroGenerator() {
   const [pct, setPct] = useState(0);
   const [err, setErr] = useState("");
   const [limited, setLimited] = useState(false);
+  /**
+   * LA PHOTO DE SA DEVANTURE, FACULTATIVE. « Peut-être que la meilleure
+   * solution serait de mettre la photo de son commerce s'il en a une
+   * (optionnel). » Elle devient le point de départ de sa photo ClikMe ; sans
+   * elle, on part de sa fiche Google, et rien ne bloque.
+   */
+  const [photo, setPhoto] = useState("");
+  const [photoDit, setPhotoDit] = useState("");
   const timers = useRef<number[]>([]);
 
   const ready = nom.trim().length >= 2 && ville.trim().length >= 2 && activite.trim().length >= 2;
@@ -77,7 +86,12 @@ export function HeroGenerator() {
       const r = await fetch("/api/site-internet/public-generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ businessName: nom.trim(), city: ville.trim(), activite: activite.trim() }),
+        body: JSON.stringify({
+          businessName: nom.trim(),
+          city: ville.trim(),
+          activite: activite.trim(),
+          ...(photo ? { photo } : {}),
+        }),
       });
       const j = await r.json().catch(() => ({}));
       if (r.ok && j.slug) {
@@ -109,6 +123,27 @@ export function HeroGenerator() {
           <input value={activite} onChange={(e) => setActivite(e.target.value)} placeholder="Votre activité (ex. coiffeur)" aria-label="Votre activité" />
           <input value={ville} onChange={(e) => setVille(e.target.value)} placeholder="Votre ville" aria-label="Votre ville" onKeyDown={(e) => { if (e.key === "Enter") submit(); }} />
         </div>
+        <label className={`genphoto${photo ? " on" : ""}`}>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              setPhotoDit("");
+              try {
+                setPhoto(await reduirePhoto(f));
+              } catch {
+                setPhoto("");
+                setPhotoDit("Cette photo n'a pas pu être lue. Essayez-en une autre, ou continuez sans.");
+              }
+            }}
+          />
+          {photo ? <img src={photo} alt="" /> : <span aria-hidden="true">📷</span>}
+          <b>{photo ? "Photo de votre devanture ajoutée" : "Photo de votre devanture"}</b>
+          <em>{photo ? "Touchez pour en choisir une autre" : "Facultatif — sinon on prend celle de votre fiche Google"}</em>
+        </label>
+        {photoDit && <div className="generr">{photoDit}</div>}
         <button className="genbtn" onClick={submit} disabled={!ready}>
           ✨ Créer mon site gratuitement
         </button>

@@ -929,7 +929,15 @@ export function DemoTour({
       steps.push({
         title: essai.titre,
         say: essai.say,
-        enter: () => { chime(); setScene(""); scrollTo("essayer"); },
+        /* ET LA PAGE À ONGLETS DES RESTAURANTS N'A PAS DE SECTION À FAIRE
+           DÉFILER : elle a un onglet. On le lui dit par un évènement, qu'elle
+           écoute et que la longue page ignore — voir `boutique-table.tsx`. */
+        enter: () => {
+          chime();
+          setScene("");
+          scrollTo("essayer");
+          try { window.dispatchEvent(new CustomEvent("clikme:montrer", { detail: "essayer" })); } catch { /* noop */ }
+        },
         // On laisse le bloc à l'écran après la phrase : c'est l'image qu'on
         // veut qu'il emporte, et la suite la recouvre immédiatement.
         respire: 1800,

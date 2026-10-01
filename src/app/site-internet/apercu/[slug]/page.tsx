@@ -40,9 +40,14 @@
 // aurait fait croire que le collectif ne lui apporte plus rien, au moment
 // précis où on lui montre le contraire.
 import type { Metadata } from "next";
+import { after } from "next/server";
+import { headers } from "next/headers";
+import { carteALire, lireLaCarte } from "@/lib/site-internet/carte-lue";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { noterClic } from "@/lib/direct/publications";
-import { carteDepuisFiche } from "@/lib/site-internet/carte-depuis-fiche";
+import { carteDepuisFiche, enGrand } from "@/lib/site-internet/carte-depuis-fiche";
+import { couvertureDuDiagnostic, photosCandidates } from "@/lib/site-internet/couverture";
+import { etatDeLaFiche, raisonLisible } from "@/lib/site-internet/fiche-google";
 import { COLONNES_FICHE, construireFiche } from "@/lib/site-internet/fiche-du-site";
 import { carteDeDemo, estAdresseDeDemo, listeDesDemos } from "@/lib/site-internet/fiches-demo";
 import { PageBoutique } from "./page-boutique";
@@ -106,6 +111,27 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   } catch {
     return { title: "Votre page", ...noindex };
   }
+}
+
+/**
+ * SA FICHE GOOGLE A-T-ELLE ÉTÉ LUE ? `places_found` le dit pour les pages
+ * récentes ; pour les plus anciennes, une page sans note, sans avis et sans
+ * photo Google n'a visiblement rien reçu de sa fiche.
+ */
+function ficheLue(row: Record<string, unknown>): { lue: boolean; erreurs: string[]; detail?: string; enCours: boolean } {
+  const d = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
+  const e = etatDeLaFiche(d);
+  const rien =
+    row.google_rating == null &&
+    !(Array.isArray(d.photos) && d.photos.length) &&
+    !(Array.isArray(d.reviews_top) && d.reviews_top.length);
+  return {
+    lue: e.lue || (d.places_found !== false && !rien),
+    erreurs: e.erreurs.map(raisonLisible),
+    // LE MESSAGE EXACT, POUR NOUS : c'est lui qui dit ce qui a coincé.
+    detail: e.erreurs.length || e.corrections.length ? [...e.erreurs, ...e.corrections].join(" | ").slice(0, 600) : undefined,
+    enCours: e.enCours,
+  };
 }
 
 export default async function ApercuMaquette({
@@ -289,6 +315,23 @@ export default async function ApercuMaquette({
   }
   const { fiche, nom, note, reviews } = construireFiche(slug, row, { disponibilites, services: proServicesRaw });
 
+  /* SA CARTE N'A PAS ENCORE ÉTÉ LUE SUR SES PHOTOS ? On la lit après avoir
+     servi la page (`after`) : les pages créées avant cette étape — et celles
+     dont la lecture a échoué — la rattrapent à la visite suivante. Une
+     tentative par demi-heure au plus, voir `carte-lue.ts`. */
+  if (carteALire(row.diagnostic)) {
+    const h = await headers();
+    const hote = h.get("x-forwarded-host") || h.get("host") || "";
+    const origine = `${h.get("x-forwarded-proto") || (/^(localhost|127\.)/.test(hote) ? "http" : "https")}://${hote}`;
+    after(async () => {
+      try {
+        await lireLaCarte(slug, origine);
+      } catch {
+        /* la visite suivante réessaiera */
+      }
+    });
+  }
+
   /* LE PRÉNOM DE SON DOUBLE, s'il en a donné un avec sa voix. Lecture à part :
      sans la migration, le double s'appelle simplement « le chef ». */
   let prenomChef = "";
@@ -325,6 +368,17 @@ export default async function ApercuMaquette({
       keepHref={keepHref}
       note={note}
       reviewsCount={reviews}
+      // SA PHOTO CLIKME : son état et les photos dont elle peut partir, dans
+      // l'ordre exact où le serveur les numérote. Jamais pour un visiteur.
+      couverture={
+        visiteurPublic
+          ? undefined
+          : {
+              etat: couvertureDuDiagnostic(row.diagnostic),
+              candidates: photosCandidates(row).map(enGrand),
+              fiche: ficheLue(row),
+            }
+      }
     />
   );
 }

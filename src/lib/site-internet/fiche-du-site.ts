@@ -23,6 +23,9 @@ import { ligneDuJour } from "@/lib/site-internet/opening-hours";
 import { numeroAppel, numeroReservations } from "@/lib/site-internet/pro-phone";
 import { carteDepuisFiche, type FicheCommercant } from "@/lib/site-internet/carte-depuis-fiche";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
+import { couvertureAffichee, couvertureDuDiagnostic } from "@/lib/site-internet/couverture";
+import { nomPropre } from "@/lib/site-internet/nom-propre";
+import { carteLueDuDiagnostic } from "@/lib/site-internet/carte-lue";
 
 const str = (v: unknown) => (v == null ? "" : String(v));
 const capWords = (s: string) =>
@@ -43,7 +46,8 @@ export function construireFiche(
   row: Record<string, unknown>,
   o: { disponibilites?: Array<Record<string, unknown>> | null; services?: unknown } = {},
 ): { fiche: FicheCommercant; nom: string; ville: string; note: string | null; reviews: number | null } {
-  const nom = str(row.business_name) || "Votre commerce";
+  // LES PAGES DÉJÀ CRÉÉES AVEC UN NOM EN MINUSCULES se redressent ici aussi.
+  const nom = nomPropre(str(row.business_name)) || "Votre commerce";
   const ville = str(row.city);
   const activite = str(row.activite) || "Commerce";
   const villeAff = capWords(ville);
@@ -162,6 +166,13 @@ export function construireFiche(
       : undefined,
     services,
     avisGoogle,
+    couverture: couvertureAffichee(couvertureDuDiagnostic(diag)),
+    carteLue: carteLueDuDiagnostic(diag),
+    ficheGoogle: {
+      menu: /^https?:\/\//i.test(str(diag.menu_url)) ? str(diag.menu_url) : undefined,
+      prix: str(diag.prix_moyen).slice(0, 30) || undefined,
+      services: (Array.isArray(diag.services_google) ? diag.services_google : []).map((x) => str(x)).filter(Boolean).slice(0, 8),
+    },
   };
   return { fiche, nom, ville, note, reviews };
 }

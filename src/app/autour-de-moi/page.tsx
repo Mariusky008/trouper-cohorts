@@ -13,6 +13,11 @@
 import type { Metadata, Viewport } from "next";
 import { MARQUE } from "@/lib/marque";
 import { ApercuHabitant } from "./apercu-habitant";
+import { CopainsDuQuartier, type CopainsProps } from "./copains-du-quartier";
+import { toutesLesCartes, type CarteAutour } from "@/lib/direct/apercu-habitant";
+import { choisirLesCopains, fantomeDe } from "@/lib/direct/copains";
+import { carteDeDemo, estAdresseDeDemo } from "@/lib/site-internet/fiches-demo";
+import { lireLeSite } from "@/lib/site-internet/fiche-du-site";
 
 /**
  * `viewport-fit=cover` — SANS LUI, L'IPHONE LAISSE UNE BANDE.
@@ -83,6 +88,57 @@ export const metadata: Metadata = {
 // la branche qu'on regarde. Et le lien de retour d'avis a disparu de l'écran —
 // il ajoutait une sortie hors de l'application dans une maquette qui doit se
 // jouer, pas se commenter. Le retour se demande de vive voix, en montrant.
-export default function AutourDeMoiPage() {
-  return <ApercuHabitant />;
+/**
+ * ═══ « EXPLORER MA VILLE », DEPUIS LA PAGE D'UN COMMERCE ═══════════════════
+ *
+ * `?depuis=` nomme le commerce d'où l'on vient — un commerce de la démonstration
+ * (son identifiant), ou une vraie page (son adresse). On retrouve sa carte, on
+ * choisit ses deux copains (`lib/direct/copains.ts`), et l'écran des copains
+ * passe devant l'application. Sans `depuis`, ou si on ne le retrouve pas,
+ * l'application s'ouvre comme d'habitude.
+ */
+async function leCommerce(depuis: string): Promise<{ carte: CarteAutour; fictif: boolean } | null> {
+  if (!depuis || !/^[a-z0-9-]{2,120}$/i.test(depuis)) return null;
+  const demo = toutesLesCartes().find((c) => c.id === depuis);
+  if (demo) return { carte: demo, fictif: true };
+  if (estAdresseDeDemo(depuis)) {
+    const c = carteDeDemo(depuis);
+    return c ? { carte: c, fictif: true } : null;
+  }
+  try {
+    const site = await lireLeSite(depuis);
+    return site ? { carte: site.carte, fictif: false } : null;
+  } catch {
+    return null;
+  }
+}
+
+export default async function AutourDeMoiPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ depuis?: string; retour?: string }>;
+}) {
+  const sp = await searchParams;
+  const trouve = await leCommerce(String(sp.depuis ?? ""));
+  let copains: CopainsProps | null = null;
+  if (trouve) {
+    const { carte } = trouve;
+    const choisis = choisirLesCopains(carte, toutesLesCartes());
+    // LE RETOUR NE PEUT MENER QUE CHEZ NOUS : une adresse relative, jamais une
+    // autre origine glissée dans le lien.
+    const retour = String(sp.retour ?? "");
+    copains = {
+      moi: { nom: carte.nom, metier: carte.metier, ville: carte.ville || "votre ville", fantome: fantomeDe(carte) },
+      copains: choisis,
+      retour: /^\/(?!\/)/.test(retour) ? retour : undefined,
+      // LES COPAINS VIENNENT DE LA DÉMONSTRATION : la page le dit, toujours.
+      fictifs: choisis.length > 0,
+    };
+  }
+  return (
+    <>
+      <ApercuHabitant />
+      {copains && <CopainsDuQuartier {...copains} />}
+    </>
+  );
 }

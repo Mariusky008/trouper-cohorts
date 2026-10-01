@@ -211,6 +211,13 @@ export default function HomePage() {
           .pop-home .gen-row.two{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
           .pop-home .gen input{width:100%;height:52px;border:1.5px solid var(--line);border-radius:14px;padding:0 15px;font-size:15.5px;font-family:inherit;background:#fff;color:var(--ink);transition:border-color .15s ease,box-shadow .15s ease;}
           .pop-home .gen input:focus{outline:none;border-color:var(--a1);box-shadow:0 0 0 4px rgba(18,185,129,.14);}
+          /* LA PHOTO DE SA DEVANTURE, FACULTATIVE : une ligne discrète, pas un champ de plus à remplir. */
+          .pop-home .genphoto{display:grid;grid-template-columns:44px 1fr;column-gap:12px;align-items:center;margin-bottom:10px;padding:8px 12px;border:1.5px dashed var(--line);border-radius:14px;background:#fff;cursor:pointer;}
+          .pop-home .genphoto input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
+          .pop-home .genphoto>span,.pop-home .genphoto>img{grid-row:span 2;width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;background:#F3F5F1;object-fit:cover;}
+          .pop-home .genphoto b{font-size:14px;color:var(--ink);}
+          .pop-home .genphoto em{font-style:normal;font-size:12px;color:var(--faint);line-height:1.35;}
+          .pop-home .genphoto.on{border-style:solid;border-color:var(--a1);}
           .pop-home .genbtn{position:relative;width:100%;height:56px;margin-top:4px;border:none;border-radius:15px;cursor:pointer;font-family:inherit;font-size:16.5px;font-weight:800;color:#fff;overflow:hidden;
             background:linear-gradient(120deg,var(--a1),var(--a2) 60%,var(--a3));box-shadow:0 18px 38px -12px rgba(18,185,129,.8);transition:transform .12s ease,filter .12s ease;}
           .pop-home .genbtn::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-18deg);animation:sheen 3.4s ease-in-out infinite;}
