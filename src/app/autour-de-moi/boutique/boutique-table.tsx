@@ -794,36 +794,57 @@ export function BoutiqueTable({
       {/* ════════════════════════════ 5 · LES AMIS ═════════════════════════ */}
       {onglet === "amis" && (
         <section className="bt-ecran bt-e-amis" key="amis">
-          <header className="bt-haut plein">
+          {/* ═══ UNE FENETRE DE MESSAGERIE, PAS UNE PAGE ══════════════════════
+              « Le salon n'est pas tres bien fait : il faut qu'il ressemble plus a
+              une pop-up messagerie de discussion en plein milieu de l'ecran, sans
+              image sur le cote. »
+              TOUT TIENT DANS UNE FENETRE : l'en-tete d'une conversation de
+              groupe (le lieu en pastille, le nom du salon, le cadenas), le
+              rendez-vous epingle en haut du fil, le fil, la saisie. Sur un
+              telephone, la fenetre prend l'ecran, comme toute messagerie ; sur
+              un ordinateur, elle flotte au milieu, et la moitie photo des
+              autres onglets disparait. La grande banniere photo est partie :
+              c'etait l'image d'une page, pas d'une conversation. */}
+          <div className="bt-fenetre" role="dialog" aria-label={`En parler à mes amis — ${c.nom}`}>
+          <header className="bt-haut plein bt-chat-tete">
             <button type="button" className="bt-rond" onClick={() => setOnglet("lieu")} aria-label="Revenir au lieu">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M19 12H5.5M11 5.5 4.5 12l6.5 6.5" />
               </svg>
             </button>
-            <div className="bt-marque">
-              <MotMarque className="bt-mot petit" encre="#FFF4E6" />
-              <b className="grand">En parler à mes amis</b>
-              <em>{c.nom} · Salon privé</em>
-            </div>
-            <span className="bt-rond vide cadenas" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <rect x="5" y="10.5" width="14" height="10" rx="2.4" />
-                <path d="M8.2 10.5V8a3.8 3.8 0 0 1 7.6 0v2.5" />
-              </svg>
+            <span
+              className={`bt-ava${dedans(0) ? "" : " vide"}`}
+              style={dedans(0) ? { backgroundImage: `url("${dedans(0)}")` } : undefined}
+              aria-hidden="true"
+            >
+              {dedans(0) ? null : c.nom[0]?.toUpperCase()}
             </span>
+            <div className="bt-chat-qui">
+              <b>En parler à mes amis</b>
+              <em>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="5" y="10.5" width="14" height="10" rx="2.4" />
+                  <path d="M8.2 10.5V8a3.8 3.8 0 0 1 7.6 0v2.5" />
+                </svg>
+                Salon privé · {c.nom}
+              </em>
+            </div>
           </header>
           <div className="bt-corps">
+            {/* LE RENDEZ-VOUS, EPINGLE EN HAUT DU FIL — comme un message
+                epingle dans une conversation de groupe. */}
             <div className="bt-rdv">
-              <div className="bt-rdv-i" style={{ backgroundImage: `url("${dedans(0)}")` }}>
+              <div className="bt-rdv-i">
+                <Epingle />
                 <div>
                   <b>On se retrouve ici&nbsp;?</b>
                   <em>
-                    <Epingle /> {c.nom}
+                    {c.nom}
                     {c.ville ? ` · ${c.ville}` : ""}
                   </em>
                 </div>
                 <button type="button" onClick={() => setOnglet("lieu")}>
-                  <Epingle /> Voir le lieu
+                  Voir le lieu
                 </button>
               </div>
               <div className="bt-rdv-b">
@@ -925,6 +946,7 @@ export function BoutiqueTable({
               </svg>
             </button>
           </form>
+          </div>
         </section>
       )}
 
@@ -1045,7 +1067,7 @@ export function BoutiqueTable({
       {pied && !(onglet === "infos") && (
         <button
           type="button"
-          className="bt-garder"
+          className={`bt-garder${onglet === "amis" ? " sur-salon" : ""}`}
           onClick={() => {
             setOnglet("infos");
             setVersPied(true);

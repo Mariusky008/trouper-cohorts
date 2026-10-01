@@ -368,31 +368,45 @@ export function StylesBoutiqueTable() {
         /* ═══ 5 · LES AMIS ══════════════════════════════════════════════ */
         .bt-e-amis .bt-corps{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;
           padding-bottom:12px;}
-        .bt-e-amis .bt-haut.plein{padding-top:calc(6px + env(safe-area-inset-top,0px));
-          padding-bottom:8px;}
-        .bt-e-amis .bt-marque b.grand{font-size:clamp(18px,5vw,21px);}
-        .bt-e-amis .bt-marque em{font-size:12.5px;}
-        .bt-rdv{border-radius:22px;overflow:hidden;border:1px solid var(--bt-trait);
+        /* LA FENETRE : sur un telephone elle EST l'ecran ; elle ne devient une
+           fenetre flottante que sur un ordinateur (plus bas). */
+        .bt-fenetre{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+        /* L'EN-TETE D'UNE CONVERSATION DE GROUPE : retour, la pastille du lieu,
+           le nom du salon et son cadenas — aligne a gauche, comme partout. */
+        .bt-haut.bt-chat-tete{grid-template-columns:40px 44px minmax(0,1fr);gap:10px;
+          padding-top:calc(8px + env(safe-area-inset-top,0px));padding-bottom:10px;
           background:var(--bt-nappe);}
-        .bt-rdv-i{position:relative;aspect-ratio:2.35 / 1;background-size:cover;
-          background-position:center;display:flex;align-items:flex-end;
-          justify-content:space-between;gap:10px;padding:12px 12px 12px 16px;}
-        .bt-rdv-i::before{content:"";position:absolute;inset:0;
-          background:linear-gradient(180deg,rgba(18,12,9,0) 35%,rgba(18,12,9,.86));}
-        .bt-rdv-i>*{position:relative;}
+        .bt-ava{width:44px;height:44px;border-radius:50%;background-size:cover;
+          background-position:center;border:2px solid rgba(245,162,58,.55);
+          display:flex;align-items:center;justify-content:center;
+          font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:18px;}
+        .bt-ava.vide{background:linear-gradient(150deg,#A8683A,#7A4526);}
+        .bt-chat-qui{min-width:0;display:flex;flex-direction:column;gap:1px;}
+        .bt-chat-qui b{font-family:var(--font-clikme),sans-serif;font-weight:800;
+          font-size:17px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;
+          text-overflow:ellipsis;}
+        .bt-chat-qui em{display:flex;align-items:center;gap:5px;font-style:normal;
+          font-size:13px;color:var(--bt-gris);white-space:nowrap;overflow:hidden;
+          text-overflow:ellipsis;}
+        .bt-chat-qui svg{flex:none;width:13px;height:13px;fill:none;stroke:currentColor;
+          stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+        /* LE RENDEZ-VOUS EPINGLE : une bande, pas une banniere photo. */
+        .bt-rdv{border-radius:18px;overflow:hidden;border:1px solid rgba(245,162,58,.28);
+          background:linear-gradient(180deg,rgba(245,162,58,.10),rgba(245,162,58,.04));}
+        .bt-rdv-i{display:flex;align-items:center;gap:10px;padding:11px 10px 11px 14px;}
+        .bt-rdv-i>.bt-ico{flex:none;width:20px;height:20px;color:var(--bt-ambre);}
+        .bt-rdv-i>div{flex:1 1 auto;min-width:0;}
         .bt-rdv-i b{display:block;font-family:var(--font-clikme),sans-serif;
-          font-weight:800;font-size:clamp(19px,5.6vw,23px);letter-spacing:-.02em;}
-        .bt-rdv-i em{display:flex;align-items:center;gap:4px;font-style:normal;
-          font-size:14px;color:#FFE3C4;margin-top:2px;}
-        .bt-rdv-i em .bt-ico{width:15px;height:15px;color:var(--bt-rose);}
-        .bt-rdv-i button{flex:none;display:flex;align-items:center;gap:6px;
-          padding:9px 13px;border-radius:999px;cursor:pointer;font-size:14px;
-          font-weight:600;background:rgba(12,8,6,.8);
-          border:1px solid rgba(255,244,230,.3);}
-        .bt-rdv-i button .bt-ico{width:16px;height:16px;}
-        .bt-rdv-b{display:grid;grid-template-columns:1fr 1fr;}
+          font-weight:800;font-size:16px;letter-spacing:-.01em;}
+        .bt-rdv-i em{display:block;font-style:normal;font-size:13px;color:#FFE3C4;
+          margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .bt-rdv-i button{flex:none;padding:8px 12px;border-radius:999px;cursor:pointer;
+          font-size:13.5px;font-weight:600;background:rgba(12,8,6,.55);
+          border:1px solid rgba(255,244,230,.24);white-space:nowrap;}
+        .bt-rdv-b{display:grid;grid-template-columns:1fr 1fr;
+          border-top:1px solid rgba(245,162,58,.18);}
         .bt-rdv-b button{display:flex;align-items:center;justify-content:center;gap:7px;
-          padding:11px 8px;background:none;border:0;cursor:pointer;font-size:14.5px;
+          padding:10px 8px;background:none;border:0;cursor:pointer;font-size:14px;
           font-weight:600;white-space:nowrap;}
         .bt-rdv-b button:first-child{color:var(--bt-rose);
           border-right:1px solid var(--bt-trait);}
@@ -432,6 +446,11 @@ export function StylesBoutiqueTable() {
         .bt-msg p{margin:0;padding:8px 13px;border-radius:18px 18px 18px 6px;
           font-size:15.5px;line-height:1.35;background:#2A1F1B;}
         .bt-msg.moi p{border-radius:18px 18px 6px 18px;background:var(--bt-rose);color:#fff;}
+        /* LE FIL SE POSE EN BAS, CONTRE LA SAISIE, comme dans toute messagerie :
+           le rendez-vous reste epingle en haut, le vide va entre les deux. */
+        .bt-e-amis .bt-corps{display:flex;flex-direction:column;}
+        .bt-e-amis .bt-corps>*{flex:none;}
+        .bt-e-amis .bt-corps>.bt-trait{margin-top:auto;padding-top:10px;}
         .bt-e-amis .bt-duo{margin-top:12px;}
         .bt-e-amis .bt-note{max-width:none;}
         .bt-ecrire{flex:none;display:flex;align-items:center;gap:10px;
@@ -508,6 +527,9 @@ export function StylesBoutiqueTable() {
           font:inherit;font-size:13px;font-weight:700;color:#1A0F08;
           background:linear-gradient(140deg,#FFC66B,#F5A23A);
           box-shadow:0 8px 22px -8px rgba(245,162,58,.9);}
+        /* SUR LE SALON D'UN TELEPHONE, ELLE SE RETIRE : elle tombait sur
+           l'en-tete de la conversation. Les cinq autres onglets la gardent. */
+        @media (max-width: 959px){.bt-garder.sur-salon{display:none;}}
         .bt-pied{margin-top:22px;}
 
         /* ═══ LA BARRE COMMUNE ══════════════════════════════════════════ */
@@ -581,7 +603,7 @@ export function StylesBoutiqueTable() {
             rgba(18,12,9,0) 60%,rgba(18,12,9,.55) 88%,var(--bt-fond) 100%),
             linear-gradient(180deg,rgba(18,12,9,.55) 0%,rgba(18,12,9,0) 26%,
             rgba(18,12,9,0) 70%,rgba(18,12,9,.6) 100%);}
-          .bt-ecran>:not(.bt-photo):not(.bt-voile):not(.bt-hero){
+          .bt-ecran>:not(.bt-photo):not(.bt-voile):not(.bt-hero):not(.bt-fenetre){
             margin-left:var(--bt-g);width:calc(100% - var(--bt-g));
             padding-left:var(--bt-d);padding-right:var(--bt-d);box-sizing:border-box;}
           .bt-ecran>*>*{max-width:600px;}
@@ -608,11 +630,26 @@ export function StylesBoutiqueTable() {
           .bt-apres,.bt-note,.bt-lien{max-width:none;}
           .bt-e-avis .bt-go,.bt-e-avis .bt-deux,.bt-e-infos .bt-autour{width:100%;}
           .bt-e-avis .bt-corps{padding-top:84px;}
-          /* LES AMIS N'ONT PAS DE PHOTO EN PLEIN : une seule colonne, centree. */
-          .bt-e-amis>:not(.bt-photo){margin-left:auto;margin-right:auto;
-            width:100%;max-width:720px;}
-          .bt-e-amis>*>*{max-width:none;}
-          .bt-e-amis .bt-haut.plein{max-width:none;}
+          /* LES AMIS : UNE FENETRE DE MESSAGERIE AU MILIEU DE L'ECRAN.
+             La regle des deux moities ci-dessus la poussait dans la moitie
+             droite, la gauche restant noire et vide : elle en est exclue. Le
+             fond n'est qu'une lueur ambree, sans photo. */
+          .bt-e-amis{align-items:center;justify-content:center;padding:28px 24px;
+            background:radial-gradient(60% 55% at 50% 45%,rgba(245,162,58,.13),
+              rgba(18,12,9,0) 70%),var(--bt-fond);}
+          .bt-ecran.bt-e-amis>.bt-fenetre{margin:0;padding:0;flex:none;
+            width:min(640px,100%);height:min(860px,100%);
+            border-radius:28px;overflow:hidden;background:var(--bt-fond);
+            border:1px solid rgba(255,196,140,.2);
+            box-shadow:0 40px 100px -20px rgba(0,0,0,.85),
+              0 0 0 8px rgba(245,162,58,.05);
+            animation:btFenetre .34s cubic-bezier(.2,.8,.2,1) both;}
+          .bt-e-amis .bt-fenetre>*{max-width:none;}
+          .bt-e-amis .bt-haut.bt-chat-tete{padding:14px 18px;}
+          .bt-e-amis .bt-corps{padding:14px 20px 12px;}
+          .bt-e-amis .bt-ecrire{padding:12px 18px 14px;}
+          @keyframes btFenetre{from{opacity:0;transform:translateY(14px) scale(.98);}
+            to{opacity:1;transform:none;}}
           /* LES INFOS : le heros devient la moitie gauche, sur toute la hauteur. */
           .bt-e-infos .bt-hero{position:absolute;left:0;top:0;bottom:0;
             width:var(--bt-g);height:auto;margin:0;}
