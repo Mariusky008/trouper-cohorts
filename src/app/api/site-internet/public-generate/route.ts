@@ -18,6 +18,7 @@ import { apifyGoogleMaps, normName } from "@/lib/site-internet/apify";
 import { isDirectoryUrl } from "@/lib/site-internet/directories";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { fabriquerCouverture } from "@/lib/site-internet/couverture";
+import { nomPropre } from "@/lib/site-internet/nom-propre";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -246,7 +247,13 @@ export async function POST(request: Request) {
   const row = {
     slug,
     channel: "letter" as const,
-    business_name: businessName,
+    /* LE NOM QUE GOOGLE ÉCRIT, QUAND C'EST BIEN LA SIENNE : « Le Bordeaux »,
+       pas « le bordeaux » tapé vite. Sinon le sien, redressé s'il est tout en
+       minuscules — voir `nom-propre.ts`. */
+    business_name:
+      biz && matchesBusiness(String(biz.title || ""), self) && str(biz.title).length >= 2
+        ? str(biz.title).slice(0, 90)
+        : nomPropre(businessName),
     city,
     activite,
     address,

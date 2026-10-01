@@ -19,6 +19,7 @@
 // LE CLIENT NE VOIT NI L'UN NI L'AUTRE : la page ne les rend qu'au commerçant.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { reduirePhoto } from "@/lib/site-internet/reduire-photo";
 
 type Etat = {
   etat: "en_cours" | "prete" | "echec" | "originale";
@@ -85,7 +86,41 @@ function useCouverture(slug: string, initial: Etat) {
     [slug, router],
   );
 
-  return { etat, essaisMax, dit, occupe, demander };
+  /** SA PHOTO DE DEVANTURE, réduite ici puis envoyée : elle part tout de suite au rendu. */
+  const envoyerPhoto = useCallback(
+    async (f: File | undefined) => {
+      if (!f) return;
+      let photo = "";
+      try {
+        photo = await reduirePhoto(f);
+      } catch {
+        setDit("Cette photo n'a pas pu être lue. Essayez-en une autre.");
+        return;
+      }
+      await demander({ photo });
+    },
+    [demander],
+  );
+
+  return { etat, essaisMax, dit, occupe, demander, envoyerPhoto };
+}
+
+/** Le bouton qui ouvre le choix d'une photo — un vrai bouton, l'entrée est cachée dedans. */
+function EnvoyerPhoto({ onPhoto, desactive, children }: { onPhoto: (f: File | undefined) => void; desactive?: boolean; children: React.ReactNode }) {
+  return (
+    <label className={`ccl-envoi${desactive ? " off" : ""}`}>
+      <input
+        type="file"
+        accept="image/*"
+        disabled={desactive}
+        onChange={(e) => {
+          onPhoto(e.target.files?.[0]);
+          e.target.value = "";
+        }}
+      />
+      {children}
+    </label>
+  );
 }
 
 /**
@@ -93,9 +128,10 @@ function useCouverture(slug: string, initial: Etat) {
  * jamais été tenté — un échec ou un refus ne se relance pas tout seul.
  */
 export function VeilleCouverture({ slug, initial, aDesPhotos }: { slug: string; initial: Etat; aDesPhotos: boolean }) {
-  const { etat, demander } = useCouverture(slug, initial);
+  const { etat, demander, envoyerPhoto, occupe, dit } = useCouverture(slug, initial);
   const lance = useRef(false);
   const [prete, setPrete] = useState(false);
+  const [ferme, setFerme] = useState(false);
   const etaitEnCours = useRef(initial?.etat === "en_cours");
 
   useEffect(() => {
@@ -114,6 +150,47 @@ export function VeilleCouverture({ slug, initial, aDesPhotos }: { slug: string; 
     }
   }, [etat?.etat]);
 
+  /**
+   * ═══ QUAND IL N'Y A RIEN À TRANSFORMER, ON LE DIT — ET ON LUI DONNE LE GESTE ══
+   *
+   * « J'ai rentré un restaurant et le résultat est le même qu'avant. » Sa
+   * fiche n'avait aucune photo utilisable : la photo ClikMe ne pouvait pas se
+   * faire, et la page restait muette — on voyait l'ancien décor sans savoir
+   * pourquoi. Elle le dit maintenant, en haut, et propose d'envoyer la photo
+   * de sa devanture d'un geste. Même chose quand un rendu a échoué : la raison
+   * est écrite, et il peut réessayer ou changer de photo.
+   */
+  const sansPhoto = !etat && !aDesPhotos;
+  const rate = etat?.etat === "echec" && !etat.url;
+  if ((sansPhoto || rate) && !ferme) {
+    return (
+      <>
+        <style>{STYLE_VEILLE}</style>
+        <div className="ccl-appel" role="status">
+          <button type="button" className="ccl-x" aria-label="Fermer" onClick={() => setFerme(true)}>
+            ×
+          </button>
+          <b>{sansPhoto ? "📷 Il manque la photo de votre devanture" : "Votre photo ClikMe n'a pas pu être faite"}</b>
+          <span>
+            {sansPhoto
+              ? "Votre fiche Google n'en a pas d'utilisable. Envoyez-en une : on en fait votre photo ClikMe, avec nos fantômes dedans."
+              : `${etat?.erreur ? `Raison : ${etat.erreur.slice(0, 140)}. ` : ""}Envoyez une photo de votre devanture, ou réessayez.`}
+          </span>
+          <div>
+            <EnvoyerPhoto onPhoto={envoyerPhoto} desactive={occupe}>
+              {occupe ? "Envoi…" : "Envoyer une photo"}
+            </EnvoyerPhoto>
+            {rate && aDesPhotos && (
+              <button type="button" disabled={occupe} onClick={() => demander({ refaire: true })}>
+                Réessayer
+              </button>
+            )}
+          </div>
+          {dit && <em>{dit}</em>}
+        </div>
+      </>
+    );
+  }
   if (etat?.etat !== "en_cours" && !prete) return null;
   return (
     <>
@@ -136,7 +213,7 @@ export function ChoixCouverture({
   /** Ses photos, prêtes à afficher (dans l'ordre que le serveur numérote). */
   candidates: string[];
 }) {
-  const { etat, essaisMax, dit, occupe, demander } = useCouverture(slug, initial);
+  const { etat, essaisMax, dit, occupe, demander, envoyerPhoto } = useCouverture(slug, initial);
   const [choisir, setChoisir] = useState(false);
   const reste = Math.max(0, essaisMax - (etat?.essais ?? 0));
   const enCours = etat?.etat === "en_cours";
@@ -152,10 +229,18 @@ export function ChoixCouverture({
       </p>
 
       {!candidates.length ? (
-        <p className="ccl-note">
-          Votre fiche n&apos;a pas encore de photo. Déposez celle de votre devanture dans votre Espace Pro :
-          elle deviendra votre photo ClikMe.
-        </p>
+        <>
+          <p className="ccl-note">
+            Votre fiche Google n&apos;a pas de photo utilisable. Envoyez celle de votre devanture : elle
+            deviendra votre photo ClikMe.
+          </p>
+          <div className="ccl-gestes">
+            <EnvoyerPhoto onPhoto={envoyerPhoto} desactive={occupe || enCours}>
+              📷 Envoyer la photo de ma devanture
+            </EnvoyerPhoto>
+          </div>
+          {dit && <p className="ccl-note">{dit}</p>}
+        </>
       ) : (
         <>
           <div className="ccl-vue">
@@ -192,6 +277,9 @@ export function ChoixCouverture({
             <button type="button" disabled={occupe || enCours || reste === 0} onClick={() => setChoisir((x) => !x)}>
               Partir d&apos;une autre photo
             </button>
+            <EnvoyerPhoto onPhoto={envoyerPhoto} desactive={occupe || enCours || reste === 0}>
+              📷 Envoyer une photo
+            </EnvoyerPhoto>
             {etat?.url && etat.etat !== "originale" && (
               <button type="button" className="sobre" disabled={occupe || enCours} onClick={() => demander({ originale: true })}>
                 Garder ma photo d&apos;origine
@@ -221,6 +309,7 @@ export function ChoixCouverture({
             {reste > 0
               ? `Encore ${reste} rendu${reste > 1 ? "s" : ""} possible${reste > 1 ? "s" : ""}.`
               : "Vous avez utilisé tous les rendus : écrivez-nous pour en refaire une."}
+            {etat?.etat === "echec" && etat.erreur ? ` Dernier essai : ${etat.erreur.slice(0, 160)}.` : ""}
             {dit ? ` ${dit}` : ""}
           </p>
         </>
@@ -236,7 +325,24 @@ const STYLE_VEILLE = `
   background:linear-gradient(140deg,#FFD38A,#F5A23A);
   box-shadow:0 10px 26px -10px rgba(245,162,58,.9);animation:cclVient .4s ease both;}
 @keyframes cclVient{from{opacity:0;transform:translate(-50%,-8px);}to{opacity:1;transform:translate(-50%,0);}}
-@media (prefers-reduced-motion: reduce){.ccl-veille{animation:none;}}
+@media (prefers-reduced-motion: reduce){.ccl-veille,.ccl-appel{animation:none;}}
+.ccl-appel{position:fixed;z-index:60;left:50%;transform:translateX(-50%);
+  top:calc(70px + env(safe-area-inset-top,0px));width:min(440px,calc(100vw - 24px));
+  box-sizing:border-box;padding:14px 16px;border-radius:18px;font:14px/1.4 system-ui,sans-serif;
+  color:#FFF4E6;background:rgba(28,20,17,.96);border:1px solid rgba(245,162,58,.45);
+  box-shadow:0 18px 40px -14px rgba(0,0,0,.8);animation:cclVient .4s ease both;}
+.ccl-appel b{display:block;margin:0 22px 4px 0;font-size:15px;}
+.ccl-appel span{display:block;color:#CDB8A4;font-size:13px;}
+.ccl-appel em{display:block;margin-top:6px;font-style:normal;font-size:12.5px;color:#FFB4A0;}
+.ccl-appel div{display:flex;gap:8px;margin-top:10px;}
+.ccl-appel div>*{flex:1 1 auto;text-align:center;padding:10px 12px;border-radius:999px;cursor:pointer;
+  font:700 14px/1.2 system-ui,sans-serif;color:#1A0F08;border:0;background:linear-gradient(140deg,#FFC66B,#F5A23A);}
+.ccl-appel div>button{color:#FFF4E6;background:none;border:1px solid rgba(255,244,230,.3);}
+.ccl-x{position:absolute;right:8px;top:6px;width:30px;height:30px;border:0;background:none;
+  color:#CDB8A4;font-size:22px;line-height:1;cursor:pointer;}
+.ccl-envoi{position:relative;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;}
+.ccl-envoi input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
+.ccl-envoi.off{opacity:.45;cursor:default;}
 `;
 
 const STYLE_PANNEAU = `
@@ -254,11 +360,11 @@ const STYLE_PANNEAU = `
   border:3px solid rgba(245,162,58,.3);border-top-color:#F5A23A;animation:cclTourne 1s linear infinite;}
 @keyframes cclTourne{to{transform:rotate(360deg);}}
 .ccl-gestes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
-.ccl-gestes button{flex:1 1 auto;padding:11px 14px;border-radius:999px;cursor:pointer;
+.ccl-gestes button,.ccl-gestes .ccl-envoi{flex:1 1 auto;padding:11px 14px;border-radius:999px;cursor:pointer;
   font:inherit;font-size:14px;font-weight:700;color:#1A0F08;border:0;
   background:linear-gradient(140deg,#FFC66B,#F5A23A);}
 .ccl-gestes button.sobre{color:#FFF4E6;background:none;border:1px solid rgba(255,244,230,.25);}
-.ccl-gestes button:disabled{opacity:.45;cursor:default;}
+.ccl-gestes button:disabled,.ccl-gestes .ccl-envoi.off{opacity:.45;cursor:default;}
 .ccl-choix{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;}
 .ccl-choix button{padding:0;border:0;border-radius:10px;overflow:hidden;aspect-ratio:1;cursor:pointer;
   background:#120C09;}

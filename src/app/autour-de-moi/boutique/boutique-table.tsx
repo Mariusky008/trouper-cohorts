@@ -110,11 +110,15 @@ const ONGLETS: { cle: Onglet; mot: string }[] = [
  * plus grosse, porte une faute qu'un restaurateur verra avant tout le reste.
  */
 function aLaMaison(nom: string): string {
-  if (/^Le\s/.test(nom)) return `au ${nom.slice(3)}`;
-  if (/^Les\s/.test(nom)) return `aux ${nom.slice(4)}`;
-  if (/^La\s/.test(nom)) return `à la ${nom.slice(3)}`;
-  if (/^L['’]/.test(nom)) return `à l’${nom.slice(2)}`;
-  if (/^(Un|Une)\s/.test(nom)) return `à ${nom[0].toLowerCase()}${nom.slice(1)}`;
+  /* SANS ÉGARD À LA CASSE : « le bordeaux », tapé en minuscules, donnait
+     « Bienvenue à le bordeaux ». L'article se contracte quelle que soit la
+     façon dont il a été écrit, et le nom qui suit garde sa capitale. */
+  const cap = (s: string) => s.replace(/^(\p{L})/u, (x) => x.toUpperCase());
+  if (/^le\s/i.test(nom)) return `au ${cap(nom.slice(3))}`;
+  if (/^les\s/i.test(nom)) return `aux ${cap(nom.slice(4))}`;
+  if (/^la\s/i.test(nom)) return `à la ${cap(nom.slice(3))}`;
+  if (/^l['’]/i.test(nom)) return `à l’${cap(nom.slice(2))}`;
+  if (/^(un|une)\s/i.test(nom)) return `à ${nom[0].toLowerCase()}${nom.slice(1)}`;
   return `à ${nom}`;
 }
 

@@ -24,6 +24,7 @@ import { numeroAppel, numeroReservations } from "@/lib/site-internet/pro-phone";
 import { carteDepuisFiche, type FicheCommercant } from "@/lib/site-internet/carte-depuis-fiche";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { couvertureAffichee, couvertureDuDiagnostic } from "@/lib/site-internet/couverture";
+import { nomPropre } from "@/lib/site-internet/nom-propre";
 
 const str = (v: unknown) => (v == null ? "" : String(v));
 const capWords = (s: string) =>
@@ -44,7 +45,8 @@ export function construireFiche(
   row: Record<string, unknown>,
   o: { disponibilites?: Array<Record<string, unknown>> | null; services?: unknown } = {},
 ): { fiche: FicheCommercant; nom: string; ville: string; note: string | null; reviews: number | null } {
-  const nom = str(row.business_name) || "Votre commerce";
+  // LES PAGES DÉJÀ CRÉÉES AVEC UN NOM EN MINUSCULES se redressent ici aussi.
+  const nom = nomPropre(str(row.business_name)) || "Votre commerce";
   const ville = str(row.city);
   const activite = str(row.activite) || "Commerce";
   const villeAff = capWords(ville);

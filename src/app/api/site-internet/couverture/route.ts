@@ -1,6 +1,6 @@
 // 📸 LA PHOTO CLIKME D'UN COMMERCE — la lancer, la suivre, en changer.
 //
-// POST { slug, source?, refaire?, originale?, reprendre? }
+// POST { slug, source?, refaire?, originale?, reprendre?, photo? }
 //   → répond tout de suite avec l'état ; le rendu, s'il y en a un, tourne
 //     ensuite (`after`) et l'écran interroge GET pendant ce temps.
 // GET ?slug= → l'état seul, sans rien lancer.
@@ -51,6 +51,8 @@ export async function POST(requete: Request) {
     refaire: p.refaire === true,
     originale: p.originale === true,
     reprendre: p.reprendre === true,
+    // LA PHOTO DE SA DEVANTURE, envoyée depuis sa page, déjà réduite par le navigateur.
+    depot: typeof p.photo === "string" && p.photo.length < 6_000_000 ? p.photo : undefined,
   });
   if (prep.travail) after(prep.travail);
   return NextResponse.json(

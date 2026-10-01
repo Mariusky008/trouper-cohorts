@@ -80,6 +80,11 @@ export type EtatCouverture = {
   erreur?: string;
   /** Quand le dernier rendu a été LANCÉ — c'est ce que compte le plafond du jour. */
   lance?: string;
+  /**
+   * LA PHOTO DE DEVANTURE QU'IL A ENVOYÉE DEPUIS SA PAGE, rangée dans le
+   * stockage. Elle passe en tête des photos de départ.
+   */
+  depot?: string;
 };
 
 /** L'état rangé dans le diagnostic, s'il y en a un et qu'il est lisible. */
@@ -98,6 +103,7 @@ export function couvertureDuDiagnostic(diag: unknown): EtatCouverture | null {
     modele: s(c.modele) || undefined,
     erreur: s(c.erreur) || undefined,
     lance: s(c.lance) || undefined,
+    depot: s(c.depot) || undefined,
   };
 }
 
@@ -194,7 +200,11 @@ async function lireSource(src: string, origine: string): Promise<{ type: string;
   const d = decoder(src);
   if (d) return d;
   let adresse = "";
-  if (/^https?:\/\//i.test(src)) adresse = `${origine}/api/photo-fiche?u=${encodeURIComponent(src)}`;
+  // NOTRE PROPRE STOCKAGE (une photo qu'il a envoyée) se lit directement :
+  // ce n'est pas une adresse de Google, la route photo-fiche la refuserait.
+  const stockage = `${s(process.env.NEXT_PUBLIC_SUPABASE_URL)}/storage/v1/object/public/`;
+  if (s(process.env.NEXT_PUBLIC_SUPABASE_URL) && src.startsWith(stockage)) adresse = src;
+  else if (/^https?:\/\//i.test(src)) adresse = `${origine}/api/photo-fiche?u=${encodeURIComponent(src)}`;
   else if (src.startsWith("/")) adresse = `${origine}${src}`;
   if (!adresse) return null;
   try {
@@ -377,7 +387,8 @@ export function photosCandidates(row: Record<string, unknown>): string[] {
   const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
   const siennes = (Array.isArray(row.gallery_photos) ? row.gallery_photos : []).map(s).filter((u) => /^data:image\//i.test(u));
   const google = (Array.isArray(diag.photos) ? diag.photos : []).map(s).filter((u) => /^https?:\/\//i.test(u));
-  return [...new Set([...siennes, ...google])].slice(0, 12);
+  const depot = couvertureDuDiagnostic(diag)?.depot;
+  return [...new Set([...(depot ? [depot] : []), ...siennes, ...google])].slice(0, 12);
 }
 
 async function ecrireEtat(id: string, diag: Record<string, unknown>, etat: EtatCouverture): Promise<void> {
@@ -402,6 +413,11 @@ export type Demande = {
   originale?: boolean;
   /** Reprendre la couverture ClikMe déjà faite, après être revenu à l'originale. */
   reprendre?: boolean;
+  /**
+   * UNE PHOTO DE SA DEVANTURE, ENVOYÉE DEPUIS SA PAGE (`data:`, déjà réduite
+   * par le navigateur). Elle est rangée, puis transformée tout de suite.
+   */
+  depot?: string;
 };
 
 /** LA COUVERTURE QU'ON MONTRE : une image faite, sauf s'il a choisi l'originale. */
@@ -461,14 +477,35 @@ export async function preparerCouverture(
   if (avant?.etat === "en_cours" && Date.now() - Date.parse(avant.at) < EN_COURS_PERIME_MS) {
     return { etat: avant, raison: "déjà en cours" };
   }
-  const designee = typeof demande.source === "number";
+  const designee = typeof demande.source === "number" || Boolean(demande.depot);
   if (avant?.etat === "prete" && !demande.refaire && !designee) return { etat: avant };
   if (avant?.etat === "originale" && !demande.refaire && !designee) return { etat: avant };
   const essais = avant?.essais ?? 0;
   if (essais >= ESSAIS_MAX) return { etat: avant, raison: `plafond de ${ESSAIS_MAX} rendus atteint pour ce commerce` };
 
-  const candidates = photosCandidates(row);
+  /**
+   * ═══ LA PHOTO QU'IL ENVOIE DEPUIS SA PAGE ═══════════════════════════════
+   *
+   * « J'ai rentré un restaurant et le résultat est le même qu'avant. » Sa
+   * fiche n'avait aucune photo utilisable : rien à transformer, donc rien de
+   * fait — et rien ne le lui disait. Il peut maintenant envoyer la photo de sa
+   * devanture d'où il est, et c'est elle qui part.
+   */
+  let depot = avant?.depot;
+  if (demande.depot) {
+    const d = decoder(demande.depot);
+    if (!d || d.donnees.length > 6_000_000) return { etat: avant, raison: "photo illisible ou trop lourde" };
+    const ext = d.type.includes("png") ? "png" : d.type.includes("webp") ? "webp" : "jpg";
+    const cheminDepot = `${DOSSIER}/depots/${slug}-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage
+      .from(SEAU)
+      .upload(cheminDepot, Buffer.from(d.donnees, "base64"), { contentType: d.type, upsert: true });
+    if (error) return { etat: avant, raison: `stockage : ${error.message}` };
+    depot = supabase.storage.from(SEAU).getPublicUrl(cheminDepot).data.publicUrl;
+  }
+  const candidates = [...new Set([...(depot ? [depot] : []), ...photosCandidates(row)])];
   if (!candidates.length) return { etat: avant, raison: "aucune photo de départ" };
+  if (demande.depot) demande = { ...demande, source: 0 };
 
   // LE PLAFOND DU JOUR, POUR TOUT LE SITE. Compté sur les rendus lancés.
   try {
@@ -483,10 +520,11 @@ export async function preparerCouverture(
   }
 
   // ON POSE « EN COURS » AVANT DE PAYER, pour qu'un second appel n'en lance pas un autre.
-  const enCours: EtatCouverture = { ...avant, etat: "en_cours", at: maintenant, essais: essais + 1, lance: maintenant };
+  const enCours: EtatCouverture = { ...avant, depot, etat: "en_cours", at: maintenant, essais: essais + 1, lance: maintenant };
   await ecrireEtat(id, diag, enCours);
 
-  return { etat: enCours, travail: () => rendreEtRanger(slug, origine, demande, row, diag, avant, candidates, maintenant) };
+  const avecDepot = avant || depot ? { ...(avant ?? { etat: "echec" as const, at: maintenant, essais: 0 }), depot } : null;
+  return { etat: enCours, travail: () => rendreEtRanger(slug, origine, demande, row, diag, avecDepot, candidates, maintenant) };
 }
 
 async function rendreEtRanger(
@@ -563,6 +601,7 @@ async function rendreEtRanger(
     essais: essais + 1,
     lance: maintenant,
     modele: r.modele,
+    depot: avant?.depot,
   };
   // ON RELIT LE DIAGNOSTIC AVANT D'ECRIRE : le rendu a duré, quelqu'un a pu y toucher.
   const { data: frais } = await supabase.from("human_vitrine_sites").select("diagnostic").eq("id", id).maybeSingle();
