@@ -396,7 +396,15 @@ export function BoutiqueTable({
   const avis = avisG.length
     ? avisG.map((a) => ({ qui: a.qui, texte: a.texte, note: a.note, source: "Google" }))
     : avisIci.map((a) => ({ qui: a.qui, texte: a.texte, note: a.note, source: `ClikMe · ${a.quand}` }));
-  const carteLignes = (c.catalogue ?? []).slice(0, 4);
+  /**
+   * SA VRAIE CARTE PASSE AVANT LES FORMULES DU MÉTIER. Sans carte saisie, la
+   * page montrait « Formule du midi », « Brunch du week-end » — les formules
+   * habituelles d'un restaurant, qu'il ne fait peut-être pas. Quand sa fiche
+   * Google donne le lien de son menu, c'est lui qu'on montre, et ces lignes
+   * génériques se retirent.
+   */
+  const carteGoogleSeule = Boolean(c.cataloguePropose && c.ficheGoogle?.menu);
+  const carteLignes = carteGoogleSeule ? [] : (c.catalogue ?? []).slice(0, 4);
   const prenom = prenomChef || c.voix?.prenom;
   const leChef = prenom ? prenom : "le chef";
 
@@ -468,7 +476,21 @@ export function BoutiqueTable({
   /** L'en-tête commun : la flèche, le mot ClikMe, le nom du lieu dessous. */
   const entete = (avecNom: boolean) => (
     <header className="bt-haut">
-      {retourHref ? (
+      {/* SUR UN TÉLÉPHONE, LA PASTILLE DU COMMERÇANT PREND LA PLACE VIDE DE
+          GAUCHE : posée par-dessus à droite, elle mangeait le nom du
+          restaurant (« Le Bordea… »). Voir aussi `.bt-garder`, pour l'ordinateur. */}
+      {!retourHref && pied && onglet !== "infos" ? (
+        <button
+          type="button"
+          className="bt-garder-tete"
+          onClick={() => {
+            setOnglet("infos");
+            setVersPied(true);
+          }}
+        >
+          ✨ Ma page
+        </button>
+      ) : retourHref ? (
         <Link className="bt-rond" href={retourHref} aria-label="Retour">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M19 12H5.5M11 5.5 4.5 12l6.5 6.5" />
@@ -699,7 +721,14 @@ export function BoutiqueTable({
             <div className="bt-nappe">
               <div className="bt-onglet-titre">
                 <h1 className="bt-titre moyen">La carte</h1>
-                {c.cataloguePropose && (
+                {/* LE PRIX PAR PERSONNE, TEL QUE GOOGLE L'AFFICHE : « 20–30 € ».
+                    Recopié, jamais estimé. */}
+                {c.ficheGoogle?.prix && (
+                  <p className="bt-sous">
+                    Prix par personne : <b>{c.ficheGoogle.prix}</b> · selon Google
+                  </p>
+                )}
+                {c.cataloguePropose && !carteGoogleSeule && (
                   <p className="bt-sous">
                     {saPage ? "À compléter par le restaurant." : "Les formules habituelles — à confirmer sur place."}
                   </p>
@@ -726,8 +755,26 @@ export function BoutiqueTable({
                     </li>
                   ))}
                 </ul>
+              ) : carteGoogleSeule ? (
+                <p className="bt-vide">
+                  {saPage
+                    ? "Votre carte publiée sur Google, avec ses prix, s’ouvre ci-dessous. Vos plats saisis dans l’Espace Pro s’afficheront ici."
+                    : "Sa carte complète, avec ses prix, est publiée sur sa fiche Google."}
+                </p>
               ) : (
                 <p className="bt-vide">Sa carte arrive. En attendant, demandez au chef ce qu’il propose aujourd’hui.</p>
+              )}
+              {/* ═══ SON MENU, LÀ OÙ IL EST PUBLIÉ ═══════════════════════════
+                  « Quand je regarde la fiche Google, je vois bien les menus,
+                  les prix. » C'est vrai, et on n'en montrait rien. Son lien de
+                  menu ouvre la carte complète, avec ses prix, telle qu'il l'a
+                  publiée — c'est la sienne, à jour, et on ne la recopie pas à
+                  la main. */}
+              {c.ficheGoogle?.menu && (
+                <a className="bt-deux bt-menu-g" href={c.ficheGoogle.menu} target="_blank" rel="noreferrer noopener">
+                  <Externe />
+                  Voir la carte complète et les prix
+                </a>
               )}
               <button type="button" className="bt-go" onClick={() => setDiscute(true)}>
                 <Calendrier />
@@ -736,7 +783,7 @@ export function BoutiqueTable({
               {/* SA MAQUETTE DIT « Prestations proposées · À valider par le
                   restaurant ». Au restaurateur, oui ; au client, ces mots ne
                   lui demandent rien — il lit que les prix se donnent sur place. */}
-              {c.cataloguePropose && (
+              {c.cataloguePropose && !carteGoogleSeule && (
                 <p className="bt-note">
                   <i aria-hidden="true">ⓘ</i> {saPage ? "Proposées · À valider par vous." : "Formules habituelles · Prix sur place."}
                 </p>
@@ -1055,6 +1102,13 @@ export function BoutiqueTable({
                 Écrire au restaurant
               </button>
             </div>
+            {/* SES SERVICES, TELS QUE SA FICHE LES ANNONCE : « Terrasse ·
+                Excellents cocktails · Convient aux végétariens ». */}
+            {c.ficheGoogle?.services && c.ficheGoogle.services.length > 0 && (
+              <p className="bt-services">
+                <b>Sur place</b> {c.ficheGoogle.services.join(" · ")}
+              </p>
+            )}
             {photos.length > 1 && (
               <>
                 <h2 className="bt-h2">Le lieu en images</h2>

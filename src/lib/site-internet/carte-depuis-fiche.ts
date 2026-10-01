@@ -67,6 +67,8 @@ export type FicheCommercant = {
   avisGoogle?: { qui: string; texte: string; note: number | null }[];
   /** Sa photo ClikMe, quand elle est prête — voir `lib/site-internet/couverture.ts`. */
   couverture?: string;
+  /** Ce que sa fiche Google dit de sa carte : lien du menu, prix par personne, services. */
+  ficheGoogle?: { menu?: string; prix?: string; services?: string[] };
 };
 
 /**
@@ -289,6 +291,8 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
      */
     sesPhotos: photos.map((src) => ({ src, quoi: "" })),
     couverture: f.couverture || undefined,
+    ficheGoogle:
+      f.ficheGoogle && (f.ficheGoogle.menu || f.ficheGoogle.prix || f.ficheGoogle.services?.length) ? f.ficheGoogle : undefined,
     telephone: f.telephone || undefined,
     site: f.site || undefined,
     // LA NOTE VIENT DE GOOGLE ET ON LE DIT AINSI : c'est la seule chose de

@@ -1252,6 +1252,13 @@ export type CarteAutour = {
    */
   couverture?: string;
   /**
+   * CE QUE SA FICHE GOOGLE DIT DE SA CARTE — « quand je regarde la fiche
+   * Google, je vois bien les menus, les prix ». Son lien de menu, son prix par
+   * personne tel que Google l'affiche, ses services. Des faits recopiés, jamais
+   * complétés : absent, rien ne s'affiche.
+   */
+  ficheGoogle?: { menu?: string; prix?: string; services?: string[] };
+  /**
    * LES AUTRES PHOTOS DE L'ANNONCE — le carrousel du commerçant.
    *
    * DEMANDÉ PAR DE VRAIES PERSONNES : « on m'a demandé si on pouvait voir

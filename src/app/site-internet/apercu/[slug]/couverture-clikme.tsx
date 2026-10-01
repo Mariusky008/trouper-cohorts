@@ -139,12 +139,13 @@ export function VeilleCouverture({
   initial: Etat;
   aDesPhotos: boolean;
   /** Sa fiche Google a-t-elle été lue, et sinon pourquoi. */
-  fiche?: { lue: boolean; erreurs: string[] };
+  fiche?: { lue: boolean; erreurs: string[]; detail?: string };
 }) {
   const { etat, demander, envoyerPhoto, occupe, dit } = useCouverture(slug, initial);
   const router = useRouter();
   const [relit, setRelit] = useState(false);
   const [ficheDit, setFicheDit] = useState("");
+  const [ficheDetail, setFicheDetail] = useState(fiche?.detail ?? "");
   /** Relit sa fiche Google : jusqu'à une minute, puis la page se recharge avec. */
   const relire = async () => {
     setRelit(true);
@@ -155,7 +156,8 @@ export function VeilleCouverture({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ slug }),
       });
-      const j = (await r.json()) as { ok?: boolean; raison?: string; photos?: number; avis?: number };
+      const j = (await r.json()) as { ok?: boolean; raison?: string; photos?: number; avis?: number; detail?: string };
+      if (j.detail) setFicheDetail(j.detail);
       if (j.ok) {
         setFicheDit(`Fiche lue : ${j.photos ?? 0} photo${(j.photos ?? 0) > 1 ? "s" : ""}, ${j.avis ?? 0} avis.`);
         router.refresh();
@@ -229,6 +231,14 @@ export function VeilleCouverture({
             </EnvoyerPhoto>
           </div>
           {(ficheDit || dit) && <em>{ficheDit || dit}</em>}
+          {/* LE MESSAGE EXACT DU SERVICE, REPLIÉ : le commerçant n'en a pas
+              besoin, mais c'est lui qui nous dit quoi réparer. */}
+          {ficheDetail && (
+            <details className="ccl-detail">
+              <summary>Détail technique</summary>
+              <code>{ficheDetail}</code>
+            </details>
+          )}
         </div>
       </>
     );
@@ -414,6 +424,9 @@ const STYLE_VEILLE = `
 .ccl-appel div>button.plein{color:#1A0F08;border:0;background:linear-gradient(140deg,#FFC66B,#F5A23A);}
 .ccl-appel div>button.plein+.ccl-envoi{color:#FFF4E6;background:none;border:1px solid rgba(255,244,230,.3);}
 .ccl-appel button:disabled{opacity:.6;cursor:default;}
+.ccl-detail{margin-top:8px;font-size:11.5px;color:#CDB8A4;}
+.ccl-detail summary{cursor:pointer;}
+.ccl-detail code{display:block;margin-top:4px;white-space:pre-wrap;word-break:break-word;font:11px/1.4 ui-monospace,monospace;color:#E8D5C2;}
 .ccl-x{position:absolute;right:8px;top:6px;width:30px;height:30px;border:0;background:none;
   color:#CDB8A4;font-size:22px;line-height:1;cursor:pointer;}
 .ccl-envoi{position:relative;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;}

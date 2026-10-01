@@ -115,14 +115,19 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
  * récentes ; pour les plus anciennes, une page sans note, sans avis et sans
  * photo Google n'a visiblement rien reçu de sa fiche.
  */
-function ficheLue(row: Record<string, unknown>): { lue: boolean; erreurs: string[] } {
+function ficheLue(row: Record<string, unknown>): { lue: boolean; erreurs: string[]; detail?: string } {
   const d = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
   const erreurs = (Array.isArray(d.fiche_erreurs) ? d.fiche_erreurs : []).map((e) => String(e)).filter(Boolean);
   const rien =
     row.google_rating == null &&
     !(Array.isArray(d.photos) && d.photos.length) &&
     !(Array.isArray(d.reviews_top) && d.reviews_top.length);
-  return { lue: d.places_found === false ? false : !rien, erreurs: erreurs.map(raisonLisible) };
+  return {
+    lue: d.places_found === false ? false : !rien,
+    erreurs: erreurs.map(raisonLisible),
+    // LE MESSAGE EXACT, POUR NOUS : c'est lui qui nomme le champ refusé.
+    detail: erreurs.length ? erreurs.join(" | ").slice(0, 600) : undefined,
+  };
 }
 
 export default async function ApercuMaquette({

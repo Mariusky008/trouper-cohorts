@@ -53,7 +53,30 @@ export type FicheLue = {
   horaires: Array<{ jours: string; horaires: string }>;
   /** Ce qui a échoué en route, en clair. Vide quand tout a répondu. */
   erreurs: string[];
+  /** Les champs qu'Apify a refusés et qu'on a retirés pour qu'il réponde. */
+  corrections: string[];
+  /**
+   * CE QUE SA FICHE DIT DE SA CARTE. « Quand je regarde la fiche Google, je
+   * vois bien les menus, les prix. » Son lien de menu, son prix par personne
+   * (« 20–30 € ») et ses services (« Terrasse », « Excellents cocktails »).
+   */
+  menu: string;
+  prix: string;
+  services: string[];
 };
+
+/** « Services disponibles : [{ Terrasse: true }, …] » → ["Terrasse", …], sans les « non ». */
+function servicesDe(item: Record<string, unknown>): string[] {
+  const info = item.additionalInfo && typeof item.additionalInfo === "object" ? (item.additionalInfo as Record<string, unknown>) : {};
+  const out: string[] = [];
+  for (const [rubrique, liste] of Object.entries(info)) {
+    if (!/service|point fort|offre|highlight|offering|option/i.test(rubrique) || !Array.isArray(liste)) continue;
+    for (const e of liste) {
+      if (e && typeof e === "object") for (const [k, v] of Object.entries(e as Record<string, unknown>)) if (v === true) out.push(k);
+    }
+  }
+  return [...new Set(out)].slice(0, 8);
+}
 
 /** Le titre de Google désigne-t-il bien ce commerce-là ? */
 export function memeCommerce(titre: string, nom: string): boolean {
@@ -100,14 +123,19 @@ export async function lireFicheGoogle(
     website: "",
     horaires: [],
     erreurs: [],
+    corrections: [],
+    menu: "",
+    prix: "",
+    services: [],
   };
   if (!token) {
     lue.erreurs.push("jeton Apify absent sur ce serveur");
     return lue;
   }
   const loc = `${ville}, france`;
-  const noter = (etape: string, r: { ok: boolean; error: string }) => {
-    if (!r.ok) lue.erreurs.push(`${etape} : ${r.error || "échec"}`.slice(0, 220));
+  const noter = (etape: string, r: { ok: boolean; error: string; corrige?: string[] }) => {
+    if (!r.ok) lue.erreurs.push(`${etape} : ${r.error || "échec"}`.slice(0, 400));
+    if (r.corrige?.length) lue.corrections.push(`${etape} : ${r.corrige.join(", ")}`);
   };
 
   // ── 1. LA FICHE : par son repère s'il est connu, sinon par son nom, puis par son métier ──
@@ -144,6 +172,9 @@ export async function lireFicheGoogle(
   lue.horaires = oh.slice(0, 7).map((h) => ({ jours: str(h.day), horaires: str(h.hours) }));
   // LA PHOTO PRINCIPALE D'ABORD : le second appel ne peut qu'ajouter.
   lue.photos = extraireMedias(biz).photos;
+  lue.menu = /^https?:\/\//i.test(str(biz.menu)) ? str(biz.menu) : "";
+  lue.prix = str(biz.price).slice(0, 30);
+  lue.services = servicesDe(biz);
 
   // ── 2. SES PHOTOS ET SES AVIS, en ciblant SA fiche ──
   const media = lue.placeId
@@ -154,6 +185,9 @@ export async function lireFicheGoogle(
   if (it) {
     const m = extraireMedias(it);
     if (m.photos.length) lue.photos = m.photos;
+    if (!lue.menu && /^https?:\/\//i.test(str(it.menu))) lue.menu = str(it.menu);
+    if (!lue.prix) lue.prix = str(it.price).slice(0, 30);
+    if (!lue.services.length) lue.services = servicesDe(it);
     lue.reviewsTop = m.reviews.filter((r) => r.stars == null || r.stars >= 4).slice(0, 3);
   }
   return lue;

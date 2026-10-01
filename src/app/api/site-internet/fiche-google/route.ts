@@ -68,6 +68,10 @@ export async function POST(requete: Request) {
     ...diag,
     fiche_relue_at: maintenant,
     fiche_erreurs: fiche.erreurs,
+    fiche_corrections: fiche.corrections,
+    menu_url: fiche.menu || diag.menu_url || null,
+    prix_moyen: fiche.prix || diag.prix_moyen || null,
+    services_google: prendre(fiche.services, diag.services_google),
     places_found: fiche.trouvee || Boolean(diag.places_found),
     photos: prendre(fiche.photos, diag.photos),
     reviews_top: prendre(fiche.reviewsTop, diag.reviews_top),
@@ -89,6 +93,7 @@ export async function POST(requete: Request) {
     photos: fiche.photos.length,
     avis: fiche.reviewsTop.length,
     note: fiche.rating,
+    detail: fiche.erreurs.length || fiche.corrections.length ? [...fiche.erreurs, ...fiche.corrections.map((c) => `corrigé — ${c}`)].join(" | ").slice(0, 600) : undefined,
     raison: fiche.trouvee ? undefined : raisonLisible(fiche.erreurs[fiche.erreurs.length - 1] || "aucune fiche Google à ce nom"),
   });
 }

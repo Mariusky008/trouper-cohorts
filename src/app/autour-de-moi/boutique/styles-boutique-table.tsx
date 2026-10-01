@@ -166,7 +166,7 @@ export function StylesBoutiqueTable() {
 
         /* ═══ L'EN-TETE ═════════════════════════════════════════════════ */
         .bt-haut{position:relative;z-index:3;flex:none;
-          display:grid;grid-template-columns:40px 1fr 40px;align-items:center;
+          display:grid;grid-template-columns:minmax(40px,1fr) minmax(0,auto) minmax(40px,1fr);align-items:center;
           padding:calc(10px + env(safe-area-inset-top,0px)) 14px 0;}
         .bt-haut.plein{padding-bottom:10px;border-bottom:1px solid var(--bt-trait);
           background:var(--bt-fond);}
@@ -449,6 +449,9 @@ export function StylesBoutiqueTable() {
         .bt-trait::before,.bt-trait::after{content:"";flex:1;height:1px;
           background:var(--bt-trait);}
         .bt-fil{display:flex;flex-direction:column;gap:6px;}
+        .bt-menu-g{margin:12px 0 8px;width:100%;justify-content:center;}
+        .bt-services{margin:12px 2px 0;font-size:14px;line-height:1.45;color:var(--bt-gris);}
+        .bt-services b{display:block;margin-bottom:2px;color:var(--bt-creme);font-weight:700;}
         .bt-salon-vide{display:flex;flex-direction:column;align-items:center;gap:6px;
           margin:10px 0 4px;padding:18px 16px;text-align:center;border-radius:18px;
           border:1px dashed rgba(255,196,140,.22);}
@@ -552,7 +555,12 @@ export function StylesBoutiqueTable() {
           box-shadow:0 8px 22px -8px rgba(245,162,58,.9);}
         /* SUR LE SALON D'UN TELEPHONE, ELLE SE RETIRE : elle tombait sur
            l'en-tete de la conversation. Les cinq autres onglets la gardent. */
-        @media (max-width: 959px){.bt-garder.sur-salon{display:none;}}
+        @media (max-width: 959px){.bt-garder{display:none;}}
+        .bt-garder-tete{justify-self:start;padding:8px 12px;border-radius:999px;cursor:pointer;
+          border:0;font:inherit;font-size:12.5px;font-weight:700;color:#1A0F08;white-space:nowrap;
+          background:linear-gradient(140deg,#FFC66B,#F5A23A);
+          box-shadow:0 8px 22px -8px rgba(245,162,58,.9);}
+        @media (min-width: 960px){.bt-garder-tete{visibility:hidden;}}
         .bt-pied{margin-top:22px;}
 
         /* ═══ LA BARRE COMMUNE ══════════════════════════════════════════ */
