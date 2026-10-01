@@ -34,7 +34,9 @@ export async function apifyGoogleMaps(
       body.maxCrawledPlacesPerSearch = limit;
     }
     const res = await fetch(
-      `https://api.apify.com/v2/acts/compass~crawler-google-places/run-sync-get-dataset-items?token=${encodeURIComponent(token)}&timeout=180`,
+      // L'ADRESSE EST SURCHARGEABLE POUR LA RECETTE, comme celle de Gemini :
+      // sans jeton, un faux Apify permet de mesurer tout le chemin.
+      `${(process.env.APIFY_BASE_URL || "https://api.apify.com").trim()}/v2/acts/compass~crawler-google-places/run-sync-get-dataset-items?token=${encodeURIComponent(token)}&timeout=180`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

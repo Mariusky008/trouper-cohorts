@@ -78,7 +78,7 @@ export type PageBoutiqueProps = {
    * SA PHOTO CLIKME, VUE PAR LUI. Absente pour un visiteur et pour les
    * commerces de démonstration. Voir `couverture-clikme.tsx`.
    */
-  couverture?: { etat: EtatCouverture | null; candidates: string[] };
+  couverture?: { etat: EtatCouverture | null; candidates: string[]; fiche?: { lue: boolean; erreurs: string[] } };
 };
 
 /**
@@ -221,6 +221,7 @@ export function PageBoutique(p: PageBoutiqueProps) {
           slug={slug}
           initial={p.couverture.etat}
           aDesPhotos={p.couverture.candidates.length > 0}
+          fiche={modeDemo ? p.couverture.fiche : undefined}
         />
       )}
       {modeDemo && (

@@ -449,7 +449,15 @@ export function StylesBoutiqueTable() {
         .bt-trait::before,.bt-trait::after{content:"";flex:1;height:1px;
           background:var(--bt-trait);}
         .bt-fil{display:flex;flex-direction:column;gap:6px;}
-        .bt-fil.exemple{opacity:.78;}
+        .bt-salon-vide{display:flex;flex-direction:column;align-items:center;gap:6px;
+          margin:10px 0 4px;padding:18px 16px;text-align:center;border-radius:18px;
+          border:1px dashed rgba(255,196,140,.22);}
+        .bt-salon-vide span{font-size:26px;line-height:1;}
+        .bt-salon-vide b{font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:16px;}
+        .bt-salon-vide p{margin:0;font-size:14px;color:var(--bt-gris);}
+        .bt-salon-vide button{margin-top:6px;padding:9px 14px;border-radius:999px;cursor:pointer;
+          font-size:14px;font-weight:600;color:var(--bt-creme);background:rgba(255,46,154,.14);
+          border:1px solid rgba(255,46,154,.45);}
         .bt-msg{display:flex;align-items:flex-end;gap:8px;max-width:86%;}
         .bt-msg.moi{align-self:flex-end;flex-direction:row-reverse;}
         .bt-av{flex:none;width:30px;height:30px;border-radius:50%;

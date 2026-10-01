@@ -140,6 +140,37 @@ const SCENES: Record<CleMetier, string> = {
 };
 
 /**
+ * ═══ CE QU'IL Y A SUR LEUR CASQUETTE ═══════════════════════════════════════
+ *
+ * « Les fantômes ne devraient pas avoir sur la casquette le logo ClikMe, mais
+ * plutôt le logo du métier qu'on consulte, ou encore mieux le nom du
+ * commerce. »
+ *
+ * SON NOM QUAND IL EST COURT, L'EMBLÈME DU MÉTIER SINON. Un nom brodé sur une
+ * casquette de quelques centimètres n'est lisible — et recopiable sans faute
+ * par le modèle — que s'il tient en peu de lettres. Au-delà de dix-huit
+ * signes, on brode l'emblème de son métier : une faute sur son nom serait pire
+ * qu'un symbole juste. Le logo ClikMe de l'image de référence est remplacé
+ * dans les deux cas.
+ */
+const EMBLEMES: Record<CleMetier, string> = {
+  restaurant: "a crossed fork and knife",
+  bar: "a cocktail glass",
+  fleuriste: "a flower",
+  coiffeur: "a pair of scissors",
+  ongles: "a nail polish bottle",
+  mode: "a clothes hanger",
+  artisan: "a small hammer",
+  lunetier: "a pair of glasses",
+};
+export function casquette(nom: string, branche: CleMetier): string {
+  const court = nom.trim().length >= 2 && nom.trim().length <= 18;
+  return court
+    ? `Instead of the ClikMe logo of IMAGE 2, the front of every cap shows the shop name "${nom.trim()}" embroidered in small pink letters, spelled exactly like that, letter for letter.`
+    : `Instead of the ClikMe logo of IMAGE 2, the front of every cap shows a small pink embroidered emblem: ${EMBLEMES[branche] ?? EMBLEMES.restaurant}.`;
+}
+
+/**
  * ═══ LA CONSIGNE ═══════════════════════════════════════════════════════════
  *
  * EN ANGLAIS, PARCE QUE C'EST LA LANGUE QUE CES MODELES SUIVENT LE PLUS
@@ -158,10 +189,10 @@ export function consigneCouverture(nom: string, metier: string, ville: string, b
     "1. KEEP THE PLACE. Same building, same architecture, same shopfront, same awning and colours, same terrace layout, same camera viewpoint. Someone who knows this place must recognise it at first glance.",
     "2. KEEP EVERY SIGN EXACTLY. Every word on the sign, awning or windows stays exactly as in IMAGE 1: same spelling, same letters, same position. Never invent, translate, correct or add any text, logo or brand. If a text is unreadable in IMAGE 1, leave it unreadable rather than guessing.",
     "3. LIGHT AND COLOUR. Late-afternoon golden hour: warm sunlight on the facade, glowing warm lamps inside, rich and luminous but natural colours, soft depth of field, crisp details. Tidy the street (bins, cars, clutter) only where it does not alter the building.",
-    `4. THE GHOSTS. Use the ghost character from IMAGE 2: a soft white rounded ghost, big glossy purple eyes, pink cheeks, a black cap with the pink ClikMe logo. ${SCENES[branche] ?? SCENES.restaurant} They must truly belong to the photo: realistic scale next to doors and furniture, matching perspective, light direction and colour temperature, soft contact shadows, reflections in windows where relevant. Cute, friendly, polished 3D finish; every ghost is the same character.`,
+    `4. THE GHOSTS. Use the ghost character from IMAGE 2: a soft white rounded ghost, big glossy purple eyes, pink cheeks, a black cap. ${casquette(nom, branche)} ${SCENES[branche] ?? SCENES.restaurant} They must truly belong to the photo: realistic scale next to doors and furniture, matching perspective, light direction and colour temperature, soft contact shadows, reflections in windows where relevant. Cute, friendly, polished 3D finish; every ghost is the same character.`,
     "5. PEOPLE. Real people already present may stay, unchanged and not in focus. Do not add any new person.",
     "6. FRAMING. Vertical 4:5 framing centred on the entrance. Keep the top fifth calm (facade or sky), because a title is written over it.",
-    "No watermark, no border, no caption, no added text.",
+    "No ClikMe logo anywhere. No watermark, no border, no caption, and no added text other than what is asked on the caps.",
   ].join("\n");
 }
 

@@ -105,6 +105,8 @@ function useCouverture(slug: string, initial: Etat) {
   return { etat, essaisMax, dit, occupe, demander, envoyerPhoto };
 }
 
+const couvertureFaite = (e: Etat) => Boolean(e?.url) || e?.etat === "en_cours";
+
 /** Le bouton qui ouvre le choix d'une photo — un vrai bouton, l'entrée est cachée dedans. */
 function EnvoyerPhoto({ onPhoto, desactive, children }: { onPhoto: (f: File | undefined) => void; desactive?: boolean; children: React.ReactNode }) {
   return (
@@ -127,8 +129,43 @@ function EnvoyerPhoto({ onPhoto, desactive, children }: { onPhoto: (f: File | un
  * LA VEILLE : lance une fois, suit, prévient. Elle ne lance QUE si rien n'a
  * jamais été tenté — un échec ou un refus ne se relance pas tout seul.
  */
-export function VeilleCouverture({ slug, initial, aDesPhotos }: { slug: string; initial: Etat; aDesPhotos: boolean }) {
+export function VeilleCouverture({
+  slug,
+  initial,
+  aDesPhotos,
+  fiche,
+}: {
+  slug: string;
+  initial: Etat;
+  aDesPhotos: boolean;
+  /** Sa fiche Google a-t-elle été lue, et sinon pourquoi. */
+  fiche?: { lue: boolean; erreurs: string[] };
+}) {
   const { etat, demander, envoyerPhoto, occupe, dit } = useCouverture(slug, initial);
+  const router = useRouter();
+  const [relit, setRelit] = useState(false);
+  const [ficheDit, setFicheDit] = useState("");
+  /** Relit sa fiche Google : jusqu'à une minute, puis la page se recharge avec. */
+  const relire = async () => {
+    setRelit(true);
+    setFicheDit("");
+    try {
+      const r = await fetch("/api/site-internet/fiche-google", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ slug }),
+      });
+      const j = (await r.json()) as { ok?: boolean; raison?: string; photos?: number; avis?: number };
+      if (j.ok) {
+        setFicheDit(`Fiche lue : ${j.photos ?? 0} photo${(j.photos ?? 0) > 1 ? "s" : ""}, ${j.avis ?? 0} avis.`);
+        router.refresh();
+      } else setFicheDit(j.raison || "La fiche n'a pas pu être lue.");
+    } catch {
+      setFicheDit("La lecture n'a pas abouti. Réessayez dans un instant.");
+    } finally {
+      setRelit(false);
+    }
+  };
   const lance = useRef(false);
   const [prete, setPrete] = useState(false);
   const [ferme, setFerme] = useState(false);
@@ -160,6 +197,42 @@ export function VeilleCouverture({ slug, initial, aDesPhotos }: { slug: string; 
    * de sa devanture d'un geste. Même chose quand un rendu a échoué : la raison
    * est écrite, et il peut réessayer ou changer de photo.
    */
+  /**
+   * ═══ SA FICHE GOOGLE N'A PAS ÉTÉ LUE : C'EST LA PREMIÈRE CHOSE À DIRE ═════
+   *
+   * « Je n'ai pas les avis, ni les photos. J'ai l'impression que la fiche
+   * Google n'a pas du tout été consultée. » Elle ne l'avait pas été, et la
+   * page ne le disait pas. Quand c'est le cas, l'encadré le dit, avec la
+   * raison, et propose de la relire : c'est d'elle que viennent les photos,
+   * les avis, la note — et donc aussi la photo ClikMe.
+   */
+  if (fiche && !fiche.lue && !ferme && !couvertureFaite(etat)) {
+    const raison = fiche.erreurs[0];
+    return (
+      <>
+        <style>{STYLE_VEILLE}</style>
+        <div className="ccl-appel" role="status">
+          <button type="button" className="ccl-x" aria-label="Fermer" onClick={() => setFerme(true)}>
+            ×
+          </button>
+          <b>🔎 Votre fiche Google n&apos;a pas été lue</b>
+          <span>
+            C&apos;est d&apos;elle que viennent vos photos, vos avis et votre note.
+            {raison ? ` Raison : ${raison.slice(0, 160)}.` : ""}
+          </span>
+          <div>
+            <button type="button" className="plein" disabled={relit} onClick={relire}>
+              {relit ? "Lecture… jusqu'à une minute" : "Relire ma fiche Google"}
+            </button>
+            <EnvoyerPhoto onPhoto={envoyerPhoto} desactive={occupe || relit}>
+              {occupe ? "Envoi…" : "Envoyer une photo"}
+            </EnvoyerPhoto>
+          </div>
+          {(ficheDit || dit) && <em>{ficheDit || dit}</em>}
+        </div>
+      </>
+    );
+  }
   const sansPhoto = !etat && !aDesPhotos;
   const rate = etat?.etat === "echec" && !etat.url;
   if ((sansPhoto || rate) && !ferme) {
@@ -338,6 +411,9 @@ const STYLE_VEILLE = `
 .ccl-appel div>*{flex:1 1 auto;text-align:center;padding:10px 12px;border-radius:999px;cursor:pointer;
   font:700 14px/1.2 system-ui,sans-serif;color:#1A0F08;border:0;background:linear-gradient(140deg,#FFC66B,#F5A23A);}
 .ccl-appel div>button{color:#FFF4E6;background:none;border:1px solid rgba(255,244,230,.3);}
+.ccl-appel div>button.plein{color:#1A0F08;border:0;background:linear-gradient(140deg,#FFC66B,#F5A23A);}
+.ccl-appel div>button.plein+.ccl-envoi{color:#FFF4E6;background:none;border:1px solid rgba(255,244,230,.3);}
+.ccl-appel button:disabled{opacity:.6;cursor:default;}
 .ccl-x{position:absolute;right:8px;top:6px;width:30px;height:30px;border:0;background:none;
   color:#CDB8A4;font-size:22px;line-height:1;cursor:pointer;}
 .ccl-envoi{position:relative;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;}

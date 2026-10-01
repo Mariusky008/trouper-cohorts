@@ -44,6 +44,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { noterClic } from "@/lib/direct/publications";
 import { carteDepuisFiche, enGrand } from "@/lib/site-internet/carte-depuis-fiche";
 import { couvertureDuDiagnostic, photosCandidates } from "@/lib/site-internet/couverture";
+import { raisonLisible } from "@/lib/site-internet/fiche-google";
 import { COLONNES_FICHE, construireFiche } from "@/lib/site-internet/fiche-du-site";
 import { carteDeDemo, estAdresseDeDemo, listeDesDemos } from "@/lib/site-internet/fiches-demo";
 import { PageBoutique } from "./page-boutique";
@@ -107,6 +108,21 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   } catch {
     return { title: "Votre page", ...noindex };
   }
+}
+
+/**
+ * SA FICHE GOOGLE A-T-ELLE ÉTÉ LUE ? `places_found` le dit pour les pages
+ * récentes ; pour les plus anciennes, une page sans note, sans avis et sans
+ * photo Google n'a visiblement rien reçu de sa fiche.
+ */
+function ficheLue(row: Record<string, unknown>): { lue: boolean; erreurs: string[] } {
+  const d = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
+  const erreurs = (Array.isArray(d.fiche_erreurs) ? d.fiche_erreurs : []).map((e) => String(e)).filter(Boolean);
+  const rien =
+    row.google_rating == null &&
+    !(Array.isArray(d.photos) && d.photos.length) &&
+    !(Array.isArray(d.reviews_top) && d.reviews_top.length);
+  return { lue: d.places_found === false ? false : !rien, erreurs: erreurs.map(raisonLisible) };
 }
 
 export default async function ApercuMaquette({
@@ -331,7 +347,11 @@ export default async function ApercuMaquette({
       couverture={
         visiteurPublic
           ? undefined
-          : { etat: couvertureDuDiagnostic(row.diagnostic), candidates: photosCandidates(row).map(enGrand) }
+          : {
+              etat: couvertureDuDiagnostic(row.diagnostic),
+              candidates: photosCandidates(row).map(enGrand),
+              fiche: ficheLue(row),
+            }
       }
     />
   );

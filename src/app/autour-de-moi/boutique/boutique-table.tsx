@@ -81,18 +81,6 @@ import { StylesBoutiqueTable } from "./styles-boutique-table";
 
 type Onglet = "lieu" | "experience" | "carte" | "avis" | "amis" | "infos";
 
-/**
- * LA CONVERSATION D'EXEMPLE — celle de sa maquette, mot pour mot.
- *
- * Elle n'est montrée que dans un salon vide, grisée et titrée « exemple », et
- * disparaît au premier vrai message. Voir l'onglet des amis.
- */
-const EXEMPLE: Pick<MessageSalon, "id" | "qui" | "voix" | "texte" | "quand">[] = [
-  { id: "x1", qui: "Moi", voix: "moi", texte: "Ça vous dit de se retrouver ici ?", quand: "11 h 24" },
-  { id: "x2", qui: "Sarah", voix: "ami", texte: "Oui ! Vers 20 h ?", quand: "11 h 26" },
-  { id: "x3", qui: "Paul", voix: "ami", texte: "Partant, on serait quatre.", quand: "11 h 28" },
-];
-
 const ONGLETS: { cle: Onglet; mot: string }[] = [
   { cle: "lieu", mot: "Le lieu" },
   { cle: "experience", mot: "Expérience" },
@@ -910,27 +898,42 @@ export function BoutiqueTable({
               </button>
             </div>
 
-            {/* ═══ L'EXEMPLE, TANT QUE PERSONNE N'A ÉCRIT ═══════════════════
-                Sa maquette montre une conversation « exemple ». Elle reste,
-                grisée et titrée comme telle, tant que le salon est vide — et
-                s'efface au premier vrai message. Des amis inventés présentés
-                comme réels seraient le seul mensonge de la page. */}
-            <p className="bt-trait">
-              <span>{messages.length ? "La conversation" : "Exemple de conversation"}</span>
-            </p>
-            <div className={`bt-fil${messages.length ? "" : " exemple"}`}>
-              {(messages.length ? messages.slice(-6) : EXEMPLE).map((m) => (
-                <div key={m.id} className={`bt-msg${m.voix === "moi" ? " moi" : ""}`}>
-                  {m.voix !== "moi" && <i className="bt-av">{m.qui[0]?.toUpperCase()}</i>}
-                  <div>
-                    <small>
-                      {m.voix === "moi" ? "Moi" : m.qui} <span>{m.quand}</span>
-                    </small>
-                    <p>{m.texte}</p>
-                  </div>
+            {/* ═══ UN SALON VIDE EST VIDE ═══════════════════════════════════
+                « Il y a des phrases déjà écrites alors que je n'ai jamais encore
+                invité qui que ce soit à discuter dans ce salon. »
+                C'ÉTAIT LA CONVERSATION DE SA MAQUETTE — grisée et titrée
+                « exemple », mais Sarah et Paul avaient l'air de vrais amis
+                dans un salon qui n'en avait aucun. Le salon vide le dit, et
+                propose la première phrase, que l'on peut envoyer ou changer. */}
+            {messages.length ? (
+              <>
+                <p className="bt-trait">
+                  <span>La conversation</span>
+                </p>
+                <div className="bt-fil">
+                  {messages.slice(-6).map((m) => (
+                    <div key={m.id} className={`bt-msg${m.voix === "moi" ? " moi" : ""}`}>
+                      {m.voix !== "moi" && <i className="bt-av">{m.qui[0]?.toUpperCase()}</i>}
+                      <div>
+                        <small>
+                          {m.voix === "moi" ? "Moi" : m.qui} <span>{m.quand}</span>
+                        </small>
+                        <p>{m.texte}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            ) : (
+              <div className="bt-salon-vide">
+                <span aria-hidden="true">💬</span>
+                <b>Personne n&apos;a encore écrit ici.</b>
+                <p>Invitez vos amis, ou lancez la conversation : votre message les attendra.</p>
+                <button type="button" onClick={() => setAEcrire("Ça vous dit de se retrouver ici ?")}>
+                  « Ça vous dit de se retrouver ici ? »
+                </button>
+              </div>
+            )}
 
             <div className="bt-duo">
               <button type="button" className="bt-deux" onClick={inviter}>
