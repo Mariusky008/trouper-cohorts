@@ -46,7 +46,7 @@ import { carteALire, lireLaCarte } from "@/lib/site-internet/carte-lue";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { noterClic } from "@/lib/direct/publications";
 import { carteDepuisFiche, enGrand } from "@/lib/site-internet/carte-depuis-fiche";
-import { couvertureDuDiagnostic, photosCandidates } from "@/lib/site-internet/couverture";
+import { completerLHote, couvertureDuDiagnostic, photosCandidates } from "@/lib/site-internet/couverture";
 import { etatDeLaFiche, raisonLisible } from "@/lib/site-internet/fiche-google";
 import { COLONNES_FICHE, construireFiche } from "@/lib/site-internet/fiche-du-site";
 import { carteDeDemo, estAdresseDeDemo, listeDesDemos } from "@/lib/site-internet/fiches-demo";
@@ -319,6 +319,18 @@ export default async function ApercuMaquette({
      servi la page (`after`) : les pages créées avant cette étape — et celles
      dont la lecture a échoué — la rattrapent à la visite suivante. Une
      tentative par demi-heure au plus, voir `carte-lue.ts`. */
+  /* SA PHOTO CLIKME A ÉTÉ FAITE AVANT QU'ON REPÈRE SON HÔTE ? On le cherche
+     une fois, après la page — voir `completerLHote`. */
+  const couv = couvertureDuDiagnostic(row.diagnostic);
+  if (couv?.url && couv.etat !== "originale" && !couv.hote && couv.hoteCherche !== couv.url) {
+    after(async () => {
+      try {
+        await completerLHote(slug);
+      } catch {
+        /* sans lui, la page passe par son bouton */
+      }
+    });
+  }
   if (carteALire(row.diagnostic)) {
     const h = await headers();
     const hote = h.get("x-forwarded-host") || h.get("host") || "";

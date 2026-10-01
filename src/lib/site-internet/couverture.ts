@@ -86,7 +86,106 @@ export type EtatCouverture = {
    * stockage. Elle passe en tête des photos de départ.
    */
   depot?: string;
+  /**
+   * OÙ SE TIENT L'HÔTE SUR LA PHOTO, en fractions de l'image (0 à 1). C'est là
+   * qu'on le touche pour entrer, et c'est de là que part le zoom à travers la
+   * porte. Repéré par un modèle qui voit, juste après le rendu.
+   */
+  hote?: { x: number; y: number; w: number; h: number };
+  /** Quand on a cherché l'hôte sans le trouver : on ne recommence pas. */
+  hoteCherche?: string;
 };
+
+function lireBoite(v: unknown): EtatCouverture["hote"] {
+  const b = v && typeof v === "object" ? (v as Record<string, unknown>) : null;
+  if (!b) return undefined;
+  const n = (k: string) => Number(b[k]);
+  const [x, y, w, h] = [n("x"), n("y"), n("w"), n("h")];
+  return [x, y, w, h].every((z) => Number.isFinite(z) && z >= 0 && z <= 1) && w > 0.02 && h > 0.02 ? { x, y, w, h } : undefined;
+}
+
+/**
+ * ═══ OÙ EST L'HÔTE ? ══════════════════════════════════════════════════════
+ *
+ * « Le meilleur wow serait que le fantôme te fasse entrer dans le restaurant :
+ * au toucher, il pousse la porte, et la photo zoome à travers. »
+ *
+ * SUR LA PHOTO CLIKME, L'HÔTE EST PEINT DANS L'IMAGE — et sa place change à
+ * chaque rendu. Pour qu'on puisse le toucher, et que le zoom parte de lui, on
+ * demande une fois à un modèle qui voit où il se tient. Il répond une boîte en
+ * millièmes de l'image (`box_2d`, le format qu'il connaît le mieux). Sans
+ * réponse claire, rien n'est rangé : la page passe alors par son bouton.
+ */
+async function trouverLHote(image: { type: string; donnees: string }): Promise<EtatCouverture["hote"]> {
+  const cle = s(process.env.GEMINI_API_KEY) || s(process.env.GOOGLE_API_KEY);
+  if (!cle) return undefined;
+  const base = s(process.env.GEMINI_BASE_URL) || "https://generativelanguage.googleapis.com";
+  const modele = s(process.env.GEMINI_VISION_MODEL) || "gemini-2.5-flash";
+  try {
+    const r = await fetch(`${base}/v1beta/models/${modele}:generateContent`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": cle },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { inlineData: { mimeType: image.type, data: image.donnees } },
+              {
+                text: 'In this picture, find the ghost mascot who is the HOST: the one wearing a trade outfit (apron, uniform), usually at the entrance. Answer only with JSON {"box_2d":[ymin,xmin,ymax,xmax]} normalised to 0-1000. If there is no such ghost, answer {"box_2d":[]}.',
+              },
+            ],
+          },
+        ],
+        generationConfig: { responseMimeType: "application/json" },
+      }),
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!r.ok) return undefined;
+    const j = (await r.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+    const texte = (j.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("");
+    const m = /"box_2d"\s*:\s*\[\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*\]/.exec(texte);
+    if (!m) return undefined;
+    const [ymin, xmin, ymax, xmax] = m.slice(1).map((v) => Number(v) / 1000);
+    return lireBoite({ x: xmin, y: ymin, w: xmax - xmin, h: ymax - ymin });
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * LES PHOTOS CLIKME FAITES AVANT CETTE ÉTAPE n'ont pas leur hôte repéré : la
+ * page le demande une fois, après s'être affichée. Un seul essai par photo.
+ */
+export async function completerLHote(slug: string): Promise<void> {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("human_vitrine_sites")
+    .select("id, diagnostic")
+    .eq("slug", slug)
+    .eq("channel", "letter")
+    .maybeSingle();
+  const row = (data as Record<string, unknown> | null) ?? null;
+  if (!row) return;
+  const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
+  const etat = couvertureDuDiagnostic(diag);
+  if (!etat?.url || etat.hote || etat.hoteCherche === etat.url) return;
+  // ON NOTE L'ESSAI AVANT DE PAYER : deux visites rapprochées n'en paient qu'un.
+  await ecrireEtat(s(row.id), diag, { ...etat, hoteCherche: etat.url });
+  let image: { type: string; donnees: string } | null = null;
+  try {
+    const r = await fetch(etat.url, { signal: AbortSignal.timeout(20_000) });
+    if (r.ok) image = { type: (r.headers.get("content-type") || "image/png").split(";")[0], donnees: Buffer.from(await r.arrayBuffer()).toString("base64") };
+  } catch {
+    image = null;
+  }
+  const hote = image ? await trouverLHote(image) : undefined;
+  if (!hote) return;
+  const { data: frais } = await supabase.from("human_vitrine_sites").select("diagnostic").eq("id", s(row.id)).maybeSingle();
+  const d2 = ((frais as Record<string, unknown> | null)?.diagnostic ?? diag) as Record<string, unknown>;
+  const e2 = couvertureDuDiagnostic(d2);
+  if (e2?.url === etat.url) await ecrireEtat(s(row.id), d2, { ...e2, hote, hoteCherche: etat.url });
+}
 
 /** L'état rangé dans le diagnostic, s'il y en a un et qu'il est lisible. */
 export function couvertureDuDiagnostic(diag: unknown): EtatCouverture | null {
@@ -105,6 +204,8 @@ export function couvertureDuDiagnostic(diag: unknown): EtatCouverture | null {
     erreur: s(c.erreur) || undefined,
     lance: s(c.lance) || undefined,
     depot: s(c.depot) || undefined,
+    hote: lireBoite(c.hote),
+    hoteCherche: s(c.hoteCherche) || undefined,
   };
 }
 
@@ -683,6 +784,8 @@ async function rendreEtRanger(
     .upload(chemin, Buffer.from(r.image.donnees, "base64"), { contentType: r.image.type, upsert: true });
   if (error) return echouer(`stockage : ${error.message}`);
   const url = supabase.storage.from(SEAU).getPublicUrl(chemin).data.publicUrl;
+  // OÙ SE TIENT L'HÔTE : là qu'on le touchera pour entrer — voir `trouverLHote`.
+  const hote = await trouverLHote(r.image);
 
   const etat: EtatCouverture = {
     etat: "prete",
@@ -696,6 +799,8 @@ async function rendreEtRanger(
     lance: maintenant,
     modele: r.modele,
     depot: avant?.depot,
+    hote,
+    hoteCherche: url,
   };
   // ON RELIT LE DIAGNOSTIC AVANT D'ECRIRE : le rendu a duré, quelqu'un a pu y toucher.
   const { data: frais } = await supabase.from("human_vitrine_sites").select("diagnostic").eq("id", id).maybeSingle();

@@ -1252,6 +1252,11 @@ export type CarteAutour = {
    */
   couverture?: string;
   /**
+   * OÙ SE TIENT L'HÔTE SUR SA PHOTO CLIKME, en fractions de l'image : c'est là
+   * qu'on le touche pour entrer. Voir `trouverLHote`.
+   */
+  couvertureHote?: { x: number; y: number; w: number; h: number };
+  /**
    * CE QUE SA FICHE GOOGLE DIT DE SA CARTE — « quand je regarde la fiche
    * Google, je vois bien les menus, les prix ». Son lien de menu, son prix par
    * personne tel que Google l'affiche, ses services. Des faits recopiés, jamais

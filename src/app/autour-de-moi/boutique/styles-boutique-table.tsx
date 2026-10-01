@@ -247,6 +247,77 @@ export function StylesBoutiqueTable() {
           animation:btSouffle 4.2s ease-in-out infinite;}
         @keyframes btSouffle{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
         @media (prefers-reduced-motion: reduce){.bt-accueille .bt-double{animation:none;}}
+
+        /* ═══ LE FANTÔME VIVANT ═════════════════════════════════════════════
+           « Pour qu'on devine qu'il va se passer quelque chose, sans le lire :
+           un halo ambré respire autour de lui, et seulement autour de lui —
+           c'est le seul élément animé de la page, l'œil y va tout seul. Il fait
+           un petit salut toutes les trois ou quatre secondes, avec une bulle :
+           « Entre, je te fais visiter 👋 ». »
+           ET IL TE REGARDE : il se penche vers le doigt ou la souris (--px). */
+        .bt-accueille.vivant{cursor:pointer;background:none;border:0;padding:0;color:inherit;
+          -webkit-tap-highlight-color:transparent;}
+        .bt-accueille.vivant::before{animation:btHalo 3.4s ease-in-out infinite;}
+        @keyframes btHalo{0%,100%{opacity:.62;transform:translate(-50%,-50%) scale(.92);}
+          50%{opacity:1;transform:translate(-50%,-50%) scale(1.06);}}
+        .bt-penche{display:block;transform-origin:50% 90%;
+          transform:translateX(calc(var(--px,0) * 7px)) rotate(calc(var(--px,0) * 5deg));
+          transition:transform .3s ease-out;}
+        .bt-accueille.vivant .bt-double{animation:btSouffle 4.2s ease-in-out infinite,btSalut 4s ease-in-out infinite;}
+        @keyframes btSalut{0%,10%,34%,100%{rotate:0deg;}16%{rotate:-5deg;}22%{rotate:5deg;}28%{rotate:-3deg;}}
+        /* LA BULLE : elle apparaît avec le salut, puis se retire. */
+        .bt-invite{position:absolute;z-index:3;left:50%;bottom:calc(100% - 6px);
+          transform:translate(-50%,6px);white-space:nowrap;pointer-events:none;
+          padding:8px 14px;border-radius:16px;background:#FFF4E6;color:#1A0F08;
+          font-family:var(--font-ecrit,"Caveat"),cursive;font-size:19px;font-weight:600;line-height:1.1;
+          box-shadow:0 10px 24px -10px rgba(0,0,0,.6);opacity:0;animation:btInvite 4s ease-in-out infinite;}
+        .bt-invite::after{content:"";position:absolute;left:50%;bottom:-6px;width:12px;height:12px;
+          background:#FFF4E6;transform:translateX(-50%) rotate(45deg);border-radius:2px;}
+        @keyframes btInvite{0%,8%{opacity:0;transform:translate(-50%,8px);}
+          14%,66%{opacity:1;transform:translate(-50%,0);}74%,100%{opacity:0;transform:translate(-50%,-4px);}}
+        /* L'HÔTE PEINT SUR LA PHOTO CLIKME : on ne le redessine pas, on le
+           désigne — un anneau de lumière qui respire autour de lui. */
+        .bt-hote{position:absolute;z-index:3;padding:0;border:0;cursor:pointer;background:none;
+          border-radius:44%;-webkit-tap-highlight-color:transparent;}
+        .bt-hote::before{content:"";position:absolute;inset:-18%;border-radius:50%;pointer-events:none;
+          background:radial-gradient(closest-side,rgba(255,206,130,.42),rgba(255,160,70,.16) 60%,rgba(255,140,50,0));
+          mix-blend-mode:screen;animation:btHalo2 3.4s ease-in-out infinite;}
+        @keyframes btHalo2{0%,100%{opacity:.55;transform:scale(.94);}50%{opacity:1;transform:scale(1.06);}}
+        .bt-hote .bt-invite{bottom:calc(100% + 4px);}
+
+        /* ═══ LA PORTE QUI S'OUVRE ══════════════════════════════════════════
+           Au toucher, la façade zoome à travers la porte — à partir de LUI
+           (--ox, --oy) —, il s'efface dans la lumière de la salle, et la page
+           passe à l'intérieur. Pas de retouche d'image : un zoom et une
+           lumière, et ça marche pour tous les métiers. */
+.bt-cadre-photo{position:absolute;inset:0;z-index:0;overflow:hidden;}
+                .bt-porte-lumiere{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:0;
+          background:radial-gradient(circle at var(--ox,50%) var(--oy,62%),rgba(255,226,170,.96),
+            rgba(255,176,90,.7) 26%,rgba(140,70,30,.35) 52%,rgba(18,12,9,0) 78%);}
+        .bt-e-lieu.franchit .bt-photo{transform:scale(3.3);transform-origin:var(--ox,50%) var(--oy,62%);
+          transition:transform .95s cubic-bezier(.55,0,.35,1);}
+        .bt-e-lieu.franchit .bt-porte-lumiere{opacity:1;transition:opacity .75s ease-in .2s;}
+        .bt-e-lieu.franchit .bt-accueille,.bt-e-lieu.franchit .bt-hote{opacity:0;transform:scale(1.35);
+          transition:opacity .45s ease,transform .6s ease;}
+        .bt-e-lieu.franchit .bt-accueil,.bt-e-lieu.franchit .bt-entrer,.bt-e-lieu.franchit .bt-haut,
+        .bt-e-lieu.franchit .bt-invite{opacity:0;transition:opacity .25s ease;animation:none;}
+        /* ON ARRIVE DANS LA SALLE PAR LA MÊME LUMIÈRE, qui retombe. */
+        .bt-e-exp.arrive::after{content:"";position:absolute;inset:0;z-index:30;pointer-events:none;
+          background:radial-gradient(circle at 50% 62%,rgba(255,226,170,.9),rgba(255,176,90,.55) 34%,rgba(18,12,9,.2) 80%);
+          animation:btArrive .9s ease-out forwards;}
+        @keyframes btArrive{from{opacity:1;}to{opacity:0;}}
+        /* SON ACCUEIL, DANS UNE BULLE AU-DESSUS DE LUI. */
+        .bt-bulle-seuil{position:absolute;z-index:6;left:12px;right:12px;bottom:calc(100% - 10px);
+          margin:0 auto;max-width:440px;padding:12px 16px;border:0;border-radius:18px;cursor:pointer;
+          text-align:left;background:#FFF4E6;color:#1A0F08;font:inherit;font-size:15.5px;line-height:1.4;
+          box-shadow:0 14px 32px -12px rgba(0,0,0,.7);animation:btBulle .45s ease-out .5s both;}
+        @keyframes btBulle{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+        @media (prefers-reduced-motion: reduce){
+          .bt-accueille.vivant::before,.bt-hote::before,.bt-accueille.vivant .bt-double{animation:none;}
+          .bt-invite{animation:none;opacity:1;transform:translate(-50%,0);}
+          .bt-e-lieu.franchit .bt-photo{transform:none;transition:none;}
+          .bt-e-exp.arrive::after,.bt-bulle-seuil{animation:none;}
+        }
         .bt-entrer{position:relative;z-index:2;
           display:flex;align-items:center;justify-content:center;gap:12px;
           width:min(52%,250px);padding:15px 22px;border-radius:999px;cursor:pointer;
@@ -658,7 +729,7 @@ export function StylesBoutiqueTable() {
              ClikMe reprend le voile leger des deux moities. */
           .a-couv .bt-voile.haut-bas{background:linear-gradient(90deg,
             rgba(18,12,9,0) 70%,rgba(18,12,9,.5) 92%,var(--bt-fond) 100%);}
-          .bt-ecran>:not(.bt-photo):not(.bt-voile):not(.bt-hero):not(.bt-fenetre){
+          .bt-ecran>:not(.bt-photo):not(.bt-voile):not(.bt-hero):not(.bt-fenetre):not(.bt-cadre-photo):not(.bt-porte-lumiere):not(.bt-hote){
             margin-left:var(--bt-g);width:calc(100% - var(--bt-g));
             padding-left:var(--bt-d);padding-right:var(--bt-d);box-sizing:border-box;}
           .bt-ecran>*>*{max-width:600px;}
@@ -671,6 +742,11 @@ export function StylesBoutiqueTable() {
           .bt-e-lieu .bt-seuil{position:static;margin-top:34px;align-items:flex-start;}
           .bt-e-lieu .bt-accueille{position:absolute;left:calc(var(--bt-g) / 2);
             bottom:12%;margin:0;transform:translateX(-50%);}
+          .bt-e-lieu.franchit .bt-accueille{transform:translateX(-50%) scale(1.35);}
+          /* LE CADRE PREND LA MOITIÉ GAUCHE, ET LA PHOTO LE REMPLIT. */
+          .bt-cadre-photo{right:auto;width:var(--bt-g);}
+          .bt-cadre-photo .bt-photo{width:auto;right:0;max-width:none;}
+          .bt-cadre-photo .bt-porte-lumiere{max-width:none;}
           .bt-e-lieu .bt-entrer{width:auto;min-width:260px;font-size:19px;padding:15px 24px;}
           .bt-e-lieu .bt-entrer.second{font-size:17px;padding:13px 24px;}
           .bt-e-lieu .bt-liens{margin-left:24px;}

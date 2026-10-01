@@ -167,6 +167,7 @@ export function construireFiche(
     services,
     avisGoogle,
     couverture: couvertureAffichee(couvertureDuDiagnostic(diag)),
+    couvertureHote: couvertureDuDiagnostic(diag)?.hote,
     carteLue: carteLueDuDiagnostic(diag),
     ficheGoogle: {
       menu: /^https?:\/\//i.test(str(diag.menu_url)) ? str(diag.menu_url) : undefined,
