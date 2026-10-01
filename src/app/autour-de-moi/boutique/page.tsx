@@ -46,6 +46,7 @@
 import type { Metadata, Viewport } from "next";
 import { MARQUE } from "@/lib/marque";
 import { Boutique } from "./boutique";
+import { SCRIPT_HEURE } from "@/lib/direct/lumiere-du-moment";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -63,5 +64,11 @@ export const metadata: Metadata = {
 };
 
 export default function BoutiquePage() {
-  return <Boutique />;
+  return (
+    <>
+      {/* LA LUMIÈRE DU MOMENT, POSÉE AVANT LE PREMIER AFFICHAGE — voir `SCRIPT_HEURE`. */}
+      <script dangerouslySetInnerHTML={{ __html: SCRIPT_HEURE }} />
+      <Boutique />
+    </>
+  );
 }

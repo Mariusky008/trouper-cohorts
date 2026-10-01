@@ -62,6 +62,16 @@ import { ParcoursTable } from "@/components/direct/parcours-table-ecran";
 import { StylesParcoursTable } from "@/components/direct/styles-parcours-table";
 import { tenueDu } from "@/lib/direct/double-metiers";
 import { seuilDuDouble } from "@/lib/direct/double-chef";
+import {
+  MOMENTS,
+  COUCHER,
+  enseigneAllumee,
+  heureDeParis,
+  momentDe,
+  ouvertMaintenant,
+  phraseDuSeuil,
+  type Moment,
+} from "@/lib/direct/lumiere-du-moment";
 import { speak, speechSupported, unlockAudio } from "@/lib/site-internet/speech";
 import { plaqueDuParcours } from "@/lib/direct/plaque-parcours";
 import { partager } from "@/lib/direct/partager";
@@ -497,6 +507,47 @@ export function BoutiqueTable({
     };
   }, [onglet]);
 
+  /* ═══ LA LUMIÈRE DU MOMENT, ET L'ENSEIGNE ════════════════════════════════
+     Le moment lui-même est posé sur <html> avant l'affichage (`SCRIPT_HEURE`) ;
+     ici, on le tient à jour (toutes les cinq minutes : la page peut rester
+     ouverte d'un après-midi au soir) et on décide de l'enseigne, qui demande
+     ses horaires. `?heure=soir` force un moment, pour le regarder. */
+  const [lumiere, setLumiere] = useState<{ allumee: boolean; phrase: string } | null>(null);
+  useEffect(() => {
+    const regler = () => {
+      const force = new URLSearchParams(window.location.search).get("heure") as Moment | null;
+      const vrai = heureDeParis();
+      let moment = momentDe(vrai.mois, vrai.h);
+      let quand = new Date();
+      let h = vrai.h;
+      if (force && MOMENTS.includes(force)) {
+        // LE MOMENT FORCÉ SE REGARDE À UNE HEURE QUI LUI RESSEMBLE, horaires compris.
+        moment = force;
+        h = { matin: 9.5, jour: 14.5, dore: COUCHER[vrai.mois] - 0.75, soir: 20.5 }[force];
+        quand = new Date(Date.now() + (h - vrai.h) * 3_600_000);
+      }
+      document.documentElement.setAttribute("data-heure", moment);
+      const ouvert = ouvertMaintenant(c.semaine, c.fiche?.horaires, quand);
+      const allumee = enseigneAllumee(moment, ouvert, h);
+      setLumiere({ allumee, phrase: phraseDuSeuil(ouvert, allumee) });
+    };
+    regler();
+    const t = window.setInterval(regler, 5 * 60_000);
+    return () => window.clearInterval(t);
+  }, [c.semaine, c.fiche?.horaires]);
+
+  /* ═══ « ET SI JE PARLAIS AVEC TA VOIX ? » ═════════════════════════════════
+     « Le "wow" propre au commerçant : il enregistre et s'entend répondre à un
+     client. La fonction existe déjà dans l'Espace Pro, il suffit de la
+     proposer au bon moment. »
+     LE BON MOMENT, C'EST JUSTE APRÈS L'AVOIR ENTENDU PARLER : son double vient
+     de l'accueillir chez lui, en citant un vrai avis de ses clients. Sa bulle
+     se referme, et il pose la question. Une fois par visite, et seulement au
+     commerçant qui découvre SA page — jamais à un client. */
+  const [proposeVoix, setProposeVoix] = useState(false);
+  const aProposeVoix = useRef(false);
+  const arriveAvant = useRef(false);
+
   /** Où se tient l'hôte peint sur la photo ClikMe, en pixels de l'écran du lieu. */
   const [hoteEcran, setHoteEcran] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   useLayoutEffect(() => {
@@ -644,6 +695,15 @@ export function BoutiqueTable({
       }
     };
   }, [arrive, onglet, phraseSeuil]);
+
+  useEffect(() => {
+    const etait = arriveAvant.current;
+    arriveAvant.current = arrive;
+    if (!etait || arrive || !saPage || !pied || aProposeVoix.current || onglet !== "experience") return;
+    aProposeVoix.current = true;
+    const t = window.setTimeout(() => setProposeVoix(true), 450);
+    return () => window.clearTimeout(t);
+  }, [arrive, saPage, pied, onglet]);
 
   /** Un parcours du plat jouable chez lui — sinon la cloche ne s'ouvre pas. */
   const aUnParcours = useMemo(() => plaqueDuParcours(c.id) !== null, [c.id]);
@@ -867,7 +927,7 @@ export function BoutiqueTable({
       {onglet === "lieu" && (
         <section
           ref={lieuRef}
-          className={`bt-ecran bt-e-lieu${couv ? " a-couv" : ""}${franchit ? " franchit" : ""}`}
+          className={`bt-ecran bt-e-lieu${couv ? " a-couv" : ""}${franchit ? " franchit" : ""}${lumiere?.allumee ? " enseigne" : ""}`}
           key="lieu"
           onPointerMove={pencher}
           style={franchit ? ({ "--ox": `${franchit.x}%`, "--oy": `${franchit.y}%` } as React.CSSProperties) : undefined}
@@ -905,7 +965,7 @@ export function BoutiqueTable({
             {/* LA PHRASE DU DOUBLE, DANS LA FONTE DES VOIX : c'est lui qui
                 parle, pas la page. Un seul endroit de l'écran dans une autre
                 écriture, et c'est le sien. */}
-            <p className="bt-dit">Entre, je te fais découvrir.</p>
+            <p className="bt-dit">{lumiere?.phrase ?? "Entre, je te fais découvrir."}</p>
           </div>
           <div className="bt-seuil">
             {/* ═══ IL SE TIENT DANS LA LUMIÈRE, IL N'EST PLUS SOUS LE BOUTON ══
@@ -986,6 +1046,31 @@ export function BoutiqueTable({
               <button type="button" className="bt-bulle-seuil" onClick={() => setArrive(false)}>
                 {phraseSeuil}
               </button>
+            )}
+            {proposeVoix && !arrive && (
+              <div className="bt-bulle-seuil bt-bulle-voix" role="dialog" aria-label="Ta voix pour ton double">
+                <p>
+                  <b>Et si je parlais avec ta voix&nbsp;?</b>
+                  Tu réponds à voix haute à trois petites questions, et c’est ta voix que tes clients entendront ici.
+                  Deux minutes, depuis ton Espace Pro.
+                </p>
+                <span className="bt-voix-actions">
+                  <button
+                    type="button"
+                    className="oui"
+                    onClick={() => {
+                      setProposeVoix(false);
+                      setOnglet("infos");
+                      setVersPied(true);
+                    }}
+                  >
+                    Je veux ma voix
+                  </button>
+                  <button type="button" onClick={() => setProposeVoix(false)}>
+                    Plus tard
+                  </button>
+                </span>
+              </div>
             )}
             <div className="bt-nappe">
               {/* TROIS PORTES, ET CHACUNE MÈNE QUELQUE PART. Le plat n'existe

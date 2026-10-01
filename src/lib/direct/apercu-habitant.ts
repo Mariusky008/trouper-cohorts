@@ -1264,6 +1264,13 @@ export type CarteAutour = {
    */
   ficheGoogle?: { menu?: string; prix?: string; services?: string[] };
   /**
+   * SES HORAIRES DE LA SEMAINE, ligne par ligne (« Lundi – Vendredi » →
+   * « 12 h – 14 h, 19 h – 22 h »). La ligne du jour ne suffit pas à dire s'il
+   * est ouvert À CETTE HEURE-CI : c'est elle qui décide si l'enseigne s'allume
+   * le soir — voir `lumiereDuMoment` dans `boutique-table.tsx`.
+   */
+  semaine?: { jours?: string; horaires?: string }[];
+  /**
    * SA CARTE A ÉTÉ LUE SUR LES PHOTOS DE SA FICHE GOOGLE — pas saisie par lui.
    * La page le dit sous la carte : « prix à confirmer sur place ».
    */

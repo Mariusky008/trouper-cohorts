@@ -312,6 +312,64 @@ export function StylesBoutiqueTable() {
           text-align:left;background:#FFF4E6;color:#1A0F08;font:inherit;font-size:15.5px;line-height:1.4;
           box-shadow:0 14px 32px -12px rgba(0,0,0,.7);animation:btBulle .45s ease-out .5s both;}
         @keyframes btBulle{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+        /* « ET SI JE PARLAIS AVEC TA VOIX ? » — la même bulle, qui attend une
+           réponse au lieu de se refermer seule. */
+        .bt-bulle-voix{cursor:default;}
+        .bt-bulle-voix p{margin:0;}
+        .bt-bulle-voix b{display:block;margin-bottom:3px;font-family:var(--font-clikme),sans-serif;
+          font-weight:800;font-size:17px;letter-spacing:-.01em;}
+        .bt-voix-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+        .bt-voix-actions button{padding:9px 15px;border-radius:999px;cursor:pointer;
+          font:inherit;font-weight:700;font-size:14.5px;
+          border:1px solid rgba(26,15,8,.22);background:transparent;color:#1A0F08;}
+        .bt-voix-actions button.oui{border:0;background:var(--bt-rose);color:#fff;}
+
+        /* ═══ LA LUMIÈRE SUIT L'HEURE ══════════════════════════════════════
+           data-heure est posé sur html avant même l'affichage — voir
+           SCRIPT_HEURE dans lib/direct/lumiere-du-moment.ts. Sans lui (ou
+           « soir »), rien ne change : c'est l'ambiance qu'on connaît.
+           LE JOUR, LA FAÇADE NE PASSE PLUS AU SOIR : elle garde l'étalonnage
+           ambre de la maison, sans la courbe qui enfonce les murs, et le ciel
+           violine laisse place à une lumière chaude. Le titre garde son voile :
+           la garde des contrastes le mesure à chaque moment. */
+        :root[data-heure="jour"] .bt-photo.facade,:root[data-heure="dore"] .bt-photo.facade{filter:url(#bt-ambre);}
+        :root[data-heure="matin"] .bt-photo.facade{filter:url(#bt-ambre) brightness(1.12) saturate(.85);}
+        :root[data-heure="matin"] .bt-photo.facade::after,:root[data-heure="jour"] .bt-photo.facade::after{background:
+          radial-gradient(130% 95% at 50% 60%,transparent 50%,rgba(8,3,1,.5) 100%);}
+        :root[data-heure="matin"] .bt-e-lieu .bt-voile::before{background:
+          linear-gradient(180deg,rgba(255,214,170,.22) 0%,rgba(255,200,150,.08) 30%,transparent 52%);
+          mix-blend-mode:screen;}
+        :root[data-heure="jour"] .bt-e-lieu .bt-voile::before{background:
+          linear-gradient(180deg,rgba(120,62,30,.42) 0%,rgba(150,80,40,.14) 26%,transparent 50%);}
+        /* LA FIN DE JOURNÉE : un soleil bas qui rase la façade par la droite. */
+        :root[data-heure="dore"] .bt-e-lieu .bt-voile::before{background:
+          linear-gradient(180deg,rgba(140,52,40,.55) 0%,rgba(210,100,50,.22) 26%,transparent 52%);}
+        .bt-cadre-photo::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;
+          transition:opacity 1.2s ease;}
+        :root[data-heure="dore"] .bt-cadre-photo::after{opacity:1;mix-blend-mode:screen;background:
+          radial-gradient(85% 62% at 100% 62%,rgba(255,170,60,.68),rgba(255,130,40,.3) 42%,transparent 74%),
+          linear-gradient(100deg,transparent 30%,rgba(255,150,50,.16) 100%);}
+        :root[data-heure="matin"] .bt-cadre-photo::after{opacity:1;mix-blend-mode:screen;background:
+          radial-gradient(90% 70% at 0% 40%,rgba(255,240,215,.34),rgba(255,230,200,.1) 50%,transparent 76%);}
+        /* LA PHOTO CLIKME SORT DÉJÀ DORÉE : on ne fait que l'accorder. Plus
+           claire le matin, rasée d'or en fin de journée, et le soir le jour
+           tombe dessus. */
+        :root[data-heure="matin"] .bt-photo.clikme{filter:brightness(1.05) saturate(.92);}
+        :root[data-heure="soir"] .bt-photo.clikme{filter:brightness(.78) saturate(1.08) contrast(1.04);}
+        :root[data-heure="soir"] .a-couv .bt-cadre-photo::after{opacity:1;mix-blend-mode:multiply;background:
+          linear-gradient(180deg,rgba(62,24,92,.55) 0%,rgba(150,60,72,.18) 34%,transparent 60%);}
+
+        /* ═══ L'ENSEIGNE S'ALLUME LE SOIR — s'il est ouvert ════════════════
+           Le titre devient une enseigne au néon : il s'allume en deux
+           battements, comme un vrai tube, puis tient sa lueur. */
+        .bt-e-lieu .bt-titre{transition:color .8s ease,text-shadow .8s ease;}
+        .bt-e-lieu.enseigne .bt-titre{color:#FFF1DC;
+          text-shadow:0 0 4px rgba(255,236,200,.9),0 0 14px rgba(255,170,70,.85),0 0 32px rgba(255,120,40,.6),
+            0 2px 18px rgba(0,0,0,.75);
+          animation:btNeon 1.4s ease-out both;}
+        @keyframes btNeon{0%{opacity:.55;}12%{opacity:1;}20%{opacity:.6;}30%{opacity:1;}100%{opacity:1;}}
+        @media (prefers-reduced-motion: reduce){.bt-e-lieu.enseigne .bt-titre{animation:none;}}
+
         @media (prefers-reduced-motion: reduce){
           .bt-accueille.vivant::before,.bt-hote::before,.bt-accueille.vivant .bt-double{animation:none;}
           .bt-invite{animation:none;opacity:1;transform:translate(-50%,0);}
