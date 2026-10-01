@@ -23,6 +23,7 @@ import { ligneDuJour } from "@/lib/site-internet/opening-hours";
 import { numeroAppel, numeroReservations } from "@/lib/site-internet/pro-phone";
 import { carteDepuisFiche, type FicheCommercant } from "@/lib/site-internet/carte-depuis-fiche";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
+import { couvertureAffichee, couvertureDuDiagnostic } from "@/lib/site-internet/couverture";
 
 const str = (v: unknown) => (v == null ? "" : String(v));
 const capWords = (s: string) =>
@@ -162,6 +163,7 @@ export function construireFiche(
       : undefined,
     services,
     avisGoogle,
+    couverture: couvertureAffichee(couvertureDuDiagnostic(diag)),
   };
   return { fiche, nom, ville, note, reviews };
 }

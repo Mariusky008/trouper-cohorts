@@ -132,6 +132,21 @@ export function StylesBoutiqueTable() {
         .bt-e-lieu .bt-voile::before,.bt-hero .bt-voile::before{content:"";position:absolute;inset:0;
           background:linear-gradient(180deg,rgba(62,24,92,.62) 0%,rgba(150,60,72,.26) 24%,transparent 50%);
           mix-blend-mode:multiply;}
+        /* ═══ LA PHOTO CLIKME GARDE SA LUMIERE ══════════════════════════════
+           Elle sort du rendu deja doree, fantomes compris : ni filtre du soir,
+           ni ciel violine, ni halo en bas. On ne garde que le voile qui tient
+           le titre et le bouton lisibles. */
+        .bt-photo.clikme{filter:none;background-position:center 45%;}
+        .bt-photo.clikme::after{background:none;}
+        .a-couv .bt-voile::before{display:none;}
+        /* MAIS LE TITRE Y TOMBE SUR L'ENSEIGNE. Vu au premier rendu : une
+           photo ClikMe est claire et pleine jusqu'en haut — auvent, lettres
+           peintes —, et « Bienvenue au … » se lisait par-dessus le nom
+           peint sur l'auvent. Le haut descend donc plus sombre et plus bas que
+           sur une photo du soir. */
+        .a-couv .bt-voile.haut-bas{background:linear-gradient(180deg,
+          rgba(18,12,9,.9) 0%,rgba(18,12,9,.72) 22%,rgba(18,12,9,.3) 40%,rgba(18,12,9,0) 52%,
+          rgba(18,12,9,0) 66%,rgba(18,12,9,.55) 84%,rgba(18,12,9,.92) 100%);}
         .bt-photo.haute{bottom:auto;height:60%;}
         .bt-voile{position:absolute;inset:0;z-index:0;pointer-events:none;}
         .bt-voile.haut-bas{background:linear-gradient(180deg,
@@ -603,6 +618,10 @@ export function StylesBoutiqueTable() {
             rgba(18,12,9,0) 60%,rgba(18,12,9,.55) 88%,var(--bt-fond) 100%),
             linear-gradient(180deg,rgba(18,12,9,.55) 0%,rgba(18,12,9,0) 26%,
             rgba(18,12,9,0) 70%,rgba(18,12,9,.6) 100%);}
+          /* SUR UN ORDINATEUR, LE TITRE N'EST PLUS SUR LA PHOTO : la photo
+             ClikMe reprend le voile leger des deux moities. */
+          .a-couv .bt-voile.haut-bas{background:linear-gradient(90deg,
+            rgba(18,12,9,0) 70%,rgba(18,12,9,.5) 92%,var(--bt-fond) 100%);}
           .bt-ecran>:not(.bt-photo):not(.bt-voile):not(.bt-hero):not(.bt-fenetre){
             margin-left:var(--bt-g);width:calc(100% - var(--bt-g));
             padding-left:var(--bt-d);padding-right:var(--bt-d);box-sizing:border-box;}
@@ -651,8 +670,17 @@ export function StylesBoutiqueTable() {
           @keyframes btFenetre{from{opacity:0;transform:translateY(14px) scale(.98);}
             to{opacity:1;transform:none;}}
           /* LES INFOS : le heros devient la moitie gauche, sur toute la hauteur. */
-          .bt-e-infos .bt-hero{position:absolute;left:0;top:0;bottom:0;
-            width:var(--bt-g);height:auto;margin:0;}
+          /* FIXE, ET PAS POSE EN HAUT DE LA COLONNE : vu en descendant jusqu'au
+             formulaire, la photo partait avec le texte et laissait la moitie
+             gauche vide en bas. Elle reste a sa place, la colonne defile. */
+          .bt-e-infos .bt-hero{position:fixed;left:0;top:var(--bt-maq);
+            bottom:var(--bt-nav);width:50vw;height:auto;margin:0;}
+          /* MAIS UN PARENT ANIME EN TRANSFORM RETIENT CE QUI EST FIXE : l'entree
+             de l'ecran glisse de huit points, et l'animation laisse une
+             transformation identite qui suffit a ramener la photo dans la
+             colonne. L'ecran des infos entre donc en fondu seul. */
+          .bt-e-infos{animation-name:btFondu;}
+          @keyframes btFondu{from{opacity:0;}to{opacity:1;}}
           .bt-e-infos .bt-hero .bt-titre{padding:0 0 9vh var(--bt-d);
             font-size:clamp(40px,3.6vw,58px);}
           .bt-e-infos .bt-hero .bt-double{width:clamp(170px,15vw,230px);bottom:-6%;right:6%;}

@@ -42,7 +42,8 @@
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { noterClic } from "@/lib/direct/publications";
-import { carteDepuisFiche } from "@/lib/site-internet/carte-depuis-fiche";
+import { carteDepuisFiche, enGrand } from "@/lib/site-internet/carte-depuis-fiche";
+import { couvertureDuDiagnostic, photosCandidates } from "@/lib/site-internet/couverture";
 import { COLONNES_FICHE, construireFiche } from "@/lib/site-internet/fiche-du-site";
 import { carteDeDemo, estAdresseDeDemo, listeDesDemos } from "@/lib/site-internet/fiches-demo";
 import { PageBoutique } from "./page-boutique";
@@ -325,6 +326,13 @@ export default async function ApercuMaquette({
       keepHref={keepHref}
       note={note}
       reviewsCount={reviews}
+      // SA PHOTO CLIKME : son état et les photos dont elle peut partir, dans
+      // l'ordre exact où le serveur les numérote. Jamais pour un visiteur.
+      couverture={
+        visiteurPublic
+          ? undefined
+          : { etat: couvertureDuDiagnostic(row.diagnostic), candidates: photosCandidates(row).map(enGrand) }
+      }
     />
   );
 }

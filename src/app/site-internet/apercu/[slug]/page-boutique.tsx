@@ -38,6 +38,8 @@
 import { Boutique } from "@/app/autour-de-moi/boutique/boutique";
 import { DemoTour } from "./demo-tour";
 import { GarderCeSite } from "./garder-ce-site";
+import { ChoixCouverture, VeilleCouverture } from "./couverture-clikme";
+import type { EtatCouverture } from "@/lib/site-internet/couverture";
 import { BoutonDouble } from "@/components/direct/bouton-double";
 import { aUnDouble } from "@/lib/direct/double-metiers";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
@@ -72,6 +74,11 @@ export type PageBoutiqueProps = {
   invente?: boolean;
   /** Le prénom qu'il a donné à son double dans son Espace Pro — voir `pro-voix.tsx`. */
   prenomChef?: string;
+  /**
+   * SA PHOTO CLIKME, VUE PAR LUI. Absente pour un visiteur et pour les
+   * commerces de démonstration. Voir `couverture-clikme.tsx`.
+   */
+  couverture?: { etat: EtatCouverture | null; candidates: string[] };
 };
 
 /**
@@ -190,7 +197,12 @@ export function PageBoutique(p: PageBoutiqueProps) {
   /* LES RESTAURANTS ONT LEUR PAGE À ONGLETS, FIXE : le formulaire entre dedans,
      au bout des infos. Rendu après elle, il se retrouvait derrière. */
   const aOnglets = carte.branche === "restaurant";
-  const garder = modeDemo ? <GarderCeSite slug={slug} phoneDisplay={phoneDisplay} /> : null;
+  const garder = modeDemo ? (
+    <>
+      {p.couverture && <ChoixCouverture slug={slug} initial={p.couverture.etat} candidates={p.couverture.candidates} />}
+      <GarderCeSite slug={slug} phoneDisplay={phoneDisplay} />
+    </>
+  ) : null;
 
   return (
     <>
@@ -204,6 +216,13 @@ export function PageBoutique(p: PageBoutiqueProps) {
         prenomChef={p.prenomChef}
         pied={aOnglets ? garder : undefined}
       />
+      {p.couverture && (
+        <VeilleCouverture
+          slug={slug}
+          initial={p.couverture.etat}
+          aDesPhotos={p.couverture.candidates.length > 0}
+        />
+      )}
       {modeDemo && (
         <DemoTour
           racine=".bq"

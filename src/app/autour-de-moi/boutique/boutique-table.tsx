@@ -343,12 +343,12 @@ export function BoutiqueTable({
   const [cassees, setCassees] = useState<string[]>([]);
   useEffect(() => {
     setCassees([]);
-    for (const src of photosFiche) {
+    for (const src of [...photosFiche, ...(c.couverture ? [c.couverture] : [])]) {
       const i = new Image();
       i.onerror = () => setCassees((x) => (x.includes(src) ? x : [...x, src]));
       i.src = src;
     }
-  }, [photosFiche]);
+  }, [photosFiche, c.couverture]);
   const photos = useMemo(() => photosFiche.filter((p) => !cassees.includes(p)), [photosFiche, cassees]);
   /**
    * LA DEVANTURE D'UN CÔTÉ, LA SALLE DE L'AUTRE.
@@ -366,6 +366,19 @@ export function BoutiqueTable({
   const tenue = tenueDu(c);
   const devanture = photos[0] ?? tenue?.decor ?? "";
   const dedans = (i: number) => (photos.length > 1 ? photos[1 + (i % (photos.length - 1))] : devanture);
+  /**
+   * ═══ SA PHOTO CLIKME, QUAND ELLE EST PRÊTE ═════════════════════════════
+   *
+   * « On a le fantôme qui semble perdu dans l'image et pas du tout incorporé. »
+   *
+   * QUAND ELLE EXISTE, LES FANTÔMES SONT DÉJÀ DANS L'IMAGE — rendus avec la
+   * lumière, la perspective et les ombres de sa devanture. On ne pose donc plus
+   * le double par-dessus, et on ne passe plus la photo au filtre du soir : elle
+   * a déjà sa lumière, et la filtrer une seconde fois la salirait. Voir
+   * `lib/site-internet/couverture.ts`. Le lieu et les infos l'ouvrent ; les
+   * autres écrans gardent les vraies photos de la salle.
+   */
+  const couv = c.couverture && !cassees.includes(c.couverture) ? c.couverture : undefined;
 
   const pose = (p: "accueil" | "content" | "reflechit" | "ecoute") =>
     tenue ? `${tenue.dossier}${p}.webp` : "/clikme-fantome.png";
@@ -566,8 +579,11 @@ export function BoutiqueTable({
 
       {/* ═══════════════════════════ 1 · LE LIEU ═══════════════════════════ */}
       {onglet === "lieu" && (
-        <section className="bt-ecran bt-e-lieu" key="lieu">
-          <div className="bt-photo facade" style={{ backgroundImage: `url("${devanture}")` }} />
+        <section className={`bt-ecran bt-e-lieu${couv ? " a-couv" : ""}`} key="lieu">
+          <div
+            className={`bt-photo ${couv ? "clikme" : "facade"}`}
+            style={{ backgroundImage: `url("${couv ?? devanture}")` }}
+          />
           <div className="bt-voile haut-bas" />
           {entete(false)}
           <div className="bt-accueil">
@@ -589,7 +605,7 @@ export function BoutiqueTable({
                 c'est elle qui l'ancre dans la photo. Le bas de ses poses est
                 coupé net sous la poitrine : on le fond, comme le bas d'un
                 fantôme, au lieu de le trancher. */}
-            <span className="bt-accueille">{double("accueil", "centre")}</span>
+            {!couv && <span className="bt-accueille">{double("accueil", "centre")}</span>}
             <button type="button" className="bt-entrer" onClick={() => setOnglet("experience")}>
               Entrer <s aria-hidden="true">→</s>
             </button>
@@ -952,13 +968,16 @@ export function BoutiqueTable({
 
       {/* ════════════════════════════ 6 · LES INFOS ════════════════════════ */}
       {onglet === "infos" && (
-        <section className="bt-ecran bt-e-infos defile" key="infos">
+        <section className={`bt-ecran bt-e-infos defile${couv ? " a-couv" : ""}`} key="infos">
           {entete(true)}
           <div className="bt-hero">
-            <div className="bt-photo facade" style={{ backgroundImage: `url("${devanture}")` }} />
+            <div
+              className={`bt-photo ${couv ? "clikme" : "facade"}`}
+              style={{ backgroundImage: `url("${couv ?? devanture}")` }}
+            />
             <div className="bt-voile gauche" />
             <h1 className="bt-titre moyen">On se retrouve ici&nbsp;?</h1>
-            {double("accueil", "droite")}
+            {!couv && double("accueil", "droite")}
           </div>
           <div className="bt-corps">
             <ul className="bt-fiche">

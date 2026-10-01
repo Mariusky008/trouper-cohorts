@@ -1243,6 +1243,15 @@ export type CarteAutour = {
   branche: CleMetier;
   photo?: string;
   /**
+   * SA PHOTO CLIKME — sa devanture passée dans l'univers ClikMe, les fantômes
+   * dedans. Voir `lib/site-internet/couverture.ts`.
+   *
+   * ELLE NE REMPLACE PAS SES PHOTOS : elle ouvre la page, et « Le lieu en
+   * images » garde les vraies. Absente tant qu'elle n'est pas prête, ou s'il a
+   * choisi de garder sa photo d'origine.
+   */
+  couverture?: string;
+  /**
    * LES AUTRES PHOTOS DE L'ANNONCE — le carrousel du commerçant.
    *
    * DEMANDÉ PAR DE VRAIES PERSONNES : « on m'a demandé si on pouvait voir

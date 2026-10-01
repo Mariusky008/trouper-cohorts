@@ -758,7 +758,10 @@ function BoutiqueLongue({
    * l'atelier disent QUI C'EST, ce qui est précisément la question de cette
    * page. La photo du jour, elle, reste sur les moments, à sa place.
    */
-  const photoTete = c.sesPhotos?.[0]?.src || c.photo || c.moments[0]?.photo || "";
+  /* SA PHOTO CLIKME D'ABORD, QUAND ELLE EST PRÊTE — voir `couverture` dans la
+     carte. Les autres métiers l'ouvrent ici comme les restaurants l'ouvrent
+     dans leur page à onglets. */
+  const photoTete = c.couverture || c.sesPhotos?.[0]?.src || c.photo || c.moments[0]?.photo || "";
   /** Vrai quand la photo de tête a refusé de se charger. Voir la couverture. */
   const [photoCassee, setPhotoCassee] = useState(false);
   // ON REDONNE SA CHANCE À CHAQUE COMMERCE : sans ça, une photo cassée sur un

@@ -15,6 +15,11 @@ const config: NextConfig = {
     // manque en production alors qu'il est là en local.
     "/admin/humain/site-internet/lettre/[slug]": ["./src/templates/**"],
     "/admin/humain/site-internet/lettres/[ville]": ["./src/templates/**"],
+    // LA PHOTO CLIKME LIT LE FANTOME DE REFERENCE SUR LE DISQUE (voir
+    // `lib/site-internet/couverture.ts`). Les deux routes qui la fabriquent
+    // doivent l'emporter, sinon le rendu tombe en production seulement.
+    "/api/site-internet/couverture": ["./public/clikme-fantome.png"],
+    "/api/site-internet/public-generate": ["./public/clikme-fantome.png"],
   },
   typescript: {
     ignoreBuildErrors: true,
