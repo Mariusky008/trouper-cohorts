@@ -43,13 +43,31 @@ function useArrivee(onFin: (ok: boolean) => void) {
 }
 
 /** Un décor : la photo filtrée tout de suite, le dessin par-dessus dès qu'il arrive. */
-function Decor({ id, photo, taille = "cover", pos = "50% 50%", onPret }: { id: string; photo: string; taille?: string; pos?: string; onPret: (ok: boolean) => void }) {
+function Decor({
+  id,
+  photo,
+  taille = "cover",
+  pos = "50% 50%",
+  classe = "",
+  enAttente,
+  onPret,
+}: {
+  id: string;
+  photo: string;
+  taille?: string;
+  pos?: string;
+  classe?: string;
+  /** Ce qui ne se montre que sur la photo filtrée, tant que le dessin n'est pas là — le dessin, lui, le contient déjà. */
+  enAttente?: ReactNode;
+  onPret: (ok: boolean) => void;
+}) {
   const { ref, pret, onLoad, onError } = useArrivee(onPret);
   const fond: CSSProperties = { backgroundSize: taille, backgroundPosition: pos };
   return (
     <>
-      <div className="fm-fond fm-encre" style={{ ...fond, backgroundImage: `url("${photo}")` }} />
-      <div className={`fm-fond fm-dessin${pret ? " pret" : ""}`} style={{ ...fond, backgroundImage: pret ? `url("${BD(id)}")` : undefined }} />
+      <div className={`fm-fond fm-encre ${classe}`} style={{ ...fond, backgroundImage: `url("${photo}")` }} />
+      <div className={`fm-fond fm-dessin ${classe}${pret ? " pret" : ""}`} style={{ ...fond, backgroundImage: pret ? `url("${BD(id)}")` : undefined }} />
+      {!pret && enAttente}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img ref={ref} className="fm-sonde" src={BD(id)} alt="" onLoad={onLoad} onError={onError} />
     </>
@@ -69,8 +87,9 @@ function Perso({ id, pose, style, classe = "", onPret }: { id: string; pose: str
   );
 }
 
-const Bulle = ({ children, style, queue = "g" }: { children: ReactNode; style: CSSProperties; queue?: "g" | "d" }) => (
-  <div className={`fm-bulle q-${queue}`} style={style}>
+/** « hors » : quelqu'un qu'on ne voit pas parle depuis le bord de la case. « cri » : on hausse le ton. */
+const Bulle = ({ children, style, queue = "g", classe = "" }: { children: ReactNode; style: CSSProperties; queue?: "g" | "d" | "hg" | "hors"; classe?: string }) => (
+  <div className={`fm-bulle q-${queue} ${classe}`} style={style}>
     {children}
   </div>
 );
@@ -80,7 +99,7 @@ const Recit = ({ children, style, classe = "" }: { children: ReactNode; style?: 
   </div>
 );
 
-const TOTAL = 9;
+const TOTAL = 11;
 
 export function Magazine() {
   /* COMBIEN DE DESSINS SONT ARRIVÉS — le bandeau du haut le dit, pour qu'on
@@ -148,13 +167,20 @@ export function Magazine() {
           <div className="fm-case-couv">
             <Decor id="rue" photo="/direct/bd/rue-txupinazo.jpg" pos="52% 50%" onPret={noter("rue")} />
             <Perso id="chef-accueil" pose="/direct/double/accueil.webp" style={{ left: "46%", top: "52%", height: "19%" }} classe="flotte" onPret={noter("chef-accueil")} />
-            <Perso id="ongles-accueil" pose="/direct/double/ongles/accueil.webp" style={{ left: "6%", top: "57%", height: "22%" }} classe="flotte miroir" onPret={noter("ongles-accueil")} />
-            <Bulle style={{ left: "58%", top: "44%", width: 190 }}>Entre, je te fais visiter&nbsp;!</Bulle>
+            <Perso id="ongles-content" pose="/direct/double/ongles/content.webp" style={{ left: "6%", top: "57%", height: "22%" }} classe="flotte miroir" onPret={noter("ongles-content")} />
+            <Bulle style={{ left: "57%", top: "41%", width: 210 }}>Entre… mais tu ne touches pas au taureau.</Bulle>
+            <Bulle style={{ left: "8%", top: "50%", width: 120 }} queue="d">
+              Moi&nbsp;? Jamais.
+            </Bulle>
           </div>
           <div className="fm-cartouche-couv">
-            <p className="fm-ep-k">La rencontre du mois</p>
-            <p className="fm-ep-t">Rouge Txupi</p>
-            <p className="fm-ep-d">El Txupinazo × L&apos;Atelier de Léa</p>
+            <p className="fm-ep-k">Scandale au Txupinazo</p>
+            <p className="fm-ep-t">
+              Qui a fait les ongles
+              <br />
+              du taureau&nbsp;?
+            </p>
+            <p className="fm-ep-d">La rencontre du mois · page 12</p>
           </div>
           <div className="fm-pastille">
             <b>12</b>
@@ -178,61 +204,106 @@ export function Magazine() {
             </div>
             <div className="fm-ep">
               <p className="fm-ep-k">La rencontre du mois</p>
-              <p className="fm-ep-t">Rouge Txupi</p>
+              <p className="fm-ep-t petit">Qui a fait les ongles du taureau&nbsp;?</p>
             </div>
           </header>
           <div className="fm-grille">
-            <div className="fm-case c1">
-              <Decor id="rue" photo="/direct/bd/rue-txupinazo.jpg" pos="50% 60%" onPret={() => {}} />
-              <Perso id="ongles-accueil" pose="/direct/double/ongles/accueil.webp" style={{ left: 120, top: 128, height: 170 }} classe="flotte miroir" onPret={() => {}} />
-              <Perso id="chef-accueil" pose="/direct/double/accueil.webp" style={{ left: 372, top: 150, height: 132 }} classe="flotte" onPret={() => {}} />
-              <Recit>Dax, un lundi, 12 h 40.</Recit>
-              <Bulle style={{ left: 470, top: 62, width: 210 }}>Entre, le comptoir est à toi&nbsp;!</Bulle>
-              <Bulle style={{ left: 22, top: 56, width: 200 }} queue="d">
-                Juste un pintxo… je ne reste pas.
-              </Bulle>
+            <div className="fm-rang r1">
+              {/* 1 — ELLE ARRIVE, LES ONGLES TOUT FRAIS. */}
+              <div className="fm-case" style={{ width: 784 }}>
+                <Decor id="rue" photo="/direct/bd/rue-txupinazo.jpg" pos="50% 60%" onPret={() => {}} />
+                <Perso id="ongles-accueil" pose="/direct/double/ongles/accueil.webp" style={{ left: 110, top: 104, height: 165 }} classe="flotte miroir" onPret={noter("ongles-accueil")} />
+                <Perso id="chef-accueil" pose="/direct/double/accueil.webp" style={{ left: 380, top: 132, height: 128 }} classe="flotte" onPret={() => {}} />
+                <Recit>Dax, un lundi, 12 h 40.</Recit>
+                <Bulle style={{ left: 16, top: 40, width: 250 }} queue="d">
+                  Un pintxo, vite fait. Et personne ne touche à mes ongles&nbsp;: ils sont tout frais.
+                </Bulle>
+                <Bulle style={{ left: 440, top: 40, width: 230 }}>Ici, les pintxos se mangent avec les doigts, ma belle&nbsp;!</Bulle>
+              </div>
             </div>
-            <div className="fm-case c2">
-              <Decor id="salle" photo="/direct/bd/salle-txupinazo.jpg" taille="115%" pos="51% 43%" onPret={noter("salle")} />
-              <Perso id="chef-content" pose="/direct/double/content.webp" style={{ left: 206, top: 92, height: 104 }} classe="flotte" onPret={noter("chef-content")} />
-              <Perso id="ongles-content" pose="/direct/double/ongles/content.webp" style={{ left: -6, top: 120, height: 190 }} classe="flotte miroir" onPret={noter("ongles-content")} />
-              <Recit style={{ maxWidth: 300 }}>Sous le taureau du plafond, le comptoir est plein.</Recit>
-              <Bulle style={{ left: 290, top: 70, width: 170 }}>Le premier est pour la maison&nbsp;!</Bulle>
+            <div className="fm-rang r2">
+              {/* 2 — ELLE LÈVE LES YEUX. */}
+              <div className="fm-case" style={{ width: 380 }}>
+                <Decor id="salle" photo="/direct/bd/salle-txupinazo.jpg" taille="125%" pos="45% 0%" onPret={noter("salle")} />
+                <Perso id="chef-content" pose="/direct/double/content.webp" style={{ left: 232, top: 128, height: 104 }} classe="flotte" onPret={noter("chef-content")} />
+                <Perso id="ongles-reflechit" pose="/direct/double/ongles/reflechit.webp" style={{ left: -14, top: 112, height: 190 }} classe="miroir" onPret={noter("ongles-reflechit")} />
+                <Bulle style={{ left: 8, top: 12, width: 196 }}>Et lui, là-haut&nbsp;? Ses sabots… une catastrophe.</Bulle>
+                <Bulle style={{ right: 6, top: 52, width: 158 }} queue="d">
+                  C&apos;est un taureau. Il est PEINT. Au PLAFOND.
+                </Bulle>
+              </div>
+              {/* 3 — MINUIT : UN FANTÔME, ÇA FLOTTE. */}
+              <div className="fm-case nuit" style={{ width: 394 }}>
+                <Decor id="salle" photo="/direct/bd/salle-txupinazo.jpg" taille="330%" pos="60% 4%" classe="nuit" onPret={() => {}} />
+                <div className="fm-voile-nuit" />
+                <Perso id="ongles-content" pose="/direct/double/ongles/content.webp" style={{ left: 36, top: 10, height: 170, transform: "rotate(180deg)" }} onPret={() => {}} />
+                <Recit classe="droite" style={{ maxWidth: 200 }}>
+                  Minuit. Le bar est fermé. Mais un fantôme, ça flotte.
+                </Recit>
+                <Bulle style={{ left: 56, top: 196, width: 210 }} queue="hg">
+                  Bouge pas. Ça sèche en trois minutes.
+                </Bulle>
+              </div>
             </div>
-            <div className="fm-case c3">
-              <Decor id="salle" photo="/direct/bd/salle-txupinazo.jpg" taille="362%" pos="60% 2%" onPret={() => {}} />
-              <Perso id="ongles-reflechit" pose="/direct/double/ongles/reflechit.webp" style={{ left: -30, top: 120, height: 230 }} classe="miroir" onPret={noter("ongles-reflechit")} />
-              <Recit classe="droite" style={{ maxWidth: 220 }}>
-                Elle n&apos;a pas regardé l&apos;assiette. Elle a regardé le plafond.
-              </Recit>
-              <Bulle style={{ right: 12, top: 150, width: 150 }}>Ce rouge… je ne l&apos;ai jamais vu sur des ongles.</Bulle>
-            </div>
-            <div className="fm-case c4">
-              <Decor id="atelier" photo="/direct/double/ongles/decor.jpg" taille="138%" pos="50% 13%" onPret={noter("atelier")} />
-              <Perso id="ongles-content" pose="/direct/double/ongles/content.webp" style={{ left: 54, top: 70, height: 190 }} onPret={() => {}} />
-              <Recit>Le lendemain, à l&apos;atelier.</Recit>
-              <Bulle style={{ left: 150, top: 40, width: 140 }}>Elle a un nom&nbsp;: Rouge Txupi.</Bulle>
-            </div>
-            <div className="fm-case c5">
-              <Decor id="ongles" photo="/direct/pose-ongles.jpg" pos="50% 42%" onPret={noter("ongles")} />
-              <Perso id="chef-content" pose="/direct/double/content.webp" style={{ right: -40, top: 120, height: 200 }} onPret={() => {}} />
-              <Recit classe="bas" style={{ maxWidth: 280 }}>
-                Un nude, et sur chaque ongle, un cœur du rouge exact du plafond.
-              </Recit>
-              <Bulle style={{ right: 120, top: 30, width: 170 }} queue="d">
-                Dessert offert à celles qui la portent&nbsp;!
-              </Bulle>
+            <div className="fm-rang r3">
+              {/* 4 — LE MATIN DU SCANDALE. */}
+              <div className="fm-case" style={{ width: 300 }}>
+                <Decor
+                  id="salle-verni"
+                  photo="/direct/bd/salle-txupinazo.jpg"
+                  taille="150%"
+                  pos="55% 8%"
+                  onPret={noter("salle-verni")}
+                  enAttente={<span className="fm-paillette" style={{ left: 172, top: 22 }}>✨</span>}
+                />
+                <Perso id="chef-parle" pose="/direct/double/parle-1.webp" style={{ left: 30, top: 140, height: 210 }} onPret={noter("chef-parle")} />
+                <Recit>7 h 30.</Recit>
+                <Bulle style={{ left: 60, top: 40, width: 220 }} classe="cri">
+                  Qui a fait les ongles du taureau&nbsp;?!
+                </Bulle>
+                <Bulle style={{ right: -10, top: 158, width: 112 }} queue="hors">
+                  Il a même une paillette&nbsp;!
+                </Bulle>
+                <Bulle style={{ right: -10, top: 222, width: 104 }} queue="hors">
+                  Je veux la même&nbsp;!
+                </Bulle>
+              </div>
+              {/* 5 — À L'ATELIER, C'EST COMPLET. */}
+              <div className="fm-case" style={{ width: 232 }}>
+                <Decor id="atelier" photo="/direct/double/ongles/decor.jpg" taille="200%" pos="50% 12%" onPret={noter("atelier")} />
+                <div className="fm-ardoise">
+                  <b>Rouge Txupi</b>
+                  <span>complet jusqu&apos;à jeudi</span>
+                </div>
+                <Perso id="ongles-content" pose="/direct/double/ongles/content.webp" style={{ left: 6, top: 150, height: 180 }} onPret={() => {}} />
+                <Recit>Le lendemain, à l&apos;atelier.</Recit>
+                <Bulle style={{ right: 6, top: 98, width: 150 }}>Comme le taureau&nbsp;? 45 minutes. Et je ne fais pas les sabots.</Bulle>
+              </div>
+              {/* 6 — LA CHUTE. */}
+              <div className="fm-case" style={{ width: 232 }}>
+                <Decor
+                  id="salle-verni"
+                  photo="/direct/bd/salle-txupinazo.jpg"
+                  taille="380%"
+                  pos="60% 3%"
+                  onPret={() => {}}
+                  enAttente={<span className="fm-paillette" style={{ left: 120, top: 60 }}>✨</span>}
+                />
+                <Perso id="chef-reflechit" pose="/direct/double/reflechit.webp" style={{ left: 10, top: 140, height: 170 }} onPret={noter("chef-reflechit")} />
+                <Bulle style={{ left: 50, top: 70, width: 168 }}>Et toi… t&apos;aurais pu dire non.</Bulle>
+                <Recit classe="bas">Le taureau n&apos;a rien dit. Mais il a pris rendez-vous pour la Feria.</Recit>
+              </div>
             </div>
           </div>
           <div className="fm-bon">
             <p className="fm-bon-k">Le bon du mois</p>
             <div className="fm-bon-l">
               <b>El Txupinazo</b>
-              <span>Montrez la Rouge Txupi&nbsp;: dessert offert</span>
+              <span>Venez avec des ongles «&nbsp;comme le taureau&nbsp;»&nbsp;: dessert offert</span>
             </div>
             <div className="fm-bon-l">
               <b>L&apos;Atelier de Léa</b>
-              <span>Montrez votre ticket&nbsp;: -10&nbsp;% sur la pose</span>
+              <span>Montrez votre ticket&nbsp;: -10&nbsp;% sur la pose (sabots non compris)</span>
             </div>
             <div className="fm-bon-m">
               <span>Mot de passe</span>
@@ -240,7 +311,7 @@ export function Magazine() {
               <em>jusqu&apos;au 31/10</em>
             </div>
           </div>
-          <p className="fm-folio">12 · Le mois prochain&nbsp;: le fleuriste rend visite au coiffeur.</p>
+          <p className="fm-folio">12 · Le mois prochain&nbsp;: le fleuriste chez le coiffeur. Fleurs dans la barbe garanties.</p>
         </>,
         "fm-planche",
       )}
@@ -278,14 +349,23 @@ const FEUILLE = `
   border-bottom:3px solid var(--encre);padding-bottom:8px}
 .fm-marque{font:400 46px/0.9 var(--font-affiche),Anton,sans-serif;text-transform:uppercase;color:var(--brique);letter-spacing:.5px}
 .fm-marque span{color:var(--encre)}
-.fm-sous{margin-top:6px;font:700 10.5px/1 var(--font-clikme),sans-serif;letter-spacing:2px;text-transform:uppercase;color:#6B4A34}
+.fm-sous{white-space:nowrap;margin-top:6px;font:700 10.5px/1 var(--font-clikme),sans-serif;letter-spacing:2px;text-transform:uppercase;color:#6B4A34}
 .fm-ep{text-align:right}
 .fm-ep-k{font:800 10.5px/1 var(--font-clikme),sans-serif;letter-spacing:2px;text-transform:uppercase;color:#6B4A34}
 .fm-ep-t{font:italic 600 34px/1 var(--font-enseigne),Georgia,serif;color:var(--brique)}
-.fm-grille{position:absolute;top:108px;left:28px;width:784px;height:916px;display:grid;gap:10px;
-  grid-template-columns:470px 304px;grid-template-rows:300px 290px 296px;grid-template-areas:"c1 c1" "c2 c3" "c5 c4"}
-.fm-case{position:relative;overflow:hidden;border:3px solid var(--encre);background:#3a2418}
-.c1{grid-area:c1}.c2{grid-area:c2}.c3{grid-area:c3}.c4{grid-area:c4}.c5{grid-area:c5}
+.fm-grille{position:absolute;top:108px;left:28px;width:784px;height:916px;display:flex;flex-direction:column;gap:10px}
+.fm-rang{display:flex;gap:10px}
+.r1{height:270px}.r2{height:300px}.r3{height:326px}
+.fm-case{position:relative;flex:none;overflow:hidden;border:3px solid var(--encre);background:#3a2418}
+.fm-encre.nuit{filter:url(#fm-encre) sepia(.25) brightness(.5) saturate(.85)}
+.fm-dessin.nuit{filter:brightness(.55) saturate(.85)}
+.fm-voile-nuit{position:absolute;inset:0;z-index:1;background:radial-gradient(circle at 30% 35%,rgba(255,220,160,.18),rgba(20,24,60,.45) 70%);mix-blend-mode:multiply}
+.fm-paillette{position:absolute;z-index:1;font-size:26px;filter:drop-shadow(0 0 6px #ffd76a)}
+.fm-ardoise{position:absolute;z-index:3;left:12px;top:44px;width:128px;padding:8px 10px;background:#2B2A27;border:4px solid #8A5A32;transform:rotate(-3deg);
+  color:#F4EFE6;text-align:center;box-shadow:0 6px 10px rgba(0,0,0,.35)}
+.fm-ardoise b{display:block;font:600 18px/1 var(--font-main-levee),Caveat,cursive;color:#FF8FB1}
+.fm-ardoise span{display:block;margin-top:4px;font:600 15px/1.05 var(--font-main-levee),Caveat,cursive}
+.fm-ep-t.petit{font-size:24px}
 .fm-recit{position:absolute;z-index:4;top:0;left:0;padding:8px 12px;background:var(--jaune);border-right:2.5px solid var(--encre);border-bottom:2.5px solid var(--encre);
   font:600 12.5px/1.3 var(--font-clikme),sans-serif;text-transform:uppercase;letter-spacing:.3px;color:var(--encre)}
 .fm-recit.droite{left:auto;right:0;border-right:0;border-left:2.5px solid var(--encre)}
@@ -296,6 +376,12 @@ const FEUILLE = `
 .fm-bulle::before{content:"";position:absolute;bottom:-20px;width:26px;height:22px;background:var(--encre);clip-path:polygon(0 0,100% 0,0 100%);z-index:-1}
 .q-g::after{left:28%}.q-g::before{left:calc(28% - 3px)}
 .q-d::after{right:28%;transform:scaleX(-1)}.q-d::before{right:calc(28% - 3px);transform:scaleX(-1)}
+.q-hg::after{left:28%;bottom:auto;top:-17px;transform:scaleY(-1)}.q-hg::before{left:calc(28% - 3px);bottom:auto;top:-20px;transform:scaleY(-1)}
+.q-hors{border-radius:18px 0 0 18px;border-right:0}
+.q-hors::after,.q-hors::before{display:none}
+.fm-bulle.cri{font-size:16px;font-weight:800;line-height:1.15;border-width:3px;border-radius:14px;background:#fff;
+  box-shadow:4px 4px 0 var(--encre);transform:rotate(-2deg)}
+.fm-bulle.cri::after{background:#fff}
 .fm-bon{position:absolute;left:28px;right:28px;top:1040px;height:96px;display:flex;align-items:center;gap:22px;padding:0 22px;
   border:2.5px dashed var(--brique);background:#FFF7EA}
 .fm-bon-k{font:italic 600 24px/1 var(--font-enseigne),Georgia,serif;color:var(--brique);width:110px}
@@ -306,7 +392,7 @@ const FEUILLE = `
 .fm-bon-m span{font:800 9px/1 var(--font-clikme),sans-serif;letter-spacing:1.6px;text-transform:uppercase}
 .fm-bon-m b{font:400 30px/1 var(--font-affiche),Anton,sans-serif;letter-spacing:1px}
 .fm-bon-m em{font:700 9px/1 var(--font-clikme),sans-serif;font-style:normal;opacity:.9}
-.fm-folio{position:absolute;left:28px;bottom:22px;font:700 10.5px/1 var(--font-clikme),sans-serif;letter-spacing:1.5px;text-transform:uppercase;color:#6B4A34}
+.fm-folio{position:absolute;left:28px;right:28px;bottom:22px;font:700 10.5px/1 var(--font-clikme),sans-serif;letter-spacing:1.5px;text-transform:uppercase;color:#6B4A34}
 .fm-case-couv{position:absolute;left:28px;right:28px;top:236px;bottom:28px;overflow:hidden;border:3px solid var(--encre)}
 .fm-titre-couv{position:absolute;top:22px;left:28px;right:28px;text-align:center}
 .fm-marque.grande{font-size:108px;line-height:.86}
@@ -314,7 +400,7 @@ const FEUILLE = `
 .fm-titre-couv .fm-sous{margin-top:10px}
 .fm-cartouche-couv{position:absolute;z-index:6;left:56px;bottom:62px;padding:16px 20px 14px;background:var(--jaune);border:3px solid var(--encre);box-shadow:6px 6px 0 var(--encre)}
 .fm-cartouche-couv .fm-ep-k{color:var(--encre)}
-.fm-cartouche-couv .fm-ep-t{margin-top:4px;font-size:52px}
+.fm-cartouche-couv .fm-ep-t{margin-top:4px;font-size:40px;line-height:1.02}
 .fm-ep-d{margin-top:4px;font:700 13px/1 var(--font-clikme),sans-serif;letter-spacing:1px;text-transform:uppercase}
 .fm-pastille{position:absolute;z-index:6;right:52px;bottom:70px;width:132px;height:132px;border-radius:50%;background:var(--rose);color:#fff;border:3px solid var(--encre);
   display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transform:rotate(-8deg)}

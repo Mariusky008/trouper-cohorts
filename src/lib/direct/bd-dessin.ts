@@ -60,13 +60,21 @@ export const SOURCES_BD: Record<string, SourceBD> = {
     format: "1024x1536",
     sujet: "A warm nail salon: pink velvet chairs, manicure tables, shelves of nail polish, a wooden counter in the foreground.",
   },
-  ongles: {
-    photo: "/direct/pose-ongles.jpg",
-    format: "1024x1536",
-    sujet: "A close-up of a hand with long nude almond nails, each decorated with a tiny brick-red heart, against a black knit sweater.",
+  /* LE GAG DE L'ÉPISODE TIENT DANS CETTE IMAGE. « Qui a fait les ongles du
+     taureau ? » : la même salle, et le taureau peint au plafond porte du vernis
+     rouge brillant aux sabots et au bout des cornes. Le moteur sait modifier
+     une photo ; c'est la seule case où on lui demande d'ajouter quelque chose. */
+  "salle-verni": {
+    photo: "/direct/bd/salle-txupinazo.jpg",
+    format: "1536x1024",
+    sujet:
+      "The dining room of El Txupinazo: a red ceiling with a painted bull emblem, the long bar, wooden high stools and round tables. " +
+      "ONE CHANGE: the painted bull on the ceiling now has glossy brick-red nail polish on its four hooves and on the tips of its horns, with a tiny gold sparkle, clearly visible.",
   },
   "chef-accueil": { photo: "/direct/double/accueil.webp", format: "1024x1024", personnage: true, sujet: "A friendly ghost chef waving hello." },
   "chef-content": { photo: "/direct/double/content.webp", format: "1024x1024", personnage: true, sujet: "A friendly ghost chef, eyes closed with joy." },
+  "chef-parle": { photo: "/direct/double/parle-1.webp", format: "1024x1024", personnage: true, sujet: "A ghost chef shouting in shock, mouth wide open." },
+  "chef-reflechit": { photo: "/direct/double/reflechit.webp", format: "1024x1024", personnage: true, sujet: "A ghost chef looking up, finger on the chin, suspicious." },
   "ongles-accueil": { photo: "/direct/double/ongles/accueil.webp", format: "1024x1024", personnage: true, sujet: "A friendly ghost manicurist waving hello." },
   "ongles-content": { photo: "/direct/double/ongles/content.webp", format: "1024x1024", personnage: true, sujet: "A friendly ghost manicurist, eyes closed with joy." },
   "ongles-reflechit": {
