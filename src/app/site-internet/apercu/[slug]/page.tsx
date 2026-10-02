@@ -42,7 +42,7 @@
 import type { Metadata } from "next";
 import { after } from "next/server";
 import { headers } from "next/headers";
-import { carteALire, lireLaCarte } from "@/lib/site-internet/carte-lue";
+import { carteALire } from "@/lib/site-internet/carte-lue";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { noterClic } from "@/lib/direct/publications";
 import { brancheDuMetier, carteDepuisFiche, enGrand } from "@/lib/site-internet/carte-depuis-fiche";
@@ -354,9 +354,16 @@ export default async function ApercuMaquette({
     const h = await headers();
     const hote = h.get("x-forwarded-host") || h.get("host") || "";
     const origine = `${h.get("x-forwarded-proto") || (/^(localhost|127\.)/.test(hote) ? "http" : "https")}://${hote}`;
+    // ELLE NE LIT PLUS ICI : la page n'a pas le temps d'une lecture. Elle
+    // sonne à la route qui l'a — voir `api/site-internet/carte-lue`.
     after(async () => {
       try {
-        await lireLaCarte(slug, origine);
+        await fetch(`${origine}/api/site-internet/carte-lue`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ slug }),
+          signal: AbortSignal.timeout(10_000),
+        });
       } catch {
         /* la visite suivante réessaiera */
       }

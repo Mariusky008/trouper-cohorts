@@ -77,11 +77,14 @@ export function photosDuRobot(items: unknown[]): string[] {
   const out: string[] = [];
   const garder = (u: string) => {
     if (!/^https:\/\/[^\s"']*(googleusercontent\.com|ggpht\.com)\//i.test(u)) return;
-    // LA MÊME PHOTO EN TROIS TAILLES N'EN FAIT QU'UNE : on la demande en grand.
+    // LA MÊME PHOTO EN TROIS TAILLES N'EN FAIT QU'UNE. On garde L'ADRESSE
+    // EXACTE que Google a donnée : c'est la seule dont on sache qu'elle existe,
+    // et notre route photo essaie elle-même les autres écritures (voir
+    // `api/photo-fiche`). La réécrire ici, c'était parier à sa place.
     const base = u.replace(/=[swh]\d+[^/?#]*$/i, "");
     if (vues.has(base)) return;
     vues.add(base);
-    out.push(`${base}=w1600-h1600`);
+    out.push(u);
   };
   const parcourir = (v: unknown, cle: string, profondeur: number) => {
     if (profondeur > 5 || out.length >= 24) return;

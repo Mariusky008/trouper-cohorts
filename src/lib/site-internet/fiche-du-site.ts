@@ -174,6 +174,10 @@ export function construireFiche(
     couvertureHote: couvertureDuDiagnostic(diag)?.hote,
     carteLue: carteLueDuDiagnostic(diag),
     carteSuivi: suiviDeLaCarte(diag),
+    photosCarte: (Array.isArray(diag.photos_menu) ? diag.photos_menu : [])
+      .map((u) => str(u))
+      .filter((u) => /^https:\/\//i.test(u))
+      .slice(0, 16),
     ficheGoogle: {
       menu: /^https?:\/\//i.test(str(diag.menu_url)) ? str(diag.menu_url) : undefined,
       prix: str(diag.prix_moyen).slice(0, 30) || undefined,

@@ -613,6 +613,31 @@ export function StylesBoutiqueTable() {
         .bt-trait::before,.bt-trait::after{content:"";flex:1;height:1px;
           background:var(--bt-trait);}
         .bt-fil{display:flex;flex-direction:column;gap:6px;}
+        /* ═══ LA CARTE EN PHOTOS — les pages de l'onglet « Menu », dans ClikMe ═══ */
+        .bt-pages{margin:14px 0 4px;}
+        .bt-pages-t{margin:0 0 8px;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:15px;}
+        .bt-pages-t span{font-family:var(--font-geist-sans),sans-serif;font-weight:500;font-size:13px;color:var(--bt-gris);}
+        .bt-pages-l{display:flex;gap:9px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory;
+          -webkit-overflow-scrolling:touch;scrollbar-width:none;}
+        .bt-pages-l::-webkit-scrollbar{display:none;}
+        .bt-pages-l button{flex:none;width:96px;aspect-ratio:3/4;padding:0;border-radius:12px;overflow:hidden;cursor:pointer;
+          scroll-snap-align:start;border:1px solid var(--bt-trait);background:var(--bt-nappe);}
+        .bt-pages-l img{width:100%;height:100%;object-fit:cover;display:block;}
+        .bt-visionneuse{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;
+          background:#0B0705;animation:btVis .25s ease-out both;}
+        @keyframes btVis{from{opacity:0;}to{opacity:1;}}
+        .bt-vis-page{flex:1;min-height:0;overflow:auto;display:flex;align-items:center;justify-content:center;
+          padding:calc(54px + env(safe-area-inset-top,0px)) 10px 8px;-webkit-overflow-scrolling:touch;}
+        .bt-vis-page img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;cursor:zoom-in;}
+        /* AU DOUBLE, ON LIT LES PRIX : la page déborde et se parcourt au doigt. */
+        .bt-vis-page.grande{align-items:flex-start;justify-content:flex-start;}
+        .bt-vis-page.grande img{max-width:none;max-height:none;width:200%;cursor:zoom-out;}
+        .bt-vis-barre{flex:none;display:flex;align-items:center;justify-content:center;gap:22px;
+          padding:10px 0 calc(16px + env(safe-area-inset-bottom,0px));color:var(--bt-creme);font-size:15px;}
+        .bt-vis-barre button,.bt-vis-fermer{width:46px;height:46px;border-radius:50%;cursor:pointer;
+          border:1px solid rgba(255,244,230,.2);background:rgba(255,244,230,.06);color:var(--bt-creme);font-size:26px;line-height:1;}
+        .bt-vis-barre button:disabled{opacity:.3;cursor:default;}
+        .bt-vis-fermer{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));right:10px;}
         .bt-suivi{list-style:none;margin:14px 0 0;padding:12px 14px;border-radius:14px;
           border:1px dashed var(--bt-trait);font-size:13.5px;line-height:1.45;color:var(--bt-gris);}
         .bt-suivi li+li{margin-top:6px;}

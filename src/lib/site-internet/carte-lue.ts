@@ -68,9 +68,9 @@ async function lire(src: string, origine: string): Promise<{ type: string; donne
   }
 }
 
-const CONSIGNE = `Ces photos viennent de la fiche Google d'un restaurant ou d'un bar.
-Certaines peuvent montrer SA CARTE : une page de menu, une ardoise, un tableau, un panneau de prix.
-Recopie UNIQUEMENT les plats et boissons que tu lis clairement sur ces cartes, avec leur prix exact tel qu'écrit (ex. « 5,90 € »).
+const CONSIGNE = `Ces photos viennent de la fiche Google d'un commerce (restaurant, bar, salon de coiffure, institut, boutique…).
+Certaines peuvent montrer SA CARTE ou SES TARIFS : une page de menu, une ardoise, un tableau, une grille de prix, un panneau de prestations.
+Recopie UNIQUEMENT les plats, boissons ou prestations que tu lis clairement, avec leur prix exact tel qu'écrit (ex. « 5,90 € », « Coupe homme 18 € »).
 Règles :
 - N'invente rien. Un plat illisible n'entre pas. Un prix illisible reste vide.
 - Ne déduis rien des photos de plats servis : seulement ce qui est ÉCRIT sur une carte.
@@ -114,7 +114,11 @@ export function carteALire(diag: unknown): boolean {
   if (d.carte_lue && lotLu(d) === lot) return false;
   const essai = Date.parse(s(d.carte_essai_at));
   const nouveau = s(d.carte_essai_lot) !== lot;
-  return nouveau || !(Number.isFinite(essai) && Date.now() - essai < 30 * 60_000);
+  // UNE LECTURE COUPÉE EN ROUTE (ni plats, ni erreur, six minutes après)
+  // n'attend pas la demi-heure : elle n'a rien coûté de lisible.
+  const fin = Date.parse(s(d.carte_fin_at));
+  const coupee = Number.isFinite(essai) && !(Number.isFinite(fin) && fin >= essai) && Date.now() - essai > 6 * 60_000;
+  return nouveau || coupee || !(Number.isFinite(essai) && Date.now() - essai < 30 * 60_000);
 }
 
 /**
@@ -163,7 +167,9 @@ async function lireMaintenant(slug: string, origine: string, cle: string): Promi
   let plats: PlatLu[] = [];
   let erreur = "";
   let lues = 0;
-  for (let i = 0; i < photos.length && !plats.length; i += 12) {
+  // UN BUDGET : la route a cinq minutes, on n'entame pas un paquet après trois.
+  const debut = Date.now();
+  for (let i = 0; i < photos.length && !plats.length && Date.now() - debut < 180_000; i += 12) {
     const images = (await Promise.all(photos.slice(i, i + 12).map((p) => lire(p, origine)))).filter(Boolean) as {
       type: string;
       donnees: string;
@@ -253,8 +259,9 @@ export function suiviDeLaCarte(diag: unknown): LigneSuivi[] {
   const fin = Date.parse(s(d.carte_fin_at));
   const lue = d.carte_lue && typeof d.carte_lue === "object" ? (d.carte_lue as Record<string, unknown>) : null;
   const err = s(d.carte_lue_erreur);
-  if (Number.isFinite(essai) && !(Number.isFinite(fin) && fin >= essai) && Date.now() - essai < 3 * 60_000)
-    out.push({ texte: "Lecture des prix sur les photos : en cours…" });
+  const enRoute = Number.isFinite(essai) && !(Number.isFinite(fin) && fin >= essai);
+  if (enRoute && Date.now() - essai < 3 * 60_000) out.push({ texte: "Lecture des prix sur les photos : en cours…" });
+  else if (enRoute) out.push({ texte: "Lecture des prix : interrompue — elle reprend d'elle-même à la prochaine visite." });
   else if (err)
     out.push({
       texte: /aucune photo/i.test(err)

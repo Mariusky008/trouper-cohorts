@@ -741,7 +741,18 @@ export function BoutiqueTable({
    * Google donne le lien de son menu, c'est lui qu'on montre, et ces lignes
    * génériques se retirent.
    */
-  const carteGoogleSeule = Boolean(c.cataloguePropose && c.ficheGoogle?.menu);
+  /* ═══ SA CARTE EN PHOTOS, DANS CLIKME ═════════════════════════════════════
+     « Si j'appuie sur "Voir la carte complète", ça m'amène sur le site du
+     restaurateur — ce n'est pas du tout l'idée : je veux que les clients
+     restent sur ClikMe. » Le lien partait vers son site ; les pages de sa
+     carte, elles, sont dans l'onglet « Menu » de sa fiche Google, et on les a
+     (voir `photos-menu.ts`). Elles s'affichent donc ici, et s'ouvrent en
+     grand ici. Quand elles existent, les formules d'exemple du métier
+     s'effacent : sa vraie carte vaut mieux qu'un exemple. */
+  const photosCarte = c.photosCarte ?? [];
+  const [pageCarte, setPageCarte] = useState<number | null>(null);
+  const [pageGrande, setPageGrande] = useState(false);
+  const carteGoogleSeule = Boolean(c.cataloguePropose && photosCarte.length);
   /* SA VRAIE CARTE, LUE OU SAISIE, SE MONTRE EN ENTIER ; les formules du
      métier, elles, restent quatre — ce ne sont que des exemples. */
   const carteLignes = carteGoogleSeule ? [] : (c.catalogue ?? []).slice(0, c.cataloguePropose ? 4 : 40);
@@ -1176,6 +1187,38 @@ export function BoutiqueTable({
         </section>
       )}
 
+      {/* ═══ LA VISIONNEUSE DES PAGES DE LA CARTE ═════════════════════════════
+          Une page s'ouvre en grand, les flèches passent à la suivante, et un
+          appui sur la page la lit au double : une carte photographiée se
+          déchiffre de près. On ne quitte jamais ClikMe. */}
+      {pageCarte !== null && photosCarte[pageCarte] && (
+        <div className="bt-visionneuse" role="dialog" aria-label="La carte, page par page" onClick={() => setPageCarte(null)}>
+          <div className={`bt-vis-page${pageGrande ? " grande" : ""}`} onClick={(e) => e.stopPropagation()}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photosCarte[pageCarte]} alt={`Page ${pageCarte + 1} de la carte`} onClick={() => setPageGrande((g) => !g)} />
+          </div>
+          <div className="bt-vis-barre" onClick={(e) => e.stopPropagation()}>
+            <button type="button" disabled={pageCarte === 0} onClick={() => { setPageGrande(false); setPageCarte(pageCarte - 1); }} aria-label="Page précédente">
+              ‹
+            </button>
+            <span>
+              {pageCarte + 1} / {photosCarte.length}
+            </span>
+            <button
+              type="button"
+              disabled={pageCarte === photosCarte.length - 1}
+              onClick={() => { setPageGrande(false); setPageCarte(pageCarte + 1); }}
+              aria-label="Page suivante"
+            >
+              ›
+            </button>
+          </div>
+          <button type="button" className="bt-vis-fermer" onClick={() => setPageCarte(null)} aria-label="Fermer">
+            ×
+          </button>
+        </div>
+      )}
+
       {/* ═══════════════════════════ 3 · LA CARTE ══════════════════════════ */}
       {onglet === "carte" && (
         <section className="bt-ecran bt-e-carte" key="carte">
@@ -1229,8 +1272,8 @@ export function BoutiqueTable({
               ) : carteGoogleSeule ? (
                 <p className="bt-vide">
                   {saPage
-                    ? "Votre carte publiée sur Google, avec ses prix, s’ouvre ci-dessous. Vos plats saisis dans l’Espace Pro s’afficheront ici."
-                    : "Sa carte complète, avec ses prix, est publiée sur sa fiche Google."}
+                    ? "Votre carte, telle que vous l’avez publiée sur Google. Ses plats et ses prix s’afficheront aussi en liste dès qu’ils seront lus — ou saisis dans votre Espace Pro."
+                    : "Sa carte, page par page. Touchez une page pour la lire en grand."}
                 </p>
               ) : (
                 <p className="bt-vide">Sa carte arrive. En attendant, demandez au chef ce qu’il propose aujourd’hui.</p>
@@ -1257,11 +1300,28 @@ export function BoutiqueTable({
                   menu ouvre la carte complète, avec ses prix, telle qu'il l'a
                   publiée — c'est la sienne, à jour, et on ne la recopie pas à
                   la main. */}
-              {c.ficheGoogle?.menu && (
-                <a className="bt-deux bt-menu-g" href={c.ficheGoogle.menu} target="_blank" rel="noreferrer noopener">
-                  <Externe />
-                  Voir la carte complète et les prix
-                </a>
+              {photosCarte.length > 0 && (
+                <div className="bt-pages">
+                  <p className="bt-pages-t">
+                    La carte en photos <span>· {photosCarte.length} page{photosCarte.length > 1 ? "s" : ""}</span>
+                  </p>
+                  <div className="bt-pages-l">
+                    {photosCarte.map((src, i) => (
+                      <button
+                        key={src}
+                        type="button"
+                        onClick={() => {
+                          setPageGrande(false);
+                          setPageCarte(i);
+                        }}
+                        aria-label={`Ouvrir la page ${i + 1} de la carte`}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={src} alt="" loading="lazy" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
               <button type="button" className="bt-go" onClick={() => setDiscute(true)}>
                 <Calendrier />

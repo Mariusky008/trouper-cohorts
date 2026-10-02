@@ -1270,6 +1270,12 @@ export type CarteAutour = {
    * le soir — voir `lumiereDuMoment` dans `boutique-table.tsx`.
    */
   semaine?: { jours?: string; horaires?: string }[];
+  /**
+   * LES PAGES DE SA CARTE, EN PHOTOS — l'onglet « Menu » de sa fiche Google.
+   * « Je veux que les clients restent sur ClikMe » : on les montre ici, au
+   * lieu d'envoyer vers son site. Voir `photos-menu.ts`.
+   */
+  photosCarte?: string[];
   /** Où en est la lecture de sa carte — montré au seul commerçant, sur sa carte vide. */
   carteSuivi?: { texte: string; detail?: string }[];
   /**
