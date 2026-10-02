@@ -624,6 +624,11 @@ export function BoutiqueTable({
   const regardRef = useRef(regard);
   /** Vrai le temps qu'il pousse la porte. */
   const [pousse, setPousse] = useState(false);
+  /**
+   * « VIENS, JE TE MONTRE ! » — sa bulle, au premier temps de l'entrée, posée
+   * au-dessus de lui (en points, dans l'écran du lieu).
+   */
+  const [salut, setSalut] = useState<{ x: number; y: number } | null>(null);
   /* ═══ TOC TOC ═════════════════════════════════════════════════════════════
      « S'il descend sans le toucher, il réapparaît dans un coin et tapote la
      vitre. » On quitte le lieu sans l'avoir touché : le fantôme du coin toque,
@@ -749,9 +754,29 @@ export function BoutiqueTable({
     }
   };
 
-  /** LE GESTE : le son débloqué, la voix demandée, la porte franchie. */
+  /**
+   * LE GESTE : le son débloqué, la voix demandée, la porte franchie.
+   *
+   * ═══ IL NOUS FAIT ENTRER, IL NE GROSSIT PAS À L'ÉCRAN ════════════════════
+   *
+   * « Quand je clique sur le fantôme, je voyais davantage le fantôme nous faire
+   * entrer que simplement grossir à l'écran. On voit un gros plan à gauche,
+   * une moitié droite vide, puis la page Expérience. Ça coupe la sensation de
+   * visite. » L'ancien geste zoomait par trois sur son visage, dans la seule
+   * moitié gauche, puis la page tombait d'un coup sur un éclair de lumière.
+   *
+   * TROIS TEMPS, UNE SECONDE EN TOUT, SANS ARRÊT SUR SON VISAGE :
+   *   1. IL NOUS ACCUEILLE (0,3 s) — sa bulle, « Viens, je te montre ! »,
+   *      au-dessus de lui, et son halo qui s'allume ;
+   *   2. ON AVANCE VERS LA PORTE (0,5 s) — un zoom modéré (× 1,6) centré sur
+   *      l'entrée, le texte d'accueil s'efface, et sur un ordinateur le décor
+   *      s'élargit à toute la fenêtre : plus de moitié droite vide ;
+   *   3. L'EXPÉRIENCE APPARAÎT EN FONDU COURT, et il y prend sa place, près du
+   *      bouton — comme s'il nous avait accompagnés (voir `.arrive` dans la
+   *      feuille).
+   */
   const entrer = (depuis?: HTMLElement | null, point?: { x: number; y: number }) => {
-    if (franchit || pousse) return;
+    if (franchit || pousse || salut) return;
     aTouche.current = true;
     try {
       const a = sonSeuil.current ?? new Audio();
@@ -772,31 +797,34 @@ export function BoutiqueTable({
     })
       .then(async (r) => (r.ok ? URL.createObjectURL(await r.blob()) : null))
       .catch(() => null);
-    // LE ZOOM PART DE LUI : son centre, en % de la photo.
+    // LE ZOOM PART DE L'ENTRÉE : de lui quand on sait où il se tient, sinon du
+    // doigt, en % de la photo.
     let origine = { x: 50, y: 62 };
     const ph = photoLieuRef.current?.getBoundingClientRect();
-    // TOUCHÉ SUR LA PHOTO : le zoom part du doigt — c'est là qu'il était.
-    const g = point ? { left: point.x, top: point.y, width: 0, height: 0 } : depuis?.getBoundingClientRect();
+    const sec = lieuRef.current?.getBoundingClientRect();
+    const hote = hoteEcran && sec ? { left: sec.left + hoteEcran.left, top: sec.top + hoteEcran.top, width: hoteEcran.width, height: hoteEcran.height } : null;
+    const g = hote ?? (point ? { left: point.x, top: point.y, width: 0, height: 0 } : depuis?.getBoundingClientRect());
     if (ph && g && ph.width && ph.height) {
       origine = {
-        x: Math.max(5, Math.min(95, ((g.left + g.width / 2 - ph.left) / ph.width) * 100)),
-        y: Math.max(5, Math.min(95, ((g.top + g.height * 0.55 - ph.top) / ph.height) * 100)),
+        x: Math.max(12, Math.min(88, ((g.left + g.width / 2 - ph.left) / ph.width) * 100)),
+        y: Math.max(20, Math.min(80, ((g.top + g.height * 0.55 - ph.top) / ph.height) * 100)),
       };
     }
+    // SA BULLE, JUSTE AU-DESSUS DE LUI.
+    if (g && sec) setSalut({ x: g.left + g.width / 2 - sec.left, y: Math.max(70, g.top - sec.top - 8) });
     const reduit = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    // IL SE RETOURNE ET POUSSE LA PORTE, s'il a cette pose : un temps, puis le zoom.
-    const tempsPousse = posesEnPlus["pousse-porte"] && !couv && !reduit ? 380 : 0;
-    if (tempsPousse) setPousse(true);
-    window.setTimeout(() => setFranchit(origine), tempsPousse);
-    window.setTimeout(
-      () => {
-        setOnglet("experience");
-        setArrive(true);
-        setFranchit(null);
-        setPousse(false);
-      },
-      tempsPousse + (reduit ? 120 : 950),
-    );
+    // IL SE RETOURNE ET POUSSE LA PORTE, s'il a cette pose ; sinon il salue.
+    if (posesEnPlus["pousse-porte"] && !couv && !reduit) window.setTimeout(() => setPousse(true), 220);
+    const accueil = reduit ? 0 : 300;
+    const avance = reduit ? 120 : 520;
+    window.setTimeout(() => setFranchit(origine), accueil);
+    window.setTimeout(() => {
+      setOnglet("experience");
+      setArrive(true);
+      setFranchit(null);
+      setPousse(false);
+      setSalut(null);
+    }, accueil + avance);
   };
 
   /* À L'ARRIVÉE, IL PARLE : sa vraie voix si elle vient, celle du téléphone
@@ -1126,7 +1154,7 @@ export function BoutiqueTable({
       {onglet === "lieu" && (
         <section
           ref={lieuRef}
-          className={`bt-ecran bt-e-lieu${couv ? " a-couv" : ""}${franchit ? " franchit" : ""}${lumiere?.allumee ? " enseigne" : ""}`}
+          className={`bt-ecran bt-e-lieu${couv ? " a-couv" : ""}${salut ? " salue" : ""}${franchit ? " franchit" : ""}${lumiere?.allumee ? " enseigne" : ""}`}
           key="lieu"
           onPointerMove={pencher}
           style={franchit ? ({ "--ox": `${franchit.x}%`, "--oy": `${franchit.y}%` } as React.CSSProperties) : undefined}
@@ -1167,8 +1195,13 @@ export function BoutiqueTable({
               onClick={(e) => entrer(e.currentTarget)}
               aria-label={`Entrer chez ${c.nom} avec son fantôme`}
             >
-              <span className="bt-invite">Entre, je te fais visiter 👋</span>
+              <span className="bt-invite">Viens, je te fais découvrir 👋</span>
             </button>
+          )}
+          {salut && (
+            <span className="bt-salut" style={{ left: salut.x, top: salut.y }} aria-hidden="true">
+              Viens, je te montre&nbsp;!
+            </span>
           )}
           <div className="bt-voile haut-bas" />
           {entete(false)}
@@ -1192,9 +1225,12 @@ export function BoutiqueTable({
                 encore, la photo entière est une porte — et cette bulle le
                 dit. Elle part au premier geste. */}
             {couv && !hoteEcran && (
+              /* « JE REMPLACERAIS "CLIQUE SUR LE FANTÔME POUR ENTRER" PAR
+                 "VIENS, JE TE FAIS DÉCOUVRIR" : cela annonce mieux
+                 l'expérience qui suit. » C'est lui qui parle, pas le mode
+                 d'emploi. */
               <span className="bt-indice" aria-hidden="true">
-                👆 <i className="tel">Touche</i>
-                <i className="pc">Clique sur</i> le fantôme pour entrer
+                Viens, je te fais découvrir&nbsp;👋
               </span>
             )}
             {/* ═══ IL SE TIENT DANS LA LUMIÈRE, IL N'EST PLUS SOUS LE BOUTON ══
@@ -1213,7 +1249,7 @@ export function BoutiqueTable({
                 onClick={(e) => entrer(e.currentTarget)}
                 aria-label={`Entrer chez ${c.nom} avec son fantôme`}
               >
-                <span className="bt-invite">Entre, je te fais visiter 👋</span>
+                <span className="bt-invite">Viens, je te fais découvrir 👋</span>
                 <span className="bt-penche">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -1330,7 +1366,21 @@ export function BoutiqueTable({
             <p className="bt-sous">Un aperçu en images et en son.</p>
           </div>
           <div className="bt-scene">
-            {double(bouche ? (`parle-${bouche}` as "parle-1") : "content", "gauche")}
+            {/* LUI, ET LUI SEUL, SUR CET ÉCRAN : « deux fantômes sont présents,
+                le grand et celui de "On discute ?" ; je garderais le grand
+                comme interlocuteur. » Le coin s'efface ici, et c'est lui
+                qu'on touche pour lui parler. */}
+            <button
+              type="button"
+              className="bt-lui"
+              onClick={() => {
+                aTouche.current = true;
+                setDiscute(true);
+              }}
+              aria-label={`Parler avec ${leChef}`}
+            >
+              {double(bouche ? (`parle-${bouche}` as "parle-1") : "content", "gauche")}
+            </button>
             {/* SON ACCUEIL, ÉCRIT : on le lit même sans le son. Un appui le referme. */}
             {arrive && (
               <button type="button" className="bt-bulle-seuil" onClick={() => setArrive(false)}>
@@ -1903,8 +1953,10 @@ export function BoutiqueTable({
 
       {/* ═══ « ON DISCUTE ? » — le double, en coin, sur tous les écrans ═══
           Sauf chez les amis : on y discute déjà, et le champ d'écriture
-          occupe le bas. Deux conversations empilées ne se lisent plus. */}
-      {onglet !== "amis" && !discute && !plat && (
+          occupe le bas. Deux conversations empilées ne se lisent plus.
+          ET SAUF DANS L'EXPÉRIENCE : il y est déjà, en grand, et c'est lui
+          qu'on touche — deux fantômes, on se demande lequel. */}
+      {onglet !== "amis" && onglet !== "experience" && !discute && !plat && (
         <button
           type="button"
           className={`bt-discute${toque ? " toque" : ""}`}

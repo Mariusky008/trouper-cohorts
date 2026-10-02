@@ -123,7 +123,9 @@ export function EssaiDuLieu({
 
       {/* ═══ LE FANTÔME DU MÉTIER, EN ACTION ═══ */}
       <div className="bx-scene">
-        <div className="bx-fantome">
+        {/* C'EST À LUI QU'ON PARLE : le fantôme du coin s'efface sur cet
+            écran, et celui-ci se touche — voir `bt-discute`. */}
+        <button type="button" className="bx-fantome" onClick={onReserver} aria-label={`Parler avec ${c.nom}`}>
           <span className="bx-halo" aria-hidden="true" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={`/direct/fantomes/${mots.fantome}.png`} alt="" draggable={false} />
@@ -133,7 +135,7 @@ export function EssaiDuLieu({
             <i />
             <i />
           </span>
-        </div>
+        </button>
         <div className="bx-texte">
           <p className="bx-k">L’expérience · {c.nom}</p>
           <h2 className="bx-t">
@@ -253,7 +255,8 @@ function StylesExperience() {
         @keyframes bxDerive{from{transform:translate(0,0) scale(1);}to{transform:translate(8%,10%) scale(1.15);}}
 
         .bx-scene{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;}
-        .bx-fantome{position:relative;width:min(62vw,250px);aspect-ratio:1;
+        .bx-fantome{position:relative;width:min(62vw,250px);aspect-ratio:1;padding:0;border:0;background:none;cursor:pointer;
+          -webkit-tap-highlight-color:transparent;
           animation:bxEntre .9s cubic-bezier(.16,1,.3,1) both;}
         .bx-fantome img{position:relative;z-index:1;width:100%;height:100%;object-fit:contain;
           filter:drop-shadow(0 22px 30px rgba(0,0,0,.55));animation:bxFlotte 4.2s ease-in-out infinite;}
