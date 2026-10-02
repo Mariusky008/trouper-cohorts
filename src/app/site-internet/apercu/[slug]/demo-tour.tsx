@@ -1413,32 +1413,42 @@ export function DemoTour({
           .dt-ouvre>.dt-ec{padding-top:13px;}
           .dt-ouvre>.dt-ec24{padding-top:24px;}
 
+          /* ══ AUX COULEURS DE LA MAISON ══════════════════════════════════
+             « Quand Léa fait la présentation, les couleurs utilisées sont
+             désuètes et font partie de l'ancien design. » Elles l'étaient :
+             nuit bleue, violet, vert menthe. La démonstration porte
+             maintenant la charte de ses pages — nuit brune (#120C09), crème
+             (#FFF4E6), ambre (#F5A23A) pour ce qui s'allume, rose (#FF2E9A)
+             pour ce qu'on touche — et ses titres sont dans la police ClikMe. */
+          .dtour-launch .t,.dtour-top .dt-title,.cp-1,.bo-1,.bo-2,.qi-n,.qi-q b,.ph-h,.rt-h,.iv-h,.qi-resa-t{
+            font-family:var(--font-clikme),var(--font-geist-sans),system-ui,sans-serif;}
+
           /* ── L'ÉCRAN DE LANCEMENT ────────────────────────────────────── */
           .dtour-launch{position:fixed;inset:0;z-index:92;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;
-            padding:36px 26px calc(34px + env(safe-area-inset-bottom));color:#EDF0FA;
-            background:radial-gradient(120% 90% at 50% -10%,#1B2340 0%,#0C1020 55%,#07090F 100%);
-            font-family:'Inter',system-ui,-apple-system,sans-serif;animation:dtFade .4s var(--exp);}
+            padding:36px 26px calc(34px + env(safe-area-inset-bottom));color:#FFF4E6;
+            background:radial-gradient(120% 90% at 50% -10%,#2A1A12 0%,#120C09 55%,#0B0705 100%);
+            font-family:var(--font-geist-sans),system-ui,-apple-system,sans-serif;animation:dtFade .4s var(--exp);}
           .dtour-launch>*{animation:dtRise .4s var(--exp) both;animation-delay:calc(var(--i,0) * var(--pas));}
           .dtour-mark{width:78px;height:78px;border-radius:24px;display:flex;align-items:center;justify-content:center;position:relative;
-            background:linear-gradient(140deg,#8B79FF,#5B3FA6);
-            box-shadow:0 20px 50px -12px rgba(109,74,224,.7),inset 0 1px 0 rgba(255,255,255,.3);}
+            background:linear-gradient(140deg,#FF4FB0,#FF2E9A);
+            box-shadow:0 20px 50px -12px rgba(255,46,154,.7),inset 0 1px 0 rgba(255,255,255,.3);}
           /* Un anneau qui respire — la LUMIÈRE bouge, pas la forme. */
-          .dtour-mark::after{content:"";position:absolute;inset:-7px;border-radius:29px;border:1px solid rgba(139,121,255,.45);
+          .dtour-mark::after{content:"";position:absolute;inset:-7px;border-radius:29px;border:1px solid rgba(255,79,176,.45);
             animation:dtHalo 3.2s ease-in-out infinite;}
           @keyframes dtHalo{0%,100%{opacity:.35}50%{opacity:.9}}
           .dtour-mark span{font-size:32px;color:#fff;}
-          .dtour-launch .kick{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#8E93B5;font-weight:700;}
+          .dtour-launch .kick{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#CDB8A4;font-weight:700;}
           .dtour-launch .t{font-size:27px;font-weight:800;line-height:1.15;letter-spacing:-.025em;max-width:460px;}
-          .dtour-launch .s{font-size:14.5px;color:#AEB2CC;max-width:400px;line-height:1.55;}
-          .dtour-launch .go{margin-top:10px;border:none;background:#fff;color:#141A2E;font-size:16px;font-weight:800;letter-spacing:-.01em;
+          .dtour-launch .s{font-size:14.5px;color:#D9C6B2;max-width:400px;line-height:1.55;}
+          .dtour-launch .go{margin-top:10px;border:none;background:#FF2E9A;color:#fff;font-size:16px;font-weight:800;letter-spacing:-.01em;
             padding:16px 32px;border-radius:16px;cursor:pointer;font-family:inherit;
-            box-shadow:0 18px 40px -12px rgba(255,255,255,.32);transition:transform .18s var(--spring),box-shadow .3s ease;}
-          .dtour-launch .go:active{transform:scale(.96);box-shadow:0 8px 20px -10px rgba(255,255,255,.3);}
+            box-shadow:0 18px 40px -12px rgba(255,46,154,.55);transition:transform .18s var(--spring),box-shadow .3s ease;}
+          .dtour-launch .go:active{transform:scale(.96);box-shadow:0 8px 20px -10px rgba(255,46,154,.5);}
           /* Le second bouton du lanceur a disparu — voir le commentaire du
              composant. Il reste ici en mémoire : le jour où l'on retente une
              sortie sur cet écran, elle ne doit pas revenir sous cette forme,
              c'est-à-dire au même endroit et à la même seconde que l'invitation. */
-          .dtour-launch .trust{margin-top:10px;font-size:11.5px;color:#666B88;display:flex;align-items:center;gap:7px;}
+          .dtour-launch .trust{margin-top:10px;font-size:11.5px;color:#8C7666;display:flex;align-items:center;gap:7px;}
 
           .dtour-lock{position:fixed;inset:0;z-index:88;touch-action:none;background:transparent;}
           /* LA SORTIE, PENDANT LA VISITE. Elle existe pour qui la cherche, et
@@ -1449,10 +1459,10 @@ export function DemoTour({
              et sans fond. Au-dessus du verrou (z-index 88), sinon elle serait
              affichée mais pas cliquable. */
           .dtour-quit{position:fixed;top:calc(env(safe-area-inset-top,0px) + 74px);right:14px;z-index:95;
-            border:0;background:none;color:#6E7391;font-family:inherit;font-size:10.5px;font-weight:700;
+            border:0;background:none;color:#9C8676;font-family:inherit;font-size:10.5px;font-weight:700;
             letter-spacing:.04em;padding:6px 4px;cursor:pointer;
             animation:dtRise .45s var(--exp) both;}
-          .dtour-quit:hover{color:#C9CFE6;}
+          .dtour-quit:hover{color:#E6D3BF;}
           /* Pendant la visite guidée, le site ne doit porter QU'UN message :
              celui de l'étape. La barre « côté pro » et le bandeau d'exemple se
              superposaient au titre. Et le bouton du commerçant n'existe qu'À LA
@@ -1463,17 +1473,17 @@ export function DemoTour({
 
           /* ── LA BARRE DE LÉGENDE ─────────────────────────────────────── */
           .dtour-bar{position:fixed;left:0;right:0;bottom:0;z-index:90;max-width:520px;margin:0 auto;
-            background:rgba(14,17,32,.94);-webkit-backdrop-filter:blur(20px) saturate(150%);backdrop-filter:blur(20px) saturate(150%);color:#EDF0FA;
+            background:rgba(18,12,9,.94);-webkit-backdrop-filter:blur(20px) saturate(150%);backdrop-filter:blur(20px) saturate(150%);color:#FFF4E6;
             padding:14px 15px calc(16px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:12px;
             border-top:1px solid rgba(255,255,255,.09);box-shadow:0 -18px 44px -18px rgba(0,0,0,.8);
-            animation:dtUp .42s var(--exp);font-family:'Inter',system-ui,sans-serif;}
+            animation:dtUp .42s var(--exp);font-family:var(--font-geist-sans),system-ui,sans-serif;}
           @keyframes dtUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
           /* LA PASTILLE QUI PARLE. Elle grossissait et rétrécissait toutes les
              0,6 s : le mouvement le plus daté de toute la démonstration, et le
              seul qui restait à l'écran d'un bout à l'autre. C'est maintenant
              une lueur qui tourne — la géométrie ne bouge plus. */
           .dtour-bar .mini{position:relative;width:32px;height:32px;border-radius:11px;flex:none;overflow:hidden;
-            background:linear-gradient(140deg,#8B79FF,#5B3FA6);}
+            background:linear-gradient(140deg,#FF4FB0,#FF2E9A);}
           .dtour-bar .mini::before{content:"";position:absolute;inset:-40%;
             background:conic-gradient(from 0deg,transparent 0deg,rgba(255,255,255,.55) 60deg,transparent 130deg);
             animation:dtTourne 2.6s linear infinite;}
@@ -1481,21 +1491,21 @@ export function DemoTour({
           /* LA LÉGENDE SE RELAIE, elle ne saute pas. Chaque temps remonte le
              span (clé React) : la phrase précédente ne disparaît pas d'un coup
              au milieu d'une lecture. */
-          .dtour-bar .cap{flex:1;min-width:0;font-size:13.5px;line-height:1.45;color:#DDE1F2;
+          .dtour-bar .cap{flex:1;min-width:0;font-size:13.5px;line-height:1.45;color:#F2E3D0;
             animation:dtCap .32s var(--exp);}
           @keyframes dtCap{from{opacity:0;transform:translateY(5px);filter:blur(4px)}to{opacity:1;transform:none;filter:blur(0)}}
 
           /* ── LE BANDEAU D'ÉTAPE ──────────────────────────────────────── */
           .dtour-top{position:fixed;left:0;right:0;top:0;z-index:91;max-width:520px;margin:0 auto;
-            padding:calc(14px + env(safe-area-inset-top)) 18px 13px;color:#EDF0FA;text-align:center;
-            background:linear-gradient(180deg,rgba(11,14,25,.97),rgba(11,14,25,.74) 76%,transparent);
-            font-family:'Inter',system-ui,sans-serif;animation:dtTopIn .45s var(--exp);}
+            padding:calc(14px + env(safe-area-inset-top)) 18px 13px;color:#FFF4E6;text-align:center;
+            background:linear-gradient(180deg,rgba(18,12,9,.97),rgba(18,12,9,.74) 76%,transparent);
+            font-family:var(--font-geist-sans),system-ui,sans-serif;animation:dtTopIn .45s var(--exp);}
           @keyframes dtTopIn{from{opacity:0;transform:translateY(-10px);filter:blur(6px)}to{opacity:1;transform:none;filter:blur(0)}}
-          .dtour-top .dt-step{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#8E93B5;font-weight:700;}
+          .dtour-top .dt-step{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#CDB8A4;font-weight:700;}
           .dtour-top .dt-title{font-size:16px;font-weight:800;letter-spacing:-.015em;margin-top:3px;line-height:1.2;}
           .dtour-top .dt-prog{height:3px;border-radius:2px;background:rgba(255,255,255,.13);margin:10px auto 0;max-width:220px;overflow:hidden;}
           .dtour-top .dt-prog i{display:block;height:100%;border-radius:2px;position:relative;overflow:hidden;
-            background:linear-gradient(90deg,#7C6AE8,#12B981);transition:width .7s var(--exp);}
+            background:linear-gradient(90deg,#FF2E9A,#F5A23A);transition:width .7s var(--exp);}
           /* Un reflet qui traverse la barre remplie : la progression a l'air
              vivante sans qu'on ait à la faire clignoter. */
           .dtour-top .dt-prog i::after{content:"";position:absolute;inset:0;
@@ -1505,7 +1515,7 @@ export function DemoTour({
 
           /* ── LE CALQUE DES SCÈNES ────────────────────────────────────── */
           .dtour-ov{position:fixed;inset:0;z-index:89;display:flex;align-items:center;justify-content:center;padding:84px 20px 158px;
-            background:rgba(8,10,18,.5);pointer-events:none;
+            background:rgba(12,8,6,.5);pointer-events:none;
             animation:dtVoile .4s var(--exp) both;}
           /* Le fond se ferme PROGRESSIVEMENT au lieu d'apparaître flouté d'un
              coup : c'est la scène qui prend la main sur la page, et ça se
@@ -1514,20 +1524,20 @@ export function DemoTour({
             from{opacity:0;-webkit-backdrop-filter:blur(0);backdrop-filter:blur(0)}
             to{opacity:1;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
           }
-          .dtour-ov.org-ov{background:rgba(6,8,16,.55);}
-          .dtour-ov.alive-ov{background:rgba(6,8,16,.82);}
+          .dtour-ov.org-ov{background:rgba(12,8,6,.55);}
+          .dtour-ov.alive-ov{background:rgba(12,8,6,.82);}
 
           /* ── LES ÉCRANS SANS CARTE (bascule, ville, boucle) ───────────
              Ces écrans ne montrent rien : ils portent le récit. D'où le parti
              pris typographique inverse du reste — très peu de mots, très gros,
              beaucoup de vide. Une carte chargée ici ferait retomber
              l'attention exactement quand il faut la tenir. */
-          .dtour-ov.dt-noir{background:radial-gradient(120% 80% at 50% 42%,#0D1712 0%,#060907 70%);
+          .dtour-ov.dt-noir{background:radial-gradient(120% 80% at 50% 42%,#1F140E 0%,#0B0705 70%);
             flex-direction:column;text-align:center;padding:30px 26px;gap:0;}
           .cp-1{font-size:22px;line-height:1.15;font-weight:850;letter-spacing:-.035em;color:#fff;text-wrap:balance;
             animation:dtWipe .62s var(--exp) .1s both;}
-          .bo-0{font-size:16px;line-height:1.45;color:#C9D6CE;text-wrap:balance;animation:dtRise .4s var(--exp) both;}
-          .bo-0b{padding-top:8px;font-size:16px;line-height:1.45;color:#C9D6CE;text-wrap:balance;}
+          .bo-0{font-size:16px;line-height:1.45;color:#E6D3BF;text-wrap:balance;animation:dtRise .4s var(--exp) both;}
+          .bo-0b{padding-top:8px;font-size:16px;line-height:1.45;color:#E6D3BF;text-wrap:balance;}
           .dt-ouvre.on .bo-0b{animation:dtRise .4s var(--exp) .1s both;}
           .bo-fin{padding-top:22px;}
           .bo-1{font-size:26px;line-height:1.08;font-weight:850;letter-spacing:-.035em;color:#fff;text-wrap:balance;}
@@ -1536,16 +1546,16 @@ export function DemoTour({
              background-clip:text efface le remplissage sur certains moteurs.
              Cette ligne-là a donc son propre volet, sans flou. */
           .bo-2{margin-top:6px;font-size:26px;line-height:1.08;font-weight:850;letter-spacing:-.035em;text-wrap:balance;
-            background:linear-gradient(115deg,#12B981 10%,#0EA5A5 55%,#7C5CFC);-webkit-background-clip:text;
+            background:linear-gradient(115deg,#F5A23A 10%,#FF7A4A 55%,#FF2E9A);-webkit-background-clip:text;
             background-clip:text;color:transparent;}
           .dt-ouvre.on .bo-2{animation:dtWipe .6s var(--exp) .5s both;}
           @media(min-width:520px){.cp-1{font-size:27px;}.bo-1,.bo-2{font-size:31px;}}
 
           /* ── LA CARTE, SUPPORT DE TROIS ACTES ────────────────────────── */
-          .dtour-card{background:#fff;border-radius:24px;padding:22px 22px 20px;max-width:360px;width:100%;
+          .dtour-card{background:#FFF4E6;border-radius:24px;padding:22px 22px 20px;max-width:360px;width:100%;
             max-height:calc(100dvh - 258px);overflow-y:auto;-webkit-overflow-scrolling:touch;
             box-shadow:0 48px 100px -28px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.06);
-            font-family:'Inter',system-ui,sans-serif;animation:dtLift .52s var(--exp);pointer-events:auto;}
+            font-family:var(--font-geist-sans),system-ui,sans-serif;animation:dtLift .52s var(--exp);pointer-events:auto;}
 
           /* ── ACTE 3 · CE MIDI, DANS SA VILLE ─────────────────────────── */
           .dtour-ov.qi{gap:0;}
@@ -1555,7 +1565,7 @@ export function DemoTour({
              se dilate en même temps. */
           /* isolation:isolate ouvre un contexte d'empilement : sans lui, le halo
              en z-index:-1 passe DERRIÈRE le fond de la scène et ne se voit pas. */
-          .qi-n{font-family:'Inter',system-ui,sans-serif;font-size:clamp(64px,20vw,104px);font-weight:850;
+          .qi-n{font-family:var(--font-geist-sans),system-ui,sans-serif;font-size:clamp(64px,20vw,104px);font-weight:850;
             letter-spacing:-.055em;line-height:1;color:#fff;font-variant-numeric:tabular-nums;
             animation:dtPop .55s var(--exp) both;}
           /* LE HALO EST PORTÉ PAR LA SCÈNE, PAS PAR LE NOMBRE.
@@ -1567,11 +1577,11 @@ export function DemoTour({
              nombre s'en va. */
           .dtour-ov.qi::before{content:"";position:absolute;left:50%;top:34%;width:min(150%,560px);aspect-ratio:1;
             transform:translate(-50%,-50%);pointer-events:none;
-            background:radial-gradient(circle,rgba(18,185,129,.26),transparent 62%);
+            background:radial-gradient(circle,rgba(245,162,58,.26),transparent 62%);
             animation:dtSouffle 4s ease-in-out infinite;transition:opacity .45s ease;}
           .dtour-ov.qi.serre::before{opacity:0;}
           @keyframes dtSouffle{0%,100%{opacity:.55;transform:translate(-50%,-50%) scale(.9)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.06)}}
-          .qi-q{margin-top:8px;font-size:17px;line-height:1.35;color:#9FB3A8;animation:dtRise .4s var(--exp) .22s both;}
+          .qi-q{margin-top:8px;font-size:17px;line-height:1.35;color:#CDB8A4;animation:dtRise .4s var(--exp) .22s both;}
           .qi-q b{display:inline-block;margin-top:4px;font-size:22px;font-weight:800;letter-spacing:-.025em;color:#fff;}
 
           /* LE CATALOGUE DU DIRECT, dans la main d'un habitant.
@@ -1593,7 +1603,7 @@ export function DemoTour({
              lire, donc rien à confondre. */
           .qi-pile{position:relative;width:100%;padding-top:14px;}
           .qi-dos{position:absolute;left:50%;top:0;height:14px;border-radius:16px 16px 0 0;
-            background:linear-gradient(180deg,rgba(126,230,192,.22),rgba(12,19,16,.9));
+            background:linear-gradient(180deg,rgba(255,201,122,.22),rgba(28,20,17,.9));
             border:1px solid rgba(255,255,255,.07);border-bottom:0;transform:translateX(-50%);}
           .qi-dos.d1{width:86%;top:6px;}
           .qi-dos.d2{width:72%;top:0;}
@@ -1678,7 +1688,7 @@ export function DemoTour({
             -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
             animation:dtTampon .55s var(--exp) both;}
           .qi-tampon.non{color:#FFD9D2;background:rgba(210,96,74,.34);border:2px solid rgba(255,217,210,.6);}
-          .qi-tampon.oui{color:#0A2018;background:rgba(61,226,166,.9);border:2px solid rgba(255,255,255,.55);}
+          .qi-tampon.oui{color:#1A0F08;background:rgba(245,162,58,.9);border:2px solid rgba(255,255,255,.55);}
           @keyframes dtTampon{
             from{opacity:0;transform:translate(-50%,-50%) scale(.5)}
             60%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}
@@ -1688,7 +1698,7 @@ export function DemoTour({
              voir monter s'y ranger, le compteur du bandeau passerait de 1 à 2
              dans un coin et personne ne ferait le lien. */
           .qi-vol{position:absolute;left:50%;top:46%;z-index:7;pointer-events:none;
-            font-size:38px;line-height:1;color:#3DE2A6;text-shadow:0 6px 24px rgba(18,185,129,.7);
+            font-size:38px;line-height:1;color:#F5A23A;text-shadow:0 6px 24px rgba(245,162,58,.7);
             transform:translate(-50%,-50%);animation:dtVole .95s cubic-bezier(.42,0,.18,1) forwards;}
           @keyframes dtVole{
             0%{opacity:0;left:50%;top:46%;transform:translate(-50%,-50%) scale(.4)}
@@ -1699,9 +1709,25 @@ export function DemoTour({
           /* Le bandeau accuse réception : le chiffre change au MOMENT où le
              cœur arrive, pas au moment du geste. */
           .qi-app.recu .cd-puce.vert{animation:dtRecu .6s cubic-bezier(.34,1.45,.64,1);}
+          /* LA CARTE DU DIRECT, MONTRÉE ICI, PREND LES COULEURS DE LA VISITE.
+             Elle vient du composant partagé avec l'application, qui garde les
+             siennes ; dans la démonstration seulement, son vert devient
+             l'ambre de la maison, et le bouton qu'on touche (« Je réserve »)
+             le rose. */
+          :is(.qi-app,.ph-mini) .cd-carte{--cd-halo:rgba(245,162,58,.5);}
+          :is(.qi-app,.ph-mini) .cd-puce.vert{color:#FFC97A;border-color:rgba(255,201,122,.3);background:rgba(245,162,58,.14);}
+          :is(.qi-app,.ph-mini) .cd-social{color:#FFC97A;background:rgba(245,162,58,.16);border-color:rgba(255,201,122,.3);}
+          :is(.qi-app,.ph-mini) .cd-aller{color:#1A0F08;background:linear-gradient(140deg,#FFC97A,#F5A23A);
+            box-shadow:0 10px 24px -10px rgba(245,162,58,.9);}
+          :is(.qi-app,.ph-mini) .cd-g.grand i{color:#fff;background:linear-gradient(140deg,#FF4FB0,#FF2E9A);
+            box-shadow:0 14px 30px -12px rgba(255,46,154,.75);}
+          :is(.qi-app,.ph-mini) .cd-g.grand em{color:#FFB3D9;}
+          :is(.qi-app,.ph-mini) .cd-g.on i{box-shadow:0 0 0 4px rgba(255,201,122,.22);}
+          /* LE CŒUR VERT EST UN ÉMOJI : une rotation de teinte le fait virer à l'ambre. */
+          :is(.qi-app,.ph-mini) .cd-social i,.qi-app .cd-puce.vert{filter:hue-rotate(-95deg) saturate(1.1);}
           @keyframes dtRecu{
-            0%{transform:none;box-shadow:0 0 0 0 rgba(61,226,166,.55)}
-            45%{transform:scale(1.16);box-shadow:0 0 0 9px rgba(61,226,166,0)}
+            0%{transform:none;box-shadow:0 0 0 0 rgba(245,162,58,.55)}
+            45%{transform:scale(1.16);box-shadow:0 0 0 9px rgba(245,162,58,0)}
             100%{transform:none}
           }
           /* ③ LA RÉSERVATION — le panneau du produit, par-dessus la carte. */
@@ -1710,8 +1736,8 @@ export function DemoTour({
              qui déborde de la carte se lit comme un autre écran. */
           .qi-resa{position:absolute;left:0;right:0;bottom:0;z-index:8;max-width:300px;margin-inline:auto;
             border-radius:20px 20px 26px 26px;padding:15px 15px 16px;text-align:left;
-            background:linear-gradient(180deg,rgba(10,17,14,.97),#070D0B);
-            border:1px solid rgba(126,230,192,.22);box-shadow:0 -20px 50px -20px rgba(0,0,0,.95);
+            background:linear-gradient(180deg,rgba(28,20,17,.97),#120C09);
+            border:1px solid rgba(255,201,122,.22);box-shadow:0 -20px 50px -20px rgba(0,0,0,.95);
             animation:dtFeuille .5s var(--exp) both;}
           @keyframes dtFeuille{
             from{opacity:0;transform:translate3d(0,26px,0);filter:blur(8px)}
@@ -1721,19 +1747,19 @@ export function DemoTour({
           .qi-resa-o{display:flex;flex-direction:column;gap:1px;margin-top:9px;padding:9px 11px;border-radius:12px;
             background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);}
           .qi-resa-o b{font-size:13px;font-weight:800;color:#fff;}
-          .qi-resa-o i{font-style:normal;font-size:11px;color:#9FB3A8;}
-          .qi-resa-m{margin-top:9px;padding:9px 11px;border-radius:12px;font-size:11.5px;line-height:1.4;color:#D3E2DA;
-            background:rgba(18,185,129,.09);border:1px solid rgba(126,230,192,.2);}
+          .qi-resa-o i{font-style:normal;font-size:11px;color:#CDB8A4;}
+          .qi-resa-m{margin-top:9px;padding:9px 11px;border-radius:12px;font-size:11.5px;line-height:1.4;color:#F2E3D0;
+            background:rgba(245,162,58,.09);border:1px solid rgba(255,201,122,.2);}
           .qi-resa-m .k{display:block;font-size:8.5px;font-weight:850;letter-spacing:.13em;text-transform:uppercase;
-            color:#8FE9C4;margin-bottom:4px;}
+            color:#FFC97A;margin-bottom:4px;}
           .qi-resa-b{margin-top:11px;border-radius:13px;padding:11px;text-align:center;
-            font-size:13.5px;font-weight:850;color:#04150E;background:linear-gradient(140deg,#3DE2A6,#0BA97B);
-            box-shadow:0 14px 30px -12px rgba(18,185,129,.85);}
+            font-size:13.5px;font-weight:850;color:#1A0F08;background:linear-gradient(140deg,#F5A23A,#E08A1E);
+            box-shadow:0 14px 30px -12px rgba(245,162,58,.85);}
           /* L'accusé de réception n'est pas le bouton repeint : c'est un état
              qui ne se clique plus. D'où le fond plein, le contour, et aucun
              relief — on ne propose plus rien, on constate. */
-          .qi-resa-b.envoye{color:#8FE9C4;background:rgba(18,185,129,.16);
-            border:1px solid rgba(126,230,192,.42);box-shadow:none;font-size:12.5px;
+          .qi-resa-b.envoye{color:#FFC97A;background:rgba(245,162,58,.16);
+            border:1px solid rgba(255,201,122,.42);box-shadow:none;font-size:12.5px;
             animation:dtRecu .55s cubic-bezier(.34,1.45,.64,1);}
 
           @media (prefers-reduced-motion:reduce){
@@ -1746,31 +1772,31 @@ export function DemoTour({
              trop petite pour se lire. */
           /* ── ACTE 4 · ET VOUS ? ──────────────────────────────────────── */
           .dtour-card.iv{text-align:center;}
-          .iv-h{font-size:15.5px;line-height:1.4;font-weight:700;color:#141A2E;text-wrap:balance;
+          .iv-h{font-size:15.5px;line-height:1.4;font-weight:700;color:#1A0F08;text-wrap:balance;
             animation:dtRise .45s var(--exp) .12s both;}
           /* L'ardoise se pose de travers puis se redresse : elle a l'air posée
              devant la porte, pas collée dans une maquette. */
-          .iv-ard{margin:14px 0 0;border-radius:14px;padding:14px 12px;background:#1F2A24;color:#EBE7D9;
+          .iv-ard{margin:14px 0 0;border-radius:14px;padding:14px 12px;background:#2A1C15;color:#FFF4E6;
             display:flex;flex-direction:column;gap:5px;font-family:Georgia,serif;
-            box-shadow:0 20px 40px -22px rgba(20,30,25,.9);animation:dtArd .58s var(--exp) .22s both;}
+            box-shadow:0 20px 40px -22px rgba(28,20,17,.9);animation:dtArd .58s var(--exp) .22s both;}
           @keyframes dtArd{
             from{opacity:0;transform:translate3d(0,16px,0) rotate(-2.2deg) scale(.96);filter:blur(10px)}
             to{opacity:1;transform:none;filter:blur(0)}
           }
-          .iv-ard span{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#9FB3A8;}
+          .iv-ard span{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#CDB8A4;}
           .iv-ard i{font-style:normal;font-size:14.5px;}
           /* LE COMPLIMENT. Il n'est pas de la politesse : sans lui, la phrase
              suivante se lit comme un reproche sur son ardoise, et il se ferme
              au lieu d'écouter. Il est donc écrit en petit et en gris — un
              constat, pas une accusation. */
-          .iv-ok{padding-top:15px;font-size:14.5px;line-height:1.45;color:#6E7290;text-wrap:balance;}
+          .iv-ok{padding-top:15px;font-size:14.5px;line-height:1.45;color:#8C7666;text-wrap:balance;}
           /* LE RETOURNEMENT. Il n'est plus crié en capitales — « ET EUX SONT À
              QUATRE CENTS MÈTRES » hurlait sur une carte blanche. Une phrase
              posée, en gros, qui se découvre par le volet et dont
              l'interlettrage se resserre en arrivant : le sens porte tout seul. */
-          .iv-x{padding-top:16px;margin-top:15px;border-top:1px solid #F0EFF7;
+          .iv-x{padding-top:16px;margin-top:15px;border-top:1px solid #F3E9DD;
             font-size:clamp(16px,3.6vw,19px);font-weight:800;line-height:1.28;
-            color:#141A2E;text-wrap:balance;}
+            color:#1A0F08;text-wrap:balance;}
           .dt-ouvre.on .iv-x{animation:dtSerre .58s var(--exp) .12s both;}
           @keyframes dtSerre{
             from{opacity:0;letter-spacing:.04em;clip-path:inset(0 0 104% 0);transform:translate3d(0,8px,0)}
@@ -1785,22 +1811,22 @@ export function DemoTour({
           .ph-wrap{width:100%;max-width:340px;margin:0 auto;display:flex;flex-direction:column;gap:9px;pointer-events:auto;}
           .ph-h{text-align:center;font-size:19px;font-weight:850;letter-spacing:-.03em;color:#fff;
             text-shadow:0 2px 20px rgba(0,0,0,.8);animation:dtRise .4s var(--exp) both;}
-          .ph-h em{display:block;margin-top:2px;font-style:normal;font-size:13px;font-weight:600;color:#9FB3A8;}
+          .ph-h em{display:block;margin-top:2px;font-style:normal;font-size:13px;font-weight:600;color:#CDB8A4;}
 
           /* LE CADRE DE VISÉE SE POSE SUR SON ARDOISE. Vide, il ne montrait
              rien — on voyait un appareil photo et du texte, jamais l'objet
              qu'il est censé photographier. */
           .ph-shot{position:relative;border-radius:18px;overflow:hidden;padding:14px 14px;
-            background:linear-gradient(160deg,#243029,#141C18);border:1px solid rgba(255,255,255,.08);
+            background:linear-gradient(160deg,#2A1C15,#1C1411);border:1px solid rgba(255,255,255,.08);
             box-shadow:0 30px 60px -28px rgba(0,0,0,.9);transition:box-shadow .6s var(--exp);
             animation:dtRise .45s var(--exp) .1s both;}
-          .ph-shot.lu{box-shadow:0 30px 60px -26px rgba(18,185,129,.55),0 0 0 1px rgba(126,230,192,.35);}
-          .ph-ard{display:flex;flex-direction:column;gap:3px;text-align:center;font-family:Georgia,serif;color:#EBE7D9;}
-          .ph-ard span{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#9FB3A8;}
+          .ph-shot.lu{box-shadow:0 30px 60px -26px rgba(245,162,58,.55),0 0 0 1px rgba(255,201,122,.35);}
+          .ph-ard{display:flex;flex-direction:column;gap:3px;text-align:center;font-family:Georgia,serif;color:#FFF4E6;}
+          .ph-ard span{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#CDB8A4;}
           .ph-ard i{font-style:normal;font-size:13.5px;}
           .ph-ard b{margin-top:3px;font-size:19px;font-weight:700;color:#fff;}
           /* Quatre coins, pas un cadre entier : un cadre serait une bordure. */
-          .ph-shot::before{content:"";position:absolute;border:2px solid rgba(126,230,192,.55);border-radius:9px;
+          .ph-shot::before{content:"";position:absolute;border:2px solid rgba(255,201,122,.55);border-radius:9px;
             -webkit-mask:linear-gradient(#000,#000) top left/26px 26px no-repeat,linear-gradient(#000,#000) top right/26px 26px no-repeat,
               linear-gradient(#000,#000) bottom left/26px 26px no-repeat,linear-gradient(#000,#000) bottom right/26px 26px no-repeat;
             mask:linear-gradient(#000,#000) top left/26px 26px no-repeat,linear-gradient(#000,#000) top right/26px 26px no-repeat,
@@ -1811,7 +1837,7 @@ export function DemoTour({
              écran — le flash de 2010, éblouissant sur un téléphone tenu à
              trente centimètres. */
           .ph-flash{position:absolute;left:0;right:0;height:38%;
-            background:linear-gradient(180deg,transparent,rgba(126,230,192,.3),transparent);
+            background:linear-gradient(180deg,transparent,rgba(255,201,122,.3),transparent);
             animation:dtScan 1.4s var(--exp) .3s;pointer-events:none;}
           @keyframes dtScan{from{transform:translateY(-120%)}to{transform:translateY(320%)}}
 
@@ -1822,30 +1848,30 @@ export function DemoTour({
              se ressemblent ne se lit pas comme une conversation. */
           .ph-dial{position:relative;border-radius:18px;padding:13px 13px 14px;
             display:flex;flex-direction:column;gap:9px;
-            background:linear-gradient(160deg,#243029,#141C18);
+            background:linear-gradient(160deg,#2A1C15,#1C1411);
             border:1px solid rgba(255,255,255,.08);
             box-shadow:0 30px 60px -28px rgba(0,0,0,.9);
             transition:box-shadow .6s var(--exp);
             animation:dtRise .45s var(--exp) .1s both;}
-          .ph-dial.lu{box-shadow:0 30px 60px -26px rgba(18,185,129,.55),
-            0 0 0 1px rgba(126,230,192,.35);}
+          .ph-dial.lu{box-shadow:0 30px 60px -26px rgba(245,162,58,.55),
+            0 0 0 1px rgba(255,201,122,.35);}
           .ph-elle,.ph-lui{display:flex;gap:8px;align-items:flex-start;max-width:90%;}
           .ph-elle p,.ph-lui p{margin:0;font-size:13px;line-height:1.45;
             border-radius:13px;padding:8px 11px;}
-          .ph-elle p{color:#D4DED8;background:rgba(255,255,255,.07);
+          .ph-elle p{color:#F2E3D0;background:rgba(255,255,255,.07);
             border-top-left-radius:5px;}
           .ph-av{flex:none;width:22px;height:22px;border-radius:999px;margin-top:2px;
             display:inline-flex;align-items:center;justify-content:center;
-            font-size:11px;color:#0B1218;background:#8FE9C4;}
+            font-size:11px;color:#1A0F08;background:#FFC97A;}
           /* SON TOUR A LUI VIENT APRES : il attend qu'on lui ait demande. */
           .ph-lui{align-self:flex-end;flex-direction:column;align-items:flex-end;gap:5px;
             animation:dtRise .45s var(--exp) .55s both;}
-          .ph-lui p{color:#fff;background:rgba(126,230,192,.16);
+          .ph-lui p{color:#fff;background:rgba(255,201,122,.16);
             border-top-right-radius:5px;text-align:right;}
           /* LES BARRES MONTENT ET DESCENDENT : une onde figee se lit comme une
              image de micro, pas comme quelqu'un en train de parler. */
           .ph-onde{display:flex;align-items:flex-end;gap:3px;height:20px;}
-          .ph-onde i{width:3px;border-radius:2px;background:#8FE9C4;
+          .ph-onde i{width:3px;border-radius:2px;background:#FFC97A;
             height:var(--h,10px);opacity:.75;
             animation:dtBarre 1s ease-in-out infinite alternate;
             animation-delay:calc(var(--i,0) * 70ms);}
@@ -1864,13 +1890,13 @@ export function DemoTour({
           .ph-lu{position:absolute;right:11px;bottom:-10px;
             padding:3px 9px;border-radius:999px;
             font-size:10.5px;font-weight:850;letter-spacing:.04em;
-            color:#0B1218;background:#8FE9C4;
-            box-shadow:0 8px 18px -8px rgba(18,185,129,.8);
+            color:#1A0F08;background:#FFC97A;
+            box-shadow:0 8px 18px -8px rgba(245,162,58,.8);
             animation:dtRise .35s var(--exp) both;}
 
 
           .ph-vers{display:flex;align-items:center;justify-content:center;gap:7px;padding-top:9px;
-            font-size:12px;font-weight:800;color:#8FE9C4;}
+            font-size:12px;font-weight:800;color:#FFC97A;}
           .ph-vers i{font-style:normal;font-size:14px;line-height:1;}
           .ph-mini{margin-top:8px;display:flex;flex-direction:column;align-items:center;}
           /* LA SCENE DONNE SA PLACE A LA CARTE PLEINE : sans hauteur, une carte
@@ -1912,39 +1938,39 @@ export function DemoTour({
              lisait comme une mention légale, c'est-à-dire pas du tout. */
           .rt-k{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
             color:#B23A17;background:#FDEEE8;border-radius:7px;padding:5px 9px;animation:dtRise .4s var(--exp) both;}
-          .rt-h{margin-top:12px;font-size:19px;font-weight:850;letter-spacing:-.03em;color:#141A2E;text-wrap:balance;
+          .rt-h{margin-top:12px;font-size:19px;font-weight:850;letter-spacing:-.03em;color:#1A0F08;text-wrap:balance;
             animation:dtWipe .58s var(--exp) .1s both;}
           .rt-l{margin-top:16px;display:flex;flex-direction:column;gap:10px;}
           /* Chaque ligne arrive quand la voix la prononce (retourN), et le
              chiffre se pose une fraction après le reste : c'est lui qu'on doit
              retenir de cet écran. */
-          .rt-i{display:flex;align-items:baseline;gap:10px;padding-bottom:10px;border-bottom:1px solid #F0EFF7;
+          .rt-i{display:flex;align-items:baseline;gap:10px;padding-bottom:10px;border-bottom:1px solid #F3E9DD;
             opacity:0;transform:translate3d(-12px,0,0);filter:blur(6px);
             transition:opacity .5s var(--exp),transform .6s var(--exp),filter .5s var(--exp);}
           .rt-i.on{opacity:1;transform:none;filter:blur(0);}
           .rt-i:last-child{border-bottom:0;padding-bottom:0;}
-          .rt-hh{flex:none;min-width:52px;font-family:'Inter',system-ui,sans-serif;font-size:11.5px;font-weight:700;
-            letter-spacing:.02em;color:#9A9FC0;font-variant-numeric:tabular-nums;}
+          .rt-hh{flex:none;min-width:52px;font-family:var(--font-geist-sans),system-ui,sans-serif;font-size:11.5px;font-weight:700;
+            letter-spacing:.02em;color:#A88E7B;font-variant-numeric:tabular-nums;}
           .rt-e{flex:none;font-size:16px;line-height:1;}
-          .rt-t{flex:1;min-width:0;font-size:14.5px;line-height:1.35;color:#141A2E;}
+          .rt-t{flex:1;min-width:0;font-size:14.5px;line-height:1.35;color:#1A0F08;}
           .rt-t b{display:inline-block;font-size:20px;font-weight:850;letter-spacing:-.025em;margin-right:6px;
             font-variant-numeric:tabular-nums;transform:scale(.8);opacity:0;transition:transform .5s var(--spring) .12s,opacity .3s ease .12s;}
           .rt-i.on .rt-t b{transform:none;opacity:1;}
-          .rt-i.fin{margin-top:4px;padding-top:12px;border-top:1px solid #E7E4FB;}
+          .rt-i.fin{margin-top:4px;padding-top:12px;border-top:1px solid #F3E9DD;}
           .rt-i.fin .rt-t{font-size:16px;font-weight:800;letter-spacing:-.02em;}
 
           /* ── ACTE 7 · LA JOURNÉE, TEMPS PAR TEMPS ────────────────────── */
           /* Le fond prend la teinte du moment, très bas : c'est ce qui fait
              qu'on SENT le changement d'écran avant même d'avoir lu l'heure. */
           .dtour-ov.mt-ov{align-items:flex-start;padding-top:92px;
-            background:radial-gradient(115% 62% at 50% 8%,color-mix(in srgb,var(--teinte,#3DE2A6) 17%,transparent) 0%,rgba(6,10,8,.94) 62%),rgba(6,10,8,.94);
+            background:radial-gradient(115% 62% at 50% 8%,color-mix(in srgb,var(--teinte,#F5A23A) 17%,transparent) 0%,rgba(12,8,6,.94) 62%),rgba(12,8,6,.94);
             transition:background .6s var(--exp);}
           .mt-wrap{width:100%;max-width:340px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:11px;pointer-events:auto;}
           .mt-dots{display:flex;gap:6px;}
           .mt-dots i{width:22px;height:3px;border-radius:2px;background:rgba(255,255,255,.18);
             transition:background .45s var(--exp),width .45s var(--spring);}
-          .mt-dots i.done{background:rgba(126,230,192,.55);}
-          .mt-dots i.on{width:30px;background:#fff;box-shadow:0 0 14px rgba(126,230,192,.9);}
+          .mt-dots i.done{background:rgba(255,201,122,.55);}
+          .mt-dots i.on{width:30px;background:#fff;box-shadow:0 0 14px rgba(255,201,122,.9);}
           /* Chaque temps arrive par la droite : on lit une journée qui défile,
              pas un texte qui se rafraîchit sur place. */
           .mt-temps{width:100%;display:flex;flex-direction:column;align-items:center;gap:7px;
@@ -1958,27 +1984,27 @@ export function DemoTour({
              journée — et il sait ce qu'il pourrait y faire. */
           /* L'heure porte la couleur du moment, dans une pastille : posée en
              texte nu elle se confondait avec le reste et ne signalait rien. */
-          .mt-hh{font-family:'Inter',system-ui,sans-serif;font-size:12px;font-weight:850;letter-spacing:.18em;
-            color:var(--teinte,#8FE9C4);font-variant-numeric:tabular-nums;
-            border:1px solid color-mix(in srgb,var(--teinte,#3DE2A6) 45%,transparent);border-radius:999px;
-            background:color-mix(in srgb,var(--teinte,#3DE2A6) 13%,transparent);padding:5px 12px;}
+          .mt-hh{font-family:var(--font-geist-sans),system-ui,sans-serif;font-size:12px;font-weight:850;letter-spacing:.18em;
+            color:var(--teinte,#FFC97A);font-variant-numeric:tabular-nums;
+            border:1px solid color-mix(in srgb,var(--teinte,#F5A23A) 45%,transparent);border-radius:999px;
+            background:color-mix(in srgb,var(--teinte,#F5A23A) 13%,transparent);padding:5px 12px;}
           .mt-titre{font-size:19px;font-weight:850;letter-spacing:-.03em;color:#fff;text-align:center;text-wrap:balance;
             text-shadow:0 2px 18px rgba(0,0,0,.75);}
           /* CE QU'IL DIT. C'est toujours lui qui apporte le fait : l'assistante
              ne sait pas combien il lui reste de tables, et ne le saura jamais. */
           .mt-dis{display:flex;align-items:flex-start;gap:7px;max-width:320px;text-align:left;
-            font-size:13.5px;line-height:1.4;font-weight:650;color:#D3E0D8;}
+            font-size:13.5px;line-height:1.4;font-weight:650;color:#F2E3D0;}
           .mt-dis i{font-style:normal;font-size:13px;line-height:1.35;flex:none;opacity:.75;}
           .mt-fleche{height:14px;display:flex;justify-content:center;}
           .mt-fleche i{display:block;width:2px;height:14px;border-radius:2px;transform-origin:top;
-            background:linear-gradient(180deg,transparent,var(--teinte,#3DE2A6));
+            background:linear-gradient(180deg,transparent,var(--teinte,#F5A23A));
             animation:dtTrace .4s var(--exp) .3s both;}
           @keyframes dtTrace{from{transform:scaleY(0);opacity:0}to{transform:scaleY(1);opacity:1}}
           /* La carte est cerclée de la couleur du moment. Sans ce liseré, quatre
              cartes du même composant se suivaient sans qu'on voie la coupure. */
           .cd-carte.mt-carte{max-width:288px;
-            box-shadow:0 0 0 2px color-mix(in srgb,var(--teinte,#3DE2A6) 55%,transparent),
-              0 28px 60px -24px color-mix(in srgb,var(--teinte,#3DE2A6) 60%,transparent),
+            box-shadow:0 0 0 2px color-mix(in srgb,var(--teinte,#F5A23A) 55%,transparent),
+              0 28px 60px -24px color-mix(in srgb,var(--teinte,#F5A23A) 60%,transparent),
               0 40px 80px -30px rgba(0,0,0,.9);}
           @media (max-height:780px){
             .dtour-ov.mt-ov{padding-top:84px;}
@@ -2017,11 +2043,11 @@ export function DemoTour({
             from{opacity:0;transform:translate3d(0,22px,0) scale(.9);filter:blur(8px)}
             to{opacity:1;transform:none;filter:blur(0)}
           }
-          .mt-jour-c .h{font-size:11.5px;font-weight:850;letter-spacing:.08em;color:var(--teinte,#8FE9C4);
+          .mt-jour-c .h{font-size:11.5px;font-weight:850;letter-spacing:.08em;color:var(--teinte,#FFC97A);
             font-variant-numeric:tabular-nums;white-space:nowrap;}
           .cd-carte.mt-mini{max-width:100%;border-radius:13px;
-            box-shadow:0 0 0 2px var(--teinte,#3DE2A6),
-              0 16px 32px -14px color-mix(in srgb,var(--teinte,#3DE2A6) 55%,transparent),
+            box-shadow:0 0 0 2px var(--teinte,#F5A23A),
+              0 16px 32px -14px color-mix(in srgb,var(--teinte,#F5A23A) 55%,transparent),
               0 20px 40px -18px rgba(0,0,0,.9);}
           /* CE QU'ON GARDE À CETTE TAILLE : le geste, et rien d'autre.
              La carte complète s'y compressait en colonnes de trois lettres, et
@@ -2050,22 +2076,22 @@ export function DemoTour({
              démarre — c'est .al-fly qui l'y emmène. */
           .dtour-alive{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:auto;z-index:2;}
           .dtour-alive .al-halo{position:absolute;top:60px;left:50%;width:300px;height:300px;margin:-150px 0 0 -150px;border-radius:50%;
-            background:radial-gradient(circle,rgba(124,106,232,.42),transparent 62%);animation:dtSouffle 4s ease-in-out infinite;}
+            background:radial-gradient(circle,rgba(255,46,154,.42),transparent 62%);animation:dtSouffle 4s ease-in-out infinite;}
           .dtour-alive .al-av{position:relative;z-index:3;width:120px;height:120px;border-radius:38px;display:flex;align-items:center;justify-content:center;
-            font-size:54px;color:#fff;background:linear-gradient(140deg,#8B79FF,#5B3FA6);
-            box-shadow:0 26px 60px -14px rgba(109,74,224,.75),inset 0 1px 0 rgba(255,255,255,.28);
+            font-size:54px;color:#fff;background:linear-gradient(140deg,#FF4FB0,#FF2E9A);
+            box-shadow:0 26px 60px -14px rgba(255,46,154,.75),inset 0 1px 0 rgba(255,255,255,.28);
             animation:dtPop .55s var(--exp) both;}
           /* LES ANNEAUX PARTENT VITE ET FINISSENT LENTEMENT. En linéaire, ils
              donnaient trois cercles qui grandissaient à vitesse constante —
              l'écran de veille d'un routeur. En expo, c'est une onde. */
           .dtour-alive .al-ring{position:absolute;top:60px;left:50%;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;
-            border:1px solid rgba(165,148,255,.5);animation:dtOnde 2.4s var(--exp) infinite;}
+            border:1px solid rgba(255,79,176,.5);animation:dtOnde 2.4s var(--exp) infinite;}
           .dtour-alive .al-ring.r2{animation-delay:.8s;}
           .dtour-alive .al-ring.r3{animation-delay:1.6s;}
           @keyframes dtOnde{from{transform:scale(1);opacity:.55}to{transform:scale(2.4);opacity:0}}
           .al-fly{position:fixed;left:50%;top:46%;z-index:93;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:38px;
             display:flex;align-items:center;justify-content:center;font-size:54px;color:#fff;
-            background:linear-gradient(140deg,#8B79FF,#5B3FA6);box-shadow:0 26px 60px -14px rgba(109,74,224,.7);
+            background:linear-gradient(140deg,#FF4FB0,#FF2E9A);box-shadow:0 26px 60px -14px rgba(255,46,154,.7);
             animation:dtVol .95s var(--exp) forwards;pointer-events:none;}
           @keyframes dtVol{
             to{left:var(--fx);top:var(--fy);width:32px;height:32px;margin:-16px 0 0 -16px;border-radius:11px;font-size:0;opacity:.9}
@@ -2073,50 +2099,50 @@ export function DemoTour({
 
           /* ── L'ÉCRAN DE DÉCISION ─────────────────────────────────────── */
           .dtour-end{position:fixed;inset:0;z-index:92;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;
-            padding:34px 24px calc(32px + env(safe-area-inset-bottom));color:#EDF0FA;font-family:'Inter',system-ui,sans-serif;
-            background:radial-gradient(120% 90% at 50% -10%,#1B2340 0%,#0C1020 55%,#07090F 100%);animation:dtFade .45s var(--exp);}
+            padding:34px 24px calc(32px + env(safe-area-inset-bottom));color:#FFF4E6;font-family:var(--font-geist-sans),system-ui,sans-serif;
+            background:radial-gradient(120% 90% at 50% -10%,#2A1A12 0%,#120C09 55%,#0B0705 100%);animation:dtFade .45s var(--exp);}
           .dtour-end>*{animation:dtRise .4s var(--exp) both;animation-delay:calc(var(--i,0) * var(--pas));}
           .dtour-mark.sm{width:56px;height:56px;border-radius:18px;}
           .dtour-mark.sm span{font-size:24px;}
           .dtour-end .et{font-size:23px;font-weight:800;letter-spacing:-.025em;line-height:1.15;max-width:440px;}
           .dtour-end .et.sm{font-size:21px;}
-          .dtour-end .es{font-size:14px;color:#AEB2CC;max-width:380px;line-height:1.5;margin-bottom:6px;}
+          .dtour-end .es{font-size:14px;color:#D9C6B2;max-width:380px;line-height:1.5;margin-bottom:6px;}
           .dtour-end .end-list{display:flex;flex-direction:column;gap:8px;width:100%;max-width:330px;margin-top:4px;}
-          .dtour-end .end-i{display:flex;align-items:center;gap:11px;font-size:14px;font-weight:700;color:#EDF0FA;
+          .dtour-end .end-i{display:flex;align-items:center;gap:11px;font-size:14px;font-weight:700;color:#FFF4E6;
             background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 14px;
             animation:dtGlide .45s var(--exp) both;animation-delay:calc(var(--i,0) * var(--pas));}
           .dtour-end .end-cta{display:flex;flex-direction:column;gap:11px;width:100%;max-width:360px;margin-top:8px;}
           /* Le bouton porte un reflet qui passe une fois : il attire l'œil au
              moment où l'on attend une décision, sans clignoter ensuite. */
-          .dtour-end .end-go{position:relative;overflow:hidden;border:none;background:linear-gradient(135deg,#00E0A0,#07B083);
-            color:#06231a;font-size:16px;font-weight:850;letter-spacing:-.01em;padding:16px 22px;border-radius:16px;cursor:pointer;font-family:inherit;
-            box-shadow:0 18px 38px -12px rgba(0,224,160,.7);transition:transform .18s var(--spring);}
+          .dtour-end .end-go{position:relative;overflow:hidden;border:none;background:linear-gradient(135deg,#FF4FB0,#FF2E9A);
+            color:#fff;font-size:16px;font-weight:850;letter-spacing:-.01em;padding:16px 22px;border-radius:16px;cursor:pointer;font-family:inherit;
+            box-shadow:0 18px 38px -12px rgba(255,46,154,.6);transition:transform .18s var(--spring);}
           .dtour-end .end-go::after{content:"";position:absolute;inset:0;
             background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.55) 50%,transparent 65%);
             transform:translateX(-120%);animation:dtSheen 3.4s var(--exp) .8s infinite;}
           .dtour-end .end-go:active{transform:scale(.96);}
-          .dtour-end .end-sec{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.04);color:#EDF0FA;font-size:14px;font-weight:700;
+          .dtour-end .end-sec{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.04);color:#FFF4E6;font-size:14px;font-weight:700;
             padding:13px 22px;border-radius:15px;cursor:pointer;font-family:inherit;transition:transform .18s var(--spring),background .25s ease;}
           .dtour-end .end-sec:active{transform:scale(.98);}
-          .dtour-end .end-ter{background:none;border:none;color:#9DA6C8;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;padding:6px;}
-          .dtour-end .end-ter:hover{color:#EDF0FA;}
-          .dtour-end .end-fine{margin-top:10px;font-size:11.5px;color:#8E93B5;}
+          .dtour-end .end-ter{background:none;border:none;color:#CDB8A4;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;padding:6px;}
+          .dtour-end .end-ter:hover{color:#FFF4E6;}
+          .dtour-end .end-fine{margin-top:10px;font-size:11.5px;color:#CDB8A4;}
 
           /* ── LE PANNEAU « ALLER PLUS LOIN » (à la demande) ────────────── */
-          .dtour-end .more-k{font-size:10.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#8E93B5;}
+          .dtour-end .more-k{font-size:10.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#CDB8A4;}
           .dtour-end .more-sec{width:100%;max-width:400px;text-align:left;font-size:10.5px;font-weight:800;letter-spacing:.1em;
-            text-transform:uppercase;color:#7A7F9E;margin-top:14px;}
+            text-transform:uppercase;color:#9C8676;margin-top:14px;}
           .dtour-end .more-l{display:flex;align-items:flex-start;gap:11px;width:100%;max-width:400px;text-align:left;margin-top:8px;
             background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:12px 13px;}
           .dtour-end .more-l .e{font-size:19px;flex:none;}
-          .dtour-end .more-l .x{flex:1;min-width:0;font-size:12.5px;line-height:1.45;color:#B6BDD4;display:flex;flex-direction:column;gap:3px;}
+          .dtour-end .more-l .x{flex:1;min-width:0;font-size:12.5px;line-height:1.45;color:#E6D3BF;display:flex;flex-direction:column;gap:3px;}
           .dtour-end .more-l .x b{font-size:13.5px;color:#fff;font-weight:800;}
-          .dtour-end .more-l .x sup{font-size:9px;color:#7FE6C0;font-weight:800;}
+          .dtour-end .more-l .x sup{font-size:9px;color:#FFC97A;font-weight:800;}
           .dtour-end .more-l .tg{flex:none;font-size:9px;font-weight:800;padding:3px 7px;border-radius:6px;}
-          .dtour-end .more-l .tg.opt{background:rgba(124,92,252,.25);color:#cabdff;}
-          .dtour-end .more-l .tg.free{background:rgba(18,185,129,.22);color:#7FE6C0;}
-          .dtour-end .more-note{width:100%;max-width:400px;text-align:left;font-size:11.5px;line-height:1.5;color:#8E93B5;margin-top:14px;}
-          .dtour-end .more-note b{color:#C9CFE6;}
+          .dtour-end .more-l .tg.opt{background:rgba(255,46,154,.25);color:#FFB3D9;}
+          .dtour-end .more-l .tg.free{background:rgba(245,162,58,.22);color:#FFC97A;}
+          .dtour-end .more-note{width:100%;max-width:400px;text-align:left;font-size:11.5px;line-height:1.5;color:#CDB8A4;margin-top:14px;}
+          .dtour-end .more-note b{color:#E6D3BF;}
           /* Ces blocs entrent à la demande (classe in posée par mstep) : une
              transition, pas une animation — l'état est piloté depuis React. */
           .dtour-end .more-sec,.dtour-end .more-l,.dtour-end .mp-frame,
@@ -2127,26 +2153,26 @@ export function DemoTour({
           .dtour-end .mp-k.in,.dtour-end .mp-card.in,.dtour-end .mp-res.in{opacity:1;transform:none;filter:blur(0);}
           .dtour-end .mp-frame{width:100%;max-width:400px;margin-top:10px;border-radius:16px;overflow:hidden;background:#fff;text-align:left;
             box-shadow:0 30px 60px -28px rgba(0,0,0,.8);}
-          .dtour-end .mp-bar{display:flex;align-items:center;gap:5px;padding:8px 11px;background:#EDEFF5;border-bottom:1px solid #DFE3EC;}
-          .dtour-end .mp-bar .d{width:7px;height:7px;border-radius:50%;background:#C6CBD8;}
-          .dtour-end .mp-lb{flex:1;margin-left:6px;font-size:10px;font-weight:700;color:#8A90A0;}
+          .dtour-end .mp-bar{display:flex;align-items:center;gap:5px;padding:8px 11px;background:#F7EDE2;border-bottom:1px solid #EADCCB;}
+          .dtour-end .mp-bar .d{width:7px;height:7px;border-radius:50%;background:#D9C6B2;}
+          .dtour-end .mp-lb{flex:1;margin-left:6px;font-size:10px;font-weight:700;color:#9C8676;}
           .dtour-end .mp-ex{flex:none;font-size:8.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#3A2A00;background:#FFC400;border-radius:5px;padding:2px 6px;}
           .dtour-end .mp-body{padding:13px 12px 12px;min-height:118px;}
-          .dtour-end .mp-k{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#9095A0;}
-          .dtour-end .mp-card{position:relative;display:flex;align-items:center;gap:10px;margin-top:9px;border:1px solid #E6E8EF;border-radius:13px;padding:11px 12px;}
-          .dtour-end .mp-card.in{box-shadow:0 14px 30px -18px rgba(0,224,160,.75);}
+          .dtour-end .mp-k{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#9C8676;}
+          .dtour-end .mp-card{position:relative;display:flex;align-items:center;gap:10px;margin-top:9px;border:1px solid #EADCCB;border-radius:13px;padding:11px 12px;}
+          .dtour-end .mp-card.in{box-shadow:0 14px 30px -18px rgba(245,162,58,.75);}
           .dtour-end .mp-cl{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
-          .dtour-end .mp-cl b{font-family:Georgia,serif;font-size:14.5px;font-weight:700;color:#141A2E;line-height:1.15;}
-          .dtour-end .mp-cl i{font-style:normal;font-size:11.5px;font-weight:700;color:#0B7A55;line-height:1.35;}
-          .dtour-end .mp-go{flex:none;border-radius:10px;padding:8px 12px;font-size:11.5px;font-weight:800;color:#06231a;
-            background:linear-gradient(135deg,#00E0A0,#07B083);}
+          .dtour-end .mp-cl b{font-family:Georgia,serif;font-size:14.5px;font-weight:700;color:#1A0F08;line-height:1.15;}
+          .dtour-end .mp-cl i{font-style:normal;font-size:11.5px;font-weight:700;color:#B0600E;line-height:1.35;}
+          .dtour-end .mp-go{flex:none;border-radius:10px;padding:8px 12px;font-size:11.5px;font-weight:800;color:#1A0F08;
+            background:linear-gradient(135deg,#F5A23A,#E08A1E);}
           .dtour-end .mp-go.tap{animation:dtTap .5s var(--spring);}
           @keyframes dtTap{0%{transform:none}45%{transform:scale(.9)}100%{transform:none}}
           .dtour-end .mp-cur{position:absolute;right:6px;bottom:-4px;font-size:19px;animation:dtPop .5s var(--spring);}
-          .dtour-end .mp-by{font-size:10.5px;color:#8A90A0;margin-top:9px;opacity:0;transition:opacity .5s var(--exp) .2s;}
+          .dtour-end .mp-by{font-size:10.5px;color:#9C8676;margin-top:9px;opacity:0;transition:opacity .5s var(--exp) .2s;}
           .dtour-end .mp-by.in{opacity:1;}
-          .dtour-end .mp-by b{color:#5B3FA6;font-weight:800;}
-          .dtour-end .mp-res{width:100%;max-width:400px;text-align:left;font-size:12.5px;line-height:1.5;color:#7FE6C0;margin-top:12px;}
+          .dtour-end .mp-by b{color:#FF2E9A;font-weight:800;}
+          .dtour-end .mp-res{width:100%;max-width:400px;text-align:left;font-size:12.5px;line-height:1.5;color:#FFC97A;margin-top:12px;}
           .dtour-end .mp-res b{color:#fff;}
 
           /* ── PERSONNE N'EST OBLIGÉ DE SUBIR TOUT ÇA ───────────────────
@@ -2644,7 +2670,7 @@ export function DemoTour({
           <div className={`more-l${mstep >= 1 ? " in" : ""}`}><span className="e">📲</span><span className="x"><b>Vos clients</b>Prévenir vos contacts WhatsApp.</span><span className="tg opt">option</span></div>
           <div className={`more-l${mstep >= 2 ? " in" : ""}`}><span className="e">📸</span><span className="x"><b>Vos réseaux</b>Une publication Facebook &amp; Instagram préparée.</span><span className="tg opt">option</span></div>
 
-          <div className={`more-sec${mstep >= 3 ? " in" : ""}`}>Au-delà de votre audience — <b style={{ color: "#7FE6C0" }}>inclus</b></div>
+          <div className={`more-sec${mstep >= 3 ? " in" : ""}`}>Au-delà de votre audience — <b style={{ color: "#FFC97A" }}>inclus</b></div>
           <div className={`more-l${mstep >= 3 ? " in" : ""}`}><span className="e">🤝</span><span className="x"><b>Les commerces partenaires</b>Votre annonce s&apos;affiche aussi sur leurs sites.<sup>*</sup></span><span className="tg free">inclus</span></div>
 
           {/* La scène : le site d'un partenaire s'ouvre, la section entre, votre

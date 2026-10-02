@@ -1339,7 +1339,11 @@ export function CarteSwipe({
                 {c.distance ? ` · ${c.distance.replace(/ /g, " ")}` : ""}
               </s>
             </p>
-            {c.social && <span className="cd-social">💚 {c.social}</span>}
+            {c.social && (
+              <span className="cd-social">
+                <i aria-hidden="true">💚</i> {c.social}
+              </span>
+            )}
             {/* ═══ SES AUTRES PHOTOS, SOUS L'ANNONCE ═══════════════════════
 
                 « Quand on appuie sur une photo, elle se met à la place de la

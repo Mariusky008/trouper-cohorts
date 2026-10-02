@@ -147,13 +147,28 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: MARQUE,
   },
+  /**
+   * UNE SEULE ICÔNE, PARTOUT : celle d'« Autour de moi ».
+   *
+   * « Les logos roses ne sont pas tous identiques ; j'aimerais qu'ils soient
+   * tous pareils, et plutôt celui d'"Autour de moi", plus gros et visible. »
+   * L'ancienne icône du site posait le signe à (231, 202) sur une tuile de
+   * 512, sur à peine un quart de la largeur : dans un onglet, un petit K perdu
+   * en haut à gauche. Celle d'« Autour de moi » le recentre et le porte à 285
+   * points de haut, à fond perdu. Toutes les pages la prennent désormais —
+   * le site, l'Espace Pro, le Direct, la page de chaque commerce.
+   *
+   * Le SVG est en tracés purs (pas de <text>) : il s'affiche partout à
+   * l'identique. Le PNG sert aux plateformes qui refusent le SVG — iOS
+   * notamment, pour l'icône « ajouter à l'écran d'accueil ».
+   */
   icons: {
-    // Le SVG est en tracés purs (pas de <text>) : il s'affiche partout à
-    // l'identique. Le PNG sert aux plateformes qui refusent le SVG — iOS
-    // notamment, pour l'icône « ajouter à l'écran d'accueil ».
-    icon: [{ url: "/icon.svg", type: "image/svg+xml" }, { url: "/icon-512.png", sizes: "512x512", type: "image/png" }],
-    shortcut: "/icon.svg",
-    apple: "/apple-touch-icon.png",
+    icon: [
+      { url: "/direct/icone-autour.svg", type: "image/svg+xml" },
+      { url: "/direct/icone-autour-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: "/direct/icone-autour-512.png",
+    apple: "/direct/icone-autour-180.png",
   },
 };
 

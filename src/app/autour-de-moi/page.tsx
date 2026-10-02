@@ -56,23 +56,21 @@ export const metadata: Metadata = {
   // barre du navigateur disparaisse. Sans eux, on ouvre un onglet Safari.
   appleWebApp: { capable: true, title: "Autour de moi", statusBarStyle: "black-translucent" },
   /**
-   * SON PROPRE JEU D'ICÔNES, ET DEUX RAISONS.
+   * L'ICÔNE AU SIGNE RECENTRÉ — c'est ici qu'elle est née, et c'est elle que
+   * tout le site porte maintenant (voir `icons` dans `app/layout.tsx`).
    *
-   * 1. LE SIGNE ÉTAIT DÉCENTRÉ. Défaut rapporté : « le logo sur l'écran
-   *    d'accueil est étrange, c'est un petit K ». Mesuré dans `icon.svg` : le
-   *    signe occupe 86 × 128 points sur une tuile de 512 et son centre tombe à
-   *    (231, 202) au lieu de (256, 256) — décalé de 25 points à gauche et de
-   *    54 vers le haut, et couvrant à peine un quart de la largeur. À 60
-   *    points sur un écran d'accueil, il ne reste qu'une marque perdue en haut
-   *    à gauche. Le signe est le même, recentré et porté à 285 points de haut.
-   * 2. DEUX INSTALLATIONS, DEUX ICÔNES. Le site commerçant et « Autour de moi »
-   *    peuvent coexister sur le même téléphone — `id` et `start_url` les
-   *    séparent déjà. Leur donner la même image annulait cette séparation là
-   *    où elle se voit : sur l'écran d'accueil.
+   * LE SIGNE ÉTAIT DÉCENTRÉ. Défaut rapporté : « le logo sur l'écran
+   * d'accueil est étrange, c'est un petit K ». Mesuré dans `icon.svg` : le
+   * signe occupe 86 × 128 points sur une tuile de 512 et son centre tombe à
+   * (231, 202) au lieu de (256, 256), sur à peine un quart de la largeur.
+   * Celui-ci est le même signe, recentré et porté à 285 points de haut.
    *
-   * L'icône racine garde exactement le même défaut de cadrage ; on ne la
-   * touche pas ici parce qu'elle sert aussi au logo animé du site, où la
-   * composition actuelle est peut-être voulue.
+   * Elle avait d'abord été gardée pour « Autour de moi » seul, pour que les
+   * deux installations se distinguent. « Les logos ne sont pas tous
+   * identiques, j'aimerais qu'ils soient tous pareils, et plutôt celui-ci,
+   * plus gros et visible » : la marque passe avant. Les deux installations
+   * restent séparées par leur nom et leur `start_url`.
+   * `icon.svg` ne sert plus qu'au logo animé du site.
    */
   icons: {
     icon: [

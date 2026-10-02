@@ -35,7 +35,12 @@ export async function GET(_request: Request, context: { params: Promise<{ ville:
       // sinon l'ouverture « clignote » en blanc.
       background_color: "#14201A",
       theme_color: "#14201A",
-      icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any maskable" }],
+      icons: [
+      // LA MÊME ICÔNE QUE PARTOUT — voir `icons` dans `app/layout.tsx`.
+      { src: "/direct/icone-autour.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
+      { src: "/direct/icone-autour-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/direct/icone-autour-masquable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+    ],
     },
     {
       headers: {
