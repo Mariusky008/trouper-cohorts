@@ -16,6 +16,10 @@ type Etat = {
   hoteErreur?: string;
   hoteMain?: boolean;
   etat?: string;
+  sansHote?: string;
+  sansHotePour?: string;
+  sansHoteEssais?: number;
+  sansHoteErreur?: string;
 };
 
 export function HotePhoto({ raccourcis }: { raccourcis: { slug: string; nom: string }[] }) {
@@ -138,6 +142,16 @@ export function HotePhoto({ raccourcis }: { raccourcis: { slug: string; nom: str
               {etat.hoteAt ? ` — le dernier le ${new Date(etat.hoteAt).toLocaleString("fr-FR")}` : ""}
             </li>
             {etat.hoteErreur && <li>Dernière raison : {etat.hoteErreur}</li>}
+            <li>
+              Photo sans lui (pour qu’il n’y ait qu’un fantôme, animé) :{" "}
+              {etat.sansHote && etat.hote ? (
+                <b className="text-emerald-700">prête</b>
+              ) : (
+                <b className="text-rose-700">pas encore</b>
+              )}
+              {etat.sansHoteEssais ? ` — ${etat.sansHoteEssais} essai(s)` : ""}
+              {etat.sansHoteErreur ? ` — ${etat.sansHoteErreur}` : ""}
+            </li>
           </ul>
 
           {!etat.url ? (
@@ -193,6 +207,14 @@ export function HotePhoto({ raccourcis }: { raccourcis: { slug: string; nom: str
                 >
                   {occupe ? "…" : "Relancer le modèle"}
                 </button>
+                <button
+                  type="button"
+                  disabled={occupe || !etat.hote}
+                  onClick={() => void agir({ action: "sans-hote" }, "Photo sans lui refaite : il s’animera seul, à sa place.")}
+                  className="rounded-md border px-4 py-2 text-sm disabled:opacity-40"
+                >
+                  Refaire la photo sans lui
+                </button>
                 <a
                   href={`/site-internet/apercu/${slug}?via=affiche`}
                   target="_blank"
@@ -202,6 +224,13 @@ export function HotePhoto({ raccourcis }: { raccourcis: { slug: string; nom: str
                   Voir la page
                 </a>
               </div>
+              {etat.sansHote && etat.hote && (
+                <figure className="mt-6">
+                  <figcaption className="mb-2 text-sm font-semibold">La photo sans lui (la page y pose le fantôme animé)</figcaption>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={etat.sansHote} alt="" className="block max-h-[60vh] w-auto max-w-full rounded-md" />
+                </figure>
+              )}
             </>
           )}
         </section>

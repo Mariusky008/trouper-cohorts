@@ -47,7 +47,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { noterClic } from "@/lib/direct/publications";
 import { brancheDuMetier, carteDepuisFiche, enGrand } from "@/lib/site-internet/carte-depuis-fiche";
 import { menuATenter, tenterLesPhotosMenu } from "@/lib/site-internet/photos-menu";
-import { completerLHote, couvertureDuDiagnostic, hoteACherche, photosCandidates } from "@/lib/site-internet/couverture";
+import { couvertureDuDiagnostic, hoteACherche, photosCandidates, sansHoteAFaire } from "@/lib/site-internet/couverture";
 import { etatDeLaFiche, raisonLisible } from "@/lib/site-internet/fiche-google";
 import { COLONNES_FICHE, construireFiche } from "@/lib/site-internet/fiche-du-site";
 import { carteDeDemo, estAdresseDeDemo, listeDesDemos } from "@/lib/site-internet/fiches-demo";
@@ -156,6 +156,32 @@ export async function generateMetadata({
  * SANS BASE (en local, ou si la ligne a disparu), la copie montre sa carte de
  * présentation seule : la démonstration ne tombe jamais en panne devant lui.
  */
+/** L'adresse d'où la page est servie — pour sonner à nos propres routes. */
+async function origineDeLaPage(): Promise<string> {
+  const h = await headers();
+  const hote = h.get("x-forwarded-host") || h.get("host") || "";
+  return `${h.get("x-forwarded-proto") || (/^(localhost|127\.)/.test(hote) ? "http" : "https")}://${hote}`;
+}
+
+/**
+ * SON HÔTE ET LA PHOTO SANS LUI, APRÈS LA PAGE : on sonne à la route qui a le
+ * temps (`api/site-internet/hote`), comme pour la carte. Rien n'attend.
+ */
+function sonnerLHote(slug: string, origine: string) {
+  after(async () => {
+    try {
+      await fetch(`${origine}/api/site-internet/hote`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ slug }),
+        signal: AbortSignal.timeout(10_000),
+      });
+    } catch {
+      /* la prochaine visite relancera */
+    }
+  });
+}
+
 async function lireLaCopie(copie: CopiePresentation) {
   let carte = copie.carte;
   let note: string | null = copie.carte.google?.note ?? null;
@@ -191,7 +217,8 @@ async function lireLaCopie(copie: CopiePresentation) {
       }
       const lu = construireFiche(copie.source, row, { disponibilites, services });
       carte = fusionnerCopie(carteDepuisFiche(lu.fiche), copie.carte);
-      hoteARepere = hoteACherche(couvertureDuDiagnostic(row.diagnostic));
+      const etat = couvertureDuDiagnostic(row.diagnostic);
+      hoteARepere = hoteACherche(etat) || sansHoteAFaire(etat);
       note = lu.note ?? note;
       avis = lu.reviews ?? avis;
     }
@@ -273,15 +300,7 @@ export default async function ApercuMaquette({
        pas d'hôte repéré. Elle le demande donc pour lui, sur sa photo à lui.
        Ce n'est pas un chiffre : une position sur une image, qui sert aussi
        sa vraie page. */
-    if (hoteARepere) {
-      after(async () => {
-        try {
-          await completerLHote(copie.source);
-        } catch {
-          /* la prochaine visite réessaiera */
-        }
-      });
-    }
+    if (hoteARepere) sonnerLHote(copie.source, await origineDeLaPage());
     return (
       <PageBoutique
         slug={slug}
@@ -448,15 +467,9 @@ export default async function ApercuMaquette({
   /* SA PHOTO CLIKME A ÉTÉ FAITE AVANT QU'ON REPÈRE SON HÔTE ? On le cherche
      après la page — trois essais au plus, voir `hoteACherche`. */
   const couv = couvertureDuDiagnostic(row.diagnostic);
-  if (hoteACherche(couv)) {
-    after(async () => {
-      try {
-        await completerLHote(slug);
-      } catch {
-        /* sans lui, la page passe par son bouton */
-      }
-    });
-  }
+  // ET LA PHOTO SANS LUI, POUR QU'UN SEUL FANTÔME PROPRIÉTAIRE S'ANIME —
+  // voir `effacerLHote`. Les deux se font à la route `api/site-internet/hote`.
+  if (hoteACherche(couv) || sansHoteAFaire(couv)) sonnerLHote(slug, await origineDeLaPage());
   /* SA CARTE EST VIDE ET SON ONGLET « MENU » N'A JAMAIS ÉTÉ DEMANDÉ (page
      créée avant cette étape) : on le demande une fois, après la page. La
      lecture de la carte suit d'elle-même, aux visites suivantes — JAMAIS À

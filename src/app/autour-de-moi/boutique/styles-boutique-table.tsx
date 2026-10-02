@@ -349,17 +349,25 @@ export function StylesBoutiqueTable() {
         /* ON ARRIVE DANS LA SALLE PAR UN FONDU COURT — plus d'éclair blanc —, et
            il prend sa place près du bouton, comme s'il nous avait accompagnés. */
         .bt-e-exp.arrive{animation:btArrive .45s ease-out both;}
-        @keyframes btArrive{from{opacity:0;transform:scale(1.015);}to{opacity:1;transform:none;}}
+        @keyframes btArrive{from{opacity:.4;transform:scale(1.015);}to{opacity:1;transform:none;}}
         .bt-e-exp.arrive .bt-double,.bt-e-exp.arrive .bx-fantome{animation:btRejoint .55s cubic-bezier(.2,.8,.2,1) .05s both;}
         @keyframes btRejoint{from{opacity:0;transform:translate(28px,26px) scale(1.12);}to{opacity:1;transform:none;}}
         /* ═══ SES POSES EN PIED ════════════════════════════════════════════
            Le même personnage que sur la photo ClikMe, en entier : sa
            lumière est déjà la bonne (pas de réchauffage), et ses jambes ne se
            fondent pas — la nappe passe devant elles, comme devant un comptoir. */
-        .bt-sprite{position:absolute;z-index:3;pointer-events:none;
-          filter:drop-shadow(0 12px 20px rgba(0,0,0,.45)) drop-shadow(0 0 18px rgba(255,180,90,.35));
-          animation:btSprite .12s ease-out both;}
-        @keyframes btSprite{from{opacity:0;}to{opacity:1;}}
+        /* IL EST LÀ DÈS L'ARRIVÉE, À SA PLACE, ET IL RESPIRE : le même
+           fantôme qui saluera. Son pied ne bouge pas — on respire depuis le sol. */
+        .bt-sprite{position:absolute;z-index:2;pointer-events:none;transform-origin:50% 95%;
+          filter:drop-shadow(0 10px 16px rgba(0,0,0,.4)) drop-shadow(0 0 16px rgba(255,180,90,.3));
+          animation:btSpriteVient .5s ease-out both,btRespire 3.6s ease-in-out .5s infinite;}
+        @keyframes btSpriteVient{from{opacity:0;}to{opacity:1;}}
+        @keyframes btRespire{0%,100%{transform:scale(1,1);}50%{transform:scale(1.015,.985) translateY(1px);}}
+        .bt-sprite.agit{animation:none;}
+        /* LE RING DE FOCUS DU NAVIGATEUR, UNE ELLIPSE BLEUE AUTOUR DE LUI APRÈS
+           LE CLIC : seulement au clavier. */
+        .bt-hote:focus{outline:none;}
+        .bt-hote:focus-visible{outline:2px solid rgba(255,201,122,.9);outline-offset:4px;}
         .bt-e-lieu.franchit .bt-sprite{animation:btSpritePart .55s ease-in both;}
 
         @keyframes btSpritePart{from{opacity:1;}to{opacity:0;transform:scale(1.08);}}

@@ -1288,6 +1288,11 @@ export type CarteAutour = {
    */
   couvertureHote?: { x: number; y: number; w: number; h: number };
   /**
+   * LA MÊME PHOTO CLIKME, SANS L'HÔTE PEINT : la page y pose à sa place le
+   * fantôme animé — un seul fantôme propriétaire. Voir `effacerLHote`.
+   */
+  couvertureSansHote?: string;
+  /**
    * CE QUE SA FICHE GOOGLE DIT DE SA CARTE — « quand je regarde la fiche
    * Google, je vois bien les menus, les prix ». Son lien de menu, son prix par
    * personne tel que Google l'affiche, ses services. Des faits recopiés, jamais

@@ -101,6 +101,21 @@ export type EtatCouverture = {
   hoteErreur?: string;
   /** Posé à la main dans l'administration : le modèle ne le remplace plus. */
   hoteMain?: boolean;
+  /**
+   * LA MÊME PHOTO, SANS LUI — l'entrée vide, là où il était peint.
+   *
+   * « On a le fantôme propriétaire et tout à coup un autre fantôme qui se
+   * superpose, au lieu d'avoir le même fantôme qui s'anime. » Ses poses posées
+   * par-dessus son portrait peint laissaient dépasser un bras, une ombre : deux
+   * fantômes. Sur cette photo-là il n'y en a plus qu'un — le sien, animé, posé
+   * par la page à sa place dès l'arrivée.
+   */
+  sansHote?: string;
+  /** Pour quelle photo et quel cadre elle a été faite — un autre cadre la refait. */
+  sansHotePour?: string;
+  sansHoteEssais?: number;
+  sansHoteAt?: string;
+  sansHoteErreur?: string;
 };
 
 /**
@@ -235,6 +250,111 @@ export async function completerLHote(slug: string): Promise<void> {
   await ecrireEtat(s(row.id), d2, hote ? { ...e2, hote, hoteCherche: etat.url, hoteErreur: undefined } : { ...e2, hoteErreur: raison });
 }
 
+/* ═══ LA PHOTO SANS LUI ════════════════════════════════════════════════════
+   Le moteur d'image retouche la photo ClikMe : il retire le fantôme
+   propriétaire du cadre et prolonge ce qu'il y a derrière — l'embrasure, le
+   sol, la salle. Rien d'autre ne doit bouger : la page pose ensuite à la même
+   place le fantôme animé, et les coordonnées du cadre restent justes parce
+   que le résultat est remis aux dimensions exactes de l'original. */
+const RAPPORTS: [string, number][] = [
+  ["1:1", 1], ["2:3", 2 / 3], ["3:2", 3 / 2], ["3:4", 3 / 4], ["4:3", 4 / 3],
+  ["4:5", 4 / 5], ["5:4", 5 / 4], ["9:16", 9 / 16], ["16:9", 16 / 9],
+];
+
+async function effacerLHote(
+  image: { type: string; donnees: string },
+  hote: { x: number; y: number; w: number; h: number },
+): Promise<{ type: string; donnees: string } | { erreur: string }> {
+  const cle = s(process.env.GEMINI_API_KEY) || s(process.env.GOOGLE_API_KEY);
+  if (!cle) return { erreur: "aucune clé Gemini sur le serveur" };
+  const modele = s(process.env.GEMINI_IMAGE_MODEL) || "gemini-2.5-flash-image";
+  const base = s(process.env.GEMINI_BASE_URL) || "https://generativelanguage.googleapis.com";
+  const brut = Buffer.from(image.donnees, "base64");
+  const meta = await sharp(brut).metadata();
+  const L = meta.width ?? 0;
+  const H = meta.height ?? 0;
+  if (!L || !H) return { erreur: "photo ClikMe illisible" };
+  const rapport = RAPPORTS.reduce((a, b) => (Math.abs(b[1] - L / H) < Math.abs(a[1] - L / H) ? b : a))[0];
+  const pc = (v: number) => Math.round(v * 100);
+  // UN PEU DE MARGE AUTOUR DU CADRE : un bras levé, une ombre au sol.
+  const m = 0.04;
+  const zone = {
+    x0: Math.max(0, hote.x - m), x1: Math.min(1, hote.x + hote.w + m),
+    y0: Math.max(0, hote.y - m), y1: Math.min(1, hote.y + hote.h + m / 2),
+  };
+  const consigne = [
+    "Edit this picture.",
+    `In the area from ${pc(zone.x0)}% to ${pc(zone.x1)}% of the width (from the left) and from ${pc(zone.y0)}% to ${pc(zone.y1)}% of the height (from the top) stands a white ghost mascot: the host of the shop.`,
+    "Remove that ghost completely — its body, cap, clothes, arms and shadow — and fill the area with what would naturally be behind it: the doorway, the floor, the walls or the interior, continuing the lines, the light and the textures around it.",
+    "Change NOTHING else: same framing and size, same colours and light, the same other ghosts exactly where they are, the same signs and letters.",
+  ].join(" ");
+  const corps = (avecFormat: boolean) =>
+    JSON.stringify({
+      contents: [{ role: "user", parts: [{ inlineData: { mimeType: image.type, data: image.donnees } }, { text: consigne }] }],
+      generationConfig: avecFormat
+        ? { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: rapport } }
+        : { responseModalities: ["IMAGE", "TEXT"] },
+    });
+  const appeler = (avecFormat: boolean) =>
+    fetch(`${base}/v1beta/models/${modele}:generateContent`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": cle },
+      body: corps(avecFormat),
+      signal: AbortSignal.timeout(DELAI_RENDU_MS),
+    });
+  try {
+    let r = await appeler(true);
+    if (r.status === 400) r = await appeler(false);
+    if (!r.ok) return { erreur: `le moteur d'image a répondu ${r.status} : ${(await r.text().catch(() => "")).slice(0, 160)}` };
+    const j = (await r.json()) as { candidates?: { content?: { parts?: { inlineData?: { data?: string } }[] } }[] };
+    const donnees = (j.candidates?.[0]?.content?.parts ?? []).find((x) => x.inlineData?.data)?.inlineData?.data;
+    if (!donnees) return { erreur: "le moteur d'image n'a pas rendu d'image" };
+    // AUX DIMENSIONS EXACTES DE L'ORIGINAL : le cadre de l'hôte y retombe juste.
+    const remis = await sharp(Buffer.from(donnees, "base64")).resize(L, H, { fit: "fill" }).png().toBuffer();
+    return { type: "image/png", donnees: remis.toString("base64") };
+  } catch (e) {
+    return { erreur: `appel au moteur d'image impossible : ${e instanceof Error ? e.message : "erreur"}` };
+  }
+}
+
+/** Fait la photo sans hôte pour ce site, si elle manque. Rien ne lève. */
+export async function completerSansHote(slug: string): Promise<void> {
+  const l = await ligneDuSite(slug);
+  const e = l?.etat ?? null;
+  if (!l || !e || !sansHoteAFaire(e)) return;
+  const pour = empreinte(e);
+  const essais = e.sansHotePour === pour ? (e.sansHoteEssais ?? 1) + 1 : 1;
+  // ON NOTE L'ESSAI AVANT DE PAYER : deux visites rapprochées n'en paient qu'un.
+  await ecrireEtat(l.id, l.diag, { ...e, sansHotePour: pour, sansHoteEssais: essais, sansHoteAt: new Date().toISOString() });
+  let image: { type: string; donnees: string } | null = null;
+  try {
+    const r = await fetch(s(e.url), { signal: AbortSignal.timeout(20_000) });
+    if (r.ok) image = { type: (r.headers.get("content-type") || "image/png").split(";")[0], donnees: Buffer.from(await r.arrayBuffer()).toString("base64") };
+  } catch {
+    image = null;
+  }
+  const rendu = image ? await effacerLHote(image, e.hote!) : { erreur: "photo ClikMe illisible" };
+  let url = "";
+  let erreur = "erreur" in rendu ? rendu.erreur : "";
+  if (!("erreur" in rendu)) {
+    const supabase = createAdminClient();
+    const chemin = `${DOSSIER}/${slug}-sans-hote-${Date.now()}.png`;
+    const { error } = await supabase.storage
+      .from(SEAU)
+      .upload(chemin, Buffer.from(rendu.donnees, "base64"), { contentType: "image/png", upsert: true });
+    if (error) erreur = `stockage : ${error.message}`;
+    else url = supabase.storage.from(SEAU).getPublicUrl(chemin).data.publicUrl;
+  }
+  // RELU JUSTE AVANT D'ÉCRIRE : un autre cadre a pu être posé entre-temps.
+  const frais = await ligneDuSite(slug);
+  if (!frais?.etat || empreinte(frais.etat) !== pour) return;
+  await ecrireEtat(
+    frais.id,
+    frais.diag,
+    url ? { ...frais.etat, sansHote: url, sansHotePour: pour, sansHoteErreur: undefined } : { ...frais.etat, sansHoteErreur: erreur },
+  );
+}
+
 /* ═══ L'HÔTE, À LA MAIN — voir `/admin/hote-photo` ══════════════════════════
    « J'ai cliqué sur le fantôme et je n'ai vu aucune animation. » Le repérage
    par le modèle peut échouer — et sans sa place, le fantôme propriétaire ne
@@ -268,9 +388,36 @@ export async function poserLHote(slug: string, boite: unknown) {
   const l = await ligneDuSite(slug);
   const hote = lireBoite(boite);
   if (!l?.etat?.url || !hote) return null;
-  const etat: EtatCouverture = { ...l.etat, hote, hoteMain: true, hoteCherche: l.etat.url, hoteErreur: undefined };
+  const etat: EtatCouverture = {
+    ...l.etat,
+    hote,
+    hoteMain: true,
+    hoteCherche: l.etat.url,
+    hoteErreur: undefined,
+    sansHoteEssais: undefined,
+    sansHoteAt: undefined,
+    sansHoteErreur: undefined,
+  };
   await ecrireEtat(l.id, l.diag, etat);
-  return etat;
+  // ET LA PHOTO SANS LUI, POUR CE CADRE-LÀ, tout de suite.
+  await completerSansHote(slug);
+  return (await ligneDuSite(slug))?.etat ?? etat;
+}
+
+/** La photo sans lui, refaite tout de suite, en oubliant les essais passés. */
+export async function refaireSansHote(slug: string) {
+  const l = await ligneDuSite(slug);
+  if (!l?.etat?.url || !l.etat.hote) return null;
+  await ecrireEtat(l.id, l.diag, {
+    ...l.etat,
+    sansHote: undefined,
+    sansHotePour: undefined,
+    sansHoteEssais: undefined,
+    sansHoteAt: undefined,
+    sansHoteErreur: undefined,
+  });
+  await completerSansHote(slug);
+  return (await ligneDuSite(slug))?.etat ?? null;
 }
 
 /** On redemande au modèle, tout de suite, en oubliant les essais passés. */
@@ -287,6 +434,7 @@ export async function relancerLHote(slug: string) {
     hoteErreur: undefined,
   });
   await completerLHote(slug);
+  await completerSansHote(slug);
   return (await ligneDuSite(slug))?.etat ?? null;
 }
 
@@ -325,7 +473,32 @@ export function couvertureDuDiagnostic(diag: unknown): EtatCouverture | null {
     hoteAt: s(c.hoteAt) || undefined,
     hoteErreur: s(c.hoteErreur) || undefined,
     hoteMain: c.hoteMain === true || undefined,
+    sansHote: s(c.sansHote) || undefined,
+    sansHotePour: s(c.sansHotePour) || undefined,
+    sansHoteEssais: Number(c.sansHoteEssais) || undefined,
+    sansHoteAt: s(c.sansHoteAt) || undefined,
+    sansHoteErreur: s(c.sansHoteErreur) || undefined,
   };
+}
+
+/** L'empreinte d'une photo et d'un cadre : la photo sans hôte n'est valable que pour eux. */
+const empreinte = (e: EtatCouverture) =>
+  e.url && e.hote ? `${e.url}#${[e.hote.x, e.hote.y, e.hote.w, e.hote.h].map((v) => v.toFixed(4)).join(",")}` : "";
+
+/** La photo sans hôte qui va avec CETTE photo et CE cadre, s'il y en a une. */
+export function photoSansHote(e: EtatCouverture | null): string | undefined {
+  return e?.sansHote && e.sansHotePour === empreinte(e) ? e.sansHote : undefined;
+}
+
+/** Faut-il (re)faire la photo sans hôte ? Trois essais à dix minutes, puis un par jour. */
+export function sansHoteAFaire(e: EtatCouverture | null): boolean {
+  if (!e?.url || !e.hote || e.etat === "originale" || photoSansHote(e)) return false;
+  const pour = empreinte(e);
+  if (e.sansHotePour !== pour) return true;
+  const n = e.sansHoteEssais ?? 1;
+  const dernier = Date.parse(e.sansHoteAt ?? "");
+  const depuis = Number.isFinite(dernier) ? Date.now() - dernier : Infinity;
+  return n < HOTE_ESSAIS_MAX ? depuis >= HOTE_ECART_MS : depuis >= 24 * 3_600_000;
 }
 
 /**

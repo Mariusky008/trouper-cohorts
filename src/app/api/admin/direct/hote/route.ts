@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
-import { etatDeLHote, poserLHote, relancerLHote } from "@/lib/site-internet/couverture";
+import { etatDeLHote, poserLHote, refaireSansHote, relancerLHote } from "@/lib/site-internet/couverture";
 
 // L'HÔTE D'UNE PHOTO CLIKME, VU ET RÉGLÉ DEPUIS L'ADMINISTRATION — voir
 // `/admin/hote-photo` et `poserLHote` dans `couverture.ts`.
@@ -28,6 +28,10 @@ export async function POST(requete: Request) {
     if (p.action === "poser") {
       const etat = await poserLHote(slug, p.boite);
       return etat ? NextResponse.json({ etat }) : NextResponse.json({ erreur: "photo ou cadre invalide" }, { status: 400 });
+    }
+    if (p.action === "sans-hote") {
+      const etat = await refaireSansHote(slug);
+      return etat ? NextResponse.json({ etat }) : NextResponse.json({ erreur: "pas d'hôte repéré" }, { status: 400 });
     }
     if (p.action === "relancer") {
       const etat = await relancerLHote(slug);

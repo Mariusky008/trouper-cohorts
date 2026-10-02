@@ -23,7 +23,7 @@ import { ligneDuJour } from "@/lib/site-internet/opening-hours";
 import { numeroAppel, numeroReservations } from "@/lib/site-internet/pro-phone";
 import { carteDepuisFiche, type FicheCommercant } from "@/lib/site-internet/carte-depuis-fiche";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
-import { couvertureAffichee, couvertureDuDiagnostic } from "@/lib/site-internet/couverture";
+import { couvertureAffichee, couvertureDuDiagnostic, photoSansHote } from "@/lib/site-internet/couverture";
 import { nomPropre } from "@/lib/site-internet/nom-propre";
 import { carteLueDuDiagnostic, suiviDeLaCarte } from "@/lib/site-internet/carte-lue";
 
@@ -172,6 +172,7 @@ export function construireFiche(
     avisGoogle,
     couverture: couvertureAffichee(couvertureDuDiagnostic(diag)),
     couvertureHote: couvertureDuDiagnostic(diag)?.hote,
+    couvertureSansHote: photoSansHote(couvertureDuDiagnostic(diag)),
     carteLue: carteLueDuDiagnostic(diag),
     carteSuivi: suiviDeLaCarte(diag),
     photosCarte: (Array.isArray(diag.photos_menu) ? diag.photos_menu : [])

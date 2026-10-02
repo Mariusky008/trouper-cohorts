@@ -591,6 +591,22 @@ export function BoutiqueTable({
   type Geste = "repos" | "parle-1" | "parle-2" | "salut-1" | "salut-2" | "viens" | "montre";
   const enPied = tenue?.enPied;
   const geste = (g: Geste) => `${enPied}${g}.webp`;
+  /**
+   * ═══ UN SEUL FANTÔME PROPRIÉTAIRE, ET C'EST LUI QUI S'ANIME ══════════════
+   *
+   * « On a le fantôme propriétaire et tout à coup un autre fantôme qui se
+   * superpose, au lieu d'avoir le même fantôme qui s'anime. Peut-être plus
+   * simple : avoir directement le fantôme qui s'animera, à l'arrêt, et
+   * l'animation commence quand je clique dessus. » C'est exactement ça : la
+   * photo ClikMe SANS son portrait peint (`couvertureSansHote`, faite par le
+   * moteur d'image), et lui, en pied, posé à sa place dès l'arrivée — au
+   * repos, qui respire. Au toucher, c'est lui qui salue et fait entrer.
+   *
+   * TANT QUE CETTE PHOTO N'EXISTE PAS, rien ne se pose par-dessus : on ne
+   * refait pas deux fantômes l'un sur l'autre.
+   */
+  const sansHote = enPied && couv && c.couvertureHote ? c.couvertureSansHote : undefined;
+  const fondLieu = sansHote ?? couv;
   /** Ce qu'il fait en ce moment, au seuil puis dans la salle. */
   const [sonGeste, setSonGeste] = useState<Geste | null>(null);
   /* DANS LA SALLE, IL MONTRE LE CHEMIN UN INSTANT, puis il attend qu'on
@@ -882,7 +898,7 @@ export function BoutiqueTable({
        (repéré par `completerLHote`). Sans sa place, on ne l'anime pas — sa
        bulle, puis l'avancée vers la porte. Ou sa pose sur le seuil, quand la
        page n'a pas encore de photo ClikMe : c'est alors lui, le seul. */
-    const lui = enPied && !reduit && (Boolean(hoteEcran) || !couv);
+    const lui = enPied && !reduit && ((Boolean(hoteEcran) && Boolean(sansHote)) || !couv);
     const accueil = reduit ? 0 : lui ? 1150 : 600;
     const avance = reduit ? 120 : 750;
     if (lui) {
@@ -1250,7 +1266,7 @@ export function BoutiqueTable({
             <div
               ref={photoLieuRef}
               className={`bt-photo ${couv ? "clikme" : "facade"}`}
-              style={{ backgroundImage: `url("${couv ?? devanture}")` }}
+              style={{ backgroundImage: `url("${fondLieu ?? devanture}")` }}
             />
             {/* LA LUMIÈRE DE LA SALLE, qui monte de la porte pendant qu'on la franchit. */}
             <div className="bt-porte-lumiere" aria-hidden="true" />
@@ -1300,11 +1316,11 @@ export function BoutiqueTable({
               c'est lui qui salue, puis se tourne vers la porte. Seulement
               quand on sait où il se tient : posé au hasard, ce serait un
               second fantôme. */}
-          {enPied && hoteEcran && sonGeste && onglet === "lieu" && (
+          {enPied && hoteEcran && sansHote && onglet === "lieu" && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              className="bt-sprite"
-              src={geste(sonGeste)}
+              className={`bt-sprite${sonGeste ? " agit" : ""}`}
+              src={geste(sonGeste ?? "repos")}
               alt=""
               aria-hidden="true"
               style={(() => {
