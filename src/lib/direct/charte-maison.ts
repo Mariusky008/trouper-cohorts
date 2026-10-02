@@ -58,7 +58,12 @@ export function teinteMaison(r: number, g: number, b: number): [number, number, 
   // LES GRIS : froids → chauds, à peine teintés.
   if (c.s < 0.1) return versRgb({ h: 28, s: Math.min(0.2, c.s + 0.08), l: c.l });
   // LES NUITS (bleues, violettes, vertes très sombres) → la nuit brune.
-  if (c.l < 0.27) return versRgb({ h: 20, s: Math.min(c.s, 0.38), l: c.l });
+  // ET UN PEU MOINS NOIRES QU'AVANT : la nuit bleue de l'application était
+  // presque noire (#05090C) ; repeinte à la même clarté, elle restait du
+  // noir, et l'on ne voyait pas le brun. Le fond le plus sombre remonte donc
+  // jusqu'à celui des pages (#120C09), et les autres suivent dans l'ordre :
+  // ce qui était plus clair le reste, les contrastes avec le texte aussi.
+  if (c.l < 0.27) return versRgb({ h: 20, s: Math.min(Math.max(c.s, 0.22), 0.38), l: 0.05 + c.l * 0.82 });
   // LES MENTHES ET LES VERTS → l'ambre.
   if (c.h >= 60 && c.h < 190) return versRgb({ h: 34, s: Math.max(c.s, 0.75), l: c.l });
   // LES BLEUS (190° à 245°).

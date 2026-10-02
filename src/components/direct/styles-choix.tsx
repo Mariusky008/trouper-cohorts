@@ -12,9 +12,11 @@
  * construction casse sans dire ou. Voir `scripts/verifier-styles-en-ligne.mjs`,
  * qui refuse ce fichier si l'un s'y glisse.
  */
+import { StyleMaison } from "@/components/direct/style-maison";
+
 export function StylesChoix() {
   return (
-    <style
+    <StyleMaison
       dangerouslySetInnerHTML={{
         __html: `
         /* ═══ LE CADRE ════════════════════════════════════════════════════

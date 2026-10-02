@@ -166,6 +166,7 @@ import { EcranChoix } from "@/components/direct/ecran-choix";
    dans le dossier : ce qui est mis de côté doit pouvoir revenir sans qu'on le
    refasse. Seule la ligne qui la montait est remplacée. */
 import { EcranSalon } from "@/components/direct/ecran-salon";
+import { StyleMaison } from "@/components/direct/style-maison";
 import { StylesChoix } from "@/components/direct/styles-choix";
 // LE PARCOURS MODE — la « partie 2 », pour une categorie sur cinq.
 import { ParcoursMode } from "@/components/direct/parcours-mode-ecran";
@@ -14908,7 +14909,14 @@ export function ApercuHabitant() {
         </div>
       </div>
 
-      <style
+      {/* AUX COULEURS DE LA MAISON — « pour /autour-de-moi, changer les fonds
+          pour la nouvelle charte, plus dans les marrons et le rose. » La
+          feuille a été écrite en nuit bleue et menthe, avec plus de mille
+          teintes en dur : `StyleMaison` la repeint par famille de couleur
+          (nuits → nuit brune, violets → rose, menthes → ambre) en gardant la
+          clarté de chacune, donc tous les contrastes — voir `EnCharteMaison`
+          dans `page.tsx`. La mise en page, elle, ne bouge pas d'un point. */}
+      <StyleMaison
         dangerouslySetInnerHTML={{
           __html: `
         /* ATTENTION : pas d'accent grave dans ces commentaires, ce bloc est un

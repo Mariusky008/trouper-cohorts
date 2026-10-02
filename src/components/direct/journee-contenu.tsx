@@ -68,6 +68,7 @@ import {
   type CleMoment,
   type EtapeProgramme,
 } from "@/lib/direct/programme";
+import { StyleMaison } from "@/components/direct/style-maison";
 
 type Ecran = "moment" | "envie" | "journee" | "envoi";
 
@@ -1085,7 +1086,7 @@ function telecharger(nom: string, type: string, contenu: string) {
 
 function Styles() {
   return (
-    <style
+    <StyleMaison
       dangerouslySetInnerHTML={{
         __html: `
         /* ATTENTION : pas d'accent grave dans ces commentaires, ce bloc est un

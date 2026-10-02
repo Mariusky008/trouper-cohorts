@@ -59,6 +59,7 @@ import {
   type Genre,
   type LigneLook,
 } from "@/lib/direct/relooking";
+import { StyleMaison } from "@/components/direct/style-maison";
 
 /* ════════════════════════════════════════════════════════════════════════════
    LE FANTÔME
@@ -1357,7 +1358,7 @@ async function planche(sources: string[]): Promise<string> {
 
 function Styles() {
   return (
-    <style
+    <StyleMaison
       dangerouslySetInnerHTML={{
         __html: `
         /* ATTENTION : pas d'accent grave dans ces commentaires, ce bloc est un

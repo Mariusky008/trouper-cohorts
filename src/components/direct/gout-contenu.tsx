@@ -39,6 +39,7 @@ import {
   phraseDeLaCarte,
   phrasesGardeesVides,
 } from "@/lib/direct/sa-voix";
+import { StyleMaison } from "@/components/direct/style-maison";
 
 /**
  * LE FANTÔME, EN IMAGE, ET C'EST LE SIEN.
@@ -947,7 +948,7 @@ export function EcranGout({
 
 function Styles() {
   return (
-    <style
+    <StyleMaison
       dangerouslySetInnerHTML={{
         __html: `
         /* ═══ L'ECRAN EST UNE PHOTO, ET L'APPLICATION EST DESSUS ════════════

@@ -78,7 +78,7 @@ import { essayerSurMoi, estUnRendu } from "@/lib/direct/essai-genere";
 import { prevenirPourEssai, numeroDeFiction } from "@/lib/direct/prevenir";
 import { partagerLEssai, type Sortie } from "@/lib/direct/partager-essai";
 import { jouer } from "@/lib/direct/sons";
-import { enCharteMaison } from "@/lib/direct/charte-maison";
+import { StyleMaison } from "@/components/direct/style-maison";
 import {
   ECHELLES,
   aMaTaille,
@@ -6653,7 +6653,7 @@ function Essai({
 }
 
 function Styles({ maison = false }: { maison?: boolean }) {
-  return <style dangerouslySetInnerHTML={{ __html: maison ? enCharteMaison(CSS_MUR) : CSS_MUR }} />;
+  return <StyleMaison force={maison} dangerouslySetInnerHTML={{ __html: CSS_MUR }} />;
 }
 
 const CSS_MUR = `

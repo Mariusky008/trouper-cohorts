@@ -377,10 +377,17 @@ export function Boutique(p: {
   prenomChef?: string;
   /** Ce qui ne s'adresse qu'au commerçant — voir `pied` dans `boutique-table.tsx`. */
   pied?: ReactNode;
+  /**
+   * LE COMMERCE QU'ON VIENT VOIR DEPUIS LA VILLE — `?c=`, voir `page.tsx`.
+   * Il remplace le sélecteur : on est chez lui, pas dans la maquette.
+   */
+  depart?: string;
 }) {
   const cartes = useMemo(() => toutesLesCartes(), []);
   const [id, setId] = useState(p.commerce?.id ?? "emporter");
-  const c = p.commerce ?? cartes.find((x) => x.id === id) ?? cartes[0];
+  const venu = p.depart ? cartes.find((x) => x.id === p.depart) : undefined;
+  const commerce = p.commerce ?? venu;
+  const c = commerce ?? cartes.find((x) => x.id === id) ?? cartes[0];
   if (aLaPageAOnglets(c.branche)) {
     return (
       <BoutiqueTable
@@ -391,7 +398,7 @@ export function Boutique(p: {
         /* LE SÉLECTEUR N'EXISTE QUE DANS LA MAQUETTE — sur la page d'un vrai
            commerçant, une rangée de concurrents sous son nom serait la pire
            chose qu'on puisse lui faire. */
-        autres={p.commerce ? undefined : { cartes, choisir: setId }}
+        autres={commerce ? undefined : { cartes, choisir: setId }}
         prenomChef={p.prenomChef}
         pied={p.pied}
       />
@@ -399,7 +406,7 @@ export function Boutique(p: {
   }
   return (
     <BoutiqueLongue
-      commerce={p.commerce}
+      commerce={commerce}
       retourHref={p.retourHref}
       piedMaquette={p.piedMaquette}
       saPage={p.saPage}

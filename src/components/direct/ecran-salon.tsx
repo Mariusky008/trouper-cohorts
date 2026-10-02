@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
+import { StyleMaison } from "@/components/direct/style-maison";
 
 /**
  * ☕ L'ÉCRAN DU SALON — le Fantôme cligne des yeux, le café fume.
@@ -234,7 +235,7 @@ export function EcranSalon({ onEntrer }: { onEntrer: () => void }) {
           Je tente l’expérience <i aria-hidden="true">→</i>
         </button>
       </div>
-      <style dangerouslySetInnerHTML={{ __html: FEUILLE }} />
+      <StyleMaison dangerouslySetInnerHTML={{ __html: FEUILLE }} />
     </div>
   );
 }

@@ -11,9 +11,11 @@
  * CE QUI LUI EST PROPRE : la glissiere de l'etape 2 — le meme salon sans puis
  * avec le fauteuil — et les deux gros plans de l'etape 3.
  */
+import { StyleMaison } from "@/components/direct/style-maison";
+
 export function StylesParcoursDeco() {
   return (
-    <style
+    <StyleMaison
       dangerouslySetInnerHTML={{
         __html: `
         .pd{position:absolute;inset:0;z-index:40;overflow:hidden;

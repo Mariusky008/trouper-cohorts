@@ -35,6 +35,7 @@
 "use client";
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { StyleMaison } from "@/components/direct/style-maison";
 
 /**
  * SÉPARER LE QUALIFICATIF DU MONTANT.
@@ -1494,7 +1495,7 @@ function esc(s: string): string {
  */
 export function StylesDirect() {
   return (
-    <style
+    <StyleMaison
       /* UNE SEULE FOIS DANS LA PAGE, ET TOUJOURS AVANT LES SCÈNES.
          La page d'aperçu monte ce composant à deux endroits — la visite guidée
          et l'assistante — et les deux feuilles se retrouvaient dans le corps du

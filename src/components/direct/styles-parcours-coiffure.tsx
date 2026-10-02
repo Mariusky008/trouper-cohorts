@@ -9,9 +9,11 @@
  * pastille du salon sous eux, le fantome a droite — et une photo qui prend tout
  * le reste. Les quatre etapes ne changent que ce qui est EN BAS de la photo.
  */
+import { StyleMaison } from "@/components/direct/style-maison";
+
 export function StylesParcoursCoiffure() {
   return (
-    <style
+    <StyleMaison
       dangerouslySetInnerHTML={{
         __html: `
         .pc{position:absolute;inset:0;z-index:40;overflow:hidden;

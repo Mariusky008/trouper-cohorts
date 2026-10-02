@@ -13,9 +13,11 @@
  * CE QUI LUI EST PROPRE : le lecteur de l'etape 2, les trois fantomes de
  * l'etape 3 et le plan dessine de l'etape 4.
  */
+import { StyleMaison } from "@/components/direct/style-maison";
+
 export function StylesParcoursSortie() {
   return (
-    <style
+    <StyleMaison
       dangerouslySetInnerHTML={{
         __html: `
         .ps{position:absolute;inset:0;z-index:40;overflow:hidden;

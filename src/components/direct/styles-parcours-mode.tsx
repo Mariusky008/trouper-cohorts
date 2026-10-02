@@ -11,9 +11,11 @@
  * page, pas le vocabulaire — c'est ce qui fait qu'on reste dans le meme
  * parcours au lieu de traverser quatre ecrans sans rapport.
  */
+import { StyleMaison } from "@/components/direct/style-maison";
+
 export function StylesParcoursMode() {
   return (
-    <style
+    <StyleMaison
       dangerouslySetInnerHTML={{
         __html: `
         /* ═══ LA BARRE DE DEFILEMENT NE SE MONTRE PLUS ═══════════════════

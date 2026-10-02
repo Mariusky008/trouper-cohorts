@@ -23,15 +23,12 @@
 // propose que SES pièces photographiées (`seulementLesSiennes`) ; sans elles,
 // l'invitation dit honnêtement qu'elles arrivent — et au commerçant, comment
 // les ajouter.
-import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
-import { MurContenu } from "@/components/direct/mur-contenu";
-import { HEURE_MAX, HEURE_MIN, momentEnCours, type CarteAutour } from "@/lib/direct/apercu-habitant";
-import { murDeLaCarte } from "@/lib/direct/fantomes";
+import { useCallback, useMemo, useState } from "react";
+import { AtelierPleinEcran, useMurDuLieu, type RenduEssai } from "@/components/direct/atelier-plein-ecran";
+import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { parcoursPromis } from "@/lib/direct/parcours-promis";
 
-/** Ce que l'atelier remet quand on veut montrer son rendu aux amis. */
-export type RenduEssai = Parameters<NonNullable<Parameters<typeof MurContenu>[0]["onSalon"]>>[0];
+export type { RenduEssai };
 
 /** Les mots de l'essai, métier par métier. */
 type MotsEssai = {
@@ -99,35 +96,10 @@ export function EssaiDuLieu({
   onReserver: () => void;
   onSalon: (o: RenduEssai) => void;
 }) {
-  /* L'HEURE APRÈS LE PREMIER RENDU, sinon serveur et navigateur calculent
-     deux heures différentes et React refuse l'hydratation. */
-  const [heure, setHeure] = useState(12);
-  useEffect(() => {
-    const d = new Date();
-    const h = d.getHours() + d.getMinutes() / 60;
-    setHeure(h >= HEURE_MIN && h <= HEURE_MAX ? h : 12);
-  }, []);
   /** L'atelier ouvert, et la pièce choisie pour y entrer. */
   const [atelier, setAtelier] = useState<{ piece?: string; grille?: boolean } | null>(null);
-
-  const murDuLieu = useMemo(
-    () =>
-      murDeLaCarte({
-        id: c.id,
-        nom: c.nom,
-        metier: c.metier,
-        branche: c.branche,
-        ville: c.ville,
-        distance: c.distance,
-        photo: c.photo,
-        google: c.google,
-        telephone: c.telephone,
-        catalogue: c.catalogue,
-        moment: momentEnCours(c, heure),
-        seulementLesSiennes: Boolean(c.vraiePage),
-      }),
-    [c, heure],
-  );
+  const fermer = useCallback(() => setAtelier(null), []);
+  const murDuLieu = useMurDuLieu(c);
   const onEssaie = murDuLieu.depot === "essai";
   const pieces = useMemo(() => (murDuLieu.essai?.pieces ?? []).filter((p) => !p.bientot), [murDuLieu]);
   const promis = useMemo(
@@ -140,16 +112,6 @@ export function EssaiDuLieu({
   const mots = motsEssai(c.branche);
   /** Rien à essayer chez lui pour l'instant : ni pièce, ni autre porte ouverte. */
   const bientot = Boolean(promis) || (onEssaie && pieces.length === 0);
-
-  /* L'ATELIER BLOQUE LA PAGE DERRIÈRE LUI : on ne fait pas défiler deux écrans. */
-  useEffect(() => {
-    if (!atelier) return;
-    const avant = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = avant;
-    };
-  }, [atelier]);
 
   return (
     <div className="bx">
@@ -257,44 +219,17 @@ export function EssaiDuLieu({
         </button>
       )}
 
-      {/* ═══ L'ATELIER, EN PLEIN ÉCRAN ═══════════════════════════════════════
-          POSÉ À LA RACINE DU DOCUMENT, PAS DANS L'ONGLET. Dans l'onglet, un
-          « position: fixed » reste prisonnier : l'écran entre en glissant (une
-          transformation, qui retient ce qui est fixe), et la barre du bas
-          passait par-dessus. À la racine, il couvre vraiment toute la page. */}
-      {atelier &&
-        createPortal(
-          <div className="bx-atelier" role="dialog" aria-label={`Essayer chez ${c.nom}`}>
-            <header className="bx-atelier-h">
-              <button type="button" onClick={() => setAtelier(null)} aria-label="Revenir à la page">
-                <span aria-hidden="true">‹</span> Retour
-              </button>
-              <b>{c.nom}</b>
-              <span aria-hidden="true" />
-            </header>
-            <div className="bx-atelier-c">
-              <div className="mu bt-mu atelier">
-                <MurContenu
-                  key={`${c.id}-${atelier.piece ?? ""}-${atelier.grille ? "grille" : ""}`}
-                  mur={murDuLieu}
-                  maison
-                  ouvrirSur={onEssaie ? "depot" : undefined}
-                  piecePrechoisie={atelier.piece}
-                ouvrirSurGrille={atelier.grille}
-                  onReserver={() => {
-                    setAtelier(null);
-                    onReserver();
-                  }}
-                  onSalon={(o) => {
-                    setAtelier(null);
-                    onSalon(o);
-                  }}
-                />
-              </div>
-            </div>
-          </div>,
-          document.body,
-        )}
+      {/* ═══ L'ATELIER, EN PLEIN ÉCRAN — voir `AtelierPleinEcran` ═══ */}
+      {atelier && (
+        <AtelierPleinEcran
+          c={c}
+          piece={atelier.piece}
+          grille={atelier.grille}
+          onFermer={fermer}
+          onReserver={onReserver}
+          onSalon={onSalon}
+        />
+      )}
     </div>
   );
 }
@@ -395,31 +330,6 @@ function StylesExperience() {
         .bx-second{padding:11px 18px;border-radius:999px;cursor:pointer;font:inherit;font-weight:700;font-size:15px;
           color:#FFF4E6;background:transparent;border:1px solid rgba(255,244,230,.28);}
         .bx-second s{text-decoration:none;margin-left:4px;}
-
-        /* L'ATELIER PREND TOUTE LA PAGE, par-dessus la barre et le fantôme du coin. */
-        .bx-atelier{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;
-          background:radial-gradient(120% 70% at 50% 0%,#2A1A12 0%,#120C09 55%,#0B0705 100%);
-          animation:bxOuvre .45s cubic-bezier(.16,1,.3,1) both;}
-        @keyframes bxOuvre{from{opacity:0;transform:scale(.985);}to{opacity:1;transform:none;}}
-        .bx-atelier-h{flex:none;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;
-          padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px;border-bottom:1px solid rgba(255,196,140,.12);}
-        .bx-atelier-h button{justify-self:start;display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;
-          cursor:pointer;font:inherit;font-weight:700;font-size:14px;color:#FFF4E6;
-          background:rgba(255,244,230,.06);border:1px solid rgba(255,244,230,.16);}
-        .bx-atelier-h button span{font-size:20px;line-height:1;}
-        .bx-atelier-h b{font-family:var(--font-clikme),sans-serif;font-size:15px;color:#FFF4E6;
-          max-width:52vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-        .bx-atelier-c{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
-          padding:14px 12px calc(28px + env(safe-area-inset-bottom,0px));}
-        .bx-atelier-c>.mu.bt-mu{width:100%;max-width:680px;margin:0 auto;}
-        .mu.bt-mu{max-width:none;min-height:0;background:transparent;}
-        .mu.bt-mu.atelier{padding:4px 0 10px;background:transparent;box-shadow:none;}
-        .bt-mu .mu-chez,.bt-mu .mu-e-tete{display:none;}
-        /* TOUTES SES PIÈCES D'UN COUP D'ŒIL. Dans le fil, elles défilent en une
-           rangée ; en plein écran, la rangée coupait la sixième au bord, et
-           une souris ne fait pas défiler de côté. Elles passent en grille. */
-        .bx-atelier .mu-pieces{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));overflow:visible;}
-        .bx-atelier .mu-pieces button{width:auto;}
 
         /* SUR UN ORDINATEUR, L'INVITATION SE MET EN SCÈNE SUR DEUX COLONNES. */
         @media (min-width:960px){

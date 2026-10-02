@@ -52,7 +52,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#05090C",
+  themeColor: "#120C09",
 };
 
 export const metadata: Metadata = {
@@ -63,12 +63,21 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "Boutique", statusBarStyle: "black-translucent" },
 };
 
-export default function BoutiquePage() {
+/**
+ * `?c=` — LE COMMERCE QU'ON VIENT VOIR DEPUIS LA VILLE.
+ *
+ * Sur un ordinateur, la ville est un carrousel ; « RDV » et « En parler »
+ * y mènent chez le commerce qu'on regarde, et chacun n'a pas une adresse de
+ * démonstration. Celle-ci les a tous : la maquette, ouverte sur lui.
+ */
+export default async function BoutiquePage({ searchParams }: { searchParams: Promise<{ c?: string }> }) {
+  const sp = await searchParams;
+  const depart = /^[a-z0-9-]{1,60}$/i.test(String(sp.c ?? "")) ? String(sp.c) : undefined;
   return (
     <>
       {/* LA LUMIÈRE DU MOMENT, POSÉE AVANT LE PREMIER AFFICHAGE — voir `SCRIPT_HEURE`. */}
       <script dangerouslySetInnerHTML={{ __html: SCRIPT_HEURE }} />
-      <Boutique />
+      <Boutique depart={depart} />
     </>
   );
 }

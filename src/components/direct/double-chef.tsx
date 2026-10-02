@@ -43,6 +43,7 @@ import {
 } from "@/lib/direct/double-chef";
 import { nomDansPhrase, tenueDu } from "@/lib/direct/double-metiers";
 import { onSpeakingChange, speak, speechSupported, stopSpeaking, unlockAudio } from "@/lib/site-internet/speech";
+import { StyleMaison } from "@/components/direct/style-maison";
 
 /* LES TENUES DE CHAQUE MÉTIER sont rangées dans `double-metiers.ts` — voir
    `tenueDu`. L'application et la page commerçant les lisent aussi. */
@@ -877,7 +878,7 @@ export function DoubleChef({
           {barre}
         </div>
       )}
-      <style dangerouslySetInnerHTML={{ __html: FEUILLE }} />
+      <StyleMaison dangerouslySetInnerHTML={{ __html: FEUILLE }} />
     </div>
   );
 }

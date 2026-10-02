@@ -14,6 +14,9 @@ import type { Metadata, Viewport } from "next";
 import { MARQUE } from "@/lib/marque";
 import { ApercuHabitant } from "./apercu-habitant";
 import { CopainsDuQuartier, type CopainsProps } from "./copains-du-quartier";
+import { VilleOrdinateur, type VilleOrdinateurProps } from "./ville-ordinateur";
+import { VilleSelonEcran } from "./ville-selon-ecran";
+import { EnCharteMaison } from "@/components/direct/style-maison";
 import { toutesLesCartes, type CarteAutour } from "@/lib/direct/apercu-habitant";
 import { choisirLesCopains, fantomeDe } from "@/lib/direct/copains";
 import { carteDeDemo, estAdresseDeDemo } from "@/lib/site-internet/fiches-demo";
@@ -40,7 +43,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   // La couleur des barres du système, pour que le noir de l'application ne
   // s'arrête pas net au bord de l'écran.
-  themeColor: "#05090C",
+  themeColor: "#120C09",
 };
 
 export const metadata: Metadata = {
@@ -119,6 +122,7 @@ export default async function AutourDeMoiPage({
   const sp = await searchParams;
   const trouve = await leCommerce(String(sp.depuis ?? ""));
   let copains: CopainsProps | null = null;
+  let ville: VilleOrdinateurProps = { copains: [] };
   if (trouve) {
     const { carte } = trouve;
     const choisis = choisirLesCopains(carte, toutesLesCartes());
@@ -132,11 +136,26 @@ export default async function AutourDeMoiPage({
       // LES COPAINS VIENNENT DE LA DÉMONSTRATION : la page le dit, toujours.
       fictifs: choisis.length > 0,
     };
+    ville = {
+      moi: { id: carte.id, nom: carte.nom, ville: carte.ville || "votre ville", fantome: fantomeDe(carte) },
+      copains: choisis.map((x) => x.id),
+      retour: copains.retour,
+    };
   }
+  // SUR UN ORDINATEUR, LES COPAINS ET LA VILLE SONT LE MÊME ÉCRAN — voir
+  // `VilleOrdinateur`. Sur un téléphone, rien ne change : l'écran des
+  // copains passe devant l'application.
   return (
-    <>
-      <ApercuHabitant />
-      {copains && <CopainsDuQuartier {...copains} />}
-    </>
+    <VilleSelonEcran
+      ordinateur={<VilleOrdinateur {...ville} />}
+      telephone={
+        // L'APPLICATION AUX COULEURS DE LA MAISON : nuit brune et rose, au
+        // lieu de la nuit bleue et de la menthe — voir `StyleMaison`.
+        <EnCharteMaison>
+          <ApercuHabitant />
+          {copains && <CopainsDuQuartier {...copains} />}
+        </EnCharteMaison>
+      }
+    />
   );
 }

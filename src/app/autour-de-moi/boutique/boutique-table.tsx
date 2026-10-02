@@ -934,7 +934,19 @@ export function BoutiqueTable({
   const salons = useSyncExternalStore(abonnerSalons, chargerSalons, () => SALONS_VIDES);
   const salon = salons[cleSalon];
   const [aEcrire, setAEcrire] = useState("");
-  const lienPage = () => (typeof window === "undefined" ? "" : `${window.location.origin}${window.location.pathname}`);
+  /* L'ADRESSE DE SA PAGE, AVEC LE COMMERCE QU'ELLE NOMME. Ouverte depuis la
+     ville (`/autour-de-moi/boutique?c=…`), la page ne sait qui elle montre que
+     par ce `c` : un lien partagé sans lui ouvrirait la maquette sur un autre
+     commerce. */
+  const lienPage = (salon = false) => {
+    if (typeof window === "undefined") return "";
+    const q = new URLSearchParams();
+    const nomme = new URLSearchParams(window.location.search).get("c");
+    if (nomme) q.set("c", nomme);
+    if (salon) q.set("salon", "1");
+    const suite = q.toString();
+    return `${window.location.origin}${window.location.pathname}${suite ? `?${suite}` : ""}`;
+  };
   const ouvrirLeSalon = () =>
     ouvrirSalon({
       cle: cleSalon,
@@ -977,7 +989,7 @@ export function BoutiqueTable({
     const r = await partager({
       titre: c.nom,
       texte: `On se retrouve chez ${c.nom} ?`,
-      lien: `${lienPage()}?salon=1`,
+      lien: lienPage(true),
     });
     if (r === "copie") setPartageDit("Lien copié : collez-le dans votre groupe.");
     else if (r === "echec") setPartageDit("Le partage n’a pas abouti.");

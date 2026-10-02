@@ -72,6 +72,7 @@ import {
   type ReactionEssai,
   type Soiree,
 } from "@/lib/direct/soiree";
+import { StyleMaison } from "@/components/direct/style-maison";
 
 /** Les quatre temps de l'expérience. Voir l'en-tête. */
 type Temps = "essai" | "intention" | "live" | "fantomes";
@@ -1748,7 +1749,7 @@ function PetitFantome({
  */
 function Styles() {
   return (
-    <style
+    <StyleMaison
       dangerouslySetInnerHTML={{
         __html: `
         /* ═══ LA SURFACE ═══════════════════════════════════════════════════

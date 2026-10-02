@@ -37,6 +37,7 @@
 // d'ouverture aurait promis une soirée que l'application ne donne pas.
 import { useEffect, useRef, useState } from "react";
 import { INTENTIONS, SOIREES } from "@/lib/direct/soiree";
+import { StyleMaison } from "@/components/direct/style-maison";
 
 /**
  * ═══ QUATRE TEMPS, ET LE PREMIER DIT DE QUELLE SOIRÉE ON PARLE ═════════════
@@ -335,7 +336,7 @@ export function SortieEnTrois({
 
 function Styles() {
   return (
-    <style
+    <StyleMaison
       dangerouslySetInnerHTML={{
         __html: `
 /* ATTENTION : pas d'accent grave dans ces commentaires, ce bloc est un
