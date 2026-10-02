@@ -27,7 +27,10 @@ function fmtMin(min: number): string {
 // « 9 AM », « 2 PM », « 14:00 ». Renvoie null si non interprétable.
 function parseTime(raw: string): number | null {
   const t = norm(raw).replace(/\s+/g, "");
-  const m = t.match(/^(\d{1,2})(?:[:h.](\d{2}))?(am|pm)?$/);
+  // « 12h » SANS MINUTES EST UNE HEURE : c'est l'écriture française, et celle
+  // de nos propres lignes (« 12 h – 14 h »). Sans le `?` après les minutes,
+  // toutes ces plages étaient jugées illisibles.
+  const m = t.match(/^(\d{1,2})(?:[:h.](\d{2})?)?(am|pm)?$/);
   if (!m) return null;
   let h = Number(m[1]);
   const min = m[2] ? Number(m[2]) : 0;

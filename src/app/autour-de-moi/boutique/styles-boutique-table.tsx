@@ -247,6 +247,135 @@ export function StylesBoutiqueTable() {
           animation:btSouffle 4.2s ease-in-out infinite;}
         @keyframes btSouffle{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
         @media (prefers-reduced-motion: reduce){.bt-accueille .bt-double{animation:none;}}
+
+        /* ═══ LE FANTÔME VIVANT ═════════════════════════════════════════════
+           « Pour qu'on devine qu'il va se passer quelque chose, sans le lire :
+           un halo ambré respire autour de lui, et seulement autour de lui —
+           c'est le seul élément animé de la page, l'œil y va tout seul. Il fait
+           un petit salut toutes les trois ou quatre secondes, avec une bulle :
+           « Entre, je te fais visiter 👋 ». »
+           ET IL TE REGARDE : il se penche vers le doigt ou la souris (--px). */
+        .bt-accueille.vivant{cursor:pointer;background:none;border:0;padding:0;color:inherit;
+          -webkit-tap-highlight-color:transparent;}
+        .bt-accueille.vivant::before{animation:btHalo 3.4s ease-in-out infinite;}
+        @keyframes btHalo{0%,100%{opacity:.62;transform:translate(-50%,-50%) scale(.92);}
+          50%{opacity:1;transform:translate(-50%,-50%) scale(1.06);}}
+        .bt-penche{display:block;transform-origin:50% 90%;
+          transform:translateX(calc(var(--px,0) * 7px)) rotate(calc(var(--px,0) * 5deg));
+          transition:transform .3s ease-out;}
+        .bt-accueille.vivant .bt-double{animation:btSouffle 4.2s ease-in-out infinite,btSalut 4s ease-in-out infinite;}
+        @keyframes btSalut{0%,10%,34%,100%{rotate:0deg;}16%{rotate:-5deg;}22%{rotate:5deg;}28%{rotate:-3deg;}}
+        /* LA BULLE : elle apparaît avec le salut, puis se retire. */
+        .bt-invite{position:absolute;z-index:3;left:50%;bottom:calc(100% - 6px);
+          transform:translate(-50%,6px);white-space:nowrap;pointer-events:none;
+          padding:8px 14px;border-radius:16px;background:#FFF4E6;color:#1A0F08;
+          font-family:var(--font-ecrit,"Caveat"),cursive;font-size:19px;font-weight:600;line-height:1.1;
+          box-shadow:0 10px 24px -10px rgba(0,0,0,.6);opacity:0;animation:btInvite 4s ease-in-out infinite;}
+        .bt-invite::after{content:"";position:absolute;left:50%;bottom:-6px;width:12px;height:12px;
+          background:#FFF4E6;transform:translateX(-50%) rotate(45deg);border-radius:2px;}
+        @keyframes btInvite{0%,8%{opacity:0;transform:translate(-50%,8px);}
+          14%,66%{opacity:1;transform:translate(-50%,0);}74%,100%{opacity:0;transform:translate(-50%,-4px);}}
+        /* L'HÔTE PEINT SUR LA PHOTO CLIKME : on ne le redessine pas, on le
+           désigne — un anneau de lumière qui respire autour de lui. */
+        .bt-hote{position:absolute;z-index:3;padding:0;border:0;cursor:pointer;background:none;
+          border-radius:44%;-webkit-tap-highlight-color:transparent;}
+        .bt-hote::before{content:"";position:absolute;inset:-18%;border-radius:50%;pointer-events:none;
+          background:radial-gradient(closest-side,rgba(255,206,130,.42),rgba(255,160,70,.16) 60%,rgba(255,140,50,0));
+          mix-blend-mode:screen;animation:btHalo2 3.4s ease-in-out infinite;}
+        @keyframes btHalo2{0%,100%{opacity:.55;transform:scale(.94);}50%{opacity:1;transform:scale(1.06);}}
+        .bt-hote .bt-invite{bottom:calc(100% + 4px);}
+
+        /* ═══ LA PORTE QUI S'OUVRE ══════════════════════════════════════════
+           Au toucher, la façade zoome à travers la porte — à partir de LUI
+           (--ox, --oy) —, il s'efface dans la lumière de la salle, et la page
+           passe à l'intérieur. Pas de retouche d'image : un zoom et une
+           lumière, et ça marche pour tous les métiers. */
+.bt-cadre-photo{position:absolute;inset:0;z-index:0;overflow:hidden;}
+                .bt-porte-lumiere{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:0;
+          background:radial-gradient(circle at var(--ox,50%) var(--oy,62%),rgba(255,226,170,.96),
+            rgba(255,176,90,.7) 26%,rgba(140,70,30,.35) 52%,rgba(18,12,9,0) 78%);}
+        .bt-e-lieu.franchit .bt-photo{transform:scale(3.3);transform-origin:var(--ox,50%) var(--oy,62%);
+          transition:transform .95s cubic-bezier(.55,0,.35,1);}
+        .bt-e-lieu.franchit .bt-porte-lumiere{opacity:1;transition:opacity .75s ease-in .2s;}
+        .bt-e-lieu.franchit .bt-accueille,.bt-e-lieu.franchit .bt-hote{opacity:0;transform:scale(1.35);
+          transition:opacity .45s ease,transform .6s ease;}
+        .bt-e-lieu.franchit .bt-accueil,.bt-e-lieu.franchit .bt-entrer,.bt-e-lieu.franchit .bt-haut,
+        .bt-e-lieu.franchit .bt-invite{opacity:0;transition:opacity .25s ease;animation:none;}
+        /* ON ARRIVE DANS LA SALLE PAR LA MÊME LUMIÈRE, qui retombe. */
+        .bt-e-exp.arrive::after{content:"";position:absolute;inset:0;z-index:30;pointer-events:none;
+          background:radial-gradient(circle at 50% 62%,rgba(255,226,170,.9),rgba(255,176,90,.55) 34%,rgba(18,12,9,.2) 80%);
+          animation:btArrive .9s ease-out forwards;}
+        @keyframes btArrive{from{opacity:1;}to{opacity:0;}}
+        /* SON ACCUEIL, DANS UNE BULLE AU-DESSUS DE LUI. */
+        .bt-bulle-seuil{position:absolute;z-index:6;left:12px;right:12px;bottom:calc(100% - 10px);
+          margin:0 auto;max-width:440px;padding:12px 16px;border:0;border-radius:18px;cursor:pointer;
+          text-align:left;background:#FFF4E6;color:#1A0F08;font:inherit;font-size:15.5px;line-height:1.4;
+          box-shadow:0 14px 32px -12px rgba(0,0,0,.7);animation:btBulle .45s ease-out .5s both;}
+        @keyframes btBulle{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+        /* « ET SI JE PARLAIS AVEC TA VOIX ? » — la même bulle, qui attend une
+           réponse au lieu de se refermer seule. */
+        .bt-bulle-voix{cursor:default;}
+        .bt-bulle-voix p{margin:0;}
+        .bt-bulle-voix b{display:block;margin-bottom:3px;font-family:var(--font-clikme),sans-serif;
+          font-weight:800;font-size:17px;letter-spacing:-.01em;}
+        .bt-voix-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+        .bt-voix-actions button{padding:9px 15px;border-radius:999px;cursor:pointer;
+          font:inherit;font-weight:700;font-size:14.5px;
+          border:1px solid rgba(26,15,8,.22);background:transparent;color:#1A0F08;}
+        .bt-voix-actions button.oui{border:0;background:var(--bt-rose);color:#fff;}
+
+        /* ═══ LA LUMIÈRE SUIT L'HEURE ══════════════════════════════════════
+           data-heure est posé sur html avant même l'affichage — voir
+           SCRIPT_HEURE dans lib/direct/lumiere-du-moment.ts. Sans lui (ou
+           « soir »), rien ne change : c'est l'ambiance qu'on connaît.
+           LE JOUR, LA FAÇADE NE PASSE PLUS AU SOIR : elle garde l'étalonnage
+           ambre de la maison, sans la courbe qui enfonce les murs, et le ciel
+           violine laisse place à une lumière chaude. Le titre garde son voile :
+           la garde des contrastes le mesure à chaque moment. */
+        :root[data-heure="jour"] .bt-photo.facade,:root[data-heure="dore"] .bt-photo.facade{filter:url(#bt-ambre);}
+        :root[data-heure="matin"] .bt-photo.facade{filter:url(#bt-ambre) brightness(1.12) saturate(.85);}
+        :root[data-heure="matin"] .bt-photo.facade::after,:root[data-heure="jour"] .bt-photo.facade::after{background:
+          radial-gradient(130% 95% at 50% 60%,transparent 50%,rgba(8,3,1,.5) 100%);}
+        :root[data-heure="matin"] .bt-e-lieu .bt-voile::before{background:
+          linear-gradient(180deg,rgba(255,214,170,.22) 0%,rgba(255,200,150,.08) 30%,transparent 52%);
+          mix-blend-mode:screen;}
+        :root[data-heure="jour"] .bt-e-lieu .bt-voile::before{background:
+          linear-gradient(180deg,rgba(120,62,30,.42) 0%,rgba(150,80,40,.14) 26%,transparent 50%);}
+        /* LA FIN DE JOURNÉE : un soleil bas qui rase la façade par la droite. */
+        :root[data-heure="dore"] .bt-e-lieu .bt-voile::before{background:
+          linear-gradient(180deg,rgba(140,52,40,.55) 0%,rgba(210,100,50,.22) 26%,transparent 52%);}
+        .bt-cadre-photo::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;
+          transition:opacity 1.2s ease;}
+        :root[data-heure="dore"] .bt-cadre-photo::after{opacity:1;mix-blend-mode:screen;background:
+          radial-gradient(85% 62% at 100% 62%,rgba(255,170,60,.68),rgba(255,130,40,.3) 42%,transparent 74%),
+          linear-gradient(100deg,transparent 30%,rgba(255,150,50,.16) 100%);}
+        :root[data-heure="matin"] .bt-cadre-photo::after{opacity:1;mix-blend-mode:screen;background:
+          radial-gradient(90% 70% at 0% 40%,rgba(255,240,215,.34),rgba(255,230,200,.1) 50%,transparent 76%);}
+        /* LA PHOTO CLIKME SORT DÉJÀ DORÉE : on ne fait que l'accorder. Plus
+           claire le matin, rasée d'or en fin de journée, et le soir le jour
+           tombe dessus. */
+        :root[data-heure="matin"] .bt-photo.clikme{filter:brightness(1.05) saturate(.92);}
+        :root[data-heure="soir"] .bt-photo.clikme{filter:brightness(.78) saturate(1.08) contrast(1.04);}
+        :root[data-heure="soir"] .a-couv .bt-cadre-photo::after{opacity:1;mix-blend-mode:multiply;background:
+          linear-gradient(180deg,rgba(62,24,92,.55) 0%,rgba(150,60,72,.18) 34%,transparent 60%);}
+
+        /* ═══ L'ENSEIGNE S'ALLUME LE SOIR — s'il est ouvert ════════════════
+           Le titre devient une enseigne au néon : il s'allume en deux
+           battements, comme un vrai tube, puis tient sa lueur. */
+        .bt-e-lieu .bt-titre{transition:color .8s ease,text-shadow .8s ease;}
+        .bt-e-lieu.enseigne .bt-titre{color:#FFF1DC;
+          text-shadow:0 0 4px rgba(255,236,200,.9),0 0 14px rgba(255,170,70,.85),0 0 32px rgba(255,120,40,.6),
+            0 2px 18px rgba(0,0,0,.75);
+          animation:btNeon 1.4s ease-out both;}
+        @keyframes btNeon{0%{opacity:.55;}12%{opacity:1;}20%{opacity:.6;}30%{opacity:1;}100%{opacity:1;}}
+        @media (prefers-reduced-motion: reduce){.bt-e-lieu.enseigne .bt-titre{animation:none;}}
+
+        @media (prefers-reduced-motion: reduce){
+          .bt-accueille.vivant::before,.bt-hote::before,.bt-accueille.vivant .bt-double{animation:none;}
+          .bt-invite{animation:none;opacity:1;transform:translate(-50%,0);}
+          .bt-e-lieu.franchit .bt-photo{transform:none;transition:none;}
+          .bt-e-exp.arrive::after,.bt-bulle-seuil{animation:none;}
+        }
         .bt-entrer{position:relative;z-index:2;
           display:flex;align-items:center;justify-content:center;gap:12px;
           width:min(52%,250px);padding:15px 22px;border-radius:999px;cursor:pointer;
@@ -548,6 +677,21 @@ export function StylesBoutiqueTable() {
           background:#1A120E;border:1px solid rgba(255,244,230,.28);}
         @keyframes btFlotte{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
         @media (prefers-reduced-motion: reduce){.bt-discute{animation:none;}}
+        /* ═══ TOC TOC : il tapote la vitre, une fois, avec sa bulle ═══ */
+        .bt-discute.toque img{animation:btToque .9s ease-in-out 3;}
+        @keyframes btToque{0%,100%{transform:translateX(0) rotate(0);}
+          15%{transform:translateX(-4px) rotate(-6deg);}30%{transform:translateX(2px) rotate(3deg);}
+          45%{transform:translateX(-4px) rotate(-6deg);}60%{transform:translateX(0) rotate(0);}}
+        .bt-toc{position:absolute;right:calc(100% + 8px);top:6px;white-space:nowrap;pointer-events:none;
+          padding:8px 12px;border-radius:14px;background:#FFF4E6;color:#1A0F08;font-style:normal;
+          font-family:var(--font-ecrit,"Caveat"),cursive;font-size:18px;font-weight:600;
+          box-shadow:0 10px 24px -10px rgba(0,0,0,.6);animation:btBulle .35s ease-out both;}
+        .bt-toc::after{content:"";position:absolute;right:-6px;top:50%;width:12px;height:12px;
+          background:#FFF4E6;transform:translateY(-50%) rotate(45deg);border-radius:2px;}
+        @media (prefers-reduced-motion: reduce){.bt-discute.toque img{animation:none;}}
+        /* IL POUSSE LA PORTE : un pas vers elle, le temps que la façade s'ouvre. */
+        .bt-double.pousse{animation:none !important;transform:translateY(-6px) scale(.96);
+          transition:transform .35s ease-in;}
         /* SUR L'ECRAN DU LIEU, LE DOUBLE EST DEJA LA EN GRAND : le coin se fait
            plus petit, pour ne pas faire deux personnages de la meme taille. */
         .bt-lieu .bt-discute img{width:54px;height:54px;}
@@ -658,7 +802,7 @@ export function StylesBoutiqueTable() {
              ClikMe reprend le voile leger des deux moities. */
           .a-couv .bt-voile.haut-bas{background:linear-gradient(90deg,
             rgba(18,12,9,0) 70%,rgba(18,12,9,.5) 92%,var(--bt-fond) 100%);}
-          .bt-ecran>:not(.bt-photo):not(.bt-voile):not(.bt-hero):not(.bt-fenetre){
+          .bt-ecran>:not(.bt-photo):not(.bt-voile):not(.bt-hero):not(.bt-fenetre):not(.bt-cadre-photo):not(.bt-porte-lumiere):not(.bt-hote){
             margin-left:var(--bt-g);width:calc(100% - var(--bt-g));
             padding-left:var(--bt-d);padding-right:var(--bt-d);box-sizing:border-box;}
           .bt-ecran>*>*{max-width:600px;}
@@ -671,6 +815,11 @@ export function StylesBoutiqueTable() {
           .bt-e-lieu .bt-seuil{position:static;margin-top:34px;align-items:flex-start;}
           .bt-e-lieu .bt-accueille{position:absolute;left:calc(var(--bt-g) / 2);
             bottom:12%;margin:0;transform:translateX(-50%);}
+          .bt-e-lieu.franchit .bt-accueille{transform:translateX(-50%) scale(1.35);}
+          /* LE CADRE PREND LA MOITIÉ GAUCHE, ET LA PHOTO LE REMPLIT. */
+          .bt-cadre-photo{right:auto;width:var(--bt-g);}
+          .bt-cadre-photo .bt-photo{width:auto;right:0;max-width:none;}
+          .bt-cadre-photo .bt-porte-lumiere{max-width:none;}
           .bt-e-lieu .bt-entrer{width:auto;min-width:260px;font-size:19px;padding:15px 24px;}
           .bt-e-lieu .bt-entrer.second{font-size:17px;padding:13px 24px;}
           .bt-e-lieu .bt-liens{margin-left:24px;}

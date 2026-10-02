@@ -445,3 +445,49 @@ export function nettoyerReponse(brut: unknown, f: FicheDouble): ReponseDouble | 
     .slice(0, 3);
   return { texte, carte, suggestions: suggestions.length ? suggestions : [f.profil.demande.pastille, f.profil.questionVedette] };
 }
+
+/**
+ * ═══ CE QU'IL DIT QUAND ON FRANCHIT SA PORTE ═══════════════════════════════
+ *
+ * « Au toucher, il pousse la porte… et à l'arrivée, il parle avec sa voix :
+ * "Bienvenue ! … 989 avis, 4,1 étoiles. Tu veux voir ce qu'on sert ce soir ?" »
+ *
+ * SEULEMENT CE QUI EST VRAI : son nom, sa note et son nombre d'avis tels que
+ * Google les affiche, et UNE phrase d'un vrai client, recopiée mot pour mot
+ * (la première phrase d'un avis à quatre ou cinq étoiles). Rien sur « ce qui
+ * fait parler » chez lui, sauf si un client l'a écrit : le double ne prête pas
+ * au commerçant des mots qu'il n'a pas dits.
+ *
+ * PURE ET PARTAGÉE : la page l'écrit dans la bulle, la route de la voix la
+ * prononce — la même phrase, des deux côtés, sans qu'aucun texte libre ne
+ * passe par la route.
+ */
+export function seuilDuDouble(c: Pick<CarteAutour, "nom" | "branche" | "google" | "avisGoogle">): string {
+  const nom = c.nom.trim();
+  const cap = (s: string) => s.replace(/^(\p{L})/u, (x) => x.toUpperCase());
+  const chez = /^chez\s/i.test(nom)
+    ? `chez ${cap(nom.slice(5))}`
+    : /^le\s/i.test(nom)
+      ? `au ${cap(nom.slice(3))}`
+      : /^les\s/i.test(nom)
+        ? `aux ${cap(nom.slice(4))}`
+        : /^la\s/i.test(nom)
+          ? `à la ${cap(nom.slice(3))}`
+          : /^l['’]/i.test(nom)
+            ? `à l'${cap(nom.slice(2))}`
+            : /^(un|une)\s/i.test(nom)
+              ? `à ${nom[0].toLowerCase()}${nom.slice(1)}`
+              : `à ${nom}`;
+  const morceaux = [`Bienvenue ${chez} !`];
+  if (c.google?.note && c.google.avis) {
+    morceaux.push(`${c.google.avis.toLocaleString("fr-FR")} avis, ${c.google.note} étoiles sur Google.`);
+  }
+  // UNE PHRASE D'UN VRAI CLIENT : la première phrase d'un bon avis, si elle est courte.
+  const avis = (c.avisGoogle ?? []).find((a) => (a.note == null || a.note >= 4) && a.texte);
+  if (avis) {
+    const phrase = (avis.texte.match(/^[^.!?…]{12,130}[.!?…]?/) ?? [""])[0].trim();
+    if (phrase) morceaux.push(`Un client a écrit : « ${phrase.replace(/[.!?…]$/, "")} ».`);
+  }
+  morceaux.push(c.branche === "restaurant" || c.branche === "bar" ? "Tu veux voir ce qu'on sert ?" : "Je te fais visiter ?");
+  return morceaux.join(" ");
+}

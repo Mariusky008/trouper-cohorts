@@ -20,7 +20,7 @@
 // 503, et l'écran retombe sur la voix du téléphone. La conversation marche
 // partout ; elle est seulement plus vivante là où la clé existe.
 import { NextResponse } from "next/server";
-import { accueilDuDouble, confirmationDuDouble, phrasesADire } from "@/lib/direct/double-chef";
+import { accueilDuDouble, confirmationDuDouble, phrasesADire, seuilDuDouble } from "@/lib/direct/double-chef";
 import { trouverLeCommerce } from "@/lib/direct/double-commerce";
 import { compterSignes, voixAutorisee } from "@/lib/direct/voix-clonee";
 import { faireParler, JEU_CONVERSATION, voixCloudConfiguree } from "@/lib/direct/timbres";
@@ -75,6 +75,9 @@ async function phraseDe(corps: Demande): Promise<Phrase | NextResponse> {
   let texte = "";
   if (quoi === "accueil") texte = accueilDuDouble(fiche, s(corps.prenom).slice(0, 40));
   else if (quoi === "confirmation") texte = confirmationDuDouble(fiche);
+  // LE SEUIL : la phrase qu'il dit quand on franchit sa porte, écrite ICI à
+  // partir de ses vraies données — voir `seuilDuDouble`.
+  else if (quoi === "seuil") texte = seuilDuDouble(commerce.carte);
   else if (quoi === "reponse") {
     const t = s(corps.texte);
     if (t.length > 700 || !sceauValide(fiche.id, t, s(corps.sig))) {

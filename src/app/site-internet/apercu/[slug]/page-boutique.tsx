@@ -46,6 +46,7 @@ import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { gesteDuJour } from "@/lib/direct/geste-du-jour";
 import { murDeLaCarte } from "@/lib/direct/fantomes";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
+import { SCRIPT_HEURE } from "@/lib/direct/lumiere-du-moment";
 
 export type PageBoutiqueProps = {
   slug: string;
@@ -206,6 +207,8 @@ export function PageBoutique(p: PageBoutiqueProps) {
 
   return (
     <>
+      {/* LA LUMIÈRE DU MOMENT, POSÉE AVANT LE PREMIER AFFICHAGE — voir `SCRIPT_HEURE`. */}
+      <script dangerouslySetInnerHTML={{ __html: SCRIPT_HEURE }} />
       <Boutique
         commerce={carte}
         retourHref={venuDuDirect ? "/autour-de-moi" : null}

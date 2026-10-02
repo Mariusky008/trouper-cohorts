@@ -1252,12 +1252,24 @@ export type CarteAutour = {
    */
   couverture?: string;
   /**
+   * OÙ SE TIENT L'HÔTE SUR SA PHOTO CLIKME, en fractions de l'image : c'est là
+   * qu'on le touche pour entrer. Voir `trouverLHote`.
+   */
+  couvertureHote?: { x: number; y: number; w: number; h: number };
+  /**
    * CE QUE SA FICHE GOOGLE DIT DE SA CARTE — « quand je regarde la fiche
    * Google, je vois bien les menus, les prix ». Son lien de menu, son prix par
    * personne tel que Google l'affiche, ses services. Des faits recopiés, jamais
    * complétés : absent, rien ne s'affiche.
    */
   ficheGoogle?: { menu?: string; prix?: string; services?: string[] };
+  /**
+   * SES HORAIRES DE LA SEMAINE, ligne par ligne (« Lundi – Vendredi » →
+   * « 12 h – 14 h, 19 h – 22 h »). La ligne du jour ne suffit pas à dire s'il
+   * est ouvert À CETTE HEURE-CI : c'est elle qui décide si l'enseigne s'allume
+   * le soir — voir `lumiereDuMoment` dans `boutique-table.tsx`.
+   */
+  semaine?: { jours?: string; horaires?: string }[];
   /**
    * SA CARTE A ÉTÉ LUE SUR LES PHOTOS DE SA FICHE GOOGLE — pas saisie par lui.
    * La page le dit sous la carte : « prix à confirmer sur place ».

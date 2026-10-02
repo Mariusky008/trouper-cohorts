@@ -137,6 +137,10 @@ export function construireFiche(
     ville: villeAff,
     adresse: str(row.address).replace(/,?\s*France\s*$/i, "").trim(),
     horaires: ligneDuJour(horaires),
+    semaine: horaires
+      .map((h) => ({ jours: str(h.jours).slice(0, 40), horaires: str(h.horaires).slice(0, 80) }))
+      .filter((h) => h.jours && h.horaires)
+      .slice(0, 14),
     photos,
     note: note ?? undefined,
     avis: reviews ?? undefined,
@@ -167,6 +171,7 @@ export function construireFiche(
     services,
     avisGoogle,
     couverture: couvertureAffichee(couvertureDuDiagnostic(diag)),
+    couvertureHote: couvertureDuDiagnostic(diag)?.hote,
     carteLue: carteLueDuDiagnostic(diag),
     ficheGoogle: {
       menu: /^https?:\/\//i.test(str(diag.menu_url)) ? str(diag.menu_url) : undefined,

@@ -54,13 +54,25 @@
 // « à compléter par le restaurant » ne s'adresse qu'au restaurateur — voir
 // `saPage`. Le client, lui, lit « à confirmer sur place ».
 
-import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { DoubleChef } from "@/components/direct/double-chef";
 import { ParcoursTable } from "@/components/direct/parcours-table-ecran";
 import { StylesParcoursTable } from "@/components/direct/styles-parcours-table";
 import { tenueDu } from "@/lib/direct/double-metiers";
+import { seuilDuDouble } from "@/lib/direct/double-chef";
+import {
+  MOMENTS,
+  COUCHER,
+  enseigneAllumee,
+  heureDeParis,
+  momentDe,
+  ouvertMaintenant,
+  phraseDuSeuil,
+  type Moment,
+} from "@/lib/direct/lumiere-du-moment";
+import { speak, speechSupported, unlockAudio } from "@/lib/site-internet/speech";
 import { plaqueDuParcours } from "@/lib/direct/plaque-parcours";
 import { partager } from "@/lib/direct/partager";
 import {
@@ -80,6 +92,22 @@ import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { StylesBoutiqueTable } from "./styles-boutique-table";
 
 type Onglet = "lieu" | "experience" | "carte" | "avis" | "amis" | "infos";
+
+/** Les poses validées, demandées une fois par visite et partagées par toutes les pages. */
+let posesValideesPromesse: Promise<Record<string, Partial<Record<"regard-gauche" | "regard-droite" | "pousse-porte", string>>>> | null = null;
+function lesPosesValidees() {
+  if (posesValideesPromesse) return posesValideesPromesse;
+  // CINQ SECONDES AU PLUS : une demande qui pend ne doit rien retenir de la page.
+  const fin = new AbortController();
+  window.setTimeout(() => fin.abort(), 5000);
+  posesValideesPromesse = fetch("/api/direct/poses", { signal: fin.signal, cache: "no-store" })
+    .then((r) => (r.ok ? r.json() : {}))
+    .catch(() => ({}));
+  return posesValideesPromesse;
+}
+
+/** Un silence, joué DANS le geste : c'est lui qui autorise la voix ensuite. */
+const SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
 
 /**
  * LA BARRE DU BAS. « Le menu du bas : on aurait "Explorer ma ville". » La
@@ -400,8 +428,282 @@ export function BoutiqueTable({
   const [retourExplorer, setRetourExplorer] = useState<string>();
   useEffect(() => setRetourExplorer(window.location.pathname + window.location.search), []);
 
-  const pose = (p: "accueil" | "content" | "reflechit" | "ecoute") =>
+  const pose = (p: "accueil" | "content" | "reflechit" | "ecoute" | "parle-1" | "parle-2" | "parle-3") =>
     tenue ? `${tenue.dossier}${p}.webp` : "/clikme-fantome.png";
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     LE FANTÔME TE FAIT ENTRER
+     « Le meilleur wow serait que le fantôme te fasse entrer dans le
+     restaurant. Au toucher, il pousse la porte : la photo de la façade zoome
+     à travers la porte et laisse place à la salle, comme si on franchissait
+     le seuil. À l'arrivée, il parle avec sa voix. En deux secondes, on
+     comprend que le fantôme est vivant et qu'il est la porte d'entrée de tout
+     le reste. »
+
+     TOUT PART DE LUI, ET C'EST UNE CONTRAINTE AUTANT QU'UN CHOIX : un
+     navigateur ne joue aucun son avant que la personne ait touché l'écran. Le
+     toucher sur le fantôme sert donc à la fois à franchir la porte et à
+     autoriser sa voix — l'élément audio joue un silence DANS le geste, et la
+     vraie phrase, demandée au même instant, part dès qu'elle arrive.
+
+     CE QU'IL DIT EST VRAI : `seuilDuDouble` — son nom, sa note, un vrai
+     avis. La route de la voix l'écrit elle-même, aucun texte ne lui est
+     confié par la page.
+     ═══════════════════════════════════════════════════════════════════════ */
+  const lieuRef = useRef<HTMLElement>(null);
+  const photoLieuRef = useRef<HTMLDivElement>(null);
+  /** Pendant le franchissement : d'où part le zoom, en % de la photo. */
+  const [franchit, setFranchit] = useState<{ x: number; y: number } | null>(null);
+  /** À l'arrivée dans la salle : la bulle de son accueil, et sa bouche qui bouge. */
+  const [arrive, setArrive] = useState(false);
+  const [bouche, setBouche] = useState(0);
+  const sonSeuil = useRef<HTMLAudioElement | null>(null);
+  const voixSeuil = useRef<Promise<string | null> | null>(null);
+  const phraseSeuil = useMemo(() => seuilDuDouble(c), [c]);
+
+  /* ═══ SES NOUVELLES POSES, QUAND ELLES ONT ÉTÉ VALIDÉES ════════════════════
+     « Ses yeux suivent le doigt » et « il se retourne et pousse la porte » :
+     des images fabriquées par l'IA, puis VALIDÉES une à une dans
+     l'administration (`/admin/poses-double`). Sans elles, il garde son penché
+     vers le doigt et s'efface dans la lumière — rien ne se dégrade. */
+  const [posesEnPlus, setPosesEnPlus] = useState<Partial<Record<"regard-gauche" | "regard-droite" | "pousse-porte", string>>>({});
+  useEffect(() => {
+    if (!tenue) return;
+    let vivant = true;
+    void lesPosesValidees().then((toutes) => {
+      const siennes = toutes[tenue.dossier] ?? {};
+      if (!vivant) return;
+      setPosesEnPlus(siennes);
+      // CHARGÉES D'AVANCE : un regard qui change ne doit pas clignoter.
+      for (const src of Object.values(siennes)) if (src) new Image().src = src;
+    });
+    return () => {
+      vivant = false;
+    };
+  }, [tenue]);
+  /** Où il regarde : à gauche, en face, à droite — selon le doigt. */
+  const [regard, setRegard] = useState<"gauche" | "face" | "droite">("face");
+  const regardRef = useRef(regard);
+  /** Vrai le temps qu'il pousse la porte. */
+  const [pousse, setPousse] = useState(false);
+  /* ═══ TOC TOC ═════════════════════════════════════════════════════════════
+     « S'il descend sans le toucher, il réapparaît dans un coin et tapote la
+     vitre. » On quitte le lieu sans l'avoir touché : le fantôme du coin toque,
+     une fois, avec sa bulle. Un seul toc par visite — au-delà, c'est insister. */
+  const [toque, setToque] = useState(false);
+  const aTouche = useRef(false);
+  const aToque = useRef(false);
+  const ongletAvant = useRef(onglet);
+  useEffect(() => {
+    const avant = ongletAvant.current;
+    ongletAvant.current = onglet;
+    if (avant !== "lieu" || onglet === "lieu" || onglet === "amis" || aTouche.current || aToque.current) return;
+    aToque.current = true;
+    const debut = window.setTimeout(() => setToque(true), 700);
+    const fin = window.setTimeout(() => setToque(false), 4200);
+    return () => {
+      window.clearTimeout(debut);
+      window.clearTimeout(fin);
+    };
+  }, [onglet]);
+
+  /* ═══ LA LUMIÈRE DU MOMENT, ET L'ENSEIGNE ════════════════════════════════
+     Le moment lui-même est posé sur <html> avant l'affichage (`SCRIPT_HEURE`) ;
+     ici, on le tient à jour (toutes les cinq minutes : la page peut rester
+     ouverte d'un après-midi au soir) et on décide de l'enseigne, qui demande
+     ses horaires. `?heure=soir` force un moment, pour le regarder. */
+  const [lumiere, setLumiere] = useState<{ allumee: boolean; phrase: string } | null>(null);
+  useEffect(() => {
+    const regler = () => {
+      const force = new URLSearchParams(window.location.search).get("heure") as Moment | null;
+      const vrai = heureDeParis();
+      let moment = momentDe(vrai.mois, vrai.h);
+      let quand = new Date();
+      let h = vrai.h;
+      if (force && MOMENTS.includes(force)) {
+        // LE MOMENT FORCÉ SE REGARDE À UNE HEURE QUI LUI RESSEMBLE, horaires compris.
+        moment = force;
+        h = { matin: 9.5, jour: 14.5, dore: COUCHER[vrai.mois] - 0.75, soir: 20.5 }[force];
+        quand = new Date(Date.now() + (h - vrai.h) * 3_600_000);
+      }
+      document.documentElement.setAttribute("data-heure", moment);
+      const ouvert = ouvertMaintenant(c.semaine, c.fiche?.horaires, quand);
+      const allumee = enseigneAllumee(moment, ouvert, h);
+      setLumiere({ allumee, phrase: phraseDuSeuil(ouvert, allumee) });
+    };
+    regler();
+    const t = window.setInterval(regler, 5 * 60_000);
+    return () => window.clearInterval(t);
+  }, [c.semaine, c.fiche?.horaires]);
+
+  /* ═══ « ET SI JE PARLAIS AVEC TA VOIX ? » ═════════════════════════════════
+     « Le "wow" propre au commerçant : il enregistre et s'entend répondre à un
+     client. La fonction existe déjà dans l'Espace Pro, il suffit de la
+     proposer au bon moment. »
+     LE BON MOMENT, C'EST JUSTE APRÈS L'AVOIR ENTENDU PARLER : son double vient
+     de l'accueillir chez lui, en citant un vrai avis de ses clients. Sa bulle
+     se referme, et il pose la question. Une fois par visite, et seulement au
+     commerçant qui découvre SA page — jamais à un client. */
+  const [proposeVoix, setProposeVoix] = useState(false);
+  const aProposeVoix = useRef(false);
+  const arriveAvant = useRef(false);
+
+  /** Où se tient l'hôte peint sur la photo ClikMe, en pixels de l'écran du lieu. */
+  const [hoteEcran, setHoteEcran] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  useLayoutEffect(() => {
+    const h = c.couvertureHote;
+    if (onglet !== "lieu" || !couv || !h) {
+      setHoteEcran(null);
+      return;
+    }
+    let vivant = true;
+    const img = new Image();
+    const placer = () => {
+      const sec = lieuRef.current;
+      const ph = photoLieuRef.current;
+      if (!vivant || !sec || !ph || !img.naturalWidth) return;
+      const r = ph.getBoundingClientRect();
+      const s = sec.getBoundingClientRect();
+      // LA PHOTO EST EN « COVER », CALÉE À 50 % / 45 % : on refait son calcul.
+      const k = Math.max(r.width / img.naturalWidth, r.height / img.naturalHeight);
+      const dw = img.naturalWidth * k;
+      const dh = img.naturalHeight * k;
+      const ox = (r.width - dw) * 0.5;
+      const oy = (r.height - dh) * 0.45;
+      const left = r.left - s.left + ox + h.x * dw;
+      const top = r.top - s.top + oy + h.y * dh;
+      const width = h.w * dw;
+      const height = h.h * dh;
+      // HORS DE LA PHOTO VISIBLE (recadrée) : on passe par le bouton.
+      const dedansPhoto = left + width / 2 > r.left - s.left && left + width / 2 < r.right - s.left && top + height / 2 < r.bottom - s.top;
+      setHoteEcran(dedansPhoto ? { left, top, width, height } : null);
+    };
+    img.onload = placer;
+    img.src = couv;
+    window.addEventListener("resize", placer);
+    return () => {
+      vivant = false;
+      window.removeEventListener("resize", placer);
+    };
+  }, [onglet, couv, c.couvertureHote]);
+
+  /** IL TE REGARDE : il se penche vers le doigt ou la souris. Sans re-rendu. */
+  const pencher = (e: React.PointerEvent<HTMLElement>) => {
+    const sec = lieuRef.current;
+    if (!sec) return;
+    const r = sec.getBoundingClientRect();
+    const px = Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width) * 2 - 1));
+    const py = Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height) * 2 - 1));
+    sec.style.setProperty("--px", px.toFixed(3));
+    sec.style.setProperty("--py", py.toFixed(3));
+    // SES YEUX SUIVENT — seulement s'il a ses poses de regard validées.
+    const r2 = px < -0.33 ? "gauche" : px > 0.33 ? "droite" : "face";
+    if (r2 !== regardRef.current && posesEnPlus["regard-gauche"] && posesEnPlus["regard-droite"]) {
+      regardRef.current = r2;
+      setRegard(r2);
+    }
+  };
+
+  /** LE GESTE : le son débloqué, la voix demandée, la porte franchie. */
+  const entrer = (depuis?: HTMLElement | null) => {
+    if (franchit || pousse) return;
+    aTouche.current = true;
+    try {
+      const a = sonSeuil.current ?? new Audio();
+      a.setAttribute("playsinline", "");
+      a.preload = "auto";
+      sonSeuil.current = a;
+      a.src = SILENCE;
+      void a.play().catch(() => {});
+    } catch {
+      /* au mieux */
+    }
+    unlockAudio();
+    voixSeuil.current = fetch("/api/direct/double/voix", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: c.id, quoi: "seuil" }),
+      signal: AbortSignal.timeout(12_000),
+    })
+      .then(async (r) => (r.ok ? URL.createObjectURL(await r.blob()) : null))
+      .catch(() => null);
+    // LE ZOOM PART DE LUI : son centre, en % de la photo.
+    let origine = { x: 50, y: 62 };
+    const ph = photoLieuRef.current?.getBoundingClientRect();
+    const g = depuis?.getBoundingClientRect();
+    if (ph && g && ph.width && ph.height) {
+      origine = {
+        x: Math.max(5, Math.min(95, ((g.left + g.width / 2 - ph.left) / ph.width) * 100)),
+        y: Math.max(5, Math.min(95, ((g.top + g.height * 0.55 - ph.top) / ph.height) * 100)),
+      };
+    }
+    const reduit = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    // IL SE RETOURNE ET POUSSE LA PORTE, s'il a cette pose : un temps, puis le zoom.
+    const tempsPousse = posesEnPlus["pousse-porte"] && !couv && !reduit ? 380 : 0;
+    if (tempsPousse) setPousse(true);
+    window.setTimeout(() => setFranchit(origine), tempsPousse);
+    window.setTimeout(
+      () => {
+        setOnglet("experience");
+        setArrive(true);
+        setFranchit(null);
+        setPousse(false);
+      },
+      tempsPousse + (reduit ? 120 : 950),
+    );
+  };
+
+  /* À L'ARRIVÉE, IL PARLE : sa vraie voix si elle vient, celle du téléphone
+     sinon, et la bulle dans tous les cas. Sa bouche bouge tant qu'il parle. */
+  useEffect(() => {
+    if (!arrive || onglet !== "experience") return;
+    let fini = false;
+    let trame: number | undefined;
+    const parler = (oui: boolean) => {
+      window.clearInterval(trame);
+      if (!oui) return setBouche(0);
+      let i = 0;
+      trame = window.setInterval(() => setBouche((i++ % 3) + 1), 170);
+    };
+    const fermer = window.setTimeout(() => !fini && setArrive(false), 14_000);
+    void (async () => {
+      const url = await voixSeuil.current;
+      if (fini) return;
+      const a = sonSeuil.current;
+      if (url && a) {
+        a.onplaying = () => parler(true);
+        a.onended = () => {
+          parler(false);
+          window.setTimeout(() => !fini && setArrive(false), 3500);
+        };
+        a.onerror = () => parler(false);
+        a.src = url;
+        void a.play().catch(() => parler(false));
+      } else if (speechSupported()) {
+        speak(phraseSeuil);
+      }
+    })();
+    return () => {
+      fini = true;
+      window.clearTimeout(fermer);
+      window.clearInterval(trame);
+      setBouche(0);
+      try {
+        sonSeuil.current?.pause();
+      } catch {
+        /* rien */
+      }
+    };
+  }, [arrive, onglet, phraseSeuil]);
+
+  useEffect(() => {
+    const etait = arriveAvant.current;
+    arriveAvant.current = arrive;
+    if (!etait || arrive || !saPage || !pied || aProposeVoix.current || onglet !== "experience") return;
+    aProposeVoix.current = true;
+    const t = window.setTimeout(() => setProposeVoix(true), 450);
+    return () => window.clearTimeout(t);
+  }, [arrive, saPage, pied, onglet]);
 
   /** Un parcours du plat jouable chez lui — sinon la cloche ne s'ouvre pas. */
   const aUnParcours = useMemo(() => plaqueDuParcours(c.id) !== null, [c.id]);
@@ -623,11 +925,37 @@ export function BoutiqueTable({
 
       {/* ═══════════════════════════ 1 · LE LIEU ═══════════════════════════ */}
       {onglet === "lieu" && (
-        <section className={`bt-ecran bt-e-lieu${couv ? " a-couv" : ""}`} key="lieu">
-          <div
-            className={`bt-photo ${couv ? "clikme" : "facade"}`}
-            style={{ backgroundImage: `url("${couv ?? devanture}")` }}
-          />
+        <section
+          ref={lieuRef}
+          className={`bt-ecran bt-e-lieu${couv ? " a-couv" : ""}${franchit ? " franchit" : ""}${lumiere?.allumee ? " enseigne" : ""}`}
+          key="lieu"
+          onPointerMove={pencher}
+          style={franchit ? ({ "--ox": `${franchit.x}%`, "--oy": `${franchit.y}%` } as React.CSSProperties) : undefined}
+        >
+          {/* LE CADRE GARDE LE ZOOM DANS LA PHOTO : sur ordinateur, la façade
+              agrandie débordait sur la moitié droite, coupée net. */}
+          <div className="bt-cadre-photo">
+            <div
+              ref={photoLieuRef}
+              className={`bt-photo ${couv ? "clikme" : "facade"}`}
+              style={{ backgroundImage: `url("${couv ?? devanture}")` }}
+            />
+            {/* LA LUMIÈRE DE LA SALLE, qui monte de la porte pendant qu'on la franchit. */}
+            <div className="bt-porte-lumiere" aria-hidden="true" />
+          </div>
+          {/* L'HÔTE PEINT SUR LA PHOTO CLIKME SE TOUCHE AUSSI : un halo qui
+              respire autour de lui, sa bulle, et la porte qui s'ouvre. */}
+          {hoteEcran && (
+            <button
+              type="button"
+              className="bt-hote"
+              style={{ left: hoteEcran.left, top: hoteEcran.top, width: hoteEcran.width, height: hoteEcran.height }}
+              onClick={(e) => entrer(e.currentTarget)}
+              aria-label={`Entrer chez ${c.nom} avec son fantôme`}
+            >
+              <span className="bt-invite">Entre, je te fais visiter 👋</span>
+            </button>
+          )}
           <div className="bt-voile haut-bas" />
           {entete(false)}
           <div className="bt-accueil">
@@ -637,7 +965,7 @@ export function BoutiqueTable({
             {/* LA PHRASE DU DOUBLE, DANS LA FONTE DES VOIX : c'est lui qui
                 parle, pas la page. Un seul endroit de l'écran dans une autre
                 écriture, et c'est le sien. */}
-            <p className="bt-dit">Entre, je te fais découvrir.</p>
+            <p className="bt-dit">{lumiere?.phrase ?? "Entre, je te fais découvrir."}</p>
           </div>
           <div className="bt-seuil">
             {/* ═══ IL SE TIENT DANS LA LUMIÈRE, IL N'EST PLUS SOUS LE BOUTON ══
@@ -649,14 +977,48 @@ export function BoutiqueTable({
                 c'est elle qui l'ancre dans la photo. Le bas de ses poses est
                 coupé net sous la poitrine : on le fond, comme le bas d'un
                 fantôme, au lieu de le trancher. */}
-            {!couv && <span className="bt-accueille">{double("accueil", "centre")}</span>}
+            {!couv && (
+              <button
+                type="button"
+                className="bt-accueille vivant"
+                onClick={(e) => entrer(e.currentTarget)}
+                aria-label={`Entrer chez ${c.nom} avec son fantôme`}
+              >
+                <span className="bt-invite">Entre, je te fais visiter 👋</span>
+                <span className="bt-penche">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    className={`bt-double centre${pousse ? " pousse" : ""}`}
+                    src={
+                      pousse && posesEnPlus["pousse-porte"]
+                        ? posesEnPlus["pousse-porte"]
+                        : regard === "gauche" && posesEnPlus["regard-gauche"]
+                          ? posesEnPlus["regard-gauche"]
+                          : regard === "droite" && posesEnPlus["regard-droite"]
+                            ? posesEnPlus["regard-droite"]
+                            : pose("accueil")
+                    }
+                    alt=""
+                    draggable={false}
+                  />
+                </span>
+              </button>
+            )}
             {/* ═══ DEUX PORTES, PLUS UNE ════════════════════════════════════
                 « Une partie de la droite de "Le lieu" avec deux nouveaux
                 boutons. » La carte quitte la barre du bas — elle y prenait la
                 place d'« Explorer ma ville » — et devient la seconde porte du
                 lieu : c'est la question qu'on se pose juste après « c'est
                 comment, là-dedans ? ». */}
-            <button type="button" className="bt-entrer" onClick={() => setOnglet("experience")}>
+            <button
+              type="button"
+              className="bt-entrer"
+              onClick={() =>
+                entrer(
+                  lieuRef.current?.querySelector<HTMLElement>(".bt-hote, .bt-accueille") ?? null,
+                )
+              }
+            >
               Découvrir le lieu <s aria-hidden="true">→</s>
             </button>
             <button type="button" className="bt-entrer second" onClick={() => setOnglet("carte")}>
@@ -669,7 +1031,7 @@ export function BoutiqueTable({
 
       {/* ═════════════════════════ 2 · L'EXPÉRIENCE ════════════════════════ */}
       {onglet === "experience" && (
-        <section className="bt-ecran bt-e-exp" key="experience">
+        <section className={`bt-ecran bt-e-exp${arrive ? " arrive" : ""}`} key="experience">
           <div className="bt-photo" style={{ backgroundImage: `url("${dedans(0)}")` }} />
           <div className="bt-voile haut-bas" />
           {entete(true)}
@@ -678,7 +1040,38 @@ export function BoutiqueTable({
             <p className="bt-sous">Un aperçu en images et en son.</p>
           </div>
           <div className="bt-scene">
-            {double("content", "gauche")}
+            {double(bouche ? (`parle-${bouche}` as "parle-1") : "content", "gauche")}
+            {/* SON ACCUEIL, ÉCRIT : on le lit même sans le son. Un appui le referme. */}
+            {arrive && (
+              <button type="button" className="bt-bulle-seuil" onClick={() => setArrive(false)}>
+                {phraseSeuil}
+              </button>
+            )}
+            {proposeVoix && !arrive && (
+              <div className="bt-bulle-seuil bt-bulle-voix" role="dialog" aria-label="Ta voix pour ton double">
+                <p>
+                  <b>Et si je parlais avec ta voix&nbsp;?</b>
+                  Tu réponds à voix haute à trois petites questions, et c’est ta voix que tes clients entendront ici.
+                  Deux minutes, depuis ton Espace Pro.
+                </p>
+                <span className="bt-voix-actions">
+                  <button
+                    type="button"
+                    className="oui"
+                    onClick={() => {
+                      setProposeVoix(false);
+                      setOnglet("infos");
+                      setVersPied(true);
+                    }}
+                  >
+                    Je veux ma voix
+                  </button>
+                  <button type="button" onClick={() => setProposeVoix(false)}>
+                    Plus tard
+                  </button>
+                </span>
+              </div>
+            )}
             <div className="bt-nappe">
               {/* TROIS PORTES, ET CHACUNE MÈNE QUELQUE PART. Le plat n'existe
                   que chez un restaurant qui a un parcours ; la voix du chef et
@@ -1179,7 +1572,16 @@ export function BoutiqueTable({
           Sauf chez les amis : on y discute déjà, et le champ d'écriture
           occupe le bas. Deux conversations empilées ne se lisent plus. */}
       {onglet !== "amis" && !discute && !plat && (
-        <button type="button" className="bt-discute" onClick={() => setDiscute(true)}>
+        <button
+          type="button"
+          className={`bt-discute${toque ? " toque" : ""}`}
+          onClick={() => {
+            aTouche.current = true;
+            setToque(false);
+            setDiscute(true);
+          }}
+        >
+          {toque && <em className="bt-toc">Toc toc ! Je te fais visiter&nbsp;?</em>}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={pose("accueil")} alt="" />
           <span>On discute&nbsp;?</span>

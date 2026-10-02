@@ -21,6 +21,8 @@ const config: NextConfig = {
     // …ET LE DOUBLE EN TENUE DE CHAQUE MÉTIER, pour le fantôme qui accueille.
     "/api/site-internet/couverture": ["./public/clikme-fantome.png", "./public/direct/double/**/accueil.webp"],
     "/api/site-internet/public-generate": ["./public/clikme-fantome.png", "./public/direct/double/**/accueil.webp"],
+    // L'ATELIER DES POSES PART DE LA POSE D'ACCUEIL DE CHAQUE TENUE.
+    "/api/admin/direct/poses": ["./public/direct/double/**/accueil.webp"],
   },
   typescript: {
     ignoreBuildErrors: true,
