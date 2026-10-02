@@ -119,45 +119,47 @@ type MotsDuMetier = {
   completer: string;
   /** Ce que dit son double sous le titre du lieu : l'invitation de SON métier. */
   invite: string;
+  /** « Touche-moi et je te montre MON RESTO » — comment il appelle sa maison. */
+  chezMoi: string;
 };
 const MOTS: Record<string, MotsDuMetier> = {
   restaurant: {
     carte: "Carte et prix", titre: "La carte", reserver: "Demander une réservation", experience: "Et si vous goûtiez ?",
-    vide: "Sa carte arrive. En attendant, demandez au chef ce qu’il propose aujourd’hui.", lue: ["sa carte", "votre carte"], completer: "le restaurant", invite: "Entre, je te fais découvrir.",
+    vide: "Sa carte arrive. En attendant, demandez au chef ce qu’il propose aujourd’hui.", lue: ["sa carte", "votre carte"], completer: "le restaurant", invite: "Entre, je te fais découvrir.", chezMoi: "mon resto",
   },
   bar: {
     carte: "Carte et prix", titre: "La carte", reserver: "Réserver une table", experience: "Et si vous goûtiez ?",
-    vide: "Sa carte arrive. En attendant, demandez ce qu’on sert ce soir.", lue: ["sa carte", "votre carte"], completer: "le bar", invite: "Entre, je te fais découvrir.",
+    vide: "Sa carte arrive. En attendant, demandez ce qu’on sert ce soir.", lue: ["sa carte", "votre carte"], completer: "le bar", invite: "Entre, je te fais découvrir.", chezMoi: "mon bar",
   },
   coiffeur: {
     carte: "Tarifs", titre: "Les tarifs", reserver: "Prendre rendez-vous", experience: "Et si vous essayiez une coupe ?",
-    vide: "Ses tarifs arrivent. En attendant, demandez-les directement au salon.", lue: ["sa grille de tarifs", "votre grille de tarifs"], completer: "le salon", invite: "Entre, on imagine ta prochaine coupe.",
+    vide: "Ses tarifs arrivent. En attendant, demandez-les directement au salon.", lue: ["sa grille de tarifs", "votre grille de tarifs"], completer: "le salon", invite: "Entre, on imagine ta prochaine coupe.", chezMoi: "mon salon",
   },
   ongles: {
     carte: "Tarifs", titre: "Les tarifs", reserver: "Prendre rendez-vous", experience: "Et si vous essayiez une pose ?",
-    vide: "Ses tarifs arrivent. En attendant, demandez-les directement à l’institut.", lue: ["sa grille de tarifs", "votre grille de tarifs"], completer: "l’institut", invite: "Entre, on choisit ta prochaine pose.",
+    vide: "Ses tarifs arrivent. En attendant, demandez-les directement à l’institut.", lue: ["sa grille de tarifs", "votre grille de tarifs"], completer: "l’institut", invite: "Entre, on choisit ta prochaine pose.", chezMoi: "mon salon",
   },
   lunetier: {
     carte: "Tarifs", titre: "Les tarifs", reserver: "Prendre rendez-vous", experience: "Et si vous essayiez vos lunettes ?",
-    vide: "Ses tarifs arrivent. En attendant, demandez-les directement en boutique.", lue: ["sa grille de tarifs", "votre grille de tarifs"], completer: "la boutique", invite: "Entre, on essaie tes futures lunettes.",
+    vide: "Ses tarifs arrivent. En attendant, demandez-les directement en boutique.", lue: ["sa grille de tarifs", "votre grille de tarifs"], completer: "la boutique", invite: "Entre, on essaie tes futures lunettes.", chezMoi: "ma boutique",
   },
   mode: {
     carte: "Produits et prix", titre: "La boutique", reserver: "Passer le voir", experience: "Et si vous essayiez ?",
-    vide: "Ses produits arrivent. En attendant, demandez ce qui vient d’arriver.", lue: ["ses étiquettes", "vos étiquettes"], completer: "la boutique", invite: "Entre, viens essayer les pièces du moment.",
+    vide: "Ses produits arrivent. En attendant, demandez ce qui vient d’arriver.", lue: ["ses étiquettes", "vos étiquettes"], completer: "la boutique", invite: "Entre, viens essayer les pièces du moment.", chezMoi: "ma boutique",
   },
   fleuriste: {
     carte: "Bouquets et prix", titre: "Les bouquets", reserver: "Commander un bouquet", experience: "Et si vous composiez votre bouquet ?",
-    vide: "Ses bouquets arrivent. En attendant, demandez ce qui est arrivé ce matin.", lue: ["son ardoise", "votre ardoise"], completer: "la boutique", invite: "Entre, on compose ton bouquet.",
+    vide: "Ses bouquets arrivent. En attendant, demandez ce qui est arrivé ce matin.", lue: ["son ardoise", "votre ardoise"], completer: "la boutique", invite: "Entre, on compose ton bouquet.", chezMoi: "ma boutique",
   },
   artisan: {
     carte: "Créations et prix", titre: "Les créations", reserver: "Le contacter", experience: "Et si vous découvriez ?",
-    vide: "Ses créations arrivent. En attendant, demandez ce qui sort de l’atelier.", lue: ["ses étiquettes", "vos étiquettes"], completer: "l’atelier", invite: "Entre, je te montre l’atelier.",
+    vide: "Ses créations arrivent. En attendant, demandez ce qui sort de l’atelier.", lue: ["ses étiquettes", "vos étiquettes"], completer: "l’atelier", invite: "Entre, je te montre l’atelier.", chezMoi: "mon atelier",
   },
   /* LE LIBRAIRE : sa « carte », ce sont ses coups de cœur, et l'expérience
      n'est pas un essai — c'est son conseil (voir `essai-du-lieu.tsx`). */
   librairie: {
     carte: "Ses coups de cœur", titre: "Ses coups de cœur", reserver: "Demander un livre", experience: "Et si on trouvait ton prochain livre ?",
-    vide: "Ses coups de cœur arrivent. En attendant, demandez-lui ce qu’il lit en ce moment.", lue: ["ses étiquettes", "vos étiquettes"], completer: "la librairie", invite: "Entre, je te trouve ton prochain livre.",
+    vide: "Ses coups de cœur arrivent. En attendant, demandez-lui ce qu’il lit en ce moment.", lue: ["ses étiquettes", "vos étiquettes"], completer: "la librairie", invite: "Entre, je te trouve ton prochain livre.", chezMoi: "ma librairie",
   },
 };
 const motsDuMetier = (branche: string): MotsDuMetier => MOTS[branche] ?? MOTS.artisan;
@@ -657,6 +659,16 @@ export function BoutiqueTable({
    * au-dessus de lui (en points, dans l'écran du lieu).
    */
   const [salut, setSalut] = useState<{ x: number; y: number } | null>(null);
+  /**
+   * IL VIENT NOUS CHERCHER, QUAND ON NE SAIT PAS OÙ IL EST PEINT.
+   *
+   * « L'animation n'a pas l'air de fonctionner : on passe de la photo 1 à la
+   * photo 2 en une seconde, et je n'ai vu aucune animation. » Sur la photo du
+   * Bordeaux, le modèle n'avait pas su dire où se tient l'hôte : rien ne
+   * saluait, et il ne restait qu'un zoom d'une demi-seconde. Sans sa place,
+   * il entre donc dans l'image par le bas, au premier plan, et salue de là.
+   */
+  const [guide, setGuide] = useState<{ left: number; top: number; t: number } | null>(null);
   /* ═══ TOC TOC ═════════════════════════════════════════════════════════════
      « S'il descend sans le toucher, il réapparaît dans un coin et tapote la
      vitre. » On quitte le lieu sans l'avoir touché : le fantôme du coin toque,
@@ -804,7 +816,7 @@ export function BoutiqueTable({
    *      feuille).
    */
   const entrer = (depuis?: HTMLElement | null, point?: { x: number; y: number }) => {
-    if (franchit || pousse || salut) return;
+    if (franchit || pousse || salut || guide) return;
     aTouche.current = true;
     try {
       const a = sonSeuil.current ?? new Audio();
@@ -838,20 +850,36 @@ export function BoutiqueTable({
         y: Math.max(20, Math.min(80, ((g.top + g.height * 0.55 - ph.top) / ph.height) * 100)),
       };
     }
-    // SA BULLE, JUSTE AU-DESSUS DE LUI.
-    if (g && sec) setSalut({ x: g.left + g.width / 2 - sec.left, y: Math.max(70, g.top - sec.top - 8) });
     const reduit = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    // SANS SA PLACE SUR LA PHOTO, IL VIENT AU PREMIER PLAN : au milieu de la
+    // photo, les pieds juste au-dessus des boutons — ou du bas de la photo,
+    // quand les boutons sont à côté (ordinateur).
+    let ici = g;
+    if (enPied && couv && !hoteEcran && ph && sec && !reduit) {
+      const seuil = lieuRef.current?.querySelector<HTMLElement>(".bt-seuil")?.getBoundingClientRect();
+      const milieu = ph.left + ph.width / 2;
+      const dessous = seuil && seuil.left < milieu && seuil.right > milieu ? seuil.top - 6 : ph.bottom - ph.height * 0.03;
+      const t = Math.min(ph.height * 0.46, ph.width * 0.82, dessous - ph.top - 90);
+      const pose = { left: milieu - sec.left - t / 2, top: dessous - sec.top - 0.949 * t, t };
+      setGuide(pose);
+      ici = { left: milieu - t * 0.33, top: dessous - 0.89 * t, width: t * 0.66, height: t * 0.89 } as DOMRect;
+      origine = { x: 50, y: 56 };
+    }
+    // SA BULLE, JUSTE AU-DESSUS DE LUI.
+    if (ici && sec) setSalut({ x: ici.left + ici.width / 2 - sec.left, y: Math.max(70, ici.top - sec.top - 8) });
     // IL SE RETOURNE ET POUSSE LA PORTE, s'il a cette pose ; sinon il salue.
     if (posesEnPlus["pousse-porte"] && !couv && !reduit) window.setTimeout(() => setPousse(true), 220);
-    // IL SALUE — main levée d'un côté, de l'autre, encore —, puis se tourne
-    // vers la porte : « viens ». Quatre images, le temps d'un battement.
-    const accueil = reduit ? 0 : enPied ? 380 : 300;
-    const avance = reduit ? 120 : 460;
+    // IL SALUE — main levée d'un côté, de l'autre, trois fois —, puis se
+    // tourne vers la porte : « viens ». « Il y a peut-être une animation, mais
+    // qui dure très peu de temps et je n'ai pas le temps de la voir » : la
+    // première version tenait en une seconde, et on ne la voyait pas. Elle en
+    // prend deux : un salut qu'on a le temps de lire, puis l'avancée.
+    const accueil = reduit ? 0 : enPied ? 1150 : 700;
+    const avance = reduit ? 120 : 750;
     if (enPied && !reduit) {
       setSonGeste("salut-1");
-      window.setTimeout(() => setSonGeste("salut-2"), 95);
-      window.setTimeout(() => setSonGeste("salut-1"), 190);
-      window.setTimeout(() => setSonGeste("viens"), 285);
+      [200, 400, 600, 800].forEach((t, i) => window.setTimeout(() => setSonGeste(i % 2 ? "salut-1" : "salut-2"), t));
+      window.setTimeout(() => setSonGeste("viens"), 950);
     }
     window.setTimeout(() => setFranchit(origine), accueil);
     window.setTimeout(() => {
@@ -860,6 +888,7 @@ export function BoutiqueTable({
       setFranchit(null);
       setPousse(false);
       setSalut(null);
+      setGuide(null);
       // DANS LA SALLE, IL MONTRE D'ABORD LE CHEMIN, puis il parle.
       setSonGeste(enPied ? "montre" : null);
     }, accueil + avance);
@@ -1243,7 +1272,10 @@ export function BoutiqueTable({
               onClick={(e) => entrer(e.currentTarget)}
               aria-label={`Entrer chez ${c.nom} avec son fantôme`}
             >
-              <span className="bt-invite">Viens, je te fais découvrir 👋</span>
+              <span className="bt-invite">
+                <i className="tel">Touche-moi</i>
+                <i className="pc">Clique sur moi</i> et je te montre {mots.chezMoi}&nbsp;👋
+              </span>
             </button>
           )}
           {/* ═══ IL SALUE, PAR-DESSUS SON PORTRAIT PEINT ═══════════════════
@@ -1271,6 +1303,16 @@ export function BoutiqueTable({
                   top: hoteEcran.top + hoteEcran.height - 0.949 * t,
                 };
               })()}
+            />
+          )}
+          {enPied && !hoteEcran && guide && sonGeste && onglet === "lieu" && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              className="bt-sprite guide"
+              src={geste(sonGeste)}
+              alt=""
+              aria-hidden="true"
+              style={{ width: guide.t, height: guide.t, left: guide.left, top: guide.top }}
             />
           )}
           {salut && (
@@ -1304,8 +1346,12 @@ export function BoutiqueTable({
                  "VIENS, JE TE FAIS DÉCOUVRIR" : cela annonce mieux
                  l'expérience qui suit. » C'est lui qui parle, pas le mode
                  d'emploi. */
+              /* « EN TANT QUE NOUVEL UTILISATEUR, JE N'AI AUCUNE IDÉE QU'IL FAUT
+                 CLIQUER SUR LE FANTÔME. Peut-être plutôt : touche-moi et je te
+                 montre mon resto ? » */
               <span className="bt-indice" aria-hidden="true">
-                Viens, je te fais découvrir&nbsp;👋
+                <i className="tel">Touche-moi</i>
+                <i className="pc">Clique sur moi</i> et je te montre {mots.chezMoi}&nbsp;👋
               </span>
             )}
             {/* ═══ IL SE TIENT DANS LA LUMIÈRE, IL N'EST PLUS SOUS LE BOUTON ══
@@ -1324,7 +1370,10 @@ export function BoutiqueTable({
                 onClick={(e) => entrer(e.currentTarget)}
                 aria-label={`Entrer chez ${c.nom} avec son fantôme`}
               >
-                <span className="bt-invite">Viens, je te fais découvrir 👋</span>
+                <span className="bt-invite">
+                <i className="tel">Touche-moi</i>
+                <i className="pc">Clique sur moi</i> et je te montre {mots.chezMoi}&nbsp;👋
+              </span>
                 <span className="bt-penche">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img

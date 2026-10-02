@@ -301,9 +301,10 @@ export function StylesBoutiqueTable() {
           box-shadow:0 10px 24px -10px rgba(0,0,0,.6);animation:btIndice 2.6s ease-in-out .8s infinite both;}
         @keyframes btIndice{0%,100%{transform:translateY(0);opacity:1;}50%{transform:translateY(-5px);opacity:.92;}}
         .bt-e-lieu.franchit .bt-indice{opacity:0;transition:opacity .2s ease;animation:none;}
-        .bt-indice i{font-style:normal;}
-        .bt-indice .pc{display:none;}
-        @media (hover:hover) and (pointer:fine){.bt-indice .tel{display:none;}.bt-indice .pc{display:inline;}}
+        .bt-indice i,.bt-invite i{font-style:normal;}
+        .bt-indice .pc,.bt-invite .pc{display:none;}
+        @media (hover:hover) and (pointer:fine){.bt-indice .tel,.bt-invite .tel{display:none;}
+          .bt-indice .pc,.bt-invite .pc{display:inline;}}
         @media (prefers-reduced-motion: reduce){.bt-e-lieu .bt-seuil>.bt-indice{animation:none;}}
 
         /* ═══ LA PORTE QUI S'OUVRE ══════════════════════════════════════════
@@ -336,9 +337,9 @@ export function StylesBoutiqueTable() {
           transition:transform .3s ease;}
         .bt-e-lieu.salue .bt-accueille .bt-double{animation:btSalut .6s ease-in-out 1;}
         .bt-e-lieu.salue .bt-indice,.bt-e-lieu.salue .bt-invite{opacity:0;transition:opacity .15s ease;animation:none;}
-        .bt-e-lieu.franchit .bt-photo{transform:scale(1.6);transform-origin:var(--ox,50%) var(--oy,62%);
-          transition:transform .55s cubic-bezier(.45,0,.25,1);}
-        .bt-e-lieu.franchit .bt-porte-lumiere{opacity:.55;transition:opacity .5s ease-in;}
+        .bt-e-lieu.franchit .bt-photo{transform:scale(1.7);transform-origin:var(--ox,50%) var(--oy,62%);
+          transition:transform .8s cubic-bezier(.45,0,.25,1);}
+        .bt-e-lieu.franchit .bt-porte-lumiere{opacity:.6;transition:opacity .75s ease-in;}
         .bt-e-lieu.franchit .bt-accueille,.bt-e-lieu.franchit .bt-hote{opacity:0;transform:scale(1.15);
           transition:opacity .35s ease,transform .5s ease;}
         .bt-e-lieu.franchit .bt-accueil,.bt-e-lieu.franchit .bt-entrer,.bt-e-lieu.franchit .bt-haut,
@@ -346,7 +347,7 @@ export function StylesBoutiqueTable() {
           opacity:0;transition:opacity .3s ease;animation:none;}
         /* ON ARRIVE DANS LA SALLE PAR UN FONDU COURT — plus d'éclair blanc —, et
            il prend sa place près du bouton, comme s'il nous avait accompagnés. */
-        .bt-e-exp.arrive{animation:btArrive .3s ease-out both;}
+        .bt-e-exp.arrive{animation:btArrive .45s ease-out both;}
         @keyframes btArrive{from{opacity:0;transform:scale(1.015);}to{opacity:1;transform:none;}}
         .bt-e-exp.arrive .bt-double,.bt-e-exp.arrive .bx-fantome{animation:btRejoint .55s cubic-bezier(.2,.8,.2,1) .05s both;}
         @keyframes btRejoint{from{opacity:0;transform:translate(28px,26px) scale(1.12);}to{opacity:1;transform:none;}}
@@ -358,7 +359,10 @@ export function StylesBoutiqueTable() {
           filter:drop-shadow(0 12px 20px rgba(0,0,0,.45)) drop-shadow(0 0 18px rgba(255,180,90,.35));
           animation:btSprite .12s ease-out both;}
         @keyframes btSprite{from{opacity:0;}to{opacity:1;}}
-        .bt-e-lieu.franchit .bt-sprite{animation:btSpritePart .3s ease-in both;}
+        .bt-e-lieu.franchit .bt-sprite{animation:btSpritePart .55s ease-in both;}
+        /* LE GUIDE ENTRE PAR LE BAS, au premier plan, comme s'il venait vers nous. */
+        .bt-sprite.guide{animation:btGuide .45s cubic-bezier(.34,1.4,.64,1) both;}
+        @keyframes btGuide{from{opacity:0;transform:translateY(35%) scale(.7);}to{opacity:1;transform:none;}}
         @keyframes btSpritePart{from{opacity:1;}to{opacity:0;transform:scale(1.08);}}
         .bt-e-exp .bt-double.en-pied,.bt-accueille .bt-double.en-pied{
           filter:drop-shadow(0 12px 22px rgba(0,0,0,.45)) drop-shadow(0 0 22px rgba(255,170,80,.28));}
@@ -943,7 +947,7 @@ export function StylesBoutiqueTable() {
           .bt-cadre-photo,.bt-photo-porte{right:auto;width:var(--bt-g);}
           /* ON AVANCE, ET LE DÉCOR PREND TOUTE LA LARGEUR : « une moitié droite
              vide » coupait la visite. */
-          .bt-cadre-photo{transition:width .55s cubic-bezier(.45,0,.25,1);}
+          .bt-cadre-photo{transition:width .8s cubic-bezier(.45,0,.25,1);}
           .bt-e-lieu.franchit .bt-cadre-photo{width:100%;}
           .bt-e-lieu.franchit .bt-photo-porte,.bt-e-lieu.salue .bt-photo-porte{pointer-events:none;}
           /* SUR UN ORDINATEUR, LA BULLE VA SUR LA PHOTO — pas sous le titre, à droite. */
