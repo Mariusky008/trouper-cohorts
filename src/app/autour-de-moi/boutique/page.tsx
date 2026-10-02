@@ -47,6 +47,8 @@ import type { Metadata, Viewport } from "next";
 import { MARQUE } from "@/lib/marque";
 import { Boutique } from "./boutique";
 import { SCRIPT_HEURE } from "@/lib/direct/lumiere-du-moment";
+import { toutesLesCartes } from "@/lib/direct/apercu-habitant";
+import { nomCourt } from "@/lib/site-internet/nom-de-la-page";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -55,13 +57,28 @@ export const viewport: Viewport = {
   themeColor: "#120C09",
 };
 
-export const metadata: Metadata = {
-  title: { absolute: `La page d’un commerce — ${MARQUE}` },
-  description:
-    "Tout un commerce sur une page : ce qu’il propose aujourd’hui, ce qui revient chez lui, sa carte, et comment y aller. Une maquette.",
-  robots: { index: false, follow: false },
-  appleWebApp: { capable: true, title: "Boutique", statusBarStyle: "black-translucent" },
-};
+/**
+ * SON MANIFESTE ET SON NOM, POUR L'ÉCRAN D'ACCUEIL. Sans eux, la page posée
+ * sur l'écran d'accueil d'un iPhone s'ouvrait sur clikme.fr — voir
+ * `manifest.webmanifest/route.ts`.
+ */
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ c?: string }> }): Promise<Metadata> {
+  const sp = await searchParams;
+  const c = /^[a-z0-9-]{1,60}$/i.test(String(sp.c ?? "")) ? String(sp.c) : "";
+  const carte = c ? toutesLesCartes().find((x) => x.id === c) : undefined;
+  return {
+    title: { absolute: carte ? `${carte.nom} — ${MARQUE}` : `La page d’un commerce — ${MARQUE}` },
+    description:
+      "Tout un commerce sur une page : ce qu’il propose aujourd’hui, ce qui revient chez lui, sa carte, et comment y aller. Une maquette.",
+    robots: { index: false, follow: false },
+    manifest: `/autour-de-moi/boutique/manifest.webmanifest${carte ? `?c=${encodeURIComponent(carte.id)}` : ""}`,
+    appleWebApp: {
+      capable: true,
+      title: carte ? nomCourt(carte.nom) : "Boutique",
+      statusBarStyle: "black-translucent",
+    },
+  };
+}
 
 /**
  * `?c=` — LE COMMERCE QU'ON VIENT VOIR DEPUIS LA VILLE.
