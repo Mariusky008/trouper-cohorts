@@ -3131,7 +3131,7 @@ export function modeleDeLaBranche(
  * s'essaie pas, et la faire figurer grisée dans la grille apprendrait au client
  * que la moitié du catalogue est morte.
  */
-type EntreeCatalogue = { id: string; nom: string; detail?: string; prix?: string; photo?: string };
+type EntreeCatalogue = { id: string; nom: string; detail?: string; prix?: string; photo?: string; decrire?: string; decrireEn?: string };
 
 /**
  * LE MOMENT EN COURS — ce que la carte affiche à cette heure-ci.
@@ -3223,6 +3223,8 @@ export function murDeLaCarte(c: {
    * ne porte que son catalogue photographié, quitte à être vide.
    */
   seulementLesSiennes?: boolean;
+  /** Ses propres essais sur le mur, à la place de ceux du modèle. */
+  murDuLieu?: { maison: Fantome[]; clients: Fantome[] };
 }): Mur {
   const modele = MURS.find((m) => m.cle === modeleDeLaBranche(c.branche, c.metier)) ?? MURS[0];
 
@@ -3243,6 +3245,9 @@ export function murDeLaCarte(c: {
       prix: e.prix ?? "",
       photo: e.photo as string,
       reference: e.photo as string,
+      // SA DESCRIPTION, QUAND IL L'A ÉCRITE : c'est la cible de l'essai.
+      ...(e.decrire ? { decrire: e.decrire } : {}),
+      ...(e.decrireEn ? { decrireEn: e.decrireEn } : {}),
     }));
 
   /**
@@ -3344,6 +3349,7 @@ export function murDeLaCarte(c: {
     // ET LA SOIRÉE AUSSI, pour la même raison : elle porte UN SOIR, pas une
     // mécanique. Voir `soiree` dans le type.
     soiree: soireeDuLieu(c.id),
+    ...(c.murDuLieu ? { maison: c.murDuLieu.maison, clients: c.murDuLieu.clients } : {}),
   };
 }
 

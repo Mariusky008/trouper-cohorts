@@ -1,11 +1,13 @@
 /**
- * 🎬 DEUX VRAIS RESTAURANTS, EN COPIE DE PRÉSENTATION.
+ * 🎬 TROIS VRAIS COMMERCES, EN COPIE DE PRÉSENTATION.
  *
  * « Il va me falloir deux exemples identiques à l'identique mais faux de Le
  * Bordeaux et d'El Txupinazo. Ils vont servir à faire mes présentations avec
  * des parcours (expérience) déjà mis en situation… complètement en dehors de
  * l'application… avec tous les boutons fonctionnels… le parcours complet en
  * quatre étapes comme sur la démo, avec la voix du restaurateur. »
+ * Puis : « Idem pour Oxygène by Alexis… avec plusieurs coupes de coiffure
+ * femme et homme. »
  *
  * IDENTIQUES : la page d'une copie lit la VRAIE fiche du restaurant dans la
  * base — son nom, ses photos, sa note, ses horaires, sa carte lue sur ses
@@ -148,6 +150,111 @@ const TXUPINAZO: CarteAutour = {
   ],
 };
 
+/* ═══ OXYGÈNE BY ALEXIS — LES COUPES À ESSAYER, FEMME ET HOMME ═════════════
+   « Idem pour Oxygène by Alexis, à dupliquer pour faire une présentation
+   avec plusieurs coupes de coiffure femme et homme. »
+
+   Un salon mixte, rue des Carmes : son Expérience est l'essayage — on se
+   prend en photo, on choisit une coupe, on se voit avec. Six coupes de femme,
+   quatre d'homme, toutes sur des photos du projet. Chaque description est
+   écrite DEVANT sa photo, pas d'après le nom : c'est la cible que l'essai
+   reproduit (voir le carré long de `fantomes.ts`, et pourquoi).
+
+   LES PRIX SONT CEUX D'UNE PRÉSENTATION, pas les siens : c'est la part
+   « fausse » de la copie, comme le magret du Bordeaux. */
+const coupe = (id: string, nom: string, prix: string, photo: string, decrire: string, rayon: string) => ({
+  id: `oxy-${id}`, rayon, nom, prix, photo, decrire,
+});
+const FEMME = "Coupes femme";
+const HOMME = "Coupes homme";
+const OXYGENE: CarteAutour = {
+  id: "copie-oxygene",
+  branche: "coiffeur",
+  nom: "Oxygène by Alexis",
+  metier: "Coiffeur",
+  ville: VILLE,
+  itineraire: itineraire("Oxygène by Alexis 25 rue des Carmes"),
+  metres: 350,
+  distance: "350 m",
+  photo: "/direct/accueil/coiffure-apres.jpg",
+  // SA PAGE NE PROPOSE QUE SES COUPES : aucune du modèle ne s'y glisse, même
+  // sans base (voir `seulementLesSiennes`).
+  vraiePage: true,
+  fiche: {
+    ou: "25 rue des Carmes, Dax",
+    horaires: "Du lundi au vendredi, 9 h – 18 h 30 · le samedi, 9 h – 17 h 30",
+    mot: "Salon mixte : coupes, couleurs, mèches et extensions — et la barbe.",
+  },
+  catalogue: [
+    coupe("carre-court", "Carré court, pointes rentrées", "42 €", "/direct/accueil/coiffure-apres.jpg",
+      "un carré brun foncé qui s'arrête à la mâchoire, avec une raie légèrement sur le côté, des pointes qui rentrent vers l'intérieur, du volume souple sur les côtés et rien qui touche les épaules", FEMME),
+    coupe("carre-long", "Carré long, mèches qui s'ouvrent", "45 €", "/direct/coiffure-femme-face.jpg",
+      "un carré noir très foncé qui s'arrête à la base du cou, nettement au-dessus des épaules, avec une raie au milieu, des mèches souples qui s'ouvrent autour du visage, du volume arrondi sur les côtés, des pointes qui rentrent vers l'intérieur au niveau du cou, et aucune longueur qui descende sur les épaules", FEMME),
+    coupe("mi-long", "Mi-long dégradé", "45 €", "/direct/accueil/moi-coiffure-apres.jpg",
+      "des cheveux brun foncé, lisses, qui tombent juste sur les épaules, avec une raie au milieu, un dégradé léger qui allège les pointes et des longueurs qui encadrent le visage", FEMME),
+    coupe("balayage", "Balayage blond, longueurs ondulées", "120 €", "/direct/accueil/coiffure-avant.jpg",
+      "de longs cheveux ondulés qui descendent sous la poitrine, raie au milieu, un balayage blond doré lumineux avec des racines un peu plus foncées et des ondulations souples et larges", FEMME),
+    coupe("boucles", "Boucles longues, frange", "68 €", "/direct/coiffure1.jpg",
+      "des cheveux très bouclés en petites boucles serrées, blond caramel, très volumineux, tombant jusqu'aux épaules, avec une frange bouclée qui couvre le front", FEMME),
+    coupe("cuivre", "Carré cuivré, dégradé", "95 €", "/direct/coiffure2.jpg",
+      "un carré dégradé au niveau du menton, très volumineux et ondulé, couleur cuivre roux, avec une frange épaisse", FEMME),
+    coupe("classique", "Coupe courte, dessus texturé", "24 €", "/direct/essai/coif-barbier-avant.jpg",
+      "une coupe courte masculine, cheveux châtains de trois à quatre centimètres sur le dessus, coiffés en mouvement vers l'avant et sur le côté, côtés et nuque courts", HOMME),
+    coupe("boucles-homme", "Boucles sur le dessus", "26 €", "/direct/essai/coif-barbier-apres.jpg",
+      "une coupe masculine aux boucles châtain bien dessinées et volumineuses sur le dessus, d'environ six centimètres, avec des côtés nettement plus courts", HOMME),
+    coupe("boucles-courtes", "Boucles courtes, de face", "26 €", "/direct/coiffure-homme-face.jpg",
+      "une coupe courte masculine, cheveux bouclés d'environ cinq centimètres sur le dessus, nuque et côtés plus courts, pas de raie marquée", HOMME),
+    coupe("motif", "Dégradé et motif rasé", "30 €", "/direct/avis-coupe.jpg",
+      "un motif géométrique rasé à la tondeuse dans les cheveux très courts de la nuque et du côté du crâne", HOMME),
+  ],
+  /* SON MUR : « Voir les coupes faites dans ce salon ». Le modèle y mettait
+     Hugo et Léo sur le motif rasé, et une photo de fauteuil vide ; ici, des
+     clientes et des clients sur SES coupes, femme et homme. Les prénoms sont
+     inventés, comme tout ce que la copie ajoute. */
+  murDuLieu: {
+    maison: [
+      { id: "oxy-m-1", qui: "Le salon", role: "Coiffure mixte", maison: true, photo: "/direct/accueil/coiffure-avant.jpg",
+        mot: "Balayages et extensions : essayez la couleur sur vous avant de venir ✨", heure: "09:05", interesses: 7 },
+      { id: "oxy-m-2", qui: "Le salon", role: "Accueil", maison: true, photo: "/direct/essai/coif-barbier-apres.jpg",
+        mot: "Un fauteuil se libère à 16 h, coupe homme et barbe.", heure: "11:30", interesses: 3 },
+    ],
+    clients: [
+      { id: "oxy-c-1", qui: "Sarah", photo: "/direct/accueil/coiffure-apres.jpg",
+        essai: { quoi: "Carré court, pointes rentrées", verdict: "pris", note: 5 },
+        mot: "Essayé hier soir, rendez-vous pris pour samedi !", heure: "10:12", humeur: "decouvre", interesses: 8, jusqua: "encore 2 jours" },
+      { id: "oxy-c-2", qui: "Thomas", photo: "/direct/essai/coif-barbier-apres.jpg",
+        essai: { quoi: "Boucles sur le dessus", verdict: "pris", note: 5 },
+        mot: "Je n'osais pas laisser pousser. Maintenant si.", heure: "10:47", humeur: "decouvre", interesses: 5, jusqua: "encore 2 jours" },
+      { id: "oxy-c-3", qui: "Julie", photo: "/direct/accueil/coiffure-avant.jpg",
+        essai: { quoi: "Balayage blond, longueurs ondulées", verdict: null, note: 4 },
+        mot: "J'hésite entre ça et le carré. Vos avis ?", heure: "12:05", humeur: "hesite", interesses: 6, jusqua: "encore 2 jours" },
+      { id: "oxy-c-4", qui: "Nadia", photo: "/direct/coiffure2.jpg",
+        essai: { quoi: "Carré cuivré, dégradé", verdict: "pris", note: 5 },
+        mot: "Le cuivré sur moi, je n'y aurais jamais pensé.", heure: "14:20", humeur: "decouvre", interesses: 9, jusqua: "encore 2 jours" },
+      { id: "oxy-c-5", qui: "Hugo", photo: "/direct/avis-coupe.jpg",
+        essai: { quoi: "Dégradé et motif rasé", verdict: null, note: 4 },
+        mot: "Motif ou pas motif ? Dites-moi.", heure: "15:02", humeur: "hesite", interesses: 4, jusqua: "encore 2 jours" },
+    ],
+  },
+  reponse: { cadeau: "Le soin profond offert", texte: "Un fauteuil se libère, je vous prends dès votre arrivée.", tenu: "dans 30 min", apres: 5 },
+  moments: [
+    {
+      de: 9, a: 18.5, quand: "aujourd'hui", icone: "💇‍♀️",
+      titre: "Le carré, pointes rentrées",
+      photo: "/direct/accueil/coiffure-apres.jpg",
+      lignes: ["Shampoing, coupe, brushing", "Environ 45 minutes"],
+      prix: "42 €", action: "Réserver", envies: [],
+    },
+    {
+      de: 9, a: 18.5, quand: "aujourd'hui", icone: "✂️",
+      titre: "Coupe homme et barbe",
+      photo: "/direct/essai/coif-barbier-apres.jpg",
+      lignes: ["Tondeuse, ciseaux, barbe taillée", "Environ 30 minutes"],
+      prix: "32 €", action: "Réserver", envies: ["homme"],
+    },
+  ],
+};
+
 export type CopiePresentation = {
   /** L'adresse de la copie : `/site-internet/apercu/<slug>`. */
   slug: string;
@@ -160,6 +267,7 @@ export type CopiePresentation = {
 export const COPIES_PRESENTATION: CopiePresentation[] = [
   { slug: "demo-le-bordeaux", source: "le-bordeaux-307d33", carte: BORDEAUX },
   { slug: "demo-el-txupinazo", source: "el-txupinazo-66acd5", carte: TXUPINAZO },
+  { slug: "demo-oxygene-by-alexis", source: "oxygene-by-alexis-a3e21b", carte: OXYGENE },
 ];
 
 export function copieDePresentation(slug: string): CopiePresentation | null {
@@ -182,16 +290,21 @@ export function carteDuPaquet(id: string): CarteAutour | undefined {
  *
  * Tout ce que la vraie page montre est gardé — nom, photos, note, horaires,
  * sa carte. On ne remplace que l'identifiant (pour que le parcours, la voix et
- * le double trouvent la copie) et on ajoute le plat, le parcours, la voix et
- * la petite attention de la maison.
+ * le double trouvent la copie) et on ajoute ce que la copie apporte : le
+ * plat, le parcours, la voix, les coupes à essayer, la petite attention.
  */
 export function fusionnerCopie(vraie: CarteAutour, copie: CarteAutour): CarteAutour {
   return {
     ...vraie,
     id: copie.id,
-    voix: copie.voix,
-    menu: copie.menu,
-    moments: copie.moments,
+    voix: copie.voix ?? vraie.voix,
+    menu: copie.menu ?? vraie.menu,
+    moments: copie.moments ?? vraie.moments,
     reponse: vraie.reponse ?? copie.reponse,
+    /* SES COUPES À ESSAYER D'ABORD, PUIS SES VRAIS TARIFS : l'onglet des
+       tarifs garde tout ce que sa fiche dit, et l'essayage ne propose que ce
+       qui a une photo — les coupes de la copie. */
+    catalogue: copie.catalogue ? [...copie.catalogue, ...(vraie.catalogue ?? [])] : vraie.catalogue,
+    murDuLieu: copie.murDuLieu ?? vraie.murDuLieu,
   };
 }

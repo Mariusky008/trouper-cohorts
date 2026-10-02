@@ -34,6 +34,7 @@ import type { CarteDirect } from "@/components/direct/carte-swipe";
 import { flashEnCours, momentDuFlash, partEcoulee, tempsQuiReste } from "./flash";
 import type { Flash } from "./flash";
 import type { AnnoncePassee } from "@/lib/direct/historique";
+import type { Fantome } from "@/lib/direct/fantomes";
 import { personnaliteDe } from "@/lib/direct/personnalites";
 
 /**
@@ -935,6 +936,13 @@ export type ArticleCatalogue = {
   photo?: string;
   /** Le rayon : « Entrées », « Coupes », « Bouquets »… Facultatif. */
   rayon?: string;
+  /**
+   * CE QUE L'ESSAI DOIT REPRODUIRE, écrit devant la photo — jamais d'après le
+   * nom de la prestation. Facultatif : sans elle, l'essai s'appuie sur la
+   * photo seule. Voir `decrire` dans `fantomes.ts`.
+   */
+  decrire?: string;
+  decrireEn?: string;
 };
 
 /**
@@ -1282,6 +1290,13 @@ export type CarteAutour = {
    * `seulementLesSiennes` dans `murDeLaCarte`).
    */
   vraiePage?: boolean;
+  /**
+   * LES ESSAIS AFFICHÉS SUR SON MUR, quand il en a — « Voir les coupes faites
+   * dans ce salon ». Sans eux, le mur montre ceux du modèle de son métier.
+   * Seules les copies de présentation les portent aujourd'hui : voir
+   * `copies-presentation.ts`.
+   */
+  murDuLieu?: { maison: Fantome[]; clients: Fantome[] };
   /** Où en est la lecture de sa carte — montré au seul commerçant, sur sa carte vide. */
   carteSuivi?: { texte: string; detail?: string }[];
   /**

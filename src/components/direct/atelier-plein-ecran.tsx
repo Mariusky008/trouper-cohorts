@@ -58,6 +58,7 @@ export function useMurDuLieu(c: CarteAutour) {
         catalogue: c.catalogue,
         moment: momentEnCours(c, heure),
         seulementLesSiennes: Boolean(c.vraiePage),
+        murDuLieu: c.murDuLieu,
       }),
     [c, heure],
   );
