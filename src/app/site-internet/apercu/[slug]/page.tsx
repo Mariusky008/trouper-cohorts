@@ -52,6 +52,7 @@ import { etatDeLaFiche, raisonLisible } from "@/lib/site-internet/fiche-google";
 import { COLONNES_FICHE, construireFiche } from "@/lib/site-internet/fiche-du-site";
 import { carteDeDemo, estAdresseDeDemo, listeDesDemos } from "@/lib/site-internet/fiches-demo";
 import { copieDePresentation, fusionnerCopie, type CopiePresentation } from "@/lib/direct/copies-presentation";
+import { nomCourt, nomDeLaPage } from "@/lib/site-internet/nom-de-la-page";
 import { PageBoutique } from "./page-boutique";
 import { IndexDesDemos } from "./index-demos";
 
@@ -61,7 +62,9 @@ import { IndexDesDemos } from "./index-demos";
 // démarchage. Toute origine publique doit voir la boutique nue : Le Direct, le
 // résumé, une alerte, mais aussi le lien traçable qu'il envoie lui-même sur
 // WhatsApp et le QR de l'affiche collée dans sa boutique.
-const VIA_PUBLIC = new Set(["direct", "catalogue", "digest", "alerte", "offre", "affiche"]);
+// `ecran` : rouverte depuis l'icône posée sur l'écran d'accueil par un
+// visiteur — voir `manifest.webmanifest/route.ts`.
+const VIA_PUBLIC = new Set(["direct", "catalogue", "digest", "alerte", "offre", "affiche", "ecran"]);
 
 // « Le collectif lui a-t-il amené quelqu'un ? » est autre chose, et c'est LE
 // chiffre qu'il regarde pour juger ce que les autres lui apportent. Un client
@@ -80,9 +83,34 @@ const capWords = (s: string) =>
 // Aperçu de partage (WhatsApp, SMS, réseaux) PROPRE à la page — sinon elle
 // héritait de l'Open Graph racine. Non indexée (maquette privée), mais l'aperçu
 // de partage reste soigné.
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ via?: string; salon?: string }>;
+}): Promise<Metadata> {
   const { slug } = await params;
-  const noindex = { robots: { index: false, follow: false } };
+  const { via, salon } = await searchParams;
+  /**
+   * ═══ SUR L'ÉCRAN D'ACCUEIL, C'EST SA PAGE QUI S'OUVRE ══════════════════
+   *
+   * « Quand je veux les mettre sur l'écran d'accueil de mon iPad ou de mon
+   * téléphone, ils s'ouvrent sur clikme.fr. » Sans manifeste à elle, la page
+   * héritait de celui du site, qui dit « ouvre / ». Le sien dit « ouvre-moi »
+   * — voir `manifest.webmanifest/route.ts`. Un visiteur public le reçoit avec
+   * son `via`, pour que l'icône le rouvre en visiteur et pas en commerçant.
+   *
+   * ET SOUS L'ICÔNE, SON NOM : l'iPhone y écrit `apple-mobile-web-app-title`,
+   * qui valait « ClikMe » pour toutes les pages.
+   */
+  const publicVia = VIA_PUBLIC.has(str(via)) || Boolean(str(salon));
+  const trouve = await nomDeLaPage(slug);
+  const installer: Metadata = {
+    manifest: `/site-internet/apercu/${slug}/manifest.webmanifest${publicVia ? "?via=ecran" : ""}`,
+    appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: trouve ? nomCourt(trouve.nom) : "ClikMe" },
+  };
+  const noindex = { robots: { index: false, follow: false }, ...installer };
   const copie = copieDePresentation(slug);
   if (copie) return { title: `${copie.carte.nom} — sur ClikMe`, ...noindex };
   if (estAdresseDeDemo(slug)) {
