@@ -623,11 +623,14 @@ export function StylesBoutiqueTable() {
         .bt-pages{margin:14px 0 4px;}
         .bt-pages-t{margin:0 0 8px;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:15px;}
         .bt-pages-t span{font-family:var(--font-geist-sans),sans-serif;font-weight:500;font-size:13px;color:var(--bt-gris);}
-        .bt-pages-l{display:flex;gap:9px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory;
-          -webkit-overflow-scrolling:touch;scrollbar-width:none;}
-        .bt-pages-l::-webkit-scrollbar{display:none;}
-        .bt-pages-l button{flex:none;width:96px;aspect-ratio:3/4;padding:0;border-radius:12px;overflow:hidden;cursor:pointer;
-          scroll-snap-align:start;border:1px solid var(--bt-trait);background:var(--bt-nappe);}
+        /* UNE GRILLE, PAS UNE BANDE. « Je ne peux pas scroller vers la droite
+           pour voir les autres images. » La bande glissait au doigt, mais pas
+           à la souris — une molette ne défile pas de côté, et sa barre était
+           masquée : sur un ordinateur, douze pages sur seize restaient
+           introuvables. Toutes les pages sont maintenant sous les yeux. */
+        .bt-pages-l{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px;}
+        .bt-pages-l button{aspect-ratio:3/4;padding:0;border-radius:10px;overflow:hidden;cursor:pointer;
+          border:1px solid var(--bt-trait);background:var(--bt-nappe);}
         .bt-pages-l img{width:100%;height:100%;object-fit:cover;display:block;}
         .bt-visionneuse{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;
           background:#0B0705;animation:btVis .25s ease-out both;}
