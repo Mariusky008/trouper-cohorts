@@ -160,6 +160,8 @@ async function lireLaCopie(copie: CopiePresentation) {
   let carte = copie.carte;
   let note: string | null = copie.carte.google?.note ?? null;
   let avis: number | null = copie.carte.google?.avis ?? null;
+  /** Faut-il encore repérer son hôte sur sa photo ClikMe ? Voir `ApercuMaquette`. */
+  let hoteARepere = false;
   try {
     const supabase = createAdminClient();
     const { data } = await supabase
@@ -189,13 +191,14 @@ async function lireLaCopie(copie: CopiePresentation) {
       }
       const lu = construireFiche(copie.source, row, { disponibilites, services });
       carte = fusionnerCopie(carteDepuisFiche(lu.fiche), copie.carte);
+      hoteARepere = hoteACherche(couvertureDuDiagnostic(row.diagnostic));
       note = lu.note ?? note;
       avis = lu.reviews ?? avis;
     }
   } catch {
     /* pas de base ici → la carte de présentation seule */
   }
-  return { carte, note, avis };
+  return { carte, note, avis, hoteARepere };
 }
 
 /**
@@ -261,7 +264,24 @@ export default async function ApercuMaquette({
   // l'index des démonstrations les prendrait pour une adresse inconnue.
   const copie = copieDePresentation(slug);
   if (copie) {
-    const { carte, note, avis } = await lireLaCopie(copie);
+    const { carte, note, avis, hoteARepere } = await lireLaCopie(copie);
+    /* ═══ ET SON HÔTE EST REPÉRÉ, MÊME PAR LA COPIE ═══════════════════════
+       « Normalement c'est le fantôme propriétaire qui doit bouger, celui qui
+       est devant la porte. » Il ne bouge que si l'on sait où la photo le
+       peint — et ce repérage ne se faisait qu'à la visite de SA page. La
+       copie, qu'on montre, ne le déclenchait jamais : le Bordeaux n'avait
+       pas d'hôte repéré. Elle le demande donc pour lui, sur sa photo à lui.
+       Ce n'est pas un chiffre : une position sur une image, qui sert aussi
+       sa vraie page. */
+    if (hoteARepere) {
+      after(async () => {
+        try {
+          await completerLHote(copie.source);
+        } catch {
+          /* la prochaine visite réessaiera */
+        }
+      });
+    }
     return (
       <PageBoutique
         slug={slug}

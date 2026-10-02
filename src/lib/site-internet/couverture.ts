@@ -133,7 +133,7 @@ async function trouverLHote(image: { type: string; donnees: string }): Promise<E
   return (
     (await chercherUneBoite(
       image,
-      'In this picture, find the ghost mascot who is the HOST: the one wearing a trade outfit (apron, uniform, chef or work clothes), usually at the entrance. Answer only with JSON {"box_2d":[ymin,xmin,ymax,xmax]} normalised to 0-1000. If there is no such ghost, answer {"box_2d":[]}.',
+      'In this picture, find the ghost mascot who is the HOST of the shop. The customer ghosts sit at tables or browse, and their caps show the shop name embroidered in letters. The HOST is standing, usually in the open doorway, at the entrance or behind the counter, often waving, and the front of its cap shows a small trade emblem (fork, scissors, flower...) instead of letters. Answer only with JSON {"box_2d":[ymin,xmin,ymax,xmax]} normalised to 0-1000, the box tightly around the whole host ghost from cap to bottom. If there is no such ghost, answer {"box_2d":[]}.',
     )) ??
     (await chercherUneBoite(
       image,
@@ -219,7 +219,10 @@ export function hoteACherche(etat: EtatCouverture | null): boolean {
   if (etat.hoteCherche !== etat.url) return true;
   const n = etat.hoteEssais ?? 1;
   const dernier = Date.parse(etat.hoteAt ?? "");
-  return n < HOTE_ESSAIS_MAX && !(Number.isFinite(dernier) && Date.now() - dernier < HOTE_ECART_MS);
+  const depuis = Number.isFinite(dernier) ? Date.now() - dernier : Infinity;
+  // TROIS ESSAIS À DIX MINUTES, PUIS UN PAR JOUR : un hôte jamais repéré, c'est
+  // un fantôme qui ne bouge jamais — on ne renonce pas pour de bon.
+  return n < HOTE_ESSAIS_MAX ? depuis >= HOTE_ECART_MS : depuis >= 24 * 3_600_000;
 }
 
 /** L'état rangé dans le diagnostic, s'il y en a un et qu'il est lisible. */

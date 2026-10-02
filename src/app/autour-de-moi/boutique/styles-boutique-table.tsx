@@ -284,7 +284,8 @@ export function StylesBoutiqueTable() {
           background:radial-gradient(closest-side,rgba(255,206,130,.42),rgba(255,160,70,.16) 60%,rgba(255,140,50,0));
           mix-blend-mode:screen;animation:btHalo2 3.4s ease-in-out infinite;}
         @keyframes btHalo2{0%,100%{opacity:.55;transform:scale(.94);}50%{opacity:1;transform:scale(1.06);}}
-        .bt-hote .bt-invite{bottom:calc(100% + 4px);}
+        .bt-hote .bt-invite{bottom:calc(100% + 4px);margin-left:var(--dx,0px);}
+        .bt-hote .bt-invite::after{left:calc(50% - var(--dx,0px));}
         /* TOUTE LA PHOTO CLIKME EST UNE PORTE — et le titre comme la plaque
            du bas laissent passer le doigt jusqu'à elle : seuls leurs boutons
            le retiennent. Sans ça, le seuil, large comme l'écran, couvrait
@@ -328,7 +329,7 @@ export function StylesBoutiqueTable() {
           font-family:var(--font-main-levee,var(--font-ecrit,"Caveat")),cursive;font-size:22px;font-weight:600;
           box-shadow:0 14px 30px -10px rgba(0,0,0,.7);transform-origin:50% 100%;
           animation:btSalutBulle .32s cubic-bezier(.34,1.56,.64,1) both;}
-        .bt-salut::after{content:"";position:absolute;left:50%;bottom:-7px;width:14px;height:14px;
+        .bt-salut::after{content:"";position:absolute;left:calc(50% - var(--dx,0px));bottom:-7px;width:14px;height:14px;
           background:#FFF4E6;transform:translateX(-50%) rotate(45deg);border-radius:2px;}
         @keyframes btSalutBulle{from{opacity:0;transform:scale(.6) translateY(10px);}to{opacity:1;transform:none;}}
         .bt-e-lieu.franchit .bt-salut{animation:btSalutPart .3s ease .12s both;}
@@ -360,9 +361,7 @@ export function StylesBoutiqueTable() {
           animation:btSprite .12s ease-out both;}
         @keyframes btSprite{from{opacity:0;}to{opacity:1;}}
         .bt-e-lieu.franchit .bt-sprite{animation:btSpritePart .55s ease-in both;}
-        /* LE GUIDE ENTRE PAR LE BAS, au premier plan, comme s'il venait vers nous. */
-        .bt-sprite.guide{animation:btGuide .45s cubic-bezier(.34,1.4,.64,1) both;}
-        @keyframes btGuide{from{opacity:0;transform:translateY(35%) scale(.7);}to{opacity:1;transform:none;}}
+
         @keyframes btSpritePart{from{opacity:1;}to{opacity:0;transform:scale(1.08);}}
         .bt-e-exp .bt-double.en-pied,.bt-accueille .bt-double.en-pied{
           filter:drop-shadow(0 12px 22px rgba(0,0,0,.45)) drop-shadow(0 0 22px rgba(255,170,80,.28));}

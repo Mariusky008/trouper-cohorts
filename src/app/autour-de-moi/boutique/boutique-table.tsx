@@ -177,6 +177,17 @@ function lesPosesValidees() {
   return posesValideesPromesse;
 }
 
+/**
+ * LE CENTRE D'UNE BULLE, GARDÉ DANS LA PHOTO. La plus longue (« Touche-moi et
+ * je te montre ma librairie ») fait près de deux cent quatre-vingts points :
+ * son centre reste à cent quarante-cinq points des bords.
+ */
+function dansLaPhoto(x: number, b: { gauche: number; droite: number }): number {
+  const marge = 145;
+  if (b.droite - b.gauche < marge * 2) return (b.gauche + b.droite) / 2;
+  return Math.max(b.gauche + marge, Math.min(b.droite - marge, x));
+}
+
 /** Un silence, joué DANS le geste : c'est lui qui autorise la voix ensuite. */
 const SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
 
@@ -658,17 +669,8 @@ export function BoutiqueTable({
    * « VIENS, JE TE MONTRE ! » — sa bulle, au premier temps de l'entrée, posée
    * au-dessus de lui (en points, dans l'écran du lieu).
    */
-  const [salut, setSalut] = useState<{ x: number; y: number } | null>(null);
-  /**
-   * IL VIENT NOUS CHERCHER, QUAND ON NE SAIT PAS OÙ IL EST PEINT.
-   *
-   * « L'animation n'a pas l'air de fonctionner : on passe de la photo 1 à la
-   * photo 2 en une seconde, et je n'ai vu aucune animation. » Sur la photo du
-   * Bordeaux, le modèle n'avait pas su dire où se tient l'hôte : rien ne
-   * saluait, et il ne restait qu'un zoom d'une demi-seconde. Sans sa place,
-   * il entre donc dans l'image par le bas, au premier plan, et salue de là.
-   */
-  const [guide, setGuide] = useState<{ left: number; top: number; t: number } | null>(null);
+  const [salut, setSalut] = useState<{ x: number; y: number; dx: number } | null>(null);
+
   /* ═══ TOC TOC ═════════════════════════════════════════════════════════════
      « S'il descend sans le toucher, il réapparaît dans un coin et tapote la
      vitre. » On quitte le lieu sans l'avoir touché : le fantôme du coin toque,
@@ -739,7 +741,15 @@ export function BoutiqueTable({
   const arriveAvant = useRef(false);
 
   /** Où se tient l'hôte peint sur la photo ClikMe, en pixels de l'écran du lieu. */
-  const [hoteEcran, setHoteEcran] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  const [hoteEcran, setHoteEcran] = useState<{
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+    /** Les bords de la photo, pour que ses bulles ne sortent pas de l'écran. */
+    gauche: number;
+    droite: number;
+  } | null>(null);
   useLayoutEffect(() => {
     const h = c.couvertureHote;
     if (onglet !== "lieu" || !couv || !h) {
@@ -766,7 +776,7 @@ export function BoutiqueTable({
       const height = h.h * dh;
       // HORS DE LA PHOTO VISIBLE (recadrée) : on passe par le bouton.
       const dedansPhoto = left + width / 2 > r.left - s.left && left + width / 2 < r.right - s.left && top + height / 2 < r.bottom - s.top;
-      setHoteEcran(dedansPhoto ? { left, top, width, height } : null);
+      setHoteEcran(dedansPhoto ? { left, top, width, height, gauche: r.left - s.left, droite: r.right - s.left } : null);
     };
     img.onload = placer;
     img.src = couv;
@@ -816,7 +826,7 @@ export function BoutiqueTable({
    *      feuille).
    */
   const entrer = (depuis?: HTMLElement | null, point?: { x: number; y: number }) => {
-    if (franchit || pousse || salut || guide) return;
+    if (franchit || pousse || salut) return;
     aTouche.current = true;
     try {
       const a = sonSeuil.current ?? new Audio();
@@ -851,22 +861,12 @@ export function BoutiqueTable({
       };
     }
     const reduit = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    // SANS SA PLACE SUR LA PHOTO, IL VIENT AU PREMIER PLAN : au milieu de la
-    // photo, les pieds juste au-dessus des boutons — ou du bas de la photo,
-    // quand les boutons sont à côté (ordinateur).
-    let ici = g;
-    if (enPied && couv && !hoteEcran && ph && sec && !reduit) {
-      const seuil = lieuRef.current?.querySelector<HTMLElement>(".bt-seuil")?.getBoundingClientRect();
-      const milieu = ph.left + ph.width / 2;
-      const dessous = seuil && seuil.left < milieu && seuil.right > milieu ? seuil.top - 6 : ph.bottom - ph.height * 0.03;
-      const t = Math.min(ph.height * 0.46, ph.width * 0.82, dessous - ph.top - 90);
-      const pose = { left: milieu - sec.left - t / 2, top: dessous - sec.top - 0.949 * t, t };
-      setGuide(pose);
-      ici = { left: milieu - t * 0.33, top: dessous - 0.89 * t, width: t * 0.66, height: t * 0.89 } as DOMRect;
-      origine = { x: 50, y: 56 };
-    }
     // SA BULLE, JUSTE AU-DESSUS DE LUI.
-    if (ici && sec) setSalut({ x: ici.left + ici.width / 2 - sec.left, y: Math.max(70, ici.top - sec.top - 8) });
+    if (g && sec) {
+      const x = g.left + g.width / 2 - sec.left;
+      const bornes = ph ? { gauche: ph.left - sec.left, droite: ph.right - sec.left } : null;
+      setSalut({ x, y: Math.max(70, g.top - sec.top - 8), dx: bornes ? dansLaPhoto(x, bornes) - x : 0 });
+    }
     // IL SE RETOURNE ET POUSSE LA PORTE, s'il a cette pose ; sinon il salue.
     if (posesEnPlus["pousse-porte"] && !couv && !reduit) window.setTimeout(() => setPousse(true), 220);
     // IL SALUE — main levée d'un côté, de l'autre, trois fois —, puis se
@@ -874,9 +874,18 @@ export function BoutiqueTable({
     // qui dure très peu de temps et je n'ai pas le temps de la voir » : la
     // première version tenait en une seconde, et on ne la voyait pas. Elle en
     // prend deux : un salut qu'on a le temps de lire, puis l'avancée.
-    const accueil = reduit ? 0 : enPied ? 1150 : 700;
+    /* ═══ SEUL LE FANTÔME PROPRIÉTAIRE BOUGE ════════════════════════════
+       « Normalement c'est le fantôme propriétaire qui doit bouger, celui qui
+       est devant la porte ; là, un deuxième fantôme arrive de nulle part, du
+       bas, et ça fait très bizarre. » Il n'y a plus de second fantôme : ses
+       poses ne viennent que SUR LUI, quand on sait où la photo le peint
+       (repéré par `completerLHote`). Sans sa place, on ne l'anime pas — sa
+       bulle, puis l'avancée vers la porte. Ou sa pose sur le seuil, quand la
+       page n'a pas encore de photo ClikMe : c'est alors lui, le seul. */
+    const lui = enPied && !reduit && (Boolean(hoteEcran) || !couv);
+    const accueil = reduit ? 0 : lui ? 1150 : 600;
     const avance = reduit ? 120 : 750;
-    if (enPied && !reduit) {
+    if (lui) {
       setSonGeste("salut-1");
       [200, 400, 600, 800].forEach((t, i) => window.setTimeout(() => setSonGeste(i % 2 ? "salut-1" : "salut-2"), t));
       window.setTimeout(() => setSonGeste("viens"), 950);
@@ -888,7 +897,6 @@ export function BoutiqueTable({
       setFranchit(null);
       setPousse(false);
       setSalut(null);
-      setGuide(null);
       // DANS LA SALLE, IL MONTRE D'ABORD LE CHEMIN, puis il parle.
       setSonGeste(enPied ? "montre" : null);
     }, accueil + avance);
@@ -1272,7 +1280,14 @@ export function BoutiqueTable({
               onClick={(e) => entrer(e.currentTarget)}
               aria-label={`Entrer chez ${c.nom} avec son fantôme`}
             >
-              <span className="bt-invite">
+              <span
+                className="bt-invite"
+                style={{
+                  // DANS LA PHOTO, MÊME QUAND IL SE TIENT AU BORD : la bulle
+                  // glisse vers l'intérieur, sa pointe reste sur lui.
+                  ["--dx" as string]: `${dansLaPhoto(hoteEcran.left + hoteEcran.width / 2, hoteEcran) - (hoteEcran.left + hoteEcran.width / 2)}px`,
+                }}
+              >
                 <i className="tel">Touche-moi</i>
                 <i className="pc">Clique sur moi</i> et je te montre {mots.chezMoi}&nbsp;👋
               </span>
@@ -1305,18 +1320,12 @@ export function BoutiqueTable({
               })()}
             />
           )}
-          {enPied && !hoteEcran && guide && sonGeste && onglet === "lieu" && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              className="bt-sprite guide"
-              src={geste(sonGeste)}
-              alt=""
-              aria-hidden="true"
-              style={{ width: guide.t, height: guide.t, left: guide.left, top: guide.top }}
-            />
-          )}
           {salut && (
-            <span className="bt-salut" style={{ left: salut.x, top: salut.y }} aria-hidden="true">
+            <span
+              className="bt-salut"
+              style={{ left: salut.x + salut.dx, top: salut.y, ["--dx" as string]: `${salut.dx}px` }}
+              aria-hidden="true"
+            >
               Viens, je te montre&nbsp;!
             </span>
           )}
