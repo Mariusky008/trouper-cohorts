@@ -102,8 +102,7 @@ export function brancheDuMetier(metier: string): CleMetier {
   if (/fleur|fleurist/.test(t)) return "fleuriste";
   if (/bar\b|brasserie|caviste|vin|bière|biere|pub/.test(t)) return "bar";
   if (/restaur|pizz|burger|crêper|creper|traiteur|table/.test(t)) return "restaurant";
-  if (/vêtement|vetement|prêt-à-porter|pret-a-porter|friperie|boutique|mode|chaussur/.test(t))
-    return "mode";
+  if (/vêtement|vetement|prêt-à-porter|pret-a-porter|friperie|boutique|mode|chaussur/.test(t)) return "mode";
   /**
    * ET LES MÉTIERS QUI N'ONT PAS DE BRANCHE À EUX TOMBENT DANS « ARTISAN ».
    *
@@ -118,6 +117,8 @@ export function brancheDuMetier(metier: string): CleMetier {
    * artisan jusqu'à preuve du contraire, ce qui rend une page honnête plutôt
    * qu'une page qui propose d'essayer une coupe chez un plombier.
    */
+  // LE LIBRAIRE AVANT LES ARTISANS : voir `librairie` dans `METIERS`.
+  if (/librair|bouquin|livres?\b/.test(t)) return "librairie";
   if (/tatou/.test(t)) return "artisan";
   if (/lunet|optic/.test(t)) return "lunetier";
   return "artisan";
@@ -243,15 +244,21 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
    *
    * La durée et le détail viennent du même endroit, et ne disent rien d'autre
    * que ce que fait le métier. Voir `metier-content.ts`.
+   *
+   * SAUF CHEZ LE LIBRAIRE. Son métier n'a pas de « prestations » : le repli
+   * lui écrivait « Prestation découverte, Prestation signature, Forfait ». Et
+   * ce qu'on vient chercher chez lui, ce sont SES livres — des titres qu'on ne
+   * peut pas proposer à sa place. Son chapitre dit qu'ils arrivent.
    */
-  const proposees = services.length
-    ? []
-    : (resolveMetierContent(f.metier, resolveMetier(f.metier).profil).demoServices ?? []).map((s, i) => ({
-        id: `${f.slug}-p${i}`,
-        rayon: "Prestations",
-        nom: s.name,
-        detail: [s.duration, s.desc].filter(Boolean).join(" · ") || undefined,
-      }));
+  const proposees =
+    services.length || brancheDuMetier(f.metier) === "librairie"
+      ? []
+      : (resolveMetierContent(f.metier, resolveMetier(f.metier).profil).demoServices ?? []).map((s, i) => ({
+          id: `${f.slug}-p${i}`,
+          rayon: "Prestations",
+          nom: s.name,
+          detail: [s.duration, s.desc].filter(Boolean).join(" · ") || undefined,
+        }));
   return {
     id: f.slug,
     branche: brancheDuMetier(f.metier),
@@ -303,7 +310,9 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
     couverture: f.couverture || undefined,
     couvertureHote: f.couverture ? f.couvertureHote : undefined,
     ficheGoogle:
-      f.ficheGoogle && (f.ficheGoogle.menu || f.ficheGoogle.prix || f.ficheGoogle.services?.length) ? f.ficheGoogle : undefined,
+      f.ficheGoogle && (f.ficheGoogle.menu || f.ficheGoogle.prix || f.ficheGoogle.services?.length)
+        ? f.ficheGoogle
+        : undefined,
     semaine: f.semaine?.length ? f.semaine : undefined,
     // SA PAGE, FABRIQUÉE DEPUIS SA FICHE : rien du modèle ne s'y essaie.
     vraiePage: true,
@@ -331,14 +340,21 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
     catalogue: services.length
       ? services.map((s, i) => ({
           id: `${f.slug}-s${i}`,
-          rayon: "Prestations",
+          // CHEZ LE LIBRAIRE, CE QU'IL A SAISI EST UNE TABLE DE COUPS DE CŒUR.
+          rayon: brancheDuMetier(f.metier) === "librairie" ? "Ses coups de cœur" : "Prestations",
           nom: s.nom,
           detail: s.detail,
           prix: s.prix,
         }))
       : f.carteLue?.length
         ? // SA CARTE, LUE SUR SES PHOTOS : ses plats, ses rubriques, ses prix.
-          f.carteLue.map((p, i) => ({ id: `${f.slug}-c${i}`, rayon: p.rubrique || "La carte", nom: p.nom, detail: p.detail, prix: p.prix }))
+          f.carteLue.map((p, i) => ({
+            id: `${f.slug}-c${i}`,
+            rayon: p.rubrique || "La carte",
+            nom: p.nom,
+            detail: p.detail,
+            prix: p.prix,
+          }))
         : proposees,
     // Vrai seulement quand ce sont celles du MÉTIER et pas les siennes : c'est
     // ce drapeau qui fait écrire, sous le chapitre, qu'elles sont proposées.

@@ -136,7 +136,7 @@ export function AtelierPleinEcran({
 
 /* LA FEUILLE DE L'ATELIER. La charte des pages : nuit brune (#120C09),
    crème (#FFF4E6), ambre (#F5A23A), rose (#FF2E9A). */
-function StylesAtelier() {
+export function StylesAtelier() {
   return (
     <style
       dangerouslySetInnerHTML={{

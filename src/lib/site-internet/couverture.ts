@@ -338,6 +338,18 @@ const SCENES: Record<CleMetier, { dedans: Scene; devant: Scene }> = {
       clients: "Two customer ghosts chat in front of the window, admiring the handmade pieces on display.",
     },
   },
+  /* LE LIBRAIRE CONSEILLE : il tend un livre, il ne fabrique rien. Rangé chez
+     les artisans, il recevait un marteau. */
+  librairie: {
+    dedans: {
+      hote: "stands between the bookshelves, holding out an open book to recommend it, with a warm smile",
+      clients: "A customer ghost reads the back cover of a book with delight; another browses the shelves or the table of new releases.",
+    },
+    devant: {
+      hote: "stands at the entrance door, holding a book against its chest and waving to welcome readers",
+      clients: "If the photo shows book bins or a table in front of the window, two customer ghosts browse them, one reading a page; otherwise two customer ghosts admire the books in the window.",
+    },
+  },
   lunetier: {
     dedans: {
       hote: "stands at the counter, adjusting a pair of glasses on the face of a customer ghost",
@@ -373,6 +385,7 @@ const EMBLEMES: Record<CleMetier, string> = {
   mode: "a clothes hanger",
   artisan: "a small hammer",
   lunetier: "a pair of glasses",
+  librairie: "an open book",
 };
 export function casquette(nom: string, branche: CleMetier): string {
   const court = nom.trim().length >= 2 && nom.trim().length <= 18;
@@ -498,6 +511,10 @@ const POSES_SCENE: Record<CleMetier, { hote: string; clients: string[] }> = {
   mode: { hote: "hote-mode", clients: ["client-sac", "client-curieux", "client-rit"] },
   fleuriste: { hote: "hote-fleuriste", clients: ["client-ravi", "client-curieux", "client-sac"] },
   artisan: { hote: "hote-artisan", clients: ["client-curieux", "client-ravi", "client-sac"] },
+  // SA POSE EST `hote-libraire.png`. Tant qu'elle n'est pas déposée, la photo
+  // se fait sans pose d'hôte (voir `unePose`) — jamais avec le marteau de
+  // l'artisan.
+  librairie: { hote: "hote-libraire", clients: ["client-curieux", "client-ravi", "client-sac"] },
 };
 
 type Img = { type: string; donnees: string };

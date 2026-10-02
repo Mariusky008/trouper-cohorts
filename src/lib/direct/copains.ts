@@ -34,8 +34,11 @@ const SYNERGIES: Record<CleMetier, CleMetier[]> = {
   lunetier: ["mode", "coiffeur"],
   restaurant: ["bar", "fleuriste", "artisan"],
   bar: ["restaurant", "mode"],
-  fleuriste: ["restaurant", "artisan"],
-  artisan: ["fleuriste", "mode", "restaurant"],
+  fleuriste: ["restaurant", "artisan", "librairie"],
+  artisan: ["fleuriste", "mode", "restaurant", "librairie"],
+  // LE LIBRAIRE PRÉSENTE CEUX CHEZ QUI L'ON VA AVEC UN LIVRE : le café ou la
+  // table d'à côté, le fleuriste et le créateur pour un cadeau.
+  librairie: ["restaurant", "fleuriste", "artisan"],
 };
 
 /** Ce que le bouton d'un copain promet, dans les mots de son métier. */
@@ -48,6 +51,7 @@ const BOUTON: Record<CleMetier, string> = {
   bar: "Voir la soirée",
   fleuriste: "Voir les bouquets",
   artisan: "Découvrir l'atelier",
+  librairie: "Trouver mon prochain livre",
 };
 
 export type Copain = {

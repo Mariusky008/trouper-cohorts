@@ -46,5 +46,8 @@ export default async function DomainSite() {
   if (!slug) return <NotFound />;
 
   // Rend la maquette du site (mode publié) sous le domaine du commerçant.
-  return ApercuMaquette({ params: Promise.resolve({ slug }) });
+  // SES PARAMÈTRES D'ADRESSE AUSSI, MÊME VIDES : la page les attend (`via`,
+  // `salon`) et les lisait sur rien — la page d'un domaine propre s'arrêtait
+  // net. Sous son propre nom de domaine, il n'y a ni affiche ni invitation.
+  return ApercuMaquette({ params: Promise.resolve({ slug }), searchParams: Promise.resolve({}) });
 }

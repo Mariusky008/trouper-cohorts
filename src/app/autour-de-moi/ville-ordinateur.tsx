@@ -67,6 +67,7 @@ const MOTS: Record<CleMetier, { question: string; bouton: string; fantome: strin
   bar: { question: "On y passe ce soir ?", bouton: "Voir la soirée", fantome: "hote-barman", rdv: "Réserver" },
   fleuriste: { question: "Ce bouquet, chez toi ?", bouton: "Voir les bouquets", fantome: "hote-fleuriste", rdv: "RDV" },
   artisan: { question: "Cette pièce, chez toi ?", bouton: "Découvrir l'atelier", fantome: "hote-artisan", rdv: "RDV" },
+  librairie: { question: "Ton prochain livre ?", bouton: "Trouver mon prochain livre", fantome: "hote-libraire", rdv: "Réserver" },
 };
 const motsDe = (b: string) => MOTS[b as CleMetier] ?? MOTS.artisan;
 
@@ -439,7 +440,14 @@ export function VilleOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) 
                     )}
                     {f.prix && <p className="vo-prix">{f.prix}</p>}
                     {centre && (
-                      <button type="button" className="vo-go" onClick={() => setAtelier(f.c)}>
+                      <button
+                        type="button"
+                        className="vo-go"
+                        onClick={() =>
+                          // LE LIBRAIRE N'A PAS D'ATELIER D'ESSAI : son conseil vit sur sa page.
+                          f.c.branche === "librairie" ? window.location.assign(pageDe(f.c)) : setAtelier(f.c)
+                        }
+                      >
                         <span>{mots.bouton}</span>
                         <s aria-hidden="true">→</s>
                       </button>
@@ -494,7 +502,16 @@ export function VilleOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) 
                         </button>
                       </nav>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img className="vo-son-fantome" src={`/direct/fantomes/${mots.fantome}.png`} alt="" />
+                      <img
+                        className="vo-son-fantome"
+                        src={`/direct/fantomes/${mots.fantome}.png`}
+                        alt=""
+                        onError={(e) => {
+                          // UN FANTÔME PAS ENCORE DESSINÉ (le libraire) : celui de ClikMe.
+                          const i = e.currentTarget;
+                          if (!i.src.endsWith("/clikme-fantome.png")) i.src = "/clikme-fantome.png";
+                        }}
+                      />
                     </div>
                   )}
                 </article>

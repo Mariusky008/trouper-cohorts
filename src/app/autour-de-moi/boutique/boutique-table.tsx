@@ -153,6 +153,12 @@ const MOTS: Record<string, MotsDuMetier> = {
     carte: "Créations et prix", titre: "Les créations", reserver: "Le contacter", experience: "Et si vous découvriez ?",
     vide: "Ses créations arrivent. En attendant, demandez ce qui sort de l’atelier.", lue: ["ses étiquettes", "vos étiquettes"], completer: "l’atelier", invite: "Entre, je te montre l’atelier.",
   },
+  /* LE LIBRAIRE : sa « carte », ce sont ses coups de cœur, et l'expérience
+     n'est pas un essai — c'est son conseil (voir `essai-du-lieu.tsx`). */
+  librairie: {
+    carte: "Ses coups de cœur", titre: "Ses coups de cœur", reserver: "Demander un livre", experience: "Et si on trouvait ton prochain livre ?",
+    vide: "Ses coups de cœur arrivent. En attendant, demandez-lui ce qu’il lit en ce moment.", lue: ["ses étiquettes", "vos étiquettes"], completer: "la librairie", invite: "Entre, je te trouve ton prochain livre.",
+  },
 };
 const motsDuMetier = (branche: string): MotsDuMetier => MOTS[branche] ?? MOTS.artisan;
 
@@ -1419,6 +1425,31 @@ export function BoutiqueTable({
                     : `J’ai essayé « ${o.quoi} »${o.prix ? ` (${o.prix})` : ""} sur moi. Ça me va ou pas ?`,
                   quand: heureCourte(),
                   photo: o.image,
+                });
+                setOnglet("amis");
+              }}
+              /* LE CONSEIL DU LIBRAIRE, MONTRÉ AUX AMIS : on n'a rien
+                 « essayé sur soi », on demande qui l'a lu. */
+              onConseil={(l) => {
+                const moi = monPrenom() || "Vous";
+                ouvrirSalon({
+                  cle: cleSalon,
+                  sujet: `Chez ${c.nom}`,
+                  ou: c.nom,
+                  parQui: moi,
+                  quand: "Aujourd’hui",
+                  annonce: l.quoi,
+                  prix: l.prix,
+                  distance: c.distance,
+                  photo: l.photo,
+                  boutique: { id: c.id, nom: c.nom, lien: lienPage() },
+                });
+                ecrireDansSalon(cleSalon, {
+                  qui: moi,
+                  voix: "moi",
+                  texte: `Le libraire de ${c.nom} me conseille « ${l.quoi} »${l.prix ? ` (${l.prix})` : ""}. Quelqu’un l’a lu ?`,
+                  quand: heureCourte(),
+                  photo: l.photo,
                 });
                 setOnglet("amis");
               }}

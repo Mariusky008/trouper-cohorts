@@ -117,7 +117,10 @@ export function phraseDuSeuil(ouvert: OpenState, allumee: boolean, invitation = 
   if (ouvert && !ouvert.open) {
     // COURTE, ET SANS DEUX-POINTS : la ligne tient sous le titre, et rien ne
     // s'y coupe avant une ponctuation.
-    return ouvert.next ? `On ouvre à ${ouvert.next.replace(/ /g, "\u00a0")}. Entre, je te fais visiter.` : "C'est fermé. Entre, je te fais visiter.";
+    // ET DANS LES MOTS DE SON MÉTIER, MÊME PORTE FERMÉE : le soir, tous les
+    // commerces disaient la même phrase — « Entre, je te fais visiter » —, et
+    // le coiffeur ne parlait plus de coupes.
+    return ouvert.next ? `On ouvre à ${ouvert.next.replace(/ /g, "\u00a0")}. ${invitation}` : `C'est fermé. ${invitation}`;
   }
   // « LA SALLE EST ALLUMÉE » SEULEMENT QUAND L'ENSEIGNE L'EST : c'est la même
   // promesse, dite deux fois.

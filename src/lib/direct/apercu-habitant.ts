@@ -103,6 +103,17 @@ export const METIERS = [
      Range sous « Mode », il aurait herite du mur des vetements — « photographiez
      vous en buste » — au lieu de son propre mur. */
   { cle: "lunetier", label: "Lunetiers", court: "Lunetiers", emoji: "👓" },
+  /* ═══ LE LIBRAIRE ═══
+     « J'aimerais rajouter un commerçant : c'est pour une librairie. »
+
+     SA BRANCHE A LUI, ET PAS UNE PLACE CHEZ LES CRÉATEURS. Rangé là, il
+     tombait dans la famille du bien-être — « le cabinet », « les séances »,
+     « un rendez-vous ? » — et sa photo ClikMe lui mettait un marteau dans la
+     main. Surtout, on ne vient pas chez lui pour ESSAYER quelque chose : on
+     vient pour qu'il nous CONSEILLE. Son expérience n'est donc pas un essai
+     mais « Ton prochain livre » : trois questions, et il répond par ses coups
+     de cœur — voir `essai-du-lieu.tsx`. */
+  { cle: "librairie", label: "Librairies", court: "Librairies", emoji: "📚" },
 ] as const;
 
 export type CleMetier = (typeof METIERS)[number]["cle"];
@@ -234,6 +245,9 @@ export const MOT_DU_METIER: Record<CleMetier, MotDuMetier> = {
   // travaille — c'est ce qui distingue sa pièce d'un objet de boutique. Chaque
   // métier écrit remplace ce mot par le sien, voir MOT_DU_LIBELLE.
   artisan: { carte: "L'atelier", journee: "Sa journée", icone: "bougie" },
+  // « LES COUPS DE CŒUR » : chez un libraire on ne vient pas voir un stock,
+  // on vient chercher ce qu'il a aimé. C'est le mot de sa table.
+  librairie: { carte: "Ses coups de cœur", journee: "Sa journée", icone: "librairie" },
 };
 
 /**
@@ -319,6 +333,14 @@ export const ENVIES: Record<CleMetier, Envie[]> = {
     { cle: "ordonnance", label: "Avec ordonnance", emoji: "📄" },
     { cle: "reparer", label: "Réparation", emoji: "🔧" },
     { cle: "solaire", label: "Solaires", emoji: "🕶️" },
+  ],
+  // LES ENVIES DU LECTEUR NE SONT PAS DES RAYONS NON PLUS : on entre chez le
+  // libraire pour un conseil, pour un cadeau, ou parce qu'un auteur vient.
+  librairie: [
+    { cle: "maintenant", label: "Tout de suite", emoji: "⚡" },
+    { cle: "conseil", label: "Un conseil", emoji: "💬" },
+    { cle: "offrir", label: "À offrir", emoji: "🎁" },
+    { cle: "jeunesse", label: "Jeunesse", emoji: "🧸" },
   ],
 };
 
@@ -971,7 +993,8 @@ export function motCatalogue(metier: string): {
     return { emoji: "✂️", verbe: "Voir les prestations", titre: "Les prestations" };
   if (/fleurist/.test(m))
     return { emoji: "💐", verbe: "Voir les créations", titre: "Les créations" };
-  if (/porter|friperie|mode|boutique|chauss|bijou|opticien|librairie/.test(m))
+  if (/librair|bouquin/.test(m)) return { emoji: "📚", verbe: "Voir ses coups de cœur", titre: "Ses coups de cœur" };
+  if (/porter|friperie|mode|boutique|chauss|bijou|opticien/.test(m))
     return { emoji: "🛍️", verbe: "Voir les produits", titre: "Les produits" };
   if (/garage|garagiste|réparat|reparat|plomb|électric|electric|artisan/.test(m))
     return { emoji: "🔧", verbe: "Voir les prestations", titre: "Les prestations" };

@@ -17,7 +17,17 @@
  * prénom. Ajouter un métier, c'est ajouter une entrée.
  */
 
-export type FamilleDouble = "table" | "bar" | "coiffure" | "ongles" | "fleurs" | "mode" | "createur" | "lunettes" | "seance";
+export type FamilleDouble =
+  | "table"
+  | "bar"
+  | "coiffure"
+  | "ongles"
+  | "fleurs"
+  | "mode"
+  | "createur"
+  | "lunettes"
+  | "seance"
+  | "librairie";
 
 export type ProfilDouble = {
   famille: FamilleDouble;
@@ -99,6 +109,19 @@ const DE_COTE: ProfilDouble["demande"] = {
   personnes: false,
   heures: HEURES_BOUTIQUE,
   phrase: (jour, heure) => `Je passe ${jour} vers ${heure}, tu me la mets de côté ?`,
+};
+
+/* LE LIVRE MIS DE CÔTÉ — au masculin : « je te le mets de côté ». */
+const LIVRE_DE_COTE: ProfilDouble["demande"] = {
+  titre: "Faire mettre de côté",
+  court: "Mettre de côté",
+  objet: "de te le mettre de côté",
+  verbe: "mettre le livre de côté pour un passage en librairie",
+  pastille: "Me le mettre de côté ?",
+  proposition: "Je te le mets de côté ?",
+  personnes: false,
+  heures: HEURES_BOUTIQUE,
+  phrase: (jour, heure) => `Je passe ${jour} vers ${heure}, tu me le mets de côté ?`,
 };
 
 const PROFILS: Record<FamilleDouble, ProfilDouble> = {
@@ -232,6 +255,23 @@ const PROFILS: Record<FamilleDouble, ProfilDouble> = {
     demande: DE_COTE,
     sensible: "Sur-mesure, délais, stocks exacts",
   },
+  /* LE LIBRAIRE : on vient pour son conseil. Sa question n'est pas « le
+     produit du moment » mais « ton coup de cœur ? » — c'est ce qu'on lui
+     demande en entrant. */
+  librairie: {
+    famille: "librairie",
+    murCourt: "Leurs lectures",
+    role: "libraire",
+    ...EQUIPE,
+    lieu: "la librairie",
+    typeLieu: "librairie",
+    vedette: "le coup de cœur du moment",
+    questionVedette: "Ton coup de cœur ?",
+    carteNom: "Ses coups de cœur",
+    suggestions: ["Ton coup de cœur ?", "Un livre à offrir ?", "Tu l'as en stock ?"],
+    demande: LIVRE_DE_COTE,
+    sensible: "Stock exact, délais de commande, prix d'un livre qu'il n'a pas listé",
+  },
   lunettes: {
     famille: "lunettes",
     murCourt: "Leurs essais",
@@ -276,6 +316,7 @@ export function familleDuDouble(c: { branche?: string | null; metier?: string | 
   if (/coiff|barbier/.test(m)) return "coiffure";
   if (/fleur/.test(m)) return "fleurs";
   if (/tatou|tattoo|pierc/.test(m)) return "seance";
+  if (b === "librairie" || /librair|bouquin/.test(m)) return "librairie";
   if (b === "restaurant" || b === "boulangerie") return "table";
   if (b === "bar") return "bar";
   if (b === "coiffeur") return /ongl/.test(m) ? "ongles" : "coiffure";

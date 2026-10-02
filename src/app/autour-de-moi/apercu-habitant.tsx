@@ -14497,7 +14497,10 @@ export function ApercuHabitant() {
                           <b>{toutes.length + evenements.length}</b>
                         </button>
                       </li>
-                      {METIERS.map((m) => (
+                      {/* UN MÉTIER SANS AUCUN COMMERCE N'EST PAS UNE ENTRÉE :
+                          « Librairies · 0 » promettrait un rayon vide. Il
+                          apparaît avec son premier commerce. */}
+                      {METIERS.filter((m) => toutesLesCartes().some((x) => x.branche === m.cle)).map((m) => (
                         <li key={m.cle}>
                           <button
                             type="button"

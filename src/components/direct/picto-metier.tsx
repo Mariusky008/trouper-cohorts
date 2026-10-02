@@ -25,6 +25,14 @@ import type { CleIcone } from "@/lib/direct/apercu-habitant";
 
 export function PictoMetier({ icone }: { icone: CleIcone }) {
   const traces: Record<CleIcone, ReactNode> = {
+    // UN LIVRE OUVERT : deux pages, la reliure au milieu.
+    librairie: (
+      <>
+        <path d="M12 6.5C10 5 7.2 4.5 3.5 4.8v13.4c3.7-.3 6.5.2 8.5 1.7" />
+        <path d="M12 6.5c2-1.5 4.8-2 8.5-1.7v13.4c-3.7-.3-6.5.2-8.5 1.7" />
+        <path d="M12 6.5v13.4" />
+      </>
+    ),
     // Fourchette et couteau — le seul qui existait, et le seul qui était juste.
     restaurant: (
       <>
