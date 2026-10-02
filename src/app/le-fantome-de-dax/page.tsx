@@ -1,9 +1,10 @@
 /**
  * 🖋️ « LE FANTÔME DE DAX » — LE MAGAZINE BD DE CLIKME, NUMÉRO D'ESSAI.
  *
- * Une couverture et une planche, « La rencontre du mois » : El Txupinazo et
- * l'onglerie d'en face. Les décors et les fantômes sont redessinés par le
- * moteur d'images à la première ouverture — voir `api/direct/bd/[id]`.
+ * Épisode 1 du « gossip du jour » : l'histoire vraie du Splendid, racontée
+ * par deux fantômes à sa propre terrasse — une couverture, deux pages. Les
+ * décors et les fantômes sont redessinés par le moteur d'images à la première
+ * ouverture — voir `api/direct/bd/[id]`.
  *
  * PAGE D'ESSAI : elle ne s'indexe pas, et aucun menu n'y mène.
  */

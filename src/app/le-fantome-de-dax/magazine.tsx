@@ -99,7 +99,7 @@ const Recit = ({ children, style, classe = "" }: { children: ReactNode; style?: 
   </div>
 );
 
-const TOTAL = 11;
+const TOTAL = 16;
 
 export function Magazine() {
   /* COMBIEN DE DESSINS SONT ARRIVÉS — le bandeau du haut le dit, pour qu'on
@@ -165,28 +165,29 @@ export function Magazine() {
             <p className="fm-sous">Le magazine BD de clikme · N° 1 · Octobre 2026 · Gratuit</p>
           </header>
           <div className="fm-case-couv">
-            <Decor id="rue" photo="/direct/bd/rue-txupinazo.jpg" pos="52% 50%" onPret={noter("rue")} />
-            <Perso id="chef-accueil" pose="/direct/double/accueil.webp" style={{ left: "46%", top: "52%", height: "19%" }} classe="flotte" onPret={noter("chef-accueil")} />
-            <Perso id="ongles-content" pose="/direct/double/ongles/content.webp" style={{ left: "6%", top: "57%", height: "22%" }} classe="flotte miroir" onPret={noter("ongles-content")} />
-            <Bulle style={{ left: "57%", top: "41%", width: 210 }}>Entre… mais tu ne touches pas au taureau.</Bulle>
-            <Bulle style={{ left: "8%", top: "50%", width: 120 }} queue="d">
-              Moi&nbsp;? Jamais.
+            <Decor id="facade" photo="/direct/bd/splendid-facade.jpg" pos="50% 50%" onPret={noter("facade")} />
+            <Perso id="bar-accueil" pose="/direct/double/bar/accueil.webp" style={{ left: "54%", top: "30%", height: "17%" }} classe="flotte" onPret={noter("bar-accueil")} />
+            <Perso id="ongles-reflechit" pose="/direct/double/ongles/reflechit.webp" style={{ left: "6%", top: "56%", height: "22%" }} classe="flotte miroir" onPret={noter("ongles-reflechit")} />
+            <Bulle style={{ left: "5%", top: "44%", width: 220 }} queue="d">
+              C&apos;est vrai que tu as vécu là-dedans&nbsp;?
             </Bulle>
+            <Bulle style={{ left: "64%", top: "22%", width: 190 }}>Chut. Pas devant le personnel.</Bulle>
           </div>
           <div className="fm-cartouche-couv">
-            <p className="fm-ep-k">Scandale au Txupinazo</p>
+            <p className="fm-ep-k">Le gossip du jour · une histoire vraie de Dax</p>
             <p className="fm-ep-t">
-              Qui a fait les ongles
+              Cinq ans au Splendid,
               <br />
-              du taureau&nbsp;?
+              et pas une seule note de chambre
             </p>
-            <p className="fm-ep-d">La rencontre du mois · page 12</p>
+            <p className="fm-ep-d">Épisode 1 · page 12</p>
           </div>
           <div className="fm-pastille">
-            <b>12</b>
+            <b>1</b>
             <span>
-              bons
-              <br />à l&apos;intérieur
+              café
+              <br />
+              offert
             </span>
           </div>
         </>,
@@ -203,117 +204,154 @@ export function Magazine() {
               <p className="fm-sous">Le magazine BD de clikme · N° 1 · Octobre 2026</p>
             </div>
             <div className="fm-ep">
-              <p className="fm-ep-k">La rencontre du mois</p>
-              <p className="fm-ep-t petit">Qui a fait les ongles du taureau&nbsp;?</p>
+              <p className="fm-ep-k">Le gossip du jour · épisode 1</p>
+              <p className="fm-ep-t petit">Cinq ans au Splendid</p>
             </div>
           </header>
           <div className="fm-grille">
-            <div className="fm-rang r1">
-              {/* 1 — ELLE ARRIVE, LES ONGLES TOUT FRAIS. */}
+            <div className="fm-rang" style={{ height: 360 }}>
+              {/* 1 — EN TERRASSE, FACE AU PALACE. */}
               <div className="fm-case" style={{ width: 784 }}>
-                <Decor id="rue" photo="/direct/bd/rue-txupinazo.jpg" pos="50% 60%" onPret={() => {}} />
-                <Perso id="ongles-accueil" pose="/direct/double/ongles/accueil.webp" style={{ left: 110, top: 104, height: 165 }} classe="flotte miroir" onPret={noter("ongles-accueil")} />
-                <Perso id="chef-accueil" pose="/direct/double/accueil.webp" style={{ left: 380, top: 132, height: 128 }} classe="flotte" onPret={() => {}} />
-                <Recit>Dax, un lundi, 12 h 40.</Recit>
-                <Bulle style={{ left: 16, top: 40, width: 250 }} queue="d">
-                  Un pintxo, vite fait. Et personne ne touche à mes ongles&nbsp;: ils sont tout frais.
+                <Decor id="terrasse" photo="/direct/bd/splendid-terrasse.jpg" pos="50% 55%" onPret={noter("terrasse")} />
+                <Perso id="ongles-content" pose="/direct/double/ongles/content.webp" style={{ left: 110, top: 140, height: 205 }} classe="flotte miroir" onPret={noter("ongles-content")} />
+                <Perso id="bar-accueil" pose="/direct/double/bar/accueil.webp" style={{ left: 480, top: 130, height: 215 }} classe="flotte" onPret={() => {}} />
+                <span className="fm-tasse" style={{ left: 300, top: 292 }}>☕</span>
+                <span className="fm-tasse" style={{ left: 446, top: 292 }}>☕</span>
+                <Recit>Dax, un mardi, 17 h. En terrasse du Splendid.</Recit>
+                <Bulle style={{ left: 30, top: 50, width: 250 }} queue="d">
+                  Tu as vu&nbsp;? Le Splendid est plein, ce soir.
                 </Bulle>
-                <Bulle style={{ left: 440, top: 40, width: 230 }}>Ici, les pintxos se mangent avec les doigts, ma belle&nbsp;!</Bulle>
+                <Bulle style={{ left: 470, top: 40, width: 260 }}>Plein&nbsp;? Moi, je l&apos;ai connu vide. Cinq ans.</Bulle>
               </div>
             </div>
-            <div className="fm-rang r2">
-              {/* 2 — ELLE LÈVE LES YEUX. */}
-              <div className="fm-case" style={{ width: 380 }}>
-                <Decor id="salle" photo="/direct/bd/salle-txupinazo.jpg" taille="125%" pos="45% 0%" onPret={noter("salle")} />
-                <Perso id="chef-content" pose="/direct/double/content.webp" style={{ left: 232, top: 128, height: 104 }} classe="flotte" onPret={noter("chef-content")} />
-                <Perso id="ongles-reflechit" pose="/direct/double/ongles/reflechit.webp" style={{ left: -14, top: 112, height: 190 }} classe="miroir" onPret={noter("ongles-reflechit")} />
-                <Bulle style={{ left: 8, top: 12, width: 196 }}>Et lui, là-haut&nbsp;? Ses sabots… une catastrophe.</Bulle>
-                <Bulle style={{ right: 6, top: 52, width: 158 }} queue="d">
-                  C&apos;est un taureau. Il est PEINT. Au PLAFOND.
-                </Bulle>
-              </div>
-              {/* 3 — MINUIT : UN FANTÔME, ÇA FLOTTE. */}
-              <div className="fm-case nuit" style={{ width: 394 }}>
-                <Decor id="salle" photo="/direct/bd/salle-txupinazo.jpg" taille="330%" pos="60% 4%" classe="nuit" onPret={() => {}} />
-                <div className="fm-voile-nuit" />
-                <Perso id="ongles-content" pose="/direct/double/ongles/content.webp" style={{ left: 36, top: 10, height: 170, transform: "rotate(180deg)" }} onPret={() => {}} />
-                <Recit classe="droite" style={{ maxWidth: 200 }}>
-                  Minuit. Le bar est fermé. Mais un fantôme, ça flotte.
-                </Recit>
-                <Bulle style={{ left: 56, top: 196, width: 210 }} queue="hg">
-                  Bouge pas. Ça sèche en trois minutes.
-                </Bulle>
-              </div>
-            </div>
-            <div className="fm-rang r3">
-              {/* 4 — LE MATIN DU SCANDALE. */}
+            <div className="fm-rang" style={{ height: 290 }}>
+              {/* 2 — « RACONTE. » */}
               <div className="fm-case" style={{ width: 300 }}>
-                <Decor
-                  id="salle-verni"
-                  photo="/direct/bd/salle-txupinazo.jpg"
-                  taille="150%"
-                  pos="55% 8%"
-                  onPret={noter("salle-verni")}
-                  enAttente={<span className="fm-paillette" style={{ left: 172, top: 22 }}>✨</span>}
-                />
-                <Perso id="chef-parle" pose="/direct/double/parle-1.webp" style={{ left: 30, top: 140, height: 210 }} onPret={noter("chef-parle")} />
-                <Recit>7 h 30.</Recit>
-                <Bulle style={{ left: 60, top: 40, width: 220 }} classe="cri">
-                  Qui a fait les ongles du taureau&nbsp;?!
-                </Bulle>
-                <Bulle style={{ right: -10, top: 158, width: 112 }} queue="hors">
-                  Il a même une paillette&nbsp;!
-                </Bulle>
-                <Bulle style={{ right: -10, top: 222, width: 104 }} queue="hors">
-                  Je veux la même&nbsp;!
+                <Decor id="terrasse" photo="/direct/bd/splendid-terrasse.jpg" taille="200%" pos="72% 42%" onPret={() => {}} />
+                <Perso id="ongles-reflechit" pose="/direct/double/ongles/reflechit.webp" style={{ left: 6, top: 66, height: 240 }} classe="miroir" onPret={() => {}} />
+                <Bulle style={{ right: 22, top: 26, width: 120 }}>…Raconte.</Bulle>
+                <Bulle style={{ right: -10, top: 196, width: 150 }} queue="hors">
+                  Tout commence en 1928.
                 </Bulle>
               </div>
-              {/* 5 — À L'ATELIER, C'EST COMPLET. */}
-              <div className="fm-case" style={{ width: 232 }}>
-                <Decor id="atelier" photo="/direct/double/ongles/decor.jpg" taille="200%" pos="50% 12%" onPret={noter("atelier")} />
-                <div className="fm-ardoise">
-                  <b>Rouge Txupi</b>
-                  <span>complet jusqu&apos;à jeudi</span>
+              {/* 3 — 1928 : BATTRE VICHY. */}
+              <div className="fm-case" style={{ width: 474 }}>
+                <Decor id="facade-1928" photo="/direct/bd/splendid-facade.jpg" pos="50% 40%" classe="sepia" onPret={noter("facade-1928")} />
+                <Recit style={{ maxWidth: 300 }}>1928. Le maire de Dax, Eugène Milliès-Lacroix, a une idée fixe&nbsp;: battre Vichy.</Recit>
+                <Recit classe="voix bas droite" style={{ maxWidth: 270 }}>
+                  «&nbsp;À l&apos;époque, la ville d&apos;eau chic, c&apos;était Vichy. Dax voulait SON palace.&nbsp;»
+                </Recit>
+              </div>
+            </div>
+            <div className="fm-rang" style={{ height: 350 }}>
+              {/* 4 — 1929 : LES STARS. */}
+              <div className="fm-case" style={{ width: 784 }}>
+                <Decor id="hall-1929" photo="/direct/bd/splendid-hall.jpg" pos="50% 40%" classe="sepia" onPret={noter("hall-1929")} />
+                <Recit>26 octobre 1929&nbsp;: l&apos;inauguration.</Recit>
+                <Recit classe="voix droite" style={{ maxWidth: 360 }}>
+                  «&nbsp;Joseph Kessel, Maurice Chevalier, Jean Cocteau… et plus tard Orson Welles, Mastroianni, De Gaulle.&nbsp;»
+                </Recit>
+                <div className="fm-medaillon">
+                  <Perso id="ongles-parle" pose="/direct/double/ongles/parle-1.webp" style={{ left: -6, top: 14, height: 170 }} onPret={noter("ongles-parle")} />
                 </div>
-                <Perso id="ongles-content" pose="/direct/double/ongles/content.webp" style={{ left: 6, top: 150, height: 180 }} onPret={() => {}} />
-                <Recit>Le lendemain, à l&apos;atelier.</Recit>
-                <Bulle style={{ right: 6, top: 98, width: 150 }}>Comme le taureau&nbsp;? 45 minutes. Et je ne fais pas les sabots.</Bulle>
+                <Bulle style={{ right: 176, bottom: 96, width: 150 }} classe="cri">
+                  De Gaulle&nbsp;?!
+                </Bulle>
               </div>
-              {/* 6 — LA CHUTE. */}
-              <div className="fm-case" style={{ width: 232 }}>
-                <Decor
-                  id="salle-verni"
-                  photo="/direct/bd/salle-txupinazo.jpg"
-                  taille="380%"
-                  pos="60% 3%"
-                  onPret={() => {}}
-                  enAttente={<span className="fm-paillette" style={{ left: 120, top: 60 }}>✨</span>}
-                />
-                <Perso id="chef-reflechit" pose="/direct/double/reflechit.webp" style={{ left: 10, top: 140, height: 170 }} onPret={noter("chef-reflechit")} />
-                <Bulle style={{ left: 50, top: 70, width: 168 }}>Et toi… t&apos;aurais pu dire non.</Bulle>
-                <Recit classe="bas">Le taureau n&apos;a rien dit. Mais il a pris rendez-vous pour la Feria.</Recit>
+            </div>
+          </div>
+          <p className="fm-folio">12 · La suite page 13 →</p>
+        </>,
+        "fm-planche",
+      )}
+
+      {page(
+        <>
+          <header className="fm-tete court">
+            <p className="fm-sous">Le Fantôme de Dax · Le gossip du jour · épisode 1 (suite)</p>
+          </header>
+          <div className="fm-grille suite">
+            <div className="fm-rang" style={{ height: 270 }}>
+              {/* 5 — LA GUERRE. */}
+              <div className="fm-case" style={{ width: 360 }}>
+                <Decor id="facade-guerre" photo="/direct/bd/splendid-facade.jpg" pos="50% 40%" classe="guerre" onPret={noter("facade-guerre")} />
+                <Recit style={{ maxWidth: 280 }}>1940. La guerre&nbsp;: les Allemands s&apos;installent au palace.</Recit>
+                <Recit classe="voix bas droite" style={{ maxWidth: 250 }}>
+                  «&nbsp;Ça, c&apos;est le chapitre qu&apos;on raconte à voix basse.&nbsp;»
+                </Recit>
               </div>
+              {/* 6 — 2013 : LE PALACE FERME. */}
+              <div className="fm-case" style={{ width: 414 }}>
+                <Decor id="facade-2013" photo="/direct/bd/splendid-facade.jpg" pos="50% 40%" classe="ferme" onPret={noter("facade-2013")} />
+                <Perso id="bar-content" pose="/direct/double/bar/content.webp" style={{ left: 132, top: 108, height: 140 }} classe="flotte" onPret={noter("bar-content")} />
+                <Recit style={{ maxWidth: 300 }}>2013. Plus que 12&nbsp;% des chambres occupées&nbsp;: le palace ferme.</Recit>
+                <Bulle style={{ left: 176, top: 70, width: 190 }}>Et c&apos;est là qu&apos;on a emménagé.</Bulle>
+              </div>
+            </div>
+            <div className="fm-rang" style={{ height: 330 }}>
+              {/* 7 — LE GAG : LE PALACE AUX FANTÔMES. */}
+              <div className="fm-case" style={{ width: 784 }}>
+                <Decor id="salon-vide" photo="/direct/bd/splendid-salon.jpg" pos="50% 50%" classe="vide" onPret={noter("salon-vide")} />
+                <Perso id="fleurs-accueil" pose="/direct/double/fleurs/accueil.webp" style={{ left: 30, top: 66, height: 120, transform: "rotate(-22deg)" }} classe="flotte" onPret={noter("fleurs-accueil")} />
+                <Perso id="bar-accueil" pose="/direct/double/bar/accueil.webp" style={{ left: 150, top: 150, height: 140 }} classe="flotte" onPret={() => {}} />
+                <Perso id="coiffure-content" pose="/direct/double/coiffure/content.webp" style={{ left: 560, top: 108, height: 170 }} classe="flotte" onPret={noter("coiffure-content")} />
+                <span className="fm-notes" style={{ left: 700, top: 104 }}>♪ ♫</span>
+                <Recit style={{ maxWidth: 360 }}>2013 – 2018. Cinq ans sans un seul client. Enfin… sans un seul client vivant.</Recit>
+                <Bulle style={{ left: 250, top: 74, width: 190 }}>Room service&nbsp;?… Allô&nbsp;? Room service&nbsp;?</Bulle>
+                <Bulle style={{ right: -10, top: 20, width: 190 }} queue="hors">
+                  Et la chambre, vous l&apos;avez payée&nbsp;?
+                </Bulle>
+                <Bulle style={{ left: 300, top: 196, width: 230 }}>On est des fantômes. On ne paie pas&nbsp;: on hante.</Bulle>
+              </div>
+            </div>
+            <div className="fm-rang" style={{ height: 290 }}>
+              {/* 8 — LA CHUTE. */}
+              <div className="fm-case" style={{ width: 784 }}>
+                <Decor id="terrasse-soir" photo="/direct/bd/splendid-terrasse.jpg" pos="50% 45%" classe="soir" onPret={noter("terrasse-soir")} />
+                <Perso id="ongles-reflechit" pose="/direct/double/ongles/reflechit.webp" style={{ left: 90, top: 90, height: 205 }} classe="flotte miroir" onPret={() => {}} />
+                <Perso id="bar-reflechit" pose="/direct/double/bar/reflechit.webp" style={{ left: 520, top: 80, height: 215 }} classe="flotte" onPret={noter("bar-reflechit")} />
+                <Recit>2018. Après 16,5 millions d&apos;euros de travaux, le Splendid rouvre.</Recit>
+                <Bulle style={{ left: 330, top: 48, width: 230 }} queue="d">
+                  Ils ont tout refait. Même la suite où je dormais.
+                </Bulle>
+                <Bulle style={{ left: 40, top: 92, width: 150 }} queue="d">
+                  Et tu es parti&nbsp;?
+                </Bulle>
+                <Bulle style={{ right: 16, top: 150, width: 200 }} classe="chute">
+                  Qui a dit que j&apos;étais parti&nbsp;?
+                </Bulle>
+              </div>
+            </div>
+          </div>
+          <div className="fm-vrai">
+            <div>
+              <p className="fm-vrai-k">Le vrai</p>
+              <p>
+                1928&nbsp;: le maire Eugène Milliès-Lacroix veut un palace pour battre Vichy. 26 octobre 1929&nbsp;: inauguration. Kessel, Chevalier,
+                Cocteau, Welles, Mastroianni, De Gaulle y sont passés. La guerre&nbsp;: les Allemands s&apos;y installent. 2013&nbsp;: 12&nbsp;%
+                d&apos;occupation, il ferme. 2018&nbsp;: il rouvre après 16,5&nbsp;M€ de travaux.
+              </p>
+            </div>
+            <div className="fm-faux">
+              <p className="fm-vrai-k">Le faux</p>
+              <p>Les fantômes qui ont squatté le palace. Enfin… on croit.</p>
             </div>
           </div>
           <div className="fm-bon">
-            <p className="fm-bon-k">Le bon du mois</p>
+            <p className="fm-bon-k">Le café du gossip</p>
             <div className="fm-bon-l">
-              <b>El Txupinazo</b>
-              <span>Venez avec des ongles «&nbsp;comme le taureau&nbsp;»&nbsp;: dessert offert</span>
-            </div>
-            <div className="fm-bon-l">
-              <b>L&apos;Atelier de Léa</b>
-              <span>Montrez votre ticket&nbsp;: -10&nbsp;% sur la pose (sabots non compris)</span>
+              <b>À la terrasse partenaire du mois</b>
+              <span>Montrez cette page et racontez l&apos;histoire du Splendid&nbsp;: votre café est offert</span>
             </div>
             <div className="fm-bon-m">
               <span>Mot de passe</span>
-              <b>TXUPI</b>
+              <b>SPLENDID</b>
               <em>jusqu&apos;au 31/10</em>
             </div>
           </div>
-          <p className="fm-folio">12 · Le mois prochain&nbsp;: le fleuriste chez le coiffeur. Fleurs dans la barbe garanties.</p>
+          <p className="fm-folio">13 · Épisode 2&nbsp;: le Dacquois qui a inventé le mètre.</p>
         </>,
-        "fm-planche",
+        "fm-planche fin",
       )}
       <style dangerouslySetInnerHTML={{ __html: FEUILLE }} />
     </main>
@@ -353,7 +391,7 @@ const FEUILLE = `
 .fm-ep{text-align:right}
 .fm-ep-k{font:800 10.5px/1 var(--font-clikme),sans-serif;letter-spacing:2px;text-transform:uppercase;color:#6B4A34}
 .fm-ep-t{font:italic 600 34px/1 var(--font-enseigne),Georgia,serif;color:var(--brique)}
-.fm-grille{position:absolute;top:108px;left:28px;width:784px;height:916px;display:flex;flex-direction:column;gap:10px}
+.fm-grille{position:absolute;top:108px;left:28px;width:784px;display:flex;flex-direction:column;gap:10px}
 .fm-rang{display:flex;gap:10px}
 .r1{height:270px}.r2{height:300px}.r3{height:326px}
 .fm-case{position:relative;flex:none;overflow:hidden;border:3px solid var(--encre);background:#3a2418}
@@ -366,6 +404,28 @@ const FEUILLE = `
 .fm-ardoise b{display:block;font:600 18px/1 var(--font-main-levee),Caveat,cursive;color:#FF8FB1}
 .fm-ardoise span{display:block;margin-top:4px;font:600 15px/1.05 var(--font-main-levee),Caveat,cursive}
 .fm-ep-t.petit{font-size:24px}
+.fm-encre.sepia{filter:url(#fm-encre) sepia(.85) contrast(1.05) brightness(.98)}
+.fm-encre.guerre{filter:url(#fm-encre) grayscale(.75) brightness(.55) contrast(1.1)}
+.fm-encre.ferme{filter:url(#fm-encre) grayscale(.55) brightness(.8) contrast(.95)}
+.fm-encre.vide{filter:url(#fm-encre) sepia(.3) brightness(.7) saturate(.7)}
+.fm-encre.soir{filter:url(#fm-encre) sepia(.25) brightness(.62) saturate(1.1) hue-rotate(-8deg)}
+.fm-recit.voix{background:#FFF8EC;font-family:var(--font-enseigne),Georgia,serif;font-style:italic;font-weight:600;text-transform:none;font-size:15px;line-height:1.3;letter-spacing:0}
+.fm-recit.bas.droite{left:auto;right:0;border-right:0;border-left:2.5px solid var(--encre)}
+.fm-tasse{position:absolute;z-index:3;font-size:30px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.4))}
+.fm-notes{position:absolute;z-index:4;font:700 30px/1 var(--font-clikme),sans-serif;color:#FFE7A8;text-shadow:0 2px 0 var(--encre)}
+.fm-medaillon{position:absolute;z-index:5;right:14px;bottom:14px;width:160px;height:160px;border-radius:50%;overflow:hidden;border:3px solid var(--encre);
+  background:radial-gradient(circle at 50% 40%,#FFE7C2,#F2B661)}
+.fm-bulle.chute{font-size:15px;font-weight:800;background:#FFF1C9}
+.fm-bulle.chute::after{background:#FFF1C9}
+.fm-tete.court{height:44px;align-items:center}
+.fm-grille.suite{top:76px}
+.fin .fm-bon{top:1106px;height:56px}
+.fin .fm-folio{bottom:12px}
+.fm-vrai{position:absolute;left:28px;right:28px;top:996px;display:flex;gap:18px;padding:12px 16px;background:#FFF7EA;border:2.5px solid var(--encre)}
+.fm-vrai>div:first-child{flex:3}
+.fm-faux{flex:1;padding-left:16px;border-left:2px dashed var(--brique)}
+.fm-vrai-k{font:400 20px/1 var(--font-affiche),Anton,sans-serif;text-transform:uppercase;color:var(--brique)}
+.fm-vrai p:not(.fm-vrai-k){margin-top:5px;font:500 11.5px/1.35 var(--font-geist-sans),sans-serif;color:#3B2A20}
 .fm-recit{position:absolute;z-index:4;top:0;left:0;padding:8px 12px;background:var(--jaune);border-right:2.5px solid var(--encre);border-bottom:2.5px solid var(--encre);
   font:600 12.5px/1.3 var(--font-clikme),sans-serif;text-transform:uppercase;letter-spacing:.3px;color:var(--encre)}
 .fm-recit.droite{left:auto;right:0;border-right:0;border-left:2.5px solid var(--encre)}
@@ -400,9 +460,10 @@ const FEUILLE = `
 .fm-titre-couv .fm-sous{margin-top:10px}
 .fm-cartouche-couv{position:absolute;z-index:6;left:56px;bottom:62px;padding:16px 20px 14px;background:var(--jaune);border:3px solid var(--encre);box-shadow:6px 6px 0 var(--encre)}
 .fm-cartouche-couv .fm-ep-k{color:var(--encre)}
-.fm-cartouche-couv .fm-ep-t{margin-top:4px;font-size:40px;line-height:1.02}
+.fm-cartouche-couv .fm-ep-t{margin-top:4px;font-size:34px;line-height:1.05}
+.fm-cartouche-couv{max-width:560px}
 .fm-ep-d{margin-top:4px;font:700 13px/1 var(--font-clikme),sans-serif;letter-spacing:1px;text-transform:uppercase}
-.fm-pastille{position:absolute;z-index:6;right:52px;bottom:70px;width:132px;height:132px;border-radius:50%;background:var(--rose);color:#fff;border:3px solid var(--encre);
+.fm-pastille{position:absolute;z-index:6;right:52px;bottom:190px;width:132px;height:132px;border-radius:50%;background:var(--rose);color:#fff;border:3px solid var(--encre);
   display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transform:rotate(-8deg)}
 .fm-pastille b{font:400 54px/1 var(--font-affiche),Anton,sans-serif}
 .fm-pastille span{font:800 12px/1.1 var(--font-clikme),sans-serif;text-transform:uppercase}

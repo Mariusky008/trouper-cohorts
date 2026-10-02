@@ -44,45 +44,85 @@ export const STYLE_PERSONNAGE =
   "but drawn with flat colours, soft cel shading and a clean black ink outline. Remove the pink glow and the glossy 3D plastic look. " +
   "Transparent background. No text, no shadow on the ground.";
 
+/* ═══ ÉPISODE 1 — « CINQ ANS AU SPLENDID, ET PAS UNE SEULE NOTE DE CHAMBRE » ═══
+
+   « Une BD avec une véritable histoire qui s'est produite à Dax, et des
+   fantômes qui en parlent… le gossip du jour. » L'histoire vraie du Splendid,
+   racontée par deux fantômes à sa propre terrasse.
+
+   QUATRE PHOTOS, ET LE MOTEUR EN TIRE LES ÉPOQUES. La façade devient le
+   chantier de 1928, la façade éteinte de la guerre et celle, fermée, de 2013 ;
+   le hall devient la nuit d'inauguration de 1929 ; le salon, la pièce vide
+   sous des draps. Chaque version part de la vraie photo : le palace reste le
+   palace, on le reconnaît à chaque époque. */
+const PHOTO = {
+  facade: "/direct/bd/splendid-facade.jpg",
+  hall: "/direct/bd/splendid-hall.jpg",
+  terrasse: "/direct/bd/splendid-terrasse.jpg",
+  salon: "/direct/bd/splendid-salon.jpg",
+};
+const LE_SPLENDID = "The Splendid, the white 1929 Art Deco palace hotel of Dax, France, with its arched roofline and stained-glass windows.";
+
+const perso = (photo: string, sujet: string): SourceBD => ({ photo, format: "1024x1024", personnage: true, sujet });
+
 export const SOURCES_BD: Record<string, SourceBD> = {
-  rue: {
-    photo: "/direct/bd/rue-txupinazo.jpg",
-    format: "1024x1536",
-    sujet: "The corner facade of the bar El Txupinazo in Dax, its red doors wide open, the sunny paved street of the old town.",
+  terrasse: {
+    photo: PHOTO.terrasse,
+    format: "1024x1024",
+    sujet: `The café terrace of ${LE_SPLENDID} Parasols, black bistro chairs, white facade behind.`,
   },
-  salle: {
-    photo: "/direct/bd/salle-txupinazo.jpg",
-    format: "1536x1024",
-    sujet: "The dining room of El Txupinazo: a red ceiling with a painted bull emblem, the long bar, wooden high stools and round tables.",
+  "terrasse-soir": {
+    photo: PHOTO.terrasse,
+    format: "1024x1024",
+    sujet:
+      `The café terrace of ${LE_SPLENDID} ` +
+      "ONE CHANGE: it is now evening, warm lamplight on the terrace, a deep blue sky, and one single upper window of the hotel glows brightly.",
   },
-  atelier: {
-    photo: "/direct/double/ongles/decor.jpg",
-    format: "1024x1536",
-    sujet: "A warm nail salon: pink velvet chairs, manicure tables, shelves of nail polish, a wooden counter in the foreground.",
-  },
-  /* LE GAG DE L'ÉPISODE TIENT DANS CETTE IMAGE. « Qui a fait les ongles du
-     taureau ? » : la même salle, et le taureau peint au plafond porte du vernis
-     rouge brillant aux sabots et au bout des cornes. Le moteur sait modifier
-     une photo ; c'est la seule case où on lui demande d'ajouter quelque chose. */
-  "salle-verni": {
-    photo: "/direct/bd/salle-txupinazo.jpg",
+  facade: { photo: PHOTO.facade, format: "1536x1024", sujet: `The front of ${LE_SPLENDID} Palm trees, steps, a sunny day.` },
+  "facade-1928": {
+    photo: PHOTO.facade,
     format: "1536x1024",
     sujet:
-      "The dining room of El Txupinazo: a red ceiling with a painted bull emblem, the long bar, wooden high stools and round tables. " +
-      "ONE CHANGE: the painted bull on the ceiling now has glossy brick-red nail polish on its four hooves and on the tips of its horns, with a tiny gold sparkle, clearly visible.",
+      `The front of ${LE_SPLENDID} ` +
+      "CHANGE: as it was in 1928, still under construction — wooden scaffolding on the upper floors, ladders, a few workers in period clothes, " +
+      "no modern objects (no blue sign, no bollards), young palm trees. Faded sepia tones like an old photograph, still drawn in ink.",
   },
-  "chef-accueil": { photo: "/direct/double/accueil.webp", format: "1024x1024", personnage: true, sujet: "A friendly ghost chef waving hello." },
-  "chef-content": { photo: "/direct/double/content.webp", format: "1024x1024", personnage: true, sujet: "A friendly ghost chef, eyes closed with joy." },
-  "chef-parle": { photo: "/direct/double/parle-1.webp", format: "1024x1024", personnage: true, sujet: "A ghost chef shouting in shock, mouth wide open." },
-  "chef-reflechit": { photo: "/direct/double/reflechit.webp", format: "1024x1024", personnage: true, sujet: "A ghost chef looking up, finger on the chin, suspicious." },
-  "ongles-accueil": { photo: "/direct/double/ongles/accueil.webp", format: "1024x1024", personnage: true, sujet: "A friendly ghost manicurist waving hello." },
-  "ongles-content": { photo: "/direct/double/ongles/content.webp", format: "1024x1024", personnage: true, sujet: "A friendly ghost manicurist, eyes closed with joy." },
-  "ongles-reflechit": {
-    photo: "/direct/double/ongles/reflechit.webp",
+  "hall-1929": {
+    photo: PHOTO.hall,
     format: "1024x1024",
-    personnage: true,
-    sujet: "A friendly ghost manicurist thinking, finger on the chin.",
+    sujet:
+      "The grand Art Deco hall of the Splendid in Dax, with its glowing stained-glass light panels and twin staircases. " +
+      "CHANGE: the inauguration night of October 1929 — elegant guests in 1920s evening wear, flowers, a festive crowd. Sepia tones like an old photograph, still drawn in ink.",
   },
+  "facade-guerre": {
+    photo: PHOTO.facade,
+    format: "1536x1024",
+    sujet:
+      `The front of ${LE_SPLENDID} ` +
+      "CHANGE: the early 1940s at dusk, wartime, deserted, all windows dark and shuttered, cold grey-blue desaturated tones. No people, no flags, no symbols, no vehicles.",
+  },
+  "facade-2013": {
+    photo: PHOTO.facade,
+    format: "1536x1024",
+    sujet:
+      `The front of ${LE_SPLENDID} ` +
+      "CHANGE: closed and abandoned in 2013 — every shutter closed, faded paint, weeds between the paving stones, untidy palm trees, a grey sky. No people, no text.",
+  },
+  "salon-vide": {
+    photo: PHOTO.salon,
+    format: "1536x1024",
+    sujet:
+      "The Art Deco lounge of the Splendid in Dax, with its tall columns, palm trees, reception desk and grand piano. " +
+      "CHANGE: deserted for years — white dust sheets over the armchairs, dim light through the arched windows, a few cobwebs. No people.",
+  },
+  "bar-accueil": perso("/direct/double/bar/accueil.webp", "A friendly ghost bartender in a waistcoat and bow tie, waving hello."),
+  "bar-content": perso("/direct/double/bar/content.webp", "A ghost bartender in a waistcoat and bow tie, eyes closed, smiling slyly."),
+  "bar-reflechit": perso("/direct/double/bar/reflechit.webp", "A ghost bartender in a waistcoat and bow tie, finger on the chin, nostalgic."),
+  "ongles-content": perso("/direct/double/ongles/content.webp", "A friendly ghost manicurist, eyes closed with joy."),
+  "ongles-reflechit": perso("/direct/double/ongles/reflechit.webp", "A friendly ghost manicurist listening, finger on the chin, curious."),
+  "ongles-parle": perso("/direct/double/ongles/parle-1.webp", "A ghost manicurist shouting in surprise, mouth wide open."),
+  "coiffure-content": perso("/direct/double/coiffure/content.webp", "A cheerful ghost hairdresser, eyes closed with joy."),
+  "fleurs-accueil": perso("/direct/double/fleurs/accueil.webp", "A cheerful ghost florist waving."),
 };
 
 /** La consigne complète d'un dessin. */
