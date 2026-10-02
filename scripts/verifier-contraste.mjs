@@ -360,7 +360,9 @@ for (const n of noms) {
     await p.locator(".bt-nav button", { hasText: "Expérience" }).click();
     await p.waitForTimeout(450);
     if (await p.$(".bt-e-exp .bt-go")) await p.click(".bt-e-exp .bt-go");
-    else if (await p.$(".bt-e-essai .bf-cta")) await p.click(".bt-e-essai .bf-cta");
+    // L'INVITATION A ÉTÉ REPENSÉE : son grand bouton est « .bx-go », et il
+    // ouvre l'atelier en plein écran, par-dessus toute la page.
+    else if (await p.$(".bt-e-essai .bx-go")) await p.click(".bt-e-essai .bx-go");
     else {
       dire(false, `${n.trim()} — ni plat ni grand bouton dans l'expérience`);
       continue;
@@ -422,7 +424,7 @@ if (await p.$(".bt-nav")) {
   await p.locator(".bt-nav button", { hasText: "Expérience" }).click();
   await p.waitForTimeout(450);
 }
-await p.click(".bf-cta");
+await p.click(".bx-go");
 await p.waitForTimeout(700);
 /* LE FOND DE `body` RESTE, ET C'EST VOLONTAIRE : sans lui la page devient
    transparente au sens du navigateur, qui la rend alors blanche — on ne saurait
@@ -431,9 +433,13 @@ await p.waitForTimeout(700);
    une nuit (#0B0806) : retirer les fonds au-dessus laissait le texte crème
    sur du sombre, parfaitement lisible, et la preuve ne prouvait plus rien. Le
    défaut d'origine était du blanc sur BLANC : c'est lui qu'on remet. */
+/* … ET LES PHOTOS S'EFFACENT AUSSI. L'atelier s'ouvre maintenant PAR-DESSUS
+   la page, en plein écran : son fond retiré, on voyait au travers les
+   vignettes des coupes de l'invitation, et le texte blanc posé sur une photo
+   gardait assez d'écart pour passer. C'est le blanc sur blanc qu'on veut. */
 await p.addStyleTag({
   content:
-    "html,body{background:#fff !important;} body *{background-image:none !important;background-color:transparent !important;}",
+    "html,body{background:#fff !important;} body *{background-image:none !important;background-color:transparent !important;} img{opacity:0 !important;}",
 });
 await p.waitForTimeout(200);
 const revus = await mesurerLaPage("(fond rendu transparent exprès)", true);

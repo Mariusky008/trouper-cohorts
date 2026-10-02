@@ -3212,6 +3212,17 @@ export function murDeLaCarte(c: {
   catalogue?: EntreeCatalogue[];
   /** Le moment que la carte affiche à cette heure-ci. Devient `contexte`. */
   moment?: MomentCourant | null;
+  /**
+   * SEULEMENT LES SIENNES — la page d'un vrai commerçant.
+   *
+   * « Il y a des coupes enregistrées pour la démo, qui ne devraient pas être
+   * sur la page du commerçant parce que ce ne sont pas les siennes — à
+   * supprimer jusqu'à ce qu'il mette les siennes. » Le complément du modèle
+   * fait une belle démonstration ; sous le nom d'un vrai salon, c'est lui
+   * prêter des coupes et des prix qu'il n'a jamais donnés. Vrai : la grille
+   * ne porte que son catalogue photographié, quitte à être vide.
+   */
+  seulementLesSiennes?: boolean;
 }): Mur {
   const modele = MURS.find((m) => m.cle === modeleDeLaBranche(c.branche, c.metier)) ?? MURS[0];
 
@@ -3253,7 +3264,7 @@ export function murDeLaCarte(c: {
   // avec deux images différentes : le catalogue et le modèle nomment la même
   // chose, chacun avec sa photo.
   const pareil = (a: string) => a.toLowerCase().replace(/[^a-zà-ÿ0-9]/g, "");
-  const complement = (modele.essai?.pieces ?? []).filter(
+  const complement = (c.seulementLesSiennes ? [] : (modele.essai?.pieces ?? [])).filter(
     (p) => !siennes.some((s) => s.photo === p.photo || pareil(s.nom) === pareil(p.nom)),
   );
   /**
@@ -3289,7 +3300,7 @@ export function murDeLaCarte(c: {
     ].slice(0, PLACES_EN_VITRINE),
   );
   const essai =
-    modele.essai && siennes.length > 0
+    modele.essai && (siennes.length > 0 || c.seulementLesSiennes)
       ? { ...modele.essai, pieces: toutes.map((x) => ({ ...x, vitrine: enVitrine.has(x.id) })) }
       : modele.essai;
 

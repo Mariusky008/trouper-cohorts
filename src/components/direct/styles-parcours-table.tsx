@@ -12,11 +12,14 @@
  * CE QUI LUI EST PROPRE : le prix en gros de la premiere etape, les deux vues
  * du plat a la deuxieme, et la citation de la cuisiniere a la troisieme.
  */
-export function StylesParcoursTable() {
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: `
+import { enCharteMaison } from "@/lib/direct/charte-maison";
+
+/** `maison` : sur la page d'un commerçant, la feuille prend les couleurs de ses pages — voir `charte-maison.ts`. */
+export function StylesParcoursTable({ maison = false }: { maison?: boolean } = {}) {
+  return <style dangerouslySetInnerHTML={{ __html: maison ? enCharteMaison(CSS_PARCOURS_TABLE) : CSS_PARCOURS_TABLE }} />;
+}
+
+const CSS_PARCOURS_TABLE = `
         .pt{position:absolute;inset:0;z-index:40;overflow:hidden;
           display:flex;flex-direction:column;
           background:#06060A;
@@ -687,8 +690,4 @@ export function StylesParcoursTable() {
           .pt-deux{margin-top:7px;padding:11px 16px;}
           .pt-mot{margin-top:10px;padding:11px 14px 12px 32px;}
         }
-      `,
-      }}
-    />
-  );
-}
+      `;

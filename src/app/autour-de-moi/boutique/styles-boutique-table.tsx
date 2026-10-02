@@ -97,7 +97,7 @@ export function StylesBoutiqueTable() {
           -webkit-overflow-scrolling:touch;}
         @keyframes btEntre{from{opacity:0;transform:translateY(8px);}
           to{opacity:1;transform:none;}}
-        @media (prefers-reduced-motion: reduce){.bt-ecran{animation:none;}}
+        @media (prefers-reduced-motion: reduce){.bt-ecran,.bt-plat{animation:none;}}
 
         /* ═══ L'ETALONNAGE AMBRE — la photo reste la sienne ══════════════
            LE PREMIER ESSAI ETAIT UN FILTRE CSS — sepia, saturation, halo — et
@@ -338,6 +338,13 @@ export function StylesBoutiqueTable() {
         .bt-e-essai .bt-bulle-seuil{position:relative;left:auto;right:auto;bottom:auto;display:block;
           width:100%;margin:4px 0 12px;}
         .bt-e-essai .bt-corps{padding-bottom:calc(var(--bt-nav) + 90px);}
+        /* L'ÉCRAN PLEIN : la nuit de la maison, deux lueurs, aucune photo. */
+        .bt-plein{background:radial-gradient(90% 55% at 50% 18%,rgba(245,162,58,.16),rgba(18,12,9,0) 70%),
+          radial-gradient(70% 50% at 85% 85%,rgba(255,46,154,.1),rgba(18,12,9,0) 70%),var(--bt-fond);}
+        .bt-plat{background:radial-gradient(45% 55% at 22% 35%,rgba(245,162,58,.2),rgba(18,12,9,0) 70%),
+          radial-gradient(45% 55% at 80% 70%,rgba(255,46,154,.16),rgba(18,12,9,0) 70%),var(--bt-fond);
+          animation:btPlat .45s cubic-bezier(.16,1,.3,1) both;}
+        @keyframes btPlat{from{opacity:0;transform:scale(.985);}to{opacity:1;transform:none;}}
         /* « ET SI JE PARLAIS AVEC TA VOIX ? » — la même bulle, qui attend une
            réponse au lieu de se refermer seule. */
         .bt-bulle-voix{cursor:default;}
@@ -864,10 +871,10 @@ export function StylesBoutiqueTable() {
              ClikMe reprend le voile leger des deux moities. */
           .a-couv .bt-voile.haut-bas{background:linear-gradient(90deg,
             rgba(18,12,9,0) 70%,rgba(18,12,9,.5) 92%,var(--bt-fond) 100%);}
-          .bt-ecran>:not(.bt-photo):not(.bt-voile):not(.bt-hero):not(.bt-fenetre):not(.bt-cadre-photo):not(.bt-porte-lumiere):not(.bt-hote):not(.bt-photo-porte){
+          .bt-ecran:not(.bt-plein)>:not(.bt-photo):not(.bt-voile):not(.bt-hero):not(.bt-fenetre):not(.bt-cadre-photo):not(.bt-porte-lumiere):not(.bt-hote):not(.bt-photo-porte){
             margin-left:var(--bt-g);width:calc(100% - var(--bt-g));
             padding-left:var(--bt-d);padding-right:var(--bt-d);box-sizing:border-box;}
-          .bt-ecran>*>*{max-width:600px;}
+          .bt-ecran:not(.bt-plein)>*>*{max-width:600px;}
           .bt-haut{padding-left:var(--bt-d);padding-right:var(--bt-d);}
           /* LE LIEU : le titre et la porte a droite, le double sur la photo. */
           .bt-e-lieu{justify-content:center;}
@@ -940,6 +947,18 @@ export function StylesBoutiqueTable() {
              facade ne couvrait plus qu'un quart de la fenetre. */
           .bt-e-infos .bt-hero .bt-photo,.bt-e-infos .bt-hero .bt-voile{width:auto;right:0;
             max-width:none;}
+          /* L'EXPÉRIENCE N'EST PAS EN DEUX MOITIÉS : elle prend la page
+             entière, sa scène au milieu (voir EssaiDuLieu). Son entête
+             reprend toute la largeur. */
+          .bt-e-exp.bt-plein{justify-content:flex-start;}
+          .bt-e-exp.bt-plein .bt-haut{position:relative;padding-left:var(--bt-d);}
+          .bt-plein .bt-corps{width:100%;max-width:1080px;margin:0 auto;
+            padding-left:var(--bt-d);padding-right:var(--bt-d);box-sizing:border-box;}
+          /* LE PLAT : la page entière, et le parcours au milieu, posé dans
+             une lueur ambrée — plus la colonne d'un téléphone dans le noir. */
+          .bt-plat .bt-tel{max-width:620px;border-left:1px solid var(--bt-trait);
+            border-right:1px solid var(--bt-trait);
+            box-shadow:0 0 120px -10px rgba(245,162,58,.22),0 0 0 1px rgba(255,196,140,.06);}
           .bt-garder{right:24px;}
           .bt-nav{grid-template-columns:repeat(6,minmax(0,124px));justify-content:center;}
         }

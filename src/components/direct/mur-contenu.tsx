@@ -78,6 +78,7 @@ import { essayerSurMoi, estUnRendu } from "@/lib/direct/essai-genere";
 import { prevenirPourEssai, numeroDeFiction } from "@/lib/direct/prevenir";
 import { partagerLEssai, type Sortie } from "@/lib/direct/partager-essai";
 import { jouer } from "@/lib/direct/sons";
+import { enCharteMaison } from "@/lib/direct/charte-maison";
 import {
   ECHELLES,
   aMaTaille,
@@ -904,8 +905,16 @@ export function MurContenu({
   rayonPrechoisi,
   ouvrirSurGrille,
   onReserver,
+  maison = false,
 }: {
   mur: TypeMur;
+  /**
+   * AUX COULEURS DE LA MAISON — la page d'un commerçant, pas le fil. Sa
+   * palette (violet du fantôme, menthe du commerce) est repeinte par familles
+   * dans la charte des pages : nuit brune, crème, ambre, rose. Voir
+   * `lib/direct/charte-maison.ts`. Le fil, lui, garde la sienne.
+   */
+  maison?: boolean;
   /** Voir `VersLeSalon` : absent là où il n'y a pas de salon. */
   onSalon?: (o: VersLeSalon) => void;
   /**
@@ -1199,7 +1208,7 @@ export function MurContenu({
 
   return (
     <>
-      <Styles />
+      <Styles maison={maison} />
       {/* ═══ CHEZ QUI SOMMES-NOUS ? ═══════════════════════════════════════════
 
           LA FEUILLE NE LE DISAIT NULLE PART. Elle monte par-dessus l'annonce,
@@ -6643,11 +6652,11 @@ function Essai({
   );
 }
 
-function Styles() {
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: `
+function Styles({ maison = false }: { maison?: boolean }) {
+  return <style dangerouslySetInnerHTML={{ __html: maison ? enCharteMaison(CSS_MUR) : CSS_MUR }} />;
+}
+
+const CSS_MUR = `
         /* ATTENTION : pas d'accent grave dans ces commentaires, ce bloc est un
            litteral de gabarit et un seul terminerait la chaine. */
 
@@ -10136,8 +10145,4 @@ function Styles() {
         @media (prefers-reduced-motion:reduce){
           .mu *{animation:none !important;transition:none !important;}
         }
-      `,
-      }}
-    />
-  );
-}
+      `;

@@ -305,6 +305,8 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
     ficheGoogle:
       f.ficheGoogle && (f.ficheGoogle.menu || f.ficheGoogle.prix || f.ficheGoogle.services?.length) ? f.ficheGoogle : undefined,
     semaine: f.semaine?.length ? f.semaine : undefined,
+    // SA PAGE, FABRIQUÉE DEPUIS SA FICHE : rien du modèle ne s'y essaie.
+    vraiePage: true,
     carteSuivi: f.carteSuivi?.length ? f.carteSuivi : undefined,
     // PAR NOTRE ROUTE, COMME TOUTES SES PHOTOS GOOGLE — voir `enGrand`.
     photosCarte: f.photosCarte?.length ? f.photosCarte.map(enGrand) : undefined,

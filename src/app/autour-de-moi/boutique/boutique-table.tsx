@@ -1259,11 +1259,13 @@ export function BoutiqueTable({
           « Pour les essayages "Visualiser…", on garde le même processus que
           sur /autour-de-moi, et il se retrouvera dans l'onglet Expérience. »
           Sa bulle d'accueil d'abord — on arrive ici par la porte —, puis la
-          vitrine et l'atelier, ceux du fil. Voir `EssaiDuLieu`. */}
+          vitrine et l'atelier, ceux du fil. Voir `EssaiDuLieu`.
+          SANS PHOTO, ET SUR TOUTE LA LARGEUR (`bt-plein`). « Surtout pas
+          cette photo qui nous distrait sur la gauche. » L'onglet n'est plus
+          une moitié de page à côté de la salle : c'est une scène à lui, la
+          nuit de la maison, et son fantôme au milieu. */}
       {onglet === "experience" && !aLaTable && (
-        <section className={`bt-ecran bt-e-exp bt-e-essai defile${arrive ? " arrive" : ""}`} key="experience">
-          <div className="bt-photo haute" style={{ backgroundImage: `url("${dedans(0)}")` }} />
-          <div className="bt-voile haut" />
+        <section className={`bt-ecran bt-e-exp bt-e-essai bt-plein defile${arrive ? " arrive" : ""}`} key="experience">
           {entete(true)}
           <div className="bt-corps">
             {arrive && (
@@ -1968,9 +1970,12 @@ export function BoutiqueTable({
           </div>
         </div>
       )}
+      {/* LE PLAT, AUX COULEURS DE LA MAISON ET SUR TOUTE LA PAGE. Le parcours
+          est celui de `/autour-de-moi`, peint violet et menthe : `maison` le
+          repeint en nuit brune, crème, ambre et rose. */}
       {plat && (
-        <div className="bt-couche" role="dialog" aria-label="Le plat">
-          <StylesParcoursTable />
+        <div className="bt-couche bt-plat" role="dialog" aria-label="Le plat">
+          <StylesParcoursTable maison />
           <div className="bt-tel">
             <ParcoursTable commerce={c.id} onFermer={() => setPlat(false)} />
           </div>

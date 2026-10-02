@@ -1276,6 +1276,12 @@ export type CarteAutour = {
    * lieu d'envoyer vers son site. Voir `photos-menu.ts`.
    */
   photosCarte?: string[];
+  /**
+   * UN VRAI COMMERCE, fabriqué depuis sa fiche Google — pas une démonstration.
+   * Ce qui le change : on ne lui prête aucune pièce du modèle à essayer (voir
+   * `seulementLesSiennes` dans `murDeLaCarte`).
+   */
+  vraiePage?: boolean;
   /** Où en est la lecture de sa carte — montré au seul commerçant, sur sa carte vide. */
   carteSuivi?: { texte: string; detail?: string }[];
   /**

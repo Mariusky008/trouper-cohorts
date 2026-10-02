@@ -360,6 +360,21 @@ if (await p.$(".bt-nav")) {
     await p.evaluate(() => [...document.querySelectorAll(".bt-e-avis a")].some((a) => /avis google/i.test(a.textContent || ""))),
     "on peut aller lire tous ses avis, pas seulement ceux montrés",
   );
+  // « IL Y A DES COUPES ENREGISTRÉES POUR LA DÉMO, qui ne devraient pas être
+  // sur la page d'accueil du commerçant, parce que ce ne sont pas les siennes. »
+  // Un vrai commerçant qui n'a rien photographié n'a RIEN à essayer : pas une
+  // vignette de démonstration, et une phrase qui le dit honnêtement.
+  await p.locator(".bt-nav button", { hasText: "Expérience" }).click();
+  await p.waitForTimeout(700);
+  const essai = await p.evaluate(() => ({
+    vignettes: document.querySelectorAll(".bx-grille button").length,
+    bouton: Boolean(document.querySelector(".bx-go")),
+    bientot: document.querySelector(".bx-bientot")?.textContent ?? "",
+    photo: Boolean(document.querySelector(".bt-e-essai .bt-photo")),
+  }));
+  dire(essai.vignettes === 0 && !essai.bouton, `aucune pièce de démonstration chez un vrai commerçant (${essai.vignettes} vignette(s))`);
+  dire(/arrivent bientôt/.test(essai.bientot), "et l'expérience dit que les siennes arrivent");
+  dire(!essai.photo, "l'expérience ne porte plus de photo sur le côté");
 
   // ── 9. LA CONVERSATION RESTE SUR LA PAGE DU COMMERÇANT ────────────────────
   await p.locator(".bt-nav button", { hasText: "Amis" }).click();
