@@ -45,6 +45,7 @@
  * FICHIER SERVEUR.
  */
 import { readFileSync } from "fs";
+import sharp from "sharp";
 import { join } from "path";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
@@ -391,8 +392,24 @@ export function casquette(nom: string, branche: CleMetier): string {
  * l'enseigne ensuite (elle ne doit pas changer), la lumière, puis seulement les
  * fantômes. Un rendu magnifique d'un autre restaurant serait un échec complet.
  */
-export function consigneCouverture(nom: string, metier: string, ville: string, branche: CleMetier): string {
+export function consigneCouverture(
+  nom: string,
+  metier: string,
+  ville: string,
+  branche: CleMetier,
+  refs: { tenue: boolean; action: boolean; clients: number } = { tenue: true, action: false, clients: 0 },
+): string {
   const scene = SCENES[branche] ?? SCENES.restaurant;
+  const n = numeros(refs);
+  const tenueDit = n.tenue
+    ? `the ghost of IMAGE ${n.tenue}, wearing exactly the outfit of IMAGE ${n.tenue} (same clothes, same cap and emblem — the outfit of this trade)`
+    : "the ClikMe ghost of IMAGE 2, dressed for this trade";
+  const actionDit = n.action
+    ? ` IMAGE ${n.action} shows this host in action with the tool of the trade: give the host that pose, that gesture and that tool${n.tenue ? ` (its clothes follow IMAGE ${n.tenue} where they differ)` : ""}.`
+    : "";
+  const clientsDit = n.clients.length
+    ? ` IMAGE${n.clients.length > 1 ? "S" : ""} ${n.clients.join(", ")} show customer ghosts in poses (seated, waiting, walking, delighted): reuse the poses that fit the scene you chose, same character as IMAGE 2.`
+    : "";
   const lieu = [nom && `"${nom}"`, metier && `a ${metier.toLowerCase()}`, ville && `in ${ville}`].filter(Boolean).join(", ");
   return [
     `Transform IMAGE 1 (the real photo of ${lieu || "a local shop"}) into the ClikMe photographic signature: a warm, enchanting, premium photo where the ClikMe ghosts from IMAGE 2 are part of the scene.`,
@@ -401,8 +418,8 @@ export function consigneCouverture(nom: string, metier: string, ville: string, b
     "2. KEEP EVERY SIGN EXACTLY. Every word on the sign, awning, windows or walls stays exactly as in IMAGE 1: same spelling, same letters, same position. Never invent, translate, correct or add any text, logo or brand. If a text is unreadable in IMAGE 1, leave it unreadable rather than guessing.",
     "3. LIGHT AND COLOUR. Warm, enchanting light: outside, late-afternoon golden hour on the facade with glowing lamps inside; inside, warm inviting lamplight and soft daylight from the windows. Rich and luminous but natural colours, soft depth of field, crisp details. Tidy clutter (bins, cars, boxes) only where it does not alter the place.",
     `4. INSIDE OR IN FRONT? Look at IMAGE 1. If it shows the INSIDE of the shop, the ghosts are at work inside: the host ${scene.dedans.hote}. ${scene.dedans.clients} If it shows the OUTSIDE (shopfront, street, terrace): the host ${scene.devant.hote}. ${scene.devant.clients}`,
-    "5. THE HOST. Exactly one ghost is the shop's host: the ghost of IMAGE 3, wearing exactly the outfit of IMAGE 3 (same clothes, same cap and emblem — the outfit of this trade), clearly visible and the most prominent ghost.",
-    `6. THE CUSTOMERS. The other ghosts are customers: the ghost character from IMAGE 2 (soft white rounded ghost, big glossy purple eyes, pink cheeks, a black cap), NOT dressed like the host. ${casquette(nom, branche)}`,
+    `5. THE HOST. Exactly one ghost is the shop's host: ${tenueDit}, clearly visible and the most prominent ghost.${actionDit}`,
+    `6. THE CUSTOMERS. The other ghosts are customers: the ghost character from IMAGE 2 (soft white rounded ghost, big glossy purple eyes, pink cheeks, a black cap), NOT dressed like the host. ${casquette(nom, branche)}${clientsDit}`,
     "7. ALL GHOSTS must truly belong to the photo: realistic scale next to doors, chairs and furniture, matching perspective, light direction and colour temperature, soft contact shadows, reflections in windows and mirrors where relevant. Cute, friendly, polished 3D finish; host and customers are the same kind of character. Never add furniture, rooms or a terrace that are not in IMAGE 1: only ghosts.",
     "8. PEOPLE. Real people already present may stay, unchanged and not in focus. Do not add any new person.",
     "9. FRAMING. Vertical 4:5 framing, centred on the entrance outside or on the host at work inside. Keep the top fifth calm (facade, wall, ceiling or sky), because a title is written over it.",
@@ -455,6 +472,65 @@ function laTenue(branche: CleMetier, metier: string): { type: string; donnees: s
   } catch {
     return null;
   }
+}
+
+/**
+ * ═══ SES FANTÔMES EN SITUATION — dessinés par lui ══════════════════════════
+ *
+ * « Si tu as besoin que je te fasse des fantômes en PNG, je peux te les
+ * faire. » Il les a faits : l'hôte en action pour chaque métier (le coiffeur
+ * ciseaux et peigne, la prothésiste au pinceau, le barman au shaker…) et les
+ * clients en pose (de dos au fauteuil avec la cape, la main tendue pour la
+ * manucure, le magazine, le sac de courses, le verre levé). Le moteur les
+ * reçoit comme RÉFÉRENCES DE POSE : la scène « dedans » ne s'invente plus,
+ * elle reprend ses gestes. Voir `public/direct/fantomes/`.
+ *
+ * TROIS CLIENTS AU PLUS, et dans l'ordre de la scène la plus probable : les
+ * poses de l'intérieur d'abord, puis une de la devanture — c'est le moteur
+ * qui choisit la scène selon la photo (point 4 de la consigne).
+ */
+const POSES_SCENE: Record<CleMetier, { hote: string; clients: string[] }> = {
+  restaurant: { hote: "hote-serveur", clients: ["client-verre", "client-ravi", "client-rit"] },
+  bar: { hote: "hote-barman", clients: ["client-verre", "client-rit", "client-ravi"] },
+  coiffeur: { hote: "hote-coiffeur", clients: ["client-fauteuil-cape", "client-magazine", "client-sac"] },
+  ongles: { hote: "hote-onglerie", clients: ["client-main-tendue", "client-magazine", "client-sac"] },
+  lunetier: { hote: "hote-opticien", clients: ["client-ravi", "client-curieux", "client-sac"] },
+  mode: { hote: "hote-mode", clients: ["client-sac", "client-curieux", "client-rit"] },
+  fleuriste: { hote: "hote-fleuriste", clients: ["client-ravi", "client-curieux", "client-sac"] },
+  artisan: { hote: "hote-artisan", clients: ["client-curieux", "client-ravi", "client-sac"] },
+};
+
+type Img = { type: string; donnees: string };
+const posesLues = new Map<string, Img | null>();
+/** Une pose, réduite à 512 points : une référence, pas un tirage. Gardée en mémoire. */
+async function unePose(nom: string): Promise<Img | null> {
+  if (posesLues.has(nom)) return posesLues.get(nom) ?? null;
+  let img: Img | null = null;
+  try {
+    const octets = readFileSync(join(process.cwd(), "public", "direct", "fantomes", `${nom}.png`));
+    const petit = await sharp(octets).resize(512, 512, { fit: "inside" }).png().toBuffer();
+    img = { type: "image/png", donnees: petit.toString("base64") };
+  } catch {
+    img = null;
+  }
+  posesLues.set(nom, img);
+  return img;
+}
+
+export type PosesDeScene = { hote: Img | null; clients: Img[] };
+export async function lesPoses(branche: CleMetier): Promise<PosesDeScene> {
+  const p = POSES_SCENE[branche] ?? POSES_SCENE.restaurant;
+  const clients = (await Promise.all(p.clients.map(unePose))).filter((x): x is Img => Boolean(x));
+  return { hote: await unePose(p.hote), clients };
+}
+
+/** La numérotation des images, la même pour la consigne et pour l'envoi. */
+function numeros(r: { tenue: boolean; action: boolean; clients: number }) {
+  let n = 3;
+  const tenue = r.tenue ? n++ : 0;
+  const action = r.action ? n++ : 0;
+  const clients = Array.from({ length: r.clients }, () => n++);
+  return { tenue, action, clients };
 }
 
 /**
@@ -542,7 +618,9 @@ async function parGemini(
   photo: { type: string; donnees: string },
   consigne: string,
   tenue: { type: string; donnees: string } | null,
+  poses: PosesDeScene,
 ): Promise<{ image: { type: string; donnees: string }; modele: string } | { erreur: string }> {
+  const n = numeros({ tenue: Boolean(tenue), action: Boolean(poses.hote), clients: poses.clients.length });
   const modele = s(process.env.GEMINI_IMAGE_MODEL) || "gemini-2.5-flash-image";
   const base = s(process.env.GEMINI_BASE_URL) || "https://generativelanguage.googleapis.com";
   const ref = leFantome();
@@ -558,10 +636,20 @@ async function parGemini(
             { inlineData: { mimeType: ref.type, data: ref.donnees } },
             ...(tenue
               ? [
-                  { text: "IMAGE 3 — THE HOST'S OUTFIT. The same ghost, dressed for this trade: the host wears exactly this. Its background is not part of the result." },
+                  { text: `IMAGE ${n.tenue} — THE HOST'S OUTFIT. The same ghost, dressed for this trade: the host wears exactly this. Its background is not part of the result.` },
                   { inlineData: { mimeType: tenue.type, data: tenue.donnees } },
                 ]
               : []),
+            ...(poses.hote
+              ? [
+                  { text: `IMAGE ${n.action} — THE HOST IN ACTION. Pose, gesture and tool reference for the host only.` },
+                  { inlineData: { mimeType: poses.hote.type, data: poses.hote.donnees } },
+                ]
+              : []),
+            ...poses.clients.flatMap((c, i) => [
+              { text: `IMAGE ${n.clients[i]} — A CUSTOMER POSE. Pose reference for a customer ghost.` },
+              { inlineData: { mimeType: c.type, data: c.donnees } },
+            ]),
             { text: consigne },
           ],
         },
@@ -599,7 +687,9 @@ async function parOpenAI(
   photo: { type: string; donnees: string },
   consigne: string,
   tenue: { type: string; donnees: string } | null,
+  poses: PosesDeScene,
 ): Promise<{ image: { type: string; donnees: string }; modele: string } | { erreur: string }> {
+  const n = numeros({ tenue: Boolean(tenue), action: Boolean(poses.hote), clients: poses.clients.length });
   const base = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
   const ref = leFantome();
   const fichier = (p: { type: string; donnees: string }, nom: string) =>
@@ -611,10 +701,16 @@ async function parOpenAI(
     forme.append("image[]", fichier(photo, `lieu.${photo.type.split("/")[1] || "jpg"}`));
     forme.append("image[]", fichier(ref, "fantome.png"));
     if (tenue) forme.append("image[]", fichier(tenue, "hote.webp"));
-    forme.append(
-      "prompt",
-      `IMAGE 1 is the real place; IMAGE 2 is the ClikMe ghost (customers); IMAGE 3 is the host's outfit (character references only).\n${consigne}`,
-    );
+    if (poses.hote) forme.append("image[]", fichier(poses.hote, "hote-action.png"));
+    poses.clients.forEach((c, i) => forme.append("image[]", fichier(c, `client-${i + 1}.png`)));
+    const roles = [
+      "IMAGE 1 is the real place",
+      "IMAGE 2 is the ClikMe ghost (customers)",
+      n.tenue ? `IMAGE ${n.tenue} is the host's outfit` : "",
+      n.action ? `IMAGE ${n.action} is the host in action (pose and tool)` : "",
+      n.clients.length ? `IMAGES ${n.clients.join(", ")} are customer poses` : "",
+    ].filter(Boolean);
+    forme.append("prompt", `${roles.join("; ")} (character references only).\n${consigne}`);
     forme.append("size", "1024x1536");
     forme.append("quality", s(process.env.OPENAI_IMAGE_QUALITY) || "high");
     const r = await fetch(`${base}/v1/images/edits`, {
@@ -645,6 +741,7 @@ async function rendre(
   photo: { type: string; donnees: string },
   consigne: string,
   tenue: { type: string; donnees: string } | null,
+  poses: PosesDeScene = { hote: null, clients: [] },
 ): Promise<{ image: { type: string; donnees: string }; modele: string } | { erreur: string }> {
   const gemini = s(process.env.GEMINI_API_KEY) || s(process.env.GOOGLE_API_KEY);
   const openai = s(process.env.OPENAI_API_KEY);
@@ -656,10 +753,10 @@ async function rendre(
       const r =
         f === "gemini"
           ? gemini
-            ? await parGemini(gemini, photo, consigne, tenue)
+            ? await parGemini(gemini, photo, consigne, tenue, poses)
             : null
           : openai
-            ? await parOpenAI(openai, photo, consigne, tenue)
+            ? await parOpenAI(openai, photo, consigne, tenue, poses)
             : null;
       if (!r) continue;
       if ("image" in r) return r;
@@ -868,7 +965,18 @@ async function rendreEtRanger(
   const nom = s(row.business_name);
   const metier = s(row.activite);
   const branche = brancheDuMetier(metier);
-  const r = await rendre(photo, consigneCouverture(nom, metier, s(row.city), branche), laTenue(branche, metier));
+  const tenue = laTenue(branche, metier);
+  const poses = await lesPoses(branche);
+  const r = await rendre(
+    photo,
+    consigneCouverture(nom, metier, s(row.city), branche, {
+      tenue: Boolean(tenue),
+      action: Boolean(poses.hote),
+      clients: poses.clients.length,
+    }),
+    tenue,
+    poses,
+  );
   if ("erreur" in r) return echouer(r.erreur);
 
   const ext = r.image.type.includes("jpeg") ? "jpg" : r.image.type.includes("webp") ? "webp" : "png";

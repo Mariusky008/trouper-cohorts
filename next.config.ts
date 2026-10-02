@@ -19,8 +19,19 @@ const config: NextConfig = {
     // `lib/site-internet/couverture.ts`). Les deux routes qui la fabriquent
     // doivent l'emporter, sinon le rendu tombe en production seulement.
     // …ET LE DOUBLE EN TENUE DE CHAQUE MÉTIER, pour le fantôme qui accueille.
-    "/api/site-internet/couverture": ["./public/clikme-fantome.png", "./public/direct/double/**/accueil.webp"],
-    "/api/site-internet/public-generate": ["./public/clikme-fantome.png", "./public/direct/double/**/accueil.webp"],
+    // …ET SES FANTÔMES EN SITUATION, références de pose (voir `lesPoses`).
+    "/api/site-internet/couverture": [
+      "./public/clikme-fantome.png",
+      "./public/direct/double/**/accueil.webp",
+      "./public/direct/fantomes/hote-*.png",
+      "./public/direct/fantomes/client-*.png",
+    ],
+    "/api/site-internet/public-generate": [
+      "./public/clikme-fantome.png",
+      "./public/direct/double/**/accueil.webp",
+      "./public/direct/fantomes/hote-*.png",
+      "./public/direct/fantomes/client-*.png",
+    ],
     // L'ATELIER DES POSES PART DE LA POSE D'ACCUEIL DE CHAQUE TENUE.
     "/api/admin/direct/poses": ["./public/direct/double/**/accueil.webp"],
   },
