@@ -36,6 +36,7 @@
 // SUR LA VRAIE PAGE, ce qui le rend juste chez un coiffeur comme chez une
 // onglerie sans écrire une scène par métier.
 import { Boutique } from "@/app/autour-de-moi/boutique/boutique";
+import { aLaPageAOnglets } from "@/lib/direct/page-a-onglets";
 import { DemoTour } from "./demo-tour";
 import { GarderCeSite } from "./garder-ce-site";
 import { ChoixCouverture, VeilleCouverture } from "./couverture-clikme";
@@ -195,9 +196,10 @@ export function PageBoutique(p: PageBoutiqueProps) {
   const flash = annonceExemple(carte.metier, carte.nom);
   const geste = modeDemo ? gesteDuJour(carte.metier, confirmation, secteur, carte.ville) : undefined;
   const photos = [carte.photo, ...(carte.photos ?? [])].filter((x): x is string => Boolean(x));
-  /* LES RESTAURANTS ONT LEUR PAGE À ONGLETS, FIXE : le formulaire entre dedans,
-     au bout des infos. Rendu après elle, il se retrouvait derrière. */
-  const aOnglets = carte.branche === "restaurant";
+  /* LA PAGE À ONGLETS EST FIXE : le formulaire entre dedans, au bout des
+     infos. Rendu après elle, il se retrouvait derrière. Tous les métiers l'ont
+     maintenant — voir `aLaPageAOnglets`. */
+  const aOnglets = aLaPageAOnglets(carte.branche);
   const garder = modeDemo ? (
     <>
       {p.couverture && <ChoixCouverture slug={slug} initial={p.couverture.etat} candidates={p.couverture.candidates} />}
@@ -256,7 +258,9 @@ export function PageBoutique(p: PageBoutiqueProps) {
       {/* LE RESTAURANT PORTE DÉJÀ SON DOUBLE, dans le coin de chaque onglet —
           voir « On discute ? » dans `boutique-table.tsx`. Le bouton flottant
           en ferait un second, empilé au même endroit. */}
-      {aUnDouble(carte) && carte.branche !== "restaurant" && (
+      {/* LA PAGE À ONGLETS A DÉJÀ LE SIEN, dans son coin (« On discute ? ») :
+          deux fantômes empilés au même endroit, c'était un de trop. */}
+      {aUnDouble(carte) && !aOnglets && (
         <BoutonDouble
           carte={carte}
           prenomChef={p.prenomChef}

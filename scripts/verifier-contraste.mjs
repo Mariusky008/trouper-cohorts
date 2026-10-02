@@ -353,10 +353,18 @@ for (const n of noms) {
   await choisir(n);
   /* CHEZ UN RESTAURANT, LA PORTE EST LE BOUTON ROSE DE L'EXPERIENCE — il ouvre
      le parcours du plat, ou la voix du chef quand il n'y a pas de parcours. */
+  /* TOUS LES MÉTIERS ONT MAINTENANT LEURS ONGLETS. À table, la porte est le
+     bouton rose de l'expérience ; ailleurs, l'expérience EST la vitrine de
+     l'essayage, et la porte son grand bouton — voir `essai-du-lieu.tsx`. */
   if (await p.$(".bt-nav")) {
     await p.locator(".bt-nav button", { hasText: "Expérience" }).click();
     await p.waitForTimeout(450);
-    await p.click(".bt-e-exp .bt-go");
+    if (await p.$(".bt-e-exp .bt-go")) await p.click(".bt-e-exp .bt-go");
+    else if (await p.$(".bt-e-essai .bf-cta")) await p.click(".bt-e-essai .bf-cta");
+    else {
+      dire(false, `${n.trim()} — ni plat ni grand bouton dans l'expérience`);
+      continue;
+    }
     await p.waitForTimeout(900);
     await mesurerLaPage(`${n.trim()} · derrière la porte`);
     continue;
@@ -408,13 +416,24 @@ await p.goto(`${BASE}/autour-de-moi/boutique`, { waitUntil: "networkidle" });
    besoin d'elle — elle a besoin d'un écran habillé pour la nuit derrière une
    porte, et le salon de coiffure en a un : son parcours d'essai. */
 await choisir("Un salon du centre");
+/* SA VITRINE VIT SOUS L'ONGLET « EXPÉRIENCE » depuis que tous les métiers ont
+   leurs onglets. */
+if (await p.$(".bt-nav")) {
+  await p.locator(".bt-nav button", { hasText: "Expérience" }).click();
+  await p.waitForTimeout(450);
+}
 await p.click(".bf-cta");
 await p.waitForTimeout(700);
 /* LE FOND DE `body` RESTE, ET C'EST VOLONTAIRE : sans lui la page devient
    transparente au sens du navigateur, qui la rend alors blanche — on ne saurait
    plus si l'on mesure un défaut ou une page vide. */
+/* … ET LA PAGE PASSE AU BLANC. Sur la page à onglets, `body` est lui-même
+   une nuit (#0B0806) : retirer les fonds au-dessus laissait le texte crème
+   sur du sombre, parfaitement lisible, et la preuve ne prouvait plus rien. Le
+   défaut d'origine était du blanc sur BLANC : c'est lui qu'on remet. */
 await p.addStyleTag({
-  content: "body *{background-image:none !important;background-color:transparent !important;}",
+  content:
+    "html,body{background:#fff !important;} body *{background-image:none !important;background-color:transparent !important;}",
 });
 await p.waitForTimeout(200);
 const revus = await mesurerLaPage("(fond rendu transparent exprès)", true);

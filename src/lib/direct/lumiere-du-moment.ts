@@ -113,7 +113,7 @@ export function enseigneAllumee(moment: Moment, ouvert: OpenState, h: number): b
  * Fermé, il le dit — et invite quand même à visiter : la page, elle, est
  * toujours ouverte.
  */
-export function phraseDuSeuil(ouvert: OpenState, allumee: boolean): string {
+export function phraseDuSeuil(ouvert: OpenState, allumee: boolean, invitation = "Entre, je te fais découvrir."): string {
   if (ouvert && !ouvert.open) {
     // COURTE, ET SANS DEUX-POINTS : la ligne tient sous le titre, et rien ne
     // s'y coupe avant une ponctuation.
@@ -121,5 +121,5 @@ export function phraseDuSeuil(ouvert: OpenState, allumee: boolean): string {
   }
   // « LA SALLE EST ALLUMÉE » SEULEMENT QUAND L'ENSEIGNE L'EST : c'est la même
   // promesse, dite deux fois.
-  return allumee ? "Entre, la salle est allumée." : "Entre, je te fais découvrir.";
+  return allumee ? "Entre, la salle est allumée." : invitation;
 }

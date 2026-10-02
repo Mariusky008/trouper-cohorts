@@ -112,6 +112,7 @@ import {
 } from "@/lib/direct/pieces-gardees";
 import { AnneauMetier, PictoMetier } from "@/components/direct/picto-metier";
 import { BoutiqueTable } from "./boutique-table";
+import { aLaPageAOnglets } from "@/lib/direct/page-a-onglets";
 
 /* LE SECOND ESSAI A QUITTÉ LE NAVIGATEUR. Il réécrivait l'adresse d'une photo
    Google après un premier échec ; c'est désormais le serveur qui essaie les
@@ -380,7 +381,7 @@ export function Boutique(p: {
   const cartes = useMemo(() => toutesLesCartes(), []);
   const [id, setId] = useState(p.commerce?.id ?? "emporter");
   const c = p.commerce ?? cartes.find((x) => x.id === id) ?? cartes[0];
-  if (c.branche === "restaurant") {
+  if (aLaPageAOnglets(c.branche)) {
     return (
       <BoutiqueTable
         carte={c}

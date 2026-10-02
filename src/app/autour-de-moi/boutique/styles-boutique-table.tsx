@@ -332,6 +332,12 @@ export function StylesBoutiqueTable() {
           text-align:left;background:#FFF4E6;color:#1A0F08;font:inherit;font-size:15.5px;line-height:1.4;
           box-shadow:0 14px 32px -12px rgba(0,0,0,.7);animation:btBulle .45s ease-out .5s both;}
         @keyframes btBulle{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+        /* DANS L'ESSAYAGE DES AUTRES MÉTIERS, LES BULLES SUIVENT LE FLUX : il
+           n'y a pas de double accoudé au-dessus duquel les poser, la vitrine
+           porte déjà son fantôme. */
+        .bt-e-essai .bt-bulle-seuil{position:relative;left:auto;right:auto;bottom:auto;display:block;
+          width:100%;margin:4px 0 12px;}
+        .bt-e-essai .bt-corps{padding-bottom:calc(var(--bt-nav) + 90px);}
         /* « ET SI JE PARLAIS AVEC TA VOIX ? » — la même bulle, qui attend une
            réponse au lieu de se refermer seule. */
         .bt-bulle-voix{cursor:default;}
@@ -638,6 +644,10 @@ export function StylesBoutiqueTable() {
           border:1px solid rgba(255,244,230,.2);background:rgba(255,244,230,.06);color:var(--bt-creme);font-size:26px;line-height:1;}
         .bt-vis-barre button:disabled{opacity:.3;cursor:default;}
         .bt-vis-fermer{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));right:10px;}
+        /* L'AVEU D'UN COMMERCE INVENTÉ, sous l'en-tête du lieu : petit, lisible, honnête. */
+        .bt-invente{position:relative;z-index:3;align-self:center;margin:8px auto 0;padding:4px 11px;border-radius:999px;
+          font-size:11.5px;font-weight:600;letter-spacing:.02em;color:var(--bt-creme);
+          background:rgba(18,12,9,.55);border:1px solid rgba(255,244,230,.22);}
         .bt-suivi{list-style:none;margin:14px 0 0;padding:12px 14px;border-radius:14px;
           border:1px dashed var(--bt-trait);font-size:13.5px;line-height:1.45;color:var(--bt-gris);}
         .bt-suivi li+li{margin-top:6px;}

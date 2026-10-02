@@ -90,8 +90,71 @@ import {
 } from "@/lib/direct/salons";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { StylesBoutiqueTable } from "./styles-boutique-table";
+import { EssaiDuLieu } from "./essai-du-lieu";
 
 type Onglet = "lieu" | "experience" | "carte" | "avis" | "amis" | "infos";
+
+/**
+ * ═══ LES MOTS DE CHAQUE MÉTIER, SUR LA MÊME COQUE ══════════════════════════
+ *
+ * « Maintenant il va falloir faire la même chose avec tous les autres
+ * métiers. » La page à onglets était celle du restaurant ; elle est
+ * maintenant celle de tous, et seuls changent les mots : la carte devient les
+ * tarifs chez le coiffeur, la réservation devient un rendez-vous, et
+ * l'expérience devient l'essayage d'`/autour-de-moi`.
+ */
+type MotsDuMetier = {
+  /** Le second bouton du lieu, et le titre de l'écran. */
+  carte: string;
+  titre: string;
+  /** Le bouton rose de l'écran des prix. */
+  reserver: string;
+  /** Le lien qui ramène à l'expérience. */
+  experience: string;
+  /** Quand rien n'est encore publié. */
+  vide: string;
+  /** Ce sur quoi l'offre a été lue : pour le client, puis pour le commerçant. */
+  lue: [string, string];
+  /** À qui s'adresse « à compléter ». */
+  completer: string;
+  /** Ce que dit son double sous le titre du lieu : l'invitation de SON métier. */
+  invite: string;
+};
+const MOTS: Record<string, MotsDuMetier> = {
+  restaurant: {
+    carte: "Carte et prix", titre: "La carte", reserver: "Demander une réservation", experience: "Et si vous goûtiez ?",
+    vide: "Sa carte arrive. En attendant, demandez au chef ce qu’il propose aujourd’hui.", lue: ["sa carte", "votre carte"], completer: "le restaurant", invite: "Entre, je te fais découvrir.",
+  },
+  bar: {
+    carte: "Carte et prix", titre: "La carte", reserver: "Réserver une table", experience: "Et si vous goûtiez ?",
+    vide: "Sa carte arrive. En attendant, demandez ce qu’on sert ce soir.", lue: ["sa carte", "votre carte"], completer: "le bar", invite: "Entre, je te fais découvrir.",
+  },
+  coiffeur: {
+    carte: "Tarifs", titre: "Les tarifs", reserver: "Prendre rendez-vous", experience: "Et si vous essayiez une coupe ?",
+    vide: "Ses tarifs arrivent. En attendant, demandez-les directement au salon.", lue: ["sa grille de tarifs", "votre grille de tarifs"], completer: "le salon", invite: "Entre, on imagine ta prochaine coupe.",
+  },
+  ongles: {
+    carte: "Tarifs", titre: "Les tarifs", reserver: "Prendre rendez-vous", experience: "Et si vous essayiez une pose ?",
+    vide: "Ses tarifs arrivent. En attendant, demandez-les directement à l’institut.", lue: ["sa grille de tarifs", "votre grille de tarifs"], completer: "l’institut", invite: "Entre, on choisit ta prochaine pose.",
+  },
+  lunetier: {
+    carte: "Tarifs", titre: "Les tarifs", reserver: "Prendre rendez-vous", experience: "Et si vous essayiez vos lunettes ?",
+    vide: "Ses tarifs arrivent. En attendant, demandez-les directement en boutique.", lue: ["sa grille de tarifs", "votre grille de tarifs"], completer: "la boutique", invite: "Entre, on essaie tes futures lunettes.",
+  },
+  mode: {
+    carte: "Produits et prix", titre: "La boutique", reserver: "Passer le voir", experience: "Et si vous essayiez ?",
+    vide: "Ses produits arrivent. En attendant, demandez ce qui vient d’arriver.", lue: ["ses étiquettes", "vos étiquettes"], completer: "la boutique", invite: "Entre, viens essayer les pièces du moment.",
+  },
+  fleuriste: {
+    carte: "Bouquets et prix", titre: "Les bouquets", reserver: "Commander un bouquet", experience: "Et si vous composiez votre bouquet ?",
+    vide: "Ses bouquets arrivent. En attendant, demandez ce qui est arrivé ce matin.", lue: ["son ardoise", "votre ardoise"], completer: "la boutique", invite: "Entre, on compose ton bouquet.",
+  },
+  artisan: {
+    carte: "Créations et prix", titre: "Les créations", reserver: "Le contacter", experience: "Et si vous découvriez ?",
+    vide: "Ses créations arrivent. En attendant, demandez ce qui sort de l’atelier.", lue: ["ses étiquettes", "vos étiquettes"], completer: "l’atelier", invite: "Entre, je te montre l’atelier.",
+  },
+};
+const motsDuMetier = (branche: string): MotsDuMetier => MOTS[branche] ?? MOTS.artisan;
 
 /** Les poses validées, demandées une fois par visite et partagées par toutes les pages. */
 let posesValideesPromesse: Promise<Record<string, Partial<Record<"regard-gauche" | "regard-droite" | "pousse-porte", string>>>> | null = null;
@@ -198,7 +261,61 @@ function Etoiles({ note, taille = 22 }: { note: number; taille?: number }) {
  * ligne qu'on ne reconnaît pas prend la cloche — c'est l'objet du restaurant,
  * il ne ment sur rien.
  */
-function IconeCarte({ nom }: { nom: string }) {
+/**
+ * LE PICTO DE CHAQUE LIGNE, DANS L'OUTIL DU MÉTIER. Une cloche de restaurant
+ * devant « Coupe femme · 38 € » disait qu'on avait recopié la page d'un autre.
+ * Hors de table, chaque métier a son outil : les ciseaux, le flacon, la
+ * monture, le cintre, la fleur, l'étincelle de l'atelier.
+ */
+function IconeMetier({ branche }: { branche: string }) {
+  if (branche === "coiffeur")
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="6.5" cy="17.5" r="2.6" />
+        <circle cx="17.5" cy="17.5" r="2.6" />
+        <path d="M8.4 15.6 18 4.5M15.6 15.6 6 4.5" />
+      </svg>
+    );
+  if (branche === "ongles")
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="7.5" y="10" width="9" height="10.5" rx="2.2" />
+        <path d="M10 10V7.2h4V10M11 7.2V3.5h2v3.7" />
+      </svg>
+    );
+  if (branche === "lunetier")
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="7" cy="14" r="3.6" />
+        <circle cx="17" cy="14" r="3.6" />
+        <path d="M10.6 13.4c.9-.7 1.9-.7 2.8 0M3.4 13 2.5 9.5M20.6 13l.9-3.5" />
+      </svg>
+    );
+  if (branche === "mode")
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 7.5a2 2 0 1 1 2-2" />
+        <path d="M12 7.5v1.6L3.5 15.4a1.2 1.2 0 0 0 .7 2.1h15.6a1.2 1.2 0 0 0 .7-2.1L12 9.1" />
+      </svg>
+    );
+  if (branche === "fleuriste")
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="8" r="2.2" />
+        <path d="M12 5.8c0-2.4 3.4-2.4 3.4 0 2.4 0 2.4 3.4 0 3.4 0 2.4-3.4 2.4-3.4 0-2.4 0-2.4-3.4 0-3.4z" />
+        <path d="M12 12.2v8.3M12 16.5c-2.6 0-4-1.4-4.4-3.4 2.4 0 3.8 1.2 4.4 3.4z" />
+      </svg>
+    );
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z" />
+      <path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />
+    </svg>
+  );
+}
+
+function IconeCarte({ nom, branche }: { nom: string; branche: string }) {
+  if (branche !== "restaurant" && branche !== "bar") return <IconeMetier branche={branche} />;
   const t = nom.toLowerCase();
   if (/brunch|petit[- ]d[ée]j|café|cafe|th[ée]\b/.test(t))
     return (
@@ -334,6 +451,27 @@ export function BoutiqueTable({
   pied?: ReactNode;
 }) {
   const [onglet, setOnglet] = useState<Onglet>("lieu");
+  /* ═══ `?salon=1` : L'AMI INVITÉ ARRIVE DANS LA CONVERSATION ══════════════
+     C'est ce que porte le lien « Inviter des amis » (voir `inviter`), et la
+     page à onglets le fabriquait sans le lire : l'invité tombait sur la
+     façade, sans savoir qu'on l'attendait dans les amis. Comme sur la page
+     longue, l'adresse passe ensuite à `salon=lu` : un rechargement ne
+     rouvre pas la conversation par-dessus ce qu'il regardait. */
+  useEffect(() => {
+    try {
+      const adresse = new URL(window.location.href);
+      if (adresse.searchParams.get("salon") === "1") {
+        setOnglet("amis");
+        adresse.searchParams.set("salon", "lu");
+        window.history.replaceState(window.history.state, "", adresse.toString());
+      }
+    } catch {
+      /* pas d'adresse lisible → on reste sur le lieu */
+    }
+  }, []);
+  const mots = motsDuMetier(c.branche);
+  /** À table (restaurant, bar) : le plat et la voix du chef. Ailleurs : l'essayage. */
+  const aLaTable = c.branche === "restaurant" || c.branche === "bar";
   /* ALLER AU FORMULAIRE : l'onglet des infos, puis jusqu'en bas. */
   const [versPied, setVersPied] = useState(false);
   useEffect(() => {
@@ -536,12 +674,12 @@ export function BoutiqueTable({
       document.documentElement.setAttribute("data-heure", moment);
       const ouvert = ouvertMaintenant(c.semaine, c.fiche?.horaires, quand);
       const allumee = enseigneAllumee(moment, ouvert, h);
-      setLumiere({ allumee, phrase: phraseDuSeuil(ouvert, allumee) });
+      setLumiere({ allumee, phrase: phraseDuSeuil(ouvert, allumee, mots.invite) });
     };
     regler();
     const t = window.setInterval(regler, 5 * 60_000);
     return () => window.clearInterval(t);
-  }, [c.semaine, c.fiche?.horaires]);
+  }, [c.semaine, c.fiche?.horaires, mots.invite]);
 
   /* ═══ « ET SI JE PARLAIS AVEC TA VOIX ? » ═════════════════════════════════
      « Le "wow" propre au commerçant : il enregistre et s'entend répondre à un
@@ -712,6 +850,36 @@ export function BoutiqueTable({
     const t = window.setTimeout(() => setProposeVoix(true), 450);
     return () => window.clearTimeout(t);
   }, [arrive, saPage, pied, onglet]);
+
+  /* LA BULLE « ET SI JE PARLAIS AVEC TA VOIX ? », montée dans l'une ou
+     l'autre expérience — voir `proposeVoix`. */
+  const bulleVoix =
+    proposeVoix && !arrive ? (
+
+              <div className="bt-bulle-seuil bt-bulle-voix" role="dialog" aria-label="Ta voix pour ton double">
+                <p>
+                  <b>Et si je parlais avec ta voix&nbsp;?</b>
+                  Tu réponds à voix haute à trois petites questions, et c’est ta voix que tes clients entendront ici.
+                  Deux minutes, depuis ton Espace Pro.
+                </p>
+                <span className="bt-voix-actions">
+                  <button
+                    type="button"
+                    className="oui"
+                    onClick={() => {
+                      setProposeVoix(false);
+                      setOnglet("infos");
+                      setVersPied(true);
+                    }}
+                  >
+                    Je veux ma voix
+                  </button>
+                  <button type="button" onClick={() => setProposeVoix(false)}>
+                    Plus tard
+                  </button>
+                </span>
+              </div>
+                ) : null;
 
   /** Un parcours du plat jouable chez lui — sinon la cloche ne s'ouvre pas. */
   const aUnParcours = useMemo(() => plaqueDuParcours(c.id) !== null, [c.id]);
@@ -992,6 +1160,10 @@ export function BoutiqueTable({
           )}
           <div className="bt-voile haut-bas" />
           {entete(false)}
+          {/* UN COMMERCE INVENTÉ LE DIT DÈS L'ARRIVÉE, pas seulement au bout des
+              infos : c'est la condition pour le montrer. Un vrai commerçant ne
+              reçoit jamais cette ligne sous son nom. */}
+          {piedMaquette && <p className="bt-invente">Exemple · ce commerce est inventé</p>}
           <div className="bt-accueil">
             <h1 className="bt-titre">
               Bienvenue {aLaMaison(c.nom)}.
@@ -999,7 +1171,7 @@ export function BoutiqueTable({
             {/* LA PHRASE DU DOUBLE, DANS LA FONTE DES VOIX : c'est lui qui
                 parle, pas la page. Un seul endroit de l'écran dans une autre
                 écriture, et c'est le sien. */}
-            <p className="bt-dit">{lumiere?.phrase ?? "Entre, je te fais découvrir."}</p>
+            <p className="bt-dit">{lumiere?.phrase ?? mots.invite}</p>
           </div>
           <div className="bt-seuil">
             {/* « RIEN N'INDIQUE SUR LA PHOTO QU'IL FAILLE CLIQUER SUR UN
@@ -1076,14 +1248,65 @@ export function BoutiqueTable({
               }}
             >
               <IconeLivre />
-              Carte et prix <s aria-hidden="true">›</s>
+              {mots.carte} <s aria-hidden="true">›</s>
             </button>
           </div>
         </section>
       )}
 
       {/* ═════════════════════════ 2 · L'EXPÉRIENCE ════════════════════════ */}
-      {onglet === "experience" && (
+      {/* ═══ 2 BIS · L'EXPÉRIENCE DES AUTRES MÉTIERS : L'ESSAYAGE ═══════════
+          « Pour les essayages "Visualiser…", on garde le même processus que
+          sur /autour-de-moi, et il se retrouvera dans l'onglet Expérience. »
+          Sa bulle d'accueil d'abord — on arrive ici par la porte —, puis la
+          vitrine et l'atelier, ceux du fil. Voir `EssaiDuLieu`. */}
+      {onglet === "experience" && !aLaTable && (
+        <section className={`bt-ecran bt-e-exp bt-e-essai defile${arrive ? " arrive" : ""}`} key="experience">
+          <div className="bt-photo haute" style={{ backgroundImage: `url("${dedans(0)}")` }} />
+          <div className="bt-voile haut" />
+          {entete(true)}
+          <div className="bt-corps">
+            {arrive && (
+              <button type="button" className="bt-bulle-seuil bt-bulle-flux" onClick={() => setArrive(false)}>
+                {phraseSeuil}
+              </button>
+            )}
+            {bulleVoix && <div className="bt-bulle-flux-voix">{bulleVoix}</div>}
+            <EssaiDuLieu
+              c={c}
+              saPage={saPage}
+              onReserver={() => setDiscute(true)}
+              onSalon={(o) => {
+                const moi = monPrenom() || "Vous";
+                ouvrirSalon({
+                  cle: cleSalon,
+                  sujet: `Chez ${c.nom}`,
+                  ou: c.nom,
+                  parQui: moi,
+                  quand: "Aujourd’hui",
+                  annonce: o.quoi,
+                  prix: o.prix,
+                  distance: c.distance,
+                  photo: o.image,
+                  boutique: { id: c.id, nom: c.nom, lien: lienPage() },
+                });
+                ecrireDansSalon(cleSalon, {
+                  qui: moi,
+                  voix: "moi",
+                  texte: o.note
+                    ? `J’ai essayé « ${o.quoi} »${o.prix ? ` (${o.prix})` : ""} sur moi. Je mets ${o.note}/5 — vous en pensez quoi ?`
+                    : `J’ai essayé « ${o.quoi} »${o.prix ? ` (${o.prix})` : ""} sur moi. Ça me va ou pas ?`,
+                  quand: heureCourte(),
+                  photo: o.image,
+                });
+                setOnglet("amis");
+              }}
+            />
+          </div>
+        </section>
+      )}
+
+      {onglet === "experience" && aLaTable && (
         <section className={`bt-ecran bt-e-exp${arrive ? " arrive" : ""}`} key="experience">
           <div className="bt-photo" style={{ backgroundImage: `url("${dedans(0)}")` }} />
           <div className="bt-voile haut-bas" />
@@ -1100,31 +1323,7 @@ export function BoutiqueTable({
                 {phraseSeuil}
               </button>
             )}
-            {proposeVoix && !arrive && (
-              <div className="bt-bulle-seuil bt-bulle-voix" role="dialog" aria-label="Ta voix pour ton double">
-                <p>
-                  <b>Et si je parlais avec ta voix&nbsp;?</b>
-                  Tu réponds à voix haute à trois petites questions, et c’est ta voix que tes clients entendront ici.
-                  Deux minutes, depuis ton Espace Pro.
-                </p>
-                <span className="bt-voix-actions">
-                  <button
-                    type="button"
-                    className="oui"
-                    onClick={() => {
-                      setProposeVoix(false);
-                      setOnglet("infos");
-                      setVersPied(true);
-                    }}
-                  >
-                    Je veux ma voix
-                  </button>
-                  <button type="button" onClick={() => setProposeVoix(false)}>
-                    Plus tard
-                  </button>
-                </span>
-              </div>
-            )}
+            {bulleVoix}
             <div className="bt-nappe">
               {/* TROIS PORTES, ET CHACUNE MÈNE QUELQUE PART. Le plat n'existe
                   que chez un restaurant qui a un parcours ; la voix du chef et
@@ -1229,7 +1428,7 @@ export function BoutiqueTable({
             {double("reflechit", "droite")}
             <div className="bt-nappe">
               <div className="bt-onglet-titre">
-                <h1 className="bt-titre moyen">La carte</h1>
+                <h1 className="bt-titre moyen">{mots.titre}</h1>
                 {/* LE PRIX PAR PERSONNE, TEL QUE GOOGLE L'AFFICHE : « 20–30 € ».
                     Recopié, jamais estimé. */}
                 {c.ficheGoogle?.prix && (
@@ -1239,7 +1438,7 @@ export function BoutiqueTable({
                 )}
                 {c.cataloguePropose && !carteGoogleSeule && (
                   <p className="bt-sous">
-                    {saPage ? "À compléter par le restaurant." : "Les formules habituelles — à confirmer sur place."}
+                    {saPage ? `À compléter par ${mots.completer}.` : "Les formules habituelles — à confirmer sur place."}
                   </p>
                 )}
               </div>
@@ -1257,7 +1456,7 @@ export function BoutiqueTable({
                           y a dans la formule du jour. */}
                       <button type="button" onClick={() => setDiscute(true)}>
                         <span className="bt-pastille">
-                          <IconeCarte nom={a.nom} />
+                          <IconeCarte nom={a.nom} branche={c.branche} />
                         </span>
                         <span className="bt-ligne-t">
                           <b>{a.nom}</b>
@@ -1276,7 +1475,7 @@ export function BoutiqueTable({
                     : "Sa carte, page par page. Touchez une page pour la lire en grand."}
                 </p>
               ) : (
-                <p className="bt-vide">Sa carte arrive. En attendant, demandez au chef ce qu’il propose aujourd’hui.</p>
+                <p className="bt-vide">{mots.vide}</p>
               )}
               {/* OÙ EN EST LA LECTURE DE SA CARTE — au seul commerçant, et
                   seulement quand elle est vide : ce que l'onglet « Menu » de
@@ -1325,7 +1524,7 @@ export function BoutiqueTable({
               )}
               <button type="button" className="bt-go" onClick={() => setDiscute(true)}>
                 <Calendrier />
-                Demander une réservation <s aria-hidden="true">›</s>
+                {mots.reserver} <s aria-hidden="true">›</s>
               </button>
               {/* SA MAQUETTE DIT « Prestations proposées · À valider par le
                   restaurant ». Au restaurateur, oui ; au client, ces mots ne
@@ -1334,8 +1533,8 @@ export function BoutiqueTable({
                 <p className="bt-note">
                   <i aria-hidden="true">ⓘ</i>{" "}
                   {saPage
-                    ? "Lue sur les photos de votre carte Google · saisissez-la dans l’Espace Pro pour la corriger."
-                    : "Lue sur les photos de sa carte · prix à confirmer sur place."}
+                    ? `Lue sur les photos de ${mots.lue[1]} Google · corrigez-la dans l’Espace Pro.`
+                    : `Lue sur les photos de ${mots.lue[0]} · prix à confirmer sur place.`}
                 </p>
               )}
               {c.cataloguePropose && !carteGoogleSeule && (
@@ -1344,7 +1543,7 @@ export function BoutiqueTable({
                 </p>
               )}
               <button type="button" className="bt-lien" onClick={() => setOnglet("experience")}>
-                Et si vous goûtiez&nbsp;?
+                {mots.experience.replace(" ?", "\u00a0?")}
               </button>
             </div>
           </div>
@@ -1531,8 +1730,9 @@ export function BoutiqueTable({
                 <span aria-hidden="true">💬</span>
                 <b>Personne n&apos;a encore écrit ici.</b>
                 <p>Invitez vos amis, ou lancez la conversation : votre message les attendra.</p>
-                <button type="button" onClick={() => setAEcrire("Ça vous dit de se retrouver ici ?")}>
-                  « Ça vous dit de se retrouver ici ? »
+                {/* LA PHRASE NOMME LE LIEU : un ami qui la reçoit sait de quoi on parle. */}
+                <button type="button" onClick={() => setAEcrire(`Ça vous dit qu’on aille ${aLaMaison(c.nom)} ?`)}>
+                  « Ça vous dit qu’on aille {aLaMaison(c.nom)}&nbsp;? »
                 </button>
               </div>
             )}
@@ -1544,11 +1744,12 @@ export function BoutiqueTable({
               </button>
               <button type="button" className="bt-go" onClick={() => setDiscute(true)}>
                 <Calendrier />
-                Réserver{viennent.length > 0 ? ` · ${viennent.length}` : ""}
+                {aLaTable ? "Réserver" : mots.reserver}
+                {viennent.length > 0 ? ` · ${viennent.length}` : ""}
               </button>
             </div>
             <p className="bt-note">
-              <i aria-hidden="true">ⓘ</i> Demande à confirmer par le restaurant.
+              <i aria-hidden="true">ⓘ</i> Demande à confirmer par {mots.completer}.
             </p>
             {partageDit && <p className="bt-note">{partageDit}</p>}
           </div>
