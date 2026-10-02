@@ -20,7 +20,9 @@
  *
  * FICHIER SERVEUR.
  */
+import sharp from "sharp";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { avancerLesPhotosMenu, photosMenuEnCours } from "@/lib/site-internet/photos-menu";
 
 const s = (v: unknown) => (v == null ? "" : String(v)).trim();
 
@@ -52,8 +54,15 @@ async function lire(src: string, origine: string): Promise<{ type: string; donne
     const type = (r.headers.get("content-type") || "").split(";")[0];
     if (!r.ok || !type.startsWith("image/")) return null;
     const octets = Buffer.from(await r.arrayBuffer());
-    if (octets.length < 2_000 || octets.length > 6_000_000) return null;
-    return { type, donnees: octets.toString("base64") };
+    if (octets.length < 2_000 || octets.length > 12_000_000) return null;
+    // RÉDUITE AVANT L'ENVOI : douze photos de six mégaoctets dépassent ce que le
+    // modèle accepte d'un coup. 1 600 points de côté gardent un prix lisible.
+    try {
+      const petite = await sharp(octets).rotate().resize(1600, 1600, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 82 }).toBuffer();
+      return { type: "image/jpeg", donnees: petite.toString("base64") };
+    } catch {
+      return octets.length > 6_000_000 ? null : { type, donnees: octets.toString("base64") };
+    }
   } catch {
     return null;
   }
@@ -70,17 +79,42 @@ Règles :
 - Au plus 40 lignes.
 Réponds uniquement en JSON : {"plats":[{"rubrique":"","nom":"","prix":"","detail":""}]}. Si aucune carte n'est lisible : {"plats":[]}.`;
 
-/** Faut-il (re)tenter la lecture ? Fiche lue, des photos, pas de carte, pas d'essai récent. */
+const liste = (v: unknown) => (Array.isArray(v) ? v.map(s).filter((u) => /^https?:\/\//i.test(u) || u.startsWith("/")) : []);
+
+/**
+ * LES PHOTOS À LIRE, DANS L'ORDRE OÙ LA CARTE A LE PLUS DE CHANCES D'Y ÊTRE :
+ * celles de l'onglet « Menu » d'abord (voir `photos-menu.ts`), puis toutes
+ * celles de sa fiche. `lot` dit d'où elles viennent : une lecture refaite sur
+ * de NOUVELLES photos n'attend pas la demi-heure.
+ */
+function photosALire(d: Record<string, unknown>): { photos: string[]; lot: string } {
+  const menu = liste(d.photos_menu);
+  const vues = new Set(menu);
+  const autres = [...liste(d.photos_toutes), ...liste(d.photos)].filter((u) => !vues.has(u) && vues.add(u));
+  const photos = [...menu, ...autres].slice(0, 36);
+  return { photos, lot: `menu:${menu.length}+fiche:${autres.length}` };
+}
+
+/** Ce qui a déjà été lu sans y trouver de carte, sous quelle forme. */
+const lotLu = (d: Record<string, unknown>) =>
+  d.carte_lue && typeof d.carte_lue === "object" ? s((d.carte_lue as Record<string, unknown>).lot) : "";
+
+/**
+ * Faut-il (re)tenter la lecture ? Fiche lue, des photos, pas encore de plats —
+ * et soit rien n'a été tenté depuis une demi-heure, soit de nouvelles photos
+ * sont arrivées depuis la dernière lecture (« aucune carte » sur douze photos
+ * ne dit rien de l'onglet Menu).
+ */
 export function carteALire(diag: unknown): boolean {
   const d = diag && typeof diag === "object" ? (diag as Record<string, unknown>) : {};
+  if (d.places_found !== true || carteLueDuDiagnostic(d).length) return false;
+  if (photosMenuEnCours(d)) return true; // on viendra chercher ses photos de menu
+  const { photos, lot } = photosALire(d);
+  if (!photos.length) return false;
+  if (d.carte_lue && lotLu(d) === lot) return false;
   const essai = Date.parse(s(d.carte_essai_at));
-  return (
-    d.places_found === true &&
-    !d.carte_lue &&
-    Array.isArray(d.photos) &&
-    d.photos.length > 0 &&
-    !(Number.isFinite(essai) && Date.now() - essai < 30 * 60_000)
-  );
+  const nouveau = s(d.carte_essai_lot) !== lot;
+  return nouveau || !(Number.isFinite(essai) && Date.now() - essai < 30 * 60_000);
 }
 
 /**
@@ -90,6 +124,16 @@ export function carteALire(diag: unknown): boolean {
 export async function lireLaCarte(slug: string, origine: string): Promise<number> {
   const cle = s(process.env.GEMINI_API_KEY) || s(process.env.GOOGLE_API_KEY);
   if (!cle) return 0;
+  // LES PHOTOS DE SON ONGLET « MENU » SONT PEUT-ÊTRE ARRIVÉES : on les range d'abord.
+  try {
+    await avancerLesPhotosMenu(slug);
+  } catch {
+    /* au tour suivant */
+  }
+  return lireMaintenant(slug, origine, cle);
+}
+
+async function lireMaintenant(slug: string, origine: string, cle: string): Promise<number> {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
@@ -100,24 +144,61 @@ export async function lireLaCarte(slug: string, origine: string): Promise<number
   const row = (data as Record<string, unknown> | null) ?? null;
   if (!row) return 0;
   const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
-  if (diag.carte_lue) return carteLueDuDiagnostic(diag).length;
-  const photos = (Array.isArray(diag.photos) ? diag.photos : []).map(s).filter(Boolean).slice(0, 16);
+  if (carteLueDuDiagnostic(diag).length) return carteLueDuDiagnostic(diag).length;
+  // LE ROBOT DU MENU TOURNE ENCORE : on attend ses photos, sans rien noter —
+  // la prochaine demande relira.
+  if (photosMenuEnCours(diag)) return 0;
+  if (!carteALire(diag)) return 0;
+  const { photos, lot } = photosALire(diag);
   if (!photos.length) return 0;
-  // UNE TENTATIVE PAR DEMI-HEURE AU PLUS : la page peut demander à chaque
-  // visite, la lecture ne part qu'une fois. On note l'essai AVANT de payer.
-  const essai = Date.parse(s(diag.carte_essai_at));
-  if (Number.isFinite(essai) && Date.now() - essai < 30 * 60_000) return 0;
+  // ON NOTE L'ESSAI AVANT DE PAYER : la page peut demander à chaque visite, la
+  // lecture ne part qu'une fois par lot de photos (et par demi-heure).
   await supabase
     .from("human_vitrine_sites")
-    .update({ diagnostic: { ...diag, carte_essai_at: new Date().toISOString() } })
+    .update({ diagnostic: { ...diag, carte_essai_at: new Date().toISOString(), carte_essai_lot: lot } })
     .eq("id", s(row.id));
 
-  const images = (await Promise.all(photos.map((p) => lire(p, origine)))).filter(Boolean) as { type: string; donnees: string }[];
-  if (!images.length) return 0;
-  const base = s(process.env.GEMINI_BASE_URL) || "https://generativelanguage.googleapis.com";
-  const modele = s(process.env.GEMINI_VISION_MODEL) || "gemini-2.5-flash";
+  // PAR PAQUETS DE DOUZE, et on s'arrête dès qu'une carte est lue : ses
+  // photos de menu viennent en premier, elles suffisent presque toujours.
   let plats: PlatLu[] = [];
   let erreur = "";
+  let lues = 0;
+  for (let i = 0; i < photos.length && !plats.length; i += 12) {
+    const images = (await Promise.all(photos.slice(i, i + 12).map((p) => lire(p, origine)))).filter(Boolean) as {
+      type: string;
+      donnees: string;
+    }[];
+    if (!images.length) continue;
+    lues += images.length;
+    const r = await lireUnPaquet(images, cle);
+    if ("erreur" in r) {
+      erreur = r.erreur;
+      break;
+    }
+    plats = r.plats;
+  }
+  if (!lues && !erreur) erreur = "aucune photo n'a pu être ouverte";
+  // ON RELIT AVANT D'ÉCRIRE : la fiche ou la photo ClikMe ont pu écrire entre-temps.
+  const { data: frais } = await supabase.from("human_vitrine_sites").select("diagnostic").eq("id", s(row.id)).maybeSingle();
+  const d2 = ((frais as Record<string, unknown> | null)?.diagnostic ?? diag) as Record<string, unknown>;
+  // UN ÉCHEC NE SE GRAVE PAS COMME « AUCUNE CARTE » : on garde la raison, et
+  // la lecture pourra repartir à la prochaine visite (après la demi-heure).
+  await supabase
+    .from("human_vitrine_sites")
+    .update({
+      // `carte_fin_at` : la lecture est finie, réussie ou non — la page cesse d'attendre.
+      diagnostic: erreur
+        ? { ...d2, carte_lue_erreur: erreur, carte_fin_at: new Date().toISOString() }
+        : { ...d2, carte_lue: { plats, at: new Date().toISOString(), photos: lues, lot }, carte_lue_erreur: null, carte_fin_at: new Date().toISOString() },
+    })
+    .eq("id", s(row.id));
+  return plats.length;
+}
+
+/** Un paquet de photos montré au modèle : les plats lus, ou la raison de l'échec. */
+async function lireUnPaquet(images: { type: string; donnees: string }[], cle: string): Promise<{ plats: PlatLu[] } | { erreur: string }> {
+  const base = s(process.env.GEMINI_BASE_URL) || "https://generativelanguage.googleapis.com";
+  const modele = s(process.env.GEMINI_VISION_MODEL) || "gemini-2.5-flash";
   try {
     const r = await fetch(`${base}/v1beta/models/${modele}:generateContent`, {
       method: "POST",
@@ -128,28 +209,12 @@ export async function lireLaCarte(slug: string, origine: string): Promise<number
       }),
       signal: AbortSignal.timeout(90_000),
     });
-    if (!r.ok) erreur = `Gemini ${r.status}`;
-    else {
-      const j = (await r.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-      const texte = (j.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("");
-      const brut = JSON.parse(texte.slice(texte.indexOf("{"), texte.lastIndexOf("}") + 1)) as { plats?: unknown };
-      plats = carteLueDuDiagnostic({ carte_lue: { plats: brut.plats } });
-    }
+    if (!r.ok) return { erreur: `Gemini ${r.status}` };
+    const j = (await r.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+    const texte = (j.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("");
+    const brut = JSON.parse(texte.slice(texte.indexOf("{"), texte.lastIndexOf("}") + 1)) as { plats?: unknown };
+    return { plats: carteLueDuDiagnostic({ carte_lue: { plats: brut.plats } }) };
   } catch (e) {
-    erreur = e instanceof Error ? e.message.slice(0, 160) : "lecture impossible";
+    return { erreur: e instanceof Error ? e.message.slice(0, 160) : "lecture impossible" };
   }
-  // ON RELIT AVANT D'ÉCRIRE : la fiche ou la photo ClikMe ont pu écrire entre-temps.
-  const { data: frais } = await supabase.from("human_vitrine_sites").select("diagnostic").eq("id", s(row.id)).maybeSingle();
-  const d2 = ((frais as Record<string, unknown> | null)?.diagnostic ?? diag) as Record<string, unknown>;
-  // UN ÉCHEC NE SE GRAVE PAS COMME « AUCUNE CARTE » : on garde la raison, et
-  // la lecture pourra repartir à la prochaine visite (après la demi-heure).
-  await supabase
-    .from("human_vitrine_sites")
-    .update({
-      diagnostic: erreur
-        ? { ...d2, carte_lue_erreur: erreur }
-        : { ...d2, carte_lue: { plats, at: new Date().toISOString(), photos: images.length }, carte_lue_erreur: null },
-    })
-    .eq("id", s(row.id));
-  return plats.length;
 }

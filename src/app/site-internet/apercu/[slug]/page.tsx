@@ -45,8 +45,9 @@ import { headers } from "next/headers";
 import { carteALire, lireLaCarte } from "@/lib/site-internet/carte-lue";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { noterClic } from "@/lib/direct/publications";
-import { carteDepuisFiche, enGrand } from "@/lib/site-internet/carte-depuis-fiche";
-import { completerLHote, couvertureDuDiagnostic, photosCandidates } from "@/lib/site-internet/couverture";
+import { brancheDuMetier, carteDepuisFiche, enGrand } from "@/lib/site-internet/carte-depuis-fiche";
+import { menuATenter, tenterLesPhotosMenu } from "@/lib/site-internet/photos-menu";
+import { completerLHote, couvertureDuDiagnostic, hoteACherche, photosCandidates } from "@/lib/site-internet/couverture";
 import { etatDeLaFiche, raisonLisible } from "@/lib/site-internet/fiche-google";
 import { COLONNES_FICHE, construireFiche } from "@/lib/site-internet/fiche-du-site";
 import { carteDeDemo, estAdresseDeDemo, listeDesDemos } from "@/lib/site-internet/fiches-demo";
@@ -118,7 +119,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
  * récentes ; pour les plus anciennes, une page sans note, sans avis et sans
  * photo Google n'a visiblement rien reçu de sa fiche.
  */
-function ficheLue(row: Record<string, unknown>): { lue: boolean; erreurs: string[]; detail?: string; enCours: boolean } {
+function ficheLue(row: Record<string, unknown>): { lue: boolean; erreurs: string[]; detail?: string; enCours: boolean; carteEnCours: boolean } {
   const d = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
   const e = etatDeLaFiche(d);
   const rien =
@@ -131,6 +132,8 @@ function ficheLue(row: Record<string, unknown>): { lue: boolean; erreurs: string
     // LE MESSAGE EXACT, POUR NOUS : c'est lui qui dit ce qui a coincé.
     detail: e.erreurs.length || e.corrections.length ? [...e.erreurs, ...e.corrections].join(" | ").slice(0, 600) : undefined,
     enCours: e.enCours,
+    // SA CARTE SE LIT ENCORE : la page continue de suivre, et se relit quand elle arrive.
+    carteEnCours: e.carteEnCours,
   };
 }
 
@@ -320,9 +323,9 @@ export default async function ApercuMaquette({
      dont la lecture a échoué — la rattrapent à la visite suivante. Une
      tentative par demi-heure au plus, voir `carte-lue.ts`. */
   /* SA PHOTO CLIKME A ÉTÉ FAITE AVANT QU'ON REPÈRE SON HÔTE ? On le cherche
-     une fois, après la page — voir `completerLHote`. */
+     après la page — trois essais au plus, voir `hoteACherche`. */
   const couv = couvertureDuDiagnostic(row.diagnostic);
-  if (couv?.url && couv.etat !== "originale" && !couv.hote && couv.hoteCherche !== couv.url) {
+  if (hoteACherche(couv)) {
     after(async () => {
       try {
         await completerLHote(slug);
@@ -331,7 +334,23 @@ export default async function ApercuMaquette({
       }
     });
   }
-  if (carteALire(row.diagnostic)) {
+  /* SA CARTE EST VIDE ET SON ONGLET « MENU » N'A JAMAIS ÉTÉ DEMANDÉ (page
+     créée avant cette étape) : on le demande une fois, après la page. La
+     lecture de la carte suit d'elle-même, aux visites suivantes — JAMAIS À
+     LA MÊME : partie en même temps, elle lisait les anciennes photos et
+     effaçait au passage la trace du robot du menu. */
+  if (
+    brancheDuMetier(str(row.activite)) === "restaurant" &&
+    menuATenter((row.diagnostic ?? {}) as Record<string, unknown>, str(row.google_place_id))
+  ) {
+    after(async () => {
+      try {
+        await tenterLesPhotosMenu(slug);
+      } catch {
+        /* la visite suivante réessaiera */
+      }
+    });
+  } else if (carteALire(row.diagnostic)) {
     const h = await headers();
     const hote = h.get("x-forwarded-host") || h.get("host") || "";
     const origine = `${h.get("x-forwarded-proto") || (/^(localhost|127\.)/.test(hote) ? "http" : "https")}://${hote}`;

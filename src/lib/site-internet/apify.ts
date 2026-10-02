@@ -180,13 +180,15 @@ export type RunApify = { runId: string; datasetId: string };
 export async function lancerRunApify(
   token: string,
   entree: Record<string, unknown>,
+  /** Le robot : celui des fiches par défaut, un autre pour les photos du menu. */
+  acteur = "compass~crawler-google-places",
 ): Promise<(RunApify & { corrige: string[] }) | { erreur: string }> {
   let body = { ...entree };
   const corrige: string[] = [];
   for (let essai = 0; essai < 3; essai++) {
     try {
       const r = await fetch(
-        `${baseApify()}/v2/acts/compass~crawler-google-places/runs?token=${encodeURIComponent(token)}&timeout=600`,
+        `${baseApify()}/v2/acts/${encodeURIComponent(acteur)}/runs?token=${encodeURIComponent(token)}&timeout=600`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

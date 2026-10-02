@@ -284,6 +284,15 @@ export function StylesBoutiqueTable() {
           mix-blend-mode:screen;animation:btHalo2 3.4s ease-in-out infinite;}
         @keyframes btHalo2{0%,100%{opacity:.55;transform:scale(.94);}50%{opacity:1;transform:scale(1.06);}}
         .bt-hote .bt-invite{bottom:calc(100% + 4px);}
+        /* TOUTE LA PHOTO CLIKME EST UNE PORTE — et le titre comme la plaque
+           du bas laissent passer le doigt jusqu'à elle : seuls leurs boutons
+           le retiennent. Sans ça, le seuil, large comme l'écran, couvrait
+           justement l'entrée où se tient l'hôte. */
+        .bt-photo-porte{position:absolute;inset:0;z-index:1;padding:0;border:0;background:none;
+          cursor:pointer;-webkit-tap-highlight-color:transparent;}
+        .bt-e-lieu.a-couv .bt-accueil,.bt-e-lieu.a-couv .bt-seuil{pointer-events:none;}
+        .bt-e-lieu.a-couv .bt-accueil>*,.bt-e-lieu.a-couv .bt-seuil>*{pointer-events:auto;}
+        .bt-e-lieu.a-couv .bt-accueil .bt-titre,.bt-e-lieu.a-couv .bt-accueil .bt-dit{pointer-events:none;}
 
         /* ═══ LA PORTE QUI S'OUVRE ══════════════════════════════════════════
            Au toucher, la façade zoome à travers la porte — à partir de LUI
@@ -802,7 +811,7 @@ export function StylesBoutiqueTable() {
              ClikMe reprend le voile leger des deux moities. */
           .a-couv .bt-voile.haut-bas{background:linear-gradient(90deg,
             rgba(18,12,9,0) 70%,rgba(18,12,9,.5) 92%,var(--bt-fond) 100%);}
-          .bt-ecran>:not(.bt-photo):not(.bt-voile):not(.bt-hero):not(.bt-fenetre):not(.bt-cadre-photo):not(.bt-porte-lumiere):not(.bt-hote){
+          .bt-ecran>:not(.bt-photo):not(.bt-voile):not(.bt-hero):not(.bt-fenetre):not(.bt-cadre-photo):not(.bt-porte-lumiere):not(.bt-hote):not(.bt-photo-porte){
             margin-left:var(--bt-g);width:calc(100% - var(--bt-g));
             padding-left:var(--bt-d);padding-right:var(--bt-d);box-sizing:border-box;}
           .bt-ecran>*>*{max-width:600px;}
@@ -817,7 +826,7 @@ export function StylesBoutiqueTable() {
             bottom:12%;margin:0;transform:translateX(-50%);}
           .bt-e-lieu.franchit .bt-accueille{transform:translateX(-50%) scale(1.35);}
           /* LE CADRE PREND LA MOITIÉ GAUCHE, ET LA PHOTO LE REMPLIT. */
-          .bt-cadre-photo{right:auto;width:var(--bt-g);}
+          .bt-cadre-photo,.bt-photo-porte{right:auto;width:var(--bt-g);}
           .bt-cadre-photo .bt-photo{width:auto;right:0;max-width:none;}
           .bt-cadre-photo .bt-porte-lumiere{max-width:none;}
           .bt-e-lieu .bt-entrer{width:auto;min-width:260px;font-size:19px;padding:15px 24px;}

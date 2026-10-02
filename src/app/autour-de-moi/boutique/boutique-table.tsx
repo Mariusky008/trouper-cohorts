@@ -494,17 +494,24 @@ export function BoutiqueTable({
   const aTouche = useRef(false);
   const aToque = useRef(false);
   const ongletAvant = useRef(onglet);
+  /* « LA PHRASE EST APPARUE PENDANT UNE SECONDE, PUIS A DISPARU. »
+     Ses minuteurs vivaient dans l'effet de l'onglet : le moindre changement
+     d'écran les annulait en route, et trois secondes et demie, c'était déjà
+     trop court pour la lire. Ils vivent maintenant à part, jusqu'au départ de
+     la page : la bulle tient huit secondes, ou jusqu'à ce qu'on le touche, et
+     elle ne s'affiche jamais si l'on est revenu sur le lieu entre-temps. */
+  const minuteursToc = useRef<number[]>([]);
+  useEffect(() => () => minuteursToc.current.forEach((t) => window.clearTimeout(t)), []);
   useEffect(() => {
     const avant = ongletAvant.current;
     ongletAvant.current = onglet;
+    if (onglet === "lieu") setToque(false);
     if (avant !== "lieu" || onglet === "lieu" || onglet === "amis" || aTouche.current || aToque.current) return;
     aToque.current = true;
-    const debut = window.setTimeout(() => setToque(true), 700);
-    const fin = window.setTimeout(() => setToque(false), 4200);
-    return () => {
-      window.clearTimeout(debut);
-      window.clearTimeout(fin);
-    };
+    minuteursToc.current.push(
+      window.setTimeout(() => ongletAvant.current !== "lieu" && setToque(true), 700),
+      window.setTimeout(() => setToque(false), 8700),
+    );
   }, [onglet]);
 
   /* ═══ LA LUMIÈRE DU MOMENT, ET L'ENSEIGNE ════════════════════════════════
@@ -605,7 +612,7 @@ export function BoutiqueTable({
   };
 
   /** LE GESTE : le son débloqué, la voix demandée, la porte franchie. */
-  const entrer = (depuis?: HTMLElement | null) => {
+  const entrer = (depuis?: HTMLElement | null, point?: { x: number; y: number }) => {
     if (franchit || pousse) return;
     aTouche.current = true;
     try {
@@ -630,7 +637,8 @@ export function BoutiqueTable({
     // LE ZOOM PART DE LUI : son centre, en % de la photo.
     let origine = { x: 50, y: 62 };
     const ph = photoLieuRef.current?.getBoundingClientRect();
-    const g = depuis?.getBoundingClientRect();
+    // TOUCHÉ SUR LA PHOTO : le zoom part du doigt — c'est là qu'il était.
+    const g = point ? { left: point.x, top: point.y, width: 0, height: 0 } : depuis?.getBoundingClientRect();
     if (ph && g && ph.width && ph.height) {
       origine = {
         x: Math.max(5, Math.min(95, ((g.left + g.width / 2 - ph.left) / ph.width) * 100)),
@@ -943,6 +951,21 @@ export function BoutiqueTable({
             {/* LA LUMIÈRE DE LA SALLE, qui monte de la porte pendant qu'on la franchit. */}
             <div className="bt-porte-lumiere" aria-hidden="true" />
           </div>
+          {/* ═══ TOUTE LA PHOTO CLIKME EST UNE PORTE ═══════════════════════
+              « Le fantôme propriétaire du lieu n'est pas cliquable. »
+              Il ne l'était que si un modèle avait su dire OÙ il se tient sur
+              la photo — et quand il ne savait pas, rien ne se touchait. Le
+              doigt va pourtant tout droit sur lui. La photo entière entre
+              donc, et le zoom part du doigt ; l'anneau de lumière, quand on
+              sait où il est, ne fait plus que le désigner. */}
+          {couv && (
+            <button
+              type="button"
+              className="bt-photo-porte"
+              onClick={(e) => entrer(null, { x: e.clientX, y: e.clientY })}
+              aria-label={`Entrer chez ${c.nom}`}
+            />
+          )}
           {/* L'HÔTE PEINT SUR LA PHOTO CLIKME SE TOUCHE AUSSI : un halo qui
               respire autour de lui, sa bulle, et la porte qui s'ouvre. */}
           {hoteEcran && (

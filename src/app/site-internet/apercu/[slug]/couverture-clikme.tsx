@@ -139,7 +139,7 @@ export function VeilleCouverture({
   initial: Etat;
   aDesPhotos: boolean;
   /** Sa fiche Google a-t-elle été lue, et sinon pourquoi. */
-  fiche?: { lue: boolean; erreurs: string[]; detail?: string; enCours?: boolean };
+  fiche?: { lue: boolean; erreurs: string[]; detail?: string; enCours?: boolean; carteEnCours?: boolean };
 }) {
   const { etat, demander, envoyerPhoto, occupe, dit } = useCouverture(slug, initial);
   const router = useRouter();
@@ -156,27 +156,54 @@ export function VeilleCouverture({
    */
   const [ficheEnCours, setFicheEnCours] = useState(Boolean(fiche?.enCours));
   useEffect(() => setFicheEnCours(Boolean(fiche?.enCours)), [fiche?.enCours]);
+  /* ═══ PUIS SA CARTE, QUI SE LIT APRÈS ══════════════════════════════════════
+     « Le restaurant a bien un onglet Menu… sauf que sur ClikMe ils
+     n'apparaissent toujours pas. » Sa carte se lit APRÈS la fiche (photos de
+     l'onglet Menu, puis lecture des prix) : la page continuait de dormir
+     une fois la fiche lue, et la carte n'apparaissait qu'à la visite
+     suivante. Elle suit maintenant la carte aussi — quatre minutes au plus —
+     et se relit quand ses plats arrivent. */
+  const [carteEnCours, setCarteEnCours] = useState(Boolean(fiche?.carteEnCours));
+  useEffect(() => setCarteEnCours(Boolean(fiche?.carteEnCours)), [fiche?.carteEnCours]);
+  const suivreDepuis = useRef(Date.now());
   useEffect(() => {
-    if (!ficheEnCours) return;
+    if (!ficheEnCours && !carteEnCours) return;
+    suivreDepuis.current = Date.now();
     const t = window.setInterval(async () => {
       try {
         const r = await fetch(`/api/site-internet/fiche-google?slug=${encodeURIComponent(slug)}`, { cache: "no-store" });
-        const j = (await r.json()) as { enCours?: boolean; lue?: boolean; raison?: string; detail?: string; photos?: number; avis?: number };
+        const j = (await r.json()) as {
+          enCours?: boolean;
+          carteEnCours?: boolean;
+          lue?: boolean;
+          raison?: string;
+          detail?: string;
+          photos?: number;
+          avis?: number;
+        };
         if (j.enCours) return;
-        setFicheEnCours(false);
-        if (j.detail) setFicheDetail(j.detail);
-        setFicheDit(
-          j.lue
-            ? `Fiche lue : ${j.photos ?? 0} photo${(j.photos ?? 0) > 1 ? "s" : ""}, ${j.avis ?? 0} avis.`
-            : j.raison || "La fiche n'a pas pu être lue.",
-        );
+        if (ficheEnCours) {
+          setFicheEnCours(false);
+          if (j.detail) setFicheDetail(j.detail);
+          setFicheDit(
+            j.lue
+              ? `Fiche lue : ${j.photos ?? 0} photo${(j.photos ?? 0) > 1 ? "s" : ""}, ${j.avis ?? 0} avis.`
+              : j.raison || "La fiche n'a pas pu être lue.",
+          );
+          router.refresh();
+          suivreDepuis.current = Date.now();
+          if (j.carteEnCours) setCarteEnCours(true);
+          return;
+        }
+        if (j.carteEnCours && Date.now() - suivreDepuis.current < 4 * 60_000) return;
+        setCarteEnCours(false);
         router.refresh();
       } catch {
         /* réseau coupé : on redemandera au tour suivant */
       }
     }, 5000);
     return () => window.clearInterval(t);
-  }, [ficheEnCours, slug, router]);
+  }, [ficheEnCours, carteEnCours, slug, router]);
   const relire = async () => {
     setRelit(true);
     setFicheDit("");
