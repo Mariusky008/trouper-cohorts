@@ -97,6 +97,10 @@ export type EtatCouverture = {
   hoteCherche?: string;
   hoteEssais?: number;
   hoteAt?: string;
+  /** Pourquoi le dernier repérage n'a rien donné — lu dans l'administration. */
+  hoteErreur?: string;
+  /** Posé à la main dans l'administration : le modèle ne le remplace plus. */
+  hoteMain?: boolean;
 };
 
 /**
@@ -127,7 +131,11 @@ function lireBoite(v: unknown): EtatCouverture["hote"] {
  * millièmes de l'image (`box_2d`, le format qu'il connaît le mieux). Sans
  * réponse claire, rien n'est rangé : la page passe alors par son bouton.
  */
+/** La dernière raison d'un repérage vide — voir `hoteErreur`. */
+let raisonHote = "";
+
 async function trouverLHote(image: { type: string; donnees: string }): Promise<EtatCouverture["hote"]> {
+  raisonHote = "";
   // D'ABORD L'HÔTE EN TENUE ; S'IL NE LE RECONNAÎT PAS, le fantôme le plus près
   // de l'entrée — c'est là que la consigne de la photo le place.
   return (
@@ -144,7 +152,10 @@ async function trouverLHote(image: { type: string; donnees: string }): Promise<E
 
 async function chercherUneBoite(image: { type: string; donnees: string }, question: string): Promise<EtatCouverture["hote"]> {
   const cle = s(process.env.GEMINI_API_KEY) || s(process.env.GOOGLE_API_KEY);
-  if (!cle) return undefined;
+  if (!cle) {
+    raisonHote = "aucune clé Gemini sur le serveur";
+    return undefined;
+  }
   const base = s(process.env.GEMINI_BASE_URL) || "https://generativelanguage.googleapis.com";
   const modele = s(process.env.GEMINI_VISION_MODEL) || "gemini-2.5-flash";
   try {
@@ -165,14 +176,19 @@ async function chercherUneBoite(image: { type: string; donnees: string }, questi
       }),
       signal: AbortSignal.timeout(45_000),
     });
-    if (!r.ok) return undefined;
+    if (!r.ok) {
+      raisonHote = `le modèle a répondu ${r.status} : ${(await r.text().catch(() => "")).slice(0, 160)}`;
+      return undefined;
+    }
     const j = (await r.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
     const texte = (j.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("");
+    raisonHote = `le modèle n'a pas trouvé l'hôte (réponse : ${texte.slice(0, 120) || "vide"})`;
     const m = /"box_2d"\s*:\s*\[\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*\]/.exec(texte);
     if (!m) return undefined;
     const [ymin, xmin, ymax, xmax] = m.slice(1).map((v) => Number(v) / 1000);
     return lireBoite({ x: xmin, y: ymin, w: xmax - xmin, h: ymax - ymin });
-  } catch {
+  } catch (e) {
+    raisonHote = `appel au modèle impossible : ${e instanceof Error ? e.message : "erreur"}`;
     return undefined;
   }
 }
@@ -199,18 +215,79 @@ export async function completerLHote(slug: string): Promise<void> {
   const essais = etat.hoteCherche === etat.url ? (etat.hoteEssais ?? 1) + 1 : 1;
   await ecrireEtat(s(row.id), diag, { ...etat, hoteCherche: etat.url, hoteEssais: essais, hoteAt: new Date().toISOString() });
   let image: { type: string; donnees: string } | null = null;
+  let raison = "";
   try {
     const r = await fetch(s(etat.url), { signal: AbortSignal.timeout(20_000) });
     if (r.ok) image = { type: (r.headers.get("content-type") || "image/png").split(";")[0], donnees: Buffer.from(await r.arrayBuffer()).toString("base64") };
-  } catch {
+    else raison = `photo ClikMe illisible (${r.status})`;
+  } catch (e) {
     image = null;
+    raison = `photo ClikMe illisible : ${e instanceof Error ? e.message : "erreur"}`;
   }
   const hote = image ? await trouverLHote(image) : undefined;
-  if (!hote) return;
+  if (!hote) raison = raison || raisonHote || "rien trouvé";
   const { data: frais } = await supabase.from("human_vitrine_sites").select("diagnostic").eq("id", s(row.id)).maybeSingle();
   const d2 = ((frais as Record<string, unknown> | null)?.diagnostic ?? diag) as Record<string, unknown>;
   const e2 = couvertureDuDiagnostic(d2);
-  if (e2 && e2.url === etat.url) await ecrireEtat(s(row.id), d2, { ...e2, hote, hoteCherche: etat.url });
+  // POSÉ À LA MAIN ENTRE-TEMPS : le modèle ne repasse pas par-dessus.
+  if (!e2 || e2.url !== etat.url || e2.hoteMain) return;
+  // L'ÉCHEC AUSSI EST ÉCRIT : c'est ce que l'administration montre.
+  await ecrireEtat(s(row.id), d2, hote ? { ...e2, hote, hoteCherche: etat.url, hoteErreur: undefined } : { ...e2, hoteErreur: raison });
+}
+
+/* ═══ L'HÔTE, À LA MAIN — voir `/admin/hote-photo` ══════════════════════════
+   « J'ai cliqué sur le fantôme et je n'ai vu aucune animation. » Le repérage
+   par le modèle peut échouer — et sans sa place, le fantôme propriétaire ne
+   bouge pas. L'administration montre ce qui s'est passé, relance le modèle,
+   ou pose la place à la main : on entoure le fantôme sur la photo, c'est
+   enregistré, et c'est définitif pour cette photo. */
+
+async function ligneDuSite(slug: string) {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("human_vitrine_sites")
+    .select("id, business_name, diagnostic")
+    .eq("slug", slug)
+    .eq("channel", "letter")
+    .maybeSingle();
+  const row = (data as Record<string, unknown> | null) ?? null;
+  if (!row) return null;
+  const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
+  return { id: s(row.id), nom: s(row.business_name), diag, etat: couvertureDuDiagnostic(diag) };
+}
+
+/** Ce que l'administration montre : la photo, l'hôte s'il est repéré, et les essais. */
+export async function etatDeLHote(slug: string) {
+  const l = await ligneDuSite(slug);
+  if (!l) return null;
+  return { nom: l.nom, etat: l.etat };
+}
+
+/** On l'entoure à la main : enregistré tel quel, et le modèle ne le remplace plus. */
+export async function poserLHote(slug: string, boite: unknown) {
+  const l = await ligneDuSite(slug);
+  const hote = lireBoite(boite);
+  if (!l?.etat?.url || !hote) return null;
+  const etat: EtatCouverture = { ...l.etat, hote, hoteMain: true, hoteCherche: l.etat.url, hoteErreur: undefined };
+  await ecrireEtat(l.id, l.diag, etat);
+  return etat;
+}
+
+/** On redemande au modèle, tout de suite, en oubliant les essais passés. */
+export async function relancerLHote(slug: string) {
+  const l = await ligneDuSite(slug);
+  if (!l?.etat?.url) return null;
+  await ecrireEtat(l.id, l.diag, {
+    ...l.etat,
+    hote: undefined,
+    hoteMain: undefined,
+    hoteCherche: undefined,
+    hoteEssais: undefined,
+    hoteAt: undefined,
+    hoteErreur: undefined,
+  });
+  await completerLHote(slug);
+  return (await ligneDuSite(slug))?.etat ?? null;
 }
 
 /** Faut-il (re)chercher l'hôte sur cette photo ? Lu par la page avant d'appeler `completerLHote`. */
@@ -246,6 +323,8 @@ export function couvertureDuDiagnostic(diag: unknown): EtatCouverture | null {
     hoteCherche: s(c.hoteCherche) || undefined,
     hoteEssais: Number(c.hoteEssais) || undefined,
     hoteAt: s(c.hoteAt) || undefined,
+    hoteErreur: s(c.hoteErreur) || undefined,
+    hoteMain: c.hoteMain === true || undefined,
   };
 }
 
