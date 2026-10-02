@@ -1270,6 +1270,8 @@ export type CarteAutour = {
    * le soir — voir `lumiereDuMoment` dans `boutique-table.tsx`.
    */
   semaine?: { jours?: string; horaires?: string }[];
+  /** Où en est la lecture de sa carte — montré au seul commerçant, sur sa carte vide. */
+  carteSuivi?: { texte: string; detail?: string }[];
   /**
    * SA CARTE A ÉTÉ LUE SUR LES PHOTOS DE SA FICHE GOOGLE — pas saisie par lui.
    * La page le dit sous la carte : « prix à confirmer sur place ».

@@ -54,6 +54,14 @@ const entreeMenu = (placeId: string) => ({
   placeId,
   photoCategory: "menu",
   maxPhotos: 16,
+  /* ═══ VU DEPUIS LA FRANCE ═══════════════════════════════════════════════
+     Deuxième passage, deuxième leçon de la console : « Loaded place: Le
+     Bordeaux » — la fiche s'ouvrait bien — puis « Requested photo category
+     'menu' is not visibly available » sans proxy, et le repli par proxy
+     dépassait son délai. Son proxy par défaut est résidentiel… aux
+     États-Unis. Un restaurant de Dax se regarde depuis la France : Google y
+     montre son onglet « Menu » comme sur le téléphone de ses clients. */
+  proxyConfiguration: { useApifyProxy: true, apifyProxyGroups: ["RESIDENTIAL"], apifyProxyCountry: "FR" },
 });
 
 /**
@@ -61,7 +69,7 @@ const entreeMenu = (placeId: string) => ({
  * sauf si la demande a changé depuis : la page du Bordeaux, essayée avec la
  * mauvaise entrée, redemande donc une fois avec la bonne.
  */
-export const MENU_VERSION = 2;
+export const MENU_VERSION = 3;
 
 /** Les adresses de photos Google contenues dans ce que rend le robot, où qu'elles soient. */
 export function photosDuRobot(items: unknown[]): string[] {

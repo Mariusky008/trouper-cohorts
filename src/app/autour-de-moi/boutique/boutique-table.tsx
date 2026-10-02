@@ -1055,7 +1055,15 @@ export function BoutiqueTable({
             >
               Découvrir le lieu <s aria-hidden="true">→</s>
             </button>
-            <button type="button" className="bt-entrer second" onClick={() => setOnglet("carte")}>
+            <button
+              type="button"
+              className="bt-entrer second"
+              onClick={() => {
+                // UN GESTE SUR LE LIEU : il n'a pas à toquer derrière.
+                aTouche.current = true;
+                setOnglet("carte");
+              }}
+            >
               <IconeLivre />
               Carte et prix <s aria-hidden="true">›</s>
             </button>
@@ -1227,6 +1235,22 @@ export function BoutiqueTable({
               ) : (
                 <p className="bt-vide">Sa carte arrive. En attendant, demandez au chef ce qu’il propose aujourd’hui.</p>
               )}
+              {/* OÙ EN EST LA LECTURE DE SA CARTE — au seul commerçant, et
+                  seulement quand elle est vide : ce que l'onglet « Menu » de
+                  Google a rendu, combien de photos ont été regardées, et la
+                  raison d'un échec. Le message exact dessous, pour nous.
+                  « Vide » veut dire : rien de lu ni de saisi — les formules
+                  proposées par métier ne sont que des exemples. */}
+              {saPage && (carteLignes.length === 0 || c.cataloguePropose) && c.carteSuivi?.length ? (
+                <ul className="bt-suivi">
+                  {c.carteSuivi.map((l) => (
+                    <li key={l.texte}>
+                      {l.texte}
+                      {l.detail && <code>{l.detail}</code>}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
               {/* ═══ SON MENU, LÀ OÙ IL EST PUBLIÉ ═══════════════════════════
                   « Quand je regarde la fiche Google, je vois bien les menus,
                   les prix. » C'est vrai, et on n'en montrait rien. Son lien de

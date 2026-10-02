@@ -218,3 +218,53 @@ async function lireUnPaquet(images: { type: string; donnees: string }[], cle: st
     return { erreur: e instanceof Error ? e.message.slice(0, 160) : "lecture impossible" };
   }
 }
+
+/**
+ * ═══ OÙ EN EST LA LECTURE DE SA CARTE — dit au commerçant ═══════════════════
+ *
+ * « La carte menu et prix ne s'affiche toujours pas (voir photo Apify). »
+ * Pour le savoir, il a dû ouvrir la console d'un prestataire qu'il n'a pas à
+ * connaître. Son écran « Carte et prix », vide, lui dit maintenant ce qui
+ * s'est passé : ce que l'onglet « Menu » de Google a rendu, combien de photos
+ * ont été regardées, et la raison d'un échec — le message exact en dessous,
+ * pour nous.
+ */
+export type LigneSuivi = { texte: string; detail?: string };
+
+export function suiviDeLaCarte(diag: unknown): LigneSuivi[] {
+  const d = diag && typeof diag === "object" ? (diag as Record<string, unknown>) : {};
+  if (d.places_found !== true) return [];
+  const out: LigneSuivi[] = [];
+  const menu = Array.isArray(d.photos_menu) ? d.photos_menu.length : 0;
+  const errMenu = s(d.carte_photos_erreur).replace(/^photos du menu : /, "");
+  if (photosMenuEnCours(d)) out.push({ texte: "Onglet « Menu » de Google : lecture en cours…" });
+  else if (menu) out.push({ texte: `Onglet « Menu » de Google : ${menu} photo${menu > 1 ? "s" : ""} trouvée${menu > 1 ? "s" : ""}.` });
+  else if (errMenu)
+    out.push({
+      texte: /aucune photo/i.test(errMenu)
+        ? "Onglet « Menu » de Google : aucune photo de carte trouvée."
+        : /pas fini à temps/i.test(errMenu)
+          ? "Onglet « Menu » de Google : la lecture a pris trop de temps chez notre prestataire."
+          : "Onglet « Menu » de Google : la lecture s'est arrêtée chez notre prestataire.",
+      detail: errMenu.slice(0, 200),
+    });
+
+  const essai = Date.parse(s(d.carte_essai_at));
+  const fin = Date.parse(s(d.carte_fin_at));
+  const lue = d.carte_lue && typeof d.carte_lue === "object" ? (d.carte_lue as Record<string, unknown>) : null;
+  const err = s(d.carte_lue_erreur);
+  if (Number.isFinite(essai) && !(Number.isFinite(fin) && fin >= essai) && Date.now() - essai < 3 * 60_000)
+    out.push({ texte: "Lecture des prix sur les photos : en cours…" });
+  else if (err)
+    out.push({
+      texte: /aucune photo/i.test(err)
+        ? "Lecture des prix : aucune photo n'a pu être ouverte."
+        : "Lecture des prix : le service de lecture n'a pas répondu correctement.",
+      detail: err.slice(0, 200),
+    });
+  else if (lue && !carteLueDuDiagnostic(d).length) {
+    const n = Number(lue.photos) || 0;
+    out.push({ texte: `Lecture des prix : ${n} photo${n > 1 ? "s" : ""} regardée${n > 1 ? "s" : ""}, aucune carte lisible.` });
+  }
+  return out;
+}

@@ -25,7 +25,7 @@ import { carteDepuisFiche, type FicheCommercant } from "@/lib/site-internet/cart
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { couvertureAffichee, couvertureDuDiagnostic } from "@/lib/site-internet/couverture";
 import { nomPropre } from "@/lib/site-internet/nom-propre";
-import { carteLueDuDiagnostic } from "@/lib/site-internet/carte-lue";
+import { carteLueDuDiagnostic, suiviDeLaCarte } from "@/lib/site-internet/carte-lue";
 
 const str = (v: unknown) => (v == null ? "" : String(v));
 const capWords = (s: string) =>
@@ -173,6 +173,7 @@ export function construireFiche(
     couverture: couvertureAffichee(couvertureDuDiagnostic(diag)),
     couvertureHote: couvertureDuDiagnostic(diag)?.hote,
     carteLue: carteLueDuDiagnostic(diag),
+    carteSuivi: suiviDeLaCarte(diag),
     ficheGoogle: {
       menu: /^https?:\/\//i.test(str(diag.menu_url)) ? str(diag.menu_url) : undefined,
       prix: str(diag.prix_moyen).slice(0, 30) || undefined,

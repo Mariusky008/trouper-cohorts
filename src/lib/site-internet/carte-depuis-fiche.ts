@@ -73,6 +73,8 @@ export type FicheCommercant = {
   carteLue?: { rubrique?: string; nom: string; prix?: string; detail?: string }[];
   /** Ce que sa fiche Google dit de sa carte : lien du menu, prix par personne, services. */
   ficheGoogle?: { menu?: string; prix?: string; services?: string[] };
+  /** Où en est la lecture de sa carte, dit au commerçant — voir `suiviDeLaCarte`. */
+  carteSuivi?: { texte: string; detail?: string }[];
   /** Ses horaires de la semaine, tels qu'on les lit (les siens d'abord, Google sinon). */
   semaine?: { jours?: string; horaires?: string }[];
 };
@@ -301,6 +303,7 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
     ficheGoogle:
       f.ficheGoogle && (f.ficheGoogle.menu || f.ficheGoogle.prix || f.ficheGoogle.services?.length) ? f.ficheGoogle : undefined,
     semaine: f.semaine?.length ? f.semaine : undefined,
+    carteSuivi: f.carteSuivi?.length ? f.carteSuivi : undefined,
     telephone: f.telephone || undefined,
     site: f.site || undefined,
     // LA NOTE VIENT DE GOOGLE ET ON LE DIT AINSI : c'est la seule chose de

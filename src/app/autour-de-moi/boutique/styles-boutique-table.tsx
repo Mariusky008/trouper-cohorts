@@ -613,6 +613,10 @@ export function StylesBoutiqueTable() {
         .bt-trait::before,.bt-trait::after{content:"";flex:1;height:1px;
           background:var(--bt-trait);}
         .bt-fil{display:flex;flex-direction:column;gap:6px;}
+        .bt-suivi{list-style:none;margin:14px 0 0;padding:12px 14px;border-radius:14px;
+          border:1px dashed var(--bt-trait);font-size:13.5px;line-height:1.45;color:var(--bt-gris);}
+        .bt-suivi li+li{margin-top:6px;}
+        .bt-suivi code{display:block;margin-top:2px;font-size:11.5px;opacity:.75;word-break:break-word;}
         .bt-rubrique{margin:14px 4px 6px;font-size:12px;font-weight:700;letter-spacing:.1em;
           text-transform:uppercase;color:var(--bt-ambre);}
         .bt-menu-g{margin:12px 0 8px;width:100%;justify-content:center;}
