@@ -32,6 +32,8 @@
  * FICHIER SERVEUR (jeton Apify).
  */
 import { etatRunApify, lancerRunApify, normName, resultatsRunApify, type RunApify } from "@/lib/site-internet/apify";
+import { avancerLesPhotosMenu, lancerLesPhotosMenu, photosMenuEnCours } from "@/lib/site-internet/photos-menu";
+import { carteALire } from "@/lib/site-internet/carte-lue";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isDirectoryUrl } from "@/lib/site-internet/directories";
 
@@ -88,12 +90,16 @@ export function memeCommerce(titre: string, nom: string): boolean {
   return Boolean(t) && Boolean(n) && (t.includes(n) || n.includes(t));
 }
 
-function extraireMedias(item: Record<string, unknown>): { photos: string[]; reviews: ReviewSnippet[] } {
+function extraireMedias(item: Record<string, unknown>): { photos: string[]; toutes: string[]; reviews: ReviewSnippet[] } {
   /* `imageUrls` n'arrive qu'avec un appel qui DEMANDE des images ; `imageUrl`,
      la photo principale, arrive toujours. Une seule photo fait une couverture. */
   const brutes = Array.isArray(item.imageUrls) ? item.imageUrls : [];
   const imgs = brutes.length ? brutes : [item.imageUrl].filter(Boolean);
-  const photos = imgs.map((u) => String(u)).filter((u) => /^https?:\/\//i.test(u)).slice(0, 12);
+  const valides = imgs.map((u) => String(u)).filter((u) => /^https?:\/\//i.test(u));
+  // DOUZE POUR LA PAGE, TOUTES POUR LIRE LA CARTE : la page de son menu est
+  // rarement parmi les douze premières — voir `carte-lue.ts`.
+  const photos = valides.slice(0, 12);
+  const toutes = valides.slice(0, 50);
   const rv = Array.isArray(item.reviews) ? (item.reviews as Array<Record<string, unknown>>) : [];
   const reviews = rv
     .map((r) => ({
@@ -102,7 +108,7 @@ function extraireMedias(item: Record<string, unknown>): { photos: string[]; revi
       stars: typeof r?.stars === "number" ? (r.stars as number) : typeof r?.rating === "number" ? (r.rating as number) : null,
     }))
     .filter((r) => r.text.length >= 12);
-  return { photos, reviews };
+  return { photos, toutes, reviews };
 }
 
 /**
@@ -140,9 +146,10 @@ const entreeMedias = (placeId: string) => ({
   ...ENTREE_COMMUNE,
   placeIds: [placeId],
   maxCrawledPlacesPerSearch: 1,
-  // VINGT PHOTOS : la page de sa carte est souvent parmi elles, et c'est de
-  // là qu'on lit ses plats et ses prix — voir `carte-lue.ts`.
-  maxImages: 20,
+  // CINQUANTE PHOTOS : la page de sa carte se cache souvent loin dans la
+  // liste, et c'est de là qu'on lit ses plats et ses prix quand l'onglet
+  // « Menu » n'a rien rendu — voir `carte-lue.ts` et `photos-menu.ts`.
+  maxImages: 50,
   maxReviews: 8,
   reviewsSort: "newest",
 });
@@ -200,6 +207,7 @@ function rangerUneFiche(site: Site, biz: Record<string, unknown>, renommer: bool
     ...d,
     places_found: true,
     photos: prendre(m.photos, d.photos),
+    photos_toutes: prendre(m.toutes, d.photos_toutes ?? []),
     reviews_top: prendre(m.reviews.filter((r) => r.stars == null || r.stars >= 4).slice(0, 3), d.reviews_top),
     horaires: prendre(
       oh.slice(0, 7).map((h) => ({ jours: str(h.day), horaires: str(h.hours) })),
@@ -253,8 +261,11 @@ export async function lancerLaFiche(slug: string, o: { renommer?: boolean } = {}
     return false;
   }
   const run: RunFiche = { runId: r.runId, datasetId: r.datasetId, etape, lance: maintenant, renommer: o.renommer };
+  // SA FICHE EST CONNUE : les photos de son onglet « Menu » partent en même temps.
+  const menu = site.placeId ? await lancerLesPhotosMenu(site.placeId, site.nom) : {};
   await ecrire(site, {
     ...site.diag,
+    ...menu,
     fiche_run: run,
     fiche_en_cours: maintenant,
     fiche_erreurs: [],
@@ -263,7 +274,16 @@ export async function lancerLaFiche(slug: string, o: { renommer?: boolean } = {}
   return true;
 }
 
-export type EtatFiche = { enCours: boolean; lue: boolean; photos: number; avis: number; erreurs: string[]; corrections: string[] };
+export type EtatFiche = {
+  enCours: boolean;
+  lue: boolean;
+  photos: number;
+  avis: number;
+  erreurs: string[];
+  corrections: string[];
+  /** Sa carte se lit encore : photos de l'onglet « Menu » en route, ou lecture en cours. */
+  carteEnCours: boolean;
+};
 
 export function etatDeLaFiche(diag: Record<string, unknown>): EtatFiche {
   const run = runDe(diag);
@@ -275,7 +295,16 @@ export function etatDeLaFiche(diag: Record<string, unknown>): EtatFiche {
     avis: Array.isArray(diag.reviews_top) ? diag.reviews_top.length : 0,
     erreurs: (Array.isArray(diag.fiche_erreurs) ? diag.fiche_erreurs : []).map((e) => str(e)).filter(Boolean),
     corrections: (Array.isArray(diag.fiche_corrections) ? diag.fiche_corrections : []).map((e) => str(e)).filter(Boolean),
+    carteEnCours: diag.places_found === true && (photosMenuEnCours(diag) || carteSeLit(diag) || carteALire(diag)),
   };
+}
+
+/** Une lecture de la carte partie il y a moins de trois minutes, et pas encore finie. */
+function carteSeLit(diag: Record<string, unknown>): boolean {
+  const essai = Date.parse(str(diag.carte_essai_at));
+  if (!Number.isFinite(essai) || Date.now() - essai > 3 * 60_000) return false;
+  const fin = Date.parse(str(diag.carte_fin_at));
+  return !(Number.isFinite(fin) && fin >= essai);
 }
 
 /**
@@ -283,6 +312,12 @@ export function etatDeLaFiche(diag: Record<string, unknown>): EtatFiche {
  * deux ou trois questions à Apify, jamais d'attente. Rend l'état.
  */
 export async function avancerLaFiche(slug: string): Promise<EtatFiche | null> {
+  // LES PHOTOS DU MENU D'ABORD : elles avancent même quand la fiche a fini.
+  try {
+    await avancerLesPhotosMenu(slug);
+  } catch {
+    /* au tour suivant */
+  }
   const site = await lireLeSite(slug);
   if (!site) return null;
   const run = runDe(site.diag);
@@ -337,11 +372,13 @@ export async function avancerLaFiche(slug: string): Promise<EtatFiche | null> {
   const { diag, colonnes } = rangerUneFiche(site, biz, Boolean(run.renommer));
   const placeId = str(biz.placeId);
   const r = placeId ? await lancerRunApify(token, entreeMedias(placeId)) : null;
+  // ET LES PHOTOS DE SON ONGLET « MENU », EN MÊME TEMPS — voir `photos-menu.ts`.
+  const menu = placeId ? await lancerLesPhotosMenu(placeId, str(biz.title) || site.nom, str(biz.url)) : {};
   if (r && !("erreur" in r)) {
     const suite: RunFiche = { runId: r.runId, datasetId: r.datasetId, etape: "medias", lance: new Date().toISOString(), renommer: run.renommer };
-    await ecrire(site, { ...diag, fiche_run: suite }, colonnes, run.runId);
+    await ecrire(site, { ...diag, ...menu, fiche_run: suite }, colonnes, run.runId);
   } else {
-    await ecrire(site, fini(diag, r && "erreur" in r ? `medias : ${r.erreur}` : undefined, true), colonnes, run.runId);
+    await ecrire(site, fini({ ...diag, ...menu }, r && "erreur" in r ? `medias : ${r.erreur}` : undefined, true), colonnes, run.runId);
   }
   return etatDeLaFiche((await lireLeSite(slug))?.diag ?? site.diag);
 }

@@ -34,6 +34,7 @@ const lisible = (slug: string) => /^[a-z0-9-]{2,120}$/i.test(slug);
 /** Ce que la page reçoit : l'état, la raison en français, et le détail exact. */
 const reponse = (e: EtatFiche) => ({
   enCours: e.enCours,
+  carteEnCours: e.carteEnCours,
   lue: e.lue,
   photos: e.photos,
   avis: e.avis,

@@ -92,9 +92,19 @@ export type EtatCouverture = {
    * porte. Repéré par un modèle qui voit, juste après le rendu.
    */
   hote?: { x: number; y: number; w: number; h: number };
-  /** Quand on a cherché l'hôte sans le trouver : on ne recommence pas. */
+  /** La photo sur laquelle on a cherché l'hôte, et combien de fois. */
   hoteCherche?: string;
+  hoteEssais?: number;
+  hoteAt?: string;
 };
+
+/**
+ * TROIS ESSAIS, À DIX MINUTES D'ÉCART. Un seul essai par photo, c'était un
+ * fantôme intouchable pour toujours dès que le modèle avait hésité une fois —
+ * ce qui est arrivé sur la toute première vraie inscription.
+ */
+const HOTE_ESSAIS_MAX = 3;
+const HOTE_ECART_MS = 10 * 60_000;
 
 function lireBoite(v: unknown): EtatCouverture["hote"] {
   const b = v && typeof v === "object" ? (v as Record<string, unknown>) : null;
@@ -117,6 +127,21 @@ function lireBoite(v: unknown): EtatCouverture["hote"] {
  * réponse claire, rien n'est rangé : la page passe alors par son bouton.
  */
 async function trouverLHote(image: { type: string; donnees: string }): Promise<EtatCouverture["hote"]> {
+  // D'ABORD L'HÔTE EN TENUE ; S'IL NE LE RECONNAÎT PAS, le fantôme le plus près
+  // de l'entrée — c'est là que la consigne de la photo le place.
+  return (
+    (await chercherUneBoite(
+      image,
+      'In this picture, find the ghost mascot who is the HOST: the one wearing a trade outfit (apron, uniform, chef or work clothes), usually at the entrance. Answer only with JSON {"box_2d":[ymin,xmin,ymax,xmax]} normalised to 0-1000. If there is no such ghost, answer {"box_2d":[]}.',
+    )) ??
+    (await chercherUneBoite(
+      image,
+      'In this picture there are small cute white ghost mascots. Find the one standing closest to the door or entrance (if unsure, the largest one). Answer only with JSON {"box_2d":[ymin,xmin,ymax,xmax]} normalised to 0-1000. If there is no ghost at all, answer {"box_2d":[]}.',
+    ))
+  );
+}
+
+async function chercherUneBoite(image: { type: string; donnees: string }, question: string): Promise<EtatCouverture["hote"]> {
   const cle = s(process.env.GEMINI_API_KEY) || s(process.env.GOOGLE_API_KEY);
   if (!cle) return undefined;
   const base = s(process.env.GEMINI_BASE_URL) || "https://generativelanguage.googleapis.com";
@@ -131,15 +156,13 @@ async function trouverLHote(image: { type: string; donnees: string }): Promise<E
             role: "user",
             parts: [
               { inlineData: { mimeType: image.type, data: image.donnees } },
-              {
-                text: 'In this picture, find the ghost mascot who is the HOST: the one wearing a trade outfit (apron, uniform), usually at the entrance. Answer only with JSON {"box_2d":[ymin,xmin,ymax,xmax]} normalised to 0-1000. If there is no such ghost, answer {"box_2d":[]}.',
-              },
+              { text: question },
             ],
           },
         ],
         generationConfig: { responseMimeType: "application/json" },
       }),
-      signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(45_000),
     });
     if (!r.ok) return undefined;
     const j = (await r.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
@@ -154,8 +177,9 @@ async function trouverLHote(image: { type: string; donnees: string }): Promise<E
 }
 
 /**
- * LES PHOTOS CLIKME FAITES AVANT CETTE ÉTAPE n'ont pas leur hôte repéré : la
- * page le demande une fois, après s'être affichée. Un seul essai par photo.
+ * L'HÔTE PAS ENCORE REPÉRÉ — photo faite avant cette étape, ou modèle qui a
+ * hésité au rendu : la page le redemande après s'être affichée, jusqu'à
+ * trois fois par photo, à dix minutes d'écart.
  */
 export async function completerLHote(slug: string): Promise<void> {
   const supabase = createAdminClient();
@@ -169,12 +193,13 @@ export async function completerLHote(slug: string): Promise<void> {
   if (!row) return;
   const diag = (row.diagnostic && typeof row.diagnostic === "object" ? row.diagnostic : {}) as Record<string, unknown>;
   const etat = couvertureDuDiagnostic(diag);
-  if (!etat?.url || etat.hote || etat.hoteCherche === etat.url) return;
+  if (!etat || !hoteACherche(etat)) return;
   // ON NOTE L'ESSAI AVANT DE PAYER : deux visites rapprochées n'en paient qu'un.
-  await ecrireEtat(s(row.id), diag, { ...etat, hoteCherche: etat.url });
+  const essais = etat.hoteCherche === etat.url ? (etat.hoteEssais ?? 1) + 1 : 1;
+  await ecrireEtat(s(row.id), diag, { ...etat, hoteCherche: etat.url, hoteEssais: essais, hoteAt: new Date().toISOString() });
   let image: { type: string; donnees: string } | null = null;
   try {
-    const r = await fetch(etat.url, { signal: AbortSignal.timeout(20_000) });
+    const r = await fetch(s(etat.url), { signal: AbortSignal.timeout(20_000) });
     if (r.ok) image = { type: (r.headers.get("content-type") || "image/png").split(";")[0], donnees: Buffer.from(await r.arrayBuffer()).toString("base64") };
   } catch {
     image = null;
@@ -184,7 +209,16 @@ export async function completerLHote(slug: string): Promise<void> {
   const { data: frais } = await supabase.from("human_vitrine_sites").select("diagnostic").eq("id", s(row.id)).maybeSingle();
   const d2 = ((frais as Record<string, unknown> | null)?.diagnostic ?? diag) as Record<string, unknown>;
   const e2 = couvertureDuDiagnostic(d2);
-  if (e2?.url === etat.url) await ecrireEtat(s(row.id), d2, { ...e2, hote, hoteCherche: etat.url });
+  if (e2 && e2.url === etat.url) await ecrireEtat(s(row.id), d2, { ...e2, hote, hoteCherche: etat.url });
+}
+
+/** Faut-il (re)chercher l'hôte sur cette photo ? Lu par la page avant d'appeler `completerLHote`. */
+export function hoteACherche(etat: EtatCouverture | null): boolean {
+  if (!etat?.url || etat.hote || etat.etat === "originale") return false;
+  if (etat.hoteCherche !== etat.url) return true;
+  const n = etat.hoteEssais ?? 1;
+  const dernier = Date.parse(etat.hoteAt ?? "");
+  return n < HOTE_ESSAIS_MAX && !(Number.isFinite(dernier) && Date.now() - dernier < HOTE_ECART_MS);
 }
 
 /** L'état rangé dans le diagnostic, s'il y en a un et qu'il est lisible. */
@@ -206,6 +240,8 @@ export function couvertureDuDiagnostic(diag: unknown): EtatCouverture | null {
     depot: s(c.depot) || undefined,
     hote: lireBoite(c.hote),
     hoteCherche: s(c.hoteCherche) || undefined,
+    hoteEssais: Number(c.hoteEssais) || undefined,
+    hoteAt: s(c.hoteAt) || undefined,
   };
 }
 
@@ -801,6 +837,8 @@ async function rendreEtRanger(
     depot: avant?.depot,
     hote,
     hoteCherche: url,
+    hoteEssais: 1,
+    hoteAt: new Date().toISOString(),
   };
   // ON RELIT LE DIAGNOSTIC AVANT D'ECRIRE : le rendu a duré, quelqu'un a pu y toucher.
   const { data: frais } = await supabase.from("human_vitrine_sites").select("diagnostic").eq("id", id).maybeSingle();
