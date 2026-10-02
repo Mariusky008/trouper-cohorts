@@ -568,6 +568,28 @@ export function BoutiqueTable({
 
   const pose = (p: "accueil" | "content" | "reflechit" | "ecoute" | "parle-1" | "parle-2" | "parle-3") =>
     tenue ? `${tenue.dossier}${p}.webp` : "/clikme-fantome.png";
+  /** SES POSES EN PIED, s'il les a — voir `enPied` dans `double-metiers.ts`. */
+  type Geste = "repos" | "parle-1" | "parle-2" | "salut-1" | "salut-2" | "viens" | "montre";
+  const enPied = tenue?.enPied;
+  const geste = (g: Geste) => `${enPied}${g}.webp`;
+  /** Ce qu'il fait en ce moment, au seuil puis dans la salle. */
+  const [sonGeste, setSonGeste] = useState<Geste | null>(null);
+  /* DANS LA SALLE, IL MONTRE LE CHEMIN UN INSTANT, puis il attend qu'on
+     choisisse — sa pose de repos, ou sa bouche quand il parle. */
+  useEffect(() => {
+    if (sonGeste !== "montre") return;
+    const t = window.setTimeout(() => setSonGeste(null), 1500);
+    return () => window.clearTimeout(t);
+  }, [sonGeste]);
+  /* SES SEPT IMAGES SONT CHARGÉES D'AVANCE : une pose qui arrive après son
+     tour laisse un trou d'une image au milieu du geste. */
+  useEffect(() => {
+    if (!enPied) return;
+    for (const g of ["repos", "parle-1", "parle-2", "salut-1", "salut-2", "viens", "montre"] as Geste[]) {
+      const i = new Image();
+      i.src = `${enPied}${g}.webp`;
+    }
+  }, [enPied]);
 
   /* ═══════════════════════════════════════════════════════════════════════
      LE FANTÔME TE FAIT ENTRER
@@ -815,8 +837,16 @@ export function BoutiqueTable({
     const reduit = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     // IL SE RETOURNE ET POUSSE LA PORTE, s'il a cette pose ; sinon il salue.
     if (posesEnPlus["pousse-porte"] && !couv && !reduit) window.setTimeout(() => setPousse(true), 220);
-    const accueil = reduit ? 0 : 300;
-    const avance = reduit ? 120 : 520;
+    // IL SALUE — main levée d'un côté, de l'autre, encore —, puis se tourne
+    // vers la porte : « viens ». Quatre images, le temps d'un battement.
+    const accueil = reduit ? 0 : enPied ? 380 : 300;
+    const avance = reduit ? 120 : 460;
+    if (enPied && !reduit) {
+      setSonGeste("salut-1");
+      window.setTimeout(() => setSonGeste("salut-2"), 95);
+      window.setTimeout(() => setSonGeste("salut-1"), 190);
+      window.setTimeout(() => setSonGeste("viens"), 285);
+    }
     window.setTimeout(() => setFranchit(origine), accueil);
     window.setTimeout(() => {
       setOnglet("experience");
@@ -824,6 +854,8 @@ export function BoutiqueTable({
       setFranchit(null);
       setPousse(false);
       setSalut(null);
+      // DANS LA SALLE, IL MONTRE D'ABORD LE CHEMIN, puis il parle.
+      setSonGeste(enPied ? "montre" : null);
     }, accueil + avance);
   };
 
@@ -1067,10 +1099,20 @@ export function BoutiqueTable({
   );
 
   /** Le double, accoudé. La pose et le côté changent d'un écran à l'autre. */
-  const double = (p: Parameters<typeof pose>[0], cote: "gauche" | "centre" | "droite") => (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img className={`bt-double ${cote}`} src={pose(p)} alt="" draggable={false} />
-  );
+  const double = (p: Parameters<typeof pose>[0], cote: "gauche" | "centre" | "droite") =>
+    // EN PIED QUAND IL L'EST : le même personnage d'un onglet à l'autre.
+    enPied ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        className={`bt-double ${cote} en-pied`}
+        src={geste(p === "parle-2" ? "parle-2" : p.startsWith("parle") ? "parle-1" : "repos")}
+        alt=""
+        draggable={false}
+      />
+    ) : (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img className={`bt-double ${cote}`} src={pose(p)} alt="" draggable={false} />
+    );
 
   return (
     <div className={`bt bq bt-${onglet}${autres ? " avec-maq" : ""}`}>
@@ -1198,6 +1240,33 @@ export function BoutiqueTable({
               <span className="bt-invite">Viens, je te fais découvrir 👋</span>
             </button>
           )}
+          {/* ═══ IL SALUE, PAR-DESSUS SON PORTRAIT PEINT ═══════════════════
+              La photo ClikMe le peint dans sa porte, mais une photo ne fait
+              pas signe de la main. Au toucher, ses poses en pied viennent se
+              poser exactement sur lui — même personnage, même cadrage —, et
+              c'est lui qui salue, puis se tourne vers la porte. Seulement
+              quand on sait où il se tient : posé au hasard, ce serait un
+              second fantôme. */}
+          {enPied && hoteEcran && sonGeste && onglet === "lieu" && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              className="bt-sprite"
+              src={geste(sonGeste)}
+              alt=""
+              aria-hidden="true"
+              style={(() => {
+                // LA FIGURE OCCUPE 89 % DE LA HAUTEUR DE L'IMAGE, centrée, les
+                // pieds à 95 % : on la cale sur le rectangle où il est peint.
+                const t = hoteEcran.height / 0.89;
+                return {
+                  width: t,
+                  height: t,
+                  left: hoteEcran.left + hoteEcran.width / 2 - t / 2,
+                  top: hoteEcran.top + hoteEcran.height - 0.949 * t,
+                };
+              })()}
+            />
+          )}
           {salut && (
             <span className="bt-salut" style={{ left: salut.x, top: salut.y }} aria-hidden="true">
               Viens, je te montre&nbsp;!
@@ -1253,9 +1322,11 @@ export function BoutiqueTable({
                 <span className="bt-penche">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    className={`bt-double centre${pousse ? " pousse" : ""}`}
+                    className={`bt-double centre${pousse ? " pousse" : ""}${enPied ? " en-pied" : ""}`}
                     src={
-                      pousse && posesEnPlus["pousse-porte"]
+                      enPied
+                        ? geste(sonGeste ?? "repos")
+                        : pousse && posesEnPlus["pousse-porte"]
                         ? posesEnPlus["pousse-porte"]
                         : regard === "gauche" && posesEnPlus["regard-gauche"]
                           ? posesEnPlus["regard-gauche"]
@@ -1379,7 +1450,25 @@ export function BoutiqueTable({
               }}
               aria-label={`Parler avec ${leChef}`}
             >
-              {double(bouche ? (`parle-${bouche}` as "parle-1") : "content", "gauche")}
+              {enPied ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  className="bt-double gauche en-pied"
+                  src={geste(
+                    bouche
+                      ? bouche === 2
+                        ? "parle-2"
+                        : "parle-1"
+                      : sonGeste === "montre"
+                        ? "montre"
+                        : "repos",
+                  )}
+                  alt=""
+                  draggable={false}
+                />
+              ) : (
+                double(bouche ? (`parle-${bouche}` as "parle-1") : "content", "gauche")
+              )}
             </button>
             {/* SON ACCUEIL, ÉCRIT : on le lit même sans le son. Un appui le referme. */}
             {arrive && (
@@ -1968,7 +2057,7 @@ export function BoutiqueTable({
         >
           {toque && <em className="bt-toc">Toc toc ! Je te fais visiter&nbsp;?</em>}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={pose("accueil")} alt="" />
+          <img className={enPied ? "en-pied" : undefined} src={enPied ? `${enPied}visage.webp` : pose("accueil")} alt="" />
           <span>On discute&nbsp;?</span>
         </button>
       )}

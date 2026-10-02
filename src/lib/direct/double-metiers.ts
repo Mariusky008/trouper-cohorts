@@ -335,10 +335,32 @@ export function profilDuDouble(c: { branche?: string | null; metier?: string | n
  * L'écran du double en tire la place exacte du fantôme — voir `.dc-fant`
  * dans `double-chef.tsx`.
  */
-export type Tenue = { dossier: string; decor: string; comptoir: number; pied: number };
+export type Tenue = {
+  dossier: string;
+  decor: string;
+  comptoir: number;
+  pied: number;
+  /**
+   * SES POSES EN PIED, quand il les a — le même personnage que celui que la
+   * photo ClikMe peint devant sa porte : « le fantôme change d'apparence entre
+   * l'entrée et l'expérience ; garder exactement le même personnage
+   * renforcerait la continuité ». Sept images au même cadrage, au point près,
+   * pour qu'on puisse les enchaîner sans qu'il saute : `repos`, `parle-1`
+   * (bouche entrouverte), `parle-2` (ouverte), `salut-1` et `salut-2` (la main
+   * levée, d'un côté puis de l'autre), `viens` (tourné vers la porte, le bras
+   * qui invite) et `montre` (le bras tendu vers la droite).
+   */
+  enPied?: string;
+};
 
 export const TENUES: Partial<Record<FamilleDouble, Tenue>> = {
-  table: { dossier: "/direct/double/", decor: "/direct/double/comptoir.jpg", comptoir: 0.40, pied: 0.096 },
+  table: {
+    dossier: "/direct/double/",
+    decor: "/direct/double/comptoir.jpg",
+    comptoir: 0.4,
+    pied: 0.096,
+    enPied: "/direct/double/pied/",
+  },
   /* LE MAGASIN DE VÊTEMENTS : casquette au cintre, gilet violet, foulard, et
      la boutique derrière son comptoir. */
   mode: { dossier: "/direct/double/mode/", decor: "/direct/double/mode/decor.jpg", comptoir: 0.40, pied: 0.063 },

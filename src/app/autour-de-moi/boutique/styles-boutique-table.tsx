@@ -350,6 +350,23 @@ export function StylesBoutiqueTable() {
         @keyframes btArrive{from{opacity:0;transform:scale(1.015);}to{opacity:1;transform:none;}}
         .bt-e-exp.arrive .bt-double,.bt-e-exp.arrive .bx-fantome{animation:btRejoint .55s cubic-bezier(.2,.8,.2,1) .05s both;}
         @keyframes btRejoint{from{opacity:0;transform:translate(28px,26px) scale(1.12);}to{opacity:1;transform:none;}}
+        /* ═══ SES POSES EN PIED ════════════════════════════════════════════
+           Le même personnage que sur la photo ClikMe, en entier : sa
+           lumière est déjà la bonne (pas de réchauffage), et ses jambes ne se
+           fondent pas — la nappe passe devant elles, comme devant un comptoir. */
+        .bt-sprite{position:absolute;z-index:3;pointer-events:none;
+          filter:drop-shadow(0 12px 20px rgba(0,0,0,.45)) drop-shadow(0 0 18px rgba(255,180,90,.35));
+          animation:btSprite .12s ease-out both;}
+        @keyframes btSprite{from{opacity:0;}to{opacity:1;}}
+        .bt-e-lieu.franchit .bt-sprite{animation:btSpritePart .3s ease-in both;}
+        @keyframes btSpritePart{from{opacity:1;}to{opacity:0;transform:scale(1.08);}}
+        .bt-e-exp .bt-double.en-pied,.bt-accueille .bt-double.en-pied{
+          filter:drop-shadow(0 12px 22px rgba(0,0,0,.45)) drop-shadow(0 0 22px rgba(255,170,80,.28));}
+        .bt-e-exp .bt-double.en-pied{width:calc(var(--bt-dw) * 1.1);margin-bottom:calc(var(--bt-dw) * -.34);}
+        .bt-accueille .bt-double.en-pied{-webkit-mask-image:none;mask-image:none;}
+        .bt .bt-double.en-pied{filter:drop-shadow(0 12px 22px rgba(0,0,0,.45)) drop-shadow(0 0 22px rgba(255,170,80,.28));}
+        .bt .bt-double.en-pied:not(.centre){width:calc(var(--bt-dw) * 1.1);margin-bottom:calc(var(--bt-dw) * -.34);}
+        .bt-discute img.en-pied{filter:none;}
         /* LE GRAND FANTÔME DE L'EXPÉRIENCE SE TOUCHE : c'est à lui qu'on parle. */
         .bt-lui{display:block;align-self:flex-start;padding:0;margin:0;border:0;background:none;cursor:pointer;
           -webkit-tap-highlight-color:transparent;}
@@ -443,7 +460,7 @@ export function StylesBoutiqueTable() {
           .bt-accueille.vivant::before,.bt-hote::before,.bt-accueille.vivant .bt-double{animation:none;}
           .bt-invite{animation:none;opacity:1;transform:translate(-50%,0);}
           .bt-e-lieu.franchit .bt-photo{transform:none;transition:none;}
-          .bt-e-exp.arrive,.bt-bulle-seuil,.bt-salut,.bt-e-exp.arrive .bt-double,.bt-e-exp.arrive .bx-fantome{animation:none;}
+          .bt-e-exp.arrive,.bt-bulle-seuil,.bt-salut,.bt-sprite,.bt-e-exp.arrive .bt-double,.bt-e-exp.arrive .bx-fantome{animation:none;}
           .bt-cadre-photo{transition:none !important;}
         }
         .bt-entrer{position:relative;z-index:2;
@@ -908,7 +925,7 @@ export function StylesBoutiqueTable() {
              ClikMe reprend le voile leger des deux moities. */
           .a-couv .bt-voile.haut-bas{background:linear-gradient(90deg,
             rgba(18,12,9,0) 70%,rgba(18,12,9,.5) 92%,var(--bt-fond) 100%);}
-          .bt-ecran:not(.bt-plein)>:not(.bt-photo):not(.bt-voile):not(.bt-hero):not(.bt-fenetre):not(.bt-cadre-photo):not(.bt-porte-lumiere):not(.bt-hote):not(.bt-photo-porte):not(.bt-salut){
+          .bt-ecran:not(.bt-plein)>:not(.bt-photo):not(.bt-voile):not(.bt-hero):not(.bt-fenetre):not(.bt-cadre-photo):not(.bt-porte-lumiere):not(.bt-hote):not(.bt-photo-porte):not(.bt-salut):not(.bt-sprite){
             margin-left:var(--bt-g);width:calc(100% - var(--bt-g));
             padding-left:var(--bt-d);padding-right:var(--bt-d);box-sizing:border-box;}
           .bt-ecran:not(.bt-plein)>*>*{max-width:600px;}
