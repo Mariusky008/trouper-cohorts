@@ -262,7 +262,7 @@ export async function lancerLaFiche(slug: string, o: { renommer?: boolean } = {}
   }
   const run: RunFiche = { runId: r.runId, datasetId: r.datasetId, etape, lance: maintenant, renommer: o.renommer };
   // SA FICHE EST CONNUE : les photos de son onglet « Menu » partent en même temps.
-  const menu = site.placeId ? await lancerLesPhotosMenu(site.placeId, site.nom) : {};
+  const menu = site.placeId ? await lancerLesPhotosMenu(site.placeId) : {};
   await ecrire(site, {
     ...site.diag,
     ...menu,
@@ -373,7 +373,7 @@ export async function avancerLaFiche(slug: string): Promise<EtatFiche | null> {
   const placeId = str(biz.placeId);
   const r = placeId ? await lancerRunApify(token, entreeMedias(placeId)) : null;
   // ET LES PHOTOS DE SON ONGLET « MENU », EN MÊME TEMPS — voir `photos-menu.ts`.
-  const menu = placeId ? await lancerLesPhotosMenu(placeId, str(biz.title) || site.nom, str(biz.url)) : {};
+  const menu = placeId ? await lancerLesPhotosMenu(placeId) : {};
   if (r && !("erreur" in r)) {
     const suite: RunFiche = { runId: r.runId, datasetId: r.datasetId, etape: "medias", lance: new Date().toISOString(), renommer: run.renommer };
     await ecrire(site, { ...diag, ...menu, fiche_run: suite }, colonnes, run.runId);

@@ -41,18 +41,27 @@ const MENU_PERIME_MS = 14 * 60_000;
 
 export type RunMenu = { runId: string; datasetId: string; lance: string };
 
-/** L'adresse de sa fiche, telle qu'un robot de photos sait l'ouvrir. */
-export function adresseDeLaFiche(placeId: string, titre: string, url?: string): string {
-  if (/^https:\/\/(www\.)?google\.[a-z.]+\/maps\//i.test(s(url))) return s(url);
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(titre || "restaurant")}&query_place_id=${encodeURIComponent(placeId)}`;
-}
-
-/** L'ENTRÉE DU ROBOT : l'adresse de sa fiche, l'onglet « menu », seize photos. */
-const entreeMenu = (adresse: string) => ({
-  placeUrls: [adresse],
+/**
+ * L'ENTRÉE DU ROBOT : le repère de sa fiche, l'onglet « menu », seize photos.
+ *
+ * « placeUrl is required unless placeId is provided » — vu dans la console
+ * Apify, au premier vrai passage. La première version envoyait `placeUrls`,
+ * au pluriel, que ce robot ignore : il partait sans adresse et s'arrêtait en
+ * six secondes. Son repère Google (`placeId`) est ce qu'on a de plus sûr, et
+ * il le prend tel quel.
+ */
+const entreeMenu = (placeId: string) => ({
+  placeId,
   photoCategory: "menu",
   maxPhotos: 16,
 });
+
+/**
+ * LA VERSION DE CETTE DEMANDE. Une page qui l'a déjà faite ne la refait pas —
+ * sauf si la demande a changé depuis : la page du Bordeaux, essayée avec la
+ * mauvaise entrée, redemande donc une fois avec la bonne.
+ */
+export const MENU_VERSION = 2;
 
 /** Les adresses de photos Google contenues dans ce que rend le robot, où qu'elles soient. */
 export function photosDuRobot(items: unknown[]): string[] {
@@ -90,15 +99,20 @@ export function photosDuRobot(items: unknown[]): string[] {
  * LANCE LE ROBOT. Rend ce qu'il faut ranger dans le diagnostic : le numéro de
  * la lecture, ou la raison pour laquelle elle n'est pas partie.
  */
-export async function lancerLesPhotosMenu(placeId: string, titre: string, url?: string): Promise<Record<string, unknown>> {
+export async function lancerLesPhotosMenu(placeId: string): Promise<Record<string, unknown>> {
   const acteur = acteurMenu();
   const token = s(process.env.APIFY_TOKEN);
   if (!acteur || !token || !placeId) return {};
-  const r = await lancerRunApify(token, entreeMenu(adresseDeLaFiche(placeId, titre, url)), acteur);
+  const r = await lancerRunApify(token, entreeMenu(placeId), acteur);
   if ("erreur" in r)
-    return { carte_run: null, carte_photos_erreur: `photos du menu : ${r.erreur}`.slice(0, 300), carte_photos_tente: new Date().toISOString() };
+    return {
+      carte_run: null,
+      carte_photos_erreur: `photos du menu : ${r.erreur}`.slice(0, 300),
+      carte_photos_tente: new Date().toISOString(),
+      carte_photos_v: MENU_VERSION,
+    };
   const run: RunMenu = { runId: r.runId, datasetId: r.datasetId, lance: new Date().toISOString() };
-  return { carte_run: run, carte_photos_erreur: null, carte_photos_tente: run.lance };
+  return { carte_run: run, carte_photos_erreur: null, carte_photos_tente: run.lance, carte_photos_v: MENU_VERSION };
 }
 
 export function runMenuDe(diag: Record<string, unknown>): RunMenu | null {
@@ -169,9 +183,10 @@ export function menuATenter(diag: Record<string, unknown>, placeId: string): boo
       s(process.env.APIFY_TOKEN) &&
       placeId &&
       diag.places_found === true &&
-      !runMenuDe(diag) &&
+      // UN ROBOT RESTÉ EN PLAN (jamais venu chercher) ne bloque pas une nouvelle demande.
+      !photosMenuEnCours(diag) &&
       !(Array.isArray(diag.photos_menu) && diag.photos_menu.length) &&
-      !s(diag.carte_photos_tente) &&
+      (!s(diag.carte_photos_tente) || Number(diag.carte_photos_v || 1) < MENU_VERSION) &&
       !(Array.isArray((diag.carte_lue as Record<string, unknown> | undefined)?.plats) &&
         ((diag.carte_lue as Record<string, unknown>).plats as unknown[]).length),
   );
@@ -181,7 +196,7 @@ export async function tenterLesPhotosMenu(slug: string): Promise<void> {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
-    .select("id, business_name, google_place_id, diagnostic")
+    .select("id, google_place_id, diagnostic")
     .eq("slug", slug)
     .eq("channel", "letter")
     .maybeSingle();
@@ -192,15 +207,21 @@ export async function tenterLesPhotosMenu(slug: string): Promise<void> {
   if (!menuATenter(diag, placeId)) return;
   // NOTÉ AVANT DE LANCER : deux visites rapprochées n'en lancent qu'un.
   const tente = new Date().toISOString();
-  const { data: pris } = await supabase
+  let prise = supabase
     .from("human_vitrine_sites")
-    .update({ diagnostic: { ...diag, carte_photos_tente: tente } })
-    .eq("id", s(row.id))
-    .is("diagnostic->carte_photos_tente", null)
-    .select("id");
+    .update({ diagnostic: { ...diag, carte_photos_tente: tente, carte_photos_v: MENU_VERSION } })
+    .eq("id", s(row.id));
+  // LE VERROU : on ne prend la main que si personne ne l'a prise depuis notre lecture.
+  prise = s(diag.carte_photos_tente)
+    ? prise.eq("diagnostic->>carte_photos_tente", s(diag.carte_photos_tente))
+    : prise.is("diagnostic->carte_photos_tente", null);
+  const { data: pris } = await prise.select("id");
   if (!Array.isArray(pris) || !pris.length) return;
-  const ajout = await lancerLesPhotosMenu(placeId, s(row.business_name));
+  const ajout = await lancerLesPhotosMenu(placeId);
   const { data: frais } = await supabase.from("human_vitrine_sites").select("diagnostic").eq("id", s(row.id)).maybeSingle();
   const d2 = ((frais as Record<string, unknown> | null)?.diagnostic ?? diag) as Record<string, unknown>;
-  await supabase.from("human_vitrine_sites").update({ diagnostic: { ...d2, ...ajout, carte_photos_tente: tente } }).eq("id", s(row.id));
+  await supabase
+    .from("human_vitrine_sites")
+    .update({ diagnostic: { ...d2, ...ajout, carte_photos_tente: tente, carte_photos_v: MENU_VERSION } })
+    .eq("id", s(row.id));
 }

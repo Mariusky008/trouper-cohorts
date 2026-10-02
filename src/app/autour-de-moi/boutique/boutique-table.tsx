@@ -991,6 +991,17 @@ export function BoutiqueTable({
             <p className="bt-dit">{lumiere?.phrase ?? "Entre, je te fais découvrir."}</p>
           </div>
           <div className="bt-seuil">
+            {/* « RIEN N'INDIQUE SUR LA PHOTO QU'IL FAILLE CLIQUER SUR UN
+                FANTÔME. » Quand on sait où se tient l'hôte, son anneau de
+                lumière et sa bulle le désignent. Quand on ne le sait pas
+                encore, la photo entière est une porte — et cette bulle le
+                dit. Elle part au premier geste. */}
+            {couv && !hoteEcran && (
+              <span className="bt-indice" aria-hidden="true">
+                👆 <i className="tel">Touche</i>
+                <i className="pc">Clique sur</i> le fantôme pour entrer
+              </span>
+            )}
             {/* ═══ IL SE TIENT DANS LA LUMIÈRE, IL N'EST PLUS SOUS LE BOUTON ══
                 « Le fantôme ne semble pas faire partie du restaurant, et il
                 est sous le bouton "Entrer". »

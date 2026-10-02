@@ -293,6 +293,17 @@ export function StylesBoutiqueTable() {
         .bt-e-lieu.a-couv .bt-accueil,.bt-e-lieu.a-couv .bt-seuil{pointer-events:none;}
         .bt-e-lieu.a-couv .bt-accueil>*,.bt-e-lieu.a-couv .bt-seuil>*{pointer-events:auto;}
         .bt-e-lieu.a-couv .bt-accueil .bt-titre,.bt-e-lieu.a-couv .bt-accueil .bt-dit{pointer-events:none;}
+        /* LA BULLE QUI INVITE À TOUCHER, quand on ne sait pas encore où il se tient. */
+        .bt-e-lieu .bt-seuil>.bt-indice{align-self:center;margin:0 0 14px;pointer-events:none;
+          padding:8px 14px;border-radius:16px;background:#FFF4E6;color:#1A0F08;white-space:nowrap;
+          font-family:var(--font-ecrit,"Caveat"),cursive;font-size:19px;font-weight:600;
+          box-shadow:0 10px 24px -10px rgba(0,0,0,.6);animation:btIndice 2.6s ease-in-out .8s infinite both;}
+        @keyframes btIndice{0%,100%{transform:translateY(0);opacity:1;}50%{transform:translateY(-5px);opacity:.92;}}
+        .bt-e-lieu.franchit .bt-indice{opacity:0;transition:opacity .2s ease;animation:none;}
+        .bt-indice i{font-style:normal;}
+        .bt-indice .pc{display:none;}
+        @media (hover:hover) and (pointer:fine){.bt-indice .tel{display:none;}.bt-indice .pc{display:inline;}}
+        @media (prefers-reduced-motion: reduce){.bt-e-lieu .bt-seuil>.bt-indice{animation:none;}}
 
         /* ═══ LA PORTE QUI S'OUVRE ══════════════════════════════════════════
            Au toucher, la façade zoome à travers la porte — à partir de LUI
@@ -827,6 +838,9 @@ export function StylesBoutiqueTable() {
           .bt-e-lieu.franchit .bt-accueille{transform:translateX(-50%) scale(1.35);}
           /* LE CADRE PREND LA MOITIÉ GAUCHE, ET LA PHOTO LE REMPLIT. */
           .bt-cadre-photo,.bt-photo-porte{right:auto;width:var(--bt-g);}
+          /* SUR UN ORDINATEUR, LA BULLE VA SUR LA PHOTO — pas sous le titre, à droite. */
+          .bt-e-lieu .bt-seuil>.bt-indice{position:absolute;z-index:2;left:calc(var(--bt-g) / 2);bottom:44px;
+            margin:0;translate:-50% 0;}
           .bt-cadre-photo .bt-photo{width:auto;right:0;max-width:none;}
           .bt-cadre-photo .bt-porte-lumiere{max-width:none;}
           .bt-e-lieu .bt-entrer{width:auto;min-width:260px;font-size:19px;padding:15px 24px;}
