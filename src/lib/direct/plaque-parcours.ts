@@ -26,7 +26,8 @@
  * pas. Inventer ici voudrait dire fabriquer une cuisinière au traiteur.
  */
 
-import { toutesLesCartes, momentEnCours } from "@/lib/direct/apercu-habitant";
+import { momentEnCours } from "@/lib/direct/apercu-habitant";
+import { carteDuPaquet } from "@/lib/direct/copies-presentation";
 import type { CarteAutour, MomentJour } from "@/lib/direct/apercu-habitant";
 import { CATEGORIES } from "@/lib/direct/choisir-commerce";
 
@@ -80,6 +81,12 @@ const PAIRES: Record<string, { servi: string; mot: string }> = {
      « le fauteuil » et « le salon avec le fauteuil » sont un avant/après comme
      « le plat » et « la part ». Un seul mécanisme pour les deux paquets. */
   "/direct/deco/fauteuil-grand.jpg": { servi: "/direct/deco/salon-apres.jpg", mot: "Chez vous" },
+  /* LES DEUX COPIES DE PRÉSENTATION — voir `copies-presentation.ts`. Le
+     magret dans la poêle, puis dans l'assiette ; les tapas sur le comptoir,
+     puis dans l'assiette à partager. C'est le rideau qui fait la quatrième
+     étape. */
+  "/direct/table/magret/2.jpg": { servi: "/direct/table/magret/3.jpg", mot: "Dans l’assiette" },
+  "/api/direct/bd/tapas-comptoir": { servi: "/api/direct/bd/tapas-assiette", mot: "Dans l’assiette, à partager" },
 };
 
 /**
@@ -132,7 +139,7 @@ export function photoDeLaCarte(id: string): string | undefined {
     if (c) { declaree = c.photo; break; }
   }
   if (!declaree) return undefined;
-  const commerce = toutesLesCartes().find((c) => c.id === id);
+  const commerce = carteDuPaquet(id);
   if (!commerce) return declaree;
   /* ═══ LA MEME REGLE QUE L'ECRAN DE CHOIX, ET C'EST LE POINT ═══════════
      Le paquet n'affiche la photo declaree que si elle est celle d'un MOMENT
@@ -188,7 +195,7 @@ export function plaqueDuParcours(
      déco ne dessine pas de cuisinière. */
   sait: PasParcours[] = ["chose", "paire", "voix", "details", "venir"],
 ): PlaqueParcours | null {
-  const commerce = toutesLesCartes().find((c) => c.id === id);
+  const commerce = carteDuPaquet(id);
   if (!commerce) return null;
 
   /* L'OFFRE QU'ON OUVRE EST CELLE QUI PORTE UNE PHOTO, en priorité celle du

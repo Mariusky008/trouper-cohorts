@@ -37,7 +37,7 @@
  * clé existe.
  */
 import { NextResponse } from "next/server";
-import { toutesLesCartes } from "@/lib/direct/apercu-habitant";
+import { carteDuPaquet } from "@/lib/direct/copies-presentation";
 import { faireParler, TIMBRES } from "@/lib/direct/timbres";
 
 export const dynamic = "force-dynamic";
@@ -54,7 +54,7 @@ export async function GET(request: Request) {
 
   /* LE TEXTE VIENT DES DONNÉES, JAMAIS DE LA REQUÊTE. C'est toute la garde de
      cette route : on ne peut faire dire que ce qui est déjà écrit. */
-  const commerce = toutesLesCartes().find((c) => c.id === cle);
+  const commerce = carteDuPaquet(cle);
   const texte = s(commerce?.voix?.recit || commerce?.voix?.signature);
   if (!texte) return NextResponse.json({ error: "Rien à dire." }, { status: 404 });
 

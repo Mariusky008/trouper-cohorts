@@ -21,8 +21,12 @@
  */
 
 export type SourceBD = {
-  /** L'image d'origine, servie par le site. */
-  photo: string;
+  /** L'image d'origine, servie par le site. Absente : l'image est créée de toutes pièces, d'après `sujet`. */
+  photo?: string;
+  /** « photo » : une vraie photo de restaurant, pas un dessin — voir les copies de présentation. */
+  rendu?: "dessin" | "photo";
+  /** Si le moteur échoue, l'image renvoyée à la place : là où un trou se verrait. */
+  secours?: string;
   /** Format demandé au moteur — l'orientation de la case qui l'attend. */
   format: "1024x1536" | "1536x1024" | "1024x1024";
   /** Un personnage : fond transparent, pour le poser dans les cases. */
@@ -37,6 +41,11 @@ export const STYLE_DECOR =
   "Clean black ink outlines of consistent weight, flat warm colours with soft cel shading, a warm amber, cream and brick-red palette, subtle paper grain. " +
   "Keep the exact composition, perspective, architecture, shop signs and every recognisable detail, so that locals instantly recognise the real place. " +
   "Do not add people, characters, text, speech bubbles, captions or panel borders.";
+
+/** Les photos des copies de présentation : appétissantes, crédibles, sans rien d'écrit. */
+export const STYLE_PHOTO =
+  "A realistic, appetising restaurant photograph, shot on a professional camera, warm natural light, shallow depth of field. " +
+  "No text, no logo, no watermark.";
 
 export const STYLE_PERSONNAGE =
   "Redraw this exact character as a hand-inked Franco-Belgian comic book character (ligne claire). " +
@@ -65,7 +74,28 @@ const LE_SPLENDID = "The Splendid, the white 1929 Art Deco palace hotel of Dax, 
 
 const perso = (photo: string, sujet: string): SourceBD => ({ photo, format: "1024x1024", personnage: true, sujet });
 
+/* ═══ LES TAPAS D'EL TXUPINAZO — voir `copies-presentation.ts` ═══════════
+   Aucune photo n'existait : le moteur les fait, une fois. Chacune a sa photo
+   de secours, une vraie photo de bar de la démonstration. */
+const TAPAS = "a lively Basque tapas bar in Dax, France, with a red ceiling, a long wooden bar and bottles behind";
+const tapas = (sujet: string, format: SourceBD["format"], secours: string): SourceBD => ({ rendu: "photo", format, sujet, secours });
+
 export const SOURCES_BD: Record<string, SourceBD> = {
+  "tapas-comptoir": tapas(
+    `Pintxos and tapas laid out on the wooden bar counter of ${TAPAS}: thin slices of jamón, golden croquetas, pimientos de padrón, tortilla, pan con tomate.`,
+    "1024x1536",
+    "/direct/bar-planche.jpg",
+  ),
+  "tapas-assiette": tapas(
+    "A generous shared plate of Spanish tapas on a wooden table: jamón serrano, croquetas, pimientos de padrón with coarse salt, tortilla, chorizo, pan con tomate, two glasses of red wine, a warm red wall behind.",
+    "1024x1536",
+    "/direct/bar-planche.jpg",
+  ),
+  "tapas-1": tapas(`A smiling cook in his forties in a black apron, behind the bar of ${TAPAS}, slicing jamón by hand on a ham stand, looking at the camera.`, "1024x1024", "/direct/bar-salle.jpg"),
+  "tapas-2": tapas("Close-up of golden croquetas frying in a pan, the hands of a cook holding tongs, warm kitchen light.", "1024x1024", "/direct/bar-planche.jpg"),
+  "tapas-3": tapas("Close-up of pimientos de padrón blistering in a hot black pan, coarse salt falling on them.", "1024x1024", "/direct/bar-planche.jpg"),
+  "tapas-4": tapas(`The same smiling cook in a black apron holding out a generous plate of tapas towards the camera, behind the bar of ${TAPAS}.`, "1024x1024", "/direct/verre-au-comptoir.jpg"),
+
   terrasse: {
     photo: PHOTO.terrasse,
     format: "1024x1024",
@@ -127,5 +157,6 @@ export const SOURCES_BD: Record<string, SourceBD> = {
 
 /** La consigne complète d'un dessin. */
 export function consigneBD(s: SourceBD): string {
-  return `${s.personnage ? STYLE_PERSONNAGE : STYLE_DECOR} ${s.sujet}`;
+  const style = s.rendu === "photo" ? STYLE_PHOTO : s.personnage ? STYLE_PERSONNAGE : STYLE_DECOR;
+  return `${style} ${s.sujet}`;
 }

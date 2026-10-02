@@ -65,6 +65,17 @@ function Fant({ classe }: { classe: string }) {
  * qu'on touche autre chose sur l'écran. Reprise de l'écran de l'Avant-goût,
  * pour que les deux se ressemblent.
  */
+/* « DANS LA CUISINE DE LE CHEF », « PARLER À LE PATRON » : quand la voix
+   n'a pas de prénom mais un titre (« Le chef », « La patronne »), l'article se
+   contracte comme on le dit à voix haute. Un prénom passe tel quel. */
+const contracter = (nom: string, prep: "de" | "à") =>
+  nom.replace(/^(?:(?:Le|La|Les)\s|L’|L')/, (a) => {
+    const m = a.trim().toLowerCase();
+    if (m === "le") return prep === "de" ? "du " : "au ";
+    if (m === "les") return prep === "de" ? "des " : "aux ";
+    return `${prep} ${a.toLowerCase()}`;
+  }).replace(/^(?!du |au |des |aux |de |à )/, `${prep} `);
+
 const ONDE = [18, 34, 26, 52, 40, 68, 46, 78, 58, 88, 64, 74, 50, 62, 38, 56, 30, 44, 24, 36];
 
 /**
@@ -748,7 +759,7 @@ export function ParcoursTable({
           {suite.length > 0 && (
             <>
               <p className="pt-chapeau">
-                Dans la cuisine de {voix?.prenom ?? "la maison"}
+                Dans la cuisine {contracter(voix?.prenom ?? "la maison", "de")}
               </p>
               <p className="pt-legende" aria-live="polite" key={suite[vu]?.src}>
                 {decouper(suite[vu]?.mot ?? "", suite[vu]?.fort)}
@@ -975,7 +986,7 @@ export function ParcoursTable({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/direct/double/accueil.webp" alt="" />
             </span>
-            {voix?.prenom ? `Parler à ${voix.prenom}` : "Parler au chef"}
+            {voix?.prenom ? `Parler ${contracter(voix.prenom, "à")}` : "Parler au chef"}
             <Micro />
           </button>
           {/* LES DEUX AUTRES GESTES DESCENDENT D'UN CRAN, EN LIENS : trois

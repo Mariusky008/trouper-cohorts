@@ -68,6 +68,16 @@ const nav = await pw.chromium.launch({
   args: ["--use-gl=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const ctx = await nav.newContext({ viewport: { width: 390, height: 844 }, locale: "fr-FR" });
+/* LA PASTILLE « N » DE NEXT, EN DÉVELOPPEMENT, SE POSE EN BAS À GAUCHE — pile
+   sur le premier onglet du bas, « Le lieu ». La garde ne pouvait plus cliquer
+   dessus et s'arrêtait net. Elle n'existe pas en production : on la retire. */
+await ctx.addInitScript(() => {
+  document.addEventListener("DOMContentLoaded", () => {
+    const s = document.createElement("style");
+    s.textContent = "nextjs-portal{display:none!important}";
+    document.head.appendChild(s);
+  });
+});
 const p = await ctx.newPage();
 p.on("pageerror", (e) => console.log("!! ERREUR PAGE:", e.message));
 

@@ -51,6 +51,7 @@ import { completerLHote, couvertureDuDiagnostic, hoteACherche, photosCandidates 
 import { etatDeLaFiche, raisonLisible } from "@/lib/site-internet/fiche-google";
 import { COLONNES_FICHE, construireFiche } from "@/lib/site-internet/fiche-du-site";
 import { carteDeDemo, estAdresseDeDemo, listeDesDemos } from "@/lib/site-internet/fiches-demo";
+import { copieDePresentation, fusionnerCopie, type CopiePresentation } from "@/lib/direct/copies-presentation";
 import { PageBoutique } from "./page-boutique";
 import { IndexDesDemos } from "./index-demos";
 
@@ -82,6 +83,8 @@ const capWords = (s: string) =>
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const noindex = { robots: { index: false, follow: false } };
+  const copie = copieDePresentation(slug);
+  if (copie) return { title: `${copie.carte.nom} — sur ClikMe`, ...noindex };
   if (estAdresseDeDemo(slug)) {
     const c = carteDeDemo(slug);
     const title = c ? `${c.nom} — démonstration` : "Les pages de démonstration";
@@ -112,6 +115,59 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   } catch {
     return { title: "Votre page", ...noindex };
   }
+}
+
+/**
+ * 🎬 UNE COPIE DE PRÉSENTATION : LA VRAIE FICHE, LUE SANS RIEN Y ÉCRIRE.
+ *
+ * « Deux exemples identiques… mais faux » — voir `copies-presentation.ts`.
+ * On lit sa ligne comme sa vraie page la lit, et on s'arrête là : ni scan, ni
+ * vue, ni clic, ni lecture de carte en différé. Présenter sa page cent fois ne
+ * doit pas gonfler d'une unité les chiffres qu'il regardera, lui.
+ *
+ * SANS BASE (en local, ou si la ligne a disparu), la copie montre sa carte de
+ * présentation seule : la démonstration ne tombe jamais en panne devant lui.
+ */
+async function lireLaCopie(copie: CopiePresentation) {
+  let carte = copie.carte;
+  let note: string | null = copie.carte.google?.note ?? null;
+  let avis: number | null = copie.carte.google?.avis ?? null;
+  try {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from("human_vitrine_sites")
+      .select(COLONNES_FICHE)
+      .eq("slug", copie.source)
+      .eq("channel", "letter")
+      .maybeSingle();
+    const row = (data as Record<string, unknown> | null) ?? null;
+    if (row) {
+      let services: unknown = [];
+      try {
+        const { data: ex } = await supabase.from("human_vitrine_sites").select("services").eq("id", str(row.id)).maybeSingle();
+        services = (ex as Record<string, unknown> | null)?.services ?? [];
+      } catch {
+        /* colonne non migrée */
+      }
+      let disponibilites: Array<Record<string, unknown>> = [];
+      try {
+        const { data: av } = await supabase
+          .from("human_site_availability")
+          .select("weekday, start_min, end_min")
+          .eq("site_id", str(row.id));
+        disponibilites = (Array.isArray(av) ? av : []) as Array<Record<string, unknown>>;
+      } catch {
+        /* table absente */
+      }
+      const lu = construireFiche(copie.source, row, { disponibilites, services });
+      carte = fusionnerCopie(carteDepuisFiche(lu.fiche), copie.carte);
+      note = lu.note ?? note;
+      avis = lu.reviews ?? avis;
+    }
+  } catch {
+    /* pas de base ici → la carte de présentation seule */
+  }
+  return { carte, note, avis };
 }
 
 /**
@@ -172,6 +228,25 @@ export default async function ApercuMaquette({
   // le commerce COMPLET — moments, catalogue, voix — c'est-à-dire ClikMe une
   // fois habité ; la page d'un vrai prospect, elle, ne montre que ce que sa
   // fiche Google contient. La différence est expliquée dans `fiches-demo.ts`.
+  // ── LES DEUX COPIES DE PRÉSENTATION, AVANT LES DÉMONSTRATIONS ─────────────
+  // Leur adresse commence par `demo-` : elles passent donc avant, sinon
+  // l'index des démonstrations les prendrait pour une adresse inconnue.
+  const copie = copieDePresentation(slug);
+  if (copie) {
+    const { carte, note, avis } = await lireLaCopie(copie);
+    return (
+      <PageBoutique
+        slug={slug}
+        carte={carte}
+        modeDemo={false}
+        venuDuDirect={false}
+        phoneDisplay={process.env.SITE_LETTER_PHONE || ""}
+        note={note}
+        reviewsCount={avis}
+      />
+    );
+  }
+
   if (estAdresseDeDemo(slug)) {
     const carte = carteDeDemo(slug);
     if (!carte) return <IndexDesDemos entrees={listeDesDemos()} inconnue={slug} />;

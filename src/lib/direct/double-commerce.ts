@@ -17,7 +17,8 @@
  *
  * FICHIER SERVEUR.
  */
-import { toutesLesCartes, type CarteAutour } from "@/lib/direct/apercu-habitant";
+import type { CarteAutour } from "@/lib/direct/apercu-habitant";
+import { carteDuPaquet } from "@/lib/direct/copies-presentation";
 import { carteDeDemo, estAdresseDeDemo } from "@/lib/site-internet/fiches-demo";
 import { lireLeSite } from "@/lib/site-internet/fiche-du-site";
 import { ficheDuDouble, type FicheDouble } from "@/lib/direct/double-chef";
@@ -42,7 +43,7 @@ export async function trouverLeCommerce(id: string): Promise<CommerceDuDouble | 
   /* TOUS LES MÉTIERS ONT LEUR DOUBLE, pas seulement les restaurants — voir
      `double-metiers.ts`. Un événement n'en a pas : il n'y a personne derrière
      le comptoir à qui parler. */
-  const duPaquet = toutesLesCartes().find((c) => c.id === cle);
+  const duPaquet = carteDuPaquet(cle);
   if (duPaquet) return aUnDouble(duPaquet) ? { carte: duPaquet, fiche: ficheDuDouble(duPaquet) } : null;
   if (estAdresseDeDemo(cle)) {
     const c = carteDeDemo(cle);

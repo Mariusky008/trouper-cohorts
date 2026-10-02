@@ -34,12 +34,41 @@ async function dessiner(id: string, src: SourceBD, origine: string): Promise<Arr
   const cle = s(process.env.OPENAI_API_KEY);
   if (!cle) return null;
   const base = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
-  const photo = await fetch(new URL(src.photo, origine)).catch(() => null);
-  if (!photo?.ok) return null;
-  const ext = src.photo.split(".").pop()?.toLowerCase() ?? "jpg";
-  const fichier = new Blob([await photo.arrayBuffer()], { type: TYPES[ext] ?? "image/jpeg" });
+  /* SANS PHOTO D'ORIGINE, L'IMAGE SE CRÉE DE TOUTES PIÈCES — voir les tapas
+     de `bd-dessin.ts`. Avec une photo, on la redessine. */
+  let fichier: Blob | null = null;
+  let ext = "jpg";
+  if (src.photo) {
+    const photo = await fetch(new URL(src.photo, origine)).catch(() => null);
+    if (!photo?.ok) return null;
+    ext = src.photo.split(".").pop()?.toLowerCase() ?? "jpg";
+    fichier = new Blob([await photo.arrayBuffer()], { type: TYPES[ext] ?? "image/jpeg" });
+  }
   const { liste } = await moteursDImage(cle, base);
   for (const modele of liste) {
+    if (!fichier) {
+      const r = await fetch(`${base}/v1/images/generations`, {
+        method: "POST",
+        headers: { authorization: `Bearer ${cle}`, "content-type": "application/json" },
+        body: JSON.stringify({ model: modele, prompt: consigneBD(src), n: 1, size: src.format, quality: "high", output_format: "jpeg" }),
+        signal: AbortSignal.timeout((maxDuration - 20) * 1000),
+      }).catch(() => null);
+      if (!r) return null;
+      if (!r.ok) {
+        const corps = await r.text().catch(() => "");
+        if (moteurRefuse(r.status, corps)) {
+          noterRefus(modele);
+          continue;
+        }
+        console.info("[bd] la création a échoué", JSON.stringify({ id, modele, statut: r.status, corps: corps.slice(0, 200) }));
+        return null;
+      }
+      const j = (await r.json().catch(() => null)) as { data?: { b64_json?: string }[] } | null;
+      const b = j?.data?.[0]?.b64_json;
+      if (!b) return null;
+      const octets = Buffer.from(b, "base64");
+      return octets.buffer.slice(octets.byteOffset, octets.byteOffset + octets.byteLength) as ArrayBuffer;
+    }
     const forme = new FormData();
     forme.append("model", modele);
     forme.append("prompt", consigneBD(src));
@@ -107,7 +136,12 @@ export async function GET(req: Request, context: RouteContext) {
       enCours.set(id, attente);
     }
     const fait = await attente;
-    if (!fait) return NextResponse.json({ erreur: "Dessin indisponible." }, { status: 503, headers: { "cache-control": "no-store" } });
+    if (!fait) {
+      /* UNE PHOTO DE SECOURS PLUTÔT QU'UN TROU, là où le parcours l'affiche
+         en grand. Jamais gardée : la visite suivante retente le moteur. */
+      if (src.secours) return NextResponse.redirect(new URL(src.secours, req.url), { status: 302, headers: { "cache-control": "no-store" } });
+      return NextResponse.json({ erreur: "Dessin indisponible." }, { status: 503, headers: { "cache-control": "no-store" } });
+    }
     memoire.set(id, fait);
     image = fait;
   }

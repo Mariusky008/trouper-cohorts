@@ -70,6 +70,17 @@ export const TIMBRES: Record<string, Timbre> = {
     voix: "ballad",
     ton: "Parle en français, voix d'homme franche et joviale, un boucher de quartier qui connaît ses clients par leur prénom. Direct, généreux, un rire dans la voix.",
   },
+  /* LES DEUX COPIES DE PRÉSENTATION — voir `copies-presentation.ts`. Le
+     Bordeaux a la voix enregistrée du magret ; celle-ci ne sert qu'en secours.
+     El Txupinazo n'a pas d'enregistrement : c'est elle qu'on entend. */
+  "copie-bordeaux": {
+    voix: "onyx",
+    ton: "Parle en français, voix d'homme avec un léger accent du Sud-Ouest. Posé, gourmand, un cuisinier qui raconte son magret à un client accoudé au comptoir. Ne force jamais l'accent.",
+  },
+  "copie-txupinazo": {
+    voix: "ash",
+    ton: "Parle en français, voix d'homme chaleureuse et enjouée, patron d'un bar à tapas du Pays basque, avec une pointe d'accent du Sud-Ouest et la musique de l'espagnol sans la caricaturer. Convivial, souriant, comme s'il servait l'assiette à une bande d'amis.",
+  },
   traiteur: {
     voix: "sage",
     ton: "Parle en français, voix chaleureuse et soignée, celle d'une maison de traiteur familiale qui reçoit bien. Accueillante, précise, jamais guindée.",
