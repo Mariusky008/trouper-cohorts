@@ -246,50 +246,106 @@ export function couvertureDuDiagnostic(diag: unknown): EtatCouverture | null {
 }
 
 /**
- * ═══ CE QUE FONT LES FANTOMES, METIER PAR METIER ═══════════════════════════
+ * ═══ CE QUE FONT LES FANTOMES, METIER PAR METIER — DEDANS OU DEVANT ═════════
  *
- * SES DEUX EXEMPLES DISENT LA REGLE : au café, deux fantômes prennent un café
- * en terrasse et un troisième accueille à la porte ; chez le fleuriste, l'un
- * emballe un bouquet, l'autre s'en émerveille, un troisième salue du fond de la
- * boutique. Toujours UN à l'entrée qui accueille — c'est le rôle que la page
- * lui donne — et les autres font ce qu'on vient faire chez lui.
+ * SES DEUX EXEMPLES DISAIENT LA RÈGLE DE LA DEVANTURE : au café, deux
+ * fantômes prennent un café en terrasse et un troisième accueille à la porte ;
+ * chez le fleuriste, l'un emballe un bouquet, l'autre s'en émerveille.
  *
- * « SI LA PHOTO LE PERMET » EST ECRIT A CHAQUE FOIS. Une devanture sans
- * terrasse ne doit pas en recevoir une : on ajoute des fantômes, pas des
- * tables.
+ * « Si c'est un métier dont on voit la photo de l'intérieur, alors c'est une
+ * mise en situation, avec le propriétaire fantôme qui exerce son métier ; et
+ * si c'est devant un magasin, ce sont des fantômes qui marchent ou qui parlent
+ * devant le commerce. » DEUX SCÈNES PAR MÉTIER, DONC :
+ *   · DEDANS — l'hôte, en tenue, FAIT son métier sur un client fantôme (la
+ *     coupe, la pose de vernis, le verre servi), un autre client attend ou
+ *     regarde ;
+ *   · DEVANT — l'hôte accueille à la porte, les clients passent et discutent
+ *     devant la vitrine.
+ * C'est le modèle qui voit la photo : il choisit la scène qui va avec (voir
+ * le point 4 de la consigne). On ne lui demande jamais d'ajouter une pièce
+ * qui n'est pas sur la photo — des fantômes, pas des meubles.
  */
-const SCENES: Record<CleMetier, { hote: string; clients: string }> = {
+type Scene = { hote: string; clients: string };
+const SCENES: Record<CleMetier, { dedans: Scene; devant: Scene }> = {
   restaurant: {
-    hote: "stands in the open entrance door, waving to welcome guests",
-    clients: "If the photo shows a terrace or outdoor tables, two customer ghosts sit at a table in the foreground, enjoying a coffee or a dish.",
+    dedans: {
+      hote: "walks between the tables carrying a steaming dish, or stands behind the counter, in the middle of service",
+      clients: "Two customer ghosts sit at a table, enjoying their meal; if there is room, a third one chats at the counter.",
+    },
+    devant: {
+      hote: "stands in the open entrance door, waving to welcome guests",
+      clients: "If the photo shows a terrace or outdoor tables, two customer ghosts sit at a table in the foreground, enjoying a coffee or a dish; otherwise two customer ghosts chat in front of the entrance.",
+    },
   },
   bar: {
-    hote: "stands in the open entrance door, waving to welcome guests",
-    clients: "If the photo shows a terrace or outdoor tables, two customer ghosts sit at a table in the foreground and raise their glasses together.",
+    dedans: {
+      hote: "stands behind the bar, pouring a drink or shaking a cocktail",
+      clients: "Customer ghosts lean on the bar or sit at a table and raise their glasses together.",
+    },
+    devant: {
+      hote: "stands in the open entrance door, waving to welcome guests",
+      clients: "If the photo shows a terrace or outdoor tables, two customer ghosts sit at a table in the foreground and raise their glasses together; otherwise two customer ghosts chat in front of the entrance.",
+    },
   },
   fleuriste: {
-    hote: "stands at a wooden table in front of the shop, wrapping a bouquet in kraft paper",
-    clients: "A customer ghost stands next to the table and admires the bouquet with delight.",
+    dedans: {
+      hote: "stands at the work table inside the shop, wrapping a bouquet in kraft paper",
+      clients: "A customer ghost admires the bouquet with delight; another browses the buckets of flowers.",
+    },
+    devant: {
+      hote: "stands at a wooden table in front of the shop, wrapping a bouquet in kraft paper",
+      clients: "A customer ghost stands next to the table and admires the bouquet; another walks by and stops to smell the flowers.",
+    },
   },
   coiffeur: {
-    hote: "stands at the entrance door, waving to welcome clients",
-    clients: "Through the window, a customer ghost sits in a salon chair, delighted with its fresh haircut.",
+    dedans: {
+      hote: "stands behind a salon chair, cutting the hair of a customer ghost with scissors and a comb",
+      clients: "That customer ghost sits in the salon chair, wearing a hairdressing cape, facing the mirror and delighted. Another customer ghost waits on a bench reading a magazine, or leans back at the shampoo basin.",
+    },
+    devant: {
+      hote: "stands at the entrance door, waving to welcome clients",
+      clients: "Two customer ghosts walk past the salon and chat; one of them admires its fresh haircut in the window reflection.",
+    },
   },
   ongles: {
-    hote: "stands at the entrance door, waving to welcome clients",
-    clients: "Near the window, a customer ghost proudly shows its freshly painted nails.",
+    dedans: {
+      hote: "sits at the manicure table, carefully painting the nails of a customer ghost seated opposite",
+      clients: "That customer ghost holds out its hand, delighted. Another customer ghost waits on a chair, choosing a colour from the nail polish display.",
+    },
+    devant: {
+      hote: "stands at the entrance door, waving to welcome clients",
+      clients: "In front of the shop, a customer ghost proudly shows its freshly painted nails to a friend ghost.",
+    },
   },
   mode: {
-    hote: "stands at the entrance door, waving to welcome clients",
-    clients: "A customer ghost, holding a small shopping bag, looks at the window display with wonder.",
+    dedans: {
+      hote: "stands near the clothes racks, presenting a garment to a customer ghost",
+      clients: "A customer ghost holds a garment against itself in front of a mirror; another carries a small shopping bag.",
+    },
+    devant: {
+      hote: "stands at the entrance door, waving to welcome clients",
+      clients: "Two customer ghosts walk past with small shopping bags, chatting and looking at the window display.",
+    },
   },
   artisan: {
-    hote: "stands at the entrance door, waving to welcome visitors",
-    clients: "A customer ghost admires the handmade pieces displayed in the window.",
+    dedans: {
+      hote: "works at the workbench, finishing a handmade piece",
+      clients: "A customer ghost watches the work with curiosity; another admires the pieces on display.",
+    },
+    devant: {
+      hote: "stands at the entrance door, waving to welcome visitors",
+      clients: "Two customer ghosts chat in front of the window, admiring the handmade pieces on display.",
+    },
   },
   lunetier: {
-    hote: "stands at the entrance door, waving to welcome clients",
-    clients: "Near the window, a customer ghost tries on a pair of glasses and smiles at its reflection.",
+    dedans: {
+      hote: "stands at the counter, adjusting a pair of glasses on the face of a customer ghost",
+      clients: "That customer ghost smiles at its reflection in a small mirror; another browses the frames on the wall.",
+    },
+    devant: {
+      hote: "stands at the entrance door, waving to welcome clients",
+      clients: "In front of the shop, a customer ghost tries on new glasses and shows them to a friend ghost.",
+    },
   },
 };
 
@@ -336,18 +392,20 @@ export function casquette(nom: string, branche: CleMetier): string {
  * fantômes. Un rendu magnifique d'un autre restaurant serait un échec complet.
  */
 export function consigneCouverture(nom: string, metier: string, ville: string, branche: CleMetier): string {
+  const scene = SCENES[branche] ?? SCENES.restaurant;
   const lieu = [nom && `"${nom}"`, metier && `a ${metier.toLowerCase()}`, ville && `in ${ville}`].filter(Boolean).join(", ");
   return [
     `Transform IMAGE 1 (the real photo of ${lieu || "a local shop"}) into the ClikMe photographic signature: a warm, enchanting, premium photo where the ClikMe ghosts from IMAGE 2 are part of the scene.`,
     "",
-    "1. KEEP THE PLACE. Same building, same architecture, same shopfront, same awning and colours, same terrace layout, same camera viewpoint. Someone who knows this place must recognise it at first glance.",
-    "2. KEEP EVERY SIGN EXACTLY. Every word on the sign, awning or windows stays exactly as in IMAGE 1: same spelling, same letters, same position. Never invent, translate, correct or add any text, logo or brand. If a text is unreadable in IMAGE 1, leave it unreadable rather than guessing.",
-    "3. LIGHT AND COLOUR. Late-afternoon golden hour: warm sunlight on the facade, glowing warm lamps inside, rich and luminous but natural colours, soft depth of field, crisp details. Tidy the street (bins, cars, clutter) only where it does not alter the building.",
-    `4. THE HOST. Exactly one ghost is the shop's host: the ghost of IMAGE 3, wearing exactly the outfit of IMAGE 3 (same clothes, same cap and emblem — the outfit of this trade), shown full body. It ${(SCENES[branche] ?? SCENES.restaurant).hote}.`,
-    `5. THE CUSTOMERS. The other ghosts are customers: the ghost character from IMAGE 2 (soft white rounded ghost, big glossy purple eyes, pink cheeks, a black cap), NOT dressed like the host. ${casquette(nom, branche)} ${(SCENES[branche] ?? SCENES.restaurant).clients}`,
-    "6. ALL GHOSTS must truly belong to the photo: realistic scale next to doors and furniture, matching perspective, light direction and colour temperature, soft contact shadows, reflections in windows where relevant. Cute, friendly, polished 3D finish; host and customers are the same kind of character.",
-    "7. PEOPLE. Real people already present may stay, unchanged and not in focus. Do not add any new person.",
-    "8. FRAMING. Vertical 4:5 framing centred on the entrance. Keep the top fifth calm (facade or sky), because a title is written over it.",
+    "1. KEEP THE PLACE. Same building or same room, same architecture, same shopfront or interior, same furniture, awning and colours, same camera viewpoint. Someone who knows this place must recognise it at first glance.",
+    "2. KEEP EVERY SIGN EXACTLY. Every word on the sign, awning, windows or walls stays exactly as in IMAGE 1: same spelling, same letters, same position. Never invent, translate, correct or add any text, logo or brand. If a text is unreadable in IMAGE 1, leave it unreadable rather than guessing.",
+    "3. LIGHT AND COLOUR. Warm, enchanting light: outside, late-afternoon golden hour on the facade with glowing lamps inside; inside, warm inviting lamplight and soft daylight from the windows. Rich and luminous but natural colours, soft depth of field, crisp details. Tidy clutter (bins, cars, boxes) only where it does not alter the place.",
+    `4. INSIDE OR IN FRONT? Look at IMAGE 1. If it shows the INSIDE of the shop, the ghosts are at work inside: the host ${scene.dedans.hote}. ${scene.dedans.clients} If it shows the OUTSIDE (shopfront, street, terrace): the host ${scene.devant.hote}. ${scene.devant.clients}`,
+    "5. THE HOST. Exactly one ghost is the shop's host: the ghost of IMAGE 3, wearing exactly the outfit of IMAGE 3 (same clothes, same cap and emblem — the outfit of this trade), clearly visible and the most prominent ghost.",
+    `6. THE CUSTOMERS. The other ghosts are customers: the ghost character from IMAGE 2 (soft white rounded ghost, big glossy purple eyes, pink cheeks, a black cap), NOT dressed like the host. ${casquette(nom, branche)}`,
+    "7. ALL GHOSTS must truly belong to the photo: realistic scale next to doors, chairs and furniture, matching perspective, light direction and colour temperature, soft contact shadows, reflections in windows and mirrors where relevant. Cute, friendly, polished 3D finish; host and customers are the same kind of character. Never add furniture, rooms or a terrace that are not in IMAGE 1: only ghosts.",
+    "8. PEOPLE. Real people already present may stay, unchanged and not in focus. Do not add any new person.",
+    "9. FRAMING. Vertical 4:5 framing, centred on the entrance outside or on the host at work inside. Keep the top fifth calm (facade, wall, ceiling or sky), because a title is written over it.",
     "No ClikMe logo anywhere. No watermark, no border, no caption, and no added text other than what is asked on the caps.",
   ].join("\n");
 }
