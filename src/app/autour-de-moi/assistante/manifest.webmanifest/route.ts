@@ -27,11 +27,12 @@ export const dynamic = "force-static";
 
 export async function GET() {
   const manifest = {
-    name: "Léa — votre assistante",
-    // CE QUI TIENT SOUS UNE ICÔNE, c'est-à-dire une douzaine de signes. « Léa »
-    // s'y lit entier, « Assistante Clikme » se ferait couper au milieu.
-    short_name: "Léa",
-    description: "Racontez-lui votre journée, elle s’occupe du reste.",
+    // LÉA EST DEVENUE LE COMPTOIR : c'est son fantôme qui lui pose les
+    // questions de son métier — voir `assistante/comptoir.tsx`.
+    name: "Mon comptoir ClikMe",
+    // CE QUI TIENT SOUS UNE ICÔNE, c'est-à-dire une douzaine de signes.
+    short_name: "Mon comptoir",
+    description: "Ton fantôme te pose deux questions, tu réponds à la voix, et c’est en ligne.",
     // LES TROIS DOIVENT DÉSIGNER L'ASSISTANTE, ET CHACUN POUR SA RAISON :
     //   · `start_url` décide de ce qui s'ouvre — c'est le défaut corrigé ici ;
     //   · `scope` garde la navigation dans l'application au lieu de rebasculer
@@ -46,8 +47,8 @@ export async function GET() {
     // Le fond de l'application, pas le beige du site : c'est ce que le
     // téléphone affiche pendant le lancement, et un éclair clair avant un écran
     // noir se voit.
-    background_color: "#05090C",
-    theme_color: "#05090C",
+    background_color: "#120C09",
+    theme_color: "#120C09",
     orientation: "portrait",
     icons: [
       { src: "/direct/icone-autour.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
