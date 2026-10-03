@@ -78,6 +78,9 @@ async function phraseDe(corps: Demande): Promise<Phrase | NextResponse> {
   // LE SEUIL : la phrase qu'il dit quand on franchit sa porte, écrite ICI à
   // partir de ses vraies données — voir `seuilDuDouble`.
   else if (quoi === "seuil") texte = seuilDuDouble(commerce.carte);
+  // CE QU'IL DIT DE SON PLAT, à l'étape 2 de son expérience — écrit dans sa
+  // carte depuis son espace commerçant, jamais pris dans la requête.
+  else if (quoi === "plat") texte = commerce.carte.voix?.citation ?? "";
   else if (quoi === "reponse") {
     const t = s(corps.texte);
     if (t.length > 700 || !sceauValide(fiche.id, t, s(corps.sig))) {

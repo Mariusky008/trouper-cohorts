@@ -1,5 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { completerLHote, completerSansHote } from "@/lib/site-internet/couverture";
+import { completerScenes } from "@/lib/site-internet/experience-scenes";
 
 // 👻 SON HÔTE REPÉRÉ, PUIS LA PHOTO SANS LUI — après la page, avec le temps qu'il faut.
 //
@@ -17,8 +18,15 @@ export async function POST(requete: Request) {
   if (!/^[a-z0-9-]{2,120}$/i.test(slug)) return NextResponse.json({ erreur: "adresse illisible" }, { status: 400 });
   after(async () => {
     try {
-      await completerLHote(slug);
-      await completerSansHote(slug);
+      // LES SCÈNES DE SON EXPÉRIENCE RESTAURANT, en même temps : elles ne
+      // touchent pas à la photo ClikMe — voir `experience-scenes.ts`.
+      await Promise.all([
+        (async () => {
+          await completerLHote(slug);
+          await completerSansHote(slug);
+        })(),
+        completerScenes(slug),
+      ]);
     } catch {
       /* la prochaine visite relancera */
     }

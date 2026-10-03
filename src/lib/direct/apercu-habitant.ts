@@ -1264,7 +1264,14 @@ export type Voix = {
    * (fractions de la photo). L'écran n'en pose pas un second : il rend
    * celui-là touchable.
    */
-  fantomeDansLaPhoto?: { x: number; y: number; l: number; h: number };
+  fantomeDansLaPhoto?: {
+    x: number;
+    y: number;
+    l: number;
+    h: number;
+    /** Vrai quand la bulle « Une question ? » est AUSSI dans la photo (la maquette) ; sinon l'écran la pose. */
+    bulle?: boolean;
+  };
 };
 
 /**

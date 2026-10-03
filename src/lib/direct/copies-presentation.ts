@@ -59,7 +59,7 @@ const BORDEAUX: CarteAutour = {
     // SA PHOTO, DONNÉE POUR L'ÉTAPE 3 (« L'accueil ») — son fantôme y est
     // assis à la table, repris de la maquette 3 au pixel près.
     photoChef: "/direct/table/restaurant/chef-fantome.webp",
-    fantomeDansLaPhoto: { x: 0.655, y: 0.33, l: 0.33, h: 0.26 },
+    fantomeDansLaPhoto: { x: 0.655, y: 0.33, l: 0.33, h: 0.26, bulle: true },
     recit:
       "Bonjour. Bon, mon magret, je commence par quadriller la peau. Je le pose côté peau sur le gril, doucement, pour qu'elle devienne bien croustillante sans brusquer la viande. Pendant qu'il repose, je fais dorer les pommes de terre à la graisse de canard, avec de l'ail et du persil. Et au dernier moment, je tranche le magret. Vous avez le croustillant, le fondant… et l'odeur qui arrive avant l'assiette.",
     extrait: "/direct/voix/bergine-magret.mp3",

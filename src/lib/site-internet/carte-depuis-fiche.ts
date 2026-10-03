@@ -35,6 +35,7 @@
 // ClikMe peut remplir apparaissent le jour où il les remplit. C'est aussi le
 // meilleur argument de vente qu'on puisse lui faire : il voit exactement ce
 // qu'il gagne en s'y mettant.
+import { sceneMontree, type ExperienceResto } from "@/lib/site-internet/experience-donnees";
 import type { CarteAutour, CleMetier, MomentJour } from "@/lib/direct/apercu-habitant";
 import { resolveMetierContent } from "@/lib/site-internet/metier-content";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
@@ -76,6 +77,8 @@ export type FicheCommercant = {
   ficheGoogle?: { menu?: string; prix?: string; services?: string[] };
   /** Les pages de sa carte, photographiées : l'onglet « Menu » de sa fiche Google. */
   photosCarte?: string[];
+  /** Son plat, sa photo de cuisinier et leurs scènes — voir `experience-donnees.ts`. */
+  experience?: ExperienceResto;
   /** Où en est la lecture de sa carte, dit au commerçant — voir `suiviDeLaCarte`. */
   carteSuivi?: { texte: string; detail?: string }[];
   /** Ses horaires de la semaine, tels qu'on les lit (les siens d'abord, Google sinon). */
@@ -362,5 +365,45 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
     // ce drapeau qui fait écrire, sous le chapitre, qu'elles sont proposées.
     cataloguePropose: services.length === 0 && !f.carteLue?.length && proposees.length > 0,
     catalogueLuSurPhotos: services.length === 0 && Boolean(f.carteLue?.length),
+    ...ceQuIlADonne(f),
+  };
+}
+
+/**
+ * ═══ SON EXPÉRIENCE, CE QU'IL EN A DONNÉ ═══════════════════════════════════
+ *
+ * Son plat du jour (nom, prix, SA photo, ce qu'il en dit) et sa photo de
+ * cuisinier, posés depuis son espace commerçant. Les scènes du moteur ne
+ * remplacent ses photos que si elles sont faites, pour CETTE photo, et qu'il
+ * ne les a pas refusées (`sceneMontree`).
+ *
+ * SA PHRASE SE DIT DE SA VOIX — celle de son double (sa voix clonée s'il l'a
+ * donnée), par la route du double : `quoi=plat` lit la phrase dans sa carte,
+ * jamais dans la requête.
+ *
+ * LE PRÉNOM RESTE VIDE ICI : c'est la page qui le connaît (`prenomChef`), et
+ * l'expérience dit « le chef » sans lui.
+ */
+function ceQuIlADonne(f: FicheCommercant): Pick<CarteAutour, "menu" | "voix"> {
+  const xp = f.experience;
+  if (!xp || brancheDuMetier(f.metier) !== "restaurant") return {};
+  const scenePlat = sceneMontree(xp.scenePlat, xp.plat?.photo);
+  const sceneChef = sceneMontree(xp.sceneChef, xp.chef?.photo);
+  return {
+    menu: xp.plat
+      ? { plat: xp.plat.nom, description: "", prix: xp.plat.prix ?? "", photo: xp.plat.photo, scene: scenePlat?.url }
+      : undefined,
+    voix:
+      xp.plat?.phrase || xp.chef
+        ? {
+            prenom: "",
+            role: "cuisinier",
+            citation: xp.plat?.phrase,
+            citationFort: xp.plat?.phraseFort,
+            extrait: xp.plat?.phrase ? `/api/direct/double/voix?id=${encodeURIComponent(f.slug)}&quoi=plat` : undefined,
+            photoChef: sceneChef?.url ?? xp.chef?.photo,
+            fantomeDansLaPhoto: sceneChef?.boite,
+          }
+        : undefined,
   };
 }

@@ -209,6 +209,19 @@ async function chercherUneBoite(image: { type: string; donnees: string }, questi
 }
 
 /**
+ * UNE BOÎTE DANS UNE AUTRE IMAGE, PAR LA MÊME QUESTION AU MÊME MODÈLE — pour
+ * les scènes de l'expérience restaurant (voir `experience-scenes.ts`).
+ * Rend aussi la raison quand il ne trouve rien : c'est ce qu'on écrit.
+ */
+export async function boiteDansLImage(
+  image: { type: string; donnees: string },
+  question: string,
+): Promise<{ boite?: { x: number; y: number; w: number; h: number }; raison: string }> {
+  const boite = await chercherUneBoite(image, question);
+  return { boite: boite ?? undefined, raison: boite ? "" : raisonHote };
+}
+
+/**
  * L'HÔTE PAS ENCORE REPÉRÉ — photo faite avant cette étape, ou modèle qui a
  * hésité au rendu : la page le redemande après s'être affichée, jusqu'à
  * trois fois par photo, à dix minutes d'écart.

@@ -42,6 +42,19 @@ const config: NextConfig = {
     // photo ClikMe, lue sur le stockage — rien du disque.
     // L'ATELIER DES POSES PART DE LA POSE D'ACCUEIL DE CHAQUE TENUE.
     "/api/admin/direct/poses": ["./public/direct/double/**/accueil.webp"],
+    // LES SCÈNES DE L'EXPÉRIENCE RESTAURANT LISENT SES MAQUETTES ET LE FANTÔME
+    // ASSIS SUR LE DISQUE (voir `lib/site-internet/experience-scenes.ts`) — à
+    // sa route, et à celle qui les relance après la visite de sa page.
+    "/api/site-internet/pro/experience": [
+      "./public/direct/table/restaurant/scene-magret.webp",
+      "./public/direct/table/restaurant/chef-fantome.webp",
+      "./public/direct/double/assis/*.webp",
+    ],
+    "/api/site-internet/hote": [
+      "./public/direct/table/restaurant/scene-magret.webp",
+      "./public/direct/table/restaurant/chef-fantome.webp",
+      "./public/direct/double/assis/*.webp",
+    ],
   },
   typescript: {
     ignoreBuildErrors: true,

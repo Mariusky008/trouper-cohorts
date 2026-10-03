@@ -574,7 +574,16 @@ export function ExperienceTable({
                 width: `calc(${voix.fantomeDansLaPhoto.l} * 56.28cqh)`,
                 height: `${voix.fantomeDansLaPhoto.h * 100}%`,
               }}
-            />
+            >
+              {/* LA SCÈNE DU MOTEUR N'ÉCRIT QUE SON NOM : la bulle et « Double IA »
+                  sont posées ici, au-dessus de lui et à ses pieds. */}
+              {!voix.fantomeDansLaPhoto.bulle && (
+                <>
+                  <span className="xr-bulle">Une question&nbsp;?</span>
+                  <span className="xr-ia">✦ Double IA</span>
+                </>
+              )}
+            </button>
           ) : (
             <button type="button" className="xr-question" onClick={onQuestion} aria-label="Poser une question à son double">
               <span className="xr-bulle">Une question&nbsp;?</span>
