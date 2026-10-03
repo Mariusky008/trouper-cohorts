@@ -66,6 +66,9 @@ const playfair = Playfair_Display({
   variable: "--font-enseigne",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
+  // L'ITALIQUE BRODE LE NOM DU RESTAURANT SUR LA CASQUETTE DE SON FANTÔME
+  // (`experience-table.tsx`), comme sur sa maquette.
+  style: ["normal", "italic"],
   display: "swap",
 });
 

@@ -22,7 +22,7 @@
 // RIEN N'Y EST INVENTÉ : le plat, son prix, sa photo, la voix et la phrase du
 // chef viennent de sa carte (`menu`, ses moments, `voix`). Ce qui manque ne se
 // dessine pas — pas de lecteur sans voix, pas de « dessert » sans autre plat.
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { onSpeakingChange, speak, stopSpeaking } from "@/lib/site-internet/speech";
@@ -32,61 +32,111 @@ type Proposition = { nom: string; photo: string; prix?: string };
 /** SES ÉLÉMENTS — voir `public/direct/table/restaurant/` et `double/assis/`. */
 const SALLE = "/direct/table/restaurant/salle.webp";
 const TABLE = "/direct/table/restaurant/table.webp";
-const CLOCHE = "/direct/table/restaurant/cloche.webp";
+// « C'EST MIEUX AVEC LA CLOCHE EN CUIVRE PLUTÔT QU'EN ARGENT. »
+const CLOCHE = "/direct/table/restaurant/cloche-cuivre.webp";
 const ASSIS = "/direct/double/assis/";
 
+type Pt = readonly [number, number];
 /**
- * OÙ EST LE DEVANT DE LA CASQUETTE, POSE PAR POSE — en fraction de l'image,
- * mesuré sur ses PNG (le centre de la calotte, au-dessus de la visière), et
- * l'inclinaison de la tête. C'est là que s'écrit le nom de l'établissement.
+ * LE NOM, BRODÉ COMME SUR SA MAQUETTE — pose par pose, en fraction de l'image.
+ *
+ * « Le nom est étrange sur la casquette, pas proportionnel et pas bien
+ * ajusté. » Il était posé à plat, en capitales, au milieu de la calotte. Sur
+ * sa maquette, il SUIT LA COURBE de la casquette, juste au-dessus de la
+ * visière, en italique à empattements couleur crème — et il se répète sur le
+ * plastron du tablier. Les arcs ci-dessous sont mesurés sur ses trois PNG :
+ * départ, point de contrôle (le bombé), arrivée. `tablier` : centre, largeur
+ * permise et inclinaison du plastron.
  */
-const CASQUETTE = {
-  montre: { x: 0.585, y: 0.105, tourne: 7 },
-  repos: { x: 0.5, y: 0.105, tourne: 5 },
-  salut: { x: 0.55, y: 0.105, tourne: 6 },
-} as const;
-type Pose = keyof typeof CASQUETTE;
+const BRODERIE: Record<
+  "montre" | "repos" | "salut",
+  { l: number; h: number; arc: readonly [Pt, Pt, Pt]; tablier: readonly [number, number, number, number] }
+> = {
+  montre: { l: 1047, h: 1010, arc: [[0.35, 0.143], [0.535, 0.11], [0.735, 0.173]], tablier: [0.475, 0.69, 0.27, 4] },
+  repos: { l: 853, h: 1015, arc: [[0.255, 0.15], [0.45, 0.114], [0.69, 0.183]], tablier: [0.39, 0.665, 0.27, 3] },
+  salut: { l: 963, h: 1020, arc: [[0.305, 0.14], [0.5, 0.106], [0.715, 0.17]], tablier: [0.455, 0.675, 0.26, 4] },
+};
+type Pose = keyof typeof BRODERIE;
 
 /** LE NOM EN UNE OU DEUX LIGNES, coupé entre deux mots au plus près du milieu. */
 function lignesDuNom(nom: string): string[] {
   const mots = nom.trim().split(/\s+/);
-  if (nom.length <= 11 || mots.length < 2) return [nom];
+  if (nom.length <= 14 || mots.length < 2) return [nom];
   let mieux = 1;
+  let ecart = Infinity;
   for (let i = 1; i < mots.length; i++) {
-    const a = mots.slice(0, i).join(" ").length;
-    const b = mots.slice(i).join(" ").length;
-    const m = mots.slice(0, mieux).join(" ").length;
-    if (Math.abs(a - b) < Math.abs(m - mots.slice(mieux).join(" ").length)) mieux = i;
+    const d = Math.abs(mots.slice(0, i).join(" ").length - mots.slice(i).join(" ").length);
+    if (d < ecart) [ecart, mieux] = [d, i];
   }
   return [mots.slice(0, mieux).join(" "), mots.slice(mieux).join(" ")];
 }
 
-/** SON FANTÔME ASSIS, ET SON NOM BRODÉ SUR LA CASQUETTE. */
+/** SON FANTÔME ASSIS, ET SON NOM BRODÉ SUR LA CASQUETTE ET LE TABLIER. */
 function Fantome({ pose, nom, classe }: { pose: Pose; nom: string; classe: string }) {
+  const b = BRODERIE[pose];
   const lignes = lignesDuNom(nom);
-  const plusLongue = Math.max(...lignes.map((l) => l.length));
-  // LA TAILLE SUIT LA LONGUEUR : la calotte fait un tiers de sa largeur.
-  const taille = Math.min(7, 31 / (plusLongue * 0.6));
-  const ou = CASQUETTE[pose];
+  // DEUX LIGNES : la première monte d'un cran, la seconde se resserre.
+  const arcs =
+    lignes.length === 1
+      ? [b.arc]
+      : [b.arc.map(([x, y]) => [x + 0.012, y - 0.047] as Pt), b.arc.map(([x, y], i) => [x + (i === 0 ? 0.02 : i === 2 ? -0.02 : 0), y] as Pt)];
+  const d = (arc: readonly Pt[]) => {
+    const [a, c, e] = arc.map(([x, y]) => `${(x * b.l).toFixed(1)} ${(y * b.h).toFixed(1)}`);
+    return `M${a} Q${c} ${e}`;
+  };
+  const id = `xr-arc-${pose}`;
+  const svg = useRef<SVGSVGElement | null>(null);
+  /* LA TAILLE SE MESURE, ELLE NE SE DEVINE PAS : la plus grande qui tient
+     sur l'arc, la même pour les deux lignes. La police chargée, on remesure. */
+  useEffect(() => {
+    const ajuster = () => {
+      const s = svg.current;
+      if (!s) return;
+      const textes = [...s.querySelectorAll<SVGTextElement>("text.xr-casq")];
+      const chemins = [...s.querySelectorAll<SVGPathElement>("path")];
+      let taille = (lignes.length === 1 ? 0.064 : 0.046) * b.h;
+      textes.forEach((t, i) => {
+        t.setAttribute("font-size", String(taille));
+        const place = chemins[i].getTotalLength() * 0.94;
+        const long = t.getComputedTextLength();
+        if (long > place) taille = Math.min(taille, (taille * place) / long);
+      });
+      textes.forEach((t) => {
+        t.setAttribute("font-size", String(taille));
+        t.setAttribute("stroke-width", String(taille * 0.05));
+      });
+      const tab = s.querySelector<SVGTextElement>("text.xr-tab");
+      if (tab) {
+        let f = 0.038 * b.h;
+        tab.setAttribute("font-size", String(f));
+        const long = tab.getComputedTextLength();
+        if (long > b.tablier[2] * b.l) f = (f * b.tablier[2] * b.l) / long;
+        tab.setAttribute("font-size", String(f));
+      }
+    };
+    ajuster();
+    void document.fonts?.ready.then(ajuster);
+  }, [nom, pose, b, lignes.length]);
+  const [tx, ty, , tr] = b.tablier;
   return (
-    <span className={`xr-fant ${classe}`} aria-hidden="true">
+    <span className={`xr-fant ${classe}`} style={{ aspectRatio: `${b.l} / ${b.h}` }} aria-hidden="true">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={`${ASSIS}${pose}.webp`} alt="" draggable={false} />
-      <span
-        className="xr-casq"
-        style={
-          {
-            left: `${ou.x * 100}%`,
-            top: `${ou.y * 100}%`,
-            fontSize: `${taille}cqw`,
-            transform: `translate(-50%,-50%) rotate(${ou.tourne}deg)`,
-          } as CSSProperties
-        }
-      >
-        {lignes.map((l, i) => (
-          <span key={i}>{l}</span>
+      <svg ref={svg} viewBox={`0 0 ${b.l} ${b.h}`} className="xr-brode">
+        {arcs.map((arc, i) => (
+          <path key={i} id={`${id}-${i}`} d={d(arc)} fill="none" />
         ))}
-      </span>
+        {lignes.map((l, i) => (
+          <text key={i} className="xr-casq">
+            <textPath href={`#${id}-${i}`} startOffset="50%" textAnchor="middle">
+              {l}
+            </textPath>
+          </text>
+        ))}
+        <text className="xr-tab" x={tx * b.l} y={ty * b.h} transform={`rotate(${tr} ${tx * b.l} ${ty * b.h})`} textAnchor="middle">
+          {nom}
+        </text>
+      </svg>
     </span>
   );
 }
@@ -289,16 +339,19 @@ export function ExperienceTable({
     <div className={`xr xr-e${etape}`}>
       <StylesExperienceTable />
       {/* LES TROIS FONDS SONT EMPILÉS : déjà chargés, ils glissent en fondu.
-          SUR UN ÉCRAN EN LARGEUR, la salle et le cuisinier — des photos en
-          hauteur — se montrent ENTIÈRES au milieu (`xr-net`), sur leur propre
-          flou : recadrées à la largeur, il ne restait que le bois de la table. */}
-      {[salle, repas.photo, photoChef].map((src, i) => (
-        <div key={i} className={`xr-plan${etape === i + 1 ? " on" : ""}${i === 0 ? " salle" : ""}`} aria-hidden="true">
-          <div className={`xr-fond${i !== 1 ? " haut" : ""}`} style={{ backgroundImage: `url("${src}")` }} />
-          {i !== 1 && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className="xr-net" src={src} alt="" draggable={false} />
-          )}
+          1, la salle ; 2, LA MÊME SALLE, REMONTÉE — sa table vient sous
+          l'assiette, comme sur la maquette ; 3, le cuisinier. Des photos en
+          hauteur : SUR UN ÉCRAN EN LARGEUR, elles se montrent ENTIÈRES au
+          milieu (`xr-net`), sur leur propre flou. */}
+      {[salle, salle, photoChef].map((src, i) => (
+        <div
+          key={i}
+          className={`xr-plan${etape === i + 1 ? " on" : ""}${i < 2 ? " salle" : ""}${i === 1 ? " remonte" : ""}`}
+          aria-hidden="true"
+        >
+          <div className="xr-fond" style={{ backgroundImage: `url("${src}")` }} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="xr-net" src={src} alt="" draggable={false} />
         </div>
       ))}
       <div className="xr-voile" aria-hidden="true" />
@@ -336,6 +389,12 @@ export function ExperienceTable({
         </div>
       </header>
 
+      {/* ═══ LE CADRE : LA SCÈNE SE COMPOSE DANS LA PROPORTION DE SES PHOTOS ═══
+          Toute la largeur d'un téléphone ; au milieu d'un écran large, la
+          largeur exacte de la photo montrée entière. La table, la cloche,
+          l'assiette et le fantôme s'y placent en pour cent : là où la photo
+          a sa table, quel que soit l'écran. */}
+      <div className="xr-cadre">
       {/* ───────────────────────── 1 · LA SURPRISE ───────────────────────── */}
       {etape === 1 && (
         <section className="xr-scene xr-surprise">
@@ -380,9 +439,17 @@ export function ExperienceTable({
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 20s-7.5-4.6-9.2-9.3C1.6 7.4 3.8 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.2 0 5.4 2.9 4.2 6.2C19.5 15.4 12 20 12 20Z" />
             </svg>
-            {repas.publie ? `Le coup de cœur ${deQui(qui)}` : `Bientôt : le coup de cœur ${deQui(qui)}`}
+            {/* « Le coup de cœur du chef », mot pour mot comme sa maquette :
+                avec un prénom, le badge passait sous la casquette du fantôme. */}
+            {repas.publie ? "Le coup de cœur du chef" : "Bientôt : le coup de cœur du chef"}
           </p>
+          {/* « IL DOIT ÊTRE ASSIS SUR LA TABLE, JUSTE DERRIÈRE L'ASSIETTE » —
+              et le plat DANS une assiette : « le fantôme assis sur la
+              nourriture, c'est pas top ». Il passe donc derrière. */}
           <Fantome pose="repos" nom={c.nom} classe="assis" />
+          <div className="xr-assiette" aria-hidden="true">
+            <span className="xr-creux" style={{ backgroundImage: `url("${repas.photo}")` }} />
+          </div>
           <div className="xr-bas">
             {aUneVoix && (
               <div className={`xr-voix${joue ? " joue" : ""}`}>
@@ -454,10 +521,19 @@ export function ExperienceTable({
 
       {/* ───────────────────────── 3 · L'ACCUEIL ─────────────────────────── */}
       {etape === 3 && (
-        <section className="xr-scene xr-accueil">
-          <button type="button" className="xr-question" onClick={onQuestion}>
+        <section className={`xr-scene xr-accueil${repas.autres.length ? " suite" : ""}${voix?.photoChef ? "" : " posee"}`}>
+          {/* SA TABLE EST DANS LA PHOTO DU CUISINIER QU'IL NOUS A DONNÉE
+              (`photoChef`, cadrée comme la maquette) : le bord la coupe. Sur
+              une autre photo — son accueil, prise ailleurs —, rien ne dit où
+              est la table : le bas du fantôme se fond dans l'ombre (`posee`). */}
+          {/* « LE FANTÔME DOIT ÊTRE ASSIS À LA TABLE, DONC ON LE VOIT QU'À
+              MOITIÉ. » Le bord de la table de la photo le coupe : une découpe
+              en biais, qui suit ce bord (mesuré sur la photo du cuisinier). */}
+          <button type="button" className="xr-question" onClick={onQuestion} aria-label="Poser une question à son double">
             <span className="xr-bulle">Une question&nbsp;?</span>
-            <Fantome pose="salut" nom={c.nom} classe="salue" />
+            <span className="xr-attable">
+              <Fantome pose="salut" nom={c.nom} classe="salue" />
+            </span>
             <span className="xr-ia">✦ Double IA</span>
           </button>
           <div className="xr-bas">
@@ -502,6 +578,7 @@ export function ExperienceTable({
           </div>
         </section>
       )}
+      </div>
     </div>
   );
 }
@@ -522,20 +599,25 @@ function StylesExperienceTable() {
       dangerouslySetInnerHTML={{
         __html: `
         .xr{position:absolute;inset:0;overflow:hidden;color:#FFF4E6;font-family:var(--font-geist-sans),system-ui,sans-serif;
-          background:#120C09;}
+          background:#120C09;container-type:size;}
         .xr-plan{position:absolute;inset:0;opacity:0;transition:opacity .6s ease;}
         .xr-plan.on{opacity:1;}
         .xr-plan.salle{filter:brightness(.9) saturate(1.05);}
-        .xr-fond{position:absolute;inset:0;background:#1C1411 center / cover no-repeat;transition:transform 6s ease;transform:scale(1.04);}
+        .xr-fond{position:absolute;inset:0;background:#1C1411 50% 100% / cover no-repeat;transition:transform 6s ease;transform:scale(1.03);}
         .xr-plan.on .xr-fond{transform:scale(1);}
-        .xr-plan.salle .xr-fond{background-position:50% 100%;}
+        /* LA SALLE REMONTÉE D'UN QUART : sa table passe sous l'assiette. */
+        .xr-plan.remonte .xr-fond,.xr-plan.remonte .xr-net{top:-24%;bottom:24%;}
+        .xr-plan.remonte{filter:brightness(.78) saturate(1.05);}
         .xr-net{display:none;}
         @media (min-aspect-ratio:4/5){
-          .xr-fond.haut,.xr-plan.on .xr-fond.haut{filter:blur(24px) brightness(.5);transform:scale(1.15);}
+          .xr-fond,.xr-plan.on .xr-fond{filter:blur(24px) brightness(.5);transform:scale(1.15);}
           .xr-net{display:block;position:absolute;top:0;left:50%;height:100%;width:auto;max-width:none;transform:translateX(-50%);
-            -webkit-mask-image:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent);
-            mask-image:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent);}
+            -webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);
+            mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);}
         }
+        /* LE CADRE : la proportion de ses photos (941 × 1672). */
+        .xr-cadre{position:absolute;z-index:2;top:0;bottom:0;left:50%;width:min(100cqw,56.28cqh);transform:translateX(-50%);
+          container-type:inline-size;}
         .xr-voile{position:absolute;inset:0;pointer-events:none;
           background:linear-gradient(180deg,rgba(18,12,9,.72) 0%,rgba(18,12,9,.15) 24%,rgba(18,12,9,0) 46%,rgba(18,12,9,.55) 72%,rgba(18,12,9,.96) 100%);}
         .xr-e1 .xr-voile{background:linear-gradient(180deg,rgba(18,12,9,.7) 0%,rgba(18,12,9,.25) 30%,rgba(18,12,9,.1) 55%,rgba(18,12,9,.7) 100%);}
@@ -562,7 +644,7 @@ function StylesExperienceTable() {
         .xr-bas{position:absolute;left:0;right:0;bottom:0;z-index:4;display:flex;flex-direction:column;align-items:center;
           padding:0 18px calc(14px + env(safe-area-inset-bottom,0px));max-width:600px;margin:0 auto;}
         .xr-go{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;max-width:520px;padding:17px 22px;
-          border:0;border-radius:999px;cursor:pointer;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:clamp(19px,5.4vw,24px);
+          border:0;border-radius:999px;cursor:pointer;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:clamp(19px,5.4cqw,24px);
           color:#fff;background:linear-gradient(135deg,#FF4FB0,#FF2E9A 60%,#E0187F);box-shadow:0 16px 36px -12px rgba(255,46,154,.75);
           transition:transform .2s cubic-bezier(.34,1.4,.64,1);}
         .xr-go:active{transform:scale(.97);}
@@ -571,23 +653,24 @@ function StylesExperienceTable() {
 
         /* 1 · LA SURPRISE */
         .xr-t{position:absolute;left:0;right:0;top:calc(124px + env(safe-area-inset-top,0px));margin:0 auto;max-width:560px;padding:0 22px;
-          text-align:center;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:clamp(32px,9.4vw,48px);
+          text-align:center;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:clamp(32px,9.4cqw,48px);
           line-height:1.08;letter-spacing:-.025em;text-wrap:balance;text-shadow:0 4px 26px rgba(0,0,0,.6);animation:xrMonte .7s ease both;}
         .xr-t em{font-style:normal;color:#FF2E9A;}
         @keyframes xrMonte{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
         /* SA TABLE, POSÉE DEVANT UNE SALLE QUI N'EST PAS LA NÔTRE (la nôtre a la sienne). */
         .xr-table{position:absolute;z-index:2;left:50%;bottom:-4%;width:max(140%,760px);height:auto;transform:translateX(-50%);
           pointer-events:none;}
-        /* LE FANTÔME ASSIS : une image et son nom sur la casquette, mesurés sur sa largeur. */
-        .xr-fant{position:absolute;z-index:3;pointer-events:none;container-type:inline-size;}
-        .xr-fant img{display:block;width:100%;height:auto;filter:drop-shadow(0 12px 18px rgba(0,0,0,.5));}
-        .xr-casq{position:absolute;display:flex;flex-direction:column;align-items:center;gap:.08em;white-space:nowrap;
-          font-family:var(--font-clikme),sans-serif;font-weight:800;line-height:1;letter-spacing:.02em;color:#F2C27B;
-          text-shadow:0 1px 0 rgba(0,0,0,.55),0 0 1px rgba(0,0,0,.6);}
-        .xr-fant.montre{right:max(-1%,calc(50% - 290px));bottom:calc(34% - 1px);width:min(40vw,220px);
-          animation:xrFlotte 4s ease-in-out infinite;}
-        @keyframes xrFlotte{0%,100%{translate:0 0;}50%{translate:0 -5px;}}
-        .xr-cloche{position:absolute;z-index:3;left:max(3%,calc(50% - 250px));bottom:34%;width:min(60vw,320px);
+        /* LE FANTÔME ASSIS : son image, et son nom brodé par-dessus (SVG, mêmes proportions). */
+        .xr-fant{position:absolute;z-index:3;display:block;pointer-events:none;}
+        .xr-fant img{display:block;width:100%;height:100%;filter:drop-shadow(0 10px 14px rgba(0,0,0,.45));}
+        .xr-brode{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
+        .xr-brode text{font-family:var(--font-enseigne),Georgia,serif;font-style:italic;font-weight:600;fill:#F3E6D2;
+          stroke:rgba(40,25,15,.5);paint-order:stroke;}
+        .xr-brode .xr-tab{fill:#E8D7BE;stroke:none;}
+        /* 1 · SUR LA TABLE, À DROITE, IL MONTRE LA CLOCHE — sa maquette, mesurée. */
+        .xr-fant.montre{right:-8%;bottom:40%;height:24%;animation:xrFlotte 4s ease-in-out infinite;}
+        @keyframes xrFlotte{0%,100%{translate:0 0;}50%{translate:0 -4px;}}
+        .xr-cloche{position:absolute;z-index:4;left:3%;bottom:33%;width:76%;
           padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;}
         .xr-cloche-img{display:block;width:100%;height:auto;transform-origin:50% 100%;
           filter:drop-shadow(0 16px 16px rgba(0,0,0,.55));animation:xrRespire 3.2s ease-in-out infinite;}
@@ -616,12 +699,23 @@ function StylesExperienceTable() {
         /* 2 · LA DÉCOUVERTE */
         .xr-e2 .xr-voile,.xr-e3 .xr-voile{background:linear-gradient(180deg,rgba(18,12,9,.6) 0%,rgba(18,12,9,0) 22%,rgba(18,12,9,0) 46%,
           rgba(18,12,9,.75) 64%,rgba(18,12,9,.97) 82%,#120C09 100%);}
-        .xr-badge{position:absolute;z-index:4;left:max(16px,calc(50% - 290px));top:calc(150px + env(safe-area-inset-top,0px));margin:0;
+        .xr-badge{position:absolute;z-index:4;left:5%;top:calc(112px + env(safe-area-inset-top,0px));margin:0;
           display:inline-flex;align-items:center;gap:10px;padding:10px 18px 10px 14px;border-radius:999px;font-weight:700;font-size:16px;
           background:rgba(18,12,9,.72);border:1.5px solid #FF2E9A;animation:xrMonte .6s ease .2s both;}
         .xr-badge svg{width:22px;height:22px;fill:#FF2E9A;}
-        .xr-fant.assis{right:max(0%,calc(50% - 300px));top:calc(200px + env(safe-area-inset-top,0px));width:min(40vw,230px);
-          animation:xrArrive .7s cubic-bezier(.34,1.4,.64,1) .25s both,xrFlotte 4.4s ease-in-out 1s infinite;}
+        .xr-fant.assis{right:-4%;top:12.5%;height:25%;z-index:2;
+          animation:xrArrive .7s cubic-bezier(.34,1.4,.64,1) .25s both;}
+        /* L'ASSIETTE : une faïence crème, son marli moucheté, et le plat dans son creux. */
+        .xr-assiette{position:absolute;z-index:3;left:-4%;width:108%;top:31%;height:25%;border-radius:50%;
+          background:radial-gradient(ellipse at 50% 42%,#f4ede2 0%,#e9dfcf 58%,#d4c6b1 74%,#b9a88f 86%,#8c7a63 100%);
+          box-shadow:0 26px 34px -10px rgba(0,0,0,.75),0 6px 10px rgba(0,0,0,.35),inset 0 -6px 10px rgba(80,60,40,.35);
+          animation:xrArrive .6s cubic-bezier(.34,1.3,.64,1) both;}
+        /* LE CREUX DE L'ASSIETTE, puis LE PLAT POSÉ DEDANS : ses bords se fondent dans la faïence. */
+        .xr-assiette::before{content:"";position:absolute;left:11%;right:11%;top:12%;bottom:19%;border-radius:50%;
+          background:radial-gradient(ellipse at 50% 40%,#f1e9dc,#ddd1bf);box-shadow:inset 0 4px 10px rgba(90,70,50,.4),0 1px 0 rgba(255,255,255,.7);}
+        .xr-creux{position:absolute;left:8%;right:8%;top:8%;bottom:14%;border-radius:50%;background:#2a1d14 center / cover no-repeat;
+          -webkit-mask-image:radial-gradient(closest-side,#000 68%,rgba(0,0,0,.6) 82%,transparent 100%);
+          mask-image:radial-gradient(closest-side,#000 68%,rgba(0,0,0,.6) 82%,transparent 100%);}
         @keyframes xrArrive{from{opacity:0;transform:translateY(20px) scale(.9);}to{opacity:1;transform:none;}}
         .xr-voix{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;width:100%;max-width:560px;margin-bottom:12px;}
         .xr-avatar{width:76px;height:76px;border-radius:50%;background:#2A1F1B center / cover no-repeat;overflow:hidden;
@@ -638,7 +732,7 @@ function StylesExperienceTable() {
           background:rgba(18,12,9,.5);border:2px solid #FF2E9A;}
         .xr-lire svg{width:24px;height:24px;fill:currentColor;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;}
         .xr-citation{margin:4px 0 0;text-align:center;font-family:var(--font-clikme),sans-serif;font-weight:700;
-          font-size:clamp(20px,5.6vw,27px);line-height:1.2;max-width:560px;text-wrap:balance;}
+          font-size:clamp(20px,5.6cqw,27px);line-height:1.2;max-width:560px;text-wrap:balance;}
         .xr-citation em{font-style:normal;color:#FF2E9A;}
         .xr-trait{width:40%;margin:14px 0 10px;border:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,244,230,.4),transparent);}
         .xr-plat{margin:0;font-family:var(--font-clikme),sans-serif;font-weight:600;font-size:20px;}
@@ -646,21 +740,31 @@ function StylesExperienceTable() {
         .xr-plat + .xr-go{margin-top:14px;}
 
         /* 3 · L'ACCUEIL */
-        .xr-question{position:absolute;z-index:4;right:max(0px,calc(50% - 300px));top:calc(196px + env(safe-area-inset-top,0px));
-          width:min(42vw,200px);
+        /* 3 · À SA TABLE, ON NE LE VOIT QU'À MOITIÉ : le bord de la table le coupe, en biais. */
+        .xr-question{position:absolute;z-index:4;right:-4%;top:40%;height:24%;aspect-ratio:963 / 1020;
           padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;}
-        .xr-fant.salue{position:relative;z-index:1;display:block;width:100%;transform-origin:50% 100%;
-          animation:xrSalue 1.8s ease-in-out infinite;}
+        .xr-attable{position:absolute;inset:0;clip-path:polygon(-20% -30%,120% -30%,120% 77%,-20% 58%);}
+        .xr-accueil.posee .xr-attable{clip-path:none;-webkit-mask-image:linear-gradient(180deg,#000 50%,transparent 72%);
+          mask-image:linear-gradient(180deg,#000 50%,transparent 72%);}
+        /* AVEC LA SUITE DU MENU, LE BAS SE RESSERRE : le titre doit rester sous la table. */
+        .xr-accueil.suite .xr-suite{font-size:clamp(34px,10.5cqw,48px);}
+        .xr-accueil.suite .xr-ou{margin:8px 0 10px;}
+        .xr-accueil.suite .xr-go{padding:14px 20px;}
+        .xr-accueil.suite .xr-confirme{margin:6px 0 8px;font-size:14px;}
+        .xr-accueil.suite .xr-autre{padding:8px;gap:10px;grid-template-columns:36% 1fr auto;}
+        .xr-accueil.suite .xr-autre-ph{aspect-ratio:16/9;}
+        .xr-accueil.suite .xr-autre-t b{font-size:18px;}
+        .xr-fant.salue{position:absolute;inset:0;z-index:1;transform-origin:50% 90%;animation:xrSalue 1.8s ease-in-out infinite;}
         @keyframes xrSalue{0%,100%{rotate:-3deg;}50%{rotate:3deg;}}
-        .xr-bulle{position:absolute;z-index:2;left:-14%;top:-24%;padding:10px 16px;border-radius:999px;font-weight:700;font-size:16px;
+        .xr-bulle{position:absolute;z-index:2;left:-6%;top:-26%;padding:10px 16px;border-radius:999px;font-weight:700;font-size:16px;
           color:#FFF4E6;background:rgba(18,12,9,.75);border:1.5px solid rgba(255,244,230,.8);white-space:nowrap;
           animation:xrMonte .5s ease .4s both;}
-        .xr-ia{position:absolute;z-index:2;right:0;bottom:-6%;white-space:nowrap;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:600;
+        .xr-ia{position:absolute;z-index:2;right:10%;top:60%;white-space:nowrap;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:600;
           background:rgba(18,12,9,.75);border:1px solid rgba(255,244,230,.25);}
         .xr-suite{align-self:flex-start;margin:0;font-family:var(--font-clikme),sans-serif;font-weight:800;
-          font-size:clamp(40px,12vw,60px);line-height:1;letter-spacing:-.03em;text-shadow:0 4px 24px rgba(0,0,0,.5);}
+          font-size:clamp(40px,12cqw,60px);line-height:1;letter-spacing:-.03em;text-shadow:0 4px 24px rgba(0,0,0,.5);}
         .xr-suite em{font-style:normal;color:#FF2E9A;}
-        .xr-ou{align-self:flex-start;display:flex;align-items:center;gap:8px;margin:12px 0 16px;font-size:clamp(17px,4.8vw,21px);}
+        .xr-ou{align-self:flex-start;display:flex;align-items:center;gap:8px;margin:12px 0 16px;font-size:clamp(17px,4.8cqw,21px);}
         .xr-ou svg{width:26px;height:26px;fill:none;stroke:#FF2E9A;stroke-width:2;}
         .xr-ou span{color:#E8D5C2;}
         .xr-confirme{margin:8px 0 12px;font-size:15px;color:#E8D5C2;}
@@ -675,15 +779,9 @@ function StylesExperienceTable() {
         .xr-autre-t i{font-style:normal;font-size:15px;color:#E8D5C2;}
         .xr-autre s{text-decoration:none;font-size:28px;color:#F3E2D0;}
 
-        /* SUR UN ORDINATEUR, LA SCÈNE GARDE SA MESURE AU MILIEU — le fond prend toute la fenêtre. */
-        @media (min-width:960px){
-          .xr-t{font-size:52px;}
-          .xr-cloche{width:340px;}
-        }
         @media (max-height:740px){
-          .xr-t{top:calc(112px + env(safe-area-inset-top,0px));font-size:clamp(28px,8vw,38px);}
+          .xr-t{top:calc(112px + env(safe-area-inset-top,0px));font-size:clamp(28px,8cqw,38px);}
           .xr-avatar{width:60px;height:60px;}
-          .xr-question{top:calc(150px + env(safe-area-inset-top,0px));width:min(32vw,150px);}
         }
         @media (prefers-reduced-motion:reduce){
           .xr *,.xr *::before,.xr *::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;}
