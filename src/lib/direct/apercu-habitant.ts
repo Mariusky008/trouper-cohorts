@@ -1229,6 +1229,23 @@ export type Voix = {
    * l'entend appuyer.
    */
   photosVoix?: { src: string; mot: string; fort?: string }[];
+  /**
+   * LA PHRASE DU CHEF SUR SON PLAT, À L'ÉTAPE 2 DE L'EXPÉRIENCE RESTAURANT.
+   *
+   * Sa maquette l'écrit en deux tons : « Ce plat, c'est celui que je cuisine »
+   * en blanc, « quand mes amis viennent manger. » en rose. `citationFort` est
+   * la partie rose — la fin de la phrase, celle qui dit pourquoi. Sans elle,
+   * l'écran garde la phrase entière en blanc ; sans citation, il prend la
+   * signature.
+   */
+  citation?: string;
+  citationFort?: string;
+  /**
+   * LA PHOTO DU CUISINIER, À L'ÉTAPE 3 (« L'accueil »). La vraie, donnée par
+   * lui — jamais un visage de banque d'images sous le nom d'un vrai commerce.
+   * Absente, l'écran reprend la photo d'accueil de la page, puis la salle.
+   */
+  photoChef?: string;
 };
 
 /**

@@ -54,6 +54,8 @@ const BORDEAUX: CarteAutour = {
     prenom: "Le chef",
     role: "cuisinier",
     signature: "Je quadrille la peau et je prends mon temps.",
+    citation: "Ce plat, c'est celui que je cuisine quand mes amis viennent manger.",
+    citationFort: "quand mes amis viennent manger.",
     recit:
       "Bonjour. Bon, mon magret, je commence par quadriller la peau. Je le pose côté peau sur le gril, doucement, pour qu'elle devienne bien croustillante sans brusquer la viande. Pendant qu'il repose, je fais dorer les pommes de terre à la graisse de canard, avec de l'ail et du persil. Et au dernier moment, je tranche le magret. Vous avez le croustillant, le fondant… et l'odeur qui arrive avant l'assiette.",
     extrait: "/direct/voix/bergine-magret.mp3",

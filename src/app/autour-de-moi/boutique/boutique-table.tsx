@@ -91,6 +91,7 @@ import {
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { StylesBoutiqueTable } from "./styles-boutique-table";
 import { EssaiDuLieu } from "./essai-du-lieu";
+import { ExperienceTable } from "./experience-table";
 
 type Onglet = "lieu" | "experience" | "carte" | "avis" | "amis" | "infos";
 
@@ -491,6 +492,14 @@ export function BoutiqueTable({
   const mots = motsDuMetier(c.branche);
   /** À table (restaurant, bar) : le plat et la voix du chef. Ailleurs : l'essayage. */
   const aLaTable = c.branche === "restaurant" || c.branche === "bar";
+  /* LES TROIS ÉTAPES SONT POUR LES RESTAURANTS — « pour les restaurants on va
+     modifier l'expérience ». La branche « restaurant » range aussi le
+     boulanger, le boucher, le traiteur : à eux, « Qu'est-ce que le chef te
+     prépare ? » et « Demander une table » ne veulent rien dire. Ils gardent
+     leur scène, comme le bar. */
+  const troisEtapes =
+    c.branche === "restaurant" &&
+    !/boulang|p[âa]tiss|bouch|charcut|fromag|[ée]picer|traiteur|caviste|chocolat|primeur|torr[ée]f|glacier/i.test(c.metier ?? "");
   /* ALLER AU FORMULAIRE : l'onglet des infos, puis jusqu'en bas. */
   const [versPied, setVersPied] = useState(false);
   useEffect(() => {
@@ -1532,7 +1541,32 @@ export function BoutiqueTable({
         </section>
       )}
 
-      {onglet === "experience" && aLaTable && (
+      {/* ═══ 2 TER · LE RESTAURANT : TROIS ÉTAPES ═══════════════════════════
+          « Pour les restaurants on va modifier l'expérience, il y aura
+          maintenant que 3 étapes » — la surprise (la cloche), la découverte
+          (le plat et la voix du chef), l'accueil (une table, la suite du
+          menu, une question). Toute la largeur, sa propre coque : voir
+          `ExperienceTable`. Le bar garde sa scène, juste en dessous. */}
+      {onglet === "experience" && troisEtapes && (
+        <section className={`bt-ecran bt-e-exp bt-e-table bt-plein${arrive ? " arrive" : ""}`} key="experience">
+          <ExperienceTable
+            c={c}
+            salle={dedans(0)}
+            decor={tenue?.decor}
+            enPied={enPied}
+            onRetour={() => setOnglet("lieu")}
+            onReserver={() => setDiscute(true)}
+            onQuestion={() => {
+              aTouche.current = true;
+              setDiscute(true);
+            }}
+            onCarte={() => setOnglet("carte")}
+            onDecouvrir={() => setArrive(false)}
+          />
+        </section>
+      )}
+
+      {onglet === "experience" && aLaTable && !troisEtapes && (
         <section className={`bt-ecran bt-e-exp${arrive ? " arrive" : ""}`} key="experience">
           <div className="bt-photo" style={{ backgroundImage: `url("${dedans(0)}")` }} />
           <div className="bt-voile haut-bas" />

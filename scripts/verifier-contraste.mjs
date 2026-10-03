@@ -369,7 +369,10 @@ for (const n of noms) {
   if (await p.$(".bt-nav")) {
     await p.locator(".bt-nav button", { hasText: "Expérience" }).click();
     await p.waitForTimeout(450);
-    if (await p.$(".bt-e-exp .bt-go")) await p.click(".bt-e-exp .bt-go");
+    // LE RESTAURANT A SES TROIS ÉTAPES : la porte est la cloche, et derrière
+    // elle le plat — c'est l'écran à mesurer. Voir `experience-table.tsx`.
+    if (await p.$(".bt-e-exp .xr-cloche")) await p.click(".bt-e-exp .xr-cloche");
+    else if (await p.$(".bt-e-exp .bt-go")) await p.click(".bt-e-exp .bt-go");
     // L'INVITATION A ÉTÉ REPENSÉE : son grand bouton est « .bx-go », et il
     // ouvre l'atelier en plein écran, par-dessus toute la page.
     else if (await p.$(".bt-e-essai .bx-go")) await p.click(".bt-e-essai .bx-go");
