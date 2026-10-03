@@ -44,6 +44,7 @@ import {
   type CleMetier,
 } from "@/lib/direct/apercu-habitant";
 import { partager } from "@/lib/direct/partager";
+import { tenueDu } from "@/lib/direct/double-metiers";
 import { cleSalonBoutique, ecrireDansSalon, heureCourte, monPrenom, ouvrirSalon } from "@/lib/direct/salons";
 
 export type VilleOrdinateurProps = {
@@ -504,7 +505,10 @@ export function VilleOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) 
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         className="vo-son-fantome"
-                        src={`/direct/fantomes/${mots.fantome}.png`}
+                        src={
+                          // SA POSE EN PIED : le même personnage que sur sa page.
+                          tenueDu(f.c)?.enPied ? `${tenueDu(f.c)!.enPied}repos.webp` : `/direct/fantomes/${mots.fantome}.png`
+                        }
                         alt=""
                         onError={(e) => {
                           // UN FANTÔME PAS ENCORE DESSINÉ (le libraire) : celui de ClikMe.

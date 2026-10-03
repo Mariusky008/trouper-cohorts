@@ -735,7 +735,10 @@ function laTenue(branche: CleMetier, metier: string): { type: string; donnees: s
   const t = tenueDu({ branche, metier });
   if (!t) return null;
   try {
-    const octets = readFileSync(join(process.cwd(), "public", `${t.dossier}accueil.webp`.replace(/^\//, "")));
+    // SA POSE EN PIED, QUAND IL L'A : c'est ce personnage-là qui s'animera
+    // devant la porte, c'est donc lui que la photo doit peindre.
+    const fichier = t.enPied ? `${t.enPied}repos.webp` : `${t.dossier}accueil.webp`;
+    const octets = readFileSync(join(process.cwd(), "public", fichier.replace(/^\//, "")));
     return { type: "image/webp", donnees: octets.toString("base64") };
   } catch {
     return null;
@@ -790,10 +793,31 @@ async function unePose(nom: string): Promise<Img | null> {
 }
 
 export type PosesDeScene = { hote: Img | null; clients: Img[] };
-export async function lesPoses(branche: CleMetier): Promise<PosesDeScene> {
+export async function lesPoses(branche: CleMetier, metier = ""): Promise<PosesDeScene> {
   const p = POSES_SCENE[branche] ?? POSES_SCENE.restaurant;
   const clients = (await Promise.all(p.clients.map(unePose))).filter((x): x is Img => Boolean(x));
-  return { hote: await unePose(p.hote), clients };
+  // L'HÔTE EN ACTION, DANS SA SÉRIE EN PIED quand elle existe — il salue : le
+  // même personnage que celui qui s'animera devant la porte. Le libraire garde
+  // sa pose au livre ouvert, qui est de cette même série.
+  const t = tenueDu({ branche, metier });
+  const hote =
+    t?.enPied && branche !== "librairie" ? await unePoseEnPied(`${t.enPied}salut-1.webp`) : await unePose(p.hote);
+  return { hote: hote ?? (await unePose(p.hote)), clients };
+}
+
+/** Une pose en pied (webp, sous `public/`), réduite comme les autres. */
+async function unePoseEnPied(chemin: string): Promise<Img | null> {
+  if (posesLues.has(chemin)) return posesLues.get(chemin) ?? null;
+  let img: Img | null = null;
+  try {
+    const octets = readFileSync(join(process.cwd(), "public", chemin.replace(/^\//, "")));
+    const petit = await sharp(octets).resize(512, 512, { fit: "inside" }).png().toBuffer();
+    img = { type: "image/png", donnees: petit.toString("base64") };
+  } catch {
+    img = null;
+  }
+  posesLues.set(chemin, img);
+  return img;
 }
 
 /** La numérotation des images, la même pour la consigne et pour l'envoi. */
@@ -1238,7 +1262,7 @@ async function rendreEtRanger(
   const metier = s(row.activite);
   const branche = brancheDuMetier(metier);
   const tenue = laTenue(branche, metier);
-  const poses = await lesPoses(branche);
+  const poses = await lesPoses(branche, metier);
   const r = await rendre(
     photo,
     consigneCouverture(nom, metier, s(row.city), branche, {

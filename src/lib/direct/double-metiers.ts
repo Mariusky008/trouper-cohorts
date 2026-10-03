@@ -328,7 +328,8 @@ export function familleDuDouble(c: { branche?: string | null; metier?: string | 
     if (/tatou|tattoo|pierc/.test(m)) return "seance";
     /* UNE BOUTIQUE DE MEUBLES ET DE DÉCO VEND CE QU'ON MET DE CÔTÉ : elle
        tombait dans les séances, avec un « cabinet » et des rendez-vous. */
-    if (/cir|bougie|bijou|bracelet|collier|joaill|c[ée]ram|potier|atelier|cr[ée]at|meuble|d[ée]co/.test(m)) return "createur";
+    if (/cir|bougie|bijou|bracelet|collier|joaill|c[ée]ram|potier|atelier|cr[ée]at|meuble|d[ée]co/.test(m))
+      return "createur";
     return "seance";
   }
   if (/restaur|pizz|burger|traiteur|boulang|p[âa]tiss/.test(m)) return "table";
@@ -342,7 +343,15 @@ export function profilDuDouble(c: { branche?: string | null; metier?: string | n
   const p = PROFILS[familleDuDouble(c)];
   /* UN TATOUEUR REÇOIT DANS UN STUDIO, PAS DANS UN CABINET. */
   if (p.famille === "seance" && /tatou|tattoo|pierc/.test((c.metier ?? "").toLowerCase())) {
-    return { ...p, lieu: "le studio", typeLieu: "studio de tatouage", carteNom: "Les flashs", vedette: "le flash du moment", questionVedette: "Le flash du moment ?", suggestions: ["Le flash du moment ?", "Ton histoire ?", "Un rendez-vous ?"] };
+    return {
+      ...p,
+      lieu: "le studio",
+      typeLieu: "studio de tatouage",
+      carteNom: "Les flashs",
+      vedette: "le flash du moment",
+      questionVedette: "Le flash du moment ?",
+      suggestions: ["Le flash du moment ?", "Ton histoire ?", "Un rendez-vous ?"],
+    };
   }
   return p;
 }
@@ -404,35 +413,77 @@ export const TENUES: Partial<Record<FamilleDouble, Tenue>> = {
   },
   /* LE MAGASIN DE VÊTEMENTS : casquette au cintre, gilet violet, foulard, et
      la boutique derrière son comptoir. */
-  mode: { dossier: "/direct/double/mode/", decor: "/direct/double/mode/decor.jpg", comptoir: 0.40, pied: 0.063 },
+  mode: {
+    dossier: "/direct/double/mode/",
+    decor: "/direct/double/mode/decor.jpg",
+    comptoir: 0.4,
+    pied: 0.063,
+    enPied: "/direct/double/pied/mode/",
+  },
   /* LE SALON DE COIFFURE : casquette et salopette aux ciseaux, peigne dans la
      poche, et le salon — fauteuils, miroirs dorés — derrière le comptoir. Il
      ne va PAS à l'onglerie, qui a sa propre famille : des ciseaux sur une
      prothésiste ongulaire, c'est encore un métier mal compris. */
-  coiffure: { dossier: "/direct/double/coiffure/", decor: "/direct/double/coiffure/decor.jpg", comptoir: 0.36, pied: 0.049 },
+  coiffure: {
+    dossier: "/direct/double/coiffure/",
+    decor: "/direct/double/coiffure/decor.jpg",
+    comptoir: 0.36,
+    pied: 0.049,
+    enPied: "/direct/double/pied/coiffure/",
+  },
   /* L'ONGLERIE : casquette et salopette roses au flacon de vernis, limes en
      poche, et les tables de pose — étagères de vernis — derrière le comptoir. */
-  ongles: { dossier: "/direct/double/ongles/", decor: "/direct/double/ongles/decor.jpg", comptoir: 0.405, pied: 0.047 },
+  ongles: {
+    dossier: "/direct/double/ongles/",
+    decor: "/direct/double/ongles/decor.jpg",
+    comptoir: 0.405,
+    pied: 0.047,
+    enPied: "/direct/double/pied/ongles/",
+  },
   /* LE BAR ET SES SOIRÉES : casquette à la note de musique, gilet et nœud
      papillon bleus, et la salle — banquettes, petite scène, lumières bleues
      et violettes — derrière le comptoir. Les soirées publiées par un bar sont
      des annonces du bar : elles ont ce double. Un événement de la ville, lui,
      n'a personne derrière un comptoir — voir `aUnDouble`. */
-  bar: { dossier: "/direct/double/bar/", decor: "/direct/double/bar/decor.jpg", comptoir: 0.32, pied: 0.061 },
+  bar: {
+    dossier: "/direct/double/bar/",
+    decor: "/direct/double/bar/decor.jpg",
+    comptoir: 0.32,
+    pied: 0.061,
+    enPied: "/direct/double/pied/bar/",
+  },
   /* LE FLEURISTE : casquette verte à la fleur, salopette de jardinier, un brin
      de verdure dans la poche, et la boutique — seaux de roses, étagères de
      plantes — derrière un comptoir de bois. */
-  fleurs: { dossier: "/direct/double/fleurs/", decor: "/direct/double/fleurs/decor.jpg", comptoir: 0.41, pied: 0.039 },
+  fleurs: {
+    dossier: "/direct/double/fleurs/",
+    decor: "/direct/double/fleurs/decor.jpg",
+    comptoir: 0.41,
+    pied: 0.039,
+    enPied: "/direct/double/pied/fleurs/",
+  },
   /* LES CRÉATEURS ET INDÉPENDANTS : casquette brune à l'étoile, salopette
      orange, crayons dans la poche, et l'atelier — céramiques, tissus pliés,
      grande table de travail — derrière un comptoir de bois. Il habille ceux
      qui fabriquent (bougies, bijoux, céramique…) ; le tatoueur et les autres
      séances gardent leur famille — voir `familleDuDouble`. */
-  createur: { dossier: "/direct/double/createur/", decor: "/direct/double/createur/decor.jpg", comptoir: 0.36, pied: 0.035 },
+  createur: {
+    dossier: "/direct/double/createur/",
+    decor: "/direct/double/createur/decor.jpg",
+    comptoir: 0.36,
+    pied: 0.035,
+    enPied: "/direct/double/pied/createur/",
+  },
   /* L'OPTICIEN : lunettes rondes sur le nez, casquette aux lunettes, gilet
      bleu canard sur chemise blanche, et la boutique — montures alignées sur
      des étagères éclairées, miroirs ovales — derrière un comptoir de bois. */
-  lunettes: { dossier: "/direct/double/lunettes/", decor: "/direct/double/lunettes/decor.jpg", comptoir: 0.37, pied: 0.059 },
+  lunettes: {
+    dossier: "/direct/double/lunettes/",
+    decor: "/direct/double/lunettes/decor.jpg",
+    comptoir: 0.37,
+    pied: 0.059,
+    enPied: "/direct/double/pied/lunettes/",
+  },
   /* LE BIEN-ÊTRE (hypnothérapeute, sophrologue…) : casquette aux ondes,
      gilet de laine vert sauge, foulard lavande, et le cabinet — deux
      fauteuils clairs, table basse, lumière de fin d'après-midi — derrière une
@@ -440,7 +491,24 @@ export const TENUES: Partial<Record<FamilleDouble, Tenue>> = {
      été remontée de 195 points pour tomber à 41 %, comme les autres
      comptoirs, le bas prolongé de son propre dégradé. Le tatoueur, de la
      même famille, a sa tenue à lui — voir `tenueDu`. */
-  seance: { dossier: "/direct/double/bien-etre/", decor: "/direct/double/bien-etre/decor.jpg", comptoir: 0.415, pied: 0.035 },
+  seance: {
+    dossier: "/direct/double/bien-etre/",
+    decor: "/direct/double/bien-etre/decor.jpg",
+    comptoir: 0.415,
+    pied: 0.035,
+    enPied: "/direct/double/pied/bien-etre/",
+  },
+  /* LE LIBRAIRE : casquette au livre ouvert, petites lunettes rondes, gilet
+     de laine marron. Il n'a pas de poses en buste : ses poses en pied en
+     tiennent lieu partout (accueil = il salue, content = il attend), et son
+     décor est la table de sa librairie, le bord du bois aux deux tiers. */
+  librairie: {
+    dossier: "/direct/double/librairie/",
+    decor: "/direct/double/librairie/decor.jpg",
+    comptoir: 0.634,
+    pied: 0.054,
+    enPied: "/direct/double/pied/librairie/",
+  },
 };
 
 /* LE TATOUEUR : casquette et salopette noires surpiquées de rouge, la
@@ -449,7 +517,13 @@ export const TENUES: Partial<Record<FamilleDouble, Tenue>> = {
    comptoir. Il est rangé HORS DE `TENUES` : il partage la famille « séance »
    avec l'hypnothérapeute et la sophrologue, qui reçoivent dans un cabinet
    calme, pas sous des flashs — elles ont la tenue du bien-être. */
-const TATOUAGE: Tenue = { dossier: "/direct/double/tatouage/", decor: "/direct/double/tatouage/decor.jpg", comptoir: 0.395, pied: 0.029 };
+const TATOUAGE: Tenue = {
+  dossier: "/direct/double/tatouage/",
+  decor: "/direct/double/tatouage/decor.jpg",
+  comptoir: 0.395,
+  pied: 0.029,
+  enPied: "/direct/double/pied/tatouage/",
+};
 
 /** La tenue d'un commerce, s'il en a une. */
 export function tenueDu(c: { branche?: string | null; metier?: string | null }) {

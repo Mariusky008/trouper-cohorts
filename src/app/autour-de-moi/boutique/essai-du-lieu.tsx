@@ -27,6 +27,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { AtelierPleinEcran, StylesAtelier, useMurDuLieu, type RenduEssai } from "@/components/direct/atelier-plein-ecran";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
+import { tenueDu } from "@/lib/direct/double-metiers";
 import { parcoursPromis } from "@/lib/direct/parcours-promis";
 
 export type { RenduEssai };
@@ -136,7 +137,14 @@ function EssaiEnImage({ c, saPage, onReserver, onSalon }: ProprietesEssai) {
         <button type="button" className="bx-fantome" onClick={onReserver} aria-label={`Parler avec ${c.nom}`}>
           <span className="bx-halo" aria-hidden="true" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`/direct/fantomes/${mots.fantome}.png`} alt="" draggable={false} />
+          {/* LE MÊME PERSONNAGE QUE DEVANT SA PORTE : sa pose en pied, quand
+              sa tenue en a (tous les métiers maintenant) ; l'ancien fantôme
+              « en action », d'une autre silhouette, sinon. */}
+          <img
+            src={tenueDu(c)?.enPied ? `${tenueDu(c)!.enPied}repos.webp` : `/direct/fantomes/${mots.fantome}.png`}
+            alt=""
+            draggable={false}
+          />
           <span className="bx-etincelles" aria-hidden="true">
             <i />
             <i />

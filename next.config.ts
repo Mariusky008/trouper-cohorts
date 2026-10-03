@@ -23,15 +23,23 @@ const config: NextConfig = {
     "/api/site-internet/couverture": [
       "./public/clikme-fantome.png",
       "./public/direct/double/**/accueil.webp",
+      // …ET SES POSES EN PIED : c'est lui que la photo peint désormais.
+      "./public/direct/double/pied/**/repos.webp",
+      "./public/direct/double/pied/**/salut-1.webp",
       "./public/direct/fantomes/hote-*.png",
       "./public/direct/fantomes/client-*.png",
     ],
     "/api/site-internet/public-generate": [
       "./public/clikme-fantome.png",
       "./public/direct/double/**/accueil.webp",
+      // …ET SES POSES EN PIED : c'est lui que la photo peint désormais.
+      "./public/direct/double/pied/**/repos.webp",
+      "./public/direct/double/pied/**/salut-1.webp",
       "./public/direct/fantomes/hote-*.png",
       "./public/direct/fantomes/client-*.png",
     ],
+    // LA PHOTO SANS L'HÔTE se fait à sa route : elle n'a besoin que de la
+    // photo ClikMe, lue sur le stockage — rien du disque.
     // L'ATELIER DES POSES PART DE LA POSE D'ACCUEIL DE CHAQUE TENUE.
     "/api/admin/direct/poses": ["./public/direct/double/**/accueil.webp"],
   },
