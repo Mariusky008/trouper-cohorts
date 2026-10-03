@@ -28,6 +28,18 @@ import { onSpeakingChange, speak, stopSpeaking } from "@/lib/site-internet/speec
 
 type Proposition = { nom: string; photo: string; prix?: string };
 
+/**
+ * LES TROIS ÉTAPES SONT POUR LES RESTAURANTS — « pour les restaurants on va
+ * modifier l'expérience ». La branche « restaurant » range aussi le
+ * boulanger, le boucher, le traiteur : à eux, « Qu'est-ce que le chef te
+ * prépare ? » et « Demander une table » ne veulent rien dire. Ils gardent
+ * leur parcours, comme le bar. La page du commerce et l'application lisent
+ * cette même règle.
+ */
+export const estUnRestaurant = (c: Pick<CarteAutour, "branche" | "metier">) =>
+  c.branche === "restaurant" &&
+  !/boulang|p[âa]tiss|bouch|charcut|fromag|[ée]picer|traiteur|caviste|chocolat|primeur|torr[ée]f|glacier/i.test(c.metier ?? "");
+
 /** « Le chef » → « du chef », « Margot » → « de Margot ». */
 const deQui = (nom: string) =>
   /^Le\s/i.test(nom) ? `du ${nom.slice(3)}` : /^La\s/i.test(nom) ? `de la ${nom.slice(3)}` : `de ${nom}`;

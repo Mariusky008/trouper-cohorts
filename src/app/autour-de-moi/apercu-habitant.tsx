@@ -175,7 +175,7 @@ import { ParcoursCoiffure } from "@/components/direct/parcours-coiffure-ecran";
 import { StylesParcoursCoiffure } from "@/components/direct/styles-parcours-coiffure";
 import { ParcoursSortie } from "@/components/direct/parcours-sortie-ecran";
 import { StylesParcoursSortie } from "@/components/direct/styles-parcours-sortie";
-import { ParcoursTable } from "@/components/direct/parcours-table-ecran";
+import { ParcoursRestaurant } from "@/components/direct/parcours-restaurant";
 import { DoubleChef } from "@/components/direct/double-chef";
 import { aUnDouble, nomDansPhrase, profilDuDouble, tenueDu } from "@/lib/direct/double-metiers";
 import { StylesParcoursTable } from "@/components/direct/styles-parcours-table";
@@ -7937,7 +7937,8 @@ export function ApercuHabitant() {
                     }}
                   />
                 ) : parcoursTable ? (
-                  <ParcoursTable commerce={parcoursTable} onFermer={() => setParcoursTable("")} />
+                  /* LES TROIS ÉTAPES DE SA PAGE, ICI AUSSI — voir `parcours-restaurant.tsx`. */
+                  <ParcoursRestaurant commerce={parcoursTable} onFermer={() => setParcoursTable("")} />
                 ) : parcoursDeco ? (
                   <ParcoursDeco commerce={parcoursDeco} onFermer={() => setParcoursDeco("")} />
                 ) : (
@@ -13078,7 +13079,12 @@ export function ApercuHabitant() {
           {(doubleOuvert || platOuvert) && (
             <div className="ap-plein-ecran">
               {platOuvert ? (
-                <ParcoursTable commerce={platOuvert} onFermer={() => setPlatOuvert("")} />
+                <ParcoursRestaurant
+                  commerce={platOuvert}
+                  onFermer={() => setPlatOuvert("")}
+                  /* VENU DE SON DOUBLE, ON Y RETOURNE — pas de second double par-dessus. */
+                  onDouble={doubleOuvert ? () => setPlatOuvert("") : undefined}
+                />
               ) : doubleOuvert ? (
                 <DoubleChef
                   carte={doubleOuvert}

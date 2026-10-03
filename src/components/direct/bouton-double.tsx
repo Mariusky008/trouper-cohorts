@@ -20,7 +20,7 @@ import { useEffect, useState } from "react";
 import { DoubleChef } from "@/components/direct/double-chef";
 import { nomDansPhrase, tenueDu } from "@/lib/direct/double-metiers";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
-import { ParcoursTable } from "@/components/direct/parcours-table-ecran";
+import { ParcoursRestaurant } from "@/components/direct/parcours-restaurant";
 import { StylesParcoursTable } from "@/components/direct/styles-parcours-table";
 
 export function BoutonDouble({
@@ -88,7 +88,7 @@ export function BoutonDouble({
         <div className="bd-scene" role="dialog" aria-label={`Conversation avec ${nomDansPhrase(carte.nom)}`}>
           <div className="bd-tel">
             {plat ? (
-              <ParcoursTable commerce={carte.id} onFermer={() => setPlat(false)} />
+              <ParcoursRestaurant commerce={carte.id} onFermer={() => setPlat(false)} onDouble={() => setPlat(false)} />
             ) : (
               <DoubleChef
                 carte={carte}

@@ -91,7 +91,7 @@ import {
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { StylesBoutiqueTable } from "./styles-boutique-table";
 import { EssaiDuLieu } from "./essai-du-lieu";
-import { ExperienceTable } from "./experience-table";
+import { ExperienceTable, estUnRestaurant } from "./experience-table";
 
 type Onglet = "lieu" | "experience" | "carte" | "avis" | "amis" | "infos";
 
@@ -480,6 +480,10 @@ export function BoutiqueTable({
   useEffect(() => {
     try {
       const adresse = new URL(window.location.href);
+      /* `?onglet=carte` : on arrive de l'expérience du restaurant dans
+         l'application (« Et en dessert ? ») — directement sur sa carte. */
+      const voulu = adresse.searchParams.get("onglet");
+      if (voulu === "carte" || voulu === "avis" || voulu === "infos") setOnglet(voulu);
       if (adresse.searchParams.get("salon") === "1") {
         setOnglet("amis");
         adresse.searchParams.set("salon", "lu");
@@ -492,14 +496,8 @@ export function BoutiqueTable({
   const mots = motsDuMetier(c.branche);
   /** À table (restaurant, bar) : le plat et la voix du chef. Ailleurs : l'essayage. */
   const aLaTable = c.branche === "restaurant" || c.branche === "bar";
-  /* LES TROIS ÉTAPES SONT POUR LES RESTAURANTS — « pour les restaurants on va
-     modifier l'expérience ». La branche « restaurant » range aussi le
-     boulanger, le boucher, le traiteur : à eux, « Qu'est-ce que le chef te
-     prépare ? » et « Demander une table » ne veulent rien dire. Ils gardent
-     leur scène, comme le bar. */
-  const troisEtapes =
-    c.branche === "restaurant" &&
-    !/boulang|p[âa]tiss|bouch|charcut|fromag|[ée]picer|traiteur|caviste|chocolat|primeur|torr[ée]f|glacier/i.test(c.metier ?? "");
+  // LES TROIS ÉTAPES, AUX SEULS RESTAURANTS — voir `estUnRestaurant`.
+  const troisEtapes = estUnRestaurant(c);
   /* ALLER AU FORMULAIRE : l'onglet des infos, puis jusqu'en bas. */
   const [versPied, setVersPied] = useState(false);
   useEffect(() => {
