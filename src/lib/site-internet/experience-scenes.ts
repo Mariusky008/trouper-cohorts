@@ -19,13 +19,16 @@
 // RIEN NE LÈVE. Une scène ratée laisse sa photo d'origine sur sa page, et la
 // visite suivante relance le moteur (trois essais à dix minutes d'écart, puis
 // un par jour — voir `sceneAFaire`).
+import { createHash } from "crypto";
 import { readFileSync } from "fs";
 import { join } from "path";
 import sharp from "sharp";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { boiteDansLImage } from "@/lib/site-internet/couverture";
+import { jourParis } from "@/lib/jour-paris";
 import {
   experienceDuDiagnostic,
+  platEnCours,
   sceneAFaire,
   SCENE_CHEF,
   SCENE_PLAT,
@@ -96,6 +99,10 @@ function modifier(slug: string, maj: (e: ExperienceResto) => ExperienceResto | n
  * Elle arrive en `data:` depuis son espace (déjà réduite par le navigateur,
  * ou pas) — on la ramène à 1600 pixels au plus et on la range. Une adresse
  * https déjà à nous est gardée telle quelle.
+ *
+ * RANGÉE SOUS SON EMPREINTE. La même photo renvoyée — il corrige un prix, le
+ * comptoir republie tout — retombe à la même adresse : sa scène n'est pas
+ * refaite, et le moteur n'est pas payé deux fois pour la même assiette.
  */
 export async function rangerPhoto(slug: string, quoi: Quoi, valeur: string): Promise<string | { erreur: string }> {
   const v = s(valeur);
@@ -111,10 +118,71 @@ export async function rangerPhoto(slug: string, quoi: Quoi, valeur: string): Pro
     return { erreur: "photo illisible" };
   }
   const supabase = createAdminClient();
-  const chemin = `${DOSSIER}/${slug}-${quoi}-photo-${Date.now()}.jpg`;
+  const empreinte = createHash("sha1").update(brut).digest("hex").slice(0, 16);
+  const chemin = `${DOSSIER}/${slug}-${quoi}-photo-${empreinte}.jpg`;
   const { error } = await supabase.storage.from(SEAU).upload(chemin, octets, { contentType: "image/jpeg", upsert: true });
   if (error) return { erreur: `stockage : ${error.message}` };
   return supabase.storage.from(SEAU).getPublicUrl(chemin).data.publicUrl;
+}
+
+/* ═══ SA VOIX ═══════════════════════════════════════════════════════════════
+   Ce que le comptoir enregistre : du webm/opus sur Android et Chrome, du mp4
+   (AAC) sur iPhone. Rangé tel quel — aucun convertisseur sur le serveur.
+   Un téléphone qui ne sait pas lire le fichier (un iPhone ancien face à du
+   webm) entend à la place `voixTexte`, redit par sa voix clonée : voir
+   `repli` dans la carte. */
+const EXT_AUDIO: Record<string, string> = {
+  "audio/webm": "webm",
+  "audio/ogg": "ogg",
+  "audio/mp4": "m4a",
+  "audio/x-m4a": "m4a",
+  "audio/aac": "aac",
+  "audio/mpeg": "mp3",
+  "audio/mp3": "mp3",
+  "audio/wav": "wav",
+  "audio/x-wav": "wav",
+};
+
+export async function rangerVoix(slug: string, valeur: string): Promise<string | { erreur: string }> {
+  const v = s(valeur);
+  if (/^https:\/\//i.test(v)) return v;
+  const m = /^data:(audio\/[a-z0-9.+-]+)(?:;[^,;]*)*;base64,(.+)$/i.exec(v);
+  const type = m?.[1].toLowerCase() ?? "";
+  if (!m || !EXT_AUDIO[type]) return { erreur: "enregistrement illisible (attendu : du son en data:audio/…;base64)" };
+  const octets = Buffer.from(m[2], "base64");
+  // TROIS MÉGAOCTETS, C'EST PLUS D'UNE MINUTE DE PAROLE : son mot en dure dix.
+  if (octets.length > 3 * 1024 * 1024) return { erreur: "enregistrement trop long (3 Mo au plus)" };
+  if (octets.length < 1000) return { erreur: "enregistrement vide" };
+  const supabase = createAdminClient();
+  const empreinte = createHash("sha1").update(octets).digest("hex").slice(0, 16);
+  const chemin = `${DOSSIER}/${slug}-voix-${empreinte}.${EXT_AUDIO[type]}`;
+  const { error } = await supabase.storage.from(SEAU).upload(chemin, octets, { contentType: type, upsert: true });
+  if (error) return { erreur: `stockage : ${error.message}` };
+  return supabase.storage.from(SEAU).getPublicUrl(chemin).data.publicUrl;
+}
+
+/**
+ * LA FIN DU PLAT, À L'HEURE DE PARIS. « 1 jour » veut dire jusqu'à ce soir
+ * 23 h 59 chez lui — la même règle que `finApres` dans le comptoir —, quel
+ * que soit le fuseau du serveur. Une fin donnée (ISO, ou millisecondes) est
+ * prise telle quelle.
+ */
+export function finDuPlat(fin: unknown, jours: unknown, maintenant = new Date()): string | undefined {
+  if (typeof fin === "number" && Number.isFinite(fin) && fin > 0) return new Date(fin).toISOString();
+  if (typeof fin === "string" && Number.isFinite(Date.parse(fin))) return new Date(fin).toISOString();
+  const n = Math.round(Number(jours));
+  if (!Number.isFinite(n) || n < 1) return undefined;
+  const jour = jourParis(maintenant);
+  // L'HEURE SEULE, LUE DANS SES MORCEAUX : en français, le format rend « 23 h ».
+  const heureParis = (d: Date) =>
+    new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", hourCycle: "h23" })
+      .formatToParts(d)
+      .find((x) => x.type === "hour")?.value;
+  // 23 H 59 À PARIS : +02:00 l'été, +01:00 l'hiver — on garde celui qui tombe juste.
+  const ce_soir =
+    [2, 1].map((h) => new Date(`${jour}T23:59:00+0${h}:00`)).find((d) => heureParis(d) === "23" && jourParis(d) === jour) ??
+    new Date(`${jour}T23:59:00+01:00`);
+  return new Date(ce_soir.getTime() + (Math.min(n, 365) - 1) * 86_400_000).toISOString();
 }
 
 async function lirePhoto(url: string): Promise<Img | null> {
@@ -283,6 +351,8 @@ async function completerUne(slug: string, quoi: Quoi): Promise<void> {
   const scene = l.experience[cleScene(quoi)];
   const photo = photoDe(l.experience, quoi);
   if (!photo || !scene || scene.source !== photo || !sceneAFaire(scene)) return;
+  // UN PLAT DONT LA JOURNÉE EST FINIE N'A PLUS BESOIN DE SCÈNE.
+  if (quoi === "plat" && !platEnCours(l.experience.plat)) return;
   // ON NOTE L'ESSAI AVANT DE PAYER : deux visites rapprochées n'en paient qu'un.
   const essais = (scene.essais ?? 0) + 1;
   await modifier(slug, (e) => {
@@ -314,7 +384,22 @@ export async function completerScenes(slug: string): Promise<void> {
 
 export type DemandeExperience = {
   /** `null` retire le plat. */
-  plat?: { nom?: unknown; prix?: unknown; photo?: unknown; phrase?: unknown; phraseFort?: unknown } | null;
+  plat?: {
+    nom?: unknown;
+    prix?: unknown;
+    /** Une photo, ou `photos` : jusqu'à quatre, la principale d'abord. */
+    photo?: unknown;
+    photos?: unknown;
+    phrase?: unknown;
+    phraseFort?: unknown;
+    /** Son mot enregistré (data:audio/…;base64), ce qu'il a dit, sa durée. */
+    voix?: unknown;
+    voixTexte?: unknown;
+    voixSecondes?: unknown;
+    /** Jusqu'à quand : `fin` (ISO ou millisecondes) ou `jours` (1 = jusqu'à ce soir). */
+    fin?: unknown;
+    jours?: unknown;
+  } | null;
   /** `null` retire la photo du cuisinier. */
   chef?: { photo?: unknown } | null;
 };
@@ -338,14 +423,33 @@ export async function poserExperience(slug: string, d: DemandeExperience): Promi
   else if (d.plat) {
     const nom = s(d.plat.nom).slice(0, 80);
     if (!nom) return { experience: null, erreur: "le nom du plat manque" };
-    const photo = await rangerPhoto(slug, "plat", s(d.plat.photo));
-    if (typeof photo !== "string") return { experience: null, erreur: `photo du plat : ${photo.erreur}` };
+    // SES PHOTOS : `photos` (le comptoir en prend quatre), ou `photo` seule.
+    const brutes = (Array.isArray(d.plat.photos) ? d.plat.photos : [d.plat.photo]).map((x) => s(x)).filter(Boolean).slice(0, 4);
+    if (!brutes.length) return { experience: null, erreur: "la photo du plat manque" };
+    const photos: string[] = [];
+    for (const b of brutes) {
+      const u = await rangerPhoto(slug, "plat", b);
+      if (typeof u !== "string") return { experience: null, erreur: `photo du plat : ${u.erreur}` };
+      photos.push(u);
+    }
+    let voix: string | undefined;
+    if (s(d.plat.voix)) {
+      const v = await rangerVoix(slug, s(d.plat.voix));
+      if (typeof v !== "string") return { experience: null, erreur: `voix : ${v.erreur}` };
+      voix = v;
+    }
+    const secondes = Number(d.plat.voixSecondes);
     plat = {
       nom,
       prix: s(d.plat.prix).slice(0, 20) || undefined,
-      photo,
+      photo: photos[0],
+      photos,
       phrase: s(d.plat.phrase).slice(0, 220) || undefined,
       phraseFort: s(d.plat.phraseFort).slice(0, 120) || undefined,
+      voix,
+      voixTexte: s(d.plat.voixTexte).slice(0, 400) || undefined,
+      voixSecondes: Number.isFinite(secondes) && secondes > 0 ? Math.round(secondes) : undefined,
+      fin: finDuPlat(d.plat.fin, d.plat.jours),
     };
   }
   let chef: { photo: string } | null | undefined;

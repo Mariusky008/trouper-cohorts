@@ -35,7 +35,7 @@
 // ClikMe peut remplir apparaissent le jour où il les remplit. C'est aussi le
 // meilleur argument de vente qu'on puisse lui faire : il voit exactement ce
 // qu'il gagne en s'y mettant.
-import { sceneMontree, type ExperienceResto } from "@/lib/site-internet/experience-donnees";
+import { platEnCours, sceneMontree, type ExperienceResto } from "@/lib/site-internet/experience-donnees";
 import type { CarteAutour, CleMetier, MomentJour } from "@/lib/direct/apercu-habitant";
 import { resolveMetierContent } from "@/lib/site-internet/metier-content";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
@@ -377,9 +377,12 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
  * remplacent ses photos que si elles sont faites, pour CETTE photo, et qu'il
  * ne les a pas refusées (`sceneMontree`).
  *
- * SA PHRASE SE DIT DE SA VOIX — celle de son double (sa voix clonée s'il l'a
- * donnée), par la route du double : `quoi=plat` lit la phrase dans sa carte,
- * jamais dans la requête.
+ * SON MOT S'ENTEND DE SA VRAIE VOIX : l'enregistrement du comptoir. Sans
+ * enregistrement — ou sur un téléphone qui ne sait pas le lire —, sa phrase
+ * est dite par son double (sa voix clonée s'il l'a donnée), par la route du
+ * double : `quoi=plat` lit la phrase dans sa carte, jamais dans la requête.
+ *
+ * PASSÉ SA FIN, LE PLAT N'EST PLUS LÀ — « aujourd'hui » s'arrête ce soir.
  *
  * LE PRÉNOM RESTE VIDE ICI : c'est la page qui le connaît (`prenomChef`), et
  * l'expérience dit « le chef » sans lui.
@@ -387,20 +390,24 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
 function ceQuIlADonne(f: FicheCommercant): Pick<CarteAutour, "menu" | "voix"> {
   const xp = f.experience;
   if (!xp || brancheDuMetier(f.metier) !== "restaurant") return {};
-  const scenePlat = sceneMontree(xp.scenePlat, xp.plat?.photo);
+  const plat = platEnCours(xp.plat);
+  const scenePlat = sceneMontree(xp.scenePlat, plat?.photo);
   const sceneChef = sceneMontree(xp.sceneChef, xp.chef?.photo);
+  const phrase = plat?.phrase || plat?.voixTexte;
+  const parLeDouble = phrase ? `/api/direct/double/voix?id=${encodeURIComponent(f.slug)}&quoi=plat` : undefined;
   return {
-    menu: xp.plat
-      ? { plat: xp.plat.nom, description: "", prix: xp.plat.prix ?? "", photo: xp.plat.photo, scene: scenePlat?.url }
+    menu: plat
+      ? { plat: plat.nom, description: "", prix: plat.prix ?? "", photo: plat.photo, scene: scenePlat?.url }
       : undefined,
     voix:
-      xp.plat?.phrase || xp.chef
+      phrase || plat?.voix || xp.chef
         ? {
             prenom: "",
             role: "cuisinier",
-            citation: xp.plat?.phrase,
-            citationFort: xp.plat?.phraseFort,
-            extrait: xp.plat?.phrase ? `/api/direct/double/voix?id=${encodeURIComponent(f.slug)}&quoi=plat` : undefined,
+            citation: phrase,
+            citationFort: plat?.phrase ? plat.phraseFort : undefined,
+            extrait: plat?.voix ?? parLeDouble,
+            repli: plat?.voix ? parLeDouble : undefined,
             photoChef: sceneChef?.url ?? xp.chef?.photo,
             fantomeDansLaPhoto: sceneChef?.boite,
           }

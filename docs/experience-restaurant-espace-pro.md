@@ -9,9 +9,11 @@ ClikMe.
 | Champ | Où ça sert sur sa page |
 |---|---|
 | **Nom du plat**, **prix** | Étape 2 : « Magret · Frites maison », « 19 € » |
-| **Photo du plat** | Étape 2 : la scène est fabriquée à partir de cette photo |
-| **Ce qu'il en dit** (`phrase`) | Étape 2 : la phrase en deux tons, dite de sa voix (sa voix clonée s'il l'a donnée) |
+| **Photos du plat** (1 à 4) | Étape 2 : la scène est fabriquée à partir de la **première** |
+| **Son mot enregistré** (`voix`) et ce qu'il a dit (`voixTexte`) | Étape 2 : on entend **sa vraie voix** ; le texte s'affiche en deux tons |
+| Une phrase écrite (`phrase`, facultatif) | Remplace `voixTexte` à l'écran s'il préfère l'écrire |
 | La partie en rose (`phraseFort`, facultatif) | La fin de la phrase en rose ; sans elle, l'écran coupe la phrase au milieu |
+| **Durée** (`jours`) | « 1 » = jusqu'à ce soir 23 h 59 (heure de Paris) ; passé ce délai, le plat disparaît de sa page |
 | **Photo du cuisinier** | Étape 3 : le fantôme y est assis à table |
 
 La salle de l'étape 1 est la même pour tous les restaurants : rien à donner.
@@ -41,7 +43,8 @@ const { experience, montree } = await r.json();
 ```
 
 - `montree.plat` / `montree.chef` : l'image que **sa page montre en ce moment** (la scène si elle est prête et pas refusée, sinon sa photo).
-- `experience.plat` : `{ nom, prix, photo, phrase, phraseFort }` — `photo` est **sa** photo d'origine.
+- `experience.plat` : `{ nom, prix, photo, photos, voix, voixTexte, voixSecondes, phrase, phraseFort, fin }` — `photo` est **sa** photo d'origine (la première de `photos`), `voix` l'adresse de son enregistrement, `fin` la date ISO de fin.
+- `platEnLigne` : `false` une fois la fin passée (sa page ne montre plus le plat).
 - `experience.chef` : `{ photo }`.
 - `experience.scenePlat`, `experience.sceneChef` :
   - `etat` : `attente` → `en-cours` → `prete`, ou `echec` (avec `erreur`), ou `refusee` ;
@@ -61,9 +64,11 @@ await fetch("/api/site-internet/pro/experience", {
     plat: {
       nom: "Magret frites maison",
       prix: "19 €",
-      photo: "data:image/jpeg;base64,…",   // ou une adresse https
-      phrase: "Ce plat, c'est celui que je cuisine quand mes amis viennent manger.",
-      phraseFort: "quand mes amis viennent manger.",
+      photos: ["data:image/jpeg;base64,…", "data:image/jpeg;base64,…"], // 1 à 4 ; ou `photo` seule
+      voix: "data:audio/webm;codecs=opus;base64,…",   // son mot, tel que le comptoir l'enregistre
+      voixTexte: "Ce plat, c'est celui que je cuisine quand mes amis viennent manger.",
+      voixSecondes: 6,
+      jours: 1,                                         // ou `fin` : ISO ou millisecondes (le `finLe` du comptoir)
     },
     chef: { photo: "data:image/jpeg;base64,…" },
   }),
@@ -73,7 +78,9 @@ await fetch("/api/site-internet/pro/experience", {
 - On peut n'envoyer que `plat` ou que `chef`.
 - `plat: null` ou `chef: null` les **retire**.
 - Une **photo neuve** lance une scène neuve. Changer le nom, le prix ou la phrase garde la scène.
-- Photos : `data:image/jpeg|png|webp|heic` (12 Mo au plus), ou une adresse https.
+- Photos : `data:image/jpeg|png|webp|heic`, ou une adresse https. **La même photo renvoyée ne refait pas la scène** (elle est rangée sous son empreinte) : republier tout le plat pour corriger un prix ne coûte rien.
+- Voix : `data:audio/webm|mp4|ogg|mpeg|aac|wav` (3 Mo au plus), exactement ce que rend `voix-micro.ts`. Elle est rangée telle quelle. Un téléphone qui ne sait pas lire le fichier (un iPhone devant le webm d'un Android) entend à la place `voixTexte`, dit par sa voix clonée (sa voix standard s'il ne l'a pas donnée), puis par la voix du téléphone en dernier recours.
+- **Taille d'une requête : 4,5 Mo au plus** (limite de Vercel). Les photos réduites du comptoir (1 000 px) et un mot de dix secondes y tiennent largement ; au-delà, envoyer le plat et la photo du cuisinier en deux appels.
 
 La réponse a la même forme que la lecture.
 

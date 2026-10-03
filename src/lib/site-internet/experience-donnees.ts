@@ -42,12 +42,32 @@ export type EtatScene = {
 export type PlatDuChef = {
   nom: string;
   prix?: string;
-  /** SA photo du plat — c'est elle qu'on montre tant que la scène n'est pas là. */
+  /**
+   * SA photo du plat — c'est elle qu'on montre tant que la scène n'est pas
+   * là, et c'est d'elle que la scène est faite. La première de `photos`.
+   */
   photo: string;
+  /** TOUTES ses photos, la principale d'abord (quatre au plus, comme le comptoir). */
+  photos?: string[];
   /** Ce qu'il en dit (« Ce plat, c'est celui que je cuisine… ») : écrit, et dit de sa voix. */
   phrase?: string;
   /** La partie de la phrase en rose, si elle est donnée. */
   phraseFort?: string;
+  /**
+   * SON MOT, ENREGISTRÉ DE SA VOIX dans le comptoir — c'est lui qu'on entend à
+   * l'étape 2, pas une voix de synthèse. `voixTexte` est ce qu'il a dit,
+   * écrit : la phrase affichée quand il n'en a pas écrit d'autre, et ce que sa
+   * voix clonée redit si le téléphone du client ne sait pas lire le fichier.
+   */
+  voix?: string;
+  voixTexte?: string;
+  voixSecondes?: number;
+  /**
+   * JUSQU'À QUAND IL EST EN LIGNE (ISO). « Aujourd'hui » veut dire jusqu'à ce
+   * soir à Paris, pas vingt-quatre heures : le plat d'hier ne reste pas sur
+   * sa page. Absente, il reste jusqu'à ce qu'il le retire.
+   */
+  fin?: string;
 };
 
 export type ExperienceResto = {
@@ -102,18 +122,31 @@ export function experienceDuDiagnostic(diag: unknown): ExperienceResto | null {
   const o = e as Record<string, unknown>;
   const p = (o.plat && typeof o.plat === "object" ? o.plat : null) as Record<string, unknown> | null;
   const c = (o.chef && typeof o.chef === "object" ? o.chef : null) as Record<string, unknown> | null;
+  const adresse = (v: unknown) => (/^https?:\/\//i.test(s(v)) ? s(v) : "");
+  const fin = s(p?.fin);
   const plat: PlatDuChef | undefined =
-    p && s(p.nom) && /^https?:\/\//i.test(s(p.photo))
+    p && s(p.nom) && adresse(p.photo)
       ? {
           nom: s(p.nom).slice(0, 80),
           prix: s(p.prix).slice(0, 20) || undefined,
-          photo: s(p.photo),
+          photo: adresse(p.photo),
+          photos: Array.isArray(p.photos) ? p.photos.map(adresse).filter(Boolean).slice(0, 4) : undefined,
           phrase: s(p.phrase).slice(0, 220) || undefined,
           phraseFort: s(p.phraseFort).slice(0, 120) || undefined,
+          voix: adresse(p.voix) || undefined,
+          voixTexte: s(p.voixTexte).slice(0, 400) || undefined,
+          voixSecondes: typeof p.voixSecondes === "number" && p.voixSecondes > 0 ? Math.round(p.voixSecondes) : undefined,
+          fin: fin && Number.isFinite(Date.parse(fin)) ? fin : undefined,
         }
       : undefined;
   const chef = c && /^https?:\/\//i.test(s(c.photo)) ? { photo: s(c.photo) } : undefined;
   return { plat, chef, scenePlat: lireScene(o.scenePlat), sceneChef: lireScene(o.sceneChef) };
+}
+
+/** LE PLAT EST-IL ENCORE EN LIGNE ? Passé sa fin, sa page ne le montre plus. */
+export function platEnCours(plat: PlatDuChef | undefined, maintenant = Date.now()): PlatDuChef | undefined {
+  if (!plat) return undefined;
+  return plat.fin && Date.parse(plat.fin) <= maintenant ? undefined : plat;
 }
 
 /** LA SCÈNE À MONTRER : faite, pour CETTE photo, et pas refusée. */
