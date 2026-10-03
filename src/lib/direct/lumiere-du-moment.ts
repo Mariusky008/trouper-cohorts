@@ -122,7 +122,10 @@ export function phraseDuSeuil(ouvert: OpenState, allumee: boolean, invitation = 
     // le coiffeur ne parlait plus de coupes.
     return ouvert.next ? `On ouvre à ${ouvert.next.replace(/ /g, "\u00a0")}. ${invitation}` : `C'est fermé. ${invitation}`;
   }
-  // « LA SALLE EST ALLUMÉE » SEULEMENT QUAND L'ENSEIGNE L'EST : c'est la même
-  // promesse, dite deux fois.
-  return allumee ? "Entre, la salle est allumée." : invitation;
+  // « C'EST ALLUMÉ » SEULEMENT QUAND L'ENSEIGNE L'EST : c'est la même
+  // promesse, dite deux fois. ET L'INVITATION DE SON MÉTIER RESTE : le soir,
+  // « Entre, la salle est allumée » la remplaçait, et le coiffeur ne parlait
+  // plus de coupes — la faute déjà corrigée porte fermée, revenue porte
+  // ouverte (vue par `verifier-page-commercant`, lancé à 19 h).
+  return allumee ? `C'est allumé. ${invitation}` : invitation;
 }

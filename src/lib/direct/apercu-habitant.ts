@@ -1189,6 +1189,12 @@ export type Voix = {
    */
   extrait?: string;
   /**
+   * LE REPLI DE `extrait` : la même phrase, dite par sa voix clonée (la route
+   * du double). Pour le téléphone qui ne sait pas lire son enregistrement —
+   * un iPhone devant le webm d'un Android.
+   */
+  repli?: string;
+  /**
    * ═══ SON RÉCIT — CE QU'ELLE RACONTE, EN PLUSIEURS PHRASES ════════════════
    *
    * « J'ai besoin, pour certaines annonces, d'avoir de super belles voix bien

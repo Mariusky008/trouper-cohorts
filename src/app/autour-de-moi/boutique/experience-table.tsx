@@ -304,7 +304,10 @@ export function ExperienceTable({
         a.setAttribute("playsinline", "");
         sonRef.current = a;
         let parti = false;
-        a.onplay = () => {
+        /* `playing`, PAS `play` : `play` part dès qu'on DEMANDE la lecture, même
+           d'un fichier que le téléphone ne sait pas lire — l'échec suivant
+           passait alors pour une lecture finie, et le repli ne venait jamais. */
+        a.onplaying = () => {
           parti = true;
           setJoue(true);
         };
@@ -319,10 +322,17 @@ export function ExperienceTable({
         ok(false);
       }
     });
-  const ecouter = async () => {
-    if (joue) return arreter();
+  /* `lancer` : toujours démarrer. Le bouton bascule (lecture / pause) ; la
+     cloche, elle, LANCE — vu au navigateur : l'accueil de son double parlait
+     encore quand on la soulevait, le lecteur se croyait en train de jouer, et
+     le premier geste coupait au lieu de faire entendre le chef. */
+  const ecouter = async (lancer = false) => {
+    if (joue && !lancer) return arreter();
+    if (lancer) arreter();
     setAvance(0);
     if (voix?.extrait && (await jouerFichier(voix.extrait))) return;
+    // SON ENREGISTREMENT ILLISIBLE ICI : la même phrase, de sa voix clonée.
+    if (voix?.repli && (await jouerFichier(voix.repli))) return;
     if (voix?.recit && (await jouerFichier(`/api/direct/voix?cle=${encodeURIComponent(c.id)}`))) return;
     speak(voix?.recit || citation);
   };
@@ -337,7 +347,7 @@ export function ExperienceTable({
       setEtape(2);
       // SA VOIX PART AVEC LE PLAT — le toucher de la cloche est le geste qui
       // autorise le son. Coupée, elle attend qu'on appuie.
-      if (son && aUneVoix) void ecouter();
+      if (son && aUneVoix) void ecouter(true);
     }, 900);
   };
 
