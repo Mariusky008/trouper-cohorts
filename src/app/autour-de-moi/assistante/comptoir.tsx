@@ -43,9 +43,10 @@ import {
   type Publication,
 } from "@/lib/direct/comptoir";
 import { libererMicro, ouvrirEcoute } from "@/lib/direct/voix-micro";
+import { envoyerALaVille, retirerDeLaVille, type CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { accord, demandesEnMots, effetDesAnnonces, phraseDeLaVeille, semaineDuComptoir, type JourStats } from "@/lib/direct/stats-comptoir";
 
-type Commerce = (typeof COMMERCES_DEMO)[number];
+type Commerce = CommerceComptoir;
 type Pose = "repos" | "parle-1" | "parle-2" | "salut-1" | "salut-2" | "viens" | "montre";
 const POSES: Pose[] = ["repos", "parle-1", "parle-2", "salut-1", "salut-2", "viens", "montre"];
 
@@ -113,6 +114,9 @@ function dureeEnMots(jours: number): string {
   if (jours >= 365) return "Sans limite";
   return `${jours} jours`;
 }
+
+/** « Salut Margot ! », « Salut Chef ! » — et « Salut ! » quand on ne sait pas son prénom. */
+const aQui = (c: Commerce, avant = "") => (c.prenom ? `${avant} ${c.prenom}` : "");
 
 const enHeure = (h: number) => `${Math.floor(h)} h${h % 1 ? ` ${String(Math.round((h % 1) * 60)).padStart(2, "0")}` : ""}`;
 
@@ -222,14 +226,19 @@ function metierDeDepart(): Commerce | null {
   }
 }
 
-export function Comptoir() {
+/**
+ * `impose` : LE COMMERCE DE LA PAGE D'OÙ L'ON VIENT (`?depuis=`), résolu par
+ * le serveur — voir `page.tsx`. « Quand on l'ouvre depuis une page démo, il
+ * prend l'identité de ce commerce ? — Oui. » Sans lui, on choisit un métier.
+ */
+export function Comptoir({ impose }: { impose?: CommerceComptoir }) {
   /* RIEN AVANT LE NAVIGATEUR : tout ce que l'écran sait vit dans le
      téléphone. Le serveur rend la nuit vide, le téléphone la remplit. */
   const monte = useSyncExternalStore(rien, () => true, () => false);
   return (
     <div className="cz">
       <StylesComptoir />
-      {monte && <Monte />}
+      {monte && (impose ? <Ecran commerce={impose} /> : <Monte />)}
     </div>
   );
 }
@@ -281,10 +290,13 @@ type Phase =
   | { ou: "recap"; relance?: boolean }
   | { ou: "fete"; points: number; gagnes: string[]; publication: Publication };
 
-function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger: () => void }) {
+function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => void }) {
   const mission = missionDe(commerce.famille);
   const dossier = dossierDuFantome(commerce);
-  const [etat, setEtat] = useState<EtatComptoir>(() => chargerComptoir(commerce.famille));
+  /* SA MÉMOIRE : celle de sa famille pour un commerce de la démonstration
+     (comme avant), la sienne pour un commerce venu d'une page. */
+  const memoire = commerce.id.startsWith("comptoir-") ? commerce.famille : commerce.id;
+  const [etat, setEtat] = useState<EtatComptoir>(() => chargerComptoir(memoire));
   const [brouillon, setBrouillon] = useState<Brouillon>(brouillonVide());
   const [maintenant, setMaintenant] = useState(() => Date.now());
   /* ON ARRIVE TOUJOURS PAR L'ACCUEIL : « je ne vois aucune stat de ma
@@ -345,15 +357,19 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger: () => v
     };
     const r = publier(etat, p);
     setEtat(r.comptoir);
-    garderComptoir(commerce.famille, r.comptoir);
+    garderComptoir(memoire, r.comptoir);
+    // ET ÇA PART DANS LA VILLE — Le Direct, sa carte, l'essayage, son libraire.
+    envoyerALaVille(commerce, mission, p, principal);
     setMaintenant(t);
     setPhase({ ou: "fete", points: r.points, gagnes: r.gagnes, publication: p });
   };
 
   const enlever = (id: string) => {
+    const quoi = etat.publications.find((x) => x.id === id);
     const c = retirer(etat, id);
     setEtat(c);
-    garderComptoir(commerce.famille, c);
+    garderComptoir(memoire, c);
+    if (quoi) retirerDeLaVille(quoi);
     setMaintenant(Date.now());
   };
 
@@ -364,7 +380,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger: () => v
   return (
     <div className="cz-ecran">
       <header className="cz-tete">
-        <button type="button" className="cz-qui" onClick={onChanger} aria-label="Changer de métier (démonstration)">
+        <button type="button" className="cz-qui" onClick={onChanger} disabled={!onChanger} aria-label={onChanger ? "Changer de métier (démonstration)" : commerce.nom}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={`${dossier}visage.webp`} alt="" />
           <span>
@@ -446,6 +462,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger: () => v
           gagnes={phase.gagnes}
           serie={s}
           publication={phase.publication}
+          ville={commerce.ville ?? "/autour-de-moi"}
           onFin={() => setPhase({ ou: "accueil" })}
         />
       )}
@@ -528,11 +545,11 @@ function Accueil({
   const veille = phraseDeLaVeille(semaine, mission.quoi);
   const texte = principal
     ? relance && !relanceFaite && h >= relance.apres
-      ? `Re-bonjour ${commerce.prenom} ! Le service est passé : il t’en reste ?`
-      : `Tout roule, ${commerce.prenom} ! Déjà ${auj.vues} ${accord(auj.vues, "personne a", "personnes ont")} vu ta page aujourd’hui.`
+      ? `Re-bonjour${aQui(commerce)} ! Le service est passé : il t’en reste ?`
+      : `Tout roule${aQui(commerce, ",")} ! Déjà ${auj.vues} ${accord(auj.vues, "personne a", "personnes ont")} vu ta page aujourd’hui.`
     : veille
-      ? `Salut ${commerce.prenom} ! ${veille} On remet ça ?`
-      : `Salut ${commerce.prenom} ! Prêt pour aujourd’hui ?`;
+      ? `Salut${aQui(commerce)} ! ${veille} On remet ça ?`
+      : `Salut${aQui(commerce)} ! Prêt pour aujourd’hui ?`;
   return (
     <div className="cz-corps accueil">
       <Scene dossier={dossier} texte={texte} humeur="salut" petit />
@@ -562,6 +579,12 @@ function Accueil({
             </span>
             <s aria-hidden="true">→</s>
           </button>
+        )}
+
+        {actives.length > 0 && (
+          <a className="cz-ville" href={commerce.ville ?? "/autour-de-moi"}>
+            <span aria-hidden="true">🏙️</span> Voir mon annonce dans la ville <s aria-hidden="true">→</s>
+          </a>
         )}
 
         {principal && (
@@ -833,7 +856,7 @@ function EtapeMission({
   const relance = brouillon.genre === "relance";
 
   const question =
-    premiere && etape.type === "dire" ? `Salut ${commerce.prenom} ! ${etape.question}` : etape.question;
+    premiere && etape.type === "dire" ? `Salut${aQui(commerce)} ! ${etape.question}` : etape.question;
 
   /* ── CE QU'IL A DIT : on le range, et on lui montre ── */
   const recevoir = (texte: string) => {
@@ -1218,6 +1241,7 @@ function Fete({
   gagnes,
   serie: jours,
   publication,
+  ville,
   onFin,
 }: {
   dossier: string;
@@ -1226,6 +1250,8 @@ function Fete({
   gagnes: string[];
   serie: number;
   publication: Publication;
+  /** Là où son annonce vient d'arriver : l'application de la ville. */
+  ville: string;
   onFin: () => void;
 }) {
   const pose = useFantome(false, "salut");
@@ -1268,8 +1294,12 @@ function Fete({
           })}
         </div>
       )}
-      <button type="button" className="cz-go" onClick={onFin}>
-        Super ! <s aria-hidden="true">→</s>
+      {/* LA PREUVE QUE ÇA EST PARTI : son annonce, dans la ville, tout de suite. */}
+      <a className="cz-go" href={ville}>
+        Voir dans la ville <s aria-hidden="true">→</s>
+      </a>
+      <button type="button" className="cz-lien" onClick={onFin}>
+        Revenir au comptoir
       </button>
     </div>
   );
@@ -1520,7 +1550,7 @@ label.cz-go{cursor:pointer;}
 .cz-nouveau > i{font-style:normal;font-size:28px;}
 .cz-nouveau em{display:block;font-style:normal;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#FFC2E0;}
 .cz-nouveau b{display:block;font-family:var(--font-clikme),sans-serif;font-size:16px;}
-.cz-fete .cz-go{max-width:340px;margin-top:6px;}
+.cz-fete .cz-go{max-width:340px;margin-top:6px;text-decoration:none;}
 .cz-confettis{position:absolute;inset:0;pointer-events:none;}
 .cz-confettis i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;
   background:var(--rose);animation:cz-tombe 2.6s cubic-bezier(.3,.6,.5,1) both;transform:rotate(var(--r));}
@@ -1532,6 +1562,10 @@ label.cz-go{cursor:pointer;}
 .cz-corps.accueil .cz-scene{flex:1 0 auto;padding-top:4px;}
 .cz-corps.accueil .cz-scene .cz-fantome{height:min(34vh,290px);}
 .cz-corps.accueil .cz-panneau{max-height:none;overflow:visible;flex:none;}
+.cz-ville{display:flex;align-items:center;justify-content:center;gap:8px;min-height:50px;border-radius:999px;
+  background:rgba(245,162,58,.12);border:1px solid rgba(245,162,58,.45);color:#FFD9A8;font-weight:700;font-size:15px;
+  text-decoration:none;}
+.cz-ville s{text-decoration:none;}
 .cz-second{align-self:center;background:none;border:1px solid var(--trait);border-radius:999px;padding:11px 20px;
   font-weight:700;font-size:14.5px;color:var(--creme);}
 .cz-demo{font-style:normal;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:none;

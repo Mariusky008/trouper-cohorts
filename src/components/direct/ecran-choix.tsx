@@ -33,7 +33,9 @@
  * carte sans chiffre qu'un chiffre qui n'est pas celui du plat qu'on regarde.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { abonnerJournee, avecSaJournee, carteDeLaJournee, chargerJournee, journeeVide } from "@/lib/direct/journee";
+import { carteDuPaquet } from "@/lib/direct/copies-presentation";
 import { MotMarque } from "@/components/direct/mot-marque";
 import { FantomeAccueil } from "@/components/direct/fantome-accueil";
 import { photoDeLaCarte } from "@/lib/direct/plaque-parcours";
@@ -174,6 +176,18 @@ export function EcranChoix({
      à chaque appel ; le relire à chaque rendu referait vingt objets par image
      de la main sur l'écran. */
   const commerces = useMemo(toutesLesCartes, []);
+  /* ═══ CE QU'IL VIENT DE PUBLIER À SON COMPTOIR PASSE EN TÊTE ══════════════
+     « Il en reste ! n'arrive nulle part. » Le plat qu'un restaurateur vient
+     de dire à son fantôme est la première carte de « Ce midi, je mange
+     quoi ? » — avec ce qu'il en reste, s'il l'a dit. Seulement chez les
+     restaurants : leur parcours lit sa carte (`ParcoursRestaurant`), alors
+     que ceux des autres métiers sont des démonstrations écrites d'avance. */
+  const journee = useSyncExternalStore(abonnerJournee, chargerJournee, journeeVide);
+  const saCarte = useMemo(() => {
+    const jc = journee ? carteDeLaJournee(journee) : null;
+    if (!jc || jc.branche !== "restaurant") return null;
+    return avecSaJournee(jc.id, commerces.find((x) => x.id === jc.id) ?? carteDuPaquet(jc.id), journee) ?? jc;
+  }, [journee, commerces]);
   const evenements = useMemo(evenementsDeLaVille, []);
   /* L'HEURE EST CELLE DU TELEPHONE, lue UNE FOIS. C'est elle qui decide quelle
      offre le commercant propose en ce moment — la meme que celle de l'annonce
@@ -193,7 +207,25 @@ export function EcranChoix({
    */
   const vues: Vue[] = useMemo(() => {
     const out: Vue[] = [];
+    if (saCarte && categorie.cle === "restaurants") {
+      /* LE DERNIER MOT D'ABORD : « Il en reste ! » passe devant le plat. */
+      // LE DERNIER PUBLIÉ EST LE DERNIER DE SA JOURNÉE — l'heure ne suffit pas à
+      // les départager quand le plat et « il en reste » tombent la même minute.
+      const dernier = journee?.moments[journee.moments.length - 1] ?? saCarte.moments?.[0];
+      out.push({
+        id: saCarte.id,
+        photo: dernier?.photo ?? saCarte.menu?.photo ?? saCarte.photo ?? "",
+        nom: saCarte.nom,
+        quoi: dernier?.flash ? `Il en reste ! ${dernier.flash.avantage}` : (dernier?.titre ?? saCarte.metier),
+        prix: dernier?.prix ?? "",
+        heure: "",
+        vignette: saCarte.photo ?? "",
+        distance: saCarte.distance,
+        ville: saCarte.ville,
+      });
+    }
     for (const c of categorie.cartes) {
+      if (c.id === saCarte?.id) continue;
       const com = commerces.find((x) => x.id === c.id);
       if (com) {
         /* ═══ L'IMAGE ET LE PRIX VIENNENT TOUJOURS DE LA MÊME OFFRE ═══════
@@ -250,7 +282,7 @@ export function EcranChoix({
       }
     }
     return out;
-  }, [categorie, commerces, evenements, heure]);
+  }, [categorie, commerces, evenements, heure, saCarte, journee]);
 
   /* CHANGER DE CATÉGORIE REVIENT À LA PREMIÈRE CARTE. Rester sur la quatrième
      en passant d'une liste de cinq à une liste de quatre afficherait le vide. */

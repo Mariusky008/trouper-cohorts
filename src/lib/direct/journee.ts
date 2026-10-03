@@ -29,7 +29,7 @@
 // compte commerçant — c'est le manque le plus sérieux du produit et il est noté
 // — donc rien ne part sur un serveur au nom de quelqu'un qui n'a rien signé.
 
-import type { CarteAutour, CleMetier, MomentJour } from "@/lib/direct/apercu-habitant";
+import type { ArticleCatalogue, CarteAutour, CleMetier, MenuDuJour, MomentJour } from "@/lib/direct/apercu-habitant";
 import { archiver } from "@/lib/direct/journees-passees";
 
 const CLE = "clikme.journee.v1";
@@ -73,6 +73,19 @@ export type Journee = {
    * Les deux vivent maintenant ensemble et meurent ensemble, à la même date.
    */
   conversation?: TourDit[];
+  /**
+   * ═══ CE QUE LE COMPTOIR AJOUTE À SA CARTE ═══════════════════════════════
+   *
+   * « "Il en reste !" n'arrive nulle part. Le livre conseillé, la coupe ou la
+   * pose à essayer devraient alimenter "Ton prochain livre", l'essayage et
+   * Le Direct. » Les moments ne suffisaient pas : un plat du jour est aussi
+   * l'étape 2 de son Expérience (`menu`, et sa voix), une coupe est une pièce
+   * à essayer, un livre un coup de cœur (`catalogue`). Voir
+   * `comptoir-ville.ts`.
+   */
+  menu?: MenuDuJour;
+  voix?: { extrait?: string; citation?: string };
+  catalogue?: ArticleCatalogue[];
 };
 
 /**
@@ -253,6 +266,26 @@ export function garderConversation(conversation: TourDit[]) {
   garder({ ...j, conversation: conversation.slice(-40) });
 }
 
+/** Poser ce qui n'est pas un moment : son plat, sa voix, ses pièces. Ce qui n'est pas nommé reste. */
+export function poserDansLaJournee(changement: Partial<Pick<Journee, "menu" | "voix" | "catalogue">>) {
+  const j = chargerJournee();
+  if (!j) return;
+  const nomme = Object.fromEntries(Object.entries(changement).filter(([, v]) => v !== undefined));
+  garder({ ...j, ...nomme });
+}
+
+/** Retirer ce qu'il a retiré de son comptoir : le moment, et la pièce qui allait avec. */
+export function retirerDeLaJournee(titre: string, idPiece?: string) {
+  const j = chargerJournee();
+  if (!j) return;
+  garder({
+    ...j,
+    moments: j.moments.filter((m) => m.titre !== titre),
+    catalogue: idPiece ? (j.catalogue ?? []).filter((a) => a.id !== idPiece) : j.catalogue,
+    menu: j.menu?.plat === titre ? undefined : j.menu,
+  });
+}
+
 /** Tout effacer — le bouton de remise à zéro d'une démonstration. */
 export function viderJournee() {
   garder(null);
@@ -283,6 +316,30 @@ export function carteDeLaJournee(j: Journee): CarteAutour | null {
     distance: c.distance,
     fiche: { ou: c.adresse, horaires: c.horaires, mot: "" },
     moments: j.moments,
-    voix: { prenom: c.prenom },
+    voix: { prenom: c.prenom, ...(j.voix ?? {}) },
+    ...(j.menu ? { menu: j.menu } : {}),
+    ...(j.catalogue?.length ? { catalogue: j.catalogue } : {}),
+  };
+}
+
+/**
+ * ═══ SA CARTE, AVEC CE QU'IL VIENT DE PUBLIER ═════════════════════════════
+ *
+ * Un commerce de la démonstration (ou une copie de présentation) existe déjà
+ * dans le paquet. Quand il publie depuis son comptoir, sa carte ne se double
+ * pas : elle prend ce qu'il vient de dire — ses moments en tête, son plat, sa
+ * voix, ses pièces devant les autres. Un commerce absent du paquet (les
+ * commerces du comptoir) n'a que la carte de sa journée.
+ */
+export function avecSaJournee(id: string, base: CarteAutour | undefined, j: Journee | null): CarteAutour | undefined {
+  const jc = j && j.commerce.id === id ? carteDeLaJournee(j) : null;
+  if (!jc) return base;
+  if (!base) return jc;
+  return {
+    ...base,
+    moments: [...(jc.moments ?? []), ...(base.moments ?? [])],
+    ...(jc.menu ? { menu: jc.menu } : {}),
+    voix: j?.voix?.extrait || j?.voix?.citation ? { ...(base.voix ?? { prenom: jc.voix?.prenom ?? "" }), ...j.voix } : base.voix,
+    catalogue: jc.catalogue?.length ? [...jc.catalogue, ...(base.catalogue ?? [])] : base.catalogue,
   };
 }

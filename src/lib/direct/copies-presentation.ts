@@ -270,16 +270,28 @@ export type CopiePresentation = {
   source: string;
   /** Ce que la copie ajoute : le plat du jour, le parcours, la voix. */
   carte: CarteAutour;
+  /** Comment son fantôme l'appelle au comptoir : « Salut Chef ! ». */
+  prenom: string;
 };
 
 export const COPIES_PRESENTATION: CopiePresentation[] = [
-  { slug: "demo-le-bordeaux", source: "le-bordeaux-307d33", carte: BORDEAUX },
-  { slug: "demo-el-txupinazo", source: "el-txupinazo-66acd5", carte: TXUPINAZO },
-  { slug: "demo-oxygene-by-alexis", source: "oxygene-by-alexis-a3e21b", carte: OXYGENE },
+  { slug: "demo-le-bordeaux", source: "le-bordeaux-307d33", carte: BORDEAUX, prenom: "Chef" },
+  { slug: "demo-el-txupinazo", source: "el-txupinazo-66acd5", carte: TXUPINAZO, prenom: "Patron" },
+  { slug: "demo-oxygene-by-alexis", source: "oxygene-by-alexis-a3e21b", carte: OXYGENE, prenom: "Alexis" },
 ];
 
 export function copieDePresentation(slug: string): CopiePresentation | null {
   return COPIES_PRESENTATION.find((c) => c.slug === slug) ?? null;
+}
+
+/**
+ * LA COPIE, QUELLE QUE SOIT L'ADRESSE PAR LAQUELLE ON LA NOMME : la sienne
+ * (`demo-el-txupinazo`), celle du vrai restaurant (`el-txupinazo-66acd5`) ou
+ * l'identifiant de sa carte. C'est ce que reçoivent le comptoir et la ville
+ * dans `?depuis=`.
+ */
+export function copieNommee(qui: string): CopiePresentation | null {
+  return COPIES_PRESENTATION.find((c) => c.slug === qui || c.source === qui || c.carte.id === qui) ?? null;
 }
 
 /**

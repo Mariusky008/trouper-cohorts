@@ -14,7 +14,8 @@
 // (il sait garder une table), et « Et en dessert ? » mène à sa carte, sur sa
 // page ClikMe. Le boulanger, le boucher, le traiteur gardent leur parcours —
 // voir `estUnRestaurant`.
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
+import { abonnerJournee, avecSaJournee, chargerJournee, journeeVide } from "@/lib/direct/journee";
 import { DoubleChef } from "@/components/direct/double-chef";
 import { ParcoursTable } from "@/components/direct/parcours-table-ecran";
 import { ExperienceTable, estUnRestaurant } from "@/app/autour-de-moi/boutique/experience-table";
@@ -32,7 +33,10 @@ export function ParcoursRestaurant({
   onDouble?: () => void;
 }) {
   const [double, setDouble] = useState(false);
-  const c = commerce ? carteDuPaquet(commerce) : undefined;
+  /* CE QU'IL VIENT DE PUBLIER À SON COMPTOIR — son plat, ses photos, sa voix —
+     passe devant ce que sa carte disait : voir `avecSaJournee`. */
+  const journee = useSyncExternalStore(abonnerJournee, chargerJournee, journeeVide);
+  const c = commerce ? avecSaJournee(commerce, carteDuPaquet(commerce), journee) : undefined;
   if (!c || !estUnRestaurant(c)) return <ParcoursTable commerce={commerce} onFermer={onFermer} />;
   const tenue = tenueDu(c);
   return (

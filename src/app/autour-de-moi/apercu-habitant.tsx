@@ -94,6 +94,7 @@ import {
 } from "@/lib/direct/preparation";
 import {
   abonnerJournee,
+  avecSaJournee,
   carteDeLaJournee,
   chargerJournee,
   journeeVide,
@@ -2903,8 +2904,14 @@ export function ApercuHabitant() {
   // cette ligne, « les viennoiseries qui restent » remontait en tête de
   // l'onglet Restaurant, entre l'axoa et le poulet basquaise : le paquet
   // payant montrait du gratuit, et la garantie due au commerçant tombait.
+  /* SA CARTE NE SE DOUBLE PAS : quand le commerce de sa journée est déjà dans
+     le paquet (un commerce de la démonstration ouvert depuis son comptoir),
+     c'est cette carte-là qui prend ce qu'il vient de publier, et elle passe
+     en tête — voir `avecSaJournee`. */
+  const dejaLa = carteJournee ? toutesLesCartes().find((c) => c.id === carteJournee.id) : undefined;
+  const saCarte = carteJournee ? (avecSaJournee(carteJournee.id, dejaLa, journee) ?? carteJournee) : null;
   const toutes = [
-    ...(carteJournee ? [carteJournee] : []),
+    ...(saCarte ? [saCarte] : []),
     // ⚡ LE FLASH DE DEMONSTRATION ENTRE ICI — voir `avecFlashDemo`.
     //
     // C'EST LE PAQUET PRINCIPAL, ET JE L'AVAIS MANQUE. Je l'avais pose dans
@@ -2912,9 +2919,14 @@ export function ApercuHabitant() {
     // qu'on voit en ouvrant — passe par `toutesLesCartes`. Resultat mesure : le
     // Flash n'apparaissait nulle part. Deux chemins vers le meme paquet, et
     // c'est toujours celui qu'on n'a pas regarde qui compte.
-    ...toutesLesCartes().map((c) =>
-      avecFlashDemo(sansCeQuiEstOffert(avecLesRemises(c, remises)), heure),
-    ),
+    // ET LE FLASH DE DÉMONSTRATION S'EFFACE DEVANT LE SIEN. Quand le commerçant
+    // vient de dire « il en reste » à son comptoir, c'est SON Flash que la
+    // ville montre — à la deuxième place, comme tout Flash (voir plus bas).
+    // Garder celui du bar de démonstration le faisait passer devant lui.
+    ...toutesLesCartes()
+      .filter((c) => c.id !== saCarte?.id)
+      .map((c) => sansCeQuiEstOffert(avecLesRemises(c, remises)))
+      .map((c) => (saCarte?.moments?.some((m) => m.flash) ? c : avecFlashDemo(c, heure))),
   ];
   /**
    * SIX VRAIES PHOTOS POUR LA CARTE D'ARRIVÉE — et de six métiers différents.
@@ -3099,12 +3111,14 @@ export function ApercuHabitant() {
                 // règle que pour tous les autres commerces. Elle ne remonte pas
                 // ici : c'est sa FRAÎCHEUR qui la met en tête, comme n'importe
                 // quelle annonce qui vient de tomber.
-                ...(carteJournee &&
-                carteJournee.branche === branche &&
-                momentsRestants(carteJournee, heure).length
-                  ? [carteJournee]
+                ...(saCarte &&
+                saCarte.branche === branche &&
+                momentsRestants(saCarte, heure).length
+                  ? [saCarte]
                   : []),
-                ...autourDeMoi(heure, branche).map(sansCeQuiEstOffert),
+                ...autourDeMoi(heure, branche)
+                  .filter((c) => c.id !== saCarte?.id)
+                  .map(sansCeQuiEstOffert),
               ],
               envies,
               heure,
@@ -3190,6 +3204,9 @@ export function ApercuHabitant() {
       .filter((c) => fraisDe(c) != null)
       .sort(
         (a, b) =>
+          // CE QU'IL VIENT DE DIRE À SON COMPTOIR D'ABORD : c'est sa démonstration,
+          // et une annonce de démo à 190 m ne doit pas passer devant la sienne.
+          Number(b.id === saCarte?.id) - Number(a.id === saCarte?.id) ||
           Number(enFlash(b)) - Number(enFlash(a)) ||
           (fraisDe(a)?.ilYa ?? 0) - (fraisDe(b)?.ilYa ?? 0) ||
           a.metres - b.metres,

@@ -18,6 +18,7 @@ import { VilleOrdinateur, type VilleOrdinateurProps } from "./ville-ordinateur";
 import { VilleSelonEcran } from "./ville-selon-ecran";
 import { EnCharteMaison } from "@/components/direct/style-maison";
 import { toutesLesCartes, type CarteAutour } from "@/lib/direct/apercu-habitant";
+import { copieNommee } from "@/lib/direct/copies-presentation";
 import { choisirLesCopains, fantomeDe } from "@/lib/direct/copains";
 import { carteDeDemo, estAdresseDeDemo } from "@/lib/site-internet/fiches-demo";
 import { lireLeSite } from "@/lib/site-internet/fiche-du-site";
@@ -102,6 +103,11 @@ async function leCommerce(depuis: string): Promise<{ carte: CarteAutour; fictif:
   if (!depuis || !/^[a-z0-9-]{2,120}$/i.test(depuis)) return null;
   const demo = toutesLesCartes().find((c) => c.id === depuis);
   if (demo) return { carte: demo, fictif: true };
+  // LES COPIES DE PRÉSENTATION (Le Bordeaux, El Txupinazo, Oxygène) : leur
+  // adresse commence par `demo-` mais elles ne sont pas des démonstrations —
+  // voir `copies-presentation.ts`. Le comptoir y renvoie après publication.
+  const copie = copieNommee(depuis);
+  if (copie && depuis.startsWith("demo-")) return { carte: copie.carte, fictif: true };
   if (estAdresseDeDemo(depuis)) {
     const c = carteDeDemo(depuis);
     return c ? { carte: c, fictif: true } : null;

@@ -45,16 +45,17 @@ export type Comptoir = {
 };
 
 const vide = (): Comptoir => ({ publications: [], points: 0, jours: [], badges: [] });
-const cle = (famille: FamilleDouble) => `clikme-comptoir-v1-${famille}`;
+/** Un comptoir par commerce : sa famille pour ceux de la démonstration, son identifiant pour les autres. */
+const cle = (qui: string) => `clikme-comptoir-v1-${qui}`;
 
 export function jourDe(t: number): string {
   const d = new Date(t);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export function chargerComptoir(famille: FamilleDouble): Comptoir {
+export function chargerComptoir(qui: string): Comptoir {
   try {
-    const brut = window.localStorage.getItem(cle(famille));
+    const brut = window.localStorage.getItem(cle(qui));
     if (!brut) return vide();
     const c = JSON.parse(brut) as Partial<Comptoir>;
     return { ...vide(), ...c };
@@ -68,9 +69,9 @@ export function chargerComptoir(famille: FamilleDouble): Comptoir {
  * téléphone tient cinq mégaoctets : plutôt que de perdre l'annonce du jour,
  * on retire d'abord les photos et la voix des annonces terminées.
  */
-export function garderComptoir(famille: FamilleDouble, c: Comptoir): void {
+export function garderComptoir(qui: string, c: Comptoir): void {
   const essai = (x: Comptoir) => {
-    window.localStorage.setItem(cle(famille), JSON.stringify(x));
+    window.localStorage.setItem(cle(qui), JSON.stringify(x));
   };
   try {
     essai(c);

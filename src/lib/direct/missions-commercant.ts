@@ -22,6 +22,7 @@
  * FICHIER PARTAGÉ : aucune dépendance au DOM.
  */
 import type { FamilleDouble } from "@/lib/direct/double-metiers";
+import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 
 /** Une question du fantôme. */
 export type Etape =
@@ -197,7 +198,7 @@ export const MISSIONS: Record<FamilleDouble, Mission> = {
 };
 
 /** Les commerces de la démonstration — inventés, et ils le restent. */
-export const COMMERCES_DEMO: { famille: FamilleDouble; metier: string; branche: string; prenom: string; nom: string }[] = [
+export const COMMERCES_DEMO: CommerceComptoir[] = [
   { famille: "table", metier: "Restaurant", branche: "restaurant", prenom: "Margot", nom: "La Table de Margot" },
   { famille: "librairie", metier: "Librairie", branche: "librairie", prenom: "Alice", nom: "La Page d’Alice" },
   { famille: "coiffure", metier: "Coiffeur", branche: "coiffeur", prenom: "Yann", nom: "L’Atelier de Yann" },
@@ -208,7 +209,7 @@ export const COMMERCES_DEMO: { famille: FamilleDouble; metier: string; branche: 
   { famille: "createur", metier: "Créatrice de bougies", branche: "artisan", prenom: "Jade", nom: "L’Atelier de Jade" },
   { famille: "lunettes", metier: "Opticien", branche: "lunetier", prenom: "Paul", nom: "Optique du Centre" },
   { famille: "seance", metier: "Sophrologue", branche: "artisan", prenom: "Inès", nom: "Le Cabinet d’Inès" },
-];
+].map((c) => ({ ...c, id: `comptoir-${c.famille}`, famille: c.famille as FamilleDouble }));
 
 /* ═══ CE QU'IL A DIT, RANGÉ ═══════════════════════════════════════════════
    « Magret frites maison, dix-neuf euros » doit donner un nom et un prix,
