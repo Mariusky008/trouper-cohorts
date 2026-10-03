@@ -66,9 +66,12 @@ const playfair = Playfair_Display({
   variable: "--font-enseigne",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
-  // L'ITALIQUE BRODE LE NOM DU RESTAURANT SUR LA CASQUETTE DE SON FANTÔME
-  // (`experience-table.tsx`), comme sur sa maquette.
-  style: ["normal", "italic"],
+  /* PAS D'ITALIQUE CHARGÉE, ET C'EST UNE LEÇON DE PRODUCTION. Ajoutée pour le
+     nom brodé sur la casquette du fantôme, elle a cassé chaque build Vercel :
+     Google Fonts sert ces fichiers à des adresses sans extension, et le
+     chargeur de `next/font` plante dessus (« Cannot read properties of null
+     (reading '1') »). Le build local passait. Le nom brodé demande toujours
+     l'italique : le navigateur la dessine en penchant la police droite. */
   display: "swap",
 });
 
