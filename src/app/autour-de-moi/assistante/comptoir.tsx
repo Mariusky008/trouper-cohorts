@@ -27,7 +27,7 @@
 // L'ANCIENNE LÉA RESTE OUVRABLE sur `/autour-de-moi/assistante/lea`, le temps
 // de comparer.
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { tenueDu } from "@/lib/direct/double-metiers";
+import { tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
 import { COMMERCES_DEMO, missionDe, rangerLaPhrase, type Etape, type Mission } from "@/lib/direct/missions-commercant";
 import {
   BADGES,
@@ -43,6 +43,7 @@ import {
   type Publication,
 } from "@/lib/direct/comptoir";
 import { libererMicro, ouvrirEcoute } from "@/lib/direct/voix-micro";
+import { accord, demandesEnMots, effetDesAnnonces, phraseDeLaVeille, semaineDuComptoir, type JourStats } from "@/lib/direct/stats-comptoir";
 
 type Commerce = (typeof COMMERCES_DEMO)[number];
 type Pose = "repos" | "parle-1" | "parle-2" | "salut-1" | "salut-2" | "viens" | "montre";
@@ -286,10 +287,10 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger: () => v
   const [etat, setEtat] = useState<EtatComptoir>(() => chargerComptoir(commerce.famille));
   const [brouillon, setBrouillon] = useState<Brouillon>(brouillonVide());
   const [maintenant, setMaintenant] = useState(() => Date.now());
-  // RIEN EN LIGNE AUJOURD'HUI : la première question tombe tout de suite.
-  const [phase, setPhase] = useState<Phase>(() =>
-    enLigne(etat, maintenant).some((p) => p.genre === "principal") ? { ou: "accueil" } : { ou: "mission", etape: 0 },
-  );
+  /* ON ARRIVE TOUJOURS PAR L'ACCUEIL : « je ne vois aucune stat de ma
+     journée pour me motiver ». Ce que sa dernière annonce a rapporté est la
+     première chose qu'il voit — et le bouton de la suivante est juste dessous. */
+  const [phase, setPhase] = useState<Phase>({ ou: "accueil" });
 
   useEffect(() => {
     const id = window.setInterval(() => setMaintenant(Date.now()), 30_000);
@@ -387,6 +388,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger: () => v
           etat={etat}
           enLigne={enLigneMaintenant}
           principal={principal}
+          maintenant={maintenant}
           onCommencer={commencer}
           onRetirer={enlever}
         />
@@ -400,7 +402,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger: () => v
           etape={etapes[phase.etape]}
           numero={phase.etape}
           total={etapes.length}
-          premiere={phase.etape === 0 && !phase.relance && !principal}
+          premiere={false}
           brouillon={brouillon}
           setBrouillon={setBrouillon}
           onSuivante={() => suivante(phase.relance)}
@@ -482,7 +484,7 @@ function Scene({
   );
 }
 
-/* ═══ L'ACCUEIL, QUAND C'EST DÉJÀ EN LIGNE ════════════════════════════════ */
+/* ═══ L'ACCUEIL : CE QUE ÇA LUI A RAPPORTÉ, ET LA SUITE ════════════════════ */
 function Accueil({
   commerce,
   mission,
@@ -490,6 +492,7 @@ function Accueil({
   etat,
   enLigne: actives,
   principal,
+  maintenant,
   onCommencer,
   onRetirer,
 }: {
@@ -499,6 +502,7 @@ function Accueil({
   etat: EtatComptoir;
   enLigne: Publication[];
   principal?: Publication;
+  maintenant: number;
   onCommencer: (relance?: boolean) => void;
   onRetirer: (id: string) => void;
 }) {
@@ -506,15 +510,27 @@ function Accueil({
   const relance = mission.relance;
   const relanceFaite = actives.some((p) => p.genre === "relance");
   const h = heureDecimale();
+  const semaine = useMemo(() => semaineDuComptoir(etat, commerce.famille, maintenant), [etat, commerce.famille, maintenant]);
+  const auj = semaine[semaine.length - 1];
+  const veille = phraseDeLaVeille(semaine, mission.quoi);
   const texte = principal
     ? relance && !relanceFaite && h >= relance.apres
       ? `Re-bonjour ${commerce.prenom} ! Le service est passé : il t’en reste ?`
-      : `Tout roule, ${commerce.prenom} ! ${mission.quoi} est en ligne.`
-    : `Salut ${commerce.prenom} ! Prêt pour aujourd’hui ?`;
+      : `Tout roule, ${commerce.prenom} ! Déjà ${auj.vues} ${accord(auj.vues, "personne a", "personnes ont")} vu ta page aujourd’hui.`
+    : veille
+      ? `Salut ${commerce.prenom} ! ${veille} On remet ça ?`
+      : `Salut ${commerce.prenom} ! Prêt pour aujourd’hui ?`;
   return (
-    <div className="cz-corps">
+    <div className="cz-corps accueil">
       <Scene dossier={dossier} texte={texte} humeur="salut" petit />
       <div className="cz-panneau">
+        {!principal && (
+          <button type="button" className="cz-go grand" onClick={() => onCommencer(false)}>
+            {mission.icone} Publier {mission.quoi.toLowerCase()}
+            <s aria-hidden="true">→</s>
+          </button>
+        )}
+
         {actives.length > 0 && (
           <section className="cz-bloc">
             <h2>En ligne maintenant</h2>
@@ -535,10 +551,14 @@ function Accueil({
           </button>
         )}
 
-        <button type="button" className="cz-go" onClick={() => onCommencer(false)}>
-          {principal ? `Changer ${mission.quoi.toLowerCase()}` : `${mission.icone} ${mission.quoi}`}
-          <s aria-hidden="true">→</s>
-        </button>
+        <Journee auj={auj} famille={commerce.famille} semaine={semaine} />
+        <Semaine semaine={semaine} famille={commerce.famille} />
+
+        {principal && (
+          <button type="button" className="cz-second" onClick={() => onCommencer(false)}>
+            Changer {mission.quoi.toLowerCase()}
+          </button>
+        )}
 
         <section className="cz-bloc cz-progres">
           <div className="cz-niveau">
@@ -562,6 +582,127 @@ function Accueil({
         </section>
       </div>
     </div>
+  );
+}
+
+/** La mention, sur chaque bloc de chiffres, tant qu'aucun compteur ne les mesure. */
+const DEMO = <i className="cz-demo">démonstration</i>;
+
+/**
+ * TA JOURNÉE — trois chiffres, en direct. Sans annonce, il voit ce que donne
+ * une journée muette, et à côté ce que donne une journée où il a parlé.
+ */
+function Journee({ auj, famille, semaine }: { auj: JourStats; famille: FamilleDouble; semaine: JourStats[] }) {
+  const effet = effetDesAnnonces(semaine);
+  return (
+    <section className="cz-bloc cz-stats">
+      <h2>
+        Ta journée {auj.publie && <span className="cz-direct">en direct</span>} {DEMO}
+      </h2>
+      <div className="cz-chiffres">
+        <Chiffre icone="👀" n={auj.vues} mot={accord(auj.vues, "a vu ta page", "ont vu ta page")} />
+        <Chiffre icone="🎧" n={auj.ecoutes} mot={accord(auj.ecoutes, "a écouté ta voix", "ont écouté ta voix")} />
+        <Chiffre icone="📅" n={auj.demandes} mot={demandesEnMots(famille, auj.demandes)} />
+      </div>
+      {!auj.publie && effet && (
+        <p className="cz-pousse">
+          Sans annonce, ta page reste discrète. Les jours où tu publies, elle est vue <b>{String(effet).replace(".", ",")}× plus</b>.
+        </p>
+      )}
+      {auj.publie && auj.partages > 0 && (
+        <p className="cz-pousse">
+          <b>
+            {auj.partages} {accord(auj.partages, "personne", "personnes")}
+          </b>{" "}
+          {accord(auj.partages, "a parlé de toi à ses amis", "ont parlé de toi à leurs amis")} dans un salon.
+        </p>
+      )}
+    </section>
+  );
+}
+
+/** Un chiffre qui monte jusqu'à sa valeur, une fois, à l'arrivée. */
+function Chiffre({ icone, n, mot }: { icone: string; n: number; mot: string }) {
+  const [vu, setVu] = useState(0);
+  useEffect(() => {
+    let i = 0;
+    const id = window.setInterval(() => {
+      i++;
+      setVu(Math.round((n * i) / 18));
+      if (i >= 18) window.clearInterval(id);
+    }, 40);
+    return () => window.clearInterval(id);
+  }, [n]);
+  return (
+    <span className="cz-chiffre">
+      <i aria-hidden="true">{icone}</i>
+      <b>{vu}</b>
+      <em>{mot}</em>
+    </span>
+  );
+}
+
+/**
+ * TA SEMAINE — sept barres. Roses les jours où il a publié, grises les autres :
+ * la différence se voit avant de se lire. On touche une barre pour son détail.
+ */
+function Semaine({ semaine, famille }: { semaine: JourStats[]; famille: FamilleDouble }) {
+  const [choisi, setChoisi] = useState(semaine.length - 1);
+  const max = Math.max(1, ...semaine.map((j) => j.vues));
+  const total = semaine.reduce((s, j) => s + j.vues, 0);
+  const publies = semaine.filter((j) => j.publie).length;
+  const j = semaine[Math.min(choisi, semaine.length - 1)];
+  const effet = effetDesAnnonces(semaine);
+  return (
+    <section className="cz-bloc cz-stats">
+      <h2>
+        Ta semaine {DEMO}
+      </h2>
+      <div className="cz-resume">
+        <span>
+          <b>{total}</b> visites
+        </span>
+        <span>
+          <b>{publies}</b>/7 jours avec une annonce
+        </span>
+      </div>
+      <div className="cz-barres" role="list">
+        {semaine.map((x, i) => (
+          <button
+            key={x.jour}
+            type="button"
+            role="listitem"
+            className={`cz-barre${x.publie ? " publie" : ""}${i === choisi ? " choisi" : ""}`}
+            onClick={() => setChoisi(i)}
+            aria-label={`${x.court} : ${x.vues} visites${x.publie ? ", avec une annonce" : ", sans annonce"}`}
+          >
+            <span className="cz-barre-n">{x.vues}</span>
+            <span className="cz-barre-b" style={{ height: `${Math.max(6, Math.round((x.vues / max) * 100))}%` }} />
+            <span className="cz-barre-j">{x.court}</span>
+            <span className="cz-barre-f" aria-hidden="true">
+              {x.publie ? "🔥" : "·"}
+            </span>
+          </button>
+        ))}
+      </div>
+      <div className="cz-detail">
+        <b>{j.aujourdhui ? "Aujourd’hui" : j.court}</b>
+        {j.publie ? (
+          <span>
+            {j.titre ? `« ${j.titre} » · ` : "Une annonce · "}
+            {j.vues} visites{j.ecoutes ? ` · ${j.ecoutes} écoutes` : ""}
+            {j.demandes ? ` · ${j.demandes} ${demandesEnMots(famille, j.demandes)}` : ""}
+          </span>
+        ) : (
+          <span>Pas d’annonce · {j.vues} visites</span>
+        )}
+      </div>
+      {effet && (
+        <p className="cz-pousse">
+          🔥 Les jours où tu publies, ta page est vue <b>{String(effet).replace(".", ",")}× plus</b>.
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -1323,6 +1464,47 @@ label.cz-go{cursor:pointer;}
 .cz-confettis i:nth-child(3n){background:var(--ambre);}
 .cz-confettis i:nth-child(4n){background:var(--creme);width:7px;height:7px;border-radius:50%;}
 
+/* L'ACCUEIL : LE FANTOME EN HAUT, LES CHIFFRES DESSOUS, TOUT DEFILE */
+.cz-corps.accueil{overflow-y:auto;}
+.cz-corps.accueil .cz-scene{flex:none;padding-top:4px;}
+.cz-corps.accueil .cz-scene .cz-fantome{height:min(22vh,170px);}
+.cz-corps.accueil .cz-panneau{max-height:none;overflow:visible;flex:1;}
+.cz-second{align-self:center;background:none;border:1px solid var(--trait);border-radius:999px;padding:11px 20px;
+  font-weight:700;font-size:14.5px;color:var(--creme);}
+.cz-demo{font-style:normal;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:none;
+  padding:2px 7px;border-radius:999px;background:rgba(255,244,230,.08);color:var(--gris);vertical-align:1px;margin-left:4px;}
+.cz-direct{font-size:10.5px;letter-spacing:.04em;padding:2px 8px;border-radius:999px;background:rgba(123,214,106,.14);color:#9BD58A;margin-left:4px;}
+.cz-direct::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#7BD66A;margin-right:5px;
+  vertical-align:1px;animation:cz-respire 1.6s infinite;}
+.cz-stats{padding:14px;border-radius:20px;background:var(--nappe2);border:1px solid var(--trait);}
+.cz-chiffres{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.cz-chiffre{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;padding:10px 4px;
+  border-radius:16px;background:rgba(0,0,0,.22);}
+.cz-chiffre i{font-style:normal;font-size:20px;}
+.cz-chiffre b{font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:27px;line-height:1.05;color:#FFE2A6;}
+.cz-chiffre em{font-style:normal;font-size:11.5px;line-height:1.25;color:var(--gris);}
+.cz-pousse{margin:2px 0 0;font-size:13.5px;line-height:1.45;color:var(--gris);}
+.cz-pousse b{color:var(--creme);}
+.cz-resume{display:flex;gap:16px;font-size:13px;color:var(--gris);}
+.cz-resume b{font-family:var(--font-clikme),sans-serif;font-size:20px;color:var(--creme);margin-right:3px;}
+.cz-barres{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;height:150px;align-items:end;margin-top:4px;}
+.cz-barre{position:relative;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px;
+  background:none;border:0;padding:0;}
+.cz-barre-n{font-size:11px;font-weight:700;color:var(--gris);}
+.cz-barre-b{width:100%;max-width:30px;border-radius:8px 8px 4px 4px;background:rgba(255,244,230,.16);
+  transform-origin:bottom;animation:cz-monte .7s cubic-bezier(.2,.9,.3,1) both;}
+.cz-barre.publie .cz-barre-b{background:linear-gradient(180deg,var(--rose),#C81F78);box-shadow:0 0 14px rgba(255,46,154,.35);}
+.cz-barre.choisi .cz-barre-b{outline:2px solid var(--ambre);outline-offset:2px;}
+.cz-barre.choisi .cz-barre-n{color:var(--creme);}
+.cz-barre-j{font-size:11.5px;color:var(--gris);}
+.cz-barre-f{font-size:12px;line-height:1;height:14px;color:var(--gris);}
+.cz-barre:nth-child(2) .cz-barre-b{animation-delay:.05s}.cz-barre:nth-child(3) .cz-barre-b{animation-delay:.1s}
+.cz-barre:nth-child(4) .cz-barre-b{animation-delay:.15s}.cz-barre:nth-child(5) .cz-barre-b{animation-delay:.2s}
+.cz-barre:nth-child(6) .cz-barre-b{animation-delay:.25s}.cz-barre:nth-child(7) .cz-barre-b{animation-delay:.3s}
+.cz-detail{display:flex;gap:8px;align-items:baseline;padding:9px 12px;border-radius:12px;background:rgba(0,0,0,.22);font-size:13.5px;}
+.cz-detail b{flex:none;text-transform:capitalize;}
+.cz-detail span{color:var(--gris);min-width:0;}
+@keyframes cz-monte{from{transform:scaleY(0)}to{transform:scaleY(1)}}
 @keyframes cz-flotte{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 @keyframes cz-ombre{0%,100%{transform:scaleX(1);opacity:.5}50%{transform:scaleX(.85);opacity:.3}}
 @keyframes cz-respire{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.08);opacity:1}}
