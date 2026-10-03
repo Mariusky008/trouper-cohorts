@@ -11,22 +11,85 @@
 // La carte « Et en dessert ? » apparaît uniquement si le restaurant a publié
 // d'autres propositions. »
 //
-// SES TROIS MAQUETTES, COMPOSÉES À L'ÉCRAN ET NON PEINTES : la salle du
-// restaurant en fond (toujours la même pour lui), la table au premier plan,
-// la cloche dessus, et son fantôme assis à droite — le même personnage que
-// devant sa porte (ses poses en pied, voir `enPied`). Composer plutôt que
-// peindre, c'est ce qui permet d'avoir la même scène pour chaque restaurant,
-// avec SES photos, sans fabriquer une image par restaurant.
+// SES TROIS MAQUETTES, COMPOSÉES À L'ÉCRAN AVEC SES ÉLÉMENTS À LUI. « Voilà
+// les photos demandées » : la salle (« l'image du restaurant intérieur est
+// toujours la même »), la table, la cloche d'argent, et le fantôme
+// restaurateur ASSIS en trois poses — il montre la cloche, il attend derrière
+// l'assiette, il salue. Sa casquette est vierge, exprès : « la casquette avec
+// le nom de l'établissement devra changer pour chaque établissement ». Le nom
+// s'y écrit donc à l'écran (`Fantome`), au lieu d'une image par restaurant.
 //
 // RIEN N'Y EST INVENTÉ : le plat, son prix, sa photo, la voix et la phrase du
 // chef viennent de sa carte (`menu`, ses moments, `voix`). Ce qui manque ne se
 // dessine pas — pas de lecteur sans voix, pas de « dessert » sans autre plat.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { onSpeakingChange, speak, stopSpeaking } from "@/lib/site-internet/speech";
 
 type Proposition = { nom: string; photo: string; prix?: string };
+
+/** SES ÉLÉMENTS — voir `public/direct/table/restaurant/` et `double/assis/`. */
+const SALLE = "/direct/table/restaurant/salle.webp";
+const TABLE = "/direct/table/restaurant/table.webp";
+const CLOCHE = "/direct/table/restaurant/cloche.webp";
+const ASSIS = "/direct/double/assis/";
+
+/**
+ * OÙ EST LE DEVANT DE LA CASQUETTE, POSE PAR POSE — en fraction de l'image,
+ * mesuré sur ses PNG (le centre de la calotte, au-dessus de la visière), et
+ * l'inclinaison de la tête. C'est là que s'écrit le nom de l'établissement.
+ */
+const CASQUETTE = {
+  montre: { x: 0.585, y: 0.105, tourne: 7 },
+  repos: { x: 0.5, y: 0.105, tourne: 5 },
+  salut: { x: 0.55, y: 0.105, tourne: 6 },
+} as const;
+type Pose = keyof typeof CASQUETTE;
+
+/** LE NOM EN UNE OU DEUX LIGNES, coupé entre deux mots au plus près du milieu. */
+function lignesDuNom(nom: string): string[] {
+  const mots = nom.trim().split(/\s+/);
+  if (nom.length <= 11 || mots.length < 2) return [nom];
+  let mieux = 1;
+  for (let i = 1; i < mots.length; i++) {
+    const a = mots.slice(0, i).join(" ").length;
+    const b = mots.slice(i).join(" ").length;
+    const m = mots.slice(0, mieux).join(" ").length;
+    if (Math.abs(a - b) < Math.abs(m - mots.slice(mieux).join(" ").length)) mieux = i;
+  }
+  return [mots.slice(0, mieux).join(" "), mots.slice(mieux).join(" ")];
+}
+
+/** SON FANTÔME ASSIS, ET SON NOM BRODÉ SUR LA CASQUETTE. */
+function Fantome({ pose, nom, classe }: { pose: Pose; nom: string; classe: string }) {
+  const lignes = lignesDuNom(nom);
+  const plusLongue = Math.max(...lignes.map((l) => l.length));
+  // LA TAILLE SUIT LA LONGUEUR : la calotte fait un tiers de sa largeur.
+  const taille = Math.min(7, 31 / (plusLongue * 0.6));
+  const ou = CASQUETTE[pose];
+  return (
+    <span className={`xr-fant ${classe}`} aria-hidden="true">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={`${ASSIS}${pose}.webp`} alt="" draggable={false} />
+      <span
+        className="xr-casq"
+        style={
+          {
+            left: `${ou.x * 100}%`,
+            top: `${ou.y * 100}%`,
+            fontSize: `${taille}cqw`,
+            transform: `translate(-50%,-50%) rotate(${ou.tourne}deg)`,
+          } as CSSProperties
+        }
+      >
+        {lignes.map((l, i) => (
+          <span key={i}>{l}</span>
+        ))}
+      </span>
+    </span>
+  );
+}
 
 /**
  * LES TROIS ÉTAPES SONT POUR LES RESTAURANTS — « pour les restaurants on va
@@ -59,8 +122,6 @@ const ONDE = [10, 18, 26, 14, 34, 22, 40, 28, 16, 36, 24, 44, 30, 18, 26, 38, 20
 
 export function ExperienceTable({
   c,
-  salle: salleDonnee,
-  decor,
   enPied,
   onRetour,
   onReserver,
@@ -69,10 +130,6 @@ export function ExperienceTable({
   onDecouvrir,
 }: {
   c: CarteAutour;
-  /** La salle du restaurant — le fond de la première étape, toujours le même. */
-  salle: string;
-  /** Le décor de son métier (un comptoir flou) : la salle de repli. */
-  decor?: string;
   /** Ses poses en pied (`/direct/double/pied/`), s'il les a. */
   enPied?: string;
   onRetour: () => void;
@@ -87,24 +144,15 @@ export function ExperienceTable({
 }) {
   const [etape, setEtape] = useState<1 | 2 | 3>(1);
   const [souleve, setSouleve] = useState(false);
-  const [vague, setVague] = useState(false);
 
-  /* ═══ LA SALLE NE MONTRE JAMAIS LE PLAT ═══
-     Vu au Bordeaux : sa seule photo est son magret, et elle servait de
-     « salle » — la cloche cachait un plat qu'on voyait déjà derrière elle.
-     On prend donc la première de ses photos qui n'est pas un plat publié ;
-     à défaut, le décor flou de son métier, qui n'affirme rien sur lui. */
-  const salle = useMemo(() => {
-    const plats = new Set(
-      [
-        c.menu?.photo,
-        ...(c.moments ?? []).map((m) => m.photo),
-        ...(c.voix?.photosVoix ?? []).map((p) => p.src),
-        ...(c.catalogue ?? []).map((a) => a.photo),
-      ].filter(Boolean),
-    );
-    return [salleDonnee, ...(c.photos ?? []), c.couvertureSansHote].find((p) => p && !plats.has(p)) ?? decor ?? salleDonnee;
-  }, [c, salleDonnee, decor]);
+  /* ═══ LA SALLE : TOUJOURS LA MÊME ═══
+     « L'image du restaurant intérieur est toujours la même. » Elle porte sa
+     table au premier plan, et la cloche s'y pose. Un restaurant qui donne SA
+     salle (`salle`) la garde — c'est alors notre table qu'on pose devant,
+     puisque sa photo n'en a pas forcément une à cet endroit. Jamais une photo
+     de plat ici : la cloche cacherait un plat qu'on verrait déjà derrière. */
+  const salle = c.salle ?? SALLE;
+  const posee = Boolean(c.salle);
 
   // ═══ CE QU'IL SERT, DIT PAR SA CARTE ═══
   const repas = useMemo(() => {
@@ -136,8 +184,10 @@ export function ExperienceTable({
   const photoChef = voix?.photoChef || c.photoAccueil || salle;
   /* SON VISAGE DANS LE ROND DE LA VOIX — le vrai, s'il l'a donné ; sinon
      celui de son fantôme. */
-  const visage = voix?.portrait || voix?.photoChef || c.photoAccueil;
-  const pose = (g: string) => (enPied ? `${enPied}${g}.webp` : "/clikme-fantome.png");
+  const visage = voix?.portrait || c.photoAccueil || voix?.photoChef;
+  /* SA PHOTO DE L'ÉTAPE 3 EST UNE SCÈNE, PAS UN PORTRAIT : dans le rond, on
+     s'approche de son visage (en haut, au milieu). */
+  const deLoin = !voix?.portrait && !c.photoAccueil && Boolean(voix?.photoChef);
 
   // ═══ LE SON — coupé ou non, et c'est retenu ═══
   const [son, setSon] = useState(true);
@@ -218,13 +268,6 @@ export function ExperienceTable({
     }, 900);
   };
 
-  // ═══ À L'ACCUEIL, IL SALUE ═══
-  useEffect(() => {
-    if (etape !== 3) return;
-    const t = window.setInterval(() => setVague((v) => !v), 700);
-    return () => window.clearInterval(t);
-  }, [etape]);
-
   const precedent = () => {
     arreter();
     if (etape === 1) return onRetour();
@@ -245,14 +288,18 @@ export function ExperienceTable({
   return (
     <div className={`xr xr-e${etape}`}>
       <StylesExperienceTable />
-      {/* LES TROIS FONDS SONT EMPILÉS : déjà chargés, ils glissent en fondu. */}
+      {/* LES TROIS FONDS SONT EMPILÉS : déjà chargés, ils glissent en fondu.
+          SUR UN ÉCRAN EN LARGEUR, la salle et le cuisinier — des photos en
+          hauteur — se montrent ENTIÈRES au milieu (`xr-net`), sur leur propre
+          flou : recadrées à la largeur, il ne restait que le bois de la table. */}
       {[salle, repas.photo, photoChef].map((src, i) => (
-        <div
-          key={i}
-          className={`xr-fond${etape === i + 1 ? " on" : ""}${i === 0 ? " salle" : ""}${src === decor ? " decor" : ""}`}
-          style={{ backgroundImage: `url("${src}")` }}
-          aria-hidden="true"
-        />
+        <div key={i} className={`xr-plan${etape === i + 1 ? " on" : ""}${i === 0 ? " salle" : ""}`} aria-hidden="true">
+          <div className={`xr-fond${i !== 1 ? " haut" : ""}`} style={{ backgroundImage: `url("${src}")` }} />
+          {i !== 1 && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="xr-net" src={src} alt="" draggable={false} />
+          )}
+        </div>
       ))}
       <div className="xr-voile" aria-hidden="true" />
 
@@ -295,9 +342,11 @@ export function ExperienceTable({
           <h1 className="xr-t">
             Qu’est-ce que le chef te prépare aujourd’hui<em>&nbsp;?</em>
           </h1>
-          <div className="xr-table" aria-hidden="true" />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="xr-fant montre" src={pose("montre")} alt="" draggable={false} />
+          {posee && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="xr-table" src={TABLE} alt="" aria-hidden="true" draggable={false} />
+          )}
+          <Fantome pose="montre" nom={c.nom} classe="montre" />
           <button
             type="button"
             className={`xr-cloche${souleve ? " souleve" : ""}`}
@@ -308,7 +357,8 @@ export function ExperienceTable({
               ↑
             </span>
             <span className="xr-lueur" aria-hidden="true" />
-            <Cloche />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="xr-cloche-img" src={CLOCHE} alt="" draggable={false} />
           </button>
           <p className="xr-touche" aria-hidden="true">
             <Main />
@@ -332,12 +382,14 @@ export function ExperienceTable({
             </svg>
             {repas.publie ? `Le coup de cœur ${deQui(qui)}` : `Bientôt : le coup de cœur ${deQui(qui)}`}
           </p>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="xr-fant assis" src={pose("repos")} alt="" draggable={false} />
+          <Fantome pose="repos" nom={c.nom} classe="assis" />
           <div className="xr-bas">
             {aUneVoix && (
               <div className={`xr-voix${joue ? " joue" : ""}`}>
-                <span className="xr-avatar" style={visage ? { backgroundImage: `url("${visage}")` } : undefined}>
+                <span
+                  className={`xr-avatar${deLoin ? " loin" : ""}`}
+                  style={visage ? { backgroundImage: `url("${visage}")` } : undefined}
+                >
                   {!visage && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={enPied ? `${enPied}visage.webp` : "/clikme-fantome.png"} alt="" />
@@ -405,8 +457,7 @@ export function ExperienceTable({
         <section className="xr-scene xr-accueil">
           <button type="button" className="xr-question" onClick={onQuestion}>
             <span className="xr-bulle">Une question&nbsp;?</span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="xr-fant salue" src={pose(vague ? "salut-2" : "salut-1")} alt="" draggable={false} />
+            <Fantome pose="salut" nom={c.nom} classe="salue" />
             <span className="xr-ia">✦ Double IA</span>
           </button>
           <div className="xr-bas">
@@ -455,47 +506,6 @@ export function ExperienceTable({
   );
 }
 
-/** LA CLOCHE D'ARGENT — dessinée, pour qu'elle brille comme sur la maquette. */
-function Cloche() {
-  return (
-    <svg className="xr-cloche-svg" viewBox="0 0 320 200" aria-hidden="true">
-      <defs>
-        <linearGradient id="xr-dome" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0" stopColor="#5d5248" />
-          <stop offset=".18" stopColor="#c9c2ba" />
-          <stop offset=".34" stopColor="#fbf6ee" />
-          <stop offset=".5" stopColor="#d8cfc4" />
-          <stop offset=".72" stopColor="#8a7d70" />
-          <stop offset=".9" stopColor="#e8ddd0" />
-          <stop offset="1" stopColor="#6b5f53" />
-        </linearGradient>
-        <linearGradient id="xr-dome-v" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#fff" stopOpacity=".55" />
-          <stop offset=".5" stopColor="#fff" stopOpacity="0" />
-          <stop offset="1" stopColor="#3a2a1c" stopOpacity=".45" />
-        </linearGradient>
-        <linearGradient id="xr-plat" x1="0" x2="1">
-          <stop offset="0" stopColor="#6e6155" />
-          <stop offset=".3" stopColor="#e9e1d6" />
-          <stop offset=".55" stopColor="#a99a8a" />
-          <stop offset=".8" stopColor="#f1e8dc" />
-          <stop offset="1" stopColor="#6e6155" />
-        </linearGradient>
-      </defs>
-      <g className="xr-dome">
-        <path d="M30 168 C30 92 92 44 160 44 C228 44 290 92 290 168 Z" fill="url(#xr-dome)" />
-        <path d="M30 168 C30 92 92 44 160 44 C228 44 290 92 290 168 Z" fill="url(#xr-dome-v)" />
-        <path d="M78 150 C82 108 112 76 150 66" stroke="#fff" strokeOpacity=".7" strokeWidth="6" fill="none" strokeLinecap="round" />
-        <ellipse cx="160" cy="40" rx="20" ry="8" fill="url(#xr-plat)" />
-        <circle cx="160" cy="28" r="14" fill="url(#xr-dome)" />
-        <circle cx="155" cy="23" r="4" fill="#fff" fillOpacity=".8" />
-      </g>
-      <ellipse cx="160" cy="172" rx="152" ry="16" fill="url(#xr-plat)" />
-      <ellipse cx="160" cy="168" rx="134" ry="9" fill="#2a1d14" fillOpacity=".35" />
-    </svg>
-  );
-}
-
 function Main() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -513,11 +523,19 @@ function StylesExperienceTable() {
         __html: `
         .xr{position:absolute;inset:0;overflow:hidden;color:#FFF4E6;font-family:var(--font-geist-sans),system-ui,sans-serif;
           background:#120C09;}
-        .xr-fond{position:absolute;inset:0;background:#1C1411 center / cover no-repeat;opacity:0;
-          transition:opacity .6s ease,transform 6s ease;transform:scale(1.04);}
-        .xr-fond.on{opacity:1;transform:scale(1);}
-        .xr-fond.salle{filter:brightness(.82) saturate(1.05) blur(1.5px);}
-        .xr-fond.decor{background-position:50% 0;background-size:cover;}
+        .xr-plan{position:absolute;inset:0;opacity:0;transition:opacity .6s ease;}
+        .xr-plan.on{opacity:1;}
+        .xr-plan.salle{filter:brightness(.9) saturate(1.05);}
+        .xr-fond{position:absolute;inset:0;background:#1C1411 center / cover no-repeat;transition:transform 6s ease;transform:scale(1.04);}
+        .xr-plan.on .xr-fond{transform:scale(1);}
+        .xr-plan.salle .xr-fond{background-position:50% 100%;}
+        .xr-net{display:none;}
+        @media (min-aspect-ratio:4/5){
+          .xr-fond.haut,.xr-plan.on .xr-fond.haut{filter:blur(24px) brightness(.5);transform:scale(1.15);}
+          .xr-net{display:block;position:absolute;top:0;left:50%;height:100%;width:auto;max-width:none;transform:translateX(-50%);
+            -webkit-mask-image:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent);
+            mask-image:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent);}
+        }
         .xr-voile{position:absolute;inset:0;pointer-events:none;
           background:linear-gradient(180deg,rgba(18,12,9,.72) 0%,rgba(18,12,9,.15) 24%,rgba(18,12,9,0) 46%,rgba(18,12,9,.55) 72%,rgba(18,12,9,.96) 100%);}
         .xr-e1 .xr-voile{background:linear-gradient(180deg,rgba(18,12,9,.7) 0%,rgba(18,12,9,.25) 30%,rgba(18,12,9,.1) 55%,rgba(18,12,9,.7) 100%);}
@@ -557,21 +575,24 @@ function StylesExperienceTable() {
           line-height:1.08;letter-spacing:-.025em;text-wrap:balance;text-shadow:0 4px 26px rgba(0,0,0,.6);animation:xrMonte .7s ease both;}
         .xr-t em{font-style:normal;color:#FF2E9A;}
         @keyframes xrMonte{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
-        .xr-table{position:absolute;left:-10%;right:-10%;bottom:-6%;height:42%;z-index:2;border-radius:50% 50% 0 0 / 14% 14% 0 0;
-          background:radial-gradient(70% 22% at 50% 6%,rgba(255,206,140,.32),rgba(255,206,140,0) 70%),
-            repeating-linear-gradient(176deg,rgba(0,0,0,.08) 0 3px,rgba(255,255,255,0) 3px 11px),
-            linear-gradient(180deg,#7a4a2a 0%,#5b341c 18%,#3d2213 60%,#24140b 100%);
-          box-shadow:inset 0 8px 18px rgba(255,214,160,.18),0 -8px 30px rgba(0,0,0,.45);}
-        .xr-fant{position:absolute;z-index:3;pointer-events:none;filter:drop-shadow(0 12px 22px rgba(0,0,0,.5));}
-        .xr-fant.montre{right:max(-2%,calc(50% - 300px));bottom:30%;width:min(40vw,230px);transform:scaleX(-1);
+        /* SA TABLE, POSÉE DEVANT UNE SALLE QUI N'EST PAS LA NÔTRE (la nôtre a la sienne). */
+        .xr-table{position:absolute;z-index:2;left:50%;bottom:-4%;width:max(140%,760px);height:auto;transform:translateX(-50%);
+          pointer-events:none;}
+        /* LE FANTÔME ASSIS : une image et son nom sur la casquette, mesurés sur sa largeur. */
+        .xr-fant{position:absolute;z-index:3;pointer-events:none;container-type:inline-size;}
+        .xr-fant img{display:block;width:100%;height:auto;filter:drop-shadow(0 12px 18px rgba(0,0,0,.5));}
+        .xr-casq{position:absolute;display:flex;flex-direction:column;align-items:center;gap:.08em;white-space:nowrap;
+          font-family:var(--font-clikme),sans-serif;font-weight:800;line-height:1;letter-spacing:.02em;color:#F2C27B;
+          text-shadow:0 1px 0 rgba(0,0,0,.55),0 0 1px rgba(0,0,0,.6);}
+        .xr-fant.montre{right:max(-1%,calc(50% - 290px));bottom:calc(34% - 1px);width:min(40vw,220px);
           animation:xrFlotte 4s ease-in-out infinite;}
-        @keyframes xrFlotte{0%,100%{translate:0 0;}50%{translate:0 -6px;}}
-        .xr-cloche{position:absolute;z-index:3;left:50%;bottom:31%;width:min(66vw,340px);margin-left:calc(min(66vw,340px) / -2 - 24px);
+        @keyframes xrFlotte{0%,100%{translate:0 0;}50%{translate:0 -5px;}}
+        .xr-cloche{position:absolute;z-index:3;left:max(3%,calc(50% - 250px));bottom:34%;width:min(60vw,320px);
           padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;}
-        .xr-cloche-svg{display:block;width:100%;height:auto;filter:drop-shadow(0 18px 18px rgba(0,0,0,.55));overflow:visible;}
-        .xr-dome{transform-box:fill-box;transform-origin:50% 100%;animation:xrRespire 3.2s ease-in-out infinite;}
+        .xr-cloche-img{display:block;width:100%;height:auto;transform-origin:50% 100%;
+          filter:drop-shadow(0 16px 16px rgba(0,0,0,.55));animation:xrRespire 3.2s ease-in-out infinite;}
         @keyframes xrRespire{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
-        .xr-cloche.souleve .xr-dome{animation:xrSouleve .85s cubic-bezier(.3,.1,.3,1) forwards;}
+        .xr-cloche.souleve .xr-cloche-img{animation:xrSouleve .85s cubic-bezier(.3,.1,.3,1) forwards;}
         @keyframes xrSouleve{0%{transform:none;}30%{transform:translateY(-14px) rotate(-2deg);}
           100%{transform:translate(18%,-150%) rotate(-24deg);opacity:0;}}
         .xr-lueur{position:absolute;left:10%;right:10%;bottom:8%;height:60%;border-radius:50%;opacity:0;
@@ -599,13 +620,14 @@ function StylesExperienceTable() {
           display:inline-flex;align-items:center;gap:10px;padding:10px 18px 10px 14px;border-radius:999px;font-weight:700;font-size:16px;
           background:rgba(18,12,9,.72);border:1.5px solid #FF2E9A;animation:xrMonte .6s ease .2s both;}
         .xr-badge svg{width:22px;height:22px;fill:#FF2E9A;}
-        .xr-fant.assis{right:max(-3%,calc(50% - 310px));top:calc(170px + env(safe-area-inset-top,0px));width:min(38vw,220px);
+        .xr-fant.assis{right:max(0%,calc(50% - 300px));top:calc(200px + env(safe-area-inset-top,0px));width:min(40vw,230px);
           animation:xrArrive .7s cubic-bezier(.34,1.4,.64,1) .25s both,xrFlotte 4.4s ease-in-out 1s infinite;}
         @keyframes xrArrive{from{opacity:0;transform:translateY(20px) scale(.9);}to{opacity:1;transform:none;}}
         .xr-voix{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;width:100%;max-width:560px;margin-bottom:12px;}
         .xr-avatar{width:76px;height:76px;border-radius:50%;background:#2A1F1B center / cover no-repeat;overflow:hidden;
           border:3px solid rgba(255,244,230,.85);box-shadow:0 8px 20px rgba(0,0,0,.5);}
         .xr-avatar img{width:100%;height:100%;object-fit:cover;}
+        .xr-avatar.loin{background-size:330%;background-position:56% 13%;}
         .xr-onde small{display:block;font-size:14px;color:#F3E2D0;margin-bottom:6px;}
         .xr-onde span{display:flex;align-items:center;gap:3px;height:44px;}
         .xr-onde i{flex:1;max-width:5px;height:4px;border-radius:99px;background:rgba(255,46,154,.45);transition:height .25s ease;}
@@ -627,8 +649,10 @@ function StylesExperienceTable() {
         .xr-question{position:absolute;z-index:4;right:max(0px,calc(50% - 300px));top:calc(196px + env(safe-area-inset-top,0px));
           width:min(42vw,200px);
           padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;}
-        .xr-fant.salue{position:relative;z-index:1;display:block;width:100%;height:auto;}
-        .xr-bulle{position:absolute;z-index:2;left:-6%;top:-14%;padding:10px 16px;border-radius:999px;font-weight:700;font-size:16px;
+        .xr-fant.salue{position:relative;z-index:1;display:block;width:100%;transform-origin:50% 100%;
+          animation:xrSalue 1.8s ease-in-out infinite;}
+        @keyframes xrSalue{0%,100%{rotate:-3deg;}50%{rotate:3deg;}}
+        .xr-bulle{position:absolute;z-index:2;left:-14%;top:-24%;padding:10px 16px;border-radius:999px;font-weight:700;font-size:16px;
           color:#FFF4E6;background:rgba(18,12,9,.75);border:1.5px solid rgba(255,244,230,.8);white-space:nowrap;
           animation:xrMonte .5s ease .4s both;}
         .xr-ia{position:absolute;z-index:2;right:0;bottom:-6%;white-space:nowrap;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:600;
@@ -654,8 +678,7 @@ function StylesExperienceTable() {
         /* SUR UN ORDINATEUR, LA SCÈNE GARDE SA MESURE AU MILIEU — le fond prend toute la fenêtre. */
         @media (min-width:960px){
           .xr-t{font-size:52px;}
-          .xr-cloche{width:360px;margin-left:-204px;}
-          .xr-table{left:-2%;right:-2%;}
+          .xr-cloche{width:340px;}
         }
         @media (max-height:740px){
           .xr-t{top:calc(112px + env(safe-area-inset-top,0px));font-size:clamp(28px,8vw,38px);}

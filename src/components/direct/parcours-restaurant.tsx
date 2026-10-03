@@ -39,8 +39,6 @@ export function ParcoursRestaurant({
     <div className="xr-app">
       <ExperienceTable
         c={c}
-        salle={c.sesPhotos?.[0]?.src ?? c.photos?.[1] ?? c.photo ?? ""}
-        decor={tenue?.decor}
         enPied={tenue?.enPied}
         onRetour={onFermer}
         onReserver={() => (onDouble ? onDouble() : setDouble(true))}

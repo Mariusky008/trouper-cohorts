@@ -1413,6 +1413,13 @@ export type CarteAutour = {
    * restaurateur à qui n'en a pas.
    */
   photoAccueil?: string;
+  /**
+   * SA SALLE À LUI, POUR LA SURPRISE DE L'EXPÉRIENCE RESTAURANT (la cloche).
+   * Absente — c'est le cas courant —, l'écran prend la salle de ClikMe,
+   * « toujours la même », qui a sa table au premier plan. Voir
+   * `experience-table.tsx`. Jamais une photo de plat : la cloche le cache.
+   */
+  salle?: string;
   cadrage?: string;
   /** Anonyme : ce sont les voisins de celui qui lit. */
   nom: string;

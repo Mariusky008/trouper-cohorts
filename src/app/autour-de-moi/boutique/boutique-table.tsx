@@ -1549,8 +1549,6 @@ export function BoutiqueTable({
         <section className={`bt-ecran bt-e-exp bt-e-table bt-plein${arrive ? " arrive" : ""}`} key="experience">
           <ExperienceTable
             c={c}
-            salle={dedans(0)}
-            decor={tenue?.decor}
             enPied={enPied}
             onRetour={() => setOnglet("lieu")}
             onReserver={() => setDiscute(true)}
