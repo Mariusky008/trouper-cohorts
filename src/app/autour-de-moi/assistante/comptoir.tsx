@@ -358,6 +358,8 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger: () => v
   };
 
   const s = serie(etat, maintenant);
+  const semaine = useMemo(() => semaineDuComptoir(etat, commerce.famille, maintenant), [etat, commerce.famille, maintenant]);
+  const [stats, setStats] = useState(false);
 
   return (
     <div className="cz-ecran">
@@ -370,25 +372,38 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger: () => v
             <em>Ton comptoir</em>
           </span>
         </button>
+        {/* LES STATS SONT DANS UN BOUTON, PAS SUR L'ACCUEIL. « Ces stats devraient
+            être dans un bouton en haut, à côté de la flamme, plutôt qu'en page
+            d'accueil avec le CTA. » L'accueil ne garde qu'un geste — publier ;
+            les chiffres, on va les voir. Les trois puces ouvrent le même
+            panneau : on touche ce qui attire l'œil. */}
         <div className="cz-jeu">
-          <span className={`cz-puce${s ? " allume" : ""}`} title="Jours d’affilée">
+          <button type="button" className={`cz-puce${s ? " allume" : ""}`} onClick={() => setStats(true)} aria-label={`${s} jours d’affilée — voir mes stats`}>
             🔥 {s}
-          </span>
-          <span className="cz-puce or" title="Tes points">
+          </button>
+          <button type="button" className="cz-puce stats" onClick={() => setStats(true)} aria-label="Voir mes stats">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 19V11M10 19V5M16 19v-6M22 19H2" />
+            </svg>
+            {semaine[semaine.length - 1].vues}
+          </button>
+          <button type="button" className="cz-puce or" onClick={() => setStats(true)} aria-label={`${etat.points} points — voir mes stats`}>
             ⭐ {etat.points}
-          </span>
+          </button>
         </div>
       </header>
+
+      {stats && <PanneauStats famille={commerce.famille} semaine={semaine} etat={etat} serie={s} onFermer={() => setStats(false)} />}
 
       {phase.ou === "accueil" && (
         <Accueil
           commerce={commerce}
           mission={mission}
           dossier={dossier}
-          etat={etat}
           enLigne={enLigneMaintenant}
           principal={principal}
-          maintenant={maintenant}
+          semaine={semaine}
+          onStats={() => setStats(true)}
           onCommencer={commencer}
           onRetirer={enlever}
         />
@@ -489,28 +504,26 @@ function Accueil({
   commerce,
   mission,
   dossier,
-  etat,
   enLigne: actives,
   principal,
-  maintenant,
+  semaine,
+  onStats,
   onCommencer,
   onRetirer,
 }: {
   commerce: Commerce;
   mission: Mission;
   dossier: string;
-  etat: EtatComptoir;
   enLigne: Publication[];
   principal?: Publication;
-  maintenant: number;
+  semaine: JourStats[];
+  onStats: () => void;
   onCommencer: (relance?: boolean) => void;
   onRetirer: (id: string) => void;
 }) {
-  const niveau = niveauDe(etat.points);
   const relance = mission.relance;
   const relanceFaite = actives.some((p) => p.genre === "relance");
   const h = heureDecimale();
-  const semaine = useMemo(() => semaineDuComptoir(etat, commerce.famille, maintenant), [etat, commerce.famille, maintenant]);
   const auj = semaine[semaine.length - 1];
   const veille = phraseDeLaVeille(semaine, mission.quoi);
   const texte = principal
@@ -551,36 +564,85 @@ function Accueil({
           </button>
         )}
 
-        <Journee auj={auj} famille={commerce.famille} semaine={semaine} />
-        <Semaine semaine={semaine} famille={commerce.famille} />
-
         {principal && (
           <button type="button" className="cz-second" onClick={() => onCommencer(false)}>
             Changer {mission.quoi.toLowerCase()}
           </button>
         )}
 
-        <section className="cz-bloc cz-progres">
-          <div className="cz-niveau">
-            <b>{niveau.nom}</b>
-            <span>{niveau.suivant ? `${niveau.suivant.des - etat.points} points avant « ${niveau.suivant.nom} »` : "Niveau maximum !"}</span>
-            <i>
-              <i style={{ width: `${Math.round(niveau.part * 100)}%` }} />
-            </i>
-          </div>
-          <div className="cz-badges">
-            {BADGES.map((b) => {
-              const a = etat.badges.includes(b.id);
-              return (
-                <span key={b.id} className={`cz-badge${a ? " a" : ""}`} title={b.nom}>
-                  <i>{a ? b.icone : "🔒"}</i>
-                  <em>{b.nom}</em>
-                </span>
-              );
-            })}
-          </div>
-        </section>
+        {/* UN SEUL CHIFFRE ICI, ET IL MÈNE AUX AUTRES : celui d'aujourd'hui. */}
+        <button type="button" className="cz-apercu-stats" onClick={onStats}>
+          <span>
+            <b>{auj.vues}</b> {auj.vues > 1 ? "visites" : "visite"} aujourd’hui
+            {auj.publie ? <i className="cz-direct">en direct</i> : null}
+          </span>
+          <em>Mes stats →</em>
+        </button>
       </div>
+    </div>
+  );
+}
+
+/* ═══ LE PANNEAU DES STATS ═══════════════════════════════════════════════
+   Il monte du bas, par-dessus le comptoir, et se referme d'un geste. Sa
+   journée, sa semaine, puis où il en est dans le jeu. */
+function PanneauStats({
+  famille,
+  semaine,
+  etat,
+  serie: jours,
+  onFermer,
+}: {
+  famille: FamilleDouble;
+  semaine: JourStats[];
+  etat: EtatComptoir;
+  serie: number;
+  onFermer: () => void;
+}) {
+  const niveau = niveauDe(etat.points);
+  useEffect(() => {
+    const touche = (e: KeyboardEvent) => e.key === "Escape" && onFermer();
+    window.addEventListener("keydown", touche);
+    return () => window.removeEventListener("keydown", touche);
+  }, [onFermer]);
+  return (
+    <div className="cz-voile" onClick={onFermer}>
+      <section className="cz-feuille" role="dialog" aria-label="Mes stats" onClick={(e) => e.stopPropagation()}>
+        <header className="cz-feuille-t">
+          <i className="cz-poignee" aria-hidden="true" />
+          <h2>Mes stats</h2>
+          <button type="button" onClick={onFermer} aria-label="Fermer">
+            ✕
+          </button>
+        </header>
+        <div className="cz-feuille-c">
+          <Journee auj={semaine[semaine.length - 1]} famille={famille} semaine={semaine} />
+          <Semaine semaine={semaine} famille={famille} />
+          <section className="cz-bloc cz-progres">
+            <div className="cz-niveau">
+              <b>{niveau.nom}</b>
+              <span>
+                🔥 {jours} {jours > 1 ? "jours d’affilée" : "jour"} · ⭐ {etat.points} points
+                {niveau.suivant ? ` · encore ${niveau.suivant.des - etat.points} avant « ${niveau.suivant.nom} »` : ""}
+              </span>
+              <i>
+                <i style={{ width: `${Math.round(niveau.part * 100)}%` }} />
+              </i>
+            </div>
+            <div className="cz-badges">
+              {BADGES.map((b) => {
+                const a = etat.badges.includes(b.id);
+                return (
+                  <span key={b.id} className={`cz-badge${a ? " a" : ""}`} title={b.nom}>
+                    <i>{a ? b.icone : "🔒"}</i>
+                    <em>{b.nom}</em>
+                  </span>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+      </section>
     </div>
   );
 }
@@ -1257,13 +1319,14 @@ body{background:#0B0806;}
 .cz-tete{display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:max(12px,env(safe-area-inset-top)) 14px 8px;}
 .cz-qui{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;text-align:left;min-width:0;}
-.cz-qui img{width:40px;height:40px;border-radius:50%;object-fit:cover;object-position:50% 10%;
+.cz-qui img{width:36px;height:36px;border-radius:50%;object-fit:cover;object-position:50% 10%;
   box-shadow:0 0 0 2px var(--ambre);flex:none;}
 .cz-qui b{display:block;font-family:var(--font-clikme),sans-serif;font-weight:700;font-size:15px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .cz-qui em{display:block;font-style:normal;font-size:12px;color:var(--gris);}
-.cz-jeu{display:flex;gap:6px;flex:none;}
-.cz-puce{font-weight:700;font-size:13.5px;padding:7px 11px;border-radius:999px;background:var(--nappe);
+.cz-jeu{display:flex;gap:4px;flex:none;}
+.cz-puce{cursor:pointer;display:inline-flex;align-items:center;gap:5px;
+  font-weight:700;font-size:13px;padding:6px 9px;border-radius:999px;background:var(--nappe);
   border:1px solid var(--trait);color:var(--gris);}
 .cz-puce.allume{color:#FFD9A8;border-color:rgba(245,162,58,.55);box-shadow:0 0 18px rgba(245,162,58,.25);}
 .cz-puce.or{color:#FFE2A6;}
@@ -1464,11 +1527,11 @@ label.cz-go{cursor:pointer;}
 .cz-confettis i:nth-child(3n){background:var(--ambre);}
 .cz-confettis i:nth-child(4n){background:var(--creme);width:7px;height:7px;border-radius:50%;}
 
-/* L'ACCUEIL : LE FANTOME EN HAUT, LES CHIFFRES DESSOUS, TOUT DEFILE */
+/* L'ACCUEIL : LE FANTOME EN GRAND, LE GESTE EN BAS SOUS LE POUCE, TOUT DEFILE S'IL LE FAUT */
 .cz-corps.accueil{overflow-y:auto;}
-.cz-corps.accueil .cz-scene{flex:none;padding-top:4px;}
-.cz-corps.accueil .cz-scene .cz-fantome{height:min(22vh,170px);}
-.cz-corps.accueil .cz-panneau{max-height:none;overflow:visible;flex:1;}
+.cz-corps.accueil .cz-scene{flex:1 0 auto;padding-top:4px;}
+.cz-corps.accueil .cz-scene .cz-fantome{height:min(34vh,290px);}
+.cz-corps.accueil .cz-panneau{max-height:none;overflow:visible;flex:none;}
 .cz-second{align-self:center;background:none;border:1px solid var(--trait);border-radius:999px;padding:11px 20px;
   font-weight:700;font-size:14.5px;color:var(--creme);}
 .cz-demo{font-style:normal;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:none;
@@ -1505,6 +1568,26 @@ label.cz-go{cursor:pointer;}
 .cz-detail b{flex:none;text-transform:capitalize;}
 .cz-detail span{color:var(--gris);min-width:0;}
 @keyframes cz-monte{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+/* LE BOUTON DES STATS, ET SON PANNEAU */
+.cz-puce:active{transform:scale(.95);}
+.cz-puce.stats{color:#FFC2E0;border-color:rgba(255,46,154,.45);}
+.cz-puce.stats svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;}
+.cz-apercu-stats{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-radius:16px;
+  background:rgba(255,244,230,.04);border:1px solid var(--trait);text-align:left;}
+.cz-apercu-stats span{font-size:14px;color:var(--gris);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.cz-apercu-stats b{font-family:var(--font-clikme),sans-serif;font-size:19px;color:var(--creme);}
+.cz-apercu-stats em{font-style:normal;font-weight:700;font-size:14px;color:var(--rose);flex:none;}
+.cz-voile{position:absolute;inset:0;z-index:30;background:rgba(8,5,4,.6);animation:cz-fondu .2s both;
+  display:flex;align-items:flex-end;justify-content:center;}
+.cz-feuille{width:100%;max-width:560px;max-height:88%;display:flex;flex-direction:column;background:var(--nappe);
+  border-radius:26px 26px 0 0;border-top:1px solid var(--trait);box-shadow:0 -20px 60px rgba(0,0,0,.5);
+  animation:cz-glisse .32s cubic-bezier(.2,.9,.3,1) both;}
+.cz-feuille-t{position:relative;display:flex;align-items:center;justify-content:space-between;padding:20px 18px 8px;}
+.cz-feuille-t h2{margin:0;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:22px;letter-spacing:-.03em;}
+.cz-feuille-t button{width:36px;height:36px;border-radius:50%;border:1px solid var(--trait);background:var(--nappe2);font-size:15px;}
+.cz-poignee{position:absolute;top:8px;left:50%;width:40px;height:4px;margin-left:-20px;border-radius:9px;background:rgba(255,244,230,.25);}
+.cz-feuille-c{overflow-y:auto;padding:6px 16px max(20px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;}
+@keyframes cz-glisse{from{transform:translateY(100%)}to{transform:none}}
 @keyframes cz-flotte{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 @keyframes cz-ombre{0%,100%{transform:scaleX(1);opacity:.5}50%{transform:scaleX(.85);opacity:.3}}
 @keyframes cz-respire{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.08);opacity:1}}
