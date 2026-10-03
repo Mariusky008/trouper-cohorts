@@ -921,6 +921,18 @@ export type MenuDuJour = {
   /** LA PHOTO DU PLAT, pas celle de la salle. C'est elle qui fait venir. */
   photo: string;
   cadrage?: string;
+  /**
+   * LE PLAT SERVI, SON FANTÔME ASSIS DERRIÈRE L'ASSIETTE — l'étape 2 de
+   * l'expérience restaurant, en UNE photo.
+   *
+   * « L'assiette ne fait pas du tout réelle […] on voit tout de suite que
+   * c'est fake. » Une assiette dessinée autour d'une photo de plat ne sera
+   * jamais une assiette. Ce qui est réel, c'est une photo où le plat est
+   * servi et où le fantôme est déjà assis derrière, à la bonne échelle —
+   * celle de sa maquette. Absente, l'écran montre la photo du plat seule,
+   * sans fantôme par-dessus : jamais un fantôme assis sur la nourriture.
+   */
+  scene?: string;
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1246,6 +1258,13 @@ export type Voix = {
    * Absente, l'écran reprend la photo d'accueil de la page, puis la salle.
    */
   photoChef?: string;
+  /**
+   * QUAND SA PHOTO PORTE DÉJÀ SON FANTÔME — assis à la table, la bulle « Une
+   * question ? » au-dessus, comme sur la maquette —, la boîte où il est
+   * (fractions de la photo). L'écran n'en pose pas un second : il rend
+   * celui-là touchable.
+   */
+  fantomeDansLaPhoto?: { x: number; y: number; l: number; h: number };
 };
 
 /**

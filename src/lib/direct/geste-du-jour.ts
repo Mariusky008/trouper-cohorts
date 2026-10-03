@@ -63,7 +63,7 @@ export type RetourDuJour = {
  * d'elle : les deux écrans ne peuvent plus diverger, parce qu'ils ne sont plus
  * décidés à deux endroits.
  */
-export type FamilleMetier = "restauration" | "boutique" | "rdv" | "autre";
+export type FamilleMetier = "restauration" | "boutique" | "librairie" | "rdv" | "autre";
 
 export type GesteDuJour = {
   /** Voir `FamilleMetier` : ce qui décide AUSSI du fil de la ville montré à côté. */
@@ -209,6 +209,9 @@ export function habitantsDe(villeAff: string): string {
  * vivre. La règle du dossier vaut ici comme ailleurs — mieux vaut une famille
  * générale et juste qu'une famille précise et fausse.
  */
+/** LE LIBRAIRE, ET CE QUI LUI RESSEMBLE : le bouquiniste, la librairie de BD. */
+const LA_LIBRAIRIE = /librair|bouquin|bande[ -]dessin|\bbd\b|manga/i;
+
 const LE_COMPTOIR_DU_SOIR = /\bbar\b|bar à|caviste|pub\b|cave à (vin|bière|biere)|à vins?\b|à bières?\b/i;
 
 export function gesteDuJour(
@@ -311,6 +314,55 @@ export function gesteDuJour(
         { heure: "11 h 17", icone: "❤️", nombre: "34", quoi: "personnes auront liké votre menu" },
         { heure: "11 h 32", icone: "📅", nombre: "3", quoi: "tables réservées" },
         { heure: "12 h 00", icone: "📊", nombre: "", quoi: "En un midi, vous saurez si votre menu plaît." },
+      ],
+    };
+  }
+
+  /**
+   * ── LA LIBRAIRIE ───────────────────────────────────────────────────────
+   *
+   * « La démo de la page du commerçant n'est pas appropriée : la voix de Léa
+   * parle de produits frais, et toute la démonstration est basée sur des
+   * vêtements ou autre chose qui n'a rien à voir avec les livres. »
+   *
+   * ELLE ÉTAIT RANGÉE AVEC LES COMMERCES DE PASSAGE, et c'est la famille du
+   * primeur : « ce qu'il y a de frais ce matin », la vitrine qu'on
+   * photographie, des pièces mises de côté — et un fil de la ville fait d'une
+   * friperie et d'un magasin de prêt-à-porter. Rien de ce qu'on vient
+   * chercher chez un libraire.
+   *
+   * CE QU'ON VIENT CHERCHER CHEZ LUI, C'EST SON CONSEIL. Le livre qu'il a
+   * aimé cette semaine, qu'il est seul à pouvoir défendre — et c'est
+   * exactement ce que sa page sait faire (« Ton prochain livre »). Ce qu'il
+   * dit, c'est donc son coup de cœur, pas une photo ; ce qui revient, ce sont
+   * des livres mis de côté.
+   */
+  if (LA_LIBRAIRIE.test(metier)) {
+    return {
+      famille: "librairie",
+      quand: "Cette semaine",
+      verbe: "chercher",
+      cherchent: "leur prochain livre",
+      combien: 500,
+      heure: "10 h",
+      support: "votre table des coups de cœur",
+      ouDort: "Vous, à cette heure-là, vos coups de cœur sont sur votre table, avec leur petit mot.",
+      pasVu: "Elle est très belle. Mais elle ne se lit qu'en poussant votre porte. Et eux sont à quatre cents mètres, sans idée de lecture.",
+      geste: "Dites-le-moi.",
+      gesteDit: "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me dire quel livre vous avez aimé cette semaine.",
+      gesteCourt: "Pour y être, dites-moi quel livre vous avez aimé cette semaine.",
+      parPhoto: false,
+      demande: "Quel livre conseillez-vous cette semaine ?",
+      envoi: "votre coup de cœur part",
+      extrait: {
+        titre: "Le coup de cœur du libraire",
+        lignes: ["Un roman qu'on ne lâche plus", "Je vous le mets de côté"],
+        prix: "",
+      },
+      retours: [
+        { heure: "10 h 40", icone: "❤️", nombre: "26", quoi: `${gentile} l'auront vu passer` },
+        { heure: "12 h 15", icone: "📚", nombre: "5", quoi: "livres mis de côté" },
+        { heure: "18 h 00", icone: "📊", nombre: "", quoi: "En une semaine, vous saurez quels livres donnent envie." },
       ],
     };
   }

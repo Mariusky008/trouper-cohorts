@@ -56,8 +56,10 @@ const BORDEAUX: CarteAutour = {
     signature: "Je quadrille la peau et je prends mon temps.",
     citation: "Ce plat, c'est celui que je cuisine quand mes amis viennent manger.",
     citationFort: "quand mes amis viennent manger.",
-    // SA PHOTO, DONNÉE POUR L'ÉTAPE 3 (« L'accueil »).
-    photoChef: "/direct/table/restaurant/chef.webp",
+    // SA PHOTO, DONNÉE POUR L'ÉTAPE 3 (« L'accueil ») — son fantôme y est
+    // assis à la table, repris de la maquette 3 au pixel près.
+    photoChef: "/direct/table/restaurant/chef-fantome.webp",
+    fantomeDansLaPhoto: { x: 0.655, y: 0.33, l: 0.33, h: 0.26 },
     recit:
       "Bonjour. Bon, mon magret, je commence par quadriller la peau. Je le pose côté peau sur le gril, doucement, pour qu'elle devienne bien croustillante sans brusquer la viande. Pendant qu'il repose, je fais dorer les pommes de terre à la graisse de canard, avec de l'ail et du persil. Et au dernier moment, je tranche le magret. Vous avez le croustillant, le fondant… et l'odeur qui arrive avant l'assiette.",
     extrait: "/direct/voix/bergine-magret.mp3",
@@ -74,6 +76,8 @@ const BORDEAUX: CarteAutour = {
     prix: "19 €",
     photo: "/direct/table/magret/3.jpg",
     cadrage: "50%",
+    // LE MAGRET SERVI, SON FANTÔME DERRIÈRE L'ASSIETTE : la maquette 2.
+    scene: "/direct/table/restaurant/scene-magret.webp",
   },
   reponse: { cadeau: "Le café offert", texte: "Venez, je vous garde une table en terrasse.", tenu: "12 h 40", apres: 5 },
   moments: [

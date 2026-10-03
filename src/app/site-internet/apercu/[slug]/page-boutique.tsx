@@ -96,6 +96,9 @@ export type PageBoutiqueProps = {
  */
 function annonceExemple(metier: string, nom: string): { dit: string; annonce: string } {
   const t = metier.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  // LE LIBRAIRE NE REÇOIT PAS « UNE NOUVELLE COLLECTION » : il conseille un livre.
+  if (/librair|bouquin|bande dessin|\bbd\b|manga/.test(t))
+    return { dit: "J'ai lu un roman cette semaine que je vais conseiller à tout le monde.", annonce: `Le coup de cœur du libraire chez ${nom} 📚 Passez le feuilleter, je vous le mets de côté.` };
   if (/tatou|piercing/.test(t))
     return { dit: "Je viens de créer un nouveau motif.", annonce: `Nouveau motif disponible chez ${nom} ✨ Envie de le découvrir ou de l'adapter à votre projet ? Écrivez-moi.` };
   if (/boulanger|patiss|viennoiser|chocolat|glacier/.test(t))
@@ -157,6 +160,18 @@ function direLEssai(carte: CarteAutour): { titre: string; say: string } | null {
      deux fois — « ce motif » dans le titre, puis « avec ce motif » — et disait
      en dix mots ce que trois disent. */
   const ouvre = "Et voilà ce qu'aucun site ne sait faire.";
+  /* LE LIBRAIRE N'A RIEN À ESSAYER NI À GOÛTER — son mur, faute de mieux,
+     était celui d'un restaurant, et la voix promettait de « goûter votre
+     plat ». Ce que sa page sait faire, c'est « Ton prochain livre » : trois
+     questions, et ses coups de cœur répondent. Voir `ProchainLivre`. */
+  if (carte.branche === "librairie") {
+    return {
+      titre: "Ton prochain livre",
+      say:
+        `${ouvre} Ton prochain livre : vos lecteurs disent ce qu'ils aiment lire, ` +
+        `et ce sont vos coups de cœur qui leur répondent, avant d'avoir poussé votre porte.`,
+    };
+  }
   if (mur.essai) {
     const m = mur.essai.mots;
     return {

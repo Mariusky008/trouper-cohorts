@@ -273,6 +273,8 @@ export function DemoTour({
             ? "les menus du jour, les tables qui restent"
             : G.famille === "boutique"
               ? "ce qui vient d'arriver, ce qui part le plus vite"
+              : G.famille === "librairie"
+                ? "les coups de cœur des libraires, les rencontres de la semaine"
               : G.famille === "rdv"
                 ? "les créneaux qui se libèrent"
                 : "qui est disponible cette semaine"
@@ -280,7 +282,9 @@ export function DemoTour({
         // « Une table » n'a de sens que dans la restauration : ailleurs on
         // réserve un créneau, une pièce, une place. Le mot suit le métier,
         // comme partout dans cette démonstration.
-        { acte: "resa", dit: `Et quand ils sont convaincus, ils réservent${G.cherchent === "où manger" ? " une table" : ""} — et la demande arrive chez vous.` },
+        { acte: "resa", dit: G.famille === "librairie"
+          ? "Et quand un livre leur donne envie, ils vous demandent de le mettre de côté — et la demande arrive chez vous."
+          : `Et quand ils sont convaincus, ils réservent${G.cherchent === "où manger" ? " une table" : ""} — et la demande arrive chez vous.` },
       ]
     : [];
   const QUI_DIT = QUI_TEMPS.map((t) => t.dit);

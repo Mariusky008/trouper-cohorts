@@ -184,6 +184,10 @@ const AILLEURS = {
   rayon: "/direct/friperie-rayon.jpg",
   bouquet: "/direct/bouquet-du-jour.jpg",
   vitrineBoulange: "/direct/boulange-vitrine.jpg",
+  librairie: "/direct/double/librairie/decor.jpg",
+  vinyles: "/direct/vinyles-a-donner.jpeg",
+  bouquiniste: "/direct/vide-grenier.jpg",
+  musee: "/direct/nocturne-musee.jpg",
 } as const;
 
 export function cartesDeLaVille(ville: string, famille: FamilleMetier = "restauration"): CarteDirect[] {
@@ -285,6 +289,50 @@ export function cartesDeLaVille(ville: string, famille: FamilleMetier = "restaur
         itineraire: yAllerF, reste: "Cette semaine", icone: "👕",
         quoi: "La nouvelle collection", lignes: ["Essayable sur place"],
         prix: "", social: "5 l'ont mise de côté",
+      },
+    ];
+  }
+
+  /* LA LIBRAIRIE A SES VOISINS À ELLE : ceux qu'on va voir pour une idée de
+     lecture, d'écoute ou de sortie — pas une friperie ni une fournée. LE
+     COUP DE CŒUR DU LIBRAIRE EST LA DERNIÈRE : la visite s'arrête sur elle au
+     moment où la voix dit « mettre de côté ». */
+  if (famille === "librairie") {
+    return [
+      {
+        photo: AILLEURS.vinyles, cadrage: "50%",
+        nom: "Un disquaire", metier: "Disquaire", ville, distance: "500 m",
+        itineraire: yAllerF, reste: "Arrivage du jour", icone: "🎵",
+        quoi: "Des vinyles qui viennent d'arriver", lignes: ["Jazz et chanson", "À écouter sur place"],
+        prix: "", social: "4 l'ont vu passer",
+      },
+      {
+        photo: AILLEURS.librairie, cadrage: "75%",
+        nom: "Une librairie jeunesse", metier: "Librairie", ville, distance: "650 m",
+        itineraire: yAllerF, reste: "Samedi", icone: "🧸",
+        quoi: "L'heure du conte", lignes: ["Samedi à 10 h 30", "Pour les 4-8 ans"],
+        prix: "", social: "11 ont dit qu'ils venaient",
+      },
+      {
+        photo: AILLEURS.bouquiniste, cadrage: "55%",
+        nom: "Un bouquiniste du marché", metier: "Bouquiniste", ville, distance: "400 m",
+        itineraire: yAllerF, reste: "Dimanche matin", icone: "📖",
+        quoi: "Des éditions anciennes", lignes: ["Polars et classiques", "Dès 2 €"],
+        prix: "", social: "6 l'ont vu passer",
+      },
+      {
+        photo: AILLEURS.musee, cadrage: "50%",
+        nom: "Le musée", metier: "Musée", ville, distance: "900 m",
+        itineraire: yAllerF, reste: "Jeudi soir", icone: "🖼️",
+        quoi: "Nocturne et lectures", lignes: ["De 19 h à 22 h", "Entrée libre"],
+        prix: "", social: "15 ont dit qu'ils venaient",
+      },
+      {
+        photo: AILLEURS.librairie, cadrage: "40%",
+        nom: "Une librairie du centre", metier: "Librairie", ville, distance: "350 m",
+        itineraire: yAllerF, reste: "Cette semaine", icone: "📚",
+        quoi: "Le coup de cœur du libraire", lignes: ["Un premier roman", "Avec son petit mot"],
+        prix: "", social: "8 l'ont mis de côté",
       },
     ];
   }
@@ -595,7 +643,7 @@ export function saCarte(
     metier: metierLabel,
     ville,
     reste: g.heure === "11 h" ? "Jusqu'à 14 h" : "Aujourd'hui",
-    icone: g.cherchent === "où manger" ? "🍽️" : "✨",
+    icone: g.cherchent === "où manger" ? "🍽️" : g.famille === "librairie" ? "📚" : "✨",
     quoi: g.extrait.titre,
     lignes: g.extrait.lignes,
     prix: g.extrait.prix || undefined,

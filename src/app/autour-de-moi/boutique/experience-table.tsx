@@ -94,20 +94,20 @@ function Fantome({ pose, nom, classe }: { pose: Pose; nom: string; classe: strin
       if (!s) return;
       const textes = [...s.querySelectorAll<SVGTextElement>("text.xr-casq")];
       const chemins = [...s.querySelectorAll<SVGPathElement>("path")];
-      let taille = (lignes.length === 1 ? 0.064 : 0.046) * b.h;
+      let taille = (lignes.length === 1 ? 0.074 : 0.05) * b.h;
       textes.forEach((t, i) => {
         t.setAttribute("font-size", String(taille));
-        const place = chemins[i].getTotalLength() * 0.94;
+        const place = chemins[i].getTotalLength() * 0.98;
         const long = t.getComputedTextLength();
         if (long > place) taille = Math.min(taille, (taille * place) / long);
       });
       textes.forEach((t) => {
         t.setAttribute("font-size", String(taille));
-        t.setAttribute("stroke-width", String(taille * 0.05));
+        t.setAttribute("stroke-width", String(taille * 0.035));
       });
       const tab = s.querySelector<SVGTextElement>("text.xr-tab");
       if (tab) {
-        let f = 0.038 * b.h;
+        let f = 0.044 * b.h;
         tab.setAttribute("font-size", String(f));
         const long = tab.getComputedTextLength();
         if (long > b.tablier[2] * b.l) f = (f * b.tablier[2] * b.l) / long;
@@ -123,17 +123,40 @@ function Fantome({ pose, nom, classe }: { pose: Pose; nom: string; classe: strin
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={`${ASSIS}${pose}.webp`} alt="" draggable={false} />
       <svg ref={svg} viewBox={`0 0 ${b.l} ${b.h}`} className="xr-brode">
+        <defs>
+          {/* LE FIL : crème, plus sombre là où la casquette tourne (à droite),
+              un relief d'un demi-point et un grain — on doit le croire cousu. */}
+          <linearGradient id={`${id}-fil`} x1="0" x2="1" y1="0" y2="0.3">
+            <stop offset="0" stopColor="#F7EEDF" />
+            <stop offset="0.55" stopColor="#EADCC5" />
+            <stop offset="1" stopColor="#BFAE93" />
+          </linearGradient>
+          <filter id={`${id}-relief`} x="-5%" y="-20%" width="110%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="1" seed="7" result="grain" />
+            <feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -0.55 0.95" result="voile" />
+            <feComposite in="SourceGraphic" in2="voile" operator="in" result="cousu" />
+            <feDropShadow in="cousu" dx="0" dy="1.6" stdDeviation="1" floodColor="#000" floodOpacity="0.55" />
+          </filter>
+        </defs>
         {arcs.map((arc, i) => (
           <path key={i} id={`${id}-${i}`} d={d(arc)} fill="none" />
         ))}
         {lignes.map((l, i) => (
-          <text key={i} className="xr-casq">
+          <text key={i} className="xr-casq" fill={`url(#${id}-fil)`} filter={`url(#${id}-relief)`}>
             <textPath href={`#${id}-${i}`} startOffset="50%" textAnchor="middle">
               {l}
             </textPath>
           </text>
         ))}
-        <text className="xr-tab" x={tx * b.l} y={ty * b.h} transform={`rotate(${tr} ${tx * b.l} ${ty * b.h})`} textAnchor="middle">
+        <text
+          className="xr-tab"
+          x={tx * b.l}
+          y={ty * b.h}
+          transform={`rotate(${tr} ${tx * b.l} ${ty * b.h})`}
+          textAnchor="middle"
+          fill="#E6D7C0"
+          filter={`url(#${id}-relief)`}
+        >
           {nom}
         </text>
       </svg>
@@ -224,7 +247,7 @@ export function ExperienceTable({
         .map((a) => ({ nom: a.nom, photo: a.photo as string, prix: a.prix })),
     ].filter((p, i, t) => t.findIndex((x) => x.photo === p.photo) === i);
     const desserts = autres.some((p) => /dessert|g[âa]teau|tarte|glace|fondant|cr[èe]me|mousse|moelleux|baba/i.test(p.nom));
-    return { publie, nom, photo, prix, autres: autres.slice(0, 6), desserts };
+    return { publie, nom, photo, scene: c.menu?.scene, prix, autres: autres.slice(0, 6), desserts };
   }, [c, salle]);
 
   const voix = c.voix;
@@ -346,7 +369,7 @@ export function ExperienceTable({
       {[salle, salle, photoChef].map((src, i) => (
         <div
           key={i}
-          className={`xr-plan${etape === i + 1 ? " on" : ""}${i < 2 ? " salle" : ""}${i === 1 ? " remonte" : ""}`}
+          className={`xr-plan${etape === i + 1 ? " on" : ""}${i < 2 ? " salle" : " chef"}${i === 1 ? " remonte" : ""}`}
           aria-hidden="true"
         >
           <div className="xr-fond" style={{ backgroundImage: `url("${src}")` }} />
@@ -443,13 +466,19 @@ export function ExperienceTable({
                 avec un prénom, le badge passait sous la casquette du fantôme. */}
             {repas.publie ? "Le coup de cœur du chef" : "Bientôt : le coup de cœur du chef"}
           </p>
-          {/* « IL DOIT ÊTRE ASSIS SUR LA TABLE, JUSTE DERRIÈRE L'ASSIETTE » —
-              et le plat DANS une assiette : « le fantôme assis sur la
-              nourriture, c'est pas top ». Il passe donc derrière. */}
-          <Fantome pose="repos" nom={c.nom} classe="assis" />
-          <div className="xr-assiette" aria-hidden="true">
-            <span className="xr-creux" style={{ backgroundImage: `url("${repas.photo}")` }} />
-          </div>
+          {/* « IL FAUT QUE L'ASSIETTE ET LE CONTENU DE L'ASSIETTE SOIENT
+              HARMONIEUX ET APPÉTISSANTS, COMME SUR LA PHOTO ORIGINALE. » Une
+              assiette dessinée autour d'une photo se voyait tout de suite :
+              c'était faux. On montre donc UNE PHOTO — le plat servi, son
+              fantôme déjà assis derrière l'assiette (`menu.scene`) ; à
+              défaut, la photo du plat seule, sans personne posé dessus. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className={`xr-plat-photo${repas.scene ? " scene" : ""}`}
+            src={repas.scene ?? repas.photo}
+            alt={repas.publie ? repas.nom : ""}
+            draggable={false}
+          />
           <div className="xr-bas">
             {aUneVoix && (
               <div className={`xr-voix${joue ? " joue" : ""}`}>
@@ -529,13 +558,32 @@ export function ExperienceTable({
           {/* « LE FANTÔME DOIT ÊTRE ASSIS À LA TABLE, DONC ON LE VOIT QU'À
               MOITIÉ. » Le bord de la table de la photo le coupe : une découpe
               en biais, qui suit ce bord (mesuré sur la photo du cuisinier). */}
-          <button type="button" className="xr-question" onClick={onQuestion} aria-label="Poser une question à son double">
-            <span className="xr-bulle">Une question&nbsp;?</span>
-            <span className="xr-attable">
-              <Fantome pose="salut" nom={c.nom} classe="salue" />
-            </span>
-            <span className="xr-ia">✦ Double IA</span>
-          </button>
+          {voix?.fantomeDansLaPhoto ? (
+            /* SON FANTÔME EST DÉJÀ DANS LA PHOTO, bulle comprise : on le rend
+               touchable, là où il est. La photo est montrée à sa hauteur
+               exacte et calée à droite — d'où le calcul depuis le bord droit,
+               sur sa largeur (56,28 % de la hauteur), sur tous les écrans. */
+            <button
+              type="button"
+              className="xr-ici"
+              onClick={onQuestion}
+              aria-label="Une question ? Parler à son double"
+              style={{
+                left: `calc(100% - ${(1 - voix.fantomeDansLaPhoto.x).toFixed(3)} * 56.28cqh)`,
+                top: `${voix.fantomeDansLaPhoto.y * 100}%`,
+                width: `calc(${voix.fantomeDansLaPhoto.l} * 56.28cqh)`,
+                height: `${voix.fantomeDansLaPhoto.h * 100}%`,
+              }}
+            />
+          ) : (
+            <button type="button" className="xr-question" onClick={onQuestion} aria-label="Poser une question à son double">
+              <span className="xr-bulle">Une question&nbsp;?</span>
+              <span className="xr-attable">
+                <Fantome pose="salut" nom={c.nom} classe="salue" />
+              </span>
+              <span className="xr-ia">✦ Double IA</span>
+            </button>
+          )}
           <div className="xr-bas">
             <h1 className="xr-suite">
               La suite se passe ici<em>.</em>
@@ -608,6 +656,9 @@ function StylesExperienceTable() {
         /* LA SALLE REMONTÉE D'UN QUART : sa table passe sous l'assiette. */
         .xr-plan.remonte .xr-fond,.xr-plan.remonte .xr-net{top:-24%;bottom:24%;}
         .xr-plan.remonte{filter:brightness(.78) saturate(1.05);}
+        /* LE CUISINIER, CALÉ À DROITE : c'est là que son fantôme est assis, bulle comprise.
+           Un téléphone est plus étroit que la photo — on perd le bord gauche, pas lui. */
+        .xr-plan.chef .xr-fond{background-position:100% 100%;}
         .xr-net{display:none;}
         @media (min-aspect-ratio:4/5){
           .xr-fond,.xr-plan.on .xr-fond{filter:blur(24px) brightness(.5);transform:scale(1.15);}
@@ -664,17 +715,16 @@ function StylesExperienceTable() {
         .xr-fant{position:absolute;z-index:3;display:block;pointer-events:none;}
         .xr-fant img{display:block;width:100%;height:100%;filter:drop-shadow(0 10px 14px rgba(0,0,0,.45));}
         .xr-brode{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
-        .xr-brode text{font-family:var(--font-enseigne),Georgia,serif;font-style:italic;font-weight:600;fill:#F3E6D2;
-          stroke:rgba(40,25,15,.5);paint-order:stroke;}
-        .xr-brode .xr-tab{fill:#E8D7BE;stroke:none;}
+        /* BRODÉ, PAS IMPRIMÉ : l'italique fin de sa maquette, crème, ombré du côté où la casquette tourne. */
+        .xr-brode text{font-family:var(--font-enseigne),Georgia,serif;font-style:italic;font-weight:400;
+          stroke:rgba(30,18,10,.55);paint-order:stroke;letter-spacing:.01em;}
         /* 1 · SUR LA TABLE, À DROITE, IL MONTRE LA CLOCHE — sa maquette, mesurée. */
-        .xr-fant.montre{right:-8%;bottom:40%;height:24%;animation:xrFlotte 4s ease-in-out infinite;}
-        @keyframes xrFlotte{0%,100%{translate:0 0;}50%{translate:0 -4px;}}
+        /* IMMOBILES, LUI ET LA CLOCHE : « il ne faut pas que la cloche et le fantôme bougent, ça fait étrange ». */
+        .xr-fant.montre{right:-8%;bottom:40%;height:24%;}
         .xr-cloche{position:absolute;z-index:4;left:3%;bottom:33%;width:76%;
           padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;}
         .xr-cloche-img{display:block;width:100%;height:auto;transform-origin:50% 100%;
-          filter:drop-shadow(0 16px 16px rgba(0,0,0,.55));animation:xrRespire 3.2s ease-in-out infinite;}
-        @keyframes xrRespire{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
+          filter:drop-shadow(0 16px 16px rgba(0,0,0,.55));}
         .xr-cloche.souleve .xr-cloche-img{animation:xrSouleve .85s cubic-bezier(.3,.1,.3,1) forwards;}
         @keyframes xrSouleve{0%{transform:none;}30%{transform:translateY(-14px) rotate(-2deg);}
           100%{transform:translate(18%,-150%) rotate(-24deg);opacity:0;}}
@@ -703,20 +753,15 @@ function StylesExperienceTable() {
           display:inline-flex;align-items:center;gap:10px;padding:10px 18px 10px 14px;border-radius:999px;font-weight:700;font-size:16px;
           background:rgba(18,12,9,.72);border:1.5px solid #FF2E9A;animation:xrMonte .6s ease .2s both;}
         .xr-badge svg{width:22px;height:22px;fill:#FF2E9A;}
-        .xr-fant.assis{right:-4%;top:12.5%;height:25%;z-index:2;
-          animation:xrArrive .7s cubic-bezier(.34,1.4,.64,1) .25s both;}
-        /* L'ASSIETTE : une faïence crème, son marli moucheté, et le plat dans son creux. */
-        .xr-assiette{position:absolute;z-index:3;left:-4%;width:108%;top:31%;height:25%;border-radius:50%;
-          background:radial-gradient(ellipse at 50% 42%,#f4ede2 0%,#e9dfcf 58%,#d4c6b1 74%,#b9a88f 86%,#8c7a63 100%);
-          box-shadow:0 26px 34px -10px rgba(0,0,0,.75),0 6px 10px rgba(0,0,0,.35),inset 0 -6px 10px rgba(80,60,40,.35);
-          animation:xrArrive .6s cubic-bezier(.34,1.3,.64,1) both;}
-        /* LE CREUX DE L'ASSIETTE, puis LE PLAT POSÉ DEDANS : ses bords se fondent dans la faïence. */
-        .xr-assiette::before{content:"";position:absolute;left:11%;right:11%;top:12%;bottom:19%;border-radius:50%;
-          background:radial-gradient(ellipse at 50% 40%,#f1e9dc,#ddd1bf);box-shadow:inset 0 4px 10px rgba(90,70,50,.4),0 1px 0 rgba(255,255,255,.7);}
-        .xr-creux{position:absolute;left:8%;right:8%;top:8%;bottom:14%;border-radius:50%;background:#2a1d14 center / cover no-repeat;
-          -webkit-mask-image:radial-gradient(closest-side,#000 68%,rgba(0,0,0,.6) 82%,transparent 100%);
-          mask-image:radial-gradient(closest-side,#000 68%,rgba(0,0,0,.6) 82%,transparent 100%);}
-        @keyframes xrArrive{from{opacity:0;transform:translateY(20px) scale(.9);}to{opacity:1;transform:none;}}
+        @keyframes xrArrive{from{opacity:0;transform:translateY(20px) scale(.96);}to{opacity:1;transform:none;}}
+        /* LE PLAT : une photo, posée sous l'en-tête, qui se fond dans la nuit en haut et en bas. */
+        .xr-plat-photo{position:absolute;z-index:2;left:0;top:13%;width:100%;height:48%;object-fit:cover;object-position:50% 60%;
+          -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 9%,#000 84%,transparent 100%);
+          mask-image:linear-gradient(180deg,transparent 0,#000 9%,#000 84%,transparent 100%);animation:xrArrive .6s ease both;}
+        /* LA SCÈNE DE SA MAQUETTE GARDE SA PROPORTION (941 × 761) : elle est faite pour la largeur. */
+        .xr-plat-photo.scene{top:15.8%;height:auto;aspect-ratio:941 / 761;object-fit:fill;
+          -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 7%,#000 90%,transparent 100%);
+          mask-image:linear-gradient(180deg,transparent 0,#000 7%,#000 90%,transparent 100%);}
         .xr-voix{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;width:100%;max-width:560px;margin-bottom:12px;}
         .xr-avatar{width:76px;height:76px;border-radius:50%;background:#2A1F1B center / cover no-repeat;overflow:hidden;
           border:3px solid rgba(255,244,230,.85);box-shadow:0 8px 20px rgba(0,0,0,.5);}
@@ -740,6 +785,9 @@ function StylesExperienceTable() {
         .xr-plat + .xr-go{margin-top:14px;}
 
         /* 3 · L'ACCUEIL */
+        .xr-ici{position:absolute;z-index:4;padding:0;border:0;background:none;cursor:pointer;border-radius:24px;
+          -webkit-tap-highlight-color:transparent;}
+        .xr-ici:focus-visible{outline:2px solid #FF2E9A;outline-offset:2px;}
         /* 3 · À SA TABLE, ON NE LE VOIT QU'À MOITIÉ : le bord de la table le coupe, en biais. */
         .xr-question{position:absolute;z-index:4;right:-4%;top:40%;height:24%;aspect-ratio:963 / 1020;
           padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;}
