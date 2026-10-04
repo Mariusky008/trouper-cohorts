@@ -1,6 +1,12 @@
 // Lien court de l'Espace Pro : /p/<jeton> → redirige vers l'espace du commerçant.
 // Le jeton EST le secret (on retrouve le site par pro_token). Bien plus court à
 // envoyer que /site-internet/pro/<slug>?k=<jeton>.
+//
+// IL OUVRE MAINTENANT SON COMPTOIR. « Le lien pro sera donc l'admin commerçant
+// qu'on vient de créer. » Son fantôme lui pose les questions de son métier, et
+// ce qu'il publie part sur sa page et dans Le Direct. L'ancien espace reste à
+// un geste : le lien « Réglages » du comptoir (horaires, galerie, voix du
+// double, WhatsApp…).
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -26,7 +32,7 @@ export default async function ProShortLink({ params }: { params: Promise<{ token
     }
   }
   // redirect() lève une exception (NEXT_REDIRECT) : JAMAIS dans un try/catch.
-  if (slug) redirect(`/site-internet/pro/${slug}?k=${encodeURIComponent(t)}`);
+  if (slug) redirect(`/autour-de-moi/assistante?site=${encodeURIComponent(slug)}&k=${encodeURIComponent(t)}`);
 
   return (
     <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "system-ui", padding: 24, textAlign: "center" }}>

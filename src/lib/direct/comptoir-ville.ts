@@ -51,6 +51,14 @@ export type CommerceComptoir = {
   metres?: number;
   /** Où le mène « Voir dans la ville » après avoir publié. */
   ville?: string;
+  /**
+   * UN VRAI COMMERÇANT, venu par son lien pro : son adresse et son jeton. Ce
+   * qu'il publie part alors en base — sa page et Le Direct — au lieu de la
+   * journée du téléphone. Voir `comptoir-en-ligne.ts`.
+   */
+  reel?: { slug: string; token: string };
+  /** L'ancien Espace Pro : horaires, galerie, voix du double, WhatsApp… */
+  reglages?: string;
 };
 
 /** Les familles dont la pièce s'essaie sur soi : elle entre au catalogue avec sa photo. */

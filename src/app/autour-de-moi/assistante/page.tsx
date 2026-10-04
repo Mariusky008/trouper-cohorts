@@ -17,6 +17,8 @@ import { toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import { copieNommee } from "@/lib/direct/copies-presentation";
 import { familleDuDouble } from "@/lib/direct/double-metiers";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { lireLeSite } from "@/lib/site-internet/fiche-du-site";
 import { Comptoir } from "./comptoir";
 
 export const viewport: Viewport = {
@@ -69,7 +71,69 @@ function commerceDepuis(depuis: string): CommerceComptoir | undefined {
   };
 }
 
-export default async function Page({ searchParams }: { searchParams: Promise<{ depuis?: string }> }) {
+/**
+ * ═══ UN VRAI COMMERÇANT, PAR SON LIEN PRO ════════════════════════════════
+ *
+ * `/p/<jeton>` mène ici avec `?site=<son adresse>&k=<son jeton>`. On ne croit
+ * pas l'adresse sur parole : le jeton doit être le sien, comme pour toutes les
+ * routes de l'Espace Pro. Sa carte est lue comme sa page la lit (`lireLeSite`) :
+ * son nom, son métier, sa photo, le prénom qu'il a donné à son double.
+ */
+async function commerceReel(slug: string, token: string): Promise<CommerceComptoir | null> {
+  if (!/^[a-z0-9-]{2,120}$/i.test(slug) || !token || token.length > 80) return null;
+  try {
+    const { data } = await createAdminClient()
+      .from("human_vitrine_sites")
+      .select("pro_token")
+      .eq("slug", slug)
+      .eq("channel", "letter")
+      .maybeSingle();
+    const attendu = String((data as Record<string, unknown> | null)?.pro_token ?? "");
+    if (!attendu || attendu !== token) return null;
+    const lu = await lireLeSite(slug);
+    if (!lu) return null;
+    const c = lu.carte;
+    return {
+      id: `site-${slug}`,
+      famille: familleDuDouble(c),
+      metier: c.metier,
+      branche: c.branche,
+      prenom: prenomVrai(lu.savoir.prenom),
+      nom: c.nom,
+      photo: c.photo,
+      adresse: c.fiche?.ou,
+      horaires: c.fiche?.horaires,
+      distance: c.distance,
+      metres: c.metres,
+      // CE QU'IL PUBLIE ARRIVE SUR SA PAGE : c'est là qu'il va le vérifier.
+      ville: `/site-internet/apercu/${slug}`,
+      reel: { slug, token },
+      reglages: `/site-internet/pro/${slug}?k=${encodeURIComponent(token)}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ depuis?: string; site?: string; k?: string }>;
+}) {
   const sp = await searchParams;
+  if (sp.site || sp.k) {
+    const reel = await commerceReel(String(sp.site ?? ""), String(sp.k ?? ""));
+    if (!reel) {
+      return (
+        <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "system-ui", padding: 24, textAlign: "center", background: "#120C09", color: "#FFF4E6" }}>
+          <div>
+            <h1 style={{ fontSize: 22, fontWeight: 800 }}>Lien introuvable</h1>
+            <p style={{ color: "#CDB8A4" }}>Ce lien privé n&apos;est plus valide. Contactez-nous directement.</p>
+          </div>
+        </main>
+      );
+    }
+    return <Comptoir impose={reel} />;
+  }
   return <Comptoir impose={commerceDepuis(String(sp.depuis ?? ""))} />;
 }

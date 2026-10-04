@@ -44,6 +44,7 @@ import {
 } from "@/lib/direct/comptoir";
 import { libererMicro, ouvrirEcoute } from "@/lib/direct/voix-micro";
 import { envoyerALaVille, retirerDeLaVille, type CommerceComptoir } from "@/lib/direct/comptoir-ville";
+import { envoyerEnLigne, retirerEnLigne, type ResultatEnvoi } from "@/lib/direct/comptoir-en-ligne";
 import { accord, demandesEnMots, effetDesAnnonces, phraseDeLaVeille, semaineDuComptoir, type JourStats } from "@/lib/direct/stats-comptoir";
 
 type Commerce = CommerceComptoir;
@@ -290,6 +291,9 @@ type Phase =
   | { ou: "recap"; relance?: boolean }
   | { ou: "fete"; points: number; gagnes: string[]; publication: Publication };
 
+/** L'envoi en ligne d'un vrai commerçant : en cours, arrivé, ou à refaire. */
+type Envoi = { etat: "en-cours" } | ({ etat: "fini" } & ResultatEnvoi);
+
 function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => void }) {
   const mission = missionDe(commerce.famille);
   const dossier = dossierDuFantome(commerce);
@@ -337,6 +341,13 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
     else setPhase({ ou: "recap", relance });
   };
 
+  const [envoi, setEnvoi] = useState<Envoi | null>(null);
+  const envoyerEnBase = async (p: Publication, principalAvant?: Publication) => {
+    setEnvoi({ etat: "en-cours" });
+    const r = await envoyerEnLigne(commerce, mission, p, principalAvant);
+    setEnvoi({ etat: "fini", ...r });
+  };
+
   const envoyer = () => {
     const t = Date.now();
     const relance = brouillon.genre === "relance";
@@ -359,7 +370,9 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
     setEtat(r.comptoir);
     garderComptoir(memoire, r.comptoir);
     // ET ÇA PART DANS LA VILLE — Le Direct, sa carte, l'essayage, son libraire.
-    envoyerALaVille(commerce, mission, p, principal);
+    // Un vrai commerçant publie en base ; la démonstration, dans le téléphone.
+    if (commerce.reel) void envoyerEnBase(p, principal);
+    else envoyerALaVille(commerce, mission, p, principal);
     setMaintenant(t);
     setPhase({ ou: "fete", points: r.points, gagnes: r.gagnes, publication: p });
   };
@@ -369,7 +382,10 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
     const c = retirer(etat, id);
     setEtat(c);
     garderComptoir(memoire, c);
-    if (quoi) retirerDeLaVille(quoi);
+    if (quoi) {
+      if (commerce.reel) void retirerEnLigne(commerce, mission, quoi);
+      else retirerDeLaVille(quoi);
+    }
     setMaintenant(Date.now());
   };
 
@@ -397,19 +413,30 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           <button type="button" className={`cz-puce${s ? " allume" : ""}`} onClick={() => setStats(true)} aria-label={`${s} jours d’affilée — voir mes stats`}>
             🔥 {s}
           </button>
-          <button type="button" className="cz-puce stats" onClick={() => setStats(true)} aria-label="Voir mes stats">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 19V11M10 19V5M16 19v-6M22 19H2" />
-            </svg>
-            {semaine[semaine.length - 1].vues}
-          </button>
+          {!commerce.reel && (
+            <button type="button" className="cz-puce stats" onClick={() => setStats(true)} aria-label="Voir mes stats">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 19V11M10 19V5M16 19v-6M22 19H2" />
+              </svg>
+              {semaine[semaine.length - 1].vues}
+            </button>
+          )}
           <button type="button" className="cz-puce or" onClick={() => setStats(true)} aria-label={`${etat.points} points — voir mes stats`}>
             ⭐ {etat.points}
           </button>
+          {/* SES RÉGLAGES : l'ancien Espace Pro — horaires, galerie, voix du
+              double, WhatsApp. « Je garde le lien Réglages ? — Oui. » */}
+          {commerce.reglages && (
+            <a className="cz-puce" href={commerce.reglages} aria-label="Réglages">
+              ⚙️
+            </a>
+          )}
         </div>
       </header>
 
-      {stats && <PanneauStats famille={commerce.famille} semaine={semaine} etat={etat} serie={s} onFermer={() => setStats(false)} />}
+      {stats && (
+        <PanneauStats famille={commerce.famille} semaine={semaine} etat={etat} serie={s} reel={Boolean(commerce.reel)} onFermer={() => setStats(false)} />
+      )}
 
       {phase.ou === "accueil" && (
         <Accueil
@@ -463,6 +490,9 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           serie={s}
           publication={phase.publication}
           ville={commerce.ville ?? "/autour-de-moi"}
+          reel={Boolean(commerce.reel)}
+          envoi={envoi}
+          onReessayer={() => phase.ou === "fete" && void envoyerEnBase(phase.publication, principal)}
           onFin={() => setPhase({ ou: "accueil" })}
         />
       )}
@@ -542,11 +572,15 @@ function Accueil({
   const relanceFaite = actives.some((p) => p.genre === "relance");
   const h = heureDecimale();
   const auj = semaine[semaine.length - 1];
-  const veille = phraseDeLaVeille(semaine, mission.quoi);
+  // UN VRAI COMMERÇANT N'A PAS DE CHIFFRES INVENTÉS : tant que sa page ne les
+  // compte pas, le fantôme ne lui parle pas de « personnes qui ont vu ».
+  const veille = commerce.reel ? null : phraseDeLaVeille(semaine, mission.quoi);
   const texte = principal
     ? relance && !relanceFaite && h >= relance.apres
       ? `Re-bonjour${aQui(commerce)} ! Le service est passé : il t’en reste ?`
-      : `Tout roule${aQui(commerce, ",")} ! Déjà ${auj.vues} ${accord(auj.vues, "personne a", "personnes ont")} vu ta page aujourd’hui.`
+      : commerce.reel
+        ? `Tout roule${aQui(commerce, ",")} ! ${mission.quoi} est en ligne sur ta page.`
+        : `Tout roule${aQui(commerce, ",")} ! Déjà ${auj.vues} ${accord(auj.vues, "personne a", "personnes ont")} vu ta page aujourd’hui.`
     : veille
       ? `Salut${aQui(commerce)} ! ${veille} On remet ça ?`
       : `Salut${aQui(commerce)} ! Prêt pour aujourd’hui ?`;
@@ -583,7 +617,7 @@ function Accueil({
 
         {actives.length > 0 && (
           <a className="cz-ville" href={commerce.ville ?? "/autour-de-moi"}>
-            <span aria-hidden="true">🏙️</span> Voir mon annonce dans la ville <s aria-hidden="true">→</s>
+            <span aria-hidden="true">🏙️</span> {commerce.reel ? "Voir ma page" : "Voir mon annonce dans la ville"} <s aria-hidden="true">→</s>
           </a>
         )}
 
@@ -594,13 +628,13 @@ function Accueil({
         )}
 
         {/* UN SEUL CHIFFRE ICI, ET IL MÈNE AUX AUTRES : celui d'aujourd'hui. */}
-        <button type="button" className="cz-apercu-stats" onClick={onStats}>
+        {!commerce.reel && <button type="button" className="cz-apercu-stats" onClick={onStats}>
           <span>
             <b>{auj.vues}</b> {auj.vues > 1 ? "visites" : "visite"} aujourd’hui
             {auj.publie ? <i className="cz-direct">en direct</i> : null}
           </span>
           <em>Mes stats →</em>
-        </button>
+        </button>}
       </div>
     </div>
   );
@@ -614,12 +648,15 @@ function PanneauStats({
   semaine,
   etat,
   serie: jours,
+  reel,
   onFermer,
 }: {
   famille: FamilleDouble;
   semaine: JourStats[];
   etat: EtatComptoir;
   serie: number;
+  /** Un vrai commerçant : pas de chiffres simulés, on le lui dit. */
+  reel: boolean;
   onFermer: () => void;
 }) {
   const niveau = niveauDe(etat.points);
@@ -639,8 +676,20 @@ function PanneauStats({
           </button>
         </header>
         <div className="cz-feuille-c">
-          <Journee auj={semaine[semaine.length - 1]} famille={famille} semaine={semaine} />
-          <Semaine semaine={semaine} famille={famille} />
+          {reel ? (
+            <section className="cz-bloc cz-stats">
+              <h2>Tes chiffres</h2>
+              <p className="cz-pousse">
+                Ta page commence à compter ses visites, les écoutes de ta voix et tes demandes : ils apparaîtront ici dès qu’ils
+                seront mesurés. On ne t’affichera jamais un chiffre inventé.
+              </p>
+            </section>
+          ) : (
+            <>
+              <Journee auj={semaine[semaine.length - 1]} famille={famille} semaine={semaine} />
+              <Semaine semaine={semaine} famille={famille} />
+            </>
+          )}
           <section className="cz-bloc cz-progres">
             <div className="cz-niveau">
               <b>{niveau.nom}</b>
@@ -1242,6 +1291,9 @@ function Fete({
   serie: jours,
   publication,
   ville,
+  reel,
+  envoi,
+  onReessayer,
   onFin,
 }: {
   dossier: string;
@@ -1252,6 +1304,10 @@ function Fete({
   publication: Publication;
   /** Là où son annonce vient d'arriver : l'application de la ville. */
   ville: string;
+  /** Un vrai commerçant : l'envoi en ligne, et de quoi le refaire. */
+  reel: boolean;
+  envoi: Envoi | null;
+  onReessayer: () => void;
   onFin: () => void;
 }) {
   const pose = useFantome(false, "salut");
@@ -1294,9 +1350,27 @@ function Fete({
           })}
         </div>
       )}
-      {/* LA PREUVE QUE ÇA EST PARTI : son annonce, dans la ville, tout de suite. */}
+      {/* OÙ C'EST ARRIVÉ — et si ça n'est pas parti, on le dit et on refait. */}
+      {reel && envoi && (
+        <p className={`cz-envoi-etat${envoi.etat === "fini" && envoi.erreur ? " ko" : ""}`} role="status">
+          {envoi.etat === "en-cours"
+            ? "J’envoie… ⏳"
+            : envoi.ok
+              ? `✓ En ligne : ${envoi.ou.join(" et ")}.${envoi.erreur ? ` Une partie n’a pas suivi : ${envoi.erreur}` : ""}`
+              : `Ça n’est pas parti : ${envoi.erreur ?? "erreur inconnue"}`}
+          {/* UNE PARTIE PEUT ÊTRE PARTIE ET PAS L'AUTRE : on propose de refaire
+              dès qu'il y a une erreur. Renvoyer la même photo ne refait pas la
+              scène (voir le mode d'emploi de l'Expérience). */}
+          {envoi.etat === "fini" && envoi.erreur && (
+            <button type="button" onClick={onReessayer}>
+              Réessayer
+            </button>
+          )}
+        </p>
+      )}
+      {/* LA PREUVE QUE ÇA EST PARTI : son annonce, là où on la voit, tout de suite. */}
       <a className="cz-go" href={ville}>
-        Voir dans la ville <s aria-hidden="true">→</s>
+        {reel ? "Voir ma page" : "Voir dans la ville"} <s aria-hidden="true">→</s>
       </a>
       <button type="button" className="cz-lien" onClick={onFin}>
         Revenir au comptoir
@@ -1551,6 +1625,10 @@ label.cz-go{cursor:pointer;}
 .cz-nouveau em{display:block;font-style:normal;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#FFC2E0;}
 .cz-nouveau b{display:block;font-family:var(--font-clikme),sans-serif;font-size:16px;}
 .cz-fete .cz-go{max-width:340px;margin-top:6px;text-decoration:none;}
+.cz-envoi-etat{margin:0;max-width:340px;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.4;
+  background:rgba(123,214,106,.12);color:#BDE8B0;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;}
+.cz-envoi-etat.ko{background:rgba(255,46,154,.12);color:#FFC2E0;}
+.cz-envoi-etat button{border:1px solid currentColor;background:none;border-radius:999px;padding:6px 12px;font-weight:700;font-size:13px;}
 .cz-confettis{position:absolute;inset:0;pointer-events:none;}
 .cz-confettis i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;
   background:var(--rose);animation:cz-tombe 2.6s cubic-bezier(.3,.6,.5,1) both;transform:rotate(var(--r));}
