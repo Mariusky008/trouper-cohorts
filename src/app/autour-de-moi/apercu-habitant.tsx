@@ -135,15 +135,13 @@ import {
 } from "@/lib/direct/file-attente";
 import {
   abonnerVille,
-  caMInteresse,
+  abonnerVus as abonnerVusVille,
+  AUCUN_VU,
+  chargerVus as chargerVusVille,
   chargerVille,
   comprendre,
   direQuelqueChose,
-  ilYA,
   NATURES,
-  reagirVille,
-  repondreVille,
-  resteDit,
   salonDepuisVille,
   VILLE_VIDE,
   type MessageVille,
@@ -171,6 +169,7 @@ import { EcranSalon } from "@/components/direct/ecran-salon";
 import { Ensemble } from "./ensemble";
 import { aToiDeJouer, nosDiscussions } from "@/lib/direct/ensemble";
 import { MaMaison } from "./ma-maison";
+import { LaVille } from "./la-ville";
 import { StyleMaison } from "@/components/direct/style-maison";
 import { StylesChoix } from "@/components/direct/styles-choix";
 // LE PARCOURS MODE — la « partie 2 », pour une categorie sur cinq.
@@ -223,7 +222,6 @@ import { SortieEnTrois } from "@/components/direct/sortie-en-trois";
 import { EcranGout } from "@/components/direct/gout-contenu";
 import { GOUTS } from "@/lib/direct/avant-gout";
 import { mesFantomes, rappelerFantome, SIGNAL as SIGNAL_FANTOMES, tempsRestant, type FantomePose } from "@/lib/direct/mes-fantomes";
-import { estUneSortie, mesAnnoncesDe } from "@/lib/direct/mes-annonces";
 import {
   ENVIES,
   HEURE_MAX,
@@ -418,7 +416,7 @@ const ANCIENNE_OUVERTURE = false;
  */
 const NOM_ONGLET = {
   direct: "Le direct",
-  ville: "La Ville",
+  ville: "La ville",
   salons: "Ensemble",
   profil: "Ma maison",
 } as const;
@@ -1976,14 +1974,13 @@ export function ApercuHabitant() {
    * devenir un forum de quartier.
    */
   const ville = useSyncExternalStore(abonnerVille, chargerVille, () => VILLE_VIDE);
-  const [filtreVille, setFiltreVille] = useState<"" | NatureVille>("");
+  const vusVille = useSyncExternalStore(abonnerVusVille, chargerVusVille, () => AUCUN_VU);
   const [motVille, setMotVille] = useState("");
   const [composeVille, setComposeVille] = useState(false);
   /** Ce que l'application a compris, et qu'on peut corriger d'un appui. */
   const [natureVille, setNatureVille] = useState<NatureVille>("question");
-  /** Le message dont on lit les réponses. Un seul ouvert à la fois. */
-  const [filVille, setFilVille] = useState("");
-  const [reponseVille, setReponseVille] = useState("");
+  /** L'essai d'une publication de la ville, rejoué sur soi : « Essayer sur moi ». */
+  const [essaiVille, setEssaiVille] = useState<{ carte: string; piece: string } | null>(null);
   const embauches = vue === "recrute";
   const setEmbauches = (v: boolean) => setVue(v ? "recrute" : "metiers");
   /** LA DEMANDE ÉCRITE. Rien : on regarde le paquet comme avant. */
@@ -5420,17 +5417,6 @@ export function ApercuHabitant() {
    * pas entré restent visibles tant qu'ils sont vivants : c'est là qu'on voit
    * qu'il se passe quelque chose sans y avoir été invité.
    */
-  /**
-   * CE QUI EST À L'ÉCRAN DANS LA VILLE. Deux tris, dans cet ordre : le plus
-   * RÉCENT d'abord, parce que la promesse est « maintenant » ; à égalité de
-   * minute, le plus PROCHE. Jamais le plus populaire — un classement par
-   * réactions est la porte d'entrée du forum, et c'est précisément ce qu'on
-   * refuse d'être.
-   */
-  const messagesVille = ville
-    .filter((m) => !filtreVille || m.nature === filtreVille)
-    .slice()
-    .sort((a, b) => b.a - a.a || a.metres - b.metres);
 
   /**
    * D'UN MESSAGE À UNE SORTIE. Le « cherche » de La Ville et le salon des
@@ -5596,7 +5582,6 @@ export function ApercuHabitant() {
   }
 
   const dansLeSalon = (x: Salon) => jySuis(x.presents) || cestMoi(x.parQui);
-  const salonsOuverts = Object.values(salons).filter((x) => x.ouvert && dansLeSalon(x));
   /**
    * CE QU'ON PEUT DÉCOUVRIR — les salons publics où l'on n'est pas encore.
    *
@@ -5609,34 +5594,6 @@ export function ApercuHabitant() {
   );
   const salonsPasses = Object.values(salons).filter((x) => !x.ouvert);
 
-  /* ═══ L'ONGLET « PROPOSITIONS » EN TROIS PARTIES ════════════════════════
-
-     « J'aimerais qu'on puisse retrouver toutes les annonces dans lesquelles on
-     a interagi, surtout les sorties en tout premier pour voir l'évolution du
-     chat live, et ensuite le reste (essayage…). Et ensuite une partie
-     distincte où on retrouvera les salons dans lesquels on converse avec nos
-     amis. Et enfin une troisième partie où ce sont les salons ouverts à
-     tous. »
-
-     UNE SORTIE N'EST ÉCRITE QU'UNE FOIS, ET C'EST EN HAUT. Elle est à la fois
-     une annonce sur laquelle on a agi et un salon entre amis : les deux
-     parties pouvaient donc la revendiquer. Elle va dans la première, parce que
-     c'est celle qu'il demande de voir en premier — et la deuxième garde tout
-     le reste des conversations. Une même ligne dans deux listes se lit comme
-     deux choses, et on finit par ouvrir les deux pour vérifier. */
-  const mesAnnonces = mesAnnoncesDe({
-    salons: salonsOuverts.filter(estUneSortie),
-    pieces: piecesGardees,
-    traces: mesTraces,
-    /* CE QU'ON A DÉJÀ LU, ET QUI DIT CE QUI A BOUGÉ — la seule raison de
-       rouvrir une sortie. Sans ça, la ligne répétait « Vous y êtes » sur une
-       conversation qui n'avait pas changé depuis hier. */
-    lus,
-    cestMoi,
-  });
-  const mesSalonsAmis = salonsOuverts.filter((x) => !estUneSortie(x));
-  /** Ce qui n'est pas une conversation : les essais et les traces (bientôt dans Ma maison). */
-  const mesEssaisTraces = mesAnnonces.filter((a) => !a.salon);
   /** Le badge d'Ensemble : actions attendues + conversations avec du neuf. */
   const aFaireEnsemble = (() => {
     const attentes = aToiDeJouer(salons, cestMoi, lus, monPrenom() || "Vous");
@@ -5645,6 +5602,72 @@ export function ApercuHabitant() {
     );
     return attentes.length + neuves.length;
   })();
+
+  /* ═══ CE QUE LA VILLE DEMANDE À L'APPLICATION ═══════════════════════════
+
+     MES AMIS, DANS LA MAQUETTE, CE SONT LES GENS AVEC QUI JE PARLE. Il n'y a
+     pas encore de comptes ni de liste d'amis : ceux qui partagent une
+     conversation avec moi en tiennent lieu. Sans eux, les filtres « Pour
+     toi » et « Mes amis » ne s'affichent pas — ils ne filtreraient rien. */
+  const mesAmis = [
+    ...new Set(
+      Object.values(salons)
+        .filter(dansLeSalon)
+        .flatMap((x) => [x.parQui, ...x.presents]),
+    ),
+  ].filter((q) => q && !cestMoi(q));
+
+  /* LA SUITE DE MES ÉCHANGES : une conversation née d'un essai ou d'une
+     publication, où quelqu'un a écrit depuis ma dernière visite. Rien
+     d'autre — pas de « X a répondu » sans réponse. */
+  const suitesDesEssais = nosDiscussions(salons, cestMoi, lus)
+    .actives.filter((d) => d.nonLus > 0 && /^(essai|vd|ville)\|/.test(d.cle) && d.dernier && !d.dernier.moi)
+    .map((d) => ({
+      cle: d.cle,
+      qui: d.dernier!.qui,
+      texte: `a écrit dans « ${d.titre} »`,
+      ouvrir: () => {
+        setSalonOuvert(d.cle);
+        setSalonPage(true);
+      },
+    }));
+
+  const aSuivreVille =
+    suitesDesEssais.length + ville.filter((m) => m.qui === "Vous" && m.reponses.length > (vusVille[m.id] ?? 0)).length;
+
+  /**
+   * « EN DISCUTER AVEC MES AMIS » — une conversation privée sur une
+   * publication, qui se retrouve dans Ensemble. La publication en est l'objet :
+   * sa photo en tête, son texte en sujet, et une ligne qui dit d'où elle vient.
+   * Une seule conversation par publication : y revenir rouvre la même.
+   */
+  function discuterDepuisVille(m: MessageVille) {
+    const cle = `vd|${m.id}`;
+    if (!salons[cle]) {
+      noter("partage", 0, "ville-discuter");
+      const sujet = m.commerce ? m.commerce.nom : m.texte.slice(0, 60);
+      ouvrirSalon({
+        cle,
+        sujet,
+        ou: m.commerce?.nom ?? m.ou,
+        parQui: "Vous",
+        quand: "À décider",
+        prive: true,
+        photo: m.photo,
+        annonce: m.texte.slice(0, 70),
+        distance: m.distance,
+      });
+      ecrireDansSalon(cle, {
+        qui: monPrenom() || "Vous",
+        voix: "systeme",
+        texte: `📌 Vu dans La ville — ${m.qui === "Vous" ? "ta publication" : `la publication de ${m.qui}`} : « ${m.texte.slice(0, 90)}${m.texte.length > 90 ? "…" : ""} »`,
+        quand: heureCourte(),
+        photo: m.photo,
+      });
+    }
+    setSalonOuvert(cle);
+    setSalonPage(true);
+  }
 
   /* ═══ CE QUE LE FANTÔME VOIT DU GROUPE ═══
 
@@ -11066,218 +11089,40 @@ export function ApercuHabitant() {
               </div>
             </div>
           )}
+          {/* ═══ LA VILLE — le fil social local ═══════════════════════════════
+              Voir `la-ville.tsx`. Les essais partagés, les découvertes, la vie
+              locale et les sorties ouvertes à tous (qui quittent Ensemble, en
+              événements). « Dire quelque chose » reste : c'est l'une des trois
+              entrées de « Qu'as-tu envie de partager ? ». */}
           {onglet === "ville" && !reelle && (
             <div className="ap-page ap-onglet-vue">
-              <div className="ap-page-h">
-                <span className="ap-page-t">
-                  <b>La Ville</b>
-                  <em>
-                    Ce que les habitants disent · <u>{ville.length} en ce moment</u>
-                  </em>
-                </span>
-              </div>
-
-              {/* LES NATURES SONT DES FILTRES, PAS DES CASES À COCHER À
-                  L'ÉCRITURE. On range après coup ; on ne demande jamais à
-                  quelqu'un de se classer avant d'avoir parlé. */}
-              <div className="ap-envies ap-v-filtres">
-                <button
-                  type="button"
-                  className={`ap-e${filtreVille === "" ? " on" : ""}`}
-                  onClick={() => setFiltreVille("")}
-                >
-                  Tout
-                </button>
-                {(Object.keys(NATURES) as NatureVille[]).map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    className={`ap-e${filtreVille === n ? " on" : ""}`}
-                    onClick={() => setFiltreVille(filtreVille === n ? "" : n)}
-                  >
-                    <i aria-hidden="true">{NATURES[n].emoji}</i>
-                    {NATURES[n].label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="ap-sal-corps">
-                {messagesVille.length === 0 ? (
-                  <div className="ap-moi-vide">
-                    <span aria-hidden="true">🌤️</span>
-                    <b>Personne ne parle en ce moment.</b>
-                    <i>
-                      Tout ce qui se dit ici s&apos;efface au bout de quelques
-                      heures. Dites la première chose.
-                    </i>
-                  </div>
-                ) : (
-                  messagesVille.map((m) => {
-                    const n = NATURES[m.nature];
-                    const ouvert = filVille === m.id;
-                    return (
-                      <div className={`ap-v-m ${n.teinte}`} key={m.id}>
-                        <div className="ap-v-h">
-                          <i className={`ap-av a${m.qui.charCodeAt(0) % 5}`} aria-hidden="true">
-                            {m.qui.slice(0, 1).toUpperCase()}
-                          </i>
-                          <span>
-                            <b>
-                              {m.qui}
-                              <u>{ilYA(m)}</u>
-                            </b>
-                            <em>
-                              📍 {m.ou} · {m.distance}
-                            </em>
-                          </span>
-                          <s className="ap-v-nat">
-                            {n.emoji} {n.label}
-                          </s>
-                        </div>
-
-                        <p className="ap-v-t">{m.texte}</p>
-
-                        {m.photo && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img className="ap-v-ph" src={m.photo} alt="" loading="lazy" />
-                        )}
-
-                        {/* ─── LE PONT AVEC LES SALONS ───
-                            Un « cherche » qui rassemble du monde n'est plus un
-                            message : c'est une sortie. C'est là que les deux
-                            briques cessent d'être deux fonctions côte à côte. */}
-                        {m.nature === "cherche" && (
-                          <div className="ap-v-cherche">
-                            <span>
-                              <b>
-                                {(m.interesses?.length ?? 0)}{" "}
-                                {(m.interesses?.length ?? 0) > 1
-                                  ? "personnes intéressées"
-                                  : "personne intéressée"}
-                              </b>
-                              {(m.interesses?.length ?? 0) >= 2
-                                ? "Vous êtes assez pour en faire une sortie."
-                                : "Dites-le, et ça devient une sortie."}
-                            </span>
-                            <button
-                              type="button"
-                              className={`ap-v-int${m.interesses?.includes("Vous") ? " on" : ""}`}
-                              onClick={() => {
-                                noter("jy-vais", 0, "ville");
-                                caMInteresse(m.id);
-                              }}
-                            >
-                              {m.interesses?.includes("Vous") ? "✓ Ça m'intéresse" : "Ça m'intéresse"}
-                            </button>
-                          </div>
-                        )}
-                        {m.nature === "cherche" && (m.interesses?.length ?? 0) >= 2 && (
-                          <button
-                            type="button"
-                            className="ap-v-salon"
-                            onClick={() => ouvrirSalonDepuisVille(m)}
-                          >
-                            <i aria-hidden="true">💬</i>
-                            {m.salon ? "Voir le salon" : "En faire une sortie"}
-                            <em aria-hidden="true">›</em>
-                          </button>
-                        )}
-
-                        <div className="ap-v-bas">
-                          <button
-                            type="button"
-                            className={`ap-v-coeur${m.monCoeur ? " on" : ""}`}
-                            aria-label="J'aime"
-                            onClick={() => {
-                              noter("note-donnee", m.coeurs + 1, "ville");
-                              reagirVille(m.id);
-                            }}
-                          >
-                            ❤️{m.coeurs > 0 && <b>{m.coeurs}</b>}
-                          </button>
-                          <button
-                            type="button"
-                            className="ap-v-rep"
-                            onClick={() => {
-                              setFilVille(ouvert ? "" : m.id);
-                              setReponseVille("");
-                            }}
-                          >
-                            💬{" "}
-                            {m.reponses.length > 0
-                              ? `${m.reponses.length} ${m.reponses.length > 1 ? "réponses" : "réponse"}`
-                              : "Répondre"}
-                          </button>
-                          {/* LA DISPARITION EST ÉCRITE. Sans ça, on croit qu'on
-                              a été effacé ou censuré ; dit d'avance, c'est une
-                              promesse tenue. */}
-                          <s className="ap-v-reste">s&apos;efface dans {resteDit(m)}</s>
-                        </div>
-
-                        {ouvert && (
-                          <div className="ap-v-fil">
-                            {m.reponses.map((r) => (
-                              <div className="ap-v-r" key={r.id}>
-                                <b>
-                                  {r.qui}
-                                  {r.officiel && <s>{r.officiel}</s>}
-                                </b>
-                                <span>{r.texte}</span>
-                                <u>{r.quand}</u>
-                              </div>
-                            ))}
-                            <form
-                              className="ap-v-champ"
-                              onSubmit={(ev) => {
-                                ev.preventDefault();
-                                const t = reponseVille.trim();
-                                if (!t) return;
-                                noter("demande-envoyee", t.length, "ville-reponse");
-                                repondreVille(m.id, t);
-                                setReponseVille("");
-                              }}
-                            >
-                              <input
-                                value={reponseVille}
-                                onChange={(ev) => setReponseVille(ev.target.value)}
-                                maxLength={200}
-                                placeholder="Répondre…"
-                                aria-label="Votre réponse"
-                              />
-                              <button type="submit" disabled={!reponseVille.trim()} aria-label="Envoyer">
-                                ↑
-                              </button>
-                            </form>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              {/* ─── DIRE QUELQUE CHOSE ───
-                  Pas « Publier ». Un bouton qui dit « publier » demande d'avoir
-                  quelque chose à publier — un titre, une catégorie, une
-                  intention. « Dire quelque chose » ne demande qu'une phrase, et
-                  c'est l'application qui range. */}
-              <button
-                type="button"
-                className="ap-v-dire"
-                onClick={() => {
+              <LaVille
+                messages={ville}
+                amis={mesAmis}
+                sorties={salonsADecouvrir}
+                suites={suitesDesEssais}
+                essais={piecesGardees}
+                commerces={[...toutes].sort((x, y) => x.metres - y.metres)}
+                onEssayer={(r) => {
+                  noter("ouverture", 0, "ville-essayer");
+                  setEssaiVille(r);
+                }}
+                onPage={(id) => {
+                  window.location.href = `/autour-de-moi/boutique?c=${encodeURIComponent(id)}`;
+                }}
+                onDiscuter={discuterDepuisVille}
+                onSortie={ouvrirSalonDepuisVille}
+                onOuvrirSalon={(cle) => {
+                  setSalonOuvert(cle);
+                  setSalonPage(true);
+                }}
+                onMessageVille={() => {
                   noter("champ-touche", 0, "ville");
                   setMotVille("");
                   setNatureVille("question");
                   setComposeVille(true);
                 }}
-              >
-                <i aria-hidden="true">💬</i>
-                <span>
-                  <b>Dire quelque chose</b>
-                  À Dax, maintenant
-                </span>
-                <em aria-hidden="true">✏️</em>
-              </button>
+              />
             </div>
           )}
 
@@ -11290,10 +11135,8 @@ export function ApercuHabitant() {
             /* ═══ ENSEMBLE — l'onglet qui remplace « Propositions » ═══════════
                « À toi de jouer » puis « Nos discussions » : voir `ensemble.tsx`.
                Toutes les conversations y sont, sorties comprises ; rien n'est
-               supprimé. EN ATTENDANT MA MAISON ET LA VILLE, ce que l'onglet
-               portait d'autre reste en bas : les essais et les traces (qui
-               iront dans Ma maison) et les sorties ouvertes à tous (qui iront
-               dans La ville, en événements). */
+               supprimé. Les essais et les traces sont partis dans Ma maison,
+               les sorties ouvertes à tous dans La ville, en événements. */
             <div className="ap-page ap-onglet-vue">
               <Ensemble
                 salons={salons}
@@ -11311,84 +11154,13 @@ export function ApercuHabitant() {
                   setSalonPage(true);
                 }}
                 enPlus={
-                  <div className="ap-ens-plus">
+                  /* LES ESSAIS ET LES TRACES SONT DANS MA MAISON, LES SORTIES
+                     OUVERTES À TOUS DANS LA VILLE. Restent les deux feuilles
+                     qu'un essai gardé peut ouvrir. */
+                  <>
                     {laPieceVue}
                     {laDemandePiece}
-                <div className="ap-liste ap-part mien">
-                  <h4>
-                    <i aria-hidden="true">👻</i>
-                    Vos essais et vos traces{mesEssaisTraces.length > 0 && <b>{mesEssaisTraces.length}</b>}
-                  </h4>
-                  {mesEssaisTraces.length === 0 && (
-                    <p className="ap-part-vide">
-                      Ce que vous essayez et ce que vous mettez de côté se
-                      range ici, pour y revenir.
-                    </p>
-                  )}
-                  {mesEssaisTraces.map((a) => (
-                      <button
-                        key={a.cle}
-                        type="button"
-                        className="ap-ligne"
-                        onClick={() => {
-                          /* UN SEUL DES TROIS CHAMPS EST REMPLI, et c'est lui
-                             qui dit par où l'on rentre. Voir `MonAnnonce`. */
-                          if (a.salon) {
-                            setSalonOuvert(a.salon);
-                            setSalonPage(true);
-                            return;
-                          }
-                          if (a.piece) {
-                            const p = piecesGardees.find(
-                              (x) => x.carte === a.piece?.carte && x.piece === a.piece?.piece,
-                            );
-                            if (p) setPieceVue(p);
-                            return;
-                          }
-                          if (a.mur) {
-                            const t = mesTraces.find((f) => f.id === a.cle.slice("trace:".length));
-                            if (t) {
-                              setMurRevisite(t);
-                              allerA_onglet("direct");
-                            }
-                          }
-                        }}
-                      >
-                        {a.photo ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={a.photo} alt="" loading="lazy" />
-                        ) : (
-                          <i aria-hidden="true">👻</i>
-                        )}
-                        <span>
-                          <b>{a.titre}</b>
-                          <u>{a.mot}</u>
-                          <em>
-                            {a.ou}
-                            {a.detail ? ` · ${a.detail}` : ""}
-                          </em>
-                        </span>
-                        {/* ═══ L'ÉTIQUETTE DIT CE QUI A BOUGÉ, PAS CE QUE C'EST
-
-                            « EN DIRECT » sur les trois sorties ne distinguait
-                            rien : c'est la nature de la ligne, pas sa
-                            nouvelle. Le compte des messages non lus est la
-                            seule chose qui donne une raison d'appuyer, donc il
-                            passe devant ; « EN DIRECT » ne reste que quand
-                            quelqu'un y est VRAIMENT en ce moment, et qu'il n'y
-                            a rien de neuf à lire. */}
-                        {a.nonLus ? (
-                          <s className="neuf">{a.nonLus} neuf{a.nonLus > 1 ? "s" : ""}</s>
-                        ) : a.direct ? (
-                          <s className="direct">EN DIRECT</s>
-                        ) : (
-                          <s>›</s>
-                        )}
-                      </button>
-                  ))}
-                </div>
-
-                  </div>
+                  </>
                 }
               />
             </div>
@@ -11634,7 +11406,6 @@ export function ApercuHabitant() {
                       noter("demande-envoyee", motVille.trim().length, "ville");
                       direQuelqueChose(motVille, natureVille);
                       setComposeVille(false);
-                      setFiltreVille("");
                     }}
                   >
                     Le dire à la ville
@@ -13150,6 +12921,52 @@ export function ApercuHabitant() {
               />
             </>
           )}
+          {/* ═══ « ESSAYER SUR MOI », DEPUIS LA VILLE ═══════════════════════
+              L'essai d'un ami mène au même mur que l'annonce, ouvert sur le
+              dépôt de la photo et la pièce déjà choisie : on rejoue son essai,
+              sur soi. Pas un second outil d'essayage. */}
+          {(() => {
+            const c = essaiVille ? toutesLesCartes().find((x) => x.id === essaiVille.carte) : undefined;
+            if (!essaiVille || !c) return null;
+            const fermer = () => setEssaiVille(null);
+            return (
+              <>
+                <button type="button" className="ap-fond" aria-label="Fermer" onClick={fermer} />
+                <Feuille
+                  classe="ap-murf"
+                  fermer={fermer}
+                  enfants={
+                    <>
+                      <span className="ap-feuille-p" aria-hidden="true" />
+                      <button type="button" className="ap-f-x" aria-label="Fermer" onClick={fermer}>
+                        ✕
+                      </button>
+                      <div className="mu dans-feuille">
+                        <MurContenu
+                          key={`${c.id}|${essaiVille.piece}`}
+                          mur={murDeLaCarte({
+                            id: c.id,
+                            nom: c.nom,
+                            metier: c.metier,
+                            branche: c.branche,
+                            ville: c.ville,
+                            distance: c.distance,
+                            photo: c.photo,
+                            google: c.google,
+                            catalogue: c.catalogue,
+                          })}
+                          piecePrechoisie={essaiVille.piece}
+                          ouvrirSur="depot"
+                          onSalon={envoyerLEssaiAuSalon}
+                          onSortir={fermer}
+                        />
+                      </div>
+                    </>
+                  }
+                />
+              </>
+            );
+          })()}
 
           {/* ═══ PRÉCÉDENTE ET SUIVANTE, SUR LA PHOTO ═══
 
@@ -13303,8 +13120,12 @@ export function ApercuHabitant() {
               onClick={() => allerA_onglet("ville")}
             >
               <i aria-hidden="true">🏛️</i>
-              La Ville
-              {!reelle && ville.length > 0 && <b>{ville.length}</b>}
+              {NOM_ONGLET.ville}
+              {/* LE BADGE COMPTE CE QUI M'ATTEND, pas ce qui se dit : les
+                  réponses neuves à mes publications, et les conversations nées
+                  d'un essai où l'on m'a écrit. Compter tous les messages
+                  faisait monter le chiffre quand je publiais moi-même. */}
+              {!reelle && aSuivreVille > 0 && <b>{aSuivreVille}</b>}
             </button>
             {/* ═══ LE SMILEY, AU MILIEU, QUI PASSE À LA SUIVANTE ═══
 

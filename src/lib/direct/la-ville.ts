@@ -87,6 +87,32 @@ export type MessageVille = {
   /** Pour un « cherche » : ceux que ça intéresse, et le salon s'il est ouvert. */
   interesses?: string[];
   salon?: string;
+  /**
+   * ═══ CE QUE LA VILLE EST DEVENUE : UN FIL SOCIAL LOCAL ══════════════════
+   *
+   * « Cette page rassemble les publications des habitants : essayages
+   * partagés, découvertes réelles, vie locale. » Les cinq natures restent la
+   * vie locale ; deux genres s'y ajoutent, et ils NE S'EFFACENT PAS :
+   * « Les essais et découvertes restent disponibles jusqu'à suppression par
+   * leur auteur. » L'éphémère reste la règle de tout le reste — c'est ce qui
+   * empêche le fil de devenir un forum de quartier.
+   */
+  genre?: "essai" | "decouverte";
+  /** « Mes amis » ou « Public dans ma ville ». Absent : public (la vie locale). */
+  visibilite?: "amis" | "public";
+  /** Ne s'efface pas (essais, découvertes). */
+  persistant?: boolean;
+  /** Le commerce d'origine — on l'ouvre en touchant son nom. */
+  commerce?: { id: string; nom: string };
+  /** L'article ou la coupe essayés : « Essayer sur moi » repart de là. */
+  reference?: { carte: string; piece: string; nom: string };
+  /**
+   * « VÉCU SUR PLACE » SEULEMENT QUAND L'AUTEUR LE DIT. Jamais déduit d'une
+   * adoption ni d'une réservation.
+   */
+  vecu?: boolean;
+  /** La publication dont celle-ci est la suite. */
+  suite?: string;
 };
 
 /** Ce qu'un message gagne à être utile. Voir l'en-tête : le seul classement. */
@@ -96,6 +122,7 @@ const PLAFOND = 12 * 60;
 
 /** Dans combien de minutes ce message s'efface. Négatif : il est déjà parti. */
 export function resteMinutes(m: MessageVille, maintenant = Date.now()): number {
+  if (m.persistant) return Number.MAX_SAFE_INTEGER;
   const gagne = m.reponses.length * BONUS_REPONSE + m.coeurs * BONUS_COEUR;
   const vie = Math.min(m.dure + gagne, PLAFOND);
   return Math.round(vie - (maintenant - m.a) / 60_000);
@@ -103,6 +130,7 @@ export function resteMinutes(m: MessageVille, maintenant = Date.now()): number {
 
 /** « il reste 2 h », « il reste 20 min » — jamais un compte à rebours à la seconde. */
 export function resteDit(m: MessageVille, maintenant = Date.now()): string {
+  if (m.persistant) return "";
   const r = resteMinutes(m, maintenant);
   if (r <= 0) return "";
   if (r < 60) return `${r} min`;
@@ -114,7 +142,9 @@ export function ilYA(m: MessageVille, maintenant = Date.now()): string {
   const min = Math.max(0, Math.round((maintenant - m.a) / 60_000));
   if (min < 1) return "à l'instant";
   if (min < 60) return `${min} min`;
-  return `${Math.round(min / 60)} h`;
+  // LES ESSAIS ET LES DÉCOUVERTES RESTENT : « 50 h » ne se lit pas, « 2 j » oui.
+  if (min < 24 * 60) return `${Math.round(min / 60)} h`;
+  return `${Math.round(min / 1440)} j`;
 }
 
 // ─── CE QUE L'APPLICATION COMPREND TOUTE SEULE ─────────────────────────────
@@ -191,6 +221,69 @@ const min = (n: number) => n * 60_000;
 
 export function messagesSemes(maintenant = Date.now()): MessageVille[] {
   return [
+    /* ═══ CE QUE LES AMIS ONT PARTAGÉ ═══ — des amis de démonstration, comme
+       ceux des salons : Karim et Léa y sont déjà. Les références d'essai sont
+       de vraies pièces des murs de démonstration : « Essayer sur moi » part
+       de la même coupe, des mêmes lunettes. */
+    {
+      id: "va1",
+      qui: "Karim",
+      ou: "Un salon du centre",
+      distance: "300 m",
+      metres: 300,
+      texte: "Cette coupe sur moi, vous en pensez quoi ?",
+      nature: "question",
+      genre: "essai",
+      visibilite: "amis",
+      persistant: true,
+      commerce: { id: "coif-centre", nom: "Un salon du centre" },
+      reference: { carte: "coif-centre", piece: "c-homme", nom: "Boucles courtes, de face" },
+      photo: "/direct/coiffure-homme-face.jpg",
+      a: maintenant - min(15),
+      dure: 180,
+      coeurs: 6,
+      reponses: [
+        { id: "va1r1", qui: "Thomas", texte: "Franchement elle te va bien !", quand: "il y a 9 min" },
+      ],
+    },
+    {
+      id: "va2",
+      qui: "Camille",
+      ou: "Chez Bergine",
+      distance: "400 m",
+      metres: 400,
+      texte: "On y a mangé ce midi : la garbure est parfaite, et le service adorable.",
+      nature: "coup-de-coeur",
+      genre: "decouverte",
+      vecu: true,
+      visibilite: "public",
+      persistant: true,
+      commerce: { id: "centre", nom: "Chez Bergine" },
+      photo: "/direct/plat-garbure-servi.jpeg",
+      a: maintenant - min(50),
+      dure: 180,
+      coeurs: 11,
+      reponses: [],
+    },
+    {
+      id: "va3",
+      qui: "Léa",
+      ou: "Un lunetier de la rue piétonne",
+      distance: "500 m",
+      metres: 500,
+      texte: "Je les ai essayées sur moi… trop ou pas assez ?",
+      nature: "question",
+      genre: "essai",
+      visibilite: "public",
+      persistant: true,
+      commerce: { id: "lunetier-pietonne", nom: "Un lunetier de la rue piétonne" },
+      reference: { carte: "lunetier-pietonne", piece: "lu-3", nom: "Œil-de-chat vert bouteille" },
+      photo: "/direct/lunettes3.jpeg",
+      a: maintenant - min(75),
+      dure: 180,
+      coeurs: 9,
+      reponses: [],
+    },
     {
       id: "v1",
       qui: "Camille",
@@ -439,6 +532,87 @@ export function direQuelqueChose(texte: string, nature: NatureVille, photo?: str
   };
   garder({ ...e, miennes: [neuf, ...e.miennes] });
   return neuf;
+}
+
+/**
+ * PUBLIER DANS LA VILLE — un essai, une découverte, ou la suite d'une
+ * publication. Toujours un geste : rien n'y est publié automatiquement.
+ */
+export function publierDansLaVille(o: {
+  texte: string;
+  genre?: "essai" | "decouverte";
+  nature?: NatureVille;
+  photo?: string;
+  visibilite: "amis" | "public";
+  commerce?: { id: string; nom: string };
+  reference?: { carte: string; piece: string; nom: string };
+  vecu?: boolean;
+  suite?: string;
+}) {
+  const e = lire();
+  const neuf: MessageVille = {
+    id: `v${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
+    qui: "Vous",
+    ou: o.commerce?.nom ?? "Autour de vous",
+    distance: "0 m",
+    metres: 0,
+    texte: o.texte.trim(),
+    nature: o.nature ?? (o.genre === "essai" ? "question" : o.genre === "decouverte" ? "coup-de-coeur" : comprendre(o.texte)),
+    genre: o.genre,
+    visibilite: o.visibilite,
+    persistant: Boolean(o.genre),
+    commerce: o.commerce,
+    reference: o.reference,
+    vecu: o.vecu,
+    suite: o.suite,
+    a: Date.now(),
+    dure: 180,
+    coeurs: 0,
+    reponses: [],
+    photo: o.photo,
+  };
+  garder({ ...e, miennes: [neuf, ...e.miennes] });
+  return neuf;
+}
+
+/** Retirer sa publication — l'auteur seul, et elle disparaît vraiment. */
+export function retirerDeLaVille(id: string) {
+  const e = lire();
+  garder({ ...e, miennes: e.miennes.filter((m) => m.id !== id) });
+}
+
+/* ═══ LA SUITE DE VOS ÉCHANGES ══════════════════════════════════════════════
+   « Un bloc compact, uniquement lorsqu'il existe une nouveauté réelle
+   concernant l'utilisateur : réponse à une question… » On retient, pour
+   chacune de MES publications, combien de réponses on a déjà vues. */
+const CLE_VUS = "clikme-ville-vus-v1";
+export const AUCUN_VU: Record<string, number> = {};
+let vus: Record<string, number> | null = null;
+const abonnesVus = new Set<() => void>();
+export function chargerVus(): Record<string, number> {
+  if (vus) return vus;
+  if (typeof window === "undefined") return AUCUN_VU;
+  try {
+    vus = JSON.parse(window.localStorage.getItem(CLE_VUS) ?? "{}") ?? {};
+  } catch {
+    vus = {};
+  }
+  return vus ?? AUCUN_VU;
+}
+export function abonnerVus(f: () => void) {
+  abonnesVus.add(f);
+  return () => void abonnesVus.delete(f);
+}
+export function marquerVu(id: string, n: number) {
+  const avant = chargerVus();
+  if (avant[id] === n) return;
+  vus = { ...avant, [id]: n };
+  try {
+    window.localStorage.setItem(CLE_VUS, JSON.stringify(vus));
+  } catch {
+    /* rien */
+  }
+  abonnesVus.forEach((f) => f());
 }
 
 export function reagirVille(id: string) {
