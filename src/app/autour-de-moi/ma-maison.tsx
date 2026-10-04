@@ -486,8 +486,8 @@ function StylesMaMaison() {
 .mm-roue{flex:none;display:grid;place-items:center;width:48px;height:48px;border-radius:50%;cursor:pointer;background:none;border:0;color:#FFF4E6;}
 .mm-roue svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;}
 .mm-commeami{display:flex;align-items:center;gap:10px;margin:0 2px 12px;padding:10px 12px;border-radius:14px;
-  background:rgba(255,46,154,.12);border:1px solid rgba(255,46,154,.35);font-size:13px;color:#FFD9EC;}
-.mm-commeami button{flex:none;border:0;border-radius:999px;padding:8px 12px;background:#FF2E9A;color:#fff;font:inherit;font-weight:700;cursor:pointer;}
+  background:rgba(245,162,58,.12);border:1px solid rgba(245,162,58,.4);font-size:13px;color:#FFE3BD;}
+.mm-commeami button{flex:none;border:0;border-radius:999px;padding:8px 12px;background:linear-gradient(180deg,#F8B451,#E8932A);color:#2A1608;font:inherit;font-weight:700;cursor:pointer;}
 .mm-qui{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"av t" "v v";gap:10px 14px;align-items:center;
   margin:0 2px 14px;padding:14px;border-radius:20px;background:#211813;border:1px solid rgba(255,214,170,.14);}
 .mm-av{grid-area:av;display:grid;place-items:center;width:64px;height:64px;border-radius:50%;font-size:28px;font-weight:800;
@@ -502,7 +502,7 @@ function StylesMaMaison() {
 .mm-voir{grid-area:v;justify-self:end;border:0;background:none;color:#FFF4E6;font:inherit;font-size:14px;font-weight:600;cursor:pointer;}
 .mm-voir s{text-decoration:none;margin-left:4px;}
 
-/* LA MAISON : un toit, des murs de bois, six pièces éclairées. */
+/* LA MAISON : un toit, des murs de bois, huit pièces éclairées. */
 .mm-maison{position:relative;margin:4px 0 6px;padding:0 6px;}
 .mm-toit{position:relative;height:74px;margin:0 -2px;clip-path:polygon(50% 0,100% 100%,0 100%);
   background:repeating-linear-gradient(170deg,#4a2f22 0 9px,#3a241a 9px 18px);}

@@ -9,15 +9,17 @@
 // lui qui fait entrer un commerce dans la maison. Rien ne s'en déduit d'autre —
 // ni une visite, ni un achat.
 //
-// SIX PIÈCES FIXES, pour que chaque métier ait la sienne (la maquette en
+// HUIT PIÈCES FIXES, pour que chaque métier ait la sienne (la maquette en
 // dessinait quatre : le fleuriste, les créateurs, le bien-être n'avaient pas
-// de place).
+// de place). Il y en a eu six : « il y a plus de 6 pièces dans la maison si on
+// regarde tous les métiers ? » — la cuisine portait aussi les bars, et le salon
+// les créateurs. Les bars ont leur cave, les créateurs leur atelier.
 //
 // FICHIER PARTAGÉ pour les pièces ; les partages et la présentation vivent
 // dans le téléphone (fonctions marquées « navigateur »).
 import { familleDuDouble, tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
 
-export type ClePiece = "cuisine" | "lecture" | "dressing" | "miroir" | "salon" | "detente";
+export type ClePiece = "cuisine" | "cave" | "lecture" | "dressing" | "miroir" | "salon" | "atelier" | "detente";
 
 export type PieceMaison = {
   cle: ClePiece;
@@ -32,19 +34,23 @@ export type PieceMaison = {
 
 const DECOR: Record<ClePiece, { decor: string; fantome: string }> = {
   cuisine: { decor: "/direct/double/comptoir.jpg", fantome: "/direct/double/pied/repos.webp" },
+  cave: { decor: "/direct/double/bar/decor.jpg", fantome: "/direct/double/pied/bar/repos.webp" },
   lecture: { decor: "/direct/double/librairie/decor.jpg", fantome: "/direct/double/pied/librairie/repos.webp" },
   dressing: { decor: "/direct/double/mode/decor.jpg", fantome: "/direct/double/pied/mode/repos.webp" },
   miroir: { decor: "/direct/double/coiffure/decor.jpg", fantome: "/direct/double/pied/coiffure/repos.webp" },
   salon: { decor: "/direct/double/fleurs/decor.jpg", fantome: "/direct/double/pied/fleurs/repos.webp" },
+  atelier: { decor: "/direct/double/createur/decor.jpg", fantome: "/direct/double/pied/createur/repos.webp" },
   detente: { decor: "/direct/double/bien-etre/decor.jpg", fantome: "/direct/double/pied/bien-etre/repos.webp" },
 };
 
 export const PIECES: PieceMaison[] = [
-  { cle: "cuisine", nom: "La cuisine", familles: ["table", "bar"], invite: "un restaurant", ...DECOR.cuisine },
+  { cle: "cuisine", nom: "La cuisine", familles: ["table"], invite: "un restaurant", ...DECOR.cuisine },
+  { cle: "cave", nom: "La cave", familles: ["bar"], invite: "un bar", ...DECOR.cave },
   { cle: "lecture", nom: "Le coin lecture", familles: ["librairie"], invite: "une librairie", ...DECOR.lecture },
   { cle: "dressing", nom: "Le dressing", familles: ["mode", "lunettes"], invite: "une boutique", ...DECOR.dressing },
   { cle: "miroir", nom: "Le miroir", familles: ["coiffure", "ongles"], invite: "un coiffeur", ...DECOR.miroir },
-  { cle: "salon", nom: "Le salon", familles: ["fleurs", "createur"], invite: "un fleuriste", ...DECOR.salon },
+  { cle: "salon", nom: "Le salon", familles: ["fleurs"], invite: "un fleuriste", ...DECOR.salon },
+  { cle: "atelier", nom: "L’atelier", familles: ["createur"], invite: "un créateur", ...DECOR.atelier },
   { cle: "detente", nom: "Le coin détente", familles: ["seance"], invite: "un lieu bien-être", ...DECOR.detente },
 ];
 
@@ -59,7 +65,7 @@ export function pieceDe(c: Commerce): ClePiece {
 
 /** Les commerces adoptés, rangés par pièce — plusieurs par pièce si besoin. */
 export function rangerLaMaison<C extends Commerce>(commerces: C[]): Record<ClePiece, C[]> {
-  const m = { cuisine: [], lecture: [], dressing: [], miroir: [], salon: [], detente: [] } as Record<ClePiece, C[]>;
+  const m = { cuisine: [], cave: [], lecture: [], dressing: [], miroir: [], salon: [], atelier: [], detente: [] } as Record<ClePiece, C[]>;
   for (const c of commerces) m[pieceDe(c)].push(c);
   return m;
 }

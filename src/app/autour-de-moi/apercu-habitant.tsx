@@ -17571,9 +17571,18 @@ export function ApercuHabitant() {
            « LE DIRECT » est cercle d'un filet magenta : un fond teinte seul, a
            treize pour cent, disparait sur une photo claire derriere la barre —
            c'etait deja vrai en vert, et le filet le repare. */
-        .ap-onglets button.on{color:var(--ap-magenta);
-          background:rgba(226,79,176,.14);
-          box-shadow:inset 0 0 0 1.5px rgba(226,79,176,.62);}
+        /* L'OR, PLUS LE MAGENTA. « Le rose est assez présent alors que sur
+           les autres pages on est sur de l'orange. » UNE COULEUR, UN SENS : l'or
+           est la marque et l'action, le rose est réservé à l'essai virtuel (et
+           aux pastilles de notification). L'onglet où l'on est n'est pas un
+           essai. */
+        .ap-onglets button.on{color:#F5A23A;
+          background:rgba(245,162,58,.13);
+          box-shadow:inset 0 0 0 1.5px rgba(245,162,58,.62);}
+        /* LE CONTOUR BLEU DU NAVIGATEUR après un clic : il ne reste qu'au
+           clavier, et en or. */
+        .ap-onglets button:focus:not(:focus-visible){outline:none;}
+        .ap-onglets button:focus-visible{outline:2px solid #F5A23A;outline-offset:2px;}
         .ap-onglets button.on i{filter:none;}
         .ap-onglets button b{position:absolute;top:2px;right:calc(50% - 24px);
           min-width:16px;font-size:9.5px;font-weight:850;line-height:16px;

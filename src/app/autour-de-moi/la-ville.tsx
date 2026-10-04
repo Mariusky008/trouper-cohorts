@@ -302,7 +302,7 @@ function typeDe(m: MessageVille): { mot: string; icone: string; ton: string } {
   if (m.genre === "essai") return { mot: "Essai virtuel", icone: "✨", ton: "rose" };
   if (m.genre === "decouverte") return m.vecu ? { mot: "Vécu sur place", icone: "📍", ton: "or" } : { mot: "Découverte", icone: "🔭", ton: "or" };
   const n = NATURES[m.nature];
-  return { mot: n.label, icone: n.emoji, ton: m.nature === "evenement" ? "rose" : "neutre" };
+  return { mot: n.label, icone: n.emoji, ton: m.nature === "evenement" ? "or" : "neutre" };
 }
 
 function CartePublication({
@@ -382,7 +382,7 @@ function CartePublication({
               💬 Commenter
             </button>
             {m.reference && !moi && (
-              <button type="button" className="lv-b or" onClick={() => onEssayer(m.reference!)}>
+              <button type="button" className="lv-b rose" onClick={() => onEssayer(m.reference!)}>
                 ✨ Essayer sur moi
               </button>
             )}
@@ -484,7 +484,7 @@ function CarteSortie({ s, onOuvrir, onQui }: { s: Salon; onOuvrir: () => void; o
             <i> · 🌍 Ouvert à tous</i>
           </span>
         </div>
-        <span className="lv-type rose">🎪 Événement</span>
+        <span className="lv-type or">🎪 Événement</span>
       </header>
       <div className="lv-sortie">
         <p className="lv-texte">{s.annonce ?? s.sujet}</p>
@@ -773,7 +773,7 @@ function StylesLaVille() {
   background:rgba(255,244,230,.06);border:1px solid rgba(255,244,230,.2);}
 .lv-type.rose{color:#FF8CC6;background:rgba(255,46,154,.12);border-color:rgba(255,46,154,.4);}
 .lv-type.or{color:#FFC46B;background:rgba(245,162,58,.12);border-color:rgba(245,162,58,.45);}
-.lv-suitede{margin:10px 0 0;font-size:13px;color:#FF8CC6;}
+.lv-suitede{margin:10px 0 0;font-size:13px;color:#FFC46B;}
 .lv-texte{margin:10px 0 0;font-size:17px;line-height:1.35;}
 .lv-photo{display:block;width:100%;max-height:340px;object-fit:cover;margin-top:10px;border-radius:16px;}
 .lv-commerce{display:block;margin-top:6px;padding:0;border:0;background:none;color:#CDB9A5;font:inherit;font-size:13px;cursor:pointer;text-align:left;}
@@ -784,6 +784,8 @@ function StylesLaVille() {
 .lv-b{display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:8px 10px;border-radius:14px;cursor:pointer;
   font:inherit;font-size:14px;font-weight:700;color:#FFF4E6;background:none;border:1.5px solid rgba(255,244,230,.55);}
 .lv-b.or{color:#2A1608;border-color:transparent;background:linear-gradient(180deg,#F8B451,#E8932A);}
+/* LE ROSE EST LA COULEUR DE L'ESSAI VIRTUEL, comme « Visualiser… sur moi » dans Le Direct. */
+.lv-b.rose{color:#fff;border-color:transparent;background:linear-gradient(135deg,#FF4FB0,#FF2E9A 60%,#E0187F);}
 .lv-pied{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:10px;font-size:13px;color:#CDB9A5;}
 .lv-coeur,.lv-rep{border:0;background:none;color:inherit;font:inherit;font-size:13px;cursor:pointer;padding:2px 0;}
 .lv-coeur.on{color:#FF7DBE;}
@@ -823,7 +825,7 @@ function StylesLaVille() {
 .lv-qui button.on{color:#2A1608;background:linear-gradient(180deg,#F8B451,#E8932A);border-color:transparent;}
 .lv-attention{margin:8px 0 0;padding:10px 12px;border-radius:12px;font-size:13px;color:#FFD9EC;background:rgba(255,46,154,.12);border:1px solid rgba(255,46,154,.35);}
 .lv-publier{display:block;width:100%;height:54px;margin-top:14px;border:0;border-radius:999px;cursor:pointer;font:inherit;font-size:17px;font-weight:800;
-  color:#fff;background:linear-gradient(135deg,#FF4FB0,#FF2E9A 60%,#E0187F);}
+  color:#2A1608;background:linear-gradient(180deg,#F8B451,#E8932A);}
 .lv-publier:disabled{opacity:.4;}
 .lv-retour{display:block;width:100%;margin-top:8px;padding:12px;border-radius:999px;border:1px solid rgba(255,244,230,.3);background:none;color:#FFF4E6;font:inherit;font-weight:700;cursor:pointer;}
 .lv-note{margin:0 0 10px;font-size:14px;color:#CDB9A5;line-height:1.4;}
