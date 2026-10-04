@@ -219,7 +219,9 @@ async function lireLaCopie(copie: CopiePresentation) {
       const lu = construireFiche(copie.source, row, { disponibilites, services });
       // L'ANNONCE DU VRAI COMMERÇANT RESTE CHEZ LUI : une copie de présentation
       // ne montre pas « Il en reste ! » parce que l'original l'a publié ce midi.
-      carte = fusionnerCopie(carteDepuisFiche({ ...lu.fiche, offre: undefined }), copie.carte);
+      // ET SA VILLE AUSSI : « Explorer ma ville » mène la présentation à la
+      // démonstration, pas à la vraie ville de l'original.
+      carte = { ...fusionnerCopie(carteDepuisFiche({ ...lu.fiche, offre: undefined }), copie.carte), villeReelle: undefined };
       const etat = couvertureDuDiagnostic(row.diagnostic);
       hoteARepere = hoteACherche(etat) || sansHoteAFaire(etat);
       note = lu.note ?? note;

@@ -1,299 +1,63 @@
-// ÉCRAN 1 — LE DIRECT.
+// LE DIRECT D'UNE VILLE — l'écran de l'application, nourri par la vraie ville.
 //
-// Tout ce qui se passe dans la ville : le pouls, puis le fil trié PAR ORDRE DE
-// DISPARITION — ce qui part le plus tôt d'abord, jamais par date. Ce
-// n'est pas un catalogue, c'est le pouls de la ville en temps réel — le mot
-// « catalogue » n'apparaît nulle part à l'écran, et aucune notion d'édition, de
-// numéro ni de mois n'existe.
+// « Maintenant que l'admin commerçant est fait, il va falloir que
+// clikme.fr/autour-de-moi soit calqué sur clikme.fr/ville/dax, et brancher
+// clikme.fr/ville/dax sur l'admin commerçant. » « Seulement les commerçants
+// validés comme clients. » « La page est vide au départ. »
 //
-// Une publication expirée ne figure pas dans le fil. C'est la traduction directe
-// du positionnement : mieux vaut un fil court et vrai qu'un fil rempli d'hier.
-import type { Metadata } from "next";
-import Link from "next/link";
+// L'ANCIEN FIL EST PARTI, ET SES ONGLETS AVEC LUI (Menus, Mes commerces, Moi).
+// Ce qui reste de lui, c'est sa règle : rien d'expiré, rien d'inventé. Ce que
+// le commerçant publie depuis son comptoir (son lien pro) arrive ici par sa
+// fiche — le plat du jour, « Il en reste ! », la coupe à essayer, le livre
+// conseillé —, et les messages de la mairie restent, en une ligne sous la
+// question. Voir `lib/direct/ville-reelle.ts`.
+//
+// UN SEUL ÉCRAN POUR LA DÉMONSTRATION ET LA VILLE : `EcranChoix`, que
+// `/autour-de-moi` montre avec ses commerces inventés et que cette page montre
+// avec les vrais.
+import type { Metadata, Viewport } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { filDeVille, noterAffichages } from "@/lib/direct/publications";
-import { calculerPouls, repereSpatial } from "@/lib/direct/degradation";
-import { trierLeFil, presse } from "@/lib/direct/fil";
-import { cliksDeVille, faconsParPublication, collectifDe, mesParticipations } from "@/lib/direct/cliks";
-import { faconsVue } from "@/lib/direct/facons-vue";
-import { reactionsDesPublications } from "@/lib/direct/reactions";
-import { histoiresDuJour } from "@/lib/direct/histoire";
-import { telephonesDeSites } from "@/lib/direct/menus-du-jour";
-import { boutonLien } from "@/lib/direct/mots-metier";
-import { DEFS, dansOnglet, sousTitre, estOnglet, type Onglet } from "@/lib/direct/onglets";
 import { configVille } from "@/lib/direct/ville";
-import { habitantCourant, gardees } from "@/lib/direct/habitant";
-import { ilYA } from "@/lib/site-internet/collectif";
-import { echeanceCourte } from "@/lib/site-internet/echeance";
-import { Carte, type CarteVue } from "./_ui/carte";
-import { BoutonPosition } from "./_ui/bouton-position";
+import { lireLaVilleReelle } from "@/lib/direct/ville-reelle";
+import { VilleEcran } from "./_ui/ville-ecran";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+/** Plein écran sur iPhone, comme l'application — voir `viewport` dans `/autour-de-moi`. */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#06060A",
+};
+
 export async function generateMetadata({ params }: { params: Promise<{ ville: string }> }): Promise<Metadata> {
   const { ville } = await params;
-  const cfg = await configVille(createAdminClient(), ville);
-  const title = `Le Direct de ${cfg.nom}`;
-  const description = `Tout ce qui se passe à ${cfg.nom} en ce moment : places qui se libèrent, offres du jour, événements.`;
+  let nom = ville;
+  try {
+    nom = (await configVille(createAdminClient(), ville)).nom;
+  } catch {
+    /* base indisponible → le nom de l'adresse */
+  }
+  const title = `Le Direct de ${nom}`;
+  const description = `Ce que les commerçants de ${nom} publient en ce moment : le plat du jour, la coupe à essayer, ce qu'il en reste.`;
   return {
     title,
     description,
-    // LA CANONIQUE DÉSIGNE LE FIL SANS SON ONGLET, et c'est un correctif.
-    //
-    // Les onglets vivent dans l'adresse (`?f=table`, `?f=offre`, `?f=cadeau`…).
-    // Chacune de ces adresses est une PAGE DISTINCTE pour Google, avec le même
-    // titre, la même description et un fil largement commun. Sans canonique, il
-    // ne sait pas laquelle est la vraie : il les met toutes en concurrence puis
-    // n'en garde aucune. C'est mot pour mot ce que Search Console rapporte —
-    // « Page en double sans URL canonique sélectionnée par l'utilisateur ».
-    //
-    // Toutes désignent donc `/ville/<slug>`. Les onglets restent partageables et
-    // fonctionnels ; ils cessent seulement d'exister comme pages séparées dans
-    // l'index. Même effet sur les `?utm_*` d'une campagne, qui multipliaient le
-    // problème par le nombre de sources.
+    // LA CANONIQUE DÉSIGNE LA VILLE SANS PARAMÈTRE : les `?utm_*` d'une
+    // campagne ne doivent pas devenir autant de pages en double pour Google.
     alternates: { canonical: `/ville/${ville}` },
     openGraph: { title, description, type: "website", url: `/ville/${ville}` },
     manifest: `/ville/${ville}/manifest.webmanifest`,
-    appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: `Direct ${cfg.nom}` },
+    appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: `Direct ${nom}` },
   };
 }
 
-
-export default async function LeDirectPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ ville: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+export default async function LeDirectPage({ params }: { params: Promise<{ ville: string }> }) {
   const { ville } = await params;
-  const sp = await searchParams;
-  // L'onglet demandé. Un paramètre inconnu retombe sur « tout » plutôt que de
-  // vider le fil : un lien partagé qui donne un écran vide se lit comme une
-  // panne, pas comme une faute de frappe.
-  const brut = String(Array.isArray(sp.f) ? sp.f[0] : sp.f || "");
-  const onglet: Onglet = estOnglet(brut) ? brut : "tout";
-
-  const supabase = createAdminClient();
-  const [cfg, habitant] = await Promise.all([configVille(supabase, ville), habitantCourant(supabase)]);
-
-  // Deux lectures plutôt qu'une : la première décide si la ville a le volume qui
-  // rend un fil du jour intéressant, la seconde applique la fenêtre qui en
-  // découle. On ne peut pas connaître la fenêtre avant d'avoir compté, et
-  // compter sur la mauvaise fenêtre fausserait le seuil.
-  const duJour = await filDeVille(supabase, cfg.slug);
-  const poulsInitial = calculerPouls(duJour, { seuil: cfg.seuilCompteur, ville: cfg.nom });
-  const publications = poulsInitial.fenetreLarge
-    ? await filDeVille(supabase, cfg.slug, { fenetreLarge: true })
-    : duJour;
-  const pouls = calculerPouls(publications, { seuil: cfg.seuilCompteur, ville: cfg.nom });
-
-  const mesGardees = habitant ? await gardees(supabase, habitant.id) : new Set<string>();
-
-  // Les Cliks en cours dans la ville, indexés par annonce. Une lecture de plus,
-  // mais elle change l'ordre du fil autant que son contenu : sans elle, un
-  // groupe à 5/6 se noie au milieu des annonces ordinaires.
-  const cliksParPub = faconsParPublication(await cliksDeVille(supabase, cfg.slug));
-
-  const ctx = { moi: null, quartierHabitant: habitant?.quartier, ville: cfg.nom };
-  // LE FILTRE SUIT L'INTENTION, pas notre taxonomie. On ne cherche pas « une
-  // publication de famille place », on cherche à déjeuner ou un créneau chez le
-  // coiffeur. C'est le MÉTIER qui décide, pas la famille : un restaurant qui
-  // annonce une place libre relève quand même du déjeuner.
-  const visibles = publications.filter((p) => dansOnglet(p, onglet));
-
-  // L'ORDRE DU FIL — la règle du §3, à la place du simple ordre chronologique.
-  // Ce qui expire dans l'heure passe devant, puis les collectifs proches du
-  // seuil, puis les nouveautés.
-  //
-  // La DISTANCE reste vide, et c'est volontaire plutôt qu'oublié : elle ne se
-  // connaît qu'au navigateur, la position n'étant jamais envoyée au serveur.
-  //
-  // Le rang « presque » est désormais alimenté : un collectif à qui il manque
-  // deux personnes passe devant une nouveauté. C'est le seul cas où l'habitant
-  // peut changer le résultat pour tout le monde, et le fil doit le mettre là où
-  // ça se voit.
-  //
-  // L'horloge est lue DANS `trierLeFil`, pas ici : un `Date.now()` dans le corps
-  // du composant rend le rendu impur, et la règle `react-hooks/purity` le refuse
-  // — à raison, puisque deux rendus du même état donneraient deux résultats.
-  const triees = trierLeFil(
-    visibles.map((p) => {
-      // Parmi les façons, seule la « table à partager » peut basculer : c'est
-      // elle que le rang « presque » du §3 doit voir.
-      return { ...p, distanceM: null, collectif: collectifDe(cliksParPub.get(p.id)) };
-    })
-  );
-
-  // Les réactions des annonces affichées, en UNE lecture : une requête par
-  // carte multiplierait les allers-retours par le nombre d'annonces.
-  const reacts = await reactionsDesPublications(supabase, triees.map((p) => p.id), habitant?.id ?? null);
-
-  // LA PETITE HISTOIRE DU JOUR de chaque commerce affiché, en UNE lecture.
-  // Elle est portée par le COMMERCE, pas par l'annonce : deux annonces du même
-  // boulanger montrent la même histoire, parce qu'il ne s'en passe qu'une chez
-  // lui aujourd'hui.
-  const histoires = await histoiresDuJour(supabase, triees.map((p) => p.siteId ?? ""));
-
-  // LE NUMÉRO DES RESTAURANTS QUI ONT PUBLIÉ LEUR CARTE, pour le bouton
-  // « Je réserve ». Uniquement les leurs : une carte du jour est la seule qui
-  // n'a aucune façon d'en profiter, donc la seule qui a besoin de sa propre
-  // porte. Lire le numéro de tous les commerces du fil serait une requête plus
-  // large pour un bouton qu'ils n'affichent pas.
-  // COMPTÉ SUR TOUT LE FIL, pas sur l'onglet affiché : depuis « Tout », la
-  // porte vers les menus doit exister aussi. Compté et non annoncé — « 6
-  // restaurants » doit être vrai, sinon plus rien de ce que dit cet écran ne
-  // sera cru.
-  const menusAujourdhui = publications.filter((p) => p.famille === "menu").length;
-
-  const telsMenus = await telephonesDeSites(
-    supabase,
-    triees.filter((p) => p.famille === "menu").map((p) => p.siteId ?? "")
-  );
-
-  // CE QUE J'AI DÉJÀ PRIS. En une lecture pour tout le fil : la carte ne doit
-  // pas reproposer une façon qu'on a rejointe dix minutes plus tôt — elle
-  // donnait l'impression qu'il fallait recommencer.
-  const miennes = await mesParticipations(
-    supabase,
-    triees.flatMap((p) => (cliksParPub.get(p.id) ?? []).map((c) => c.id)),
-    habitant?.id ?? null
-  );
-
-
-  const cartes: CarteVue[] = triees.map((p) => ({
-    id: p.id,
-    famille: p.famille,
-    texte: p.texte,
-    photo: p.photo,
-    video: p.video,
-    lien: p.lien,
-    auteurNom: p.auteurNom,
-    auteurMetier: p.auteurMetier,
-    auteurSlug: p.auteurSlug,
-    repere: repereSpatial(p, ctx),
-    lat: p.lat,
-    lng: p.lng,
-    fraicheur: ilYA(p.publieLe),
-    echeance: echeanceCourte(p.expireLe),
-    urgent: presse(p.expireLe),
-    // LES FAÇONS, MISES EN FORME CÔTÉ SERVEUR. La carte ne reçoit pas les
-    // campagnes mais ce qu'elle affiche. Le calcul dépend de l'heure
-    // (« Arrivée avant 12 h 47 ») : fait dans la carte, qui est un composant
-    // client, il divergerait entre le rendu serveur et l'hydratation.
-    facons: faconsVue(cliksParPub.get(p.id), miennes),
-    reste: p.reste,
-    ardoise: p.ardoise,
-    ardoiseLabel: boutonLien(p.auteurMetier),
-    telephone: (p.siteId && telsMenus.get(p.siteId)) || "",
-    prix: p.prix,
-    histoire: (p.siteId && histoires.get(p.siteId)) || null,
-    reactions: reacts.get(p.id) ?? { compte: {}, miennes: [] },
-  }));
-
-  // Après avoir décidé ce qui s'affiche, pas avant : on ne compte que ce qui est
-  // réellement passé sous les yeux, filtre compris. Sans `await` bloquant le
-  // rendu — un compteur légèrement bas vaut mieux qu'une page qui attend.
-  void noterAffichages(supabase, triees);
-
-  const maj = publications.length ? ilYA(publications[0].publieLe) : "";
-  const def = DEFS.find((d) => d.cle === onglet) ?? DEFS[0];
-
-  return (
-    <>
-      {/* LE TITRE SUIT L'ONGLET. « Ce qui se passe maintenant à Dax » et « On
-          mange quoi maintenant ? » ne sont pas la même question, et l'écran
-          doit répondre à celle qu'on vient de poser. Un titre fixe au-dessus
-          d'un filtre qui change donne l'impression d'un tableau de bord ; un
-          titre qui suit donne l'impression d'avoir été compris. */}
-      <header className="fhead">
-        <div className="live"><span className="dot" aria-hidden="true" />En direct · {cfg.nom}</div>
-        <h1>
-          {def.titre(cfg.nom).split("\n").map((l, i) => (
-            <span key={i} className="lg">{l}</span>
-          ))}
-        </h1>
-        <div className="upd">
-          {/* Le sous-titre est COMPTÉ, jamais annoncé : un chiffre inventé se
-              démonte au premier coup d'œil au fil, et c'est la seule chose que
-              cette application vend — que ce qui est écrit soit vrai. */}
-          {/* LE POULS EST ICI, EN UNE LIGNE, et plus dans une bande vert foncé
-              posée entre un en-tête clair et des onglets clairs. Elle coupait
-              la page en deux et répétait ce que ce sous-titre dit déjà. Le
-              pont vers « À saisir » ne disparaît pas pour autant : il est dans
-              la barre du bas, où il est permanent plutôt qu'occasionnel. */}
-          {sousTitre(visibles, onglet) || `Tout ce qui se passe à ${cfg.nom}`}
-          {pouls.bientot > 0 ? ` · ${pouls.bientot} ${pouls.bientot > 1 ? "finissent" : "finit"} bientôt` : ""}
-          {maj ? ` · mis à jour ${maj}` : ""}
-        </div>
-      </header>
-
-      <nav className="chips" aria-label="Ce que vous cherchez">
-        {DEFS.map((d) => (
-          <Link
-            key={d.cle}
-            href={d.cle === "tout" ? `/ville/${ville}` : `/ville/${ville}?f=${d.cle}`}
-            className={`chip${onglet === d.cle ? " on" : ""}`}
-            scroll={false}
-          >
-            {d.label}
-          </Link>
-        ))}
-        <BoutonPosition />
-      </nav>
-
-      {/* TOUTES LES CARTES DU JOUR, EN UN GESTE.
-          Comparer les menus est ce qu'on vient chercher à midi, et ça ne se
-          devine pas depuis un fil chronologique : il fallait ouvrir six photos
-          et les refermer une par une. La porte n'apparaît QUE s'il y a des
-          cartes publiées — l'annoncer un jour où il n'y en a aucune est la
-          meilleure façon de ne plus jamais y revenir. */}
-      {menusAujourdhui > 0 && (
-        <Link href={`/ville/${ville}/menus`} className="mnb" prefetch={false}>
-          <span className="mnb-e" aria-hidden="true">🍽️</span>
-          <span className="mnb-c">
-            <span className="mnb-t">Les cartes du jour à {cfg.nom}</span>
-            <span className="mnb-s">
-              {menusAujourdhui} restaurant{menusAujourdhui > 1 ? "s" : ""} — faites défiler les menus, réservez
-              celui qui vous tente
-            </span>
-          </span>
-          <span className="mnb-g" aria-hidden="true">›</span>
-        </Link>
-      )}
-
-      {cartes.length > 0 ? (
-        <>
-          <div className="sect">
-            <div className="st">Le fil</div>
-            {/* Le libellé suit le tri réel. Il annonçait « du plus récent au
-                plus ancien » alors que le fil part de ce qui disparaît le plus
-                tôt — un écran qui décrit mal son propre ordre est pire qu'un
-                écran muet. */}
-            <div className="ss">
-              ce qui part en premier
-              {pouls.fenetreLarge ? " · les sept derniers jours" : ""}
-            </div>
-          </div>
-          <div className="feed">
-            {cartes.map((c) => (
-              <Carte key={c.id} p={c} gardee={mesGardees.has(c.id)} ville={ville} villeNom={cfg.nom} />
-            ))}
-          </div>
-        </>
-      ) : (
-        <div className="vide">
-          <h3>{cfg.active ? "Rien de neuf pour l'instant" : `${cfg.nom} n'est pas encore couverte`}</h3>
-          <p>
-            {cfg.active
-              ? onglet !== "tout"
-                ? "Rien dans cette catégorie en ce moment. Le fil ne garde que ce qui est encore vrai — essayez « Tout », ou revenez tout à l'heure."
-                : "Le fil ne garde que ce qui est encore vrai aujourd'hui. Les commerçants publient au fil de la journée : revenez tout à l'heure."
-              : "Aucun commerce n'a encore rejoint Le Direct ici. C'est en train de se construire, ville par ville."}
-          </p>
-        </div>
-      )}
-    </>
-  );
+  const reelle = await lireLaVilleReelle(ville);
+  return <VilleEcran reelle={reelle} />;
 }

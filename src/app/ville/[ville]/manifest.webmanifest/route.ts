@@ -33,8 +33,8 @@ export async function GET(_request: Request, context: { params: Promise<{ ville:
       // Accordés à l'en-tête sombre du Direct : au lancement, l'écran de
       // démarrage doit être la même couleur que la barre qui apparaît ensuite,
       // sinon l'ouverture « clignote » en blanc.
-      background_color: "#14201A",
-      theme_color: "#14201A",
+      background_color: "#06060A",
+      theme_color: "#06060A",
       icons: [
       // LA MÊME ICÔNE QUE PARTOUT — voir `icons` dans `app/layout.tsx`.
       { src: "/direct/icone-autour.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },

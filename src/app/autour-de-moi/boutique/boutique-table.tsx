@@ -2253,10 +2253,17 @@ export function BoutiqueTable({
         ))}
         {/* EXPLORER MA VILLE : l'application, ouverte sur ses deux copains du
             quartier — voir `/autour-de-moi?depuis=`. Un lien, parce qu'on
-            quitte la page ; le retour ramène ici. */}
+            quitte la page ; le retour ramène ici.
+            « Le même parcours, mais non fictif » : sur la page d'un VRAI
+            commerçant, c'est sa vraie ville, `/ville/<ville>`, où il apparaît
+            dès qu'il est client et publie depuis son comptoir. */}
         <Link
           className="bt-explorer"
-          href={`/autour-de-moi?depuis=${encodeURIComponent(c.id)}&retour=${encodeURIComponent(retourExplorer ?? "")}`}
+          href={
+            c.villeReelle
+              ? `/ville/${encodeURIComponent(c.villeReelle)}`
+              : `/autour-de-moi?depuis=${encodeURIComponent(c.id)}&retour=${encodeURIComponent(retourExplorer ?? "")}`
+          }
         >
           <IconeBoussole />
           <span>Explorer ma ville</span>

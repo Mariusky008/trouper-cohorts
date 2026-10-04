@@ -37,6 +37,7 @@
 // qu'il gagne en s'y mettant.
 import { platEnCours, sceneMontree, type ExperienceResto } from "@/lib/site-internet/experience-donnees";
 import { piecesEnCours, type PieceComptoir } from "@/lib/site-internet/pieces-comptoir";
+import { villeSlug } from "@/lib/direct/ville";
 import type { CarteAutour, CleMetier, MomentJour } from "@/lib/direct/apercu-habitant";
 import { resolveMetierContent } from "@/lib/site-internet/metier-content";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
@@ -386,6 +387,8 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
     // ce drapeau qui fait écrire, sous le chapitre, qu'elles sont proposées.
     cataloguePropose: services.length === 0 && !f.carteLue?.length && !piecesEnCours(f.pieces).length && proposees.length > 0,
     catalogueLuSurPhotos: services.length === 0 && Boolean(f.carteLue?.length),
+    // SA VILLE, POUR « EXPLORER MA VILLE » — voir `villeReelle`.
+    ...(villeSlug(f.ville) ? { villeReelle: villeSlug(f.ville) } : {}),
     // SON ANNONCE EN BANDEAU. « Il en reste ! » se reconnaît à ses premiers
     // mots — c'est le comptoir qui les écrit (`texteDeLAnnonce`) — et le
     // bandeau les porte en grand ; le reste du texte vient dessous.

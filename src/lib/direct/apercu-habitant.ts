@@ -1624,6 +1624,12 @@ export type CarteAutour = {
    * page, elle, ne lisait pas `current_offer`. Voir `offreDuSite` dans
    * `fiche-du-site.ts`. Absente quand il n'a rien annoncé ou que c'est fini.
    */
+  /**
+   * LA VILLE D'UN VRAI COMMERÇANT, en adresse (« dax ») : « Explorer ma ville »
+   * mène alors à `/ville/dax`, et non à la démonstration. Absente sur les
+   * commerces inventés et les copies de présentation.
+   */
+  villeReelle?: string;
   offreDuMoment?: {
     /** Le texte tel qu'il l'a publié, sans le « Il en reste ! » de tête quand il y est. */
     texte: string;
