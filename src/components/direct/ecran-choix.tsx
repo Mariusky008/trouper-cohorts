@@ -34,7 +34,6 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
 import { abonnerJournee, avecSaJournee, carteDeLaJournee, chargerJournee, journeeVide } from "@/lib/direct/journee";
 import { carteDuPaquet } from "@/lib/direct/copies-presentation";
 import { MotMarque } from "@/components/direct/mot-marque";
@@ -47,7 +46,6 @@ import {
   type CleCategorie,
 } from "@/lib/direct/choisir-commerce";
 import { evenementsDeLaVille, momentEnCours, toutesLesCartes } from "@/lib/direct/apercu-habitant";
-import type { VilleReelle } from "@/lib/direct/ville-reelle";
 
 /** Ce qu'une carte affiche, une fois le commerce retrouvé. */
 type Vue = {
@@ -64,8 +62,6 @@ type Vue = {
   vignette: string;
   distance: string;
   ville: string;
-  /** LA VRAIE VILLE : sa page, où mène le grand bouton. */
-  lien?: string;
 };
 
 /* ═══ LES CINQ PICTOGRAMMES ═════════════════════════════════════════════════
@@ -109,16 +105,6 @@ const PICTOS: Record<CleCategorie, ReactNode> = {
   ),
 };
 
-/* CE QUI ARRIVERA DANS UNE CATÉGORIE ENCORE VIDE DE LA VRAIE VILLE — dit
-   dans les mots de la catégorie, et d'où ça viendra : leur comptoir. */
-const VIDE: Record<CleCategorie, string> = {
-  mode: "Les boutiques de la ville y montreront leurs pièces à essayer, dès qu’elles les publient.",
-  restaurants: "Les restaurants y publieront leur plat du jour, en photo et de leur voix — et «\u00a0Il en reste\u00a0!\u00a0» vers 14\u00a0h.",
-  beaute: "Les salons y montreront la coupe ou la pose du moment, à essayer sur soi.",
-  sorties: "Les bars et les événements de la ville arriveront ici, le soir venu.",
-  commerces: "Les artisans, les fleuristes et les libraires y montreront ce qu’ils viennent de faire.",
-};
-
 export function EcranChoix({
   /** Le geste qui fait sortir de l'écran. Voir `.ap-accueil` : glisser entre. */
   onEntrer,
@@ -149,7 +135,6 @@ export function EcranChoix({
    * raccourci mentirait sur ou il mene.
    */
   depart,
-  reel,
 }: {
   onEntrer?: () => void;
   /* ═══ LE PARCOURS SUIT LA CARTE QU'ON REGARDE ═════════════════════════
@@ -174,33 +159,8 @@ export function EcranChoix({
   onParcoursTable?: (commerce: string) => void;
   onParcoursDeco?: (commerce: string) => void;
   depart?: CleCategorie;
-  /**
-   * ═══ LA VRAIE VILLE, À LA PLACE DE LA DÉMONSTRATION ═══════════════════
-   *
-   * « clikme.fr/autour-de-moi doit être calqué sur clikme.fr/ville/dax. » Le
-   * même écran, nourri par les commerçants validés de la ville et ce qu'ils
-   * publient depuis leur comptoir — voir `ville-reelle.ts`. Le grand bouton
-   * ouvre alors SA page, où les trois étapes de son Expérience l'attendent :
-   * les parcours de la démonstration sont écrits d'avance et ne parlent pas
-   * de lui.
-   */
-  reel?: VilleReelle;
 }) {
-  const router = useRouter();
-  /* LA VRAIE VILLE S'OUVRE SUR UNE CATÉGORIE QUI A QUELQUE CHOSE À MONTRER :
-     ouvrir sur un salon vide quand un restaurant vient de publier serait
-     cacher la seule chose vivante de la ville. */
-  const [cle, setCle] = useState<CleCategorie>(
-    depart ??
-      (reel
-        ? (CATEGORIES.find((c) => reel.categories[c.cle].some((v) => v.neuf)) ??
-            CATEGORIES.find((c) => reel.categories[c.cle].length) ??
-            categorieDe("restaurants")
-          ).cle
-        : CATEGORIE_DEPART),
-  );
-  /** Les messages de la mairie, ouverts par-dessus. */
-  const [mairieOuverte, setMairieOuverte] = useState(false);
+  const [cle, setCle] = useState<CleCategorie>(depart ?? CATEGORIE_DEPART);
   const categorie = categorieDe(cle);
   const [actif, setActif] = useState(0);
   /** Vrai dès qu'on a bougé dans le paquet : la consigne a fait son travail. */
@@ -246,7 +206,6 @@ export function EcranChoix({
    * une carte trouée la cacherait au lieu de la montrer.
    */
   const vues: Vue[] = useMemo(() => {
-    if (reel) return reel.categories[categorie.cle];
     const out: Vue[] = [];
     if (saCarte && categorie.cle === "restaurants") {
       /* LE DERNIER MOT D'ABORD : « Il en reste ! » passe devant le plat. */
@@ -323,7 +282,7 @@ export function EcranChoix({
       }
     }
     return out;
-  }, [categorie, commerces, evenements, heure, saCarte, journee, reel]);
+  }, [categorie, commerces, evenements, heure, saCarte, journee]);
 
   /* CHANGER DE CATÉGORIE REVIENT À LA PREMIÈRE CARTE. Rester sur la quatrième
      en passant d'une liste de cinq à une liste de quatre afficherait le vide. */
@@ -372,7 +331,7 @@ export function EcranChoix({
           <MotMarque />
         </p>
         <p className="cx-sur">
-          {reel ? `${reel.nom}, en direct` : "Votre ville à essayer"} <s aria-hidden="true">♡</s>
+          Votre ville à essayer <s aria-hidden="true">♡</s>
         </p>
       </header>
 
@@ -386,21 +345,6 @@ export function EcranChoix({
           <s aria-hidden="true" />
         </em>
       </h1>
-
-      {/* ═══ LA MAIRIE, EN UNE LIGNE ════════════════════════════════════════
-          « Faut-il y garder les messages de la mairie ? » — « OK ». Ils ne
-          sont l'affaire d'aucun commerce et d'aucune catégorie : une ligne
-          sous la question, sur les cinq onglets, et ils s'ouvrent par-dessus. */}
-      {reel && reel.mairie.length > 0 && (
-        <button type="button" className="cx-mairie" onClick={() => setMairieOuverte(true)}>
-          <i aria-hidden="true">🏛️</i>
-          <span>
-            <b>{reel.mairie[0].qui}</b> {reel.mairie[0].texte}
-          </span>
-          {reel.mairie.length > 1 && <em>+{reel.mairie.length - 1}</em>}
-          <s aria-hidden="true">›</s>
-        </button>
-      )}
 
       {/* ═══ LA CONSIGNE S'EFFACE UNE FOIS APPRISE ══════════════════════════
 
@@ -419,7 +363,7 @@ export function EcranChoix({
 
           ELLE PART DONC AU PREMIER GLISSEMENT, et le Fantôme reste. Elle a
           appris ce qu'elle avait à apprendre ; la place revient aux cartes. */}
-      <div className={`cx-dit${aGlisse || (reel && (reel.mairie.length > 0 || vues.length === 0)) ? " parti" : ""}`}>
+      <div className={`cx-dit${aGlisse ? " parti" : ""}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="cx-f" src="/clikme-fantome.png" alt="" />
         <p className="cx-bulle">
@@ -509,12 +453,11 @@ export function EcranChoix({
                         {v.heure}
                       </em>
                     )}
-                    {(v.distance || v.ville) && (
-                      <em>
-                        <i aria-hidden="true">📍</i>
-                        {[v.distance, v.ville].filter(Boolean).join(" · ")}
-                      </em>
-                    )}
+                    <em>
+                      <i aria-hidden="true">📍</i>
+                      {v.distance}
+                      {v.ville ? ` · ${v.ville}` : ""}
+                    </em>
                   </span>
                 </div>
               </div>
@@ -527,17 +470,6 @@ export function EcranChoix({
             EXACTEMENT la geometrie de la carte : meme hauteur, meme rapport,
             meme centre. Il ne se voit pas et ne prend aucun appui ; les fleches
             s'accrochent a ses bords et suivent tout seules. */}
-        {/* ═══ RIEN ENCORE ICI ═══════════════════════════════════════════
-            « La page est vide au départ. » On le dit, sans rien inventer :
-            ce qui arrivera ici, et d'où ça viendra. */}
-        {reel && vues.length === 0 && (
-          <div className="cx-vide">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/clikme-fantome.png" alt="" />
-            <p className="cx-vide-t">Bientôt ici</p>
-            <p className="cx-vide-s">{VIDE[categorie.cle]}</p>
-          </div>
-        )}
         <div className="cx-bords" aria-hidden={vues.length < 2}>
           {actif > 0 && (
             <button
@@ -583,36 +515,29 @@ export function EcranChoix({
           y mène — et il ne fait toujours rien pour les quatre autres, avec la
           même ligne sous lui. Un bouton qui marcherait à moitié sans le dire
           serait pire que les deux. */}
-      {!(reel && !vues[actif]?.lien) && (
-        <button
-          type="button"
-          className="cx-go"
-          onClick={() => {
-            /* LES CINQ CATEGORIES ONT LEUR PARCOURS. La ligne « la partie 2
-               arrive » ne s'affiche donc plus jamais — elle reste sous le
-               bouton, invisible, parce que c'est elle qui rattraperait une
-               sixieme categorie ajoutee sans son parcours. */
-            const ici = vues[actif]?.id ?? "";
-            if (reel) {
-              const lien = vues[actif]?.lien;
-              if (lien) router.push(lien);
-              return;
-            }
-            if (cle === "mode" && onParcoursMode) return onParcoursMode(ici);
-            if (cle === "beaute" && onParcoursCoiffure) return onParcoursCoiffure(ici);
-            if (cle === "sorties" && onParcoursSortie) return onParcoursSortie(ici);
-            if (cle === "restaurants" && onParcoursTable) return onParcoursTable(ici);
-            if (cle === "commerces" && onParcoursDeco) return onParcoursDeco(ici);
-            setBientot(true);
-          }}
-          aria-describedby="cx-bientot"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/clikme-fantome.png" alt="" />
-          {categorie.bouton}
-          <s aria-hidden="true">→</s>
-        </button>
-      )}
+      <button
+        type="button"
+        className="cx-go"
+        onClick={() => {
+          /* LES CINQ CATEGORIES ONT LEUR PARCOURS. La ligne « la partie 2
+             arrive » ne s'affiche donc plus jamais — elle reste sous le
+             bouton, invisible, parce que c'est elle qui rattraperait une
+             sixieme categorie ajoutee sans son parcours. */
+          const ici = vues[actif]?.id ?? "";
+          if (cle === "mode" && onParcoursMode) return onParcoursMode(ici);
+          if (cle === "beaute" && onParcoursCoiffure) return onParcoursCoiffure(ici);
+          if (cle === "sorties" && onParcoursSortie) return onParcoursSortie(ici);
+          if (cle === "restaurants" && onParcoursTable) return onParcoursTable(ici);
+          if (cle === "commerces" && onParcoursDeco) return onParcoursDeco(ici);
+          setBientot(true);
+        }}
+        aria-describedby="cx-bientot"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/clikme-fantome.png" alt="" />
+        {categorie.bouton}
+        <s aria-hidden="true">→</s>
+      </button>
       {/* CE QUI SE PASSE QUAND ON L'APPUIE : rien, et on le dit. Un bouton muet
           se lit comme une panne ; la ligne ci-dessous en fait une étape à
           venir. Elle n'apparaît qu'APRÈS l'appui — annoncer d'avance qu'un
@@ -654,37 +579,6 @@ export function EcranChoix({
           `fantome-accueil.tsx` — sauf qu'ici il mène vers l'application au lieu
           d'en revenir. Une seule mascotte, une seule place, deux directions
           selon l'endroit où l'on se tient. */}
-      {/* LES MESSAGES DE LA MAIRIE, PAR-DESSUS L'ÉCRAN — voir `.cx-mairie`. */}
-      {reel && mairieOuverte && (
-        <div className="cx-feuille" role="dialog" aria-label={`Les messages de la mairie de ${reel.nom}`}>
-          <button type="button" className="cx-feuille-fond" aria-label="Fermer" onClick={() => setMairieOuverte(false)} />
-          <div className="cx-feuille-corps">
-            <div className="cx-feuille-tete">
-              <b>🏛️ {reel.nom}, la ville vous dit</b>
-              <button type="button" onClick={() => setMairieOuverte(false)} aria-label="Fermer">
-                ✕
-              </button>
-            </div>
-            {reel.mairie.map((m) => (
-              <article key={m.id} className="cx-msg">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {m.photo && <img src={m.photo} alt="" />}
-                <p className="cx-msg-qui">
-                  {m.qui}
-                  {m.quand ? ` · ${m.quand}` : ""}
-                </p>
-                <p className="cx-msg-t">{m.texte}</p>
-                {/* UN LIEN DE CHEZ NOUS RESTE DANS L'ONGLET ; un autre s'ouvre à côté. */}
-                {m.lien && (
-                  <a href={m.lien} {...(/^\/(?!\/)/.test(m.lien) ? {} : { target: "_blank", rel: "noreferrer" })}>
-                    En savoir plus →
-                  </a>
-                )}
-              </article>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

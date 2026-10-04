@@ -272,41 +272,6 @@ export function StylesChoix() {
         .cx-bientot{flex:none;margin:7px 0 0;font-size:11.5px;font-weight:700;
           color:#E7A8CF;}
 
-        /* ═══ LA VRAIE VILLE ═══════════════════════════════════════════════
-           LA MAIRIE EN UNE LIGNE sous la question, sur les cinq onglets ; ses
-           messages s'ouvrent dans une feuille qui monte du bas. */
-        .cx-mairie{flex:none;display:flex;align-items:center;gap:9px;width:min(92%,420px);
-          margin:clamp(6px,1.2vh,10px) 0 0;padding:8px 12px;border-radius:14px;cursor:pointer;
-          font:inherit;font-size:12.5px;font-weight:600;text-align:left;color:#F2E9FF;
-          background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);}
-        .cx-mairie i{font-style:normal;font-size:18px;flex:none;}
-        .cx-mairie span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .cx-mairie b{font-weight:800;color:#fff;}
-        .cx-mairie em{font-style:normal;font-size:11px;font-weight:800;color:#FF2E9A;flex:none;}
-        .cx-mairie s{text-decoration:none;color:#FF2E9A;font-size:18px;flex:none;}
-        /* UNE CATEGORIE ENCORE VIDE : le fantome, et ce qui arrivera ici. */
-        .cx-vide{position:absolute;inset:6% 9%;display:flex;flex-direction:column;align-items:center;
-          justify-content:center;gap:8px;padding:22px;border-radius:26px;text-align:center;
-          background:rgba(255,255,255,.04);border:1.5px dashed rgba(255,46,154,.45);}
-        .cx-vide img{width:clamp(70px,22vw,110px);height:auto;filter:drop-shadow(0 0 18px rgba(255,46,154,.5));}
-        .cx-vide-t{margin:4px 0 0;font-weight:900;font-size:clamp(20px,6vw,26px);text-transform:uppercase;letter-spacing:-.02em;}
-        .cx-vide-s{margin:0;max-width:300px;font-size:14px;font-weight:600;line-height:1.35;color:#E3D4EA;}
-        .cx-feuille{position:absolute;inset:0;z-index:60;display:flex;flex-direction:column;justify-content:flex-end;}
-        .cx-feuille-fond{position:absolute;inset:0;border:0;background:rgba(0,0,0,.6);cursor:pointer;}
-        .cx-feuille-corps{position:relative;max-height:78%;overflow:auto;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));
-          border-radius:24px 24px 0 0;background:#140C12;border-top:1.5px solid #FF2E9A;text-align:left;
-          animation:cxMonte .28s ease both;}
-        @keyframes cxMonte{from{transform:translateY(40px);opacity:0;}to{transform:none;opacity:1;}}
-        .cx-feuille-tete{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
-        .cx-feuille-tete b{font-size:17px;font-weight:900;}
-        .cx-feuille-tete button{width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.2);
-          background:none;color:#fff;font:inherit;font-size:15px;cursor:pointer;}
-        .cx-msg{padding:12px 0;border-top:1px solid rgba(255,255,255,.1);}
-        .cx-msg img{width:100%;max-height:220px;object-fit:cover;border-radius:14px;margin-bottom:8px;}
-        .cx-msg-qui{margin:0;font-size:12px;font-weight:800;color:#FF7CC0;}
-        .cx-msg-t{margin:4px 0 0;font-size:15px;font-weight:550;line-height:1.4;white-space:pre-line;color:#F4ECF6;}
-        .cx-msg a{display:inline-block;margin-top:6px;font-size:13.5px;font-weight:800;color:#FF2E9A;}
-
         /* ═══ LES CINQ CATEGORIES ═════════════════════════════════════════
            LE CARRE ACTIF EST UN NEON, pas un fond plein : c'est ce que montrent
            les cinq maquettes, et ca laisse voir le pictogramme au lieu de le

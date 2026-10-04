@@ -1,4 +1,4 @@
-// LE DIRECT D'UNE VILLE — l'écran de l'application, nourri par la vraie ville.
+// LE DIRECT D'UNE VILLE — l'application de /autour-de-moi, nourrie par la vraie ville.
 //
 // « Maintenant que l'admin commerçant est fait, il va falloir que
 // clikme.fr/autour-de-moi soit calqué sur clikme.fr/ville/dax, et brancher
@@ -9,17 +9,17 @@
 // Ce qui reste de lui, c'est sa règle : rien d'expiré, rien d'inventé. Ce que
 // le commerçant publie depuis son comptoir (son lien pro) arrive ici par sa
 // fiche — le plat du jour, « Il en reste ! », la coupe à essayer, le livre
-// conseillé —, et les messages de la mairie restent, en une ligne sous la
-// question. Voir `lib/direct/ville-reelle.ts`.
+// conseillé —, et les messages de la mairie restent, en cartes du Direct.
+// Voir `lib/direct/ville-reelle.ts`.
 //
-// UN SEUL ÉCRAN POUR LA DÉMONSTRATION ET LA VILLE : `EcranChoix`, que
-// `/autour-de-moi` montre avec ses commerces inventés et que cette page montre
-// avec les vrais.
+// « Quand on clique sur le petit fantôme en haut à droite, on tombe sur la
+// véritable app » : c'est ELLE qui s'ouvre ici (`ApercuHabitant`), directement,
+// sans l'écran de choix de la démonstration. Voir `_ui/ville-app.tsx`.
 import type { Metadata, Viewport } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { configVille } from "@/lib/direct/ville";
 import { lireLaVilleReelle } from "@/lib/direct/ville-reelle";
-import { VilleEcran } from "./_ui/ville-ecran";
+import { VilleApp } from "./_ui/ville-app";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -59,5 +59,5 @@ export async function generateMetadata({ params }: { params: Promise<{ ville: st
 export default async function LeDirectPage({ params }: { params: Promise<{ ville: string }> }) {
   const { ville } = await params;
   const reelle = await lireLaVilleReelle(ville);
-  return <VilleEcran reelle={reelle} />;
+  return <VilleApp reelle={reelle} />;
 }

@@ -30,6 +30,7 @@
 // six images, toutes alimentaires. Ce sont pourtant les métiers que l'annonce
 // horodatée a débloqués, donc ceux qu'on montre le plus. Voir
 // `public/direct/LISEZ-MOI.md` pour le cadrage et la règle d'anonymat.
+import { cartesDeLaSource, evenementsDeLaSource } from "./source-ville";
 import type { CarteDirect } from "@/components/direct/carte-swipe";
 import { flashEnCours, momentDuFlash, partEcoulee, tempsQuiReste } from "./flash";
 import type { Flash } from "./flash";
@@ -1761,6 +1762,11 @@ export type EvenementVille = {
   mot: string;
   /** Ce qu'il faut savoir avant d'y aller. */
   pratique: string[];
+  /**
+   * UN MESSAGE DE LA VILLE, pas un événement — la mairie qui prévient d'une
+   * rue fermée. Voir `ville-reelle.ts` et `carteDEvenement`.
+   */
+  message?: boolean;
 };
 
 const EVENEMENTS: EvenementVille[] = [
@@ -1865,7 +1871,8 @@ export function estEvenement(x: ItemPaquet): x is EvenementVille {
 
 /** Les événements, du plus proche au plus loin. Aujourd'hui d'abord. */
 export function evenementsDeLaVille(): EvenementVille[] {
-  return [...EVENEMENTS].sort(
+  // CEUX DE LA VRAIE VILLE QUAND ELLE EST POSÉE — la mairie, les associations.
+  return [...(evenementsDeLaSource() ?? EVENEMENTS)].sort(
     (a, b) => Number(b.aujourdhui) - Number(a.aujourdhui) || a.metres - b.metres,
   );
 }
@@ -1894,11 +1901,17 @@ export function carteDEvenement(e: EvenementVille, heure: number): CarteDirect {
     ville: VILLE,
     distance: e.distance,
     itineraire: e.itineraire,
-    reste: enCours ? `● En ce moment · jusqu'à ${e.a} h` : `${e.jour} · ${e.heure}`,
+    // UN MESSAGE DE LA MAIRIE N'EST PAS UN CONCERT : pas de « Gratuit » en
+    // grand, pas d'heure de début. Ce qu'il dit prend la place du lieu.
+    reste: e.message
+      ? e.heure || "Un mot de la ville"
+      : enCours
+        ? `● En ce moment · jusqu'à ${e.a} h`
+        : `${e.jour} · ${e.heure}`,
     icone: ORGANISATEURS[e.typeQui].emoji,
-    quoi: e.lieu,
+    quoi: e.message ? e.quoi : e.lieu,
     lignes: e.lignes,
-    prix: e.prix ?? "Gratuit",
+    prix: e.message ? "" : (e.prix ?? "Gratuit"),
     etiquette: e.aujourdhui ? "AUJOURD'HUI" : e.jour.toUpperCase(),
   };
 }
@@ -4185,6 +4198,25 @@ export function nombreDeDemo(id: string, quoi: string, bas: number, haut: number
   return bas + (n % (haut - bas + 1));
 }
 
+/**
+ * LES TROIS COMPTEURS DE LA CARTE — clients du mois, cœurs, partages.
+ *
+ * EN DÉMONSTRATION, C'EST DE LA FICTION DÉCLARÉE, tirée de l'identifiant (voir
+ * le commentaire dans `carteDe`). SUR UN VRAI COMMERCE (`villeReelle`, que les
+ * copies de présentation n'ont pas), c'est un
+ * mensonge : « 169 » sous le cœur d'un restaurant de Dax que personne n'a
+ * encore gardé. Ils valent donc zéro — et la carte n'affiche pas un compteur à
+ * zéro — jusqu'au jour où on les compte pour de vrai.
+ */
+function chiffresDeFiction(c: CarteAutour): { clientsMois: number; gardes: number; partages: number } {
+  if (c.villeReelle) return { clientsMois: 0, gardes: 0, partages: 0 };
+  return {
+    clientsMois: nombreDeDemo(c.id, "clients", 80, 460),
+    gardes: nombreDeDemo(c.id, "gardes", 40, 320),
+    partages: nombreDeDemo(c.id, "partages", 8, 90),
+  };
+}
+
 export function momentsRestants(c: CarteAutour, heure: number): MomentJour[] {
   const aujourdhui = c.moments.filter((m) => heure < m.a);
   if (aujourdhui.length) return aujourdhui;
@@ -4352,7 +4384,7 @@ export function autourDeMoi(heure: number, branche: CleMetier): CarteAutour[] {
   // CELUI QUI N'A RIEN PUBLIÉ N'EST PAS DANS LE PAQUET. Voir `silencieux` :
   // pas de planning le matin, pas de carte dans la journée. C'est la règle du
   // produit, pas une exception de maquette.
-  return CARTES.filter(
+  return toutesLesCartes().filter(
     (c) => c.branche === branche && !c.silencieux && momentsRestants(c, heure).length > 0,
   )
     // ⚡ LE FLASH DE DEMONSTRATION ENTRE ICI — voir `avecFlashDemo`, qui refuse
@@ -4478,12 +4510,16 @@ export function nouvelleDuJour(
  * Ailleurs on filtre toujours : ici on rend ce qu'on a gardé, pas ce qui est
  * ouvert.
  */
+/**
+ * LES COMMERCES DE L'APPLICATION : ceux de la démonstration, ou ceux d'une
+ * vraie ville quand `/ville/<ville>` l'a posée — voir `source-ville.ts`.
+ */
 export function toutesLesCartes(): CarteAutour[] {
-  return CARTES;
+  return cartesDeLaSource() ?? CARTES;
 }
 
 export function ceuxQuiRecrutent(): CarteAutour[] {
-  return CARTES.filter((c) => c.recrute).sort((a, b) => a.metres - b.metres);
+  return toutesLesCartes().filter((c) => c.recrute).sort((a, b) => a.metres - b.metres);
 }
 
 /**
@@ -4508,7 +4544,7 @@ export function ceuxQuiRecrutent(): CarteAutour[] {
  * une vue de dons périmés serait pire que pas de vue du tout.
  */
 export function cequiEstOffert(heure: number): CarteAutour[] {
-  return CARTES.filter((c) => c.moments.some((m) => estAPrendre(m, heure)))
+  return toutesLesCartes().filter((c) => c.moments.some((m) => estAPrendre(m, heure)))
     .map((c) => ({ ...c, moments: c.moments.filter((m) => estAPrendre(m, heure)) }))
     .sort((a, b) => a.metres - b.metres);
 }
@@ -4793,9 +4829,9 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
       // carte les reçoit telles quelles : c'est elle qui met la sienne en tête,
       // dédoublonne, et décide qu'en dessous de deux il n'y a pas de bande.
       photos: c.sesPhotos,
-      clientsMois: nombreDeDemo(c.id, "clients", 80, 460),
-      gardes: nombreDeDemo(c.id, "gardes", 40, 320),
-      partages: nombreDeDemo(c.id, "partages", 8, 90),
+      // UN VRAI COMMERCE N'A PAS DE CHIFFRES DE FICTION — voir `fiction` :
+      // tant qu'on ne les compte pas pour lui, il n'en montre aucun.
+      ...chiffresDeFiction(c),
       // ─── LA PASTILLE NE RÉPÈTE PLUS LE MENU, ELLE DIT JUSQU'À QUAND ───
       //
       // Elle affichait le titre du moment : « 🍲 Les deux plats du jour » —
@@ -4875,9 +4911,7 @@ export function carteAffichee(c: CarteAutour, heure: number): CarteDirect {
     note: c.google?.note,
     avis: c.google?.avis,
     photos: c.sesPhotos,
-    clientsMois: nombreDeDemo(c.id, "clients", 80, 460),
-    gardes: nombreDeDemo(c.id, "gardes", 40, 320),
-    partages: nombreDeDemo(c.id, "partages", 8, 90),
+    ...chiffresDeFiction(c),
     itineraire: c.itineraire,
     // Le badge du haut ne dit plus une échéance mais QUAND ça se passe : c'est
     // devenu l'information principale de la carte.

@@ -160,6 +160,7 @@ import { CarteSwipe, StylesDirect } from "@/components/direct/carte-swipe";
 // fichier parce que c'est un ecran entier : le poser ici, dans dix-neuf mille
 // lignes, aurait rendu les deux illisibles.
 import { EcranChoix } from "@/components/direct/ecran-choix";
+import { useVilleReelle } from "@/components/direct/ville-reelle-contexte";
 /* ═══ L'OUVERTURE EN TROIS ACTES EST MISE DE CÔTÉ, PAS EFFACÉE ═════════════
    « L'animation de départ ne fonctionne pas assez bien, garde-la de côté, on
    essaiera de faire mieux plus tard. »
@@ -1369,7 +1370,27 @@ function Attente({
   );
 }
 
+/** Aucune remise : une vraie ville ne lit pas celles d'un comptoir de démonstration. */
+const AUCUNE_REMISE: ReturnType<typeof remisesVides> = [];
+
 export function ApercuHabitant() {
+  /**
+   * ═══ UNE VRAIE VILLE, OU LA DÉMONSTRATION ═══════════════════════════════
+   *
+   * « La véritable app devra être répliquée au niveau UX, UI et
+   * fonctionnalités sur clikme.fr/ville/dax. » C'est ce composant-ci qui s'y
+   * ouvre, sur les commerçants validés de la ville — voir `ville-reelle.ts` et
+   * `source-ville.ts`. Il change alors quatre choses, et rien d'autre :
+   *   · on entre directement dans l'application (pas d'écran de choix) ;
+   *   · rien de la démonstration ne s'y glisse — ni la journée d'un comptoir
+   *     de démonstration, ni les commerces préparés pour une visite ;
+   *   · on ne prête à aucun vrai commerce les essais ni les visages du modèle
+   *     de son métier ;
+   *   · « La Ville » et « Propositions », qui ne vivent encore que dans ce
+   *     téléphone, disent qu'elles arrivent au lieu de montrer des voisins
+   *     inventés.
+   */
+  const reelle = useVilleReelle();
   /**
    * CE QU'IL VIENT DE DICTER À SON ASSISTANTE — voir `journee.ts`.
    *
@@ -1386,7 +1407,9 @@ export function ApercuHabitant() {
    * dessous : un Flash en cours a le droit de tenir l'écran ouvert quand la
    * ville est officiellement fermée.
    */
-  const journee = useSyncExternalStore(abonnerJournee, chargerJournee, journeeVide);
+  const journeeLue = useSyncExternalStore(abonnerJournee, chargerJournee, journeeVide);
+  // LA JOURNÉE D'UN COMPTOIR DE DÉMONSTRATION N'ENTRE PAS DANS UNE VRAIE VILLE.
+  const journee = reelle ? null : journeeLue;
   // L'HEURE DU VISITEUR, SANS CASSER L'HYDRATATION : le serveur ne connaît pas
   // son fuseau. Instantané serveur à midi, instantané client réel.
   //
@@ -1627,6 +1650,8 @@ export function ApercuHabitant() {
    * que la règle des effets interdit ici.
    */
   const vus = useSyncExternalStore(abonnerVus, chargerVus, () => RIEN_VU);
+  /** L'écran de choix est passé — toujours, dans une vraie ville : on y entre directement. */
+  const accueilVu = vus.includes("accueil") || Boolean(reelle);
   /**
    * LE NAVIGATEUR A-T-IL REPRIS LA MAIN — voir l'écran d'accueil.
    *
@@ -2183,7 +2208,7 @@ export function ApercuHabitant() {
   const poseEntree = useRef(false);
   const enRetour = useRef(false);
   const dedans =
-    vus.includes("accueil") ||
+    accueilVu ||
     !!parcoursMode ||
     !!parcoursCoiffure ||
     !!parcoursSortie ||
@@ -2887,7 +2912,8 @@ export function ApercuHabitant() {
     chargerPreparation,
     preparationVide,
   );
-  const cartesPreparees = prepares.map(carteDuPrepare);
+  // LES COMMERCES PRÉPARÉS POUR UNE VISITE SONT CEUX DE LA DÉMONSTRATION.
+  const cartesPreparees = (reelle ? [] : prepares).map(carteDuPrepare);
 
   /**
    * CE QU'IL VIENT DE REMETTRE EN LIGNE — voir `historique.ts`.
@@ -2896,7 +2922,8 @@ export function ApercuHabitant() {
    * carte changer DANS LE PAQUET, tout de suite. Sans ça, le bouton demande de
    * croire qu'il a marché, et un bouton qu'il faut croire ne se réappuie pas.
    */
-  const remises = useSyncExternalStore(abonnerRemises, chargerRemises, remisesVides);
+  const remisesLues = useSyncExternalStore(abonnerRemises, chargerRemises, remisesVides);
+  const remises = reelle ? AUCUNE_REMISE : remisesLues;
   // SA JOURNÉE EST LUE TOUT EN HAUT DU COMPOSANT — l'heure du paquet en dépend
   // quand un Flash court. Il ne reste ici que la carte qu'on en tire.
   const carteJournee = journee ? carteDeLaJournee(journee) : null;
@@ -3581,7 +3608,7 @@ export function ApercuHabitant() {
    * arrête la boucle sur le premier acte ; les cinq temps restent lisibles
    * parce qu'ils sont aussi écrits, voir `.ap-acc-tous`.
    */
-  const accueilOuvert = monte && !!sommet && !vus.includes("accueil") && !sortie && !embauches;
+  const accueilOuvert = monte && !!sommet && !accueilVu && !sortie && !embauches;
 
   /**
    * ═══ LES NEUF PHOTOS SONT CHARGÉES D'AVANCE ══════════════════════════════
@@ -4111,9 +4138,12 @@ export function ApercuHabitant() {
             google: dessus.google,
             catalogue: dessus.catalogue,
             moment: momentDuSommet,
+            // UN VRAI COMMERCE : seulement ses pièces, et seulement ses essais —
+            // aucun, tant qu'il n'en a pas. Voir `seulementLesSiennes`.
+            ...(reelle ? { seulementLesSiennes: true, murDuLieu: dessus.murDuLieu ?? { maison: [], clients: [] } } : {}),
           })
         : null,
-    [dessus, momentDuSommet],
+    [dessus, momentDuSommet, reelle],
   );
 
   /**
@@ -4860,7 +4890,7 @@ export function ApercuHabitant() {
     !sortie &&
     !embauches &&
     !salonUrl &&
-    vus.includes("accueil") &&
+    accueilVu &&
     passees.length + 1 >= RANG_ANNONCE_JOURNEE &&
     apercuJournee.length > 0 &&
     !journeeDejaVue;
@@ -4878,7 +4908,7 @@ export function ApercuHabitant() {
        relooking se dessinerait DERRIÈRE celle de la journée, et on en fermerait
        deux d'un seul geste sans en avoir lu une. */
     !annonceJournee &&
-    vus.includes("accueil") &&
+    accueilVu &&
     passees.length + 1 >= RANG_ANNONCE_RELOOKING &&
     !relookDejaVu;
   /** Le commerce de la carte du dessus est-il en favori. */
@@ -7922,7 +7952,7 @@ export function ApercuHabitant() {
             {!ANCIENNE_OUVERTURE &&
               monte &&
               sommet &&
-              !vus.includes("accueil") &&
+              !accueilVu &&
               !sortie &&
               !embauches &&
               !salonUrl && (
@@ -7989,7 +8019,7 @@ export function ApercuHabitant() {
                 )
               )}
 
-            {ANCIENNE_OUVERTURE && monte && sommet && !vus.includes("accueil") && !sortie && !embauches && !salonUrl && (
+            {ANCIENNE_OUVERTURE && monte && sommet && !accueilVu && !sortie && !embauches && !salonUrl && (
               <div
                 className={`ap-accueil${accueilDx ? " part" : ""}`}
                 style={{ transform: `translate3d(${accueilDx}px,0,0) rotate(${accueilDx * 0.04}deg)` }}
@@ -10186,14 +10216,26 @@ export function ApercuHabitant() {
                       ? "Personne ne cherche là, maintenant."
                       : vue === "evenements"
                         ? "Rien d'annoncé en ville pour l'instant."
-                        : "Personne ne le propose là."
+                        : reelle && vue === "tout"
+                          ? `Rien en direct à ${reelle.nom} pour l’instant.`
+                          : "Personne ne le propose là."
                     : gardees.length > 0
                       ? `${gardees.length} ${gardees.length > 1 ? "gardés" : "gardé"}`
                       : "Vous avez tout vu"}
                 </b>
-                <button type="button" className="ap-cta" onClick={remettre}>
-                  ↻ Revoir
-                </button>
+                {/* « LA PAGE EST VIDE AU DÉPART » — et on dit d'où viendra ce
+                    qui la remplira, sans rien inventer pour la meubler. */}
+                {reelle && dispo.length === 0 && (
+                  <p className="ap-vide-p">
+                    Les commerçants de {reelle.nom} publient ici depuis leur comptoir : le plat du jour, « Il en reste ! », la
+                    coupe à essayer. La mairie aussi. Revenez tout à l’heure.
+                  </p>
+                )}
+                {!(reelle && dispo.length === 0) && (
+                  <button type="button" className="ap-cta" onClick={remettre}>
+                    ↻ Revoir
+                  </button>
+                )}
               </div>
             )}
               </>
@@ -10983,7 +11025,33 @@ export function ApercuHabitant() {
               devenir un forum de quartier, et ils sont dans le code : tout
               disparaît au bout de quelques heures, on ne publie pas mais on
               « dit quelque chose », et un message porte un lieu et une heure. */}
-          {onglet === "ville" && (
+          {/* ═══ DANS UNE VRAIE VILLE, CES DEUX ONGLETS ARRIVENT ═══════════
+              Leurs messages et leurs propositions ne vivent encore que dans ce
+              téléphone, et la démonstration les remplit de voisins et d'amis
+              qui répondent tout seuls. Sous de vrais commerces, ce serait les
+              inventer : on dit ce qui arrivera, et c'est tout. */}
+          {reelle && (onglet === "ville" || onglet === "salons") && (
+            <div className="ap-page ap-onglet-vue">
+              <div className="ap-page-h">
+                <span className="ap-page-t">
+                  <b>{onglet === "ville" ? "La Ville" : NOM_ONGLET.salons}</b>
+                  <em>{reelle.nom}</em>
+                </span>
+              </div>
+              <div className="ap-vide">
+                <span className="ap-vide-e" aria-hidden="true">
+                  {onglet === "ville" ? "🏛️" : "💬"}
+                </span>
+                <b>Bientôt ici</b>
+                <p className="ap-vide-p">
+                  {onglet === "ville"
+                    ? `Ce que les habitants de ${reelle.nom} disent de ce qui se passe, maintenant. Les messages de la mairie, eux, sont déjà dans Le Direct.`
+                    : "Ce que vous proposerez à vos amis depuis une annonce — et ce qu’ils vous proposeront."}
+                </p>
+              </div>
+            </div>
+          )}
+          {onglet === "ville" && !reelle && (
             <div className="ap-page ap-onglet-vue">
               <div className="ap-page-h">
                 <span className="ap-page-t">
@@ -11203,7 +11271,7 @@ export function ApercuHabitant() {
               dessous. C'est le seul écran de l'application qui regarde en
               arrière, et c'est voulu — tout le reste ne parle que de
               maintenant. */}
-          {onglet === "salons" && (
+          {onglet === "salons" && !reelle && (
             <div className="ap-page ap-onglet-vue">
               <div className="ap-page-h">
                 <span className="ap-page-t">
@@ -13353,7 +13421,7 @@ export function ApercuHabitant() {
             >
               <i aria-hidden="true">🏛️</i>
               La Ville
-              {ville.length > 0 && <b>{ville.length}</b>}
+              {!reelle && ville.length > 0 && <b>{ville.length}</b>}
             </button>
             {/* ═══ LE SMILEY, AU MILIEU, QUI PASSE À LA SUIVANTE ═══
 
@@ -13538,7 +13606,7 @@ export function ApercuHabitant() {
                   qu'on peut rejoindre. Ne compter que les siens le faisait
                   disparaitre a la premiere visite, au moment precis ou il y a
                   cinq salons ouverts a decouvrir. */}
-              {salonsOuverts.length + salonsADecouvrir.length > 0 && (
+              {!reelle && salonsOuverts.length + salonsADecouvrir.length > 0 && (
                 <b>{salonsOuverts.length + salonsADecouvrir.length}</b>
               )}
             </button>
@@ -19923,6 +19991,7 @@ export function ApercuHabitant() {
           border:1px dashed rgba(255,255,255,.15);border-radius:26px;}
         .ap-vide-e{font-size:34px;line-height:1;}
         .ap-vide b{font-size:20px;font-weight:850;color:#fff;letter-spacing:-.02em;}
+        .ap-vide-p{margin:0;max-width:300px;text-align:center;font-size:14px;line-height:1.4;color:rgba(255,255,255,.72);}
         .ap-cta{font:inherit;font-size:15px;font-weight:850;color:#04150E;border:0;
           background:linear-gradient(140deg,#3DE2A6,#0BA97B);border-radius:999px;
           padding:13px 24px;cursor:pointer;box-shadow:0 14px 30px -14px rgba(18,185,129,.9);}
