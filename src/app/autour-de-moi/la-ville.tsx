@@ -59,6 +59,7 @@ export function LaVille({
   onSortie,
   onOuvrirSalon,
   onMessageVille,
+  demandePartage = 0,
 }: {
   messages: MessageVille[];
   /** Les gens avec qui je partage des conversations : mes amis, dans la maquette. */
@@ -80,6 +81,8 @@ export function LaVille({
   onOuvrirSalon: (cle: string) => void;
   /** Le composeur existant de la vie locale (question, bon plan…). */
   onMessageVille: () => void;
+  /** Change à chaque appui sur le fantôme de la barre : « Qu'as-tu envie de partager ? ». */
+  demandePartage?: number;
 }) {
   const vus = useSyncExternalStore(abonnerVus, chargerVus, () => AUCUN_VU);
   const aDesAmis = amis.length > 0;
@@ -89,6 +92,14 @@ export function LaVille({
   const [chezQui, setChezQui] = useState<string | null>(null);
   const [compose, setCompose] = useState<null | "choix" | "essai" | "decouverte">(null);
   const [suiteDe, setSuiteDe] = useState<MessageVille | null>(null);
+  // LE FANTÔME DE LA BARRE EST LE BOUTON « PARTAGER » DE CETTE PAGE. Une
+  // demande nouvelle se voit pendant le rendu, sans effet.
+  const [demandeVue, setDemandeVue] = useState(demandePartage);
+  if (demandePartage !== demandeVue) {
+    setDemandeVue(demandePartage);
+    setSuiteDe(null);
+    setCompose("choix");
+  }
   /** L'heure d'ouverture de l'écran : une sortie sans date se range une demi-heure avant. */
   const [ouverture] = useState(() => Date.now());
 
@@ -236,14 +247,6 @@ export function LaVille({
         ),
       )}
 
-      <button type="button" className="lv-partager" onClick={() => setCompose("choix")}>
-        <span className="lv-crayon" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path d="M4 20h4L19 9l-4-4L4 16v4Z" />
-          </svg>
-        </span>
-        Qu’as-tu envie de partager ?
-      </button>
 
       {compose && (
         <Composeur
@@ -735,7 +738,7 @@ function StylesLaVille() {
     <style
       dangerouslySetInnerHTML={{
         __html: `
-.lv{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px 2px calc(96px + env(safe-area-inset-bottom,0px));
+.lv{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:4px 2px calc(28px + env(safe-area-inset-bottom,0px));
   color:#FFF4E6;font-family:var(--font-clikme),system-ui,sans-serif;}
 .lv-tete{margin:2px 4px 14px;}
 .lv-tete h1{margin:0;font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.05;}
@@ -792,11 +795,6 @@ function StylesLaVille() {
 .lv-reponses input{flex:1;min-width:0;height:42px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,214,170,.22);background:#17100D;color:#FFF4E6;font:inherit;font-size:14px;}
 .lv-reponses form button{width:42px;height:42px;border-radius:50%;border:0;background:#F5A23A;color:#2A1608;font-weight:800;cursor:pointer;}
 .lv-reponses form button:disabled{opacity:.4;}
-.lv-partager{position:sticky;bottom:10px;z-index:3;display:flex;align-items:center;gap:14px;width:calc(100% - 4px);height:60px;margin:6px 2px 0;padding:0 10px;
-  border:0;border-radius:18px;cursor:pointer;font:inherit;font-size:17px;font-weight:700;color:#2A1608;
-  background:linear-gradient(180deg,#F8B451,#E8932A);box-shadow:0 14px 30px -12px rgba(0,0,0,.9);}
-.lv-crayon{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:#FFF4E6;}
-.lv-crayon svg{width:22px;height:22px;fill:none;stroke:#2A1608;stroke-width:2;stroke-linejoin:round;}
 .lv-fond{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;background:rgba(10,6,4,.6);}
 .lv-feuille{width:min(520px,100%);max-height:86vh;overflow-y:auto;padding:10px 16px calc(18px + env(safe-area-inset-bottom,0px));
   border-radius:24px 24px 0 0;background:#1C1411;border:1px solid rgba(255,214,170,.18);color:#FFF4E6;font-family:var(--font-clikme),system-ui,sans-serif;

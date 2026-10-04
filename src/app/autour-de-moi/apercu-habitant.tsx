@@ -420,6 +420,58 @@ const NOM_ONGLET = {
   salons: "Ensemble",
   profil: "Ma maison",
 } as const;
+
+/**
+ * ═══ UN FANTÔME PAR PAGE, ET SON GESTE ═══════════════════════════════════════
+ *
+ * « Qu'as-tu envie de partager est mal placé et au milieu ; peut-être qu'on
+ * pourrait le mettre à la place du fantôme. […] Idem pour la page Ensemble et
+ * Maison, où on aura des fantômes appropriés pour chacune des pages, qui auront
+ * une fonctionnalité spéciale à chaque fois. »
+ *
+ * DANS LE DIRECT, IL OUVRE LE MUR (ou le double) de l'annonce qu'on regarde.
+ * Sur les trois autres pages, il change de tenue et devient LE geste de la page :
+ * - La ville : il rit, la main levée — « Qu'as-tu envie de partager ? » ;
+ * - Ensemble : il lève son verre — « Lancer une discussion » ;
+ * - Ma maison : il lit dans son fauteuil — « Faire visiter ma maison ».
+ * Un petit signe doré au coin dit ce qu'il fait ; le mot s'affiche au-dessus
+ * tant qu'on ne l'a jamais touché sur cette page.
+ */
+const GESTES_DE_PAGE = {
+  ville: { image: "/direct/fantomes/client-rit.png", mot: "Partager", dit: "Qu’as-tu envie de partager ?" },
+  salons: { image: "/direct/fantomes/client-verre.png", mot: "Discuter", dit: "Lancer une discussion" },
+  profil: { image: "/direct/fantomes/client-magazine.png", mot: "Inviter", dit: "Faire visiter ma maison" },
+} as const;
+type PageAGeste = keyof typeof GESTES_DE_PAGE;
+
+/** Les pages dont on a déjà touché le fantôme : le mot au-dessus s'y tait. */
+const GESTES_CONNUS = "clikme-gestes-connus-v1";
+const gestesAbonnes = new Set<() => void>();
+let gestesCache: string | null = null;
+function lireGestesConnus(): string {
+  if (gestesCache !== null) return gestesCache;
+  try {
+    gestesCache = window.localStorage.getItem(GESTES_CONNUS) ?? "";
+  } catch {
+    gestesCache = "";
+  }
+  return gestesCache;
+}
+function connaitreGeste(page: PageAGeste) {
+  const avant = lireGestesConnus();
+  if (avant.split(",").includes(page)) return;
+  gestesCache = [avant, page].filter(Boolean).join(",");
+  try {
+    window.localStorage.setItem(GESTES_CONNUS, gestesCache);
+  } catch {
+    /* refusé : le mot se taira au moins pour la visite */
+  }
+  gestesAbonnes.forEach((f) => f());
+}
+function abonnerGestes(f: () => void) {
+  gestesAbonnes.add(f);
+  return () => void gestesAbonnes.delete(f);
+}
 /** À partir de cette descente dans la carte, on considère qu'on LIT — et le
  *  balayage horizontal se désarme pour ne pas emporter la carte qu'on lit. */
 const SEUIL_PLI = 90;
@@ -1981,6 +2033,9 @@ export function ApercuHabitant() {
   const [natureVille, setNatureVille] = useState<NatureVille>("question");
   /** L'essai d'une publication de la ville, rejoué sur soi : « Essayer sur moi ». */
   const [essaiVille, setEssaiVille] = useState<{ carte: string; piece: string } | null>(null);
+  /** Chaque appui sur le fantôme d'une page l'augmente : la page ouvre son geste. */
+  const [demandeGeste, setDemandeGeste] = useState(0);
+  const gestesConnus = useSyncExternalStore(abonnerGestes, lireGestesConnus, () => "ville,salons,profil");
   const embauches = vue === "recrute";
   const setEmbauches = (v: boolean) => setVue(v ? "recrute" : "metiers");
   /** LA DEMANDE ÉCRITE. Rien : on regarde le paquet comme avant. */
@@ -5631,6 +5686,9 @@ export function ApercuHabitant() {
         setSalonPage(true);
       },
     }));
+
+  /** Le geste du fantôme sur la page affichée — aucun dans Le Direct ni dans une vraie ville. */
+  const gestePage = !reelle && onglet in GESTES_DE_PAGE ? GESTES_DE_PAGE[onglet as PageAGeste] : null;
 
   const aSuivreVille =
     suitesDesEssais.length + ville.filter((m) => m.qui === "Vous" && m.reponses.length > (vusVille[m.id] ?? 0)).length;
@@ -11116,6 +11174,7 @@ export function ApercuHabitant() {
                   setSalonOuvert(cle);
                   setSalonPage(true);
                 }}
+                demandePartage={demandeGeste}
                 onMessageVille={() => {
                   noter("champ-touche", 0, "ville");
                   setMotVille("");
@@ -11143,6 +11202,7 @@ export function ApercuHabitant() {
                 lus={lus}
                 cestMoi={cestMoi}
                 moi={monPrenom() || "Vous"}
+                demandeLancer={demandeGeste}
                 onOuvrir={(cle) => {
                   setSalonOuvert(cle);
                   setSalonPage(true);
@@ -11219,6 +11279,7 @@ export function ApercuHabitant() {
                 onDecouvrir={() => allerA_onglet("direct")}
                 onReglages={() => setReglagesMaison(true)}
                 onNePlusSuivre={(id) => basculerSuivi(id)}
+                demandeVisite={demandeGeste}
               />
               {laPieceVue}
             </div>
@@ -13161,7 +13222,7 @@ export function ApercuHabitant() {
                   aurait alors declenche le grand saut sur un depart banal. */}
             <button
               type="button"
-              className={`ap-monfantome${clin ? " clin" : ""}${
+              className={gestePage ? `ap-monfantome page${clin ? " clin" : ""}` : `ap-monfantome${clin ? " clin" : ""}${
                 appel && !clin ? " appel" : ""
               }${
                 tonDeSection ? ` sec ${tonDeSection}` : ""
@@ -13169,7 +13230,9 @@ export function ApercuHabitant() {
                 clin === "or" ? " saut-or" : ""
               }${tonDeLaVeille ? ` veille ${tonDeLaVeille}` : ""}`}
               aria-label={
-                arbitre
+                gestePage
+                  ? gestePage.dit
+                  : arbitre
                   ? `Le fantôme a quelque chose à dire : ${arbitre.phrase}`
                   : aDouble && dessus
                     ? `Parler avec ${nomDansPhrase(dessus.nom)}`
@@ -13178,8 +13241,19 @@ export function ApercuHabitant() {
               // SANS COMMERCE SOUS LES YEUX, IL N'Y A PAS DE MUR A OUVRIR : un
               // evenement de la ville n'a pas de comptoir. Le fantome s'eteint,
               // sauf si l'arbitre a quelque chose a dire.
-              disabled={!arbitre && !dessus}
+              disabled={!gestePage && !arbitre && !dessus}
               onClick={() => {
+                // SUR LES TROIS AUTRES PAGES, IL EST LE GESTE DE LA PAGE — voir
+                // `GESTES_DE_PAGE`. Le bond reste : il répond au doigt.
+                if (gestePage) {
+                  setClin("simple");
+                  sonDuBond(false);
+                  window.setTimeout(() => setClin(""), BOND_MS);
+                  noter("onglet", 0, `geste-${onglet}`);
+                  connaitreGeste(onglet as PageAGeste);
+                  setDemandeGeste((n) => n + 1);
+                  return;
+                }
                 // LE PREMIER APPUI FAIT TAIRE L'APPEL POUR DE BON. Voir
                 // `FANTOME_CONNU` : quelqu'un qui sait n'a pas besoin qu'on le
                 // lui rappelle, et un appel qu'on n'eteint jamais devient la
@@ -13258,7 +13332,7 @@ export function ApercuHabitant() {
                   dans « Profil » n'existe pour personne. Un chiffre sur le
                   fantôme est le seul endroit où cette information est à sa
                   place : c'est lui qui est parti quelque part. */}
-              {mesTraces.length > 0 && <b className="ap-mf-n">{mesTraces.length}</b>}
+              {!gestePage && mesTraces.length > 0 && <b className="ap-mf-n">{mesTraces.length}</b>}
 
               {/* ═══ UN PETIT FANTÔME, ET IL BOUGE QUAND ON L'APPUIE ═══
 
@@ -13282,7 +13356,26 @@ export function ApercuHabitant() {
                   mieux que le geste qu'il remplace. */}
               {/* LA TENUE DE CHEF AU RESTAURANT ; ailleurs le fantôme ClikMe, qui
                   ouvre lui aussi le double du commerçant. */}
-              {aDouble && dessus && tenueDu(dessus) ? (
+              {gestePage ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img className="ap-mf-page" src={gestePage.image} alt="" />
+                  <i className="ap-mf-signe" aria-hidden="true">
+                    {onglet === "ville" ? (
+                      <svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4Z" /></svg>
+                    ) : onglet === "salons" ? (
+                      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7M6 9.5V20h12V9.5" /></svg>
+                    )}
+                  </i>
+                  {!gestesConnus.split(",").includes(onglet) && (
+                    <span key={onglet} className="ap-mf-dit" aria-hidden="true">
+                      {gestePage.mot}
+                    </span>
+                  )}
+                </>
+              ) : aDouble && dessus && tenueDu(dessus) ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img className="ap-mf-chef" src={`${tenueDu(dessus)!.dossier}accueil.webp`} alt="" />
               ) : (
@@ -20138,6 +20231,27 @@ export function ApercuHabitant() {
         .ap-plein-ecran>.pt{z-index:1;}
         /* LE FANTOME PORTE LA TENUE DU CHEF quand l'annonce est un restaurant :
            c'est la pose d'accueil du double, cadree sur le visage. */
+        /* LE FANTÔME D'UNE PAGE (voir GESTES_DE_PAGE) : sa tenue sur un disque
+           chaud, un signe doré au coin, et son mot au-dessus tant qu'on ne
+           l'a jamais touché ici. */
+        .ap-onglets .ap-monfantome.page{background:radial-gradient(circle at 50% 38%,#4A3428,#22170F 72%);
+          box-shadow:0 0 0 2px #F5A23A,0 8px 22px -6px rgba(245,162,58,.6);}
+        .ap-onglets .ap-monfantome .ap-mf-page{position:absolute;inset:0;width:100%;height:100%;
+          border-radius:50%;object-fit:cover;object-position:50% 20%;transform:scale(1.05);}
+        .ap-onglets .ap-monfantome .ap-mf-signe{position:absolute;right:-5px;bottom:-3px;display:grid;place-items:center;
+          width:24px;height:24px;border-radius:50%;background:linear-gradient(180deg,#F8B451,#E8932A);
+          box-shadow:0 0 0 2px #1C1411;pointer-events:none;
+          /* LES ICÔNES D'ONGLET INACTIVES SONT GRISÉES ; celle-ci n'est pas un onglet. */
+          filter:none;opacity:1;}
+        .ap-onglets .ap-monfantome .ap-mf-signe svg{width:14px;height:14px;fill:none;stroke:#2A1608;stroke-width:2.6;
+          stroke-linecap:round;stroke-linejoin:round;}
+        .ap-onglets .ap-monfantome .ap-mf-dit{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
+          padding:5px 11px;border-radius:999px;white-space:nowrap;font-size:12px;font-weight:800;font-style:normal;
+          color:#2A1608;background:#FFD08A;box-shadow:0 6px 16px -6px rgba(0,0,0,.8);pointer-events:none;
+          animation:apMfDit 2.4s ease-in-out infinite;}
+        .ap-onglets .ap-monfantome .ap-mf-dit::after{content:"";position:absolute;top:100%;left:50%;margin-left:-5px;
+          border:5px solid transparent;border-top-color:#FFD08A;}
+        @keyframes apMfDit{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,-3px);}}
         .ap-onglets .ap-monfantome .ap-mf-chef{position:absolute;inset:0;width:100%;height:100%;
           border-radius:50%;object-fit:cover;object-position:50% 14%;transform:scale(1.18);}
         .ap-fond{position:absolute;inset:0;z-index:8;border:0;padding:0;cursor:pointer;

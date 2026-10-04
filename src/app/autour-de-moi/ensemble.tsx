@@ -42,6 +42,7 @@ export function Ensemble({
   onOuvrir,
   onLancer,
   enPlus,
+  demandeLancer = 0,
 }: {
   salons: Record<string, Salon>;
   lus: Record<string, number>;
@@ -52,13 +53,22 @@ export function Ensemble({
   onOuvrir: (cle: string) => void;
   /** Crée un salon privé sur ce sujet, et l'ouvre. */
   onLancer: (sujet: string) => void;
-  /** Ce que l'onglet porte encore en attendant Ma maison et La ville. */
+  /** Les feuilles qu'un essai gardé peut ouvrir. */
   enPlus?: ReactNode;
+  /** Change à chaque appui sur le fantôme de la barre : il lance une discussion. */
+  demandeLancer?: number;
 }) {
   const attentes = aToiDeJouer(salons, cestMoi, lus, moi);
   const { actives, archives } = nosDiscussions(salons, cestMoi, lus);
   const [voirArchives, setVoirArchives] = useState(false);
   const [lancer, setLancer] = useState(false);
+  // LE FANTÔME DE LA BARRE DEMANDE, LA PAGE OUVRE. Une demande nouvelle se
+  // voit pendant le rendu : pas d'effet, pas de rendu de trop.
+  const [demandeVue, setDemandeVue] = useState(demandeLancer);
+  if (demandeLancer !== demandeVue) {
+    setDemandeVue(demandeLancer);
+    setLancer(true);
+  }
   const [sujet, setSujet] = useState("");
   const liste = voirArchives ? archives : actives;
 
@@ -228,7 +238,7 @@ function StylesEnsemble() {
     <style
       dangerouslySetInnerHTML={{
         __html: `
-.en{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px 2px calc(28px + env(safe-area-inset-bottom,0px));
+.en{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:4px 2px calc(28px + env(safe-area-inset-bottom,0px));
   color:#FFF4E6;font-family:var(--font-clikme),system-ui,sans-serif;}
 .en-tete{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:2px 4px 18px;}
 .en-tete h1{margin:0;font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.05;}

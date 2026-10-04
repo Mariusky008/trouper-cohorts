@@ -48,6 +48,7 @@ export function MaMaison({
   onDecouvrir,
   onReglages,
   onNePlusSuivre,
+  demandeVisite = 0,
 }: {
   prenom: string;
   /** Les commerces adoptés (suivis), tels que l'application les connaît. */
@@ -67,6 +68,8 @@ export function MaMaison({
   /** Les réglages du compte (l'ancien « Mon espace »). */
   onReglages: () => void;
   onNePlusSuivre: (id: string) => void;
+  /** Change à chaque appui sur le fantôme de la barre : « Faire visiter ma maison ». */
+  demandeVisite?: number;
 }) {
   const monte = useSyncExternalStore(rien, () => true, () => false);
   const reglages = useSyncExternalStore(abonnerMaison, chargerMaison, () => MAISON_VIDE);
@@ -76,6 +79,15 @@ export function MaMaison({
   const [edition, setEdition] = useState(false);
   const [presentation, setPresentation] = useState("");
   const [invite, setInvite] = useState("");
+  const [visite, setVisite] = useState(false);
+  // LE FANTÔME DE LA BARRE FAIT VISITER LA MAISON. Une demande nouvelle se
+  // voit pendant le rendu, sans effet.
+  const [demandeVue, setDemandeVue] = useState(demandeVisite);
+  if (demandeVisite !== demandeVue) {
+    setDemandeVue(demandeVisite);
+    setOuverte(null);
+    setVisite(true);
+  }
 
   const maison = rangerLaMaison(adoptes);
   const nbFantomes = adoptes.length;
@@ -347,6 +359,49 @@ export function MaMaison({
       )}
       {invite && <p className="mm-toast">{invite}</p>}
 
+      {/* ═══ FAIRE VISITER MA MAISON ═══
+          Le geste du fantôme sur cette page. Le partage part d'un appui DANS
+          la feuille : un téléphone ne laisse ouvrir son menu de partage qu'au
+          doigt, jamais au milieu d'un rendu. */}
+      {visite && (
+        <div className="mm-fond" role="dialog" aria-label="Faire visiter ma maison" onClick={() => setVisite(false)}>
+          <div className="mm-fiche" onClick={(e) => e.stopPropagation()}>
+            <span className="mm-poignee" aria-hidden="true" />
+            <h2>Faire visiter ma maison</h2>
+            <p className="mm-visite-p">
+              {nbFantomes > 0
+                ? `${nbFantomes} fantôme${nbFantomes > 1 ? "s" : ""} habite${nbFantomes > 1 ? "nt" : ""} chez toi. `
+                : "Ta maison est encore vide. "}
+              Tes amis verront tes bonnes adresses, tes découvertes et les essais que tu as choisi de partager — jamais les autres.
+            </p>
+            <button
+              type="button"
+              className="mm-inviter"
+              onClick={() => {
+                setVisite(false);
+                void inviter();
+              }}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="9" cy="8" r="3.5" />
+                <path d="M2.5 20c.6-3.7 3.3-6 6.5-6s5.9 2.3 6.5 6M19 8v6M16 11h6" />
+              </svg>
+              Inviter un ami chez moi
+            </button>
+            <button
+              type="button"
+              className="mm-visite-voir"
+              onClick={() => {
+                setVisite(false);
+                setCommeAmi(true);
+              }}
+            >
+              👀 Voir ce que mes amis verront
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ═══ LA FICHE D'UNE PIÈCE ═══ */}
       {pieceOuverte && (
         <div className="mm-fond" role="dialog" aria-label={pieceOuverte.nom} onClick={() => setOuverte(null)}>
@@ -422,7 +477,7 @@ function StylesMaMaison() {
     <style
       dangerouslySetInnerHTML={{
         __html: `
-.mm{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px 2px calc(30px + env(safe-area-inset-bottom,0px));
+.mm{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:4px 2px calc(30px + env(safe-area-inset-bottom,0px));
   color:#FFF4E6;font-family:var(--font-clikme),system-ui,sans-serif;}
 .mm-tete{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:2px 4px 14px;}
 .mm-tete h1{margin:0;font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.05;}
@@ -502,6 +557,9 @@ function StylesMaMaison() {
 .mm-inviter{display:flex;align-items:center;justify-content:center;gap:10px;width:calc(100% - 4px);height:58px;margin:18px 2px 0;border:0;border-radius:18px;cursor:pointer;
   font:inherit;font-size:17px;font-weight:800;color:#2A1608;background:linear-gradient(180deg,#F8B451,#E8932A);box-shadow:0 12px 26px -12px rgba(245,162,58,.8);}
 .mm-inviter svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;}
+.mm-visite-p{margin:0 0 4px;font-size:14px;line-height:1.45;color:#CDB9A5;}
+.mm-visite-voir{display:block;width:calc(100% - 4px);height:50px;margin:10px 2px 0;border-radius:18px;cursor:pointer;font:inherit;font-size:15px;font-weight:700;
+  color:#FFF4E6;background:transparent;border:1px solid rgba(255,214,170,.3);}
 .mm-toast{margin:8px 2px 0;text-align:center;font-size:13px;color:#FFD08A;}
 .mm-fond{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;background:rgba(10,6,4,.6);}
 .mm-fiche{width:min(520px,100%);max-height:82vh;overflow-y:auto;padding:10px 16px calc(18px + env(safe-area-inset-bottom,0px));
