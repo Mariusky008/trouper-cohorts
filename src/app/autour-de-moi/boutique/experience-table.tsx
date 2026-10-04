@@ -37,6 +37,19 @@ const TABLE = "/direct/table/restaurant/table.webp";
 const CLOCHE = "/direct/table/restaurant/cloche-cuivre.webp";
 const ASSIS = "/direct/double/assis/";
 
+/**
+ * OÙ EST ASSIS SON FANTÔME DANS LA MAQUETTE 3, en fractions de la photo — et
+ * donc dans toute scène qui la recompose (`rendreScene`, même consigne). La
+ * page y pose la bulle « Une question ? » et le rend touchable.
+ */
+const BOITE_MAQUETTE = { x: 0.655, y: 0.33, l: 0.33, h: 0.26, bulle: false } as const;
+/**
+ * EN ATTENDANT LA SCÈNE — ou sans elle : la salle de la maquette, et son
+ * fantôme assis à droite, là où il est sur la maquette, coupé par le bord de
+ * la table (`coupe`, en fraction de sa hauteur). Mesuré sur la salle.
+ */
+const ASSIS_SALLE = { x: 0.655, y: 0.42, l: 0.33, coupe: 0.76 } as const;
+
 type Pt = readonly [number, number];
 /**
  * LE NOM, BRODÉ COMME SUR SA MAQUETTE — pose par pose, en fraction de l'image.
@@ -255,7 +268,26 @@ export function ExperienceTable({
   const qui = voix?.prenom || "Le chef";
   const citation = voix?.citation || voix?.signature || "";
   const [blanc, rose] = deuxTons(citation, voix?.citationFort);
-  const photoChef = voix?.photoChef || c.photoAccueil || salle;
+  /* ═══ L'ÉTAPE 3 : SA SCÈNE, OU LA SALLE DE LA MAQUETTE ═══
+
+     « Voir photo 1 et photo 2, c'est à quoi ça devrait ressembler. » Sa photo
+     d'accueil — prise en largeur, sur le pas de sa porte — servait de fond :
+     recadrée dans la hauteur d'un téléphone, il n'en restait qu'un visage
+     coupé au bord, et un fantôme qui flottait devant. Le fond est maintenant
+     TOUJOURS la maquette 3 :
+       · sa SCÈNE quand elle existe — faite par le moteur depuis sa photo,
+         comme celle du Bordeaux ; pour un restaurant de la démonstration,
+         `/api/direct/scene-chef` la compose depuis sa photo d'accueil ;
+       · en l'attendant, ou si le moteur échoue : LA SALLE DE LA MAQUETTE et
+         son fantôme assis à la table, au même endroit que dans la scène.
+     Sa photo telle quelle ne revient que s'il a refusé la scène. */
+  const telleQuelle = Boolean(voix?.photoChefTelleQuelle && voix.photoChef);
+  const sceneChef = telleQuelle
+    ? undefined
+    : voix?.photoChef ?? (c.photoAccueil?.startsWith("/direct/") ? `/api/direct/scene-chef/${encodeURIComponent(c.id)}` : undefined);
+  const [sceneVue, setSceneVue] = useState(false);
+  const photoChef = telleQuelle ? voix!.photoChef! : SALLE;
+  const boite = voix?.fantomeDansLaPhoto ?? BOITE_MAQUETTE;
   /* SON VISAGE DANS LE ROND DE LA VOIX — le vrai, s'il l'a donné ; sinon
      celui de son fantôme. */
   const visage = voix?.portrait || c.photoAccueil || voix?.photoChef;
@@ -388,12 +420,30 @@ export function ExperienceTable({
       {[salle, salle, photoChef].map((src, i) => (
         <div
           key={i}
-          className={`xr-plan${etape === i + 1 ? " on" : ""}${i < 2 ? " salle" : " chef"}${i === 1 ? " remonte" : ""}`}
+          className={`xr-plan${etape === i + 1 ? " on" : ""}${i < 2 ? " salle" : " chef"}${i === 1 ? " remonte" : ""}${
+            i === 2 && telleQuelle ? " telle" : ""
+          }`}
           aria-hidden="true"
         >
           <div className="xr-fond" style={{ backgroundImage: `url("${src}")` }} />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="xr-net" src={src} alt="" draggable={false} />
+          {/* SA SCÈNE, PAR-DESSUS LA SALLE : elle se charge dès l'étape 1, et ne
+              se montre qu'une fois là — la salle et son fantôme en attendant. */}
+          {i === 2 && sceneChef && (
+            <div className={`xr-sc${sceneVue ? " vue" : ""}`}>
+              <div className="xr-fond" style={{ backgroundImage: `url("${sceneChef}")` }} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                className="xr-net"
+                src={sceneChef}
+                alt=""
+                draggable={false}
+                onLoad={() => setSceneVue(true)}
+                onError={() => setSceneVue(false)}
+              />
+            </div>
+          )}
         </div>
       ))}
       <div className="xr-voile" aria-hidden="true" />
@@ -582,7 +632,7 @@ export function ExperienceTable({
 
       {/* ───────────────────────── 3 · L'ACCUEIL ─────────────────────────── */}
       {etape === 3 && (
-        <section className={`xr-scene xr-accueil${repas.autres.length ? " suite" : ""}${voix?.photoChef ? "" : " posee"}`}>
+        <section className={`xr-scene xr-accueil${repas.autres.length ? " suite" : ""}${telleQuelle ? " posee" : ""}`}>
           {/* SA TABLE EST DANS LA PHOTO DU CUISINIER QU'IL NOUS A DONNÉE
               (`photoChef`, cadrée comme la maquette) : le bord la coupe. Sur
               une autre photo — son accueil, prise ailleurs —, rien ne dit où
@@ -590,7 +640,7 @@ export function ExperienceTable({
           {/* « LE FANTÔME DOIT ÊTRE ASSIS À LA TABLE, DONC ON LE VOIT QU'À
               MOITIÉ. » Le bord de la table de la photo le coupe : une découpe
               en biais, qui suit ce bord (mesuré sur la photo du cuisinier). */}
-          {voix?.fantomeDansLaPhoto ? (
+          {sceneVue ? (
             /* SON FANTÔME EST DÉJÀ DANS LA PHOTO, bulle comprise : on le rend
                touchable, là où il est. La photo est montrée à sa hauteur
                exacte et calée à droite — d'où le calcul depuis le bord droit,
@@ -601,20 +651,41 @@ export function ExperienceTable({
               onClick={onQuestion}
               aria-label="Une question ? Parler à son double"
               style={{
-                left: `calc(100% - ${(1 - voix.fantomeDansLaPhoto.x).toFixed(3)} * 56.28cqh)`,
-                top: `${voix.fantomeDansLaPhoto.y * 100}%`,
-                width: `calc(${voix.fantomeDansLaPhoto.l} * 56.28cqh)`,
-                height: `${voix.fantomeDansLaPhoto.h * 100}%`,
+                left: `calc(100% - ${(1 - boite.x).toFixed(3)} * 56.28cqh)`,
+                top: `${boite.y * 100}%`,
+                width: `calc(${boite.l} * 56.28cqh)`,
+                height: `${boite.h * 100}%`,
               }}
             >
               {/* LA SCÈNE DU MOTEUR N'ÉCRIT QUE SON NOM : la bulle et « Double IA »
                   sont posées ici, au-dessus de lui et à ses pieds. */}
-              {!voix.fantomeDansLaPhoto.bulle && (
+              {!boite.bulle && (
                 <>
                   <span className="xr-bulle">Une question&nbsp;?</span>
                   <span className="xr-ia">✦ Double IA</span>
                 </>
               )}
+            </button>
+          ) : !telleQuelle ? (
+            /* LA SALLE DE LA MAQUETTE, ET LUI À SA TABLE, À DROITE — à la place
+               exacte qu'il a dans la scène, coupé par le bord de la table. */
+            <button
+              type="button"
+              className="xr-assis"
+              onClick={onQuestion}
+              aria-label="Poser une question à son double"
+              style={{
+                left: `calc(100% - ${(1 - ASSIS_SALLE.x).toFixed(3)} * 56.28cqh)`,
+                top: `${ASSIS_SALLE.y * 100}%`,
+                width: `calc(${ASSIS_SALLE.l} * 56.28cqh)`,
+                ["--coupe" as string]: `${ASSIS_SALLE.coupe * 100}%`,
+              }}
+            >
+              <span className="xr-bulle">Une question&nbsp;?</span>
+              <span className="xr-attable">
+                <Fantome pose="salut" nom={c.nom} classe="salue" />
+              </span>
+              <span className="xr-ia">✦ Double IA</span>
             </button>
           ) : (
             <button type="button" className="xr-question" onClick={onQuestion} aria-label="Poser une question à son double">
@@ -700,6 +771,10 @@ function StylesExperienceTable() {
         /* LE CUISINIER, CALÉ À DROITE : c'est là que son fantôme est assis, bulle comprise.
            Un téléphone est plus étroit que la photo — on perd le bord gauche, pas lui. */
         .xr-plan.chef .xr-fond{background-position:100% 100%;}
+        /* SA PHOTO TELLE QUELLE (il a refusé la scène) : cadrée sur lui. */
+        .xr-plan.chef.telle .xr-fond{background-position:50% 30%;}
+        .xr-sc{position:absolute;inset:0;opacity:0;transition:opacity .7s ease;}
+        .xr-sc.vue{opacity:1;}
         .xr-net{display:none;}
         @media (min-aspect-ratio:4/5){
           .xr-fond,.xr-plan.on .xr-fond{filter:blur(24px) brightness(.5);transform:scale(1.15);}
@@ -836,6 +911,12 @@ function StylesExperienceTable() {
         .xr-question{position:absolute;z-index:4;right:-4%;top:40%;height:24%;aspect-ratio:963 / 1020;
           padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;}
         .xr-attable{position:absolute;inset:0;clip-path:polygon(-20% -30%,120% -30%,120% 77%,-20% 58%);}
+        /* EN ATTENDANT SA SCÈNE : assis à la table de la salle, coupé par son bord. */
+        .xr-assis{position:absolute;z-index:4;aspect-ratio:963 / 1020;padding:0;border:0;background:none;cursor:pointer;
+          -webkit-tap-highlight-color:transparent;}
+        .xr-assis .xr-attable{clip-path:polygon(-20% -40%,120% -40%,120% calc(var(--coupe) + 2%),-20% calc(var(--coupe) - 2%));}
+        .xr-assis .xr-bulle{left:auto;right:-4%;top:-24%;}
+        .xr-assis .xr-ia{right:2%;top:calc(var(--coupe) - 10%);}
         .xr-accueil.posee .xr-attable{clip-path:none;-webkit-mask-image:linear-gradient(180deg,#000 50%,transparent 72%);
           mask-image:linear-gradient(180deg,#000 50%,transparent 72%);}
         /* AVEC LA SUITE DU MENU, LE BAS SE RESSERRE : le titre doit rester sous la table. */

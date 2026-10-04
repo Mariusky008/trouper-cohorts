@@ -48,7 +48,7 @@ import { noterClic } from "@/lib/direct/publications";
 import { brancheDuMetier, carteDepuisFiche, enGrand } from "@/lib/site-internet/carte-depuis-fiche";
 import { menuATenter, tenterLesPhotosMenu } from "@/lib/site-internet/photos-menu";
 import { couvertureDuDiagnostic, hoteACherche, photosCandidates, sansHoteAFaire } from "@/lib/site-internet/couverture";
-import { experienceDuDiagnostic, sceneAFaire } from "@/lib/site-internet/experience-donnees";
+import { experienceDuDiagnostic, sceneAFaire, sceneARefaire } from "@/lib/site-internet/experience-donnees";
 import { etatDeLaFiche, raisonLisible } from "@/lib/site-internet/fiche-google";
 import { COLONNES_FICHE, construireFiche } from "@/lib/site-internet/fiche-du-site";
 import { compterLeJour } from "@/lib/site-internet/compteurs-jour";
@@ -483,9 +483,10 @@ export default async function ApercuMaquette({
   // ET LA PHOTO SANS LUI, POUR QU'UN SEUL FANTÔME PROPRIÉTAIRE S'ANIME —
   // voir `effacerLHote`. Les deux se font à la route `api/site-internet/hote`.
   // ET LES SCÈNES DE SON EXPÉRIENCE RESTAURANT, QUAND UN RENDU A ÉCHOUÉ OU
-  // A ÉTÉ PERDU — voir `sceneAFaire` : la même route, la même relance.
+  // A ÉTÉ PERDU — voir `sceneAFaire` : la même route, la même relance. Et la
+  // scène du cuisinier faite d'une ancienne consigne (`sceneARefaire`).
   const xp = experienceDuDiagnostic(row.diagnostic);
-  if (hoteACherche(couv) || sansHoteAFaire(couv) || sceneAFaire(xp?.scenePlat) || sceneAFaire(xp?.sceneChef))
+  if (hoteACherche(couv) || sansHoteAFaire(couv) || sceneAFaire(xp?.scenePlat) || sceneARefaire(xp?.sceneChef, "chef"))
     sonnerLHote(slug, await origineDeLaPage());
   /* SA CARTE EST VIDE ET SON ONGLET « MENU » N'A JAMAIS ÉTÉ DEMANDÉ (page
      créée avant cette étape) : on le demande une fois, après la page. La

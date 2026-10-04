@@ -1266,6 +1266,11 @@ export type Voix = {
    */
   photoChef?: string;
   /**
+   * VRAI QUAND `photoChef` EST SA PHOTO D'ORIGINE (il a refusé la scène) et
+   * pas une scène composée : l'écran la cadre sur lui et y pose son fantôme.
+   */
+  photoChefTelleQuelle?: boolean;
+  /**
    * QUAND SA PHOTO PORTE DÉJÀ SON FANTÔME — assis à la table, la bulle « Une
    * question ? » au-dessus, comme sur la maquette —, la boîte où il est
    * (fractions de la photo). L'écran n'en pose pas un second : il rend

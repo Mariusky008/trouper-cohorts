@@ -35,7 +35,7 @@
 // ClikMe peut remplir apparaissent le jour où il les remplit. C'est aussi le
 // meilleur argument de vente qu'on puisse lui faire : il voit exactement ce
 // qu'il gagne en s'y mettant.
-import { platEnCours, sceneMontree, type ExperienceResto } from "@/lib/site-internet/experience-donnees";
+import { platEnCours, sceneChefMontree, sceneMontree, type ExperienceResto } from "@/lib/site-internet/experience-donnees";
 import { piecesEnCours, type PieceComptoir } from "@/lib/site-internet/pieces-comptoir";
 import { villeSlug } from "@/lib/direct/ville";
 import type { CarteAutour, CleMetier, MomentJour } from "@/lib/direct/apercu-habitant";
@@ -429,7 +429,13 @@ function ceQuIlADonne(f: FicheCommercant): Pick<CarteAutour, "menu" | "voix"> {
   if (!xp || brancheDuMetier(f.metier) !== "restaurant") return {};
   const plat = platEnCours(xp.plat);
   const scenePlat = sceneMontree(xp.scenePlat, plat?.photo);
-  const sceneChef = sceneMontree(xp.sceneChef, xp.chef?.photo);
+  const sceneChef = sceneChefMontree(xp.sceneChef, xp.chef?.photo);
+  /* SA PHOTO TELLE QUELLE NE SERT DE FOND À L'ÉTAPE 3 QUE S'IL A REFUSÉ LA
+     SCÈNE (« la refuser pour garder sa photo d'origine »). Pendant que la
+     scène se fait, l'étape 3 montre la salle de la maquette et son fantôme
+     assis : une photo prise ailleurs, recadrée en hauteur, ne donnait qu'un
+     visage coupé au bord de l'écran. */
+  const refusee = xp.sceneChef?.etat === "refusee" && xp.sceneChef.source === xp.chef?.photo;
   const phrase = plat?.phrase || plat?.voixTexte;
   const parLeDouble = phrase ? `/api/direct/double/voix?id=${encodeURIComponent(f.slug)}&quoi=plat` : undefined;
   return {
@@ -445,7 +451,8 @@ function ceQuIlADonne(f: FicheCommercant): Pick<CarteAutour, "menu" | "voix"> {
             citationFort: plat?.phrase ? plat.phraseFort : undefined,
             extrait: plat?.voix ?? parLeDouble,
             repli: plat?.voix ? parLeDouble : undefined,
-            photoChef: sceneChef?.url ?? xp.chef?.photo,
+            photoChef: sceneChef?.url ?? (refusee ? xp.chef?.photo : undefined),
+            photoChefTelleQuelle: !sceneChef && refusee ? true : undefined,
             fantomeDansLaPhoto: sceneChef?.boite,
           }
         : undefined,

@@ -30,7 +30,9 @@ import {
   experienceDuDiagnostic,
   platEnCours,
   sceneAFaire,
+  sceneARefaire,
   SCENE_CHEF,
+  VERSION_SCENE_CHEF,
   SCENE_PLAT,
   type EtatScene,
   type ExperienceResto,
@@ -239,18 +241,35 @@ function consignePlat(nom: string, plat: PlatDuChef): string {
   ].join("\n");
 }
 
+/**
+ * LA SCÈNE DU CUISINIER, RECOMPOSÉE COMME LA MAQUETTE 3.
+ *
+ * « Le parcours en 3 étapes côté restaurant n'est pas bon […] voir photo 1 et
+ * photo 2, c'est à quoi ça devrait ressembler. » La consigne demandait de
+ * GARDER LE CADRAGE de sa photo : une photo prise sur le pas de la porte, le
+ * cuisinier au bord du cadre, restait un visage coupé à droite de l'écran.
+ * Elle demande maintenant SA MISE EN SCÈNE : lui, entier jusqu'à la taille,
+ * penché derrière une chaise vide qu'il nous tend, la table au premier plan,
+ * son fantôme assis à droite. Ce qui ne change pas : son visage, ses
+ * vêtements — c'est lui, pas un autre. Et il peut toujours refuser la scène.
+ */
 function consigneChef(nom: string): string {
   return [
-    "Edit IMAGE 1 into ONE photorealistic photograph.",
-    `IMAGE 1 — THE RESTAURANT'S COOK, in the restaurant "${nom}". Keep this person exactly: the same face and features, hair, body, ` +
-      "clothes, pose and place; keep the room, the light and the framing. Do not beautify, age or change the person in any way.",
-    "IMAGE 2 — THE COMPOSITION MODEL (ignore its speech bubble and its small label). Add, as in it: on the right side, in the foreground, " +
-      "a small cute white ghost mascot sitting at a wooden table, waving with one hand, facing the camera; the edge of the table hides its " +
-      "lower half, so only its upper half shows. If image 1 has no table there, add the near edge of a warm wooden bistro table along the " +
-      "bottom right, in the same light, so the ghost sits behind it.",
+    "Create ONE photorealistic vertical photograph (9:16) by recomposing the scene of IMAGE 2 with the person of IMAGE 1.",
+    `IMAGE 1 — THE RESTAURANT'S COOK, of the restaurant "${nom}". Keep this person's identity exactly: the same face and features, ` +
+      "skin, hair, beard, age, build and the same clothes and apron. Do not beautify, age or change the person. Only the pose, the place " +
+      "in the picture and the light change.",
+    "IMAGE 2 — THE COMPOSITION MODEL. Copy its composition, camera height, lens and warm evening light (ignore its speech bubble and its " +
+      "small label): the cook stands in the upper middle-left of the picture, visible from the head to the waist, leaning slightly forward " +
+      "behind an EMPTY leather chair at a polished wooden table, one hand on the back of the chair, the other arm stretched out towards the " +
+      "chair in a welcoming gesture, smiling at the camera. The table fills the lower part of the picture in the foreground, with a candle " +
+      "in a glass, a water glass, a pepper mill and a small bunch of dried flowers on the left, and a folded napkin with a fork and knife " +
+      "on a plate at the bottom right. Behind: a warm bistro dining room with soft globe lights, blurred, a few guests far away.",
+    "On the right, at the table, a small cute white ghost mascot sits facing the camera and waves with one hand; the near edge of the table " +
+      "hides its lower half, so only its upper half shows — exactly where it sits in IMAGE 2.",
     "IMAGE 3 — THE GHOST. Character reference only (ignore its background): the white ghost with a black cap and a black apron, waving.",
     broderie(nom),
-    "Vertical format, 9:16, the same framing as image 1.",
+    "Natural proportions: the seated ghost is small, its head about the size of the cook's head. Vertical format, 9:16.",
   ].join("\n");
 }
 
@@ -293,17 +312,21 @@ async function parGemini(
   }
 }
 
-/** LA SCÈNE FAITE, AUX DIMENSIONS DE SA MAQUETTE, ET RANGÉE. */
-async function fabriquer(
-  slug: string,
+/**
+ * LA SCÈNE RENDUE, AUX DIMENSIONS DE SA MAQUETTE — sans la ranger. La page du
+ * commerçant la range dans son seau (`fabriquer`) ; la démonstration la sert
+ * depuis le réseau (`/api/direct/scene-chef`).
+ */
+export async function rendreScene(
   quoi: Quoi,
   nom: string,
   photo: Img,
-  plat: PlatDuChef | undefined,
-): Promise<{ url: string; modele: string; boite?: EtatScene["boite"]; erreur?: undefined } | { erreur: string }> {
+  plat?: PlatDuChef,
+): Promise<{ octets: Buffer; modele: string; boite?: EtatScene["boite"] } | { erreur: string }> {
   const modeleImg = await reference(quoi === "plat" ? "/direct/table/restaurant/scene-magret.webp" : "/direct/table/restaurant/chef-fantome.webp");
   const fantome = await reference(quoi === "plat" ? "/direct/double/assis/repos.webp" : "/direct/double/assis/salut.webp", 512);
   if (!modeleImg || !fantome) return { erreur: "références introuvables sur le serveur" };
+  if (quoi === "plat" && !plat) return { erreur: "pas de plat" };
   const r = await parGemini(
     [
       { text: quoi === "plat" ? "IMAGE 1 — THE DISH:" : "IMAGE 1 — THE COOK:" },
@@ -334,11 +357,35 @@ async function fabriquer(
     );
     if (t.boite) boite = { x: t.boite.x, y: t.boite.y, l: t.boite.w, h: t.boite.h };
   }
+  return { octets, modele: r.modele, boite };
+}
+
+/** UNE PHOTO DU DOSSIER `public`, à la taille que le moteur accepte. */
+export async function photoDuDisque(chemin: string): Promise<Img | null> {
+  try {
+    const octets = readFileSync(join(process.cwd(), "public", chemin.replace(/^\//, "")));
+    const petit = await sharp(octets).rotate().resize(1280, 1280, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 88 }).toBuffer();
+    return { type: "image/jpeg", donnees: petit.toString("base64") };
+  } catch {
+    return null;
+  }
+}
+
+/** LA SCÈNE FAITE, AUX DIMENSIONS DE SA MAQUETTE, ET RANGÉE. */
+async function fabriquer(
+  slug: string,
+  quoi: Quoi,
+  nom: string,
+  photo: Img,
+  plat: PlatDuChef | undefined,
+): Promise<{ url: string; modele: string; boite?: EtatScene["boite"]; erreur?: undefined } | { erreur: string }> {
+  const r = await rendreScene(quoi, nom, photo, plat);
+  if ("erreur" in r) return r;
   const supabase = createAdminClient();
   const chemin = `${DOSSIER}/${slug}-${quoi}-scene-${Date.now()}.webp`;
-  const { error } = await supabase.storage.from(SEAU).upload(chemin, octets, { contentType: "image/webp", upsert: true });
+  const { error } = await supabase.storage.from(SEAU).upload(chemin, r.octets, { contentType: "image/webp", upsert: true });
   if (error) return { erreur: `stockage : ${error.message}` };
-  return { url: supabase.storage.from(SEAU).getPublicUrl(chemin).data.publicUrl, modele: r.modele, boite };
+  return { url: supabase.storage.from(SEAU).getPublicUrl(chemin).data.publicUrl, modele: r.modele, boite: r.boite };
 }
 
 const cleScene = (quoi: Quoi) => (quoi === "plat" ? "scenePlat" : "sceneChef") as "scenePlat" | "sceneChef";
@@ -350,14 +397,14 @@ async function completerUne(slug: string, quoi: Quoi): Promise<void> {
   if (!l) return;
   const scene = l.experience[cleScene(quoi)];
   const photo = photoDe(l.experience, quoi);
-  if (!photo || !scene || scene.source !== photo || !sceneAFaire(scene)) return;
+  if (!photo || !scene || scene.source !== photo || !sceneARefaire(scene, quoi)) return;
   // UN PLAT DONT LA JOURNÉE EST FINIE N'A PLUS BESOIN DE SCÈNE.
   if (quoi === "plat" && !platEnCours(l.experience.plat)) return;
   // ON NOTE L'ESSAI AVANT DE PAYER : deux visites rapprochées n'en paient qu'un.
   const essais = (scene.essais ?? 0) + 1;
   await modifier(slug, (e) => {
     const sc = e[cleScene(quoi)];
-    if (!sc || sc.source !== photo || !sceneAFaire(sc)) return null;
+    if (!sc || sc.source !== photo || !sceneARefaire(sc, quoi)) return null;
     return { ...e, [cleScene(quoi)]: { ...sc, etat: "en-cours", essais, at: new Date().toISOString(), erreur: undefined } };
   });
   const img = await lirePhoto(photo);
@@ -369,7 +416,16 @@ async function completerUne(slug: string, quoi: Quoi): Promise<void> {
     if (!sc || sc.source !== photo) return null;
     const fait: EtatScene =
       "url" in r && r.url
-        ? { ...sc, etat: "prete", url: r.url, modele: r.modele, boite: r.boite, at: new Date().toISOString(), erreur: undefined }
+        ? {
+            ...sc,
+            etat: "prete",
+            url: r.url,
+            modele: r.modele,
+            boite: r.boite,
+            at: new Date().toISOString(),
+            erreur: undefined,
+            v: quoi === "chef" ? VERSION_SCENE_CHEF : undefined,
+          }
         : { ...sc, etat: "echec", at: new Date().toISOString(), erreur: ("erreur" in r && r.erreur) || "inconnue" };
     return { ...e, [cleScene(quoi)]: fait };
   });

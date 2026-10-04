@@ -37,6 +37,8 @@ export type EtatScene = {
   modele?: string;
   /** Scène du cuisinier : où le fantôme est assis (on le rend touchable). */
   boite?: Boite;
+  /** La version de la consigne qui l'a faite — voir `VERSION_SCENE_CHEF`. */
+  v?: number;
 };
 
 export type PlatDuChef = {
@@ -111,6 +113,7 @@ function lireScene(v: unknown): EtatScene | undefined {
     erreur: s(o.erreur).slice(0, 300) || undefined,
     modele: s(o.modele) || undefined,
     boite: lireBoite(o.boite),
+    v: typeof o.v === "number" ? o.v : undefined,
   };
 }
 
@@ -152,6 +155,26 @@ export function platEnCours(plat: PlatDuChef | undefined, maintenant = Date.now(
 /** LA SCÈNE À MONTRER : faite, pour CETTE photo, et pas refusée. */
 export function sceneMontree(scene: EtatScene | undefined, photo: string | undefined): EtatScene | undefined {
   return scene && scene.etat === "prete" && scene.url && photo && scene.source === photo ? scene : undefined;
+}
+
+/**
+ * LA VERSION DE LA SCÈNE DU CUISINIER. La 1 gardait le cadrage de sa photo ;
+ * la 2 recompose sa maquette 3 (« voir photo 1 et photo 2, c'est à quoi ça
+ * devrait ressembler »). Une scène de la version 1 ne se montre plus, et se
+ * refait à la visite suivante — sauf s'il l'a refusée : son refus tient.
+ */
+export const VERSION_SCENE_CHEF = 2;
+
+/** LA SCÈNE DU CUISINIER À MONTRER : comme `sceneMontree`, et de la bonne version. */
+export function sceneChefMontree(scene: EtatScene | undefined, photo: string | undefined): EtatScene | undefined {
+  const sc = sceneMontree(scene, photo);
+  return sc && (sc.v ?? 1) >= VERSION_SCENE_CHEF ? sc : undefined;
+}
+
+/** À FAIRE, OU À REFAIRE PARCE QU'ELLE EST D'UNE ANCIENNE CONSIGNE. */
+export function sceneARefaire(scene: EtatScene | undefined, quoi: "plat" | "chef", maintenant = Date.now()): boolean {
+  if (sceneAFaire(scene, maintenant)) return true;
+  return quoi === "chef" && scene?.etat === "prete" && (scene.v ?? 1) < VERSION_SCENE_CHEF;
 }
 
 /* ═══ QUAND RELANCER LE MOTEUR ════════════════════════════════════════════

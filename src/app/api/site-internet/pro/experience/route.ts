@@ -25,7 +25,7 @@ import {
   poserExperience,
   type DemandeExperience,
 } from "@/lib/site-internet/experience-scenes";
-import { platEnCours, sceneMontree, type ExperienceResto } from "@/lib/site-internet/experience-donnees";
+import { platEnCours, sceneChefMontree, sceneMontree, type ExperienceResto } from "@/lib/site-internet/experience-donnees";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -41,7 +41,7 @@ function reponse(experience: ExperienceResto | null) {
     platEnLigne: Boolean(platEnCours(e.plat)),
     montree: {
       plat: sceneMontree(e.scenePlat, e.plat?.photo)?.url ?? e.plat?.photo ?? null,
-      chef: sceneMontree(e.sceneChef, e.chef?.photo)?.url ?? e.chef?.photo ?? null,
+      chef: sceneChefMontree(e.sceneChef, e.chef?.photo)?.url ?? e.chef?.photo ?? null,
     },
   };
 }
