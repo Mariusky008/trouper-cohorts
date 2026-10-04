@@ -84,6 +84,14 @@ export type MessageSalon = {
      * salon, c'est un écran d'ailleurs, montré ici.
      */
     pro?: boolean;
+    /**
+     * LA RÉPONSE DU COMMERÇANT À UNE DEMANDE — et seulement elle. Rien ne
+     * l'écrit encore : la demande part sur son WhatsApp, et sa réponse n'y
+     * revient pas. Le jour où elle revient, c'est ce drapeau qui allume
+     * « X a répondu » dans Ensemble. Jamais posé par la maquette : une réponse
+     * qui n'a pas eu lieu ne s'affiche pas.
+     */
+    reponse?: boolean;
   };
 };
 
@@ -155,7 +163,8 @@ export type EnDirect = {
  */
 export type Vote = {
   question: string;
-  options: { cle: string; label: string; voix: number }[];
+  /** `photo` : quand on départage deux images (« laquelle pour samedi ? »). */
+  options: { cle: string; label: string; voix: number; photo?: string }[];
   /** Ce que j'ai voté. Vide : je n'ai pas encore tranché. */
   monVote?: string;
   /** Ce que la personne sur place a finalement choisi. */
@@ -326,6 +335,16 @@ export type Salon = {
     /** Où retourner pour essayer — la page, ancrée sur son chapitre d'essai. */
     lien: string;
   };
+  /**
+   * LA DERNIÈRE ACTIVITÉ (millisecondes) : ce qui trie « Nos discussions ».
+   * Posée à l'ouverture et à chaque message ; un salon semé la tient de
+   * `ilYa`, un salon ancien sans elle passe derrière.
+   */
+  activite?: number;
+  /** Semé seulement : « il y a combien de minutes » a eu lieu le dernier échange. */
+  ilYa?: number;
+  /** Rangé dans les archives par son lecteur. Rien n'est effacé. */
+  archive?: boolean;
 };
 
 /**
@@ -587,6 +606,57 @@ export const SALONS_SEMES: Salon[] = [
   // Ce qui donne envie de rouvrir la liste, c'est ce qu'on y a VÉCU. Il faut
   // donc en voir au moins deux déjà refermés, avec leur fin — dont un qui ne
   // s'est pas fait, parce qu'une archive où tout réussit ne ressemble à rien.
+  /* ═══ DEUX CONVERSATIONS OÙ L'ON VOUS ATTEND ═══════════════════════════
+     « À toi de jouer » n'affiche que des actions réelles en attente. Sans
+     elles, la maquette ouvrait Ensemble sur un bloc vide, et personne ne
+     voyait ce qu'il fait. Ce sont des amis de démonstration, comme ceux qui
+     répondent dans les salons : Léa vous demande votre avis entre deux
+     tenues, Karim et Thomas ont chacun une idée pour samedi. Voter, ou
+     soutenir une idée, fait disparaître la carte — elle se lit dans le salon,
+     elle n'est pas une seconde messagerie. */
+  {
+    cle: "avis|tenues-samedi",
+    sujet: "Laquelle pour samedi ?",
+    ou: "Le Dressing",
+    parQui: "Léa",
+    quand: "Samedi soir",
+    viennent: [],
+    presents: ["Léa", "Vous", "Camille"],
+    prive: true,
+    ilYa: 12,
+    vote: {
+      question: "Laquelle pour samedi ?",
+      options: [
+        { cle: "volants", label: "La robe à volants", voix: 1, photo: "/direct/mode-robe-volants-corail.jpg" },
+        { cle: "fleurs", label: "La robe à fleurs", voix: 1, photo: "/direct/mode-robe-fleurs-noire.jpg" },
+      ],
+    },
+    messages: [
+      { id: "t1", qui: "Léa", voix: "ami", texte: "J'hésite entre les deux pour samedi, vous prendriez laquelle ?", quand: "18 h 02" },
+      { id: "t2", qui: "Camille", voix: "ami", texte: "La rouge ! Mais j'attends l'avis des autres 😄", quand: "18 h 09" },
+    ],
+    ouvert: true,
+  },
+  {
+    cle: "idee|samedi",
+    sujet: "Une idée pour samedi",
+    ou: "Dax",
+    parQui: "Karim",
+    quand: "Samedi soir",
+    viennent: [],
+    presents: ["Karim", "Vous", "Thomas"],
+    prive: true,
+    ilYa: 20,
+    propositions: [
+      { cle: "kiosque", par: "Thomas", quoi: "Le concert au kiosque", ou: "Kiosque du parc", photo: "/direct/concert-kiosque.jpg", voix: ["Thomas"] },
+      { cle: "bordeaux", par: "Karim", quoi: "Dîner au Bordeaux avant", ou: "Le Bordeaux", prix: "19 €", photo: "/direct/table/magret/3.jpg", voix: ["Karim"] },
+    ],
+    messages: [
+      { id: "k1", qui: "Thomas", voix: "ami", texte: "Le concert sur la place me tente !", quand: "17 h 40" },
+      { id: "k2", qui: "Karim", voix: "ami", texte: "Et si on dînait au Bordeaux avant ? Leur magret est top.", quand: "17 h 52" },
+    ],
+    ouvert: true,
+  },
   {
     cle: "passe|halles",
     sujet: "Le marché du samedi",
@@ -781,7 +851,13 @@ export const SALONS_VIDES: Record<string, Salon> = {};
 
 function semer(): Record<string, Salon> {
   const d: Record<string, Salon> = {};
-  for (const s of SALONS_SEMES) d[s.cle] = { ...s, messages: [...s.messages] };
+  const maintenant = Date.now();
+  for (const s of SALONS_SEMES)
+    d[s.cle] = {
+      ...s,
+      messages: [...s.messages],
+      activite: s.activite ?? (s.ilYa != null ? maintenant - s.ilYa * 60_000 : undefined),
+    };
   return d;
 }
 
@@ -851,6 +927,7 @@ export function ouvrirSalon(
     presents: [moi, ...(salon.presents ?? []).filter((q) => q !== moi)],
     messages: [],
     ouvert: true,
+    activite: Date.now(),
     // CE QUI EST SUR LA TABLE DÈS L'OUVERTURE : l'annonce qui a déclenché le
     // salon, portée par celui qui l'a ouvert. Sans elle, la première
     // alternative proposée n'aurait rien à départager.
@@ -876,7 +953,16 @@ export function ecrireDansSalon(cle: string, m: Omit<MessageSalon, "id">) {
   const s = avant[cle];
   if (!s) return;
   const id = `m${Date.now()}${Math.random().toString(36).slice(2, 6)}`;
-  garder({ ...avant, [cle]: { ...s, messages: [...s.messages, { ...m, id }] } });
+  // UN MESSAGE SORT AUSSI LA CONVERSATION DES ARCHIVES : on y parle de nouveau.
+  garder({ ...avant, [cle]: { ...s, messages: [...s.messages, { ...m, id }], activite: Date.now(), archive: false } });
+}
+
+/** Ranger une conversation dans les archives, ou l'en ressortir. Rien n'est effacé. */
+export function archiverSalon(cle: string, archive = true) {
+  const avant = chargerSalons();
+  const s = avant[cle];
+  if (!s) return;
+  garder({ ...avant, [cle]: { ...s, archive } });
 }
 
 /** Le préfixe qui marque une annonce de tête, et rien d'autre. */
