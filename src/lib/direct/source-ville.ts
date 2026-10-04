@@ -31,3 +31,15 @@ export function poserLaSource(s: Source | null): void {
 
 export const cartesDeLaSource = (): CarteAutour[] | null => source?.cartes ?? null;
 export const evenementsDeLaSource = (): EvenementVille[] | null => source?.evenements ?? null;
+
+/**
+ * LA PAGE D'UN COMMERCE : sa vraie page pour un commerçant de la ville
+ * (`villeReelle`), la boutique de démonstration sinon. `onglet` ouvre
+ * directement un onglet de sa page (« carte »).
+ */
+export function pageDuCommerce(c: { id: string; villeReelle?: string }, onglet?: string): string {
+  const suite = onglet ? `onglet=${encodeURIComponent(onglet)}` : "";
+  return c.villeReelle
+    ? `/site-internet/apercu/${encodeURIComponent(c.id)}${suite ? `?${suite}` : ""}`
+    : `/autour-de-moi/boutique?c=${encodeURIComponent(c.id)}${suite ? `&${suite}` : ""}`;
+}

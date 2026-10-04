@@ -66,6 +66,7 @@ import {
   direSonPrenom,
   monPrenom,
   chargerSalons,
+  sansLeDecor,
   reagir,
   voter,
   ecrireDansSalon,
@@ -143,6 +144,7 @@ import {
   direQuelqueChose,
   NATURES,
   salonDepuisVille,
+  sansLesExemples,
   VILLE_VIDE,
   type MessageVille,
   type NatureVille,
@@ -159,6 +161,7 @@ import { CarteSwipe, StylesDirect } from "@/components/direct/carte-swipe";
 // lignes, aurait rendu les deux illisibles.
 import { EcranChoix } from "@/components/direct/ecran-choix";
 import { useVilleReelle } from "@/components/direct/ville-reelle-contexte";
+import { pageDuCommerce } from "@/lib/direct/source-ville";
 /* ═══ L'OUVERTURE EN TROIS ACTES EST MISE DE CÔTÉ, PAS EFFACÉE ═════════════
    « L'animation de départ ne fonctionne pas assez bien, garde-la de côté, on
    essaiera de faire mieux plus tard. »
@@ -1439,9 +1442,10 @@ export function ApercuHabitant() {
    *     de démonstration, ni les commerces préparés pour une visite ;
    *   · on ne prête à aucun vrai commerce les essais ni les visages du modèle
    *     de son métier ;
-   *   · « La Ville » et « Propositions », qui ne vivent encore que dans ce
-   *     téléphone, disent qu'elles arrivent au lieu de montrer des voisins
-   *     inventés.
+   *   · La ville, Ensemble et Ma maison ne montrent que ce que la personne
+   *     a fait elle-même : ni les voisins, ni les amis, ni les conversations
+   *     de la démonstration (`sansLesExemples`, `sansLeDecor`). Sans rien,
+   *     elles le disent — c'est leur état vide.
    */
   const reelle = useVilleReelle();
   /**
@@ -1652,10 +1656,17 @@ export function ApercuHabitant() {
    * elles s'ouvrent par le MÊME cœur, qui les compte ensemble. Voir
    * `lib/direct/pieces-gardees.ts`.
    */
-  const piecesGardees = useSyncExternalStore(
+  const piecesGardeesLues = useSyncExternalStore(
     abonnerPiecesGardees,
     chargerPiecesGardees,
     piecesGardeesVides,
+  );
+  /* LA DÉMONSTRATION ET LA VRAIE VILLE PARTAGENT LA MÉMOIRE DU TÉLÉPHONE : dans
+     la ville, seuls comptent les essais faits chez ses commerçants — pas la
+     coupe essayée au salon inventé de la démonstration. */
+  const piecesGardees = useMemo(
+    () => (reelle ? piecesGardeesLues.filter((p) => toutesLesCartes().some((c) => c.id === p.carte)) : piecesGardeesLues),
+    [reelle, piecesGardeesLues],
   );
   /** La pièce gardée qu'on regarde en grand. Vide : aucune. */
   const [pieceVue, setPieceVue] = useState<PieceGardee | null>(null);
@@ -2025,7 +2036,10 @@ export function ApercuHabitant() {
    * Voir `lib/direct/la-ville.ts` pour les trois choix qui l'empêchent de
    * devenir un forum de quartier.
    */
-  const ville = useSyncExternalStore(abonnerVille, chargerVille, () => VILLE_VIDE);
+  const villeLue = useSyncExternalStore(abonnerVille, chargerVille, () => VILLE_VIDE);
+  // DANS UNE VRAIE VILLE, CE QUE LES HABITANTS ONT ÉCRIT, ET RIEN D'AUTRE : les
+  // voisins et les amis de démonstration seraient inventés. Voir `sansLesExemples`.
+  const ville = useMemo(() => (reelle ? sansLesExemples(villeLue) : villeLue), [reelle, villeLue]);
   const vusVille = useSyncExternalStore(abonnerVusVille, chargerVusVille, () => AUCUN_VU);
   const [motVille, setMotVille] = useState("");
   const [composeVille, setComposeVille] = useState(false);
@@ -2063,7 +2077,9 @@ export function ApercuHabitant() {
   const miens = useSyncExternalStore(abonnerAvis, chargerAvis, () => VIDE);
   const mesRappels = useSyncExternalStore(abonnerRappels, chargerRappels, () => RIEN);
   const mesFlammes = useSyncExternalStore(abonnerFlammes, chargerFlammes, () => AUCUNE);
-  const salons = useSyncExternalStore(abonnerSalons, chargerSalons, () => SALONS_VIDES);
+  const salonsLus = useSyncExternalStore(abonnerSalons, chargerSalons, () => SALONS_VIDES);
+  // ET SES CONVERSATIONS, SANS LE DÉCOR — Léa, Karim, les sorties de démonstration.
+  const salons = useMemo(() => (reelle ? sansLeDecor(salonsLus) : salonsLus), [reelle, salonsLus]);
   /** Combien de messages on avait déjà lus, par salon. Voir le fantôme veilleur. */
   const lus = useSyncExternalStore(abonnerLus, chargerLus, () => AUCUN_LU);
   /**
@@ -5687,8 +5703,8 @@ export function ApercuHabitant() {
       },
     }));
 
-  /** Le geste du fantôme sur la page affichée — aucun dans Le Direct ni dans une vraie ville. */
-  const gestePage = !reelle && onglet in GESTES_DE_PAGE ? GESTES_DE_PAGE[onglet as PageAGeste] : null;
+  /** Le geste du fantôme sur la page affichée — aucun dans Le Direct. */
+  const gestePage = onglet in GESTES_DE_PAGE ? GESTES_DE_PAGE[onglet as PageAGeste] : null;
 
   const aSuivreVille =
     suitesDesEssais.length + ville.filter((m) => m.qui === "Vous" && m.reponses.length > (vusVille[m.id] ?? 0)).length;
@@ -9925,7 +9941,7 @@ export function ApercuHabitant() {
                           plus qu'un seul endroit où lire la fiche d'un
                           commerce, et elle a été posée avant d'être prise. */}
                       <Link
-                        href="/autour-de-moi/boutique"
+                        href={dessus.villeReelle ? pageDuCommerce(dessus) : "/autour-de-moi/boutique"}
                         prefetch={false}
                         className="ap-tout"
                         onPointerDown={(ev) => ev.stopPropagation()}
@@ -10139,7 +10155,7 @@ export function ApercuHabitant() {
                             </a>
                           )}
                           <Link
-                            href="/autour-de-moi/boutique"
+                            href={dessus.villeReelle ? pageDuCommerce(dessus) : "/autour-de-moi/boutique"}
                             prefetch={false}
                             onPointerDown={(ev) => ev.stopPropagation()}
                             onClick={() => noter("pli-ouvert", 0, "fiche-page")}
@@ -11121,38 +11137,7 @@ export function ApercuHabitant() {
               devenir un forum de quartier, et ils sont dans le code : tout
               disparaît au bout de quelques heures, on ne publie pas mais on
               « dit quelque chose », et un message porte un lieu et une heure. */}
-          {/* ═══ DANS UNE VRAIE VILLE, CES DEUX ONGLETS ARRIVENT ═══════════
-              Leurs messages et leurs propositions ne vivent encore que dans ce
-              téléphone, et la démonstration les remplit de voisins et d'amis
-              qui répondent tout seuls. Sous de vrais commerces, ce serait les
-              inventer : on dit ce qui arrivera, et c'est tout. */}
-          {reelle && (onglet === "ville" || onglet === "salons") && (
-            <div className="ap-page ap-onglet-vue">
-              <div className="ap-page-h">
-                <span className="ap-page-t">
-                  <b>{onglet === "ville" ? "La Ville" : NOM_ONGLET.salons}</b>
-                  <em>{reelle.nom}</em>
-                </span>
-              </div>
-              <div className="ap-vide">
-                <span className="ap-vide-e" aria-hidden="true">
-                  {onglet === "ville" ? "🏛️" : "💬"}
-                </span>
-                <b>Bientôt ici</b>
-                <p className="ap-vide-p">
-                  {onglet === "ville"
-                    ? `Ce que les habitants de ${reelle.nom} disent de ce qui se passe, maintenant. Les messages de la mairie, eux, sont déjà dans Le Direct.`
-                    : "Ce que vous proposerez à vos amis depuis une annonce — et ce qu’ils vous proposeront."}
-                </p>
-              </div>
-            </div>
-          )}
-          {/* ═══ LA VILLE — le fil social local ═══════════════════════════════
-              Voir `la-ville.tsx`. Les essais partagés, les découvertes, la vie
-              locale et les sorties ouvertes à tous (qui quittent Ensemble, en
-              événements). « Dire quelque chose » reste : c'est l'une des trois
-              entrées de « Qu'as-tu envie de partager ? ». */}
-          {onglet === "ville" && !reelle && (
+          {onglet === "ville" && (
             <div className="ap-page ap-onglet-vue">
               <LaVille
                 messages={ville}
@@ -11166,7 +11151,8 @@ export function ApercuHabitant() {
                   setEssaiVille(r);
                 }}
                 onPage={(id) => {
-                  window.location.href = `/autour-de-moi/boutique?c=${encodeURIComponent(id)}`;
+                  // SA VRAIE PAGE pour un commerçant de la ville — voir `pageDuCommerce`.
+                  window.location.href = pageDuCommerce(toutes.find((x) => x.id === id) ?? { id });
                 }}
                 onDiscuter={discuterDepuisVille}
                 onSortie={ouvrirSalonDepuisVille}
@@ -11190,7 +11176,7 @@ export function ApercuHabitant() {
               dessous. C'est le seul écran de l'application qui regarde en
               arrière, et c'est voulu — tout le reste ne parle que de
               maintenant. */}
-          {onglet === "salons" && !reelle && (
+          {onglet === "salons" && (
             /* ═══ ENSEMBLE — l'onglet qui remplace « Propositions » ═══════════
                « À toi de jouer » puis « Nos discussions » : voir `ensemble.tsx`.
                Toutes les conversations y sont, sorties comprises ; rien n'est
@@ -11240,10 +11226,10 @@ export function ApercuHabitant() {
                 prenom={prenom}
                 adoptes={mesSuivis}
                 pieces={piecesGardees}
-                traces={mesTraces}
+                traces={reelle ? mesTraces.filter((t) => toutes.some((c) => c.id === t.souvenir.cle)) : mesTraces}
                 publications={ville.filter((m) => m.qui === "Vous")}
                 onPage={(c) => {
-                  window.location.href = `/autour-de-moi/boutique?c=${encodeURIComponent(c.id)}`;
+                  window.location.href = pageDuCommerce(toutes.find((x) => x.id === c.id) ?? c);
                 }}
                 onVoirPiece={(p) => setPieceVue(p)}
                 onVoirTrace={(t) => {
@@ -13186,7 +13172,7 @@ export function ApercuHabitant() {
                   réponses neuves à mes publications, et les conversations nées
                   d'un essai où l'on m'a écrit. Compter tous les messages
                   faisait monter le chiffre quand je publiais moi-même. */}
-              {!reelle && aSuivreVille > 0 && <b>{aSuivreVille}</b>}
+              {aSuivreVille > 0 && <b>{aSuivreVille}</b>}
             </button>
             {/* ═══ LE SMILEY, AU MILIEU, QUI PASSE À LA SUIVANTE ═══
 
@@ -13406,7 +13392,7 @@ export function ApercuHabitant() {
               {/* CE QUI M'ATTEND VRAIMENT : les actions de « À toi de jouer » et
                   les conversations qui ont du neuf — plus le compte des salons
                   ouverts, qui ne disait rien de ce qu'il y avait à faire. */}
-              {!reelle && aFaireEnsemble > 0 && <b>{aFaireEnsemble}</b>}
+              {aFaireEnsemble > 0 && <b>{aFaireEnsemble}</b>}
             </button>
             <button
               type="button"

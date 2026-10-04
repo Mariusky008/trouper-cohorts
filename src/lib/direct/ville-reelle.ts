@@ -282,8 +282,11 @@ export async function lireLaVilleReelle(ville: string, maintenant = Date.now()):
       const { fiche } = construireFiche(s, r, { services: services.get(str(r.id)) });
       const carte = carteDepuisFiche(fiche);
       const moments = momentsDuCommercant(r, carte, maintenant);
-      // CELUI QUI N'A RIEN PUBLIÉ N'EST PAS DANS LE DIRECT — voir l'en-tête.
-      if (moments.length) cartes.push({ ...carte, moments });
+      // CELUI QUI N'A RIEN PUBLIÉ N'EST PAS DANS LE DIRECT — voir l'en-tête —,
+      // mais il reste un commerce de la ville : on peut l'adopter dans Ma
+      // maison, le citer dans une découverte de La ville. `silencieux` est la
+      // règle même du paquet pour l'écarter.
+      cartes.push({ ...carte, moments, ...(moments.length ? {} : { silencieux: true }) });
     } catch {
       /* une fiche illisible ne vide pas la ville */
     }

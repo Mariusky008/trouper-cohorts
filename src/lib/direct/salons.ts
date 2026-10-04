@@ -861,6 +861,17 @@ function semer(): Record<string, Salon> {
   return d;
 }
 
+/**
+ * LES CONVERSATIONS DE LA PERSONNE, SANS LE DÉCOR DE LA DÉMONSTRATION — Léa
+ * qui hésite entre deux robes, Karim et Thomas pour samedi. Ils font vivre la
+ * maquette ; dans une vraie ville (`/ville/<ville>`), ce seraient des amis
+ * inventés. Voir `source-ville.ts`.
+ */
+export function sansLeDecor(salons: Record<string, Salon>): Record<string, Salon> {
+  const semes = new Set(SALONS_SEMES.map((s) => s.cle));
+  return Object.fromEntries(Object.entries(salons).filter(([cle]) => !semes.has(cle)));
+}
+
 export function chargerSalons(): Record<string, Salon> {
   if (memoire) return memoire;
   try {

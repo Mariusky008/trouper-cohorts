@@ -19,6 +19,7 @@ import { abonnerJournee, avecSaJournee, chargerJournee, journeeVide } from "@/li
 import { DoubleChef } from "@/components/direct/double-chef";
 import { ParcoursTable } from "@/components/direct/parcours-table-ecran";
 import { ExperienceTable, estUnRestaurant } from "@/app/autour-de-moi/boutique/experience-table";
+import { pageDuCommerce } from "@/lib/direct/source-ville";
 import { carteDuPaquet } from "@/lib/direct/copies-presentation";
 import { tenueDu } from "@/lib/direct/double-metiers";
 
@@ -48,7 +49,8 @@ export function ParcoursRestaurant({
         onReserver={() => (onDouble ? onDouble() : setDouble(true))}
         onQuestion={() => (onDouble ? onDouble() : setDouble(true))}
         onCarte={() => {
-          window.location.href = `/autour-de-moi/boutique?c=${encodeURIComponent(c.id)}&onglet=carte`;
+          // SA CARTE, SUR SA PAGE — la vraie, pour un commerçant de la ville.
+          window.location.href = pageDuCommerce(c, "carte");
         }}
       />
       {double && <DoubleChef carte={c} onFermer={() => setDouble(false)} />}

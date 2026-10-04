@@ -437,6 +437,16 @@ export const VILLE_VIDE: MessageVille[] = [];
 let etat: Etat | null = null;
 let cache: MessageVille[] | null = null;
 
+/**
+ * CE QUE LA PERSONNE A ÉCRIT, SANS LES EXEMPLES DE LA DÉMONSTRATION — dans une
+ * vraie ville, les voisins et les amis de démonstration seraient inventés.
+ * Voir `source-ville.ts`.
+ */
+export function sansLesExemples(messages: MessageVille[]): MessageVille[] {
+  const exemples = new Set(messagesSemes().map((m) => m.id));
+  return messages.filter((m) => !exemples.has(m.id));
+}
+
 /** Recolle les exemples frais et ce que le visiteur en a fait. */
 function composer(e: Etat): MessageVille[] {
   const semes = messagesSemes().map((m) => {
