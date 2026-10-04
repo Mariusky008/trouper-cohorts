@@ -1616,6 +1616,24 @@ export type CarteAutour = {
    *  n'en ont pas, et leur carte continue de montrer le moment en cours. */
   menu?: MenuDuJour;
   /**
+   * L'ANNONCE QU'IL VIENT DE FAIRE, EN BANDEAU SUR SA PAGE — « Il en reste !
+   * Plus que 5 parts · Magret · 12 € ».
+   *
+   * « "Il en reste !" n'arrive nulle part : ni sur sa page, ni dans Le Direct,
+   * où il serait le plus utile vers 14 h. » Le Direct l'avait déjà reçue ; sa
+   * page, elle, ne lisait pas `current_offer`. Voir `offreDuSite` dans
+   * `fiche-du-site.ts`. Absente quand il n'a rien annoncé ou que c'est fini.
+   */
+  offreDuMoment?: {
+    /** Le texte tel qu'il l'a publié, sans le « Il en reste ! » de tête quand il y est. */
+    texte: string;
+    /** Vrai pour la relance des restes : le bandeau le dit en grand. */
+    reste: boolean;
+    /** « jusqu'à 16 h », « jusqu'à ce soir », déjà mis à l'heure de Paris. */
+    jusqua?: string;
+    photo?: string;
+  };
+  /**
    * CE QU'IL PROPOSE D'HABITUDE. Voir le grand commentaire au-dessus de
    * `ArticleCatalogue` : c'est la référence permanente, pas l'actualité.
    *

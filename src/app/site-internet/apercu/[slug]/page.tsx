@@ -217,7 +217,9 @@ async function lireLaCopie(copie: CopiePresentation) {
         /* table absente */
       }
       const lu = construireFiche(copie.source, row, { disponibilites, services });
-      carte = fusionnerCopie(carteDepuisFiche(lu.fiche), copie.carte);
+      // L'ANNONCE DU VRAI COMMERÇANT RESTE CHEZ LUI : une copie de présentation
+      // ne montre pas « Il en reste ! » parce que l'original l'a publié ce midi.
+      carte = fusionnerCopie(carteDepuisFiche({ ...lu.fiche, offre: undefined }), copie.carte);
       const etat = couvertureDuDiagnostic(row.diagnostic);
       hoteARepere = hoteACherche(etat) || sansHoteAFaire(etat);
       note = lu.note ?? note;

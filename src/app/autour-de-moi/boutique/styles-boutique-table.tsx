@@ -498,6 +498,28 @@ export function StylesBoutiqueTable() {
         .bt-entrer.second .bt-ico{width:22px;height:22px;fill:none;stroke:currentColor;
           stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
         .bt-entrer.second s{color:var(--bt-creme);font-size:20px;}
+        /* SON ANNONCE : un bandeau au-dessus des portes, de leur largeur. « Il en
+           reste ! » prend le rose et une lueur qui respire ; une annonce
+           ordinaire reste sobre. */
+        .bt-annonce{position:relative;z-index:2;display:flex;align-items:center;gap:12px;
+          width:calc(100% - var(--bt-coin) + 14px);max-width:330px;margin:0 0 12px;padding:10px 14px 10px 10px;
+          border-radius:18px;cursor:pointer;text-align:left;color:var(--bt-creme);
+          background:rgba(18,12,9,.86);border:1.5px solid rgba(245,162,58,.7);
+          box-shadow:0 12px 30px -10px rgba(0,0,0,.8);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+          animation:btAnnonce .5s ease .3s both;}
+        .bt-annonce.reste{border-color:var(--bt-rose);animation:btAnnonce .5s ease .3s both,btLueur 2.4s ease-in-out 1s infinite;}
+        .bt-annonce-photo{flex:none;width:52px;height:52px;border-radius:12px;background:#2A1F1B center / cover no-repeat;}
+        .bt-annonce-mots{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;}
+        .bt-annonce-mots b{font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:17px;color:var(--bt-ambre);}
+        .bt-annonce.reste .bt-annonce-mots b{color:var(--bt-rose);}
+        .bt-annonce-mots span{font-size:15px;font-weight:600;line-height:1.25;
+          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+        .bt-annonce-mots small{font-size:13px;color:var(--bt-gris);}
+        .bt-annonce s{text-decoration:none;font-size:22px;color:var(--bt-creme);}
+        .bt-e-lieu.franchit .bt-annonce{opacity:0;transition:opacity .3s ease;}
+        @keyframes btAnnonce{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+        @keyframes btLueur{0%,100%{box-shadow:0 12px 30px -10px rgba(0,0,0,.8);}50%{box-shadow:0 0 0 4px rgba(255,46,154,.22),0 12px 30px -10px rgba(0,0,0,.8);}}
+        @media (prefers-reduced-motion: reduce){.bt-annonce,.bt-annonce.reste{animation:none;}}
         .bt-liens{display:flex;align-items:center;gap:10px;margin:12px 0 0;
           font-size:15px;}
         .bt-liens button{background:none;border:0;padding:4px 2px;cursor:pointer;
@@ -964,6 +986,7 @@ export function StylesBoutiqueTable() {
           .bt-cadre-photo .bt-porte-lumiere{max-width:none;}
           .bt-e-lieu .bt-entrer{width:auto;min-width:260px;font-size:19px;padding:15px 24px;}
           .bt-e-lieu .bt-entrer.second{font-size:17px;padding:13px 24px;}
+          .bt-e-lieu .bt-annonce{max-width:420px;}
           .bt-e-lieu .bt-liens{margin-left:24px;}
           /* LES ECRANS A NAPPE : la nappe flotte au milieu de la moitie droite. */
           .bt-e-exp,.bt-e-carte{justify-content:center;}

@@ -35,7 +35,55 @@ const capWords = (s: string) =>
 
 /** Les colonnes que la fiche lit — la page et le double demandent les mêmes. */
 export const COLONNES_FICHE =
-  "id, business_name, city, activite, address, google_rating, google_reviews, google_place_id, diagnostic, published, gallery_photos";
+  "id, business_name, city, activite, address, google_rating, google_reviews, google_place_id, diagnostic, published, gallery_photos, current_offer";
+
+/** « 16 h », « 16 h 30 » : l'heure murale de Paris, le serveur peut tourner ailleurs. */
+function heureDeParis(t: Date): { jour: string; h: number; m: number } {
+  const p = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+    .formatToParts(t);
+  const n = (k: string) => Number(p.find((x) => x.type === k)?.value ?? 0);
+  return { jour: t.toLocaleDateString("en-CA", { timeZone: "Europe/Paris" }), h: n("hour"), m: n("minute") };
+}
+
+/**
+ * ═══ SON ANNONCE EN COURS, POUR LE BANDEAU DE SA PAGE ════════════════════
+ *
+ * « Sur la page réelle d'un restaurant, afficher le bandeau "Il en reste !". »
+ *
+ * LE COMPTOIR L'ÉCRIVAIT DÉJÀ, ET PERSONNE NE LA LISAIT ICI. La route des
+ * annonces range la dernière dans `current_offer` (« le bandeau de SON
+ * site ») et une publication dans Le Direct ; la page, elle, ne demandait
+ * pas la colonne. Une annonce passée ne s'affiche plus : « il en reste » à
+ * 14 h ne veut plus rien dire à 18 h.
+ *
+ * SA PHOTO SEULEMENT SI ELLE EST CHEZ NOUS (https). Celle du comptoir arrive
+ * en `data:` et pèse jusqu'à un mégaoctet : la recopier dans chaque page
+ * servie pour une vignette serait absurde. Le bandeau prend alors la photo du
+ * plat, qui, elle, est rangée.
+ */
+export function offreDuSite(v: unknown, maintenant = new Date()): FicheCommercant["offre"] {
+  if (!v || typeof v !== "object") return undefined;
+  const o = v as Record<string, unknown>;
+  const texte = str(o.text).replace(/\s+/g, " ").trim().slice(0, 160);
+  if (!texte) return undefined;
+  const fin = str(o.until) ? new Date(str(o.until)) : null;
+  if (fin && Number.isFinite(fin.getTime()) && fin.getTime() <= maintenant.getTime()) return undefined;
+  let jusqua: string | undefined;
+  if (fin && Number.isFinite(fin.getTime())) {
+    const a = heureDeParis(fin);
+    const ici = heureDeParis(maintenant);
+    if (a.jour !== ici.jour) {
+      jusqua = `jusqu’au ${fin.toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", weekday: "long", day: "numeric", month: "long" })}`;
+    } else if (a.h * 60 + a.m >= 23 * 60 + 30) {
+      // 23 h 59 : c'est « le plat du jour », pas une heure à surveiller.
+      jusqua = "jusqu’à ce soir";
+    } else {
+      jusqua = `jusqu’à ${a.h} h${a.m ? ` ${String(a.m).padStart(2, "0")}` : ""}`;
+    }
+  }
+  const photo = /^https:\/\//i.test(str(o.photo)) ? str(o.photo) : undefined;
+  return { texte, jusqua, photo };
+}
 
 /**
  * FABRIQUE LA FICHE À PARTIR DE CE QUI A ÉTÉ LU.
@@ -180,6 +228,8 @@ export function construireFiche(
     experience: experienceDuDiagnostic(diag) ?? undefined,
     // CE QU'IL A MIS À ESSAYER OU EN CONSEIL DEPUIS SON COMPTOIR.
     pieces: piecesDuDiagnostic(diag),
+    // SON ANNONCE EN COURS : le bandeau de sa page — voir `offreDuSite`.
+    offre: offreDuSite(row.current_offer),
     carteSuivi: suiviDeLaCarte(diag),
     photosCarte: (Array.isArray(diag.photos_menu) ? diag.photos_menu : [])
       .map((u) => str(u))

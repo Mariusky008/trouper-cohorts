@@ -82,6 +82,8 @@ export type FicheCommercant = {
   experience?: ExperienceResto;
   /** Ce qu'il a mis à essayer ou en conseil depuis son comptoir — voir `pieces-comptoir.ts`. */
   pieces?: PieceComptoir[];
+  /** Son annonce en cours, lue dans `current_offer` — voir `offreDuSite`. */
+  offre?: { texte: string; jusqua?: string; photo?: string };
   /** Où en est la lecture de sa carte, dit au commerçant — voir `suiviDeLaCarte`. */
   carteSuivi?: { texte: string; detail?: string }[];
   /** Ses horaires de la semaine, tels qu'on les lit (les siens d'abord, Google sinon). */
@@ -384,6 +386,19 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
     // ce drapeau qui fait écrire, sous le chapitre, qu'elles sont proposées.
     cataloguePropose: services.length === 0 && !f.carteLue?.length && !piecesEnCours(f.pieces).length && proposees.length > 0,
     catalogueLuSurPhotos: services.length === 0 && Boolean(f.carteLue?.length),
+    // SON ANNONCE EN BANDEAU. « Il en reste ! » se reconnaît à ses premiers
+    // mots — c'est le comptoir qui les écrit (`texteDeLAnnonce`) — et le
+    // bandeau les porte en grand ; le reste du texte vient dessous.
+    ...(f.offre
+      ? {
+          offreDuMoment: {
+            texte: f.offre.texte.replace(/^il en reste\s*!?\s*[·:-]?\s*/i, "").replace(/^·\s*/, "") || f.offre.texte,
+            reste: /^il en reste/i.test(f.offre.texte),
+            jusqua: f.offre.jusqua,
+            photo: f.offre.photo,
+          },
+        }
+      : {}),
     ...ceQuIlADonne(f),
   };
 }

@@ -535,6 +535,19 @@ export function ExperienceTable({
                   {repas.nom.replace(/\s+(frites|pommes|riz|salade)/i, " · $1").replace(/^./, (x) => x.toUpperCase())}
                 </p>
                 {repas.prix && <p className="xr-prix">{repas.prix}</p>}
+                {/* « IL EN RESTE ! », SOUS LE PRIX : la relance de 14 h que le
+                    chef vient de faire depuis son comptoir — voir `offreDuMoment`. */}
+                {c.offreDuMoment?.reste && (
+                  <p className="xr-reste">
+                    {/* Le nom et le prix sont juste au-dessus : on ne garde que le reste. */}
+                    <b>Il en reste !</b>{" "}
+                    {c.offreDuMoment.texte
+                      .split(" · ")
+                      .filter((x) => x.trim() && x.trim() !== repas.nom && x.trim() !== repas.prix)
+                      .join(" · ")}
+                    {c.offreDuMoment.jusqua ? ` · ${c.offreDuMoment.jusqua}` : ""}
+                  </p>
+                )}
               </>
             ) : (
               !citation && (
@@ -798,6 +811,9 @@ function StylesExperienceTable() {
         .xr-citation{margin:4px 0 0;text-align:center;font-family:var(--font-clikme),sans-serif;font-weight:700;
           font-size:clamp(20px,5.6cqw,27px);line-height:1.2;max-width:560px;text-wrap:balance;}
         .xr-citation em{font-style:normal;color:#FF2E9A;}
+        .xr-reste{margin:-4px 0 14px;padding:7px 14px;border-radius:999px;font-size:15px;font-weight:600;text-align:center;
+          max-width:560px;background:rgba(255,46,154,.14);border:1px solid rgba(255,46,154,.6);color:#FFF4E6;}
+        .xr-reste b{color:#FF5FB0;font-weight:800;}
         .xr-trait{width:40%;margin:14px 0 10px;border:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,244,230,.4),transparent);}
         .xr-plat{margin:0;font-family:var(--font-clikme),sans-serif;font-weight:600;font-size:20px;}
         .xr-prix{margin:2px 0 14px;font-size:17px;color:#E8D5C2;}

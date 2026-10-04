@@ -1433,6 +1433,31 @@ export function BoutiqueTable({
                 place d'« Explorer ma ville » — et devient la seconde porte du
                 lieu : c'est la question qu'on se pose juste après « c'est
                 comment, là-dedans ? ». */}
+            {/* ═══ SON ANNONCE, EN BANDEAU, JUSTE AVANT LES PORTES ═══════════
+                « Il en reste ! » n'arrivait pas sur sa page : le comptoir
+                l'écrivait dans `current_offer` et la page ne le lisait pas.
+                Il passe AVANT « Découvrir le lieu » parce que c'est la seule
+                chose de l'écran qui ne sera plus vraie dans deux heures. Le
+                toucher fait entrer : l'étape 2 montre le plat dont il parle. */}
+            {c.offreDuMoment && (() => {
+              const o = c.offreDuMoment;
+              const vignette = o.photo ?? (o.reste ? c.menu?.photo : undefined);
+              return (
+                <button
+                  type="button"
+                  className={`bt-annonce${o.reste ? " reste" : ""}`}
+                  onClick={() => entrer(lieuRef.current?.querySelector<HTMLElement>(".bt-hote, .bt-accueille") ?? null)}
+                >
+                  {vignette && <span className="bt-annonce-photo" style={{ backgroundImage: `url("${vignette}")` }} aria-hidden="true" />}
+                  <span className="bt-annonce-mots">
+                    <b>{o.reste ? "Il en reste !" : "En ce moment"}</b>
+                    <span>{o.texte}</span>
+                    {o.jusqua && <small>{o.jusqua}</small>}
+                  </span>
+                  <s aria-hidden="true">›</s>
+                </button>
+              );
+            })()}
             <button
               type="button"
               className="bt-entrer"
