@@ -18,6 +18,7 @@
  * FICHIER SERVEUR : il lit la base avec la clé d'administration.
  */
 import { experienceDuDiagnostic } from "@/lib/site-internet/experience-donnees";
+import { piecesDuDiagnostic } from "@/lib/site-internet/pieces-comptoir";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { horairesLisibles } from "@/lib/site-internet/horaires-pro";
 import { ligneDuJour } from "@/lib/site-internet/opening-hours";
@@ -177,6 +178,8 @@ export function construireFiche(
     carteLue: carteLueDuDiagnostic(diag),
     // CE QU'IL A DONNÉ À SON EXPÉRIENCE RESTAURANT — voir `experience-donnees.ts`.
     experience: experienceDuDiagnostic(diag) ?? undefined,
+    // CE QU'IL A MIS À ESSAYER OU EN CONSEIL DEPUIS SON COMPTOIR.
+    pieces: piecesDuDiagnostic(diag),
     carteSuivi: suiviDeLaCarte(diag),
     photosCarte: (Array.isArray(diag.photos_menu) ? diag.photos_menu : [])
       .map((u) => str(u))

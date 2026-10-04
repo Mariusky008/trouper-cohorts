@@ -10,6 +10,10 @@
  *     de son Expérience : son nom, son prix, ses photos (la scène est faite
  *     d'après la première), SA VOIX telle que le micro l'enregistre, et sa fin.
  *     Le mode d'emploi est dans `docs/experience-restaurant-espace-pro.md`.
+ *   · `/api/site-internet/pro/pieces` — LA PIÈCE À ESSAYER (coupe, pose,
+ *     monture, pièce, création) ou LE LIVRE CONSEILLÉ, avec sa photo : elle
+ *     entre en tête de son catalogue, donc dans l'essayage de sa page et dans
+ *     « Ton prochain livre ». Voir `pieces-comptoir.ts`.
  *   · `/api/site-internet/pro/offer` (`set`) — L'ANNONCE, pour tous les
  *     métiers : elle entre dans Le Direct de sa ville et s'affiche en bandeau
  *     sur sa page. « Il en reste ! » passe par là, avec son échéance de deux
@@ -27,6 +31,9 @@ import type { Publication } from "@/lib/direct/comptoir";
 import type { Mission } from "@/lib/direct/missions-commercant";
 
 export type ResultatEnvoi = { ok: boolean; ou: string[]; erreur?: string };
+
+/** Les métiers dont la pièce entre au catalogue avec sa photo. */
+const AVEC_PIECE = ["coiffure", "ongles", "lunettes", "mode", "createur", "librairie"];
 
 async function poster(url: string, corps: unknown): Promise<{ ok: boolean; erreur?: string; json?: Record<string, unknown> }> {
   try {
@@ -85,6 +92,27 @@ export async function envoyerEnLigne(
     else erreurs.push(r.erreur ?? "Le plat n'a pas pu partir.");
   }
 
+  // ── LA PIÈCE À ESSAYER, LE LIVRE CONSEILLÉ : SON CATALOGUE ──
+  if (AVEC_PIECE.includes(c.famille) && p.genre === "principal" && p.photos[0]) {
+    const r = await poster("/api/site-internet/pro/pieces", {
+      slug,
+      token,
+      action: "poser",
+      piece: {
+        id: p.id,
+        nom: p.nom,
+        prix: p.prix,
+        photo: p.photos[0],
+        rayon: c.famille === "librairie" ? "Ses coups de cœur" : mission.quoi,
+        ...(c.famille !== "librairie" ? { decrire: p.nom } : {}),
+        ...(p.voixTexte ? { detail: p.voixTexte } : {}),
+        fin: p.finLe,
+      },
+    });
+    if (r.ok) ou.push(c.famille === "librairie" ? "« Ton prochain livre »" : "ton essayage");
+    else erreurs.push(r.erreur ?? "La pièce n'a pas pu partir.");
+  }
+
   // ── L'ANNONCE : LE DIRECT, ET LE BANDEAU DE SA PAGE ──
   const photo = p.photos[0] ?? (p.genre === "relance" ? principal?.photos[0] : undefined);
   if (photo) {
@@ -110,6 +138,9 @@ export async function retirerEnLigne(c: CommerceComptoir, mission: Mission, p: P
   const { slug, token } = c.reel;
   if (c.famille === "table" && p.genre === "principal") {
     await poster("/api/site-internet/pro/experience", { slug, token, action: "poser", plat: null });
+  }
+  if (AVEC_PIECE.includes(c.famille) && p.genre === "principal") {
+    await poster("/api/site-internet/pro/pieces", { slug, token, action: "retirer", id: p.id });
   }
   const liste = await poster("/api/site-internet/pro/offer", { slug, token, action: "annonces" });
   const texte = texteDeLAnnonce(c, mission, p);

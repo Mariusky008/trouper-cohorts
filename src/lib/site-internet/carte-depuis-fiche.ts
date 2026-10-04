@@ -36,6 +36,7 @@
 // meilleur argument de vente qu'on puisse lui faire : il voit exactement ce
 // qu'il gagne en s'y mettant.
 import { platEnCours, sceneMontree, type ExperienceResto } from "@/lib/site-internet/experience-donnees";
+import { piecesEnCours, type PieceComptoir } from "@/lib/site-internet/pieces-comptoir";
 import type { CarteAutour, CleMetier, MomentJour } from "@/lib/direct/apercu-habitant";
 import { resolveMetierContent } from "@/lib/site-internet/metier-content";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
@@ -79,6 +80,8 @@ export type FicheCommercant = {
   photosCarte?: string[];
   /** Son plat, sa photo de cuisinier et leurs scènes — voir `experience-donnees.ts`. */
   experience?: ExperienceResto;
+  /** Ce qu'il a mis à essayer ou en conseil depuis son comptoir — voir `pieces-comptoir.ts`. */
+  pieces?: PieceComptoir[];
   /** Où en est la lecture de sa carte, dit au commerçant — voir `suiviDeLaCarte`. */
   carteSuivi?: { texte: string; detail?: string }[];
   /** Ses horaires de la semaine, tels qu'on les lit (les siens d'abord, Google sinon). */
@@ -342,7 +345,20 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
      * prestations, et deviner des rayons produirait des intitulés qu'il n'a pas
      * choisis.
      */
-    catalogue: services.length
+    /* SES PIÈCES DU COMPTOIR PASSENT DEVANT : la coupe qu'il vient de mettre à
+       essayer, le livre qu'il conseille, avec leur photo — c'est elle que
+       l'essayage pose sur le client et que « Ton prochain livre » montre. */
+    catalogue: [
+      ...piecesEnCours(f.pieces).map((x) => ({
+        id: x.id,
+        rayon: brancheDuMetier(f.metier) === "librairie" ? "Ses coups de cœur" : x.rayon,
+        nom: x.nom,
+        detail: x.detail,
+        prix: x.prix,
+        photo: x.photo,
+        decrire: x.decrire,
+      })),
+      ...(services.length
       ? services.map((s, i) => ({
           id: `${f.slug}-s${i}`,
           // CHEZ LE LIBRAIRE, CE QU'IL A SAISI EST UNE TABLE DE COUPS DE CŒUR.
@@ -360,10 +376,13 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
             detail: p.detail,
             prix: p.prix,
           }))
-        : proposees,
+        : piecesEnCours(f.pieces).length
+          ? []
+          : proposees),
+    ],
     // Vrai seulement quand ce sont celles du MÉTIER et pas les siennes : c'est
     // ce drapeau qui fait écrire, sous le chapitre, qu'elles sont proposées.
-    cataloguePropose: services.length === 0 && !f.carteLue?.length && proposees.length > 0,
+    cataloguePropose: services.length === 0 && !f.carteLue?.length && !piecesEnCours(f.pieces).length && proposees.length > 0,
     catalogueLuSurPhotos: services.length === 0 && Boolean(f.carteLue?.length),
     ...ceQuIlADonne(f),
   };
