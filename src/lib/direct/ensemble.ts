@@ -122,7 +122,9 @@ export function aToiDeJouer(
         genre: "proposition",
         qui: autre.par,
         titre: `${autre.par} propose une ${propos.length > 1 ? "autre " : ""}idée`,
-        contexte: `${s.sujet} · ${autre.quoi}`,
+        // UNE DISCUSSION LANCÉE SANS ANNONCE A POUR IDÉE SON SUJET MÊME : on ne
+        // l'écrit pas deux fois (« Resto vendredi ? · Resto vendredi ? »).
+        contexte: autre.quoi === s.sujet ? s.sujet : `${s.sujet} · ${autre.quoi}`,
         libelle: "Voir sa proposition",
         photos: autre.photo ? [autre.photo] : undefined,
       });

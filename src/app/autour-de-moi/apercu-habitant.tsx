@@ -162,6 +162,7 @@ import { CarteSwipe, StylesDirect } from "@/components/direct/carte-swipe";
 import { EcranChoix } from "@/components/direct/ecran-choix";
 import { useVilleReelle } from "@/components/direct/ville-reelle-contexte";
 import { pageDuCommerce } from "@/lib/direct/source-ville";
+import { lienConnu, lienDInvitation } from "@/lib/direct/conversations-sync";
 /* ═══ L'OUVERTURE EN TROIS ACTES EST MISE DE CÔTÉ, PAS EFFACÉE ═════════════
    « L'animation de départ ne fonctionne pas assez bien, garde-la de côté, on
    essaiera de faire mieux plus tard. »
@@ -2917,7 +2918,12 @@ export function ApercuHabitant() {
    * et on le dit, plutôt que de ne rien faire.
    */
   async function inviterAuSalon(s: Salon) {
-    const lien = typeof window === "undefined" ? "" : `${window.location.origin}/autour-de-moi`;
+    // DANS UNE VRAIE VILLE, LE LIEN MÈNE À LA CONVERSATION ELLE-MÊME — et celui
+    // qui l'ouvre la trouve avec ses messages. Voir `conversations-sync.ts`.
+    const lien =
+      typeof window === "undefined"
+        ? ""
+        : ((reelle ? (lienConnu(s) ?? (await lienDInvitation(s))) : null) ?? `${window.location.origin}/autour-de-moi`);
     const texte = `${s.sujet} — ${s.ou} · ${s.quand}. J'ai trouvé ça sur Clikme, qui vient ? ${lien}`;
     noter("partage", 0, "invitation-salon");
     const f = window.open(
@@ -2955,7 +2961,10 @@ export function ApercuHabitant() {
    * d'afficher « copie » sur un presse-papiers vide.
    */
   async function copierLeLien(s: Salon) {
-    const lien = typeof window === "undefined" ? "" : `${window.location.origin}/autour-de-moi`;
+    const lien =
+      typeof window === "undefined"
+        ? ""
+        : ((reelle ? (lienConnu(s) ?? (await lienDInvitation(s))) : null) ?? `${window.location.origin}/autour-de-moi`);
     const texte = `${s.sujet} — ${s.ou} · ${s.quand}. J'ai trouvé ça sur Clikme, qui vient ? ${lien}`;
     try {
       await navigator.clipboard.writeText(texte);

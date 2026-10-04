@@ -45,6 +45,8 @@
 // ce sont de vraies personnes qui écrivent.
 
 /** Qui parle. « moi » est la personne qui tient le téléphone. */
+import type { Geste as GesteConversation } from "@/lib/direct/conversations";
+
 export type Voix = "moi" | "ami" | "systeme";
 
 export type MessageSalon = {
@@ -872,6 +874,40 @@ export function sansLeDecor(salons: Record<string, Salon>): Record<string, Salon
   return Object.fromEntries(Object.entries(salons).filter(([cle]) => !semes.has(cle)));
 }
 
+/**
+ * ═══ LE PARTAGE, DANS LA VRAIE VILLE ════════════════════════════════════════
+ *
+ * Sur `/ville/<ville>`, chaque geste fait ici (ouvrir, écrire, proposer,
+ * voter, réagir, venir) part aussi au serveur — voir `conversations-sync.ts`,
+ * qui se branche ici. Dans la démonstration, personne n'est branché : rien ne
+ * sort du téléphone, comme avant.
+ */
+type Partage = { ouverture: (s: Salon) => void; geste: (cle: string, g: GesteConversation) => void };
+let partage: Partage | null = null;
+export function brancherLePartage(p: Partage | null): void {
+  partage = p;
+}
+
+/**
+ * LES CONVERSATIONS TELLES QUE LE SERVEUR LES REND, posées sur celles du
+ * téléphone. Seul `archive` reste local : c'est le rangement de ce lecteur-là,
+ * pas un fait de la conversation.
+ */
+export function poserLesConversations(venues: Record<string, Salon>): void {
+  const avant = chargerSalons();
+  const suite = { ...avant };
+  let change = false;
+  for (const [cle, s] of Object.entries(venues)) {
+    const local = avant[cle];
+    const neuf = { ...s, ...(local?.archive && (s.activite ?? 0) <= (local.activite ?? 0) ? { archive: true } : {}) };
+    if (JSON.stringify(local) !== JSON.stringify(neuf)) {
+      suite[cle] = neuf;
+      change = true;
+    }
+  }
+  if (change) garder(suite);
+}
+
 export function chargerSalons(): Record<string, Salon> {
   if (memoire) return memoire;
   try {
@@ -956,6 +992,7 @@ export function ouvrirSalon(
     ],
   };
   garder({ ...avant, [salon.cle]: neuf });
+  partage?.ouverture(neuf);
   return neuf;
 }
 
@@ -966,6 +1003,13 @@ export function ecrireDansSalon(cle: string, m: Omit<MessageSalon, "id">) {
   const id = `m${Date.now()}${Math.random().toString(36).slice(2, 6)}`;
   // UN MESSAGE SORT AUSSI LA CONVERSATION DES ARCHIVES : on y parle de nouveau.
   garder({ ...avant, [cle]: { ...s, messages: [...s.messages, { ...m, id }], activite: Date.now(), archive: false } });
+  partage?.geste(cle, {
+    type: "ecrire",
+    texte: m.texte,
+    ...(m.photo ? { photo: m.photo } : {}),
+    ...(m.carte ? { carte: m.carte } : {}),
+    ...(m.voix === "systeme" ? { systeme: true } : {}),
+  });
 }
 
 /** Ranger une conversation dans les archives, ou l'en ressortir. Rien n'est effacé. */
@@ -1024,6 +1068,7 @@ export function annoncerLaTete(cle: string, texte: string, quand: string) {
     ? [...s.messages.slice(0, -1), ligne]
     : [...s.messages, ligne];
   garder({ ...avant, [cle]: { ...s, messages } });
+  partage?.geste(cle, { type: "tete", texte });
 }
 
 // ─── CE QUI EST EN TÊTE, ET COMMENT ON Y ARRIVE ────────────────────────────
@@ -1066,6 +1111,7 @@ export function proposer(cleSalon: string, p: Omit<Proposition, "voix">, qui: st
     ...avant,
     [cleSalon]: { ...s, propositions: [...avecMaVoix, { ...p, voix: [qui] }] },
   });
+  partage?.geste(cleSalon, { type: "proposer", p });
 }
 
 /**
@@ -1096,6 +1142,7 @@ export function donnerSaVoix(cleSalon: string, clePropo: string, qui: string) {
       })),
     },
   });
+  partage?.geste(cleSalon, { type: "voix", propo: clePropo });
 }
 
 /**
@@ -1117,6 +1164,7 @@ export function basculerVisibilite(cle: string): boolean {
   if (!s || (s.parQui !== "Vous" && s.parQui !== moi)) return !!s?.prive;
   const prive = !s.prive;
   garder({ ...avant, [cle]: { ...s, prive } });
+  partage?.geste(cle, { type: "visibilite", prive });
   return prive;
 }
 
@@ -1134,6 +1182,7 @@ export function basculerVenue(cle: string, qui = "Vous") {
       presents: s.presents.includes(qui) ? s.presents : [...s.presents, qui],
     },
   });
+  partage?.geste(cle, { type: "venue" });
 }
 
 /** Un cœur sous un message, ou le retirer. Un appui, jamais plus. */
@@ -1155,6 +1204,7 @@ export function reagir(cle: string, idMessage: string, emoji: string) {
       }),
     },
   });
+  partage?.geste(cle, { type: "reagir", message: idMessage, emoji });
 }
 
 /** Voter pour celle qui est sur place. Revoter change la voix, n'en ajoute pas. */
@@ -1178,6 +1228,7 @@ export function voter(cle: string, option: string) {
       },
     },
   });
+  partage?.geste(cle, { type: "voter", option });
 }
 
 /** Fait entrer quelqu'un dans le salon sans qu'il se prononce. */
@@ -1193,6 +1244,7 @@ export function entrerDansSalon(cle: string, qui: string, vient: boolean) {
       viennent: vient && !s.viennent.includes(qui) ? [...s.viennent, qui] : s.viennent,
     },
   });
+  partage?.geste(cle, { type: "entrer", vient });
 }
 
 // ═════════════════════════════════════════════════════════════════════════════

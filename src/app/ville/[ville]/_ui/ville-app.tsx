@@ -17,6 +17,7 @@ import { ApercuHabitant } from "@/app/autour-de-moi/apercu-habitant";
 import { EnCharteMaison } from "@/components/direct/style-maison";
 import { VilleReelleContexte } from "@/components/direct/ville-reelle-contexte";
 import { poserLaSource } from "@/lib/direct/source-ville";
+import { brancherLaVille } from "@/lib/direct/conversations-sync";
 import type { VilleReelle } from "@/lib/direct/ville-reelle";
 
 const rien = () => () => {};
@@ -33,6 +34,12 @@ export function VilleApp({ reelle }: { reelle: VilleReelle }) {
     poserLaSource(source);
     return () => poserLaSource(null);
   }, [source]);
+  // LES CONVERSATIONS D'ENSEMBLE PARTENT AU SERVEUR, ET EN REVIENNENT — voir
+  // `conversations-sync.ts`. `?salon=p:<identifiant>` : le lien reçu d'un ami.
+  useEffect(() => {
+    const salon = new URLSearchParams(window.location.search).get("salon") || undefined;
+    return brancherLaVille(reelle.slug, salon);
+  }, [reelle.slug]);
   if (!monte) return <div style={{ position: "fixed", inset: 0, background: "#120C09" }} aria-busy="true" />;
   return (
     <VilleReelleContexte.Provider value={info}>
