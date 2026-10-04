@@ -33,6 +33,24 @@ import {
 
 type Essai = { cle: string; titre: string; lieu: string; photo?: string; carte?: string; piece?: PieceGardee; trace?: FantomePose };
 
+/**
+ * ═══ LA MAISON D'UN AUTRE HABITANT, EN VISITE ══════════════════════════════
+ *
+ * « Toucher l'avatar d'un habitant ouvre sa vraie maison : ses commerces
+ * adoptés et ce qu'il a choisi de partager. » La même maison, vue comme ses
+ * amis la voient (« Voir comme mes amis ») : sans essais privés, sans
+ * réglages, sans rien à modifier. Voir `maison-sync.ts`.
+ */
+export type MaisonEnVisite = {
+  prenom: string;
+  presentation: string;
+  adoptes: CarteAutour[];
+  /** Ses essais partagés — le serveur ne rend jamais les privés. */
+  essais: { cle: string; titre: string; lieu: string; photo?: string; carte?: string }[];
+  publications: MessageVille[];
+  onFermer: () => void;
+};
+
 const rien = () => () => {};
 
 export function MaMaison({
@@ -49,6 +67,8 @@ export function MaMaison({
   onReglages,
   onNePlusSuivre,
   demandeVisite = 0,
+  visiteur,
+  lienInvitation,
 }: {
   prenom: string;
   /** Les commerces adoptés (suivis), tels que l'application les connaît. */
@@ -70,10 +90,16 @@ export function MaMaison({
   onNePlusSuivre: (id: string) => void;
   /** Change à chaque appui sur le fantôme de la barre : « Faire visiter ma maison ». */
   demandeVisite?: number;
+  /** La maison d'un autre habitant, en visite — voir `MaisonEnVisite`. */
+  visiteur?: MaisonEnVisite;
+  /** Le lien d'invitation de ma maison, dans la vraie ville. Absent : celui de l'application. */
+  lienInvitation?: () => Promise<string | null>;
 }) {
   const monte = useSyncExternalStore(rien, () => true, () => false);
   const reglages = useSyncExternalStore(abonnerMaison, chargerMaison, () => MAISON_VIDE);
-  const [commeAmi, setCommeAmi] = useState(false);
+  const [commeAmiDemande, setCommeAmi] = useState(false);
+  /** EN VISITE, ON VOIT TOUJOURS COMME UN AMI : rien de privé, rien à modifier. */
+  const commeAmi = commeAmiDemande || Boolean(visiteur);
   const [onglet, setOnglet] = useState<"essais" | "decouvertes" | "publications">("essais");
   const [ouverte, setOuverte] = useState<ClePiece | null>(null);
   const [edition, setEdition] = useState(false);
@@ -85,28 +111,34 @@ export function MaMaison({
   const [demandeVue, setDemandeVue] = useState(demandeVisite);
   if (demandeVisite !== demandeVue) {
     setDemandeVue(demandeVisite);
-    setOuverte(null);
-    setVisite(true);
+    // EN VISITE, ON NE FAIT PAS VISITER LA MAISON D'UN AUTRE.
+    if (!visiteur) {
+      setOuverte(null);
+      setVisite(true);
+    }
   }
 
-  const maison = rangerLaMaison(adoptes);
-  const nbFantomes = adoptes.length;
-  const nom = prenom.trim();
+  const lesAdoptes = visiteur ? visiteur.adoptes : adoptes;
+  const maison = rangerLaMaison(lesAdoptes);
+  const nbFantomes = lesAdoptes.length;
+  const nom = (visiteur ? visiteur.prenom : prenom).trim();
 
   // MES ESSAIS : les pièces essayées et gardées, et les traces d'un essai.
-  const essais: Essai[] = [
+  const essais: Essai[] = visiteur ? visiteur.essais : [
     ...pieces.map((p) => ({ cle: `piece:${p.carte}|${p.piece}`, titre: p.nom, lieu: p.lieu, photo: p.image, carte: p.carte, piece: p })),
     ...traces
       .filter((t) => t.essai)
       .map((t) => ({ cle: `trace:${t.id}`, titre: t.essai?.quoi ?? t.mot, lieu: t.souvenir.lieu, photo: t.photo, carte: t.souvenir.cle, trace: t })),
   ];
-  const partage = (cle: string) => reglages.partages.includes(cle);
+  const partage = (cle: string) => Boolean(visiteur) || reglages.partages.includes(cle);
   const essaisVus = commeAmi ? essais.filter((e) => partage(e.cle)) : essais;
   // MES DÉCOUVERTES : les lieux où j'ai laissé mon fantôme — ce que J'AI dit y avoir vécu.
-  const decouvertes = traces.filter((t) => !t.essai);
+  const decouvertes = visiteur ? [] : traces.filter((t) => !t.essai);
+  const lesPublications = visiteur ? visiteur.publications : publications;
 
   const inviter = async () => {
-    const url = `${window.location.origin}/autour-de-moi`;
+    // DANS LA VRAIE VILLE, LE LIEN MÈNE À MA MAISON ELLE-MÊME.
+    const url = (lienInvitation ? await lienInvitation() : null) ?? `${window.location.origin}/autour-de-moi`;
     const texte = `Viens voir ma maison sur Clikme${nom ? ` — chez ${nom}` : ""} : mes bonnes adresses et mes coups de cœur.`;
     try {
       if (navigator.share) {
@@ -128,8 +160,8 @@ export function MaMaison({
       <StylesMaMaison />
       <header className="mm-tete">
         <div>
-          <h1>Ma maison</h1>
-          <p>Mon univers, mes essais, mes bonnes adresses</p>
+          <h1>{visiteur ? (nom ? `Chez ${nom}` : "Chez un habitant") : "Ma maison"}</h1>
+          <p>{visiteur ? "Son univers, ses essais partagés, ses bonnes adresses" : "Mon univers, mes essais, mes bonnes adresses"}</p>
         </div>
         {!commeAmi && (
           <button type="button" className="mm-roue" onClick={onReglages} aria-label="Réglages">
@@ -142,13 +174,22 @@ export function MaMaison({
         )}
       </header>
 
-      {commeAmi && (
+      {visiteur ? (
         <div className="mm-commeami">
-          <span>👀 Tes amis voient ta maison ainsi : sans tes essais privés, tes réservations ni tes conversations.</span>
-          <button type="button" onClick={() => setCommeAmi(false)}>
+          <span>🏠 Tu visites sa maison : ce qu’il a choisi de partager, rien de privé.</span>
+          <button type="button" onClick={visiteur.onFermer}>
             Revenir
           </button>
         </div>
+      ) : (
+        commeAmi && (
+          <div className="mm-commeami">
+            <span>👀 Tes amis voient ta maison ainsi : sans tes essais privés, tes réservations ni tes conversations.</span>
+            <button type="button" onClick={() => setCommeAmi(false)}>
+              Revenir
+            </button>
+          </div>
+        )
       )}
 
       {/* ═══ QUI HABITE LÀ ═══ */}
@@ -177,7 +218,9 @@ export function MaMaison({
             </form>
           ) : (
             <em>
-              {(monte && reglages.presentation) || "Mes goûts, mes essais, mes bonnes adresses."}
+              {visiteur
+                ? visiteur.presentation || "Ses goûts, ses essais, ses bonnes adresses."
+                : (monte && reglages.presentation) || "Mes goûts, mes essais, mes bonnes adresses."}
               {!commeAmi && (
                 <button
                   type="button"
@@ -256,18 +299,24 @@ export function MaMaison({
             ["decouvertes", "Mes découvertes"],
             ["publications", "Mes publications"],
           ] as const
-        ).map(([k, t]) => (
-          <button key={k} type="button" className={onglet === k ? "on" : ""} onClick={() => setOnglet(k)}>
-            {t}
-          </button>
-        ))}
+        )
+          // EN VISITE : ses essais partagés et ses publications. Ses découvertes
+          // (les fantômes qu'il laisse) restent dans son téléphone.
+          .filter(([k]) => !visiteur || k !== "decouvertes")
+          .map(([k, t]) => (
+            <button key={k} type="button" className={onglet === k ? "on" : ""} onClick={() => setOnglet(k)}>
+              {visiteur ? t.replace("Mes ", "Ses ") : t}
+            </button>
+          ))}
       </nav>
 
       {onglet === "essais" && (
         <section className="mm-liste">
           {essaisVus.length === 0 && (
             <p className="mm-vide">
-              {commeAmi
+              {visiteur
+                ? "Aucun essai partagé pour l’instant."
+                : commeAmi
                 ? "Aucun essai partagé avec tes amis."
                 : "Tes essais apparaîtront ici : une coupe, une tenue, des lunettes essayées sur toi. Ils restent privés tant que tu ne les partages pas."}
             </p>
@@ -277,7 +326,10 @@ export function MaMaison({
               <button
                 type="button"
                 className="mm-essai-ph"
-                onClick={() => (e.piece ? onVoirPiece(e.piece) : e.trace && onVoirTrace(e.trace))}
+                onClick={() =>
+                  // EN VISITE, L'ESSAI MÈNE AU COMMERCE OÙ IL A ÉTÉ FAIT.
+                  visiteur ? e.carte && onPage({ id: e.carte }) : e.piece ? onVoirPiece(e.piece) : e.trace && onVoirTrace(e.trace)
+                }
                 style={e.photo ? { backgroundImage: `url("${e.photo}")` } : undefined}
                 aria-label={`Voir ${e.titre}`}
               >
@@ -287,7 +339,7 @@ export function MaMaison({
                 <b>{e.titre}</b>
                 <em>{e.lieu}</em>
                 <span className={`mm-badge${partage(e.cle) ? " amis" : ""}`}>
-                  {partage(e.cle) ? "👥 Partagé avec mes amis" : "🔒 Privé"}
+                  {visiteur ? "👥 Partagé" : partage(e.cle) ? "👥 Partagé avec mes amis" : "🔒 Privé"}
                 </span>
                 {!commeAmi &&
                   (partage(e.cle) ? (
@@ -334,10 +386,14 @@ export function MaMaison({
 
       {onglet === "publications" && (
         <section className="mm-liste">
-          {publications.length === 0 && (
-            <p className="mm-vide">Ce que tu dis dans La ville — une question, un bon plan, un coup de cœur — se retrouve ici.</p>
+          {lesPublications.length === 0 && (
+            <p className="mm-vide">
+              {visiteur
+                ? "Rien de publié dans La ville pour l’instant — ou rien que tu puisses voir."
+                : "Ce que tu dis dans La ville — une question, un bon plan, un coup de cœur — se retrouve ici."}
+            </p>
           )}
-          {publications.map((m) => (
+          {lesPublications.map((m) => (
             <div key={m.id} className="mm-pub">
               <b>{m.texte}</b>
               <em>

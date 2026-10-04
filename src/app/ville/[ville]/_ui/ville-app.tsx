@@ -19,6 +19,7 @@ import { VilleReelleContexte } from "@/components/direct/ville-reelle-contexte";
 import { poserLaSource } from "@/lib/direct/source-ville";
 import { brancherLaVille } from "@/lib/direct/conversations-sync";
 import { brancherLeFil } from "@/lib/direct/ville-sync";
+import { brancherLaMaison } from "@/lib/direct/maison-sync";
 import type { VilleReelle } from "@/lib/direct/ville-reelle";
 
 const rien = () => () => {};
@@ -43,6 +44,8 @@ export function VilleApp({ reelle }: { reelle: VilleReelle }) {
   }, [reelle.slug]);
   // ET LE FIL DE LA VILLE — voir `ville-sync.ts`.
   useEffect(() => brancherLeFil(reelle.slug, reelle.nom), [reelle.slug, reelle.nom]);
+  // ET MA MAISON, VISITABLE PAR SON LIEN — voir `maison-sync.ts`.
+  useEffect(() => brancherLaMaison(reelle.slug), [reelle.slug]);
   if (!monte) return <div style={{ position: "fixed", inset: 0, background: "#120C09" }} aria-busy="true" />;
   return (
     <VilleReelleContexte.Provider value={info}>

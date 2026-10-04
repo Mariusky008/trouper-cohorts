@@ -60,6 +60,7 @@ export function LaVille({
   onOuvrirSalon,
   onMessageVille,
   onSignaler,
+  onMaison,
   demandePartage = 0,
 }: {
   messages: MessageVille[];
@@ -89,6 +90,12 @@ export function LaVille({
    * autres habitants sont réelles et publiques. Voir `ville-sync.ts`.
    */
   onSignaler?: (m: MessageVille) => void;
+  /**
+   * OUVRIR LA VRAIE MAISON D'UN HABITANT, par une de ses publications — dans
+   * la vraie ville seulement. Sans elle, la feuille « Chez … » reste celle de
+   * la maquette. Voir `maison-sync.ts`.
+   */
+  onMaison?: (m: MessageVille) => void;
 }) {
   const vus = useSyncExternalStore(abonnerVus, chargerVus, () => AUCUN_VU);
   const aDesAmis = amis.length > 0;
@@ -284,6 +291,14 @@ export function LaVille({
           publications={vivants.filter((m) => m.qui === chezQui)}
           onFermer={() => setChezQui(null)}
           onPage={onPage}
+          onMaison={
+            onMaison
+              ? (m) => {
+                  setChezQui(null);
+                  onMaison(m);
+                }
+              : undefined
+          }
         />
       )}
     </div>
@@ -704,12 +719,16 @@ function ChezQuelquun({
   publications,
   onFermer,
   onPage,
+  onMaison,
 }: {
   qui: string;
   publications: MessageVille[];
   onFermer: () => void;
   onPage: (id: string) => void;
+  onMaison?: (m: MessageVille) => void;
 }) {
+  // DANS LA VRAIE VILLE, SA MAISON EXISTE : on la retrouve par une de ses publications.
+  const parOu = onMaison && qui !== "Vous" ? publications[0] : undefined;
   const adresses = [...new Map(publications.filter((m) => m.commerce).map((m) => [m.commerce!.id, m.commerce!])).values()];
   return (
     <div className="lv-fond" role="dialog" aria-label={`Chez ${qui}`} onClick={onFermer}>
@@ -746,7 +765,13 @@ function ChezQuelquun({
             </p>
           ))
         )}
-        <p className="lv-note petite">Sa maison complète s’ouvrira quand les comptes existeront : dans la maquette, chacun garde la sienne sur son téléphone.</p>
+        {parOu ? (
+          <button type="button" className="lv-publier" onClick={() => onMaison?.(parOu)}>
+            🏠 Voir sa maison
+          </button>
+        ) : (
+          <p className="lv-note petite">Sa maison complète s’ouvrira quand les comptes existeront : dans la maquette, chacun garde la sienne sur son téléphone.</p>
+        )}
         <button type="button" className="lv-retour" onClick={onFermer}>
           Fermer
         </button>

@@ -40,6 +40,7 @@
 // désactivé dès qu'on a commencé à descendre. Sans ça, lire le programme ferait
 // partir la carte.
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -164,7 +165,9 @@ import { EcranChoix } from "@/components/direct/ecran-choix";
 import { useVilleReelle } from "@/components/direct/ville-reelle-contexte";
 import { pageDuCommerce } from "@/lib/direct/source-ville";
 import { lienConnu, lienDInvitation } from "@/lib/direct/conversations-sync";
-import { signalerPublication } from "@/lib/direct/ville-sync";
+import { messageDeMaison, signalerPublication } from "@/lib/direct/ville-sync";
+import { essaisPartages, lienDeMaMaison, lireUneMaison, publierLaMaison, type MaisonLue } from "@/lib/direct/maison-sync";
+import { abonnerMaison, chargerMaison, MAISON_VIDE } from "@/lib/direct/ma-maison";
 /* ═══ L'OUVERTURE EN TROIS ACTES EST MISE DE CÔTÉ, PAS EFFACÉE ═════════════
    « L'animation de départ ne fonctionne pas assez bien, garde-la de côté, on
    essaiera de faire mieux plus tard. »
@@ -174,7 +177,7 @@ import { signalerPublication } from "@/lib/direct/ville-sync";
 import { EcranSalon } from "@/components/direct/ecran-salon";
 import { Ensemble } from "./ensemble";
 import { aToiDeJouer, nosDiscussions } from "@/lib/direct/ensemble";
-import { MaMaison } from "./ma-maison";
+import { MaMaison, type MaisonEnVisite } from "./ma-maison";
 import { LaVille } from "./la-ville";
 import { StyleMaison } from "@/components/direct/style-maison";
 import { StylesChoix } from "@/components/direct/styles-choix";
@@ -1626,6 +1629,15 @@ export function ApercuHabitant() {
   /** Ma maison montre ses réglages (l'ancien « Mon espace ») — voir la roue dentée. */
   const [reglagesMaison, setReglagesMaison] = useState(false);
   /**
+   * LA MAISON D'UN AUTRE HABITANT, EN VISITE — vraie ville seulement. Ouverte
+   * par son lien (`?maison=`) ou par « Voir sa maison » dans La ville ; elle
+   * prend la place de la mienne dans l'onglet, et n'importe quel onglet la
+   * referme — « Ma maison » compris, qui ramène chez moi.
+   */
+  const [maisonLue, setMaisonLue] = useState<MaisonLue | null>(null);
+  /** Ce que je partage de ma maison : ma présentation, mes essais partagés. */
+  const maisonGardee = useSyncExternalStore(abonnerMaison, chargerMaison, () => MAISON_VIDE);
+  /**
    * ON LIT LA MÉMOIRE APRÈS LE PREMIER RENDU, ET PAS PENDANT.
    *
    * `localStorage` n'existe pas sur le serveur : le lire pendant le rendu
@@ -2604,6 +2616,7 @@ export function ApercuHabitant() {
     // s'éteint tout seul, et un fantôme posé il y a dix secondes doit apparaître
     // sans recharger la page.
     if (o === "profil") setMesTraces(mesFantomes());
+    setMaisonLue(null);
     // ON FERME CE QUI EST PAR-DESSUS, ET C'EST INDISPENSABLE DEPUIS QUE LA
     // BARRE RESTE VISIBLE DANS UN SALON. Sans ces deux lignes, appuyer sur
     // « Le direct » depuis un salon changeait bien l'onglet — mais la page du
@@ -5096,6 +5109,85 @@ export function ApercuHabitant() {
   /** Ce que le cœur du bandeau compte : les commerces ET les pièces. */
   const gardesTotal = gardees.length + piecesGardees.length;
   const mesSuivis = toutes.filter((c) => suivis.includes(c.id));
+  /**
+   * ═══ MA MAISON, PUBLIÉE — dans la vraie ville ═══════════════════════════
+   *
+   * « Toucher l'avatar d'un habitant ouvre sa vraie maison. » Pour qu'on
+   * puisse ouvrir la mienne, elle part au serveur dès que ce que je partage
+   * change : mon prénom, ma présentation, mes commerces adoptés, mes essais
+   * PARTAGÉS. Les essais privés ne quittent jamais le téléphone. Voir
+   * `maison-sync.ts`.
+   */
+  const idsSuivis = mesSuivis.map((c) => c.id).join(",");
+  const maMaisonAPublier = useCallback(
+    () => ({
+      prenom,
+      presentation: maisonGardee.presentation,
+      adoptes: idsSuivis ? idsSuivis.split(",") : [],
+      essais: essaisPartages(
+        piecesGardees,
+        // LES TRACES SONT RELUES ICI, PAS DANS L'ÉTAT : il n'est rempli qu'en ouvrant Ma maison.
+        mesFantomes().filter((t) => toutesLesCartes().some((c) => c.id === t.souvenir.cle)),
+        maisonGardee.partages,
+      ),
+    }),
+    [prenom, maisonGardee, idsSuivis, piecesGardees],
+  );
+  useEffect(() => {
+    if (reelle) publierLaMaison(maMaisonAPublier());
+  }, [reelle, maMaisonAPublier]);
+  /** « Voir sa maison », depuis une de ses publications de La ville. */
+  async function visiterLaMaison(par: { publication: string }) {
+    const m = await lireUneMaison(par);
+    if (!m) {
+      setEchoIcone("🏠");
+      setEcho("Sa maison n’est pas visitable pour l’instant.");
+      return;
+    }
+    allerA_onglet("profil");
+    setReglagesMaison(false);
+    if (!m.moi) setMaisonLue(m);
+  }
+  /**
+   * LA MAISON VISITÉE, DANS LA FORME QUE `MaMaison` AFFICHE : ses commerces
+   * adoptés retrouvés parmi ceux de la ville (un commerce qui n'y est plus
+   * disparaît de sa maison), ses publications écrites à son nom.
+   */
+  const maisonEnVisite: MaisonEnVisite | null =
+    maisonLue && reelle
+      ? {
+          prenom: maisonLue.prenom,
+          presentation: maisonLue.presentation,
+          adoptes: maisonLue.adoptes.flatMap((id) => toutes.filter((c) => c.id === id).slice(0, 1)),
+          essais: maisonLue.essais,
+          publications: maisonLue.publications.map((p) => messageDeMaison(p, maisonLue.prenom || "Un habitant", reelle.nom)),
+          onFermer: () => setMaisonLue(null),
+        }
+      : null;
+  /**
+   * ARRIVÉ PAR LE LIEN D'UNE MAISON (`?maison=<jeton>`) : on l'ouvre. Le
+   * paramètre quitte l'adresse aussitôt — recharger la page ramène chez soi.
+   * Ma propre maison, ouverte par mon lien, c'est simplement la mienne.
+   */
+  useEffect(() => {
+    if (!reelle) return;
+    const jeton = new URLSearchParams(window.location.search).get("maison");
+    if (!jeton) return;
+    void lireUneMaison({ jeton }).then((m) => {
+      // APRÈS LA LECTURE, PAS AVANT : au premier rendu, le routeur de Next
+      // réécrit encore l'adresse derrière nous.
+      const url = new URL(window.location.href);
+      url.searchParams.delete("maison");
+      window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+      setOnglet("profil");
+      setReglagesMaison(false);
+      if (m && !m.moi) setMaisonLue(m);
+      else if (!m) {
+        setEchoIcone("🏠");
+        setEcho("Cette maison n’est plus visitable.");
+      }
+    });
+  }, [reelle]);
   /**
    * CE QUE MES COMMERCES ONT DIT AUJOURD'HUI — la matière de la pastille.
    *
@@ -11183,6 +11275,7 @@ export function ApercuHabitant() {
                       }
                     : undefined
                 }
+                onMaison={reelle ? (m) => void visiterLaMaison({ publication: m.id }) : undefined}
                 onMessageVille={() => {
                   noter("champ-touche", 0, "ville");
                   setMotVille("");
@@ -11245,6 +11338,10 @@ export function ApercuHabitant() {
           {onglet === "profil" && !reglagesMaison && (
             <div className="ap-page ap-onglet-vue">
               <MaMaison
+                key={maisonEnVisite ? "visite" : "moi"}
+                visiteur={maisonEnVisite ?? undefined}
+                // DANS LA VRAIE VILLE, « Inviter un ami chez moi » mène à MA maison.
+                lienInvitation={reelle ? () => lienDeMaMaison(maMaisonAPublier()) : undefined}
                 prenom={prenom}
                 adoptes={mesSuivis}
                 pieces={piecesGardees}
@@ -13260,6 +13357,11 @@ export function ApercuHabitant() {
                   window.setTimeout(() => setClin(""), BOND_MS);
                   noter("onglet", 0, `geste-${onglet}`);
                   connaitreGeste(onglet as PageAGeste);
+                  // CHEZ QUELQU'UN, « Faire visiter ma maison » ramène d'abord chez moi.
+                  if (onglet === "profil" && maisonLue) {
+                    setMaisonLue(null);
+                    return;
+                  }
                   setDemandeGeste((n) => n + 1);
                   return;
                 }
