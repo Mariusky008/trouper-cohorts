@@ -169,6 +169,8 @@ import { useVilleReelle } from "@/components/direct/ville-reelle-contexte";
    refasse. Seule la ligne qui la montait est remplacée. */
 import { EcranSalon } from "@/components/direct/ecran-salon";
 import { Ensemble } from "./ensemble";
+import { aToiDeJouer, nosDiscussions } from "@/lib/direct/ensemble";
+import { MaMaison } from "./ma-maison";
 import { StyleMaison } from "@/components/direct/style-maison";
 import { StylesChoix } from "@/components/direct/styles-choix";
 // LE PARCOURS MODE — la « partie 2 », pour une categorie sur cinq.
@@ -418,7 +420,7 @@ const NOM_ONGLET = {
   direct: "Le direct",
   ville: "La Ville",
   salons: "Ensemble",
-  profil: "Profil",
+  profil: "Ma maison",
 } as const;
 /** À partir de cette descente dans la carte, on considère qu'on LIT — et le
  *  balayage horizontal se désarme pour ne pas emporter la carte qu'on lit. */
@@ -1564,6 +1566,8 @@ export function ApercuHabitant() {
   const [murRevisite, setMurRevisite] = useState<FantomePose | null>(null);
   /** Les lieux où l'on s'est posé. Relus à l'ouverture de « Profil ». */
   const [mesTraces, setMesTraces] = useState<FantomePose[]>([]);
+  /** Ma maison montre ses réglages (l'ancien « Mon espace ») — voir la roue dentée. */
+  const [reglagesMaison, setReglagesMaison] = useState(false);
   /**
    * ON LIT LA MÉMOIRE APRÈS LE PREMIER RENDU, ET PAS PENDANT.
    *
@@ -5633,6 +5637,14 @@ export function ApercuHabitant() {
   const mesSalonsAmis = salonsOuverts.filter((x) => !estUneSortie(x));
   /** Ce qui n'est pas une conversation : les essais et les traces (bientôt dans Ma maison). */
   const mesEssaisTraces = mesAnnonces.filter((a) => !a.salon);
+  /** Le badge d'Ensemble : actions attendues + conversations avec du neuf. */
+  const aFaireEnsemble = (() => {
+    const attentes = aToiDeJouer(salons, cestMoi, lus, monPrenom() || "Vous");
+    const neuves = nosDiscussions(salons, cestMoi, lus).actives.filter(
+      (d) => d.nonLus > 0 && !attentes.some((a) => a.cle === d.cle),
+    );
+    return attentes.length + neuves.length;
+  })();
 
   /* ═══ CE QUE LE FANTÔME VOIT DU GROUPE ═══
 
@@ -11386,11 +11398,67 @@ export function ApercuHabitant() {
               L'ancienne feuille « Mon espace », montée d'un étage. Elle ne
               porte plus « Mes sorties » : les salons ont leur onglet, et deux
               endroits pour la même chose est un défaut, pas un raccourci. */}
-          {onglet === "profil" && (
+          {/* ═══ MA MAISON — l'onglet qui remplace « Profil » ═══════════════
+              Voir `ma-maison.tsx`. L'ancien « Mon espace » (sans compte,
+              installer l'application, mes commerces, mes traces) n'est pas
+              perdu : la roue dentée l'ouvre, ce sont les réglages. */}
+          {onglet === "profil" && !reglagesMaison && (
+            <div className="ap-page ap-onglet-vue">
+              <MaMaison
+                prenom={prenom}
+                adoptes={mesSuivis}
+                pieces={piecesGardees}
+                traces={mesTraces}
+                publications={ville.filter((m) => m.qui === "Vous")}
+                onPage={(c) => {
+                  window.location.href = `/autour-de-moi/boutique?c=${encodeURIComponent(c.id)}`;
+                }}
+                onVoirPiece={(p) => setPieceVue(p)}
+                onVoirTrace={(t) => {
+                  setMurRevisite(t);
+                  allerA_onglet("direct");
+                }}
+                onPartager={(e) => {
+                  /* PARTAGER UN ESSAI AVEC SES AMIS, C'EST OUVRIR UNE
+                     CONVERSATION SUR LUI — privée, où l'on invite par lien.
+                     Elle se retrouve dans Ensemble. Rien n'est publié dans la
+                     ville sans qu'on le demande. */
+                  const cle = `essai|${(e.carte ?? "moi")}|${e.titre}`.slice(0, 120);
+                  ouvrirSalon({
+                    cle,
+                    sujet: `Mon essai : ${e.titre}`,
+                    ou: e.lieu,
+                    parQui: "Vous",
+                    quand: "Aujourd'hui",
+                    prive: true,
+                    photo: e.photo,
+                    annonce: e.titre,
+                  });
+                  ecrireDansSalon(cle, {
+                    qui: monPrenom() || "Vous",
+                    voix: "moi",
+                    texte: "Je l'ai essayé sur moi, vous en pensez quoi ?",
+                    quand: heureCourte(),
+                    photo: e.photo,
+                  });
+                  setSalonOuvert(cle);
+                  setSalonPage(true);
+                }}
+                onDecouvrir={() => allerA_onglet("direct")}
+                onReglages={() => setReglagesMaison(true)}
+                onNePlusSuivre={(id) => basculerSuivi(id)}
+              />
+              {laPieceVue}
+            </div>
+          )}
+          {onglet === "profil" && reglagesMaison && (
             <div className="ap-page ap-onglet-vue">
               <div className="ap-page-h">
+                <button type="button" className="ap-maison-retour" onClick={() => setReglagesMaison(false)}>
+                  ← Ma maison
+                </button>
                 <span className="ap-page-t">
-                  <b>Mon espace</b>
+                  <b>Réglages</b>
                   <em>Ce que vous avez gardé, réservé et demandé.</em>
                 </span>
               </div>
@@ -13421,17 +13489,18 @@ export function ApercuHabitant() {
                   qu'on peut rejoindre. Ne compter que les siens le faisait
                   disparaitre a la premiere visite, au moment precis ou il y a
                   cinq salons ouverts a decouvrir. */}
-              {!reelle && salonsOuverts.length + salonsADecouvrir.length > 0 && (
-                <b>{salonsOuverts.length + salonsADecouvrir.length}</b>
-              )}
+              {/* CE QUI M'ATTEND VRAIMENT : les actions de « À toi de jouer » et
+                  les conversations qui ont du neuf — plus le compte des salons
+                  ouverts, qui ne disait rien de ce qu'il y avait à faire. */}
+              {!reelle && aFaireEnsemble > 0 && <b>{aFaireEnsemble}</b>}
             </button>
             <button
               type="button"
               className={onglet === "profil" ? "on" : ""}
               onClick={() => allerA_onglet("profil")}
             >
-              <i aria-hidden="true">🙂</i>
-              Profil
+              <i aria-hidden="true">🏠</i>
+              {NOM_ONGLET.profil}
               {/* ═══ LA CLOCHE A DÉMÉNAGÉ ICI ═══
 
                   « Peut-être que ça peut être à la place de la cloche, et la
@@ -19203,6 +19272,7 @@ export function ApercuHabitant() {
            leur alignement. Deuxieme collision de la semaine : une seule verite
            par sujet vaut aussi pour les noms de classe. */
         .ap-liste{flex:none;margin-bottom:16px;}
+        .ap-maison-retour{flex:none;border:0;background:none;color:#F5A23A;font:inherit;font-size:14px;font-weight:700;cursor:pointer;padding:6px 2px;}
         .ap-ens-plus{margin-top:8px;padding-top:16px;border-top:1px solid rgba(255,214,170,.12);}
         .ap-vote-ph{position:relative;width:46px;height:58px;object-fit:cover;border-radius:10px;margin-right:10px;flex:none;}
         .ap-liste h4{display:flex;align-items:center;gap:7px;font-size:11px;
