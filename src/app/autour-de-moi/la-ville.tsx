@@ -738,7 +738,8 @@ function StylesLaVille() {
     <style
       dangerouslySetInnerHTML={{
         __html: `
-.lv{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:4px 2px calc(28px + env(safe-area-inset-bottom,0px));
+.lv::-webkit-scrollbar{display:none;}
+.lv{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;overscroll-behavior:contain;padding:4px 2px calc(28px + env(safe-area-inset-bottom,0px));
   color:#FFF4E6;font-family:var(--font-clikme),system-ui,sans-serif;}
 .lv-tete{margin:2px 4px 14px;}
 .lv-tete h1{margin:0;font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.05;}

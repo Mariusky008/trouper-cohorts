@@ -238,7 +238,8 @@ function StylesEnsemble() {
     <style
       dangerouslySetInnerHTML={{
         __html: `
-.en{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:4px 2px calc(28px + env(safe-area-inset-bottom,0px));
+.en::-webkit-scrollbar{display:none;}
+.en{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;overscroll-behavior:contain;padding:4px 2px calc(28px + env(safe-area-inset-bottom,0px));
   color:#FFF4E6;font-family:var(--font-clikme),system-ui,sans-serif;}
 .en-tete{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:2px 4px 18px;}
 .en-tete h1{margin:0;font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.05;}
