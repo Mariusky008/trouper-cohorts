@@ -145,6 +145,7 @@ import {
   NATURES,
   salonDepuisVille,
   sansLesExemples,
+  amisPartages,
   VILLE_VIDE,
   type MessageVille,
   type NatureVille,
@@ -163,6 +164,7 @@ import { EcranChoix } from "@/components/direct/ecran-choix";
 import { useVilleReelle } from "@/components/direct/ville-reelle-contexte";
 import { pageDuCommerce } from "@/lib/direct/source-ville";
 import { lienConnu, lienDInvitation } from "@/lib/direct/conversations-sync";
+import { signalerPublication } from "@/lib/direct/ville-sync";
 /* ═══ L'OUVERTURE EN TROIS ACTES EST MISE DE CÔTÉ, PAS EFFACÉE ═════════════
    « L'animation de départ ne fonctionne pas assez bien, garde-la de côté, on
    essaiera de faire mieux plus tard. »
@@ -11150,7 +11152,9 @@ export function ApercuHabitant() {
             <div className="ap-page ap-onglet-vue">
               <LaVille
                 messages={ville}
-                amis={mesAmis}
+                // ET LES AMIS QUE LE SERVEUR CONNAÎT, dans la vraie ville : ceux
+                // d'une conversation partagée — voir `amis.ts`.
+                amis={reelle ? [...new Set([...mesAmis, ...amisPartages()])] : mesAmis}
                 sorties={salonsADecouvrir}
                 suites={suitesDesEssais}
                 essais={piecesGardees}
@@ -11170,6 +11174,15 @@ export function ApercuHabitant() {
                   setSalonPage(true);
                 }}
                 demandePartage={demandeGeste}
+                onSignaler={
+                  reelle
+                    ? (m) => {
+                        void signalerPublication(m.id, reelle.nom);
+                        setEchoIcone("🛡️");
+                        setEcho("Merci. Elle a quitté ton fil, et ClikMe va la vérifier.");
+                      }
+                    : undefined
+                }
                 onMessageVille={() => {
                   noter("champ-touche", 0, "ville");
                   setMotVille("");
@@ -11457,8 +11470,9 @@ export function ApercuHabitant() {
                     className="ap-pdem-b"
                     disabled={motVille.trim().length < 3}
                     onClick={() => {
-                      // LA LONGUEUR, JAMAIS LE TEXTE. Ce qui est écrit ici ne
-                      // quitte pas le téléphone, comme partout ailleurs.
+                      // LA LONGUEUR, JAMAIS LE TEXTE, dans la mesure des parcours.
+                      // Le message, lui, ne quitte le téléphone que dans la
+                      // vraie ville, où il part au fil partagé (`ville-sync.ts`).
                       noter("demande-envoyee", motVille.trim().length, "ville");
                       direQuelqueChose(motVille, natureVille);
                       setComposeVille(false);

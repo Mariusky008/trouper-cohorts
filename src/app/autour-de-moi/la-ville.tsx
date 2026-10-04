@@ -59,6 +59,7 @@ export function LaVille({
   onSortie,
   onOuvrirSalon,
   onMessageVille,
+  onSignaler,
   demandePartage = 0,
 }: {
   messages: MessageVille[];
@@ -83,6 +84,11 @@ export function LaVille({
   onMessageVille: () => void;
   /** Change à chaque appui sur le fantôme de la barre : « Qu'as-tu envie de partager ? ». */
   demandePartage?: number;
+  /**
+   * « SIGNALER » — dans la vraie ville seulement, où les publications des
+   * autres habitants sont réelles et publiques. Voir `ville-sync.ts`.
+   */
+  onSignaler?: (m: MessageVille) => void;
 }) {
   const vus = useSyncExternalStore(abonnerVus, chargerVus, () => AUCUN_VU);
   const aDesAmis = amis.length > 0;
@@ -243,6 +249,7 @@ export function LaVille({
               setSuiteDe(e.m!);
               setCompose(e.m!.genre === "essai" ? "essai" : "decouverte");
             }}
+            onSignaler={onSignaler}
           />
         ),
       )}
@@ -319,6 +326,7 @@ function CartePublication({
   onDiscuter,
   onSortie,
   onSuite,
+  onSignaler,
 }: {
   m: MessageVille;
   ami: boolean;
@@ -333,6 +341,7 @@ function CartePublication({
   onDiscuter: (m: MessageVille) => void;
   onSortie: (m: MessageVille) => void;
   onSuite: () => void;
+  onSignaler?: (m: MessageVille) => void;
 }) {
   const t = typeDe(m);
   const moi = m.qui === "Vous";
@@ -443,6 +452,19 @@ function CartePublication({
         )}
         {reste && <span className="lv-reste">s’efface dans {reste}</span>}
         {ami && !moi && <span className="lv-ami">ton ami·e</span>}
+        {/* SIGNALER, ET SEULEMENT CHEZ LES AUTRES : on demande confirmation,
+            puis la publication quitte mon fil et l'administrateur la voit. */}
+        {onSignaler && !moi && (
+          <button
+            type="button"
+            className="lv-rep lv-signaler"
+            onClick={() => {
+              if (window.confirm("Signaler cette publication ? Elle disparaîtra de ton fil, et ClikMe la vérifiera.")) onSignaler(m);
+            }}
+          >
+            Signaler
+          </button>
+        )}
       </footer>
 
       {ouverte && (
@@ -788,6 +810,7 @@ function StylesLaVille() {
 .lv-b.rose{color:#fff;border-color:transparent;background:linear-gradient(135deg,#FF4FB0,#FF2E9A 60%,#E0187F);}
 .lv-pied{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:10px;font-size:13px;color:#CDB9A5;}
 .lv-coeur,.lv-rep{border:0;background:none;color:inherit;font:inherit;font-size:13px;cursor:pointer;padding:2px 0;}
+.lv-signaler{margin-left:auto;opacity:.6;font-size:12px;}
 .lv-coeur.on{color:#FF7DBE;}
 .lv-reste{margin-left:auto;font-size:12px;color:#9C8775;}
 .lv-ami{margin-left:auto;font-size:12px;color:#FFC46B;}

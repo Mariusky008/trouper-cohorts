@@ -15,17 +15,16 @@
 // sur seize caractères : on ne le devine pas.
 import { NextResponse } from "next/server";
 import { createHash, randomBytes } from "crypto";
-import sharp from "sharp";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assurerHabitant, habitantCourant } from "@/lib/direct/habitant";
 import { villeSlug } from "@/lib/direct/ville";
+import { rangerPhoto as rangerPhotoDHabitant } from "@/lib/direct/ranger-photo";
 import type { BaseConversation, Geste, GesteLu } from "@/lib/direct/conversations";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 const s = (v: unknown) => String(v ?? "").trim();
-const SEAU = s(process.env.COUVERTURE_BUCKET) || "marketplace-privilege-offers";
 const ID = /^[a-z0-9]{16}$/;
 /** Au plus tant de gestes par minute et par habitant : un téléphone qui boucle ne remplit pas la base. */
 const PAR_MINUTE = 40;
@@ -33,26 +32,8 @@ const PAR_MINUTE = 40;
 /** L'empreinte d'un habitant dans une conversation — voir `GesteLu.auteur`. */
 const empreinte = (habitant: string, conv: string) => createHash("sha1").update(`${habitant}|${conv}`).digest("hex").slice(0, 10);
 
-/** Une photo de conversation : rangée chez nous (1600 points), jamais gardée en `data:` dans la base. */
-async function rangerPhoto(conv: string, valeur: unknown): Promise<string | undefined> {
-  const v = s(valeur);
-  if (!v) return undefined;
-  if (/^https:\/\//i.test(v) || /^\/[a-z0-9/_.-]+$/i.test(v)) return v.slice(0, 600);
-  const m = /^data:(image\/(?:jpeg|jpg|png|webp|heic|heif));base64,(.+)$/i.exec(v);
-  if (!m) return undefined;
-  const brut = Buffer.from(m[2], "base64");
-  if (brut.length > 8 * 1024 * 1024) return undefined;
-  try {
-    const octets = await sharp(brut).rotate().resize(1600, 1600, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 84 }).toBuffer();
-    const supabase = createAdminClient();
-    const chemin = `conversations/${conv}-${createHash("sha1").update(brut).digest("hex").slice(0, 16)}.jpg`;
-    const { error } = await supabase.storage.from(SEAU).upload(chemin, octets, { contentType: "image/jpeg", upsert: true });
-    if (error) return undefined;
-    return supabase.storage.from(SEAU).getPublicUrl(chemin).data.publicUrl;
-  } catch {
-    return undefined;
-  }
-}
+/** Une photo de conversation : rangée chez nous — voir `ranger-photo.ts`. */
+const rangerPhoto = (conv: string, valeur: unknown) => rangerPhotoDHabitant("conversations", conv, valeur);
 
 /** Un texte borné. */
 const texte = (v: unknown, n: number) => s(v).slice(0, n);

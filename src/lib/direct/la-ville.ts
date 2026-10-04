@@ -447,8 +447,51 @@ export function sansLesExemples(messages: MessageVille[]): MessageVille[] {
   return messages.filter((m) => !exemples.has(m.id));
 }
 
+/**
+ * ═══ LE FIL PARTAGÉ, DANS LA VRAIE VILLE ═══════════════════════════════════
+ *
+ * Sur `/ville/<ville>`, ce qui est publié ici part au serveur et en revient —
+ * voir `ville-sync.ts`, qui se branche ici. Le fil rendu par le serveur
+ * (`fil`) remplace alors les exemples : on y lit les publications des autres
+ * habitants, celles qu'on a le droit de voir. Dans la démonstration, personne
+ * n'est branché et rien ne change.
+ */
+type PartageVille = {
+  publier: (m: MessageVille) => void;
+  geste: (id: string, g: { type: "coeur" } | { type: "interesse" } | { type: "reponse"; texte: string }) => void;
+  retirer: (id: string) => void;
+};
+let partage: PartageVille | null = null;
+let fil: MessageVille[] | null = null;
+let amisDuFil: string[] = [];
+export function brancherLePartageVille(p: PartageVille | null): void {
+  partage = p;
+  if (!p) {
+    fil = null;
+    amisDuFil = [];
+    cache = null;
+  }
+}
+/** Le fil tel que le serveur le rend, et les amis qu'il connaît. */
+export function poserLeFil(messages: MessageVille[], amis: string[]): void {
+  fil = messages;
+  amisDuFil = amis;
+  cache = etat ? composer(etat) : null;
+  abonnes.forEach((f) => f());
+}
+/** Les prénoms des amis selon le serveur — vide hors de la vraie ville. */
+export function amisPartages(): string[] {
+  return amisDuFil;
+}
+
 /** Recolle les exemples frais et ce que le visiteur en a fait. */
 function composer(e: Etat): MessageVille[] {
+  // LA VRAIE VILLE : ce que rend le serveur, plus ce que je viens d'écrire et
+  // qu'il n'a pas encore confirmé. Aucun exemple.
+  if (fil) {
+    const dejaLa = new Set(fil.map((m) => m.id));
+    return [...e.miennes.filter((m) => !dejaLa.has(m.id) && resteMinutes(m) > 0), ...fil];
+  }
   const semes = messagesSemes().map((m) => {
     const r = e.retouches[m.id];
     if (!r) return m;
@@ -495,6 +538,14 @@ function garder(e: Etat) {
 /** Retouche un exemple, ou modifie un message du visiteur : même appel. */
 function retoucher(id: string, f: (r: Retouche) => Retouche, g: (m: MessageVille) => MessageVille) {
   const e = lire();
+  // UNE PUBLICATION DU FIL PARTAGÉ : l'écran répond tout de suite, le serveur
+  // confirme au prochain relevé.
+  if (fil?.some((m) => m.id === id)) {
+    fil = fil.map((m) => (m.id === id ? g(m) : m));
+    cache = composer(e);
+    abonnes.forEach((x) => x());
+    return;
+  }
   if (e.miennes.some((m) => m.id === id)) {
     garder({ ...e, miennes: e.miennes.map((m) => (m.id === id ? g(m) : m)) });
     return;
@@ -539,8 +590,11 @@ export function direQuelqueChose(texte: string, nature: NatureVille, photo?: str
     reponses: [],
     photo,
     interesses: nature === "cherche" ? [] : undefined,
+    // LA VIE LOCALE EST PUBLIQUE — c'est ce qu'elle a toujours été.
+    visibilite: "public",
   };
   garder({ ...e, miennes: [neuf, ...e.miennes] });
+  partage?.publier(neuf);
   return neuf;
 }
 
@@ -582,13 +636,16 @@ export function publierDansLaVille(o: {
     photo: o.photo,
   };
   garder({ ...e, miennes: [neuf, ...e.miennes] });
+  partage?.publier(neuf);
   return neuf;
 }
 
 /** Retirer sa publication — l'auteur seul, et elle disparaît vraiment. */
 export function retirerDeLaVille(id: string) {
   const e = lire();
+  if (fil) fil = fil.filter((m) => m.id !== id);
   garder({ ...e, miennes: e.miennes.filter((m) => m.id !== id) });
+  partage?.retirer(id);
 }
 
 /* ═══ LA SUITE DE VOS ÉCHANGES ══════════════════════════════════════════════
@@ -631,6 +688,7 @@ export function reagirVille(id: string) {
     (r) => ({ ...r, monCoeur: !r.monCoeur }),
     (m) => ({ ...m, coeurs: m.coeurs + (m.monCoeur ? -1 : 1), monCoeur: !m.monCoeur }),
   );
+  partage?.geste(id, { type: "coeur" });
 }
 
 export function repondreVille(id: string, texte: string) {
@@ -645,6 +703,7 @@ export function repondreVille(id: string, texte: string) {
     (x) => ({ ...x, reponses: [...(x.reponses ?? []), r] }),
     (m) => ({ ...m, reponses: [...m.reponses, r] }),
   );
+  partage?.geste(id, { type: "reponse", texte: r.texte });
 }
 
 /** Sur un « cherche » : dire que ça vous intéresse. */
@@ -659,6 +718,7 @@ export function caMInteresse(id: string) {
     (r) => ({ ...r, interesses: bascule(r.interesses ?? depart(id)) }),
     (m) => ({ ...m, interesses: bascule(m.interesses ?? []) }),
   );
+  partage?.geste(id, { type: "interesse" });
 }
 
 /** Marque le salon ouvert depuis un message, pour ne pas en ouvrir deux. */
