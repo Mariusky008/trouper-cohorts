@@ -15,9 +15,9 @@
  * Il n'y a pas encore de compte commerçant, donc personne ne compte ses vues.
  * Les chiffres d'ici sont calculés — toujours les mêmes pour un même jour,
  * plus hauts les jours où il a publié — et chaque bloc porte la mention
- * « démonstration ». Le jour où le compte existe, ils viendront du compteur de
- * sa page (`site_views`, les écoutes, les demandes) par cette même forme,
- * `JourStats`, et la mention disparaît.
+ * « démonstration ». Chez un vrai commerçant (son lien pro), ils viennent des
+ * compteurs de sa page, jour par jour, dans cette même forme `JourStats` — voir
+ * `lib/site-internet/compteurs-jour.ts` — et la mention disparaît.
  *
  * FICHIER PARTAGÉ : aucune dépendance au DOM.
  */
@@ -155,7 +155,9 @@ const JOURS_LONGS = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendred
 /** La phrase du fantôme en arrivant : ce que sa dernière annonce a fait. */
 export function phraseDeLaVeille(semaine: JourStats[], quoi: string): string | null {
   const dernier = [...semaine].reverse().find((j) => !j.aujourdhui && j.publie);
-  if (!dernier) return null;
+  // ZÉRO N'EST PAS UNE NOUVELLE À ANNONCER EN ARRIVANT — chez un vrai
+  // commerçant, une journée sans visite comptée arrive.
+  if (!dernier || dernier.vues <= 0) return null;
   const hier = semaine[semaine.length - 2]?.jour === dernier.jour;
   const [a, m, d] = dernier.jour.split("-").map(Number);
   const quand = hier ? "Hier" : `${JOURS_LONGS[new Date(a, m - 1, d).getDay()]} dernier`;

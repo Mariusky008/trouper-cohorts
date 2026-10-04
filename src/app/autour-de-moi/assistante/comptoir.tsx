@@ -392,6 +392,40 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
   const s = serie(etat, maintenant);
   const semaine = useMemo(() => semaineDuComptoir(etat, commerce.famille, maintenant), [etat, commerce.famille, maintenant]);
   const [stats, setStats] = useState(false);
+  /**
+   * ═══ SES VRAIS CHIFFRES, QUAND IL EST UN VRAI COMMERÇANT ════════════════
+   *
+   * « Je ne vois aucune stat de ma journée ou des précédentes pour me motiver
+   * à chaque jour poster quelque chose. » Sa page les compte maintenant, jour
+   * par jour — visites, écoutes de sa voix, demandes, partages : voir
+   * `compteurs-jour.ts`. On les relit en arrivant, en ouvrant le panneau et
+   * après chaque publication. Tant qu'ils ne sont pas mesurés (la migration
+   * des compteurs n'est pas appliquée), `null` : le panneau garde sa phrase
+   * honnête, et rien de simulé n'apparaît jamais chez lui.
+   */
+  const [vrais, setVrais] = useState<JourStats[] | null>(null);
+  const reel = commerce.reel;
+  useEffect(() => {
+    if (!reel) return;
+    let fini = false;
+    fetch("/api/site-internet/pro/stats", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ slug: reel.slug, token: reel.token }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { mesure?: boolean; jours?: JourStats[] } | null) => {
+        if (!fini) setVrais(j?.mesure && Array.isArray(j.jours) && j.jours.length === 7 ? j.jours : null);
+      })
+      .catch(() => {
+        /* hors ligne → on garde ce qu'on avait */
+      });
+    return () => {
+      fini = true;
+    };
+  }, [reel, stats, maintenant]);
+  /** Les chiffres qu'on montre : simulés en démonstration, les vrais sinon — ou aucun. */
+  const chiffres = reel ? vrais : semaine;
 
   return (
     <div className="cz-ecran">
@@ -413,12 +447,12 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           <button type="button" className={`cz-puce${s ? " allume" : ""}`} onClick={() => setStats(true)} aria-label={`${s} jours d’affilée — voir mes stats`}>
             🔥 {s}
           </button>
-          {!commerce.reel && (
+          {chiffres && (
             <button type="button" className="cz-puce stats" onClick={() => setStats(true)} aria-label="Voir mes stats">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M4 19V11M10 19V5M16 19v-6M22 19H2" />
               </svg>
-              {semaine[semaine.length - 1].vues}
+              {chiffres[chiffres.length - 1].vues}
             </button>
           )}
           <button type="button" className="cz-puce or" onClick={() => setStats(true)} aria-label={`${etat.points} points — voir mes stats`}>
@@ -435,7 +469,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
       </header>
 
       {stats && (
-        <PanneauStats famille={commerce.famille} semaine={semaine} etat={etat} serie={s} reel={Boolean(commerce.reel)} onFermer={() => setStats(false)} />
+        <PanneauStats famille={commerce.famille} semaine={chiffres} etat={etat} serie={s} reel={Boolean(commerce.reel)} onFermer={() => setStats(false)} />
       )}
 
       {phase.ou === "accueil" && (
@@ -445,7 +479,7 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           dossier={dossier}
           enLigne={enLigneMaintenant}
           principal={principal}
-          semaine={semaine}
+          semaine={chiffres}
           onStats={() => setStats(true)}
           onCommencer={commencer}
           onRetirer={enlever}
@@ -563,7 +597,8 @@ function Accueil({
   dossier: string;
   enLigne: Publication[];
   principal?: Publication;
-  semaine: JourStats[];
+  /** `null` : un vrai commerçant dont la page ne compte pas encore. */
+  semaine: JourStats[] | null;
   onStats: () => void;
   onCommencer: (relance?: boolean) => void;
   onRetirer: (id: string) => void;
@@ -571,14 +606,15 @@ function Accueil({
   const relance = mission.relance;
   const relanceFaite = actives.some((p) => p.genre === "relance");
   const h = heureDecimale();
-  const auj = semaine[semaine.length - 1];
+  const auj = semaine?.[semaine.length - 1];
   // UN VRAI COMMERÇANT N'A PAS DE CHIFFRES INVENTÉS : tant que sa page ne les
-  // compte pas, le fantôme ne lui parle pas de « personnes qui ont vu ».
-  const veille = commerce.reel ? null : phraseDeLaVeille(semaine, mission.quoi);
+  // compte pas, le fantôme ne lui parle pas de « personnes qui ont vu ». Dès
+  // qu'elle les compte, il lui parle des vrais.
+  const veille = semaine ? phraseDeLaVeille(semaine, mission.quoi) : null;
   const texte = principal
     ? relance && !relanceFaite && h >= relance.apres
       ? `Re-bonjour${aQui(commerce)} ! Le service est passé : il t’en reste ?`
-      : commerce.reel
+      : !auj || auj.vues === 0
         ? `Tout roule${aQui(commerce, ",")} ! ${mission.quoi} est en ligne sur ta page.`
         : `Tout roule${aQui(commerce, ",")} ! Déjà ${auj.vues} ${accord(auj.vues, "personne a", "personnes ont")} vu ta page aujourd’hui.`
     : veille
@@ -628,7 +664,7 @@ function Accueil({
         )}
 
         {/* UN SEUL CHIFFRE ICI, ET IL MÈNE AUX AUTRES : celui d'aujourd'hui. */}
-        {!commerce.reel && <button type="button" className="cz-apercu-stats" onClick={onStats}>
+        {auj && <button type="button" className="cz-apercu-stats" onClick={onStats}>
           <span>
             <b>{auj.vues}</b> {auj.vues > 1 ? "visites" : "visite"} aujourd’hui
             {auj.publie ? <i className="cz-direct">en direct</i> : null}
@@ -652,10 +688,11 @@ function PanneauStats({
   onFermer,
 }: {
   famille: FamilleDouble;
-  semaine: JourStats[];
+  /** `null` : un vrai commerçant dont la page ne compte pas encore. */
+  semaine: JourStats[] | null;
   etat: EtatComptoir;
   serie: number;
-  /** Un vrai commerçant : pas de chiffres simulés, on le lui dit. */
+  /** Un vrai commerçant : ses vrais chiffres, jamais de simulés. */
   reel: boolean;
   onFermer: () => void;
 }) {
@@ -676,7 +713,7 @@ function PanneauStats({
           </button>
         </header>
         <div className="cz-feuille-c">
-          {reel ? (
+          {!semaine ? (
             <section className="cz-bloc cz-stats">
               <h2>Tes chiffres</h2>
               <p className="cz-pousse">
@@ -686,8 +723,8 @@ function PanneauStats({
             </section>
           ) : (
             <>
-              <Journee auj={semaine[semaine.length - 1]} famille={famille} semaine={semaine} />
-              <Semaine semaine={semaine} famille={famille} />
+              <Journee auj={semaine[semaine.length - 1]} famille={famille} semaine={semaine} demo={!reel} />
+              <Semaine semaine={semaine} famille={famille} demo={!reel} />
             </>
           )}
           <section className="cz-bloc cz-progres">
@@ -719,19 +756,19 @@ function PanneauStats({
   );
 }
 
-/** La mention, sur chaque bloc de chiffres, tant qu'aucun compteur ne les mesure. */
+/** La mention, sur chaque bloc de chiffres simulés — jamais chez un vrai commerçant. */
 const DEMO = <i className="cz-demo">démonstration</i>;
 
 /**
  * TA JOURNÉE — trois chiffres, en direct. Sans annonce, il voit ce que donne
  * une journée muette, et à côté ce que donne une journée où il a parlé.
  */
-function Journee({ auj, famille, semaine }: { auj: JourStats; famille: FamilleDouble; semaine: JourStats[] }) {
+function Journee({ auj, famille, semaine, demo }: { auj: JourStats; famille: FamilleDouble; semaine: JourStats[]; demo: boolean }) {
   const effet = effetDesAnnonces(semaine);
   return (
     <section className="cz-bloc cz-stats">
       <h2>
-        Ta journée {auj.publie && <span className="cz-direct">en direct</span>} {DEMO}
+        Ta journée {auj.publie && <span className="cz-direct">en direct</span>} {demo && DEMO}
       </h2>
       <div className="cz-chiffres">
         <Chiffre icone="👀" n={auj.vues} mot={accord(auj.vues, "a vu ta page", "ont vu ta page")} />
@@ -748,7 +785,9 @@ function Journee({ auj, famille, semaine }: { auj: JourStats; famille: FamilleDo
           <b>
             {auj.partages} {accord(auj.partages, "personne", "personnes")}
           </b>{" "}
-          {accord(auj.partages, "a parlé de toi à ses amis", "ont parlé de toi à leurs amis")} dans un salon.
+          {demo
+            ? `${accord(auj.partages, "a parlé de toi à ses amis", "ont parlé de toi à leurs amis")} dans un salon.`
+            : `${accord(auj.partages, "a partagé ta page", "ont partagé ta page")} aujourd’hui.`}
         </p>
       )}
     </section>
@@ -780,7 +819,7 @@ function Chiffre({ icone, n, mot }: { icone: string; n: number; mot: string }) {
  * TA SEMAINE — sept barres. Roses les jours où il a publié, grises les autres :
  * la différence se voit avant de se lire. On touche une barre pour son détail.
  */
-function Semaine({ semaine, famille }: { semaine: JourStats[]; famille: FamilleDouble }) {
+function Semaine({ semaine, famille, demo }: { semaine: JourStats[]; famille: FamilleDouble; demo: boolean }) {
   const [choisi, setChoisi] = useState(semaine.length - 1);
   const max = Math.max(1, ...semaine.map((j) => j.vues));
   const total = semaine.reduce((s, j) => s + j.vues, 0);
@@ -790,7 +829,7 @@ function Semaine({ semaine, famille }: { semaine: JourStats[]; famille: FamilleD
   return (
     <section className="cz-bloc cz-stats">
       <h2>
-        Ta semaine {DEMO}
+        Ta semaine {demo && DEMO}
       </h2>
       <div className="cz-resume">
         <span>

@@ -26,6 +26,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { MotMarque } from "@/components/direct/mot-marque";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { onSpeakingChange, speak, stopSpeaking } from "@/lib/site-internet/speech";
+import { compter } from "@/lib/direct/compter";
 
 type Proposition = { nom: string; photo: string; prix?: string };
 
@@ -326,10 +327,18 @@ export function ExperienceTable({
      cloche, elle, LANCE — vu au navigateur : l'accueil de son double parlait
      encore quand on la soulevait, le lecteur se croyait en train de jouer, et
      le premier geste coupait au lieu de faire entendre le chef. */
+  /** Son écoute est-elle déjà comptée ? Voir `ecouter`. */
+  const ecouteComptee = useRef(false);
   const ecouter = async (lancer = false) => {
     if (joue && !lancer) return arreter();
     if (lancer) arreter();
     setAvance(0);
+    // UNE ÉCOUTE PAR VISITE, pour les chiffres de son comptoir — rejouer le mot
+    // trois fois ne fait pas trois personnes. Voir `compteurs-jour.ts`.
+    if (!ecouteComptee.current) {
+      ecouteComptee.current = true;
+      compter(c.id, "ecoutes");
+    }
     if (voix?.extrait && (await jouerFichier(voix.extrait))) return;
     // SON ENREGISTREMENT ILLISIBLE ICI : la même phrase, de sa voix clonée.
     if (voix?.repli && (await jouerFichier(voix.repli))) return;

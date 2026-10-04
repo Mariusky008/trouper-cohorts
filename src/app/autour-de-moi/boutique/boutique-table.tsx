@@ -90,6 +90,7 @@ import {
 } from "@/lib/direct/salons";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { StylesBoutiqueTable } from "./styles-boutique-table";
+import { compter } from "@/lib/direct/compter";
 import { EssaiDuLieu } from "./essai-du-lieu";
 import { ExperienceTable, estUnRestaurant } from "./experience-table";
 
@@ -1119,10 +1120,15 @@ export function BoutiqueTable({
     });
     if (r === "copie") setPartageDit("Lien copié : collez-le dans votre groupe.");
     else if (r === "echec") setPartageDit("Le partage n’a pas abouti.");
+    // UN PARTAGE compte dans les chiffres de son comptoir. La feuille de
+    // partage refermée sans choix compte aussi : `partager` ne les distingue
+    // pas, et c'est le seul écart connu de ce chiffre.
+    if (r !== "echec") compter(c.id, "partages");
   };
   const partagerLeLieu = async () => {
     const r = await partager({ titre: c.nom, texte: `Regarde : ${c.nom}`, lien: lienPage() });
     if (r === "copie") setPartageDit("Lien copié.");
+    if (r !== "echec") compter(c.id, "partages");
   };
   const viennent = salon?.viennent ?? [];
   const presents = (salon?.presents ?? []).filter((p) => !viennent.includes(p));

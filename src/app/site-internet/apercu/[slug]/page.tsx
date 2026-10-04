@@ -51,6 +51,7 @@ import { couvertureDuDiagnostic, hoteACherche, photosCandidates, sansHoteAFaire 
 import { experienceDuDiagnostic, sceneAFaire } from "@/lib/site-internet/experience-donnees";
 import { etatDeLaFiche, raisonLisible } from "@/lib/site-internet/fiche-google";
 import { COLONNES_FICHE, construireFiche } from "@/lib/site-internet/fiche-du-site";
+import { compterLeJour } from "@/lib/site-internet/compteurs-jour";
 import { carteDeDemo, estAdresseDeDemo, listeDesDemos } from "@/lib/site-internet/fiches-demo";
 import { copieDePresentation, fusionnerCopie, type CopiePresentation } from "@/lib/direct/copies-presentation";
 import { nomCourt, nomDeLaPage } from "@/lib/site-internet/nom-de-la-page";
@@ -261,10 +262,10 @@ export default async function ApercuMaquette({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ via?: string; pub?: string; salon?: string }>;
+  searchParams: Promise<{ via?: string; pub?: string; salon?: string; moi?: string }>;
 }) {
   const { slug } = await params;
-  const { via, pub, salon } = await searchParams;
+  const { via, pub, salon, moi } = await searchParams;
   /**
    * ═══ QUI ARRIVE PAR UNE CONVERSATION EST UN CLIENT, JAMAIS LE PROSPECT ═══
    *
@@ -423,6 +424,13 @@ export default async function ApercuMaquette({
       proServicesRaw = ex.services;
     }
     await supabase.from("human_vitrine_sites").update({ site_views: siteViews + 1 }).eq("id", str(row.id));
+    // ET LA VISITE DU JOUR, pour les chiffres de son comptoir — sauf la sienne,
+    // quand il vient voir sa page depuis son comptoir (`?moi=1`). Voir
+    // `compteurs-jour.ts`. Après la page : elle n'a pas à l'attendre.
+    if (str(moi) !== "1") {
+      const idSite = str(row.id);
+      after(() => compterLeJour(idSite, "vues"));
+    }
   } catch {
     /* colonnes non migrées → best-effort, la page reste complète */
   }

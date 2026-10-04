@@ -44,6 +44,7 @@ import {
 import { nomDansPhrase, tenueDu } from "@/lib/direct/double-metiers";
 import { onSpeakingChange, speak, speechSupported, stopSpeaking, unlockAudio } from "@/lib/site-internet/speech";
 import { StyleMaison } from "@/components/direct/style-maison";
+import { compter } from "@/lib/direct/compter";
 
 /* LES TENUES DE CHAQUE MÉTIER sont rangées dans `double-metiers.ts` — voir
    `tenueDu`. L'application et la page commerçant les lisent aussi. */
@@ -523,6 +524,8 @@ export function DoubleChef({
   const confirmer = () => {
     const jour = joursListe.find((j) => j.cle === resa.jour)?.mot.toLowerCase() ?? "aujourd’hui";
     setResaFaite(true);
+    // UNE DEMANDE CONFIRMÉE, pour les chiffres de son comptoir — voir `compteurs-jour.ts`.
+    compter(carte.id, "demandes");
     ajouter({ de: "client", texte: p.demande.phrase(jour, resa.heure, resa.personnes) });
     const texte = confirmationDuDouble(fiche);
     const voix: DemandeVoix = { quoi: "confirmation" };

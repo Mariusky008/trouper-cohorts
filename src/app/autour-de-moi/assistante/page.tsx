@@ -106,7 +106,8 @@ async function commerceReel(slug: string, token: string): Promise<CommerceCompto
       distance: c.distance,
       metres: c.metres,
       // CE QU'IL PUBLIE ARRIVE SUR SA PAGE : c'est là qu'il va le vérifier.
-      ville: `/site-internet/apercu/${slug}`,
+      // `?moi=1` : sa propre visite ne compte pas dans ses chiffres.
+      ville: `/site-internet/apercu/${slug}?moi=1`,
       reel: { slug, token },
       reglages: `/site-internet/pro/${slug}?k=${encodeURIComponent(token)}`,
     };
