@@ -47,6 +47,7 @@ import {
 } from "@/lib/direct/la-ville";
 import {
   cadrageDe,
+  mentionDuCommerce,
   estUnLieuDeSortie,
   etiquetteDuMenu,
   jourDe,
@@ -380,7 +381,7 @@ export function LaVille({
               : filtre === "amis"
                 ? amis.length
                   ? "Tes amis n’ont encore rien partagé. Partage le premier : touche le fantôme."
-                  : "Tu n’as pas encore d’amis ici. Invite-les depuis Ma maison, ou partage le premier."
+                  : "Tes amis, ici, sont les personnes présentes dans tes salons d’Ensemble. Invite quelqu’un dans un salon : vous verrez alors vos publications « Amis »."
                 : "Rien pour l’instant autour de toi. Sois le premier à dire ce qui se passe : touche le fantôme."}
           </p>
         )}
@@ -422,6 +423,7 @@ export function LaVille({
           setEtape={setCompose}
           essais={essais}
           commerces={commerces}
+          amis={amis}
           suiteDe={suiteDe}
           onPremierEssai={() => {
             setCompose(null);
@@ -555,10 +557,11 @@ function motDuCommerce(branche?: CarteAutour["branche"]): string {
 function Contenu({ m, cadre, branche }: { m: MessageVille; cadre?: boolean; branche?: CarteAutour["branche"] }) {
   const miniature = m.commerce?.photo;
   const cadrage = m.scene?.rendu === "vitrine" ? m.scene.affiche.cadrage : cadrageDe(branche);
+  const mention = mentionDuCommerce(branche, m.genre === "essai");
   if (m.photo && m.scene) {
-    return <SceneDuFil scene={m.scene} photo={m.photo} repli={{ commerce: m.commerce?.nom, miniature, essai: m.genre === "essai", cadrage }} />;
+    return <SceneDuFil scene={m.scene} photo={m.photo} repli={{ commerce: m.commerce?.nom, miniature, essai: m.genre === "essai", cadrage, mention }} />;
   }
-  if (m.photo && m.genre === "essai") return <CarteSimple photo={m.photo} commerce={m.commerce?.nom} miniature={miniature} essai cadrage={cadrage} />;
+  if (m.photo && m.genre === "essai") return <CarteSimple photo={m.photo} commerce={m.commerce?.nom} miniature={miniature} essai cadrage={cadrage} mention={mention} />;
   if (m.photo) {
     const plat = m.contenu?.type === "plat";
     return (
@@ -742,72 +745,77 @@ function CartePublication({
             le commerce se coupaient. Le nom du commerce peut maintenant
             passer à la ligne plutôt que de perdre la fin. */}
         <div className="lv-h-t">
-          <p className="lv-nom">
-            <b>{moi ? "Toi" : m.qui}</b>
-          </p>
+          {/* LA PREMIÈRE LIGNE PORTE LE NOM, L'HEURE ET LE MENU ; les deux
+              suivantes ont toute la largeur. « Une découverte » ne passe plus
+              sur deux lignes parce qu'une colonne d'heure lui volait la place. */}
+          <div className="lv-l1">
+            <p className="lv-nom">
+              <b>{moi ? "Toi" : m.qui}</b>
+            </p>
+            <span className="lv-quand">{quand(m)}</span>
+            <div className="lv-menu">
+              <button type="button" className="lv-points" aria-label="Plus d’options" aria-expanded={menuOuvert} onClick={() => setMenu(!menuOuvert)}>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="5.5" r="1.7" />
+                  <circle cx="12" cy="12" r="1.7" />
+                  <circle cx="12" cy="18.5" r="1.7" />
+                </svg>
+              </button>
+              {menuOuvert && (
+                <>
+                  <button type="button" className="lv-menu-fond" aria-label="Fermer" onClick={() => setMenu(false)} />
+                  <div className="lv-menu-l" role="menu">
+                    {m.commerce && (
+                      <button type="button" role="menuitem" onClick={() => (setMenu(false), onPage(m.commerce!.id))}>
+                        Voir {m.commerce.nom}
+                      </button>
+                    )}
+                    {!moi && (
+                      <button type="button" role="menuitem" onClick={() => (setMenu(false), onQui(m.qui))}>
+                        Voir sa maison
+                      </button>
+                    )}
+                    {moi && m.genre && (
+                      <button type="button" role="menuitem" onClick={() => (setMenu(false), onSuite())}>
+                        ↪ Publier la suite
+                      </button>
+                    )}
+                    {moi && (
+                      <button type="button" role="menuitem" onClick={() => (setMenu(false), retirerDeLaVille(m.id))}>
+                        Retirer ma publication
+                      </button>
+                    )}
+                    {/* SIGNALER, ET SEULEMENT CHEZ LES AUTRES : on demande
+                        confirmation, puis la publication quitte mon fil et
+                        l'administrateur la voit. */}
+                    {onSignaler && !moi && (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="lv-signaler"
+                        onClick={() => {
+                          setMenu(false);
+                          if (window.confirm("Signaler cette publication ? Elle disparaîtra de ton fil, et ClikMe la vérifiera.")) onSignaler(m);
+                        }}
+                      >
+                        Signaler
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
           <p className="lv-type">
             {typeDe(m, branche)}
             {/* « MES AMIS » SE DIT ; le public est le cas courant du fil. */}
-            {m.visibilite === "amis" && <i> · 👥 Amis</i>}
+            {m.visibilite === "amis" && <i>{"\u00a0· 👥 Amis"}</i>}
           </p>
           {lieu && (
             <p className="lv-lieu">
               <Epingle />
               <span>{m.commerce && m.genre ? m.commerce.nom : lieu}</span>
             </p>
-          )}
-        </div>
-        <span className="lv-quand">{quand(m)}</span>
-        <div className="lv-menu">
-          <button type="button" className="lv-points" aria-label="Plus d’options" aria-expanded={menuOuvert} onClick={() => setMenu(!menuOuvert)}>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="5.5" r="1.7" />
-              <circle cx="12" cy="12" r="1.7" />
-              <circle cx="12" cy="18.5" r="1.7" />
-            </svg>
-          </button>
-          {menuOuvert && (
-            <>
-              <button type="button" className="lv-menu-fond" aria-label="Fermer" onClick={() => setMenu(false)} />
-              <div className="lv-menu-l" role="menu">
-                {m.commerce && (
-                  <button type="button" role="menuitem" onClick={() => (setMenu(false), onPage(m.commerce!.id))}>
-                    Voir {m.commerce.nom}
-                  </button>
-                )}
-                {!moi && (
-                  <button type="button" role="menuitem" onClick={() => (setMenu(false), onQui(m.qui))}>
-                    Voir sa maison
-                  </button>
-                )}
-                {moi && m.genre && (
-                  <button type="button" role="menuitem" onClick={() => (setMenu(false), onSuite())}>
-                    ↪ Publier la suite
-                  </button>
-                )}
-                {moi && (
-                  <button type="button" role="menuitem" onClick={() => (setMenu(false), retirerDeLaVille(m.id))}>
-                    Retirer ma publication
-                  </button>
-                )}
-                {/* SIGNALER, ET SEULEMENT CHEZ LES AUTRES : on demande
-                    confirmation, puis la publication quitte mon fil et
-                    l'administrateur la voit. */}
-                {onSignaler && !moi && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="lv-signaler"
-                    onClick={() => {
-                      setMenu(false);
-                      if (window.confirm("Signaler cette publication ? Elle disparaîtra de ton fil, et ClikMe la vérifiera.")) onSignaler(m);
-                    }}
-                  >
-                    Signaler
-                  </button>
-                )}
-              </div>
-            </>
           )}
         </div>
       </header>
@@ -900,11 +908,14 @@ function CarteSortie({ s, onOuvrir, onQui }: { s: Salon; onOuvrir: () => void; o
       <header className="lv-h">
         <Avatar qui={s.parQui} onQui={onQui} />
         <div className="lv-h-t">
-          <p className="lv-nom">
-            <b>{s.parQui === "Vous" ? "Toi" : s.parQui}</b>
-          </p>
+          <div className="lv-l1">
+            <p className="lv-nom">
+              <b>{s.parQui === "Vous" ? "Toi" : s.parQui}</b>
+            </p>
+            <span className="lv-quand">{s.quand}</span>
+          </div>
           <p className="lv-type">
-            Une idée de sortie<i> · 🌍 Ouvert à tous</i>
+            Une idée de sortie<i>{"\u00a0· 🌍 Ouvert à tous"}</i>
           </p>
           {s.ou && (
             <p className="lv-lieu">
@@ -913,7 +924,6 @@ function CarteSortie({ s, onOuvrir, onQui }: { s: Salon; onOuvrir: () => void; o
             </p>
           )}
         </div>
-        <span className="lv-quand">{s.quand}</span>
       </header>
       {s.photo && (
         <div className="lv-photo">
@@ -1003,11 +1013,20 @@ function contenusDe(c: CarteAutour): (ContenuPartage & { cle: string })[] {
   return l.slice(0, 12);
 }
 
+/** Ce que « Mes amis » et « Public » veulent dire, pour de vrai. */
+function quiVoit(v: Audience, amis: string[]): string {
+  if (v === "public") return "Tous les habitants de ta ville qui ouvrent La ville.";
+  if (!amis.length) return "Tes amis, ici, sont les personnes présentes dans tes salons d’Ensemble. Pour l’instant il n’y a personne : seul·e toi la verras.";
+  const noms = amis.length <= 3 ? amis.join(", ") : `${amis.slice(0, 2).join(", ")} et ${amis.length - 2} autres`;
+  return `Les personnes présentes dans tes salons d’Ensemble : ${noms}.`;
+}
+
 function Composeur({
   etape,
   setEtape,
   essais,
   commerces,
+  amis,
   suiteDe,
   preselection,
   seul = false,
@@ -1019,6 +1038,8 @@ function Composeur({
   setEtape: (e: Etape) => void;
   essais: EssaiPartageable[];
   commerces: CarteAutour[];
+  /** Ceux qui verront une publication « Mes amis » — dits sous le choix. */
+  amis: string[];
   suiteDe: MessageVille | null;
   preselection?: { commerce: string; contenu?: string };
   /** Ouvert depuis une annonce : pas d'étape avant, la flèche referme. */
@@ -1489,6 +1510,11 @@ function Composeur({
                 </button>
               </div>
             </div>
+            {/* QUI VOIT VRAIMENT — « Les libellés doivent correspondre aux
+                accès réellement disponibles. » Il n'y a pas de liste d'amis :
+                mes amis, ici, ce sont les personnes présentes dans mes salons
+                d'Ensemble (`amis.ts`). On le dit, avec leurs prénoms. */}
+            <p className="lv-qui-voit">{quiVoit(visibilite, amis)}</p>
             {visibilite === "public" && etape === "essai" && (
               <p className="lv-attention">⚠️ Ta photo — et donc ton visage — sera visible par tous les habitants de ta ville.</p>
             )}
@@ -1514,11 +1540,13 @@ function Composeur({
  */
 export function ComposeurVille({
   commerces,
+  amis,
   preselection,
   onFermer,
   onPublie,
 }: {
   commerces: CarteAutour[];
+  amis: string[];
   preselection: { commerce: string; contenu?: string };
   onFermer: () => void;
   onPublie: (v: Audience, id: string) => void;
@@ -1531,6 +1559,7 @@ export function ComposeurVille({
         setEtape={() => undefined}
         essais={[]}
         commerces={commerces}
+        amis={amis}
         suiteDe={null}
         preselection={preselection}
         seul
@@ -1667,7 +1696,7 @@ function VersEnsemble({
         {cree ? (
           <>
             <p className="lv-note">
-              ✅ Ton salon est prêt, avec la publication dedans. Invite tes amis : ceux qui reçoivent le lien y entrent directement, sans rien installer.
+              ✅ Ton salon est prêt, avec la publication dedans. Invite tes amis : ceux qui reçoivent le lien y entrent directement, sans rien installer. En y entrant, ils verront aussi tes publications « Amis ».
             </p>
             <button type="button" className="lv-publier" onClick={() => onInviter(cree)}>
               📲 Inviter sur WhatsApp
@@ -1843,25 +1872,26 @@ function StylesLaVille() {
 .lv-carte{scroll-margin-top:136px;}
 .lv-carte.neuve{border-color:rgba(245,162,58,.85);box-shadow:0 0 0 3px rgba(245,162,58,.25),0 10px 30px rgba(0,0,0,.28);}
 .ap-app:has(.lv-page) .ap-mf-dit{display:none;}
-.lv-h{display:flex;align-items:flex-start;gap:11px;margin-bottom:11px;}
-.lv-av{position:relative;flex:none;width:52px;height:52px;padding:0;border-radius:50%;border:2.5px solid #F5A23A;background:radial-gradient(circle at 50% 35%,#3a2b23,#1d1511);
+.lv-h{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
+.lv-av{position:relative;flex:none;width:46px;height:46px;padding:0;border-radius:50%;border:2.5px solid #F5A23A;background:radial-gradient(circle at 50% 35%,#3a2b23,#1d1511);
   overflow:visible;cursor:pointer;display:block;}
 .lv-av img{width:100%;height:100%;object-fit:cover;object-position:50% 12%;border-radius:50%;display:block;}
 .lv-av i{position:absolute;right:-4px;bottom:-3px;width:22px;height:22px;border-radius:50%;background:#FF3E8E;color:#fff;font-style:normal;font-size:13px;font-weight:800;
   display:grid;place-items:center;box-shadow:0 0 0 2px #1E1612;}
 .lv-av.petit{width:34px;height:34px;border-width:2px;}
 .lv-h-t{flex:1;min-width:0;}
-.lv-nom{margin:2px 0 0;font-size:16.5px;line-height:1.2;overflow-wrap:anywhere;}
+.lv-l1{display:flex;align-items:center;gap:8px;min-width:0;min-height:26px;}
+.lv-nom{flex:1;min-width:0;margin:0;font-size:16.5px;line-height:1.2;overflow-wrap:anywhere;}
 .lv-nom b{font-weight:800;}
-.lv-type{margin:2px 0 0;font-size:14px;line-height:1.25;font-weight:600;color:#F5A23A;}
+.lv-type{margin:1px 0 0;font-size:13px;line-height:1.25;font-weight:600;color:#E89A3C;}
 .lv-type i{display:inline-block;font-style:normal;font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;font-weight:500;font-size:12.5px;color:#9C8775;}
-.lv-lieu{margin:3px 0 0;display:flex;align-items:flex-start;gap:5px;font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;
-  font-weight:500;font-size:13.5px;line-height:1.3;color:#CDB9A5;}
+.lv-lieu{margin:2px 0 0;display:flex;align-items:flex-start;gap:5px;font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;
+  font-weight:500;font-size:13px;line-height:1.3;color:#B8A492;}
 .lv-lieu span{overflow-wrap:anywhere;}
 .lv-pin{width:14px;height:14px;flex:none;margin-top:1px;fill:none;stroke:currentColor;stroke-width:2;}
-.lv-quand{flex:none;margin-top:4px;font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;font-weight:500;font-size:13px;color:#9C8775;white-space:nowrap;}
-.lv-menu{position:relative;align-self:flex-start;}
-.lv-points{width:30px;height:30px;margin-right:-6px;border:0;border-radius:50%;background:none;color:#CDB9A5;cursor:pointer;display:grid;place-items:center;}
+.lv-quand{flex:none;font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;font-weight:500;font-size:13px;color:#9C8775;white-space:nowrap;}
+.lv-menu{position:relative;flex:none;}
+.lv-points{width:28px;height:28px;margin:-2px -6px -2px -4px;border:0;border-radius:50%;background:none;color:#CDB9A5;cursor:pointer;display:grid;place-items:center;}
 .lv-points svg{width:20px;height:20px;fill:currentColor;}
 .lv-menu-fond{position:fixed;inset:0;z-index:40;border:0;background:transparent;cursor:default;}
 .lv-menu-l{position:absolute;right:0;top:34px;z-index:41;min-width:210px;padding:6px;border-radius:16px;background:#2A1F1A;border:1px solid rgba(255,214,170,.2);
@@ -1989,6 +2019,7 @@ function StylesLaVille() {
 .lv-audience button{height:40px;padding:0 14px;border-radius:999px;cursor:pointer;font:inherit;font-size:14px;font-weight:700;color:#EADBC8;
   background:rgba(255,255,255,.03);border:1px solid rgba(255,214,170,.22);}
 .lv-audience button.on{color:#2A1608;background:linear-gradient(180deg,#F8B451,#E8932A);border-color:transparent;}
+.lv-qui-voit{margin:8px 0 0;font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;font-weight:500;font-size:13px;line-height:1.4;color:#B8A492;}
 .lv-aucun{display:grid;justify-items:center;gap:8px;text-align:center;margin-top:20px;}
 .lv-aucun img{height:130px;width:auto;}
 .lv-aucun p{margin:0;color:#CDB9A5;line-height:1.45;font-size:15px;}
@@ -2015,7 +2046,7 @@ function StylesLaVille() {
 .lv-adresses{display:flex;flex-wrap:wrap;gap:8px;}
 .lv-adresses button{padding:8px 12px;border-radius:999px;border:1px solid rgba(245,162,58,.5);background:none;color:#FFC46B;font:inherit;font-size:13px;font-weight:700;cursor:pointer;}
 .lv-pub{margin:0 0 8px;padding:10px 12px;border-radius:12px;background:#241A15;font-size:14px;}
-@media (max-width:370px){.lv-filtres button{font-size:12.5px;padding:0 6px;gap:3px;}.lv-filtres svg{display:none;}.lv-pill{padding:0 11px;}.lv-cta{padding:0 13px;font-size:14px;}.lv-av{width:44px;height:44px;}}
+@media (max-width:370px){.lv-filtres button{font-size:12.5px;padding:0 6px;gap:3px;}.lv-filtres svg{display:none;}.lv-pill{padding:0 11px;}.lv-cta{padding:0 13px;font-size:14px;}.lv-av{width:42px;height:42px;}}
 `,
       }}
     />

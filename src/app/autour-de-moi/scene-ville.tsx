@@ -84,7 +84,19 @@ function StyleCalque(c: Calque): CSSProperties {
     top: `${c.y * 100}%`,
     height: `${c.h * 100}%`,
     transform: `translate(-50%, -100%)${c.miroir ? " scaleX(-1)" : ""}`,
-    ...(c.filtre ? { filter: `${c.filtre} drop-shadow(0 2px 3px rgba(0,0,0,.35))` } : {}),
+    // LA LUEUR : un liseré doré, serré, puis un halo plus large et très
+    // léger — la lumière chaude de la salle qui accroche la silhouette.
+    ...(c.filtre || c.lueur
+      ? {
+          filter: [
+            c.filtre,
+            c.lueur && "drop-shadow(0 0 1.2px rgba(255,190,110,.95)) drop-shadow(0 -1px 5px rgba(255,165,75,.5))",
+            "drop-shadow(0 2px 3px rgba(0,0,0,.35))",
+          ]
+            .filter(Boolean)
+            .join(" "),
+        }
+      : {}),
   };
 }
 
@@ -105,6 +117,13 @@ function Calques({ calques, devant, decor, ratio }: { calques?: Calque[]; devant
           )}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="scv-calque" src={c.src} alt="" aria-hidden="true" style={StyleCalque(c)} />
+          {c.lueur && (
+            // LA MÊME SILHOUETTE, TEINTE AMBRÉE, EN MULTIPLICATION : elle ne
+            // touche que le fantôme, le dore, et l'assombrit vers le bas —
+            // la lumière des lampes tombe d'en haut.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="scv-calque scv-chaud" src={c.src} alt="" aria-hidden="true" style={{ ...StyleCalque({ ...c, filtre: undefined, lueur: false }), filter: undefined }} />
+          )}
         </span>
       ))}
       {(devant ?? []).map((poly, i) => (
@@ -169,8 +188,8 @@ function Vitrine({ s, photo, onErreur }: { s: SceneVitrine; photo: string; onErr
             />
           )}
           {/* LA PHRASE MANUSCRITE, SEULEMENT SI L'AFFICHE EST ASSEZ GRANDE POUR LA LIRE. */}
-          {w > 150 && s.affiche.mot && (
-            <span className="scv-mot" style={{ fontSize: Math.round(w * 0.085) }}>
+          {w > 110 && s.affiche.mot && (
+            <span className="scv-mot" style={{ fontSize: Math.max(10, Math.round(w * 0.09)) }}>
               {s.affiche.mot} ♡
             </span>
           )}
@@ -205,7 +224,7 @@ export function SceneDuFil({
 }: {
   scene: SceneVille;
   photo: string;
-  repli: { commerce?: string; miniature?: string; essai: boolean; cadrage?: string };
+  repli: { commerce?: string; miniature?: string; essai: boolean; cadrage?: string; mention?: string };
 }) {
   const [cassee, setCassee] = useState(false);
   const casser = () => setCassee(true);
@@ -230,12 +249,15 @@ export function CarteSimple({
   miniature,
   essai,
   cadrage,
+  mention,
 }: {
   photo: string;
   commerce?: string;
   miniature?: string;
   essai: boolean;
   cadrage?: string;
+  /** « Coupe proposée par », « Tenue proposée par »… — voir mentionDuCommerce. */
+  mention?: string;
 }) {
   const [sansPhoto, setSansPhoto] = useState(false);
   return (
@@ -264,7 +286,7 @@ export function CarteSimple({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {miniature && <img src={miniature} alt="" />}
             <span>
-              <small>{essai ? "Essayé chez" : "Chez"}</small>
+              <small>{mention ?? (essai ? "Proposé par" : "Chez")}</small>
               <b>{commerce}</b>
             </span>
           </span>
@@ -283,11 +305,13 @@ function StylesScene() {
 .scv-decor,.scv-plein,.scv-devant{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
 .scv-devant{z-index:5;pointer-events:none;}
 .scv-calque{position:absolute;width:auto;z-index:4;pointer-events:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));}
+.scv-chaud{filter:sepia(1) saturate(3.2) hue-rotate(-12deg) brightness(.92);mix-blend-mode:multiply;opacity:.42;
+  -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.35) 0%,#000 75%);mask-image:linear-gradient(180deg,rgba(0,0,0,.35) 0%,#000 75%);}
 .scv-ombre{position:absolute;z-index:3;transform:translate(-50%,-62%);border-radius:50%;pointer-events:none;
   background:radial-gradient(closest-side,rgba(0,0,0,.55),rgba(0,0,0,.28) 55%,transparent);filter:blur(2px);}
 
-.scv-affiche{position:absolute;left:0;top:0;z-index:2;overflow:hidden;transform-origin:0 0;background:#efe4d4;
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);}
+.scv-affiche{position:absolute;left:0;top:0;z-index:2;overflow:hidden;transform-origin:0 0;background:#efe4d4;box-sizing:border-box;
+  border:2.5px solid #f2e9d8;box-shadow:0 6px 16px rgba(0,0,0,.38),inset 0 0 0 1px rgba(255,255,255,.18);}
 .scv-essai{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;filter:brightness(.94) saturate(1.02);}
 .scv-essai.entier,.scv-plein.entier{object-fit:contain;}
 .scv-flou{position:absolute;inset:-8%;width:116%;height:116%;object-fit:cover;filter:blur(14px) saturate(1.1) brightness(.85);}

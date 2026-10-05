@@ -5835,6 +5835,10 @@ export function ApercuHabitant() {
         .flatMap((x) => [x.parQui, ...x.presents]),
     ),
   ].filter((q) => q && !cestMoi(q));
+  // ET LES AMIS QUE LE SERVEUR CONNAÎT, dans la vraie ville : ceux d'une
+  // conversation partagée — voir `amis.ts`. C'est cette liste, et elle seule,
+  // qui voit une publication « Mes amis ».
+  const amisVille = reelle ? [...new Set([...mesAmis, ...amisPartages()])] : mesAmis;
 
   /* LA SUITE DE MES ÉCHANGES : une conversation née d'un essai ou d'une
      publication, où quelqu'un a écrit depuis ma dernière visite. Rien
@@ -11317,9 +11321,7 @@ export function ApercuHabitant() {
             <div className="ap-page ap-onglet-vue">
               <LaVille
                 messages={ville}
-                // ET LES AMIS QUE LE SERVEUR CONNAÎT, dans la vraie ville : ceux
-                // d'une conversation partagée — voir `amis.ts`.
-                amis={reelle ? [...new Set([...mesAmis, ...amisPartages()])] : mesAmis}
+                amis={amisVille}
                 sorties={salonsADecouvrir}
                 suites={suitesDesEssais}
                 essais={essaisPartageables}
@@ -11591,6 +11593,7 @@ export function ApercuHabitant() {
           {preselectionVille && onglet === "direct" && (
             <ComposeurVille
               commerces={toutes}
+              amis={amisVille}
               preselection={preselectionVille}
               onFermer={() => setPreselectionVille(null)}
               onPublie={(visibilite, id) => {

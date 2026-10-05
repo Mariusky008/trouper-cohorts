@@ -64,9 +64,10 @@ export type Quad = [Point, Point, Point, Point];
  * UN CALQUE POSÉ DANS LA SCÈNE — un fantôme. `x` : son milieu ; `y` : là où
  * il touche le sol (ou le bord qui le cache) ; `h` : sa hauteur, en fractions
  * de la scène. `ombre` : une ombre de contact sous lui ; `filtre` : de quoi
- * le mettre dans la lumière de la photo (plus chaud, plus sombre).
+ * le mettre dans la lumière de la photo (plus chaud, plus sombre) ; `lueur` :
+ * la lumière dorée de la salle qui accroche ses contours.
  */
-export type Calque = { src: string; x: number; y: number; h: number; miroir?: boolean; ombre?: boolean; filtre?: string };
+export type Calque = { src: string; x: number; y: number; h: number; miroir?: boolean; ombre?: boolean; filtre?: string; lueur?: boolean };
 
 /** Le décor d'un commerce, mesuré une fois. */
 export type DecorMesure = {
@@ -114,6 +115,24 @@ export function cadrageDe(branche: CleMetier | undefined): Cadrage {
   return (branche && AFFICHE_DU_METIER[branche]?.cadrage) || "visage";
 }
 
+/**
+ * LA MENTION SOUS UN ESSAI — « « Essayé chez » reste ambigu : cela peut
+ * laisser croire que la personne s'est réellement rendue dans le salon ».
+ * L'essai est virtuel (le coin le dit) ; le commerce, lui, PROPOSE la coupe,
+ * la tenue, la pose. Hors essai, simplement « Chez ».
+ */
+export function mentionDuCommerce(branche: CleMetier | undefined, essai: boolean): string {
+  if (!essai) return "Chez";
+  const mots: Partial<Record<CleMetier, string>> = {
+    coiffeur: "Coupe proposée par",
+    mode: "Tenue proposée par",
+    ongles: "Pose proposée par",
+    lunetier: "Monture proposée par",
+    artisan: "Création proposée par",
+  };
+  return (branche && mots[branche]) || "Proposé par";
+}
+
 /** Le fantôme du métier, pour une miniature ou un avatar. */
 export function fantomeDuMetier(branche: CleMetier | undefined): string {
   const direct: Partial<Record<CleMetier, string>> = {
@@ -140,11 +159,14 @@ const DECORS_DE_LA_DEMO: Record<string, DecorMesure> = {
   "mode-centre": {
     decor: "/direct/vitrine-mode.jpg",
     ratio: 387 / 516,
+    // « L'AFFICHE EN PERSPECTIVE » : un grand panneau posé dans la vitrine,
+    // tourné vers la rue — le bord gauche, plus proche, est plus haut que le
+    // droit. Il s'arrête avant la silhouette beige du premier mannequin.
     coins: [
-      [0.07, 0.315],
-      [0.375, 0.315],
-      [0.375, 0.74],
-      [0.07, 0.74],
+      [0.05, 0.285],
+      [0.385, 0.318],
+      [0.385, 0.728],
+      [0.05, 0.77],
     ],
     calques: [{ src: "/direct/ville/hote-mode.webp", x: 0.8, y: 1.07, h: 0.4, filtre: "brightness(.97) sepia(.1)" }],
   },
@@ -161,10 +183,13 @@ const SALLES_MESUREES: Record<string, Omit<SceneAmbiance, "v" | "rendu">> = {
     decor: "/direct/bar-salle.jpg",
     ratio: 450 / 300,
     calques: [
+      // « TROP BLANCS PAR RAPPORT À LA LUMIÈRE DORÉE » : on les baisse au
+      // niveau de la salle, on les réchauffe, et la lueur pose sur leurs
+      // contours la lumière des lampes. La scène, elle, ne bouge pas.
       // DERRIÈRE LA GRANDE TABLE : on ne voit que le haut, comme quelqu'un d'assis.
-      { src: "/direct/ville/client-verre.webp", x: 0.42, y: 0.8, h: 0.56, filtre: "brightness(.9) sepia(.22) saturate(1.1)" },
-      // DERRIÈRE LA TABLE DE DROITE, plus loin donc plus petit.
-      { src: "/direct/ville/client-rit.webp", x: 0.87, y: 0.68, h: 0.34, miroir: true, filtre: "brightness(.88) sepia(.22) saturate(1.1)" },
+      { src: "/direct/ville/client-verre.webp", x: 0.42, y: 0.8, h: 0.56, lueur: true, filtre: "brightness(.78) sepia(.42) saturate(1.25) contrast(.96)" },
+      // DERRIÈRE LA TABLE DE DROITE, plus loin donc plus petit — et plus sombre.
+      { src: "/direct/ville/client-rit.webp", x: 0.87, y: 0.68, h: 0.34, miroir: true, lueur: true, filtre: "brightness(.72) sepia(.42) saturate(1.25) contrast(.96)" },
     ],
     devant: [
       // La grande table et tout ce qui est en dessous.
@@ -309,6 +334,7 @@ const calque = (v: unknown): Calque | undefined => {
     h: nombre(c.h, 0.05, 1, 0.4),
     ...(c.miroir ? { miroir: true } : {}),
     ...(c.ombre ? { ombre: true } : {}),
+    ...(c.lueur ? { lueur: true } : {}),
     ...(f ? { filtre: f } : {}),
   };
 };
