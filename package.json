@@ -10,6 +10,8 @@
     "lint": "eslint",
     "verifier:styles": "node scripts/verifier-styles-en-ligne.mjs",
     "verifier:contraste": "node scripts/verifier-contraste.mjs",
+    "verifier:salons": "node scripts/verifier-salons.mjs",
+    "faux-supabase": "node scripts/faux-supabase.mjs",
     "verifier:soiree": "node scripts/verifier-soiree.mjs",
     "voice:bridge": "ts-node --project voice-bridge/tsconfig.json voice-bridge/server.ts",
     "e2e:human-access": "node scripts/e2e-human-access.mjs",

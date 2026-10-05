@@ -52,6 +52,8 @@ export type Voix = "moi" | "ami" | "systeme";
 export type MessageSalon = {
   id: string;
   qui: string;
+  /** Dans la vraie ville : l'empreinte de son auteur dans ce salon — pour signaler, bloquer, modérer. */
+  auteur?: string;
   voix: Voix;
   texte: string;
   quand: string;
@@ -209,9 +211,31 @@ export type Proposition = {
   voix: string[];
 };
 
+/**
+ * CE QUE JE SUIS POUR UN SALON DE LA VRAIE VILLE — rendu par le serveur, qui
+ * décide seul (`salons-acces.ts`). Absent dans la démonstration, où tout se
+ * passe dans le téléphone.
+ */
+export type AccesSalon = {
+  statut: "membre" | "lecture" | "invite" | "a_demander" | "demande" | "refusee" | "exclu";
+  prive: boolean;
+  /** Les membres réels — une invitation en attente ne compte pas. */
+  nb: number;
+  role?: "createur" | "moderateur" | "membre";
+  sourdine?: boolean;
+  participants?: { auteur: string; qui: string; role: string; moi: boolean }[];
+  /** Pour le créateur et les modérateurs : qui demande à entrer. */
+  demandes?: { auteur: string; qui: string }[];
+  /** Le jeton de l'invitation (à mon nom, ou du lien reçu). */
+  jeton?: string;
+  invitePar?: string;
+};
+
 export type Salon = {
   /** L'identifiant de l'annonce : commerce + moment, ou événement. */
   cle: string;
+  /** Dans la vraie ville : mon accès à ce salon. */
+  acces?: AccesSalon;
   /** Ce dont on parle, écrit comme on le dirait. */
   sujet: string;
   /** Le commerce ou l'organisateur. */
@@ -996,10 +1020,28 @@ export function ouvrirSalon(
   return neuf;
 }
 
+/**
+ * AGIR DANS UN SALON DEMANDE D'EN ÊTRE MEMBRE. Un salon public qu'on lit sans
+ * l'avoir rejoint, un salon privé dont on attend l'entrée : rien ne s'y écrit,
+ * pas même chez soi — le serveur le refuserait de toute façon.
+ */
+export function peutAgir(s: Salon | undefined): s is Salon {
+  return Boolean(s && (!s.acces || s.acces.statut === "membre"));
+}
+
+/** Oublier un salon qu'on a quitté, ou qui ne nous est plus accessible. */
+export function oublierSalon(cle: string) {
+  const avant = chargerSalons();
+  if (!avant[cle]) return;
+  const suite = { ...avant };
+  delete suite[cle];
+  garder(suite);
+}
+
 export function ecrireDansSalon(cle: string, m: Omit<MessageSalon, "id">) {
   const avant = chargerSalons();
   const s = avant[cle];
-  if (!s) return;
+  if (!peutAgir(s)) return;
   const id = `m${Date.now()}${Math.random().toString(36).slice(2, 6)}`;
   // UN MESSAGE SORT AUSSI LA CONVERSATION DES ARCHIVES : on y parle de nouveau.
   garder({ ...avant, [cle]: { ...s, messages: [...s.messages, { ...m, id }], activite: Date.now(), archive: false } });
@@ -1052,7 +1094,7 @@ const TETE = "🏆 ";
 export function annoncerLaTete(cle: string, texte: string, quand: string) {
   const avant = chargerSalons();
   const s = avant[cle];
-  if (!s) return;
+  if (!peutAgir(s)) return;
   const dernier = s.messages[s.messages.length - 1];
   const remplace =
     dernier && dernier.voix === "systeme" && dernier.texte.startsWith(TETE);
@@ -1099,7 +1141,7 @@ export function enTete(s: Salon): Proposition | undefined {
 export function proposer(cleSalon: string, p: Omit<Proposition, "voix">, qui: string) {
   const avant = chargerSalons();
   const s = avant[cleSalon];
-  if (!s) return;
+  if (!peutAgir(s)) return;
   const liste = s.propositions ?? [];
   if (liste.some((x) => x.cle === p.cle)) {
     // Déjà sur la table : on n'en fait pas un doublon, on y met sa voix.
@@ -1128,7 +1170,7 @@ export function proposer(cleSalon: string, p: Omit<Proposition, "voix">, qui: st
 export function donnerSaVoix(cleSalon: string, clePropo: string, qui: string) {
   const avant = chargerSalons();
   const s = avant[cleSalon];
-  if (!s?.propositions) return;
+  if (!peutAgir(s) || !s.propositions) return;
   garder({
     ...avant,
     [cleSalon]: {
@@ -1162,6 +1204,9 @@ export function basculerVisibilite(cle: string): boolean {
   const s = avant[cle];
   const moi = monPrenom() || "Vous";
   if (!s || (s.parQui !== "Vous" && s.parQui !== moi)) return !!s?.prive;
+  // DANS LA VRAIE VILLE, UN SALON PRIVÉ NE DEVIENT JAMAIS PUBLIC APRÈS COUP :
+  // ce qui y a été écrit l'a été pour quelques-uns.
+  if (s.acces && s.prive !== false) return true;
   const prive = !s.prive;
   garder({ ...avant, [cle]: { ...s, prive } });
   partage?.geste(cle, { type: "visibilite", prive });
@@ -1172,7 +1217,7 @@ export function basculerVisibilite(cle: string): boolean {
 export function basculerVenue(cle: string, qui = "Vous") {
   const avant = chargerSalons();
   const s = avant[cle];
-  if (!s) return;
+  if (!peutAgir(s)) return;
   const dedans = s.viennent.includes(qui);
   garder({
     ...avant,
@@ -1189,7 +1234,7 @@ export function basculerVenue(cle: string, qui = "Vous") {
 export function reagir(cle: string, idMessage: string, emoji: string) {
   const avant = chargerSalons();
   const s = avant[cle];
-  if (!s) return;
+  if (!peutAgir(s)) return;
   garder({
     ...avant,
     [cle]: {
@@ -1211,7 +1256,7 @@ export function reagir(cle: string, idMessage: string, emoji: string) {
 export function voter(cle: string, option: string) {
   const avant = chargerSalons();
   const s = avant[cle];
-  if (!s?.vote) return;
+  if (!peutAgir(s) || !s.vote) return;
   const ancien = s.vote.monVote;
   if (ancien === option) return;
   garder({
@@ -1235,7 +1280,7 @@ export function voter(cle: string, option: string) {
 export function entrerDansSalon(cle: string, qui: string, vient: boolean) {
   const avant = chargerSalons();
   const s = avant[cle];
-  if (!s) return;
+  if (!peutAgir(s)) return;
   garder({
     ...avant,
     [cle]: {

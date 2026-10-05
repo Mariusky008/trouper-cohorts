@@ -18,6 +18,16 @@
 import { useState, type ReactNode } from "react";
 import { aToiDeJouer, ilYa, nosDiscussions, type Discussion } from "@/lib/direct/ensemble";
 import { archiverSalon, type Salon } from "@/lib/direct/salons";
+import { repondreInvitation, type SalonADecouvrir } from "@/lib/direct/conversations-sync";
+
+/**
+ * MES SALONS : ceux dont je suis membre. Dans la vraie ville, un salon public
+ * que je lis sans l'avoir rejoint, une invitation pas encore acceptée ou une
+ * demande d'entrée en attente n'en font pas partie (`salon.acces`).
+ */
+export function salonsDontJeSuisMembre(salons: Record<string, Salon>): Record<string, Salon> {
+  return Object.fromEntries(Object.entries(salons).filter(([, x]) => !x.acces || x.acces.statut === "membre"));
+}
 
 const TEINTES = ["#FF5FA8", "#F5A23A", "#7FB7FF", "#7BD3A8", "#C99BFF", "#FF8A65"];
 function teinte(nom: string): string {
@@ -43,8 +53,14 @@ export function Ensemble({
   onLancer,
   enPlus,
   demandeLancer = 0,
+  aDecouvrir = [],
+  onVoirPublic,
 }: {
   salons: Record<string, Salon>;
+  /** Vraie ville : les salons publics de la ville que je n'ai pas rejoints. */
+  aDecouvrir?: SalonADecouvrir[];
+  /** Ouvre un salon public en lecture, sans le rejoindre. */
+  onVoirPublic?: (id: string) => void;
   lus: Record<string, number>;
   cestMoi: (qui: string) => boolean;
   /** Mon prénom tel que les salons l'écrivent. */
@@ -58,8 +74,13 @@ export function Ensemble({
   /** Change à chaque appui sur le fantôme de la barre : il lance une discussion. */
   demandeLancer?: number;
 }) {
-  const attentes = aToiDeJouer(salons, cestMoi, lus, moi);
-  const { actives, archives } = nosDiscussions(salons, cestMoi, lus);
+  const miens = salonsDontJeSuisMembre(salons);
+  const attentes = aToiDeJouer(miens, cestMoi, lus, moi);
+  const { actives, archives } = nosDiscussions(miens, cestMoi, lus);
+  // LES INVITATIONS À MON NOM, ET MES DEMANDES D'ENTRÉE EN ATTENTE.
+  const invitations = Object.values(salons).filter((x) => x.acces?.statut === "invite");
+  const enAttente = Object.values(salons).filter((x) => x.acces?.statut === "demande");
+  const [reponse, setReponse] = useState("");
   const [voirArchives, setVoirArchives] = useState(false);
   const [lancer, setLancer] = useState(false);
   // LE FANTÔME DE LA BARRE DEMANDE, LA PAGE OUVRE. Une demande nouvelle se
@@ -120,6 +141,43 @@ export function Ensemble({
           </div>
           <small>Tu inviteras tes amis dans la discussion, par un lien.</small>
         </form>
+      )}
+
+      {/* ═══ LES INVITATIONS ═══ — à accepter ou refuser, ici. Une invitation
+          en attente n'est pas une participation : le salon n'apparaît dans
+          mes discussions qu'une fois accepté. */}
+      {(invitations.length > 0 || enAttente.length > 0) && (
+        <section className="en-bloc">
+          <h2>
+            <i aria-hidden="true" />
+            Invitations
+          </h2>
+          {invitations.map((x) => (
+            <div key={x.cle} className="en-invit">
+              <button type="button" className="en-invit-t" onClick={() => onOuvrir(x.cle)}>
+                <b>{x.sujet}</b>
+                <em>
+                  {x.acces?.prive ? "🔒 Privé" : "🌍 Public"} · invitation de {x.acces?.invitePar || x.parQui}
+                </em>
+              </button>
+              <button type="button" className="en-invit-oui" onClick={async () => setReponse((await repondreInvitation(x, true)) ?? "")}>
+                Accepter
+              </button>
+              <button type="button" className="en-invit-non" onClick={async () => setReponse((await repondreInvitation(x, false)) ?? "")}>
+                Refuser
+              </button>
+            </div>
+          ))}
+          {enAttente.map((x) => (
+            <div key={x.cle} className="en-invit">
+              <span className="en-invit-t">
+                <b>{x.sujet}</b>
+                <em>🔒 Ta demande d’entrée attend la réponse du créateur.</em>
+              </span>
+            </div>
+          ))}
+          {reponse && <p className="en-vide">{reponse}</p>}
+        </section>
       )}
 
       {/* ═══ À TOI DE JOUER ═══ — seulement ce qui attend vraiment. */}
@@ -183,6 +241,33 @@ export function Ensemble({
           </button>
         )}
       </section>
+
+      {/* ═══ SALONS PUBLICS À DÉCOUVRIR ═══ — vraie ville : ceux de la ville que
+          je n'ai pas rejoints. Les ouvrir ne me fait pas entrer. */}
+      {aDecouvrir.length > 0 && onVoirPublic && (
+        <section className="en-bloc">
+          <h2>
+            <i aria-hidden="true" />
+            Salons publics à découvrir
+          </h2>
+          {aDecouvrir.map((x) => (
+            <button key={x.id} type="button" className="en-invit en-pub" onClick={() => onVoirPublic(x.id)}>
+              <span className="en-invit-t">
+                <b>{x.sujet}</b>
+                <em>
+                  🌍 Salon public · ouvert par {x.parQui || "un habitant"} · {x.nb} participant{x.nb > 1 ? "s" : ""}
+                </em>
+                {x.dernier && (
+                  <em>
+                    {x.dernier.qui} : {x.dernier.texte}
+                  </em>
+                )}
+              </span>
+              <s aria-hidden="true">Voir la discussion ›</s>
+            </button>
+          ))}
+        </section>
+      )}
 
       {enPlus}
     </div>
@@ -257,6 +342,16 @@ function StylesEnsemble() {
 .en-lancer button:disabled{opacity:.45;}
 .en-lancer small{display:block;margin-top:8px;font-size:12px;color:#BFA894;}
 .en-bloc{margin-bottom:24px;}
+.en-invit{display:flex;align-items:center;gap:8px;width:100%;margin-bottom:8px;padding:12px;border-radius:16px;border:1px solid rgba(255,214,170,.2);
+  background:rgba(255,244,230,.05);color:#FFF4E6;font:inherit;text-align:left;}
+.en-invit-t{flex:1;min-width:0;display:grid;gap:2px;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;}
+.en-invit-t b{font-size:15.5px;overflow-wrap:anywhere;}
+.en-invit-t em{font-style:normal;font-size:12.5px;color:#CDB9A5;overflow-wrap:anywhere;}
+.en-invit button.en-invit-oui,.en-invit button.en-invit-non{flex:none;height:34px;padding:0 12px;border-radius:999px;border:0;font:inherit;font-size:13px;font-weight:800;cursor:pointer;}
+.en-invit-oui{background:#F5A23A;color:#2A1608;}
+.en-invit-non{background:rgba(255,244,230,.12);color:#FFF4E6;}
+.en-pub{cursor:pointer;flex-wrap:wrap;}
+.en-pub s{text-decoration:none;font-size:13px;font-weight:800;color:#F5A23A;}
 .en-bloc h2{display:flex;align-items:center;gap:10px;margin:0 4px 12px;font-size:23px;font-weight:800;letter-spacing:-.01em;}
 .en-bloc h2 i{width:12px;height:12px;border-radius:50%;background:#F5A23A;box-shadow:0 0 10px rgba(245,162,58,.6);}
 .en-archives{margin-left:auto;border:0;background:none;color:#CDB9A5;font:inherit;font-size:14px;font-weight:600;cursor:pointer;}

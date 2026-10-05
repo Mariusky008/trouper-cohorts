@@ -37,10 +37,11 @@ export function VilleApp({ reelle }: { reelle: VilleReelle }) {
     return () => poserLaSource(null);
   }, [source]);
   // LES CONVERSATIONS D'ENSEMBLE PARTENT AU SERVEUR, ET EN REVIENNENT — voir
-  // `conversations-sync.ts`. `?salon=p:<identifiant>` : le lien reçu d'un ami.
+  // `conversations-sync.ts`. `?invitation=<jeton>` : le lien reçu d'un ami ;
+  // `?salon=p:<identifiant>` : un ancien lien, ou un salon public.
   useEffect(() => {
-    const salon = new URLSearchParams(window.location.search).get("salon") || undefined;
-    return brancherLaVille(reelle.slug, salon);
+    const q = new URLSearchParams(window.location.search);
+    return brancherLaVille(reelle.slug, q.get("salon") || undefined, q.get("invitation") || undefined);
   }, [reelle.slug]);
   // ET LE FIL DE LA VILLE — voir `ville-sync.ts`.
   useEffect(() => brancherLeFil(reelle.slug, reelle.nom), [reelle.slug, reelle.nom]);

@@ -160,7 +160,15 @@ import { CarteSwipe, StylesDirect } from "@/components/direct/carte-swipe";
 import { EcranChoix } from "@/components/direct/ecran-choix";
 import { useVilleReelle } from "@/components/direct/ville-reelle-contexte";
 import { pageDuCommerce } from "@/lib/direct/source-ville";
-import { lienConnu, lienDInvitation } from "@/lib/direct/conversations-sync";
+import {
+  abonnerDecouverte,
+  lienConnu,
+  lienDInvitation,
+  preparerLien,
+  salonDuLien,
+  salonsADecouvrirDeLaVille,
+  voirSalonPublic,
+} from "@/lib/direct/conversations-sync";
 import { messageDeMaison, signalerPublication } from "@/lib/direct/ville-sync";
 import { essaisPartages, lienDeMaMaison, lireUneMaison, publierLaMaison, type MaisonLue } from "@/lib/direct/maison-sync";
 import { abonnerMaison, chargerMaison, MAISON_VIDE } from "@/lib/direct/ma-maison";
@@ -171,7 +179,8 @@ import { abonnerMaison, chargerMaison, MAISON_VIDE } from "@/lib/direct/ma-maiso
    dans le dossier : ce qui est mis de côté doit pouvoir revenir sans qu'on le
    refasse. Seule la ligne qui la montait est remplacée. */
 import { EcranSalon } from "@/components/direct/ecran-salon";
-import { Ensemble } from "./ensemble";
+import { Ensemble, salonsDontJeSuisMembre } from "./ensemble";
+import { BarreDAcces, LectureDuSalon, MenuDuMessage, PorteDuSalon, porteFermee } from "./porte-salon";
 import { aToiDeJouer, nosDiscussions } from "@/lib/direct/ensemble";
 import { MaMaison, type MaisonEnVisite } from "./ma-maison";
 import { ComposeurVille, LaVille, type CibleSalon, type EssaiPartageable, type SalonPartageable } from "./la-ville";
@@ -1442,6 +1451,9 @@ function Attente({
 /** Aucune remise : une vraie ville ne lit pas celles d'un comptoir de démonstration. */
 const AUCUNE_REMISE: ReturnType<typeof remisesVides> = [];
 
+/** Une liste vide stable, pour `useSyncExternalStore` hors de la vraie ville. */
+const AUCUN_PUBLIC: import("@/lib/direct/conversations-sync").SalonADecouvrir[] = [];
+
 export function ApercuHabitant() {
   /**
    * ═══ UNE VRAIE VILLE, OU LA DÉMONSTRATION ═══════════════════════════════
@@ -2555,6 +2567,21 @@ export function ApercuHabitant() {
    */
   const [salonPage, setSalonPage] = useState(false);
   /**
+   * ARRIVÉ PAR UN LIEN D'INVITATION (`?invitation=`) : on ne connaît le salon
+   * qu'après le premier relevé du serveur. Il s'ouvre alors, une fois — la
+   * porte s'il est privé, la lecture s'il est public. Vu pendant le rendu,
+   * sans effet.
+   */
+  const lienSalon = useSyncExternalStore(abonnerDecouverte, salonDuLien, () => "");
+  const [lienVu, setLienVu] = useState("");
+  if (lienSalon && lienSalon !== lienVu) {
+    setLienVu(lienSalon);
+    setSalonOuvert(lienSalon);
+    setSalonPage(true);
+  }
+  /** Vraie ville : les salons publics de la ville que je n'ai pas rejoints. */
+  const publicsADecouvrir = useSyncExternalStore(abonnerDecouverte, salonsADecouvrirDeLaVille, () => AUCUN_PUBLIC);
+  /**
    * LES FAÇONS DE PARLER, REPLIÉES.
    *
    * La barre du bas portait CINQ boutons de poids égal — Inviter, Réserver,
@@ -2736,6 +2763,12 @@ export function ApercuHabitant() {
   }, [montrerLeTuto]);
 
   const salon: Salon | undefined = salons[salonOuvert];
+  // LE LIEN D'INVITATION SE PRÉPARE DÈS QU'ON OUVRE LE SALON : WhatsApp doit
+  // s'ouvrir dans le geste même, sans attendre le serveur.
+  useEffect(() => {
+    if (reelle && salonPage) preparerLien(salon);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reelle, salonPage, salonOuvert]);
   /**
    * IL VIENT D'ARRIVER, ET IL EST ENCORE SEUL.
    *
@@ -5826,11 +5859,16 @@ export function ApercuHabitant() {
 
   /** Le badge d'Ensemble : actions attendues + conversations avec du neuf. */
   const aFaireEnsemble = (() => {
-    const attentes = aToiDeJouer(salons, cestMoi, lus, monPrenom() || "Vous");
-    const neuves = nosDiscussions(salons, cestMoi, lus).actives.filter(
+    // MES SALONS SEULEMENT, ET PAS CEUX QUE J'AI MIS EN SOURDINE : « ses
+    // nouveaux messages ne seront plus comptés dans le badge ». Les
+    // invitations à mon nom, elles, comptent.
+    const comptes = Object.fromEntries(Object.entries(salonsDontJeSuisMembre(salons)).filter(([, x]) => !x.acces?.sourdine));
+    const attentes = aToiDeJouer(comptes, cestMoi, lus, monPrenom() || "Vous");
+    const neuves = nosDiscussions(comptes, cestMoi, lus).actives.filter(
       (d) => d.nonLus > 0 && !attentes.some((a) => a.cle === d.cle),
     );
-    return attentes.length + neuves.length;
+    const invitations = Object.values(salons).filter((x) => x.acces?.statut === "invite").length;
+    return attentes.length + neuves.length + invitations;
   })();
 
   /* LA SUITE DE MES ÉCHANGES : une conversation née d'un essai ou d'une
@@ -11388,6 +11426,16 @@ export function ApercuHabitant() {
             <div className="ap-page ap-onglet-vue">
               <Ensemble
                 salons={salons}
+                aDecouvrir={reelle ? publicsADecouvrir : []}
+                onVoirPublic={
+                  reelle
+                    ? async (id) => {
+                        const cle = await voirSalonPublic(id);
+                        setSalonOuvert(cle);
+                        setSalonPage(true);
+                      }
+                    : undefined
+                }
                 lus={lus}
                 cestMoi={cestMoi}
                 moi={monPrenom() || "Vous"}
@@ -11685,8 +11733,11 @@ export function ApercuHabitant() {
                   second écran actif : on revient par la flèche, qui dit où elle
                   ramène. */}
               <div className="ap-feuille-dos" aria-hidden="true" />
-            <div className="ap-page feuille">
+            <div className={`ap-page feuille${salon.acces && salon.acces.statut !== "membre" ? " lecture" : ""}`}>
               <span className="ap-feuille-p" aria-hidden="true" />
+              {/* UN SALON PRIVÉ DONT JE NE SUIS PAS MEMBRE : la porte, par-dessus
+                  une feuille vide — le serveur n'en a envoyé que le titre. */}
+              {porteFermee(salon) && <PorteDuSalon salon={salon} onRetour={() => setSalonPage(false)} />}
               {/* ═══ L'EN-TETE DISPARAIT TANT QU'ON EST SEUL ═══
 
                   « Lorsqu'on ouvre pour la premiere fois le salon apres
@@ -12703,6 +12754,9 @@ export function ApercuHabitant() {
                     </div>
                   )}
 
+                  {salon.acces?.statut === "membre" && (
+                    <BarreDAcces salon={salon} onInviterLien={() => void inviterAuSalon(salon)} onQuitte={() => setSalonPage(false)} />
+                  )}
                   <div className="ap-sal-fil">
                     {salon.messages.map((m) =>
                       m.carte ? (
@@ -12773,6 +12827,7 @@ export function ApercuHabitant() {
                             ❤️
                             {(m.reactions?.["❤️"] ?? 0) > 0 && <b>{m.reactions!["❤️"]}</b>}
                           </button>
+                          {m.voix === "ami" && <MenuDuMessage salon={salon} m={m} />}
                         </div>
                       ),
                     )}
@@ -12947,7 +13002,10 @@ export function ApercuHabitant() {
                   du monde. On ouvre l'écriture le jour où le signalement
                   existe, c'est-à-dire en même temps que la fiabilité qui suit
                   ceux qui ne viennent pas. Un seul système, une seule date. */}
-              {!salon.collectif && (
+              {/* UN SALON PUBLIC LU SANS L'AVOIR REJOINT : pas de champ actif,
+                  « Rejoindre et participer » à sa place. */}
+              {salon.acces && salon.acces.statut !== "membre" && !porteFermee(salon) && <LectureDuSalon salon={salon} />}
+              {!salon.collectif && (!salon.acces || salon.acces.statut === "membre") && (
               <form
                 className="ap-page-champ"
                 onSubmit={(ev) => {
@@ -17384,6 +17442,12 @@ export function ApercuHabitant() {
            titre de l'annonce et le haut de sa photo : elle repond en
            permanence, ce qui etait la demande. La feuille defile a l'interieur,
            elle ne perd donc rien de ce qu'elle contient. */
+        /* EN LECTURE (salon public non rejoint, invitation pas encore acceptée) :
+           ni « Je viens », ni proposition, ni réaction, ni invitation, ni
+           réservation — rejoindre d'abord. Ne jamais confondre rejoindre,
+           venir, voter et réserver. */
+        .ap-page.feuille.lecture .ap-gens-b,.ap-page.feuille.lecture .ap-propo-plus,.ap-page.feuille.lecture .ap-page-actions,
+        .ap-page.feuille.lecture .ap-reac{display:none;}
         .ap-page.feuille{top:150px;border-radius:22px 22px 0 0;
           padding-top:12px;overflow:hidden;
           box-shadow:0 -1px 0 rgba(126,230,192,.22),0 -22px 44px rgba(0,0,0,.6);

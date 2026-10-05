@@ -62,3 +62,42 @@ export async function rangerSon(dossier: string, nom: string, valeur: unknown): 
     return undefined;
   }
 }
+
+/**
+ * 🔒 UNE PHOTO DE SALON, RANGÉE DANS LE SEAU PRIVÉ — voir la migration
+ * `20261008120000_salons_acces.sql`. Elle n'a PAS d'adresse publique : on
+ * garde sa référence (`salon:<chemin>`), et seule la route
+ * `/api/direct/conversations/photo` la sert, après avoir vérifié que celui qui
+ * la demande peut lire le salon. Une photo déjà publique (un chemin du site,
+ * une adresse https — l'image d'une annonce, d'une publication de La ville)
+ * passe telle quelle : elle n'est pas à protéger.
+ */
+export const SEAU_SALONS = s(process.env.SALONS_BUCKET) || "salons-prives";
+export const PREFIXE_PRIVE = "salon:";
+
+export async function rangerPhotoPrivee(conversation: string, valeur: unknown): Promise<string | undefined> {
+  const v = s(valeur);
+  if (!v) return undefined;
+  if (v.startsWith(PREFIXE_PRIVE)) return cheminPrive(v)?.startsWith(`${conversation}/`) ? v : undefined;
+  if (/^https:\/\//i.test(v) || /^\/[a-z0-9/_.-]+$/i.test(v)) return v.slice(0, 600);
+  const m = /^data:(image\/(?:jpeg|jpg|png|webp|heic|heif));base64,(.+)$/i.exec(v);
+  if (!m) return undefined;
+  const brut = Buffer.from(m[2], "base64");
+  if (brut.length > 8 * 1024 * 1024) return undefined;
+  try {
+    const octets = await sharp(brut).rotate().resize(1600, 1600, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 84 }).toBuffer();
+    const supabase = createAdminClient();
+    const chemin = `${conversation}/${createHash("sha1").update(brut).digest("hex").slice(0, 16)}.jpg`;
+    const { error } = await supabase.storage.from(SEAU_SALONS).upload(chemin, octets, { contentType: "image/jpeg", upsert: true });
+    if (error) return undefined;
+    return `${PREFIXE_PRIVE}${chemin}`;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Le chemin d'une référence privée, s'il est bien formé. */
+export function cheminPrive(ref: string): string | undefined {
+  const c = ref.startsWith(PREFIXE_PRIVE) ? ref.slice(PREFIXE_PRIVE.length) : "";
+  return /^[a-z0-9]{16}\/[a-f0-9]{16}\.jpg$/.test(c) ? c : undefined;
+}

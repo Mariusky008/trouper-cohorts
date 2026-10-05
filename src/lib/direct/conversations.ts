@@ -99,6 +99,7 @@ export function rejouer(
         const m: MessageSalon = {
           id: `g${g.id}`,
           qui: x.systeme ? "Clikme" : qui,
+          ...(g.auteur && !g.moi && !x.systeme ? { auteur: g.auteur } : {}),
           voix: x.systeme ? "systeme" : g.moi ? "moi" : "ami",
           texte: x.texte,
           quand: Number.isFinite(t) ? heureCourte(new Date(t)) : "",
