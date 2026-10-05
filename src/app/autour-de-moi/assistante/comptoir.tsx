@@ -179,11 +179,26 @@ function useMicro() {
   const enCours = useRef<ReturnType<typeof ouvrirEcoute> | null>(null);
   const finir = useRef<((r: { texte: string; audio?: string; secondes?: number; erreur?: string }) => void) | null>(null);
 
+  /**
+   * L'ÉCOUTE SE FERME : on n'en rouvre pas une pendant ce temps.
+   *
+   * « J'ai réussi à parler et ça a bien retranscrit ce que je disais, et
+   * pourtant j'ai un message d'erreur. » Quand il se tait, l'écoute s'arrête
+   * seule — mais la transcription prend une seconde ou deux, et pendant ce
+   * temps le bouton dit encore « je t'écoute ». Son appui pour « finir »
+   * tombait là : il OUVRAIT une seconde écoute, muette, dont l'erreur
+   * s'affichait sous sa phrase bien comprise.
+   */
+  const fermeture = useRef(false);
+
   const arreter = useCallback(async () => {
     const e = enCours.current;
     if (!e) return;
     enCours.current = null;
-    const r = await e.arreter();
+    fermeture.current = true;
+    const r = await e.arreter().finally(() => {
+      fermeture.current = false;
+    });
     setEcoute(false);
     finir.current?.({ texte: r.texte, audio: r.audio, secondes: r.secondes, erreur: r.erreur });
   }, []);
@@ -194,6 +209,7 @@ function useMicro() {
         void arreter();
         return;
       }
+      if (fermeture.current) return;
       finir.current = quandFini;
       setDirect("");
       setEcoute(true);
@@ -955,6 +971,9 @@ function EtapeMission({
   const recevoir = (texte: string, erreur?: string) => {
     const t = texte.trim();
     if (!t) {
+      /* UNE ÉCOUTE VIDE N'EFFACE PAS CE QUI A ÉTÉ COMPRIS : sa phrase reste à
+         l'écran, sans message d'erreur par-dessus. */
+      if (compris) return;
       /* LA VRAIE RAISON QUAND ON LA CONNAÎT — un micro refusé ne se règle pas
          en « réessayant ». */
       setEnnui(erreur && !/rien entendu/i.test(erreur) ? `${erreur} Tu peux aussi l’écrire.` : "Je n’ai rien entendu… Réessaie, ou écris-le.");
@@ -991,9 +1010,20 @@ function EtapeMission({
   };
 
   const humeur = compris || (etape.type === "voix" && brouillon.voix) ? "montre" : premiere ? "salut" : "repos";
+  /* ═══ DEUX ÉTAPES OÙ L'ON PARLE, ET ELLES NE SERVENT PAS À LA MÊME CHOSE ═══
+     « On ne comprend pas bien pourquoi il y a l'étape 1 où on demande de dire
+     le menu du jour, et l'étape 3 où on redemande de dire quelque chose pour
+     les clients. » La première donne le NOM et le PRIX, avec lesquels
+     l'annonce s'écrit ; la troisième garde SA VOIX, que ses clients
+     entendront en ouvrant l'annonce (« la voix du chef »). Ça ne se voyait
+     nulle part : chaque étape le dit maintenant, avant l'exemple. */
   const sous =
-    etape.type === "dire" || etape.type === "voix"
-      ? `Par exemple : ${etape.exemple}`
+    etape.type === "dire"
+      ? relance
+        ? `Par exemple : ${etape.exemple}`
+        : `J’écris ton annonce avec ça. Par exemple : ${etape.exemple}`
+      : etape.type === "voix"
+        ? `L’annonce est écrite. Ici, je garde ta voix : tes clients l’entendront en l’ouvrant. Par exemple : ${etape.exemple}`
       : etape.type === "photos"
         ? etape.conseil
         : undefined;
