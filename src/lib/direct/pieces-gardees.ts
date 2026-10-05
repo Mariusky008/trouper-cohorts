@@ -36,6 +36,13 @@ export type PieceGardee = {
    * la pièce sur soi, pas du mannequin — et la photo du catalogue sinon.
    */
   image?: string;
+  /**
+   * VRAI QUAND `image` EST LE RENDU DE L'ESSAI — soi, avec la pièce. Faux pour
+   * la photo du catalogue. C'est ce qui décide qu'on peut la partager dans La
+   * ville comme un essai (« Essai virtuel ») : une photo de catalogue n'en est
+   * pas un. Absent sur les pièces gardées avant ce champ : voir `estUnEssai`.
+   */
+  rendu?: boolean;
   /** Ce qu'on en a pensé, de un à cinq. Zéro : on n'a pas noté. */
   note: number;
   /** Quand on l'a mise de côté. C'est l'ordre de la poche : le plus récent devant. */
@@ -101,4 +108,16 @@ export function basculerPieceGardee(p: Omit<PieceGardee, "quand">) {
       ? l.filter((x) => !(x.carte === p.carte && x.piece === p.piece))
       : [{ ...p, quand: Date.now() }, ...l],
   );
+}
+
+/**
+ * CETTE PIÈCE GARDÉE EST-ELLE UN ESSAI — un rendu de soi avec elle ? Les
+ * pièces gardées avant le champ `rendu` le disent par leur image : un rendu
+ * arrive en `data:` ou depuis le stockage, une photo de catalogue est un
+ * chemin du site.
+ */
+export function estUnEssai(p: PieceGardee): boolean {
+  if (!p.image) return false;
+  if (typeof p.rendu === "boolean") return p.rendu;
+  return /^(data:|blob:|https:)/.test(p.image);
 }

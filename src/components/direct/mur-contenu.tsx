@@ -5847,6 +5847,7 @@ function Essai({
                     nom: piece.nom,
                     prix: piece.prix,
                     image: rendu && !rendu.souci ? rendu.image : piece.photo,
+                    rendu: Boolean(rendu && !rendu.souci),
                     note,
                   });
                   // ON NE GARDE PLUS LE COMMERCE AU PASSAGE. « J'ai bien le

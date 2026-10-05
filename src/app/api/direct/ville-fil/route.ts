@@ -15,7 +15,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { assurerHabitant, habitantCourant } from "@/lib/direct/habitant";
 import { villeSlug } from "@/lib/direct/ville";
 import { amisDe } from "@/lib/direct/amis";
-import { rangerPhoto } from "@/lib/direct/ranger-photo";
+import { rangerPhoto, rangerSon } from "@/lib/direct/ranger-photo";
+import { lireContenu, lireScene } from "@/lib/direct/scenes-ville";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -160,7 +161,14 @@ export async function POST(request: Request) {
     const d = (p?.donnees && typeof p.donnees === "object" ? p.donnees : {}) as Record<string, unknown>;
     const t = texte(d.texte, 1200);
     const photo = await rangerPhoto("ville", id, d.photo);
-    if (!t && !photo) return NextResponse.json({ error: "Il manque le texte." }, { status: 400 });
+    // LE MOT VOCAL, rangé à part comme la photo — et sa durée, bornée.
+    const a = d.audio && typeof d.audio === "object" ? (d.audio as Record<string, unknown>) : null;
+    const son = a ? await rangerSon("ville-sons", id, a.src) : undefined;
+    if (!t && !photo && !son) return NextResponse.json({ error: "Il manque le texte." }, { status: 400 });
+    // LA PRÉSENTATION FIGÉE AU PARTAGE (`scenes-ville.ts`) : on ne garde que ce
+    // qu'on sait dessiner, et rien qui pointe ailleurs que chez nous.
+    const scene = lireScene(d.scene);
+    const contenu = lireContenu(d.contenu);
     const genre = d.genre === "essai" || d.genre === "decouverte" ? d.genre : undefined;
     const c = d.commerce && typeof d.commerce === "object" ? (d.commerce as Record<string, unknown>) : null;
     const r = d.reference && typeof d.reference === "object" ? (d.reference as Record<string, unknown>) : null;
@@ -171,7 +179,18 @@ export async function POST(request: Request) {
       ...(photo ? { photo } : {}),
       ou: texte(d.ou, 120),
       dure: Math.max(30, Math.min(Number(d.dure) || 180, 720)),
-      ...(c && s(c.id) ? { commerce: { id: texte(c.id, 120), nom: texte(c.nom, 120) } } : {}),
+      ...(c && s(c.id)
+        ? {
+            commerce: {
+              id: texte(c.id, 120),
+              nom: texte(c.nom, 120),
+              ...(/^(https:\/\/|\/[a-z0-9/_.-]+$)/i.test(s(c.photo)) ? { photo: texte(c.photo, 600) } : {}),
+            },
+          }
+        : {}),
+      ...(scene ? { scene } : {}),
+      ...(contenu ? { contenu } : {}),
+      ...(son ? { audio: { src: son, duree: Math.max(1, Math.min(Number(a?.duree) || 1, 120)) } } : {}),
       ...(r && s(r.carte) && s(r.piece) ? { reference: { carte: texte(r.carte, 120), piece: texte(r.piece, 120), nom: texte(r.nom, 120) } } : {}),
       ...(d.vecu ? { vecu: true } : {}),
       ...(ID.test(s(d.suite)) ? { suite: s(d.suite) } : {}),

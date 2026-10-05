@@ -106,6 +106,7 @@ import {
   abonnerPiecesGardees,
   basculerPieceGardee,
   chargerPiecesGardees,
+  estUnEssai,
   piecesGardeesVides,
   type PieceGardee,
 } from "@/lib/direct/pieces-gardees";
@@ -141,15 +142,11 @@ import {
   AUCUN_VU,
   chargerVus as chargerVusVille,
   chargerVille,
-  comprendre,
-  direQuelqueChose,
-  NATURES,
   salonDepuisVille,
   sansLesExemples,
   amisPartages,
   VILLE_VIDE,
   type MessageVille,
-  type NatureVille,
 } from "@/lib/direct/la-ville";
 import {
   abonnerInstallation,
@@ -178,7 +175,7 @@ import { EcranSalon } from "@/components/direct/ecran-salon";
 import { Ensemble } from "./ensemble";
 import { aToiDeJouer, nosDiscussions } from "@/lib/direct/ensemble";
 import { MaMaison, type MaisonEnVisite } from "./ma-maison";
-import { LaVille } from "./la-ville";
+import { LaVille, type CibleSalon, type EssaiPartageable, type SalonPartageable } from "./la-ville";
 import { StyleMaison } from "@/components/direct/style-maison";
 import { StylesChoix } from "@/components/direct/styles-choix";
 // LE PARCOURS MODE — la « partie 2 », pour une categorie sur cinq.
@@ -2056,10 +2053,6 @@ export function ApercuHabitant() {
   // voisins et les amis de démonstration seraient inventés. Voir `sansLesExemples`.
   const ville = useMemo(() => (reelle ? sansLesExemples(villeLue) : villeLue), [reelle, villeLue]);
   const vusVille = useSyncExternalStore(abonnerVusVille, chargerVusVille, () => AUCUN_VU);
-  const [motVille, setMotVille] = useState("");
-  const [composeVille, setComposeVille] = useState(false);
-  /** Ce que l'application a compris, et qu'on peut corriger d'un appui. */
-  const [natureVille, setNatureVille] = useState<NatureVille>("question");
   /** L'essai d'une publication de la ville, rejoué sur soi : « Essayer sur moi ». */
   const [essaiVille, setEssaiVille] = useState<{ carte: string; piece: string } | null>(null);
   /** Chaque appui sur le fantôme d'une page l'augmente : la page ouvre son geste. */
@@ -5622,6 +5615,44 @@ export function ApercuHabitant() {
   }
 
   /**
+   * « EN PARLER À MES AMIS », « PROPOSER À MES AMIS » — la publication part
+   * dans Ensemble avec son contenu : dans un salon où je suis, ou dans un
+   * nouveau, privé ou public selon ce que j'ai choisi (`VersEnsemble` dans
+   * `la-ville.tsx`). Elle s'y retrouve ensuite, comme toute conversation.
+   */
+  function partagerDansUnSalon(m: MessageVille, cible: CibleSalon) {
+    noter("partage", 0, "ville-ensemble");
+    const ligne = {
+      qui: monPrenom() || "Vous",
+      voix: "moi" as const,
+      texte: `📌 Vu dans La ville — ${m.qui === "Vous" ? "ma publication" : `la publication de ${m.qui}`}${m.commerce ? ` (${m.commerce.nom})` : ""} : « ${m.texte.slice(0, 90)}${m.texte.length > 90 ? "…" : ""} »`,
+      quand: heureCourte(),
+      photo: m.photo,
+    };
+    let cle: string;
+    if ("cle" in cible) {
+      cle = cible.cle;
+    } else {
+      cle = `vd|${m.id}|${Date.now().toString(36)}`;
+      const sortie = m.nature === "evenement" || m.nature === "cherche";
+      ouvrirSalon({
+        cle,
+        sujet: m.contenu?.nom ?? m.commerce?.nom ?? m.texte.slice(0, 60),
+        ou: m.commerce?.nom ?? m.ou,
+        parQui: "Vous",
+        quand: sortie ? "Ce soir" : "À décider",
+        prive: cible.prive,
+        photo: m.photo,
+        annonce: m.texte.slice(0, 70),
+        distance: m.distance,
+      });
+    }
+    ecrireDansSalon(cle, ligne);
+    setSalonOuvert(cle);
+    setSalonPage(true);
+  }
+
+  /**
    * LA PROPOSITION EN TÊTE — c'est elle que le bandeau du salon montre.
    * Pas de seuil de majorité : le bandeau suit ce qui mène, en direct, et
    * c'est réserver qui tranche. Voir `salons.ts` pour pourquoi « la majorité »
@@ -5806,45 +5837,37 @@ export function ApercuHabitant() {
       },
     }));
 
+  /**
+   * ═══ CE QUE JE PEUX PARTAGER DANS LA VILLE ═══════════════════════════════
+   *
+   * « Un de mes essais » : les essais RÉELLEMENT enregistrés — une pièce
+   * gardée avec son rendu (pas la photo du catalogue : ce n'est pas un essai),
+   * ou la trace d'un essai avec sa photo. Le commerce et la pièce y sont déjà.
+   * Rien n'est publié tout seul : c'est une liste où l'on choisit.
+   */
+  const essaisPartageables: EssaiPartageable[] =
+    onglet === "ville"
+      ? [
+          ...piecesGardees
+            .filter(estUnEssai)
+            .map((p) => ({ cle: `piece:${p.carte}|${p.piece}`, image: p.image!, nom: p.nom, carte: p.carte, lieu: p.lieu, piece: p.piece })),
+          ...mesFantomes()
+            .filter((t) => t.essai && t.photo && (!reelle || toutes.some((c) => c.id === t.souvenir.cle)))
+            .map((t) => ({ cle: `trace:${t.id}`, image: t.photo!, nom: t.essai?.quoi || t.mot, carte: t.souvenir.cle, lieu: t.souvenir.lieu })),
+        ]
+      : [];
+  /** Les salons où je suis : on peut y partager une publication de La ville. */
+  const salonsPartageables: SalonPartageable[] = Object.values(salons)
+    .filter((x) => x.ouvert && dansLeSalon(x))
+    .map((x) => ({ cle: x.cle, sujet: x.sujet, prive: Boolean(x.prive), photo: x.photo }));
+
   /** Le geste du fantôme sur la page affichée — aucun dans Le Direct. */
   const gestePage = onglet in GESTES_DE_PAGE ? GESTES_DE_PAGE[onglet as PageAGeste] : null;
 
   const aSuivreVille =
     suitesDesEssais.length + ville.filter((m) => m.qui === "Vous" && m.reponses.length > (vusVille[m.id] ?? 0)).length;
 
-  /**
-   * « EN DISCUTER AVEC MES AMIS » — une conversation privée sur une
-   * publication, qui se retrouve dans Ensemble. La publication en est l'objet :
-   * sa photo en tête, son texte en sujet, et une ligne qui dit d'où elle vient.
-   * Une seule conversation par publication : y revenir rouvre la même.
-   */
-  function discuterDepuisVille(m: MessageVille) {
-    const cle = `vd|${m.id}`;
-    if (!salons[cle]) {
-      noter("partage", 0, "ville-discuter");
-      const sujet = m.commerce ? m.commerce.nom : m.texte.slice(0, 60);
-      ouvrirSalon({
-        cle,
-        sujet,
-        ou: m.commerce?.nom ?? m.ou,
-        parQui: "Vous",
-        quand: "À décider",
-        prive: true,
-        photo: m.photo,
-        annonce: m.texte.slice(0, 70),
-        distance: m.distance,
-      });
-      ecrireDansSalon(cle, {
-        qui: monPrenom() || "Vous",
-        voix: "systeme",
-        texte: `📌 Vu dans La ville — ${m.qui === "Vous" ? "ta publication" : `la publication de ${m.qui}`} : « ${m.texte.slice(0, 90)}${m.texte.length > 90 ? "…" : ""} »`,
-        quand: heureCourte(),
-        photo: m.photo,
-      });
-    }
-    setSalonOuvert(cle);
-    setSalonPage(true);
-  }
+
 
   /* ═══ CE QUE LE FANTÔME VOIT DU GROUPE ═══
 
@@ -11249,17 +11272,26 @@ export function ApercuHabitant() {
                 amis={reelle ? [...new Set([...mesAmis, ...amisPartages()])] : mesAmis}
                 sorties={salonsADecouvrir}
                 suites={suitesDesEssais}
-                essais={piecesGardees}
+                essais={essaisPartageables}
                 commerces={[...toutes].sort((x, y) => x.metres - y.metres)}
+                mesSalons={salonsPartageables}
                 onEssayer={(r) => {
                   noter("ouverture", 0, "ville-essayer");
                   setEssaiVille(r);
                 }}
+                onPremierEssai={() => {
+                  // DANS LA DÉMONSTRATION, ON L'Y EMMÈNE : le carré du salon du
+                  // centre, essayable tout de suite. Dans la vraie ville, Le
+                  // Direct, où ses commerçants proposent leurs essais.
+                  noter("ouverture", 0, "ville-premier-essai");
+                  if (!reelle && toutes.some((c) => c.id === "coif-centre")) setEssaiVille({ carte: "coif-centre", piece: "c-femme" });
+                  else allerA_onglet("direct");
+                }}
+                onPartagerSalon={partagerDansUnSalon}
                 onPage={(id) => {
                   // SA VRAIE PAGE pour un commerçant de la ville — voir `pageDuCommerce`.
                   window.location.href = pageDuCommerce(toutes.find((x) => x.id === id) ?? { id });
                 }}
-                onDiscuter={discuterDepuisVille}
                 onSortie={ouvrirSalonDepuisVille}
                 onOuvrirSalon={(cle) => {
                   setSalonOuvert(cle);
@@ -11276,12 +11308,6 @@ export function ApercuHabitant() {
                     : undefined
                 }
                 onMaison={reelle ? (m) => void visiterLaMaison({ publication: m.id }) : undefined}
-                onMessageVille={() => {
-                  noter("champ-touche", 0, "ville");
-                  setMotVille("");
-                  setNatureVille("question");
-                  setComposeVille(true);
-                }}
               />
             </div>
           )}
@@ -11500,89 +11526,10 @@ export function ApercuHabitant() {
               masquée dans un salon ouvert, qui a sa propre barre d'actions —
               deux barres l'une sur l'autre ne se lisent pas. */}
           {/* ─── DIRE QUELQUE CHOSE ───
-              Un champ, et ce que l'application a compris, MONTRÉ et
-              CORRIGEABLE. Un rangement silencieux qui se trompe est pire qu'une
-              case à cocher : la personne ne comprend pas où son message est
-              parti, et n'écrit plus. */}
-          {composeVille && (
-            <>
-              <button
-                type="button"
-                className="ap-fond"
-                aria-label="Fermer"
-                onClick={() => setComposeVille(false)}
-              />
-              <Feuille
-                fermer={() => setComposeVille(false)}
-                enfants={
-                  <>
-                <div className="ap-f-tete">
-                  <b>Dire quelque chose</b>
-                  <span className="simple">
-                    À Dax, maintenant. Ça s&apos;effacera tout seul dans quelques
-                    heures.
-                  </span>
-                </div>
-                <div className="ap-pdem">
-                  <textarea
-                    className="ap-dem-t"
-                    rows={3}
-                    maxLength={280}
-                    autoFocus
-                    value={motVille}
-                    placeholder="Il se passe quoi ce soir en ville ?"
-                    aria-label="Ce que vous voulez dire"
-                    onChange={(ev) => {
-                      const t = ev.target.value;
-                      setMotVille(t);
-                      // On range à mesure qu'on écrit, pour que le résultat
-                      // soit là AVANT d'appuyer, pas après.
-                      if (t.trim().length > 6) setNatureVille(comprendre(t));
-                    }}
-                  />
-
-                  <div className="ap-v-compris">
-                    <span>
-                      <i aria-hidden="true">✨</i>
-                      Rangé dans <b>{NATURES[natureVille].label}</b>
-                    </span>
-                    <em>Pas le bon endroit&nbsp;? Choisissez&nbsp;:</em>
-                    <div className="ap-envies">
-                      {(Object.keys(NATURES) as NatureVille[]).map((n) => (
-                        <button
-                          key={n}
-                          type="button"
-                          className={`ap-e${natureVille === n ? " on" : ""}`}
-                          onClick={() => setNatureVille(n)}
-                        >
-                          <i aria-hidden="true">{NATURES[n].emoji}</i>
-                          {NATURES[n].label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="ap-pdem-b"
-                    disabled={motVille.trim().length < 3}
-                    onClick={() => {
-                      // LA LONGUEUR, JAMAIS LE TEXTE, dans la mesure des parcours.
-                      // Le message, lui, ne quitte le téléphone que dans la
-                      // vraie ville, où il part au fil partagé (`ville-sync.ts`).
-                      noter("demande-envoyee", motVille.trim().length, "ville");
-                      direQuelqueChose(motVille, natureVille);
-                      setComposeVille(false);
-                    }}
-                  >
-                    Le dire à la ville
-                  </button>
-                </div>
-                  </>
-                }
-              />
-            </>
-          )}
+              La feuille « Dire quelque chose » est devenue le parcours « Un
+              message sur la ville » de La ville (`la-ville.tsx`) : texte,
+              photo ou mot vocal, un lieu facultatif, un aperçu et l'audience
+              avant de publier. */}
 
 
           {/* ═══ LA FEUILLE EST POSEE SUR L'ANNONCE, PAS A SA PLACE ═══

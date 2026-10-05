@@ -30,6 +30,7 @@
 // L'ANONYMAT EST LE MÊME QUE PARTOUT AILLEURS ICI : un prénom, une initiale,
 // une distance. Pas de visage, pas de nom de famille, pas de profil qu'on
 // puisse suivre. Voir `apercu-habitant.ts` pour la règle complète.
+import { jourDe, sceneDAmbiance, sceneDeVitrine, type ContenuPartage, type SceneVille } from "@/lib/direct/scenes-ville";
 
 /** Ce dont un message parle. Fermé : cinq natures, pas une de plus. */
 export type NatureVille =
@@ -102,8 +103,26 @@ export type MessageVille = {
   visibilite?: "amis" | "public";
   /** Ne s'efface pas (essais, découvertes). */
   persistant?: boolean;
-  /** Le commerce d'origine — on l'ouvre en touchant son nom. */
-  commerce?: { id: string; nom: string };
+  /**
+   * Le commerce d'origine — on l'ouvre en touchant son nom. `photo` : sa
+   * miniature, pour la carte simple quand la scène ne peut pas se monter.
+   */
+  commerce?: { id: string; nom: string; photo?: string };
+  /**
+   * ═══ LA PRÉSENTATION, FIGÉE AU PARTAGE — voir `scenes-ville.ts` ═══
+   *
+   * La scène (la vitrine où l'essai devient affiche, l'ambiance illustrée
+   * d'une salle) est recopiée ici au moment où l'on publie. Le commerçant
+   * change sa devanture : cette publication garde la sienne.
+   */
+  scene?: SceneVille;
+  /**
+   * CE QU'ON A PARTAGÉ D'UN COMMERCE : un plat de son menu (avec son jour),
+   * un produit, un événement. Le lien vers le commerce est dans `commerce`.
+   */
+  contenu?: ContenuPartage;
+  /** Un mot vocal : son adresse (data: avant l'envoi) et sa durée en secondes. */
+  audio?: { src: string; duree: number };
   /** L'article ou la coupe essayés : « Essayer sur moi » repart de là. */
   reference?: { carte: string; piece: string; nom: string };
   /**
@@ -219,50 +238,196 @@ export function comprendre(texte: string): NatureVille {
 
 const min = (n: number) => n * 60_000;
 
+/* LES COMMERCES DE LA DÉMONSTRATION QUE LE FIL CITE — de quoi préparer leur
+   scène (`scenes-ville.ts`) avec leurs photos à eux, celles de leurs cartes
+   dans `apercu-habitant.ts`. */
+const SALON_DU_CENTRE = {
+  branche: "coiffeur" as const,
+  nom: "Un salon du centre",
+  ville: "Dax",
+  photo: "/direct/coiffure-femme-face.jpg",
+  photos: ["/direct/coiffure-femme-face.jpg", "/direct/fauteuil-coiffeur.jpg", "/direct/salon-neuf.jpg"],
+};
+const DEPOT_VENTE = {
+  branche: "mode" as const,
+  nom: "Un dépôt-vente de la place",
+  ville: "Dax",
+  photo: "/direct/mode-manteau-leopard.jpg",
+  photos: ["/direct/mode-manteau-leopard.jpg", "/direct/friperie-rayon.jpg"],
+};
+const PROTHESISTE = { branche: "ongles" as const, nom: "Une prothésiste ongulaire", ville: "Dax", photo: "/direct/pose-ongles.jpg" };
+const LUNETIER = { branche: "lunetier" as const, nom: "Un lunetier de la rue piétonne", ville: "Dax", photo: "/direct/lunettes3.jpeg" };
+
 export function messagesSemes(maintenant = Date.now()): MessageVille[] {
+  const vitrine = (c: Parameters<typeof sceneDeVitrine>[0]) => sceneDeVitrine(c) ?? undefined;
   return [
     /* ═══ CE QUE LES AMIS ONT PARTAGÉ ═══ — des amis de démonstration, comme
        ceux des salons : Karim et Léa y sont déjà. Les références d'essai sont
        de vraies pièces des murs de démonstration : « Essayer sur moi » part
-       de la même coupe, des mêmes lunettes. */
+       de la même coupe, des mêmes lunettes. Chaque essai entre dans la
+       vitrine de SON commerce — voir `scenes-ville.ts`. */
     {
       id: "va1",
-      qui: "Karim",
+      qui: "Léa",
       ou: "Un salon du centre",
       distance: "300 m",
       metres: 300,
-      texte: "Cette coupe sur moi, vous en pensez quoi ?",
+      texte: "Et si je passais au carré ? 💇‍♀️",
       nature: "question",
       genre: "essai",
       visibilite: "amis",
       persistant: true,
-      commerce: { id: "coif-centre", nom: "Un salon du centre" },
-      reference: { carte: "coif-centre", piece: "c-homme", nom: "Boucles courtes, de face" },
-      photo: "/direct/coiffure-homme-face.jpg",
+      commerce: { id: "coif-centre", nom: "Un salon du centre", photo: "/direct/salon-neuf.jpg" },
+      reference: { carte: "coif-centre", piece: "c-femme", nom: "Carré long, de face" },
+      photo: "/direct/accueil/coiffure-apres.jpg",
+      scene: vitrine(SALON_DU_CENTRE),
       a: maintenant - min(15),
       dure: 180,
-      coeurs: 6,
+      coeurs: 12,
       reponses: [
-        { id: "va1r1", qui: "Thomas", texte: "Franchement elle te va bien !", quand: "il y a 9 min" },
+        { id: "va1r1", qui: "Karim", texte: "Franchement il te va très bien !", quand: "il y a 9 min" },
       ],
     },
     {
-      id: "va2",
+      id: "va7",
       qui: "Camille",
+      ou: "Autour de Dax",
+      distance: "1 km",
+      metres: 1000,
+      texte: "Une balade sympa près de Dax ? 🌿",
+      nature: "question",
+      a: maintenant - min(22),
+      dure: 240,
+      coeurs: 8,
+      reponses: [
+        { id: "va7r1", qui: "Marc", texte: "Les barthes de l'Adour, au coucher du soleil.", quand: "il y a 18 min" },
+        { id: "va7r2", qui: "Inès", texte: "Le bois de Boulogne, à côté du lac.", quand: "il y a 15 min" },
+      ],
+    },
+    {
+      // LA PHOTO DU PLAT, DIRECTEMENT — celle de son menu, avec son jour :
+      // demain, elle dira « Au menu le … », pas « Menu du jour ».
+      id: "va2",
+      qui: "Thomas",
       ou: "Chez Bergine",
       distance: "400 m",
       metres: 400,
-      texte: "On y a mangé ce midi : la garbure est parfaite, et le service adorable.",
+      texte: "Ça vous tente pour ce midi ?",
       nature: "coup-de-coeur",
       genre: "decouverte",
-      vecu: true,
       visibilite: "public",
       persistant: true,
-      commerce: { id: "centre", nom: "Chez Bergine" },
-      photo: "/direct/plat-garbure-servi.jpeg",
-      a: maintenant - min(50),
+      commerce: { id: "centre", nom: "Chez Bergine", photo: "/direct/tables-libres.jpg" },
+      contenu: {
+        type: "plat",
+        nom: "Garbure landaise, magret grillé",
+        detail: "Pommes sarladaises",
+        prix: "19 €",
+        photo: "/direct/plat-garbure.jpg",
+        jour: jourDe(maintenant),
+      },
+      photo: "/direct/plat-garbure.jpg",
+      a: maintenant - min(40),
       dure: 180,
       coeurs: 11,
+      reponses: [],
+    },
+    {
+      // UN MOT VOCAL, SANS DÉCOR : le son de la soirée, et une phrase.
+      id: "va4",
+      qui: "Camille",
+      ou: "Près des Halles",
+      distance: "250 m",
+      metres: 250,
+      texte: "Il y a de la musique près des Halles ! 🎶",
+      nature: "bon-plan",
+      audio: { src: "/direct/soiree/son-de-ce-soir.wav", duree: 12 },
+      a: maintenant - min(48),
+      dure: 240,
+      coeurs: 5,
+      reponses: [],
+    },
+    {
+      // LA SALLE DU BAR, AVEC DEUX CLIENTS FANTÔMES : « Ambiance illustrée ».
+      id: "va5",
+      qui: "Karim",
+      ou: "Un bar à vins",
+      distance: "350 m",
+      metres: 350,
+      texte: "On se retrouve ici samedi ?",
+      nature: "evenement",
+      genre: "decouverte",
+      visibilite: "public",
+      persistant: true,
+      commerce: { id: "bar-vins", nom: "Un bar à vins", photo: "/direct/verre-au-comptoir.jpg" },
+      contenu: { type: "lieu", nom: "La salle, avant le service", photo: "/direct/bar-salle.jpg" },
+      photo: "/direct/bar-salle.jpg",
+      scene: sceneDAmbiance(),
+      a: maintenant - min(70),
+      dure: 180,
+      coeurs: 24,
+      reponses: [],
+    },
+    {
+      id: "va6",
+      qui: "Camille",
+      ou: "Une prothésiste ongulaire",
+      distance: "210 m",
+      metres: 210,
+      texte: "Pastel ou plus osé ? 💅",
+      nature: "question",
+      genre: "essai",
+      visibilite: "public",
+      persistant: true,
+      commerce: { id: "ongle-institut", nom: "Une prothésiste ongulaire", photo: "/direct/pose-ongles.jpg" },
+      reference: { carte: "ongle-institut", piece: "p-pastel", nom: "Pastel" },
+      photo: "/direct/ongles2.jpeg",
+      scene: vitrine(PROTHESISTE),
+      a: maintenant - min(95),
+      dure: 180,
+      coeurs: 16,
+      reponses: [],
+    },
+    {
+      // LA TROUVAILLE D'UNE FLEURISTE : la photo du bouquet, rien d'autre.
+      // Pas de décor d'atelier tant qu'aucun modèle ne lui convient.
+      id: "va8",
+      qui: "Léa",
+      ou: "Une fleuriste du marché",
+      distance: "380 m",
+      metres: 380,
+      texte: "Des bouquets qui font du bien 🌸",
+      nature: "coup-de-coeur",
+      genre: "decouverte",
+      visibilite: "public",
+      persistant: true,
+      vecu: true,
+      commerce: { id: "fleur-marche", nom: "Une fleuriste du marché", photo: "/direct/bouquet-du-jour.jpg" },
+      contenu: { type: "produit", nom: "Le bouquet du jour", photo: "/direct/bouquet-du-jour.jpg" },
+      photo: "/direct/bouquet-du-jour.jpg",
+      a: maintenant - min(130),
+      dure: 180,
+      coeurs: 9,
+      reponses: [],
+    },
+    {
+      id: "va9",
+      qui: "Inès",
+      ou: "Un dépôt-vente de la place",
+      distance: "260 m",
+      metres: 260,
+      texte: "Cette tenue pour samedi ? 🧥",
+      nature: "question",
+      genre: "essai",
+      visibilite: "public",
+      persistant: true,
+      commerce: { id: "mode-depot", nom: "Un dépôt-vente de la place", photo: "/direct/friperie-rayon.jpg" },
+      reference: { carte: "mode-depot", piece: "m-leopard", nom: "Manteau léopard" },
+      photo: "/direct/essai/mode-depot-apres.jpg",
+      scene: vitrine(DEPOT_VENTE),
+      a: maintenant - min(160),
+      dure: 180,
+      coeurs: 7,
       reponses: [],
     },
     {
@@ -276,10 +441,11 @@ export function messagesSemes(maintenant = Date.now()): MessageVille[] {
       genre: "essai",
       visibilite: "public",
       persistant: true,
-      commerce: { id: "lunetier-pietonne", nom: "Un lunetier de la rue piétonne" },
-      reference: { carte: "lunetier-pietonne", piece: "lu-3", nom: "Œil-de-chat vert bouteille" },
-      photo: "/direct/lunettes3.jpeg",
-      a: maintenant - min(75),
+      commerce: { id: "lunetier-pietonne", nom: "Un lunetier de la rue piétonne", photo: "/direct/lunetier.jpeg" },
+      reference: { carte: "lunetier-pietonne", piece: "l-fuchsia", nom: "Papillon fuchsia translucide" },
+      photo: "/direct/lunettes2.jpeg",
+      scene: vitrine(LUNETIER),
+      a: maintenant - min(190),
       dure: 180,
       coeurs: 9,
       reponses: [],
@@ -303,45 +469,6 @@ export function messagesSemes(maintenant = Date.now()): MessageVille[] {
           quand: "il y a 9 min",
         },
         { id: "v1r2", qui: "Sonia", texte: "Ah merci, je me demandais aussi.", quand: "il y a 6 min" },
-      ],
-    },
-    {
-      id: "v2",
-      qui: "Thomas",
-      ou: "Place de la Fontaine chaude",
-      distance: "150 m",
-      metres: 150,
-      texte: "Je viens de voir un super groupe jouer place de la Fontaine chaude 🔥",
-      nature: "bon-plan",
-      a: maintenant - min(28),
-      dure: 180,
-      coeurs: 18,
-      photo: "/direct/concert-kiosque.jpg",
-      reponses: [
-        { id: "v2r1", qui: "Inès", texte: "Ils jouent jusqu'à quand ?", quand: "il y a 21 min" },
-        { id: "v2r2", qui: "Thomas", texte: "Ils viennent de dire encore trois morceaux.", quand: "il y a 18 min" },
-      ],
-    },
-    {
-      id: "v3",
-      qui: "Sarah",
-      ou: "Kiosque du parc",
-      distance: "300 m",
-      metres: 300,
-      texte: "Il y a encore des places pour le concert de ce soir ?",
-      nature: "question",
-      a: maintenant - min(58),
-      dure: 240,
-      coeurs: 1,
-      reponses: [
-        {
-          id: "v3r1",
-          qui: "La mairie",
-          texte: "C'est en accès libre, il n'y a pas de billet. Venez avec de quoi vous asseoir.",
-          quand: "il y a 44 min",
-          officiel: "Organisateur",
-        },
-        { id: "v3r2", qui: "Paul", texte: "On y sera à 19 h, il y a de la place sur l'herbe.", quand: "il y a 31 min" },
       ],
     },
     {
@@ -608,16 +735,21 @@ export function publierDansLaVille(o: {
   nature?: NatureVille;
   photo?: string;
   visibilite: "amis" | "public";
-  commerce?: { id: string; nom: string };
+  commerce?: { id: string; nom: string; photo?: string };
   reference?: { carte: string; piece: string; nom: string };
   vecu?: boolean;
   suite?: string;
+  scene?: SceneVille;
+  contenu?: ContenuPartage;
+  audio?: { src: string; duree: number };
+  /** Le lieu d'un message sur la ville — facultatif. */
+  ou?: string;
 }) {
   const e = lire();
   const neuf: MessageVille = {
     id: `v${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
     qui: "Vous",
-    ou: o.commerce?.nom ?? "Autour de vous",
+    ou: o.commerce?.nom ?? (o.ou?.trim() || "Autour de vous"),
     distance: "0 m",
     metres: 0,
     texte: o.texte.trim(),
@@ -634,6 +766,9 @@ export function publierDansLaVille(o: {
     coeurs: 0,
     reponses: [],
     photo: o.photo,
+    ...(o.scene ? { scene: o.scene } : {}),
+    ...(o.contenu ? { contenu: o.contenu } : {}),
+    ...(o.audio ? { audio: o.audio } : {}),
   };
   garder({ ...e, miennes: [neuf, ...e.miennes] });
   partage?.publier(neuf);
