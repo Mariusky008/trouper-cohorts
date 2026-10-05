@@ -140,12 +140,26 @@ export function mentionDuCommerce(branche: CleMetier | undefined, essai: boolean
   return (branche && mots[branche]) || "Proposé par";
 }
 
+/**
+ * LE DÉCOR CLIKME PRÉPARÉ D'UN COMMERÇANT — une image de référence faite à
+ * partir d'une vraie photo de son commerce : façade reconnaissable,
+ * emplacement d'affiche assez grand (il peut être créé pour la mise en scène,
+ * il n'a pas besoin d'exister dans la rue), fantôme déjà intégré s'il le faut.
+ * Déposé une fois dans `/admin/humain/scenes` (`diagnostic.decorVille`).
+ */
+export function decorVilleDuDiagnostic(diag: Record<string, unknown>): string | undefined {
+  const d = diag.decorVille as Record<string, unknown> | undefined;
+  const url = String(d?.url ?? "");
+  return /^https:\/\//i.test(url) ? url.slice(0, 600) : undefined;
+}
+
 /** Le petit fantôme posé dans un angle — voir `DecorMesure.fantome`. */
 export function fantomeEnCoin(src: string, cote: "gauche" | "droite", ratio: number): Calque {
   // UNE HAUTEUR QUI TIENT DANS LA SCÈNE : environ le quart d'une photo en
   // hauteur, un peu plus sur une photo en largeur, où il paraîtrait minuscule.
   const h = ratio > 1 ? 0.3 : 0.22;
-  return { src, x: cote === "gauche" ? 0.13 : 0.87, y: 0.985, h, ombre: true, filtre: "brightness(.95) sepia(.14) saturate(1.05)" };
+  // ENTIER : écarté du bord et de l'angle arrondi de la carte, qui le rognaient.
+  return { src, x: cote === "gauche" ? 0.17 : 0.83, y: 0.965, h, ombre: true, filtre: "brightness(.95) sepia(.14) saturate(1.05)" };
 }
 
 /** Le fantôme du métier, pour une miniature ou un avatar. */
@@ -160,25 +174,37 @@ export function fantomeDuMetier(branche: CleMetier | undefined): string {
 }
 
 /* ═══ LES DÉCORS MESURÉS DE LA DÉMONSTRATION ═══════════════════════════════
-   AUCUN, ET C'EST VOULU. La vitrine de la boutique de prêt-à-porter
-   (`vitrine-mode.jpg`) a été essayée : trois mannequins remplissent toute la
-   vitre, il n'y reste aucune place prévue pour une grande affiche. « Si aucun
-   emplacement ne permet une grande affiche crédible, mieux vaut changer de
-   décor que forcer le montage. » Faute d'autre devanture, ses essais partent
-   en carte simple, comme ceux des autres commerces de la démonstration.
+   UNE VITRINE VIRTUELLE, EN ATTENDANT LE DÉCOR DE RÉFÉRENCE. « On peut
+   distinguer le commerce réel, dont on conserve l'enseigne, l'entrée et
+   l'architecture, et la mise en scène ClikMe, qui peut ajouter un cadre
+   d'affichage virtuel et le fantôme. » L'emplacement n'a donc pas besoin
+   d'exister dans la rue : la scène le dit (« Vitrine virtuelle »).
 
-   CE QU'IL FAUT À UNE VITRINE, pour qu'on comprenne « mon amie est à
-   l'affiche de cette boutique » avant de remarquer le fantôme : une photo de
-   face, et un vrai support — un cadre, un panneau, un pan de vitre dégagé —
-   dont les quatre coins se posent sur ses lignes (`/admin/humain/scenes`).
-   Le fantôme, s'il y en a un, reste petit, entier, dans un angle.
+   PROVISOIRE, SUR LA PHOTO QU'ON A (`vitrine-mode.jpg`) : la grande affiche
+   prend le milieu de la vitre, devant les deux mannequins de droite — assez
+   large pour reconnaître la personne en faisant défiler. Le mannequin de
+   gauche, la vitrine et ses objets restent : on reconnaît la boutique. Le
+   petit fantôme se tient dans l'angle gauche.
 
-   LA PROCHAINE : la photo d'une boutique partenaire de Dax, prise pour ça.
-   Elle se range dans `public/direct/ville/`, puis une ligne ici —
-     "mode-centre": { decor, ratio, coins, fantome: "gauche" }
-   — et l'essai d'Inès redevient une vitrine : grande affiche, petit
-   fantôme, un appui sur l'affiche pour la voir en grand. */
-const DECORS_DE_LA_DEMO: Record<string, DecorMesure> = {};
+   LE DÉCOR DE RÉFÉRENCE la remplacera : une image préparée à partir d'une
+   vraie photo du commerce, façade reconnaissable, emplacement d'affiche
+   assez grand, fantôme déjà intégré (alors sans `fantome` ici). On la range
+   dans `public/direct/ville/`, on mesure ses quatre coins une fois, et les
+   essais s'y insèrent sans aucune génération d'image. Pour un vrai
+   commerçant, la même chose se fait dans `/admin/humain/scenes`. */
+const DECORS_DE_LA_DEMO: Record<string, DecorMesure> = {
+  "mode-centre": {
+    decor: "/direct/vitrine-mode.jpg",
+    ratio: 387 / 516,
+    coins: [
+      [0.3, 0.235],
+      [0.765, 0.235],
+      [0.765, 0.8],
+      [0.3, 0.8],
+    ],
+    fantome: "gauche",
+  },
+};
 
 /**
  * LES SALLES MESURÉES : où deux clients fantômes peuvent s'asseoir, et ce qui

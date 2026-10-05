@@ -248,8 +248,8 @@ const SALON_DU_CENTRE = {
   photo: "/direct/coiffure-femme-face.jpg",
   photos: ["/direct/coiffure-femme-face.jpg", "/direct/fauteuil-coiffeur.jpg", "/direct/salon-neuf.jpg"],
 };
-// SA VITRINE N'A PAS DE PLACE POUR UNE GRANDE AFFICHE — voir `scenes-ville.ts` :
-// l'essai d'Inès part en carte simple, avec la boutique en bas.
+// SA VITRINE VIRTUELLE — la grande affiche au milieu de sa vitre, et son
+// petit fantôme. Voir `DECORS_DE_LA_DEMO` dans `scenes-ville.ts`.
 const BOUTIQUE_PIETONNE = {
   id: "mode-centre",
   branche: "mode" as const,

@@ -26,7 +26,7 @@ import { numeroAppel, numeroReservations } from "@/lib/site-internet/pro-phone";
 import { carteDepuisFiche, type FicheCommercant } from "@/lib/site-internet/carte-depuis-fiche";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { couvertureAffichee, couvertureDuDiagnostic, photoSansHote } from "@/lib/site-internet/couverture";
-import { lireDecor, type DecorMesure } from "@/lib/direct/scenes-ville";
+import { decorVilleDuDiagnostic, lireDecor, type DecorMesure } from "@/lib/direct/scenes-ville";
 
 /**
  * SA SCÈNE POUR LE FIL DE LA VILLE — la zone d'affiche posée sur sa photo
@@ -37,9 +37,11 @@ import { lireDecor, type DecorMesure } from "@/lib/direct/scenes-ville";
  */
 function sceneVilleDuDiagnostic(diag: Record<string, unknown>, couverture: string | undefined, devanture?: string): DecorMesure | undefined {
   const d = lireDecor(diag.sceneVille);
-  // LA ZONE VAUT POUR SA PHOTO : sa photo ClikMe, ou la photo de devanture
-  // qu'il a rangée lui-même (`photos-du-lieu.ts`). Photo changée, zone tombée.
-  return d && ((couverture && d.decor === couverture) || (devanture && d.decor === devanture)) ? d : undefined;
+  // LA ZONE VAUT POUR SA PHOTO : son décor ClikMe préparé, sa photo ClikMe, ou
+  // la photo de devanture qu'il a rangée lui-même (`photos-du-lieu.ts`).
+  // Photo changée, zone tombée.
+  const valables = [decorVilleDuDiagnostic(diag), couverture, devanture].filter(Boolean);
+  return d && valables.includes(d.decor) ? d : undefined;
 }
 import { nomPropre } from "@/lib/site-internet/nom-propre";
 import { lirePhotosDuLieu } from "@/lib/site-internet/photos-du-lieu";

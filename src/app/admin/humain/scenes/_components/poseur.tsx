@@ -5,6 +5,7 @@
 // angle si on le veut, et l'aperçu de l'affiche telle que le fil la montrera.
 import { useRef, useState } from "react";
 import { fantomeEnCoin, type Point, type Quad, type SceneVitrine } from "@/lib/direct/scenes-ville";
+import { reduirePhoto } from "@/lib/site-internet/reduire-photo";
 import { SceneDuFil } from "@/app/autour-de-moi/scene-ville";
 
 const ESSAI_EXEMPLE: Record<string, string> = {
@@ -39,7 +40,9 @@ export function PoseurDeZone({
   cadrage: string;
   hote: string;
 }) {
-  const [couverture, setDecor] = useState(decorPose ?? photos[0].url);
+  const [lesPhotos, setPhotos] = useState(photos);
+  const [couverture, setDecor] = useState(decorPose ?? photos[0]?.url ?? "");
+  const [depot, setDepot] = useState<"" | "envoi" | "erreur">("");
   const [fantome, setFantome] = useState<"" | "gauche" | "droite">(fantomePose ?? "");
   const [coins, setCoins] = useState<Point[]>(zone ?? []);
   // `null` tant que la photo n'a pas dit sa forme : on ne clique pas avant.
@@ -75,6 +78,28 @@ export function PoseurDeZone({
     }
   };
 
+  // LE DÉCOR CLIKME PRÉPARÉ, DÉPOSÉ ICI : il devient la photo choisie.
+  const deposer = async (f: File | undefined) => {
+    if (!f) return;
+    setDepot("envoi");
+    try {
+      const r = await fetch("/api/admin/direct/scenes", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ slug, decor: await reduirePhoto(f) }),
+      });
+      const j = (await r.json().catch(() => ({}))) as { url?: string };
+      if (!r.ok || !j.url) throw new Error();
+      setPhotos((l) => [{ quoi: "Décor ClikMe préparé", url: j.url! }, ...l.filter((p) => p.quoi !== "Décor ClikMe préparé")]);
+      setDecor(j.url);
+      setCoins([]);
+      setRatio(null);
+      setDepot("");
+    } catch {
+      setDepot("erreur");
+    }
+  };
+
   const complet = coins.length === 4;
   const apercu: SceneVitrine | null = complet
     ? {
@@ -97,9 +122,8 @@ export function PoseurDeZone({
           {zone ? "Zone posée" : aReposer ? "Photo changée : zone à reposer" : "Pas de zone"}
         </span>
       </header>
-      {photos.length > 1 && (
-        <div className="flex flex-wrap gap-2 text-sm">
-          {photos.map((p) => (
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+          {lesPhotos.map((p) => (
             <button
               key={p.url}
               type="button"
@@ -115,8 +139,15 @@ export function PoseurDeZone({
               {p.quoi}
             </button>
           ))}
-        </div>
-      )}
+        <label className="cursor-pointer rounded-full border border-dashed border-slate-400 px-3 py-1 text-slate-700">
+          {depot === "envoi" ? "Envoi…" : "＋ Déposer un décor préparé"}
+          <input type="file" accept="image/*" className="hidden" disabled={depot === "envoi"} onChange={(e) => void deposer(e.target.files?.[0])} />
+        </label>
+        {depot === "erreur" && <span className="text-rose-700">Dépôt impossible.</span>}
+      </div>
+      {!couverture ? (
+        <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">Pas encore de photo : dépose son décor ClikMe préparé.</p>
+      ) : (
       <div
         key={couverture}
         ref={cadre}
@@ -179,6 +210,7 @@ export function PoseurDeZone({
           </button>
         ))}
       </div>
+      )}
       <p className="text-sm text-slate-600">
         {complet ? "Fais glisser un coin pour l’ajuster." : `Clique le coin ${ORDRE[coins.length]} (${coins.length + 1}/4).`}
       </p>

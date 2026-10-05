@@ -166,14 +166,14 @@ function Visionneuse({ photo, repli, onEssayer, onFermer }: { photo: string; rep
       <button type="button" className="scv-grand-x" aria-label="Fermer" onClick={onFermer}>
         ✕
       </button>
-      <figure>
-        <span className="scv-grand-img" onClick={(e) => e.stopPropagation()}>
+      {/* UN SEUL BLOC : l'image, le commerce collé dessous, puis le bouton —
+          « le nom du commerce paraît détaché de la photo ». */}
+      <div className="scv-grand-bloc" onClick={(e) => e.stopPropagation()}>
+        <span className="scv-grand-img">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={photo} alt="L’essai, en entier" />
           <span className="scv-coin gauche haut">✨ Essai virtuel</span>
         </span>
-      </figure>
-      <div className="scv-grand-pied" onClick={(e) => e.stopPropagation()}>
         {repli.commerce && (
           <p>
             <small>{repli.mention ?? "Proposé par"}</small>
@@ -261,8 +261,10 @@ function Vitrine({ s, photo, repli, onEssayer, onErreur }: { s: SceneVitrine; ph
         </div>
       )}
       <Calques calques={s.calques} devant={s.devant} decor={s.decor} ratio={s.ratio} />
-      {/* LA PASTILLE DU CÔTÉ OÙ IL N'Y A PAS DE FANTÔME. */}
-      <span className={`scv-coin${(s.calques ?? []).some((c) => c.x < 0.5) ? "" : " gauche"}`}>✨ Essai virtuel</span>
+      {/* « VITRINE VIRTUELLE », EN PETIT, EN HAUT : la mise en scène est
+          ClikMe, l'essai n'est pas réellement affiché dans la rue — et
+          l'affiche, pas la pastille, doit attirer le regard. */}
+      <span className="scv-coin haut gauche petit">✨ Vitrine virtuelle</span>
       {grand && <Visionneuse photo={photo} repli={repli} onEssayer={onEssayer} onFermer={() => setGrand(false)} />}
     </div>
   );
@@ -397,22 +399,23 @@ function StylesScene() {
   background:rgba(20,13,9,.74);color:#FFF4E6;font-size:12.5px;font-weight:700;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
 .scv-coin.gauche{right:auto;left:10px;background:#fbdcc8;color:#3a1d10;}
 .scv-coin.haut{bottom:auto;top:12px;}
+.scv-coin.petit{top:8px;left:8px;gap:4px;padding:3px 8px;font-size:10.5px;font-weight:700;background:rgba(251,220,200,.9);}
 .scv-affiche[role="button"]{cursor:zoom-in;}
 .scv-affiche:focus-visible{outline:2px solid #F5A23A;outline-offset:2px;}
-.scv-loupe{position:absolute;right:5%;bottom:4%;z-index:4;display:grid;place-items:center;width:18%;max-width:30px;aspect-ratio:1;border-radius:50%;
+.scv-loupe{position:absolute;right:5%;bottom:4%;z-index:4;display:grid;place-items:center;width:14%;max-width:22px;aspect-ratio:1;border-radius:50%;
   background:rgba(255,248,238,.88);box-shadow:0 1px 4px rgba(0,0,0,.3);}
 .scv-loupe svg{width:58%;height:58%;fill:none;stroke:#3a1d10;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
-.scv-grand{position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;background:#0c0806;color:#FFF4E6;font-family:var(--font-clikme),system-ui,sans-serif;animation:scvGrand .18s ease both;}
+.scv-grand{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:60px 16px calc(16px + env(safe-area-inset-bottom));
+  background:#0c0806;color:#FFF4E6;font-family:var(--font-clikme),system-ui,sans-serif;animation:scvGrand .18s ease both;}
 @keyframes scvGrand{from{opacity:0}to{opacity:1}}
-.scv-grand figure{position:relative;flex:1;min-height:0;margin:56px 16px 0;display:flex;align-items:center;justify-content:center;}
-.scv-grand-img{position:relative;display:inline-block;max-width:100%;}
-.scv-grand-img img{display:block;max-width:100%;max-height:calc(100dvh - 210px);object-fit:contain;border-radius:16px;}
+.scv-grand-bloc{display:flex;flex-direction:column;gap:10px;width:min(100%,460px);max-height:100%;}
+.scv-grand-img{position:relative;align-self:center;min-height:0;}
+.scv-grand-img img{display:block;max-width:100%;max-height:calc(100dvh - 250px);border-radius:16px;}
 .scv-grand-x{position:absolute;top:12px;right:12px;width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,244,230,.14);color:#FFF4E6;font-size:18px;cursor:pointer;}
-.scv-grand-pied{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:14px 16px calc(16px + env(safe-area-inset-bottom));color:#FFF4E6;}
-.scv-grand-pied p{flex:1 1 160px;margin:0;display:grid;min-width:0;}
-.scv-grand-pied small{font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;font-weight:500;font-size:12.5px;color:#EADBC8;}
-.scv-grand-pied b{font-size:16px;font-weight:800;overflow-wrap:anywhere;}
-.scv-grand-cta{flex:1 0 auto;height:48px;padding:0 20px;border:0;border-radius:999px;background:linear-gradient(180deg,#F8B451,#E8932A);color:#2A1608;font:inherit;font-size:15.5px;font-weight:800;cursor:pointer;}
+.scv-grand-bloc p{margin:2px 2px 0;display:grid;min-width:0;}
+.scv-grand-bloc small{font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;font-weight:500;font-size:12.5px;color:#EADBC8;}
+.scv-grand-bloc b{font-size:16px;font-weight:800;overflow-wrap:anywhere;}
+.scv-grand-cta{flex:none;height:48px;padding:0 20px;border:0;border-radius:999px;background:linear-gradient(180deg,#F8B451,#E8932A);color:#2A1608;font:inherit;font-size:15.5px;font-weight:800;cursor:pointer;}
 
 .scv-simple{position:relative;width:100%;aspect-ratio:4/5;max-height:480px;overflow:hidden;border-radius:18px;background:#241A15;isolation:isolate;}
 .scv-simple.haute{aspect-ratio:3/4;}
