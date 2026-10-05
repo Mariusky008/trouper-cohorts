@@ -15,7 +15,8 @@
 // LES AVATARS SONT DES INITIALES. Les maquettes montrent des visages ; nous
 // n'avons pas celui de vos amis, et un visage pris ailleurs mentirait sur qui
 // parle.
-import { useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { GrandSalon, type SceneDeSalon } from "./grand-salon";
 import { aToiDeJouer, ilYa, nosDiscussions, type Discussion } from "@/lib/direct/ensemble";
 import { archiverSalon, type Salon } from "@/lib/direct/salons";
 import { repondreInvitation, type SalonADecouvrir } from "@/lib/direct/conversations-sync";
@@ -27,6 +28,68 @@ import { repondreInvitation, type SalonADecouvrir } from "@/lib/direct/conversat
  */
 export function salonsDontJeSuisMembre(salons: Record<string, Salon>): Record<string, Salon> {
   return Object.fromEntries(Object.entries(salons).filter(([, x]) => !x.acces || x.acces.statut === "membre"));
+}
+
+/* ═══ LE GRAND SALON : CE QUE CHAQUE DISCUSSION Y MONTRE ═════════════════ */
+
+/** La vue et le filtre gardés d'une visite à l'autre : on revient où on était. */
+let vueGardee: "salon" | "liste" = "salon";
+let filtreGarde: "tous" | "miens" | "decouvrir" = "tous";
+
+/**
+ * L'ORDRE D'OUVERTURE, PLUS RÉCENT D'ABORD — et gardé. On ne connaît pas
+ * toujours la date de création d'un salon ; on retient le moment où ce
+ * téléphone l'a vu pour la première fois. Un nouveau message ne le déplace
+ * donc jamais dans le décor.
+ */
+const CLE_ORDRE = "clikme-ensemble-ordre-v1";
+let ordre: Record<string, number> | null = null;
+/**
+ * Les rangs d'une liste de salons, dans l'ordre où on les donne (le plus
+ * récent d'abord). La toute première fois, la liste fait l'ordre. Ensuite,
+ * un salon jamais vu passe AU-DESSUS de tous ceux déjà rangés : c'est le
+ * dernier ouvert. Ceux qui sont rangés ne bougent plus.
+ */
+function rangsDe(cles: string[]): Map<string, number> {
+  if (!ordre) {
+    try {
+      ordre = JSON.parse(window.localStorage.getItem(CLE_ORDRE) || "{}") as Record<string, number>;
+    } catch {
+      ordre = {};
+    }
+  }
+  const o = ordre;
+  const inconnus = cles.filter((c) => o[c] == null);
+  if (inconnus.length) {
+    const connus = Object.values(o);
+    const dessus = connus.length ? Math.max(...connus) + 1 : 0;
+    inconnus.forEach((c, i) => {
+      o[c] = dessus + inconnus.length - 1 - i;
+    });
+    try {
+      window.localStorage.setItem(CLE_ORDRE, JSON.stringify(o));
+    } catch {
+      /* rien : l'ordre vaut le temps de la visite */
+    }
+  }
+  return new Map(cles.map((c) => [c, o[c]]));
+}
+
+const estUneImage = (u: unknown): u is string => typeof u === "string" && /^(https:\/\/|\/|data:image\/)/.test(u);
+
+/**
+ * CE QUI EST POSÉ SUR LA TABLE : seulement ce que le salon contient vraiment.
+ * Un vote entre deux pièces : les deux photos, côte à côte. Plusieurs idées
+ * avec leur photo : les deux premières. Sinon la photo qui a lancé le salon.
+ * Rien : la table reste nue — on n'invente ni produit, ni menu, ni essai.
+ */
+export function contenuDuSalon(x: Salon): string[] {
+  const vote = (x.vote?.options ?? []).map((o) => o.photo).filter(estUneImage);
+  if (vote.length >= 2) return vote.slice(0, 2);
+  const idees = [...new Set((x.propositions ?? []).map((p) => p.photo).filter(estUneImage))];
+  if (idees.length >= 2) return idees.slice(0, 2);
+  if (estUneImage(x.photo)) return [x.photo];
+  return idees.slice(0, 1);
 }
 
 const TEINTES = ["#FF5FA8", "#F5A23A", "#7FB7FF", "#7BD3A8", "#C99BFF", "#FF8A65"];
@@ -55,7 +118,10 @@ export function Ensemble({
   demandeLancer = 0,
   aDecouvrir = [],
   onVoirPublic,
+  onIdee,
 }: {
+  /** « Trouver une idée à partager » : ouvre Le Direct. */
+  onIdee?: () => void;
   salons: Record<string, Salon>;
   /** Vraie ville : les salons publics de la ville que je n'ai pas rejoints. */
   aDecouvrir?: SalonADecouvrir[];
@@ -86,12 +152,99 @@ export function Ensemble({
   // LE FANTÔME DE LA BARRE DEMANDE, LA PAGE OUVRE. Une demande nouvelle se
   // voit pendant le rendu : pas d'effet, pas de rendu de trop.
   const [demandeVue, setDemandeVue] = useState(demandeLancer);
+  // LA VUE ET LE FILTRE SE RETROUVENT au retour d'une conversation.
+  const [vue, setVue] = useState(vueGardee);
+  const [filtre, setFiltre] = useState(filtreGarde);
+  useEffect(() => {
+    vueGardee = vue;
+    filtreGarde = filtre;
+  }, [vue, filtre]);
+  const [recherche, setRecherche] = useState<string | null>(null);
+  // LA HAUTEUR RÉELLE DE L'EN-TÊTE, mesurée : sur un petit téléphone le
+  // sous-titre passe sur deux lignes, et les étiquettes ne doivent pas
+  // glisser dessous.
+  const [hautTete, setHautTete] = useState(0);
+  const obsTete = useRef<ResizeObserver | null>(null);
+  const refTete = useCallback((el: HTMLElement | null) => {
+    obsTete.current?.disconnect();
+    obsTete.current = null;
+    if (!el) return;
+    const mesurer = () => setHautTete(Math.round(el.offsetTop + el.offsetHeight - 8));
+    obsTete.current = new ResizeObserver(mesurer);
+    obsTete.current.observe(el);
+    mesurer();
+  }, []);
   if (demandeLancer !== demandeVue) {
     setDemandeVue(demandeLancer);
     setLancer(true);
+    setVue("liste");
   }
   const [sujet, setSujet] = useState("");
   const liste = voirArchives ? archives : actives;
+
+  // ═══ LES SCÈNES DU SALON ═══ — mes salons d'abord, dans l'ordre de leur
+  // ouverture ; puis les salons publics à découvrir, plus bas dans le même lieu.
+  const q = (recherche ?? "").trim().toLowerCase();
+  const correspond = (t: string) => !q || t.toLowerCase().includes(q);
+  // La première fois, l'activité la plus récente d'abord ; ensuite, l'ordre gardé.
+  const rangs = rangsDe([...actives].sort((a, b) => (b.activite ?? 0) - (a.activite ?? 0)).map((d) => d.cle));
+  const scenesMiennes: SceneDeSalon[] = actives
+    .filter((d) => correspond(d.titre))
+    .map((d) => {
+      const x = salons[d.cle];
+      const autres = x.presents.filter((q2) => !cestMoi(q2));
+      return {
+        cle: d.cle,
+        titre: d.titre,
+        prive: x.acces ? x.acces.prive : x.prive !== false,
+        membre: true,
+        participants: [...autres, "Toi"],
+        ...(x.acces ? { nb: x.acces.nb } : {}),
+        nonLus: d.nonLus,
+        ...(d.dernier ? { dernier: { qui: d.dernier.moi ? "Toi" : d.dernier.qui, texte: d.dernier.texte } } : {}),
+        contenu: contenuDuSalon(x),
+        _rang: rangs.get(d.cle) ?? 0,
+      };
+    })
+    .sort((a, b) => b._rang - a._rang)
+    .map(({ _rang, ...sc }) => (void _rang, sc));
+  // À DÉCOUVRIR : dans la vraie ville, la liste du serveur ; dans la
+  // démonstration, les salons publics du téléphone où je ne suis pas.
+  const publicsLocaux = onVoirPublic
+    ? []
+    : Object.values(salons).filter((x) => x.ouvert && x.prive === false && !x.archive && !x.presents.some(cestMoi) && !cestMoi(x.parQui));
+  const scenesPubliques: SceneDeSalon[] = [
+    ...aDecouvrir.map((x) => ({
+      cle: `pub:${x.id}`,
+      titre: x.sujet,
+      prive: false,
+      membre: false,
+      participants: x.parQui ? [x.parQui] : [],
+      nb: x.nb,
+      nonLus: 0,
+      ...(x.dernier ? { dernier: x.dernier } : {}),
+      contenu: estUneImage(x.photo) ? [x.photo] : [],
+    })),
+    ...publicsLocaux.map((x) => ({
+      cle: x.cle,
+      titre: x.sujet,
+      prive: false,
+      membre: false,
+      participants: x.presents,
+      nonLus: 0,
+      contenu: contenuDuSalon(x),
+    })),
+  ].filter((x) => correspond(x.titre));
+  const scenes = [
+    ...(filtre === "decouvrir" ? [] : scenesMiennes),
+    ...(filtre === "miens" ? [] : scenesPubliques.map((x, i) => (i === 0 && filtre === "tous" && scenesMiennes.length ? { ...x, debutDecouverte: true } : x))),
+  ];
+  // LE BADGE DIT CE QU'IL COMPTE : des discussions avec du nouveau, des invitations.
+  const avecDuNouveau = actives.filter((d) => d.nonLus > 0).length;
+  const nouvelles = [
+    avecDuNouveau ? `${avecDuNouveau} discussion${avecDuNouveau > 1 ? "s" : ""} avec du nouveau` : "",
+    invitations.length ? `${invitations.length} invitation${invitations.length > 1 ? "s" : ""}` : "",
+  ].filter(Boolean);
 
   const lancerMaintenant = () => {
     const t = sujet.trim();
@@ -101,9 +254,67 @@ export function Ensemble({
     setLancer(false);
   };
 
+  if (vue === "salon")
+    return (
+      <div className="en en-salon">
+        <StylesEnsemble />
+        <GrandSalon
+          scenes={scenes}
+          recherche={recherche ?? ""}
+          enHaut={hautTete || 118 + (nouvelles.length ? 32 : 0) + (recherche !== null ? 52 : 0)}
+          onIdee={() => onIdee?.()}
+          onOuvrir={(sc) => (sc.cle.startsWith("pub:") ? onVoirPublic?.(sc.cle.slice(4)) : onOuvrir(sc.cle))}
+        />
+        {/* L'EN-TÊTE, PAR-DESSUS LE SALON : le titre, la recherche, la vue liste, les filtres. */}
+        <header className="en-salon-tete" ref={refTete}>
+          <div className="en-salon-l1">
+            <div>
+              <h1>Ensemble</h1>
+              <p>Prends place dans la conversation.</p>
+            </div>
+            <button type="button" className="en-icone" aria-label="Rechercher dans les discussions" onClick={() => setRecherche((r) => (r === null ? "" : null))}>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5" />
+                <path d="m16 16 4.5 4.5" />
+              </svg>
+            </button>
+            <button type="button" className="en-icone" aria-label="Vue liste" onClick={() => setVue("liste")}>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />
+              </svg>
+            </button>
+          </div>
+          {recherche !== null && (
+            <input className="en-recherche" autoFocus value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Un salon, un sujet…" aria-label="Rechercher" />
+          )}
+          <nav className="en-filtres" aria-label="Filtrer les salons">
+            {(
+              [
+                ["tous", "Tous"],
+                ["miens", "Mes salons"],
+                ["decouvrir", "À découvrir"],
+              ] as const
+            ).map(([f, l]) => (
+              <button key={f} type="button" className={filtre === f ? "on" : ""} onClick={() => setFiltre(f)}>
+                {l}
+              </button>
+            ))}
+          </nav>
+          {nouvelles.length > 0 && (
+            <button type="button" className="en-nouvelles" onClick={() => setVue("liste")}>
+              {nouvelles.join(" · ")}
+            </button>
+          )}
+        </header>
+      </div>
+    );
+
   return (
     <div className="en">
       <StylesEnsemble />
+      <button type="button" className="en-vers-salon" onClick={() => setVue("salon")}>
+        ← Revenir au salon
+      </button>
       <header className="en-tete">
         <div>
           <h1>Ensemble</h1>
@@ -342,6 +553,23 @@ function StylesEnsemble() {
 .en-lancer button:disabled{opacity:.45;}
 .en-lancer small{display:block;margin-top:8px;font-size:12px;color:#BFA894;}
 .en-bloc{margin-bottom:24px;}
+.en.en-salon{position:relative;padding:0;overflow:hidden;margin:calc(-14px - env(safe-area-inset-top,0px)) -14px 0;}
+.en-salon-tete{position:absolute;left:0;right:0;top:0;z-index:950;display:grid;gap:8px;padding:10px 14px 18px;pointer-events:none;
+  background:linear-gradient(180deg,rgba(22,13,8,.92),rgba(22,13,8,.7) 65%,rgba(22,13,8,0));}
+.en-salon-tete > *{pointer-events:auto;}
+.en-salon-l1{display:flex;align-items:center;gap:8px;}
+.en-salon-l1 > div{flex:1;min-width:0;}
+.en-salon-l1 h1{margin:0;font-family:Georgia,"Times New Roman",serif;font-size:30px;font-weight:700;line-height:1.05;}
+.en-salon-l1 p{margin:2px 0 0;font-size:12.5px;color:#E9D6C2;letter-spacing:.02em;}
+@media (max-height:640px){.en-salon-l1 p{display:none;}.en-salon-l1 h1{font-size:26px;}}
+.en-icone{flex:none;display:grid;place-items:center;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,214,170,.28);background:rgba(28,17,10,.6);color:#FFF4E6;cursor:pointer;}
+.en-icone svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;}
+.en-recherche{height:40px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,214,170,.3);background:rgba(28,17,10,.85);color:#FFF4E6;font:inherit;font-size:15px;}
+.en-filtres{display:flex;gap:6px;}
+.en-filtres button{height:34px;padding:0 13px;border-radius:999px;border:1px solid rgba(255,214,170,.3);background:rgba(28,17,10,.6);color:#FFF4E6;font:inherit;font-size:13px;font-weight:700;cursor:pointer;}
+.en-filtres button.on{background:linear-gradient(180deg,#F8B451,#E8932A);color:#2A1608;border-color:transparent;}
+.en-nouvelles{justify-self:start;height:32px;padding:0 13px;border:0;border-radius:999px;background:#F5C04A;color:#2A1608;font:inherit;font-size:13px;font-weight:800;cursor:pointer;}
+.en-vers-salon{margin:0 4px 10px;padding:0;border:0;background:none;color:#F5A23A;font:inherit;font-size:14px;font-weight:800;cursor:pointer;}
 .en-invit{display:flex;align-items:center;gap:8px;width:100%;margin-bottom:8px;padding:12px;border-radius:16px;border:1px solid rgba(255,214,170,.2);
   background:rgba(255,244,230,.05);color:#FFF4E6;font:inherit;text-align:left;}
 .en-invit-t{flex:1;min-width:0;display:grid;gap:2px;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;}

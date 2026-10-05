@@ -70,7 +70,7 @@ function repere(p: Point[]): M3 {
   return mul(m, [v[0], 0, 0, 0, v[1], 0, 0, 0, v[2]]);
 }
 /** Le matrix3d qui plie un rectangle w×h sur `dst` (en points). */
-function matrice(w: number, h: number, dst: Point[]): string {
+export function matrice(w: number, h: number, dst: Point[]): string {
   const src: Point[] = [[0, 0], [w, 0], [w, h], [0, h]];
   // ORDRE DU REPÈRE : haut-gauche, haut-droite, bas-gauche, puis bas-droite.
   const t = mul(repere([dst[0], dst[1], dst[3], dst[2]]), adj(repere([src[0], src[1], src[3], src[2]])));

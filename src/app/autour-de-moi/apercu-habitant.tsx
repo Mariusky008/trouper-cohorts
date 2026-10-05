@@ -11426,6 +11426,7 @@ export function ApercuHabitant() {
             <div className="ap-page ap-onglet-vue">
               <Ensemble
                 salons={salons}
+                onIdee={() => allerA_onglet("direct")}
                 aDecouvrir={reelle ? publicsADecouvrir : []}
                 onVoirPublic={
                   reelle
