@@ -189,7 +189,7 @@ function useMicro() {
   }, []);
 
   const ecouter = useCallback(
-    (quandFini: (r: { texte: string; audio?: string; secondes?: number; erreur?: string }) => void, dictee = true) => {
+    (quandFini: (r: { texte: string; audio?: string; secondes?: number; erreur?: string }) => void, saVoix = false) => {
       if (enCours.current) {
         void arreter();
         return;
@@ -197,7 +197,12 @@ function useMicro() {
       finir.current = quandFini;
       setDirect("");
       setEcoute(true);
-      enCours.current = ouvrirEcoute((t) => setDirect(t), { surSilence: () => void arreter(), dictee });
+      enCours.current = ouvrirEcoute((t) => setDirect(t), {
+        surSilence: () => void arreter(),
+        // SA VOIX : la dictée éteinte, et un micro neuf (voir `fluxNeuf`).
+        dictee: !saVoix,
+        fluxNeuf: saVoix,
+      });
     },
     [arreter],
   );
@@ -1139,16 +1144,21 @@ function EtapeMission({
                      a le micro pour lui seul — voir `dictee` dans voix-micro.ts. */
                   micro.ecouter((r) => {
                     if (!r.audio) {
+                      /* « AUCUN SON » N'EST PAS UNE AUTORISATION REFUSÉE ICI : le micro a
+                         marché à la première étape. On le dit, et le prochain appui
+                         repart d'un micro neuf (voir `fluxSuspect`). */
                       setEnnui(
-                        r.erreur && !/rien entendu/i.test(r.erreur)
-                          ? `${r.erreur} Tu peux aussi passer cette étape.`
-                          : "Ta voix n’a pas pu s’enregistrer sur ce téléphone. Réessaie, ou passe cette étape.",
+                        r.erreur && /aucun son/i.test(r.erreur)
+                          ? "Je n’ai capté aucun son. Appuie à nouveau sur le micro et parle : je repars d’un micro neuf."
+                          : r.erreur && !/rien entendu/i.test(r.erreur)
+                            ? `${r.erreur} Tu peux aussi passer cette étape.`
+                            : "Ta voix n’a pas pu s’enregistrer sur ce téléphone. Réessaie, ou passe cette étape.",
                       );
                       return;
                     }
                     setEnnui("");
                     setBrouillon((b) => ({ ...b, voix: r.audio, voixSecondes: r.secondes, voixTexte: r.texte }));
-                  }, false)
+                  }, true)
                 }
                 mot={micro.ecoute ? "Je t’écoute… appuie pour finir" : "Appuie et parle à tes clients"}
               />

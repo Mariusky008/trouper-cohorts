@@ -154,12 +154,22 @@ let fluxPartage: MediaStream | null = null;
 let demande: Promise<MediaStream | null> | null = null;
 /** Pourquoi le micro a été refusé, la dernière fois — pour le dire avec des mots. */
 let refusMicro = "";
+/**
+ * LE FLUX A RENDU DU SILENCE PUR alors que l'oreille écoutait vraiment : on ne
+ * le redonne plus, on en demande un neuf. Voir `fluxNeuf` dans `Reglages`.
+ */
+let fluxSuspect = false;
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 let ctxSon: any = null;
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 let analyseur: any = null;
 
-async function obtenirMicro(): Promise<MediaStream | null> {
+async function obtenirMicro(neuf = false): Promise<MediaStream | null> {
+  if (neuf || fluxSuspect) {
+    fluxPartage?.getTracks().forEach((t) => t.stop());
+    fluxPartage = null;
+    fluxSuspect = false;
+  }
   // UN FLUX VIVANT SE REDONNE TEL QUEL. On vérifie qu'il l'est encore : le
   // système peut le couper tout seul (appel entrant, écran verrouillé), et on
   // en redemande alors un — c'est le seul cas où l'on redemande.
@@ -221,6 +231,18 @@ function reveillerOreille() {
   const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
   if (!AC) return;
   try {
+    // INTERROMPU PAR L'APPAREIL PHOTO (un état propre à iOS), ou fermé : on en
+    // refait un neuf, et l'oreille se rebranchera sur le flux.
+    if (ctxSon && (ctxSon.state === "interrupted" || ctxSon.state === "closed")) {
+      try {
+        ctxSon.close();
+      } catch {
+        /* déjà fermé */
+      }
+      ctxSon = null;
+      analyseur = null;
+      fluxEcoute = null;
+    }
     if (!ctxSon) {
       ctxSon = new AC();
       analyseur = ctxSon.createAnalyser();
@@ -284,6 +306,15 @@ export type Reglages = {
    * texte, lui, vient du serveur. Vrai par défaut.
    */
   dictee?: boolean;
+  /**
+   * VRAI POUR REPARTIR D'UN MICRO NEUF. « La première étape fonctionne […]
+   * la troisième me dit : le micro n'a capté aucun son. » Entre les deux,
+   * l'étape photo ouvre l'appareil photo de l'iPad : il prend la session
+   * audio, et le micro gardé depuis la première étape reste « vivant » mais
+   * ne rend plus que du silence — sans le dire. Après la photo, on ne s'y fie
+   * donc plus.
+   */
+  fluxNeuf?: boolean;
 };
 
 /**
@@ -360,7 +391,7 @@ export function ouvrirEcoute(
   }
 
   const pret = (async () => {
-    flux = await obtenirMicro();
+    flux = await obtenirMicro(reglages.fluxNeuf);
     if (!flux || coupe) return;
     try {
       const type = conteneur();
@@ -482,6 +513,9 @@ export function ouvrirEcoute(
       // rien saisi non plus. Une oreille endormie lit zéro : ce n'était pas
       // un micro sourd, et on jetait sa phrase.
       const sourd = !!reglages.surSilence && mesure && niveauMax < SOURD && !duTelephone;
+      // UN FLUX QUI N'A RENDU QUE DU SILENCE NE SERT PLUS : la prochaine écoute
+      // en ouvre un neuf, sans qu'il ait à recharger la page.
+      if (mesure && niveauMax < SOURD) fluxSuspect = true;
       fermer();
 
       // CE QUE LE TÉLÉPHONE A DONNÉ SUFFIT-IL ? Le seuil est en MOTS : « oui »
