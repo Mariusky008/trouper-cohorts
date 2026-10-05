@@ -102,6 +102,7 @@ export function LaVille({
   onMaison,
   demandePartage = 0,
   preselection,
+  onPreselectionVue,
 }: {
   messages: MessageVille[];
   /** Les gens avec qui je partage des conversations : mes amis. */
@@ -132,6 +133,8 @@ export function LaVille({
    * commerce (et ce contenu) déjà choisis. `n` change à chaque demande.
    */
   preselection?: { commerce: string; contenu?: string; n: number };
+  /** La découverte présélectionnée est fermée ou publiée : la demande tombe. */
+  onPreselectionVue?: () => void;
   /**
    * SIGNALER UNE PUBLICATION — dans la vraie ville seulement, où elle vient
    * d'un autre habitant. Voir `ville-sync.ts`.
@@ -149,7 +152,9 @@ export function LaVille({
   const [ouvertes, setOuvertes] = useState<string[]>([]);
   const [reponse, setReponse] = useState<Record<string, string>>({});
   const [chezQui, setChezQui] = useState<string | null>(null);
-  const [compose, setCompose] = useState<null | Etape>(null);
+  // L'ONGLET SE MONTE AVEC LA DEMANDE DÉJÀ LÀ quand on arrive d'une annonce :
+  // la découverte s'ouvre tout de suite.
+  const [compose, setCompose] = useState<null | Etape>(preselection ? "decouverte" : null);
   const [suiteDe, setSuiteDe] = useState<MessageVille | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
   const [cherche, setCherche] = useState<string | null>(null);
@@ -402,10 +407,12 @@ export function LaVille({
           onFermer={() => {
             setCompose(null);
             setSuiteDe(null);
+            onPreselectionVue?.();
           }}
           onPublie={(visibilite) => {
             setCompose(null);
             setSuiteDe(null);
+            onPreselectionVue?.();
             setCherche(null);
             setFiltre(visibilite === "amis" ? "amis" : "pour-toi");
             window.setTimeout(() => document.querySelector(".lv")?.scrollTo({ top: 0, behavior: "smooth" }), 60);
@@ -971,13 +978,21 @@ function Composeur({
   /** L'instant de l'aperçu : la publication dira « à l'instant ». */
   const [maintenant] = useState(() => Date.now());
   const pics = useRef<HTMLDivElement | null>(null);
+  const rangee = useRef<HTMLDivElement | null>(null);
+  // LE COMMERCE PRÉSÉLECTIONNÉ SE VOIT : la rangée défile jusqu'à lui.
+  useEffect(() => {
+    if (etape !== "decouverte") return;
+    rangee.current?.querySelector<HTMLElement>("button.on")?.scrollIntoView({ inline: "center", block: "nearest" });
+  }, [etape]);
 
   /* ─── CE QUE LA PUBLICATION SERA ─── calculé ici, montré en aperçu, publié tel quel. */
   const commerceEssai = essai ? parId(essai.carte) : undefined;
   const sceneEssai: SceneVille | undefined = commerceEssai ? (sceneDeVitrine(commerceEssai) ?? undefined) : undefined;
 
   const options = commerce ? contenusDe(commerce) : [];
-  const choisi = maPhoto ? null : (options.find((o) => o.cle === contenu) ?? options[0] ?? null);
+  // LE CONTENU PRÉSÉLECTIONNÉ SE RECONNAÎT À SA CLÉ, OU À SON NOM — celui que
+  // l'annonce montrait (le plat du jour, la pièce du moment).
+  const choisi = maPhoto ? null : (options.find((o) => o.cle === contenu || o.nom === contenu) ?? options[0] ?? null);
   const photoDecouverte = maPhoto ?? choisi?.photo ?? suiteDe?.photo;
   // UNE PHOTO PRISE SUR PLACE RESTE UNE PHOTO : l'ambiance illustrée ne se pose
   // que sur la photo de la salle d'un bar, jamais sur celle d'un habitant.
@@ -1212,7 +1227,7 @@ function Composeur({
         {etape === "decouverte" && !suiteDe && (
           <>
             <h3>Le commerce</h3>
-            <div className="lv-commerces">
+            <div className="lv-commerces" ref={rangee}>
               {[...commerces]
                 .sort((x, y) => x.metres - y.metres)
                 .slice(0, 60)
@@ -1359,7 +1374,15 @@ function Composeur({
               value={texte}
               onChange={(e) => setTexte(e.target.value.slice(0, 220))}
               rows={2}
-              placeholder={etape === "essai" ? "Et si je passais au carré ?" : "Ça vous tente pour ce midi ?"}
+              placeholder={
+                etape === "essai"
+                  ? "Et si je passais au carré ?"
+                  : apercu.contenu?.type === "plat"
+                    ? "Ça vous tente pour ce midi ?"
+                    : estUnLieuDeSortie(commerce?.branche)
+                      ? "On se retrouve ici samedi ?"
+                      : "Ce que tu en as pensé…"
+              }
             />
             {etape === "decouverte" && (
               <label className="lv-coche">

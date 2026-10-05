@@ -2053,6 +2053,12 @@ export function ApercuHabitant() {
   // voisins et les amis de démonstration seraient inventés. Voir `sansLesExemples`.
   const ville = useMemo(() => (reelle ? sansLesExemples(villeLue) : villeLue), [reelle, villeLue]);
   const vusVille = useSyncExternalStore(abonnerVusVille, chargerVusVille, () => AUCUN_VU);
+  /**
+   * ARRIVÉ DEPUIS UNE ANNONCE : « Le partager dans La ville » ouvre la
+   * découverte avec ce commerce et ce qu'il propose déjà choisis. `n` change
+   * à chaque demande ; la demande tombe quand on quitte l'onglet.
+   */
+  const [preselectionVille, setPreselectionVille] = useState<{ commerce: string; contenu?: string; n: number } | null>(null);
   /** L'essai d'une publication de la ville, rejoué sur soi : « Essayer sur moi ». */
   const [essaiVille, setEssaiVille] = useState<{ carte: string; piece: string } | null>(null);
   /** Chaque appui sur le fantôme d'une page l'augmente : la page ouvre son geste. */
@@ -2610,6 +2616,7 @@ export function ApercuHabitant() {
     // sans recharger la page.
     if (o === "profil") setMesTraces(mesFantomes());
     setMaisonLue(null);
+    if (o !== "ville") setPreselectionVille(null);
     // ON FERME CE QUI EST PAR-DESSUS, ET C'EST INDISPENSABLE DEPUIS QUE LA
     // BARRE RESTE VISIBLE DANS UN SALON. Sans ces deux lignes, appuyer sur
     // « Le direct » depuis un salon changeait bien l'onglet — mais la page du
@@ -10328,6 +10335,31 @@ export function ApercuHabitant() {
                           </span>
                         </button>
 
+                        {/* ═══ ET LE FAIRE DÉCOUVRIR À LA VILLE ═══════════════
+                            « Si l'utilisateur arrive depuis une fiche ou une
+                            annonce, présélectionner le commerce et le
+                            contenu. » Le bouton « Partager » du rail reste
+                            WhatsApp, comme demandé ; celui-ci publie dans La
+                            ville — la découverte s'ouvre avec ce commerce et
+                            ce qu'il propose maintenant, l'aperçu et
+                            l'audience avant de publier. Rien ne part tout seul. */}
+                        <button
+                          type="button"
+                          className="ap-pouce ap-pouce-ville"
+                          onPointerDown={(ev) => ev.stopPropagation()}
+                          onClick={() => {
+                            noter("partage", 0, "annonce-ville");
+                            setPreselectionVille((p) => ({ commerce: dessus.id, contenu: momentDuSommet?.titre, n: (p?.n ?? 0) + 1 }));
+                            allerA_onglet("ville");
+                          }}
+                        >
+                          <i aria-hidden="true">📍</i>
+                          <span>
+                            <b>Le partager dans La ville</b>
+                            Une découverte, avec un aperçu avant de publier
+                          </span>
+                        </button>
+
                         {/* LES HABITUÉS. Par commerce, jamais en classement de
                             ville : un palmarès municipal désignerait des
                             derniers, se ferait jouer, et transformerait un geste
@@ -11308,6 +11340,8 @@ export function ApercuHabitant() {
                     : undefined
                 }
                 onMaison={reelle ? (m) => void visiterLaMaison({ publication: m.id }) : undefined}
+                preselection={preselectionVille ?? undefined}
+                onPreselectionVue={() => setPreselectionVille(null)}
               />
             </div>
           )}
@@ -16926,6 +16960,7 @@ export function ApercuHabitant() {
           border-radius:14px;padding:12px 14px;transition:transform .12s ease;}
         .ap-pouce:active{transform:scale(.98);}
         .ap-pouce i{font-style:normal;font-size:20px;line-height:1;flex:none;}
+        .ap-pouce-ville{margin-top:8px;}
         .ap-pouce span{flex:1;min-width:0;font-size:12.5px;color:#C79B84;}
         .ap-pouce b{display:block;font-size:14.5px;font-weight:850;color:#FFD9BE;
           letter-spacing:-.01em;margin-bottom:1px;}
