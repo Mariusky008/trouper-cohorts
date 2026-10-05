@@ -28,7 +28,7 @@
 // de comparer.
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
-import { COMMERCES_DEMO, missionDe, rangerLaPhrase, type Etape, type Mission } from "@/lib/direct/missions-commercant";
+import { COMMERCES_DEMO, missionDe, type Etape, type Mission } from "@/lib/direct/missions-commercant";
 import {
   BADGES,
   chargerComptoir,
@@ -96,10 +96,13 @@ async function reduire(fichier: File, large = 1000): Promise<string> {
   }
 }
 
-/** « 5 parts » dans « il me reste 5 parts à 12 euros ». */
-function quantiteDans(texte: string): string {
-  const m = texte.match(/(\d+)\s*(parts?|portions?|assiettes?|bouquets?|pi[eè]ces?|places?)/i);
-  return m ? `Plus que ${m[1]} ${m[2].toLowerCase()}` : "";
+/** « Magret frites maison, 19 euros » → { nom: « Magret frites maison », prix: « 19 € » }. */
+function exempleEnChamps(exemple: string): { nom: string; prix: string } {
+  const t = exemple.replace(/[«»]/g, "").trim();
+  const m = t.match(/(\d+(?:[,.]\d+)?)\s*euros?(?:\s*(\d{2}))?/i);
+  const prix = m ? `${m[1]}${m[2] ? `,${m[2]}` : ""} €` : "";
+  const nom = t.split(/,\s*(?:à\s*)?\d/)[0].trim();
+  return { nom, prix };
 }
 
 const heureDecimale = () => {
@@ -956,34 +959,25 @@ function EtapeMission({
   onRetour: () => void;
 }) {
   const micro = useMicro();
-  const [clavier, setClavier] = useState(false);
-  const [ecrit, setEcrit] = useState("");
+  const relance = brouillon.genre === "relance";
+  /* ═══ L'ÉTAPE 1 S'ÉCRIT, ELLE NE SE DIT PLUS ═════════════════════════════
+     « Pour l'étape 1, supprimer la voix : juste "écris l'intitulé de ton menu
+     du jour". » L'intitulé et le prix se tapent dans leurs deux champs, déjà
+     ouverts ; la voix, elle, est pour l'étape 3 — c'est elle que ses clients
+     entendent. Deux étapes où l'on parlait se confondaient. */
   const [compris, setCompris] = useState<{ nom: string; prix: string } | null>(
-    etape.type === "dire" && brouillon.nom ? { nom: brouillon.nom, prix: brouillon.prix } : null,
+    etape.type === "dire"
+      ? relance
+        ? { nom: brouillon.detail ?? "", prix: brouillon.prix ?? "" }
+        : { nom: brouillon.nom ?? "", prix: brouillon.prix ?? "" }
+      : null,
   );
   const [ennui, setEnnui] = useState("");
-  const relance = brouillon.genre === "relance";
+  /* L'EXEMPLE SERT DE MODÈLE DANS LES CHAMPS : « Magret frites maison » et « 19 € ». */
+  const modele = etape.type === "dire" ? exempleEnChamps(etape.exemple) : { nom: "", prix: "" };
 
   const question =
     premiere && etape.type === "dire" ? `Salut${aQui(commerce)} ! ${etape.question}` : etape.question;
-
-  /* ── CE QU'IL A DIT : on le range, et on lui montre ── */
-  const recevoir = (texte: string, erreur?: string) => {
-    const t = texte.trim();
-    if (!t) {
-      /* UNE ÉCOUTE VIDE N'EFFACE PAS CE QUI A ÉTÉ COMPRIS : sa phrase reste à
-         l'écran, sans message d'erreur par-dessus. */
-      if (compris) return;
-      /* LA VRAIE RAISON QUAND ON LA CONNAÎT — un micro refusé ne se règle pas
-         en « réessayant ». */
-      setEnnui(erreur && !/rien entendu/i.test(erreur) ? `${erreur} Tu peux aussi l’écrire.` : "Je n’ai rien entendu… Réessaie, ou écris-le.");
-      return;
-    }
-    setEnnui("");
-    const r = rangerLaPhrase(t, { titre: commerce.famille === "librairie" });
-    if (relance) setBrouillon((b) => ({ ...b, detail: quantiteDans(t) || "Les dernières", prix: r.prix }));
-    setCompris(relance ? { nom: quantiteDans(t) || "Les dernières", prix: r.prix } : r);
-  };
 
   const valider = () => {
     if (!compris) return;
@@ -1009,7 +1003,8 @@ function EtapeMission({
     if (reduites.length) setBrouillon((b) => ({ ...b, photos: [...b.photos, ...reduites].slice(0, etape.max) }));
   };
 
-  const humeur = compris || (etape.type === "voix" && brouillon.voix) ? "montre" : premiere ? "salut" : "repos";
+  /* LE CHAMP EST OUVERT D'OFFICE : le fantôme montre l'endroit où écrire. */
+  const humeur = etape.type === "dire" || (etape.type === "voix" && brouillon.voix) ? "montre" : premiere ? "salut" : "repos";
   /* ═══ DEUX ÉTAPES OÙ L'ON PARLE, ET ELLES NE SERVENT PAS À LA MÊME CHOSE ═══
      « On ne comprend pas bien pourquoi il y a l'étape 1 où on demande de dire
      le menu du jour, et l'étape 3 où on redemande de dire quelque chose pour
@@ -1020,10 +1015,13 @@ function EtapeMission({
   const sous =
     etape.type === "dire"
       ? relance
-        ? `Par exemple : ${etape.exemple}`
-        : `J’écris ton annonce avec ça. Par exemple : ${etape.exemple}`
+        ? "Écris combien il t’en reste, et le prix."
+        : "C’est le titre de ton annonce. Écris-le, avec son prix."
       : etape.type === "voix"
-        ? `L’annonce est écrite. Ici, je garde ta voix : tes clients l’entendront en l’ouvrant. Par exemple : ${etape.exemple}`
+        ? `${
+            etape.consigne ??
+            "Enregistre un message pour tes clients : ce qui rend ça spécial, ce qu’il faut savoir. Ils l’entendront de ta voix en ouvrant ton annonce."
+          } Par exemple : ${etape.exemple}`
       : etape.type === "photos"
         ? etape.conseil
         : undefined;
@@ -1046,8 +1044,8 @@ function EtapeMission({
 
       <Scene
         dossier={dossier}
-        texte={compris && etape.type === "dire" ? "J’ai noté ! C’est bien ça ?" : question}
-        sous={compris ? undefined : sous}
+        texte={question}
+        sous={sous}
         humeur={humeur}
         ecoute={micro.ecoute}
       />
@@ -1062,34 +1060,37 @@ function EtapeMission({
         {ennui && !micro.ecoute && <p className="cz-ennui">{ennui}</p>}
 
         {/* ── DIRE ── */}
-        {etape.type === "dire" &&
-          (compris && !micro.ecoute ? (
-            <div className="cz-compris">
-              <label>
-                <span>{etape.nomDuChamp}</span>
-                <input value={compris.nom} onChange={(e) => setCompris({ ...compris, nom: e.target.value })} />
-              </label>
-              <label className="prix">
-                <span>Prix</span>
-                <input value={compris.prix} placeholder="—" onChange={(e) => setCompris({ ...compris, prix: e.target.value })} />
-              </label>
-              <button type="button" className="cz-go" onClick={valider} disabled={!compris.nom.trim()}>
-                C’est ça ! <s aria-hidden="true">✓</s>
-              </button>
-              <button type="button" className="cz-lien" onClick={() => setCompris(null)}>
-                Je le redis
-              </button>
-            </div>
-          ) : (
-            <Parler
-              micro={micro}
-              clavier={clavier}
-              setClavier={setClavier}
-              ecrit={ecrit}
-              setEcrit={setEcrit}
-              onTexte={(t, e) => recevoir(t, e)}
-            />
-          ))}
+        {etape.type === "dire" && compris && (
+          <form
+            className="cz-compris"
+            onSubmit={(e) => {
+              e.preventDefault();
+              valider();
+            }}
+          >
+            <label>
+              <span>{etape.nomDuChamp}</span>
+              <input
+                autoFocus
+                value={compris.nom}
+                placeholder={modele.nom}
+                onChange={(e) => setCompris({ ...compris, nom: e.target.value })}
+              />
+            </label>
+            <label className="prix">
+              <span>Prix</span>
+              <input
+                value={compris.prix}
+                placeholder={modele.prix || "—"}
+                inputMode="decimal"
+                onChange={(e) => setCompris({ ...compris, prix: e.target.value })}
+              />
+            </label>
+            <button type="submit" className="cz-go" disabled={!compris.nom.trim()}>
+              C’est ça ! <s aria-hidden="true">✓</s>
+            </button>
+          </form>
+        )}
 
         {/* ── PHOTOS ── */}
         {etape.type === "photos" && (
@@ -1219,56 +1220,6 @@ function BoutonMicro({ ecoute, onClick, mot }: { ecoute: boolean; onClick: () =>
         )}
       </button>
       <span className="cz-micro-mot">{mot}</span>
-    </div>
-  );
-}
-
-/** Dire : le micro, et le clavier juste à côté — s'il rate deux fois, il tape. */
-function Parler({
-  micro,
-  clavier,
-  setClavier,
-  ecrit,
-  setEcrit,
-  onTexte,
-}: {
-  micro: ReturnType<typeof useMicro>;
-  clavier: boolean;
-  setClavier: (v: boolean) => void;
-  ecrit: string;
-  setEcrit: (v: string) => void;
-  onTexte: (t: string, erreur?: string) => void;
-}) {
-  if (clavier)
-    return (
-      <form
-        className="cz-clavier"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onTexte(ecrit);
-        }}
-      >
-        <input autoFocus value={ecrit} onChange={(e) => setEcrit(e.target.value)} placeholder="Écris-le ici…" />
-        <button type="submit" className="cz-envoi" aria-label="Envoyer" disabled={!ecrit.trim()}>
-          ↑
-        </button>
-        <button type="button" className="cz-lien" onClick={() => setClavier(false)}>
-          🎙️ Plutôt le dire
-        </button>
-      </form>
-    );
-  return (
-    <div className="cz-parler">
-      <BoutonMicro
-        ecoute={micro.ecoute}
-        onClick={() => micro.ecouter((r) => onTexte(r.texte, r.erreur))}
-        mot={micro.ecoute ? "Je t’écoute… appuie pour finir" : "Appuie et dis-le moi"}
-      />
-      {!micro.ecoute && (
-        <button type="button" className="cz-lien" onClick={() => setClavier(true)}>
-          ⌨️ Je préfère l’écrire
-        </button>
-      )}
     </div>
   );
 }
