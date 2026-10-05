@@ -29,6 +29,7 @@ import {
   cacherLeVisage,
   cadrerLaTete,
   decouperLaTete,
+  garderLaMonture,
   recollerLaTete,
   trouverLaTete,
   type CadreTete,
@@ -197,8 +198,28 @@ const COTE_CHATGPT = 2048;
  */
 export type Regime = "atelier" | "leger" | "brut" | "calquee" | "chatgpt";
 
-function regimeDe(partie: string | undefined): Regime {
-  const defaut: Regime = zoneDe(partie) === "coiffure" ? "chatgpt" : "atelier";
+/**
+ * ═══ TOUS LES MÉTIERS COMME LA COIFFURE ═══════════════════════════════════
+ *
+ * « On a le même problème qu'on avait avec la coupe de cheveux : c'est un
+ * mélange de deux personnes […] la paire de lunettes est superposée avec un
+ * autre visage. Et de manière générale, il faut voir s'il n'y a pas le même
+ * souci avec les ongles et tous les autres commerces. »
+ *
+ * LA COIFFURE AVAIT ÉTÉ SORTIE DE L'ATELIER, LES AUTRES Y ÉTAIENT RESTÉS. Le
+ * lunetier recollait donc encore le visage d'origine par-dessus le rendu,
+ * sauf la bande des yeux : deux visages, et une couture à la bouche — sa
+ * photo. Le buste du prêt-à-porter recollait la tête entière. Et les métiers
+ * sans visage (la main, le poignet, la table) partaient rognés au cadre de
+ * l'atelier, ce qui force le moteur à recomposer.
+ *
+ * TOUS PASSENT DONC AU RÉGIME `chatgpt` : la photo entière, la consigne
+ * calquée, aucun masque, aucun visage recollé — le moteur garde la personne
+ * lui-même, comme il le fait pour la coupe. Les autres régimes restent au
+ * banc d'essai, dans l'adresse.
+ */
+function regimeDe(_partie: string | undefined): Regime {
+  const defaut: Regime = "chatgpt";
   if (typeof window === "undefined") return defaut;
   try {
     const q = new URLSearchParams(window.location.search);
@@ -630,6 +651,17 @@ export async function essayerSurMoi(opts: {
   const photoEntiere = photo;
   let cadreTete: CadreTete | null = null;
   let visageReferenceCache = false;
+  /* LE LUNETIER : on n'envoie que la monture de la référence, pas le visage
+     du mannequin qui la porte — voir `garderLaMonture`. */
+  if (commeChatGPT && zone === "lunettes" && reference) {
+    try {
+      const m = await garderLaMonture(reference);
+      reference = m.image;
+      dire(`comme ChatGPT : référence ${m.decoupe ? "réduite à la monture" : "entière (aucun visage)"}`);
+    } catch (e) {
+      dire("découpe de la monture impossible : référence entière", e);
+    }
+  }
   if (commeChatGPT && zone === "coiffure") {
     try {
       if (reference) {
