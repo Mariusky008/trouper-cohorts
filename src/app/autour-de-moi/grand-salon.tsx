@@ -27,8 +27,7 @@
 // fantôme d'une personne de son prénom : « notre table du déjeuner » reste la
 // même d'une visite à l'autre. Les fantômes représentent les membres, pas leur
 // présence en ligne. Sur la table, seulement ce qui a été réellement partagé.
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
-import { matrice } from "./scene-ville";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 const D = "/direct/ensemble/";
 
@@ -53,221 +52,207 @@ function hache(t: string): number {
 }
 export const fantomeDe = (nom: string) => FANTOMES[hache(nom.trim().toLowerCase()) % FANTOMES.length];
 
+/* ═══ LE LIEU ═══════════════════════════════════════════════════════════════
+   Tout est relevé sur la VUE FIXE VALIDÉE (docs/ensemble/gabarit-390x844.json) :
+   un écran de 390 de large, dont la scène fait 795 de haut au-dessus de la
+   barre. Le décor y est posé en « cover », calé en haut ; sur un autre écran,
+   un point du décor de référence se retrouve par `decorDe`. Les groupes du
+   fond et du milieu, la bibliothèque et le passage suivent ainsi le décor ;
+   le premier plan, lui, suit la place du bouton (voir `geoDe`). */
+const FOND = { src: "fond-salon", l: 853, h: 1844 };
+function decorDe(W: number, H: number) {
+  const k = W > 0 ? Math.max(W / FOND.l, H / FOND.h) / (390 / FOND.l) : 1;
+  const ox = W / 2 - 195 * k;
+  return { k, x: (x: number) => ox + x * k, y: (y: number) => y * k };
+}
+/** La bibliothèque, ALLÉGÉE, devant le bord gauche du passage vers la seconde pièce. */
+const BIBLIO = { x: 40, y: 193, l: 64 };
+/** Le montant droit du passage : ce qui part au fond passe derrière lui, puis derrière la bibliothèque. */
+const PASSAGE_DROITE = 180;
+
 /* ═══ LES COMPOSITIONS ═══════════════════════════════════════════════════════
-   Un groupe se dessine dans une boîte de largeur 1 : chaque meuble par son
-   centre (`cx`), son pied (`b`) et sa largeur (`w`) ; sa hauteur suit son
-   image (`r` = largeur / hauteur).
+   Chaque groupe se dessine en points « du premier plan » (un fantôme y fait
+   152 de haut), autour de son ancre : le milieu de sa base, au sol. La
+   trajectoire ne fait que le déplacer et le mettre à l'échelle — le même
+   groupe, la même table, partout.
 
-   « LES FANTÔMES DOIVENT VRAIMENT ÊTRE ASSIS. » Une place est donc posée SUR
-   un siège, en fractions de son image : `u` à travers, `v` le bas du
-   fantôme, `h` sa taille (en largeurs du siège). Puis l'avant du siège — le
-   devant du coussin, les accoudoirs — est redessiné PAR-DESSUS le fantôme :
-   c'est la même image, découpée par `avant` (un polygone, en fractions de
-   l'image). Le bas du fantôme disparaît dans l'assise ; une ombre de contact
-   le pose sur le coussin, à la hauteur `coupe`. On dessine siège par siège,
-   du fond vers l'avant : un fauteuil devant le canapé cache aussi ceux qui y
-   sont assis.
-
-   La table vient ensuite, devant tout le monde ; `plateau` : les quatre
-   coins de son dessus, en fractions de SON image — on la déplace sans
-   refaire le plateau. Le tapis, dessous, délimite le coin. */
+   « LES FANTÔMES DOIVENT VRAIMENT ÊTRE ASSIS. » Une place est posée SUR un
+   siège, en fractions de son image (`u` à travers, `v` le bas du fantôme,
+   `c` la ligne d'assise où tombe l'ombre). L'avant du siège (`avant`, un
+   polygone de l'image) est redessiné par-dessus le fantôme, et la table,
+   devant, cache encore le bas de son corps. */
 type Point = [number, number];
 type Meuble = { src: string; r: number; cx: number; b: number; w: number; miroir?: boolean; avant?: Point[] };
-type Place = { m: number; u: number; v: number; coupe: number; h: number; miroir?: boolean };
-type Table = { src: string; r: number; cx: number; b: number; w: number; plateau: [Point, Point, Point, Point] };
-type Tapis = { cx: number; cy: number; w: number; h: number; teinte: string; bord: string };
-/** Un tapis couché à 62° paraît `COUCHE` fois moins haut : on le dessine d'autant plus haut. */
-const COUCHE = 0.47;
-type Composition = { nom: string; meubles: Meuble[]; places: Place[]; table: Table; tapis: Tapis };
+type Place = { m: number; u: number; v: number; c: number; h: number; miroir?: boolean };
+type Table = { src: string; r: number; cx: number; b: number; w: number };
+type Composition = { nom: string; meubles: Meuble[]; places: Place[]; table: Table };
 
-const AVANT_FAUTEUIL_CUIR: Point[] = [
-  [0, 0.25],
-  [0.2, 0.24],
-  [0.38, 0.3],
-  [0.46, 0.38],
-  [0.47, 0.5],
-  [0.7, 0.5],
-  [0.9, 0.47],
-  [1, 0.47],
-  [1, 1],
-  [0, 1],
-];
-const PLATEAU_RONDE: [Point, Point, Point, Point] = [
-  [0.22, 0.06],
-  [0.78, 0.06],
-  [0.86, 0.26],
-  [0.14, 0.26],
-];
-
+const TABLE = (cx: number, b: number, w: number): Table => ({ src: "table-face", r: 1903 / 591, cx, b, w });
 const COMPOSITIONS: Composition[] = [
   {
-    // LE CANAPÉ VERT ET LA TABLE DE TRAVERTIN — deux places.
-    nom: "canape-vert",
+    // LA BANQUETTE DE CUIR ET LA TABLE RONDE — le premier plan de la vue validée.
+    nom: "banquette",
     meubles: [
       {
-        src: "canape-vert",
-        r: 1.4875,
-        cx: 0.5,
-        b: 0.62,
-        w: 1,
-        avant: [[0, 0.17], [0.2, 0.2], [0.24, 0.3], [0.24, 0.48], [0.4, 0.51], [0.7, 0.49], [0.92, 0.46], [0.93, 0.2], [1, 0.17], [1, 1], [0, 1]],
+        src: "banquette-face",
+        r: 1571 / 708,
+        cx: 0,
+        b: 0,
+        w: 470,
+        avant: [[0, 0.3], [0.035, 0.27], [0.05, 0.5], [0.3, 0.5], [0.5, 0.49], [0.7, 0.5], [0.95, 0.5], [0.965, 0.27], [1, 0.3], [1, 1], [0, 1]],
       },
     ],
     places: [
-      { m: 0, u: 0.41, v: 0.56, coupe: 0.5, h: 0.36 },
-      { m: 0, u: 0.71, v: 0.54, coupe: 0.48, h: 0.36, miroir: true },
+      { m: 0, u: 0.281, v: 0.586, c: 0.5, h: 152 },
+      { m: 0, u: 0.5, v: 0.576, c: 0.5, h: 154 },
+      { m: 0, u: 0.719, v: 0.586, c: 0.5, h: 152, miroir: true },
     ],
-    table: { src: "table-travertin", r: 2.235, cx: 0.5, b: 0.8, w: 0.66, plateau: [[0.2, 0.07], [0.8, 0.07], [0.88, 0.25], [0.12, 0.25]] },
-    tapis: { cx: 0.5, cy: 0.7, w: 0.9, h: 0.26, teinte: "#5b2328", bord: "#a8784a" },
+    table: TABLE(0, -18, 360),
   },
   {
-    // LE CANAPÉ DE CUIR, LE FAUTEUIL BOUCLETTE, LA TABLE AUX PIEDS DE LAITON.
-    nom: "canape-cuir",
-    meubles: [
-      {
-        src: "canape-cuir",
-        r: 1.559,
-        cx: 0.37,
-        b: 0.62,
-        w: 0.74,
-        avant: [[0, 0.12], [0.12, 0.2], [0.2, 0.3], [0.21, 0.52], [0.45, 0.53], [0.75, 0.5], [0.95, 0.47], [0.96, 0.22], [1, 0.18], [1, 1], [0, 1]],
-      },
-      {
-        src: "fauteuil-bouclette",
-        r: 1.368,
-        cx: 0.83,
-        b: 0.7,
-        w: 0.44,
-        avant: [[0, 0.35], [0.1, 0.28], [0.3, 0.25], [0.42, 0.3], [0.45, 0.46], [0.6, 0.47], [0.61, 0.27], [0.75, 0.24], [1, 0.27], [1, 1], [0, 1]],
-      },
-    ],
-    places: [
-      { m: 0, u: 0.38, v: 0.6, coupe: 0.52, h: 0.48 },
-      { m: 1, u: 0.5, v: 0.56, coupe: 0.47, h: 0.6, miroir: true },
-      { m: 0, u: 0.74, v: 0.57, coupe: 0.5, h: 0.48 },
-    ],
-    table: { src: "table-laiton", r: 1.8525, cx: 0.5, b: 0.84, w: 0.58, plateau: [[0.17, 0.06], [0.8, 0.06], [0.86, 0.2], [0.1, 0.2]] },
-    tapis: { cx: 0.52, cy: 0.72, w: 0.92, h: 0.26, teinte: "#1f3b45", bord: "#b08a58" },
-  },
-  {
-    // LE CANAPÉ BOUCLETTE, DEUX FAUTEUILS DE CUIR, LA TABLE RONDE — quatre places.
-    nom: "table-ronde",
+    // LE CANAPÉ BOUCLETTE — le milieu de la vue validée. Les fantômes s'enfoncent
+    // dans l'assise ; le plateau et l'avant du coussin cachent leur bas.
+    nom: "bouclette",
     meubles: [
       {
         src: "canape-bouclette",
         r: 2.115,
-        cx: 0.5,
-        b: 0.5,
-        w: 0.84,
+        cx: 0,
+        b: 0,
+        w: 507,
         avant: [[0, 0.12], [0.15, 0.15], [0.22, 0.3], [0.23, 0.5], [0.5, 0.48], [0.75, 0.44], [0.95, 0.41], [0.97, 0.2], [1, 0.2], [1, 1], [0, 1]],
       },
-      { src: "fauteuil-cuir", r: 1.2875, cx: 0.15, b: 0.8, w: 0.36, avant: AVANT_FAUTEUIL_CUIR },
-      { src: "fauteuil-cuir", r: 1.2875, cx: 0.85, b: 0.8, w: 0.36, miroir: true, avant: AVANT_FAUTEUIL_CUIR },
     ],
     places: [
-      { m: 0, u: 0.4, v: 0.54, coupe: 0.48, h: 0.4 },
-      { m: 0, u: 0.66, v: 0.5, coupe: 0.45, h: 0.4, miroir: true },
-      { m: 1, u: 0.66, v: 0.56, coupe: 0.5, h: 0.74 },
-      { m: 2, u: 0.66, v: 0.56, coupe: 0.5, h: 0.74, miroir: true },
+      { m: 0, u: 0.42, v: 0.58, c: 0.49, h: 152 },
+      { m: 0, u: 0.68, v: 0.555, c: 0.46, h: 152 },
     ],
-    table: { src: "table-ronde", r: 1.893, cx: 0.5, b: 0.86, w: 0.46, plateau: PLATEAU_RONDE },
-    tapis: { cx: 0.5, cy: 0.72, w: 0.92, h: 0.28, teinte: "#6a3320", bord: "#c09a62" },
+    table: TABLE(7, -48, 217),
   },
   {
-    // LES TROIS CHAISES DE VELOURS AUTOUR DE LA TABLE RONDE.
-    nom: "chaises",
+    // LE CANAPÉ VERT, retourné — le fond de la vue validée.
+    nom: "vert",
     meubles: [
       {
-        src: "chaises-velours",
-        r: 2.34,
-        cx: 0.5,
-        b: 0.6,
-        w: 1,
-        avant: [[0, 0.6], [0.42, 0.6], [0.42, 0.42], [0.64, 0.42], [0.64, 0.6], [1, 0.6], [1, 1], [0, 1]],
+        src: "canape-vert",
+        r: 1.4875,
+        cx: 0,
+        b: -60,
+        w: 486,
+        miroir: true,
+        avant: [[0, 0.17], [0.2, 0.2], [0.24, 0.3], [0.24, 0.48], [0.4, 0.51], [0.7, 0.49], [0.92, 0.46], [0.93, 0.2], [1, 0.17], [1, 1], [0, 1]],
       },
     ],
     places: [
-      { m: 0, u: 0.22, v: 0.64, coupe: 0.6, h: 0.26 },
-      { m: 0, u: 0.5, v: 0.46, coupe: 0.42, h: 0.26 },
-      { m: 0, u: 0.78, v: 0.64, coupe: 0.6, h: 0.26, miroir: true },
+      { m: 0, u: 0.41, v: 0.6, c: 0.53, h: 152 },
+      { m: 0, u: 0.71, v: 0.58, c: 0.51, h: 152, miroir: true },
     ],
-    table: { src: "table-ronde", r: 1.893, cx: 0.5, b: 0.78, w: 0.5, plateau: PLATEAU_RONDE },
-    tapis: { cx: 0.5, cy: 0.68, w: 0.84, h: 0.25, teinte: "#24402e", bord: "#b08a58" },
+    // Le pied de sa table au même niveau que celui du premier plan : au-dessus du bouton.
+    table: TABLE(8, -18, 266),
   },
 ];
-/** Le haut et le bas d'un meuble, en largeurs de groupe. */
+export const compositionDe = (cle: string) => COMPOSITIONS[hache(cle) % COMPOSITIONS.length];
+
+/** Le haut d'un meuble, en points du premier plan. */
 const hautDe = (m: { b: number; w: number; r: number }) => m.b - m.w / m.r;
-/** Où s'assied une place : son centre, le bas du fantôme, la ligne d'assise, sa taille — en largeurs de groupe. */
+/** Où s'assied une place : son centre, le bas du fantôme, la ligne d'assise. */
 function assise(c: Composition, p: Place) {
   const m = c.meubles[p.m];
   const mh = m.w / m.r;
   const u = m.miroir ? 1 - p.u : p.u;
-  return { x: m.cx - m.w / 2 + u * m.w, bas: hautDe(m) + p.v * mh, coupe: hautDe(m) + p.coupe * mh, h: p.h * m.w };
+  return { x: m.cx - m.w / 2 + u * m.w, bas: hautDe(m) + p.v * mh, coupe: hautDe(m) + p.c * mh, h: p.h };
 }
-/** Le haut et le bas de la boîte d'une composition, en largeurs de groupe. */
-function boite(c: Composition) {
-  const meubles = [...c.meubles, c.table];
-  const haut = Math.min(...meubles.map(hautDe), ...c.places.map((p) => assise(c, p)).map((a) => a.bas - a.h));
-  const bas = Math.max(...meubles.map((m) => m.b));
-  return { haut, bas, h: bas - haut };
+/** L'étendue d'un groupe autour de son ancre, et le haut des têtes (où se rattache l'étiquette). */
+function etendue(c: Composition) {
+  const tout = [...c.meubles, c.table];
+  const tetes = Math.min(...c.places.map((p) => assise(c, p)).map((a) => a.bas - a.h));
+  return {
+    g: Math.min(...tout.map((m) => m.cx - m.w / 2)),
+    d: Math.max(...tout.map((m) => m.cx + m.w / 2)),
+    haut: Math.min(tetes, ...tout.map(hautDe)),
+    tetes,
+  };
 }
-export const compositionDe = (cle: string) => COMPOSITIONS[hache(cle) % COMPOSITIONS.length];
 
 /* ═══ LA TRAJECTOIRE ════════════════════════════════════════════════════════
-   Cinq repères, en fractions de la scène : `x` le centre du groupe, `y` son
-   pied, `w` sa largeur. -1 : caché derrière la bibliothèque ; 0 : le fond ;
-   1 : le milieu ; 2 : le premier plan ; 3 : sous le bord de l'écran. Entre
-   deux repères, une spline de Catmull-Rom : la sortie vers la bibliothèque
+   Cinq repères, relevés sur la vue validée (points de l'écran de référence ;
+   `s` l'échelle, 1 au premier plan) :
+   -1 : dans le passage, ENTIÈREMENT derrière la bibliothèque ;
+    0 : le fond, à l'entrée du passage ; 1 : le milieu, à droite ;
+    2 : le premier plan ; 3 : sous le bord de l'écran.
+   Entre deux repères, une spline de Catmull-Rom : la sortie vers le passage
    s'incurve d'elle-même, sans cassure. */
 const REPERES = [
-  { x: 0.13, y: 0.285, w: 0.2 },
-  { x: 0.47, y: 0.345, w: 0.36 },
-  { x: 0.66, y: 0.575, w: 0.66 },
-  // LE PREMIER PLAN S'ARRÊTE AU-DESSUS DU BOUTON : on doit voir ce qui est
-  // posé sur la table, pas le cacher sous « Ouvrir la discussion ».
-  { x: 0.5, y: 0.865, w: 0.96 },
-  // SOUS L'ÉCRAN, ENTIÈREMENT : au repos on voit trois groupes, pas un
-  // quatrième qui dépasse. (Le groupe le plus haut fait 0,8 de sa largeur,
-  // soit 0,49 de la hauteur au rapport des repères — d'où 1,52.)
-  { x: 0.5, y: 1.52, w: 1.24 },
+  { x: 72, y: 306, s: 0.1 },
+  { x: 160, y: 329, s: 0.2632 },
+  { x: 300, y: 420, s: 0.5526 },
+  { x: 195, y: 704, s: 1 },
+  { x: 195, y: 1270, s: 1.25 },
+];
+/** Où se rattache l'étiquette, par rapport à l'ancre (en points du premier plan), et où tombe sa pointe dans sa largeur. */
+const POINTES = [
+  { dx: -53, f: 0.49 },
+  { dx: -53, f: 0.49 },
+  { dx: -18, f: 0.5 },
+  { dx: -165, f: 0.09 },
+  { dx: -165, f: 0.09 },
 ];
 const PREMIER = -1;
 function catmull(a: number, b: number, c: number, d: number, t: number) {
   return 0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t * t + (-a + 3 * b - 3 * c + d) * t * t * t);
 }
-/** Le rapport hauteur / largeur de la scène pour lequel les repères sont faits. */
-const RAPPORT = 2.04;
-/**
- * SUR UN TÉLÉPHONE PLUS TRAPU, LES GROUPES RAPETISSENT : leur hauteur suit la
- * largeur de l'écran, et trois plans doivent tenir dans une hauteur moindre.
- */
-export const echelleDe = (W: number, H: number) => (W > 0 ? Math.min(1, H / W / RAPPORT) : 1);
+function spline<T extends Record<string, number>>(pts: T[], place: number, cle: keyof T & string) {
+  const s = Math.min(3, Math.max(-1, place)) - PREMIER;
+  const i = Math.min(pts.length - 2, Math.floor(s));
+  const t = s - i;
+  const p = (k: number) => pts[Math.min(pts.length - 1, Math.max(0, k))][cle] as number;
+  return catmull(p(i - 1), p(i), p(i + 1), p(i + 2), t);
+}
 
-/** Ce que la taille de l'écran décide : l'échelle des groupes, le pied du premier plan, la place du bouton. */
-type Geo = { W: number; H: number; e: number; yAvant: number; cta: number };
+/** Ce que la taille de l'écran décide : le décor, le premier plan, la place du bouton. */
+type Geo = { W: number; H: number; cta: number; reperes: { x: number; y: number; s: number }[] };
 /**
  * LE BOUTON A SA ZONE, AU-DESSUS DE LA BARRE (`bas` : ce que la barre et le
- * fantôme du milieu prennent sur la scène). Le premier plan s'arrête au-dessus
- * de lui, et les groupes rapetissent si la hauteur restante ne suffit pas —
- * sur un 320 × 568, c'est elle qui manque.
+ * fantôme du milieu prennent sur la scène). Le pied du premier plan se pose
+ * juste sous le haut du bouton, comme dans la vue validée, et le groupe
+ * rapetisse si la hauteur restante ne suffit pas (320 × 568).
  */
 function geoDe(W: number, H: number, bas: number): Geo {
   const cta = H - bas - 10 - 46;
-  const yAvant = Math.min(REPERES[3].y, (cta - 6) / H);
-  const reste = (yAvant - 0.45) * H;
-  const e = W > 0 ? Math.min(echelleDe(W, H), reste / (0.78 * REPERES[3].w * W)) : 1;
-  return { W, H, e: Math.max(0.5, e), yAvant, cta };
-}
-export function surLaTrajectoire(place: number, echelle = 1, yAvant = REPERES[3].y) {
-  const s = Math.min(3, Math.max(-1, place)) - PREMIER;
-  const i = Math.min(REPERES.length - 2, Math.floor(s));
-  const t = s - i;
-  const p = (k: number) => {
-    const j = Math.min(REPERES.length - 1, Math.max(0, k));
-    return j === 3 ? { ...REPERES[3], y: yAvant } : REPERES[j];
+  const d = decorDe(W, H);
+  const sAvant = Math.max(0.5, Math.min(d.k, (Math.min(REPERES[3].y * d.k, cta + 18) - 0.42 * H) / 250));
+  // Le pied des tables (18 au-dessus de l'ancre, à l'échelle) s'arrête au haut du bouton.
+  const yAvant = Math.min(REPERES[3].y * d.k, cta + 18 * sAvant);
+  const fixe = (r: { x: number; y: number; s: number }) => ({ x: d.x(r.x), y: d.y(r.y), s: r.s * d.k });
+  return {
+    W,
+    H,
+    cta,
+    reperes: [
+      fixe(REPERES[0]),
+      fixe(REPERES[1]),
+      fixe(REPERES[2]),
+      { x: W / 2, y: yAvant, s: sAvant },
+      { x: W / 2, y: H + 470 * sAvant * 1.25, s: sAvant * 1.25 },
+    ],
   };
-  const v = (cle: "x" | "y" | "w") => catmull(p(i - 1)[cle], p(i)[cle], p(i + 1)[cle], p(i + 2)[cle], t);
-  return { x: v("x"), y: v("y"), w: v("w") * echelle };
+}
+/** Où est un groupe à sa place : son ancre à l'écran et son échelle. */
+export function surLaTrajectoire(place: number, geo: Geo) {
+  return { x: spline(geo.reperes, place, "x"), y: spline(geo.reperes, place, "y"), s: spline(geo.reperes, place, "s") };
+}
+/**
+ * LE MONTANT DU PASSAGE : à partir du fond, ce qui recule dans le passage est
+ * coupé à droite par son montant, de plus en plus — sans saut, puisque la
+ * coupe commence au bord du groupe et rejoint le montant.
+ */
+function coupePassage(place: number, geo: Geo, c: Composition) {
+  if (place >= 0) return null;
+  const d = decorDe(geo.W, geo.H);
+  const t = surLaTrajectoire(place, geo);
+  const bord = t.x + etendue(c).d * t.s;
+  const montant = d.x(PASSAGE_DROITE);
+  return Math.min(bord, montant + (bord - montant) * Math.max(0, 1 + place / 0.3));
 }
 
 /** Ce qu'une discussion montre dans le salon. */
@@ -352,6 +337,7 @@ export function GrandSalon({
 
   const { W, H } = taille;
   const geo = geoDe(W, H, taille.bas);
+  const decor = decorDe(W, H);
   /** Un pas de défilement, une discussion. */
   const pas = Math.max(1, Math.round(H * 0.42));
   const n = scenes.length;
@@ -397,7 +383,7 @@ export function GrandSalon({
     if (e.scrollTop < pas * 0.3) setNouveau(false);
   };
 
-  const masquees = W > 0 ? etiquettesMasquees(scenes, scenes.map((_, i) => i - p + decalage), geo, enHaut) : new Set<string>();
+  const etiquettes = W > 0 ? placerEtiquettes(scenes, scenes.map((_, i) => i - p + decalage), geo, enHaut) : new Map<string, Place2>();
 
   if (calme) return <SalonCalme scenes={scenes} onOuvrir={onOuvrir} onIdee={onIdee} enHaut={enHaut} recherche={recherche} />;
 
@@ -410,21 +396,23 @@ export function GrandSalon({
         ))}
         <div className="gs-scene" style={{ height: H }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="gs-fond" src={`${D}fond.webp`} alt="" aria-hidden="true" />
+          <img className="gs-fond" src={`${D}${FOND.src}.webp`} alt="" aria-hidden="true" />
           {W > 0 &&
             scenes.map((s, i) => {
               const place = i - p + decalage;
               if (place < -1.02 || place > 3) return null;
-              return <Groupe key={s.cle} s={s} place={place} geo={geo} />;
+              const t = surLaTrajectoire(place, geo);
+              return <Groupe key={s.cle} s={s} ax={t.x} ay={t.y} e={t.s} z={100 + Math.round(place * 100)} coupe={coupePassage(place, geo, compositionDe(s.cle))} />;
             })}
-          {/* LA BIBLIOTHÈQUE : un calque à part, devant les groupes qui s'en vont. */}
+          {/* LA BIBLIOTHÈQUE : un calque à part, devant le bord gauche du passage —
+              les groupes qui s'en vont disparaissent derrière elle. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="gs-biblio" src={`${D}bibliotheque.webp`} alt="" aria-hidden="true" />
+          <img className="gs-biblio" src={`${D}bibliotheque.webp`} alt="" aria-hidden="true" style={{ left: decor.x(BIBLIO.x), top: decor.y(BIBLIO.y), width: BIBLIO.l * decor.k }} />
           {W > 0 &&
             scenes.map((s, i) => {
               const place = i - p + decalage;
-              if (place < -0.3 || place > 2.6) return null;
-              return <Etiquette key={s.cle} s={s} place={place} geo={geo} enHaut={enHaut} masquee={masquees.has(s.cle)} onOuvrir={() => onOuvrir(s)} />;
+              if (place < -0.3 || place > 3) return null;
+              return <Etiquette key={s.cle} s={s} place={place} geo={geo} enHaut={enHaut} decale={etiquettes.get(s.cle)} onOuvrir={() => onOuvrir(s)} />;
             })}
           {n === 0 && (
             <div className="gs-vide" style={{ top: enHaut + 24 }}>
@@ -460,29 +448,16 @@ export function GrandSalon({
   );
 }
 
-/** Le dessin d'un groupe, à sa place sur la trajectoire. */
-function Groupe({ s, place, geo, fixe }: { s: SceneDeSalon; place: number; geo: Geo; fixe?: number }) {
+/**
+ * LE DESSIN D'UN GROUPE, ancré en `ax, ay` (le milieu de sa base) à l'échelle
+ * `e`. Dessiné en points du premier plan puis réduit d'un `scale` : le
+ * navigateur ne refait pas la mise en page des images à chaque pas.
+ * `coupe` : ce qui recule dans le passage est coupé à droite par son montant.
+ */
+function Groupe({ s, ax, ay, e, z, coupe }: { s: SceneDeSalon; ax: number; ay: number; e: number; z?: number; coupe?: number | null }) {
   const c = compositionDe(s.cle);
-  const bx = boite(c);
-  const { W, H, e } = geo;
-  const t = surLaTrajectoire(place, e, geo.yAvant);
-  // DESSINÉ À LA TAILLE DU PREMIER PLAN, puis réduit d'un `scale` : le
-  // navigateur ne refait pas la mise en page des images à chaque pas.
-  // `fixe` : le même groupe, immobile, à cette largeur (mouvements réduits).
-  const base = fixe ?? W * REPERES[3].w * e;
-  const k = t.w / (REPERES[3].w * e);
-  const hPx = bx.h * base;
   const assis = s.participants.slice(0, c.places.length);
-  const style: CSSProperties = fixe
-    ? { position: "relative", width: base, height: hPx, margin: "0 auto" }
-    : {
-        width: base,
-        height: hPx,
-        transform: `translate(${t.x * W - base / 2}px, ${t.y * H - hPx}px) scale(${k})`,
-        zIndex: 100 + Math.round(place * 100),
-      };
-  const enY = (b: number) => ((b - bx.haut) / bx.h) * 100;
-  const meuble = (m: { src: string; r: number; cx: number; b: number; w: number; miroir?: boolean }, cle: string, avant?: Point[]) => (
+  const image = (m: { src: string; r: number; cx: number; b: number; w: number; miroir?: boolean }, cle: string, avant?: Point[]) => (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       key={cle}
@@ -490,105 +465,89 @@ function Groupe({ s, place, geo, fixe }: { s: SceneDeSalon; place: number; geo: 
       src={`${D}${m.src}.webp`}
       alt=""
       style={{
-        left: `${(m.cx - m.w / 2) * 100}%`,
-        top: `${enY(hautDe(m))}%`,
-        width: `${m.w * 100}%`,
+        left: m.cx - m.w / 2,
+        top: hautDe(m),
+        width: m.w,
+        height: m.w / m.r,
         ...(avant ? { clipPath: `polygon(${avant.map(([x, y]) => `${x * 100}% ${y * 100}%`).join(",")})` } : {}),
       }}
     />
   );
-  // DU FOND VERS L'AVANT : chaque siège, ceux qui y sont assis, puis l'avant
-  // du siège par-dessus eux, et leur ombre sur le coussin.
+  // DU FOND VERS L'AVANT : chaque siège, l'ombre de chaque place sur le coussin,
+  // les fantômes, puis l'avant du siège par-dessus eux.
   const ordre = c.meubles.map((m, i) => ({ m, i })).sort((x, y) => x.m.b - y.m.b);
-  const tbl = c.table;
-  const tblH = tbl.w / tbl.r;
-  const plateau = tbl.plateau.map(
-    ([x, y]) => [(tbl.cx - tbl.w / 2 + x * tbl.w) * base, ((hautDe(tbl) + y * tblH - bx.haut) / bx.h) * hPx] as [number, number],
-  );
-  const tp = c.tapis;
-  return (
-    <div className="gs-groupe" style={style} aria-hidden="true" data-cle={s.cle}>
-      {/* LE TAPIS délimite le coin et l'ancre au sol : un rectangle couché
-          en perspective, bordé, au motif discret. */}
-      <i
-        className="gs-tapis"
-        style={{
-          left: `${(tp.cx - tp.w / 2) * 100}%`,
-          top: `${enY(tp.cy - tp.h / COUCHE / 2)}%`,
-          width: `${tp.w * 100}%`,
-          height: `${(tp.h / COUCHE / bx.h) * 100}%`,
-          backgroundColor: tp.teinte,
-          borderColor: tp.bord,
-        }}
-      />
+  const t = c.table;
+  const tH = t.w / t.r;
+  const tHaut = hautDe(t);
+  const photos = s.contenu.slice(0, 2);
+  const groupe = (
+    <div className="gs-groupe" style={{ transform: `translate(${ax}px, ${ay}px) scale(${e})`, zIndex: coupe == null ? z : undefined }} aria-hidden="true" data-cle={s.cle}>
       {ordre.map(({ m, i }) => {
         const ici = c.places.map((pl, k) => ({ pl, k })).filter(({ pl, k }) => pl.m === i && k < assis.length);
         return [
-          meuble(m, `m${i}`),
+          image(m, `m${i}`),
+          ...ici.map(({ pl, k }) => {
+            const a = assise(c, pl);
+            const w = a.h * 0.95;
+            return <i key={`os${k}`} className="gs-ombre-siege" style={{ left: a.x - w / 2, top: a.coupe - w * 0.09, width: w, height: w * 0.18 }} />;
+          }),
           ...ici.map(({ pl, k }) => {
             const f = fantomeDe(assis[k]);
             const a = assise(c, pl);
             const w = a.h * f.r;
-            return (
+            const src = `${D}${f.src}.webp`;
+            const cadre = { left: a.x - w / 2, top: a.bas - a.h, width: w, height: a.h };
+            // LA LUMIÈRE DE LA PIÈCE : le bas du fantôme s'assombrit, une lumière
+            // chaude vient de la gauche (les lampes) — du même côté, retourné ou non.
+            const sens = pl.miroir ? "to left" : "to right";
+            const masque = { WebkitMaskImage: `url(${src})`, maskImage: `url(${src})` };
+            return [
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={`f${k}`}
-                className={`gs-fantome${pl.miroir ? " miroir" : ""}`}
-                src={`${D}${f.src}.webp`}
-                alt=""
-                style={{ left: `${(a.x - w / 2) * 100}%`, top: `${enY(a.bas - a.h)}%`, width: `${w * 100}%` }}
-              />
-            );
+              <img key={`f${k}`} className={`gs-fantome${pl.miroir ? " miroir" : ""}`} src={src} alt="" style={cadre} />,
+              <i
+                key={`fo${k}`}
+                className={`gs-teinte${pl.miroir ? " miroir" : ""}`}
+                style={{
+                  ...cadre,
+                  ...masque,
+                  background: `linear-gradient(${sens},rgba(255,176,96,.3),rgba(255,176,96,0) 45%,rgba(60,28,10,0) 70%,rgba(60,28,10,.22)),linear-gradient(to bottom,rgba(0,0,0,0) 48%,rgba(70,32,10,.42) 100%)`,
+                }}
+              />,
+              <i
+                key={`fl${k}`}
+                className={`gs-reflet${pl.miroir ? " miroir" : ""}`}
+                style={{ ...cadre, ...masque, background: `linear-gradient(${sens},rgba(255,190,110,.35),rgba(255,190,110,0) 35%)` }}
+              />,
+            ];
           }),
-          ...(m.avant && ici.length ? [meuble(m, `a${i}`, m.avant)] : []),
+          ...(m.avant && ici.length ? [image(m, `a${i}`, m.avant)] : []),
           ...ici.map(({ pl, k }) => {
             const a = assise(c, pl);
-            const sw = a.h * 0.8;
-            const sh = sw * 0.2;
-            return (
-              <i
-                key={`o${k}`}
-                className="gs-ombre"
-                style={{ left: `${(a.x - sw / 2) * 100}%`, top: `${enY(a.coupe - sh / 2)}%`, width: `${sw * 100}%`, height: `${(sh / bx.h) * 100}%` }}
-              />
-            );
+            const w = a.h * 0.6;
+            return <i key={`oc${k}`} className="gs-ombre" style={{ left: a.x - w / 2, top: a.coupe + 2 - w * 0.1, width: w, height: w * 0.2 }} />;
           }),
         ];
       })}
-      {meuble(tbl, "table")}
-      {/* LE CONTENU RÉELLEMENT PARTAGÉ, posé à plat sur le plateau. Deux
+      {/* L'ombre de la table sur l'assise, juste derrière le plateau, puis la table. */}
+      <i className="gs-ombre-table" style={{ left: t.cx - t.w * 0.46, top: tHaut - 6, width: t.w * 0.92, height: 22 }} />
+      {image(t, "table")}
+      {/* LE CONTENU RÉELLEMENT PARTAGÉ, en grand et à plat sur le plateau ; deux
           choix : côte à côte. Rien de partagé : la table reste nue. */}
-      {s.contenu.slice(0, 2).map((src, i, l) => {
-        const [a, b2, c2, d] = plateau;
-        const part = (u: number) => [a[0] + (b2[0] - a[0]) * u, a[1] + (b2[1] - a[1]) * u, d[0] + (c2[0] - d[0]) * u, d[1] + (c2[1] - d[1]) * u];
-        const n = l.length;
-        const g = 0.06;
-        const u0 = n === 1 ? 0.18 : i === 0 ? 0.02 : 0.5 + g / 2;
-        const u1 = n === 1 ? 0.82 : i === 0 ? 0.5 - g / 2 : 0.98;
-        const [x0, y0, x3, y3] = part(u0);
-        const [x1, y1, x2, y2] = part(u1);
-        const w = 300;
-        const h = 220;
+      {photos.map((src, i) => {
+        const l = photos.length === 1 ? t.w * 0.45 : t.w * 0.215;
+        const h = photos.length === 1 ? t.w * 0.29 : t.w * 0.2;
+        const gauche = photos.length === 1 ? t.cx - l / 2 : i === 0 ? t.cx - l - t.w * 0.01 : t.cx + t.w * 0.01;
         return (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            key={src + i}
-            className="gs-contenu"
-            src={src}
-            alt=""
-            style={{
-              width: w,
-              height: h,
-              transform: matrice(w, h, [
-                [x0, y0],
-                [x1, y1],
-                [x2, y2],
-                [x3, y3],
-              ]),
-            }}
-          />
+          <img key={src + i} className="gs-contenu" src={src} alt="" style={{ left: gauche, top: tHaut + 0.626 * tH - h, width: l, height: h }} />
         );
       })}
+    </div>
+  );
+  if (coupe == null) return groupe;
+  return (
+    <div className="gs-passe" style={{ clipPath: `inset(0 calc(100% - ${coupe}px) 0 0)`, zIndex: z }}>
+      {groupe}
     </div>
   );
 }
@@ -596,99 +555,142 @@ function Groupe({ s, place, geo, fixe }: { s: SceneDeSalon; place: number; geo: 
 const borne = (v: number) => Math.max(0, Math.min(1, v));
 
 /**
- * « LES ÉTIQUETTES PRENNENT TROP DE PLACE. » Une hiérarchie simple, qui suit
- * la profondeur sans saut :
- *   · au fond : le titre, court, et le statut ;
- *   · au milieu : s'y ajoutent les participants ;
- *   · au premier plan : le dernier message, près des fantômes, et le bouton.
- * La taille du titre et l'arrivée des détails sont continues : elles
- * grandissent quand la table se rapproche.
+ * « ON DOIT COMPRENDRE IMMÉDIATEMENT QUEL TITRE APPARTIENT À QUELLE TABLE. »
+ * Chaque étiquette est posée juste au-dessus des têtes de SON groupe, une
+ * pointe vers lui ; elle ne descend jamais sur les visages. Le détail suit la
+ * profondeur, sans saut : au fond le titre et le statut, au milieu les
+ * participants, au premier plan le dernier message dans le même bloc compact.
  */
 function lecture(s: SceneDeSalon, place: number, geo: Geo, enHaut: number) {
-  const { W, H } = geo;
+  const { W } = geo;
   const c = compositionDe(s.cle);
-  const bx = boite(c);
-  const t = surLaTrajectoire(place, geo.e, geo.yAvant);
-  const gw = t.w * W;
-  const top = t.y * H - bx.h * gw;
-  /** Les participants arrivent entre le fond et le milieu. */
+  const et = etendue(c);
+  const t = surLaTrajectoire(place, geo);
   const details = borne((place - 0.45) / 0.4);
-  /** La bulle du dernier message, au premier plan seulement. */
-  const bulle = s.dernier && s.nonLus > 0 ? borne((place - 1.65) / 0.3) * (place > 2.35 ? borne((2.6 - place) / 0.25) : 1) : 0;
-  const taille = 12.5 + 4.5 * borne((place - 0.2) / 1.8);
+  const message = s.dernier ? borne((place - 1.75) / 0.2) ** 2 : 0;
+  const taille = 12.5 + 4 * borne((place - 0.2) / 1.8);
   const nb = s.nb ?? s.participants.length;
   const assis = s.participants.slice(0, c.places.length);
   const enPlus = nb - assis.length;
   const statut = s.prive ? "🔒 Privé" : "🌍 Public";
   const gens = s.membre ? `${assis.join(", ")}${enPlus > 0 ? ` +${enPlus}` : ""}` : `${nb} participant${nb > 1 ? "s" : ""}`;
-  const maxi = Math.min(W - 16, 300, W * (0.56 + 0.28 * borne(place / 2)));
-  // LA LARGEUR RÉELLE, ESTIMÉE au plus près : le titre, ou la ligne du statut.
-  const larg = Math.min(maxi, Math.max(s.titre.length * taille * 0.56 + 30, (statut.length + details * (gens.length + 3)) * 6.6 + 30));
-  const haut = taille * 1.25 + 30 + (s.debutDecouverte ? 26 : 0);
-  // JAMAIS SOUS L'EN-TÊTE, JAMAIS HORS DE L'ÉCRAN.
-  const y = Math.max(enHaut + haut + 4, top + gw * 0.06);
-  const x = Math.min(W - 8 - larg / 2, Math.max(8 + larg / 2, t.x * W));
-  return { t, gw, top, x, y, larg, haut, maxi, details, bulle, taille, statut, gens, bx };
+  const maxi = Math.min(W - 16, 150 + 90 * borne(place / 2));
+  const larg = Math.min(
+    maxi,
+    Math.max(
+      s.titre.length * taille * 0.56 + 30,
+      (statut.length + details * (gens.length + 3)) * 6.6 + 30,
+      message > 0.05 && s.dernier ? (s.dernier.qui.length + s.dernier.texte.length) * 6.4 + 44 : 0,
+    ),
+  );
+  const haut = taille * 1.25 + 30 + message * 26 + (s.debutDecouverte ? 26 : 0);
+  const f = borne(spline(POINTES, place, "f"));
+  const pointeX = t.x + spline(POINTES, place, "dx") * t.s;
+  // La pointe juste au-dessus des têtes ; jamais sous l'en-tête.
+  // Le groupe qui ENTRE par le bas : son étiquette reste au-dessus de la zone du bouton.
+  const pointeY = Math.min(geo.cta - 12, Math.max(enHaut + haut + 19, t.y + et.tetes * t.s - 6));
+  const gauche = Math.min(W - 8 - larg, Math.max(8, pointeX - f * larg));
+  return { t, et, x: gauche, y: pointeY, larg, haut, pointe: Math.min(larg - 16, Math.max(16, pointeX - gauche)), details, message, taille, statut, gens };
 }
 
 /**
- * DEUX ÉTIQUETTES NE SE CHEVAUCHENT JAMAIS — bulle comprise. La plus proche
- * garde la sienne, la plus lointaine s'efface ; son groupe reste visible et
- * se touche toujours.
+ * DEUX ÉTIQUETTES NE SE CHEVAUCHENT JAMAIS. La plus proche garde sa place ; la
+ * plus lointaine glisse d'abord sur le côté, puis vers le haut — sa pointe
+ * vise toujours son groupe. Si rien ne convient (ou qu'elle passerait sous
+ * l'en-tête), elle s'efface en fondu ; son groupe reste visible et se touche.
  */
-function etiquettesMasquees(scenes: SceneDeSalon[], places: number[], geo: Geo, enHaut: number) {
+type Place2 = { dx: number; dy: number } | null;
+function placerEtiquettes(scenes: SceneDeSalon[], places: number[], geo: Geo, enHaut: number) {
   const posees: { g: number; d: number; h: number; b: number }[] = [];
-  const masquees = new Set<string>();
-  const ordre = scenes.map((s, i) => ({ s, place: places[i] })).filter((x) => x.place > -0.3 && x.place < 2.6);
+  const res = new Map<string, Place2>();
+  const ordre = scenes.map((s, i) => ({ s, place: places[i] })).filter((x) => x.place > -0.3 && x.place < 2.25);
   ordre.sort((a, b) => b.place - a.place);
+  // LES VISAGES DE TOUS LES GROUPES VISIBLES sont des obstacles : une étiquette n'en couvre aucun.
+  const visages: { g: number; d: number; h: number; b: number }[] = [];
+  scenes.forEach((s, i) => {
+    const place = places[i];
+    if (place <= -1 || place > 3) return;
+    const c = compositionDe(s.cle);
+    const t = surLaTrajectoire(place, geo);
+    c.places.slice(0, s.participants.length).forEach((pl, k) => {
+      const a = assise(c, pl);
+      const w = a.h * fantomeDe(s.participants[k]).r * t.s;
+      const x = t.x + a.x * t.s;
+      const haut = t.y + (a.bas - a.h) * t.s;
+      visages.push({ g: x - w * 0.36, d: x + w * 0.36, h: haut + a.h * t.s * 0.05, b: haut + a.h * t.s * 0.55 });
+    });
+  });
+  const touche = (r: { g: number; d: number; h: number; b: number }, p: { g: number; d: number; h: number; b: number }, m: number) =>
+    r.g < p.d + m && r.d > p.g - m && r.h < p.b + m && r.b > p.h - m;
+  const libre = (r: { g: number; d: number; h: number; b: number }) =>
+    r.g >= 4 && r.d <= geo.W - 4 && r.h >= enHaut + 10 && r.b <= geo.cta - 4 && !posees.some((p) => touche(r, p, 6)) && !visages.some((v) => touche(r, v, 5));
   for (const { s, place } of ordre) {
     const l = lecture(s, place, geo, enHaut);
-    const boites = [{ g: l.x - l.larg / 2, d: l.x + l.larg / 2, h: l.y - l.haut, b: l.y }];
-    if (l.bulle > 0.05) boites.push({ g: l.x - l.larg / 2 + 10, d: l.x - l.larg / 2 + 240, h: l.y + 4, b: l.y + 50 });
-    const touche = boites.some((r) => posees.some((p) => r.g < p.d + 6 && r.d > p.g - 6 && r.h < p.b + 6 && r.b > p.h - 6));
-    if (touche) masquees.add(s.cle);
-    else posees.push(...boites);
+    const base = { g: l.x, d: l.x + l.larg, h: l.y - 7 - l.haut, b: l.y };
+    const essais: { dx: number; dy: number }[] = [{ dx: 0, dy: 0 }];
+    for (const p of [...posees, ...visages]) {
+      essais.push({ dx: p.g - 8 - base.d, dy: 0 }, { dx: p.d + 8 - base.g, dy: 0 }, { dx: 0, dy: p.h - 8 - base.b });
+    }
+    for (const e of [...essais]) for (const p of [...posees, ...visages]) essais.push({ dx: e.dx, dy: p.h - 8 - base.b });
+    // Glisser sur le côté reste limité : la pointe doit encore viser le groupe.
+    const bon = essais
+      .filter((e) => Math.abs(e.dx) <= l.larg * 0.6 && e.dy <= 0 && e.dy >= -90)
+      .sort((a, b) => Math.abs(a.dx) + Math.abs(a.dy) * 1.5 - (Math.abs(b.dx) + Math.abs(b.dy) * 1.5))
+      .find((e) => libre({ g: base.g + e.dx, d: base.d + e.dx, h: base.h + e.dy, b: base.b + e.dy }));
+    if (bon) {
+      res.set(s.cle, bon);
+      posees.push({ g: base.g + bon.dx, d: base.d + bon.dx, h: base.h + bon.dy, b: base.b + bon.dy });
+    } else res.set(s.cle, null);
   }
-  return masquees;
+  return res;
 }
 
-/** Le titre, le statut, les membres — un vrai bouton, à taille lisible. */
+/** L'étiquette, la zone qu'on touche, et le bouton du premier plan. */
 function Etiquette({
   s,
   place,
   geo,
   enHaut,
-  masquee,
+  decale,
   onOuvrir,
 }: {
   s: SceneDeSalon;
   place: number;
   geo: Geo;
   enHaut: number;
-  masquee: boolean;
+  decale: Place2 | undefined;
   onOuvrir: () => void;
 }) {
   const l = lecture(s, place, geo, enHaut);
-  const { t, gw, top, bx } = l;
-  // ELLE S'EN VA AVEC SON GROUPE : plus d'étiquette ni de zone touchable une
-  // fois qu'il est passé derrière la bibliothèque. Au repos, une étiquette
-  // est pleine ou absente ; masquée, elle s'efface en fondu.
+  const masquee = decale === null;
+  const dx = decale?.dx ?? 0;
+  const dy = decale?.dy ?? 0;
+  const { t, et } = l;
+  // ELLE S'EN VA AVEC SON GROUPE : effacée pendant qu'il recule dans le passage,
+  // absente une fois qu'il est derrière la bibliothèque.
   const visible = place > -0.3;
-  const opacite = masquee ? 0 : place < 0 ? borne((place + 0.3) / 0.3) : place > 2.35 ? borne((2.6 - place) / 0.25) : 1;
-  // LE GROUPE NE SE TOUCHE PLUS dès qu'il commence à passer derrière la bibliothèque.
+  // Le groupe qui entre n'a d'étiquette qu'une fois presque arrivé : rien ne flotte au bas de l'écran.
+  const opacite = masquee ? 0 : place < 0 ? borne((place + 0.3) / 0.3) : place > 2.05 ? borne((2.25 - place) / 0.2) : 1;
+  // TOUT GROUPE VISIBLE SE TOUCHE — plus dès qu'il commence à passer derrière le montant du passage.
   const touchable = place > -0.05;
   const action = s.membre ? "Ouvrir la discussion" : "Voir la discussion";
   const ctaVu = borne(1 - (Math.abs(place - 2) - 0.1) / 0.3);
   return (
     <>
-      {/* TOUT LE GROUPE SE TOUCHE — un appui, pas un défilement. */}
       <button
         type="button"
         className="gs-zone"
         data-cle={s.cle}
         tabIndex={-1}
         aria-hidden="true"
-        style={{ left: t.x * geo.W - gw / 2, top, width: gw, height: bx.h * gw, pointerEvents: touchable ? "auto" : "none", zIndex: 400 + Math.round(place * 10) }}
+        style={{
+          left: t.x + et.g * t.s,
+          top: t.y + et.haut * t.s,
+          width: (et.d - et.g) * t.s,
+          height: -et.haut * t.s,
+          pointerEvents: touchable ? "auto" : "none",
+          zIndex: 400 + Math.round(place * 10),
+        }}
         onClick={onOuvrir}
       />
       <div
@@ -696,9 +698,9 @@ function Etiquette({
         data-cle={s.cle}
         aria-hidden={masquee || undefined}
         style={{
-          left: l.x,
-          top: l.y,
-          maxWidth: l.maxi,
+          left: l.x + dx,
+          top: l.y - 7 + dy,
+          width: l.larg,
           opacity: opacite,
           visibility: visible ? "visible" : "hidden",
           pointerEvents: opacite > 0.5 ? undefined : "none",
@@ -715,21 +717,15 @@ function Etiquette({
               {l.gens}
             </span>
           </span>
+          {s.dernier && l.message > 0.05 && (
+            <span className="gs-dernier" style={{ maxHeight: l.message * 26, opacity: l.message, marginTop: 5 * l.message, paddingTop: 3 * l.message, paddingBottom: 3 * l.message }}>
+              <i>{s.dernier.qui} :</i> {s.dernier.texte}
+            </span>
+          )}
           {s.nonLus > 0 && <em>{s.nonLus > 9 ? "9+" : s.nonLus}</em>}
         </button>
+        <i className="gs-pointe" style={{ left: Math.min(l.larg - 16, Math.max(16, l.pointe - dx)) }} aria-hidden="true" />
       </div>
-      {l.bulle > 0 && s.dernier && (
-        // LE DERNIER MESSAGE, PRÈS DES FANTÔMES : sous le titre, pas dans la plaque.
-        <p
-          className="gs-bulle"
-          aria-hidden="true"
-          style={{ left: l.x - l.larg / 2 + 10, top: l.y + 6, opacity: masquee ? 0 : l.bulle * opacite, zIndex: 650 + Math.round(place * 10) }}
-        >
-          <span>
-            <i>{s.dernier.qui} :</i> {s.dernier.texte}
-          </span>
-        </p>
-      )}
       {ctaVu > 0 && (
         <button
           type="button"
@@ -803,13 +799,25 @@ function SalonCalme({
               {s.nonLus > 0 && <em>{s.nonLus}</em>}
             </span>
             <span className="gs-calme-d" aria-hidden="true">
-              {larg > 0 && <Groupe s={s} place={2} geo={{ W: larg, H: larg * 2, e: 1, yAvant: REPERES[3].y, cta: 0 }} fixe={Math.min(320, (larg - 48) * 0.92)} />}
+              {larg > 0 && <GroupeFixe s={s} larg={Math.min(320, (larg - 48) * 0.92)} />}
             </span>
             <span className="gs-cta-calme">{s.membre ? "Ouvrir la discussion" : "Voir la discussion"} →</span>
           </button>
         );
       })}
     </div>
+  );
+}
+
+/** Le même groupe, immobile, à une largeur donnée (mouvements réduits). */
+function GroupeFixe({ s, larg }: { s: SceneDeSalon; larg: number }) {
+  const et = etendue(compositionDe(s.cle));
+  const e = larg / (et.d - et.g);
+  const h = -et.haut * e;
+  return (
+    <span style={{ position: "relative", display: "block", width: larg, height: h, margin: "0 auto" }}>
+      <Groupe s={s} ax={larg / 2 - ((et.g + et.d) / 2) * e} ay={h} e={e} />
+    </span>
   );
 }
 
@@ -825,32 +833,36 @@ function StylesGrandSalon() {
 .gs-cran{position:absolute;left:0;width:1px;height:1px;scroll-snap-align:start;}
 .gs-scene{position:sticky;top:0;overflow:hidden;}
 .gs-fond{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 0;}
-.gs-groupe{position:absolute;left:0;top:0;transform-origin:50% 100%;pointer-events:none;will-change:transform;}
-.gs-meuble,.gs-fantome{position:absolute;display:block;height:auto;}
-.gs-meuble.miroir,.gs-fantome.miroir{transform:scaleX(-1);}
+.gs-groupe{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;pointer-events:none;will-change:transform;}
+.gs-groupe img,.gs-groupe i{position:absolute;display:block;max-width:none;max-height:none;}
+.gs-passe{position:absolute;inset:0;pointer-events:none;}
+.gs-meuble.miroir,.gs-fantome.miroir,.gs-teinte.miroir,.gs-reflet.miroir{transform:scaleX(-1);}
 .gs-fantome{filter:drop-shadow(0 2px 3px rgba(40,20,5,.25));}
-.gs-ombre{position:absolute;display:block;border-radius:50%;background:radial-gradient(ellipse at 50% 50%,rgba(30,14,4,.55),rgba(30,14,4,0) 70%);pointer-events:none;}
-.gs-tapis{position:absolute;display:block;box-sizing:border-box;border:solid 3px;border-radius:4px;opacity:.85;transform:perspective(900px) rotateX(62deg);transform-origin:50% 50%;
-  background-image:repeating-linear-gradient(45deg,rgba(255,230,190,.07) 0 6px,transparent 6px 14px),repeating-linear-gradient(-45deg,rgba(0,0,0,.12) 0 6px,transparent 6px 14px);
-  box-shadow:inset 0 0 0 8px rgba(0,0,0,.18),inset 0 0 0 11px rgba(255,220,170,.25),0 6px 18px rgba(20,8,2,.35);}
-.gs-contenu{position:absolute;left:0;top:0;transform-origin:0 0;object-fit:cover;border-radius:6px;border:5px solid #fbf6ee;box-sizing:border-box;
-  box-shadow:0 3px 8px rgba(30,14,4,.35);}
-.gs-biblio{position:absolute;left:-1%;top:-1%;width:31%;height:auto;z-index:350;pointer-events:none;filter:drop-shadow(6px 0 10px rgba(30,14,4,.35));}
+.gs-teinte,.gs-reflet{-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;mix-blend-mode:multiply;}
+.gs-reflet{mix-blend-mode:soft-light;}
+.gs-ombre,.gs-ombre-siege,.gs-ombre-table{border-radius:50%;}
+.gs-ombre{background:radial-gradient(ellipse at 50% 50%,rgba(30,14,4,.55),rgba(30,14,4,0) 70%);}
+.gs-ombre-siege{background:radial-gradient(ellipse,rgba(40,16,4,.55),rgba(40,16,4,.28) 45%,rgba(40,16,4,0) 72%);}
+.gs-ombre-table{background:radial-gradient(ellipse,rgba(30,12,3,.45),rgba(30,12,3,0) 70%);}
+.gs-contenu{object-fit:cover;border:4px solid #fbf6ee;border-radius:6px;box-sizing:border-box;box-shadow:0 4px 10px rgba(30,14,4,.45);
+  transform:perspective(420px) rotateX(62deg);transform-origin:50% 100%;}
+.gs-biblio{position:absolute;height:auto;max-width:none;z-index:350;pointer-events:none;filter:brightness(.82) drop-shadow(4px 0 8px rgba(20,8,2,.4));}
 .gs-zone{position:absolute;padding:0;border:0;background:none;cursor:pointer;}
-.gs-plaque{position:absolute;display:grid;justify-items:center;gap:5px;transform:translate(-50%,-100%);width:max-content;transition:opacity .18s;}
+.gs-plaque{position:absolute;display:grid;justify-items:stretch;gap:5px;transform:translateY(-100%);transition:opacity .18s;}
+.gs-pointe{position:absolute;bottom:-7px;width:14px;height:14px;margin-left:-7px;transform:rotate(45deg);background:rgba(28,17,10,.9);
+  border-right:1px solid rgba(255,214,170,.24);border-bottom:1px solid rgba(255,214,170,.24);pointer-events:none;}
+.gs-dernier{display:block;max-width:100%;min-width:0;box-sizing:border-box;overflow:hidden;margin-top:5px;padding:3px 9px;border-radius:9px;background:#fffaf2;color:#2A1608;font-size:12px;line-height:1.35;
+  white-space:nowrap;text-overflow:ellipsis;text-align:left;}
+.gs-dernier i{font-style:normal;font-weight:800;color:#B0306A;}
 .gs-section{padding:3px 10px;border-radius:999px;background:rgba(245,162,58,.92);color:#2A1608;font-size:11.5px;font-weight:800;letter-spacing:.02em;}
-.gs-titre{position:relative;display:grid;justify-items:center;max-width:100%;min-height:40px;padding:4px 12px 5px;border-radius:12px;border:1px solid rgba(255,214,170,.24);
-  background:rgba(28,17,10,.78);color:#FFF4E6;font:inherit;text-align:center;cursor:pointer;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+.gs-titre{position:relative;display:grid;justify-items:start;grid-template-columns:minmax(0,1fr);width:100%;max-width:100%;min-height:40px;padding:6px 12px 7px;border-radius:13px;border:1px solid rgba(255,214,170,.24);
+  background:rgba(28,17,10,.86);color:#FFF4E6;font:inherit;text-align:left;cursor:pointer;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
   box-shadow:0 5px 14px rgba(20,10,4,.3);box-sizing:border-box;}
 .gs-titre b{display:block;max-width:100%;font-family:Georgia,"Times New Roman",serif;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .gs-ligne{display:flex;max-width:100%;font-size:11px;color:#E9D6C2;line-height:1.35;white-space:nowrap;}
 .gs-gens{display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:pre;}
 .gs-titre em{position:absolute;top:-8px;right:-8px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#FF3E8E;color:#fff;
   font-style:normal;font-size:12px;font-weight:800;line-height:22px;}
-.gs-bulle{position:absolute;margin:0;max-width:min(230px,70%);padding:5px 10px;border-radius:4px 12px 12px 12px;background:#fffaf2;color:#2A1608;font-size:12px;line-height:1.3;
-  box-shadow:0 4px 10px rgba(20,10,4,.3);overflow-wrap:anywhere;pointer-events:none;box-sizing:border-box;}
-.gs-bulle span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-.gs-bulle i{font-style:normal;font-weight:800;color:#B0306A;}
 .gs-cta{position:absolute;left:50%;transform:translateX(-50%);height:46px;padding:0 22px;border:0;border-radius:999px;background:linear-gradient(180deg,#F8B451,#E8932A);
   color:#2A1608;font:inherit;font-size:15.5px;font-weight:800;white-space:nowrap;cursor:pointer;box-shadow:0 8px 18px rgba(20,10,4,.4);}
 .gs-vide{position:absolute;left:16px;right:16px;display:grid;justify-items:center;gap:8px;padding:18px;border-radius:18px;background:rgba(28,17,10,.82);text-align:center;z-index:800;}
@@ -859,7 +871,7 @@ function StylesGrandSalon() {
 .gs-vide button{height:46px;padding:0 20px;border:0;border-radius:999px;background:linear-gradient(180deg,#F8B451,#E8932A);color:#2A1608;font:inherit;font-weight:800;cursor:pointer;}
 .gs-nouveau{position:absolute;left:50%;transform:translateX(-50%);z-index:900;height:36px;padding:0 14px;border:0;border-radius:999px;background:#FFF4E6;color:#2A1608;
   font:inherit;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 6px 14px rgba(20,10,4,.35);}
-.gs.calme{scroll-snap-type:none;padding:0 12px 24px;background:#2a1a10 url(/direct/ensemble/fond.webp) 50% 0/cover fixed;}
+.gs.calme{scroll-snap-type:none;padding:0 12px 24px;background:#2a1a10 url(/direct/ensemble/fond-salon.webp) 50% 0/cover fixed;}
 .gs-calme{display:grid;gap:8px;width:100%;margin:12px 0;padding:12px;border-radius:18px;border:1px solid rgba(255,214,170,.22);background:rgba(28,17,10,.82);
   color:#FFF4E6;font:inherit;text-align:left;cursor:pointer;}
 .gs-calme-t{position:relative;display:grid;gap:2px;}

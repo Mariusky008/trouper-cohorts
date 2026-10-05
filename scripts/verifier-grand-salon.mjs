@@ -62,7 +62,7 @@ let echecs = 0;
   for (let y = 0; y <= Math.min(max, 2 * pas); y += 8) {
     await p.evaluate((y) => { document.querySelector('.gs').scrollTop = y; }, y); await p.waitForTimeout(16);
     const e = await p.evaluate(() => Object.fromEntries([...document.querySelectorAll('.gs-groupe')].map((g) => { const r = g.getBoundingClientRect(); return [g.dataset.cle, [r.x + r.width / 2, r.bottom]]; })));
-    if (prec) for (const k in e) if (prec[k]) saut = Math.max(saut, Math.hypot(e[k][0] - prec[k][0], e[k][1] - prec[k][1]));
+    if (prec) for (const k in e) if (prec[k]) { const d = Math.hypot(e[k][0] - prec[k][0], e[k][1] - prec[k][1]); if (d > saut) { saut = d; if (process.env.DETAIL) console.log('     saut', y, k, prec[k], e[k]); } }
     prec = e;
   }
   ok(saut < 0.06 * Hh, `continu : plus grand déplacement par pas de 8 px = ${saut.toFixed(1)} px`);
@@ -73,7 +73,9 @@ let echecs = 0;
     const bib = document.querySelector('.gs-biblio').getBoundingClientRect();
     const zbib = getComputedStyle(document.querySelector('.gs-biblio')).zIndex;
     return [...document.querySelectorAll('.gs-groupe')].map((g) => {
-      const z = Number(g.style.zIndex); const r = g.getBoundingClientRect();
+      const z = Number(g.style.zIndex || g.parentElement.style.zIndex);
+      const rs = [...g.querySelectorAll('img')].map((x) => x.getBoundingClientRect());
+      const r = { x: Math.min(...rs.map((q) => q.left)), y: Math.min(...rs.map((q) => q.top)), right: Math.max(...rs.map((q) => q.right)), bottom: Math.max(...rs.map((q) => q.bottom)), top: Math.min(...rs.map((q) => q.top)) };
       const pl = document.querySelector(`.gs-plaque[data-cle="${g.dataset.cle}"]`);
       const zo = document.querySelector(`.gs-zone[data-cle="${g.dataset.cle}"]`);
       return { cle: g.dataset.cle, z, zbib: Number(zbib), dedans: r.right <= bib.right + 2 && r.top >= bib.top - 2 && r.bottom <= bib.bottom + 2,
@@ -92,6 +94,23 @@ let echecs = 0;
   const bas = await p.evaluate(() => [...document.querySelectorAll('.gs-groupe')].map((g) => [g.dataset.cle, Number(g.style.zIndex), Math.round(g.getBoundingClientRect().top)]).sort((a, b) => b[1] - a[1])[0]);
   ok(bas[1] >= 300 && bas[2] > Hh * 0.55, `à mi-pas, le groupe qui entre est en bas de l'écran (haut à ${bas[2]} px)`);
   if (D) await p.screenshot({ path: `${D}/v-${W}-1.5.png` });
+
+  // 4 bis. AUCUNE ÉTIQUETTE SUR UN VISAGE, à chaque pas du mouvement (le visage : le haut
+  // du fantôme, sur 55 % de sa hauteur), et les étiquettes visibles restent dans l'écran.
+  let visages = 0; let dehors = 0;
+  for (let f = 0; f <= 2; f += 0.1) {
+    await p.evaluate((y) => { document.querySelector('.gs').scrollTop = y; }, Math.round(f * pas)); await p.waitForTimeout(40);
+    const r = await p.evaluate(() => {
+      const pl = [...document.querySelectorAll('.gs-plaque')].filter((x) => getComputedStyle(x).visibility === 'visible' && Number(x.style.opacity) > 0.5).map((x) => x.getBoundingClientRect());
+      const vis = [...document.querySelectorAll('.gs-fantome')].map((x) => x.getBoundingClientRect()).filter((v) => v.bottom > 0 && v.top < innerHeight && v.height > 14).map((v) => ({ l: v.left + v.width * 0.15, r: v.right - v.width * 0.15, t: v.top + v.height * 0.05, b: v.top + v.height * 0.55 }));
+      const sur = pl.filter((a) => vis.some((v) => a.left < v.r - 2 && a.right > v.l + 2 && a.top < v.b - 2 && a.bottom > v.t + 2));
+      return { sur: sur.length, detail: sur.map((a) => [Math.round(a.left), Math.round(a.top), Math.round(a.right), Math.round(a.bottom)] + ' sur ' + vis.filter((v) => a.left < v.r - 2 && a.right > v.l + 2 && a.top < v.b - 2 && a.bottom > v.t + 2).map((v) => [v.l, v.t, v.r, v.b].map(Math.round))).join(' '), dehors: pl.filter((a) => a.left < -1 || a.right > innerWidth + 1).length };
+    });
+    visages += r.sur; dehors += r.dehors;
+    if (r.sur && process.env.DETAIL) console.log('     visage couvert à', f.toFixed(1), r.detail);
+  }
+  ok(visages === 0, `aucune étiquette sur un visage pendant le mouvement (${visages} cas sur 21 pas)`);
+  ok(dehors === 0, `les étiquettes restent dans l'écran (${dehors} cas)`);
 
   // 5. BORNÉ : pas au-delà de la dernière discussion.
   await aller(max + 2000);
@@ -131,9 +150,10 @@ let echecs = 0;
   const table = await p.evaluate(() => {
     const cta = [...document.querySelectorAll('.gs-cta')].find((x) => Number(x.style.opacity) > 0.5);
     const g = [...document.querySelectorAll('.gs-groupe')].find((x) => x.style.zIndex === '300');
-    return cta && g ? { cta: Math.round(cta.getBoundingClientRect().top), pied: Math.round(g.getBoundingClientRect().bottom) } : null;
+    const t = g && [...g.querySelectorAll('img')].find((x) => /table/.test(x.src));
+    return cta && t ? { cta: Math.round(cta.getBoundingClientRect().top), pied: Math.round(t.getBoundingClientRect().bottom) } : null;
   });
-  ok(table && table.pied <= table.cta + 2, `le bouton ne couvre pas la table (pied du groupe ${table?.pied}, bouton à ${table?.cta})`);
+  ok(table && table.pied <= table.cta + 2, `le bouton ne couvre pas la table (pied de la table ${table?.pied}, bouton à ${table?.cta})`);
 
   // 8. RETOUR D'UNE CONVERSATION : la position exacte, même entre deux états.
   await p.evaluate(() => { document.querySelector('.gs').style.scrollSnapType = 'none'; });
@@ -142,7 +162,7 @@ let echecs = 0;
   const scene1 = await etat();
   const bas1 = await p.evaluate(() => [document.querySelector('.gs').dataset.bas, !!document.querySelector('.ap-mf-dit'), document.querySelector('.gs').clientHeight]);
   const cta = p.locator('.gs-cta');
-  const z = await p.evaluate(() => { const e = [...document.querySelectorAll('.gs-zone')].filter((x) => x.style.pointerEvents === 'auto').sort((a, b) => Number(b.style.zIndex) - Number(a.style.zIndex))[0]; const r = e.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height * 0.45, cle: e.dataset.cle }; });
+  const z = await p.evaluate(() => { const e = [...document.querySelectorAll('.gs-zone')].filter((x) => x.style.pointerEvents === 'auto' && x.getBoundingClientRect().top < innerHeight * 0.6).sort((a, b) => Number(b.style.zIndex) - Number(a.style.zIndex))[0]; const r = e.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height * 0.45, cle: e.dataset.cle }; });
   await p.touchscreen.tap(z.x, z.y); await p.waitForTimeout(1200);
   const ouvert = await p.evaluate(() => ({ ouvert: !!document.querySelector('.ap-page.feuille'), titre: document.querySelector('.ap-page.feuille h2, .ap-page.feuille .ap-page-h')?.textContent?.slice(0, 60) }));
   ok(ouvert.ouvert, `un appui sur le groupe ouvre la discussion (${z.cle} → ${ouvert.titre})`);
