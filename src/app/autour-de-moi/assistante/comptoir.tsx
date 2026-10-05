@@ -177,7 +177,7 @@ function useMicro() {
   const [ecoute, setEcoute] = useState(false);
   const [direct, setDirect] = useState("");
   const enCours = useRef<ReturnType<typeof ouvrirEcoute> | null>(null);
-  const finir = useRef<((r: { texte: string; audio?: string; secondes?: number }) => void) | null>(null);
+  const finir = useRef<((r: { texte: string; audio?: string; secondes?: number; erreur?: string }) => void) | null>(null);
 
   const arreter = useCallback(async () => {
     const e = enCours.current;
@@ -185,11 +185,11 @@ function useMicro() {
     enCours.current = null;
     const r = await e.arreter();
     setEcoute(false);
-    finir.current?.({ texte: r.texte, audio: r.audio, secondes: r.secondes });
+    finir.current?.({ texte: r.texte, audio: r.audio, secondes: r.secondes, erreur: r.erreur });
   }, []);
 
   const ecouter = useCallback(
-    (quandFini: (r: { texte: string; audio?: string; secondes?: number }) => void) => {
+    (quandFini: (r: { texte: string; audio?: string; secondes?: number; erreur?: string }) => void) => {
       if (enCours.current) {
         void arreter();
         return;
@@ -947,10 +947,12 @@ function EtapeMission({
     premiere && etape.type === "dire" ? `Salut${aQui(commerce)} ! ${etape.question}` : etape.question;
 
   /* ── CE QU'IL A DIT : on le range, et on lui montre ── */
-  const recevoir = (texte: string) => {
+  const recevoir = (texte: string, erreur?: string) => {
     const t = texte.trim();
     if (!t) {
-      setEnnui("Je n’ai rien entendu… Réessaie, ou écris-le.");
+      /* LA VRAIE RAISON QUAND ON LA CONNAÎT — un micro refusé ne se règle pas
+         en « réessayant ». */
+      setEnnui(erreur && !/rien entendu/i.test(erreur) ? `${erreur} Tu peux aussi l’écrire.` : "Je n’ai rien entendu… Réessaie, ou écris-le.");
       return;
     }
     setEnnui("");
@@ -1050,7 +1052,7 @@ function EtapeMission({
               setClavier={setClavier}
               ecrit={ecrit}
               setEcrit={setEcrit}
-              onTexte={(t) => recevoir(t)}
+              onTexte={(t, e) => recevoir(t, e)}
             />
           ))}
 
@@ -1189,7 +1191,7 @@ function Parler({
   setClavier: (v: boolean) => void;
   ecrit: string;
   setEcrit: (v: string) => void;
-  onTexte: (t: string) => void;
+  onTexte: (t: string, erreur?: string) => void;
 }) {
   if (clavier)
     return (
@@ -1213,7 +1215,7 @@ function Parler({
     <div className="cz-parler">
       <BoutonMicro
         ecoute={micro.ecoute}
-        onClick={() => micro.ecouter((r) => onTexte(r.texte))}
+        onClick={() => micro.ecouter((r) => onTexte(r.texte, r.erreur))}
         mot={micro.ecoute ? "Je t’écoute… appuie pour finir" : "Appuie et dis-le moi"}
       />
       {!micro.ecoute && (

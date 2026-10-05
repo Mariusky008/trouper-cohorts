@@ -141,6 +141,8 @@ const SEUIL = 0.012;
  */
 const SILENCE_MS = 700;
 const RIEN_MS = 8000;
+/** Le silence, quand seuls les mots du moteur disent qu'il parle. */
+const SILENCE_MOTS_MS = 1800;
 
 /** En dessous, ce n'est pas quelqu'un qui parle bas : c'est un micro sourd. */
 const SOURD = 0.002;
@@ -150,6 +152,8 @@ const SOURD = 0.002;
 // pour toute la visite. C'est tout le correctif : voir l'en-tête du fichier.
 let fluxPartage: MediaStream | null = null;
 let demande: Promise<MediaStream | null> | null = null;
+/** Pourquoi le micro a été refusé, la dernière fois — pour le dire avec des mots. */
+let refusMicro = "";
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 let ctxSon: any = null;
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
@@ -168,9 +172,13 @@ async function obtenirMicro(): Promise<MediaStream | null> {
       .getUserMedia({ audio: true })
       .then((f) => {
         fluxPartage = f;
+        refusMicro = "";
         return f;
       })
-      .catch(() => null)
+      .catch((e: unknown) => {
+        refusMicro = e instanceof Error ? e.name : "inconnu";
+        return null;
+      })
       .finally(() => {
         demande = null;
       });
@@ -186,24 +194,58 @@ async function obtenirMicro(): Promise<MediaStream | null> {
  * finie. Le contexte s'ouvre en sommeil quand un son vient d'être joué — et Léa
  * vient justement de parler — donc on le réveille à chaque fois.
  */
-async function preparerOreille(flux: MediaStream) {
+/** Le flux que l'oreille écoute : s'il a été remplacé, on la rebranche. */
+let fluxEcoute: MediaStream | null = null;
+
+/**
+ * LE CONTEXTE SE RÉVEILLE PENDANT LE GESTE, ou jamais.
+ *
+ * « Sur mon iPad […] je n'ai rien entendu, réessaie ou écris-le […] il ne
+ * m'entend pas. » Sur iPad et iPhone, un contexte audio ne démarre QUE dans
+ * l'appui du doigt. On le créait plus tard — après l'autorisation du micro,
+ * donc hors du geste : il restait en sommeil, et l'oreille lisait un silence
+ * parfait. Résultat, trois fautes en chaîne : la parole n'était jamais
+ * « entendue », l'écoute se coupait seule au bout de huit secondes, et le
+ * micro, jugé « sourd », n'envoyait même pas l'enregistrement au serveur.
+ * Cette fonction est donc appelée au tout début de `ouvrirEcoute`, qui part
+ * directement de l'appui.
+ */
+function reveillerOreille() {
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
-  if (!AC) return null;
-  if (!ctxSon) {
-    ctxSon = new AC();
-    analyseur = ctxSon.createAnalyser();
-    analyseur.fftSize = 1024;
-    ctxSon.createMediaStreamSource(flux).connect(analyseur);
+  if (!AC) return;
+  try {
+    if (!ctxSon) {
+      ctxSon = new AC();
+      analyseur = ctxSon.createAnalyser();
+      analyseur.fftSize = 1024;
+    }
+    if (ctxSon.state === "suspended") void ctxSon.resume().catch(() => undefined);
+  } catch {
+    ctxSon = null;
+    analyseur = null;
+  }
+}
+
+async function preparerOreille(flux: MediaStream) {
+  if (!ctxSon || !analyseur) return null;
+  if (fluxEcoute !== flux) {
+    try {
+      ctxSon.createMediaStreamSource(flux).connect(analyseur);
+      fluxEcoute = flux;
+    } catch {
+      return null;
+    }
   }
   if (ctxSon.state === "suspended") {
     try {
       await ctxSon.resume();
     } catch {
-      /* Refusé : on écoutera quand même, sans détection de silence. */
+      /* Refusé : voir plus bas, on ne se fie alors pas à ce qu'elle mesure. */
     }
   }
-  return analyseur;
+  // UNE OREILLE QUI DORT N'ENTEND RIEN — et ne doit rien décider.
+  return ctxSon.state === "running" ? analyseur : null;
 }
 
 /** Tout relâcher — en quittant l'écran, et nulle part ailleurs. */
@@ -217,6 +259,7 @@ export function libererMicro() {
   }
   ctxSon = null;
   analyseur = null;
+  fluxEcoute = null;
 }
 
 /** Vrai si le micro est déjà branché — l'autorisation ne sera pas redemandée. */
@@ -252,8 +295,17 @@ export function ouvrirEcoute(
   let coupe = false;
   let guet = 0;
   let aParle = false;
+  /** Quand le moteur du téléphone a rendu ses derniers mots. */
+  let dernierMot = 0;
   /** Le niveau le plus fort entendu — un zéro strict vaut un diagnostic. */
   let niveauMax = 0;
+  /** L'oreille a-t-elle vraiment mesuré ? Sinon, `niveauMax` ne prouve rien. */
+  let mesure = false;
+  /** Le micro a-t-il été donné ? */
+  let flux: MediaStream | null = null;
+
+  // DANS LE GESTE, AVANT TOUT `await` — voir `reveillerOreille`.
+  if (reglages.surSilence) reveillerOreille();
   /** Quand l'enregistreur a réellement démarré — voir `secondes` dans `Ecoute`. */
   let debutEnr = 0;
 
@@ -275,6 +327,12 @@ export function ouvrirEcoute(
         }
         fini = f.trim();
         vivant = (f + c).trim();
+        // LE MOTEUR A ENTENDU DES MOTS : c'est une preuve de parole, quoi que
+        // dise l'oreille.
+        if (vivant) {
+          aParle = true;
+          dernierMot = Date.now();
+        }
         enDirect(vivant);
       };
       // ON NE TRAITE PAS L'ERREUR : elle est normale. « no-speech », « aborted »,
@@ -288,7 +346,7 @@ export function ouvrirEcoute(
   }
 
   const pret = (async () => {
-    const flux = await obtenirMicro();
+    flux = await obtenirMicro();
     if (!flux || coupe) return;
     try {
       const type = conteneur();
@@ -310,8 +368,12 @@ export function ouvrirEcoute(
     }
 
     if (!reglages.surSilence) return;
+    // SANS OREILLE QUI MESURE, PAS DE COUPURE AUTOMATIQUE : il appuie pour
+    // finir. Mieux vaut un appui de plus qu'une écoute qui se ferme pendant
+    // qu'il parle.
     const an = await preparerOreille(flux);
     if (!an || coupe) return;
+    mesure = true;
     const tampon = new Float32Array(an.fftSize);
     const debut = Date.now();
     let dernierSon = 0;
@@ -327,9 +389,11 @@ export function ouvrirEcoute(
         dernierSon = t;
         return;
       }
-      const termine = aParle
-        ? dernierSon && t - dernierSon > SILENCE_MS
-        : t - debut > RIEN_MS;
+      // SI SEUL LE MOTEUR L'A ENTENDU (un micro qui capte bas), on attend plus
+      // longtemps : ses mots arrivent par paquets, avec du retard.
+      const dernier = Math.max(dernierSon, dernierMot);
+      const attente = dernierSon ? SILENCE_MS : SILENCE_MOTS_MS;
+      const termine = aParle ? dernier > 0 && t - dernier > attente : t - debut > RIEN_MS;
       if (termine) {
         window.clearInterval(guet);
         guet = 0;
@@ -398,7 +462,10 @@ export function ouvrirEcoute(
       // perdrait la fin de la phrase.
       await new Promise((r) => setTimeout(r, 300));
       const duTelephone = (fini || vivant).trim();
-      const sourd = !!reglages.surSilence && niveauMax < SOURD;
+      // « SOURD » SEULEMENT SI L'OREILLE A VRAIMENT ÉCOUTÉ, et que le moteur n'a
+      // rien saisi non plus. Une oreille endormie lit zéro : ce n'était pas
+      // un micro sourd, et on jetait sa phrase.
+      const sourd = !!reglages.surSilence && mesure && niveauMax < SOURD && !duTelephone;
       fermer();
 
       // CE QUE LE TÉLÉPHONE A DONNÉ SUFFIT-IL ? Le seuil est en MOTS : « oui »
@@ -428,7 +495,11 @@ export function ouvrirEcoute(
         return {
           texte: duTelephone,
           par: duTelephone ? "telephone" : "rien",
-          erreur: duTelephone ? undefined : "Je n’ai rien entendu.",
+          erreur: duTelephone
+            ? undefined
+            : !flux && refusMicro
+              ? "Le micro n’est pas autorisé pour ce site. Sur iPad ou iPhone : Réglages › Safari › Microphone › Autoriser, puis recharge la page."
+              : "Je n’ai rien entendu.",
           audio,
           secondes,
         };
