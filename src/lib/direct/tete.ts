@@ -169,6 +169,42 @@ export async function cacherLeVisage(src: string): Promise<{ image: string; cach
   return { image: c.toDataURL("image/jpeg", 0.92), cache: true };
 }
 
+/**
+ * ═══ LA RÉFÉRENCE DU LUNETIER : LA MONTURE, PAS LE VISAGE ═══════════════════
+ *
+ * « La paire de lunettes est superposée avec un autre visage apparemment. » La
+ * photo de la monture est un portrait de mannequin, net, de face : le moteur
+ * avait un second visage sous les yeux, et c'est lui qu'il a recopié. Comme
+ * pour la coiffure (`cacherLeVisage`), on ne lui laisse que ce qu'on essaie :
+ * une bande des sourcils au bout du nez, assez large pour les branches. Plus
+ * de bouche, de mâchoire, de cheveux à prendre.
+ *
+ * SANS VISAGE TROUVÉ, LA RÉFÉRENCE PART TELLE QUELLE : une monture posée sur
+ * une table n'a rien à cacher.
+ */
+export async function garderLaMonture(src: string): Promise<{ image: string; decoupe: boolean }> {
+  const v = await trouverLeVisage(src).catch(() => null);
+  if (!v) return { image: src, decoupe: false };
+  const img = await charger(src);
+  const L = img.naturalWidth;
+  const H = img.naturalHeight;
+  const b = v.boite;
+  const yeux = v.reperes.slice(0, 4);
+  const yYeux = yeux.reduce((t, p) => t + p.y, 0) / yeux.length;
+  const yNez = v.reperes[5]?.y ?? yYeux + b.h * 0.2;
+  const haut = Math.max(0, yYeux - b.h * 0.2);
+  const bas = Math.min(H, yNez + b.h * 0.04);
+  const gauche = Math.max(0, b.x - b.l * 0.12);
+  const droite = Math.min(L, b.x + b.l * 1.12);
+  const l = droite - gauche;
+  const h = bas - haut;
+  if (l < 40 || h < 20) return { image: src, decoupe: false };
+  const [c, g] = toile(l, h);
+  g.imageSmoothingQuality = "high";
+  g.drawImage(img, gauche, haut, l, h, 0, 0, l, h);
+  return { image: c.toDataURL("image/jpeg", 0.94), decoupe: true };
+}
+
 /** Le cadre découpé autour de la tête, dans les pixels de la photo. */
 export type CadreTete = { x: number; y: number; l: number; h: number };
 

@@ -371,6 +371,17 @@ const LES_ENVIES = false;
  *
  * POUR LA RALLUMER : passer cette constante à `true`. Rien d'autre.
  */
+/**
+ * ═══ LE TOUR DE RÔLE EST ÉTEINT, PAS EFFACÉ ═══════════════════════════════
+ *
+ * « Le timer ne sert à rien je pense, puisqu'on n'a rien pensé dans ce sens
+ * encore, donc le supprimer pour le moment. » La bande « C'est à vous — 4:57 »
+ * promettait une réservation de cinq minutes qu'aucun commerçant ne tient
+ * encore. Elle reste dans le code, prête le jour où le comptoir saura la
+ * proposer.
+ */
+const TOUR_DE_ROLE = false;
+
 const CLOCHE_EN_HAUT = false;
 
 /**
@@ -7819,7 +7830,7 @@ export function ApercuHabitant() {
                 contrepartie de l'abonnement, celle qu'on ne trouve nulle part
                 ailleurs, et c'est ce qui donne au geste « prévenez-moi » une
                 raison d'être autre chose qu'une politesse. */}
-            {tourCarte && tour && tourMur && tourEtat !== "fini" && (
+            {TOUR_DE_ROLE && tourCarte && tour && tourMur && tourEtat !== "fini" && (
               <div className={`ap-tour ${tourEtat}`}>
                 {tourEnCours ? (
                   <>
@@ -8234,7 +8245,16 @@ export function ApercuHabitant() {
                    est dans `TOUJOURS_REVOIR` — c'est une démonstration qu'il
                    remontre. */
                 !ouvertureVue ? (
-                  <EcranSalon onEntrer={() => setOuvertureVue(true)} />
+                  <EcranSalon
+                    onEntrer={() => setOuvertureVue(true)}
+                    /* PASSER LA DÉMO : le même geste que « Entrer » de l'écran de
+                       choix — on arrive dans l'application. */
+                    onPasser={() => {
+                      setOuvertureVue(true);
+                      jouer("ouvrir");
+                      marquerVu("accueil");
+                    }}
+                  />
                 ) : parcoursMode ? (
                   <ParcoursMode commerce={parcoursMode} onFermer={() => setParcoursMode("")} />
                 ) : parcoursCoiffure ? (

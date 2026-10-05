@@ -215,6 +215,7 @@ export function ExperienceTable({
   onQuestion,
   onCarte,
   onDecouvrir,
+  onFermer,
 }: {
   c: CarteAutour;
   /** Ses poses en pied (`/direct/double/pied/`), s'il les a. */
@@ -228,6 +229,13 @@ export function ExperienceTable({
   onCarte: () => void;
   /** La cloche est soulevée — la voix d'accueil se tait, celle du chef va parler. */
   onDecouvrir?: () => void;
+  /**
+   * SORTIR DU PARCOURS, À N'IMPORTE QUELLE ÉTAPE. « Je n'ai aucun moyen de
+   * revenir à l'app, je suis bloqué à chaque étape. » La flèche ne recule que
+   * d'une étape ; la croix rend l'annonce. Absente, elle fait comme la flèche
+   * à l'étape 1.
+   */
+  onFermer?: () => void;
 }) {
   const [etape, setEtape] = useState<1 | 2 | 3>(1);
   const [souleve, setSouleve] = useState(false);
@@ -333,8 +341,13 @@ export function ExperienceTable({
   const jouerFichier = (src: string) =>
     new Promise<boolean>((ok) => {
       try {
-        const a = new Audio(src);
+        /* LE MÊME LECTEUR D'UN BOUT À L'AUTRE. Sur iPhone, un lecteur n'a le droit
+           de parler que s'il a été lancé dans un appui ; une fois lancé, il le
+           garde. En créer un neuf pour la source de secours, c'était en créer un
+           qui n'avait pas ce droit — et le repli restait muet. */
+        const a = sonRef.current ?? new Audio();
         a.setAttribute("playsinline", "");
+        a.src = src;
         sonRef.current = a;
         let parti = false;
         /* `playing`, PAS `play` : `play` part dès qu'on DEMANDE la lecture, même
@@ -384,12 +397,14 @@ export function ExperienceTable({
     if (souleve) return;
     setSouleve(true);
     onDecouvrir?.();
-    window.setTimeout(() => {
-      setEtape(2);
-      // SA VOIX PART AVEC LE PLAT — le toucher de la cloche est le geste qui
-      // autorise le son. Coupée, elle attend qu'on appuie.
-      if (son && aUneVoix) void ecouter(true);
-    }, 900);
+    /* SA VOIX PART DANS L'APPUI, PAS APRÈS L'ANIMATION. « J'aimerais que le son
+       démarre dès que j'arrive sur l'étape 2 sans avoir à appuyer sur play. »
+       Lancée 0,9 s plus tard, à la fin du lever de cloche, elle sortait du
+       geste — et Safari refuse le son hors d'un geste. Elle commence donc
+       pendant que la cloche s'envole, et le plat apparaît sur ses premiers mots.
+       Coupée, elle attend qu'on appuie. */
+    if (son && aUneVoix) void ecouter(true);
+    window.setTimeout(() => setEtape(2), 900);
   };
 
   const precedent = () => {
@@ -459,18 +474,33 @@ export function ExperienceTable({
           <MotMarque className="xr-mot" encre="#FFF4E6" />
           <span>{c.nom}</span>
         </div>
-        <button
-          type="button"
-          className={`xr-rond xr-son${son ? "" : " coupe"}`}
-          onClick={basculerSon}
-          aria-label={son ? "Couper le son" : "Remettre le son"}
-          aria-pressed={!son}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z" />
-            {son ? <path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" /> : <path d="m16 9.5 5 5m0-5-5 5" />}
-          </svg>
-        </button>
+        <div className="xr-droite">
+          <button
+            type="button"
+            className={`xr-rond xr-son${son ? "" : " coupe"}`}
+            onClick={basculerSon}
+            aria-label={son ? "Couper le son" : "Remettre le son"}
+            aria-pressed={!son}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z" />
+              {son ? <path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" /> : <path d="m16 9.5 5 5m0-5-5 5" />}
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="xr-rond"
+            onClick={() => {
+              arreter();
+              (onFermer ?? onRetour)();
+            }}
+            aria-label="Fermer et revenir à l’annonce"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
+          </button>
+        </div>
         <div className="xr-pas" aria-label={`Étape ${etape} sur 3`}>
           <ol>
             {[1, 2, 3].map((n) => (
@@ -790,8 +820,10 @@ function StylesExperienceTable() {
         .xr-e1 .xr-voile{background:linear-gradient(180deg,rgba(18,12,9,.7) 0%,rgba(18,12,9,.25) 30%,rgba(18,12,9,.1) 55%,rgba(18,12,9,.7) 100%);}
 
         /* LA COQUE */
-        .xr-haut{position:absolute;z-index:5;top:0;left:0;right:0;display:grid;grid-template-columns:44px 1fr 44px;
+        .xr-haut{position:absolute;z-index:5;top:0;left:0;right:0;display:grid;grid-template-columns:96px 1fr 96px;
           align-items:center;gap:8px;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 0;max-width:640px;margin:0 auto;}
+        .xr-droite{display:flex;gap:8px;justify-self:end;}
+        .xr-haut>.xr-rond{justify-self:start;}
         .xr-rond{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;border:0;cursor:pointer;
           background:rgba(18,12,9,.35);color:#FFF4E6;}
         .xr-rond svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}

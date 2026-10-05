@@ -9157,8 +9157,13 @@ const CSS_MUR = `
            SOUS LE SOUS-TITRE. Son bord du haut se dissout dans le flou : sans
            le masque, on voyait une arete horizontale en travers de l'ecran,
            c'est-a-dire exactement ou la photo commence. */
+        /* LA PHOTO ENTIERE, PAS UN GROS PLAN. « J'aurais aime que deja sur cet
+           ecran on puisse voir la personne un peu plus que le gros plan. » En
+           cover, un rendu carre remplissait la hauteur et ne laissait que le
+           haut du crane. En contain, toute la photo tient en largeur sous le
+           titre, et le fond flou de la meme photo remplit le reste. */
         .mu-res-ph{position:absolute;left:0;right:0;top:15%;width:100%;
-          height:100%;object-fit:cover;object-position:center top;z-index:0;
+          height:85%;object-fit:contain;object-position:center top;z-index:0;
           -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 11%);
           mask-image:linear-gradient(180deg,transparent 0,#000 11%);}
         /* DEUX VOILES, UN EN HAUT ET UN EN BAS, ET RIEN AU MILIEU. Le titre et
@@ -9503,7 +9508,13 @@ const CSS_MUR = `
            plait ? » : la question de l'ecran, masquee par une infobulle. Elle
            se pose maintenant sur le haut de la photo, ou elle ne cache que du
            flou, et sa fleche continue de designer la cloche. */
-        .mu-res-bulle{position:absolute;z-index:9;top:146px;right:74px;
+        /* A COTE DE LA CLOCHE, DANS LA BARRE — PLUS SOUS ELLE. « Voir en
+           entier est cache par le bouton » : posee sous la cloche, la bulle
+           tombait pendant six secondes sur la pastille « Voir en entier ».
+           A gauche de la cloche, elle ne couvre que la jauge, et sa fleche la
+           designe toujours. */
+        .mu-res-bulle{position:absolute;z-index:9;top:17px;right:130px;
+          min-height:42px;display:flex;align-items:center;
           width:max-content;max-width:150px;border-radius:14px;
           padding:8px 11px;font-size:11.5px;font-weight:700;line-height:1.3;
           color:#EDF2F8;background:rgba(10,14,24,.92);
@@ -9530,10 +9541,10 @@ const CSS_MUR = `
            ELLE REPASSE DONC SOUS LA CLOCHE, ET ELLE PASSE PAR-DESSUS. Le titre
            est en dessous quatre secondes, puis elle s'efface : c'est ce que
            fait une infobulle, et c'est bien moins couteux que de la perdre. */
-        .mu-res-bulle::after{content:"";position:absolute;top:-6px;right:16px;
+        .mu-res-bulle::after{content:"";position:absolute;top:calc(50% - 6px);right:-6px;
           width:12px;height:12px;transform:rotate(45deg);border-radius:3px;
           background:rgba(10,14,24,.92);
-          border-left:1px solid rgba(255,255,255,.18);
+          border-right:1px solid rgba(255,255,255,.18);
           border-top:1px solid rgba(255,255,255,.18);}
         .mu-res-bulle.on{color:#FFD9EE;border-color:rgba(240,38,155,.5);}
 

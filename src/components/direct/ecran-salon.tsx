@@ -87,7 +87,17 @@ const DOUBLE = 0.3;
 const VAPEUR_MS = 1100;
 const FONDU_MS = 700;
 
-export function EcranSalon({ onEntrer }: { onEntrer: () => void }) {
+export function EcranSalon({
+  onEntrer,
+  onPasser,
+}: {
+  onEntrer: () => void;
+  /**
+   * « J'aimerais pouvoir passer la démo si je le veux : un bouton qui amène
+   * directement à l'app sur cet écran. » Absent, le lien ne s'affiche pas.
+   */
+  onPasser?: () => void;
+}) {
   /* 0 = yeux ouverts, 1 = mi-clos, 2 = fermés. */
   const [paupiere, setPaupiere] = useState(0);
   const [fumee, setFumee] = useState(0);
@@ -234,6 +244,11 @@ export function EcranSalon({ onEntrer }: { onEntrer: () => void }) {
         <button type="button" className="sal-b" onClick={onEntrer}>
           Je tente l’expérience <i aria-hidden="true">→</i>
         </button>
+        {onPasser && (
+          <button type="button" className="sal-passer" onClick={onPasser}>
+            Passer la démo, aller à l’application
+          </button>
+        )}
       </div>
       <StyleMaison dangerouslySetInnerHTML={{ __html: FEUILLE }} />
     </div>
@@ -372,6 +387,12 @@ const FEUILLE = `
     0 0 0 1px rgba(255,255,255,.14) inset;
   display:inline-flex;align-items:center;gap:9px;}
 .sal-b i{font-style:normal;font-size:1em;}
+/* PASSER LA DEMO : un lien, pas un second bouton. L'experience reste
+   l'invitation ; celui qui connait deja va droit a l'application. */
+.sal-passer{display:block;margin:14px auto 0;padding:6px 10px;pointer-events:auto;cursor:pointer;
+  font:inherit;font-size:clamp(13px,min(3.8cqw,2cqh),15px);font-weight:600;color:rgba(255,255,255,.86);
+  background:none;border:0;text-decoration:underline;text-underline-offset:3px;
+  animation:salMonte .75s cubic-bezier(.2,.8,.2,1) .9s both;}
 .sal-b:active{transform:scale(.97);}
 /* LE BOUTON APPELLE, DOUCEMENT : une lueur qui gonfle toutes les trois
    secondes, apres son entree. */
