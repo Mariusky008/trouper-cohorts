@@ -120,16 +120,27 @@ let echecs = 0;
   const cdp = await ctx.newCDPSession(p);
   const tp = (type, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: W / 2, y }] });
   await tp('touchStart', Hh * 0.7);
-  for (let k = 1; k <= 10; k++) { await tp('touchMove', Hh * 0.7 - k * 20); await p.waitForTimeout(16); }
+  for (let k = 1; k <= 10; k++) { await tp('touchMove', Hh * 0.7 - k * pas * 0.08); await p.waitForTimeout(16); }
   await tp('touchEnd'); await p.waitForTimeout(1200);
   const apres = await p.evaluate(() => ({ y: document.querySelector('.gs').scrollTop, ouvert: !!document.querySelector('.ap-page.feuille') }));
   ok(!apres.ouvert && apres.y !== avant, `glisser : défile (${avant} → ${apres.y}) et n'ouvre rien`);
+
+  // 7 bis. LE BOUTON NE COUVRE PAS LA TABLE : au repos, le groupe du premier plan s'arrête au-dessus de lui.
+  await p.evaluate(() => { document.querySelector('.gs').style.scrollSnapType = 'none'; });
+  await aller(Math.round(2 * pas)); await p.waitForTimeout(400);
+  const table = await p.evaluate(() => {
+    const cta = [...document.querySelectorAll('.gs-cta')].find((x) => Number(x.style.opacity) > 0.5);
+    const g = [...document.querySelectorAll('.gs-groupe')].find((x) => x.style.zIndex === '300');
+    return cta && g ? { cta: Math.round(cta.getBoundingClientRect().top), pied: Math.round(g.getBoundingClientRect().bottom) } : null;
+  });
+  ok(table && table.pied <= table.cta + 2, `le bouton ne couvre pas la table (pied du groupe ${table?.pied}, bouton à ${table?.cta})`);
 
   // 8. RETOUR D'UNE CONVERSATION : la position exacte, même entre deux états.
   await p.evaluate(() => { document.querySelector('.gs').style.scrollSnapType = 'none'; });
   await aller(Math.round(1.37 * pas)); await p.waitForTimeout(300);
   const garde = await p.evaluate(() => document.querySelector('.gs').scrollTop);
   const scene1 = await etat();
+  const bas1 = await p.evaluate(() => [document.querySelector('.gs').dataset.bas, !!document.querySelector('.ap-mf-dit'), document.querySelector('.gs').clientHeight]);
   const cta = p.locator('.gs-cta');
   const z = await p.evaluate(() => { const e = [...document.querySelectorAll('.gs-zone')].filter((x) => x.style.pointerEvents === 'auto').sort((a, b) => Number(b.style.zIndex) - Number(a.style.zIndex))[0]; const r = e.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height * 0.45, cle: e.dataset.cle }; });
   await p.touchscreen.tap(z.x, z.y); await p.waitForTimeout(1200);
@@ -139,6 +150,8 @@ let echecs = 0;
   await p.locator('.ap-page-r').first().click(); await p.waitForTimeout(1200);
   const retour = await p.evaluate(() => document.querySelector('.gs')?.scrollTop);
   const scene2 = await etat();
+  console.log('     bas', JSON.stringify(bas1), '→', JSON.stringify(await p.evaluate(() => [document.querySelector('.gs').dataset.bas, !!document.querySelector('.ap-mf-dit'), document.querySelector('.gs').clientHeight])));
+  if (JSON.stringify(scene1) !== JSON.stringify(scene2)) for (const k in scene1) if (scene1[k] !== scene2[k]) console.log('     diff', k, scene1[k], '→', scene2[k]);
   ok(retour === garde && JSON.stringify(scene1) === JSON.stringify(scene2), `retour : position ${retour} (gardée ${garde}), même scène`);
   void cta;
   await b.close();

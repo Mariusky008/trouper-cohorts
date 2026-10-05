@@ -261,7 +261,7 @@ export function Ensemble({
         <GrandSalon
           scenes={scenes}
           recherche={recherche ?? ""}
-          enHaut={hautTete || 118 + (nouvelles.length ? 32 : 0) + (recherche !== null ? 52 : 0)}
+          enHaut={hautTete || 118 + (recherche !== null ? 52 : 0)}
           onIdee={() => onIdee?.()}
           onOuvrir={(sc) => (sc.cle.startsWith("pub:") ? onVoirPublic?.(sc.cle.slice(4)) : onOuvrir(sc.cle))}
         />
@@ -270,7 +270,23 @@ export function Ensemble({
           <div className="en-salon-l1">
             <div>
               <h1>Ensemble</h1>
-              <p>Prends place dans la conversation.</p>
+              {/* « TROP DE SOLLICITATIONS SIMULTANÉES. » Le total devient une
+                  mention discrète sous le titre ; les pastilles des salons et
+                  le bouton du premier plan suffisent à appeler l'œil. */}
+              {nouvelles.length > 0 ? (
+                <button
+                  type="button"
+                  className="en-nouveau-discret"
+                  aria-label={nouvelles.join(" · ")}
+                  onClick={() => setVue("liste")}
+                >
+                  {[avecDuNouveau ? `${avecDuNouveau} avec du nouveau` : "", invitations.length ? `${invitations.length} invitation${invitations.length > 1 ? "s" : ""}` : ""]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </button>
+              ) : (
+                <p>Prends place dans la conversation.</p>
+              )}
             </div>
             <button type="button" className="en-icone" aria-label="Rechercher dans les discussions" onClick={() => setRecherche((r) => (r === null ? "" : null))}>
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -300,11 +316,6 @@ export function Ensemble({
               </button>
             ))}
           </nav>
-          {nouvelles.length > 0 && (
-            <button type="button" className="en-nouvelles" onClick={() => setVue("liste")}>
-              {nouvelles.join(" · ")}
-            </button>
-          )}
         </header>
       </div>
     );
@@ -561,6 +572,9 @@ function StylesEnsemble() {
 .en-salon-l1 > div{flex:1;min-width:0;}
 .en-salon-l1 h1{margin:0;font-family:Georgia,"Times New Roman",serif;font-size:30px;font-weight:700;line-height:1.05;}
 .en-salon-l1 p{margin:2px 0 0;font-size:12.5px;color:#E9D6C2;letter-spacing:.02em;}
+.en-nouveau-discret{display:block;margin:3px 0 0;padding:0;border:0;background:none;color:#F5C04A;font:inherit;font-size:12.5px;font-weight:700;letter-spacing:.01em;
+  text-align:left;cursor:pointer;min-height:24px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.en-nouveau-discret::before{content:"";display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:#F5C04A;vertical-align:1px;}
 @media (max-height:640px){.en-salon-l1 p{display:none;}.en-salon-l1 h1{font-size:26px;}}
 .en-icone{flex:none;display:grid;place-items:center;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,214,170,.28);background:rgba(28,17,10,.6);color:#FFF4E6;cursor:pointer;}
 .en-icone svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;}
@@ -568,7 +582,6 @@ function StylesEnsemble() {
 .en-filtres{display:flex;gap:6px;}
 .en-filtres button{height:34px;padding:0 13px;border-radius:999px;border:1px solid rgba(255,214,170,.3);background:rgba(28,17,10,.6);color:#FFF4E6;font:inherit;font-size:13px;font-weight:700;cursor:pointer;}
 .en-filtres button.on{background:linear-gradient(180deg,#F8B451,#E8932A);color:#2A1608;border-color:transparent;}
-.en-nouvelles{justify-self:start;height:32px;padding:0 13px;border:0;border-radius:999px;background:#F5C04A;color:#2A1608;font:inherit;font-size:13px;font-weight:800;cursor:pointer;}
 .en-vers-salon{margin:0 4px 10px;padding:0;border:0;background:none;color:#F5A23A;font:inherit;font-size:14px;font-weight:800;cursor:pointer;}
 .en-invit{display:flex;align-items:center;gap:8px;width:100%;margin-bottom:8px;padding:12px;border-radius:16px;border:1px solid rgba(255,214,170,.2);
   background:rgba(255,244,230,.05);color:#FFF4E6;font:inherit;text-align:left;}

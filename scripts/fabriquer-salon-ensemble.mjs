@@ -49,6 +49,28 @@ const NOMS = {
   "aa60d6b3-967b-4847-8085-0a10e8a0346f": ["fantome-casquette-noire", 520],
 };
 
+/**
+ * « LE SOL DOMINE TROP LA COMPOSITION. Le parquet orange très lumineux attire
+ * presque autant l'œil que les personnages. » Sous la ligne des fenêtres, le
+ * parquet passe plus sombre, moins saturé, ses reflets adoucis ; un léger
+ * assombrissement sur les bords ramène le regard vers le milieu, où sont les
+ * groupes. Le haut de la pièce (fenêtres, bibliothèques) ne change pas.
+ */
+async function solAdouci(img, haut) {
+  const orig = await img.resize({ height: haut, withoutEnlargement: true }).png().toBuffer({ resolveWithObject: true });
+  const { width: W, height: H } = orig.info;
+  const doux = await sharp(orig.data).modulate({ brightness: 0.76, saturation: 0.68 }).linear(0.86, 10).blur(0.8).png().toBuffer();
+  const svg = (corps) => Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${corps}</svg>`);
+  const masque = svg(
+    '<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0.25" stop-color="#fff" stop-opacity="0"/><stop offset="0.42" stop-color="#fff" stop-opacity="1"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/>',
+  );
+  const bords = svg(
+    '<defs><radialGradient id="v" cx="0.5" cy="0.6" r="0.8"><stop offset="0.5" stop-color="#140904" stop-opacity="0"/><stop offset="1" stop-color="#140904" stop-opacity="0.5"/></radialGradient></defs><rect width="100%" height="100%" fill="url(#v)"/>',
+  );
+  const sol = await sharp(doux).composite([{ input: masque, blend: "dest-in" }]).png().toBuffer();
+  return sharp(orig.data).composite([{ input: sol }, { input: bords }]);
+}
+
 mkdirSync(OUT, { recursive: true });
 for (const [id, [nom, haut]] of Object.entries(NOMS)) {
   const f = join(SRC, `${id}.png`);
@@ -59,6 +81,7 @@ for (const [id, [nom, haut]] of Object.entries(NOMS)) {
   let img = sharp(f);
   // LE FOND GARDE SON CADRE ; les calques perdent leur vide.
   if (nom !== "fond") img = img.trim({ threshold: 1 });
+  if (nom === "fond") img = await solAdouci(img, haut);
   const info = await img
     .resize({ height: haut, withoutEnlargement: true })
     .webp({ quality: nom === "fond" ? 80 : 84, alphaQuality: 90 })
