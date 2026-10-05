@@ -61,7 +61,8 @@ let echecs = 0;
   let saut = 0; let prec = null;
   for (let y = 0; y <= Math.min(max, 2 * pas); y += 8) {
     await p.evaluate((y) => { document.querySelector('.gs').scrollTop = y; }, y); await p.waitForTimeout(16);
-    const e = await p.evaluate(() => Object.fromEntries([...document.querySelectorAll('.gs-groupe')].map((g) => { const r = g.getBoundingClientRect(); return [g.dataset.cle, [r.x + r.width / 2, r.bottom]]; })));
+    // (Le groupe qui arrive de derrière le spectateur, encore presque hors champ, va vite par nature : on suit les autres.)
+    const e = await p.evaluate(() => Object.fromEntries([...document.querySelectorAll('.gs-groupe')].filter((g) => Number(g.dataset.place) <= 2.5).map((g) => { const r = g.getBoundingClientRect(); return [g.dataset.cle, [r.x + r.width / 2, r.bottom]]; })));
     if (prec) for (const k in e) if (prec[k]) { const d = Math.hypot(e[k][0] - prec[k][0], e[k][1] - prec[k][1]); if (d > saut) { saut = d; if (process.env.DETAIL) console.log('     saut', y, k, prec[k], e[k]); } }
     prec = e;
   }
@@ -74,6 +75,7 @@ let echecs = 0;
     const zbib = getComputedStyle(document.querySelector('.gs-biblio')).zIndex;
     return [...document.querySelectorAll('.gs-groupe')].map((g) => {
       const z = Number(g.style.zIndex || g.parentElement.style.zIndex);
+      if (Number(g.dataset.place) > -0.9) return null;
       const rs = [...g.querySelectorAll('img')].map((x) => x.getBoundingClientRect());
       const r = { x: Math.min(...rs.map((q) => q.left)), y: Math.min(...rs.map((q) => q.top)), right: Math.max(...rs.map((q) => q.right)), bottom: Math.max(...rs.map((q) => q.bottom)), top: Math.min(...rs.map((q) => q.top)) };
       const pl = document.querySelector(`.gs-plaque[data-cle="${g.dataset.cle}"]`);
@@ -82,17 +84,18 @@ let echecs = 0;
         plaque: pl ? getComputedStyle(pl).visibility + '/' + pl.style.opacity : 'aucune', zone: zo ? zo.style.pointerEvents : 'aucune', r: [r.x, r.y, r.right, r.bottom].map(Math.round), bib: [bib.right, bib.bottom].map(Math.round) };
     });
   });
-  const partis = cache.filter((c) => c.z < 100);
+  const partis = cache.filter(Boolean);
   console.log('     groupes partis :', JSON.stringify(partis));
   ok(partis.length > 0 && partis.every((c) => c.z < c.zbib && c.dedans && c.plaque !== 'visible/1' && c.zone !== 'auto'), 'le groupe sorti est derrière la bibliothèque, sans étiquette ni zone touchable');
+  console.log('     (tous les groupes :', cache.length, ')');
   const visibles = await p.evaluate(() => [...document.querySelectorAll('.gs-plaque')].filter((x) => getComputedStyle(x).visibility === 'visible' && Number(x.style.opacity) > 0.01).length);
   console.log('     étiquettes visibles :', visibles, ' groupes dessinés :', cache.length);
   if (D) await p.screenshot({ path: `${D}/v-${W}-1.0.png` });
 
   // 4. ENTRÉE PAR LE BAS : le prochain groupe arrive de sous l'écran.
   await aller(Math.round(1.5 * pas));
-  const bas = await p.evaluate(() => [...document.querySelectorAll('.gs-groupe')].map((g) => [g.dataset.cle, Number(g.style.zIndex), Math.round(g.getBoundingClientRect().top)]).sort((a, b) => b[1] - a[1])[0]);
-  ok(bas[1] >= 300 && bas[2] > Hh * 0.55, `à mi-pas, le groupe qui entre est en bas de l'écran (haut à ${bas[2]} px)`);
+  const bas = await p.evaluate(() => [...document.querySelectorAll('.gs-groupe')].map((g) => [g.dataset.cle, Number(g.dataset.place), Math.round(Math.min(...[...g.querySelectorAll('img')].map((x) => x.getBoundingClientRect().top)))]).sort((a, b) => b[1] - a[1])[0]);
+  ok(bas[1] > 2 && bas[2] > Hh * 0.45, `à mi-pas, le groupe qui entre monte par le bas de l'écran (haut à ${bas[2]} px)`);
   if (D) await p.screenshot({ path: `${D}/v-${W}-1.5.png` });
 
   // 4 bis. AUCUNE ÉTIQUETTE SUR UN VISAGE, à chaque pas du mouvement (le visage : le haut
@@ -102,7 +105,9 @@ let echecs = 0;
     await p.evaluate((y) => { document.querySelector('.gs').scrollTop = y; }, Math.round(f * pas)); await p.waitForTimeout(40);
     const r = await p.evaluate(() => {
       const pl = [...document.querySelectorAll('.gs-plaque')].filter((x) => getComputedStyle(x).visibility === 'visible' && Number(x.style.opacity) > 0.5).map((x) => x.getBoundingClientRect());
-      const vis = [...document.querySelectorAll('.gs-fantome')].map((x) => x.getBoundingClientRect()).filter((v) => v.bottom > 0 && v.top < innerHeight && v.height > 14).map((v) => ({ l: v.left + v.width * 0.15, r: v.right - v.width * 0.15, t: v.top + v.height * 0.05, b: v.top + v.height * 0.55 }));
+      const bib = document.querySelector('.gs-biblio').getBoundingClientRect();
+      const cache = (x) => { const g = x.closest('.gs-groupe'); const r = x.getBoundingClientRect(); return Number(g.dataset.place) < -0.5 && r.left >= bib.left - 2 && r.right <= bib.right + 2; };
+      const vis = [...document.querySelectorAll('.gs-fantome')].filter((x) => !cache(x)).map((x) => x.getBoundingClientRect()).filter((v) => v.bottom > 0 && v.top < innerHeight && v.height > 14).map((v) => ({ l: v.left + v.width * 0.15, r: v.right - v.width * 0.15, t: v.top + v.height * 0.05, b: v.top + v.height * 0.55 }));
       const sur = pl.filter((a) => vis.some((v) => a.left < v.r - 2 && a.right > v.l + 2 && a.top < v.b - 2 && a.bottom > v.t + 2));
       return { sur: sur.length, detail: sur.map((a) => [Math.round(a.left), Math.round(a.top), Math.round(a.right), Math.round(a.bottom)] + ' sur ' + vis.filter((v) => a.left < v.r - 2 && a.right > v.l + 2 && a.top < v.b - 2 && a.bottom > v.t + 2).map((v) => [v.l, v.t, v.r, v.b].map(Math.round))).join(' '), dehors: pl.filter((a) => a.left < -1 || a.right > innerWidth + 1).length };
     });
@@ -149,7 +154,7 @@ let echecs = 0;
   await aller(Math.round(2 * pas)); await p.waitForTimeout(400);
   const table = await p.evaluate(() => {
     const cta = [...document.querySelectorAll('.gs-cta')].find((x) => Number(x.style.opacity) > 0.5);
-    const g = [...document.querySelectorAll('.gs-groupe')].find((x) => x.style.zIndex === '300');
+    const g = [...document.querySelectorAll('.gs-groupe')].find((x) => Math.abs(Number(x.dataset.place) - 2) < 0.01);
     const t = g && [...g.querySelectorAll('img')].find((x) => /table/.test(x.src));
     return cta && t ? { cta: Math.round(cta.getBoundingClientRect().top), pied: Math.round(t.getBoundingClientRect().bottom) } : null;
   });
@@ -162,9 +167,19 @@ let echecs = 0;
   const scene1 = await etat();
   const bas1 = await p.evaluate(() => [document.querySelector('.gs').dataset.bas, !!document.querySelector('.ap-mf-dit'), document.querySelector('.gs').clientHeight]);
   const cta = p.locator('.gs-cta');
-  const z = await p.evaluate(() => { const e = [...document.querySelectorAll('.gs-zone')].filter((x) => x.style.pointerEvents === 'auto' && x.getBoundingClientRect().top < innerHeight * 0.6).sort((a, b) => Number(b.style.zIndex) - Number(a.style.zIndex))[0]; const r = e.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height * 0.45, cle: e.dataset.cle }; });
+  // On touche le groupe le plus visible, au milieu de sa partie visible (au-dessus du bouton).
+  const z = await p.evaluate(() => {
+    const bas = document.querySelector('.gs-cta')?.getBoundingClientRect().top ?? innerHeight - 160;
+    const vus = [...document.querySelectorAll('.gs-zone')].filter((x) => x.style.pointerEvents === 'auto').map((e) => {
+      const r = e.getBoundingClientRect(); const h = Math.max(0, Math.min(r.bottom, bas) - Math.max(r.top, 130));
+      return { e, r, h, aire: h * r.width };
+    }).sort((a, b) => b.aire - a.aire);
+    const { e, r } = vus[0];
+    return { x: r.x + r.width / 2, y: (Math.max(r.top, 130) + Math.min(r.bottom, bas)) / 2, cle: e.dataset.cle };
+  });
+  if (process.env.DETAIL) console.log('     appui', JSON.stringify(z), await p.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return e ? e.className + ' ' + (e.dataset?.cle || '') : 'rien'; }, [z.x, z.y]));
   await p.touchscreen.tap(z.x, z.y); await p.waitForTimeout(1200);
-  const ouvert = await p.evaluate(() => ({ ouvert: !!document.querySelector('.ap-page.feuille'), titre: document.querySelector('.ap-page.feuille h2, .ap-page.feuille .ap-page-h')?.textContent?.slice(0, 60) }));
+  const ouvert = await p.evaluate(() => ({ el: (() => { const e = document.elementFromPoint(0, 0); return e; })() && '', ouvert: !!document.querySelector('.ap-page.feuille'), titre: document.querySelector('.ap-page.feuille h2, .ap-page.feuille .ap-page-h')?.textContent?.slice(0, 60) }));
   ok(ouvert.ouvert, `un appui sur le groupe ouvre la discussion (${z.cle} → ${ouvert.titre})`);
   if (D) await p.screenshot({ path: `${D}/v-${W}-ouvert.png` });
   await p.locator('.ap-page-r').first().click(); await p.waitForTimeout(1200);

@@ -63,12 +63,14 @@ const FOND = { src: "fond-salon", l: 853, h: 1844 };
 function decorDe(W: number, H: number) {
   const k = W > 0 ? Math.max(W / FOND.l, H / FOND.h) / (390 / FOND.l) : 1;
   const ox = W / 2 - 195 * k;
-  return { k, x: (x: number) => ox + x * k, y: (y: number) => y * k };
+  // SUR UN ÉCRAN PLUS TRAPU, le décor remonte (sous l'en-tête) pour garder
+  // l'horizon au même tiers de l'écran — sans jamais découvrir son bas.
+  const reste = (FOND.h * 390) / FOND.l * k - H;
+  const oy = Math.max(0, Math.min(reste, 300 * k - 0.377 * H));
+  return { k, oy, x: (x: number) => ox + x * k, y: (y: number) => y * k - oy };
 }
-/** La bibliothèque, ALLÉGÉE, devant le bord gauche du passage vers la seconde pièce. */
-const BIBLIO = { x: 40, y: 193, l: 64 };
-/** Le montant droit du passage : ce qui part au fond passe derrière lui, puis derrière la bibliothèque. */
-const PASSAGE_DROITE = 180;
+/** La bibliothèque, ALLÉGÉE, devant le bord gauche du passage vers la seconde pièce (pied à y 340). */
+const BIBLIO = { x: 40, y: 193, l: 64, pied: 340 };
 
 /* ═══ LES COMPOSITIONS ═══════════════════════════════════════════════════════
    Chaque groupe se dessine en points « du premier plan » (un fantôme y fait
@@ -151,7 +153,13 @@ const COMPOSITIONS: Composition[] = [
     table: TABLE(8, -18, 266),
   },
 ];
-export const compositionDe = (cle: string) => COMPOSITIONS[hache(cle) % COMPOSITIONS.length];
+/**
+ * MOBILIER UNIFORME, POUR L'ESSAI DE CONTINUITÉ : la même banquette et la
+ * même table pour toutes les discussions — ce qui change d'une discussion à
+ * l'autre, ce sont les fantômes, le titre et ce qui est posé sur la table.
+ * Les autres coins reviendront avec des meubles vus sous le même angle.
+ */
+export const compositionDe = (cle: string) => (void cle, COMPOSITIONS[0]);
 
 /** Le haut d'un meuble, en points du premier plan. */
 const hautDe = (m: { b: number; w: number; r: number }) => m.b - m.w / m.r;
@@ -174,25 +182,38 @@ function etendue(c: Composition) {
   };
 }
 
-/* ═══ LA TRAJECTOIRE ════════════════════════════════════════════════════════
-   Cinq repères, relevés sur la vue validée (points de l'écran de référence ;
-   `s` l'échelle, 1 au premier plan) :
-   -1 : dans le passage, ENTIÈREMENT derrière la bibliothèque ;
-    0 : le fond, à l'entrée du passage ; 1 : le milieu, à droite ;
-    2 : le premier plan ; 3 : sous le bord de l'écran.
-   Entre deux repères, une spline de Catmull-Rom : la sortie vers le passage
-   s'incurve d'elle-même, sans cassure. */
+/* ═══ LA TRAJECTOIRE : POSÉE AU SOL ════════════════════════════════════════
+   « Chaque groupe doit sembler posé sur le parquet pendant tout le
+   mouvement. » En perspective, un objet posé au sol, à l'échelle `s`, a son
+   pied à `y = HORIZON + SOL × s` : sa taille et sa hauteur à l'écran ne sont
+   pas libres, l'une donne l'autre. On ne fait donc évoluer que l'échelle
+   (et la position en travers) ; le pied s'en déduit, toujours sur le sol.
+
+   Cinq repères, en points de l'écran de référence :
+   -1 : dans le passage, derrière la bibliothèque ;
+    0 : le fond, devant l'entrée du passage, à gauche ;
+    1 : le milieu, à droite, nettement plus petit ;
+    2 : le premier plan, qui déborde des deux côtés ;
+    3 : derrière le spectateur — on passe à côté de la table qui arrive.
+   L'échelle s'interpole en logarithme (une distance qui change à vitesse
+   régulière), la position en travers par une spline : pas de temps mort,
+   la table qui arrive monte pendant que la précédente s'éloigne. */
+const HORIZON = 300;
+const SOL = 404;
 const REPERES = [
-  { x: 72, y: 306, s: 0.1 },
-  { x: 160, y: 329, s: 0.2632 },
-  { x: 300, y: 420, s: 0.5526 },
-  { x: 195, y: 704, s: 1 },
-  { x: 195, y: 1270, s: 1.25 },
+  { x: 70, s: 0.09 },
+  { x: 140, s: 0.27 },
+  { x: 320, s: 0.5 },
+  { x: 195, s: 1 },
+  { x: 195, s: 3.2 },
 ];
+/** Le mur du fond de la grande pièce (son pied), et l'ouverture du passage dans ce mur. */
+const MUR = 346;
+const OUVERTURE = { g: 45, d: 180 };
 /** Où se rattache l'étiquette, par rapport à l'ancre (en points du premier plan), et où tombe sa pointe dans sa largeur. */
 const POINTES = [
-  { dx: -53, f: 0.49 },
-  { dx: -53, f: 0.49 },
+  { dx: -53, f: 0.6 },
+  { dx: -53, f: 0.6 },
   { dx: -18, f: 0.5 },
   { dx: -165, f: 0.09 },
   { dx: -165, f: 0.09 },
@@ -201,59 +222,72 @@ const PREMIER = -1;
 function catmull(a: number, b: number, c: number, d: number, t: number) {
   return 0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t * t + (-a + 3 * b - 3 * c + d) * t * t * t);
 }
-function spline<T extends Record<string, number>>(pts: T[], place: number, cle: keyof T & string) {
+function spline(pts: number[], place: number) {
   const s = Math.min(3, Math.max(-1, place)) - PREMIER;
   const i = Math.min(pts.length - 2, Math.floor(s));
   const t = s - i;
-  const p = (k: number) => pts[Math.min(pts.length - 1, Math.max(0, k))][cle] as number;
+  const p = (k: number) => pts[Math.min(pts.length - 1, Math.max(0, k))];
   return catmull(p(i - 1), p(i), p(i + 1), p(i + 2), t);
 }
 
-/** Ce que la taille de l'écran décide : le décor, le premier plan, la place du bouton. */
-type Geo = { W: number; H: number; cta: number; reperes: { x: number; y: number; s: number }[] };
+/** Ce que la taille de l'écran et le geste décident : le décor, le sol, le bouton, la caméra. */
+type Geo = {
+  W: number;
+  H: number;
+  cta: number;
+  d: ReturnType<typeof decorDe>;
+  horizon: number;
+  sol: number;
+  xs: number[];
+  ls: number[];
+  /** LA CAMÉRA : pendant le passage d'une discussion à l'autre, toute la pièce s'avance légèrement. */
+  cam: { z: number; ox: number; oy: number };
+};
 /**
- * LE BOUTON A SA ZONE, AU-DESSUS DE LA BARRE (`bas` : ce que la barre et le
- * fantôme du milieu prennent sur la scène). Le pied du premier plan se pose
- * juste sous le haut du bouton, comme dans la vue validée, et le groupe
- * rapetisse si la hauteur restante ne suffit pas (320 × 568).
+ * LE BOUTON A SA ZONE, AU-DESSUS DE LA BARRE. Le pied des tables du premier
+ * plan s'arrête au haut du bouton : si la hauteur manque (320 × 568), le
+ * premier plan recule d'autant — il rapetisse ET remonte, toujours au sol.
  */
-function geoDe(W: number, H: number, bas: number): Geo {
+function geoDe(W: number, H: number, bas: number, p: number): Geo {
   const cta = H - bas - 10 - 46;
   const d = decorDe(W, H);
-  const sAvant = Math.max(0.5, Math.min(d.k, (Math.min(REPERES[3].y * d.k, cta + 18) - 0.42 * H) / 250));
-  // Le pied des tables (18 au-dessus de l'ancre, à l'échelle) s'arrête au haut du bouton.
-  const yAvant = Math.min(REPERES[3].y * d.k, cta + 18 * sAvant);
-  const fixe = (r: { x: number; y: number; s: number }) => ({ x: d.x(r.x), y: d.y(r.y), s: r.s * d.k });
+  const horizon = d.y(HORIZON);
+  // Une échelle d'affichage `s` met le pied à SOL × s sous l'horizon, quelle que soit la taille de l'écran.
+  const sol = SOL;
+  const sAvant = Math.max(0.45, Math.min(d.k, (cta - horizon) / (sol - 18)));
+  const f = p - Math.floor(p);
   return {
     W,
     H,
     cta,
-    reperes: [
-      fixe(REPERES[0]),
-      fixe(REPERES[1]),
-      fixe(REPERES[2]),
-      { x: W / 2, y: yAvant, s: sAvant },
-      { x: W / 2, y: H + 470 * sAvant * 1.25, s: sAvant * 1.25 },
-    ],
+    d,
+    horizon,
+    sol,
+    xs: REPERES.map((r, i) => (i >= 3 ? W / 2 : d.x(r.x))),
+    ls: REPERES.map((r, i) => Math.log(i === 3 ? sAvant : i === 4 ? sAvant * r.s : r.s * d.k)),
+    cam: { z: 1 + 0.035 * Math.sin(Math.PI * f), ox: W / 2, oy: horizon },
   };
 }
-/** Où est un groupe à sa place : son ancre à l'écran et son échelle. */
+/** Un point de la pièce, vu par la caméra. */
+const vu = (geo: Geo, x: number, y: number) => ({ x: geo.cam.ox + (x - geo.cam.ox) * geo.cam.z, y: geo.cam.oy + (y - geo.cam.oy) * geo.cam.z });
+/** Où est un groupe à sa place : son ancre à l'écran (son pied, au sol) et son échelle. */
 export function surLaTrajectoire(place: number, geo: Geo) {
-  return { x: spline(geo.reperes, place, "x"), y: spline(geo.reperes, place, "y"), s: spline(geo.reperes, place, "s") };
+  const s = Math.exp(spline(geo.ls, place));
+  const v = vu(geo, spline(geo.xs, place), geo.horizon + geo.sol * s);
+  return { x: v.x, y: v.y, s: s * geo.cam.z, sol: geo.horizon + geo.sol * s };
 }
 /**
- * LE MONTANT DU PASSAGE : à partir du fond, ce qui recule dans le passage est
- * coupé à droite par son montant, de plus en plus — sans saut, puisque la
- * coupe commence au bord du groupe et rejoint le montant.
+ * LE MUR DU FOND : un groupe dont le pied passe derrière lui n'est plus visible
+ * que dans l'ouverture du passage — et la bibliothèque, devant, le cache.
+ * Il y entre déjà à l'intérieur de l'ouverture : la coupe ne fait pas sauter l'image.
  */
-function coupePassage(place: number, geo: Geo, c: Composition) {
-  if (place >= 0) return null;
-  const d = decorDe(geo.W, geo.H);
+function fenetre(place: number, geo: Geo) {
   const t = surLaTrajectoire(place, geo);
-  const bord = t.x + etendue(c).d * t.s;
-  const montant = d.x(PASSAGE_DROITE);
-  return Math.min(bord, montant + (bord - montant) * Math.max(0, 1 + place / 0.3));
+  if (t.sol >= geo.d.y(MUR)) return null;
+  return { g: vu(geo, geo.d.x(OUVERTURE.g), 0).x, d: vu(geo, geo.d.x(OUVERTURE.d), 0).x };
 }
+/** Devant ou derrière la bibliothèque : selon que le pied du groupe est en deçà ou au-delà du sien. */
+const devantBiblio = (place: number, geo: Geo) => surLaTrajectoire(place, geo).sol > geo.d.y(BIBLIO.pied);
 
 /** Ce qu'une discussion montre dans le salon. */
 export type SceneDeSalon = {
@@ -336,8 +370,6 @@ export function GrandSalon({
   }, []);
 
   const { W, H } = taille;
-  const geo = geoDe(W, H, taille.bas);
-  const decor = decorDe(W, H);
   /** Un pas de défilement, une discussion. */
   const pas = Math.max(1, Math.round(H * 0.42));
   const n = scenes.length;
@@ -345,6 +377,14 @@ export function GrandSalon({
   /** Moins de trois discussions : elles se rangent vers le premier plan, sans groupes fictifs. */
   const decalage = Math.max(0, 3 - n);
   const p = Math.min(pMax, Math.max(0, haut / pas));
+  const geo = geoDe(W, H, taille.bas, p);
+  const decor = geo.d;
+  // LA PIÈCE ENTIÈRE SUIT LA CAMÉRA : le décor et la bibliothèque prennent le
+  // même zoom que les groupes, autour du même point — tout reste collé au sol.
+  const camera = (gauche: number, haut: number) => ({
+    transform: `scale(${geo.cam.z})`,
+    transformOrigin: `${geo.cam.ox - gauche}px ${geo.cam.oy - haut}px`,
+  });
 
   // LA POSITION RETROUVÉE au retour d'une conversation ou d'un autre onglet —
   // même arrêtée entre deux états.
@@ -396,18 +436,20 @@ export function GrandSalon({
         ))}
         <div className="gs-scene" style={{ height: H }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="gs-fond" src={`${D}${FOND.src}.webp`} alt="" aria-hidden="true" />
+          <img className="gs-fond" src={`${D}${FOND.src}.webp`} alt="" aria-hidden="true" style={{ objectPosition: `50% ${-decor.oy}px`, ...camera(0, 0) }} />
           {W > 0 &&
             scenes.map((s, i) => {
               const place = i - p + decalage;
               if (place < -1.02 || place > 3) return null;
               const t = surLaTrajectoire(place, geo);
-              return <Groupe key={s.cle} s={s} ax={t.x} ay={t.y} e={t.s} z={100 + Math.round(place * 100)} coupe={coupePassage(place, geo, compositionDe(s.cle))} />;
+              // LES PLUS PROCHES DEVANT ; et devant la bibliothèque tant qu'ils sont en deçà d'elle.
+              const z = (devantBiblio(place, geo) ? 200 : 100) + Math.round(place * 30);
+              return <Groupe key={s.cle} s={s} ax={t.x} ay={t.y} e={t.s} z={z} place={place} fenetre={fenetre(place, geo)} />;
             })}
           {/* LA BIBLIOTHÈQUE : un calque à part, devant le bord gauche du passage —
               les groupes qui s'en vont disparaissent derrière elle. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="gs-biblio" src={`${D}bibliotheque.webp`} alt="" aria-hidden="true" style={{ left: decor.x(BIBLIO.x), top: decor.y(BIBLIO.y), width: BIBLIO.l * decor.k }} />
+          <img className="gs-biblio" src={`${D}bibliotheque.webp`} alt="" aria-hidden="true" style={{ left: decor.x(BIBLIO.x), top: decor.y(BIBLIO.y), width: BIBLIO.l * decor.k, ...camera(decor.x(BIBLIO.x), decor.y(BIBLIO.y)) }} />
           {W > 0 &&
             scenes.map((s, i) => {
               const place = i - p + decalage;
@@ -454,7 +496,23 @@ export function GrandSalon({
  * navigateur ne refait pas la mise en page des images à chaque pas.
  * `coupe` : ce qui recule dans le passage est coupé à droite par son montant.
  */
-function Groupe({ s, ax, ay, e, z, coupe }: { s: SceneDeSalon; ax: number; ay: number; e: number; z?: number; coupe?: number | null }) {
+function Groupe({
+  s,
+  ax,
+  ay,
+  e,
+  z,
+  place,
+  fenetre,
+}: {
+  s: SceneDeSalon;
+  ax: number;
+  ay: number;
+  e: number;
+  z?: number;
+  place?: number;
+  fenetre?: { g: number; d: number } | null;
+}) {
   const c = compositionDe(s.cle);
   const assis = s.participants.slice(0, c.places.length);
   const image = (m: { src: string; r: number; cx: number; b: number; w: number; miroir?: boolean }, cle: string, avant?: Point[]) => (
@@ -481,7 +539,11 @@ function Groupe({ s, ax, ay, e, z, coupe }: { s: SceneDeSalon; ax: number; ay: n
   const tHaut = hautDe(t);
   const photos = s.contenu.slice(0, 2);
   const groupe = (
-    <div className="gs-groupe" style={{ transform: `translate(${ax}px, ${ay}px) scale(${e})`, zIndex: coupe == null ? z : undefined }} aria-hidden="true" data-cle={s.cle}>
+    <div className="gs-groupe" style={{ transform: `translate(${ax}px, ${ay}px) scale(${e})`, zIndex: fenetre == null ? z : undefined }} aria-hidden="true" data-cle={s.cle} data-place={place?.toFixed(3)}>
+      {/* L'OMBRE AU SOL, sous les pieds des meubles : le groupe est posé sur le parquet. */}
+      {c.meubles.map((m, i) => (
+        <i key={`sol${i}`} className="gs-ombre-sol" style={{ left: m.cx - m.w * 0.5, top: m.b - m.w * 0.035, width: m.w, height: m.w * 0.07 }} />
+      ))}
       {ordre.map(({ m, i }) => {
         const ici = c.places.map((pl, k) => ({ pl, k })).filter(({ pl, k }) => pl.m === i && k < assis.length);
         return [
@@ -544,9 +606,9 @@ function Groupe({ s, ax, ay, e, z, coupe }: { s: SceneDeSalon; ax: number; ay: n
       })}
     </div>
   );
-  if (coupe == null) return groupe;
+  if (fenetre == null) return groupe;
   return (
-    <div className="gs-passe" style={{ clipPath: `inset(0 calc(100% - ${coupe}px) 0 0)`, zIndex: z }}>
+    <div className="gs-passe" style={{ clipPath: `inset(0 calc(100% - ${fenetre.d}px) 0 ${fenetre.g}px)`, zIndex: z }}>
       {groupe}
     </div>
   );
@@ -574,7 +636,7 @@ function lecture(s: SceneDeSalon, place: number, geo: Geo, enHaut: number) {
   const enPlus = nb - assis.length;
   const statut = s.prive ? "🔒 Privé" : "🌍 Public";
   const gens = s.membre ? `${assis.join(", ")}${enPlus > 0 ? ` +${enPlus}` : ""}` : `${nb} participant${nb > 1 ? "s" : ""}`;
-  const maxi = Math.min(W - 16, 150 + 90 * borne(place / 2));
+  const maxi = Math.min(W - 16, 150 + 68 * borne(place - 1));
   const larg = Math.min(
     maxi,
     Math.max(
@@ -584,8 +646,8 @@ function lecture(s: SceneDeSalon, place: number, geo: Geo, enHaut: number) {
     ),
   );
   const haut = taille * 1.25 + 30 + message * 26 + (s.debutDecouverte ? 26 : 0);
-  const f = borne(spline(POINTES, place, "f"));
-  const pointeX = t.x + spline(POINTES, place, "dx") * t.s;
+  const f = borne(spline(POINTES.map((q) => q.f), place));
+  const pointeX = t.x + spline(POINTES.map((q) => q.dx), place) * t.s;
   // La pointe juste au-dessus des têtes ; jamais sous l'en-tête.
   // Le groupe qui ENTRE par le bas : son étiquette reste au-dessus de la zone du bouton.
   const pointeY = Math.min(geo.cta - 12, Math.max(enHaut + haut + 19, t.y + et.tetes * t.s - 6));
@@ -594,10 +656,9 @@ function lecture(s: SceneDeSalon, place: number, geo: Geo, enHaut: number) {
 }
 
 /**
- * DEUX ÉTIQUETTES NE SE CHEVAUCHENT JAMAIS. La plus proche garde sa place ; la
- * plus lointaine glisse d'abord sur le côté, puis vers le haut — sa pointe
- * vise toujours son groupe. Si rien ne convient (ou qu'elle passerait sous
- * l'en-tête), elle s'efface en fondu ; son groupe reste visible et se touche.
+ * DEUX ÉTIQUETTES NE SE CHEVAUCHENT JAMAIS, ET AUCUNE NE COUVRE UN VISAGE. La
+ * plus proche garde sa place ; une étiquette qui gênerait s'efface en fondu,
+ * son groupe reste visible et se touche.
  */
 type Place2 = { dx: number; dy: number } | null;
 function placerEtiquettes(scenes: SceneDeSalon[], places: number[], geo: Geo, enHaut: number) {
@@ -623,23 +684,16 @@ function placerEtiquettes(scenes: SceneDeSalon[], places: number[], geo: Geo, en
   const touche = (r: { g: number; d: number; h: number; b: number }, p: { g: number; d: number; h: number; b: number }, m: number) =>
     r.g < p.d + m && r.d > p.g - m && r.h < p.b + m && r.b > p.h - m;
   const libre = (r: { g: number; d: number; h: number; b: number }) =>
-    r.g >= 4 && r.d <= geo.W - 4 && r.h >= enHaut + 10 && r.b <= geo.cta - 4 && !posees.some((p) => touche(r, p, 6)) && !visages.some((v) => touche(r, v, 5));
+    r.g >= 4 && r.d <= geo.W - 4 && r.h >= enHaut + 10 && r.b <= geo.cta - 4 && !posees.some((p) => touche(r, p, 3)) && !visages.some((v) => touche(r, v, 1));
   for (const { s, place } of ordre) {
     const l = lecture(s, place, geo, enHaut);
     const base = { g: l.x, d: l.x + l.larg, h: l.y - 7 - l.haut, b: l.y };
-    const essais: { dx: number; dy: number }[] = [{ dx: 0, dy: 0 }];
-    for (const p of [...posees, ...visages]) {
-      essais.push({ dx: p.g - 8 - base.d, dy: 0 }, { dx: p.d + 8 - base.g, dy: 0 }, { dx: 0, dy: p.h - 8 - base.b });
-    }
-    for (const e of [...essais]) for (const p of [...posees, ...visages]) essais.push({ dx: e.dx, dy: p.h - 8 - base.b });
-    // Glisser sur le côté reste limité : la pointe doit encore viser le groupe.
-    const bon = essais
-      .filter((e) => Math.abs(e.dx) <= l.larg * 0.6 && e.dy <= 0 && e.dy >= -90)
-      .sort((a, b) => Math.abs(a.dx) + Math.abs(a.dy) * 1.5 - (Math.abs(b.dx) + Math.abs(b.dy) * 1.5))
-      .find((e) => libre({ g: base.g + e.dx, d: base.d + e.dx, h: base.h + e.dy, b: base.b + e.dy }));
-    if (bon) {
-      res.set(s.cle, bon);
-      posees.push({ g: base.g + bon.dx, d: base.d + bon.dx, h: base.h + bon.dy, b: base.b + bon.dy });
+    // UNE PLACE PAR PROFONDEUR, SANS CORRECTION : l'étiquette accompagne sa
+    // table ; si elle gênait (un visage, une étiquette plus proche), elle
+    // s'efface le temps du passage plutôt que de se promener dans la pièce.
+    if (libre(base)) {
+      res.set(s.cle, { dx: 0, dy: 0 });
+      posees.push(base);
     } else res.set(s.cle, null);
   }
   return res;
@@ -843,10 +897,11 @@ function StylesGrandSalon() {
 .gs-ombre,.gs-ombre-siege,.gs-ombre-table{border-radius:50%;}
 .gs-ombre{background:radial-gradient(ellipse at 50% 50%,rgba(30,14,4,.55),rgba(30,14,4,0) 70%);}
 .gs-ombre-siege{background:radial-gradient(ellipse,rgba(40,16,4,.55),rgba(40,16,4,.28) 45%,rgba(40,16,4,0) 72%);}
+.gs-ombre-sol{border-radius:50%;background:radial-gradient(ellipse at 50% 50%,rgba(18,7,2,.6),rgba(18,7,2,.3) 50%,rgba(18,7,2,0) 72%);}
 .gs-ombre-table{background:radial-gradient(ellipse,rgba(30,12,3,.45),rgba(30,12,3,0) 70%);}
 .gs-contenu{object-fit:cover;border:4px solid #fbf6ee;border-radius:6px;box-sizing:border-box;box-shadow:0 4px 10px rgba(30,14,4,.45);
   transform:perspective(420px) rotateX(62deg);transform-origin:50% 100%;}
-.gs-biblio{position:absolute;height:auto;max-width:none;z-index:350;pointer-events:none;filter:brightness(.82) drop-shadow(4px 0 8px rgba(20,8,2,.4));}
+.gs-biblio{position:absolute;height:auto;max-width:none;z-index:150;pointer-events:none;filter:brightness(.82) drop-shadow(4px 0 8px rgba(20,8,2,.4));}
 .gs-zone{position:absolute;padding:0;border:0;background:none;cursor:pointer;}
 .gs-plaque{position:absolute;display:grid;justify-items:stretch;gap:5px;transform:translateY(-100%);transition:opacity .18s;}
 .gs-pointe{position:absolute;bottom:-7px;width:14px;height:14px;margin-left:-7px;transform:rotate(45deg);background:rgba(28,17,10,.9);
