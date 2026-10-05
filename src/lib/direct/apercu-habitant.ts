@@ -1348,6 +1348,13 @@ export type CarteAutour = {
    */
   couvertureSansHote?: string;
   /**
+   * SA SCÈNE POUR LE FIL DE LA VILLE — sa photo ClikMe et la zone de l'affiche
+   * posée dessus (quatre coins, donc la perspective), mesurées une fois dans
+   * l'administration. Absente : ses essais partent en carte simple. Voir
+   * `scenes-ville.ts`.
+   */
+  sceneVille?: import("./scenes-ville").DecorMesure;
+  /**
    * CE QUE SA FICHE GOOGLE DIT DE SA CARTE — « quand je regarde la fiche
    * Google, je vois bien les menus, les prix ». Son lien de menu, son prix par
    * personne tel que Google l'affiche, ses services. Des faits recopiés, jamais
@@ -3310,7 +3317,10 @@ const CARTES: CarteAutour[] = [
     catalogue: [
       { id: "bt-1", rayon: "Au comptoir", nom: "Demi pression", prix: "3 €" },
       { id: "bt-2", rayon: "Au comptoir", nom: "Café", prix: "1,60 €" },
-      { id: "bt-3", rayon: "Apéritif", nom: "Spritz", prix: "7 €", photo: "/direct/verre-au-comptoir.jpg" },
+      // PAS DE PHOTO, PLUTÔT QU'UNE PHOTO FAUSSE : `verre-au-comptoir.jpg` montre
+      // le comptoir, pas un spritz. Partagé dans La ville, il aurait légendé
+      // « Spritz » une photo de salle.
+      { id: "bt-3", rayon: "Apéritif", nom: "Spritz", prix: "7 €" },
       { id: "bt-4", rayon: "Apéritif", nom: "Planche à partager", detail: "Pour deux ou trois.", prix: "14 €" },
       { id: "bt-5", rayon: "Sans alcool", nom: "Limonade artisanale", prix: "4 €" },
     ],

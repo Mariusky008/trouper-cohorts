@@ -240,6 +240,36 @@ async function ecart(image, r, taille) {
  * un journal qui affiche un échec là où il y a une réussite est exactement ce
  * qui fait qu'on cesse de lire les journaux.
  */
+/**
+ * ═══ ON PHOTOGRAPHIE L'ÉCRAN AU REPOS, PAS EN TRAIN D'ARRIVER ═══════════════
+ *
+ * « Le contraste qui passe au deuxième essai mérite d'être expliqué plutôt
+ * que considéré comme définitivement réglé. » L'EXPLICATION : le badge « Le
+ * coup de cœur du chef » du Bocal de Margot entre en fondu (0,6 s après 0,2 s
+ * de délai), et la garde le photographiait 0,9 s après le clic. Sur une
+ * machine chargée — la première compilation, une image encore en route — le
+ * fondu n'était pas fini : le badge était photographié à demi transparent,
+ * écart 39, ÉCHEC ; au second passage, plus rien. La page n'avait rien ; la
+ * garde mesurait trop tôt.
+ *
+ * DONC, AVANT CHAQUE PHOTO : on attend que les animations QUI ONT UNE FIN
+ * soient finies (une animation infinie — un halo qui respire — n'en a pas, et
+ * on ne l'attend pas), et que les images visibles soient chargées. Avec un
+ * plafond, pour qu'une page qui ne se calme jamais ne bloque pas la garde.
+ */
+async function attendreLeCalme() {
+  await p.evaluate(async () => {
+    const finies = document
+      .getAnimations()
+      .filter((a) => a.playState === "running" && Number.isFinite(a.effect?.getComputedTiming?.().endTime ?? Infinity))
+      .map((a) => a.finished.catch(() => undefined));
+    const images = [...document.images]
+      .filter((i) => !i.complete && i.getBoundingClientRect().bottom > 0 && i.getBoundingClientRect().top < innerHeight)
+      .map((i) => new Promise((ok) => { i.addEventListener("load", ok, { once: true }); i.addEventListener("error", ok, { once: true }); }));
+    await Promise.race([Promise.all([...finies, ...images]), new Promise((ok) => setTimeout(ok, 4000))]);
+  });
+}
+
 async function mesurerLaPage(nom, preuve = false, conteneur = null) {
   /* LE CONTENEUR QUI DEFILE. La longue page fait defiler le document ; la page
      a onglets des restaurants est fixe, et c'est chaque onglet qui defile a
@@ -271,6 +301,7 @@ async function mesurerLaPage(nom, preuve = false, conteneur = null) {
       [y, conteneur],
     );
     await p.waitForTimeout(220);
+    await attendreLeCalme();
     const image = await p.screenshot();
     const taille = await sharp(image).metadata().then((m) => ({ l: m.width, h: m.height }));
     for (const r of await lignes()) {

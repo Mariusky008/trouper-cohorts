@@ -73,6 +73,11 @@ export type FicheCommercant = {
   /** Où se tient l'hôte sur sa photo ClikMe, en fractions de l'image. */
   couvertureHote?: { x: number; y: number; w: number; h: number };
   couvertureSansHote?: string;
+  /**
+   * LA ZONE D'AFFICHE POSÉE SUR SA PHOTO CLIKME, pour le fil de La ville —
+   * mesurée dans l'administration. Voir `scenes-ville.ts`.
+   */
+  sceneVille?: import("@/lib/direct/scenes-ville").DecorMesure;
   /** Ses plats et leurs prix, lus sur les photos de sa carte — voir `carte-lue.ts`. */
   carteLue?: { rubrique?: string; nom: string; prix?: string; detail?: string }[];
   /** Ce que sa fiche Google dit de sa carte : lien du menu, prix par personne, services. */
@@ -320,6 +325,7 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
     couverture: f.couverture || undefined,
     couvertureHote: f.couverture ? f.couvertureHote : undefined,
     couvertureSansHote: f.couverture && f.couvertureHote ? f.couvertureSansHote : undefined,
+    sceneVille: f.sceneVille,
     ficheGoogle:
       f.ficheGoogle && (f.ficheGoogle.menu || f.ficheGoogle.prix || f.ficheGoogle.services?.length)
         ? f.ficheGoogle

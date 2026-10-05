@@ -26,6 +26,19 @@ import { numeroAppel, numeroReservations } from "@/lib/site-internet/pro-phone";
 import { carteDepuisFiche, type FicheCommercant } from "@/lib/site-internet/carte-depuis-fiche";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { couvertureAffichee, couvertureDuDiagnostic, photoSansHote } from "@/lib/site-internet/couverture";
+import { lireDecor, type DecorMesure } from "@/lib/direct/scenes-ville";
+
+/**
+ * SA SCÈNE POUR LE FIL DE LA VILLE — la zone d'affiche posée sur sa photo
+ * ClikMe dans l'administration (`/admin/humain/scenes`). ELLE NE VAUT QUE
+ * POUR CETTE PHOTO : s'il en change, les quatre coins ne tombent plus sur sa
+ * vitrine, et on ne la montre plus jusqu'à ce qu'elle soit reposée. « Elle
+ * peut être renouvelée lorsque le commerçant change sa photo. »
+ */
+function sceneVilleDuDiagnostic(diag: Record<string, unknown>, couverture: string | undefined): DecorMesure | undefined {
+  const d = lireDecor(diag.sceneVille);
+  return d && couverture && d.decor === couverture ? d : undefined;
+}
 import { nomPropre } from "@/lib/site-internet/nom-propre";
 import { carteLueDuDiagnostic, suiviDeLaCarte } from "@/lib/site-internet/carte-lue";
 
@@ -223,6 +236,7 @@ export function construireFiche(
     couverture: couvertureAffichee(couvertureDuDiagnostic(diag)),
     couvertureHote: couvertureDuDiagnostic(diag)?.hote,
     couvertureSansHote: photoSansHote(couvertureDuDiagnostic(diag)),
+    sceneVille: sceneVilleDuDiagnostic(diag, couvertureAffichee(couvertureDuDiagnostic(diag))),
     carteLue: carteLueDuDiagnostic(diag),
     // CE QU'IL A DONNÉ À SON EXPÉRIENCE RESTAURANT — voir `experience-donnees.ts`.
     experience: experienceDuDiagnostic(diag) ?? undefined,

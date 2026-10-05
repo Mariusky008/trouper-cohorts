@@ -84,6 +84,7 @@ export default async function AdminHumainPage() {
         { href: "/admin/humain/site-internet", label: "Site internet" },
         { href: "/admin/humain/direct", label: "Le Direct" },
         { href: "/admin/humain/ville", label: "La ville · signalements" },
+        { href: "/admin/humain/scenes", label: "La ville · zones d'affiche" },
         { href: "/admin/humain/marketplace", label: "Marketplace" },
         { href: "/admin/humain/marketplace/tour-de-controle", label: "Tour de controle" },
         { href: "/admin/humain/affiliation", label: "Affiliation publique" },

@@ -41,10 +41,12 @@ import {
   reagirVille,
   repondreVille,
   resteDit,
+  resteMinutes,
   retirerDeLaVille,
   type MessageVille,
 } from "@/lib/direct/la-ville";
 import {
+  cadrageDe,
   estUnLieuDeSortie,
   etiquetteDuMenu,
   jourDe,
@@ -96,13 +98,14 @@ export function LaVille({
   onPremierEssai,
   onPage,
   onPartagerSalon,
+  onInviterSalon,
+  onCopierLienSalon,
   onSortie,
   onOuvrirSalon,
   onSignaler,
   onMaison,
   demandePartage = 0,
-  preselection,
-  onPreselectionVue,
+  nouvelle,
 }: {
   messages: MessageVille[];
   /** Les gens avec qui je partage des conversations : mes amis. */
@@ -121,20 +124,25 @@ export function LaVille({
   /** « Faire un premier essai », quand je n'en ai aucun. */
   onPremierEssai: () => void;
   onPage: (id: string) => void;
-  /** « En parler à mes amis », « Proposer à mes amis » : vers Ensemble. */
-  onPartagerSalon: (m: MessageVille, cible: CibleSalon) => void;
+  /**
+   * « En parler à mes amis », « Proposer à mes amis » : vers Ensemble. Rend
+   * la clé du salon. Un salon existant s'ouvre tout de suite ; un nouveau
+   * passe d'abord par l'invitation.
+   */
+  onPartagerSalon: (m: MessageVille, cible: CibleSalon) => string;
+  /** Inviter dans un salon qu'on vient de créer : WhatsApp, ou le lien copié. */
+  onInviterSalon: (cle: string) => void;
+  onCopierLienSalon: (cle: string) => void;
   /** Un « cherche » qui devient une sortie, avec ceux que ça intéresse. */
   onSortie: (m: MessageVille) => void;
   onOuvrirSalon: (cle: string) => void;
   /** Le fantôme de la barre a été touché : on ouvre « Tu veux partager quoi ? ». */
   demandePartage?: number;
   /**
-   * ARRIVÉ DEPUIS UNE FICHE OU UNE ANNONCE : la découverte s'ouvre avec ce
-   * commerce (et ce contenu) déjà choisis. `n` change à chaque demande.
+   * UNE PUBLICATION QU'ON VIENT DE FAIRE AILLEURS (depuis une annonce) : le
+   * fil s'ouvre dessus, sous le bon filtre, et la montre. `n` change à chaque fois.
    */
-  preselection?: { commerce: string; contenu?: string; n: number };
-  /** La découverte présélectionnée est fermée ou publiée : la demande tombe. */
-  onPreselectionVue?: () => void;
+  nouvelle?: { id: string; visibilite: Audience; n: number };
   /**
    * SIGNALER UNE PUBLICATION — dans la vraie ville seulement, où elle vient
    * d'un autre habitant. Voir `ville-sync.ts`.
@@ -152,15 +160,16 @@ export function LaVille({
   const [ouvertes, setOuvertes] = useState<string[]>([]);
   const [reponse, setReponse] = useState<Record<string, string>>({});
   const [chezQui, setChezQui] = useState<string | null>(null);
-  // L'ONGLET SE MONTE AVEC LA DEMANDE DÉJÀ LÀ quand on arrive d'une annonce :
-  // la découverte s'ouvre tout de suite.
-  const [compose, setCompose] = useState<null | Etape>(preselection ? "decouverte" : null);
+  const [compose, setCompose] = useState<null | Etape>(null);
   const [suiteDe, setSuiteDe] = useState<MessageVille | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
   const [cherche, setCherche] = useState<string | null>(null);
   const [cloche, setCloche] = useState(false);
   const [versEnsemble, setVersEnsemble] = useState<{ m: MessageVille; sortie: boolean } | null>(null);
-  const [preVue, setPreVue] = useState(preselection?.n ?? 0);
+  /** L'en-tête se compacte dès qu'on lit le fil : le logo cède sa place aux publications. */
+  const [compact, setCompact] = useState(false);
+  const [nouvelleVue, setNouvelleVue] = useState(0);
+  const [neuve, setNeuve] = useState<string | null>(null);
   // LE FANTÔME DE LA BARRE EST LE BOUTON « PARTAGER » DE CETTE PAGE. Une
   // demande nouvelle se voit pendant le rendu, sans effet.
   const [demandeVue, setDemandeVue] = useState(demandePartage);
@@ -169,11 +178,22 @@ export function LaVille({
     setSuiteDe(null);
     setCompose("choix");
   }
-  if (preselection && preselection.n !== preVue) {
-    setPreVue(preselection.n);
-    setSuiteDe(null);
-    setCompose("decouverte");
+  if (nouvelle && nouvelle.n !== nouvelleVue) {
+    setNouvelleVue(nouvelle.n);
+    setFiltre(nouvelle.visibilite === "amis" ? "amis" : "pour-toi");
+    setNeuve(nouvelle.id);
   }
+  // LA NOUVELLE PUBLICATION SE MONTRE : le fil descend jusqu'à elle, elle
+  // s'éclaire un instant, puis redevient une carte comme les autres.
+  useEffect(() => {
+    if (!neuve) return;
+    const t = window.setTimeout(() => document.getElementById(`lv-${neuve}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+    const u = window.setTimeout(() => setNeuve(null), 2600);
+    return () => {
+      window.clearTimeout(t);
+      window.clearTimeout(u);
+    };
+  }, [neuve]);
   /** L'heure d'ouverture de l'écran : une sortie sans date se range une demi-heure avant. */
   const [ouverture] = useState(() => Date.now());
 
@@ -237,10 +257,13 @@ export function LaVille({
   const parId = (id: string) => commerces.find((c) => c.id === id);
 
   return (
-    <div className="lv">
+    <div className="lv" onScroll={(e) => setCompact(e.currentTarget.scrollTop > 48)}>
       <StylesLaVille />
-      {/* ═══ LE MÊME EN-TÊTE SUR TOUT LE FIL ═══ — collé en haut. */}
-      <div className="lv-haut">
+      {/* ═══ LE MÊME EN-TÊTE SUR TOUT LE FIL ═══ — collé en haut, et compact
+          dès qu'on fait défiler : « le grand bloc logo + titre + filtres
+          prend une place précieuse ». Les filtres, la recherche et la cloche
+          restent ; le logo se retire, le titre rapetisse. */}
+      <div className={`lv-haut${compact ? " compact" : ""}`}>
         <header className="lv-tete">
           <span className="lv-tete-g" aria-hidden="true" />
           <div className="lv-marque">
@@ -387,6 +410,7 @@ export function LaVille({
                 setCompose(e.m!.genre === "essai" ? "essai" : "decouverte");
               }}
               onSignaler={onSignaler}
+              neuve={neuve === e.m!.id}
             />
           ),
         )}
@@ -399,7 +423,6 @@ export function LaVille({
           essais={essais}
           commerces={commerces}
           suiteDe={suiteDe}
-          preselection={preselection}
           onPremierEssai={() => {
             setCompose(null);
             onPremierEssai();
@@ -407,15 +430,13 @@ export function LaVille({
           onFermer={() => {
             setCompose(null);
             setSuiteDe(null);
-            onPreselectionVue?.();
           }}
-          onPublie={(visibilite) => {
+          onPublie={(visibilite, id) => {
             setCompose(null);
             setSuiteDe(null);
-            onPreselectionVue?.();
             setCherche(null);
             setFiltre(visibilite === "amis" ? "amis" : "pour-toi");
-            window.setTimeout(() => document.querySelector(".lv")?.scrollTo({ top: 0, behavior: "smooth" }), 60);
+            setNeuve(id);
           }}
         />
       )}
@@ -427,9 +448,16 @@ export function LaVille({
           mesSalons={mesSalons}
           onFermer={() => setVersEnsemble(null)}
           onPartager={(cible) => {
-            const m = versEnsemble.m;
+            const cle = onPartagerSalon(versEnsemble.m, cible);
+            // UN SALON OÙ JE SUIS DÉJÀ : il s'ouvre, ses membres y sont.
+            if ("cle" in cible) setVersEnsemble(null);
+            return cle;
+          }}
+          onInviter={onInviterSalon}
+          onCopierLien={onCopierLienSalon}
+          onOuvrir={(cle) => {
             setVersEnsemble(null);
-            onPartagerSalon(m, cible);
+            onOuvrirSalon(cle);
           }}
         />
       )}
@@ -524,12 +552,13 @@ function motDuCommerce(branche?: CarteAutour["branche"]): string {
 /* ═══ LE CONTENU PRINCIPAL D'UNE PUBLICATION ═══════════════════════════════
    La scène figée s'il y en a une ; sinon la photo, telle quelle ; sinon le
    mot vocal ; sinon rien — un message texte reste léger. */
-function Contenu({ m, cadre }: { m: MessageVille; cadre?: boolean }) {
+function Contenu({ m, cadre, branche }: { m: MessageVille; cadre?: boolean; branche?: CarteAutour["branche"] }) {
   const miniature = m.commerce?.photo;
+  const cadrage = m.scene?.rendu === "vitrine" ? m.scene.affiche.cadrage : cadrageDe(branche);
   if (m.photo && m.scene) {
-    return <SceneDuFil scene={m.scene} photo={m.photo} repli={{ commerce: m.commerce?.nom, miniature, essai: m.genre === "essai" }} />;
+    return <SceneDuFil scene={m.scene} photo={m.photo} repli={{ commerce: m.commerce?.nom, miniature, essai: m.genre === "essai", cadrage }} />;
   }
-  if (m.photo && m.genre === "essai") return <CarteSimple photo={m.photo} commerce={m.commerce?.nom} miniature={miniature} essai />;
+  if (m.photo && m.genre === "essai") return <CarteSimple photo={m.photo} commerce={m.commerce?.nom} miniature={miniature} essai cadrage={cadrage} />;
   if (m.photo) {
     const plat = m.contenu?.type === "plat";
     return (
@@ -625,9 +654,11 @@ function CartePublication({
   onSortie,
   onSuite,
   onSignaler,
+  neuve,
 }: {
   m: MessageVille;
   branche?: CarteAutour["branche"];
+  neuve?: boolean;
   suiteDeQuoi?: MessageVille;
   ouverte: boolean;
   menuOuvert: boolean;
@@ -644,7 +675,11 @@ function CartePublication({
   onSignaler?: (m: MessageVille) => void;
 }) {
   const moi = m.qui === "Vous";
-  const reste = resteDit(m);
+  // « S'EFFACE DANS… » NE SE DIT QUE LÀ OÙ ÇA COMPTE : une question ou une
+  // recherche de gens qui expire bientôt. Un essai, une découverte ou un bon
+  // plan n'ont pas à afficher leur compte à rebours.
+  const urgent = !m.genre && (m.nature === "question" || m.nature === "cherche") && resteMinutes(m) < 120;
+  const reste = urgent ? resteDit(m) : "";
   const media = Boolean(m.photo);
   const envoyer = () => {
     const x = reponse.trim();
@@ -699,24 +734,28 @@ function CartePublication({
   const messageLocal = !m.genre;
 
   return (
-    <article className="lv-carte" id={`lv-${m.id}`}>
+    <article className={`lv-carte${neuve ? " neuve" : ""}`} id={`lv-${m.id}`}>
       <header className="lv-h">
         <Avatar qui={m.qui} onQui={onQui} vocal={Boolean(m.audio)} />
+        {/* L'AUTEUR, PUIS CE QU'IL PUBLIE, PUIS OÙ — une ligne chacun.
+            « Une questi… », « Un salon d… » : sur une seule ligne, le type et
+            le commerce se coupaient. Le nom du commerce peut maintenant
+            passer à la ligne plutôt que de perdre la fin. */}
         <div className="lv-h-t">
           <p className="lv-nom">
             <b>{moi ? "Toi" : m.qui}</b>
-            <em> · {typeDe(m, branche)}</em>
           </p>
-          <p className="lv-lieu">
-            {lieu && (
-              <>
-                <Epingle />
-                <span>{m.commerce && m.genre ? m.commerce.nom : lieu}</span>
-              </>
-            )}
+          <p className="lv-type">
+            {typeDe(m, branche)}
             {/* « MES AMIS » SE DIT ; le public est le cas courant du fil. */}
-            {m.visibilite === "amis" && <i>· 👥 Amis</i>}
+            {m.visibilite === "amis" && <i> · 👥 Amis</i>}
           </p>
+          {lieu && (
+            <p className="lv-lieu">
+              <Epingle />
+              <span>{m.commerce && m.genre ? m.commerce.nom : lieu}</span>
+            </p>
+          )}
         </div>
         <span className="lv-quand">{quand(m)}</span>
         <div className="lv-menu">
@@ -738,7 +777,7 @@ function CartePublication({
                 )}
                 {!moi && (
                   <button type="button" role="menuitem" onClick={() => (setMenu(false), onQui(m.qui))}>
-                    Chez {m.qui}
+                    Voir sa maison
                   </button>
                 )}
                 {moi && m.genre && (
@@ -777,14 +816,29 @@ function CartePublication({
 
       {/* UN MESSAGE SANS PHOTO SE LIT D'ABORD : le texte, puis le vocal. */}
       {!media && <p className="lv-texte grand">{m.texte}</p>}
-      <Contenu m={m} />
+      <Contenu m={m} branche={branche} />
       {media && m.texte && <p className="lv-texte">{m.texte}</p>}
-      {m.contenu && (m.contenu.type === "plat" || m.contenu.prix) && (
-        <p className="lv-sous">
-          {m.contenu.nom}
-          {m.contenu.detail ? ` & ${m.contenu.detail.toLowerCase()}` : ""}
-          {m.contenu.prix && <b> · {m.contenu.prix}</b>}
-        </p>
+      {/* UNE FORMULE SE DIT FORMULE : la photo montre un de ses plats, la
+          ligne dit tout ce qu'elle comprend — sinon on lirait « magret » sous
+          une photo de garbure sans comprendre. */}
+      {m.contenu?.formule ? (
+        <>
+          <p className="lv-sous fort">
+            Formule du jour{m.contenu.prix && <b> · {m.contenu.prix}</b>}
+          </p>
+          <p className="lv-sous">
+            {m.contenu.nom}
+            {m.contenu.detail ? ` · ${m.contenu.detail}` : ""}
+          </p>
+        </>
+      ) : (
+        m.contenu &&
+        (m.contenu.type === "plat" || m.contenu.prix) && (
+          <p className="lv-sous">
+            {m.contenu.nom}
+            {m.contenu.prix && <b> · {m.contenu.prix}</b>}
+          </p>
+        )
       )}
       {m.vecu && <p className="lv-vecu">📍 Vécu sur place</p>}
 
@@ -807,7 +861,6 @@ function CartePublication({
             🙋 {(m.interesses ?? []).length || ""}
           </button>
         )}
-        <span className="lv-espace" />
         {action}
       </footer>
       {reste && (
@@ -849,13 +902,16 @@ function CarteSortie({ s, onOuvrir, onQui }: { s: Salon; onOuvrir: () => void; o
         <div className="lv-h-t">
           <p className="lv-nom">
             <b>{s.parQui === "Vous" ? "Toi" : s.parQui}</b>
-            <em> · Une idée de sortie</em>
           </p>
-          <p className="lv-lieu">
-            {s.ou && <Epingle />}
-            {s.ou && <span>{s.ou}</span>}
-            <i>{s.ou ? "· " : ""}🌍 Ouvert à tous</i>
+          <p className="lv-type">
+            Une idée de sortie<i> · 🌍 Ouvert à tous</i>
           </p>
+          {s.ou && (
+            <p className="lv-lieu">
+              <Epingle />
+              <span>{s.ou}</span>
+            </p>
+          )}
         </div>
         <span className="lv-quand">{s.quand}</span>
       </header>
@@ -866,9 +922,11 @@ function CarteSortie({ s, onOuvrir, onQui }: { s: Salon; onOuvrir: () => void; o
         </div>
       )}
       <p className={`lv-texte${s.photo ? "" : " grand"}`}>{s.annonce ?? s.sujet}</p>
+      {/* QUI VIENT, ET RIEN DE PLUS : « 8 portions restantes » n'est pas une
+          information qu'on sait encore valide au moment où on la lit. Le
+          salon, lui, la montre à jour. */}
       <p className="lv-sous">
         {s.viennent.length} {s.viennent.length > 1 ? "viennent" : "vient"}
-        {s.reste ? ` · ${s.reste}` : ""}
       </p>
       <footer className="lv-pied">
         <button type="button" className="lv-pill" onClick={onOuvrir}>
@@ -877,7 +935,6 @@ function CarteSortie({ s, onOuvrir, onQui }: { s: Salon; onOuvrir: () => void; o
           </svg>
           En discuter
         </button>
-        <span className="lv-espace" />
         <button type="button" className="lv-cta" onClick={onOuvrir}>
           <Avion /> Je viens
         </button>
@@ -922,7 +979,8 @@ function contenusDe(c: CarteAutour): (ContenuPartage & { cle: string })[] {
   const resto = c.branche === "restaurant";
   const jour = jourDe();
   if (c.menu?.photo) {
-    l.push({ cle: "menu", type: "plat", nom: c.menu.plat, detail: c.menu.description?.split("·")[0]?.trim() || undefined, prix: c.menu.prix, photo: c.menu.photo, jour });
+    // LE MENU DU JOUR EST UNE FORMULE : il est dit comme tel, en entier.
+    l.push({ cle: "menu", type: "plat", formule: true, nom: c.menu.plat, detail: c.menu.description || undefined, prix: c.menu.prix, photo: c.menu.photo, jour });
   }
   for (const [i, mo] of (c.moments ?? []).entries()) {
     if (!mo.photo || !mo.titre || l.some((x) => x.nom === mo.titre)) continue;
@@ -933,9 +991,15 @@ function contenusDe(c: CarteAutour): (ContenuPartage & { cle: string })[] {
     // UN PLAT DE SA CARTE N'EST PAS LE MENU DU JOUR : pas de jour, donc « À la carte ».
     l.push({ cle: `cat-${a.id}`, type: resto ? "plat" : "produit", nom: a.nom, detail: a.detail, prix: a.prix, photo: a.photo });
   }
-  const salle = (c.sesPhotos ?? []).find((p) => /salle|terrasse|lieu|boutique|atelier|int[ée]rieur/i.test(p.quoi));
-  const lieu = salle?.src ?? c.couverture ?? c.photo;
-  if (lieu) l.push({ cle: "lieu", type: "lieu", nom: salle?.quoi ?? "Le lieu", photo: lieu });
+  // LE LIEU, AVEC LE NOM DE CE QUE MONTRE LA PHOTO : « La salle, avant le
+  // service », « La terrasse ». Une photo de salle se partage comme le lieu,
+  // jamais sous le nom d'une boisson ou d'un plat.
+  const lieux = (c.sesPhotos ?? []).filter((p) => /salle|terrasse|lieu|boutique|atelier|int[ée]rieur|comptoir|devanture|vitrine|cabine|bacs/i.test(p.quoi));
+  for (const [i, p] of lieux.entries()) {
+    if (!l.some((x) => x.photo === p.src)) l.push({ cle: `lieu-${i}`, type: "lieu", nom: p.quoi, photo: p.src });
+  }
+  const repli = c.couverture ?? c.photo;
+  if (!lieux.length && repli && !l.some((x) => x.photo === repli)) l.push({ cle: "lieu", type: "lieu", nom: "Le lieu", photo: repli });
   return l.slice(0, 12);
 }
 
@@ -946,6 +1010,7 @@ function Composeur({
   commerces,
   suiteDe,
   preselection,
+  seul = false,
   onPremierEssai,
   onFermer,
   onPublie,
@@ -955,10 +1020,12 @@ function Composeur({
   essais: EssaiPartageable[];
   commerces: CarteAutour[];
   suiteDe: MessageVille | null;
-  preselection?: { commerce: string; contenu?: string; n: number };
+  preselection?: { commerce: string; contenu?: string };
+  /** Ouvert depuis une annonce : pas d'étape avant, la flèche referme. */
+  seul?: boolean;
   onPremierEssai: () => void;
   onFermer: () => void;
-  onPublie: (v: Audience) => void;
+  onPublie: (v: Audience, id: string) => void;
 }) {
   const parId = (id?: string) => (id ? commerces.find((c) => c.id === id) : undefined);
   const [essai, setEssai] = useState<EssaiPartageable | null>(essais[0] ?? null);
@@ -978,12 +1045,13 @@ function Composeur({
   /** L'instant de l'aperçu : la publication dira « à l'instant ». */
   const [maintenant] = useState(() => Date.now());
   const pics = useRef<HTMLDivElement | null>(null);
-  const rangee = useRef<HTMLDivElement | null>(null);
-  // LE COMMERCE PRÉSÉLECTIONNÉ SE VOIT : la rangée défile jusqu'à lui.
-  useEffect(() => {
-    if (etape !== "decouverte") return;
-    rangee.current?.querySelector<HTMLElement>("button.on")?.scrollIntoView({ inline: "center", block: "nearest" });
-  }, [etape]);
+  /**
+   * LE COMMERCE CHOISI RESTE CHOISI. « La rangée affiche un fleuriste alors
+   * qu'on partage un bar » : une fois choisi (ou arrivé d'une annonce), il se
+   * montre en fiche, avec « Changer » ; la rangée ne revient que si on le
+   * demande.
+   */
+  const [changerCommerce, setChangerCommerce] = useState(false);
 
   /* ─── CE QUE LA PUBLICATION SERA ─── calculé ici, montré en aperçu, publié tel quel. */
   const commerceEssai = essai ? parId(essai.carte) : undefined;
@@ -997,7 +1065,7 @@ function Composeur({
   // UNE PHOTO PRISE SUR PLACE RESTE UNE PHOTO : l'ambiance illustrée ne se pose
   // que sur la photo de la salle d'un bar, jamais sur celle d'un habitant.
   const sceneDecouverte: SceneVille | undefined =
-    !maPhoto && choisi?.type === "lieu" && estUnLieuDeSortie(commerce?.branche) ? sceneDAmbiance() : undefined;
+    !maPhoto && choisi?.type === "lieu" && estUnLieuDeSortie(commerce?.branche) ? sceneDAmbiance(choisi.photo) : undefined;
   const contenuDecouverte: ContenuPartage | undefined = maPhoto
     ? { type: "photo", nom: commerce ? `Chez ${commerce.nom}` : "Ma photo" }
     : choisi
@@ -1062,7 +1130,7 @@ function Composeur({
 
   const publier = () => {
     if (!apercu || !pret) return;
-    publierDansLaVille({
+    const neuf = publierDansLaVille({
       texte: apercu.texte || (etape === "message" && vocal.son ? "Un mot vocal" : ""),
       genre: apercu.genre,
       nature: apercu.nature,
@@ -1082,7 +1150,7 @@ function Composeur({
       audio: apercu.audio,
       ou: etape === "message" ? lieu : undefined,
     });
-    onPublie(visibilite);
+    onPublie(visibilite, neuf.id);
   };
 
   const titre =
@@ -1161,12 +1229,12 @@ function Composeur({
   return (
     <div className="lv-page" role="dialog" aria-label={titre}>
       <header className="lv-page-h">
-        <button type="button" aria-label="Retour" onClick={() => (suiteDe ? onFermer() : setEtape("choix"))}>
+        <button type="button" aria-label="Retour" onClick={() => (suiteDe || seul ? onFermer() : setEtape("choix"))}>
           ‹
         </button>
         <div>
           <h2>{titre}</h2>
-          <small>2/2</small>
+          {!seul && <small>2/2</small>}
         </div>
         <button type="button" aria-label="Fermer" onClick={onFermer}>
           ✕
@@ -1227,7 +1295,19 @@ function Composeur({
         {etape === "decouverte" && !suiteDe && (
           <>
             <h3>Le commerce</h3>
-            <div className="lv-commerces" ref={rangee}>
+            {commerce && !changerCommerce ? (
+              <div className="lv-ligne">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {miniature(commerce) ? <img src={miniature(commerce)} alt="" /> : <span className="lv-ligne-ic">📍</span>}
+                <span>
+                  <b>{commerce.nom}</b> · {commerce.metier}
+                </span>
+                <button type="button" onClick={() => setChangerCommerce(true)}>
+                  Changer ›
+                </button>
+              </div>
+            ) : (
+            <div className="lv-commerces">
               {[...commerces]
                 .sort((x, y) => x.metres - y.metres)
                 .slice(0, 60)
@@ -1241,6 +1321,7 @@ function Composeur({
                       setCommerce(c);
                       setContenu("");
                       setMaPhoto(null);
+                      setChangerCommerce(false);
                     }}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1249,6 +1330,7 @@ function Composeur({
                   </button>
                 ))}
             </div>
+            )}
             {commerce && (
               <>
                 <h3>Ce que tu partages</h3>
@@ -1348,7 +1430,7 @@ function Composeur({
                 {apercu.photo && apercu.texte && <p className="lv-texte">{apercu.texte}</p>}
               </div>
             ) : (
-              <Contenu m={apercu} />
+              <Contenu m={apercu} branche={etape === "essai" ? commerceEssai?.branche : commerce?.branche} />
             )}
             {etape === "essai" && apercu.photo && (
               <p className="lv-note-ic">
@@ -1380,7 +1462,7 @@ function Composeur({
                   : apercu.contenu?.type === "plat"
                     ? "Ça vous tente pour ce midi ?"
                     : estUnLieuDeSortie(commerce?.branche)
-                      ? "On se retrouve ici samedi ?"
+                      ? "On se retrouve ici ?"
                       : "Ce que tu en as pensé…"
               }
             />
@@ -1418,6 +1500,45 @@ function Composeur({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * ═══ « PUBLIER DANS LA VILLE », DEPUIS UNE ANNONCE ══════════════════════════
+ *
+ * La découverte s'ouvre PAR-DESSUS l'annonce, avec son commerce et ce qu'elle
+ * montrait déjà choisis. « Si je ferme sans publier, je préférerais revenir à
+ * l'annonce, au même endroit. Si je publie, j'arrive dans "La ville" sur ma
+ * nouvelle publication. » Par-dessus, l'annonce n'a jamais été quittée :
+ * fermer la retrouve telle qu'elle était, défilée au même endroit.
+ */
+export function ComposeurVille({
+  commerces,
+  preselection,
+  onFermer,
+  onPublie,
+}: {
+  commerces: CarteAutour[];
+  preselection: { commerce: string; contenu?: string };
+  onFermer: () => void;
+  onPublie: (v: Audience, id: string) => void;
+}) {
+  return (
+    <>
+      <StylesLaVille />
+      <Composeur
+        etape="decouverte"
+        setEtape={() => undefined}
+        essais={[]}
+        commerces={commerces}
+        suiteDe={null}
+        preselection={preselection}
+        seul
+        onPremierEssai={onFermer}
+        onFermer={onFermer}
+        onPublie={onPublie}
+      />
+    </>
   );
 }
 
@@ -1498,19 +1619,37 @@ function VersEnsemble({
   mesSalons,
   onFermer,
   onPartager,
+  onInviter,
+  onCopierLien,
+  onOuvrir,
 }: {
   m: MessageVille;
   sortie: boolean;
   mesSalons: SalonPartageable[];
   onFermer: () => void;
-  onPartager: (c: CibleSalon) => void;
+  onPartager: (c: CibleSalon) => string;
+  onInviter: (cle: string) => void;
+  onCopierLien: (cle: string) => void;
+  onOuvrir: (cle: string) => void;
 }) {
   const [prive, setPrive] = useState(true);
   const [confirmer, setConfirmer] = useState<CibleSalon | null>(null);
+  /**
+   * LE SALON CRÉÉ, ET L'ÉTAPE QUI MANQUAIT : inviter. « Les captures montrent
+   * "Créer le salon", mais pas la sélection des amis. » Un salon neuf est vide
+   * — il faut y faire venir quelqu'un. Il n'y a pas d'annuaire d'amis à
+   * cocher (pas de comptes) : l'invitation est le lien, envoyé sur WhatsApp
+   * ou copié, et ceux qui le reçoivent entrent directement dans ce salon.
+   */
+  const [cree, setCree] = useState<string | null>(null);
   const reserve = m.visibilite === "amis";
+  const partager = (c: CibleSalon) => {
+    const cle = onPartager(c);
+    if (!("cle" in c)) setCree(cle);
+  };
   const essayer = (c: CibleSalon, publicCible: boolean) => {
     if (reserve && publicCible) setConfirmer(c);
-    else onPartager(c);
+    else partager(c);
   };
   return (
     <div className="lv-fond" role="dialog" aria-label={sortie ? "Proposer à mes amis" : "En parler à mes amis"} onClick={onFermer}>
@@ -1525,12 +1664,27 @@ function VersEnsemble({
           </span>
         </div>
 
-        {confirmer ? (
+        {cree ? (
+          <>
+            <p className="lv-note">
+              ✅ Ton salon est prêt, avec la publication dedans. Invite tes amis : ceux qui reçoivent le lien y entrent directement, sans rien installer.
+            </p>
+            <button type="button" className="lv-publier" onClick={() => onInviter(cree)}>
+              📲 Inviter sur WhatsApp
+            </button>
+            <button type="button" className="lv-retour" onClick={() => onCopierLien(cree)}>
+              🔗 Copier le lien d’invitation
+            </button>
+            <button type="button" className="lv-retour" onClick={() => onOuvrir(cree)}>
+              Ouvrir le salon →
+            </button>
+          </>
+        ) : confirmer ? (
           <>
             <p className="lv-attention">
               Cette publication n’est visible que par tes amis. La partager dans un salon public la montrera à tous ceux qui y entrent.
             </p>
-            <button type="button" className="lv-publier" onClick={() => onPartager(confirmer)}>
+            <button type="button" className="lv-publier" onClick={() => partager(confirmer)}>
               Oui, la partager quand même
             </button>
             <button type="button" className="lv-retour" onClick={() => setConfirmer(null)}>
@@ -1645,15 +1799,20 @@ function StylesLaVille() {
       dangerouslySetInnerHTML={{
         __html: `
 .lv{flex:1;min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;overscroll-behavior:contain;
-  padding:0 2px calc(28px + env(safe-area-inset-bottom,0px));color:#FFF4E6;font-family:var(--font-clikme),system-ui,sans-serif;}
+  padding:0 2px calc(96px + env(safe-area-inset-bottom,0px));color:#FFF4E6;font-family:var(--font-clikme),system-ui,sans-serif;}
 .lv::-webkit-scrollbar{display:none;}
 .lv-haut{position:sticky;top:0;z-index:30;margin:0 -2px;padding:0 2px 10px;
   background:linear-gradient(180deg,#0A0F0D 0%,rgba(14,13,11,.97) 85%,rgba(14,13,11,.9) 100%);
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,214,170,.08);}
 .lv-tete{display:grid;grid-template-columns:76px 1fr 76px;align-items:center;}
 .lv-marque{display:flex;flex-direction:column;align-items:center;gap:1px;}
-.lv-marque img{height:30px;width:auto;display:block;}
-.lv-marque h1{margin:0;font-size:19px;font-weight:800;line-height:1.1;color:#F5A23A;letter-spacing:.01em;}
+.lv-marque img{height:30px;width:auto;display:block;transition:height .2s ease,opacity .2s ease;}
+.lv-marque h1{margin:0;font-size:19px;font-weight:800;line-height:1.1;color:#F5A23A;letter-spacing:.01em;transition:font-size .2s ease;}
+.lv-haut.compact .lv-marque img{height:0;opacity:0;}
+.lv-haut.compact .lv-marque h1{font-size:17px;}
+.lv-haut.compact .lv-filtres{margin-top:6px;}
+.lv-haut.compact .lv-filtres button{height:34px;}
+.lv-haut.compact .lv-outils button{width:34px;height:34px;}
 .lv-outils{display:flex;justify-content:flex-end;gap:4px;}
 .lv-outils button{position:relative;width:38px;height:38px;border-radius:50%;border:0;background:none;color:#FFF4E6;cursor:pointer;display:grid;place-items:center;}
 .lv-outils button.on{background:rgba(245,162,58,.16);color:#FFC46B;}
@@ -1670,7 +1829,8 @@ function StylesLaVille() {
 .lv-cherche input{flex:1;min-width:0;height:42px;padding:0 16px;border-radius:999px;border:1px solid rgba(255,214,170,.25);background:#1C1411;color:#FFF4E6;font:inherit;font-size:15px;}
 .lv-cherche button{width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,214,170,.2);background:none;color:#FFF4E6;cursor:pointer;}
 .lv-suites{display:grid;gap:6px;margin-top:10px;}
-.lv-suite{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;border-radius:16px;cursor:pointer;text-align:left;font:inherit;font-size:14px;color:#EADBC8;
+.lv-suite{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;border-radius:16px;cursor:pointer;text-align:left;
+  font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;font-weight:400;font-size:14px;color:#EADBC8;
   background:#241A15;border:1px solid rgba(245,162,58,.28);}
 .lv-suite span{flex:1;min-width:0;}
 .lv-suite b{color:#FFF4E6;}
@@ -1679,8 +1839,11 @@ function StylesLaVille() {
 .lv-fil{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;padding-top:14px;}
 .lv-vide{margin:24px 4px;text-align:center;font-size:15px;color:#CDB9A5;line-height:1.5;}
 .lv-carte{position:relative;padding:14px 14px 12px;border-radius:24px;background:linear-gradient(180deg,#221915,#1B1411);border:1px solid rgba(255,214,170,.13);
-  box-shadow:0 10px 30px rgba(0,0,0,.28);}
-.lv-h{display:flex;align-items:center;gap:11px;margin-bottom:11px;}
+  box-shadow:0 10px 30px rgba(0,0,0,.28);transition:box-shadow .5s ease,border-color .5s ease;}
+.lv-carte{scroll-margin-top:136px;}
+.lv-carte.neuve{border-color:rgba(245,162,58,.85);box-shadow:0 0 0 3px rgba(245,162,58,.25),0 10px 30px rgba(0,0,0,.28);}
+.ap-app:has(.lv-page) .ap-mf-dit{display:none;}
+.lv-h{display:flex;align-items:flex-start;gap:11px;margin-bottom:11px;}
 .lv-av{position:relative;flex:none;width:52px;height:52px;padding:0;border-radius:50%;border:2.5px solid #F5A23A;background:radial-gradient(circle at 50% 35%,#3a2b23,#1d1511);
   overflow:visible;cursor:pointer;display:block;}
 .lv-av img{width:100%;height:100%;object-fit:cover;object-position:50% 12%;border-radius:50%;display:block;}
@@ -1688,14 +1851,15 @@ function StylesLaVille() {
   display:grid;place-items:center;box-shadow:0 0 0 2px #1E1612;}
 .lv-av.petit{width:34px;height:34px;border-width:2px;}
 .lv-h-t{flex:1;min-width:0;}
-.lv-nom{margin:0;font-size:16px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lv-nom{margin:2px 0 0;font-size:16.5px;line-height:1.2;overflow-wrap:anywhere;}
 .lv-nom b{font-weight:800;}
-.lv-nom em{font-style:normal;font-weight:700;color:#F5A23A;font-size:14px;}
-.lv-lieu{margin:3px 0 0;display:flex;align-items:center;gap:5px;font-size:13.5px;color:#CDB9A5;white-space:nowrap;overflow:hidden;}
-.lv-lieu span{overflow:hidden;text-overflow:ellipsis;}
-.lv-lieu i{font-style:normal;font-size:12px;color:#9C8775;flex:none;margin-left:2px;}
-.lv-pin{width:14px;height:14px;flex:none;fill:none;stroke:currentColor;stroke-width:2;}
-.lv-quand{flex:none;align-self:flex-start;margin-top:5px;font-size:13px;color:#9C8775;white-space:nowrap;}
+.lv-type{margin:2px 0 0;font-size:14px;line-height:1.25;font-weight:600;color:#F5A23A;}
+.lv-type i{display:inline-block;font-style:normal;font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;font-weight:500;font-size:12.5px;color:#9C8775;}
+.lv-lieu{margin:3px 0 0;display:flex;align-items:flex-start;gap:5px;font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;
+  font-weight:500;font-size:13.5px;line-height:1.3;color:#CDB9A5;}
+.lv-lieu span{overflow-wrap:anywhere;}
+.lv-pin{width:14px;height:14px;flex:none;margin-top:1px;fill:none;stroke:currentColor;stroke-width:2;}
+.lv-quand{flex:none;margin-top:4px;font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;font-weight:500;font-size:13px;color:#9C8775;white-space:nowrap;}
 .lv-menu{position:relative;align-self:flex-start;}
 .lv-points{width:30px;height:30px;margin-right:-6px;border:0;border-radius:50%;background:none;color:#CDB9A5;cursor:pointer;display:grid;place-items:center;}
 .lv-points svg{width:20px;height:20px;fill:currentColor;}
@@ -1708,8 +1872,9 @@ function StylesLaVille() {
 .lv-suitede{margin:0 0 8px;font-size:13px;color:#F5A23A;}
 .lv-texte{margin:12px 2px 2px;font-size:18px;font-weight:800;line-height:1.3;color:#FFF4E6;overflow-wrap:anywhere;}
 .lv-texte.grand{margin:2px 2px 10px;font-size:19px;}
-.lv-sous{margin:4px 2px 0;font-size:15px;color:#CDB9A5;}
-.lv-sous b{color:#FFC46B;font-weight:800;}
+.lv-sous{margin:4px 2px 0;font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;font-weight:400;font-size:14.5px;line-height:1.4;color:#CDB9A5;}
+.lv-sous.fort{font-family:var(--font-clikme),system-ui,sans-serif;font-weight:600;color:#EADBC8;}
+.lv-sous b{font-family:var(--font-clikme),system-ui,sans-serif;color:#FFC46B;font-weight:800;}
 .lv-vecu{margin:6px 2px 0;font-size:13px;color:#F5A23A;font-weight:700;}
 .lv-photo{position:relative;border-radius:18px;overflow:hidden;background:#241A15;}
 .lv-photo img{display:block;width:100%;aspect-ratio:16/11;max-height:420px;object-fit:cover;}
@@ -1724,8 +1889,7 @@ function StylesLaVille() {
 .lv-onde i.lu{background:#F5A23A;}
 .lv-vocal em{flex:none;font-style:normal;font-size:14px;color:#EADBC8;font-variant-numeric:tabular-nums;}
 
-.lv-pied{display:flex;align-items:center;gap:7px;margin-top:12px;min-width:0;}
-.lv-espace{flex:1;}
+.lv-pied{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px;min-width:0;}
 .lv-pill{flex:none;display:inline-flex;align-items:center;gap:6px;height:42px;padding:0 12px;border-radius:999px;cursor:pointer;font:inherit;font-size:14.5px;font-weight:700;
   color:#EADBC8;background:rgba(255,255,255,.03);border:1px solid rgba(255,214,170,.2);white-space:nowrap;}
 .lv-pill svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linejoin:round;}
@@ -1733,15 +1897,16 @@ function StylesLaVille() {
 .lv-pill.coeur.on{color:#FF8FA6;}
 .lv-pill.coeur.on svg{fill:#FF4F72;stroke:#FF4F72;}
 .lv-pill.on{border-color:rgba(245,162,58,.55);}
-.lv-cta{min-width:0;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis;display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 13px;border-radius:999px;border:0;cursor:pointer;font:inherit;font-size:14.5px;font-weight:800;
+.lv-cta{flex:1 0 auto;justify-content:center;display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 16px;border-radius:999px;border:0;cursor:pointer;font:inherit;font-size:14.5px;font-weight:800;
   color:#2A1608;background:linear-gradient(180deg,#F8B451,#E8932A);box-shadow:0 6px 18px rgba(232,147,42,.3);white-space:nowrap;}
 .lv-cta.creux{color:#FFC46B;background:none;border:1.5px solid #F5A23A;box-shadow:none;}
 .lv-ic{width:17px;height:17px;flex:none;fill:currentColor;}
 .lv-ic.trait{fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;}
-.lv-bas{display:flex;gap:10px;justify-content:flex-end;margin:8px 4px 0;font-size:12px;color:#9C8775;}
+.lv-bas{display:flex;gap:10px;justify-content:flex-end;margin:8px 4px 0;font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;font-weight:500;font-size:12.5px;color:#9C8775;}
 .lv-ami{color:#F5A23A;font-weight:700;}
 .lv-reponses{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,214,170,.12);}
-.lv-reponses p{margin:0 0 7px;font-size:14px;color:#EADBC8;line-height:1.4;}
+.lv-reponses p{margin:0 0 7px;font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;font-weight:400;font-size:14.5px;color:#EADBC8;line-height:1.45;}
+.lv-reponses p b{font-family:var(--font-clikme),system-ui,sans-serif;font-weight:600;}
 .lv-reponses p b{color:#FFF4E6;margin-right:4px;}
 .lv-reponses p u{text-decoration:none;font-size:11px;padding:1px 6px;border-radius:6px;background:rgba(245,162,58,.18);color:#FFC46B;margin-right:4px;}
 .lv-reponses form{display:flex;gap:8px;margin-top:6px;}
@@ -1770,9 +1935,9 @@ function StylesLaVille() {
 .lv-choix-msg i{position:absolute;left:10px;top:12px;padding:3px 10px;border-radius:14px;background:#FFF4E6;color:#2A1608;font-style:normal;font-weight:900;font-size:15px;letter-spacing:.06em;}
 .lv-choix span{flex:1;min-width:0;display:grid;gap:3px;}
 .lv-choix b{font-size:17px;font-weight:800;}
-.lv-choix em{font-style:normal;font-size:13.5px;color:#CDB9A5;line-height:1.35;}
+.lv-choix em{font-style:normal;font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;font-weight:400;font-size:14px;color:#CDB9A5;line-height:1.35;}
 .lv-choix s{flex:none;width:40px;height:40px;border-radius:50%;background:#F5A23A;color:#2A1608;text-decoration:none;font-size:24px;font-weight:800;display:grid;place-items:center;}
-.lv-garde{margin:10px 0 0;text-align:center;font-size:13px;color:#9C8775;}
+.lv-garde{margin:10px 0 0;text-align:center;font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;font-weight:500;font-size:13px;color:#9C8775;}
 
 .lv-page{position:fixed;inset:0;z-index:62;overflow-y:auto;background:#160F0C;color:#FFF4E6;font-family:var(--font-clikme),system-ui,sans-serif;animation:lvMonte .22s ease both;}
 .lv-page-h{position:sticky;top:0;z-index:2;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 8px;
@@ -1805,7 +1970,7 @@ function StylesLaVille() {
 .lv-apercu{margin-top:14px;padding:12px;border-radius:22px;background:rgba(255,255,255,.025);border:1px solid rgba(255,214,170,.14);}
 .lv-apercu h3{margin:0 0 8px;}
 .lv-apercu-msg .lv-texte.grand{margin-top:0;}
-.lv-note-ic{display:flex;align-items:center;gap:7px;margin:10px 2px 0;font-size:13.5px;color:#CDB9A5;}
+.lv-note-ic{display:flex;align-items:center;gap:7px;margin:10px 2px 0;font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;font-weight:500;font-size:13.5px;color:#CDB9A5;}
 .lv-note-ic .lv-pin{color:#F5A23A;}
 .lv-legende-h{display:flex;align-items:baseline;justify-content:space-between;}
 .lv-legende-h small,.lv-compte{color:#9C8775;font-size:12.5px;}
@@ -1843,14 +2008,14 @@ function StylesLaVille() {
 .lv-publier .lv-ic{width:22px;height:22px;}
 .lv-publier:disabled{opacity:.4;box-shadow:none;}
 .lv-retour{display:block;width:100%;margin-top:8px;padding:12px;border-radius:999px;border:1px solid rgba(255,244,230,.3);background:none;color:#FFF4E6;font:inherit;font-weight:700;cursor:pointer;}
-.lv-note{margin:0 0 10px;font-size:14px;color:#CDB9A5;line-height:1.4;}
+.lv-note{margin:0 0 10px;font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;font-weight:400;font-size:14px;color:#CDB9A5;line-height:1.45;}
 .lv-note.petite{margin-top:14px;font-size:12px;color:#9C8775;}
 .lv-chez{display:flex;align-items:center;gap:14px;margin-bottom:6px;}
 .lv-chez h2{margin:0;}
 .lv-adresses{display:flex;flex-wrap:wrap;gap:8px;}
 .lv-adresses button{padding:8px 12px;border-radius:999px;border:1px solid rgba(245,162,58,.5);background:none;color:#FFC46B;font:inherit;font-size:13px;font-weight:700;cursor:pointer;}
 .lv-pub{margin:0 0 8px;padding:10px 12px;border-radius:12px;background:#241A15;font-size:14px;}
-@media (max-width:370px){.lv-filtres button{font-size:12.5px;padding:0 6px;gap:3px;}.lv-filtres svg{display:none;}.lv-pill{padding:0 11px;}.lv-cta{padding:0 13px;font-size:14px;}}
+@media (max-width:370px){.lv-filtres button{font-size:12.5px;padding:0 6px;gap:3px;}.lv-filtres svg{display:none;}.lv-pill{padding:0 11px;}.lv-cta{padding:0 13px;font-size:14px;}.lv-av{width:44px;height:44px;}}
 `,
       }}
     />

@@ -1,156 +1,117 @@
 /**
- * 🎬 LES SCÈNES DU FIL DE LA VILLE — un modèle par métier, posé sur les vrais
- * assets du commerce, et FIGÉ dans la publication au moment du partage.
+ * 🎬 LES SCÈNES DU FIL DE LA VILLE — de VRAIS décors, chacun avec sa zone
+ * d'affiche définie, et la scène FIGÉE dans la publication au partage.
  *
  * « L'utilisateur fait une action simple — partager un essai, une découverte
  * ou un message — et Clikme lui donne automatiquement la présentation
  * appropriée. » Ce fichier décide de cette présentation. Il ne fabrique
- * aucune image : une scène est une DESCRIPTION DE CALQUES (le décor, la zone
- * de l'affiche, le fantôme du commerce), que l'écran empile. Rien ne se
- * génère quand on ouvre le fil ou qu'on le fait défiler.
+ * aucune image : une scène est une DESCRIPTION DE CALQUES que l'écran empile.
+ * Rien ne se génère quand on ouvre le fil ou qu'on le fait défiler.
  *
- * ═══ LES QUATRE CHOSES QU'ON DISTINGUE, COMME DEMANDÉ ═════════════════════
+ * ═══ CE QUI A CHANGÉ, ET POURQUOI ═════════════════════════════════════════
  *
- *   · LE DÉCOR FIXE — la photo ClikMe du commerce (sa vraie devanture, au ton
- *     chaud, son fantôme déjà peint dedans : `couverture.ts`) quand elle
- *     existe ; sinon la devanture du modèle, dessinée autour de SES photos à
- *     lui (on voit son intérieur par la porte, son nom sur l'enseigne) ;
- *   · LE FANTÔME DU COMMERCE — déjà dans la photo ClikMe, ou posé en calque
- *     devant la devanture du modèle (`/direct/ville/hote-*.webp`) ;
- *   · LA ZONE DU CONTENU — l'affiche en vitrine : sa place exacte en fractions
- *     de la scène, sa perspective, son cadrage ;
- *   · LE CONTENU — l'essai du client, TEL QUEL. Jamais redessiné : pas de
- *     visage refait, pas de tenue changée, pas de coupe recoiffée.
+ * La première version dessinait une devanture générique autour des photos du
+ * commerce, et posait l'affiche « du côté où le fantôme n'est pas ». Deux
+ * retours, justes tous les deux : « les devantures ressemblent à de petites
+ * vitrines dessinées », et « cette règle est trop approximative — selon la
+ * photo, l'affiche peut masquer une porte ou paraître suspendue dans le
+ * vide ». Il faut une zone définie pour chaque décor.
+ *
+ * DONC : UN DÉCOR = UNE VRAIE PHOTO DU COMMERCE + SES MESURES, posées une
+ * fois et enregistrées avec elle —
+ *
+ *   · LA ZONE DE L'AFFICHE : ses quatre coins sur la photo. Ils donnent son
+ *     emplacement ET sa perspective (l'écran en tire une transformation
+ *     projective : l'affiche suit le plan de la vitrine) ;
+ *   · LE CADRAGE de l'essai : visage, tenue entière, mains ;
+ *   · LES CALQUES : le fantôme du commerce, à sa place, à son échelle, avec
+ *     son ombre de contact — absent quand la photo ClikMe l'a déjà ;
+ *   · LE PREMIER PLAN : les morceaux de la photo qui passent DEVANT (le bord
+ *     d'une table, un objet de la vitrine). L'écran les redessine par-dessus,
+ *     découpés dans la photo elle-même : aucun fichier de plus.
+ *
+ * Pour un vrai commerçant, ces mesures se posent sur sa photo ClikMe dans
+ * l'administration (`/admin/humain/scenes`) et vivent dans son diagnostic
+ * (`sceneVille`). Pour la démonstration, elles sont ici, sur les vraies
+ * photos de ses commerces.
+ *
+ * SANS DÉCOR MESURÉ, PAS DE DÉCOR : l'essai part dans une belle carte simple,
+ * avec la photo et le nom du vrai commerce. « La devanture générique risque
+ * d'uniformiser tous les magasins et d'affaiblir le réalisme recherché. »
  *
  * ═══ POURQUOI ON FIGE LA SCÈNE DANS LA PUBLICATION ════════════════════════
  *
  * « Une publication existante doit conserver son rendu si le commerce change
- * ensuite sa devanture ou son décor. » La scène est donc recopiée dans la
- * publication au moment du partage, avec sa version (`VERSION_SCENES`). Le
- * commerçant change sa photo : les publications suivantes prennent la
- * nouvelle, les anciennes gardent celle qu'elles montraient.
- *
- * ═══ CE QU'ON NE FAIT PAS ══════════════════════════════════════════════════
- *
- * On n'impose pas de décor : une photo prise sur place reste une photo, un
- * message reste léger. Une scène qui ne peut pas se monter (décor absent,
- * image cassée) retombe sur une carte simple avec le contenu d'origine — voir
- * `scene-ville.tsx`. Et rien n'est présenté comme vécu : l'affiche porte
- * « Essai virtuel », une salle enrichie de fantômes « Ambiance illustrée ».
+ * ensuite sa devanture. » La scène est recopiée dans la publication au
+ * partage, avec sa version (`VERSION_SCENES`).
  *
  * FICHIER PARTAGÉ : aucune dépendance au navigateur.
  */
 import type { CarteAutour, CleMetier } from "@/lib/direct/apercu-habitant";
 
-/** Monte quand le dessin d'un modèle change. Une scène figée garde la sienne. */
-export const VERSION_SCENES = 1;
+/** Monte quand le format d'une scène change. Une scène illisible tombe en carte simple. */
+export const VERSION_SCENES = 2;
 
 /** Ce que l'affiche doit laisser voir du sujet. */
 export type Cadrage = "visage" | "en-pied" | "mains";
 
-/** Une zone de la scène, en fractions (0 à 1) de sa largeur et de sa hauteur. */
-export type Zone = { x: number; y: number; w: number; h: number };
-
-/** Un calque d'image posé dans la scène : un fantôme, un objet de premier plan. */
-export type Calque = { src: string; x: number; y: number; h: number; miroir?: boolean };
+/** Un point de la photo, en fractions (0 à 1) de sa largeur et de sa hauteur. */
+export type Point = [number, number];
+/** Quatre coins : haut-gauche, haut-droite, bas-droite, bas-gauche. */
+export type Quad = [Point, Point, Point, Point];
 
 /**
- * L'AFFICHE EN VITRINE — où l'essai prend place.
- * `pivot` : la perspective, en degrés autour de l'axe vertical (0 = de face).
+ * UN CALQUE POSÉ DANS LA SCÈNE — un fantôme. `x` : son milieu ; `y` : là où
+ * il touche le sol (ou le bord qui le cache) ; `h` : sa hauteur, en fractions
+ * de la scène. `ombre` : une ombre de contact sous lui ; `filtre` : de quoi
+ * le mettre dans la lumière de la photo (plus chaud, plus sombre).
  */
-export type Affiche = Zone & { pivot: number; cadrage: Cadrage; mot: string };
+export type Calque = { src: string; x: number; y: number; h: number; miroir?: boolean; ombre?: boolean; filtre?: string };
+
+/** Le décor d'un commerce, mesuré une fois. */
+export type DecorMesure = {
+  decor: string;
+  /** Largeur sur hauteur de la photo : la scène prend sa forme exacte. */
+  ratio: number;
+  coins: Quad;
+  calques?: Calque[];
+  devant?: Point[][];
+};
 
 export type SceneVitrine = {
   v: number;
   rendu: "vitrine";
-  /**
-   * LA PHOTO CLIKME DU COMMERCE, si on la prend pour décor — son fantôme est
-   * déjà dedans. Absente : la devanture du modèle, dessinée.
-   */
-  decor?: string;
-  /** Ce qu'on voit par la porte de la devanture dessinée : une photo à lui. */
-  interieur?: string;
-  enseigne: string;
-  sousTitre: string;
-  services: string[];
-  affiche: Affiche;
-  /** Le fantôme du commerce, en calque — absent quand le décor l'a déjà. */
-  hote?: Calque;
+  decor: string;
+  ratio: number;
+  affiche: { coins: Quad; cadrage: Cadrage; mot: string };
+  calques?: Calque[];
+  devant?: Point[][];
 };
 
 export type SceneAmbiance = {
   v: number;
   rendu: "ambiance";
+  decor: string;
+  ratio: number;
   /** Les fantômes posés dans la salle : la scène dit alors « Ambiance illustrée ». */
-  fantomes: Calque[];
+  calques: Calque[];
+  devant?: Point[][];
 };
 
 export type SceneVille = SceneVitrine | SceneAmbiance;
 
-/* ═══ UN MODÈLE PAR MÉTIER ══════════════════════════════════════════════════
-   « Prévoir un modèle de scène réutilisable par métier, puis l'adapter aux
-   assets de chaque commerce, plutôt qu'un développement spécifique pour
-   chaque boutique. » */
-type ModeleVitrine = {
-  cadrage: Cadrage;
-  sousTitre: string;
-  services: string[];
-  mot: string;
-  hote: string;
-  /** Si le commerçant n'a aucune photo d'intérieur à montrer par la porte. */
-  interieur: string;
+/* ═══ CE QUE CHAQUE MÉTIER MONTRE SUR SON AFFICHE ══════════════════════════ */
+const AFFICHE_DU_METIER: Partial<Record<CleMetier, { cadrage: Cadrage; mot: string; hote: string }>> = {
+  coiffeur: { cadrage: "visage", mot: "Une coupe qui me ressemble", hote: "/direct/ville/hote-coiffeur.webp" },
+  mode: { cadrage: "en-pied", mot: "Confiance en toute occasion", hote: "/direct/ville/hote-mode.webp" },
+  ongles: { cadrage: "mains", mot: "Des mains qui me ressemblent", hote: "/direct/ville/hote-onglerie.webp" },
+  lunetier: { cadrage: "visage", mot: "Un regard qui me ressemble", hote: "/direct/ville/hote-opticien.webp" },
+  artisan: { cadrage: "mains", mot: "Fait à la main, ici", hote: "/direct/ville/hote-artisan.webp" },
 };
 
-const MODELES: Partial<Record<CleMetier, ModeleVitrine>> = {
-  coiffeur: {
-    cadrage: "visage",
-    sousTitre: "Salon de coiffure",
-    services: ["Coiffure", "Coloration", "Soins", "Conseils"],
-    mot: "Une coupe qui me ressemble",
-    hote: "/direct/ville/hote-coiffeur.webp",
-    interieur: "/direct/salon-neuf.jpg",
-  },
-  mode: {
-    cadrage: "en-pied",
-    sousTitre: "Prêt-à-porter",
-    services: ["Mode", "Accessoires", "Conseils", "Retouches"],
-    mot: "Confiance en toute occasion",
-    hote: "/direct/ville/hote-mode.webp",
-    interieur: "/direct/vitrine-mode.jpg",
-  },
-  ongles: {
-    cadrage: "mains",
-    sousTitre: "Beauté des mains",
-    services: ["Manucure", "Semi-permanent", "Nail art", "Conseils"],
-    mot: "Des mains qui me ressemblent",
-    hote: "/direct/ville/hote-onglerie.webp",
-    interieur: "/direct/avis-cabine.jpg",
-  },
-  lunetier: {
-    cadrage: "visage",
-    sousTitre: "Opticien",
-    services: ["Lunettes", "Solaires", "Examens", "Conseils"],
-    mot: "Un regard qui me ressemble",
-    hote: "/direct/ville/hote-opticien.webp",
-    interieur: "/direct/lunetier.jpeg",
-  },
-  artisan: {
-    cadrage: "mains",
-    sousTitre: "Atelier",
-    services: ["Créations", "Sur mesure", "Pièces uniques"],
-    mot: "Fait à la main, ici",
-    hote: "/direct/ville/hote-artisan.webp",
-    interieur: "/direct/atelier-bijoux.jpg",
-  },
-};
-
-/** Ce qu'une scène lit d'un commerce — de quoi la préparer sans la carte entière. */
-export type CommerceDeScene = Pick<CarteAutour, "branche" | "nom" | "ville" | "photo"> &
-  Partial<Pick<CarteAutour, "photos" | "sesPhotos" | "couverture" | "couvertureHote">>;
-
-/** Les métiers dont un essai se partage en affiche, dans leur vitrine. */
-export function aUneVitrine(branche: CleMetier | undefined): boolean {
-  return Boolean(branche && MODELES[branche]);
+/** Le cadrage d'un essai d'après le métier — pour une carte simple aussi. */
+export function cadrageDe(branche: CleMetier | undefined): Cadrage {
+  return (branche && AFFICHE_DU_METIER[branche]?.cadrage) || "visage";
 }
 
 /** Le fantôme du métier, pour une miniature ou un avatar. */
@@ -161,101 +122,110 @@ export function fantomeDuMetier(branche: CleMetier | undefined): string {
     fleuriste: "/direct/ville/hote-fleuriste.webp",
     librairie: "/direct/ville/hote-libraire.webp",
   };
-  return (branche && (MODELES[branche]?.hote ?? direct[branche])) || "/direct/ville/client-ravi.webp";
+  return (branche && (AFFICHE_DU_METIER[branche]?.hote ?? direct[branche])) || "/direct/ville/client-ravi.webp";
 }
 
+/* ═══ LES DÉCORS MESURÉS DE LA DÉMONSTRATION ═══════════════════════════════
+   Sur les vraies photos de ses commerces, mesurées à la main sur une grille.
+   Une seule devanture s'y prête aujourd'hui : la vitrine de la boutique de
+   prêt-à-porter (`vitrine-mode.jpg`, la photo de son lieu). La vitrine de
+   Noël au piano reste écartée — ni un salon, ni la saison. Les autres
+   commerces de la démonstration partent en carte simple, et c'est voulu. */
+const DECORS_DE_LA_DEMO: Record<string, DecorMesure> = {
+  // L'AFFICHE PREND LA PLACE DU MANNEQUIN DE GAUCHE, derrière la vitre, et
+  // s'arrête au-dessus des objets posés au sol de la vitrine : rien ne la
+  // coupe. LE FANTÔME EST AU PREMIER PLAN, DEVANT LA VITRINE, COUPÉ PAR LE
+  // BAS DU CADRE comme quelqu'un qui passe devant l'objectif : sans trottoir
+  // dans la photo, c'est la seule place où il ne flotte pas.
+  "mode-centre": {
+    decor: "/direct/vitrine-mode.jpg",
+    ratio: 387 / 516,
+    coins: [
+      [0.07, 0.315],
+      [0.375, 0.315],
+      [0.375, 0.74],
+      [0.07, 0.74],
+    ],
+    calques: [{ src: "/direct/ville/hote-mode.webp", x: 0.8, y: 1.07, h: 0.4, filtre: "brightness(.97) sepia(.1)" }],
+  },
+};
+
 /**
- * SON NOM SUR L'ENSEIGNE. Les commerces de la démonstration ont des noms qui
- * décrivent (« Un salon du centre ») : en lettres dorées sur un auvent, ça ne
- * se lit pas comme un nom. On y met alors le métier, et le nom reste sous la
- * publication, là où on le touche.
+ * LES SALLES MESURÉES : où deux clients fantômes peuvent s'asseoir, et ce qui
+ * passe devant eux. « Dans le bar, les placer derrière le bord de table quand
+ * la perspective l'exige. » Repérées par la photo elle-même — une autre photo
+ * de salle n'a pas ces mesures, et reste une photo.
  */
-function enseigneDe(c: CommerceDeScene, m: ModeleVitrine): string {
-  const nom = c.nom.trim();
-  return /^(un|une|des|le salon|la boutique)\s/i.test(nom) ? m.sousTitre : nom;
-}
+const SALLES_MESUREES: Record<string, Omit<SceneAmbiance, "v" | "rendu">> = {
+  "/direct/bar-salle.jpg": {
+    decor: "/direct/bar-salle.jpg",
+    ratio: 450 / 300,
+    calques: [
+      // DERRIÈRE LA GRANDE TABLE : on ne voit que le haut, comme quelqu'un d'assis.
+      { src: "/direct/ville/client-verre.webp", x: 0.42, y: 0.8, h: 0.56, filtre: "brightness(.9) sepia(.22) saturate(1.1)" },
+      // DERRIÈRE LA TABLE DE DROITE, plus loin donc plus petit.
+      { src: "/direct/ville/client-rit.webp", x: 0.87, y: 0.68, h: 0.34, miroir: true, filtre: "brightness(.88) sepia(.22) saturate(1.1)" },
+    ],
+    devant: [
+      // La grande table et tout ce qui est en dessous.
+      [
+        [0.232, 0.668],
+        [0.53, 0.577],
+        [0.82, 0.606],
+        [0.92, 0.636],
+        [0.92, 0.76],
+        [0.66, 0.9],
+        [0.64, 1],
+        [0.2, 1],
+      ],
+      // La table de droite.
+      [
+        [0.708, 0.566],
+        [0.8, 0.546],
+        [1, 0.533],
+        [1, 1],
+        [0.7, 1],
+      ],
+    ],
+  },
+};
 
-/** Une photo d'intérieur à lui, si on en trouve une — jamais le produit essayé. */
-function interieurDe(c: CommerceDeScene, m: ModeleVitrine): string {
-  const parMot = (c.sesPhotos ?? []).find((p) => /salle|salon|boutique|int[ée]rieur|atelier|cabine|magasin|lieu/i.test(p.quoi));
-  if (parMot) return parMot.src;
-  const autres = (c.photos ?? []).filter((p) => p && p !== c.photo);
-  return autres[autres.length - 1] ?? m.interieur;
-}
+/** Ce qu'une scène lit d'un commerce — de quoi la préparer sans la carte entière. */
+export type CommerceDeScene = Pick<CarteAutour, "branche" | "nom" | "ville" | "photo"> &
+  Partial<Pick<CarteAutour, "id" | "photos" | "sesPhotos" | "couverture" | "sceneVille">>;
 
 /**
- * LA SCÈNE DE VITRINE D'UN COMMERCE — préparée une fois par modèle, adaptée à
- * ses assets. `null` pour un métier sans vitrine : l'essai part alors en carte
- * simple, avec le nom et la miniature du commerce.
+ * LA SCÈNE DE VITRINE D'UN COMMERCE — seulement s'il a un décor MESURÉ :
+ * celui posé sur sa photo ClikMe dans l'administration, ou celui de la
+ * démonstration. `null` sinon : l'essai part en carte simple, avec le nom et
+ * la photo du vrai commerce.
  */
 export function sceneDeVitrine(c: CommerceDeScene | undefined): SceneVitrine | null {
   if (!c) return null;
-  const m = MODELES[c.branche];
-  if (!m) return null;
-  const ville = (c.ville || "").trim();
-  const enseigne = enseigneDe(c, m);
-  const base = {
-    v: VERSION_SCENES,
-    rendu: "vitrine" as const,
-    enseigne,
-    // LE MÉTIER UNE FOIS, PAS DEUX : sous une enseigne qui le dit déjà, la ville seule.
-    sousTitre: enseigne === m.sousTitre ? ville : ville ? `${m.sousTitre} · ${ville}` : m.sousTitre,
-    services: m.services,
-  };
-  // SA PHOTO CLIKME, QUAND ELLE EXISTE : la vraie devanture, le fantôme déjà
-  // peint. L'affiche se pose du côté où il n'est pas, pour ne jamais le
-  // cacher, et se tourne légèrement vers le centre de la rue.
-  if (c.couverture && /^https:\/\//.test(c.couverture)) {
-    const h = c.couvertureHote;
-    const aDroite = !h || h.x + h.w / 2 >= 0.5;
-    const w = m.cadrage === "en-pied" ? 0.3 : 0.38;
-    return {
-      ...base,
-      decor: c.couverture,
-      affiche: {
-        x: aDroite ? 0.07 : 0.93 - w,
-        y: 0.2,
-        w,
-        h: 0.64,
-        pivot: aDroite ? 8 : -8,
-        cadrage: m.cadrage,
-        mot: m.mot,
-      },
-    };
-  }
-  // LA DEVANTURE DU MODÈLE : sa porte ouverte sur son intérieur, son nom en
-  // haut, ses services sur le pilier, son fantôme sur le pas de la porte.
-  const enPied = m.cadrage === "en-pied";
+  const metier = AFFICHE_DU_METIER[c.branche];
+  if (!metier) return null;
+  const d = c.sceneVille ?? (c.id ? DECORS_DE_LA_DEMO[c.id] : undefined);
+  if (!d) return null;
   return {
-    ...base,
-    interieur: interieurDe(c, m),
-    affiche: {
-      x: 0.085,
-      y: 0.245,
-      w: enPied ? 0.3 : 0.42,
-      h: 0.62,
-      pivot: 0,
-      cadrage: m.cadrage,
-      mot: m.mot,
-    },
-    hote: { src: m.hote, x: enPied ? 0.6 : 0.66, y: 0.97, h: 0.5 },
+    v: VERSION_SCENES,
+    rendu: "vitrine",
+    decor: d.decor,
+    ratio: d.ratio,
+    affiche: { coins: d.coins, cadrage: metier.cadrage, mot: metier.mot },
+    ...(d.calques?.length ? { calques: d.calques } : {}),
+    ...(d.devant?.length ? { devant: d.devant } : {}),
   };
 }
 
-/* ═══ L'AMBIANCE D'UN LIEU ══════════════════════════════════════════════════
-   « Bar, soirée : photo réelle de l'intérieur ; si elle est mise en scène avec
-   des fantômes, afficher "Ambiance illustrée". » Deux clients fantômes, posés
-   au premier plan, jamais au milieu de la salle. Seulement sur la photo du
-   commerçant : la photo prise par un habitant reste une photo. */
-export function sceneDAmbiance(): SceneAmbiance {
-  return {
-    v: VERSION_SCENES,
-    rendu: "ambiance",
-    fantomes: [
-      { src: "/direct/ville/client-verre.webp", x: 0.16, y: 1.02, h: 0.52 },
-      { src: "/direct/ville/client-rit.webp", x: 0.84, y: 1.02, h: 0.48, miroir: true },
-    ],
-  };
+/**
+ * L'AMBIANCE D'UNE SALLE — « Bar, soirée : photo réelle de l'intérieur ; si
+ * elle est mise en scène avec des fantômes, afficher "Ambiance illustrée". »
+ * Seulement sur une photo mesurée du commerçant ; une photo prise par un
+ * habitant reste une photo.
+ */
+export function sceneDAmbiance(photo: string | undefined): SceneAmbiance | undefined {
+  const s = photo ? SALLES_MESUREES[photo] : undefined;
+  return s ? { v: VERSION_SCENES, rendu: "ambiance", ...s } : undefined;
 }
 
 /* ═══ QUEL RENDU POUR QUEL CONTENU ═════════════════════════════════════════ */
@@ -267,6 +237,8 @@ export type ContenuPartage = {
   detail?: string;
   prix?: string;
   photo?: string;
+  /** Le menu du jour est une formule : la photo ne montre qu'un de ses plats. */
+  formule?: boolean;
   /**
    * LE JOUR DU MENU, pour un plat du jour (AAAA-MM-JJ). « Une ancienne
    * publication ne doit pas laisser croire que le plat est toujours le menu
@@ -294,11 +266,6 @@ export function etiquetteDuMenu(jour: string | undefined, maintenant = Date.now(
   return `Au menu le ${d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}`;
 }
 
-/** Le cadrage d'un essai d'après le métier — pour une carte simple aussi. */
-export function cadrageDe(branche: CleMetier | undefined): Cadrage {
-  return (branche && MODELES[branche]?.cadrage) || "visage";
-}
-
 /* ═══ CE QUI VIENT DU RÉSEAU : on ne recopie que ce qu'on sait dessiner ════ */
 const nombre = (v: unknown, min: number, max: number, d: number) => {
   const n = Number(v);
@@ -310,51 +277,85 @@ const image = (v: unknown) => {
   const s = chaine(v, 600);
   return /^https:\/\//i.test(s) || /^\/[a-z0-9/_.-]+$/i.test(s) ? s : undefined;
 };
+const point = (v: unknown): Point | undefined => {
+  if (!Array.isArray(v) || v.length !== 2) return undefined;
+  const [x, y] = v.map(Number);
+  return Number.isFinite(x) && Number.isFinite(y) ? [Math.min(1.2, Math.max(-0.2, x)), Math.min(1.2, Math.max(-0.2, y))] : undefined;
+};
+const polygone = (v: unknown): Point[] | undefined => {
+  if (!Array.isArray(v) || v.length < 3 || v.length > 16) return undefined;
+  const l = v.map(point);
+  return l.every(Boolean) ? (l as Point[]) : undefined;
+};
+const quad = (v: unknown): Quad | undefined => {
+  const l = polygone(v);
+  return l && l.length === 4 ? (l as Quad) : undefined;
+};
+/** Un filtre CSS de lumière, et rien d'autre. */
+const filtre = (v: unknown) => {
+  const s = chaine(v, 80);
+  return /^((brightness|sepia|saturate|contrast|hue-rotate)\([0-9.]+(deg)?\)\s*)+$/.test(s) ? s : undefined;
+};
 const calque = (v: unknown): Calque | undefined => {
   if (!v || typeof v !== "object") return undefined;
   const c = v as Record<string, unknown>;
   const src = image(c.src);
   if (!src || !src.startsWith("/direct/ville/")) return undefined;
-  return { src, x: nombre(c.x, -0.2, 1.2, 0.5), y: nombre(c.y, 0, 1.2, 1), h: nombre(c.h, 0.05, 1, 0.5), ...(c.miroir ? { miroir: true } : {}) };
+  const f = filtre(c.filtre);
+  return {
+    src,
+    x: nombre(c.x, -0.2, 1.2, 0.5),
+    y: nombre(c.y, 0, 1.3, 1),
+    h: nombre(c.h, 0.05, 1, 0.4),
+    ...(c.miroir ? { miroir: true } : {}),
+    ...(c.ombre ? { ombre: true } : {}),
+    ...(f ? { filtre: f } : {}),
+  };
 };
+const calques = (v: unknown) => (Array.isArray(v) ? v : []).map(calque).filter((x): x is Calque => Boolean(x)).slice(0, 4);
+const devants = (v: unknown) => (Array.isArray(v) ? v : []).map(polygone).filter((x): x is Point[] => Boolean(x)).slice(0, 4);
+
+/** Relire un décor mesuré — celui posé dans l'administration, par exemple. */
+export function lireDecor(v: unknown): DecorMesure | undefined {
+  if (!v || typeof v !== "object") return undefined;
+  const d = v as Record<string, unknown>;
+  const decor = image(d.decor);
+  const coins = quad(d.coins);
+  if (!decor || !coins) return undefined;
+  const c = calques(d.calques);
+  const dv = devants(d.devant);
+  return { decor, ratio: nombre(d.ratio, 0.3, 3, 1.5), coins, ...(c.length ? { calques: c } : {}), ...(dv.length ? { devant: dv } : {}) };
+}
 
 /**
  * RELIRE UNE SCÈNE venue du serveur ou du stockage — tout ce qui n'est pas
- * reconnu tombe, et une scène illisible devient `undefined` : la publication
- * s'affiche alors en carte simple, sans rien perdre de son contenu.
+ * reconnu tombe, et une scène illisible (ou d'un ancien format) devient
+ * `undefined` : la publication s'affiche alors en carte simple, sans rien
+ * perdre de son contenu.
  */
 export function lireScene(v: unknown): SceneVille | undefined {
   if (!v || typeof v !== "object") return undefined;
   const s = v as Record<string, unknown>;
+  const decor = image(s.decor);
+  if (!decor) return undefined;
+  const base = { v: nombre(s.v, 1, 99, VERSION_SCENES), decor, ratio: nombre(s.ratio, 0.3, 3, 1.5) };
+  const dv = devants(s.devant);
   if (s.rendu === "ambiance") {
-    const f = (Array.isArray(s.fantomes) ? s.fantomes : []).map(calque).filter((x): x is Calque => Boolean(x)).slice(0, 4);
-    return { v: nombre(s.v, 1, 99, 1), rendu: "ambiance", fantomes: f };
+    const c = calques(s.calques);
+    return c.length ? { ...base, rendu: "ambiance", calques: c, ...(dv.length ? { devant: dv } : {}) } : undefined;
   }
   if (s.rendu !== "vitrine" || !s.affiche || typeof s.affiche !== "object") return undefined;
   const a = s.affiche as Record<string, unknown>;
+  const coins = quad(a.coins);
+  if (!coins) return undefined;
   const cadrage: Cadrage = a.cadrage === "en-pied" || a.cadrage === "mains" ? a.cadrage : "visage";
-  const decor = image(s.decor);
-  const interieur = image(s.interieur);
-  if (!decor && !interieur) return undefined;
-  const hote = calque(s.hote);
+  const c = calques(s.calques);
   return {
-    v: nombre(s.v, 1, 99, 1),
+    ...base,
     rendu: "vitrine",
-    ...(decor ? { decor } : {}),
-    ...(interieur ? { interieur } : {}),
-    enseigne: chaine(s.enseigne, 60),
-    sousTitre: chaine(s.sousTitre, 60),
-    services: (Array.isArray(s.services) ? s.services : []).map((x) => chaine(x, 24)).filter(Boolean).slice(0, 5),
-    affiche: {
-      x: nombre(a.x, 0, 1, 0.08),
-      y: nombre(a.y, 0, 1, 0.24),
-      w: nombre(a.w, 0.1, 1, 0.42),
-      h: nombre(a.h, 0.1, 1, 0.62),
-      pivot: nombre(a.pivot, -25, 25, 0),
-      cadrage,
-      mot: chaine(a.mot, 60),
-    },
-    ...(hote ? { hote } : {}),
+    affiche: { coins, cadrage, mot: chaine(a.mot, 60) },
+    ...(c.length ? { calques: c } : {}),
+    ...(dv.length ? { devant: dv } : {}),
   };
 }
 
@@ -375,5 +376,6 @@ export function lireContenu(v: unknown): ContenuPartage | undefined {
     ...(chaine(c.prix, 30) ? { prix: chaine(c.prix, 30) } : {}),
     ...(photo ? { photo } : {}),
     ...(jour ? { jour } : {}),
+    ...(c.formule ? { formule: true } : {}),
   };
 }

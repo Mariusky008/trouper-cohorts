@@ -248,12 +248,14 @@ const SALON_DU_CENTRE = {
   photo: "/direct/coiffure-femme-face.jpg",
   photos: ["/direct/coiffure-femme-face.jpg", "/direct/fauteuil-coiffeur.jpg", "/direct/salon-neuf.jpg"],
 };
-const DEPOT_VENTE = {
+// LA SEULE DEVANTURE MESURÉE DE LA DÉMONSTRATION : sa vitrine, avec la zone
+// de l'affiche posée à la place du mannequin de gauche — voir `scenes-ville.ts`.
+const BOUTIQUE_PIETONNE = {
+  id: "mode-centre",
   branche: "mode" as const,
-  nom: "Un dépôt-vente de la place",
+  nom: "Une boutique de la rue piétonne",
   ville: "Dax",
-  photo: "/direct/mode-manteau-leopard.jpg",
-  photos: ["/direct/mode-manteau-leopard.jpg", "/direct/friperie-rayon.jpg"],
+  photo: "/direct/mode-ensemble-maille-beige.jpg",
 };
 const PROTHESISTE = { branche: "ongles" as const, nom: "Une prothésiste ongulaire", ville: "Dax", photo: "/direct/pose-ongles.jpg" };
 const LUNETIER = { branche: "lunetier" as const, nom: "Un lunetier de la rue piétonne", ville: "Dax", photo: "/direct/lunettes3.jpeg" };
@@ -320,8 +322,9 @@ export function messagesSemes(maintenant = Date.now()): MessageVille[] {
       commerce: { id: "centre", nom: "Chez Bergine", photo: "/direct/tables-libres.jpg" },
       contenu: {
         type: "plat",
+        formule: true,
         nom: "Garbure landaise, magret grillé",
-        detail: "Pommes sarladaises",
+        detail: "Pommes sarladaises · Pastis landais en dessert",
         prix: "19 €",
         photo: "/direct/plat-garbure.jpg",
         jour: jourDe(maintenant),
@@ -362,7 +365,7 @@ export function messagesSemes(maintenant = Date.now()): MessageVille[] {
       commerce: { id: "bar-vins", nom: "Un bar à vins", photo: "/direct/verre-au-comptoir.jpg" },
       contenu: { type: "lieu", nom: "La salle, avant le service", photo: "/direct/bar-salle.jpg" },
       photo: "/direct/bar-salle.jpg",
-      scene: sceneDAmbiance(),
+      scene: sceneDAmbiance("/direct/bar-salle.jpg"),
       a: maintenant - min(70),
       dure: 180,
       coeurs: 24,
@@ -413,18 +416,18 @@ export function messagesSemes(maintenant = Date.now()): MessageVille[] {
     {
       id: "va9",
       qui: "Inès",
-      ou: "Un dépôt-vente de la place",
-      distance: "260 m",
-      metres: 260,
+      ou: "Une boutique de la rue piétonne",
+      distance: "180 m",
+      metres: 180,
       texte: "Cette tenue pour samedi ? 🧥",
       nature: "question",
       genre: "essai",
       visibilite: "public",
       persistant: true,
-      commerce: { id: "mode-depot", nom: "Un dépôt-vente de la place", photo: "/direct/friperie-rayon.jpg" },
-      reference: { carte: "mode-depot", piece: "m-leopard", nom: "Manteau léopard" },
+      commerce: { id: "mode-centre", nom: "Une boutique de la rue piétonne", photo: "/direct/vitrine-mode.jpg" },
+      reference: { carte: "mode-centre", piece: "m-leopard", nom: "Manteau léopard" },
       photo: "/direct/essai/mode-depot-apres.jpg",
-      scene: vitrine(DEPOT_VENTE),
+      scene: vitrine(BOUTIQUE_PIETONNE),
       a: maintenant - min(160),
       dure: 180,
       coeurs: 7,

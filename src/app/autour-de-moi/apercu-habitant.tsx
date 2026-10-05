@@ -175,7 +175,7 @@ import { EcranSalon } from "@/components/direct/ecran-salon";
 import { Ensemble } from "./ensemble";
 import { aToiDeJouer, nosDiscussions } from "@/lib/direct/ensemble";
 import { MaMaison, type MaisonEnVisite } from "./ma-maison";
-import { LaVille, type CibleSalon, type EssaiPartageable, type SalonPartageable } from "./la-ville";
+import { ComposeurVille, LaVille, type CibleSalon, type EssaiPartageable, type SalonPartageable } from "./la-ville";
 import { StyleMaison } from "@/components/direct/style-maison";
 import { StylesChoix } from "@/components/direct/styles-choix";
 // LE PARCOURS MODE — la « partie 2 », pour une categorie sur cinq.
@@ -2054,11 +2054,13 @@ export function ApercuHabitant() {
   const ville = useMemo(() => (reelle ? sansLesExemples(villeLue) : villeLue), [reelle, villeLue]);
   const vusVille = useSyncExternalStore(abonnerVusVille, chargerVusVille, () => AUCUN_VU);
   /**
-   * ARRIVÉ DEPUIS UNE ANNONCE : « Le partager dans La ville » ouvre la
-   * découverte avec ce commerce et ce qu'il propose déjà choisis. `n` change
-   * à chaque demande ; la demande tombe quand on quitte l'onglet.
+   * DEPUIS UNE ANNONCE : « Publier dans La ville » ouvre la découverte
+   * PAR-DESSUS l'annonce, ce commerce et ce qu'elle montre déjà choisis. La
+   * demande tombe quand on ferme, quand on publie, ou quand on change d'onglet.
    */
-  const [preselectionVille, setPreselectionVille] = useState<{ commerce: string; contenu?: string; n: number } | null>(null);
+  const [preselectionVille, setPreselectionVille] = useState<{ commerce: string; contenu?: string } | null>(null);
+  /** La publication faite depuis une annonce : La ville s'ouvre dessus. */
+  const [nouvelleVille, setNouvelleVille] = useState<{ id: string; visibilite: "amis" | "public"; n: number } | null>(null);
   /** L'essai d'une publication de la ville, rejoué sur soi : « Essayer sur moi ». */
   const [essaiVille, setEssaiVille] = useState<{ carte: string; piece: string } | null>(null);
   /** Chaque appui sur le fantôme d'une page l'augmente : la page ouvre son geste. */
@@ -2616,7 +2618,7 @@ export function ApercuHabitant() {
     // sans recharger la page.
     if (o === "profil") setMesTraces(mesFantomes());
     setMaisonLue(null);
-    if (o !== "ville") setPreselectionVille(null);
+    setPreselectionVille(null);
     // ON FERME CE QUI EST PAR-DESSUS, ET C'EST INDISPENSABLE DEPUIS QUE LA
     // BARRE RESTE VISIBLE DANS UN SALON. Sans ces deux lignes, appuyer sur
     // « Le direct » depuis un salon changeait bien l'onglet — mais la page du
@@ -5627,7 +5629,7 @@ export function ApercuHabitant() {
    * nouveau, privé ou public selon ce que j'ai choisi (`VersEnsemble` dans
    * `la-ville.tsx`). Elle s'y retrouve ensuite, comme toute conversation.
    */
-  function partagerDansUnSalon(m: MessageVille, cible: CibleSalon) {
+  function partagerDansUnSalon(m: MessageVille, cible: CibleSalon): string {
     noter("partage", 0, "ville-ensemble");
     const ligne = {
       qui: monPrenom() || "Vous",
@@ -5655,8 +5657,13 @@ export function ApercuHabitant() {
       });
     }
     ecrireDansSalon(cle, ligne);
-    setSalonOuvert(cle);
-    setSalonPage(true);
+    // UN SALON OÙ JE SUIS DÉJÀ S'OUVRE ; UN NOUVEAU ATTEND L'INVITATION — la
+    // feuille de La ville la propose (WhatsApp, lien copié, ou l'ouvrir).
+    if ("cle" in cible) {
+      setSalonOuvert(cle);
+      setSalonPage(true);
+    }
+    return cle;
   }
 
   /**
@@ -5870,6 +5877,18 @@ export function ApercuHabitant() {
 
   /** Le geste du fantôme sur la page affichée — aucun dans Le Direct. */
   const gestePage = onglet in GESTES_DE_PAGE ? GESTES_DE_PAGE[onglet as PageAGeste] : null;
+  /**
+   * LE MOT AU-DESSUS DU FANTÔME EST UNE AIDE DE PREMIER USAGE, PAS UNE
+   * ÉTIQUETTE. « La bulle permanente "Partager" recouvre les actions des
+   * cartes. » Elle se taisait seulement quand on touchait le fantôme ; elle
+   * se tait maintenant aussi après quelques secondes de première visite — on
+   * l'a vue, elle a fait son travail — et ne revient plus sur cette page.
+   */
+  useEffect(() => {
+    if (!(onglet in GESTES_DE_PAGE) || gestesConnus.split(",").includes(onglet)) return;
+    const t = window.setTimeout(() => connaitreGeste(onglet as PageAGeste), 6000);
+    return () => window.clearTimeout(t);
+  }, [onglet, gestesConnus]);
 
   const aSuivreVille =
     suitesDesEssais.length + ville.filter((m) => m.qui === "Vous" && m.reponses.length > (vusVille[m.id] ?? 0)).length;
@@ -10349,14 +10368,13 @@ export function ApercuHabitant() {
                           onPointerDown={(ev) => ev.stopPropagation()}
                           onClick={() => {
                             noter("partage", 0, "annonce-ville");
-                            setPreselectionVille((p) => ({ commerce: dessus.id, contenu: momentDuSommet?.titre, n: (p?.n ?? 0) + 1 }));
-                            allerA_onglet("ville");
+                            setPreselectionVille({ commerce: dessus.id, contenu: momentDuSommet?.titre });
                           }}
                         >
                           <i aria-hidden="true">📍</i>
                           <span>
-                            <b>Le partager dans La ville</b>
-                            Une découverte, avec un aperçu avant de publier
+                            <b>Publier dans La ville</b>
+                            Partage cette découverte avec tes amis ou ta ville.
                           </span>
                         </button>
 
@@ -11093,7 +11111,7 @@ export function ApercuHabitant() {
                 chaque balayage se remarque en deux secondes et détruit la seule
                 chose qu'on lui demande. Voir `nombreDeDemo`. */}
             {enPlace && sommet && (
-              <div className="ap-rail" aria-label="Autres gestes sur cette annonce">
+              <div className={`ap-rail${descendu ? " lit" : ""}`} aria-label="Autres gestes sur cette annonce">
                 {/* ═══ LES AUTRES CLIENTS, EN TÊTE DU RAIL, HORS DU RESTAURANT ═══
                     « Cette fonctionnalité des autres clients qui ont essayé la
                     même chose, il va falloir la mettre autre part — un
@@ -11194,7 +11212,7 @@ export function ApercuHabitant() {
               </div>
             )}
             {coeurDuSommet && (
-              <div className="ap-rail" aria-label="Autres gestes sur cette annonce">
+              <div className={`ap-rail${descendu ? " lit" : ""}`} aria-label="Autres gestes sur cette annonce">
                 {/* LE MÊME QUATRIÈME BOUTON que sur l'autre colonne : les autres
                     clients qui ont essayé la même chose. Voir plus haut. */}
                 {aDouble && !estResto && murDuSommet && dessus && (
@@ -11320,6 +11338,14 @@ export function ApercuHabitant() {
                   else allerA_onglet("direct");
                 }}
                 onPartagerSalon={partagerDansUnSalon}
+                onInviterSalon={(cle) => {
+                  const s = chargerSalons()[cle];
+                  if (s) void inviterAuSalon(s);
+                }}
+                onCopierLienSalon={(cle) => {
+                  const s = chargerSalons()[cle];
+                  if (s) void copierLeLien(s);
+                }}
                 onPage={(id) => {
                   // SA VRAIE PAGE pour un commerçant de la ville — voir `pageDuCommerce`.
                   window.location.href = pageDuCommerce(toutes.find((x) => x.id === id) ?? { id });
@@ -11340,8 +11366,7 @@ export function ApercuHabitant() {
                     : undefined
                 }
                 onMaison={reelle ? (m) => void visiterLaMaison({ publication: m.id }) : undefined}
-                preselection={preselectionVille ?? undefined}
-                onPreselectionVue={() => setPreselectionVille(null)}
+                nouvelle={nouvelleVille ?? undefined}
               />
             </div>
           )}
@@ -11559,6 +11584,22 @@ export function ApercuHabitant() {
               En bas, sous les gestes : c'est là que le pouce est déjà. Elle est
               masquée dans un salon ouvert, qui a sa propre barre d'actions —
               deux barres l'une sur l'autre ne se lisent pas. */}
+          {/* ─── PUBLIER DANS LA VILLE, PAR-DESSUS L'ANNONCE ───
+              Fermer laisse l'annonce telle qu'elle était, au même endroit du
+              défilement ; publier mène à La ville, sur la nouvelle
+              publication. Voir `ComposeurVille`. */}
+          {preselectionVille && onglet === "direct" && (
+            <ComposeurVille
+              commerces={toutes}
+              preselection={preselectionVille}
+              onFermer={() => setPreselectionVille(null)}
+              onPublie={(visibilite, id) => {
+                setNouvelleVille((n) => ({ id, visibilite, n: (n?.n ?? 0) + 1 }));
+                allerA_onglet("ville");
+              }}
+            />
+          )}
+
           {/* ─── DIRE QUELQUE CHOSE ───
               La feuille « Dire quelque chose » est devenue le parcours « Un
               message sur la ville » de La ville (`la-ville.tsx`) : texte,
@@ -20254,7 +20295,11 @@ export function ApercuHabitant() {
         .ap-app.essai .ap-nav{top:30%;}
         .ap-rail{position:absolute;right:2px;bottom:calc(100% + 10px);
           display:flex;flex-direction:column;align-items:center;gap:9px;
-          pointer-events:auto;z-index:7;}
+          pointer-events:auto;z-index:7;transition:opacity .2s ease,transform .2s ease;}
+        /* QUAND ON LIT LE DÉTAIL DE L'ANNONCE, LE RAIL S'ÉCARTE : il restait
+           posé sur les blocs « Le commerce » et « En parler », et recouvrait
+           leurs boutons. Il revient dès qu'on remonte à la photo. */
+        .ap-rail.lit{opacity:0;transform:translateX(14px);pointer-events:none;}
         /* LE MOT PASSE A LA LIGNE, IL NE SE COUPE PAS. Mesure a 390 points :
            « Prendre rendez-vous » — le libelle du coiffeur, qui vient du metier
            et non d'ici — sortait « Prendre … ». Un libelle tronque ne dit rien

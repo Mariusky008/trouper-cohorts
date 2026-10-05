@@ -108,6 +108,28 @@ const poppins = Poppins({
   display: "swap",
 });
 
+/**
+ * ET DEUX GRAISSES LÉGÈRES, À PART — pour retrouver une hiérarchie.
+ *
+ * « Presque tous les textes sont très gras. » C'était mécanique : Poppins
+ * n'est chargée qu'en 600, 800 et 900, donc un texte demandé en 400 ou 500
+ * s'affichait en 600. Dans le fil de La ville, les métadonnées (le lieu,
+ * l'heure, les descriptions) prennent celle-ci, et le gras reste à l'accroche
+ * et aux boutons.
+ *
+ * UNE VARIABLE À PART, ET PAS DEUX GRAISSES DE PLUS DANS `--font-clikme` :
+ * ajoutées là, elles allégeraient d'un coup tous les écrans qui demandent du
+ * 400 en le recevant en 600 depuis des mois. Et `preload: false` : le
+ * téléphone ne les télécharge que sur une page qui s'en sert.
+ */
+const poppinsLeger = Poppins({
+  variable: "--font-clikme-leger",
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  display: "swap",
+  preload: false,
+});
+
 const caveat = Caveat({
   variable: "--font-main-levee",
   subsets: ["latin"],
@@ -186,7 +208,7 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning className="scroll-smooth">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} ${playfair.variable} ${caveat.variable} ${poppins.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} ${playfair.variable} ${caveat.variable} ${poppins.variable} ${poppinsLeger.variable} antialiased`}
         suppressHydrationWarning
       >
         <RecoveryRedirectGuard />
