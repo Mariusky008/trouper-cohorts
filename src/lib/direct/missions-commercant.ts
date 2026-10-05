@@ -36,7 +36,18 @@ export type Etape =
    * Un mot à ses clients, à sa voix : c'est l'étape 2 de l'Expérience sur sa
    * page (« La voix du chef »). Facultatif — on peut passer.
    */
-  | { type: "voix"; question: string; exemple: string };
+  | {
+      type: "voix";
+      question: string;
+      exemple: string;
+      /**
+       * CE QU'ON ATTEND DE LUI, EN CLAIR — affiché avant l'exemple. « Il faut
+       * être très clair et dire qu'il faut enregistrer un message pour les
+       * clients, afin qu'ils sachent les petits secrets du plat du jour et la
+       * composition. » Absente, le comptoir dit une phrase générale.
+       */
+      consigne?: string;
+    };
 
 /** La petite annonce de l'après-midi : « il me reste des parts ». */
 export type Relance = {
@@ -71,9 +82,18 @@ export const MISSIONS: Record<FamilleDouble, Mission> = {
     quoi: "Le plat du jour",
     icone: "🍽️",
     etapes: [
-      { type: "dire", question: "Qu’est-ce qu’il y a au menu aujourd’hui ?", exemple: "« Magret frites maison, 19 euros »", nomDuChamp: "Le plat" },
+      /* « POUR L'ÉTAPE 1, SUPPRIMER LA VOIX : JUSTE "ÉCRIS L'INTITULÉ DE TON MENU
+         DU JOUR". » La voix est pour l'étape 3. */
+      { type: "dire", question: "Écris l’intitulé de ton menu du jour", exemple: "« Magret frites maison, 19 euros »", nomDuChamp: "Le plat" },
       { type: "photos", question: "Montre-moi l’assiette !", conseil: "De près, avec la lumière du jour si tu peux.", min: 1, max: 4 },
-      { type: "voix", question: "Un mot pour tes clients ?", exemple: "« Ce plat, c’est celui que je cuisine quand mes amis viennent manger. »" },
+      {
+        type: "voix",
+        question: "Enregistre un message pour tes clients",
+        consigne:
+          "Raconte-leur les petits secrets de ton plat du jour : ce qu’il y a dedans, comment tu le prépares, d’où viennent tes produits. Ils l’entendront de ta voix en ouvrant ton annonce.",
+        exemple:
+          "« Mon magret vient d’une ferme à vingt kilomètres. Je le cuis côté peau, tout doucement, et mes frites sont faites à la graisse de canard. »",
+      },
     ],
     bravo: "Ton plat est en ligne ! S’il t’en reste après le service, reviens me le dire.",
     relance: {
