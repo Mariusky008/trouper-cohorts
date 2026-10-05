@@ -189,7 +189,7 @@ function useMicro() {
   }, []);
 
   const ecouter = useCallback(
-    (quandFini: (r: { texte: string; audio?: string; secondes?: number; erreur?: string }) => void) => {
+    (quandFini: (r: { texte: string; audio?: string; secondes?: number; erreur?: string }) => void, dictee = true) => {
       if (enCours.current) {
         void arreter();
         return;
@@ -197,7 +197,7 @@ function useMicro() {
       finir.current = quandFini;
       setDirect("");
       setEcoute(true);
-      enCours.current = ouvrirEcoute((t) => setDirect(t), { surSilence: () => void arreter() });
+      enCours.current = ouvrirEcoute((t) => setDirect(t), { surSilence: () => void arreter(), dictee });
     },
     [arreter],
   );
@@ -1135,14 +1135,20 @@ function EtapeMission({
               <BoutonMicro
                 ecoute={micro.ecoute}
                 onClick={() =>
+                  /* SA VOIX, PAS SES MOTS : la dictée reste éteinte, l'enregistreur
+                     a le micro pour lui seul — voir `dictee` dans voix-micro.ts. */
                   micro.ecouter((r) => {
                     if (!r.audio) {
-                      setEnnui("Ta voix n’a pas pu s’enregistrer sur ce téléphone. Tu peux passer cette étape.");
+                      setEnnui(
+                        r.erreur && !/rien entendu/i.test(r.erreur)
+                          ? `${r.erreur} Tu peux aussi passer cette étape.`
+                          : "Ta voix n’a pas pu s’enregistrer sur ce téléphone. Réessaie, ou passe cette étape.",
+                      );
                       return;
                     }
                     setEnnui("");
                     setBrouillon((b) => ({ ...b, voix: r.audio, voixSecondes: r.secondes, voixTexte: r.texte }));
-                  })
+                  }, false)
                 }
                 mot={micro.ecoute ? "Je t’écoute… appuie pour finir" : "Appuie et parle à tes clients"}
               />

@@ -163,9 +163,15 @@ async function obtenirMicro(): Promise<MediaStream | null> {
   // UN FLUX VIVANT SE REDONNE TEL QUEL. On vérifie qu'il l'est encore : le
   // système peut le couper tout seul (appel entrant, écran verrouillé), et on
   // en redemande alors un — c'est le seul cas où l'on redemande.
-  if (fluxPartage && fluxPartage.getAudioTracks().some((t) => t.readyState === "live")) {
+  //
+  // ET « VIVANT » NE SUFFIT PAS : SUR IPAD, LE SYSTÈME REND LA PISTE MUETTE
+  // (`muted`) sans la terminer — après une voix jouée, ou quand la dictée a
+  // pris le micro. L'enregistreur produisait alors un fichier vide : « ta voix
+  // n'a pas pu s'enregistrer sur ce téléphone ». Une piste muette se remplace.
+  if (fluxPartage && fluxPartage.getAudioTracks().some((t) => t.readyState === "live" && !t.muted && t.enabled)) {
     return fluxPartage;
   }
+  fluxPartage?.getTracks().forEach((t) => t.stop());
   fluxPartage = null;
   if (!demande) {
     demande = navigator.mediaDevices
@@ -270,6 +276,14 @@ export function microBranche(): boolean {
 export type Reglages = {
   /** Appelé quand il s'est tu — c'est ce qui remplace le deuxième appui. */
   surSilence?: () => void;
+  /**
+   * FAUX QUAND C'EST SA VOIX QU'ON GARDE, pas ses mots. Sur iPad, la dictée du
+   * navigateur et l'enregistreur se disputent le micro : la dictée gagne, et
+   * l'enregistrement revient vide. Quand le fichier est ce qu'on veut (« dis
+   * un mot à tes clients »), on laisse le micro au seul enregistreur — le
+   * texte, lui, vient du serveur. Vrai par défaut.
+   */
+  dictee?: boolean;
 };
 
 /**
@@ -309,7 +323,7 @@ export function ouvrirEcoute(
   /** Quand l'enregistreur a réellement démarré — voir `secondes` dans `Ecoute`. */
   let debutEnr = 0;
 
-  const Moteur = moteur();
+  const Moteur = reglages.dictee === false ? null : moteur();
   if (Moteur) {
     try {
       const r = new Moteur();
@@ -356,7 +370,9 @@ export function ouvrirEcoute(
       m.ondataavailable = (ev) => {
         if (ev.data && ev.data.size) bouts.push(ev.data);
       };
-      m.start();
+      // PAR TRANCHES D'UNE SECONDE : Safari ne rend parfois ses données qu'à
+      // l'arrêt, et un arrêt raté ne rendait alors rien du tout.
+      m.start(1000);
       enr = m;
       // L'HORODATAGE EST CELUI DE L'ENREGISTREUR, pas celui du bouton. Entre
       // l'appui et le premier octet il y a l'autorisation du micro, qui peut
