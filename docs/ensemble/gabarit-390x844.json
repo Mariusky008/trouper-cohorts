@@ -1,48 +1,265 @@
 {
   "_": "Gabarit figé du grand salon d'Ensemble — écran de référence 390 × 844 (points CSS). Origine en haut à gauche. Pour une image à 3×, multiplier par 3.",
-  "ecran": { "largeur": 390, "hauteur": 844, "scene_hauteur": 795, "barre_haut": 795 },
+  "ecran": {
+    "largeur": 390,
+    "hauteur": 844,
+    "scene_hauteur": 795,
+    "barre_haut": 795
+  },
   "zones_reservees": {
-    "entete": { "x": 0, "y": 0, "l": 390, "h": 140, "note": "titre, mention, filtres — rien d'important dessous" },
-    "bouton": { "x": 85, "y": 686, "l": 220, "h": 46, "note": "« Ouvrir la discussion » — position fixe" },
-    "bande_libre_bouton": { "x": 0, "y": 680, "l": 390, "h": 60, "note": "aucun visage ni contenu partagé dans cette bande" },
-    "mot_du_fantome": { "x": 150, "y": 735, "l": 90, "h": 37, "note": "« Discuter », au-dessus du fantôme de la barre" },
-    "barre": { "x": 0, "y": 795, "l": 390, "h": 49 }
+    "entete": {
+      "x": 0,
+      "y": 0,
+      "l": 390,
+      "h": 140,
+      "note": "titre, mention, filtres — rien d'important dessous"
+    },
+    "bouton": {
+      "x": 85,
+      "y": 686,
+      "l": 220,
+      "h": 46,
+      "note": "« Ouvrir la discussion » — position fixe"
+    },
+    "bande_libre_bouton": {
+      "x": 0,
+      "y": 680,
+      "l": 390,
+      "h": 60,
+      "note": "aucun visage ni contenu partagé dans cette bande"
+    },
+    "mot_du_fantome": {
+      "x": 150,
+      "y": 735,
+      "l": 90,
+      "h": 37,
+      "note": "« Discuter », au-dessus du fantôme de la barre"
+    },
+    "barre": {
+      "x": 0,
+      "y": 795,
+      "l": 390,
+      "h": 49
+    }
   },
   "decor": {
-    "ligne_d_horizon_y": 250,
-    "point_de_fuite": [195, 250],
+    "ligne_d_horizon_y": 278,
+    "point_de_fuite": [
+      195,
+      278
+    ],
     "camera": "peu plongeante : 10 à 15° sous l'horizontale",
-    "bibliotheque": { "x": 0, "y": 0, "l": 121, "h": 270, "note": "calque séparé, devant le groupe du fond" },
-    "cadres_lateraux": "éléments de bord (lampes, plantes, boiseries) sur x 0–60 et x 330–390, de y 140 à y 480, sans entrer dans les zones des groupes"
+    "bibliotheque": {
+      "x": 40,
+      "y": 193,
+      "l": 64,
+      "h": 147,
+      "note": "allégée : devant le bord gauche du passage (x 45 → 180, y 145 → 330) ; le passage reste libre derrière elle pour les sorties"
+    },
+    "cadres_lateraux": "éléments de bord (lampes, plantes, boiseries) sur x 0–60 et x 330–390, de y 140 à y 480, sans entrer dans les zones des groupes",
+    "passage": {
+      "x": 45,
+      "y": 145,
+      "l": 135,
+      "h": 185,
+      "note": "vers la seconde pièce : les groupes qui partent y disparaissent derrière la bibliothèque"
+    }
   },
   "fond": {
-    "groupe": { "x": 70, "y": 160, "l": 160, "h": 110, "note": "en partie derrière la bibliothèque (x < 121) ; pied à y 262" },
-    "etiquette": { "x": 112, "y": 126, "l": 160, "h": 40 }
+    "groupe": {
+      "x": 96,
+      "y": 232,
+      "l": 128,
+      "h": 100,
+      "note": "canapé vert à l'entrée du passage, presque entier au repos ; pied à y 318"
+    },
+    "etiquette": {
+      "x": 70,
+      "y": 182,
+      "l": 156,
+      "h": 42,
+      "note": "au-dessus de sa table, pointe vers elle"
+    }
   },
   "milieu": {
-    "groupe": { "x": 145, "y": 255, "l": 260, "h": 170, "note": "peut déborder à droite ; pied à y 404" },
-    "etiquette": { "x": 206, "y": 198, "l": 180, "h": 46 }
+    "groupe": {
+      "x": 160,
+      "y": 288,
+      "l": 280,
+      "h": 135,
+      "note": "canapé bouclette, peut déborder à droite ; pied à y 420"
+    },
+    "etiquette": {
+      "x": 198,
+      "y": 212,
+      "l": 182,
+      "h": 46,
+      "note": "au-dessus de sa table, pointe vers elle"
+    }
   },
   "premier_plan": {
     "banquette": {
-      "boite": { "x": -40, "y": 480, "l": 470, "h": 290, "note": "déborde de 40 de chaque côté ; le bas est caché par la table et le bouton" },
-      "haut_du_dossier": [[-40, 562], [0, 548], [60, 518], [195, 492], [330, 518], [390, 548], [430, 562]],
-      "ligne_d_assise": [[40, 604], [105, 592], [195, 585], [285, 592], [350, 604]],
+      "boite": {
+        "x": -40,
+        "y": 480,
+        "l": 470,
+        "h": 290,
+        "note": "déborde de 40 de chaque côté ; le bas est caché par la table et le bouton"
+      },
+      "haut_du_dossier": [
+        [
+          -40,
+          562
+        ],
+        [
+          0,
+          548
+        ],
+        [
+          60,
+          518
+        ],
+        [
+          195,
+          492
+        ],
+        [
+          330,
+          518
+        ],
+        [
+          390,
+          548
+        ],
+        [
+          430,
+          562
+        ]
+      ],
+      "ligne_d_assise": [
+        [
+          40,
+          604
+        ],
+        [
+          105,
+          592
+        ],
+        [
+          195,
+          585
+        ],
+        [
+          285,
+          592
+        ],
+        [
+          350,
+          604
+        ]
+      ],
       "camera": "de face (0° de lacet), 18 à 22° de plongée — la même que la table",
       "forme": "arrondie, elle entoure la table ; dossier bas : il arrive aux épaules des fantômes"
     },
     "fantomes": [
-      { "centre_x": 105, "haut": 455, "assise": 592, "largeur": 115 },
-      { "centre_x": 195, "haut": 450, "assise": 585, "largeur": 115 },
-      { "centre_x": 285, "haut": 455, "assise": 592, "largeur": 115 }
+      {
+        "centre_x": 92,
+        "haut": 464,
+        "assise": 616,
+        "largeur": 135
+      },
+      {
+        "centre_x": 195,
+        "haut": 462,
+        "assise": 614,
+        "largeur": 128
+      },
+      {
+        "centre_x": 298,
+        "haut": 464,
+        "assise": 616,
+        "largeur": 141
+      }
     ],
     "table": {
-      "plateau": { "centre": [195, 620], "rayon_x": 160, "rayon_y": 55, "note": "ellipse du dessus ; son bord arrière (y 565 au centre, 575 à x 105/285) cache le bas des fantômes" },
-      "chant": 12,
-      "pied": "court, sous y 680 — caché par la bande du bouton",
-      "camera": "de face, 18 à 22° de plongée (ellipse environ 3 fois plus large que haute)"
+      "boite": {
+        "x": 15,
+        "y": 574,
+        "l": 360,
+        "h": 112
+      },
+      "plateau": {
+        "centre": [
+          195,
+          611
+        ],
+        "rayon_x": 180,
+        "rayon_y": 37,
+        "note": "son bord arrière (y 574) passe devant le bas des trois fantômes"
+      },
+      "chant": 8,
+      "pied": "jusqu'à y 685, au-dessus du bouton",
+      "camera": "celle de la table reçue (plateau environ 5 fois plus large que haut)"
     },
-    "contenu_partage": { "quad": [[115, 588], [275, 588], [290, 648], [100, 648]], "note": "une photo, ou deux côte à côte" },
-    "etiquette": { "x": 12, "y": 336, "l": 216, "h": 100, "note": "titre, statut, dernier message — au-dessus du groupe, aucun visage dessous" }
+    "contenu_partage": {
+      "quad": [
+        [
+          118,
+          586
+        ],
+        [
+          272,
+          586
+        ],
+        [
+          278,
+          640
+        ],
+        [
+          112,
+          640
+        ]
+      ],
+      "note": "une photo, ou deux côte à côte ; toujours libre"
+    },
+    "etiquette": {
+      "x": 8,
+      "y": 384,
+      "l": 236,
+      "h": 78,
+      "pointe_x": 30,
+      "note": "compact : titre, statut, dernier message sur une ligne ; juste au-dessus du dossier, pointe vers la banquette ; aucun visage dessous"
+    },
+    "ligne_d_assise": "y 598 : le bas des fantômes s'enfonce dans le coussin et passe sous le plateau",
+    "accessoires": {
+      "_": "posés RELATIVEMENT À LA TABLE (fractions de sa boîte, u à travers, v pour la base de l'objet) : ils la suivent au défilement",
+      "lampe": {
+        "u": 0.764,
+        "v": 0.16,
+        "l": 30,
+        "h": 56
+      },
+      "tasses": [
+        {
+          "u": 0.167,
+          "v": 0.29,
+          "l": 34,
+          "h": 24
+        },
+        {
+          "u": 0.86,
+          "v": 0.45,
+          "l": 34,
+          "h": 24
+        }
+      ]
+    }
+  },
+  "plante_premier_plan": {
+    "x": -10,
+    "y": 560,
+    "l": 86,
+    "h": 232,
+    "note": "au bord gauche, fixe dans le cadre (comme la bibliothèque) ; hors du bouton et de la barre"
   }
 }

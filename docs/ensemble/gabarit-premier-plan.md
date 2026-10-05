@@ -62,12 +62,30 @@ l'image : les ombres sont posées à l'assemblage.
    x 990–1170 px, de y 420 à 1440 px, sans entrer dans les zones des
    groupes. Peu de sol libre au centre. La bibliothèque reste un calque à
    part, à gauche.
-4. Ensuite : plante de premier plan (bas gauche), fauteuil vu de dos (bas
-   droite), objets de table (tasses, bougie, petite lampe) — même caméra
-   que la table.
+4. Ensuite, peu d'accessoires (emplacements dans le gabarit, relatifs à la
+   table du premier plan — ils la suivent au défilement) :
+   - **une petite lampe chaude** (laiton, abat-jour champignon), environ
+     30 × 56 points à l'écran (90 × 168 px à 3×), posée sur le plateau à
+     droite, à hauteur du corps des fantômes, jamais devant un visage ;
+   - **deux tasses** (avec soucoupe), environ 34 × 24 points (100 × 72 px à 3×) ;
+   - **une plante** de premier plan, au bord gauche, environ 86 × 232
+     points (260 × 700 px à 3×), fixe dans le cadre, hors du bouton et de
+     la barre.
+   Même caméra que la table reçue (plateau environ 5 fois plus large que
+   haut), PNG transparents, lumière chaude venant de la gauche.
 
 Les fantômes actuels (de face, à hauteur d'œil) conviennent : ils sont
 posés sur la ligne d'assise, le bas caché par le plateau.
+
+## Vue fixe validée (révision 2)
+
+- La bibliothèque est allégée (64 points de large) et posée devant le bord
+  gauche du passage vers la seconde pièce ; derrière elle, le passage reste
+  libre pour la disparition des tables pendant le défilement.
+- Chaque étiquette est au-dessus de sa table, avec une pointe vers elle ;
+  le bloc du premier plan est compact et posé juste au-dessus du dossier.
+- Premier plan figé : banquette, table (360 points de large), fantômes
+  assis (ligne y 598, bas caché par le plateau), photo partagée à cette taille.
 
 ## Assemblage, à réception
 
