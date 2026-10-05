@@ -11,7 +11,7 @@
 //  - plafond par IP / 24 h (anti-abus) et plafond global / 24 h (budget) ;
 //  - entrées bornées ; jeton Apify requis, sinon on refuse proprement.
 import { NextResponse, after } from "next/server";
-import { createHash } from "crypto";
+import { createHash, randomBytes } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/popey-marketplace";
 import { conduireLaFiche, lancerLaFiche } from "@/lib/site-internet/fiche-google";
@@ -115,6 +115,7 @@ export async function POST(request: Request) {
   const suffix = slugify(crypto.randomUUID()).slice(0, 6) || String(Date.now()).slice(-6);
   const slug = `${baseSlug}-${suffix}`.slice(0, 80);
   const maintenant = new Date().toISOString();
+  const jetonPhotos = randomBytes(18).toString("hex");
 
   const row = {
     slug,
@@ -143,7 +144,10 @@ export async function POST(request: Request) {
     },
     letter_status: "draft" as const,
     ...(photoValide ? { gallery_photos: [photoValide] } : {}),
-    metadata: { self_serve: true, self_serve_ip: ipHash, self_serve_at: maintenant },
+    // LE JETON DE SES PHOTOS : il a rempli le formulaire, il peut y joindre
+    // ses autres photos tout de suite — pendant trois heures, et pour cette
+    // page seulement (`/api/site-internet/photos-lieu`).
+    metadata: { self_serve: true, self_serve_ip: ipHash, self_serve_at: maintenant, jeton_photos: jetonPhotos, jeton_photos_at: maintenant },
   };
 
   const { error } = await supabase.from("human_vitrine_sites").insert(row);
@@ -179,5 +183,5 @@ export async function POST(request: Request) {
     }
   });
 
-  return NextResponse.json({ slug }, { status: 201 });
+  return NextResponse.json({ slug, jetonPhotos }, { status: 201 });
 }

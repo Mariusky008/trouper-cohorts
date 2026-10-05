@@ -187,12 +187,6 @@ function Vitrine({ s, photo, onErreur }: { s: SceneVitrine; photo: string; onErr
               onError={onErreur}
             />
           )}
-          {/* LA PHRASE MANUSCRITE, SEULEMENT SI L'AFFICHE EST ASSEZ GRANDE POUR LA LIRE. */}
-          {w > 110 && s.affiche.mot && (
-            <span className="scv-mot" style={{ fontSize: Math.max(10, Math.round(w * 0.09)) }}>
-              {s.affiche.mot} ♡
-            </span>
-          )}
           <i className="scv-vitre" aria-hidden="true" />
         </div>
       )}
@@ -311,12 +305,10 @@ function StylesScene() {
   background:radial-gradient(closest-side,rgba(0,0,0,.55),rgba(0,0,0,.28) 55%,transparent);filter:blur(2px);}
 
 .scv-affiche{position:absolute;left:0;top:0;z-index:2;overflow:hidden;transform-origin:0 0;background:#efe4d4;box-sizing:border-box;
-  border:2.5px solid #f2e9d8;box-shadow:0 6px 16px rgba(0,0,0,.38),inset 0 0 0 1px rgba(255,255,255,.18);}
+  border:1.5px solid rgba(240,230,212,.8);box-shadow:0 3px 10px rgba(0,0,0,.28);}
 .scv-essai{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;filter:brightness(.94) saturate(1.02);}
 .scv-essai.entier,.scv-plein.entier{object-fit:contain;}
 .scv-flou{position:absolute;inset:-8%;width:116%;height:116%;object-fit:cover;filter:blur(14px) saturate(1.1) brightness(.85);}
-.scv-mot{position:absolute;left:7%;right:7%;bottom:7%;z-index:2;font-family:var(--font-main-levee),"Caveat","Segoe Script",cursive;
-  line-height:1;color:#fff8ee;text-shadow:0 1px 6px rgba(0,0,0,.6);font-weight:600;}
 .scv-vitre{position:absolute;inset:0;z-index:3;pointer-events:none;
   background:
     linear-gradient(118deg,rgba(255,255,255,.18) 0 10%,transparent 22% 64%,rgba(255,255,255,.08) 72%,transparent 82%),

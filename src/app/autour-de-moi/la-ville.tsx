@@ -14,8 +14,8 @@
 // collé en haut pendant qu'on fait défiler. Chaque publication est une carte
 // séparée : l'auteur, la date, le lieu, le contenu, la légende, les
 // réactions, et UNE action qui dépend de ce qu'elle montre — « Essayer sur
-// moi » sous un essai, « En parler à mes amis » sous un plat, « Proposer à
-// mes amis » sous une sortie, « Voir le commerce » sous une trouvaille.
+// moi » sous un essai, « Partager dans un salon » sous un plat, « Proposer
+// dans un salon » sous une sortie, « Voir le commerce » sous une trouvaille.
 //
 // LA VARIÉTÉ VIENT DE CE QUI EST PUBLIÉ : un essai entre dans la vitrine de
 // son commerce, un plat s'affiche tel quel, un mot vocal reste un mot vocal.
@@ -24,8 +24,14 @@
 //
 // LE FANTÔME DE LA BARRE OUVRE TROIS CHOIX — un de mes essais, une
 // découverte, un message sur la ville — et chacun finit sur un APERÇU, une
-// légende, et le choix de l'audience (« Mes amis » d'abord). Rien n'est
-// publié sans ce dernier appui.
+// légende, et deux destinations dites clairement : « Publier dans La ville »,
+// c'est public ; « Partager dans un salon », c'est un salon précis d'Ensemble,
+// pour ceux qui y sont. Rien n'est publié sans ce dernier appui.
+//
+// IL N'Y A PLUS DE « MES AMIS ». Le cercle reposait sur les conversations :
+// « je rejoins un salon public pour une sortie, et ses membres accèdent
+// ensuite à mes essais coiffure réservés aux amis. » Le mot promettait autre
+// chose. Il reviendra avec une relation choisie et révocable.
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import {
@@ -68,8 +74,7 @@ function hache(nom: string): number {
 }
 const teinte = (nom: string) => TEINTES[hache(nom) % TEINTES.length];
 
-type Filtre = "pour-toi" | "amis" | "autour";
-type Audience = "amis" | "public";
+type Filtre = "pour-toi" | "autour";
 
 /** Une ligne de « La suite de vos échanges » : une nouveauté qui me concerne. */
 export type Suite = { cle: string; qui: string; texte: string; ouvrir: () => void };
@@ -89,7 +94,6 @@ export type CibleSalon = { cle: string } | { prive: boolean };
 
 export function LaVille({
   messages,
-  amis,
   sorties,
   suites,
   essais,
@@ -109,8 +113,6 @@ export function LaVille({
   nouvelle,
 }: {
   messages: MessageVille[];
-  /** Les gens avec qui je partage des conversations : mes amis. */
-  amis: string[];
   /** Les sorties ouvertes à tous où je ne suis pas encore. */
   sorties: Salon[];
   /** Les nouveautés qui me concernent (calculées par l'application). */
@@ -126,11 +128,12 @@ export function LaVille({
   onPremierEssai: () => void;
   onPage: (id: string) => void;
   /**
-   * « En parler à mes amis », « Proposer à mes amis » : vers Ensemble. Rend
-   * la clé du salon. Un salon existant s'ouvre tout de suite ; un nouveau
-   * passe d'abord par l'invitation.
+   * « Partager dans un salon », « Proposer dans un salon » : vers Ensemble.
+   * Rend la clé du salon. Un salon existant s'ouvre tout de suite ; un nouveau
+   * passe d'abord par l'invitation. `horsVille` : partagé depuis le composeur,
+   * sans être publié dans La ville.
    */
-  onPartagerSalon: (m: MessageVille, cible: CibleSalon) => string;
+  onPartagerSalon: (m: MessageVille, cible: CibleSalon, horsVille?: boolean) => string;
   /** Inviter dans un salon qu'on vient de créer : WhatsApp, ou le lien copié. */
   onInviterSalon: (cle: string) => void;
   onCopierLienSalon: (cle: string) => void;
@@ -141,9 +144,9 @@ export function LaVille({
   demandePartage?: number;
   /**
    * UNE PUBLICATION QU'ON VIENT DE FAIRE AILLEURS (depuis une annonce) : le
-   * fil s'ouvre dessus, sous le bon filtre, et la montre. `n` change à chaque fois.
+   * fil s'ouvre dessus et la montre. `n` change à chaque fois.
    */
-  nouvelle?: { id: string; visibilite: Audience; n: number };
+  nouvelle?: { id: string; n: number };
   /**
    * SIGNALER UNE PUBLICATION — dans la vraie ville seulement, où elle vient
    * d'un autre habitant. Voir `ville-sync.ts`.
@@ -166,7 +169,7 @@ export function LaVille({
   const [menu, setMenu] = useState<string | null>(null);
   const [cherche, setCherche] = useState<string | null>(null);
   const [cloche, setCloche] = useState(false);
-  const [versEnsemble, setVersEnsemble] = useState<{ m: MessageVille; sortie: boolean } | null>(null);
+  const [versEnsemble, setVersEnsemble] = useState<{ m: MessageVille; sortie: boolean; horsVille?: boolean } | null>(null);
   /** L'en-tête se compacte dès qu'on lit le fil : le logo cède sa place aux publications. */
   const [compact, setCompact] = useState(false);
   const [nouvelleVue, setNouvelleVue] = useState(0);
@@ -181,7 +184,7 @@ export function LaVille({
   }
   if (nouvelle && nouvelle.n !== nouvelleVue) {
     setNouvelleVue(nouvelle.n);
-    setFiltre(nouvelle.visibilite === "amis" ? "amis" : "pour-toi");
+    setFiltre("pour-toi");
     setNeuve(nouvelle.id);
   }
   // LA NOUVELLE PUBLICATION SE MONTRE : le fil descend jusqu'à elle, elle
@@ -198,8 +201,9 @@ export function LaVille({
   /** L'heure d'ouverture de l'écran : une sortie sans date se range une demi-heure avant. */
   const [ouverture] = useState(() => Date.now());
 
-  const estAmi = (q: string) => amis.includes(q);
-  const visible = (m: MessageVille) => m.visibilite !== "amis" || m.qui === "Vous" || estAmi(m.qui);
+  // UNE ANCIENNE PUBLICATION « AMIS » NE SE VOIT PLUS QUE DE SON AUTEUR — comme
+  // sur le serveur (`ville-fil`).
+  const visible = (m: MessageVille) => m.visibilite !== "amis" || m.qui === "Vous";
   const vivants = messages.filter(visible);
 
   type Entree = { cle: string; a: number; m?: MessageVille; salon?: Salon; score: number };
@@ -208,8 +212,8 @@ export function LaVille({
       cle: m.id,
       a: m.a,
       m,
-      // UN CLASSEMENT SIMPLE : le plus récent, et les amis remontent de deux heures.
-      score: m.a + (estAmi(m.qui) || m.qui === "Vous" ? 2 * 3600_000 : 0),
+      // UN CLASSEMENT SIMPLE : le plus récent, et les miennes remontent de deux heures.
+      score: m.a + (m.qui === "Vous" ? 2 * 3600_000 : 0),
     })),
     // LES SORTIES OUVERTES À TOUS, EN IDÉES DE SORTIE — elles quittent Ensemble.
     ...sorties.map((x) => {
@@ -224,13 +228,9 @@ export function LaVille({
       .filter(Boolean)
       .some((t) => String(t).toLowerCase().includes(q));
   const fil = (
-    filtre === "amis"
-      ? entrees.filter((e) => e.m && (estAmi(e.m.qui) || e.m.qui === "Vous")).sort((a, b) => b.a - a.a)
-      : filtre === "autour"
-        ? entrees
-            .filter((e) => e.salon || (e.m && e.m.visibilite !== "amis"))
-            .sort((a, b) => b.a - a.a || (a.m?.metres ?? 0) - (b.m?.metres ?? 0))
-        : entrees.sort((a, b) => b.score - a.score)
+    filtre === "autour"
+      ? entrees.sort((a, b) => b.a - a.a || (a.m?.metres ?? 0) - (b.m?.metres ?? 0))
+      : entrees.sort((a, b) => b.score - a.score)
   ).filter(correspond);
 
   const basculerReponses = (m: MessageVille) => {
@@ -313,14 +313,6 @@ export function LaVille({
             </svg>
             Pour toi
           </button>
-          <button type="button" className={filtre === "amis" ? "on" : ""} onClick={() => setFiltre("amis")}>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="9" cy="8" r="3.2" />
-              <circle cx="17" cy="9" r="2.6" />
-              <path d="M3 20c.6-3.4 3-5.4 6-5.4s5.4 2 6 5.4M15.5 14.8c2.6.2 4.6 2 5 5.2" />
-            </svg>
-            Mes amis
-          </button>
           <button type="button" className={filtre === "autour" ? "on" : ""} onClick={() => setFiltre("autour")}>
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11Z" />
@@ -378,11 +370,7 @@ export function LaVille({
           <p className="lv-vide">
             {q
               ? `Rien ne correspond à « ${cherche} » dans le fil.`
-              : filtre === "amis"
-                ? amis.length
-                  ? "Tes amis n’ont encore rien partagé. Partage le premier : touche le fantôme."
-                  : "Tes amis, ici, sont les personnes présentes dans tes salons d’Ensemble. Invite quelqu’un dans un salon : vous verrez alors vos publications « Amis »."
-                : "Rien pour l’instant autour de toi. Sois le premier à dire ce qui se passe : touche le fantôme."}
+ : "Rien pour l’instant autour de toi. Sois le premier à dire ce qui se passe : touche le fantôme."}
           </p>
         )}
 
@@ -423,7 +411,6 @@ export function LaVille({
           setEtape={setCompose}
           essais={essais}
           commerces={commerces}
-          amis={amis}
           suiteDe={suiteDe}
           onPremierEssai={() => {
             setCompose(null);
@@ -433,11 +420,16 @@ export function LaVille({
             setCompose(null);
             setSuiteDe(null);
           }}
-          onPublie={(visibilite, id) => {
+          onVersSalon={(m) => {
+            setCompose(null);
+            setSuiteDe(null);
+            setVersEnsemble({ m, sortie: false, horsVille: true });
+          }}
+          onPublie={(id) => {
             setCompose(null);
             setSuiteDe(null);
             setCherche(null);
-            setFiltre(visibilite === "amis" ? "amis" : "pour-toi");
+            setFiltre("pour-toi");
             setNeuve(id);
           }}
         />
@@ -447,10 +439,11 @@ export function LaVille({
         <VersEnsemble
           m={versEnsemble.m}
           sortie={versEnsemble.sortie}
+          horsVille={versEnsemble.horsVille}
           mesSalons={mesSalons}
           onFermer={() => setVersEnsemble(null)}
           onPartager={(cible) => {
-            const cle = onPartagerSalon(versEnsemble.m, cible);
+            const cle = onPartagerSalon(versEnsemble.m, cible, versEnsemble.horsVille);
             // UN SALON OÙ JE SUIS DÉJÀ : il s'ouvre, ses membres y sont.
             if ("cle" in cible) setVersEnsemble(null);
             return cle;
@@ -712,19 +705,19 @@ function CartePublication({
   } else if (m.nature === "cherche" && !m.genre) {
     action = (
       <button type="button" className="lv-cta" onClick={() => onSortie(m)}>
-        <Avion /> Proposer à mes amis
+        <Avion /> Proposer une sortie
       </button>
     );
   } else if (sortie) {
     action = (
       <button type="button" className="lv-cta" onClick={() => onEnsemble(true)}>
-        <Avion /> Proposer à mes amis
+        <Avion /> Proposer dans un salon
       </button>
     );
   } else if (m.genre === "decouverte" && m.contenu?.type === "plat") {
     action = (
       <button type="button" className="lv-cta" onClick={() => onEnsemble(false)}>
-        <Fleche /> En parler à mes amis
+        <Fleche /> Partager dans un salon
       </button>
     );
   } else if (m.genre === "decouverte" && m.commerce) {
@@ -809,7 +802,7 @@ function CartePublication({
           <p className="lv-type">
             {typeDe(m, branche)}
             {/* « MES AMIS » SE DIT ; le public est le cas courant du fil. */}
-            {m.visibilite === "amis" && <i>{"\u00a0· 👥 Amis"}</i>}
+            {m.visibilite === "amis" && <i>{"\u00a0· 🔒 Toi seul·e"}</i>}
           </p>
           {lieu && (
             <p className="lv-lieu">
@@ -1013,40 +1006,32 @@ function contenusDe(c: CarteAutour): (ContenuPartage & { cle: string })[] {
   return l.slice(0, 12);
 }
 
-/** Ce que « Mes amis » et « Public » veulent dire, pour de vrai. */
-function quiVoit(v: Audience, amis: string[]): string {
-  if (v === "public") return "Tous les habitants de ta ville qui ouvrent La ville.";
-  if (!amis.length) return "Tes amis, ici, sont les personnes présentes dans tes salons d’Ensemble. Pour l’instant il n’y a personne : seul·e toi la verras.";
-  const noms = amis.length <= 3 ? amis.join(", ") : `${amis.slice(0, 2).join(", ")} et ${amis.length - 2} autres`;
-  return `Les personnes présentes dans tes salons d’Ensemble : ${noms}.`;
-}
-
 function Composeur({
   etape,
   setEtape,
   essais,
   commerces,
-  amis,
   suiteDe,
   preselection,
   seul = false,
   onPremierEssai,
   onFermer,
   onPublie,
+  onVersSalon,
 }: {
   etape: Etape;
   setEtape: (e: Etape) => void;
   essais: EssaiPartageable[];
   commerces: CarteAutour[];
-  /** Ceux qui verront une publication « Mes amis » — dits sous le choix. */
-  amis: string[];
   suiteDe: MessageVille | null;
   preselection?: { commerce: string; contenu?: string };
   /** Ouvert depuis une annonce : pas d'étape avant, la flèche referme. */
   seul?: boolean;
   onPremierEssai: () => void;
   onFermer: () => void;
-  onPublie: (v: Audience, id: string) => void;
+  onPublie: (id: string) => void;
+  /** « Partager dans un salon » : la même publication, vers un salon précis, sans La ville. */
+  onVersSalon: (m: MessageVille) => void;
 }) {
   const parId = (id?: string) => (id ? commerces.find((c) => c.id === id) : undefined);
   const [essai, setEssai] = useState<EssaiPartageable | null>(essais[0] ?? null);
@@ -1061,7 +1046,6 @@ function Composeur({
   const [voirLieu, setVoirLieu] = useState(false);
   const [photoMessage, setPhotoMessage] = useState<string | null>(null);
   // « MES AMIS » D'ABORD : le public se choisit, et le choix est toujours montré.
-  const [visibilite, setVisibilite] = useState<Audience>("amis");
   const vocal = useEnregistreur();
   /** L'instant de l'aperçu : la publication dira « à l'instant ». */
   const [maintenant] = useState(() => Date.now());
@@ -1105,7 +1089,7 @@ function Composeur({
       dure: 180,
       coeurs: 0,
       reponses: [],
-      visibilite,
+      visibilite: "public" as const,
       texte: texte.trim(),
     };
     if (etape === "essai" && (essai || suiteDe)) {
@@ -1155,7 +1139,7 @@ function Composeur({
       texte: apercu.texte || (etape === "message" && vocal.son ? "Un mot vocal" : ""),
       genre: apercu.genre,
       nature: apercu.nature,
-      visibilite,
+      visibilite: "public",
       photo: apercu.photo,
       commerce: apercu.commerce,
       reference:
@@ -1171,7 +1155,13 @@ function Composeur({
       audio: apercu.audio,
       ou: etape === "message" ? lieu : undefined,
     });
-    onPublie(visibilite, neuf.id);
+    onPublie(neuf.id);
+  };
+  // LE MÊME CONTENU, VERS UN SALON : rien ne part dans La ville. La photo, le
+  // commerce et la légende suivent ; l'identifiant devient le sien.
+  const versSalon = () => {
+    if (!apercu || !pret) return;
+    onVersSalon({ ...apercu, id: `s${maintenant.toString(36)}`, texte: apercu.texte || (etape === "message" && vocal.son ? "Un mot vocal" : "") });
   };
 
   const titre =
@@ -1499,28 +1489,20 @@ function Composeur({
 
         {(apercu || etape === "message") && (
           <>
-            <div className="lv-audience">
-              <span>Visible par :</span>
-              <div role="radiogroup" aria-label="Qui la voit">
-                <button type="button" role="radio" aria-checked={visibilite === "amis"} className={visibilite === "amis" ? "on" : ""} onClick={() => setVisibilite("amis")}>
-                  👥 Mes amis
-                </button>
-                <button type="button" role="radio" aria-checked={visibilite === "public"} className={visibilite === "public" ? "on" : ""} onClick={() => setVisibilite("public")}>
-                  🌍 Public
-                </button>
-              </div>
+            {/* DEUX DESTINATIONS, DITES TELLES QU'ELLES SONT — « les libellés
+                doivent correspondre aux accès réellement disponibles ».
+                La ville est publique ; un salon, c'est ceux qui y sont. */}
+            <div className="lv-dest">
+              <button type="button" className="lv-publier" disabled={!pret} onClick={publier}>
+                <Etincelle /> Publier dans La ville
+              </button>
+              <p className="lv-qui-voit">🌍 Publique : tous les habitants de ta ville pourront la voir.</p>
+              {etape === "essai" && <p className="lv-attention">⚠️ Ta photo — et donc ton visage — sera visible par tous.</p>}
+              <button type="button" className="lv-retour lv-vers-salon" disabled={!pret} onClick={versSalon}>
+                💬 Partager plutôt dans un salon
+              </button>
+              <p className="lv-qui-voit">Un salon précis d’Ensemble : seuls ceux qui y sont la verront.</p>
             </div>
-            {/* QUI VOIT VRAIMENT — « Les libellés doivent correspondre aux
-                accès réellement disponibles. » Il n'y a pas de liste d'amis :
-                mes amis, ici, ce sont les personnes présentes dans mes salons
-                d'Ensemble (`amis.ts`). On le dit, avec leurs prénoms. */}
-            <p className="lv-qui-voit">{quiVoit(visibilite, amis)}</p>
-            {visibilite === "public" && etape === "essai" && (
-              <p className="lv-attention">⚠️ Ta photo — et donc ton visage — sera visible par tous les habitants de ta ville.</p>
-            )}
-            <button type="button" className="lv-publier" disabled={!pret} onClick={publier}>
-              <Etincelle /> Publier dans La ville
-            </button>
             <p className="lv-garde">🔒 Rien n’est publié sans ton accord.</p>
           </>
         )}
@@ -1540,33 +1522,64 @@ function Composeur({
  */
 export function ComposeurVille({
   commerces,
-  amis,
   preselection,
+  mesSalons,
   onFermer,
   onPublie,
+  onPartagerSalon,
+  onInviterSalon,
+  onCopierLienSalon,
+  onOuvrirSalon,
 }: {
   commerces: CarteAutour[];
-  amis: string[];
   preselection: { commerce: string; contenu?: string };
+  mesSalons: SalonPartageable[];
   onFermer: () => void;
-  onPublie: (v: Audience, id: string) => void;
+  onPublie: (id: string) => void;
+  onPartagerSalon: (m: MessageVille, cible: CibleSalon, horsVille?: boolean) => string;
+  onInviterSalon: (cle: string) => void;
+  onCopierLienSalon: (cle: string) => void;
+  onOuvrirSalon: (cle: string) => void;
 }) {
+  // « PARTAGER PLUTÔT DANS UN SALON » : la même feuille que depuis le fil.
+  const [vers, setVers] = useState<MessageVille | null>(null);
   return (
     <>
       <StylesLaVille />
-      <Composeur
-        etape="decouverte"
-        setEtape={() => undefined}
-        essais={[]}
-        commerces={commerces}
-        amis={amis}
-        suiteDe={null}
-        preselection={preselection}
-        seul
-        onPremierEssai={onFermer}
-        onFermer={onFermer}
-        onPublie={onPublie}
-      />
+      {vers ? (
+        <VersEnsemble
+          m={vers}
+          sortie={false}
+          horsVille
+          mesSalons={mesSalons}
+          onFermer={onFermer}
+          onPartager={(cible) => {
+            const cle = onPartagerSalon(vers, cible, true);
+            if ("cle" in cible) onFermer();
+            return cle;
+          }}
+          onInviter={onInviterSalon}
+          onCopierLien={onCopierLienSalon}
+          onOuvrir={(cle) => {
+            onFermer();
+            onOuvrirSalon(cle);
+          }}
+        />
+      ) : (
+        <Composeur
+          etape="decouverte"
+          setEtape={() => undefined}
+          essais={[]}
+          commerces={commerces}
+          suiteDe={null}
+          preselection={preselection}
+          seul
+          onPremierEssai={onFermer}
+          onFermer={onFermer}
+          onPublie={onPublie}
+          onVersSalon={setVers}
+        />
+      )}
     </>
   );
 }
@@ -1637,14 +1650,15 @@ function useEnregistreur() {
 }
 
 /* ═══ VERS ENSEMBLE ══════════════════════════════════════════════════════════
-   « En parler à mes amis » ou « Proposer à mes amis » ouvre une discussion
-   avec le contenu déjà associé : un nouveau salon (privé par défaut), ou un
-   salon où je suis déjà. Le choix public/privé du salon n'est pas l'audience
-   de la publication — et un contenu réservé à mes amis ne part pas dans un
+   « Partager dans un salon » ou « Proposer dans un salon » ouvre une
+   discussion avec le contenu déjà associé : un nouveau salon (privé par
+   défaut), ou un salon où je suis déjà. Rejoindre un salon donne accès à ce
+   salon, et à rien d'autre. Un essai — donc un visage — ne part pas dans un
    salon public sans que je le confirme. */
 function VersEnsemble({
   m,
   sortie,
+  horsVille = false,
   mesSalons,
   onFermer,
   onPartager,
@@ -1654,6 +1668,8 @@ function VersEnsemble({
 }: {
   m: MessageVille;
   sortie: boolean;
+  /** Depuis le composeur : le contenu n'est pas publié dans La ville. */
+  horsVille?: boolean;
   mesSalons: SalonPartageable[];
   onFermer: () => void;
   onPartager: (c: CibleSalon) => string;
@@ -1671,20 +1687,23 @@ function VersEnsemble({
    * ou copié, et ceux qui le reçoivent entrent directement dans ce salon.
    */
   const [cree, setCree] = useState<string | null>(null);
-  const reserve = m.visibilite === "amis";
+  const visage = m.genre === "essai";
   const partager = (c: CibleSalon) => {
     const cle = onPartager(c);
     if (!("cle" in c)) setCree(cle);
   };
   const essayer = (c: CibleSalon, publicCible: boolean) => {
-    if (reserve && publicCible) setConfirmer(c);
+    if (visage && publicCible) setConfirmer(c);
     else partager(c);
   };
   return (
-    <div className="lv-fond" role="dialog" aria-label={sortie ? "Proposer à mes amis" : "En parler à mes amis"} onClick={onFermer}>
+    <div className="lv-fond" role="dialog" aria-label={sortie ? "Proposer dans un salon" : "Partager dans un salon"} onClick={onFermer}>
       <div className="lv-feuille" onClick={(e) => e.stopPropagation()}>
         <span className="lv-poignee" aria-hidden="true" />
-        <h2>{sortie ? "Proposer à mes amis" : "En parler à mes amis"}</h2>
+        <h2>{sortie ? "Proposer dans un salon" : "Partager dans un salon"}</h2>
+        <p className="lv-qui-voit">
+          {horsVille ? "Rien ne part dans La ville : seuls les membres du salon choisi la verront." : "Seuls les membres du salon choisi verront ce partage."}
+        </p>
         <div className="lv-ligne">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {m.photo ? <img src={m.photo} alt="" /> : <span className="lv-ligne-ic">💬</span>}
@@ -1696,7 +1715,7 @@ function VersEnsemble({
         {cree ? (
           <>
             <p className="lv-note">
-              ✅ Ton salon est prêt, avec la publication dedans. Invite tes amis : ceux qui reçoivent le lien y entrent directement, sans rien installer. En y entrant, ils verront aussi tes publications « Amis ».
+              ✅ Ton salon est prêt, avec ton partage dedans. Invite qui tu veux : ceux qui reçoivent le lien entrent dans ce salon, sans rien installer — et seulement dans celui-ci.
             </p>
             <button type="button" className="lv-publier" onClick={() => onInviter(cree)}>
               📲 Inviter sur WhatsApp
@@ -1711,7 +1730,7 @@ function VersEnsemble({
         ) : confirmer ? (
           <>
             <p className="lv-attention">
-              Cette publication n’est visible que par tes amis. La partager dans un salon public la montrera à tous ceux qui y entrent.
+              Ce salon est public : tous ceux qui y entrent verront ta photo, et donc ton visage.
             </p>
             <button type="button" className="lv-publier" onClick={() => partager(confirmer)}>
               Oui, la partager quand même
@@ -2019,6 +2038,10 @@ function StylesLaVille() {
 .lv-audience button{height:40px;padding:0 14px;border-radius:999px;cursor:pointer;font:inherit;font-size:14px;font-weight:700;color:#EADBC8;
   background:rgba(255,255,255,.03);border:1px solid rgba(255,214,170,.22);}
 .lv-audience button.on{color:#2A1608;background:linear-gradient(180deg,#F8B451,#E8932A);border-color:transparent;}
+.lv-dest{margin-top:16px;}
+.lv-dest .lv-qui-voit{margin:6px 0 4px;text-align:center;}
+.lv-vers-salon{margin-top:12px;}
+.lv-vers-salon:disabled{opacity:.45;cursor:default;}
 .lv-qui-voit{margin:8px 0 0;font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;font-weight:500;font-size:13px;line-height:1.4;color:#B8A492;}
 .lv-aucun{display:grid;justify-items:center;gap:8px;text-align:center;margin-top:20px;}
 .lv-aucun img{height:130px;width:auto;}

@@ -40,6 +40,7 @@ function sceneVilleDuDiagnostic(diag: Record<string, unknown>, couverture: strin
   return d && couverture && d.decor === couverture ? d : undefined;
 }
 import { nomPropre } from "@/lib/site-internet/nom-propre";
+import { lirePhotosDuLieu } from "@/lib/site-internet/photos-du-lieu";
 import { carteLueDuDiagnostic, suiviDeLaCarte } from "@/lib/site-internet/carte-lue";
 
 const str = (v: unknown) => (v == null ? "" : String(v));
@@ -48,7 +49,7 @@ const capWords = (s: string) =>
 
 /** Les colonnes que la fiche lit — la page et le double demandent les mêmes. */
 export const COLONNES_FICHE =
-  "id, business_name, city, activite, address, google_rating, google_reviews, google_place_id, diagnostic, published, gallery_photos, current_offer";
+  "id, business_name, city, activite, address, google_rating, google_reviews, google_place_id, diagnostic, published, gallery_photos, current_offer, metadata";
 
 /** « 16 h », « 16 h 30 » : l'heure murale de Paris, le serveur peut tourner ailleurs. */
 function heureDeParis(t: Date): { jour: string; h: number; m: number } {
@@ -237,6 +238,8 @@ export function construireFiche(
     couvertureHote: couvertureDuDiagnostic(diag)?.hote,
     couvertureSansHote: photoSansHote(couvertureDuDiagnostic(diag)),
     sceneVille: sceneVilleDuDiagnostic(diag, couvertureAffichee(couvertureDuDiagnostic(diag))),
+    // SES PHOTOS RANGÉES SOUS UN INTITULÉ — voir `photos-du-lieu.ts`.
+    photosDuLieu: lirePhotosDuLieu(row.metadata),
     carteLue: carteLueDuDiagnostic(diag),
     // CE QU'IL A DONNÉ À SON EXPÉRIENCE RESTAURANT — voir `experience-donnees.ts`.
     experience: experienceDuDiagnostic(diag) ?? undefined,

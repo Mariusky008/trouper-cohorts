@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import { vocabulaire } from "@/lib/site-internet/actions-flash";
 import { reduirePhoto } from "@/lib/site-internet/reduire-photo";
+import { CONSIGNES_PHOTOS, PHOTOS_DU_LIEU, type CleLieu } from "@/lib/site-internet/photos-du-lieu";
 
 const WA_HREF = "https://wa.me/33768233347?text=" +
   encodeURIComponent("Bonjour Marius, je voudrais voir ce que Popey construirait pour mon activité.");
@@ -37,6 +38,16 @@ export function HeroGenerator() {
    */
   const [photo, setPhoto] = useState("");
   const [photoDit, setPhotoDit] = useState("");
+  /**
+   * SES AUTRES PHOTOS, FACULTATIVES, CHACUNE SOUS SON INTITULÉ — « il faudra
+   * que sous chaque photo téléchargée il y ait le bon intitulé ». Envoyées
+   * une à une juste après la création de sa page (le jeton que rend
+   * `public-generate`), puis modifiables depuis son Espace Pro. Voir
+   * `photos-du-lieu.ts`.
+   */
+  const [autres, setAutres] = useState<Partial<Record<CleLieu, string>>>({});
+  const [voirAutres, setVoirAutres] = useState(false);
+  const [envoi, setEnvoi] = useState("");
   const timers = useRef<number[]>([]);
 
   const ready = nom.trim().length >= 2 && ville.trim().length >= 2 && activite.trim().length >= 2;
@@ -95,6 +106,22 @@ export function HeroGenerator() {
       });
       const j = await r.json().catch(() => ({}));
       if (r.ok && j.slug) {
+        // SES PHOTOS, UNE À UNE, AVEC LEUR INTITULÉ. Une photo refusée ne
+        // bloque rien : il la remettra depuis son Espace Pro.
+        const aEnvoyer = [...(photo ? [["devanture", photo] as const] : []), ...Object.entries(autres)].filter(
+          (x): x is [string, string] => Boolean(x[1]),
+        );
+        if (j.jetonPhotos && aEnvoyer.length) {
+          let n = 0;
+          for (const [cle, valeur] of aEnvoyer) {
+            setEnvoi(`J'enregistre vos photos… ${++n}/${aEnvoyer.length}`);
+            await fetch("/api/site-internet/photos-lieu", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ slug: j.slug, jeton: j.jetonPhotos, action: "poser", cle, photo: valeur }),
+            }).catch(() => null);
+          }
+        }
         stopAnim();
         setPct(100);
         setStep(STEPS.length - 1);
@@ -141,9 +168,43 @@ export function HeroGenerator() {
           />
           {photo ? <img src={photo} alt="" /> : <span aria-hidden="true">📷</span>}
           <b>{photo ? "Photo de votre devanture ajoutée" : "Photo de votre devanture"}</b>
-          <em>{photo ? "Touchez pour en choisir une autre" : "Facultatif — sinon on prend celle de votre fiche Google"}</em>
+          <em>{photo ? "Touchez pour en choisir une autre" : "Facultatif — de face, de jour, en entier. Sinon on prend celle de votre fiche Google"}</em>
         </label>
         {photoDit && <div className="generr">{photoDit}</div>}
+        {!voirAutres ? (
+          <button type="button" className="genplus" onClick={() => setVoirAutres(true)}>
+            ➕ Ajouter d&apos;autres photos <em>(facultatif)</em>
+          </button>
+        ) : (
+          <div className="genlieu">
+            <p>
+              Elles servent à votre page et à La ville. {CONSIGNES_PHOTOS} Vous pourrez les changer plus tard dans votre Espace Pro.
+            </p>
+            <div className="genlieu-g">
+              {PHOTOS_DU_LIEU.filter((x) => x.cle !== "devanture").map((x) => (
+                <label key={x.cle} className={`genlieu-c${autres[x.cle] ? " on" : ""}`} title={x.conseil}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const f = e.target.files?.[0];
+                      if (!f) return;
+                      try {
+                        const v = await reduirePhoto(f);
+                        setAutres((a) => ({ ...a, [x.cle]: v }));
+                      } catch {
+                        setPhotoDit(`« ${x.intitule} » n'a pas pu être lue. Essayez-en une autre, ou continuez sans.`);
+                      }
+                    }}
+                  />
+                  {autres[x.cle] ? <img src={autres[x.cle]} alt="" /> : <span aria-hidden="true">📷</span>}
+                  <b>{x.intitule}</b>
+                  <em>{x.conseil}</em>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
         <button className="genbtn" onClick={submit} disabled={!ready}>
           ✨ Créer mon site gratuitement
         </button>
@@ -205,7 +266,7 @@ export function HeroGenerator() {
             </div>
             <div className="genov-status">
               <div className="genov-title">Je construis le site de <b>{nom.trim() || "votre établissement"}</b>…</div>
-              <div className="genov-step"><span className="genov-dot" />{STEPS[step]}</div>
+              <div className="genov-step"><span className="genov-dot" />{envoi || STEPS[step]}</div>
               <div className="genov-bar"><i style={{ width: `${Math.min(100, Math.round(pct))}%` }} /></div>
             </div>
           </div>

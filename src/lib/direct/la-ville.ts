@@ -248,8 +248,8 @@ const SALON_DU_CENTRE = {
   photo: "/direct/coiffure-femme-face.jpg",
   photos: ["/direct/coiffure-femme-face.jpg", "/direct/fauteuil-coiffeur.jpg", "/direct/salon-neuf.jpg"],
 };
-// LA SEULE DEVANTURE MESURÉE DE LA DÉMONSTRATION : sa vitrine, avec la zone
-// de l'affiche posée à la place du mannequin de gauche — voir `scenes-ville.ts`.
+// SA VITRINE N'A PAS DE PLACE POUR UNE GRANDE AFFICHE — voir `scenes-ville.ts` :
+// l'essai d'Inès part en carte simple, avec la boutique en bas.
 const BOUTIQUE_PIETONNE = {
   id: "mode-centre",
   branche: "mode" as const,
@@ -277,7 +277,7 @@ export function messagesSemes(maintenant = Date.now()): MessageVille[] {
       texte: "Et si je passais au carré ? 💇‍♀️",
       nature: "question",
       genre: "essai",
-      visibilite: "amis",
+      visibilite: "public",
       persistant: true,
       commerce: { id: "coif-centre", nom: "Un salon du centre", photo: "/direct/salon-neuf.jpg" },
       reference: { carte: "coif-centre", piece: "c-femme", nom: "Carré long, de face" },
@@ -593,25 +593,18 @@ type PartageVille = {
 };
 let partage: PartageVille | null = null;
 let fil: MessageVille[] | null = null;
-let amisDuFil: string[] = [];
 export function brancherLePartageVille(p: PartageVille | null): void {
   partage = p;
   if (!p) {
     fil = null;
-    amisDuFil = [];
     cache = null;
   }
 }
-/** Le fil tel que le serveur le rend, et les amis qu'il connaît. */
-export function poserLeFil(messages: MessageVille[], amis: string[]): void {
+/** Le fil tel que le serveur le rend. */
+export function poserLeFil(messages: MessageVille[]): void {
   fil = messages;
-  amisDuFil = amis;
   cache = etat ? composer(etat) : null;
   abonnes.forEach((f) => f());
-}
-/** Les prénoms des amis selon le serveur — vide hors de la vraie ville. */
-export function amisPartages(): string[] {
-  return amisDuFil;
 }
 
 /** Recolle les exemples frais et ce que le visiteur en a fait. */

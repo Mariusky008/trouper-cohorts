@@ -144,7 +144,6 @@ import {
   chargerVille,
   salonDepuisVille,
   sansLesExemples,
-  amisPartages,
   VILLE_VIDE,
   type MessageVille,
 } from "@/lib/direct/la-ville";
@@ -2071,7 +2070,7 @@ export function ApercuHabitant() {
    */
   const [preselectionVille, setPreselectionVille] = useState<{ commerce: string; contenu?: string } | null>(null);
   /** La publication faite depuis une annonce : La ville s'ouvre dessus. */
-  const [nouvelleVille, setNouvelleVille] = useState<{ id: string; visibilite: "amis" | "public"; n: number } | null>(null);
+  const [nouvelleVille, setNouvelleVille] = useState<{ id: string; n: number } | null>(null);
   /** L'essai d'une publication de la ville, rejoué sur soi : « Essayer sur moi ». */
   const [essaiVille, setEssaiVille] = useState<{ carte: string; piece: string } | null>(null);
   /** Chaque appui sur le fantôme d'une page l'augmente : la page ouvre son geste. */
@@ -5640,12 +5639,13 @@ export function ApercuHabitant() {
    * nouveau, privé ou public selon ce que j'ai choisi (`VersEnsemble` dans
    * `la-ville.tsx`). Elle s'y retrouve ensuite, comme toute conversation.
    */
-  function partagerDansUnSalon(m: MessageVille, cible: CibleSalon): string {
+  function partagerDansUnSalon(m: MessageVille, cible: CibleSalon, horsVille = false): string {
     noter("partage", 0, "ville-ensemble");
     const ligne = {
       qui: monPrenom() || "Vous",
       voix: "moi" as const,
-      texte: `📌 Vu dans La ville — ${m.qui === "Vous" ? "ma publication" : `la publication de ${m.qui}`}${m.commerce ? ` (${m.commerce.nom})` : ""} : « ${m.texte.slice(0, 90)}${m.texte.length > 90 ? "…" : ""} »`,
+      // PARTAGÉ DEPUIS LE COMPOSEUR, SANS PASSER PAR LA VILLE : on ne dit pas « vu dans La ville ».
+      texte: `${horsVille ? `📌 ${m.genre === "essai" ? "Mon essai" : m.genre === "decouverte" ? "Une découverte" : "Un mot"}` : `📌 Vu dans La ville — ${m.qui === "Vous" ? "ma publication" : `la publication de ${m.qui}`}`}${m.commerce ? ` (${m.commerce.nom})` : ""} : « ${m.texte.slice(0, 90)}${m.texte.length > 90 ? "…" : ""} »`,
       quand: heureCourte(),
       photo: m.photo,
     };
@@ -5832,24 +5832,6 @@ export function ApercuHabitant() {
     );
     return attentes.length + neuves.length;
   })();
-
-  /* ═══ CE QUE LA VILLE DEMANDE À L'APPLICATION ═══════════════════════════
-
-     MES AMIS, DANS LA MAQUETTE, CE SONT LES GENS AVEC QUI JE PARLE. Il n'y a
-     pas encore de comptes ni de liste d'amis : ceux qui partagent une
-     conversation avec moi en tiennent lieu. Sans eux, les filtres « Pour
-     toi » et « Mes amis » ne s'affichent pas — ils ne filtreraient rien. */
-  const mesAmis = [
-    ...new Set(
-      Object.values(salons)
-        .filter(dansLeSalon)
-        .flatMap((x) => [x.parQui, ...x.presents]),
-    ),
-  ].filter((q) => q && !cestMoi(q));
-  // ET LES AMIS QUE LE SERVEUR CONNAÎT, dans la vraie ville : ceux d'une
-  // conversation partagée — voir `amis.ts`. C'est cette liste, et elle seule,
-  // qui voit une publication « Mes amis ».
-  const amisVille = reelle ? [...new Set([...mesAmis, ...amisPartages()])] : mesAmis;
 
   /* LA SUITE DE MES ÉCHANGES : une conversation née d'un essai ou d'une
      publication, où quelqu'un a écrit depuis ma dernière visite. Rien
@@ -11341,7 +11323,6 @@ export function ApercuHabitant() {
             <div className="ap-page ap-onglet-vue">
               <LaVille
                 messages={ville}
-                amis={amisVille}
                 sorties={salonsADecouvrir}
                 suites={suitesDesEssais}
                 essais={essaisPartageables}
@@ -11613,12 +11594,25 @@ export function ApercuHabitant() {
           {preselectionVille && onglet === "direct" && (
             <ComposeurVille
               commerces={toutes}
-              amis={amisVille}
               preselection={preselectionVille}
               onFermer={() => setPreselectionVille(null)}
-              onPublie={(visibilite, id) => {
-                setNouvelleVille((n) => ({ id, visibilite, n: (n?.n ?? 0) + 1 }));
+              onPublie={(id) => {
+                setNouvelleVille((n) => ({ id, n: (n?.n ?? 0) + 1 }));
                 allerA_onglet("ville");
+              }}
+              mesSalons={salonsPartageables}
+              onPartagerSalon={partagerDansUnSalon}
+              onInviterSalon={(cle) => {
+                const s = chargerSalons()[cle];
+                if (s) void inviterAuSalon(s);
+              }}
+              onCopierLienSalon={(cle) => {
+                const s = chargerSalons()[cle];
+                if (s) void copierLeLien(s);
+              }}
+              onOuvrirSalon={(cle) => {
+                setSalonOuvert(cle);
+                setSalonPage(true);
               }}
             />
           )}

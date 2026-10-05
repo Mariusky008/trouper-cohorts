@@ -218,6 +218,17 @@ export default function HomePage() {
           .pop-home .genphoto b{font-size:14px;color:var(--ink);}
           .pop-home .genphoto em{font-style:normal;font-size:12px;color:var(--faint);line-height:1.35;}
           .pop-home .genphoto.on{border-style:solid;border-color:var(--a1);}
+          .pop-home .genplus{display:block;width:100%;margin:-2px 0 10px;padding:6px 0;border:0;background:none;font:inherit;font-size:13.5px;font-weight:700;color:var(--a1);text-align:left;cursor:pointer;}
+          .pop-home .genplus em{font-style:normal;font-weight:500;color:var(--faint);}
+          .pop-home .genlieu{margin-bottom:10px;}
+          .pop-home .genlieu p{margin:0 0 8px;font-size:12px;line-height:1.4;color:var(--faint);}
+          .pop-home .genlieu-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+          .pop-home .genlieu-c{position:relative;display:flex;flex-direction:column;gap:3px;padding:6px;border:1.5px dashed var(--line);border-radius:12px;background:#fff;cursor:pointer;min-width:0;}
+          .pop-home .genlieu-c input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
+          .pop-home .genlieu-c>span,.pop-home .genlieu-c>img{width:100%;aspect-ratio:4/3;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;background:#F3F5F1;object-fit:cover;}
+          .pop-home .genlieu-c b{font-size:12px;line-height:1.25;color:var(--ink);}
+          .pop-home .genlieu-c em{font-style:normal;font-size:11px;line-height:1.3;color:var(--faint);}
+          .pop-home .genlieu-c.on{border-style:solid;border-color:var(--a1);}
           .pop-home .genbtn{position:relative;width:100%;height:56px;margin-top:4px;border:none;border-radius:15px;cursor:pointer;font-family:inherit;font-size:16.5px;font-weight:800;color:#fff;overflow:hidden;
             background:linear-gradient(120deg,var(--a1),var(--a2) 60%,var(--a3));box-shadow:0 18px 38px -12px rgba(18,185,129,.8);transition:transform .12s ease,filter .12s ease;}
           .pop-home .genbtn::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-18deg);animation:sheen 3.4s ease-in-out infinite;}

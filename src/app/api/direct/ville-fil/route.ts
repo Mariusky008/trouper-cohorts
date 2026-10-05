@@ -1,20 +1,22 @@
 // LE FIL PARTAGÉ DE LA VILLE — voir la migration `20261006120000_ville_partagee.sql`.
 //
-// GET  ?ville=<ville>                          → { moi, amis, publications }
-// POST { action: "publier", ville, id, visibilite, donnees, qui }
+// GET  ?ville=<ville>                          → { moi, publications }
+// POST { action: "publier", ville, id, donnees, qui }  — toujours public
 // POST { action: "geste", id, geste, qui }     — cœur, réponse, « ça m'intéresse »
 // POST { action: "retirer", id }               — l'auteur seul
 // POST { action: "signaler", id, motif }
 //
-// QUI VOIT QUOI, ET C'EST ICI QUE ÇA SE DÉCIDE : « Public dans ma ville » pour
-// tous les habitants de la ville, « Mes amis » pour l'auteur et ceux qui
-// partagent une conversation avec lui (`amis.ts`). L'écran ne reçoit jamais ce
-// qu'il n'a pas le droit de montrer.
+// QUI VOIT QUOI, ET C'EST ICI QUE ÇA SE DÉCIDE : La ville est publique — tous
+// les habitants de la ville. « Mes amis » n'existe plus : « entrer dans une
+// conversation ne devrait pas donner accès à toutes les publications privées
+// de ses participants », et il n'y a pas encore de relation choisie et
+// révocable pour le remplacer. Pour un cercle précis, on partage dans un salon
+// d'Ensemble. Une ancienne publication « amis » ne se voit plus que de son
+// auteur. L'écran ne reçoit jamais ce qu'il n'a pas le droit de montrer.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assurerHabitant, habitantCourant } from "@/lib/direct/habitant";
 import { villeSlug } from "@/lib/direct/ville";
-import { amisDe } from "@/lib/direct/amis";
 import { rangerPhoto, rangerSon } from "@/lib/direct/ranger-photo";
 import { lireContenu, lireScene } from "@/lib/direct/scenes-ville";
 
@@ -40,11 +42,11 @@ const prenom = (qui: unknown, connu: string) => {
 };
 
 /** Peut-il voir cette publication ? */
-function peutVoir(p: Record<string, unknown>, moi: string | null, amis: Map<string, string>): boolean {
+function peutVoir(p: Record<string, unknown>, moi: string | null): boolean {
   const auteur = s(p.habitant);
   if (moi && auteur === moi) return true;
   if (p.retire_le || p.masque) return false;
-  return p.visibilite === "public" || amis.has(auteur);
+  return p.visibilite === "public";
 }
 
 async function limite(supabase: Supabase, habitant: string): Promise<boolean> {
@@ -62,12 +64,11 @@ export async function GET(request: Request) {
   try {
     supabase = createAdminClient();
   } catch {
-    return NextResponse.json({ ok: false, publications: [], amis: [] });
+    return NextResponse.json({ ok: false, publications: [] });
   }
-  if (!ville) return NextResponse.json({ ok: false, publications: [], amis: [] });
+  if (!ville) return NextResponse.json({ ok: false, publications: [] });
   const moi = await habitantCourant(supabase);
   try {
-    const amis = moi ? await amisDe(supabase, moi.id) : new Map<string, string>();
     const { data, error } = await supabase
       .from("human_ville_publications")
       .select("id, habitant, qui, visibilite, donnees, persistant, cree_le, retire_le, masque")
@@ -77,7 +78,7 @@ export async function GET(request: Request) {
       .order("cree_le", { ascending: false })
       .limit(200);
     if (error) throw new Error(error.message);
-    const visibles = ((data ?? []) as Record<string, unknown>[]).filter((p) => peutVoir(p, moi?.id ?? null, amis));
+    const visibles = ((data ?? []) as Record<string, unknown>[]).filter((p) => peutVoir(p, moi?.id ?? null));
     const ids = visibles.map((p) => s(p.id));
     const { data: gestes } = ids.length
       ? await supabase.from("human_ville_gestes").select("id, publication, habitant, qui, geste, cree_le").in("publication", ids).order("id", { ascending: true }).limit(5000)
@@ -109,7 +110,6 @@ export async function GET(request: Request) {
     return NextResponse.json({
       ok: true,
       moi: moi ? "1" : null,
-      amis: [...new Set(amis.values())],
       publications: visibles.map((p) => {
         const id = s(p.id);
         const auteur = s(p.habitant);
@@ -117,7 +117,6 @@ export async function GET(request: Request) {
           id,
           qui: s(p.qui),
           moi: Boolean(moi && auteur === moi.id),
-          ami: amis.has(auteur),
           visibilite: s(p.visibilite),
           persistant: Boolean(p.persistant),
           cree_le: s(p.cree_le),
@@ -132,7 +131,7 @@ export async function GET(request: Request) {
     });
   } catch {
     // MIGRATION PAS ENCORE APPLIQUÉE : rien de partagé, le téléphone garde les siennes.
-    return NextResponse.json({ ok: false, publications: [], amis: [] });
+    return NextResponse.json({ ok: false, publications: [] });
   }
 }
 
@@ -201,7 +200,7 @@ export async function POST(request: Request) {
       ville_slug: ville,
       habitant: h.id,
       qui: prenom(p?.qui, h.prenom),
-      visibilite: p?.visibilite === "public" ? "public" : "amis",
+      visibilite: "public",
       donnees,
       persistant: Boolean(genre),
     });
@@ -228,8 +227,7 @@ export async function POST(request: Request) {
   }
 
   // POUR RÉAGIR OU SIGNALER, IL FAUT POUVOIR LA VOIR.
-  const amis = await amisDe(supabase, h.id);
-  if (!peutVoir(ligne, h.id, amis)) return NextResponse.json({ error: "Publication inconnue." }, { status: 404 });
+  if (!peutVoir(ligne, h.id)) return NextResponse.json({ error: "Publication inconnue." }, { status: 404 });
 
   if (action === "geste") {
     if (await limite(supabase, h.id)) return NextResponse.json({ error: "Doucement : réessaie dans une minute." }, { status: 429 });

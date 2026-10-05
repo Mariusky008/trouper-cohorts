@@ -102,12 +102,12 @@ export type SceneAmbiance = {
 export type SceneVille = SceneVitrine | SceneAmbiance;
 
 /* ═══ CE QUE CHAQUE MÉTIER MONTRE SUR SON AFFICHE ══════════════════════════ */
-const AFFICHE_DU_METIER: Partial<Record<CleMetier, { cadrage: Cadrage; mot: string; hote: string }>> = {
-  coiffeur: { cadrage: "visage", mot: "Une coupe qui me ressemble", hote: "/direct/ville/hote-coiffeur.webp" },
-  mode: { cadrage: "en-pied", mot: "Confiance en toute occasion", hote: "/direct/ville/hote-mode.webp" },
-  ongles: { cadrage: "mains", mot: "Des mains qui me ressemblent", hote: "/direct/ville/hote-onglerie.webp" },
-  lunetier: { cadrage: "visage", mot: "Un regard qui me ressemble", hote: "/direct/ville/hote-opticien.webp" },
-  artisan: { cadrage: "mains", mot: "Fait à la main, ici", hote: "/direct/ville/hote-artisan.webp" },
+const AFFICHE_DU_METIER: Partial<Record<CleMetier, { cadrage: Cadrage; hote: string }>> = {
+  coiffeur: { cadrage: "visage", hote: "/direct/ville/hote-coiffeur.webp" },
+  mode: { cadrage: "en-pied", hote: "/direct/ville/hote-mode.webp" },
+  ongles: { cadrage: "mains", hote: "/direct/ville/hote-onglerie.webp" },
+  lunetier: { cadrage: "visage", hote: "/direct/ville/hote-opticien.webp" },
+  artisan: { cadrage: "mains", hote: "/direct/ville/hote-artisan.webp" },
 };
 
 /** Le cadrage d'un essai d'après le métier — pour une carte simple aussi. */
@@ -145,32 +145,19 @@ export function fantomeDuMetier(branche: CleMetier | undefined): string {
 }
 
 /* ═══ LES DÉCORS MESURÉS DE LA DÉMONSTRATION ═══════════════════════════════
-   Sur les vraies photos de ses commerces, mesurées à la main sur une grille.
-   Une seule devanture s'y prête aujourd'hui : la vitrine de la boutique de
-   prêt-à-porter (`vitrine-mode.jpg`, la photo de son lieu). La vitrine de
-   Noël au piano reste écartée — ni un salon, ni la saison. Les autres
-   commerces de la démonstration partent en carte simple, et c'est voulu. */
-const DECORS_DE_LA_DEMO: Record<string, DecorMesure> = {
-  // L'AFFICHE PREND LA PLACE DU MANNEQUIN DE GAUCHE, derrière la vitre, et
-  // s'arrête au-dessus des objets posés au sol de la vitrine : rien ne la
-  // coupe. LE FANTÔME EST AU PREMIER PLAN, DEVANT LA VITRINE, COUPÉ PAR LE
-  // BAS DU CADRE comme quelqu'un qui passe devant l'objectif : sans trottoir
-  // dans la photo, c'est la seule place où il ne flotte pas.
-  "mode-centre": {
-    decor: "/direct/vitrine-mode.jpg",
-    ratio: 387 / 516,
-    // « L'AFFICHE EN PERSPECTIVE » : un grand panneau posé dans la vitrine,
-    // tourné vers la rue — le bord gauche, plus proche, est plus haut que le
-    // droit. Il s'arrête avant la silhouette beige du premier mannequin.
-    coins: [
-      [0.05, 0.285],
-      [0.385, 0.318],
-      [0.385, 0.728],
-      [0.05, 0.77],
-    ],
-    calques: [{ src: "/direct/ville/hote-mode.webp", x: 0.8, y: 1.07, h: 0.4, filtre: "brightness(.97) sepia(.1)" }],
-  },
-};
+   AUCUN, ET C'EST VOULU. La vitrine de la boutique de prêt-à-porter
+   (`vitrine-mode.jpg`) a été essayée : trois mannequins remplissent toute la
+   vitre, il n'y reste aucune place prévue pour une grande affiche. « Si aucun
+   emplacement ne permet une grande affiche crédible, mieux vaut changer de
+   décor que forcer le montage. » Faute d'autre devanture, ses essais partent
+   en carte simple, comme ceux des autres commerces de la démonstration.
+
+   CE QU'IL FAUT À UNE VITRINE, pour qu'on comprenne « mon amie est à
+   l'affiche de cette boutique » avant de remarquer le fantôme : une photo de
+   face, et un vrai support — un cadre, un panneau, un pan de vitre dégagé —
+   dont les quatre coins se posent sur ses lignes (`/admin/humain/scenes`).
+   Le fantôme, s'il y en a un, reste petit, entier, dans un angle. */
+const DECORS_DE_LA_DEMO: Record<string, DecorMesure> = {};
 
 /**
  * LES SALLES MESURÉES : où deux clients fantômes peuvent s'asseoir, et ce qui
@@ -236,7 +223,10 @@ export function sceneDeVitrine(c: CommerceDeScene | undefined): SceneVitrine | n
     rendu: "vitrine",
     decor: d.decor,
     ratio: d.ratio,
-    affiche: { coins: d.coins, cadrage: metier.cadrage, mot: metier.mot },
+    // PLUS DE PHRASE SUR L'AFFICHE : « elle rend l'essai publicitaire et sera
+    // difficilement lisible sur téléphone ». Le champ reste, vide, pour les
+    // scènes déjà figées.
+    affiche: { coins: d.coins, cadrage: metier.cadrage, mot: "" },
     ...(d.calques?.length ? { calques: d.calques } : {}),
     ...(d.devant?.length ? { devant: d.devant } : {}),
   };

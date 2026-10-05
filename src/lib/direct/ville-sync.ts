@@ -25,7 +25,6 @@ type PublicationLue = {
   id: string;
   qui: string;
   moi: boolean;
-  ami: boolean;
   visibilite: "amis" | "public";
   persistant: boolean;
   cree_le: string;
@@ -113,7 +112,6 @@ export function messageDeMaison(
       ...p,
       qui,
       moi: false,
-      ami: false,
       visibilite: p.visibilite === "amis" ? "amis" : "public",
       persistant: false,
       masque: false,
@@ -140,7 +138,7 @@ const qui = () => monPrenom() || "";
 /** Relire le fil et le poser dans le téléphone. */
 export async function relireLaVille(nomVille: string): Promise<void> {
   if (!ville) return;
-  type Reponse = { ok?: boolean; amis?: string[]; publications?: PublicationLue[] };
+  type Reponse = { ok?: boolean; publications?: PublicationLue[] };
   let j: Reponse | null = null;
   try {
     const r = await fetch(`${ROUTE}?ville=${encodeURIComponent(ville)}`, { cache: "no-store" });
@@ -152,10 +150,7 @@ export async function relireLaVille(nomVille: string): Promise<void> {
   // garde ce qu'il a — plutôt qu'un fil vide qui ferait croire à une panne.
   if (!j?.ok || !Array.isArray(j.publications)) return;
   const cachees = new Set(signalees());
-  poserLeFil(
-    j.publications.filter((p) => !cachees.has(p.id)).map((p) => enMessage(p, nomVille)),
-    Array.isArray(j.amis) ? j.amis : [],
-  );
+  poserLeFil(j.publications.filter((p) => !cachees.has(p.id)).map((p) => enMessage(p, nomVille)));
 }
 
 /** Signaler une publication : elle disparaît de mon fil, et l'administrateur la verra. */

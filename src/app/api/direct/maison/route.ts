@@ -6,16 +6,18 @@
 // GET ?jeton=<jeton>            → la maison, essais partagés compris (le lien
 //                                 est l'invitation) ;
 // GET ?publication=<id>         → la maison de l'auteur de cette publication
-//                                 de La ville : ses essais partagés seulement
-//                                 pour ses amis.
-// Dans les deux cas : ses publications de La ville que le visiteur a le droit
-// de voir.
+//                                 de La ville, sans ses essais : ceux-là ne
+//                                 se voient que par le lien qu'il a donné.
+// Dans les deux cas : ses publications publiques de La ville.
+//
+// « ENTRER DANS UNE CONVERSATION NE DEVRAIT PAS DONNER ACCÈS À TOUTES LES
+// PUBLICATIONS PRIVÉES DE SES PARTICIPANTS. » Partager un salon ne fait plus
+// de personne un « ami » : rien ici ne dépend des conversations.
 import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assurerHabitant, habitantCourant } from "@/lib/direct/habitant";
 import { villeSlug } from "@/lib/direct/ville";
-import { amisDe } from "@/lib/direct/amis";
 import { rangerPhoto } from "@/lib/direct/ranger-photo";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +31,7 @@ type Essai = { cle: string; titre: string; lieu: string; photo?: string; carte?:
 const VIE_MAX_MS = 12 * 3600_000;
 
 /** Ses publications de La ville que ce visiteur a le droit de voir. */
-async function publicationsVisibles(supabase: Supabase, auteur: string, visiteur: string | null, ami: boolean) {
+async function publicationsVisibles(supabase: Supabase, auteur: string, visiteur: string | null) {
   try {
     const { data } = await supabase
       .from("human_ville_publications")
@@ -41,7 +43,7 @@ async function publicationsVisibles(supabase: Supabase, auteur: string, visiteur
       .limit(30);
     const moi = visiteur === auteur;
     return ((data ?? []) as Record<string, unknown>[])
-      .filter((p) => moi || (!p.masque && (p.visibilite === "public" || ami)))
+      .filter((p) => moi || (!p.masque && p.visibilite === "public"))
       .map((p) => ({ id: s(p.id), visibilite: s(p.visibilite), cree_le: s(p.cree_le), donnees: p.donnees }));
   } catch {
     return [];
@@ -78,17 +80,16 @@ export async function GET(request: Request) {
     if (!maison) return NextResponse.json({ ok: false, error: "Maison introuvable." }, { status: 404 });
     const auteur = s(maison.habitant);
     const moi = Boolean(visiteur && visiteur.id === auteur);
-    const ami = Boolean(visiteur && (await amisDe(supabase, visiteur.id)).has(auteur));
-    const essais = parLien || ami || moi ? ((Array.isArray(maison.essais) ? maison.essais : []) as Essai[]) : [];
+    const essais = parLien || moi ? ((Array.isArray(maison.essais) ? maison.essais : []) as Essai[]) : [];
     return NextResponse.json({
       ok: true,
       moi,
-      ami,
+      ami: false,
       prenom: s(maison.prenom),
       presentation: s(maison.presentation),
       adoptes: Array.isArray(maison.adoptes) ? (maison.adoptes as unknown[]).map(s).filter(Boolean) : [],
       essais,
-      publications: await publicationsVisibles(supabase, auteur, visiteur?.id ?? null, ami || parLien),
+      publications: await publicationsVisibles(supabase, auteur, visiteur?.id ?? null),
     });
   } catch {
     return NextResponse.json({ ok: false });

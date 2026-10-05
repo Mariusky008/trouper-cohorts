@@ -13,6 +13,11 @@ const MAX_VIDEOS = 6;
 const MAX_LEN = 900_000; // ~0,6 Mo par photo (data URI) — le client compresse avant.
 
 const isPhoto = (v: unknown) => typeof v === "string" && /^data:image\/(jpe?g|png|webp);base64,/.test(v) && v.length <= MAX_LEN;
+// UNE PHOTO DÉJÀ RANGÉE, QUELLE QUE SOIT SA TAILLE. La devanture donnée à
+// l'inscription peut peser jusqu'à 4 Mo (`public-generate`) : filtrée avec la
+// borne d'un AJOUT, elle disparaissait de « Mes photos », puis de la base au
+// premier ajout ou retrait. La borne ne vaut que pour ce qui entre.
+const estRangee = (v: unknown) => typeof v === "string" && /^data:image\/(jpe?g|png|webp);base64,/.test(v);
 // Vidéo = URL YouTube ou fichier mp4/webm/mov en https (jamais de data URI vidéo, trop lourd).
 const isVideo = (v: unknown) =>
   typeof v === "string" &&
@@ -43,7 +48,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   }
 
-  let photos: string[] = Array.isArray(site.gallery_photos) ? (site.gallery_photos as unknown[]).filter(isPhoto).map((x) => x as string) : [];
+  let photos: string[] = Array.isArray(site.gallery_photos) ? (site.gallery_photos as unknown[]).filter(estRangee).map((x) => x as string) : [];
   const metadata = (site.metadata && typeof site.metadata === "object" ? { ...(site.metadata as Record<string, unknown>) } : {}) as Record<string, unknown>;
   let videos: string[] = Array.isArray(metadata.gallery_videos) ? (metadata.gallery_videos as unknown[]).filter(isVideo).map((x) => x as string) : [];
 

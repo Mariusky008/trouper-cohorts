@@ -184,7 +184,7 @@ export function MaMaison({
       ) : (
         commeAmi && (
           <div className="mm-commeami">
-            <span>👀 Tes amis voient ta maison ainsi : sans tes essais privés, tes réservations ni tes conversations.</span>
+            <span>👀 Tes invités voient ta maison ainsi : sans tes essais privés, tes réservations ni tes conversations.</span>
             <button type="button" onClick={() => setCommeAmi(false)}>
               Revenir
             </button>
@@ -339,7 +339,7 @@ export function MaMaison({
                 <b>{e.titre}</b>
                 <em>{e.lieu}</em>
                 <span className={`mm-badge${partage(e.cle) ? " amis" : ""}`}>
-                  {visiteur ? "👥 Partagé" : partage(e.cle) ? "👥 Partagé avec mes amis" : "🔒 Privé"}
+                  {visiteur ? "👥 Partagé" : partage(e.cle) ? "👥 Visible par mes invités" : "🔒 Privé"}
                 </span>
                 {!commeAmi &&
                   (partage(e.cle) ? (
@@ -428,7 +428,7 @@ export function MaMaison({
               {nbFantomes > 0
                 ? `${nbFantomes} fantôme${nbFantomes > 1 ? "s" : ""} habite${nbFantomes > 1 ? "nt" : ""} chez toi. `
                 : "Ta maison est encore vide. "}
-              Tes amis verront tes bonnes adresses, tes découvertes et les essais que tu as choisi de partager — jamais les autres.
+              Ceux à qui tu envoies le lien verront tes bonnes adresses, tes découvertes et les essais que tu as choisi de montrer — jamais les autres.
             </p>
             <button
               type="button"

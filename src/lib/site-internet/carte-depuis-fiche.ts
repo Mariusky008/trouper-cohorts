@@ -36,6 +36,7 @@
 // meilleur argument de vente qu'on puisse lui faire : il voit exactement ce
 // qu'il gagne en s'y mettant.
 import { platEnCours, sceneChefMontree, sceneMontree, type ExperienceResto } from "@/lib/site-internet/experience-donnees";
+import { photosLegendees } from "@/lib/site-internet/photos-du-lieu";
 import { piecesEnCours, type PieceComptoir } from "@/lib/site-internet/pieces-comptoir";
 import { villeSlug } from "@/lib/direct/ville";
 import type { CarteAutour, CleMetier, MomentJour } from "@/lib/direct/apercu-habitant";
@@ -78,6 +79,8 @@ export type FicheCommercant = {
    * mesurée dans l'administration. Voir `scenes-ville.ts`.
    */
   sceneVille?: import("@/lib/direct/scenes-ville").DecorMesure;
+  /** Les photos qu'il a rangées lui-même sous un intitulé — voir `photos-du-lieu.ts`. */
+  photosDuLieu?: import("@/lib/site-internet/photos-du-lieu").PhotosDuLieu;
   /** Ses plats et leurs prix, lus sur les photos de sa carte — voir `carte-lue.ts`. */
   carteLue?: { rubrique?: string; nom: string; prix?: string; detail?: string }[];
   /** Ce que sa fiche Google dit de sa carte : lien du menu, prix par personne, services. */
@@ -321,7 +324,11 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
      * la même faute que le reste de ce dossier refuse — affirmer à sa place.
      * La galerie sait se passer de légende ; voir `bq-gal`.
      */
-    sesPhotos: photos.map((src) => ({ src, quoi: "" })),
+    //
+    // SAUF CELLES QU'IL A RANGÉES LUI-MÊME SOUS UN INTITULÉ (`photos-du-lieu.ts`) :
+    // là, la légende est la sienne — « La devanture », « L'intérieur ». Elles
+    // ouvrent la galerie, les autres suivent sans légende.
+    sesPhotos: [...photosLegendees(f.photosDuLieu ?? {}), ...photos.map((src) => ({ src, quoi: "" }))],
     couverture: f.couverture || undefined,
     couvertureHote: f.couverture ? f.couvertureHote : undefined,
     couvertureSansHote: f.couverture && f.couvertureHote ? f.couvertureSansHote : undefined,
