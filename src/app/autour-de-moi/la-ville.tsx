@@ -547,12 +547,12 @@ function motDuCommerce(branche?: CarteAutour["branche"]): string {
 /* ═══ LE CONTENU PRINCIPAL D'UNE PUBLICATION ═══════════════════════════════
    La scène figée s'il y en a une ; sinon la photo, telle quelle ; sinon le
    mot vocal ; sinon rien — un message texte reste léger. */
-function Contenu({ m, cadre, branche }: { m: MessageVille; cadre?: boolean; branche?: CarteAutour["branche"] }) {
+function Contenu({ m, cadre, branche, onEssayer }: { m: MessageVille; cadre?: boolean; branche?: CarteAutour["branche"]; onEssayer?: () => void }) {
   const miniature = m.commerce?.photo;
   const cadrage = m.scene?.rendu === "vitrine" ? m.scene.affiche.cadrage : cadrageDe(branche);
   const mention = mentionDuCommerce(branche, m.genre === "essai");
   if (m.photo && m.scene) {
-    return <SceneDuFil scene={m.scene} photo={m.photo} repli={{ commerce: m.commerce?.nom, miniature, essai: m.genre === "essai", cadrage, mention }} />;
+    return <SceneDuFil scene={m.scene} photo={m.photo} repli={{ commerce: m.commerce?.nom, miniature, essai: m.genre === "essai", cadrage, mention }} onEssayer={onEssayer} />;
   }
   if (m.photo && m.genre === "essai") return <CarteSimple photo={m.photo} commerce={m.commerce?.nom} miniature={miniature} essai cadrage={cadrage} mention={mention} />;
   if (m.photo) {
@@ -817,7 +817,7 @@ function CartePublication({
 
       {/* UN MESSAGE SANS PHOTO SE LIT D'ABORD : le texte, puis le vocal. */}
       {!media && <p className="lv-texte grand">{m.texte}</p>}
-      <Contenu m={m} branche={branche} />
+      <Contenu m={m} branche={branche} onEssayer={m.reference && !moi ? () => onEssayer(m.reference!) : undefined} />
       {media && m.texte && <p className="lv-texte">{m.texte}</p>}
       {/* UNE FORMULE SE DIT FORMULE : la photo montre un de ses plats, la
           ligne dit tout ce qu'elle comprend — sinon on lirait « magret » sous

@@ -25,6 +25,7 @@
 // SI UNE COUCHE NE SE CHARGE PAS, on ne montre pas une scène à trous : la
 // carte simple prend la place — l'essai, le nom et la photo du commerce.
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import type { Calque, Point, Quad, SceneAmbiance, SceneVille, SceneVitrine } from "@/lib/direct/scenes-ville";
 
 const POSITION: Record<string, string> = {
@@ -142,8 +143,64 @@ function Calques({ calques, devant, decor, ratio }: { calques?: Calque[]; devant
   );
 }
 
-function Vitrine({ s, photo, onErreur }: { s: SceneVitrine; photo: string; onErreur: () => void }) {
+/** Ce que la carte sait du commerce : son nom, et ce qu'il propose. */
+type Repli = { commerce?: string; miniature?: string; essai: boolean; cadrage?: string; mention?: string };
+
+/**
+ * L'ESSAI EN GRAND — « un appui sur l'affiche pour voir l'essai en grand ».
+ * L'image entière, jamais rognée, la mention du commerce dessous, et
+ * « Essayer sur moi » quand l'essai porte une pièce qu'on peut essayer.
+ */
+function Visionneuse({ photo, repli, onEssayer, onFermer }: { photo: string; repli: Repli; onEssayer?: () => void; onFermer: () => void }) {
+  useEffect(() => {
+    const touche = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onFermer();
+    };
+    window.addEventListener("keydown", touche);
+    return () => window.removeEventListener("keydown", touche);
+  }, [onFermer]);
+  // PORTÉE AU NIVEAU DU DOCUMENT : la scène isole ses calques (`isolation`),
+  // et l'en-tête collé du fil passerait sinon par-dessus.
+  return createPortal(
+    <div className="scv-grand" role="dialog" aria-modal="true" aria-label="L’essai en grand" onClick={onFermer}>
+      <button type="button" className="scv-grand-x" aria-label="Fermer" onClick={onFermer}>
+        ✕
+      </button>
+      <figure>
+        <span className="scv-grand-img" onClick={(e) => e.stopPropagation()}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={photo} alt="L’essai, en entier" />
+          <span className="scv-coin gauche haut">✨ Essai virtuel</span>
+        </span>
+      </figure>
+      <div className="scv-grand-pied" onClick={(e) => e.stopPropagation()}>
+        {repli.commerce && (
+          <p>
+            <small>{repli.mention ?? "Proposé par"}</small>
+            <b>{repli.commerce}</b>
+          </p>
+        )}
+        {onEssayer && (
+          <button
+            type="button"
+            className="scv-grand-cta"
+            onClick={() => {
+              onFermer();
+              onEssayer();
+            }}
+          >
+            ✨ Essayer sur moi
+          </button>
+        )}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function Vitrine({ s, photo, repli, onEssayer, onErreur }: { s: SceneVitrine; photo: string; repli: Repli; onEssayer?: () => void; onErreur: () => void }) {
   const [ref, L] = useLargeur<HTMLDivElement>();
+  const [grand, setGrand] = useState(false);
   /** La forme de l'essai, lue au chargement : elle décide comment il remplit l'affiche. */
   const [formeEssai, setFormeEssai] = useState(0);
   const H = L / s.ratio;
@@ -154,17 +211,25 @@ function Vitrine({ s, photo, onErreur }: { s: SceneVitrine; photo: string; onErr
   const h = Math.max(1, (dist(coins[0], coins[3]) + dist(coins[1], coins[2])) / 2);
   const cadrage = s.affiche.cadrage;
   return (
-    <div
-      ref={ref}
-      className="scv scv-vitrine"
-      style={{ aspectRatio: String(s.ratio) }}
-      role="img"
-      aria-label="L'essai, en affiche dans la vitrine du commerce"
-    >
+    <div ref={ref} className="scv scv-vitrine" style={{ aspectRatio: String(s.ratio) }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="scv-decor" src={s.decor} alt="" onError={onErreur} />
       {L > 0 && (
-        <div className="scv-affiche" style={{ width: w, height: h, transform: matrice(w, h, coins) }}>
+        // L'AFFICHE SE TOUCHE : elle ouvre l'essai en grand.
+        <div
+          className="scv-affiche"
+          role="button"
+          tabIndex={0}
+          aria-label="L’essai, en affiche dans la vitrine — voir en grand"
+          style={{ width: w, height: h, transform: matrice(w, h, coins) }}
+          onClick={() => setGrand(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setGrand(true);
+            }
+          }}
+        >
           {/* LA TENUE ENTIÈRE, SANS BANDES FLOUES : un portrait plus large que
               l'affiche remplit sa hauteur et ne perd que des côtés — la tête
               et les pieds restent. Plus étroit qu'elle, il est posé entier sur
@@ -188,10 +253,17 @@ function Vitrine({ s, photo, onErreur }: { s: SceneVitrine; photo: string; onErr
             />
           )}
           <i className="scv-vitre" aria-hidden="true" />
+          <span className="scv-loupe" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7" />
+            </svg>
+          </span>
         </div>
       )}
       <Calques calques={s.calques} devant={s.devant} decor={s.decor} ratio={s.ratio} />
-      <span className="scv-coin gauche">✨ Essai virtuel</span>
+      {/* LA PASTILLE DU CÔTÉ OÙ IL N'Y A PAS DE FANTÔME. */}
+      <span className={`scv-coin${(s.calques ?? []).some((c) => c.x < 0.5) ? "" : " gauche"}`}>✨ Essai virtuel</span>
+      {grand && <Visionneuse photo={photo} repli={repli} onEssayer={onEssayer} onFermer={() => setGrand(false)} />}
     </div>
   );
 }
@@ -215,10 +287,13 @@ export function SceneDuFil({
   scene,
   photo,
   repli,
+  onEssayer,
 }: {
   scene: SceneVille;
   photo: string;
-  repli: { commerce?: string; miniature?: string; essai: boolean; cadrage?: string; mention?: string };
+  repli: Repli;
+  /** « Essayer sur moi », depuis l'essai en grand. */
+  onEssayer?: () => void;
 }) {
   const [cassee, setCassee] = useState(false);
   const casser = () => setCassee(true);
@@ -226,7 +301,11 @@ export function SceneDuFil({
   return (
     <>
       <StylesScene />
-      {scene.rendu === "vitrine" ? <Vitrine s={scene} photo={photo} onErreur={casser} /> : <Ambiance s={scene} onErreur={casser} />}
+      {scene.rendu === "vitrine" ? (
+        <Vitrine s={scene} photo={photo} repli={repli} onEssayer={onEssayer} onErreur={casser} />
+      ) : (
+        <Ambiance s={scene} onErreur={casser} />
+      )}
     </>
   );
 }
@@ -318,6 +397,22 @@ function StylesScene() {
   background:rgba(20,13,9,.74);color:#FFF4E6;font-size:12.5px;font-weight:700;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
 .scv-coin.gauche{right:auto;left:10px;background:#fbdcc8;color:#3a1d10;}
 .scv-coin.haut{bottom:auto;top:12px;}
+.scv-affiche[role="button"]{cursor:zoom-in;}
+.scv-affiche:focus-visible{outline:2px solid #F5A23A;outline-offset:2px;}
+.scv-loupe{position:absolute;right:5%;bottom:4%;z-index:4;display:grid;place-items:center;width:18%;max-width:30px;aspect-ratio:1;border-radius:50%;
+  background:rgba(255,248,238,.88);box-shadow:0 1px 4px rgba(0,0,0,.3);}
+.scv-loupe svg{width:58%;height:58%;fill:none;stroke:#3a1d10;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
+.scv-grand{position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;background:#0c0806;color:#FFF4E6;font-family:var(--font-clikme),system-ui,sans-serif;animation:scvGrand .18s ease both;}
+@keyframes scvGrand{from{opacity:0}to{opacity:1}}
+.scv-grand figure{position:relative;flex:1;min-height:0;margin:56px 16px 0;display:flex;align-items:center;justify-content:center;}
+.scv-grand-img{position:relative;display:inline-block;max-width:100%;}
+.scv-grand-img img{display:block;max-width:100%;max-height:calc(100dvh - 210px);object-fit:contain;border-radius:16px;}
+.scv-grand-x{position:absolute;top:12px;right:12px;width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,244,230,.14);color:#FFF4E6;font-size:18px;cursor:pointer;}
+.scv-grand-pied{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:14px 16px calc(16px + env(safe-area-inset-bottom));color:#FFF4E6;}
+.scv-grand-pied p{flex:1 1 160px;margin:0;display:grid;min-width:0;}
+.scv-grand-pied small{font-family:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;font-weight:500;font-size:12.5px;color:#EADBC8;}
+.scv-grand-pied b{font-size:16px;font-weight:800;overflow-wrap:anywhere;}
+.scv-grand-cta{flex:1 0 auto;height:48px;padding:0 20px;border:0;border-radius:999px;background:linear-gradient(180deg,#F8B451,#E8932A);color:#2A1608;font:inherit;font-size:15.5px;font-weight:800;cursor:pointer;}
 
 .scv-simple{position:relative;width:100%;aspect-ratio:4/5;max-height:480px;overflow:hidden;border-radius:18px;background:#241A15;isolation:isolate;}
 .scv-simple.haute{aspect-ratio:3/4;}

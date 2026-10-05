@@ -1,9 +1,10 @@
 "use client";
 
-// LE POSEUR DE ZONE — quatre coins cliqués sur la photo ClikMe, ajustables au
-// doigt, et l'aperçu de l'affiche telle que le fil la montrera.
+// LE POSEUR DE ZONE — la photo choisie (sa devanture ou sa photo ClikMe),
+// quatre coins cliqués dessus, ajustables au doigt, le petit fantôme dans un
+// angle si on le veut, et l'aperçu de l'affiche telle que le fil la montrera.
 import { useRef, useState } from "react";
-import type { Point, Quad, SceneVitrine } from "@/lib/direct/scenes-ville";
+import { fantomeEnCoin, type Point, type Quad, type SceneVitrine } from "@/lib/direct/scenes-ville";
 import { SceneDuFil } from "@/app/autour-de-moi/scene-ville";
 
 const ESSAI_EXEMPLE: Record<string, string> = {
@@ -18,20 +19,28 @@ export function PoseurDeZone({
   nom,
   ville,
   metier,
-  couverture,
+  photos,
   zone,
+  decor: decorPose,
+  fantome: fantomePose,
   aReposer,
   cadrage,
+  hote,
 }: {
   slug: string;
   nom: string;
   ville: string;
   metier: string;
-  couverture: string;
+  photos: { quoi: string; url: string }[];
   zone?: Quad;
+  decor?: string;
+  fantome?: "gauche" | "droite";
   aReposer: boolean;
   cadrage: string;
+  hote: string;
 }) {
+  const [couverture, setDecor] = useState(decorPose ?? photos[0].url);
+  const [fantome, setFantome] = useState<"" | "gauche" | "droite">(fantomePose ?? "");
   const [coins, setCoins] = useState<Point[]>(zone ?? []);
   // `null` tant que la photo n'a pas dit sa forme : on ne clique pas avant.
   const [ratioLu, setRatio] = useState<number | null>(null);
@@ -54,7 +63,10 @@ export function PoseurDeZone({
       const r = await fetch("/api/admin/direct/scenes", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ slug, zone: avecZone ? { decor: couverture, ratio: +ratio.toFixed(4), coins } : null }),
+        body: JSON.stringify({
+          slug,
+          zone: avecZone ? { decor: couverture, ratio: +ratio.toFixed(4), coins, ...(fantome ? { fantome } : {}) } : null,
+        }),
       });
       setEtat(r.ok ? "ok" : "erreur");
       if (r.ok && !avecZone) setCoins([]);
@@ -65,7 +77,14 @@ export function PoseurDeZone({
 
   const complet = coins.length === 4;
   const apercu: SceneVitrine | null = complet
-    ? { v: 2, rendu: "vitrine", decor: couverture, ratio, affiche: { coins: coins as Quad, cadrage: cadrage as SceneVitrine["affiche"]["cadrage"], mot: "" } }
+    ? {
+        v: 2,
+        rendu: "vitrine",
+        decor: couverture,
+        ratio,
+        affiche: { coins: coins as Quad, cadrage: cadrage as SceneVitrine["affiche"]["cadrage"], mot: "" },
+        ...(fantome ? { calques: [fantomeEnCoin(hote, fantome, ratio)] } : {}),
+      }
     : null;
 
   return (
@@ -78,7 +97,28 @@ export function PoseurDeZone({
           {zone ? "Zone posée" : aReposer ? "Photo changée : zone à reposer" : "Pas de zone"}
         </span>
       </header>
+      {photos.length > 1 && (
+        <div className="flex flex-wrap gap-2 text-sm">
+          {photos.map((p) => (
+            <button
+              key={p.url}
+              type="button"
+              onClick={() => {
+                if (p.url === couverture) return;
+                // UNE AUTRE PHOTO, D'AUTRES COINS : la zone se repose.
+                setDecor(p.url);
+                setCoins([]);
+                setRatio(null);
+              }}
+              className={`rounded-full border px-3 py-1 ${p.url === couverture ? "border-slate-900 bg-slate-900 text-white" : "border-slate-300"}`}
+            >
+              {p.quoi}
+            </button>
+          ))}
+        </div>
+      )}
       <div
+        key={couverture}
         ref={cadre}
         className="relative w-full touch-none select-none overflow-hidden rounded-xl"
         style={{ aspectRatio: String(ratio) }}
@@ -96,7 +136,7 @@ export function PoseurDeZone({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={couverture}
-          alt={`Photo ClikMe de ${nom}`}
+          alt={`Photo de ${nom}`}
           className="absolute inset-0 h-full w-full object-cover"
           draggable={false}
           // LA FORME VRAIE DE LA PHOTO, AVANT TOUT CLIC : sans elle, le cadre
@@ -142,6 +182,14 @@ export function PoseurDeZone({
       <p className="text-sm text-slate-600">
         {complet ? "Fais glisser un coin pour l’ajuster." : `Clique le coin ${ORDRE[coins.length]} (${coins.length + 1}/4).`}
       </p>
+      <label className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
+        Son petit fantôme :
+        <select value={fantome} onChange={(e) => setFantome(e.target.value as "" | "gauche" | "droite")} className="rounded-lg border border-slate-300 px-2 py-1">
+          <option value="">aucun (sa photo ClikMe a souvent déjà le sien)</option>
+          <option value="gauche">dans l’angle gauche</option>
+          <option value="droite">dans l’angle droit</option>
+        </select>
+      </label>
       {apercu && (
         <div className="space-y-1">
           <p className="text-sm font-semibold text-slate-700">Aperçu avec un essai d’exemple :</p>

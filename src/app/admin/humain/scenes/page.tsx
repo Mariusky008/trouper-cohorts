@@ -11,13 +11,19 @@
 // LA ZONE VAUT POUR UNE PHOTO. Si le commerçant change sa photo ClikMe, la
 // zone n'est plus montrée (voir `sceneVilleDuDiagnostic`), et ce tableau la
 // signale « à reposer ».
+//
+// DEUX PHOTOS POSSIBLES : sa photo ClikMe, ou la photo de devanture qu'il a
+// rangée lui-même (inscription ou Espace Pro, `photos-du-lieu.ts`) — souvent
+// la meilleure pour une affiche, prise de face pour ça. Et, au choix, son
+// petit fantôme dans un angle (`DecorMesure.fantome`).
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isCurrentUserAdmin } from "@/lib/admin-guard";
 import { couvertureAffichee, couvertureDuDiagnostic } from "@/lib/site-internet/couverture";
 import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
-import { cadrageDe, lireDecor, type Quad } from "@/lib/direct/scenes-ville";
+import { cadrageDe, fantomeDuMetier, lireDecor, type Quad } from "@/lib/direct/scenes-ville";
+import { lirePhotosDuLieu } from "@/lib/site-internet/photos-du-lieu";
 import { PoseurDeZone } from "./_components/poseur";
 
 export const dynamic = "force-dynamic";
@@ -25,14 +31,28 @@ export const revalidate = 0;
 
 const str = (v: unknown) => (v == null ? "" : String(v)).trim();
 
-type Ligne = { slug: string; nom: string; ville: string; metier: string; couverture: string; zone?: Quad; aReposer: boolean; cadrage: string };
+type Ligne = {
+  slug: string;
+  nom: string;
+  ville: string;
+  metier: string;
+  /** Les photos sur lesquelles on peut poser la zone : sa devanture, sa photo ClikMe. */
+  photos: { quoi: string; url: string }[];
+  /** La zone en place, et la photo sur laquelle elle est posée. */
+  zone?: Quad;
+  decor?: string;
+  fantome?: "gauche" | "droite";
+  aReposer: boolean;
+  cadrage: string;
+  hote: string;
+};
 
 async function lesCommercants(): Promise<Ligne[]> {
   try {
     const supabase = createAdminClient();
     const { data } = await supabase
       .from("human_vitrine_sites")
-      .select("slug, business_name, activite, city, diagnostic")
+      .select("slug, business_name, activite, city, diagnostic, metadata")
       .eq("channel", "letter")
       .eq("est_client", true)
       .order("business_name")
@@ -40,8 +60,14 @@ async function lesCommercants(): Promise<Ligne[]> {
     return ((data ?? []) as Record<string, unknown>[]).flatMap((r) => {
       const diag = (r.diagnostic && typeof r.diagnostic === "object" ? r.diagnostic : {}) as Record<string, unknown>;
       const couverture = couvertureAffichee(couvertureDuDiagnostic(diag));
-      if (!couverture) return [];
+      const devanture = lirePhotosDuLieu(r.metadata).devanture?.url;
+      const photos = [
+        ...(devanture ? [{ quoi: "Sa devanture", url: devanture }] : []),
+        ...(couverture ? [{ quoi: "Sa photo ClikMe", url: couverture }] : []),
+      ];
+      if (!photos.length) return [];
       const d = lireDecor(diag.sceneVille);
+      const valable = Boolean(d && photos.some((p) => p.url === d.decor));
       const metier = str(r.activite);
       return [
         {
@@ -49,10 +75,13 @@ async function lesCommercants(): Promise<Ligne[]> {
           nom: str(r.business_name),
           ville: str(r.city),
           metier,
-          couverture,
-          zone: d && d.decor === couverture ? d.coins : undefined,
-          aReposer: Boolean(d && d.decor !== couverture),
+          photos,
+          zone: valable ? d!.coins : undefined,
+          decor: valable ? d!.decor : undefined,
+          fantome: valable ? d!.fantome : undefined,
+          aReposer: Boolean(d && !valable),
           cadrage: cadrageDe(brancheDuMetier(metier)),
+          hote: fantomeDuMetier(brancheDuMetier(metier)),
         },
       ];
     });
@@ -71,12 +100,13 @@ export default async function ZonesDAffichePage() {
       </Link>
       <h1 className="text-2xl font-black text-slate-900">La ville · zones d’affiche</h1>
       <p className="text-slate-600">
-        Pour chaque commerçant validé qui a sa photo ClikMe : clique les quatre coins de l’endroit où l’essai d’un client doit prendre place —
-        en haut à gauche, en haut à droite, en bas à droite, en bas à gauche — en suivant la perspective de sa vitrine. Ne couvre ni la porte, ni
-        son fantôme. Sans zone, ses essais s’affichent en carte simple.
+        Pour chaque commerçant validé qui a une photo de devanture ou sa photo ClikMe : choisis la photo, puis clique les quatre coins du
+        support réel où l’essai d’un client prend place — un cadre, un panneau, un pan de vitre dégagé —, en haut à gauche, en haut à droite, en
+        bas à droite, en bas à gauche. Ne couvre ni la porte, ni un fantôme déjà présent. L’essai doit se voir avant le fantôme : grand
+        support, petit fantôme dans un angle. Sans zone, ses essais s’affichent en carte simple.
       </p>
       {liste.length === 0 ? (
-        <p className="rounded-xl bg-slate-50 p-4 text-slate-600">Aucun commerçant validé n’a encore sa photo ClikMe.</p>
+        <p className="rounded-xl bg-slate-50 p-4 text-slate-600">Aucun commerçant validé n’a encore de photo de devanture ni de photo ClikMe.</p>
       ) : (
         liste.map((l) => <PoseurDeZone key={l.slug} {...l} />)
       )}

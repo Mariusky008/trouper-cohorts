@@ -35,9 +35,11 @@ import { lireDecor, type DecorMesure } from "@/lib/direct/scenes-ville";
  * vitrine, et on ne la montre plus jusqu'à ce qu'elle soit reposée. « Elle
  * peut être renouvelée lorsque le commerçant change sa photo. »
  */
-function sceneVilleDuDiagnostic(diag: Record<string, unknown>, couverture: string | undefined): DecorMesure | undefined {
+function sceneVilleDuDiagnostic(diag: Record<string, unknown>, couverture: string | undefined, devanture?: string): DecorMesure | undefined {
   const d = lireDecor(diag.sceneVille);
-  return d && couverture && d.decor === couverture ? d : undefined;
+  // LA ZONE VAUT POUR SA PHOTO : sa photo ClikMe, ou la photo de devanture
+  // qu'il a rangée lui-même (`photos-du-lieu.ts`). Photo changée, zone tombée.
+  return d && ((couverture && d.decor === couverture) || (devanture && d.decor === devanture)) ? d : undefined;
 }
 import { nomPropre } from "@/lib/site-internet/nom-propre";
 import { lirePhotosDuLieu } from "@/lib/site-internet/photos-du-lieu";
@@ -237,7 +239,7 @@ export function construireFiche(
     couverture: couvertureAffichee(couvertureDuDiagnostic(diag)),
     couvertureHote: couvertureDuDiagnostic(diag)?.hote,
     couvertureSansHote: photoSansHote(couvertureDuDiagnostic(diag)),
-    sceneVille: sceneVilleDuDiagnostic(diag, couvertureAffichee(couvertureDuDiagnostic(diag))),
+    sceneVille: sceneVilleDuDiagnostic(diag, couvertureAffichee(couvertureDuDiagnostic(diag)), lirePhotosDuLieu(row.metadata).devanture?.url),
     // SES PHOTOS RANGÉES SOUS UN INTITULÉ — voir `photos-du-lieu.ts`.
     photosDuLieu: lirePhotosDuLieu(row.metadata),
     carteLue: carteLueDuDiagnostic(diag),

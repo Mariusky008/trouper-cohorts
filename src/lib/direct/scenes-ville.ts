@@ -77,6 +77,13 @@ export type DecorMesure = {
   coins: Quad;
   calques?: Calque[];
   devant?: Point[][];
+  /**
+   * LE PETIT FANTÔME DU MÉTIER, DANS UN ANGLE DU TROTTOIR — « environ deux
+   * fois plus petit, placé dans un angle et visible en entier ». On voit
+   * d'abord l'essai, ensuite lui. Absent : pas de fantôme (une photo ClikMe
+   * a souvent déjà le sien). Ignoré si `calques` est donné.
+   */
+  fantome?: "gauche" | "droite";
 };
 
 export type SceneVitrine = {
@@ -133,6 +140,14 @@ export function mentionDuCommerce(branche: CleMetier | undefined, essai: boolean
   return (branche && mots[branche]) || "Proposé par";
 }
 
+/** Le petit fantôme posé dans un angle — voir `DecorMesure.fantome`. */
+export function fantomeEnCoin(src: string, cote: "gauche" | "droite", ratio: number): Calque {
+  // UNE HAUTEUR QUI TIENT DANS LA SCÈNE : environ le quart d'une photo en
+  // hauteur, un peu plus sur une photo en largeur, où il paraîtrait minuscule.
+  const h = ratio > 1 ? 0.3 : 0.22;
+  return { src, x: cote === "gauche" ? 0.13 : 0.87, y: 0.985, h, ombre: true, filtre: "brightness(.95) sepia(.14) saturate(1.05)" };
+}
+
 /** Le fantôme du métier, pour une miniature ou un avatar. */
 export function fantomeDuMetier(branche: CleMetier | undefined): string {
   const direct: Partial<Record<CleMetier, string>> = {
@@ -156,7 +171,13 @@ export function fantomeDuMetier(branche: CleMetier | undefined): string {
    l'affiche de cette boutique » avant de remarquer le fantôme : une photo de
    face, et un vrai support — un cadre, un panneau, un pan de vitre dégagé —
    dont les quatre coins se posent sur ses lignes (`/admin/humain/scenes`).
-   Le fantôme, s'il y en a un, reste petit, entier, dans un angle. */
+   Le fantôme, s'il y en a un, reste petit, entier, dans un angle.
+
+   LA PROCHAINE : la photo d'une boutique partenaire de Dax, prise pour ça.
+   Elle se range dans `public/direct/ville/`, puis une ligne ici —
+     "mode-centre": { decor, ratio, coins, fantome: "gauche" }
+   — et l'essai d'Inès redevient une vitrine : grande affiche, petit
+   fantôme, un appui sur l'affiche pour la voir en grand. */
 const DECORS_DE_LA_DEMO: Record<string, DecorMesure> = {};
 
 /**
@@ -227,7 +248,11 @@ export function sceneDeVitrine(c: CommerceDeScene | undefined): SceneVitrine | n
     // difficilement lisible sur téléphone ». Le champ reste, vide, pour les
     // scènes déjà figées.
     affiche: { coins: d.coins, cadrage: metier.cadrage, mot: "" },
-    ...(d.calques?.length ? { calques: d.calques } : {}),
+    ...(d.calques?.length
+      ? { calques: d.calques }
+      : d.fantome
+        ? { calques: [fantomeEnCoin(metier.hote, d.fantome, d.ratio)] }
+        : {}),
     ...(d.devant?.length ? { devant: d.devant } : {}),
   };
 }
@@ -340,7 +365,15 @@ export function lireDecor(v: unknown): DecorMesure | undefined {
   if (!decor || !coins) return undefined;
   const c = calques(d.calques);
   const dv = devants(d.devant);
-  return { decor, ratio: nombre(d.ratio, 0.3, 3, 1.5), coins, ...(c.length ? { calques: c } : {}), ...(dv.length ? { devant: dv } : {}) };
+  const fantome = d.fantome === "gauche" || d.fantome === "droite" ? d.fantome : undefined;
+  return {
+    decor,
+    ratio: nombre(d.ratio, 0.3, 3, 1.5),
+    coins,
+    ...(c.length ? { calques: c } : {}),
+    ...(dv.length ? { devant: dv } : {}),
+    ...(fantome ? { fantome } : {}),
+  };
 }
 
 /**
