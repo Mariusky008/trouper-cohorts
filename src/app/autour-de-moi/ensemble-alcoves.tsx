@@ -18,7 +18,7 @@
 // dernier message, et la place libre « Ta place ? » est une invitation à
 // s'asseoir, pas une capacité.
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Alcove, imageAssis, type AlcoveData } from "./alcove";
+import { Alcove, IMAGES_DU_DECOR, imageAssis, type AlcoveData } from "./alcove";
 import { abonnerInstallation, installationAJouer, installationJouee } from "./prendre-place";
 import { abonnerLook, monLook } from "@/lib/direct/look";
 
@@ -33,7 +33,7 @@ let accueilPasse = false;
 let sourceGardee: "publics" | "miens" | null = null;
 let sceneGardee: string | null = null;
 
-const FOND = "/direct/ensemble/fond-salon.webp";
+const FOND = "/direct/ensemble/scene-canape-vert.webp";
 const reduit = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 const pluriel = (n: number, mot: string) => `${n} ${mot}${n > 1 ? "s" : ""}`;
 
@@ -69,6 +69,14 @@ export function EnsembleAlcoves({
   onInviter: (a: AlcoveData) => void;
   onIdee: () => void;
 }) {
+  // LA PIÈCE SE CHARGE DÈS L'ARRIVÉE (et pendant l'accueil) : la scène ne
+  // s'ouvre jamais sur un fond vide.
+  useEffect(() => {
+    for (const u of [...IMAGES_DU_DECOR, monLook().image]) {
+      const i = new Image();
+      i.src = u;
+    }
+  }, []);
   const [accueil, setAccueil] = useState(() => !accueilPasse && miens.length === 0 && invitations.length === 0);
   const [source, setSource] = useState<"publics" | "miens">(() => sourceGardee ?? (publics.length || !miens.length ? "publics" : "miens"));
   const [scene, setScene] = useState<string | null>(sceneGardee);
@@ -165,12 +173,55 @@ export function EnsembleAlcoves({
 
 /* ═══ L'ACCUEIL (image 1) ═══════════════════════════════════════════════ */
 
+/**
+ * LA SALLE D'ACCUEIL, dans les coordonnées de son image (941 × 1672) : le
+ * tabouret est au sol vers (680, 1352). Le fantôme apporte son propre
+ * tabouret ; on le pose exactement sur celui de la salle, un peu plus large
+ * pour le couvrir.
+ */
+const ACCUEIL = {
+  salle: "/direct/ensemble/accueil-salle.webp",
+  fantome: "/direct/ensemble/flaneur-tabouret.webp",
+  l: 941,
+  h: 1672,
+  tabouret: { x: 680, sol: 1352 },
+  /** Largeur de l'image du fantôme (882 × 1100) dans la salle, et le centre de son tabouret. */
+  largeur: 470,
+  r: 882 / 1100,
+  centre: 0.445,
+};
+
 function Accueil({ onDecouvrir }: { onDecouvrir: () => void }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [t, setT] = useState({ W: 0, H: 0 });
+  useEffect(() => {
+    const e = ref.current;
+    if (!e) return;
+    const ro = new ResizeObserver(() => setT({ W: e.clientWidth, H: e.clientHeight }));
+    ro.observe(e);
+    return () => ro.disconnect();
+  }, []);
+  const s = Math.max(t.W / ACCUEIL.l, t.H / ACCUEIL.h);
+  const ox = (ACCUEIL.l * s - t.W) / 2;
+  const lf = ACCUEIL.largeur * s;
+  const hf = lf / ACCUEIL.r;
   return (
-    <div className="ea ea-accueil">
+    <div className="ea ea-accueil" ref={ref}>
       <StylesEnsembleAlcoves />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="ea-fond" src={FOND} alt="" aria-hidden="true" />
+      {t.W > 0 && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="ea-calque" src={ACCUEIL.salle} alt="" aria-hidden="true" style={{ left: -ox, top: 0, width: ACCUEIL.l * s, height: ACCUEIL.h * s }} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className="ea-accueil-fantome"
+            src={ACCUEIL.fantome}
+            alt=""
+            aria-hidden="true"
+            style={{ left: ACCUEIL.tabouret.x * s - ox - lf * ACCUEIL.centre, top: ACCUEIL.tabouret.sol * s - hf, width: lf, height: hf }}
+          />
+        </>
+      )}
       <i className="ea-voile-accueil" aria-hidden="true" />
       <div className="ea-accueil-haut">
         <p className="ea-logo">
@@ -187,10 +238,7 @@ function Accueil({ onDecouvrir }: { onDecouvrir: () => void }) {
           Partage un essai, un resto ou une sortie depuis Le Direct. Retrouve ici vos discussions, en privé ou en public.
         </p>
       </div>
-      {/* LE FANTÔME QUI ACCUEILLE — en attendant celui du tabouret (images-a-preparer.md). */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="ea-accueil-fantome" src="/direct/fantomes/client-verre.png" alt="" aria-hidden="true" />
-      <button type="button" className="ea-cta ea-accueil-cta" onClick={onDecouvrir}>
+      <button type="button" className="ea-cta ea-accueil-cta" data-garde-bulle onClick={onDecouvrir}>
         Découvrir les discussions <s aria-hidden="true">→</s>
       </button>
     </div>
@@ -353,7 +401,7 @@ function BasDeScene({ a, onVoir, onInviter }: { a: AlcoveData; onVoir: () => voi
           Inviter quelqu’un
         </button>
       )}
-      <button type="button" className="ea-cta" onClick={onVoir}>
+      <button type="button" className="ea-cta" data-garde-bulle onClick={onVoir}>
         {a.membre ? "Entrer dans la discussion" : "Voir la discussion"} <s aria-hidden="true">→</s>
       </button>
     </div>
@@ -385,7 +433,7 @@ function Vide({
             {source === "publics" ? "Voir mes salons" : "Voir les salons publics"}
           </button>
         )}
-        <button type="button" className="ea-cta" onClick={onIdee}>
+        <button type="button" className="ea-cta" data-garde-bulle onClick={onIdee}>
           Trouver une idée à partager <s aria-hidden="true">→</s>
         </button>
       </div>
@@ -613,7 +661,7 @@ function StylesEnsembleAlcoves() {
         __html: `
 .ea{position:absolute;inset:0;overflow:hidden;background:#24150b;color:#FFF6EA;font-family:var(--font-clikme),system-ui,sans-serif;-webkit-tap-highlight-color:transparent;
   --leger:var(--font-clikme-leger),var(--font-clikme),system-ui,sans-serif;}
-.ea-fond{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 0;max-width:none;}
+.ea-fond{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;max-width:none;}
 .ea svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
 .ea svg.plein{fill:currentColor;stroke:none;}
 .ea-cta{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:46px;border:0;border-radius:999px;cursor:pointer;
@@ -631,11 +679,11 @@ function StylesEnsembleAlcoves() {
 .ea-bienvenue{margin:4px 0 0;text-align:center;font-family:var(--leger);font-weight:400;font-size:14.5px;color:#EEDDC8;}
 .ea-accueil h1{margin:44px 0 0;font-size:clamp(26px,8.6vw,38px);line-height:1.08;font-weight:600;letter-spacing:-.02em;text-shadow:0 2px 16px rgba(0,0,0,.4);}
 .ea-accueil-texte{margin:16px 0 0;max-width:21em;font-family:var(--leger);font-weight:400;font-size:16px;line-height:1.42;color:#F7EADA;text-shadow:0 1px 10px rgba(0,0,0,.45);}
-.ea-accueil-fantome{position:absolute;z-index:1;right:4%;bottom:calc(124px + 6%);width:min(62%,300px);height:auto;max-width:none;
-  filter:drop-shadow(0 18px 18px rgba(0,0,0,.45));pointer-events:none;}
+.ea-calque{position:absolute;max-width:none;pointer-events:none;user-select:none;}
+.ea-accueil-fantome{position:absolute;z-index:1;max-width:none;pointer-events:none;filter:brightness(.95) sepia(.06) drop-shadow(0 14px 16px rgba(24,10,2,.45));}
 .ea-accueil-cta{position:absolute;z-index:2;left:42px;right:42px;bottom:62px;width:auto;height:50px;font-size:17px;}
 @media (max-width:360px){.ea-accueil-cta{left:18px;right:18px;font-size:16px;}}
-@media (max-height:640px){.ea-accueil h1{margin-top:22px;}.ea-accueil-texte{font-size:14px;}.ea-accueil-fantome{width:min(46%,220px);bottom:76px;}}
+@media (max-height:640px){.ea-accueil h1{margin-top:22px;}.ea-accueil-texte{font-size:14px;}}
 
 .ea-piste{position:absolute;inset:0;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;outline:none;}
 .ea-piste::-webkit-scrollbar{display:none;}
@@ -732,7 +780,7 @@ function StylesEnsembleAlcoves() {
   border:1px solid rgba(246,190,110,.18);background:rgba(255,236,210,.04);color:#FFF4E6;font:inherit;}
 .ea-invitation{cursor:default;}
 .ea-vignette{position:relative;flex:none;width:80px;height:60px;border-radius:11px;overflow:hidden;background:#3a2414;box-shadow:0 2px 8px rgba(0,0,0,.3);}
-.ea-vignette-fond{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:30% 62%;max-width:none;}
+.ea-vignette-fond{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 47%;max-width:none;}
 .ea-vignette-f{position:absolute;bottom:-4px;width:36px;height:auto;max-width:none;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4));}
 .ea-vignette-f.f0{left:8px;}
 .ea-vignette-f.f1{right:8px;transform:scaleX(-1);}

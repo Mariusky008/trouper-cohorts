@@ -2,17 +2,21 @@
 
 // 🛋️ UNE ALCÔVE — la scène plein écran d'un salon d'Ensemble.
 //
-// « Les meubles ne changent plus de taille. » Chaque salon a son coin fixe :
-// le décor, la banquette, les fantômes assis, la table et ce qui y a
-// réellement été partagé. Les textes, boutons et nombres sont posés par-dessus
-// en vrais éléments ; rien de tout cela n'est dans l'image.
+// « Je suis assis dans cette pièce avec ces personnes. » Une vraie pièce,
+// préparée sans fantômes (le salon au canapé vert), et des calques posés
+// dans ses propres coordonnées :
 //
-// DÉCOR PROVISOIRE : en attendant le module de validation (le décor « canapé
-// vert » en deux calques, et Le Flâneur dans ses quatre poses — voir
-// docs/ensemble/images-a-preparer.md), c'est le salon déjà validé : le décor,
-// la banquette de cuir et la table ronde.
+//   1. la pièce entière (`fond`) ;
+//   2. les fantômes, assis sur le canapé, leur bas posé derrière la table ;
+//   3. la table elle-même (`devant`), découpée dans la même image et
+//      superposable au pixel : c'est elle qui passe devant le bas des fantômes ;
+//   4. ce qui a réellement été partagé, posé sur le plateau.
+//
+// Les textes, boutons et nombres sont de vrais éléments par-dessus ; rien de
+// tout cela n'est dans l'image. Trois places : deux habitants et une place
+// libre devant un salon que je découvre (comme la maquette), moi et deux
+// autres dans les miens, puis « +N ».
 import { useEffect, useRef, useState } from "react";
-import { Groupe, StylesGrandSalon, assise, compositionDe, type Siege } from "./grand-salon";
 import { lookDe, lookParDefautDe, monLook } from "@/lib/direct/look";
 
 /** Une personne assise : sa clé (une empreinte, pas son prénom), son prénom, son look. */
@@ -42,15 +46,41 @@ export type AlcoveData = {
   contenu: string[];
 };
 
-const FOND = "/direct/ensemble/fond-salon.webp";
-const ECHELLE = 1.4;
-const ANCRE = 0.68;
+/**
+ * LE DÉCOR, DANS LES COORDONNÉES DE SON IMAGE (941 × 1672). Les places sont
+ * relevées sur la photo : le milieu des coussins, l'assise, le bord arrière
+ * du plateau. `cadre` dit ce qui doit tenir dans la largeur de l'écran (le
+ * canapé) et où poser l'assise en hauteur.
+ */
+export const DECOR = {
+  fond: "/direct/ensemble/scene-canape-vert.webp",
+  devant: "/direct/ensemble/scene-canape-vert-devant.webp",
+  /** Le calque de devant commence à cette hauteur de l'image. */
+  devantY: 700,
+  l: 941,
+  h: 1672,
+  cadre: { x0: 205, x1: 735, assise: 790, part: 0.47 },
+  /** Le milieu de chaque place, de gauche à droite. */
+  places: [300, 470, 640],
+  /** Le bas des fantômes : juste sous le bord arrière du plateau (≈ 840). */
+  bas: 872,
+  /** La hauteur d'un fantôme assis. */
+  hauteur: 205,
+  /** Le creux du coussin, pour la place libre. */
+  coussin: 772,
+  /** Le centre de la zone libre du plateau, et la largeur d'une photo posée. */
+  plateau: { x: 470, y: 922, l: 150 },
+} as const;
+
 const reduit = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 /** L'image d'un fantôme assis pour une personne. */
+/** Les images d'une scène, à charger avant qu'elle n'apparaisse. */
+export const IMAGES_DU_DECOR = [DECOR.fond, DECOR.devant];
+
 export function imageAssis(a: Assis | "moi", salon: string) {
   const l = a === "moi" ? monLook() : a.look ? lookDe(a.look) : lookParDefautDe(`${salon}:${a.cle}`);
-  return { src: l.image, r: l.r };
+  return { src: l.image, r: l.r, frontal: Boolean(l.frontal) };
 }
 
 /**
@@ -70,6 +100,22 @@ export function placement(a: AlcoveData, nbPlaces: number, moiAssis: boolean) {
   }
   const visibles = places.filter((x) => x && x.qui !== "libre").length;
   return { places, enPlus: Math.max(0, a.nb - visibles) };
+}
+
+/**
+ * LE CADRAGE : le canapé remplit la largeur, l'assise tombe vers la moitié de
+ * la hauteur ; l'image couvre toujours tout l'écran.
+ */
+export function cadrage(W: number, H: number) {
+  const { l, h, cadre } = DECOR;
+  let s = W / (cadre.x1 - cadre.x0);
+  if (h * s < H) s = H / h;
+  if (l * s < W) s = W / l;
+  const ox = Math.min(Math.max(((cadre.x0 + cadre.x1) / 2) * s - W / 2, 0), l * s - W);
+  // Petit écran : la scène remonte un peu, pour laisser la table au-dessus du titre.
+  const part = H < 600 ? cadre.part - 0.05 : cadre.part;
+  const oy = Math.min(Math.max(cadre.assise * s - part * H, 0), h * s - H);
+  return { s, ox, oy, x: (v: number) => v * s - ox, y: (v: number) => v * s - oy };
 }
 
 /**
@@ -100,74 +146,112 @@ export function Alcove({
   }, []);
   const { W, H } = taille;
   const decor = a.scene ?? a.cle;
-  const c = compositionDe(decor);
   const moiAssis = a.membre || installe;
-  const { places, enPlus } = placement(a, c.places.length, moiAssis);
+  const { places, enPlus } = placement(a, DECOR.places.length, moiAssis);
+  const c = cadrage(W || 1, H || 1);
+  const hf = DECOR.hauteur * c.s;
+  const haut = c.y(DECOR.bas) - hf;
   const derniere = places.reduce((k, p, i) => (p && p.qui !== "libre" ? i : k), -1);
-  // LA BANQUETTE PREND TOUTE LA LARGEUR, et déborde un peu : on est à sa table.
-  // On est à la table, comme sur la maquette : les fantômes au centre de
-  // l'écran, la table qui s'avance jusque sous le titre.
-  const e = W > 0 ? Math.min((W * ECHELLE) / 470, (H * 0.4) / 250) : 1;
-  const ax = W / 2;
-  const ay = H * ANCRE;
-  const sieges: (Siege | null)[] = places.map((p) => {
-    if (!p || p.qui === "libre") return null;
-    if (p.qui === "moi") return { ...imageAssis("moi", decor), classe: installe && !calme ? "al-arrive" : undefined };
-    return imageAssis(p.qui, decor);
-  });
-  const ecran = (k: number) => {
-    const s = assise(c, c.places[k]);
-    return { x: ax + s.x * e, haut: ay + (s.bas - s.h) * e, bas: ay + s.bas * e, h: s.h * e };
-  };
+  const image = { left: -c.ox, top: -c.oy, width: DECOR.l * c.s, height: DECOR.h * c.s };
   return (
     <div className={`al${actif ? " actif" : ""}${calme ? " calme" : ""}`} ref={ref}>
-      <StylesGrandSalon />
       <StylesAlcove />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="al-fond" src={FOND} alt="" aria-hidden="true" />
-      <i className="al-lumiere" aria-hidden="true" />
       {W > 0 && (
-        <Groupe
-          s={{ cle: decor, participants: [], contenu: a.invitation ? [] : a.contenu }}
-          ax={ax}
-          ay={ay}
-          e={e}
-          z={2}
-          sieges={sieges}
-        />
-      )}
-      {W > 0 &&
-        places.map((p, k) => {
-          if (!p) return null;
-          const s = ecran(k);
-          if (p.qui === "libre")
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="al-calque" src={DECOR.fond} alt="" aria-hidden="true" style={image} />
+          <i className="al-lumiere" aria-hidden="true" />
+          {places.map((p, k) => {
+            if (!p) return null;
+            const x = c.x(DECOR.places[k]);
+            if (p.qui === "libre")
+              return (
+                // LA PLACE LIBRE : le coussin vide, à peine éclairé — pas un cadre.
+                <i
+                  key={k}
+                  className="al-coussin"
+                  aria-hidden="true"
+                  style={{ left: x, top: c.y(DECOR.coussin), width: 150 * c.s, height: 80 * c.s }}
+                />
+              );
+            const img = p.qui === "moi" ? imageAssis("moi", decor) : imageAssis(p.qui, decor);
+            const miroir = !img.frontal && k === places.length - 1;
+            const arrive = p.qui === "moi" && installe && !calme;
             return (
-              // LA PLACE LIBRE : une invitation à s'asseoir, pas une capacité.
-              <button
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
                 key={k}
-                type="button"
-                className="al-libre"
-                style={{ left: s.x - s.h * 0.36, top: s.haut + s.h * 0.08, width: s.h * 0.72, height: s.h * 0.86 }}
-                onClick={onPlaceLibre}
-                aria-label="Ta place ? Prendre une place dans ce salon"
-              >
-                <span>Ta place ?</span>
-              </button>
+                className={`al-fantome${arrive ? " al-arrive" : ""}`}
+                src={img.src}
+                alt=""
+                aria-hidden="true"
+                style={{
+                  left: x - (hf * img.r) / 2,
+                  top: haut,
+                  width: hf * img.r,
+                  height: hf,
+                  zIndex: k === 1 ? 3 : 2,
+                  ...(miroir ? { scale: "-1 1" } : {}),
+                }}
+              />
             );
-          if (p.qui === "moi")
-            return (
-              <span key={k} className={`al-toi${installe && !calme ? " al-arrive-mot" : ""}`} style={{ left: s.x, top: s.haut - 4 }}>
-                Toi
-              </span>
-            );
-          return null;
-        })}
-      {/* LES AUTRES MEMBRES, comptés : « +N », jamais de fantômes inventés pour eux.
-          Pas devant un salon que je découvre : sa place libre parle seule. */}
-      {W > 0 && moiAssis && enPlus > 0 && derniere >= 0 && (
-        <span className="al-plus" style={{ left: ecran(derniere).x + ecran(derniere).h * 0.34, top: ecran(derniere).haut + ecran(derniere).h * 0.1 }}>
-          +{enPlus}
-        </span>
+          })}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className="al-calque al-devant"
+            src={DECOR.devant}
+            alt=""
+            aria-hidden="true"
+            style={{ ...image, top: c.y(DECOR.devantY), height: (DECOR.h - DECOR.devantY) * c.s }}
+          />
+          {!a.invitation && a.contenu.length > 0 && (
+            <div className="al-plateau" style={{ left: c.x(DECOR.plateau.x), top: c.y(DECOR.plateau.y) }} aria-hidden="true">
+              {a.contenu.slice(0, 2).map((u, i, t) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={u}
+                  src={u}
+                  alt=""
+                  style={{
+                    width: DECOR.plateau.l * c.s * (t.length > 1 ? 0.8 : 1),
+                    transform: `translate(-50%, -50%) translateX(${(i - (t.length - 1) / 2) * DECOR.plateau.l * 0.85 * c.s}px) rotate(${i ? 5 : -4}deg)`,
+                  }}
+                />
+              ))}
+            </div>
+          )}
+          {places.map((p, k) => {
+            if (!p) return null;
+            const x = c.x(DECOR.places[k]);
+            if (p.qui === "libre")
+              return (
+                <button
+                  key={k}
+                  type="button"
+                  className="al-libre"
+                  style={{ left: x - 80 * c.s, top: c.y(DECOR.coussin - 95), width: 160 * c.s, height: 150 * c.s }}
+                  onClick={onPlaceLibre}
+                  aria-label="Ta place ? Prendre une place dans ce salon"
+                >
+                  <span>Ta place ?</span>
+                </button>
+              );
+            if (p.qui === "moi")
+              return (
+                <span key={k} className={`al-toi${installe && !calme ? " al-arrive-mot" : ""}`} style={{ left: x, top: haut - 2 }}>
+                  Toi
+                </span>
+              );
+            return null;
+          })}
+          {/* LES AUTRES MEMBRES, comptés : « +N », jamais de fantômes inventés pour eux.
+              Pas devant un salon que je découvre : sa place libre parle seule. */}
+          {moiAssis && enPlus > 0 && derniere >= 0 && (
+            <span className="al-plus" style={{ left: Math.min(c.x(DECOR.places[derniere]) + hf * 0.3, W - 44), top: haut + hf * 0.04 }}>
+              +{enPlus}
+            </span>
+          )}
+        </>
       )}
     </div>
   );
@@ -179,28 +263,33 @@ function StylesAlcove() {
       dangerouslySetInnerHTML={{
         __html: `
 .al{position:absolute;inset:0;overflow:hidden;background:#1d120b;}
-.al-fond{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 0;max-width:none;}
-.al-lumiere{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 30% 40%,rgba(255,190,110,.18),rgba(255,190,110,0) 60%);opacity:0;transition:opacity .6s ease;}
+.al-calque{position:absolute;max-width:none;pointer-events:none;user-select:none;}
+.al-devant{z-index:4;object-fit:cover;object-position:50% 100%;}
+.al-lumiere{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at 50% 46%,rgba(255,190,110,.16),rgba(255,190,110,0) 58%);opacity:0;transition:opacity .6s ease;}
 .al.actif .al-lumiere{opacity:1;}
 .al.calme .al-lumiere{transition:none;}
-.al .gs-groupe{position:absolute;}
-.al-libre{position:absolute;z-index:3;display:grid;place-items:end center;padding:0 0 8%;border:1.5px dashed rgba(255,214,150,.6);border-radius:48% 48% 22% 22%;
-  background:radial-gradient(ellipse at 50% 72%,rgba(255,196,110,.3),rgba(255,196,110,.08) 62%,rgba(255,196,110,0) 80%);cursor:pointer;font:inherit;color:#FFE9C7;
-  box-shadow:0 0 22px rgba(255,190,100,.18);}
-.al-libre span{padding:4px 11px;border-radius:999px;background:rgba(36,21,11,.78);border:1px solid rgba(246,190,110,.45);font-size:12.5px;font-weight:600;white-space:nowrap;box-shadow:0 3px 8px rgba(0,0,0,.35);}
-.al-toi{position:absolute;z-index:3;transform:translate(-50%,-100%);padding:2px 9px;border-radius:999px;background:#F5B544;color:#2A1608;font-size:12px;font-weight:600;
+.al-fantome{position:absolute;max-width:none;pointer-events:none;object-fit:contain;object-position:50% 100%;
+  filter:brightness(.93) sepia(.08) drop-shadow(0 10px 12px rgba(24,10,2,.45));}
+.al-coussin{position:absolute;z-index:2;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
+  background:radial-gradient(ellipse,rgba(255,206,130,.26) 0%,rgba(255,190,110,.1) 48%,rgba(255,190,110,0) 72%);}
+.al.actif .al-coussin{animation:al-respire 3.6s ease-in-out infinite;}
+@keyframes al-respire{0%,100%{opacity:.75;}50%{opacity:1;}}
+.al-plateau{position:absolute;z-index:5;width:0;height:0;pointer-events:none;transform:perspective(420px) rotateX(50deg);}
+.al-plateau img{position:absolute;left:0;top:0;max-width:none;aspect-ratio:4/3;object-fit:cover;border:3px solid #FBF4E8;border-radius:3px;
+  box-shadow:0 6px 10px rgba(20,8,0,.45);}
+.al-libre{position:absolute;z-index:6;display:grid;place-items:center;padding:0;border:0;background:none;cursor:pointer;font:inherit;color:#FFE9C7;}
+.al-libre span{padding:5px 12px;border-radius:999px;background:rgba(36,21,11,.72);border:1px solid rgba(246,190,110,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  font-size:12.5px;font-weight:600;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.35),0 0 14px rgba(246,181,75,.18);}
+.al-libre:focus-visible span{outline:2px solid #F6B54B;outline-offset:2px;}
+.al-toi{position:absolute;z-index:6;transform:translate(-50%,-100%);padding:2px 10px;border-radius:999px;background:#F6B54B;color:#2A1608;font-size:12px;font-weight:600;
   box-shadow:0 3px 8px rgba(0,0,0,.35);pointer-events:none;}
-.al-plus{position:absolute;z-index:3;padding:3px 9px;border-radius:999px;background:rgba(28,17,10,.82);border:1px solid rgba(255,230,200,.35);
+.al-plus{position:absolute;z-index:6;padding:3px 9px;border-radius:999px;background:rgba(36,21,11,.78);border:1px solid rgba(246,190,110,.4);
   color:#FFF4E6;font-size:12.5px;font-weight:600;pointer-events:none;box-shadow:0 3px 8px rgba(0,0,0,.35);}
-@keyframes al-arrive{0%{opacity:0;transform:translateY(-22px) scale(.96);}55%{opacity:1;transform:translateY(3px) scale(1);}100%{opacity:1;transform:translateY(0) scale(1);}}
-@keyframes al-arrive-miroir{0%{opacity:0;transform:scaleX(-1) translateY(-22px) scale(.96);}55%{opacity:1;transform:scaleX(-1) translateY(3px) scale(1);}100%{opacity:1;transform:scaleX(-1) translateY(0) scale(1);}}
-@keyframes al-ombre{0%{opacity:0;transform:scaleX(.5);}100%{opacity:1;transform:scaleX(1);}}
+@keyframes al-arrive{0%{opacity:0;translate:0 -22px;}55%{opacity:1;translate:0 3px;}100%{opacity:1;translate:0 0;}}
 @keyframes al-mot{0%,45%{opacity:0;transform:translate(-50%,-80%);}100%{opacity:1;transform:translate(-50%,-100%);}}
 .al-arrive{animation:al-arrive .8s cubic-bezier(.2,.8,.3,1) both;}
-.al-arrive.miroir{animation-name:al-arrive-miroir;}
-.al-arrive-ombre{animation:al-ombre .8s ease-out both;}
 .al-arrive-mot{animation:al-mot .9s ease-out both;}
-@media (prefers-reduced-motion: reduce){.al-arrive,.al-arrive-ombre,.al-arrive-mot{animation:none;}}
+@media (prefers-reduced-motion: reduce){.al-arrive,.al-arrive-mot,.al.actif .al-coussin{animation:none;}}
 `,
       }}
     />

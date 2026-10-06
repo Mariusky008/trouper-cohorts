@@ -209,7 +209,7 @@ function Apercu({ id }: { id: string }) {
       <i className="pp-sol" />
       <i className="pp-etincelles" />
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img key={l.id} src={l.image} alt="" style={{ aspectRatio: String(l.r) }} />
+      <img key={l.id} src={l.debout ?? l.image} alt="" />
     </div>
   );
 }
@@ -309,7 +309,7 @@ function Choix({
               >
                 <span className="pp-rond">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={x.image} alt="" />
+                  <img src={x.debout ?? x.image} alt="" />
                   {x.id === choisi && (
                     <i className="pp-coche" aria-hidden="true">
                       <svg viewBox="0 0 24 24">
@@ -380,7 +380,7 @@ function Confirmation({
         </button>
         <div className="pp-carte">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={cible.vignette ?? "/direct/ensemble/fond-salon.webp"} alt="" aria-hidden="true" />
+          <img src={cible.vignette ?? "/direct/ensemble/scene-canape-vert.webp"} alt="" aria-hidden="true" />
           <div>
             <b>{cible.titre}</b>
             <span className="pp-statut">
@@ -503,7 +503,7 @@ function StylesPlace() {
 .pp-info{display:flex;align-items:center;gap:8px;margin:0;font-family:var(--leger);font-weight:400;font-size:13.5px;color:#DCC6A8;}
 .pp-info i{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;border:1.2px solid currentColor;font-family:var(--font-clikme),system-ui,sans-serif;font-style:normal;font-size:11px;font-weight:600;}
 .pp-carte{display:flex;gap:14px;align-items:center;margin:14px 0 0;padding:10px;border-radius:20px;border:1px solid rgba(246,190,110,.35);background:rgba(36,21,11,.35);text-align:left;}
-.pp-carte img{flex:none;width:36%;aspect-ratio:1.45;object-fit:cover;object-position:50% 35%;border-radius:12px;max-width:none;}
+.pp-carte img{flex:none;width:36%;aspect-ratio:1.45;object-fit:cover;object-position:50% 47%;border-radius:12px;max-width:none;}
 .pp-carte > div{min-width:0;}
 .pp-carte b{display:block;font-size:17px;font-weight:600;line-height:1.28;}
 .pp-statut{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;margin-top:8px;padding:5px 12px;border-radius:999px;border:1px solid rgba(246,190,110,.35);font-family:var(--leger);font-weight:400;font-size:14px;color:#ECD9C3;}
@@ -512,8 +512,8 @@ function StylesPlace() {
 .pp-annonce{position:absolute;left:50%;top:calc(var(--ap-encoche,0px) + 16px);z-index:1300;display:flex;align-items:center;gap:8px;transform:translateX(-50%);padding:8px 16px;
   border-radius:999px;background:#FFF4E6;color:#2A1608;font-family:var(--font-clikme),system-ui,sans-serif;font-size:14.5px;font-weight:600;white-space:nowrap;
   box-shadow:0 8px 20px rgba(0,0,0,.35);animation:pp-annonce 2.6s ease both;pointer-events:none;}
-.pp-annonce.alcove{top:calc(178px + env(safe-area-inset-top,0px));}
-@media (max-height:640px){.pp-annonce.alcove{top:calc(146px + env(safe-area-inset-top,0px));}}
+.pp-annonce.alcove{top:calc(124px + env(safe-area-inset-top,0px));padding:6px 14px;font-size:13.5px;}
+@media (max-height:640px){.pp-annonce.alcove{top:calc(98px + env(safe-area-inset-top,0px));}}
 .pp-annonce-f{width:34px;height:auto;max-width:none;animation:pp-pose .8s cubic-bezier(.2,.8,.3,1) both;}
 @keyframes pp-annonce{0%{opacity:0;transform:translate(-50%,-8px);}10%,85%{opacity:1;transform:translate(-50%,0);}100%{opacity:0;}}
 @keyframes pp-pose{0%{opacity:0;transform:translateY(-14px);}60%{opacity:1;transform:translateY(2px);}100%{transform:none;}}

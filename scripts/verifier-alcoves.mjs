@@ -77,7 +77,14 @@ await ctx.addInitScript(() => {
 const p = await ctx.newPage();
 p.on("pageerror", (e) => console.log("ERREUR", String(e).slice(0, 300)));
 const nom = (n) => `${D}/${W}x${H}${CALME ? "-calme" : ""}-${n}.png`;
-const capture = async (n) => D && (await p.screenshot({ path: nom(n) }));
+// On capture ce que l'écran montre une fois ses images chargées.
+const chargees = () =>
+  p.waitForFunction(() => [...document.querySelectorAll("img")].filter((i) => i.getBoundingClientRect().width > 0).every((i) => i.complete), null, { timeout: 15000 }).catch(() => {});
+const capture = async (n) => {
+  if (!D) return;
+  await chargees();
+  await p.screenshot({ path: nom(n) });
+};
 const texte = (sel) => p.locator(sel).first().innerText().catch(() => "");
 const compte = (sel) => p.locator(sel).count();
 const attendre = (ms) => p.waitForTimeout(ms);
@@ -86,6 +93,17 @@ const ensemble = async () => {
   await attendre(1500);
 };
 const sceneActive = ".ea-scene[aria-hidden='false']";
+// LA BULLE DU FANTÔME DU MENU ne recouvre jamais un bouton principal visible.
+const bulleLibre = () =>
+  p.evaluate(() => {
+    const b = document.querySelector(".ap-mf-dit:not(.tait)")?.getBoundingClientRect();
+    if (!b) return true;
+    return ![...document.querySelectorAll("[data-garde-bulle]")].some((el) => {
+      const r = el.getBoundingClientRect();
+      if (!r.width || r.right <= 0 || r.left >= innerWidth) return false;
+      return r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top;
+    });
+  });
 
 await p.goto(APP + "/ville/dax", { waitUntil: "networkidle", timeout: 300000 });
 await attendre(2500);
@@ -93,6 +111,7 @@ await ensemble();
 
 // 1. L'ACCUEIL
 ok((await texte(".ea-accueil h1")).includes("Une découverte."), "accueil : « Une découverte. Une conversation. »");
+ok(await bulleLibre(), "accueil : la bulle du menu ne recouvre pas « Découvrir les discussions »");
 await capture("01-accueil");
 await p.getByRole("button", { name: /Découvrir les discussions/ }).click();
 await attendre(1800);
@@ -103,6 +122,8 @@ ok((await texte(".ea-boutons button.on")).includes("Salons publics"), "par défa
 ok(!(await p.content()).includes("Anniversaire surprise"), "le salon privé de Léa n'apparaît nulle part");
 const titre1 = await texte(`${sceneActive} h2`);
 ok(titre1.length > 0, `scène 1 : « ${titre1} »`);
+ok(await bulleLibre(), "salon : la bulle du menu ne recouvre pas le bouton");
+ok((await compte(`${sceneActive} .al-libre`)) === 1 && (await compte(`${sceneActive} .al-coussin`)) === 1, "place libre : un coussin éclairé et sa pastille, sans cadre");
 await capture("02-public-non-rejoint");
 await p.evaluate(() => {
   const e = document.querySelector(".ea-piste");
@@ -141,8 +162,11 @@ await attendre(500);
 await capture("04-choix-fantome");
 await p.locator(".pp-fleche.d").click();
 await attendre(600);
+ok((await texte(".pp-compte")).startsWith("2"), `flèche : le look suivant (${await texte(".pp-nom")}, ${await texte(".pp-compte")})`);
+await p.locator(".pp-fleche.g").click();
+await attendre(600);
 const choisi = await texte(".pp-nom");
-ok((await texte(".pp-compte")).startsWith("2"), `flèche : le look suivant (${choisi}, ${await texte(".pp-compte")})`);
+ok(choisi === "Le Flâneur", "flèche gauche : retour au Flâneur");
 await p.getByRole("button", { name: /Garder ce fantôme/ }).click();
 await attendre(400);
 ok((await texte(".pp-panneau h2")).includes("Ton fantôme est prêt"), "« Garder ce fantôme » → la confirmation, sans rejoindre");

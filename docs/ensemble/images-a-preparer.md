@@ -12,6 +12,29 @@ les maquettes, fantômes **sans oreilles**.
 
 ---
 
+## Reçu et intégré (module de validation)
+
+| Image reçue | Devenue | Usage |
+| --- | --- | --- |
+| salon canapé vert, table ronde (`d98a6d72…`) | `scene-canape-vert.webp` | la pièce de l'alcôve |
+| la même, découpée sous le bord arrière du plateau | `scene-canape-vert-devant.webp` | la table qui passe devant le bas des fantômes |
+| table avec lampe, tasses, bol (`176bfcb8…`) | posés sur ce plateau | la lampe, une tasse et le bol, avec leur ombre |
+| Le Flâneur assis, tasse en main (`f4a0cb34…`) | `flaneur-assis.webp` | les alcôves |
+| Le Flâneur debout, bras ouverts (`0fc1ba76…`) | `flaneur-debout.webp` | sélecteur et « Ton fantôme est prêt » |
+| salle de l'accueil (`23d0f1ba…`) et Flâneur au verre levé sur son tabouret (`0c8c7db9…`) | `accueil-salle.webp`, `flaneur-tabouret.webp` | l'accueil |
+
+Refaire les calques : `docs/ensemble/outils/preparer-scene.py <dossier reçu> public/direct/ensemble`
+puis `poser-objets.py <dossier reçu> public/direct/ensemble <aperçu.png>`. Les
+places (milieu des coussins, assise, bord du plateau) sont relevées dans
+`DECOR` (`src/app/autour-de-moi/alcove.tsx`).
+
+Reçus, gardés pour la suite : l'autre salon au canapé vert (`487520ef…`), la
+seconde salle à tabouret (`d24202e3…`), la table seule (`4233397f…`), le Flâneur
+debout (variante `ee740e6b…`), assis de trois quarts (`5dc3a66b…`) et au verre
+levé en clin d'œil (`5d79f612…`, pour le clignement).
+
+---
+
 ## 0. D'abord : le module de validation
 
 Ne pas produire les 48 images tout de suite. On valide d'abord, intégré

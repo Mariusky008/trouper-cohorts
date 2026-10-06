@@ -26,11 +26,15 @@ export type Look = {
   image?: string;
   /** Largeur / hauteur de l'image. */
   r: number;
+  /** La pose debout, bras ouverts : le sélecteur et « Ton fantôme est prêt ». */
+  debout?: string;
+  /** Vu de face (les autres images sont de trois quarts, retournées à droite). */
+  frontal?: boolean;
 };
 
 const D = "/direct/ensemble/";
 export const TOUS_LES_LOOKS: Look[] = [
-  { id: "flaneur", nom: "Le Flâneur", style: "Casquette marine, écharpe moutarde.", devise: "Curieux, toujours partant.", image: `${D}fantome-casquette-bleue.webp`, r: 0.885 },
+  { id: "flaneur", nom: "Le Flâneur", style: "Casquette marine, écharpe moutarde.", devise: "Curieux, toujours partant.", image: `${D}flaneur-assis.webp`, r: 0.9, debout: `${D}flaneur-debout.webp`, frontal: true },
   { id: "cosy", nom: "Le Cosy", style: "Bonnet terracotta, écharpe vert sauge.", devise: "Un plaid, un thé, et on refait le monde.", image: `${D}fantome-bonnet.webp`, r: 0.929 },
   { id: "artiste", nom: "L'Artiste", style: "Béret bordeaux, lunettes rondes.", devise: "Toujours un carnet dans la poche.", image: `${D}fantome-beret-rouge.webp`, r: 0.777 },
   { id: "jardinier", nom: "Le Jardinier", style: "Couronne de fleurs, foulard crème.", devise: "Les mains dans la terre, le cœur en fleurs.", r: 0.85 },

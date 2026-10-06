@@ -471,6 +471,43 @@ const GESTES_DE_PAGE = {
 } as const;
 type PageAGeste = keyof typeof GESTES_DE_PAGE;
 
+/**
+ * LE MOT AU-DESSUS DU FANTÔME DU MENU NE RECOUVRE JAMAIS L'ACTION DE LA PAGE.
+ * « La bulle recouvre encore le CTA principal. » Elle regarde où sont les
+ * boutons principaux visibles (`data-garde-bulle`) et se tait tant qu'elle en
+ * toucherait un — puis revient si la place se libère (un autre salon, une
+ * liste ouverte).
+ */
+function BulleDuGeste({ mot }: { mot: string }) {
+  const ref = useRef<HTMLSpanElement | null>(null);
+  const [gene, setGene] = useState(true);
+  useEffect(() => {
+    const voir = () => {
+      const b = ref.current?.getBoundingClientRect();
+      if (!b) return;
+      const marge = 6;
+      const touche = [...document.querySelectorAll<HTMLElement>("[data-garde-bulle]")].some((el) => {
+        const r = el.getBoundingClientRect();
+        if (!r.width || r.right <= 0 || r.left >= window.innerWidth) return false;
+        return r.left < b.right + marge && r.right > b.left - marge && r.top < b.bottom + marge && r.bottom > b.top - marge;
+      });
+      setGene(touche);
+    };
+    voir();
+    const t = window.setInterval(voir, 400);
+    window.addEventListener("resize", voir);
+    return () => {
+      window.clearInterval(t);
+      window.removeEventListener("resize", voir);
+    };
+  }, []);
+  return (
+    <span ref={ref} className={`ap-mf-dit${gene ? " tait" : ""}`} aria-hidden="true">
+      {mot}
+    </span>
+  );
+}
+
 /** Les pages dont on a déjà touché le fantôme : le mot au-dessus s'y tait. */
 const GESTES_CONNUS = "clikme-gestes-connus-v1";
 const gestesAbonnes = new Set<() => void>();
@@ -13654,9 +13691,7 @@ export function ApercuHabitant() {
                     )}
                   </i>
                   {!gestesConnus.split(",").includes(onglet) && (
-                    <span key={onglet} className="ap-mf-dit" aria-hidden="true">
-                      {gestePage.mot}
-                    </span>
+                    <BulleDuGeste key={onglet} mot={gestePage.mot} />
                   )}
                 </>
               ) : aDouble && dessus && tenueDu(dessus) ? (
@@ -20556,6 +20591,7 @@ export function ApercuHabitant() {
         .ap-onglets .ap-monfantome .ap-mf-dit::after{content:"";position:absolute;top:100%;left:50%;margin-left:-5px;
           border:5px solid transparent;border-top-color:#FFD08A;}
         @keyframes apMfDit{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,-3px);}}
+        .ap-onglets .ap-monfantome .ap-mf-dit.tait{visibility:hidden;}
         .ap-onglets .ap-monfantome .ap-mf-chef{position:absolute;inset:0;width:100%;height:100%;
           border-radius:50%;object-fit:cover;object-position:50% 14%;transform:scale(1.18);}
         .ap-fond{position:absolute;inset:0;z-index:8;border:0;padding:0;cursor:pointer;
