@@ -135,7 +135,7 @@ const reduit = () => typeof window !== "undefined" && window.matchMedia?.("(pref
 /** L'image d'un fantôme assis pour une personne. */
 export function imageAssis(a: Assis | "moi", salon: string) {
   const l = a === "moi" ? monLook() : a.look ? lookDe(a.look) : lookParDefautDe(`${salon}:${a.cle}`);
-  return { src: l.image, r: l.r, frontal: Boolean(l.frontal), cligne: l.cligne };
+  return { src: l.image, r: l.r, frontal: Boolean(l.frontal), cligne: l.cligne, salue: l.salue, echelle: l.echelle ?? 1 };
 }
 
 /**
@@ -245,23 +245,24 @@ export function Alcove({
             const img = p.qui === "moi" ? imageAssis("moi", decor) : imageAssis(p.qui, decor);
             const miroir = !img.frontal && k === places.length - 1;
             const arrive = p.qui === "moi" && installe && !calme;
-            const lf = hf * img.r;
+            const hi = hf * img.echelle;
+            const lf = hi * img.r;
             // Chacun cligne à son rythme (5 à 8 s), jamais tous ensemble.
             const rythme = 5.2 + ((k * 1.7 + decor.length * 0.37) % 2.8);
             return [
               // ASSIS POUR DE VRAI : l'ombre sur le dossier derrière lui, et
               // celle de contact où il pèse sur le coussin.
-              <i key={`d${k}`} className="al-ombre-dos" aria-hidden="true" style={{ left: x + lf * 0.06, top: haut + hf * 0.42, width: lf * 0.95, height: hf * 0.5 }} />,
+              <i key={`d${k}`} className="al-ombre-dos" aria-hidden="true" style={{ left: x + lf * 0.06, top: c.y(D.bas) - hi * 0.58, width: lf * 0.95, height: hi * 0.5 }} />,
               <i key={`c${k}`} className="al-ombre-assise" aria-hidden="true" style={{ left: x, top: c.y(D.bas) - D.hauteur * 0.03 * c.s, width: lf * 1.05, height: D.hauteur * 0.14 * c.s }} />,
               <span
                 key={k}
-                className={`al-fantome${arrive ? " al-arrive" : ""}${salut && p.qui !== "moi" ? " al-salut" : ""}`}
+                className={`al-fantome${arrive ? " al-arrive" : ""}${salut && p.qui !== "moi" ? (img.salue ? " al-salut-main" : " al-salut") : ""}`}
                 aria-hidden="true"
                 style={{
                   left: x - lf / 2,
-                  top: haut,
+                  top: c.y(D.bas) - hi,
                   width: lf,
-                  height: hf,
+                  height: hi,
                   zIndex: k === 1 ? 3 : 2,
                   animationDelay: salut && p.qui !== "moi" ? `${k * 0.16}s` : undefined,
                   ...(miroir ? { scale: "-1 1" } : {}),
@@ -272,6 +273,11 @@ export function Alcove({
                 {img.cligne && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img className="al-cligne" src={img.cligne} alt="" style={{ animationDuration: `${rythme}s`, animationDelay: `${-k * 1.9}s` }} />
+                )}
+                {img.salue && (
+                  // LA MAIN LEVÉE, au même cadrage : elle remplace la pose le temps du salut.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="al-salue" src={img.salue} alt="" />
                 )}
               </span>,
             ];
@@ -322,7 +328,7 @@ export function Alcove({
               );
             if (p.qui === "moi")
               return (
-                <span key={k} className={`al-toi${installe && !calme ? " al-arrive-mot" : ""}`} style={{ left: x, top: haut - 2 }}>
+                <span key={k} className={`al-toi${installe && !calme ? " al-arrive-mot" : ""}`} style={{ left: x, top: haut - (imageAssis("moi", decor).echelle - 1) * hf - 2 }}>
                   Toi
                 </span>
               );
@@ -370,6 +376,11 @@ function StylesAlcove() {
 .al.actif:not(.calme) .al-cligne{animation:al-cligne 6s steps(1,end) infinite;}
 @keyframes al-cligne{0%{opacity:0;}95.5%{opacity:1;}98%{opacity:0;}}
 .al-salut{animation:al-salut 1.5s cubic-bezier(.35,.1,.3,1) both;}
+.al-fantome .al-salue{opacity:0;}
+.al-salut-main .al-salue{animation:al-salue 1.6s ease both;animation-delay:inherit;}
+.al-salut-main > img:first-child,.al-salut-main .al-cligne{animation:al-salue-cache 1.6s ease both !important;animation-delay:inherit !important;}
+@keyframes al-salue{0%{opacity:0;}10%,82%{opacity:1;}100%{opacity:0;}}
+@keyframes al-salue-cache{0%{opacity:1;}10%,82%{opacity:0;}100%{opacity:1;}}
 @keyframes al-salut{0%{rotate:0deg;translate:0 0;}18%{rotate:-6deg;translate:0 -5%;}36%{rotate:5deg;translate:0 -3%;}54%{rotate:-3deg;translate:0 -1%;}72%{rotate:2deg;translate:0 0;}100%{rotate:0deg;translate:0 0;}}
 .al-vapeur{position:absolute;z-index:5;transform:translate(-50%,-90%);pointer-events:none;}
 .al-vapeur i{position:absolute;left:50%;bottom:0;width:38%;height:62%;margin-left:-19%;border-radius:45%;opacity:0;
@@ -399,7 +410,7 @@ function StylesAlcove() {
 @keyframes al-mot{0%,45%{opacity:0;transform:translate(-50%,-80%);}100%{opacity:1;transform:translate(-50%,-100%);}}
 .al-arrive{animation:al-arrive .8s cubic-bezier(.2,.8,.3,1) both;}
 .al-arrive-mot{animation:al-mot .9s ease-out both;}
-@media (prefers-reduced-motion: reduce){.al-arrive,.al-arrive-mot,.al.actif .al-coussin,.al-salut,.al-cligne,.al-vapeur i{animation:none !important;}}
+@media (prefers-reduced-motion: reduce){.al-arrive,.al-arrive-mot,.al.actif .al-coussin,.al-salut,.al-cligne,.al-vapeur i,.al-salue,.al-salut-main > img{animation:none !important;}}
 `,
       }}
     />

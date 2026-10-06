@@ -5,11 +5,10 @@
  * Des looks PRÉPARÉS À L'AVANCE, sans génération au moment du choix. Les noms
  * décrivent un style ; ils ne changent aucun droit ni aucun comportement.
  *
- * LES DOUZE LOOKS VALIDÉS. Leurs images arrivent par modules (Le Flâneur en
- * premier, dans ses quatre poses). En attendant, un look n'est proposé que
- * s'il a déjà une image qui lui ressemble vraiment, prise parmi les fantômes
- * du dépôt — jamais une copie répétée pour faire nombre. Le compteur du
- * sélecteur compte donc les looks réellement disponibles.
+ * DOUZE LOOKS, chacun en plusieurs poses superposables : assis tasse en
+ * main (les scènes), la même main levée (le salut), les yeux fermés (le
+ * clignement), et bras ouverts (le sélecteur). Un look n'est proposé que s'il
+ * a son image ; le compteur du sélecteur compte les looks disponibles.
  *
  * L'IDENTIFIANT EST RATTACHÉ À L'HABITANT (le cookie de l'appareil), jamais au
  * prénom. Sur un autre appareil, sans le même cookie, le look n'est pas
@@ -30,6 +29,10 @@ export type Look = {
   debout?: string;
   /** Vu de face (les autres images sont de trois quarts, retournées à droite). */
   frontal?: boolean;
+  /** Agrandissement dans les scènes, pour que tous aient la même carrure (le chapeau compte dans la hauteur). */
+  echelle?: number;
+  /** Assis, une main levée qui salue : superposable au pixel à `image`. */
+  salue?: string;
   /** Les mêmes images, yeux fermés, superposables au pixel (le clignement). */
   cligne?: string;
   deboutCligne?: string;
@@ -38,17 +41,17 @@ export type Look = {
 const D = "/direct/ensemble/";
 export const TOUS_LES_LOOKS: Look[] = [
   { id: "flaneur", nom: "Le Flâneur", style: "Casquette marine, écharpe moutarde.", devise: "Curieux, toujours partant.", image: `${D}flaneur-assis.webp`, r: 0.9, debout: `${D}flaneur-debout.webp`, frontal: true, cligne: `${D}flaneur-assis-cligne.webp`, deboutCligne: `${D}flaneur-debout-cligne.webp` },
-  { id: "cosy", nom: "Le Cosy", style: "Bonnet terracotta, écharpe vert sauge.", devise: "Un plaid, un thé, et on refait le monde.", image: `${D}fantome-bonnet.webp`, r: 0.929, cligne: `${D}fantome-bonnet-cligne.webp` },
-  { id: "artiste", nom: "L'Artiste", style: "Béret bordeaux, lunettes rondes.", devise: "Toujours un carnet dans la poche.", image: `${D}fantome-beret-rouge.webp`, r: 0.777 },
-  { id: "jardinier", nom: "Le Jardinier", style: "Couronne de fleurs, foulard crème.", devise: "Les mains dans la terre, le cœur en fleurs.", r: 0.85 },
-  { id: "voyageur", nom: "Le Voyageur", style: "Casquette en jean, bandana bleu.", devise: "Toujours un plan pour le prochain départ.", r: 0.85 },
-  { id: "lecteur", nom: "Le Lecteur", style: "Lunettes rondes, cardigan beige.", devise: "Un livre d’avance sur tout le monde.", image: `${D}fantome-lunettes-rouges.webp`, r: 0.821 },
-  { id: "melomane", nom: "Le Mélomane", style: "Casque audio, bonnet noir.", devise: "Une chanson pour chaque moment.", r: 0.85 },
-  { id: "curieux", nom: "Le Curieux", style: "Casquette moutarde, petite sacoche.", devise: "Il pose toujours la question de trop.", r: 0.85 },
-  { id: "reveur", nom: "Le Rêveur", style: "Bonnet lavande, écharpe bleu nuit.", devise: "La tête dans les étoiles.", image: `${D}fantome-echarpe-violette.webp`, r: 0.833, cligne: `${D}fantome-echarpe-violette-cligne.webp` },
-  { id: "local", nom: "Le Local", style: "Béret basque, foulard écru.", devise: "Connaît chaque recoin de la ville.", image: `${D}fantome-beret-noir.webp`, r: 0.746, cligne: `${D}fantome-beret-noir-cligne.webp` },
-  { id: "rebelle", nom: "Le Rebelle", style: "Bonnet noir, bandana rouge.", devise: "Jamais là où on l’attend.", r: 0.85 },
-  { id: "soleil", nom: "Le Soleil", style: "Bob orange, lunettes teintées.", devise: "La bonne humeur en plus.", r: 0.85 },
+  { id: "cosy", nom: "Le Cosy", style: "Bonnet terracotta, écharpe vert sauge.", devise: "Un plaid, un thé, et on refait le monde.", image: `${D}cosy-assis.webp`, r: 0.663, debout: `${D}cosy-debout.webp`, frontal: true, echelle: 1.12, cligne: `${D}cosy-cligne.webp`, salue: `${D}cosy-salue.webp` },
+  { id: "artiste", nom: "L'Artiste", style: "Béret bordeaux, lunettes rondes.", devise: "Toujours un carnet dans la poche.", image: `${D}artiste-assis.webp`, r: 0.691, debout: `${D}artiste-debout.webp`, frontal: true, echelle: 1.12, cligne: `${D}artiste-cligne.webp`, salue: `${D}artiste-salue.webp` },
+  { id: "fleuri", nom: "Le Fleuri", style: "Couronne de marguerites, foulard pêche.", devise: "Toujours une fleur à offrir.", image: `${D}fleuri-assis.webp`, r: 0.741, debout: `${D}fleuri-debout.webp`, frontal: true, echelle: 1.12, cligne: `${D}fleuri-cligne.webp`, salue: `${D}fleuri-salue.webp` },
+  { id: "jardinier", nom: "Le Jardinier", style: "Chapeau de paille, salopette verte.", devise: "Les mains dans la terre, le cœur en fleurs.", image: `${D}jardinier-assis.webp`, r: 0.815, debout: `${D}jardinier-debout.webp`, frontal: true, echelle: 1.12, cligne: `${D}jardinier-cligne.webp`, salue: `${D}jardinier-salue.webp` },
+  { id: "denim", nom: "Le Denim", style: "Casquette et veste en jean.", devise: "Toujours partant pour une virée.", image: `${D}denim-assis.webp`, r: 0.65, debout: `${D}denim-debout.webp`, frontal: true, echelle: 1.12, cligne: `${D}denim-cligne.webp`, salue: `${D}denim-salue.webp` },
+  { id: "voyageur", nom: "Le Voyageur", style: "Bob, foulard bleu, petite sacoche.", devise: "Toujours un plan pour le prochain départ.", image: `${D}voyageur-assis.webp`, r: 0.741, debout: `${D}voyageur-debout.webp`, frontal: true, echelle: 1.12, cligne: `${D}voyageur-cligne.webp`, salue: `${D}voyageur-salue.webp` },
+  { id: "lecteur", nom: "Le Lecteur", style: "Lunettes rondes dorées, cardigan beige.", devise: "Un livre d’avance sur tout le monde.", image: `${D}lecteur-assis.webp`, r: 0.753, debout: `${D}lecteur-debout.webp`, frontal: true, echelle: 1.12, cligne: `${D}lecteur-cligne.webp`, salue: `${D}lecteur-salue.webp` },
+  { id: "melomane", nom: "Le Mélomane", style: "Casque audio, écharpe corail.", devise: "Une chanson pour chaque moment.", image: `${D}melomane-assis.webp`, r: 0.787, debout: `${D}melomane-debout.webp`, frontal: true, echelle: 1.12, cligne: `${D}melomane-cligne.webp`, salue: `${D}melomane-salue.webp` },
+  { id: "curieux", nom: "Le Curieux", style: "Casquette à l’envers, doudoune moutarde.", devise: "Il pose toujours la question de trop.", image: `${D}curieux-assis.webp`, r: 0.728, debout: `${D}curieux-debout.webp`, frontal: true, echelle: 1.12, cligne: `${D}curieux-cligne.webp`, salue: `${D}curieux-salue.webp` },
+  { id: "rebelle", nom: "Le Rebelle", style: "Bonnet noir, bandana rouge, perfecto.", devise: "Jamais là où on l’attend.", image: `${D}rebelle-assis.webp`, r: 0.678, debout: `${D}rebelle-debout.webp`, frontal: true, echelle: 1.12, cligne: `${D}rebelle-cligne.webp`, salue: `${D}rebelle-salue.webp` },
+  { id: "soleil", nom: "Le Soleil", style: "Bandeau orange, écharpe moutarde.", devise: "La bonne humeur en plus.", image: `${D}soleil-assis.webp`, r: 0.685, debout: `${D}soleil-debout.webp`, frontal: true, echelle: 1.12, cligne: `${D}soleil-cligne.webp`, salue: `${D}soleil-salue.webp` },
 ];
 /** Les looks qu'on peut choisir aujourd'hui : ceux qui ont une image. */
 export const LOOKS = TOUS_LES_LOOKS.filter((l): l is Look & { image: string } => Boolean(l.image));

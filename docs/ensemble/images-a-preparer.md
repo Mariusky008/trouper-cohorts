@@ -12,6 +12,19 @@ les maquettes, fantômes **sans oreilles**.
 
 ---
 
+## Les douze looks intégrés
+
+Le Flâneur et onze looks reçus (Cosy, Artiste, Fleuri, Jardinier, Denim,
+Voyageur, Lecteur, Mélomane, Curieux, Rebelle, Soleil), chacun en trois
+poses : tasse en main, main levée (superposable, pour le salut) et bras
+ouverts (le sélecteur). Les yeux fermés sont fabriqués par `cligner.py`, sauf
+pour le Lecteur et l'Artiste qui ont la leur. Refaire les fichiers :
+`preparer-looks.py <dossier des .png reçus> public/direct/ensemble`.
+
+Les PNG reçus ne restent pas dans `public/` : trop lourds pour être servis, et
+un nom accentué (« Mélomane ») a fait échouer le déploiement. Garder des noms
+de fichiers sans accent ni espace.
+
 ## Les six scènes intégrées
 
 Canapé vert, chalet, terrasse à guirlandes, salon-bibliothèque, verrière

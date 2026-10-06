@@ -131,7 +131,8 @@ const anim = await p.evaluate((sel) => {
   return { cligne: c ? getComputedStyle(c).animationName : "absent", vapeur: v ? getComputedStyle(v).animationName : "absent" };
 }, sceneActive);
 ok(
-  CALME ? anim.cligne !== "al-cligne" && anim.vapeur !== "al-vapeur" : anim.cligne === "al-cligne" && anim.vapeur === "al-vapeur",
+  // (pendant le salut, la pose de base — et son clignement — s'effacent derrière la main levée)
+  CALME ? !/^al-/.test(anim.cligne) && anim.vapeur !== "al-vapeur" : /^al-(cligne|salue-cache)$/.test(anim.cligne) && anim.vapeur === "al-vapeur",
   `animations ${CALME ? "coupées en mouvement réduit" : "actives"} (clignement : ${anim.cligne}, vapeur : ${anim.vapeur})`,
 );
 await capture("02-public-non-rejoint");
