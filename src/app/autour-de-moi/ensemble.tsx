@@ -160,7 +160,12 @@ export function Ensemble({
   onIdee,
   onPlace,
   ville = "Dax",
+  onWhatsApp,
+  onCopierLien,
 }: {
+  /** Les invitations existantes d'un salon : WhatsApp, lien copié. */
+  onWhatsApp?: (cle: string) => void;
+  onCopierLien?: (cle: string) => void;
   /** « Ta place ? » : choisir son fantôme, puis rejoindre ce salon. */
   onPlace?: (a: AlcoveData) => void;
   /** Le nom de la ville, pour « Les discussions de Dax ». */
@@ -312,6 +317,8 @@ export function Ensemble({
           }
           onPlace={(a) => onPlace?.(a)}
           onInviter={(a) => onOuvrir(a.cle)}
+          onWhatsApp={onWhatsApp}
+          onCopierLien={onCopierLien}
           onIdee={() => onIdee?.()}
         />
         {enPlus}

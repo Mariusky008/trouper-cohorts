@@ -112,6 +112,17 @@ function ouvrirSurLeServeur(s: Salon): Promise<string | null> {
   return p;
 }
 
+/**
+ * CRÉER UN SALON SUR LE SERVEUR AVANT DE L'ÉCRIRE SUR LE TÉLÉPHONE : depuis le
+ * fantôme d'Ensemble, un salon n'existe qu'une fois confirmé. En cas d'échec,
+ * rien n'est créé nulle part et la saisie reste à l'écran.
+ */
+export async function creerSurLeServeur(s: Salon): Promise<{ erreur: string | null }> {
+  if (!ville) return { erreur: null };
+  const id = await ouvrirSurLeServeur(s);
+  return id ? { erreur: null } : { erreur: "Le salon n’a pas pu être créé." };
+}
+
 /** Envoyer un geste — après l'ouverture si elle est encore en route. */
 async function envoyerGeste(cle: string, geste: Geste | { type: "visibilite"; prive: boolean }) {
   let id = idDuServeur(cle);

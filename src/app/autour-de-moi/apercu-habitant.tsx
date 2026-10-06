@@ -165,12 +165,24 @@ import {
   lienConnu,
   lienDInvitation,
   preparerLien,
+  creerSurLeServeur,
   rejoindreEtCompter,
   salonDuLien,
   salonsADecouvrirDeLaVille,
   voirSalonPublic,
 } from "@/lib/direct/conversations-sync";
-import { AnnonceInstallation, PanneauPlace, demanderPlace, fermerPlace, panneauOuvert } from "./prendre-place";
+import { AnnonceInstallation, PanneauPlace, demanderPlace, fermerPlace, jouerInstallationDe, panneauOuvert } from "./prendre-place";
+import {
+  PanneauEnsemble,
+  fermerPanneauEnsemble,
+  finirIdee,
+  ideeDepuisEnsemble,
+  ouvrirPanneauEnsemble,
+  panneauEnsembleOuvert,
+  type ContenuPartage,
+  type SalonEcriture,
+} from "./panneau-ensemble";
+import { montrerSalonPret } from "./ensemble-alcoves";
 import { messageDeMaison, signalerPublication } from "@/lib/direct/ville-sync";
 import { essaisPartages, lienDeMaMaison, lireUneMaison, publierLaMaison, type MaisonLue } from "@/lib/direct/maison-sync";
 import { abonnerMaison, chargerMaison, MAISON_VIDE } from "@/lib/direct/ma-maison";
@@ -4123,6 +4135,20 @@ export function ApercuHabitant() {
   const salonDuSommet = cleDuSommet ? salons[cleDuSommet] : undefined;
 
   function ouvrirLeSalonDuSommet() {
+    // VENU D'ENSEMBLE (« Trouver une idée dans Le Direct ») : l'annonce et son
+    // commerce repartent vers le panneau, où l'on choisit le salon.
+    if (ideeDepuisEnsemble() && (dessusEv || dessus)) {
+      const titre = dessusEv ? dessusEv.quoi : carteDe(dessus!).quoi;
+      ouvrirPanneauEnsemble({
+        cle: `direct:${dessusEv ? dessusEv.id : dessus!.id}|${titre}`,
+        image: dessusEv ? dessusEv.photo : (carteDe(dessus!).photo ?? dessus!.photo),
+        titre,
+        commerce: dessusEv ? dessusEv.qui : dessus!.nom,
+        perso: false,
+        suggestion: `${titre} : ça vous dit ?`,
+      });
+      return;
+    }
     if (dessusEv) {
       enParler(
         cleSalonEv(dessusEv),
@@ -4227,6 +4253,20 @@ export function ApercuHabitant() {
     qui?: string;
   }) {
     if (!dessus) return;
+    // L'ESSAI QU'ON VIENT DE FAIRE, VENU D'ENSEMBLE : il repart vers le panneau.
+    if (ideeDepuisEnsemble() && o.depuis !== "mur") {
+      setMurOuvert(false);
+      setMurRevisite(null);
+      ouvrirPanneauEnsemble({
+        cle: `essai:${dessus.id}|${o.quoi}`,
+        image: o.image,
+        titre: o.quoi,
+        commerce: dessus.nom,
+        perso: true,
+        suggestion: `J’ai essayé ${o.quoi} sur moi, vous en pensez quoi ?`,
+      });
+      return;
+    }
     const cle = cleSalonMoment(dessus, carteDe(dessus).quoi, !!carteDe(dessus).flash);
     setMurOuvert(false);
     setMurRevisite(null);
@@ -5991,7 +6031,7 @@ export function ApercuHabitant() {
    * Rien n'est publié tout seul : c'est une liste où l'on choisit.
    */
   const essaisPartageables: EssaiPartageable[] =
-    onglet === "ville"
+    onglet === "ville" || onglet === "salons"
       ? [
           ...piecesGardees
             .filter(estUnEssai)
@@ -6005,6 +6045,53 @@ export function ApercuHabitant() {
   const salonsPartageables: SalonPartageable[] = Object.values(salons)
     .filter((x) => x.ouvert && dansLeSalon(x))
     .map((x) => ({ cle: x.cle, sujet: x.sujet, prive: Boolean(x.prive), photo: x.photo }));
+
+  /**
+   * ═══ LE FANTÔME CENTRAL D'ENSEMBLE ═══════════════════════════════════════
+   * Voir `panneau-ensemble.tsx`. Les essais à moi, les salons où je peux
+   * écrire, et une création qui n'a lieu qu'une fois confirmée par le serveur.
+   */
+  const essaisPourEnsemble: ContenuPartage[] = essaisPartageables.map((e) => ({
+    cle: e.cle,
+    image: e.image,
+    titre: e.nom,
+    commerce: e.lieu,
+    perso: true,
+    suggestion: `${e.nom} sur moi, vous en pensez quoi ?`,
+  }));
+  const salonsEcriture: SalonEcriture[] = Object.values(salons)
+    .filter((x) => x.ouvert && !x.archive && !x.collectif && (x.acces ? x.acces.statut === "membre" : dansLeSalon(x)))
+    .sort((a, b) => (b.activite ?? 0) - (a.activite ?? 0))
+    .map((x) => ({ cle: x.cle, sujet: x.sujet, prive: x.acces ? x.acces.prive : x.prive !== false, photo: x.photo }));
+  /** La première ligne d'un partage : le message, et le commerce du contenu. */
+  const ligneDePartage = (contenu: ContenuPartage | undefined, message: string) => ({
+    qui: monPrenom() || "Vous",
+    voix: "moi" as const,
+    texte: `${message || contenu?.suggestion || ""}${contenu?.commerce ? ` — ${contenu.commerce}` : ""}`.trim(),
+    quand: heureCourte(),
+    ...(contenu?.image ? { photo: contenu.image } : {}),
+  });
+  async function creerDepuisEnsemble(o: { sujet: string; prive: boolean; message: string; contenu?: ContenuPartage }) {
+    const cle = `moi|${Date.now().toString(36)}`;
+    const base = {
+      cle,
+      sujet: o.sujet,
+      ou: o.contenu?.commerce ?? "Lieu à décider",
+      parQui: "Vous",
+      quand: "À décider",
+      prive: o.prive,
+      ...(o.contenu?.image ? { photo: o.contenu.image } : {}),
+    };
+    // LE SERVEUR D'ABORD : aucun salon n'existe sur ce téléphone tant qu'il n'a pas répondu.
+    if (reelle) {
+      const moi = monPrenom() || "Vous";
+      const r = await creerSurLeServeur({ ...base, parQui: moi, viennent: [moi], presents: [moi], messages: [], ouvert: true, activite: Date.now() } as Salon);
+      if (r.erreur) return { erreur: r.erreur };
+    }
+    ouvrirSalon(base);
+    if (o.message || o.contenu) ecrireDansSalon(cle, ligneDePartage(o.contenu, o.message));
+    return { erreur: null, cle };
+  }
 
   /** Le geste du fantôme sur la page affichée — aucun dans Le Direct. */
   const gestePage = onglet in GESTES_DE_PAGE ? GESTES_DE_PAGE[onglet as PageAGeste] : null;
@@ -11538,7 +11625,14 @@ export function ApercuHabitant() {
                 lus={lus}
                 cestMoi={cestMoi}
                 moi={monPrenom() || "Vous"}
-                demandeLancer={demandeGeste}
+                onWhatsApp={(cle) => {
+                  const s = chargerSalons()[cle];
+                  if (s) void inviterAuSalon(s);
+                }}
+                onCopierLien={(cle) => {
+                  const s = chargerSalons()[cle];
+                  if (s) void copierLeLien(s);
+                }}
                 onOuvrir={(cle) => {
                   setSalonOuvert(cle);
                   setSalonPage(true);
@@ -13479,6 +13573,28 @@ export function ApercuHabitant() {
             </button>
           )}
           {/* PRENDRE SA PLACE : le panneau remonte au-dessus du vrai menu, qui reste à l'écran. */}
+          <PanneauEnsemble
+            essais={essaisPourEnsemble}
+            salons={salonsEcriture}
+            onDirect={() => allerA_onglet("direct")}
+            onPremierEssai={() => allerA_onglet("direct")}
+            creer={creerDepuisEnsemble}
+            partager={(cle, contenu, message) => {
+              // UN SALON OÙ JE SUIS DÉJÀ : sa conversation s'ouvre sur ce que j'envoie.
+              noter("partage", 0, "ensemble-fantome");
+              ecrireDansSalon(cle, ligneDePartage(contenu, message));
+              setSalonOuvert(cle);
+              setSalonPage(true);
+            }}
+            onCree={(cle) => {
+              // LE NOUVEAU SALON : retour dans Ensemble, sur son alcôve, mon fantôme s'installe.
+              noter("partage", 0, "ensemble-cree");
+              setSalonPage(false);
+              if (onglet !== "salons") allerA_onglet("salons");
+              jouerInstallationDe(cle);
+              montrerSalonPret(cle);
+            }}
+          />
           <PanneauPlace />
           <AnnonceInstallation />
           <nav
@@ -13487,6 +13603,7 @@ export function ApercuHabitant() {
             ref={barreOnglets}
             onClickCapture={() => {
               if (panneauOuvert()) fermerPlace();
+              if (panneauEnsembleOuvert()) fermerPanneauEnsemble();
             }}
           >
             <button
@@ -13576,6 +13693,12 @@ export function ApercuHabitant() {
                   // CHEZ QUELQU'UN, « Faire visiter ma maison » ramène d'abord chez moi.
                   if (onglet === "profil" && maisonLue) {
                     setMaisonLue(null);
+                    return;
+                  }
+                  // DANS ENSEMBLE, LE PANNEAU « ON SE RETROUVE AUTOUR DE QUOI ? » —
+                  // par-dessus l'alcôve affichée, qu'on retrouve à la fermeture.
+                  if (onglet === "salons") {
+                    window.setTimeout(() => ouvrirPanneauEnsemble(), 0);
                     return;
                   }
                   setDemandeGeste((n) => n + 1);
@@ -13691,7 +13814,13 @@ export function ApercuHabitant() {
                     {onglet === "ville" ? (
                       <svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4Z" /></svg>
                     ) : onglet === "salons" ? (
-                      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
+                      // UNE BULLE DE DIALOGUE : il propose de se retrouver autour de quelque chose.
+                      <svg viewBox="0 0 24 24">
+                        <path d="M4.5 6.2c0-1 .8-1.7 1.7-1.7h11.6c1 0 1.7.8 1.7 1.7v8.2c0 1-.8 1.7-1.7 1.7H11l-4.3 3.4v-3.4h-.5c-1 0-1.7-.8-1.7-1.7Z" fill="#2A1608" stroke="none" />
+                        <circle cx="8.6" cy="10.3" r="1.15" fill="#F6B54B" stroke="none" />
+                        <circle cx="12" cy="10.3" r="1.15" fill="#F6B54B" stroke="none" />
+                        <circle cx="15.4" cy="10.3" r="1.15" fill="#F6B54B" stroke="none" />
+                      </svg>
                     ) : (
                       <svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7M6 9.5V20h12V9.5" /></svg>
                     )}

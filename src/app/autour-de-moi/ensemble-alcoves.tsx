@@ -56,6 +56,22 @@ function accueilVu() {
 let sourceGardee: "publics" | "miens" | null = null;
 let sceneGardee: string | null = null;
 
+/**
+ * APRÈS UNE CRÉATION DEPUIS LE FANTÔME : on revient sur l'alcôve du salon
+ * créé (dès qu'il apparaît dans mes salons), avec « Ton salon est prêt ».
+ */
+let aMontrer: string | null = null;
+const abonnesMontrer = new Set<() => void>();
+export function montrerSalonPret(cle: string) {
+  aMontrer = cle;
+  sourceGardee = "miens";
+  abonnesMontrer.forEach((f) => f());
+}
+const abonnerMontrer = (f: () => void) => {
+  abonnesMontrer.add(f);
+  return () => void abonnesMontrer.delete(f);
+};
+
 const FOND = "/direct/ensemble/scene-canape-vert.webp";
 const reduit = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 const pluriel = (n: number, mot: string) => `${n} ${mot}${n > 1 ? "s" : ""}`;
@@ -77,7 +93,12 @@ export function EnsembleAlcoves({
   onPlace,
   onInviter,
   onIdee,
+  onWhatsApp,
+  onCopierLien,
 }: {
+  /** Les invitations existantes : WhatsApp, et le lien copié. */
+  onWhatsApp?: (cle: string) => void;
+  onCopierLien?: (cle: string) => void;
   ville: string;
   /** Les salons dont je suis membre, dans l'ordre gardé. */
   miens: AlcoveData[];
@@ -108,6 +129,26 @@ export function EnsembleAlcoves({
   const [source, setSource] = useState<"publics" | "miens">(() => sourceGardee ?? (publics.length || !miens.length ? "publics" : "miens"));
   const [scene, setScene] = useState<string | null>(sceneGardee);
   const [liste, setListe] = useState<"" | "miens" | "publics">("");
+  // « TON SALON EST PRÊT » : le salon que je viens de créer, et la feuille d'invitation.
+  const [pret, setPret] = useState<string | null>(null);
+  const [inviter, setInviter] = useState<string | null>(null);
+  const aOuvrir = useSyncExternalStore(abonnerMontrer, () => aMontrer, () => null);
+  // Le salon créé n'arrive dans « mes salons » qu'après la synchronisation :
+  // on attend qu'il y soit pour y aller (un abonnement extérieur, d'où l'effet).
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (!aOuvrir) return;
+    const a = miens.find((x) => x.cle === aOuvrir);
+    if (!a) return;
+    aMontrer = null;
+    accueilVu();
+    setAccueil(false);
+    setListe("");
+    setSource("miens");
+    setScene(sceneDe(a));
+    setPret(a.cle);
+  }, [aOuvrir, miens]);
+  /* eslint-enable react-hooks/set-state-in-effect */
   useEffect(() => {
     sourceGardee = source;
     sceneGardee = scene;
@@ -144,7 +185,8 @@ export function EnsembleAlcoves({
         onActif={(a) => setScene(sceneDe(a))}
         onVoir={onVoir}
         onPlace={onPlace}
-        onInviter={onInviter}
+        onInviter={(a) => (onWhatsApp || onCopierLien ? setInviter(a.cle) : onInviter(a))}
+        pret={pret}
         vide={
           <Vide
             source={source}
@@ -182,6 +224,13 @@ export function EnsembleAlcoves({
           Les discussions de {ville}
         </p>
       </header>
+      {inviter && (
+        <FeuilleInviter
+          onWhatsApp={() => onWhatsApp?.(inviter)}
+          onCopier={() => onCopierLien?.(inviter)}
+          onFermer={() => setInviter(null)}
+        />
+      )}
       {liste && (
         <FeuilleListe
           quoi={liste}
@@ -291,7 +340,9 @@ function Carrousel({
   onPlace,
   onInviter,
   vide,
+  pret = null,
 }: {
+  pret?: string | null;
   salons: AlcoveData[];
   idx: number;
   onActif: (a: AlcoveData) => void;
@@ -371,7 +422,7 @@ function Carrousel({
             {Math.abs(k - idx) <= 1 && (
               <>
                 <Alcove a={s} actif={k === idx && enVue} installe={k === idx && installe} onPlaceLibre={() => onPlace(s)} />
-                <BasDeScene a={s} onVoir={() => onVoir(s)} onInviter={() => onInviter(s)} />
+                <BasDeScene a={s} pret={pret === s.cle} onVoir={() => onVoir(s)} onInviter={() => onInviter(s)} />
               </>
             )}
           </section>
@@ -402,8 +453,8 @@ function Carrousel({
 }
 
 /** LE BAS DE LA SCÈNE : statut, titre, la phrase vraie, et le bouton. */
-function BasDeScene({ a, onVoir, onInviter }: { a: AlcoveData; onVoir: () => void; onInviter: () => void }) {
-  const seul = a.membre && a.nb <= 1 && a.autres.length === 0;
+function BasDeScene({ a, pret, onVoir, onInviter }: { a: AlcoveData; pret: boolean; onVoir: () => void; onInviter: () => void }) {
+  const seul = pret || (a.membre && a.nb <= 1 && a.autres.length === 0);
   const auteur = a.dernier ? (a.dernier.qui === "Toi" ? "moi" : { cle: a.dernier.qui, qui: a.dernier.qui, look: a.dernier.look }) : null;
   return (
     <div className="ea-bas">
@@ -412,10 +463,10 @@ function BasDeScene({ a, onVoir, onInviter }: { a: AlcoveData; onVoir: () => voi
         <b>{a.prive ? "Privé" : "Public"}</b> · {pluriel(a.nb, "participant")}
       </p>
       <h2>{a.titre}</h2>
-      {a.phrase ? (
+      {pret || a.phrase ? (
         <p className="ea-phrase">
           <i aria-hidden="true" />
-          {a.phrase}
+          {pret ? "Ton salon est prêt" : a.phrase}
         </p>
       ) : (
         a.dernier &&
@@ -438,7 +489,7 @@ function BasDeScene({ a, onVoir, onInviter }: { a: AlcoveData; onVoir: () => voi
         </button>
       )}
       <button type="button" className="ea-cta" data-garde-bulle onClick={onVoir}>
-        {a.membre ? "Entrer dans la discussion" : "Voir la discussion"} <s aria-hidden="true">→</s>
+        {pret ? "Ouvrir la discussion" : a.membre ? "Entrer dans la discussion" : "Voir la discussion"} <s aria-hidden="true">→</s>
       </button>
     </div>
   );
@@ -474,6 +525,48 @@ function Vide({
         </button>
       </div>
     </section>
+  );
+}
+
+/**
+ * INVITER QUELQU'UN : les invitations qui existent déjà — WhatsApp, ou le lien
+ * copié. Celui qui reçoit le lien entre dans CE salon, et dans aucun autre.
+ */
+function FeuilleInviter({ onWhatsApp, onCopier, onFermer }: { onWhatsApp: () => void; onCopier: () => void; onFermer: () => void }) {
+  const [copie, setCopie] = useState(false);
+  return (
+    <div className="ea-feuille" role="dialog" aria-modal="true" aria-label="Inviter quelqu’un">
+      <button type="button" className="ea-feuille-voile" aria-label="Fermer" onClick={onFermer} />
+      <div className="ea-feuille-corps ea-inviter-corps">
+        <i className="ea-poignee" aria-hidden="true" />
+        <div className="ea-feuille-tete">
+          <div>
+            <h2>Inviter quelqu’un</h2>
+            <p>Ceux qui reçoivent le lien entrent dans ce salon, et seulement celui-ci.</p>
+          </div>
+          <button type="button" className="ea-x" aria-label="Fermer" onClick={onFermer}>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
+          </button>
+        </div>
+        <div className="ea-inviter-actions">
+          <button type="button" className="ea-cta" onClick={onWhatsApp}>
+            Inviter sur WhatsApp
+          </button>
+          <button
+            type="button"
+            className="ea-inviter-lien"
+            onClick={() => {
+              onCopier();
+              setCopie(true);
+            }}
+          >
+            {copie ? "Lien copié ✓" : "Copier le lien d’invitation"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -840,6 +933,10 @@ function StylesEnsembleAlcoves() {
 .ea-invit-boutons .oui{background:linear-gradient(180deg,#FAC863,#F2AA3E);color:#2A1608;}
 .ea-invit-boutons .non{background:rgba(255,244,230,.1);border:1px solid rgba(246,190,110,.3);color:#FFF4E6;}
 .ea-invit-boutons button:disabled{opacity:.5;}
+.ea-inviter-corps{height:auto;}
+.ea-inviter-actions{display:grid;gap:10px;padding:16px 18px calc(20px + env(safe-area-inset-bottom,0px));}
+.ea-inviter-lien{min-height:46px;border-radius:999px;border:1.2px solid rgba(246,200,140,.55);background:rgba(36,21,11,.25);color:#FFF4E6;
+  font-family:var(--leger);font-size:16px;font-weight:500;cursor:pointer;}
 .ea-pied{margin:14px 8px 4px;font-family:var(--leger);font-weight:400;font-size:13.5px;color:#C9B29A;}
 `,
       }}

@@ -244,6 +244,7 @@ await p.getByRole("button", { name: /Salons publics/ }).click();
 await attendre(400);
 await p.locator(".ea-ligne", { hasText: "Que faire découvrir" }).click();
 await attendre(900);
+await p.locator(`${sceneActive} .ea-statut`, { hasText: "7 participants" }).first().waitFor({ timeout: 4000 }).catch(() => {});
 ok((await compte(`${sceneActive} .al-plus`)) === 0 && (await texte(`${sceneActive} .ea-statut`)).includes("7 participants"), "beaucoup de participants, non rejoint : quelques vrais fantômes, la place libre, le nombre réel");
 await capture("11-beaucoup");
 

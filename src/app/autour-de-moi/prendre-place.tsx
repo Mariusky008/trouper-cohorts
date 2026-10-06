@@ -108,6 +108,12 @@ function marquerInstalle(cle: string) {
     /* rien */
   }
 }
+/** Un salon que je viens de créer : mon fantôme s'y installe, une seule fois. */
+export function jouerInstallationDe(cle: string) {
+  if (dejaInstalles().has(cle)) return;
+  aJouer.set(cle, undefined);
+  abonnesInstall.forEach((f) => f());
+}
 export function abonnerInstallation(f: () => void) {
   abonnesInstall.add(f);
   return () => void abonnesInstall.delete(f);
