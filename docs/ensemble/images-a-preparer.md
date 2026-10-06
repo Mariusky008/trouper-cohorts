@@ -12,6 +12,22 @@ les maquettes, fantômes **sans oreilles**.
 
 ---
 
+## 0. D'abord : le module de validation
+
+Ne pas produire les 48 images tout de suite. On valide d'abord, intégré
+dans l'application :
+
+1. le décor **`alcove-canape-vert`** en deux calques (`-fond`, `-devant`),
+   voir § 2 ;
+2. **Le Flâneur** (`look-flaneur-…`) dans ses quatre poses : assis tasse en
+   main, assis yeux fermés, assis main levée, debout bras ouverts — voir § 3 ;
+3. la place libre « Ta place ? » est construite en code : aucune image.
+
+Une fois ce module intégré et validé, on décline les trois autres décors et
+les onze autres fantômes, au même gabarit.
+
+---
+
 ## 1. Écran d'accueil (maquette « image 1 »)
 
 | Fichier | Taille | Contenu |
@@ -82,23 +98,33 @@ Sans cette pose, je compose un tabouret générique et la pose debout.
 
 Total : **48 images** (+ 12 optionnelles).
 
-### Les looks
+### Les looks (validés)
 
-Cinq looks sont visibles dans les maquettes. Leurs noms décrivent un style,
-rien d'autre : ils ne changent aucun droit ni aucun comportement.
+Leurs noms décrivent un style, rien d'autre : ils ne changent aucun droit ni
+aucun comportement. Un seul look par personne, gardé avec son habitant (et
+non avec son prénom), le même dans Ensemble, les conversations et Ma maison.
 
 | # | id | Nom | Accessoires |
 | --- | --- | --- | --- |
 | 1 | `flaneur` | Le Flâneur | casquette marine, écharpe moutarde (look par défaut) |
-| 2 | `cosy` | Le Cosy | bonnet rouille à pompon, écharpe verte |
-| 3 | `artiste` | L'Artiste | béret rouge, lunettes rondes |
-| 4 | `boheme` | La Bohème | couronne de marguerites |
-| 5 | `baroudeur` | Le Baroudeur | casquette en jean, foulard à motifs |
-| 6–12 | à définir | à définir | sept autres combinaisons distinctes : couleurs et accessoires différents, aucun doublon |
+| 2 | `cosy` | Le Cosy | bonnet terracotta, écharpe vert sauge |
+| 3 | `artiste` | L'Artiste | béret bordeaux, lunettes rondes |
+| 4 | `jardinier` | Le Jardinier | couronne de fleurs, foulard crème |
+| 5 | `voyageur` | Le Voyageur | casquette en jean, bandana bleu |
+| 6 | `lecteur` | Le Lecteur | lunettes rondes dorées, cardigan beige |
+| 7 | `melomane` | Le Mélomane | casque audio autour du cou, bonnet noir |
+| 8 | `curieux` | Le Curieux | casquette jaune moutarde, petite sacoche |
+| 9 | `reveur` | Le Rêveur | bonnet lavande, écharpe bleu nuit |
+| 10 | `local` | Le Local | béret basque rouge, foulard écru |
+| 11 | `rebelle` | Le Rebelle | bonnet noir, bandana rouge |
+| 12 | `soleil` | Le Soleil | bob orange, lunettes rondes teintées |
 
-**À ta charge :** les noms et accessoires des looks 6 à 12, et la phrase sous
-le nom (« Curieux, toujours partant. »), qui décrit un style et non un
-caractère.
+**En attendant les images**, l'application ne propose que les looks qui ont
+déjà un fantôme ressemblant (repli dans `public/direct/ensemble/`, une seule
+pose) : Le Flâneur, Le Cosy, L'Artiste, Le Lecteur, Le Rêveur et Le Local.
+Les six autres apparaîtront dans le sélecteur dès que leurs images seront
+déposées (`src/lib/direct/look.ts`) ; aucune image n'est réutilisée pour
+deux looks.
 
 ### Ce qui existe déjà et ne suffit pas
 

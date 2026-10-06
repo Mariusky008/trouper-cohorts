@@ -28,6 +28,7 @@
  *
  * FICHIER NAVIGATEUR.
  */
+import { brancherEnvoiDuLook, lookDuServeur } from "./look";
 import {
   brancherLePartage,
   chargerSalons,
@@ -138,6 +139,8 @@ export type SalonADecouvrir = {
   parQui: string;
   photo?: string;
   nb: number;
+  /** Quelques vrais participants, à asseoir dans l'alcôve (prénom, look, empreinte propre au salon). */
+  visibles?: { auteur: string; qui: string; look?: string }[];
   activite: string;
   dernier?: { qui: string; texte: string };
 };
@@ -159,7 +162,7 @@ export async function synchroniser(): Promise<void> {
   const params = new URLSearchParams({ ville, decouvrir: "1" });
   if (demandees.size) params.set("ids", [...demandees].join(","));
   if (jetonsRecus.size) params.set("jetons", [...jetonsRecus].join(","));
-  type Reponse = { ok?: boolean; conversations?: ConvLue[]; decouvrir?: SalonADecouvrir[] };
+  type Reponse = { ok?: boolean; look?: string; conversations?: ConvLue[]; decouvrir?: SalonADecouvrir[] };
   let j: Reponse | null = null;
   try {
     const r = await fetch(`${ROUTE}?${params}`, { cache: "no-store" });
@@ -168,6 +171,8 @@ export async function synchroniser(): Promise<void> {
     return;
   }
   if (!j?.ok || !Array.isArray(j.conversations)) return;
+  // MON FANTÔME, tel que le serveur le connaît pour cet habitant.
+  if (j.look) lookDuServeur(j.look);
   const inverse = Object.fromEntries(Object.entries(correspondance).map(([cle, id]) => [id, cle]));
   const moiNom = monPrenom() || "Vous";
   const venues: Record<string, Salon> = {};
@@ -220,6 +225,7 @@ export function brancherLaVille(slug: string, salon?: string, invitation?: strin
     ouverture: (s) => void ouvrirSurLeServeur(s),
     geste: (cle, g) => void envoyerGeste(cle, g),
   });
+  brancherEnvoiDuLook((look) => void poster({ action: "look", look, ville }));
   void synchroniser();
   // RELIRE TOUTES LES SIX SECONDES quand l'écran est visible — de quoi suivre
   // une conversation sans tenir une connexion ouverte. Au retour sur l'onglet,
@@ -234,6 +240,7 @@ export function brancherLaVille(slug: string, salon?: string, invitation?: strin
     minuteur = null;
     document.removeEventListener("visibilitychange", tic);
     brancherLePartage(null);
+    brancherEnvoiDuLook(null);
     ville = "";
   };
 }
@@ -290,6 +297,18 @@ async function demarche(cle: string | null, corps: Record<string, unknown>): Pro
 
 /** Rejoindre un salon public pour y participer. */
 export const rejoindreSalon = (cle: string) => demarche(cle, { action: "rejoindre" });
+/**
+ * REJOINDRE, ET SAVOIR COMBIEN ON EST : le nombre réel de membres rendu par
+ * le serveur après l'adhésion — c'est lui que l'écran affiche, pas un calcul.
+ */
+export async function rejoindreEtCompter(cle: string): Promise<{ erreur: string | null; nb?: number }> {
+  const id = idDuServeur(cle);
+  if (!id) return { erreur: "Ce salon n'est pas encore partagé." };
+  const j = await poster({ action: "rejoindre", id, qui: qui(), ville });
+  if (typeof j?.erreur === "string") return { erreur: j.erreur };
+  await synchroniser();
+  return { erreur: null, ...(typeof j?.nb === "number" ? { nb: j.nb } : {}) };
+}
 /** Demander à entrer dans un salon privé (par le jeton du lien s'il y en a un). */
 export const demanderAEntrer = (s: Salon) =>
   s.acces?.jeton ? demarche(null, { action: "demander", jeton: s.acces.jeton }) : demarche(s.cle, { action: "demander" });

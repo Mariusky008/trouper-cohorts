@@ -2,9 +2,14 @@
 
 // 🤝 ENSEMBLE — l'onglet qui remplace « Propositions ».
 //
-// « "Ensemble" permet de poursuivre les échanges. » Deux blocs, dans l'ordre
-// de ce qui compte : ce qu'on attend de moi (« À toi de jouer »), puis les
-// conversations où je suis (« Nos discussions »).
+// « "Ensemble" permet de poursuivre les échanges. » La vue principale est
+// celle des ALCÔVES (`ensemble-alcoves.tsx`) : un salon plein écran à la fois,
+// les salons publics à découvrir par défaut, « Mes salons ▾ » et « Salons
+// publics ▾ » en listes. Ce fichier en prépare les données — de vrais
+// participants, une phrase tirée d'un fait — à partir des salons.
+//
+// La vue en liste ci-dessous (« À toi de jouer », « Nos discussions ») reste
+// celle où le fantôme de la barre lance une nouvelle discussion.
 //
 // RIEN N'EST UNE SECONDE MESSAGERIE. Chaque carte et chaque ligne ouvrent le
 // salon qui existe déjà — on y vote, on y propose une alternative, on y
@@ -15,11 +20,13 @@
 // LES AVATARS SONT DES INITIALES. Les maquettes montrent des visages ; nous
 // n'avons pas celui de vos amis, et un visage pris ailleurs mentirait sur qui
 // parle.
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { GrandSalon, type SceneDeSalon } from "./grand-salon";
+import { useEffect, useState, type ReactNode } from "react";
+import type { AlcoveData, Assis } from "./alcove";
+import { EnsembleAlcoves, sceneDe } from "./ensemble-alcoves";
 import { aToiDeJouer, ilYa, nosDiscussions, type Discussion } from "@/lib/direct/ensemble";
 import { archiverSalon, type Salon } from "@/lib/direct/salons";
-import { repondreInvitation, type SalonADecouvrir } from "@/lib/direct/conversations-sync";
+import { idDuServeur, repondreInvitation, type SalonADecouvrir } from "@/lib/direct/conversations-sync";
+import { lookParDefautDe } from "@/lib/direct/look";
 
 /**
  * MES SALONS : ceux dont je suis membre. Dans la vraie ville, un salon public
@@ -30,11 +37,42 @@ export function salonsDontJeSuisMembre(salons: Record<string, Salon>): Record<st
   return Object.fromEntries(Object.entries(salons).filter(([, x]) => !x.acces || x.acces.statut === "membre"));
 }
 
-/* ═══ LE GRAND SALON : CE QUE CHAQUE DISCUSSION Y MONTRE ═════════════════ */
+/* ═══ LES ALCÔVES : CE QUE CHAQUE DISCUSSION Y MONTRE ════════════════════ */
 
-/** La vue et le filtre gardés d'une visite à l'autre : on revient où on était. */
+/** La vue gardée d'une visite à l'autre : on revient où on était. */
 let vueGardee: "salon" | "liste" = "salon";
-let filtreGarde: "tous" | "miens" | "decouvrir" = "tous";
+
+/**
+ * LA SCÈNE D'UN SALON, la même avant et après l'avoir rejoint : dans la vraie
+ * ville, son identifiant serveur (celui de « à découvrir ») ; sinon sa clé.
+ */
+function sceneDuSalon(cle: string): string {
+  const id = idDuServeur(cle);
+  return id ? `pub:${id}` : cle;
+}
+
+/** Le look de l'auteur d'un message, d'après ceux qui sont assis — ou celui de sa place par défaut. */
+function lookDeQui(qui: string, autres: Assis[], scene: string): string {
+  const a = autres.find((x) => x.qui === qui);
+  return a?.look ?? lookParDefautDe(`${scene}:${a?.cle ?? qui}`).id;
+}
+
+/**
+ * LES SALONS PUBLICS DE LA VISITE. Un salon que je viens de rejoindre quitte
+ * « à découvrir » côté serveur ; il reste pourtant à sa place dans le
+ * carrousel le temps de la visite — avec moi assis — au lieu de disparaître
+ * sous mes yeux.
+ */
+let ordrePublics: string[] = [];
+function publicsDeLaVisite(decouverte: AlcoveData[], miens: AlcoveData[]): AlcoveData[] {
+  const aDecouvrir = new Map(decouverte.map((a) => [sceneDe(a), a]));
+  const rejoints = new Map(miens.map((a) => [sceneDe(a), a]));
+  const garde = ordrePublics.map((s) => aDecouvrir.get(s) ?? rejoints.get(s)).filter((a): a is AlcoveData => Boolean(a));
+  const vus = new Set(garde.map(sceneDe));
+  const tous = [...garde, ...decouverte.filter((a) => !vus.has(sceneDe(a)))];
+  ordrePublics = tous.map(sceneDe);
+  return tous;
+}
 
 /**
  * L'ORDRE D'OUVERTURE, PLUS RÉCENT D'ABORD — et gardé. On ne connaît pas
@@ -119,7 +157,13 @@ export function Ensemble({
   aDecouvrir = [],
   onVoirPublic,
   onIdee,
+  onPlace,
+  ville = "Dax",
 }: {
+  /** « Ta place ? » : choisir son fantôme, puis rejoindre ce salon. */
+  onPlace?: (a: AlcoveData) => void;
+  /** Le nom de la ville, pour « Les discussions de Dax ». */
+  ville?: string;
   /** « Trouver une idée à partager » : ouvre Le Direct. */
   onIdee?: () => void;
   salons: Record<string, Salon>;
@@ -152,28 +196,11 @@ export function Ensemble({
   // LE FANTÔME DE LA BARRE DEMANDE, LA PAGE OUVRE. Une demande nouvelle se
   // voit pendant le rendu : pas d'effet, pas de rendu de trop.
   const [demandeVue, setDemandeVue] = useState(demandeLancer);
-  // LA VUE ET LE FILTRE SE RETROUVENT au retour d'une conversation.
+  // LA VUE SE RETROUVE au retour d'une conversation.
   const [vue, setVue] = useState(vueGardee);
-  const [filtre, setFiltre] = useState(filtreGarde);
   useEffect(() => {
     vueGardee = vue;
-    filtreGarde = filtre;
-  }, [vue, filtre]);
-  const [recherche, setRecherche] = useState<string | null>(null);
-  // LA HAUTEUR RÉELLE DE L'EN-TÊTE, mesurée : sur un petit téléphone le
-  // sous-titre passe sur deux lignes, et les étiquettes ne doivent pas
-  // glisser dessous.
-  const [hautTete, setHautTete] = useState(0);
-  const obsTete = useRef<ResizeObserver | null>(null);
-  const refTete = useCallback((el: HTMLElement | null) => {
-    obsTete.current?.disconnect();
-    obsTete.current = null;
-    if (!el) return;
-    const mesurer = () => setHautTete(Math.round(el.offsetTop + el.offsetHeight - 8));
-    obsTete.current = new ResizeObserver(mesurer);
-    obsTete.current.observe(el);
-    mesurer();
-  }, []);
+  }, [vue]);
   if (demandeLancer !== demandeVue) {
     setDemandeVue(demandeLancer);
     setLancer(true);
@@ -181,70 +208,6 @@ export function Ensemble({
   }
   const [sujet, setSujet] = useState("");
   const liste = voirArchives ? archives : actives;
-
-  // ═══ LES SCÈNES DU SALON ═══ — mes salons d'abord, dans l'ordre de leur
-  // ouverture ; puis les salons publics à découvrir, plus bas dans le même lieu.
-  const q = (recherche ?? "").trim().toLowerCase();
-  const correspond = (t: string) => !q || t.toLowerCase().includes(q);
-  // La première fois, l'activité la plus récente d'abord ; ensuite, l'ordre gardé.
-  const rangs = rangsDe([...actives].sort((a, b) => (b.activite ?? 0) - (a.activite ?? 0)).map((d) => d.cle));
-  const scenesMiennes: SceneDeSalon[] = actives
-    .filter((d) => correspond(d.titre))
-    .map((d) => {
-      const x = salons[d.cle];
-      const autres = x.presents.filter((q2) => !cestMoi(q2));
-      return {
-        cle: d.cle,
-        titre: d.titre,
-        prive: x.acces ? x.acces.prive : x.prive !== false,
-        membre: true,
-        participants: [...autres, "Toi"],
-        ...(x.acces ? { nb: x.acces.nb } : {}),
-        nonLus: d.nonLus,
-        ...(d.dernier ? { dernier: { qui: d.dernier.moi ? "Toi" : d.dernier.qui, texte: d.dernier.texte } } : {}),
-        contenu: contenuDuSalon(x),
-        _rang: rangs.get(d.cle) ?? 0,
-      };
-    })
-    .sort((a, b) => b._rang - a._rang)
-    .map(({ _rang, ...sc }) => (void _rang, sc));
-  // À DÉCOUVRIR : dans la vraie ville, la liste du serveur ; dans la
-  // démonstration, les salons publics du téléphone où je ne suis pas.
-  const publicsLocaux = onVoirPublic
-    ? []
-    : Object.values(salons).filter((x) => x.ouvert && x.prive === false && !x.archive && !x.presents.some(cestMoi) && !cestMoi(x.parQui));
-  const scenesPubliques: SceneDeSalon[] = [
-    ...aDecouvrir.map((x) => ({
-      cle: `pub:${x.id}`,
-      titre: x.sujet,
-      prive: false,
-      membre: false,
-      participants: x.parQui ? [x.parQui] : [],
-      nb: x.nb,
-      nonLus: 0,
-      ...(x.dernier ? { dernier: x.dernier } : {}),
-      contenu: estUneImage(x.photo) ? [x.photo] : [],
-    })),
-    ...publicsLocaux.map((x) => ({
-      cle: x.cle,
-      titre: x.sujet,
-      prive: false,
-      membre: false,
-      participants: x.presents,
-      nonLus: 0,
-      contenu: contenuDuSalon(x),
-    })),
-  ].filter((x) => correspond(x.titre));
-  const scenes = [
-    ...(filtre === "decouvrir" ? [] : scenesMiennes),
-    ...(filtre === "miens" ? [] : scenesPubliques.map((x, i) => (i === 0 && filtre === "tous" && scenesMiennes.length ? { ...x, debutDecouverte: true } : x))),
-  ];
-  // LE BADGE DIT CE QU'IL COMPTE : des discussions avec du nouveau, des invitations.
-  const avecDuNouveau = actives.filter((d) => d.nonLus > 0).length;
-  const nouvelles = [
-    avecDuNouveau ? `${avecDuNouveau} discussion${avecDuNouveau > 1 ? "s" : ""} avec du nouveau` : "",
-    invitations.length ? `${invitations.length} invitation${invitations.length > 1 ? "s" : ""}` : "",
-  ].filter(Boolean);
 
   const lancerMaintenant = () => {
     const t = sujet.trim();
@@ -254,71 +217,104 @@ export function Ensemble({
     setLancer(false);
   };
 
-  if (vue === "salon")
+  if (vue === "salon") {
+    // ═══ LES ALCÔVES ═══ — mes salons dans l'ordre de leur ouverture ; les
+    // salons publics à découvrir, chacun dans son coin.
+    const rangs = rangsDe([...actives].sort((a, b) => (b.activite ?? 0) - (a.activite ?? 0)).map((d) => d.cle));
+    const miensAlcoves: AlcoveData[] = actives
+      .map((d) => {
+        const x = salons[d.cle];
+        const scene = sceneDuSalon(d.cle);
+        const autres: Assis[] = x.acces?.participants
+          ? x.acces.participants.filter((p) => !p.moi).map((p) => ({ cle: p.auteur, qui: p.qui, look: p.look }))
+          : [...new Set([x.parQui, ...x.presents].filter((q2) => q2 && !cestMoi(q2) && q2 !== "Le commerce"))].map((q2) => ({ cle: q2, qui: q2 }));
+        const vote = attentes.some((t) => t.cle === d.cle && t.genre === "avis");
+        const lanceParMoi = x.acces ? x.acces.role === "createur" : cestMoi(x.parQui);
+        const phrase = vote
+          ? "Ton vote est attendu"
+          : d.nonLus > 0
+            ? `${d.nonLus} ${d.nonLus > 1 ? "nouveaux messages" : "nouveau message"}`
+            : !d.dernier && lanceParMoi
+              ? "Tu as lancé cette discussion"
+              : undefined;
+        return {
+          cle: d.cle,
+          scene,
+          titre: d.titre,
+          prive: x.acces ? x.acces.prive : x.prive !== false,
+          membre: true,
+          nb: x.acces ? x.acces.nb : autres.length + 1,
+          autres,
+          ...(d.dernier
+            ? { dernier: { qui: d.dernier.moi ? "Toi" : d.dernier.qui, texte: d.dernier.texte, look: d.dernier.moi ? undefined : lookDeQui(d.dernier.qui, autres, scene) } }
+            : {}),
+          ...(phrase ? { phrase } : {}),
+          nonLus: d.nonLus,
+          contenu: contenuDuSalon(x),
+          _rang: rangs.get(d.cle) ?? 0,
+        };
+      })
+      .sort((a, b) => b._rang - a._rang)
+      .map(({ _rang, ...a }) => (void _rang, a));
+    // À DÉCOUVRIR : dans la vraie ville, la liste du serveur ; dans la
+    // démonstration, les salons publics du téléphone où je ne suis pas.
+    const publicsLocaux = onVoirPublic
+      ? []
+      : Object.values(salons).filter((x) => x.ouvert && x.prive === false && !x.archive && !x.collectif && !x.presents.some(cestMoi) && !cestMoi(x.parQui));
+    const decouverte: AlcoveData[] = [
+      ...aDecouvrir.map((x) => {
+        const autres: Assis[] = (x.visibles ?? []).map((v) => ({ cle: v.auteur, qui: v.qui, look: v.look }));
+        const scene = `pub:${x.id}`;
+        return {
+          cle: scene,
+          scene,
+          titre: x.sujet,
+          prive: false,
+          membre: false,
+          nb: x.nb,
+          autres,
+          ...(x.dernier ? { dernier: { ...x.dernier, look: lookDeQui(x.dernier.qui, autres, scene) } } : {}),
+          nonLus: 0,
+          contenu: estUneImage(x.photo) ? [x.photo] : [],
+        };
+      }),
+      ...publicsLocaux.map((x) => {
+        const autres: Assis[] = [...new Set([x.parQui, ...x.presents].filter(Boolean))].map((q2) => ({ cle: q2, qui: q2 }));
+        const dernier = [...x.messages].reverse().find((m) => m.voix !== "systeme" && m.texte);
+        return {
+          cle: x.cle,
+          titre: x.sujet,
+          prive: false,
+          membre: false,
+          nb: autres.length,
+          autres,
+          ...(dernier ? { dernier: { qui: dernier.qui, texte: dernier.texte } } : {}),
+          nonLus: 0,
+          contenu: contenuDuSalon(x),
+        };
+      }),
+    ];
     return (
       <div className="en en-salon">
         <StylesEnsemble />
-        <GrandSalon
-          scenes={scenes}
-          recherche={recherche ?? ""}
-          enHaut={hautTete || 118 + (recherche !== null ? 52 : 0)}
+        <EnsembleAlcoves
+          ville={ville}
+          miens={miensAlcoves}
+          publics={publicsDeLaVisite(decouverte, miensAlcoves)}
+          invitations={[
+            ...invitations.map((x) => ({ cle: x.cle, titre: x.sujet, prive: x.acces?.prive ?? true, par: x.acces?.invitePar || x.parQui })),
+            ...enAttente.map((x) => ({ cle: x.cle, titre: x.sujet, prive: true, par: x.parQui, demande: true })),
+          ]}
+          onRepondre={(cle, oui) => repondreInvitation(salons[cle], oui)}
+          onVoir={(a) => (a.cle.startsWith("pub:") ? onVoirPublic?.(a.cle.slice(4)) : onOuvrir(a.cle))}
+          onPlace={(a) => onPlace?.(a)}
+          onInviter={(a) => onOuvrir(a.cle)}
           onIdee={() => onIdee?.()}
-          onOuvrir={(sc) => (sc.cle.startsWith("pub:") ? onVoirPublic?.(sc.cle.slice(4)) : onOuvrir(sc.cle))}
         />
-        {/* L'EN-TÊTE, PAR-DESSUS LE SALON : le titre, la recherche, la vue liste, les filtres. */}
-        <header className="en-salon-tete" ref={refTete}>
-          <div className="en-salon-l1">
-            <div>
-              <h1>Ensemble</h1>
-              {/* « TROP DE SOLLICITATIONS SIMULTANÉES. » Le total devient une
-                  mention discrète sous le titre ; les pastilles des salons et
-                  le bouton du premier plan suffisent à appeler l'œil. */}
-              {nouvelles.length > 0 ? (
-                <button
-                  type="button"
-                  className="en-nouveau-discret"
-                  aria-label={nouvelles.join(" · ")}
-                  onClick={() => setVue("liste")}
-                >
-                  {[avecDuNouveau ? `${avecDuNouveau} avec du nouveau` : "", invitations.length ? `${invitations.length} invitation${invitations.length > 1 ? "s" : ""}` : ""]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </button>
-              ) : (
-                <p>Prends place dans la conversation.</p>
-              )}
-            </div>
-            <button type="button" className="en-icone" aria-label="Rechercher dans les discussions" onClick={() => setRecherche((r) => (r === null ? "" : null))}>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="11" cy="11" r="6.5" />
-                <path d="m16 16 4.5 4.5" />
-              </svg>
-            </button>
-            <button type="button" className="en-icone" aria-label="Vue liste" onClick={() => setVue("liste")}>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />
-              </svg>
-            </button>
-          </div>
-          {recherche !== null && (
-            <input className="en-recherche" autoFocus value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Un salon, un sujet…" aria-label="Rechercher" />
-          )}
-          <nav className="en-filtres" aria-label="Filtrer les salons">
-            {(
-              [
-                ["tous", "Tous"],
-                ["miens", "Mes salons"],
-                ["decouvrir", "À découvrir"],
-              ] as const
-            ).map(([f, l]) => (
-              <button key={f} type="button" className={filtre === f ? "on" : ""} onClick={() => setFiltre(f)}>
-                {l}
-              </button>
-            ))}
-          </nav>
-        </header>
+        {enPlus}
       </div>
     );
+  }
 
   return (
     <div className="en">

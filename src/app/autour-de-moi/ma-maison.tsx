@@ -15,6 +15,8 @@
 // telle qu'un ami la verrait : sans les essais privés, sans les réservations,
 // sans les conversations.
 import { useState, useSyncExternalStore } from "react";
+import { abonnerLook, monLook } from "@/lib/direct/look";
+import { changerDeLook } from "./prendre-place";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import type { MessageVille } from "@/lib/direct/la-ville";
 import type { FantomePose } from "@/lib/direct/mes-fantomes";
@@ -103,6 +105,7 @@ export function MaMaison({
   const [onglet, setOnglet] = useState<"essais" | "decouvertes" | "publications">("essais");
   const [ouverte, setOuverte] = useState<ClePiece | null>(null);
   const [edition, setEdition] = useState(false);
+  const look = useSyncExternalStore(abonnerLook, monLook, monLook);
   const [presentation, setPresentation] = useState("");
   const [invite, setInvite] = useState("");
   const [visite, setVisite] = useState(false);
@@ -194,9 +197,18 @@ export function MaMaison({
 
       {/* ═══ QUI HABITE LÀ ═══ */}
       <section className="mm-qui">
-        <span className="mm-av" aria-hidden="true">
-          {(nom[0] ?? "🙂").toUpperCase()}
-        </span>
+        {visiteur ? (
+          <span className="mm-av" aria-hidden="true">
+            {(nom[0] ?? "🙂").toUpperCase()}
+          </span>
+        ) : (
+          // MON FANTÔME — le même look dans Ensemble, les conversations et ici.
+          <button type="button" className="mm-av mm-av-fantome" onClick={changerDeLook} aria-label={`Mon fantôme : ${look.nom}. Changer mon fantôme`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={look.image} alt="" />
+            <i aria-hidden="true">✎</i>
+          </button>
+        )}
         <div className="mm-qui-t">
           <b>{nom ? `Chez ${nom}` : "Chez toi"}</b>
           {edition ? (
@@ -236,6 +248,11 @@ export function MaMaison({
             </em>
           )}
         </div>
+        {!visiteur && !commeAmi && (
+          <button type="button" className="mm-voir mm-look" onClick={changerDeLook}>
+            Changer mon fantôme <s aria-hidden="true">›</s>
+          </button>
+        )}
         {!commeAmi && (
           <button type="button" className="mm-voir" onClick={() => setCommeAmi(true)}>
             Voir comme mes amis <s aria-hidden="true">›</s>
@@ -544,7 +561,7 @@ function StylesMaMaison() {
 .mm-commeami{display:flex;align-items:center;gap:10px;margin:0 2px 12px;padding:10px 12px;border-radius:14px;
   background:rgba(245,162,58,.12);border:1px solid rgba(245,162,58,.4);font-size:13px;color:#FFE3BD;}
 .mm-commeami button{flex:none;border:0;border-radius:999px;padding:8px 12px;background:linear-gradient(180deg,#F8B451,#E8932A);color:#2A1608;font:inherit;font-weight:700;cursor:pointer;}
-.mm-qui{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"av t" "v v";gap:10px 14px;align-items:center;
+.mm-qui{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"av t" "l v";gap:10px 14px;align-items:center;
   margin:0 2px 14px;padding:14px;border-radius:20px;background:#211813;border:1px solid rgba(255,214,170,.14);}
 .mm-av{grid-area:av;display:grid;place-items:center;width:64px;height:64px;border-radius:50%;font-size:28px;font-weight:800;
   color:#1C1009;background:linear-gradient(135deg,#F5A23A,#FF7DBE);border:2px solid rgba(255,244,230,.6);}
@@ -557,6 +574,11 @@ function StylesMaMaison() {
 .mm-edit{margin-left:8px;border:0;background:none;color:#F5A23A;font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:0;}
 .mm-voir{grid-area:v;justify-self:end;border:0;background:none;color:#FFF4E6;font:inherit;font-size:14px;font-weight:600;cursor:pointer;}
 .mm-voir s{text-decoration:none;margin-left:4px;}
+.mm-voir.mm-look{grid-area:l;justify-self:start;padding:0;color:#F5B544;font-weight:700;}
+.mm-av-fantome{position:relative;padding:0;cursor:pointer;background:radial-gradient(circle at 50% 40%,#FFE7C2,#F5B544 70%);overflow:visible;}
+.mm-av-fantome img{width:84%;height:auto;max-width:none;border-radius:0 0 30px 30px;}
+.mm-av-fantome i{position:absolute;right:-4px;bottom:-2px;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;
+  background:#2A1608;color:#F5B544;font-style:normal;font-size:12px;border:1.5px solid #F5B544;}
 
 /* LA MAISON : un toit, des murs de bois, huit pièces éclairées. */
 .mm-maison{position:relative;margin:4px 0 6px;padding:0 6px;}

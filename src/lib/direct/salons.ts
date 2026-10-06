@@ -223,7 +223,7 @@ export type AccesSalon = {
   nb: number;
   role?: "createur" | "moderateur" | "membre";
   sourdine?: boolean;
-  participants?: { auteur: string; qui: string; role: string; moi: boolean }[];
+  participants?: { auteur: string; qui: string; role: string; moi: boolean; look?: string }[];
   /** Pour le créateur et les modérateurs : qui demande à entrer. */
   demandes?: { auteur: string; qui: string }[];
   /** Le jeton de l'invitation (à mon nom, ou du lien reçu). */

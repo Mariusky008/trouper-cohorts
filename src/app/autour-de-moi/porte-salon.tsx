@@ -152,12 +152,26 @@ export function PorteDuSalon({ salon, onRetour }: { salon: Salon; onRetour: () =
 
 /**
  * UN SALON PUBLIC LU SANS L'AVOIR REJOINT — à la place de la barre de saisie.
- * Le lire n'ajoute personne aux participants ; le rejoindre est un geste.
+ * Le lire n'ajoute personne aux participants ; le rejoindre est un geste :
+ * `onRejoindre` ouvre le choix du fantôme et la confirmation. Une invitation à
+ * mon nom s'accepte directement.
  */
-export function LectureDuSalon({ salon }: { salon: Salon }) {
+export function LectureDuSalon({ salon, onRejoindre }: { salon: Salon; onRejoindre?: () => void }) {
   const [attente, setAttente] = useState(false);
   const [mot, setMot] = useState("");
   const invite = salon.acces?.statut === "invite";
+  if (!invite && onRejoindre)
+    return (
+      <div className="ps-lecture">
+        <Styles />
+        <p>
+          <b>🌍 Tu lis ce salon public sans l’avoir rejoint.</b> Les messages publiés ici sont visibles par tous ceux qui le consultent.
+        </p>
+        <button type="button" className="ps-bouton" onClick={onRejoindre}>
+          Rejoindre pour répondre
+        </button>
+      </div>
+    );
   return (
     <div className="ps-lecture">
       <Styles />

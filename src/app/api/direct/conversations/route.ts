@@ -33,6 +33,7 @@ import { randomBytes } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assurerHabitant, habitantCourant } from "@/lib/direct/habitant";
 import { villeSlug } from "@/lib/direct/ville";
+import { lookValide } from "@/lib/direct/look";
 import { PREFIXE_PRIVE, cheminPrive, rangerPhotoPrivee } from "@/lib/direct/ranger-photo";
 import {
   actif,
@@ -264,7 +265,25 @@ const prenom = (qui: unknown, connu: string) => {
   return q && q !== "Vous" ? q : connu || "Un ami";
 };
 
-type Personne = { auteur: string; qui: string; role: string; moi: boolean };
+type Personne = { auteur: string; qui: string; role: string; moi: boolean; look?: string };
+
+/**
+ * LES LOOKS D'UNE LISTE D'HABITANTS. Si la colonne n'existe pas encore (la
+ * migration du look n'est pas appliquée), rien : chacun garde son look par
+ * défaut, et le reste de la réponse n'en souffre pas.
+ */
+async function looksDe(supabase: Supabase, ids: string[]): Promise<Map<string, string>> {
+  const res = new Map<string, string>();
+  if (!ids.length) return res;
+  try {
+    const { data, error } = await supabase.from("human_habitants").select("id, look").in("id", ids.slice(0, 300));
+    if (error) return res;
+    for (const r of (data ?? []) as Ligne[]) if (lookValide(r.look)) res.set(s(r.id), s(r.look));
+  } catch {
+    /* pas de looks */
+  }
+  return res;
+}
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -338,6 +357,7 @@ export async function GET(request: Request) {
       }
       const membresDe = new Map<string, LigneMembre[]>();
       for (const m of ((tous ?? []) as Ligne[]).map(lireMembre)) membresDe.set(m.conversation, [...(membresDe.get(m.conversation) ?? []), m]);
+      const looks = await looksDe(supabase, [...new Set([...membresDe.values()].flat().filter((x) => actif(x)).map((x) => x.habitant))]);
       const attenteDe = new Map<string, Ligne[]>();
       for (const d of (enAttente ?? []) as Ligne[]) attenteDe.set(s(d.conversation), [...(attenteDe.get(s(d.conversation)) ?? []), d]);
 
@@ -361,7 +381,13 @@ export async function GET(request: Request) {
           });
           continue;
         }
-        const participants: Personne[] = actifs.map((x) => ({ auteur: empreinte(x.habitant, c.id), qui: x.qui || "Un ami", role: x.role, moi: Boolean(moi && x.habitant === moi.id) }));
+        const participants: Personne[] = actifs.map((x) => ({
+          auteur: empreinte(x.habitant, c.id),
+          qui: x.qui || "Un ami",
+          role: x.role,
+          moi: Boolean(moi && x.habitant === moi.id),
+          ...(looks.get(x.habitant) ? { look: looks.get(x.habitant) } : {}),
+        }));
         conversations.push({
           id: c.id,
           base: servirPhotos(c.base, c.id),
@@ -400,11 +426,22 @@ export async function GET(request: Request) {
       if (pubs.length) {
         const idsP = pubs.map((c) => c.id);
         const [{ data: mm }, { data: gg }] = await Promise.all([
-          supabase.from("human_conversation_membres").select("conversation, quitte_le, exclu_le").in("conversation", idsP),
+          supabase.from("human_conversation_membres").select("conversation, habitant, qui, entre_le, quitte_le, exclu_le").in("conversation", idsP),
           supabase.from("human_conversation_gestes").select("conversation, habitant, qui, geste, masque_le").in("conversation", idsP).order("id", { ascending: false }).limit(600),
         ]);
         const nb = new Map<string, number>();
-        for (const r of (mm ?? []) as Ligne[]) if (!r.quitte_le && !r.exclu_le) nb.set(s(r.conversation), (nb.get(s(r.conversation)) ?? 0) + 1);
+        // QUELQUES VRAIS PARTICIPANTS, pour les asseoir dans l'alcôve : leur
+        // prénom, leur look, une empreinte propre à ce salon — rien d'autre.
+        const visibles = new Map<string, { auteur: string; qui: string; habitant: string }[]>();
+        const actifsP = ((mm ?? []) as Ligne[]).filter((r) => !r.quitte_le && !r.exclu_le).sort((a, b) => s(a.entre_le).localeCompare(s(b.entre_le)));
+        for (const r of actifsP) {
+          const c = s(r.conversation);
+          nb.set(c, (nb.get(c) ?? 0) + 1);
+          const l = visibles.get(c) ?? [];
+          if (l.length < 3 && !blocs.jeBloque.has(s(r.habitant))) l.push({ auteur: empreinte(s(r.habitant), c), qui: s(r.qui) || "Un ami", habitant: s(r.habitant) });
+          visibles.set(c, l);
+        }
+        const looksP = await looksDe(supabase, [...new Set([...visibles.values()].flat().map((v) => v.habitant))]);
         const dernier = new Map<string, { qui: string; texte: string }>();
         for (const g of (gg ?? []) as Ligne[]) {
           const c = s(g.conversation);
@@ -420,12 +457,14 @@ export async function GET(request: Request) {
             parQui: s(c.base.parQui),
             ...(s(c.base.photo) ? { photo: servirPhotos(s(c.base.photo), c.id) } : {}),
             nb: nb.get(c.id) ?? 0,
+            visibles: (visibles.get(c.id) ?? []).map((v) => ({ auteur: v.auteur, qui: v.qui, ...(looksP.get(v.habitant) ? { look: looksP.get(v.habitant) } : {}) })),
             activite: c.activite,
             ...(dernier.get(c.id) ? { dernier: dernier.get(c.id) } : {}),
           });
       }
     }
-    return NextResponse.json({ ok: true, moi: moi ? "1" : null, conversations, decouvrir: decouverts });
+    const monLook = moi ? (await looksDe(supabase, [moi.id])).get(moi.id) : undefined;
+    return NextResponse.json({ ok: true, moi: moi ? "1" : null, ...(monLook ? { look: monLook } : {}), conversations, decouvrir: decouverts });
   } catch {
     // MIGRATION PAS ENCORE APPLIQUÉE, OU BASE INDISPONIBLE : rien de partagé,
     // l'application garde ce qui est dans le téléphone.
@@ -496,6 +535,16 @@ export async function POST(request: Request) {
     if (!c.prive) return ok({ id: c.id, lecture: true });
     if (action === "refuser") return ok();
     return demander(supabase, c, h.id, qui, jeton);
+  }
+
+  // ─── MON FANTÔME : l'identifiant d'un look prédéfini, rattaché à l'habitant ───
+  if (action === "look") {
+    if (!lookValide(p?.look)) return non("Look inconnu.", 400);
+    const h = await assurerHabitant(supabase, villeSlug(s(p?.ville)));
+    if (!h) return non("Indisponible.", 503);
+    const { error } = await supabase.from("human_habitants").update({ look: s(p?.look) }).eq("id", h.id);
+    // Migration pas encore appliquée : le look reste sur l'appareil.
+    return ok({ garde: !error });
   }
 
   // ─── TOUT LE RESTE PORTE SUR UN SALON DONNÉ ───
@@ -584,7 +633,10 @@ export async function POST(request: Request) {
   if (action === "rejoindre") {
     if (c.prive) return non("Ce salon est privé : il faut y être invité.");
     if (!(await entrer(supabase, c.id, h.id, qui))) return non("Tu ne peux plus rejoindre ce salon.");
-    return ok();
+    // LE NOMBRE RÉEL DE MEMBRES, après mon entrée : l'écran l'affiche tel quel.
+    const { data: mm } = await supabase.from("human_conversation_membres").select("habitant, quitte_le, exclu_le").eq("conversation", c.id);
+    const nb = ((mm ?? []) as Ligne[]).filter((r) => !r.quitte_le && !r.exclu_le).length;
+    return ok({ nb });
   }
 
   if (action === "quitter") {

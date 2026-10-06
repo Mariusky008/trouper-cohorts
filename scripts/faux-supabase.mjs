@@ -49,6 +49,7 @@ const DEFAUTS = {
     confirmed_at: null,
     unsub_token: hex(8),
     telephone: null,
+    look: null,
   }),
   human_conversations: () => ({ cree_le: maintenant(), activite: maintenant(), prive: true, supprime_le: null, createur: null }),
   human_conversation_gestes: () => ({ id: suite++, cree_le: maintenant(), masque_le: null }),

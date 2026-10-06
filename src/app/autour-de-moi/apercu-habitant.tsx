@@ -165,10 +165,12 @@ import {
   lienConnu,
   lienDInvitation,
   preparerLien,
+  rejoindreEtCompter,
   salonDuLien,
   salonsADecouvrirDeLaVille,
   voirSalonPublic,
 } from "@/lib/direct/conversations-sync";
+import { AnnonceInstallation, PanneauPlace, demanderPlace, fermerPlace, panneauOuvert } from "./prendre-place";
 import { messageDeMaison, signalerPublication } from "@/lib/direct/ville-sync";
 import { essaisPartages, lienDeMaMaison, lireUneMaison, publierLaMaison, type MaisonLue } from "@/lib/direct/maison-sync";
 import { abonnerMaison, chargerMaison, MAISON_VIDE } from "@/lib/direct/ma-maison";
@@ -2763,6 +2765,57 @@ export function ApercuHabitant() {
   }, [montrerLeTuto]);
 
   const salon: Salon | undefined = salons[salonOuvert];
+  /**
+   * DÉMONSTRATION : un salon public lancé par quelqu'un d'autre, où je ne suis
+   * pas encore — il se lit, et l'on y répond après l'avoir rejoint, comme dans
+   * la vraie ville.
+   */
+  const lectureDemo = Boolean(
+    salon &&
+      !salon.acces &&
+      salon.prive === false &&
+      !salon.collectif &&
+      !salon.presents.some(cestMoi) &&
+      !cestMoi(salon.parQui) &&
+      !salon.messages.some((m) => cestMoi(m.qui)),
+  );
+  /**
+   * PRENDRE SA PLACE DANS UN SALON : le fantôme, la confirmation, puis
+   * l'adhésion — envoyée au serveur dans la vraie ville, sur le téléphone dans
+   * la démonstration. `a.cle` commence par « pub: » pour un salon public pas
+   * encore chargé sur ce téléphone.
+   */
+  const prendrePlace = (a: { cle: string; titre: string; prive: boolean; nb: number }, depuis: "alcove" | "conversation") =>
+    demanderPlace({
+      cle: a.cle,
+      titre: a.titre,
+      prive: a.prive,
+      nb: a.nb,
+      depuis,
+      rejoindre: async () => {
+        if (reelle) {
+          const cle = a.cle.startsWith("pub:") ? await voirSalonPublic(a.cle.slice(4)) : a.cle;
+          return { ...(await rejoindreEtCompter(cle)), cle };
+        }
+        const qui = monPrenom() || "Vous";
+        entrerDansSalon(a.cle, qui, false);
+        const s2 = chargerSalons()[a.cle];
+        if (!s2?.presents.includes(qui)) return { erreur: "Ce salon ne peut pas être rejoint pour l’instant." };
+        return { erreur: null, nb: new Set([s2.parQui, ...s2.presents]).size, cle: a.cle };
+      },
+      lire: () => {
+        if (depuis === "conversation") return;
+        if (a.cle.startsWith("pub:"))
+          void voirSalonPublic(a.cle.slice(4)).then((cle) => {
+            setSalonOuvert(cle);
+            setSalonPage(true);
+          });
+        else {
+          setSalonOuvert(a.cle);
+          setSalonPage(true);
+        }
+      },
+    });
   // LE LIEN D'INVITATION SE PRÉPARE DÈS QU'ON OUVRE LE SALON : WhatsApp doit
   // s'ouvrir dans le geste même, sans attendre le serveur.
   useEffect(() => {
@@ -11437,6 +11490,8 @@ export function ApercuHabitant() {
                       }
                     : undefined
                 }
+                onPlace={(a) => prendrePlace(a, "alcove")}
+                ville={reelle?.nom ?? "Dax"}
                 lus={lus}
                 cestMoi={cestMoi}
                 moi={monPrenom() || "Vous"}
@@ -13005,8 +13060,18 @@ export function ApercuHabitant() {
                   ceux qui ne viennent pas. Un seul système, une seule date. */}
               {/* UN SALON PUBLIC LU SANS L'AVOIR REJOINT : pas de champ actif,
                   « Rejoindre et participer » à sa place. */}
-              {salon.acces && salon.acces.statut !== "membre" && !porteFermee(salon) && <LectureDuSalon salon={salon} />}
-              {!salon.collectif && (!salon.acces || salon.acces.statut === "membre") && (
+              {((salon.acces && salon.acces.statut !== "membre" && !porteFermee(salon)) || lectureDemo) && (
+                <LectureDuSalon
+                  salon={salon}
+                  onRejoindre={() =>
+                    prendrePlace(
+                      { cle: salon.cle, titre: salon.sujet, prive: false, nb: salon.acces?.nb ?? new Set([salon.parQui, ...salon.presents]).size },
+                      "conversation",
+                    )
+                  }
+                />
+              )}
+              {!salon.collectif && !lectureDemo && (!salon.acces || salon.acces.statut === "membre") && (
               <form
                 className="ap-page-champ"
                 onSubmit={(ev) => {
@@ -13370,7 +13435,17 @@ export function ApercuHabitant() {
               </span>
             </button>
           )}
-          <nav className="ap-onglets" aria-label="Sections" ref={barreOnglets}>
+          {/* PRENDRE SA PLACE : le panneau remonte au-dessus du vrai menu, qui reste à l'écran. */}
+          <PanneauPlace />
+          <AnnonceInstallation />
+          <nav
+            className="ap-onglets"
+            aria-label="Sections"
+            ref={barreOnglets}
+            onClickCapture={() => {
+              if (panneauOuvert()) fermerPlace();
+            }}
+          >
             <button
               type="button"
               className={onglet === "direct" ? "on" : ""}

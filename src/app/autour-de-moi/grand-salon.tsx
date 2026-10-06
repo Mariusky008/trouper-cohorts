@@ -164,14 +164,14 @@ export const compositionDe = (cle: string) => (void cle, COMPOSITIONS[0]);
 /** Le haut d'un meuble, en points du premier plan. */
 const hautDe = (m: { b: number; w: number; r: number }) => m.b - m.w / m.r;
 /** Où s'assied une place : son centre, le bas du fantôme, la ligne d'assise. */
-function assise(c: Composition, p: Place) {
+export function assise(c: Composition, p: Place) {
   const m = c.meubles[p.m];
   const mh = m.w / m.r;
   const u = m.miroir ? 1 - p.u : p.u;
   return { x: m.cx - m.w / 2 + u * m.w, bas: hautDe(m) + p.v * mh, coupe: hautDe(m) + p.c * mh, h: p.h };
 }
 /** L'étendue d'un groupe autour de son ancre, et le haut des têtes (où se rattache l'étiquette). */
-function etendue(c: Composition) {
+export function etendue(c: Composition) {
   const tout = [...c.meubles, c.table];
   const tetes = Math.min(...c.places.map((p) => assise(c, p)).map((a) => a.bas - a.h));
   return {
@@ -522,7 +522,9 @@ export function GrandSalon({
  * navigateur ne refait pas la mise en page des images à chaque pas.
  * `coupe` : ce qui recule dans le passage est coupé à droite par son montant.
  */
-function Groupe({
+/** Un fantôme assis à une place : son image, son rapport largeur / hauteur, et une classe d'animation. */
+export type Siege = { src: string; r: number; classe?: string };
+export function Groupe({
   s,
   ax,
   ay,
@@ -530,17 +532,27 @@ function Groupe({
   z,
   place,
   fenetre,
+  sieges,
 }: {
-  s: SceneDeSalon;
+  s: Pick<SceneDeSalon, "cle" | "participants" | "contenu">;
   ax: number;
   ay: number;
   e: number;
   z?: number;
   place?: number;
   fenetre?: { g: number; d: number } | null;
+  /** Qui est assis à chaque place (sinon : les participants, par leur prénom). `null` : place vide. */
+  sieges?: (Siege | null)[];
 }) {
   const c = compositionDe(s.cle);
   const assis = s.participants.slice(0, c.places.length);
+  const occupants: (Siege | null)[] =
+    sieges ??
+    c.places.map((_, k) => {
+      if (k >= assis.length) return null;
+      const f = fantomeDe(assis[k]);
+      return { src: `${D}${f.src}.webp`, r: f.r };
+    });
   const image = (m: { src: string; r: number; cx: number; b: number; w: number; miroir?: boolean }, cle: string, avant?: Point[]) => (
     // eslint-disable-next-line @next/next/no-img-element
     <img
@@ -571,7 +583,7 @@ function Groupe({
         <i key={`sol${i}`} className="gs-ombre-sol" style={{ left: m.cx - m.w * 0.5, top: m.b - m.w * 0.035, width: m.w, height: m.w * 0.07 }} />
       ))}
       {ordre.map(({ m, i }) => {
-        const ici = c.places.map((pl, k) => ({ pl, k })).filter(({ pl, k }) => pl.m === i && k < assis.length);
+        const ici = c.places.map((pl, k) => ({ pl, k })).filter(({ pl, k }) => pl.m === i && occupants[k]);
         return [
           image(m, `m${i}`),
           ...ici.map(({ pl, k }) => {
@@ -580,10 +592,10 @@ function Groupe({
             return <i key={`os${k}`} className="gs-ombre-siege" style={{ left: a.x - w / 2, top: a.coupe - w * 0.09, width: w, height: w * 0.18 }} />;
           }),
           ...ici.map(({ pl, k }) => {
-            const f = fantomeDe(assis[k]);
+            const f = occupants[k]!;
             const a = assise(c, pl);
             const w = a.h * f.r;
-            const src = `${D}${f.src}.webp`;
+            const src = f.src;
             const cadre = { left: a.x - w / 2, top: a.bas - a.h, width: w, height: a.h };
             // LA LUMIÈRE DE LA PIÈCE : le bas du fantôme s'assombrit, une lumière
             // chaude vient de la gauche (les lampes) — du même côté, retourné ou non.
@@ -591,10 +603,10 @@ function Groupe({
             const masque = { WebkitMaskImage: `url(${src})`, maskImage: `url(${src})` };
             return [
               // eslint-disable-next-line @next/next/no-img-element
-              <img key={`f${k}`} className={`gs-fantome${pl.miroir ? " miroir" : ""}`} src={src} alt="" style={cadre} />,
+              <img key={`f${k}`} className={`gs-fantome${pl.miroir ? " miroir" : ""}${f.classe ? ` ${f.classe}` : ""}`} src={src} alt="" style={cadre} />,
               <i
                 key={`fo${k}`}
-                className={`gs-teinte${pl.miroir ? " miroir" : ""}`}
+                className={`gs-teinte${pl.miroir ? " miroir" : ""}${f.classe ? ` ${f.classe}` : ""}`}
                 style={{
                   ...cadre,
                   ...masque,
@@ -603,7 +615,7 @@ function Groupe({
               />,
               <i
                 key={`fl${k}`}
-                className={`gs-reflet${pl.miroir ? " miroir" : ""}`}
+                className={`gs-reflet${pl.miroir ? " miroir" : ""}${f.classe ? ` ${f.classe}` : ""}`}
                 style={{ ...cadre, ...masque, background: `linear-gradient(${sens},rgba(255,190,110,.35),rgba(255,190,110,0) 35%)` }}
               />,
             ];
@@ -612,7 +624,7 @@ function Groupe({
           ...ici.map(({ pl, k }) => {
             const a = assise(c, pl);
             const w = a.h * 0.6;
-            return <i key={`oc${k}`} className="gs-ombre" style={{ left: a.x - w / 2, top: a.coupe + 2 - w * 0.1, width: w, height: w * 0.2 }} />;
+            return <i key={`oc${k}`} className={`gs-ombre${occupants[k]?.classe ? ` ${occupants[k]!.classe}-ombre` : ""}`} style={{ left: a.x - w / 2, top: a.coupe + 2 - w * 0.1, width: w, height: w * 0.2 }} />;
           }),
         ];
       })}
@@ -901,7 +913,7 @@ function GroupeFixe({ s, larg }: { s: SceneDeSalon; larg: number }) {
   );
 }
 
-function StylesGrandSalon() {
+export function StylesGrandSalon() {
   return (
     <style
       dangerouslySetInnerHTML={{
