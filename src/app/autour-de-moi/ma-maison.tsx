@@ -248,15 +248,17 @@ export function MaMaison({
             </em>
           )}
         </div>
-        {!visiteur && !commeAmi && (
-          <button type="button" className="mm-voir mm-look" onClick={changerDeLook}>
-            Changer mon fantôme <s aria-hidden="true">›</s>
-          </button>
-        )}
         {!commeAmi && (
-          <button type="button" className="mm-voir" onClick={() => setCommeAmi(true)}>
-            Voir comme mes amis <s aria-hidden="true">›</s>
-          </button>
+          <div className="mm-qui-actions">
+            {!visiteur && (
+              <button type="button" className="mm-voir mm-look" onClick={changerDeLook}>
+                Changer mon fantôme <s aria-hidden="true">›</s>
+              </button>
+            )}
+            <button type="button" className="mm-voir" onClick={() => setCommeAmi(true)}>
+              Voir comme mes amis <s aria-hidden="true">›</s>
+            </button>
+          </div>
         )}
       </section>
 
@@ -561,23 +563,25 @@ function StylesMaMaison() {
 .mm-commeami{display:flex;align-items:center;gap:10px;margin:0 2px 12px;padding:10px 12px;border-radius:14px;
   background:rgba(245,162,58,.12);border:1px solid rgba(245,162,58,.4);font-size:13px;color:#FFE3BD;}
 .mm-commeami button{flex:none;border:0;border-radius:999px;padding:8px 12px;background:linear-gradient(180deg,#F8B451,#E8932A);color:#2A1608;font:inherit;font-weight:700;cursor:pointer;}
-.mm-qui{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"av t" "l v";gap:10px 14px;align-items:center;
+.mm-qui{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"av t" "a a";gap:14px 16px;align-items:center;
   margin:0 2px 14px;padding:14px;border-radius:20px;background:#211813;border:1px solid rgba(255,214,170,.14);}
-.mm-av{grid-area:av;display:grid;place-items:center;width:64px;height:64px;border-radius:50%;font-size:28px;font-weight:800;
+.mm-av{grid-area:av;display:grid;place-items:center;width:88px;height:88px;border-radius:50%;font-size:28px;font-weight:800;
   color:#1C1009;background:linear-gradient(135deg,#F5A23A,#FF7DBE);border:2px solid rgba(255,244,230,.6);}
 .mm-qui-t{grid-area:t;min-width:0;}
 .mm-qui-t b{display:block;font-size:22px;font-weight:800;}
-.mm-qui-t em{display:block;font-style:normal;font-size:14px;color:#CDB9A5;margin-top:3px;}
+.mm-qui-t em{display:block;font-style:normal;font-size:14px;line-height:1.4;color:#CDB9A5;margin-top:4px;}
 .mm-qui-t form{display:flex;gap:6px;margin-top:6px;}
 .mm-qui-t input{flex:1;min-width:0;height:38px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,214,170,.25);background:#17100D;color:#FFF4E6;font:inherit;font-size:14px;}
 .mm-qui-t form button{border:0;border-radius:999px;padding:0 14px;background:#F5A23A;color:#2A1608;font:inherit;font-weight:800;cursor:pointer;}
 .mm-edit{margin-left:8px;border:0;background:none;color:#F5A23A;font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:0;}
-.mm-voir{grid-area:v;justify-self:end;border:0;background:none;color:#FFF4E6;font:inherit;font-size:14px;font-weight:600;cursor:pointer;}
+.mm-qui-actions{grid-area:a;display:flex;flex-wrap:wrap;gap:8px;}
+.mm-voir{flex:1 1 auto;min-height:40px;padding:8px 14px;border-radius:999px;border:1px solid rgba(255,214,170,.22);background:rgba(255,236,210,.05);
+  color:#FFF4E6;font:inherit;font-size:13.5px;font-weight:600;white-space:nowrap;cursor:pointer;}
 .mm-voir s{text-decoration:none;margin-left:4px;}
-.mm-voir.mm-look{grid-area:l;justify-self:start;padding:0;color:#F5B544;font-weight:700;}
+.mm-voir.mm-look{border-color:rgba(245,181,68,.55);color:#F5B544;font-weight:700;}
 .mm-av-fantome{position:relative;padding:0;cursor:pointer;background:radial-gradient(circle at 50% 40%,#FFE7C2,#F5B544 70%);overflow:visible;}
-.mm-av-fantome img{width:84%;height:auto;max-width:none;border-radius:0 0 30px 30px;}
-.mm-av-fantome i{position:absolute;right:-4px;bottom:-2px;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;
+.mm-av-fantome img{width:90%;height:auto;max-width:none;border-radius:0 0 30px 30px;}
+.mm-av-fantome i{position:absolute;right:-2px;bottom:0;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;
   background:#2A1608;color:#F5B544;font-style:normal;font-size:12px;border:1.5px solid #F5B544;}
 
 /* LA MAISON : un toit, des murs de bois, huit pièces éclairées. */
