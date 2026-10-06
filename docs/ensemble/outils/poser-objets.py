@@ -35,12 +35,12 @@ def masque_lampe(x0, y0, x1, y1):
 morceaux = {
     'lampe': ((60, 895, 280, 1172), masque_lampe),
     'tasse': ((40, 1150, 180, 1300), lambda *bx: masque_ceramique(*bx)),
-    'bol': ((628, 1098, 780, 1185), lambda *bx: masque_ceramique(*bx, 0.42, 0.38)),
+    'bol': ((628, 1098, 724, 1185), lambda *bx: masque_ceramique(*bx, 0.42, 0.38)),
 }
 dev = Image.open(dst + '/scene-canape-vert-devant.webp').convert('RGBA')
 DY = 700
 k = 0.6
-poses = {'lampe': (232, 912), 'tasse': (348, 962), 'bol': (612, 944)}
+poses = {'lampe': (298, 905), 'tasse': (392, 968), 'bol': (712, 948)}
 ombre = Image.new('L', dev.size, 0); od = ImageDraw.Draw(ombre)
 pieces = []
 for nom, ((x0, y0, x1, y1), fm) in morceaux.items():

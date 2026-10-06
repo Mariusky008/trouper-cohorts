@@ -59,17 +59,17 @@ export const DECOR = {
   devantY: 700,
   l: 941,
   h: 1672,
-  cadre: { x0: 205, x1: 735, assise: 790, part: 0.47 },
-  /** Le milieu de chaque place, de gauche à droite. */
-  places: [300, 470, 640],
-  /** Le bas des fantômes : juste sous le bord arrière du plateau (≈ 840). */
-  bas: 872,
-  /** La hauteur d'un fantôme assis. */
-  hauteur: 205,
+  cadre: { x0: 265, x1: 895, assise: 790, part: 0.47 },
+  /** Le milieu de chaque coussin occupé, de gauche à droite (relevé sur la photo). */
+  places: [370, 582, 790],
+  /** Le bas des fantômes : posé sur l'assise (de 735 au fond à 775 au bord), pas devant. */
+  bas: 795,
+  /** La hauteur d'un fantôme assis : la tête dépasse du dossier (haut vers 620). */
+  hauteur: 215,
   /** Le creux du coussin, pour la place libre. */
-  coussin: 772,
+  coussin: 755,
   /** Le centre de la zone libre du plateau, et la largeur d'une photo posée. */
-  plateau: { x: 470, y: 922, l: 150 },
+  plateau: { x: 545, y: 930, l: 150 },
 } as const;
 
 const reduit = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -113,7 +113,7 @@ export function cadrage(W: number, H: number) {
   if (l * s < W) s = W / l;
   const ox = Math.min(Math.max(((cadre.x0 + cadre.x1) / 2) * s - W / 2, 0), l * s - W);
   // Petit écran : la scène remonte un peu, pour laisser la table au-dessus du titre.
-  const part = H < 600 ? cadre.part - 0.05 : cadre.part;
+  const part = H < 600 ? cadre.part - 0.01 : cadre.part;
   const oy = Math.min(Math.max(cadre.assise * s - part * H, 0), h * s - H);
   return { s, ox, oy, x: (v: number) => v * s - ox, y: (v: number) => v * s - oy };
 }
@@ -171,13 +171,18 @@ export function Alcove({
                   key={k}
                   className="al-coussin"
                   aria-hidden="true"
-                  style={{ left: x, top: c.y(DECOR.coussin), width: 150 * c.s, height: 80 * c.s }}
+                  style={{ left: x, top: c.y(DECOR.coussin), width: 190 * c.s, height: 70 * c.s }}
                 />
               );
             const img = p.qui === "moi" ? imageAssis("moi", decor) : imageAssis(p.qui, decor);
             const miroir = !img.frontal && k === places.length - 1;
             const arrive = p.qui === "moi" && installe && !calme;
-            return (
+            const lf = hf * img.r;
+            return [
+              // ASSIS POUR DE VRAI : l'ombre sur le dossier derrière lui, et
+              // celle de contact où il pèse sur le coussin.
+              <i key={`d${k}`} className="al-ombre-dos" aria-hidden="true" style={{ left: x + lf * 0.06, top: haut + hf * 0.42, width: lf * 0.95, height: hf * 0.5 }} />,
+              <i key={`c${k}`} className="al-ombre-assise" aria-hidden="true" style={{ left: x, top: c.y(DECOR.bas) - 6 * c.s, width: lf * 1.05, height: 30 * c.s }} />,
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 key={k}
@@ -193,8 +198,8 @@ export function Alcove({
                   zIndex: k === 1 ? 3 : 2,
                   ...(miroir ? { scale: "-1 1" } : {}),
                 }}
-              />
-            );
+              />,
+            ];
           })}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -229,7 +234,7 @@ export function Alcove({
                   key={k}
                   type="button"
                   className="al-libre"
-                  style={{ left: x - 80 * c.s, top: c.y(DECOR.coussin - 95), width: 160 * c.s, height: 150 * c.s }}
+                  style={{ left: x - 85 * c.s, top: c.y(DECOR.coussin - 110), width: 170 * c.s, height: 165 * c.s }}
                   onClick={onPlaceLibre}
                   aria-label="Ta place ? Prendre une place dans ce salon"
                 >
@@ -269,7 +274,11 @@ function StylesAlcove() {
 .al.actif .al-lumiere{opacity:1;}
 .al.calme .al-lumiere{transition:none;}
 .al-fantome{position:absolute;max-width:none;pointer-events:none;object-fit:contain;object-position:50% 100%;
-  filter:brightness(.93) sepia(.08) drop-shadow(0 10px 12px rgba(24,10,2,.45));}
+  filter:brightness(.93) sepia(.08) drop-shadow(0 4px 5px rgba(20,8,0,.4));}
+.al-ombre-dos{position:absolute;z-index:2;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
+  background:radial-gradient(ellipse,rgba(8,4,0,.42) 0%,rgba(8,4,0,.18) 45%,rgba(8,4,0,0) 70%);}
+.al-ombre-assise{position:absolute;z-index:2;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
+  background:radial-gradient(ellipse,rgba(6,3,0,.62) 0%,rgba(6,3,0,.3) 45%,rgba(6,3,0,0) 72%);}
 .al-coussin{position:absolute;z-index:2;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
   background:radial-gradient(ellipse,rgba(255,206,130,.26) 0%,rgba(255,190,110,.1) 48%,rgba(255,190,110,0) 72%);}
 .al.actif .al-coussin{animation:al-respire 3.6s ease-in-out infinite;}
