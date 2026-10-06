@@ -58,7 +58,7 @@ async function ceQuiPart(carte) {
   // LES DEUX CLÉS QUI ÉCARTENT L'ÉCRAN D'ACCUEIL. Sans les deux, on clique
   // dans une feuille de bienvenue et aucun essai ne part.
   await ctx.addInitScript(() => {
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"]));
     localStorage.setItem("clikme-demo-v1", "0");
   });
   const p = await ctx.newPage();

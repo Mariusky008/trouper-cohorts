@@ -49,7 +49,7 @@ const ctx = await nav.newContext({ viewport: { width: 390, height: 844 }, locale
 // intercepte tous les appuis — c'est la même clé que les autres suites posent.
 await ctx.addInitScript(() => {
   try {
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"]));
     // ET ON SORT DU MODE DÉMONSTRATION. Depuis qu'il demande à revoir l'écran
     // d'ouverture à chaque fois, la clé ci-dessus ne suffit plus à le faire
     // passer — voir `TOUJOURS_REVOIR` dans premiere-fois.ts.

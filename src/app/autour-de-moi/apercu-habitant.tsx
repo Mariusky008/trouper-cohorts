@@ -182,6 +182,7 @@ import {
   type ContenuPartage,
   type SalonEcriture,
 } from "./panneau-ensemble";
+import { Bienvenue } from "./bienvenue";
 import { montrerSalonPret } from "./ensemble-alcoves";
 import { messageDeMaison, signalerPublication } from "@/lib/direct/ville-sync";
 import { essaisPartages, lienDeMaMaison, lireUneMaison, publierLaMaison, type MaisonLue } from "@/lib/direct/maison-sync";
@@ -1699,6 +1700,8 @@ export function ApercuHabitant() {
   const [mesTraces, setMesTraces] = useState<FantomePose[]>([]);
   /** Ma maison montre ses réglages (l'ancien « Mon espace ») — voir la roue dentée. */
   const [reglagesMaison, setReglagesMaison] = useState(false);
+  /** « Bienvenue sur Clikme » rouvert depuis Réglages → Aide. */
+  const [revoirBienvenue, setRevoirBienvenue] = useState(false);
   /**
    * LA MAISON D'UN AUTRE HABITANT, EN VISITE — vraie ville seulement. Ouverte
    * par son lien (`?maison=`) ou par « Voir sa maison » dans La ville ; elle
@@ -2796,7 +2799,10 @@ export function ApercuHabitant() {
     // `useSyncExternalStore` existe précisément pour ça : il sert l'instantané
     // du serveur pendant l'hydratation, puis celui du client. Le fondu d'entrée
     // de 0,24 s couvre l'unique image où les deux diffèrent.
-    !vus.includes("balayage");
+    !vus.includes("balayage") &&
+    // LE TUTO D'ARRIVÉE D'ABORD : la démonstration du balayage joue derrière
+    // lui sinon, et personne ne la verrait.
+    vus.includes("bienvenue");
 
   /**
    * LA DÉMONSTRATION SE TERMINE TOUTE SEULE, ET C'EST UN MINUTEUR QUI LA FINIT
@@ -3859,6 +3865,17 @@ export function ApercuHabitant() {
    * parce qu'ils sont aussi écrits, voir `.ap-acc-tous`.
    */
   const accueilOuvert = monte && !!sommet && !accueilVu && !sortie && !embauches;
+  /**
+   * « BIENVENUE SUR CLIKME » — le tuto d'arrivée, une fois l'écran d'ouverture
+   * passé (ou tout de suite dans une vraie ville), sur Le Direct et rien par-dessus.
+   */
+  const bienvenueOuverte =
+    revoirBienvenue ||
+    (monte && accueilVu && onglet === "direct" && !embauches && !sortie && !salonPage && !favorisPage && !feuille && !vus.includes("bienvenue"));
+  const fermerBienvenue = () => {
+    setRevoirBienvenue(false);
+    marquerVu("bienvenue");
+  };
 
   /**
    * ═══ LES NEUF PHOTOS SONT CHARGÉES D'AVANCE ══════════════════════════════
@@ -11761,6 +11778,25 @@ export function ApercuHabitant() {
                   </div>
                 </div>
 
+                {/* AIDE : le tuto d'arrivée, à revoir quand on veut. */}
+                <div className="ap-aide">
+                  <b>Aide</b>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReglagesMaison(false);
+                      allerA_onglet("direct");
+                      setRevoirBienvenue(true);
+                    }}
+                  >
+                    <span>
+                      Revoir la présentation de Clikme
+                      <em>Les 4 gestes pour découvrir ta ville</em>
+                    </span>
+                    <s aria-hidden="true">›</s>
+                  </button>
+                </div>
+
                 {/* ═══ OÙ EST MON FANTÔME ═══
                     « Comment accéder au mur du commerçant si on n'a plus accès à
                     son profil ? Il faudrait que lorsqu'on a laissé un fantôme
@@ -13597,6 +13633,15 @@ export function ApercuHabitant() {
           />
           <PanneauPlace />
           <AnnonceInstallation />
+          {/* LE TUTO D'ARRIVÉE : au premier passage dans Le Direct, par-dessus l'annonce. */}
+          <Bienvenue
+            ouvert={bienvenueOuverte}
+            onFermer={fermerBienvenue}
+            onAller={(o) => {
+              fermerBienvenue();
+              if (o !== "direct") allerA_onglet(o);
+            }}
+          />
           <nav
             className="ap-onglets"
             aria-label="Sections"
@@ -13604,6 +13649,7 @@ export function ApercuHabitant() {
             onClickCapture={() => {
               if (panneauOuvert()) fermerPlace();
               if (panneauEnsembleOuvert()) fermerPanneauEnsemble();
+              if (bienvenueOuverte) fermerBienvenue();
             }}
           >
             <button
@@ -19612,6 +19658,13 @@ export function ApercuHabitant() {
           letter-spacing:-.02em;}
         .ap-traces-t em{display:block;font-style:normal;font-size:12px;
           line-height:1.45;color:rgba(255,255,255,.62);margin-top:3px;}
+        .ap-aide{margin:0 0 14px;}
+        .ap-aide>b{display:block;font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,236,210,.7);margin:0 2px 6px;}
+        .ap-aide button{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;border-radius:16px;cursor:pointer;text-align:left;
+          background:rgba(246,181,75,.1);border:1px solid rgba(246,181,75,.45);color:#FFF4E6;font:inherit;font-size:15px;font-weight:700;}
+        .ap-aide button span{flex:1;min-width:0;}
+        .ap-aide button em{display:block;font-style:normal;font-size:12.5px;font-weight:500;color:rgba(255,236,210,.7);margin-top:2px;}
+        .ap-aide button s{text-decoration:none;font-size:20px;color:#F6B54B;}
         .ap-trace{display:flex;gap:11px;align-items:center;padding:10px;
           background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.11);
           border-radius:16px;margin-bottom:8px;}

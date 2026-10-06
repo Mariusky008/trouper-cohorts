@@ -306,7 +306,7 @@ const ouvrir = async (url = "/autour-de-moi", heure) => {
   // autre chose : on note qu'elle a déjà été vue, comme après un premier
   // passage. Sa propre garde vit dans la suite « accueil ».
   await ctx.addInitScript(() => {
-    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); localStorage.setItem("clikme-demo-v1", "0"); } catch {}
+    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"])); localStorage.setItem("clikme-demo-v1", "0"); } catch {}
   });
   if (heure != null) {
     await ctx.clock.setFixedTime(
@@ -766,7 +766,7 @@ console.log("\n══ mon commerce ══");
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
   await c3.addInitScript(() => {
-    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); localStorage.setItem("clikme-demo-v1", "0"); } catch {}
+    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"])); localStorage.setItem("clikme-demo-v1", "0"); } catch {}
   });
   const q = await c3.newPage();
   q.on("pageerror", (e) => erreurs.push(String(e)));
@@ -999,7 +999,7 @@ console.log("\n══ la vidéo dans le rond ══");
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
   await c4.addInitScript(() => {
-    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); localStorage.setItem("clikme-demo-v1", "0"); } catch {}
+    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"])); localStorage.setItem("clikme-demo-v1", "0"); } catch {}
   });
   const q = await c4.newPage();
   q.on("pageerror", (e) => erreurs.push(String(e)));
@@ -1146,7 +1146,7 @@ console.log("\n══ la vidéo dans le rond ══");
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
   await c5.addInitScript(() => {
-    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); localStorage.setItem("clikme-demo-v1", "0"); } catch {}
+    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"])); localStorage.setItem("clikme-demo-v1", "0"); } catch {}
   });
   const q = await c5.newPage();
   await q.goto(`${BASE}/autour-de-moi?chez=emporter`, { waitUntil: "networkidle" });
@@ -1594,7 +1594,7 @@ console.log("\n══ l'annonce pousse vers l'essai ══");
   });
   await cE.clock.setFixedTime(new Date(2026, 8, 2, 14, 15, 0));
   await cE.addInitScript(() => {
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"]));
     localStorage.setItem("clikme-demo-v1", "0");
   });
   const pE = await cE.newPage();
@@ -1767,7 +1767,7 @@ console.log("\n══ l'essai se joue en trois temps ══");
   });
   await c3.clock.setFixedTime(new Date(2026, 8, 2, 14, 15, 0));
   await c3.addInitScript(() => {
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"]));
     localStorage.setItem("clikme-demo-v1", "0");
   });
   const p3 = await c3.newPage();
@@ -2195,7 +2195,7 @@ console.log("\n══ ce qu'on dépose se voit et s'écrit ══");
     isMobile: true, hasTouch: true, locale: "fr-FR",
   });
   await cA.addInitScript(() => {
-    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"])); localStorage.setItem("clikme-demo-v1", "0"); } catch {}
+    try { localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"])); localStorage.setItem("clikme-demo-v1", "0"); } catch {}
   });
   await cA.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
   const pA = await cA.newPage();
@@ -2988,7 +2988,7 @@ console.log("\n══ la page du commerce ══");
   });
   await lieu.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
   await lieu.addInitScript(() => {
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"]));
     localStorage.setItem("clikme-demo-v1", "0");
   });
   const pL = await lieu.newPage();
@@ -3094,7 +3094,7 @@ console.log("\n══ la page du commerce ══");
       new Date(2026, 8, 2, Math.floor(heure), Math.round((heure % 1) * 60), 0),
     );
     await soir.addInitScript(() => {
-      localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+      localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"]));
       localStorage.setItem("clikme-demo-v1", "0");
     });
     const pS = await soir.newPage();
@@ -3128,7 +3128,7 @@ console.log("\n══ la page du commerce ══");
     });
     await tard.clock.setFixedTime(new Date(2026, 8, 2, 21, 30, 0));
     await tard.addInitScript(() => {
-      localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+      localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"]));
       localStorage.setItem("clikme-demo-v1", "0");
     });
     const pR = await tard.newPage();
@@ -3189,7 +3189,7 @@ console.log("\n══ la page du commerce ══");
   });
   await dec.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
   await dec.addInitScript(() => {
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"]));
     localStorage.setItem("clikme-demo-v1", "0");
   });
   // WHATSAPP NE DOIT PAS EMPORTER L'ONGLET : on neutralise l'ouverture, sinon
@@ -3279,7 +3279,7 @@ console.log("\n══ la page du commerce ══");
   });
   await na.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
   await na.addInitScript(() => {
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"]));
     localStorage.setItem("clikme-demo-v1", "0");
   });
   const pN = await na.newPage();
@@ -3380,7 +3380,7 @@ console.log("\n══ la page du commerce ══");
   });
   await en.clock.setFixedTime(new Date(2026, 8, 2, 8, 30, 0));
   await en.addInitScript(() => {
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"]));
     localStorage.setItem("clikme-demo-v1", "0");
   });
   const pE = await en.newPage();
@@ -3625,7 +3625,7 @@ console.log("\n══ la page du commerce ══");
   });
   await ph.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
   await ph.addInitScript(() => {
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"]));
     localStorage.setItem("clikme-demo-v1", "0");
   });
   const pP = await ph.newPage();
@@ -3736,7 +3736,7 @@ console.log("\n══ la page du commerce ══");
   });
   await bar.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
   await bar.addInitScript(() => {
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"]));
     localStorage.setItem("clikme-demo-v1", "0");
   });
   const pV = await bar.newPage();
@@ -3874,7 +3874,7 @@ console.log("\n══ la page du commerce ══");
   });
   await ta.clock.setFixedTime(new Date(2026, 8, 2, 12, 30, 0));
   await ta.addInitScript(() => {
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"]));
     localStorage.setItem("clikme-demo-v1", "0");
   });
   const pT = await ta.newPage();
@@ -3973,7 +3973,7 @@ console.log("\n══ la page du commerce ══");
   // façon de savoir qu'aucune fenêtre n'est partie : une fenêtre qui s'ouvre
   // puis se referme ne laisse aucune trace dans le document.
   await tel.addInitScript(() => {
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"]));
     localStorage.setItem("clikme-demo-v1", "0");
     window.__ouverts = [];
     window.open = (u) => {

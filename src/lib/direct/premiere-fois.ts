@@ -34,7 +34,9 @@ const CLE = "clikme-vu-v1";
  * page aurait demandé de retrouver laquelle, dans quel composant, le jour où il
  * faudra la défaire.
  */
-export const TOUJOURS_REVOIR = new Set<string>(["accueil"]);
+// « bienvenue » — le tuto d'arrivée — suit la même règle : on le remontre à
+// chaque démonstration, une seule fois à un habitant.
+export const TOUJOURS_REVOIR = new Set<string>(["accueil", "bienvenue"]);
 const CLE_DEMO = "clikme-demo-v1";
 
 /**

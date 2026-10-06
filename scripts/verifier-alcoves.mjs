@@ -66,7 +66,7 @@ await ctx.addInitScript(() => {
   try {
     localStorage.setItem("clikme-prenom", "Marie");
     localStorage.setItem("clikme-demo-v1", "0");
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"]));
   } catch {}
   document.addEventListener("DOMContentLoaded", () => {
     const st = document.createElement("style");
@@ -276,7 +276,7 @@ const ctx2 = await b.newContext({ viewport: { width: W, height: H }, deviceScale
 await ctx2.addInitScript(() => {
   try {
     localStorage.setItem("clikme-prenom", "Théo");
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"]));
   } catch {}
 });
 const q = await ctx2.newPage();
@@ -298,7 +298,7 @@ const ctx3 = await b.newContext({ viewport: { width: W, height: H }, deviceScale
 await ctx3.addInitScript(() => {
   try {
     localStorage.setItem("clikme-prenom", "Zoé");
-    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil", "bienvenue"]));
   } catch {}
 });
 const z = await ctx3.newPage();
