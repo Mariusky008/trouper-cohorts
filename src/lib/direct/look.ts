@@ -30,20 +30,23 @@ export type Look = {
   debout?: string;
   /** Vu de face (les autres images sont de trois quarts, retournées à droite). */
   frontal?: boolean;
+  /** Les mêmes images, yeux fermés, superposables au pixel (le clignement). */
+  cligne?: string;
+  deboutCligne?: string;
 };
 
 const D = "/direct/ensemble/";
 export const TOUS_LES_LOOKS: Look[] = [
-  { id: "flaneur", nom: "Le Flâneur", style: "Casquette marine, écharpe moutarde.", devise: "Curieux, toujours partant.", image: `${D}flaneur-assis.webp`, r: 0.9, debout: `${D}flaneur-debout.webp`, frontal: true },
-  { id: "cosy", nom: "Le Cosy", style: "Bonnet terracotta, écharpe vert sauge.", devise: "Un plaid, un thé, et on refait le monde.", image: `${D}fantome-bonnet.webp`, r: 0.929 },
+  { id: "flaneur", nom: "Le Flâneur", style: "Casquette marine, écharpe moutarde.", devise: "Curieux, toujours partant.", image: `${D}flaneur-assis.webp`, r: 0.9, debout: `${D}flaneur-debout.webp`, frontal: true, cligne: `${D}flaneur-assis-cligne.webp`, deboutCligne: `${D}flaneur-debout-cligne.webp` },
+  { id: "cosy", nom: "Le Cosy", style: "Bonnet terracotta, écharpe vert sauge.", devise: "Un plaid, un thé, et on refait le monde.", image: `${D}fantome-bonnet.webp`, r: 0.929, cligne: `${D}fantome-bonnet-cligne.webp` },
   { id: "artiste", nom: "L'Artiste", style: "Béret bordeaux, lunettes rondes.", devise: "Toujours un carnet dans la poche.", image: `${D}fantome-beret-rouge.webp`, r: 0.777 },
   { id: "jardinier", nom: "Le Jardinier", style: "Couronne de fleurs, foulard crème.", devise: "Les mains dans la terre, le cœur en fleurs.", r: 0.85 },
   { id: "voyageur", nom: "Le Voyageur", style: "Casquette en jean, bandana bleu.", devise: "Toujours un plan pour le prochain départ.", r: 0.85 },
   { id: "lecteur", nom: "Le Lecteur", style: "Lunettes rondes, cardigan beige.", devise: "Un livre d’avance sur tout le monde.", image: `${D}fantome-lunettes-rouges.webp`, r: 0.821 },
   { id: "melomane", nom: "Le Mélomane", style: "Casque audio, bonnet noir.", devise: "Une chanson pour chaque moment.", r: 0.85 },
   { id: "curieux", nom: "Le Curieux", style: "Casquette moutarde, petite sacoche.", devise: "Il pose toujours la question de trop.", r: 0.85 },
-  { id: "reveur", nom: "Le Rêveur", style: "Bonnet lavande, écharpe bleu nuit.", devise: "La tête dans les étoiles.", image: `${D}fantome-echarpe-violette.webp`, r: 0.833 },
-  { id: "local", nom: "Le Local", style: "Béret basque, foulard écru.", devise: "Connaît chaque recoin de la ville.", image: `${D}fantome-beret-noir.webp`, r: 0.746 },
+  { id: "reveur", nom: "Le Rêveur", style: "Bonnet lavande, écharpe bleu nuit.", devise: "La tête dans les étoiles.", image: `${D}fantome-echarpe-violette.webp`, r: 0.833, cligne: `${D}fantome-echarpe-violette-cligne.webp` },
+  { id: "local", nom: "Le Local", style: "Béret basque, foulard écru.", devise: "Connaît chaque recoin de la ville.", image: `${D}fantome-beret-noir.webp`, r: 0.746, cligne: `${D}fantome-beret-noir-cligne.webp` },
   { id: "rebelle", nom: "Le Rebelle", style: "Bonnet noir, bandana rouge.", devise: "Jamais là où on l’attend.", r: 0.85 },
   { id: "soleil", nom: "Le Soleil", style: "Bob orange, lunettes teintées.", devise: "La bonne humeur en plus.", r: 0.85 },
 ];

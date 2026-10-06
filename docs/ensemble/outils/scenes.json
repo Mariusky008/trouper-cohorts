@@ -1,0 +1,7 @@
+{
+ "chalet":       {"table": [440, 1175, 642, 165], "places": [250, 450, 650], "bas": 1005, "hauteur": 270, "coussin": 965, "plateau": [440, 1160], "tasses": [[75, 1078], [790, 1068]]},
+ "terrasse":     {"table": [440, 1145, 700, 170], "places": [255, 445, 635], "bas": 965, "hauteur": 250, "coussin": 930, "plateau": [440, 1120], "tasses": [[112, 978], [760, 1012]]},
+ "bibliotheque": {"table": [430, 1162, 650, 175], "places": [285, 455, 625], "bas": 995, "hauteur": 255, "coussin": 975, "plateau": [440, 1130], "tasses": [[172, 1022], [767, 1027]]},
+ "verriere":     {"table": [430, 1160, 650, 177], "places": [270, 445, 620], "bas": 1000, "hauteur": 255, "coussin": 975, "plateau": [430, 1120], "tasses": [[114, 1003], [748, 1033]]},
+ "ocean":        {"table": [430, 1098, 600, 180], "places": [270, 450, 630], "bas": 905, "hauteur": 245, "coussin": 870, "plateau": [430, 1080], "tasses": [[68, 1012], [806, 937]]}
+}

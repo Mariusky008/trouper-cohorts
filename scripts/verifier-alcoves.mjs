@@ -124,6 +124,16 @@ const titre1 = await texte(`${sceneActive} h2`);
 ok(titre1.length > 0, `scène 1 : « ${titre1} »`);
 ok(await bulleLibre(), "salon : la bulle du menu ne recouvre pas le bouton");
 ok((await compte(`${sceneActive} .al-libre`)) === 1 && (await compte(`${sceneActive} .al-coussin`)) === 1, "place libre : un coussin éclairé et sa pastille, sans cadre");
+// LA SCÈNE VIT : clignements, vapeur ; rien ne bouge en mouvement réduit.
+const anim = await p.evaluate((sel) => {
+  const c = document.querySelector(`${sel} .al-cligne`);
+  const v = document.querySelector(`${sel} .al-vapeur i`);
+  return { cligne: c ? getComputedStyle(c).animationName : "absent", vapeur: v ? getComputedStyle(v).animationName : "absent" };
+}, sceneActive);
+ok(
+  CALME ? anim.cligne !== "al-cligne" && anim.vapeur !== "al-vapeur" : anim.cligne === "al-cligne" && anim.vapeur === "al-vapeur",
+  `animations ${CALME ? "coupées en mouvement réduit" : "actives"} (clignement : ${anim.cligne}, vapeur : ${anim.vapeur})`,
+);
 await capture("02-public-non-rejoint");
 await p.evaluate(() => {
   const e = document.querySelector(".ea-piste");
@@ -280,6 +290,35 @@ await q.getByRole("button", { name: /Choisir plus tard/ }).click();
 await q.waitForTimeout(300);
 ok((await q.locator(".pp-panneau h2").first().innerText()).includes("Ton fantôme est prêt") && (await q.locator(".pp-nom").first().innerText()) === "Le Flâneur", "« Choisir plus tard » : le look par défaut, puis la confirmation");
 ok((await q.locator(`${sceneActive} .al-toi`).count()) === 0, "… sans rejoindre");
+
+// 11. UN SALON À MOI, LOOK JAMAIS CHOISI : « Entrer dans la discussion » demande d'abord le fantôme.
+const ctx3 = await b.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 2, hasTouch: true });
+await ctx3.addInitScript(() => {
+  try {
+    localStorage.setItem("clikme-prenom", "Zoé");
+    localStorage.setItem("clikme-vu-v1", JSON.stringify(["accueil"]));
+  } catch {}
+});
+const z = await ctx3.newPage();
+await z.goto(APP + "/ville/dax", { waitUntil: "networkidle" });
+await z.request.post(APP + ROUTE, { data: { action: "ouvrir", ville: "dax", qui: "Zoé", base: { sujet: "Brunch dimanche", ou: "Dax", quand: "Dimanche", prive: true } } });
+await z.reload({ waitUntil: "networkidle" });
+await z.waitForTimeout(2500);
+await z.locator(".ap-onglets button", { hasText: /Ensemble/i }).first().click({ force: true });
+await z.waitForTimeout(1200);
+ok((await z.locator(".ea-accueil").count()) === 1, "première ouverture d'Ensemble, même avec un salon : l'accueil");
+await z.getByRole("button", { name: /Découvrir les discussions/ }).click();
+await z.waitForTimeout(1000);
+await z.getByRole("button", { name: /Mes salons/ }).click();
+await z.waitForTimeout(400);
+await z.locator(".ea-ligne", { hasText: "Brunch dimanche" }).click();
+await z.waitForTimeout(800);
+await z.locator(`${sceneActive} .ea-cta`).click();
+await z.waitForTimeout(500);
+ok((await z.locator(".pp-panneau h2").first().innerText().catch(() => "")).includes("Choisis ton fantôme"), "membre, look jamais choisi : « Entrer » ouvre d'abord le choix du fantôme");
+await z.getByRole("button", { name: /Garder ce fantôme/ }).click();
+await z.waitForTimeout(1500);
+ok((await z.locator(".pp").count()) === 0 && (await z.locator(".ap-page-champ").count()) === 1, "… puis la conversation s'ouvre");
 
 await b.close();
 console.log(echecs ? `\n${echecs} échec(s)` : "\nTout est bon.");

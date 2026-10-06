@@ -181,7 +181,8 @@ import { abonnerMaison, chargerMaison, MAISON_VIDE } from "@/lib/direct/ma-maiso
    dans le dossier : ce qui est mis de côté doit pouvoir revenir sans qu'on le
    refasse. Seule la ligne qui la montait est remplacée. */
 import { EcranSalon } from "@/components/direct/ecran-salon";
-import { Ensemble, salonsDontJeSuisMembre } from "./ensemble";
+import { Ensemble, salonsDontJeSuisMembre, sceneDuSalon } from "./ensemble";
+import { decorDe } from "./alcove";
 import { BarreDAcces, LectureDuSalon, MenuDuMessage, PorteDuSalon, porteFermee } from "./porte-salon";
 import { aToiDeJouer, nosDiscussions } from "@/lib/direct/ensemble";
 import { MaMaison, type MaisonEnVisite } from "./ma-maison";
@@ -2822,13 +2823,18 @@ export function ApercuHabitant() {
    * la démonstration. `a.cle` commence par « pub: » pour un salon public pas
    * encore chargé sur ce téléphone.
    */
-  const prendrePlace = (a: { cle: string; titre: string; prive: boolean; nb: number }, depuis: "alcove" | "conversation") =>
+  const prendrePlace = (a: { cle: string; titre: string; prive: boolean; nb: number; scene?: string }, depuis: "alcove" | "conversation") =>
     demanderPlace({
       cle: a.cle,
       titre: a.titre,
       prive: a.prive,
       nb: a.nb,
       depuis,
+      // LE DÉCOR DE CE SALON, le même que dans son alcôve.
+      vignette: (() => {
+        const d = decorDe(a.scene ?? sceneDuSalon(a.cle));
+        return { src: d.fond, y: Math.round((d.bas / d.h) * 100) - 4 };
+      })(),
       rejoindre: async () => {
         if (reelle) {
           const cle = a.cle.startsWith("pub:") ? await voirSalonPublic(a.cle.slice(4)) : a.cle;

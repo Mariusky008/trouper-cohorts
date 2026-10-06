@@ -18,7 +18,7 @@
 // dernier message, et la place libre « Ta place ? » est une invitation à
 // s'asseoir, pas une capacité.
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Alcove, IMAGES_DU_DECOR, imageAssis, type AlcoveData } from "./alcove";
+import { Alcove, DECORS, decorDe, imageAssis, imagesDuDecor, type AlcoveData } from "./alcove";
 import { abonnerInstallation, installationAJouer, installationJouee } from "./prendre-place";
 import { abonnerLook, monLook } from "@/lib/direct/look";
 
@@ -29,7 +29,30 @@ export type InvitationListe = { cle: string; titre: string; prive: boolean; par:
 export const sceneDe = (a: AlcoveData) => a.scene ?? a.cle;
 
 // GARDÉS D'UNE VISITE DE L'ONGLET À L'AUTRE : on revient sur le même salon.
+/**
+ * L'ACCUEIL SE MONTRE UNE FOIS PAR TÉLÉPHONE, la toute première fois qu'on
+ * ouvre Ensemble — qu'on ait déjà des salons ou non (« quand j'appuie pour la
+ * première fois sur Ensemble, je n'ai pas le premier écran »).
+ */
+const CLE_ACCUEIL = "clikme-ensemble-accueil-vu-v1";
 let accueilPasse = false;
+function accueilDejaVu() {
+  if (accueilPasse) return true;
+  try {
+    accueilPasse = window.localStorage.getItem(CLE_ACCUEIL) === "1";
+  } catch {
+    /* stockage refusé : l'accueil vaut pour la visite */
+  }
+  return accueilPasse;
+}
+function accueilVu() {
+  accueilPasse = true;
+  try {
+    window.localStorage.setItem(CLE_ACCUEIL, "1");
+  } catch {
+    /* rien */
+  }
+}
 let sourceGardee: "publics" | "miens" | null = null;
 let sceneGardee: string | null = null;
 
@@ -71,13 +94,17 @@ export function EnsembleAlcoves({
 }) {
   // LA PIÈCE SE CHARGE DÈS L'ARRIVÉE (et pendant l'accueil) : la scène ne
   // s'ouvre jamais sur un fond vide.
+  // Seulement les premières scènes de chaque liste : les autres se chargent
+  // pendant qu'on glisse (la voisine est toujours dessinée d'avance).
+  const premieres = [...publics.slice(0, 2), ...miens.slice(0, 2)].map(sceneDe).join("|");
   useEffect(() => {
-    for (const u of [...IMAGES_DU_DECOR, monLook().image]) {
+    const urls = new Set([monLook().image, ...premieres.split("|").filter(Boolean).flatMap(imagesDuDecor)]);
+    for (const u of urls) {
       const i = new Image();
       i.src = u;
     }
-  }, []);
-  const [accueil, setAccueil] = useState(() => !accueilPasse && miens.length === 0 && invitations.length === 0);
+  }, [premieres]);
+  const [accueil, setAccueil] = useState(() => typeof window !== "undefined" && !accueilDejaVu());
   const [source, setSource] = useState<"publics" | "miens">(() => sourceGardee ?? (publics.length || !miens.length ? "publics" : "miens"));
   const [scene, setScene] = useState<string | null>(sceneGardee);
   const [liste, setListe] = useState<"" | "miens" | "publics">("");
@@ -90,7 +117,7 @@ export function EnsembleAlcoves({
     return (
       <Accueil
         onDecouvrir={() => {
-          accueilPasse = true;
+          accueilVu();
           setAccueil(false);
         }}
       />
@@ -182,6 +209,7 @@ export function EnsembleAlcoves({
 const ACCUEIL = {
   salle: "/direct/ensemble/accueil-salle.webp",
   fantome: "/direct/ensemble/flaneur-tabouret.webp",
+  cligne: "/direct/ensemble/flaneur-tabouret-cligne.webp",
   l: 941,
   h: 1672,
   tabouret: { x: 680, sol: 1352 },
@@ -216,6 +244,14 @@ function Accueil({ onDecouvrir }: { onDecouvrir: () => void }) {
           <img
             className="ea-accueil-fantome"
             src={ACCUEIL.fantome}
+            alt=""
+            aria-hidden="true"
+            style={{ left: ACCUEIL.tabouret.x * s - ox - lf * ACCUEIL.centre, top: ACCUEIL.tabouret.sol * s - hf, width: lf, height: hf }}
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className="ea-accueil-fantome ea-cligne"
+            src={ACCUEIL.cligne}
             alt=""
             aria-hidden="true"
             style={{ left: ACCUEIL.tabouret.x * s - ox - lf * ACCUEIL.centre, top: ACCUEIL.tabouret.sol * s - hf, width: lf, height: hf }}
@@ -610,10 +646,12 @@ function Ligne({ a, rejoint, onChoisir }: { a: AlcoveData; rejoint?: boolean; on
 /** LA VIGNETTE : le coin du décor et deux fantômes assis. Sans salon (une invitation), le décor seul. */
 function Vignette({ a }: { a?: AlcoveData }) {
   const assis = a ? [...(a.membre ? (["moi"] as const) : []), ...a.autres].slice(0, 2) : [];
+  // LE COIN DU DÉCOR DE CE SALON, cadré sur sa banquette.
+  const D = a ? decorDe(sceneDe(a)) : DECORS[0];
   return (
     <span className="ea-vignette" aria-hidden="true">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="ea-vignette-fond" src={FOND} alt="" />
+      <img className="ea-vignette-fond" src={D.fond} alt="" style={{ objectPosition: `50% ${Math.round((D.bas / D.h) * 100) - 4}%` }} />
       {assis.map((x, k) => (
         // eslint-disable-next-line @next/next/no-img-element
         <img key={k} className={`ea-vignette-f f${k}`} src={imageAssis(x, sceneDe(a!)).src} alt="" />
@@ -679,6 +717,9 @@ function StylesEnsembleAlcoves() {
 .ea-bienvenue{margin:4px 0 0;text-align:center;font-family:var(--leger);font-weight:400;font-size:14.5px;color:#EEDDC8;}
 .ea-accueil h1{margin:44px 0 0;font-size:clamp(26px,8.6vw,38px);line-height:1.08;font-weight:600;letter-spacing:-.02em;text-shadow:0 2px 16px rgba(0,0,0,.4);}
 .ea-accueil-texte{margin:16px 0 0;max-width:21em;font-family:var(--leger);font-weight:400;font-size:16px;line-height:1.42;color:#F7EADA;text-shadow:0 1px 10px rgba(0,0,0,.45);}
+.ea-cligne{opacity:0;animation:ea-cligne 5.5s steps(1,end) 2s infinite;}
+@keyframes ea-cligne{0%{opacity:0;}95.5%{opacity:1;}98%{opacity:0;}}
+@media (prefers-reduced-motion: reduce){.ea-cligne{display:none;}}
 .ea-calque{position:absolute;max-width:none;pointer-events:none;user-select:none;}
 .ea-accueil-fantome{position:absolute;z-index:1;max-width:none;pointer-events:none;filter:brightness(.95) sepia(.06) drop-shadow(0 14px 16px rgba(24,10,2,.45));}
 .ea-accueil-cta{position:absolute;z-index:2;left:42px;right:42px;bottom:62px;width:auto;height:50px;font-size:17px;}

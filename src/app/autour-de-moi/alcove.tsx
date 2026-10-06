@@ -47,40 +47,95 @@ export type AlcoveData = {
 };
 
 /**
- * LE DÉCOR, DANS LES COORDONNÉES DE SON IMAGE (941 × 1672). Les places sont
- * relevées sur la photo : le milieu des coussins, l'assise, le bord arrière
- * du plateau. `cadre` dit ce qui doit tenir dans la largeur de l'écran (le
- * canapé) et où poser l'assise en hauteur.
+ * UN DÉCOR, DANS LES COORDONNÉES DE SON IMAGE. Les places sont relevées sur
+ * la photo : le milieu des coussins, l'assise, le bord arrière du plateau,
+ * les tasses. `cadre` dit ce qui doit tenir dans la largeur de l'écran et où
+ * poser l'assise en hauteur. Les calques sont préparés par
+ * `docs/ensemble/outils/` (la table, découpée dans la même image, passe
+ * devant le bas des fantômes).
  */
-export const DECOR = {
-  fond: "/direct/ensemble/scene-canape-vert.webp",
-  devant: "/direct/ensemble/scene-canape-vert-devant.webp",
+export type Decor = {
+  id: string;
+  nom: string;
+  fond: string;
+  devant: string;
   /** Le calque de devant commence à cette hauteur de l'image. */
-  devantY: 700,
-  l: 941,
-  h: 1672,
-  cadre: { x0: 265, x1: 895, assise: 790, part: 0.47 },
-  /** Le milieu de chaque coussin occupé, de gauche à droite (relevé sur la photo). */
-  places: [370, 582, 790],
-  /** Le bas des fantômes : posé sur l'assise (de 735 au fond à 775 au bord), pas devant. */
-  bas: 795,
-  /** La hauteur d'un fantôme assis : la tête dépasse du dossier (haut vers 620). */
-  hauteur: 215,
+  devantY: number;
+  l: number;
+  h: number;
+  cadre: { x0: number; x1: number; assise: number; part: number };
+  /** Le milieu de chaque place, de gauche à droite. */
+  places: number[];
+  /** Le bas des fantômes, posé sur l'assise. */
+  bas: number;
+  /** La hauteur d'un fantôme assis : la tête dépasse du dossier. */
+  hauteur: number;
   /** Le creux du coussin, pour la place libre. */
-  coussin: 755,
+  coussin: number;
   /** Le centre de la zone libre du plateau, et la largeur d'une photo posée. */
-  plateau: { x: 545, y: 930, l: 150 },
-} as const;
+  plateau: { x: number; y: number; l: number };
+  /** Le bord des tasses posées sur la table, d'où monte la vapeur. */
+  tasses: [number, number][];
+};
+
+const E = "/direct/ensemble/";
+const pleine = (id: string, nom: string, l: number, h: number, devantY: number, d: Omit<Decor, "id" | "nom" | "fond" | "devant" | "devantY" | "l" | "h" | "cadre">): Decor => ({
+  id,
+  nom,
+  fond: `${E}scene-${id}.webp`,
+  devant: `${E}scene-${id}-devant.webp`,
+  devantY,
+  l,
+  h,
+  // Ces scènes ont déjà le format d'un téléphone : on resserre un peu sur la
+  // banquette, pour que les fantômes aient la taille de ceux de la maquette.
+  cadre: { x0: 75, x1: l - 75, assise: d.bas, part: 0.5 },
+  ...d,
+});
+
+export const DECORS: Decor[] = [
+  {
+    id: "canape-vert",
+    nom: "Le salon au canapé vert",
+    fond: `${E}scene-canape-vert.webp`,
+    devant: `${E}scene-canape-vert-devant.webp`,
+    devantY: 700,
+    l: 941,
+    h: 1672,
+    cadre: { x0: 265, x1: 895, assise: 790, part: 0.47 },
+    places: [370, 582, 790],
+    bas: 795,
+    hauteur: 215,
+    coussin: 755,
+    plateau: { x: 545, y: 930, l: 150 },
+    tasses: [[392, 893]],
+  },
+  pleine("chalet", "Le chalet", 852, 1846, 998, { places: [250, 450, 650], bas: 1005, hauteur: 270, coussin: 965, plateau: { x: 440, y: 1160, l: 190 }, tasses: [[75, 1078], [790, 1068]] }),
+  pleine("terrasse", "La terrasse à guirlandes", 853, 1844, 963, { places: [255, 445, 635], bas: 965, hauteur: 250, coussin: 930, plateau: { x: 440, y: 1120, l: 190 }, tasses: [[112, 978], [760, 1012]] }),
+  pleine("bibliotheque", "Le salon-bibliothèque", 853, 1844, 975, { places: [285, 455, 625], bas: 995, hauteur: 255, coussin: 975, plateau: { x: 440, y: 1130, l: 190 }, tasses: [[172, 1022], [767, 1027]] }),
+  pleine("verriere", "La verrière végétale", 853, 1844, 971, { places: [270, 445, 620], bas: 1000, hauteur: 255, coussin: 975, plateau: { x: 430, y: 1120, l: 190 }, tasses: [[114, 1003], [748, 1033]] }),
+  pleine("ocean", "Le salon face à l'océan", 853, 1844, 906, { places: [270, 450, 630], bas: 905, hauteur: 245, coussin: 870, plateau: { x: 430, y: 1080, l: 190 }, tasses: [[68, 1012], [806, 937]] }),
+];
+
+/** LE DÉCOR D'UN SALON : tiré de sa scène, toujours le même — dans l'alcôve, les listes et la confirmation. */
+export function decorDe(scene: string): Decor {
+  let h = 2166136261;
+  for (let i = 0; i < scene.length; i++) h = Math.imul(h ^ scene.charCodeAt(i), 16777619) >>> 0;
+  return DECORS[h % DECORS.length];
+}
+
+/** Les images d'une scène, à charger avant qu'elle n'apparaisse. */
+export const imagesDuDecor = (scene: string) => {
+  const d = decorDe(scene);
+  return [d.fond, d.devant];
+};
 
 const reduit = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 /** L'image d'un fantôme assis pour une personne. */
-/** Les images d'une scène, à charger avant qu'elle n'apparaisse. */
-export const IMAGES_DU_DECOR = [DECOR.fond, DECOR.devant];
-
 export function imageAssis(a: Assis | "moi", salon: string) {
   const l = a === "moi" ? monLook() : a.look ? lookDe(a.look) : lookParDefautDe(`${salon}:${a.cle}`);
-  return { src: l.image, r: l.r, frontal: Boolean(l.frontal) };
+  return { src: l.image, r: l.r, frontal: Boolean(l.frontal), cligne: l.cligne };
 }
 
 /**
@@ -106,8 +161,8 @@ export function placement(a: AlcoveData, nbPlaces: number, moiAssis: boolean) {
  * LE CADRAGE : le canapé remplit la largeur, l'assise tombe vers la moitié de
  * la hauteur ; l'image couvre toujours tout l'écran.
  */
-export function cadrage(W: number, H: number) {
-  const { l, h, cadre } = DECOR;
+export function cadrage(W: number, H: number, D: Decor) {
+  const { l, h, cadre } = D;
   let s = W / (cadre.x1 - cadre.x0);
   if (h * s < H) s = H / h;
   if (l * s < W) s = W / l;
@@ -137,6 +192,18 @@ export function Alcove({
   const ref = useRef<HTMLDivElement | null>(null);
   const [taille, setTaille] = useState({ W: 0, H: 0 });
   const [calme] = useState(reduit);
+  // LE SALUT : à l'arrivée sur la scène, et quand je m'installe, chacun se
+  // tourne vers moi, une fois. Un numéro qui change rejoue l'animation.
+  const [salut, setSalut] = useState(0);
+  useEffect(() => {
+    if (!actif || calme) return;
+    const t0 = window.setTimeout(() => setSalut((n) => n + 1), installe ? 650 : 250);
+    const t1 = window.setTimeout(() => setSalut(0), (installe ? 650 : 250) + 1900);
+    return () => {
+      window.clearTimeout(t0);
+      window.clearTimeout(t1);
+    };
+  }, [actif, calme, installe]);
   useEffect(() => {
     const e = ref.current;
     if (!e) return;
@@ -146,24 +213,25 @@ export function Alcove({
   }, []);
   const { W, H } = taille;
   const decor = a.scene ?? a.cle;
+  const D = decorDe(decor);
   const moiAssis = a.membre || installe;
-  const { places, enPlus } = placement(a, DECOR.places.length, moiAssis);
-  const c = cadrage(W || 1, H || 1);
-  const hf = DECOR.hauteur * c.s;
-  const haut = c.y(DECOR.bas) - hf;
+  const { places, enPlus } = placement(a, D.places.length, moiAssis);
+  const c = cadrage(W || 1, H || 1, D);
+  const hf = D.hauteur * c.s;
+  const haut = c.y(D.bas) - hf;
   const derniere = places.reduce((k, p, i) => (p && p.qui !== "libre" ? i : k), -1);
-  const image = { left: -c.ox, top: -c.oy, width: DECOR.l * c.s, height: DECOR.h * c.s };
+  const image = { left: -c.ox, top: -c.oy, width: D.l * c.s, height: D.h * c.s };
   return (
-    <div className={`al${actif ? " actif" : ""}${calme ? " calme" : ""}`} ref={ref}>
+    <div className={`al${actif ? " actif" : ""}${calme ? " calme" : ""}`} ref={ref} data-decor={D.id}>
       <StylesAlcove />
       {W > 0 && (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="al-calque" src={DECOR.fond} alt="" aria-hidden="true" style={image} />
+          <img className="al-calque" src={D.fond} alt="" aria-hidden="true" style={image} />
           <i className="al-lumiere" aria-hidden="true" />
           {places.map((p, k) => {
             if (!p) return null;
-            const x = c.x(DECOR.places[k]);
+            const x = c.x(D.places[k]);
             if (p.qui === "libre")
               return (
                 // LA PLACE LIBRE : le coussin vide, à peine éclairé — pas un cadre.
@@ -171,46 +239,57 @@ export function Alcove({
                   key={k}
                   className="al-coussin"
                   aria-hidden="true"
-                  style={{ left: x, top: c.y(DECOR.coussin), width: 190 * c.s, height: 70 * c.s }}
+                  style={{ left: x, top: c.y(D.coussin), width: D.hauteur * 0.9 * c.s, height: D.hauteur * 0.33 * c.s }}
                 />
               );
             const img = p.qui === "moi" ? imageAssis("moi", decor) : imageAssis(p.qui, decor);
             const miroir = !img.frontal && k === places.length - 1;
             const arrive = p.qui === "moi" && installe && !calme;
             const lf = hf * img.r;
+            // Chacun cligne à son rythme (5 à 8 s), jamais tous ensemble.
+            const rythme = 5.2 + ((k * 1.7 + decor.length * 0.37) % 2.8);
             return [
               // ASSIS POUR DE VRAI : l'ombre sur le dossier derrière lui, et
               // celle de contact où il pèse sur le coussin.
               <i key={`d${k}`} className="al-ombre-dos" aria-hidden="true" style={{ left: x + lf * 0.06, top: haut + hf * 0.42, width: lf * 0.95, height: hf * 0.5 }} />,
-              <i key={`c${k}`} className="al-ombre-assise" aria-hidden="true" style={{ left: x, top: c.y(DECOR.bas) - 6 * c.s, width: lf * 1.05, height: 30 * c.s }} />,
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <i key={`c${k}`} className="al-ombre-assise" aria-hidden="true" style={{ left: x, top: c.y(D.bas) - D.hauteur * 0.03 * c.s, width: lf * 1.05, height: D.hauteur * 0.14 * c.s }} />,
+              <span
                 key={k}
-                className={`al-fantome${arrive ? " al-arrive" : ""}`}
-                src={img.src}
-                alt=""
+                className={`al-fantome${arrive ? " al-arrive" : ""}${salut && p.qui !== "moi" ? " al-salut" : ""}`}
                 aria-hidden="true"
                 style={{
-                  left: x - (hf * img.r) / 2,
+                  left: x - lf / 2,
                   top: haut,
-                  width: hf * img.r,
+                  width: lf,
                   height: hf,
                   zIndex: k === 1 ? 3 : 2,
+                  animationDelay: salut && p.qui !== "moi" ? `${k * 0.16}s` : undefined,
                   ...(miroir ? { scale: "-1 1" } : {}),
                 }}
-              />,
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={img.src} alt="" />
+                {img.cligne && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="al-cligne" src={img.cligne} alt="" style={{ animationDuration: `${rythme}s`, animationDelay: `${-k * 1.9}s` }} />
+                )}
+              </span>,
             ];
           })}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             className="al-calque al-devant"
-            src={DECOR.devant}
+            src={D.devant}
             alt=""
             aria-hidden="true"
-            style={{ ...image, top: c.y(DECOR.devantY), height: (DECOR.h - DECOR.devantY) * c.s }}
+            style={{ ...image, top: c.y(D.devantY), height: (D.h - D.devantY) * c.s }}
           />
+          {/* LA VAPEUR DES TASSES POSÉES SUR LA TABLE. */}
+          {D.tasses.map(([tx, ty], i) => (
+            <Vapeur key={`t${i}`} x={c.x(tx)} y={c.y(ty)} t={D.hauteur * 0.34 * c.s} decale={i * 0.9 + 0.4} />
+          ))}
           {!a.invitation && a.contenu.length > 0 && (
-            <div className="al-plateau" style={{ left: c.x(DECOR.plateau.x), top: c.y(DECOR.plateau.y) }} aria-hidden="true">
+            <div className="al-plateau" style={{ left: c.x(D.plateau.x), top: c.y(D.plateau.y) }} aria-hidden="true">
               {a.contenu.slice(0, 2).map((u, i, t) => (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -218,8 +297,8 @@ export function Alcove({
                   src={u}
                   alt=""
                   style={{
-                    width: DECOR.plateau.l * c.s * (t.length > 1 ? 0.8 : 1),
-                    transform: `translate(-50%, -50%) translateX(${(i - (t.length - 1) / 2) * DECOR.plateau.l * 0.85 * c.s}px) rotate(${i ? 5 : -4}deg)`,
+                    width: D.plateau.l * c.s * (t.length > 1 ? 0.8 : 1),
+                    transform: `translate(-50%, -50%) translateX(${(i - (t.length - 1) / 2) * D.plateau.l * 0.85 * c.s}px) rotate(${i ? 5 : -4}deg)`,
                   }}
                 />
               ))}
@@ -227,14 +306,14 @@ export function Alcove({
           )}
           {places.map((p, k) => {
             if (!p) return null;
-            const x = c.x(DECOR.places[k]);
+            const x = c.x(D.places[k]);
             if (p.qui === "libre")
               return (
                 <button
                   key={k}
                   type="button"
                   className="al-libre"
-                  style={{ left: x - 85 * c.s, top: c.y(DECOR.coussin - 110), width: 170 * c.s, height: 165 * c.s }}
+                  style={{ left: x - D.hauteur * 0.4 * c.s, top: c.y(D.coussin - D.hauteur * 0.51), width: D.hauteur * 0.8 * c.s, height: D.hauteur * 0.77 * c.s }}
                   onClick={onPlaceLibre}
                   aria-label="Ta place ? Prendre une place dans ce salon"
                 >
@@ -252,13 +331,24 @@ export function Alcove({
           {/* LES AUTRES MEMBRES, comptés : « +N », jamais de fantômes inventés pour eux.
               Pas devant un salon que je découvre : sa place libre parle seule. */}
           {moiAssis && enPlus > 0 && derniere >= 0 && (
-            <span className="al-plus" style={{ left: Math.min(c.x(DECOR.places[derniere]) + hf * 0.3, W - 44), top: haut + hf * 0.04 }}>
+            <span className="al-plus" style={{ left: Math.min(c.x(D.places[derniere]) + hf * 0.3, W - 44), top: haut + hf * 0.04 }}>
               +{enPlus}
             </span>
           )}
         </>
       )}
     </div>
+  );
+}
+
+/** TROIS VOLUTES DE VAPEUR, qui montent et s'effacent ; immobiles en mouvement réduit (cachées). */
+function Vapeur({ x, y, t, decale = 0 }: { x: number; y: number; t: number; decale?: number }) {
+  return (
+    <span className="al-vapeur" aria-hidden="true" style={{ left: x, top: y, width: t * 0.7, height: t }}>
+      <i style={{ animationDelay: `${-decale}s` }} />
+      <i style={{ animationDelay: `${-decale - 1.1}s` }} />
+      <i style={{ animationDelay: `${-decale - 2.2}s` }} />
+    </span>
   );
 }
 
@@ -273,8 +363,19 @@ function StylesAlcove() {
 .al-lumiere{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at 50% 46%,rgba(255,190,110,.16),rgba(255,190,110,0) 58%);opacity:0;transition:opacity .6s ease;}
 .al.actif .al-lumiere{opacity:1;}
 .al.calme .al-lumiere{transition:none;}
-.al-fantome{position:absolute;max-width:none;pointer-events:none;object-fit:contain;object-position:50% 100%;
+.al-fantome{position:absolute;display:block;pointer-events:none;transform-origin:50% 100%;
   filter:brightness(.93) sepia(.08) drop-shadow(0 4px 5px rgba(20,8,0,.4));}
+.al-fantome img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:contain;object-position:50% 100%;}
+.al-fantome .al-cligne{opacity:0;}
+.al.actif:not(.calme) .al-cligne{animation:al-cligne 6s steps(1,end) infinite;}
+@keyframes al-cligne{0%{opacity:0;}95.5%{opacity:1;}98%{opacity:0;}}
+.al-salut{animation:al-salut 1.5s cubic-bezier(.35,.1,.3,1) both;}
+@keyframes al-salut{0%{rotate:0deg;translate:0 0;}18%{rotate:-6deg;translate:0 -5%;}36%{rotate:5deg;translate:0 -3%;}54%{rotate:-3deg;translate:0 -1%;}72%{rotate:2deg;translate:0 0;}100%{rotate:0deg;translate:0 0;}}
+.al-vapeur{position:absolute;z-index:5;transform:translate(-50%,-90%);pointer-events:none;}
+.al-vapeur i{position:absolute;left:50%;bottom:0;width:38%;height:62%;margin-left:-19%;border-radius:45%;opacity:0;
+  background:radial-gradient(ellipse at 50% 55%,rgba(255,252,246,.95),rgba(255,250,240,.5) 40%,rgba(255,250,240,0) 70%);filter:blur(1.2px);mix-blend-mode:screen;}
+.al.actif:not(.calme) .al-vapeur i{animation:al-vapeur 3.3s ease-out infinite;}
+@keyframes al-vapeur{0%{opacity:0;transform:translate(0,10%) scale(.6,.7);}22%{opacity:.95;}60%{opacity:.45;transform:translate(18%,-45%) scale(1,1.15);}100%{opacity:0;transform:translate(-14%,-95%) scale(1.25,1.3);}}
 .al-ombre-dos{position:absolute;z-index:2;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
   background:radial-gradient(ellipse,rgba(8,4,0,.42) 0%,rgba(8,4,0,.18) 45%,rgba(8,4,0,0) 70%);}
 .al-ombre-assise{position:absolute;z-index:2;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
@@ -298,7 +399,7 @@ function StylesAlcove() {
 @keyframes al-mot{0%,45%{opacity:0;transform:translate(-50%,-80%);}100%{opacity:1;transform:translate(-50%,-100%);}}
 .al-arrive{animation:al-arrive .8s cubic-bezier(.2,.8,.3,1) both;}
 .al-arrive-mot{animation:al-mot .9s ease-out both;}
-@media (prefers-reduced-motion: reduce){.al-arrive,.al-arrive-mot,.al.actif .al-coussin{animation:none;}}
+@media (prefers-reduced-motion: reduce){.al-arrive,.al-arrive-mot,.al.actif .al-coussin,.al-salut,.al-cligne,.al-vapeur i{animation:none !important;}}
 `,
       }}
     />

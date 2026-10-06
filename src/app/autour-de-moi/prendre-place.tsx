@@ -31,8 +31,8 @@ export type CiblePlace = {
   /** L'adhésion, envoyée au serveur. `cle` : la clé du salon une fois rejoint, si elle change. */
   rejoindre: () => Promise<{ erreur: string | null; nb?: number; cle?: string }>;
   lire: () => void;
-  /** Une vignette du décor, pour la confirmation. */
-  vignette?: string;
+  /** Une vignette du décor du salon, pour la confirmation, et la hauteur (en %) où cadrer sa banquette. */
+  vignette?: { src: string; y: number };
 };
 
 type Etat = {
@@ -40,6 +40,8 @@ type Etat = {
   etape: "choix" | "confirmation";
   /** `null` : changer de look depuis Ma maison, sans salon. */
   cible: CiblePlace | null;
+  /** Ce qui suit le choix du look (entrer dans un salon dont je suis déjà membre). */
+  apres?: () => void;
 };
 let etat: Etat = { ouvert: false, etape: "choix", cible: null };
 const abonnes = new Set<() => void>();
@@ -60,8 +62,17 @@ export function demanderPlace(cible: CiblePlace) {
 export function changerDeLook() {
   publier({ ouvert: true, etape: "choix", cible: null });
 }
+/**
+ * ENTRER DANS UN SALON OÙ JE SUIS DÉJÀ : si je n'ai jamais choisi mon
+ * fantôme, je le choisis d'abord (ou « plus tard »), puis j'entre. Sinon
+ * j'entre tout de suite.
+ */
+export function choisirPuis(apres: () => void) {
+  if (lookDecide()) apres();
+  else publier({ ouvert: true, etape: "choix", cible: null, apres });
+}
 export function fermerPlace() {
-  publier({ ...etat, ouvert: false });
+  publier({ ...etat, ouvert: false, apres: undefined });
 }
 export const panneauOuvert = () => etat.ouvert;
 
@@ -138,7 +149,11 @@ export function PanneauPlace() {
   const c = e.cible;
   const garder = (id: string) => {
     garderLook(id);
-    if (!c) fermerPlace();
+    if (!c) {
+      const suite = e.apres;
+      fermerPlace();
+      suite?.();
+    }
     else publier({ ...etat, etape: "confirmation" });
   };
   const rejoindre = async () => {
@@ -177,7 +192,7 @@ export function PanneauPlace() {
             choisi={choisi}
             setChoisi={setChoisi}
             onGarder={() => garder(choisi)}
-            onPlusTard={c ? () => garder(look.id) : undefined}
+            onPlusTard={c || e.apres ? () => garder(look.id) : undefined}
             avecSalon={Boolean(c)}
           />
         ) : (
@@ -210,6 +225,10 @@ function Apercu({ id }: { id: string }) {
       <i className="pp-etincelles" />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img key={l.id} src={l.debout ?? l.image} alt="" />
+      {l.debout && l.deboutCligne && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img key={`${l.id}-c`} className="pp-cligne" src={l.deboutCligne} alt="" />
+      )}
     </div>
   );
 }
@@ -380,7 +399,12 @@ function Confirmation({
         </button>
         <div className="pp-carte">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={cible.vignette ?? "/direct/ensemble/scene-canape-vert.webp"} alt="" aria-hidden="true" />
+          <img
+            src={cible.vignette?.src ?? "/direct/ensemble/scene-canape-vert.webp"}
+            alt=""
+            aria-hidden="true"
+            style={{ objectPosition: `50% ${cible.vignette?.y ?? 47}%` }}
+          />
           <div>
             <b>{cible.titre}</b>
             <span className="pp-statut">
@@ -463,8 +487,10 @@ function StylesPlace() {
 .pp-note{margin:5px 0 0;font-family:var(--leger);font-weight:400;font-size:14.5px;color:#D9B98E;}
 .pp-apercu{position:relative;display:flex;justify-content:center;align-items:flex-end;height:clamp(120px,20vh,172px);margin:10px auto 0;padding-bottom:8px;}
 .pp-apercu img{position:relative;z-index:2;height:100%;width:auto;min-height:0;max-width:none;filter:drop-shadow(0 0 18px rgba(255,190,100,.35)) drop-shadow(0 10px 14px rgba(0,0,0,.3));animation:pp-apparait .35s ease-out both;}
+.pp-apercu .pp-cligne{position:absolute;top:0;height:calc(100% - 8px);left:50%;translate:-50% 0;opacity:0;animation:pp-cligne 4.8s steps(1,end) 1.2s infinite;}
+@keyframes pp-cligne{0%{opacity:0;}95%{opacity:1;}97.5%{opacity:0;}}
 @keyframes pp-apparait{from{opacity:0;transform:scale(.94);}to{opacity:1;transform:none;}}
-@media (prefers-reduced-motion: reduce){.pp-apercu img{animation:none;}}
+@media (prefers-reduced-motion: reduce){.pp-apercu img{animation:none;}.pp-apercu .pp-cligne{display:none;}}
 .pp-halo{position:absolute;left:50%;top:6%;width:min(78%,300px);aspect-ratio:1;transform:translateX(-50%);border-radius:50%;
   background:radial-gradient(circle,rgba(255,178,74,.42) 0%,rgba(255,150,40,.16) 42%,rgba(255,150,40,0) 70%);}
 .pp-sol{position:absolute;left:50%;bottom:0;z-index:1;width:min(92%,360px);height:34px;transform:translateX(-50%);border-radius:50%;

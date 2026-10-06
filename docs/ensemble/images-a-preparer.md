@@ -12,6 +12,19 @@ les maquettes, fantômes **sans oreilles**.
 
 ---
 
+## Les six scènes intégrées
+
+Canapé vert, chalet, terrasse à guirlandes, salon-bibliothèque, verrière
+végétale, salon face à l'océan. Chaque salon reçoit toujours la même (tirée
+de sa clé). Les places, le bord du plateau et les tasses de chaque photo sont
+dans `docs/ensemble/outils/scenes.json` et `DECORS` (`alcove.tsx`) ; refaire
+les calques : `preparer-scenes.py <dossier des .jpg> scenes.json public/direct/ensemble`.
+
+Animations : le clignement utilise des images « yeux fermés » fabriquées par
+`cligner.py` (superposables au pixel) ; la vapeur monte des tasses de la
+table ; le salut est un balancement du corps. **Pour un vrai salut de la
+main, il faut la pose « assis, main levée »** de chaque look.
+
 ## Reçu et intégré (module de validation)
 
 | Image reçue | Devenue | Usage |

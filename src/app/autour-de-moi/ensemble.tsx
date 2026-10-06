@@ -27,6 +27,7 @@ import { aToiDeJouer, ilYa, nosDiscussions, type Discussion } from "@/lib/direct
 import { archiverSalon, type Salon } from "@/lib/direct/salons";
 import { idDuServeur, repondreInvitation, type SalonADecouvrir } from "@/lib/direct/conversations-sync";
 import { lookParDefautDe } from "@/lib/direct/look";
+import { choisirPuis } from "./prendre-place";
 
 /**
  * MES SALONS : ceux dont je suis membre. Dans la vraie ville, un salon public
@@ -46,7 +47,7 @@ let vueGardee: "salon" | "liste" = "salon";
  * LA SCÈNE D'UN SALON, la même avant et après l'avoir rejoint : dans la vraie
  * ville, son identifiant serveur (celui de « à découvrir ») ; sinon sa clé.
  */
-function sceneDuSalon(cle: string): string {
+export function sceneDuSalon(cle: string): string {
   const id = idDuServeur(cle);
   return id ? `pub:${id}` : cle;
 }
@@ -306,7 +307,9 @@ export function Ensemble({
             ...enAttente.map((x) => ({ cle: x.cle, titre: x.sujet, prive: true, par: x.parQui, demande: true })),
           ]}
           onRepondre={(cle, oui) => repondreInvitation(salons[cle], oui)}
-          onVoir={(a) => (a.cle.startsWith("pub:") ? onVoirPublic?.(a.cle.slice(4)) : onOuvrir(a.cle))}
+          onVoir={(a) =>
+            a.cle.startsWith("pub:") ? onVoirPublic?.(a.cle.slice(4)) : a.membre ? choisirPuis(() => onOuvrir(a.cle)) : onOuvrir(a.cle)
+          }
           onPlace={(a) => onPlace?.(a)}
           onInviter={(a) => onOuvrir(a.cle)}
           onIdee={() => onIdee?.()}
