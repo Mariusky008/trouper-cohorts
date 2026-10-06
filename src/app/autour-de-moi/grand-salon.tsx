@@ -240,6 +240,9 @@ type Geo = {
   sol: number;
   xs: number[];
   ls: number[];
+  /** L'échelle et le pied du premier plan. */
+  sAvant: number;
+  yAvant: number;
   /** LA CAMÉRA : pendant le passage d'une discussion à l'autre, toute la pièce s'avance légèrement. */
   cam: { z: number; ox: number; oy: number };
 };
@@ -263,17 +266,40 @@ function geoDe(W: number, H: number, bas: number, p: number): Geo {
     d,
     horizon,
     sol,
-    xs: REPERES.map((r, i) => (i >= 3 ? W / 2 : d.x(r.x))),
-    ls: REPERES.map((r, i) => Math.log(i === 3 ? sAvant : i === 4 ? sAvant * r.s : r.s * d.k)),
+    xs: REPERES.slice(0, 4).map((r, i) => (i === 3 ? W / 2 : d.x(r.x))),
+    ls: REPERES.slice(0, 4).map((r, i) => Math.log(i === 3 ? sAvant : r.s * d.k)),
+    sAvant,
+    yAvant: horizon + sol * sAvant,
     cam: { z: 1 + 0.035 * Math.sin(Math.PI * f), ox: W / 2, oy: horizon },
   };
 }
 /** Un point de la pièce, vu par la caméra. */
 const vu = (geo: Geo, x: number, y: number) => ({ x: geo.cam.ox + (x - geo.cam.ox) * geo.cam.z, y: geo.cam.oy + (y - geo.cam.oy) * geo.cam.z });
 /** Où est un groupe à sa place : son ancre à l'écran (son pied, au sol) et son échelle. */
+/**
+ * LE RYTHME DU PASSAGE (le même à l'aller et au retour : il ne dépend que de
+ * la position). Le groupe qui quitte le premier plan démarre doucement ; celui
+ * qui arrive commence à monter tôt. Rien ne change aux positions de repos.
+ */
+function rythme(place: number) {
+  // `u` : où en est l'arrivée (0 → 1) ; elle va plus vite au début.
+  if (place > 2 && place < 3) return 3 - (1 - (1 - (3 - place)) ** 1.3);
+  if (place > 1 && place < 2) return 2 - (2 - place) ** 1.3;
+  return place;
+}
+/** Où est un groupe à sa place : son ancre à l'écran (son pied, au sol) et son échelle. */
 export function surLaTrajectoire(place: number, geo: Geo) {
-  const s = Math.exp(spline(geo.ls, place));
-  const v = vu(geo, spline(geo.xs, place), geo.horizon + geo.sol * s);
+  const q = rythme(place);
+  if (q > 2) {
+    // LE GROUPE QUI ARRIVE ne dépasse jamais sa taille du premier plan : il
+    // monte par le bas de l'écran, à cette taille, jusqu'à sa place.
+    const s = geo.sAvant;
+    const y = geo.yAvant + (q - 2) * (geo.H + 262 * s - geo.yAvant);
+    const v = vu(geo, geo.xs[3], y);
+    return { x: v.x, y: v.y, s, sol: y };
+  }
+  const s = Math.exp(spline(geo.ls, q));
+  const v = vu(geo, spline(geo.xs, q), geo.horizon + geo.sol * s);
   return { x: v.x, y: v.y, s: s * geo.cam.z, sol: geo.horizon + geo.sol * s };
 }
 /**

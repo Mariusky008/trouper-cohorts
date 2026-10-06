@@ -117,6 +117,29 @@ let echecs = 0;
   ok(visages === 0, `aucune étiquette sur un visage pendant le mouvement (${visages} cas sur 21 pas)`);
   ok(dehors === 0, `les étiquettes restent dans l'écran (${dehors} cas)`);
 
+  // 4 ter. LE GROUPE QUI ARRIVE ne dépasse jamais la taille qu'il aura au premier plan ;
+  // et l'aller et le retour passent par les mêmes images.
+  let trop = 0; let enAvant = 0; const vuAller = {}; let ecart = 0;
+  for (let k = 0; k <= 20; k++) {
+    const f = k / 20;
+    await p.evaluate((y) => { document.querySelector('.gs').scrollTop = y; }, Math.round((1 + f) * pas)); await p.waitForTimeout(30);
+    const r = await p.evaluate(() => [...document.querySelectorAll('.gs-groupe')].map((g) => [g.dataset.cle, Number(g.dataset.place), g.style.transform]));
+    vuAller[f.toFixed(2)] = JSON.stringify(r);
+    for (const [, place, tr] of r) {
+      const e = Number((tr.match(/scale\(([\d.]+)\)/) || [])[1]);
+      if (Math.abs(place - 2) < 0.01) enAvant = e;
+      if (place > 2) trop = Math.max(trop, e);
+    }
+  }
+  for (let k = 20; k >= 0; k--) {
+    const f = k / 20;
+    await p.evaluate((y) => { document.querySelector('.gs').scrollTop = y; }, Math.round((1 + f) * pas)); await p.waitForTimeout(30);
+    const r = await p.evaluate(() => [...document.querySelectorAll('.gs-groupe')].map((g) => [g.dataset.cle, Number(g.dataset.place), g.style.transform]));
+    if (JSON.stringify(r) !== vuAller[Math.abs(f).toFixed(2)]) ecart++;
+  }
+  ok(trop <= enAvant + 0.001, `le groupe qui arrive ne dépasse pas sa taille du premier plan (${trop.toFixed(3)} ≤ ${enAvant.toFixed(3)})`);
+  ok(ecart === 0, `le retour reproduit exactement l'aller (${ecart} écart sur 21 positions)`);
+
   // 5. BORNÉ : pas au-delà de la dernière discussion.
   await aller(max + 2000);
   const fin = await p.evaluate(() => document.querySelector('.gs').scrollTop);
