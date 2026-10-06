@@ -20,6 +20,8 @@ export type Look = {
   nom: string;
   /** Les accessoires, en quelques mots. */
   style: string;
+  /** Une courte phrase de caractère, sous le nom (« Curieux, toujours partant. »). */
+  devise: string;
   /** L'image assise (provisoire tant que les quatre poses n'existent pas). */
   image?: string;
   /** Largeur / hauteur de l'image. */
@@ -28,18 +30,18 @@ export type Look = {
 
 const D = "/direct/ensemble/";
 export const TOUS_LES_LOOKS: Look[] = [
-  { id: "flaneur", nom: "Le Flâneur", style: "Casquette marine, écharpe moutarde.", image: `${D}fantome-casquette-bleue.webp`, r: 0.885 },
-  { id: "cosy", nom: "Le Cosy", style: "Bonnet terracotta, écharpe vert sauge.", image: `${D}fantome-bonnet.webp`, r: 0.929 },
-  { id: "artiste", nom: "L'Artiste", style: "Béret bordeaux, lunettes rondes.", image: `${D}fantome-beret-rouge.webp`, r: 0.777 },
-  { id: "jardinier", nom: "Le Jardinier", style: "Couronne de fleurs, foulard crème.", r: 0.85 },
-  { id: "voyageur", nom: "Le Voyageur", style: "Casquette en jean, bandana bleu.", r: 0.85 },
-  { id: "lecteur", nom: "Le Lecteur", style: "Lunettes rondes, cardigan beige.", image: `${D}fantome-lunettes-rouges.webp`, r: 0.821 },
-  { id: "melomane", nom: "Le Mélomane", style: "Casque audio, bonnet noir.", r: 0.85 },
-  { id: "curieux", nom: "Le Curieux", style: "Casquette moutarde, petite sacoche.", r: 0.85 },
-  { id: "reveur", nom: "Le Rêveur", style: "Bonnet lavande, écharpe bleu nuit.", image: `${D}fantome-echarpe-violette.webp`, r: 0.833 },
-  { id: "local", nom: "Le Local", style: "Béret basque, foulard écru.", image: `${D}fantome-beret-noir.webp`, r: 0.746 },
-  { id: "rebelle", nom: "Le Rebelle", style: "Bonnet noir, bandana rouge.", r: 0.85 },
-  { id: "soleil", nom: "Le Soleil", style: "Bob orange, lunettes teintées.", r: 0.85 },
+  { id: "flaneur", nom: "Le Flâneur", style: "Casquette marine, écharpe moutarde.", devise: "Curieux, toujours partant.", image: `${D}fantome-casquette-bleue.webp`, r: 0.885 },
+  { id: "cosy", nom: "Le Cosy", style: "Bonnet terracotta, écharpe vert sauge.", devise: "Un plaid, un thé, et on refait le monde.", image: `${D}fantome-bonnet.webp`, r: 0.929 },
+  { id: "artiste", nom: "L'Artiste", style: "Béret bordeaux, lunettes rondes.", devise: "Toujours un carnet dans la poche.", image: `${D}fantome-beret-rouge.webp`, r: 0.777 },
+  { id: "jardinier", nom: "Le Jardinier", style: "Couronne de fleurs, foulard crème.", devise: "Les mains dans la terre, le cœur en fleurs.", r: 0.85 },
+  { id: "voyageur", nom: "Le Voyageur", style: "Casquette en jean, bandana bleu.", devise: "Toujours un plan pour le prochain départ.", r: 0.85 },
+  { id: "lecteur", nom: "Le Lecteur", style: "Lunettes rondes, cardigan beige.", devise: "Un livre d’avance sur tout le monde.", image: `${D}fantome-lunettes-rouges.webp`, r: 0.821 },
+  { id: "melomane", nom: "Le Mélomane", style: "Casque audio, bonnet noir.", devise: "Une chanson pour chaque moment.", r: 0.85 },
+  { id: "curieux", nom: "Le Curieux", style: "Casquette moutarde, petite sacoche.", devise: "Il pose toujours la question de trop.", r: 0.85 },
+  { id: "reveur", nom: "Le Rêveur", style: "Bonnet lavande, écharpe bleu nuit.", devise: "La tête dans les étoiles.", image: `${D}fantome-echarpe-violette.webp`, r: 0.833 },
+  { id: "local", nom: "Le Local", style: "Béret basque, foulard écru.", devise: "Connaît chaque recoin de la ville.", image: `${D}fantome-beret-noir.webp`, r: 0.746 },
+  { id: "rebelle", nom: "Le Rebelle", style: "Bonnet noir, bandana rouge.", devise: "Jamais là où on l’attend.", r: 0.85 },
+  { id: "soleil", nom: "Le Soleil", style: "Bob orange, lunettes teintées.", devise: "La bonne humeur en plus.", r: 0.85 },
 ];
 /** Les looks qu'on peut choisir aujourd'hui : ceux qui ont une image. */
 export const LOOKS = TOUS_LES_LOOKS.filter((l): l is Look & { image: string } => Boolean(l.image));

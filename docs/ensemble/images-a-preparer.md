@@ -17,8 +17,8 @@ les maquettes, fantômes **sans oreilles**.
 Ne pas produire les 48 images tout de suite. On valide d'abord, intégré
 dans l'application :
 
-1. le décor **`alcove-canape-vert`** en deux calques (`-fond`, `-devant`),
-   voir § 2 ;
+1. la scène **`scene-canape-vert`** sans fantômes (et son calque `-devant`
+   si possible), voir § 2 ;
 2. **Le Flâneur** (`look-flaneur-…`) dans ses quatre poses : assis tasse en
    main, assis yeux fermés, assis main levée, debout bras ouverts — voir § 3 ;
 3. la place libre « Ta place ? » est construite en code : aucune image.
@@ -41,40 +41,53 @@ dépanne en attendant.
 
 ---
 
-## 2. Les alcôves (maquette « image 4 ») — décor en DEUX calques
+## 2. Les alcôves (maquette « image 4 ») — des scènes complètes, SANS fantômes
 
-Chaque salon s'affiche sur une alcôve plein écran. Pour que les fantômes
-soient vraiment **assis** (bas du corps caché par la table, comme sur
-l'image 4), chaque alcôve est livrée en deux calques **de même taille et
-parfaitement superposables** :
+C'est l'image qui manque le plus : aujourd'hui l'alcôve est composée en code
+(un couloir, une banquette et une table posées dessus), ce qui ne peut pas
+atteindre le niveau de l'image 4. Il faut **une vraie pièce par salon**,
+exactement comme l'image 4, mais **vide de fantômes** : je les assois en
+code, chacun avec son look.
+
+Pour chaque scène :
 
 | Fichier | Taille | Contenu |
 | --- | --- | --- |
-| `alcove-<nom>-fond.png` | 1170 × 2532, opaque | Tout ce qui est **derrière** les fantômes : murs, fenêtre, bibliothèque, canapé ou banquette **vide**, coussins. |
-| `alcove-<nom>-devant.png` | 1170 × 2532, transparent | Tout ce qui est **devant** les fantômes : la table et ses objets de décor (lampe, livres, tasse, bol…), le dossier de chaise au premier plan. Transparent partout ailleurs. |
+| `scene-<nom>.png` | 1170 × 2532, opaque | La pièce entière, sans fantôme, sans texte, sans bouton, sans menu. |
+| `scene-<nom>-devant.png` *(si possible)* | 1170 × 2532, transparent | Uniquement ce qui passe **devant** les fantômes : la table et ses objets, l'accoudoir ou le dossier au premier plan. Transparent partout ailleurs, parfaitement superposable. Si tu ne peux pas le produire, je le découpe moi-même dans la scène. |
 
-Règles :
+Ce que chaque scène doit contenir (même lumière dorée de fin de journée,
+même style 3D doux que les maquettes) :
 
-- **Aucun fantôme, aucune tasse tenue, aucun texte.**
-- **Pas de contenu partagé dans le décor** : la carte postale de l'image 4
-  est une vraie photo partagée, je la pose en code. Il faut laisser sur la
-  table une **zone plate et libre** d'environ 330 × 230 px (à 3×), vue sous
-  le même angle que la table.
-- Le canapé doit offrir **au moins 4 places d'assise lisibles** (3 fantômes
-  et une place libre « Ta place ? »), à la hauteur des fantômes de l'image 4.
-- Le bas de l'image (sous la table, environ le tiers inférieur) reste sombre
-  et peu chargé : le titre, le dernier message et le bouton s'y posent.
+- un **canapé** (et/ou des fauteuils) avec **au moins 4 places vides** bien
+  lisibles, coussins compris ;
+- une **table** au premier plan avec quelques objets (lampe, tasses, livres,
+  bol, plante) et une **zone plate et libre** au centre du plateau, environ
+  330 × 210 px : j'y pose la photo réellement partagée ;
+- une ou plusieurs **fenêtres avec une vue** : la ville et l'Adour au
+  coucher du soleil, une montagne enneigée vue d'un chalet, la mer, une
+  place de village… ;
+- lampes, bois, plantes, bibliothèque : un lieu chaleureux et détaillé.
 
-Variantes demandées (même lieu, mêmes matériaux, même lumière) :
+Zones à respecter (en pixels, image 1170 × 2532 ; pas au pixel près, je
+repère moi-même les places de chaque scène) :
 
-1. `alcove-canape-vert` — canapé vert, table ronde, fenêtre sur Dax (image 4) ;
-2. `alcove-banquette-cuir` — banquette de cuir arrondie, table ronde ;
-3. `alcove-terrasse` — terrasse avec guirlandes lumineuses ;
-4. `alcove-adour` — table près des fenêtres, vue sur l'Adour.
+| Zone | Hauteur | Ce qu'il y a |
+| --- | --- | --- |
+| Haut | 0 → 600 | Le haut de la pièce (fenêtres, plafond, étagères) : l'en-tête se pose dessus, rien d'essentiel. |
+| Canapé | 650 → 1250 | Le dossier et l'assise vides ; les têtes des fantômes arriveront vers 750, l'assise vers 1150. |
+| Table | 1100 → 1700 | Le plateau vu de trois quarts, sa zone libre au centre. |
+| Bas | 1700 → 2532 | L'avant de la table et le sol, plus sombres : le titre, le dernier message et le bouton s'y posent. |
 
-Quatre suffisent pour démarrer. Les vignettes des listes (images 5 et 6) et
-de la confirmation (image 3) sont tirées de ces décors en code : aucune
-image à part.
+Quatre scènes suffisent pour démarrer, chacune dans un lieu différent :
+
+1. `scene-canape-vert` — le salon de l'image 4 (canapé vert, vue sur Dax et l'Adour) ;
+2. `scene-chalet` — chalet, canapé et fauteuils, vue sur la montagne ;
+3. `scene-terrasse` — terrasse couverte avec guirlandes, vue sur la ville ;
+4. `scene-bibliotheque` — salon-bibliothèque, fauteuils de cuir, fenêtre sur une place.
+
+Les vignettes des listes et de la confirmation sont tirées de ces scènes en
+code : aucune image à part.
 
 ---
 

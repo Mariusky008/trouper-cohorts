@@ -43,6 +43,8 @@ export type AlcoveData = {
 };
 
 const FOND = "/direct/ensemble/fond-salon.webp";
+const ECHELLE = 1.4;
+const ANCRE = 0.68;
 const reduit = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 /** L'image d'un fantôme assis pour une personne. */
@@ -103,9 +105,11 @@ export function Alcove({
   const { places, enPlus } = placement(a, c.places.length, moiAssis);
   const derniere = places.reduce((k, p, i) => (p && p.qui !== "libre" ? i : k), -1);
   // LA BANQUETTE PREND TOUTE LA LARGEUR, et déborde un peu : on est à sa table.
-  const e = W > 0 ? Math.min((W * 1.18) / 470, (H * 0.36) / 250) : 1;
+  // On est à la table, comme sur la maquette : les fantômes au centre de
+  // l'écran, la table qui s'avance jusque sous le titre.
+  const e = W > 0 ? Math.min((W * ECHELLE) / 470, (H * 0.4) / 250) : 1;
   const ax = W / 2;
-  const ay = H * 0.6;
+  const ay = H * ANCRE;
   const sieges: (Siege | null)[] = places.map((p) => {
     if (!p || p.qui === "libre") return null;
     if (p.qui === "moi") return { ...imageAssis("moi", decor), classe: installe && !calme ? "al-arrive" : undefined };
@@ -180,13 +184,14 @@ function StylesAlcove() {
 .al.actif .al-lumiere{opacity:1;}
 .al.calme .al-lumiere{transition:none;}
 .al .gs-groupe{position:absolute;}
-.al-libre{position:absolute;z-index:3;display:grid;place-items:end center;padding:0 0 8%;border:2px dashed rgba(255,214,150,.85);border-radius:48% 48% 22% 22%;
-  background:radial-gradient(ellipse at 50% 70%,rgba(255,200,120,.22),rgba(255,200,120,.06) 70%);cursor:pointer;font:inherit;color:#FFE9C7;}
-.al-libre span{padding:4px 10px;border-radius:999px;background:rgba(28,17,10,.82);font-size:12.5px;font-weight:800;white-space:nowrap;box-shadow:0 3px 8px rgba(0,0,0,.35);}
-.al-toi{position:absolute;z-index:3;transform:translate(-50%,-100%);padding:2px 9px;border-radius:999px;background:#F5B544;color:#2A1608;font-size:12px;font-weight:800;
+.al-libre{position:absolute;z-index:3;display:grid;place-items:end center;padding:0 0 8%;border:1.5px dashed rgba(255,214,150,.6);border-radius:48% 48% 22% 22%;
+  background:radial-gradient(ellipse at 50% 72%,rgba(255,196,110,.3),rgba(255,196,110,.08) 62%,rgba(255,196,110,0) 80%);cursor:pointer;font:inherit;color:#FFE9C7;
+  box-shadow:0 0 22px rgba(255,190,100,.18);}
+.al-libre span{padding:4px 11px;border-radius:999px;background:rgba(36,21,11,.78);border:1px solid rgba(246,190,110,.45);font-size:12.5px;font-weight:600;white-space:nowrap;box-shadow:0 3px 8px rgba(0,0,0,.35);}
+.al-toi{position:absolute;z-index:3;transform:translate(-50%,-100%);padding:2px 9px;border-radius:999px;background:#F5B544;color:#2A1608;font-size:12px;font-weight:600;
   box-shadow:0 3px 8px rgba(0,0,0,.35);pointer-events:none;}
 .al-plus{position:absolute;z-index:3;padding:3px 9px;border-radius:999px;background:rgba(28,17,10,.82);border:1px solid rgba(255,230,200,.35);
-  color:#FFF4E6;font-size:12.5px;font-weight:800;pointer-events:none;box-shadow:0 3px 8px rgba(0,0,0,.35);}
+  color:#FFF4E6;font-size:12.5px;font-weight:600;pointer-events:none;box-shadow:0 3px 8px rgba(0,0,0,.35);}
 @keyframes al-arrive{0%{opacity:0;transform:translateY(-22px) scale(.96);}55%{opacity:1;transform:translateY(3px) scale(1);}100%{opacity:1;transform:translateY(0) scale(1);}}
 @keyframes al-arrive-miroir{0%{opacity:0;transform:scaleX(-1) translateY(-22px) scale(.96);}55%{opacity:1;transform:scaleX(-1) translateY(3px) scale(1);}100%{opacity:1;transform:scaleX(-1) translateY(0) scale(1);}}
 @keyframes al-ombre{0%{opacity:0;transform:scaleX(.5);}100%{opacity:1;transform:scaleX(1);}}
