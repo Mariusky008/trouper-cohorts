@@ -200,23 +200,48 @@ export function LectureDuSalon({ salon, onRejoindre }: { salon: Salon; onRejoind
  * MEMBRE : LE STATUT, LES DEMANDES À DÉCIDER, LES OPTIONS. `onInviterLien` :
  * le partage d'invitation qui existe déjà (WhatsApp ou lien copié).
  */
-export function BarreDAcces({ salon, onInviterLien, onQuitte }: { salon: Salon; onInviterLien: () => void; onQuitte: () => void }) {
+export function BarreDAcces({
+  salon,
+  onInviterLien,
+  onQuitte,
+  sansBarre = false,
+  ouvrirOptions = 0,
+}: {
+  salon: Salon;
+  onInviterLien: () => void;
+  onQuitte: () => void;
+  /** Dans le chat, le statut et « Participants et options » passent dans le ⋯ de l'en-tête. */
+  sansBarre?: boolean;
+  /** Chaque nouvelle valeur ouvre le menu des options (le ⋯ de l'en-tête). */
+  ouvrirOptions?: number;
+}) {
   const a = salon.acces!;
   const [options, setOptions] = useState<"" | "menu" | "inviter">("");
   const [personnes, setPersonnes] = useState<{ ref: string; qui: string }[] | null>(null);
   const [mot, setMot] = useState("");
+  // LE ⋯ DEMANDE LE MENU : on le suit pendant le rendu, comme une valeur dérivée.
+  const [demandeVue, setDemandeVue] = useState(ouvrirOptions);
+  if (ouvrirOptions !== demandeVue) {
+    setDemandeVue(ouvrirOptions);
+    if (ouvrirOptions) {
+      setMot("");
+      setOptions("menu");
+    }
+  }
   const moderateur = a.role === "createur" || a.role === "moderateur";
   const dire = (r: string | null, ok: string) => setMot(r ?? ok);
   return (
     <>
       <Styles />
-      <div className="ps-barre">
-        <span className="ps-statut">{statut(salon)}</span>
-        {a.sourdine && <span className="ps-statut">🔕 En sourdine</span>}
-        <button type="button" className="ps-opt" onClick={() => (setMot(""), setOptions("menu"))}>
-          Participants et options
-        </button>
-      </div>
+      {!sansBarre && (
+        <div className="ps-barre">
+          <span className="ps-statut">{statut(salon)}</span>
+          {a.sourdine && <span className="ps-statut">🔕 En sourdine</span>}
+          <button type="button" className="ps-opt" onClick={() => (setMot(""), setOptions("menu"))}>
+            Participants et options
+          </button>
+        </div>
+      )}
       {moderateur && (a.demandes?.length ?? 0) > 0 && (
         <div className="ps-demandes">
           <p>Ils demandent à entrer — tu décides :</p>
