@@ -351,9 +351,14 @@ function ProchainLivre({ c, saPage, onReserver, onConseil, portail }: Proprietes
    * son double ; il ouvre maintenant WhatsApp sur SON numéro, le message déjà
    * écrit — le dernier centimètre de tout le produit (voir `prevenir.ts`).
    *
-   * UNE LIBRAIRIE INVENTÉE N'A PAS DE NUMÉRO : on n'ouvre rien (WhatsApp
-   * tomberait sur le carnet d'adresses), et on montre le message qui
-   * partirait chez un vrai libraire.
+   * UNE LIBRAIRIE INVENTÉE N'A PAS DE NUMÉRO, MAIS WHATSAPP S'OUVRE QUAND MÊME.
+   * « "Me le mettre de côté" ouvre "La Page d'Alice est une librairie
+   * inventée…" au lieu d'ouvrir le message pré-rempli avec les infos du livre
+   * sur le WhatsApp du commerçant. » Le geste doit se vivre jusqu'au bout,
+   * même en démonstration. On ouvre donc WhatsApp avec le message déjà écrit,
+   * SANS destinataire (`wa.me/?text=`) : on ne lui invente pas un numéro, qui
+   * tomberait chez un inconnu, et c'est lui qui choisit à qui l'envoyer — à
+   * lui-même pour voir. Chez un vrai libraire, le même lien porte son numéro.
    */
   const [deCote, setDeCote] = useState<{ nom: string; texte: string; reel: boolean } | null>(null);
   const mettreDeCote = (l: Livre) => {
@@ -364,7 +369,7 @@ function ProchainLivre({ c, saPage, onReserver, onConseil, portail }: Proprietes
       prenom: monPrenom() || undefined,
       quand: "Pouvez-vous me le mettre de côté ? Je passe le chercher dans les jours qui viennent",
     });
-    if (tel) window.open(m.whatsapp, "_blank", "noopener");
+    window.open(tel ? m.whatsapp : `https://wa.me/?text=${encodeURIComponent(m.texte)}`, "_blank", "noopener");
     setDeCote({ nom: l.nom, texte: m.texte, reel: Boolean(tel) });
   };
   // SES livres seulement : jamais des lignes « proposées » par le métier.
@@ -551,13 +556,13 @@ function ProchainLivre({ c, saPage, onReserver, onConseil, portail }: Proprietes
                           <b>Le message est prêt dans WhatsApp, chez {c.nom}. Envoie-le, et le livre t’attend.</b>
                         ) : (
                           <>
-                            <b>{c.nom} est une librairie inventée pour la démonstration : elle n’a pas de numéro.</b>
-                            <span>Voici le message qui partirait sur le WhatsApp d’un vrai libraire :</span>
+                            <b>Le message est prêt dans WhatsApp.</b>
+                            <span>{c.nom} est inventée pour la démonstration et n’a pas de numéro : choisis à qui l’envoyer. Chez un vrai libraire, il part tout droit sur le sien.</span>
                           </>
                         )}
                         <q>{deCote.texte}</q>
                         <button type="button" onClick={() => setDeCote(null)}>
-                          {deCote.reel ? "C’est envoyé" : "J’ai compris"}
+                          {deCote.reel ? "C’est envoyé" : "C’est vu"}
                         </button>
                       </div>
                     )}
