@@ -26,6 +26,7 @@ import { ProEngagements } from "./pro-engagements";
 import { ProWhatsapp } from "./pro-whatsapp";
 import { ProGallery } from "./pro-gallery";
 import { ProPhotosDuLieu } from "./pro-photos-lieu";
+import { ProMusique } from "./pro-musique";
 import { ProServices } from "./pro-services";
 import { ProMotifs } from "./pro-motifs";
 import { ProApproche } from "./pro-approche";
@@ -636,6 +637,8 @@ export default async function EspacePro({
           {/* LES PHOTOS DE SON LIEU, AVEC LEUR INTITULÉ — celles qu'il n'a pas
               données à l'inscription, il les donne ici. */}
           <div className="siteblock"><ProPhotosDuLieu slug={slug} token={token} /></div>
+          {/* LA MUSIQUE DE SON AMBIANCE — jouée dans « L'ambiance » de sa soirée. */}
+          <div className="siteblock"><ProMusique slug={slug} token={token} /></div>
           <div className="siteblock"><ProGallery slug={slug} token={token} /></div>
           <div className="siteblock"><ProAssistant slug={slug} token={token} /></div>
         </div>
