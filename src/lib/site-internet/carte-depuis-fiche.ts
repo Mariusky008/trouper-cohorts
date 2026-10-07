@@ -62,7 +62,7 @@ export type FicheCommercant = {
   /** Sa page d'avis Google, quand on connaît son `place_id`. */
   avisHref?: string;
   /** Les prestations déclarées, quand il en a déclaré. */
-  services?: { nom: string; prix?: string; detail?: string }[];
+  services?: { nom: string; prix?: string; detail?: string; rubrique?: string }[];
   /**
    * LES AVIS GOOGLE, EN TOUTES LETTRES — et c'est la seule preuve qu'il a le
    * premier jour. Voir `avisGoogle` dans `apercu-habitant.ts` pour la raison
@@ -342,7 +342,10 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
     vraiePage: true,
     carteSuivi: f.carteSuivi?.length ? f.carteSuivi : undefined,
     // PAR NOTRE ROUTE, COMME TOUTES SES PHOTOS GOOGLE — voir `enGrand`.
-    photosCarte: f.photosCarte?.length ? f.photosCarte.map(enGrand) : undefined,
+    // SAUF QUAND IL A SAISI SA CARTE : « que ça arrive directement sur leur
+    // CARTE et PRIX, plutôt qu'avoir des photos recueillies sur leur fiche
+    // Google ». Sa parole, à jour, remplace les pages photographiées.
+    photosCarte: !services.length && f.photosCarte?.length ? f.photosCarte.map(enGrand) : undefined,
     telephone: f.telephone || undefined,
     site: f.site || undefined,
     // LA NOTE VIENT DE GOOGLE ET ON LE DIT AINSI : c'est la seule chose de
@@ -378,7 +381,8 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
       ? services.map((s, i) => ({
           id: `${f.slug}-s${i}`,
           // CHEZ LE LIBRAIRE, CE QU'IL A SAISI EST UNE TABLE DE COUPS DE CŒUR.
-          rayon: brancheDuMetier(f.metier) === "librairie" ? "Ses coups de cœur" : "Prestations",
+          // SA RUBRIQUE QUAND IL L'A ÉCRITE dans « Ma carte » du comptoir.
+          rayon: s.rubrique || (brancheDuMetier(f.metier) === "librairie" ? "Ses coups de cœur" : "Prestations"),
           nom: s.nom,
           detail: s.detail,
           prix: s.prix,

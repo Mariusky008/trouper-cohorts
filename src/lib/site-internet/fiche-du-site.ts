@@ -180,9 +180,11 @@ export function construireFiche(
       nom: str(x.name).slice(0, 80),
       prix: str(x.price).slice(0, 40) || undefined,
       detail: str(x.desc).slice(0, 160) || undefined,
+      // SA RUBRIQUE (« Entrées », « Coupes ») — saisie dans « Ma carte » du comptoir.
+      rubrique: str(x.rubrique).slice(0, 40) || undefined,
     }))
     .filter((x) => x.nom.length > 0)
-    .slice(0, 12);
+    .slice(0, 80);
 
   // LES AVIS GOOGLE, TELS QU'ILS ONT ÉTÉ ÉCRITS. Ils dormaient dans le
   // diagnostic depuis toujours et l'ancienne maquette les affichait ; la

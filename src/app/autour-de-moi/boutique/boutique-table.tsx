@@ -1053,7 +1053,10 @@ export function BoutiqueTable({
   const carteGoogleSeule = Boolean(c.cataloguePropose && photosCarte.length);
   /* SA VRAIE CARTE, LUE OU SAISIE, SE MONTRE EN ENTIER ; les formules du
      métier, elles, restent quatre — ce ne sont que des exemples. */
-  const carteLignes = carteGoogleSeule ? [] : (c.catalogue ?? []).slice(0, c.cataloguePropose ? 4 : 40);
+  const carteLignes = carteGoogleSeule ? [] : (c.catalogue ?? []).slice(0, c.cataloguePropose ? 4 : 80);
+  /* SES RUBRIQUES S'AFFICHENT DÈS QU'IL Y EN A PLUSIEURS — lues sur ses photos
+     ou saisies dans « Ma carte » du comptoir (Entrées, Plats, Desserts). */
+  const avecRubriques = !c.cataloguePropose && new Set(carteLignes.map((a) => a.rayon || "")).size > 1;
   const prenom = prenomChef || c.voix?.prenom;
   const leChef = prenom ? prenom : "le chef";
 
@@ -1770,7 +1773,7 @@ export function BoutiqueTable({
                     <li key={a.id}>
                       {/* LES RUBRIQUES DE SA CARTE (« Tapas & entrées »),
                           telles qu'elles sont écrites, quand elle a été lue. */}
-                      {c.catalogueLuSurPhotos && a.rayon && a.rayon !== carteLignes[i - 1]?.rayon && (
+                      {(c.catalogueLuSurPhotos || avecRubriques) && a.rayon && a.rayon !== carteLignes[i - 1]?.rayon && (
                         <p className="bt-rubrique">{a.rayon}</p>
                       )}
                       {/* UNE LIGNE QUI A L'AIR DE S'OUVRIR DOIT S'OUVRIR. Elle
@@ -1793,7 +1796,7 @@ export function BoutiqueTable({
               ) : carteGoogleSeule ? (
                 <p className="bt-vide">
                   {saPage
-                    ? "Votre carte, telle que vous l’avez publiée sur Google. Ses plats et ses prix s’afficheront aussi en liste dès qu’ils seront lus — ou saisis dans votre Espace Pro."
+                    ? "Votre carte, telle que vous l’avez publiée sur Google. Ses plats et ses prix s’afficheront aussi en liste dès qu’ils seront lus — ou saisis dans « Ma carte », sur votre comptoir."
                     : "Sa carte, page par page. Touchez une page pour la lire en grand."}
                 </p>
               ) : (
@@ -1855,7 +1858,7 @@ export function BoutiqueTable({
                 <p className="bt-note">
                   <i aria-hidden="true">ⓘ</i>{" "}
                   {saPage
-                    ? `Lue sur les photos de ${mots.lue[1]} Google · corrigez-la dans l’Espace Pro.`
+                    ? `Lue sur les photos de ${mots.lue[1]} Google · remplacez-la dans « Ma carte », sur votre comptoir.`
                     : `Lue sur les photos de ${mots.lue[0]} · prix à confirmer sur place.`}
                 </p>
               )}
