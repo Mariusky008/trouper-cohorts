@@ -241,7 +241,7 @@ export const CATEGORIES: Categorie[] = [
     bulle: "Glissez pour découvrir les sorties",
     bouton: "Découvrir cette soirée",
     cartes: [
-      { id: "bar-terrasse", photo: "/direct/terrasse-au-soleil.jpg" },
+      { id: "bar-terrasse", photo: "/direct/terrasse-du-soir.jpg" },
       { id: "marche-nuit", photo: "/direct/marche-producteurs.jpg" },
       { id: "expo", photo: "/direct/nocturne-musee.jpg" },
       { id: "vide-grenier", photo: "/direct/vide-grenier.jpg" },

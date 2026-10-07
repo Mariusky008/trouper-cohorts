@@ -3331,9 +3331,10 @@ const CARTES: CarteAutour[] = [
     // faites d'images DEJA presentes : rien n'est invente, mais deux salons
     // partagent leurs interieurs et deux bars leurs comptoirs — a remplacer
     // par de vraies photos de chaque commerce. Voir public/direct/LISEZ-MOI.md.
-    photos: ["/direct/terrasse-au-soleil.jpg", "/direct/verre-au-comptoir.jpg"],
+    // LE SOIR EN PREMIER : c'est une soirée qu'on annonce, la terrasse de jour vient après.
+    photos: ["/direct/terrasse-du-soir.jpg", "/direct/terrasse-au-soleil.jpg", "/direct/verre-au-comptoir.jpg"],
     branche: "bar",
-    photo: "/direct/terrasse-au-soleil.jpg",
+    photo: "/direct/terrasse-du-soir.jpg",
     cadrage: "50%",
     nom: "Une terrasse au soleil",
     google: { note: "4,5", avis: 154 },

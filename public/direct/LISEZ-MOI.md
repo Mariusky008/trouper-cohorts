@@ -32,6 +32,7 @@ l'image et le dégradé sont deux couches empilées, précisément pour ça).
 | `vitrine-mode.jpg`     | Une vitrine de prêt-à-porter, mannequins habillés. Ni visage, ni enseigne lisible. 387 points de large : légèrement molle sur un téléphone récent. |
 | `verre-au-comptoir.jpg`| Un comptoir de bar à vins, fûts au plafond        |
 | `terrasse-au-soleil.jpg` | Une terrasse en plein soleil                    |
+| `terrasse-du-soir.jpg` | La même terrasse le soir, sous une guirlande — retouche de la précédente (`scripts/fabriquer-terrasse-du-soir.py`), à remplacer par une vraie photo du lieu en soirée |
 | `fauteuil-coiffeur.jpg`| Un fauteuil de coiffeur libre                     |
 | `salon-neuf.jpg`       | Un salon de coiffure qui vient d'ouvrir           |
 | `bouquet-du-jour.jpg`  | Un bouquet devant une fenêtre                     |
