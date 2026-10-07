@@ -586,7 +586,7 @@ const SOIREE_TERRASSE: Soiree = {
   suite: "cette fin de journée",
   phrase: "La terrasse vous montre à quoi elle ressemble à l’heure où vous viendrez.",
   note: "Même terrasse,\nmêmes envies.",
-  photo: "/direct/terrasse-du-soir.jpg",
+  photo: "/direct/soiree/saxo-du-soir.jpg",
   accent: "#FFB24B",
   essais: [
     /**
