@@ -21,8 +21,8 @@
  *
  * UNE REQUÊTE TIENT EN 4,5 MO (limite de Vercel). Les photos du comptoir sont
  * réduites à mille points et un mot de dix secondes pèse une centaine de
- * kilo-octets : un plat entier y tient largement. On envoie la voix au plat
- * seulement, jamais à l'annonce.
+ * kilo-octets : un plat entier y tient largement. La voix part avec le plat
+ * et avec la pièce (le livre conseillé, la coupe), jamais avec l'annonce.
  *
  * FICHIER NAVIGATEUR.
  */
@@ -106,6 +106,10 @@ export async function envoyerEnLigne(
         rayon: c.famille === "librairie" ? "Ses coups de cœur" : mission.quoi,
         ...(c.famille !== "librairie" ? { decrire: p.nom } : {}),
         ...(p.voixTexte ? { detail: p.voixTexte } : {}),
+        // SA VOIX PART AVEC LE LIVRE : « la libraire peut mettre un petit
+        // message vocal […] mais je ne la vois pas apparaître ». Elle restait
+        // dans le comptoir ; elle suit maintenant la pièce.
+        ...(p.voix ? { voix: p.voix, voixSecondes: p.voixSecondes, voixTexte: p.voixTexte } : {}),
         fin: p.finLe,
       },
     });

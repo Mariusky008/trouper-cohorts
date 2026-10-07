@@ -618,6 +618,7 @@ export function StylesBoutiqueTable() {
         .bt-lignes s,.bt-fiche s{flex:none;text-decoration:none;font-size:26px;
           line-height:1;color:var(--bt-gris);}
         .bt-prix{flex:none;text-decoration:none;font-weight:700;color:var(--bt-ambre);}
+        .bt-a-voix{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:11px;background:var(--bt-ambre);color:#1A110B;}
 
         /* ═══ 4 · LES AVIS ══════════════════════════════════════════════ */
         .bt-corps{position:relative;z-index:2;padding:12px 16px var(--bt-coin);}

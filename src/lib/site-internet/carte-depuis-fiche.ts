@@ -376,6 +376,8 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
         prix: x.prix,
         photo: x.photo,
         decrire: x.decrire,
+        // SON MOT À SA VOIX, s'il en a enregistré un — voir `ChoixDuLibraire`.
+        ...(x.voix ? { voix: x.voix, voixSecondes: x.voixSecondes, voixTexte: x.voixTexte } : {}),
       })),
       ...(services.length
       ? services.map((s, i) => ({

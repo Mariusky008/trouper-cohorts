@@ -31,6 +31,7 @@ import { tenueDu } from "@/lib/direct/double-metiers";
 import { parcoursPromis } from "@/lib/direct/parcours-promis";
 import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
 import { monPrenom } from "@/lib/direct/salons";
+import { ChoixDuLibraire } from "./choix-du-libraire";
 
 export type { RenduEssai };
 
@@ -312,7 +313,18 @@ const QUESTIONS: { cle: "gout" | "humeur" | "pour"; titre: string; choix: Choix[
   },
 ];
 
-type Livre = { id: string; nom: string; detail?: string; prix?: string; photo?: string; rayon?: string };
+type Livre = {
+  id: string;
+  nom: string;
+  detail?: string;
+  prix?: string;
+  photo?: string;
+  rayon?: string;
+  /** Son mot à sa voix — voir `ChoixDuLibraire`. */
+  voix?: string;
+  voixSecondes?: number;
+  voixTexte?: string;
+};
 
 const aplatir = (t: string) =>
   t
@@ -383,6 +395,13 @@ function ProchainLivre({ c, saPage, onReserver, onConseil, portail }: Proprietes
   const conseils = useMemo(() => conseilsDuLibraire(livres, reponses), [livres, reponses]);
   const fermer = useCallback(() => setEtape(-1), []);
   const ouvert = etape >= 0;
+  /**
+   * LE LIVRE OUVERT EN GRAND, avec sa voix et ses gestes — « lorsque je
+   * clique sur un livre, j'ai la présentation du livre, le vocal et les CTA ».
+   * `pourToi` : ouvert depuis ses conseils, après les questions.
+   */
+  const [enGrand, setEnGrand] = useState<{ livre: Livre; pourToi: boolean } | null>(null);
+  const humeur = QUESTIONS[1].choix.find((x) => x.cle === reponses.humeur)?.label;
 
   /* LA PAGE DERRIÈRE NE DÉFILE PAS, ET ÉCHAP REFERME — comme l'atelier. */
   useEffect(() => {
@@ -462,9 +481,21 @@ function ProchainLivre({ c, saPage, onReserver, onConseil, portail }: Proprietes
               <span>) s'envolait par-dessus le titre. */}
           <div className="bl-rayon">
             {livres.slice(0, 6).map((l, i) => (
-              <div key={l.id} className="bl-livre" style={{ ["--i" as string]: i }}>
+              <button
+                key={l.id}
+                type="button"
+                className="bl-livre"
+                style={{ ["--i" as string]: i }}
+                onClick={() => setEnGrand({ livre: l, pourToi: false })}
+                aria-label={`Voir ${l.nom}`}
+              >
                 <Couverture livre={l} />
-              </div>
+                {l.voix && (
+                  <span className="bl-voix" aria-hidden="true">
+                    ▶
+                  </span>
+                )}
+              </button>
             ))}
           </div>
         </section>
@@ -569,9 +600,15 @@ function ProchainLivre({ c, saPage, onReserver, onConseil, portail }: Proprietes
                     <div className="bl-conseils">
                       {conseils.livres.map((l, i) => (
                         <article key={l.id} className="bl-conseil" style={{ ["--i" as string]: i }}>
-                          <Couverture livre={l} />
+                          <button type="button" className="bl-ouvrir" onClick={() => setEnGrand({ livre: l, pourToi: true })} aria-label={`Ouvrir ${l.nom}`}>
+                            <Couverture livre={l} />
+                          </button>
                           <div className="bl-conseil-t">
                             <b>{l.nom}</b>
+                            {/* SA VOIX, QUAND ELLE L'A ENREGISTRÉE : on l'écoute en ouvrant le livre. */}
+                            <button type="button" className="bl-ecouter" onClick={() => setEnGrand({ livre: l, pourToi: true })}>
+                              {l.voix ? `▶ Pourquoi elle l’a choisi${l.voixSecondes ? ` · ${l.voixSecondes} s` : ""}` : "Voir le livre ›"}
+                            </button>
                             {l.detail && <p>{l.detail}</p>}
                             {l.prix && <em>{l.prix}</em>}
                             <div className="bl-gestes">
@@ -616,6 +653,26 @@ function ProchainLivre({ c, saPage, onReserver, onConseil, portail }: Proprietes
           </div>,
           portail ?? document.body,
         )}
+      {enGrand && (
+        <ChoixDuLibraire
+          c={c}
+          livre={enGrand.livre}
+          pourToi={enGrand.pourToi}
+          envie={enGrand.pourToi ? humeur : undefined}
+          portail={portail}
+          onFermer={() => setEnGrand(null)}
+          onEnParler={
+            onConseil
+              ? () => {
+                  const l = enGrand.livre;
+                  setEnGrand(null);
+                  fermer();
+                  onConseil({ quoi: l.nom, prix: l.prix, photo: l.photo });
+                }
+              : undefined
+          }
+        />
+      )}
     </div>
   );
 }
@@ -738,6 +795,12 @@ function StylesExperience() {
         /* ═══ TON PROCHAIN LIVRE ═══ */
         .bl-rayon{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:12px;}
         .bl-livre{animation:bxMonte .6s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(.06s * var(--i,0));}
+        .bl-livre{position:relative;display:block;padding:0;border:0;background:none;cursor:pointer;font:inherit;text-align:left;}
+        .bl-voix{position:absolute;right:6px;bottom:6px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+          background:#F5B04A;color:#1A110B;font-size:12px;box-shadow:0 4px 10px rgba(0,0,0,.4);}
+        .bl-ouvrir{display:block;padding:0;border:0;background:none;cursor:pointer;}
+        .bl-ecouter{display:inline-block;margin-top:8px;padding:0;border:0;background:none;cursor:pointer;font:inherit;
+          font-weight:800;font-size:14px;color:#F5B04A;text-align:left;}
         .bl-couv{display:block;width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:6px 12px 12px 6px;
           box-shadow:inset 6px 0 10px -6px rgba(0,0,0,.6),0 14px 26px -12px rgba(0,0,0,.8);background:#2A1F1B;}
         .bl-couv.dessinee{display:flex;align-items:flex-end;padding:10px;box-sizing:border-box;

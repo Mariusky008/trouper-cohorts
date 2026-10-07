@@ -8,10 +8,17 @@
 // elles que ses clients essaieront depuis sa page et ses annonces.
 //
 // CE N'EST PAS UNE ANNONCE : rien ne s'efface le soir. Il ajoute, il retire.
+// SON MOT À SA VOIX, SUR CHAQUE PHOTO. « Quand elle est sur son admin, il faut
+// qu'elle puisse enregistrer un vocal pas seulement sur l'annonce du jour mais
+// aussi depuis sa galerie vitrine, et que ça apparaisse sur sa page. » Un
+// appui sur « Ajouter mon mot », elle parle, c'est rangé avec la photo ; chez
+// le libraire, c'est ce qu'on entend en ouvrant le livre (`ChoixDuLibraire`).
+//
 // Le même écran sert les deux villes — voir `lib/direct/vitrine.ts` pour où
 // partent les photos (en base pour un vrai commerçant, dans le téléphone pour
 // la démonstration).
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useMicro } from "./use-micro";
 import type { CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import {
   abonnerVitrines,
@@ -19,6 +26,7 @@ import {
   MAX_VITRINE,
   motsDeLaVitrine,
   poserDansVitrine,
+  poserVoixVitrine,
   retirerDeVitrine,
   VITRINES_VIDES,
   type ArticleVitrine,
@@ -48,11 +56,27 @@ async function reduire(fichier: File, large = 1000): Promise<string> {
   }
 }
 
-type PieceServeur = { id: string; nom: string; prix?: string; photo: string; publieLe?: string; vitrine?: boolean };
+type PieceServeur = {
+  id: string;
+  nom: string;
+  prix?: string;
+  photo: string;
+  publieLe?: string;
+  vitrine?: boolean;
+  voix?: string;
+  voixSecondes?: number;
+};
 const depuisServeur = (l: PieceServeur[] | undefined): ArticleVitrine[] =>
   (l ?? [])
     .filter((p) => p.vitrine)
-    .map((p) => ({ id: p.id, nom: p.nom, prix: p.prix, photo: p.photo, ajouteLe: Date.parse(p.publieLe ?? "") || 0 }));
+    .map((p) => ({
+      id: p.id,
+      nom: p.nom,
+      prix: p.prix,
+      photo: p.photo,
+      ajouteLe: Date.parse(p.publieLe ?? "") || 0,
+      ...(p.voix ? { voix: p.voix, voixSecondes: p.voixSecondes } : {}),
+    }));
 
 export function VitrineComptoir({
   commerce,
@@ -70,6 +94,12 @@ export function VitrineComptoir({
   const [enBase, setEnBase] = useState<ArticleVitrine[] | null>(null);
   const [brouillons, setBrouillons] = useState<Brouillon[]>([]);
   const [message, setMessage] = useState("");
+  const micro = useMicro();
+  /** La photo dont on enregistre le mot, celle dont le mot part, celle qu'on écoute. */
+  const [surQui, setSurQui] = useState<string | null>(null);
+  const [envoiVoix, setEnvoiVoix] = useState<string | null>(null);
+  const [joue, setJoue] = useState<string | null>(null);
+  const son = useRef<HTMLAudioElement | null>(null);
 
   // UN VRAI COMMERÇANT : SA VITRINE EST EN BASE, on la relit en arrivant.
   useEffect(() => {
@@ -176,8 +206,70 @@ export function VitrineComptoir({
     }
   };
 
+  /** Son mot : il parle, et le son part avec la photo (ou s'en va, sans `voix`). */
+  const garderLeMot = async (a: ArticleVitrine, voix?: string, secondes?: number) => {
+    if (!reel) {
+      const souci = poserVoixVitrine(commerce.id, a.id, voix, secondes);
+      if (souci) setMessage(souci);
+      return;
+    }
+    setEnvoiVoix(a.id);
+    try {
+      const r = await fetch("/api/site-internet/pro/pieces", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ slug: reel.slug, token: reel.token, action: "voix", id: a.id, voix: voix ?? null, voixSecondes: secondes }),
+      });
+      const j = (await r.json().catch(() => ({}))) as { pieces?: PieceServeur[]; error?: string };
+      if (!r.ok) throw new Error(j.error || `Erreur ${r.status}`);
+      setEnBase(depuisServeur(j.pieces));
+    } catch (e) {
+      setMessage(`Ton mot n’a pas pu partir : ${e instanceof Error ? e.message : "réessaie"}.`);
+    } finally {
+      setEnvoiVoix(null);
+    }
+  };
+
+  const enregistrer = (a: ArticleVitrine) => {
+    // UN SECOND APPUI FINIT L'ENREGISTREMENT EN COURS — sur la même photo.
+    if (micro.ecoute) {
+      void micro.arreter();
+      return;
+    }
+    setSurQui(a.id);
+    setMessage("");
+    /* SA VOIX, PAS SES MOTS : la dictée éteinte et un micro neuf, comme à
+       l'étape « voix » du comptoir — voir `ecouter` dans `use-micro.ts`. */
+    micro.ecouter((r) => {
+      setSurQui(null);
+      if (!r.audio) {
+        setMessage(
+          r.erreur && /aucun son/i.test(r.erreur)
+            ? "Je n’ai capté aucun son. Appuie à nouveau et parle : je repars d’un micro neuf."
+            : r.erreur || "Ton mot n’a pas pu s’enregistrer sur ce téléphone. Réessaie.",
+        );
+        return;
+      }
+      void garderLeMot(a, r.audio, r.secondes ? Math.round(r.secondes) : undefined);
+    }, true);
+  };
+
+  const ecouter = (a: ArticleVitrine) => {
+    const el = son.current;
+    if (!el || !a.voix) return;
+    if (joue === a.id) {
+      el.pause();
+      setJoue(null);
+      return;
+    }
+    // play() DANS LE GESTE : c'est ce qu'exige l'iPhone.
+    el.src = a.voix;
+    void el.play().then(() => setJoue(a.id)).catch(() => setJoue(null));
+  };
+
   return (
     <div className="vt">
+      <audio ref={son} onEnded={() => setJoue(null)} preload="none" />
       <StylesVitrine />
       <div className="vt-haut">
         <button type="button" className="vt-retour" onClick={onRetour}>
@@ -195,6 +287,7 @@ export function VitrineComptoir({
           <h2>Ma vitrine · {mots.titre.toLowerCase()}</h2>
           <p>{mots.usage}</p>
           <p className="vt-astuce">Mets-en 10 ou 15 : plus il y a de choix, plus on essaie. Chaque photo garde son libellé.</p>
+          <p className="vt-astuce">🎙️ Sous chaque photo, ton mot à ta voix, si tu veux : {mots.mot.charAt(0).toLowerCase() + mots.mot.slice(1)}</p>
         </div>
       </section>
 
@@ -268,6 +361,32 @@ export function VitrineComptoir({
                   <b>{a.nom}</b>
                   {a.prix && <em>{a.prix}</em>}
                 </figcaption>
+                {/* ═══ SON MOT ═══ enregistrer, écouter, refaire, retirer. */}
+                <div className="vt-mot">
+                  {surQui === a.id && micro.ecoute ? (
+                    <button type="button" className="vt-mot-b ecoute" onClick={() => enregistrer(a)}>
+                      <i aria-hidden="true" /> {micro.direct ? "J’écoute…" : "Parle… touche pour finir"}
+                    </button>
+                  ) : envoiVoix === a.id ? (
+                    <span className="vt-mot-b">Envoi…</span>
+                  ) : a.voix ? (
+                    <>
+                      <button type="button" className="vt-mot-b plein" onClick={() => ecouter(a)}>
+                        {joue === a.id ? "❚❚" : "▶"} Mon mot{a.voixSecondes ? ` · ${a.voixSecondes} s` : ""}
+                      </button>
+                      <button type="button" className="vt-mot-x" onClick={() => enregistrer(a)} aria-label={`Refaire mon mot sur ${a.nom}`} disabled={micro.ecoute}>
+                        ↺
+                      </button>
+                      <button type="button" className="vt-mot-x" onClick={() => void garderLeMot(a)} aria-label={`Retirer mon mot sur ${a.nom}`}>
+                        ✕
+                      </button>
+                    </>
+                  ) : (
+                    <button type="button" className="vt-mot-b" onClick={() => enregistrer(a)} disabled={micro.ecoute}>
+                      🎙️ Ajouter mon mot
+                    </button>
+                  )}
+                </div>
                 <button type="button" className="vt-retirer" onClick={() => void retirer(a)} aria-label={`Retirer ${a.nom}`}>
                   Retirer
                 </button>
@@ -319,7 +438,16 @@ function StylesVitrine() {
 .vt-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
 .vt-article{position:relative;margin:0;border-radius:18px;overflow:hidden;background:var(--nappe);border:1px solid var(--trait);}
 .vt-article img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;}
-.vt-article figcaption{padding:8px 10px 34px;}
+.vt-article figcaption{padding:8px 10px 4px;}
+.vt-mot{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:4px 10px 34px;}
+.vt-mot-b{flex:1;min-width:0;height:34px;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:999px;
+  border:1px solid rgba(245,162,58,.5);background:none;color:var(--ambre);font-size:12.5px;font-weight:800;white-space:nowrap;}
+.vt-mot-b.plein{flex-basis:100%;background:var(--ambre);color:#2A1608;border-color:var(--ambre);}
+.vt-mot-b.ecoute{background:var(--rose);color:#fff;border-color:var(--rose);}
+.vt-mot-b.ecoute i{width:8px;height:8px;border-radius:50%;background:#fff;animation:vt-pouls 1s ease-in-out infinite;}
+@keyframes vt-pouls{50%{opacity:.25;}}
+.vt-mot-b:disabled{opacity:.45;}
+.vt-mot-x{width:30px;height:30px;flex:none;border-radius:50%;border:1px solid var(--trait);background:none;color:var(--gris);font-size:13px;}
 .vt-article b{display:block;font-size:14px;line-height:1.25;}
 .vt-article em{display:block;margin-top:2px;font-style:normal;font-weight:800;color:var(--ambre);font-size:14px;}
 .vt-retirer{position:absolute;left:10px;bottom:8px;border:0;background:none;padding:0;font-size:12.5px;font-weight:700;

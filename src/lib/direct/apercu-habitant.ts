@@ -978,6 +978,16 @@ export type ArticleCatalogue = {
    */
   decrire?: string;
   decrireEn?: string;
+  /**
+   * SON MOT, À SA VOIX — « pourquoi je l'ai choisi ». Enregistré au comptoir,
+   * sur l'annonce du jour ou sur une photo de sa vitrine : une adresse https
+   * chez un vrai commerçant, un data: dans la démonstration. Voir
+   * `ChoixDuLibraire` dans `essai-du-lieu.tsx`.
+   */
+  voix?: string;
+  voixSecondes?: number;
+  /** Ce qu'il a dit, quand on le sait : la citation sous le lecteur. */
+  voixTexte?: string;
 };
 
 /**

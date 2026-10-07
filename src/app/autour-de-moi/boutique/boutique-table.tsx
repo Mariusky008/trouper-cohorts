@@ -92,6 +92,7 @@ import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { StylesBoutiqueTable } from "./styles-boutique-table";
 import { compter } from "@/lib/direct/compter";
 import { EssaiDuLieu } from "./essai-du-lieu";
+import { ChoixDuLibraire } from "./choix-du-libraire";
 import { ExperienceTable, estUnRestaurant } from "./experience-table";
 
 type Onglet = "lieu" | "experience" | "carte" | "avis" | "amis" | "infos";
@@ -1057,6 +1058,11 @@ export function BoutiqueTable({
   /* SES RUBRIQUES S'AFFICHENT DÈS QU'IL Y EN A PLUSIEURS — lues sur ses photos
      ou saisies dans « Ma carte » du comptoir (Entrées, Plats, Desserts). */
   const avecRubriques = !c.cataloguePropose && new Set(carteLignes.map((a) => a.rayon || "")).size > 1;
+  /* ═══ UN LIVRE DE SES COUPS DE CŒUR, OUVERT EN GRAND ═══════════════════
+     « Lorsque je clique sur un livre, j'ai la présentation du livre, le
+     vocal et les CTA. » Chez le libraire, une ligne de sa carte ouvre
+     `ChoixDuLibraire` au lieu du double. */
+  const [livreVu, setLivreVu] = useState<(typeof carteLignes)[number] | null>(null);
   const prenom = prenomChef || c.voix?.prenom;
   const leChef = prenom ? prenom : "le chef";
 
@@ -1079,6 +1085,32 @@ export function BoutiqueTable({
     if (salon) q.set("salon", "1");
     const suite = q.toString();
     return `${window.location.origin}${window.location.pathname}${suite ? `?${suite}` : ""}`;
+  };
+  /* LE CONSEIL DU LIBRAIRE, MONTRÉ AUX AMIS : on n'a rien « essayé sur soi »,
+     on demande qui l'a lu. Depuis « Ton prochain livre » et depuis un livre
+     ouvert en grand (`ChoixDuLibraire`). */
+  const parlerDuLivre = (l: { quoi: string; prix?: string; photo?: string }) => {
+    const moi = monPrenom() || "Vous";
+    ouvrirSalon({
+      cle: cleSalon,
+      sujet: `Chez ${c.nom}`,
+      ou: c.nom,
+      parQui: moi,
+      quand: "Aujourd’hui",
+      annonce: l.quoi,
+      prix: l.prix,
+      distance: c.distance,
+      photo: l.photo,
+      boutique: { id: c.id, nom: c.nom, lien: lienPage() },
+    });
+    ecrireDansSalon(cleSalon, {
+      qui: moi,
+      voix: "moi",
+      texte: `Le libraire de ${c.nom} me conseille « ${l.quoi} »${l.prix ? ` (${l.prix})` : ""}. Quelqu’un l’a lu ?`,
+      quand: heureCourte(),
+      photo: l.photo,
+    });
+    setOnglet("amis");
   };
   const ouvrirLeSalon = () =>
     ouvrirSalon({
@@ -1548,29 +1580,7 @@ export function BoutiqueTable({
               }}
               /* LE CONSEIL DU LIBRAIRE, MONTRÉ AUX AMIS : on n'a rien
                  « essayé sur soi », on demande qui l'a lu. */
-              onConseil={(l) => {
-                const moi = monPrenom() || "Vous";
-                ouvrirSalon({
-                  cle: cleSalon,
-                  sujet: `Chez ${c.nom}`,
-                  ou: c.nom,
-                  parQui: moi,
-                  quand: "Aujourd’hui",
-                  annonce: l.quoi,
-                  prix: l.prix,
-                  distance: c.distance,
-                  photo: l.photo,
-                  boutique: { id: c.id, nom: c.nom, lien: lienPage() },
-                });
-                ecrireDansSalon(cleSalon, {
-                  qui: moi,
-                  voix: "moi",
-                  texte: `Le libraire de ${c.nom} me conseille « ${l.quoi} »${l.prix ? ` (${l.prix})` : ""}. Quelqu’un l’a lu ?`,
-                  quand: heureCourte(),
-                  photo: l.photo,
-                });
-                setOnglet("amis");
-              }}
+              onConseil={parlerDuLivre}
             />
           </div>
         </section>
@@ -1715,6 +1725,17 @@ export function BoutiqueTable({
           Une page s'ouvre en grand, les flèches passent à la suivante, et un
           appui sur la page la lit au double : une carte photographiée se
           déchiffre de près. On ne quitte jamais ClikMe. */}
+      {livreVu && (
+        <ChoixDuLibraire
+          c={c}
+          livre={livreVu}
+          onFermer={() => setLivreVu(null)}
+          onEnParler={() => {
+            setLivreVu(null);
+            parlerDuLivre({ quoi: livreVu.nom, prix: livreVu.prix, photo: livreVu.photo });
+          }}
+        />
+      )}
       {pageCarte !== null && photosCarte[pageCarte] && (
         <div className="bt-visionneuse" role="dialog" aria-label="La carte, page par page" onClick={() => setPageCarte(null)}>
           <div className={`bt-vis-page${pageGrande ? " grande" : ""}`} onClick={(e) => e.stopPropagation()}>
@@ -1779,7 +1800,7 @@ export function BoutiqueTable({
                       {/* UNE LIGNE QUI A L'AIR DE S'OUVRIR DOIT S'OUVRIR. Elle
                           ouvre le double : c'est lui qui sait dire ce qu'il
                           y a dans la formule du jour. */}
-                      <button type="button" onClick={() => setDiscute(true)}>
+                      <button type="button" onClick={() => (c.branche === "librairie" ? setLivreVu(a) : setDiscute(true))}>
                         <span className="bt-pastille">
                           <IconeCarte nom={a.nom} branche={c.branche} />
                         </span>
@@ -1787,6 +1808,11 @@ export function BoutiqueTable({
                           <b>{a.nom}</b>
                           {a.detail && <em>{a.detail}</em>}
                         </span>
+                        {a.voix && (
+                          <i className="bt-a-voix" aria-label="Son mot à sa voix">
+                            ▶
+                          </i>
+                        )}
                         {a.prix && <u className="bt-prix">{a.prix}</u>}
                         <s aria-hidden="true">›</s>
                       </button>
