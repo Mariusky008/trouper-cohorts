@@ -909,6 +909,7 @@ export function MurContenu({
   soireeSur,
   choisirFantome,
   onEnsemble,
+  demo,
 }: {
   mur: TypeMur;
   /** La découverte d'une soirée s'ouvre sur cet onglet (« Qui vient ? » depuis le rail). */
@@ -917,6 +918,8 @@ export function MurContenu({
   choisirFantome?: (apres: () => void) => void;
   /** Le salon public de la soirée, ouvert dans Ensemble. */
   onEnsemble?: (cle: string) => void;
+  /** La démonstration : les consos offertes se jouent « côté bar » sur le téléphone. */
+  demo?: boolean;
   /**
    * AUX COULEURS DE LA MAISON — la page d'un commerçant, pas le fil. Sa
    * palette (violet du fantôme, menthe du commerce) est repeinte par familles
@@ -1274,6 +1277,7 @@ export function MurContenu({
           ouvrirSur={soireeSur}
           choisirFantome={choisirFantome}
           onEnsemble={onEnsemble}
+          demo={demo}
         />
       ) : gout ? (
         <EcranGout

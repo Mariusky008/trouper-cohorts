@@ -60,6 +60,8 @@ export type MessageSalon = {
   quand: string;
   /** Une photo envoyée dans le salon, en data-URL ou en chemin public. */
   photo?: string;
+  /** 🎁 Le lancement de consos offertes dont ce message est la carte (voir `soiree-cadeaux.ts`). */
+  cadeau?: string;
   /**
    * LES RÉACTIONS. Un cœur sous un message coûte un appui et dit ce qu'une
    * réponse écrite ne dirait pas mieux — c'est la moitié des échanges d'un

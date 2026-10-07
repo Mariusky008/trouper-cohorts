@@ -13675,6 +13675,7 @@ export function ApercuHabitant() {
                       soireeSur={soireeSur}
                       choisirFantome={choisirPuis}
                       onEnsemble={ouvrirSalonDeSoiree}
+                      demo={!reelle}
                       /* LE MUR EST DÉJÀ CALCULÉ PLUS HAUT : c'est lui qui décide
                          du bouton principal de l'annonce. Deux appels séparés
                          auraient fini par ne plus répondre la même chose. */
@@ -13698,6 +13699,7 @@ export function ApercuHabitant() {
                       ouvrirSur={soireeSur}
                       choisirFantome={choisirPuis}
                       onEnsemble={ouvrirSalonDeSoiree}
+                      demo={!reelle}
                     />
                   ) : null}
                 </div>

@@ -45,6 +45,8 @@ import {
 import { abonnerLook, lookDe, lookParDefautDe, monLook } from "@/lib/direct/look";
 import { abonnerEnvies, AUCUNES_ENVIES, chargerEnvies, poserEnvies } from "@/lib/direct/soiree-envies";
 import { reduirePhoto } from "@/lib/site-internet/reduire-photo";
+import { abonnerCadeaux, AUCUN_CADEAU, chargerCadeaux, lancerCadeau, oublierCadeau, retenirTirage, retenirTiragePour, ticketVu, tirer, validerCode, type Cadeau } from "@/lib/direct/soiree-cadeaux";
+import { CarteCadeau, CoteBar, EcranGagne, StylesConsos, TicketEpingle } from "@/components/direct/consos-offertes";
 
 export type OngletSoiree = "ambiance" | "qui" | "discussion";
 
@@ -59,6 +61,7 @@ export function DecouverteSoiree({
   ouvrirSur = "ambiance",
   choisirFantome,
   onEnsemble,
+  demo,
 }: {
   soiree: Soiree;
   ville?: string;
@@ -71,6 +74,8 @@ export function DecouverteSoiree({
   choisirFantome?: (apres: () => void) => void;
   /** Ouvrir le même salon dans Ensemble. */
   onEnsemble?: (cle: string) => void;
+  /** La démonstration : le geste « Côté bar » des consos offertes se joue sur le téléphone. */
+  demo?: boolean;
 }) {
   const [onglet, setOnglet] = useState<OngletSoiree>(ouvrirSur);
   const [feuille, setFeuille] = useState(false);
@@ -136,7 +141,53 @@ export function DecouverteSoiree({
   const total = soiree.fantomes.length + (moi ? 1 : 0);
   const monFantome = look.debout ?? look.image;
 
-  const compterVenir = () => (choisirFantome ?? ((f: () => void) => f()))(() => setFeuille(true));
+  const compterVenir = () => {
+    // UN TIRAGE QUI TOURNE ATTEND CELUI QUI EST EN TRAIN DE DIRE QU'IL VIENT.
+    retenirTiragePour(soiree.id, 30_000);
+    (choisirFantome ?? ((f: () => void) => f()))(() => setFeuille(true));
+  };
+
+  // ─── 🎁 LES CONSOS OFFERTES ─── voir `lib/direct/soiree-cadeaux.ts`.
+  const cadeaux = useSyncExternalStore(abonnerCadeaux, chargerCadeaux, () => AUCUN_CADEAU);
+  const cadeau: Cadeau | undefined = cadeaux[soiree.id];
+  const [coteBar, setCoteBar] = useState(false);
+  const [voirTicket, setVoirTicket] = useState(false);
+  const [maintenant, setMaintenant] = useState(0);
+  const finCadeau = cadeau ? cadeau.tirageLe + cadeau.duree * 60_000 : 0;
+  // L'HORLOGE NE TOURNE QUE PENDANT QU'IL Y A QUELQUE CHOSE À COMPTER.
+  useEffect(() => {
+    if (!finCadeau) return;
+    const t = () => setMaintenant(Date.now());
+    // L'HEURE DU TÉLÉPHONE, LUE TOUT DE SUITE PUIS CHAQUE SECONDE.
+    t();
+    const i = window.setInterval(t, 1000);
+    return () => window.clearInterval(i);
+  }, [finCadeau]);
+  // LE TIRAGE : parmi ceux qui comptent venir, moi compris si je l'ai dit.
+  // Il attend que la feuille « Tu viens pour… » soit refermée.
+  useEffect(() => (feuille ? retenirTirage(soiree.id) : undefined), [feuille, soiree.id]);
+  useEffect(() => {
+    if (!cadeau || cadeau.gagnants || feuille || !maintenant || maintenant < cadeau.tirageLe) return;
+    tirer(soiree.id, [...(moi ? [{ nom: prenom || "Toi", moi: true }] : []), ...soiree.fantomes.map((f) => ({ nom: f.nom }))]);
+  }, [cadeau, feuille, maintenant, moi, prenom, soiree]);
+  const jaiGagne = !!cadeau?.gagnants?.some((g) => g.moi);
+  const fermerTicket = () => {
+    ticketVu(soiree.id);
+    setVoirTicket(false);
+  };
+  const lancer = (o: { nombre: number; quoi: string; duree: number }) => {
+    const c = lancerCadeau(soiree.id, o);
+    ecrireDansSalon(cle, {
+      qui: soiree.lieu,
+      voix: "ami",
+      texte: `🎁 ${c.nombre} ${c.nombre > 1 ? "consos offertes" : "conso offerte"} ce soir ! Tirage au sort parmi ceux qui comptent venir.`,
+      quand: heureCourte(),
+      cadeau: c.id,
+    });
+    setMaintenant(Date.now());
+    setCoteBar(false);
+    setOnglet("discussion");
+  };
 
   return (
     <div className="dso" style={{ "--dso-accent": "#E8338A" } as React.CSSProperties}>
@@ -259,6 +310,16 @@ export function DecouverteSoiree({
               </button>
             </div>
           </div>
+          {demo && (
+            <button type="button" className="cg-demo" onClick={() => setCoteBar(true)}>
+              <i aria-hidden="true">🎁</i>
+              <span>
+                <b>Démo · côté bar</b>
+                <em>{cadeau ? "Voir le tirage et valider les codes" : "Offrir des consos, tirées au sort parmi ceux qui viennent"}</em>
+              </span>
+              <s aria-hidden="true">›</s>
+            </button>
+          )}
         </section>
       )}
 
@@ -312,6 +373,14 @@ export function DecouverteSoiree({
           })()}
           onModifier={() => setFeuille(true)}
           onEnsemble={onEnsemble}
+          consos={{
+            cadeau,
+            maintenant,
+            lieu: soiree.lieu,
+            onVenir: compterVenir,
+            onTicket: () => setVoirTicket(true),
+            onCoteBar: demo ? () => setCoteBar(true) : undefined,
+          }}
         />
       )}
 
@@ -345,7 +414,42 @@ export function DecouverteSoiree({
         />
       )}
 
+      {coteBar && (
+        <CoteBar
+          lieu={soiree.lieu}
+          cadeau={cadeau}
+          maintenant={maintenant}
+          comptentVenir={total}
+          onLancer={lancer}
+          onValider={(code) => validerCode(soiree.id, code)}
+          onNouvelle={() => {
+            oublierCadeau(soiree.id);
+            setVoirTicket(false);
+          }}
+          onFermer={() => setCoteBar(false)}
+        />
+      )}
+      {cadeau && jaiGagne && (voirTicket || !cadeau.vu) && !coteBar && (
+        <EcranGagne
+          cadeau={cadeau}
+          maintenant={maintenant}
+          lieu={soiree.lieu}
+          monFantome={monFantome}
+          prenom={prenom}
+          onFermer={fermerTicket}
+          onValiderDemo={
+            demo
+              ? () => {
+                  const g = cadeau.gagnants?.find((x) => x.moi);
+                  if (g) validerCode(soiree.id, g.code);
+                }
+              : undefined
+          }
+        />
+      )}
+
       <Styles />
+      <StylesConsos />
     </div>
   );
 }
@@ -422,9 +526,10 @@ function Discussion({
   annonce,
   onModifier,
   onEnsemble,
+  consos,
 }: {
   cle: string;
-  messages: { id: string; qui: string; voix: string; texte: string; quand: string; photo?: string }[];
+  messages: { id: string; qui: string; voix: string; texte: string; quand: string; photo?: string; cadeau?: string }[];
   prenom: string;
   monFantome: string;
   fantomeDe: (nom: string) => string;
@@ -432,6 +537,15 @@ function Discussion({
   annonce: { texte: string; emoji: string; programme: { heure: string; emoji: string; quoi: string }[] } | null;
   onModifier: () => void;
   onEnsemble?: (cle: string) => void;
+  consos: {
+    cadeau?: Cadeau;
+    maintenant: number;
+    lieu: string;
+    onVenir: () => void;
+    onTicket: () => void;
+    /** Démonstration seulement : ouvrir le geste du bar. */
+    onCoteBar?: () => void;
+  };
 }) {
   const [texte, setTexte] = useState("");
   const [nom, setNom] = useState("");
@@ -455,6 +569,12 @@ function Discussion({
 
   return (
     <section className="dso-corps dso-disc" role="tabpanel">
+      {consos.cadeau && consos.maintenant > 0 && <TicketEpingle cadeau={consos.cadeau} maintenant={consos.maintenant} onOuvrir={consos.onTicket} />}
+      {consos.onCoteBar && (
+        <button type="button" className="cg-pastille" onClick={consos.onCoteBar}>
+          🎁 Démo · côté bar <span aria-hidden="true">›</span>
+        </button>
+      )}
       {moi && (
         <button type="button" className="dso-moi" onClick={onModifier}>
           <Fantome src={monFantome} petit />
@@ -486,7 +606,19 @@ function Discussion({
       )}
       <div className="dso-fil">
         {messages.map((m) =>
-          m.voix === "systeme" ? (
+          m.cadeau ? (
+            <CarteCadeau
+              key={m.id}
+              cadeau={consos.cadeau?.id === m.cadeau ? consos.cadeau : undefined}
+              maintenant={consos.maintenant}
+              lieu={consos.lieu}
+              fantomeDe={fantomeDe}
+              monFantome={monFantome}
+              jeViens={moi}
+              onVenir={consos.onVenir}
+              onTicket={consos.onTicket}
+            />
+          ) : m.voix === "systeme" ? (
             <p key={m.id} className="dso-sys">
               {m.texte}
             </p>

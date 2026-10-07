@@ -194,7 +194,7 @@ export function ParcoursSortie({
         <section className="ps-dec">
           {/* LE CADRE NE DÉFILE PAS, SON CONTENU SI : la feuille « Tu viens pour… » se pose sur le cadre. */}
           <div className="ps-dec-d">
-            <DecouverteSoiree soiree={soiree} ville={VILLE} itineraire={evt.itineraire} choisirFantome={choisirFantome} />
+            <DecouverteSoiree soiree={soiree} ville={VILLE} itineraire={evt.itineraire} choisirFantome={choisirFantome} demo />
             {/* ET ON PASSE DE SON CÔTÉ — voir `cote-commercant.tsx`. */}
             <div className="ps-dec-cote">
               <BoutonCote commerce={SORTIE_ID} branche="sortie" onClick={() => setCote(true)} />
