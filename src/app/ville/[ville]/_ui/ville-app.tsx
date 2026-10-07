@@ -14,6 +14,8 @@
 // place le temps d'un battement.
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { ApercuHabitant } from "@/app/autour-de-moi/apercu-habitant";
+import { VilleOrdinateur } from "@/app/autour-de-moi/ville-ordinateur";
+import { VilleSelonEcran } from "@/app/autour-de-moi/ville-selon-ecran";
 import { EnCharteMaison } from "@/components/direct/style-maison";
 import { VilleReelleContexte } from "@/components/direct/ville-reelle-contexte";
 import { poserLaSource } from "@/lib/direct/source-ville";
@@ -50,9 +52,18 @@ export function VilleApp({ reelle }: { reelle: VilleReelle }) {
   if (!monte) return <div style={{ position: "fixed", inset: 0, background: "#120C09" }} aria-busy="true" />;
   return (
     <VilleReelleContexte.Provider value={info}>
-      <EnCharteMaison>
-        <ApercuHabitant />
-      </EnCharteMaison>
+      {/* SUR UN ORDINATEUR, LE CARROUSEL PLEINE PAGE — le même que
+          /autour-de-moi, sur SES commerçants. « Sur clikme.fr/ville/dax, il
+          n'y a aucune version ordinateur : on voit l'application téléphone
+          posée au milieu de l'écran. » Sur un téléphone, rien ne change. */}
+      <VilleSelonEcran
+        ordinateur={<VilleOrdinateur copains={[]} />}
+        telephone={
+          <EnCharteMaison>
+            <ApercuHabitant />
+          </EnCharteMaison>
+        }
+      />
     </VilleReelleContexte.Provider>
   );
 }
