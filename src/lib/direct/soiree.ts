@@ -355,7 +355,13 @@ export type MotsNature = {
 
 export const MOTS_NATURE: Record<NatureSoiree, MotsNature> = {
   festive: {
-    geste: "Essayer cette soirée",
+    /**
+     * « DÉCOUVRIR », PLUS « ESSAYER ». « Appuyer sur "Essayer cette soirée"
+     * plutôt : "Découvrir cette soirée". » On n'essaie pas une soirée : on
+     * l'écoute, on voit qui vient, on en parle — c'est ce que fait l'écran
+     * derrière le bouton.
+     */
+    geste: "Découvrir cette soirée",
     ce: "cette soirée",
     live: "de ce soir",
     dedans: "dans la soirée",
@@ -371,7 +377,7 @@ export const MOTS_NATURE: Record<NatureSoiree, MotsNature> = {
      * c'est ce qu'on y trouvera. Le verbe change la promesse, donc il change
      * qui appuie.
      */
-    geste: "Voir ce qui s’y passe",
+    geste: "Découvrir cet événement",
     ce: "ce rendez-vous",
     live: "en direct",
     dedans: "parmi ceux qui y vont",
@@ -399,6 +405,12 @@ export type Soiree = {
   lieu: string;
   /** « Ce soir », « Jeudi soir ». */
   quand: string;
+  /** L'endroit exact, pour l'onglet « L'ambiance » : « Kiosque du parc Théodore-Denis ». */
+  adresse?: string;
+  /** « Entrée gratuite », « 5 € ». */
+  prix?: string;
+  /** « 19 h » : l'heure seule, pour l'en-tête de la découverte. */
+  heure?: string;
   /** Le titre de l'essai, en deux morceaux — le second prend l'accent. */
   titre: string;
   suite: string;
@@ -689,11 +701,16 @@ const SOIREE_KIOSQUE: Soiree = {
   id: "kiosque-ce-soir",
   lieu: "Concert au kiosque",
   quand: "Ce soir, 19 h",
+  adresse: "Kiosque du parc Théodore-Denis",
+  prix: "Entrée gratuite",
+  heure: "19 h",
   titre: "Essayez un bout de ",
   suite: "cette soirée",
   phrase: "Le kiosque vous fait découvrir un avant-goût de ce qui vous attend.",
   note: "Même soirée,\nmêmes envies.",
-  photo: "/direct/concert-kiosque.jpg",
+  // LE TRIO, VU DE PRÈS : la photo de ses maquettes. L'ancienne montrait
+  // deux guitares électriques dans le noir, ni un trio de jazz ni une envie.
+  photo: "/direct/soiree/trio-au-kiosque.jpg",
   accent: "#E56BE0",
   essais: [
     {

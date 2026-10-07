@@ -171,7 +171,9 @@ import {
   salonsADecouvrirDeLaVille,
   voirSalonPublic,
 } from "@/lib/direct/conversations-sync";
-import { AnnonceInstallation, PanneauPlace, demanderPlace, fermerPlace, jouerInstallationDe, panneauOuvert } from "./prendre-place";
+import { AnnonceInstallation, PanneauPlace, choisirPuis, demanderPlace, fermerPlace, jouerInstallationDe, panneauOuvert } from "./prendre-place";
+import { DecouverteSoiree, type OngletSoiree } from "@/components/direct/decouverte-soiree";
+import { abonnerEnvies, AUCUNES_ENVIES, chargerEnvies } from "@/lib/direct/soiree-envies";
 import {
   PanneauEnsemble,
   fermerPanneauEnsemble,
@@ -304,6 +306,7 @@ import {
   collectifDeLaCarte,
   compteCollectif,
   partCollectif,
+  VILLE,
 } from "@/lib/direct/apercu-habitant";
 import { MARQUE } from "@/lib/marque";
 import { MotMarque } from "@/components/direct/mot-marque";
@@ -1701,6 +1704,10 @@ export function ApercuHabitant() {
   const [mesTraces, setMesTraces] = useState<FantomePose[]>([]);
   /** Ma maison montre ses réglages (l'ancien « Mon espace ») — voir la roue dentée. */
   const [reglagesMaison, setReglagesMaison] = useState(false);
+  /** L'onglet sur lequel s'ouvre la découverte d'une soirée : l'ambiance, ou « Qui vient ? » depuis le rail. */
+  const [soireeSur, setSoireeSur] = useState<OngletSoiree>("ambiance");
+  /** Ce que j'ai dit des soirées (« Tu viens pour… ») : le compte du rail en tient compte. */
+  const mesEnviesSoirees = useSyncExternalStore(abonnerEnvies, chargerEnvies, () => AUCUNES_ENVIES);
   /** Le salon dont le panneau des propositions est ouvert — le chat reste dessous. */
   const [propositionsDe, setPropositionsDe] = useState("");
   /** Le ⋯ de l'en-tête du salon, hors vraie ville. */
@@ -7237,6 +7244,44 @@ export function ApercuHabitant() {
     // loin » sur toutes les autres.
   }
 
+  /** Le salon public d'une soirée, ouvert dans Ensemble : le même fil que l'onglet « Discussion ». */
+  function ouvrirSalonDeSoiree(cle: string) {
+    setMurOuvert(false);
+    allerA_onglet("salons");
+    setSalonOuvert(cle);
+    setSalonPage(true);
+  }
+  /**
+   * « QUI VIENT ? » EN TÊTE DU RAIL D'UNE SOIRÉE. Il remplace « Leurs soirées »,
+   * qui ouvrait exactement la même feuille que le grand bouton : deux portes
+   * pour une pièce. Celui-ci ouvre la découverte directement sur les gens.
+   */
+  const boutonQuiVient =
+    onPeutSoirer && soireeDuSommet ? (
+      <button
+        type="button"
+        className="ap-rail-b ap-essais"
+        onClick={() => {
+          noter("onglet", 0, "soiree-qui");
+          setDejaOuvert(true);
+          setMurSur(undefined);
+          setSoireeSur("qui");
+          setMurOuvert(true);
+        }}
+      >
+        <i aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <circle cx="9" cy="8" r="3.2" />
+            <path d="M2.8 20c0-3.4 2.8-5.6 6.2-5.6s6.2 2.2 6.2 5.6" />
+            <circle cx="16.6" cy="9" r="2.6" />
+            <path d="M15.4 14.6c3.2-.4 5.6 1.6 5.8 5" />
+          </svg>
+          <b className="ap-essais-n">{soireeDuSommet.fantomes.length + (mesEnviesSoirees[soireeDuSommet.id] ? 1 : 0)}</b>
+        </i>
+        <span>Qui vient ?</span>
+      </button>
+    ) : null;
+
   /* ═══ LES PIÈCES DE LA SORTIE ═══
      « Le salon aurait deux niveaux très clairs : Chat = ce que l'on voit en
      premier. Propositions = panneau que l'on ouvre quand on veut décider. »
@@ -11477,6 +11522,7 @@ export function ApercuHabitant() {
                   noter("onglet", 0, "soiree-carte");
                   setDejaOuvert(true);
                   setMurSur(undefined);
+                  setSoireeSur("ambiance");
                   setMurOuvert(true);
                 }}
                 disabled={!sommet}
@@ -11812,6 +11858,7 @@ export function ApercuHabitant() {
                 chose qu'on lui demande. Voir `nombreDeDemo`. */}
             {enPlace && sommet && (
               <div className={`ap-rail${descendu ? " lit" : ""}`} aria-label="Autres gestes sur cette annonce">
+                {boutonQuiVient}
                 {/* ═══ LES AUTRES CLIENTS, EN TÊTE DU RAIL, HORS DU RESTAURANT ═══
                     « Cette fonctionnalité des autres clients qui ont essayé la
                     même chose, il va falloir la mettre autre part — un
@@ -11819,7 +11866,7 @@ export function ApercuHabitant() {
                     fantôme ouvre maintenant le double ; ce qu'il ouvrait avant
                     est ici, avec les mots du métier : « Leurs coupes », « Chez
                     eux », « Leurs ongles ». */}
-                {aDouble && !estResto && murDuSommet && dessus && (
+                {aDouble && !estResto && murDuSommet && dessus && !onPeutSoirer && (
                   <button
                     type="button"
                     className="ap-rail-b ap-essais"
@@ -11913,9 +11960,10 @@ export function ApercuHabitant() {
             )}
             {coeurDuSommet && (
               <div className={`ap-rail${descendu ? " lit" : ""}`} aria-label="Autres gestes sur cette annonce">
+                {boutonQuiVient}
                 {/* LE MÊME QUATRIÈME BOUTON que sur l'autre colonne : les autres
                     clients qui ont essayé la même chose. Voir plus haut. */}
-                {aDouble && !estResto && murDuSommet && dessus && (
+                {aDouble && !estResto && murDuSommet && dessus && !onPeutSoirer && (
                   <button
                     type="button"
                     className="ap-rail-b ap-essais"
@@ -13623,6 +13671,9 @@ export function ApercuHabitant() {
                          réservation aurait donné une table qui ne compte pas. */
                       onReserver={engagerLeSommet}
                       ouvrirSur={murSur}
+                      soireeSur={soireeSur}
+                      choisirFantome={choisirPuis}
+                      onEnsemble={ouvrirSalonDeSoiree}
                       /* LE MUR EST DÉJÀ CALCULÉ PLUS HAUT : c'est lui qui décide
                          du bouton principal de l'annonce. Deux appels séparés
                          auraient fini par ne plus répondre la même chose. */
@@ -13638,11 +13689,14 @@ export function ApercuHabitant() {
                        sur du vide. C'est la moitié « événements » de sa
                        demande, et elle se règle ici : `EcranSoiree` n'a besoin
                        que d'une soirée. */
-                    <EcranSoiree
-                      key={soireeDuSommet.id}
+                    <DecouverteSoiree
+                      key={`${soireeDuSommet.id}|${soireeSur}`}
                       soiree={soireeDuSommet}
-                      distance={dessusEv?.distance}
-                      onYAller={engagerLeSommet}
+                      ville={VILLE}
+                      itineraire={dessusEv?.itineraire}
+                      ouvrirSur={soireeSur}
+                      choisirFantome={choisirPuis}
+                      onEnsemble={ouvrirSalonDeSoiree}
                     />
                   ) : null}
                 </div>

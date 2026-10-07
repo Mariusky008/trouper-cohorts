@@ -46,6 +46,7 @@
 
 /** Qui parle. « moi » est la personne qui tient le téléphone. */
 import type { Geste as GesteConversation } from "@/lib/direct/conversations";
+import { SOIREES, type Soiree } from "@/lib/direct/soiree";
 
 export type Voix = "moi" | "ami" | "systeme";
 
@@ -875,9 +876,50 @@ let memoire: Record<string, Salon> | null = null;
 const abonnes = new Set<() => void>();
 export const SALONS_VIDES: Record<string, Salon> = {};
 
+/**
+ * ═══ CHAQUE SOIRÉE A SON SALON PUBLIC, DÈS LE DÉPART ═══════════════════════
+ *
+ * « Soirée, événement, sortie ouvre également automatiquement un salon public
+ * pour converser dans Ensemble. » C'est l'onglet « Discussion » de la
+ * découverte, et le même salon que « Salons publics » montre dans Ensemble : un
+ * seul fil, deux portes. Il est tenu par l'organisateur ; ceux qui ont dit
+ * qu'ils venaient y sont déjà, et ce qui s'y est dit vient du Live de la soirée.
+ */
+export const cleSalonDeSoiree = (s: { id: string }) => `soiree|${s.id}`;
+const heureDuLive = (h: string) => {
+  const [a, b] = h.split(":");
+  return b !== undefined ? `${a} h ${b}` : h;
+};
+export function salonDeSoiree(s: Soiree): Salon {
+  const noms = s.fantomes.map((f) => f.nom);
+  const organisateur = s.live.find((m) => m.maison)?.qui ?? s.lieu;
+  return {
+    cle: cleSalonDeSoiree(s),
+    sujet: s.lieu,
+    ou: organisateur,
+    parQui: organisateur,
+    quand: s.quand,
+    viennent: noms,
+    presents: noms,
+    prive: false,
+    ...(s.photo ? { photo: s.photo } : {}),
+    annonce: s.lieu,
+    ...(s.prix ? { prix: s.prix } : {}),
+    // LE LIVE, SANS CE QUI NE S'ADRESSE QU'À QUELQU'UN : le message du Fantôme
+    // ClikMe ne parle qu'à celui qui a écouté l'extrait, et un sondage n'est
+    // pas une phrase.
+    messages: s.live
+      .filter((m) => !m.siEssaye && m.sorte !== "sondage" && m.sorte !== "fantome")
+      .map((m) => ({ id: `${s.id}-${m.id}`, qui: m.qui, voix: "ami" as const, texte: m.mot, quand: heureDuLive(m.heure) })),
+    ouvert: true,
+  };
+}
+const SALONS_DES_SOIREES: Salon[] = Object.values(SOIREES).map(salonDeSoiree);
+
 function semer(): Record<string, Salon> {
   const d: Record<string, Salon> = {};
   const maintenant = Date.now();
+  for (const s of SALONS_DES_SOIREES) d[s.cle] = { ...s, messages: [...s.messages] };
   for (const s of SALONS_SEMES)
     d[s.cle] = {
       ...s,
@@ -894,7 +936,7 @@ function semer(): Record<string, Salon> {
  * inventés. Voir `source-ville.ts`.
  */
 export function sansLeDecor(salons: Record<string, Salon>): Record<string, Salon> {
-  const semes = new Set(SALONS_SEMES.map((s) => s.cle));
+  const semes = new Set([...SALONS_SEMES, ...SALONS_DES_SOIREES].map((s) => s.cle));
   return Object.fromEntries(Object.entries(salons).filter(([cle]) => !semes.has(cle)));
 }
 

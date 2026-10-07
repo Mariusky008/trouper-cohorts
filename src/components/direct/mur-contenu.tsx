@@ -101,7 +101,7 @@ import {
 import { basculerPieceGardee } from "@/lib/direct/pieces-gardees";
 import { rayonDuNom } from "@/lib/direct/rayons";
 import { EcranGout } from "@/components/direct/gout-contenu";
-import { EcranSoiree } from "@/components/direct/soiree-contenu";
+import { DecouverteSoiree, type OngletSoiree } from "@/components/direct/decouverte-soiree";
 
 /**
  * « CHEZ QUI », ÉCRIT COMME ON LE DIRAIT.
@@ -906,8 +906,17 @@ export function MurContenu({
   ouvrirSurGrille,
   onReserver,
   maison = false,
+  soireeSur,
+  choisirFantome,
+  onEnsemble,
 }: {
   mur: TypeMur;
+  /** La découverte d'une soirée s'ouvre sur cet onglet (« Qui vient ? » depuis le rail). */
+  soireeSur?: OngletSoiree;
+  /** « Je compte venir » demande d'abord le fantôme, quand l'application sait le faire choisir. */
+  choisirFantome?: (apres: () => void) => void;
+  /** Le salon public de la soirée, ouvert dans Ensemble. */
+  onEnsemble?: (cle: string) => void;
   /**
    * AUX COULEURS DE LA MAISON — la page d'un commerçant, pas le fil. Sa
    * palette (violet du fantôme, menthe du commerce) est repeinte par familles
@@ -1258,14 +1267,13 @@ export function MurContenu({
       </div>
       )}
       {soiree ? (
-        <EcranSoiree
+        <DecouverteSoiree
+          key={soireeSur}
           soiree={soiree}
-          distance={mur.distance}
-          onFermer={() => (murDAvant ? onSortir?.() : setSoireePassee(true))}
-          /* « J'Y VAIS » EST LE MÊME GESTE QUE « RÉSERVER » SUR L'ANNONCE.
-             Le quatrième temps de son cahier des charges ne fabrique pas un
-             second chemin : il emmène là où l'annonce emmenait déjà. */
-          onYAller={onReserver}
+          ville={mur.ville}
+          ouvrirSur={soireeSur}
+          choisirFantome={choisirFantome}
+          onEnsemble={onEnsemble}
         />
       ) : gout ? (
         <EcranGout
