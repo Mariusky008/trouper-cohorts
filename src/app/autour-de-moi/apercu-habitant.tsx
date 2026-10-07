@@ -184,7 +184,7 @@ import {
   type ContenuPartage,
   type SalonEcriture,
 } from "./panneau-ensemble";
-import { Bienvenue } from "./bienvenue";
+import { Bienvenue, type OngletBienvenue } from "./bienvenue";
 import { AvatarFantome, CarteDuSalon, fantomeDe, garderVusPropos, lireVusPropos, MenuDuSalon, PanneauPropositions, StylesSalonChat } from "./salon-chat";
 import { useCadeauDuSalon } from "@/components/direct/cadeau-du-salon";
 import { monLook } from "@/lib/direct/look";
@@ -3907,6 +3907,8 @@ export function ApercuHabitant() {
   const bienvenueOuverte =
     revoirBienvenue ||
     (monte && accueilVu && onglet === "direct" && !embauches && !sortie && !salonPage && !favorisPage && !feuille && !vus.includes("bienvenue"));
+  /** L'icône du bas que le tuto présente en ce moment : elle s'éclaire avec sa rubrique. */
+  const [bvEclaire, setBvEclaire] = useState<OngletBienvenue | null>(null);
   const fermerBienvenue = () => {
     setRevoirBienvenue(false);
     marquerVu("bienvenue");
@@ -14049,6 +14051,7 @@ export function ApercuHabitant() {
           <Bienvenue
             ouvert={bienvenueOuverte}
             onFermer={fermerBienvenue}
+            onEclaire={setBvEclaire}
             onAller={(o) => {
               fermerBienvenue();
               if (o !== "direct") allerA_onglet(o);
@@ -14066,7 +14069,7 @@ export function ApercuHabitant() {
           >
             <button
               type="button"
-              className={onglet === "direct" ? "on" : ""}
+              className={`${onglet === "direct" ? "on" : ""}${bvEclaire === "direct" ? " eclaire" : ""}`}
               onClick={() => allerA_onglet("direct")}
             >
               <i aria-hidden="true">⚡</i>
@@ -14074,7 +14077,7 @@ export function ApercuHabitant() {
             </button>
             <button
               type="button"
-              className={onglet === "ville" ? "on" : ""}
+              className={`${onglet === "ville" ? "on" : ""}${bvEclaire === "ville" ? " eclaire" : ""}`}
               onClick={() => allerA_onglet("ville")}
             >
               <i aria-hidden="true">🏛️</i>
@@ -14296,7 +14299,7 @@ export function ApercuHabitant() {
             </button>
             <button
               type="button"
-              className={onglet === "salons" ? "on" : ""}
+              className={`${onglet === "salons" ? "on" : ""}${bvEclaire === "salons" ? " eclaire" : ""}`}
               onClick={() => allerA_onglet("salons")}
             >
               <i aria-hidden="true">💬</i>
@@ -14322,7 +14325,7 @@ export function ApercuHabitant() {
             </button>
             <button
               type="button"
-              className={onglet === "profil" ? "on" : ""}
+              className={`${onglet === "profil" ? "on" : ""}${bvEclaire === "profil" ? " eclaire" : ""}`}
               onClick={() => allerA_onglet("profil")}
             >
               <i aria-hidden="true">🏠</i>
@@ -18507,6 +18510,11 @@ export function ApercuHabitant() {
         .ap-onglets button:focus:not(:focus-visible){outline:none;}
         .ap-onglets button:focus-visible{outline:2px solid #F5A23A;outline-offset:2px;}
         .ap-onglets button.on i{filter:none;}
+        /* LE TUTO D'ARRIVÉE ÉCLAIRE L'ICÔNE DE LA RUBRIQUE QU'IL PRÉSENTE. */
+        .ap-onglets button.eclaire{color:#F5A23A;background:rgba(245,162,58,.16);
+          box-shadow:inset 0 0 0 1.5px rgba(245,162,58,.85),0 0 18px rgba(245,162,58,.35);
+          transition:background .4s ease,box-shadow .4s ease,color .4s ease;}
+        .ap-onglets button.eclaire i{filter:none;}
         .ap-onglets button b{position:absolute;top:2px;right:calc(50% - 24px);
           min-width:16px;font-size:9.5px;font-weight:850;line-height:16px;
           text-align:center;color:#fff;background:var(--ap-magenta);border-radius:999px;
