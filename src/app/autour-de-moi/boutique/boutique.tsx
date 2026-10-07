@@ -59,6 +59,7 @@
 // paquet qu'on balaie ne défile pas. Une PAGE défile — c'est même sa nature, et
 // c'est la seule chose ici qui ne doit surtout pas imiter le fil.
 import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import { abonnerVitrines, avecSaVitrine, chargerVitrines, VITRINES_VIDES } from "@/lib/direct/vitrine";
 import { MotMarque } from "@/components/direct/mot-marque";
 import Link from "next/link";
 import {
@@ -383,7 +384,9 @@ export function Boutique(p: {
    */
   depart?: string;
 }) {
-  const cartes = useMemo(() => toutesLesCartes(), []);
+  // SA VITRINE, POSÉE DEPUIS SON COMPTOIR DE DÉMONSTRATION, rejoint son catalogue.
+  const vitrines = useSyncExternalStore(abonnerVitrines, chargerVitrines, () => VITRINES_VIDES);
+  const cartes = useMemo(() => toutesLesCartes().map((x) => avecSaVitrine(x, vitrines)), [vitrines]);
   const [id, setId] = useState(p.commerce?.id ?? "emporter");
   const venu = p.depart ? cartes.find((x) => x.id === p.depart) : undefined;
   const commerce = p.commerce ?? venu;
@@ -488,7 +491,9 @@ function BoutiqueLongue({
   saPage?: boolean;
 }) {
   const retour = retourHref === undefined ? "/autour-de-moi" : retourHref;
-  const cartes = useMemo(() => toutesLesCartes(), []);
+  // SA VITRINE, POSÉE DEPUIS SON COMPTOIR DE DÉMONSTRATION, rejoint son catalogue.
+  const vitrines = useSyncExternalStore(abonnerVitrines, chargerVitrines, () => VITRINES_VIDES);
+  const cartes = useMemo(() => toutesLesCartes().map((x) => avecSaVitrine(x, vitrines)), [vitrines]);
   /* LE CHOIX EST TENU PAR L'AIGUILLAGE quand il y en a un : c'est lui qui
      décide si le commerce suivant est un restaurant, donc s'il change de
      dessin. L'état local ne sert plus que si la longue page est montée seule. */

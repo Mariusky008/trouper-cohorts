@@ -3835,6 +3835,67 @@ const CARTES: CarteAutour[] = [
     ],
   },
 
+  // ── LIBRAIRIES ───────────────────────────────────────────────────────────
+  //
+  // « Je ne vois pas sur /autour-de-moi une annonce de la librairie avec le
+  // parcours de découverte qu'on avait pensé. »
+  //
+  // LE MÉTIER ÉTAIT LÀ, SON EXPÉRIENCE AUSSI (« Ton prochain livre », dans
+  // `essai-du-lieu.tsx`) — MAIS AUCUN LIBRAIRE DANS LE PAQUET. Et un métier sans
+  // commerce ne s'affiche pas : « Librairies » n'apparaissait nulle part.
+  //
+  // C'EST ALICE, CELLE DU COMPTOIR (`COMMERCES_DEMO`), sous le même
+  // identifiant : ce qu'elle publie au comptoir arrive sur SA carte, comme
+  // pour les autres. Ses coups de cœur sont de vrais livres, conseillés par une
+  // librairie inventée ; ce sont eux que « Ton prochain livre » choisit, selon
+  // ce qu'on aime, son humeur et pour qui — chacun porte son rayon et ses mots.
+  // LEURS COUVERTURES VIVENT DANS `public/direct/livres/` ; tant qu'un fichier
+  // manque, la couverture dessinée à son titre le remplace.
+  {
+    id: "comptoir-librairie",
+    catalogue: [
+      { id: "li-1", rayon: "Roman", nom: "L’Anomalie — Hervé Le Tellier", detail: "Un roman vertigineux et plein d’humour. Prix Goncourt.", prix: "9,90 €", photo: "/direct/livres/anomalie.png" },
+      { id: "li-2", rayon: "Polar", nom: "La Vérité sur l’affaire Harry Quebert — Joël Dicker", detail: "Une enquête à suspense, impossible à lâcher.", prix: "10,90 €", photo: "/direct/livres/harry-quebert.jpg" },
+      { id: "li-3", rayon: "Roman", nom: "Les Gratitudes — Delphine de Vigan", detail: "Un roman tendre et bouleversant, sur la famille et l’amour des mots.", prix: "7,90 €", photo: "/direct/livres/gratitudes.jpg" },
+      { id: "li-4", rayon: "Essai", nom: "Sapiens — Yuval Noah Harari", detail: "L’histoire de l’humanité, pour réfléchir autrement.", prix: "11,90 €", photo: "/direct/livres/sapiens.jpg" },
+      { id: "li-5", rayon: "BD", nom: "Blacksad — Canales et Guarnido", detail: "Une bande dessinée noire, un polar superbe.", prix: "15,95 €", photo: "/direct/livres/blacksad.jpg" },
+      { id: "li-6", rayon: "Jeunesse", nom: "Le Petit Prince — Antoine de Saint-Exupéry", detail: "L’album à offrir à un enfant, et à relire adulte.", prix: "8,90 €", photo: "/direct/livres/petit-prince.jpg" },
+      { id: "li-7", rayon: "Cuisine", nom: "Simple — Yotam Ottolenghi", detail: "La cuisine du quotidien, pratique et généreuse.", prix: "29,90 €", photo: "/direct/livres/ottolenghi-simple.png" },
+      { id: "li-8", rayon: "Roman", nom: "Le Comte de Monte-Cristo — Alexandre Dumas", detail: "La grande aventure, pour s’évader des semaines.", prix: "12,50 €", photo: "/direct/livres/monte-cristo.jpg" },
+    ],
+    branche: "librairie",
+    photo: "/direct/double/librairie/decor.jpg",
+    cadrage: "50%",
+    nom: "La Page d’Alice",
+    google: { note: "4,9", avis: 64 },
+    metier: "Librairie",
+    ville: VILLE,
+    itineraire: YALLER,
+    metres: 260,
+    distance: "260 m",
+    fiche: {
+      ou: "Rue Neuve",
+      horaires: "Aujourd'hui, 9 h 30 – 19 h",
+      mot: "Une librairie indépendante : des livres choisis un par un, et un conseil pour chacun.",
+    },
+    moments: [
+      {
+        de: 9, a: 19, quand: "jusqu'à 19 h", icone: "📚",
+        titre: "Ton prochain livre",
+        lignes: ["Trois questions, et Alice te conseille", "Parmi ses coups de cœur"],
+        places: 8, action: "Me le mettre de côté",
+        envies: ["maintenant", "conseil"],
+      },
+      {
+        de: 9, a: 19, quand: "cette semaine", icone: "💛",
+        titre: "Son coup de cœur : L’Anomalie",
+        lignes: ["« Je l’ai lu d’une traite »", "Hervé Le Tellier, en poche"],
+        prix: "9,90 €", places: 6, action: "Me le mettre de côté",
+        envies: ["conseil", "offrir"],
+      },
+    ],
+  },
+
   // ── ONGLERIES ────────────────────────────────────────────────────────────
   {
     id: "ongle-institut",

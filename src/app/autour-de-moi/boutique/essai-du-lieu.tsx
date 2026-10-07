@@ -29,6 +29,8 @@ import { AtelierPleinEcran, StylesAtelier, useMurDuLieu, type RenduEssai } from 
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { tenueDu } from "@/lib/direct/double-metiers";
 import { parcoursPromis } from "@/lib/direct/parcours-promis";
+import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
+import { monPrenom } from "@/lib/direct/salons";
 
 export type { RenduEssai };
 
@@ -94,6 +96,12 @@ type ProprietesEssai = {
   onSalon: (o: RenduEssai) => void;
   /** Le libraire : un livre conseillé qu'on montre à ses amis — voir `ProchainLivre`. */
   onConseil?: (l: { quoi: string; prix?: string; photo?: string }) => void;
+  /**
+   * OÙ S'OUVRE LE PLEIN ÉCRAN DES QUESTIONS. Sur sa page, la fenêtre entière ;
+   * dans l'application, le cadre du téléphone — sinon, sur un ordinateur, il
+   * sortait du téléphone et prenait tout l'écran.
+   */
+  portail?: HTMLElement | null;
 };
 
 /**
@@ -334,7 +342,31 @@ export function conseilsDuLibraire(
   return { livres: livres.slice(0, 3), repondent: false };
 }
 
-function ProchainLivre({ c, saPage, onReserver, onConseil }: ProprietesEssai) {
+function ProchainLivre({ c, saPage, onReserver, onConseil, portail }: ProprietesEssai) {
+  /**
+   * ═══ « ME LE METTRE DE CÔTÉ » PART CHEZ LE LIBRAIRE, SUR WHATSAPP ═══════
+   *
+   * « Quand je clique sur "Me le mettre de côté", au lieu d'arriver sur le
+   * WhatsApp du commerçant, j'arrive sur le chat d'Alice. » Le geste ouvrait
+   * son double ; il ouvre maintenant WhatsApp sur SON numéro, le message déjà
+   * écrit — le dernier centimètre de tout le produit (voir `prevenir.ts`).
+   *
+   * UNE LIBRAIRIE INVENTÉE N'A PAS DE NUMÉRO : on n'ouvre rien (WhatsApp
+   * tomberait sur le carnet d'adresses), et on montre le message qui
+   * partirait chez un vrai libraire.
+   */
+  const [deCote, setDeCote] = useState<{ nom: string; texte: string; reel: boolean } | null>(null);
+  const mettreDeCote = (l: Livre) => {
+    const tel = c.telephone;
+    const m = commentPrevenir({
+      telephone: tel || numeroDeFiction(c.id),
+      quoi: `«\u00a0${l.nom}\u00a0»${l.prix ? ` (${l.prix})` : ""}`,
+      prenom: monPrenom() || undefined,
+      quand: "Pouvez-vous me le mettre de côté ? Je passe le chercher dans les jours qui viennent",
+    });
+    if (tel) window.open(m.whatsapp, "_blank", "noopener");
+    setDeCote({ nom: l.nom, texte: m.texte, reel: Boolean(tel) });
+  };
   // SES livres seulement : jamais des lignes « proposées » par le métier.
   const livres = useMemo<Livre[]>(
     () => (c.cataloguePropose ? [] : (c.catalogue ?? []).filter((l) => l.nom)),
@@ -513,6 +545,22 @@ function ProchainLivre({ c, saPage, onReserver, onConseil }: ProprietesEssai) {
                           : "Pour toi, j’ai celui-là."
                         : "Rien dans mes coups de cœur ne colle pile à tes réponses. Voici ce que je conseille en ce moment — ou demande-moi directement."}
                     </p>
+                    {deCote && (
+                      <div className="bl-prevenu" role="status">
+                        {deCote.reel ? (
+                          <b>Le message est prêt dans WhatsApp, chez {c.nom}. Envoie-le, et le livre t’attend.</b>
+                        ) : (
+                          <>
+                            <b>{c.nom} est une librairie inventée pour la démonstration : elle n’a pas de numéro.</b>
+                            <span>Voici le message qui partirait sur le WhatsApp d’un vrai libraire :</span>
+                          </>
+                        )}
+                        <q>{deCote.texte}</q>
+                        <button type="button" onClick={() => setDeCote(null)}>
+                          {deCote.reel ? "C’est envoyé" : "J’ai compris"}
+                        </button>
+                      </div>
+                    )}
                     <div className="bl-conseils">
                       {conseils.livres.map((l, i) => (
                         <article key={l.id} className="bl-conseil" style={{ ["--i" as string]: i }}>
@@ -525,10 +573,7 @@ function ProchainLivre({ c, saPage, onReserver, onConseil }: ProprietesEssai) {
                               <button
                                 type="button"
                                 className="bl-garde"
-                                onClick={() => {
-                                  fermer();
-                                  onReserver();
-                                }}
+                                onClick={() => mettreDeCote(l)}
                               >
                                 Me le mettre de côté
                               </button>
@@ -564,17 +609,22 @@ function ProchainLivre({ c, saPage, onReserver, onConseil }: ProprietesEssai) {
               </div>
             </div>
           </div>,
-          document.body,
+          portail ?? document.body,
         )}
     </div>
   );
 }
 
-/** La couverture d'un livre — sa photo, ou une couverture dessinée à son titre. */
+/**
+ * La couverture d'un livre — sa photo, ou une couverture dessinée à son titre.
+ * UNE PHOTO QUI NE SE CHARGE PAS REDEVIENT LA COUVERTURE DESSINÉE : les
+ * couvertures de la démonstration sont branchées avant d'être déposées.
+ */
 function Couverture({ livre }: { livre: Livre }) {
-  return livre.photo ? (
+  const [rate, setRate] = useState(false);
+  return livre.photo && !rate ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img className="bl-couv" src={livre.photo} alt="" loading="lazy" />
+    <img className="bl-couv" src={livre.photo} alt="" loading="lazy" onError={() => setRate(true)} />
   ) : (
     <span className="bl-couv dessinee" aria-hidden="true">
       <b>{livre.nom}</b>
@@ -722,6 +772,13 @@ function StylesExperience() {
           box-shadow:0 12px 26px -12px rgba(255,46,154,.75);}
         .bl-amis,.bl-encore{color:#FFF4E6;background:transparent;border:1px solid rgba(255,244,230,.28);}
         .bl-encore{display:block;margin:20px auto 0;}
+        .bl-prevenu{display:grid;gap:8px;margin:0 0 16px;padding:14px 16px;border-radius:20px;
+          background:rgba(245,162,58,.12);border:1px solid rgba(245,162,58,.45);color:#FFF4E6;font-size:14.5px;line-height:1.4;}
+        .bl-prevenu b{font-weight:700;}
+        .bl-prevenu span{color:#E8D5C2;}
+        .bl-prevenu q{display:block;padding:10px 12px;border-radius:14px;background:rgba(18,12,9,.6);font-style:italic;color:#FFE9D2;}
+        .bl-prevenu button{justify-self:start;padding:9px 16px;border-radius:999px;border:0;cursor:pointer;font:inherit;font-weight:700;
+          color:#2A1608;background:linear-gradient(180deg,#F8B451,#E8932A);}
 
         /* SUR UN ORDINATEUR, L'INVITATION SE MET EN SCÈNE SUR DEUX COLONNES. */
         @media (min-width:960px){

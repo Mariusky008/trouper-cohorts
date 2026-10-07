@@ -3,7 +3,8 @@
 //
 // POST, même jeton que le reste de l'Espace Pro (`slug` + `token`) :
 //   · `lire`    → { pieces }
-//   · `poser`   → { piece: { id, nom, prix?, photo, rayon, decrire?, detail?, fin? } }
+//   · `poser`   → { piece: { id, nom, prix?, photo, rayon, decrire?, detail?, fin?, vitrine? } }
+//                 `vitrine: true` : une photo de sa vitrine — sans fin, elle reste ;
 //                 la photo arrive en data: (réduite par le comptoir) ou en https ;
 //                 elle est rangée chez nous sous son empreinte, comme celles du plat.
 //   · `retirer` → { id }
@@ -15,7 +16,7 @@ import { createHash } from "crypto";
 import sharp from "sharp";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ligneDuCommercant } from "@/lib/site-internet/experience-scenes";
-import { piecesDuDiagnostic, type PieceComptoir } from "@/lib/site-internet/pieces-comptoir";
+import { MAX_PIECES, piecesDuDiagnostic, type PieceComptoir } from "@/lib/site-internet/pieces-comptoir";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -23,7 +24,6 @@ export const maxDuration = 60;
 const s = (v: unknown) => String(v ?? "").trim();
 const SEAU = s(process.env.COUVERTURE_BUCKET) || "marketplace-privilege-offers";
 const DOSSIER = "comptoir-clikme";
-const MAX_PIECES = 24;
 const MAX_MS = 400 * 24 * 3600 * 1000;
 
 /** Sa photo, ramenée à 1600 points et rangée sous son empreinte — voir `rangerPhoto` de l'Expérience. */
@@ -52,7 +52,10 @@ async function changer(id: string, maj: (p: PieceComptoir[]) => PieceComptoir[])
   const supabase = createAdminClient();
   const { data } = await supabase.from("human_vitrine_sites").select("diagnostic").eq("id", id).maybeSingle();
   const diag = ((data as Record<string, unknown> | null)?.diagnostic ?? {}) as Record<string, unknown>;
-  const suite = maj(piecesDuDiagnostic(diag)).slice(0, MAX_PIECES);
+  // LES ANNONCES PASSÉES SORTENT D'ABORD : elles ne prennent plus la place
+  // d'une photo de sa vitrine, qui, elle, n'a pas de fin.
+  const vivantes = piecesDuDiagnostic(diag).filter((x) => !x.fin || Date.parse(x.fin) > Date.now());
+  const suite = maj(vivantes).slice(0, MAX_PIECES);
   const { error } = await supabase
     .from("human_vitrine_sites")
     .update({ diagnostic: { ...(typeof diag === "object" ? diag : {}), pieces_comptoir: suite } })
@@ -93,8 +96,10 @@ export async function POST(request: Request) {
     if (!id || !nom) return NextResponse.json({ error: "Il manque le nom." }, { status: 400 });
     const photo = await ranger(slug, s(o.photo));
     if (typeof photo !== "string") return NextResponse.json({ error: `Photo : ${photo.erreur}` }, { status: 400 });
+    const vitrine = o.vitrine === true;
     const t = typeof o.fin === "number" ? o.fin : Date.parse(s(o.fin));
-    const fin = Number.isFinite(t) && t > Date.now() ? new Date(Math.min(t, Date.now() + MAX_MS)).toISOString() : undefined;
+    const fin =
+      !vitrine && Number.isFinite(t) && t > Date.now() ? new Date(Math.min(t, Date.now() + MAX_MS)).toISOString() : undefined;
     const piece: PieceComptoir = {
       id,
       nom,
@@ -105,6 +110,7 @@ export async function POST(request: Request) {
       detail: s(o.detail).slice(0, 300) || undefined,
       publieLe: new Date().toISOString(),
       fin,
+      ...(vitrine ? { vitrine: true } : {}),
     };
     try {
       const pieces = await changer(ligne.id, (l) => [piece, ...l.filter((x) => x.id !== id)]);

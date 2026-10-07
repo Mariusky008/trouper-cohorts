@@ -45,6 +45,8 @@ import {
 import { libererMicro, ouvrirEcoute } from "@/lib/direct/voix-micro";
 import { envoyerALaVille, retirerDeLaVille, type CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { envoyerEnLigne, retirerEnLigne, type ResultatEnvoi } from "@/lib/direct/comptoir-en-ligne";
+import { motsDeLaVitrine } from "@/lib/direct/vitrine";
+import { VitrineComptoir } from "./vitrine-comptoir";
 import { accord, demandesEnMots, effetDesAnnonces, phraseDeLaVeille, semaineDuComptoir, type JourStats } from "@/lib/direct/stats-comptoir";
 
 type Commerce = CommerceComptoir;
@@ -313,7 +315,9 @@ type Phase =
   | { ou: "accueil" }
   | { ou: "mission"; etape: number; relance?: boolean }
   | { ou: "recap"; relance?: boolean }
-  | { ou: "fete"; points: number; gagnes: string[]; publication: Publication };
+  | { ou: "fete"; points: number; gagnes: string[]; publication: Publication }
+  /** Ma vitrine : ses photos de produits, avec leur libellé — voir `vitrine-comptoir.tsx`. */
+  | { ou: "vitrine" };
 
 /** L'envoi en ligne d'un vrai commerçant : en cours, arrivé, ou à refaire. */
 type Envoi = { etat: "en-cours" } | ({ etat: "fini" } & ResultatEnvoi);
@@ -507,7 +511,12 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           onStats={() => setStats(true)}
           onCommencer={commencer}
           onRetirer={enlever}
+          onVitrine={() => setPhase({ ou: "vitrine" })}
         />
+      )}
+
+      {phase.ou === "vitrine" && (
+        <VitrineComptoir commerce={commerce} dossier={dossier} onRetour={() => setPhase({ ou: "accueil" })} />
       )}
 
       {phase.ou === "mission" && (
@@ -615,6 +624,7 @@ function Accueil({
   onStats,
   onCommencer,
   onRetirer,
+  onVitrine,
 }: {
   commerce: Commerce;
   mission: Mission;
@@ -626,8 +636,11 @@ function Accueil({
   onStats: () => void;
   onCommencer: (relance?: boolean) => void;
   onRetirer: (id: string) => void;
+  /** Ouvrir « Ma vitrine ». */
+  onVitrine: () => void;
 }) {
   const relance = mission.relance;
+  const vitrine = motsDeLaVitrine(commerce.famille, commerce.metier);
   const relanceFaite = actives.some((p) => p.genre === "relance");
   const h = heureDecimale();
   const auj = semaine?.[semaine.length - 1];
@@ -686,6 +699,18 @@ function Accueil({
             Changer {mission.quoi.toLowerCase()}
           </button>
         )}
+
+        {/* ═══ MA VITRINE ═══ « Prévoir un endroit où il pourra mettre ses photos
+            avec libellés » : ses coupes, ses poses, ses livres, ses flashs. Pas
+            une annonce — elles restent, et ses clients les essaient. */}
+        <button type="button" className="cz-relance cz-vitrine" onClick={onVitrine}>
+          <span className="cz-relance-i">📸</span>
+          <span>
+            <b>Ma vitrine · {vitrine.titre.toLowerCase()}</b>
+            <em>Tes photos avec leur libellé, sur ta page et dans tes annonces.</em>
+          </span>
+          <s aria-hidden="true">→</s>
+        </button>
 
         {/* UN SEUL CHIFFRE ICI, ET IL MÈNE AUX AUTRES : celui d'aujourd'hui. */}
         {auj && <button type="button" className="cz-apercu-stats" onClick={onStats}>

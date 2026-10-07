@@ -487,11 +487,15 @@ function StylesPlace() {
   background:rgba(36,21,11,.4);color:#FFF4E6;cursor:pointer;}
 .pp-x svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;}
 .pp-corps{display:flex;flex-direction:column;min-height:0;flex:1;}
-.pp-defile{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:24px 16px 4px;text-align:center;}
+.pp-defile{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:24px 16px 4px;text-align:center;scrollbar-width:none;}
+/* PAS DE BARRE DE DEFILEMENT : le panneau defile toujours, au doigt. */
+.pp-defile::-webkit-scrollbar{display:none;}
 .pp h2{margin:0;padding:0 36px;font-size:clamp(20px,6.6vw,27px);font-weight:600;letter-spacing:-.01em;}
 .pp-sous{margin:2px 0 0;font-family:var(--leger);font-weight:400;font-size:17px;color:#F6E8D6;}
 .pp-note{margin:5px 0 0;font-family:var(--leger);font-weight:400;font-size:14.5px;color:#D9B98E;}
-.pp-apercu{position:relative;display:flex;justify-content:center;align-items:flex-end;height:clamp(120px,20vh,172px);margin:10px auto 0;padding-bottom:8px;}
+/* L'APERCU NE PREND AUCUN APPUI. Son halo deborde sous lui et couvrait
+   « Modifier mon look » : le lien ne repondait pas. */
+.pp-apercu{pointer-events:none;position:relative;display:flex;justify-content:center;align-items:flex-end;height:clamp(120px,20vh,172px);margin:10px auto 0;padding-bottom:8px;}
 .pp-apercu img{position:relative;z-index:2;height:100%;width:auto;min-height:0;max-width:none;filter:drop-shadow(0 0 18px rgba(255,190,100,.35)) drop-shadow(0 10px 14px rgba(0,0,0,.3));animation:pp-apparait .35s ease-out both;}
 .pp-apercu .pp-cligne{position:absolute;top:0;height:calc(100% - 8px);left:50%;translate:-50% 0;opacity:0;animation:pp-cligne 4.8s steps(1,end) 1.2s infinite;}
 @keyframes pp-cligne{0%{opacity:0;}95%{opacity:1;}97.5%{opacity:0;}}
@@ -526,7 +530,7 @@ function StylesPlace() {
 .pp-fleche svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
 .pp-compte{margin:10px 0 0;font-size:15px;font-weight:600;color:#ECD9C3;}
 .pp-glisse{margin:2px 0 0;font-family:var(--leger);font-weight:400;font-size:13.5px;color:#CDB394;}
-.pp-actions{flex:none;display:grid;gap:8px;justify-items:center;padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));}
+.pp-actions{flex:none;display:grid;gap:8px;justify-items:center;padding:10px 16px calc(30px + env(safe-area-inset-bottom,0px));}
 .pp-principal{width:100%;max-width:340px;height:50px;border:0;border-radius:999px;background:linear-gradient(180deg,#FAC863,#F2AA3E);color:#2A1608;
   font:inherit;font-size:17px;font-weight:600;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,236,190,.6),0 6px 24px rgba(242,160,60,.34),0 2px 6px rgba(0,0,0,.28);}
 .pp-principal:disabled{opacity:.7;cursor:progress;}
@@ -538,8 +542,16 @@ function StylesPlace() {
 .pp-carte img{flex:none;width:36%;aspect-ratio:1.45;object-fit:cover;object-position:50% 47%;border-radius:12px;max-width:none;}
 .pp-carte > div{min-width:0;}
 .pp-carte b{display:block;font-size:17px;font-weight:600;line-height:1.28;}
-.pp-statut{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;margin-top:8px;padding:5px 12px;border-radius:999px;border:1px solid rgba(246,190,110,.35);font-family:var(--leger);font-weight:400;font-size:14px;color:#ECD9C3;}
-.pp-statut svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;}
+/* LE STATUT PASSE A LA LIGNE PLUTOT QUE DE SORTIR DE LA CARTE. */
+.pp-statut{display:inline-flex;align-items:center;gap:6px;max-width:100%;line-height:1.25;margin-top:8px;padding:5px 12px;border-radius:999px;border:1px solid rgba(246,190,110,.35);font-family:var(--leger);font-weight:400;font-size:14px;color:#ECD9C3;}
+.pp-statut svg{flex:none;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;}
+/* LE FANTOME DU MENU DU BAS RESTE ENTIER : il deborde au-dessus de la barre, et
+   le panneau recouvrait sa tete. C'est la BARRE qui passe devant : son flou
+   d'arriere-plan en fait un calque a part, ou le rang du fantome seul ne
+   compte pas. Le panneau s'arrete a son bord, donc seule la tete du fantome
+   le chevauche, et le bas du panneau lui laisse sa place. */
+.ap-onglets{z-index:1250;}
+.ap-app:not(.direct):not(.sur-page) .ap-onglets{position:relative;}
 .pp-erreur{margin:10px 0 0;padding:8px 12px;border-radius:12px;background:rgba(220,70,60,.18);color:#FFD6CF;font-size:14px;}
 .pp-annonce{position:absolute;left:50%;top:calc(var(--ap-encoche,0px) + 16px);z-index:1300;display:flex;align-items:center;gap:8px;transform:translateX(-50%);padding:8px 16px;
   border-radius:999px;background:#FFF4E6;color:#2A1608;font-family:var(--font-clikme),system-ui,sans-serif;font-size:14.5px;font-weight:600;white-space:nowrap;
