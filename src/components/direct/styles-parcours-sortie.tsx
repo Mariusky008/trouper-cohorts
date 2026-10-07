@@ -84,6 +84,16 @@ export function StylesParcoursSortie() {
         .ps-f{flex:none;width:clamp(46px,min(12.5vw,6.2vh),62px);height:auto;
           filter:drop-shadow(0 0 16px rgba(255,46,154,.65));}
 
+        /* ═══ 2/2 · LA DÉCOUVERTE, LA MÊME QUE DANS L'APPLICATION ═══
+           Une feuille sous l'en-tête, au brun des soirées ; elle défile
+           dedans, et la pastille du lieu se tait (la découverte a son titre). */
+        .ps-e2 .ps-lieu{display:none;}
+        .ps-dec{position:relative;z-index:3;flex:1;min-height:0;display:flex;flex-direction:column;margin-top:8px;
+          border-radius:26px 26px 0 0;background:#231a15;border:1px solid rgba(255,220,200,.12);border-bottom:0;
+          -webkit-user-select:text;user-select:text;}
+        .ps-dec-d{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:16px 16px 18px;scrollbar-width:none;}
+        .ps-dec-d::-webkit-scrollbar{display:none;}
+        .ps-dec-cote{margin-top:14px;}
         .ps-lieu{position:relative;z-index:3;flex:none;align-self:flex-start;
           display:flex;align-items:center;gap:10px;
           margin:12px 0 0 14px;padding:6px;border-radius:999px;

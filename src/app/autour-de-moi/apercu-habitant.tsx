@@ -8986,6 +8986,7 @@ export function ApercuHabitant() {
                   <ParcoursCoiffure commerce={parcoursCoiffure} onFermer={() => setParcoursCoiffure("")} />
                 ) : parcoursSortie ? (
                   <ParcoursSortie
+                    choisirFantome={choisirPuis}
                     onFermer={() => setParcoursSortie("")}
                     onCategorie={(c) => {
                       setCategorieChoix(c as CleCategorie);
