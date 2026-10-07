@@ -22,6 +22,7 @@ import { ExperienceTable, estUnRestaurant } from "@/app/autour-de-moi/boutique/e
 import { pageDuCommerce } from "@/lib/direct/source-ville";
 import { carteDuPaquet } from "@/lib/direct/copies-presentation";
 import { tenueDu } from "@/lib/direct/double-metiers";
+import { abonnerVitrines, avecSaVitrine, chargerVitrines, VITRINES_VIDES } from "@/lib/direct/vitrine";
 
 export function ParcoursRestaurant({
   commerce,
@@ -37,7 +38,9 @@ export function ParcoursRestaurant({
   /* CE QU'IL VIENT DE PUBLIER À SON COMPTOIR — son plat, ses photos, sa voix —
      passe devant ce que sa carte disait : voir `avecSaJournee`. */
   const journee = useSyncExternalStore(abonnerJournee, chargerJournee, journeeVide);
-  const c = commerce ? avecSaJournee(commerce, carteDuPaquet(commerce), journee) : undefined;
+  // SA VITRINE (ses plats en photo, posés depuis son comptoir) rejoint sa carte.
+  const vitrines = useSyncExternalStore(abonnerVitrines, chargerVitrines, () => VITRINES_VIDES);
+  const c = commerce ? avecSaVitrine(avecSaJournee(commerce, carteDuPaquet(commerce), journee), vitrines) : undefined;
   if (!c || !estUnRestaurant(c)) return <ParcoursTable commerce={commerce} onFermer={onFermer} />;
   const tenue = tenueDu(c);
   return (

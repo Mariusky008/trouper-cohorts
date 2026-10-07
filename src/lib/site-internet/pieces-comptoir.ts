@@ -30,7 +30,15 @@ export type PieceComptoir = {
   publieLe: string;
   /** ISO. Passé, la pièce sort de son catalogue. */
   fin?: string;
+  /**
+   * UNE PHOTO DE SA VITRINE, PAS UNE ANNONCE : elle n'a pas de fin et reste
+   * jusqu'à ce qu'il la retire. Voir `lib/direct/vitrine.ts`.
+   */
+  vitrine?: boolean;
 };
+
+/** Combien de pièces il garde en tout : sa vitrine (trente) et ses annonces du moment. */
+export const MAX_PIECES = 40;
 
 const s = (v: unknown) => String(v ?? "").trim();
 const https = (v: unknown) => (/^https:\/\//i.test(s(v)) ? s(v) : "");
@@ -55,15 +63,19 @@ export function piecesDuDiagnostic(diag: unknown): PieceComptoir[] {
       decrire: s(o.decrire).slice(0, 300) || undefined,
       detail: s(o.detail).slice(0, 300) || undefined,
       publieLe: s(o.publieLe) || new Date(0).toISOString(),
-      fin: fin && Number.isFinite(Date.parse(fin)) ? fin : undefined,
+      fin: o.vitrine === true ? undefined : fin && Number.isFinite(Date.parse(fin)) ? fin : undefined,
+      ...(o.vitrine === true ? { vitrine: true } : {}),
     });
   }
-  return out.slice(0, 24);
+  return out.slice(0, MAX_PIECES);
 }
 
-/** Celles qui sont encore en ligne, la plus récente d'abord. */
+/**
+ * Celles qui sont encore en ligne : ses annonces du moment d'abord (la coupe
+ * qu'il met en avant aujourd'hui), puis sa vitrine — la plus récente devant.
+ */
 export function piecesEnCours(pieces: PieceComptoir[] | undefined, maintenant = Date.now()): PieceComptoir[] {
   return (pieces ?? [])
     .filter((p) => !p.fin || Date.parse(p.fin) > maintenant)
-    .sort((a, b) => Date.parse(b.publieLe) - Date.parse(a.publieLe));
+    .sort((a, b) => Number(Boolean(a.vitrine)) - Number(Boolean(b.vitrine)) || Date.parse(b.publieLe) - Date.parse(a.publieLe));
 }

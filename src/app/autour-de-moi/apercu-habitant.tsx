@@ -214,6 +214,7 @@ import { ParcoursSortie } from "@/components/direct/parcours-sortie-ecran";
 import { StylesParcoursSortie } from "@/components/direct/styles-parcours-sortie";
 import { ParcoursRestaurant } from "@/components/direct/parcours-restaurant";
 import { EssaiDuLieu } from "./boutique/essai-du-lieu";
+import { abonnerVitrines, avecSaVitrine, chargerVitrines, VITRINES_VIDES } from "@/lib/direct/vitrine";
 import { DoubleChef } from "@/components/direct/double-chef";
 import { aUnDouble, nomDansPhrase, profilDuDouble, tenueDu } from "@/lib/direct/double-metiers";
 import { StylesParcoursTable } from "@/components/direct/styles-parcours-table";
@@ -3205,6 +3206,7 @@ export function ApercuHabitant() {
    * croire qu'il a marché, et un bouton qu'il faut croire ne se réappuie pas.
    */
   const remisesLues = useSyncExternalStore(abonnerRemises, chargerRemises, remisesVides);
+  const vitrines = useSyncExternalStore(abonnerVitrines, chargerVitrines, () => VITRINES_VIDES);
   const remises = reelle ? AUCUNE_REMISE : remisesLues;
   // SA JOURNÉE EST LUE TOUT EN HAUT DU COMPOSANT — l'heure du paquet en dépend
   // quand un Flash court. Il ne reste ici que la carte qu'on en tire.
@@ -3218,7 +3220,11 @@ export function ApercuHabitant() {
      c'est cette carte-là qui prend ce qu'il vient de publier, et elle passe
      en tête — voir `avecSaJournee`. */
   const dejaLa = carteJournee ? toutesLesCartes().find((c) => c.id === carteJournee.id) : undefined;
-  const saCarte = carteJournee ? (avecSaJournee(carteJournee.id, dejaLa, journee) ?? carteJournee) : null;
+  const saCarteBrute = carteJournee ? (avecSaJournee(carteJournee.id, dejaLa, journee) ?? carteJournee) : null;
+  /* SA VITRINE — les photos de produits qu'il a posées dans son comptoir de
+     démonstration — rejoint le catalogue de sa carte : l'essayage de l'annonce
+     les propose. Voir `lib/direct/vitrine.ts`. */
+  const saCarte = saCarteBrute ? avecSaVitrine(saCarteBrute, vitrines) : null;
   const toutes = [
     ...(saCarte ? [saCarte] : []),
     // ⚡ LE FLASH DE DEMONSTRATION ENTRE ICI — voir `avecFlashDemo`.
@@ -3234,7 +3240,7 @@ export function ApercuHabitant() {
     // Garder celui du bar de démonstration le faisait passer devant lui.
     ...toutesLesCartes()
       .filter((c) => c.id !== saCarte?.id)
-      .map((c) => sansCeQuiEstOffert(avecLesRemises(c, remises)))
+      .map((c) => sansCeQuiEstOffert(avecLesRemises(avecSaVitrine(c, vitrines), remises)))
       .map((c) => (saCarte?.moments?.some((m) => m.flash) ? c : avecFlashDemo(c, heure))),
   ];
   /**

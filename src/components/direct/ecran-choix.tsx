@@ -33,6 +33,7 @@
  * carte sans chiffre qu'un chiffre qui n'est pas celui du plat qu'on regarde.
  */
 
+import { abonnerVitrines, avecSaVitrine, chargerVitrines, VITRINES_VIDES } from "@/lib/direct/vitrine";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { abonnerJournee, avecSaJournee, carteDeLaJournee, chargerJournee, journeeVide } from "@/lib/direct/journee";
 import { carteDuPaquet } from "@/lib/direct/copies-presentation";
@@ -183,11 +184,12 @@ export function EcranChoix({
      restaurants : leur parcours lit sa carte (`ParcoursRestaurant`), alors
      que ceux des autres métiers sont des démonstrations écrites d'avance. */
   const journee = useSyncExternalStore(abonnerJournee, chargerJournee, journeeVide);
+  const vitrines = useSyncExternalStore(abonnerVitrines, chargerVitrines, () => VITRINES_VIDES);
   const saCarte = useMemo(() => {
     const jc = journee ? carteDeLaJournee(journee) : null;
     if (!jc || jc.branche !== "restaurant") return null;
-    return avecSaJournee(jc.id, commerces.find((x) => x.id === jc.id) ?? carteDuPaquet(jc.id), journee) ?? jc;
-  }, [journee, commerces]);
+    return avecSaVitrine(avecSaJournee(jc.id, commerces.find((x) => x.id === jc.id) ?? carteDuPaquet(jc.id), journee) ?? jc, vitrines);
+  }, [journee, commerces, vitrines]);
   const evenements = useMemo(evenementsDeLaVille, []);
   /* L'HEURE EST CELLE DU TELEPHONE, lue UNE FOIS. C'est elle qui decide quelle
      offre le commercant propose en ce moment — la meme que celle de l'annonce
