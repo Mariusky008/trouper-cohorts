@@ -485,6 +485,9 @@ export function BoutiqueTable({
          l'application (« Et en dessert ? ») — directement sur sa carte. */
       const voulu = adresse.searchParams.get("onglet");
       if (voulu === "carte" || voulu === "avis" || voulu === "infos") setOnglet(voulu);
+      /* `?onglet=experience` : « Trouver mon prochain livre » depuis
+         l'application — on entre directement dans le conseil du libraire. */
+      if (voulu === "experience") setOnglet("experience");
       if (adresse.searchParams.get("salon") === "1") {
         setOnglet("amis");
         adresse.searchParams.set("salon", "lu");

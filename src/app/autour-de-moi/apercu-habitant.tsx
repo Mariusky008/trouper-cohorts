@@ -11551,6 +11551,27 @@ export function ApercuHabitant() {
                 <span>{motsDe(soireeDuSommet).geste}</span>
                 <s aria-hidden="true">→</s>
               </button>
+            ) : enPlace && dessus?.branche === "librairie" && !estPoste(dessus) && !flashDuSommet ? (
+              /* ═══ CHEZ LE LIBRAIRE, LE GESTE PLEIN EST SON CONSEIL ═════════
+                 On n'essaie pas un livre comme une coupe : on vient pour qu'il
+                 nous conseille. Le gros bouton ouvre « Ton prochain livre »
+                 sur sa page — trois questions, et il répond par SES coups de
+                 cœur. Une vraie librairie de /ville/dax y va de la même façon,
+                 sur sa page à elle (`pageDuCommerce`). */
+              <button
+                type="button"
+                className="ap-agir reserver ap-decouvrir"
+                onClick={() => {
+                  noter("onglet", 0, "prochain-livre");
+                  window.location.href = pageDuCommerce(dessus, "experience");
+                }}
+              >
+                <svg className="ap-agir-i" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 6.5C10 5 7 4.5 4 5v13c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5ZM12 6.5V19" />
+                </svg>
+                <span>Trouver mon prochain livre</span>
+                <s aria-hidden="true">→</s>
+              </button>
             ) : enPlace && estResto && !flashDuSommet ? (
               /* ═══ CHEZ UN RESTAURANT, LE GESTE PLEIN FAIT DÉCOUVRIR ═══════
                  « Le bouton qui remplace "Réserver mon plat" sera "Découvrir
