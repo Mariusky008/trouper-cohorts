@@ -95,7 +95,7 @@ export function VitrineComptoir({
     };
   }, [reel]);
 
-  const liste = reel ? (enBase ?? []) : (locales[commerce.id] ?? []);
+  const liste = reel ? (enBase ?? []) : (locales.articles[commerce.id] ?? []);
   const place = MAX_VITRINE - liste.length - brouillons.length;
 
   const choisir = async (fichiers: FileList | null) => {

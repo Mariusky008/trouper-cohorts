@@ -45,7 +45,8 @@ import {
 import { libererMicro, ouvrirEcoute } from "@/lib/direct/voix-micro";
 import { envoyerALaVille, retirerDeLaVille, type CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { envoyerEnLigne, retirerEnLigne, type ResultatEnvoi } from "@/lib/direct/comptoir-en-ligne";
-import { motsDeLaVitrine } from "@/lib/direct/vitrine";
+import { motsDeLaCarte, motsDeLaVitrine } from "@/lib/direct/vitrine";
+import { CarteComptoir } from "./carte-comptoir";
 import { VitrineComptoir } from "./vitrine-comptoir";
 import { accord, demandesEnMots, effetDesAnnonces, phraseDeLaVeille, semaineDuComptoir, type JourStats } from "@/lib/direct/stats-comptoir";
 
@@ -317,7 +318,9 @@ type Phase =
   | { ou: "recap"; relance?: boolean }
   | { ou: "fete"; points: number; gagnes: string[]; publication: Publication }
   /** Ma vitrine : ses photos de produits, avec leur libellé — voir `vitrine-comptoir.tsx`. */
-  | { ou: "vitrine" };
+  | { ou: "vitrine" }
+  /** Ma carte : ses rubriques, ses lignes et ses prix — voir `carte-comptoir.tsx`. */
+  | { ou: "carte" };
 
 /** L'envoi en ligne d'un vrai commerçant : en cours, arrivé, ou à refaire. */
 type Envoi = { etat: "en-cours" } | ({ etat: "fini" } & ResultatEnvoi);
@@ -512,7 +515,12 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           onCommencer={commencer}
           onRetirer={enlever}
           onVitrine={() => setPhase({ ou: "vitrine" })}
+          onCarte={() => setPhase({ ou: "carte" })}
         />
+      )}
+
+      {phase.ou === "carte" && (
+        <CarteComptoir commerce={commerce} dossier={dossier} onRetour={() => setPhase({ ou: "accueil" })} />
       )}
 
       {phase.ou === "vitrine" && (
@@ -625,6 +633,7 @@ function Accueil({
   onCommencer,
   onRetirer,
   onVitrine,
+  onCarte,
 }: {
   commerce: Commerce;
   mission: Mission;
@@ -638,9 +647,12 @@ function Accueil({
   onRetirer: (id: string) => void;
   /** Ouvrir « Ma vitrine ». */
   onVitrine: () => void;
+  /** Ouvrir « Ma carte ». */
+  onCarte: () => void;
 }) {
   const relance = mission.relance;
   const vitrine = motsDeLaVitrine(commerce.famille, commerce.metier);
+  const carte = motsDeLaCarte(commerce.famille, commerce.metier);
   const relanceFaite = actives.some((p) => p.genre === "relance");
   const h = heureDecimale();
   const auj = semaine?.[semaine.length - 1];
@@ -708,6 +720,18 @@ function Accueil({
           <span>
             <b>Ma vitrine · {vitrine.titre.toLowerCase()}</b>
             <em>Tes photos avec leur libellé, sur ta page et dans tes annonces.</em>
+          </span>
+          <s aria-hidden="true">→</s>
+        </button>
+
+        {/* ═══ MA CARTE ═══ « Que ça arrive directement sur leur CARTE et PRIX,
+            plutôt qu'avoir des photos recueillies sur leur fiche Google. » Ses
+            rubriques, ses lignes, ses prix : sa page les montre tels quels. */}
+        <button type="button" className="cz-relance cz-carte" onClick={onCarte}>
+          <span className="cz-relance-i">📋</span>
+          <span>
+            <b>{carte.titre}</b>
+            <em>{carte.titre === "Ma carte" ? "Tes rubriques, tes lignes et leurs prix" : "Tes prestations et leurs prix"}, écrits par toi, sur ta page.</em>
           </span>
           <s aria-hidden="true">→</s>
         </button>

@@ -8,8 +8,10 @@
 // avec les suggestions du métier, que le pro ajuste.
 import { useEffect, useState } from "react";
 
-type Service = { name: string; duration: string; price: string; desc: string };
-type Suggestion = { name: string; duration?: string; price?: string; desc?: string };
+// LA RUBRIQUE VOYAGE SANS ÊTRE MONTRÉE ICI : elle se saisit dans « Ma carte »
+// du comptoir, et un enregistrement depuis cet écran ne doit pas l'effacer.
+type Service = { name: string; duration: string; price: string; desc: string; rubrique?: string };
+type Suggestion = { name: string; duration?: string; price?: string; desc?: string; rubrique?: string };
 
 const EMPTY: Service = { name: "", duration: "", price: "", desc: "" };
 
@@ -41,6 +43,7 @@ export function ProServices({
     duration: s.duration || "",
     price: s.price || "",
     desc: s.desc || "",
+    ...(s.rubrique ? { rubrique: s.rubrique } : {}),
   });
 
   useEffect(() => {
