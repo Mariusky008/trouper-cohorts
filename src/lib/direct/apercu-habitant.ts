@@ -3854,13 +3854,13 @@ const CARTES: CarteAutour[] = [
   {
     id: "comptoir-librairie",
     catalogue: [
-      { id: "li-1", rayon: "Roman", nom: "L’Anomalie — Hervé Le Tellier", detail: "Un roman vertigineux et plein d’humour. Prix Goncourt.", prix: "9,90 €", photo: "/direct/livres/anomalie.jpg" },
+      { id: "li-1", rayon: "Roman", nom: "L’Anomalie — Hervé Le Tellier", detail: "Un roman vertigineux et plein d’humour. Prix Goncourt.", prix: "9,90 €", photo: "/direct/livres/anomalie.png" },
       { id: "li-2", rayon: "Polar", nom: "La Vérité sur l’affaire Harry Quebert — Joël Dicker", detail: "Une enquête à suspense, impossible à lâcher.", prix: "10,90 €", photo: "/direct/livres/harry-quebert.jpg" },
       { id: "li-3", rayon: "Roman", nom: "Les Gratitudes — Delphine de Vigan", detail: "Un roman tendre et bouleversant, sur la famille et l’amour des mots.", prix: "7,90 €", photo: "/direct/livres/gratitudes.jpg" },
       { id: "li-4", rayon: "Essai", nom: "Sapiens — Yuval Noah Harari", detail: "L’histoire de l’humanité, pour réfléchir autrement.", prix: "11,90 €", photo: "/direct/livres/sapiens.jpg" },
       { id: "li-5", rayon: "BD", nom: "Blacksad — Canales et Guarnido", detail: "Une bande dessinée noire, un polar superbe.", prix: "15,95 €", photo: "/direct/livres/blacksad.jpg" },
       { id: "li-6", rayon: "Jeunesse", nom: "Le Petit Prince — Antoine de Saint-Exupéry", detail: "L’album à offrir à un enfant, et à relire adulte.", prix: "8,90 €", photo: "/direct/livres/petit-prince.jpg" },
-      { id: "li-7", rayon: "Cuisine", nom: "Simple — Yotam Ottolenghi", detail: "La cuisine du quotidien, pratique et généreuse.", prix: "29,90 €", photo: "/direct/livres/ottolenghi-simple.jpg" },
+      { id: "li-7", rayon: "Cuisine", nom: "Simple — Yotam Ottolenghi", detail: "La cuisine du quotidien, pratique et généreuse.", prix: "29,90 €", photo: "/direct/livres/ottolenghi-simple.png" },
       { id: "li-8", rayon: "Roman", nom: "Le Comte de Monte-Cristo — Alexandre Dumas", detail: "La grande aventure, pour s’évader des semaines.", prix: "12,50 €", photo: "/direct/livres/monte-cristo.jpg" },
     ],
     branche: "librairie",
