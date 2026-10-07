@@ -34,6 +34,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { MotMarque } from "@/components/direct/mot-marque";
+import { EnCharteMaison } from "@/components/direct/style-maison";
+import { ApercuHabitant, type OngletAppli } from "./apercu-habitant";
 import { AtelierPleinEcran, useMurDuLieu, type RenduEssai } from "@/components/direct/atelier-plein-ecran";
 import { useVilleReelle } from "@/components/direct/ville-reelle-contexte";
 import {
@@ -160,7 +162,77 @@ type Fiche = {
   copain: boolean;
 };
 
-export function VilleOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) {
+/**
+ * ═══ LES QUATRE ONGLETS, EN HAUT ═══════════════════════════════════════════
+ *
+ * « Ajouter les trois onglets. Sur grand écran, une barre en haut (Le Direct ·
+ * La Ville · Ensemble · Ma maison) ; les écrans du téléphone y sont réutilisés
+ * en plus large, plutôt que de tout redessiner. » Le Direct est le carrousel ;
+ * les trois autres sont ceux de l'application (`ApercuHabitant`, mode
+ * `surOrdinateur`), ouverts sous la barre dans une colonne plus large.
+ */
+const VUES: { cle: OngletAppli; nom: string }[] = [
+  { cle: "direct", nom: "Le Direct" },
+  { cle: "ville", nom: "La Ville" },
+  { cle: "salons", nom: "Ensemble" },
+  { cle: "profil", nom: "Ma maison" },
+];
+
+/** UN LIEN REÇU OUVRE SON ONGLET : une maison (`?maison=`), un salon ou une invitation. */
+function vueDeLAdresse(): OngletAppli {
+  if (typeof window === "undefined") return "direct";
+  const q = new URLSearchParams(window.location.search);
+  if (q.get("maison")) return "profil";
+  if (q.get("salon") || q.get("invitation")) return "salons";
+  return "direct";
+}
+
+export function VilleOrdinateur(props: VilleOrdinateurProps) {
+  const [vue, setVue] = useState<OngletAppli>(vueDeLAdresse);
+  return (
+    <>
+      <nav className="vo-vues" aria-label="Onglets">
+        {VUES.map((v) => (
+          <button key={v.cle} type="button" className={vue === v.cle ? "on" : ""} onClick={() => setVue(v.cle)} aria-pressed={vue === v.cle}>
+            <IconeVue cle={v.cle} />
+            {v.nom}
+          </button>
+        ))}
+      </nav>
+      {vue === "direct" ? (
+        <LeDirectOrdinateur {...props} />
+      ) : (
+        <div className="vo vo-autre">
+          <StylesVille />
+          <div className="vo-aurore" aria-hidden="true">
+            <i />
+            <i />
+          </div>
+          {/* PAS DE SECONDE MARQUE : l'écran de l'application porte la sienne,
+              et chaque point de hauteur va à la colonne. */}
+          <div className="vo-appli">
+            <EnCharteMaison>
+              {/* UNE CLÉ PAR ONGLET : l'application repart sur celui qu'on a choisi en haut. */}
+              <ApercuHabitant key={vue} ongletDeDepart={vue} surOrdinateur onOnglet={setVue} />
+            </EnCharteMaison>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function IconeVue({ cle }: { cle: OngletAppli }) {
+  const d: Record<OngletAppli, React.ReactNode> = {
+    direct: <path d="M13 2.5 5 13.5h6l-1 8 8-11h-6l1-8Z" />,
+    ville: <path d="M3.5 20.5h17M5 20.5v-9M9.5 20.5v-9M14.5 20.5v-9M19 20.5v-9M3 11.5h18L12 4 3 11.5Z" />,
+    salons: <path d="M20 11.5a7.5 7.5 0 0 1-11 6.6L4 19.5l1.4-4.5A7.5 7.5 0 1 1 20 11.5Z" />,
+    profil: <path d="M4 11 12 4l8 7v9a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1v-9Z" />,
+  };
+  return <svg viewBox="0 0 24 24" aria-hidden="true">{d[cle]}</svg>;
+}
+
+function LeDirectOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) {
   /* DANS LA VRAIE VILLE (`/ville/dax`), CE SONT SES COMMERÇANTS — rien n'y est
      marqué « Démonstration », et leur page est leur page ClikMe. */
   const reelle = useVilleReelle();
@@ -1048,7 +1120,7 @@ function StylesVille() {
 
         /* EN HAUT */
         .vo-haut{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;
-          padding:18px 36px 0;animation:voDescend .7s cubic-bezier(.16,1,.3,1) both;}
+          padding:84px 36px 0;animation:voDescend .7s cubic-bezier(.16,1,.3,1) both;}
         .vo-pilule{justify-self:start;display:inline-flex;align-items:center;gap:10px;max-width:100%;
           padding:12px 20px;border-radius:999px;cursor:pointer;text-decoration:none;color:#FFF4E6;
           font-size:16px;font-weight:600;background:rgba(28,20,17,.75);border:1px solid rgba(255,196,140,.28);
@@ -1276,6 +1348,20 @@ function StylesVille() {
           border:1px solid rgba(255,244,230,.3);}
         .vo-p-page:hover{background:rgba(255,244,230,.08);}
 
+        /* LA BARRE DES QUATRE ONGLETS, AU-DESSUS DE TOUT */
+        .vo-vues{position:fixed;top:22px;left:50%;transform:translateX(-50%);z-index:60;display:none;gap:4px;padding:6px;
+          border-radius:999px;background:rgba(28,20,17,.88);border:1px solid rgba(255,196,140,.24);
+          backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 14px 40px -14px rgba(0,0,0,.8);}
+        .vo-vues button{display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;border:0;cursor:pointer;
+          font-family:var(--font-geist-sans),system-ui,sans-serif;font-size:15px;font-weight:700;background:transparent;color:#F3E2D0;}
+        .vo-vues button:hover{background:rgba(255,244,230,.07);}
+        .vo-vues button.on{background:linear-gradient(135deg,#F7B95A,#F5A23A);color:#1A0F08;}
+        .vo-vues svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+        .vo~.vo-vues,.vo-vues{display:flex;}
+        /* LA MARQUE DESCEND SOUS LA BARRE ; LES DEUX PILULES RESTENT A LEUR PLACE */
+        .vo-haut .vo-pilule{align-self:start;margin-top:-62px;}
+        .vo-appli{flex:1;min-height:0;position:relative;margin:92px 0 0;}
+
         .vo-dit{position:absolute !important;left:50%;bottom:110px;z-index:40 !important;transform:translateX(-50%);margin:0;
           padding:12px 20px;border-radius:999px;background:#FFF4E6;color:#1A0F08;font-weight:600;
           box-shadow:0 14px 30px -10px rgba(0,0,0,.6);animation:voBulle .35s ease both;}
@@ -1287,7 +1373,7 @@ function StylesVille() {
 
         /* UN ÉCRAN PLUS BAS : on serre, sans rien retirer. */
         @media (max-height:820px){
-          .vo-haut{padding-top:12px;}
+          .vo-haut{padding-top:74px;}
           .vo-mot{font-size:34px;}
           .vo-marque p{font-size:18px;}
           .vo-titre h1{font-size:26px;}

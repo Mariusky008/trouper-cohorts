@@ -1516,7 +1516,29 @@ const AUCUNE_REMISE: ReturnType<typeof remisesVides> = [];
 /** Une liste vide stable, pour `useSyncExternalStore` hors de la vraie ville. */
 const AUCUN_PUBLIC: import("@/lib/direct/conversations-sync").SalonADecouvrir[] = [];
 
-export function ApercuHabitant() {
+/** Les quatre onglets de l'application. */
+export type OngletAppli = "direct" | "ville" | "salons" | "profil";
+
+export function ApercuHabitant({
+  ongletDeDepart,
+  surOrdinateur = false,
+  onOnglet,
+}: {
+  /**
+   * ═══ SUR UN ORDINATEUR, L'APPLICATION S'OUVRE SUR UN ONGLET ═══════════
+   *
+   * « Ajouter les trois onglets : sur grand écran, une barre en haut (Le
+   * Direct · La Ville · Ensemble · Ma maison) ; les écrans du téléphone y
+   * sont réutilisés en plus large, plutôt que de tout redessiner. » Le Direct
+   * d'un ordinateur est son carrousel (`VilleOrdinateur`) ; les trois autres
+   * onglets sont CEUX-CI, ouverts directement, dans une colonne plus large et
+   * sans le cadre du téléphone (`.ap.ordi`).
+   */
+  ongletDeDepart?: OngletAppli;
+  surOrdinateur?: boolean;
+  /** Chaque changement d'onglet, dit à l'écran d'ordinateur — « Le Direct » y rend la main au carrousel. */
+  onOnglet?: (o: OngletAppli) => void;
+} = {}) {
   /**
    * ═══ UNE VRAIE VILLE, OU LA DÉMONSTRATION ═══════════════════════════════
    *
@@ -2302,7 +2324,7 @@ export function ApercuHabitant() {
    * quatrième onglet obligerait à répondre « et celui-là, il sert à quoi ? »,
    * et on n'a pas de réponse.
    */
-  const [onglet, setOnglet] = useState<"direct" | "ville" | "salons" | "profil">("direct");
+  const [onglet, setOnglet] = useState<OngletAppli>(ongletDeDepart ?? "direct");
   /**
    * LES FAVORIS SONT UNE PAGE, PAS L'ESPACE PERSO.
    *
@@ -2734,7 +2756,13 @@ export function ApercuHabitant() {
    */
   const files = useSyncExternalStore(abonnerFile, chargerFile, fileVide);
 
-  function allerA_onglet(o: "direct" | "ville" | "salons" | "profil") {
+  function allerA_onglet(o: OngletAppli) {
+    // SUR UN ORDINATEUR, LE DIRECT EST LE CARROUSEL : on lui rend la main.
+    if (surOrdinateur && o === "direct" && onOnglet) {
+      onOnglet("direct");
+      return;
+    }
+    onOnglet?.(o);
     // ON RELIT LA MÉMOIRE EN ARRIVANT, PAS UNE FOIS POUR TOUTES : un fantôme
     // s'éteint tout seul, et un fantôme posé il y a dix secondes doit apparaître
     // sans recharger la page.
@@ -7690,7 +7718,7 @@ export function ApercuHabitant() {
   };
 
   return (
-    <div className="ap">
+    <div className={`ap${surOrdinateur ? " ordi" : ""}`}>
       <StylesDirect />
       <StylesChoix />
       <StylesParcoursMode />
@@ -21283,6 +21311,14 @@ export function ApercuHabitant() {
 
         @media (min-width:720px){
           .ap{padding:24px;background:radial-gradient(90% 60% at 50% 0%,#101A22,#05090C 70%),#05090C;}
+          /* SUR UN ORDINATEUR, SOUS LA BARRE DES ONGLETS : une colonne plus
+             large, sans cadre de telephone ; les quatre onglets du bas
+             s effacent (ceux du haut les remplacent), le fantome reste. */
+          .ap.ordi{position:absolute;top:0;height:100%;padding:0 0 18px;background:transparent;}
+          .ap.ordi .ap-tel{width:min(600px,100%);height:100%;padding:0;border:1px solid rgba(255,196,140,.22);
+            border-radius:30px;background:none;box-shadow:0 40px 90px -30px rgba(0,0,0,.9);}
+          .ap.ordi .ap-app{border-radius:30px;}
+          .ap.ordi .ap-onglets>button:not(.ap-monfantome){visibility:hidden;}
           .ap-tel{width:390px;height:min(844px, calc(var(--ap-h, 100svh) - 48px));
             border:1px solid rgba(255,255,255,.14);border-radius:42px;padding:9px;
             background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.01));
