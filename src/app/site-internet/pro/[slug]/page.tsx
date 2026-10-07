@@ -27,7 +27,8 @@ import { ProWhatsapp } from "./pro-whatsapp";
 import { ProGallery } from "./pro-gallery";
 import { ProPhotosDuLieu } from "./pro-photos-lieu";
 import { ProMusique } from "./pro-musique";
-import { ProConsos } from "./pro-consos";
+import { ProCadeau } from "./pro-cadeau";
+import { cadeauDuMetier } from "@/lib/site-internet/cadeau-du-metier";
 import { ProServices } from "./pro-services";
 import { ProMotifs } from "./pro-motifs";
 import { ProApproche } from "./pro-approche";
@@ -640,8 +641,11 @@ export default async function EspacePro({
           <div className="siteblock"><ProPhotosDuLieu slug={slug} token={token} /></div>
           {/* LA MUSIQUE DE SON AMBIANCE — jouée dans « L'ambiance » de sa soirée. */}
           <div className="siteblock"><ProMusique slug={slug} token={token} /></div>
-          {/* LES CONSOS OFFERTES — le geste du bar quand sa soirée est calme. */}
-          {brancheDuMetier(activite) === "bar" && <div className="siteblock"><ProConsos slug={slug} token={token} /></div>}
+          {/* LE CADEAU OFFERT — le même geste pour tous les métiers non réglementés, avec leurs mots. */}
+          {(() => {
+            const c = cadeauDuMetier(activite);
+            return c ? <div className="siteblock"><ProCadeau slug={slug} token={token} branche={c.branche} profil={c.profil} /></div> : null;
+          })()}
           <div className="siteblock"><ProGallery slug={slug} token={token} /></div>
           <div className="siteblock"><ProAssistant slug={slug} token={token} /></div>
         </div>

@@ -45,8 +45,23 @@ import {
 import { abonnerLook, lookDe, lookParDefautDe, monLook } from "@/lib/direct/look";
 import { abonnerEnvies, AUCUNES_ENVIES, chargerEnvies, poserEnvies } from "@/lib/direct/soiree-envies";
 import { reduirePhoto } from "@/lib/site-internet/reduire-photo";
-import { abonnerCadeaux, AUCUN_CADEAU, chargerCadeaux, lancerCadeau, oublierCadeau, retenirTirage, retenirTiragePour, ticketVu, tirer, validerCode, type Cadeau } from "@/lib/direct/soiree-cadeaux";
-import { CarteCadeau, CoteBar, EcranGagne, StylesConsos, TicketEpingle } from "@/components/direct/consos-offertes";
+import {
+  abonnerCadeaux,
+  AUCUN_CADEAU,
+  chargerCadeaux,
+  finDuCadeau,
+  lancerCadeau,
+  MOTS_DU_BAR,
+  oublierCadeau,
+  retenirTirage,
+  retenirTiragePour,
+  ticketVu,
+  tirer,
+  validerCode,
+  type Cadeau,
+} from "@/lib/direct/cadeaux";
+import { CarteCadeau, CoteCommercant, EcranGagne, StylesCadeau, TicketEpingle } from "@/components/direct/cadeau-offert";
+import { combienDe, PROFILS_CADEAU, type Parmi } from "@/lib/site-internet/cadeau-offert";
 
 export type OngletSoiree = "ambiance" | "qui" | "discussion";
 
@@ -143,17 +158,18 @@ export function DecouverteSoiree({
 
   const compterVenir = () => {
     // UN TIRAGE QUI TOURNE ATTEND CELUI QUI EST EN TRAIN DE DIRE QU'IL VIENT.
-    retenirTiragePour(soiree.id, 30_000);
+    retenirTiragePour(cle, 30_000);
     (choisirFantome ?? ((f: () => void) => f()))(() => setFeuille(true));
   };
 
-  // ─── 🎁 LES CONSOS OFFERTES ─── voir `lib/direct/soiree-cadeaux.ts`.
+  // ─── 🎁 LES CONSOS OFFERTES ─── voir `lib/direct/cadeaux.ts`. Rangées sous
+  // la clé du SALON de la soirée : le même cadeau se voit ici et dans Ensemble.
   const cadeaux = useSyncExternalStore(abonnerCadeaux, chargerCadeaux, () => AUCUN_CADEAU);
-  const cadeau: Cadeau | undefined = cadeaux[soiree.id];
+  const cadeau: Cadeau | undefined = cadeaux[cle];
   const [coteBar, setCoteBar] = useState(false);
   const [voirTicket, setVoirTicket] = useState(false);
   const [maintenant, setMaintenant] = useState(0);
-  const finCadeau = cadeau ? cadeau.tirageLe + cadeau.duree * 60_000 : 0;
+  const finCadeau = cadeau ? finDuCadeau(cadeau) : 0;
   // L'HORLOGE NE TOURNE QUE PENDANT QU'IL Y A QUELQUE CHOSE À COMPTER.
   useEffect(() => {
     if (!finCadeau) return;
@@ -165,22 +181,22 @@ export function DecouverteSoiree({
   }, [finCadeau]);
   // LE TIRAGE : parmi ceux qui comptent venir, moi compris si je l'ai dit.
   // Il attend que la feuille « Tu viens pour… » soit refermée.
-  useEffect(() => (feuille ? retenirTirage(soiree.id) : undefined), [feuille, soiree.id]);
+  useEffect(() => (feuille ? retenirTirage(cle) : undefined), [feuille, cle]);
   useEffect(() => {
     if (!cadeau || cadeau.gagnants || feuille || !maintenant || maintenant < cadeau.tirageLe) return;
-    tirer(soiree.id, [...(moi ? [{ nom: prenom || "Toi", moi: true }] : []), ...soiree.fantomes.map((f) => ({ nom: f.nom }))]);
-  }, [cadeau, feuille, maintenant, moi, prenom, soiree]);
+    tirer(cle, [...(moi ? [{ nom: prenom || "Toi", moi: true }] : []), ...soiree.fantomes.map((f) => ({ nom: f.nom }))]);
+  }, [cadeau, cle, feuille, maintenant, moi, prenom, soiree]);
   const jaiGagne = !!cadeau?.gagnants?.some((g) => g.moi);
   const fermerTicket = () => {
-    ticketVu(soiree.id);
+    ticketVu(cle);
     setVoirTicket(false);
   };
-  const lancer = (o: { nombre: number; quoi: string; duree: number }) => {
-    const c = lancerCadeau(soiree.id, o);
+  const lancer = (o: { nombre: number; quoi: string; duree: number; parmi: Parmi }) => {
+    const c = lancerCadeau(cle, { ...o, par: soiree.lieu, mots: MOTS_DU_BAR });
     ecrireDansSalon(cle, {
       qui: soiree.lieu,
       voix: "ami",
-      texte: `🎁 ${c.nombre} ${c.nombre > 1 ? "consos offertes" : "conso offerte"} ce soir ! Tirage au sort parmi ceux qui comptent venir.`,
+      texte: `🎁 ${combienDe(c.mots, c.nombre)} ce soir ! Tirage au sort parmi ceux qui comptent venir.`,
       quand: heureCourte(),
       cadeau: c.id,
     });
@@ -376,7 +392,6 @@ export function DecouverteSoiree({
           consos={{
             cadeau,
             maintenant,
-            lieu: soiree.lieu,
             onVenir: compterVenir,
             onTicket: () => setVoirTicket(true),
             onCoteBar: demo ? () => setCoteBar(true) : undefined,
@@ -415,15 +430,16 @@ export function DecouverteSoiree({
       )}
 
       {coteBar && (
-        <CoteBar
+        <CoteCommercant
+          profil={PROFILS_CADEAU.bar}
           lieu={soiree.lieu}
           cadeau={cadeau}
           maintenant={maintenant}
-          comptentVenir={total}
+          sources={[{ parmi: "viennent", mot: "Comptent venir", combien: total }]}
           onLancer={lancer}
-          onValider={(code) => validerCode(soiree.id, code)}
+          onValider={(code) => validerCode(cle, code)}
           onNouvelle={() => {
-            oublierCadeau(soiree.id);
+            oublierCadeau(cle);
             setVoirTicket(false);
           }}
           onFermer={() => setCoteBar(false)}
@@ -433,7 +449,6 @@ export function DecouverteSoiree({
         <EcranGagne
           cadeau={cadeau}
           maintenant={maintenant}
-          lieu={soiree.lieu}
           monFantome={monFantome}
           prenom={prenom}
           onFermer={fermerTicket}
@@ -441,7 +456,7 @@ export function DecouverteSoiree({
             demo
               ? () => {
                   const g = cadeau.gagnants?.find((x) => x.moi);
-                  if (g) validerCode(soiree.id, g.code);
+                  if (g) validerCode(cle, g.code);
                 }
               : undefined
           }
@@ -449,7 +464,7 @@ export function DecouverteSoiree({
       )}
 
       <Styles />
-      <StylesConsos />
+      <StylesCadeau />
     </div>
   );
 }
@@ -540,7 +555,6 @@ function Discussion({
   consos: {
     cadeau?: Cadeau;
     maintenant: number;
-    lieu: string;
     onVenir: () => void;
     onTicket: () => void;
     /** Démonstration seulement : ouvrir le geste du bar. */
@@ -611,11 +625,10 @@ function Discussion({
               key={m.id}
               cadeau={consos.cadeau?.id === m.cadeau ? consos.cadeau : undefined}
               maintenant={consos.maintenant}
-              lieu={consos.lieu}
               fantomeDe={fantomeDe}
               monFantome={monFantome}
-              jeViens={moi}
-              onVenir={consos.onVenir}
+              jeParticipe={moi}
+              onParticiper={consos.onVenir}
               onTicket={consos.onTicket}
             />
           ) : m.voix === "systeme" ? (

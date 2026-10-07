@@ -646,7 +646,7 @@ export const SALONS_SEMES: Salon[] = [
   {
     cle: "avis|tenues-samedi",
     sujet: "Laquelle pour samedi ?",
-    ou: "Le Dressing",
+    ou: "Une boutique de la rue piétonne",
     parQui: "Léa",
     quand: "Samedi soir",
     viennent: [],

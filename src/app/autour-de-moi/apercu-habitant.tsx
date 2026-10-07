@@ -186,6 +186,9 @@ import {
 } from "./panneau-ensemble";
 import { Bienvenue } from "./bienvenue";
 import { AvatarFantome, CarteDuSalon, fantomeDe, garderVusPropos, lireVusPropos, MenuDuSalon, PanneauPropositions, StylesSalonChat } from "./salon-chat";
+import { useCadeauDuSalon } from "@/components/direct/cadeau-du-salon";
+import { monLook } from "@/lib/direct/look";
+import { PROFILS_CADEAU, profilCadeau } from "@/lib/site-internet/cadeau-offert";
 import { montrerSalonPret } from "./ensemble-alcoves";
 import { messageDeMaison, signalerPublication } from "@/lib/direct/ville-sync";
 import { essaisPartages, lienDeMaMaison, lireUneMaison, publierLaMaison, type MaisonLue } from "@/lib/direct/maison-sync";
@@ -5917,6 +5920,38 @@ export function ApercuHabitant() {
     : salon.acces?.participants
       ? salon.acces.participants.filter((x) => !x.moi).map((x) => ({ qui: x.qui, auteur: x.auteur }))
       : [...new Set([salon.parQui, ...salon.presents])].filter((q) => q && !cestMoi(q) && q !== "Le commerce").map((q) => ({ qui: q }));
+  /**
+   * 🎁 LE CADEAU DU COMMERCE DONT ON PARLE — voir `cadeau-du-salon.tsx`.
+   * « S'il y a un salon d'ouvert, public ou privé, il peut l'envoyer dedans. »
+   * Le commerce se retrouve par le lien de la boutique, par la clé du salon
+   * (« centre|menu » est chez « centre »), ou par son nom ; une soirée par
+   * la clé de son salon public.
+   */
+  const soireeDuSalon = salon?.cle.startsWith("soiree|") ? Object.values(SOIREES).find((x) => `soiree|${x.id}` === salon.cle) : undefined;
+  const commerceCadeau = !salon || soireeDuSalon
+    ? undefined
+    : toutesLesCartes().find((c) => salon.boutique?.id === c.id || salon.cle.startsWith(`${c.id}|`) || c.nom === salon.ou);
+  const cadeauSalon = useCadeauDuSalon({
+    salon: modeChat ? salon : undefined,
+    profil: soireeDuSalon ? PROFILS_CADEAU.bar : profilCadeau(commerceCadeau?.branche),
+    par: soireeDuSalon?.lieu ?? commerceCadeau?.nom ?? "",
+    idCommerce: commerceCadeau?.id,
+    demo: !reelle,
+    membre: !!salon && !lectureSalon,
+    monNom: prenom || "Vous",
+    estMoi: cestMoi,
+    fantomeDe: (qui) => (salon ? fantomeDe(salon, qui, false) : ""),
+    // DEBOUT, BRAS OUVERTS : c'est lui qui sort du cadeau sur l'écran du gagnant.
+    monFantome: monLook().debout ?? monLook().image,
+    onRejoindre:
+      salon && lectureDemo
+        ? () =>
+            prendrePlace(
+              { cle: salon.cle, titre: salon.sujet, prive: false, nb: new Set([salon.parQui, ...salon.presents]).size },
+              "conversation",
+            )
+        : undefined,
+  });
   /** L'empreinte des propositions et de leurs voix : ce qui a changé depuis qu'on les a regardées. */
   const sigPropos = (salon?.propositions ?? []).map((x) => `${x.cle}:${x.voix.length}`).join(",");
   /** On a vu les propositions de ce salon telles qu'elles sont : gardé sur le téléphone. */
@@ -13266,9 +13301,18 @@ export function ApercuHabitant() {
                       ouvrirOptions={optionsAcces}
                     />
                   )}
+                  {/* 🎁 LE GESTE DU COMMERÇANT (démonstration) ET MON TICKET, en tête du fil. */}
+                  {(cadeauSalon.pastille || cadeauSalon.entete) && (
+                    <div className="ap-sal-cadeau">
+                      {cadeauSalon.entete}
+                      {cadeauSalon.pastille}
+                    </div>
+                  )}
                   <div className="ap-sal-fil">
                     {salon.messages.map((m) =>
-                      m.carte ? (
+                      m.cadeau ? (
+                        cadeauSalon.carte(m)
+                      ) : m.carte ? (
                         <div
                           className={`ap-sal-carte${m.carte.pro ? " pro" : ""}`}
                           key={m.id}
@@ -13560,6 +13604,7 @@ export function ApercuHabitant() {
                   }
                 />
               )}
+              {cadeauSalon.calques}
               <StylesSalonChat />
             </div>
             </>
@@ -17893,6 +17938,10 @@ export function ApercuHabitant() {
            sur un ecran de 360. Chaque bloc garde son flex:none, et c'est le
            corps qui defile. */
         .ap-sal-fil{display:flex;flex-direction:column;gap:9px;padding:12px 2px 2px;}
+        .ap-sal-cadeau{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:8px 2px 0;}
+        .ap-sal-cadeau .cg-pastille{align-self:flex-end;}
+        /* LA BULLE DU MENU DÉPASSE AU-DESSUS DE LA BARRE : le bas de l'écran du gagnant lui laisse sa place. */
+        .ap-page .cg-gagne-c{padding-bottom:64px;}
         /* ── LA DEMANDE, RELUE AVANT DE PARTIR ─────────────────────────
            Ce qu'on montre n'est pas une question mais LE MESSAGE : « etes-vous
            sur ? » ne renseigne personne et se repond au reflexe. */
