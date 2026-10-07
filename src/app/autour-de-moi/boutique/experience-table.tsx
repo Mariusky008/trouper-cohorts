@@ -27,6 +27,7 @@ import { MotMarque } from "@/components/direct/mot-marque";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { onSpeakingChange, speak, stopSpeaking } from "@/lib/site-internet/speech";
 import { compter } from "@/lib/direct/compter";
+import { DemandeTable } from "@/components/direct/demande-table";
 
 type Proposition = { nom: string; photo: string; prix?: string };
 
@@ -221,7 +222,11 @@ export function ExperienceTable({
   /** Ses poses en pied (`/direct/double/pied/`), s'il les a. */
   enPied?: string;
   onRetour: () => void;
-  /** « Demander une table » : la conversation avec son double, qui sait réserver. */
+  /**
+   * SON DOUBLE, QUI SAIT RÉPONDRE AVANT DE RÉSERVER. « Demander une table »
+   * ouvre WhatsApp sur le restaurant (voir `demande-table.tsx`) ; le double
+   * reste à un appui, sous le bouton, pour qui a une question d'abord.
+   */
   onReserver: () => void;
   /** « Une question ? » : le même double. */
   onQuestion: () => void;
@@ -238,6 +243,7 @@ export function ExperienceTable({
   onFermer?: () => void;
 }) {
   const [etape, setEtape] = useState<1 | 2 | 3>(1);
+  const [demande, setDemande] = useState(false);
   const [souleve, setSouleve] = useState(false);
 
   /* ═══ LA SALLE : TOUJOURS LA MÊME ═══
@@ -741,14 +747,14 @@ export function ExperienceTable({
               </b>
               {c.distance && <span> · À {c.distance}</span>}
             </p>
-            <button type="button" className="xr-go" onClick={onReserver}>
+            <button type="button" className="xr-go" onClick={() => setDemande(true)}>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="3.5" y="5" width="17" height="15" rx="3" />
                 <path d="M3.5 10h17M8 3v4M16 3v4M8 14h.01M12 14h.01M16 14h.01" />
               </svg>
               Demander une table
             </button>
-            <p className="xr-confirme">Confirmation par le restaurant</p>
+            <p className="xr-confirme">Par WhatsApp · confirmation par le restaurant</p>
             {/* « LA CARTE "ET EN DESSERT ?" APPARAÎT UNIQUEMENT SI LE RESTAURANT
                 A PUBLIÉ D'AUTRES PROPOSITIONS. » */}
             {repas.autres.length > 0 && (
@@ -769,6 +775,17 @@ export function ExperienceTable({
         </section>
       )}
       </div>
+      {demande && (
+        <DemandeTable
+          restaurant={c.nom}
+          telephone={c.telephone}
+          onFermer={() => setDemande(false)}
+          onDouble={() => {
+            setDemande(false);
+            onReserver();
+          }}
+        />
+      )}
     </div>
   );
 }
