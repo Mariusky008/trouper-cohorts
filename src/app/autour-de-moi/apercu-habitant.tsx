@@ -213,6 +213,7 @@ import { StylesParcoursCoiffure } from "@/components/direct/styles-parcours-coif
 import { ParcoursSortie } from "@/components/direct/parcours-sortie-ecran";
 import { StylesParcoursSortie } from "@/components/direct/styles-parcours-sortie";
 import { ParcoursRestaurant } from "@/components/direct/parcours-restaurant";
+import { EssaiDuLieu } from "./boutique/essai-du-lieu";
 import { DoubleChef } from "@/components/direct/double-chef";
 import { aUnDouble, nomDansPhrase, profilDuDouble, tenueDu } from "@/lib/direct/double-metiers";
 import { StylesParcoursTable } from "@/components/direct/styles-parcours-table";
@@ -2366,6 +2367,15 @@ export function ApercuHabitant() {
      écrite à la main. */
   const [doubleOuvert, setDoubleOuvert] = useState<CarteAutour | null>(null);
   const [platOuvert, setPlatOuvert] = useState("");
+  /**
+   * « TON PROCHAIN LIVRE », OUVERT DANS L'APPLICATION. « Quand je clique sur
+   * "Trouver mon prochain livre", tout à coup le design est cassé et le
+   * format app se transforme en rectangle. » Le bouton quittait l'application
+   * pour la page du libraire ; il ouvre maintenant son conseil ICI, en plein
+   * écran dans le téléphone, comme le parcours du plat.
+   */
+  const [livreOuvert, setLivreOuvert] = useState<CarteAutour | null>(null);
+  const [portailLivre, setPortailLivre] = useState<HTMLElement | null>(null);
   const [parcoursDeco, setParcoursDeco] = useState("");
   /* ═══ LA FLECHE « EN ARRIERE » DU NAVIGATEUR RAMENE A LA DEMO ═════════
 
@@ -11563,7 +11573,7 @@ export function ApercuHabitant() {
                 className="ap-agir reserver ap-decouvrir"
                 onClick={() => {
                   noter("onglet", 0, "prochain-livre");
-                  window.location.href = pageDuCommerce(dessus, "experience");
+                  if (dessus) setLivreOuvert(dessus);
                 }}
               >
                 <svg className="ap-agir-i" viewBox="0 0 24 24" aria-hidden="true">
@@ -13615,7 +13625,7 @@ export function ApercuHabitant() {
           {/* ═══ LE DOUBLE ET LE PARCOURS DU PLAT, PLEIN ÉCRAN ═══════════
               Ils couvrent aussi la barre du bas : ce sont des moments à part,
               qui ont chacun leur bouton de retour. */}
-          {(doubleOuvert || platOuvert) && (
+          {(doubleOuvert || platOuvert || livreOuvert) && (
             <div className="ap-plein-ecran">
               {platOuvert ? (
                 <ParcoursRestaurant
@@ -13634,6 +13644,52 @@ export function ApercuHabitant() {
                     doubleOuvert.branche === "restaurant" ? () => setPlatOuvert(doubleOuvert.id) : undefined
                   }
                 />
+              ) : livreOuvert ? (
+                /* LE CONSEIL DU LIBRAIRE, DANS LE TÉLÉPHONE. Son fantôme ouvre son
+                   double par-dessus ; le refermer ramène ici. Les trois questions
+                   s'ouvrent dans `ap-livre-portail`, donc dans le cadre. */
+                <div className="ap-livre">
+                  <header className="ap-livre-h">
+                    <button type="button" onClick={() => setLivreOuvert(null)} aria-label="Revenir à l’annonce">
+                      ‹
+                    </button>
+                    <b>{livreOuvert.nom}</b>
+                    <span aria-hidden="true" />
+                  </header>
+                  <div className="ap-livre-c">
+                    <EssaiDuLieu
+                      c={livreOuvert}
+                      saPage={false}
+                      onReserver={() => setDoubleOuvert(livreOuvert)}
+                      onSalon={() => undefined}
+                      portail={portailLivre}
+                      onConseil={(l) => {
+                        const cle = `livre|${livreOuvert.id}|${l.quoi}`.slice(0, 120);
+                        ouvrirSalon({
+                          cle,
+                          sujet: `Quelqu’un l’a lu ? ${l.quoi}`,
+                          ou: livreOuvert.nom,
+                          parQui: "Vous",
+                          quand: "Aujourd'hui",
+                          prive: true,
+                          photo: l.photo,
+                          annonce: l.quoi,
+                        });
+                        ecrireDansSalon(cle, {
+                          qui: monPrenom() || "Vous",
+                          voix: "moi",
+                          texte: `${livreOuvert.nom} me conseille « ${l.quoi} » — quelqu’un l’a lu ?`,
+                          quand: heureCourte(),
+                          photo: l.photo,
+                        });
+                        setLivreOuvert(null);
+                        setSalonOuvert(cle);
+                        setSalonPage(true);
+                      }}
+                    />
+                  </div>
+                  <div className="ap-livre-portail" ref={setPortailLivre} />
+                </div>
               ) : null}
             </div>
           )}
@@ -21061,6 +21117,20 @@ export function ApercuHabitant() {
            du bas comprise. Ils ont chacun leur bouton de retour. */
         .ap-plein-ecran{position:absolute;inset:0;z-index:95;background:#0B0710;}
         .ap-plein-ecran>.pt{z-index:1;}
+        /* « TON PROCHAIN LIVRE » DANS LE TELEPHONE : une page a lui, sans barre de
+           defilement, et un calque ou s'ouvrent les trois questions — le
+           translateZ en fait le repere de leur plein ecran, qui reste dans le
+           cadre au lieu de prendre la fenetre. */
+        .ap-livre{position:absolute;inset:0;display:flex;flex-direction:column;background:#120C09;color:#FFF4E6;}
+        .ap-livre-h{flex:none;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:8px;
+          padding:calc(10px + env(safe-area-inset-top,0px)) 12px 6px;}
+        .ap-livre-h button{width:44px;height:44px;border-radius:50%;border:0;cursor:pointer;font-size:28px;line-height:1;
+          color:#FFF4E6;background:rgba(255,244,230,.08);}
+        .ap-livre-h b{text-align:center;font-weight:800;font-size:16px;}
+        .ap-livre-c{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:0 16px 24px;scrollbar-width:none;}
+        .ap-livre-c::-webkit-scrollbar{display:none;}
+        .ap-livre-portail{position:absolute;inset:0;z-index:5;pointer-events:none;transform:translateZ(0);}
+        .ap-livre-portail>*{pointer-events:auto;}
         /* LE FANTOME PORTE LA TENUE DU CHEF quand l'annonce est un restaurant :
            c'est la pose d'accueil du double, cadree sur le visage. */
         /* LE FANTÔME D'UNE PAGE (voir GESTES_DE_PAGE) : sa tenue sur un disque
