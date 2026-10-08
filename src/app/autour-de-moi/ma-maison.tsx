@@ -85,8 +85,8 @@ export function MaMaison({
   onVoirTrace: (t: FantomePose) => void;
   /** Partager un essai avec ses amis : ouvre la conversation. */
   onPartager: (e: { titre: string; lieu: string; photo?: string; carte?: string }) => void;
-  /** Aller découvrir des commerces (Le Direct). */
-  onDecouvrir: () => void;
+  /** Aller découvrir des commerces (Le Direct) — sur ce métier, quand il est donné. */
+  onDecouvrir: (branche?: string) => void;
   /** Les réglages du compte (l'ancien « Mon espace »). */
   onReglages: () => void;
   onNePlusSuivre: (id: string) => void;
@@ -105,6 +105,22 @@ export function MaMaison({
   const [onglet, setOnglet] = useState<"essais" | "decouvertes" | "publications">("essais");
   const [ouverte, setOuverte] = useState<ClePiece | null>(null);
   const [edition, setEdition] = useState(false);
+  /** « Comment un fantôme emménage ? » refermé une fois : on ne le remontre plus. */
+  const [regleVue, setRegleVueEtat] = useState(() => {
+    try {
+      return typeof window !== "undefined" && window.localStorage.getItem("clikme-maison-regle-vue") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const setRegleVue = (v: boolean) => {
+    setRegleVueEtat(v);
+    try {
+      window.localStorage.setItem("clikme-maison-regle-vue", v ? "1" : "0");
+    } catch {
+      /* stockage refusé : refermé le temps de la visite */
+    }
+  };
   const look = useSyncExternalStore(abonnerLook, monLook, monLook);
   const [presentation, setPresentation] = useState("");
   const [invite, setInvite] = useState("");
@@ -262,6 +278,30 @@ export function MaMaison({
         )}
       </section>
 
+      {/* ═══ COMMENT ELLE SE REMPLIT — dit en clair, toujours ═══════════════
+          « On ne comprend pas vraiment comment on arrive à obtenir les
+          fantômes dans les maisons. En likant, en ouvrant un salon ou
+          autre ? Ce n'est pas clair. » L'explication n'existait que sur une
+          maison vide, et elle parlait d'un bouton « Suivre » qui s'appelle
+          « Favori » sur l'annonce. Elle est maintenant là tant qu'on ne l'a
+          pas refermée, avec le vrai nom du geste. */}
+      {!commeAmi && nbFantomes > 0 && !regleVue && (
+        <div className="mm-regle" role="note">
+          <b>Comment un fantôme emménage ?</b>
+          <ol>
+            <li>
+              Sur une annonce du Direct, touche <em>♡ Favori</em> — ou tape deux fois sur sa photo.
+            </li>
+            <li>Le fantôme du commerce s’installe dans la pièce de son métier : le restaurant à la cuisine, le bar à la cave, la librairie au coin lecture…</li>
+            <li>Tu es prévenu de ses annonces. Pour le faire partir : sa pièce, puis « Ne plus suivre ».</li>
+          </ol>
+          <p>Tes essais gardés et tes découvertes se rangent plus bas, dans « Mes essais » et « Mes découvertes ».</p>
+          <button type="button" onClick={() => setRegleVue(true)}>
+            Compris
+          </button>
+        </div>
+      )}
+
       {/* ═══ LA MAISON ═══ — une pièce par univers. */}
       <div className="mm-maison" aria-label="Ma maison et ses pièces">
         <div className="mm-toit" aria-hidden="true">
@@ -299,12 +339,13 @@ export function MaMaison({
         </div>
       </div>
 
+
       {/* ÉTAT INITIAL : rien d'adopté, on dit comment la remplir. */}
       {nbFantomes === 0 && !commeAmi && (
         <div className="mm-accueil">
           <b>Ta maison est encore vide.</b>
-          <span>Touche le cœur « Suivre » d’un commerce que tu aimes : son fantôme vient s’installer dans la pièce qui lui va.</span>
-          <button type="button" onClick={onDecouvrir}>
+          <span>Sur une annonce du Direct, touche ♡ « Favori » : le fantôme du commerce emménage dans la pièce de son métier — le restaurant à la cuisine, le bar à la cave, la librairie au coin lecture.</span>
+          <button type="button" onClick={() => onDecouvrir()}>
             Découvrir les commerces <s aria-hidden="true">→</s>
           </button>
         </div>
@@ -485,13 +526,16 @@ export function MaMaison({
             <h2>{pieceOuverte.nom}</h2>
             {maison[pieceOuverte.cle].length === 0 ? (
               <div className="mm-fiche-vide">
-                <p>Personne n’habite encore {pieceOuverte.nom.toLowerCase()}. Adopte {pieceOuverte.invite} près de chez toi : son fantôme s’y installera.</p>
+                <p>
+                  Personne n’habite encore {pieceOuverte.nom.toLowerCase()}. Trouve {pieceOuverte.invite} dans Le Direct et touche ♡ « Favori » sur son
+                  annonce : son fantôme s’installera ici.
+                </p>
                 <button
                   type="button"
                   className="mm-or"
                   onClick={() => {
                     setOuverte(null);
-                    onDecouvrir();
+                    onDecouvrir(pieceOuverte.branche);
                   }}
                 >
                   Découvrir {pieceOuverte.invite} <s aria-hidden="true">→</s>
@@ -608,6 +652,12 @@ function StylesMaMaison() {
 .mm-piece.vide .mm-etiq{border-style:dashed;border-color:rgba(255,214,170,.45);color:#D9C6B2;}
 .mm-compte{display:flex;align-items:center;justify-content:center;gap:8px;width:max-content;margin:-14px auto 0;position:relative;z-index:2;
   padding:8px 16px;border-radius:999px;font-size:14px;font-weight:700;background:#2A1E18;border:1.5px solid #E7A84B;}
+.mm-regle{margin:14px 2px 0;padding:14px 16px;border-radius:18px;background:#211813;border:1px solid rgba(245,162,58,.4);}
+.mm-regle b{display:block;font-size:16px;}
+.mm-regle ol{list-style:decimal outside;margin:8px 0 0;padding-left:20px;display:grid;gap:5px;font-size:14px;line-height:1.4;color:#E7D6C4;}
+.mm-regle em{font-style:normal;font-weight:800;color:#FFB0D6;}
+.mm-regle p{margin:8px 0 10px;font-size:13px;color:#CDB9A5;line-height:1.4;}
+.mm-regle button{border:1px solid rgba(245,162,58,.5);background:none;color:#F5B65A;border-radius:999px;padding:7px 16px;font-weight:700;cursor:pointer;}
 .mm-accueil{margin:14px 2px 0;padding:16px;border-radius:18px;text-align:center;background:#211813;border:1px dashed rgba(245,162,58,.45);}
 .mm-accueil b{display:block;font-size:17px;}
 .mm-accueil span{display:block;margin:6px 0 12px;font-size:14px;color:#CDB9A5;line-height:1.4;}

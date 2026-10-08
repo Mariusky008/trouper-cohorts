@@ -37,6 +37,7 @@ import { MotMarque } from "@/components/direct/mot-marque";
 import { EnCharteMaison } from "@/components/direct/style-maison";
 import { ApercuHabitant, type OngletAppli } from "./apercu-habitant";
 import { AtelierPleinEcran, useMurDuLieu, type RenduEssai } from "@/components/direct/atelier-plein-ecran";
+import { ParcoursRestaurant } from "@/components/direct/parcours-restaurant";
 import { useVilleReelle } from "@/components/direct/ville-reelle-contexte";
 import {
   evenementsDeLaVille,
@@ -53,6 +54,8 @@ import { partager } from "@/lib/direct/partager";
 import { personnaliteDe } from "@/lib/direct/personnalites";
 import { commentPrevenir, demanderRendezVous, numeroDeFiction } from "@/lib/direct/prevenir";
 import { pageDuCommerce } from "@/lib/direct/source-ville";
+import { basculerSuivi, chargerSuivis } from "@/lib/direct/suivis";
+import { pieceDe, PIECES } from "@/lib/direct/ma-maison";
 import { profilDuDouble, tenueDu } from "@/lib/direct/double-metiers";
 import { cleSalonBoutique, ecrireDansSalon, heureCourte, monPrenom, ouvrirSalon } from "@/lib/direct/salons";
 
@@ -73,7 +76,7 @@ const MOTS: Record<CleMetier, { question: string; bouton: string; fantome: strin
   coiffeur: { question: "Cette coupe, sur toi ?", bouton: "Essayer cette coupe", fantome: "hote-coiffeur", rdv: "RDV" },
   mode: { question: "Cette pièce, sur toi ?", bouton: "Essayer cette tenue", fantome: "hote-mode", rdv: "RDV" },
   lunetier: { question: "Ces lunettes, sur ton nez ?", bouton: "Essayer ces lunettes", fantome: "hote-opticien", rdv: "RDV" },
-  restaurant: { question: "Ça te tente, aujourd'hui ?", bouton: "Voir ce qu'on mange", fantome: "hote-serveur", rdv: "Réserver" },
+  restaurant: { question: "Ça te tente, aujourd'hui ?", bouton: "Découvrir ce plat", fantome: "hote-serveur", rdv: "Réserver" },
   bar: { question: "On y passe ce soir ?", bouton: "Voir la soirée", fantome: "hote-barman", rdv: "Réserver" },
   fleuriste: { question: "Ce bouquet, chez toi ?", bouton: "Voir les bouquets", fantome: "hote-fleuriste", rdv: "RDV" },
   artisan: { question: "Cette pièce, chez toi ?", bouton: "Découvrir l'atelier", fantome: "hote-artisan", rdv: "RDV" },
@@ -362,6 +365,16 @@ function LeDirectOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) {
   // ═══ L'ATELIER, LE PANNEAU, ET CE QUI MÈNE CHEZ LE COMMERCE ═══
   const [atelier, setAtelier] = useState<CarteAutour | null>(null);
   const fermer = useCallback(() => setAtelier(null), []);
+  /**
+   * LE PARCOURS DU PLAT, COMME SUR LE TÉLÉPHONE.
+   *
+   * « J'ai encore des restaurants avec l'ancien parcours en mode ordinateur,
+   * alors qu'en mode téléphone j'ai le bon parcours. » Le grand bouton d'un
+   * restaurant ouvrait l'atelier d'essai (`AtelierPleinEcran`) ; sur le
+   * téléphone, il ouvre `ParcoursRestaurant` — le plat, avant/servi, la voix
+   * du chef, la venue. C'est lui qui s'ouvre maintenant, au milieu de l'écran.
+   */
+  const [plat, setPlat] = useState("");
   /** « Voir toutes les offres + infos » : le panneau de droite. */
   const [panneau, setPanneau] = useState<CarteAutour | null>(null);
   /* SA PAGE : la page ClikMe d'un vrai commerçant, la boutique de démonstration sinon. */
@@ -683,7 +696,9 @@ function LeDirectOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) {
                               // LE LIBRAIRE N'A PAS D'ATELIER D'ESSAI : son conseil vit sur sa page.
                               f.c!.branche === "librairie"
                                 ? window.location.assign(pageDuCommerce(f.c!, "experience"))
-                                : setAtelier(f.c!)
+                                : f.c!.branche === "restaurant"
+                                  ? setPlat(f.c!.id)
+                                  : setAtelier(f.c!)
                             }
                           >
                             <span>{mots?.bouton}</span>
@@ -704,7 +719,17 @@ function LeDirectOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) {
                         <button
                           type="button"
                           className={aime ? "aime" : ""}
-                          onClick={() => basculerEnvie(f.cle)}
+                          onClick={() => {
+                            basculerEnvie(f.cle);
+                            // LIKER UN COMMERCE LE FAIT EMMÉNAGER DANS MA MAISON — la
+                            // même règle que « Favori » sur le téléphone.
+                            if (!aime && f.c && !chargerSuivis().includes(f.c.id)) {
+                              basculerSuivi(f.c.id);
+                              setDit(
+                                `${f.c.nom} emménage dans ta maison : son fantôme t’attend dans ${PIECES.find((x) => x.cle === pieceDe(f.c!))?.nom.toLowerCase() ?? "sa pièce"}.`,
+                              );
+                            }
+                          }}
                           aria-pressed={aime}
                           title="J’aime"
                         >
@@ -849,6 +874,15 @@ function LeDirectOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) {
             if (f) reserver(f);
           }}
         />
+      )}
+
+      {plat && (
+        <div className="vo-parcours" role="dialog" aria-label="Découvrir ce plat">
+          <button type="button" className="vo-parcours-fond" onClick={() => setPlat("")} aria-label="Fermer" />
+          <div className="vo-parcours-col">
+            <ParcoursRestaurant commerce={plat} onFermer={() => setPlat("")} />
+          </div>
+        </div>
       )}
 
       {atelier && (
@@ -1308,6 +1342,14 @@ function StylesVille() {
         .vo-avec-n{position:relative;}
         .vo-avec-n b{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;
           display:grid;place-items:center;font-size:11.5px;background:#FF2E9A;color:#fff;}
+        /* LE PARCOURS DU PLAT, AU MILIEU DE L ECRAN */
+        .vo-parcours{position:absolute !important;inset:0;z-index:70 !important;display:grid;place-items:center;
+          animation:voFondu .3s ease both;}
+        .vo-parcours-fond{position:absolute;inset:0;border:0;cursor:default;background:rgba(8,5,3,.72);
+          backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+        .vo-parcours-col{position:relative;width:min(470px,92vw);height:min(900px,calc(100vh - 40px));overflow:hidden;
+          border-radius:34px;border:1px solid rgba(255,196,140,.25);box-shadow:0 50px 120px -30px rgba(0,0,0,.95);
+          animation:voArrive .55s cubic-bezier(.16,1,.3,1) both;}
         /* LE PANNEAU DE DROITE */
         .vo-panneau-fond{position:absolute !important;inset:0;z-index:50 !important;border:0;background:rgba(8,5,3,.45);cursor:default;
           animation:voFondu .3s ease both;}
@@ -1358,6 +1400,8 @@ function StylesVille() {
         .vo-vues button.on{background:linear-gradient(135deg,#F7B95A,#F5A23A);color:#1A0F08;}
         .vo-vues svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
         .vo~.vo-vues,.vo-vues{display:flex;}
+        /* UN ECRAN PLEIN PAR-DESSUS (le plat, l atelier, le panneau) : la barre s efface. */
+        body:has(.vo-parcours) .vo-vues,body:has(.bx-atelier) .vo-vues,body:has(.vo-panneau) .vo-vues{display:none;}
         /* LA MARQUE DESCEND SOUS LA BARRE ; LES DEUX PILULES RESTENT A LEUR PLACE */
         .vo-haut .vo-pilule{align-self:start;margin-top:-62px;}
         .vo-appli{flex:1;min-height:0;position:relative;margin:92px 0 0;}

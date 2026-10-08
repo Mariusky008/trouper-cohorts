@@ -875,6 +875,36 @@ export function heureCourte(d = new Date()): string {
 
 const CLE = "clikme-salons-v1";
 let memoire: Record<string, Salon> | null = null;
+
+/**
+ * ═══ LES SALONS D'UNE VRAIE VILLE NE SONT PAS CEUX DE LA DÉMONSTRATION ══════
+ *
+ * « Sur clikme.fr/ville/dax, il n'y a encore aucun commerçant sur l'app,
+ * pourtant sur Ensemble j'ai 41 salons, et j'ai même pu cliquer sur
+ * "Quelqu'un sait pourquoi il y a autant de monde devant les Arènes". »
+ *
+ * LES DEUX ADRESSES PARTAGENT LE MÊME NAVIGATEUR, DONC LE MÊME TIROIR.
+ * /autour-de-moi et /ville/dax sont sur clikme.fr : tout salon ouvert dans la
+ * démonstration (une question de La ville, « Un bar à vins », « Concert au
+ * kiosque ») était rangé sous la même clé, et la vraie ville le relisait.
+ * `sansLeDecor` ne retirait que les salons semés, pas ceux que la personne
+ * avait ouverts en jouant avec la démonstration.
+ *
+ * CHAQUE VRAIE VILLE A DONC SON TIROIR (`clikme-salons-v1:dax`), posé par
+ * `/ville/<ville>` avant le premier dessin de l'application — voir
+ * `ville-app.tsx`. Le décor de la démonstration n'y est pas semé. Ce qui est
+ * vraiment à la personne dans cette ville revient du serveur au premier
+ * relevé (`conversations-sync.ts`).
+ */
+let espace = "";
+const cleDuTiroir = () => (espace ? `${CLE}:${espace}` : CLE);
+/** La ville dont on range les salons — `null` : la démonstration. */
+export function rangerLesSalonsDans(ville: string | null): void {
+  const e = ville ?? "";
+  if (e === espace) return;
+  espace = e;
+  memoire = null;
+}
 const abonnes = new Set<() => void>();
 export const SALONS_VIDES: Record<string, Salon> = {};
 
@@ -979,12 +1009,12 @@ export function poserLesConversations(venues: Record<string, Salon>): void {
 export function chargerSalons(): Record<string, Salon> {
   if (memoire) return memoire;
   try {
-    const brut = window.localStorage.getItem(CLE);
+    const brut = window.localStorage.getItem(cleDuTiroir());
     // Les salons semés sont reposés à chaque fois SOUS ce qui a été écrit : ils
-    // font partie du décor, pas des données de la personne.
-    memoire = { ...semer(), ...(brut ? JSON.parse(brut) : {}) };
+    // font partie du décor, pas des données de la personne. Pas dans une vraie ville.
+    memoire = { ...(espace ? {} : semer()), ...(brut ? JSON.parse(brut) : {}) };
   } catch {
-    memoire = semer();
+    memoire = espace ? {} : semer();
   }
   return memoire ?? SALONS_VIDES;
 }
@@ -997,7 +1027,7 @@ export function abonnerSalons(f: () => void) {
 function garder(suivant: Record<string, Salon>) {
   memoire = suivant;
   try {
-    window.localStorage.setItem(CLE, JSON.stringify(suivant));
+    window.localStorage.setItem(cleDuTiroir(), JSON.stringify(suivant));
   } catch {
     /* Refusé : le salon vit quand même le temps de la visite. */
   }
@@ -1397,15 +1427,37 @@ export function placesRestantes(s: Salon): number | undefined {
  * DEUX FORMULATIONS : celle qu'écrit la demande (« Alice demande pour 4 ») et
  * celle déjà confirmée par le commerce (« Pauline a réservé pour 4 »).
  */
-export function demandeDuFil(s: Salon): { qui: string; combien: number } | undefined {
+export function demandeDuFil(
+  s: Salon,
+  /** Seulement celle de cette personne — dans un salon public, chacun réserve pour soi. */
+  de?: (qui: string) => boolean,
+): { qui: string; combien: number } | undefined {
   for (let i = s.messages.length - 1; i >= 0; i--) {
     const m = s.messages[i];
     const t = m.carte?.titre ?? "";
-    if (/annule la demande/i.test(t)) return undefined;
+    const annule = /^(.+?) annule la demande/i.exec(t);
+    if (annule && (!de || de(annule[1]))) return undefined;
     const d = /^(.+?) (?:demande|a réservé) pour (\d+)/.exec(t);
-    if (m.voix === "systeme" && d) return { qui: d[1], combien: Number(d[2]) };
+    if (m.voix === "systeme" && d && (!de || de(d[1]))) return { qui: d[1], combien: Number(d[2]) };
   }
   return undefined;
+}
+
+/**
+ * ═══ UN SALON PUBLIC : CHACUN RÉSERVE POUR SOI ═══════════════════════════════
+ *
+ * « Ensemble, salon public : quand je veux réserver, c'est une réservation
+ * commune que je fais pour tous, au lieu qu'elle soit individuelle puisque
+ * c'est un salon public. »
+ *
+ * UN SALON PRIVÉ EST UN GROUPE : une table pour ceux qui viennent, et une
+ * seule demande — la règle de `demandeDuFil`. UN SALON PUBLIC EST UNE SALLE :
+ * ceux qui s'y croisent ne viennent pas ensemble. Chacun y réserve SA place,
+ * la demande d'un autre ne bloque personne, et l'arbitre ne propose jamais
+ * « Réserver pour 12 » au nom d'inconnus.
+ */
+export function estPublic(s: Salon): boolean {
+  return s.acces ? !s.acces.prive : s.prive === false;
 }
 
 /**
@@ -1475,7 +1527,10 @@ export function etatDuSalon(
   const calme: EtatDuFantome = { ton: "calme", cle: s.cle, phrase: "" };
   if (!s.ouvert) return calme;
 
-  const deja = demandeDuFil(s);
+  // DANS UN SALON PUBLIC, PAS DE RÉSERVATION DE GROUPE : on passe directement
+  // à ce qui reste vrai pour tout le monde (le vote, les nouveaux messages).
+  const enPublic = estPublic(s);
+  const deja = enPublic ? demandeDuFil(s, (q) => q === moi) : demandeDuFil(s);
   const propos = s.propositions ?? [];
   const chef = enTete(s);
   const combien = Math.max(s.viennent.length, 1);
@@ -1486,7 +1541,7 @@ export function etatDuSalon(
   //     l'heure de fin du moment — l'inventer aurait fait mentir l'arbitre au
   //     premier essai, et un arbitre pris en défaut ne se rattrape pas.
   const restant = placesRestantes(s);
-  if (!deja && restant !== undefined && restant < s.viennent.length) {
+  if (!enPublic && !deja && restant !== undefined && restant < s.viennent.length) {
     return {
       ton: "presse",
       cle: s.cle,
@@ -1500,7 +1555,7 @@ export function etatDuSalon(
   //     quand personne ne réclame le contraire ; attendre l'unanimité, c'est
   //     exactement la panne qu'on répare — la table se prend pendant qu'on
   //     s'assure que tout le monde est bien d'accord.
-  if (!deja && s.viennent.length >= 2) {
+  if (!enPublic && !deja && s.viennent.length >= 2) {
     const second = propos
       .filter((p) => p.cle !== chef?.cle)
       .reduce((m, x) => (!m || x.voix.length > m.voix.length ? x : m), undefined as Proposition | undefined);

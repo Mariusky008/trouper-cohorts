@@ -19,6 +19,7 @@ import { VilleSelonEcran } from "@/app/autour-de-moi/ville-selon-ecran";
 import { EnCharteMaison } from "@/components/direct/style-maison";
 import { VilleReelleContexte } from "@/components/direct/ville-reelle-contexte";
 import { poserLaSource } from "@/lib/direct/source-ville";
+import { rangerLesSalonsDans } from "@/lib/direct/salons";
 import { brancherLaVille } from "@/lib/direct/conversations-sync";
 import { brancherLeFil } from "@/lib/direct/ville-sync";
 import { brancherLaMaison } from "@/lib/direct/maison-sync";
@@ -33,11 +34,20 @@ export function VilleApp({ reelle }: { reelle: VilleReelle }) {
   // POSÉE AVANT LE PREMIER DESSIN DE L'APPLICATION — elle lit ses commerces
   // dès son premier rendu —, et reposée par l'effet : en développement, React
   // démonte et remonte une fois, et le démontage la retire.
-  if (monte) poserLaSource(source);
+  // SES SALONS AUSSI : un tiroir à elle, pas celui de la démonstration — voir
+  // `rangerLesSalonsDans`.
+  if (monte) {
+    poserLaSource(source);
+    rangerLesSalonsDans(reelle.slug);
+  }
   useEffect(() => {
     poserLaSource(source);
-    return () => poserLaSource(null);
-  }, [source]);
+    rangerLesSalonsDans(reelle.slug);
+    return () => {
+      poserLaSource(null);
+      rangerLesSalonsDans(null);
+    };
+  }, [source, reelle.slug]);
   // LES CONVERSATIONS D'ENSEMBLE PARTENT AU SERVEUR, ET EN REVIENNENT — voir
   // `conversations-sync.ts`. `?invitation=<jeton>` : le lien reçu d'un ami ;
   // `?salon=p:<identifiant>` : un ancien lien, ou un salon public.
