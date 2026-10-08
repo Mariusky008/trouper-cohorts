@@ -35,6 +35,14 @@ export type PieceComptoir = {
    * jusqu'à ce qu'il la retire. Voir `lib/direct/vitrine.ts`.
    */
   vitrine?: boolean;
+  /**
+   * SON MOT À SA VOIX (https, rangé par `rangerVoix`) — « pourquoi je l'ai
+   * choisi ». Il s'enregistre avec l'annonce, ou après coup sur une photo de
+   * sa vitrine (action `voix` de la route).
+   */
+  voix?: string;
+  voixSecondes?: number;
+  voixTexte?: string;
 };
 
 /** Combien de pièces il garde en tout : sa vitrine (trente) et ses annonces du moment. */
@@ -65,6 +73,13 @@ export function piecesDuDiagnostic(diag: unknown): PieceComptoir[] {
       publieLe: s(o.publieLe) || new Date(0).toISOString(),
       fin: o.vitrine === true ? undefined : fin && Number.isFinite(Date.parse(fin)) ? fin : undefined,
       ...(o.vitrine === true ? { vitrine: true } : {}),
+      ...(https(o.voix)
+        ? {
+            voix: https(o.voix),
+            ...(typeof o.voixSecondes === "number" && o.voixSecondes > 0 ? { voixSecondes: Math.round(o.voixSecondes) } : {}),
+            ...(s(o.voixTexte) ? { voixTexte: s(o.voixTexte).slice(0, 400) } : {}),
+          }
+        : {}),
     });
   }
   return out.slice(0, MAX_PIECES);

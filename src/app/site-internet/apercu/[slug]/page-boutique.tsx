@@ -174,6 +174,16 @@ function direLEssai(carte: CarteAutour): { titre: string; say: string } | null {
   }
   if (mur.essai) {
     const m = mur.essai.mots;
+    /* UNE DE SES PIÈCES EST DÉJÀ À L'ÉCRAN, PORTÉE : Léa la montre au lieu de
+       la décrire. Voir `avant-apres-vitrine.tsx`. */
+    if (carte.essaiVitrine?.etat === "prete") {
+      return {
+        titre: m.titre,
+        say:
+          `${ouvre} Regardez : une de vos pièces, essayée en quelques secondes. ` +
+          `Vos clients se prennent en photo et s'y voient, avant d'avoir poussé votre porte.`,
+      };
+    }
     return {
       titre: m.titre,
       say:
@@ -209,7 +219,20 @@ export function PageBoutique(p: PageBoutiqueProps) {
   // récit « on vous fait connaître ». Un cabinet de santé ou de droit, non.
   const avisAllowed = mp.def.avis_sollicitation;
   const flash = annonceExemple(carte.metier, carte.nom);
-  const geste = modeDemo ? gesteDuJour(carte.metier, confirmation, secteur, carte.ville) : undefined;
+  const gesteBrut = modeDemo ? gesteDuJour(carte.metier, confirmation, secteur, carte.ville, carte.branche) : undefined;
+  /* ═══ SA VRAIE PIÈCE, QUAND ELLE EST LÀ ═══ La pièce du jour de la
+     démonstration est une robe en lin inventée, posée sur sa première photo
+     Google — souvent sa devanture. Quand l'essayage de sa vitrine a trouvé une
+     de SES pièces (étape 2), c'est elle que la carte du Direct montre, avec
+     son nom et sans prix inventé. Voir `essai-vitrine.ts`. */
+  const pieceDuJour = carte.branche === "mode" && carte.essaiVitrine?.etat === "prete" ? carte.essaiVitrine : undefined;
+  const geste =
+    gesteBrut && pieceDuJour
+      ? {
+          ...gesteBrut,
+          extrait: { titre: "La pièce du jour", lignes: [pieceDuJour.nom ?? "Une pièce de la boutique", "À essayer sur soi avant de passer"], prix: "" },
+        }
+      : gesteBrut;
   const photos = [carte.photo, ...(carte.photos ?? [])].filter((x): x is string => Boolean(x));
   /* LA PAGE À ONGLETS EST FIXE : le formulaire entre dedans, au bout des
      infos. Rendu après elle, il se retrouvait derrière. Tous les métiers l'ont
@@ -252,6 +275,7 @@ export function PageBoutique(p: PageBoutiqueProps) {
           metierLabel={carte.metier}
           villeAff={carte.ville}
           photos={photos}
+          pieceDuJour={pieceDuJour?.piece}
           note={note}
           reviewsCount={reviewsCount}
           avisAllowed={avisAllowed}

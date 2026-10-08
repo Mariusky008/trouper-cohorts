@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "prebuild": "bash scripts/poser-mediapipe.sh",
+    "prebuild": "bash scripts/poser-mediapipe.sh && node scripts/reparer-next-font.mjs",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",

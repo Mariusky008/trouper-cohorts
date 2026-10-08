@@ -151,6 +151,35 @@ export type GesteDuJour = {
   envoi: string;
   /** Ce que l'assistante en tire, tel qu'elle l'affiche. */
   extrait: { titre: string; lignes: string[]; prix: string };
+  /**
+   * CE QUI EST PUBLIÉ, EN UN GROUPE NOMINAL — pour la phrase qui ouvre le
+   * dernier acte : « Une fois votre menu dans Le Direct… ». Il se déduisait de
+   * `envoi` en retirant le verbe, et donnait chez un commerce de passage
+   * « Une fois ce que vous avez ce matin dans Le Direct » — « ce n'est pas du
+   * bon français ». Absent, on garde la déduction, juste pour les autres.
+   */
+  publie?: string;
+  /**
+   * LA SECONDE PHRASE DU GESTE, quand le métier a plus à dire que « je
+   * l'écris, et ça part ». Chez une boutique de vêtements, c'est là que tient
+   * l'essayage : la pièce part, et chacun peut la porter avant de venir.
+   */
+  suite?: string;
+  /** La phrase de la demande, à l'acte de la ville, quand « ils réservent » ne se dit pas chez lui. */
+  convaincus?: string;
+  /**
+   * LE GESTE EST UNE PHOTO DE LA PIÈCE ET UN MOT À SA VOIX — la boutique de
+   * vêtements. « Ce n'est pas une description, mais plutôt qu'on montre à
+   * l'assistante une photo du vêtement, et on laisse un vocal pour donner des
+   * infos aux clients quand ils l'essaient virtuellement. » L'écran de l'acte
+   * montre alors la photo envoyée et la bulle du vocal, et le fil de la ville
+   * ne montre que des boutiques de vêtements.
+   */
+  photoEtVoix?: boolean;
+  /** Ce que dit son vocal, pour l'exemple — affiché sous la bulle, jamais prêté à quelqu'un de réel. */
+  motVoix?: string;
+  /** La photo de la pièce de l'exemple, quand on n'a pas encore la sienne. */
+  pieceExemple?: string;
   /** Ce qui revient, heure par heure. Le cœur de la démonstration. */
   retours: RetourDuJour[];
 };
@@ -212,13 +241,20 @@ export function habitantsDe(villeAff: string): string {
 /** LE LIBRAIRE, ET CE QUI LUI RESSEMBLE : le bouquiniste, la librairie de BD. */
 const LA_LIBRAIRIE = /librair|bouquin|bande[ -]dessin|\bbd\b|manga/i;
 
+/** LA BOUTIQUE DE VÊTEMENTS — les mêmes mots que `brancheDuMetier`, sans « boutique » seul, qui dit tous les commerces. */
+const LA_MODE = /v[êe]tement|pr[êe]t[- ]?[àa][- ]porter|friperie|\bmode\b|chaussur|lingerie|concept[- ]store|dressing/i;
+/** …sauf quand le métier dit autre chose avant : une boutique de fleurs, de lunettes, de bijoux. */
+const PAS_LA_MODE = /fleur|coiff|ongl|optic|lunet|bijou|librair/i;
+
 const LE_COMPTOIR_DU_SOIR = /\bbar\b|bar à|caviste|pub\b|cave à (vin|bière|biere)|à vins?\b|à bières?\b/i;
 
 export function gesteDuJour(
   metier: string,
   confirmation: Confirmation,
   secteur: Secteur,
-  villeAff: string
+  villeAff: string,
+  /** LA BRANCHE DE SA PAGE, quand on la connaît : « mode » vaut tous les mots du métier — sa page dit déjà « la pièce qui vous plaît ». */
+  branche?: string
 ): GesteDuJour {
   const v = vocabulaire(metier, confirmation, secteur);
   const gentile = habitantsDe(villeAff);
@@ -367,6 +403,67 @@ export function gesteDuJour(
     };
   }
 
+  /**
+   * ── LA BOUTIQUE DE VÊTEMENTS ─────────────────────────────────────────────
+   *
+   * « Étape 3 : pour un magasin de vêtements, on parle de ce qu'il y a de
+   * frais au lieu de parler de ce qu'il y a de nouveau. Étape 4 : un magasin
+   * de vêtements ne va pas photographier sa vitrine, mais plutôt parler de son
+   * arrivage ou de la pièce qu'il veut mettre en lumière ce jour-là, pour
+   * qu'elle soit vue d'un maximum de gens. Il suffit de parler à son
+   * assistante IA, de lui décrire le vêtement du jour, et l'IA fait tout le
+   * reste en la présentant à un maximum de personnes et en proposant de la
+   * porter virtuellement avant de passer à la boutique. »
+   *
+   * ELLE ÉTAIT RANGÉE AVEC LE PRIMEUR, comme le libraire avant elle : « ce
+   * qu'il y a de frais ce matin », la vitrine qu'on photographie. Ce qu'on
+   * vient chercher chez elle, c'est ce qui vient d'arriver ; ce qu'elle a à
+   * dire, c'est UNE pièce, décrite — et ce que sa page sait faire de plus
+   * qu'une autre, c'est la faire essayer. Le fil de la ville reste celui des
+   * boutiques : on y cherche une pièce comme on y cherche une baguette.
+   */
+  if (branche === "mode" || (LA_MODE.test(metier) && !PAS_LA_MODE.test(metier))) {
+    return {
+      famille: "boutique",
+      quand: "Aujourd'hui",
+      verbe: "chercher",
+      cherchent: "ce qu'il y a de nouveau en boutique",
+      combien: 800,
+      heure: "10 h",
+      support: "vos portants",
+      ouDort: "Vous, ce matin, votre nouvel arrivage est sur vos portants.",
+      pasVu: "Il est superbe. Mais il ne se voit qu'en poussant votre porte. Et eux sont à quatre cents mètres, en train de choisir.",
+      /* UNE PHOTO ET UN VOCAL, PAS UNE DESCRIPTION. « On montre à
+         l'assistante une photo du vêtement, et on laisse un vocal pour donner
+         des infos aux clients quand ils l'essaient virtuellement. » */
+      geste: "Montrez-moi la pièce du jour.",
+      gesteDit:
+        "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me montrer la pièce du jour en photo, et de me laisser un vocal.",
+      gesteCourt: "Pour y être, montrez-moi la pièce du jour en photo, et laissez-moi un vocal pour vos clientes.",
+      parPhoto: false,
+      photoEtVoix: true,
+      demande: "Montrez-moi la pièce du jour, et dites-moi ce que vos clientes doivent savoir.",
+      motVoix: "Elle tombe parfaitement, je la porte moi-même. Du 36 au 44, et les retouches sont offertes.",
+      pieceExemple: "/direct/mode-chemise-volants-rose.jpeg",
+      envoi: "votre pièce du jour part",
+      suite:
+        "Je m'occupe du reste : elle part sur votre page et dans Le Direct, chacun l'essaie sur sa propre photo, et c'est votre voix qui leur en parle.",
+      convaincus:
+        "Et quand une pièce leur plaît, ils l'essaient sur leur photo, puis vous demandent de la mettre de côté — et la demande arrive chez vous.",
+      publie: "votre pièce du jour",
+      extrait: {
+        titre: "La pièce du jour",
+        lignes: ["Chemise à volants rose poudré", "Du 36 au 44 · à essayer sur soi"],
+        prix: "59 €",
+      },
+      retours: [
+        { heure: "10 h 20", icone: "❤️", nombre: "31", quoi: `${gentile} l'auront vue passer` },
+        { heure: "11 h 05", icone: "👗", nombre: "9", quoi: "l'auront essayée sur leur photo" },
+        { heure: "12 h 00", icone: "📊", nombre: "", quoi: "En une matinée, vous saurez quelle pièce donne envie." },
+      ],
+    };
+  }
+
   // ── LES COMMERCES DE PASSAGE ───────────────────────────────────────────
   if (v.boutique) {
     return {
@@ -388,6 +485,7 @@ export function gesteDuJour(
          à la conversation, la phrase est déjà écrite dans ses mots. */
       demande: "Qu'est-ce que vous avez de frais ce matin ?",
       envoi: "ce que vous avez ce matin part",
+      publie: "votre vitrine du matin",
       // AUCUN MOT DE BOULANGER : cette branche sert aussi un fleuriste, un
       // primeur et un poissonnier. « Sortis du four à 7 h · Tourtière
       // landaise » en désignait un seul et donnait aux autres une
@@ -505,7 +603,7 @@ export function direRetours(g: GesteDuJour): { say: string; phrases: string[] } 
    * ET LA PHRASE DIT QUE C'EST UNE PROJECTION. Les chiffres qui suivent ne
    * sont pas une promesse : l'écran le dit, la voix doit le dire aussi.
    */
-  const quoi = g.envoi.replace(/\s+(part|partent)$/i, "").trim() || "votre annonce";
+  const quoi = g.publie ?? (g.envoi.replace(/\s+(part|partent)$/i, "").trim() || "votre annonce");
   return {
     say: [`Une fois ${quoi} dans Le Direct, voilà ce qui pourrait se passer.`, ...phrases].join(" "),
     phrases,

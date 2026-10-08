@@ -89,7 +89,9 @@ const pleine = (id: string, nom: string, l: number, h: number, devantY: number, 
   h,
   // Ces scènes ont déjà le format d'un téléphone : on resserre un peu sur la
   // banquette, pour que les fantômes aient la taille de ceux de la maquette.
-  cadre: { x0: 75, x1: l - 75, assise: d.bas, part: 0.5 },
+  // PAS PLUS DE 45 POINTS DE CHAQUE CÔTÉ : à 75, les tasses posées au bord de
+  // la table sortaient à moitié de l'écran — « parfois à moitié visibles ».
+  cadre: { x0: 45, x1: l - 45, assise: d.bas, part: 0.5 },
   ...d,
 });
 
@@ -108,7 +110,15 @@ export const DECORS: Decor[] = [
     hauteur: 215,
     coussin: 755,
     plateau: { x: 545, y: 930, l: 150 },
-    tasses: [[392, 893]],
+    /* ═══ PLUS RIEN DE COLLÉ SUR CETTE TABLE ═══════════════════════════════
+       « Le café et les items posés sur les tables sont très mal positionnés
+       et font faux. » Une lampe, une tasse et un bol avaient été découpés dans
+       une autre image et collés sur le calque de devant
+       (`docs/ensemble/outils/poser-objets.py`) : détourage blanc, lumière qui
+       ne venait pas de la pièce, lampe coupée par le cadrage. Le calque est
+       refait à partir de la photo elle-même — la bougie, le vase et les
+       livres qui y sont vraiment. Pas de tasse, donc pas de vapeur. */
+    tasses: [],
   },
   pleine("chalet", "Le chalet", 852, 1846, 998, { places: [250, 450, 650], bas: 1005, hauteur: 270, coussin: 965, plateau: { x: 440, y: 1160, l: 190 }, tasses: [[75, 1078], [790, 1068]] }),
   pleine("terrasse", "La terrasse à guirlandes", 853, 1844, 963, { places: [255, 445, 635], bas: 965, hauteur: 250, coussin: 930, plateau: { x: 440, y: 1120, l: 190 }, tasses: [[112, 978], [760, 1012]] }),
@@ -291,9 +301,12 @@ export function Alcove({
             style={{ ...image, top: c.y(D.devantY), height: (D.h - D.devantY) * c.s }}
           />
           {/* LA VAPEUR DES TASSES POSÉES SUR LA TABLE. */}
-          {D.tasses.map(([tx, ty], i) => (
-            <Vapeur key={`t${i}`} x={c.x(tx)} y={c.y(ty)} t={D.hauteur * 0.34 * c.s} decale={i * 0.9 + 0.4} />
-          ))}
+          {D.tasses.map(([tx, ty], i) =>
+            // PAS DE VAPEUR AU-DESSUS D'UNE TASSE QUE LE CADRAGE A COUPÉE.
+            c.x(tx) < 10 || c.x(tx) > W - 10 ? null : (
+              <Vapeur key={`t${i}`} x={c.x(tx)} y={c.y(ty)} t={D.hauteur * 0.34 * c.s} decale={i * 0.9 + 0.4} />
+            ),
+          )}
           {!a.invitation && a.contenu.length > 0 && (
             <div className="al-plateau" style={{ left: c.x(D.plateau.x), top: c.y(D.plateau.y) }} aria-hidden="true">
               {a.contenu.slice(0, 2).map((u, i, t) => (
@@ -347,13 +360,20 @@ export function Alcove({
   );
 }
 
-/** TROIS VOLUTES DE VAPEUR, qui montent et s'effacent ; immobiles en mouvement réduit (cachées). */
+/**
+ * LA VAPEUR D'UNE TASSE : trois filets fins qui montent en ondulant et se
+ * défont — pas des boules blanches. « Que les cafés fassent de la vapeur
+ * au-dessus des cafés de manière plus naturelle. » Les anciennes volutes
+ * étaient trois ellipses presque opaques ; un café chaud fume en rubans
+ * transparents, à peine visibles, qui se tordent avant de disparaître.
+ * Cachée en mouvement réduit.
+ */
 function Vapeur({ x, y, t, decale = 0 }: { x: number; y: number; t: number; decale?: number }) {
   return (
-    <span className="al-vapeur" aria-hidden="true" style={{ left: x, top: y, width: t * 0.7, height: t }}>
+    <span className="al-vapeur" aria-hidden="true" style={{ left: x, top: y, width: t * 0.6, height: t * 1.15 }}>
       <i style={{ animationDelay: `${-decale}s` }} />
-      <i style={{ animationDelay: `${-decale - 1.1}s` }} />
-      <i style={{ animationDelay: `${-decale - 2.2}s` }} />
+      <i style={{ animationDelay: `${-decale - 1.5}s` }} />
+      <i style={{ animationDelay: `${-decale - 3}s` }} />
     </span>
   );
 }
@@ -382,11 +402,19 @@ function StylesAlcove() {
 @keyframes al-salue{0%{opacity:0;}10%,82%{opacity:1;}100%{opacity:0;}}
 @keyframes al-salue-cache{0%{opacity:1;}10%,82%{opacity:0;}100%{opacity:1;}}
 @keyframes al-salut{0%{rotate:0deg;translate:0 0;}18%{rotate:-6deg;translate:0 -5%;}36%{rotate:5deg;translate:0 -3%;}54%{rotate:-3deg;translate:0 -1%;}72%{rotate:2deg;translate:0 0;}100%{rotate:0deg;translate:0 0;}}
-.al-vapeur{position:absolute;z-index:5;transform:translate(-50%,-90%);pointer-events:none;}
-.al-vapeur i{position:absolute;left:50%;bottom:0;width:38%;height:62%;margin-left:-19%;border-radius:45%;opacity:0;
-  background:radial-gradient(ellipse at 50% 55%,rgba(255,252,246,.95),rgba(255,250,240,.5) 40%,rgba(255,250,240,0) 70%);filter:blur(1.2px);mix-blend-mode:screen;}
-.al.actif:not(.calme) .al-vapeur i{animation:al-vapeur 3.3s ease-out infinite;}
-@keyframes al-vapeur{0%{opacity:0;transform:translate(0,10%) scale(.6,.7);}22%{opacity:.95;}60%{opacity:.45;transform:translate(18%,-45%) scale(1,1.15);}100%{opacity:0;transform:translate(-14%,-95%) scale(1.25,1.3);}}
+.al-vapeur{position:absolute;z-index:5;transform:translate(-50%,-96%);pointer-events:none;}
+.al-vapeur i{position:absolute;left:50%;bottom:0;width:16%;height:72%;margin-left:-8%;border-radius:50%;opacity:0;transform-origin:50% 100%;
+  background:linear-gradient(to top,rgba(255,246,232,0),rgba(255,246,232,.5) 28%,rgba(255,246,232,.22) 66%,rgba(255,246,232,0));
+  filter:blur(2.2px);mix-blend-mode:screen;}
+.al-vapeur i:nth-child(2){left:38%;}
+.al-vapeur i:nth-child(3){left:62%;}
+.al.actif:not(.calme) .al-vapeur i{animation:al-volute 4.6s ease-in-out infinite;}
+@keyframes al-volute{
+  0%{opacity:0;transform:translate(0,12%) scale(.7,.35) skewX(0deg);}
+  20%{opacity:.55;}
+  45%{transform:translate(-30%,-22%) scale(1,.9) skewX(-14deg);}
+  70%{opacity:.32;transform:translate(26%,-50%) scale(1.25,1.05) skewX(12deg);}
+  100%{opacity:0;transform:translate(-18%,-82%) scale(1.6,1.15) skewX(-8deg);}}
 .al-ombre-dos{position:absolute;z-index:2;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
   background:radial-gradient(ellipse,rgba(8,4,0,.42) 0%,rgba(8,4,0,.18) 45%,rgba(8,4,0,0) 70%);}
 .al-ombre-assise{position:absolute;z-index:2;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
@@ -396,7 +424,7 @@ function StylesAlcove() {
 .al.actif .al-coussin{animation:al-respire 3.6s ease-in-out infinite;}
 @keyframes al-respire{0%,100%{opacity:.75;}50%{opacity:1;}}
 .al-plateau{position:absolute;z-index:5;width:0;height:0;pointer-events:none;transform:perspective(420px) rotateX(50deg);}
-.al-plateau img{position:absolute;left:0;top:0;max-width:none;aspect-ratio:4/3;object-fit:cover;border:3px solid #FBF4E8;border-radius:3px;
+.al-plateau img{position:absolute;left:0;top:0;max-width:none;aspect-ratio:4/3;object-fit:cover;border:3px solid #F3E6D2;border-radius:3px;filter:brightness(.86) sepia(.14);
   box-shadow:0 6px 10px rgba(20,8,0,.45);}
 .al-libre{position:absolute;z-index:6;display:grid;place-items:center;padding:0;border:0;background:none;cursor:pointer;font:inherit;color:#FFE9C7;}
 .al-libre span{padding:5px 12px;border-radius:999px;background:rgba(36,21,11,.72);border:1px solid rgba(246,190,110,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);

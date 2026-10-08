@@ -14,9 +14,12 @@
 // place le temps d'un battement.
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { ApercuHabitant } from "@/app/autour-de-moi/apercu-habitant";
+import { VilleOrdinateur } from "@/app/autour-de-moi/ville-ordinateur";
+import { VilleSelonEcran } from "@/app/autour-de-moi/ville-selon-ecran";
 import { EnCharteMaison } from "@/components/direct/style-maison";
 import { VilleReelleContexte } from "@/components/direct/ville-reelle-contexte";
 import { poserLaSource } from "@/lib/direct/source-ville";
+import { rangerLesSalonsDans } from "@/lib/direct/salons";
 import { brancherLaVille } from "@/lib/direct/conversations-sync";
 import { brancherLeFil } from "@/lib/direct/ville-sync";
 import { brancherLaMaison } from "@/lib/direct/maison-sync";
@@ -31,11 +34,20 @@ export function VilleApp({ reelle }: { reelle: VilleReelle }) {
   // POSÉE AVANT LE PREMIER DESSIN DE L'APPLICATION — elle lit ses commerces
   // dès son premier rendu —, et reposée par l'effet : en développement, React
   // démonte et remonte une fois, et le démontage la retire.
-  if (monte) poserLaSource(source);
+  // SES SALONS AUSSI : un tiroir à elle, pas celui de la démonstration — voir
+  // `rangerLesSalonsDans`.
+  if (monte) {
+    poserLaSource(source);
+    rangerLesSalonsDans(reelle.slug);
+  }
   useEffect(() => {
     poserLaSource(source);
-    return () => poserLaSource(null);
-  }, [source]);
+    rangerLesSalonsDans(reelle.slug);
+    return () => {
+      poserLaSource(null);
+      rangerLesSalonsDans(null);
+    };
+  }, [source, reelle.slug]);
   // LES CONVERSATIONS D'ENSEMBLE PARTENT AU SERVEUR, ET EN REVIENNENT — voir
   // `conversations-sync.ts`. `?invitation=<jeton>` : le lien reçu d'un ami ;
   // `?salon=p:<identifiant>` : un ancien lien, ou un salon public.
@@ -50,9 +62,18 @@ export function VilleApp({ reelle }: { reelle: VilleReelle }) {
   if (!monte) return <div style={{ position: "fixed", inset: 0, background: "#120C09" }} aria-busy="true" />;
   return (
     <VilleReelleContexte.Provider value={info}>
-      <EnCharteMaison>
-        <ApercuHabitant />
-      </EnCharteMaison>
+      {/* SUR UN ORDINATEUR, LE CARROUSEL PLEINE PAGE — le même que
+          /autour-de-moi, sur SES commerçants. « Sur clikme.fr/ville/dax, il
+          n'y a aucune version ordinateur : on voit l'application téléphone
+          posée au milieu de l'écran. » Sur un téléphone, rien ne change. */}
+      <VilleSelonEcran
+        ordinateur={<VilleOrdinateur copains={[]} />}
+        telephone={
+          <EnCharteMaison>
+            <ApercuHabitant />
+          </EnCharteMaison>
+        }
+      />
     </VilleReelleContexte.Provider>
   );
 }

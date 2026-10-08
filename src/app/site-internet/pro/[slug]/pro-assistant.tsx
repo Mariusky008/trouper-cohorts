@@ -94,7 +94,8 @@ export function ProAssistant({ slug, token }: { slug: string; token: string }) {
         <div className="a-title">🧠 Fiche de mon assistante</div>
         <div className="a-sub">
           Dites à votre accueil intelligent ce qu&apos;il doit savoir. Il répondra à vos clients avec <b>vos mots</b> —
-          et jamais rien qui ne soit écrit ici.
+          et jamais rien qui ne soit écrit ici. C&apos;est aussi « Ce que mon fantôme sait », dans votre comptoir : les
+          questions de votre métier, et celles de vos clients restées sans réponse.
         </div>
 
         <div className="fld">

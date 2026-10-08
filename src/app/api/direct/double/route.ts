@@ -18,15 +18,18 @@
 // phrases : une fraction de centime sur un petit modèle. On borne quand même
 // l'historique aux douze derniers messages et chaque message à cinq cents
 // signes : une conversation qui s'allonge ne doit pas faire grossir la facture.
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { trouverLeCommerce } from "@/lib/direct/double-commerce";
 import {
+  avecLeSavoir,
   consigneDuDouble,
   nettoyerReponse,
   repondreSansIA,
   type ReponseDouble,
 } from "@/lib/direct/double-chef";
 import { scellerVoix } from "@/lib/direct/sceau-voix";
+import { nettoyerSavoir, savoirPourLeDouble } from "@/lib/direct/savoir-fantome";
+import { noterQuestionSansReponse } from "@/lib/direct/savoir-en-base";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,16 +49,26 @@ const MODELE = () => s(process.env.OPENAI_DOUBLE_MODEL) || "gpt-5.4-mini";
 type Message = { de: "client" | "double"; texte: string };
 
 export async function POST(req: Request) {
-  let corps: { id?: unknown; messages?: unknown; prenom?: unknown };
+  let corps: { id?: unknown; messages?: unknown; prenom?: unknown; essai?: unknown; savoirLocal?: unknown };
   try {
     corps = (await req.json()) as typeof corps;
   } catch {
     return NextResponse.json({ erreur: "Requête illisible." }, { status: 400 });
   }
+  /* LE COMMERÇANT QUI ESSAIE SON FANTÔME depuis son comptoir : la base relue
+     tout de suite, et ses propres questions ne lui remontent pas. */
+  const essai = corps.essai === true;
   /* LA DÉMONSTRATION OU UN VRAI RESTAURANT — voir `double-commerce.ts`. */
-  const commerce = await trouverLeCommerce(s(corps.id));
+  const commerce = await trouverLeCommerce(s(corps.id), { frais: essai });
   if (!commerce) return NextResponse.json({ erreur: "Commerce inconnu." }, { status: 404 });
-  const fiche = commerce.fiche;
+  /* ═══ CE QU'IL A APPRIS À SON FANTÔME, DANS LA DÉMONSTRATION ═══
+     Un vrai commerçant : relu en base, comme tout le reste, et le navigateur
+     ne peut rien y ajouter. Un commerce de démonstration n'a pas de base : son
+     savoir est dans le téléphone de celui qui joue les deux rôles, et ne parle
+     qu'à lui. */
+  const fiche = commerce.siteId
+    ? commerce.fiche
+    : avecLeSavoir(commerce.fiche, savoirPourLeDouble(nettoyerSavoir(corps.savoirLocal), commerce.fiche.profil.famille, commerce.fiche.metier));
   const prenom = s(corps.prenom).slice(0, 40);
   const messages: Message[] = (Array.isArray(corps.messages) ? corps.messages : [])
     .map((m) => {
@@ -70,11 +83,21 @@ export async function POST(req: Request) {
   /* CHAQUE RÉPONSE PART AVEC SON SCEAU : c'est lui qui permet ensuite à la
      route de la voix de la dire, et à elle seule. Voir `sceau-voix.ts`. */
   /* LA CARTE « PLAT » PART AVEC CE DONT ELLE PARLE — voir `ReponseDouble.plat`. */
-  const scelle = (r: ReponseDouble): ReponseDouble => ({
-    ...r,
-    sig: scellerVoix(fiche.id, r.texte),
-    ...(r.carte === "plat" && fiche.plat ? { plat: fiche.plat } : {}),
-  });
+  /* ═══ IL NE SAVAIT PAS : LA QUESTION REMONTE AU COMMERÇANT ═══
+     Rangée après la réponse (`after`) : celui qui attend sa phrase ne paie pas
+     l'écriture en base. Voir `savoir-en-base.ts`. */
+  const siteId = commerce.siteId;
+  const remonter = (r: ReponseDouble): ReponseDouble => {
+    if (!r.transmise || !siteId || essai) return r;
+    after(() => noterQuestionSansReponse(siteId, question));
+    return { ...r, notee: true };
+  };
+  const scelle = (r: ReponseDouble): ReponseDouble =>
+    remonter({
+      ...r,
+      sig: scellerVoix(fiche.id, r.texte),
+      ...(r.carte === "plat" && fiche.plat ? { plat: fiche.plat } : {}),
+    });
   const secours = (): ReponseDouble => scelle({ ...repondreSansIA(question, fiche), par: "local" });
   const cle = s(process.env.OPENAI_API_KEY);
   if (!cle) return NextResponse.json(secours());

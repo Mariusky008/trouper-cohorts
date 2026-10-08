@@ -58,6 +58,16 @@ const config: NextConfig = {
       "./public/direct/table/restaurant/scene-magret.webp",
       "./public/direct/table/restaurant/chef-fantome.webp",
       "./public/direct/double/assis/*.webp",
+      // …ET LES DEUX « AVANT » DE L'ESSAYAGE DE SA VITRINE (voir
+      // `lib/site-internet/essai-vitrine.ts`) : sans eux, l'étape 2 de la
+      // présentation d'une boutique de vêtements restait vide en production.
+      "./public/direct/accueil/moi-mode-sans.jpg",
+      "./public/direct/essai/mode-homme-avant.jpg",
+    ],
+    // L'ESSAYAGE DE SA VITRINE SE FAIT DÉSORMAIS À SA PROPRE ROUTE.
+    "/api/site-internet/essai-vitrine": [
+      "./public/direct/accueil/moi-mode-sans.jpg",
+      "./public/direct/essai/mode-homme-avant.jpg",
     ],
   },
   typescript: {

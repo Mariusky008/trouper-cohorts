@@ -25,6 +25,8 @@ export async function POST(requete: Request) {
           await completerLHote(slug);
           await completerSansHote(slug);
         })(),
+        // L'ESSAYAGE DE SA VITRINE A SA PROPRE ROUTE (`essai-vitrine`) : il
+        // passait ici après deux rendus d'image, dans le même budget.
         completerScenes(slug),
       ]);
     } catch {

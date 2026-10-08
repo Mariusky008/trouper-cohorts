@@ -978,6 +978,16 @@ export type ArticleCatalogue = {
    */
   decrire?: string;
   decrireEn?: string;
+  /**
+   * SON MOT, À SA VOIX — « pourquoi je l'ai choisi ». Enregistré au comptoir,
+   * sur l'annonce du jour ou sur une photo de sa vitrine : une adresse https
+   * chez un vrai commerçant, un data: dans la démonstration. Voir
+   * `ChoixDuLibraire` dans `essai-du-lieu.tsx`.
+   */
+  voix?: string;
+  voixSecondes?: number;
+  /** Ce qu'il a dit, quand on le sait : la citation sous le lecteur. */
+  voixTexte?: string;
 };
 
 /**
@@ -1354,6 +1364,13 @@ export type CarteAutour = {
    * `scenes-ville.ts`.
    */
   sceneVille?: import("./scenes-ville").DecorMesure;
+  /**
+   * UNE DE SES PIÈCES, ESSAYÉE PAR LE MOTEUR, sur la personne de l'essayage de
+   * démonstration — l'avant, l'après, la pièce. Seulement chez une boutique de
+   * vêtements qui n'a encore rien mis à essayer, et montré à lui seul, sur sa
+   * page. Voir `lib/site-internet/essai-vitrine.ts`.
+   */
+  essaiVitrine?: import("@/lib/site-internet/essai-vitrine-donnees").EssaiVitrineCarte;
   /**
    * CE QUE SA FICHE GOOGLE DIT DE SA CARTE — « quand je regarde la fiche
    * Google, je vois bien les menus, les prix ». Son lien de menu, son prix par

@@ -131,19 +131,63 @@ function extraireMedias(item: Record<string, unknown>): { photos: string[]; tout
  * Ce qui la fait avancer : la boucle lancée à l'inscription (`after`), et la
  * page du commerçant, qui demande où on en est toutes les cinq secondes.
  */
-type RunFiche = RunApify & { etape: "recherche" | "metier" | "medias"; lance: string; renommer?: boolean };
+type RunFiche = RunApify & { etape: "recherche" | "partout" | "metier" | "medias"; lance: string; renommer?: boolean };
 
-const ENTREE_COMMUNE = { language: "fr", countryCode: "fr" };
-const entreeRecherche = (q: string, ville: string, n: number) => ({
-  ...ENTREE_COMMUNE,
-  searchStringsArray: [q],
-  locationQuery: `${ville}, france`,
-  maxCrawledPlacesPerSearch: n,
-  maxImages: 0,
-  maxReviews: 0,
-});
+/**
+ * ═══ PAS SEULEMENT EN FRANCE ═══════════════════════════════════════════════
+ *
+ * « J'ai été sur clikme.fr pour créer un commerçant, "Lili Ross by me", qui
+ * est situé en Suisse et qui a bien une fiche Google complète avec avis, mais
+ * ça n'a pas récupéré ses avis ni ses infos. »
+ *
+ * LA RECHERCHE ÉTAIT VERROUILLÉE SUR LA FRANCE : `« <ville>, france »` et le
+ * Google français. Une boutique de Lausanne y était introuvable, et la page se
+ * construisait sans note, sans avis, sans horaires.
+ *
+ * TROIS CAS, DANS CET ORDRE :
+ *   · la ville tapée NOMME un pays (« Lausanne, Suisse », « Liège (BE) ») :
+ *     on cherche directement là-bas ;
+ *   · sinon, la France d'abord — c'est le cas de presque tous, et « Dax » seul
+ *     doit rester Dax dans les Landes ;
+ *   · rien en France à ce nom : on relance PARTOUT (`partout`), la ville seule,
+ *     sans pays. Le garde-fou reste `memeCommerce` : on ne prend une fiche que
+ *     si son nom est bien le sien, donc un homonyme lointain ne passe pas.
+ */
+const PAYS: [RegExp, string][] = [
+  [/\b(suisse|switzerland|schweiz|svizzera)\b|\(ch\)|,\s*ch\s*$/i, "ch"],
+  [/\b(belgique|belgium|belgi[eë])\b|\(be\)|,\s*be\s*$/i, "be"],
+  [/\bluxembourg\b|\(lu\)/i, "lu"],
+  [/\bmonaco\b/i, "mc"],
+  [/\b(canada|qu[ée]bec)\b/i, "ca"],
+  [/\b(espagne|españa|spain)\b/i, "es"],
+  [/\b(italie|italia|italy)\b/i, "it"],
+  [/\b(allemagne|deutschland|germany)\b/i, "de"],
+  [/\b(portugal)\b/i, "pt"],
+  [/\b(maroc|morocco)\b/i, "ma"],
+  [/\b(tunisie|tunisia)\b/i, "tn"],
+  [/\b(r[ée]union|martinique|guadeloupe|guyane|mayotte)\b/i, "fr"],
+];
+/** Le pays que la ville tapée nomme, s'il en nomme un. */
+export function paysDeLaVille(ville: string): string | null {
+  return PAYS.find(([re]) => re.test(ville))?.[1] ?? null;
+}
+
+const LANGUE = { language: "fr" };
+const entreeRecherche = (q: string, ville: string, n: number, partout = false) => {
+  const pays = paysDeLaVille(ville);
+  return {
+    ...LANGUE,
+    // UN PAYS NOMMÉ : on y va. PARTOUT : la ville seule, sans pays. SINON : la France.
+    ...(pays ? { countryCode: pays, locationQuery: ville } : partout ? { locationQuery: ville } : { countryCode: "fr", locationQuery: `${ville}, france` }),
+    searchStringsArray: [q],
+    maxCrawledPlacesPerSearch: n,
+    maxImages: 0,
+    maxReviews: 0,
+  };
+};
 const entreeMedias = (placeId: string) => ({
-  ...ENTREE_COMMUNE,
+  // SON REPÈRE GOOGLE EST LE MÊME PARTOUT DANS LE MONDE : pas de pays imposé.
+  ...LANGUE,
   placeIds: [placeId],
   maxCrawledPlacesPerSearch: 1,
   // CINQUANTE PHOTOS : la page de sa carte se cache souvent loin dans la
@@ -352,11 +396,21 @@ export async function avancerLaFiche(slug: string): Promise<EtatFiche | null> {
     return etatDeLaFiche((await lireLeSite(slug))?.diag ?? site.diag);
   }
 
-  // « recherche » ou « metier » : est-ce bien lui ?
+  // « recherche », « partout » ou « metier » : est-ce bien lui ?
   const biz = items.find((it) => memeCommerce(str(it.title), site.nom)) ?? null;
   if (!biz) {
-    if (run.etape === "recherche" && site.activite) {
-      const r = await lancerRunApify(token, entreeRecherche(site.activite, site.ville, 20));
+    // RIEN EN FRANCE À SON NOM, ET SA VILLE NE NOMME PAS DE PAYS : on cherche partout.
+    if (run.etape === "recherche" && !paysDeLaVille(site.ville)) {
+      const r = await lancerRunApify(token, entreeRecherche(`${site.nom} ${site.ville}`.trim(), site.ville, 3, true));
+      if (!("erreur" in r)) {
+        const suite: RunFiche = { runId: r.runId, datasetId: r.datasetId, etape: "partout", lance: new Date().toISOString(), renommer: run.renommer };
+        await ecrire(site, { ...site.diag, fiche_run: suite }, {}, run.runId);
+        return etatDeLaFiche({ ...site.diag, fiche_run: suite });
+      }
+    }
+    if ((run.etape === "recherche" || run.etape === "partout") && site.activite) {
+      // PAR SON MÉTIER, LÀ OÙ ON L'A CHERCHÉ EN DERNIER (la France, ou partout).
+      const r = await lancerRunApify(token, entreeRecherche(site.activite, site.ville, 20, run.etape === "partout"));
       if (!("erreur" in r)) {
         const suite: RunFiche = { runId: r.runId, datasetId: r.datasetId, etape: "metier", lance: new Date().toISOString(), renommer: run.renommer };
         await ecrire(site, { ...site.diag, fiche_run: suite }, {}, run.runId);

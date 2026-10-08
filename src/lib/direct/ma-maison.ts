@@ -27,6 +27,8 @@ export type PieceMaison = {
   familles: FamilleDouble[];
   /** Le métier qu'on invite à découvrir quand la pièce est vide. */
   invite: string;
+  /** Le métier du Direct qu'ouvre « Découvrir » depuis cette pièce vide. */
+  branche?: string;
   /** Le décor et le fantôme par défaut — ceux du premier métier. */
   decor: string;
   fantome: string;
@@ -44,14 +46,14 @@ const DECOR: Record<ClePiece, { decor: string; fantome: string }> = {
 };
 
 export const PIECES: PieceMaison[] = [
-  { cle: "cuisine", nom: "La cuisine", familles: ["table"], invite: "un restaurant", ...DECOR.cuisine },
-  { cle: "cave", nom: "La cave", familles: ["bar"], invite: "un bar", ...DECOR.cave },
-  { cle: "lecture", nom: "Le coin lecture", familles: ["librairie"], invite: "une librairie", ...DECOR.lecture },
-  { cle: "dressing", nom: "Le dressing", familles: ["mode", "lunettes"], invite: "une boutique", ...DECOR.dressing },
-  { cle: "miroir", nom: "Le miroir", familles: ["coiffure", "ongles"], invite: "un coiffeur", ...DECOR.miroir },
-  { cle: "salon", nom: "Le salon", familles: ["fleurs"], invite: "un fleuriste", ...DECOR.salon },
-  { cle: "atelier", nom: "L’atelier", familles: ["createur"], invite: "un créateur", ...DECOR.atelier },
-  { cle: "detente", nom: "Le coin détente", familles: ["seance"], invite: "un lieu bien-être", ...DECOR.detente },
+  { cle: "cuisine", nom: "La cuisine", familles: ["table"], invite: "un restaurant", branche: "restaurant", ...DECOR.cuisine },
+  { cle: "cave", nom: "La cave", familles: ["bar"], invite: "un bar", branche: "bar", ...DECOR.cave },
+  { cle: "lecture", nom: "Le coin lecture", familles: ["librairie"], invite: "une librairie", branche: "librairie", ...DECOR.lecture },
+  { cle: "dressing", nom: "Le dressing", familles: ["mode", "lunettes"], invite: "une boutique", branche: "mode", ...DECOR.dressing },
+  { cle: "miroir", nom: "Le miroir", familles: ["coiffure", "ongles"], invite: "un coiffeur", branche: "coiffeur", ...DECOR.miroir },
+  { cle: "salon", nom: "Le salon", familles: ["fleurs"], invite: "un fleuriste", branche: "fleuriste", ...DECOR.salon },
+  { cle: "atelier", nom: "L’atelier", familles: ["createur"], invite: "un créateur", branche: "artisan", ...DECOR.atelier },
+  { cle: "detente", nom: "Le coin détente", familles: ["seance"], invite: "un lieu bien-être", branche: "artisan", ...DECOR.detente },
 ];
 
 type Commerce = { id: string; branche?: string | null; metier?: string | null };

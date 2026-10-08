@@ -392,6 +392,9 @@ export function motsDe(s: Soiree | undefined): MotsNature {
   return MOTS_NATURE[s?.nature ?? "festive"];
 }
 
+/** Les pictos des trois infos de l'étape 1. */
+export type IconeAtout = "musique" | "assis" | "billet" | "verre" | "panier" | "musee" | "horloge" | "soleil";
+
 export type Soiree = {
   /** `event_id` : ce qui relie toutes les données de la même soirée. */
   id: string;
@@ -430,6 +433,25 @@ export type Soiree = {
   rapides: MotRapide[];
   /** Ce qui arrive, heure par heure. Voir `TempsFort`. */
   programme?: TempsFort[];
+  /**
+   * ═══ L'ÉTAPE 1, D'APRÈS SA MAQUETTE ═══════════════════════════════════════
+   *
+   * « La partie découverte des bars / événements / soirées de l'étape 1 est
+   * trop faible : améliorer le visuel et les infos données […] avec la
+   * musique en plus qui se lance automatiquement dès qu'on arrive à l'étape 1,
+   * et quelques infos aussi utiles que l'utilisateur pourra découvrir. »
+   *
+   * `accroche` : la phrase en grand (« Du jazz, un verre, et le temps de
+   * rester. ») ; `atouts` : trois choses à savoir, un mot chacune ;
+   * `invitation` : ce que dit le fantôme dans sa bulle ; `musique` : l'extrait
+   * qui part tout seul. Tous facultatifs : sans eux, l'écran retombe sur le
+   * lieu, le programme et le prix.
+   */
+  accroche?: string;
+  atouts?: { icone: IconeAtout; mot: string }[];
+  invitation?: string;
+  /** `demo` : un extrait de la démonstration, pas la musique du lieu — l'écran le dit. */
+  musique?: { src: string; titre?: string; duree?: number; demo?: boolean };
 };
 
 /**
@@ -485,6 +507,14 @@ const SOIREE_BAR_VINS: Soiree = {
   note: "Même soirée,\nmêmes envies.",
   photo: "/direct/verre-au-comptoir.jpg",
   accent: "#C77DFF",
+  accroche: "Un verre, une planche, et le vinyle du jeudi.",
+  atouts: [
+    { icone: "verre", mot: "Vins au verre" },
+    { icone: "musique", mot: "Vinyle à 22 h" },
+    { icone: "billet", mot: "Entrée libre" },
+  ],
+  invitation: "Viens pour un verre, reste pour le vinyle.",
+  musique: { src: "/direct/soiree/son-de-ce-soir.wav", titre: "Entre dans l’ambiance", duree: 10, demo: true },
   essais: [
     {
       id: "verre",
@@ -588,6 +618,14 @@ const SOIREE_TERRASSE: Soiree = {
   note: "Même terrasse,\nmêmes envies.",
   photo: "/direct/soiree/saxo-du-soir.jpg",
   accent: "#FFB24B",
+  accroche: "Le soleil qui tombe, un saxo, et le temps de rester.",
+  atouts: [
+    { icone: "musique", mot: "Saxo en live" },
+    { icone: "assis", mot: "En terrasse, à ton rythme" },
+    { icone: "billet", mot: "Entrée libre" },
+  ],
+  invitation: "Viens pour un morceau, reste pour le coucher de soleil.",
+  musique: { src: "/direct/soiree/son-de-ce-soir.wav", titre: "Entre dans l’ambiance", duree: 10, demo: true },
   essais: [
     /**
      * ═══ LE COCKTAIL DU SOIR, MONTÉ DEVANT VOUS ═══════════════════════════
@@ -712,6 +750,13 @@ const SOIREE_KIOSQUE: Soiree = {
   // deux guitares électriques dans le noir, ni un trio de jazz ni une envie.
   photo: "/direct/soiree/trio-au-kiosque.jpg",
   accent: "#E56BE0",
+  accroche: "Du jazz sous le kiosque, et toute la ville autour.",
+  atouts: [
+    { icone: "musique", mot: "Trio jazz en live" },
+    { icone: "assis", mot: "Sur l’herbe ou sur un banc" },
+    { icone: "billet", mot: "Entrée gratuite" },
+  ],
+  invitation: "Viens pour un morceau, reste pour la soirée.",
   essais: [
     {
       id: "son",
@@ -868,6 +913,13 @@ const SOIREE_MARCHE: Soiree = {
   note: "Même marché,\nmêmes envies.",
   photo: "/direct/marche-producteurs.jpg",
   accent: "#3DE2A6",
+  accroche: "Vingt producteurs, des tables, et le dîner sous les halles.",
+  atouts: [
+    { icone: "panier", mot: "20 producteurs" },
+    { icone: "assis", mot: "Tables sous les halles" },
+    { icone: "billet", mot: "Entrée libre" },
+  ],
+  invitation: "Viens faire ton marché, reste pour dîner.",
   essais: [
     {
       id: "producteur",
@@ -940,6 +992,13 @@ const SOIREE_EXPO: Soiree = {
   note: "Même soirée,\nmêmes curiosités.",
   photo: "/direct/nocturne-musee.jpg",
   accent: "#7C93FF",
+  accroche: "Le musée la nuit, et ce qu’on a sorti des réserves.",
+  atouts: [
+    { icone: "musee", mot: "Visites à 19 h et 20 h 30" },
+    { icone: "horloge", mot: "Ouvert jusqu’à 22 h" },
+    { icone: "billet", mot: "Entrée 5 €" },
+  ],
+  invitation: "Viens pour une salle, reste pour la visite.",
   essais: [
     {
       id: "piece",
@@ -1005,6 +1064,13 @@ const SOIREE_VIDE_GRENIER: Soiree = {
   phrase: "Ce qu’on y trouve, avant de traverser la ville pour le voir.",
   note: "Même chasse,\nmêmes trouvailles.",
   accent: "#FF8A5B",
+  accroche: "120 exposants, et le meilleur part le matin.",
+  atouts: [
+    { icone: "panier", mot: "120 exposants" },
+    { icone: "horloge", mot: "Dès 8 h" },
+    { icone: "billet", mot: "Entrée libre" },
+  ],
+  invitation: "Viens tôt : les vélos d’enfant partent à 10 h.",
   essais: [
     {
       id: "trouvaille",

@@ -32,6 +32,12 @@ export type ArticleVitrine = {
   /** data: dans la démonstration, https chez un vrai commerçant. */
   photo: string;
   ajouteLe: number;
+  /**
+   * SON MOT À SA VOIX SUR CETTE PHOTO — « pourquoi je l'ai choisi ». data:
+   * dans la démonstration, https chez un vrai commerçant.
+   */
+  voix?: string;
+  voixSecondes?: number;
 };
 
 /** Combien de photos au plus — « 10 ou 15 », avec de la marge. */
@@ -50,25 +56,27 @@ export type MotsVitrine = {
   usage: string;
   /** L'exemple de libellé. */
   exemple: string;
+  /** Ce que son mot à sa voix raconte, sur chaque photo. */
+  mot: string;
 };
 
 /** LES MOTS DE SA VITRINE, selon sa famille (et son métier, pour le tatoueur). */
 export function motsDeLaVitrine(famille: string, metier = ""): MotsVitrine {
   if (famille === "seance" && /tatou|tattoo/i.test(metier))
-    return { titre: "Tes flashs", un: "flash", plusieurs: "flashs", rayon: "Flashs à essayer", usage: "Tes clients les essaieront sur leur peau, depuis ta page et tes annonces.", exemple: "Hirondelle fine line" };
+    return { titre: "Tes flashs", un: "flash", plusieurs: "flashs", rayon: "Flashs à essayer", usage: "Tes clients les essaieront sur leur peau, depuis ta page et tes annonces.", exemple: "Hirondelle fine line", mot: "Raconte ce flash en quelques secondes." };
   const m: Record<string, MotsVitrine> = {
-    coiffure: { titre: "Tes coupes", un: "coupe", plusieurs: "coupes", rayon: "Coupes à essayer", usage: "Tes clients les essaieront sur leur propre photo, depuis ta page et tes annonces.", exemple: "Carré court dégradé" },
-    ongles: { titre: "Tes poses", un: "pose", plusieurs: "poses", rayon: "Poses à essayer", usage: "Tes clientes les essaieront sur leur main, depuis ta page et tes annonces.", exemple: "French rose poudré" },
-    lunettes: { titre: "Tes montures", un: "monture", plusieurs: "montures", rayon: "Montures à essayer", usage: "Tes clients les essaieront sur leur visage, depuis ta page et tes annonces.", exemple: "Écaille ronde" },
-    mode: { titre: "Tes pièces", un: "pièce", plusieurs: "pièces", rayon: "Pièces à essayer", usage: "Tes clients les essaieront sur eux, depuis ta page et tes annonces.", exemple: "Blazer rose, du 36 au 44" },
-    createur: { titre: "Tes créations", un: "création", plusieurs: "créations", rayon: "Créations", usage: "Tes clients les verront chez eux, depuis ta page et tes annonces.", exemple: "Bougie figue et cèdre" },
-    librairie: { titre: "Tes livres", un: "livre", plusieurs: "livres", rayon: "Ses coups de cœur", usage: "Ce sont eux que « Ton prochain livre » conseillera à tes lecteurs. Photographie la couverture, et écris le titre et l’auteur.", exemple: "L’Anomalie — Hervé Le Tellier" },
-    fleurs: { titre: "Tes bouquets", un: "bouquet", plusieurs: "bouquets", rayon: "Bouquets", usage: "Tes clients les verront chez eux, depuis ta page et tes annonces.", exemple: "Bouquet de pivoines" },
-    table: { titre: "Tes plats", un: "plat", plusieurs: "plats", rayon: "La carte", usage: "Ils s’afficheront sur ta page et dans tes annonces.", exemple: "Magret frites maison" },
-    bar: { titre: "Ta carte", un: "photo", plusieurs: "photos", rayon: "La carte", usage: "Elles s’afficheront sur ta page et dans tes annonces.", exemple: "Planche à partager" },
-    seance: { titre: "Tes séances", un: "séance", plusieurs: "séances", rayon: "Séances", usage: "Elles s’afficheront sur ta page et dans tes annonces.", exemple: "Séance découverte d’une heure" },
+    coiffure: { titre: "Tes coupes", un: "coupe", plusieurs: "coupes", rayon: "Coupes à essayer", usage: "Tes clients les essaieront sur leur propre photo, depuis ta page et tes annonces.", exemple: "Carré court dégradé", mot: "Dis à qui va cette coupe, en quelques secondes." },
+    ongles: { titre: "Tes poses", un: "pose", plusieurs: "poses", rayon: "Poses à essayer", usage: "Tes clientes les essaieront sur leur main, depuis ta page et tes annonces.", exemple: "French rose poudré", mot: "Dis ce qui rend cette pose jolie, en quelques secondes." },
+    lunettes: { titre: "Tes montures", un: "monture", plusieurs: "montures", rayon: "Montures à essayer", usage: "Tes clients les essaieront sur leur visage, depuis ta page et tes annonces.", exemple: "Écaille ronde", mot: "Dis à quel visage elle va, en quelques secondes." },
+    mode: { titre: "Tes pièces", un: "pièce", plusieurs: "pièces", rayon: "Pièces à essayer", usage: "Tes clients les essaieront sur eux, depuis ta page et tes annonces.", exemple: "Blazer rose, du 36 au 44", mot: "Dis comment la porter, en quelques secondes." },
+    createur: { titre: "Tes créations", un: "création", plusieurs: "créations", rayon: "Créations", usage: "Tes clients les verront chez eux, depuis ta page et tes annonces.", exemple: "Bougie figue et cèdre", mot: "Raconte comment tu l’as faite, en quelques secondes." },
+    librairie: { titre: "Tes livres", un: "livre", plusieurs: "livres", rayon: "Ses coups de cœur", usage: "Ce sont eux que « Ton prochain livre » conseillera à tes lecteurs. Photographie la couverture, et écris le titre et l’auteur.", exemple: "L’Anomalie — Hervé Le Tellier", mot: "Dis pourquoi tu l’as choisi, en quinze secondes : c’est ce que tes lecteurs entendront en l’ouvrant." },
+    fleurs: { titre: "Tes bouquets", un: "bouquet", plusieurs: "bouquets", rayon: "Bouquets", usage: "Tes clients les verront chez eux, depuis ta page et tes annonces.", exemple: "Bouquet de pivoines", mot: "Dis pour quelle occasion, en quelques secondes." },
+    table: { titre: "Tes plats", un: "plat", plusieurs: "plats", rayon: "La carte", usage: "Ils s’afficheront sur ta page et dans tes annonces.", exemple: "Magret frites maison", mot: "Raconte le petit secret de ce plat, en quelques secondes." },
+    bar: { titre: "Ta carte", un: "photo", plusieurs: "photos", rayon: "La carte", usage: "Elles s’afficheront sur ta page et dans tes annonces.", exemple: "Planche à partager", mot: "Raconte-la en quelques secondes." },
+    seance: { titre: "Tes séances", un: "séance", plusieurs: "séances", rayon: "Séances", usage: "Elles s’afficheront sur ta page et dans tes annonces.", exemple: "Séance découverte d’une heure", mot: "Dis comment elle se passe, en quelques secondes." },
   };
-  return m[famille] ?? { titre: "Tes produits", un: "produit", plusieurs: "produits", rayon: "Ses produits", usage: "Ils s’afficheront sur ta page et dans tes annonces.", exemple: "Le produit du moment" };
+  return m[famille] ?? { titre: "Tes produits", un: "produit", plusieurs: "produits", rayon: "Ses produits", usage: "Ils s’afficheront sur ta page et dans tes annonces.", exemple: "Le produit du moment", mot: "Raconte-le en quelques secondes." };
 }
 
 // ═══ MA CARTE : SES LIGNES ET SES PRIX, SAISIS PAR LUI ═══════════════════════
@@ -168,6 +176,20 @@ export function poserDansVitrine(commerce: string, a: ArticleVitrine): string | 
   return garder({ ...v, articles: { ...v.articles, [commerce]: liste } });
 }
 
+/** Poser (ou retirer, sans `voix`) son mot à sa voix sur une photo de sa vitrine. */
+export function poserVoixVitrine(commerce: string, id: string, voix?: string, secondes?: number): string | null {
+  const v = chargerVitrines();
+  const liste = (v.articles[commerce] ?? []).map((a) => {
+    if (a.id !== id) return a;
+    const { voix: _v, voixSecondes: _s, ...reste } = a;
+    void _v;
+    void _s;
+    return voix ? { ...reste, voix, ...(secondes ? { voixSecondes: secondes } : {}) } : reste;
+  });
+  const souci = garder({ ...v, articles: { ...v.articles, [commerce]: liste } });
+  return souci ? "Le téléphone n’a plus de place pour garder ce mot après la visite." : null;
+}
+
 export function retirerDeVitrine(commerce: string, id: string) {
   const v = chargerVitrines();
   garder({ ...v, articles: { ...v.articles, [commerce]: (v.articles[commerce] ?? []).filter((x) => x.id !== id) } });
@@ -201,6 +223,7 @@ export function avecSaVitrine<C extends CarteAutour | undefined>(c0: C, vitrines
         rayon: mots.rayon,
         // L'ESSAI REPRODUIT CE QU'IL A ÉCRIT SOUS SA PHOTO, pas un nom de prestation.
         ...(c.branche !== "librairie" ? { decrire: a.nom } : {}),
+        ...(a.voix ? { voix: a.voix, voixSecondes: a.voixSecondes } : {}),
       })),
       ...(c.catalogue ?? []),
     ],

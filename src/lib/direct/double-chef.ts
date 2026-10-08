@@ -25,6 +25,7 @@
 
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { nomDansPhrase, profilDuDouble, type ProfilDouble } from "@/lib/direct/double-metiers";
+import { questionsDuMetier, reponseDuSavoir, type ReponseSavoir } from "@/lib/direct/savoir-fantome";
 
 /** Ce que le double peut poser dans la conversation, en plus de sa phrase. */
 export type CarteDouble = "plat" | "reservation" | "horaires" | "carte";
@@ -49,6 +50,13 @@ export type ReponseDouble = {
    * maintenant ce que la phrase vient de dire.
    */
   plat?: FicheDouble["plat"];
+  /**
+   * IL NE SAVAIT PAS, ET IL L'A DIT. La question remonte au commerçant, dans
+   * son comptoir : « 3 clients ont demandé… ». Voir `savoir-fantome.ts`.
+   */
+  transmise?: boolean;
+  /** Le serveur l'a déjà rangée chez un vrai commerçant : l'écran n'a rien à garder. */
+  notee?: boolean;
 };
 
 export type FicheDouble = {
@@ -74,6 +82,10 @@ export type FicheDouble = {
   notes?: string;
   /** Son métier, vu par le double : les mots, la demande, les questions. Voir `double-metiers.ts`. */
   profil: ProfilDouble;
+  /** « Opticien », « Tatoueur » : les questions de son métier en dépendent. */
+  metier: string;
+  /** Ses réponses, avec ses mots — « Ce que mon fantôme sait », dans son comptoir. */
+  faq: ReponseSavoir[];
 };
 
 /**
@@ -84,7 +96,7 @@ export type FicheDouble = {
  * de lui dans son Espace Pro : le prénom de son double, sa fiche de
  * connaissances, et ce qu'il a raconté en donnant sa voix.
  */
-export type SavoirEnPlus = { prenom?: string; notes?: string; recit?: string };
+export type SavoirEnPlus = { prenom?: string; notes?: string; recit?: string; faq?: ReponseSavoir[] };
 
 /** La fiche du double, lue dans les données du commerce — et nulle part ailleurs. */
 export function ficheDuDouble(c: CarteAutour, plus: SavoirEnPlus = {}): FicheDouble {
@@ -129,7 +141,18 @@ export function ficheDuDouble(c: CarteAutour, plus: SavoirEnPlus = {}): FicheDou
     cadeau: c.reponse?.cadeau,
     notes: (plus.notes ?? "").trim() || undefined,
     profil,
+    metier: c.metier ?? "",
+    faq: plus.faq ?? [],
   };
+}
+
+/**
+ * LA FICHE, AVEC CE QU'IL A APPRIS À SON FANTÔME — pour la démonstration, dont
+ * le savoir est dans le téléphone et pas en base. Voir `savoir-fantome.ts`.
+ */
+export function avecLeSavoir(f: FicheDouble, s: { notes: string; faq: ReponseSavoir[] } | null): FicheDouble {
+  if (!s || (!s.notes && !s.faq.length)) return f;
+  return { ...f, notes: [f.notes, s.notes].filter(Boolean).join("\n") || undefined, faq: [...s.faq, ...f.faq] };
 }
 
 /** L'heure qu'il est à Paris, en heures décimales. */
@@ -280,14 +303,42 @@ export function repondreSansIA(question: string, f: FicheDouble): ReponseDouble 
      « Un rendez-vous ? » au salon, « Commander un bouquet ? » chez la fleuriste. */
   const demande = p.demande.pastille;
   const vedette = p.questionVedette;
+  /* ═══ SES MOTS D'ABORD ═══ Ce qu'il a répondu dans son comptoir passe avant
+     tout ce que le double déduirait d'ailleurs : « vous prenez la CB ? » ne
+     doit plus recevoir sa carte des plats parce que la question dit « carte ». */
+  const savoir = reponseDuSavoir(question, f.faq, p.famille, f.metier);
+  const deSonMetier = savoir?.cle ? questionsDuMetier(p.famille, f.metier).find((m) => m.cle === savoir.cle) : undefined;
+  const carteDuSavoir: CarteDouble | null = deSonMetier?.demande ? "reservation" : savoir?.cle === "acces" ? "horaires" : null;
 
   if (/allerg|gluten|lactose|arachide|vegan|vegetar|sans porc|halal|intoleran|enceinte|sante|medical|ordonnance/.test(q)) {
+    /* IL L'A ÉCRIT LUI-MÊME : on le redit, mot pour mot, et on rappelle de le
+       lui confirmer — une allergie ne se règle pas avec un fantôme. */
+    if (savoir) {
+      return {
+        texte: `${savoir.a.replace(/\s+$/, "")} Et pour une allergie ou ta santé, redis-le ${aLui(f)} en venant.`,
+        carte: "reservation",
+        suggestions: [demande, "Tes horaires ?"],
+      };
+    }
     return {
       texte: table
         ? `Pour les allergies et les régimes, demande directement ${aLui(f)} : c'est trop important pour que je devine.`
         : `C'est trop important pour que je devine : pose la question directement ${aLui(f)}.`,
       carte: "reservation",
       suggestions: [demande, "Tes horaires ?"],
+      transmise: true,
+    };
+  }
+  /* SA RÉPONSE, SAUF QUAND ON LUI DEMANDE UNE TABLE POUR CE SOIR : « faut-il
+     réserver ? » reçoit ses mots ; « on vient à quatre demain » reçoit la
+     demande. */
+  const demandePrecise =
+    /\d|ce soir|demain|ce midi|midi pour|on sera|nous sommes|personnes|pour (deux|trois|quatre|cinq|six)|(je voudrais|je veux|j.aimerais|je souhaite) (reserv|une table|un rendez|un rdv|commander|venir|passer)/.test(q);
+  if (savoir && !demandePrecise) {
+    return {
+      texte: savoir.a,
+      carte: carteDuSavoir,
+      suggestions: [demande, vedette],
     };
   }
   /* « CE SOIR, IL Y A QUOI ? » N'EST PAS UNE RÉSERVATION, même s'il dit « ce
@@ -310,6 +361,7 @@ export function repondreSansIA(question: string, f: FicheDouble): ReponseDouble 
       texte: f.horaires ? `${f.horaires}.` : `Je n'ai pas les horaires sous la main : je demande ${aLui(f)}.`,
       carte: f.horaires ? "horaires" : null,
       suggestions: [demande, "C'est où ?"],
+      ...(f.horaires ? {} : { transmise: true }),
     };
   }
   // « OÙ » SEUL NE SUFFIT PAS : « ou » et « où » s'écrivent pareil sans accent.
@@ -384,6 +436,7 @@ export function repondreSansIA(question: string, f: FicheDouble): ReponseDouble 
     }`,
     carte: plat ? "plat" : null,
     suggestions: [demande, "Tes horaires ?"],
+    transmise: true,
   };
 }
 
@@ -397,6 +450,8 @@ export function repondreSansIA(question: string, f: FicheDouble): ReponseDouble 
 export function consigneDuDouble(f: FicheDouble, prenomClient?: string): string {
   const p = f.profil;
   const liste = (l: FicheDouble["carte"][number]) => `${l.nom}${l.prix ? ` (${l.prix})` : ""}${l.detail ? ` — ${l.detail}` : ""}`;
+  /* SES RÉPONSES, sans les deux premières : elles sont déjà dans sa note. */
+  const reponses = f.faq.filter((r) => r.cle !== "specialite" && r.cle !== "exclusions");
   const lignes = [
     `Tu es le double IA ${f.prenomConnu ? `de ${f.prenom}, ${f.role},` : p.deAnonyme} ${p.famille === "table" ? "du restaurant" : `de « ${p.typeLieu} »`} « ${f.nom} » à ${f.ville}.`,
     "Tu parles comme lui ou elle, avec chaleur et bonne humeur, en TUTOYANT, en français.",
@@ -406,6 +461,7 @@ export function consigneDuDouble(f: FicheDouble, prenomClient?: string): string 
     "- Une ou deux phrases courtes, 220 caractères au maximum. C'est une conversation, pas un discours.",
     "- Tu n'utilises QUE les informations de la fiche ci-dessous. Tu n'inventes ni prix, ni produit, ni horaire, ni disponibilité.",
     `- ${p.sensible}, ou tout ce qui n'est pas dans la fiche : tu dis que tu transmets la question ${aLui(f)}.`,
+    "- Quand une de SES RÉPONSES ci-dessous répond à la question, tu la reprends fidèlement, avec ses mots, sans rien ajouter.",
     "- Tu es une IA et tu ne le caches pas si on te le demande.",
     `- Quand c'est utile, tu proposes de ${p.demande.verbe} : c'est ce qui fait venir les gens.`,
     "",
@@ -420,10 +476,12 @@ export function consigneDuDouble(f: FicheDouble, prenomClient?: string): string 
     f.signature ? `Sa phrase : « ${f.signature} »` : "",
     f.cadeau ? `Petit plus proposé aux clients ClikMe : ${f.cadeau}.` : "",
     f.notes ? `Ce qu'il a écrit lui-même sur sa maison :\n${f.notes}` : "",
+    reponses.length ? `SES RÉPONSES aux questions de ses clients, avec ses mots :\n${reponses.map((r) => `- ${r.q} → ${r.a}`).join("\n")}` : "",
     "",
     "RÉPONDS EN JSON UNIQUEMENT, de cette forme :",
-    '{"texte": "ta réponse", "carte": "plat" | "reservation" | "horaires" | "carte" | null, "suggestions": ["2 ou 3 questions courtes que l\'habitant pourrait poser ensuite, 24 caractères max chacune"]}',
+    '{"texte": "ta réponse", "carte": "plat" | "reservation" | "horaires" | "carte" | null, "suggestions": ["2 ou 3 questions courtes que l\'habitant pourrait poser ensuite, 24 caractères max chacune"], "transmise": true | false}',
     `carte = plat pour montrer ${p.vedette} ; reservation pour proposer ${p.demande.objet} ; horaires pour l'adresse et les horaires ; carte pour ${p.carteNom.toLowerCase()}.`,
+    "transmise = true SEULEMENT quand on te pose une question dont la réponse n'est pas dans la fiche et que tu dis la transmettre ; false sinon, y compris pour une demande de réservation ou de rendez-vous.",
   ];
   return lignes.filter((l) => l !== "").join("\n");
 }
@@ -431,7 +489,7 @@ export function consigneDuDouble(f: FicheDouble, prenomClient?: string): string 
 /** Ne garde d'une réponse de modèle que ce qu'on sait afficher. */
 export function nettoyerReponse(brut: unknown, f: FicheDouble): ReponseDouble | null {
   if (!brut || typeof brut !== "object") return null;
-  const r = brut as { texte?: unknown; carte?: unknown; suggestions?: unknown };
+  const r = brut as { texte?: unknown; carte?: unknown; suggestions?: unknown; transmise?: unknown };
   const texte = typeof r.texte === "string" ? r.texte.trim().slice(0, 400) : "";
   if (!texte) return null;
   const cartes: CarteDouble[] = ["plat", "reservation", "horaires", "carte"];
@@ -443,7 +501,12 @@ export function nettoyerReponse(brut: unknown, f: FicheDouble): ReponseDouble | 
     .filter((x): x is string => typeof x === "string" && !!x.trim())
     .map((x) => x.trim().slice(0, 32))
     .slice(0, 3);
-  return { texte, carte, suggestions: suggestions.length ? suggestions : [f.profil.demande.pastille, f.profil.questionVedette] };
+  return {
+    texte,
+    carte,
+    suggestions: suggestions.length ? suggestions : [f.profil.demande.pastille, f.profil.questionVedette],
+    ...(r.transmise === true ? { transmise: true } : {}),
+  };
 }
 
 /**

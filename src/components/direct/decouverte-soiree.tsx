@@ -28,7 +28,7 @@
 // l'heure se lisent sans rien dire.
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { INTENTIONS, intentionDe, intentionsDe, motsDe, ouEnEstLaSoiree, type Soiree } from "@/lib/direct/soiree";
+import { INTENTIONS, intentionDe, intentionsDe, motsDe, ouEnEstLaSoiree, type IconeAtout, type Soiree } from "@/lib/direct/soiree";
 import {
   abonnerPrenom,
   abonnerSalons,
@@ -106,9 +106,13 @@ export function DecouverteSoiree({
   // ─── LE SON ─── il part tout seul à l'ouverture ; le navigateur peut le
   // refuser, et le bouton reste alors à « écouter ».
   const essaiSon = soiree.essais.find((e) => e.forme === "son" && e.media);
-  const son = musique?.src ?? essaiSon?.media;
-  const duree = musique?.duree ?? essaiSon?.duree ?? 10;
-  const titreSon = musique?.titre ?? (essaiSon?.etiquette ? `Extrait · ${minuscule(essaiSon.etiquette.haut)}` : "L’ambiance de ce soir");
+  // LA MUSIQUE DU LIEU D'ABORD, PUIS CELLE DE LA SOIRÉE, PUIS L'EXTRAIT DE SON ESSAI.
+  const son = musique?.src ?? essaiSon?.media ?? soiree.musique?.src;
+  const duree = musique?.duree ?? essaiSon?.duree ?? soiree.musique?.duree ?? 10;
+  /** Un extrait de la démonstration, pas la musique du lieu : l'écran le dit. */
+  const sonDeDemo = !musique?.src && !essaiSon?.media && Boolean(soiree.musique?.demo);
+  const titreSon =
+    musique?.titre ?? soiree.musique?.titre ?? (essaiSon?.etiquette ? `Extrait · ${minuscule(essaiSon.etiquette.haut)}` : "Entre dans l’ambiance");
   const audio = useRef<HTMLAudioElement | null>(null);
   const [joue, setJoue] = useState(false);
   const [avance, setAvance] = useState(0);
@@ -129,14 +133,32 @@ export function DecouverteSoiree({
       }
     };
   }, [ouvrirSur]);
+  /** Il a mis en pause lui-même : on ne relance plus rien à sa place. */
+  const pauseVoulue = useRef(false);
   const basculerSon = () => {
     const a = audio.current;
     if (!a) return;
-    if (joue) a.pause();
-    else
+    if (joue) {
+      pauseVoulue.current = true;
+      a.pause();
+    } else
       a.play().catch(() => {
         /* refusé */
       });
+  };
+  /**
+   * LE SON PART AU PREMIER CONTACT, SI LE NAVIGATEUR L'A REFUSÉ À L'OUVERTURE.
+   * « La musique qui se lance automatiquement dès qu'on arrive à l'étape 1 » :
+   * c'est ce qu'on tente. Mais un iPhone refuse le son qui n'est pas demandé
+   * DANS le geste ; le premier appui sur l'écran — n'importe où — le lance
+   * donc, une fois, sauf s'il l'a mis en pause lui-même.
+   */
+  const relancerAuContact = () => {
+    const a = audio.current;
+    if (!a || joue || pauseVoulue.current || ecoute || onglet !== "ambiance") return;
+    a.play().catch(() => {
+      /* toujours refusé : le bouton reste là */
+    });
   };
 
   // ─── L'HEURE ─── lue après le premier rendu (voir `soiree-contenu.tsx`).
@@ -206,7 +228,7 @@ export function DecouverteSoiree({
   };
 
   return (
-    <div className="dso" style={{ "--dso-accent": "#E8338A" } as React.CSSProperties}>
+    <div className="dso" style={{ "--dso-accent": "#E8338A" } as React.CSSProperties} onPointerDownCapture={relancerAuContact}>
       {son && (
         <audio
           ref={audio}
@@ -228,18 +250,13 @@ export function DecouverteSoiree({
         />
       )}
 
+      {/* ═══ L'EN-TÊTE, D'APRÈS SA MAQUETTE ═══ « LE COMPTOIR · DAX », la
+          phrase en grand, puis « Ce soir dès 19 h ». */}
       <header className="dso-tete">
-        <h2>{soiree.lieu}</h2>
-        <p className="dso-meta">
-          {ville && (
-            <span>
-              <Ico n="lieu" /> {ville}
-            </span>
-          )}
-          <span>
-            <Ico n="heure" /> {soiree.heure ?? soiree.quand}
-          </span>
-          {soiree.prix && <b className="dso-prix">{/gratuit/i.test(soiree.prix) ? "Gratuit" : soiree.prix.replace(/^Entrée /i, "")}</b>}
+        <p className="dso-kicker">{(soiree.accroche ? [soiree.lieu, ville] : [ville]).filter(Boolean).join(" · ")}</p>
+        <h2>{soiree.accroche ?? soiree.lieu}</h2>
+        <p className="dso-quand">
+          <Ico n="heure" /> {quandDes(soiree)}
         </p>
       </header>
 
@@ -257,7 +274,9 @@ export function DecouverteSoiree({
         ))}
       </nav>
 
-      {/* ═══ L'AMBIANCE ═══ */}
+      {/* ═══ L'AMBIANCE ═══ — sa maquette, de haut en bas : la photo et
+          « Entre dans l'ambiance » qui joue tout seul, trois choses à savoir,
+          le mot du fantôme, qui compte venir, puis l'utile (où, quand, combien). */}
       {onglet === "ambiance" && (
         <section className="dso-corps" role="tabpanel">
           <div className="dso-photo">
@@ -266,21 +285,68 @@ export function DecouverteSoiree({
               <img src={soiree.photo} alt="" />
             )}
             {son && (
-              <button type="button" className={`dso-son${joue ? " joue" : ""}`} onClick={basculerSon} aria-label={joue ? "Mettre l’extrait en pause" : "Écouter l’extrait"}>
+              <button type="button" className={`dso-lecteur${joue ? " joue" : ""}`} onClick={basculerSon} aria-label={joue ? "Mettre la musique en pause" : "Écouter la musique"}>
                 <i aria-hidden="true">{joue ? <Ico n="pause" /> : <Ico n="lecture" />}</i>
-                <span>
-                  {titreSon} · {duree} s
+                <span className="dso-lecteur-t">
+                  <b>
+                    {titreSon} · {duree} s
+                  </b>
+                  {sonDeDemo && <em>Extrait de démonstration</em>}
                 </span>
-                <s aria-hidden="true" style={{ transform: `scaleX(${avance})` }} />
+                <span className="dso-onde" aria-hidden="true">
+                  {ONDE.map((h, k) => (
+                    <i key={k} className={k / ONDE.length < avance ? "lu" : ""} style={{ height: h }} />
+                  ))}
+                </span>
               </button>
             )}
           </div>
 
+          {/* TROIS CHOSES À SAVOIR, UN MOT CHACUNE */}
+          <ul className="dso-atouts">
+            {atoutsDe(soiree).map((x) => (
+              <li key={x.mot}>
+                <IcoAtout n={x.icone} />
+                <span>{x.mot}</span>
+              </li>
+            ))}
+          </ul>
+
+          {/* LE MOT DU FANTÔME */}
+          <div className="dso-dit">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/clikme-fantome.png" alt="" />
+            <p>{soiree.invitation ?? soiree.phrase}</p>
+          </div>
+
+          {/* QUI COMPTE VENIR */}
+          <div className="dso-viennent">
+            <b>
+              {total} {total > 1 ? "personnes comptent" : "personne compte"} venir
+            </b>
+            <div className="dso-viennent-l">
+              {[
+                ...(moi ? [{ id: "moi", src: monFantome }] : []),
+                ...autres.slice(0, moi ? 4 : 5).map((f) => ({ id: f.id, src: fantomeDe(f.nom) })),
+              ].map((g) => (
+                <Fantome key={g.id} src={g.src} />
+              ))}
+              {total > 5 && <s>+{total - 5}</s>}
+            </div>
+            <div className="dso-viennent-b">
+              {dernierMot(soiree, salon?.messages) && (
+                <p>
+                  <Ico n="bulle" /> <span>{dernierMot(soiree, salon?.messages)}</span>
+                </p>
+              )}
+              <button type="button" onClick={() => setOnglet("qui")}>
+                Voir qui vient <span aria-hidden="true">→</span>
+              </button>
+            </div>
+          </div>
+
+          {/* L'UTILE : où, le programme, combien */}
           <div className="dso-infos">
-            <p>
-              <Ico n="agenda" />
-              <b>{soiree.quand.replace(/, /, " · ")}</b>
-            </p>
             {soiree.adresse &&
               (itineraire ? (
                 <a href={itineraire} target="_blank" rel="noreferrer noopener">
@@ -300,31 +366,25 @@ export function DecouverteSoiree({
                 <b>{soiree.prix}</b>
               </p>
             )}
-            <hr />
-            <div className="dso-gens">
-              <div className="dso-gens-l">
-                {[
-                  ...(moi ? [{ id: "moi", nom: "Moi", src: monFantome }] : []),
-                  ...autres.slice(0, moi ? 2 : 3).map((f) => ({ id: f.id, nom: f.nom, src: fantomeDe(f.nom) })),
-                ].map((g) => (
-                  <span key={g.id} className="dso-g">
-                    <Fantome src={g.src} />
-                    <em>{g.nom}</em>
-                  </span>
-                ))}
-              </div>
-              <button type="button" className="dso-gens-n" onClick={() => setOnglet("qui")}>
-                <span className="dso-pile" aria-hidden="true">
-                  {autres.slice(moi ? 2 : 3, (moi ? 2 : 3) + 2).map((f) => (
-                    <Fantome key={f.id} src={fantomeDe(f.nom)} petit />
-                  ))}
-                  {total > 5 && <s>+{total - 5}</s>}
+            {(soiree.programme ?? []).filter((t) => !t.siEssaye || ecoute).length > 0 && (
+              <div className="dso-prog">
+                <span className="dso-prog-t">
+                  <Ico n="agenda" /> Au programme
                 </span>
-                <b>
-                  {total} comptent venir <span aria-hidden="true">→</span>
-                </b>
-              </button>
-            </div>
+                <ol>
+                  {(soiree.programme ?? [])
+                    .filter((t) => !t.siEssaye || ecoute)
+                    .map((t) => (
+                      <li key={`${t.heure}-${t.quoi}`} className={heure !== null && heure >= t.quand ? "passe" : ""}>
+                        <em>{t.heure}</em>
+                        <span>
+                          {t.emoji} {t.quoi}
+                        </span>
+                      </li>
+                    ))}
+                </ol>
+              </div>
+            )}
           </div>
           {demo && (
             <button type="button" className="cg-demo" onClick={() => setCoteBar(true)}>
@@ -474,6 +534,67 @@ function minuscule(t: string) {
 }
 
 /** Un fantôme en médaillon : la tête et le haut du corps, jamais étiré. */
+/** Les barres de l'onde du lecteur : un dessin fixe, pas une analyse du son. */
+const ONDE = [6, 12, 18, 10, 22, 14, 26, 16, 10, 20, 24, 12, 16, 8];
+
+/** « Ce soir dès 19 h » — l'heure de la soirée, ou celle de son premier temps fort. */
+function quandDes(s: Soiree): string {
+  const h = s.heure ?? s.programme?.[0]?.heure;
+  const jour = s.quand.split(",")[0].trim();
+  return h ? `${jour} dès ${h}` : s.quand;
+}
+
+/** Les trois choses à savoir : celles qu'il a écrites, sinon l'heure, le premier temps fort et le prix. */
+function atoutsDe(s: Soiree): { icone: IconeAtout; mot: string }[] {
+  if (s.atouts?.length) return s.atouts.slice(0, 3);
+  const h = s.heure ?? s.programme?.[0]?.heure;
+  return [
+    ...(h ? [{ icone: "horloge" as const, mot: `Dès ${h}` }] : []),
+    ...(s.programme?.[1] ? [{ icone: "musique" as const, mot: s.programme[1].quoi }] : []),
+    { icone: "billet" as const, mot: s.prix ?? "Entrée libre" },
+  ].slice(0, 3);
+}
+
+/** Le dernier mot de quelqu'un — dans le salon de la soirée, sinon dans son Live. */
+function dernierMot(s: Soiree, messages?: { qui: string; voix: string; texte: string }[]): string | null {
+  // UN HABITANT, PAS LE LIEU : « Léa : Je viens seule, qui aussi ? ». Ce que
+  // dit l'organisateur est une info ; ce qu'on veut lire ici, c'est qui vient.
+  const maison = new Set([s.lieu, ...s.live.filter((x) => x.maison).map((x) => x.qui)]);
+  const m = [...(messages ?? [])].reverse().find((x) => x.voix === "ami" && x.texte && !maison.has(x.qui));
+  if (m) return `${m.qui} : ${m.texte}`;
+  const l = [...s.live].reverse().find((x) => !x.maison && (x.sorte === "mot" || x.sorte === "question") && x.mot);
+  return l ? `${l.qui} : ${l.mot}` : null;
+}
+
+/** Les pictos des trois infos — au trait, comme ceux de la maquette. */
+function IcoAtout({ n }: { n: IconeAtout }) {
+  const d: Record<IconeAtout, React.ReactNode> = {
+    musique: <path d="M9 18.5V6.2l10-2v11.6M9 18.5a2.6 2.6 0 1 1-5.2 0 2.6 2.6 0 0 1 5.2 0Zm10-2.7a2.6 2.6 0 1 1-5.2 0 2.6 2.6 0 0 1 5.2 0Z" />,
+    assis: <path d="M5 4.5v15M5 12.5h9.5a2 2 0 0 1 2 2v5M5 8.5h7M16.5 19.5h-3M19 6v13.5M19 9.5h-3" />,
+    billet: <path d="M3.8 8.6V6.4h16.4v2.2a2.4 2.4 0 0 0 0 4.8v2.2H3.8v-2.2a2.4 2.4 0 0 0 0-4.8ZM14.6 6.6v10.8" />,
+    verre: <path d="M7 3.5h10l-.8 6.2a4.2 4.2 0 0 1-8.4 0L7 3.5ZM12 14v6.5M8.5 20.5h7M7.4 7h9.2" />,
+    panier: <path d="M4 9.5h16l-1.6 9a2 2 0 0 1-2 1.6H7.6a2 2 0 0 1-2-1.6L4 9.5ZM8.5 9.5 11 4M15.5 9.5 13 4M9.5 13v4M14.5 13v4" />,
+    musee: <path d="M3.5 9.5 12 4l8.5 5.5M5 9.5v8M9.5 9.5v8M14.5 9.5v8M19 9.5v8M3.5 20h17" />,
+    horloge: (
+      <>
+        <circle cx="12" cy="12" r="8.6" />
+        <path d="M12 7.4V12l3.2 2" />
+      </>
+    ),
+    soleil: (
+      <>
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" />
+      </>
+    ),
+  };
+  return (
+    <svg className="dso-ic dso-atout-i" viewBox="0 0 24 24" aria-hidden="true">
+      {d[n]}
+    </svg>
+  );
+}
+
 function Fantome({ src, petit }: { src: string; petit?: boolean }) {
   return (
     <span className={`dso-av${petit ? " petit" : ""}`} aria-hidden="true">
@@ -877,6 +998,7 @@ function Ico({ n }: { n: string }) {
       </>
     ),
     envoyer: <path d="M12 19V5.6M6.4 11 12 5.4l5.6 5.6" />,
+    bulle: <path d="M20 11.5a7.5 7.5 0 0 1-11 6.6L4 19.5l1.4-4.5A7.5 7.5 0 1 1 20 11.5Z" />,
   };
   return (
     <svg className="dso-ic" viewBox="0 0 24 24" aria-hidden="true">
@@ -892,12 +1014,11 @@ function Styles() {
         __html: `
 .dso{--dso-fond:#231a15;position:static;color:#FFF4EA;font-family:var(--font-clikme),system-ui,sans-serif;padding-bottom:4px;}
 .dso-ic{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
-.dso-tete{padding:4px 40px 18px 2px;}
-.dso-tete h2{margin:0;font-size:clamp(26px,7.4vw,32px);line-height:1.05;font-weight:850;letter-spacing:-.02em;color:#FFF6EE;}
-.dso-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:8px 0 0;font-size:14.5px;font-weight:600;color:#F2E0D2;}
-.dso-meta span{display:inline-flex;align-items:center;gap:5px;}
-.dso-meta .dso-ic{width:18px;height:18px;color:#F6B54B;}
-.dso-prix{padding:3px 11px;border-radius:999px;background:var(--dso-accent);color:#fff;font-size:13px;}
+.dso-tete{padding:2px 44px 16px 2px;}
+.dso-kicker{margin:0 0 8px;font-size:12.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#CDB4A4;}
+.dso-tete h2{margin:0;font-size:clamp(28px,8.4vw,36px);line-height:1.04;font-weight:850;letter-spacing:-.025em;color:#FFF6EE;text-wrap:balance;}
+.dso-quand{display:flex;align-items:center;gap:8px;margin:10px 0 0;font-size:16px;font-weight:600;color:#F2E0D2;}
+.dso-quand .dso-ic{width:22px;height:22px;color:#F6B54B;}
 
 .dso-onglets{position:sticky;top:-2px;z-index:3;display:flex;gap:6px;margin:0 -2px 12px;padding:6px;border-radius:999px;
   background:rgba(43,26,18,.96);border:1px solid rgba(255,220,200,.12);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
@@ -909,14 +1030,49 @@ function Styles() {
 .dso-photo{position:relative;margin:0 -2px;border-radius:20px;overflow:hidden;aspect-ratio:16/10.5;background:#1a0f0a;}
 .dso-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 30%;}
 .dso-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 55%,rgba(20,10,6,.55));pointer-events:none;}
-.dso-son{position:absolute;left:12px;bottom:12px;z-index:1;display:inline-flex;align-items:center;gap:10px;max-width:calc(100% - 24px);overflow:hidden;
-  padding:8px 16px 8px 9px;border-radius:999px;cursor:pointer;color:#fff;font:inherit;font-size:14px;font-weight:700;
-  background:rgba(18,9,5,.62);border:1.5px solid rgba(255,255,255,.8);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
-.dso-son i{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#fff;color:#1a0f0a;}
-.dso-son i .dso-ic{width:16px;height:16px;}
-.dso-son span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.dso-son s{position:absolute;left:0;bottom:0;height:3px;width:100%;transform-origin:0 50%;background:var(--dso-accent);transition:transform .25s linear;}
-.dso-son.joue{border-color:var(--dso-accent);}
+.dso-lecteur{position:absolute;left:12px;right:12px;bottom:12px;z-index:1;display:flex;align-items:center;gap:12px;overflow:hidden;
+  padding:8px 14px 8px 8px;border-radius:999px;cursor:pointer;color:#fff;font:inherit;text-align:left;
+  background:rgba(18,9,5,.66);border:1px solid rgba(255,255,255,.22);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+.dso-lecteur i{flex:none;display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;}
+.dso-lecteur i .dso-ic{width:20px;height:20px;}
+.dso-lecteur.joue i{background:var(--dso-accent);}
+.dso-lecteur-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
+.dso-lecteur-t b{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dso-lecteur-t em{font-style:normal;font-weight:500;font-size:11.5px;color:#E9D3C6;}
+.dso-onde{flex:none;display:flex;align-items:center;gap:2px;height:28px;}
+.dso-onde i{display:block;width:2.5px;border-radius:2px;background:rgba(255,255,255,.45);}
+.dso-onde i.lu{background:#fff;}
+.dso-lecteur.joue .dso-onde i{animation:dsoVibre .8s ease-in-out infinite alternate;}
+.dso-lecteur.joue .dso-onde i:nth-child(3n){animation-delay:.2s;}
+.dso-lecteur.joue .dso-onde i:nth-child(3n+1){animation-delay:.4s;}
+@keyframes dsoVibre{to{transform:scaleY(.5);}}
+
+.dso-atouts{list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0;padding:14px 4px;border-radius:20px;
+  background:rgba(255,236,224,.05);border:1px solid rgba(255,220,200,.12);}
+.dso-atouts li{display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 6px;text-align:center;font-size:14px;font-weight:600;line-height:1.25;color:#FFF4EA;}
+.dso-atouts li+li{border-left:1px solid rgba(255,220,200,.14);}
+.dso-atout-i{width:30px;height:30px;color:var(--dso-accent);}
+.dso-atouts li:nth-child(2) .dso-atout-i{color:#F6B54B;}
+
+.dso-dit{display:flex;align-items:center;gap:6px;margin:2px 0;}
+.dso-dit img{flex:none;width:78px;height:auto;filter:drop-shadow(0 8px 14px rgba(0,0,0,.45));animation:dsoFlotte 3.6s ease-in-out infinite;}
+@keyframes dsoFlotte{50%{transform:translateY(-5px);}}
+.dso-dit p{position:relative;flex:1;margin:0;padding:14px 18px;border-radius:22px;background:rgba(255,236,224,.07);
+  border:1px solid rgba(255,220,200,.14);font-size:17px;font-weight:800;line-height:1.3;color:#FFF4EA;}
+.dso-dit p::before{content:"";position:absolute;left:-7px;top:50%;width:12px;height:12px;margin-top:-6px;transform:rotate(45deg);
+  background:#3a2a22;border-left:1px solid rgba(255,220,200,.14);border-bottom:1px solid rgba(255,220,200,.14);}
+
+.dso-viennent{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:20px;background:rgba(255,236,224,.05);border:1px solid rgba(255,220,200,.12);}
+.dso-viennent>b{font-size:17px;font-weight:800;}
+.dso-viennent-l{display:flex;align-items:center;gap:8px;}
+.dso-viennent-l .dso-av{width:54px;height:54px;}
+.dso-viennent-l s{display:grid;place-items:center;height:36px;min-width:36px;padding:0 8px;border-radius:999px;text-decoration:none;font-size:13px;font-weight:800;
+  background:#7a1f4a;border:1.5px solid rgba(255,220,200,.3);}
+.dso-viennent-b{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.dso-viennent-b p{display:flex;align-items:center;gap:8px;min-width:0;margin:0;font-size:14px;color:#E9D3C6;}
+.dso-viennent-b p span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dso-viennent-b p .dso-ic{width:20px;height:20px;color:#CDB4A4;}
+.dso-viennent-b button{flex:none;margin-left:auto;padding:0;border:0;background:none;cursor:pointer;font:inherit;font-size:14.5px;font-weight:800;color:#F0418F;}
 
 .dso-infos{display:flex;flex-direction:column;gap:2px;padding:10px 14px 10px;border-radius:20px;background:rgba(255,236,224,.05);border:1px solid rgba(255,220,200,.12);}
 .dso-infos p,.dso-infos a{display:flex;align-items:center;gap:12px;margin:0;padding:4px 2px;color:#FFF4EA;text-decoration:none;font-size:16.5px;}
@@ -924,19 +1080,17 @@ function Styles() {
 .dso-infos a b{flex:1;}
 .dso-infos a>.dso-ic:last-child{color:#E9D3C6;}
 .dso-infos hr{width:100%;margin:6px 0 8px;border:0;border-top:1px solid rgba(255,220,200,.12);}
-.dso-gens{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;}
-.dso-gens-l{display:flex;gap:6px;min-width:0;}
-.dso-g{display:flex;flex-direction:column;align-items:center;gap:4px;width:58px;}
-.dso-g em{max-width:100%;font-style:normal;font-size:12px;font-weight:600;color:#F2E0D2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dso-prog{padding:6px 2px 2px;}
+.dso-prog-t{display:flex;align-items:center;gap:12px;font-size:16.5px;font-weight:700;color:#FFF4EA;}
+.dso-prog-t .dso-ic{width:24px;height:24px;color:var(--dso-accent);}
+.dso-prog ol{list-style:none;display:grid;gap:6px;margin:10px 0 2px;padding:0 0 0 36px;}
+.dso-prog li{display:flex;gap:10px;font-size:14.5px;color:#F2E0D2;}
+.dso-prog li em{flex:none;min-width:52px;font-style:normal;font-weight:800;color:#F6B54B;}
+.dso-prog li.passe{opacity:.5;}
 .dso-av{position:relative;display:block;flex:none;width:52px;height:52px;overflow:hidden;border-radius:50%;
   background:radial-gradient(circle at 50% 30%,#6b3d2c,#2e1a12 75%);border:1.5px solid rgba(255,220,200,.25);}
 .dso-av img{position:absolute;left:50%;top:6%;width:132%;height:auto;max-width:none;transform:translateX(-50%);}
 .dso-av.petit{width:30px;height:30px;}
-.dso-gens-n{display:flex;flex-direction:column;align-items:flex-end;gap:4px;padding:0;border:0;background:none;color:#FFF4EA;font:inherit;cursor:pointer;}
-.dso-pile{display:flex;align-items:center;}
-.dso-pile .dso-av+.dso-av,.dso-pile s{margin-left:-8px;}
-.dso-pile s{display:grid;place-items:center;height:30px;min-width:30px;padding:0 6px;border-radius:999px;text-decoration:none;font-size:12px;font-weight:800;background:#7a1f4a;border:1.5px solid rgba(255,220,200,.3);}
-.dso-gens-n b{font-size:13.5px;font-weight:700;text-align:right;line-height:1.25;}
 
 .dso-h{margin:2px 0 0;font-size:24px;font-weight:850;color:#FFF6EE;}
 .dso-tendance{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 2px;}
@@ -1032,7 +1186,7 @@ function Styles() {
   .dso-envies button{min-height:40px;}
   .dso-f-p h3{font-size:22px;}
 }
-@media (prefers-reduced-motion: reduce){.dso-f-p{animation:none;}.dso-son s{transition:none;}}
+@media (prefers-reduced-motion: reduce){.dso-f-p{animation:none;}.dso-lecteur.joue .dso-onde i,.dso-dit img{animation:none;}}
 `,
       }}
     />

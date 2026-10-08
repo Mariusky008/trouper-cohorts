@@ -174,6 +174,8 @@ export function envoyerALaVille(c: CommerceComptoir, mission: Mission, p: Public
       photo,
       rayon: c.famille === "librairie" ? "Coup de cœur" : mission.quoi,
       ...(p.voixTexte ? { detail: p.voixTexte } : {}),
+      // SA VOIX SUIT LE LIVRE (ou la pièce) : elle s'écoute en l'ouvrant.
+      ...(p.voix ? { voix: p.voix, voixSecondes: p.voixSecondes, voixTexte: p.voixTexte } : {}),
       // LA CIBLE DE L'ESSAI : son nom dit ce qu'est la coupe ; la photo, elle,
       // tient la forme (voir `consigne-essai.ts`).
       ...(S_ESSAIE.includes(c.famille) ? { decrire: p.nom } : {}),

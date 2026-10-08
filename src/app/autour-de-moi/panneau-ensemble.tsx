@@ -59,10 +59,19 @@ export const panneauEnsembleOuvert = () => etat.ouvert;
  * dans Le Direct ne crée pas de salon d'office — il revient dans ce panneau,
  * avec l'annonce et son commerce, pour choisir où la partager.
  */
-let ideeEnCours = false;
-export const ideeDepuisEnsemble = () => ideeEnCours;
+//
+// LE FIL SE DÉTEND TOUT SEUL. « Quand j'ai appuyé sur "En parler", j'ai eu
+// cette pop-up étrange » — la feuille « Partager » au lieu du salon. Le fil
+// restait tendu tant que ce panneau n'avait pas été refermé par sa croix :
+// parti chercher une idée, revenu par un autre onglet, on le retrouvait des
+// heures plus tard sur un « En parler » qui n'avait plus rien à voir. Il ne
+// tient donc que cinq minutes, et tombe dès qu'on quitte Le Direct (voir
+// `allerA_onglet`).
+let ideeLe = 0;
+const DUREE_IDEE = 5 * 60_000;
+export const ideeDepuisEnsemble = () => ideeLe > 0 && Date.now() - ideeLe < DUREE_IDEE;
 export function finirIdee() {
-  ideeEnCours = false;
+  ideeLe = 0;
 }
 
 const reduit = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -114,7 +123,7 @@ export function PanneauEnsemble({
       <div className="pe-panneau" key={e.n}>
         <i className="pe-poignee" aria-hidden="true" />
         {e.etape !== "menu" && (
-          <button type="button" className="pe-retour" aria-label="Retour" onClick={() => (e.etape === "partage" && !ideeEnCours ? aller("essais") : aller("menu", null))}>
+          <button type="button" className="pe-retour" aria-label="Retour" onClick={() => (e.etape === "partage" && !ideeDepuisEnsemble() ? aller("essais") : aller("menu", null))}>
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="m14.5 6-6 6 6 6" />
             </svg>
@@ -130,7 +139,7 @@ export function PanneauEnsemble({
             <Menu
               onEssais={() => aller("essais")}
               onDirect={() => {
-                ideeEnCours = true;
+                ideeLe = Date.now();
                 fermerPanneauEnsemble();
                 onDirect();
               }}
@@ -524,9 +533,13 @@ function StylesPanneauEnsemble() {
 .pe-ou button.on,.pe-qui button.on,.pe-salons button.on{border-color:#F6B54B;background:rgba(246,181,75,.16);box-shadow:inset 0 0 0 1px rgba(246,181,75,.5);}
 .pe-ou button:disabled{opacity:.45;cursor:default;}
 .pe-qui b{font-family:var(--font-clikme),system-ui,sans-serif;font-weight:600;}
-.pe-salons{display:grid;gap:8px;margin:0 0 12px;max-height:200px;overflow-y:auto;}
-.pe-salons button{display:flex;align-items:center;justify-content:space-between;gap:10px;}
-.pe-salons b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pe-salons{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:0 0 12px;max-height:200px;overflow-y:auto;overflow-x:hidden;
+  padding-right:4px;scrollbar-width:thin;scrollbar-color:rgba(246,181,75,.45) transparent;}
+.pe-salons::-webkit-scrollbar{width:4px;height:0;}
+.pe-salons::-webkit-scrollbar-thumb{border-radius:4px;background:rgba(246,181,75,.45);}
+.pe-salons::-webkit-scrollbar-track{background:transparent;}
+.pe-salons button{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;width:100%;text-align:left;}
+.pe-salons b{min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .pe-salons em{flex:none;font-style:normal;font-size:12.5px;color:#DCC8B2;}
 .pe-principal{display:block;width:100%;min-height:50px;margin:4px 0 0;border:0;border-radius:999px;cursor:pointer;
   background:linear-gradient(180deg,#FAC863,#F2AA3E);color:#2A1608;font:inherit;font-size:17px;font-weight:600;

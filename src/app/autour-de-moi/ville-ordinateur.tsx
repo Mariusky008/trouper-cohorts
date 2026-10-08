@@ -34,17 +34,30 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { MotMarque } from "@/components/direct/mot-marque";
-import { AtelierPleinEcran, type RenduEssai } from "@/components/direct/atelier-plein-ecran";
+import { EnCharteMaison } from "@/components/direct/style-maison";
+import { ApercuHabitant, type OngletAppli } from "./apercu-habitant";
+import { AtelierPleinEcran, useMurDuLieu, type RenduEssai } from "@/components/direct/atelier-plein-ecran";
+import { ParcoursRestaurant } from "@/components/direct/parcours-restaurant";
+import { useVilleReelle } from "@/components/direct/ville-reelle-contexte";
 import {
+  evenementsDeLaVille,
   HEURE_MAX,
   HEURE_MIN,
   momentEnCours,
-  toutesLesCartes,
+  momentsRestants,
   type CarteAutour,
   type CleMetier,
+  type EvenementVille,
 } from "@/lib/direct/apercu-habitant";
+import { useCartesDeLaVille } from "@/lib/direct/cartes-de-la-ville";
+import { flashEnCours, tempsQuiReste, type Flash } from "@/lib/direct/flash";
 import { partager } from "@/lib/direct/partager";
-import { tenueDu } from "@/lib/direct/double-metiers";
+import { personnaliteDe } from "@/lib/direct/personnalites";
+import { commentPrevenir, demanderRendezVous, numeroDeFiction } from "@/lib/direct/prevenir";
+import { pageDuCommerce } from "@/lib/direct/source-ville";
+import { basculerSuivi, chargerSuivis } from "@/lib/direct/suivis";
+import { pieceDe, PIECES } from "@/lib/direct/ma-maison";
+import { profilDuDouble, tenueDu } from "@/lib/direct/double-metiers";
 import { cleSalonBoutique, ecrireDansSalon, heureCourte, monPrenom, ouvrirSalon } from "@/lib/direct/salons";
 
 export type VilleOrdinateurProps = {
@@ -64,7 +77,7 @@ const MOTS: Record<CleMetier, { question: string; bouton: string; fantome: strin
   coiffeur: { question: "Cette coupe, sur toi ?", bouton: "Essayer cette coupe", fantome: "hote-coiffeur", rdv: "RDV" },
   mode: { question: "Cette pièce, sur toi ?", bouton: "Essayer cette tenue", fantome: "hote-mode", rdv: "RDV" },
   lunetier: { question: "Ces lunettes, sur ton nez ?", bouton: "Essayer ces lunettes", fantome: "hote-opticien", rdv: "RDV" },
-  restaurant: { question: "Ça te tente, aujourd'hui ?", bouton: "Voir ce qu'on mange", fantome: "hote-serveur", rdv: "Réserver" },
+  restaurant: { question: "Ça te tente, aujourd'hui ?", bouton: "Découvrir ce plat", fantome: "hote-serveur", rdv: "Réserver" },
   bar: { question: "On y passe ce soir ?", bouton: "Voir la soirée", fantome: "hote-barman", rdv: "Réserver" },
   fleuriste: { question: "Ce bouquet, chez toi ?", bouton: "Voir les bouquets", fantome: "hote-fleuriste", rdv: "RDV" },
   artisan: { question: "Cette pièce, chez toi ?", bouton: "Découvrir l'atelier", fantome: "hote-artisan", rdv: "RDV" },
@@ -73,14 +86,18 @@ const MOTS: Record<CleMetier, { question: string; bouton: string; fantome: strin
 const motsDe = (b: string) => MOTS[b as CleMetier] ?? MOTS.artisan;
 
 // ═══ LES CATÉGORIES DU BAS ═══════════════════════════════════════════════
-type Categorie = "tout" | "table" | "mode" | "beaute" | "sorties" | "createurs" | "envies";
+type Categorie = "tout" | "table" | "mode" | "beaute" | "sorties" | "fleurs" | "createurs" | "livres" | "evenements" | "envies";
 const CATEGORIES: { cle: Exclude<Categorie, "envies">; nom: string; branches: string[] }[] = [
   { cle: "tout", nom: "Tout", branches: [] },
   { cle: "table", nom: "À table", branches: ["restaurant"] },
   { cle: "mode", nom: "Mode", branches: ["mode", "lunetier"] },
   { cle: "beaute", nom: "Coiffure & ongles", branches: ["coiffeur", "ongles"] },
   { cle: "sorties", nom: "Sorties", branches: ["bar"] },
-  { cle: "createurs", nom: "Créateurs", branches: ["fleuriste", "artisan"] },
+  { cle: "fleurs", nom: "Fleurs", branches: ["fleuriste"] },
+  { cle: "createurs", nom: "Créateurs", branches: ["artisan"] },
+  { cle: "livres", nom: "Librairies", branches: ["librairie"] },
+  // LES ÉVÉNEMENTS DE LA VILLE — la mairie, les associations.
+  { cle: "evenements", nom: "Événements", branches: [] },
 ];
 
 const sansAccent = (s: string) =>
@@ -129,36 +146,154 @@ function abonnerEnvies(f: () => void) {
   };
 }
 
-/** Une carte du carrousel : le commerce, et ce que sa carte montre maintenant. */
+/**
+ * Une carte du carrousel : un commerce et ce que sa carte montre maintenant,
+ * ou un événement de la ville (la mairie, une association).
+ */
 type Fiche = {
-  c: CarteAutour;
+  cle: string;
+  nom: string;
+  /** Le commerce — absent pour un événement. */
+  c?: CarteAutour;
+  /** L'événement — absent pour un commerce. */
+  e?: EvenementVille;
   photo: string;
   offre?: string;
   detail?: string;
   prix?: string;
+  /** Le Flash en cours (« Il en reste ! »), avec son compte à rebours. */
+  flash?: { etiquette: string; f: Flash };
   copain: boolean;
 };
 
-export function VilleOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) {
+/**
+ * ═══ LES QUATRE ONGLETS, EN HAUT ═══════════════════════════════════════════
+ *
+ * « Ajouter les trois onglets. Sur grand écran, une barre en haut (Le Direct ·
+ * La Ville · Ensemble · Ma maison) ; les écrans du téléphone y sont réutilisés
+ * en plus large, plutôt que de tout redessiner. » Le Direct est le carrousel ;
+ * les trois autres sont ceux de l'application (`ApercuHabitant`, mode
+ * `surOrdinateur`), ouverts sous la barre dans une colonne plus large.
+ */
+const VUES: { cle: OngletAppli; nom: string }[] = [
+  { cle: "direct", nom: "Le Direct" },
+  { cle: "ville", nom: "La Ville" },
+  { cle: "salons", nom: "Ensemble" },
+  { cle: "profil", nom: "Ma maison" },
+];
+
+/** UN LIEN REÇU OUVRE SON ONGLET : une maison (`?maison=`), un salon ou une invitation. */
+function vueDeLAdresse(): OngletAppli {
+  if (typeof window === "undefined") return "direct";
+  const q = new URLSearchParams(window.location.search);
+  if (q.get("maison")) return "profil";
+  if (q.get("salon") || q.get("invitation")) return "salons";
+  return "direct";
+}
+
+export function VilleOrdinateur(props: VilleOrdinateurProps) {
+  const [vue, setVue] = useState<OngletAppli>(vueDeLAdresse);
+  return (
+    <>
+      <nav className="vo-vues" aria-label="Onglets">
+        {VUES.map((v) => (
+          <button key={v.cle} type="button" className={vue === v.cle ? "on" : ""} onClick={() => setVue(v.cle)} aria-pressed={vue === v.cle}>
+            <IconeVue cle={v.cle} />
+            {v.nom}
+          </button>
+        ))}
+      </nav>
+      {vue === "direct" ? (
+        <LeDirectOrdinateur {...props} />
+      ) : (
+        <div className="vo vo-autre">
+          <StylesVille />
+          <div className="vo-aurore" aria-hidden="true">
+            <i />
+            <i />
+          </div>
+          {/* PAS DE SECONDE MARQUE : l'écran de l'application porte la sienne,
+              et chaque point de hauteur va à la colonne. */}
+          <div className="vo-appli">
+            <EnCharteMaison>
+              {/* UNE CLÉ PAR ONGLET : l'application repart sur celui qu'on a choisi en haut. */}
+              <ApercuHabitant key={vue} ongletDeDepart={vue} surOrdinateur onOnglet={setVue} />
+            </EnCharteMaison>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function IconeVue({ cle }: { cle: OngletAppli }) {
+  const d: Record<OngletAppli, React.ReactNode> = {
+    direct: <path d="M13 2.5 5 13.5h6l-1 8 8-11h-6l1-8Z" />,
+    ville: <path d="M3.5 20.5h17M5 20.5v-9M9.5 20.5v-9M14.5 20.5v-9M19 20.5v-9M3 11.5h18L12 4 3 11.5Z" />,
+    salons: <path d="M20 11.5a7.5 7.5 0 0 1-11 6.6L4 19.5l1.4-4.5A7.5 7.5 0 1 1 20 11.5Z" />,
+    profil: <path d="M4 11 12 4l8 7v9a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1v-9Z" />,
+  };
+  return <svg viewBox="0 0 24 24" aria-hidden="true">{d[cle]}</svg>;
+}
+
+function LeDirectOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) {
+  /* DANS LA VRAIE VILLE (`/ville/dax`), CE SONT SES COMMERÇANTS — rien n'y est
+     marqué « Démonstration », et leur page est leur page ClikMe. */
+  const reelle = useVilleReelle();
+  const demo = !reelle;
   /* L'HEURE APRÈS LE PREMIER RENDU, comme partout : le serveur ne connaît
-     pas l'heure du visiteur. */
+     pas l'heure du visiteur. ET ELLE AVANCE : le compte à rebours d'un Flash
+     est l'annonce elle-même — figé, il mentirait au bout d'une minute. */
   const [heure, setHeure] = useState(12);
   useEffect(() => {
-    const d = new Date();
-    const h = d.getHours() + d.getMinutes() / 60;
-    setHeure(h >= HEURE_MIN && h <= HEURE_MAX ? h : 12);
+    const lire = () => {
+      const d = new Date();
+      const h = d.getHours() + d.getMinutes() / 60;
+      setHeure(h >= HEURE_MIN && h <= HEURE_MAX ? h : 12);
+    };
+    lire();
+    const t = window.setInterval(lire, 30_000);
+    return () => window.clearInterval(t);
   }, []);
 
-  const cartes = useMemo(() => toutesLesCartes().filter((c) => !c.prepare && c.id !== moi?.id), [moi?.id]);
+  // LES MÊMES COMMERCES QUE L'APPLICATION — voir `cartes-de-la-ville.ts`.
+  const lesCartes = useCartesDeLaVille(heure);
+  /**
+   * LA MÊME RÈGLE QUE LE PAQUET DU TÉLÉPHONE : on n'y voit que ceux qui ont
+   * quelque chose aujourd'hui.
+   *
+   * « En mode ordinateur seulement, j'ai plein d'annonces de commerçants
+   * fictives sur clikme.fr/ville/dax. » Ce n'étaient pas des annonces : des
+   * commerces de la ville qui n'ont rien publié (`silencieux`), que le
+   * téléphone écarte du Direct et que le carrousel montrait quand même, avec
+   * « Ça te tente, aujourd'hui ? » et rien dessous. Ils en sortent, comme sur
+   * le téléphone (voir `ouverts` dans `apercu-habitant.tsx`) — sauf les
+   * copains présentés par un commerce, qu'on vient voir exprès.
+   */
+  const cartes = useMemo(
+    () =>
+      lesCartes.filter(
+        (c) =>
+          !c.prepare &&
+          c.id !== moi?.id &&
+          (copains.includes(c.id) || (!c.silencieux && momentsRestants(c, heure).length > 0)),
+      ),
+    [lesCartes, moi?.id, copains, heure],
+  );
+  const evenements = useMemo(() => evenementsDeLaVille(), []);
   const fiches = useMemo<Fiche[]>(() => {
     const fiche = (c: CarteAutour, copain: boolean): Fiche => {
       const m = momentEnCours(c, heure) ?? c.moments.find((x) => x.titre) ?? null;
+      const enFlash = m?.flash && flashEnCours(m.flash, heure) ? m.flash : undefined;
       return {
+        cle: c.id,
+        nom: c.nom,
         c,
         photo: m?.photo || c.photoAccueil || c.photo || c.sesPhotos?.[0]?.src || "",
         offre: m?.titre,
         detail: m?.lignes?.[0],
         prix: m?.prix,
+        ...(enFlash ? { flash: { etiquette: m?.etiquette || "Flash", f: enFlash } } : {}),
         copain,
       };
     };
@@ -166,8 +301,8 @@ export function VilleOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) 
       const c = cartes.find((x) => x.id === id);
       return c ? [fiche(c, true)] : [];
     });
-    // LA VILLE ENSUITE : ceux qui ont quelque chose aujourd'hui d'abord, puis
-    // du plus près au plus loin.
+    // LA VILLE ENSUITE : un Flash d'abord, puis ceux qui ont quelque chose
+    // aujourd'hui, puis du plus près au plus loin.
     const metres = (d?: string) => {
       const n = parseFloat(String(d || "").replace(",", "."));
       return /km/.test(String(d)) ? n * 1000 : Number.isFinite(n) ? n : 9999;
@@ -175,9 +310,26 @@ export function VilleOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) 
     const ville = cartes
       .filter((c) => !copains.includes(c.id))
       .map((c) => fiche(c, false))
-      .sort((a, b) => Number(Boolean(b.offre)) - Number(Boolean(a.offre)) || metres(a.c.distance) - metres(b.c.distance));
-    return [...siens, ...ville];
-  }, [cartes, copains, heure]);
+      .sort(
+        (a, b) =>
+          Number(Boolean(b.flash)) - Number(Boolean(a.flash)) ||
+          Number(Boolean(b.offre)) - Number(Boolean(a.offre)) ||
+          metres(a.c?.distance) - metres(b.c?.distance),
+      );
+    // LES ÉVÉNEMENTS DE LA VILLE, APRÈS LES COMMERCES : la mairie, une
+    // association — ceux d'aujourd'hui d'abord (`evenementsDeLaVille`).
+    const ev: Fiche[] = evenements.map((e) => ({
+      cle: `ev-${e.id}`,
+      nom: e.qui,
+      e,
+      photo: e.photo || "",
+      offre: e.quoi,
+      detail: [e.jour, e.heure, e.lieu].filter(Boolean).join(" · "),
+      prix: e.prix,
+      copain: false,
+    }));
+    return [...siens, ...ville, ...ev];
+  }, [cartes, copains, heure, evenements]);
   const nbCopains = fiches.filter((f) => f.copain).length;
 
   const enviesBrut = useSyncExternalStore(abonnerEnvies, lireEnvies, () => "[]");
@@ -192,41 +344,74 @@ export function VilleOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) 
   // ═══ CE QU'ON REGARDE ═══
   const [categorie, setCategorie] = useState<Categorie>("tout");
   const [cherche, setCherche] = useState("");
+  /* UNE CATÉGORIE SANS PERSONNE NE S'AFFICHE PAS — comme le filtre du
+     téléphone : « Librairies » n'apparaît que s'il y a une librairie. */
+  const categories = useMemo(
+    () =>
+      CATEGORIES.filter(
+        (x) =>
+          x.cle === "tout" ||
+          (x.cle === "evenements" ? evenements.length > 0 : cartes.some((c) => x.branches.includes(c.branche))),
+      ),
+    [cartes, evenements.length],
+  );
   const liste = useMemo(() => {
     const q = sansAccent(cherche.trim());
     const cat = CATEGORIES.find((x) => x.cle === categorie);
     return fiches.filter((f) => {
-      if (categorie === "envies" && !envies.includes(f.c.id)) return false;
-      if (cat && cat.branches.length && !cat.branches.includes(f.c.branche)) return false;
-      if (q && !sansAccent(`${f.c.nom} ${f.c.metier} ${f.offre ?? ""}`).includes(q)) return false;
+      if (categorie === "envies" && !envies.includes(f.cle)) return false;
+      if (categorie === "evenements" && !f.e) return false;
+      if (cat && cat.branches.length && (!f.c || !cat.branches.includes(f.c.branche))) return false;
+      if (q && !sansAccent(`${f.nom} ${f.c?.metier ?? ""} ${f.offre ?? ""} ${f.e?.lieu ?? ""}`).includes(q)) return false;
       return true;
     });
   }, [fiches, categorie, cherche, envies]);
   const filtre = categorie !== "tout" || cherche.trim() !== "";
   const [index, setIndex] = useState(0);
   // UN NOUVEAU FILTRE REPART DU DÉBUT — et le carrousel « respire » pour le dire.
+  // Décidé pendant le rendu, pas dans un effet : sinon la carte d'avant
+  // s'afficherait une image sous le nouveau filtre.
   const [vague, setVague] = useState(0);
-  useEffect(() => {
+  const [filtreVu, setFiltreVu] = useState(`${categorie}|${cherche}`);
+  if (filtreVu !== `${categorie}|${cherche}`) {
+    setFiltreVu(`${categorie}|${cherche}`);
     setIndex(0);
     setVague((v) => v + 1);
-  }, [categorie, cherche]);
+  }
   const i = Math.min(index, Math.max(0, liste.length - 1));
   const ici = liste[i];
   const aller = useCallback((n: number) => setIndex(Math.max(0, Math.min(liste.length - 1, n))), [liste.length]);
   const suivant = useCallback(() => setIndex((x) => Math.min(liste.length - 1, x + 1)), [liste.length]);
   const precedent = useCallback(() => setIndex((x) => Math.max(0, x - 1)), []);
 
-  // ═══ L'ATELIER, ET CE QUI MÈNE CHEZ LE COMMERCE ═══
+  // ═══ L'ATELIER, LE PANNEAU, ET CE QUI MÈNE CHEZ LE COMMERCE ═══
   const [atelier, setAtelier] = useState<CarteAutour | null>(null);
   const fermer = useCallback(() => setAtelier(null), []);
-  const pageDe = (c: CarteAutour, salon = false) => `/autour-de-moi/boutique?c=${encodeURIComponent(c.id)}${salon ? "&salon=1" : ""}`;
+  /**
+   * LE PARCOURS DU PLAT, COMME SUR LE TÉLÉPHONE.
+   *
+   * « J'ai encore des restaurants avec l'ancien parcours en mode ordinateur,
+   * alors qu'en mode téléphone j'ai le bon parcours. » Le grand bouton d'un
+   * restaurant ouvrait l'atelier d'essai (`AtelierPleinEcran`) ; sur le
+   * téléphone, il ouvre `ParcoursRestaurant` — le plat, avant/servi, la voix
+   * du chef, la venue. C'est lui qui s'ouvre maintenant, au milieu de l'écran.
+   */
+  const [plat, setPlat] = useState("");
+  /** « Voir toutes les offres + infos » : le panneau de droite. */
+  const [panneau, setPanneau] = useState<CarteAutour | null>(null);
+  /* SA PAGE : la page ClikMe d'un vrai commerçant, la boutique de démonstration sinon. */
+  const pageDe = (c: CarteAutour, salon = false) => {
+    const p = pageDuCommerce(c);
+    return salon ? `${p}${p.includes("?") ? "&" : "?"}salon=1` : p;
+  };
   const [dit, setDit] = useState("");
   useEffect(() => {
     if (!dit) return;
-    const t = window.setTimeout(() => setDit(""), 2600);
+    const t = window.setTimeout(() => setDit(""), 4200);
     return () => window.clearTimeout(t);
   }, [dit]);
-  const ouvrirLeSalon = (f: Fiche) =>
+  const ouvrirLeSalon = (f: Fiche) => {
+    if (!f.c) return;
     ouvrirSalon({
       cle: cleSalonBoutique(f.c.id),
       sujet: `Chez ${f.c.nom}`,
@@ -239,20 +424,54 @@ export function VilleOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) 
       photo: f.photo,
       boutique: { id: f.c.id, nom: f.c.nom, lien: `${window.location.origin}${pageDe(f.c)}` },
     });
+  };
   const enParler = (f: Fiche) => {
+    if (!f.c) return;
     ouvrirLeSalon(f);
     window.location.assign(pageDe(f.c, true));
   };
   const partagerLe = async (f: Fiche) => {
+    const lien = f.c ? `${window.location.origin}${pageDe(f.c)}` : window.location.href;
     const r = await partager({
-      titre: f.c.nom,
-      texte: f.offre ? `${f.offre} — chez ${f.c.nom}` : `Regarde : ${f.c.nom}`,
-      lien: `${window.location.origin}${pageDe(f.c)}`,
+      titre: f.nom,
+      texte: f.offre ? `${f.offre} — ${f.c ? `chez ${f.nom}` : f.e?.lieu ?? f.nom}` : `Regarde : ${f.nom}`,
+      lien,
     });
     if (r === "copie") setDit("Lien copié : collez-le à qui vous voulez.");
     else if (r === "echec") setDit("Le partage n’a pas abouti.");
   };
+  /**
+   * ═══ « M'EN METTRE UN DE CÔTÉ » / « RÉSERVER » — PAR WHATSAPP ═══════════
+   *
+   * Le même geste que sur le téléphone : WhatsApp s'ouvre (WhatsApp Web sur
+   * un ordinateur), le message déjà écrit, sur SON numéro. Un commerce de la
+   * démonstration n'a pas de numéro : on ne lui en invente pas un, WhatsApp
+   * s'ouvre sans destinataire et l'on choisit à qui l'envoyer.
+   */
+  const reserver = (f: Fiche) => {
+    const c = f.c;
+    if (!c) return;
+    const geste = personnaliteDe({ branche: c.branche, metier: c.metier }).reserver;
+    const tel = c.telephone || "";
+    const prenom = monPrenom() || undefined;
+    const m =
+      f.offre && !/rendez-vous|table/i.test(geste)
+        ? commentPrevenir({
+            telephone: tel || numeroDeFiction(c.id),
+            quoi: `« ${f.offre} »${f.prix ? ` (${f.prix})` : ""}`,
+            prenom,
+            quand: "Pouvez-vous me le mettre de côté ? Je passe aujourd’hui",
+          })
+        : demanderRendezVous({ telephone: tel || numeroDeFiction(c.id), nom: c.nom, geste, prenom });
+    window.open(tel ? m.whatsapp : `https://wa.me/?text=${encodeURIComponent(m.texte)}`, "_blank", "noopener");
+    setDit(
+      tel
+        ? `Le message est prêt dans WhatsApp, chez ${c.nom}. Il ne reste qu’à l’envoyer.`
+        : `Le message est prêt dans WhatsApp. ${c.nom} est inventé pour la démonstration et n’a pas de numéro : choisis à qui l’envoyer.`,
+    );
+  };
   const montrerAuxAmis = (f: Fiche, o: RenduEssai) => {
+    if (!f.c) return;
     ouvrirLeSalon(f);
     const qui = monPrenom() || "Vous";
     ecrireDansSalon(cleSalonBoutique(f.c.id), {
@@ -272,6 +491,7 @@ export function VilleOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) 
     if (atelier) return;
     const touche = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.tagName === "INPUT") return;
+      if (e.key === "Escape") setPanneau(null);
       if (e.key === "ArrowRight") suivant();
       if (e.key === "ArrowLeft") precedent();
     };
@@ -291,17 +511,20 @@ export function VilleOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) 
   const appui = useRef<number | null>(null);
 
   const dansLesCopains = !filtre && i < nbCopains;
+  const nomVille = reelle?.nom || moi?.ville || "Dax";
   const titre = filtre
     ? categorie === "envies"
       ? "Mes envies"
       : cherche.trim()
         ? `« ${cherche.trim()} »`
-        : `${CATEGORIES.find((x) => x.cle === categorie)?.nom ?? ""} · ${moi?.ville && nbCopains ? moi.ville : "Dax"}`
+        : `${CATEGORIES.find((x) => x.cle === categorie)?.nom ?? ""} · ${nomVille}`
     : dansLesCopains && moi
       ? lesCopainsDe(moi.nom)
       : moi && !nbCopains
         ? "En attendant, l’exemple de Dax"
-        : "Toute la ville, en ce moment";
+        : reelle
+          ? `${reelle.nom}, en ce moment`
+          : "Toute la ville, en ce moment";
   const bulle = dansLesCopains
     ? "Je te présente mes deux copains !"
     : moi && !nbCopains
@@ -384,27 +607,38 @@ export function VilleOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) 
       >
         {liste.length === 0 ? (
           <div className="vo-rien">
-            <b>{categorie === "envies" ? "Aucune envie pour l’instant." : "Rien de ce côté-là."}</b>
+            <b>
+              {categorie === "envies"
+                ? "Aucune envie pour l’instant."
+                : fiches.length === 0
+                  ? `Rien en direct à ${nomVille} pour l’instant.`
+                  : "Rien de ce côté-là."}
+            </b>
             <p>
               {categorie === "envies"
                 ? "Touchez le cœur d’une carte : elle vous attendra ici."
-                : "Essayez une autre catégorie, ou un autre mot."}
+                : fiches.length === 0
+                  ? "Les commerçants publient ici depuis leur comptoir : le plat du jour, « Il en reste ! », la coupe à essayer. Revenez tout à l’heure."
+                  : "Essayez une autre catégorie, ou un autre mot."}
             </p>
-            <button type="button" onClick={() => (setCategorie("tout"), setCherche(""))}>
-              Revoir toute la ville
-            </button>
+            {fiches.length > 0 && (
+              <button type="button" onClick={() => (setCategorie("tout"), setCherche(""))}>
+                Revoir toute la ville
+              </button>
+            )}
           </div>
         ) : (
           <div className="vo-piste" key={vague}>
             {liste.map((f, k) => {
               const o = k - i;
               if (Math.abs(o) > 2) return null;
-              const mots = motsDe(f.c.branche);
-              const aime = envies.includes(f.c.id);
+              const mots = f.c ? motsDe(f.c.branche) : null;
+              const aime = envies.includes(f.cle);
               const centre = o === 0;
+              const note = f.c?.google;
               return (
                 <article
-                  key={f.c.id}
+                  key={f.cle}
                   className={`vo-carte${centre ? " centre" : " cote"}`}
                   style={{
                     transform: `translateX(${o * 64}%) scale(${centre ? 1 : Math.abs(o) === 1 ? 0.76 : 0.6}) rotateY(${-o * 7}deg)`,
@@ -418,41 +652,82 @@ export function VilleOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) 
                   <div className="vo-photo" style={f.photo ? { backgroundImage: `url("${f.photo}")` } : undefined} />
                   <div className="vo-voile" />
                   <header className="vo-c-haut">
-                    <span
-                      className="vo-avatar"
-                      style={{ backgroundImage: `url("${f.c.photoAccueil || f.c.photo || f.photo}")` }}
-                    />
-                    <span className="vo-nom">
-                      <b>{f.c.nom}</b>
-                      <i>
-                        {f.c.metier} · {f.c.distance}
-                      </i>
-                    </span>
-                    {centre && <em className="vo-demo">Démonstration</em>}
+                    {f.c ? (
+                      <>
+                        <span
+                          className="vo-avatar"
+                          style={{ backgroundImage: `url("${f.c.photoAccueil || f.c.photo || f.photo}")` }}
+                        />
+                        {/* LE NOM MÈNE CHEZ LUI, comme sur le téléphone. */}
+                        <a className="vo-nom" href={centre ? pageDe(f.c) : undefined} tabIndex={centre ? 0 : -1}>
+                          <b>{f.c.nom}</b>
+                          <i>
+                            {note ? (
+                              <span className="vo-note">
+                                ★ {note.note}
+                                {note.avis ? <em> ({note.avis} avis)</em> : null}
+                                {" · "}
+                              </span>
+                            ) : null}
+                            {f.c.metier}
+                            {f.c.distance ? ` · ${f.c.distance}` : ""}
+                          </i>
+                        </a>
+                      </>
+                    ) : (
+                      <span className="vo-nom">
+                        <b>{f.e?.qui}</b>
+                        <i>Événement · {f.e?.distance}</i>
+                      </span>
+                    )}
+                    {centre && demo && <em className="vo-demo">Démonstration</em>}
                   </header>
 
                   <div className="vo-c-bas">
-                    {centre && <h2>{mots.question}</h2>}
-                    {f.offre && (
+                    {/* ═══ « IL EN RESTE ! » ET SON COMPTE À REBOURS ═══ */}
+                    {f.flash && (
+                      <p className="vo-flash">
+                        <b>⚡ {f.flash.etiquette}</b> {tempsQuiReste(f.flash.f, heure)}
+                      </p>
+                    )}
+                    {centre && <h2>{f.e ? f.e.quoi : mots?.question}</h2>}
+                    {(f.e ? f.detail : f.offre) && (
                       <p className="vo-offre">
-                        {f.offre}
-                        {centre && f.detail ? <span> · {f.detail}</span> : null}
+                        {f.e ? f.detail : f.offre}
+                        {centre && !f.e && f.detail ? <span> · {f.detail}</span> : null}
                       </p>
                     )}
                     {f.prix && <p className="vo-prix">{f.prix}</p>}
-                    {centre && (
-                      <button
-                        type="button"
-                        className="vo-go"
-                        onClick={() =>
-                          // LE LIBRAIRE N'A PAS D'ATELIER D'ESSAI : son conseil vit sur sa page.
-                          f.c.branche === "librairie" ? window.location.assign(pageDe(f.c)) : setAtelier(f.c)
-                        }
-                      >
-                        <span>{mots.bouton}</span>
-                        <s aria-hidden="true">→</s>
+                    {centre && f.c && (
+                      <button type="button" className="vo-toutes" onClick={() => setPanneau(f.c ?? null)}>
+                        Voir toutes les offres + infos <s aria-hidden="true">→</s>
                       </button>
                     )}
+                    {centre &&
+                      (f.e ? (
+                        <a className="vo-go" href={f.e.itineraire} target="_blank" rel="noopener noreferrer">
+                          <span>Y aller</span>
+                          <s aria-hidden="true">→</s>
+                        </a>
+                      ) : (
+                        f.c && (
+                          <button
+                            type="button"
+                            className="vo-go"
+                            onClick={() =>
+                              // LE LIBRAIRE N'A PAS D'ATELIER D'ESSAI : son conseil vit sur sa page.
+                              f.c!.branche === "librairie"
+                                ? window.location.assign(pageDuCommerce(f.c!, "experience"))
+                                : f.c!.branche === "restaurant"
+                                  ? setPlat(f.c!.id)
+                                  : setAtelier(f.c!)
+                            }
+                          >
+                            <span>{mots?.bouton}</span>
+                            <s aria-hidden="true">→</s>
+                          </button>
+                        )
+                      ))}
                   </div>
 
                   {/* LES GESTES EN HAUT, SON FANTÔME EN BAS, DANS UNE MÊME
@@ -460,20 +735,23 @@ export function VilleOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) 
                       sur « Partager » dès que l'écran était moins haut. */}
                   {centre && (
                     <div className="vo-droite">
-                      <nav className="vo-gestes" aria-label={`Chez ${f.c.nom}`}>
-                        <a href={pageDe(f.c)} title={mots.rdv}>
-                          <span>
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                              <rect x="3.5" y="5" width="17" height="15" rx="3" />
-                              <path d="M3.5 10h17M8 3v4M16 3v4" />
-                            </svg>
-                          </span>
-                          {mots.rdv}
-                        </a>
+                      <nav className="vo-gestes" aria-label={`Chez ${f.nom}`}>
+                        {f.c && <GesteReserver c={f.c} onClick={() => reserver(f)} />}
+                        {f.c && <GesteChezEux c={f.c} onClick={() => setAtelier(f.c ?? null)} />}
                         <button
                           type="button"
                           className={aime ? "aime" : ""}
-                          onClick={() => basculerEnvie(f.c.id)}
+                          onClick={() => {
+                            basculerEnvie(f.cle);
+                            // LIKER UN COMMERCE LE FAIT EMMÉNAGER DANS MA MAISON — la
+                            // même règle que « Favori » sur le téléphone.
+                            if (!aime && f.c && !chargerSuivis().includes(f.c.id)) {
+                              basculerSuivi(f.c.id);
+                              setDit(
+                                `${f.c.nom} emménage dans ta maison : son fantôme t’attend dans ${PIECES.find((x) => x.cle === pieceDe(f.c!))?.nom.toLowerCase() ?? "sa pièce"}.`,
+                              );
+                            }
+                          }}
                           aria-pressed={aime}
                           title="J’aime"
                         >
@@ -492,30 +770,34 @@ export function VilleOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) 
                           </span>
                           Partager
                         </button>
-                        <button type="button" onClick={() => enParler(f)} title="En parler avec mes amis">
-                          <span>
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                              <path d="M20 11.5a7.5 7.5 0 0 1-11 6.6L4 19.5l1.4-4.5A7.5 7.5 0 1 1 20 11.5Z" />
-                              <path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01" />
-                            </svg>
-                          </span>
-                          En parler
-                        </button>
+                        {f.c && (
+                          <button type="button" onClick={() => enParler(f)} title="En parler avec mes amis">
+                            <span>
+                              <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M20 11.5a7.5 7.5 0 0 1-11 6.6L4 19.5l1.4-4.5A7.5 7.5 0 1 1 20 11.5Z" />
+                                <path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01" />
+                              </svg>
+                            </span>
+                            En parler
+                          </button>
+                        )}
                       </nav>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        className="vo-son-fantome"
-                        src={
-                          // SA POSE EN PIED : le même personnage que sur sa page.
-                          tenueDu(f.c)?.enPied ? `${tenueDu(f.c)!.enPied}repos.webp` : `/direct/fantomes/${mots.fantome}.png`
-                        }
-                        alt=""
-                        onError={(e) => {
-                          // UN FANTÔME PAS ENCORE DESSINÉ (le libraire) : celui de ClikMe.
-                          const i = e.currentTarget;
-                          if (!i.src.endsWith("/clikme-fantome.png")) i.src = "/clikme-fantome.png";
-                        }}
-                      />
+                      {f.c && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          className="vo-son-fantome"
+                          src={
+                            // SA POSE EN PIED : le même personnage que sur sa page.
+                            tenueDu(f.c)?.enPied ? `${tenueDu(f.c)!.enPied}repos.webp` : `/direct/fantomes/${mots?.fantome}.png`
+                          }
+                          alt=""
+                          onError={(e) => {
+                            // UN FANTÔME PAS ENCORE DESSINÉ : celui de ClikMe.
+                            const im = e.currentTarget;
+                            if (!im.src.endsWith("/clikme-fantome.png")) im.src = "/clikme-fantome.png";
+                          }}
+                        />
+                      )}
                     </div>
                   )}
                 </article>
@@ -550,7 +832,7 @@ export function VilleOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) 
       <div className="vo-ou">
         <div className="vo-points" aria-hidden="true">
           {(dansLesCopains ? fiches.slice(0, nbCopains) : liste.slice(Math.max(0, i - 4), Math.max(0, i - 4) + 9)).map((f) => (
-            <i key={f.c.id} className={f.c.id === ici?.c.id ? "on" : ""} />
+            <i key={f.cle} className={f.cle === ici?.cle ? "on" : ""} />
           ))}
         </div>
         <p>{compte}</p>
@@ -568,7 +850,7 @@ export function VilleOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) 
       {/* ═══ LES CATÉGORIES ET LA RECHERCHE ═══ */}
       <nav className="vo-bas" aria-label="Catégories">
         <div className="vo-cats">
-          {CATEGORIES.map((x) => (
+          {categories.map((x) => (
             <button
               key={x.cle}
               type="button"
@@ -602,18 +884,229 @@ export function VilleOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) 
         </p>
       )}
 
+      {/* ═══ TOUTES SES OFFRES ET SES INFOS, DANS UN PANNEAU À DROITE ═══ */}
+      {panneau && (
+        <PanneauCommerce
+          c={panneau}
+          heure={heure}
+          page={pageDe(panneau)}
+          onFermer={() => setPanneau(null)}
+          onReserver={() => {
+            const f = fiches.find((x) => x.cle === panneau.id);
+            if (f) reserver(f);
+          }}
+        />
+      )}
+
+      {plat && (
+        <div className="vo-parcours" role="dialog" aria-label="Découvrir ce plat">
+          <button type="button" className="vo-parcours-fond" onClick={() => setPlat("")} aria-label="Fermer" />
+          <div className="vo-parcours-col">
+            <ParcoursRestaurant commerce={plat} onFermer={() => setPlat("")} />
+          </div>
+        </div>
+      )}
+
       {atelier && (
         <AtelierPleinEcran
           c={atelier}
           onFermer={fermer}
           onReserver={() => window.location.assign(pageDe(atelier))}
           onSalon={(o) => {
-            const f = fiches.find((x) => x.c.id === atelier.id);
+            const f = fiches.find((x) => x.cle === atelier.id);
             if (f) montrerAuxAmis(f, o);
           }}
         />
       )}
     </div>
+  );
+}
+
+/** « M'en mettre un de côté », « Réserver une table » : le verbe de son métier. */
+function GesteReserver({ c, onClick }: { c: CarteAutour; onClick: () => void }) {
+  const geste = personnaliteDe({ branche: c.branche, metier: c.metier }).reserver;
+  return (
+    <button type="button" onClick={onClick} title={geste}>
+      <span>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3.5" y="5" width="17" height="15" rx="3" />
+          <path d="M3.5 10h17M8 3v4M16 3v4" />
+        </svg>
+      </span>
+      {geste}
+    </button>
+  );
+}
+
+/**
+ * « CHEZ EUX » — les essais de ses clients, et l'atelier pour essayer à son
+ * tour. Seulement là où l'on essaie quelque chose sur soi (pas au restaurant,
+ * ni chez le libraire), avec le nombre d'essais, comme sur le téléphone.
+ */
+function GesteChezEux({ c, onClick }: { c: CarteAutour; onClick: () => void }) {
+  const mur = useMurDuLieu(c);
+  if (mur.depot !== "essai" || c.branche === "restaurant" || c.branche === "bar" || c.branche === "librairie") return null;
+  const n = mur.clients.length;
+  return (
+    <button type="button" onClick={onClick} title="Leurs essais">
+      <span className="vo-avec-n">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3" y="6.2" width="12.4" height="14.4" rx="2.6" />
+          <path d="M8.2 3.4h10.2a2.6 2.6 0 0 1 2.6 2.6v10.4" />
+          <circle cx="9.2" cy="11.6" r="2.3" />
+          <path d="M5.4 18.4c.8-2 2.1-3.1 3.8-3.1s3 1.1 3.8 3.1" />
+        </svg>
+        {n > 0 && <b>{n}</b>}
+      </span>
+      {profilDuDouble(c).murCourt}
+    </button>
+  );
+}
+
+const heureEcrite = (h: number) => {
+  const hh = Math.floor(h);
+  const mm = Math.round((h - hh) * 60);
+  return `${hh} h${mm ? String(mm).padStart(2, "0") : ""}`;
+};
+
+/**
+ * ═══ « VOIR TOUTES LES OFFRES + INFOS » ═══════════════════════════════════
+ *
+ * Sur le téléphone, la feuille qui monte sous l'annonce ; ici, un panneau à
+ * droite, par-dessus le carrousel. Ses moments du jour (avec le Flash en
+ * cours), ses infos (adresse, horaires, téléphone), le début de sa carte, et
+ * les deux gestes : réserver, ou aller sur sa page.
+ */
+function PanneauCommerce({
+  c,
+  heure,
+  page,
+  onFermer,
+  onReserver,
+}: {
+  c: CarteAutour;
+  heure: number;
+  page: string;
+  onFermer: () => void;
+  onReserver: () => void;
+}) {
+  const moments = c.moments.filter((m) => m.titre && m.a > heure).sort((a, b) => a.de - b.de);
+  const carte = (c.catalogue ?? []).filter((a) => a.nom).slice(0, 8);
+  const geste = personnaliteDe({ branche: c.branche, metier: c.metier }).reserver;
+  return (
+    <>
+      <button type="button" className="vo-panneau-fond" onClick={onFermer} aria-label="Fermer" />
+      <aside className="vo-panneau" role="dialog" aria-label={`${c.nom} : offres et infos`}>
+        <header>
+          <span className="vo-avatar" style={{ backgroundImage: `url("${c.photoAccueil || c.photo || ""}")` }} />
+          <div>
+            <b>{c.nom}</b>
+            <i>
+              {c.google ? `★ ${c.google.note}${c.google.avis ? ` (${c.google.avis} avis)` : ""} · ` : ""}
+              {c.metier}
+            </i>
+          </div>
+          <button type="button" className="vo-panneau-x" onClick={onFermer} aria-label="Fermer">
+            ✕
+          </button>
+        </header>
+
+        <section>
+          <h3>Aujourd’hui</h3>
+          {moments.length ? (
+            <ul className="vo-moments">
+              {moments.map((m, k) => {
+                const enFlash = m.flash && flashEnCours(m.flash, heure);
+                return (
+                  <li key={`${m.titre}-${k}`} className={m.de <= heure ? "maintenant" : ""}>
+                    {m.photo ? <span className="vo-m-photo" style={{ backgroundImage: `url("${m.photo}")` }} /> : null}
+                    <div>
+                      <em>
+                        {m.de <= heure ? "Maintenant" : `À ${heureEcrite(m.de)}`} · jusqu’à {heureEcrite(m.a)}
+                      </em>
+                      <b>{m.titre}</b>
+                      {m.lignes?.[0] && <span>{m.lignes[0]}</span>}
+                      {enFlash && m.flash && (
+                        <span className="vo-m-flash">
+                          ⚡ {m.etiquette || "Flash"} · {tempsQuiReste(m.flash, heure)}
+                        </span>
+                      )}
+                    </div>
+                    {m.prix && <u>{m.prix}</u>}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="vo-p-vide">Plus rien de prévu aujourd’hui.</p>
+          )}
+        </section>
+
+        <section>
+          <h3>Infos</h3>
+          <dl className="vo-infos">
+            {c.fiche.ou && (
+              <>
+                <dt>Adresse</dt>
+                <dd>
+                  {c.itineraire ? (
+                    <a href={c.itineraire} target="_blank" rel="noopener noreferrer">
+                      {c.fiche.ou}
+                    </a>
+                  ) : (
+                    c.fiche.ou
+                  )}
+                </dd>
+              </>
+            )}
+            {c.fiche.horaires && (
+              <>
+                <dt>Horaires</dt>
+                <dd>{c.fiche.horaires}</dd>
+              </>
+            )}
+            {c.telephone && (
+              <>
+                <dt>Téléphone</dt>
+                <dd>
+                  <a href={`tel:${c.telephone.replace(/\s/g, "")}`}>{c.telephone}</a>
+                </dd>
+              </>
+            )}
+            {c.distance && (
+              <>
+                <dt>Distance</dt>
+                <dd>{c.distance}</dd>
+              </>
+            )}
+          </dl>
+        </section>
+
+        {carte.length > 0 && (
+          <section>
+            <h3>{c.cataloguePropose ? "Ce qu’on y trouve d’habitude" : "Sa carte"}</h3>
+            <ul className="vo-carte-l">
+              {carte.map((a) => (
+                <li key={a.id}>
+                  <span>{a.nom}</span>
+                  {a.prix && <u>{a.prix}</u>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <footer>
+          <button type="button" className="vo-go" onClick={onReserver}>
+            <span>{geste}</span>
+            <s aria-hidden="true">→</s>
+          </button>
+          <a className="vo-p-page" href={page}>
+            Voir sa page
+          </a>
+        </footer>
+      </aside>
+    </>
   );
 }
 
@@ -639,6 +1132,19 @@ function IconeCategorie({ cle }: { cle: string }) {
     sorties: <path d="M5 4h14l-7 8-7-8ZM12 12v8M8 20.5h8" />,
     createurs: (
       <path d="M12 21c-4.5-2.5-7-5.6-7-9.5C5 8 7.5 5.5 12 3c4.5 2.5 7 5 7 8.5 0 3.9-2.5 7-7 9.5ZM12 21V9" />
+    ),
+    fleurs: (
+      <>
+        <circle cx="12" cy="8" r="3" />
+        <path d="M12 5a3 3 0 0 1 3-3M12 11v10M12 16c-2-2.5-5-2.5-6-1 2 2.5 4 2 6 1Zm0-1c2-2.5 5-2.5 6-1-2 2.5-4 2-6 1Z" />
+      </>
+    ),
+    livres: <path d="M4 5.5C6.5 4 9.5 4 12 6c2.5-2 5.5-2 8-.5v13c-2.5-1.5-5.5-1.5-8 .5-2.5-2-5.5-2-8-.5v-13ZM12 6v13.5" />,
+    evenements: (
+      <>
+        <rect x="3.5" y="5" width="17" height="15" rx="3" />
+        <path d="M3.5 10h17M8 3v4M16 3v4M12 13l1 2 2 .3-1.5 1.4.4 2.1-1.9-1-1.9 1 .4-2.1L9 15.3l2-.3 1-2Z" />
+      </>
     ),
   };
   return <svg viewBox="0 0 24 24" aria-hidden="true">{d[cle]}</svg>;
@@ -670,7 +1176,7 @@ function StylesVille() {
 
         /* EN HAUT */
         .vo-haut{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;
-          padding:18px 36px 0;animation:voDescend .7s cubic-bezier(.16,1,.3,1) both;}
+          padding:84px 36px 0;animation:voDescend .7s cubic-bezier(.16,1,.3,1) both;}
         .vo-pilule{justify-self:start;display:inline-flex;align-items:center;gap:10px;max-width:100%;
           padding:12px 20px;border-radius:999px;cursor:pointer;text-decoration:none;color:#FFF4E6;
           font-size:16px;font-weight:600;background:rgba(28,20,17,.75);border:1px solid rgba(255,196,140,.28);
@@ -756,22 +1262,22 @@ function StylesVille() {
           background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.45) 50%,transparent 65%);
           transform:translateX(-120%);animation:voReflet 3.6s cubic-bezier(.16,1,.3,1) 1.2s infinite;}
         @keyframes voReflet{0%{transform:translateX(-120%);}55%,100%{transform:translateX(120%);}}
-        .vo-droite{position:absolute;right:14px;top:72px;bottom:10px;width:clamp(116px,10vw,150px);
+        .vo-droite{position:absolute;right:14px;top:84px;bottom:10px;width:clamp(116px,10vw,150px);
           display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:8px;pointer-events:none;}
         .vo-droite>*{pointer-events:auto;}
-        .vo-son-fantome{flex:none;width:100%;height:clamp(100px,16vh,160px);object-fit:contain;
+        .vo-son-fantome{flex:none;width:100%;height:clamp(84px,12vh,140px);object-fit:contain;
           object-position:bottom;pointer-events:none !important;filter:drop-shadow(0 14px 22px rgba(0,0,0,.6));
           animation:voFlotte 4.4s ease-in-out infinite,voSurgit .7s cubic-bezier(.34,1.56,.64,1) .3s both;}
         @keyframes voFlotte{0%,100%{translate:0 0;rotate:-2deg;}50%{translate:0 -10px;rotate:2deg;}}
         @keyframes voSurgit{from{opacity:0;transform:scale(.4) translateY(30px);}to{opacity:1;transform:none;}}
 
         /* LES QUATRE GESTES */
-        .vo-gestes{flex:0 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:clamp(6px,1.1vh,12px);
+        .vo-gestes{flex:0 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:clamp(4px,.8vh,10px);
           animation:voGlisse .6s cubic-bezier(.16,1,.3,1) .2s both;}
         .vo-gestes a,.vo-gestes button{display:flex;flex-direction:column;align-items:center;gap:5px;padding:0;border:0;
-          background:none;cursor:pointer;text-decoration:none;color:#FFF4E6;font-size:14px;font-weight:600;
+          background:none;cursor:pointer;text-decoration:none;color:#FFF4E6;font-size:13px;font-weight:600;text-align:center;line-height:1.15;
           text-shadow:0 1px 8px rgba(0,0,0,.7);}
-        .vo-gestes span{display:grid;place-items:center;width:clamp(44px,5.6vh,56px);aspect-ratio:1;border-radius:50%;
+        .vo-gestes span{display:grid;place-items:center;width:clamp(42px,5.2vh,52px);aspect-ratio:1;border-radius:50%;
           background:rgba(18,12,9,.72);border:1px solid rgba(255,244,230,.22);backdrop-filter:blur(8px);
           -webkit-backdrop-filter:blur(8px);transition:transform .2s cubic-bezier(.34,1.4,.64,1),background .2s ease;}
         .vo-gestes a:hover span,.vo-gestes button:hover span{transform:scale(1.08);background:rgba(255,46,154,.25);}
@@ -838,6 +1344,90 @@ function StylesVille() {
         .vo-cherche input::placeholder{color:#B9A594;}
         .vo-cherche:focus-within{border-color:rgba(255,46,154,.6);}
 
+        /* LA NOTE GOOGLE, LE NOM QUI MÈNE CHEZ LUI */
+        a.vo-nom{text-decoration:none;color:inherit;}
+        a.vo-nom[href]:hover b{text-decoration:underline;text-underline-offset:4px;}
+        .vo-note{color:#FFD58A;font-weight:700;}
+        .vo-note em{font-style:normal;font-weight:400;color:#F3E2D0;}
+        /* « IL EN RESTE ! » ET SON COMPTE À REBOURS */
+        .vo-flash{display:inline-flex;align-items:center;gap:8px;margin:0 0 10px;padding:7px 14px;border-radius:999px;
+          font-size:15px;font-weight:700;color:#1A0F08;background:#FFD58A;box-shadow:0 8px 24px -8px rgba(255,213,138,.7);
+          animation:voPouls 2s ease-in-out infinite;}
+        .vo-flash b{font-weight:800;}
+        @keyframes voPouls{50%{box-shadow:0 8px 34px -4px rgba(255,213,138,.95);}}
+        /* « VOIR TOUTES LES OFFRES + INFOS » */
+        .vo-toutes{display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:9px 16px;border-radius:999px;cursor:pointer;
+          font-size:15px;font-weight:600;background:rgba(18,12,9,.55);border:1px solid rgba(255,244,230,.3);}
+        .vo-toutes:hover{background:rgba(255,244,230,.1);}
+        .vo-toutes s{text-decoration:none;}
+        a.vo-go{text-decoration:none;}
+        .vo-avec-n{position:relative;}
+        .vo-avec-n b{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;
+          display:grid;place-items:center;font-size:11.5px;background:#FF2E9A;color:#fff;}
+        /* LE PARCOURS DU PLAT, AU MILIEU DE L ECRAN */
+        .vo-parcours{position:absolute !important;inset:0;z-index:70 !important;display:grid;place-items:center;
+          animation:voFondu .3s ease both;}
+        .vo-parcours-fond{position:absolute;inset:0;border:0;cursor:default;background:rgba(8,5,3,.72);
+          backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+        .vo-parcours-col{position:relative;width:min(470px,92vw);height:min(900px,calc(100vh - 40px));overflow:hidden;
+          border-radius:34px;border:1px solid rgba(255,196,140,.25);box-shadow:0 50px 120px -30px rgba(0,0,0,.95);
+          animation:voArrive .55s cubic-bezier(.16,1,.3,1) both;}
+        /* LE PANNEAU DE DROITE */
+        .vo-panneau-fond{position:absolute !important;inset:0;z-index:50 !important;border:0;background:rgba(8,5,3,.45);cursor:default;
+          animation:voFondu .3s ease both;}
+        @keyframes voFondu{from{opacity:0;}}
+        .vo-panneau{position:absolute !important;top:0;right:0;bottom:0;z-index:51 !important;width:min(460px,38vw);overflow-y:auto;
+          display:flex;flex-direction:column;gap:22px;padding:26px 26px 22px;scrollbar-width:none;
+          background:linear-gradient(180deg,#22160F,#140D09);border-left:1px solid rgba(255,196,140,.22);
+          box-shadow:-30px 0 80px -20px rgba(0,0,0,.8);animation:voPanneau .45s cubic-bezier(.16,1,.3,1) both;}
+        .vo-panneau::-webkit-scrollbar{display:none;}
+        @keyframes voPanneau{from{transform:translateX(100%);}}
+        .vo-panneau header{display:flex;align-items:center;gap:14px;}
+        .vo-panneau header .vo-avatar{width:58px;}
+        .vo-panneau header div{flex:1;min-width:0;display:flex;flex-direction:column;}
+        .vo-panneau header b{font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:22px;line-height:1.1;}
+        .vo-panneau header i{font-style:normal;color:#E8D5C2;font-size:14.5px;}
+        .vo-panneau-x{width:40px;height:40px;flex:none;border-radius:50%;cursor:pointer;background:none;border:1px solid rgba(255,244,230,.25);}
+        .vo-panneau h3{margin:0 0 10px;font-size:12.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#F5A23A;}
+        .vo-moments,.vo-carte-l{list-style:none;margin:0;padding:0;display:grid;gap:10px;}
+        .vo-moments li{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px;border-radius:18px;
+          background:rgba(255,244,230,.04);border:1px solid rgba(255,196,140,.14);}
+        .vo-moments li.maintenant{border-color:rgba(255,46,154,.5);background:rgba(255,46,154,.08);}
+        .vo-m-photo{width:58px;height:58px;border-radius:14px;background:#2A1F1B center/cover no-repeat;}
+        .vo-moments li div{display:flex;flex-direction:column;gap:2px;min-width:0;grid-column:2;}
+        .vo-moments li:not(:has(.vo-m-photo)) div{grid-column:1 / 3;}
+        .vo-moments em{font-style:normal;font-size:12.5px;color:#CDB8A4;}
+        .vo-moments b{font-size:16px;}
+        .vo-moments span{font-size:13.5px;color:#E8D5C2;}
+        .vo-moments .vo-m-flash{color:#FFD58A;font-weight:700;}
+        .vo-moments u,.vo-carte-l u{text-decoration:none;font-family:var(--font-clikme),sans-serif;font-weight:800;color:#F5A23A;}
+        .vo-p-vide{margin:0;color:#CDB8A4;}
+        .vo-infos{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin:0;}
+        .vo-infos dt{color:#CDB8A4;font-size:14px;}
+        .vo-infos dd{margin:0;font-size:15px;}
+        .vo-infos a{color:#FFF4E6;}
+        .vo-carte-l li{display:flex;justify-content:space-between;gap:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,196,140,.12);}
+        .vo-panneau footer{margin-top:auto;display:grid;gap:10px;}
+        .vo-p-page{text-align:center;padding:12px;border-radius:999px;color:#FFF4E6;text-decoration:none;font-weight:700;
+          border:1px solid rgba(255,244,230,.3);}
+        .vo-p-page:hover{background:rgba(255,244,230,.08);}
+
+        /* LA BARRE DES QUATRE ONGLETS, AU-DESSUS DE TOUT */
+        .vo-vues{position:fixed;top:22px;left:50%;transform:translateX(-50%);z-index:60;display:none;gap:4px;padding:6px;
+          border-radius:999px;background:rgba(28,20,17,.88);border:1px solid rgba(255,196,140,.24);
+          backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 14px 40px -14px rgba(0,0,0,.8);}
+        .vo-vues button{display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;border:0;cursor:pointer;
+          font-family:var(--font-geist-sans),system-ui,sans-serif;font-size:15px;font-weight:700;background:transparent;color:#F3E2D0;}
+        .vo-vues button:hover{background:rgba(255,244,230,.07);}
+        .vo-vues button.on{background:linear-gradient(135deg,#F7B95A,#F5A23A);color:#1A0F08;}
+        .vo-vues svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+        .vo~.vo-vues,.vo-vues{display:flex;}
+        /* UN ECRAN PLEIN PAR-DESSUS (le plat, l atelier, le panneau) : la barre s efface. */
+        body:has(.vo-parcours) .vo-vues,body:has(.bx-atelier) .vo-vues,body:has(.vo-panneau) .vo-vues{display:none;}
+        /* LA MARQUE DESCEND SOUS LA BARRE ; LES DEUX PILULES RESTENT A LEUR PLACE */
+        .vo-haut .vo-pilule{align-self:start;margin-top:-62px;}
+        .vo-appli{flex:1;min-height:0;position:relative;margin:92px 0 0;}
+
         .vo-dit{position:absolute !important;left:50%;bottom:110px;z-index:40 !important;transform:translateX(-50%);margin:0;
           padding:12px 20px;border-radius:999px;background:#FFF4E6;color:#1A0F08;font-weight:600;
           box-shadow:0 14px 30px -10px rgba(0,0,0,.6);animation:voBulle .35s ease both;}
@@ -849,7 +1439,7 @@ function StylesVille() {
 
         /* UN ÉCRAN PLUS BAS : on serre, sans rien retirer. */
         @media (max-height:820px){
-          .vo-haut{padding-top:12px;}
+          .vo-haut{padding-top:74px;}
           .vo-mot{font-size:34px;}
           .vo-marque p{font-size:18px;}
           .vo-titre h1{font-size:26px;}

@@ -78,6 +78,7 @@ import {
   etatDesSalons,
   etatDuSalon,
   demandeDuFil,
+  estPublic,
   marquerLu,
   abonnerLus,
   chargerLus,
@@ -187,12 +188,13 @@ import {
 import { Bienvenue, type OngletBienvenue } from "./bienvenue";
 import { AvatarFantome, CarteDuSalon, fantomeDe, garderVusPropos, lireVusPropos, MenuDuSalon, PanneauPropositions, StylesSalonChat } from "./salon-chat";
 import { useCadeauDuSalon } from "@/components/direct/cadeau-du-salon";
+import { StylesCadeau } from "@/components/direct/cadeau-offert";
 import { monLook } from "@/lib/direct/look";
 import { PROFILS_CADEAU, profilCadeau } from "@/lib/site-internet/cadeau-offert";
 import { montrerSalonPret } from "./ensemble-alcoves";
 import { messageDeMaison, signalerPublication } from "@/lib/direct/ville-sync";
 import { essaisPartages, lienDeMaMaison, lireUneMaison, publierLaMaison, type MaisonLue } from "@/lib/direct/maison-sync";
-import { abonnerMaison, chargerMaison, MAISON_VIDE } from "@/lib/direct/ma-maison";
+import { abonnerMaison, chargerMaison, MAISON_VIDE, pieceDe, PIECES } from "@/lib/direct/ma-maison";
 /* ═══ L'OUVERTURE EN TROIS ACTES EST MISE DE CÔTÉ, PAS EFFACÉE ═════════════
    « L'animation de départ ne fonctionne pas assez bien, garde-la de côté, on
    essaiera de faire mieux plus tard. »
@@ -1516,7 +1518,29 @@ const AUCUNE_REMISE: ReturnType<typeof remisesVides> = [];
 /** Une liste vide stable, pour `useSyncExternalStore` hors de la vraie ville. */
 const AUCUN_PUBLIC: import("@/lib/direct/conversations-sync").SalonADecouvrir[] = [];
 
-export function ApercuHabitant() {
+/** Les quatre onglets de l'application. */
+export type OngletAppli = "direct" | "ville" | "salons" | "profil";
+
+export function ApercuHabitant({
+  ongletDeDepart,
+  surOrdinateur = false,
+  onOnglet,
+}: {
+  /**
+   * ═══ SUR UN ORDINATEUR, L'APPLICATION S'OUVRE SUR UN ONGLET ═══════════
+   *
+   * « Ajouter les trois onglets : sur grand écran, une barre en haut (Le
+   * Direct · La Ville · Ensemble · Ma maison) ; les écrans du téléphone y
+   * sont réutilisés en plus large, plutôt que de tout redessiner. » Le Direct
+   * d'un ordinateur est son carrousel (`VilleOrdinateur`) ; les trois autres
+   * onglets sont CEUX-CI, ouverts directement, dans une colonne plus large et
+   * sans le cadre du téléphone (`.ap.ordi`).
+   */
+  ongletDeDepart?: OngletAppli;
+  surOrdinateur?: boolean;
+  /** Chaque changement d'onglet, dit à l'écran d'ordinateur — « Le Direct » y rend la main au carrousel. */
+  onOnglet?: (o: OngletAppli) => void;
+} = {}) {
   /**
    * ═══ UNE VRAIE VILLE, OU LA DÉMONSTRATION ═══════════════════════════════
    *
@@ -2302,7 +2326,7 @@ export function ApercuHabitant() {
    * quatrième onglet obligerait à répondre « et celui-là, il sert à quoi ? »,
    * et on n'a pas de réponse.
    */
-  const [onglet, setOnglet] = useState<"direct" | "ville" | "salons" | "profil">("direct");
+  const [onglet, setOnglet] = useState<OngletAppli>(ongletDeDepart ?? "direct");
   /**
    * LES FAVORIS SONT UNE PAGE, PAS L'ESPACE PERSO.
    *
@@ -2734,7 +2758,15 @@ export function ApercuHabitant() {
    */
   const files = useSyncExternalStore(abonnerFile, chargerFile, fileVide);
 
-  function allerA_onglet(o: "direct" | "ville" | "salons" | "profil") {
+  function allerA_onglet(o: OngletAppli) {
+    // SUR UN ORDINATEUR, LE DIRECT EST LE CARROUSEL : on lui rend la main.
+    if (surOrdinateur && o === "direct" && onOnglet) {
+      onOnglet("direct");
+      return;
+    }
+    onOnglet?.(o);
+    // PARTI CHERCHER UNE IDÉE POUR ENSEMBLE, ON EST ALLÉ AILLEURS : le fil tombe.
+    if (o !== "direct") finirIdee();
     // ON RELIT LA MÉMOIRE EN ARRIVANT, PAS UNE FOIS POUR TOUTES : un fantôme
     // s'éteint tout seul, et un fantôme posé il y a dix secondes doit apparaître
     // sans recharger la page.
@@ -5316,10 +5348,21 @@ export function ApercuHabitant() {
   function garderLeSommet() {
     if (!sommet) return;
     noter("garde", passees.length + 1, "bandeau");
+    const ajoute = !gardees.includes(sommet.id);
     setGardees((g) =>
       g.includes(sommet.id) ? g.filter((x) => x !== sommet.id) : [...g, sommet.id],
     );
     lancerLeCoeur();
+    /* ═══ « FAVORI » FAIT AUSSI EMMÉNAGER SON FANTÔME ════════════════════
+       « On ne comprend pas vraiment comment on arrive à obtenir les fantômes
+       dans les maisons. En likant, en ouvrant un salon ou autre ? »
+       IL Y AVAIT DEUX CŒURS POUR DEUX CHOSES : « Favori » rangeait l'annonce
+       dans la poche du haut, et seuls « Suivre » (sous le pli) ou deux tapes
+       sur la photo faisaient emménager le commerce dans Ma maison. Liker,
+       c'est maintenant les deux : l'annonce va dans la poche, son commerce
+       dans sa pièce — et l'écho le dit. Retirer le favori ne le fait pas
+       partir : on le congédie depuis sa pièce (« Ne plus suivre »). */
+    if (ajoute && dessus && dessus.id === sommet.id && !suivis.includes(dessus.id)) suivreCeCommerce(dessus);
   }
 
   const listeEnvies = ENVIES[branche];
@@ -5682,9 +5725,11 @@ export function ApercuHabitant() {
     // serez prévenu de ses prochaines annonces. Mais seulement APRÈS l'action. »
     // C'est toute la différence avec l'encart qu'on vient de retirer : celui-ci
     // ne demandait rien, il constate.
+    // ET IL DIT OÙ EST PASSÉ LE FANTÔME : « on ne comprend pas comment on
+    // obtient les fantômes dans les maisons ». C'est ce geste-ci qui les y met.
     setEcho(
-      `${c.nom} ajouté à vos favoris. ` +
-        `Vous serez prévenu de ses prochaines annonces.`,
+      `${c.nom} emménage dans ta maison : son fantôme t’attend dans ${PIECES.find((p) => p.cle === pieceDe(c))?.nom.toLowerCase() ?? "sa pièce"}. ` +
+        `Tu seras prévenu de ses prochaines annonces.`,
     );
     noter("notif-proposee", 0, "suivre");
     void demanderAvertissement().then((r) =>
@@ -5950,7 +5995,12 @@ export function ApercuHabitant() {
     ? undefined
     : toutesLesCartes().find((c) => salon.boutique?.id === c.id || salon.cle.startsWith(`${c.id}|`) || c.nom === salon.ou);
   const cadeauSalon = useCadeauDuSalon({
-    salon: modeChat ? salon : undefined,
+    /* LE SALON MÊME QUAND ON Y EST ENCORE SEUL. « Le bouton "Démo · côté
+       boutique" ne fonctionne pas » : on ne passait le salon qu'en mode
+       conversation (`modeChat`). Juste après « En parler », on y est seul —
+       la pastille s'affichait, mais l'écran du commerçant n'avait pas de
+       salon où se poser, et l'appui ne faisait rien. */
+    salon: salon ?? undefined,
     profil: soireeDuSalon ? PROFILS_CADEAU.bar : profilCadeau(commerceCadeau?.branche),
     par: soireeDuSalon?.lieu ?? commerceCadeau?.nom ?? "",
     idCommerce: commerceCadeau?.id,
@@ -6995,7 +7045,9 @@ export function ApercuHabitant() {
     const p = tete;
     const ou = p?.ou ?? s.ou;
     const quoi = p?.quoi ?? s.annonce ?? s.sujet;
-    const combien = pourUnSeul ? 1 : Math.max(1, s.viennent.length);
+    // UN SALON PUBLIC N'EST PAS UN GROUPE : chacun y réserve pour soi.
+    const combien = pourUnSeul || estPublic(s) ? 1 : Math.max(1, s.viennent.length);
+    const quand = s.quand.toLowerCase().replace(" · ", " à ");
     return {
       ou,
       quoi,
@@ -7003,10 +7055,14 @@ export function ApercuHabitant() {
       prix: p?.prix,
       // « ce soir · 19 h » est un libellé d'écran, pas une phrase : le point
       // médian se lit comme une coquille dans un message qu'on envoie.
-      quand: s.quand.toLowerCase().replace(" · ", " à "),
+      quand,
+      // « NOUS SOMMES 1 » NE SE DIT PAS : seul, on parle à la première personne.
       texte:
-        `Bonjour, nous sommes ${combien} et nous avons vu « ${quoi} » chez ${ou} sur Clikme. ` +
-        `Est-ce que vous avez de la place ${s.quand.toLowerCase().replace(" · ", " à ")} ? Merci !`,
+        combien > 1
+          ? `Bonjour, nous sommes ${combien} et nous avons vu « ${quoi} » chez ${ou} sur Clikme. ` +
+            `Est-ce que vous avez de la place ${quand} ? Merci !`
+          : `Bonjour, j'ai vu « ${quoi} » chez ${ou} sur Clikme. ` +
+            `Est-ce que vous avez une place pour moi ${quand} ? Merci !`,
     };
   }
 
@@ -7074,7 +7130,9 @@ export function ApercuHabitant() {
    * lectures du meme fil auraient fini par ne plus dire la meme chose ; il n'y
    * en a donc qu'une, et l'ecran s'y branche comme la barre.
    */
-  const demandeEnCours = salon ? demandeDuFil(salon) : undefined;
+  // DANS UN SALON PUBLIC, SEULE MA DEMANDE COMPTE — voir `estPublic`.
+  const salonPublic = salon ? estPublic(salon) : false;
+  const demandeEnCours = salon ? (salonPublic ? demandeDuFil(salon, cestMoi) : demandeDuFil(salon)) : undefined;
 
   /** Annuler la demande — seul celui qui l'a faite le peut. */
   function annulerLaDemande() {
@@ -7200,7 +7258,9 @@ export function ApercuHabitant() {
     // ELLE EST ÉCRITE DANS LE SALON, ET C'EST ASSUMÉ : ce n'est pas un message
     // du groupe, c'est un écran d'ailleurs, montré ici. Le libellé le dit, et
     // la carte ne ressemble à aucune autre.
-    const prenoms = (salon.viennent.length ? salon.viennent : salon.presents)
+    // DANS UN SALON PUBLIC, LE COMMERÇANT NE REÇOIT QUE MOI : les autres ne
+    // viennent pas avec moi.
+    const prenoms = (salonPublic ? [moi] : salon.viennent.length ? salon.viennent : salon.presents)
       .slice(0, 4)
       .map((q) => (cestMoi(q) ? "vous" : q));
     const liste =
@@ -7678,11 +7738,11 @@ export function ApercuHabitant() {
                 <button
                   type="button"
                   className="ap-act fort"
-                  onClick={() => avecMonPrenom(() => setAConfirmer({ pourUnSeul: false }))}
+                  onClick={() => avecMonPrenom(() => setAConfirmer({ pourUnSeul: salonPublic }))}
                 >
                   <i aria-hidden="true">📅</i>
-                  Réserver
-                  {salon.viennent.length > 1 && <b>{salon.viennent.length}</b>}
+                  {salonPublic ? "Réserver ma place" : "Réserver"}
+                  {!salonPublic && salon.viennent.length > 1 && <b>{salon.viennent.length}</b>}
                 </button>
                 )}
               </div>
@@ -7690,7 +7750,7 @@ export function ApercuHabitant() {
   };
 
   return (
-    <div className="ap">
+    <div className={`ap${surOrdinateur ? " ordi" : ""}`}>
       <StylesDirect />
       <StylesChoix />
       <StylesParcoursMode />
@@ -12306,7 +12366,18 @@ export function ApercuHabitant() {
                   setSalonOuvert(cle);
                   setSalonPage(true);
                 }}
-                onDecouvrir={() => allerA_onglet("direct")}
+                onDecouvrir={(b) => {
+                  // DEPUIS UNE PIÈCE VIDE : LE DIRECT S'OUVRE SUR SON MÉTIER (la cave → les bars).
+                  if (surOrdinateur && onOnglet) {
+                    onOnglet("direct");
+                    return;
+                  }
+                  allerA_onglet("direct");
+                  if (b && METIERS.some((m) => m.cle === b)) {
+                    setBranche(b as CleMetier);
+                    setVue("metiers");
+                  }
+                }}
                 onReglages={() => setReglagesMaison(true)}
                 onNePlusSuivre={(id) => basculerSuivi(id)}
                 demandeVisite={demandeGeste}
@@ -13644,6 +13715,12 @@ export function ApercuHabitant() {
                 />
               )}
               {cadeauSalon.calques}
+              {/* LA FEUILLE DE STYLE DES CADEAUX, ICI AUSSI. « Le bouton "Démo ·
+                  côté boutique" ne fonctionne pas » : il ouvrait bien l'écran
+                  du commerçant, mais sans sa feuille de style — montée
+                  seulement dans « Découvrir cette soirée » —, cet écran restait
+                  un bloc sans fond ni position, perdu sous le fil. */}
+              {(cadeauSalon.pastille || cadeauSalon.entete || cadeauSalon.calques) && <StylesCadeau />}
               <StylesSalonChat />
             </div>
             </>
@@ -14448,8 +14525,9 @@ export function ApercuHabitant() {
                       <div className="ap-f-tete">
                         <b>Envoyer la demande&nbsp;?</b>
                         <span className="simple">
-                          Elle part sur WhatsApp, et le groupe la verra dans la
-                          conversation.
+                          {salonPublic
+                            ? "Elle part sur WhatsApp, pour toi seul : dans un salon public, chacun réserve sa place."
+                            : "Elle part sur WhatsApp, et le groupe la verra dans la conversation."}
                         </span>
                       </div>
                       <div className="ap-conf">
@@ -21283,6 +21361,14 @@ export function ApercuHabitant() {
 
         @media (min-width:720px){
           .ap{padding:24px;background:radial-gradient(90% 60% at 50% 0%,#101A22,#05090C 70%),#05090C;}
+          /* SUR UN ORDINATEUR, SOUS LA BARRE DES ONGLETS : une colonne plus
+             large, sans cadre de telephone ; les quatre onglets du bas
+             s effacent (ceux du haut les remplacent), le fantome reste. */
+          .ap.ordi{position:absolute;top:0;height:100%;padding:0 0 18px;background:transparent;}
+          .ap.ordi .ap-tel{width:min(600px,100%);height:100%;padding:0;border:1px solid rgba(255,196,140,.22);
+            border-radius:30px;background:none;box-shadow:0 40px 90px -30px rgba(0,0,0,.9);}
+          .ap.ordi .ap-app{border-radius:30px;}
+          .ap.ordi .ap-onglets>button:not(.ap-monfantome){visibility:hidden;}
           .ap-tel{width:390px;height:min(844px, calc(var(--ap-h, 100svh) - 48px));
             border:1px solid rgba(255,255,255,.14);border-radius:42px;padding:9px;
             background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.01));

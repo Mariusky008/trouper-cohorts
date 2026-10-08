@@ -144,7 +144,8 @@ export function useCadeauDuSalon({
 
   /** La pastille de la démonstration : le geste du commerçant, joué sur le téléphone. */
   const pastille: ReactNode =
-    demo && profil && salon?.ouvert !== false ? (
+    // PAS DE PASTILLE SANS SALON : elle ouvrirait un écran qui n'a nulle part où se poser.
+    demo && profil && salon && salon.ouvert !== false ? (
       <button type="button" className="cg-pastille" onClick={() => setCote(true)}>
         🎁 Démo · {profil.cote.toLowerCase()} <span aria-hidden="true">›</span>
       </button>

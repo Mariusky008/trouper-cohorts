@@ -26,7 +26,7 @@
 //
 // L'ANCIENNE LÉA RESTE OUVRABLE sur `/autour-de-moi/assistante/lea`, le temps
 // de comparer.
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { tenueDu, type FamilleDouble } from "@/lib/direct/double-metiers";
 import { COMMERCES_DEMO, missionDe, type Etape, type Mission } from "@/lib/direct/missions-commercant";
 import {
@@ -42,12 +42,15 @@ import {
   type Comptoir as EtatComptoir,
   type Publication,
 } from "@/lib/direct/comptoir";
-import { libererMicro, ouvrirEcoute } from "@/lib/direct/voix-micro";
+import { useMicro } from "./use-micro";
 import { envoyerALaVille, retirerDeLaVille, type CommerceComptoir } from "@/lib/direct/comptoir-ville";
 import { envoyerEnLigne, retirerEnLigne, type ResultatEnvoi } from "@/lib/direct/comptoir-en-ligne";
 import { motsDeLaCarte, motsDeLaVitrine } from "@/lib/direct/vitrine";
 import { CarteComptoir } from "./carte-comptoir";
 import { VitrineComptoir } from "./vitrine-comptoir";
+import { SavoirComptoir } from "./savoir-comptoir";
+import { useSavoir, type SavoirDuComptoir } from "./use-savoir";
+import { questionsDuMetier, reponduesDuMetier } from "@/lib/direct/savoir-fantome";
 import { accord, demandesEnMots, effetDesAnnonces, phraseDeLaVeille, semaineDuComptoir, type JourStats } from "@/lib/direct/stats-comptoir";
 
 type Commerce = CommerceComptoir;
@@ -175,69 +178,7 @@ function useMachine(texte: string) {
   return { ecrit: texte.slice(0, n), fini: n >= texte.length };
 }
 
-/* ═══ LE MICRO, FAÇON TALKIE-WALKIE ═══════════════════════════════════════
-   Un appui et il écoute ; il s'arrête tout seul quand on se tait, ou au
-   second appui. Les mots s'écrivent pendant qu'on parle : c'est ce qui
-   apprend qu'on est entendu. Voir `voix-micro.ts` pour le filet serveur. */
-function useMicro() {
-  const [ecoute, setEcoute] = useState(false);
-  const [direct, setDirect] = useState("");
-  const enCours = useRef<ReturnType<typeof ouvrirEcoute> | null>(null);
-  const finir = useRef<((r: { texte: string; audio?: string; secondes?: number; erreur?: string }) => void) | null>(null);
-
-  /**
-   * L'ÉCOUTE SE FERME : on n'en rouvre pas une pendant ce temps.
-   *
-   * « J'ai réussi à parler et ça a bien retranscrit ce que je disais, et
-   * pourtant j'ai un message d'erreur. » Quand il se tait, l'écoute s'arrête
-   * seule — mais la transcription prend une seconde ou deux, et pendant ce
-   * temps le bouton dit encore « je t'écoute ». Son appui pour « finir »
-   * tombait là : il OUVRAIT une seconde écoute, muette, dont l'erreur
-   * s'affichait sous sa phrase bien comprise.
-   */
-  const fermeture = useRef(false);
-
-  const arreter = useCallback(async () => {
-    const e = enCours.current;
-    if (!e) return;
-    enCours.current = null;
-    fermeture.current = true;
-    const r = await e.arreter().finally(() => {
-      fermeture.current = false;
-    });
-    setEcoute(false);
-    finir.current?.({ texte: r.texte, audio: r.audio, secondes: r.secondes, erreur: r.erreur });
-  }, []);
-
-  const ecouter = useCallback(
-    (quandFini: (r: { texte: string; audio?: string; secondes?: number; erreur?: string }) => void, saVoix = false) => {
-      if (enCours.current) {
-        void arreter();
-        return;
-      }
-      if (fermeture.current) return;
-      finir.current = quandFini;
-      setDirect("");
-      setEcoute(true);
-      enCours.current = ouvrirEcoute((t) => setDirect(t), {
-        surSilence: () => void arreter(),
-        // SA VOIX : la dictée éteinte, et un micro neuf (voir `fluxNeuf`).
-        dictee: !saVoix,
-        fluxNeuf: saVoix,
-      });
-    },
-    [arreter],
-  );
-
-  useEffect(
-    () => () => {
-      enCours.current?.annuler();
-      libererMicro();
-    },
-    [],
-  );
-  return { ecoute, direct, ecouter, arreter };
-}
+/* LE MICRO, FAÇON TALKIE-WALKIE : voir `use-micro.ts` (partagé avec « Ma vitrine »). */
 
 /* ═══ L'ÉCRAN ═══════════════════════════════════════════════════════════ */
 
@@ -320,7 +261,9 @@ type Phase =
   /** Ma vitrine : ses photos de produits, avec leur libellé — voir `vitrine-comptoir.tsx`. */
   | { ou: "vitrine" }
   /** Ma carte : ses rubriques, ses lignes et ses prix — voir `carte-comptoir.tsx`. */
-  | { ou: "carte" };
+  | { ou: "carte" }
+  /** Ce que mon fantôme sait : ses réponses, et les questions de ses clients — voir `savoir-comptoir.tsx`. */
+  | { ou: "savoir" };
 
 /** L'envoi en ligne d'un vrai commerçant : en cours, arrivé, ou à refaire. */
 type Envoi = { etat: "en-cours" } | ({ etat: "fini" } & ResultatEnvoi);
@@ -338,6 +281,9 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
      journée pour me motiver ». Ce que sa dernière annonce a rapporté est la
      première chose qu'il voit — et le bouton de la suivante est juste dessous. */
   const [phase, setPhase] = useState<Phase>({ ou: "accueil" });
+  /* CE QUE SON FANTÔME SAIT, lu une fois : l'accueil y compte les questions
+     de ses clients, l'écran du savoir y répond. */
+  const savoir = useSavoir(commerce);
 
   useEffect(() => {
     const id = window.setInterval(() => setMaintenant(Date.now()), 30_000);
@@ -516,7 +462,13 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           onRetirer={enlever}
           onVitrine={() => setPhase({ ou: "vitrine" })}
           onCarte={() => setPhase({ ou: "carte" })}
+          savoir={savoir}
+          onSavoir={() => setPhase({ ou: "savoir" })}
         />
+      )}
+
+      {phase.ou === "savoir" && (
+        <SavoirComptoir commerce={commerce} dossier={dossier} savoir={savoir} onRetour={() => setPhase({ ou: "accueil" })} />
       )}
 
       {phase.ou === "carte" && (
@@ -634,6 +586,8 @@ function Accueil({
   onRetirer,
   onVitrine,
   onCarte,
+  savoir,
+  onSavoir,
 }: {
   commerce: Commerce;
   mission: Mission;
@@ -649,11 +603,40 @@ function Accueil({
   onVitrine: () => void;
   /** Ouvrir « Ma carte ». */
   onCarte: () => void;
+  savoir: SavoirDuComptoir;
+  /** Ouvrir « Ce que mon fantôme sait ». */
+  onSavoir: () => void;
 }) {
   const relance = mission.relance;
   const vitrine = motsDeLaVitrine(commerce.famille, commerce.metier);
   const carte = motsDeLaCarte(commerce.famille, commerce.metier);
   const relanceFaite = actives.some((p) => p.genre === "relance");
+  const questions = questionsDuMetier(commerce.famille, commerce.metier);
+  const sues = savoir.savoir ? reponduesDuMetier(savoir.savoir, questions) : 0;
+  const enAttente = savoir.savoir?.attente.length ?? 0;
+  /* ═══ CE QUE MON FANTÔME SAIT ═══ « Un endroit dans l'admin où le
+     commerçant donne tous les détails de son commerce, pour que le chat puisse
+     répondre. » Quand des clients ont posé une question sans réponse, le
+     bouton monte et s'allume : c'est la chose à faire avant tout le reste. */
+  const boutonSavoir = (
+    <button type="button" className={`cz-relance cz-savoir${enAttente ? " chaud" : ""}`} onClick={onSavoir}>
+      <span className="cz-relance-i">🧠</span>
+      <span>
+        <b>
+          Ce que mon fantôme sait
+          {enAttente > 0 && <i className="cz-pastille">{enAttente}</i>}
+        </b>
+        <em>
+          {enAttente
+            ? `${enAttente > 1 ? `${enAttente} questions de clients t’attendent` : "Une question de client t’attend"} : réponds une fois, il le saura.`
+            : sues >= questions.length
+              ? "Il connaît ton métier par cœur. Essaie-le !"
+              : `${sues}/${questions.length} réponses : il répond à tes clients avec tes mots.`}
+        </em>
+      </span>
+      <s aria-hidden="true">→</s>
+    </button>
+  );
   const h = heureDecimale();
   const auj = semaine?.[semaine.length - 1];
   // UN VRAI COMMERÇANT N'A PAS DE CHIFFRES INVENTÉS : tant que sa page ne les
@@ -712,6 +695,8 @@ function Accueil({
           </button>
         )}
 
+        {enAttente > 0 && boutonSavoir}
+
         {/* ═══ MA VITRINE ═══ « Prévoir un endroit où il pourra mettre ses photos
             avec libellés » : ses coupes, ses poses, ses livres, ses flashs. Pas
             une annonce — elles restent, et ses clients les essaient. */}
@@ -735,6 +720,8 @@ function Accueil({
           </span>
           <s aria-hidden="true">→</s>
         </button>
+
+        {enAttente === 0 && boutonSavoir}
 
         {/* UN SEUL CHIFFRE ICI, ET IL MÈNE AUX AUTRES : celui d'aujourd'hui. */}
         {auj && <button type="button" className="cz-apercu-stats" onClick={onStats}>
@@ -1665,6 +1652,8 @@ label.cz-go{cursor:pointer;}
 .cz-relance-i{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:rgba(245,162,58,.18);}
 .cz-relance b{display:block;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:16px;}
 .cz-relance em{display:block;font-style:normal;font-size:13px;color:var(--gris);margin-top:2px;}
+.cz-pastille{display:inline-grid;place-items:center;min-width:22px;height:22px;margin-left:8px;padding:0 6px;border-radius:999px;
+  background:var(--rose);color:#fff;font-style:normal;font-size:12.5px;vertical-align:2px;}
 .cz-relance s{text-decoration:none;font-size:20px;color:var(--ambre);}
 .cz-progres{padding:14px;border-radius:20px;background:rgba(255,244,230,.04);border:1px solid var(--trait);}
 .cz-niveau b{display:block;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:16px;}
