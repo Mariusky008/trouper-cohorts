@@ -37,7 +37,12 @@ export type CommerceDuDouble = {
 const recent = new Map<string, { quand: number; c: CommerceDuDouble | null }>();
 const DUREE = 60_000;
 
-export async function trouverLeCommerce(id: string): Promise<CommerceDuDouble | null> {
+/**
+ * `frais` : relire la base sans la mémoire courte — c'est le commerçant qui
+ * essaie son fantôme depuis son comptoir, juste après lui avoir appris
+ * quelque chose : il doit l'entendre tout de suite.
+ */
+export async function trouverLeCommerce(id: string, { frais = false }: { frais?: boolean } = {}): Promise<CommerceDuDouble | null> {
   const cle = String(id ?? "").trim();
   if (!cle) return null;
   /* TOUS LES MÉTIERS ONT LEUR DOUBLE, pas seulement les restaurants — voir
@@ -50,7 +55,7 @@ export async function trouverLeCommerce(id: string): Promise<CommerceDuDouble | 
     return c && aUnDouble(c) ? { carte: c, fiche: ficheDuDouble(c) } : null;
   }
   const r = recent.get(cle);
-  if (r && Date.now() - r.quand < DUREE) return r.c;
+  if (r && !frais && Date.now() - r.quand < DUREE) return r.c;
   let c: CommerceDuDouble | null = null;
   try {
     const lu = await lireLeSite(cle);

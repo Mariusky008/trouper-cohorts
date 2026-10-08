@@ -20,6 +20,8 @@
 import { experienceDuDiagnostic } from "@/lib/site-internet/experience-donnees";
 import { piecesDuDiagnostic } from "@/lib/site-internet/pieces-comptoir";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { familleDuDouble } from "@/lib/direct/double-metiers";
+import { MAX_REPONSES, memeQuestion, nettoyerSavoir, savoirPourLeDouble, type ReponseSavoir } from "@/lib/direct/savoir-fantome";
 import { horairesLisibles } from "@/lib/site-internet/horaires-pro";
 import { ligneDuJour } from "@/lib/site-internet/opening-hours";
 import { numeroAppel, numeroReservations } from "@/lib/site-internet/pro-phone";
@@ -271,8 +273,14 @@ export function construireFiche(
 export type SavoirDuSite = {
   /** Le prénom qu'il a donné à son double, dans la carte de sa voix. */
   prenom: string;
-  /** Sa fiche de connaissances (spécialités, ce qu'il ne fait pas, questions fréquentes), en clair. */
+  /** Ses spécialités et ce qu'il ne fait pas, en clair. */
   notes: string;
+  /**
+   * Ses réponses, avec ses mots : celles de « Ce que mon fantôme sait » (son
+   * comptoir, ou l'ancienne « Fiche de mon assistante ») et celles de sa FAQ
+   * « Avant de venir ». Voir `savoir-fantome.ts`.
+   */
+  faq: ReponseSavoir[];
   /** Ce qu'il a raconté à voix haute en donnant sa voix, retranscrit. */
   recit: string;
   /** L'identifiant de sa voix clonée, s'il l'a donnée ET qu'il est d'accord. */
@@ -300,22 +308,28 @@ export async function lireLeSite(slug: string): Promise<{ carte: CarteAutour; sa
   const siteId = str(row.id);
 
   let services: unknown = [];
-  const savoir: SavoirDuSite = { prenom: "", notes: "", recit: "", voixId: "" };
+  const savoir: SavoirDuSite = { prenom: "", notes: "", recit: "", voixId: "", faq: [] };
+  let kb: unknown = null;
   try {
     const { data: ex } = await supabase.from("human_vitrine_sites").select("services, assistant_kb").eq("id", siteId).maybeSingle();
     const e = (ex as Record<string, unknown> | null) ?? {};
     services = e.services;
-    const kb = (e.assistant_kb && typeof e.assistant_kb === "object" ? e.assistant_kb : {}) as Record<string, unknown>;
-    const faq = (Array.isArray(kb.faq) ? kb.faq : []) as Array<{ q?: string; a?: string }>;
-    savoir.notes = [
-      str(kb.specialites) ? `Spécialités : ${str(kb.specialites).slice(0, 1500)}` : "",
-      str(kb.exclusions) ? `Ce qu'il ne propose PAS : ${str(kb.exclusions).slice(0, 800)}` : "",
-      ...faq.slice(0, 20).map((f) => (str(f.q) && str(f.a) ? `Q : ${str(f.q)} → R : ${str(f.a)}` : "")),
-    ]
-      .filter(Boolean)
-      .join("\n");
+    kb = e.assistant_kb;
   } catch {
     /* colonnes non migrées */
+  }
+  /* SA FAQ « AVANT DE VENIR » : écrite par lui pour sa page, elle vaut aussi
+     pour son fantôme. Lue à part — la colonne peut manquer. */
+  try {
+    const { data: fq } = await supabase.from("human_vitrine_sites").select("faq").eq("id", siteId).maybeSingle();
+    const liste = (Array.isArray((fq as Record<string, unknown> | null)?.faq) ? (fq as { faq: unknown[] }).faq : []) as Array<{ q?: unknown; a?: unknown }>;
+    for (const f of liste.slice(0, 6)) {
+      const q = str(f.q).slice(0, 200);
+      const a = str(f.a).slice(0, 600);
+      if (q && a && !savoir.faq.some((r) => memeQuestion(r.q, q))) savoir.faq.push({ q, a });
+    }
+  } catch {
+    /* colonne absente */
   }
   try {
     const { data: v } = await supabase
@@ -343,5 +357,10 @@ export async function lireLeSite(slug: string): Promise<{ carte: CarteAutour; sa
 
   const { fiche } = construireFiche(slug, row, { disponibilites, services });
   const carte = carteDepuisFiche(fiche);
+  /* CE QUE SON FANTÔME SAIT — la même colonne que l'ancienne fiche, relue par
+     les mêmes règles que son comptoir ; sa FAQ « Avant de venir » derrière. */
+  const d = savoirPourLeDouble(nettoyerSavoir(kb), familleDuDouble(carte), carte.metier);
+  savoir.notes = d.notes;
+  savoir.faq = [...d.faq, ...savoir.faq.filter((f) => !d.faq.some((r) => memeQuestion(r.q, f.q)))].slice(0, MAX_REPONSES + 8);
   return { carte, savoir, siteId };
 }

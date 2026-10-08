@@ -32,6 +32,7 @@ import { MotMarque } from "@/components/direct/mot-marque";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import {
   accueilDuDouble,
+  avecLeSavoir,
   phrasesADire,
   confirmationDuDouble,
   ficheDuDouble,
@@ -45,6 +46,7 @@ import { nomDansPhrase, tenueDu } from "@/lib/direct/double-metiers";
 import { onSpeakingChange, speak, speechSupported, stopSpeaking, unlockAudio } from "@/lib/site-internet/speech";
 import { StyleMaison } from "@/components/direct/style-maison";
 import { compter } from "@/lib/direct/compter";
+import { noterEnAttenteLocale, savoirLocal, savoirPourLeDouble } from "@/lib/direct/savoir-fantome";
 
 /* LES TENUES DE CHAQUE MÉTIER sont rangées dans `double-metiers.ts` — voir
    `tenueDu`. L'application et la page commerçant les lisent aussi. */
@@ -450,16 +452,27 @@ export function DoubleChef({
     ajouter({ de: "client", texte: t });
     setReflechit(true);
     let r: ReponseDouble;
+    /* ═══ CE QUE LE COMMERÇANT DE DÉMONSTRATION LUI A APPRIS ═══ Dans la
+       démonstration, celui qui teste joue les deux rôles : ce qu'il a écrit
+       dans « Ce que mon fantôme sait » est dans ce téléphone. Il part avec la
+       question ; le serveur ne s'en sert que pour un commerce de
+       démonstration — un vrai commerçant est relu en base. */
+    const appris = savoirLocal(carte.id);
+    const ficheLocale = appris ? avecLeSavoir(fiche, savoirPourLeDouble(appris, fiche.profil.famille, fiche.metier)) : fiche;
     try {
       const rep = await fetch("/api/direct/double", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id: carte.id, messages: historique, prenom: prenomClient ?? "" }),
+        body: JSON.stringify({ id: carte.id, messages: historique, prenom: prenomClient ?? "", ...(appris ? { savoirLocal: appris } : {}) }),
       });
-      r = rep.ok ? ((await rep.json()) as ReponseDouble) : repondreSansIA(t, fiche);
+      r = rep.ok ? ((await rep.json()) as ReponseDouble) : repondreSansIA(t, ficheLocale);
     } catch {
-      r = repondreSansIA(t, fiche);
+      r = repondreSansIA(t, ficheLocale);
     }
+    /* IL NE SAVAIT PAS : chez un vrai commerçant, le serveur a rangé la
+       question (`notee`) ; dans la démonstration, elle attend dans ce
+       téléphone, et le comptoir de démonstration la montre. */
+    if (r.transmise && !r.notee) noterEnAttenteLocale(carte.id, t);
     const voix: DemandeVoix | undefined = r.sig ? { quoi: "reponse", sig: r.sig } : undefined;
     await parler(r.texte, voix);
     setReflechit(false);

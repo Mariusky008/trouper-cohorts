@@ -48,6 +48,9 @@ import { envoyerEnLigne, retirerEnLigne, type ResultatEnvoi } from "@/lib/direct
 import { motsDeLaCarte, motsDeLaVitrine } from "@/lib/direct/vitrine";
 import { CarteComptoir } from "./carte-comptoir";
 import { VitrineComptoir } from "./vitrine-comptoir";
+import { SavoirComptoir } from "./savoir-comptoir";
+import { useSavoir, type SavoirDuComptoir } from "./use-savoir";
+import { questionsDuMetier, reponduesDuMetier } from "@/lib/direct/savoir-fantome";
 import { accord, demandesEnMots, effetDesAnnonces, phraseDeLaVeille, semaineDuComptoir, type JourStats } from "@/lib/direct/stats-comptoir";
 
 type Commerce = CommerceComptoir;
@@ -258,7 +261,9 @@ type Phase =
   /** Ma vitrine : ses photos de produits, avec leur libellé — voir `vitrine-comptoir.tsx`. */
   | { ou: "vitrine" }
   /** Ma carte : ses rubriques, ses lignes et ses prix — voir `carte-comptoir.tsx`. */
-  | { ou: "carte" };
+  | { ou: "carte" }
+  /** Ce que mon fantôme sait : ses réponses, et les questions de ses clients — voir `savoir-comptoir.tsx`. */
+  | { ou: "savoir" };
 
 /** L'envoi en ligne d'un vrai commerçant : en cours, arrivé, ou à refaire. */
 type Envoi = { etat: "en-cours" } | ({ etat: "fini" } & ResultatEnvoi);
@@ -276,6 +281,9 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
      journée pour me motiver ». Ce que sa dernière annonce a rapporté est la
      première chose qu'il voit — et le bouton de la suivante est juste dessous. */
   const [phase, setPhase] = useState<Phase>({ ou: "accueil" });
+  /* CE QUE SON FANTÔME SAIT, lu une fois : l'accueil y compte les questions
+     de ses clients, l'écran du savoir y répond. */
+  const savoir = useSavoir(commerce);
 
   useEffect(() => {
     const id = window.setInterval(() => setMaintenant(Date.now()), 30_000);
@@ -454,7 +462,13 @@ function Ecran({ commerce, onChanger }: { commerce: Commerce; onChanger?: () => 
           onRetirer={enlever}
           onVitrine={() => setPhase({ ou: "vitrine" })}
           onCarte={() => setPhase({ ou: "carte" })}
+          savoir={savoir}
+          onSavoir={() => setPhase({ ou: "savoir" })}
         />
+      )}
+
+      {phase.ou === "savoir" && (
+        <SavoirComptoir commerce={commerce} dossier={dossier} savoir={savoir} onRetour={() => setPhase({ ou: "accueil" })} />
       )}
 
       {phase.ou === "carte" && (
@@ -572,6 +586,8 @@ function Accueil({
   onRetirer,
   onVitrine,
   onCarte,
+  savoir,
+  onSavoir,
 }: {
   commerce: Commerce;
   mission: Mission;
@@ -587,11 +603,40 @@ function Accueil({
   onVitrine: () => void;
   /** Ouvrir « Ma carte ». */
   onCarte: () => void;
+  savoir: SavoirDuComptoir;
+  /** Ouvrir « Ce que mon fantôme sait ». */
+  onSavoir: () => void;
 }) {
   const relance = mission.relance;
   const vitrine = motsDeLaVitrine(commerce.famille, commerce.metier);
   const carte = motsDeLaCarte(commerce.famille, commerce.metier);
   const relanceFaite = actives.some((p) => p.genre === "relance");
+  const questions = questionsDuMetier(commerce.famille, commerce.metier);
+  const sues = savoir.savoir ? reponduesDuMetier(savoir.savoir, questions) : 0;
+  const enAttente = savoir.savoir?.attente.length ?? 0;
+  /* ═══ CE QUE MON FANTÔME SAIT ═══ « Un endroit dans l'admin où le
+     commerçant donne tous les détails de son commerce, pour que le chat puisse
+     répondre. » Quand des clients ont posé une question sans réponse, le
+     bouton monte et s'allume : c'est la chose à faire avant tout le reste. */
+  const boutonSavoir = (
+    <button type="button" className={`cz-relance cz-savoir${enAttente ? " chaud" : ""}`} onClick={onSavoir}>
+      <span className="cz-relance-i">🧠</span>
+      <span>
+        <b>
+          Ce que mon fantôme sait
+          {enAttente > 0 && <i className="cz-pastille">{enAttente}</i>}
+        </b>
+        <em>
+          {enAttente
+            ? `${enAttente > 1 ? `${enAttente} questions de clients t’attendent` : "Une question de client t’attend"} : réponds une fois, il le saura.`
+            : sues >= questions.length
+              ? "Il connaît ton métier par cœur. Essaie-le !"
+              : `${sues}/${questions.length} réponses : il répond à tes clients avec tes mots.`}
+        </em>
+      </span>
+      <s aria-hidden="true">→</s>
+    </button>
+  );
   const h = heureDecimale();
   const auj = semaine?.[semaine.length - 1];
   // UN VRAI COMMERÇANT N'A PAS DE CHIFFRES INVENTÉS : tant que sa page ne les
@@ -650,6 +695,8 @@ function Accueil({
           </button>
         )}
 
+        {enAttente > 0 && boutonSavoir}
+
         {/* ═══ MA VITRINE ═══ « Prévoir un endroit où il pourra mettre ses photos
             avec libellés » : ses coupes, ses poses, ses livres, ses flashs. Pas
             une annonce — elles restent, et ses clients les essaient. */}
@@ -673,6 +720,8 @@ function Accueil({
           </span>
           <s aria-hidden="true">→</s>
         </button>
+
+        {enAttente === 0 && boutonSavoir}
 
         {/* UN SEUL CHIFFRE ICI, ET IL MÈNE AUX AUTRES : celui d'aujourd'hui. */}
         {auj && <button type="button" className="cz-apercu-stats" onClick={onStats}>
@@ -1603,6 +1652,8 @@ label.cz-go{cursor:pointer;}
 .cz-relance-i{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:rgba(245,162,58,.18);}
 .cz-relance b{display:block;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:16px;}
 .cz-relance em{display:block;font-style:normal;font-size:13px;color:var(--gris);margin-top:2px;}
+.cz-pastille{display:inline-grid;place-items:center;min-width:22px;height:22px;margin-left:8px;padding:0 6px;border-radius:999px;
+  background:var(--rose);color:#fff;font-style:normal;font-size:12.5px;vertical-align:2px;}
 .cz-relance s{text-decoration:none;font-size:20px;color:var(--ambre);}
 .cz-progres{padding:14px;border-radius:20px;background:rgba(255,244,230,.04);border:1px solid var(--trait);}
 .cz-niveau b{display:block;font-family:var(--font-clikme),sans-serif;font-weight:800;font-size:16px;}
