@@ -91,6 +91,8 @@ export type FicheCommercant = {
   experience?: ExperienceResto;
   /** Ce qu'il a mis à essayer ou en conseil depuis son comptoir — voir `pieces-comptoir.ts`. */
   pieces?: PieceComptoir[];
+  /** Une de ses pièces, essayée par le moteur — voir `essai-vitrine.ts`. */
+  essaiVitrine?: import("@/lib/site-internet/essai-vitrine-donnees").EssaiVitrineCarte;
   /** Son annonce en cours, lue dans `current_offer` — voir `offreDuSite`. */
   offre?: { texte: string; jusqua?: string; photo?: string };
   /** Où en est la lecture de sa carte, dit au commerçant — voir `suiviDeLaCarte`. */
@@ -333,6 +335,8 @@ export function carteDepuisFiche(f: FicheCommercant): CarteAutour {
     couvertureHote: f.couverture ? f.couvertureHote : undefined,
     couvertureSansHote: f.couverture && f.couvertureHote ? f.couvertureSansHote : undefined,
     sceneVille: f.sceneVille,
+    // UNE DE SES PIÈCES, ESSAYÉE — l'étape 2 de sa présentation, vue par lui seul.
+    ...(f.essaiVitrine ? { essaiVitrine: f.essaiVitrine } : {}),
     ficheGoogle:
       f.ficheGoogle && (f.ficheGoogle.menu || f.ficheGoogle.prix || f.ficheGoogle.services?.length)
         ? f.ficheGoogle

@@ -1365,6 +1365,13 @@ export type CarteAutour = {
    */
   sceneVille?: import("./scenes-ville").DecorMesure;
   /**
+   * UNE DE SES PIÈCES, ESSAYÉE PAR LE MOTEUR, sur la personne de l'essayage de
+   * démonstration — l'avant, l'après, la pièce. Seulement chez une boutique de
+   * vêtements qui n'a encore rien mis à essayer, et montré à lui seul, sur sa
+   * page. Voir `lib/site-internet/essai-vitrine.ts`.
+   */
+  essaiVitrine?: import("@/lib/site-internet/essai-vitrine-donnees").EssaiVitrineCarte;
+  /**
    * CE QUE SA FICHE GOOGLE DIT DE SA CARTE — « quand je regarde la fiche
    * Google, je vois bien les menus, les prix ». Son lien de menu, son prix par
    * personne tel que Google l'affiche, ses services. Des faits recopiés, jamais

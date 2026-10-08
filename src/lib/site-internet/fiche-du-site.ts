@@ -20,6 +20,8 @@
 import { experienceDuDiagnostic } from "@/lib/site-internet/experience-donnees";
 import { piecesDuDiagnostic } from "@/lib/site-internet/pieces-comptoir";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { boutiqueAEssayer, moteurEssaiConfigure } from "@/lib/site-internet/essai-vitrine";
+import { essaiVitrineAFaire, essaiVitrineDuDiagnostic, essaiVitrinePourLaCarte } from "@/lib/site-internet/essai-vitrine-donnees";
 import { familleDuDouble } from "@/lib/direct/double-metiers";
 import { MAX_REPONSES, memeQuestion, nettoyerSavoir, savoirPourLeDouble, type ReponseSavoir } from "@/lib/direct/savoir-fantome";
 import { horairesLisibles } from "@/lib/site-internet/horaires-pro";
@@ -253,6 +255,11 @@ export function construireFiche(
     experience: experienceDuDiagnostic(diag) ?? undefined,
     // CE QU'IL A MIS À ESSAYER OU EN CONSEIL DEPUIS SON COMPTOIR.
     pieces: piecesDuDiagnostic(diag),
+    // UNE DE SES PIÈCES, ESSAYÉE PAR LE MOTEUR, tant qu'il n'en a mis aucune
+    // lui-même — l'étape 2 de sa présentation. Voir `essai-vitrine.ts`.
+    essaiVitrine: boutiqueAEssayer(activite, diag)
+      ? essaiVitrinePourLaCarte(essaiVitrineDuDiagnostic(diag), moteurEssaiConfigure() && essaiVitrineAFaire(essaiVitrineDuDiagnostic(diag)))
+      : undefined,
     // SON ANNONCE EN COURS : le bandeau de sa page — voir `offreDuSite`.
     offre: offreDuSite(row.current_offer),
     carteSuivi: suiviDeLaCarte(diag),

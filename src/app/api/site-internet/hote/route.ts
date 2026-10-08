@@ -1,6 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { completerLHote, completerSansHote } from "@/lib/site-internet/couverture";
 import { completerScenes } from "@/lib/site-internet/experience-scenes";
+import { completerEssaiVitrine } from "@/lib/site-internet/essai-vitrine";
 
 // 👻 SON HÔTE REPÉRÉ, PUIS LA PHOTO SANS LUI — après la page, avec le temps qu'il faut.
 //
@@ -24,6 +25,11 @@ export async function POST(requete: Request) {
         (async () => {
           await completerLHote(slug);
           await completerSansHote(slug);
+          // UNE DE SES PIÈCES ESSAYÉE, chez une boutique de vêtements — voir
+          // `essai-vitrine.ts`. APRÈS la photo ClikMe, pas en même temps : les
+          // deux réécrivent la même colonne, et la seconde à finir effacerait
+          // la première.
+          await completerEssaiVitrine(slug);
         })(),
         completerScenes(slug),
       ]);

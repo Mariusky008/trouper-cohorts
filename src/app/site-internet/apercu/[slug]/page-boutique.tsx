@@ -174,6 +174,16 @@ function direLEssai(carte: CarteAutour): { titre: string; say: string } | null {
   }
   if (mur.essai) {
     const m = mur.essai.mots;
+    /* UNE DE SES PIÈCES EST DÉJÀ À L'ÉCRAN, PORTÉE : Léa la montre au lieu de
+       la décrire. Voir `avant-apres-vitrine.tsx`. */
+    if (carte.essaiVitrine?.etat === "prete") {
+      return {
+        titre: m.titre,
+        say:
+          `${ouvre} Regardez : une de vos pièces, essayée en quelques secondes. ` +
+          `Vos clients se prennent en photo et s'y voient, avant d'avoir poussé votre porte.`,
+      };
+    }
     return {
       titre: m.titre,
       say:

@@ -187,7 +187,7 @@ export function finDuPlat(fin: unknown, jours: unknown, maintenant = new Date())
   return new Date(ce_soir.getTime() + (Math.min(n, 365) - 1) * 86_400_000).toISOString();
 }
 
-async function lirePhoto(url: string): Promise<Img | null> {
+export async function lirePhoto(url: string): Promise<Img | null> {
   try {
     const r = await fetch(url, { signal: AbortSignal.timeout(20_000) });
     if (!r.ok) return null;
@@ -275,7 +275,7 @@ function consigneChef(nom: string): string {
 
 // ═══ LE MOTEUR ══════════════════════════════════════════════════════════════
 
-async function parGemini(
+export async function parGemini(
   parties: ({ text: string } | { inlineData: { mimeType: string; data: string } })[],
   format: string,
 ): Promise<{ image: Img; modele: string } | { erreur: string }> {

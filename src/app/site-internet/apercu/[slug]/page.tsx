@@ -56,6 +56,8 @@ import { carteDeDemo, estAdresseDeDemo, listeDesDemos } from "@/lib/site-interne
 import { copieDePresentation, fusionnerCopie, type CopiePresentation } from "@/lib/direct/copies-presentation";
 import { nomCourt, nomDeLaPage } from "@/lib/site-internet/nom-de-la-page";
 import { PageBoutique } from "./page-boutique";
+import { boutiqueAEssayer, moteurEssaiConfigure } from "@/lib/site-internet/essai-vitrine";
+import { essaiVitrineAFaire, essaiVitrineDuDiagnostic } from "@/lib/site-internet/essai-vitrine-donnees";
 import { IndexDesDemos } from "./index-demos";
 
 // DEUX LISTES, parce que ce sont deux questions différentes.
@@ -486,7 +488,16 @@ export default async function ApercuMaquette({
   // A ÉTÉ PERDU — voir `sceneAFaire` : la même route, la même relance. Et la
   // scène du cuisinier faite d'une ancienne consigne (`sceneARefaire`).
   const xp = experienceDuDiagnostic(row.diagnostic);
-  if (hoteACherche(couv) || sansHoteAFaire(couv) || sceneAFaire(xp?.scenePlat) || sceneARefaire(xp?.sceneChef, "chef"))
+  /* ET UNE DE SES PIÈCES ESSAYÉE, CHEZ UNE BOUTIQUE DE VÊTEMENTS — l'étape 2
+     de sa présentation. Seulement quand c'est LUI qui regarde sa page : un
+     rendu se paie, et il n'est montré qu'à lui. Voir `essai-vitrine.ts`. */
+  const essaiAFaire =
+    !estClient &&
+    !visiteurPublic &&
+    moteurEssaiConfigure() &&
+    boutiqueAEssayer(str(row.activite), row.diagnostic) &&
+    essaiVitrineAFaire(essaiVitrineDuDiagnostic(row.diagnostic));
+  if (hoteACherche(couv) || sansHoteAFaire(couv) || sceneAFaire(xp?.scenePlat) || sceneARefaire(xp?.sceneChef, "chef") || essaiAFaire)
     sonnerLHote(slug, await origineDeLaPage());
   /* SA CARTE EST VIDE ET SON ONGLET « MENU » N'A JAMAIS ÉTÉ DEMANDÉ (page
      créée avant cette étape) : on le demande une fois, après la page. La

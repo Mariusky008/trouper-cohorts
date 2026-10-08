@@ -32,6 +32,7 @@ import { parcoursPromis } from "@/lib/direct/parcours-promis";
 import { commentPrevenir, numeroDeFiction } from "@/lib/direct/prevenir";
 import { monPrenom } from "@/lib/direct/salons";
 import { ChoixDuLibraire } from "./choix-du-libraire";
+import { AvantApresVitrine } from "./avant-apres-vitrine";
 
 export type { RenduEssai };
 
@@ -130,6 +131,11 @@ function EssaiEnImage({ c, saPage, onReserver, onSalon }: ProprietesEssai) {
   const mots = motsEssai(c.branche);
   /** Rien à essayer chez lui pour l'instant : ni pièce, ni autre porte ouverte. */
   const bientot = Boolean(promis) || (onEssaie && pieces.length === 0);
+  /* ═══ MAIS UNE DE SES PIÈCES, DÉJÀ ESSAYÉE ═══ « Une personne avec ses
+     vêtements normaux, et exactement la même pose avec les vêtements de sa
+     boutique, pris sur sa fiche Google. » Montrée à lui seul, sur sa page,
+     tant qu'il n'a rien mis à essayer — voir `avant-apres-vitrine.tsx`. */
+  const essaiVitrine = saPage && onEssaie && pieces.length === 0 ? c.essaiVitrine : undefined;
 
   return (
     <div className="bx">
@@ -217,9 +223,19 @@ function EssaiEnImage({ c, saPage, onReserver, onSalon }: ProprietesEssai) {
       )}
 
       {/* ═══ LE GRAND BOUTON — ou l'aveu honnête que rien n'est encore là ═══ */}
+      {essaiVitrine && <AvantApresVitrine c={c} essai={essaiVitrine} />}
+
       {bientot ? (
         <div className="bx-bientot">
-          {saPage ? (
+          {saPage && essaiVitrine ? (
+            <>
+              <b>Toutes vos {mots.pieces}, essayées comme celle-ci.</b>
+              <p>
+                Ajoutez-les depuis votre comptoir — une photo, un nom, un prix. Vos clients les essaieront sur leur propre
+                photo, en quelques secondes, avant de vous écrire.
+              </p>
+            </>
+          ) : saPage ? (
             <>
               <b>Vos {mots.pieces} arrivent ici.</b>
               <p>
