@@ -42,6 +42,7 @@ import {
   AVANT_LUI,
   essaiVitrineAFaire,
   essaiVitrineDuDiagnostic,
+  VERSION_ESSAI,
   type EssaiVitrine,
 } from "@/lib/site-internet/essai-vitrine-donnees";
 
@@ -280,9 +281,10 @@ export async function completerEssaiVitrine(slug: string, origine?: string): Pro
   const avant = essaiVitrineDuDiagnostic(row.diagnostic);
   if (!essaiVitrineAFaire(avant)) return;
   // ON NOTE L'ESSAI AVANT DE PAYER : deux visites rapprochées n'en paient qu'un.
-  const essais = (avant?.essais ?? 0) + 1;
+  // Les essais d'une version précédente ne comptent pas — voir `VERSION_ESSAI`.
+  const essais = ((avant?.v ?? 1) < VERSION_ESSAI ? 0 : (avant?.essais ?? 0)) + 1;
   const debut = new Date().toISOString();
-  await ecrire(id, (e) => (e && !essaiVitrineAFaire(e) ? null : { ...(e ?? {}), etat: "en-cours", essais, at: debut, erreur: undefined }));
+  await ecrire(id, (e) => (e && !essaiVitrineAFaire(e) ? null : { ...(e ?? {}), etat: "en-cours", essais, at: debut, erreur: undefined, v: VERSION_ESSAI }));
 
   const echec = (erreur: string, etat: EssaiVitrine["etat"] = "echec") =>
     ecrire(id, (e) => (e?.at !== debut ? null : { ...e, etat, at: new Date().toISOString(), erreur }));
@@ -353,6 +355,7 @@ export async function completerEssaiVitrine(slug: string, origine?: string): Pro
         ? null
         : {
             etat: "prete",
+            v: VERSION_ESSAI,
             essais,
             at: new Date().toISOString(),
             source: /^https:\/\//i.test(source.url) ? source.url : undefined,

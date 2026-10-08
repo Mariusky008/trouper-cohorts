@@ -19,7 +19,17 @@
 export const AVANT_ELLE = "/direct/accueil/moi-mode-sans.jpg";
 export const AVANT_LUI = "/direct/essai/mode-homme-avant.jpg";
 
+/**
+ * LA VERSION DU MOTEUR QUI A FAIT L'ESSAI. Un échec d'une version précédente
+ * ne compte pas : la première version ne trouvait pas la photo de l'avant en
+ * production, et ses échecs auraient fait attendre un jour entier une page
+ * que la version suivante sait réussir.
+ */
+export const VERSION_ESSAI = 2;
+
 export type EssaiVitrine = {
+  /** Voir `VERSION_ESSAI`. */
+  v?: number;
   /** `aucune` : aucune de ses photos ne montre une pièce qu'on puisse essayer. */
   etat: "en-cours" | "prete" | "echec" | "aucune";
   essais: number;
@@ -58,6 +68,7 @@ export function essaiVitrineDuDiagnostic(diag: unknown): EssaiVitrine | undefine
     apres: https(e.apres),
     modele: s(e.modele) || undefined,
     erreur: s(e.erreur) || undefined,
+    v: Number.isFinite(Number(e.v)) ? Number(e.v) : undefined,
   };
 }
 
@@ -74,6 +85,8 @@ const PERDU = 6 * 60_000;
  */
 export function essaiVitrineAFaire(e: EssaiVitrine | undefined, maintenant = Date.now()): boolean {
   if (!e) return true;
+  // UN ÉCHEC D'UNE VERSION PRÉCÉDENTE SE RETENTE TOUT DE SUITE — voir `VERSION_ESSAI`.
+  if (e.etat !== "prete" && e.etat !== "en-cours" && (e.v ?? 1) < VERSION_ESSAI) return true;
   const depuis = e.at ? maintenant - Date.parse(e.at) : Infinity;
   if (e.etat === "prete") return false;
   if (e.etat === "en-cours") return !(depuis < PERDU);
