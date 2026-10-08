@@ -219,8 +219,21 @@ export function PageBoutique(p: PageBoutiqueProps) {
   // récit « on vous fait connaître ». Un cabinet de santé ou de droit, non.
   const avisAllowed = mp.def.avis_sollicitation;
   const flash = annonceExemple(carte.metier, carte.nom);
-  const geste = modeDemo ? gesteDuJour(carte.metier, confirmation, secteur, carte.ville) : undefined;
-  const photos = [carte.photo, ...(carte.photos ?? [])].filter((x): x is string => Boolean(x));
+  const gesteBrut = modeDemo ? gesteDuJour(carte.metier, confirmation, secteur, carte.ville, carte.branche) : undefined;
+  /* ═══ SA VRAIE PIÈCE, QUAND ELLE EST LÀ ═══ La pièce du jour de la
+     démonstration est une robe en lin inventée, posée sur sa première photo
+     Google — souvent sa devanture. Quand l'essayage de sa vitrine a trouvé une
+     de SES pièces (étape 2), c'est elle que la carte du Direct montre, avec
+     son nom et sans prix inventé. Voir `essai-vitrine.ts`. */
+  const pieceDuJour = carte.branche === "mode" && carte.essaiVitrine?.etat === "prete" ? carte.essaiVitrine : undefined;
+  const geste =
+    gesteBrut && pieceDuJour
+      ? {
+          ...gesteBrut,
+          extrait: { titre: "La pièce du jour", lignes: [pieceDuJour.nom ?? "Une pièce de la boutique", "À essayer sur soi avant de passer"], prix: "" },
+        }
+      : gesteBrut;
+  const photos = [pieceDuJour?.piece, carte.photo, ...(carte.photos ?? [])].filter((x): x is string => Boolean(x));
   /* LA PAGE À ONGLETS EST FIXE : le formulaire entre dedans, au bout des
      infos. Rendu après elle, il se retrouvait derrière. Tous les métiers l'ont
      maintenant — voir `aLaPageAOnglets`. */

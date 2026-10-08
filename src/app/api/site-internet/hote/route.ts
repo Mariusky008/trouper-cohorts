@@ -17,6 +17,8 @@ export async function POST(requete: Request) {
   const p = (await requete.json().catch(() => ({}))) as Record<string, unknown>;
   const slug = String(p.slug ?? "").trim();
   if (!/^[a-z0-9-]{2,120}$/i.test(slug)) return NextResponse.json({ erreur: "adresse illisible" }, { status: 400 });
+  /* SA PROPRE ADRESSE : l'essayage y relit l'avant si le disque ne l'a pas. */
+  const origine = new URL(requete.url).origin;
   after(async () => {
     try {
       // LES SCÈNES DE SON EXPÉRIENCE RESTAURANT, en même temps : elles ne
@@ -29,7 +31,7 @@ export async function POST(requete: Request) {
           // `essai-vitrine.ts`. APRÈS la photo ClikMe, pas en même temps : les
           // deux réécrivent la même colonne, et la seconde à finir effacerait
           // la première.
-          await completerEssaiVitrine(slug);
+          await completerEssaiVitrine(slug, origine);
         })(),
         completerScenes(slug),
       ]);

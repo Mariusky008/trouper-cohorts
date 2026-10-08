@@ -282,7 +282,7 @@ export function DemoTour({
         // « Une table » n'a de sens que dans la restauration : ailleurs on
         // réserve un créneau, une pièce, une place. Le mot suit le métier,
         // comme partout dans cette démonstration.
-        { acte: "resa", dit: G.famille === "librairie"
+        { acte: "resa", dit: G.convaincus ? G.convaincus : G.famille === "librairie"
           ? "Et quand un livre leur donne envie, ils vous demandent de le mettre de côté — et la demande arrive chez vous."
           : `Et quand ils sont convaincus, ils réservent${G.cherchent === "où manger" ? " une table" : ""} — et la demande arrive chez vous.` },
       ]
@@ -332,7 +332,7 @@ export function DemoTour({
            VOIX y reste telle quelle. Une photo d'ardoise n'aurait jamais pu
            produire ça — c'est pour cette raison que le geste a changé, et il
            faut donc que la phrase le dise. */
-        `${G.parPhoto ? "Je la lis, je l'écris" : "Je l'écris"}, et ${G.envoi} sur votre page et dans Le Direct.`,
+        G.suite ?? `${G.parPhoto ? "Je la lis, je l'écris" : "Je l'écris"}, et ${G.envoi} sur votre page et dans Le Direct.`,
         /* ═══ LA TROISIÈME PHRASE EST PARTIE, ET LA PASTILLE AVEC ══════════
 
            « Étape 3 : supprimer "4 écrans, votre voix à l'étape 3". »

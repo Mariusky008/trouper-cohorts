@@ -36,6 +36,7 @@ import { brancheDuMetier } from "@/lib/site-internet/carte-depuis-fiche";
 import { photosCandidates } from "@/lib/site-internet/couverture";
 import { lirePhoto, parGemini, photoDuDisque } from "@/lib/site-internet/experience-scenes";
 import { piecesDuDiagnostic } from "@/lib/site-internet/pieces-comptoir";
+import { moteurRefuse, moteursDImage, noterRefus } from "@/lib/direct/moteur-image";
 import {
   AVANT_ELLE,
   AVANT_LUI,
@@ -79,35 +80,90 @@ type Choix = { index: number; nom: string; genre: "femme" | "homme"; boite?: { x
  * centime. Sans réponse claire, aucune pièce — on n'habille personne avec la
  * photo d'une façade.
  */
-async function choisirLaPiece(photos: Img[]): Promise<Choix | "aucune" | { erreur: string }> {
-  const cle = s(process.env.GEMINI_API_KEY) || s(process.env.GOOGLE_API_KEY);
-  if (!cle) return { erreur: "aucune clé Gemini sur le serveur" };
-  if (!photos.length) return "aucune";
-  const base = s(process.env.GEMINI_BASE_URL) || "https://generativelanguage.googleapis.com";
-  const modele = s(process.env.GEMINI_VISION_MODEL) || "gemini-2.5-flash";
-  const parts: ({ text: string } | { inlineData: { mimeType: string; data: string } })[] = [];
-  photos.forEach((p, i) => parts.push({ text: `PHOTO ${i}` }, { inlineData: { mimeType: p.type, data: p.donnees } }));
-  parts.push({
-    text:
-      "These photos come from the Google listing of a clothing shop. Choose the ONE photo that shows a single garment or outfit " +
+const QUESTION_PIECE =
+  "These photos come from the Google listing of a clothing shop. Choose the ONE photo that shows a single garment or outfit " +
       "most clearly and completely, so that it can be used to dress another person: worn by someone, on a mannequin, on a hanger " +
       "or laid flat. Prefer a photo where the whole garment is visible and well lit; avoid shop fronts, crowded racks of many " +
       "clothes, accessories alone, shoes alone and bags. Answer only with JSON: " +
       '{"index": <photo number, or -1 if no photo shows a usable garment>, ' +
       '"nom": "<short French name of the garment, 2 to 5 words, lower case after the first letter, e.g. Ensemble en dentelle corail>", ' +
       '"genre": "femme" or "homme", ' +
-      '"box_2d": [ymin, xmin, ymax, xmax] normalised to 0-1000, tight around the garment only, EXCLUDING the head and face of the person wearing it}.',
+  '"box_2d": [ymin, xmin, ymax, xmax] normalised to 0-1000, tight around the garment only, EXCLUDING the head and face of the person wearing it}.';
+
+/** Les clés présentes : Gemini d'abord, OpenAI ensuite — la même règle que l'essayage et la photo ClikMe. */
+const cleGemini = () => s(process.env.GEMINI_API_KEY) || s(process.env.GOOGLE_API_KEY);
+const cleOpenAI = () => s(process.env.OPENAI_API_KEY);
+
+/** La question, posée à Gemini : il rend le texte de sa réponse. */
+async function voirParGemini(photos: Img[], cle: string): Promise<string | { erreur: string }> {
+  const base = s(process.env.GEMINI_BASE_URL) || "https://generativelanguage.googleapis.com";
+  const modele = s(process.env.GEMINI_VISION_MODEL) || "gemini-2.5-flash";
+  const parts: ({ text: string } | { inlineData: { mimeType: string; data: string } })[] = [];
+  photos.forEach((p, i) => parts.push({ text: `PHOTO ${i}` }, { inlineData: { mimeType: p.type, data: p.donnees } }));
+  parts.push({ text: QUESTION_PIECE });
+  const r = await fetch(`${base}/v1beta/models/${modele}:generateContent`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-goog-api-key": cle },
+    body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: { responseMimeType: "application/json" } }),
+    signal: AbortSignal.timeout(45_000),
   });
+  if (!r.ok) return { erreur: `Gemini (vue) a répondu ${r.status} : ${(await r.text().catch(() => "")).slice(0, 160)}` };
+  const j = (await r.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+  return (j.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("");
+}
+
+/**
+ * LA MÊME QUESTION, POSÉE À OPENAI quand il n'y a pas de clé Gemini — ou que
+ * Gemini n'a pas répondu. Le modèle de conversation du double sait voir.
+ */
+async function voirParOpenAI(photos: Img[], cle: string): Promise<string | { erreur: string }> {
+  const base = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
+  const modele = s(process.env.OPENAI_VISION_MODEL) || s(process.env.OPENAI_DOUBLE_MODEL) || "gpt-5.4-mini";
+  const contenu = [
+    ...photos.flatMap((p, i) => [
+      { type: "text", text: `PHOTO ${i}` },
+      { type: "image_url", image_url: { url: `data:${p.type};base64,${p.donnees}` } },
+    ]),
+    { type: "text", text: QUESTION_PIECE },
+  ];
+  const r = await fetch(`${base}/v1/chat/completions`, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${cle}` },
+    body: JSON.stringify({
+      model: modele,
+      response_format: { type: "json_object" },
+      max_completion_tokens: 4000,
+      messages: [{ role: "user", content: contenu }],
+    }),
+    signal: AbortSignal.timeout(60_000),
+  });
+  if (!r.ok) return { erreur: `OpenAI (vue) a répondu ${r.status} : ${(await r.text().catch(() => "")).slice(0, 160)}` };
+  const j = (await r.json()) as { choices?: { message?: { content?: string } }[] };
+  return j.choices?.[0]?.message?.content ?? "";
+}
+
+async function choisirLaPiece(photos: Img[]): Promise<Choix | "aucune" | { erreur: string }> {
+  if (!photos.length) return "aucune";
+  const erreurs: string[] = [];
+  let texte = "";
+  for (const [cle, voir] of [
+    [cleGemini(), voirParGemini],
+    [cleOpenAI(), voirParOpenAI],
+  ] as const) {
+    if (!cle) continue;
+    try {
+      const r = await voir(photos, cle);
+      if (typeof r === "string" && r.trim()) {
+        texte = r;
+        break;
+      }
+      erreurs.push(typeof r === "string" ? "réponse vide" : r.erreur);
+    } catch (e) {
+      erreurs.push(e instanceof Error ? e.message : String(e));
+    }
+  }
+  if (!texte) return { erreur: erreurs.join(" ; ") || "aucune clé d'IA sur le serveur (GEMINI_API_KEY ou OPENAI_API_KEY)" };
   try {
-    const r = await fetch(`${base}/v1beta/models/${modele}:generateContent`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": cle },
-      body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: { responseMimeType: "application/json" } }),
-      signal: AbortSignal.timeout(45_000),
-    });
-    if (!r.ok) return { erreur: `le modèle qui voit a répondu ${r.status}` };
-    const j = (await r.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-    const texte = (j.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("");
     const o = JSON.parse(texte.replace(/^```json|```$/g, "").trim()) as { index?: unknown; nom?: unknown; genre?: unknown; box_2d?: unknown };
     const index = Number(o.index);
     if (!Number.isInteger(index) || index < 0 || index >= photos.length) return "aucune";
@@ -118,14 +174,55 @@ async function choisirLaPiece(photos: Img[]): Promise<Choix | "aucune" | { erreu
         : undefined;
     const nom = s(o.nom).replace(/["«»]/g, "").slice(0, 60);
     return { index, nom: nom ? nom[0].toUpperCase() + nom.slice(1) : "", genre: o.genre === "homme" ? "homme" : "femme", boite };
-  } catch (e) {
-    return { erreur: `choix de la pièce impossible : ${e instanceof Error ? e.message : "erreur"}` };
+  } catch {
+    return { erreur: `réponse illisible du modèle qui voit : ${texte.slice(0, 120)}` };
   }
 }
 
 /** Le moteur est-il branché ? Sans clé, la page ne promet rien. */
 export function moteurEssaiConfigure(): boolean {
-  return Boolean(s(process.env.GEMINI_API_KEY) || s(process.env.GOOGLE_API_KEY));
+  return Boolean(cleGemini() || cleOpenAI());
+}
+
+/**
+ * ═══ LE RENDU PAR OPENAI ═══ Quand Gemini n'a pas de clé ou n'a pas rendu
+ * d'image : les deux photos en `image[]`, la même consigne, au format 2:3 de
+ * l'avant (1024 × 1536). Le moteur est celui de l'essayage — le plus proche de
+ * ChatGPT dans le catalogue du compte, voir `moteur-image.ts`.
+ */
+async function rendreParOpenAI(avant: Img, piece: Img, consigne: string, cle: string): Promise<{ image: Img; modele: string } | { erreur: string }> {
+  const base = s(process.env.OPENAI_BASE_URL) || "https://api.openai.com";
+  const fichier = (p: Img, nom: string) => new File([Buffer.from(p.donnees, "base64")], nom, { type: p.type });
+  const erreurs: string[] = [];
+  for (const modele of (await moteursDImage(cle, base)).liste) {
+    const forme = new FormData();
+    forme.append("model", modele);
+    forme.append("image[]", fichier(avant, "personne.jpg"));
+    forme.append("image[]", fichier(piece, "piece.jpg"));
+    forme.append("prompt", `IMAGE 1 is the person; IMAGE 2 is the shop's garment.\n${consigne}`);
+    forme.append("size", "1024x1536");
+    forme.append("quality", s(process.env.OPENAI_IMAGE_QUALITY) || "high");
+    const r = await fetch(`${base}/v1/images/edits`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${cle}` },
+      body: forme,
+      signal: AbortSignal.timeout(200_000),
+    });
+    if (!r.ok) {
+      const txt = await r.text().catch(() => "");
+      if (moteurRefuse(r.status, txt)) {
+        noterRefus(modele);
+        erreurs.push(`${modele} refusé`);
+        continue;
+      }
+      return { erreur: `OpenAI a répondu ${r.status}${txt ? ` : ${txt.slice(0, 200)}` : ""}` };
+    }
+    const j = (await r.json()) as { data?: { b64_json?: string }[] };
+    const b64 = j.data?.[0]?.b64_json;
+    if (b64) return { image: { type: "image/png", donnees: b64 }, modele };
+    return { erreur: "OpenAI n'a pas rendu d'image." };
+  }
+  return { erreur: erreurs.join(" ; ") || "Aucun moteur OpenAI disponible." };
 }
 
 /** ═══ 2. RECADRÉE SUR ELLE ═══ Une marge de six pour cent ; une boîte trop petite ou absente garde la photo entière. */
@@ -169,7 +266,7 @@ async function ranger(chemin: string, octets: Buffer, type: string): Promise<str
 }
 
 /** L'ESSAYAGE DE SA VITRINE, S'IL EST À FAIRE. Rien ne lève. */
-export async function completerEssaiVitrine(slug: string): Promise<void> {
+export async function completerEssaiVitrine(slug: string, origine?: string): Promise<void> {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("human_vitrine_sites")
@@ -215,19 +312,37 @@ export async function completerEssaiVitrine(slug: string): Promise<void> {
 
     // ── 3. L'AVANT, HABILLÉ ──
     const cheminAvant = choix.genre === "homme" ? AVANT_LUI : AVANT_ELLE;
-    const imgAvant = await photoDuDisque(cheminAvant);
+    /* SUR LE DISQUE, ET PAR LE RÉSEAU EN REPLI. En production, une route ne
+       voit du dossier `public` que ce que `next.config.ts` lui fait emporter :
+       sans la ligne dédiée, l'avant manquait — c'est ce qui laissait l'étape 2
+       vide. Le site le sert de toute façon à son adresse. */
+    const imgAvant = (await photoDuDisque(cheminAvant)) ?? (origine ? await lirePhoto(`${origine}${cheminAvant}`) : null);
     if (!imgAvant) return void (await echec("la photo de l'avant est introuvable sur le serveur"));
-    const r = await parGemini(
-      [
-        { text: "IMAGE 1 — THE PERSON:" },
-        { inlineData: { mimeType: imgAvant.type, data: imgAvant.donnees } },
-        { text: "IMAGE 2 — THE SHOP'S GARMENT:" },
-        { inlineData: { mimeType: "image/jpeg", data: piece.toString("base64") } },
-        { text: consigneEssai(choix.nom, s(row.business_name)) },
-      ],
-      "2:3",
-    );
-    if ("erreur" in r) return void (await echec(r.erreur));
+    const consigne = consigneEssai(choix.nom, s(row.business_name));
+    const imgPiece: Img = { type: "image/jpeg", donnees: piece.toString("base64") };
+    /* GEMINI D'ABORD, OPENAI ENSUITE — la règle de l'essayage et de la photo ClikMe. */
+    const erreurs: string[] = [];
+    let r: { image: Img; modele: string } | null = null;
+    if (cleGemini()) {
+      const g = await parGemini(
+        [
+          { text: "IMAGE 1 — THE PERSON:" },
+          { inlineData: { mimeType: imgAvant.type, data: imgAvant.donnees } },
+          { text: "IMAGE 2 — THE SHOP'S GARMENT:" },
+          { inlineData: { mimeType: imgPiece.type, data: imgPiece.donnees } },
+          { text: consigne },
+        ],
+        "2:3",
+      );
+      if ("erreur" in g) erreurs.push(g.erreur);
+      else r = g;
+    }
+    if (!r && cleOpenAI()) {
+      const o = await rendreParOpenAI(imgAvant, imgPiece, consigne, cleOpenAI());
+      if ("erreur" in o) erreurs.push(o.erreur);
+      else r = o;
+    }
+    if (!r) return void (await echec(erreurs.join(" ; ") || "aucun moteur d'image"));
     const dim = DIMENSIONS[cheminAvant];
     const octets = await sharp(Buffer.from(r.image.donnees, "base64")).resize(dim.l, dim.h, { fit: "cover" }).webp({ quality: 86 }).toBuffer();
     const urlApres = await ranger(`${DOSSIER}/${slug}-essai-apres-${Date.now()}.webp`, octets, "image/webp");

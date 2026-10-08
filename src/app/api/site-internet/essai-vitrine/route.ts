@@ -21,7 +21,9 @@ export async function GET(req: Request) {
     if (e?.etat === "prete" && e.apres && e.avant) {
       return NextResponse.json({ etat: "prete", avant: e.avant, apres: e.apres, piece: e.piece, nom: e.nom });
     }
-    return NextResponse.json({ etat: e?.etat ?? "absent" });
+    /* L'ÉCHEC DIT POURQUOI : c'est ce qu'on lit pour comprendre une étape 2
+       restée vide, sans ouvrir la base. */
+    return NextResponse.json({ etat: e?.etat ?? "absent", essais: e?.essais, at: e?.at, erreur: e?.erreur });
   } catch {
     return NextResponse.json({ etat: "absent" });
   }
