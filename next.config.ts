@@ -8,6 +8,10 @@ const config: NextConfig = {
   // ils sont lus via readFileSync avec un chemin dynamique (couleur/N&B), que le
   // file-tracing de Next ne détecte pas automatiquement.
   outputFileTracingIncludes: {
+    // L'IMAGE DE PARTAGE LIT SA POLICE ET LE FANTÔME SUR LE DISQUE (voir
+    // `lib/og/clikme-og.tsx`). Fabriquée à la compilation d'ordinaire, elle doit
+    // pouvoir l'être aussi à la demande sans retomber sur une police générique.
+    "/opengraph-image": ["./public/clikme-fantome.png", "./src/lib/og/polices/**"],
     "/admin/rejoindre/lettre/[slug]": ["./src/templates/**"],
     // Les DEUX lettres du parcours commerçant lisent leurs gabarits par un
     // chemin construit à l'exécution (type de diagnostic, recto/verso) : le

@@ -20,6 +20,7 @@ import type { Metadata, Viewport } from "next";
 import { Caveat } from "next/font/google";
 import { MARQUE } from "@/lib/marque";
 import { Histoire } from "./histoire";
+import { IMAGE_DE_PARTAGE } from "@/lib/og/image-de-partage";
 
 /**
  * L'ÉCRITURE MANUSCRITE DES ANNOTATIONS.
@@ -59,6 +60,14 @@ export const metadata: Metadata = {
       "Voyez. Essayez. Décidez. Ce que les commerçants de votre ville proposent aujourd’hui, essayé sur votre photo avant de vous déplacer.",
     locale: "fr_FR",
     type: "website",
+    images: [IMAGE_DE_PARTAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${MARQUE} — votre ville bouge, voyez ce qui se passe`,
+    description:
+      "Voyez. Essayez. Décidez. Ce que les commerçants de votre ville proposent aujourd’hui, essayé sur votre photo avant de vous déplacer.",
+    images: [IMAGE_DE_PARTAGE.url],
   },
 };
 

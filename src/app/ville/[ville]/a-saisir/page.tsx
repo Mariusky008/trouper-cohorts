@@ -32,6 +32,7 @@ import { telephonesDeSites } from "@/lib/direct/menus-du-jour";
 import type { CarteVue } from "../_ui/carte";
 import { SelectionSwipe } from "./selection-swipe";
 import { StylesSwipe } from "./styles-swipe";
+import { IMAGE_DE_PARTAGE } from "@/lib/og/image-de-partage";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -67,7 +68,8 @@ export async function generateMetadata({ params }: { params: Promise<{ ville: st
     title,
     description,
     alternates: { canonical: `/ville/${ville}/a-saisir` },
-    openGraph: { title, description, type: "website" },
+    openGraph: { title, description, type: "website", images: [IMAGE_DE_PARTAGE] },
+    twitter: { card: "summary_large_image", title, description, images: [IMAGE_DE_PARTAGE.url] },
     robots: duJour.length ? undefined : { index: false },
   };
 }

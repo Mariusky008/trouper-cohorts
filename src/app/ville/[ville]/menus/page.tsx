@@ -20,6 +20,7 @@ import { configVille } from "@/lib/direct/ville";
 import { menusDuJour } from "@/lib/direct/menus-du-jour";
 import { MenusDefile } from "./defile";
 import { StylesMenus } from "./styles";
+import { IMAGE_DE_PARTAGE } from "@/lib/og/image-de-partage";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -61,7 +62,8 @@ export async function generateMetadata({ params }: { params: Promise<{ ville: st
     // La canonique sans `?carte=…` : ce paramètre ouvre le défilé sur un menu
     // partagé, il ne fait pas une autre page.
     alternates: { canonical: `/ville/${ville}/menus` },
-    openGraph: { title, description, type: "website" },
+    openGraph: { title, description, type: "website", images: [IMAGE_DE_PARTAGE] },
+    twitter: { card: "summary_large_image", title, description, images: [IMAGE_DE_PARTAGE.url] },
     robots: menus.length ? undefined : { index: false },
   };
 }

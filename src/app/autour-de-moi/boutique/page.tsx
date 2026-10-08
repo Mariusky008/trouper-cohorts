@@ -49,6 +49,7 @@ import { Boutique } from "./boutique";
 import { SCRIPT_HEURE } from "@/lib/direct/lumiere-du-moment";
 import { toutesLesCartes } from "@/lib/direct/apercu-habitant";
 import { nomCourt } from "@/lib/site-internet/nom-de-la-page";
+import { IMAGE_DE_PARTAGE } from "@/lib/og/image-de-partage";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -71,6 +72,26 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
     description:
       "Tout un commerce sur une page : ce qu’il propose aujourd’hui, ce qui revient chez lui, sa carte, et comment y aller. Une maquette.",
     robots: { index: false, follow: false },
+    // L'APERÇU D'UN LIEN VERS UN COMMERCE PORTE SON NOM — c'est lui qu'on envoie
+    // à un ami, pas la marque. L'image reste celle de Clikme.
+    ...(carte
+      ? {
+          openGraph: {
+            title: `${carte.nom} — sur ${MARQUE}`,
+            description: "Ce qu’il propose aujourd’hui, à essayer avant d’y aller.",
+            siteName: MARQUE,
+            locale: "fr_FR",
+            type: "website" as const,
+            images: [IMAGE_DE_PARTAGE],
+          },
+          twitter: {
+            card: "summary_large_image" as const,
+            title: `${carte.nom} — sur ${MARQUE}`,
+            description: "Ce qu’il propose aujourd’hui, à essayer avant d’y aller.",
+            images: [IMAGE_DE_PARTAGE.url],
+          },
+        }
+      : {}),
     manifest: `/autour-de-moi/boutique/manifest.webmanifest${carte ? `?c=${encodeURIComponent(carte.id)}` : ""}`,
     appleWebApp: {
       capable: true,

@@ -20,6 +20,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { configVille } from "@/lib/direct/ville";
 import { lireLaVilleReelle } from "@/lib/direct/ville-reelle";
 import { VilleApp } from "./_ui/ville-app";
+import { IMAGE_DE_PARTAGE } from "@/lib/og/image-de-partage";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -50,7 +51,8 @@ export async function generateMetadata({ params }: { params: Promise<{ ville: st
     // LA CANONIQUE DÉSIGNE LA VILLE SANS PARAMÈTRE : les `?utm_*` d'une
     // campagne ne doivent pas devenir autant de pages en double pour Google.
     alternates: { canonical: `/ville/${ville}` },
-    openGraph: { title, description, type: "website", url: `/ville/${ville}` },
+    openGraph: { title, description, type: "website", url: `/ville/${ville}`, images: [IMAGE_DE_PARTAGE] },
+    twitter: { card: "summary_large_image", title, description, images: [IMAGE_DE_PARTAGE.url] },
     manifest: `/ville/${ville}/manifest.webmanifest`,
     appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: `Direct ${nom}` },
   };

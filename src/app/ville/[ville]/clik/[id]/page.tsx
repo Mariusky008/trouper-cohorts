@@ -26,6 +26,7 @@ import { codeDe } from "@/lib/direct/code-bon";
 import { commerceDuClik } from "@/lib/direct/commerce-vue";
 import { conditionPhrase } from "@/lib/direct/condition-achat";
 import { telephoneDe } from "@/lib/direct/habitant";
+import { IMAGE_DE_PARTAGE } from "@/lib/og/image-de-partage";
 
 /** La condition d'achat, telle qu'on peut la lire. La mise en forme vit dans
  *  `condition-achat` : trois écrans l'affichent, et chacun la formulait à sa
@@ -56,7 +57,7 @@ export async function generateMetadata({ params }: { params: Promise<{ ville: st
   // n'est plus appelée, la page ne servira pas un écran vide.
   if (!c) notFound();
   const title = c?.titre ? `${c.titre} · ${cfg.nom}` : `Le Direct de ${cfg.nom}`;
-  return { title, description: c?.titre || "", openGraph: { title, type: "website" } };
+  return { title, description: c?.titre || "", openGraph: { title, type: "website", images: [IMAGE_DE_PARTAGE] } };
 }
 
 export default async function ClikPage({ params }: { params: Promise<{ ville: string; id: string }> }) {
