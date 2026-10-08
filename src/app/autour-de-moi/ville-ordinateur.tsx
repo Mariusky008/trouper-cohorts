@@ -44,6 +44,7 @@ import {
   HEURE_MAX,
   HEURE_MIN,
   momentEnCours,
+  momentsRestants,
   type CarteAutour,
   type CleMetier,
   type EvenementVille,
@@ -257,7 +258,28 @@ function LeDirectOrdinateur({ moi, copains, retour }: VilleOrdinateurProps) {
 
   // LES MÊMES COMMERCES QUE L'APPLICATION — voir `cartes-de-la-ville.ts`.
   const lesCartes = useCartesDeLaVille(heure);
-  const cartes = useMemo(() => lesCartes.filter((c) => !c.prepare && c.id !== moi?.id), [lesCartes, moi?.id]);
+  /**
+   * LA MÊME RÈGLE QUE LE PAQUET DU TÉLÉPHONE : on n'y voit que ceux qui ont
+   * quelque chose aujourd'hui.
+   *
+   * « En mode ordinateur seulement, j'ai plein d'annonces de commerçants
+   * fictives sur clikme.fr/ville/dax. » Ce n'étaient pas des annonces : des
+   * commerces de la ville qui n'ont rien publié (`silencieux`), que le
+   * téléphone écarte du Direct et que le carrousel montrait quand même, avec
+   * « Ça te tente, aujourd'hui ? » et rien dessous. Ils en sortent, comme sur
+   * le téléphone (voir `ouverts` dans `apercu-habitant.tsx`) — sauf les
+   * copains présentés par un commerce, qu'on vient voir exprès.
+   */
+  const cartes = useMemo(
+    () =>
+      lesCartes.filter(
+        (c) =>
+          !c.prepare &&
+          c.id !== moi?.id &&
+          (copains.includes(c.id) || (!c.silencieux && momentsRestants(c, heure).length > 0)),
+      ),
+    [lesCartes, moi?.id, copains, heure],
+  );
   const evenements = useMemo(() => evenementsDeLaVille(), []);
   const fiches = useMemo<Fiche[]>(() => {
     const fiche = (c: CarteAutour, copain: boolean): Fiche => {
