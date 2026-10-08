@@ -24,6 +24,8 @@ type Props = {
   metierLabel: string;
   villeAff: string;
   photos?: string[]; // photos Google du pro — la carte du fil est pleine photo
+  /** Sa pièce, recadrée sur sa photo Google par l'essayage de sa vitrine — voir `essai-vitrine.ts`. */
+  pieceDuJour?: string;
   note: string | null;
   reviewsCount: number | null;
   avisAllowed: boolean; // commerce (déonto none) : avis + « remplir ce soir » autorisés
@@ -106,6 +108,7 @@ export function DemoTour({
   metierLabel,
   villeAff,
   photos,
+  pieceDuJour,
   reviewsCount,
   avisAllowed,
   flashExample,
@@ -389,7 +392,7 @@ export function DemoTour({
   const mesPhotos = Array.isArray(photos) ? photos.filter(Boolean) : [];
   // LE FIL DE LA VILLE SUIT LA FAMILLE DU MÉTIER. Sans elle, il retombait sur
   // cinq restaurants — voir `FamilleMetier` dans `geste-du-jour`.
-  const cartesVille = G ? cartesDeLaVille(laVille, G.famille) : [];
+  const cartesVille = G ? cartesDeLaVille(laVille, G.famille, Boolean(G.photoEtVoix)) : [];
   const actionHabitant = G ? motDAction(G) : "Je veux";
   /**
    * ═══ SA PHOTO, MAIS SEULEMENT SI ELLE ARRIVE ═════════════════════════════
@@ -449,8 +452,12 @@ export function DemoTour({
    * « voilà votre commerce dans Le Direct ».
    */
   const carteDeLExemple = G?.famille === "restauration";
+  /* LA BOUTIQUE DE VÊTEMENTS MONTRE SA PIÈCE : la sienne quand l'essayage l'a
+     trouvée sur sa fiche, celle de l'exemple sinon — jamais sa devanture sous
+     une chemise inventée. */
+  const pieceMontree = G?.photoEtVoix ? pieceDuJour || G.pieceExemple : undefined;
   const maCarte = G
-    ? saCarte(G, nom, metierLabel, laVille, carteDeLExemple || photoKO ? undefined : saPhoto)
+    ? saCarte(G, nom, metierLabel, laVille, pieceMontree ?? (carteDeLExemple || photoKO ? undefined : saPhoto))
     : null;
 
   /* ═══ LA QUEUE DE LA DÉMONSTRATION N'EST PLUS QU'UN SEUL ACTE ════════════
@@ -894,7 +901,43 @@ export function DemoTour({
      * vous ? » qui retourne la situation contre lui — il faut le temps de la
      * recevoir. Une seconde et demie de noir vaut mieux qu'une transition.
      */
-    const steps: Array<{ title: string; say: string; enter: () => void; respire?: number }> = [];
+    const steps: Array<{ title: string; say: string; enter: () => void; respire?: number; attendre?: () => Promise<void> }> = [];
+
+    /**
+     * ═══ L'ÉTAPE 2 ATTEND SA PIÈCE, QUAND ELLE EST EN ROUTE ═══════════════
+     *
+     * « L'assistante m'a montré l'avant et l'après, mais je n'ai pas eu le
+     * temps de voir apparaître l'après : on est passé en étape 3. »
+     *
+     * LE RENDU DE SA PIÈCE PREND UNE MINUTE, la réplique dix secondes. Quand
+     * l'essai est encore en route à la fin de la phrase (`clikme:essai`,
+     * annoncé par `avant-apres-vitrine.tsx`), la visite patiente — vingt-cinq
+     * secondes au plus, la légende le dit — et laisse jouer l'apparition s'il
+     * arrive. Sinon, elle continue : on ne retient pas quelqu'un une minute
+     * devant une image qui charge.
+     */
+    const attendreLEssai = (maxMs: number) =>
+      new Promise<void>((ok) => {
+        const etat = () => (window as unknown as { __clikmeEssai?: string }).__clikmeEssai;
+        if (etat() !== "en-cours") return ok();
+        setCaption("Un instant : je l'habille avec une de vos pièces…");
+        let fini = false;
+        let t = 0;
+        const ecoute = (e: Event) => {
+          const d = (e as CustomEvent).detail;
+          if (d === "prete") finir(3800);
+          else if (d !== "en-cours") finir(0);
+        };
+        const finir = (encore: number) => {
+          if (fini) return;
+          fini = true;
+          window.removeEventListener("clikme:essai", ecoute);
+          window.clearTimeout(t);
+          window.setTimeout(ok, encore);
+        };
+        window.addEventListener("clikme:essai", ecoute);
+        t = window.setTimeout(() => finir(0), maxMs);
+      });
 
     // ── 0. LA PAGE, CINQ SECONDES, COMME PREUVE ────────────────────────────
     //
@@ -945,6 +988,7 @@ export function DemoTour({
         // On laisse le bloc à l'écran après la phrase : c'est l'image qu'on
         // veut qu'il emporte, et la suite la recouvre immédiatement.
         respire: 1800,
+        attendre: () => attendreLEssai(25_000),
       });
     }
 
@@ -1253,6 +1297,8 @@ export function DemoTour({
       if (cancelled.current) return;
       // LA RESPIRATION. La scène reste à l'écran, la voix se tait : c'est le
       // silence qui fait qu'on a le temps de comprendre ce qu'on vient de voir.
+      if (st.attendre) await st.attendre();
+      if (cancelled.current) return;
       if (st.respire) await new Promise((r) => window.setTimeout(r, st.respire));
       if (cancelled.current) return;
     }
@@ -1884,6 +1930,16 @@ export function DemoTour({
              aurait ecrase la premiere en silence. La garde des feuilles en
              ligne l'a vu ; voir npm run verifier:styles. */
           @keyframes dtBarre{from{transform:scaleY(.42)}to{transform:scaleY(1)}}
+          /* LA BOUTIQUE DE VÊTEMENTS : la photo de la pièce, puis la bulle du vocal. */
+          .ph-piece{width:96px;height:124px;object-fit:cover;border-radius:13px;border-top-right-radius:5px;
+            border:1px solid rgba(255,201,122,.35);}
+          .ph-vocal{display:inline-flex;align-items:center;gap:8px;padding:6px 11px 6px 6px;border-radius:13px;
+            background:rgba(255,201,122,.16);}
+          .ph-play{width:24px;height:24px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;
+            font-size:10px;color:#1A0F08;background:#FFC97A;}
+          .ph-vocal em{font-style:normal;font-size:11.5px;color:#FFE2B8;}
+          .ph-lui p.ph-mot{font-size:12px;font-style:italic;color:#F2E3D0;background:rgba(255,255,255,.05);}
+          .ph-mot small{display:block;margin-top:3px;font-style:normal;font-size:10.5px;color:#BFA88F;}
 
 
           /* ── LE TAMPON « LU » / « ECRIT » ──
@@ -2528,7 +2584,39 @@ export function DemoTour({
                     ce qui remplit l'étape 3. Sa réponse se compose depuis le
                     même `extrait` que la carte qui en sort ; aucune des deux ne
                     peut donc dire autre chose que l'autre. */}
-                {G.parPhoto ? (
+                {G.photoEtVoix ? (
+                  /* ═══ UNE PHOTO, PUIS UN VOCAL ═══ « On montre à l'assistante
+                     une photo du vêtement, et on laisse un vocal pour donner
+                     des infos aux clients quand ils l'essaient. » Son tour à
+                     lui : la photo de la pièce, puis la bulle de sa voix. */
+                  <div className={`ph-dial${photoN >= 1 ? " lu" : ""}`}>
+                    <div className="ph-elle">
+                      <span className="ph-av" aria-hidden="true">✦</span>
+                      <p>{G.demande}</p>
+                    </div>
+                    <div className="ph-lui">
+                      {pieceMontree && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img className="ph-piece" src={pieceMontree} alt="" />
+                      )}
+                      <span className="ph-vocal">
+                        <span className="ph-play" aria-hidden="true">▶</span>
+                        <span className="ph-onde" aria-hidden="true">
+                          {[7, 13, 9, 17, 11, 20, 14, 8, 16, 10, 12, 18, 9].map((h, i) => (
+                            <i key={`${h}-${i}`} style={{ ["--h" as string]: `${h}px`, ["--i" as string]: i }} />
+                          ))}
+                        </span>
+                        <em>0:12</em>
+                      </span>
+                      {G.motVoix && (
+                        <p className="ph-mot">
+                          « {G.motVoix} »<small>Exemple de vocal</small>
+                        </p>
+                      )}
+                    </div>
+                    {photoN >= 1 && <span className="ph-lu" aria-hidden="true">✓ reçu</span>}
+                  </div>
+                ) : G.parPhoto ? (
                   <div className={`ph-shot${photoN >= 1 ? " lu" : ""}`}>
                     <div className="ph-ard" aria-hidden="true">
                       <span>{G.extrait.titre}</span>

@@ -25,7 +25,7 @@ export const AVANT_LUI = "/direct/essai/mode-homme-avant.jpg";
  * production, et ses échecs auraient fait attendre un jour entier une page
  * que la version suivante sait réussir.
  */
-export const VERSION_ESSAI = 2;
+export const VERSION_ESSAI = 3;
 
 export type EssaiVitrine = {
   /** Voir `VERSION_ESSAI`. */
@@ -73,6 +73,7 @@ export function essaiVitrineDuDiagnostic(diag: unknown): EssaiVitrine | undefine
 }
 
 const DIX_MINUTES = 10 * 60_000;
+const DEMI_HEURE = 30 * 60_000;
 const UN_JOUR = 24 * 3600_000;
 const PERDU = 6 * 60_000;
 
@@ -80,8 +81,9 @@ const PERDU = 6 * 60_000;
  * FAUT-IL (RE)LANCER LE MOTEUR ? Jamais encore fait : oui. Un rendu perdu
  * (en cours depuis plus de six minutes) : oui. Un échec : trois essais à dix
  * minutes d'écart, puis un par jour — la même règle que les scènes du
- * restaurant. « Aucune pièce sur ses photos » : une fois par jour, ses photos
- * ont pu changer.
+ * restaurant. « Aucune pièce sur ses photos » : trois fois à une demi-heure
+ * d'écart (une inscription toute neuve n'a pas encore toutes ses photos),
+ * puis une fois par jour.
  */
 export function essaiVitrineAFaire(e: EssaiVitrine | undefined, maintenant = Date.now()): boolean {
   if (!e) return true;
@@ -90,21 +92,43 @@ export function essaiVitrineAFaire(e: EssaiVitrine | undefined, maintenant = Dat
   const depuis = e.at ? maintenant - Date.parse(e.at) : Infinity;
   if (e.etat === "prete") return false;
   if (e.etat === "en-cours") return !(depuis < PERDU);
-  if (e.etat === "aucune") return !(depuis < UN_JOUR);
+  if (e.etat === "aucune") return e.essais < 3 ? !(depuis < DEMI_HEURE) : !(depuis < UN_JOUR);
   return e.essais < 3 ? !(depuis < DIX_MINUTES) : !(depuis < UN_JOUR);
 }
 
-/** Ce que la page reçoit : l'essai prêt, ou « en cours » pour qu'elle attende. */
+/**
+ * Ce que la page reçoit : l'essai prêt, « en cours » pour qu'elle attende, ou
+ * « echec » AVEC SA RAISON. « Le après n'a jamais marché, et ensuite à l'étape
+ * 2 je n'ai pas eu d'avant ou d'après » : le bloc s'effaçait sans un mot, et
+ * personne ne pouvait savoir pourquoi. Il le dit maintenant, à lui seul.
+ */
 export type EssaiVitrineCarte = {
-  etat: "en-cours" | "prete";
+  etat: "en-cours" | "prete" | "echec";
   avant?: string;
   apres?: string;
   piece?: string;
   nom?: string;
+  /** La raison, en clair, pour le commerçant. */
+  raison?: string;
+  /** Le détail technique, replié sous la raison. */
+  detail?: string;
 };
+
+/** La raison d'un échec, dite au commerçant — le détail technique reste à part. */
+export function raisonLisible(e: EssaiVitrine): string {
+  if (e.etat === "aucune") {
+    return /lisible/.test(e.erreur ?? "")
+      ? "Vos photos Google arrivent : l’essayage se fera dès qu’elles seront là."
+      : "Aucune de vos photos Google ne montre une pièce en entier. Ajoutez-en une depuis votre comptoir : elle s’essaiera ici.";
+  }
+  return "Le rendu n’a pas abouti cette fois. Un nouvel essai se fait tout seul à votre prochaine visite.";
+}
 
 export function essaiVitrinePourLaCarte(e: EssaiVitrine | undefined, aFaire: boolean): EssaiVitrineCarte | undefined {
   if (e?.etat === "prete" && e.apres && e.avant) return { etat: "prete", avant: e.avant, apres: e.apres, piece: e.piece, nom: e.nom };
-  if (aFaire || e?.etat === "en-cours") return { etat: "en-cours", avant: AVANT_ELLE };
+  if (aFaire || e?.etat === "en-cours") return { etat: "en-cours", avant: AVANT_ELLE, piece: e?.piece, nom: e?.nom };
+  if (e && (e.etat === "echec" || e.etat === "aucune")) {
+    return { etat: "echec", avant: e.avant ?? AVANT_ELLE, piece: e.piece, nom: e.nom, raison: raisonLisible(e), detail: e.erreur };
+  }
   return undefined;
 }

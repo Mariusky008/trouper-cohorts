@@ -190,8 +190,59 @@ const AILLEURS = {
   musee: "/direct/nocturne-musee.jpg",
 } as const;
 
-export function cartesDeLaVille(ville: string, famille: FamilleMetier = "restauration"): CarteDirect[] {
+export function cartesDeLaVille(ville: string, famille: FamilleMetier = "restauration", mode = false): CarteDirect[] {
   const yAllerF = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(ville);
+
+  /* ═══ LA BOUTIQUE DE VÊTEMENTS NE VOIT QUE DES BOUTIQUES DE VÊTEMENTS ═══
+   *
+   * « Étapes 3 et 4, on parle de nouveaux arrivages mais je vois des images
+   * de boulangerie au lieu d'avoir que des magasins de vêtements : crée deux
+   * ou trois annonces de plus de magasins de vêtements pour qu'on reste dans
+   * le thème, et supprime les autres types de commerçants. »
+   *
+   * CINQ VOISINS, TOUS DE SON MÉTIER, et aucun visage : une vitrine de
+   * mannequins, un jean à plat, un rayon de friperie, une combinaison sur un
+   * mannequin, une chemise de près. LE JEAN EST LE DERNIER : la visite
+   * s'arrête sur lui au moment où la voix dit « mettre de côté ». */
+  if (mode) {
+    return [
+      {
+        photo: "/direct/vitrine-mode.jpg", cadrage: "50%",
+        nom: "Une boutique de la rue piétonne", metier: "Prêt-à-porter", ville, distance: "180 m",
+        itineraire: yAllerF, reste: "Cette semaine", icone: "👗",
+        quoi: "La nouvelle collection", lignes: ["En vitrine depuis ce matin", "À essayer sur sa photo"],
+        prix: "", social: "5 l'ont mise de côté",
+      },
+      {
+        photo: "/direct/mode-chemise-jean.jpg", cadrage: "40%",
+        nom: "Un magasin pour hommes", metier: "Prêt-à-porter homme", ville, distance: "300 m",
+        itineraire: yAllerF, reste: "Arrivage du jour", icone: "👕",
+        quoi: "La chemise en jean délavé", lignes: ["Du S au XXL", "Retouches offertes"],
+        prix: "55 €", social: "4 l'ont essayée",
+      },
+      {
+        photo: AILLEURS.rayon, cadrage: "50%",
+        nom: "Une friperie du vieux centre", metier: "Friperie", ville, distance: "400 m",
+        itineraire: yAllerF, reste: "Arrivage du jour", icone: "🧥",
+        quoi: "Ce qui vient de rentrer", lignes: ["Une pièce par taille", "Premier arrivé"],
+        prix: "", social: "7 l'ont vu passer",
+      },
+      {
+        photo: "/direct/mode-combinaison.jpg", cadrage: "35%",
+        nom: "Un dépôt-vente", metier: "Dépôt-vente", ville, distance: "550 m",
+        itineraire: yAllerF, reste: "Aujourd'hui", icone: "✨",
+        quoi: "La combinaison des années 70", lignes: ["Pièce unique · taille 38", "À essayer sur sa photo"],
+        prix: "45 €", social: "3 l'ont essayée",
+      },
+      {
+        photo: "/direct/mode-jean-papillons.jpg", cadrage: "55%",
+        nom: "Un concept store", metier: "Concept store", ville, distance: "350 m",
+        itineraire: yAllerF, reste: "Arrivage du jour", icone: "👖",
+        quoi: "Le jean brodé papillons", lignes: ["Du 34 au 42", "À essayer sur sa photo"],
+        prix: "69 €", social: "8 l'ont essayé",
+      },
+    ];
+  }
 
   /* ═══ CE QUE CHAQUE FAMILLE VOIT, ET POURQUOI CE N'EST PAS LA MÊME VILLE ══
    *

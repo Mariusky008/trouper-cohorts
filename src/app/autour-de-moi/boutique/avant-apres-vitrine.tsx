@@ -25,14 +25,33 @@
 //
 // LE RENDU PEUT ÊTRE EN ROUTE à la première visite (le moteur travaille après
 // la page, voir `essai-vitrine.ts`) : le second cadre le dit, la page demande
-// où il en est, et l'animation part dès qu'il arrive. S'il échoue, le bloc
-// s'efface et la page reste comme avant.
+// où il en est, et l'animation part dès qu'il arrive.
+//
+// S'IL ÉCHOUE, LE BLOC LE DIT. « Le après n'a jamais marché, et ensuite à
+// l'étape 2 je n'ai pas eu d'avant ou d'après » : il s'effaçait sans un mot,
+// et personne ne pouvait savoir pourquoi. Il garde l'avant, dit la raison en
+// clair, et replie le détail technique dessous. Et il continue de demander :
+// un nouvel essai part dès que ses photos Google sont lues.
+//
+// LA VISITE DE LÉA L'ATTEND : l'état est annoncé à la fenêtre
+// (`clikme:essai`), et l'étape 2 patiente quelques secondes quand le rendu
+// est en route — voir `attendreLEssai` dans `demo-tour.tsx`.
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import type { EssaiVitrineCarte } from "@/lib/site-internet/essai-vitrine-donnees";
 
-/** Combien de temps on attend le rendu, au plus, avant de laisser la page comme avant. */
-const ATTENTE_MAX = 4 * 60_000;
+/** Combien de temps on attend le rendu, au plus. */
+const ATTENTE_MAX = 5 * 60_000;
+
+/** L'état de l'essai, annoncé à la fenêtre pour la visite de Léa. */
+function annoncer(etat: string) {
+  try {
+    (window as unknown as { __clikmeEssai?: string }).__clikmeEssai = etat;
+    window.dispatchEvent(new CustomEvent("clikme:essai", { detail: etat }));
+  } catch {
+    /* rien */
+  }
+}
 /** Les hauteurs de l'onde du mot — fixes : une onde qui change à chaque rendu clignote. */
 const ONDE = [30, 55, 40, 80, 60, 95, 45, 70, 35, 85, 50, 65, 30, 75, 55, 90, 40, 60, 35, 70, 45, 80, 30, 50];
 
@@ -55,41 +74,52 @@ export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai:
   const racine = useRef<HTMLElement | null>(null);
   const rejouer = useCallback(() => setTour((t) => t + 1), []);
 
-  /* ═══ LE RENDU EN ROUTE : ON DEMANDE OÙ IL EN EST ═══ Toutes les six
-     secondes, quatre minutes au plus. « Absent » au début est normal : la
-     route qui le fabrique vient à peine d'être sonnée. */
-  const enRoute = essai?.etat === "en-cours";
+  /* ═══ TANT QU'IL N'EST PAS PRÊT, ON DEMANDE OÙ IL EN EST ═══ Toutes les
+     cinq secondes, cinq minutes au plus — en cours comme après un échec : un
+     nouvel essai part dès que ses photos Google sont lues. « Absent » au
+     début est normal : la route qui le fabrique vient à peine d'être sonnée. */
+  const attend = essai?.etat === "en-cours" || essai?.etat === "echec";
   useEffect(() => {
-    if (!enRoute) return;
+    if (!attend) return;
     const debut = Date.now();
     let fini = false;
     const t = window.setInterval(async () => {
       if (Date.now() - debut > ATTENTE_MAX) {
         window.clearInterval(t);
-        if (!fini) setEssai(null);
+        if (!fini)
+          setEssai((e) =>
+            e?.etat === "en-cours" ? { ...e, etat: "echec", raison: "Le rendu prend plus de temps que prévu : il sera là à votre prochaine visite." } : e,
+          );
         return;
       }
       try {
         const r = await fetch(`/api/site-internet/essai-vitrine?slug=${encodeURIComponent(c.id)}`, { cache: "no-store" });
-        const j = (await r.json()) as { etat: string; avant?: string; apres?: string; piece?: string; nom?: string };
+        const j = (await r.json()) as { etat: string; avant?: string; apres?: string; piece?: string; nom?: string; raison?: string; erreur?: string };
         if (fini) return;
         if (j.etat === "prete" && j.apres) {
           window.clearInterval(t);
           setEssai({ etat: "prete", avant: j.avant, apres: j.apres, piece: j.piece, nom: j.nom });
           setTour((x) => x + 1);
-        } else if ((j.etat === "echec" || j.etat === "aucune") && Date.now() - debut > 20_000) {
-          window.clearInterval(t);
-          setEssai(null);
+        } else if (j.etat === "en-cours") {
+          setEssai((e) => ({ ...(e ?? {}), etat: "en-cours", piece: j.piece ?? e?.piece, nom: j.nom ?? e?.nom }));
+        } else if ((j.etat === "echec" || j.etat === "aucune") && j.raison) {
+          setEssai((e) => ({ ...(e ?? {}), etat: "echec", raison: j.raison, detail: j.erreur, piece: j.piece ?? e?.piece, nom: j.nom ?? e?.nom }));
         }
       } catch {
         /* réseau coupé : au tour suivant */
       }
-    }, 6000);
+    }, 5000);
     return () => {
       fini = true;
       window.clearInterval(t);
     };
-  }, [enRoute, c.id]);
+  }, [attend, c.id]);
+
+  /* L'ÉTAT, ANNONCÉ À LA VISITE DE LÉA — voir `attendreLEssai`. */
+  const etat = essai?.etat ?? "absent";
+  useEffect(() => {
+    annoncer(etat);
+  }, [etat]);
 
   /* ═══ L'ANIMATION PART QUAND ON LA VOIT, ET QUAND LÉA EN PARLE ═══ */
   useEffect(() => {
@@ -163,6 +193,10 @@ export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai:
               </span>
               <figcaption className="aa-badge or">Avec votre pièce</figcaption>
             </div>
+          ) : essai.etat === "echec" ? (
+            <div className="aa-route rate">
+              <p>{essai.raison ?? "Le rendu n’a pas abouti cette fois."}</p>
+            </div>
           ) : (
             <div className="aa-route">
               <i className="aa-scan boucle" aria-hidden="true" />
@@ -212,6 +246,13 @@ export function AvantApresVitrine({ c, essai: depart }: { c: CarteAutour; essai:
           </div>
         )}
       </div>
+
+      {essai.etat === "echec" && essai.detail && (
+        <details className="aa-detail">
+          <summary>Détail technique</summary>
+          <code>{essai.detail}</code>
+        </details>
+      )}
 
       <p className="aa-pied">
         <span>Simulation d’essayage · Rendu indicatif</span>
@@ -265,6 +306,12 @@ function StylesAvantApres() {
 .aa-route{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:14px;}
 .aa-route p{position:relative;z-index:3;margin:0;padding:8px 12px;border-radius:12px;background:rgba(18,12,9,.7);
   font-size:13px;font-weight:700;color:#FFF4E6;text-align:center;}
+.aa-route.rate{align-items:center;}
+.aa-route.rate p{font-weight:600;line-height:1.4;background:rgba(18,12,9,.82);}
+.aa-detail{margin:10px 2px 0;font-size:12px;color:#A8927F;}
+.aa-detail summary{cursor:pointer;}
+.aa-detail code{display:block;margin-top:6px;padding:8px 10px;border-radius:10px;background:rgba(18,12,9,.6);
+  white-space:pre-wrap;word-break:break-word;font-size:11.5px;color:#CDB8A4;}
 @keyframes aa-devoile{from{clip-path:inset(0 0 100% 0);}to{clip-path:inset(0 0 0 0);}}
 @keyframes aa-balaye{0%{top:0;opacity:0;}8%{opacity:1;}92%{opacity:1;}100%{top:100%;opacity:0;}}
 @keyframes aa-brille{0%{opacity:0;transform:scale(.2);}40%{opacity:1;transform:scale(1.6);}100%{opacity:0;transform:scale(.6);}}

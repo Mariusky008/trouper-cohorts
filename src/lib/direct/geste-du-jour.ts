@@ -167,6 +167,19 @@ export type GesteDuJour = {
   suite?: string;
   /** La phrase de la demande, à l'acte de la ville, quand « ils réservent » ne se dit pas chez lui. */
   convaincus?: string;
+  /**
+   * LE GESTE EST UNE PHOTO DE LA PIÈCE ET UN MOT À SA VOIX — la boutique de
+   * vêtements. « Ce n'est pas une description, mais plutôt qu'on montre à
+   * l'assistante une photo du vêtement, et on laisse un vocal pour donner des
+   * infos aux clients quand ils l'essaient virtuellement. » L'écran de l'acte
+   * montre alors la photo envoyée et la bulle du vocal, et le fil de la ville
+   * ne montre que des boutiques de vêtements.
+   */
+  photoEtVoix?: boolean;
+  /** Ce que dit son vocal, pour l'exemple — affiché sous la bulle, jamais prêté à quelqu'un de réel. */
+  motVoix?: string;
+  /** La photo de la pièce de l'exemple, quand on n'a pas encore la sienne. */
+  pieceExemple?: string;
   /** Ce qui revient, heure par heure. Le cœur de la démonstration. */
   retours: RetourDuJour[];
 };
@@ -420,22 +433,28 @@ export function gesteDuJour(
       support: "vos portants",
       ouDort: "Vous, ce matin, votre nouvel arrivage est sur vos portants.",
       pasVu: "Il est superbe. Mais il ne se voit qu'en poussant votre porte. Et eux sont à quatre cents mètres, en train de choisir.",
-      geste: "Décrivez-moi votre pièce du jour.",
+      /* UNE PHOTO ET UN VOCAL, PAS UNE DESCRIPTION. « On montre à
+         l'assistante une photo du vêtement, et on laisse un vocal pour donner
+         des infos aux clients quand ils l'essaient virtuellement. » */
+      geste: "Montrez-moi la pièce du jour.",
       gesteDit:
-        "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me décrire la pièce que vous voulez mettre en lumière aujourd'hui.",
-      gesteCourt: "Pour y être, décrivez-moi la pièce que vous voulez mettre en lumière aujourd'hui.",
+        "Pour rejoindre Le Direct, tout ce que vous avez à faire, c'est de me montrer la pièce du jour en photo, et de me laisser un vocal.",
+      gesteCourt: "Pour y être, montrez-moi la pièce du jour en photo, et laissez-moi un vocal pour vos clientes.",
       parPhoto: false,
-      demande: "Quelle pièce voulez-vous mettre en lumière aujourd'hui ?",
+      photoEtVoix: true,
+      demande: "Montrez-moi la pièce du jour, et dites-moi ce que vos clientes doivent savoir.",
+      motVoix: "Elle tombe parfaitement, je la porte moi-même. Du 36 au 44, et les retouches sont offertes.",
+      pieceExemple: "/direct/mode-chemise-volants-rose.jpeg",
       envoi: "votre pièce du jour part",
       suite:
-        "Je m'occupe du reste : elle part sur votre page et dans Le Direct, et chacun peut la porter sur sa propre photo avant de passer vous voir.",
+        "Je m'occupe du reste : elle part sur votre page et dans Le Direct, chacun l'essaie sur sa propre photo, et c'est votre voix qui leur en parle.",
       convaincus:
         "Et quand une pièce leur plaît, ils l'essaient sur leur photo, puis vous demandent de la mettre de côté — et la demande arrive chez vous.",
       publie: "votre pièce du jour",
       extrait: {
         titre: "La pièce du jour",
-        lignes: ["Robe en lin, couleur terracotta", "Du 36 au 44, à essayer sur soi"],
-        prix: "79 €",
+        lignes: ["Chemise à volants rose poudré", "Du 36 au 44 · à essayer sur soi"],
+        prix: "59 €",
       },
       retours: [
         { heure: "10 h 20", icone: "❤️", nombre: "31", quoi: `${gentile} l'auront vue passer` },

@@ -186,6 +186,22 @@ function sonnerLHote(slug: string, origine: string) {
   });
 }
 
+/** L'ESSAYAGE DE SA VITRINE, APRÈS LA PAGE, à sa propre route — voir `api/site-internet/essai-vitrine`. */
+function sonnerLEssai(slug: string, origine: string) {
+  after(async () => {
+    try {
+      await fetch(`${origine}/api/site-internet/essai-vitrine`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ slug }),
+        signal: AbortSignal.timeout(10_000),
+      });
+    } catch {
+      /* la prochaine visite relancera */
+    }
+  });
+}
+
 async function lireLaCopie(copie: CopiePresentation) {
   let carte = copie.carte;
   let note: string | null = copie.carte.google?.note ?? null;
@@ -497,8 +513,9 @@ export default async function ApercuMaquette({
     moteurEssaiConfigure() &&
     boutiqueAEssayer(str(row.activite), row.diagnostic) &&
     essaiVitrineAFaire(essaiVitrineDuDiagnostic(row.diagnostic));
-  if (hoteACherche(couv) || sansHoteAFaire(couv) || sceneAFaire(xp?.scenePlat) || sceneARefaire(xp?.sceneChef, "chef") || essaiAFaire)
+  if (hoteACherche(couv) || sansHoteAFaire(couv) || sceneAFaire(xp?.scenePlat) || sceneARefaire(xp?.sceneChef, "chef"))
     sonnerLHote(slug, await origineDeLaPage());
+  if (essaiAFaire) sonnerLEssai(slug, await origineDeLaPage());
   /* SA CARTE EST VIDE ET SON ONGLET « MENU » N'A JAMAIS ÉTÉ DEMANDÉ (page
      créée avant cette étape) : on le demande une fois, après la page. La
      lecture de la carte suit d'elle-même, aux visites suivantes — JAMAIS À

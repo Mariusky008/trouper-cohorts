@@ -60,6 +60,21 @@ export async function GET(requete: Request) {
         /* la page la redemandera */
       }
     });
+    /* SES PHOTOS SONT LÀ : L'ESSAYAGE DE SA VITRINE PEUT PARTIR (une boutique
+       de vêtements seulement — la route le vérifie, et ne refait rien de
+       fait). Sonné ici, il est prêt avant qu'il lance la présentation. */
+    after(async () => {
+      try {
+        await fetch(`${origine}/api/site-internet/essai-vitrine`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ slug }),
+          signal: AbortSignal.timeout(10_000),
+        });
+      } catch {
+        /* sa page le relancera */
+      }
+    });
   }
   return NextResponse.json(reponse(e), { headers: { "cache-control": "no-store" } });
 }

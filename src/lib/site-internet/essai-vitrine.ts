@@ -65,13 +65,14 @@ export function boutiqueAEssayer(activite: string, diag: unknown): boolean {
 
 /* ON ÉCRIT SUR LE DIAGNOSTIC RELU, une chose à la fois : la photo ClikMe et
    les autres travaux de la même route écrivent dans la même colonne. */
-async function ecrire(id: string, maj: (e: EssaiVitrine | undefined) => EssaiVitrine | null): Promise<void> {
+async function ecrire(id: string, maj: (e: EssaiVitrine | undefined) => EssaiVitrine | null): Promise<boolean> {
   const supabase = createAdminClient();
   const { data } = await supabase.from("human_vitrine_sites").select("diagnostic").eq("id", id).maybeSingle();
   const diag = ((data as Record<string, unknown> | null)?.diagnostic ?? {}) as Record<string, unknown>;
   const suite = maj(essaiVitrineDuDiagnostic(diag));
-  if (!suite) return;
+  if (!suite) return false;
   await supabase.from("human_vitrine_sites").update({ diagnostic: { ...diag, essai_vitrine: suite } }).eq("id", id);
+  return true;
 }
 
 type Choix = { index: number; nom: string; genre: "femme" | "homme"; boite?: { x: number; y: number; w: number; h: number } };
@@ -280,18 +281,29 @@ export async function completerEssaiVitrine(slug: string, origine?: string): Pro
   const id = s(row.id);
   const avant = essaiVitrineDuDiagnostic(row.diagnostic);
   if (!essaiVitrineAFaire(avant)) return;
+  /* PAS ENCORE DE PHOTOS — une inscription toute neuve, dont la fiche Google
+     est en train d'être lue : on n'essaie pas, et RIEN N'EST NOTÉ. L'essai
+     partira quand la lecture de la fiche sonnera (voir la route
+     `fiche-google`), au lieu d'être compté « sans pièce » et d'attendre. */
+  const urls = photosCandidates(row).slice(0, 10);
+  if (!urls.length) return;
   // ON NOTE L'ESSAI AVANT DE PAYER : deux visites rapprochées n'en paient qu'un.
   // Les essais d'une version précédente ne comptent pas — voir `VERSION_ESSAI`.
   const essais = ((avant?.v ?? 1) < VERSION_ESSAI ? 0 : (avant?.essais ?? 0)) + 1;
   const debut = new Date().toISOString();
-  await ecrire(id, (e) => (e && !essaiVitrineAFaire(e) ? null : { ...(e ?? {}), etat: "en-cours", essais, at: debut, erreur: undefined, v: VERSION_ESSAI }));
+  /* LE VERROU : la page et la lecture de la fiche peuvent sonner ensemble. Le
+     second à arriver trouve « en cours » et s'en va — un rendu se paie une
+     fois. */
+  const pris = await ecrire(id, (e) =>
+    e && !essaiVitrineAFaire(e) ? null : { ...(e ?? {}), etat: "en-cours", essais, at: debut, erreur: undefined, v: VERSION_ESSAI },
+  );
+  if (!pris) return;
 
   const echec = (erreur: string, etat: EssaiVitrine["etat"] = "echec") =>
     ecrire(id, (e) => (e?.at !== debut ? null : { ...e, etat, at: new Date().toISOString(), erreur }));
 
   try {
     // ── 1. SES PHOTOS, EN PETIT, ET LA PIÈCE ──
-    const urls = photosCandidates(row).slice(0, 10);
     const grandes = await Promise.all(urls.map((u) => lirePhoto(u)));
     const lues = grandes.map((g, i) => ({ g, url: urls[i] })).filter((x): x is { g: Img; url: string } => Boolean(x.g));
     if (!lues.length) return void (await echec("aucune photo lisible sur sa fiche", "aucune"));

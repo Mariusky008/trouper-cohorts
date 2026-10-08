@@ -233,7 +233,7 @@ export function PageBoutique(p: PageBoutiqueProps) {
           extrait: { titre: "La pièce du jour", lignes: [pieceDuJour.nom ?? "Une pièce de la boutique", "À essayer sur soi avant de passer"], prix: "" },
         }
       : gesteBrut;
-  const photos = [pieceDuJour?.piece, carte.photo, ...(carte.photos ?? [])].filter((x): x is string => Boolean(x));
+  const photos = [carte.photo, ...(carte.photos ?? [])].filter((x): x is string => Boolean(x));
   /* LA PAGE À ONGLETS EST FIXE : le formulaire entre dedans, au bout des
      infos. Rendu après elle, il se retrouvait derrière. Tous les métiers l'ont
      maintenant — voir `aLaPageAOnglets`. */
@@ -275,6 +275,7 @@ export function PageBoutique(p: PageBoutiqueProps) {
           metierLabel={carte.metier}
           villeAff={carte.ville}
           photos={photos}
+          pieceDuJour={pieceDuJour?.piece}
           note={note}
           reviewsCount={reviewsCount}
           avisAllowed={avisAllowed}

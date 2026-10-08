@@ -60,6 +60,11 @@ const config: NextConfig = {
       "./public/direct/accueil/moi-mode-sans.jpg",
       "./public/direct/essai/mode-homme-avant.jpg",
     ],
+    // L'ESSAYAGE DE SA VITRINE SE FAIT DÉSORMAIS À SA PROPRE ROUTE.
+    "/api/site-internet/essai-vitrine": [
+      "./public/direct/accueil/moi-mode-sans.jpg",
+      "./public/direct/essai/mode-homme-avant.jpg",
+    ],
   },
   typescript: {
     ignoreBuildErrors: true,
