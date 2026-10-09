@@ -6035,6 +6035,7 @@ export function ApercuHabitant({
     fantomeDe: (qui, auteur) => (salon ? fantomeDe(salon, qui, false, auteur) : ""),
     monFantome: monLook().image,
     ouvrirSalon: ouvrirSalonDeSoiree,
+    onInviter: salon && !lectureSalon ? () => void inviterAuSalon(salon) : undefined,
   });
   /** L'empreinte des propositions et de leurs voix : ce qui a changé depuis qu'on les a regardées. */
   const sigPropos = (salon?.propositions ?? []).map((x) => `${x.cle}:${x.voix.length}`).join(",");
@@ -12628,7 +12629,7 @@ export function ApercuHabitant({
                   second écran actif : on revient par la flèche, qui dit où elle
                   ramène. */}
               <div className="ap-feuille-dos" aria-hidden="true" />
-            <div className={`ap-page feuille${salon.acces && salon.acces.statut !== "membre" ? " lecture" : ""}`}>
+            <div className={`ap-page feuille${onglet === "direct" ? "" : " haute"}${salon.acces && salon.acces.statut !== "membre" ? " lecture" : ""}`}>
               <span className="ap-feuille-p" aria-hidden="true" />
               {/* UN SALON PRIVÉ DONT JE NE SUIS PAS MEMBRE : la porte, par-dessus
                   une feuille vide — le serveur n'en a envoyé que le titre. */}
@@ -18266,7 +18267,14 @@ export function ApercuHabitant({
            venir, voter et réserver. */
         .ap-page.feuille.lecture .ap-gens-b,.ap-page.feuille.lecture .ap-propo-plus,.ap-page.feuille.lecture .ap-page-actions,
         .ap-page.feuille.lecture .ap-reac{display:none;}
-        .ap-page.feuille{top:150px;border-radius:22px 22px 0 0;
+        /* ET ELLE MONTE DAVANTAGE, parce que le salon a grandi : le duel, ses
+           cartes et le fil se partagent la feuille. « C'est dommage qu'à
+           l'intérieur du salon on ne puisse pas tout voir. » Depuis Le Direct,
+           la bande garde le nom du commerce (96 points) ; depuis Ensemble, ce
+           qui dépassait n'était que l'en-tête d'Ensemble — la feuille monte
+           presque en haut, il n'y a pas d'annonce à rappeler. */
+        .ap-page.feuille.haute{top:calc(34px + env(safe-area-inset-top));}
+        .ap-page.feuille{top:96px;border-radius:22px 22px 0 0;
           padding-top:12px;overflow:hidden;
           box-shadow:0 -1px 0 rgba(126,230,192,.22),0 -22px 44px rgba(0,0,0,.6);
           /* ELLE MONTE ASSEZ LENTEMENT POUR QU'ON VOIE D'OU ELLE VIENT.
