@@ -3,7 +3,16 @@
 //  - scope "apercu" : la maquette doit exister ET ne PAS être publiée. Un site
 //    en ligne chez un client n'appelle jamais la voix payante (voix navigateur).
 //  - scope "pro"    : jeton privé pro_token exigé.
-//  - texte plafonné à 500 caractères, nettoyé des emojis.
+//  - texte plafonné à 1 200 caractères, nettoyé des emojis.
+//
+// « Étape 3 : "puis vous demande de la mettre" : ça ne veut rien dire cette
+// phrase, je pense qu'il manque la fin. » IL MANQUAIT LA FIN, COUPÉE ICI.
+// Chaque acte de la visite est dit d'un seul tenant, et l'étape 3 a passé
+// 500 caractères en recevant la définition du Direct : la voix s'arrêtait net
+// au 500e (« … de la mettre »), pendant que la légende, elle, était entière.
+// Le plafond ne borne pas le coût — la visite dit la même chose, en un ou
+// deux morceaux — il borne seulement un abus ; 1 200 laisse de la marge aux
+// actes les plus longs.
 // Sans ELEVENLABS_API_KEY → 503, le client retombe sur la voix du navigateur.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -11,7 +20,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const dynamic = "force-dynamic";
 
 const s = (v: unknown) => String(v ?? "").trim();
-const MAX_CHARS = 500;
+const MAX_CHARS = 1200;
 
 // Voix par défaut : multilingue ElevenLabs. Remplaçable par ELEVENLABS_VOICE_ID
 // (choisir une voix française dans la bibliothèque ElevenLabs → coller son ID).
