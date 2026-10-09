@@ -794,6 +794,25 @@ export function StylesBoutiqueTable() {
         .bt-msg p{margin:0;padding:8px 13px;border-radius:18px 18px 18px 6px;
           font-size:15.5px;line-height:1.35;background:#2A1F1B;}
         .bt-msg.moi p{border-radius:18px 18px 6px 18px;background:var(--bt-rose);color:#fff;}
+        /* ═══ LA CONVERSATION D'EXEMPLE — tant que sa page n'est pas gardée ═══
+           Voir salon-exemple.tsx : l'essai ouvre le fil, les amies répondent
+           une par une, comme dans une vraie messagerie. */
+        .bt-exemple{display:flex;flex-direction:column;gap:8px;}
+        .bt-exemple-k{align-self:center;margin:0 0 2px;padding:4px 11px;border-radius:999px;text-align:center;
+          font-size:11.5px;font-weight:700;color:#1A0F08;background:#FFE2A6;}
+        .bt-av-img{flex:none;width:30px;height:30px;border-radius:50%;object-fit:cover;object-position:50% 16%;
+          background:#FFE7D6;}
+        .bt-essai{position:relative;margin:0 0 6px;width:min(190px,54vw);aspect-ratio:3 / 4;overflow:hidden;
+          border-radius:18px 18px 18px 6px;box-shadow:0 12px 28px rgba(0,0,0,.45);}
+        .bt-essai img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 22%;}
+        .bt-essai figcaption{position:absolute;left:8px;bottom:8px;padding:4px 9px;border-radius:999px;
+          font-size:11.5px;font-weight:800;color:#fff;background:linear-gradient(90deg,#FF4FA0,#F5A23A);
+          box-shadow:0 6px 16px rgba(255,79,160,.4);}
+        .bt-essai-ex{position:absolute;right:8px;top:8px;padding:3px 8px;border-radius:999px;
+          font-size:10.5px;font-weight:800;color:#FFF4E6;background:rgba(18,12,9,.7);}
+        .bt-exemple .bt-msg{opacity:0;animation:btMsgExemple .45s ease both;animation-delay:calc(.3s + var(--i) * .75s);}
+        @keyframes btMsgExemple{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+        @media (prefers-reduced-motion: reduce){.bt-exemple .bt-msg{animation:none;opacity:1;}}
         /* LE FIL SE POSE EN BAS, CONTRE LA SAISIE, comme dans toute messagerie :
            le rendez-vous reste epingle en haut, le vide va entre les deux. */
         .bt-e-amis .bt-corps{display:flex;flex-direction:column;}

@@ -93,6 +93,7 @@ import { StylesBoutiqueTable } from "./styles-boutique-table";
 import { compter } from "@/lib/direct/compter";
 import { aLaMaison } from "@/lib/site-internet/bienvenue";
 import { EssaiDuLieu } from "./essai-du-lieu";
+import { SalonExemple } from "./salon-exemple";
 import { ChoixDuLibraire } from "./choix-du-libraire";
 import { ExperienceTable, estUnRestaurant } from "./experience-table";
 
@@ -2054,6 +2055,17 @@ export function BoutiqueTable({
                     </div>
                   ))}
                 </div>
+              </>
+            ) : saPage ? (
+              /* ═══ MAIS À ELLE, TANT QU'ELLE N'A PAS GARDÉ SA PAGE, ON MONTRE
+                  CE QUI S'Y PASSERA — voir `salon-exemple.tsx`. Un essai de sa
+                  pièce ouvre la conversation, ses amies répondent ; tout est
+                  marqué « Exemple », et le premier vrai message le remplace. */
+              <>
+                <p className="bt-trait">
+                  <span>La conversation</span>
+                </p>
+                <SalonExemple c={c} photoLieu={couv ?? dedans(0)} />
               </>
             ) : (
               <div className="bt-salon-vide">
