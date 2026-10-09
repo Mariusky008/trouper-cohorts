@@ -28,7 +28,7 @@
 // parmi les messages, les lignes du Fantôme entre eux, le petit fantôme au
 // bord du champ).
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { CarteAutour } from "@/lib/direct/apercu-habitant";
 import { murDeLaCarte, type Piece } from "@/lib/direct/fantomes";
 import { familleDuDouble, profilDuDouble } from "@/lib/direct/double-metiers";
@@ -37,6 +37,7 @@ import { essayerSurMoi, estUnRendu } from "@/lib/direct/essai-genere";
 import { photoDEssaiPour, renduPour } from "@/lib/direct/photo-essai";
 import { lienReponseCommerce } from "@/lib/direct/conversations-sync";
 import { noter } from "@/lib/direct/parcours";
+import { abonnerCloche, allumerLaCloche, ecarterLaCloche, etatDeLaCloche, prevenuEnPoche, sonnerIci, villeDeLaPage, type EtatCloche } from "@/lib/direct/cloche";
 import {
   cleSalonDeSoiree,
   demanderPourLeDuel,
@@ -442,6 +443,7 @@ export function useDuelDuSalon(p: {
   const [texteDemande, setTexteDemande] = useState("");
   const [coteBoutique, setCoteBoutique] = useState(false);
   const [traceOuverte, setTraceOuverte] = useState<string | null>(null);
+  const cloche = useSyncExternalStore(abonnerCloche, etatDeLaCloche, () => "indisponible" as EtatCloche);
   const minuteurHumeur = useRef<number | null>(null);
   const instantane = useRef<Instantane | null>(null);
   const paroles = useRef<number[]>([]);
@@ -561,6 +563,13 @@ export function useDuelDuSalon(p: {
         if (JSON.stringify(a.votes) !== JSON.stringify(d.votes)) {
           evs.push({ type: "vote_cast", sur: d.id });
           const k = compte(d);
+          /* 🔔 DANS LA DÉMONSTRATION, LA CLOCHE SONNE ICI (dans la vraie ville, c'est le serveur) —
+             et seulement si l'écran n'est pas regardé (voir `sonnerIci`). */
+          const ami = Object.entries(d.votes).filter(([q, c]) => q !== MOI && a.votes[q] !== c).pop();
+          if (!reelle && d.cleProprio === MOI && ami && !d.fin) {
+            const tete = k.a === k.b ? `Égalité ${k.a}–${k.b}` : `${k.a > k.b ? "A" : "B"} mène ${Math.max(k.a, k.b)}–${Math.min(k.a, k.b)}`;
+            void sonnerIci({ titre: `${d.votants[ami[0]] ?? ami[0]} vient de voter`, corps: `${lettre(ami[1])} : ${objetDe(d, ami[1]).nom}. ${tete}.`, tag: `vote-${d.id}` });
+          }
           const lead = maintenant.duel.lead;
           if (lead && a.lead && lead !== a.lead) evs.push({ type: "vote_lead_changed", sur: `${d.id}|${k.total}`, lettre: lettre(lead) === "A" ? "A" : "B" });
           const autresVotes = Object.entries(d.votes).filter(([q]) => q !== d.cleProprio).map(([, c]) => c);
@@ -584,7 +593,7 @@ export function useDuelDuSalon(p: {
       }
     }
     evs.forEach(emettre);
-  }, [salon, membre, peutDuel, seul, emettre, chez]);
+  }, [salon, membre, peutDuel, seul, emettre, chez, reelle]);
 
   // ─── L'ISSUE EST RETENUE, ET LA RÉPONSE DU COMMERÇANT MESURÉE ───
   useEffect(() => {
@@ -895,6 +904,20 @@ export function useDuelDuSalon(p: {
           monFantome={p.monFantome}
           onVoter={(c) => voter(d, c)}
           onResultat={() => voirResultat(d)}
+          cloche={
+            !seul && (cloche === "a-demander" || cloche === "allumee")
+              ? {
+                  etat: cloche,
+                  enPoche: reelle && prevenuEnPoche(),
+                  onAllumer: () =>
+                    void allumerLaCloche(reelle ? villeDeLaPage() : undefined).then((e) => noter("duel", d.n, e === "allumee" ? "cloche-oui" : "cloche-non")),
+                  onEcarter: () => {
+                    ecarterLaCloche();
+                    noter("duel", d.n, "cloche-ecartee");
+                  },
+                }
+              : undefined
+          }
         />
       );
     }
@@ -1237,6 +1260,7 @@ function CarteVote({
   monFantome,
   onVoter,
   onResultat,
+  cloche,
 }: {
   d: Duel;
   humeur: Humeur;
@@ -1245,6 +1269,8 @@ function CarteVote({
   monFantome: string;
   onVoter: (c: Cote) => void;
   onResultat: () => void;
+  /** « Je vous préviens ? » — proposé une fois, au moment où ça annonce quelque chose. */
+  cloche?: { etat: EtatCloche; enPoche: boolean; onAllumer: () => void; onEcarter: () => void };
 }) {
   const k = compte(d);
   const monVote = d.votes[MOI];
@@ -1284,6 +1310,22 @@ function CarteVote({
         </button>
       )}
       {monVote && <p className="dl-mien">✓ Vous avez voté {lettre(monVote)}</p>}
+      {cloche?.etat === "a-demander" && (
+        <div className="dl-cloche">
+          <p>{proprio ? "Je vous préviens quand vos amis votent ?" : `Je vous préviens du choix de ${d.par} ?`}</p>
+          <div>
+            <button type="button" className="dl-cloche-oui" onClick={cloche.onAllumer}>
+              🔔 Me prévenir
+            </button>
+            <button type="button" className="dl-cloche-non" onClick={cloche.onEcarter}>
+              Non merci
+            </button>
+          </div>
+        </div>
+      )}
+      {cloche?.etat === "allumee" && (
+        <p className="dl-cloche-ok">{cloche.enPoche ? "🔔 Je vous préviens, même téléphone en poche." : "🔔 Je vous préviens si vous quittez l’écran."}</p>
+      )}
     </section>
   );
 }
@@ -1774,6 +1816,13 @@ ${Array.from({ length: 10 }, (_, i) => {
 .dl-x{position:absolute;top:6px;right:8px;width:30px;height:30px;padding:0;border:0;background:none;cursor:pointer;color:#CDB9A5;font-size:22px;line-height:1;}
 .dl-pied{margin:10px 0 0;text-align:center;font-size:12.5px;color:#CDB9A5;}
 .dl-consigne{margin:10px 0 0;text-align:center;font-size:14px;color:#FFF4E6;}
+.dl-cloche{margin:12px 0 0;padding:10px 12px;border-radius:14px;background:rgba(255,244,230,.06);border:1px dashed rgba(246,181,75,.45);}
+.dl-cloche p{margin:0 0 8px;font-size:13.5px;font-weight:700;color:#FFF4E6;}
+.dl-cloche div{display:flex;gap:8px;flex-wrap:wrap;}
+.dl-cloche button{min-height:40px;padding:0 14px;border-radius:999px;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer;}
+.dl-cloche-oui{color:#2A1608;border:0;background:linear-gradient(180deg,#FBC766,#F0A23A);}
+.dl-cloche-non{color:#FFF4E6;background:none;border:1px solid rgba(255,244,230,.3);}
+.dl-cloche-ok{margin:10px 0 0;text-align:center;font-size:12.5px;color:#D9C3A8;}
 .dl-pourquoi{display:inline-block;margin:6px 0 0;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;color:#F6B54B;background:rgba(246,181,75,.12);border:1px solid rgba(246,181,75,.35);}
 .dl-lettre{position:absolute;top:8px;left:8px;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;
   font-style:normal;font-size:15px;font-weight:900;color:#F6B54B;background:rgba(30,18,10,.88);border:1.5px solid rgba(246,181,75,.8);}

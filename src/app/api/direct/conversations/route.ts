@@ -28,7 +28,7 @@
 //
 // LIRE NE CRÉE PERSONNE, ET LIRE UN SALON PUBLIC N'Y FAIT PAS ENTRER : seul
 // « rejoindre » ajoute aux participants.
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assurerHabitant, habitantCourant } from "@/lib/direct/habitant";
@@ -51,6 +51,7 @@ import {
 import type { BaseConversation, Geste, GesteLu } from "@/lib/direct/conversations";
 import type { ObjetDuel } from "@/lib/direct/duel";
 import { signerReponse } from "@/lib/direct/reponse-commerce";
+import { prevenirDuGeste } from "@/lib/direct/push-salons";
 import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
@@ -617,6 +618,8 @@ export async function POST(request: Request) {
     const { error } = await supabase.from("human_conversation_gestes").insert({ conversation: c.id, habitant: h.id, qui: prenom(p?.qui, h.prenom), geste });
     if (error) return non("Enregistrement impossible.", 500);
     await supabase.from("human_conversations").update({ activite: new Date().toISOString() }).eq("id", c.id);
+    // 🔔 UN DUEL, UNE VOIX, UN CHOIX : ceux que ça concerne sont prévenus — après la réponse, pour ne pas la retarder.
+    after(() => prevenirDuGeste(supabase, c, h.id, prenom(p?.qui, h.prenom), geste as Parameters<typeof prevenirDuGeste>[4]));
     return ok();
   }
 

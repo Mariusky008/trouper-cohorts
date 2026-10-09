@@ -5,9 +5,11 @@
 // conversation et UN duel, et rien d'autre. La réponse entre dans le salon
 // comme un geste sans habitant derrière — le seul genre de geste que le rejeu
 // accepte pour dire « confirmé » (voir `duelReponse` dans `conversations.ts`).
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { lireJetonReponse } from "@/lib/direct/reponse-commerce";
+import { motsDeLAction } from "@/lib/direct/duel";
+import { prevenirDeLaReponse } from "@/lib/direct/push-salons";
 
 export const dynamic = "force-dynamic";
 
@@ -41,5 +43,8 @@ export async function POST(request: Request) {
     .insert({ conversation: j.c, habitant: null, qui: j.m || "Le commerce", geste: { type: "duelReponse", duel: j.d, etat } });
   if (error) return NextResponse.json({ error: "Enregistrement impossible." }, { status: 500 });
   await supabase.from("human_conversations").update({ activite: new Date().toISOString() }).eq("id", j.c);
+  // 🔔 CELUI QUI AVAIT DEMANDÉ L'APPREND, MÊME TÉLÉPHONE EN POCHE.
+  const mots = motsDeLAction(j.a);
+  after(() => prevenirDeLaReponse(supabase, j, { titre: etat === "confirme" ? `${mots.confirme} ✅` : mots.refuse }));
   return NextResponse.json({ ok: true, etat });
 }
