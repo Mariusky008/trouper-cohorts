@@ -42,6 +42,32 @@ export type RetourDuJour = {
   /** Le chiffre, mis en avant. Vide quand la ligne est une conclusion. */
   nombre: string;
   quoi: string;
+  /** CE CHIFFRE-LÀ EST UNE DEMANDE QUI ARRIVE CHEZ LUI — l'étape 5 montre alors les messages reçus. */
+  demande?: true;
+};
+
+/**
+ * ═══ LES SALONS, À L'ÉTAPE 2 — juste après l'essai ═══════════════════════
+ *
+ * « À la fin de cette étape, c'est là qu'il faut dire qu'une fois le produit
+ * essayé, le client peut ouvrir un salon entre amis ou public, où il pourrait
+ * demander des avis, faire des comparaisons… C'est un endroit où les ventes
+ * grimpent. Il faut montrer ces salons où le fantôme intervient, qu'on soit
+ * seul ou avec des amis, et qui va nous aider à prendre une décision de chez
+ * soi. » Le fantôme est celui DE LA BOUTIQUE — « avec sa casquette ».
+ *
+ * TROIS PHRASES, DANS LES MOTS DU MÉTIER : on ouvre un salon, son fantôme y
+ * répond et conclut, et c'est là que ça se décide. `bilan` est ce que l'écran
+ * affiche quand la dernière est dite.
+ */
+export type SalonsDuMetier = {
+  ouvre: string;
+  fantome: string;
+  ventes: string;
+  /** Le titre de la scène. */
+  titre: string;
+  /** « 2 pièces mises de côté » — ce que les salons ont décidé, à l'écran. */
+  bilan: string;
 };
 
 /**
@@ -195,7 +221,38 @@ export type GesteDuJour = {
   pieceExemple?: string;
   /** Ce qui revient, heure par heure. Le cœur de la démonstration. */
   retours: RetourDuJour[];
+  /** Voir `SalonsDuMetier`. */
+  salons: SalonsDuMetier;
+  /**
+   * LA PHRASE QUI OUVRE L'ÉTAPE 3 QUAND L'ÉTAPE 2 A MONTRÉ L'ESSAI ET SES
+   * SALONS : « Mais pour l'essayer, encore faut-il la découvrir. » Elle remplace
+   * « le plus important n'est pas votre page », qui ne suivait plus rien.
+   */
+  liaison: string;
 };
+
+/** Les salons d'un métier, avec le mot de ce qu'on y décide. */
+function salons(
+  ils: "ils" | "elles",
+  fantomeDe: string,
+  conclut: string,
+  ventes: string,
+  bilan: string,
+): SalonsDuMetier {
+  const amis = ils === "elles" ? "entre amies" : "entre amis";
+  const chez = ils === "elles" ? "chez elles" : "chez eux";
+  return {
+    ouvre: `Et d'un clic, ${ils} ouvrent un salon : ${amis}, ou ouvert à toute la ville. On y demande des avis, on compare, on hésite…`,
+    /* « …ces salons où le fantôme intervient, qu'on soit seul ou avec des amis,
+       et qui va nous aider à prendre une décision de chez soi » : c'est le duel
+       d'« Ensemble » (`duel-salon.tsx`) — il oppose leur choix à une autre
+       pièce de la boutique, on vote, et la gagnante devient une demande. */
+    fantome: `Et ${fantomeDe} est là, qu'${ils} soient seul${ils === "elles" ? "e" : ""}s ou ${amis} : il répond à leurs questions, les aide à trancher et, quand ${ils} se décident, ${conclut}.`,
+    ventes: `C'est là que ${ventes} : depuis ${chez}.`,
+    titre: ils === "elles" ? "Un essai, un clic, et elles en parlent." : "Un clic, et ils en parlent.",
+    bilan,
+  };
+}
 
 /**
  * CE QUE L'HABITANT VOIT EN OUVRANT LE DIRECT, dans la rue, à midi moins dix.
@@ -316,9 +373,11 @@ export function gesteDuJour(
         },
         retours: [
           { heure: "18 h 20", icone: "❤️", nombre: "41", quoi: `${gentile} l'auront vu passer` },
-          { heure: "19 h 05", icone: "🍷", nombre: "9", quoi: "ont dit qu'ils venaient" },
+          { heure: "19 h 05", icone: "🍷", nombre: "9", quoi: "ont dit qu'ils venaient", demande: true },
           { heure: "20 h 00", icone: "📊", nombre: "", quoi: "Avant l'ouverture, vous saurez à quoi ressemble votre soirée." },
         ],
+        salons: salons("ils", "le fantôme de votre bar", "il vous envoie leur demande", "vos soirées se remplissent", "🍷 2 places demandées"),
+        liaison: "Mais pour venir, encore faut-il vous découvrir.",
       };
     }
     return {
@@ -361,9 +420,11 @@ export function gesteDuJour(
         // appuie sur un cœur : c'est ce mot-là qu'il emploie, et c'est celui
         // qui fait le lien avec ce qu'on vient de lui montrer à l'acte 3.
         { heure: "11 h 17", icone: "❤️", nombre: "34", quoi: "personnes auront liké votre menu" },
-        { heure: "11 h 32", icone: "📅", nombre: "3", quoi: "tables réservées" },
+        { heure: "11 h 32", icone: "📅", nombre: "3", quoi: "tables réservées", demande: true },
         { heure: "12 h 00", icone: "📊", nombre: "", quoi: "En un midi, vous saurez si votre menu plaît." },
       ],
+      salons: salons("ils", "le fantôme de votre restaurant", "il vous envoie leur réservation", "vos tables se remplissent", "📅 2 réservations demandées"),
+      liaison: "Mais pour venir, encore faut-il vous découvrir.",
     };
   }
 
@@ -410,9 +471,11 @@ export function gesteDuJour(
       },
       retours: [
         { heure: "10 h 40", icone: "❤️", nombre: "26", quoi: `${gentile} l'auront vu passer` },
-        { heure: "12 h 15", icone: "📚", nombre: "5", quoi: "livres mis de côté" },
+        { heure: "12 h 15", icone: "📚", nombre: "5", quoi: "livres mis de côté", demande: true },
         { heure: "18 h 00", icone: "📊", nombre: "", quoi: "En une semaine, vous saurez quels livres donnent envie." },
       ],
+      salons: salons("ils", "le fantôme de votre librairie", "il vous demande de leur mettre le livre de côté", "vos livres trouvent leurs lecteurs", "📚 2 livres demandés"),
+      liaison: "Mais pour le lire, encore faut-il le découvrir.",
     };
   }
 
@@ -461,8 +524,12 @@ export function gesteDuJour(
       envoi: "votre pièce du jour part",
       suite:
         "Je m'occupe du reste : elle part sur votre page et dans Le Direct, chacun l'essaie sur sa propre photo, et c'est votre voix qui leur en parle.",
+      /* « "Puis vous demande de la mettre" : ça ne veut rien dire. » La phrase
+         était entière, c'est la voix qui la coupait au 500e caractère de
+         l'acte (voir la route `tts`). Elle dit maintenant aussi le salon, que
+         l'étape 2 vient de montrer. */
       convaincus:
-        "Et quand une pièce leur plaît, ils l'essaient sur leur photo, puis vous demandent de la mettre de côté — et la demande arrive chez vous.",
+        "Et quand une pièce leur plaît, ils l'essaient, en parlent dans leur salon, puis vous demandent de la leur mettre de côté. La demande arrive directement chez vous.",
       publie: "votre pièce du jour",
       partage:
         "Et en un clic, elles la partagent : entre amies dans leurs salons privés, et avec toute la ville dans le salon public.",
@@ -476,8 +543,13 @@ export function gesteDuJour(
       retours: [
         { heure: "15 h 30", icone: "❤️", nombre: "549", quoi: `${gentile} l'auront vue passer` },
         { heure: "16 h 05", icone: "👗", nombre: "19", quoi: "l'auront essayée virtuellement" },
-        { heure: "17 h 00", icone: "📊", nombre: "", quoi: "En une journée, vous saurez quelle pièce donne envie." },
+        /* « Étape 5 : les demandes qui arrivent chez elle. » Les salons sont
+           montrés à l'étape 2 ; ici, c'est ce qui en sort et arrive chez elle. */
+        { heure: "17 h", icone: "🛍️", nombre: "3", quoi: "clientes vous auront demandé de la mettre de côté", demande: true },
+        { heure: "18 h 00", icone: "📊", nombre: "", quoi: "En une journée, vous saurez quelle pièce donne envie." },
       ],
+      salons: salons("elles", "le fantôme de votre boutique", "il vous demande de la mettre de côté", "vos ventes se décident", "🛍️ 2 mises de côté demandées"),
+      liaison: "Mais pour l'essayer, encore faut-il la découvrir.",
     };
   }
 
@@ -514,9 +586,11 @@ export function gesteDuJour(
       },
       retours: [
         { heure: "7 h 40", icone: "❤️", nombre: "28", quoi: `${gentile} l'auront vu passer` },
-        { heure: "8 h 15", icone: "🧺", nombre: "6", quoi: "pièces mises de côté" },
+        { heure: "8 h 15", icone: "🧺", nombre: "6", quoi: "pièces mises de côté", demande: true },
         { heure: "9 h 00", icone: "📊", nombre: "", quoi: "En une matinée, vous saurez ce qui plaît." },
       ],
+      salons: salons("ils", "le fantôme de votre boutique", "il vous demande de leur mettre de côté", "vos ventes se décident", "🧺 2 mises de côté demandées"),
+      liaison: "Mais pour en profiter, encore faut-il vous découvrir.",
     };
   }
 
@@ -547,9 +621,11 @@ export function gesteDuJour(
         { heure: "9 h 25", icone: "❤️", nombre: "22", quoi: `${gentile} l'auront vu passer` },
         // L'accord suit le genre du mot, qui est rangé à côté de lui : sans
         // ça on lisait « 3 créneaux demandées » sur l'écran d'un coiffeur.
-        { heure: "10 h 10", icone: "📅", nombre: "3", quoi: `${v.places} demandé${v.un === "une" ? "es" : "s"}` },
+        { heure: "10 h 10", icone: "📅", nombre: "3", quoi: `${v.places} demandé${v.un === "une" ? "es" : "s"}`, demande: true },
         { heure: "11 h 00", icone: "📊", nombre: "", quoi: "Vous saurez si votre après-midi se remplit." },
       ],
+      salons: salons("ils", "votre fantôme", "il vous envoie leur demande", "votre agenda se remplit", `📅 2 ${v.places} demandé${v.un === "une" ? "es" : "s"}`),
+      liaison: "Mais pour venir, encore faut-il vous découvrir.",
     };
   }
 
@@ -573,9 +649,11 @@ export function gesteDuJour(
     extrait: { titre: "Cette semaine", lignes: ["Disponible à partir de jeudi"], prix: "" },
     retours: [
       { heure: "9 h 25", icone: "❤️", nombre: "18", quoi: `${gentile} l'auront vu passer` },
-      { heure: "10 h 40", icone: "📞", nombre: "2", quoi: "demandes reçues" },
+      { heure: "10 h 40", icone: "📞", nombre: "2", quoi: "demandes reçues", demande: true },
       { heure: "11 h 00", icone: "📊", nombre: "", quoi: "Vous saurez si votre semaine se remplit." },
     ],
+    salons: salons("ils", "votre fantôme", "il vous envoie leur demande", "vos clients se décident", "📞 2 demandes reçues"),
+    liaison: "Mais pour vous appeler, encore faut-il vous découvrir.",
   };
 }
 
@@ -594,7 +672,11 @@ export function gesteDuJour(
 /** La phrase du partage, pour tous les métiers qui n'en ont pas une à eux. */
 const PARTAGE = "Et en un clic, ils en parlent : entre amis dans leurs salons privés, et avec toute la ville dans le salon public.";
 
-export function direRetours(g: GesteDuJour): { say: string; phrases: string[] } {
+export function direRetours(
+  g: GesteDuJour,
+  /** FAUX QUAND L'ÉTAPE 2 A DÉJÀ MONTRÉ LES SALONS : on ne les redit pas ici, l'étape montre ce qui en revient. */
+  avecPartage = true,
+): { say: string; phrases: string[] } {
   /* DEUX RELEVÉS ET LA CONCLUSION, comme avant — mais la conclusion n'est plus
      comptée comme un relevé : c'est elle qui ferme, et l'écran l'affiche à
      part. Rien n'est retiré ici ; la coupe, quand il en faudra une, se fera
@@ -603,9 +685,13 @@ export function direRetours(g: GesteDuJour): { say: string; phrases: string[] } 
      midi, vous saurez si votre menu plaît ») n'est plus dite : l'écran
      l'affiche sous les compteurs, et la voix garde son temps pour ce qui
      fait la différence — les salons où l'on en parle, en un clic. */
+  /* « Étape 5 : les demandes qui arrivent chez elle. » QUAND L'ÉTAPE 2 A
+     MONTRÉ LES SALONS, LE PARTAGE N'EST PLUS REDIT ICI : les chiffres
+     finissent sur la demande qui arrive chez lui (`demande`), et l'écran
+     montre ces messages reçus. */
   const phrases = [
     ...g.retours.filter((r) => r.nombre).map((r) => `À ${r.heure}, ${r.nombre} ${r.quoi}.`),
-    g.partage ?? PARTAGE,
+    ...(avecPartage ? [g.partage ?? PARTAGE] : []),
   ];
   /**
    * ═══ « VOTRE MENU » ÉTAIT ÉCRIT EN DUR, POUR TOUT LE MONDE ═══════════════

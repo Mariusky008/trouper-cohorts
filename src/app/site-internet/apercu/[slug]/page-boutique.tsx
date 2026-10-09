@@ -42,7 +42,7 @@ import { GarderCeSite } from "./garder-ce-site";
 import { ChoixCouverture, VeilleCouverture } from "./couverture-clikme";
 import type { EtatCouverture } from "@/lib/site-internet/couverture";
 import { BoutonDouble } from "@/components/direct/bouton-double";
-import { aUnDouble } from "@/lib/direct/double-metiers";
+import { aUnDouble, tenueDu } from "@/lib/direct/double-metiers";
 import { resolveMetier } from "@/lib/site-internet/metier-profiles";
 import { gesteDuJour } from "@/lib/direct/geste-du-jour";
 import { murDeLaCarte } from "@/lib/direct/fantomes";
@@ -174,6 +174,9 @@ function direLEssai(carte: CarteAutour): { titre: string; say: string } | null {
   }
   if (mur.essai) {
     const m = mur.essai.mots;
+    /* « VOS CLIENTES » CHEZ UNE BOUTIQUE DE VÊTEMENTS — c'est le mot du texte
+       validé pour l'étape 2, et la suite (les salons) le reprend. */
+    const clients = carte.branche === "mode" ? "clientes" : "clients";
     /* UNE DE SES PIÈCES EST DÉJÀ À L'ÉCRAN, PORTÉE : Léa la montre au lieu de
        la décrire. Voir `avant-apres-vitrine.tsx`. */
     if (carte.essaiVitrine?.etat === "prete") {
@@ -181,13 +184,13 @@ function direLEssai(carte: CarteAutour): { titre: string; say: string } | null {
         titre: m.titre,
         say:
           `${ouvre} Regardez : une de vos pièces, essayée en quelques secondes. ` +
-          `Vos clients se prennent en photo et s'y voient, avant d'avoir poussé votre porte.`,
+          `Vos ${clients} se prennent en photo et s'y voient, avant d'avoir poussé votre porte.`,
       };
     }
     return {
       titre: m.titre,
       say:
-        `${ouvre} ${m.titre} : vos clients se prennent en photo et s'y voient ` +
+        `${ouvre} ${m.titre} : vos ${clients} se prennent en photo et s'y voient ` +
         `en quelques secondes, avant d'avoir poussé votre porte.`,
     };
   }
@@ -208,6 +211,13 @@ function direLEssai(carte: CarteAutour): { titre: string; say: string } | null {
     };
   }
   return null;
+}
+
+/** Le visage du fantôme de la boutique — le même que dans « On discute ? ». */
+function fantomeDe(carte: CarteAutour): string | undefined {
+  const tenue = tenueDu(carte);
+  if (!tenue) return undefined;
+  return tenue.enPied ? `${tenue.enPied}visage.webp` : `${tenue.dossier}accueil.webp`;
 }
 
 export function PageBoutique(p: PageBoutiqueProps) {
@@ -285,6 +295,9 @@ export function PageBoutique(p: PageBoutiqueProps) {
           flashDit={flash.dit}
           geste={geste}
           essai={direLEssai(carte) ?? undefined}
+          /* SON FANTÔME, CELUI « AVEC SA CASQUETTE » : il répond dans les salons
+             de l'étape 2. Son visage en pied, s'il en a ; sa pose d'accueil sinon. */
+          fantomeBoutique={fantomeDe(carte)}
           keepHref={keepHref}
         />
       )}
